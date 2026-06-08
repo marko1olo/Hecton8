@@ -5,10 +5,12 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Crafting;
+using Hecton8.Gameplay.Atlas6Liability;
 using Hecton8.Power;
 using Hecton8.UI;
 using Hecton8.Visor;
 using Hecton8.World;
+using System;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -251,6 +253,25 @@ namespace Hecton8.Gameplay
         private const uint LifeSupportCriticalStatusBit = 1u << 9;
         private const uint StationKeepingStatusBit = 1u << 10;
         private const uint SubOsPoweredStatusBit = 1u << 11;
+        private const float MaximumDecodedPressureKPa = 999999f;
+        private const float MaximumDecodedSpeedKnots = 9999.9f;
+        private const uint KnownSubsystemStatusBits = (uint)(SubsystemStatus.Engines | SubsystemStatus.LifeSupport | SubsystemStatus.Lights | SubsystemStatus.Sonar);
+        private const uint KnownAtlasTelemetryFlags =
+            ThermalSheerManager.TelemetryFlagMasked |
+            ThermalSheerManager.TelemetryFlagCriticalDowngraded;
+        private const ushort KnownVocalWarningFlags = (ushort)(
+            SubmarineVwsFlags.PowerLow |
+            SubmarineVwsFlags.OxygenLow |
+            SubmarineVwsFlags.OxygenCritical |
+            SubmarineVwsFlags.HullBreach |
+            SubmarineVwsFlags.PressureHigh |
+            SubmarineVwsFlags.FatalPressure |
+            SubmarineVwsFlags.ThermalStress |
+            SubmarineVwsFlags.MultiSystemFailure);
+        private const uint SubOsDuplicateListenerWarningHash = 0x48445344u; // HDSD
+        private const uint SubOsListenerRejectedWarningHash = 0x4853524Au; // HSRJ
+        private const uint SubOsListenerExceptionWarningHash = 0x48534558u; // HSEX
+        private const uint SubOsListenerContextHash = 0x48534C53u; // HSLS
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
         private struct ListenerSlot
@@ -304,7 +325,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            public void Unregister(ISubmarineOsEventListener listener)
+            public bool TryUnregister(ISubmarineOsEventListener listener)
             {
                 for (int i = 0; i < _count; i++)
                 {
@@ -314,8 +335,10 @@ namespace Hecton8.Gameplay
                     _count--;
                     _slots[i] = _slots[_count];
                     _slots[_count].Clear();
-                    return;
+                    return true;
                 }
+
+                return false;
             }
 
             public ISubmarineOsEventListener GetAt(int index)
@@ -326,13 +349,37 @@ namespace Hecton8.Gameplay
 
         // COLD ALLOC: ListenerSlot[16] - submarine OS deferred listeners - owner: HectonSubmarineOsEvents
         private static SubmarineOsListenerRegistry _listeners = new SubmarineOsListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[16] - listener additions deferred while Sub OS events are dispatching - owner: HectonSubmarineOsEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[16] - listener removals deferred while Sub OS events are dispatching - owner: HectonSubmarineOsEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<SubmarineOsEventPayload> _pendingEvents;
         private static NativeQueue<SubmarineOsEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _droppedSnapshotEventCount;
+        private static int _droppedLogEventCount;
+        private static int _duplicateListenerRegistrationCount;
+        private static int _listenerRejectCount;
+        private static int _listenerExceptionCount;
+        private static int _lastDuplicateListenerTelemetryFrame = -1;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+        public static int DroppedSnapshotEventCount => _droppedSnapshotEventCount;
+        public static int DroppedLogEventCount => _droppedLogEventCount;
+        public static int DuplicateListenerRegistrationCount => _duplicateListenerRegistrationCount;
+        public static int ListenerRejectCount => _listenerRejectCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
+        public static uint ModuleId => GlobalSubmarineOsModuleId;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -340,8 +387,21 @@ namespace Hecton8.Gameplay
             ReleaseNativeQueues();
 
             _listeners.Clear();
+            System.Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            System.Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _droppedSnapshotEventCount = 0;
+            _droppedLogEventCount = 0;
+            _duplicateListenerRegistrationCount = 0;
+            _listenerRejectCount = 0;
+            _listenerExceptionCount = 0;
+            _lastDuplicateListenerTelemetryFrame = -1;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -354,8 +414,13 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.TryRegister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -366,8 +431,25 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            _listeners.TryUnregister(listener);
+        }
+
+        private static void RegisterImmediate(ISubmarineOsEventListener listener)
+        {
             if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            {
+                ReportDuplicateListenerRegistration();
+                return;
+            }
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRejected();
         }
 
         /// <summary>
@@ -412,7 +494,10 @@ namespace Hecton8.Gameplay
 
         public static bool TryRaiseSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot)
         {
-            uint statusBits = (uint)snapshot.SubsystemStatus;
+            if (!IsKnownEmergencyLevel((ushort)snapshot.EmergencyLevel))
+                return false;
+
+            uint statusBits = (uint)snapshot.SubsystemStatus & KnownSubsystemStatusBits;
             if (HectonSubmarineOsSnapshot.HasLowPowerMode(snapshot.StatusFlags))
                 statusBits |= LowPowerModeStatusBit;
             if (HectonSubmarineOsSnapshot.HasLifeSupportCritical(snapshot.StatusFlags))
@@ -424,24 +509,24 @@ namespace Hecton8.Gameplay
 
             return Enqueue(new SubmarineOsEventPayload
             {
-                PowerNormalized = snapshot.PowerNormalized,
-                OxygenNormalized = snapshot.OxygenNormalized,
-                CarbonDioxideNormalized = snapshot.CarbonDioxideNormalized,
-                MaxPressureKPa = snapshot.MaxPressureKPa,
-                SpeedKnots = snapshot.SpeedKnots,
-                EngineHeat01 = snapshot.EngineHeat01,
-                EngineHeatTrue01 = snapshot.EngineHeatTrue01,
-                EngineHeatMaskDelta01 = snapshot.EngineHeatMaskDelta01,
-                AtlasTelemetryFlags = snapshot.AtlasTelemetryFlags,
-                SonarContactCount = snapshot.SonarContactCount,
-                NearestSonarContactMeters = snapshot.NearestSonarContactMeters,
+                PowerNormalized = SanitizeNormalized(snapshot.PowerNormalized),
+                OxygenNormalized = SanitizeNormalized(snapshot.OxygenNormalized),
+                CarbonDioxideNormalized = SanitizeNormalized(snapshot.CarbonDioxideNormalized),
+                MaxPressureKPa = SanitizeNonNegativeFinite(snapshot.MaxPressureKPa, MaximumDecodedPressureKPa),
+                SpeedKnots = SanitizeNonNegativeFinite(snapshot.SpeedKnots, MaximumDecodedSpeedKnots),
+                EngineHeat01 = SanitizeNormalized(snapshot.EngineHeat01),
+                EngineHeatTrue01 = SanitizeNormalized(snapshot.EngineHeatTrue01),
+                EngineHeatMaskDelta01 = SanitizeNormalized(snapshot.EngineHeatMaskDelta01),
+                AtlasTelemetryFlags = snapshot.AtlasTelemetryFlags & KnownAtlasTelemetryFlags,
+                SonarContactCount = math.max(0, snapshot.SonarContactCount),
+                NearestSonarContactMeters = math.max(0, snapshot.NearestSonarContactMeters),
                 ModuleId = GlobalSubmarineOsModuleId,
                 StatusBits = statusBits,
                 EmergencyLevel = (ushort)snapshot.EmergencyLevel,
                 EventType = (ushort)SubmarineOsEventType.SnapshotUpdated,
                 LogCode = 0,
                 Priority = 0,
-                VocalWarningFlags = (ushort)snapshot.VocalWarningFlags
+                VocalWarningFlags = (ushort)((ushort)snapshot.VocalWarningFlags & KnownVocalWarningFlags)
             });
         }
 
@@ -450,6 +535,9 @@ namespace Hecton8.Gameplay
 
         public static bool TryRaiseLogRequested(in HectonSubmarineOsLogRequest request)
         {
+            if (!IsKnownLogCode((ushort)request.Code) || request.Priority == 0)
+                return false;
+
             return Enqueue(new SubmarineOsEventPayload
             {
                 PowerNormalized = 0f,
@@ -476,24 +564,30 @@ namespace Hecton8.Gameplay
         public static bool TryBuildSnapshot(in SubmarineOsEventPayload payload, out HectonSubmarineOsSnapshot snapshot)
         {
             snapshot = default;
+            if (payload.ModuleId != GlobalSubmarineOsModuleId)
+                return false;
+
             if ((SubmarineOsEventType)payload.EventType != SubmarineOsEventType.SnapshotUpdated)
                 return false;
 
+            if (!IsKnownEmergencyLevel(payload.EmergencyLevel))
+                return false;
+
             snapshot = new HectonSubmarineOsSnapshot(
-                (SubsystemStatus)(payload.StatusBits & 0xFFu),
+                (SubsystemStatus)(payload.StatusBits & KnownSubsystemStatusBits),
                 (SubmarineEmergencyLevel)payload.EmergencyLevel,
-                payload.PowerNormalized,
-                payload.OxygenNormalized,
-                payload.CarbonDioxideNormalized,
-                payload.MaxPressureKPa,
-                payload.SpeedKnots,
-                payload.EngineHeat01,
-                payload.EngineHeatTrue01,
-                payload.EngineHeatMaskDelta01,
-                payload.AtlasTelemetryFlags,
-                payload.SonarContactCount,
-                payload.NearestSonarContactMeters,
-                (SubmarineVwsFlags)payload.VocalWarningFlags,
+                SanitizeNormalized(payload.PowerNormalized),
+                SanitizeNormalized(payload.OxygenNormalized),
+                SanitizeNormalized(payload.CarbonDioxideNormalized),
+                SanitizeNonNegativeFinite(payload.MaxPressureKPa, MaximumDecodedPressureKPa),
+                SanitizeNonNegativeFinite(payload.SpeedKnots, MaximumDecodedSpeedKnots),
+                SanitizeNormalized(payload.EngineHeat01),
+                SanitizeNormalized(payload.EngineHeatTrue01),
+                SanitizeNormalized(payload.EngineHeatMaskDelta01),
+                payload.AtlasTelemetryFlags & KnownAtlasTelemetryFlags,
+                math.max(0, payload.SonarContactCount),
+                math.max(0, payload.NearestSonarContactMeters),
+                (SubmarineVwsFlags)(payload.VocalWarningFlags & KnownVocalWarningFlags),
                 (payload.StatusBits & LowPowerModeStatusBit) != 0u,
                 (payload.StatusBits & LifeSupportCriticalStatusBit) != 0u,
                 (payload.StatusBits & StationKeepingStatusBit) != 0u,
@@ -504,13 +598,71 @@ namespace Hecton8.Gameplay
         public static bool TryBuildLogRequest(in SubmarineOsEventPayload payload, out HectonSubmarineOsLogRequest request)
         {
             request = default;
+            if (payload.ModuleId != GlobalSubmarineOsModuleId)
+                return false;
+
             if ((SubmarineOsEventType)payload.EventType != SubmarineOsEventType.LogRequested)
+                return false;
+
+            if (!IsKnownLogCode(payload.LogCode) || payload.Priority == 0 || payload.Priority > byte.MaxValue)
                 return false;
 
             request = new HectonSubmarineOsLogRequest(
                 (HectonSubmarineOsLogCode)payload.LogCode,
                 (byte)payload.Priority);
             return true;
+        }
+
+        private static bool IsKnownLogCode(ushort logCode)
+        {
+            switch ((HectonSubmarineOsLogCode)logCode)
+            {
+                case HectonSubmarineOsLogCode.ReactorStable:
+                case HectonSubmarineOsLogCode.LowPowerModeEngaged:
+                case HectonSubmarineOsLogCode.LowPowerModeCleared:
+                case HectonSubmarineOsLogCode.LifeSupportCritical:
+                case HectonSubmarineOsLogCode.LifeSupportStabilized:
+                case HectonSubmarineOsLogCode.HullPressureHigh:
+                case HectonSubmarineOsLogCode.HullPressureStabilized:
+                case HectonSubmarineOsLogCode.MultiSystemFailure:
+                case HectonSubmarineOsLogCode.FatalImplosion:
+                case HectonSubmarineOsLogCode.EmergencyLevelNominal:
+                case HectonSubmarineOsLogCode.EmergencyLevelCaution:
+                case HectonSubmarineOsLogCode.EmergencyLevelDanger:
+                case HectonSubmarineOsLogCode.EmergencyLevelEvacuate:
+                case HectonSubmarineOsLogCode.StationKeepingArmed:
+                case HectonSubmarineOsLogCode.StationKeepingReleased:
+                case HectonSubmarineOsLogCode.HostileDroneDetected:
+                case HectonSubmarineOsLogCode.EngineTelemetryMasked:
+                case HectonSubmarineOsLogCode.EngineTelemetryRestored:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsKnownEmergencyLevel(ushort emergencyLevel)
+        {
+            switch ((SubmarineEmergencyLevel)emergencyLevel)
+            {
+                case SubmarineEmergencyLevel.Nominal:
+                case SubmarineEmergencyLevel.Caution:
+                case SubmarineEmergencyLevel.Danger:
+                case SubmarineEmergencyLevel.Evacuate:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static float SanitizeNormalized(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value, float maxValue)
+        {
+            return math.isfinite(value) ? math.clamp(value, 0f, math.max(0f, maxValue)) : 0f;
         }
 
         private static void EnsureInitialized()
@@ -520,14 +672,14 @@ namespace Hecton8.Gameplay
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - deferred submarine OS event lane - owner: HectonSubmarineOsEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - next-frame submarine OS event lane prevents same-frame reentrant dispatch - owner: HectonSubmarineOsEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -543,10 +695,12 @@ namespace Hecton8.Gameplay
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(HectonSubmarineOsEvents),
@@ -555,25 +709,60 @@ namespace Hecton8.Gameplay
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(HectonSubmarineOsEvents), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -594,7 +783,10 @@ namespace Hecton8.Gameplay
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                RecordDroppedEvent(payload.EventType);
                 return false;
+            }
 
             if (_isDispatching)
             {
@@ -606,6 +798,111 @@ namespace Hecton8.Gameplay
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
             return true;
+        }
+
+        private static void RecordDroppedEvent(ushort eventType)
+        {
+            if (_droppedEventCount < int.MaxValue)
+                _droppedEventCount++;
+
+            if (eventType == (ushort)SubmarineOsEventType.SnapshotUpdated)
+            {
+                if (_droppedSnapshotEventCount < int.MaxValue)
+                    _droppedSnapshotEventCount++;
+                return;
+            }
+
+            if (eventType == (ushort)SubmarineOsEventType.LogRequested &&
+                _droppedLogEventCount < int.MaxValue)
+            {
+                _droppedLogEventCount++;
+            }
+        }
+
+        private static void ReportDuplicateListenerRegistration()
+        {
+            _duplicateListenerRegistrationCount = SaturatingIncrement(_duplicateListenerRegistrationCount);
+            PublishListenerWarning(
+                SubOsDuplicateListenerWarningHash,
+                _duplicateListenerRegistrationCount,
+                ref _lastDuplicateListenerTelemetryFrame);
+        }
+
+        private static void ReportListenerRejected()
+        {
+            _listenerRejectCount = SaturatingIncrement(_listenerRejectCount);
+            PublishListenerWarning(
+                SubOsListenerRejectedWarningHash,
+                _listenerRejectCount,
+                ref _lastListenerRejectedTelemetryFrame);
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount = SaturatingIncrement(_listenerExceptionCount);
+            PublishListenerWarning(
+                SubOsListenerExceptionWarningHash,
+                _listenerExceptionCount,
+                ref _lastListenerExceptionTelemetryFrame);
+        }
+
+        private static void PublishListenerWarning(uint warningHash, int count, ref int lastTelemetryFrame)
+        {
+            if (!TryReserveTelemetryWarningFrame(ref lastTelemetryFrame, 1))
+                return;
+
+            PublishPerformanceWarningBestEffort(
+                warningHash,
+                SubOsListenerContextHash,
+                count);
+        }
+
+        private static bool TryReserveTelemetryWarningFrame(ref int lastTelemetryFrame, int cooldownFrames)
+        {
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (frame < 0)
+            {
+                if (lastTelemetryFrame == int.MinValue)
+                    return false;
+
+                lastTelemetryFrame = int.MinValue;
+                return true;
+            }
+
+            if (lastTelemetryFrame >= 0 && frame - lastTelemetryFrame < cooldownFrames)
+                return false;
+
+            lastTelemetryFrame = frame;
+            return true;
+        }
+
+        private static int ResolveCurrentFrameIndexSafe()
+        {
+            try
+            {
+                return SystemDispatcher.CurrentFrameIndex;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
+            }
+            catch (System.Exception telemetryException)
+            {
+                LogTelemetryWarningException(telemetryException);
+            }
+        }
+
+        private static int SaturatingIncrement(int value)
+        {
+            return value < int.MaxValue ? value + 1 : int.MaxValue;
         }
 
         private static void DispatchRegisteredListeners(in SubmarineOsEventPayload payload)
@@ -621,13 +918,172 @@ namespace Hecton8.Gameplay
                 {
                     ISubmarineOsEventListener listener = _listeners.GetAt(i);
                     if (listener != null)
-                        listener.OnSubmarineOsEvent(in payload);
+                        DispatchToListener(listener, in payload);
                 }
             }
             finally
             {
                 _isDispatching = false;
+                ApplyDeferredListenerMutations();
             }
+        }
+
+        private static void DispatchToListener(ISubmarineOsEventListener listener, in SubmarineOsEventPayload payload)
+        {
+            try
+            {
+                listener.OnSubmarineOsEvent(in payload);
+            }
+            catch (System.Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(System.Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            try
+            {
+                H8Debug.LogException(exception);
+            }
+            catch
+            {
+            }
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogTelemetryWarningException(System.Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            try
+            {
+                H8Debug.LogException(exception);
+            }
+            catch
+            {
+            }
+#endif
+        }
+
+        private static void QueueDeferredRegister(ISubmarineOsEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                if (!CancelDeferredUnregister(listener))
+                    ReportDuplicateListenerRegistration();
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
+        }
+
+        private static void QueueDeferredUnregister(ISubmarineOsEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
+        }
+
+        private static bool CancelDeferredRegister(ISubmarineOsEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool CancelDeferredUnregister(ISubmarineOsEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredRegisterPending(ISubmarineOsEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(ISubmarineOsEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                ISubmarineOsEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                ISubmarineOsEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
         }
 
         private static void DrainWithoutDispatch()
@@ -688,6 +1144,9 @@ namespace Hecton8.Gameplay
             NativeQueue<SubmarineOsEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
@@ -734,6 +1193,10 @@ namespace Hecton8.Gameplay
         private const float VwsRepeatCooldownSeconds = 8f;
         private const float VwsCaptionDurationSeconds = 2.5f;
         private const float BrownoutBlinkFrequency = 8f;
+        private const int SubOsEventDropTelemetryCooldownFrames = 120;
+        private const uint SubOsSnapshotDropWarningHash = 0x534E4452u; // SNDR
+        private const uint SubOsLogDropWarningHash = 0x4C4F4452u; // LODR
+        private const uint SubOsEventDropContextHash = 0x48534F53u; // HSOS
         private const byte LogPriorityNormal = 1;
         private const byte LogPriorityWarning = 2;
         private const byte LogPriorityCritical = 3;
@@ -838,6 +1301,7 @@ namespace Hecton8.Gameplay
         private bool _registeredRenderable;
         private bool _registeredSlowTick;
         private bool _registeredHotSwapListener;
+        private bool _registeredAtlas6ActiveRuntimeListener;
         private bool _runtimeDispatcherReady;
         private bool _runtimeLifecycleStarted;
         private bool _stationKeepingStateCached;
@@ -862,6 +1326,9 @@ namespace Hecton8.Gameplay
         private Vector4 _pendingNavigationShaderGlobal;
         private Vector4 _pendingEngineDiagnosticsShaderGlobal;
         private float _pendingBrownoutPulseShaderGlobal;
+        private int _droppedSubOsSnapshotPublishCount;
+        private int _droppedSubOsLogPublishCount;
+        private int _lastSubOsEventDropTelemetryFrame = -SubOsEventDropTelemetryCooldownFrames;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstalled()
@@ -923,6 +1390,7 @@ namespace Hecton8.Gameplay
         {
             RefreshColdRegistryReferences();
             TryRegisterHotSwapListener();
+            TryRegisterAtlas6ActiveRuntimeListener();
             RefreshCachedSonarQualityWeight();
             ApplySonarLodShaderGlobal(true);
             TryStartRuntimeLifecycle();
@@ -932,11 +1400,13 @@ namespace Hecton8.Gameplay
         {
             RefreshColdRegistryReferences();
             TryRegisterHotSwapListener();
+            TryRegisterAtlas6ActiveRuntimeListener();
             TryStartRuntimeLifecycle();
         }
 
         private void OnDisable()
         {
+            TryUnregisterAtlas6ActiveRuntimeListener();
             TryUnregisterHotSwapListener();
 
             if (!_runtimeLifecycleStarted && !_registeredUpdatable && !_registeredSlowTick && !_registeredRenderable)
@@ -955,6 +1425,7 @@ namespace Hecton8.Gameplay
         {
             _runtimeLifecycleStarted = false;
             Unsubscribe();
+            TryUnregisterAtlas6ActiveRuntimeListener();
             TryUnregisterHotSwapListener();
             TryUnregister();
             RestoreBrownoutVisualsImmediate();
@@ -1079,10 +1550,7 @@ namespace Hecton8.Gameplay
                     _submarineCore.TryGetComponent(out _stationKeepingController);
             }
 
-            if (_atlas6Manager == null)
-            {
-                _atlas6Manager = Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager.ActiveRuntimeInstance;
-            }
+            RefreshAtlas6ManagerReference(publishIfChanged: false);
         }
 
         private void RefreshCachedComponentReferencesHot()
@@ -1091,8 +1559,58 @@ namespace Hecton8.Gameplay
             if (submarineCore != null && _atmosphereSystem == null)
                 _atmosphereSystem = submarineCore.AtmosphereSystem;
 
-            if (_atlas6Manager == null)
-                _atlas6Manager = Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager.ActiveRuntimeInstance;
+            RefreshAtlas6ManagerReference(publishIfChanged: true);
+        }
+
+        private void RefreshAtlas6ManagerReference(bool publishIfChanged)
+        {
+            Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager activeRuntime =
+                Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager.ActiveRuntimeInstance;
+            if (ReferenceEquals(_atlas6Manager, activeRuntime))
+                return;
+
+            _atlas6Manager = activeRuntime;
+            if (!publishIfChanged || !_runtimeLifecycleStarted || !_subOsPowered || !CanUseRuntimeDispatcher())
+                return;
+
+            RefreshEngineDiagnosticsTelemetry(DiagnosticsRefreshIntervalSeconds);
+            PublishCurrentSnapshotIfChanged();
+        }
+
+        private void TryRegisterAtlas6ActiveRuntimeListener()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (_registeredAtlas6ActiveRuntimeListener)
+                Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager.ActiveRuntimeInstanceChanged -= HandleAtlas6ActiveRuntimeInstanceChanged;
+
+            Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager.ActiveRuntimeInstanceChanged += HandleAtlas6ActiveRuntimeInstanceChanged;
+            _registeredAtlas6ActiveRuntimeListener = true;
+            RefreshAtlas6ManagerReference(publishIfChanged: false);
+        }
+
+        private void TryUnregisterAtlas6ActiveRuntimeListener()
+        {
+            if (!_registeredAtlas6ActiveRuntimeListener)
+                return;
+
+            Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager.ActiveRuntimeInstanceChanged -= HandleAtlas6ActiveRuntimeInstanceChanged;
+            _registeredAtlas6ActiveRuntimeListener = false;
+        }
+
+        private void HandleAtlas6ActiveRuntimeInstanceChanged(
+            Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager activeRuntime)
+        {
+            if (ReferenceEquals(_atlas6Manager, activeRuntime))
+                return;
+
+            _atlas6Manager = activeRuntime;
+            if (!_runtimeLifecycleStarted || !_subOsPowered || !CanUseRuntimeDispatcher())
+                return;
+
+            RefreshEngineDiagnosticsTelemetry(DiagnosticsRefreshIntervalSeconds);
+            PublishCurrentSnapshotIfChanged();
         }
 
         private void RefreshColdRegistryReferences()
@@ -1105,8 +1623,11 @@ namespace Hecton8.Gameplay
 
         private void Subscribe()
         {
+            PowerGridTelemetryEvents.Unregister(this);
             PowerGridTelemetryEvents.Register(this);
+            HighPressureEvents.Unregister(this);
             HighPressureEvents.Register(this);
+            FatalPressureImplosionEvents.Unregister(this);
             FatalPressureImplosionEvents.Register(this);
             HectonDroneFleetEvents.Unregister(this);
             HectonDroneFleetEvents.Register(this);
@@ -1272,13 +1793,17 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.PowerGrid:
                     _powerGridService = currentService as IPowerGridService;
+                    RefreshTelemetryFromServices();
+                    PublishCurrentSnapshotIfRuntimeReady();
                     break;
                 case GlobalRegistryServiceSlot.SpectrumRuntime:
                     _spectrumRuntime = currentService as SpectrumSystem;
                     RefreshSubsystemStatus();
+                    PublishCurrentSnapshotIfRuntimeReady();
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntime = currentService as IPlayerRuntimeContext;
+                    RefreshPlayerDrivenStateAfterServiceReplacement();
                     break;
             }
         }
@@ -1314,6 +1839,25 @@ namespace Hecton8.Gameplay
             HectonSubmarineOsDisplay.EnsureRuntimeInstance();
         }
 
+        private void PublishCurrentSnapshotIfRuntimeReady()
+        {
+            if (!_runtimeLifecycleStarted || !CanUseRuntimeDispatcher())
+                return;
+
+            SetSubOsPowered(ResolveSubOsPowered());
+            if (_subOsPowered)
+                PublishCurrentSnapshotIfChanged();
+        }
+
+        private void RefreshPlayerDrivenStateAfterServiceReplacement()
+        {
+            if (!_runtimeLifecycleStarted || !_subOsPowered || !CanUseRuntimeDispatcher())
+                return;
+
+            EvaluateStateMachine(false);
+            PublishCurrentSnapshotIfChanged();
+        }
+
         private void ResetSubOsShaderGlobals()
         {
             _subOsShaderResetDirty = true;
@@ -1328,17 +1872,29 @@ namespace Hecton8.Gameplay
         private void RefreshTelemetryFromServices()
         {
             IPowerGridService powerGridService = _powerGridService;
-            if (powerGridService != null)
+            if (powerGridService == null)
+            {
+                ResetPowerTelemetryFallback();
+            }
+            else
             {
                 BatteryRuntimeSnapshot batterySnapshot = powerGridService.BatterySnapshot;
                 _powerSupplyRatio = ResolveSupplyRatio(powerGridService.TotalGeneration, powerGridService.TotalConsumption);
                 _powerNormalized = batterySnapshot.TotalCapacityWattSeconds > 0.0001f
-                    ? math.saturate(batterySnapshot.ChargeNormalized)
+                    ? SaturateFinite(batterySnapshot.ChargeNormalized, _powerSupplyRatio)
                     : _powerSupplyRatio;
             }
 
             RefreshAtmosphereTelemetry();
             RefreshSubsystemStatus();
+        }
+
+        private void ResetPowerTelemetryFallback()
+        {
+            _powerSupplyRatio = 1f;
+            _powerNormalized = 1f;
+            _highestBrownoutTier = LogisticsBrownoutTier.None;
+            _cascadingBrownoutActive = false;
         }
 
         private void RefreshAtmosphereTelemetry()
@@ -1347,6 +1903,7 @@ namespace Hecton8.Gameplay
             if (atmosphereSystem == null || !atmosphereSystem.IsAtmosphereRuntimeActive)
             {
                 _oxygenNormalized = 1f;
+                _carbonDioxideNormalized = 0f;
                 _maxPressureKPa = DefaultReferencePressureKPa;
                 return;
             }
@@ -1355,6 +1912,7 @@ namespace Hecton8.Gameplay
             if (roomCount <= 0)
             {
                 _oxygenNormalized = 1f;
+                _carbonDioxideNormalized = 0f;
                 _maxPressureKPa = DefaultReferencePressureKPa;
                 return;
             }
@@ -1364,14 +1922,22 @@ namespace Hecton8.Gameplay
             float maxPressureKPa = 0f;
             for (int roomIndex = 0; roomIndex < roomCount; roomIndex++)
             {
-                minOxygenFraction = math.min(minOxygenFraction, atmosphereSystem.GetRoomOxygenFraction(roomIndex));
-                maxCarbonDioxideFraction = math.max(maxCarbonDioxideFraction, atmosphereSystem.GetRoomCarbonDioxidePressureFraction(roomIndex));
-                maxPressureKPa = math.max(maxPressureKPa, atmosphereSystem.GetRoomPressureKPa(roomIndex));
+                float oxygenFraction = atmosphereSystem.GetRoomOxygenFraction(roomIndex);
+                if (math.isfinite(oxygenFraction))
+                    minOxygenFraction = math.min(minOxygenFraction, oxygenFraction);
+
+                float carbonDioxideFraction = atmosphereSystem.GetRoomCarbonDioxidePressureFraction(roomIndex);
+                if (math.isfinite(carbonDioxideFraction))
+                    maxCarbonDioxideFraction = math.max(maxCarbonDioxideFraction, carbonDioxideFraction);
+
+                float pressureKPa = atmosphereSystem.GetRoomPressureKPa(roomIndex);
+                if (math.isfinite(pressureKPa))
+                    maxPressureKPa = math.max(maxPressureKPa, math.max(0f, pressureKPa));
             }
 
-            _oxygenNormalized = math.saturate(minOxygenFraction);
-            _carbonDioxideNormalized = math.saturate(maxCarbonDioxideFraction);
-            _maxPressureKPa = math.max(DefaultReferencePressureKPa, maxPressureKPa);
+            _oxygenNormalized = SaturateFinite(minOxygenFraction, 1f);
+            _carbonDioxideNormalized = SaturateFinite(maxCarbonDioxideFraction, 0f);
+            _maxPressureKPa = math.max(DefaultReferencePressureKPa, NonNegativeFinite(maxPressureKPa, DefaultReferencePressureKPa));
         }
 
         private void RefreshSubsystemStatus()
@@ -1470,7 +2036,7 @@ namespace Hecton8.Gameplay
 
         private static float QuantizeHeat01(float value)
         {
-            return math.floor(math.saturate(value) * EngineHeatQuantizeScale + 0.5f) * EngineHeatQuantizeInv;
+            return math.floor(SaturateFinite(value, 0f) * EngineHeatQuantizeScale + 0.5f) * EngineHeatQuantizeInv;
         }
 
         private void RefreshSonarDerivedTelemetry()
@@ -1725,8 +2291,8 @@ namespace Hecton8.Gameplay
         /// <param name="snapshot">Aggregate power telemetry snapshot.</param>
         public void OnPowerGridTelemetryUpdated(in PowerGridTelemetrySnapshot snapshot)
         {
-            _powerNormalized = math.saturate(snapshot.AvailablePowerNormalized);
-            _powerSupplyRatio = math.saturate(snapshot.SupplyRatio);
+            _powerNormalized = SaturateFinite(snapshot.AvailablePowerNormalized, _powerNormalized);
+            _powerSupplyRatio = SaturateFinite(snapshot.SupplyRatio, _powerSupplyRatio);
             _highestBrownoutTier = PowerGridTelemetrySnapshot.GetHighestBrownoutTier(in snapshot);
             SetSubOsPowered(ResolveSubOsPowered());
             if (!_subOsPowered)
@@ -1753,7 +2319,9 @@ namespace Hecton8.Gameplay
 
         private void HandleHighPressure(in HighPressureEvent pressureEvent)
         {
-            _maxPressureKPa = math.max(_maxPressureKPa, math.max(pressureEvent.PressureAKPa, pressureEvent.PressureBKPa));
+            float pressureA = NonNegativeFinite(pressureEvent.PressureAKPa, _maxPressureKPa);
+            float pressureB = NonNegativeFinite(pressureEvent.PressureBKPa, _maxPressureKPa);
+            _maxPressureKPa = math.max(_maxPressureKPa, math.max(pressureA, pressureB));
         }
 
         private void HandleFatalPressureImplosion(in FatalPressureImplosionEvent implosionEvent)
@@ -1808,8 +2376,11 @@ namespace Hecton8.Gameplay
                 flags |= SubmarineVwsFlags.MultiSystemFailure;
 
             HectonSurvivalSystem survivalSystem = ResolvePlayerSurvivalSystem();
-            if (survivalSystem != null && survivalSystem.ThermalStressSeverity01 >= ThermalStressVwsThreshold01)
+            if (survivalSystem != null &&
+                SaturateFinite(survivalSystem.ThermalStressSeverity01, 0f) >= ThermalStressVwsThreshold01)
+            {
                 flags |= SubmarineVwsFlags.ThermalStress;
+            }
 
             return flags;
         }
@@ -1819,9 +2390,9 @@ namespace Hecton8.Gameplay
             float oxygen01 = _oxygenNormalized;
             HectonSurvivalSystem survivalSystem = ResolvePlayerSurvivalSystem();
             if (survivalSystem != null)
-                oxygen01 = math.min(oxygen01, math.saturate(survivalSystem.OxygenNormalized));
+                oxygen01 = math.min(oxygen01, SaturateFinite(survivalSystem.OxygenNormalized, oxygen01));
 
-            return math.saturate(oxygen01);
+            return SaturateFinite(oxygen01, 1f);
         }
 
         private HectonSurvivalSystem ResolvePlayerSurvivalSystem()
@@ -1837,7 +2408,7 @@ namespace Hecton8.Gameplay
             if (playerHealth == null)
                 return false;
 
-            float health01 = math.saturate(playerHealth.HealthPercent);
+            float health01 = SaturateFinite(playerHealth.HealthPercent, 1f);
             float threshold01 = _vitalWarningActive
                 ? VitalWarningHealthReleaseThreshold01
                 : VitalWarningHealthThreshold01;
@@ -2078,7 +2649,7 @@ namespace Hecton8.Gameplay
 
         private void QueueVoiceAlarm(uint eventId, uint captionHashId, float intensity, byte warningId, byte warningFlags)
         {
-            byte normalizedWarningId = warningId >= (byte)VocalWarningId.CrushDepth && warningId <= (byte)VocalWarningId.PowerLow
+            byte normalizedWarningId = warningId >= (byte)VocalWarningId.CrushDepth && warningId <= (byte)VocalWarningId.Toxicity
                 ? warningId
                 : (byte)0;
             if (normalizedWarningId == 0)
@@ -2122,8 +2693,13 @@ namespace Hecton8.Gameplay
             if (AreSnapshotsEqual(in _lastPublishedSnapshot, in nextSnapshot))
                 return;
 
+            if (!HectonSubmarineOsEvents.TryRaiseSnapshotUpdated(in nextSnapshot))
+            {
+                RecordSubOsEventPublishDrop(snapshotDrop: true);
+                return;
+            }
+
             _lastPublishedSnapshot = nextSnapshot;
-            HectonSubmarineOsEvents.TryRaiseSnapshotUpdated(in nextSnapshot);
         }
 
         private void PublishShutdownSnapshot()
@@ -2147,21 +2723,118 @@ namespace Hecton8.Gameplay
                 false,
                 false,
                 false);
+            if (!HectonSubmarineOsEvents.TryRaiseSnapshotUpdated(in shutdownSnapshot))
+            {
+                RecordSubOsEventPublishDrop(snapshotDrop: true);
+                return;
+            }
+
             _lastPublishedSnapshot = shutdownSnapshot;
-            HectonSubmarineOsEvents.TryRaiseSnapshotUpdated(in shutdownSnapshot);
         }
 
         private void PublishLog(HectonSubmarineOsLogCode code, byte priority)
         {
             HectonSubmarineOsLogRequest request = new HectonSubmarineOsLogRequest(code, priority);
-            HectonSubmarineOsEvents.TryRaiseLogRequested(in request);
+            if (!HectonSubmarineOsEvents.TryRaiseLogRequested(in request))
+                RecordSubOsEventPublishDrop(snapshotDrop: false);
+        }
+
+        private void RecordSubOsEventPublishDrop(bool snapshotDrop)
+        {
+            if (snapshotDrop)
+                _droppedSubOsSnapshotPublishCount = SaturatingIncrement(_droppedSubOsSnapshotPublishCount);
+            else
+                _droppedSubOsLogPublishCount = SaturatingIncrement(_droppedSubOsLogPublishCount);
+
+            if (!TryReserveTelemetryWarningFrame(
+                    ref _lastSubOsEventDropTelemetryFrame,
+                    SubOsEventDropTelemetryCooldownFrames))
+                return;
+
+            PublishPerformanceWarningBestEffort(
+                snapshotDrop ? SubOsSnapshotDropWarningHash : SubOsLogDropWarningHash,
+                SubOsEventDropContextHash,
+                snapshotDrop ? _droppedSubOsSnapshotPublishCount : _droppedSubOsLogPublishCount);
+        }
+
+        private static bool TryReserveTelemetryWarningFrame(ref int lastTelemetryFrame, int cooldownFrames)
+        {
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (frame < 0)
+            {
+                if (lastTelemetryFrame == int.MinValue)
+                    return false;
+
+                lastTelemetryFrame = int.MinValue;
+                return true;
+            }
+
+            if (lastTelemetryFrame >= 0 && frame - lastTelemetryFrame < cooldownFrames)
+                return false;
+
+            lastTelemetryFrame = frame;
+            return true;
+        }
+
+        private static int ResolveCurrentFrameIndexSafe()
+        {
+            try
+            {
+                return SystemDispatcher.CurrentFrameIndex;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
+            }
+            catch (System.Exception telemetryException)
+            {
+                LogTelemetryWarningException(telemetryException);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogTelemetryWarningException(System.Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            try
+            {
+                H8Debug.LogException(exception);
+            }
+            catch
+            {
+            }
+#endif
+        }
+
+        private static int SaturatingIncrement(int value)
+        {
+            return value < int.MaxValue ? value + 1 : int.MaxValue;
         }
 
         private static float ResolveSupplyRatio(float totalGeneration, float totalConsumption)
         {
-            return totalConsumption > 0.0001f
-                ? math.saturate(totalGeneration / totalConsumption)
+            return math.isfinite(totalConsumption) && totalConsumption > 0.0001f
+                ? SaturateFinite(totalGeneration / totalConsumption, 1f)
                 : 1f;
+        }
+
+        private static float SaturateFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.saturate(value) : fallback;
+        }
+
+        private static float NonNegativeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : fallback;
         }
 
         private static bool IsFinite(Vector3 value)

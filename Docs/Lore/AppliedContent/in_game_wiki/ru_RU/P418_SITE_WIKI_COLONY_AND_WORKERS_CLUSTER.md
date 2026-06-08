@@ -9,21 +9,21 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "Колония и рабочие"
+title: "Колония и работники"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Колония и рабочие
+# Колония и работники
 
-Восстановленный индекс рабочих: water ledgers, relay witness trays, brine route stamps, triage repair tags и vent-forge rejects сохраняют имена через работу.
+Индекс работников: water ledgers, relay witness trays, brine route stamps, triage repair tags и vent-forge rejects сохраняют имена через труд.
 
 ## Scanner
 
-WORKER INDEX // Пять именных записей с маршрутной связью. Pump, relay, brine, triage, forge. Сохранять цепочку tag до демонтажа.
+WORKER INDEX // Пять route-linked именных записей. Pump, relay, brine, triage, forge. Сохранять tag chain до снятия железа.
 
 ## Terminal
 
@@ -31,10 +31,10 @@ KEELMARK LOSS DESK: сохранять name tags, если они связаны
 
 ## Audio
 
-Mara Venn, pump chief: если pump поет чисто, внеси в log. Если перестал петь - беги вверх.
+Mara Venn, pump chief: если насос поет чисто, запиши. Если он перестал петь, беги вверх.
 
 ## Field Note
 
-Не семья. Работа. Имя на pump card объясняет, почему дверь оставалась открытой.
+Не семья. Работа. Имя на pump card объясняет, почему дверь осталась открытой.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/ru_RU. -->

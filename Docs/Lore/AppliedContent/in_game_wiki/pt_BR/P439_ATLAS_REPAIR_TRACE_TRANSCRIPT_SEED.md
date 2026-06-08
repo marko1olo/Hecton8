@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Transcrição do Rastro de Reparo Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Repair Trace Transcript Seed
+# Transcrição do Rastro de Reparo Atlas
 
-PT LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.
+O áudio Atlas assusta porque trata vida, metal e água como uma maintenance surface danificada.
 
 ## Scanner
 
-PT LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+Seed de áudio/caption: rastros Atlas devem soar como telemetria de reparo colapsando categorias, não como deus falando.
 
 ## Terminal
 
-PT LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
+TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.
 
 ## Audio
 
-PT LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+Rastro de reparo: descontinuidade de membrana aceita. Crescimento de cabo autorizado. Rota de fauna marcada serviceable.
 
 ## Field Note
 
-PT LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+Para scanner captions, camadas profundas de áudio e Atlas spoiler gates. Curto, taxonômico e danificado.
 
 <!-- In-Game Wiki; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/pt_BR. -->

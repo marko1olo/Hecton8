@@ -9,32 +9,22 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Ending Record Transcript Seed"
+title: "Ending-Record-Transkript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Ending Record Transcript Seed
+# Ending-Record-Transkript
 
-DE LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.
+## Abschluss Als Custody
 
-## Scanner
+HECTON-8-Enden dürfen dem Spieler keine saubere Absolution geben. Der Record nennt receiver, payload hash, Schuldenstand und Überlebensstand, weil Institutionen diese Felder besser erinnern als Menschen. Diese Kälte ist nützlich. Sie macht jedes Outcome vergleichbar, ohne Wahrheit zur Trophäe zu machen.
 
-DE LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Die ungelösten Felder zählen am meisten. Suppression flag unknown. Truth custody unresolved. Atlas continuity unclear. Public ledger status pending. Diese Lücken halten das Ende ehrlich: Etwas verließ den Ozean, aber Besitz ist nicht Gerechtigkeit, und Überleben ist nicht Reparatur.
 
-## Terminal
-
-DE LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
-
-## Audio
-
-DE LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
-
-## Field Note
-
-DE LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Das Transkriptformat schützt auch Replay. Ein Spieler kann mit Wissen zurückkehren, aber der nächste Lauf soll keine Macht erben. Er erbt Misstrauen, Geschmack und Furcht. Der Record ist Quittung, nicht Vergebung.
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/de_DE. -->

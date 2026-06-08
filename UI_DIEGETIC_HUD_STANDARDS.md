@@ -104,7 +104,7 @@ Warnings must be legible and disciplined:
 - amber for caution/service;
 - red for fatal/urgent only;
 - audio/visual/haptic pairing for critical states;
-- short label plus physical value when possible;
+- short label plus physical value for numeric, threshold, damage, pressure, oxygen, power, route, and lock-state warnings;
 - cadence encodes severity;
 - repeat suppression prevents warning spam.
 

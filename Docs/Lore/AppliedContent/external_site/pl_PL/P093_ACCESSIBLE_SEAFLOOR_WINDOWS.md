@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "Dostepne okna dna morskiego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# Dostepne okna dna morskiego
 
-PL LOC HOLD: Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map.
-
-## Scanner
-
-PL LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
-
-## Terminal
-
-PL LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-PL LOC HOLD: You land where the moon lets stone show through.
-
-## Field Note
-
-PL LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+Wiekszosc dna HECTON-8 jest nieosiagalna zwykla odwaga. Cisnienie stawia sciane, zanim pojawi sie grunt. Dostepne okna sa wyjatkami: rozerwanymi miejscami, gdzie zapadnieta polka, odsloniety grzbiet, podgrzana blizna komina lub gesta kolumna solanki zmienia krzywa zejscia. To nie sa bezpieczne jaskinie. To waskie umowy z geologia. Zaloga moze dotknac starej skorupy, wydobyc mineraly wyrosle w cisnieniu, znalezc zapieczetowany sprzet kolonii albo odczytac pogrzebane zdarzenie, zanim ocean zamknie trase.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/pl_PL. -->

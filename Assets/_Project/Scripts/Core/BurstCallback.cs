@@ -45,6 +45,7 @@ namespace Hecton8.Core
         private NativeQueue<int> _events;
         private NativeArray<int> _counters;
         private int _capacity;
+        private int _queueSentinelId;
         private int _counterSentinelId;
 
         public bool IsCreated => _events.IsCreated && _counters.IsCreated;
@@ -81,20 +82,21 @@ namespace Hecton8.Core
         {
             _capacity = expectedCapacity <= 0 ? 1 : expectedCapacity;
             _events = new NativeQueue<int>(Allocator.Persistent);
-            bool queueRegistered = false;
+            _counters = default;
+            _queueSentinelId = 0;
+            _counterSentinelId = 0;
             bool budgetRegistered = false;
             try
             {
-                int queueSentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                _queueSentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                     _events,
                     _capacity,
                     nameof(BurstCallbackQueue),
                     nameof(_events),
                     NativeAllocationLifetime.Session);
-                if (queueSentinelId <= 0)
+                if (_queueSentinelId <= 0)
                     throw new InvalidOperationException("NativeMemorySentinel rejected BurstCallbackQueue event queue registration.");
 
-                queueRegistered = true;
                 _counters = Hecton8.Core.Memory.H8Memory.Allocate<int>(
                     CounterLength,
                     Hecton8.Core.Memory.SystemID.CoreDiagnostics,
@@ -116,26 +118,82 @@ namespace Hecton8.Core
                 budgetRegistered = true;
                 Prewarm();
             }
-            catch
+            catch (Exception initializationException)
             {
-                if (budgetRegistered)
-                    MemoryBudgetTracker.Unregister(BudgetOwner);
+                Exception cleanupException = null;
+
                 if (_counterSentinelId > 0)
                 {
-                    NativeMemorySentinel.Unregister(_counterSentinelId);
-                    _counterSentinelId = 0;
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(_counterSentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        cleanupException = exception;
+                    }
+                    finally
+                    {
+                        _counterSentinelId = 0;
+                    }
                 }
-                Hecton8.Core.Memory.H8Memory.Release(
-                    ref _counters,
-                    Hecton8.Core.Memory.SystemID.CoreDiagnostics);
-                if (queueRegistered)
-                    NativeMemorySentinel.UnregisterNativeQueue(nameof(BurstCallbackQueue), nameof(_events));
+
+                try
+                {
+                    Hecton8.Core.Memory.H8Memory.Release(
+                        ref _counters,
+                        Hecton8.Core.Memory.SystemID.CoreDiagnostics);
+                }
+                catch (Exception exception)
+                {
+                    if (cleanupException == null)
+                        cleanupException = exception;
+                }
+
+                if (_queueSentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(_queueSentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        if (cleanupException == null)
+                            cleanupException = exception;
+                    }
+                    finally
+                    {
+                        _queueSentinelId = 0;
+                    }
+                }
+
                 if (_events.IsCreated)
                 {
-                    _events.Dispose();
-                    _events = default;
+                    try
+                    {
+                        _events.Dispose();
+                    }
+                    catch (Exception exception)
+                    {
+                        if (cleanupException == null)
+                            cleanupException = exception;
+                    }
+                    finally
+                    {
+                        _events = default;
+                    }
                 }
+
+                if (budgetRegistered && !_counters.IsCreated && !_events.IsCreated)
+                    MemoryBudgetTracker.Unregister(BudgetOwner);
                 _capacity = 0;
+
+                if (cleanupException != null)
+                    throw new AggregateException(
+                        "Burst callback initialization failed and native cleanup also failed.",
+                        initializationException,
+                        cleanupException);
+
                 throw;
             }
         }
@@ -218,48 +276,176 @@ namespace Hecton8.Core
 
         public void Dispose()
         {
-            if (!IsCreated)
+            if (!_events.IsCreated &&
+                !_counters.IsCreated &&
+                _queueSentinelId <= 0 &&
+                _counterSentinelId <= 0)
                 return;
 
-            Clear();
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(BurstCallbackQueue), nameof(_events));
+            if (IsCreated)
+                Clear();
 
-            if (_counterSentinelId > 0)
+            Exception cleanupException = null;
+
+            if (_counters.IsCreated)
             {
-                NativeMemorySentinel.Unregister(_counterSentinelId);
-                _counterSentinelId = 0;
+                Hecton8.Core.Memory.H8Memory.Release(
+                    ref _counters,
+                    Hecton8.Core.Memory.SystemID.CoreDiagnostics);
+                if (_counters.IsCreated)
+                    return;
+
+                if (_counterSentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(_counterSentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        cleanupException = exception;
+                    }
+                    finally
+                    {
+                        _counterSentinelId = 0;
+                    }
+                }
+            }
+            else if (_counterSentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(_counterSentinelId);
+                }
+                catch (Exception exception)
+                {
+                    cleanupException = exception;
+                }
+                finally
+                {
+                    _counterSentinelId = 0;
+                }
             }
 
-            MemoryBudgetTracker.Unregister(BudgetOwner);
-            _events.Dispose();
-            Hecton8.Core.Memory.H8Memory.Release(
-                ref _counters,
-                Hecton8.Core.Memory.SystemID.CoreDiagnostics);
+            if (_queueSentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(_queueSentinelId);
+                }
+                catch (Exception exception)
+                {
+                    cleanupException = exception;
+                }
+                finally
+                {
+                    _queueSentinelId = 0;
+                }
+            }
+
+            if (_events.IsCreated)
+            {
+                try
+                {
+                    _events.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (cleanupException == null)
+                        cleanupException = exception;
+                }
+                finally
+                {
+                    _events = default;
+                }
+            }
+            else
+            {
+                _events = default;
+            }
+
+            try
+            {
+                MemoryBudgetTracker.Unregister(BudgetOwner);
+            }
+            catch (Exception exception)
+            {
+                if (cleanupException == null)
+                    cleanupException = exception;
+            }
+
             _capacity = 0;
+
+            if (cleanupException != null)
+                throw cleanupException;
         }
 
         public JobHandle Dispose(JobHandle inputDeps)
         {
-            if (!IsCreated)
+            if (!_events.IsCreated &&
+                !_counters.IsCreated &&
+                _queueSentinelId <= 0 &&
+                _counterSentinelId <= 0)
                 return inputDeps;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(BurstCallbackQueue), nameof(_events));
+            JobHandle counterDisposeHandle = inputDeps;
+            if (_counters.IsCreated)
+            {
+                counterDisposeHandle = Hecton8.Core.Memory.H8Memory.Release(
+                    ref _counters,
+                    inputDeps,
+                    Hecton8.Core.Memory.SystemID.CoreDiagnostics);
+                if (_counters.IsCreated)
+                    return counterDisposeHandle;
 
-            if (_counterSentinelId > 0)
+                if (_counterSentinelId > 0)
+                    CompleteCounterDisposeBeforeSentinelUnregister(ref counterDisposeHandle);
+            }
+            else if (_counterSentinelId > 0)
             {
                 NativeMemorySentinel.Unregister(_counterSentinelId);
                 _counterSentinelId = 0;
             }
 
+            JobHandle eventsDisposeHandle = inputDeps;
+            if (_events.IsCreated)
+            {
+                eventsDisposeHandle = _events.Dispose(inputDeps);
+                if (_queueSentinelId > 0)
+                    CompleteEventQueueDisposeBeforeSentinelUnregister(ref eventsDisposeHandle);
+                else
+                    _events = default;
+            }
+            else if (_queueSentinelId > 0)
+            {
+                NativeMemorySentinel.Unregister(_queueSentinelId);
+                _queueSentinelId = 0;
+            }
+
             MemoryBudgetTracker.Unregister(BudgetOwner);
-            JobHandle eventsDisposeHandle = _events.Dispose(inputDeps);
-            JobHandle counterDisposeHandle = Hecton8.Core.Memory.H8Memory.Release(
-                ref _counters,
-                inputDeps,
-                Hecton8.Core.Memory.SystemID.CoreDiagnostics);
-            _events = default;
             _capacity = 0;
             return JobHandle.CombineDependencies(eventsDisposeHandle, counterDisposeHandle);
+        }
+
+        private void CompleteCounterDisposeBeforeSentinelUnregister(ref JobHandle disposeHandle)
+        {
+            disposeHandle.Complete();
+            if (_counterSentinelId > 0)
+            {
+                NativeMemorySentinel.Unregister(_counterSentinelId);
+                _counterSentinelId = 0;
+            }
+        }
+
+        private void CompleteEventQueueDisposeBeforeSentinelUnregister(ref JobHandle disposeHandle)
+        {
+            disposeHandle.Complete();
+            _events = default;
+            if (_queueSentinelId > 0)
+            {
+                NativeMemorySentinel.Unregister(_queueSentinelId);
+                _queueSentinelId = 0;
+            }
         }
 
         private void Prewarm()

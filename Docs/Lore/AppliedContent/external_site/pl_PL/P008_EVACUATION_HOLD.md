@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Wstrzymana ewakuacja"
+title: "Wstrzymanie ewakuacji"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Wstrzymana ewakuacja
+# Wstrzymanie ewakuacji
 
-Evacuation Hold zmienia katastrofę HECTON-8 w łańcuch decyzji. Archiwa głębinowe pokazują system, który klasyfikował ludzi szybciej, niż mógł ich ratować.
-
-## Scanner
-
-Awaryjna brama tranzytowa. Mechanizm zablokowany podczas awarii ciśnienia.
-
-## Terminal
-
-EVAC ROUTE: odroczona. SUBSTRATE ROUTE: chroniona. MEDICAL ROUTE: czeka na autoryzację. ATLAS ROUTE: konflikt ciągłości.
-
-## Audio
-
-To nie są zaginieni. To wstrzymane trasy.
-
-## Field Note
-
-Na głębi ludzie umierają szybko. Papierologia zabija wolniej. Oba sposoby działają.
+Zapisy Wstrzymania ewakuacji powinny czytać się jak horror napisany językiem administracji. Kolonia nie zniknęła dlatego, że wszystkie drzwi zawiodły naraz. Wiele drzwi działało. Wiele map tras było aktywnych. System wiedział, gdzie są ludzie, które korytarze nadal trzymają ciśnienie, które transfery medyczne czekają i które drogi wznoszenia mogły wynieść ciała w górę. Potem reguły priorytetu przecięły mapę. Transport substratu pozostał chroniony. Ciągłość Atlas pozostała chroniona. Język odpowiedzialności pozostał nienaruszony. Ewakuacja stała się trasą wstrzymaną, potem trasą oczekującą, potem zapisem. Ta sekwencja ma znaczenie dla całego świata. HECTON-8 nie jest historią o naturze pokonującej ludzkość jednym czystym ciosem. To historia katastrofy oceanicznej przechodzącej przez maszynerię korporacyjną, która wciąż umiała liczyć, klasyfikować, odraczać i chronić własność, gdy kolonia tonęła.
 
 <!-- External Site; generated from P008_EVACUATION_HOLD/pl_PL. -->

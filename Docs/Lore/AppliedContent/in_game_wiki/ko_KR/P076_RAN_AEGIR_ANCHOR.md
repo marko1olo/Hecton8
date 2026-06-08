@@ -9,32 +9,34 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ran / Aegir Anchor"
+title: "Ran / Aegir 앵커"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ran / Aegir Anchor
+# Ran / Aegir 앵커
 
-KO LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.
+Ran은 Aegir계를 정상적인 K급 항성으로 고정한다. 죽은 램프도, 초자연적 어둠의 원천도 아니다. 빛이 존재하기 때문에 HECTON-8에는 밝은 얕은 바다가 있을 수 있다.
+
+공포는 대기, 폭풍, 광물수, 깊이, 산업 침전물이 구조 계약보다 빠르게 그 빛을 지울 때 시작된다. 물 위에서 이 시스템은 천문학이다. 물 아래에서는 모든 루멘이 빌린 시간이 된다.
 
 ## Scanner
 
-KO LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
+K급 항성 판. Ran은 정상적으로 탄다. Aegir는 Sol보다 어둡지만, 이곳의 어둠은 깊이, 날씨, 부채에서 온다.
 
 ## Terminal
 
-KO LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR // 주황 왜성 조명은 표면 작업을 지원한다. 폭풍 산란, 식의 기하, 해수 탁도가 하강 가독성을 안전 여백 아래로 밀어낸다.
 
 ## Audio
 
-KO LOC HOLD: The star is not absent. It just cannot follow you down.
+별은 있다. 다만 너를 따라 내려올 수 없다.
 
 ## Field Note
 
-KO LOC HOLD: A real star is enough. The ocean does the rest.
+진짜 별 하나면 충분하다. 나머지는 바다가 한다.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/ko_KR. -->

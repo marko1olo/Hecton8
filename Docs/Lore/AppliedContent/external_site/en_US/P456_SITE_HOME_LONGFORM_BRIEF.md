@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8: Pressure Claim"
+title: "HECTON-8: The Pressure Claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,36 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# HECTON-8: Pressure Claim
+# HECTON-8: The Pressure Claim
 
-HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## The First Job
 
-## Scanner
+HECTON-8 starts with a contract, not a prophecy. Black Keel opens a narrow Aegir relay window, assigns a 4.8 tonne-window lien, and drops a damaged bathydrop toward P-63: a shallow industrial shelf still bright enough to navigate and broken enough to kill a careless worker. The Marauder inside is not a passenger. They are a salvage professional, formerly trained by Deep Reach field systems, hired because dead infrastructure and bad paperwork still pay.
 
-Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+The first tasks are small because pressure makes small tasks honest. Pump the shelter dry. Patch the seal inside its rating. Read the capsule faults before trusting the voice from orbit. Scan the shelf, not because the world needs exposition, but because the official accident record is missing the marks that the metal still carries.
 
-## Terminal
+## What The Shelf Proves
 
-PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+P-63 is beautiful in daylight. That is part of the danger. The open water shows limestone, coral-like growth, old module edges, cable scars and ruined evacuation hardware before the abyss takes color away. HECTON-8 is not black from the surface; it becomes dark where depth, storm, pressure and broken machines steal choices from the player.
 
-## Audio
+The contract says cargo. The room says evidence. A torn recovery ring, flooded ascent avionics and warped crush-frame prove the bathydrop spent its return capacity surviving the fall. The player can still repair, but the repair path points downward: shallow tools, mid-depth relays, brine containment, abyssal pressure glass, and a legal handshake that decides who is allowed to answer the recovery call.
 
-Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+## Why It Reads As A Crime Scene
 
-## Field Note
+Deep Reach did not need to invent an evil ocean. HECTON-8 already had tides, storms, pressure chemistry and bad geology. The crime begins where clean corporate wording refuses to name accepted risk, underbuilt evacuation, Atlas continuity weighting and workers converted into loss categories. The long descent is the act of carrying physical proof through systems designed to price it, delay it or bury it.
 
-Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+The player question is simple enough to fit on a damaged visor: what keeps me alive, what can fail next, and which piece of truth is worth the mass to bring back?
+
+## How To Read The Descent
+
+The useful rule for HECTON-8 is that every piece of lore must leave a mark the player can inspect. A contract number is not flavor if it changes the mass window. A scratch on the bathydrop is not decoration if it proves the ascent system fired before impact. A drowned room is not background if its pump, gasket, route log and scanner return all disagree with the official packet.
+
+That is why the opening keeps returning to work. P-63 teaches the player that beauty is not safety, that shallow water can still be a claim trap, and that survival is made from ugly nouns: seal rating, intake pressure, relay drift, battery reserve, custody grade. The game should let a player learn history by repairing the place that tried to erase it.
+
+## The Promise
+
+The large story is not a galaxy-saving speech. It is a long pressure problem around one worker with a bad lien and a useful memory. The ocean narrows. The contract narrows. The route window narrows. Against that, the player builds a chain of proof one scan, one sample and one repaired system at a time.
+
+HECTON-8 should feel readable because it is physical. If something matters, it has a surface, a cost, a failure mode and a witness.
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/en_US. -->

@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Hecton8.SaveSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -29,7 +31,7 @@ namespace Hecton8.Input
         private const string PauseActionName = "Pause";
         private const string CancelActionName = "Cancel";
         private const string TabNextActionName = "TabNext";
-        private const string AgentTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_1332.bin";
+        private const string TelemetryDumpFileName = "Diagnostics/InputBindingTelemetry.bin";
         [Header("Persistence")]
         [SerializeField] private bool loadOverridesOnAwake = true;
         [SerializeField] private bool saveOverridesAfterRebind = true;
@@ -78,6 +80,21 @@ namespace Hecton8.Input
         }
 
         internal static RebindingManager ActiveRuntimeInstance { get; private set; }
+
+        internal static bool TryResolveActiveRuntime(ref RebindingManager target)
+        {
+            RebindingManager active = ActiveRuntimeInstance;
+            if (active == null || !active.isActiveAndEnabled || !active._registeredService)
+            {
+                target = null;
+                return false;
+            }
+
+            if (!ReferenceEquals(target, active))
+                target = active;
+
+            return true;
+        }
 
         public bool IsRebinding => _activeRebind != null || _pendingConflictAction != null;
 
@@ -161,6 +178,12 @@ namespace Hecton8.Input
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+            {
+                BindNativeInputManager(currentService as INativeInputManagerRuntime);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -197,6 +220,9 @@ namespace Hecton8.Input
         {
             if (ReferenceEquals(_nativeInputManager, inputManager))
                 return;
+
+            if (IsRebinding)
+                CancelRebindOrPendingConflict();
 
             _nativeInputManager = inputManager;
             TryLoadInitialOverrides();
@@ -508,7 +534,7 @@ namespace Hecton8.Input
 
             if (saveOverridesAfterRebind)
             {
-                if (!SaveOverrides())
+                if (!SaveOverrides(emitFailureEvent: false))
                 {
                     TryRestoreBindingOverride(action, bindingIndex, previousOverridePath);
                     OnRebindSaveFailed?.Invoke(actionName, actionMap, bindingIndex);
@@ -577,17 +603,22 @@ namespace Hecton8.Input
 
         public bool SaveOverrides()
         {
+            return SaveOverrides(emitFailureEvent: true);
+        }
+
+        private bool SaveOverrides(bool emitFailureEvent)
+        {
             if (IsRebinding)
             {
                 LogWarning("Cannot save binding overrides while rebinding.");
-                return false;
+                return FailSaveOverrides(emitFailureEvent);
             }
 
             INativeInputManagerRuntime inputManager = ResolveNativeInputManager();
             if (inputManager == null)
             {
                 LogWarning("Cannot save binding overrides because the native input manager is not bound.");
-                return false;
+                return FailSaveOverrides(emitFailureEvent);
             }
 
             string path = GetOverridesFilePath();
@@ -597,19 +628,31 @@ namespace Hecton8.Input
                 RecordControlRemapTelemetry(in saveResult.Telemetry);
                 DumpControlRemapTelemetryOnFault(in saveResult.Telemetry);
                 LogWarning("Failed to save binding overrides file.");
-                return false;
+                return FailSaveOverrides(emitFailureEvent);
             }
 
             RecordControlRemapTelemetry(in saveResult.Telemetry);
             if (saveResult.RecordCount == 0)
             {
-                if (!DeleteOverridesFileIfExistsCold())
-                    return false;
+                if (!DeleteOverridesFileIfExistsCold(out InputBindingTelemetryEntry deleteTelemetry))
+                {
+                    RecordControlRemapTelemetry(in deleteTelemetry);
+                    DumpControlRemapTelemetryOnFault(in deleteTelemetry);
+                    return FailSaveOverrides(emitFailureEvent);
+                }
             }
 
             OnOverridesSaved?.Invoke();
             Log("Binding overrides saved.");
             return true;
+        }
+
+        private bool FailSaveOverrides(bool emitFailureEvent)
+        {
+            if (emitFailureEvent)
+                OnOverridesSaveFailed?.Invoke();
+
+            return false;
         }
 
         public bool LoadOverrides()
@@ -635,23 +678,31 @@ namespace Hecton8.Input
                 return false;
             }
 
-            if (!TryCaptureRuntimeOverrideRollback(inputManager, out int rollbackCount))
+            if (!TryCaptureRuntimeOverrideRollback(inputManager, out int rollbackCount, out InputBindingTelemetryEntry captureTelemetry))
             {
+                RecordControlRemapTelemetry(in captureTelemetry);
+                DumpControlRemapTelemetryOnFault(in captureTelemetry);
                 LogWarning("Cannot clear binding overrides because the current runtime override state could not be captured.");
                 return false;
             }
 
             try
             {
+                long clearStartTicks = Stopwatch.GetTimestamp();
                 if (!TryClearRuntimeBindingOverrides(inputManager))
                 {
+                    InputBindingTelemetryEntry applyTelemetry = BuildApplyFailureTelemetry(0, clearStartTicks);
+                    RecordControlRemapTelemetry(in applyTelemetry);
+                    DumpControlRemapTelemetryOnFault(in applyTelemetry);
                     TryRestoreRuntimeOverrideRollback(rollbackCount);
                     LogWarning("Cannot clear binding overrides because the native input manager rejected the clear request.");
                     return false;
                 }
 
-                if (clearSavedOverrides && !DeleteOverridesFileIfExistsCold())
+                if (clearSavedOverrides && !DeleteOverridesFileIfExistsCold(out InputBindingTelemetryEntry deleteTelemetry))
                 {
+                    RecordControlRemapTelemetry(in deleteTelemetry);
+                    DumpControlRemapTelemetryOnFault(in deleteTelemetry);
                     if (!TryRestoreRuntimeOverrideRollback(rollbackCount))
                         LogWarning("Runtime binding override rollback failed after saved override deletion failed.");
                     return false;
@@ -681,8 +732,12 @@ namespace Hecton8.Input
             RecordControlRemapTelemetry(in loadResult.Telemetry);
             if (loadResult.ResultCode == InputBindingTelemetryResult.FileMissing)
             {
+                long clearStartTicks = Stopwatch.GetTimestamp();
                 if (!TryClearRuntimeBindingOverrides(inputManager))
                 {
+                    InputBindingTelemetryEntry applyTelemetry = BuildApplyFailureTelemetry(0, clearStartTicks);
+                    RecordControlRemapTelemetry(in applyTelemetry);
+                    DumpControlRemapTelemetryOnFault(in applyTelemetry);
                     LogWarning("No saved binding overrides found, but runtime defaults could not be applied.");
                     return false;
                 }
@@ -703,46 +758,115 @@ namespace Hecton8.Input
             return false;
         }
 
-        private bool DeleteOverridesFileIfExistsCold()
+        private bool DeleteOverridesFileIfExistsCold(out InputBindingTelemetryEntry failureTelemetry)
         {
+            failureTelemetry = default;
+
             string tempPath = GetOverridesTempFilePath();
-            if (!TryDeleteOverridesFileCold(tempPath, "Failed to delete temp binding overrides file."))
+            if (!TryDeleteOverridesFileCold(tempPath, "Failed to delete temp binding overrides file.", out failureTelemetry))
                 return false;
 
             string path = GetOverridesFilePath();
-            return TryDeleteOverridesFileCold(path, "Failed to delete binding overrides file.");
+            return TryDeleteOverridesFileCold(path, "Failed to delete binding overrides file.", out failureTelemetry);
         }
 
-        private bool TryDeleteOverridesFileCold(string path, string warning)
+        private bool TryDeleteOverridesFileCold(string path, string warning, out InputBindingTelemetryEntry failureTelemetry)
         {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            failureTelemetry = default;
+            if (string.IsNullOrEmpty(path))
                 return true;
 
+            string absolutePath = null;
+            int byteCount = 0;
+            int pathBytes = 0;
+            long startTicks = Stopwatch.GetTimestamp();
             try
             {
-                File.Delete(path);
+                absolutePath = Path.GetFullPath(path);
+                pathBytes = absolutePath.Length;
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                if (File.Exists(absolutePath))
+                {
+                    if (AsyncWriteManager.TryGetFileLength(absolutePath, out long fileBytes, out _))
+                        byteCount = fileBytes > int.MaxValue ? int.MaxValue : (int)Math.Max(0L, fileBytes);
+
+                    File.Delete(absolutePath);
+                }
+
                 return true;
             }
             catch (UnauthorizedAccessException)
             {
+                failureTelemetry = BuildDeleteFailureTelemetry(byteCount, pathBytes, startTicks);
                 LogWarning(warning);
                 return false;
             }
             catch (IOException)
             {
+                failureTelemetry = BuildDeleteFailureTelemetry(byteCount, pathBytes, startTicks);
                 LogWarning(warning);
                 return false;
             }
             catch (ArgumentException)
             {
+                failureTelemetry = BuildDeleteFailureTelemetry(byteCount, pathBytes, startTicks);
                 LogWarning(warning);
                 return false;
             }
             catch (NotSupportedException)
             {
+                failureTelemetry = BuildDeleteFailureTelemetry(byteCount, pathBytes, startTicks);
                 LogWarning(warning);
                 return false;
             }
+            catch (System.Security.SecurityException)
+            {
+                failureTelemetry = BuildDeleteFailureTelemetry(byteCount, pathBytes, startTicks);
+                LogWarning(warning);
+                return false;
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(absolutePath))
+                    AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+            }
+        }
+
+        private static InputBindingTelemetryEntry BuildDeleteFailureTelemetry(
+            int byteCount,
+            int pathBytes,
+            long startTicks)
+        {
+            return ControlRemapper.BuildDeleteTelemetry(
+                InputBindingTelemetryResult.IoFailure,
+                InputBindingFaultFlags.IoException,
+                byteCount,
+                pathBytes,
+                startTicks);
+        }
+
+        private static InputBindingTelemetryEntry BuildApplyFailureTelemetry(
+            uint resultCode,
+            uint faultFlags,
+            int recordCount,
+            long startTicks)
+        {
+            return ControlRemapper.BuildApplyTelemetry(
+                resultCode,
+                faultFlags,
+                recordCount,
+                startTicks);
+        }
+
+        private static InputBindingTelemetryEntry BuildApplyFailureTelemetry(
+            int recordCount,
+            long startTicks)
+        {
+            return BuildApplyFailureTelemetry(
+                InputBindingTelemetryResult.UnsupportedPath,
+                InputBindingFaultFlags.UnsupportedPath,
+                recordCount,
+                startTicks);
         }
 
         private string GetOverridesFilePath()
@@ -834,6 +958,14 @@ namespace Hecton8.Input
             if (!_telemetryBootstrapped)
                 TryColdBootstrapTelemetry();
 
+            if (!_telemetryBootstrapped ||
+                _dataVault == null ||
+                _telemetryRingHandle.BufferID == 0u ||
+                _telemetryCursorHandle.BufferID == 0u)
+            {
+                return;
+            }
+
             ControlRemapper.RecordTelemetry(_dataVault, in _telemetryRingHandle, in _telemetryCursorHandle, in entry);
         }
 
@@ -849,8 +981,16 @@ namespace Hecton8.Input
             if (!_telemetryBootstrapped)
                 TryColdBootstrapTelemetry();
 
-            string path = Path.Combine(Directory.GetCurrentDirectory(), AgentTelemetryDumpRelativePath);
-            ControlRemapper.TryDumpTelemetry(_dataVault, in _telemetryRingHandle, path);
+            if (!_telemetryBootstrapped ||
+                _dataVault == null ||
+                _telemetryRingHandle.BufferID == 0u ||
+                _telemetryCursorHandle.BufferID == 0u)
+            {
+                return;
+            }
+
+            string path = HectonPersistentPathPolicy.CombineFile(TelemetryDumpFileName);
+            ControlRemapper.TryDumpTelemetry(_dataVault, in _telemetryRingHandle, in _telemetryCursorHandle, path);
         }
 
         private void ClearActiveRebindContext()
@@ -948,36 +1088,55 @@ namespace Hecton8.Input
             }
         }
 
-        private bool TryCaptureRuntimeOverrideRollback(INativeInputManagerRuntime inputManager, out int rollbackCount)
+        private bool TryCaptureRuntimeOverrideRollback(
+            INativeInputManagerRuntime inputManager,
+            out int rollbackCount,
+            out InputBindingTelemetryEntry failureTelemetry)
         {
             rollbackCount = 0;
+            failureTelemetry = default;
+            long startTicks = Stopwatch.GetTimestamp();
             if (inputManager == null)
+            {
+                failureTelemetry = BuildApplyFailureTelemetry(0, startTicks);
                 return false;
+            }
 
             InputActionMap playerMap;
             InputActionMap uiMap;
             try
             {
-                playerMap = inputManager.GetActionMap("Player");
-                uiMap = inputManager.GetActionMap("UI");
+                playerMap = inputManager.GetActionMap(PlayerActionMapName);
+                uiMap = inputManager.GetActionMap(UiActionMapName);
             }
             catch (InvalidOperationException)
             {
+                failureTelemetry = BuildApplyFailureTelemetry(rollbackCount, startTicks);
                 return false;
             }
             catch (ArgumentException)
             {
+                failureTelemetry = BuildApplyFailureTelemetry(rollbackCount, startTicks);
                 return false;
             }
             catch (NotSupportedException)
             {
+                failureTelemetry = BuildApplyFailureTelemetry(rollbackCount, startTicks);
                 return false;
             }
 
             bool captured = TryCaptureRuntimeOverrideRollbackFromMap(playerMap, ref rollbackCount) &&
                             TryCaptureRuntimeOverrideRollbackFromMap(uiMap, ref rollbackCount);
             if (!captured)
+            {
+                failureTelemetry = BuildApplyFailureTelemetry(
+                    InputBindingTelemetryResult.IoFailure,
+                    InputBindingFaultFlags.BufferOverflow,
+                    rollbackCount,
+                    startTicks);
                 ClearRuntimeOverrideRollback(rollbackCount);
+            }
+
             return captured;
         }
 
@@ -1375,7 +1534,7 @@ namespace Hecton8.Input
         {
             if (saveOverridesAfterRebind)
             {
-                if (!SaveOverrides())
+                if (!SaveOverrides(emitFailureEvent: false))
                 {
                     TryRestoreBindingOverride(victimAction, victimBindingIndex, victimPreviousOverridePath);
                     TryRestoreBindingOverride(action, bindingIndex, previousOverridePath);

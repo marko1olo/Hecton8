@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Varnek Margin Memo"
+title: "Мемо Варнека о принятом запасе"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Varnek Margin Memo
+# Мемо Варнека о принятом запасе
 
-RU LOC HOLD: The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
+Мемо Варнека - тихая улика вины. Оно не выдумывает потоп и не отдаёт приказ убивать. Оно показывает, как известный запас давления оценили, приняли и опустили ниже цены continuity, пока внутри контура колонии ещё были люди.
 
 ## Scanner
 
-RU LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Мемо Aegir Operations Risk. Запас перед Great Tide был виден до того, как сработало право остановки.
 
 ## Terminal
 
-RU LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: tail exposure принято как цена continuity. Эвакуационный резерв не активирован. Независимая остановка не рекомендована.
 
 ## Audio
 
-RU LOC HOLD: No murder order. A margin acceptance.
+Это похоже на арифметику, пока не понимаешь, кто оказался внутри запаса.
 
 ## Field Note
 
-RU LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Заметка Marauder: грязная строка не в числе риска. Она в слове accepted.
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/ru_RU. -->

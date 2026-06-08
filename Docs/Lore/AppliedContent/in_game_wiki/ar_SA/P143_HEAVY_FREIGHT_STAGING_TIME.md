@@ -7,34 +7,34 @@ poi_tags: poi.freight_stage_mass_board;poi.seed_ship_burn_schedule
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "زمن تجهيز الشحن الثقيل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# زمن تجهيز الشحن الثقيل
 
-AR LOC HOLD: Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.
+يحمي توقيت الشحن الثقيل خط الزمن بلا FTL. يمكن لعتاد Atlas الوصول قبل الاستيطان الكتلي لأن الشركات تطلق شحنا سابقا مبكرا، وتدفعه إلى الأمام، وتقبل مخاطر غير مأهولة، وتدفن نوافذ الفشل في لغة البرامج. لا يستطيع الإنقاذ استعارة هذه الحيلة بعد بدء الطارئ.
 
 ## Scanner
 
-AR LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
+شحن فئة Atlas هو صبر مدفوع مسبقا ملفوف بالدروع.
 
 ## Terminal
 
-AR LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
+ملاحظة شحن: تستخدم حمولات Atlas وseed التجهيز المرحلي ومساعدة اندماج الحبيبات والانجرافات الطويلة وبنية الكبح. قد تخفي التواريخ العامة إطلاقات سابقة ومغادرات forward-domain.
 
 ## Audio
 
-AR LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
+سفينة بهذا الثقل لا تسافر ببساطة. تصبح فاتورة لها أثر.
 
 ## Field Note
 
-AR LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+الطريق الثقيل يركب من مستودعات ونوافذ حزم وكتلة كبح وجرأة سياسية.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/ar_SA. -->

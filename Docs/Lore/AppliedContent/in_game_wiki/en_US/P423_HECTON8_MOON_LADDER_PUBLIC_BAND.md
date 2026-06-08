@@ -7,8 +7,8 @@ poi_tags: poi.moon_ladder_public_band;poi.hecton8_mid_orbit_card
 biome_tags: biome.aegir_system;biome.publication
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "HECTON-8 Moon Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # HECTON-8 Moon Ladder
 
-The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
+The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8. Nearby bodies shape relays, ice-scatter, quarantine timing, salvage traffic and silence windows without promising extra playable moons.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
 
 ## Terminal
 
-MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER: public role labels only; exact orbital elements remain table-owned data.
 
 ## Audio
 

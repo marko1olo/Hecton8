@@ -3,38 +3,38 @@ packet_id: P344_SYSTEM_CARRIER_TUG_STACK
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.system_carrier_tug_stack
 unlock_id: unlock.system_carrier_tug_stack
-poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
+poi_tags: poi.black_keel_carrier_spec;poi.tug_manifest
 biome_tags: biome.orbit;biome.contract
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: System Carrier Tug Stack"
+title: "מחסנית נושא וגוררות מערכת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: System Carrier Tug Stack
+# מחסנית נושא וגוררות מערכת
 
-HE LOC HOLD: The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.
+Black Keel היא נושא מערכת ופלטפורמת חילוץ, לא חללית אישית. היא מחזיקה מסלול, מטפלת במטען, מפעילה נעילות משמורת, משגרת קפסולות ומתאמת גוררות. היא אינה מוחקת השהיית אור, חלונות נתיב, חומרת bathydrop פגועה או כללי עלות.
 
 ## Scanner
 
-HE LOC HOLD: Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
+רישום מחסנית נושא: Black Keel מזיזה salvage בעזרת גוררות, נעילות משמורת, מדפי קפסולות וטיימרים. זו אינה ספינת בית.
 
 ## Terminal
 
-HE LOC HOLD: BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
+מפרט BLACK KEEL: נושא claim-pool. פונקציות: החזקת מסלול, קבלת מטען, פריסת bathydrops, עגינת גוררות, מיחזור חוב. מגבלה: אינה מחליפה שרשרת החדרה ירחית שבורה.
 
 ## Audio
 
-HE LOC HOLD: The carrier is not your home. It is a machine that knows who owns your debt.
+הנושא מכיר את החוב שלך טוב יותר משמך.
 
 ## Field Note
 
-HE LOC HOLD: Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
+רישום בעלות נושא: מכונה מסלולית שימושית עדיין עוינת כאשר הנאמנות הראשונה שלה היא משמורת.
 
 <!-- In-Game Wiki; generated from P344_SYSTEM_CARRIER_TUG_STACK/he_IL. -->

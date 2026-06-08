@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: أول إصلاح PressureSeal"
+title: "أول إصلاح PressureSeal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: أول إصلاح PressureSeal
+# أول إصلاح PressureSeal
 
-AR LOC HOLD: تم العثور على مذكرة إصلاح P-63. يمكن تحويل FiberKelp إلى FiberMesh ليحمل PressureSeal مؤقتا. يبطئ الختم تسربا محليا، لكنه غير معتمد للصعود.
+تم العثور على مذكرة إصلاح P-63. يمكن تحويل FiberKelp إلى FiberMesh واستعماله طبقة حاملة لـ PressureSeal مؤقت. الختم يبطئ تسربا محليا، لكنه ليس معتمدا للصعود.
 
 ## Scanner
 
-AR LOC HOLD: هدف PRESSURESEAL // تسرب في طوق P-63. حامل FiberMesh متوافق. تثبيت محلي فقط؛ اعتماد الصعود مرفوض.
+هدف PRESSURESEAL // تسرب في طوق P-63. حامل FiberMesh متوافق. تثبيت محلي فقط؛ اعتماد الصعود مرفوض.
 
 ## Terminal
 
-AR LOC HOLD: ملاحظة تحمل DEEP REACH P-63 // تأجيل استبدال الطوق. طبق حامل ختم لين معتمد حيث يبقى التسرب ضمن حد الخدمة المحلي.
+مذكرة تحمل P-63 من DEEP REACH // أرجئ استبدال الطوق. طبق حامل ختم لين معتمد حيث يبقى التسرب تحت حد الخدمة المحلي.
 
 ## Audio
 
-AR LOC HOLD: ترحيل Black Keel: رقعة P-63 آمنة محليا لا للصعود. خذ الختم واحتفظ بالرقم التسلسلي.
+ترحيل Black Keel: رقعة P-63 تقرأ محلية آمنة، لا آمنة للصعود. خذ الختم واحتفظ بالرقم.
 
 ## Field Note
 
-AR LOC HOLD: ماء مضيء في الخارج. طوق مبتل في الداخل. سمته Deep Reach اسميا لأن الكلمة أرخص من حلقة مشبك.
+ماء مضيء في الخارج. طوق مبتل في الداخل. سمته Deep Reach اسميا لأن الكلمة أرخص من حلقة مشبك.
 
 <!-- In-Game Wiki; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/ar_SA. -->

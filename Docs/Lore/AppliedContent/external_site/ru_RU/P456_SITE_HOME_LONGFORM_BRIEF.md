@@ -9,32 +9,44 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: претензия под давлением"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: претензия под давлением
 
-RU LOC HOLD: HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## Первая работа
 
-## Scanner
+HECTON-8 начинается с контракта. Black Keel открывает узкое окно реле Aegir, вешает залог в 4.8 tonne-window и сбрасывает поврежденный bathydrop к P-63. Это мелкий промышленный шельф: света еще хватает для маршрута, а сломанных систем уже хватает для смерти. Внутри не герой-пассажир, а мародер-профессионал, бывший специалист Deep Reach по полевым системам.
 
-RU LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+Первые действия маленькие, потому что давление быстро убирает красивую ложь. Откачать воду. Залатать уплотнение в пределах допуска. Прочитать ошибки капсулы до того, как верить голосу с орбиты. Сканировать шельф не ради справки, а потому что официальный акт аварии пропускает следы, которые остались на металле.
 
-## Terminal
+## Что доказывает P-63
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+P-63 красив при дневном свете. Это не смягчает угрозу. Вода показывает известняк, кораллоподобный рост, старые грани модулей, кабельные рубцы и сорванное эвакуационное железо еще до того, как глубина заберет цвет.
 
-## Audio
+Контракт говорит о грузе. Комната говорит о доказательствах. Порванное кольцо восстановления, затопленная авионика и поведенная рама показывают: bathydrop потратил способность к подъему, чтобы пережить падение. Ремонт возможен, но путь ведет вниз: мелкие инструменты, срединные реле, рассольное удержание, абиссальное pressure glass и юридическое рукопожатие, которое решает, кто ответит на вызов.
 
-RU LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+## Почему это место читается как сцена преступления
 
-## Field Note
+Deep Reach не создала злой океан. У HECTON-8 уже были приливы, штормы, давление, химия и плохая геология. Преступление начинается там, где чистый корпоративный язык не называет принятый риск, недостроенную эвакуацию, приоритет Atlas continuity и рабочих, превращенных в категории убытка.
 
-RU LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+Главный вопрос помещается на грязный визор: что держит меня живым, что сломается следующим и какой кусок правды стоит массы на обратном пути?
+
+## Как читать спуск
+
+Главное правило HECTON-8: любой кусок лора должен оставлять след, который игрок может проверить. Номер контракта не декор, если он меняет mass window. Царапина на bathydrop не украшение, если доказывает, что система подъема сработала до удара. Затопленная комната не фон, если ее насос, прокладка, route log и scanner return спорят с официальным пакетом.
+
+Поэтому начало снова и снова возвращается к работе. P-63 учит: красота не равна безопасности, мелкая вода тоже может быть ловушкой claim, а выживание собирается из некрасивых слов - seal rating, intake pressure, relay drift, battery reserve, custody grade. Историю нужно узнавать через ремонт места, которое пытались стереть.
+
+## Обещание
+
+Большой сюжет здесь не про спасение галактики. Это длинная задача давления вокруг одного работника с плохим залогом и полезной памятью. Океан сужает выбор. Контракт сужает выбор. Route window сужает выбор. Игрок отвечает цепочкой доказательств: один scan, один sample, одна отремонтированная система за раз.
+
+HECTON-8 должен читаться потому, что он физический. Если вещь важна, у нее есть поверхность, цена, режим отказа и свидетель.
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/ru_RU. -->

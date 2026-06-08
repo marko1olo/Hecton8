@@ -7,34 +7,34 @@ poi_tags: poi.shallow_annex_p63_fabricator;poi.first_recipe_console
 biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "Польовий фабрикатор P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# Польовий фабрикатор P-63
 
-UA LOC HOLD: Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.
+Shallow Annex P-63 містить перший польовий фабрикатор, і він працює як ремонтна інфраструктура, а не чарівний принтер. Ранні рецепти - прокладки клапанів, контакти різака, поплавки пінгера й хомути герметика: малі деталі, що знову роблять пошкоджені інструменти надійними. Фабрикатор відмовляється від небезпечного pressure material, доки гравець не має сертифікації та знань containment.
 
 ## Scanner
 
-UA LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
+Польовий фабрикатор P-63. Таблиця сертифікації ціла; приймає брухт як сировину, відхиляє несертифікований pressure material.
 
 ## Terminal
 
-UA LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
+FAB P-63 / ЗАТВЕРДЖЕНІ ПЕРШІ РЕЦЕПТИ: прокладка клапана, контакт різака, поплавок пінгера, хомут герметика. Невідомі фрагменти blue debt відхиляються до наявності pressure certification і класу containment.
 
 ## Audio
 
-UA LOC HOLD: The machine can make parts. It cannot make permission.
+Деталі прості. Право доступу - дорога частина.
 
 ## Field Note
 
-UA LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+Він друкує деталі, не дозволи. Якщо рецепт просить штамп, океан теж його попросить.
 
 <!-- In-Game Wiki; generated from P115_P63_FIELD_FABRICATOR/uk_UA. -->

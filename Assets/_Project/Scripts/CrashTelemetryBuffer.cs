@@ -2682,15 +2682,23 @@ namespace Hecton8.Core
 
         private float3 SamplePlayerPosition(out bool hasPlayer)
         {
-            if (TryReadPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose))
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext != null)
             {
-                double3 poseAup = pose.Aup.ToAbsoluteDouble3();
-                float3 playerAup = new float3((float)poseAup.x, (float)poseAup.y, (float)poseAup.z);
-                if (math.all(math.isfinite(playerAup)))
+                if (TryReadPlayerPoseSnapshot(runtimeContext, out _, out float3 poseAup))
                 {
                     hasPlayer = true;
-                    return playerAup;
+                    return poseAup;
                 }
+
+                if (TryReadPlayerMovementAupSnapshot(runtimeContext, out float3 movementAup))
+                {
+                    hasPlayer = true;
+                    return movementAup;
+                }
+
+                hasPlayer = false;
+                return float3.zero;
             }
 
             if (_playerTransform == null)
@@ -2699,26 +2707,55 @@ namespace Hecton8.Core
                 return float3.zero;
             }
 
-            hasPlayer = true;
             if (_playerMovement != null)
             {
-                double3 absolute = _playerMovement.CurrentAup.ToAbsoluteDouble3();
-                float3 playerAup = new float3((float)absolute.x, (float)absolute.y, (float)absolute.z);
-                if (math.all(math.isfinite(playerAup)))
+                AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup;
+                if (TryConvertAupToFloat3(currentAup, out float3 playerAup))
+                {
+                    hasPlayer = true;
                     return playerAup;
+                }
             }
 
             Vector3 runtimePosition = _playerTransform.position;
+            if (!IsFiniteVector(runtimePosition))
+            {
+                hasPlayer = false;
+                return float3.zero;
+            }
+
+            hasPlayer = true;
             return ToAbsoluteUniversePosition(runtimePosition);
         }
 
-        private static bool TryReadPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)
+        private static bool TryReadPlayerPoseSnapshot(IPlayerRuntimeContext runtimeContext, out PlayerRuntimePoseSnapshot pose, out float3 playerAup)
         {
             pose = default;
-            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            playerAup = default;
             return runtimeContext != null &&
                    runtimeContext.TryGetPlayerPoseSnapshot(out pose) &&
-                   pose.Aup.IsFinite();
+                   (pose.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                   TryConvertAupToFloat3(pose.Aup, out playerAup);
+        }
+
+        private static bool TryReadPlayerMovementAupSnapshot(IPlayerRuntimeContext runtimeContext, out float3 playerAup)
+        {
+            playerAup = default;
+            return runtimeContext != null &&
+                   runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                   (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                   TryConvertAupToFloat3(movementState.PredictedAup, out playerAup);
+        }
+
+        private static bool TryConvertAupToFloat3(AbsoluteUniversePosition aup, out float3 playerAup)
+        {
+            playerAup = default;
+            if (!aup.IsFinite())
+                return false;
+
+            double3 absolute = aup.ToAbsoluteDouble3();
+            playerAup = new float3((float)absolute.x, (float)absolute.y, (float)absolute.z);
+            return math.all(math.isfinite(playerAup));
         }
 
         private static float3 ToAbsoluteUniversePosition(Vector3 runtimePosition)

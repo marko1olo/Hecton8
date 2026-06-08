@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS190_FIRST_CLEANUP_STATION_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1225_MOP_BUCKET_MINERAL_RING",
+    "P1226_RAG_CLAMP_RUST_BITE",
+    "P1227_SOAP_DISPENSER_CRUST_LIP",
+    "P1228_WASTE_HATCH_SMEAR_ARC",
+    "P1229_DISINFECTANT_TAG_PALE_BOX"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1225_MOP_BUCKET_MINERAL_RING.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1226_RAG_CLAMP_RUST_BITE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1227_SOAP_DISPENSER_CRUST_LIP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1228_WASTE_HATCH_SMEAR_ARC.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1229_DISINFECTANT_TAG_PALE_BOX.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

@@ -7,34 +7,34 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "Handmatige lenspompset"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# Handmatige lenspompset
 
-NL LOC HOLD: The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.
+De handmatige lenspomp is het eerste nuttige gereedschap na de drop, omdat hij werkt terwijl de capsule elektrisch onveilig is. Hij leegt alleen kleine overstroomde ruimtes en dwingt de speler naar inlaat, uitlaat en klepweerstand te kijken in plaats van een groen lampje te geloven. De set leert de openingsregel van HECTON-8: reparatie begint met water, druk en handen.
 
 ## Scanner
 
-NL LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
+Handmatige lensset gedetecteerd. Inlaatrooster zit dicht met capsuleschuim; maak schoon voordat het paneel stroom krijgt.
 
 ## Terminal
 
-NL LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
+P-63 VELDUITGIFTE / LENSSET: handpomp, slangklem, inlaatrooster, terugslagklep. Verwijder stilstaand water voor elke test van een gevoed paneel. Loos niet in verzegelde kabelgoten.
 
 ## Audio
 
-NL LOC HOLD: Hand work first. Electricity second. Breathing always.
+Eerst water. Daarna stroom. Als de hendel terugkomt, antwoordt de kamer.
 
 ## Field Note
 
-NL LOC HOLD: First tool must teach survival before upgrade fantasy.
+Pompen liegen minder dan meters. Als de hendel terugslaat, stop en kijk waar het water heen gaat.
 
 <!-- In-Game Wiki; generated from P111_MANUAL_BILGE_PUMP_KIT/nl_NL. -->

@@ -9,32 +9,35 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Спойлер-закрита стаття Atlas-6"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Спойлер-закрита стаття Atlas-6
 
-UA LOC HOLD: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6 — спойлер-закрите машинне питання HECTON-8: пошкоджений індустріальний інтелект, переплетений з обслуговуванням, ремонтом, класифікацією і самим океаном. Публічний текст має захищати розкриття. Він може сигналити етичну неоднозначність, але не повинен наперед розв’язувати фінальний вибір чи зводити Atlas до карикатурного лиходія.
 
 ## Scanner
 
-UA LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+Не відкривай Atlas як розкриття монстра. Закрий, доки гравець не побачить, що ремонт, класифікація і шкода мають одну машину.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+ПУБЛІЧНИЙ РІВЕНЬ СТАТТІ / ATLAS-6
+дозволено до gate: пошкоджений індустріальний інтелект, логіка обслуговування, переплетення з океаном, етична неоднозначність
+закрито до відкриття: фінальний маршрут payload, наслідок receiver, аргумент вимкнення або збереження
+примітка редактора: без рамки evil AI; питання зламаного guardian тільки після доказів.
 
 ## Audio
 
-UA LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+Якщо назвати його надто рано, він стане лиходієм. Якщо зачекати, він стане питанням.
 
 ## Field Note
 
-UA LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+Закрий ім’я, доки в гравця не буде достатньо іржі на руках, щоб із ним сперечатися.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/uk_UA. -->

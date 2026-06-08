@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Predator Shadow Encounter Grammar"
+title: "דקדוק מפגש: צל טורף"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Predator Shadow Encounter Grammar
+# דקדוק מפגש: צל טורף
 
-HE LOC HOLD: Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.
+מפגשי צל טורף צריכים לגרום לאוקיינוס להרגיש תפוס לפני שהחיה נראית. שרשרת האזהרה המועילה היא סביבתית: מגרדי זכוכית עוצרים כשהאוכל עדיין חשוף, lantern bloom מידלדל בצד אחד, pressureweed מתקפל בלי גל, sonar מראה פער רחב מדי לפסולת, ואור השחקן חוצה צורה רחבה שלעולם לא נפתרת לצללית נקייה. החיה אינה boss שמחכה ב-arena. היא לחץ מסלול. היא משנה צריכת חמצן, משמעת return-line, תזמון תיקון ואמון ב-scan. מפגש צל טוב נותן לשרוד למי שקורא היעדרות: אל תוסיף רעש, הצר את המנורה, אל תרדוף אחרי הנתיב הנקי וצא בזווית במקום לרוץ ישר חזרה דרך המים המסומנים.
 
 ## Scanner
 
-HE LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+עקבת צל טורף. פער sonar, נתיב טרף חתוך, דממה פתאומית של מגרדים, חסימת אור רחבה. גוף לא אושר; שמור על משמעת אור וזווית יציאה.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+דקדוק מפגש / צל טורף / תפקיד: לחץ מסלול לפני חשיפת גוף, קפיצת צריכת חמצן, שבר אמון ב-scan / קריאה בטוחה: נתיב טרף נעצר, רעש bloom קורס, החזרי sonar מתפצלים סביב מים ריקים / דחה: חשיפת גוף scripted כאזהרה ראשונה, jump scare חסר עלות, boss arena נקייה / הערת מסלול: אם כל החיות הקטנות נעצרות לפני שה-scanner קורא למטרה בשם, המסלול כבר השתנה.
 
 ## Audio
 
-HE LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+הסימן הבטוח אינו לראות אותו. הסימן הבטוח הוא לשים לב שכל השאר בחר בשקט קודם.
 
 ## Field Note
 
-HE LOC HOLD: Use for AI/spawn design notes and scanner cards.
+קרא לחיה בשם מאוחר. תן לטרף, לאור ול-sonar להיכשל קודם. אם המסלול משתתק, הצל כבר מחזיק בו.
 
 <!-- In-Game Wiki; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/he_IL. -->

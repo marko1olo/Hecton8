@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Field Systems Specialist Record"
+title: "Dossier de spécialiste des systèmes de terrain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Field Systems Specialist Record
+# Dossier de spécialiste des systèmes de terrain
 
-FR LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.
+Le personnage joueur de HECTON-8 entre dans l'océan avec une cicatrice pratique : ancien travail sur les systèmes de terrain de Deep Reach, accès à l'infrastructure d'évacuation, accréditation révoquée et mémoire procédurale suffisante pour lire les machines noyées comme des preuves. Il est Marauder désormais, pas officier de compagnie ni héros passager. Une pompe brisée, un tampon de route ou une formule de responsabilité comptent parce que l'opérateur sait comment ces systèmes devaient protéger les travailleurs avant de devenir du papier.
 
 ## Scanner
 
-FR LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+Ancienne accréditation systèmes de terrain. Pas un cadre de commandement. Travail d'infrastructure avec assez d'accès pour reconnaître l'endroit où une route a été enterrée.
 
 ## Terminal
 
-FR LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+TRACE PERSONNELLE : systèmes de terrain, infrastructure d'évacuation, certification route-safe. Accès révoqué après révision du silence d'Aegir. Le cache de procédure correspond encore à la séquence de l'opérateur.
 
 ## Audio
 
-FR LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+Tu n'as jamais signé le mensonge. Tu connaissais la grammaire qui le faisait passer l'inspection.
 
 ## Field Note
 
-FR LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+Le badge n'ouvrait plus les portes. Il n'a pas désappris l'ordre des pannes.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/fr_FR. -->

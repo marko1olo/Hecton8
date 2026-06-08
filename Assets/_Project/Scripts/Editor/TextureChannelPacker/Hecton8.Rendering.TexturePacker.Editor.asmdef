@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.EditorTools",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
         "Unity.Collections",
         "Unity.Mathematics",
         "Unity.Burst",

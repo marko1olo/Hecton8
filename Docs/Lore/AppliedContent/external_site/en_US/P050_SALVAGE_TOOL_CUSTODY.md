@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.deep_colony
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Salvage Tool Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Salvage Tool Custody
 
-Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder.
+On HECTON-8, a tool can be survival gear and contract witness at once. Salvage custody logs tie cuts, repairs and samples to claim tokens, making a useful action part of later evidence, debt or payout pressure.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Tool dock holds a sealed custody log. Last cut, repair and sample pouch are tied to a Keelmark claim token.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+A cutter can save your air and sell your hands in the same stroke. Check what it records before you call it yours.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/en_US. -->

@@ -7,34 +7,34 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "ジュノ・ケイド避難保留"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# ジュノ・ケイド避難保留
 
-JP LOC HOLD: Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+ジュノ・ケイドは植民地が単に硬直したわけではないと示す。人々は列を作り、マーシャルは経路を出し、出口システムはauthorization holds、隔離確認、payload優先で応答した。扉が本物だったからこそ災害は重くなる。
 
 ## Scanner
 
-JP LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
+ジュノ・ケイドは列を開いたが、隔離、認証、payload順位でできた壁にぶつかった。
 
 ## Terminal
 
-JP LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+KADE避難状況: route red。manual override拒否。隔離ゲートはAtlas continuity check待ち。claim seal解決までpayload liftが優先。
 
 ## Audio
 
-JP LOC HOLD: She kept counting people after the system started counting rooms.
+出口は存在した。だから保留に意味がある。
 
 ## Field Note
 
-JP LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+避難マーシャルは人を動かせる。扉を所有する条項は動かせない。
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/ja_JP. -->

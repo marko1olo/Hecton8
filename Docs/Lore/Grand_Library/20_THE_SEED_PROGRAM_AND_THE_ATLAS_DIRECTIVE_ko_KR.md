@@ -1,4 +1,5 @@
-﻿# 시드 프로그램과 아틀라스 지침
+<!-- localization_status: source_draft_pending_native_review -->
+# 시드 프로그램과 아틀라스 지침
 
 > **Source:** Deep Reach 시스템 엔지니어링 부서, 지침 논리 로그.
 > **Speaker:** 자율 운영 디렉터.

@@ -9,32 +9,35 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Professional Guilt To Personal Stake"
+title: "Dari Rasa Bersalah Profesional ke Kepentingan Pribadi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Professional Guilt To Personal Stake
+# Dari Rasa Bersalah Profesional ke Kepentingan Pribadi
 
-ID LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.
+Motif protagonis tumbuh dari keahlian menjadi tanggung jawab. HECTON-8 menghindari melodrama keluarga yang dipaksakan: mantan pekerja Deep Reach peduli karena ia memahami mesin prosedural yang membuat penelantaran tampak selesai.
 
 ## Scanner
 
-ID LOC HOLD: Signature match. The form language is old. The names are new.
+Pola tanda tangan cocok dengan cache prosedur lama. Namanya berubah. Ruangan gagal dengan cara yang sama. Keahlian bukan lagi jarak.
 
 ## Terminal
 
-ID LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+RESOLUSI DOSSIER / KEPENTINGAN PROFESIONAL
+bukti pemicu: pengenalan prosedur, tag pekerja yang ditemukan, konflik penerima klaim
+motif dikecualikan: hubungan keluarga, garis balas dendam, status saksi terpilih
+motif aktif: mantan pekerja sistem mengenali penelantaran yang bisa dicegah dan masih dapat membaca mesin yang mengarsipkannya.
 
 ## Audio
 
-ID LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+Kau datang untuk klaim. Kau tinggal karena dokumen itu mengenal tanganmu.
 
 ## Field Note
 
-ID LOC HOLD: Use near late dossier and final payload route.
+Bukan tanda tanganmu. Tetap keahlianmu. Karena itu ruangan tidak akan diam.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/id_ID. -->

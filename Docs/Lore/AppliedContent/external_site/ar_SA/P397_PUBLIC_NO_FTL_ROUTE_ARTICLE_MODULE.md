@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: No-FTL Route Delay"
+title: "تأخر مسار بلا FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: No-FTL Route Delay
+# تأخر مسار بلا FTL
 
-AR LOC HOLD: HECTON-8 has no instant rescue channel. Aegir was reached through precursor probes, beam infrastructure, pellet-fusion freight and braking systems that treat human urgency as one more payload constraint. A message can cross the route before the hardware that would make the message useful. That delay is why Black Keel can hold a valid claim while the player still has to fix seals by hand.
+لا يملك HECTON-8 قناة إنقاذ فورية. تم الوصول إلى نظام Aegir عبر precursor probes وbeam infrastructure وpellet-fusion freight وأنظمة كبح تتعامل مع العجلة كقيد كتلة آخر. قد تصل الرسالة قبل العتاد الذي يجعلها مفيدة. يستطيع carrier الاعتراف بوجودك، وتسعير payload، وحمل valid claim، ومع ذلك يعجز عن إنفاق descent mass تحت weather أو relay angle أو custody window خاطئة. يجب أن يبقي نص السفر العام هذا القيد ظاهرا، لأن العزلة هنا نتيجة هندسة وقانون ولوجستيات معا. قد يكون Black Keel قريبا قانونيا وغير قابل للوصول ماديا. هذا التأخير هو سبب استمرار اللاعب في إصلاح الأختام يدويا بعد رد relay.
 
 ## Scanner
 
-AR LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+سجل عبور. حركة Aegir تعتمد على precursor probes وbeam lanes وpellet-fusion freight وbraking mass وpacket age وrelay custody والتأخير القانوني.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+عقدة الأرشيف العام // حد العبور. لا يوجد FTL. لا يوجد Ansible. الإنقاذ الحي يحتاج نقلا ماديا وbraking architecture وcarrier position وdescent mass وlocal window صالحة.
 
 ## Audio
 
-AR LOC HOLD: Help can be legally present and physically years away.
+قد تكون المساعدة حاضرة قانونيا وبعيدة ماديا لسنوات.
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+ملاحظة Marauder: عندما يجيب relay، اسأل عن عمر الجواب وعن الكتلة التي يستطيع تحريكها.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/ar_SA. -->

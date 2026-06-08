@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 중계 보관 부채 사슬
 
-중계 보관은 우주 물류를 압력으로 바꾼다. 도움은 부채, 우선권, 기업 권한도 함께 운반한다.
+중계 보관은 우주 물류를 압력으로 바꾼다. 도움은 도착할 수 있지만, 도움을 운반하는 항로는 부채, 우선권 고리, 기업 권한도 함께 운반한다.
 
 ## Scanner
 

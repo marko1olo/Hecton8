@@ -7,34 +7,34 @@ poi_tags: poi.brine_density_marker;poi.canyon_current_gate
 biome_tags: biome.brine_canyon;biome.drop_zone
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "塩水峡谷ルート梯子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# 塩水峡谷ルート梯子
 
-JP LOC HOLD: Brine canyons make depth progression physical. Dense brine layers, mineral walls, thermal leaks and acoustic distortion create routes that teach the player why deeper travel requires better instruments and better pressure discipline.
+塩水峡谷は深度進行を物理にする。高密度層、鉱物壁、熱漏れ、音響歪みが、深い移動には良い計器と圧力規律が必要だと教える。
 
 ## Scanner
 
-JP LOC HOLD: Brine density marker. The descent route is chemistry with walls.
+塩水密度マーカー。降下ルートは壁を持つ化学である。
 
 ## Terminal
 
-JP LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
+BRINE CANYON CONTROL: 密度界面は段階降下に十分安定。警告: 1800m以下で音響リレー歪み、車両浮力誤差、偽床イベントが予想される。
 
 ## Audio
 
-JP LOC HOLD: The canyon is a staircase made of wrong water.
+峡谷は間違った水でできた階段だ。
 
 ## Field Note
 
-JP LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+峡谷を泳いで抜けるのではない。スーツより重い層と交渉する。
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/ja_JP. -->

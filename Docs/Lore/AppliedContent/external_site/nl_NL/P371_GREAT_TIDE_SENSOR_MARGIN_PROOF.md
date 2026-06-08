@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Great Tide Sensor Margin Proof"
+title: "Margepoor van de Grote Getijde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Great Tide Sensor Margin Proof
+# Margepoor van de Grote Getijde
 
-NL LOC HOLD: The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.
+Het eerste bruikbare bewijs tegen Deep Reach is geen bekentenis. Het is een sensormarge die bleef opnemen nadat de gang verdronk. De cijfers maken de ramp niet kunstmatig: hydrostatische last, getijdenshear en falende infrastructuur overweldigden HECTON-8 echt. Daarom doet het bewijs ertoe. De leugen begint tussen ruwe trace en publiek rapport. De ruwe trace markeert een waarschuwingsmargebreuk vóór het goedgekeurde routevenster sloot. Het rapport bewaart de geotechnische cascade en verwijdert de accepted-tail-risk-notitie. Wie de trace vindt, ziet de schuldvorm scherp: fysica trof de kolonie, daarna besloten bevoegden dat waarschuwing goedkoper was dan shutdown.
 
 ## Scanner
 
-NL LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Geborgen getijdensensor. Piekshear overschreed het koloniedesign, maar de waarschuwingsmargebreuk werd gelogd vóór het publieke cascade-tijdstempel.
 
 ## Terminal
 
-NL LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Tail-riskdrempel geaccepteerd door routeautoriteit. Operatornotitie uit publieke incidentketen verwijderd. Ruwe trace bewaard in brine-buffergeheugen.
 
 ## Audio
 
-NL LOC HOLD: Physics did the damage. A person signed the margin.
+De oceaan loog niet. Het rapport wel.
 
 ## Field Note
 
-NL LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Marauder-notitie: zoek geen schurkenspeech. Zoek de regel die iemand heeft verwijderd.
 
 <!-- External Site; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/nl_NL. -->

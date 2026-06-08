@@ -16,8 +16,8 @@ namespace Hecton8.World
             float pillarRadiusMeters = 50f,
             float pillarHeightMeters = 1000f)
         {
-            ResourceDistributionDirector director = ResourceDistributionDirector.ActiveRuntimeInstance;
-            if (director == null ||
+            ResourceDistributionDirector director = null;
+            if (!WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref director) ||
                 !featureRecords.IsCreated ||
                 maxPillars <= 0 ||
                 !math.isfinite(pillarRadiusMeters) ||

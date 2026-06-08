@@ -34,6 +34,7 @@ namespace Hecton8.Rendering
         public const uint FlagWeatherSnapshotBound = 1u << 10;
         public const uint FlagProfileBound = 1u << 11;
         public const uint FlagInputSnapshot = 1u << 12;
+        public const uint FlagCelestialLightBound = 1u << 13;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = AbyssalCausticsConstants.CBufferBytes)]

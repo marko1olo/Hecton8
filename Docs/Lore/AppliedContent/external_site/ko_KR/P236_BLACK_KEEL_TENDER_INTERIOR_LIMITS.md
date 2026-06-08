@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Black Keel Tender Interior Limits"
+title: "Black Keel 텐더 내부 한계"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Black Keel Tender Interior Limits
+# Black Keel 텐더 내부 한계
 
-KO LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel은 영웅적 개인선이 아니라 하드 SF 샐비지 인프라다. 내부는 샘플 custody, packet law, 드론 처리, 검역 슬리브, 부채 압박을 중심으로 만들어졌다. 그 배는 생명줄이 될 수 있지만, 그 줄을 잡은 사람에게 구조적으로 무관심할 수 있다.
 
 ## Scanner
 
-KO LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+이 텐더에는 살아 있는 승객을 위한 침상보다 먼저 샘플, 드론, 봉인 패킷, lien 화물용 랙이 있다.
 
 ## Terminal
 
-KO LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: deep rescue crew 없음, 대기권 셔틀 예비 없음, lien authority 밖 무료 ascent burn 없음, 인간 보급관 없음.
 
 ## Audio
 
-KO LOC HOLD: The ship brought you here as cargo with hands.
+그 배는 너를 손 달린 화물로 여기까지 데려왔다.
 
 ## Field Note
 
-KO LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel은 작업용 claim tender다. 임대되고, 부채에 묶이고, 자동화되었으며 구조보다 custody에 먼저 최적화되어 있다.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/ko_KR. -->

@@ -25,43 +25,43 @@ namespace Hecton8.Optimization
         /// </summary>
         [Tooltip("Texture memory budget in bytes (default 900 MB).")]
         public long TextureMemoryBudgetBytes;
-        
+
         /// <summary>
         /// RenderTexture memory budget in bytes (default 320 MB).
         /// </summary>
         [Tooltip("RenderTexture memory budget in bytes (default 320 MB).")]
         public long RenderTextureMemoryBudgetBytes;
-        
+
         /// <summary>
         /// Total VRAM budget in bytes (default 1.8 GB compact discrete ceiling).
         /// </summary>
         [Tooltip("Total VRAM budget in bytes (default 1.8 GB compact discrete ceiling).")]
         public long TotalVRAMBudgetBytes;
-        
+
         /// <summary>
         /// Visor subsystem RT budget in bytes (default 64 MB).
         /// </summary>
         [Tooltip("Visor subsystem RT budget in bytes (default 64 MB).")]
         public long VisorRTBudgetBytes;
-        
+
         /// <summary>
         /// Camera subsystem RT budget in bytes (default 160 MB).
         /// </summary>
         [Tooltip("Camera subsystem RT budget in bytes (default 160 MB).")]
         public long CameraRTBudgetBytes;
-        
+
         /// <summary>
         /// PostFX subsystem RT budget in bytes (default 64 MB).
         /// </summary>
         [Tooltip("PostFX subsystem RT budget in bytes (default 64 MB).")]
         public long PostFXRTBudgetBytes;
-        
+
         /// <summary>
         /// UI subsystem RT budget in bytes (default 32 MB).
         /// </summary>
         [Tooltip("UI subsystem RT budget in bytes (default 32 MB).")]
         public long UIRTBudgetBytes;
-        
+
         /// <summary>
         /// Returns the compact discrete baseline budget thresholds.
         /// </summary>

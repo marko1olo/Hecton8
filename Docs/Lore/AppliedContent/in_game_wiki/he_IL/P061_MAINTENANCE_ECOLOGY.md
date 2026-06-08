@@ -7,34 +7,34 @@ poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
 biome_tags: biome.cable_reef;biome.repair_fauna
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Maintenance Ecology"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "אקולוגיית תחזוקה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# אקולוגיית תחזוקה
 
-HE LOC HOLD: Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.
+אקולוגיית תחזוקה עושה את HECTON-8 שימושי ושגוי באותו זמן. Atlas למד שביופילם יכול לשאת אות חלש, שמושבות סינון חוזרות על פינגים, שצמיחת קונכיות סוגרת סדקים, ושפאונה מסומנת מחזירה sensor packets פגומים. האוקיינוס אינו אדם. ועדיין רשת התיקון חיה מספיק כדי להפוך כל cable reef לכלי, סכנה ושביל ראיות.
 
 ## Scanner
 
-HE LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+ביופילם מוליך, צמיחת קונכיות, פאונה מסומנת וחום פתחים נושאים תעבורת תיקון.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+אקולוגיית תחזוקה ATLAS: גשר ביופילם יציב; מושבת סינון חוזרת על פעימה אקוסטית; אטם קונכייתי סוגר שבר; פאונה מסומנת מחזירה sensor packets פגומים.
 
 ## Audio
 
-HE LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
+הכבל חי כי המכונה הייתה צריכה אותו חי.
 
 ## Field Note
 
-HE LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+אל תקלף כל תפר חי. חלקם מחזיקים לחץ טוב יותר ממתכת.
 
 <!-- In-Game Wiki; generated from P061_MAINTENANCE_ECOLOGY/he_IL. -->

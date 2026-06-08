@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Penahanan Karantina: Udara Apak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Penahanan Karantina: Udara Apak
 
-ID LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+Penahanan Karantina menyelamatkan tubuh dan menangguhkan agency. Pemain lolos dari tekanan, tetapi tidak dari custody. Setiap napas diukur sementara bukti menunggu di balik bahasa review.
 
 ## Scanner
 
-ID LOC HOLD: You are alive, sealed, and still not free.
+Tubuh dipulihkan. Saksi disegel. Ransum udara aktif.
 
 ## Terminal
 
-ID LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+PENAHANAN KARANTINA: kontraktor dipulihkan hidup; ransum udara aktif; sample custody belum selesai; kesaksian eksternal ditunda menunggu review kontaminasi, tantangan claimant, dan review kerugian Keelmark.
 
 ## Audio
 
-ID LOC HOLD: The hatch opens only to another closed hatch.
+Palka terbuka ke palka tertutup lain.
 
 ## Field Note
 
-ID LOC HOLD: This is the bureaucratic version of drowning.
+Ini adalah bentuk administratif dari tenggelam.
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/id_ID. -->

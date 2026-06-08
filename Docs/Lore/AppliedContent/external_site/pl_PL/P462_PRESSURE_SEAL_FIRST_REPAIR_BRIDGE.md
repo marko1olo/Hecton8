@@ -9,32 +9,26 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Pierwsza naprawa PressureSeal"
+title: "Pierwsza naprawa PressureSeal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Pierwsza naprawa PressureSeal
+# Pierwsza naprawa PressureSeal
 
-PL LOC HOLD: Pierwsza użyteczna naprawa w Shallow Annex P-63 zaczyna się w świetle. FiberKelp z jasnej półki staje się FiberMesh, który niesie tymczasowy PressureSeal dla cieknącego kołnierza lub gniazda. Kupuje czas i bezpieczeństwo trasy, nie ucieczkę.
+## Naprawa W Świetle
 
-## Scanner
+Pierwsza użyteczna naprawa w Shallow Annex P-63 zaczyna się tam, gdzie woda jest jeszcze dość jasna, by kłamać. Na zewnątrz FiberKelp porusza się w prądzie półki. W środku kołnierz ciśnieniowy poci się przez szew, który Deep Reach oznaczyło jako zdatny do serwisu.
 
-PL LOC HOLD: CEL PRESSURESEAL // Wyciek kołnierza P-63. Nośnik FiberMesh zgodny. Tylko lokalna stabilizacja; certyfikacja wznoszenia odrzucona.
+FiberKelp to płytkowodna biofibra, nie rzadki skarb. Rośnie tam, gdzie spotykają się światło, prąd i stare ciepło przemysłowe. Umyte i rozczesane pasma stają się FiberMesh. Polowy fabricator P-63 może wprasować tę siatkę w warstwę nośną tymczasowego PressureSeal.
 
-## Terminal
+Część jest użyteczna, ponieważ ma granice. PressureSeal może spowolnić lokalny wyciek, ustabilizować kieszeń powrotu i uczynić krótką pętlę naprawczą możliwą do przeżycia. Nie certyfikuje bathydrop do wznoszenia, nie zastępuje pierścienia zaciskowego i nie zmienia odpowiedzi Black Keel w odzysk.
 
-PL LOC HOLD: NOTA TOLERANCJI DEEP REACH P-63 // Odroczyć wymianę kołnierza. Użyć zatwierdzonego miękkiego nośnika uszczelnienia, jeśli wyciek mieści się w progu lokalnym.
+Sprzeczność widać przed archiwum. Terminal mówi o wariancie ciśnienia w tolerancji serwisowej. Kołnierz pokazuje wygięte śruby, sól pod paskiem inspekcyjnym i włókna w pęknięciu, które powinno być czystym metalem.
 
-## Audio
-
-PL LOC HOLD: Przekaźnik Black Keel: łatka P-63 jest lokalnie bezpieczna, nie wznoszeniowa. Weź uszczelnienie, zachowaj numer seryjny.
-
-## Field Note
-
-PL LOC HOLD: Jasna woda na zewnątrz. Mokry kołnierz w środku. Deep Reach nazwało to nominalnym, bo słowo kosztuje mniej niż pierścień zaciskowy.
+Dla Maraudera lekcja jest praktyczna: tnij FiberKelp czysto, nie wprowadzaj piasku do siatki, zachowaj numer na uszczelce i nie ufaj naprawie, która mówi lokalnie bezpiecznie tam, gdzie trasa potrzebuje bezpieczeństwa do wznoszenia.
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/pl_PL. -->

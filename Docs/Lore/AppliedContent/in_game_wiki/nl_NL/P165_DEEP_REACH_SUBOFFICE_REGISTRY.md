@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Deep Reach Suboffice Registry"
+title: "Deep Reach Subkantoorregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Deep Reach Suboffice Registry
+# Deep Reach Subkantoorregister
 
-NL LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+Het subkantoorregister telt omdat het de machine benoemt zonder een troonzaal uit te vinden. Deep Reach had niet één persoon nodig die elke dood beval. Het had offices met smalle namen nodig, elk in staat om te vertragen, herclassificeren of een pakket door te geven. Contract Continuity hield obligations levend. Packet Notary besliste wat proof was. Quarantine Hold liet rescue gevaarlijk klinken. Asset Silence verlaagde de waarde van getuigen. Return Action besliste wie massa waard was.
 
 ## Scanner
 
-NL LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board en Return Action Queue.
 
 ## Terminal
 
-NL LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach hield dodelijke beslissingen onder het niveau van één schurk. Kleine desks routeerden clauses, packets, quarantine, silence en return priority tot geen enkele stempel op moord leek.
 
 ## Audio
 
-NL LOC HOLD: A small desk can kill more quietly than a director.
+Een kleine desk kan stiller doden dan een directeur.
 
 ## Field Note
 
-NL LOC HOLD: Use dull names. Dull names are where liability hides.
+Houd de namen saai. Daar verstopt liability zich.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/nl_NL. -->

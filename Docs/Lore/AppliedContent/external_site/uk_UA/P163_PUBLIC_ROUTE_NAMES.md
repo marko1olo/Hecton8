@@ -9,32 +9,20 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Public Route Names"
+title: "Публічні Назви Маршрутів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Public Route Names
+# Публічні Назви Маршрутів
 
-UK LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier.
+## Names That Bill
 
-## Scanner
+Публічні назви маршрутів - не поезія в темряві. Це робочі ярлики, які переживають контракти, плити корпусів, черги реле й судові докази. Sol-Centauri Charter Spine несе легітимність, Barnard Breaker Run пахне розбиранням кораблів і борговою працею. Luyten Packet Ladder є custody-ланцюгом, що робить доказ допустимим або марним, Tau Public Ledger Lane - повільний публічний тиск, а Ran Long Claim каже, що робота дорога ще до того, як океан почне брати своє.
 
-UK LOC HOLD: Route names make travel feel owned before it feels adventurous.
-
-## Terminal
-
-UK LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.
-
-## Audio
-
-UK LOC HOLD: A route is a road only after somebody sells the delay twice.
-
-## Field Note
-
-UK LOC HOLD: Every route name should sound like a tariff, not a wonder.
+A player should read each name as a working pressure mark: whose law travels here, whose cargo moves, whose proof survives, and whose body was left off the return manifest.
 
 <!-- External Site; generated from P163_PUBLIC_ROUTE_NAMES/uk_UA. -->

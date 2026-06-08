@@ -9,32 +9,38 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: مطالبة تحت الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: مطالبة تحت الضغط
 
-AR LOC HOLD: HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## العمل الأول
 
-## Scanner
+تبدأ HECTON-8 بعقد. يفتح Black Keel نافذة Aegir، ويسجل رهنا قدره 4.8 tonne-window، ثم يسقط bathydrop متضررا نحو P-63. الضوء يكفي لقراءة الطريق، والخلل يكفي لقتل العامل المهمل.
 
-AR LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+الأعمال الأولى صغيرة وحقيقية: ضخ الماء، سد الختم ضمن درجته، قراءة عيوب الكبسولة، ومسح المعدن. الماسح لا يشرح العالم. إنه يختبر لماذا لا يعرف تقرير الحادث آثار الأجهزة.
 
-## Terminal
+P-63 جميل في الضوء. الجمال ليس أمانا. الحجر الكلسي، حواف الوحدات، ندوب الكابلات وحديد الإخلاء المكسور تكذب الورق النظيف.
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+العقد يطلب حمولة. الغرفة تقدم دليلا. حلقة الاسترجاع الممزقة، الإلكترونيات الغارقة والإطار الملتوي تثبت أن bathydrop أنفق عودته كي ينجو من السقوط. الإصلاح يقود إلى الأسفل: أدوات، مرحلات، محلول ملحي، pressure glass ومصافحة قانونية للمستقبل.
 
-## Audio
+لم تصنع Deep Reach محيطا شريرا. الذنب في هامش خطر مقبول، وإخلاء ناقص، ولغة تحول العمال إلى بنود خسارة.
 
-AR LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+## كيف تقرأ النزول
 
-## Field Note
+قاعدة HECTON-8 العملية أن كل قطعة من اللور يجب أن تترك أثرا يمكن للاعب فحصه. رقم العقد ليس زينة إذا كان يغير mass window. خدش على bathydrop ليس خلفية إذا كان يثبت أن نظام الصعود اشتغل قبل الاصطدام. غرفة غارقة ليست ديكورا إذا كانت المضخة، الحشية، route log وscanner return تخالف الحزمة الرسمية.
 
-AR LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+لذلك تعود البداية دائما إلى العمل. P-63 يعلّم أن الجمال ليس أمانا، وأن الماء الضحل قد يكون فخ claim، وأن النجاة مبنية من كلمات قاسية: seal rating، intake pressure، relay drift، battery reserve، custody grade.
+
+## الوعد
+
+القصة الكبيرة ليست خطاب إنقاذ للمجرة. إنها مسألة ضغط طويلة حول عامل عليه lien سيئ وذاكرة نافعة. المحيط يضيّق الاختيار. العقد يضيّق الاختيار. route window يضيّق الاختيار. اللاعب يرد بسلسلة دليل: scan واحد، sample واحد، ونظام واحد تم إصلاحه.
+
+HECTON-8 يجب أن يكون مقروءا لأنه مادي. ما يهم له سطح وكلفة ونمط فشل وشاهد.
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/ar_SA. -->

@@ -3,38 +3,38 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relay Queue Drift"
+title: "Deriva de cola de relé"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Queue Drift
+# Deriva de cola de relé
 
-ES LOC HOLD: Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.
+La comunicación demorada es peligrosa porque puede seguir siendo exacta en el momento equivocado. Una advertencia del portador puede describir una válvula real, una fuga real y una ruta real que ya cambió bajo presión. El jugador compara edad del paquete con evidencia local antes de obedecer.
 
 ## Scanner
 
-ES LOC HOLD: The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
+El sello de relé es más viejo que la fuga que nombra; la instrucción era cierta para una sala que ya no existe.
 
 ## Terminal
 
-ES LOC HOLD: QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
+DERIVA DE COLA: edad del paquete supera validez de ruta. Evidencia local supera instrucción del portador hasta una ventana de relé nueva.
 
 ## Audio
 
-ES LOC HOLD: The message is correct. That is the problem.
+El mensaje es correcto. Ese es el problema.
 
 ## Field Note
 
-ES LOC HOLD: A late truth can still kill.
+Una verdad tardía todavía puede matar.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/es_ES. -->

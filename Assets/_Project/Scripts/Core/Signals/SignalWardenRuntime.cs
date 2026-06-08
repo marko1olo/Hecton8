@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
@@ -29,6 +30,8 @@ namespace Hecton8.Core.Contracts.Signals
         private const int DefaultFatalPriority = 255;
         private const int DefaultAudioPriority = 40;
         private const int DefaultVfxPriority = 10;
+        private const int DefaultToxicityExposurePriority = 100;
+        private const int DefaultToxicBioluminescencePriority = 20;
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
 
@@ -72,6 +75,7 @@ namespace Hecton8.Core.Contracts.Signals
             UpsertPriority(ComputeLabelHash(nameof(WakeRequestSignal)), DefaultCombatPriority);
             UpsertPriority(ComputeLabelHash(nameof(CrashTelemetrySignal)), DefaultCombatPriority);
             UpsertPriority(ComputeLabelHash(nameof(InputStateSignal)), DefaultCombatPriority);
+            UpsertPriority(ToxicityExposureSignal.LaneHash, DefaultToxicityExposurePriority);
             UpsertPriority(ComputeLabelHash(nameof(AcousticPingSignal)), DefaultAudioPriority);
             UpsertPriority(ComputeLabelHash(nameof(MovementAcousticSignal)), DefaultAudioPriority);
             UpsertPriority(ComputeLabelHash(nameof(BulletTimeVisualSignal)), DefaultVfxPriority);
@@ -79,6 +83,7 @@ namespace Hecton8.Core.Contracts.Signals
             UpsertPriority(ComputeLabelHash(nameof(DebrisSpawnSignal)), DefaultVfxPriority);
             UpsertPriority(ComputeLabelHash(nameof(MockPlayerFootstepSignal)), DefaultVfxPriority);
             UpsertPriority(ComputeLabelHash(nameof(VisualFlareSignal)), DefaultVfxPriority);
+            UpsertPriority(ToxicBioluminescenceSignal.LaneHash, DefaultToxicBioluminescencePriority);
             _fallbackUsed = 1;
         }
 
@@ -248,6 +253,17 @@ namespace Hecton8.Core.Contracts.Signals
         private const int MaxProfiles = 64;
         private const int CsvScratchBytes = 8192;
         private const float DefaultCoalescingRadiusMeters = 1f;
+        private const int DefaultToxicityExposurePriority = 100;
+        private const int DefaultToxicBioluminescenceMinFrameSignals = 4;
+        private const int DefaultToxicBioluminescencePriority = 20;
+        private const int DefaultSignalWardenMockDamageMinFrameSignals = 8;
+        private const int DefaultSignalWardenMockDamageMaxFrameSignals = 64;
+        private const float DefaultSignalWardenMockDamageCoalescingRadiusMeters = 0.5f;
+        private const int DefaultSignalWardenMockDamagePriority = 100;
+        private const int DefaultMockPlayerFootstepMinFrameSignals = 4;
+        private const int DefaultMockPlayerFootstepMaxFrameSignals = 48;
+        private const float DefaultMockPlayerFootstepCoalescingRadiusMeters = 1.5f;
+        private const int DefaultMockPlayerFootstepPriority = 10;
         private const BufferID ProfileBufferId = (BufferID)73040;
         private const BufferID ProfileCountBufferId = (BufferID)73041;
 
@@ -295,6 +311,30 @@ namespace Hecton8.Core.Contracts.Signals
             count[0] = 0;
             UpsertProfile(ComputeLabelHash(nameof(AcousticPingSignal)), 16, 128, DefaultCoalescingRadiusMeters, 40);
             UpsertProfile(ComputeLabelHash(nameof(CombatDamageSignal)), 16, 128, DefaultCoalescingRadiusMeters, 100);
+            UpsertProfile(
+                ComputeLabelHash(nameof(SignalWardenMockDamageSignal)),
+                DefaultSignalWardenMockDamageMinFrameSignals,
+                DefaultSignalWardenMockDamageMaxFrameSignals,
+                DefaultSignalWardenMockDamageCoalescingRadiusMeters,
+                DefaultSignalWardenMockDamagePriority);
+            UpsertProfile(
+                ComputeLabelHash(nameof(MockPlayerFootstepSignal)),
+                DefaultMockPlayerFootstepMinFrameSignals,
+                DefaultMockPlayerFootstepMaxFrameSignals,
+                DefaultMockPlayerFootstepCoalescingRadiusMeters,
+                DefaultMockPlayerFootstepPriority);
+            UpsertProfile(
+                ToxicityExposureSignal.LaneHash,
+                ToxicityExposureSignal.LowTierFrameSignals,
+                ToxicityExposureSignal.MaxFrameSignals,
+                DefaultCoalescingRadiusMeters,
+                DefaultToxicityExposurePriority);
+            UpsertProfile(
+                ToxicBioluminescenceSignal.LaneHash,
+                DefaultToxicBioluminescenceMinFrameSignals,
+                ToxicBioluminescenceSignal.MaxFrameSignals,
+                DefaultCoalescingRadiusMeters,
+                DefaultToxicBioluminescencePriority);
         }
 
 #if UNITY_EDITOR
@@ -616,6 +656,46 @@ namespace Hecton8.Core.Contracts.Signals
             return laneHash != 0u;
         }
 
+        /// <summary>Editor/test probe for source-data lane ids without mutating the vault-backed profile table.</summary>
+        public static bool TryResolveLaneHashForEditor(string name, out uint laneHash)
+        {
+            laneHash = 0u;
+            if (string.IsNullOrEmpty(name) || name.Length > 128)
+                return false;
+
+            Span<byte> bytes = stackalloc byte[name.Length];
+            for (int i = 0; i < name.Length; i++)
+            {
+                char c = name[i];
+                if (c > 127)
+                    return false;
+
+                bytes[i] = (byte)c;
+            }
+
+            return TryResolveLaneHash(Trim(bytes), out laneHash);
+        }
+
+        /// <summary>Editor/test probe for source-data radius fields without mutating the vault-backed profile table.</summary>
+        public static bool TryParseRadiusForEditor(string text, out float radius)
+        {
+            radius = 0f;
+            if (string.IsNullOrEmpty(text) || text.Length > 128)
+                return false;
+
+            Span<byte> bytes = stackalloc byte[text.Length];
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c > 127)
+                    return false;
+
+                bytes[i] = (byte)c;
+            }
+
+            return TryParseFloat(Trim(bytes), out radius);
+        }
+
         private static int IndexOf(ReadOnlySpan<byte> bytes, byte target, int start)
         {
             if (start < 0)
@@ -678,7 +758,20 @@ namespace Hecton8.Core.Contracts.Signals
                 else
                     return false;
 
-                value = hex ? (value << 4) | digit : (value * 10u) + digit;
+                if (hex)
+                {
+                    if (value > 0x0FFFFFFFu)
+                        return false;
+
+                    value = (value << 4) | digit;
+                }
+                else
+                {
+                    if (value > (uint.MaxValue - digit) / 10u)
+                        return false;
+
+                    value = (value * 10u) + digit;
+                }
             }
 
             return true;
@@ -709,11 +802,17 @@ namespace Hecton8.Core.Contracts.Signals
                 uint digit = (uint)(c - (byte)'0');
                 if (afterPeriod)
                 {
+                    if (fraction > (uint.MaxValue - digit) / 10u || fractionScale > uint.MaxValue / 10u)
+                        return false;
+
                     fraction = (fraction * 10u) + digit;
                     fractionScale *= 10u;
                 }
                 else
                 {
+                    if (whole > (uint.MaxValue - digit) / 10u)
+                        return false;
+
                     whole = (whole * 10u) + digit;
                 }
             }
@@ -1194,7 +1293,20 @@ namespace Hecton8.Core.Contracts.Signals
                 else
                     return false;
 
-                value = hex ? (value << 4) | digit : (value * 10u) + digit;
+                if (hex)
+                {
+                    if (value > 0x0FFFFFFFu)
+                        return false;
+
+                    value = (value << 4) | digit;
+                }
+                else
+                {
+                    if (value > (uint.MaxValue - digit) / 10u)
+                        return false;
+
+                    value = (value * 10u) + digit;
+                }
             }
 
             return true;
@@ -3814,6 +3926,8 @@ namespace Hecton8.Core.Contracts.Signals
         public static void PreserveGenerics()
         {
             PreserveLane<CombatDamageSignal>();
+            PreserveLane<ToxicityExposureSignal>();
+            PreserveLane<ToxicBioluminescenceSignal>();
             PreserveLane<AcousticPingSignal>();
             PreserveLane<SignalWardenMockDamageSignal>();
             PreserveLane<MockPlayerFootstepSignal>();

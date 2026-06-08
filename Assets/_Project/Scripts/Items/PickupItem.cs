@@ -35,6 +35,7 @@ namespace Hecton8.Interaction
         private static IAmbientCurrentReadModel s_ambientCurrentReadModel;
         private static IObjectPoolService s_objectPool;
         private static ILocalizationTextReadModel s_localizationText;
+        private static WorldStateManager s_worldStateManager;
         private static readonly StaticRegistryHotSwapListener s_hotSwapListener = new StaticRegistryHotSwapListener();
         private static bool s_hotSwapListenerRegistered;
 
@@ -50,6 +51,7 @@ namespace Hecton8.Interaction
             s_ambientCurrentReadModel = null;
             s_objectPool = null;
             s_localizationText = null;
+            s_worldStateManager = null;
             s_hotSwapListenerRegistered = false;
         }
 
@@ -76,6 +78,8 @@ namespace Hecton8.Interaction
         [Header("World State")]
         [Tooltip("Persist this authored world pickup into WorldStateManager depletion storage.")]
         [SerializeField] private bool persistWorldState = true;
+        [Tooltip("Stable authored pickup identity. Scene instances auto-fill this in editor so hierarchy/name cleanup cannot respawn collected pickups.")]
+        [SerializeField] private string stableWorldStateId = string.Empty;
 
         private InteractionHighlighter _highlighter;
         private Rigidbody _rigidbody;
@@ -103,11 +107,15 @@ namespace Hecton8.Interaction
         private bool _worldStateIdentityAvailable;
         private long _worldStatePersistenceKey;
         private long _worldStateChunkKey;
+        private bool _legacyWorldStateIdentityAvailable;
+        private long _legacyWorldStatePersistenceKey;
         private Vector3 _worldStateAnchorPosition;
         private bool _isPooledRuntimeInstance;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
         private bool _registeredToWorldStateRegistry;
+        private bool _worldStateSuppressedByPersistence;
+        private int _worldStateRestoreQuantity;
         private ulong _geneticsMask;
         private ushort _qualityMilli = DefaultQualityMilli;
         private bool _lootMagnetMotionVectorForced;
@@ -194,6 +202,8 @@ namespace Hecton8.Interaction
         {
             itemData = data;
             quantity = Mathf.Max(1, itemQuantity);
+            _worldStateRestoreQuantity = quantity;
+            _worldStateSuppressedByPersistence = false;
             _geneticsMask = geneticsMask;
             _qualityMilli = NormalizeQualityMilli(qualityMilli);
             RefreshCachedItemHash();
@@ -254,6 +264,7 @@ namespace Hecton8.Interaction
                 _defaultAngularDamping = _rigidbody.angularDamping;
             }
             RefreshCachedItemHash();
+            CaptureWorldStateRestoreBaseline();
             ApplyPhysicalMetadata();
             RebuildInteractTextCache();
             RefreshColdRegistryReferences();
@@ -293,12 +304,15 @@ namespace Hecton8.Interaction
 
             CaptureWorldStateIdentityCold();
 
-            WorldStateManager worldStateManager = _worldStateManager;
+            WorldStateManager worldStateManager = ResolveWorldStateManager();
             if (_worldStateIdentityAvailable &&
                 worldStateManager != null &&
-                worldStateManager.IsPickupDepleted(_worldStatePersistenceKey))
+                worldStateManager.TryResolveOrPromoteCollectedPickup(
+                    _worldStatePersistenceKey,
+                    _worldStateChunkKey,
+                    _legacyWorldStateIdentityAvailable ? _legacyWorldStatePersistenceKey : 0L))
             {
-                gameObject.SetActive(false);
+                ApplyWorldStateSuppression();
                 return;
             }
 
@@ -322,7 +336,8 @@ namespace Hecton8.Interaction
             TryUnregisterSlowTick();
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
-            UnregisterWorldStateRegistry();
+            if (!ShouldRetainWorldStateRegistryWhileInactive())
+                UnregisterWorldStateRegistry();
             ClearPersistentWorldRecord();
             RestoreDamping();
             RestoreLootMagnetRuntimeState();
@@ -415,6 +430,14 @@ namespace Hecton8.Interaction
         {
             persistenceKey = _worldStatePersistenceKey;
             chunkKey = _worldStateChunkKey;
+            return _worldStateIdentityAvailable;
+        }
+
+        internal bool TryGetWorldStatePersistenceIdentity(out long persistenceKey, out long chunkKey, out long legacyPersistenceKey)
+        {
+            persistenceKey = _worldStatePersistenceKey;
+            chunkKey = _worldStateChunkKey;
+            legacyPersistenceKey = _legacyWorldStateIdentityAvailable ? _legacyWorldStatePersistenceKey : 0L;
             return _worldStateIdentityAvailable;
         }
 
@@ -549,6 +572,7 @@ namespace Hecton8.Interaction
 
             if (publishAcquiredSignal)
                 PublishItemAcquiredSignal(attempt.AddedQuantity, interactor);
+            PublishItemLifecycleCollectedSignal(attempt.AddedQuantity, interactor);
 
             quantity = attempt.RejectedQuantity;
             if (quantity > 0)
@@ -559,7 +583,10 @@ namespace Hecton8.Interaction
             }
 
             if (_worldStateIdentityAvailable)
-                _worldStateManager?.RegisterCollectedPickup(_worldStatePersistenceKey, _worldStateChunkKey);
+            {
+                ResolveWorldStateManager()?.RegisterCollectedPickup(_worldStatePersistenceKey, _worldStateChunkKey);
+                _worldStateSuppressedByPersistence = true;
+            }
 
             _persistentWorldRegistry?.MarkRecordCollected(_persistentWorldRecordIndex);
             ConsumeWorldProxy();
@@ -592,6 +619,24 @@ namespace Hecton8.Interaction
                 Frame = ResolveCurrentFrameId()
             };
             SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref s_x001PickupItemSignalPushDropCount);
+        }
+
+        private void PublishItemLifecycleCollectedSignal(int addedQuantity, Transform interactor)
+        {
+            if (itemData == null || addedQuantity <= 0)
+                return;
+
+            bool hasInteractorPosition = interactor != null && IsFiniteVector(interactor.position);
+            ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(interactor.GetEntityId()) : 0ul;
+            Vector3 runtimePosition = hasInteractorPosition ? interactor.position : transform.position;
+            bool hasRuntimePosition = hasInteractorPosition || IsFiniteVector(runtimePosition);
+
+            ItemLifecycleSignalRoute.TryPublishCollected(
+                itemData,
+                addedQuantity,
+                interactorEntityId,
+                runtimePosition,
+                hasRuntimePosition);
         }
 
         private static uint ResolveCurrentFrameId()
@@ -691,6 +736,9 @@ namespace Hecton8.Interaction
             if (_registeredToWorldStateRegistry)
                 return;
 
+            if (!ShouldRetainWorldStateRegistryWhileInactive())
+                return;
+
             _worldStateRegistry.Register(this);
             _registeredToWorldStateRegistry = true;
         }
@@ -704,13 +752,53 @@ namespace Hecton8.Interaction
             _registeredToWorldStateRegistry = false;
         }
 
+        private bool ShouldRetainWorldStateRegistryWhileInactive()
+        {
+            return persistWorldState && !_isPooledRuntimeInstance;
+        }
+
+        internal void ApplyWorldStateSuppression()
+        {
+            if (!_worldStateIdentityAvailable)
+                CaptureWorldStateIdentityCold();
+
+            CaptureWorldStateRestoreBaseline();
+            _worldStateSuppressedByPersistence = true;
+            if (gameObject.activeSelf)
+                gameObject.SetActive(false);
+        }
+
+        internal bool TryRestoreWorldStateSuppression()
+        {
+            if (!_worldStateSuppressedByPersistence)
+                return false;
+
+            _worldStateSuppressedByPersistence = false;
+            if (_worldStateRestoreQuantity > 0)
+                quantity = _worldStateRestoreQuantity;
+
+            RebuildInteractTextCache();
+            RestoreLootMagnetRuntimeState();
+            if (!gameObject.activeSelf)
+                gameObject.SetActive(true);
+
+            return true;
+        }
+
+        private void CaptureWorldStateRestoreBaseline()
+        {
+            if (!ShouldRetainWorldStateRegistryWhileInactive() || quantity <= 0)
+                return;
+
+            _worldStateRestoreQuantity = quantity;
+        }
+
         private void ConsumeWorldProxy()
         {
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
 
-            IObjectPoolService pool = s_objectPool;
-            if (pool != null && _isPooledRuntimeInstance)
+            if (_isPooledRuntimeInstance && TryResolveCachedObjectPool(out IObjectPoolService pool))
             {
                 pool.Despawn(gameObject);
                 return;
@@ -862,6 +950,8 @@ namespace Hecton8.Interaction
                 _worldStateIdentityAvailable = false;
                 _worldStatePersistenceKey = 0L;
                 _worldStateChunkKey = 0L;
+                _legacyWorldStateIdentityAvailable = false;
+                _legacyWorldStatePersistenceKey = 0L;
                 return;
             }
 
@@ -872,15 +962,28 @@ namespace Hecton8.Interaction
                                                transform,
                                                gameObject.scene,
                                                itemData,
+                                               stableWorldStateId,
                                                _worldStateAnchorPosition,
                                                out _worldStatePersistenceKey,
                                                out _worldStateChunkKey);
 
             if (_worldStateIdentityAvailable)
+            {
+                _legacyWorldStateIdentityAvailable = WorldPickupStateCodec.TryBuildLegacyIdentity(
+                    transform,
+                    gameObject.scene,
+                    itemData,
+                    _worldStateAnchorPosition,
+                    out _legacyWorldStatePersistenceKey,
+                    out long _) &&
+                    _legacyWorldStatePersistenceKey != _worldStatePersistenceKey;
                 return;
+            }
 
             _worldStatePersistenceKey = 0L;
             _worldStateChunkKey = 0L;
+            _legacyWorldStateIdentityAvailable = false;
+            _legacyWorldStatePersistenceKey = 0L;
         }
 
         private void InvalidateWorldStateIdentity()
@@ -889,8 +992,119 @@ namespace Hecton8.Interaction
             _worldStateIdentityAvailable = false;
             _worldStatePersistenceKey = 0L;
             _worldStateChunkKey = 0L;
+            _legacyWorldStateIdentityAvailable = false;
+            _legacyWorldStatePersistenceKey = 0L;
             _worldStateAnchorPosition = default;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            InvalidateWorldStateIdentity();
+
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            if (!persistWorldState ||
+                gameObject == null ||
+                !gameObject.scene.IsValid() ||
+                string.IsNullOrEmpty(gameObject.scene.path) ||
+                !gameObject.scene.path.EndsWith(".unity", StringComparison.OrdinalIgnoreCase) ||
+                TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+            {
+                return;
+            }
+
+            if (itemData == null || string.IsNullOrWhiteSpace(itemData.PersistentId))
+            {
+                UnityEngine.Debug.LogError(
+                    "[PickupItem] Persistent scene pickup cannot seed stableWorldStateId without item persistent ID.",
+                    this);
+                return;
+            }
+
+            string normalizedStableId = string.IsNullOrWhiteSpace(stableWorldStateId)
+                ? string.Empty
+                : stableWorldStateId.Trim();
+            bool stableIdChanged = false;
+            if (string.IsNullOrEmpty(normalizedStableId))
+            {
+                UnityEditor.Undo.RecordObject(this, "Seed World Pickup Stable ID");
+                normalizedStableId = Guid.NewGuid().ToString("N");
+                stableWorldStateId = normalizedStableId;
+                stableIdChanged = true;
+            }
+            else if (!string.Equals(stableWorldStateId, normalizedStableId, StringComparison.Ordinal))
+            {
+                UnityEditor.Undo.RecordObject(this, "Trim World Pickup Stable ID");
+                stableWorldStateId = normalizedStableId;
+                stableIdChanged = true;
+            }
+
+            for (int attempt = 0; attempt < 8 && HasDuplicateStableWorldStateIdInOpenScenes(normalizedStableId); attempt++)
+            {
+                if (!stableIdChanged)
+                    UnityEditor.Undo.RecordObject(this, "Seed World Pickup Stable ID");
+
+                normalizedStableId = Guid.NewGuid().ToString("N");
+                stableWorldStateId = normalizedStableId;
+                stableIdChanged = true;
+            }
+
+            if (HasDuplicateStableWorldStateIdInOpenScenes(normalizedStableId))
+            {
+                UnityEngine.Debug.LogError(
+                    $"[PickupItem] Persistent pickup still has duplicate stableWorldStateId after repair attempts: {normalizedStableId}",
+                    this);
+            }
+
+            if (stableIdChanged)
+            {
+                UnityEditor.EditorUtility.SetDirty(this);
+                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
+            }
+        }
+
+        private bool HasDuplicateStableWorldStateIdInOpenScenes(string normalizedStableId)
+        {
+            if (string.IsNullOrEmpty(normalizedStableId))
+                return false;
+
+            string scenePath = gameObject.scene.path;
+            PickupItem[] pickups = UnityEngine.Object.FindObjectsByType<PickupItem>(
+                UnityEngine.FindObjectsInactive.Include,
+                UnityEngine.FindObjectsSortMode.None);
+
+            for (int i = 0; i < pickups.Length; i++)
+            {
+                PickupItem candidate = pickups[i];
+                if (candidate == null || ReferenceEquals(candidate, this))
+                    continue;
+
+                if (!candidate.gameObject.scene.IsValid() ||
+                    !candidate.persistWorldState ||
+                    !string.Equals(candidate.gameObject.scene.path, scenePath, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (candidate.TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+                    continue;
+
+                string candidateStableId = string.IsNullOrWhiteSpace(candidate.stableWorldStateId)
+                    ? string.Empty
+                    : candidate.stableWorldStateId.Trim();
+                if (string.Equals(candidateStableId, normalizedStableId, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
+#endif
 
         private void RefreshPoolMarkerCacheCold()
         {
@@ -900,15 +1114,51 @@ namespace Hecton8.Interaction
         private void RefreshColdRegistryReferences()
         {
             _worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
+            s_worldStateManager = _worldStateManager;
             s_playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
             s_playerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
             s_physicsService = Hecton8.Core.GlobalRegistry.Physics;
             s_physicsStateEvents = Hecton8.Core.GlobalRegistry.PhysicsStateEvents;
             s_ambientCurrentReadModel = Hecton8.Core.GlobalRegistry.AmbientCurrent;
-            s_objectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             s_localizationText = Hecton8.Core.GlobalRegistry.LocalizationText;
             TryRegisterStaticHotSwapListener();
             RefreshCachedPlayerMovement();
+        }
+
+        private static void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                s_objectPool = pool;
+                return;
+            }
+
+            s_objectPool = null;
+        }
+
+        private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = s_objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                s_objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            s_objectPool = null;
+            pool = null;
+            return false;
         }
 
         private static void TryRegisterStaticHotSwapListener()
@@ -916,6 +1166,7 @@ namespace Hecton8.Interaction
             if (s_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
+            Hecton8.Core.GlobalRegistry.TryUnregisterHotSwapListener(s_hotSwapListener);
             s_hotSwapListenerRegistered = Hecton8.Core.GlobalRegistry.TryRegisterHotSwapListener(s_hotSwapListener);
         }
 
@@ -944,18 +1195,34 @@ namespace Hecton8.Interaction
                         s_ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
                         break;
                     case GlobalRegistryServiceSlot.ObjectPool:
-                        s_objectPool = currentService as IObjectPoolService;
+                        CacheObjectPoolService(currentService as ObjectPoolManager);
                         break;
                     case GlobalRegistryServiceSlot.LocalizationRuntime:
                         s_localizationText = currentService as ILocalizationTextReadModel;
+                        break;
+                    case GlobalRegistryServiceSlot.WorldStateRuntime:
+                        s_worldStateManager = currentService as WorldStateManager;
                         break;
                 }
             }
         }
 
+        private WorldStateManager ResolveWorldStateManager()
+        {
+            WorldStateManager manager = s_worldStateManager;
+            if (manager == null)
+            {
+                manager = Hecton8.Core.GlobalRegistry.WorldState;
+                s_worldStateManager = manager;
+            }
+
+            _worldStateManager = manager;
+            return manager;
+        }
+
         private void RefreshCachedPlayerMovement()
         {
-            WorldStateManager worldStateManager = _worldStateManager;
+            WorldStateManager worldStateManager = ResolveWorldStateManager();
             Transform playerTransform = worldStateManager != null ? worldStateManager.PlayerTransform : null;
             if (playerTransform == null)
             {

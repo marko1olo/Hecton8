@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Sensor Tagged Fauna Codex Card"
+title: "بطاقة كودكس فونا ذات وسم حساسي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Sensor Tagged Fauna Codex Card
+# بطاقة كودكس فونا ذات وسم حساسي
 
-AR LOC HOLD: Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.
+الفونا ذات الوسوم الحساسية من أوضح الطرق لرؤية بيئة الآلة في HECTON-8 من دون تحويل المحيط إلى عقل. قامت Deep Reach بوسم حيوانات وshell colonies وأنواع مسار لدراسة الهجرة وتحمل الضغط والتلوث. بعد سنوات، صارت بعض الوسوم مدفونة في نسيج ندبي، أو تجاويف صدفة، أو أغطية معدنية، أو حلقات نمو. ما زال Atlas يستطيع سماع عودة ضعيفة وقد يعامل الجسد المتحرك كمعلم تشخيصي: pressure packet، تلميح تلوث، occupancy مسار، مرساة drone sweep، شاهد صيانة قديم. هذا لا يجعل الحيوان مطيعا. قد يرعى أو يهرب أو يصطاد أو يذعر لأسباب عادية، بينما يجعل tag طريقه مهما لبنية تحتية مكسورة. لا تقرأ حركة tag كنية. لا تقطع tag حيا إلا إذا كان ثمن المسار يستحق القسوة والبيانات الملوثة. السؤال النافع ليس: ماذا يريد؟ بل: أي نظام ما زال يصدق أن هذه الندبة sensor؟
 
 ## Scanner
 
-AR LOC HOLD: Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+فونا ذات وسم حساسي. وسم biometal قديم من Deep Reach مغروس في ندبة أو صدفة أو حلقة نمو. صدى مسار Atlas ضعيف؛ نية الحيوان غير مؤكدة.
 
 ## Terminal
 
-AR LOC HOLD: SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+عينة / فونا ذات وسم حساسي / الدور: حامل telemetry حي، معلم survey قديم، ملوث repair-route / قراءة آمنة: نبضة tag قديمة، نمو نسيج ندبي، حركة غير مأمورة / ارفض: اعتبار السلوك طاعة، قطع tag من جسم حي، الثقة في occupancy echo / ملاحظة مسار: يستطيع tag أن يبلغ عن الغرفة التي عبرها الحيوان، لا عن سبب عبوره.
 
 ## Audio
 
-AR LOC HOLD: It is not obeying. It is being used.
+إنه لا يطيع Atlas. إنه يحمل سؤالا قديما ما زال Atlas يطرحه.
 
 ## Field Note
 
-AR LOC HOLD: Do not write as possession. It is damaged maintenance using animal movement.
+الوسم ندبة، لا مقود. قد يبلغ عنك، أو يضعك في مكان خاطئ، أو يوقظ شيئا لم ير الحيوان أصلا.
 
 <!-- In-Game Wiki; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/ar_SA. -->

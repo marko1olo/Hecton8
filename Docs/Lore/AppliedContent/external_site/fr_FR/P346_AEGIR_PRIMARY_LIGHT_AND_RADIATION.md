@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Aegir Primary Light and Radiation"
+title: "Lumière primaire et radiation d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Aegir Primary Light and Radiation
+# Lumière primaire et radiation d'Aegir
 
-FR LOC HOLD: Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
-
-## Scanner
-
-FR LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
-
-## Terminal
-
-FR LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
-
-## Audio
-
-FR LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
-
-## Field Note
-
-FR LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir ne se lit jamais comme un noir vide. Sa primaire K pose une lumière ambrée sur les ponts, de longues ombres, et assez de flux pour faire dériver les instruments exposés si personne ne vérifie les ceintures. La géante gazeuse est la seconde horloge : les voies de magnétosphère durcissent, se calment, puis durcissent encore quand les lunes croisent charge et ombre. Deep Reach vendait ces nombres comme des fenêtres de travail. Les équipages ont appris la version utile : un ciel chaud peut cuire un joint bon marché, rendre un lien muet et facturer le secours à la minute.
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/fr_FR. -->

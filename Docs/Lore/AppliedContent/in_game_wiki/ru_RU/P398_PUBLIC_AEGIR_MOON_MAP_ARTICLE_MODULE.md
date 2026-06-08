@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Aegir Moon Route Map"
+title: "Маршрутная карта лун Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Aegir Moon Route Map
+# Маршрутная карта лун Aegir
 
-RU LOC HOLD: Aegir moon data is route data. HECTON-8 is one ocean moon inside a larger ladder of relay, radiation, scatter and tide constraints; the visible sky is part of navigation, not decoration.
+Данные по лунам Aegir являются маршрутными данными. HECTON-8 является игровой океанической луной, но стоит внутри более крупной лестницы relay, радиации, рассеяния и приливных ограничений. Видимое небо участвует в том, будет ли сигнал спасения услышан, задержан, оценен, отклонен или физически невозможен.
 
 ## Scanner
 
-RU LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Системная карта. Луны Aegir задают relay timing, радиационное прикрытие, ледяное рассеяние, приливное давление, полосы occultation, мертвые маяки и геометрию recovery.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+ПУБЛИЧНЫЙ АРХИВНЫЙ УЗЕЛ // ЛУННАЯ ЛЕСТНИЦА AEGIR. Названия лун являются маршрутными метками. Каждое тело меняет возраст сигнала, transfer risk, storm exposure, custody timing или надежность claim.
 
 ## Audio
 
-RU LOC HOLD: The map is why no one arrives the moment you ask.
+Карта объясняет, почему никто не приходит в тот момент, когда ты просишь.
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Заметка Marauder: отметь луну, потом отметь, что она делает с маршрутом.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/ru_RU. -->

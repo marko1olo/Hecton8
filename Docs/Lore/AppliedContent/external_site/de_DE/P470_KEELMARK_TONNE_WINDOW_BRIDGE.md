@@ -1,0 +1,34 @@
+---
+packet_id: P470_KEELMARK_TONNE_WINDOW_BRIDGE
+release_set_id: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
+article_id: applied_lore.keelmark_tonne_window_bridge
+unlock_id: unlock.keelmark_tonne_window_bridge
+poi_tags: poi.black_keel_contract_approach;poi.capsule_diagnostic
+biome_tags: biome.photic_shelf
+locale: de_DE
+surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Keelmark-Tonnefenster"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# Keelmark-Tonnefenster
+
+## Was der Eintrag beweist
+
+Keelmark beginnt den Operator als Massenproblem: 4,8 Tonnefenster-Äquivalent vor Sauerstoff, Wohlfahrt, Probenverwahrung und Beweispaket-Anpassungen.
+
+Ein Tonnefenster ist die wiederbringbare Masse, die Black Keel durch eine orbitale Gelegenheit heben darf, nachdem Treibstoff, Sturm, Quarantäne, Versicherung und Priorität bepreist sind. Keelmark Mutual macht den Spieler zuerst als Masse lesbar, erst später als Person. Jede gesicherte Probe, jedes Beweispaket, Sauerstoffschuld und Wohlfahrtsrider können die Zahl bewegen.
+
+KEELMARK MUTUAL FENSTERLEDGER // Grundpfand: 4,8 Tonnefenster-Äquivalent. Anpassungen können Sauerstoffrisiko, Wohlfahrtsanhang, Probenverwahrung, Beweispayload, Quarantänehalt und Carrier-Hebezuteilung umfassen. Dieses Ledger bepreist Bergung; es verspricht keine Rettung.
+
+## Wie der Spieler es liest
+
+Lies 4,8 nicht nur als Geld. Es ist das Gewicht deiner nächsten Chance. Lies es als Regel für Beweisführung, nicht als Versprechen, dass Hilfe bereits unterwegs ist.
+
+<!-- External Site; generated from P470_KEELMARK_TONNE_WINDOW_BRIDGE/de_DE. -->

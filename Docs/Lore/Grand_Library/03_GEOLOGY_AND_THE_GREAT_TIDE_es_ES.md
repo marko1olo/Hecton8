@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # GEOLOGÍA, PRESIÓN Y LA GRAN MAREA DE 2147
 
 > **Fuente:** Keelmark Loss Desk, Resumen de Denegación de Reclamación. Anexo Adjunto: Guía de Riesgos Batimétricos.  

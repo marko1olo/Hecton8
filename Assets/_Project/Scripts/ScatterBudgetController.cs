@@ -16,6 +16,7 @@ namespace Hecton8.World
         private const float DefaultDepthBandHysteresisMeters = 5f;
         private const float MinimumBudgetRefreshDepthDelta = 1f;
         private const float MinimumBudgetRefreshQualityDelta = 0.025f;
+        private const float DefaultWaterSurfaceLevelY = 14.02f;
 
         internal static ScatterBudgetController ActiveRuntimeInstance { get; private set; }
         internal static event System.Action<ScatterBudgetController> ActiveRuntimeInstanceChanged;
@@ -156,6 +157,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            PublishActiveRuntimeInstance();
             if (Application.isPlaying)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
 
@@ -176,6 +178,9 @@ namespace Hecton8.World
             TryUnregister();
             UnregisterRuntimeDependencyListeners();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
+
+            if (ActiveRuntimeInstance == this)
+                ClearActiveRuntimeInstance();
         }
 
         private void OnDestroy()
@@ -232,21 +237,25 @@ namespace Hecton8.World
                     RefreshPlayerFromCachedContext();
                 }
             }
-            else if (serviceSlot == GlobalRegistryServiceSlot.MapMagicRuntime)
+            else if (serviceSlot == GlobalRegistryServiceSlot.MapMagicRuntime ||
+                     serviceSlot == GlobalRegistryServiceSlot.TerrainProviderRuntime)
             {
                 if (previousService != null && ReferenceEquals(mapMagicBridge, previousService))
                     mapMagicBridge = null;
 
-                if (currentService is MapMagicBridge currentMapMagic)
-                    mapMagicBridge = currentMapMagic;
+                mapMagicBridge = currentService as MapMagicBridge;
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+
+                if (isActiveAndEnabled)
+                    ApplyCurrentBudget(force: true);
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.ScavengePopulatorRuntime)
             {
                 if (previousService != null && ReferenceEquals(scavengePopulator, previousService))
                     scavengePopulator = null;
 
-                if (currentService is ScavengePopulator currentScavenge)
-                    scavengePopulator = currentScavenge;
+                scavengePopulator = currentService as ScavengePopulator;
+                WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);
             }
         }
 
@@ -266,7 +275,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }
@@ -523,17 +532,29 @@ namespace Hecton8.World
 
             RefreshPlayerFromCachedContext();
 
-            if (force || mapMagicBridge == null)
-                mapMagicBridge = GlobalRegistry.MapMagic;
+            if (force || mapMagicBridge == null || !mapMagicBridge.isActiveAndEnabled)
+            {
+                mapMagicBridge = null;
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+            }
 
-            if (force || scavengePopulator == null)
-                scavengePopulator = GlobalRegistry.ScavengePopulator;
+            if (force || scavengePopulator == null || !scavengePopulator.IsRuntimeOwnerUsable)
+            {
+                scavengePopulator = null;
+                WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);
+            }
 
-            if (force || proximityColliderSystem == null)
-                proximityColliderSystem = ProximityColliderSystem.ActiveRuntimeInstance;
+            if (force || proximityColliderSystem == null || !proximityColliderSystem.isActiveAndEnabled)
+            {
+                proximityColliderSystem = null;
+                WorldRuntimeReferenceUtility.TryResolveProximityColliderSystem(ref proximityColliderSystem);
+            }
 
-            if (force || biomeSamplerCache == null)
-                biomeSamplerCache = BiomeSamplerCache.ActiveRuntimeInstance;
+            if (force || biomeSamplerCache == null || !biomeSamplerCache.isActiveAndEnabled)
+            {
+                biomeSamplerCache = null;
+                WorldRuntimeReferenceUtility.TryResolveBiomeSamplerCache(ref biomeSamplerCache);
+            }
         }
 
         private void RefreshPlayerFromCachedContext()
@@ -606,11 +627,36 @@ namespace Hecton8.World
                 return true;
             }
 
+            if (mapMagicBridge == null || !mapMagicBridge.isActiveAndEnabled)
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+
             if (playerTransform == null || mapMagicBridge == null || !mapMagicBridge.IsAvailable)
                 return false;
 
-            depth = Mathf.Max(0f, mapMagicBridge.WaterSurfaceLevel - playerTransform.position.y);
+            depth = Mathf.Max(0f, ResolveWaterSurfaceLevel() - playerTransform.position.y);
             return true;
+        }
+
+        private float ResolveWaterSurfaceLevel()
+        {
+            if (mapMagicBridge != null && TryResolveWaterSurfaceLevel(mapMagicBridge.WaterSurfaceLevel, out float waterSurfaceLevel))
+                return waterSurfaceLevel;
+
+            return DefaultWaterSurfaceLevelY;
+        }
+
+        private static bool TryResolveWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
+        {
+            if (float.IsFinite(candidateWaterSurfaceLevel) &&
+                Mathf.Abs(candidateWaterSurfaceLevel) > 0.0001f &&
+                Mathf.Abs(candidateWaterSurfaceLevel) <= 1000f)
+            {
+                waterSurfaceLevel = candidateWaterSurfaceLevel;
+                return true;
+            }
+
+            waterSurfaceLevel = DefaultWaterSurfaceLevelY;
+            return false;
         }
 
         private void ApplyChunkProfileDefaults()

@@ -225,12 +225,46 @@ namespace Hecton8.Economy
 
         internal static bool TryBuildRecycleYieldSnapshot(ItemData sourceItem, ResourceStack[] destination, out int resolvedCount)
         {
+            uint unusedOverlayOwnerHash;
+            return TryBuildRecycleYieldSnapshot(sourceItem, destination, out resolvedCount, out unusedOverlayOwnerHash);
+        }
+
+        internal static bool TryBuildRecycleYieldSnapshot(
+            ItemData sourceItem,
+            ResourceStack[] destination,
+            out int resolvedCount,
+            out uint overlayOwnerHash)
+        {
+            bool unusedRegisteredOverlay;
+            return TryBuildRecycleYieldSnapshot(
+                sourceItem,
+                destination,
+                out resolvedCount,
+                out overlayOwnerHash,
+                out unusedRegisteredOverlay);
+        }
+
+        internal static bool TryBuildRecycleYieldSnapshot(
+            ItemData sourceItem,
+            ResourceStack[] destination,
+            out int resolvedCount,
+            out uint overlayOwnerHash,
+            out bool usedRegisteredOverlay)
+        {
             resolvedCount = 0;
+            overlayOwnerHash = 0u;
+            usedRegisteredOverlay = false;
             if (sourceItem == null || destination == null || destination.Length == 0)
                 return false;
 
-            if (RecyclingRegistry.TryGetYield(unchecked((uint)sourceItem.PersistentHashId), out ResourceStack[] registeredYield))
+            if (RecyclingRegistry.TryGetYield(
+                    unchecked((uint)sourceItem.PersistentHashId),
+                    out ResourceStack[] registeredYield,
+                    out overlayOwnerHash))
+            {
+                usedRegisteredOverlay = true;
                 return CopyYieldSnapshotNonAlloc(registeredYield, destination, out resolvedCount);
+            }
 
             RecipeData recipe;
             if (!Fabricator.TryResolveRecipeForResultItem(sourceItem, out recipe) ||

@@ -256,8 +256,7 @@ namespace Hecton8.World
             if (_pendingPoolDespawn)
             {
                 _pendingPoolDespawn = false;
-                IObjectPoolService poolManager = _objectPool;
-                if (poolManager != null)
+                if (TryResolveCachedObjectPool(out IObjectPoolService poolManager))
                     poolManager.Despawn(gameObject);
             }
         }
@@ -332,6 +331,7 @@ namespace Hecton8.World
             _disintegrating = false;
             DisableSnagJoints();
             TryUnregisterScavengerHost();
+            _sargassumDrag = null;
             UpdateConsumedScale();
 
             if (siltTrail != null)
@@ -347,6 +347,7 @@ namespace Hecton8.World
             TryUnregister();
             TryUnregisterHotSwapListener();
             HectonFloatingOrigin.UnregisterListener(this);
+            _sargassumDrag = null;
         }
 
         private void OnDestroy()
@@ -356,6 +357,7 @@ namespace Hecton8.World
             TryUnregister();
             TryUnregisterHotSwapListener();
             HectonFloatingOrigin.UnregisterListener(this);
+            _sargassumDrag = null;
         }
 
         private void TryRegister()
@@ -445,9 +447,44 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _objectPool = GlobalRegistry.ObjectPoolService;
-            _sargassumDrag = SargassumGlobalDragManager.Instance;
+            CacheObjectPoolService(null);
+            WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDrag);
             _physicsService = GlobalRegistry.Physics;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                return;
+            }
+
+            _objectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -475,13 +512,14 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.SargassumDragRuntime:
                     if (_registeredScavengerHost && previousService is SargassumGlobalDragManager previousDrag)
                         previousDrag.UnregisterSettledCollapseChunk(this);
 
                     _sargassumDrag = currentService as SargassumGlobalDragManager;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDrag);
                     _registeredScavengerHost = false;
                     if (CanHostScavengers)
                         TryRegisterScavengerHost();
@@ -500,8 +538,14 @@ namespace Hecton8.World
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (!isActiveAndEnabled || shiftOffset.sqrMagnitude <= 0.000001f)
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             _snagConnectedAnchor -= shiftOffset;
             EnsureShiftBuffers();
@@ -560,8 +604,7 @@ namespace Hecton8.World
             if (siltTrail != null || authoredSiltTrailPrefab == null)
                 return;
 
-            IObjectPoolService poolManager = _objectPool;
-            if (poolManager == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService poolManager))
                 return;
 
             GameObject instance = poolManager.Spawn(authoredSiltTrailPrefab, transform.position, transform.rotation, allowExpand: false);
@@ -601,7 +644,7 @@ namespace Hecton8.World
             _pooledSiltTrailInstance = null;
             siltTrail = null;
 
-            IObjectPoolService poolManager = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService poolManager);
             if (poolManager != null)
                 poolManager.Despawn(instance);
             else
@@ -903,7 +946,7 @@ namespace Hecton8.World
 
         private void ExecuteDisintegrationPoolCommands()
         {
-            IObjectPoolService poolManager = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService poolManager);
             if (poolManager != null && scrapPickupPrefab != null)
             {
                 Vector3 origin = transform.position;

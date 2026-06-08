@@ -38,17 +38,15 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            MissionManager registered = GlobalRegistry.Missions;
-            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
         }
 
         private void OnEnable()
         {
-            TryRegisterService();
+            if (!TryRegisterService())
+                return;
+
             TryRegisterHotSwapListener();
             QuestEvents.Register(this);
         }
@@ -66,17 +64,13 @@ namespace Hecton8.Gameplay
             TryUnregisterService();
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
-                return;
+                return true;
 
-            MissionManager registered = GlobalRegistry.Missions;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
-                return;
-            }
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterMissionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Missions, this);
@@ -86,6 +80,8 @@ namespace Hecton8.Gameplay
                 _questManager = GlobalRegistry.QuestSystem;
                 RefreshMissionCacheFromQuestSystem();
             }
+
+            return _serviceRegistered;
         }
 
         private void TryUnregisterService()
@@ -100,6 +96,52 @@ namespace Hecton8.Gameplay
             _activeMissions.Clear();
             _completedMissions.Clear();
             _questManager = null;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            MissionManager registered = GlobalRegistry.Missions;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsMissionRuntimeUsable(registered))
+                {
+                    s_activeRuntime = registered;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntime, registered))
+                    s_activeRuntime = null;
+
+                GlobalRegistry.UnregisterMissionRuntime(registered);
+            }
+
+            MissionManager active = s_activeRuntime;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsMissionRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterMissionRuntime(active);
+                Destroy(gameObject);
+                return true;
+            }
+
+            s_activeRuntime = null;
+            if (ReferenceEquals(GlobalRegistry.Missions, active))
+                GlobalRegistry.UnregisterMissionRuntime(active);
+            return false;
+        }
+
+        private static bool IsMissionRuntimeUsable(MissionManager manager)
+        {
+            return !ReferenceEquals(manager, null) &&
+                   manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
         }
 
         public void StartMission(string missionId)

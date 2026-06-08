@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "Кузня тиску Оскара Нойманна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# Кузня тиску Оскара Нойманна
 
-UK LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
+Кузня тиску Оскара Нойманна фіксує виробничу логіку втечі з HECTON-8: гравець має зібрати шлях підйому з ремесла світу тиску, а не знайти умовний ключ від ракети.
 
 ## Scanner
 
-UK LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+Оскар Нойманн залишив ковальський рецепт затискних кілець, достатньо міцних, щоб підйомна колиска стала більшим, ніж труною.
 
 ## Terminal
 
-UK LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+НОЙМАНН, О. Ковальська нотатка: пил бароскла псує перший ущільнювач, якщо змішати його холодним. Нагріти кільце під тягою вентканалу, загартувати в соляному кожусі, потім випробувати подвійним навантаженням підйому.
 
 ## Audio
 
-UK LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+Запуск - це просто гермодвері, що рухаються вгору. Будуйте його як двері.
 
 ## Field Note
 
-UK LOC HOLD: The exit needs craft, not courage.
+Вихід потребує майстерності, а не хоробрості.
 
 <!-- External Site; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/uk_UA. -->

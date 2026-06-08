@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "דקדוק מפגש: ניווט בסנפירי תמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Brine Vane Navigation Encounter Grammar
+# דקדוק מפגש: ניווט בסנפירי תמלחת
 
-HE LOC HOLD: The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
+ניווט בסנפירי תמלחת עושה את קניוני HECTON-8 קריאים בלי חצים. המסלול כתוב בצפיפות, נזק ממברנה, עיוות sonar ומשמעת הציפה של השחקן.
 
 ## Scanner
 
-HE LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+שדה סנפירי תמלחת. יריעות מיושרות מסמנות פניות צפיפות; קצוות מסולסלים מסמנים חלונות חלשים; sonar מתעוות ליד זוהר פתוח. שמור שפה אחת בטווח הראייה.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+דקדוק מפגש / ניווט בסנפירי תמלחת / תפקיד: אוריינות מסלול בעומק ביניים, מעקה קיר צפיפות, תיקון רצפה כוזבת / קריאה בטוחה: שפת סנפיר שלמה, פה קרוע, כיפוף sonar תואם drift ציפה / דחה: חציית מים שחורים פתוחים, חיתוך יריעת הדרכה, אמון בהחזר רצפה בלי גבול סנפיר / הערת מסלול: הסנפיר לא מדריך בכוונה; הוא מציית למים בקול מספיק חזק כדי לעקוב אחריו.
 
 ## Audio
 
-HE LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+הסנפיר אינו שלט. אלה מים שעושים קיר ומשאירים תפר.
 
 ## Field Note
 
-HE LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+התייחס לשפת הסנפיר כמעקה. אם הקו מתכופף לא נכון, קריאת הציפה שלך כבר מאחרת.
 
 <!-- External Site; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/he_IL. -->

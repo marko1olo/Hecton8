@@ -1,0 +1,4039 @@
+{
+  "schema": "hecton8.generated_material_catalog.v2",
+  "catalogDate": "2026-06-08",
+  "catalogPath": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialCatalog_20260608.json",
+  "aliases": [
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialCatalog_Latest.json",
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialCatalog_20260607.json"
+  ],
+  "status": "STATIC_VALIDATED_PENDING_UNITY_IMPORT",
+  "first20RouteMoment": "surface/cave/first-tool/world-proxy readability material library",
+  "materialManifestCount": 4,
+  "materialCount": 51,
+  "sourceAtlasCount": 22,
+  "alphaCandidateCount": 20,
+  "paddedAtlasCount": 6,
+  "splitAtlasEntryCount": 6,
+  "splitIslandCount": 150,
+  "alphaStatusCounts": {
+    "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW": 20
+  },
+  "consumerBindingCount": 121,
+  "sourceConsumerBindingCount": 38,
+  "notes": [
+    "Catalog is a live routing index for generated Gemini materials, material atlases, source atlases, alpha candidates, and current consumers.",
+    "Unity import/material assignment remains pending until the Unity apply-all runner creates .meta/material assets and post-apply validators pass.",
+    "Batch34 material tiles/trim sheets are importer-discoverable through GeminiMaterialAtlases/*/GeminiMaterialAtlas_Manifest.json.",
+    "Batch34 decal/UV/pickup atlases are source-only; do not auto-create Lit materials from them.",
+    "Alpha candidates are review/input assets. High-coverage candidates stay rejected until manually split or regenerated.",
+    "Batch34 alpha/padded PNG source optimization is lossless only; lossy/quantized alpha changes require visual proof before replacement.",
+    "Padded atlases are whole-atlas transparent handoff sources for UV/decal binding; prefer them over raw split islands when island extraction is visually noisy.",
+    "Split atlas candidates are support/raw candidate islands only. They require manual review or downstream mesh/UV selection before production binding.",
+    "World proxy assignments now resolve provider from material id, so Batch34 consumers are visible in this catalog.",
+    "Batch34 terrain seamless tiles have an editor TerrainLayer handoff route for MapMagic/terrain owners; terrain graph mutation is still Unity-owner work.",
+    "Player suit material palette is an editor ProductFace handoff from Gemini PBR source materials into generated suit slot materials; prefab binding remains Unity-owner work.",
+    "Resource pickup materials are updated through existing Mat_Resource_* assets so current pickup prefabs keep stable material GUIDs while gaining generated PBR maps.",
+    "World-support final materials are updated through existing Mat_Support_* assets and self-healed by WorldProceduralSupportFinalAuthoring when generated sources are available.",
+    "World-support ruin decals are first-party generated quad decals sourced from Batch34 alpha candidates, replacing vendor ScifiFacility decal prefab dependency in that route.",
+    "Tool surface detail primitives bind old Gemini single/micro-panel materials as small no-collider tool accents instead of repainting whole tools.",
+    "Batch34 UV/pickup atlas source handoff creates explicit Unity material assets for flora/fauna/pickup mesh owners without mutating current prefabs.",
+    "Construction damp-insulation backing adds physical no-collider backing panels to damage/ruin prefabs and binds B34-3421.",
+    "Gemini material Unity apply is a single gated batch through GeminiMaterialIntegrationApplier.ApplyAll; do not re-add per-stage Unity batch launches.",
+    "Legacy generated-material runner names are compatibility wrappers that delegate to RunGeminiMaterialUnityApplyAll.ps1.",
+    "Batch34 direct service prompt files are checked as two exact 25-job queues with non-empty negative prompts before source intake work."
+  ],
+  "materialManifests": [
+    {
+      "path": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "schema": "hecton8.external_pbr_pack.v1",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "provider": "GeminiBiome_20260607",
+      "assetCount": 10,
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "reviewStatus": "PENDING VISUAL REVIEW"
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "schema": "hecton8.external_pbr_pack.v1",
+      "sourceProvider": "GeminiManualAtlas",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "assetCount": 16,
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "reviewStatus": "PENDING VISUAL REVIEW"
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "schema": "hecton8.external_pbr_pack.v1",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "assetCount": 16,
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "reviewStatus": "PENDING UNITY MATERIAL PREVIEW"
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json",
+      "schema": "hecton8.external_pbr_pack.v1",
+      "sourceProvider": "GeminiManualSingleMaterials",
+      "provider": "GeminiSingles_20260607",
+      "assetCount": 9,
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "reviewStatus": "PENDING VISUAL REVIEW"
+    }
+  ],
+  "sourceAtlasManifests": [
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json"
+  ],
+  "alphaCandidateManifests": [
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json"
+  ],
+  "paddedAtlasManifests": [
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/GeminiBatch34PaddedAtlasSources_Manifest.json"
+  ],
+  "splitAtlasManifests": [
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/GeminiBatch34SplitAtlasCandidates_Manifest.json"
+  ],
+  "integrationReports": [
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeFloraIntegration_20260607.json",
+    "Assets/_Project/Art/TEXTURES/Generated/GeneratedTextureOptimization_20260607.json",
+    "Assets/_Project/Art/TEXTURES/Generated/GeneratedFloraImportedNormalization_20260607.json",
+    "Assets/_Project/Art/TEXTURES/Generated/GeneratedSingleTextureNormalization_20260607.json",
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiReplacementTextureIntegration_20260607.json",
+    "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_CurationManifest.json"
+  ],
+  "previewSheets": [
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/PREVIEW_Batch34_PaddedAtlasSources.png",
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PREVIEW_Batch34_SourceAtlases.png",
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/PREVIEW_Batch34_SplitAtlasCandidates.png",
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/PREVIEW_GeminiBiomeMaterials_20260607.png",
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/PREVIEW_GeminiBiome_LitMaterialSheet.png",
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/PREVIEW_Batch20260607_MicroPanel_GeminiMaterialAtlas.png",
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/PREVIEW_Batch20260608_TextureExpansion_Materials.png",
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/PREVIEW_GeminiSingleMaterials_20260607.png",
+    "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/PREVIEW_GeminiSingles_LitMaterialSheet.png"
+  ],
+  "integrationTools": [
+    "Assets/_Project/Scripts/Editor/ExternalPbrTexturePackImporter.cs",
+    "Tools/ValidateExternalPbrImporterBindings.py",
+    "Tools/ValidateExternalPbrMaterialAssets.py",
+    "Tools/ValidateGeminiGeneratedMaterialState.py",
+    "Tools/RunGeminiMaterialStaticPreflight.ps1",
+    "Tools/RunExternalPbrUnityImport.ps1",
+    "Tools/RunWorldProxyGeminiBiomeApply.ps1",
+    "Assets/_Project/Scripts/Editor/WorldProxyGeminiBiomeMaterialApplier.cs",
+    "Tools/ValidateWorldProxyGeminiBiomeAssignments.py",
+    "Assets/_Project/Scripts/Editor/HeldToolExternalPbrMaterialApplier.cs",
+    "Tools/ValidateHeldToolExternalPbrRules.py",
+    "Tools/RunHeldToolExternalPbrApply.ps1",
+    "Assets/_Project/Scripts/Editor/WorldToolExternalPbrMaterialApplier.cs",
+    "Tools/ValidateWorldToolExternalPbrRules.py",
+    "Tools/RunWorldToolExternalPbrApply.ps1",
+    "Assets/_Project/Scripts/Editor/ToolSurfaceDetailGeminiIntegrator.cs",
+    "Tools/ValidateToolSurfaceDetailGeminiRoute.py",
+    "Assets/_Project/Scripts/Editor/Batch34UvAtlasMaterialHandoffBuilder.cs",
+    "Tools/ValidateBatch34UvAtlasMaterialHandoff.py",
+    "Assets/_Project/Scripts/Editor/GeminiMaterialIntegrationApplier.cs",
+    "Tools/RunGeminiMaterialUnityApplyAll.ps1",
+    "Tools/ValidateGeminiUnityApplyRunner.py",
+    "Assets/_Project/Scripts/Editor/ConstructionGeminiMaterialApplier.cs",
+    "Tools/ValidateConstructionGeminiMaterialAssignments.py",
+    "Tools/RunConstructionGeminiMaterialApply.ps1",
+    "Assets/_Project/Scripts/Editor/ConstructionInsulationBackingIntegrator.cs",
+    "Tools/ValidateConstructionInsulationBackingRoute.py",
+    "Tools/ApplyGeminiBiomeToFloraImported.py",
+    "Tools/ValidateGeminiBiomeFloraImportedAssignments.py",
+    "Tools/ValidateBatch34DirectPromptQueue.py",
+    "Assets/_Project/Scripts/Editor/Batch34SourceAtlasImporter.cs",
+    "Tools/ValidateBatch34SourceAtlasPack.py",
+    "Tools/ValidateBatch34SourceAtlasImporter.py",
+    "Assets/_Project/Scripts/Editor/Batch34TerrainLayerAssetBuilder.cs",
+    "Tools/ValidateBatch34TerrainLayerBuilder.py",
+    "Assets/_Project/Scripts/Editor/ProductFacePlayerSuitGeminiMaterialApplier.cs",
+    "Tools/ValidateProductFacePlayerSuitGeminiMaterialRoute.py",
+    "Assets/_Project/Scripts/Editor/ResourcePickupGeminiMaterialApplier.cs",
+    "Tools/ValidateResourcePickupGeminiMaterialRoute.py",
+    "Assets/_Project/Scripts/Editor/WorldSupportGeminiMaterialApplier.cs",
+    "Tools/ValidateWorldSupportGeminiMaterialRoute.py",
+    "Assets/_Project/Scripts/Editor/WorldSupportGeneratedDecalMaterialBuilder.cs",
+    "Tools/PromoteBatch34AlphaCandidatesToUnitySources.py",
+    "Tools/ValidateBatch34AlphaCandidatePack.py",
+    "Tools/ExtractBatch34SourceAtlasAlphaCandidates.py",
+    "Tools/OptimizeBatch34AlphaPngSources.py",
+    "Tools/BuildBatch34PaddedNeedsWorkAtlases.py",
+    "Tools/ValidateBatch34PaddedAtlasSources.py",
+    "Tools/SplitBatch34NeedsWorkAtlases.py",
+    "Tools/ValidateBatch34SplitAtlasCandidates.py",
+    "Assets/_Project/Scripts/Editor/Batch34VisorTraumaDecalArrayIntegrator.cs",
+    "Tools/ValidateBatch34VisorTraumaDecalArrayRoute.py",
+    "Tools/ValidateBatch34VisorTraumaProfileCsv.py"
+  ],
+  "consumerBindings": [
+    {
+      "materialId": "gemini_20260607_black_waterproof_grip_rubber",
+      "consumers": [
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Repair_Held.prefab::Detail_RubberGripPad",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        },
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_StunPistol_Held.prefab::Detail_RubberGripPad",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        },
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Repair_World.prefab::Detail_RubberGripPad",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_20260607_clean_nasa_punk_tool_housing_metal",
+      "consumers": [
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Builder_Held.prefab::Detail_CleanHousingPlate",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        },
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Builder_World.prefab::Detail_CleanHousingPlate",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_20260607_dark_anodized_tool_metal",
+      "consumers": [
+        {
+          "lane": "construction_material",
+          "target": "Assets/_Project/Art/Materials/Construction/Mat_Module_CurrentTurbine.mat",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_20260607_fine_ribbed_metal_trim",
+      "consumers": [
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_SeafloorDrill_Held.prefab::Detail_RibbedTrimBand",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        },
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_HarpoonLauncher_Held.prefab::Detail_RibbedTrimBand",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        },
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_SeafloorDrill_World.prefab::Detail_RibbedTrimBand",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_20260607_orange_safety_composite_panel",
+      "consumers": [
+        {
+          "lane": "construction_material",
+          "target": "Assets/_Project/Art/Materials/Construction/Mat_Module_Pylon.mat",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_20260607_salvage_worn_repair_metal",
+      "consumers": [
+        {
+          "lane": "construction_material",
+          "target": "Assets/_Project/Art/Materials/Construction/Mat_Module_Foundation.mat",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_20260607_transparent_pressure_glass_edge_wear",
+      "consumers": [
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Scanner_Held.prefab::Detail_LensGlass",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        },
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Scanner_World.prefab::Detail_LensGlass",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_20260607_wet_service_panel_biofilm",
+      "consumers": [
+        {
+          "lane": "construction_material",
+          "target": "Assets/_Project/Art/Materials/Construction/Mat_Module_ServicePump.mat",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_20260607_white_ceramic_sensor_casing",
+      "consumers": [
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Scanner_Held.prefab::Detail_CeramicSensorCap",
+          "provider": "GeminiSingles_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_aged_green_service_metal",
+      "consumers": [
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Repair_Held.prefab::Detail_AgedServicePatch",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_SalvageSampler_Held.prefab::Detail_AgedServicePatch",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_SalvageSampler_World.prefab::Detail_AgedServicePatch",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_black_gasket_rubber",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Repair_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Repair_World.prefab::Item_Tool_Repair_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_black_grip_rubber",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_StunPistol_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_StunPistol_World.prefab::Item_Tool_StunPistol_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_blue_painted_metal",
+      "consumers": [
+        {
+          "lane": "player_suit_material_palette",
+          "target": "Assets/_Project/Art/Generated/ProductFace/PlayerSuit/Materials/MAT_GEN_PlayerSuit_Slot1_WetHardShell.mat",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": "slot=1; role=WetHardShell"
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_brushed_titanium",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Knife_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Knife_World.prefab::Item_Tool_Knife_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_clean_graphite_panel",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Builder_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Builder_World.prefab::Item_Tool_Builder_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_dark_anodized_metal",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Flashlight_Held.prefab::Visual",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Flashlight_World.prefab::Item_Tool_Flashlight_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_fine_ribbed_trim",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_HarpoonLauncher_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_SeafloorDrill_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_HarpoonLauncher_World.prefab::Item_Tool_HarpoonLauncher_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_SeafloorDrill_World.prefab::Item_Tool_SeafloorDrill_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_gray_polymer",
+      "consumers": [
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Flashlight_Held.prefab::Detail_GrayPolymerServiceCap",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Flashlight_World.prefab::Detail_GrayPolymerServiceCap",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_matte_carbon_composite",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Propulsion_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Propulsion_World.prefab::Item_Tool_Propulsion_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_orange_safety_composite",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_BeaconDeployer_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_LaserCutter_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_BeaconDeployer_World.prefab::Item_Tool_BeaconDeployer_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_LaserCutter_World.prefab::Item_Tool_LaserCutter_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "player_suit_aux_material_palette",
+          "target": "Assets/_Project/Art/Generated/ProductFace/PlayerSuit/Materials/MAT_GEN_PlayerSuit_Aux_SafetyLatch.mat",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": "slot=-1; role=SafetyLatchAux"
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_repaired_salvage_metal",
+      "consumers": [
+        {
+          "lane": "resource_pickup_material",
+          "target": "Assets/_Project/Art/Materials/Resources/Mat_Resource_Scrap.mat",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_salt_scuffed_metal",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_SalvageSampler_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_SalvageSampler_World.prefab::Item_Tool_SalvageSampler_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_smoky_acrylic_glass",
+      "consumers": [
+        {
+          "lane": "player_suit_material_palette",
+          "target": "Assets/_Project/Art/Generated/ProductFace/PlayerSuit/Materials/MAT_GEN_PlayerSuit_Slot3_ViewportGlass.mat",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": "slot=3; role=ViewportGlass"
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_white_ceramic_casing",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_EnvAnalyzer_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Scanner_Held.prefab::VisualBody",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_EnvAnalyzer_World.prefab::Item_Tool_EnvAnalyzer_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "world_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Scanner_World.prefab::Item_Tool_Scanner_World",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260607_MicroPanel_worn_steel_inset",
+      "consumers": [
+        {
+          "lane": "held_tool_prefab_renderer",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_SeafloorDrill_Held.prefab::DrillBit",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        },
+        {
+          "lane": "resource_pickup_material",
+          "target": "Assets/_Project/Art/Materials/Resources/Mat_Resource_Silver.mat",
+          "provider": "Gemini_Batch20260607_MicroPanel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3401_photic_limestone_rubble_shelf",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_pocket_safe.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "world_support_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_SafePocket.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "terrain_layer_builder",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/TerrainLayers/L_B34_3401_PhoticLimestoneRubbleShelf.terrainlayer",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3402_shallow_seagrass_root_mat_substrate",
+      "consumers": [
+        {
+          "lane": "terrain_layer_builder",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/TerrainLayers/L_B34_3402_ShallowSeagrassRootMat.terrainlayer",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3403_brine_canyon_salt_crust_silt",
+      "consumers": [
+        {
+          "lane": "terrain_layer_builder",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/TerrainLayers/L_B34_3403_BrineCanyonSaltCrustSilt.terrainlayer",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3404_abyssal_manganese_nodule_plain",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_pocket_resource.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "resource_pickup_material",
+          "target": "Assets/_Project/Art/Materials/Resources/Mat_Resource_Copper.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "world_support_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_ResourcePocket.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "terrain_layer_builder",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/TerrainLayers/L_B34_3404_AbyssalManganeseNodulePlain.terrainlayer",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3405_methane_hydrate_crack_vein",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_pocket_hazard.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "terrain_layer_builder",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/TerrainLayers/L_B34_3405_MethaneHydrateCrackVein.terrainlayer",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3406_serpentinite_fault_rock",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_landmark_spire.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "terrain_layer_builder",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/TerrainLayers/L_B34_3406_SerpentiniteFaultRock.terrainlayer",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3408_clay_silt_turbidity_slope",
+      "consumers": [
+        {
+          "lane": "terrain_layer_builder",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/TerrainLayers/L_B34_3408_ClaySiltTurbiditySlope.terrainlayer",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3410_drowned_concrete_rubble",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_ruin_cluster_medium.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3411_pressure_base_exterior_hull_trim_sheet",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_ruin_module_single.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_ruin_megastructure.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "world_support_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_RuinApex.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3412_pressure_base_interior_wall_trim_sheet",
+      "consumers": [
+        {
+          "lane": "construction_material",
+          "target": "Assets/_Project/Art/Materials/Construction/Mat_Module_Corridor.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3414_rubber_gasket_ring_trim_sheet",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_route_power.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "player_suit_aux_material_palette",
+          "target": "Assets/_Project/Art/Generated/ProductFace/PlayerSuit/Materials/MAT_GEN_PlayerSuit_Aux_GasketSeal.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": "slot=-1; role=GasketSealAux"
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3416_ribbed_flexible_hose_material",
+      "consumers": [
+        {
+          "lane": "construction_material",
+          "target": "Assets/_Project/Art/Materials/Construction/MAT_Equipment_Atlas.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "player_suit_aux_material_palette",
+          "target": "Assets/_Project/Art/Generated/ProductFace/PlayerSuit/Materials/MAT_GEN_PlayerSuit_Aux_RibbedHose.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": "slot=-1; role=RibbedHoseAux"
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3419_welded_seam_and_rivet_row_trim_sheet",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_debris_field.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_service_scar.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3420_salvage_cut_cross_section_trim_atlas",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_debris_scatter.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3421_damped_insulation_blanket_material",
+      "consumers": [
+        {
+          "lane": "construction_insulation_backing_material",
+          "target": "Assets/_Project/Art/Materials/Construction/Mat_Module_InsulationBacking.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3422_pressure_suit_patch_trim_sheet",
+      "consumers": [
+        {
+          "lane": "player_suit_material_palette",
+          "target": "Assets/_Project/Art/Generated/ProductFace/PlayerSuit/Materials/MAT_GEN_PlayerSuit_Slot2_PatchTrim.mat",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": "slot=2; role=PatchTrim"
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_biome_20260607_abyssal_predator_hide",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_creature_spawn_predator.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_creature_zone_abyss_apex.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_support_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_CreaturePredator.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_support_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_AbyssApex.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_biome_20260607_aegir_surface_foamless_wet_rock",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_rock_small_floor.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_biome_20260607_bioluminescent_coral_flesh",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "resource_pickup_material",
+          "target": "Assets/_Project/Art/Materials/Resources/Mat_Resource_Resin.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_support_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_ReefApex.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "imported_flora_texture_slots",
+          "target": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "imported_flora_texture_slots",
+          "target": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_biome_20260607_creature_bone_plate_material",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_creature_zone_large_threat.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_creature_zone_ruin_apex.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_biome_20260607_hydrothermal_vent_mineral_crust",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_rock_cluster_medium.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "resource_pickup_material",
+          "target": "Assets/_Project/Art/Materials/Resources/Mat_Resource_Sulfur.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_support_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_HazardPocket.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_biome_20260607_living_kelp_frond_surface",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_tall.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_canopy.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_plant_giant.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "resource_pickup_material",
+          "target": "Assets/_Project/Art/Materials/Resources/Mat_Resource_Fiber.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "imported_flora_texture_slots",
+          "target": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "imported_flora_texture_slots",
+          "target": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "imported_flora_texture_slots",
+          "target": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_biome_20260607_pale_tube_coral_calcium",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_low.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "resource_pickup_material",
+          "target": "Assets/_Project/Art/Materials/Resources/Mat_Resource_Silica.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "imported_flora_texture_slots",
+          "target": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "imported_flora_texture_slots",
+          "target": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "imported_flora_texture_slots",
+          "target": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_biome_20260607_pressure_suit_fabric_composite",
+      "consumers": [
+        {
+          "lane": "player_suit_material_palette",
+          "target": "Assets/_Project/Art/Generated/ProductFace/PlayerSuit/Materials/MAT_GEN_PlayerSuit_Slot0_GraphiteFabric.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": "slot=0; role=GraphiteFabric"
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_biome_20260607_soft_jelly_membrane",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_creature_spawn_passive.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_creature_zone_reef_apex.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_egg_cluster.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "resource_pickup_material",
+          "target": "Assets/_Project/Art/Materials/Resources/Mat_Resource_Membrane.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_support_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_CreaturePassive.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_biome_20260607_wet_basalt_cave_wall",
+      "consumers": [
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_rock_arch_large.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_rock_shelf_large.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        },
+        {
+          "lane": "world_proxy_material",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_cave_entrance.mat",
+          "provider": "GeminiBiome_20260607",
+          "note": ""
+        }
+      ]
+    }
+  ],
+  "sourceConsumerBindings": [
+    {
+      "sourceId": "B34-3423",
+      "consumers": [
+        {
+          "lane": "world_support_generated_decal_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_LeakRustBiofilmDecal.mat",
+          "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3423_leak_rust_biofilm_decal_atlas_AlphaCandidate.png"
+        },
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=3; Leak rust hull scuff"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3425",
+      "consumers": [
+        {
+          "lane": "world_support_generated_decal_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_SaltMineralDepositDecal.mat",
+          "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3425_salt_mineral_deposit_decal_atlas_AlphaCandidate.png"
+        },
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=6; Salt crust mineral deposit"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3426",
+      "consumers": [
+        {
+          "lane": "world_support_generated_decal_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_InstrumentGlassSmudgeDecal.mat",
+          "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3426_instrument_glass_smudge_alpha_decal_atlas_AlphaCandidate.png"
+        },
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=7; Instrument glass smudge"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3427",
+      "consumers": [
+        {
+          "lane": "world_support_generated_decal_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_PressureGlassCrackDecal.mat",
+          "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3427_pressure_crack_glass_decal_atlas_AlphaCandidate.png"
+        },
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=4; Pressure glass crack"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3428",
+      "consumers": [
+        {
+          "lane": "world_support_generated_decal_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_WarningStripeDecal.mat",
+          "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3428_warning_paint_stripe_decal_atlas_AlphaCandidate.png"
+        },
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=5; Warning stripe abrasion"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3429",
+      "consumers": [
+        {
+          "lane": "world_support_generated_decal_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_CutterScorchDecal.mat",
+          "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3429_cutter_burn_scorch_decal_atlas_AlphaCandidate.png"
+        },
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=0; Scorch/cutter burn"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3430",
+      "consumers": [
+        {
+          "lane": "world_support_generated_decal_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_BarnacleColonyDecal.mat",
+          "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/organic_decal/TX_B34-3430_barnacle_colony_decal_variants_AlphaCandidate.png"
+        },
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=8; Barnacle colony decal"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3431",
+      "consumers": [
+        {
+          "lane": "world_support_generated_decal_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_WetnessRivuletDecal.mat",
+          "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3431_wetness_rivulet_decal_atlas_AlphaCandidate.png"
+        },
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=2; Wetness/acid-like rivulet"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3432",
+      "consumers": [
+        {
+          "lane": "world_support_generated_decal_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_ContaminationStainDecal.mat",
+          "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/organic_decal/TX_B34-3432_contamination_biohazard_stain_atlas_AlphaCandidate.png"
+        },
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=1; Contamination organic stain"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3433",
+      "consumers": [
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=9; Brine vane organic smear"
+        },
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Flora_BrineVaneAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/flora_uv/TX_B34-3433_brine_vane_flora_uv_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3434",
+      "consumers": [
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Flora_SeagrassBladeAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/flora_uv/TX_B34-3434_shallow_alien_seagrass_blade_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3435",
+      "consumers": [
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Flora_PlateCoralRimAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/flora_uv/TX_B34-3435_plate_coral_rim_uv_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3436",
+      "consumers": [
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=10; Sponge pore organic"
+        },
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Flora_SpongePoreOrganicAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/flora_uv/TX_B34-3436_sponge_pore_organic_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3437",
+      "consumers": [
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Flora_KelpHoldfastRootAtlas_Opaque.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3437_kelp_holdfast_root_atlas_BaseColorCandidate.jpg; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3439",
+      "consumers": [
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=11; Spore pod translucent smear"
+        },
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Flora_SporePodSeedSacAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/flora_uv/TX_B34-3439_spore_pod_and_seed_sac_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_plant_giant.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3441",
+      "consumers": [
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Fauna_NeutralGrazerSkinAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/fauna_uv/TX_B34-3441_neutral_grazer_skin_uv_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_creature_spawn_passive.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3442",
+      "consumers": [
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Fauna_FilterFeederGillMembraneAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/fauna_uv/TX_B34-3442_filter_feeder_gill_membrane_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_creature_spawn_passive.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3445",
+      "consumers": [
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=12; Larva egg sac membrane"
+        },
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Fauna_LarvaEggSacAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/fauna_uv/TX_B34-3445_translucent_larva_egg_sac_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_egg_cluster.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3446",
+      "consumers": [
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=13; Scavenged carcass trace"
+        },
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Fauna_CarcassBoneFleshAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/fauna_uv/TX_B34-3446_scavenged_carcass_bone_flesh_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_creature_zone_large_threat.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3448",
+      "consumers": [
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=14; Resource nodule pickup trace"
+        },
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Pickup_ResourceNoduleAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/pickup_resource/TX_B34-3448_resource_nodule_pickup_uv_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_pocket_resource.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3449",
+      "consumers": [
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Pickup_IndustrialSalvageSmallPartsAtlas_Opaque.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PickupAtlases/TX_B34_3449_industrial_salvage_small_parts_atlas_BaseColorCandidate.jpg; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_debris_scatter.mat"
+        }
+      ]
+    },
+    {
+      "sourceId": "B34-3450",
+      "consumers": [
+        {
+          "lane": "visor_trauma_decal_array_slice",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+          "note": "slice=15; Data core circuit trace"
+        },
+        {
+          "lane": "batch34_uv_atlas_material_handoff",
+          "target": "Assets/_Project/Art/Materials/WorldProceduralProxy/Batch34UvAtlasHandoff/MAT_B34_Pickup_DataCoreCircuitAtlas_Cutout.mat",
+          "note": "texture=Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/pickup_salvage/TX_B34-3450_data_core_wet_circuit_ceramic_atlas_AlphaCandidate.png; template=Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_debris_scatter.mat"
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "id": "gemini_biome_20260607_aegir_surface_foamless_wet_rock",
+      "title": "Aegir Surface Foamless Wet Rock",
+      "provider": "GeminiBiome_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Aegir Surface Foamless Wet Rock.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "role": "foamless wet shoreline rock for Aegir surface route, tide-slick outcrops, and shallow cave lips",
+      "integrationNote": "",
+      "materialFamily": "geology",
+      "surfaceClass": "aegir_wet_surface_rock",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 2.1,
+      "metallic": 0.0,
+      "smoothness": 0.44,
+      "seamScoreBefore": 9.4831,
+      "seamScoreAfter": 1.0426,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_biome_20260607_pressure_suit_fabric_composite",
+      "title": "Pressure Suit Fabric Composite",
+      "provider": "GeminiBiome_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Pressure Suit Fabric Composite.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "role": "woven pressure suit composite for player gear panels, glove inserts, soft seals, and emergency packs",
+      "integrationNote": "",
+      "materialFamily": "playerGear",
+      "surfaceClass": "pressure_suit_fabric_composite",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": true,
+      "tilingScale": 4.8,
+      "metallic": 0.0,
+      "smoothness": 0.24,
+      "seamScoreBefore": 5.7969,
+      "seamScoreAfter": 0.5908,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_biome_20260607_creature_bone_plate_material",
+      "title": "Creature Bone Plate Material",
+      "provider": "GeminiBiome_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Creature Bone Plate Material.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "role": "aged calcium bone plate for large fauna shells, harvested fragments, and pressure-worn creature armor",
+      "integrationNote": "",
+      "materialFamily": "fauna",
+      "surfaceClass": "creature_bone_plate",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": true,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": true,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.6,
+      "metallic": 0.0,
+      "smoothness": 0.31,
+      "seamScoreBefore": 11.6079,
+      "seamScoreAfter": 1.4224,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_biome_20260607_pale_tube_coral_calcium",
+      "title": "Pale Tube Coral Calcium",
+      "provider": "GeminiBiome_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Pale Tube Coral Calcium.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "role": "pale tube coral calcium for reef clusters, cave lip colonies, and bleached shallow formations",
+      "integrationNote": "",
+      "materialFamily": "flora",
+      "surfaceClass": "pale_tube_coral_calcium",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": true,
+      "floraAllowed": true,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.0,
+      "metallic": 0.0,
+      "smoothness": 0.36,
+      "seamScoreBefore": 10.5353,
+      "seamScoreAfter": 1.2807,
+      "seamRepaired": true,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_biome_20260607_wet_basalt_cave_wall",
+      "title": "Wet Basalt Cave Wall",
+      "provider": "GeminiBiome_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Wet Basalt Cave Wall.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "role": "wet black basalt and green biofilm for early cave walls, tunnel lips, and damp overhangs",
+      "integrationNote": "",
+      "materialFamily": "geology",
+      "surfaceClass": "wet_basalt_cave_wall",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 1.8,
+      "metallic": 0.0,
+      "smoothness": 0.48,
+      "seamScoreBefore": 8.2689,
+      "seamScoreAfter": 0.9266,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_biome_20260607_hydrothermal_vent_mineral_crust",
+      "title": "Hydrothermal Vent Mineral Crust",
+      "provider": "GeminiBiome_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Hydrothermal Vent Mineral Crust.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "role": "sulfur and iron mineral crust for hydrothermal vents, hot fissures, and pressure-stained cave props",
+      "integrationNote": "",
+      "materialFamily": "geology",
+      "surfaceClass": "hydrothermal_vent_mineral_crust",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 2.4,
+      "metallic": 0.06,
+      "smoothness": 0.22,
+      "seamScoreBefore": 15.0736,
+      "seamScoreAfter": 0.2155,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_biome_20260607_soft_jelly_membrane",
+      "title": "Soft Jelly Membrane",
+      "provider": "GeminiBiome_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Soft Jelly Membrane.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "role": "translucent jelly membrane for soft fauna bodies, egg sacs, and living pressure membranes",
+      "integrationNote": "",
+      "materialFamily": "fauna",
+      "surfaceClass": "soft_jelly_membrane",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": true,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.2,
+      "metallic": 0.0,
+      "smoothness": 0.72,
+      "seamScoreBefore": 7.7363,
+      "seamScoreAfter": 0.8757,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_biome_20260607_abyssal_predator_hide",
+      "title": "Abyssal Predator Hide",
+      "provider": "GeminiBiome_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Abyssal Predator Hide.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "role": "dark scarred predator hide for large hostile fauna, pressure armor, and close-range creature reads",
+      "integrationNote": "",
+      "materialFamily": "fauna",
+      "surfaceClass": "abyssal_predator_hide",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": true,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.8,
+      "metallic": 0.0,
+      "smoothness": 0.27,
+      "seamScoreBefore": 3.6076,
+      "seamScoreAfter": 0.4149,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_biome_20260607_bioluminescent_coral_flesh",
+      "title": "Bioluminescent Coral Flesh",
+      "provider": "GeminiBiome_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Bioluminescent Coral Flesh.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "role": "blue bioluminescent coral flesh for readable night/depth flora clusters and cave route highlights",
+      "integrationNote": "",
+      "materialFamily": "flora",
+      "surfaceClass": "bioluminescent_coral_flesh",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": true,
+      "floraAllowed": true,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.1,
+      "metallic": 0.0,
+      "smoothness": 0.43,
+      "seamScoreBefore": 12.9421,
+      "seamScoreAfter": 1.4881,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_biome_20260607_living_kelp_frond_surface",
+      "title": "Living Kelp Frond Surface",
+      "provider": "GeminiBiome_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Living Kelp Frond Surface.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualBiomeMaterials",
+      "role": "living kelp frond surface for near-surface vegetation, harvestable leaves, and swaying habitat silhouettes",
+      "integrationNote": "",
+      "materialFamily": "flora",
+      "surfaceClass": "living_kelp_frond_surface",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": true,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.7,
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "seamScoreBefore": 3.3554,
+      "seamScoreAfter": 0.3875,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_blue_painted_metal",
+      "title": "Blue Painted Metal",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "clean painted tool housing for scanner, builder, and compact equipment shells",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "clean_tool_housing",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 3.5,
+      "metallic": 0.56,
+      "smoothness": 0.36,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_black_grip_rubber",
+      "title": "Black Grip Rubber",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "waterproof molded grip rubber for handheld tool handles and gasket-like grip zones",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "waterproof_rubber",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 5.0,
+      "metallic": 0.0,
+      "smoothness": 0.18,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_dark_anodized_metal",
+      "title": "Dark Anodized Metal",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "dark anodized aluminum for premium compact tool frames and inset rails",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "dark_anodized_tool_metal",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 4.2,
+      "metallic": 0.78,
+      "smoothness": 0.34,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_orange_safety_composite",
+      "title": "Orange Safety Composite",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "orange-red polymer composite for readable safety accents on tools and survival equipment",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "safety_composite_panel",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 3.4,
+      "metallic": 0.0,
+      "smoothness": 0.3,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_white_ceramic_casing",
+      "title": "White Ceramic Casing",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "off-white ceramic or composite casing for scanner and analysis tool science surfaces",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "scientific_ceramic_casing",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 3.0,
+      "metallic": 0.0,
+      "smoothness": 0.42,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_fine_ribbed_trim",
+      "title": "Fine Ribbed Trim",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "small-scale ribbed trim for laser cutter, flashlight, drill, and compact equipment ribs",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "fine_corrugated_trim",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 4.4,
+      "metallic": 0.66,
+      "smoothness": 0.28,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_worn_steel_inset",
+      "title": "Worn Steel Inset",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "worn steel inset plate for tool jaws, blade mounts, sampler heads, and mechanical contact zones",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "aged_panel_steel",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 3.8,
+      "metallic": 0.72,
+      "smoothness": 0.24,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_smoky_acrylic_glass",
+      "title": "Smoky Acrylic Glass",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "smoky cyan acrylic or glass for scanner lenses, small displays, and pressure viewport insets",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "pressure_acrylic_viewport",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.8,
+      "metallic": 0.0,
+      "smoothness": 0.62,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_gray_polymer",
+      "title": "Gray Polymer",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "neutral gray polymer shell for non-metal tool bodies and equipment casings",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "neutral_polymer_shell",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 3.6,
+      "metallic": 0.0,
+      "smoothness": 0.32,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_salt_scuffed_metal",
+      "title": "Salt Scuffed Metal",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "salt-scuffed tool metal for frequently handled exterior plates and repair equipment",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "salt_scuffed_tool_metal",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 3.2,
+      "metallic": 0.64,
+      "smoothness": 0.22,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_clean_graphite_panel",
+      "title": "Clean Graphite Panel",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "clean graphite-black panel material for advanced tools and subdued high-tech casings",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "clean_graphite_panel",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 3.8,
+      "metallic": 0.18,
+      "smoothness": 0.4,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_aged_green_service_metal",
+      "title": "Aged Green Service Metal",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "aged green service metal for analyzer, repair, station service props, and older equipment",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "aged_green_service_metal",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.6,
+      "metallic": 0.56,
+      "smoothness": 0.22,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_brushed_titanium",
+      "title": "Brushed Titanium",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "brushed titanium for durable blades, precision mechanisms, and high-pressure tool hardware",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "brushed_titanium",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 4.0,
+      "metallic": 0.82,
+      "smoothness": 0.38,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_black_gasket_rubber",
+      "title": "Black Gasket Rubber",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "black gasket rubber for sealed joints, O-ring-like strips, and pressure-rated seams",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "black_gasket_rubber",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 5.5,
+      "metallic": 0.0,
+      "smoothness": 0.16,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_repaired_salvage_metal",
+      "title": "Repaired Salvage Metal",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "repaired salvage metal for damaged tools, wreckage props, and visibly patched service equipment",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "repaired_salvage_metal",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.4,
+      "metallic": 0.48,
+      "smoothness": 0.17,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260607_MicroPanel_matte_carbon_composite",
+      "title": "Matte Carbon Composite",
+      "provider": "Gemini_Batch20260607_MicroPanel",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Source/TX_GM_Batch20260607_MicroPanel_Cleaned_2k.jpg",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualAtlas",
+      "role": "matte carbon composite for premium compact tool shells and lightweight structural panels",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "matte_carbon_composite",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 4.5,
+      "metallic": 0.0,
+      "smoothness": 0.34,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": true
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3401_photic_limestone_rubble_shelf",
+      "title": "Photic Limestone Rubble Shelf",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Limestone_rubble_shelf_material_202606080323.jpeg",
+      "sourceBatchId": "B34-3401",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "Terrain detail and triplanar blend for photic limestone shelves.",
+      "integrationNote": "Use as detail/blend layer first; broad flat hero terrain still needs Unity route screenshot.",
+      "materialFamily": "",
+      "surfaceClass": "terrain_photic_photic_limestone_rubble_shelf",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "terrain_photic",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 1.5,
+      "metallic": 0.0,
+      "smoothness": 0.2824,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3402_shallow_seagrass_root_mat_substrate",
+      "title": "Shallow Seagrass Root-Mat Substrate",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Seagrass_alien_root-mat_material_202606080323.jpeg",
+      "sourceBatchId": "B34-3402",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "Shallow root-mat/sand transition detail layer.",
+      "integrationNote": "Dense fine fibers hide repeat acceptably at gameplay scale; avoid huge single-material planes.",
+      "materialFamily": "",
+      "surfaceClass": "terrain_photic_shallow_seagrass_root_mat_substrate",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "terrain_photic",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 1.5,
+      "metallic": 0.0,
+      "smoothness": 0.2235,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3403_brine_canyon_salt_crust_silt",
+      "title": "Brine Canyon Salt-Crust Silt",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Salt_crust_silt_material_tile_202606080323.jpeg",
+      "sourceBatchId": "B34-3403",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "Brine canyon salt-crust/silt terrain detail.",
+      "integrationNote": "Good mineral pattern; verify normals do not over-crack brine route readability.",
+      "materialFamily": "",
+      "surfaceClass": "terrain_brine_brine_canyon_salt_crust_silt",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "terrain_brine",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 1.2,
+      "metallic": 0.0,
+      "smoothness": 0.1804,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3404_abyssal_manganese_nodule_plain",
+      "title": "Abyssal Manganese Nodule Plain",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Seafloor_clay_with_manganese_nod\u2026_202606080323.jpeg",
+      "sourceBatchId": "B34-3404",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "Abyssal nodule plain ground material and resource-biome base.",
+      "integrationNote": "Nodule scale reads well; use with scatter meshes to avoid flat painted resource feel.",
+      "materialFamily": "",
+      "surfaceClass": "terrain_abyssal_abyssal_manganese_nodule_plain",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "terrain_abyssal",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 1.2,
+      "metallic": 0.0392,
+      "smoothness": 0.2431,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3405_methane_hydrate_crack_vein",
+      "title": "Methane Hydrate Crack Vein",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Seabed_mud_with_hydrate_crust_202606080323.jpeg",
+      "sourceBatchId": "B34-3405",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "cold seep terrain and hydrate hazard substrate",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "materialFamily": "",
+      "surfaceClass": "terrain_cold_seep_methane_hydrate_crack_vein",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "terrain_cold_seep",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 1.2,
+      "metallic": 0.0,
+      "smoothness": 0.3216,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3406_serpentinite_fault_rock",
+      "title": "Serpentinite Fault Rock",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Serpentinite_fault_rock_material\u2026_202606080323.jpeg",
+      "sourceBatchId": "B34-3406",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "Directional serpentinite/fault wall material.",
+      "integrationNote": "Use on walls/slabs or triplanar rock, not as a perfectly isotropic floor tile.",
+      "materialFamily": "",
+      "surfaceClass": "terrain_geology_serpentinite_fault_rock",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "terrain_geology",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 1.2,
+      "metallic": 0.0,
+      "smoothness": 0.3804,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3408_clay_silt_turbidity_slope",
+      "title": "Clay Silt Turbidity Slope",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Seamless_PBR_material_tile_202606080323.jpeg",
+      "sourceBatchId": "B34-3408",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "silt-heavy traversal slopes and disturbed sediment",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "materialFamily": "",
+      "surfaceClass": "terrain_sediment_clay_silt_turbidity_slope",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "terrain_sediment",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 2.0,
+      "metallic": 0.0,
+      "smoothness": 0.1216,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3410_drowned_concrete_rubble",
+      "title": "Drowned Concrete Rubble",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Concrete_rubble_substrate_materi\u2026_202606080322.jpeg",
+      "sourceBatchId": "B34-3410",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "Drowned concrete rubble local terrain blend.",
+      "integrationNote": "Useful for ruin transitions; combine with meshes/decals before hero-route use.",
+      "materialFamily": "",
+      "surfaceClass": "hard_surface_ruin_drowned_concrete_rubble",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "hard_surface_ruin",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 1.0,
+      "metallic": 0.0471,
+      "smoothness": 0.2235,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3411_pressure_base_exterior_hull_trim_sheet",
+      "title": "Pressure Base Exterior Hull Trim Sheet",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_texture_202606080322.jpeg",
+      "sourceBatchId": "B34-3411",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "base exteriors, module edges, hatch frames, pressure ribs",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "materialFamily": "",
+      "surfaceClass": "hard_surface_trim_pressure_base_exterior_hull_trim_sheet",
+      "sourceType": "TRIM_SHEET",
+      "sourceFamily": "hard_surface_trim",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 1.0,
+      "metallic": 0.4784,
+      "smoothness": 0.5412,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3412_pressure_base_interior_wall_trim_sheet",
+      "title": "Pressure Base Interior Wall Trim Sheet",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_interior_walls_202606080322.jpeg",
+      "sourceBatchId": "B34-3412",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "corridors, safe rooms, wreck interiors, wall panels",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "materialFamily": "",
+      "surfaceClass": "hard_surface_trim_pressure_base_interior_wall_trim_sheet",
+      "sourceType": "TRIM_SHEET",
+      "sourceFamily": "hard_surface_trim",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 1.0,
+      "metallic": 0.3176,
+      "smoothness": 0.502,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3414_rubber_gasket_ring_trim_sheet",
+      "title": "Rubber Gasket Ring Trim Sheet",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_rubber_gaskets_202606080322.jpeg",
+      "sourceBatchId": "B34-3414",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "hatches, viewport rims, pressure doors, pipe sockets",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "materialFamily": "",
+      "surfaceClass": "rubber_trim_rubber_gasket_ring_trim_sheet",
+      "sourceType": "TRIM_SHEET",
+      "sourceFamily": "rubber_trim",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": true,
+      "tilingScale": 1.0,
+      "metallic": 0.0,
+      "smoothness": 0.3216,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3416_ribbed_flexible_hose_material",
+      "title": "Ribbed Flexible Hose Material",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Ribbed_flexible_hose_material_tile_202606080322.jpeg",
+      "sourceBatchId": "B34-3416",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "oxygen hoses, coolant lines, base pipes, tool cords",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "materialFamily": "",
+      "surfaceClass": "rubber_cable_ribbed_flexible_hose_material",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "rubber_cable",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": true,
+      "tilingScale": 3.0,
+      "metallic": 0.0,
+      "smoothness": 0.4235,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3419_welded_seam_and_rivet_row_trim_sheet",
+      "title": "Welded Seam And Rivet Row Trim Sheet",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_for_seams_202606080320.jpeg",
+      "sourceBatchId": "B34-3419",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "wreckage, base hulls, repaired panels, industrial seams",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "materialFamily": "",
+      "surfaceClass": "hard_surface_trim_welded_seam_and_rivet_row_trim_sheet",
+      "sourceType": "TRIM_SHEET",
+      "sourceFamily": "hard_surface_trim",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 1.0,
+      "metallic": 0.6196,
+      "smoothness": 0.4431,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3420_salvage_cut_cross_section_trim_atlas",
+      "title": "Salvage Cut Cross-Section Trim Atlas",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Trim_atlas_for_HECTON-8_salvage-\u2026_202606080320.jpeg",
+      "sourceBatchId": "B34-3420",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "cut panels, opened wrecks, salvage resource surfaces",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "materialFamily": "",
+      "surfaceClass": "hard_surface_trim_salvage_cut_cross_section_trim_atlas",
+      "sourceType": "TRIM_SHEET",
+      "sourceFamily": "hard_surface_trim",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 1.0,
+      "metallic": 0.4784,
+      "smoothness": 0.4235,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3421_damped_insulation_blanket_material",
+      "title": "Damped Insulation Blanket Material",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Quilted_fabric_insulation_materi\u2026_202606080320.jpeg",
+      "sourceBatchId": "B34-3421",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "Damped insulation blanket for interiors/equipment backing.",
+      "integrationNote": "Quilt repeat is expected; still needs Unity roughness/normal review.",
+      "materialFamily": "",
+      "surfaceClass": "fabric_insulation_damped_insulation_blanket_material",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "fabric_insulation",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 1.0,
+      "metallic": 0.0,
+      "smoothness": 0.1412,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3422_pressure_suit_patch_trim_sheet",
+      "title": "Pressure Suit Patch Trim Sheet",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Square_trim_sheet_for_suit_202606080319.jpeg",
+      "sourceBatchId": "B34-3422",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "suit meshes, tool pouches, wearable repair patches",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "materialFamily": "",
+      "surfaceClass": "suit_fabric_pressure_suit_patch_trim_sheet",
+      "sourceType": "TRIM_SHEET",
+      "sourceFamily": "suit_fabric",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": true,
+      "tilingScale": 1.0,
+      "metallic": 0.0,
+      "smoothness": 0.2824,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_20260607_wet_service_panel_biofilm",
+      "title": "Wet Service Panel Biofilm",
+      "provider": "GeminiSingles_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Wet Service Panel Biofilm.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualSingleMaterials",
+      "role": "wet aged service panel material for base equipment, old modules, and damp industrial props",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "wet_service_panel_biofilm",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": true,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.4,
+      "metallic": 0.44,
+      "smoothness": 0.26,
+      "seamScoreBefore": 15.0735,
+      "seamScoreAfter": 0.2283,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_20260607_transparent_pressure_glass_edge_wear",
+      "title": "Transparent Pressure Glass Edge Wear",
+      "provider": "GeminiSingles_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Transparent Pressure Glass Edge Wear.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualSingleMaterials",
+      "role": "smoky cyan acrylic/glass surface for scanner lenses, small viewports, and instrument covers",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "pressure_acrylic_viewport",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.8,
+      "metallic": 0.0,
+      "smoothness": 0.64,
+      "seamScoreBefore": 1.2414,
+      "seamScoreAfter": 1.2414,
+      "seamRepaired": false,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_20260607_salvage_worn_repair_metal",
+      "title": "Salvage-Worn Repair Metal",
+      "provider": "GeminiSingles_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Salvage-Worn Repair Metal.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualSingleMaterials",
+      "role": "patched salvage metal for damaged props, wreckage panels, and repairable industrial equipment",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "repaired_salvage_metal",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": false,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 2.2,
+      "metallic": 0.48,
+      "smoothness": 0.16,
+      "seamScoreBefore": 10.1272,
+      "seamScoreAfter": 1.1238,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_20260607_white_ceramic_sensor_casing",
+      "title": "White Ceramic Sensor Casing",
+      "provider": "GeminiSingles_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\White Ceramic Sensor Casing.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualSingleMaterials",
+      "role": "off-white ceramic/composite casing for scanner, analyzer, and clean science tool bodies",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "scientific_ceramic_casing",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 3.0,
+      "metallic": 0.0,
+      "smoothness": 0.42,
+      "seamScoreBefore": 3.1278,
+      "seamScoreAfter": 0.3552,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_20260607_dark_anodized_tool_metal",
+      "title": "Dark Anodized Tool Metal",
+      "provider": "GeminiSingles_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Dark Anodized Tool Metal.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualSingleMaterials",
+      "role": "dark anodized aluminum for premium compact tool frames and inset rails",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "dark_anodized_tool_metal",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 4.2,
+      "metallic": 0.78,
+      "smoothness": 0.34,
+      "seamScoreBefore": 7.8688,
+      "seamScoreAfter": 0.5778,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_20260607_fine_ribbed_metal_trim",
+      "title": "Fine Ribbed Metal Trim",
+      "provider": "GeminiSingles_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Fine Ribbed Metal Trim.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualSingleMaterials",
+      "role": "small-scale ribbed trim for laser cutter, flashlight, drill, and compact equipment ribs",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "fine_corrugated_trim",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": true,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 4.4,
+      "metallic": 0.66,
+      "smoothness": 0.28,
+      "seamScoreBefore": 2.9822,
+      "seamScoreAfter": 0.394,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_20260607_orange_safety_composite_panel",
+      "title": "Orange Safety Composite Panel",
+      "provider": "GeminiSingles_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Orange Safety Composite Panel.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualSingleMaterials",
+      "role": "orange-red polymer composite for readable safety accents on tools and survival equipment",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "safety_composite_panel",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 1.15,
+      "metallic": 0.0,
+      "smoothness": 0.3,
+      "seamScoreBefore": 2.5816,
+      "seamScoreAfter": 0.2989,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_20260607_black_waterproof_grip_rubber",
+      "title": "Black Waterproof Grip Rubber",
+      "provider": "GeminiSingles_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Black Waterproof Grip Rubber.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualSingleMaterials",
+      "role": "black waterproof grip rubber for handheld tool grips and pressure-sealed handles",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "waterproof_rubber",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 5.0,
+      "metallic": 0.0,
+      "smoothness": 0.18,
+      "seamScoreBefore": 4.0347,
+      "seamScoreAfter": 0.4451,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_20260607_clean_nasa_punk_tool_housing_metal",
+      "title": "Clean NASA-Punk Tool Housing Metal",
+      "provider": "GeminiSingles_20260607",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Clean NASA-Punk Tool Housing Metal.png",
+      "sourceBatchId": "",
+      "sourceProvider": "GeminiManualSingleMaterials",
+      "role": "clean blue painted pressure-rated tool housing for scanner, builder, and compact equipment shells",
+      "integrationNote": "",
+      "materialFamily": "",
+      "surfaceClass": "clean_tool_housing",
+      "sourceType": "",
+      "sourceFamily": "",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": false,
+      "tilingScale": 3.5,
+      "metallic": 0.56,
+      "smoothness": 0.36,
+      "seamScoreBefore": 3.1604,
+      "seamScoreAfter": 0.3583,
+      "seamRepaired": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    }
+  ],
+  "sourceAtlases": [
+    {
+      "id": "B34-3423",
+      "title": "Leak Rust Biofilm Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3423_leak_rust_biofilm_decal_atlas_BaseColorCandidate.jpg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "base/wreck damage, damp panels, old machinery",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3425",
+      "title": "Salt Mineral Deposit Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3425_salt_mineral_deposit_decal_atlas_BaseColorCandidate.jpg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "wet edges, cave rocks, hull seams, old base interiors",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3426",
+      "title": "Instrument Glass Smudge Alpha Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3426_instrument_glass_smudge_alpha_decal_atlas_BaseColorCandidate.jpg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Instrument glass smudge/scratch alpha source.",
+      "integrationNote": "Black background drives clipping warning by design; extract mask before shader use.",
+      "downstreamRoute": "extract alpha/matte mask before material or decal binding",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3427",
+      "title": "Pressure Crack Glass Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3427_pressure_crack_glass_decal_atlas_BaseColorCandidate.jpg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "damaged viewports, scanner lenses, cockpit glass",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3428",
+      "title": "Warning Paint Stripe Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3428_warning_paint_stripe_decal_atlas_BaseColorCandidate.jpg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "hazard stripes, panel markings without text, trim variation",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3429",
+      "title": "Cutter Burn Scorch Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3429_cutter_burn_scorch_decal_atlas_BaseColorCandidate.jpg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "cutter tool impact, salvage cuts, repair/weld states",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3430",
+      "title": "Barnacle Colony Decal Variants",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3430_barnacle_colony_decal_variants_BaseColorCandidate.jpg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "organic_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "rocks, hulls, cave surfaces, colony overgrowth",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3431",
+      "title": "Wetness Rivulet Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3431_wetness_rivulet_decal_atlas_BaseColorCandidate.jpg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "interiors, hatches, floors, wet rock, leak presentation",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3432",
+      "title": "Contamination Biohazard Stain Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3432_contamination_biohazard_stain_atlas_BaseColorCandidate.jpg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "organic_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "contaminated rooms, organism stains, procedural evidence",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3433",
+      "title": "Brine Vane Flora UV Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3433_brine_vane_flora_uv_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Brine vane flora UV source with dark matte background.",
+      "integrationNote": "Clipping is background/matte, not content failure; split islands before mesh UV use.",
+      "downstreamRoute": "extract alpha/matte mask before material or decal binding",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3434",
+      "title": "Shallow Alien Seagrass Blade Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3434_shallow_alien_seagrass_blade_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "shallow flora cards/meshes, photic route grass/seagrass",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3435",
+      "title": "Plate Coral Rim UV Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3435_plate_coral_rim_uv_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "shallow plate coral meshes, reef geometry, coral trim",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3436",
+      "title": "Sponge Pore Organic Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3436_sponge_pore_organic_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "sponge/coral variants, organic rock overgrowth",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3437",
+      "title": "Kelp Holdfast Root Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3437_kelp_holdfast_root_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "kelp anchors/roots, flora root geometry, terrain contact",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3439",
+      "title": "Spore Pod And Seed Sac Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3439_spore_pod_and_seed_sac_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "harvestable flora pods, scan targets, small organic props",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3441",
+      "title": "Neutral Grazer Skin UV Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3441_neutral_grazer_skin_uv_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "first-route neutral fauna body material zones",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3442",
+      "title": "Filter Feeder Gill Membrane Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3442_filter_feeder_gill_membrane_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Filter feeder gill membrane UV source.",
+      "integrationNote": "Black matte background caused clipping warning; content is usable after island extraction.",
+      "downstreamRoute": "extract alpha/matte mask before material or decal binding",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3445",
+      "title": "Translucent Larva Egg Sac Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3445_translucent_larva_egg_sac_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "ecology props, creature nests, scan/evidence objects",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3446",
+      "title": "Scavenged Carcass Bone Flesh Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3446_scavenged_carcass_bone_flesh_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Carcass bone/flesh UV source.",
+      "integrationNote": "Dark matte background causes black clipping warning; isolate islands before use.",
+      "downstreamRoute": "extract alpha/matte mask before material or decal binding",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3448",
+      "title": "Resource Nodule Pickup UV Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PickupAtlases/TX_B34_3448_resource_nodule_pickup_uv_atlas_BaseColorCandidate.jpg",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_resource",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "3D pickup/resource meshes, not inventory icons",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "bind to small 3D pickup mesh UVs; not inventory icons",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3449",
+      "title": "Industrial Salvage Small Parts Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PickupAtlases/TX_B34_3449_industrial_salvage_small_parts_atlas_BaseColorCandidate.jpg",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_salvage",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "salvage pickups, small mesh parts, crafting visuals",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "bind to small 3D pickup mesh UVs; not inventory icons",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "B34-3450",
+      "title": "Data Core Wet Circuit Ceramic Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PickupAtlases/TX_B34_3450_data_core_wet_circuit_ceramic_atlas_BaseColorCandidate.jpg",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_salvage",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "black-box/data core props, electronics salvage",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "bind to small 3D pickup mesh UVs; not inventory icons",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    }
+  ],
+  "alphaCandidates": [
+    {
+      "id": "B34-3423",
+      "title": "Leak Rust Biofilm Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3423_leak_rust_biofilm_decal_atlas_AlphaCandidate.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 31.165,
+      "alphaOpaquePct": 13.994,
+      "alphaMean": 54.317
+    },
+    {
+      "id": "B34-3425",
+      "title": "Salt Mineral Deposit Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3425_salt_mineral_deposit_decal_atlas_AlphaCandidate.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 34.993,
+      "alphaOpaquePct": 22.203,
+      "alphaMean": 69.903
+    },
+    {
+      "id": "B34-3426",
+      "title": "Instrument Glass Smudge Alpha Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3426_instrument_glass_smudge_alpha_decal_atlas_AlphaCandidate.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 24.106,
+      "alphaOpaquePct": 13.609,
+      "alphaMean": 46.112
+    },
+    {
+      "id": "B34-3427",
+      "title": "Pressure Crack Glass Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3427_pressure_crack_glass_decal_atlas_AlphaCandidate.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 36.484,
+      "alphaOpaquePct": 17.945,
+      "alphaMean": 61.63
+    },
+    {
+      "id": "B34-3428",
+      "title": "Warning Paint Stripe Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3428_warning_paint_stripe_decal_atlas_AlphaCandidate.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 61.381,
+      "alphaOpaquePct": 56.294,
+      "alphaMean": 148.367
+    },
+    {
+      "id": "B34-3429",
+      "title": "Cutter Burn Scorch Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3429_cutter_burn_scorch_decal_atlas_AlphaCandidate.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 42.975,
+      "alphaOpaquePct": 16.492,
+      "alphaMean": 71.131
+    },
+    {
+      "id": "B34-3430",
+      "title": "Barnacle Colony Decal Variants",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/organic_decal/TX_B34-3430_barnacle_colony_decal_variants_AlphaCandidate.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "organic_decal",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 57.551,
+      "alphaOpaquePct": 23.487,
+      "alphaMean": 92.592
+    },
+    {
+      "id": "B34-3431",
+      "title": "Wetness Rivulet Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3431_wetness_rivulet_decal_atlas_AlphaCandidate.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 18.083,
+      "alphaOpaquePct": 0.22,
+      "alphaMean": 14.015
+    },
+    {
+      "id": "B34-3432",
+      "title": "Contamination Biohazard Stain Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/organic_decal/TX_B34-3432_contamination_biohazard_stain_atlas_AlphaCandidate.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "organic_decal",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 25.427,
+      "alphaOpaquePct": 5.728,
+      "alphaMean": 33.623
+    },
+    {
+      "id": "B34-3433",
+      "title": "Brine Vane Flora UV Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/flora_uv/TX_B34-3433_brine_vane_flora_uv_atlas_AlphaCandidate.png",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 42.252,
+      "alphaOpaquePct": 35.357,
+      "alphaMean": 98.094
+    },
+    {
+      "id": "B34-3434",
+      "title": "Shallow Alien Seagrass Blade Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/flora_uv/TX_B34-3434_shallow_alien_seagrass_blade_atlas_AlphaCandidate.png",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 35.537,
+      "alphaOpaquePct": 28.947,
+      "alphaMean": 79.993
+    },
+    {
+      "id": "B34-3435",
+      "title": "Plate Coral Rim UV Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/flora_uv/TX_B34-3435_plate_coral_rim_uv_atlas_AlphaCandidate.png",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 63.983,
+      "alphaOpaquePct": 61.428,
+      "alphaMean": 159.106
+    },
+    {
+      "id": "B34-3436",
+      "title": "Sponge Pore Organic Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/flora_uv/TX_B34-3436_sponge_pore_organic_atlas_AlphaCandidate.png",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 66.064,
+      "alphaOpaquePct": 42.115,
+      "alphaMean": 136.593
+    },
+    {
+      "id": "B34-3439",
+      "title": "Spore Pod And Seed Sac Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/flora_uv/TX_B34-3439_spore_pod_and_seed_sac_atlas_AlphaCandidate.png",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 67.125,
+      "alphaOpaquePct": 42.352,
+      "alphaMean": 138.032
+    },
+    {
+      "id": "B34-3441",
+      "title": "Neutral Grazer Skin UV Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/fauna_uv/TX_B34-3441_neutral_grazer_skin_uv_atlas_AlphaCandidate.png",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 70.993,
+      "alphaOpaquePct": 52.852,
+      "alphaMean": 161.804
+    },
+    {
+      "id": "B34-3442",
+      "title": "Filter Feeder Gill Membrane Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/fauna_uv/TX_B34-3442_filter_feeder_gill_membrane_atlas_AlphaCandidate.png",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 60.575,
+      "alphaOpaquePct": 59.009,
+      "alphaMean": 152.51
+    },
+    {
+      "id": "B34-3445",
+      "title": "Translucent Larva Egg Sac Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/fauna_uv/TX_B34-3445_translucent_larva_egg_sac_atlas_AlphaCandidate.png",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 55.587,
+      "alphaOpaquePct": 42.033,
+      "alphaMean": 123.553
+    },
+    {
+      "id": "B34-3446",
+      "title": "Scavenged Carcass Bone Flesh Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/fauna_uv/TX_B34-3446_scavenged_carcass_bone_flesh_atlas_AlphaCandidate.png",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 51.773,
+      "alphaOpaquePct": 49.873,
+      "alphaMean": 129.778
+    },
+    {
+      "id": "B34-3448",
+      "title": "Resource Nodule Pickup UV Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/pickup_resource/TX_B34-3448_resource_nodule_pickup_uv_atlas_AlphaCandidate.png",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_resource",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 65.945,
+      "alphaOpaquePct": 35.262,
+      "alphaMean": 108.947
+    },
+    {
+      "id": "B34-3450",
+      "title": "Data Core Wet Circuit Ceramic Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/pickup_salvage/TX_B34-3450_data_core_wet_circuit_ceramic_atlas_AlphaCandidate.png",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_salvage",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 70.398,
+      "alphaOpaquePct": 44.445,
+      "alphaMean": 136.217
+    }
+  ],
+  "paddedAtlases": [
+    {
+      "id": "B34-3424",
+      "title": "Paint Chip Scratch Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/GeminiBatch34PaddedAtlasSources_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3424_paint_chip_scratch_decal_atlas_BaseColorCandidate.jpg",
+      "paddedAtlas": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/decal_atlas/TX_B34-3424_padded_source_atlas.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "sourceCurationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "PADDED_SOURCE_ATLAS_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1536,
+      "height": 1536,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "alphaNonZeroPct": 17.872,
+      "edgeAlphaNonZeroPct": 0.0
+    },
+    {
+      "id": "B34-3438",
+      "title": "Tube Worm Soft Crown Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/GeminiBatch34PaddedAtlasSources_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3438_tube_worm_soft_crown_atlas_BaseColorCandidate.jpg",
+      "paddedAtlas": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/uv_atlas/TX_B34-3438_padded_source_atlas.png",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "sourceCurationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "PADDED_SOURCE_ATLAS_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1536,
+      "height": 1536,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "alphaNonZeroPct": 26.681,
+      "edgeAlphaNonZeroPct": 0.0
+    },
+    {
+      "id": "B34-3440",
+      "title": "Cave Lichen Biofilm Sheet Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/GeminiBatch34PaddedAtlasSources_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3440_cave_lichen_biofilm_sheet_atlas_BaseColorCandidate.jpg",
+      "paddedAtlas": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/uv_atlas/TX_B34-3440_padded_source_atlas.png",
+      "sourceType": "UV_ATLAS",
+      "family": "organic_decal",
+      "sourceCurationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "PADDED_SOURCE_ATLAS_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1536,
+      "height": 1536,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "alphaNonZeroPct": 20.498,
+      "edgeAlphaNonZeroPct": 0.0
+    },
+    {
+      "id": "B34-3443",
+      "title": "Small Predator Jaw Fin Eye Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/GeminiBatch34PaddedAtlasSources_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3443_small_predator_jaw_fin_eye_atlas_BaseColorCandidate.jpg",
+      "paddedAtlas": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/uv_atlas/TX_B34-3443_padded_source_atlas.png",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "sourceCurationStatus": "MANUAL_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "PADDED_SOURCE_ATLAS_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1536,
+      "height": 1536,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "alphaNonZeroPct": 31.617,
+      "edgeAlphaNonZeroPct": 0.0
+    },
+    {
+      "id": "B34-3444",
+      "title": "Armored Benthic Shell Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/GeminiBatch34PaddedAtlasSources_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3444_armored_benthic_shell_atlas_BaseColorCandidate.jpg",
+      "paddedAtlas": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/uv_atlas/TX_B34-3444_padded_source_atlas.png",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "sourceCurationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "PADDED_SOURCE_ATLAS_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1536,
+      "height": 1536,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "alphaNonZeroPct": 44.444,
+      "edgeAlphaNonZeroPct": 0.0
+    },
+    {
+      "id": "B34-3447",
+      "title": "Creature Eye Lens Wet Organ Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/GeminiBatch34PaddedAtlasSources_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3447_creature_eye_lens_wet_organ_atlas_BaseColorCandidate.jpg",
+      "paddedAtlas": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/uv_atlas/TX_B34-3447_padded_source_atlas.png",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "sourceCurationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "PADDED_SOURCE_ATLAS_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1536,
+      "height": 1536,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "alphaNonZeroPct": 30.578,
+      "edgeAlphaNonZeroPct": 0.0
+    }
+  ],
+  "splitAtlasCandidates": [
+    {
+      "id": "B34-3424",
+      "title": "Paint Chip Scratch Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/GeminiBatch34SplitAtlasCandidates_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3424_paint_chip_scratch_decal_atlas_BaseColorCandidate.jpg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "sourceCurationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "SPLIT_ISLAND_CANDIDATE_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "islandCount": 36,
+      "sampleIslands": [
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/decal_atlas/B34-3424/TX_B34-3424_island_00.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/decal_atlas/B34-3424/TX_B34-3424_island_01.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/decal_atlas/B34-3424/TX_B34-3424_island_02.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/decal_atlas/B34-3424/TX_B34-3424_island_03.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/decal_atlas/B34-3424/TX_B34-3424_island_04.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/decal_atlas/B34-3424/TX_B34-3424_island_05.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/decal_atlas/B34-3424/TX_B34-3424_island_06.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/decal_atlas/B34-3424/TX_B34-3424_island_07.png"
+      ]
+    },
+    {
+      "id": "B34-3438",
+      "title": "Tube Worm Soft Crown Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/GeminiBatch34SplitAtlasCandidates_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3438_tube_worm_soft_crown_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "sourceCurationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "SPLIT_ISLAND_CANDIDATE_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "islandCount": 17,
+      "sampleIslands": [
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3438/TX_B34-3438_island_00.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3438/TX_B34-3438_island_01.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3438/TX_B34-3438_island_02.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3438/TX_B34-3438_island_03.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3438/TX_B34-3438_island_04.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3438/TX_B34-3438_island_05.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3438/TX_B34-3438_island_06.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3438/TX_B34-3438_island_07.png"
+      ]
+    },
+    {
+      "id": "B34-3440",
+      "title": "Cave Lichen Biofilm Sheet Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/GeminiBatch34SplitAtlasCandidates_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3440_cave_lichen_biofilm_sheet_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "organic_decal",
+      "sourceCurationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "SPLIT_ISLAND_CANDIDATE_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "islandCount": 28,
+      "sampleIslands": [
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3440/TX_B34-3440_island_00.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3440/TX_B34-3440_island_01.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3440/TX_B34-3440_island_02.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3440/TX_B34-3440_island_03.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3440/TX_B34-3440_island_04.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3440/TX_B34-3440_island_05.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3440/TX_B34-3440_island_06.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3440/TX_B34-3440_island_07.png"
+      ]
+    },
+    {
+      "id": "B34-3443",
+      "title": "Small Predator Jaw Fin Eye Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/GeminiBatch34SplitAtlasCandidates_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3443_small_predator_jaw_fin_eye_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "sourceCurationStatus": "MANUAL_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "SPLIT_ISLAND_CANDIDATE_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "islandCount": 10,
+      "sampleIslands": [
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3443/TX_B34-3443_island_00.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3443/TX_B34-3443_island_01.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3443/TX_B34-3443_island_02.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3443/TX_B34-3443_island_03.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3443/TX_B34-3443_island_04.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3443/TX_B34-3443_island_05.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3443/TX_B34-3443_island_06.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3443/TX_B34-3443_island_07.png"
+      ]
+    },
+    {
+      "id": "B34-3444",
+      "title": "Armored Benthic Shell Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/GeminiBatch34SplitAtlasCandidates_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3444_armored_benthic_shell_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "sourceCurationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "SPLIT_ISLAND_CANDIDATE_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "islandCount": 31,
+      "sampleIslands": [
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3444/TX_B34-3444_island_00.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3444/TX_B34-3444_island_01.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3444/TX_B34-3444_island_02.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3444/TX_B34-3444_island_03.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3444/TX_B34-3444_island_04.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3444/TX_B34-3444_island_05.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3444/TX_B34-3444_island_06.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3444/TX_B34-3444_island_07.png"
+      ]
+    },
+    {
+      "id": "B34-3447",
+      "title": "Creature Eye Lens Wet Organ Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/GeminiBatch34SplitAtlasCandidates_Manifest.json",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3447_creature_eye_lens_wet_organ_atlas_BaseColorCandidate.jpg",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "sourceCurationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "productionBindingStatus": "SPLIT_ISLAND_CANDIDATE_PENDING_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "islandCount": 28,
+      "sampleIslands": [
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3447/TX_B34-3447_island_00.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3447/TX_B34-3447_island_01.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3447/TX_B34-3447_island_02.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3447/TX_B34-3447_island_03.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3447/TX_B34-3447_island_04.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3447/TX_B34-3447_island_05.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3447/TX_B34-3447_island_06.png",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SplitAtlasCandidates_20260608/uv_atlas/B34-3447/TX_B34-3447_island_07.png"
+      ]
+    }
+  ]
+}

@@ -9,32 +9,36 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Pressão de Contrato por Dívida e Lista Negra"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Debt Blacklist Contract Pressure
+# Pressão de Contrato por Dívida e Lista Negra
 
-PT LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.
+A pressão da dívida mantém a abertura honesta. O protagonista não é arrastado para HECTON-8 por melodrama, e também não é livre em nenhum sentido útil. A Black Keel pode oferecer um contrato porque pools de reivindicação, janelas de dívida, créditos de oxigênio, acesso a beliche e prova de custódia pertencem à mesma economia de fronteira. Recusar a reivindicação seria legal. Também deixaria o jogador na lista negra, em terra, e fora do preço da rota. Aceitar não transforma a Black Keel em vilã com rosto. Transforma a transportadora numa máquina de converter risco em papelada. O jogador mergulha porque o contrato é feio, sobrevivível e plausivelmente a única rota de volta ao movimento.
 
 ## Scanner
 
-PT LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Aviso de penhor ligado à custódia da Black Keel. Recusar continua legal, mas deixa em terra: sem beliche, sem crédito limpo de oxigênio, sem janela de rota para fora de Aegir.
 
 ## Terminal
 
-PT LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+ACEITAÇÃO DE REIVINDICAÇÃO / JANELA DE ALÍVIO DE LISTA NEGRA
+status do contratado: Marauder preso por dívida
+transportadora: custódia de claim-pool Black Keel
+termos de alívio: massa recuperável, prova de custódia, conformidade do recebedor
+estado de falha: lista negra permanece ativa; acesso a beliche negado; suporte de bem-estar de oxigênio convertido em serviço faturável.
 
 ## Audio
 
-PT LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+Isso não foi sequestro. Foi o tipo de escolha que a fronteira vende como liberdade: assine, mergulhe, ou fique limpo no papel e preso na prática.
 
 ## Field Note
 
-PT LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+O penhor não apontou uma arma. Apontou para a conta do ar, a lista de beliches e a próxima janela de rota.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/pt_BR. -->

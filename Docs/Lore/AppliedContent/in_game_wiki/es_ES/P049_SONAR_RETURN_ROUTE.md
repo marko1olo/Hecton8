@@ -7,34 +7,34 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Ruta de regreso por sonar"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Ruta de retorno por sonar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ruta de regreso por sonar
+# Ruta de retorno por sonar
 
-Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.
+Una baliza de retorno registra cómo sonaba una ruta cuando fue segura por última vez. No promete que siguiera segura. Oleaje de tormenta, cable suelto, limo móvil, fauna y cortes frescos de salvage pueden doblar el retorno de sonar sin borrar el corredor. Antes de cargar o bajar más, haz ping a la línea. Si el tono se desplaza, guarda la carga o marca una segunda vía.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+Baliza de retorno obsoleta. El antiguo ping seguro ya no coincide con el eco del corredor; la masa de carga ralentizará la ventana de retirada.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: último eco limpio inválido. Ping de Black Keel recibido con baja confianza. Deriva de obstáculos y densidad de limo exceden tolerancia de mapa. Marcar línea secundaria antes de extraer carga.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+La ruta sigue ahí. El eco no es el mismo.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+Haz ping antes de cargar. Si el camino a casa cambió con las manos vacías, no perdonará una mochila llena.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/es_ES. -->

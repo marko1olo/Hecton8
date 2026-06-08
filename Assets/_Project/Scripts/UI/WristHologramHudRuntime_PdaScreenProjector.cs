@@ -236,6 +236,8 @@ namespace Hecton8.UI
         private bool _pdaProjectionGraphicsBuffersReady;
         private bool _pdaProjectionGpuPayloadValid;
         private bool _pdaProjectionBlackBoxDumped;
+        private bool _pdaProjectionPdaEventsRegistered;
+        private IPlayerRuntimeContext _pdaProjectionPlayerRuntimeContext;
         private int _pdaProjectionWriteBufferIndex;
         private int _pdaProjectionGlobalsWriteBufferIndex;
         private float _pdaProjectionBoot01;
@@ -247,7 +249,7 @@ namespace Hecton8.UI
                 return;
 
             s_activePdaProjectorRuntime = this;
-            PDAEvents.Register(this);
+            _pdaProjectionPdaEventsRegistered = PDAEvents.TryRegister(this);
             PDAIntrusionEvents.Register(this);
             if (EnsurePdaProjectionNativeBuffers())
             {
@@ -261,7 +263,11 @@ namespace Hecton8.UI
 
         private void PdaProjectorOnDisable()
         {
-            PDAEvents.Unregister(this);
+            if (_pdaProjectionPdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaProjectionPdaEventsRegistered = false;
+            }
             PDAIntrusionEvents.Unregister(this);
             if (ReferenceEquals(s_activePdaProjectorRuntime, this))
                 s_activePdaProjectorRuntime = null;
@@ -710,7 +716,9 @@ namespace Hecton8.UI
 
             if (enableMockWristProjection && AllowPdaProjectionMockSource())
             {
-                double3 cameraAup = ResolveCameraAupAbsoluteDouble3();
+                if (!TryResolveCameraAupAbsoluteDouble3(out double3 cameraAup))
+                    return false;
+
                 inputs[0] = BuildMockPdaProjectionInput(
                     cameraAup,
                     (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
@@ -792,6 +800,9 @@ namespace Hecton8.UI
             if (wrist == null)
                 return false;
 
+            if (!TryResolvePdaProjectionPlayerAupGuard(out _, out _))
+                return false;
+
             if (!TryResolveRuntimeAup(camera.transform.position, out AbsoluteUniversePosition cameraAup) ||
                 !TryResolveRuntimeAup(wrist.position, out AbsoluteUniversePosition wristAup))
             {
@@ -811,14 +822,88 @@ namespace Hecton8.UI
             return RuntimeOriginRoute.TryRuntimePositionToAup(runtimePosition, ref aup) && aup.IsFinite();
         }
 
-        private double3 ResolveCameraAupAbsoluteDouble3()
+        private bool TryResolveCameraAupAbsoluteDouble3(out double3 cameraAup)
         {
+            cameraAup = default;
+            if (!TryResolvePdaProjectionPlayerAupGuard(out bool hasPlayerContext, out AbsoluteUniversePosition playerAup))
+                return false;
+
             Camera camera = ResolveRenderCamera();
-            if (camera != null && camera.transform != null && TryResolveRuntimeAup(camera.transform.position, out AbsoluteUniversePosition cameraAup))
-                return cameraAup.ToAbsoluteDouble3();
+            if (camera != null && camera.transform != null && TryResolveRuntimeAup(camera.transform.position, out AbsoluteUniversePosition resolvedCameraAup))
+            {
+                cameraAup = resolvedCameraAup.ToAbsoluteDouble3();
+                return true;
+            }
+
+            if (hasPlayerContext)
+            {
+                cameraAup = playerAup.ToAbsoluteDouble3();
+                return true;
+            }
 
             AbsoluteUniversePosition origin = RuntimeOriginRoute.CurrentRuntimeOriginAup();
-            return origin.IsFinite() ? origin.ToAbsoluteDouble3() : double3.zero;
+            if (!origin.IsFinite())
+                return false;
+
+            cameraAup = origin.ToAbsoluteDouble3();
+            return true;
+        }
+
+        private void PdaProjectorRebindPlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _pdaProjectionPlayerRuntimeContext = playerContext;
+            _pdaProjectionGpuPayloadValid = false;
+        }
+
+        private bool TryResolvePdaProjectionPlayerRuntimeContext(out IPlayerRuntimeContext playerContext)
+        {
+            playerContext = _pdaProjectionPlayerRuntimeContext;
+            if (playerContext != null)
+                return true;
+
+            playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
+                return false;
+
+            _pdaProjectionPlayerRuntimeContext = playerContext;
+            return true;
+        }
+
+        private bool TryResolvePdaProjectionPlayerAupGuard(out bool hasPlayerContext, out AbsoluteUniversePosition playerAup)
+        {
+            hasPlayerContext = TryResolvePdaProjectionPlayerRuntimeContext(out IPlayerRuntimeContext playerContext);
+            if (!hasPlayerContext)
+            {
+                playerAup = default;
+                return true;
+            }
+
+            return TryResolvePdaProjectionPlayerAup(playerContext, out playerAup);
+        }
+
+        private static bool TryResolvePdaProjectionPlayerAup(IPlayerRuntimeContext playerContext, out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                snapshot.Aup.IsFinite())
+            {
+                playerAup = snapshot.Aup;
+                return true;
+            }
+
+            if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
+            {
+                playerAup = movementState.PredictedAup;
+                return true;
+            }
+
+            return false;
         }
 
         private float ResolvePdaProjectionActive01()

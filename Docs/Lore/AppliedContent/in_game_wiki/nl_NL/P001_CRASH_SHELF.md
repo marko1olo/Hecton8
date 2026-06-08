@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Crashplateau
 
-De bathy-drop werd gebouwd voor één gewelddadige taak: de atmosfeer in, stormschering overleven, de oceaan raken, hitte afwerpen en één operator lang genoeg in leven houden om te beginnen. Het was nooit een schip. Het was een wegwerpdiscussie met de natuurkunde. De Black Keel bevindt zich nog ergens boven de maan in Aegir-verkeer, maar de uplink-kern is gescheurd en de opstijghardware is weg. Een schone redding vraagt stroom, timing, een orbitaal venster en een zender die door weer, water en Aegirs magnetische ruis heen komt.
+De bathy-drop was een afdalingswerktuig, geen reddingsvaartuig. Ze werd gebouwd om Aegirs weer binnen te gaan, in HECTON-8s oceaan te slaan, hitte af te werpen en één arbeider te laten ademen tot het eerste onderkomen online kwam. De inslag nam het opstijgpakket mee. De overgebleven schaal is grof, luid en waardevol: drukframe, keramiekscherven, batterizribbels, droge holtes, halfdode uplink. Het plateau eromheen is helder genoeg om zachtaardig te lijken, maar elk nuttig object is ook bewijs. Black Keel weet dat er een levende claim is. Wat die claim waard is, staat nog open.
 
 ## Scanner
 
-Wrak van een bathy-dropcapsule. Drukframe intact, opstijgpakket vernietigd. Dit houdt je in leven, maar brengt je niet thuis.
+Wrak van de bathy-drop. Drukframe intact; opstijgpakket weg. De schaal kan druk en warmte vasthouden. Ze kan je niet optillen.
 
 ## Terminal
 
-OPSTIJGPAKKET: ontbreekt. UPLINK-KERN: breuk gedetecteerd. CARRIERCONTACT: vertraagd.
+BATHY-DROP BD-K8-113: INSLAG OVERLEEFD. OPSTIJGPAKKET: WEG. UPLINK-KERN: GEBROKEN. BLACK KEEL: ALLEEN HANDSHAKE.
 
 ## Audio
 
-Black Keel-handshake ontvangen. Pakketintegriteit onder hersteldrempel. Herhaal: drempel niet gehaald.
+Black Keel-handshake ontvangen. Operator leeft. Bergingsbevoegdheid onopgelost. Houd onderdak en wacht op een bruikbaar venster.
 
 ## Field Note
 
-Als de capsule nog druk houdt, strip haar dan niet kaal. Een slecht onderkomen is meer waard dan een nette inventaris.
+Strip de dropschaal niet tot op het frame. De eerste basis op HECTON-8 is alles wat regen buiten, druk binnen en gereedschap droog houdt.
 
 <!-- In-Game Wiki; generated from P001_CRASH_SHELF/nl_NL. -->

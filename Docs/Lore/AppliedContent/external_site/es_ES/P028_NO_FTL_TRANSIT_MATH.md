@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Cálculo de tránsito sin FTL
 
-Convierte la distancia en presión jugable: órdenes tardías, autoridad vieja y ventanas físicas de escape.
+El cálculo de tránsito sin FTL convierte la distancia interestelar en presión: órdenes tardías, autoridad caduca, retraso de custodia y ventanas físicas de escape.
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Deep Reach优先钩"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Deep Reach优先钩
 
-CN LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+Deep Reach现在的压力不需要不可能的远程控制。旧continuity certificates、隔离clauses、Atlas访问令牌和payload priority hooks已经位于Black Keel的法律路径内。公司可以影响carrier看重什么,而不必显性拥有carrier。这让反派更难切除:它不是可以干扰的信号,而是不断醒来的条款。
 
 ## Scanner
 
-CN LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+旧证书钩。Deep Reach不拥有船;它拥有条款。
 
 ## Terminal
 
-CN LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE:Deep Reach legacy continuity certificate可在Aegir索取法下推进payload recovery、隔离锁、Atlas访问令牌或证据压制队列。除非危险证明超过custody value,人类撤出优先级不变。
 
 ## Audio
 
-CN LOC HOLD: They do not need to be on the bridge to steer the answer.
+他们不需要站在舰桥上,也能引导答案。
 
 ## Field Note
 
-CN LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+比阴谋更干净:文件仍然活着,也仍然饥饿。
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/zh_CN. -->

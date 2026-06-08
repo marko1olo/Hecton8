@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Ending Record Transcript Seed"
+title: "Ending-Record-Transkript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Ending Record Transcript Seed
+# Ending-Record-Transkript
 
-DE LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
+Ending-Record-Transkripte machen Outcomes loggbar und replay-vergleichbar, ohne Wissen in vererbte Macht zu verwandeln.
 
 ## Scanner
 
-DE LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Ending-Record-Fragment listet Empfänger, Payload-Hash, Schuldenstand und ungelöste Kosten.
 
 ## Terminal
 
-DE LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.
 
 ## Audio
 
-DE LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
+After-action record. Empfänger akzeptierte Payload-Hash. Claim für Buchhaltung geschlossen. Suppression flag unlesbar. Truth custody ungelöst.
 
 ## Field Note
 
-DE LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Ending-Dossier-Record. Empfänger, custody und ungelöste Kosten nennen, nicht sauberen moralischen Abschluss.
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/de_DE. -->

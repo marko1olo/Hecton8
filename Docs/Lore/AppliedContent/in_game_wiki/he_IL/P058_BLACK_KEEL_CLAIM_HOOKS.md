@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "קרסי התביעה של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# קרסי התביעה של Black Keel
 
-HE LOC HOLD: Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.
+Black Keel הוא מסלול ההורדה של השחקן, הבטחת ההחזרה והכלוב המשפטי הראשון. המוביל יכול לענות, אבל כל תשובה עוברת דרך קרסי תביעה: ערך מטען, מצב הסגר, תעודת מסלול, משמורת חוב וסעיפי עדיפות ישנים של Deep Reach שכבר היו אמורים לפוג. לכן פני הים אינם כפתור הצלה. הספינה קרובה מספיק כדי לדבר ורחוקה מספיק כדי לסרב; העיכובים שלה אינם מצב רוח. זו לוגיקת חוזה שפועלת בדיוק כפי שנכתבה.
 
 ## Scanner
 
-HE LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+במניפסט, Black Keel הוא חומרה של מאגר תביעות; בסעיפים, הוא מנוף של Deep Reach.
 
 ## Terminal
 
-HE LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+משמורת מוביל: החזרת מפעיל מותרת אחרי מיון מטען, שער הסגר, תעודת מסלול וניקוי אחריות. חותם עדיפות Deep Reach נשמר בסעיפים רדומים.
 
 ## Audio
 
-HE LOC HOLD: It can hear you. It just has to price the answer first.
+היא יכולה לשמוע אותך. היא פשוט חייבת לתמחר את התשובה קודם.
 
 ## Field Note
 
-HE LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+הספינה אינה רעה. היא מושכרת לחוזה שיודע להיות אכזרי בלי להישמע חי.
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/he_IL. -->

@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "光遅延権限"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# 光遅延権限
 
-JP LOC HOLD: Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather.
-
-## Scanner
-
-JP LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
-
-## Terminal
-
-JP LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
-
-## Audio
-
-JP LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
-
-## Field Note
-
-JP LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+HECTON-8の遭難信号は、意味を載せた物理的な貨物だ。浸水したマストを出て、Aegir空間を光速で渡り、リレーバッファで待ち、リスクの値段を先に知っている待ち行列を通ってBlack Keelへ届く。最初の遅れは正直な距離だ。その後の遅れは人間のものだ。保管等級、嵐の窓、責任文言、そして人より先に資産へ返答するキャリアの癖。だから返答は技術的には新しくても、崩れかけた加圧室では何の助けにもならない。
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/ja_JP. -->

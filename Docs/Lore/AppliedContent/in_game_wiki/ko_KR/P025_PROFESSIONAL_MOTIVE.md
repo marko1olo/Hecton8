@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 전문가 동기
 
-플레이어는 빈 관광객이 아니다. 전문성과 dead claim을 받을 이유로 시작하고, 증거가 개인적 동기를 키운다.
+마로더는 빈 관광객이 아니다. 항로는 전문적 관심, salvage 기술, 죽은 청구를 받아들일 이유에서 시작된다. 개인적 동기는 증거, 익숙한 표식, 그리고 HECTON-8이 이 일을 정상으로 만든 같은 단단한 세계에 속한다는 깨달음으로 자란다.
 
 ## Scanner
 

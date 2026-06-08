@@ -8,33 +8,19 @@ biome_tags: biome.tide_pump;biome.drowned_admin
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+spoiler_tier: 1
+title: "Registre physique de la Grande Marée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# Registre physique de la Grande Marée
 
-FR LOC HOLD: Great Tide Physics Record defines the disaster logic for HECTON-8: the ocean is physically dangerous, and the corporate crime is designing around optimistic margins until a moon-sized system collected the debt.
+Le Registre physique de la Grande Marée garde la catastrophe honnête. HECTON-8 était vulnérable à la résonance de marée, à l'effondrement de glace, aux surcotes et aux rejets thermiques. La culpabilité de Deep Reach se lit dans les marges, la capacité d'évacuation et les priorités de décision, pas dans une fausse cause magique.
 
-## Scanner
-
-FR LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
-
-## Terminal
-
-FR LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
-
-## Audio
-
-FR LOC HOLD: The report was right. That is why they buried it.
-
-## Field Note
-
-FR LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+Le Registre physique de la Grande Marée fixe la logique du désastre de HECTON-8: l'océan est dangereux physiquement, et le crime d'entreprise consiste à concevoir avec des marges optimistes jusqu'à ce qu'un système lunaire réclame la dette. N'adoucis pas: une vraie physique a tué des gens, et Deep Reach lui a donné des victimes.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/fr_FR. -->

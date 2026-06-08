@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Ограничения интерьера тендера Black Keel
 
-Ограничения интерьера тендера Black Keel задают carrier игрока как hard-sci-fi salvage infrastructure. Это не героический личный корабль; это claim-pool tender, построенный вокруг sample custody, packet law и долгового давления.
+Black Keel - hard-sci-fi salvage infrastructure, а не героический личный корабль. Его интерьер построен вокруг custody образцов, packet law, обслуживания дронов, карантинных рукавов и долгового давления. Корабль может быть линией жизни и все равно оставаться конструктивно равнодушным к человеку на этой линии.
 
 ## Scanner
 
-У carrier сначала есть стойки для образцов, дронов и legal packets, а уже потом место для живого пассажира.
+В тендере сначала идут стойки под образцы, дроны, sealed packets и lien-груз; место для живого пассажира появляется только после них.
 
 ## Terminal
 
-TENDER LIMIT: нет deep rescue crew, нет atmospheric shuttle reserve, нет free ascent burn вне lien authority.
+TENDER LIMIT: нет deep rescue crew, нет atmospheric shuttle reserve, нет free ascent burn вне lien authority, нет живого квартмейстера.
 
 ## Audio
 
@@ -35,6 +35,6 @@ TENDER LIMIT: нет deep rescue crew, нет atmospheric shuttle reserve, не�
 
 ## Field Note
 
-Black Keel - рабочий claim tender: арендованный, арестованный долгом, автоматизированный и заточенный под salvage custody.
+Black Keel - рабочий claim tender: арендованный, долгово арестованный, автоматизированный и заточенный под custody раньше спасения.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/ru_RU. -->

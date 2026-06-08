@@ -91,6 +91,9 @@ def strip_generated_comments(text: str) -> str:
 def is_ignored_publication_path(path: Path) -> bool:
     return any(part in IGNORED_PUBLICATION_DIR_NAMES for part in path.parts)
 
+def is_nonnegative_int_text(value: str) -> bool:
+    return value.isdigit()
+
 def run_guard(root: Path, packet_glob: str, json_output: bool):
     counters = Counters()
     messages = []
@@ -143,6 +146,10 @@ def run_guard(root: Path, packet_glob: str, json_output: bool):
         missing_keys = [k for k in REQUIRED_KEYS if not fm.get(k)]
         if missing_keys:
             log_fail(f"{rel}: Missing or empty required keys: {missing_keys}")
+
+        flags_text = fm.get("localization_flags", "")
+        if flags_text and not is_nonnegative_int_text(flags_text):
+            log_fail(f"{rel}: localization_flags must be a non-negative integer, got {flags_text!r}")
 
         body_lower = body.lower()
         found_prose = [p for p in ANTI_AI_PHRASES if p in body_lower]

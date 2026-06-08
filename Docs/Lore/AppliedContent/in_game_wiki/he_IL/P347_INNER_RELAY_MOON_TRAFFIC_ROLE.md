@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela כירח relay פנימי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Inner Relay Moon Traffic Role
+# Vela כירח relay פנימי
 
-HE LOC HOLD: Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
+Vela הוא ירח עבודה פנימי של Aegir. הוא חוצה נתיבים טעונים מהר מספיק כדי להעניש מיגון רע, אבל מסכות ה-relay וההחזרים הישנים שלו עדיין מעצבים טבלאות נתיב. גישת Black Keel יכולה להשתמש בצל של Vela כדי להסתיר רעש קישור לכמה דקות. אותו צל יכול לעכב ping חילוץ עד ששעון החוזה כבר החליף ידיים.
 
 ## Scanner
 
-HE LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
+יומן ירח. Vela מסתיר ומחזיר תעבורת relay; ספינות מתייחסות אליו כשער אגרה נע.
 
 ## Terminal
 
-HE LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
+סולם ירחים H2 VELA: צל relay יתנקה בעוד ארבעים ושלוש דקות. ספירת קרינה עולה בצד Skarn. burn העברה אל HECTON נשאר חוקי אם מסת carrier מתחת למגבלה שהוגשה.
 
 ## Audio
 
-HE LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
+איש לא הולך ל-Vela בשביל הנוף. סופרים אותו, מחכים לו, ומקווים שה-beacon הישן ימשיך לשקר באותה צורה.
 
 ## Field Note
 
-HE LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Vela שימושי מפני שהוא עומד בדרך בזמן קבוע.
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/he_IL. -->

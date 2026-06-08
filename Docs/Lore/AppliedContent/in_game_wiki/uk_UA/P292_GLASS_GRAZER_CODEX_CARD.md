@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Glass Grazer Codex Card"
+title: "Картка кодексу: скляний шкребак"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Glass Grazer Codex Card
+# Картка кодексу: скляний шкребак
 
-UK LOC HOLD: Glass Grazer Codex Card turns a benign animal into a readable safety instrument.
+Скляні шкребаки — не улюбленці, не здобич і не декорація. Це малі прозорі панцирні живильники, які роблять фотичний шельф читаним, зчищаючи мінеральну плівку з pressure glass, пухких країв фотичних матів, старих кабельних оболонок і вапнякових губ. Зграя під час живлення лишає у рості бліді смуги. Вони можуть показати недавню течію, чистий зачіп, шов без зайвого тепла або ділянку, де хижаки не проходили кілька останніх хвилин. Корисна підказка — не лише рух. Це переривання. Якщо корм лишився, а панцирні цокання стихли, зграя почула зміну тиску, рух тіні, вібрацію cutter або більшу тварину поза конусом scanner. Вишкребана смуга — доказ, не дозвіл. Іди краєм. Відходь, коли край складається всередину.
 
 ## Scanner
 
-UK LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+Зграя скляних шкребаків. Неворожі панцирні живильники зчищають мінеральну плівку. Рівне цокання — робоча вода; раптова тиша — галявину змінило щось більше.
 
 ## Terminal
 
-UK LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+ЗРАЗОК / ЗГРАЯ СКЛЯНИХ ШКРЕБАКІВ / роль: шкребак мілководної плівки, свідок течії, ознака витіснення хижаком / безпечне читання: край живлення, свіжа бліда смуга, сталі панцирні цокання / відмова: покинуте поле корму, стиснута нерухома зграя, немає зворотних цокань після pinger / примітка маршруту: відсутність після живлення — дані небезпеки.
 
 ## Audio
 
-UK LOC HOLD: When they stop eating, you stop moving.
+Коли маленькі роти перестають цокати, а корм лишається, не ставай наступним, хто чекає.
 
 ## Field Note
 
-UK LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Зграя живиться: читай смугу. Зграя застигла: читай воду. Порожня смуга з кормом: іди.
 
 <!-- In-Game Wiki; generated from P292_GLASS_GRAZER_CODEX_CARD/uk_UA. -->

@@ -71,7 +71,8 @@ namespace Hecton8.EditorTools
             Button reloadCsv = new Button(ReloadCsv) { text = "Reload CSV" };
             rootVisualElement.Add(reloadCsv);
 
-            _target = FloraInteractionManager.ActiveRuntimeInstance;
+            _target = null;
+            WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref _target);
             _targetField.value = _target;
             RebindTarget();
         }
@@ -151,7 +152,7 @@ namespace Hecton8.EditorTools
         private void RefreshReadout()
         {
             if (_target == null)
-                _target = FloraInteractionManager.ActiveRuntimeInstance;
+                WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref _target);
 
             if (_target == null)
             {

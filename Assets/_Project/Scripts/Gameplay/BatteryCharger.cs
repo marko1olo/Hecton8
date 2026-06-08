@@ -14,13 +14,13 @@
 //   • UnityEvent compatibility for cold UI call-sites
 // ============================================================================
 
-using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.Tools;
+using Hecton.Localization;
 using System;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
@@ -419,8 +419,8 @@ namespace Hecton8.Gameplay
 
             // Check by category or a custom flag
             // Adjust based on actual ItemData structure
-            return item.category == ItemCategory.Tool || 
-                   item.itemName != null && 
+            return item.category == ItemCategory.Tool ||
+                   item.itemName != null &&
                    (item.itemName.Contains("Battery") || item.itemName.Contains("Cell"));
         }
 
@@ -878,11 +878,7 @@ namespace Hecton8.Gameplay
 
         private static uint ComputeItemHash(ItemData item)
         {
-            if (item == null)
-                return 0u;
-
-            string key = !string.IsNullOrEmpty(item.PersistentId) ? item.PersistentId : item.itemName;
-            return string.IsNullOrEmpty(key) ? 1u : unchecked((uint)Hecton.Localization.LocHash.Compute(key));
+            return unchecked((uint)ItemData.ResolvePersistentHashId(item));
         }
 
         private void PreserveColdInspectorCompatibility()
@@ -961,7 +957,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)

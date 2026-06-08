@@ -7,34 +7,34 @@ poi_tags: poi.tide_physics_archive;poi.cryosphere_stress_record
 biome_tags: biome.tide_pump;biome.drowned_admin
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "سجل فيزياء المد العظيم"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# سجل فيزياء المد العظيم
 
-AR LOC HOLD: The Great Tide Physics Record keeps the catastrophe honest. HECTON-8 was vulnerable to tide resonance, ice collapse, storm surge and heat discharge. Deep Reach's guilt is visible in margins, evacuation capacity and decision priority, not in a fake magic cause.
+يحافظ سجل فيزياء المد العظيم على صدق الكارثة. كان HECTON-8 ضعيفا أمام رنين المد، انهيار الجليد، اندفاع العواصف وتصريف الحرارة. ذنب Deep Reach يظهر في الهوامش وسعة الإخلاء وأولوية القرار، لا في سبب سحري مزيف.
 
 ## Scanner
 
-AR LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
+نموذج الفيضان سليم. البحر لم يحتج إلى شرير؛ احتاج فقط إلى هوامش أمان سيئة.
 
 ## Terminal
 
-AR LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
+نموذج المد العظيم: قص الغلاف الجليدي، الرفع المحيطي الرنيني، تصريف الحرارة الصناعي وتراكم العواصف تتجاوز غلاف الإخلاء الآمن بمقدار 3.7. احتياطي الصعود المستقل: غير ممول.
 
 ## Audio
 
-AR LOC HOLD: The report was right. That is why they buried it.
+كان التقرير صحيحا. لهذا دفنوه.
 
 ## Field Note
 
-AR LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+لا تلطف الأمر: الفيزياء الحقيقية قتلت الناس، وDeep Reach جعلت لتلك الفيزياء ضحايا.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/ar_SA. -->

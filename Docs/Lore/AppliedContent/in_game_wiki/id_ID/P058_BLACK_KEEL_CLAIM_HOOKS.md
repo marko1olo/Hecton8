@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Kait Klaim Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Kait Klaim Black Keel
 
-ID LOC HOLD: Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.
+Black Keel adalah rute pengantaran pemain, janji pemulihan, dan kandang hukum pertama. Karrier dapat menjawab, tetapi setiap jawaban melewati kait klaim: nilai muatan, status karantina, sertifikat rute, pengawasan utang, dan klausul prioritas lama Deep Reach yang seharusnya sudah kedaluwarsa. Karena itu permukaan bukan tombol penyelamat. Kapal itu cukup dekat untuk berbicara dan cukup jauh untuk menolak; keterlambatannya bukan suasana hati. Itu logika kontrak yang bekerja persis seperti tertulis.
 
 ## Scanner
 
-ID LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+Di manifes, Black Keel adalah perangkat pool klaim; di klausul, ia adalah tuas Deep Reach.
 
 ## Terminal
 
-ID LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+PENGAWASAN KARRIER: pemulihan operator diizinkan setelah triase muatan, gerbang karantina, sertifikat rute, dan pembersihan tanggung jawab. Segel prioritas Deep Reach dipertahankan dalam klausul tidur.
 
 ## Audio
 
-ID LOC HOLD: It can hear you. It just has to price the answer first.
+Ia bisa mendengarmu. Ia hanya harus memberi harga pada jawabannya terlebih dahulu.
 
 ## Field Note
 
-ID LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+Kapal itu tidak jahat. Ia disewakan kepada kontrak yang tahu cara menjadi kejam tanpa terdengar hidup.
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/id_ID. -->

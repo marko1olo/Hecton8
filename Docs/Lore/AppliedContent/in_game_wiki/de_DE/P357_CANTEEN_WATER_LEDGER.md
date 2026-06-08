@@ -9,32 +9,36 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Canteen Water Ledger"
+title: "Kantinen-Wasserledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Canteen Water Ledger
+# Kantinen-Wasserledger
 
-DE LOC HOLD: The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.
+Das Kantinenledger ist klein genug, um es zu uebersehen, und zu menschlich, um es als Deko zu behandeln. Es ist eine drucklaminierte Tafel aus einem ertrunkenen Essraum: Wassermarken auf der einen Seite, Pumpenzugang auf der anderen, medizinische Ausnahmen in den Rand gequetscht, wo die Software kein menschliches Feld liess. Niemand schrieb einen Abschied darauf. Niemand erklaerte die Gro?e Flut. Der letzte sichtbare Streit handelt von sechs fehlenden Bechern, einem schlechten Nordfilter und davon, ob ein Pumpentrupp vor einem Nachttauchgang Wasser bekommen sollte.
+
+Darum zaehlt es. HECTON-8 wird real, wenn die Kolonie aufhoert, nur Katastrophenort zu sein, und ein Ort wird, an dem muede Arbeiter Trinkwasser wie Werkzeugnachweis zaehlten. Eine Mahlzeitmarke war nicht nur Ration. Sie bewies, dass jemand von der Schicht kam, einen Pumpenschluessel zurueckgab, Drucksymptome pruefen liess oder in einer Koje sein sollte statt unter dem Boden. Das Ledger verwandelt anonymen Verlust in Routine: abgekuerzte Namen, abgezeichnete Korrekturen, vorgetragene Schulden, weil das System keine Zeit hatte, freundlich zu werden.
+
+Fuer einen Marauder ist das Objekt nuetzlich, bevor es traurig ist. Die Pumpenraum-Korrektur verbindet die Kantine mit einer Wartungsroute. Die medizinischen Overrides zeigen Druckkrankheit, bevor das offizielle Paket einen Verletzungscluster zugibt. Die fehlenden Marken koennen Diebstahl bedeuten, Notfalltriage, Kontamination oder jemanden, der heimlich einen Trupp fuetterte, den der Plan schon geloescht hatte. Bewahre die Tafel, bevor du den Raum ausweidest. Eine Becherzeile kann mehr beweisen als ein Memorial.
 
 ## Scanner
 
-DE LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
+KANTINEN-WASSERLEDGER // Laminierte Tafel, Ecken aufgequollen. Sechs Mahlzeit-Wasser-Marken fehlen, zwei medizinische Ausnahmen, eine Pumpenraum-Korrektur in Fettstift. Die Kolonie stritt noch ueber Becher, als der Ozean begann, Raeume zu nehmen.
 
 ## Terminal
 
-DE LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
+KANTINENLEDGER: Trinkwasserzuteilung vom Schichtlead versiegelt. Fehlende Marken: 6. Medizinische Ausnahmen: 2. Pumpenraum-Korrektur: Mara Venn. Rationsstreit nach Ton 2 gehalten, weil der Nordfilter sauer lief und niemand es schon contamination nennen wollte.
 
 ## Audio
 
-DE LOC HOLD: The last argument was about water tokens.
+Der letzte Streit war nicht heroisch. Es ging darum, wer getrunken hat, wer nass arbeitete und wer den Becher zurueckzeichnete.
 
 ## Field Note
 
-DE LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+Sechs fehlende Marken, zwei medizinische Ausnahmen, eine Pumpenkorrektur. Den Rand nicht s?ubern. Der Becherstreit ist die Route.
 
 <!-- In-Game Wiki; generated from P357_CANTEEN_WATER_LEDGER/de_DE. -->

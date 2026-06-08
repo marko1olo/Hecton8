@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Naamstapel uit zwarte dozen
 
-De naamstack maakt waarheid draagbaar. Wat de speler meeneemt beïnvloedt broadcast, dossier en ending.
+De black-box-naamstack maakt de uiteindelijke waarheid draagbaar. Bewijs, broadcast-pakketten en publieke dossiers hangen af van welke namen, hashes en ontvangstbewijzen het water verlaten.
 
 ## Scanner
 

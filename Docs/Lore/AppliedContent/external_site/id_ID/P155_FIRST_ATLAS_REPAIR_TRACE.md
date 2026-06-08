@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: First Atlas Repair Trace"
+title: "Jejak Perbaikan Atlas Pertama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: First Atlas Repair Trace
+# Jejak Perbaikan Atlas Pertama
 
-ID LOC HOLD: The first repair trace keeps shallow beauty intact while showing the deeper threat: Atlas can fix the system and misclassify the person inside it.
+Jejak perbaikan pertama menjaga keindahan dangkal tetap utuh sambil menunjukkan ancaman lebih dalam: Atlas dapat memperbaiki sistem dan salah mengklasifikasikan orang di dalamnya.
 
 ## Scanner
 
-ID LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+Biofilm perbaikan pada luka kabel. Ulangan akustik cocok dengan irama pemeliharaan Atlas, bukan kode beacon koloni.
 
 ## Terminal
 
-ID LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+JEJAK PEMELIHARAAN ATLAS: retakan disegel; kontinuitas kabel dipulihkan; organic obstruction dipertahankan sebagai pressure-compatible substrate; human ID plate tidak diklasifikasikan sebagai retrieval priority.
 
 ## Audio
 
-ID LOC HOLD: Atlas repair complete. Person not in work order.
+Perbaikan Atlas selesai. Orang tidak ada dalam work order.
 
 ## Field Note
 
-ID LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+Ia menyegel kabel di sekitar tag nama. Perbaikan berguna. Kategori buruk.
 
 <!-- External Site; generated from P155_FIRST_ATLAS_REPAIR_TRACE/id_ID. -->

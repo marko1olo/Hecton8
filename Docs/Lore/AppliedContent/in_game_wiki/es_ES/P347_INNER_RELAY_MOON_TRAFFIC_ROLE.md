@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela como luna interior de relé"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Inner Relay Moon Traffic Role
+# Vela como luna interior de relé
 
-ES LOC HOLD: Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
+Vela es una luna interior de trabajo de Aegir. Cruza rutas cargadas con rapidez suficiente para castigar mal blindaje, pero sus viejas máscaras y reflejos de relé siguen formando tablas de ruta. Un acercamiento Black Keel puede usar su sombra para ocultar ruido de enlace durante pocos minutos.
 
 ## Scanner
 
-ES LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
+Registro lunar. Vela enmascara y refleja tráfico de relé; las naves la tratan como un peaje móvil.
 
 ## Terminal
 
-ES LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
+ESCALERA LUNAR H2 VELA: sombra de relé despeja en cuarenta y tres minutos. Conteo de radiación sube por el lado Skarn. Burn de transferencia HECTON sigue legal si la masa carrier queda bajo el límite archivado.
 
 ## Audio
 
-ES LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
+Nadie va a Vela por la vista. La cuentas, la esperas y esperas que el viejo faro siga mintiendo igual.
 
 ## Field Note
 
-ES LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Vela sirve porque se pone en medio con puntualidad.
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/es_ES. -->

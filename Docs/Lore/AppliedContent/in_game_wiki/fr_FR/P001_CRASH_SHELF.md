@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Plateau d'impact"
+title: "Plateau du crash"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Plateau d'impact
+# Plateau du crash
 
-La capsule bathy a été conçue pour une seule tâche brutale: entrer dans l'atmosphère, survivre au cisaillement des tempêtes, frapper l'océan, perdre sa chaleur et garder un opérateur vivant assez longtemps pour commencer le travail. Ce n'était pas un vaisseau. C'était une dispute jetable avec la physique. Le Black Keel est toujours quelque part au-dessus de la lune dans le trafic d'Aegir, mais le coeur uplink est fendu et le matériel d'ascension a disparu. Un sauvetage propre exige de l'énergie, du timing, une fenêtre orbitale et un émetteur capable de traverser météo, eau et bruit magnétique d'Aegir.
+La bathy-drop était un outil de descente, pas un appareil de sauvetage. Elle était faite pour entrer dans le temps d'Aegir, percuter l'océan de HECTON-8, rejeter la chaleur et garder un travailleur en respiration jusqu'à l'activation du premier abri. L'impact a emporté le paquet d'ascension. La coque restante est grossière, bruyante et précieuse : cadre de pression, éclats céramiques, nervures de batterie, cavités sèches, uplink à moitié mort. Le plateau autour brille assez pour paraître doux, mais chaque objet utile est aussi une preuve. Black Keel sait qu'une réclamation est vivante. Sa valeur reste à décider.
 
 ## Scanner
 
-Epave de capsule bathy. Chassis de pression intact, module d'ascension détruit. Elle peut te garder en vie, pas te ramener.
+Épave de bathy-drop. Cadre de pression intact ; paquet d'ascension perdu. La coque peut garder pression et chaleur. Elle ne peut pas te soulever.
 
 ## Terminal
 
-MODULE D'ASCENSION: manquant. NOYAU UPLINK: fracture détectée. CONTACT CARRIER: retardé.
+BATHY-DROP BD-K8-113 : IMPACT SURVÉCU. PAQUET D'ASCENSION : PERDU. NOYAU UPLINK : FRACTURÉ. BLACK KEEL : HANDSHAKE SEUL.
 
 ## Audio
 
-Poignée de main Black Keel reçue. Intégrité du paquet sous le seuil de récupération. Répétition: seuil non atteint.
+Handshake de Black Keel reçu. Opérateur vivant. Autorité de récupération non résolue. Tenir l'abri et attendre une fenêtre utilisable.
 
 ## Field Note
 
-Si la coque tient encore la pression, ne la dépouille pas. Un mauvais abri vaut mieux qu'un inventaire propre.
+Ne dépouille pas la coque de descente jusqu'au cadre. La première base sur HECTON-8, c'est tout ce qui garde la pluie dehors, la pression dedans et les outils au sec.
 
 <!-- In-Game Wiki; generated from P001_CRASH_SHELF/fr_FR. -->

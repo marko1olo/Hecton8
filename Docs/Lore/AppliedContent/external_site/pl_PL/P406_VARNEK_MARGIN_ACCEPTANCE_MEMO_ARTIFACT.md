@@ -9,32 +9,22 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Varnek Margin Memo"
+title: "Memo Varneka o przyjętym marginesie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Varnek Margin Memo
+# Memo Varneka o przyjętym marginesie
 
-PL LOC HOLD: Deep Reach liability begins where real physics became an acceptable loss line.
+## Pieczęć Przed Zalaniem
 
-## Scanner
+Memo Varneka jest ważne, bo brzmi spokojnie. Wielka Fala była realna. Kaskada ciśnienia była realna. Ocean nie potrzebował korporacyjnego rozkazu, by zmiażdżyć HECTON-8. Przestępstwo pojawia się w linii, gdzie znany margines ostrzegawczy staje się accepted tail exposure, a rezerwa ewakuacyjna nadal śpi.
 
-PL LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Dokument mówi językiem odpowiedzialnego zarządzania: average model, continuity cost, reserve non-triggered, independent shutdown not recommended. W tym jest groza. Varnek nie brzmi jak złoczyńca. Brzmi jak człowiek, który znalazł kolumnę, gdzie niebezpieczeństwo staje się payable. Gdy Marauder znajduje memo, dawna decyzja jest już krajobrazem: wygięte żebra korytarzy, utopione narzędzia, drzwi ciśnieniowe zamknięte przed pracownikami czekającymi jeszcze na zmianę polecenia.
 
-## Terminal
-
-PL LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
-
-## Audio
-
-PL LOC HOLD: No murder order. A margin acceptance.
-
-## Field Note
-
-PL LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Ten dowód powinien ważyć ciężej niż wyznanie. Wyznanie można odrzucić jako panikę albo złą wolę. Podpisana margin review pokazuje Deep Reach w zwykłej pracy, z zabójczymi danymi na stole. Firma przyjęła ocean jako cost center, a potem wydała raport katastrofy dość czysty dla kontroli ubezpieczeniowej.
 
 <!-- External Site; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/pl_PL. -->

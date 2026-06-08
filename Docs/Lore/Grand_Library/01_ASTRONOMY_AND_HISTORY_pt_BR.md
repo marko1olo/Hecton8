@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # O SISTEMA AEGIR: NOVE LUAS E UM TÚMULO
 
 > **Fonte:** Arquivo Público, Escritório de Registros de Fronteira, Estaleiros Barnard. Compilador: J. Elkin-Torres, Arquivista Chefe. Última revisão: 2188. Nível de acesso: público / sem censura.  

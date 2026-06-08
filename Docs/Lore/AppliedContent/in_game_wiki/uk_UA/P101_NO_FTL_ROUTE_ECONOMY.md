@@ -7,34 +7,34 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Економіка маршрутів без FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# Економіка маршрутів без FTL
 
-UA LOC HOLD: Human space in 2190 runs on slow routes, relay custody, mass budgets, braking windows and old law. HECTON-8 is far enough that help is procedural before it is physical. That makes Black Keel, Deep Reach proxy packets and local evidence more important than any clean rescue fantasy.
+До 2190 року людський простір працює на повільних кораблях, релейній опіці, вікнах гальмування й боргу. HECTON-8 лежить поза негайним порятунком. Закон може прийти пакетами; кораблі приходять лише з масою, захистом, паливом, гальмівною архітектурою і тим, хто готовий заплатити за рейс.
 
 ## Scanner
 
-UA LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
+Транзитний штамп: затримка, маса, захист і борг гальмування сформували цей об'єкт раніше, ніж колонія торкнулася води.
 
 ## Terminal
 
-UA LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
+МАРШРУТНЕ ПОВІДОМЛЕННЯ: ансибля немає. Локальна опіка лишається обов'язковою до наступного релейного пакета. Salvage authority не може чекати відповіді з Sol.
 
 ## Audio
 
-UA LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
+Ніхто з внутрішніх світів не дістанеться цієї води вчасно. Твоя застава вже врахувала це.
 
 ## Field Note
 
-UA LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+Якщо порятунок здається запізнілим, покажи квитанцію. Відстань виставили в рахунок раніше за сигнал лиха.
 
 <!-- In-Game Wiki; generated from P101_NO_FTL_ROUTE_ECONOMY/uk_UA. -->

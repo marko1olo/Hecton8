@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "第一小时主脊"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# 第一小时主脊
 
-CN LOC HOLD: First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.
+第一小时不该从黑暗开始。它从合同声音、受损下降、呼吸管理、明亮浅水，以及重启水泵的实际需求开始。美丽是陷阱的一部分：HECTON-8 必须先显得值得被渴望，然后它的纸面程序才会变得致命。随后，开场主脊把生存变成证据。第一个庇护房间有用但已经被污染；被清洗过的事故包听起来过于干净；第一道 Atlas 修复伤痕显示电缆、工具金属和生命残留被压进同一个维护决定。玩家通过行动而不是说明学会基础循环：呼吸、修理、阅读、怀疑、下潜更深。
 
 ## Scanner
 
-CN LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+合同、受损投送、空气、明亮浅滩、泵房避难点、被清洗过的谎言，然后是第一道把生命当密封垫使用的修复伤痕。
 
 ## Terminal
 
-CN LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+浅水附属区：手动泵重启有效。Deep Reach 事故包已缓存。Atlas 修复生长在电缆、工具碎片和生物残留周围检出。
 
 ## Audio
 
-CN LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+第一个安全房间并不干净。它只是比你更会憋气。
 
 ## Field Note
 
-CN LOC HOLD: The opening must be beautiful before it becomes accusing.
+开场必须先美丽，之后才开始控诉。
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/zh_CN. -->

@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ko_KR
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "저출력 유도 절단기"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# 저출력 유도 절단기
 
-KO LOC HOLD: The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+저출력 유도 절단기는 첫 접근 도구이지 만능 열쇠가 아니다. 걸린 서비스 해치, 패널 볼트, salvage 상자를 열지만 부품이 무엇을 지탱하는지 읽게 만든다. Pressure glass, 활성 프레임, Atlas 성장 이음부는 이후 도구나 더 나은 증거의 영역이다.
 
 ## Scanner
 
-KO LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+저출력 유도 절단기. 서비스 금속 전용. 하중 프레임과 pressure glass는 등급 밖.
 
 ## Terminal
 
-KO LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+공구 경고 / 유도 절단기: 허가 대상은 서비스 해치, 패널 볼트, 경량 브래킷, 상자 잠금장치. 이후 등급 인증 없이 활성 프레임, pressure-glass 격자, Atlas 성장 이음부 절단 금지.
 
 ## Audio
 
-KO LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
+볼트를 잘라라. 리브는 남겨라.
 
 ## Field Note
 
-KO LOC HOLD: The cutter should feel valuable because it is limited.
+좋은 절단기라도 믿음이 되면 안 된다. 패널은 열지만, 방을 네모로 버티는 리브를 자르면 용서하지 않는다.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/ko_KR. -->

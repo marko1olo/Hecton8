@@ -514,10 +514,10 @@ The following patterns are unconditionally forbidden in any method called per-fr
 
 FORBIDDEN                               REASON
 
-GameObject.Find("Name")                 O(N) scene graph string search. Allocates.
-FindObjectOfType<T>()                   O(N) scene graph type scan. No caching.
+[FORBID] GameObject.Find("Name")        O(N) scene graph string search. Allocates.
+[FORBID] FindObjectOfType<T>()          O(N) scene graph type scan. No caching.
 GetComponentInChildren<T>()             O(depth) tree traversal. Allocates array.
-Resources.Load(path)                    Synchronous disk I/O in tick. Hitches.
+[FORBID] Resources.Load(path)           Synchronous disk I/O in tick. Hitches.
 new List<T>() / LINQ inside Tick()      Heap allocation -> GC pressure.
 Dictionary lookup per registered item   Hash compute + potential collision chain.
 Nested registry bucket lookups          Breaks cache locality. Use flat arrays only.

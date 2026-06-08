@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Needleprobe Precursor Program"
+title: "Programme précurseur Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Needleprobe Precursor Program
+# Programme précurseur Needleprobe
 
-FR LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Les needleprobes ont porté la première revendication humaine dans Aegir. Ces charges d'étude étroites et blindées partaient avant les équipages pour lire gravité, radiation, spectres océaniques, orbites lunaires et lignes relais. Leurs paquets retardés ont rendu HECTON-8 lisible aux investisseurs avant d'être vivable pour les ouvriers.
 
 ## Scanner
 
-FR LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+Archive needleprobe : Aegir fut une cible de registre bien avant de devenir un lieu de travail. Les yeux des machines ont atteint les lunes d'abord.
 
 ## Terminal
 
-FR LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+ARCHIVE RAN : chaîne de sondes revenue avec parallaxe, radiation, signatures océaniques, géométrie relais et confiance de voie à pellets. Cote équipage retenue jusqu'à stabilisation du troisième modèle de risque.
 
 ## Audio
 
-FR LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+La première chose humaine dans Aegir n'était pas une personne. C'était une machine demandant si des gens seraient rentables ici.
 
 ## Field Note
 
-FR LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Les archives de sondes sont des preuves de route. Une vieille télémétrie peut précéder la colonie et décider encore qui possède l'eau.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/fr_FR. -->

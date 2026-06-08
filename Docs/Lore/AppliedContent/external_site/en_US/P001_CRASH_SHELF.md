@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Crash Shelf
 
-HECTON-8 begins at the waterline: a damaged descent capsule, a bright alien shelf, and a carrier too distant to answer cleanly. The first mystery is not what lives below, but why the rescue chain already feels hostile.
-
-## Scanner
-
-Bathy-drop wreckage. Crush frame intact, ascent package destroyed. This craft can keep you alive, not take you home.
-
-## Terminal
-
-ASCENT PACKAGE: missing. UPLINK CORE: fracture detected. CARRIER CONTACT: delayed.
-
-## Audio
-
-Black Keel handshake received. Packet integrity below recovery threshold. Repeat: recovery threshold not met.
-
-## Field Note
-
-If the drop shell is still holding pressure, do not strip it bare. A bad shelter is worth more than a clean inventory.
+The Crash Shelf is the player's first room and first crime scene. A descent capsule lies half-buried in salt weed and warm ceramic, too damaged to leave and too useful to abandon. Its surviving frame gives the player shelter, salvage, scanner targets, and a line to Black Keel that sounds procedural before it sounds human. That tone matters. The carrier does not answer like a friend. It inventories the failure: ascent package gone, uplink fractured, operator alive, recovery authority unresolved. The opening location teaches HECTON-8 without a lecture. Beauty is real: shallow bioluminescence, reef color, storm light under Aegir. So is the industrial violence: stamped parts, impact scars, claim language, a rescue chain already counting cost. The first question is practical: stay alive. The second question arrives inside the same wreckage: who benefits if you do?
 
 <!-- External Site; generated from P001_CRASH_SHELF/en_US. -->

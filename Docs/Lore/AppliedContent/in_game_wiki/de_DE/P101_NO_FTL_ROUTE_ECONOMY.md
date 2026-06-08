@@ -7,34 +7,34 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "No-FTL-Routenökonomie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# No-FTL-Routenökonomie
 
-DE LOC HOLD: Human space in 2190 runs on slow routes, relay custody, mass budgets, braking windows and old law. HECTON-8 is far enough that help is procedural before it is physical. That makes Black Keel, Deep Reach proxy packets and local evidence more important than any clean rescue fantasy.
+Um 2190 läuft menschlicher Raum über langsame Schiffe, Relaisverwahrung, Bremsfenster und Schuld. HECTON-8 liegt außerhalb sofortiger Rettung. Recht kann als Paket eintreffen; Schiffe kommen nur mit Masse, Abschirmung, Treibstoff, Bremsarchitektur und jemandem, der die Reise bezahlt.
 
 ## Scanner
 
-DE LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
+Transitstempel: Verzögerung, Masse, Abschirmung und Bremschuld formten dieses Objekt, bevor irgendeine Kolonie Wasser berührte.
 
 ## Terminal
 
-DE LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
+ROUTENHINWEIS: kein Ansible. Lokale Verwahrung bleibt bis zum nächsten Relaispaket bindend. Bergungsautorität kann nicht auf Sol-Antwort warten.
 
 ## Audio
 
-DE LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
+Niemand aus den inneren Welten erreicht dieses Wasser rechtzeitig. Dein Pfandrecht hat das schon eingepreist.
 
 ## Field Note
 
-DE LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+Wenn Rettung verspätet wirkt, zeig die Quittung. Distanz wurde vor dem Notruf berechnet.
 
 <!-- In-Game Wiki; generated from P101_NO_FTL_ROUTE_ECONOMY/de_DE. -->

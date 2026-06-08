@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Quarantine Release Delay Proof"
+title: "検疫解放保留"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Quarantine Release Delay Proof
+# 検疫解放保留
 
-JA LOC HOLD: Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
+保留記録は検疫を悪にしない。時刻を見えるようにする。Deep Reachは不確実性を名付け、解放を遅らせ、保険上の立場を守り、経路が死ぬまで作業員を区域内に留めることができた。
 
 ## Scanner
 
-JA LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+検疫保留プレート。出口経路がすでに施錠された後で、保護という言葉が現れる。
 
 ## Terminal
 
-JA LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY。reviewまで保留。worker releaseより先にasset massをrecovery queueへ受理。insurance ping有効。
 
 ## Audio
 
-JA LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+検疫は身体を救える。身体を紙になるまで待たせることもできる。
 
 ## Field Note
 
-JA LOC HOLD: Use where player may confuse rescue with custody.
+Marauderメモ: protectionという言葉だけで保護は証明されない。時計を見ろ。
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/ja_JP. -->

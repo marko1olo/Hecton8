@@ -1,16 +1,16 @@
 // ============================================================================
-// HECTON-8 — EndingTerminalInteractable.cs
-// Interaktivnyy terminal yadra Atlas-6 — tochka vybora kontsovki.
+// HECTON-8 â€” EndingTerminalInteractable.cs
+// Interaktivnyy terminal yadra Atlas-6 â€” tochka vybora kontsovki.
 //
 // LOR: Terminal ryadom s yadrom na -5000m.
 // Na terminale: polnye dannye programmy Poseva, prichina "polomki" Atlas-6,
-// i — glavnoe — chto on stroil 847 dney.
+// i â€” glavnoe â€” chto on stroil 847 dney.
 //
 // ARHITEKTURA:
-//   • IInteractable — vzaimodeystvie otkryvaet UI vybora kontsovki.
-//   • Aktiven tolko esli EndingSystem.IsConditionMet.
-//   • Pokazyvaet tri varianta cherez NotificationEvents (vremenno).
-//   • V finalnoy versii — otdelnyy UI ekran.
+//   â€¢ IInteractable â€” vzaimodeystvie otkryvaet UI vybora kontsovki.
+//   â€¢ Aktiven tolko esli EndingSystem.IsConditionMet.
+//   â€¢ Pokazyvaet tri varianta cherez NotificationEvents (vremenno).
+//   â€¢ V finalnoy versii â€” otdelnyy UI ekran.
 // ============================================================================
 
 using System;
@@ -60,13 +60,22 @@ namespace Hecton8.Gameplay
         private IQuestSystem _cachedQuest;
         private ILocalizationTextReadModel _cachedLocalization;
         private bool _hotSwapListenerRegistered;
+        private int _choiceNotificationMissCount;
 
-        // Pre-cached interact texts — zero GC
+        // Pre-cached interact texts â€” zero GC
         private const string TextInactive = "ATLAS-6 TERMINAL UNAVAILABLE";
         private const string TextActive = "INTERACT WITH ATLAS-6 CORE";
         private const string TextComplete = "DECISION RECORDED";
         private static readonly uint s_terminalInactiveDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash("atlas6_terminal_inactive");
         private static readonly uint s_atlasCoreDataAccessedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash("atlas6_core_data_accessed");
+        private static readonly uint s_choiceNotificationMissWarningHash =
+            unchecked((uint)LocHash.Compute("EndingTerminal.ChoiceNotificationMiss"));
+        private static readonly uint s_endingTerminalContextHash =
+            unchecked((uint)LocHash.Compute("EndingTerminalInteractable"));
+        private static readonly uint s_choiceNotificationContextHash =
+            unchecked((uint)LocHash.Compute("EndingTerminal.ChoiceNotification"));
+
+        public int ChoiceNotificationMissCount => _choiceNotificationMissCount;
 
         // ----------------------------------------------------------
         //  LIFECYCLE
@@ -93,6 +102,7 @@ namespace Hecton8.Gameplay
             InteractableRegistry.InvalidateTree(this);
             SetObjectActive(highlightObject, false);
             _choiceOpen = false;
+            ClearChoiceNotificationDiagnostics();
             TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
             EndingEvents.Unregister(this);
@@ -172,12 +182,33 @@ namespace Hecton8.Gameplay
             NarrativeEvents.TryRaiseDiscoveryMade(s_atlasCoreDataAccessedDiscoveryHash);
 
             // Publikuem tri varianta cherez HUD
-            // V finalnoy versii — otdelnyy UI ekran s tremya knopkami
-            // Seychas — uvedomleniya s instruktsiey
-            Hecton8.UI.NotificationEvents.TryPushWarning(
-                _dataLoadedTextBuffer.AsSpan(0, _dataLoadedTextLength));
+            // V finalnoy versii â€” otdelnyy UI ekran s tremya knopkami
+            // Seychas â€” uvedomleniya s instruktsiey
+            TryPushChoiceNotification(_dataLoadedTextBuffer.AsSpan(0, _dataLoadedTextLength));
 
             LogChoiceUiOpened();
+        }
+
+        private void TryPushChoiceNotification(ReadOnlySpan<char> message)
+        {
+            if (Hecton8.UI.NotificationEvents.TryPushWarning(message))
+                return;
+
+            ReportChoiceNotificationMiss();
+        }
+
+        private void ReportChoiceNotificationMiss()
+        {
+            _choiceNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                s_choiceNotificationMissWarningHash,
+                s_endingTerminalContextHash ^ s_choiceNotificationContextHash,
+                Math.Max(1, _choiceNotificationMissCount));
+        }
+
+        private void ClearChoiceNotificationDiagnostics()
+        {
+            _choiceNotificationMissCount = 0;
         }
 
         public void ChooseStay()

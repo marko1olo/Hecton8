@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Rantai Utang Relay Custody
 
-Relay custody mengubah logistik ruang menjadi tekanan: bantuan membawa utang, prioritas dan otoritas korporat.
+Relay custody mengubah logistik ruang menjadi tekanan. Bantuan bisa tiba, tetapi rute yang membawa bantuan juga membawa utang, kait prioritas, dan otoritas korporat.
 
 ## Scanner
 

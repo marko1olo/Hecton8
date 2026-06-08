@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "תמליל עקבת תיקון Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Repair Trace Transcript Seed
+# תמליל עקבת תיקון Atlas
 
-HE LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.
+שמע Atlas מפחיד כי הוא מתייחס לחיים, מתכת ומים כאל maintenance surface פגוע אחד.
 
 ## Scanner
 
-HE LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+זרע שמע/כתובית: עקבות Atlas צריכות להישמע כמו טלמטריית תיקון שממוטטת קטגוריות, לא כמו אל מדבר.
 
 ## Terminal
 
-HE LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
+TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.
 
 ## Audio
 
-HE LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+עקבת תיקון: אי-רציפות ממברנה התקבלה. צמיחת כבל אושרה. נתיב פאונה סומן serviceable.
 
 ## Field Note
 
-HE LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+לכתוביות סורק, שכבות שמע עמוקות ושערי spoiler של Atlas. קצר, טקסונומי ופגוע.
 
 <!-- In-Game Wiki; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/he_IL. -->

@@ -9,32 +9,28 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: パケット保管"
+title: "パケット保管"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: パケット保管
+# パケット保管
 
-JA LOC HOLD: HECTON-8からの通信は、経路、封印、受信者、損傷状態が一緒に残って初めて意味を持つ。パケット保管は、Aegirの遅延、請求者の圧力、物理回収を越えて事実を単なる貨物にしない。
+## 封印の意味
 
-## Scanner
+HECTON-8からの通信は、言葉として発せられただけでは役に立たない。誰が運び、いつ出発し、何を越え、どの請求者が消せなかったのかを経路が証明して初めて役に立つ。
 
-JA LOC HOLD: パケット封印 // 証人ハッシュ帯は損傷しているが読める。サルベージ切断前に保全。未封印の証拠は請求材料になる。
+Black Keelは証言を貨物のように扱う。質量、封印、番号、受信者、遅延。保管帯なしでcarrierへ届いたサンプルは請求材料として記録される。witness hashのない作業員名は損失分類に落ちる。経路印のない圧力記録は、次の中継窓が開く前にセンサー雑音として退けられる。
 
-## Terminal
+だから初期サルベージは小さく醜い物へ戻ってくる。曲がったパケット板、濡れた公証帯、経路印、中継票、塩で膨れたコネクタタグ。紙仕事に見えるものを、海が物理的な証拠に変える。プレイヤーはAegirで事実を生かす鎖を守る。
 
-JA LOC HOLD: KEELMARKパケット公証 // 転送前に封印板、証人ハッシュ、経路印、コネクタタグを保全。無印の材料は請求損失として処理される。
+パケット保管は正義ではない。正義に経路を与える最低条件だ。封印を壊せば、Deep Reachは破損を主張できる。封印を保てば、同じ金属が圧力、距離、負債、請求法を越えた証人になる。
 
-## Audio
+## プレイヤーの扱い
 
-JA LOC HOLD: Black Keel中継: 貨物は質量だ。証拠は保管だ。両方持ち帰れ。でなければ窓口が差額を請求する。
-
-## Field Note
-
-JA LOC HOLD: 先に封印、切るのは後。壊れたタグ付きの清潔なサンプルは、台帳を持つ者のものになる。
+周囲のハードウェアを切る前にプレートをスキャンすること。経路印、受信レーン、witness hash、損傷状態は一緒に保つ。タグがサンプルから離れたら、発見物の価値は残っても、同じ事実は証明できない。
 
 <!-- External Site; generated from P461_PACKET_CUSTODY_BRIDGE/ja_JP. -->

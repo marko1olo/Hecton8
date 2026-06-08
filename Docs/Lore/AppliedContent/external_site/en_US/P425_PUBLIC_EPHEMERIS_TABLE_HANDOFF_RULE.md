@@ -8,7 +8,7 @@ biome_tags: biome.authoring;biome.aegir_system
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Ephemeris Data Boundary Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Ephemeris Data Boundary Rule
 
-Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.
+Public pages can explain Aegir, HECTON-8, transfer windows and route hazards without freezing exact orbital constants in prose.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Data boundary: prose owns bands; final orbital numbers stay table-owned.
 
 ## Terminal
 
-DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY: prose may state roles, hazards and bands. Exact orbital values stay out of narrative copy.
 
 ## Audio
 

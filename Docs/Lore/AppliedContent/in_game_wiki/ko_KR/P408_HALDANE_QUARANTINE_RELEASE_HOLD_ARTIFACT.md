@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Haldane Quarantine Hold"
+title: "할데인 격리 해제 보류"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Haldane Quarantine Hold
+# 할데인 격리 해제 보류
 
-KO LOC HOLD: The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
+할데인 hold는 격리가 가짜였다는 증거가 아니다. 더 나쁘다. 프로토콜에는 실제 근거가 있었고, Deep Reach는 certification 언어로 몸, 샘플, liability를 제자리에 묶었다. 식민지에는 서류보다 이동이 필요했는데도.
 
 ## Scanner
 
-KO LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+격리 해제 hold. 실제 오염 프로토콜이 압력 위험이 물리화된 뒤 custody 지연으로 변했다.
 
 ## Terminal
 
-KO LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
+QUARANTINE HOLD DESK / HALDANE / RELEASE CERTIFICATION: evacuee movement remains suspended pending XO sample custody, seal-read variance and downstream exposure review.
 
 ## Audio
 
-KO LOC HOLD: The folder was orderly. That was the problem.
+hold가 위험을 만든 것은 아니다. 사람들을 그 안에 붙잡았다.
 
 ## Field Note
 
-KO LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Marauder 메모: 격리는 진실일 수 있고, 동시에 자물쇠처럼 쓰일 수 있다.
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/ko_KR. -->

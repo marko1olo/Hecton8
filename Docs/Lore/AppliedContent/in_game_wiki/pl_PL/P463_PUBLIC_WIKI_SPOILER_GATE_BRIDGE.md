@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Brama spoilerów"
+title: "Brama spoilerów"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Brama spoilerów
+# Brama spoilerów
 
-PL LOC HOLD: Brama archiwum publicznego. Strony zewnętrzne i wiki mogą nazwać HECTON-8, Aegir, Black Keel, Deep Reach, publiczną historię Atlas-6 i pogłoski Xenon-Omega. Silniejsze wpisy otwierają się dopiero po odzyskanej kustodii.
+Brama archiwum publicznego. Strony i wiki mogą nazwać HECTON-8, Aegir, Black Keel, Deep Reach, publiczną historię Atlas-6 i pogłoski Xenon-Omega. Mocniejsze wpisy odblokowują się dopiero po odzyskanej kustodii.
 
 ## Scanner
 
-PL LOC HOLD: BRAMA ARCHIWUM PUBLICZNEGO // Poziom spoilera 0/1. Tylko kontekst publiczny. Głębokie dowody wymagają odzyskanej kustodii przed rozszerzeniem kodeksu.
+BRAMA ARCHIWUM PUBLICZNEGO // Poziom spoilera 0/1. Tylko kontekst publiczny. Głębokie dowody wymagają odzyskanej kustodii przed rozszerzeniem kodeksu.
 
 ## Terminal
 
-PL LOC HOLD: FILTR PUBLIC/WIKI // Przed dowodem wolno: tło, presję trasy, publiczny język wypadku, znane instytucje i wczesną przesłankę salvage. Głębokie dowody zatrzymać.
+FILTR PUBLIC/WIKI // Przed dowodem dozwolone: setting, presja trasy, publiczny język awarii, znane instytucje i wczesna przesłanka salvage. Głębokie dowody wstrzymać.
 
 ## Audio
 
-PL LOC HOLD: Przekaźnik Black Keel: tekst publiczny nazywa księżyc. Dowód potrzebuje pieczęci. Przynieś pieczęć.
+Przekaźnik Black Keel: publiczny tekst nazywa księżyc. Dowód potrzebuje pieczęci. Przynieś pieczęć.
 
 ## Field Note
 
-PL LOC HOLD: Publiczna strona mówi, gdzie nurkować. Nie mówi, kto zapłacił za zamknięte drzwi.
+Publiczna strona mówi, gdzie nurkować. Nie mówi, kto zapłacił za zamknięte drzwi.
 
 <!-- In-Game Wiki; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/pl_PL. -->

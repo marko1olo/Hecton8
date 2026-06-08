@@ -4,7 +4,7 @@ release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.vent_micronode_power_nest
 unlock_id: unlock.vent_micronode_power_nest
 poi_tags: poi.vent_micronode_nest;poi.thermal_logic_patch
-biome_tags: biome.atlas;biome.vent
+biome_tags: biome.atlas;biome.abyss
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Gniazdo zasilania mikrowęzłów kominowych
 
-Mikrowęzły kominowe tworzą się tam, gdzie gorąca chemia, metaliczny pył i stary sprzęt zasilający dzielą tę samą szczelinę. Nie zasilają kolonii jak reaktor. Utrzymują przy życiu drobiazgi: pętlę pamięci, błysk diagnostyczny, pełzanie drona, rygiel drzwi, który powinien umrzeć lata temu.
-
-Przy Basenie Atlas gniazda gęstnieją, bo każdy gradient jest użyteczny. Geologia daje ciepło. Życie daje przewodzące powierzchnie. Zepsute maszyny dają reguły. Marauder może zebrać ładunek albo odczytać pamięć, ale ten sam węzeł może karmić pętlę naprawczą, która zauważy kradzież.
+Gniazda mikrowęzłów kominowych wyjaśniają, dlaczego Atlas gęstnieje przy głębokich polach maszynowych, nie stając się wszechmocny. Każdy węzeł zbiera lokalny gradient: ciepło, chemię minerałów, wibrację i ciśnienie. Pojedyncze gniazdo nie może dowodzić kolonią, ale może obudzić łatę, zasilić bliznę drona, zachować fragment pamięci albo utrzymać złą naprawę przy życiu.
 
 ## Scanner
 
-Termiczne mikrowęzły w skorupie komina. Ślady ładowania dronów i resztki pamięci obecne. Lokalna magistrala naprawcza pobiera prąd.
+Termiczne mikrowęzły pulsują w ścianie komina. Blizny ładowania dronów otaczają mineralną gardziel.
 
 ## Terminal
 
-MIKROWĘZEŁ KOMINOWY // Gradient chemiczny wspiera routing niskiej mocy, resztki pamięci i przerywane cykle ładowania dronów. Gęstość węzłów rośnie przy strukturach fabryczno-świątynnych Basenu Atlas.
+ŚLAD ZASILANIA ATLASA: gradient komina karmi lokalny węzeł, węzeł budzi reakcję biofilmu i uszczelnienia, interwał ładowania dronów nieregularny. Pewność centralnego polecenia niska.
 
 ## Audio
 
-Tu na dole nawet ciepło ma papierologię.
+Tu na dole nawet ciepło ma zlecenie pracy.
 
 ## Field Note
 
-Weź jeden ładunek i ruszaj. Drugie pociągnięcie sprawia, że gniazdo patrzy z powrotem.
+Używać przy polach kominowych, podejściu factory-temple i późnej trwałości napraw.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/pl_PL. -->

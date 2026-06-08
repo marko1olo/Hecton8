@@ -7,8 +7,8 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Human Crew Rotation Transit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Human Crew Rotation Transit
 
-Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
+Human rotation makes HECTON-8's abandonment believable. Workers, specialists, and replacement crews move slower than claim language. A person can leave Sol under one contract, wake under another, and discover that the emergency they trained for has already become evidence.
 
 ## Scanner
 
-Humans do not commute to Aegir. They spend years being cargo with opinions.
+Humans do not commute to Aegir. They spend years as cargo with opinions.
 
 ## Terminal
 
-CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles, and staged rotations. A missing worker becomes a delayed custody problem.
 
 ## Audio
 

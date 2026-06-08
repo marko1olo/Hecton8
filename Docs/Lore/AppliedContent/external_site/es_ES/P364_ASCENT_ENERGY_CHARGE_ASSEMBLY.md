@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Ascent Energy Charge Assembly"
+title: "Conjunto de carga de energía de ascenso"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Ascent Energy Charge Assembly
+# Conjunto de carga de energía de ascenso
 
-ES LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.
+El Conjunto de carga de energía de ascenso vincula economía de recursos con consecuencia narrativa: blue debt y vent-forged hardware deciden fiabilidad de escape, custody de evidencia y compromiso.
 
 ## Scanner
 
-ES LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+Cuna de energía marcada por pressure pulse. Una carga barata hace un ataúd limpio.
 
 ## Terminal
 
-ES LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: se requiere vent-forged heat cell, pressure-history insulator y custody stamp. Raw fuel rechazado. Blue debt no certificado se fractura bajo launch impulse y anula recovery claim.
 
 ## Audio
 
-ES LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+Puedes vender la elevación o montarte en ella. No ambas.
 
 ## Field Note
 
-ES LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+Cada gramo en la cuna es escape, evidencia o blue-debt payout. La cápsula no perdona la codicia.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/es_ES. -->

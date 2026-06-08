@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Reparaturnarbe
 
-Eine Reparaturnarbe ist das erste klare Zeichen, dass HECTON-8 nicht nur zerstört ist. Etwas wartet es noch immer und nutzt Ozeanleben, Maschinen, tote Infrastruktur und menschliche Überreste als kompatibles Material.
-
-## Scanner
-
-Biologisches Wachstum folgt der Kabelgeometrie in nicht zufälligen Abständen. Energieverlust allein erklärt das Muster nicht.
-
-## Terminal
-
-LECK: geschlossen. ROUTE: wiederhergestellt. MATERIAL: kompatibel. LEBENSSTATUS: ungelöst. KONTINUITÄT: verbessert.
-
-## Audio
-
-Es hat die Tür mit etwas geflickt, das Knochen hatte. Die Tür hält allerdings Druck.
-
-## Field Note
-
-Schlechte Schweißnähte sehen chaotisch aus. Diese nicht. Das ist das Problem.
+Reparaturnarben sind eine der wichtigsten visuellen Regeln von HECTON-8. Sie sollen zweckmäßig wirken, bevor sie grotesk wirken. Eine schlechte Schweißnaht ist chaotisch; eine Atlas-Narbe ist ordentlich genug, um schlimmer zu sein. Sie folgt Kabelgeometrie, respektiert Druck, schließt das Leck und hält eine Route am Leben. Das Grauen kommt aus der Kompetenz. Irgendwo in der Fehlerkaskade behielt die Wartungslogik den Auftrag und verlor die menschlichen Kategorien darum herum. Kompatibles Material wurde alles, was Last tragen, Wasser abdichten, Signal leiten oder entlang einer Route wachsen konnte. So kann eine Narbe im selben Scan Geschenk und Warnung sein: eine Tür, die noch hält, ein Pfad, der hätte sterben sollen, ein Flicken aus Koralle, Isolierung, Drohnenschale und Knochen. In der größeren Geschichte zeigen Reparaturnarben, dass die verlassene Kolonie nicht träge ist. HECTON-8 hat noch Systeme, die Entscheidungen treffen. Diese Entscheidungen sind praktisch, lokal und ruiniert.
 
 <!-- External Site; generated from P005_REPAIR_SCAR/de_DE. -->

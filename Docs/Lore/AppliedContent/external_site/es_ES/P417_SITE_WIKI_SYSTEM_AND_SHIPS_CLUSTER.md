@@ -9,24 +9,24 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ES LOC HOLD: Aegir Route and Ships"
+title: "Ruta Aegir y naves"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Aegir Route and Ships
+# Ruta Aegir y naves
 
-ES LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegir está lo bastante cerca para explotarlo y lo bastante lejos para abandonarlo. Ningún motor supralumínico cruza la brecha, y ningún ansible lleva órdenes por delante de la física. Cada mensaje, contrato y solicitud de rescate pasa por retraso: paquetes de sondas, custodia de relé, horarios de haces, carga pellet-fusión, ventanas de transferencia y clima indiferente a la urgencia humana.
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+El primer tráfico de Aegir no fue humano. Sondas aguja cartografiaron el sistema de enana cálida y devolvieron suficientes datos minerales, radiológicos y orbitales para justificar inversión pesada. Después llegaron paquetes de vela de haz, carga más lenta y masa de seed-ship que debía frenar dentro de una red de infraestructura planificada años antes de que un trabajador viera el océano. Cuando Deep Reach llegó a HECTON-8, la ruta ya pertenecía a instituciones: carriers, aseguradoras, oficinas de dominio, fondos de recuperación y compañías expertas en hacer difícil nombrar al dueño.
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+Black Keel vive dentro de esa ambigüedad. No es una nave militar ni un servicio de rescate. Es una plataforma de reclamaciones con masa de atraque, lanchas tender, libros de deuda y autoridad de salvage. Su cadena contractual permite a Deep Reach presionar sin parecer la mano directa sobre la escotilla. La nave solo puede extraer una persona, una muestra o una carga sellada cuando masa, clima, órbita, margen térmico y custodia se alinean.
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+El bathydrop dañado es por tanto una frontera real. Un impacto de descenso puede dejar la carcasa intacta para sobrevivir y arruinar al mismo tiempo las tolerancias de ascenso: compresión de sellos, retorno acústico, tablas de guiado, búfer de energía y saludo de cuarentena. La cápsula se vuelve refugio y evidencia a la vez: certifica la llegada, pero no la huida.
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+En el sistema Aegir, la distancia no es fondo. Es la razón por la que la ayuda llega como papeleo antes de llegar como hardware.
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/es_ES. -->

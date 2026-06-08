@@ -3,38 +3,38 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relay Queue Drift"
+title: "סחיפת תור ממסר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Queue Drift
+# סחיפת תור ממסר
 
-HE LOC HOLD: Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.
+תקשורת מאוחרת מסוכנת כי היא יכולה להישאר מדויקת בזמן הלא נכון. אזהרת נושא עשויה לתאר שסתום אמיתי, דליפה אמיתית ונתיב אמיתי שכבר השתנו תחת לחץ. השחקן חייב להשוות את גיל החבילה לראיות מקומיות לפני אמון בסמכות רחוקה.
 
 ## Scanner
 
-HE LOC HOLD: The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
+חותמת הממסר ישנה יותר מהדליפה שהיא מציינת; ההוראה הייתה נכונה לחדר שכבר אינו קיים.
 
 ## Terminal
 
-HE LOC HOLD: QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
+סחיפת תור: גיל החבילה חורג מתוקף הנתיב. ראיה מקומית גוברת על הוראת הנושא עד חלון ממסר טרי.
 
 ## Audio
 
-HE LOC HOLD: The message is correct. That is the problem.
+ההודעה נכונה. זו הבעיה.
 
 ## Field Note
 
-HE LOC HOLD: A late truth can still kill.
+אמת מאוחרת עדיין יכולה להרוג.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/he_IL. -->

@@ -7,34 +7,34 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Trânsito de rotação de tripulação humana"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# Trânsito de rotação de tripulação humana
 
-PT LOC HOLD: Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
+Rotação humana torna o abandono de HECTON-8 crível. Trabalhadores, especialistas e tripulações de reposição se movem mais devagar que linguagem de reivindicação. Uma pessoa pode sair de Sol sob um contrato, acordar sob outro e descobrir que a emergência para a qual treinou já virou evidência.
 
 ## Scanner
 
-PT LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
+Humanos não fazem bate-volta para Aegir. Passam anos como carga com opinião.
 
 ## Terminal
 
-PT LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+ROTAÇÃO DE TRIPULAÇÃO: transporte humano usa janelas lentas, seções de habitat blindadas, ciclos metabólicos baixos e rotações em estágio. Trabalhador ausente vira problema de custody atrasado.
 
 ## Audio
 
-PT LOC HOLD: By the time home asks where you are, the room has already flooded.
+Quando casa pergunta onde você está, a sala já inundou.
 
 ## Field Note
 
-PT LOC HOLD: A frontier worker sells time before they sell labor.
+Um trabalhador de fronteira vende tempo antes de vender trabalho.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/pt_BR. -->

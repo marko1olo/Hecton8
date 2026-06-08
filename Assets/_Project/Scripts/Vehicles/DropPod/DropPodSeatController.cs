@@ -529,7 +529,11 @@ namespace Hecton8.Vehicles.DropPod
             RestoreInputBlock();
             _inputBlockService = currentService;
             if (_inputBlockService == null)
-                _inputBlockService = InputDispatcher.ActiveRuntimeInstance;
+            {
+                InputDispatcher dispatcher = null;
+                if (InputDispatcher.TryResolveActiveRuntime(ref dispatcher))
+                    _inputBlockService = dispatcher;
+            }
 
             if (!shouldKeepBlocked)
                 return;
@@ -832,7 +836,7 @@ namespace Hecton8.Vehicles.DropPod
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -845,7 +849,11 @@ namespace Hecton8.Vehicles.DropPod
         {
             _inputBlockService = GlobalRegistry.Input;
             if (_inputBlockService == null)
-                _inputBlockService = InputDispatcher.ActiveRuntimeInstance;
+            {
+                InputDispatcher dispatcher = null;
+                if (InputDispatcher.TryResolveActiveRuntime(ref dispatcher))
+                    _inputBlockService = dispatcher;
+            }
         }
 
         private uint ResolveSourceId()

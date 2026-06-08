@@ -14,27 +14,30 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Публичное досье Deep Reach
 
-Публичная статья: Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression.
+Deep Reach Extraterrestrial Development Combine — корпоративная сила за индустриальной историей HECTON-8. Она строила давлениевые маршруты, жилье работников, системы извлечения и бумаги, которые делали все это законным. Публично это провалившаяся development authority. Более глубокие улики показывают жесткую форму: эвакуационная емкость недостроена, язык задержек очищен, continuity weighting Atlas защищен, а claim law сохранен, пока работники превращались в потери.
 
 ## Scanner
 
-Сканер: The public company name is cleaner than its route history.
+Публичное имя компании чище, чем история ее маршрутов. Начни с инфраструктуры. Пусть ответственность проступит в стыках.
 
 ## Terminal
 
-Терминал: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+ПУБЛИЧНЫЙ УРОВЕНЬ СТАТЬИ / DEEP REACH
+разрешено: development combine, оператор колонии, инфраструктурная власть, проблема эвакуационной емкости, язык публичного провала
+закрыто: именная цепочка подписей, внутренности weighting Atlas, финальные последствия receiver
+заметка редактора: сначала правдоподобный институт; потом преступление через процедуру.
 
 ## Audio
 
-Аудио: Never make the villain simpler than the paperwork.
+Deep Reach не нужно было звучать жестоко. Ей нужно было только, чтобы каждое опасное предложение звучало завершенным.
 
 ## Field Note
 
-Полевая заметка: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+Не заставляй Deep Reach шипеть. Заставь ее сертифицировать, откладывать, сохранять и выставлять счет.
 
 <!-- External Site; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/ru_RU. -->

@@ -12,6 +12,7 @@ namespace Hecton8.Physiology
     public static class ShinobuMetabolismJobMath
     {
         private const float Epsilon = 0.0001f;
+        private const double DefaultSeaLevelAupY = 14.02d;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SanitizeFinite(float value, float fallback)
@@ -38,6 +39,14 @@ namespace Hecton8.Physiology
                 return 0f;
 
             return lengthSq * math.rsqrt(math.max(lengthSq, Epsilon));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveSeaLevelDepthMeters(double absoluteY)
+        {
+            return math.isfinite(absoluteY)
+                ? (float)math.max(0d, DefaultSeaLevelAupY - absoluteY)
+                : 0f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -711,7 +720,7 @@ namespace Hecton8.Physiology
             float safeDt = math.max(0.0001f, ShinobuMetabolismJobMath.SanitizeFinite(dt, ShinobuMetabolismConstants.NominalSlowTickSeconds));
             MetabolicDetailTelemetryEntry entry = default;
             entry.PlayerAup = playerAup;
-            entry.PlayerDepthMeters = math.max(0f, -(float)playerAup.y);
+            entry.PlayerDepthMeters = ShinobuMetabolismJobMath.ResolveSeaLevelDepthMeters(playerAup.y);
             entry.ActiveCalorieBurnPerSecond = math.max(0f, ShinobuMetabolismJobMath.SanitizeFinite(calorieDrainPerSecond, 0f));
             entry.AmbientCelsius = ShinobuMetabolismJobMath.SanitizeFinite(ambient, 0f);
             entry.ThermalK = math.max(0f, ShinobuMetabolismJobMath.SanitizeFinite(thermalK, 0f));
@@ -982,6 +991,7 @@ namespace Hecton8.Physiology
         {
             if (ExposureSignals == null ||
                 entityHash == 0u ||
+                !math.all(math.isfinite(entityAup)) ||
                 !math.isfinite(magnitude) ||
                 magnitude <= 0f)
             {
@@ -994,7 +1004,7 @@ namespace Hecton8.Physiology
                 return;
 
             MetabolicExposureSignalDTO exposure = default;
-            exposure.AUP = math.all(math.isfinite(entityAup)) ? entityAup : double3.zero;
+            exposure.AUP = entityAup;
             exposure.EntityHash = entityHash;
             exposure.Frame = Frame;
             exposure.Exposure01 = math.saturate(magnitude);

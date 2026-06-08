@@ -955,7 +955,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             PublishInfoMessage("LASER CUTTER - RECOVERY QUEUED");
-            
+
             _telemetryBuffer.Clear();
             _telemetryBuffer.Append("Laser-assisted deconstruction queued for habitat rollback validation on target module.");
 
@@ -1046,7 +1046,7 @@ namespace Hecton8.Gameplay
             _cachedInputService = GlobalRegistry.Input;
             _cachedInteractionService = GlobalRegistry.InteractionSignals;
             _cachedHabitatDeconstructionSystem = GlobalRegistry.HabitatDeconstruction;
-            _cachedSargassumCutWriter = GlobalRegistry.SargassumCutWrite;
+            WorldRuntimeReferenceUtility.TryResolveSargassumCutWriteService(ref _cachedSargassumCutWriter);
             _cachedOrganicToolHits = GlobalRegistry.OrganicToolHits;
             CacheLaserLocalizationCold();
         }
@@ -1076,7 +1076,17 @@ namespace Hecton8.Gameplay
 
         private IAudioResidencyService ResolveAudioResidencyService()
         {
-            return ResolveAudioService() != null ? _cachedAudioResidencyService : null;
+            IAudioService audioService = ResolveAudioService();
+            if (audioService == null)
+                return null;
+
+            IAudioResidencyService residencyService = _cachedAudioResidencyService;
+            if (ReferenceEquals(residencyService, audioService))
+                return residencyService;
+
+            residencyService = audioService as IAudioResidencyService;
+            _cachedAudioResidencyService = residencyService;
+            return residencyService;
         }
 
         private void ClearCachedAudioService()
@@ -1088,7 +1098,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1163,6 +1173,7 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.SargassumCutRuntime:
                     _cachedSargassumCutWriter = currentService as ISargassumCutWriteService;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumCutWriteService(ref _cachedSargassumCutWriter);
                     break;
                 case GlobalRegistryServiceSlot.DestructibleOrganicRuntime:
                     _cachedOrganicToolHits = currentService as IOrganicToolHitService;
@@ -1405,7 +1416,7 @@ namespace Hecton8.Gameplay
             _cachedDiagnosis.Severity = severity;
             _diagnosisCached = true;
             _diagnosisFrame = ResolveCurrentFrameId();
-            
+
             PublishDiagnosis();
             string severityText = ResolveDiagnosisSeverityText(severity);
             FieldOperationLogSystem.RecordOperation(
@@ -1953,7 +1964,7 @@ namespace Hecton8.Gameplay
                 }
 
                 PublishInfoMessage("LASER CUTTER - RECOVERY QUEUED");
-                
+
                 _telemetryBuffer.Clear();
                 _telemetryBuffer.Append("Laser-assisted deconstruction queued for habitat rollback validation on target module.");
 

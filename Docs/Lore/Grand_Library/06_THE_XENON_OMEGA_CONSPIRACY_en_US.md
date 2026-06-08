@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # THE XENON-OMEGA DIRECTIVE AND ATLAS-6 PROTOCOLS
 
 > **Source:** Luyten Committee Open Investigation, Case No. CF-2148-0071. Evidence Exhibit 44-B: Audit Log of Atlas-6 Core.  

@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Beam Sail and Pellet Lane"
+title: "Layar Berkas dan Jalur Pellet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Beam Sail and Pellet Lane
+# Layar Berkas dan Jalur Pellet
 
-ID LOC HOLD: Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.
+Kapal cepat di HECTON-8 bukan komet kecil dengan mesin ajaib. Mereka faktur yang diberi lambung. Layar berkas mengambil daya dari array yang dibangun, dirawat, diasuransikan, dan diarahkan jauh sebelum kapal tiba di jalur. Arus pellet melempar massa reaksi ke lintasan dengan disiplin timing brutal; terlalu tipis dan kendaraan kelaparan, terlalu padat dan ia menjadi pola tembakan. Kapal masih membawa tahap fusi, es perisai, radiator, pompa, dan otoritas untuk memilih kapan membelanjakannya, tetapi separuh mesin yang mahal berada di luar lambung.
 
-## Scanner
-
-ID LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
-
-## Terminal
-
-ID LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
-
-## Audio
-
-ID LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
-
-## Field Note
-
-ID LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Desain itu membuat ruang manusia lebih luas tanpa membuatnya kecil. Aegir dapat dicapai karena domain lama membayar koridor akselerasi, notaris, stasiun penerima, dan cadangan pengereman. Tubuh yang terdampar di HECTON-8 tidak bisa mengubah pesan darurat menjadi koridor itu. Seseorang harus memiliki jendela tangkap, membagi margin panas, menerima kustodi karantina, dan mengambil risiko mengubah lari penyelamatan cepat menjadi puing cepat. Black Keel bertahan dalam ekonomi itu karena membeli jendela dan menjual bukti; pemain bertahan dengan memahami bahwa jarak tidak kosong. Ia terjadwal, tergadai, dan sudah diklaim.
 
 <!-- External Site; generated from P342_BEAM_SAIL_AND_PELLET_LANE/id_ID. -->

@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Black Keel Bathydrop Interface"
+title: "Interface bathydrop da Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Black Keel Bathydrop Interface
+# Interface bathydrop da Black Keel
 
-PT LOC HOLD: The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+O primeiro bloqueio de fuga é engenharia. A Black Keel ainda existe acima da água, mas a interface bathydrop danificada não reconecta superfície, órbita e timing só por intenção. Reparo precisa de salvage deep-rated, lacres limpos, geometria de relé funcionando e janela de lançamento aceita pela transportadora.
 
 ## Scanner
 
-PT LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+Interface bathydrop danificada: cadeia de retorno à superfície não fecha sem peças de pressão, timing de relé e trava de subida limpa.
 
 ## Terminal
 
-PT LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+RELATÓRIO DA CÁPSULA: ajuste do escudo térmico sobreviveu. Portão de flutuação entortado. Mastro com inundado. Trava de subida contaminada. Reparo exige cerâmica de pressão, selante, matemática de relé e janela verificada.
 
 ## Audio
 
-PT LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
+Você não perdeu a nave inteira. Perdeu a única cadeia que faz a nave importar.
 
 ## Field Note
 
-PT LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Registro de fuga da primeira hora: a transportadora está presente, mas a cadeia entre jogador, mar, superfície e órbita está quebrada em peças nomeadas.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/pt_BR. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # OS CULTOS DO ABISMO E A LOUCURA DA PRESSÃO
 
 > **Fonte:** Registros de Avaliação Psicológica, Ala Médica do Setor 44 (Recuperados).

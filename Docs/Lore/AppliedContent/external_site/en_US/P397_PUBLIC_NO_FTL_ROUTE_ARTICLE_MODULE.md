@@ -19,15 +19,15 @@ localization_flags: 0
 
 # No-FTL Route Delay
 
-HECTON-8 has no instant rescue channel. Aegir was reached through precursor probes, beam infrastructure, pellet-fusion freight and braking systems that treat human urgency as one more payload constraint. A message can cross the route before the hardware that would make the message useful. That delay is why Black Keel can hold a valid claim while the player still has to fix seals by hand.
+HECTON-8 has no instant rescue channel. The Aegir system was reached by precursor probes, beam infrastructure, pellet-fusion freight and braking systems that treat urgency as another mass constraint. A message can arrive before the hardware that would make the message useful. A carrier can acknowledge your existence, price your payload and hold a valid claim while still being unable to spend descent mass under the wrong weather, relay angle or custody window. Public travel copy has to keep this visible because isolation here is engineering, law and logistics working together. Black Keel can be nearby in legal terms and unreachable in physical terms. That delay is why the player still repairs seals by hand after the relay answers.
 
 ## Scanner
 
-Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+Transit record. Aegir traffic depends on precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody and legal delay.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Live rescue requires physical transfer, braking architecture, carrier position, descent mass and a valid local window.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Help can be legally present and physically years away.
 
 ## Field Note
 
-Marauder note: when the relay answers, ask how old the answer is.
+Marauder note: when the relay answers, ask how old the answer is and what mass it can move.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/en_US. -->

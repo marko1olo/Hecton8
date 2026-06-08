@@ -7,34 +7,34 @@ poi_tags: poi.pressure_glass_vein;poi.blue_debt_casket
 biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Формування тискового скла"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Формування тискового скла
 
-UK LOC HOLD: Pressure glass is the technical field name behind Marauder blue debt and Deep Reach Xenon-Omega language. It forms where pressure, noble-gas pockets, brine, minerals, heat and altered biology meet. Good samples are valuable because they stay stable under conditions normal industry cannot tolerate.
+Тискове скло є технічною назвою того, що мародери називають blue debt, а Deep Reach ховає за мовою Xenon-Omega. Воно виникає там, де сходяться тиск, кишені благородних газів, розсіл, мінерали, тепло й змінена біологія.
 
 ## Scanner
 
-UK LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
+Синя боргова ґратка. Благородний газ, розсіл, мінеральні дефекти й історія тиску замкнені в дорогій помилці.
 
 ## Terminal
 
-UK LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
+XO CONTINUITY SUBSTRATE: багата на ксенон клатратна ґратка дефектів стабілізована хімією розсолу, термоциклами й залишками біологічного каталізатора. Ризик розгерметизації: дрейф сигналу, тріщина, спалах забруднення.
 
 ## Audio
 
-UK LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
+Ось чому вони повернулися. Не золото. Машиночитний шрам.
 
 ## Field Note
 
-UK LOC HOLD: It is not ore. It is a process that remembers where it was made.
+Це не руда. Це процес, який пам'ятає, де його створили.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/uk_UA. -->

@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Эра beam-sail зондов"
+spoiler_tier: 1
+title: "Эра зондов на лучевых парусах"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Эра beam-sail зондов
+# Эра зондов на лучевых парусах
 
-Эра beam-sail зондов - первый слой истории Aegir. Она держит сеттинг правдоподобным: быстрые разведочные зонды, более медленная тяжелая индустрия и люди, прибывающие после того, как машинная уверенность уже стала корпоративной политикой.
-
-## Scanner
-
-Survey reel. Первые карты Aegir отправили наружу как легкий груз, а не как обет пилотируемой колонии.
-
-## Terminal
-
-SURVEY LINEAGE: beamed sail packets картировали Ran/Aegir до того, как грузовые маршруты стали безопасны для живого груза. Confidence decayed before colony buildout.
-
-## Audio
-
-Первой человеческой вещью здесь был не человек. Это была квитанция от beam station.
-
-## Field Note
-
-Раннее расширение должно быть тонким: сначала видят зонды, потом готовят машины, люди прибывают, когда долг говорит да.
+Эра зондов на лучевом парусе - тихое начало истории Aegir. Малые полезные нагрузки шли на энергии дальних массивов, пересекали пустоту первыми и возвращали пакеты, уже достаточно старые для споров, но достаточно убедительные для продажи. Зонды не сделали Aegir безопасным. Они сделали его читаемым: гравитационные колодцы, радиационные пояса, океанические подписи, sightlines реле и маршрут, который можно превратить в прибыль при достаточном равнодушии. Разница между читаемым и безопасным - место, где в историю входит Deep Reach.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/ru_RU. -->

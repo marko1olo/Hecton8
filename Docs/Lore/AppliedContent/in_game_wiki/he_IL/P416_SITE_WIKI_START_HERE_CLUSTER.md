@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "HE LOC HOLD: Start Here: HECTON-8"
+title: "להתחיל כאן: HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Start Here: HECTON-8
+# להתחיל כאן: HECTON-8
 
-HE LOC HOLD: Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.
+אשכול פתיחה: חוזה, תפקיד השחקן, לחץ ההישרדות של HECTON-8 והסתירה הראשונה בסיפור Deep Reach.
 
 ## Scanner
 
-HE LOC HOLD: Publication hub: premise, player role, first constraints and the first Deep Reach lie.
+מרכז פרסום: הנחת היסוד, תפקיד השחקן, המגבלות הראשונות והשקר הראשון של Deep Reach.
 
 ## Terminal
 
-HE LOC HOLD: SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.
+SITE NAV: כניסה דרך חוזה, מומחה Deep Reach לשעבר, Marauder בחוב, קפסולה פגועה, בלי וו משפחתי, עקבת תיקון Atlas ראשונה.
 
 ## Audio
 
-HE LOC HOLD: You came for salvage. The ocean will make that motive too small.
+באת בשביל salvage. האוקיינוס יהפוך את המניע הזה לקטן מדי.
 
 ## Field Note
 
-HE LOC HOLD: Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
+ניווט spoiler-light מתחיל כאן: קודם premise, אחר כך evidence, וסופים רק אחרי שהשחקן מרוויח גישה.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/he_IL. -->

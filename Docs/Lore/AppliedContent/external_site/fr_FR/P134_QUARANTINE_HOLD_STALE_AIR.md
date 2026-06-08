@@ -9,32 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Maintien en quarantaine : air vicié"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Maintien en quarantaine : air vicié
 
-FR LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+Le maintien en quarantaine est la plus silencieuse des fausses sorties. Il n'a pas besoin d'un méchant dans la pièce. Le formulaire dit récupéré vivant, le compteur d'air dit ration active, et la porte suivante ne s'ouvre qu'après examen de contamination, contestation du claimant et revue d'assurance.
 
-## Scanner
-
-FR LOC HOLD: You are alive, sealed, and still not free.
-
-## Terminal
-
-FR LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-FR LOC HOLD: The hatch opens only to another closed hatch.
-
-## Field Note
-
-FR LOC HOLD: This is the bureaucratic version of drowning.
+L'issue est cruelle parce qu'elle est défendable. Personne n'a tué le témoin. Personne n'a détruit l'échantillon. Le système fait simplement attendre chaque déclaration plus longtemps que les corps n'ont jamais pu attendre. Le joueur survit à l'océan et entre dans un couloir scellé construit avec de la procédure.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/fr_FR. -->

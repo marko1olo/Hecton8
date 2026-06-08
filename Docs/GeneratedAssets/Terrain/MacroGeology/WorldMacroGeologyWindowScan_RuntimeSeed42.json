@@ -1,0 +1,312 @@
+{
+  "artifact": "WorldMacroGeologyWindowScan",
+  "artifactVersion": 4,
+  "bestWindows": [
+    {
+      "depthBandCountsMeters": {
+        "0-500": 438,
+        "1000-2000": 236,
+        "2000-3000": 177,
+        "3000-4000": 222,
+        "4000+": 112,
+        "500-1000": 111
+      },
+      "depthStrataCounts": {
+        "Abyssal": 399,
+        "Bathyal": 249,
+        "Hadal": 112,
+        "Mesophotic": 270,
+        "Photic": 266
+      },
+      "heightRangeMeters": 5040.37,
+      "originMeters": {
+        "x": 0.0,
+        "z": 0.0
+      },
+      "score": 17.5031,
+      "zoneCounts": {
+        "AbyssalPlain": 248,
+        "BrineTrench": 170,
+        "ColdSeepField": 0,
+        "FaultRidge": 377,
+        "HadalBasin": 43,
+        "PhoticShelf": 314,
+        "SedimentFan": 0,
+        "ShelfBreak": 144,
+        "Unknown": 0
+      },
+      "zoneDiversity": 6
+    },
+    {
+      "depthBandCountsMeters": {
+        "0-500": 592,
+        "1000-2000": 206,
+        "2000-3000": 242,
+        "3000-4000": 85,
+        "4000+": 28,
+        "500-1000": 143
+      },
+      "depthStrataCounts": {
+        "Abyssal": 327,
+        "Bathyal": 231,
+        "Hadal": 28,
+        "Mesophotic": 210,
+        "Photic": 500
+      },
+      "heightRangeMeters": 4678.14,
+      "originMeters": {
+        "x": -30000.0,
+        "z": 0.0
+      },
+      "score": 15.9432,
+      "zoneCounts": {
+        "AbyssalPlain": 423,
+        "BrineTrench": 0,
+        "ColdSeepField": 0,
+        "FaultRidge": 282,
+        "HadalBasin": 28,
+        "PhoticShelf": 513,
+        "SedimentFan": 0,
+        "ShelfBreak": 50,
+        "Unknown": 0
+      },
+      "zoneDiversity": 5
+    },
+    {
+      "depthBandCountsMeters": {
+        "0-500": 502,
+        "1000-2000": 261,
+        "2000-3000": 386,
+        "3000-4000": 49,
+        "4000+": 7,
+        "500-1000": 91
+      },
+      "depthStrataCounts": {
+        "Abyssal": 435,
+        "Bathyal": 283,
+        "Hadal": 7,
+        "Mesophotic": 137,
+        "Photic": 434
+      },
+      "heightRangeMeters": 4894.45,
+      "originMeters": {
+        "x": 30000.0,
+        "z": 0.0
+      },
+      "score": 13.8594,
+      "zoneCounts": {
+        "AbyssalPlain": 665,
+        "BrineTrench": 5,
+        "ColdSeepField": 0,
+        "FaultRidge": 63,
+        "HadalBasin": 2,
+        "PhoticShelf": 452,
+        "SedimentFan": 0,
+        "ShelfBreak": 109,
+        "Unknown": 0
+      },
+      "zoneDiversity": 4
+    },
+    {
+      "depthBandCountsMeters": {
+        "0-500": 2,
+        "1000-2000": 118,
+        "2000-3000": 511,
+        "3000-4000": 449,
+        "4000+": 189,
+        "500-1000": 27
+      },
+      "depthStrataCounts": {
+        "Abyssal": 960,
+        "Bathyal": 127,
+        "Hadal": 189,
+        "Mesophotic": 20
+      },
+      "heightRangeMeters": 4105.28,
+      "originMeters": {
+        "x": 30000.0,
+        "z": 30000.0
+      },
+      "score": 11.4987,
+      "zoneCounts": {
+        "AbyssalPlain": 605,
+        "BrineTrench": 209,
+        "ColdSeepField": 0,
+        "FaultRidge": 448,
+        "HadalBasin": 34,
+        "PhoticShelf": 0,
+        "SedimentFan": 0,
+        "ShelfBreak": 0,
+        "Unknown": 0
+      },
+      "zoneDiversity": 4
+    },
+    {
+      "depthBandCountsMeters": {
+        "0-500": 1296,
+        "1000-2000": 0,
+        "2000-3000": 0,
+        "3000-4000": 0,
+        "4000+": 0,
+        "500-1000": 0
+      },
+      "depthStrataCounts": {
+        "Mesophotic": 131,
+        "Photic": 1165
+      },
+      "heightRangeMeters": 838.12,
+      "originMeters": {
+        "x": -30000.0,
+        "z": -30000.0
+      },
+      "score": 9.6432,
+      "zoneCounts": {
+        "AbyssalPlain": 59,
+        "BrineTrench": 0,
+        "ColdSeepField": 0,
+        "FaultRidge": 20,
+        "HadalBasin": 0,
+        "PhoticShelf": 1217,
+        "SedimentFan": 0,
+        "ShelfBreak": 0,
+        "Unknown": 0
+      },
+      "zoneDiversity": 3
+    },
+    {
+      "depthBandCountsMeters": {
+        "0-500": 0,
+        "1000-2000": 78,
+        "2000-3000": 532,
+        "3000-4000": 668,
+        "4000+": 11,
+        "500-1000": 7
+      },
+      "depthStrataCounts": {
+        "Abyssal": 1200,
+        "Bathyal": 82,
+        "Hadal": 11,
+        "Mesophotic": 3
+      },
+      "heightRangeMeters": 3885.54,
+      "originMeters": {
+        "x": 0.0,
+        "z": 30000.0
+      },
+      "score": 8.6145,
+      "zoneCounts": {
+        "AbyssalPlain": 1157,
+        "BrineTrench": 17,
+        "ColdSeepField": 0,
+        "FaultRidge": 122,
+        "HadalBasin": 0,
+        "PhoticShelf": 0,
+        "SedimentFan": 0,
+        "ShelfBreak": 0,
+        "Unknown": 0
+      },
+      "zoneDiversity": 3
+    },
+    {
+      "depthBandCountsMeters": {
+        "0-500": 1296,
+        "1000-2000": 0,
+        "2000-3000": 0,
+        "3000-4000": 0,
+        "4000+": 0,
+        "500-1000": 0
+      },
+      "depthStrataCounts": {
+        "Mesophotic": 253,
+        "Photic": 1043
+      },
+      "heightRangeMeters": 884.13,
+      "originMeters": {
+        "x": 30000.0,
+        "z": -30000.0
+      },
+      "score": 8.3492,
+      "zoneCounts": {
+        "AbyssalPlain": 168,
+        "BrineTrench": 0,
+        "ColdSeepField": 0,
+        "FaultRidge": 2,
+        "HadalBasin": 0,
+        "PhoticShelf": 1126,
+        "SedimentFan": 0,
+        "ShelfBreak": 0,
+        "Unknown": 0
+      },
+      "zoneDiversity": 2
+    },
+    {
+      "depthBandCountsMeters": {
+        "0-500": 1296,
+        "1000-2000": 0,
+        "2000-3000": 0,
+        "3000-4000": 0,
+        "4000+": 0,
+        "500-1000": 0
+      },
+      "depthStrataCounts": {
+        "Mesophotic": 32,
+        "Photic": 1264
+      },
+      "heightRangeMeters": 755.84,
+      "originMeters": {
+        "x": 0.0,
+        "z": -30000.0
+      },
+      "score": 8.1148,
+      "zoneCounts": {
+        "AbyssalPlain": 3,
+        "BrineTrench": 0,
+        "ColdSeepField": 0,
+        "FaultRidge": 14,
+        "HadalBasin": 0,
+        "PhoticShelf": 1279,
+        "SedimentFan": 0,
+        "ShelfBreak": 0,
+        "Unknown": 0
+      },
+      "zoneDiversity": 2
+    },
+    {
+      "depthBandCountsMeters": {
+        "0-500": 0,
+        "1000-2000": 0,
+        "2000-3000": 312,
+        "3000-4000": 865,
+        "4000+": 119,
+        "500-1000": 0
+      },
+      "depthStrataCounts": {
+        "Abyssal": 1177,
+        "Hadal": 119
+      },
+      "heightRangeMeters": 2512.77,
+      "originMeters": {
+        "x": -30000.0,
+        "z": 30000.0
+      },
+      "score": 7.5174,
+      "zoneCounts": {
+        "AbyssalPlain": 1149,
+        "BrineTrench": 11,
+        "ColdSeepField": 0,
+        "FaultRidge": 28,
+        "HadalBasin": 108,
+        "PhoticShelf": 0,
+        "SedimentFan": 0,
+        "ShelfBreak": 0,
+        "Unknown": 0
+      },
+      "zoneDiversity": 3
+    }
+  ],
+  "extentMeters": 30000.0,
+  "resolution": 36,
+  "runtimeSeed": 42,
+  "sampledWindowCount": 9,
+  "seed": 880031
+}

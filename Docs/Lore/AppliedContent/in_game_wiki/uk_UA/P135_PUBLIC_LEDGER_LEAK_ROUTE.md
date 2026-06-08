@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "Витік у публічний реєстр"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# Витік у публічний реєстр
 
-UA LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.
+Витік у публічний реєстр - кінцівка часткової правди. Гравець надсилає достатньо доказів, щоб стирання стало важчим, але недостатньо, щоб контролювати Atlas, відповідь Deep Reach або те, що публічні інституції зроблять із пакетом.
 
 ## Scanner
 
-UA LOC HOLD: You can leak truth before you understand all of it.
+Witness hash прийнято. Часткова правда йде раніше повної custody.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
+МАРШРУТ ПУБЛІЧНОГО РЕЄСТРУ: packet notary Tau Ceti прийняв witness hash; payload неповний; спір claimant імовірний; вікно відповіді Deep Reach починається після підтвердження relay.
 
 ## Audio
 
-UA LOC HOLD: The truth leaves first. You may not like who reads it.
+Правда йде першою. Тобі може не сподобатися, хто її прочитає.
 
 ## Field Note
 
-UA LOC HOLD: Public does not mean safe. It means harder to erase.
+Публічність не означає безпеку. Вона лише означає: стерти важче.
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/uk_UA. -->

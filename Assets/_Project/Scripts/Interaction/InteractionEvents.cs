@@ -64,6 +64,10 @@ namespace Hecton8.Interaction
         private const uint InteractionListenerExceptionContextHash = 0x49455658u; // IEVX
         private const uint InteractionQueueOverflowWarningHash = 0x49455651u; // IEVQ
         private const uint InteractionQueueContextHash = 0x49455650u; // IEVP
+        private const uint InteractionInvalidItemEventWarningHash = 0x4945564Du; // IEVM
+        private const uint InteractionInvalidItemEventContextHash = 0x4945564Fu; // IEVO
+        private const uint InteractionQueueInitializationFailureWarningHash = 0x49455649u; // IEVI
+        private const uint InteractionQueueReleaseFailureWarningHash = 0x49455644u; // IEVD
         private const uint InteractionReferenceSlotExhaustedWarningHash = 0x49524653u; // IRFS
         private const uint InteractionReferenceSlotContextHash = 0x49524643u; // IRFC
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
@@ -163,8 +167,12 @@ namespace Hecton8.Interaction
         private static readonly InteractionReferenceSlot[] _referenceSlots = new InteractionReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[128] — reference slot occupancy map prevents wrap overwrite before deferred flush — owner: InteractionEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
+        // COLD ALLOC: ushort[128] - reference slot generations invalidate stale payload handles after sidecar reuse - owner: InteractionEvents
+        private static readonly ushort[] _referenceSlotGenerations = new ushort[ReferenceSlotCapacity];
         private static NativeQueue<InteractionEventPayload> _pendingEvents;
         private static NativeQueue<InteractionEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
         private static int _pendingEventCount;
@@ -172,10 +180,14 @@ namespace Hecton8.Interaction
         private static int _deferredRegisterCount;
         private static int _deferredUnregisterCount;
         private static int _droppedEventCount;
+        private static int _droppedInvalidItemEventCount;
         private static int _droppedReferenceSlotCount;
         private static int _droppedListenerRegistrationCount;
         private static int _listenerExceptionCount;
         private static int _lastQueueOverflowTelemetryFrame = -1;
+        private static int _lastInvalidItemEventTelemetryFrame = -1;
+        private static int _lastQueueInitializationFailureTelemetryFrame = -1;
+        private static int _lastQueueReleaseFailureTelemetryFrame = -1;
         private static int _lastReferenceSlotTelemetryFrame = -1;
         private static int _lastListenerOverflowTelemetryFrame = -1;
         private static int _lastListenerExceptionTelemetryFrame = -1;
@@ -185,6 +197,8 @@ namespace Hecton8.Interaction
 
         public static int DroppedEventCount => _droppedEventCount;
 
+        public static int DroppedInvalidItemEventCount => _droppedInvalidItemEventCount;
+
         public static int DroppedReferenceSlotCount => _droppedReferenceSlotCount;
 
         public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
@@ -193,13 +207,20 @@ namespace Hecton8.Interaction
 
         internal static void PrewarmCold()
         {
-            EnsureInitialized();
+            try
+            {
+                EnsureInitialized();
+            }
+            catch (Exception exception)
+            {
+                ReportQueueInitializationFailure((ushort)InteractionEventType.InteractionStarted, exception);
+            }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
-            ReleaseNativeQueues();
+            Exception releaseException = ReleaseNativeQueuesBestEffort();
 
             _listeners.Clear();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
@@ -212,14 +233,20 @@ namespace Hecton8.Interaction
             _deferredRegisterCount = 0;
             _deferredUnregisterCount = 0;
             _droppedEventCount = 0;
+            _droppedInvalidItemEventCount = 0;
             _droppedReferenceSlotCount = 0;
             _droppedListenerRegistrationCount = 0;
             _listenerExceptionCount = 0;
             _lastQueueOverflowTelemetryFrame = -1;
+            _lastInvalidItemEventTelemetryFrame = -1;
+            _lastQueueInitializationFailureTelemetryFrame = -1;
+            _lastQueueReleaseFailureTelemetryFrame = -1;
             _lastReferenceSlotTelemetryFrame = -1;
             _lastListenerOverflowTelemetryFrame = -1;
             _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
+
+            ReportQueueReleaseFailure(releaseException);
         }
 
         /// <summary>
@@ -322,7 +349,7 @@ namespace Hecton8.Interaction
         public static bool TryResolveItem(in InteractionEventPayload payload, out ItemData item)
         {
             item = null;
-            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+            if (!IsReferenceSlotPayloadCurrent(in payload))
                 return false;
 
             item = _referenceSlots[payload.ReferenceSlot].Item;
@@ -336,7 +363,7 @@ namespace Hecton8.Interaction
         public static bool TryResolveTarget(in InteractionEventPayload payload, out IInteractable target)
         {
             target = null;
-            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+            if (!IsReferenceSlotPayloadCurrent(in payload))
                 return false;
 
             target = _referenceSlots[payload.ReferenceSlot].Target;
@@ -350,7 +377,7 @@ namespace Hecton8.Interaction
         public static bool TryResolveInteractor(in InteractionEventPayload payload, out Transform interactor)
         {
             interactor = null;
-            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+            if (!IsReferenceSlotPayloadCurrent(in payload))
                 return false;
 
             interactor = _referenceSlots[payload.ReferenceSlot].Interactor;
@@ -368,7 +395,14 @@ namespace Hecton8.Interaction
 
         public static bool TryRaiseItemCollected(ItemData item, int quantity, Transform interactor)
         {
-            if (!TryReserveReferenceSlot(InteractionEventType.ItemCollected, out int referenceSlot))
+            uint itemHashId = ComputeItemHash(item);
+            if (quantity <= 0 || itemHashId == 0u)
+            {
+                ReportInvalidItemEvent((ushort)InteractionEventType.ItemCollected, itemHashId, quantity);
+                return false;
+            }
+
+            if (!TryReserveReferenceSlot(InteractionEventType.ItemCollected, out int referenceSlot, out ushort referenceGeneration))
                 return false;
 
             _referenceSlots[referenceSlot].Item = item;
@@ -377,13 +411,13 @@ namespace Hecton8.Interaction
 
             return Enqueue(new InteractionEventPayload
             {
-                ItemHashId = ComputeItemHash(item),
+                ItemHashId = itemHashId,
                 TargetHashId = 0u,
                 InteractorHashId = ComputeTransformHash(interactor),
                 ReferenceSlot = referenceSlot,
                 Quantity = quantity,
                 EventType = (ushort)InteractionEventType.ItemCollected,
-                Reserved = 0
+                Reserved = referenceGeneration
             });
         }
 
@@ -398,7 +432,14 @@ namespace Hecton8.Interaction
 
         public static bool TryRaiseItemLost(ItemData item, int quantity, Transform interactor)
         {
-            if (!TryReserveReferenceSlot(InteractionEventType.ItemLost, out int referenceSlot))
+            uint itemHashId = ComputeItemHash(item);
+            if (quantity <= 0 || itemHashId == 0u)
+            {
+                ReportInvalidItemEvent((ushort)InteractionEventType.ItemLost, itemHashId, quantity);
+                return false;
+            }
+
+            if (!TryReserveReferenceSlot(InteractionEventType.ItemLost, out int referenceSlot, out ushort referenceGeneration))
                 return false;
 
             _referenceSlots[referenceSlot].Item = item;
@@ -407,13 +448,13 @@ namespace Hecton8.Interaction
 
             return Enqueue(new InteractionEventPayload
             {
-                ItemHashId = ComputeItemHash(item),
+                ItemHashId = itemHashId,
                 TargetHashId = 0u,
                 InteractorHashId = ComputeTransformHash(interactor),
                 ReferenceSlot = referenceSlot,
                 Quantity = quantity,
                 EventType = (ushort)InteractionEventType.ItemLost,
-                Reserved = 0
+                Reserved = referenceGeneration
             });
         }
 
@@ -428,7 +469,7 @@ namespace Hecton8.Interaction
 
         public static bool TryRaiseInteractionStarted(IInteractable target, Transform interactor)
         {
-            if (!TryReserveReferenceSlot(InteractionEventType.InteractionStarted, out int referenceSlot))
+            if (!TryReserveReferenceSlot(InteractionEventType.InteractionStarted, out int referenceSlot, out ushort referenceGeneration))
                 return false;
 
             _referenceSlots[referenceSlot].Item = null;
@@ -443,7 +484,7 @@ namespace Hecton8.Interaction
                 ReferenceSlot = referenceSlot,
                 Quantity = 0,
                 EventType = (ushort)InteractionEventType.InteractionStarted,
-                Reserved = 0
+                Reserved = referenceGeneration
             });
         }
 
@@ -459,9 +500,10 @@ namespace Hecton8.Interaction
         public static bool TryRaiseHoverChanged(IInteractable target)
         {
             int referenceSlot = -1;
+            ushort referenceGeneration = 0;
             if (target != null)
             {
-                if (!TryReserveReferenceSlot(InteractionEventType.HoverChanged, out referenceSlot))
+                if (!TryReserveReferenceSlot(InteractionEventType.HoverChanged, out referenceSlot, out referenceGeneration))
                     return false;
 
                 _referenceSlots[referenceSlot].Item = null;
@@ -477,7 +519,7 @@ namespace Hecton8.Interaction
                 ReferenceSlot = referenceSlot,
                 Quantity = 0,
                 EventType = (ushort)InteractionEventType.HoverChanged,
-                Reserved = 0
+                Reserved = referenceGeneration
             });
         }
 
@@ -488,23 +530,24 @@ namespace Hecton8.Interaction
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<InteractionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InteractionEventPayload>[128] — deferred interaction event lane flushed by SystemDispatcher LateUpdate — owner: InteractionEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<InteractionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InteractionEventPayload>[128] — next-frame interaction event lane prevents same-frame reentrant dispatch — owner: InteractionEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
             catch
             {
-                ReleaseNativeQueues();
+                Exception releaseException = ReleaseNativeQueuesBestEffort();
                 ClearReferenceSlots();
                 _pendingEventCount = 0;
                 _nextFrameEventCount = 0;
+                ReportQueueReleaseFailure(releaseException);
                 throw;
             }
         }
@@ -512,10 +555,12 @@ namespace Hecton8.Interaction
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(InteractionEvents),
@@ -524,25 +569,74 @@ namespace Hecton8.Interaction
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static Exception ReleaseNativeQueuesBestEffort()
+        {
+            Exception firstException = ReleaseNativeQueueBestEffort(ref _pendingEvents, ref _pendingEventsSentinelId);
+            Exception nextFrameException = ReleaseNativeQueueBestEffort(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
+            return firstException ?? nextFrameException;
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception releaseException = ReleaseNativeQueueBestEffort(ref queue, ref sentinelId);
+            if (releaseException != null)
+                throw releaseException;
+        }
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(InteractionEvents), label);
-            queue.Dispose();
-            queue = default;
+        private static Exception ReleaseNativeQueueBestEffort<T>(ref NativeQueue<T> queue, ref int sentinelId)
+            where T : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            return firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -568,7 +662,17 @@ namespace Hecton8.Interaction
                 return false;
             }
 
-            EnsureInitialized();
+            try
+            {
+                EnsureInitialized();
+            }
+            catch (Exception exception)
+            {
+                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReportQueueInitializationFailure(payload.EventType, exception);
+                return false;
+            }
+
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(payload);
@@ -581,9 +685,13 @@ namespace Hecton8.Interaction
             return true;
         }
 
-        private static bool TryReserveReferenceSlot(InteractionEventType eventType, out int referenceSlot)
+        private static bool TryReserveReferenceSlot(
+            InteractionEventType eventType,
+            out int referenceSlot,
+            out ushort referenceGeneration)
         {
             referenceSlot = -1;
+            referenceGeneration = 0;
             if (_referencePendingCount >= ReferenceSlotCapacity)
             {
                 ReportReferenceSlotExhausted((ushort)eventType);
@@ -601,12 +709,24 @@ namespace Hecton8.Interaction
                     continue;
 
                 referenceSlot = candidateSlot;
+                referenceGeneration = AdvanceReferenceSlotGeneration(referenceSlot);
                 _referenceSlotOccupied[referenceSlot] = true;
                 _referencePendingCount++;
                 return true;
             }
 
+            ReportReferenceSlotExhausted((ushort)eventType);
             return false;
+        }
+
+        private static ushort AdvanceReferenceSlotGeneration(int referenceSlot)
+        {
+            ushort generation = unchecked((ushort)(_referenceSlotGenerations[referenceSlot] + 1));
+            if (generation == 0)
+                generation = 1;
+
+            _referenceSlotGenerations[referenceSlot] = generation;
+            return generation;
         }
 
         private static void ReleaseReferenceSlot(int referenceSlot)
@@ -626,6 +746,15 @@ namespace Hecton8.Interaction
         private static bool IsValidReferenceSlot(int referenceSlot)
         {
             return (uint)referenceSlot < ReferenceSlotCapacity;
+        }
+
+        private static bool IsReferenceSlotPayloadCurrent(in InteractionEventPayload payload)
+        {
+            int referenceSlot = payload.ReferenceSlot;
+            return IsValidReferenceSlot(referenceSlot) &&
+                   _referenceSlotOccupied[referenceSlot] &&
+                   payload.Reserved != 0 &&
+                   _referenceSlotGenerations[referenceSlot] == payload.Reserved;
         }
 
         private static void DrainWithoutDispatch()
@@ -690,6 +819,9 @@ namespace Hecton8.Interaction
             NativeQueue<InteractionEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
@@ -712,7 +844,13 @@ namespace Hecton8.Interaction
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogException(exception);
+            try
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch
+            {
+            }
 #endif
         }
 
@@ -843,26 +981,80 @@ namespace Hecton8.Interaction
         private static void ReportQueueOverflow(ushort eventType)
         {
             _droppedEventCount++;
-            int frame = SystemDispatcher.CurrentFrameIndex;
+            int frame = ResolveCurrentFrameIndexSafe();
             if (_lastQueueOverflowTelemetryFrame == frame)
                 return;
 
             _lastQueueOverflowTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningBestEffort(
                 InteractionQueueOverflowWarningHash,
                 InteractionQueueContextHash ^ ((uint)eventType << 24),
                 Mathf.Max(1, _droppedEventCount));
         }
 
+        private static void ReportInvalidItemEvent(ushort eventType, uint itemHashId, int quantity)
+        {
+            _droppedInvalidItemEventCount++;
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (_lastInvalidItemEventTelemetryFrame == frame)
+                return;
+
+            _lastInvalidItemEventTelemetryFrame = frame;
+            uint contextHash = InteractionInvalidItemEventContextHash ^ ((uint)eventType << 24);
+            if (itemHashId == 0u)
+                contextHash ^= 1u;
+            if (quantity <= 0)
+                contextHash ^= 2u;
+
+            PublishPerformanceWarningBestEffort(
+                InteractionInvalidItemEventWarningHash,
+                contextHash,
+                Mathf.Max(1, _droppedInvalidItemEventCount));
+        }
+
+        private static void ReportQueueInitializationFailure(ushort eventType, Exception exception)
+        {
+            _droppedEventCount++;
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (_lastQueueInitializationFailureTelemetryFrame != frame)
+            {
+                _lastQueueInitializationFailureTelemetryFrame = frame;
+                PublishPerformanceWarningBestEffort(
+                    InteractionQueueInitializationFailureWarningHash,
+                    InteractionQueueContextHash ^ ((uint)eventType << 24),
+                    Mathf.Max(1, _droppedEventCount));
+            }
+
+            LogQueueInitializationException(exception);
+        }
+
+        private static void ReportQueueReleaseFailure(Exception exception)
+        {
+            if (exception == null)
+                return;
+
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (_lastQueueReleaseFailureTelemetryFrame != frame)
+            {
+                _lastQueueReleaseFailureTelemetryFrame = frame;
+                PublishPerformanceWarningBestEffort(
+                    InteractionQueueReleaseFailureWarningHash,
+                    InteractionQueueContextHash,
+                    1f);
+            }
+
+            LogQueueInitializationException(exception);
+        }
+
         private static void ReportReferenceSlotExhausted(ushort eventType)
         {
             _droppedReferenceSlotCount++;
-            int frame = SystemDispatcher.CurrentFrameIndex;
+            int frame = ResolveCurrentFrameIndexSafe();
             if (_lastReferenceSlotTelemetryFrame == frame)
                 return;
 
             _lastReferenceSlotTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningBestEffort(
                 InteractionReferenceSlotExhaustedWarningHash,
                 InteractionReferenceSlotContextHash ^ ((uint)eventType << 24),
                 Mathf.Max(1, _droppedReferenceSlotCount));
@@ -871,12 +1063,12 @@ namespace Hecton8.Interaction
         private static void ReportListenerRegistrationOverflow()
         {
             _droppedListenerRegistrationCount++;
-            int frame = SystemDispatcher.CurrentFrameIndex;
+            int frame = ResolveCurrentFrameIndexSafe();
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
             _lastListenerOverflowTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningBestEffort(
                 InteractionListenerOverflowWarningHash,
                 InteractionListenerContextHash,
                 Mathf.Max(1, _droppedListenerRegistrationCount));
@@ -885,15 +1077,54 @@ namespace Hecton8.Interaction
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = SystemDispatcher.CurrentFrameIndex;
+            int frame = ResolveCurrentFrameIndexSafe();
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
             _lastListenerExceptionTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningBestEffort(
                 InteractionListenerExceptionWarningHash,
                 InteractionListenerExceptionContextHash,
                 Mathf.Max(1, _listenerExceptionCount));
+        }
+
+        private static int ResolveCurrentFrameIndexSafe()
+        {
+            try
+            {
+                return SystemDispatcher.CurrentFrameIndex;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
+            }
+            catch (Exception telemetryException)
+            {
+                LogQueueInitializationException(telemetryException);
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogQueueInitializationException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            try
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch
+            {
+            }
+#endif
         }
 
         private static void ClearReferenceSlots()
@@ -902,12 +1133,13 @@ namespace Hecton8.Interaction
             {
                 _referenceSlots[i].Clear();
                 _referenceSlotOccupied[i] = false;
+                AdvanceReferenceSlotGeneration(i);
             }
         }
 
         private static uint ComputeItemHash(ItemData item)
         {
-            return item != null ? unchecked((uint)item.PersistentHashId) : 0u;
+            return unchecked((uint)ItemData.ResolvePersistentHashId(item));
         }
 
         private static uint ComputeInteractableHash(IInteractable target)

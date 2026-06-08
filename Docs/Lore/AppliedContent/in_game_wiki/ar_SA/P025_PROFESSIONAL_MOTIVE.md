@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # دافع مهني
 
-اللاعب ليس سائحا فارغا. يبدأ بمهارة وسبب لقبول claim ميت، ثم تصبح الأدلة شخصية.
+المغير ليس سائحا فارغا. تبدأ الرحلة باهتمام مهني ومهارة salvage وسبب لقبول مطالبة ميتة. ينمو الدافع الشخصي عبر الأدلة والعلامات المألوفة وفهم أن HECTON-8 ينتمي إلى العالم القاسي نفسه الذي جعل هذا العمل عاديا.
 
 ## Scanner
 

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Kerusakan Kapsul Jatuh
 
-Pemain tiba lewat kapsul. Crash menyisakan perlindungan, daya dan log, tetapi menghancurkan jalur naik. Kabur dini adalah rantai engineering.
+Kapsul jatuh membawa Marauder ke HECTON-8. Benturan menyisakan cukup sistem untuk perlindungan, daya, dan log, tetapi menghancurkan perangkat naik. Keluar dini menjadi rantai engineering, bukan tombol.
 
 ## Scanner
 

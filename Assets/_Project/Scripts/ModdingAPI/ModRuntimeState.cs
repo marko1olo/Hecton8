@@ -5,6 +5,7 @@ using Hecton8.Crafting;
 using Hecton8.Economy;
 using Hecton8.Ecosystem;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
@@ -78,12 +79,11 @@ namespace Hecton8.Modding
         private const string SaveDictionaryPrefix = "m8v1:";
         private const string EngineStorageKeyPrefix = "hecton.internal.";
         private const string EngineStorageOwnerId = "hecton.internal.engine_save_owner";
-        private const string NativeMemoryOwner = nameof(ModSaveStateStore);
+        private const SystemID NativeArrayOwnerSystem = SystemID.ModSandbox;
         private const string ModPayloadWriteBufferLabel = "modPayloadWriteBuffer";
         private const string ModPayloadReadBufferLabel = "modPayloadReadBuffer";
-        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for ModSaveStateStore temp buffer.";
-        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after ModSaveStateStore native disposal fault.";
-        private const NativeAllocationLifetime NativeTempMemoryLifetime = NativeAllocationLifetime.Temp;
+        private const string NativeMemoryAllocationFailureMessage = "H8Memory allocation failed for ModSaveStateStore temp buffer.";
+        private const string NativeMemoryReleaseFailureMessage = "H8Memory release failed for ModSaveStateStore temp buffer.";
         private static readonly uint EngineStorageOwnerHash = ModCommandDispatcher.ComputeModHash(EngineStorageOwnerId);
 
         // COLD ALLOC: Dictionary<string,string>[64] — custom mod save payload map persisted inside SaveData — owner: ModSaveStateStore
@@ -98,6 +98,8 @@ namespace Hecton8.Modding
         }
 
         private static readonly List<ModSaveEntry> _customModData = new List<ModSaveEntry>(64);
+        // COLD ALLOC: List<ModSaveEntry>[64] - MMF load rollback snapshot - owner: ModSaveStateStore
+        private static readonly List<ModSaveEntry> _mmfLoadRollbackData = new List<ModSaveEntry>(64);
         private static readonly Dictionary<uint, int> _customModIndexByHash = new Dictionary<uint, int>(64);
         // COLD ALLOC: char[ModPayloadMaxBytes/2] - reusable UTF-16 decode scratch for mod save payload load - owner: ModSaveStateStore
         private static readonly char[] _decodeCharScratch =
@@ -109,6 +111,7 @@ namespace Hecton8.Modding
         private static void ResetStaticState()
         {
             _customModData.Clear();
+            _mmfLoadRollbackData.Clear();
             _customModIndexByHash.Clear();
         }
 
@@ -288,16 +291,13 @@ namespace Hecton8.Modding
                 uint compoundHash = isNamespaced
                     ? ComputeCompoundPersistenceHash(modHash, keyHash)
                     : keyHash;
-                _customModIndexByHash[compoundHash] = _customModData.Count;
-                _customModData.Add(new ModSaveEntry
-                {
-                    Key = isNamespaced ? string.Empty : key,
-                    Value = enumerator.Current.Value ?? string.Empty,
-                    SerializedKey = isNamespaced ? key : string.Empty,
-                    KeyHash = keyHash,
-                    ModHash = modHash,
-                    CompoundHash = compoundHash
-                });
+                AddOrReplaceLoadedSaveEntry(
+                    isNamespaced ? string.Empty : key,
+                    enumerator.Current.Value ?? string.Empty,
+                    isNamespaced ? BuildSerializedStorageKey(modHash, keyHash) : string.Empty,
+                    keyHash,
+                    modHash,
+                    compoundHash);
             }
         }
 
@@ -322,9 +322,21 @@ namespace Hecton8.Modding
 
                     string value = entry.Value ?? string.Empty;
                     int payloadLength = value.Length * sizeof(char);
+                    string tempOverridePath = BuildModPayloadTempOverridePath(absoluteSavePath, entry.ModHash, entry.KeyHash);
                     if (payloadLength > SaveBinaryStorage.ModPayloadMaxBytes)
                     {
-                        error = "Mod payload exceeds isolated sub-sector budget.";
+                        if (!SaveBinaryStorage.TryCommitModPayloadSubSector(
+                                absoluteSavePath,
+                                tempOverridePath,
+                                entry.ModHash,
+                                entry.KeyHash,
+                                payloadBytes,
+                                payloadLength,
+                                out string oversizeCommitError))
+                        {
+                            error = oversizeCommitError;
+                        }
+
                         continue;
                     }
 
@@ -335,13 +347,6 @@ namespace Hecton8.Modding
                         payloadBytes[byteIndex] = (byte)(character & 0xFF);
                         payloadBytes[byteIndex + 1] = (byte)(character >> 8);
                     }
-
-                    string tempOverridePath = absoluteSavePath +
-                                              ".mod_" +
-                                              entry.ModHash.ToString("X8") +
-                                              "_" +
-                                              entry.KeyHash.ToString("X8") +
-                                              ".sectmp";
 
                     if (!SaveBinaryStorage.TryCommitModPayloadSubSector(
                             absoluteSavePath,
@@ -364,6 +369,16 @@ namespace Hecton8.Modding
             return string.IsNullOrEmpty(error);
         }
 
+        private static string BuildModPayloadTempOverridePath(string absoluteSavePath, uint modHash, uint keyHash)
+        {
+            return absoluteSavePath +
+                   ".mod_" +
+                   modHash.ToString("X8") +
+                   "_" +
+                   keyHash.ToString("X8") +
+                   ".sectmp";
+        }
+
         internal static bool TryLoadMmfPayloads(string absoluteSavePath, out string error)
         {
             error = string.Empty;
@@ -371,23 +386,122 @@ namespace Hecton8.Modding
                 return true;
 
             NativeArray<byte> payloadBytes = default;
+            bool keepLoadedPayloads = false;
+            CaptureMmfLoadRollbackSnapshot();
             try
             {
                 payloadBytes = CreateTempNativeArrayBuffer(
                     math.max(1, SaveBinaryStorage.ModPayloadMaxBytes),
                     ModPayloadReadBufferLabel);
 
-                return SaveBinaryStorage.TryReadIndexedModPayloads(
+                bool loaded = SaveBinaryStorage.TryReadIndexedModPayloads(
                     absoluteSavePath,
                     null,
                     payloadBytes,
                     _modPayloadReadHandler,
                     out error);
+                if (!loaded)
+                {
+                    RestoreMmfLoadRollbackSnapshot();
+                    return false;
+                }
+
+                keepLoadedPayloads = true;
+                return true;
+            }
+            catch
+            {
+                RestoreMmfLoadRollbackSnapshot();
+                throw;
             }
             finally
             {
-                DisposeTempNativeArrayBuffer(ref payloadBytes, ModPayloadReadBufferLabel);
+                try
+                {
+                    DisposeTempNativeArrayBuffer(ref payloadBytes, ModPayloadReadBufferLabel);
+                }
+                catch
+                {
+                    if (keepLoadedPayloads)
+                        RestoreMmfLoadRollbackSnapshot();
+                    else
+                        DiscardMmfLoadRollbackSnapshot();
+
+                    throw;
+                }
+
+                if (keepLoadedPayloads)
+                    DiscardMmfLoadRollbackSnapshot();
             }
+        }
+
+        private static void CaptureMmfLoadRollbackSnapshot()
+        {
+            _mmfLoadRollbackData.Clear();
+            for (int i = 0; i < _customModData.Count; i++)
+                _mmfLoadRollbackData.Add(_customModData[i]);
+        }
+
+        private static void RestoreMmfLoadRollbackSnapshot()
+        {
+            _customModData.Clear();
+            for (int i = 0; i < _mmfLoadRollbackData.Count; i++)
+                _customModData.Add(_mmfLoadRollbackData[i]);
+
+            RebuildCustomModIndex();
+            _mmfLoadRollbackData.Clear();
+        }
+
+        private static void DiscardMmfLoadRollbackSnapshot()
+        {
+            _mmfLoadRollbackData.Clear();
+        }
+
+        private static void RebuildCustomModIndex()
+        {
+            _customModIndexByHash.Clear();
+            for (int i = 0; i < _customModData.Count; i++)
+            {
+                uint compoundHash = _customModData[i].CompoundHash;
+                if (compoundHash != 0u)
+                    _customModIndexByHash[compoundHash] = i;
+            }
+        }
+
+        private static void AddOrReplaceLoadedSaveEntry(
+            string key,
+            string value,
+            string serializedKey,
+            uint keyHash,
+            uint modHash,
+            uint compoundHash)
+        {
+            if (_customModIndexByHash.TryGetValue(compoundHash, out int existingIndex) &&
+                existingIndex >= 0 &&
+                existingIndex < _customModData.Count)
+            {
+                _customModData[existingIndex] = new ModSaveEntry
+                {
+                    Key = key ?? string.Empty,
+                    Value = value ?? string.Empty,
+                    SerializedKey = serializedKey ?? string.Empty,
+                    KeyHash = keyHash,
+                    ModHash = modHash,
+                    CompoundHash = compoundHash
+                };
+                return;
+            }
+
+            _customModIndexByHash[compoundHash] = _customModData.Count;
+            _customModData.Add(new ModSaveEntry
+            {
+                Key = key ?? string.Empty,
+                Value = value ?? string.Empty,
+                SerializedKey = serializedKey ?? string.Empty,
+                KeyHash = keyHash,
+                ModHash = modHash,
+                CompoundHash = compoundHash
+            });
         }
 
         private static bool LoadMmfPayload(
@@ -579,31 +693,17 @@ namespace Hecton8.Modding
 
         private static NativeArray<byte> CreateTempNativeArrayBuffer(int length, string label)
         {
-            NativeArray<byte> buffer = new NativeArray<byte>(
-                math.max(1, length),
+            int safeLength = math.max(1, length);
+            NativeArray<byte> buffer = H8Memory.Allocate<byte>(
+                safeLength,
+                NativeArrayOwnerSystem,
                 Allocator.Temp,
                 NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[length] - isolated mod save payload staging buffer - owner: ModSaveStateStore
-            try
-            {
-                RegisterTempNativeArrayBuffer(buffer, label);
-                return buffer;
-            }
-            catch
-            {
-                if (buffer.IsCreated)
-                    buffer.Dispose();
-                throw;
-            }
-        }
 
-        private static void RegisterTempNativeArrayBuffer(NativeArray<byte> buffer, string label)
-        {
-            if (!buffer.IsCreated)
-                return;
+            if (!buffer.IsCreated || buffer.Length != safeLength)
+                throw new System.InvalidOperationException($"{NativeMemoryAllocationFailureMessage} Label={label}.");
 
-            int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
-            if (registrationId <= 0)
-                throw new System.InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+            return buffer;
         }
 
         private static void DisposeTempNativeArrayBuffer(ref NativeArray<byte> buffer, string label)
@@ -611,53 +711,36 @@ namespace Hecton8.Modding
             if (!buffer.IsCreated)
                 return;
 
-            bool sentinelUnregistered = false;
-            try
-            {
-                NativeMemorySentinel.UnregisterNativeArray(buffer);
-                sentinelUnregistered = true;
-                buffer.Dispose();
-                buffer = default;
-            }
-            catch (System.Exception disposalException)
-            {
-                RestoreTempNativeArrayBufferSentinelOrThrow(buffer, label, sentinelUnregistered, disposalException);
-                throw;
-            }
-        }
+            H8Memory.Release(ref buffer, NativeArrayOwnerSystem);
 
-        private static void RestoreTempNativeArrayBufferSentinelOrThrow(
-            NativeArray<byte> buffer,
-            string label,
-            bool sentinelUnregistered,
-            System.Exception disposalException)
-        {
-            if (!sentinelUnregistered || !buffer.IsCreated)
-                return;
-
-            try
-            {
-                int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
-                if (registrationId <= 0)
-                    throw new System.InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
-            }
-            catch (System.Exception restoreException)
-            {
-                throw new System.AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
-            }
+            if (buffer.IsCreated)
+                throw new System.InvalidOperationException($"{NativeMemoryReleaseFailureMessage} Label={label}.");
         }
     }
 
     internal static class ModItemRegistry
     {
-        // COLD ALLOC: List<ItemData>[16] — deferred item registrations until the runtime item catalog exists — owner: ModItemRegistry
-        private static readonly List<ItemData> _pendingItems = new List<ItemData>(16);
+        private struct PendingItemRegistration
+        {
+            public ItemData Data;
+            public string ModId;
+            public uint ModHash;
+        }
+
+        // COLD ALLOC: List<PendingItemRegistration>[16] — deferred item registrations until the runtime item catalog exists — owner: ModItemRegistry
+        private static readonly List<PendingItemRegistration> _pendingItems = new List<PendingItemRegistration>(16);
+        // COLD ALLOC: List<PendingItemRegistration>[16] — mod-owned item registrations replayed into replacement runtime catalogs — owner: ModItemRegistry
+        private static readonly List<PendingItemRegistration> _liveItems = new List<PendingItemRegistration>(16);
+        // COLD ALLOC: List<ItemCatalog>[4] — catalogs that received mod-owned runtime items and must be owner-cleaned on disable — owner: ModItemRegistry
+        private static readonly List<ItemCatalog> _liveItemCatalogs = new List<ItemCatalog>(4);
         private static IPlayerInventoryService s_playerInventoryService;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _pendingItems.Clear();
+            _liveItems.Clear();
+            _liveItemCatalogs.Clear();
             s_playerInventoryService = null;
         }
 
@@ -670,8 +753,12 @@ namespace Hecton8.Modding
             GlobalRegistryServiceSlot serviceSlot,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
-                s_playerInventoryService = currentService as IPlayerInventoryService;
+            if (serviceSlot != GlobalRegistryServiceSlot.PlayerInventory)
+                return;
+
+            s_playerInventoryService = currentService as IPlayerInventoryService;
+            ReplayLiveRegistrationsToActiveCatalog();
+            FlushPendingRegistrations();
         }
 
         internal static bool TryRegister(ItemData itemData, out string error)
@@ -686,13 +773,71 @@ namespace Hecton8.Modding
 
             ItemCatalog catalog = ResolveActiveCatalog();
             if (catalog != null)
-                return catalog.TryRegisterRuntimeItem(itemData, out error);
+            {
+                uint modHash = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModHash : 0u;
+                string modId = ResolveActiveOwnerId();
+                bool success = catalog.TryRegisterRuntimeItem(itemData, modId, out error);
+                if (success)
+                {
+                    AddOrReplaceLiveItemRegistration(itemData, modId, modHash);
+                    TrackLiveCatalog(catalog);
+                    ModRegistryEvents.NotifyRuntimeRegistryChanged(modHash);
+                }
 
-            if (ContainsPendingItem(itemData))
+                return success;
+            }
+
+            int existingLiveItemIndex;
+            if (TryFindLiveItem(itemData, out existingLiveItemIndex))
+            {
+                PromoteItemRegistrationOwnerIfUnownedOrSameMod(_liveItems, existingLiveItemIndex);
+                PromoteKnownItemCatalogOwnersIfUnownedOrSameMod(itemData);
                 return true;
+            }
 
-            _pendingItems.Add(itemData);
+            int existingPendingItemIndex;
+            if (TryFindPendingItem(itemData, out existingPendingItemIndex))
+            {
+                PromoteItemRegistrationOwnerIfUnownedOrSameMod(_pendingItems, existingPendingItemIndex);
+                return true;
+            }
+
+            _pendingItems.Add(new PendingItemRegistration
+            {
+                Data = itemData,
+                ModId = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModId : string.Empty,
+                ModHash = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModHash : 0u
+            });
             return true;
+        }
+
+        internal static void UnregisterModItems(string modId)
+        {
+            if (string.IsNullOrWhiteSpace(modId))
+                return;
+
+            bool removed = false;
+            if (RemoveLiveItemRegistrationsForMod(modId))
+                removed = true;
+
+            if (UnregisterRuntimeItemsFromKnownCatalogs(modId))
+                removed = true;
+
+            for (int i = _pendingItems.Count - 1; i >= 0; i--)
+            {
+                if (!string.Equals(_pendingItems[i].ModId, modId, System.StringComparison.Ordinal))
+                    continue;
+
+                _pendingItems.RemoveAt(i);
+                removed = true;
+            }
+
+            ItemCatalog catalog = ResolveActiveCatalog();
+            if (catalog != null && !ContainsKnownLiveCatalog(catalog) && catalog.UnregisterRuntimeItemsForOwner(modId))
+                removed = true;
+
+            if (removed)
+                ModRegistryEvents.NotifyRuntimeRegistryChanged(ModCommandDispatcher.ComputeModHash(modId));
         }
 
         internal static void FlushPendingRegistrations()
@@ -701,12 +846,23 @@ namespace Hecton8.Modding
             if (catalog == null || _pendingItems.Count == 0)
                 return;
 
+            bool changed = false;
             for (int i = _pendingItems.Count - 1; i >= 0; i--)
             {
-                ItemData itemData = _pendingItems[i];
-                if (catalog.TryRegisterRuntimeItem(itemData, out string error))
+                PendingItemRegistration registration = _pendingItems[i];
+                if (!IsPendingOwnerStillRegistered(registration.ModHash))
                 {
                     _pendingItems.RemoveAt(i);
+                    continue;
+                }
+
+                ItemData itemData = registration.Data;
+                if (catalog.TryRegisterRuntimeItem(itemData, registration.ModId, out string error))
+                {
+                    _pendingItems.RemoveAt(i);
+                    AddOrReplaceLiveItemRegistration(registration.Data, registration.ModId, registration.ModHash);
+                    TrackLiveCatalog(catalog);
+                    changed = true;
                     continue;
                 }
 
@@ -714,6 +870,9 @@ namespace Hecton8.Modding
                     $"[ModItemRegistry] Failed to register pending runtime item '{(itemData != null ? itemData.name : "null")}': {error}");
                 _pendingItems.RemoveAt(i);
             }
+
+            if (changed)
+                ModRegistryEvents.NotifyRuntimeRegistryChanged(0u);
         }
 
         internal static ItemCatalog ResolveActiveCatalog()
@@ -723,31 +882,265 @@ namespace Hecton8.Modding
             return playerInventory != null ? playerInventory.ItemCatalog : null;
         }
 
-        private static bool ContainsPendingItem(ItemData itemData)
+        private static bool IsPendingOwnerStillRegistered(uint modHash)
         {
-            for (int i = 0; i < _pendingItems.Count; i++)
-            {
-                ItemData pending = _pendingItems[i];
-                if (ReferenceEquals(pending, itemData))
-                    return true;
+            return modHash == 0u || ModCommandDispatcher.IsRegisteredMod(modHash);
+        }
 
-                if (pending != null &&
-                    itemData != null &&
-                    string.Equals(pending.PersistentId, itemData.PersistentId, System.StringComparison.Ordinal))
+        private static string ResolveActiveOwnerId()
+        {
+            return ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModId : string.Empty;
+        }
+
+        private static void ReplayLiveRegistrationsToActiveCatalog()
+        {
+            ItemCatalog catalog = ResolveActiveCatalog();
+            if (catalog == null || _liveItems.Count == 0)
+                return;
+
+            bool changed = false;
+            for (int i = _liveItems.Count - 1; i >= 0; i--)
+            {
+                PendingItemRegistration registration = _liveItems[i];
+                if (!IsPendingOwnerStillRegistered(registration.ModHash))
                 {
+                    _liveItems.RemoveAt(i);
+                    changed = true;
+                    continue;
+                }
+
+                if (catalog.TryRegisterRuntimeItem(registration.Data, registration.ModId, out string error))
+                {
+                    TrackLiveCatalog(catalog);
+                    changed = true;
+                    continue;
+                }
+
+                Hecton8.Core.H8Debug.LogWarning(
+                    $"[ModItemRegistry] Failed to replay runtime item '{(registration.Data != null ? registration.Data.name : "null")}': {error}");
+                _liveItems.RemoveAt(i);
+                changed = true;
+            }
+
+            if (changed)
+                ModRegistryEvents.NotifyRuntimeRegistryChanged(0u);
+        }
+
+        private static void TrackLiveCatalog(ItemCatalog catalog)
+        {
+            if (catalog == null)
+                return;
+
+            for (int i = _liveItemCatalogs.Count - 1; i >= 0; i--)
+            {
+                ItemCatalog existing = _liveItemCatalogs[i];
+                if (existing == null)
+                {
+                    _liveItemCatalogs.RemoveAt(i);
+                    continue;
+                }
+
+                if (ReferenceEquals(existing, catalog))
+                    return;
+            }
+
+            _liveItemCatalogs.Add(catalog);
+        }
+
+        private static bool ContainsKnownLiveCatalog(ItemCatalog catalog)
+        {
+            if (catalog == null)
+                return false;
+
+            for (int i = _liveItemCatalogs.Count - 1; i >= 0; i--)
+            {
+                ItemCatalog existing = _liveItemCatalogs[i];
+                if (existing == null)
+                {
+                    _liveItemCatalogs.RemoveAt(i);
+                    continue;
+                }
+
+                if (ReferenceEquals(existing, catalog))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void AddOrReplaceLiveItemRegistration(ItemData itemData, string modId, uint modHash)
+        {
+            for (int i = 0; i < _liveItems.Count; i++)
+            {
+                PendingItemRegistration registration = _liveItems[i];
+                ItemData liveItem = registration.Data;
+                if (!ReferenceEquals(liveItem, itemData) &&
+                    (liveItem == null ||
+                     itemData == null ||
+                     !string.Equals(liveItem.PersistentId, itemData.PersistentId, System.StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                registration.Data = itemData;
+                registration.ModId = modId;
+                registration.ModHash = modHash;
+                _liveItems[i] = registration;
+                return;
+            }
+
+            _liveItems.Add(new PendingItemRegistration
+            {
+                Data = itemData,
+                ModId = modId,
+                ModHash = modHash
+            });
+        }
+
+        private static bool RemoveLiveItemRegistrationsForMod(string modId)
+        {
+            bool removed = false;
+            for (int i = _liveItems.Count - 1; i >= 0; i--)
+            {
+                if (!string.Equals(_liveItems[i].ModId, modId, System.StringComparison.Ordinal))
+                    continue;
+
+                _liveItems.RemoveAt(i);
+                removed = true;
+            }
+
+            return removed;
+        }
+
+        private static bool UnregisterRuntimeItemsFromKnownCatalogs(string modId)
+        {
+            bool removed = false;
+            for (int i = _liveItemCatalogs.Count - 1; i >= 0; i--)
+            {
+                ItemCatalog catalog = _liveItemCatalogs[i];
+                if (catalog == null)
+                {
+                    _liveItemCatalogs.RemoveAt(i);
+                    continue;
+                }
+
+                if (catalog.UnregisterRuntimeItemsForOwner(modId))
+                    removed = true;
+            }
+
+            return removed;
+        }
+
+        private static void PromoteKnownItemCatalogOwnersIfUnownedOrSameMod(ItemData itemData)
+        {
+            if (!ModExecutionScope.HasActiveMod || itemData == null)
+                return;
+
+            string modId = ModExecutionScope.CurrentModId;
+            for (int i = _liveItemCatalogs.Count - 1; i >= 0; i--)
+            {
+                ItemCatalog catalog = _liveItemCatalogs[i];
+                if (catalog == null)
+                {
+                    _liveItemCatalogs.RemoveAt(i);
+                    continue;
+                }
+
+                catalog.TryPromoteRuntimeItemOwnerIfPresent(itemData, modId);
+            }
+        }
+
+        private static bool ContainsLiveItem(ItemData itemData)
+        {
+            int unusedIndex;
+            return TryFindLiveItem(itemData, out unusedIndex);
+        }
+
+        private static bool TryFindLiveItem(ItemData itemData, out int index)
+        {
+            index = -1;
+            for (int i = 0; i < _liveItems.Count; i++)
+            {
+                ItemData live = _liveItems[i].Data;
+                if (ReferenceEquals(live, itemData))
+                {
+                    index = i;
+                    return true;
+                }
+
+                if (live != null &&
+                    itemData != null &&
+                    string.Equals(live.PersistentId, itemData.PersistentId, System.StringComparison.Ordinal))
+                {
+                    index = i;
                     return true;
                 }
             }
 
             return false;
         }
+
+        private static bool ContainsPendingItem(ItemData itemData)
+        {
+            int unusedIndex;
+            return TryFindPendingItem(itemData, out unusedIndex);
+        }
+
+        private static bool TryFindPendingItem(ItemData itemData, out int index)
+        {
+            index = -1;
+            for (int i = 0; i < _pendingItems.Count; i++)
+            {
+                ItemData pending = _pendingItems[i].Data;
+                if (ReferenceEquals(pending, itemData))
+                {
+                    index = i;
+                    return true;
+                }
+
+                if (pending != null &&
+                    itemData != null &&
+                    string.Equals(pending.PersistentId, itemData.PersistentId, System.StringComparison.Ordinal))
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void PromoteItemRegistrationOwnerIfUnownedOrSameMod(List<PendingItemRegistration> registrations, int index)
+        {
+            if (!ModExecutionScope.HasActiveMod ||
+                registrations == null ||
+                (uint)index >= (uint)registrations.Count)
+            {
+                return;
+            }
+
+            PendingItemRegistration registration = registrations[index];
+            if (registration.ModHash != 0u && registration.ModHash != ModExecutionScope.CurrentModHash)
+                return;
+
+            registration.ModId = ModExecutionScope.CurrentModId;
+            registration.ModHash = ModExecutionScope.CurrentModHash;
+            registrations[index] = registration;
+        }
     }
 
     internal static class ModRecipeRegistry
     {
         private const int MaxRuntimeRecipeCount = Fabricator.MaxRecipeCacheEntries;
-        // COLD ALLOC: List<RecipeData>[Fabricator.MaxRecipeCacheEntries] — bounded runtime crafting recipe overlay — owner: ModRecipeRegistry
-        private static readonly List<RecipeData> _runtimeRecipes = new List<RecipeData>(MaxRuntimeRecipeCount);
+        // COLD ALLOC: List<RuntimeRecipeRegistration>[Fabricator.MaxRecipeCacheEntries] — bounded runtime crafting recipe overlay — owner: ModRecipeRegistry
+        private struct RuntimeRecipeRegistration
+        {
+            public RecipeData Data;
+            public string ModId;
+            public uint ModHash;
+        }
+
+        private static readonly List<RuntimeRecipeRegistration> _runtimeRecipes = new List<RuntimeRecipeRegistration>(MaxRuntimeRecipeCount);
 
         internal static int Count => _runtimeRecipes.Count;
 
@@ -785,22 +1178,59 @@ namespace Hecton8.Modding
                 return false;
             }
 
-            if (ContainsRecipeReference(recipeData))
+            bool removedStaleOwnerRecipes = RemoveStaleOwnerRecipes();
+
+            int existingRecipeIndex;
+            if (TryFindRecipeReference(recipeData, out existingRecipeIndex))
+            {
+                PromoteRuntimeRecipeOwnerIfUnownedOrSameMod(existingRecipeIndex);
+                if (removedStaleOwnerRecipes)
+                    ModRegistryEvents.NotifyRecipeRegistryChanged();
+
                 return true;
+            }
 
             if (_runtimeRecipes.Count >= MaxRuntimeRecipeCount)
             {
+                if (removedStaleOwnerRecipes)
+                    ModRegistryEvents.NotifyRecipeRegistryChanged();
+
                 error = "Runtime recipe registry capacity exceeded.";
                 return false;
             }
 
-            _runtimeRecipes.Add(recipeData);
+            _runtimeRecipes.Add(new RuntimeRecipeRegistration
+            {
+                Data = recipeData,
+                ModId = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModId : string.Empty,
+                ModHash = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModHash : 0u
+            });
             ModRegistryEvents.NotifyRecipeRegistryChanged();
             return true;
         }
 
+        internal static void UnregisterModRecipes(string modId)
+        {
+            if (string.IsNullOrWhiteSpace(modId))
+                return;
+
+            bool removed = false;
+            for (int i = _runtimeRecipes.Count - 1; i >= 0; i--)
+            {
+                if (!string.Equals(_runtimeRecipes[i].ModId, modId, System.StringComparison.Ordinal))
+                    continue;
+
+                _runtimeRecipes.RemoveAt(i);
+                removed = true;
+            }
+
+            if (removed)
+                ModRegistryEvents.NotifyRecipeRegistryChanged();
+        }
+
         internal static void FlushPendingRegistrations()
         {
+            RemoveStaleOwnerRecipes();
             ModRegistryEvents.NotifyRecipeRegistryChanged();
         }
 
@@ -809,18 +1239,62 @@ namespace Hecton8.Modding
             if ((uint)index >= (uint)_runtimeRecipes.Count)
                 return null;
 
-            return _runtimeRecipes[index];
+            return _runtimeRecipes[index].Data;
         }
 
         private static bool ContainsRecipeReference(RecipeData recipeData)
         {
+            int unusedIndex;
+            return TryFindRecipeReference(recipeData, out unusedIndex);
+        }
+
+        private static bool TryFindRecipeReference(RecipeData recipeData, out int index)
+        {
+            index = -1;
             for (int i = 0; i < _runtimeRecipes.Count; i++)
             {
-                if (ReferenceEquals(_runtimeRecipes[i], recipeData))
+                if (ReferenceEquals(_runtimeRecipes[i].Data, recipeData))
+                {
+                    index = i;
                     return true;
+                }
             }
 
             return false;
+        }
+
+        private static void PromoteRuntimeRecipeOwnerIfUnownedOrSameMod(int index)
+        {
+            if (!ModExecutionScope.HasActiveMod || (uint)index >= (uint)_runtimeRecipes.Count)
+                return;
+
+            RuntimeRecipeRegistration registration = _runtimeRecipes[index];
+            if (registration.ModHash != 0u && registration.ModHash != ModExecutionScope.CurrentModHash)
+                return;
+
+            registration.ModId = ModExecutionScope.CurrentModId;
+            registration.ModHash = ModExecutionScope.CurrentModHash;
+            _runtimeRecipes[index] = registration;
+        }
+
+        private static bool RemoveStaleOwnerRecipes()
+        {
+            bool removed = false;
+            for (int i = _runtimeRecipes.Count - 1; i >= 0; i--)
+            {
+                if (IsRuntimeOwnerStillRegistered(_runtimeRecipes[i].ModHash))
+                    continue;
+
+                _runtimeRecipes.RemoveAt(i);
+                removed = true;
+            }
+
+            return removed;
+        }
+
+        private static bool IsRuntimeOwnerStillRegistered(uint modHash)
+        {
+            return modHash == 0u || ModCommandDispatcher.IsRegisteredMod(modHash);
         }
     }
 
@@ -832,16 +1306,24 @@ namespace Hecton8.Modding
         {
             public BuildableData Data;
             public string CustomCategory;
+            public string ModId;
+            public uint ModHash;
         }
 
         // COLD ALLOC: List<PendingBuildableRegistration>[16] — deferred buildable registrations until the live module catalog exists — owner: ModBuildableRegistry
         private static readonly List<PendingBuildableRegistration> _pendingBuildables = new List<PendingBuildableRegistration>(16);
+        // COLD ALLOC: List<PendingBuildableRegistration>[16] — mod-owned buildable registrations replayed into replacement runtime catalogs — owner: ModBuildableRegistry
+        private static readonly List<PendingBuildableRegistration> _liveBuildables = new List<PendingBuildableRegistration>(16);
+        // COLD ALLOC: List<ModuleCatalog>[4] — catalogs that received mod-owned runtime buildables and must be owner-cleaned on disable — owner: ModBuildableRegistry
+        private static readonly List<ModuleCatalog> _liveModuleCatalogs = new List<ModuleCatalog>(4);
         private static ILogisticsService s_logisticsService;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _pendingBuildables.Clear();
+            _liveBuildables.Clear();
+            _liveModuleCatalogs.Clear();
             s_logisticsService = null;
         }
 
@@ -854,8 +1336,12 @@ namespace Hecton8.Modding
             GlobalRegistryServiceSlot serviceSlot,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Logistics)
-                s_logisticsService = currentService as ILogisticsService;
+            if (serviceSlot != GlobalRegistryServiceSlot.Logistics)
+                return;
+
+            s_logisticsService = currentService as ILogisticsService;
+            ReplayLiveRegistrationsToActiveCatalog();
+            FlushPendingRegistrations();
         }
 
         internal static bool TryRegister(BuildableData buildableData, string customCategory, out string error)
@@ -877,15 +1363,34 @@ namespace Hecton8.Modding
             ModuleCatalog catalog = ResolveActiveCatalog();
             if (catalog != null)
             {
-                bool success = catalog.TryRegisterRuntimeModule(buildableData, NormalizeCategory(customCategory), out error);
+                string normalizedCategory = NormalizeCategory(customCategory);
+                string modId = ResolveActiveOwnerId();
+                uint modHash = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModHash : 0u;
+                bool success = catalog.TryRegisterRuntimeModule(buildableData, normalizedCategory, modId, out error);
                 if (success)
+                {
+                    AddOrReplaceLiveBuildableRegistration(buildableData, normalizedCategory, modId, modHash);
+                    TrackLiveCatalog(catalog);
                     ModRegistryEvents.NotifyBuildableRegistryChanged();
+                }
 
                 return success;
             }
 
-            if (ContainsPendingBuildable(buildableData))
+            int existingLiveBuildableIndex;
+            if (TryFindLiveBuildable(buildableData, out existingLiveBuildableIndex))
+            {
+                PromoteBuildableRegistrationOwnerIfUnownedOrSameMod(_liveBuildables, existingLiveBuildableIndex, customCategory);
+                PromoteKnownModuleCatalogOwnersIfUnownedOrSameMod(buildableData, customCategory);
                 return true;
+            }
+
+            int existingPendingBuildableIndex;
+            if (TryFindPendingBuildable(buildableData, out existingPendingBuildableIndex))
+            {
+                PromoteBuildableRegistrationOwnerIfUnownedOrSameMod(_pendingBuildables, existingPendingBuildableIndex, customCategory);
+                return true;
+            }
 
             if (HasPendingAliasConflict(buildableData, out error))
                 return false;
@@ -893,11 +1398,42 @@ namespace Hecton8.Modding
             _pendingBuildables.Add(new PendingBuildableRegistration
             {
                 Data = buildableData,
-                CustomCategory = NormalizeCategory(customCategory)
+                CustomCategory = NormalizeCategory(customCategory),
+                ModId = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModId : string.Empty,
+                ModHash = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModHash : 0u
             });
 
             ModRegistryEvents.NotifyBuildableRegistryChanged();
             return true;
+        }
+
+        internal static void UnregisterModBuildables(string modId)
+        {
+            if (string.IsNullOrWhiteSpace(modId))
+                return;
+
+            bool removed = false;
+            if (RemoveLiveBuildableRegistrationsForMod(modId))
+                removed = true;
+
+            if (UnregisterRuntimeBuildablesFromKnownCatalogs(modId))
+                removed = true;
+
+            for (int i = _pendingBuildables.Count - 1; i >= 0; i--)
+            {
+                if (!string.Equals(_pendingBuildables[i].ModId, modId, System.StringComparison.Ordinal))
+                    continue;
+
+                _pendingBuildables.RemoveAt(i);
+                removed = true;
+            }
+
+            ModuleCatalog catalog = ResolveActiveCatalog();
+            if (catalog != null && !ContainsKnownLiveCatalog(catalog) && catalog.UnregisterRuntimeModulesForOwner(modId))
+                removed = true;
+
+            if (removed)
+                ModRegistryEvents.NotifyBuildableRegistryChanged();
         }
 
         internal static void FlushPendingRegistrations()
@@ -910,9 +1446,18 @@ namespace Hecton8.Modding
             for (int i = _pendingBuildables.Count - 1; i >= 0; i--)
             {
                 PendingBuildableRegistration registration = _pendingBuildables[i];
-                if (catalog.TryRegisterRuntimeModule(registration.Data, registration.CustomCategory, out string error))
+                if (!IsPendingOwnerStillRegistered(registration.ModHash))
                 {
                     _pendingBuildables.RemoveAt(i);
+                    changed = true;
+                    continue;
+                }
+
+                if (catalog.TryRegisterRuntimeModule(registration.Data, registration.CustomCategory, registration.ModId, out string error))
+                {
+                    _pendingBuildables.RemoveAt(i);
+                    AddOrReplaceLiveBuildableRegistration(registration.Data, registration.CustomCategory, registration.ModId, registration.ModHash);
+                    TrackLiveCatalog(catalog);
                     changed = true;
                     continue;
                 }
@@ -932,6 +1477,211 @@ namespace Hecton8.Modding
             return logistics != null ? logistics.Catalog : null;
         }
 
+        private static bool IsPendingOwnerStillRegistered(uint modHash)
+        {
+            return modHash == 0u || ModCommandDispatcher.IsRegisteredMod(modHash);
+        }
+
+        private static string ResolveActiveOwnerId()
+        {
+            return ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModId : string.Empty;
+        }
+
+        private static void ReplayLiveRegistrationsToActiveCatalog()
+        {
+            ModuleCatalog catalog = ResolveActiveCatalog();
+            if (catalog == null || _liveBuildables.Count == 0)
+                return;
+
+            bool changed = false;
+            for (int i = _liveBuildables.Count - 1; i >= 0; i--)
+            {
+                PendingBuildableRegistration registration = _liveBuildables[i];
+                if (!IsPendingOwnerStillRegistered(registration.ModHash))
+                {
+                    _liveBuildables.RemoveAt(i);
+                    changed = true;
+                    continue;
+                }
+
+                if (catalog.TryRegisterRuntimeModule(registration.Data, registration.CustomCategory, registration.ModId, out string error))
+                {
+                    TrackLiveCatalog(catalog);
+                    changed = true;
+                    continue;
+                }
+
+                Hecton8.Core.H8Debug.LogWarning(
+                    $"[ModBuildableRegistry] Failed to replay runtime buildable '{(registration.Data != null ? registration.Data.name : "null")}': {error}");
+                _liveBuildables.RemoveAt(i);
+                changed = true;
+            }
+
+            if (changed)
+                ModRegistryEvents.NotifyBuildableRegistryChanged();
+        }
+
+        private static void TrackLiveCatalog(ModuleCatalog catalog)
+        {
+            if (catalog == null)
+                return;
+
+            for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)
+            {
+                ModuleCatalog existing = _liveModuleCatalogs[i];
+                if (existing == null)
+                {
+                    _liveModuleCatalogs.RemoveAt(i);
+                    continue;
+                }
+
+                if (ReferenceEquals(existing, catalog))
+                    return;
+            }
+
+            _liveModuleCatalogs.Add(catalog);
+        }
+
+        private static bool ContainsKnownLiveCatalog(ModuleCatalog catalog)
+        {
+            if (catalog == null)
+                return false;
+
+            for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)
+            {
+                ModuleCatalog existing = _liveModuleCatalogs[i];
+                if (existing == null)
+                {
+                    _liveModuleCatalogs.RemoveAt(i);
+                    continue;
+                }
+
+                if (ReferenceEquals(existing, catalog))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void AddOrReplaceLiveBuildableRegistration(
+            BuildableData buildableData,
+            string customCategory,
+            string modId,
+            uint modHash)
+        {
+            for (int i = 0; i < _liveBuildables.Count; i++)
+            {
+                PendingBuildableRegistration registration = _liveBuildables[i];
+                BuildableData liveBuildable = registration.Data;
+                if (!ReferenceEquals(liveBuildable, buildableData) &&
+                    (liveBuildable == null ||
+                     buildableData == null ||
+                     !string.Equals(liveBuildable.PersistentId, buildableData.PersistentId, System.StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                registration.Data = buildableData;
+                registration.CustomCategory = NormalizeCategory(customCategory);
+                registration.ModId = modId;
+                registration.ModHash = modHash;
+                _liveBuildables[i] = registration;
+                return;
+            }
+
+            _liveBuildables.Add(new PendingBuildableRegistration
+            {
+                Data = buildableData,
+                CustomCategory = NormalizeCategory(customCategory),
+                ModId = modId,
+                ModHash = modHash
+            });
+        }
+
+        private static bool RemoveLiveBuildableRegistrationsForMod(string modId)
+        {
+            bool removed = false;
+            for (int i = _liveBuildables.Count - 1; i >= 0; i--)
+            {
+                if (!string.Equals(_liveBuildables[i].ModId, modId, System.StringComparison.Ordinal))
+                    continue;
+
+                _liveBuildables.RemoveAt(i);
+                removed = true;
+            }
+
+            return removed;
+        }
+
+        private static bool UnregisterRuntimeBuildablesFromKnownCatalogs(string modId)
+        {
+            bool removed = false;
+            for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)
+            {
+                ModuleCatalog catalog = _liveModuleCatalogs[i];
+                if (catalog == null)
+                {
+                    _liveModuleCatalogs.RemoveAt(i);
+                    continue;
+                }
+
+                if (catalog.UnregisterRuntimeModulesForOwner(modId))
+                    removed = true;
+            }
+
+            return removed;
+        }
+
+        private static void PromoteKnownModuleCatalogOwnersIfUnownedOrSameMod(BuildableData buildableData, string customCategory)
+        {
+            if (!ModExecutionScope.HasActiveMod || buildableData == null)
+                return;
+
+            string modId = ModExecutionScope.CurrentModId;
+            string normalizedCategory = NormalizeCategory(customCategory);
+            for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)
+            {
+                ModuleCatalog catalog = _liveModuleCatalogs[i];
+                if (catalog == null)
+                {
+                    _liveModuleCatalogs.RemoveAt(i);
+                    continue;
+                }
+
+                catalog.TryPromoteRuntimeModuleOwnerIfPresent(buildableData, normalizedCategory, modId);
+            }
+        }
+
+        private static bool ContainsLiveBuildable(BuildableData buildableData)
+        {
+            int unusedIndex;
+            return TryFindLiveBuildable(buildableData, out unusedIndex);
+        }
+
+        private static bool TryFindLiveBuildable(BuildableData buildableData, out int index)
+        {
+            index = -1;
+            for (int i = 0; i < _liveBuildables.Count; i++)
+            {
+                BuildableData live = _liveBuildables[i].Data;
+                if (ReferenceEquals(live, buildableData))
+                {
+                    index = i;
+                    return true;
+                }
+
+                if (live != null &&
+                    buildableData != null &&
+                    string.Equals(live.PersistentId, buildableData.PersistentId, System.StringComparison.Ordinal))
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static string NormalizeCategory(string customCategory)
         {
             return string.IsNullOrWhiteSpace(customCategory) ? DefaultCategory : customCategory.Trim();
@@ -939,20 +1689,53 @@ namespace Hecton8.Modding
 
         private static bool ContainsPendingBuildable(BuildableData buildableData)
         {
+            int unusedIndex;
+            return TryFindPendingBuildable(buildableData, out unusedIndex);
+        }
+
+        private static bool TryFindPendingBuildable(BuildableData buildableData, out int index)
+        {
+            index = -1;
             for (int i = 0; i < _pendingBuildables.Count; i++)
             {
                 PendingBuildableRegistration pending = _pendingBuildables[i];
                 if (ReferenceEquals(pending.Data, buildableData))
+                {
+                    index = i;
                     return true;
+                }
 
                 if (pending.Data != null &&
                     string.Equals(pending.Data.PersistentId, buildableData.PersistentId, System.StringComparison.Ordinal))
                 {
+                    index = i;
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private static void PromoteBuildableRegistrationOwnerIfUnownedOrSameMod(
+            List<PendingBuildableRegistration> registrations,
+            int index,
+            string customCategory)
+        {
+            if (!ModExecutionScope.HasActiveMod ||
+                registrations == null ||
+                (uint)index >= (uint)registrations.Count)
+            {
+                return;
+            }
+
+            PendingBuildableRegistration registration = registrations[index];
+            if (registration.ModHash != 0u && registration.ModHash != ModExecutionScope.CurrentModHash)
+                return;
+
+            registration.CustomCategory = NormalizeCategory(customCategory);
+            registration.ModId = ModExecutionScope.CurrentModId;
+            registration.ModHash = ModExecutionScope.CurrentModHash;
+            registrations[index] = registration;
         }
 
         private static bool HasPendingAliasConflict(BuildableData buildableData, out string error)
@@ -992,12 +1775,26 @@ namespace Hecton8.Modding
         {
             return RecyclingRegistry.TryRegister(itemId, yield, out error);
         }
+
+        internal static void UnregisterModRecycleYields(string modId)
+        {
+            RecyclingRegistry.ClearOwner(modId);
+        }
     }
 
     internal static class ModEcosystemRegistry
     {
-        // COLD ALLOC: List<FaunaBiomeMutationDefinition>[16] - runtime-only biome mutation overlay registry - owner: ModEcosystemRegistry
-        private static readonly List<FaunaBiomeMutationDefinition> _runtimeMutations = new List<FaunaBiomeMutationDefinition>(16);
+        private const int MaxRuntimeMutationCount = 16;
+
+        private struct RuntimeBiomeMutationRegistration
+        {
+            public FaunaBiomeMutationDefinition Data;
+            public string ModId;
+            public uint ModHash;
+        }
+
+        // COLD ALLOC: List<RuntimeBiomeMutationRegistration>[16] - runtime-only biome mutation overlay registry - owner: ModEcosystemRegistry
+        private static readonly List<RuntimeBiomeMutationRegistration> _runtimeMutations = new List<RuntimeBiomeMutationRegistration>(MaxRuntimeMutationCount);
 
         internal static int Count => _runtimeMutations.Count;
 
@@ -1047,11 +1844,42 @@ namespace Hecton8.Modding
                 return false;
             }
 
-            if (ContainsMatchingDefinition(definition))
-                return true;
+            RemoveStaleOwnerMutations();
 
-            _runtimeMutations.Add(CloneDefinition(definition));
+            int existingMutationIndex;
+            if (TryFindMatchingDefinition(definition, out existingMutationIndex))
+            {
+                PromoteRuntimeMutationOwnerIfUnownedOrSameMod(existingMutationIndex);
+                return true;
+            }
+
+            if (_runtimeMutations.Count >= MaxRuntimeMutationCount)
+            {
+                error = "Runtime biome mutation registry capacity exceeded.";
+                return false;
+            }
+
+            _runtimeMutations.Add(new RuntimeBiomeMutationRegistration
+            {
+                Data = CloneDefinition(definition),
+                ModId = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModId : string.Empty,
+                ModHash = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModHash : 0u
+            });
             return true;
+        }
+
+        internal static void UnregisterModBiomeMutations(string modId)
+        {
+            if (string.IsNullOrWhiteSpace(modId))
+                return;
+
+            for (int i = _runtimeMutations.Count - 1; i >= 0; i--)
+            {
+                if (!string.Equals(_runtimeMutations[i].ModId, modId, System.StringComparison.Ordinal))
+                    continue;
+
+                _runtimeMutations.RemoveAt(i);
+            }
         }
 
         internal static FaunaBiomeMutationDefinition GetAt(int index)
@@ -1059,14 +1887,21 @@ namespace Hecton8.Modding
             if ((uint)index >= (uint)_runtimeMutations.Count)
                 return null;
 
-            return _runtimeMutations[index];
+            return _runtimeMutations[index].Data;
         }
 
         private static bool ContainsMatchingDefinition(FaunaBiomeMutationDefinition definition)
         {
+            int unusedIndex;
+            return TryFindMatchingDefinition(definition, out unusedIndex);
+        }
+
+        private static bool TryFindMatchingDefinition(FaunaBiomeMutationDefinition definition, out int index)
+        {
+            index = -1;
             for (int i = 0; i < _runtimeMutations.Count; i++)
             {
-                FaunaBiomeMutationDefinition existing = _runtimeMutations[i];
+                FaunaBiomeMutationDefinition existing = _runtimeMutations[i].Data;
                 if (existing == null)
                     continue;
 
@@ -1088,10 +1923,41 @@ namespace Hecton8.Modding
                 if (Mathf.Abs(existing.HealthMultiplier - definition.HealthMultiplier) > 0.0001f)
                     continue;
 
+                index = i;
                 return true;
             }
 
             return false;
+        }
+
+        private static void PromoteRuntimeMutationOwnerIfUnownedOrSameMod(int index)
+        {
+            if (!ModExecutionScope.HasActiveMod || (uint)index >= (uint)_runtimeMutations.Count)
+                return;
+
+            RuntimeBiomeMutationRegistration registration = _runtimeMutations[index];
+            if (registration.ModHash != 0u && registration.ModHash != ModExecutionScope.CurrentModHash)
+                return;
+
+            registration.ModId = ModExecutionScope.CurrentModId;
+            registration.ModHash = ModExecutionScope.CurrentModHash;
+            _runtimeMutations[index] = registration;
+        }
+
+        private static void RemoveStaleOwnerMutations()
+        {
+            for (int i = _runtimeMutations.Count - 1; i >= 0; i--)
+            {
+                if (IsRuntimeOwnerStillRegistered(_runtimeMutations[i].ModHash))
+                    continue;
+
+                _runtimeMutations.RemoveAt(i);
+            }
+        }
+
+        private static bool IsRuntimeOwnerStillRegistered(uint modHash)
+        {
+            return modHash == 0u || ModCommandDispatcher.IsRegisteredMod(modHash);
         }
 
         private static FaunaBiomeMutationDefinition CloneDefinition(FaunaBiomeMutationDefinition definition)

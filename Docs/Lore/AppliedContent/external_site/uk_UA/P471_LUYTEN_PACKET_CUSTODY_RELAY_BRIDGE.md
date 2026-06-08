@@ -1,0 +1,34 @@
+---
+packet_id: P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE
+release_set_id: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
+article_id: applied_lore.luyten_packet_custody_relay_bridge
+unlock_id: unlock.luyten_packet_custody_relay_bridge
+poi_tags: poi.packet_seal;poi.p63_relay_board
+biome_tags: biome.photic_shelf
+locale: uk_UA
+surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Реле збереження пакетів Luyten"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# Реле збереження пакетів Luyten
+
+## Що доводить запис
+
+Luyten Junction не робить HECTON-8 ближчим. Воно робить пакет важче стерти: маршрут, тариф, witness hash і notary spool отримують шлях, здатний вижити.
+
+Цивілізація без FTL може підтвердити факт за роки до фізичної відповіді. Luyten Junction - не милість, а укріплена нотаріальна лінія. Пакет, що дійшов із цілим збереженням, важче стерти претендентам, навіть поки відправник лишається під тиском Aegir.
+
+НОТАРІАЛЬНА ШПУЛЯ LUYTEN // Зберегти маршрутну мітку, тарифну пломбу, witness hash, сегмент spool і чергу отримувача. Автентифікація може пережити затримку. Це relay не виділяє евакуацію, масу carrier, кисень чи пріоритет порятунку.
+
+## Як гравець це читає
+
+Тримай нотаріальний маршрут прикріпленим. Вільний файл - чутка; маршрутизований пакет - майбутній свідок. Читай це як правило поводження з доказом, а не як обіцянку, що допомога вже летить.
+
+<!-- External Site; generated from P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE/uk_UA. -->

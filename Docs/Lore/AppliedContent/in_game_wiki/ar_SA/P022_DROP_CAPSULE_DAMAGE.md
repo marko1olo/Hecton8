@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # ضرر كبسولة الهبوط
 
-يصل اللاعب إلى HECTON-8 بكبسولة هبوط. الحادث يترك المأوى والطاقة والسجلات، لكنه يدمر الصعود. الهروب المبكر يصبح عملا هندسيا.
+توصل كبسولة الهبوط المغير إلى HECTON-8. يترك التحطم أنظمة كافية للمأوى والطاقة والسجلات، لكنه يدمر عتاد الصعود. يصبح الخروج المبكر سلسلة هندسية لا زرا.
 
 ## Scanner
 

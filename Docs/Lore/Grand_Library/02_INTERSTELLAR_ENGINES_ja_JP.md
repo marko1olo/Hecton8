@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # エンジン設計と星間物流
 
 > **出典:** 技術シラバス、バーナード造船所。文書 44-A。全派遣請負業者の必読資料。  

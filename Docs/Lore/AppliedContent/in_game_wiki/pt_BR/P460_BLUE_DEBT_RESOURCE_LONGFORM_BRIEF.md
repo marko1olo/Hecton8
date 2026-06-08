@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "PT LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: histórico de pressão em custódia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Blue Debt Custody
+# Blue Debt: histórico de pressão em custódia
 
-PT LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt é útil, caro e moralmente sujo. Não é minério mágico; é pressure-grown substrate cujo valor depende de handling, contamination, custody, Atlas compatibility e dono da prova.
 
 ## Scanner
 
-PT LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Arquivo de recurso. Blue debt é Xenon-Omega pressure substrate em custódia: pressure history, brine exposure, noble-gas capture, contamination stage, sample grade e pagamento mass-through-window.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+NÓ PÚBLICO DE RECURSO // BLUE DEBT. Valor exige containment classificado por pressão, extraction scar, contamination status, custody receipt e recoverable tonne-window allocation.
 
 ## Audio
 
-PT LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+Áudio de pagamento Black Keel: "Não polir a amostra. Sele, dê grade e mantenha o receipt seco."
 
 ## Field Note
 
-PT LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Nota de saqueador: dê grade à amostra primeiro, depois pergunte o que tocou nela. Preço sem custody é isca.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/pt_BR. -->

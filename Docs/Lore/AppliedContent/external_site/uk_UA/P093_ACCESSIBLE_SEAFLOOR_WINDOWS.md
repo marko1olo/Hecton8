@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "Доступні вікна морського дна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# Доступні вікна морського дна
 
-UK LOC HOLD: Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map.
-
-## Scanner
-
-UK LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
-
-## Terminal
-
-UK LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-UK LOC HOLD: You land where the moon lets stone show through.
-
-## Field Note
-
-UK LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+Більша частина морського дна HECTON-8 недоступна звичайній сміливості. Тиск будує стіну раніше, ніж з'являється ґрунт. Доступні вікна - винятки: рвані місця, де зруйнований шельф, оголений гребінь, прогрітий жерловий шрам або щільний ропний стовп змінюють криву спуску. Це не безпечні печери. Це вузькі угоди з геологією. Екіпаж може торкнутися старої кори, підняти мінерали, вирощені тиском, знайти запечатане залізо колонії або прочитати поховану подію, перш ніж океан знову закриє маршрут.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/uk_UA. -->

@@ -9,32 +9,35 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "מאמר Atlas-6 נעול ספוילרים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas-6 Spoiler-Gated Article
+# מאמר Atlas-6 נעול ספוילרים
 
-HE LOC HOLD: Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.
+Atlas-6 נעול בכוונה בספוילרים מפני שהוא משנה את משמעות HECTON-8 כאשר לשחקן יש מספיק ראיות. לפני נקודה זו, טקסט ציבורי יכול לתאר מודיעין תעשייתי פגוע הקשור לתחזוקה, סיווג, לוגיקת תיקון ומערכות אוקיינוס ארוכות טווח. אסור לו לשטח את Atlas למכונה רעה, אל סודי או קורבן פשוט. הצורה החשובה היא עמימות שהורווחה דרך משחק. Atlas יכול לשמר נתיב ועדיין לפגוע באנשים. הוא יכול לתקן תשתית ועדיין לסווג נזק לא נכון. הוא יכול להיות קשור לנוהלי Deep Reach בלי להפוך לזהה לכוונת Deep Reach. המאמר צריך להיפתח רק אחרי שהשחקן ראה יחד חדרים שטבעו, ראיות עובדים, שפת נתיבים ועקבות מכונה. Atlas אינו תשובת הסיפור. Atlas הוא המקום שבו השחקן חייב להחליט איזה סוג תשובה עדיין יהיה כן.
 
 ## Scanner
 
-HE LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+אל תפתח את Atlas כחשיפת מפלצת. נעל אותו עד שהשחקן ראה שתיקון, סיווג ופגיעה חולקים אותה מכונה.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+רמת מאמר ציבורי / ATLAS-6
+מותר לפני gate: מודיעין תעשייתי פגוע, לוגיקת תחזוקה, הסתבכות עם האוקיינוס, עמימות אתית
+נעול עד גילוי: מסלול payload סופי, השלכת receiver, טיעון כיבוי או שימור
+הערת עורך: בלי מסגור evil AI; שאלת guardian שבור רק אחרי ראיות.
 
 ## Audio
 
-HE LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+אם תקרא לו בשם מוקדם מדי, הוא יהפוך לנבל. אם תחכה, הוא יהפוך לשאלה.
 
 ## Field Note
 
-HE LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+נעל את השם עד שיש מספיק חלודה על ידי השחקן כדי להתווכח איתו.
 
 <!-- In-Game Wiki; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/he_IL. -->

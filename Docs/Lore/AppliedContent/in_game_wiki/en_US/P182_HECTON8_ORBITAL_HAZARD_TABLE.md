@@ -19,22 +19,22 @@ localization_flags: 0
 
 # HECTON-8 Orbital Hazard Table
 
-Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.
+Orbital hazards explain why a repaired capsule is not enough. The ascent chain still needs relay access, guidance timing, shielding work and a legal launch window before HECTON-8 can be left behind.
 
 ## Scanner
 
-HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+Extraction from HECTON-8 is gated by eclipse, radiation surge, relay shutter, ice scatter and storm-plume windows.
 
 ## Terminal
 
-ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be cleared before ascent.
 
 ## Audio
 
-The sky is not empty. It is a machine with bad timing.
+The sky above the ocean is a machine with teeth in the timing.
 
 ## Field Note
 
-This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+No one is parking rescue for drama. Ascent has to meet the sky's bad schedule.
 
 <!-- In-Game Wiki; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/en_US. -->

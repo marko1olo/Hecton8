@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black-Keel-Kontakt
 
-Die Black Keel ist ein System-Carrier, kein Heimatschiff. Sie bewegt Kapseln, Frachtschlepper, Claim-Pakete, versiegelte Proben und unglückliche Operatoren durch den Aegir-Verkehr. Sie kann helfen, aber Hilfe läuft durch Geometrie, Wetter, Automatik, Schulden und versteckte Prioritäten im Vertrag.
+Black Keel ist ein Aegir-System-Claim-Tender, kein Heimatschiff. Er bewegt Kapseln, Frachtschlepper, versiegelte Proben, Pfandregister und unglückliche Operatoren durch lokalen Verkehr. Er kann helfen, aber Hilfe läuft durch Orbitalgeometrie, Wetter, Automatik, Schulden und Begünstigtenhaken, die im Vertrag versteckt waren, bevor der Spieler den Ozean berührte.
 
 ## Scanner
 
-Alter Relaismast. Versalzen, verbogen, noch immer auf den richtigen Himmel gerichtet.
+Alter Relaismast. Versalzen, verbogen, noch immer auf den richtigen Ausschnitt des Aegir-Himmels gerichtet.
 
 ## Terminal
 
-OPERATORSTATUS: lebend. DROPCRAFT: nicht bergbar. CLAIM: offen. PROBE: unbekannt. BERGUNG: Fenster ausstehend.
+OPERATORSTATUS: LEBEND. DROPCRAFT: NICHT BERGBAR. CLAIMSTATUS: OFFEN. PROBENSTATUS: UNBEKANNT. BERGUNGSSTATUS: FENSTER AUSSTEHEND. PFANDMASSE: 4,8 TONNE-WINDOW BASIS.
 
 ## Audio
 

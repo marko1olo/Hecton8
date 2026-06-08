@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # SEKTE-SEKTE ABISAL DAN KEGILAAN TEKANAN
 
 > **Sumber:** Catatan Evaluasi Psikologis, Teluk Medis Sektor 44 (Ditemukan).

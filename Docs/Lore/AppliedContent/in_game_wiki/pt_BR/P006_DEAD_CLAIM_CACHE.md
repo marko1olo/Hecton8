@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Cache de claim morto"
+title: "Cache de reivindicação morta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cache de claim morto
+# Cache de reivindicação morta
 
-Caches de claims mortos provam que o jogador não foi o primeiro profissional a seguir dinheiro até HECTON-8. Guardam ferramentas, mapas ruins, cabos cortados, marcas privadas e avisos.
+Caches de reivindicação morta provam que o jogador não é o primeiro saqueador a seguir dinheiro até HECTON-8. Eles ficam abaixo das rotas normais de varredura: bolsas secas presas sob tubulações de serviço, marcas privadas de reivindicação riscadas no lastro, pastilhas de oxigênio embrulhadas em papel oleado e mapas corrigidos por mãos trêmulas. O valor deles não é o equipamento. O valor deles é a cronologia. Depois da perda de 2147 e antes da descida do jogador, equipes independentes desceram, encontraram rotas parciais pela infraestrutura afogada e sumiram na mesma escuridão que manteve a colônia calada.
 
 ## Scanner
 
-Cache de campo escondido. Embalado por alguém que esperava voltar.
+Cache de campo escondido. Embalado seco, preso baixo, marcado por um tether cortado e um mapa que diz seguro vezes demais.
 
 ## Terminal
 
-A rota sob o tubo norte fica quieta até as lâmpadas acordarem. Não toque no cofre azul. Não responda pings do carrier dentro do cânion.
+NOTA DO CACHE: rota sob o tubo norte quieta até a grade de lâmpadas acordar. A caixa azul permanece selada. Não responda pings do carrier dentro da sombra do cânion. Se o tether estiver cortado, conte o cache como problema herdado.
 
 ## Audio
 
-Isso não é kit Deep Reach. Outra pessoa desceu aqui com um cutter e azar.
+Isso não é kit Deep Reach. Outro profissional desceu com um cutter, um mapa ruim e uma esperança que não merecia.
 
 ## Field Note
 
-Se um mapa diz seguro duas vezes, foi escrito por alguém tentando se convencer.
+Alguém chegou a este cânion antes de você e aprendeu o bastante para esconder equipamento, não o bastante para sair limpo.
 
 <!-- In-Game Wiki; generated from P006_DEAD_CLAIM_CACHE/pt_BR. -->

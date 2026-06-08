@@ -9,32 +9,36 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Black Keel Tender Interior Limits"
+title: "Обмеження інтер'єру тендера Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Black Keel Tender Interior Limits
+# Обмеження інтер'єру тендера Black Keel
 
-UA LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.
+Інтер'єр Black Keel каже правду раніше, ніж його голос. Найкраще захищені місця тендера - не койки і не медвідсіки, а стійки зразків, гнізда дронів, шафи пакетів, карантинні рукави і рейки боргового вантажу. Живий Marauder входить у цю систему тільки після того, як маніфест знає, яку масу можна виставити до рахунку, який зразок можна зберегти і який legal packet можна вивести з руки заявника.
+
+Тому чистий орбітальний порятунок не приходить першою відповіддю. Тендер досить близько, щоб оцінити вікно відновлення, тримати custody, відмовити через забруднення, вимагати ascent mass і говорити через реле. Він не створений як пасажирський корабель, і на ньому немає deep rescue crew, що чекає нагоди імпровізувати милість. Black Keel може тримати контракт живим, лишаючи контрактника під водою.
+
+Корисний урок потворний: пошкоджене місцеве залізо - не побічна проблема. Це маршрут. Зрізана щогла, забитий компресор або поганий ascent sleeve важать, бо Black Keel не витрачає burn на надію. Він витрачає burn на прийнятий payload, перевірені пакети, карантинні умови і lien authority.
 
 ## Scanner
 
-UA LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+У тендері спершу є стійки для зразків, дронів, sealed packets і lien-вантажу; місце для живого пасажира йде після них.
 
 ## Terminal
 
-UA LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: немає deep rescue crew, немає atmospheric shuttle reserve, немає free ascent burn поза lien authority, немає живого квартирмейстера.
 
 ## Audio
 
-UA LOC HOLD: The ship brought you here as cargo with hands.
+Корабель привіз тебе як вантаж із руками.
 
 ## Field Note
 
-UA LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel - робочий claim tender: орендований, заарештований боргом, автоматизований і налаштований на custody раніше за порятунок.
 
 <!-- In-Game Wiki; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/uk_UA. -->

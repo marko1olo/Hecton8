@@ -127,6 +127,8 @@ namespace Hecton8.Gameplay
         private const float BasePressureAtm = 1f;
         private const float BreachDepthThresholdMeters = 200f;
         private const float HighPressureJetDepthMeters = 1000f;
+        private const float DefaultSeaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+        private const float MaxResolvedPressureDepthMeters = 12000f;
         private const float BreachIntegrityThreshold = 0.4f;
         private const float FloodedReserveCutoff = 0.3f;
         private const float NearDryThreshold = 0.01f;
@@ -329,7 +331,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _stepAccumulator += slowTickInterval;
+            _stepAccumulator = ResolveSafeStepAccumulator(_stepAccumulator, slowTickInterval);
             int iterations = 0;
             while (_stepAccumulator >= HabitatStepInterval && iterations < MaxStepIterationsPerSlowTick)
             {
@@ -944,11 +946,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            float safeRadius = math.max(ToxicHazardMinimumRadius, radius);
             if (HectonHazardManager.Register(
                     _toxicityHazardId,
                     worldCenter,
                     intensity,
-                    Mathf.Max(ToxicHazardMinimumRadius, radius),
+                    safeRadius,
                     HazardType.Toxicity))
             {
                 _toxicityHazardRegistered = true;
@@ -988,14 +991,27 @@ namespace Hecton8.Gameplay
             return DefaultSlowTickInterval;
         }
 
+        private static float ResolveSafeStepAccumulator(float accumulator, float interval)
+        {
+            float safeInterval = math.isfinite(interval) && interval > 0f
+                ? interval
+                : DefaultSlowTickInterval;
+            float next = math.isfinite(accumulator)
+                ? accumulator + safeInterval
+                : safeInterval;
+            return math.min(
+                next,
+                HabitatStepInterval * (MaxStepIterationsPerSlowTick + 1));
+        }
+
         private float ResolveDepthMeters()
         {
-            float seaLevelY = 0f;
+            float seaLevelY = DefaultSeaLevelY;
             ITerrainProvider terrainProvider = _terrainProvider;
-            if (terrainProvider != null)
-                seaLevelY = terrainProvider.WaterSurfaceLevel;
-            else if (_atmosphereRuntime != null)
-                seaLevelY = _atmosphereRuntime.SeaLevelY;
+            if (terrainProvider != null && TryResolveSeaLevelY(terrainProvider.WaterSurfaceLevel, out float terrainSeaLevelY))
+                seaLevelY = terrainSeaLevelY;
+            else if (_atmosphereRuntime != null && TryResolveSeaLevelY(_atmosphereRuntime.SeaLevelY, out float atmosphereSeaLevelY))
+                seaLevelY = atmosphereSeaLevelY;
 
             Transform hostTransform = _cachedTransform != null ? _cachedTransform : transform;
             if (!TryResolveAupFromRuntimeOrigin(hostTransform.position, out AbsoluteUniversePosition moduleAup))
@@ -1003,6 +1019,20 @@ namespace Hecton8.Gameplay
 
             double absoluteModuleY = (moduleAup.GridY * AbsoluteUniversePosition.CellSizeMeters) + moduleAup.LocalY;
             return Mathf.Max(0f, (float)(seaLevelY - absoluteModuleY));
+        }
+
+        private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) > 0.0001f &&
+                math.abs(candidateSeaLevelY) <= 1000f)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(
@@ -1029,7 +1059,11 @@ namespace Hecton8.Gameplay
 
         private static float ResolvePressureDelta(float depthMeters)
         {
-            return Mathf.Max(0f, (depthMeters / 1000f) * BasePressureAtm);
+            if (!math.isfinite(depthMeters) || depthMeters <= 0f)
+                return 0f;
+
+            float safeDepthMeters = math.min(depthMeters, MaxResolvedPressureDepthMeters);
+            return safeDepthMeters * 0.001f * BasePressureAtm;
         }
 
         private HabitatDamageSignal BuildSignal(

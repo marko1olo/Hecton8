@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -11,10 +12,13 @@ using Hecton8.Economy;
 using Hecton8.Gameplay;
 using Hecton8.Gameplay.Atlas6Liability;
 using Hecton8.Inventory;
+using Hecton8.Interaction;
+using Hecton8.Items;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using NUnit.Framework;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
 
 namespace Hecton8.Tests.Editor
 {
@@ -38,6 +42,89 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(21, (int)Marshal.OffsetOf<SaveEventPayload>(nameof(SaveEventPayload._pad0)));
             Assert.AreEqual(22, (int)Marshal.OffsetOf<SaveEventPayload>(nameof(SaveEventPayload._pad1)));
             Assert.AreEqual(23, (int)Marshal.OffsetOf<SaveEventPayload>(nameof(SaveEventPayload._pad2)));
+        }
+
+        [Test]
+        public void PersistentIdConverter_BlankIdsMapToZeroBeforeHashing()
+        {
+            Assert.AreEqual(0u, PersistentIDConverter.ToPersistentId32((string)null));
+            Assert.AreEqual(0u, PersistentIDConverter.ToPersistentId32(string.Empty));
+            Assert.AreEqual(0u, PersistentIDConverter.ToPersistentId32(" \t\r\n"));
+            Assert.AreEqual(0u, PersistentIDConverter.ToPersistentId32(ReadOnlySpan<char>.Empty));
+            Assert.AreEqual(0u, PersistentIDConverter.ToPersistentId32(" \t\r\n".AsSpan()));
+
+            const string persistentId = "Data_TitaniumScrap";
+            const string paddedPersistentId = " \tData_TitaniumScrap\r\n";
+            uint expectedHash = unchecked((uint)LocHash.ComputeAsciiLowerInvariant(persistentId));
+            Assert.AreEqual(
+                expectedHash,
+                PersistentIDConverter.ToPersistentId32(persistentId));
+            Assert.AreEqual(
+                expectedHash,
+                PersistentIDConverter.ToPersistentId32(persistentId.AsSpan()));
+            Assert.AreEqual(
+                expectedHash,
+                PersistentIDConverter.ToPersistentId32(paddedPersistentId));
+            Assert.AreEqual(
+                expectedHash,
+                PersistentIDConverter.ToPersistentId32(paddedPersistentId.AsSpan()));
+
+            string converterSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/PersistentIDConverter.cs"));
+            StringAssert.Contains("persistentId = TrimWhiteSpace(persistentId);", converterSource);
+            StringAssert.Contains("return start <= end ? value.Slice(start, end - start + 1) : ReadOnlySpan<char>.Empty;", converterSource);
+            StringAssert.DoesNotContain("ComputeAsciiLowerInvariant(persistentId)", ExtractMethodBody(
+                converterSource,
+                "public static uint ToPersistentId32(string persistentId)"));
+        }
+
+        [Test]
+        public void SaveMetadataSceneNames_NormalizeWhitespaceAtStorageAndUiBoundaries()
+        {
+            Assert.AreEqual(SaveMetadata.UnknownSceneName, SaveMetadata.NormalizeSceneName(null));
+            Assert.AreEqual(SaveMetadata.UnknownSceneName, SaveMetadata.NormalizeSceneName(string.Empty));
+            Assert.AreEqual(SaveMetadata.UnknownSceneName, SaveMetadata.NormalizeSceneName(" \t\r\n"));
+            Assert.AreEqual("02_HECTON_WORLD", SaveMetadata.NormalizeSceneName("02_HECTON_WORLD"));
+            Assert.AreEqual("02_HECTON_WORLD", SaveMetadata.NormalizeSceneName(" 02_HECTON_WORLD "));
+
+            string root = Directory.GetCurrentDirectory();
+            string metadata = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/SaveMetadata.cs"));
+            string sidecar = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/SaveSidecarStorage.cs"));
+            string binary = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+            string manager = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/SaveManager.cs"));
+            string mainMenu = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/MainMenuController.cs"));
+            string slotUi = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/SaveSlotUI.cs"));
+            string hoverPreview = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/UI/SaveSlotHoverPreview.cs"));
+
+            StringAssert.Contains("public const string UnknownSceneName = \"Unknown\";", metadata);
+            StringAssert.Contains("public string sceneName => NormalizeSceneName(SceneName);", metadata);
+            StringAssert.Contains("return string.IsNullOrWhiteSpace(sceneName) ? UnknownSceneName : sceneName.Trim();", metadata);
+
+            StringAssert.Contains("string sceneName = SaveMetadata.NormalizeSceneName(metadata.SceneName);", sidecar);
+            StringAssert.Contains("writer.WriteString(sceneName)", sidecar);
+            StringAssert.Contains("loaded.SceneName = SaveMetadata.NormalizeSceneName(loaded.SceneName);", sidecar);
+            StringAssert.Contains("TryAddStringByteCount(ref total, SaveMetadata.NormalizeSceneName(metadata.SceneName), out error)", sidecar);
+
+            StringAssert.Contains("string sceneName = SaveMetadata.NormalizeSceneName(metadata.SceneName);", binary);
+            StringAssert.Contains("SceneName = SaveMetadata.NormalizeSceneName(sceneName)", binary);
+            StringAssert.DoesNotContain("string sceneName = string.IsNullOrEmpty(metadata.SceneName) ? \"Unknown\" : metadata.SceneName;", binary);
+            StringAssert.DoesNotContain("SceneName = sceneName,", binary);
+
+            StringAssert.Contains("SceneName = SaveMetadata.NormalizeSceneName(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name)", manager);
+            StringAssert.Contains("SceneName = SaveMetadata.NormalizeSceneName(activeSceneName)", manager);
+            StringAssert.Contains("string sceneName = SaveMetadata.NormalizeSceneName(source != null ? source.SceneName : null);", manager);
+            StringAssert.DoesNotContain("SceneName = string.IsNullOrEmpty(activeSceneName) ? \"Unknown\" : activeSceneName", manager);
+            StringAssert.DoesNotContain("string sceneName = source != null && !string.IsNullOrEmpty(source.SceneName)", manager);
+
+            StringAssert.Contains("string normalizedSceneName = SaveMetadata.NormalizeSceneName(metadata.SceneName);", mainMenu);
+            StringAssert.Contains("string.Equals(normalizedSceneName, SaveMetadata.UnknownSceneName, StringComparison.Ordinal)", mainMenu);
+            StringAssert.DoesNotContain("ReadOnlySpan<char> sceneName = string.IsNullOrEmpty(metadata.sceneName)", mainMenu);
+
+            StringAssert.Contains("sceneName = SaveMetadata.NormalizeSceneName(sceneName);", slotUi);
+            StringAssert.Contains("sceneName = SaveMetadata.NormalizeSceneName(sceneName);", hoverPreview);
+            StringAssert.DoesNotContain("string.IsNullOrEmpty(sceneName)", slotUi);
+            StringAssert.DoesNotContain("string.IsNullOrEmpty(sceneName)", hoverPreview);
         }
 
         [Test]
@@ -76,6 +163,1555 @@ namespace Hecton8.Tests.Editor
             Assert.IsFalse(source.Contains("stackalloc ulong[MaxWfcDirtySectorStackEntries]"));
             Assert.IsFalse(source.Contains("stackalloc ushort[MaxWfcDirtySectorStackEntries]"));
             Assert.IsFalse(source.Contains("stackalloc byte[MaxWfcDirtySectorStackEntries]"));
+        }
+
+        [Test]
+        public void AsyncWriteManagerFlushQueue_FallsBackInsteadOfDroppingRequests()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            StringAssert.Contains("bool flushImmediately = false;", source);
+            StringAssert.Contains("Native flush is unsupported on this platform.", source);
+            StringAssert.Contains("if (!EnsureFlushThread())", source);
+            StringAssert.Contains("Flush worker is unavailable and immediate flush failed.", source);
+            StringAssert.Contains("flushImmediately = true;", source);
+            StringAssert.Contains("if (flushImmediately)", source);
+            StringAssert.Contains("ThrottleFlush(byteCount);", source);
+            StringAssert.Contains("if (!TryFlushPath(absolutePath))", source);
+            StringAssert.Contains("Flush queue is full and immediate flush failed.", source);
+            StringAssert.Contains("private static bool TryFlushPath(string absolutePath)", source);
+            StringAssert.Contains("_ = TryFlushPath(request.AbsolutePath);", source);
+            StringAssert.Contains("internal static bool FlushCriticalSavePath(string absolutePath, long byteCount, out string error)", source);
+            StringAssert.Contains("Critical save flush byte count does not match file length.", source);
+            StringAssert.Contains("Critical save file length changed during flush.", source);
+            StringAssert.Contains("private static bool TryFlushParentDirectory(string absolutePath)", source);
+            StringAssert.Contains("TryFlushParentDirectoryNative(directory)", source);
+
+            int criticalFlushIndex = source.IndexOf(
+                "internal static bool FlushCriticalSavePath(string absolutePath, long byteCount, out string error)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(criticalFlushIndex, 0, source);
+
+            int lengthCheckIndex = source.IndexOf(
+                "if (!TryGetFileLength(absolutePath, out long currentBytes, out string lengthError))",
+                criticalFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(lengthCheckIndex, criticalFlushIndex, source);
+
+            int mismatchIndex = source.IndexOf(
+                "if (currentBytes != byteCount)",
+                lengthCheckIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(mismatchIndex, lengthCheckIndex, source);
+
+            int flushIndex = source.IndexOf(
+                "if (!TryFlushPathAndParentDirectory(absolutePath, out error))",
+                mismatchIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(flushIndex, mismatchIndex, source);
+
+            int postFlushLengthIndex = source.IndexOf(
+                "if (!TryGetFileLength(absolutePath, out long flushedBytes, out lengthError))",
+                flushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postFlushLengthIndex, flushIndex, source);
+
+            int postFlushMismatchIndex = source.IndexOf(
+                "if (flushedBytes != byteCount)",
+                postFlushLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postFlushMismatchIndex, postFlushLengthIndex, source);
+
+            int queueFullIndex = source.IndexOf("if (s_flushCount == DiskFlushQueueCapacity)", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(queueFullIndex, 0, source);
+            int enqueueIndex = source.IndexOf("s_flushQueue[s_flushWriteIndex]", queueFullIndex, StringComparison.Ordinal);
+            Assert.Greater(enqueueIndex, queueFullIndex, source);
+            string queueFullBlock = source.Substring(queueFullIndex, enqueueIndex - queueFullIndex);
+            StringAssert.Contains("flushImmediately = true;", queueFullBlock);
+            StringAssert.DoesNotContain("s_flushReadIndex = (s_flushReadIndex + 1) % DiskFlushQueueCapacity;", queueFullBlock);
+            StringAssert.DoesNotContain("s_flushCount--;", queueFullBlock);
+        }
+
+        [Test]
+        public void AsyncWriteManagerCriticalOverwrite_UsesSynchronousFileAndDirectoryFlush()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            StringAssert.Contains("public static bool OverwriteAllCritical(string absolutePath, void* buffer, int byteCount, out string error)", source);
+            StringAssert.Contains("return OverwriteAllInternal(absolutePath, buffer, byteCount, criticalFlush: true, out error);", source);
+            StringAssert.Contains("private static bool OverwriteAllInternal(string absolutePath, void* buffer, int byteCount, bool criticalFlush, out string error)", source);
+
+            int helperIndex = source.IndexOf(
+                "private static bool OverwriteAllInternal(string absolutePath, void* buffer, int byteCount, bool criticalFlush, out string error)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(helperIndex, 0, source);
+
+            int writeIndex = source.IndexOf(
+                "TryWriteAllNative(absolutePath, buffer, byteCount, null, 0, byteCount, createAlways: false",
+                helperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeIndex, helperIndex, source);
+
+            int criticalBranchIndex = source.IndexOf("if (criticalFlush)", writeIndex, StringComparison.Ordinal);
+            Assert.Greater(criticalBranchIndex, writeIndex, source);
+
+            int criticalFlushIndex = source.IndexOf(
+                "FlushCriticalSavePath(absolutePath, byteCount, out error)",
+                criticalBranchIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(criticalFlushIndex, criticalBranchIndex, source);
+
+            int queuedFlushIndex = source.IndexOf(
+                "QueueThrottledFlush(absolutePath, byteCount, out error)",
+                criticalFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(queuedFlushIndex, criticalFlushIndex, source);
+
+            int overrideCommitIndex = source.IndexOf(
+                "internal static bool TryCommitIndexedPersistentWorldSectorOverride(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(overrideCommitIndex, 0, source);
+            int overrideCommitWriteIndex = source.IndexOf(
+                "AsyncWriteManager.OverwriteAllCritical(absoluteSavePath, mappedFilePtr, (int)newLength, out error)",
+                overrideCommitIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(overrideCommitWriteIndex, overrideCommitIndex, source);
+
+            int compactionIndex = source.IndexOf(
+                "internal static bool TryCompactIndexedPersistentWorldSectors(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(compactionIndex, 0, source);
+            int compactionWriteIndex = source.IndexOf(
+                "AsyncWriteManager.OverwriteAllCritical(absolutePath, compactPtr, compactLength, out error)",
+                compactionIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(compactionWriteIndex, compactionIndex, source);
+
+            int persistentOverrideIndex = source.IndexOf(
+                "internal static bool TryWriteIndexedPersistentWorldSectorOverride(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(persistentOverrideIndex, 0, source);
+            int persistentOverrideWriteIndex = source.IndexOf(
+                "AsyncWriteManager.WriteAll(absolutePath, filePtr, fileCursor, out error)",
+                persistentOverrideIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(persistentOverrideWriteIndex, persistentOverrideIndex, source);
+            int persistentOverrideFlushIndex = source.IndexOf(
+                "AsyncWriteManager.FlushCriticalSavePath(absolutePath, fileCursor, out error)",
+                persistentOverrideWriteIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(persistentOverrideFlushIndex, persistentOverrideWriteIndex, source);
+
+            int entityStateOverrideIndex = source.IndexOf(
+                "internal static bool TryCompleteIndexedSectorEntityStateOverrideWrite(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(entityStateOverrideIndex, 0, source);
+            int entityStateWriteIndex = source.IndexOf(
+                "AsyncWriteManager.WriteAll(writeHandle.AbsolutePath, filePtr, fileLength, out error)",
+                entityStateOverrideIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(entityStateWriteIndex, entityStateOverrideIndex, source);
+            int entityStateFlushIndex = source.IndexOf(
+                "AsyncWriteManager.FlushCriticalSavePath(writeHandle.AbsolutePath, fileLength, out error)",
+                entityStateWriteIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(entityStateFlushIndex, entityStateWriteIndex, source);
+
+            int modPayloadIndex = source.IndexOf(
+                "internal static bool TryCommitModPayloadSubSector(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(modPayloadIndex, 0, source);
+            int modPayloadWriteIndex = source.IndexOf(
+                "AsyncWriteManager.WriteAll(tempOverridePath, filePtr, fileCursor, out error)",
+                modPayloadIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(modPayloadWriteIndex, modPayloadIndex, source);
+            int modPayloadFlushIndex = source.IndexOf(
+                "AsyncWriteManager.FlushCriticalSavePath(tempOverridePath, fileCursor, out error)",
+                modPayloadWriteIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(modPayloadFlushIndex, modPayloadWriteIndex, source);
+            int modPayloadCommitIndex = source.IndexOf(
+                "TryCommitIndexedPersistentWorldSectorOverride(absoluteSavePath, tempOverridePath, out error)",
+                modPayloadFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(modPayloadCommitIndex, modPayloadFlushIndex, source);
+        }
+
+        [Test]
+        public void CriticalSavePromotions_DoNotUseBestEffortFlushQueue()
+        {
+            string saveBinaryStorage = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+            string saveManager = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveManager.cs"));
+
+            string indexedBackup = ExtractMethodBody(
+                saveBinaryStorage,
+                "private static bool TryPrepareIndexedSectorCommitBackup(");
+            StringAssert.Contains("FlushCriticalSavePath(backupPath, backupBytes, out string flushError)", indexedBackup);
+            StringAssert.Contains("catch (System.Security.SecurityException ex)", indexedBackup);
+            StringAssert.DoesNotContain("QueueThrottledFlush(", indexedBackup);
+
+            string primaryCommit = ExtractMethodBody(
+                saveManager,
+                "private static bool TryCommitTempSaveToPrimary(");
+            StringAssert.Contains("TryGetFileLength(absoluteTempPath, out long tempBytesBeforePromotion, out string tempLengthError)", primaryCommit);
+            StringAssert.Contains("promotedBytes != tempBytesBeforePromotion", primaryCommit);
+            StringAssert.Contains("FlushCriticalSavePath(absoluteFinalPath, promotedBytes, out string flushError)", primaryCommit);
+            StringAssert.DoesNotContain("QueueThrottledFlush(", primaryCommit);
+
+            int primaryTempLengthIndex = primaryCommit.IndexOf(
+                "TryGetFileLength(absoluteTempPath, out long tempBytesBeforePromotion, out string tempLengthError)",
+                StringComparison.Ordinal);
+            int primaryPromoteIndex = primaryCommit.IndexOf(
+                "File.Replace(absoluteTempPath, absoluteFinalPath, null);",
+                primaryTempLengthIndex,
+                StringComparison.Ordinal);
+            int primaryFinalLengthIndex = primaryCommit.IndexOf(
+                "TryGetFileLength(absoluteFinalPath, out long promotedBytes, out string lengthError)",
+                primaryPromoteIndex,
+                StringComparison.Ordinal);
+            int primaryMismatchIndex = primaryCommit.IndexOf(
+                "promotedBytes != tempBytesBeforePromotion",
+                primaryFinalLengthIndex,
+                StringComparison.Ordinal);
+            int primaryFlushIndex = primaryCommit.IndexOf(
+                "FlushCriticalSavePath(absoluteFinalPath, promotedBytes, out string flushError)",
+                primaryMismatchIndex,
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(primaryTempLengthIndex, 0, primaryCommit);
+            Assert.Greater(primaryPromoteIndex, primaryTempLengthIndex, primaryCommit);
+            Assert.Greater(primaryFinalLengthIndex, primaryPromoteIndex, primaryCommit);
+            Assert.Greater(primaryMismatchIndex, primaryFinalLengthIndex, primaryCommit);
+            Assert.Greater(primaryFlushIndex, primaryMismatchIndex, primaryCommit);
+
+            string backupRotation = ExtractMethodBody(
+                saveManager,
+                "private static bool TryRotateBackupChain(");
+            StringAssert.Contains("TryGetFileLength(absoluteSourcePath, out long sourceBytes, out string sourceLengthError)", backupRotation);
+            StringAssert.Contains("backupBytes != sourceBytes", backupRotation);
+            StringAssert.Contains("FlushCriticalSavePath(absoluteTargetPath, backupBytes, out string flushError)", backupRotation);
+            StringAssert.DoesNotContain("QueueThrottledFlush(", backupRotation);
+
+            int rotationSourceLengthIndex = backupRotation.IndexOf(
+                "TryGetFileLength(absoluteSourcePath, out long sourceBytes, out string sourceLengthError)",
+                StringComparison.Ordinal);
+            int rotationCopyIndex = backupRotation.IndexOf(
+                "File.Copy(absoluteSourcePath, absoluteTargetPath, true);",
+                rotationSourceLengthIndex,
+                StringComparison.Ordinal);
+            int rotationTargetLengthIndex = backupRotation.IndexOf(
+                "TryGetFileLength(absoluteTargetPath, out long backupBytes, out string lengthError)",
+                rotationCopyIndex,
+                StringComparison.Ordinal);
+            int rotationMismatchIndex = backupRotation.IndexOf(
+                "backupBytes != sourceBytes",
+                rotationTargetLengthIndex,
+                StringComparison.Ordinal);
+            int rotationFlushIndex = backupRotation.IndexOf(
+                "FlushCriticalSavePath(absoluteTargetPath, backupBytes, out string flushError)",
+                rotationMismatchIndex,
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(rotationSourceLengthIndex, 0, backupRotation);
+            Assert.Greater(rotationCopyIndex, rotationSourceLengthIndex, backupRotation);
+            Assert.Greater(rotationTargetLengthIndex, rotationCopyIndex, backupRotation);
+            Assert.Greater(rotationMismatchIndex, rotationTargetLengthIndex, backupRotation);
+            Assert.Greater(rotationFlushIndex, rotationMismatchIndex, backupRotation);
+
+            string criticalRecovery = ExtractMethodBody(
+                saveManager,
+                "private static bool TryPromoteBackupToPrimaryAfterCriticalRecovery(");
+            StringAssert.Contains("TryGetFileLength(absoluteBackupPath, out long backupSourceBytes, out string backupLengthError)", criticalRecovery);
+            StringAssert.Contains("TryGetFileLength(absoluteTempPath, out long tempBytes, out string tempLengthError)", criticalRecovery);
+            StringAssert.Contains("tempBytes != backupSourceBytes", criticalRecovery);
+            StringAssert.Contains("FlushCriticalSavePath(absoluteTempPath, tempBytes, out string tempFlushError)", criticalRecovery);
+            StringAssert.Contains("promotedBytes != backupSourceBytes", criticalRecovery);
+            StringAssert.Contains("FlushCriticalSavePath(absolutePrimaryPath, promotedBytes, out string flushError)", criticalRecovery);
+            StringAssert.DoesNotContain("QueueThrottledFlush(", criticalRecovery);
+
+            int backupSourceLengthIndex = criticalRecovery.IndexOf(
+                "TryGetFileLength(absoluteBackupPath, out long backupSourceBytes, out string backupLengthError)",
+                StringComparison.Ordinal);
+            int tempLengthIndex = criticalRecovery.IndexOf(
+                "TryGetFileLength(absoluteTempPath, out long tempBytes, out string tempLengthError)",
+                backupSourceLengthIndex,
+                StringComparison.Ordinal);
+            int tempFlushIndex = criticalRecovery.IndexOf(
+                "FlushCriticalSavePath(absoluteTempPath, tempBytes, out string tempFlushError)",
+                tempLengthIndex,
+                StringComparison.Ordinal);
+            int promoteIndex = criticalRecovery.IndexOf(
+                "File.Replace(absoluteTempPath, absolutePrimaryPath, null, true);",
+                tempFlushIndex,
+                StringComparison.Ordinal);
+            int finalLengthIndex = criticalRecovery.IndexOf(
+                "TryGetFileLength(absolutePrimaryPath, out long promotedBytes, out string lengthError)",
+                promoteIndex,
+                StringComparison.Ordinal);
+            int finalMismatchIndex = criticalRecovery.IndexOf(
+                "promotedBytes != backupSourceBytes",
+                finalLengthIndex,
+                StringComparison.Ordinal);
+            int finalFlushIndex = criticalRecovery.IndexOf(
+                "FlushCriticalSavePath(absolutePrimaryPath, promotedBytes, out string flushError)",
+                finalMismatchIndex,
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(backupSourceLengthIndex, 0, criticalRecovery);
+            Assert.Greater(tempLengthIndex, backupSourceLengthIndex, criticalRecovery);
+            Assert.Greater(tempFlushIndex, tempLengthIndex, criticalRecovery);
+            Assert.Greater(promoteIndex, tempFlushIndex, criticalRecovery);
+            Assert.Greater(finalLengthIndex, promoteIndex, criticalRecovery);
+            Assert.Greater(finalMismatchIndex, finalLengthIndex, criticalRecovery);
+            Assert.Greater(finalFlushIndex, finalMismatchIndex, criticalRecovery);
+        }
+
+        [Test]
+        public void IndexedSectorCommitBackup_PropagatesBackupFlushFailure()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            int methodIndex = source.IndexOf(
+                "private static bool TryPrepareIndexedSectorCommitBackup(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int sourceLengthIndex = source.IndexOf(
+                "!AsyncWriteManager.TryGetFileLength(absolutePath, out long sourceBytes, out string sourceLengthError)",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(sourceLengthIndex, methodIndex, source);
+
+            int tempInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);",
+                sourceLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempInvalidationIndex, sourceLengthIndex, source);
+
+            int copyIndex = source.IndexOf(
+                "File.Copy(absolutePath, backupTempPath, true);",
+                tempInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(copyIndex, tempInvalidationIndex, source);
+
+            int postCopyTempInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);",
+                copyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postCopyTempInvalidationIndex, copyIndex, source);
+
+            int tempLengthIndex = source.IndexOf(
+                "!AsyncWriteManager.TryGetFileLength(backupTempPath, out long backupTempBytes, out string tempLengthError)",
+                postCopyTempInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempLengthIndex, postCopyTempInvalidationIndex, source);
+
+            int tempLengthMismatchIndex = source.IndexOf(
+                "backupTempBytes != sourceBytes",
+                tempLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempLengthMismatchIndex, tempLengthIndex, source);
+
+            int tempFlushIndex = source.IndexOf(
+                "!AsyncWriteManager.FlushCriticalSavePath(backupTempPath, backupTempBytes, out string tempFlushError)",
+                tempLengthMismatchIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempFlushIndex, tempLengthMismatchIndex, source);
+
+            int backupInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(backupPath);",
+                tempFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(backupInvalidationIndex, tempFlushIndex, source);
+
+            int moveIndex = source.IndexOf(
+                "File.Move(backupTempPath, backupPath);",
+                backupInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(moveIndex, backupInvalidationIndex, source);
+
+            int postMoveTempInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);",
+                moveIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postMoveTempInvalidationIndex, moveIndex, source);
+
+            int postMoveBackupInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(backupPath);",
+                postMoveTempInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postMoveBackupInvalidationIndex, postMoveTempInvalidationIndex, source);
+
+            int backupLengthIndex = source.IndexOf(
+                "!AsyncWriteManager.TryGetFileLength(backupPath, out long backupBytes, out string lengthError)",
+                postMoveBackupInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(backupLengthIndex, postMoveBackupInvalidationIndex, source);
+
+            int lengthErrorIndex = source.IndexOf(
+                "Indexed sector commit backup file length could not be resolved.",
+                backupLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(lengthErrorIndex, backupLengthIndex, source);
+
+            int finalLengthMismatchIndex = source.IndexOf(
+                "backupBytes != sourceBytes",
+                lengthErrorIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(finalLengthMismatchIndex, lengthErrorIndex, source);
+
+            int flushFailureIndex = source.IndexOf(
+                "!AsyncWriteManager.FlushCriticalSavePath(backupPath, backupBytes, out string flushError)",
+                finalLengthMismatchIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(flushFailureIndex, finalLengthMismatchIndex, source);
+
+            int flushErrorIndex = source.IndexOf(
+                "Indexed sector commit backup critical flush failed.",
+                flushFailureIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(flushErrorIndex, flushFailureIndex, source);
+
+            int returnFalseIndex = source.IndexOf("return false;", flushErrorIndex, StringComparison.Ordinal);
+            Assert.Greater(returnFalseIndex, flushErrorIndex, source);
+        }
+
+        [Test]
+        public void IndexedSectorCommitBackupFailure_DisposesPreparedOverrideScratch()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            int methodIndex = source.IndexOf(
+                "internal static bool TryCommitIndexedPersistentWorldSectorOverride(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int commitBytesIndex = source.IndexOf(
+                "NativeArray<byte> commitBytes = default;",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(commitBytesIndex, methodIndex, source);
+
+            int tryIndex = source.IndexOf("try", commitBytesIndex, StringComparison.Ordinal);
+            Assert.Greater(tryIndex, commitBytesIndex, source);
+
+            int backupIndex = source.IndexOf(
+                "if (refreshBackupBeforeCommit && !TryPrepareIndexedSectorCommitBackup(absoluteSavePath, out error))",
+                tryIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(backupIndex, tryIndex, source);
+
+            int newLengthIndex = source.IndexOf(
+                "long newLength = commitTarget.NewFileLength;",
+                backupIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(newLengthIndex, backupIndex, source);
+
+            int finallyIndex = source.IndexOf("finally", newLengthIndex, StringComparison.Ordinal);
+            Assert.Greater(finallyIndex, newLengthIndex, source);
+
+            int disposeIndex = source.IndexOf(
+                "overrideBlockBytesOwner.Dispose();",
+                finallyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(disposeIndex, finallyIndex, source);
+        }
+
+        [Test]
+        public void AsyncWriteManagerCachedReadWindow_DisposesSentinelIdEvenAfterArrayInvalidation()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+            string disposeBytes = ExtractMethodBody(source, "private static void DisposeCachedReadWindowBytes(");
+
+            StringAssert.Contains("public int BytesSentinelId;", source);
+            StringAssert.Contains("if (window.Bytes.IsCreated || window.BytesSentinelId > 0)", source);
+            StringAssert.Contains("if (!transferredWindowBytes && (windowBytes.IsCreated || windowBytesSentinelId > 0))", source);
+            StringAssert.DoesNotContain("bool disposed = !", disposeBytes);
+            StringAssert.Contains("bytes.Dispose();", disposeBytes);
+            StringAssert.DoesNotContain("if (disposed &&", disposeBytes);
+            StringAssert.Contains("NativeMemorySentinel.Unregister(sentinelId);", disposeBytes);
+            StringAssert.Contains("sentinelId = 0;", disposeBytes);
+            StringAssert.Contains("finally", disposeBytes);
+            Assert.Less(
+                disposeBytes.IndexOf("NativeMemorySentinel.Unregister(sentinelId);", StringComparison.Ordinal),
+                disposeBytes.IndexOf("bytes.Dispose();", StringComparison.Ordinal));
+            Assert.Less(
+                disposeBytes.IndexOf("NativeMemorySentinel.Unregister(sentinelId);", StringComparison.Ordinal),
+                disposeBytes.IndexOf("sentinelId = 0;", StringComparison.Ordinal));
+        }
+
+        [Test]
+        public void AsyncWriteManagerReadPrefetch_DropsWindowsCreatedAcrossInvalidation()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            StringAssert.Contains("private static int s_readCacheInvalidationGeneration;", source);
+            StringAssert.Contains("public int InvalidationGeneration;", source);
+
+            int invalidateIndex = source.IndexOf(
+                "internal static void InvalidateCachedReadWindows(string absolutePath)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(invalidateIndex, 0, source);
+
+            int generationIncrementIndex = source.IndexOf(
+                "s_readCacheInvalidationGeneration++;",
+                invalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(generationIncrementIndex, invalidateIndex, source);
+
+            int enqueueIndex = source.IndexOf(
+                "InvalidationGeneration = s_readCacheInvalidationGeneration",
+                generationIncrementIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(enqueueIndex, generationIncrementIndex, source);
+
+            int workerIndex = source.IndexOf(
+                "private static void ReadPrefetchWorkerLoop()",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(workerIndex, 0, source);
+
+            int staleRequestCheckIndex = source.IndexOf(
+                "request.InvalidationGeneration != s_readCacheInvalidationGeneration",
+                workerIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(staleRequestCheckIndex, workerIndex, source);
+
+            int createIndex = source.IndexOf(
+                "TryCreateCachedReadWindow(request.AbsolutePath, request.WindowOffset, 1, request.FileLength, out CachedReadWindow prefetchedWindow, out _)",
+                staleRequestCheckIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(createIndex, staleRequestCheckIndex, source);
+
+            int staleWindowCheckIndex = source.IndexOf(
+                "request.InvalidationGeneration != s_readCacheInvalidationGeneration",
+                createIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(staleWindowCheckIndex, createIndex, source);
+
+            int disposeIndex = source.IndexOf(
+                "DisposeCachedReadWindow(ref prefetchedWindow);",
+                staleWindowCheckIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(disposeIndex, staleWindowCheckIndex, source);
+        }
+
+        [Test]
+        public void AsyncWriteManagerCachedReadWindow_RejectsStaleFileLengthHits()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            StringAssert.DoesNotContain(
+                "private static int FindCachedReadWindowLocked(string absolutePath, long byteOffset, int byteCount)",
+                source);
+            StringAssert.Contains(
+                "private static int FindCachedReadWindowLocked(string absolutePath, long byteOffset, int byteCount, long fileLength)",
+                source);
+
+            int methodIndex = source.IndexOf(
+                "private static int FindCachedReadWindowLocked(string absolutePath, long byteOffset, int byteCount, long fileLength)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int fileLengthCheckIndex = source.IndexOf(
+                "candidate.FileLength != fileLength",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(fileLengthCheckIndex, methodIndex, source);
+
+            int staleDisposeIndex = source.IndexOf(
+                "DisposeCachedReadWindow(ref s_readWindows[i]);",
+                fileLengthCheckIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(staleDisposeIndex, fileLengthCheckIndex, source);
+
+            int acquireIndex = source.IndexOf(
+                "private static int AcquireCachedReadWindowLocked(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(acquireIndex, 0, source);
+
+            int acquireFindIndex = source.IndexOf(
+                "FindCachedReadWindowLocked(absolutePath, byteOffset, byteCount, fileLength)",
+                acquireIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(acquireFindIndex, acquireIndex, source);
+
+            int prefetchIndex = source.IndexOf(
+                "private static void ReadPrefetchWorkerLoop()",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(prefetchIndex, 0, source);
+
+            int prefetchFindIndex = source.IndexOf(
+                "FindCachedReadWindowLocked(request.AbsolutePath, request.WindowOffset, 1, request.FileLength)",
+                prefetchIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(prefetchFindIndex, prefetchIndex, source);
+
+            int predictiveIndex = source.IndexOf(
+                "private static void QueuePredictiveReadWindowLocked(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(predictiveIndex, 0, source);
+
+            int predictiveFindIndex = source.IndexOf(
+                "FindCachedReadWindowLocked(window.AbsolutePath, nextWindowOffset, 1, window.FileLength)",
+                predictiveIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(predictiveFindIndex, predictiveIndex, source);
+        }
+
+        [Test]
+        public void AsyncWriteManagerNativeWrite_InvalidatesReadCacheBeforeAndAfterDiskMutation()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            int writeMethodIndex = source.IndexOf(
+                "private static NativeWriteResult WriteAllSynchronous(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(writeMethodIndex, 0, source);
+
+            int firstWriteInvalidateIndex = source.IndexOf(
+                "InvalidateCachedReadWindows(absolutePath);",
+                writeMethodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(firstWriteInvalidateIndex, writeMethodIndex, source);
+
+            int writeNativeIndex = source.IndexOf(
+                "TryWriteAllNative(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways: true, paceWrites, out string writeError)",
+                firstWriteInvalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeNativeIndex, firstWriteInvalidateIndex, source);
+
+            int secondWriteInvalidateIndex = source.IndexOf(
+                "InvalidateCachedReadWindows(absolutePath);",
+                writeNativeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(secondWriteInvalidateIndex, writeNativeIndex, source);
+
+            int writeFlushIndex = source.IndexOf(
+                "QueueThrottledFlush(absolutePath, totalBytes, out string flushError)",
+                secondWriteInvalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeFlushIndex, secondWriteInvalidateIndex, source);
+
+            int overwriteMethodIndex = source.IndexOf(
+                "private static bool OverwriteAllInternal(string absolutePath, void* buffer, int byteCount, bool criticalFlush, out string error)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(overwriteMethodIndex, 0, source);
+
+            int firstOverwriteInvalidateIndex = source.IndexOf(
+                "InvalidateCachedReadWindows(absolutePath);",
+                overwriteMethodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(firstOverwriteInvalidateIndex, overwriteMethodIndex, source);
+
+            int overwriteNativeIndex = source.IndexOf(
+                "TryWriteAllNative(absolutePath, buffer, byteCount, null, 0, byteCount, createAlways: false, paceWrites: false, out error)",
+                firstOverwriteInvalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(overwriteNativeIndex, firstOverwriteInvalidateIndex, source);
+
+            int secondOverwriteInvalidateIndex = source.IndexOf(
+                "InvalidateCachedReadWindows(absolutePath);",
+                overwriteNativeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(secondOverwriteInvalidateIndex, overwriteNativeIndex, source);
+
+            int overwriteFlushIndex = source.IndexOf(
+                "if (criticalFlush)",
+                secondOverwriteInvalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(overwriteFlushIndex, secondOverwriteInvalidateIndex, source);
+        }
+
+        [Test]
+        public void SaveBinaryStorageFileDelete_InvalidatesReadCacheBeforeAndAfterDelete()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            int methodIndex = source.IndexOf(
+                "private static bool TryDeleteFileIfExists(string absolutePath, out string error)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int firstInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(firstInvalidationIndex, methodIndex, source);
+
+            int deleteIndex = source.IndexOf(
+                "File.Delete(absolutePath);",
+                firstInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(deleteIndex, firstInvalidationIndex, source);
+
+            int finallyIndex = source.IndexOf("finally", deleteIndex, StringComparison.Ordinal);
+            Assert.Greater(finallyIndex, deleteIndex, source);
+
+            int secondInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);",
+                finallyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(secondInvalidationIndex, finallyIndex, source);
+        }
+
+        [Test]
+        public void SaveSidecarStorage_WritesThroughTempCriticalFlushAndPromote()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveSidecarStorage.cs"));
+
+            StringAssert.Contains("return WriteSidecarAtomically(absolutePath, bufferPtr, byteCount, \"Metadata\", out error);", source);
+            StringAssert.Contains("return WriteSidecarAtomically(absolutePath, bufferPtr, byteCount, \"Maintenance\", out error);", source);
+
+            int deleteIndex = source.IndexOf(
+                "internal static bool Delete(string relativePath)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(deleteIndex, 0, source);
+
+            int publicDeleteInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);",
+                deleteIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(publicDeleteInvalidationIndex, deleteIndex, source);
+
+            int publicDeleteFileIndex = source.IndexOf(
+                "File.Delete(absolutePath);",
+                publicDeleteInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(publicDeleteFileIndex, publicDeleteInvalidationIndex, source);
+
+            int publicDeletePostInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);",
+                publicDeleteFileIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(publicDeletePostInvalidationIndex, publicDeleteFileIndex, source);
+
+            int helperIndex = source.IndexOf(
+                "private static bool WriteSidecarAtomically(string absolutePath, void* bufferPtr, int byteCount, string sidecarName, out string error)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(helperIndex, 0, source);
+
+            int tempPathIndex = source.IndexOf(
+                "string tempPath = absolutePath + \".tmp\";",
+                helperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempPathIndex, helperIndex, source);
+
+            int staleTempInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                tempPathIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(staleTempInvalidationIndex, tempPathIndex, source);
+
+            int staleTempDeleteIndex = source.IndexOf(
+                "File.Delete(tempPath);",
+                staleTempInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(staleTempDeleteIndex, staleTempInvalidationIndex, source);
+
+            int staleTempPostInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                staleTempDeleteIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(staleTempPostInvalidationIndex, staleTempDeleteIndex, source);
+
+            int writeTempIndex = source.IndexOf(
+                "AsyncWriteManager.WriteAll(tempPath, bufferPtr, byteCount, out error)",
+                staleTempPostInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeTempIndex, staleTempPostInvalidationIndex, source);
+
+            int tempLengthIndex = source.IndexOf(
+                "AsyncWriteManager.TryGetFileLength(tempPath, out long tempBytes, out string lengthError)",
+                writeTempIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempLengthIndex, writeTempIndex, source);
+
+            int tempFlushIndex = source.IndexOf(
+                "AsyncWriteManager.FlushCriticalSavePath(tempPath, tempBytes, out string flushError)",
+                tempLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempFlushIndex, tempLengthIndex, source);
+
+            int prePromoteInvalidateIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);",
+                tempFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(prePromoteInvalidateIndex, tempFlushIndex, source);
+
+            int replaceIndex = source.IndexOf(
+                "File.Replace(tempPath, absolutePath, null)",
+                prePromoteInvalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(replaceIndex, prePromoteInvalidateIndex, source);
+
+            int moveIndex = source.IndexOf(
+                "File.Move(tempPath, absolutePath)",
+                replaceIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(moveIndex, replaceIndex, source);
+
+            int postPromoteInvalidateIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);",
+                moveIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postPromoteInvalidateIndex, moveIndex, source);
+
+            int promotedLengthIndex = source.IndexOf(
+                "AsyncWriteManager.TryGetFileLength(absolutePath, out long promotedBytes, out lengthError)",
+                postPromoteInvalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(promotedLengthIndex, postPromoteInvalidateIndex, source);
+
+            int promotedFlushIndex = source.IndexOf(
+                "AsyncWriteManager.FlushCriticalSavePath(absolutePath, promotedBytes, out flushError)",
+                promotedLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(promotedFlushIndex, promotedLengthIndex, source);
+
+            int cleanupIndex = source.IndexOf(
+                "DeleteFileBestEffort(tempPath);",
+                promotedFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cleanupIndex, promotedFlushIndex, source);
+
+            int cleanupHelperIndex = source.IndexOf(
+                "private static void DeleteFileBestEffort(string absolutePath)",
+                cleanupIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cleanupHelperIndex, cleanupIndex, source);
+
+            int cleanupInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);",
+                cleanupHelperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cleanupInvalidationIndex, cleanupHelperIndex, source);
+
+            int cleanupDeleteIndex = source.IndexOf(
+                "File.Delete(absolutePath);",
+                cleanupInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cleanupDeleteIndex, cleanupInvalidationIndex, source);
+
+            int cleanupFinallyIndex = source.IndexOf("finally", cleanupDeleteIndex, StringComparison.Ordinal);
+            Assert.Greater(cleanupFinallyIndex, cleanupDeleteIndex, source);
+
+            int cleanupPostInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);",
+                cleanupFinallyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cleanupPostInvalidationIndex, cleanupFinallyIndex, source);
+        }
+
+        [Test]
+        public void SaveThumbnailSystem_PromotesThumbnailThroughCriticalFlushAndInvalidatesCache()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveThumbnailSystem.cs"));
+
+            int methodIndex = source.IndexOf(
+                "private static async Awaitable PersistThumbnailAsync(CaptureRequest request, NativeArray<byte> rgbaBytes, int width, int height)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int nextMethodIndex = source.IndexOf(
+                "private static void ReleaseWriteInProgress()",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(nextMethodIndex, methodIndex, source);
+
+            string methodBody = source.Substring(methodIndex, nextMethodIndex - methodIndex);
+            StringAssert.DoesNotContain("File.Delete(path)", methodBody);
+
+            int directoryIndex = methodBody.IndexOf(
+                "Directory.CreateDirectory(directory);",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(directoryIndex, 0, methodBody);
+
+            int deleteTempIndex = methodBody.IndexOf(
+                "DeleteThumbnailFile(tempPath);",
+                directoryIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(deleteTempIndex, directoryIndex, methodBody);
+
+            int writeTempIndex = methodBody.IndexOf(
+                "AsyncWriteManager.WriteAll(tempPath, dataPtr, encodedJpg.Length, out string writeError)",
+                deleteTempIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeTempIndex, deleteTempIndex, methodBody);
+
+            int tempLengthIndex = methodBody.IndexOf(
+                "AsyncWriteManager.TryGetFileLength(tempPath, out long tempThumbnailBytes, out string tempLengthError)",
+                writeTempIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempLengthIndex, writeTempIndex, methodBody);
+
+            int tempFlushIndex = methodBody.IndexOf(
+                "AsyncWriteManager.FlushCriticalSavePath(tempPath, tempThumbnailBytes, out string tempFlushError)",
+                tempLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempFlushIndex, tempLengthIndex, methodBody);
+
+            int firstTempInvalidateIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                tempFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(firstTempInvalidateIndex, tempFlushIndex, methodBody);
+
+            int firstInvalidateIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                firstTempInvalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(firstInvalidateIndex, firstTempInvalidateIndex, methodBody);
+
+            int replaceIndex = methodBody.IndexOf(
+                "File.Replace(tempPath, path, null)",
+                firstInvalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(replaceIndex, firstInvalidateIndex, methodBody);
+
+            int moveIndex = methodBody.IndexOf(
+                "File.Move(tempPath, path)",
+                replaceIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(moveIndex, replaceIndex, methodBody);
+
+            int secondTempInvalidateIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                moveIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(secondTempInvalidateIndex, moveIndex, methodBody);
+
+            int secondInvalidateIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                secondTempInvalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(secondInvalidateIndex, secondTempInvalidateIndex, methodBody);
+
+            int finalLengthIndex = methodBody.IndexOf(
+                "AsyncWriteManager.TryGetFileLength(path, out long persistedThumbnailBytes, out string lengthError)",
+                secondInvalidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(finalLengthIndex, secondInvalidateIndex, methodBody);
+
+            int finalLengthMismatchIndex = methodBody.IndexOf(
+                "persistedThumbnailBytes != encodedByteLength",
+                finalLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(finalLengthMismatchIndex, finalLengthIndex, methodBody);
+
+            int finalFlushIndex = methodBody.IndexOf(
+                "AsyncWriteManager.FlushCriticalSavePath(path, persistedThumbnailBytes, out string flushError)",
+                finalLengthMismatchIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(finalFlushIndex, finalLengthMismatchIndex, methodBody);
+
+            int mainThreadIndex = methodBody.IndexOf(
+                "await Awaitable.MainThreadAsync();",
+                finalFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(mainThreadIndex, finalFlushIndex, methodBody);
+
+            int clearCacheIndex = methodBody.IndexOf(
+                "ClearCacheEntry(slotName);",
+                mainThreadIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(clearCacheIndex, mainThreadIndex, methodBody);
+
+            int helperIndex = source.IndexOf(
+                "private static void DeleteThumbnailFile(string path)",
+                nextMethodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(helperIndex, nextMethodIndex, source);
+
+            int helperInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                helperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(helperInvalidationIndex, helperIndex, source);
+
+            int helperDeleteIndex = source.IndexOf(
+                "File.Delete(path);",
+                helperInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(helperDeleteIndex, helperInvalidationIndex, source);
+
+            int helperFinallyIndex = source.IndexOf("finally", helperDeleteIndex, StringComparison.Ordinal);
+            Assert.Greater(helperFinallyIndex, helperDeleteIndex, source);
+
+            int helperPostInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                helperFinallyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(helperPostInvalidationIndex, helperFinallyIndex, source);
+        }
+
+        [Test]
+        public void PersistenceUxSmokeTester_WriteAllBytesPurgeScansRuntimeSourceOnly()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Editor/PersistenceUxSmokeTester.cs"));
+
+            StringAssert.Contains(
+                "bool writeAllBytesPurgedPass = !ProjectRuntimeSourceContains(\"File.\" + \"WriteAllBytes\");",
+                source);
+            StringAssert.Contains(
+                ".Append(\"\\\"writeAllBytesPurgedPass\\\":\").Append(writeAllBytesPurgedPass ? \"true\" : \"false\")",
+                source);
+            StringAssert.DoesNotContain("ProjectSourceContains(", source);
+
+            int helperIndex = source.IndexOf(
+                "private static bool ProjectRuntimeSourceContains(string value)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(helperIndex, 0, source);
+
+            int enumerateIndex = source.IndexOf(
+                "Directory.EnumerateFiles(sourceRoot, \"*.cs\", SearchOption.AllDirectories)",
+                helperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(enumerateIndex, helperIndex, source);
+
+            int skipEditorIndex = source.IndexOf(
+                "if (IsEditorSourcePath(file))",
+                enumerateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(skipEditorIndex, enumerateIndex, source);
+
+            int readIndex = source.IndexOf(
+                "File.ReadAllText(file).IndexOf(value, StringComparison.Ordinal) >= 0",
+                skipEditorIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(readIndex, skipEditorIndex, source);
+
+            StringAssert.Contains("private static bool IsEditorSourcePath(string path)", source);
+            StringAssert.Contains("normalizedPath.IndexOf(\"/Editor/\", StringComparison.Ordinal) >= 0", source);
+        }
+
+        [Test]
+        public void IndexedSectorEntityStateWriteHandle_DisposesAfterDependencyCompletion()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            int methodIndex = source.IndexOf("internal JobHandle DisposeDeferred(JobHandle dependency)", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+            int nextMethodIndex = source.IndexOf(
+                "private static NativeArray<T> AllocateRegisteredPersistentScratchNativeArray",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(nextMethodIndex, methodIndex, source);
+
+            string methodBody = source.Substring(methodIndex, nextMethodIndex - methodIndex);
+            StringAssert.Contains("JobHandle disposeHandle = JobHandle.CombineDependencies(Handle, dependency);", methodBody);
+            StringAssert.Contains("disposeHandle.Complete();", methodBody);
+            StringAssert.Contains("Dispose();", methodBody);
+            StringAssert.Contains("return default;", methodBody);
+            StringAssert.DoesNotContain("UnregisterNativeMemorySentinel();", methodBody);
+            StringAssert.DoesNotContain("SourceStates.Dispose(disposeHandle);", methodBody);
+            StringAssert.DoesNotContain("RadixOffsets.Dispose(disposeHandle);", methodBody);
+            StringAssert.DoesNotContain("return disposeHandle;", methodBody);
+        }
+
+        [Test]
+        public void IndexedSectorPersistentScratch_IsRegisteredAsTransientArena()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            int methodIndex = source.IndexOf(
+                "private static void RegisterPersistentScratchNativeArray<T>",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+            int nextMethodIndex = source.IndexOf(
+                "private static void DisposeRegisteredPersistentScratchNativeArray<T>",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(nextMethodIndex, methodIndex, source);
+
+            string methodBody = source.Substring(methodIndex, nextMethodIndex - methodIndex);
+            StringAssert.Contains("NativeAllocationLifetime.TransientArena", methodBody);
+            StringAssert.DoesNotContain("NativeAllocationLifetime.Session", methodBody);
+        }
+
+        [Test]
+        public void SaveManagerDeleteFileIfExists_InvalidatesReadCacheBeforeAndAfterDelete()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveManager.cs"));
+
+            int methodIndex = source.IndexOf(
+                "private static void DeleteFileIfExists(string path)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int absolutePathIndex = source.IndexOf(
+                "string absolutePath = GetPersistentAbsolutePath(path);",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(absolutePathIndex, methodIndex, source);
+
+            int firstInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);",
+                absolutePathIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(firstInvalidationIndex, absolutePathIndex, source);
+
+            int deleteIndex = source.IndexOf(
+                "File.Delete(absolutePath);",
+                firstInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(deleteIndex, firstInvalidationIndex, source);
+
+            int finallyIndex = source.IndexOf("finally", deleteIndex, StringComparison.Ordinal);
+            Assert.Greater(finallyIndex, deleteIndex, source);
+
+            int secondInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);",
+                finallyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(secondInvalidationIndex, finallyIndex, source);
+        }
+
+        [Test]
+        public void PersistentWorldRegistryTempDelete_InvalidatesReadCacheBeforeAndAfterDelete()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"));
+
+            int methodIndex = source.IndexOf(
+                "private static bool TryDeleteFileIfExists(string path)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int nextMethodIndex = source.IndexOf(
+                "private string ResolveSectorOverrideTempPath(long sectorHash)",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(nextMethodIndex, methodIndex, source);
+
+            string methodBody = source.Substring(methodIndex, nextMethodIndex - methodIndex);
+            StringAssert.Contains("AsyncWriteManager.InvalidateCachedReadWindows(path);", methodBody);
+            StringAssert.Contains("File.Delete(path);", methodBody);
+            StringAssert.Contains("catch (System.Security.SecurityException)", methodBody);
+
+            int preInvalidationIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(preInvalidationIndex, 0, methodBody);
+
+            int deleteIndex = methodBody.IndexOf(
+                "File.Delete(path);",
+                preInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(deleteIndex, preInvalidationIndex, methodBody);
+
+            int finallyIndex = methodBody.IndexOf("finally", deleteIndex, StringComparison.Ordinal);
+            Assert.Greater(finallyIndex, deleteIndex, methodBody);
+
+            int postInvalidationIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                finallyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postInvalidationIndex, finallyIndex, methodBody);
+        }
+
+        [Test]
+        public void SaveManagerBackupRotation_CopiesAndFlushesPrimaryBackupBeforeAtomicPromotion()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveManager.cs"));
+
+            int rotationIndex = source.IndexOf(
+                "private static bool TryRotateBackupChain(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(rotationIndex, 0, source);
+
+            int commitIndex = source.IndexOf(
+                "private static bool TryCommitTempSaveToPrimary(",
+                rotationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(commitIndex, rotationIndex, source);
+
+            string rotationBody = source.Substring(rotationIndex, commitIndex - rotationIndex);
+            StringAssert.DoesNotContain("DeleteFileIfExists(primaryPath);", rotationBody);
+
+            int primarySourceIndex = rotationBody.IndexOf(
+                "bool isPrimarySource = generation == 1;",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(primarySourceIndex, 0, rotationBody);
+
+            int copyIndex = rotationBody.IndexOf(
+                "File.Copy(absoluteSourcePath, absoluteTargetPath, true);",
+                primarySourceIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(copyIndex, primarySourceIndex, rotationBody);
+
+            int moveIndex = rotationBody.IndexOf(
+                "File.Move(absoluteSourcePath, absoluteTargetPath);",
+                copyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(moveIndex, copyIndex, rotationBody);
+
+            int lengthIndex = source.IndexOf(
+                "!AsyncWriteManager.TryGetFileLength(absoluteTargetPath, out long backupBytes, out string lengthError)",
+                rotationIndex + copyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(lengthIndex, rotationIndex + copyIndex, source);
+
+            int lengthErrorIndex = source.IndexOf(
+                "Rotated backup save file length could not be resolved.",
+                lengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(lengthErrorIndex, lengthIndex, source);
+
+            int flushIndex = source.IndexOf(
+                "!AsyncWriteManager.FlushCriticalSavePath(absoluteTargetPath, backupBytes, out string flushError)",
+                lengthErrorIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(flushIndex, lengthErrorIndex, source);
+
+            int flushErrorIndex = source.IndexOf(
+                "Rotated backup save critical flush failed.",
+                flushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(flushErrorIndex, flushIndex, source);
+
+            int rotationCallIndex = source.IndexOf(
+                "!TryRotateBackupChain(finalPath, generation => GetBackupSaveFilePath(slotName, generation), math.clamp(backupRetentionCount, 1, 8), out error)",
+                commitIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(rotationCallIndex, commitIndex, source);
+
+            int tempPathIndex = source.IndexOf(
+                "string absoluteTempPath = GetPersistentAbsolutePath(tempPath);",
+                rotationCallIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempPathIndex, rotationCallIndex, source);
+
+            int finalInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absoluteFinalPath);",
+                tempPathIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(finalInvalidationIndex, tempPathIndex, source);
+
+            int promotionReplaceIndex = source.IndexOf(
+                "File.Replace(absoluteTempPath, absoluteFinalPath, null);",
+                finalInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(promotionReplaceIndex, finalInvalidationIndex, source);
+
+            int promotionMoveIndex = source.IndexOf(
+                "File.Move(absoluteTempPath, absoluteFinalPath);",
+                promotionReplaceIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(promotionMoveIndex, promotionReplaceIndex, source);
+
+            int postPromotionInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absoluteFinalPath);",
+                promotionMoveIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postPromotionInvalidationIndex, promotionMoveIndex, source);
+        }
+
+        [Test]
+        public void GlobalProfileManagerWrite_AvoidsDeleteGapAndFlushesPromotedProfile()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs"));
+
+            int methodIndex = source.IndexOf(
+                "private static bool TryWriteProfileCold(GlobalProfileData profile)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int nextMethodIndex = source.IndexOf(
+                "private static GlobalProfileData LoadProfileFromDiskCold()",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(nextMethodIndex, methodIndex, source);
+
+            string methodBody = source.Substring(methodIndex, nextMethodIndex - methodIndex);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough)", methodBody);
+            StringAssert.Contains("stream.Flush(true);", methodBody);
+            StringAssert.Contains("AsyncWriteManager.TryGetFileLength(tempPath, out long tempProfileBytes, out string tempLengthError)", methodBody);
+            StringAssert.Contains("tempProfileBytes != jsonBytes.LongLength", methodBody);
+            StringAssert.Contains("AsyncWriteManager.FlushCriticalSavePath(tempPath, tempProfileBytes, out string tempFlushError)", methodBody);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", methodBody);
+            StringAssert.Contains("File.Move(tempPath, path);", methodBody);
+            StringAssert.Contains("AsyncWriteManager.TryGetFileLength(path, out long promotedProfileBytes, out string lengthError)", methodBody);
+            StringAssert.Contains("promotedProfileBytes != jsonBytes.LongLength", methodBody);
+            StringAssert.Contains("AsyncWriteManager.FlushCriticalSavePath(path, promotedProfileBytes, out string flushError)", methodBody);
+            StringAssert.DoesNotContain("File.Delete(path)", methodBody);
+
+            int preWriteInvalidationIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(preWriteInvalidationIndex, 0, methodBody);
+
+            int writeStreamIndex = methodBody.IndexOf(
+                "new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough)",
+                preWriteInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeStreamIndex, preWriteInvalidationIndex, methodBody);
+
+            int streamFlushIndex = methodBody.IndexOf(
+                "stream.Flush(true);",
+                writeStreamIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(streamFlushIndex, writeStreamIndex, methodBody);
+
+            int postWriteInvalidationIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                streamFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postWriteInvalidationIndex, streamFlushIndex, methodBody);
+
+            int tempLengthIndex = methodBody.IndexOf(
+                "AsyncWriteManager.TryGetFileLength(tempPath, out long tempProfileBytes, out string tempLengthError)",
+                postWriteInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempLengthIndex, postWriteInvalidationIndex, methodBody);
+
+            int tempFlushIndex = methodBody.IndexOf(
+                "AsyncWriteManager.FlushCriticalSavePath(tempPath, tempProfileBytes, out string tempFlushError)",
+                tempLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempFlushIndex, tempLengthIndex, methodBody);
+
+            int prePromoteTempInvalidationIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                tempFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(prePromoteTempInvalidationIndex, tempFlushIndex, methodBody);
+
+            int prePromoteProfileInvalidationIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                prePromoteTempInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(prePromoteProfileInvalidationIndex, prePromoteTempInvalidationIndex, methodBody);
+
+            int replaceIndex = methodBody.IndexOf(
+                "File.Replace(tempPath, path, null, true);",
+                prePromoteProfileInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(replaceIndex, prePromoteProfileInvalidationIndex, methodBody);
+
+            int moveIndex = methodBody.IndexOf(
+                "File.Move(tempPath, path);",
+                replaceIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(moveIndex, replaceIndex, methodBody);
+
+            int postPromoteTempInvalidationIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                moveIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postPromoteTempInvalidationIndex, moveIndex, methodBody);
+
+            int postPromoteProfileInvalidationIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                postPromoteTempInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(postPromoteProfileInvalidationIndex, postPromoteTempInvalidationIndex, methodBody);
+
+            int promotedLengthIndex = methodBody.IndexOf(
+                "AsyncWriteManager.TryGetFileLength(path, out long promotedProfileBytes, out string lengthError)",
+                postPromoteProfileInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(promotedLengthIndex, postPromoteProfileInvalidationIndex, methodBody);
+
+            int finalFlushIndex = methodBody.IndexOf(
+                "AsyncWriteManager.FlushCriticalSavePath(path, promotedProfileBytes, out string flushError)",
+                promotedLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(finalFlushIndex, promotedLengthIndex, methodBody);
+
+            int cleanupCallIndex = methodBody.IndexOf(
+                "DeleteProfileTempBestEffort(tempPath);",
+                finalFlushIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cleanupCallIndex, finalFlushIndex, methodBody);
+
+            int cleanupHelperIndex = methodBody.IndexOf(
+                "private static void DeleteProfileTempBestEffort(string tempPath)",
+                cleanupCallIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cleanupHelperIndex, cleanupCallIndex, methodBody);
+
+            int cleanupInvalidationIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                cleanupHelperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cleanupInvalidationIndex, cleanupHelperIndex, methodBody);
+
+            int cleanupDeleteIndex = methodBody.IndexOf(
+                "File.Delete(tempPath);",
+                cleanupInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cleanupDeleteIndex, cleanupInvalidationIndex, methodBody);
+
+            int cleanupFinallyIndex = methodBody.IndexOf("finally", cleanupDeleteIndex, StringComparison.Ordinal);
+            Assert.Greater(cleanupFinallyIndex, cleanupDeleteIndex, methodBody);
+
+            int cleanupPostInvalidationIndex = methodBody.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                cleanupFinallyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cleanupPostInvalidationIndex, cleanupFinallyIndex, methodBody);
+        }
+
+        [Test]
+        public void SaveManagerCommitTempSaveToPrimary_PropagatesPromotedFlushFailure()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveManager.cs"));
+
+            int methodIndex = source.IndexOf(
+                "private static bool TryCommitTempSaveToPrimary(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int promotedLengthIndex = source.IndexOf(
+                "!AsyncWriteManager.TryGetFileLength(absoluteFinalPath, out long promotedBytes, out string lengthError)",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(promotedLengthIndex, methodIndex, source);
+
+            int lengthErrorIndex = source.IndexOf(
+                "Primary save promoted file length could not be resolved.",
+                promotedLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(lengthErrorIndex, promotedLengthIndex, source);
+
+            int flushFailureIndex = source.IndexOf(
+                "!AsyncWriteManager.FlushCriticalSavePath(absoluteFinalPath, promotedBytes, out string flushError)",
+                lengthErrorIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(flushFailureIndex, lengthErrorIndex, source);
+
+            int errorIndex = source.IndexOf(
+                "Primary save critical flush failed.",
+                flushFailureIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(errorIndex, flushFailureIndex, source);
+
+            int returnFalseIndex = source.IndexOf("return false;", errorIndex, StringComparison.Ordinal);
+            Assert.Greater(returnFalseIndex, errorIndex, source);
+        }
+
+        [Test]
+        public void SaveManagerCriticalRecoveryPromotion_PropagatesPromotedFlushFailure()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveManager.cs"));
+
+            int methodIndex = source.IndexOf(
+                "private static bool TryPromoteBackupToPrimaryAfterCriticalRecovery(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int invalidationBeforeReplaceIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePrimaryPath);",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(invalidationBeforeReplaceIndex, methodIndex, source);
+
+            int replaceIndex = source.IndexOf(
+                "File.Replace(absoluteTempPath, absolutePrimaryPath, null, true);",
+                invalidationBeforeReplaceIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(replaceIndex, invalidationBeforeReplaceIndex, source);
+
+            int moveIndex = source.IndexOf(
+                "File.Move(absoluteTempPath, absolutePrimaryPath);",
+                replaceIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(moveIndex, replaceIndex, source);
+
+            int invalidationAfterReplaceIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absolutePrimaryPath);",
+                moveIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(invalidationAfterReplaceIndex, moveIndex, source);
+
+            int tempCleanupDeleteIndex = source.IndexOf(
+                "File.Delete(absoluteTempPath);",
+                invalidationAfterReplaceIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempCleanupDeleteIndex, invalidationAfterReplaceIndex, source);
+
+            int tempCleanupFinallyIndex = source.IndexOf("finally", tempCleanupDeleteIndex, StringComparison.Ordinal);
+            Assert.Greater(tempCleanupFinallyIndex, tempCleanupDeleteIndex, source);
+
+            int tempCleanupInvalidationIndex = source.IndexOf(
+                "AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);",
+                tempCleanupFinallyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(tempCleanupInvalidationIndex, tempCleanupFinallyIndex, source);
+
+            int existsIndex = source.IndexOf(
+                "Primary file was missing after atomic backup promotion.",
+                tempCleanupInvalidationIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(existsIndex, tempCleanupInvalidationIndex, source);
+
+            int promotedLengthIndex = source.IndexOf(
+                "!AsyncWriteManager.TryGetFileLength(absolutePrimaryPath, out long promotedBytes, out string lengthError)",
+                existsIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(promotedLengthIndex, existsIndex, source);
+
+            int lengthErrorIndex = source.IndexOf(
+                "Critical recovery promoted primary file length could not be resolved.",
+                promotedLengthIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(lengthErrorIndex, promotedLengthIndex, source);
+
+            int flushFailureIndex = source.IndexOf(
+                "!AsyncWriteManager.FlushCriticalSavePath(absolutePrimaryPath, promotedBytes, out string flushError)",
+                lengthErrorIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(flushFailureIndex, lengthErrorIndex, source);
+
+            int errorIndex = source.IndexOf(
+                "Critical recovery promoted primary flush failed.",
+                flushFailureIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(errorIndex, flushFailureIndex, source);
+
+            int returnFalseIndex = source.IndexOf("return false;", errorIndex, StringComparison.Ordinal);
+            Assert.Greater(returnFalseIndex, errorIndex, source);
         }
 
         [Test]
@@ -539,6 +2175,962 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PlayerInventoryRuntime_ToolPersistentIdsRejectWhitespaceBeforeHashing()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/PlayerInventory.cs"));
+
+            int currentToolMethodIndex = source.IndexOf(
+                "private bool TryResolveCurrentToolItemHash(out uint itemHash)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(currentToolMethodIndex, 0, source);
+
+            int currentToolNullGuardIndex = source.IndexOf(
+                "if (currentTool == null || currentTool.ToolData == null)",
+                currentToolMethodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(currentToolNullGuardIndex, currentToolMethodIndex, source);
+
+            int currentToolHashIndex = source.IndexOf(
+                "ItemData.ResolvePersistentHashId(currentTool.ToolData)",
+                currentToolNullGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(currentToolHashIndex, currentToolNullGuardIndex, source);
+
+            int repairToolMethodIndex = source.IndexOf(
+                "private bool TryResolveActiveRepairToolItemHash(out int itemHashId)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(repairToolMethodIndex, 0, source);
+
+            int repairToolNullGuardIndex = source.IndexOf(
+                "if (!(currentTool is RepairTool) || currentTool.ToolData == null)",
+                repairToolMethodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(repairToolNullGuardIndex, repairToolMethodIndex, source);
+
+            int repairToolHashIndex = source.IndexOf(
+                "ItemData.ResolvePersistentHashId(currentTool.ToolData)",
+                repairToolNullGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(repairToolHashIndex, repairToolNullGuardIndex, source);
+
+            StringAssert.DoesNotContain("string.IsNullOrEmpty(currentTool.ToolData.PersistentId)", source);
+            StringAssert.DoesNotContain("LocHash.Compute(currentTool.ToolData.PersistentId)", source);
+        }
+
+        [Test]
+        public void PlayerToolRuntime_ToolPersistentIdsRejectWhitespaceBeforeHashing()
+        {
+            string managerSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/PlayerToolManager.cs"));
+            string toolSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/PlayerTool.cs"));
+
+            int forceDropIndex = managerSource.IndexOf(
+                "public bool TryForceDropCurrentToolFromHands(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(forceDropIndex, 0, managerSource);
+            int forceDropNullGuardIndex = managerSource.IndexOf(
+                "if (toolData == null)",
+                forceDropIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(forceDropNullGuardIndex, forceDropIndex, managerSource);
+            int forceDropHashIndex = managerSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(toolData)",
+                forceDropNullGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(forceDropHashIndex, forceDropNullGuardIndex, managerSource);
+
+            int batteryIndex = managerSource.IndexOf(
+                "private bool TryResolveInventoryBatteryCandidate(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(batteryIndex, 0, managerSource);
+            int batteryHashIndex = managerSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(installedBattery)",
+                batteryIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(batteryHashIndex, batteryIndex, managerSource);
+
+            int activeToolHashIndex = managerSource.IndexOf(
+                "private static uint ResolveActiveToolHash(PlayerTool tool)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(activeToolHashIndex, 0, managerSource);
+            int activeToolHashComputeIndex = managerSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(tool.ToolData)",
+                activeToolHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(activeToolHashComputeIndex, activeToolHashIndex, managerSource);
+            int metadataFallbackGuardIndex = managerSource.IndexOf(
+                "!string.IsNullOrWhiteSpace(metadata.toolID)",
+                activeToolHashComputeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(metadataFallbackGuardIndex, activeToolHashComputeIndex, managerSource);
+
+            int activeMetadataHashIndex = managerSource.IndexOf(
+                "private static uint ResolveActiveToolMetadataHash(PlayerTool tool)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(activeMetadataHashIndex, 0, managerSource);
+            int activeMetadataGuardIndex = managerSource.IndexOf(
+                "metadata == null || string.IsNullOrWhiteSpace(metadata.toolID)",
+                activeMetadataHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(activeMetadataGuardIndex, activeMetadataHashIndex, managerSource);
+
+            int hasToolIndex = managerSource.IndexOf(
+                "private bool HasToolInInventory(GameObject toolPrefab)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(hasToolIndex, 0, managerSource);
+            int hasToolHashIndex = managerSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(targetData)",
+                hasToolIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(hasToolHashIndex, hasToolIndex, managerSource);
+
+            int brokenToolIndex = managerSource.IndexOf(
+                "private void HandleEquippedToolBroken()",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(brokenToolIndex, 0, managerSource);
+            int brokenToolNullGuardIndex = managerSource.IndexOf(
+                "if (brokenToolData == null || metadata == null)",
+                brokenToolIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(brokenToolNullGuardIndex, brokenToolIndex, managerSource);
+            int brokenToolHashIndex = managerSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(brokenToolData)",
+                brokenToolNullGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(brokenToolHashIndex, brokenToolNullGuardIndex, managerSource);
+
+            int overchargeIndex = toolSource.IndexOf(
+                "internal void HandleRuntimeOverchargeFailure(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(overchargeIndex, 0, toolSource);
+            int overchargeHashIndex = toolSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(_toolData)",
+                overchargeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(overchargeHashIndex, overchargeIndex, toolSource);
+
+            int mirrorIndex = toolSource.IndexOf(
+                "internal bool TryGetDurabilityMirror(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(mirrorIndex, 0, toolSource);
+            int mirrorGuardIndex = toolSource.IndexOf(
+                "string.IsNullOrWhiteSpace(_toolMetadata.toolID)",
+                mirrorIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(mirrorGuardIndex, mirrorIndex, toolSource);
+
+            int cacheIndex = toolSource.IndexOf(
+                "private void CacheToolItemHash()",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(cacheIndex, 0, toolSource);
+            int cacheClearIndex = toolSource.IndexOf("_cachedToolItemHashId = 0u;", cacheIndex, StringComparison.Ordinal);
+            Assert.Greater(cacheClearIndex, cacheIndex, toolSource);
+            int cacheHashIndex = toolSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(_toolData)",
+                cacheClearIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cacheHashIndex, cacheClearIndex, toolSource);
+            int cacheMetadataGuardIndex = toolSource.IndexOf(
+                "!string.IsNullOrWhiteSpace(_toolMetadata.toolID)",
+                cacheHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cacheMetadataGuardIndex, cacheHashIndex, toolSource);
+
+            int registerMirrorIndex = toolSource.IndexOf(
+                "private void RegisterDurabilityMirrorCold()",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(registerMirrorIndex, 0, toolSource);
+            int registerMirrorGuardIndex = toolSource.IndexOf(
+                "string.IsNullOrWhiteSpace(_toolMetadata.toolID)",
+                registerMirrorIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(registerMirrorGuardIndex, registerMirrorIndex, toolSource);
+
+            StringAssert.DoesNotContain("string.IsNullOrEmpty(targetData.PersistentId)", managerSource);
+            StringAssert.DoesNotContain("LocHash.Compute(toolData.PersistentId)", managerSource);
+            StringAssert.DoesNotContain("LocHash.Compute(item.PersistentId)", managerSource);
+            StringAssert.DoesNotContain("LocHash.Compute(installedBattery.PersistentId)", managerSource);
+            StringAssert.DoesNotContain("LocHash.Compute(targetData.PersistentId)", managerSource);
+            StringAssert.DoesNotContain("LocHash.Compute(brokenToolData.PersistentId)", managerSource);
+            StringAssert.DoesNotContain("string.IsNullOrEmpty(metadata.toolID)", managerSource);
+            StringAssert.DoesNotContain("LocHash.Compute(_toolData.PersistentId)", toolSource);
+            StringAssert.DoesNotContain("string.IsNullOrEmpty(_toolMetadata.toolID)", toolSource);
+        }
+
+        [Test]
+        public void ItemIdentityRuntime_BlankPersistentIdsDoNotProduceHashes()
+        {
+            string itemDataSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ItemData.cs"));
+            string buildableDataSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/BuildableData.cs"));
+            string hectonItemSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/HectonItem.cs"));
+            string itemNodeSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Inventory/ItemNodeData.cs"));
+            string itemCatalogSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ItemCatalog.cs"));
+            string persistentWorldSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"));
+
+            StringAssert.Contains("public string PersistentId => ResolveCanonicalPersistentId(stableId, name);", itemDataSource);
+            StringAssert.Contains("private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)", itemDataSource);
+            int itemCanonicalIndex = itemDataSource.IndexOf(
+                "private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(itemCanonicalIndex, 0, itemDataSource);
+            int itemCanonicalTrimIndex = itemDataSource.IndexOf(
+                "return string.IsNullOrWhiteSpace(id) ? string.Empty : id.Trim();",
+                itemCanonicalIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(itemCanonicalTrimIndex, itemCanonicalIndex, itemDataSource);
+
+            int matchesIdIndex = itemDataSource.IndexOf(
+                "public bool MatchesPersistentId(string id)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(matchesIdIndex, 0, itemDataSource);
+            int matchesIdGuardIndex = itemDataSource.IndexOf(
+                "string.IsNullOrWhiteSpace(id)",
+                matchesIdIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(matchesIdGuardIndex, matchesIdIndex, itemDataSource);
+            int matchesIdTrimIndex = itemDataSource.IndexOf(
+                "id = id.Trim();",
+                matchesIdGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(matchesIdTrimIndex, matchesIdGuardIndex, itemDataSource);
+            int matchesIdHashIndex = itemDataSource.IndexOf(
+                "LocHash.Compute(id)",
+                matchesIdTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(matchesIdHashIndex, matchesIdTrimIndex, itemDataSource);
+
+            int refreshIndex = itemDataSource.IndexOf(
+                "private void RefreshPersistentHash()",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(refreshIndex, 0, itemDataSource);
+            StringAssert.Contains("public int PersistentHashId => ResolvePersistentHashId();", itemDataSource);
+            int resolveItemHashIndex = itemDataSource.IndexOf(
+                "public int ResolvePersistentHashId()",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(resolveItemHashIndex, 0, itemDataSource);
+            int resolveItemCachedIndex = itemDataSource.IndexOf(
+                "if (_persistentHashId != 0)",
+                resolveItemHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(resolveItemCachedIndex, resolveItemHashIndex, itemDataSource);
+            int resolveItemHelperReturnIndex = itemDataSource.IndexOf(
+                "return ComputeCanonicalPersistentHashId(PersistentId);",
+                resolveItemCachedIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(resolveItemHelperReturnIndex, resolveItemCachedIndex, itemDataSource);
+            int itemHashHelperIndex = itemDataSource.IndexOf(
+                "private static int ComputeCanonicalPersistentHashId(string value)",
+                resolveItemHelperReturnIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(itemHashHelperIndex, resolveItemHelperReturnIndex, itemDataSource);
+            int itemHashHelperCanonicalIndex = itemDataSource.IndexOf(
+                "string persistentId = ResolveCanonicalPersistentId(value, null);",
+                itemHashHelperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(itemHashHelperCanonicalIndex, itemHashHelperIndex, itemDataSource);
+            int itemHashHelperComputeIndex = itemDataSource.IndexOf(
+                "persistentId.Length == 0 ? 0 : LocHash.Compute(persistentId)",
+                itemHashHelperCanonicalIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(itemHashHelperComputeIndex, itemHashHelperCanonicalIndex, itemDataSource);
+            StringAssert.Contains("public static int ResolvePersistentHashId(ItemData item)", itemDataSource);
+            int matchesHashIndex = itemDataSource.IndexOf(
+                "public bool MatchesPersistentHash(int hashId)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(matchesHashIndex, 0, itemDataSource);
+            int matchesPersistentResolveIndex = itemDataSource.IndexOf(
+                "int persistentHashId = ResolvePersistentHashId();",
+                matchesHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(matchesPersistentResolveIndex, matchesHashIndex, itemDataSource);
+            int matchesLegacyResolveIndex = itemDataSource.IndexOf(
+                "int legacyNameHashId = ResolveLegacyNameHashId();",
+                matchesPersistentResolveIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(matchesLegacyResolveIndex, matchesPersistentResolveIndex, itemDataSource);
+            StringAssert.Contains("private int ResolveLegacyNameHashId()", itemDataSource);
+            int legacyNameResolveIndex = itemDataSource.IndexOf(
+                "return ComputeCanonicalPersistentHashId(name);",
+                matchesLegacyResolveIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(legacyNameResolveIndex, matchesLegacyResolveIndex, itemDataSource);
+            int persistentIdGuardIndex = itemDataSource.IndexOf(
+                "_persistentHashId = ComputeCanonicalPersistentHashId(PersistentId);",
+                refreshIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(persistentIdGuardIndex, refreshIndex, itemDataSource);
+            int legacyNameGuardIndex = itemDataSource.IndexOf(
+                "_legacyNameHashId = ComputeCanonicalPersistentHashId(name);",
+                persistentIdGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(legacyNameGuardIndex, persistentIdGuardIndex, itemDataSource);
+
+            int buildableRebuildIndex = buildableDataSource.IndexOf(
+                "private void RebuildCache()",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(buildableRebuildIndex, 0, buildableDataSource);
+            int buildableMatchesIdIndex = buildableDataSource.IndexOf(
+                "public bool MatchesPersistentId(string id)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(buildableMatchesIdIndex, 0, buildableDataSource);
+            int buildableMatchesIdGuardIndex = buildableDataSource.IndexOf(
+                "string.IsNullOrWhiteSpace(id)",
+                buildableMatchesIdIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableMatchesIdGuardIndex, buildableMatchesIdIndex, buildableDataSource);
+            int buildableMatchesIdTrimIndex = buildableDataSource.IndexOf(
+                "id = id.Trim();",
+                buildableMatchesIdGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableMatchesIdTrimIndex, buildableMatchesIdGuardIndex, buildableDataSource);
+            int buildableMatchesIdCompareIndex = buildableDataSource.IndexOf(
+                "string.Equals(persistentId, id, StringComparison.Ordinal)",
+                buildableMatchesIdTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableMatchesIdCompareIndex, buildableMatchesIdTrimIndex, buildableDataSource);
+            int buildableLegacyNameIndex = buildableDataSource.IndexOf(
+                "string legacyName = string.IsNullOrWhiteSpace(name) ? string.Empty : name.Trim();",
+                buildableMatchesIdCompareIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableLegacyNameIndex, buildableMatchesIdCompareIndex, buildableDataSource);
+            int buildableLegacyCompareIndex = buildableDataSource.IndexOf(
+                "string.Equals(legacyName, id, StringComparison.Ordinal)",
+                buildableLegacyNameIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableLegacyCompareIndex, buildableLegacyNameIndex, buildableDataSource);
+            int buildableHelperWriteIndex = buildableDataSource.IndexOf(
+                "_persistentHashId = ComputeCanonicalPersistentHashId(PersistentId);",
+                buildableRebuildIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableHelperWriteIndex, buildableRebuildIndex, buildableDataSource);
+            int buildableHashHelperIndex = buildableDataSource.IndexOf(
+                "private static int ComputeCanonicalPersistentHashId(string value)",
+                buildableHelperWriteIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableHashHelperIndex, buildableHelperWriteIndex, buildableDataSource);
+            int buildableHashHelperCanonicalIndex = buildableDataSource.IndexOf(
+                "string persistentId = ResolveCanonicalPersistentId(value, null);",
+                buildableHashHelperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableHashHelperCanonicalIndex, buildableHashHelperIndex, buildableDataSource);
+            int buildableHashHelperComputeIndex = buildableDataSource.IndexOf(
+                "persistentId.Length == 0 ? 0 : Hecton.Localization.LocHash.Compute(persistentId)",
+                buildableHashHelperCanonicalIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableHashHelperComputeIndex, buildableHashHelperCanonicalIndex, buildableDataSource);
+            int buildableModuleHashIndex = buildableDataSource.IndexOf(
+                "public int ModuleHashId",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(buildableModuleHashIndex, 0, buildableDataSource);
+            int buildableTemplateHashNonZeroIndex = buildableDataSource.IndexOf(
+                "int templateHashId = moduleTemplate.ResolvePersistentHashId();",
+                buildableModuleHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableTemplateHashNonZeroIndex, buildableModuleHashIndex, buildableDataSource);
+            int buildableLazyResolveIndex = buildableDataSource.IndexOf(
+                "return ResolvePersistentHashId();",
+                buildableTemplateHashNonZeroIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableLazyResolveIndex, buildableTemplateHashNonZeroIndex, buildableDataSource);
+            StringAssert.Contains("private int ResolvePersistentHashId()", buildableDataSource);
+
+            int itemCacheIndex = hectonItemSource.IndexOf(
+                "private void RefreshCachedItemHash()",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(itemCacheIndex, 0, hectonItemSource);
+            int itemCacheHashIndex = hectonItemSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(itemData)",
+                itemCacheIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(itemCacheHashIndex, itemCacheIndex, hectonItemSource);
+
+            int bakeIndex = itemNodeSource.IndexOf(
+                "public void ConfigureEditorBake(ItemData itemData, ushort authoredFlags)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(bakeIndex, 0, itemNodeSource);
+            int bakeHashIndex = itemNodeSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(itemData)",
+                bakeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(bakeHashIndex, bakeIndex, itemNodeSource);
+
+            int findByIdIndex = itemCatalogSource.IndexOf(
+                "public ItemData FindById(string id)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(findByIdIndex, 0, itemCatalogSource);
+            int findByIdGuardIndex = itemCatalogSource.IndexOf(
+                "string.IsNullOrWhiteSpace(id)",
+                findByIdIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(findByIdGuardIndex, findByIdIndex, itemCatalogSource);
+            int findByIdTrimIndex = itemCatalogSource.IndexOf(
+                "id = id.Trim();",
+                findByIdGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(findByIdTrimIndex, findByIdGuardIndex, itemCatalogSource);
+            int findByIdLookupIndex = itemCatalogSource.IndexOf(
+                "_lookup.TryGetValue(id, out ItemData result)",
+                findByIdTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(findByIdLookupIndex, findByIdTrimIndex, itemCatalogSource);
+            StringAssert.Contains("PersistentId = string.IsNullOrWhiteSpace(persistentId) ? string.Empty : persistentId.Trim();", itemCatalogSource);
+            StringAssert.Contains("HashId = ComputeHashId(PersistentId);", itemCatalogSource);
+            StringAssert.Contains("LocHash.Compute(canonicalPersistentId)", itemCatalogSource);
+
+            int registerRuntimeItemIndex = itemCatalogSource.IndexOf(
+                "public bool TryRegisterRuntimeItem(ItemData item, out string error)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(registerRuntimeItemIndex, 0, itemCatalogSource);
+            int registerPersistentTrimIndex = itemCatalogSource.IndexOf(
+                "persistentId = persistentId.Trim();",
+                registerRuntimeItemIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(registerPersistentTrimIndex, registerRuntimeItemIndex, itemCatalogSource);
+            int registerConflictIndex = itemCatalogSource.IndexOf(
+                "HasAliasConflict(persistentId, item, out error)",
+                registerPersistentTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(registerConflictIndex, registerPersistentTrimIndex, itemCatalogSource);
+            int registerLegacyTrimIndex = itemCatalogSource.IndexOf(
+                "legacyAlias = legacyAlias.Trim();",
+                registerConflictIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(registerLegacyTrimIndex, registerConflictIndex, itemCatalogSource);
+
+            int addLookupAliasIndex = itemCatalogSource.IndexOf(
+                "private void AddLookupAlias(string id, ItemData item)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(addLookupAliasIndex, 0, itemCatalogSource);
+            int addLookupGuardIndex = itemCatalogSource.IndexOf(
+                "string.IsNullOrWhiteSpace(id)",
+                addLookupAliasIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(addLookupGuardIndex, addLookupAliasIndex, itemCatalogSource);
+            int addLookupTrimIndex = itemCatalogSource.IndexOf(
+                "id = id.Trim();",
+                addLookupGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(addLookupTrimIndex, addLookupGuardIndex, itemCatalogSource);
+            int addLookupTryIndex = itemCatalogSource.IndexOf(
+                "_lookup.TryGetValue(id, out ItemData existing)",
+                addLookupTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(addLookupTryIndex, addLookupTrimIndex, itemCatalogSource);
+
+            int itemAliasConflictIndex = itemCatalogSource.IndexOf(
+                "private bool HasAliasConflict(string alias, ItemData item, out string error)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(itemAliasConflictIndex, 0, itemCatalogSource);
+            int itemAliasTrimIndex = itemCatalogSource.IndexOf(
+                "alias = alias.Trim();",
+                itemAliasConflictIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(itemAliasTrimIndex, itemAliasConflictIndex, itemCatalogSource);
+            int itemAliasLookupIndex = itemCatalogSource.IndexOf(
+                "_lookup.TryGetValue(alias, out ItemData existing)",
+                itemAliasTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(itemAliasLookupIndex, itemAliasTrimIndex, itemCatalogSource);
+
+            int resolveHashIndex = itemCatalogSource.IndexOf(
+                "private static int ResolvePersistentHashId(ItemData item)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(resolveHashIndex, 0, itemCatalogSource);
+            int catalogResolverIndex = itemCatalogSource.IndexOf(
+                "return ItemData.ResolvePersistentHashId(item);",
+                resolveHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(catalogResolverIndex, resolveHashIndex, itemCatalogSource);
+            StringAssert.Contains("int hashId = ResolvePersistentHashId(item);", itemCatalogSource);
+            StringAssert.DoesNotContain("LocHash.Compute(item.PersistentId)", itemCatalogSource);
+            StringAssert.DoesNotContain("LocHash.Compute(persistentId)", itemCatalogSource);
+
+            int registerDroppedIndex = persistentWorldSource.IndexOf(
+                "private bool TryRegisterDroppedItemStateful(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(registerDroppedIndex, 0, persistentWorldSource);
+            int droppedIdIndex = persistentWorldSource.IndexOf(
+                "string persistentId = itemData.PersistentId;",
+                registerDroppedIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(droppedIdIndex, registerDroppedIndex, persistentWorldSource);
+            int droppedGuardIndex = persistentWorldSource.IndexOf(
+                "string.IsNullOrWhiteSpace(persistentId)",
+                droppedIdIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(droppedGuardIndex, droppedIdIndex, persistentWorldSource);
+            int droppedHashIndex = persistentWorldSource.IndexOf(
+                "ulong persistentIdHash = ComputePersistentIdHash(persistentId);",
+                droppedGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(droppedHashIndex, droppedGuardIndex, persistentWorldSource);
+            int recordHashIndex = persistentWorldSource.IndexOf(
+                "ItemPersistentIdHash = persistentIdHash",
+                droppedHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(recordHashIndex, droppedHashIndex, persistentWorldSource);
+
+            int persistentHashStringIndex = persistentWorldSource.IndexOf(
+                "internal static ulong ComputePersistentIdHash(string value)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(persistentHashStringIndex, 0, persistentWorldSource);
+            int persistentHashStringGuardIndex = persistentWorldSource.IndexOf(
+                "string.IsNullOrWhiteSpace(value)",
+                persistentHashStringIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(persistentHashStringGuardIndex, persistentHashStringIndex, persistentWorldSource);
+
+            int persistentHashFixedIndex = persistentWorldSource.IndexOf(
+                "internal static ulong ComputePersistentIdHash(in FixedString128Bytes value)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(persistentHashFixedIndex, 0, persistentWorldSource);
+            int persistentHashFixedGuardIndex = persistentWorldSource.IndexOf(
+                "bool hasNonWhiteSpace = false;",
+                persistentHashFixedIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(persistentHashFixedGuardIndex, persistentHashFixedIndex, persistentWorldSource);
+            StringAssert.Contains("hasNonWhiteSpace |= !IsAsciiWhiteSpace(current);", persistentWorldSource);
+            StringAssert.Contains("return hasNonWhiteSpace ? hash : 0UL;", persistentWorldSource);
+            StringAssert.Contains("private static bool IsAsciiWhiteSpace(byte value)", persistentWorldSource);
+            StringAssert.Contains("private static int ComputeCatalogItemHash(ItemData itemData)", persistentWorldSource);
+            StringAssert.Contains("return ItemData.ResolvePersistentHashId(itemData);", persistentWorldSource);
+        }
+
+        [Test]
+        public void ItemIdentityRuntime_SourceDoesNotHashItemPersistentIdsDirectly()
+        {
+            string scriptsRoot = Path.Combine(Directory.GetCurrentDirectory(), "Assets/_Project/Scripts");
+            foreach (string file in Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories))
+            {
+                int lineNumber = 0;
+                foreach (string line in File.ReadLines(file))
+                {
+                    lineNumber++;
+                    bool hashesDirectPersistentId =
+                        line.IndexOf("LocHash.Compute(", StringComparison.Ordinal) >= 0 &&
+                        line.IndexOf(".PersistentId", StringComparison.Ordinal) >= 0;
+
+                    Assert.IsFalse(
+                        hashesDirectPersistentId,
+                        $"{file}:{lineNumber} hashes ItemData.PersistentId directly; use ItemData.ResolvePersistentHashId.");
+                }
+            }
+        }
+
+        [Test]
+        public void ToolIdentityRuntime_SourceRejectsWhitespaceToolIds()
+        {
+            string scriptsRoot = Path.Combine(Directory.GetCurrentDirectory(), "Assets/_Project/Scripts");
+            foreach (string file in Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories))
+            {
+                int lineNumber = 0;
+                foreach (string line in File.ReadLines(file))
+                {
+                    lineNumber++;
+                    bool emptyOnlyToolIdGuard =
+                        line.IndexOf("string.IsNullOrEmpty(", StringComparison.Ordinal) >= 0 &&
+                        line.IndexOf("toolID", StringComparison.Ordinal) >= 0;
+
+                    Assert.IsFalse(
+                        emptyOnlyToolIdGuard,
+                        $"{file}:{lineNumber} accepts whitespace toolID; use string.IsNullOrWhiteSpace.");
+                }
+            }
+        }
+
+        [Test]
+        public void RuntimeIdentityBridges_RejectWhitespaceAndUseCanonicalItemHashes()
+        {
+            string batteryChargerSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs"));
+            string worldPickupSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/World/WorldPickupStateCodec.cs"));
+            string moduleIntegritySource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs"));
+            string toolUpgradeSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Tools/ToolUpgradeSystem.cs"));
+            string fabricationSmokeSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs"));
+            string cultivationSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Construction/CultivationManager.cs"));
+            string interactionEventsSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Interaction/InteractionEvents.cs"));
+
+            StringAssert.Contains("return unchecked((uint)ItemData.ResolvePersistentHashId(item));", batteryChargerSource);
+            StringAssert.DoesNotContain("return string.IsNullOrEmpty(key) ? 1u", batteryChargerSource);
+            StringAssert.Contains("return unchecked((uint)ItemData.ResolvePersistentHashId(item));", interactionEventsSource);
+
+            StringAssert.Contains("string.IsNullOrWhiteSpace(owningScene.path)", worldPickupSource);
+            StringAssert.Contains("string.IsNullOrWhiteSpace(scenePath)", worldPickupSource);
+            StringAssert.Contains("string.IsNullOrWhiteSpace(itemData.PersistentId)", worldPickupSource);
+            StringAssert.Contains("NormalizeStableWorldStateId(stableWorldStateId)", worldPickupSource);
+            StringAssert.DoesNotContain("string.IsNullOrEmpty(owningScene.path)", worldPickupSource);
+            StringAssert.DoesNotContain("string.IsNullOrEmpty(scenePath)", worldPickupSource);
+
+            StringAssert.Contains("if (!string.IsNullOrWhiteSpace(prefabId))", moduleIntegritySource);
+            StringAssert.Contains("if (string.IsNullOrWhiteSpace(moduleId))", toolUpgradeSource);
+
+            StringAssert.Contains("int resultHashId = ItemData.ResolvePersistentHashId(recipe.resultItem);", fabricationSmokeSource);
+            StringAssert.Contains("has invalid result item hash", fabricationSmokeSource);
+            StringAssert.Contains("int itemHash = ItemData.ResolvePersistentHashId(cost.item);", fabricationSmokeSource);
+            StringAssert.Contains("has invalid item hash", fabricationSmokeSource);
+
+            int cultivationRestoreIndex = cultivationSource.IndexOf(
+                "public void RestoreFromSaveData(ModuleDTO moduleDto, ItemCatalog itemCatalog)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(cultivationRestoreIndex, 0, cultivationSource);
+            int cultivationSeedIdIndex = cultivationSource.IndexOf(
+                "string persistentId = moduleDto.cultivationSeedItemIds[i];",
+                cultivationRestoreIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cultivationSeedIdIndex, cultivationRestoreIndex, cultivationSource);
+            int cultivationSeedGuardIndex = cultivationSource.IndexOf(
+                "string.IsNullOrWhiteSpace(persistentId)",
+                cultivationSeedIdIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cultivationSeedGuardIndex, cultivationSeedIdIndex, cultivationSource);
+            int cultivationSeedTrimIndex = cultivationSource.IndexOf(
+                "persistentId = persistentId.Trim();",
+                cultivationSeedGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cultivationSeedTrimIndex, cultivationSeedGuardIndex, cultivationSource);
+            int cultivationLookupIndex = cultivationSource.IndexOf(
+                "itemCatalog.FindById(persistentId)",
+                cultivationSeedTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cultivationLookupIndex, cultivationSeedTrimIndex, cultivationSource);
+            int cultivationFallbackHashIndex = cultivationSource.IndexOf(
+                "LocHash.Compute(persistentId)",
+                cultivationSeedTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(cultivationFallbackHashIndex, cultivationSeedTrimIndex, cultivationSource);
+        }
+
+        [Test]
+        public void BuildableIdentityRuntime_BlankPersistentIdsDoNotProduceHashesOrLookups()
+        {
+            string moduleCatalogSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ModuleCatalog.cs"));
+            string buildableDataSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/BuildableData.cs"));
+            string baseModuleSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/BaseModule.cs"));
+            string constructionSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ConstructionManager.cs"));
+            string templateSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/BaseModuleTemplate.cs"));
+            string saveDataSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveData.cs"));
+            string contentSanitySource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Editor/ContentSanityValidator.cs"));
+            string moduleMarkerSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ModuleMarker.cs"));
+            string playerBuilderSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/PlayerBuilder.cs"));
+            string moduleStatusSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ModuleStatusEvents.cs"));
+            string habitatConstructionSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs"));
+            string habitatGraphSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs"));
+            string baseModuleCatalogRuntimeSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs"));
+            string baseModuleCatalogEditorSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Editor/BaseModuleCatalogEditorTools.cs"));
+            string abandonedAuthoringSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Editor/AbandonedHabitatModuleAuthoring.cs"));
+
+            StringAssert.Contains("public string PersistentId => ResolveCanonicalPersistentId(stableId, name);", buildableDataSource);
+            StringAssert.Contains("private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)", buildableDataSource);
+            int buildableCanonicalIndex = buildableDataSource.IndexOf(
+                "private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(buildableCanonicalIndex, 0, buildableDataSource);
+            int buildableCanonicalTrimIndex = buildableDataSource.IndexOf(
+                "return string.IsNullOrWhiteSpace(id) ? string.Empty : id.Trim();",
+                buildableCanonicalIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(buildableCanonicalTrimIndex, buildableCanonicalIndex, buildableDataSource);
+
+            int findDataIndex = moduleCatalogSource.IndexOf(
+                "public BuildableData FindDataById(string prefabId)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(findDataIndex, 0, moduleCatalogSource);
+            int findDataGuardIndex = moduleCatalogSource.IndexOf(
+                "string.IsNullOrWhiteSpace(prefabId)",
+                findDataIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(findDataGuardIndex, findDataIndex, moduleCatalogSource);
+            int findDataTrimIndex = moduleCatalogSource.IndexOf(
+                "prefabId = prefabId.Trim();",
+                findDataGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(findDataTrimIndex, findDataGuardIndex, moduleCatalogSource);
+            int findDataLookupIndex = moduleCatalogSource.IndexOf(
+                "_lookup.TryGetValue(prefabId, out BuildableData result)",
+                findDataTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(findDataLookupIndex, findDataTrimIndex, moduleCatalogSource);
+
+            int registerRuntimeModuleIndex = moduleCatalogSource.IndexOf(
+                "public bool TryRegisterRuntimeModule(BuildableData data, string customCategory, out string error)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(registerRuntimeModuleIndex, 0, moduleCatalogSource);
+            int registerPersistentTrimIndex = moduleCatalogSource.IndexOf(
+                "persistentId = persistentId.Trim();",
+                registerRuntimeModuleIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(registerPersistentTrimIndex, registerRuntimeModuleIndex, moduleCatalogSource);
+            int registerConflictIndex = moduleCatalogSource.IndexOf(
+                "HasAliasConflict(persistentId, data, out error)",
+                registerPersistentTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(registerConflictIndex, registerPersistentTrimIndex, moduleCatalogSource);
+            int registerLegacyTrimIndex = moduleCatalogSource.IndexOf(
+                "legacyAlias = legacyAlias.Trim();",
+                registerConflictIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(registerLegacyTrimIndex, registerConflictIndex, moduleCatalogSource);
+
+            int runtimeCategoryIndex = moduleCatalogSource.IndexOf(
+                "public bool TryGetRuntimeCategory(BuildableData data, out string customCategory)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(runtimeCategoryIndex, 0, moduleCatalogSource);
+            int runtimeCategoryTrimIndex = moduleCatalogSource.IndexOf(
+                "persistentId = persistentId.Trim();",
+                runtimeCategoryIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(runtimeCategoryTrimIndex, runtimeCategoryIndex, moduleCatalogSource);
+            int runtimeCategoryLookupIndex = moduleCatalogSource.IndexOf(
+                "_runtimeCategoryByPersistentId.TryGetValue(persistentId, out customCategory)",
+                runtimeCategoryTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(runtimeCategoryLookupIndex, runtimeCategoryTrimIndex, moduleCatalogSource);
+
+            int addLookupAliasIndex = moduleCatalogSource.IndexOf(
+                "private void AddLookupAlias(string id, BuildableData data)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(addLookupAliasIndex, 0, moduleCatalogSource);
+            int addLookupGuardIndex = moduleCatalogSource.IndexOf(
+                "string.IsNullOrWhiteSpace(id)",
+                addLookupAliasIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(addLookupGuardIndex, addLookupAliasIndex, moduleCatalogSource);
+            int addLookupTrimIndex = moduleCatalogSource.IndexOf(
+                "id = id.Trim();",
+                addLookupGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(addLookupTrimIndex, addLookupGuardIndex, moduleCatalogSource);
+            int addLookupTryIndex = moduleCatalogSource.IndexOf(
+                "_lookup.TryGetValue(id, out BuildableData existing)",
+                addLookupTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(addLookupTryIndex, addLookupTrimIndex, moduleCatalogSource);
+
+            int moduleAliasConflictIndex = moduleCatalogSource.IndexOf(
+                "private bool HasAliasConflict(string alias, BuildableData data, out string error)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(moduleAliasConflictIndex, 0, moduleCatalogSource);
+            int moduleAliasTrimIndex = moduleCatalogSource.IndexOf(
+                "alias = alias.Trim();",
+                moduleAliasConflictIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(moduleAliasTrimIndex, moduleAliasConflictIndex, moduleCatalogSource);
+            int moduleAliasLookupIndex = moduleCatalogSource.IndexOf(
+                "_lookup.TryGetValue(alias, out BuildableData existing)",
+                moduleAliasTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(moduleAliasLookupIndex, moduleAliasTrimIndex, moduleCatalogSource);
+
+            int cachedHashIndex = baseModuleSource.IndexOf(
+                "internal int CachedModuleHashId",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(cachedHashIndex, 0, baseModuleSource);
+            int templateHashIndex = baseModuleSource.IndexOf(
+                "moduleTemplate.ResolvePersistentHashId()",
+                cachedHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(templateHashIndex, cachedHashIndex, baseModuleSource);
+            StringAssert.Contains("template != null ? template.ResolvePersistentHashId() : data.ModuleHashId", moduleMarkerSource);
+            StringAssert.Contains("data.ModuleTemplate.ResolvePersistentHashId()", playerBuilderSource);
+            StringAssert.Contains("moduleTemplate.ResolvePersistentHashId()", moduleStatusSource);
+            StringAssert.Contains("uint prefabHash = unchecked((uint)template.ResolvePersistentHashId());", habitatConstructionSource);
+            StringAssert.Contains("uint prefabHash = unchecked((uint)template.ResolvePersistentHashId());", habitatGraphSource);
+            StringAssert.Contains("PrefabHashID = unchecked((uint)template.ResolvePersistentHashId())", baseModuleCatalogRuntimeSource);
+            StringAssert.Contains("a.ResolvePersistentHashId().CompareTo(b.ResolvePersistentHashId())", baseModuleCatalogEditorSource);
+            StringAssert.Contains("uint prefabHash = unchecked((uint)template.ResolvePersistentHashId());", baseModuleCatalogEditorSource);
+            StringAssert.Contains("asset.ResolvePersistentHashId()", abandonedAuthoringSource);
+            StringAssert.DoesNotContain("template.TemplateHashId", moduleMarkerSource);
+            StringAssert.DoesNotContain("data.ModuleTemplate.TemplateHashId", playerBuilderSource);
+            StringAssert.DoesNotContain("moduleTemplate.TemplateHashId", moduleStatusSource);
+            StringAssert.DoesNotContain("template.TemplateHashId", baseModuleCatalogEditorSource);
+            StringAssert.DoesNotContain("asset.TemplateHashId", abandonedAuthoringSource);
+
+            int templateValidateIndex = templateSource.IndexOf(
+                "private void OnValidate()",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(templateValidateIndex, 0, templateSource);
+            StringAssert.Contains("public string PersistentId => ResolveCanonicalPersistentId(stableId, name);", templateSource);
+            StringAssert.Contains("private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)", templateSource);
+            int templateStableTrimIndex = templateSource.IndexOf(
+                "stableId = ResolveCanonicalPersistentId(stableId, name);",
+                templateValidateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(templateStableTrimIndex, templateValidateIndex, templateSource);
+            int templateStableGuardIndex = templateSource.IndexOf(
+                "templateHashId = ComputeCanonicalPersistentHashId(stableId);",
+                templateStableTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(templateStableGuardIndex, templateStableTrimIndex, templateSource);
+            int templateResolveHashIndex = templateSource.IndexOf(
+                "public int ResolvePersistentHashId()",
+                templateStableGuardIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(templateResolveHashIndex, templateStableGuardIndex, templateSource);
+            int templateHashHelperIndex = templateSource.IndexOf(
+                "private static int ComputeCanonicalPersistentHashId(string value)",
+                templateResolveHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(templateHashHelperIndex, templateResolveHashIndex, templateSource);
+            int templateHashHelperCanonicalIndex = templateSource.IndexOf(
+                "string persistentId = ResolveCanonicalPersistentId(value, null);",
+                templateHashHelperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(templateHashHelperCanonicalIndex, templateHashHelperIndex, templateSource);
+            int templateHashHelperComputeIndex = templateSource.IndexOf(
+                "persistentId.Length == 0 ? 0 : Hecton.Localization.LocHash.Compute(persistentId)",
+                templateHashHelperCanonicalIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(templateHashHelperComputeIndex, templateHashHelperCanonicalIndex, templateSource);
+
+            int templateValidatorIndex = contentSanitySource.IndexOf(
+                "private static void ValidateBaseModuleTemplates(ValidationResult result)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(templateValidatorIndex, 0, contentSanitySource);
+            int validatorPersistentIdIndex = contentSanitySource.IndexOf(
+                "string persistentId = template.PersistentId;",
+                templateValidatorIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(validatorPersistentIdIndex, templateValidatorIndex, contentSanitySource);
+            int validatorExpectedHashIndex = contentSanitySource.IndexOf(
+                "int expectedTemplateHashId = string.IsNullOrWhiteSpace(persistentId) ? 0 : LocHash.Compute(persistentId);",
+                validatorPersistentIdIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(validatorExpectedHashIndex, validatorPersistentIdIndex, contentSanitySource);
+            int validatorMismatchIndex = contentSanitySource.IndexOf(
+                "template.TemplateHashId != expectedTemplateHashId",
+                validatorExpectedHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(validatorMismatchIndex, validatorExpectedHashIndex, contentSanitySource);
+            int validatorMessageIndex = contentSanitySource.IndexOf(
+                "canonical PersistentId",
+                validatorMismatchIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(validatorMessageIndex, validatorMismatchIndex, contentSanitySource);
+
+            int refundIndex = constructionSource.IndexOf(
+                "private static int ResolveRefundCostItemHash(InventoryCost cost)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(refundIndex, 0, constructionSource);
+            int refundResolverIndex = constructionSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(cost.item)",
+                refundIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(refundResolverIndex, refundIndex, constructionSource);
+            StringAssert.DoesNotContain("LocHash.Compute(cost.item.PersistentId)", constructionSource);
+
+            int savePrefabGuardIndex = constructionSource.IndexOf(
+                "if (string.IsNullOrWhiteSpace(prefabId))",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(savePrefabGuardIndex, 0, constructionSource);
+            StringAssert.Contains("hasGraphTopology && !string.IsNullOrWhiteSpace(graphNodeDto.prefabId)", constructionSource);
+            StringAssert.Contains("if (string.IsNullOrWhiteSpace(prefabId) && (!hasGraphTopology || graphNodeDto.moduleHashId == 0))", constructionSource);
+            StringAssert.Contains("BuildableData buildData = !string.IsNullOrWhiteSpace(prefabId)", constructionSource);
+
+            int sanitizePersistenceIdIndex = saveDataSource.IndexOf(
+                "internal static string SanitizePersistenceId(string value)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(sanitizePersistenceIdIndex, 0, saveDataSource);
+            int sanitizePersistenceTrimIndex = saveDataSource.IndexOf(
+                "return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();",
+                sanitizePersistenceIdIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(sanitizePersistenceTrimIndex, sanitizePersistenceIdIndex, saveDataSource);
+
+            int graphNodeSanitizeIndex = saveDataSource.IndexOf(
+                "internal static ModuleGraphNodeDTO SanitizeForPersistence(in ModuleGraphNodeDTO value)",
+                sanitizePersistenceTrimIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(graphNodeSanitizeIndex, sanitizePersistenceTrimIndex, saveDataSource);
+            int graphNodePrefabSanitizeIndex = saveDataSource.IndexOf(
+                "dto.prefabId = ModuleDTO.SanitizePersistenceId(dto.prefabId);",
+                graphNodeSanitizeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(graphNodePrefabSanitizeIndex, graphNodeSanitizeIndex, saveDataSource);
+        }
+
+        [Test]
+        public void BuildableIdentityRuntime_TemplateHashIdDirectReadsStayOutOfRuntimeBindingPaths()
+        {
+            string scriptsRoot = Path.Combine(Directory.GetCurrentDirectory(), "Assets/_Project/Scripts");
+            string[] scriptFiles = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
+            for (int i = 0; i < scriptFiles.Length; i++)
+            {
+                string path = scriptFiles[i].Replace('\\', '/');
+                string source = File.ReadAllText(scriptFiles[i]);
+                if (!source.Contains(".TemplateHashId"))
+                    continue;
+
+                if (path.EndsWith("Assets/_Project/Scripts/Editor/ContentSanityValidator.cs", StringComparison.Ordinal) ||
+                    path.EndsWith("Assets/_Project/Scripts/World/ResourceDistributionDirector.cs", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                Assert.Fail(path + " reads TemplateHashId directly; use BaseModuleTemplate.ResolvePersistentHashId().");
+            }
+        }
+
+        [Test]
         public void HazardZoneRuntimeDTO_IsExplicitEightBytes()
         {
             StructLayoutAttribute layout = typeof(HazardZoneRuntimeDTO).StructLayoutAttribute;
@@ -676,18 +3268,22 @@ namespace Hecton8.Tests.Editor
         {
             ModuleDTO module = new ModuleDTO
             {
-                prefabId = " ",
-                slottedToolItemId = "\t",
-                pipeInFlightItemId = null,
+                prefabId = " HabitatLocker ",
+                slottedToolItemId = "\tTool_Repair\r\n",
+                pipeInFlightItemId = " \t ",
                 pipeInFlightAmount = -3,
                 pipeTransitProgress = float.NaN,
                 pipeExportTimerSeconds = float.PositiveInfinity,
                 drillBufferedItemId = " ",
                 drillBufferedAmount = -2,
                 drillCycleTimerSeconds = -10f,
-                sorterBufferedSlotCount = 1,
-                sorterBufferedItemIds = new[] { " ", "sorter.kept" },
+                sorterBufferedSlotCount = 2,
+                sorterBufferedItemIds = new[] { " ", " sorter.kept " },
                 sorterBufferedQuantities = new[] { -5, 9 },
+                storageCrateContentsSerialized = true,
+                storageCrateSlotCount = 2,
+                storageCrateItemIds = new[] { "\t", " crate.kept " },
+                storageCrateQuantities = new[] { -4, 6 },
                 posX = float.NaN,
                 posY = 12f,
                 posZ = float.NegativeInfinity,
@@ -701,8 +3297,8 @@ namespace Hecton8.Tests.Editor
                 co2Normalized = -2f,
                 failureMode = 9,
                 floodedReefFloodSeconds = float.PositiveInfinity,
-                cultivationSlotCount = 1,
-                cultivationSeedItemIds = new[] { "\t", "seed.kept" },
+                cultivationSlotCount = 2,
+                cultivationSeedItemIds = new[] { "\t", " seed.kept " },
                 cultivationGeneticsMasks = new[] { 0xFFFFUL, 0x2UL },
                 cultivationGrowth01 = new[] { float.NaN, 0.5f },
                 cultivationQuality01 = new[] { 2f, 0.5f }
@@ -710,8 +3306,8 @@ namespace Hecton8.Tests.Editor
 
             ModuleDTO sanitized = ModuleDTO.SanitizeForPersistence(in module);
 
-            Assert.AreEqual(string.Empty, sanitized.prefabId);
-            Assert.AreEqual(string.Empty, sanitized.slottedToolItemId);
+            Assert.AreEqual("HabitatLocker", sanitized.prefabId);
+            Assert.AreEqual("Tool_Repair", sanitized.slottedToolItemId);
             Assert.AreEqual(string.Empty, sanitized.pipeInFlightItemId);
             Assert.AreEqual(0, sanitized.pipeInFlightAmount);
             Assert.AreEqual(0f, sanitized.pipeTransitProgress);
@@ -721,6 +3317,13 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0f, sanitized.drillCycleTimerSeconds);
             Assert.AreEqual(string.Empty, sanitized.sorterBufferedItemIds[0]);
             Assert.AreEqual(0, sanitized.sorterBufferedQuantities[0]);
+            Assert.AreEqual("sorter.kept", sanitized.sorterBufferedItemIds[1]);
+            Assert.AreEqual(9, sanitized.sorterBufferedQuantities[1]);
+            Assert.IsTrue(sanitized.storageCrateContentsSerialized);
+            Assert.AreEqual(string.Empty, sanitized.storageCrateItemIds[0]);
+            Assert.AreEqual(0, sanitized.storageCrateQuantities[0]);
+            Assert.AreEqual("crate.kept", sanitized.storageCrateItemIds[1]);
+            Assert.AreEqual(6, sanitized.storageCrateQuantities[1]);
             Assert.AreEqual(0f, sanitized.posX);
             Assert.AreEqual(12f, sanitized.posY);
             Assert.AreEqual(0f, sanitized.posZ);
@@ -738,10 +3341,19 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(ModuleDTO.CultivationGeneticsSupportedMask, sanitized.cultivationGeneticsMasks[0]);
             Assert.AreEqual(0f, sanitized.cultivationGrowth01[0]);
             Assert.AreEqual(1f, sanitized.cultivationQuality01[0]);
+            Assert.AreEqual("seed.kept", sanitized.cultivationSeedItemIds[1]);
+            Assert.AreEqual(0x2UL, sanitized.cultivationGeneticsMasks[1]);
+            Assert.AreEqual(0.5f, sanitized.cultivationGrowth01[1]);
+            Assert.AreEqual(0.5f, sanitized.cultivationQuality01[1]);
             Assert.AreEqual(" ", module.sorterBufferedItemIds[0]);
+            Assert.AreEqual(" sorter.kept ", module.sorterBufferedItemIds[1]);
             Assert.AreEqual(-5, module.sorterBufferedQuantities[0]);
+            Assert.AreEqual("\t", module.storageCrateItemIds[0]);
+            Assert.AreEqual(" crate.kept ", module.storageCrateItemIds[1]);
+            Assert.AreEqual(-4, module.storageCrateQuantities[0]);
             Assert.AreEqual(9, module.failureMode);
             Assert.AreEqual("\t", module.cultivationSeedItemIds[0]);
+            Assert.AreEqual(" seed.kept ", module.cultivationSeedItemIds[1]);
             Assert.AreEqual(0xFFFFUL, module.cultivationGeneticsMasks[0]);
             Assert.IsTrue(float.IsNaN(module.cultivationGrowth01[0]));
             Assert.AreEqual(2f, module.cultivationQuality01[0]);
@@ -789,6 +3401,18 @@ namespace Hecton8.Tests.Editor
             changed = CreatePersistenceSampleModule();
             changed.sorterBufferedQuantities[1] = 9;
             AssertModulePersistenceDifference(in module, in changed, nameof(ModuleDTO.sorterBufferedQuantities));
+
+            changed = CreatePersistenceSampleModule();
+            changed.storageCrateItemIds[1] = "crate.changed";
+            AssertModulePersistenceDifference(in module, in changed, nameof(ModuleDTO.storageCrateItemIds));
+
+            changed = CreatePersistenceSampleModule();
+            changed.storageCrateQuantities[1] = 9;
+            AssertModulePersistenceDifference(in module, in changed, nameof(ModuleDTO.storageCrateQuantities));
+
+            changed = CreatePersistenceSampleModule();
+            changed.storageCrateContentsSerialized = false;
+            AssertModulePersistenceDifference(in module, in changed, nameof(ModuleDTO.storageCrateContentsSerialized));
 
             changed = CreatePersistenceSampleModule();
             changed.cultivationSeedItemIds[1] = "seed.changed";
@@ -842,6 +3466,15 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("private const uint HazardZoneDumpMagic = 0x4838485Au", source);
             StringAssert.Contains("private const int HazardZoneDumpHeaderBytes = 24", source);
+            StringAssert.Contains("private const int HazardZoneDumpEntrySizeBytes = 64", source);
+            StringAssert.Contains("private const int HazardZoneTelemetryCapacity = 300", source);
+            StringAssert.Contains("IsValidHazardZoneDumpHeader(bytes.Length, span, field2, field3)", source);
+            StringAssert.Contains("BuildInvalidHazardZoneHeaderSummary(path, bytes.Length, field2, field3, ReadU32(span, 16))", source);
+            StringAssert.Contains("invalid hazard-zone header", source);
+            StringAssert.Contains("entrySize != HazardZoneDumpEntrySizeBytes", source);
+            StringAssert.Contains("entryCount > HazardZoneTelemetryCapacity", source);
+            StringAssert.Contains("uint writeIndex = ReadU32(span, 16);", source);
+            StringAssert.Contains("return writeIndex < entryCount;", source);
             StringAssert.Contains("layoutName = \"hazard-zone\"", source);
             StringAssert.Contains("builder.Append(\" | writeIndex=\")", source);
             StringAssert.Contains("BuildHazardZoneEntryLine", source);
@@ -861,11 +3494,29 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs"));
+            string buildVolumeBody = ExtractMethodBody(source, "private HazardVolumeData BuildVolumeData(");
+            string queueRegisterBody = ExtractMethodBody(source, "private bool QueueRegisterMutation(");
+            string normalizeRadiusBody = ExtractMethodBody(source, "private static float NormalizeHazardRadius(");
+            string publishExposureBody = ExtractMethodBody(source, "private void PublishExposureMask(");
+            string updateDiagnosticsBody = ExtractMethodBody(source, "private void UpdateDiagnostics()");
 
             StringAssert.Contains("private static float ClampExposure(float value)", source);
             StringAssert.Contains("private const float HazardIntensityHardCap = 1000f", source);
+            StringAssert.Contains("private const float MaxHazardRadius = 2500f;", source);
+            StringAssert.Contains("public float ToxicityDose => ClampPersistedToxicityDose(_toxicityDose);", source);
             StringAssert.Contains("math.isfinite(value) ? math.clamp(value, 0f, HazardIntensityHardCap) : 0f", source);
             StringAssert.Contains("data.Intensity = ClampExposure(intensity)", source);
+            StringAssert.Contains("float safeRadius = NormalizeHazardRadius(radius);", buildVolumeBody);
+            StringAssert.Contains("mutation.Radius = NormalizeHazardRadius(radius);", queueRegisterBody);
+            StringAssert.Contains("return math.clamp(value, MinHazardRadius, MaxHazardRadius);", normalizeRadiusBody);
+            StringAssert.Contains("float playerToxicity = ClampExposure(_playerHazardIntensity[(int)HazardType.Toxicity]);", updateDiagnosticsBody);
+            StringAssert.Contains("float vehicleToxicity = ClampExposure(_vehicleHazardIntensity[(int)HazardType.Toxicity]);", updateDiagnosticsBody);
+            StringAssert.Contains("_debugToxicityDose = ToxicityDose;", updateDiagnosticsBody);
+            StringAssert.Contains("_debugPlayerToxicityIntensity = playerToxicity;", updateDiagnosticsBody);
+            StringAssert.Contains("_debugVehicleToxicityIntensity = vehicleToxicity;", updateDiagnosticsBody);
+            StringAssert.Contains("_debugVehicleExposureActive = vehicleToxicity > 0.001f;", updateDiagnosticsBody);
+            StringAssert.Contains("nextMask &= HazardTypeMaskNonRadiation;", publishExposureBody);
+            StringAssert.Contains("? ClampExposure(radiation01) : 0f", source);
             StringAssert.Contains("return ClampExposure(SumHazardIntensityLinear(", source);
             StringAssert.Contains("_lastExposureJobResultNonFinite = HasNonFiniteExposureJobResult(in result)", source);
             StringAssert.Contains("HasNonFiniteExposureJobResult", source);
@@ -885,6 +3536,267 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0.5f, (float)clampExposure.Invoke(null, new object[] { 0.5f }));
             Assert.AreEqual(128f, (float)clampExposure.Invoke(null, new object[] { 128f }));
             Assert.AreEqual(1000f, (float)clampExposure.Invoke(null, new object[] { 5000f }));
+
+            MethodInfo normalizeRadius = typeof(HazardZoneManager).GetMethod(
+                "NormalizeHazardRadius",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(normalizeRadius);
+            Assert.AreEqual(0.01f, (float)normalizeRadius.Invoke(null, new object[] { float.NaN }));
+            Assert.AreEqual(0.01f, (float)normalizeRadius.Invoke(null, new object[] { 0f }));
+            Assert.AreEqual(12f, (float)normalizeRadius.Invoke(null, new object[] { 12f }));
+            Assert.AreEqual(2500f, (float)normalizeRadius.Invoke(null, new object[] { 5000f }));
+
+            UnityEngine.GameObject gameObject = new UnityEngine.GameObject("HazardZoneRuntimeReadModelClampTest");
+            gameObject.SetActive(false);
+            try
+            {
+                HazardZoneManager manager = gameObject.AddComponent<HazardZoneManager>();
+                SetPrivateInstanceField(manager, "_toxicityDose", float.NaN);
+                Assert.AreEqual(0f, manager.ToxicityDose);
+
+                SetPrivateInstanceField(manager, "_toxicityDose", SaveData.HazardZoneMaxPersistedToxicityDose * 2f);
+                Assert.AreEqual(SaveData.HazardZoneMaxPersistedToxicityDose, manager.ToxicityDose);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
+        public void HazardZoneManager_PlayerRuntimeHotSwapClearsStalePlayerBindings()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs"));
+            string serviceReplacedBody = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string clearRuntimeBody = ExtractMethodBody(source, "private void ClearRuntimeState()");
+            string refreshSnapshotBody = ExtractMethodBody(source, "private void RefreshPlayerContextSnapshot()");
+            string applyPlayerBody = ExtractMethodBody(source, "private void ApplyPlayerContextReferences(");
+            string boundBody = ExtractMethodBody(source, "private static bool IsPlayerRuntimeContextBound(");
+            string clearPlayerBody = ExtractMethodBody(source, "private void ClearPlayerRuntimeBindings()");
+            string refreshTransportBody = ExtractMethodBody(source, "private void RefreshActiveTransportOwner()");
+
+            StringAssert.Contains("IPlayerRuntimeContext nextPlayerContext = currentService as IPlayerRuntimeContext;", serviceReplacedBody);
+            StringAssert.Contains("!IsPlayerRuntimeContextBound(nextPlayerContext)", serviceReplacedBody);
+            StringAssert.Contains("ClearPlayerRuntimeBindings();", serviceReplacedBody);
+            StringAssert.Contains("if (!ReferenceEquals(_playerRuntimeContext, nextPlayerContext))", serviceReplacedBody);
+            StringAssert.Contains("RefreshActiveTransportOwner();", serviceReplacedBody);
+            StringAssert.Contains("UpdateDiagnostics();", serviceReplacedBody);
+            StringAssert.Contains("playerContext.IsInitialized", boundBody);
+            StringAssert.Contains("playerContext.PlayerTransform != null", boundBody);
+            StringAssert.Contains("ClearPlayerRuntimeBindings();", clearRuntimeBody);
+            StringAssert.Contains("_playerRuntimeContext != null && !IsPlayerRuntimeContextBound(_playerRuntimeContext)", refreshSnapshotBody);
+            StringAssert.Contains("ClearPlayerRuntimeBindings();", refreshSnapshotBody);
+            StringAssert.Contains("_activeTransportOwner = null;", applyPlayerBody);
+            StringAssert.Contains("_activeTransportBehaviour = null;", applyPlayerBody);
+            StringAssert.Contains("_activeTransportCollider = null;", applyPlayerBody);
+            StringAssert.Contains("ClearExposureState();", clearPlayerBody);
+            StringAssert.Contains("_playerRuntimeContext = null;", clearPlayerBody);
+            StringAssert.Contains("_playerTransform = null;", clearPlayerBody);
+            StringAssert.Contains("_playerCollider = null;", clearPlayerBody);
+            StringAssert.Contains("_playerSurvival = null;", clearPlayerBody);
+            StringAssert.Contains("_playerHealth = null;", clearPlayerBody);
+            StringAssert.Contains("_playerTraumaDispatcher = null;", clearPlayerBody);
+            StringAssert.Contains("_playerTransportCoordinator = null;", clearPlayerBody);
+            StringAssert.Contains("_activeTransportOwner = null;", clearPlayerBody);
+            StringAssert.Contains("_activeTransportBehaviour = null;", clearPlayerBody);
+            StringAssert.Contains("_activeTransportCollider = null;", clearPlayerBody);
+            StringAssert.Contains("if (_playerTransform == null)", refreshTransportBody);
+            StringAssert.Contains("_activeTransportOwner = null;", refreshTransportBody);
+            StringAssert.Contains("_activeTransportBehaviour = null;", refreshTransportBody);
+            StringAssert.Contains("_activeTransportCollider = null;", refreshTransportBody);
+            StringAssert.Contains("_activeTransportCollider = ResolveTransportColliderCold(_activeTransportBehaviour);", refreshTransportBody);
+        }
+
+        [Test]
+        public void HazardZoneManager_DataVaultSwapClearsExposureAndSpatialRuntime()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs"));
+            string dataVaultSwapBody = ExtractMethodBody(source, "private void ApplyDataVaultSwap(");
+            string clearRuntimeBody = ExtractMethodBody(source, "private void ClearRuntimeState()");
+            string releaseSpatialHashBody = ExtractMethodBody(source, "private void ReleaseHazardSpatialHash()");
+
+            StringAssert.Contains("ClearExposureState();", dataVaultSwapBody);
+            StringAssert.Contains("ClearPendingMutations();", dataVaultSwapBody);
+            StringAssert.Contains("ReleaseHazardExposureResultBuffer();", dataVaultSwapBody);
+            StringAssert.Contains("ReleaseHazardVaultBuffers();", dataVaultSwapBody);
+            StringAssert.Contains("ReleaseHazardSpatialHash();", dataVaultSwapBody);
+            StringAssert.Contains("CacheHazardVaultCold(nextVault);", dataVaultSwapBody);
+            StringAssert.Contains("AllocateNativeState();", dataVaultSwapBody);
+            StringAssert.Contains("UpdateDiagnostics();", dataVaultSwapBody);
+            StringAssert.Contains("ReleaseHazardSpatialHash();", clearRuntimeBody);
+            StringAssert.Contains("_spatialHash?.Dispose();", releaseSpatialHashBody);
+            StringAssert.Contains("_spatialHash = null;", releaseSpatialHashBody);
+        }
+
+        [Test]
+        public void HazardZoneManager_ToxicityDamagePulseLoopIsBounded()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs"));
+            string applyBody = ExtractMethodBody(source, "private void ApplyToxicityDose(float dt)");
+
+            StringAssert.Contains("private const int MaxToxicityDamagePulsesPerTick = 4;", source);
+            StringAssert.Contains("if (_toxicityDose <= ToxicityDoseThreshold)", applyBody);
+            StringAssert.Contains("_toxicityPulseAccumulatorSeconds = 0f;", applyBody);
+            StringAssert.Contains("if (_playerSurvival == null)", applyBody);
+            StringAssert.Contains("_toxicityPulseAccumulatorSeconds = ClampPersistedToxicityPulseAccumulator(_toxicityPulseAccumulatorSeconds);", applyBody);
+            StringAssert.Contains("if (ToxicityDamagePulseIntervalSeconds <= 0f)", applyBody);
+            StringAssert.Contains("float maxPulseAccumulatorSeconds = ToxicityDamagePulseIntervalSeconds * (MaxToxicityDamagePulsesPerTick + 1);", applyBody);
+            StringAssert.Contains("FiniteNonNegativeOrZero(_toxicityPulseAccumulatorSeconds) + safeDt", applyBody);
+            StringAssert.Contains("int pulseCount = math.min(", applyBody);
+            StringAssert.Contains("MaxToxicityDamagePulsesPerTick", applyBody);
+            StringAssert.Contains("(int)math.floor(_toxicityPulseAccumulatorSeconds / ToxicityDamagePulseIntervalSeconds)", applyBody);
+            StringAssert.Contains("for (int pulseIndex = 0; pulseIndex < pulseCount; pulseIndex++)", applyBody);
+            StringAssert.DoesNotContain("while (_toxicityPulseAccumulatorSeconds >= ToxicityDamagePulseIntervalSeconds)", applyBody);
+        }
+
+        [Test]
+        public void HazardZoneManager_SaveLoadSanitizesPersistedToxicityState()
+        {
+            UnityEngine.GameObject gameObject = new UnityEngine.GameObject("HazardZoneRuntimeSaveToxicityTest");
+            gameObject.SetActive(false);
+
+            try
+            {
+                HazardZoneManager manager = gameObject.AddComponent<HazardZoneManager>();
+
+                SetPrivateInstanceField(manager, "_toxicityDose", 12.25f);
+                SetPrivateInstanceField(manager, "_toxicityPulseAccumulatorSeconds", 0.25f);
+                SaveData data = SaveData.CreateNew(0.0);
+                manager.PopulateSaveData(data);
+                Assert.AreEqual(12.25f, data.hazardZones.toxicityDose);
+                Assert.AreEqual(0.25f, data.hazardZones.toxicityPulseAccumulatorSeconds);
+
+                SetPrivateInstanceField(manager, "_toxicityDose", float.PositiveInfinity);
+                SetPrivateInstanceField(manager, "_toxicityPulseAccumulatorSeconds", 0.25f);
+                SaveData nonFinite = SaveData.CreateNew(0.0);
+                manager.PopulateSaveData(nonFinite);
+                Assert.AreEqual(0f, nonFinite.hazardZones.toxicityDose);
+                Assert.AreEqual(0f, nonFinite.hazardZones.toxicityPulseAccumulatorSeconds);
+
+                SetPrivateInstanceField(manager, "_toxicityDose", SaveData.HazardZoneMaxPersistedToxicityDose * 2f);
+                SetPrivateInstanceField(manager, "_toxicityPulseAccumulatorSeconds", SaveData.HazardZoneMaxPersistedToxicityPulseSeconds * 4f);
+                SaveData clamped = SaveData.CreateNew(0.0);
+                manager.PopulateSaveData(clamped);
+                Assert.AreEqual(SaveData.HazardZoneMaxPersistedToxicityDose, clamped.hazardZones.toxicityDose);
+                Assert.AreEqual(SaveData.HazardZoneMaxPersistedToxicityPulseSeconds, clamped.hazardZones.toxicityPulseAccumulatorSeconds);
+
+                SaveData malformedLoad = SaveData.CreateNew(0.0);
+                malformedLoad.hazardZones.toxicityDose = SaveData.HazardZoneMaxPersistedToxicityDose * 3f;
+                malformedLoad.hazardZones.toxicityPulseAccumulatorSeconds = SaveData.HazardZoneMaxPersistedToxicityPulseSeconds * 6f;
+                manager.LoadFromSaveData(malformedLoad);
+                Assert.AreEqual(SaveData.HazardZoneMaxPersistedToxicityDose, GetPrivateInstanceField<float>(manager, "_toxicityDose"));
+                Assert.AreEqual(SaveData.HazardZoneMaxPersistedToxicityPulseSeconds, GetPrivateInstanceField<float>(manager, "_toxicityPulseAccumulatorSeconds"));
+
+                SaveData nonFiniteLoad = SaveData.CreateNew(0.0);
+                nonFiniteLoad.hazardZones.toxicityDose = float.NaN;
+                nonFiniteLoad.hazardZones.toxicityPulseAccumulatorSeconds = 0.25f;
+                manager.LoadFromSaveData(nonFiniteLoad);
+                Assert.AreEqual(0f, GetPrivateInstanceField<float>(manager, "_toxicityDose"));
+                Assert.AreEqual(0f, GetPrivateInstanceField<float>(manager, "_toxicityPulseAccumulatorSeconds"));
+
+                SaveData inactivePulse = SaveData.CreateNew(0.0);
+                inactivePulse.hazardZones.toxicityDose = SaveData.HazardZoneToxicityDamageDoseThreshold * 0.5f;
+                inactivePulse.hazardZones.toxicityPulseAccumulatorSeconds = 0.25f;
+                manager.LoadFromSaveData(inactivePulse);
+                Assert.AreEqual(inactivePulse.hazardZones.toxicityDose, GetPrivateInstanceField<float>(manager, "_toxicityDose"));
+                Assert.AreEqual(0f, GetPrivateInstanceField<float>(manager, "_toxicityPulseAccumulatorSeconds"));
+
+                SaveData legacy = SaveData.CreateNew(0.0);
+                legacy.version = SaveData.HazardZoneRuntimePersistenceVersion - 1;
+                legacy.hazardZones.toxicityDose = 32f;
+                legacy.hazardZones.toxicityPulseAccumulatorSeconds = 0.25f;
+                manager.LoadFromSaveData(legacy);
+                Assert.AreEqual(0f, GetPrivateInstanceField<float>(manager, "_toxicityDose"));
+                Assert.AreEqual(0f, GetPrivateInstanceField<float>(manager, "_toxicityPulseAccumulatorSeconds"));
+
+                SetPrivateInstanceField(manager, "_toxicityDose", 5f);
+                SetPrivateInstanceField(manager, "_toxicityPulseAccumulatorSeconds", 0.25f);
+                manager.LoadFromSaveData(null);
+                Assert.AreEqual(0f, GetPrivateInstanceField<float>(manager, "_toxicityDose"));
+                Assert.AreEqual(0f, GetPrivateInstanceField<float>(manager, "_toxicityPulseAccumulatorSeconds"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
+        public void HazardZoneManager_TelemetryCursorIsNormalizedForWriteAndDump()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs"));
+            string writeEntryBody = ExtractMethodBody(source, "private bool TryWriteHazardTelemetryEntry(ref HazardZoneTelemetryEntry entry)");
+            string writeCursorBody = ExtractMethodBody(source, "private bool TryWriteHazardTelemetryCursor(int nextWriteIndex, int telemetryLength)");
+            string ensureBuffersBody = ExtractMethodBody(source, "private bool TryEnsureHazardTelemetryBuffers()");
+            string restoreStateBody = ExtractMethodBody(source, "private void RestoreHazardTelemetryRuntimeStateFromVault()");
+            string restoreSequenceBody = ExtractMethodBody(source, "private static uint RestoreHazardTelemetrySequence(");
+            string normalizeBody = ExtractMethodBody(source, "private static int NormalizeHazardTelemetryCursor(int cursor, int telemetryLength)");
+            string dumpBody = ExtractMethodBody(source, "private void DumpHazardBlackBoxOnce()");
+            string dumpHeaderBody = ExtractMethodBody(source, "private static bool TryWriteHazardTelemetryDumpHeader(");
+            string dumpEntryBody = ExtractMethodBody(source, "private static bool TryWriteHazardTelemetryDumpEntry(");
+            string sanitizeEntryBody = ExtractMethodBody(source, "private static HazardZoneTelemetryEntry SanitizeHazardTelemetryDumpEntry(in HazardZoneTelemetryEntry entry)");
+            string hasNonFiniteEntryBody = ExtractMethodBody(source, "private static bool HasNonFiniteHazardTelemetryEntry(in HazardZoneTelemetryEntry entry)");
+            string writeUInt32Body = ExtractMethodBody(source, "private static bool TryWriteUInt32LittleEndian(NativeArray<byte> target, ref int cursor, uint value)");
+            string writeUInt64Body = ExtractMethodBody(source, "private static bool TryWriteUInt64LittleEndian(NativeArray<byte> target, ref int cursor, ulong value)");
+            string canWriteBody = ExtractMethodBody(source, "private static bool CanWriteLittleEndianBytes(NativeArray<byte> target, int cursor, int byteCount)");
+
+            StringAssert.Contains("int telemetryLengthForCursor = TelemetryCapacity;", writeEntryBody);
+            StringAssert.Contains("int telemetryLength = math.min(telemetryRing.Length, TelemetryCapacity);", writeEntryBody);
+            StringAssert.Contains("telemetryLengthForCursor = telemetryLength;", writeEntryBody);
+            StringAssert.Contains("int writeIndex = NormalizeHazardTelemetryCursor(_telemetryWriteIndex, telemetryLength);", writeEntryBody);
+            StringAssert.Contains("nextWriteIndex = NormalizeHazardTelemetryCursor(writeIndex + 1, telemetryLength);", writeEntryBody);
+            StringAssert.Contains("TryWriteHazardTelemetryCursor(nextWriteIndex, telemetryLengthForCursor);", writeEntryBody);
+            StringAssert.Contains("bool ready = ringReady && cursorReady;", ensureBuffersBody);
+            StringAssert.Contains("if (ready)", ensureBuffersBody);
+            StringAssert.Contains("RestoreHazardTelemetryRuntimeStateFromVault();", ensureBuffersBody);
+            StringAssert.Contains("!vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<HazardZoneTelemetryEntry>.ReadOnly telemetryRing)", restoreStateBody);
+            StringAssert.Contains("!vault.TryReadOnlyHandle(in _telemetryCursorHandle, out NativeArray<int>.ReadOnly cursorBuffer)", restoreStateBody);
+            StringAssert.Contains("int telemetryLength = math.min(telemetryRing.Length, TelemetryCapacity);", restoreStateBody);
+            StringAssert.Contains("int restoredWriteIndex = NormalizeHazardTelemetryCursor(cursorBuffer[0], telemetryLength);", restoreStateBody);
+            StringAssert.Contains("uint restoredSequence = RestoreHazardTelemetrySequence(telemetryRing, telemetryLength, restoredWriteIndex);", restoreStateBody);
+            StringAssert.Contains("if (restoredSequence == 0u)", restoreStateBody);
+            StringAssert.Contains("restoredWriteIndex = 0;", restoreStateBody);
+            StringAssert.Contains("_telemetryWriteIndex = restoredWriteIndex;", restoreStateBody);
+            StringAssert.Contains("_telemetrySequence = restoredSequence;", restoreStateBody);
+            StringAssert.Contains("int newestIndex = nextWriteIndex > 0 ? nextWriteIndex - 1 : telemetryLength - 1;", restoreSequenceBody);
+            StringAssert.Contains("uint newestSequence = telemetryRing[newestIndex].Sequence;", restoreSequenceBody);
+            StringAssert.Contains("if (newestSequence != 0u)", restoreSequenceBody);
+            StringAssert.Contains("uint restoredSequence = 0u;", restoreSequenceBody);
+            StringAssert.Contains("sequence > restoredSequence", restoreSequenceBody);
+            StringAssert.Contains("cursorBuffer[0] = NormalizeHazardTelemetryCursor(nextWriteIndex, telemetryLength);", writeCursorBody);
+            StringAssert.Contains("telemetryLength > 0 && (uint)cursor < (uint)telemetryLength", normalizeBody);
+            StringAssert.Contains("private const int TelemetryDumpHeaderBytes = 24;", source);
+            StringAssert.Contains("int entryCount = math.min(telemetryRing.Length, TelemetryCapacity);", dumpBody);
+            StringAssert.Contains("payloadBytes = TelemetryDumpHeaderBytes + entryCount * TelemetryEntrySizeBytes;", dumpBody);
+            StringAssert.Contains("TryWriteHazardTelemetryDumpHeader(", dumpBody);
+            StringAssert.Contains("NormalizeHazardTelemetryCursor(_telemetryWriteIndex, entryCount)", dumpBody);
+            StringAssert.Contains("HazardZoneTelemetryEntry rawEntry = telemetryRing[i];", dumpBody);
+            StringAssert.Contains("HazardZoneTelemetryEntry entry = SanitizeHazardTelemetryDumpEntry(in rawEntry);", dumpBody);
+            StringAssert.Contains("TryWriteHazardTelemetryDumpEntry(payload, ref cursor, in entry)", dumpBody);
+            StringAssert.Contains("if (cursor != payloadBytes)", dumpBody);
+            StringAssert.Contains("TryWriteInt32LittleEndian(target, ref cursor, writeIndex)", dumpHeaderBody);
+            StringAssert.Contains("TryWriteUInt64LittleEndian(target, ref cursor, entry.PackedOwner)", dumpEntryBody);
+            StringAssert.Contains("TryWriteFloatLittleEndian(target, ref cursor, entry.VehicleRadiation)", dumpEntryBody);
+            StringAssert.Contains("if (!HasNonFiniteHazardTelemetryEntry(in entry))", sanitizeEntryBody);
+            StringAssert.Contains("return entry;", sanitizeEntryBody);
+            StringAssert.Contains("FiniteTelemetryValue(sanitized.ToxicityDose, ref flags)", sanitizeEntryBody);
+            StringAssert.Contains("sanitized.StateHash = ComputeHazardTelemetryStateHash(in sanitized);", sanitizeEntryBody);
+            StringAssert.Contains("!math.isfinite(entry.ToxicityDose)", hasNonFiniteEntryBody);
+            StringAssert.Contains("!math.isfinite(entry.VehicleRadiation)", hasNonFiniteEntryBody);
+            StringAssert.Contains("if (!CanWriteLittleEndianBytes(target, cursor, WriteBytes))", writeUInt32Body);
+            StringAssert.Contains("if (!CanWriteLittleEndianBytes(target, cursor, WriteBytes))", writeUInt64Body);
+            StringAssert.Contains("target.IsCreated", canWriteBody);
+            StringAssert.Contains("cursor <= target.Length - byteCount", canWriteBody);
+            StringAssert.DoesNotContain("WriteInt32LittleEndian(payload, ref cursor, _telemetryWriteIndex);", dumpBody);
+            StringAssert.DoesNotContain("target[cursor++] = (byte)value;", dumpBody);
         }
 
         [Test]
@@ -901,6 +3813,10 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("intensity > 0f", source);
             StringAssert.Contains("math.isfinite(radius)", source);
             StringAssert.Contains("radius > 0f", source);
+            StringAssert.Contains("private const float HazardIntensityHardCap = 1000f;", source);
+            StringAssert.Contains("private static float SanitizeHazardIntensity(float intensity)", source);
+            StringAssert.Contains("math.isfinite(intensity) ? math.clamp(intensity, 0f, HazardIntensityHardCap) : 0f", source);
+            StringAssert.Contains("? SanitizeHazardIntensity(radiation01) : 0f", source);
             StringAssert.Contains("RuntimeInitializeLoadType.SubsystemRegistration", source);
             StringAssert.Contains("System.Array.Clear(_radiationFacadeIds, 0, _radiationFacadeIds.Length)", source);
             StringAssert.Contains("_radiationFacadeIdCount = 0", source);
@@ -908,6 +3824,16 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("Unregister(id, type)", source);
             StringAssert.Contains("zoneManager.UnregisterZone(id)", source);
             StringAssert.Contains("if (id == 0)", source);
+
+            MethodInfo sanitizeHazardIntensity = typeof(HectonHazardManager).GetMethod(
+                "SanitizeHazardIntensity",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(sanitizeHazardIntensity);
+            Assert.AreEqual(0f, (float)sanitizeHazardIntensity.Invoke(null, new object[] { float.NaN }));
+            Assert.AreEqual(0f, (float)sanitizeHazardIntensity.Invoke(null, new object[] { -4f }));
+            Assert.AreEqual(0.5f, (float)sanitizeHazardIntensity.Invoke(null, new object[] { 0.5f }));
+            Assert.AreEqual(128f, (float)sanitizeHazardIntensity.Invoke(null, new object[] { 128f }));
+            Assert.AreEqual(1000f, (float)sanitizeHazardIntensity.Invoke(null, new object[] { 5000f }));
         }
 
         [Test]
@@ -916,6 +3842,8 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "Assets/_Project/Scripts/Gameplay/HectonHazardSource.cs"));
+            string slowTickBody = ExtractMethodBody(source, "public void SlowTick()");
+            string resolveIntervalBody = ExtractMethodBody(source, "private static float ResolveSafeUpdateInterval(float interval)");
 
             StringAssert.Contains("TryResolveValidRuntimeSource", source);
             StringAssert.Contains("TryUnregisterAuthority();", source);
@@ -929,6 +3857,12 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("intensity > 0f", source);
             StringAssert.Contains("math.isfinite(radius)", source);
             StringAssert.Contains("radius > 0f", source);
+            StringAssert.Contains("private const float MinHazardSourceUpdateIntervalSeconds = 0.1f;", source);
+            StringAssert.Contains("private const float MaxHazardSourceUpdateIntervalSeconds = 2f;", source);
+            StringAssert.Contains("if (!math.isfinite(_timer) || _timer <= 0f)", slowTickBody);
+            StringAssert.Contains("_timer = ResolveSafeUpdateInterval(_updateInterval);", slowTickBody);
+            StringAssert.Contains("math.clamp(interval, MinHazardSourceUpdateIntervalSeconds, MaxHazardSourceUpdateIntervalSeconds)", resolveIntervalBody);
+            StringAssert.Contains(": MinHazardSourceUpdateIntervalSeconds", resolveIntervalBody);
         }
 
         [Test]
@@ -937,6 +3871,11 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs"));
+            string slowTickBody = ExtractMethodBody(source, "public void SlowTick()");
+            string applyDamageBody = ExtractMethodBody(source, "private void ApplyDamage()");
+            string centralDamageBody = ExtractMethodBody(source, "private bool TryQueueCentralHazardDamage(");
+            string resolveIntervalBody = ExtractMethodBody(source, "private static float ResolveSafeDamageInterval(float interval)");
+            string onValidateBody = ExtractMethodBody(source, "private void OnValidate()");
 
             StringAssert.Contains("TryResolveValidHazardSourcePayload", source);
             StringAssert.Contains("TryUnregisterRadiationSource();", source);
@@ -946,7 +3885,99 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("thermodynamics.TryInjectTransientHeatSource(position, safeRadius, safeIntensity", source);
             StringAssert.Contains("!math.isfinite(baseDamagePerSecond)", source);
             StringAssert.Contains("!math.isfinite(hazardRadius)", source);
-            StringAssert.Contains("!math.isfinite(damageInterval)", source);
+            StringAssert.Contains("ResolveSafeDamageInterval(damageInterval)", source);
+            StringAssert.Contains("private const float MinDamageIntervalSeconds = 0.1f;", source);
+            StringAssert.Contains("private const float MaxDamageIntervalSeconds = 2f;", source);
+            StringAssert.Contains("float safeDamageInterval = ResolveSafeDamageInterval(damageInterval);", slowTickBody);
+            StringAssert.Contains("_damageTimer = math.isfinite(_damageTimer)", slowTickBody);
+            StringAssert.Contains("? _damageTimer + HazardSlowTickDeltaSeconds", slowTickBody);
+            StringAssert.Contains(": safeDamageInterval", slowTickBody);
+            StringAssert.Contains("if (_damageTimer >= safeDamageInterval)", slowTickBody);
+            StringAssert.Contains("float safeDamageInterval = ResolveSafeDamageInterval(damageInterval);", applyDamageBody);
+            StringAssert.Contains("baseDamagePerSecond * _currentIntensity * safeDamageInterval", applyDamageBody);
+            StringAssert.Contains("StatusDurationSeconds = math.max(ResolveSafeDamageInterval(damageInterval), HazardSlowTickDeltaSeconds)", centralDamageBody);
+            StringAssert.Contains("math.clamp(interval, MinDamageIntervalSeconds, MaxDamageIntervalSeconds)", resolveIntervalBody);
+            StringAssert.Contains(": MinDamageIntervalSeconds", resolveIntervalBody);
+            StringAssert.Contains("damageInterval = ResolveSafeDamageInterval(damageInterval);", onValidateBody);
+        }
+
+        [Test]
+        public void LocalHazardSources_ClearExposureOnPlayerRuntimeHotSwap()
+        {
+            string environmentalSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs"));
+            string toxinSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/ToxinHazard.cs"));
+            string environmentalHotSwap = ExtractMethodBody(environmentalSource, "public void OnGlobalRegistryServiceReplaced(");
+            string environmentalResolve = ExtractMethodBody(environmentalSource, "private Transform ResolveRuntimePlayerTransform()");
+            string environmentalBound = ExtractMethodBody(environmentalSource, "private static bool IsPlayerRuntimeContextBound(");
+            string toxinHotSwap = ExtractMethodBody(toxinSource, "public void OnGlobalRegistryServiceReplaced(");
+            string toxinResolve = ExtractMethodBody(toxinSource, "private bool TryResolvePlayerPosition(");
+            string toxinBound = ExtractMethodBody(toxinSource, "private static bool IsPlayerRuntimeContextBound(");
+
+            StringAssert.Contains("IPlayerRuntimeContext nextPlayerRuntime = currentService as IPlayerRuntimeContext;", environmentalHotSwap);
+            StringAssert.Contains("!IsPlayerRuntimeContextBound(nextPlayerRuntime)", environmentalHotSwap);
+            StringAssert.Contains("_playerRuntime = null;", environmentalHotSwap);
+            StringAssert.Contains("_playerHealth = null;", environmentalHotSwap);
+            StringAssert.Contains("ClearExposureState();", environmentalHotSwap);
+            StringAssert.Contains("QueueIndicatorUpdate();", environmentalHotSwap);
+            StringAssert.Contains("_playerTransform != null && !ReferenceEquals(_playerTransform, nextPlayerRuntime.PlayerTransform)", environmentalHotSwap);
+            StringAssert.Contains("return IsPlayerRuntimeContextBound(playerContext) ? playerContext.PlayerTransform : null;", environmentalResolve);
+            StringAssert.DoesNotContain("playerContext != null && playerContext.PlayerTransform != null", environmentalResolve);
+            StringAssert.Contains("playerContext.IsInitialized", environmentalBound);
+            StringAssert.Contains("playerContext.PlayerTransform != null", environmentalBound);
+
+            StringAssert.Contains("IPlayerRuntimeContext nextPlayerRuntime = currentService as IPlayerRuntimeContext;", toxinHotSwap);
+            StringAssert.Contains("!IsPlayerRuntimeContextBound(nextPlayerRuntime)", toxinHotSwap);
+            StringAssert.Contains("_playerRuntime = null;", toxinHotSwap);
+            StringAssert.Contains("ClearExposure();", toxinHotSwap);
+            StringAssert.Contains("if (!ReferenceEquals(_playerRuntime, nextPlayerRuntime))", toxinHotSwap);
+            StringAssert.Contains("ClearExposure();", toxinHotSwap);
+            StringAssert.Contains("if (!IsPlayerRuntimeContextBound(runtime))", toxinResolve);
+            StringAssert.Contains("playerContext.IsInitialized", toxinBound);
+            StringAssert.Contains("playerContext.PlayerTransform != null", toxinBound);
+        }
+
+        [Test]
+        public void HazardExposureNotifier_BoundsRepeatedEnterFloods()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/HazardExposureNotifier.cs"));
+            string enterBody = ExtractMethodBody(source, "public static void Enter(");
+            string exitBody = ExtractMethodBody(source, "public static void Exit(");
+            string pushBody = ExtractMethodBody(source, "private static void TryPushExposureNotification(");
+            string reportBody = ExtractMethodBody(source, "private static void ReportExposureNotificationMiss(");
+            string contextBody = ExtractMethodBody(source, "private static uint ResolveExposureNotificationContext(");
+            string resetBody = ExtractMethodBody(source, "private static void ResetStaticState()");
+
+            StringAssert.Contains("private const int MaxActiveExposureCount = 32767;", source);
+            StringAssert.Contains("private static readonly uint s_notificationMissWarningHash", source);
+            StringAssert.Contains("private static readonly uint s_notificationContextHash", source);
+            StringAssert.Contains("private static readonly uint s_enterContextHash", source);
+            StringAssert.Contains("private static readonly uint s_exitContextHash", source);
+            StringAssert.Contains("public static int NotificationMissCount => s_notificationMissCount;", source);
+            StringAssert.Contains("if ((uint)index >= (uint)s_activeExposureCounts.Length)", enterBody);
+            StringAssert.Contains("if (previousCount >= MaxActiveExposureCount)", enterBody);
+            StringAssert.Contains("return;", enterBody);
+            StringAssert.Contains("s_activeExposureCounts[index] = previousCount + 1;", enterBody);
+            StringAssert.Contains("TryPushExposureNotification(GetEnterMessage(type), type, warning: true);", enterBody);
+            StringAssert.Contains("TryPushExposureNotification(GetExitMessage(type), type, warning: false);", exitBody);
+            StringAssert.DoesNotContain("NotificationEvents.TryPushWarning(GetEnterMessage(type));", enterBody);
+            StringAssert.DoesNotContain("NotificationEvents.TryPushInfo(GetExitMessage(type));", exitBody);
+
+            StringAssert.Contains("? NotificationEvents.TryPushWarning(message)", pushBody);
+            StringAssert.Contains(": NotificationEvents.TryPushInfo(message)", pushBody);
+            StringAssert.Contains("ReportExposureNotificationMiss(type, warning);", pushBody);
+            StringAssert.Contains("s_notificationMissCount++;", reportBody);
+            StringAssert.Contains("GlobalTelemetryBus.PublishPerformanceWarning(", reportBody);
+            StringAssert.Contains("s_notificationMissWarningHash", reportBody);
+            StringAssert.Contains("Mathf.Max(1, s_notificationMissCount)", reportBody);
+            StringAssert.Contains("s_notificationContextHash ^ (warning ? s_enterContextHash : s_exitContextHash) ^ hazardHash", contextBody);
+            StringAssert.Contains("System.Array.Clear(s_activeExposureCounts, 0, s_activeExposureCounts.Length);", resetBody);
+            StringAssert.Contains("s_notificationMissCount = 0;", resetBody);
         }
 
         [Test]
@@ -974,12 +4005,45 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs"));
+            string slowTickBody = ExtractMethodBody(source, "public void SlowTick()");
+            string toxicityHazardBody = ExtractMethodBody(source, "private void UpdateToxicityHazard()");
+            string accumulatorBody = ExtractMethodBody(source, "private static float ResolveSafeStepAccumulator(");
+            string pressureBody = ExtractMethodBody(source, "private static float ResolvePressureDelta(float depthMeters)");
 
             StringAssert.Contains("!math.isfinite(intensity)", source);
-            StringAssert.Contains("if (HectonHazardManager.Register(", source);
-            StringAssert.Contains("_toxicityHazardRegistered = true", source);
-            StringAssert.Contains("ClearToxicityHazard();", source);
+            StringAssert.Contains("if (HectonHazardManager.Register(", toxicityHazardBody);
+            StringAssert.Contains("_toxicityHazardRegistered = true", toxicityHazardBody);
+            StringAssert.Contains("ClearToxicityHazard();", toxicityHazardBody);
             StringAssert.Contains("HectonHazardManager.Unregister(_toxicityHazardId)", source);
+            StringAssert.Contains("float safeRadius = math.max(ToxicHazardMinimumRadius, radius);", toxicityHazardBody);
+            StringAssert.Contains("safeRadius,", toxicityHazardBody);
+            StringAssert.Contains("private const float MaxResolvedPressureDepthMeters = 12000f;", source);
+            StringAssert.Contains("_stepAccumulator = ResolveSafeStepAccumulator(_stepAccumulator, slowTickInterval);", slowTickBody);
+            StringAssert.Contains("math.isfinite(interval) && interval > 0f", accumulatorBody);
+            StringAssert.Contains("math.isfinite(accumulator)", accumulatorBody);
+            StringAssert.Contains("HabitatStepInterval * (MaxStepIterationsPerSlowTick + 1)", accumulatorBody);
+            StringAssert.Contains("!math.isfinite(depthMeters) || depthMeters <= 0f", pressureBody);
+            StringAssert.Contains("math.min(depthMeters, MaxResolvedPressureDepthMeters)", pressureBody);
+        }
+
+        [Test]
+        public void BaseModule_InteriorHazardBoundsRejectsNonFiniteGeometry()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/BaseModule.cs"));
+            string overlapBody = ExtractMethodBody(source, "private bool TryGetInteriorOverlapQuery(");
+            string hazardBoundsBody = ExtractMethodBody(source, "internal bool TryGetInteriorHazardBounds(");
+
+            StringAssert.Contains("private const float MaxInteriorHazardRadiusMeters = 128f;", source);
+            StringAssert.Contains("IsFiniteVector(worldCenter)", overlapBody);
+            StringAssert.Contains("IsFiniteVector(halfExtents)", overlapBody);
+            StringAssert.Contains("IsFiniteQuaternion(worldRotation)", overlapBody);
+            StringAssert.Contains("MaxFinite(0f, halfExtents.x, 0f)", hazardBoundsBody);
+            StringAssert.Contains("MaxFinite(0f, halfExtents.y, 0f)", hazardBoundsBody);
+            StringAssert.Contains("MaxFinite(0f, halfExtents.z, 0f)", hazardBoundsBody);
+            StringAssert.Contains("math.min(maxExtent * 1.75f, MaxInteriorHazardRadiusMeters)", hazardBoundsBody);
+            StringAssert.Contains("return radius > 0.01f;", hazardBoundsBody);
         }
 
         [Test]
@@ -1005,6 +4069,7 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs"));
+            string meteorBody = ExtractMethodBody(source, "private void RegisterMeteoriteRadiationHazard(");
 
             StringAssert.Contains("RegisterMeteoriteRadiationHazard", source);
             StringAssert.Contains("ResolveMeteorRadiationHazardZoneId(stableSeed)", source);
@@ -1017,6 +4082,78 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("in radiationAup", source);
             StringAssert.Contains("ResolveFiniteSaturate(meteoriteRadiationIntensity, DefaultMeteoriteRadiationIntensity)", source);
             StringAssert.Contains("ResolveFiniteAtLeast(meteoriteRadiationRadiusMeters, DefaultMeteoriteRadiationRadiusMeters, 4f)", source);
+            StringAssert.Contains("float safeIntensity = ResolveFiniteSaturate(meteoriteRadiationIntensity, DefaultMeteoriteRadiationIntensity);", meteorBody);
+            StringAssert.Contains("float safeRadius = math.clamp(", meteorBody);
+            StringAssert.Contains("safeIntensity,", meteorBody);
+            StringAssert.Contains("safeRadius);", meteorBody);
+        }
+
+        [Test]
+        public void ResourceDistributionDirector_BrineHazardFailsClosedAcrossMudHazardAndServiceSwap()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs"));
+            string serviceReplacedBody = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string syncBody = ExtractMethodBody(source, "private void SyncBrineHazardRegistration(");
+            string refreshBody = ExtractMethodBody(source, "private void RefreshBrineHazardRegistrations()");
+            string unregisterAllBody = ExtractMethodBody(source, "private void UnregisterAllBrineHazards(");
+            string unregisterBody = ExtractMethodBody(source, "private void UnregisterBrineHazard(");
+
+            StringAssert.Contains("HazardZoneManager previousHazards = previousService as HazardZoneManager;", serviceReplacedBody);
+            StringAssert.Contains("HazardZoneManager currentHazards = currentService as HazardZoneManager;", serviceReplacedBody);
+            StringAssert.Contains("UnregisterAllBrineHazards(previousHazards);", serviceReplacedBody);
+            StringAssert.Contains("_hazardZoneManager = currentHazards;", serviceReplacedBody);
+            StringAssert.Contains("RefreshBrineHazardRegistrations();", serviceReplacedBody);
+            Assert.Less(
+                serviceReplacedBody.IndexOf("UnregisterAllBrineHazards(previousHazards);", StringComparison.Ordinal),
+                serviceReplacedBody.IndexOf("_hazardZoneManager = currentHazards;", StringComparison.Ordinal));
+
+            StringAssert.Contains("if (hazardManager == null)", syncBody);
+            StringAssert.Contains("UnregisterBrineHazard(ref state.BrinePool);", syncBody);
+            StringAssert.DoesNotContain("if (hazardManager == null)\r\n                return;", syncBody);
+            StringAssert.DoesNotContain("if (hazardManager == null)\n                return;", syncBody);
+
+            StringAssert.Contains("if (!HectonBrineToxicMudGrid.IsRegisteredCell(zoneId))", syncBody);
+            StringAssert.Contains("hazardManager.UnregisterZone(zoneId);", syncBody);
+            StringAssert.Contains("state.BrinePool.HazardRegistered = 0;", syncBody);
+            StringAssert.Contains("state.BrinePool.HazardZoneId = 0;", syncBody);
+            StringAssert.Contains("HectonBrineToxicMudGrid.UnregisterCell(zoneId);", syncBody);
+            StringAssert.Contains("if (!hazardManager.RegisterZone(", syncBody);
+
+            StringAssert.Contains("SyncBrineHazardRegistration(state);", refreshBody);
+            StringAssert.Contains("UnregisterBrineHazard(ref state.BrinePool, managerFallback);", unregisterAllBody);
+            StringAssert.Contains("HazardZoneManager manager = _hazardZoneManager != null ? _hazardZoneManager : managerFallback;", unregisterBody);
+            StringAssert.Contains("HectonBrineToxicMudGrid.UnregisterCell(brinePool.HazardZoneId);", unregisterBody);
+        }
+
+        [Test]
+        public void BrinePoolMeshGenerator_UnregistersGeneratedToxicMudWhenHazardBindingFailsOrClears()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/World/HectonBrinePoolMeshGenerator.cs"));
+            string buildBody = ExtractMethodBody(source, "public int BuildBrinePools(");
+            string clearBody = ExtractMethodBody(source, "public void ClearBrinePools()");
+            string registerBody = ExtractMethodBody(source, "private bool TryRegisterBrineHazard(");
+
+            StringAssert.Contains("if (Application.isPlaying)", buildBody);
+            StringAssert.Contains("ClearBrinePools();", buildBody);
+            StringAssert.Contains("if (!TryRegisterBrineHazard(in poolCenterAup, poolBounds, safeCellSize, hazardId))", buildBody);
+            StringAssert.Contains("DestroyPoolObject(poolObject);", buildBody);
+            StringAssert.Contains("GlobalTelemetryBus.PublishPerformanceWarning(InvalidInputWarningHash, BrineGeneratorContextHash, hazardId);", buildBody);
+
+            StringAssert.Contains("HectonBrineToxicMudGrid.UnregisterCell(pool.HazardId);", clearBody);
+            StringAssert.Contains("HectonHazardManager.Unregister(pool.HazardId);", clearBody);
+            StringAssert.Contains("ClearActivePoolState();", clearBody);
+
+            StringAssert.Contains("HectonBrineToxicMudGrid.RegisterCell(hazardId, in centerAup, sizeX, sizeZ, colliderDepthMeters);", registerBody);
+            StringAssert.Contains("if (!HectonBrineToxicMudGrid.IsRegisteredCell(hazardId))", registerBody);
+            StringAssert.Contains("if (!HectonHazardManager.Register(hazardId, in centerAup, hazardIntensity, radius, HazardType.Toxicity, hazardVisorGlitchBias))", registerBody);
+            StringAssert.Contains("HectonBrineToxicMudGrid.UnregisterCell(hazardId);", registerBody);
+            Assert.Less(
+                registerBody.IndexOf("HectonBrineToxicMudGrid.RegisterCell(hazardId, in centerAup, sizeX, sizeZ, colliderDepthMeters);", StringComparison.Ordinal),
+                registerBody.IndexOf("if (!HectonHazardManager.Register(hazardId, in centerAup, hazardIntensity, radius, HazardType.Toxicity, hazardVisorGlitchBias))", StringComparison.Ordinal));
         }
 
         [Test]
@@ -1051,6 +4188,11 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs"));
+            string deadZoneBody = ExtractMethodBody(source, "internal static void QueueDefoliantDeadZone(");
+            string emitterBody = ExtractMethodBody(source, "private void QueueChemicalEmitter(");
+            string breadcrumbBody = ExtractMethodBody(source, "private void DropBreadcrumb(");
+            string defoliantStoreBody = ExtractMethodBody(source, "private void RegisterDefoliantDeadZone(");
+            string radiusBody = ExtractMethodBody(source, "private static float NormalizeChemicalRadius(");
 
             StringAssert.Contains("TryResolveChemicalQueueInput(worldPosition, intensity, out float clampedIntensity)", source);
             StringAssert.Contains("!IsFiniteRuntimePosition(worldPosition)", source);
@@ -1059,7 +4201,19 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("private static bool IsFiniteRuntimePosition(Vector3 runtimePosition)", source);
             StringAssert.Contains("!math.isfinite(radiusMeters)", source);
             StringAssert.Contains("radiusMeters <= 0f", source);
-            StringAssert.Contains("breadcrumbRadiusMeters = FiniteAtLeast(breadcrumbRadiusMeters, 28f, 1f);", source);
+            StringAssert.Contains("private const float MaxChemicalRadiusMeters = DefaultCellSizeMeters * GridAxisX;", source);
+            StringAssert.Contains("breadcrumbRadiusMeters = math.max(1f, NormalizeChemicalRadius(FiniteAtLeast(breadcrumbRadiusMeters, DefaultBreadcrumbRadiusMeters, 1f)));", source);
+            StringAssert.Contains("float safeRadius = NormalizeChemicalRadius(radiusMeters);", deadZoneBody);
+            StringAssert.Contains("float radiusScale = FiniteAtLeast(profile.RadiusMultiplier, 1f, 0.001f);", emitterBody);
+            StringAssert.Contains("float safeRadius = NormalizeChemicalRadius(radiusMeters * radiusScale);", emitterBody);
+            StringAssert.Contains("RadiusMeters = safeRadius", emitterBody);
+            StringAssert.Contains("float safeRadius = NormalizeChemicalRadius(radiusOverrideMeters > 0f ? radiusOverrideMeters : breadcrumbRadiusMeters);", breadcrumbBody);
+            StringAssert.Contains("merged.RadiusMeters = math.max(NormalizeChemicalRadius(merged.RadiusMeters), safeRadius);", breadcrumbBody);
+            StringAssert.Contains("float safeRadius = NormalizeChemicalRadius(radiusMeters);", defoliantStoreBody);
+            StringAssert.Contains("zone.RadiusMeters = math.max(NormalizeChemicalRadius(zone.RadiusMeters), safeRadius);", defoliantStoreBody);
+            StringAssert.Contains("return math.clamp(radiusMeters, MinimumRadiusMeters, MaxChemicalRadiusMeters);", radiusBody);
+            StringAssert.Contains("NormalizeChemicalRadius(emitter.RadiusMeters * FiniteAtLeast(EmitterRadiusScale, 1f, 0.001f))", source);
+            StringAssert.Contains("float radius = NormalizeChemicalRadius(zone.RadiusMeters);", source);
             StringAssert.Contains("maximumChannelIntensity = FiniteAtLeast(maximumChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);", source);
             StringAssert.Contains("tuning.BaseDiffusionRate = FiniteAtLeast(baseDiffusionRate, 0.18f, 0.001f);", source);
             StringAssert.Contains("tuning.MaxChannelIntensity = FiniteAtLeast(maximumChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);", source);
@@ -1068,6 +4222,10 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("MaxChannelIntensity = math.max(0.1f, tuning.MaxChannelIntensity)", source);
             StringAssert.DoesNotContain("float safeMax = math.max(0.1f, MaxChannelIntensity)", source);
             StringAssert.DoesNotContain("math.rcp(math.max(0.1f, MaxChannelIntensity))", source);
+            StringAssert.DoesNotContain("math.max(MinimumRadiusMeters, radiusMeters)", source);
+            StringAssert.DoesNotContain("math.max(1f, waypoint.RadiusMeters)", source);
+            StringAssert.DoesNotContain("zone.RadiusMeters * zone.RadiusMeters", source);
+            StringAssert.DoesNotContain("radiusMeters * math.max(0.001f, profile.RadiusMultiplier)", source);
             StringAssert.Contains("private static float FiniteAtLeast(float value, float fallback, float minimum)", source);
             StringAssert.Contains("float safeFallback = math.select(minimum, fallback, math.isfinite(fallback));", source);
             StringAssert.Contains("math.select(safeFallback, value, math.isfinite(value))", source);
@@ -1078,6 +4236,27 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("!IsFiniteRuntimePosition(worldPosition)", transientBody);
             StringAssert.Contains("!math.isfinite(intensity)", transientBody);
             StringAssert.Contains("WorldSpatialHashGrid.RegisterTransientEvent", transientBody);
+        }
+
+        [Test]
+        public void WorldSpatialHashGrid_TransientEventsBoundRadiusBeforeNativePublish()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs"));
+            string publicRegisterBody = ExtractMethodBody(source, "public static void RegisterTransientEvent(");
+            string internalRegisterBody = ExtractMethodBody(source, "internal static void RegisterTransientEvent(");
+            string radiusBody = ExtractMethodBody(source, "private static float NormalizeTransientEventRadius(");
+
+            StringAssert.Contains("private const float MaxTransientEventRadiusMeters = FarUnloadDistanceMeters;", source);
+            StringAssert.Contains("float safeRadiusMeters = NormalizeTransientEventRadius(radiusMeters);", publicRegisterBody);
+            StringAssert.Contains("safeRadiusMeters,", publicRegisterBody);
+            StringAssert.Contains("float safeRadiusMeters = NormalizeTransientEventRadius(radiusMeters);", internalRegisterBody);
+            StringAssert.Contains("_nativeHash.RegisterTransientEvent(", internalRegisterBody);
+            StringAssert.Contains("safeRadiusMeters,", internalRegisterBody);
+            StringAssert.Contains("return math.min(radiusMeters, MaxTransientEventRadiusMeters);", radiusBody);
+            StringAssert.DoesNotContain("in positionAup,\r\n                radiusMeters,", internalRegisterBody);
+            StringAssert.DoesNotContain("in positionAup,\n                radiusMeters,", internalRegisterBody);
         }
 
         [Test]
@@ -2883,6 +6062,42 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RadiationGridSourceRadius_IsBoundedBeforePublishAndSimulation()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs"));
+            string publicRegisterBody = ExtractMethodBody(source, "public static void RegisterSource(int sourceId, in AbsoluteUniversePosition sourceAup, float intensity, float radiusMeters)");
+            string internalRegisterBody = ExtractMethodBody(source, "private void RegisterSourceInternal(");
+            string rebuildBody = ExtractMethodBody(source, "private void RebuildSourceGrid()");
+            string inverseSampleBody = ExtractMethodBody(source, "private float SampleInverseSquare(");
+            string trySampleBody = ExtractMethodBody(source, "internal static bool TrySampleRadiationIntensity01(in AbsoluteUniversePosition sampleAup");
+            string profileParseBody = ExtractMethodBody(source, "private static RadiationProfileDTO ParseRadiationProfileLine(");
+            string normalizeRadiusBody = ExtractMethodBody(source, "private static float NormalizeSourceRadius(");
+
+            StringAssert.Contains("private const float MaxSourceRadiusMeters = SaveData.RadiationGridMaxCellSizeMeters * GridResolution;", source);
+            StringAssert.Contains("float safeRadius = NormalizeSourceRadius(radiusMeters);", publicRegisterBody);
+            StringAssert.Contains("safeIntensity <= 0f || safeRadius <= 0f", publicRegisterBody);
+            StringAssert.Contains("RadiusMeters = safeRadius", publicRegisterBody);
+            StringAssert.Contains("float sourceRadiusMeters = NormalizeSourceRadius(radiusMeters);", internalRegisterBody);
+            StringAssert.Contains("UnregisterSourceInternal(sourceId);", internalRegisterBody);
+            StringAssert.Contains("float safeRadius = NormalizeSourceRadius(source.RadiusMeters);", rebuildBody);
+            StringAssert.Contains("!math.all(math.isfinite(sourceAbsolute)) || !math.all(math.isfinite(sourceOffset))", rebuildBody);
+            StringAssert.Contains("math.ceil(safeRadius / safeCellSize)", rebuildBody);
+            StringAssert.Contains("safeRadius * safeRadius", rebuildBody);
+            StringAssert.Contains("float radius = NormalizeSourceRadius(source.RadiusMeters);", inverseSampleBody);
+            StringAssert.Contains("float sampleIntensity = grid._radiationSimulationJobActive", trySampleBody);
+            StringAssert.Contains("intensity01 = SanitizeNonNegative(sampleIntensity);", trySampleBody);
+            StringAssert.Contains("return intensity01 > 0f;", trySampleBody);
+            StringAssert.Contains("float profileRadiusMeters = NormalizeSourceRadius(profile.RadiusMeters);", profileParseBody);
+            StringAssert.Contains("return math.clamp(radiusMeters, 0.5f, MaxSourceRadiusMeters);", normalizeRadiusBody);
+            StringAssert.DoesNotContain("math.max(0.5f, radiusMeters)", publicRegisterBody);
+            StringAssert.DoesNotContain("source.RadiusMeters / safeCellSize", rebuildBody);
+            StringAssert.DoesNotContain("source.RadiusMeters * source.RadiusMeters", rebuildBody);
+            StringAssert.DoesNotContain("float radius = math.max(0.5f, source.RadiusMeters);", inverseSampleBody);
+        }
+
+        [Test]
         public void RadiationGridLoad_ClearsTransientStateWithoutDroppingRegisteredSources()
         {
             string source = File.ReadAllText(Path.Combine(
@@ -2901,6 +6116,57 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("_lastExternalIntensity01 = 0f;", source);
             StringAssert.Contains("_lastSourceSignalDrainFrame = -1;", source);
             StringAssert.Contains("_lastExternalDoseSignalDrainFrame = -1;", source);
+        }
+
+        [Test]
+        public void RadiationGridDataVaultSwap_RebindsVaultAndClearsTransientMirrors()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs"));
+            string swapBody = ExtractMethodBody(source, "private void ApplyDataVaultSwap(");
+            string restoreBody = ExtractMethodBody(source, "private void RestoreRadiationRuntimeStateFromVaultAfterSwap(");
+            string repairBody = ExtractMethodBody(source, "private void RepairRadiationSourceCountFromBuffer()");
+            string restoredFlagsBody = ExtractMethodBody(source, "private static uint ResolveRestoredRadiationStateFlags(");
+
+            StringAssert.Contains("float preservedAccumulatedDose = SanitizeNonNegative(_accumulatedRadiationDose);", swapBody);
+            StringAssert.Contains("ReleaseVaultHandles();", swapBody);
+            StringAssert.Contains("_dataVault = nextVault;", swapBody);
+            StringAssert.Contains("EnsureNativeBuffers();", swapBody);
+            StringAssert.Contains("RestoreRadiationRuntimeStateFromVaultAfterSwap(preservedAccumulatedDose);", swapBody);
+
+            StringAssert.Contains("_lastExternalIntensity01 = 0f;", restoreBody);
+            StringAssert.Contains("_pendingExternalDoseRad = 0f;", restoreBody);
+            StringAssert.Contains("_pendingIodineDoseReductionRad = 0f;", restoreBody);
+            StringAssert.Contains("_radiationEvaluatedThisFrame = false;", restoreBody);
+            StringAssert.Contains("_lastSimulationPlayerContext = null;", restoreBody);
+            StringAssert.Contains("_lastSourceSignalDrainFrame = -1;", restoreBody);
+            StringAssert.Contains("_lastSourceSignalPreserveFrame = -1;", restoreBody);
+            StringAssert.Contains("_lastExternalDoseSignalDrainFrame = -1;", restoreBody);
+            StringAssert.Contains("ClearGrid(_gridSource);", restoreBody);
+            StringAssert.Contains("RepairRadiationSourceCountFromBuffer();", restoreBody);
+            StringAssert.Contains("RestoreGridOriginFromActiveSourceOrDefault();", restoreBody);
+            StringAssert.Contains("vaultDose > 0f ? vaultDose : safePreservedDose", restoreBody);
+            StringAssert.Contains("state.CurrentExposureRate = 0f;", restoreBody);
+            StringAssert.Contains("state.EntityHashID = RadiationSystemHash;", restoreBody);
+            StringAssert.Contains("state.Flags = ResolveRestoredRadiationStateFlags(state.CellularDegradation01);", restoreBody);
+            StringAssert.Contains("_statusSignalLane[0] = default;", restoreBody);
+            StringAssert.Contains("_telemetryWriteIndex = 0;", restoreBody);
+            StringAssert.Contains("_telemetryCursorLane[0] = 0u;", restoreBody);
+
+            StringAssert.Contains("float safeIntensity01 = NormalizeSourceIntensity(source.Intensity01);", repairBody);
+            StringAssert.Contains("float safeRadiusMeters = NormalizeSourceRadius(source.RadiusMeters);", repairBody);
+            StringAssert.Contains("source.SourceId == 0", repairBody);
+            StringAssert.Contains("!math.all(math.isfinite(source.PositionAup))", repairBody);
+            StringAssert.Contains("_sources[i] = default;", repairBody);
+            StringAssert.Contains("source.Intensity01 = safeIntensity01;", repairBody);
+            StringAssert.Contains("source.RadiusMeters = safeRadiusMeters;", repairBody);
+            StringAssert.Contains("sourceSlotsChanged", repairBody);
+
+            StringAssert.Contains("RadiationStateFlagMutated", restoredFlagsBody);
+            StringAssert.Contains("RadiationStateFlagCritical", restoredFlagsBody);
+            StringAssert.DoesNotContain("RadiationStateFlagIrradiated", restoredFlagsBody);
+            StringAssert.DoesNotContain("RadiationStateFlagShielded", restoredFlagsBody);
         }
 
         [Test]
@@ -2931,10 +6197,11 @@ namespace Hecton8.Tests.Editor
 
             string aupOverload = source.Substring(aupOverloadIndex, unregisterIndex - aupOverloadIndex);
             StringAssert.Contains("!AbsoluteUniversePosition.IsFinite(in sourceAup)", aupOverload);
-            StringAssert.Contains("!math.isfinite(radiusMeters)", aupOverload);
-            StringAssert.Contains("radiusMeters <= 0f", aupOverload);
+            StringAssert.Contains("float safeRadius = NormalizeSourceRadius(radiusMeters);", aupOverload);
+            StringAssert.Contains("safeIntensity <= 0f || safeRadius <= 0f", aupOverload);
             StringAssert.Contains("UnregisterSource(sourceId);", aupOverload);
-            StringAssert.Contains("float safeRadius = math.max(0.5f, radiusMeters);", aupOverload);
+            StringAssert.Contains("RadiusMeters = safeRadius", aupOverload);
+            StringAssert.DoesNotContain("math.max(0.5f, radiusMeters)", aupOverload);
             StringAssert.DoesNotContain(": DefaultSourceRadiusMeters", aupOverload);
         }
 
@@ -3013,7 +6280,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             data.totalPlayTime = double.NaN;
             data.firstHourSessionTime = float.PositiveInfinity;
-            data.corporatePendingOrderIds.Add("order.a");
+            data.corporatePendingOrderIds.Add(" order.a ");
             data.corporatePendingOrderTimers.Add(float.NegativeInfinity);
 
             byte[] payload = new byte[BinaryPayloadScratchBytes];
@@ -3040,6 +6307,8 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(bytesWritten, bytesRead);
                 Assert.AreEqual(0d, restored.totalPlayTime);
                 Assert.AreEqual(0f, restored.firstHourSessionTime);
+                Assert.AreEqual(1, restored.corporatePendingOrderIds.Count);
+                Assert.AreEqual("order.a", restored.corporatePendingOrderIds[0]);
                 Assert.AreEqual(1, restored.corporatePendingOrderTimers.Count);
                 Assert.AreEqual(0f, restored.corporatePendingOrderTimers[0]);
             }
@@ -3080,26 +6349,47 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SaveRootRuntime_WriteCanonicalizesNullOperationalLogStrings()
+        public void SaveRootRuntime_WriteCanonicalizesOperationalLogIds()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.scanLog.EnsureCapacity();
-            data.scanLog.entryCount = 1;
-            data.scanLog.entries[0] = new ScanEntryDTO { title = "Scan Title" };
-            data.scanLog.recentCount = 1;
-            data.scanLog.recentEntryIds[0] = null;
+            data.scanLog.entryCount = 2;
+            data.scanLog.entries[0] = new ScanEntryDTO
+            {
+                id = " scan.alpha ",
+                title = "Scan Title"
+            };
+            data.scanLog.entries[1] = new ScanEntryDTO
+            {
+                id = " \t ",
+                title = "Blank Scan"
+            };
+            data.scanLog.recentCount = 2;
+            data.scanLog.recentEntryIds[0] = " scan.alpha ";
+            data.scanLog.recentEntryIds[1] = " \t ";
 
             data.barter.EnsureCapacity();
-            data.barter.stateCount = 1;
+            data.barter.stateCount = 2;
             data.barter.offerStates[0] = new BarterOfferStateDTO
             {
-                offerId = null,
+                offerId = " offer.alpha ",
                 executionCount = -7
             };
-            data.barter.recentTransactionCount = 1;
+            data.barter.offerStates[1] = new BarterOfferStateDTO
+            {
+                offerId = " \t ",
+                executionCount = -2
+            };
+            data.barter.recentTransactionCount = 2;
             data.barter.recentTransactions[0] = new BarterTransactionDTO
             {
+                offerId = " offer.tx ",
                 offerName = "Recovered Offer"
+            };
+            data.barter.recentTransactions[1] = new BarterTransactionDTO
+            {
+                offerId = " \t ",
+                offerName = "Blank Offer"
             };
 
             data.fieldOperations.EnsureCapacity();
@@ -3131,18 +6421,29 @@ namespace Hecton8.Tests.Editor
 
                 Assert.IsTrue(read, readError);
                 Assert.AreEqual(bytesWritten, bytesRead);
-                Assert.AreEqual(string.Empty, restored.scanLog.entries[0].id);
+                Assert.AreEqual(2, restored.scanLog.entryCount);
+                Assert.AreEqual("scan.alpha", restored.scanLog.entries[0].id);
                 Assert.AreEqual("Scan Title", restored.scanLog.entries[0].title);
                 Assert.AreEqual(string.Empty, restored.scanLog.entries[0].category);
                 Assert.AreEqual(string.Empty, restored.scanLog.entries[0].summary);
-                Assert.AreEqual(0, restored.scanLog.recentCount);
-                Assert.AreEqual(string.Empty, restored.barter.offerStates[0].offerId);
+                Assert.AreEqual(string.Empty, restored.scanLog.entries[1].id);
+                Assert.AreEqual("Blank Scan", restored.scanLog.entries[1].title);
+                Assert.AreEqual(1, restored.scanLog.recentCount);
+                Assert.AreEqual("scan.alpha", restored.scanLog.recentEntryIds[0]);
+                Assert.AreEqual(string.Empty, restored.scanLog.recentEntryIds[1]);
+                Assert.AreEqual(2, restored.barter.stateCount);
+                Assert.AreEqual("offer.alpha", restored.barter.offerStates[0].offerId);
                 Assert.AreEqual(0, restored.barter.offerStates[0].executionCount);
-                Assert.AreEqual(string.Empty, restored.barter.recentTransactions[0].offerId);
+                Assert.AreEqual(string.Empty, restored.barter.offerStates[1].offerId);
+                Assert.AreEqual(0, restored.barter.offerStates[1].executionCount);
+                Assert.AreEqual(2, restored.barter.recentTransactionCount);
+                Assert.AreEqual("offer.tx", restored.barter.recentTransactions[0].offerId);
                 Assert.AreEqual("Recovered Offer", restored.barter.recentTransactions[0].offerName);
                 Assert.AreEqual(string.Empty, restored.barter.recentTransactions[0].channelName);
                 Assert.AreEqual(string.Empty, restored.barter.recentTransactions[0].costSummary);
                 Assert.AreEqual(string.Empty, restored.barter.recentTransactions[0].rewardSummary);
+                Assert.AreEqual(string.Empty, restored.barter.recentTransactions[1].offerId);
+                Assert.AreEqual("Blank Offer", restored.barter.recentTransactions[1].offerName);
                 Assert.AreEqual(string.Empty, restored.fieldOperations.recentEntries[0].source);
                 Assert.AreEqual("Field Title", restored.fieldOperations.recentEntries[0].title);
                 Assert.AreEqual(string.Empty, restored.fieldOperations.recentEntries[0].summary);
@@ -3262,6 +6563,54 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(bytesWritten, bytesRead);
                 Assert.AreEqual(1, restoredData.narrativeDiscoveryCount);
                 Assert.AreEqual(SaveData.MaxNarrativeDiscoveries, restoredData.narrativeDiscoveryIds.Length);
+                Assert.AreEqual(narrativeId, restoredData.narrativeDiscoveryIds[0]);
+                Assert.AreEqual(narrativeDepthTier, restoredData.narrativeDepthTier);
+            }
+        }
+
+        [Test]
+        public void SaveRootRuntime_ReadRecoversDecodedNarrativeDiscoveryCountWhenOuterCountIsTooLow()
+        {
+            const string narrativeId = "narrative.low-count";
+            const int narrativeDepthTier = 3;
+
+            SaveData data = SaveData.CreateNew(0.0);
+            data.narrativeDiscoveryCount = 1;
+            data.narrativeDiscoveryIds[0] = narrativeId;
+            data.narrativeDepthTier = narrativeDepthTier;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            int bytesWritten;
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+            }
+
+            byte[] marker = BuildNarrativeDiscoveryRootMarker(-1, narrativeId, narrativeDepthTier);
+            int narrativeOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, marker);
+            Assert.GreaterOrEqual(narrativeOffset, 0);
+            PatchPayloadInt(payload, narrativeOffset + sizeof(int), 0);
+
+            fixed (byte* payloadPtr = payload)
+            {
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restoredData,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(1, restoredData.narrativeDiscoveryCount);
                 Assert.AreEqual(narrativeId, restoredData.narrativeDiscoveryIds[0]);
                 Assert.AreEqual(narrativeDepthTier, restoredData.narrativeDepthTier);
             }
@@ -3995,18 +7344,56 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SaveRootRuntime_WriteSkipsBlankDictionaryKeys()
+        public void SaveRootRuntime_WriteCanonicalizesPlayerExpressionProfileId()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.playerExpressionProfileId = " profile.write ";
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual("profile.write", restored.playerExpressionProfileId);
+            }
+        }
+
+        [Test]
+        public void SaveRootRuntime_WriteCanonicalizesDictionaryKeys()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.toolDurabilityMap[string.Empty] = 99f;
             data.toolDurabilityMap[" "] = 88f;
             data.toolDurabilityMap["tool.valid.key"] = 7.5f;
+            data.toolDurabilityMap[" tool.valid.key "] = 99.5f;
+            data.toolDurabilityMap[" tool.trim.only "] = 2.25f;
             data.toolBrokenMap[string.Empty] = true;
             data.toolBrokenMap[" "] = true;
             data.toolBrokenMap["tool.valid.key"] = false;
+            data.toolBrokenMap[" tool.valid.key "] = true;
+            data.toolBrokenMap[" tool.trim.only "] = true;
             data.CustomModData[string.Empty] = "discard";
             data.CustomModData[" "] = "discard";
             data.CustomModData["custom.valid.key"] = "keep";
+            data.CustomModData[" custom.valid.key "] = "discard";
+            data.CustomModData[" custom.trim.only "] = "trimmed";
 
             byte[] payload = new byte[BinaryPayloadScratchBytes];
             fixed (byte* payloadPtr = payload)
@@ -4032,13 +7419,22 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(bytesWritten, bytesRead);
                 Assert.IsFalse(restored.toolDurabilityMap.ContainsKey(string.Empty));
                 Assert.IsFalse(restored.toolDurabilityMap.ContainsKey(" "));
+                Assert.IsFalse(restored.toolDurabilityMap.ContainsKey(" tool.valid.key "));
+                Assert.IsFalse(restored.toolDurabilityMap.ContainsKey(" tool.trim.only "));
                 Assert.IsFalse(restored.toolBrokenMap.ContainsKey(string.Empty));
                 Assert.IsFalse(restored.toolBrokenMap.ContainsKey(" "));
+                Assert.IsFalse(restored.toolBrokenMap.ContainsKey(" tool.valid.key "));
+                Assert.IsFalse(restored.toolBrokenMap.ContainsKey(" tool.trim.only "));
                 Assert.IsFalse(restored.CustomModData.ContainsKey(string.Empty));
                 Assert.IsFalse(restored.CustomModData.ContainsKey(" "));
+                Assert.IsFalse(restored.CustomModData.ContainsKey(" custom.valid.key "));
+                Assert.IsFalse(restored.CustomModData.ContainsKey(" custom.trim.only "));
                 Assert.AreEqual(7.5f, restored.toolDurabilityMap["tool.valid.key"]);
+                Assert.AreEqual(2.25f, restored.toolDurabilityMap["tool.trim.only"]);
                 Assert.IsFalse(restored.toolBrokenMap["tool.valid.key"]);
+                Assert.IsTrue(restored.toolBrokenMap["tool.trim.only"]);
                 Assert.AreEqual("keep", restored.CustomModData["custom.valid.key"]);
+                Assert.AreEqual("trimmed", restored.CustomModData["custom.trim.only"]);
             }
         }
 
@@ -4551,8 +7947,8 @@ namespace Hecton8.Tests.Editor
             data.version = SaveData.CurrentVersion;
             data.totalPlayTime = double.NegativeInfinity;
             data.firstHourSessionTime = float.NaN;
-            data.corporatePendingOrderIds.Add("order.a");
-            data.corporatePendingOrderIds.Add("order.b");
+            data.corporatePendingOrderIds.Add(" order.a ");
+            data.corporatePendingOrderIds.Add(" order.b ");
             data.corporatePendingOrderTimers.Add(-1f);
             data.corporatePendingOrderTimers.Add(float.PositiveInfinity);
 
@@ -4563,11 +7959,15 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(SaveData.CurrentVersion, data.version);
             Assert.AreEqual(0d, data.totalPlayTime);
             Assert.AreEqual(0f, data.firstHourSessionTime);
+            Assert.AreEqual(2, data.corporatePendingOrderIds.Count);
+            Assert.AreEqual("order.a", data.corporatePendingOrderIds[0]);
+            Assert.AreEqual("order.b", data.corporatePendingOrderIds[1]);
             Assert.AreEqual(2, data.corporatePendingOrderTimers.Count);
             Assert.AreEqual(0f, data.corporatePendingOrderTimers[0]);
             Assert.AreEqual(0f, data.corporatePendingOrderTimers[1]);
             StringAssert.Contains("total play time repaired", summary);
             StringAssert.Contains("first hour session time repaired", summary);
+            StringAssert.Contains("corporate pending order ids repaired", summary);
             StringAssert.Contains("corporate order timers repaired", summary);
         }
 
@@ -4578,11 +7978,11 @@ namespace Hecton8.Tests.Editor
             data.version = SaveData.CurrentVersion;
             data.corporatePendingOrderIds.Clear();
             data.corporatePendingOrderTimers.Clear();
-            data.corporatePendingOrderIds.Add("order.alpha");
+            data.corporatePendingOrderIds.Add(" order.alpha ");
             data.corporatePendingOrderTimers.Add(1.25f);
             data.corporatePendingOrderIds.Add(" ");
             data.corporatePendingOrderTimers.Add(99f);
-            data.corporatePendingOrderIds.Add("order.beta");
+            data.corporatePendingOrderIds.Add(" order.beta ");
             data.corporatePendingOrderTimers.Add(2.5f);
 
             bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
@@ -4617,27 +8017,48 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SaveRootRuntimeMigration_CurrentCanonicalizesNullOperationalLogStrings()
+        public void SaveRootRuntimeMigration_CurrentCanonicalizesOperationalLogIds()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.version = SaveData.CurrentVersion;
             data.scanLog.EnsureCapacity();
-            data.scanLog.entryCount = 1;
-            data.scanLog.entries[0] = new ScanEntryDTO { title = "Scan Title" };
-            data.scanLog.recentCount = 1;
-            data.scanLog.recentEntryIds[0] = null;
+            data.scanLog.entryCount = 2;
+            data.scanLog.entries[0] = new ScanEntryDTO
+            {
+                id = " scan.alpha ",
+                title = "Scan Title"
+            };
+            data.scanLog.entries[1] = new ScanEntryDTO
+            {
+                id = " \t ",
+                title = "Blank Scan"
+            };
+            data.scanLog.recentCount = 2;
+            data.scanLog.recentEntryIds[0] = " scan.alpha ";
+            data.scanLog.recentEntryIds[1] = " \t ";
 
             data.barter.EnsureCapacity();
-            data.barter.stateCount = 1;
+            data.barter.stateCount = 2;
             data.barter.offerStates[0] = new BarterOfferStateDTO
             {
-                offerId = null,
+                offerId = " offer.alpha ",
                 executionCount = -7
             };
-            data.barter.recentTransactionCount = 1;
+            data.barter.offerStates[1] = new BarterOfferStateDTO
+            {
+                offerId = " \t ",
+                executionCount = -2
+            };
+            data.barter.recentTransactionCount = 2;
             data.barter.recentTransactions[0] = new BarterTransactionDTO
             {
+                offerId = " offer.tx ",
                 offerName = "Recovered Offer"
+            };
+            data.barter.recentTransactions[1] = new BarterTransactionDTO
+            {
+                offerId = " \t ",
+                offerName = "Blank Offer"
             };
 
             data.fieldOperations.EnsureCapacity();
@@ -4651,19 +8072,29 @@ namespace Hecton8.Tests.Editor
 
             Assert.IsTrue(changed, summary);
             Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
-            Assert.AreEqual(string.Empty, data.scanLog.entries[0].id);
+            Assert.AreEqual(2, data.scanLog.entryCount);
+            Assert.AreEqual("scan.alpha", data.scanLog.entries[0].id);
             Assert.AreEqual("Scan Title", data.scanLog.entries[0].title);
             Assert.AreEqual(string.Empty, data.scanLog.entries[0].category);
             Assert.AreEqual(string.Empty, data.scanLog.entries[0].summary);
-            Assert.AreEqual(0, data.scanLog.recentCount);
-            Assert.AreEqual(string.Empty, data.scanLog.recentEntryIds[0]);
-            Assert.AreEqual(string.Empty, data.barter.offerStates[0].offerId);
+            Assert.AreEqual(string.Empty, data.scanLog.entries[1].id);
+            Assert.AreEqual("Blank Scan", data.scanLog.entries[1].title);
+            Assert.AreEqual(1, data.scanLog.recentCount);
+            Assert.AreEqual("scan.alpha", data.scanLog.recentEntryIds[0]);
+            Assert.AreEqual(string.Empty, data.scanLog.recentEntryIds[1]);
+            Assert.AreEqual(2, data.barter.stateCount);
+            Assert.AreEqual("offer.alpha", data.barter.offerStates[0].offerId);
             Assert.AreEqual(0, data.barter.offerStates[0].executionCount);
-            Assert.AreEqual(string.Empty, data.barter.recentTransactions[0].offerId);
+            Assert.AreEqual(string.Empty, data.barter.offerStates[1].offerId);
+            Assert.AreEqual(0, data.barter.offerStates[1].executionCount);
+            Assert.AreEqual(2, data.barter.recentTransactionCount);
+            Assert.AreEqual("offer.tx", data.barter.recentTransactions[0].offerId);
             Assert.AreEqual("Recovered Offer", data.barter.recentTransactions[0].offerName);
             Assert.AreEqual(string.Empty, data.barter.recentTransactions[0].channelName);
             Assert.AreEqual(string.Empty, data.barter.recentTransactions[0].costSummary);
             Assert.AreEqual(string.Empty, data.barter.recentTransactions[0].rewardSummary);
+            Assert.AreEqual(string.Empty, data.barter.recentTransactions[1].offerId);
+            Assert.AreEqual("Blank Offer", data.barter.recentTransactions[1].offerName);
             Assert.AreEqual(string.Empty, data.fieldOperations.recentEntries[0].source);
             Assert.AreEqual("Field Title", data.fieldOperations.recentEntries[0].title);
             Assert.AreEqual(string.Empty, data.fieldOperations.recentEntries[0].summary);
@@ -4681,31 +8112,31 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             data.version = SaveData.CurrentVersion;
             data.narrativeDiscoveryCount = 4;
-            data.narrativeDiscoveryIds[0] = "narrative.alpha";
+            data.narrativeDiscoveryIds[0] = " narrative.alpha ";
             data.narrativeDiscoveryIds[1] = null;
             data.narrativeDiscoveryIds[2] = " ";
-            data.narrativeDiscoveryIds[3] = "narrative.beta";
+            data.narrativeDiscoveryIds[3] = " narrative.beta ";
 
             data.worldState.EnsureCapacity();
             data.worldState.depletedCount = 4;
-            data.worldState.depletedNodeIds[0] = "node.alpha";
+            data.worldState.depletedNodeIds[0] = " node.alpha ";
             data.worldState.depletedNodeIds[1] = null;
             data.worldState.depletedNodeIds[2] = "\t";
-            data.worldState.depletedNodeIds[3] = "node.beta";
+            data.worldState.depletedNodeIds[3] = " node.beta ";
 
             data.scanLog.EnsureCapacity();
             data.scanLog.recentCount = 4;
-            data.scanLog.recentEntryIds[0] = "scan.alpha";
+            data.scanLog.recentEntryIds[0] = " scan.alpha ";
             data.scanLog.recentEntryIds[1] = null;
             data.scanLog.recentEntryIds[2] = " ";
-            data.scanLog.recentEntryIds[3] = "scan.beta";
+            data.scanLog.recentEntryIds[3] = " scan.beta ";
 
             data.achievements.EnsureCapacity();
             data.achievements.unlockedCount = 4;
-            data.achievements.unlockedIds[0] = "achievement.alpha";
+            data.achievements.unlockedIds[0] = " achievement.alpha ";
             data.achievements.unlockedIds[1] = null;
             data.achievements.unlockedIds[2] = " ";
-            data.achievements.unlockedIds[3] = "achievement.beta";
+            data.achievements.unlockedIds[3] = " achievement.beta ";
 
             bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
 
@@ -4738,59 +8169,59 @@ namespace Hecton8.Tests.Editor
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.audioLogDiscoveredIds.Clear();
-            data.audioLogDiscoveredIds.Add("audio.alpha");
+            data.audioLogDiscoveredIds.Add(" audio.alpha ");
             data.audioLogDiscoveredIds.Add(null);
             data.audioLogDiscoveredIds.Add(" ");
-            data.audioLogDiscoveredIds.Add("audio.beta");
+            data.audioLogDiscoveredIds.Add(" audio.beta ");
 
             data.questActiveIds.Clear();
-            data.questActiveIds.Add("quest.alpha");
+            data.questActiveIds.Add(" quest.alpha ");
             data.questActiveIds.Add(string.Empty);
-            data.questActiveIds.Add("quest.beta");
+            data.questActiveIds.Add(" quest.beta ");
 
             data.questCompletedIds.Clear();
-            data.questCompletedIds.Add("quest.done.alpha");
+            data.questCompletedIds.Add(" quest.done.alpha ");
             data.questCompletedIds.Add(" ");
-            data.questCompletedIds.Add("quest.done.beta");
+            data.questCompletedIds.Add(" quest.done.beta ");
 
             data.suitInstalledUpgradeIds.Clear();
-            data.suitInstalledUpgradeIds.Add("upgrade.alpha");
+            data.suitInstalledUpgradeIds.Add(" upgrade.alpha ");
             data.suitInstalledUpgradeIds.Add("\t");
-            data.suitInstalledUpgradeIds.Add("upgrade.beta");
+            data.suitInstalledUpgradeIds.Add(" upgrade.beta ");
 
             data.suitUnlockedBlueprintIds.Clear();
-            data.suitUnlockedBlueprintIds.Add("blueprint.alpha");
+            data.suitUnlockedBlueprintIds.Add(" blueprint.alpha ");
             data.suitUnlockedBlueprintIds.Add(null);
-            data.suitUnlockedBlueprintIds.Add("blueprint.beta");
+            data.suitUnlockedBlueprintIds.Add(" blueprint.beta ");
 
             data.suitBrokenUpgradeIds.Clear();
-            data.suitBrokenUpgradeIds.Add("broken.alpha");
+            data.suitBrokenUpgradeIds.Add(" broken.alpha ");
             data.suitBrokenUpgradeIds.Add(string.Empty);
-            data.suitBrokenUpgradeIds.Add("broken.beta");
+            data.suitBrokenUpgradeIds.Add(" broken.beta ");
 
             data.corporateReceivedOrderIds.Clear();
-            data.corporateReceivedOrderIds.Add("corp.alpha");
+            data.corporateReceivedOrderIds.Add(" corp.alpha ");
             data.corporateReceivedOrderIds.Add(" ");
-            data.corporateReceivedOrderIds.Add("corp.beta");
+            data.corporateReceivedOrderIds.Add(" corp.beta ");
 
             data.corporatePendingOrderIds.Clear();
             data.corporatePendingOrderTimers.Clear();
-            data.corporatePendingOrderIds.Add("pending.alpha");
+            data.corporatePendingOrderIds.Add(" pending.alpha ");
             data.corporatePendingOrderTimers.Add(1f);
             data.corporatePendingOrderIds.Add(" ");
             data.corporatePendingOrderTimers.Add(2f);
-            data.corporatePendingOrderIds.Add("pending.beta");
+            data.corporatePendingOrderIds.Add(" pending.beta ");
             data.corporatePendingOrderTimers.Add(float.NaN);
 
             data.missionActiveIds.Clear();
-            data.missionActiveIds.Add("mission.alpha");
+            data.missionActiveIds.Add(" mission.alpha ");
             data.missionActiveIds.Add(null);
-            data.missionActiveIds.Add("mission.beta");
+            data.missionActiveIds.Add(" mission.beta ");
 
             data.missionCompletedIds.Clear();
-            data.missionCompletedIds.Add("mission.done.alpha");
+            data.missionCompletedIds.Add(" mission.done.alpha ");
             data.missionCompletedIds.Add(" ");
-            data.missionCompletedIds.Add("mission.done.beta");
+            data.missionCompletedIds.Add(" mission.done.beta ");
 
             byte[] payload = new byte[BinaryPayloadScratchBytes];
             fixed (byte* payloadPtr = payload)
@@ -5254,19 +8685,40 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SaveRootRuntimeMigration_CurrentRemovesBlankDictionaryKeys()
+        public void SaveRootRuntimeMigration_CurrentCanonicalizesPlayerExpressionProfileId()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.playerExpressionProfileId = " profile.migration ";
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual("profile.migration", data.playerExpressionProfileId);
+            StringAssert.Contains("player expression profile repaired", summary);
+        }
+
+        [Test]
+        public void SaveRootRuntimeMigration_CurrentCanonicalizesDictionaryKeys()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.version = SaveData.CurrentVersion;
             data.toolDurabilityMap[string.Empty] = 99f;
             data.toolDurabilityMap[" "] = 88f;
             data.toolDurabilityMap["tool.valid.key"] = 6.25f;
+            data.toolDurabilityMap[" tool.valid.key "] = 99.25f;
+            data.toolDurabilityMap[" tool.trim.only "] = 3.5f;
             data.toolBrokenMap[string.Empty] = true;
             data.toolBrokenMap[" "] = true;
             data.toolBrokenMap["tool.valid.key"] = false;
+            data.toolBrokenMap[" tool.valid.key "] = true;
+            data.toolBrokenMap[" tool.trim.only "] = true;
             data.CustomModData[string.Empty] = "discard";
             data.CustomModData[" "] = "discard";
             data.CustomModData["custom.valid.key"] = "keep";
+            data.CustomModData[" custom.valid.key "] = "discard";
+            data.CustomModData[" custom.trim.only "] = "trimmed";
             data.CustomModData["custom.null"] = null;
 
             bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
@@ -5275,13 +8727,22 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
             Assert.IsFalse(data.toolDurabilityMap.ContainsKey(string.Empty));
             Assert.IsFalse(data.toolDurabilityMap.ContainsKey(" "));
+            Assert.IsFalse(data.toolDurabilityMap.ContainsKey(" tool.valid.key "));
+            Assert.IsFalse(data.toolDurabilityMap.ContainsKey(" tool.trim.only "));
             Assert.IsFalse(data.toolBrokenMap.ContainsKey(string.Empty));
             Assert.IsFalse(data.toolBrokenMap.ContainsKey(" "));
+            Assert.IsFalse(data.toolBrokenMap.ContainsKey(" tool.valid.key "));
+            Assert.IsFalse(data.toolBrokenMap.ContainsKey(" tool.trim.only "));
             Assert.IsFalse(data.CustomModData.ContainsKey(string.Empty));
             Assert.IsFalse(data.CustomModData.ContainsKey(" "));
+            Assert.IsFalse(data.CustomModData.ContainsKey(" custom.valid.key "));
+            Assert.IsFalse(data.CustomModData.ContainsKey(" custom.trim.only "));
             Assert.AreEqual(6.25f, data.toolDurabilityMap["tool.valid.key"]);
+            Assert.AreEqual(3.5f, data.toolDurabilityMap["tool.trim.only"]);
             Assert.IsFalse(data.toolBrokenMap["tool.valid.key"]);
+            Assert.IsTrue(data.toolBrokenMap["tool.trim.only"]);
             Assert.AreEqual("keep", data.CustomModData["custom.valid.key"]);
+            Assert.AreEqual("trimmed", data.CustomModData["custom.trim.only"]);
             Assert.AreEqual(string.Empty, data.CustomModData["custom.null"]);
             StringAssert.Contains("tool durability keys repaired", summary);
             StringAssert.Contains("tool broken keys repaired", summary);
@@ -5845,7 +9306,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             data.resourceScarcity.entryCount = 2;
             data.resourceScarcity.itemHashIds = null;
-            data.resourceScarcity.itemIds = new[] { "CopperOre", "Quartz" };
+            data.resourceScarcity.itemIds = new[] { " CopperOre ", "Quartz" };
             data.resourceScarcity.collectedCounts = new[] { 4, 5 };
 
             byte[] payload = new byte[BinaryPayloadScratchBytes];
@@ -5876,8 +9337,13 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(ResourceScarcityDTO.MaxTrackedResources, restored.resourceScarcity.collectedCounts.Length);
                 Assert.AreEqual(LocHash.Compute("CopperOre"), restored.resourceScarcity.itemHashIds[0]);
                 Assert.AreEqual(LocHash.Compute("Quartz"), restored.resourceScarcity.itemHashIds[1]);
+                Assert.AreEqual("CopperOre", restored.resourceScarcity.itemIds[0]);
+                Assert.AreEqual("Quartz", restored.resourceScarcity.itemIds[1]);
                 Assert.AreEqual(4, restored.resourceScarcity.collectedCounts[0]);
                 Assert.AreEqual(5, restored.resourceScarcity.collectedCounts[1]);
+                Assert.AreEqual(0, restored.resourceScarcity.itemHashIds[2]);
+                Assert.AreEqual(string.Empty, restored.resourceScarcity.itemIds[2]);
+                Assert.AreEqual(0, restored.resourceScarcity.collectedCounts[2]);
             }
         }
 
@@ -5918,10 +9384,151 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(ResourceScarcityDTO.MaxTrackedResources, restored.resourceScarcity.collectedCounts.Length);
                 Assert.AreEqual(303, restored.resourceScarcity.itemHashIds[0]);
                 Assert.AreEqual(404, restored.resourceScarcity.itemHashIds[1]);
-                Assert.IsNull(restored.resourceScarcity.itemIds[0]);
-                Assert.IsNull(restored.resourceScarcity.itemIds[1]);
+                Assert.AreEqual(string.Empty, restored.resourceScarcity.itemIds[0]);
+                Assert.AreEqual(string.Empty, restored.resourceScarcity.itemIds[1]);
                 Assert.AreEqual(6, restored.resourceScarcity.collectedCounts[0]);
                 Assert.AreEqual(8, restored.resourceScarcity.collectedCounts[1]);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_ReadRecoversDecodedHashOnlyEntryWhenOuterCountIsTooLow()
+        {
+            const int resourceHash = 987654321;
+
+            SaveData data = SaveData.CreateNew(0.0);
+            data.resourceScarcity.entryCount = 1;
+            data.resourceScarcity.itemHashIds = new[] { resourceHash };
+            data.resourceScarcity.itemIds = null;
+            data.resourceScarcity.collectedCounts = new[] { 17 };
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            int bytesWritten;
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+            }
+
+            byte[] marker = new byte[sizeof(int) * 3];
+            int markerOffset = 0;
+            WritePayloadInt(marker, ref markerOffset, 1);
+            WritePayloadInt(marker, ref markerOffset, 1);
+            WritePayloadInt(marker, ref markerOffset, resourceHash);
+            int resourceScarcityOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, marker);
+            Assert.GreaterOrEqual(resourceScarcityOffset, 0);
+            PatchPayloadInt(payload, resourceScarcityOffset, 0);
+
+            fixed (byte* payloadPtr = payload)
+            {
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(1, restored.resourceScarcity.entryCount);
+                Assert.AreEqual(resourceHash, restored.resourceScarcity.itemHashIds[0]);
+                Assert.AreEqual(string.Empty, restored.resourceScarcity.itemIds[0]);
+                Assert.AreEqual(17, restored.resourceScarcity.collectedCounts[0]);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_WriteSanitizesBlankItemIds()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.resourceScarcity.EnsureCapacity();
+            data.resourceScarcity.entryCount = 2;
+            data.resourceScarcity.itemHashIds[0] = 303;
+            data.resourceScarcity.itemHashIds[1] = 0;
+            data.resourceScarcity.itemIds[0] = " \t ";
+            data.resourceScarcity.itemIds[1] = "Quartz";
+            data.resourceScarcity.collectedCounts[0] = 6;
+            data.resourceScarcity.collectedCounts[1] = 8;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(2, restored.resourceScarcity.entryCount);
+                Assert.AreEqual(303, restored.resourceScarcity.itemHashIds[0]);
+                Assert.AreEqual(LocHash.Compute("Quartz"), restored.resourceScarcity.itemHashIds[1]);
+                Assert.AreEqual(string.Empty, restored.resourceScarcity.itemIds[0]);
+                Assert.AreEqual("Quartz", restored.resourceScarcity.itemIds[1]);
+                Assert.AreEqual(6, restored.resourceScarcity.collectedCounts[0]);
+                Assert.AreEqual(8, restored.resourceScarcity.collectedCounts[1]);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_WriteDropsItemIdsThatDisagreeWithPersistedHash()
+        {
+            const string trueItemId = "CopperOre";
+            const string staleItemId = "Quartz";
+            int trueHash = LocHash.Compute(trueItemId);
+
+            SaveData data = SaveData.CreateNew(0.0);
+            data.resourceScarcity.EnsureCapacity();
+            data.resourceScarcity.entryCount = 1;
+            data.resourceScarcity.itemHashIds[0] = trueHash;
+            data.resourceScarcity.itemIds[0] = " " + staleItemId + " ";
+            data.resourceScarcity.collectedCounts[0] = 9;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(1, restored.resourceScarcity.entryCount);
+                Assert.AreEqual(trueHash, restored.resourceScarcity.itemHashIds[0]);
+                Assert.AreEqual(string.Empty, restored.resourceScarcity.itemIds[0]);
+                Assert.AreEqual(9, restored.resourceScarcity.collectedCounts[0]);
             }
         }
 
@@ -5932,7 +9539,7 @@ namespace Hecton8.Tests.Editor
             data.version = 59;
             data.resourceScarcity.entryCount = 2;
             data.resourceScarcity.itemHashIds = null;
-            data.resourceScarcity.itemIds = new[] { "CopperOre", "Quartz" };
+            data.resourceScarcity.itemIds = new[] { " CopperOre ", "Quartz" };
             data.resourceScarcity.collectedCounts = new[] { -4, 3 };
 
             bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
@@ -5946,11 +9553,502 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(ResourceScarcityDTO.MaxTrackedResources, data.resourceScarcity.collectedCounts.Length);
             Assert.AreEqual(LocHash.Compute("CopperOre"), data.resourceScarcity.itemHashIds[0]);
             Assert.AreEqual(LocHash.Compute("Quartz"), data.resourceScarcity.itemHashIds[1]);
+            Assert.AreEqual("CopperOre", data.resourceScarcity.itemIds[0]);
+            Assert.AreEqual("Quartz", data.resourceScarcity.itemIds[1]);
             Assert.AreEqual(0, data.resourceScarcity.collectedCounts[0]);
             Assert.AreEqual(3, data.resourceScarcity.collectedCounts[1]);
             StringAssert.Contains("resource scarcity capacity repaired", summary);
             StringAssert.Contains("resource scarcity hash repaired", summary);
             StringAssert.Contains("resource scarcity collected counts repaired", summary);
+        }
+
+        [Test]
+        public void ResourceScarcityRuntimeMigration_CurrentPreservesHashOnlyEntries()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.resourceScarcity.entryCount = 2;
+            data.resourceScarcity.itemHashIds = new[] { 303, 404 };
+            data.resourceScarcity.itemIds = null;
+            data.resourceScarcity.collectedCounts = new[] { 6, 8 };
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(2, data.resourceScarcity.entryCount);
+            Assert.AreEqual(ResourceScarcityDTO.MaxTrackedResources, data.resourceScarcity.itemHashIds.Length);
+            Assert.AreEqual(ResourceScarcityDTO.MaxTrackedResources, data.resourceScarcity.itemIds.Length);
+            Assert.AreEqual(ResourceScarcityDTO.MaxTrackedResources, data.resourceScarcity.collectedCounts.Length);
+            Assert.AreEqual(303, data.resourceScarcity.itemHashIds[0]);
+            Assert.AreEqual(404, data.resourceScarcity.itemHashIds[1]);
+            Assert.AreEqual(string.Empty, data.resourceScarcity.itemIds[0]);
+            Assert.AreEqual(string.Empty, data.resourceScarcity.itemIds[1]);
+            Assert.AreEqual(6, data.resourceScarcity.collectedCounts[0]);
+            Assert.AreEqual(8, data.resourceScarcity.collectedCounts[1]);
+            StringAssert.Contains("resource scarcity capacity repaired", summary);
+        }
+
+        [Test]
+        public void ResourceScarcityRuntimeMigration_CurrentRepairsBlankItemIds()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.resourceScarcity.EnsureCapacity();
+            data.resourceScarcity.entryCount = 2;
+            data.resourceScarcity.itemHashIds[0] = 303;
+            data.resourceScarcity.itemHashIds[1] = 0;
+            data.resourceScarcity.itemIds[0] = " \t ";
+            data.resourceScarcity.itemIds[1] = " Quartz ";
+            data.resourceScarcity.collectedCounts[0] = 6;
+            data.resourceScarcity.collectedCounts[1] = 8;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(2, data.resourceScarcity.entryCount);
+            Assert.AreEqual(303, data.resourceScarcity.itemHashIds[0]);
+            Assert.AreEqual(LocHash.Compute("Quartz"), data.resourceScarcity.itemHashIds[1]);
+            Assert.AreEqual(string.Empty, data.resourceScarcity.itemIds[0]);
+            Assert.AreEqual("Quartz", data.resourceScarcity.itemIds[1]);
+            Assert.AreEqual(6, data.resourceScarcity.collectedCounts[0]);
+            Assert.AreEqual(8, data.resourceScarcity.collectedCounts[1]);
+            StringAssert.Contains("resource scarcity item ids repaired", summary);
+            StringAssert.Contains("resource scarcity hash repaired", summary);
+        }
+
+        [Test]
+        public void ResourceScarcityRuntimeMigration_CurrentDropsItemIdsThatDisagreeWithPersistedHash()
+        {
+            const string trueItemId = "CopperOre";
+            const string staleItemId = "Quartz";
+            int trueHash = LocHash.Compute(trueItemId);
+
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.resourceScarcity.EnsureCapacity();
+            data.resourceScarcity.entryCount = 1;
+            data.resourceScarcity.itemHashIds[0] = trueHash;
+            data.resourceScarcity.itemIds[0] = " " + staleItemId + " ";
+            data.resourceScarcity.collectedCounts[0] = 9;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(1, data.resourceScarcity.entryCount);
+            Assert.AreEqual(trueHash, data.resourceScarcity.itemHashIds[0]);
+            Assert.AreEqual(string.Empty, data.resourceScarcity.itemIds[0]);
+            Assert.AreEqual(9, data.resourceScarcity.collectedCounts[0]);
+            StringAssert.Contains("resource scarcity item ids repaired", summary);
+        }
+
+        [Test]
+        public void ResourceScarcityRuntimeMigration_CurrentClearsInactiveTailSlots()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.resourceScarcity.EnsureCapacity();
+            data.resourceScarcity.entryCount = 1;
+            data.resourceScarcity.itemHashIds[0] = 100;
+            data.resourceScarcity.collectedCounts[0] = 4;
+            data.resourceScarcity.itemHashIds[1] = 200;
+            data.resourceScarcity.itemIds[1] = "stale";
+            data.resourceScarcity.collectedCounts[1] = 9;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(1, data.resourceScarcity.entryCount);
+            Assert.AreEqual(100, data.resourceScarcity.itemHashIds[0]);
+            Assert.AreEqual(4, data.resourceScarcity.collectedCounts[0]);
+            Assert.AreEqual(0, data.resourceScarcity.itemHashIds[1]);
+            Assert.AreEqual(string.Empty, data.resourceScarcity.itemIds[1]);
+            Assert.AreEqual(0, data.resourceScarcity.collectedCounts[1]);
+            StringAssert.Contains("resource scarcity tail repaired", summary);
+        }
+
+        [Test]
+        public void ResourceScarcityRuntimeMigration_CurrentCompactsDuplicateItemHashes()
+        {
+            const string itemId = "CopperOre";
+            int itemHash = LocHash.Compute(itemId);
+
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.resourceScarcity.EnsureCapacity();
+            data.resourceScarcity.entryCount = 3;
+            data.resourceScarcity.itemHashIds[0] = itemHash;
+            data.resourceScarcity.itemHashIds[1] = itemHash;
+            data.resourceScarcity.itemHashIds[2] = 0;
+            data.resourceScarcity.itemIds[0] = string.Empty;
+            data.resourceScarcity.itemIds[1] = itemId;
+            data.resourceScarcity.itemIds[2] = string.Empty;
+            data.resourceScarcity.collectedCounts[0] = 4;
+            data.resourceScarcity.collectedCounts[1] = 7;
+            data.resourceScarcity.collectedCounts[2] = 9;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(1, data.resourceScarcity.entryCount);
+            Assert.AreEqual(itemHash, data.resourceScarcity.itemHashIds[0]);
+            Assert.AreEqual(itemId, data.resourceScarcity.itemIds[0]);
+            Assert.AreEqual(11, data.resourceScarcity.collectedCounts[0]);
+            Assert.AreEqual(0, data.resourceScarcity.itemHashIds[1]);
+            Assert.AreEqual(string.Empty, data.resourceScarcity.itemIds[1]);
+            Assert.AreEqual(0, data.resourceScarcity.collectedCounts[1]);
+            StringAssert.Contains("resource scarcity entries compacted", summary);
+        }
+
+        [Test]
+        public void ResourceScarcityRuntimeMigration_CurrentCompactsDuplicateItemHashesWithSaturatingCounts()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.resourceScarcity.EnsureCapacity();
+            data.resourceScarcity.entryCount = 2;
+            data.resourceScarcity.itemHashIds[0] = 100;
+            data.resourceScarcity.itemHashIds[1] = 100;
+            data.resourceScarcity.collectedCounts[0] = int.MaxValue - 2;
+            data.resourceScarcity.collectedCounts[1] = 7;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(1, data.resourceScarcity.entryCount);
+            Assert.AreEqual(100, data.resourceScarcity.itemHashIds[0]);
+            Assert.AreEqual(int.MaxValue, data.resourceScarcity.collectedCounts[0]);
+            Assert.AreEqual(0, data.resourceScarcity.itemHashIds[1]);
+            Assert.AreEqual(0, data.resourceScarcity.collectedCounts[1]);
+            StringAssert.Contains("resource scarcity entries compacted", summary);
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_LoadDropsItemIdsThatDisagreeWithPersistedHash()
+        {
+            const string trueItemId = "CopperOre";
+            const string staleItemId = "Quartz";
+            int trueHash = LocHash.Compute(trueItemId);
+
+            GameObject owner = new GameObject("ResourceScarcityRuntime_LoadDropsItemIdsThatDisagreeWithPersistedHash");
+            try
+            {
+                ResourceScarcityDirector director = owner.AddComponent<ResourceScarcityDirector>();
+                SaveData data = SaveData.CreateNew(0.0);
+                data.resourceScarcity.EnsureCapacity();
+                data.resourceScarcity.entryCount = 1;
+                data.resourceScarcity.itemHashIds[0] = trueHash;
+                data.resourceScarcity.itemIds[0] = " " + staleItemId + " ";
+                data.resourceScarcity.collectedCounts[0] = 9;
+
+                director.LoadFromSaveData(data);
+
+                SaveData restored = SaveData.CreateNew(0.0);
+                director.PopulateSaveData(restored);
+
+                Assert.AreEqual(1, restored.resourceScarcity.entryCount);
+                Assert.AreEqual(trueHash, restored.resourceScarcity.itemHashIds[0]);
+                Assert.AreEqual(string.Empty, restored.resourceScarcity.itemIds[0]);
+                Assert.AreEqual(9, restored.resourceScarcity.collectedCounts[0]);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_LoadMergesDuplicateItemHashes()
+        {
+            GameObject owner = new GameObject("ResourceScarcityRuntime_LoadMergesDuplicateItemHashes");
+            try
+            {
+                ResourceScarcityDirector director = owner.AddComponent<ResourceScarcityDirector>();
+                SaveData data = SaveData.CreateNew(0.0);
+                data.resourceScarcity.EnsureCapacity();
+                data.resourceScarcity.entryCount = 2;
+                data.resourceScarcity.itemHashIds[0] = 100;
+                data.resourceScarcity.itemHashIds[1] = 100;
+                data.resourceScarcity.collectedCounts[0] = 4;
+                data.resourceScarcity.collectedCounts[1] = 7;
+
+                director.LoadFromSaveData(data);
+
+                SaveData restored = SaveData.CreateNew(0.0);
+                director.PopulateSaveData(restored);
+
+                Assert.AreEqual(1, restored.resourceScarcity.entryCount);
+                Assert.AreEqual(100, restored.resourceScarcity.itemHashIds[0]);
+                Assert.AreEqual(11, restored.resourceScarcity.collectedCounts[0]);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_LoadMergesDuplicateItemHashesWithSaturatingCounts()
+        {
+            GameObject owner = new GameObject("ResourceScarcityRuntime_LoadMergesDuplicateItemHashesWithSaturatingCounts");
+            try
+            {
+                ResourceScarcityDirector director = owner.AddComponent<ResourceScarcityDirector>();
+                SaveData data = SaveData.CreateNew(0.0);
+                data.resourceScarcity.EnsureCapacity();
+                data.resourceScarcity.entryCount = 2;
+                data.resourceScarcity.itemHashIds[0] = 100;
+                data.resourceScarcity.itemHashIds[1] = 100;
+                data.resourceScarcity.collectedCounts[0] = int.MaxValue - 2;
+                data.resourceScarcity.collectedCounts[1] = 7;
+
+                director.LoadFromSaveData(data);
+
+                SaveData restored = SaveData.CreateNew(0.0);
+                director.PopulateSaveData(restored);
+
+                Assert.AreEqual(1, restored.resourceScarcity.entryCount);
+                Assert.AreEqual(100, restored.resourceScarcity.itemHashIds[0]);
+                Assert.AreEqual(int.MaxValue, restored.resourceScarcity.collectedCounts[0]);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_StaleInteractionPayloadDoesNotMutateScarcityState()
+        {
+            GameObject owner = new GameObject("ResourceScarcityRuntime_StaleInteractionPayloadDoesNotMutateScarcityState");
+            try
+            {
+                ResourceScarcityDirector director = owner.AddComponent<ResourceScarcityDirector>();
+                var stalePayload = new Hecton8.Interaction.InteractionEventPayload
+                {
+                    ItemHashId = unchecked((uint)LocHash.Compute("Data_TitaniumScrap")),
+                    ReferenceSlot = -1,
+                    Quantity = 4,
+                    EventType = (ushort)Hecton8.Interaction.InteractionEventType.ItemCollected
+                };
+
+                director.OnInteractionEvent(in stalePayload);
+
+                SaveData restored = SaveData.CreateNew(0.0);
+                director.PopulateSaveData(restored);
+
+                Assert.AreEqual(0, restored.resourceScarcity.entryCount);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_InteractionEventQueueMutatesSaveStateForValidRawResource()
+        {
+            InvokeInteractionEventsResetStaticState();
+            GameObject owner = new GameObject("ResourceScarcityRuntime_InteractionEventQueueMutatesSaveStateForValidRawResource");
+            ItemData item = null;
+            try
+            {
+                ResourceScarcityDirector director = owner.AddComponent<ResourceScarcityDirector>();
+                item = UnityEngine.ScriptableObject.CreateInstance<ItemData>();
+                item.name = "ResourceScarcityRuntime.ValidRawResource";
+                SetPrivateInstanceField(item, "stableId", "Data_ResourceScarcityRuntimeValidRawResource");
+                InvokePrivateInstanceMethod(item, "RefreshPersistentHash");
+                item.category = ItemCategory.Material;
+                item.isRawResource = true;
+
+                int itemHashId = ItemData.ResolvePersistentHashId(item);
+                Assert.AreNotEqual(0, itemHashId);
+                InteractionEvents.Register(director);
+
+                Assert.IsTrue(InteractionEvents.TryRaiseItemCollected(item, 6, null));
+                Assert.AreEqual(1, InteractionEvents.PendingCount);
+
+                InteractionEvents.FlushPending();
+
+                SaveData restored = SaveData.CreateNew(0.0);
+                director.PopulateSaveData(restored);
+
+                Assert.AreEqual(0, InteractionEvents.PendingCount);
+                Assert.AreEqual(0, InteractionEvents.DroppedEventCount);
+                Assert.AreEqual(0, InteractionEvents.DroppedInvalidItemEventCount);
+                Assert.AreEqual(0, InteractionEvents.DroppedReferenceSlotCount);
+                Assert.AreEqual(1, restored.resourceScarcity.entryCount);
+                Assert.AreEqual(itemHashId, restored.resourceScarcity.itemHashIds[0]);
+                Assert.AreEqual(item.PersistentId, restored.resourceScarcity.itemIds[0]);
+                Assert.AreEqual(6, restored.resourceScarcity.collectedCounts[0]);
+            }
+            finally
+            {
+                InvokeInteractionEventsResetStaticState();
+
+                if (item != null)
+                    UnityEngine.Object.DestroyImmediate(item);
+
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_PopulateWritesDeterministicHashOrder()
+        {
+            GameObject owner = new GameObject("ResourceScarcityRuntime_PopulateWritesDeterministicHashOrder");
+            try
+            {
+                ResourceScarcityDirector director = owner.AddComponent<ResourceScarcityDirector>();
+                SaveData data = SaveData.CreateNew(0.0);
+                data.resourceScarcity.EnsureCapacity();
+                data.resourceScarcity.entryCount = 3;
+                data.resourceScarcity.itemHashIds[0] = 300;
+                data.resourceScarcity.itemHashIds[1] = 100;
+                data.resourceScarcity.itemHashIds[2] = 200;
+                data.resourceScarcity.collectedCounts[0] = 3;
+                data.resourceScarcity.collectedCounts[1] = 1;
+                data.resourceScarcity.collectedCounts[2] = 2;
+
+                director.LoadFromSaveData(data);
+
+                SaveData restored = SaveData.CreateNew(0.0);
+                director.PopulateSaveData(restored);
+
+                Assert.AreEqual(3, restored.resourceScarcity.entryCount);
+                Assert.AreEqual(100, restored.resourceScarcity.itemHashIds[0]);
+                Assert.AreEqual(200, restored.resourceScarcity.itemHashIds[1]);
+                Assert.AreEqual(300, restored.resourceScarcity.itemHashIds[2]);
+                Assert.AreEqual(1, restored.resourceScarcity.collectedCounts[0]);
+                Assert.AreEqual(2, restored.resourceScarcity.collectedCounts[1]);
+                Assert.AreEqual(3, restored.resourceScarcity.collectedCounts[2]);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_PopulateKeepsHighestCountsWhenTrackedResourcesExceedSaveCapacity()
+        {
+            GameObject owner = new GameObject("ResourceScarcityRuntime_PopulateKeepsHighestCountsWhenTrackedResourcesExceedSaveCapacity");
+            try
+            {
+                ResourceScarcityDirector director = owner.AddComponent<ResourceScarcityDirector>();
+                Dictionary<int, int> collectedByHash = GetPrivateInstanceField<Dictionary<int, int>>(
+                    director,
+                    "_collectedByItemHash");
+
+                for (int hash = 1; hash <= ResourceScarcityDTO.MaxTrackedResources + 2; hash++)
+                    collectedByHash[hash] = hash > ResourceScarcityDTO.MaxTrackedResources ? 1000 - hash : 10;
+
+                SaveData restored = SaveData.CreateNew(0.0);
+                director.PopulateSaveData(restored);
+
+                Assert.AreEqual(ResourceScarcityDTO.MaxTrackedResources, restored.resourceScarcity.entryCount);
+                int retainedLowCount = ResourceScarcityDTO.MaxTrackedResources - 2;
+                for (int i = 0; i < retainedLowCount; i++)
+                {
+                    Assert.AreEqual(i + 1, restored.resourceScarcity.itemHashIds[i]);
+                    Assert.AreEqual(10, restored.resourceScarcity.collectedCounts[i]);
+                }
+
+                Assert.AreEqual(ResourceScarcityDTO.MaxTrackedResources + 1, restored.resourceScarcity.itemHashIds[retainedLowCount]);
+                Assert.AreEqual(
+                    1000 - (ResourceScarcityDTO.MaxTrackedResources + 1),
+                    restored.resourceScarcity.collectedCounts[retainedLowCount]);
+                Assert.AreEqual(
+                    ResourceScarcityDTO.MaxTrackedResources + 2,
+                    restored.resourceScarcity.itemHashIds[retainedLowCount + 1]);
+                Assert.AreEqual(
+                    1000 - (ResourceScarcityDTO.MaxTrackedResources + 2),
+                    restored.resourceScarcity.collectedCounts[retainedLowCount + 1]);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_EmptyLoadInvalidatesReadModelAfterClearingState()
+        {
+            GameObject owner = new GameObject("ResourceScarcityRuntime_EmptyLoadInvalidatesReadModelAfterClearingState");
+            try
+            {
+                ResourceScarcityDirector director = owner.AddComponent<ResourceScarcityDirector>();
+                SaveData populated = SaveData.CreateNew(0.0);
+                populated.resourceScarcity.EnsureCapacity();
+                populated.resourceScarcity.entryCount = 1;
+                populated.resourceScarcity.itemHashIds[0] = 100;
+                populated.resourceScarcity.collectedCounts[0] = 4;
+
+                director.LoadFromSaveData(populated);
+                int populatedVersion = director.RuntimeVersion;
+
+                SaveData empty = SaveData.CreateNew(0.0);
+                director.LoadFromSaveData(empty);
+
+                SaveData restored = SaveData.CreateNew(0.0);
+                director.PopulateSaveData(restored);
+
+                Assert.Greater(director.RuntimeVersion, populatedVersion);
+                Assert.AreEqual(0, restored.resourceScarcity.entryCount);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_PopulateClearsStaleDtoTail()
+        {
+            GameObject owner = new GameObject("ResourceScarcityRuntime_PopulateClearsStaleDtoTail");
+            try
+            {
+                ResourceScarcityDirector director = owner.AddComponent<ResourceScarcityDirector>();
+                SaveData loaded = SaveData.CreateNew(0.0);
+                loaded.resourceScarcity.EnsureCapacity();
+                loaded.resourceScarcity.entryCount = 1;
+                loaded.resourceScarcity.itemHashIds[0] = 100;
+                loaded.resourceScarcity.collectedCounts[0] = 4;
+                director.LoadFromSaveData(loaded);
+
+                SaveData restored = SaveData.CreateNew(0.0);
+                restored.resourceScarcity.EnsureCapacity();
+                restored.resourceScarcity.entryCount = ResourceScarcityDTO.MaxTrackedResources;
+                for (int i = 0; i < ResourceScarcityDTO.MaxTrackedResources; i++)
+                {
+                    restored.resourceScarcity.itemHashIds[i] = 999;
+                    restored.resourceScarcity.itemIds[i] = "stale";
+                    restored.resourceScarcity.collectedCounts[i] = 999;
+                }
+
+                director.PopulateSaveData(restored);
+
+                Assert.AreEqual(1, restored.resourceScarcity.entryCount);
+                Assert.AreEqual(100, restored.resourceScarcity.itemHashIds[0]);
+                for (int i = restored.resourceScarcity.entryCount; i < ResourceScarcityDTO.MaxTrackedResources; i++)
+                {
+                    Assert.AreEqual(0, restored.resourceScarcity.itemHashIds[i]);
+                    Assert.AreEqual(string.Empty, restored.resourceScarcity.itemIds[i]);
+                    Assert.AreEqual(0, restored.resourceScarcity.collectedCounts[i]);
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
         }
 
         [Test]
@@ -5973,6 +10071,314 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(4, ResourceScarcityDirector.SaturatingInflatedAmountAtLeastBase(4, 0.5f));
             Assert.AreEqual(10, ResourceScarcityDirector.SaturatingInflatedAmountAtLeastBase(4, 2.5f));
             Assert.AreEqual(int.MaxValue, ResourceScarcityDirector.SaturatingInflatedAmountAtLeastBase(int.MaxValue - 1, 4f));
+        }
+
+        [Test]
+        public void InventoryRuntime_LegacyStringCellsSkipBlankItemIdsBeforeHashing()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs"));
+
+            int writeCellIndex = source.IndexOf(
+                "private static bool WriteInventoryCell(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(writeCellIndex, 0, source);
+
+            int readCellIndex = source.IndexOf(
+                "private static bool ReadInventoryCell(",
+                writeCellIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(readCellIndex, writeCellIndex, source);
+
+            int writeSanitizeIndex = source.IndexOf(
+                "writer.WriteString(SaveData.SanitizePersistenceString(value.itemId))",
+                writeCellIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeSanitizeIndex, writeCellIndex, source);
+            Assert.Less(writeSanitizeIndex, readCellIndex, source);
+
+            int readCellEndIndex = source.IndexOf(
+                "private static bool WriteScanEntry(",
+                readCellIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(readCellEndIndex, readCellIndex, source);
+
+            int readSanitizeIndex = source.IndexOf(
+                "value.itemId = SaveData.SanitizePersistenceString(value.itemId);",
+                readCellIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(readSanitizeIndex, readCellIndex, source);
+            Assert.Less(readSanitizeIndex, readCellEndIndex, source);
+
+            int legacyBranchIndex = source.IndexOf(
+                "if (!ReadInventoryCellArray(ref reader, out InventoryCellDTO[] legacyCells)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(legacyBranchIndex, 0, source);
+
+            int writeIndexDeclaration = source.IndexOf("int writeIndex = 0;", legacyBranchIndex, StringComparison.Ordinal);
+            Assert.Greater(writeIndexDeclaration, legacyBranchIndex, source);
+
+            int legacySanitizeIndex = source.IndexOf(
+                "string itemId = SaveData.SanitizePersistenceString(legacyCell.itemId);",
+                writeIndexDeclaration,
+                StringComparison.Ordinal);
+            Assert.Greater(legacySanitizeIndex, writeIndexDeclaration, source);
+
+            int blankGuardIndex = source.IndexOf(
+                "itemId.Length == 0",
+                legacySanitizeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(blankGuardIndex, legacySanitizeIndex, source);
+
+            int hashIndex = source.IndexOf("LocHash.Compute(itemId)", blankGuardIndex, StringComparison.Ordinal);
+            Assert.Greater(hashIndex, blankGuardIndex, source);
+
+            int compactCountIndex = source.IndexOf("value.cellCount = writeIndex;", hashIndex, StringComparison.Ordinal);
+            Assert.Greater(compactCountIndex, hashIndex, source);
+        }
+
+        [Test]
+        public void ResourceScarcityRuntime_StringIdsAreSanitizedAndMatchedBeforeHashFallbacks()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs"));
+
+            int writeHashIdsIndex = source.IndexOf(
+                "private static bool WriteResourceScarcityHashIds(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(writeHashIdsIndex, 0, source);
+
+            int writeHashIdsEndIndex = source.IndexOf(
+                "private static bool WriteResourceScarcityItemIds(",
+                writeHashIdsIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeHashIdsEndIndex, writeHashIdsIndex, source);
+
+            int writeSanitizeIndex = source.IndexOf(
+                "SanitizeResourceScarcityItemId(hash, value.itemIds[i])",
+                writeHashIdsIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeSanitizeIndex, writeHashIdsIndex, source);
+            Assert.Less(writeSanitizeIndex, writeHashIdsEndIndex, source);
+
+            int writeGuardIndex = source.IndexOf(
+                "hash == 0 && itemId.Length != 0",
+                writeSanitizeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeGuardIndex, writeSanitizeIndex, source);
+            Assert.Less(writeGuardIndex, writeHashIdsEndIndex, source);
+
+            int writeHashIndex = source.IndexOf("hash = LocHash.Compute(itemId);", writeGuardIndex, StringComparison.Ordinal);
+            Assert.Greater(writeHashIndex, writeGuardIndex, source);
+            Assert.Less(writeHashIndex, writeHashIdsEndIndex, source);
+
+            int writeItemIdsIndex = writeHashIdsEndIndex;
+            int writeItemIdsEndIndex = source.IndexOf(
+                "private static bool WriteResourceScarcityCounts(",
+                writeItemIdsIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeItemIdsEndIndex, writeItemIdsIndex, source);
+
+            int writeStringSanitizeIndex = source.IndexOf(
+                "SanitizeResourceScarcityItemId(hash, value.itemIds[i])",
+                writeItemIdsIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(writeStringSanitizeIndex, writeItemIdsIndex, source);
+            Assert.Less(writeStringSanitizeIndex, writeItemIdsEndIndex, source);
+
+            int writeStringIndex = source.IndexOf("writer.WriteString(itemId)", writeStringSanitizeIndex, StringComparison.Ordinal);
+            Assert.Greater(writeStringIndex, writeStringSanitizeIndex, source);
+            Assert.Less(writeStringIndex, writeItemIdsEndIndex, source);
+
+            int readSanitizeIndex = source.IndexOf(
+                "private static bool SanitizeResourceScarcityAfterRead(",
+                writeItemIdsEndIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(readSanitizeIndex, writeItemIdsEndIndex, source);
+
+            int readCanonicalIndex = source.IndexOf(
+                "value.itemIds[i] = SanitizeResourceScarcityItemId(value.itemHashIds[i], value.itemIds[i]);",
+                readSanitizeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(readCanonicalIndex, readSanitizeIndex, source);
+
+            int readGuardIndex = source.IndexOf(
+                "value.itemHashIds[i] == 0 && value.itemIds[i].Length != 0",
+                readCanonicalIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(readGuardIndex, readCanonicalIndex, source);
+
+            int readHashIndex = source.IndexOf("value.itemHashIds[i] = LocHash.Compute(value.itemIds[i]);", readGuardIndex, StringComparison.Ordinal);
+            Assert.Greater(readHashIndex, readGuardIndex, source);
+
+            int codecHelperIndex = source.IndexOf(
+                "private static string SanitizeResourceScarcityItemId(int itemHashId, string itemId)",
+                readHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(codecHelperIndex, readHashIndex, source);
+            int codecMismatchIndex = source.IndexOf(
+                "return LocHash.Compute(itemId) == itemHashId ? itemId : string.Empty;",
+                codecHelperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(codecMismatchIndex, codecHelperIndex, source);
+
+            string migrationSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveDataMigration.cs"));
+            int migrationResourceIndex = migrationSource.IndexOf(
+                "private static bool SanitizeResourceScarcity(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(migrationResourceIndex, 0, migrationSource);
+
+            int migrationCanonicalIndex = migrationSource.IndexOf(
+                "string canonicalItemId = SanitizeResourceScarcityItemId(dto.itemHashIds[i], dto.itemIds[i]);",
+                migrationResourceIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(migrationCanonicalIndex, migrationResourceIndex, migrationSource);
+
+            int migrationAssignIndex = migrationSource.IndexOf("dto.itemIds[i] = canonicalItemId;", migrationCanonicalIndex, StringComparison.Ordinal);
+            Assert.Greater(migrationAssignIndex, migrationCanonicalIndex, migrationSource);
+
+            int migrationGuardIndex = migrationSource.IndexOf(
+                "dto.itemHashIds[i] == 0 && canonicalItemId.Length != 0",
+                migrationAssignIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(migrationGuardIndex, migrationAssignIndex, migrationSource);
+
+            int migrationHashIndex = migrationSource.IndexOf("dto.itemHashIds[i] = LocHash.Compute(canonicalItemId);", migrationGuardIndex, StringComparison.Ordinal);
+            Assert.Greater(migrationHashIndex, migrationGuardIndex, migrationSource);
+
+            int migrationHelperIndex = migrationSource.IndexOf(
+                "private static string SanitizeResourceScarcityItemId(int itemHashId, string itemId)",
+                migrationHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(migrationHelperIndex, migrationHashIndex, migrationSource);
+            int migrationMismatchIndex = migrationSource.IndexOf(
+                "return LocHash.Compute(itemId) == itemHashId ? itemId : string.Empty;",
+                migrationHelperIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(migrationMismatchIndex, migrationHelperIndex, migrationSource);
+
+            string directorSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs"));
+            StringAssert.Contains("private bool _interactionRegistered;", directorSource);
+            StringAssert.Contains("private void TryRegisterWithSaveManager()", directorSource);
+            StringAssert.Contains("_saveServiceRegistered || !Application.isPlaying", directorSource);
+            StringAssert.Contains("private void TryRegisterInteractionListener()", directorSource);
+            StringAssert.Contains("private void TryUnregisterInteractionListener()", directorSource);
+            StringAssert.Contains("_interactionRegistered || !Application.isPlaying", directorSource);
+            StringAssert.Contains("InteractionEvents.Register(this);", directorSource);
+            StringAssert.Contains("InteractionEvents.Unregister(this);", directorSource);
+            StringAssert.Contains("TryRegisterInteractionListener();", directorSource);
+            StringAssert.Contains("TryUnregisterInteractionListener();", directorSource);
+            int enableIndex = directorSource.IndexOf("private void OnEnable()", StringComparison.Ordinal);
+            int disableIndex = directorSource.IndexOf("private void OnDisable()", enableIndex, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(enableIndex, 0, directorSource);
+            Assert.Greater(disableIndex, enableIndex, directorSource);
+            string enableBody = directorSource.Substring(enableIndex, disableIndex - enableIndex);
+            StringAssert.Contains("TryRegisterInteractionListener();", enableBody);
+            StringAssert.DoesNotContain("InteractionEvents.Register(this);", enableBody);
+
+            int destroyIndex = directorSource.IndexOf("private void OnDestroy()", disableIndex, StringComparison.Ordinal);
+            Assert.Greater(destroyIndex, disableIndex, directorSource);
+            string disableBody = directorSource.Substring(disableIndex, destroyIndex - disableIndex);
+            StringAssert.Contains("TryUnregisterInteractionListener();", disableBody);
+            StringAssert.DoesNotContain("InteractionEvents.Unregister(this);", disableBody);
+
+            int globalReplaceIndex = directorSource.IndexOf(
+                "public void OnGlobalRegistryServiceReplaced(",
+                destroyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(globalReplaceIndex, destroyIndex, directorSource);
+            string destroyBody = directorSource.Substring(destroyIndex, globalReplaceIndex - destroyIndex);
+            StringAssert.Contains("TryUnregisterInteractionListener();", destroyBody);
+            StringAssert.DoesNotContain("InteractionEvents.Unregister(this);", destroyBody);
+
+            int eventIndex = directorSource.IndexOf(
+                "public void OnInteractionEvent(in InteractionEventPayload payload)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(eventIndex, 0, directorSource);
+
+            int eventResolveItemIndex = directorSource.IndexOf(
+                "!InteractionEvents.TryResolveItem(in payload, out ItemData item) || item == null",
+                eventIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(eventResolveItemIndex, eventIndex, directorSource);
+
+            int eventClassifyIndex = directorSource.IndexOf(
+                "!item.isRawResource && item.category != ItemCategory.Material",
+                eventResolveItemIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(eventClassifyIndex, eventResolveItemIndex, directorSource);
+
+            int eventHashMatchIndex = directorSource.IndexOf(
+                "ItemData.ResolvePersistentHashId(item) != itemHashId",
+                eventClassifyIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(eventHashMatchIndex, eventClassifyIndex, directorSource);
+
+            int eventSanitizeIndex = directorSource.IndexOf(
+                "string stableItemId = SaveData.SanitizePersistenceString(item.PersistentId);",
+                eventHashMatchIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(eventSanitizeIndex, eventHashMatchIndex, directorSource);
+
+            int eventStoreIndex = directorSource.IndexOf(
+                "_itemIdsByHash[itemHashId] = stableItemId;",
+                eventSanitizeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(eventStoreIndex, eventSanitizeIndex, directorSource);
+
+            int populateIndex = directorSource.IndexOf(
+                "public void PopulateSaveData(SaveData data)",
+                eventStoreIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(populateIndex, eventStoreIndex, directorSource);
+
+            int populateSanitizeIndex = directorSource.IndexOf(
+                "dto.itemIds[dto.entryCount] = SaveData.SanitizePersistenceString(stableItemId);",
+                populateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(populateSanitizeIndex, populateIndex, directorSource);
+
+            int loadIndex = directorSource.IndexOf(
+                "public void LoadFromSaveData(SaveData data)",
+                populateSanitizeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(loadIndex, populateSanitizeIndex, directorSource);
+
+            int directorSanitizeIndex = directorSource.IndexOf(
+                "SaveData.SanitizePersistenceString(dto.itemIds[i])",
+                loadIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(directorSanitizeIndex, loadIndex, directorSource);
+
+            int directorMismatchIndex = directorSource.IndexOf(
+                "itemHashId != 0 && stableItemId.Length != 0 && LocHash.Compute(stableItemId) != itemHashId",
+                directorSanitizeIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(directorMismatchIndex, directorSanitizeIndex, directorSource);
+
+            int directorGuardIndex = directorSource.IndexOf(
+                "itemHashId == 0 && stableItemId.Length != 0",
+                directorMismatchIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(directorGuardIndex, directorMismatchIndex, directorSource);
+
+            int directorHashIndex = directorSource.IndexOf("itemHashId = LocHash.Compute(stableItemId);", directorGuardIndex, StringComparison.Ordinal);
+            Assert.Greater(directorHashIndex, directorGuardIndex, directorSource);
+
+            int directorStoreGuardIndex = directorSource.IndexOf(
+                "if (stableItemId.Length != 0)",
+                directorHashIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(directorStoreGuardIndex, directorHashIndex, directorSource);
+
+            int directorStoreIndex = directorSource.IndexOf("_itemIdsByHash[itemHashId] = stableItemId;", directorStoreGuardIndex, StringComparison.Ordinal);
+            Assert.Greater(directorStoreIndex, directorStoreGuardIndex, directorSource);
         }
 
         [Test]
@@ -7255,7 +11661,7 @@ namespace Hecton8.Tests.Editor
             {
                 prefabId = " ",
                 slottedToolItemId = "\t",
-                pipeInFlightItemId = null,
+                pipeInFlightItemId = " \t ",
                 pipeInFlightAmount = -1,
                 pipeTransitProgress = float.PositiveInfinity,
                 pipeExportTimerSeconds = -5f,
@@ -7333,7 +11739,7 @@ namespace Hecton8.Tests.Editor
             {
                 prefabId = " ",
                 slottedToolItemId = "\t",
-                pipeInFlightItemId = null,
+                pipeInFlightItemId = " \t ",
                 drillBufferedItemId = " ",
                 sorterBufferedSlotCount = 1,
                 cultivationSlotCount = 1,
@@ -7485,7 +11891,7 @@ namespace Hecton8.Tests.Editor
             {
                 prefabId = " ",
                 slottedToolItemId = "\t",
-                pipeInFlightItemId = null,
+                pipeInFlightItemId = " \t ",
                 pipeInFlightAmount = -5,
                 pipeTransitProgress = float.NaN,
                 pipeExportTimerSeconds = float.PositiveInfinity,
@@ -7578,7 +11984,7 @@ namespace Hecton8.Tests.Editor
             data.construction.graphNodeCount = 1;
             data.construction.graphNodes[0] = new ModuleGraphNodeDTO
             {
-                prefabId = null,
+                prefabId = " HabitatLocker ",
                 moduleHashId = 42,
                 aupGridX = -12,
                 aupGridY = 3,
@@ -7636,7 +12042,7 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(bytesWritten, bytesRead);
                 Assert.AreEqual(1, restoredData.construction.graphNodeCount);
                 ModuleGraphNodeDTO graphNode = restoredData.construction.graphNodes[0];
-                Assert.AreEqual(string.Empty, graphNode.prefabId);
+                Assert.AreEqual("HabitatLocker", graphNode.prefabId);
                 Assert.AreEqual(42, graphNode.moduleHashId);
                 Assert.AreEqual(-12, graphNode.aupGridX);
                 Assert.AreEqual(3, graphNode.aupGridY);
@@ -7679,7 +12085,7 @@ namespace Hecton8.Tests.Editor
             data.construction.graphNodeCount = 1;
             data.construction.graphNodes[0] = new ModuleGraphNodeDTO
             {
-                prefabId = null,
+                prefabId = " \t ",
                 moduleHashId = 42,
                 aupLocalX = float.NaN,
                 aupLocalY = 2f,
@@ -8017,7 +12423,6 @@ namespace Hecton8.Tests.Editor
             data.construction.modules[0] = new ModuleDTO
             {
                 prefabId = "module.prefab",
-                instanceId = "module.instance",
                 rotW = 1f,
                 integrity = 100f,
                 repairIntegrityCap = 100f,
@@ -8027,7 +12432,6 @@ namespace Hecton8.Tests.Editor
             data.construction.graphNodes[0] = new ModuleGraphNodeDTO
             {
                 prefabId = "module.prefab",
-                instanceId = "module.instance",
                 moduleHashId = 1,
                 rotW = 1f
             };
@@ -8408,9 +12812,9 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void ConstructionRuntime_ReadClampsFirstHourFloodMirrorCountToActiveModules()
+        public void ConstructionRuntime_ReadRecoversDecodedModuleWhenOuterCountIsTooLow()
         {
-            const string sentinelPrefabId = "FIRST_HOUR_FLOOD_CLAMP_SENTINEL";
+            const string sentinelPrefabId = "CONSTRUCTION_MODULE_LOW_COUNT_SENTINEL";
             SaveData data = SaveData.CreateNew(0.0);
             data.construction.EnsureCapacity();
             data.construction.moduleCount = 1;
@@ -8462,9 +12866,161 @@ namespace Hecton8.Tests.Editor
 
                 Assert.IsTrue(read, readError);
                 Assert.AreEqual(bytesWritten, bytesRead);
-                Assert.AreEqual(0, restoredData.construction.moduleCount);
-                Assert.AreEqual(0, restoredData.construction.graphNodeCount);
-                Assert.AreEqual(0, restoredData.construction.habitatFloodStateCount);
+                Assert.AreEqual(1, restoredData.construction.moduleCount);
+                Assert.AreEqual(1, restoredData.construction.graphNodeCount);
+                Assert.AreEqual(1, restoredData.construction.habitatFloodStateCount);
+                Assert.AreEqual(sentinelPrefabId, restoredData.construction.modules[0].prefabId);
+            }
+        }
+
+        [Test]
+        public void ConstructionRuntime_ReadRecoversDecodedGraphNodeWhenOuterCountIsTooLow()
+        {
+            const string modulePrefabId = "CONSTRUCTION_GRAPH_LOW_COUNT_MODULE";
+            const string nodePrefabId = "CONSTRUCTION_GRAPH_LOW_COUNT_NODE";
+            const int moduleHashId = 24680;
+
+            SaveData data = SaveData.CreateNew(0.0);
+            data.construction.EnsureCapacity();
+            data.construction.moduleCount = 1;
+            data.construction.modules[0] = new ModuleDTO
+            {
+                prefabId = modulePrefabId,
+                integrity = 15f,
+                repairIntegrityCap = 20f,
+                airReserveNormalized = 0.9f,
+                co2Normalized = 0.1f,
+                health = 177
+            };
+            data.construction.graphNodeCount = 1;
+            data.construction.graphNodes[0] = new ModuleGraphNodeDTO
+            {
+                prefabId = nodePrefabId,
+                moduleHashId = moduleHashId,
+                rotW = 1f
+            };
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            int bytesWritten;
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+            }
+
+            byte[] marker = BuildConstructionModuleHeaderMarker(nodePrefabId);
+            int graphNodeCountOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, marker);
+            Assert.GreaterOrEqual(graphNodeCountOffset, 0);
+            PatchLittleEndianIntAtOffset(payload, graphNodeCountOffset, 0);
+
+            fixed (byte* payloadPtr = payload)
+            {
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restoredData,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(1, restoredData.construction.moduleCount);
+                Assert.AreEqual(1, restoredData.construction.graphNodeCount);
+                Assert.AreEqual(1, restoredData.construction.habitatFloodStateCount);
+                Assert.AreEqual(moduleHashId, restoredData.construction.graphNodes[0].moduleHashId);
+                Assert.AreEqual(moduleHashId, restoredData.construction.habitatFloodStates[0].moduleHashId);
+            }
+        }
+
+        [Test]
+        public void ConstructionRuntime_ReadRecoversDecodedGraphEdgeWhenOuterCountIsTooLow()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.construction.EnsureCapacity();
+            data.construction.moduleCount = 2;
+            data.construction.modules[0] = new ModuleDTO
+            {
+                prefabId = "edge.module.a",
+                rotW = 1f,
+                integrity = 100f,
+                repairIntegrityCap = 100f,
+                health = 100
+            };
+            data.construction.modules[1] = new ModuleDTO
+            {
+                prefabId = "edge.module.b",
+                rotW = 1f,
+                integrity = 100f,
+                repairIntegrityCap = 100f,
+                health = 100
+            };
+            data.construction.graphNodeCount = 2;
+            data.construction.graphNodes[0] = new ModuleGraphNodeDTO
+            {
+                prefabId = "edge.node.a",
+                moduleHashId = 101,
+                rotW = 1f
+            };
+            data.construction.graphNodes[1] = new ModuleGraphNodeDTO
+            {
+                prefabId = "edge.node.b",
+                moduleHashId = 202,
+                rotW = 1f
+            };
+            data.construction.graphEdgeCount = 1;
+            data.construction.graphEdges[0] = new ModuleGraphEdgeDTO
+            {
+                sourceNodeIndex = 0,
+                destinationNodeIndex = 1
+            };
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            int bytesWritten;
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+            }
+
+            byte[] marker = new byte[sizeof(int) * 4];
+            int markerOffset = 0;
+            WritePayloadInt(marker, ref markerOffset, 1);
+            WritePayloadInt(marker, ref markerOffset, 1);
+            WritePayloadInt(marker, ref markerOffset, 0);
+            WritePayloadInt(marker, ref markerOffset, 1);
+            int graphEdgeCountOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, marker);
+            Assert.GreaterOrEqual(graphEdgeCountOffset, 0);
+            PatchLittleEndianIntAtOffset(payload, graphEdgeCountOffset, 0);
+
+            fixed (byte* payloadPtr = payload)
+            {
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restoredData,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(2, restoredData.construction.graphNodeCount);
+                Assert.AreEqual(1, restoredData.construction.graphEdgeCount);
+                Assert.AreEqual(0, restoredData.construction.graphEdges[0].sourceNodeIndex);
+                Assert.AreEqual(1, restoredData.construction.graphEdges[0].destinationNodeIndex);
             }
         }
 
@@ -9052,7 +13608,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void ProceduralLoreRuntimeMigration_CurrentRepairsMalformedPlacementPosition()
+        public void ProceduralLoreRuntimeMigration_CurrentRepairsMalformedPlacementPositionAndIds()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.version = SaveData.CurrentVersion;
@@ -9060,8 +13616,8 @@ namespace Hecton8.Tests.Editor
             data.proceduralLore.activeCount = 1;
             data.proceduralLore.activePlacements[0] = new ProceduralLorePlacementDTO
             {
-                discoveryId = null,
-                logId = null,
+                discoveryId = " discovery.alpha ",
+                logId = " log.alpha ",
                 chunkKey = 42L,
                 posX = float.NaN,
                 posY = 2f,
@@ -9073,8 +13629,8 @@ namespace Hecton8.Tests.Editor
             Assert.IsTrue(changed, summary);
             Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
             ProceduralLorePlacementDTO placement = data.proceduralLore.activePlacements[0];
-            Assert.AreEqual(string.Empty, placement.discoveryId);
-            Assert.AreEqual(string.Empty, placement.logId);
+            Assert.AreEqual("discovery.alpha", placement.discoveryId);
+            Assert.AreEqual("log.alpha", placement.logId);
             Assert.AreEqual(42L, placement.chunkKey);
             Assert.AreEqual(0f, placement.posX);
             Assert.AreEqual(2f, placement.posY);
@@ -9083,15 +13639,15 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void ProceduralLoreRuntime_WriteSanitizesMalformedPlacementPosition()
+        public void ProceduralLoreRuntime_WriteSanitizesMalformedPlacementPositionAndIds()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.proceduralLore.EnsureCapacity();
             data.proceduralLore.activeCount = 1;
             data.proceduralLore.activePlacements[0] = new ProceduralLorePlacementDTO
             {
-                discoveryId = null,
-                logId = null,
+                discoveryId = " discovery.write ",
+                logId = " log.write ",
                 chunkKey = 84L,
                 posX = float.PositiveInfinity,
                 posY = 5f,
@@ -9124,8 +13680,8 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(bytesWritten, bytesRead);
                 Assert.AreEqual(1, restoredData.proceduralLore.activeCount);
                 ProceduralLorePlacementDTO placement = restoredData.proceduralLore.activePlacements[0];
-                Assert.AreEqual(string.Empty, placement.discoveryId);
-                Assert.AreEqual(string.Empty, placement.logId);
+                Assert.AreEqual("discovery.write", placement.discoveryId);
+                Assert.AreEqual("log.write", placement.logId);
                 Assert.AreEqual(84L, placement.chunkKey);
                 Assert.AreEqual(0f, placement.posX);
                 Assert.AreEqual(5f, placement.posY);
@@ -9293,6 +13849,45 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RunModifiersRuntimeMigration_CurrentCanonicalizesDailySeedId()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.runModifiers = new RunModifiersDTO
+            {
+                isDailySeed = true,
+                dailySeedId = " daily.trim "
+            };
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.IsTrue(data.runModifiers.isDailySeed);
+            Assert.AreEqual("daily.trim", data.runModifiers.dailySeedId);
+            StringAssert.Contains("run modifiers daily-seed id repaired", summary);
+        }
+
+        [Test]
+        public void RunModifiersRuntimeMigration_CurrentClearsBlankNonDailySeedId()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.runModifiers = new RunModifiersDTO
+            {
+                isDailySeed = false,
+                dailySeedId = " \t"
+            };
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(string.Empty, data.runModifiers.dailySeedId);
+            StringAssert.Contains("run modifiers daily-seed id cleared", summary);
+        }
+
+        [Test]
         public void RunModifiersRuntime_WriteSanitizesInconsistentFlags()
         {
             SaveData data = SaveData.CreateNew(0.0);
@@ -9368,6 +13963,43 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RunModifiersRuntime_WriteCanonicalizesDailySeedId()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.runModifiers = new RunModifiersDTO
+            {
+                isDailySeed = true,
+                dailySeedId = " daily.write "
+            };
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restoredData,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.IsTrue(restoredData.runModifiers.isDailySeed);
+                Assert.AreEqual("daily.write", restoredData.runModifiers.dailySeedId);
+            }
+        }
+
+        [Test]
         public void WorldStateRuntime_ReadClampsMalformedCounts()
         {
             const string depletedNodeId = "node.world.count";
@@ -9433,6 +14065,73 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(WorldStateDTO.MaxPickupChunks, restoredData.worldState.depletedPickupChunkWordStarts.Length);
                 Assert.AreEqual(WorldStateDTO.MaxPickupChunks, restoredData.worldState.depletedPickupChunkWordCounts.Length);
                 Assert.AreEqual(WorldStateDTO.MaxPickupWords, restoredData.worldState.depletedPickupWords.Length);
+                Assert.AreEqual(depletedNodeId, restoredData.worldState.depletedNodeIds[0]);
+                Assert.AreEqual(pickupChunkKey, restoredData.worldState.depletedPickupChunkKeys[0]);
+                Assert.AreEqual(pickupWord, restoredData.worldState.depletedPickupWords[0]);
+            }
+        }
+
+        [Test]
+        public void WorldStateRuntime_ReadRecoversDecodedCountsWhenOuterCountsAreTooLow()
+        {
+            const string depletedNodeId = "node.world.low-count";
+            const long pickupChunkKey = 0x1122334455667788L;
+            const long pickupWord = 0x1020304050607080L;
+
+            SaveData data = SaveData.CreateNew(0.0);
+            data.worldState.EnsureCapacity();
+            data.worldState.depletedCount = 1;
+            data.worldState.depletedNodeIds[0] = depletedNodeId;
+            data.worldState.depletedPickupChunkCount = 1;
+            data.worldState.depletedPickupChunkKeys[0] = pickupChunkKey;
+            data.worldState.depletedPickupChunkWordStarts[0] = 0;
+            data.worldState.depletedPickupChunkWordCounts[0] = 1;
+            data.worldState.depletedPickupWordCount = 1;
+            data.worldState.depletedPickupWords[0] = pickupWord;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            int bytesWritten;
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+            }
+
+            byte[] marker = BuildWorldStateMarker(depletedNodeId, pickupChunkKey, pickupWord);
+            int worldOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, marker);
+            Assert.GreaterOrEqual(worldOffset, 0);
+
+            int pickupChunkCountOffset = sizeof(int) + EncodedStringArraySingleEntryBytes(depletedNodeId);
+            int pickupWordCountOffset = pickupChunkCountOffset
+                + sizeof(int)
+                + (int)EncodedStructArrayBytes<long>(1)
+                + (int)EncodedStructArrayBytes<int>(1)
+                + (int)EncodedStructArrayBytes<int>(1);
+            PatchPayloadInt(payload, worldOffset, 0);
+            PatchPayloadInt(payload, worldOffset + pickupChunkCountOffset, 0);
+            PatchPayloadInt(payload, worldOffset + pickupWordCountOffset, 0);
+
+            fixed (byte* payloadPtr = payload)
+            {
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restoredData,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(1, restoredData.worldState.depletedCount);
+                Assert.AreEqual(1, restoredData.worldState.depletedPickupChunkCount);
+                Assert.AreEqual(1, restoredData.worldState.depletedPickupWordCount);
                 Assert.AreEqual(depletedNodeId, restoredData.worldState.depletedNodeIds[0]);
                 Assert.AreEqual(pickupChunkKey, restoredData.worldState.depletedPickupChunkKeys[0]);
                 Assert.AreEqual(pickupWord, restoredData.worldState.depletedPickupWords[0]);
@@ -9612,6 +14311,58 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void BarterRuntime_ReadRecoversDecodedOfferStateWhenOuterCountIsTooLow()
+        {
+            const string offerId = "offer.low-count";
+
+            SaveData data = SaveData.CreateNew(0.0);
+            data.barter.EnsureCapacity();
+            data.barter.stateCount = 1;
+            data.barter.offerStates[0] = new BarterOfferStateDTO
+            {
+                offerId = offerId,
+                executionCount = 2
+            };
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            int bytesWritten;
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+            }
+
+            byte[] marker = BuildBarterSingleOfferMarker(offerId, 2);
+            int barterOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, marker);
+            Assert.GreaterOrEqual(barterOffset, 0);
+            PatchPayloadInt(payload, barterOffset, 0);
+
+            fixed (byte* payloadPtr = payload)
+            {
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restoredData,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(1, restoredData.barter.stateCount);
+                Assert.AreEqual(0, restoredData.barter.recentTransactionCount);
+                Assert.AreEqual(offerId, restoredData.barter.offerStates[0].offerId);
+                Assert.AreEqual(2, restoredData.barter.offerStates[0].executionCount);
+            }
+        }
+
+        [Test]
         public void ExplorationMapRuntime_ReadCanonicalizesMalformedCurrentHeader()
         {
             const int malformedByteCount = 7;
@@ -9683,7 +14434,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void PdaMarkerRuntimeMigration_CurrentRepairsMalformedEntryPosition()
+        public void PdaMarkerRuntimeMigration_CurrentRepairsMalformedEntryPositionAndId()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.version = SaveData.CurrentVersion;
@@ -9692,7 +14443,7 @@ namespace Hecton8.Tests.Editor
             data.pdaMarkers.nextSequence = 1;
             data.pdaMarkers.entries[0] = new PDAMarkerEntryDTO
             {
-                markerId = "marker.sample",
+                markerId = " marker.alpha ",
                 title = "Marker Sample",
                 iconType = 2,
                 posX = float.NaN,
@@ -9713,7 +14464,7 @@ namespace Hecton8.Tests.Editor
             Assert.IsTrue(changed, summary);
             Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
             PDAMarkerEntryDTO entry = data.pdaMarkers.entries[0];
-            Assert.AreEqual("marker.sample", entry.markerId);
+            Assert.AreEqual("marker.alpha", entry.markerId);
             Assert.AreEqual("Marker Sample", entry.title);
             Assert.AreEqual(2, entry.iconType);
             Assert.AreEqual(0f, entry.posX);
@@ -9754,7 +14505,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void PdaMarkerRuntime_WriteSanitizesMalformedEntryPosition()
+        public void PdaMarkerRuntime_WriteSanitizesMalformedEntryPositionAndId()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.pdaMarkers.EnsureCapacity();
@@ -9762,7 +14513,7 @@ namespace Hecton8.Tests.Editor
             data.pdaMarkers.nextSequence = 2;
             data.pdaMarkers.entries[0] = new PDAMarkerEntryDTO
             {
-                markerId = "marker.write",
+                markerId = " marker.write ",
                 title = "Marker Write",
                 iconType = 3,
                 posX = float.PositiveInfinity,
@@ -10455,8 +15206,8 @@ namespace Hecton8.Tests.Editor
             data.beaconNetwork.nextSequence = 0;
             data.beaconNetwork.entries[0] = new BeaconEntryDTO
             {
-                id = "beacon-alpha",
-                label = "Alpha",
+                id = " \t ",
+                label = " \t ",
                 posX = float.NaN,
                 posY = 2f,
                 posZ = float.PositiveInfinity,
@@ -10478,8 +15229,9 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(1, data.beaconNetwork.activeCount);
             Assert.AreEqual(2, data.beaconNetwork.nextSequence);
             BeaconEntryDTO entry = data.beaconNetwork.entries[0];
-            Assert.AreEqual("beacon-alpha", entry.id);
-            Assert.AreEqual("Alpha", entry.label);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(entry.id));
+            Assert.AreEqual(32, entry.id.Length);
+            Assert.AreEqual("BEACON 01", entry.label);
             Assert.AreEqual(0f, entry.posX);
             Assert.AreEqual(2f, entry.posY);
             Assert.AreEqual(0f, entry.posZ);
@@ -10497,6 +15249,72 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void BeaconNetworkRuntimeMigration_CurrentReportsBlankBeaconIdentityRepair()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.beaconNetwork.EnsureCapacity();
+            data.beaconNetwork.activeCount = 1;
+            data.beaconNetwork.nextSequence = 2;
+            data.beaconNetwork.entries[0] = new BeaconEntryDTO
+            {
+                id = " \t ",
+                label = " \t ",
+                rotW = 1f,
+                colorA = 1f,
+                lightRange = BeaconEntryDTO.DefaultLightRange
+            };
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            BeaconEntryDTO entry = data.beaconNetwork.entries[0];
+            uint salt = unchecked((uint)LocHash.Compute("SaveDataMigration.BeaconNetwork.RepairedId"));
+            uint capacity = unchecked((uint)BeaconNetworkDTO.MaxEntries);
+            string expectedId = $"{salt:x8}{0u:x8}{2u:x8}{capacity:x8}";
+            Assert.AreEqual(expectedId, entry.id);
+            Assert.AreEqual("BEACON 01", entry.label);
+            StringAssert.Contains("beacon entries repaired", summary);
+        }
+
+        [Test]
+        public void BeaconNetworkRuntimeMigration_CurrentRepairsBlankBeaconIdentityDeterministically()
+        {
+            SaveData first = SaveData.CreateNew(0.0);
+            first.version = SaveData.CurrentVersion;
+            first.beaconNetwork.EnsureCapacity();
+            first.beaconNetwork.activeCount = 1;
+            first.beaconNetwork.nextSequence = 17;
+            first.beaconNetwork.entries[0] = new BeaconEntryDTO
+            {
+                id = " \t ",
+                label = " \t ",
+                rotW = 1f,
+                colorA = 1f,
+                lightRange = BeaconEntryDTO.DefaultLightRange
+            };
+
+            SaveData second = SaveData.CreateNew(0.0);
+            second.version = SaveData.CurrentVersion;
+            second.beaconNetwork.EnsureCapacity();
+            second.beaconNetwork.activeCount = first.beaconNetwork.activeCount;
+            second.beaconNetwork.nextSequence = first.beaconNetwork.nextSequence;
+            second.beaconNetwork.entries[0] = first.beaconNetwork.entries[0];
+
+            bool firstChanged = SaveDataMigration.MigrateInPlace(first, out _, out string firstSummary);
+            bool secondChanged = SaveDataMigration.MigrateInPlace(second, out _, out string secondSummary);
+
+            Assert.IsTrue(firstChanged, firstSummary);
+            Assert.IsTrue(secondChanged, secondSummary);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(first.beaconNetwork.entries[0].id));
+            Assert.AreEqual(32, first.beaconNetwork.entries[0].id.Length);
+            Assert.AreEqual(first.beaconNetwork.entries[0].id, second.beaconNetwork.entries[0].id);
+            StringAssert.Contains("beacon entries repaired", firstSummary);
+            StringAssert.Contains("beacon entries repaired", secondSummary);
+        }
+
+        [Test]
         public void BeaconNetworkRuntime_WriteSanitizesMalformedBeaconEntries()
         {
             SaveData data = SaveData.CreateNew(0.0);
@@ -10505,8 +15323,8 @@ namespace Hecton8.Tests.Editor
             data.beaconNetwork.nextSequence = 0;
             data.beaconNetwork.entries[0] = new BeaconEntryDTO
             {
-                id = "beacon-beta",
-                label = "Beta",
+                id = " beacon-write ",
+                label = " \t ",
                 posX = float.PositiveInfinity,
                 posY = 5f,
                 posZ = float.NaN,
@@ -10546,8 +15364,8 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(1, restoredData.beaconNetwork.activeCount);
                 Assert.AreEqual(1, restoredData.beaconNetwork.nextSequence);
                 BeaconEntryDTO entry = restoredData.beaconNetwork.entries[0];
-                Assert.AreEqual("beacon-beta", entry.id);
-                Assert.AreEqual("Beta", entry.label);
+                Assert.AreEqual("beacon-write", entry.id);
+                Assert.AreEqual(string.Empty, entry.label);
                 Assert.AreEqual(0f, entry.posX);
                 Assert.AreEqual(5f, entry.posY);
                 Assert.AreEqual(0f, entry.posZ);
@@ -10637,6 +15455,78 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void BeaconNetworkRuntime_ReadRecoversDecodedEntryWhenOuterCountIsTooLow()
+        {
+            const int nextSequence = 7;
+            BeaconEntryDTO expectedEntry = new BeaconEntryDTO
+            {
+                id = "beacon-low-count",
+                label = "Low Count Beacon",
+                posX = 1f,
+                posY = 2f,
+                posZ = 3f,
+                rotX = 0f,
+                rotY = 0f,
+                rotZ = 0f,
+                rotW = 1f,
+                colorR = 0.25f,
+                colorG = 0.5f,
+                colorB = 0.75f,
+                colorA = 1f,
+                lightRange = 8f
+            };
+
+            SaveData data = SaveData.CreateNew(0.0);
+            data.beaconNetwork.EnsureCapacity();
+            data.beaconNetwork.activeCount = 1;
+            data.beaconNetwork.nextSequence = nextSequence;
+            data.beaconNetwork.entries[0] = expectedEntry;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            int bytesWritten;
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+            }
+
+            byte[] marker = BuildBeaconNetworkSingleEntryMarker(expectedEntry, nextSequence);
+            int beaconOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, marker);
+            Assert.GreaterOrEqual(beaconOffset, 0);
+            PatchPayloadInt(payload, beaconOffset, 0);
+
+            fixed (byte* payloadPtr = payload)
+            {
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restoredData,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(1, restoredData.beaconNetwork.activeCount);
+                Assert.AreEqual(nextSequence, restoredData.beaconNetwork.nextSequence);
+                BeaconEntryDTO entry = restoredData.beaconNetwork.entries[0];
+                Assert.AreEqual(expectedEntry.id, entry.id);
+                Assert.AreEqual(expectedEntry.label, entry.label);
+                Assert.AreEqual(expectedEntry.posX, entry.posX);
+                Assert.AreEqual(expectedEntry.posY, entry.posY);
+                Assert.AreEqual(expectedEntry.posZ, entry.posZ);
+                Assert.AreEqual(expectedEntry.rotW, entry.rotW);
+                Assert.AreEqual(expectedEntry.lightRange, entry.lightRange);
+            }
+        }
+
+        [Test]
         public void PdaLogbookRuntimeMigration_CurrentRepairsMalformedEntryTime()
         {
             SaveData data = SaveData.CreateNew(0.0);
@@ -10700,9 +15590,9 @@ namespace Hecton8.Tests.Editor
                 dayIndex = 1,
                 dayTimeHours = 5f,
                 playTimeSeconds = 10f,
-                title = "pda.log.title.alpha",
-                message = "pda.log.message.alpha",
-                originKey = "pda.log.origin.alpha"
+                title = " pda.log.title.alpha ",
+                message = " pda.log.message.alpha ",
+                originKey = " pda.log.origin.alpha "
             };
             data.pdaLogbook.entries[1] = new PDALogbookEntryDTO
             {
@@ -10738,31 +15628,70 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PdaLogbookRuntime_LegacyStringReadDefersHashingToSanitizer()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs"));
+
+            int methodIndex = source.IndexOf(
+                "private static bool ReadPdaLogbookEntry(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodIndex, 0, source);
+
+            int nextMethodIndex = source.IndexOf(
+                "private static bool WritePdaMarkerEntry(",
+                methodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(nextMethodIndex, methodIndex, source);
+
+            string methodBody = source.Substring(methodIndex, nextMethodIndex - methodIndex);
+            int legacyStringReadIndex = methodBody.IndexOf(
+                "reader.ReadString(out value.title)",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(legacyStringReadIndex, 0, methodBody);
+
+            int sanitizeIndex = methodBody.IndexOf(
+                "value = PDALogbookEntryDTO.SanitizeForPersistence(in value);",
+                legacyStringReadIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(sanitizeIndex, legacyStringReadIndex, methodBody);
+
+            StringAssert.DoesNotContain("value.titleHash = LocHash.Compute(value.title);", methodBody);
+            StringAssert.DoesNotContain("value.messageHash = LocHash.Compute(value.message);", methodBody);
+            StringAssert.DoesNotContain("value.originHash = LocHash.Compute(value.originKey);", methodBody);
+        }
+
+        [Test]
         public void PdaLogbookRuntimeMigration_CurrentConvertsLegacySeenOriginKeys()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.version = SaveData.CurrentVersion;
-            data.pdaLogbook.seenOriginCount = 4;
-            data.pdaLogbook.seenOriginHashes = null;
+            int hashOnlyOrigin = LocHash.Compute("origin.hash.only");
+            data.pdaLogbook.seenOriginCount = 5;
+            data.pdaLogbook.seenOriginHashes = new[] { 0, 0, hashOnlyOrigin, 0, 0 };
             data.pdaLogbook.seenOriginKeys = new[]
             {
-                "origin.alpha",
+                " origin.alpha ",
                 null,
+                " \t ",
                 string.Empty,
-                "origin.beta"
+                " origin.beta "
             };
 
             bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
 
             Assert.IsTrue(changed, summary);
             Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
-            Assert.AreEqual(2, data.pdaLogbook.seenOriginCount);
+            Assert.AreEqual(3, data.pdaLogbook.seenOriginCount);
             Assert.AreEqual(LocHash.Compute("origin.alpha"), data.pdaLogbook.seenOriginHashes[0]);
-            Assert.AreEqual(LocHash.Compute("origin.beta"), data.pdaLogbook.seenOriginHashes[1]);
+            Assert.AreEqual(hashOnlyOrigin, data.pdaLogbook.seenOriginHashes[1]);
+            Assert.AreEqual(LocHash.Compute("origin.beta"), data.pdaLogbook.seenOriginHashes[2]);
             Assert.AreEqual("origin.alpha", data.pdaLogbook.seenOriginKeys[0]);
-            Assert.AreEqual("origin.beta", data.pdaLogbook.seenOriginKeys[1]);
-            Assert.AreEqual(string.Empty, data.pdaLogbook.seenOriginKeys[2]);
+            Assert.AreEqual(string.Empty, data.pdaLogbook.seenOriginKeys[1]);
+            Assert.AreEqual("origin.beta", data.pdaLogbook.seenOriginKeys[2]);
             Assert.AreEqual(string.Empty, data.pdaLogbook.seenOriginKeys[3]);
+            Assert.AreEqual(string.Empty, data.pdaLogbook.seenOriginKeys[4]);
             StringAssert.Contains("pda logbook capacity repaired", summary);
             StringAssert.Contains("pda logbook seen origins repaired", summary);
         }
@@ -11617,6 +16546,21 @@ namespace Hecton8.Tests.Editor
             field.SetValue(target, value);
         }
 
+        private static void InvokePrivateInstanceMethod(object target, string methodName)
+        {
+            Assert.IsNotNull(target);
+            MethodInfo method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(method, methodName);
+            method.Invoke(target, null);
+        }
+
+        private static void InvokeInteractionEventsResetStaticState()
+        {
+            MethodInfo method = typeof(InteractionEvents).GetMethod("ResetStaticState", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(method, "InteractionEvents.ResetStaticState");
+            method.Invoke(null, null);
+        }
+
         private static TValue GetPrivateInstanceField<TValue>(object target, string fieldName)
         {
             Assert.IsNotNull(target);
@@ -11848,6 +16792,10 @@ namespace Hecton8.Tests.Editor
                 sorterBufferedSlotCount = 2,
                 sorterBufferedItemIds = new[] { "sorter.a", "sorter.b", "unused.sorter" },
                 sorterBufferedQuantities = new[] { 1, 2, 99 },
+                storageCrateContentsSerialized = true,
+                storageCrateSlotCount = 2,
+                storageCrateItemIds = new[] { "crate.a", "crate.b", "unused.crate" },
+                storageCrateQuantities = new[] { 1, 2, 99 },
                 posX = 10f,
                 posY = 20f,
                 posZ = 30f,
@@ -12589,6 +17537,31 @@ namespace Hecton8.Tests.Editor
             }
 
             return true;
+        }
+
+        private static string ExtractMethodBody(string source, string signature)
+        {
+            int signatureIndex = source.IndexOf(signature, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(signatureIndex, 0, "Missing method signature: " + signature);
+            int open = source.IndexOf('{', signatureIndex);
+            Assert.GreaterOrEqual(open, 0, "Missing method open brace: " + signature);
+
+            int depth = 0;
+            for (int i = open; i < source.Length; i++)
+            {
+                char c = source[i];
+                if (c == '{')
+                    depth++;
+                else if (c == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                        return source.Substring(open, i - open + 1);
+                }
+            }
+
+            Assert.Fail("Missing method close brace: " + signature);
+            return string.Empty;
         }
     }
 }

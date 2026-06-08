@@ -4,6 +4,7 @@ using System.Text;
 using Hecton8.Core;
 using Hecton8.Editor.ColliderOptimization1716;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor;
@@ -48,10 +49,12 @@ namespace Hecton8.Editor.ProceduralGen
 
             NativeList<Matrix4x4> branchMatrices = default;
             NativeList<BioForgeBranch> branches = default;
+            int branchMatricesSentinelId = 0;
+            int branchesSentinelId = 0;
             try
             {
-                branchMatrices = AllocateTrackedNativeList<Matrix4x4>(rule.MaxBranches, Allocator.TempJob, nameof(branchMatrices));
-                branches = AllocateTrackedNativeList<BioForgeBranch>(rule.MaxBranches, Allocator.TempJob, nameof(branches));
+                branchMatrices = AllocateTrackedNativeList<Matrix4x4>(rule.MaxBranches, Allocator.TempJob, nameof(branchMatrices), out branchMatricesSentinelId);
+                branches = AllocateTrackedNativeList<BioForgeBranch>(rule.MaxBranches, Allocator.TempJob, nameof(branches), out branchesSentinelId);
                 string expanded = ExpandAxiom(rule);
                 ParseLSystem(rule, expanded, seed, branchMatrices, branches);
 
@@ -68,8 +71,8 @@ namespace Hecton8.Editor.ProceduralGen
             }
             finally
             {
-                DisposeTrackedNativeList(ref branches, nameof(branches));
-                DisposeTrackedNativeList(ref branchMatrices, nameof(branchMatrices));
+                DisposeTrackedNativeList(ref branches, ref branchesSentinelId);
+                DisposeTrackedNativeList(ref branchMatrices, ref branchMatricesSentinelId);
             }
         }
 
@@ -215,6 +218,7 @@ namespace Hecton8.Editor.ProceduralGen
             NativeList<BioForgeRawVertex> rawVertices = default;
             NativeArray<int> overflow = default;
             NativeArray<BioForgeMeshVertex> bakedVertices = default;
+            int rawVerticesSentinelId = 0;
 
             try
             {
@@ -222,7 +226,7 @@ namespace Hecton8.Editor.ProceduralGen
                 density = AllocateTrackedNativeArray<float>(pointCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(density));
                 int rawCapacity = math.min(cellCount * 18, 3000000);
                 // COLD ALLOC: NativeList<BioForgeRawVertex>[rawCapacity] - editor marching-cubes raw vertex output - owner: BioForgeGenerator
-                rawVertices = AllocateTrackedNativeList<BioForgeRawVertex>(rawCapacity, Allocator.TempJob, nameof(rawVertices));
+                rawVertices = AllocateTrackedNativeList<BioForgeRawVertex>(rawCapacity, Allocator.TempJob, nameof(rawVertices), out rawVerticesSentinelId);
                 // COLD ALLOC: NativeArray<int>[1] - editor MC overflow flag - owner: BioForgeGenerator
                 overflow = AllocateTrackedNativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory, nameof(overflow));
 
@@ -293,7 +297,7 @@ namespace Hecton8.Editor.ProceduralGen
             finally
             {
                 DisposeTrackedNativeArray(ref bakedVertices);
-                DisposeTrackedNativeList(ref rawVertices, nameof(rawVertices));
+                DisposeTrackedNativeList(ref rawVertices, ref rawVerticesSentinelId);
                 DisposeTrackedNativeArray(ref overflow);
                 DisposeTrackedNativeArray(ref density);
             }
@@ -365,24 +369,44 @@ namespace Hecton8.Editor.ProceduralGen
             return array;
         }
 
-        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
             }
             finally
             {
-                array.Dispose();
                 array = default;
             }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
-        private static NativeList<T> AllocateTrackedNativeList<T>(int capacity, Allocator allocator, string label) where T : unmanaged
+        private static NativeList<T> AllocateTrackedNativeList<T>(int capacity, Allocator allocator, string label, out int sentinelId) where T : unmanaged
         {
+            sentinelId = 0;
             int safeCapacity = math.max(1, capacity);
             NativeList<T> list = new NativeList<T>(safeCapacity, allocator);
             if (!list.IsCreated)
@@ -390,33 +414,92 @@ namespace Hecton8.Editor.ProceduralGen
 
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator));
+                sentinelId = NativeMemorySentinel.RegisterNativeListInstance(list, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator));
                 if (sentinelId <= 0)
                     throw new InvalidOperationException("[BioForge] NativeMemorySentinel rejected NativeList registration for " + label + ".");
             }
             catch
             {
-                list.Dispose();
+                System.Exception nativeSentinelCleanupException1 = null;
+
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (System.Exception nativeSentinelException1)
+                    {
+                        nativeSentinelCleanupException1 = nativeSentinelException1;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                try
+                {
+                    list.Dispose();
+                }
+                catch (System.Exception nativeSentinelException1)
+                {
+                    if (nativeSentinelCleanupException1 == null)
+                        nativeSentinelCleanupException1 = nativeSentinelException1;
+                }
+
+                if (nativeSentinelCleanupException1 != null)
+                    throw nativeSentinelCleanupException1;
+
                 throw;
             }
 
             return list;
         }
 
-        private static void DisposeTrackedNativeList<T>(ref NativeList<T> list, string label) where T : unmanaged
+        private static void DisposeTrackedNativeList<T>(ref NativeList<T> list, ref int sentinelId) where T : unmanaged
         {
-            if (!list.IsCreated)
-                return;
+            Exception firstException = null;
 
-            try
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
-            finally
+
+            if (list.IsCreated)
             {
-                list.Dispose();
+                try
+                {
+                    list.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    list = default;
+                }
+            }
+            else
+            {
                 list = default;
             }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
@@ -775,7 +858,8 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static void ParseLSystem(BioRuleData rule, string expanded, int seed, NativeList<Matrix4x4> branchMatrices, NativeList<BioForgeBranch> branches)
         {
-            NativeList<TurtleState> stateStack = AllocateTrackedNativeList<TurtleState>(math.max(64, rule.MaxBranches), Allocator.Temp, nameof(stateStack));
+            int stateStackSentinelId = 0;
+            NativeList<TurtleState> stateStack = AllocateTrackedNativeList<TurtleState>(math.max(64, rule.MaxBranches), Allocator.Temp, nameof(stateStack), out stateStackSentinelId);
             try
             {
                 float angleRad = math.radians(rule.AngleDegrees + (Hash01((uint)seed, 17u) - 0.5f) * 4f);
@@ -831,7 +915,7 @@ namespace Hecton8.Editor.ProceduralGen
             }
             finally
             {
-                DisposeTrackedNativeList(ref stateStack, nameof(stateStack));
+                DisposeTrackedNativeList(ref stateStack, ref stateStackSentinelId);
             }
         }
 

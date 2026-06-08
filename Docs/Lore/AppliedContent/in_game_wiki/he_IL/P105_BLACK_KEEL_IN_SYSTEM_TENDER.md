@@ -7,34 +7,34 @@ poi_tags: poi.black_keel_limit_notice;poi.tender_maintenance_tag
 biome_tags: biome.carrier_link;biome.shallow_annex
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Black Keel In-System Tender"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "מכרז תוך-מערכתי של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel In-System Tender
+# מכרז תוך-מערכתי של Black Keel
 
-HE LOC HOLD: Black Keel is an Aegir-system automated claim-tender, not a personal interstellar ship. It can hold custody, speak through windows, recover payload mass and enforce debt. It cannot ignore HECTON-8 weather, orbital timing, quarantine clauses or damaged descent hardware.
+Black Keel הוא מכרז תביעה אוטומטי במערכת Aegir, לא ספינה בין-כוכבית אישית. הוא יכול להחזיק custody, לדבר דרך חלונות, להשיב מסת payload, לאכוף חוב ולקבל או לדחות תנאי הסגר. הוא לא יכול להתעלם ממזג האוויר של HECTON-8, מתזמון מסלולי, מחומרת ירידה פגועה או מעלות הזזת מסה.
 
 ## Scanner
 
-HE LOC HOLD: Tender limit. Black Keel can recover mass through a window; it cannot cross light-years for you.
+מגבלת מכרז: Black Keel יכול להשיב מסה דרך חלון. הוא לא יחצה שנות אור בשבילך.
 
 ## Terminal
 
-HE LOC HOLD: CARRIER LIMIT: Aegir-system claim tender. Interstellar custody is inherited from route owners; local recovery requires ascent package, quarantine handshake and payload acceptance.
+מגבלת נושאת: מכרז תביעה במערכת Aegir. השבה דורשת חבילת עלייה, לחיצת יד הסגר, קבלת payload ויישור חלון.
 
 ## Audio
 
-HE LOC HOLD: Black Keel is close enough to bill you. Not close enough to save you for free.
+Black Keel קרוב מספיק כדי לחייב אותך. לא קרוב מספיק כדי להציל אותך בחינם.
 
 ## Field Note
 
-HE LOC HOLD: Black Keel is leverage and logistics, not cavalry.
+Black Keel הוא מנוף ולוגיסטיקה, לא חיל פרשים.
 
 <!-- In-Game Wiki; generated from P105_BLACK_KEEL_IN_SYSTEM_TENDER/he_IL. -->

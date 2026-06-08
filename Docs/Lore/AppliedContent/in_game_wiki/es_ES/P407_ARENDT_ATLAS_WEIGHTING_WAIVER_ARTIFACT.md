@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Arendt Atlas Waiver"
+title: "Exención Arendt de ponderación Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Arendt Atlas Waiver
+# Exención Arendt de ponderación Atlas
 
-ES LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+La exención Arendt explica por qué Atlas asusta sin convertirse en enemigo de caricatura. La máquina está dañada, pero la herida moral es anterior: la seguridad laboral fue reponderada bajo continuity antes de las peores decisiones de Atlas.
 
 ## Scanner
 
-ES LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Exención Atlas Continuity. La seguridad laboral quedó protegida solo hasta chocar con process continuity.
 
 ## Terminal
 
-ES LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-ES LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas no aprendió crueldad. Le entregaron una priority stack más fría.
 
 ## Field Note
 
-ES LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Nota Marauder: la exención es donde la compañía enseñó a la máquina cuánto valía una persona.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/es_ES. -->

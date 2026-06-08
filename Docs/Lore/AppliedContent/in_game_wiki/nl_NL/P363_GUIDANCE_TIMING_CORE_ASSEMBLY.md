@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Guidance Timing Core Assembly"
+title: "Geleidingstimingkernassemblage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Guidance Timing Core Assembly
+# Geleidingstimingkernassemblage
 
-NL LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.
+Een werkende opstijging heeft een geleidingstimingkern nodig die Aegirs maangeometrie, blackout-intervallen, relaisschaduwen en carrier recovery lanes begrijpt. Slechte timing kan de capsule verliezen zonder één onderdeel te breken.
 
 ## Scanner
 
-NL LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+Lege timing core. Aegir-geometrie beslist of opstijging recovery, capture of stilte wordt.
 
 ## Terminal
 
-NL LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: capsuleklok uitlijnen op Aegir window, Black Keel receiver lane, moon relay shutter en storm-plume-drift. Late packets worden bewijsverlies; vroege packets worden capture noise.
 
 ## Audio
 
-NL LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+Omhoog is geen richting. Het is een venster met een getuige.
 
 ## Field Note
 
-NL LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+Er is geen simpel omhoog vanaf HECTON-8. Er is een ontvanger, een schaduw, stormdrift en een packet queue die al ouder is dan je paniek.
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/nl_NL. -->

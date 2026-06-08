@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Aegir Moon Route Map"
+title: "Aegir-maanroutekaart"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Aegir Moon Route Map
+# Aegir-maanroutekaart
 
-NL LOC HOLD: Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+De maankaart van Aegir is operationeel voordat hij mooi is. HECTON-8 is een oceaanlichaam in een ladder van manen, shepherd rocks, ice-scatter paths en dead relay marks. Binnenste lichamen verstoren narrowband contact en stralingsdekking. IJsmanen breken optical relay lines in slechte fragmenten. Occultation bands maken stille vensters waar een claim geldig kan zijn en toch ongehoord blijft. Buitenste beacons bewaren oud eigendom nadat bemanningen verdwijnen. Getijdengeometrie en storm stacking beslissen of een bathydrop chain schoon opstijgt of in het loss ledger belandt. Publieke kaarten kunnen dit tonen zonder extra speelbare werelden te beloven; hun taak is de hemel leesbaar te maken als druk, vertraging en routerisico.
 
 ## Scanner
 
-NL LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Systeemkaartrecord. Aegir-manen bepalen relay timing, stralingsdekking, ice scatter, getijdendruk, occultation bands, dode beacons en recovery geometry.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+PUBLIEK ARCHIEFKNOOPPUNT // AEGIR-MAANLADDER. Maannamen zijn routelabels. Elk lichaam verandert signal age, transfer risk, storm exposure, custody timing of claim reliability.
 
 ## Audio
 
-NL LOC HOLD: The map is why no one arrives the moment you ask.
+De kaart verklaart waarom niemand aankomt op het moment dat je vraagt.
 
 ## Field Note
 
-NL LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Marauder-notitie: markeer de maan, markeer daarna wat die met de route doet.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/nl_NL. -->

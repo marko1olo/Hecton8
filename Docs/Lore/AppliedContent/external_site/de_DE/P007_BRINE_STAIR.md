@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Sole-Treppe
 
-Brine Stair macht HECTON-8s Geologie zu traversal. Tiefe wird gelesen, nicht nur ertragen.
-
-## Scanner
-
-Hochdichte Sole-Schicht. Sonarrückläufe biegen an der Grenze. Auftriebsmodell unzuverlässig.
-
-## Terminal
-
-Thermalzapfen ausgerichtet. Substratwachstum über Erwartung. Atlas-Wartung verschoben.
-
-## Audio
-
-Hier unten ist eine ganze Treppe, wenn du Wasser nicht mehr als eine Sache behandelst.
-
-## Field Note
-
-Die Rumpfklasse sagt, wann Metall aufgibt. Sole sagt, wann du arrogant warst.
+Die Sole-Treppe ist der Punkt, an dem HECTON-8 kein einfacher Abstieg mehr ist, sondern eine Maschine aus Wasser. Dichte Sole mischt sich nicht sauber mit den Schichten darüber. Sie liegt in Schelfen, Vorhängen und langsamen Flüssen am Meeresboden, beugt Sonar und verändert Auftrieb im ungünstigsten Moment. Diese Gefahr gibt dem Spieler eine neue Lesefähigkeit. Ein stärkerer Rumpf hilft, aber das Wasser zu lesen zählt mehr: wo Hitze hebt, wo Salz fällt, wo eine Grenze wie eine Straße geritten werden kann, und wo eine sorglose Ballaständerung ein Fahrzeug unter einer unsichtbaren Decke festsetzt. Der Lore-Wert ist ebenso wichtig. Sole-Treppen bewahren, was die Kolonie verlieren wollte. Sie halten alte Routenmarker, Druckkassetten, tote Drohnen, chemische Spuren und manchmal Körper in Schichten, die sich seit Jahrzehnten nicht gemischt haben. Jede Stufe nach unten kann zugleich Navigation, Archäologie und Anklage sein.
 
 <!-- External Site; generated from P007_BRINE_STAIR/de_DE. -->

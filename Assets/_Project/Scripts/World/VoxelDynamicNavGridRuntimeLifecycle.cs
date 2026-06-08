@@ -16,7 +16,9 @@ namespace Hecton8.World
         private void OnEnable()
         {
             VoxelDynamicNavGridRuntime.SetDataVault(GlobalRegistry.DataVault);
-            VoxelDynamicNavGridRuntime.SetVegetationBridge(GlobalRegistry.MapMagicVegetation);
+            HectonMapMagicVegetationBridge vegetationBridge = null;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
+            VoxelDynamicNavGridRuntime.SetVegetationBridge(vegetationBridge);
             TryRegisterHotSwapListener();
             TryRegisterSlowTick();
         }
@@ -63,7 +65,9 @@ namespace Hecton8.World
 
             if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
             {
-                VoxelDynamicNavGridRuntime.SetVegetationBridge(currentService as HectonMapMagicVegetationBridge);
+                HectonMapMagicVegetationBridge vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
+                VoxelDynamicNavGridRuntime.SetVegetationBridge(vegetationBridge);
                 return;
             }
 

@@ -38,9 +38,9 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void CodexPlayModeLauncher_UsesPerProcessNoThrowBeeLifecycle()
+        public void H8PlayModeSentinel_UsesPerProcessNoThrowBeeLifecycle()
         {
-            string source = ReadProjectFile("Assets/_Project/Scripts/Editor/CodexPlayModeLauncher.cs");
+            string source = ReadProjectFile("Assets/_Project/Scripts/Editor/H8PlayModeSentinel.cs");
             string killLoopBody = ExtractMethodBody(source, "private static int KillBeeBackends()");
             string killBody = ExtractMethodBody(source, "private static bool TryKillBeeBackendNoThrow(Process process)");
             string disposeBody = ExtractMethodBody(source, "private static void DisposeBeeBackendProcessNoThrow(Process process)");

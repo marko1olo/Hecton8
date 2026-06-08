@@ -9,32 +9,36 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "AR LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: مسؤولية تحت ماء حقيقي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: مسؤولية تحت ماء حقيقي
 
-AR LOC HOLD: Deep Reach did not need to invent the ocean. HECTON-8 failed under real pressure, real tide force and real infrastructure limits. That is what makes the liability harder to bury. The official record names a localized geotechnical cascade, corrupted Atlas logs and incomplete evacuation. Each phrase has enough truth to survive a hearing. The physical site adds what the public sentence omits: margin approvals signed before the tide window, evacuation routes held behind authorization, quarantine doors certified late, Atlas continuity weights that protected system function before worker recovery, and loss ledgers that turned names into categories after the water had already won. The accusation is not that Deep Reach caused the ocean to rise by command. It is that the company priced known risk, delayed human exit, kept records clean and let recovery offices convert disaster into manageable custody. On HECTON-8, the rooms testify more precisely than the statement.
+## نصف الحقيقة المفيد
 
-## Scanner
+يبقى تقرير Deep Reach مقنعا لأنه يحتوي ماء حقيقيا. تعرضت HECTON-8 إلى Great Tide: ضغط الغلاف الجليدي، المد الرنيني، العواصف، الحرارة والضغط فتحت المستعمرة.
 
-AR LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+المسؤولية في الطبقة المحذوفة: هوامش حساسات مقبولة، إخلاء دون الحاجة، Atlas continuity فوق استخراج البشر، لغة الحجر كشراء وقت، والمفقودون كفئات claim.
 
-## Terminal
+Varnek يحول التحذير إلى خطر جدول. Arendt تبقي السلامة داخل إطار العملية. Haldane تجعل الاستخراج ينتظر الشهادة. Ibarra يترجم الأجساد إلى حمل وخسارة. Sato-Ren ما زالت تطلب الإحداثيات ودليل XO والصمت قبل لغة الإنقاذ.
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+لا يحتاج المستند النظيف إلى اعتراف. الغرفة المغمورة تقدم الكلفة. مذكرة واحدة شبهة. السلسلة دليل، واللاعب يقرر أي سياق يستحق عبوره عبر custody Black Keel.
 
-## Audio
+## شكل الذنب
 
-AR LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Deep Reach لا يجب أن تختصر إلى شرير واحد يضغط زرا نظيفا. ذنبها أقوى لأنه موزع. Varnek يقبل tide margin. Arendt يضع Atlas weights فوق العمال. Haldane يبقي لغة quarantine نظيفة. Ibarra يحول الأسماء إلى loss categories. Sato-Ren يحاول تحريك return action بعد أن صار الضرر داخل النظام.
 
-## Field Note
+كل وثيقة صغيرة بما يكفي لتبدو عادية. معا تكشف مؤسسة نجت لأنها جعلت كل قرار قاتل يبدو محليا ومؤقتا وصحيحا إجرائيا. العمال ماتوا داخل تلك القواعد.
 
-AR LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+## لماذا للدليل كتلة
+
+اللاعب لا يحل هذا بالإيمان. يمكن تأخير packet أو الطعن فيه أو تنقيحه أو تسعيره. الدليل المادي يجب حمله: sensor margins، معدات إخلاء مكسورة، Atlas trace، custody ledger، sample chain. الدليل ثقيل لأن HECTON-8 يجعل الحقيقة تشارك المكان مع الأكسجين والأدوات والحمولة.
+
+هذا هو ضغط القصة. اللاعب لا يتعلم ما حدث فقط. إنه يقرر كم من النجاة يمكن إنفاقه كي يصبح محو ما حدث أصعب.
 
 <!-- External Site; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/ar_SA. -->

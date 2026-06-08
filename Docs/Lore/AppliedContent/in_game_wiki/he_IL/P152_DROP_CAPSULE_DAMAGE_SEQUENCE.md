@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Drop Capsule Damage Sequence"
+title: "רצף נזקי קפסולת ההטלה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Drop Capsule Damage Sequence
+# רצף נזקי קפסולת ההטלה
 
-HE LOC HOLD: The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.
+ה-bathy-drop הפגוע הופך בריחה לשרשרת הנדסית. המקלט והאבחון שרדו, אבל חומרת העלייה אבדה פיזית או הוצפה.
 
 ## Scanner
 
-HE LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+אבחון קפסולה. הירידה הצילה את הגוף במחיר חומרת העלייה.
 
 ## Terminal
 
-HE LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+סיכום נזק BATHY-DROP: crush-frame התעקם; high-gain mast אבד; ascent avionics הוצף; recovery/flotation ring נקרע; מצוף חירום חוזר על no-lock. כוח מקלט זמין. עלייה עצמאית אינה זמינה.
 
 ## Audio
 
-HE LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus הוצף. Recovery ring no-lock. הקפסולה הזאת יכולה להשאיר אותך נושם, לא לקחת אותך הביתה.
 
 ## Field Note
 
-HE LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+הטבעת התחתונה אליפטית בשתי אצבעות. High-gain mast נעלם. המצוף עדיין מבקש שיגור שלא יוכל לבצע.
 
 <!-- In-Game Wiki; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/he_IL. -->

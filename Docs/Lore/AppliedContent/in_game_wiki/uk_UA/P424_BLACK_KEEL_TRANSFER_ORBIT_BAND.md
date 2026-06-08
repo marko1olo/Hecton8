@@ -7,34 +7,34 @@ poi_tags: poi.black_keel_transfer_band;poi.carrier_custody_orbit
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "UK LOC HOLD: Black Keel Transfer Band"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Трансферний діапазон Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Black Keel Transfer Band
+# Трансферний діапазон Black Keel
 
-UK LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.
+Трансферний діапазон Black Keel пояснює, чому контакт, payload pickup і human extraction є різними задачами. Carrier може чути, оцінювати й приймати cargo раніше, ніж безпечно витратить масу на людину.
 
 ## Scanner
 
-UK LOC HOLD: Carrier band: Black Keel loiters high, not above HECTON-8.
+Діапазон carrier: Black Keel тримається високо, не над HECTON-8.
 
 ## Terminal
 
-UK LOC HOLD: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+CARRIER ORBIT: висока custody lane; descent mass обмежена й weather-gated.
 
 ## Audio
 
-UK LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.
+Він не припаркований над тобою. Він чекає там, де дозволяє страхування.
 
 ## Field Note
 
-UK LOC HOLD: Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
+Запис орбіти carrier: Black Keel може прийняти payloads раніше за людей; цей розрив рухає partial-exit logic.
 
 <!-- In-Game Wiki; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/uk_UA. -->

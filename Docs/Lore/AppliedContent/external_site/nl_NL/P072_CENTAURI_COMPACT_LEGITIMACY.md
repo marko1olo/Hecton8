@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "Legitimiteit van het Centauri Compact"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# Legitimiteit van het Centauri Compact
 
-NL LOC HOLD: Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt.
+De legitimiteit van het Centauri Compact houdt de bredere setting geaard: menselijke expansie werkt al op sommige plekken, waardoor Aegir minder heldhaftig en corrupter voelt.
 
 ## Scanner
 
-NL LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+Centauri-auditlabel. Vroege extrasolaire legitimiteit, later grensland-excuses.
 
 ## Terminal
 
-NL LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+CENTAURI COMPACT HARDWARE: drukcase gecertificeerd voor civiel transport. Auditkanaal inactief. Garantie vervallen na retrofit door derde partij Deep Reach.
 
 ## Audio
 
-NL LOC HOLD: First legitimacy became old metal under a newer lie.
+De eerste legitimiteit werd oud metaal onder een nieuwere leugen.
 
 ## Field Note
 
-NL LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+Het Compact maakte verre claims respectabel. Respectabiliteit is geen redding.
 
 <!-- External Site; generated from P072_CENTAURI_COMPACT_LEGITIMACY/nl_NL. -->

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Aegir Route and Ships
 
-Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
+Route and ship hub: human domains without FTL, the Aegir moon system, Black Keel custody limits, transfer windows, and the damaged bathydrop that proves arrival without certifying escape.
 
 ## Scanner
 
-Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
+Publication hub: no FTL, Aegir route timing, Black Keel limits, and the hard reason rescue cannot arrive on demand.
 
 ## Terminal
 
-SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
+SITE NAV: needleprobes, beam and pellet lanes, seed-ship braking, Black Keel custody, transfer orbit, bathydrop failure.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Distance is not lore trivia. It is the pressure on every decision.
 
 ## Field Note
 
-Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
+Read ship pages as survival mechanics: delay, custody, mass, weather, orbit, and the broken descent interface all matter.
 
 <!-- In-Game Wiki; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/en_US. -->

@@ -7,34 +7,34 @@ poi_tags: poi.probe_packet_spool;poi.beam_sail_archive
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Czasy podróży pakietów sond"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# Czasy podróży pakietów sond
 
-PL LOC HOLD: Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.
+Czas podróży sond wyjaśnia, jak Deep Reach mogło wycenić HECTON-8, zanim mogło chronić tam ludzi. Pierwsze zapisy były wąskie, stare już przy przybyciu i od razu finansowe. Pakiet może sprawić, że roszczenie wygląda dojrzale, choć ludzki plan za nim nadal jest zgadywanką.
 
 ## Scanner
 
-PL LOC HOLD: The first Aegir witnesses were packets, not colonists.
+Pierwszymi świadkami Aegir były pakiety, nie koloniści.
 
 ## Terminal
 
-PL LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
+ŁAŃCUCH POMIAROWY: sondy wspierane wiązką i statki pakietowe przechodzą pierwsze, zwracają nieświeżą prawdę, ustalają matematykę hamowania i pozwalają korporacjom sprzedać trasę, zanim stanie się ludzka.
 
 ## Audio
 
-PL LOC HOLD: The probe saw the ocean before anyone had a grave there.
+Sonda zobaczyła ocean, zanim ktokolwiek miał tam grób.
 
 ## Field Note
 
-PL LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+Sonda może spędzić ludzką karierę na trasie, zanim ktoś zaryzykuje ciało.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/pl_PL. -->

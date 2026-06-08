@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Payload Window
 
-The Payload Window is where endings become physical. The player can move only a limited mass through pressure, weather, radiation timing, and Black Keel geometry. Money, proof, names, coordinates, living samples, Atlas signal, or silence cannot all leave together.
+The Payload Window is where final choices become physical. The player can move only limited mass through pressure, storm cover, Aegir radiation timing, and Black Keel recovery geometry. Money, proof, worker names, coordinates, living samples, Atlas signal, or silence cannot all leave together.
 
 ## Scanner
 
-Improvised ascent package. It can leave the ocean if mass, weather, and carrier geometry agree.
+Improvised ascent package. It can leave the ocean if mass, weather, dose timing, and Black Keel geometry agree.
 
 ## Terminal
 
-PAYLOAD SLOT: limited. WINDOW: open. ROUTE: contested. CLAIM VALUE: variable. EVIDENCE STATE: insufficient for clean dispute.
+PAYLOAD SLOT: LIMITED. WINDOW: OPEN. ROUTE: CONTESTED. RECEIVER: UNCONFIRMED. CLAIM VALUE: VARIABLE. EVIDENCE STATE: INSUFFICIENT FOR CLEAN DISPUTE.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Window is open. It will not stay open for everything.
 
 ## Field Note
 
-Getting out is a route. Getting out clean is a myth.
+Getting out is a route. Getting out clean is a story people sell after someone else pays the mass.
 
 <!-- In-Game Wiki; generated from P010_PAYLOAD_WINDOW/en_US. -->

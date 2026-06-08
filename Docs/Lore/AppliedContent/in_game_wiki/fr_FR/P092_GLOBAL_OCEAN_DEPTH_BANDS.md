@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "Bandes mondiales de profondeur oceanique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# Bandes mondiales de profondeur oceanique
 
-FR LOC HOLD: HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.
+L'ocean de HECTON-8 se lit par bandes, pas par une simple ligne de fond. Le plateau photique garde lumiere, epaves, algues et pilotes imprudents. Le plateau industriel porte recifs de cables, cages de tuyaux et vieux ponts de chargement. Plus bas, les escaliers de saumure plient sonar et ballast. Les champs de machines abyssaux punissent les reparations. Le bassin Atlas donne a la pression un air de juridiction.
 
 ## Scanner
 
-FR LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+Carte des profondeurs. Le premier plateau pardonne un mauvais ballast; l'eau plus basse facture chaque erreur en pression, chaleur et silence.
 
 ## Terminal
 
-FR LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+BANDES: 0-250 m plateau photique de recuperation; 250-1200 m plateau industriel et recif de cables; 1200-2800 m escalier/canyon de saumure; 2800-4300 m champ abyssal de machines; 4300-5600 m bassin Atlas.
 
 ## Audio
 
-FR LOC HOLD: Every band changes what the world allows you to do.
+Tous les cent metres t'enlevent une habitude.
 
 ## Field Note
 
-FR LOC HOLD: Depth is not a number. It is a ruleset.
+La profondeur sur HECTON-8 est loi, meteo, frontiere et faim sous le meme nombre.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/fr_FR. -->

@@ -9,32 +9,16 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Gancho de prioridade Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Gancho de prioridade Deep Reach
 
-PT-BR LOC HOLD: Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control.
-
-## Scanner
-
-PT-BR LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
-
-## Terminal
-
-PT-BR LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
-
-## Audio
-
-PT-BR LOC HOLD: They do not need to be on the bridge to steer the answer.
-
-## Field Note
-
-PT-BR LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+O gancho de prioridade é a forma mais limpa de manter a Deep Reach perigosa depois que a colônia fica em silêncio. A empresa não precisa pilotar Black Keel por milagre remoto. Só precisa de um certificado antigo que o carrier ainda reconhece, uma regra de continuidade ligada ao acesso Atlas e uma classe de payload que supera o corpo de um contratado sob condições específicas de perigo. Isso basta. Uma rota pode ser deslocada. Uma caixa selada pode subir na fila. Uma trava de quarentena pode permanecer fechada enquanto a contagem de oxigênio do operador vira outra entrada de dívida. O resultado é mais frio que sabotagem: o sistema funciona como foi escrito, e a Deep Reach aprendeu a se escrever nas partes que sobrevivem a desastres.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/pt_BR. -->

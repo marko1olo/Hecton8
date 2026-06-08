@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Ascent Energy Charge Assembly
 
-The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.
+The ascent charge turns deep resources into a mechanical and moral trade. High-pressure materials can lift the capsule, preserve evidence through custody, or become payout that weakens the route home.
 
 ## Scanner
 
-Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+Energy cradle scored by pressure pulse. A cheap charge makes a clean coffin.
 
 ## Terminal
 
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: vent-forged heat cell, pressure-history insulator and custody stamp required. Raw fuel rejected. Uncertified blue debt fractures under launch impulse and voids recovery claim.
 
 ## Audio
 
-Every gram here is either escape, evidence, or money. You do not get all three.
+You can sell the lift or ride it. Not both.
 
 ## Field Note
 
-The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+Every gram in the cradle is escape, evidence or blue-debt payout. The capsule does not forgive greed.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/en_US. -->

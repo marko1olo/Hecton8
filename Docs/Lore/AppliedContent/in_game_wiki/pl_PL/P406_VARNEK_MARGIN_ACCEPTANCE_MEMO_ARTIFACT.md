@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Varnek Margin Memo"
+title: "Memo Varneka o przyjętym marginesie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Varnek Margin Memo
+# Memo Varneka o przyjętym marginesie
 
-PL LOC HOLD: The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
+Memo Varneka to cicha wina. Nie zmyśla powodzi i nie wydaje rozkazu zabicia. Pokazuje znany margines ciśnienia, wyceniony, przyjęty i zepchnięty pod koszt continuity, gdy wciąż byli ludzie w obwodzie kolonii.
 
 ## Scanner
 
-PL LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Memo Aegir Operations Risk. Margines Wielkiej Fali był widoczny, zanim ruszyła władza zatrzymania.
 
 ## Terminal
 
-PL LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: tail exposure accepted under continuity cost. Evacuation reserve remains non-triggered. Independent shutdown not recommended.
 
 ## Audio
 
-PL LOC HOLD: No murder order. A margin acceptance.
+Czyta się to jak arytmetykę, dopóki nie widać, kto był w środku marginesu.
 
 ## Field Note
 
-PL LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Notatka Maraudera: brudna nie jest liczba ryzyka. Brudne jest słowo accepted.
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/pl_PL. -->

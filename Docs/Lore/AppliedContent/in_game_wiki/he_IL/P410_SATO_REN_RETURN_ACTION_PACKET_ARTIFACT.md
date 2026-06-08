@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Sato-Ren Return Packet"
+title: "חבילת Sato-Ren Return Action"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Sato-Ren Return Packet
+# חבילת Sato-Ren Return Action
 
-HE LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190 through compliance traffic, not a warship: coordinates, custody, access and silence first.
+ה-packet של Sato-Ren מוכיח ש-Deep Reach פעילה ב-2190 דרך compliance traffic, לא דרך rescue fleet. היא מבקשת קואורדינטות, Atlas access state, sample custody ו-silence לפני שהיא מציעה את המילה extraction.
 
 ## Scanner
 
-HE LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+Recovery Compliance packet. קואורדינטות, access state ו-payload custody נדרשים לפני שמופיעה שפת extraction.
 
 ## Terminal
 
-HE LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
+RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
 
 ## Audio
 
-HE LOC HOLD: The packet knows where the asset is. It is less certain where you are.
+ה-packet יודע שה-asset חי. הוא עדיין מחליט אם אתה נחשב.
 
 ## Field Note
 
-HE LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+הערת Marauder: אם הם אומרים extraction אחרי custody, קרא את הסדר פעמיים.
 
 <!-- In-Game Wiki; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/he_IL. -->

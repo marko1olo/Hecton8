@@ -9,32 +9,22 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Sato-Ren Return Packet"
+title: "Return Action Packet Сато-Рен"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Sato-Ren Return Packet
+# Return Action Packet Сато-Рен
 
-UK LOC HOLD: Deep Reach returns to HECTON-8 as paperwork moving through rare signal windows: coordinates, custody, access, then maybe rescue.
+## Порятунок, Сказаний У Порядку Claim
 
-## Scanner
+Пакет Сато-Рен - тиск теперішнього часу. Він приходить після того, як гравець дізнався, що Deep Reach робила в старих memo і ledger, і доводить: компанія не лише труп в архіві. Deep Reach ще говорить. Просто говорить у порядку, який розуміють її системи: coordinates, access state, sample custody, silence acknowledgement, extraction language.
 
-UK LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+Цей порядок і є загрозою. Служба порятунку питає, де ти поранений. Recovery desk питає, що ти несеш, хто може це certify, чи Atlas ще відкриє route і чи приймаєш ти silence як умову переміщення. Сато-Рен не потрібен військовий корабель над HECTON-8. Сам packet уже leverage, бо повідомлення рідкісні, маса дорога, а гравець debt-bound.
 
-## Terminal
-
-UK LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
-
-## Audio
-
-UK LOC HOLD: The packet knows where the asset is. It is less certain where you are.
-
-## Field Note
-
-UK LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+Тут late game має ставати морально тісним. Один документ може виглядати як допомога, repossession або шантаж залежно від того, що гравець уже знає. Він з'єднує стару втоплену бюрократію з живим вибором Marauder: продати координати, зберегти proof, sever Atlas, опублікувати ledger або йти далі океаном, де навіть rescue має claim number.
 
 <!-- External Site; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/uk_UA. -->

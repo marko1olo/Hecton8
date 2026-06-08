@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: Klaim Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: Klaim Tekanan
 
-ID LOC HOLD: Recovered P-63 route notes tie the opening contract to Black Keel's salvage window. The shelf is bright enough to navigate, but the useful facts are mechanical: bathydrop damage, pressure repair, scanner returns, and official wording that does not match the marks on the hardware. Keep the record spoiler-safe until deeper evidence is recovered.
+Catatan P-63 menempatkan awal sebagai kerja salvage di bawah utang. Fakta berguna bersifat mekanis: cadangan naik habis, avionik banjir, seal rusak, hasil scanner, dan bahasa resmi yang tidak menjelaskan penyok.
 
 ## Scanner
 
-ID LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+Catatan masuk Marauder. Kontrak Black Keel mengikat P-63, bathydrop rusak, lien 4.8 tonne-window, dan laporan kecelakaan yang tidak cocok dengan bekas pada logam.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+NODE ARSIP PUBLIK // KLAIM H8. Jendela Aegir terbuka. Kerja: pulihkan seal tekanan, pindai P-63, ambil kargo, jaga bukti, kembali sebelum geometri penerima tertutup.
 
 ## Audio
 
-ID LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+Cuplikan relai Black Keel: "Jendelanya sempit. Perbaiki cangkang turun, baca bekas tekanan, bawa bukti bersama kargo."
 
 ## Field Note
 
-ID LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+Catatan Marauder: cahaya di P-63 bukan keselamatan. Hitung udara, perbaiki seal sebelum kargo, dan jangan percaya laporan yang tidak menjelaskan penyok.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/id_ID. -->

@@ -768,8 +768,8 @@ namespace Hecton8.World
             if (math.lengthsq((float3)segment) < FloraScatteringMinimumSegmentMeters * FloraScatteringMinimumSegmentMeters)
                 return;
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (vegetationBridge == null)
+            HectonMapMagicVegetationBridge vegetationBridge = null;
+            if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge))
                 return;
 
             int floraIntersections = 0;

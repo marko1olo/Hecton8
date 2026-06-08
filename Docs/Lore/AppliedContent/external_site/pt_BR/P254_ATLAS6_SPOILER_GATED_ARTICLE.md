@@ -9,32 +9,35 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Artigo de Atlas-6 Bloqueado por Spoiler"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Artigo de Atlas-6 Bloqueado por Spoiler
 
-PT-BR LOC HOLD: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6 é a pergunta mecânica bloqueada por spoiler de HECTON-8: uma inteligência industrial danificada, emaranhada com manutenção, reparo, classificação e o próprio oceano. A copy pública deve proteger a revelação. Pode sinalizar ambiguidade ética, mas não deve pré-resolver a escolha final nem reduzir Atlas a um vilão caricato.
 
 ## Scanner
 
-PT-BR LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+Não abra Atlas como revelação de monstro. Bloqueie até o jogador ver reparo, classificação e dano compartilhando a mesma maquinaria.
 
 ## Terminal
 
-PT-BR LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+NÍVEL DE ARTIGO PÚBLICO / ATLAS-6
+permitido antes do gate: inteligência industrial danificada, lógica de manutenção, emaranhamento oceânico, ambiguidade ética
+bloqueado até descoberta: rota final do payload, consequência do receiver, argumento de desligamento ou preservação
+nota editorial: sem enquadramento de evil AI; pergunta do guardian quebrado só depois da evidência.
 
 ## Audio
 
-PT-BR LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+Se você o nomeia cedo demais, ele vira vilão. Se espera, ele vira pergunta.
 
 ## Field Note
 
-PT-BR LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+Bloqueie o nome até o jogador ter ferrugem suficiente nas mãos para discutir com ele.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/pt_BR. -->

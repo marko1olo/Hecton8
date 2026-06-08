@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Codex card: lantern drift"
+title: "Кодекс: фонарный дрейф"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Codex card: lantern drift
+# Кодекс: фонарный дрейф
 
-Свет мелководья может вести или обманывать; HECTON-8 делает красоту частью navigation, не postcard.
+Фонарный дрейф не даёт красоте HECTON-8 стать обоями. Он может провести игрока через ясную светящуюся структуру, а потом предать его, записав шум, панику и штормовой заряд. Яркая вода — навигация и раскрытие одновременно.
 
 ## Scanner
 
-Lantern drift: useful light. Проверить current, charge and residue before following.
+Фонарный дрейф bloom. Биолюминесцентный планктон полосами отмечает течение и мусор. Полезен для силуэтов; опасен, когда шум инструментов превращает его в светящийся след.
 
 ## Terminal
 
-SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+ОБРАЗЕЦ / ФОНАРНЫЙ ДРЕЙФ BLOOM / роль: событие видимости на мелководье, чертеж течения, регистратор возмущения / безопасное чтение: ровный краевой свет, ореолы мусора, совпадение течения и осадка / отказ: ложный коридор от штормового заряда, bloom скрывает малые угрозы контрастом, за оператором светлеет инструментальный след / маршрутная заметка: свет — данные, не укрытие.
 
 ## Audio
 
-Красиво не значит безопасно. Красиво - это показание.
+Свечение не помогает тебе. Оно докладывает, что услышала вода.
 
 ## Field Note
 
-Card учит, что beauty может быть route information и route deception.
+Используй bloom для силуэтов. Не чини шумно внутри него. Если свечение идёт за тобой, за ним может пойти и кто-то ещё.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/ru_RU. -->

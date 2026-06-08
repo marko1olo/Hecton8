@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Transcrição de Aproximação da Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Black Keel Approach Transcript Seed
+# Transcrição de Aproximação da Black Keel
 
-PT LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+A transcrição de aproximação torna a Black Keel útil sem torná-la piedosa. O carrier dá ao Marauder uma linha para a órbita e então nomeia dívida, janela de receptor, limite de saúde, limite de massa e prova exigida antes que a esperança reescreva a física.
 
 ## Scanner
 
-PT LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Áudio de carrier recuperado confirma descida cobrada, retorno condicional, atraso de quatro segundos e pacote de prova obrigatório.
 
 ## Terminal
 
-PT LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
-PT LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+Tender Black Keel para reclamante. Atraso quatro segundos. Descida faturada. Retorno não garantido. Envie saúde, massa, prova.
 
 ## Field Note
 
-PT LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+Buffer de claim-tender, cortado por storm carrier. Manter a voz procedural: fatos de rota primeiro, conforto nunca.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/pt_BR. -->

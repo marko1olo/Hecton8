@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Znak Barnard
 
-Pierwszy znak Barnard na HECTON-8 jest tak mały, że łatwo go przegapić: stempel narzędzia, nawyk naprawczy, etykieta dostawy. Dlatego ma znaczenie. HECTON-8 przestaje być odległym kontraktem, gdy te same znaki pojawiają się obok nazwisk, tras ewakuacji i nieudanych autoryzacji.
+Pierwszy znak Barnard na HECTON-8 jest dość mały, by go przegapić: stempel narzędzia, zawieszka szafki, nawyk dostaw, blizna po taniej stali stoczniowej. Dlatego ma znaczenie. Księżyc przestaje być odległym kontraktem, kiedy znane ślady pracy pojawiają się obok wstrzymań ewakuacji, nazwisk pracowników i nieudanych zezwoleń tras.
 
 ## Scanner
 
-Stempel Barnard Yards. To nie sprzęt Deep Reach. Ktoś przyniósł domowe narzędzie na dno tego księżyca.
+Stempel Barnard Yards. To nie sprzęt Deep Reach. Ktoś zaniósł hardware stoczniowy na dno tego księżyca.
 
 ## Terminal
 
-TRASA PERSONELU: HOLD. TRASA ZASOBU: ACTIVE. TRASA SUBSTRATU: PROTECTED.
+TRASA PERSONELU: HOLD. TRASA ZASOBU: ACTIVE. TRASA SUBSTRATU: PROTECTED. POCHODZENIE NARZĘDZIA: BARNARD YARDS / ZAPAS NAPRAWCZY TRZECIEGO WŁAŚCICIELA.
 
 ## Audio
 
-To znak Barnard. Ten sam wzór cięcia. Ten sam tani stop. Kto to tu przyniósł, znał te same warsztaty co ty.
+To cięcie jest z Barnard. Tani stop, lewy stempel, złe wygrzewanie. Kto to tu zniósł, znał te same warsztaty co ty.
 
 ## Field Note
 
-Martwą korporację można zignorować. Klucz z własnej stoczni trudniej.
+Martwą korporację można zbyć wzruszeniem ramion. Klucz z własnej stoczni trudniej zostawić w błocie.
 
 <!-- In-Game Wiki; generated from P003_BARNARD_MARK/pl_PL. -->

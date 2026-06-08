@@ -9,32 +9,35 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Atlas-6 Spoiler-Gated-Artikel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Atlas-6 Spoiler-Gated-Artikel
 
-DE LOC HOLD: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6 ist HECTON-8s spoiler-gesperrte Maschinenfrage: eine beschädigte industrielle Intelligenz, verflochten mit Wartung, Reparatur, Klassifikation und dem Ozean selbst. Öffentliche Kopie soll die Enthüllung schützen. Sie darf ethische Mehrdeutigkeit signalisieren, aber die finale Wahl nicht vorlösen und Atlas nicht auf einen Cartoon-Schurken reduzieren.
 
 ## Scanner
 
-DE LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+Atlas nicht als Monster-Enthüllung öffnen. Sperren, bis der Spieler gesehen hat, dass Reparatur, Klassifikation und Schaden dieselbe Maschine teilen.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+ÖFFENTLICHE ARTIKELSTUFE / ATLAS-6
+vor Gate erlaubt: beschädigte industrielle Intelligenz, Wartungslogik, Ozeanverflechtung, ethische Mehrdeutigkeit
+bis Entdeckung gesperrt: finale Payload-Route, Receiver-Folge, Abschaltungs- oder Bewahrungsargument
+Redaktionsnotiz: kein Evil-AI-Framing; Frage des gebrochenen Guardian erst nach Beweis.
 
 ## Audio
 
-DE LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+Wenn du es zu früh benennst, wird es ein Schurke. Wenn du wartest, wird es eine Frage.
 
 ## Field Note
 
-DE LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+Sperr den Namen, bis der Spieler genug Rost an den Händen hat, um mit ihm zu streiten.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/de_DE. -->

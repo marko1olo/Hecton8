@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "最終問い: 公開された真実、失われた制御"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# 最終問い: 公開された真実、失われた制御
 
-JP LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+公開真実ルートは清潔な隠蔽を壊す。同時に結果の所有権も壊す。証拠は名前を削除から守り、本物の救助圧力を作り、法律机や祈祷チャンネルを持つあらゆる捕食者を呼び込む。
 
 ## Scanner
 
-JP LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+証拠を公開すれば抹消は防げる。同時に、発見を悪用できる全員へ十分速く渡すことになる。
 
 ## Terminal
 
-JP LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+PUBLIC TRUTH AXIS: witness hash、責任連鎖、Atlas状態、blue debt座標、payload routeはDeep Reach支配から離れられる。公開後、オペレーターは受信者の行動、市場反応、最初に到着する者を制御できない。
 
 ## Audio
 
-JP LOC HOLD: Truth leaves your hand faster than rescue ever could.
+真実は救助より速く手を離れる。
 
 ## Field Note
 
-JP LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+公開真実は純粋な正義ではない。制裁、信仰、競売、訴訟、救助圧力、模倣claimを生む。
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/ja_JP. -->

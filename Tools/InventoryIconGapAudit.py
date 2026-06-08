@@ -73,6 +73,11 @@ VISUAL_HINTS = {
     "HighCapacityCell": "advanced high-capacity power cell with layered casing, heat vents, restrained cyan charge accent",
     "HydraulicActuator": "short hydraulic piston assembly with oil-stained seals, brushed metal rod, compact mounting lugs",
     "EnvAnalyzer": "environmental analyzer tool with sample intake, probe fork, rugged handheld body, blank protected lens",
+    "Flashlight": "pressure-rated dive lamp with thick glass bezel, compact angled body, rubber grip ribs, sealed battery cap, small cyan charge window left blank",
+    "HarpoonLauncher": "compact underwater harpoon launcher with reinforced barrel shroud, folded line spool, pressure-safe trigger guard, worn titanium and black composite body",
+    "Knife": "survival blade with blunt industrial dive-knife silhouette, serrated utility spine, dark rubber handle, scuffed titanium edge, sheath latch detail",
+    "Propulsion": "propulsion cannon tool with short intake muzzle, circular turbine mouth, heavy pressure housing, two-hand grip, restrained cyan emitter glass",
+    "StunPistol": "underwater stun pistol with insulated black rubber grip, ceramic emitter prongs, compact capacitor housing, amber safety insert",
     "TitaniumScrap": "irregular titanium salvage plate fragment with torn pressure-hull edge, bolt holes, scraped oxide, cut brace rib, clearly scrap not a clean ingot",
 }
 

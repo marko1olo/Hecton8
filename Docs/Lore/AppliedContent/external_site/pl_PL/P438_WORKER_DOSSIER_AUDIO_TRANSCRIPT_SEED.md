@@ -9,32 +9,22 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Transkrypt audio dossier pracownika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Worker Dossier Audio Transcript Seed
+# Transkrypt audio dossier pracownika
 
-PL LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+## Kolonia Zanim Stanie Się Dowodem
 
-## Scanner
+Audio dossier pracowników nie może przedstawiać zmarłych jak przedmiotów ołtarzowych. Musi pozwolić im pracować. Szef pomp sprawdza zawór. Notariusz relay narzeka na tablicę. Medyk kłóci się z water ledger. Operator fabricatora loguje certyfikat narzędzia, bo narzędzie jest ważniejsze niż mowa o odwadze.
 
-PL LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Ta rutyna daje ruinom wagę. Gracz powinien usłyszeć nazwiska przed memoriałami, role przed tragedią i małe irytacje zanim większe kłamstwo się zamknie. HECTON-8 nie była sceną dla Maraudera. Była miejscem pracy z nawykami, urazami, żartami, monitami długu i matematyką ciśnienia.
 
-## Terminal
-
-PL LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
-
-## Audio
-
-PL LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
-
-## Field Note
-
-PL LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Ta warstwa chroni canon przed melodramatem. Nie ma rodzinnego haka, który czyni gracza wyjątkowym. Wina jest zawodowa. Rozpoznajesz procedury, identyfikatory i złe decyzje, bo należałeś do takiego systemu, a teraz system mówi przez zatopione zlecenia pracy.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/pl_PL. -->

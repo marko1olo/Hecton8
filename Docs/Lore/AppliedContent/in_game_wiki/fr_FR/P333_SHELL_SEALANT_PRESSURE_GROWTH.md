@@ -3,13 +3,13 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+poi_tags: poi.shell_sealant_growth;poi.pressure_fracture_patch
 biome_tags: biome.atlas;biome.pressure
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Croissance sous pression du scellant coquille"
+title: "Croissance de scellement coquillier sous pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Croissance sous pression du scellant coquille
+# Croissance de scellement coquillier sous pression
 
-Le scellant coquille commence comme chimie d'urgence : mousse de patch, boue minérale et pression poussant la matière dans une brèche. Dans l'eau de HECTON-8, une croissance locale peut coloniser le patch et le durcir en coquille stratifiée.
-
-Atlas juge l'événement réussi si la perte de pression baisse. Les maraudeurs regardent la largeur du retour, le passage des outils et ce que la coquille a piégé. Un bon joint peut bloquer une route, cacher une poche d'eau mauvaise ou préserver une salle morte assez longtemps pour que ses machines répondent.
+La croissance de scellement coquillier est l'erreur la plus nette d'Atlas : la réparation fonctionne. Des couches de silicate de calcium et une résine biopolymère ferment une fracture, tiennent la pression statique et sauvent une pièce qui aurait dû se noyer. La même croissance peut enterrer étiquettes, poignées, flèches à la craie, griffures et dernière route humaine dans la station.
 
 ## Scanner
 
-Laminé de coquille sur fissure de pression. Croissance calcium-silicate fusionnée avec mousse de patch Atlas. Flexion sous charge.
+Un scellement stratifié ferme la fracture et enterre les marques de route ouvrières sous une coquille blanche.
 
 ## Terminal
 
-ÉVÉNEMENT DE SCELLANT // Mousse de patch d'urgence a semé une coquille minérale sur la brèche P-4. Croissance au-dessus de la table statique. Joint tient à la pression actuelle; dégagement de route réduit de 31 pour cent.
+CONFLIT DE RÉPARATION : fuite réduite, frontière de pression améliorée, marquages de sortie occultés. Couper la coquille peut rouvrir un chemin d'inondation.
 
 ## Audio
 
-Le mur est guéri. C'est le problème. Il a guéri vers l'intérieur.
+La pièce a survécu. La sortie, non.
 
 ## Field Note
 
-Marque les patchs coquille à l'aller. Au retour, suppose qu'ils ont rétréci.
+À utiliser sur portes, rampes étroites et choix de pression où réparation et dommage sont le même objet.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/fr_FR. -->

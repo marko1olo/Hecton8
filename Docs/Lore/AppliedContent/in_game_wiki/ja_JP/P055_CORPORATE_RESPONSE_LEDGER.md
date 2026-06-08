@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "企業応答台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# 企業応答台帳
 
-JP LOC HOLD: Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+台帳は、誰も即興していないときのBlack Keelの話し方だ。危険を認め、待ち行列を開き、請求権を保全し、それでも操作者を資産規則の後ろに置く。応答台帳は有用な信号であり、実行可能になった敵対的書類でもある。
 
 ## Scanner
 
-JP LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+すべての返答は契約語で届く。資産保管、責任ロック、サンプル経路、船体リスク、そして操作者回収。
 
 ## Terminal
 
-JP LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+応答区分: 資産保全。操作者回収はサンプル保管、責任封印、船体監査、支払い経路の後に追加。
 
 ## Audio
 
-JP LOC HOLD: The reply was automatic. The rescue was conditional.
+返答は自動だった。救助は条件付きだった。
 
 ## Field Note
 
-JP LOC HOLD: Immediate response is not immediate rescue.
+即時応答は即時救助ではない。
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/ja_JP. -->

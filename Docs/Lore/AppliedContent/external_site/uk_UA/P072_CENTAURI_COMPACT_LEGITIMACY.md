@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "Легітимність Centauri Compact"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# Легітимність Centauri Compact
 
-UK LOC HOLD: Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt.
+Легітимність Centauri Compact заземлює ширший сетинг: людська експансія подекуди вже працює, тому Aegir здається не героїчним, а корумпованим.
 
 ## Scanner
 
-UK LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+Аудитна мітка Centauri. Рання позасонячна легітимність, пізніше - фронтирні виправдання.
 
 ## Terminal
 
-UK LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+ОБЛАДНАННЯ CENTAURI COMPACT: гермокейс сертифіковано для цивільного транзиту. Канал аудиту неактивний. Гарантію скасовано після сторонньої модернізації Deep Reach.
 
 ## Audio
 
-UK LOC HOLD: First legitimacy became old metal under a newer lie.
+Перша легітимність стала старим металом під новішою брехнею.
 
 ## Field Note
 
-UK LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+Compact зробив далекі претензії поважними. Поважність не рятує.
 
 <!-- External Site; generated from P072_CENTAURI_COMPACT_LEGITIMACY/uk_UA. -->

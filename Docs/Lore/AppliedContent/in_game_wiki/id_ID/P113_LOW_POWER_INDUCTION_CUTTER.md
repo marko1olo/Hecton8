@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "Pemotong Induksi Daya Rendah"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# Pemotong Induksi Daya Rendah
 
-ID LOC HOLD: The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+Pemotong induksi daya rendah adalah alat akses pertama, bukan kunci universal. Ia membuka palka servis macet, baut panel, dan peti salvage sambil memaksa pemain membaca fungsi tiap bagian. Pressure glass, rangka aktif, dan sambungan tumbuh Atlas milik alat berikutnya atau bukti yang lebih baik.
 
 ## Scanner
 
-ID LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+Pemotong induksi daya rendah. Hanya untuk logam servis; rangka penahan beban dan pressure glass di luar rating.
 
 ## Terminal
 
-ID LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+PERINGATAN ALAT / PEMOTONG INDUKSI: target sah adalah palka servis, baut panel, bracket ringan, dan kunci peti. Jangan potong rangka aktif, kisi pressure glass, atau sambungan tumbuh Atlas tanpa sertifikasi kelas lanjut.
 
 ## Audio
 
-ID LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
+Potong bautnya. Biarkan rusuknya.
 
 ## Field Note
 
-ID LOC HOLD: The cutter should feel valuable because it is limited.
+Cutter bagus, iman buruk. Ia membuka panel. Ia tidak memaafkan kalau kamu memotong rusuk yang menjaga ruangan tetap lurus.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/id_ID. -->

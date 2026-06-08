@@ -1,10 +1,12 @@
-```markdown
 # PROJECT_LTS_Compatibility_Layer.md
 
 Status: ACTIVE_COMPATIBILITY_PATTERN_WITH_LEGACY_EXAMPLES
 Current HECTON-8 correction: this file contains older illustrative assembly names and Unity-version examples. `Hecton.Core`, `Hecton.Simulation`, `Hecton.Voxel`, `Hecton.EngineAbstraction`, `Hecton.UnityBackend`, `Hecton.ModdingFacade`, and Unity 2022/dual-LTS examples are not current project authority.
 
 Current use rule: apply the compatibility-layer principles only after reading live `.asmdef` files, current source owners, `AGENTS.md`, `PROJECT_BIBLES.md`, `platform.md`, `release.md`, and the relevant route bible. Current first-party namespaces and assemblies use `Hecton8.*` source-owned names unless live source proves a narrower exception. Do not create legacy `Hecton.*` assemblies or Unity 2022 compatibility gates from this document.
+
+[FORBID] Copying any legacy `Hecton.*` assembly name below into new code, task files, route cards, or acceptance criteria.
+[RULE] Treat every remaining `Hecton.*` or dual-LTS phrase below as a preserved compatibility example only. The current project route is live `Hecton8.*` asmdefs plus Unity 6000.4 proof.
 
 ---
 

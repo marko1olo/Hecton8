@@ -9,24 +9,24 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "HE LOC HOLD: Aegir Route and Ships"
+title: "מסלול Aegir וספינות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Aegir Route and Ships
+# מסלול Aegir וספינות
 
-HE LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegir קרוב מספיק לניצול ורחוק מספיק לנטישה. שום מנוע מהיר-מאור אינו חוצה את הפער, ושום ansible אינו נושא פקודות לפני הפיזיקה. כל הודעה, חוזה ותביעת הצלה עוברים דרך עיכוב: חבילות גשושים, משמורת ממסרים, לוחות זמנים של קרן, מטען pellet-fusion, חלונות העברה ומזג אוויר שאינו מתעניין בדחיפות אנושית.
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+התנועה הראשונה של Aegir לא הייתה אנושית. גשושי מחט מיפו את מערכת הננס החם והחזירו מספיק נתוני מינרלים, קרינה ומסלול כדי להצדיק השקעה כבדה יותר. אחריהם באו חבילות מפרשי קרן, מטען איטי יותר ומסת seed-ship שנאלצה לבלום בתוך רשת תשתית שתוכננה שנים לפני שעובד ראה את האוקיינוס. עד ש-Deep Reach הגיע ל-HECTON-8, המסלול כבר היה שייך למוסדות: מובילים, מבטחים, משרדי תחום, מאגרי השבה וחברות שמיומנות בהפיכת הבעלות לקשה לנקיבה.
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+Black Keel יושבת בתוך העמימות הזאת. היא לא ספינת מלחמה ולא שירות הצלה. היא פלטפורמת תביעות עם מסת עגינה, כלי tender, ספרי חוב וסמכות salvage. שרשרת החוזים שלה מאפשרת ל-Deep Reach להפעיל לחץ בלי להיראות כיד הישירה על הפתח. הספינה יכולה להוציא אדם, דגימה או מטען חתום רק כאשר מסה, מזג אוויר, מסלול, מרווח חום ומשמורת מתיישרים.
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+לכן ה-bathydrop הפגום נעשה גבול אמיתי. פגיעת ירידה יכולה להשאיר מעטפת שלמה מספיק להישרדות ובה בעת להרוס סבילויות עלייה: דחיסת אטמים, סנכרון חזרה אקוסטית, טבלאות הנחיה, מאגר אנרגיה ולחיצת יד של הסגר. הקפסולה נעשית מחסה וראיה יחד: היא מוכיחה הגעה, אבל אינה מאשרת בריחה.
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+במערכת Aegir מרחק אינו רקע. הוא הסיבה שעזרה מגיעה קודם כניירת ורק אחר כך כחומרה.
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/he_IL. -->

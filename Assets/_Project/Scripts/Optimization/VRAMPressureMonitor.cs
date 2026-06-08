@@ -51,6 +51,7 @@ namespace Hecton8.Optimization
         private bool _registeredSlowTick;
         private bool _registeredService;
         private bool _registeredHotSwap;
+        private bool _runtimeOwnerAborted;
         private bool _forceSampleQueued;
         private int _nextSampleFrame;
         private int _baselineMipLimit;
@@ -95,6 +96,9 @@ namespace Hecton8.Optimization
 
         private void Awake()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             _runtimeBudgetThresholds = VRAMBudgetThresholds.RuntimeDefault;
             _runtimeTotalVramBudgetBytes = _runtimeBudgetThresholds.TotalVRAMBudgetBytes > 0L
                 ? _runtimeBudgetThresholds.TotalVRAMBudgetBytes
@@ -115,14 +119,25 @@ namespace Hecton8.Optimization
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
+            if (!TryRegisterService())
+                return;
+
             CacheDependencies();
             TryRegisterHotSwap();
-            if (TryRegisterService())
-                TryRegister();
+            TryRegister();
         }
 
         private void Start()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
+            if (!_registeredService && !TryRegisterService())
+                return;
+
             CacheDependencies();
             TryRegisterHotSwap();
             TryRegister();
@@ -130,6 +145,12 @@ namespace Hecton8.Optimization
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+            {
+                ClearCachedDependencies();
+                return;
+            }
+
             RestoreGlobalQualityOverrides();
             TryUnregister();
             TryUnregisterHotSwap();
@@ -139,6 +160,12 @@ namespace Hecton8.Optimization
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+            {
+                ClearCachedDependencies();
+                return;
+            }
+
             RestoreGlobalQualityOverrides();
             TryUnregister();
             TryUnregisterHotSwap();
@@ -208,16 +235,39 @@ namespace Hecton8.Optimization
             if (!Application.isPlaying)
                 return false;
 
-            VRAMPressureMonitor registered = GlobalRegistry.VRAMPressure;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterVRAMPressureRuntime(this);
             _registeredService = ReferenceEquals(GlobalRegistry.VRAMPressure, this);
             return _registeredService;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            VRAMPressureMonitor registered = GlobalRegistry.VRAMPressure;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsVRAMPressureRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterVRAMPressureRuntime(registered);
+            return false;
+        }
+
+        private static bool IsVRAMPressureRuntimeUsable(VRAMPressureMonitor monitor)
+        {
+            return monitor != null &&
+                   monitor._registeredService &&
+                   monitor.isActiveAndEnabled;
         }
 
         private void TryUnregister()
@@ -316,6 +366,11 @@ namespace Hecton8.Optimization
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
+                    if (currentService != null && isActiveAndEnabled && !_runtimeOwnerAborted)
+                        TryRegister();
+                    break;
                 case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
                     _vramMonitor = currentService as IVramBudgetReadModel;
                     _vramBudgetSample = currentService as IVramBudgetSampleSink;

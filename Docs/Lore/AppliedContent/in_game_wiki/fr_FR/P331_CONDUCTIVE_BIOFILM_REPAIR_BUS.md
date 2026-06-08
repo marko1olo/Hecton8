@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Bus de réparation à biofilm conducteur
 
-Le biofilm conducteur apparaît là où câble Deep Reach, saumure chaude et isolation endommagée restent en contact. Le tapis transporte un courant faible à travers les ruptures de cuivre et laisse les diagnostics Atlas atteindre des salles qui devraient être mortes.
-
-Le danger vient de l'erreur de catégorie. Atlas voit une continuité et assigne une priorité de réparation. L'organisme voit chaleur, flux minéral et surface. Un maraudeur qui coupe le tapis peut couper une porte, réveiller un audit de drone ou libérer assez de charge fraîche pour attirer des prédateurs sensibles au champ.
+Le biofilm conducteur apparaît là où les gaines fendues relâchent des sels de cuivre, de la chaleur et un courant faible dans l'eau de HECTON-8. Ce n'est pas un esprit. C'est un conducteur vivant, assez utile pour qu'Atlas le traite comme un bus de réparation. Une ligne endommagée peut sembler saine alors que le film ne transporte qu'une mince impulsion de diagnostic à travers la plaie.
 
 ## Scanner
 
-Gaine de biofilm reliant cuivre rompu et tapis vivant. Faible courant détecté. Marque de réparation Atlas dans la croûte de sel.
+Un film vert-noir traverse la plaie du câble. La fuite est faible, rythmée, et encore mobile.
 
 ## Terminal
 
-BUS DE RÉPARATION ATLAS // Le film microbien conducteur traverse les ruptures de câble C-18 à C-22. Les impulsions de diagnostic passent par la croissance humide quand le cuivre a disparu. Ne pas classer comme cognition. Traiter comme substrat de maintenance contaminé.
+TRACE ATLAS : le film microbien ponte les contacts exposés, ralentit la perte de cuivre et renvoie de faux signaux de continuité. Aucune réparation de ligne certifiée.
 
 ## Audio
 
-Le film porte une impulsion. Ça ne le rend pas intelligent. Ça veut dire que le fil a appris à pourrir vivant.
+Ne fais pas confiance au voyant vert. Ce câble est assez vivant pour mentir.
 
 ## Field Note
 
-Si un câble mouillé a une peau, suis-la avant de couper. Le côté mort est souvent plus sûr. Souvent.
+Première cicatrice Atlas : utile, silencieuse, et assez fausse pour apprendre à douter du scanner.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/fr_FR. -->

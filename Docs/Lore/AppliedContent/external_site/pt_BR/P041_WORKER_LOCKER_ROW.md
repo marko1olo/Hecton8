@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Fileira de Armários de Trabalho
@@ -27,7 +27,7 @@ Os objetos tornam a colônia humana: nomes, ferramentas, crédito de comida e ma
 
 ## Terminal
 
-Auditoria colonial: armazenamento pessoal e marcas Barnard conectam o jogador a tripulantes reais.
+AUDITORIA COLONIAL: armazenamento pessoal e marcas Barnard ligam a fileira de armários a tripulação nomeada e rotas de trabalho.
 
 ## Audio
 

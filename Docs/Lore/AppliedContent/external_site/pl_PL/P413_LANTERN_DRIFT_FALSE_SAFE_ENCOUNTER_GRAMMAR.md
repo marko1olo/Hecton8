@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "Gramatyka spotkania: fałszywe bezpieczeństwo latarniowego dryfu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# Gramatyka spotkania: fałszywe bezpieczeństwo latarniowego dryfu
 
-PL LOC HOLD: HECTON-8's bright shallows are readable, but never innocent.
+Fałszywe bezpieczeństwo latarniowego dryfu utrzymuje jasne płycizny HECTON-8 w prawdzie. Blask jest użyteczny, kuszący i groźny, bo zapisuje więcej niż jedną prawdę naraz.
 
 ## Scanner
 
-PL LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Pas latarniowego dryfu. Jasna woda może oznaczać krawędź tlenu, szum sygnału, ślad narzędzi albo ruch wyparty przez drapieżnika. Sprawdź prąd przed podążaniem.
 
 ## Terminal
 
-PL LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+GRAMATYKA SPOTKANIA / FAŁSZYWE BEZPIECZEŃSTWO LATARNIOWEGO DRYFU / rola: piękno jako dane niejednoznaczne, pokusa trasy, kara stealth / bezpieczny odczyt: prąd zgadza się z blaskiem, fauna normalna, osad po spodziewanej stronie / odrzuć: niebieskie światło jako bezpieczeństwo, podążanie za fałszywym korytarzem burzowym, głośna naprawa w świecącym śladzie / notatka trasy: jeden blask może być ścieżką, przynętą, zapisem paniki lub ekspozycją.
 
 ## Audio
 
-PL LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+Światło nie jest miłosierdziem. To dane, których twój skafander nie umie jeszcze rozdzielić.
 
 ## Field Note
 
-PL LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+Zapytaj, co niesie światło: prąd, tlen, twój hałas czy coś, co odsunęło całą resztę.
 
 <!-- External Site; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/pl_PL. -->

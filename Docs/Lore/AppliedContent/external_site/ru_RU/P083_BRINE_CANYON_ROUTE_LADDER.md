@@ -8,33 +8,19 @@ biome_tags: biome.brine_canyon;biome.drop_zone
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Маршрутная лестница brine canyon"
+spoiler_tier: 1
+title: "Маршрутная лестница рассольного каньона"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Маршрутная лестница brine canyon
+# Маршрутная лестница рассольного каньона
 
-Маршрутная лестница brine canyon - одна из ключевых exploration structures HECTON-8: не коридор, а chemical geography, где density, current и sound формируют progression.
+Рассольные каньоны делают продвижение в глубину физическим. Плотные слои, минеральные стены, тепловые утечки и акустические искажения учат, почему более глубокий путь требует лучших приборов и дисциплины давления.
 
-## Scanner
-
-Brine density marker. Маршрут спуска - это химия со стенами.
-
-## Terminal
-
-BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
-
-## Audio
-
-Каньон - лестница из неправильной воды.
-
-## Field Note
-
-Ты не плывешь через canyon. Ты договариваешься со слоями тяжелее твоего suit.
+Маршрутная лестница рассольного каньона является одной из базовых структур исследования HECTON-8: это не коридор, а химическая география, где плотность, течение и звук формируют прогресс. Через каньон не плывут. С ним торгуются слоями, которые тяжелее твоего костюма.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/ru_RU. -->

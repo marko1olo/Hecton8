@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Black Keel-claimvenster"
+title: "Black Keel-claimvenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Black Keel-claimvenster
+# Black Keel-claimvenster
 
-NL LOC HOLD: Black Keel-claimvenster teruggevonden. Carriercontact betekent dat een signaal de Aegir-relaisbaan bereikte; het betekent niet dat berging beschikbaar is. Extractie vereist stijghardware, quarantaine, geaccepteerde lading en tonne-window-toewijzing.
+Black Keel-claimvenster teruggevonden. Carriercontact betekent dat een signaal de Aegir-relaisbaan bereikte; het betekent niet dat berging beschikbaar is. Extractie vereist stijghardware, quarantaine, geaccepteerde lading en tonne-window-toewijzing.
 
 ## Scanner
 
-NL LOC HOLD: CLAIMVENSTER // Aegir-relais voorspelt alleen ontvangst. Berging vereist stijgpakket, quarantaine-handshake en tonne-window-toewijzing.
+CLAIMVENSTER // Aegir-relais voorspelt alleen ontvangst. Berging vereist stijgpakket, quarantaine-handshake en tonne-window-toewijzing.
 
 ## Terminal
 
-NL LOC HOLD: KEELMARK BEWARINGSBERICHT // Operatorsignaal ontvangen. Bergingsprioriteit onopgelost. Ontvangst van signaal of bewijspakket garandeert geen operatorberging.
+KEELMARK BEWARINGSBERICHT // Operatorsignaal ontvangen. Bergingsprioriteit onopgelost. Ontvangst van signaal of bewijspakket garandeert geen operatorberging.
 
 ## Audio
 
-NL LOC HOLD: Black Keel-relais: operatorsignaal geprijsd. Bergingsvenster wacht. Verwar ontvangst niet met optillen.
+Black Keel-relais: operatorsignaal geprijsd. Bergingsvenster wacht. Verwar ontvangst niet met optillen.
 
 ## Field Note
 
-NL LOC HOLD: Als Black Keel antwoordt, tel de rekening, niet de redding. Een ontvangen pakket is alleen een plek in de rij tot massa, zegel, quarantaine en weer kloppen.
+Als Black Keel antwoordt, tel de rekening, niet de redding. Een ontvangen pakket is alleen een plek in de rij tot massa, zegel, quarantaine en weer kloppen.
 
 <!-- In-Game Wiki; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/nl_NL. -->

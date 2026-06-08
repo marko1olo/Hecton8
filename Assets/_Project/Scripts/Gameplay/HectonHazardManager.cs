@@ -18,6 +18,7 @@ namespace Hecton8.Gameplay
     public sealed class HectonHazardManager : MonoBehaviour
     {
         private const int MaxTrackedRadiationFacadeIds = 1024;
+        private const float HazardIntensityHardCap = 1000f;
 
         // COLD ALLOC: int[1024] - untyped compatibility radiation source IDs - owner: HectonHazardManager
         private static readonly int[] _radiationFacadeIds = new int[MaxTrackedRadiationFacadeIds];
@@ -175,7 +176,7 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             if (type == HazardType.Radiation)
-                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? radiation01 : 0f;
+                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? SanitizeHazardIntensity(radiation01) : 0f;
 
             HazardZoneManager zoneManager = TryResolveZoneManager();
             return zoneManager != null
@@ -193,7 +194,7 @@ namespace Hecton8.Gameplay
 
             AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromAbsolutePosition(absolutePoint);
             if (type == HazardType.Radiation)
-                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? radiation01 : 0f;
+                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? SanitizeHazardIntensity(radiation01) : 0f;
 
             HazardZoneManager zoneManager = TryResolveZoneManager();
             return zoneManager != null
@@ -210,7 +211,7 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             if (type == HazardType.Radiation)
-                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? radiation01 : 0f;
+                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? SanitizeHazardIntensity(radiation01) : 0f;
 
             HazardZoneManager zoneManager = TryResolveZoneManager();
             return zoneManager != null
@@ -247,6 +248,11 @@ namespace Hecton8.Gameplay
                    intensity > 0f &&
                    math.isfinite(radius) &&
                    radius > 0f;
+        }
+
+        private static float SanitizeHazardIntensity(float intensity)
+        {
+            return math.isfinite(intensity) ? math.clamp(intensity, 0f, HazardIntensityHardCap) : 0f;
         }
 
         private static bool TrackRadiationFacadeId(int id, out bool added)

@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "DE LOC HOLD: RAN-B:H8 Public Catalog"
+spoiler_tier: 1
+title: "Öffentlicher Katalog RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: RAN-B:H8 Public Catalog
+# Öffentlicher Katalog RAN-B:H8
 
-DE LOC HOLD: RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name.
-
-## Scanner
-
-DE LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
-
-## Terminal
-
-DE LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
-
-## Audio
-
-DE LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
-
-## Field Note
-
-DE LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+RAN-B:H8 ist der Name, wenn der Mond eine Koordinate ist. HECTON-8 ist der Name, wenn der Mond eine Wunde ist. Die Trennung zählt, weil derselbe Ort in Astronomietabellen, Versicherungsformularen, Arbeitersprache, Totenregistern und Black-Keel-Verwahrung funktionieren muss. Ein öffentlicher Katalog macht das Ziel sauber und sortierbar; ein Anspruchsname hält den menschlichen Rückstand fest. Gute Lore lässt beide Namen zugleich spürbar werden: den indexierten Körper und den ertrunkenen Arbeitsplatz.
 
 <!-- External Site; generated from P104_RAN_B_H8_PUBLIC_CATALOG/de_DE. -->

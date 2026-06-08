@@ -73,6 +73,7 @@ namespace Hecton8.UI
         private Canvas _targetCanvas;
         private Camera _viewCamera;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private object _cachedAudioRuntime;
         private ISpatialAudioImpactEmitterReadModel _cachedAudioManager;
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
@@ -121,6 +122,8 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             HideDots();
             ApplyRootAlpha(0f);
+            _cachedAudioRuntime = null;
+            _cachedAudioManager = null;
         }
 
         private void OnDestroy()
@@ -128,6 +131,8 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarPingListener(this);
             TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
+            _cachedAudioRuntime = null;
+            _cachedAudioManager = null;
             DisposeProjectionBuffers();
         }
 
@@ -483,7 +488,7 @@ namespace Hecton8.UI
                 viewAup = OffsetAupLocal(
                     in cachedMovementState.PredictedAup,
                     (Vector3)((float3)viewPosition - cachedMovementState.PredictedWorldPosition));
-                return true;
+                return viewAup.IsFinite();
             }
 
             viewAup = default;
@@ -756,19 +761,34 @@ namespace Hecton8.UI
 
         private void CacheImpactEmitterReadModel(object audioRuntime)
         {
-            _cachedAudioManager = IsAudioRuntimeObjectUsable(audioRuntime)
-                ? audioRuntime as ISpatialAudioImpactEmitterReadModel
-                : null;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _cachedAudioRuntime = null;
+                _cachedAudioManager = null;
+                return;
+            }
+
+            _cachedAudioRuntime = audioRuntime;
+            _cachedAudioManager = audioRuntime as ISpatialAudioImpactEmitterReadModel;
         }
 
         private ISpatialAudioImpactEmitterReadModel ResolveImpactEmitterReadModel()
         {
+            object audioRuntime = _cachedAudioRuntime;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _cachedAudioRuntime = null;
+                _cachedAudioManager = null;
+                return null;
+            }
+
             ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager;
-            if (IsAudioRuntimeObjectUsable(audioManager))
+            if (ReferenceEquals(audioManager, audioRuntime) && IsAudioRuntimeObjectUsable(audioManager))
                 return audioManager;
 
-            _cachedAudioManager = null;
-            return null;
+            audioManager = audioRuntime as ISpatialAudioImpactEmitterReadModel;
+            _cachedAudioManager = audioManager;
+            return IsAudioRuntimeObjectUsable(audioManager) ? audioManager : null;
         }
 
         private static bool IsAudioRuntimeObjectUsable(object runtime)
@@ -776,7 +796,7 @@ namespace Hecton8.UI
             if (runtime == null)
                 return false;
 
-            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+            if (runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (runtime is Behaviour behaviour)
@@ -787,7 +807,8 @@ namespace Hecton8.UI
 
         private static Canvas ResolveTargetCanvas(bool allowComponentFallback)
         {
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 

@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_distance_band;poi.no_ftl_route_index
 biome_tags: biome.human_space;biome.publication
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "FR LOC HOLD: Ran/Aegir Distance Band"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Bande de distance Ran/Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Ran/Aegir Distance Band
+# Bande de distance Ran/Aegir
 
-FR LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.
+La bande de distance Ran/Aegir garde le cadre lisible sans faire passer la prose pour des simulation data finales. Aegir est atteignable par sondes, fret et colonisation adossée à la dette, pas par sauvetage improvisé quand une pièce se noie.
 
 ## Scanner
 
-FR LOC HOLD: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+Bande publique : Ran/Aegir est une route sans FTL de classe dix années-lumière depuis Sol.
 
 ## Terminal
 
-FR LOC HOLD: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+BANDE D'ÉPHÉMÉRIDES : utiliser la classe dix années-lumière jusqu'au gel des constantes célestes en table. Aucun secours FTL n'existe sur cette route.
 
 ## Audio
 
-FR LOC HOLD: Ten light-years is close on a map and brutal for a contract.
+Dix années-lumière sont proches sur une carte et brutales dans un contrat.
 
 ## Field Note
 
-FR LOC HOLD: Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
+Archive astronomique publique : les bandes de distance et cartes de route sont des plages explicatives, pas des constantes finales.
 
 <!-- In-Game Wiki; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/fr_FR. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Dano da cápsula de queda
 
-O jogador chega por cápsula. O impacto preserva abrigo, energia e logs, mas destrói o caminho de subida. Fuga cedo vira engenharia.
+A cápsula de queda leva o Marauder a HECTON-8. O impacto deixa sistemas suficientes para abrigo, energia e logs, mas destrói o hardware de subida. Sair cedo vira uma cadeia de engenharia, não um botão.
 
 ## Scanner
 

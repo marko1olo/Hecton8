@@ -9,32 +9,36 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Debt Blacklist Contract Pressure"
+title: "ضغط عقد الدين والقائمة السوداء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Debt Blacklist Contract Pressure
+# ضغط عقد الدين والقائمة السوداء
 
-AR LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+تؤطر HECTON-8 بطلها عبر اقتصاد الحدود لا عبر القدر. الدين، القوائم السوداء، حيازة مجمع المطالبات، رصيد الأكسجين، وصول المراقد، واعتمادات Deep Reach القديمة تجعل عقد الإنقاذ قسريا من دون جعل اللاعب عاجزا.
 
 ## Scanner
 
-AR LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+إشعار رهن مرتبط بحيازة Black Keel. الرفض يبقى قانونيا، لكنه يبقيك على الأرض: لا مرقد، لا رصيد أكسجين نظيف، ولا نافذة مسار للخروج من Aegir.
 
 ## Terminal
 
-AR LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+قبول مطالبة / نافذة تخفيف القائمة السوداء
+حالة المتعاقد: Marauder مقيد بالدين
+الناقل: حيازة مجمع مطالبات Black Keel
+شروط التخفيف: كتلة قابلة للاسترداد، إثبات حيازة، امتثال المستلم
+حالة الفشل: تبقى القائمة السوداء نشطة؛ يرفض وصول المرقد؛ تتحول رعاية الأكسجين إلى دعم قابل للفوترة.
 
 ## Audio
 
-AR LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+لم يكن هذا اختطافا. كان ذلك النوع من الاختيار الذي تبيعه الحدود كحرية: وقّع، اغص، أو ابق نظيفا على الورق ومحاصرا في الواقع.
 
 ## Field Note
 
-AR LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+لم يوجه الرهن مسدسا. أشار إلى فاتورة الهواء، وقائمة المراقد، ونافذة المسار التالية.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/ar_SA. -->

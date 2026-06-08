@@ -19,10 +19,14 @@ from pathlib import Path
 from typing import Any
 
 from AppliedLoreImporter import (
+    CSV_HEADERS,
     DRAFT_LOCALIZATION_PREFIX,
     LOCALIZED_TEXT_FIELDS,
+    ROW_FLAG_DRAFT_LOCALIZATION,
     TARGET_LOCALES,
     localized_row_flags,
+    packet_rows,
+    render_csv,
     sanitize_localized_text,
 )
 from AppliedLorePageExporter import (
@@ -36,6 +40,7 @@ from AppliedLorePageExporter import (
     render_page,
     safe_text,
 )
+from AppliedLoreTextIntegrity import find_text_integrity_errors
 
 
 PACKET_SOURCE_GLOB = "*.json"
@@ -47,16 +52,8 @@ REQUIRED_LOCALIZED_FIELDS = (
     "in_game_wiki",
     "external_site",
 )
-OPTIONAL_LOCALIZED_FIELDS = ("field_note",)
+OPTIONAL_LOCALIZED_FIELDS = ("field_note", "external_site_article")
 RTL_LOCALES = {"ar_SA", "he_IL"}
-FORBIDDEN_VISIBLE_MARKERS = ("LOC HOLD", "TODO", "\ufffd")
-EXACT_MOJIBAKE_PATTERNS = (
-    ("utf8_as_latin1_c2_c3", re.compile(r"[\u00c2\u00c3][\u0080-\u00bf]")),
-    ("utf8_as_latin1_d0_d1", re.compile(r"[\u00d0\u00d1][\u0080-\u00bf]")),
-    ("utf8_as_latin1_d8_d9", re.compile(r"[\u00d8\u00d9][\u0080-\u00bf]")),
-    ("utf8_as_latin1_e2_punct", re.compile(r"\u00e2(?:[\u0080-\u009f]|\u20ac)")),
-    ("utf8_as_latin1_e3_cjk", re.compile(r"\u00e3(?:[\u0080-\u009f]|\u0192|\u201a)")),
-)
 
 
 class AppliedLoreTargetedError(Exception):
@@ -76,6 +73,8 @@ class ExportStats:
     surface_index_written: bool = False
     status_index_written: bool = False
     refreshed_indexes: bool = False
+    baked_csv_rows_targeted: int = 0
+    baked_csv_written: bool = False
 
 
 def applied_content_base(root: Path) -> Path:
@@ -113,12 +112,46 @@ def iter_packet_source_paths(base: Path, explicit_paths: tuple[Path, ...] = ()) 
     return sorted(packet_dir.glob(PACKET_SOURCE_GLOB), key=lambda item: item.name.lower())
 
 
+def release_set_by_packet_source(base: Path) -> dict[Path, dict[str, str]]:
+    release_dir = base / "release_sets"
+    mapped: dict[Path, dict[str, str]] = {}
+    if not release_dir.exists():
+        return mapped
+
+    for manifest_path in sorted(release_dir.glob("*_manifest.json"), key=lambda item: item.name.lower()):
+        data = read_json_object(manifest_path)
+        release_set_id = safe_text(data.get("release_set_id"))
+        if not release_set_id:
+            continue
+        manifest_status = safe_text(data.get("status"))
+        packet_sources = data.get("packet_sources")
+        if not isinstance(packet_sources, list):
+            continue
+        for raw_source in packet_sources:
+            if not isinstance(raw_source, str):
+                continue
+            source_path = Path(raw_source)
+            if not source_path.is_absolute():
+                source_path = base.parent.parent.parent / source_path
+            mapped[source_path.resolve()] = {
+                "release_set_id": release_set_id,
+                "manifest_status": manifest_status,
+            }
+
+    return mapped
+
+
 def load_packet_sources(base: Path, explicit_paths: tuple[Path, ...] = ()) -> list[dict[str, Any]]:
     packets_by_id: dict[str, dict[str, Any]] = {}
+    release_sets_by_source = release_set_by_packet_source(base)
 
     for source_path in iter_packet_source_paths(base, explicit_paths):
         data = read_json_object(source_path)
-        bundle_release_set = safe_text(data.get("release_set_id"))
+        source_metadata = release_sets_by_source.get(source_path.resolve(), {})
+        source_release_set = safe_text(source_metadata.get("release_set_id"))
+        manifest_status = safe_text(source_metadata.get("manifest_status"))
+        bundle_release_set = safe_text(data.get("release_set_id")) or source_release_set
+        bundle_status = safe_text(data.get("status"))
         if isinstance(data.get("packets"), list):
             for item in data["packets"]:
                 if not isinstance(item, dict):
@@ -126,11 +159,15 @@ def load_packet_sources(base: Path, explicit_paths: tuple[Path, ...] = ()) -> li
                 packet = dict(item)
                 if bundle_release_set:
                     packet.setdefault("release_set_id", bundle_release_set)
+                packet.setdefault("_bundle_status", bundle_status)
+                packet.setdefault("_manifest_status", manifest_status)
                 add_packet(packets_by_id, packet, source_path)
         else:
             packet = dict(data)
             if bundle_release_set:
                 packet.setdefault("release_set_id", bundle_release_set)
+            packet.setdefault("_bundle_status", bundle_status)
+            packet.setdefault("_manifest_status", manifest_status)
             add_packet(packets_by_id, packet, source_path)
 
     return [packets_by_id[key] for key in sorted(packets_by_id)]
@@ -186,22 +223,6 @@ def write_text_if_changed_count(path: Path, text: str, dry_run: bool) -> bool:
     return True
 
 
-def find_text_integrity_errors(text: str) -> list[str]:
-    errors: list[str] = []
-    for marker in FORBIDDEN_VISIBLE_MARKERS:
-        if marker in text:
-            errors.append(f"forbidden_marker={marker!r}")
-
-    if any(0x80 <= ord(char) <= 0x9F for char in text):
-        errors.append("c1_control_character")
-
-    for name, pattern in EXACT_MOJIBAKE_PATTERNS:
-        if pattern.search(text) is not None:
-            errors.append(f"mojibake={name}")
-
-    return errors
-
-
 def validate_packet_source(packets: list[dict[str, Any]]) -> None:
     errors: list[str] = []
     required_locales = set(TARGET_LOCALES)
@@ -225,6 +246,9 @@ def validate_packet_source(packets: list[dict[str, Any]]) -> None:
             row = localized_by_locale.get(locale)
             if not isinstance(row, dict):
                 continue
+            row_flags = localized_row_flags(row, locale, packet)
+            if locale != "en_US" and (row_flags & ROW_FLAG_DRAFT_LOCALIZATION) == 0:
+                errors.append(f"{packet_id}/{locale}: missing draft localization status")
 
             for field in REQUIRED_LOCALIZED_FIELDS:
                 value = row.get(field)
@@ -241,7 +265,8 @@ def validate_packet_source(packets: list[dict[str, Any]]) -> None:
                         continue
                     validate_localized_field(errors, packet_id, locale, field, value, required=False)
 
-            unknown_fields = sorted(set(row).difference(LOCALIZED_TEXT_FIELDS + ("external_site_article_path", "external_site_article")))
+            known_fields = LOCALIZED_TEXT_FIELDS + OPTIONAL_LOCALIZED_FIELDS + ("external_site_article_path",)
+            unknown_fields = sorted(set(row).difference(known_fields))
             for field in unknown_fields:
                 value = row.get(field)
                 if isinstance(value, str):
@@ -266,10 +291,6 @@ def validate_localized_field(
     has_draft_prefix = DRAFT_LOCALIZATION_PREFIX.match(value.strip()) is not None
     if locale == "en_US" and has_draft_prefix:
         errors.append(f"{packet_id}/{locale}/{field}: English row contains draft marker")
-    elif locale != "en_US" and required and not has_draft_prefix:
-        errors.append(f"{packet_id}/{locale}/{field}: missing draft localization marker")
-    elif locale != "en_US" and not required and value.strip() and not has_draft_prefix:
-        errors.append(f"{packet_id}/{locale}/{field}: optional localized field missing draft marker")
 
     cleaned = sanitize_localized_text(value)
     if not cleaned.strip():
@@ -338,6 +359,93 @@ def write_publication_surface_index(path: Path, rows: list[dict[str, str]], dry_
     writer.writeheader()
     writer.writerows(rows)
     return write_text_if_changed_count(path, buffer.getvalue(), dry_run)
+
+
+def applied_lore_packet_csv_path(root: Path) -> Path:
+    return root / "Assets" / "_SourceData" / "DataMonolith" / "Narrative" / "applied_lore_packets.csv"
+
+
+def read_baked_lore_packet_rows(path: Path) -> list[dict[str, str]]:
+    if not path.exists():
+        raise AppliedLoreTargetedError(f"Missing AppliedLore baked CSV: {path}")
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if tuple(reader.fieldnames or ()) != CSV_HEADERS:
+            raise AppliedLoreTargetedError(f"AppliedLore baked CSV header mismatch: {path}")
+        return [{key: safe_text(row.get(key)) for key in CSV_HEADERS} for row in reader]
+
+
+def validate_selected_baked_csv(root: Path, packets: list[dict[str, Any]]) -> int:
+    path = applied_lore_packet_csv_path(root)
+    expected_rows = packet_rows(packets)
+    selected_ids = {safe_text(packet.get("packet_id")) for packet in packets}
+    selected_ids.discard("")
+    actual_rows = [
+        row for row in read_baked_lore_packet_rows(path)
+        if safe_text(row.get("packet_id")) in selected_ids
+    ]
+
+    errors: list[str] = []
+    expected_by_key: dict[tuple[str, str], dict[str, str]] = {}
+    actual_by_key: dict[tuple[str, str], dict[str, str]] = {}
+
+    for row in expected_rows:
+        key = (row["packet_id"], row["locale"])
+        if key in expected_by_key:
+            errors.append(f"source duplicate row packet={key[0]} locale={key[1]}")
+        expected_by_key[key] = {header: safe_text(row.get(header)) for header in CSV_HEADERS}
+
+    for row in actual_rows:
+        key = (row["packet_id"], row["locale"])
+        if key in actual_by_key:
+            errors.append(f"baked CSV duplicate row packet={key[0]} locale={key[1]}")
+        actual_by_key[key] = row
+
+    expected_keys = set(expected_by_key)
+    actual_keys = set(actual_by_key)
+    for packet_id, locale in sorted(expected_keys.difference(actual_keys)):
+        errors.append(f"baked CSV missing row packet={packet_id} locale={locale}")
+    for packet_id, locale in sorted(actual_keys.difference(expected_keys)):
+        errors.append(f"baked CSV extra row packet={packet_id} locale={locale}")
+
+    for key in sorted(expected_keys.intersection(actual_keys)):
+        expected = expected_by_key[key]
+        actual = actual_by_key[key]
+        for header in CSV_HEADERS:
+            if actual[header] != expected[header]:
+                errors.append(
+                    f"baked CSV mismatch packet={key[0]} locale={key[1]} field={header}: "
+                    f"expected={expected[header]!r} actual={actual[header]!r}"
+                )
+
+    if errors:
+        sample = "\n".join(errors[:40])
+        remaining = "" if len(errors) <= 40 else f"\n... {len(errors) - 40} more"
+        raise AppliedLoreTargetedError("Selected AppliedLore baked CSV validation failed:\n" + sample + remaining)
+
+    return len(expected_rows)
+
+
+def merge_baked_lore_packet_rows(root: Path, packets: list[dict[str, Any]], dry_run: bool) -> tuple[int, bool]:
+    path = applied_lore_packet_csv_path(root)
+    existing_rows = read_baked_lore_packet_rows(path)
+    expected_rows = [{header: safe_text(row.get(header)) for header in CSV_HEADERS} for row in packet_rows(packets)]
+    selected_ids = {safe_text(packet.get("packet_id")) for packet in packets}
+    selected_ids.discard("")
+
+    first_selected_index: int | None = None
+    preserved_rows: list[dict[str, str]] = []
+    for row in existing_rows:
+        if safe_text(row.get("packet_id")) in selected_ids:
+            if first_selected_index is None:
+                first_selected_index = len(preserved_rows)
+            continue
+        preserved_rows.append(row)
+
+    insert_at = first_selected_index if first_selected_index is not None else len(preserved_rows)
+    merged_rows = preserved_rows[:insert_at] + expected_rows + preserved_rows[insert_at:]
+    changed = write_text_if_changed_count(path, render_csv(merged_rows), dry_run)
+    return len(expected_rows), changed
 
 
 def merge_publication_surface_rows(base: Path, selected_packets: list[dict[str, Any]], dry_run: bool) -> tuple[int, bool]:
@@ -443,7 +551,7 @@ def validate_selected_pages(base: Path, packets: list[dict[str, Any]]) -> None:
 
         for locale in TARGET_LOCALES:
             localized = localized_by_locale.get(locale, {})
-            flags = localized_row_flags(localized) if isinstance(localized, dict) else 0
+            flags = localized_row_flags(localized, locale, packet) if isinstance(localized, dict) else 0
             expected_status = "source_authority" if locale == "en_US" else "draft_machine_or_llm"
             for folder, surface_key, _surface_title in SURFACES:
                 path = base / folder / locale / f"{packet_id}.md"
@@ -573,6 +681,8 @@ def export_targeted(
     validate_only: bool,
     source_only: bool,
     refresh_indexes: bool,
+    validate_baked_csv: bool = False,
+    update_baked_csv: bool = False,
 ) -> ExportStats:
     base = applied_content_base(root)
     all_packets = load_packet_sources(base, explicit_packet_sources)
@@ -581,6 +691,16 @@ def export_targeted(
     validate_packet_source(selected_packets)
 
     stats = ExportStats(source_packets=len(all_packets), target_packets=len(selected_packets))
+    if update_baked_csv:
+        stats.baked_csv_rows_targeted, stats.baked_csv_written = merge_baked_lore_packet_rows(
+            root,
+            selected_packets,
+            dry_run,
+        )
+        if not dry_run:
+            stats.baked_csv_rows_targeted = validate_selected_baked_csv(root, selected_packets)
+    elif validate_baked_csv:
+        stats.baked_csv_rows_targeted = validate_selected_baked_csv(root, selected_packets)
     if source_only:
         return stats
     if not validate_only:
@@ -612,6 +732,8 @@ def format_stats(stats: ExportStats, *, dry_run: bool, validate_only: bool, sour
         f"pages_written={stats.pages_written} pages_unchanged={stats.pages_unchanged} "
         f"disabled_pages_removed={stats.disabled_pages_removed} surface_rows_targeted={stats.surface_rows_targeted} "
         f"surface_index_written={int(stats.surface_index_written)} "
+        f"baked_csv_rows_targeted={stats.baked_csv_rows_targeted} "
+        f"baked_csv_written={int(stats.baked_csv_written)} "
         f"refreshed_indexes={int(stats.refreshed_indexes)} "
         f"locale_indexes_written={stats.locale_indexes_written} "
         f"locale_indexes_unchanged={stats.locale_indexes_unchanged} "
@@ -645,6 +767,22 @@ def main() -> int:
     parser.add_argument("--source-only", action="store_true", help="Validate selected packet JSON sources only.")
     parser.add_argument("--validate-only", action="store_true", help="Validate selected packet publication output only.")
     parser.add_argument(
+        "--validate-baked-csv",
+        action="store_true",
+        help=(
+            "Also validate selected rows in "
+            "Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv match packet source exactly."
+        ),
+    )
+    parser.add_argument(
+        "--update-baked-csv",
+        action="store_true",
+        help=(
+            "Replace selected rows in "
+            "Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv from packet source, preserving unrelated rows."
+        ),
+    )
+    parser.add_argument(
         "--refresh-indexes",
         action="store_true",
         help="Also regenerate locale INDEX.md files and Localization_Status_Index.md from all loaded packet JSON.",
@@ -652,6 +790,9 @@ def main() -> int:
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
+    if args.validate_only and args.update_baked_csv:
+        print("AppliedLore targeted export FAILED: --update-baked-csv cannot be combined with --validate-only")
+        return 1
     selectors = split_selectors(args.packet_id + args.packet_glob)
     explicit_sources = tuple((root / value).resolve() for value in args.packet_source)
     try:
@@ -664,6 +805,8 @@ def main() -> int:
             validate_only=args.validate_only,
             source_only=args.source_only,
             refresh_indexes=args.refresh_indexes,
+            validate_baked_csv=args.validate_baked_csv,
+            update_baked_csv=args.update_baked_csv,
         )
     except AppliedLoreTargetedError as exc:
         print(f"AppliedLore targeted export FAILED: {exc}")

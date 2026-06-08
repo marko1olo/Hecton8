@@ -9,32 +9,26 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Primera reparación PressureSeal"
+title: "Primera reparación PressureSeal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Primera reparación PressureSeal
+# Primera reparación PressureSeal
 
-ES LOC HOLD: La primera reparación útil en Shallow Annex P-63 empieza con luz. El FiberKelp de la repisa brillante puede volverse FiberMesh y llevar un PressureSeal temporal para un collar o toma de servicio. Compra tiempo y seguridad de ruta, no escape.
+## Reparación Con Luz
 
-## Scanner
+La primera reparación útil en Shallow Annex P-63 empieza donde el agua aún tiene luz suficiente para mentir. Fuera, FiberKelp se mueve en la corriente del estante. Dentro, un collar de presión suda por una junta que Deep Reach marcó como servible.
 
-ES LOC HOLD: OBJETIVO PRESSURESEAL // Fuga en collar P-63. Portador FiberMesh compatible. Solo estabilización local; certificación de ascenso denegada.
+FiberKelp es biofibra somera, no tesoro raro. Crece donde se cruzan luz, corriente y calor industrial viejo. Las hebras lavadas y peinadas se convierten en FiberMesh. Un fabricador de campo P-63 puede prensar esa malla como capa portadora de un PressureSeal temporal.
 
-## Terminal
+La pieza importa porque tiene límite. Un PressureSeal puede frenar una fuga local, estabilizar un bolsillo de regreso y hacer sobrevivible un bucle corto de reparación. No certifica el bathydrop para ascenso, no sustituye un anillo de sujeción y no convierte un acuse de Black Keel en recuperación.
 
-ES LOC HOLD: NOTA DE TOLERANCIA DEEP REACH P-63 // Aplazar reemplazo del collar. Aplicar portador de sello blando aprobado si la fuga queda dentro del umbral local.
+La contradicción se ve antes del archivo. El terminal dice variación de presión dentro de tolerancia de servicio. El collar muestra pernos torcidos, sal bajo la tira de inspección y fibras atrapadas en una grieta que debía ser metal limpio.
 
-## Audio
-
-ES LOC HOLD: Relé Black Keel: el parche P-63 es seguro local, no seguro para ascenso. Toma el sello y conserva el número.
-
-## Field Note
-
-ES LOC HOLD: Agua brillante fuera. Collar mojado dentro. Deep Reach lo llamó nominal porque la palabra cuesta menos que un anillo de sujeción.
+Para el Marauder la lección es práctica: corta FiberKelp limpio, no metas arena en la malla, conserva el serial del sello y no confíes en una reparación que dice local seguro cuando la ruta necesita ascenso seguro.
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/es_ES. -->

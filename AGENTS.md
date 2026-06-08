@@ -15,7 +15,7 @@ Tone: direct, factual, technically demanding. Criticize bad ideas with reasoning
 
 [RULE] `C:\Users\danat\.codex\AGENTS.md` is a global router only. It must route HECTON-8 work here and must not duplicate divergent project law.
 
-[RULE] `Docs\PROJECT_ROOT_BIBLES_COMBINED.md` is generated. Do not hand-edit it. After root bible or rule-source edits, run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`, then `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`.
+[RULE] `Docs\PROJECT_ROOT_BIBLES_COMBINED.md` is generated. Do not hand-edit it. After root bible or rule-source edits, run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`, then `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`. After agent rule-surface edits, also run `python -B Tools/Docs/TestAgentRuleRouting.py`. After mandate edits, also run `python -B Tools/Docs/TestMandateRegistry.py`.
 
 [RULE] Full pre-kernel root law text from 2026-06-05 is preserved in `Docs\AGENTS_RULE_DETAIL_LEDGER.md`. That ledger is binding detail/provenance when a task or dispute needs a former monolithic clause not yet promoted into a narrower bible or mandate. Do not bulk-read it for ordinary work.
 
@@ -63,6 +63,8 @@ Technical report means an audit, policy review, architecture review, proof revie
 
 [RULE] Work product priority is source/asset/proof first, report second. For ordinary implementation, visual, runtime, gameplay, asset, UI, or proof work, an agent's final useful artifact must be one of: changed source, changed asset/scene through an allowed route, generated/importable asset package, fresh Unity/player/profiler proof, or a concise blocker with the exact missing external condition. A report-only result is rejected unless the user explicitly asked for a report or the task was a narrow policy/documentation update.
 
+[RULE] Lore/content production artifact means concrete files, not chat prose. Unless the user explicitly asks for brainstorming or English-only draft text, AppliedLore work must create or update source article/production packet files, all 15 locale rows with honest draft/native status, publication/import/binding evidence, or a source-brief blocker with the missing canon fact. Source briefs, route cards, outlines, and packet plans are support work only.
+
 [FORBID] Paper-success loops: no agent may convert an implementation failure into success by producing more status files, task packets, boards, CSVs, static scans, route cards, or rationale prose. Once the root blocker is known, more paperwork is allowed only if it directly names the next command, next file to edit, or proof artifact to collect.
 
 [RULE] Same-failure escalation: if the same defect appears in two consecutive captures, scans, compile logs, or proof attempts, the agent must change strategy. For visuals, declare `VISUAL_ROUTE_INVALID` and recover/replace the route. For runtime, fix the owner/source path or run the missing proof. For blocked Unity/build/profiler gates, stop that lane with the exact process/tool blocker instead of writing another validation artifact.
@@ -86,6 +88,8 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 [REQ] Existing editor/offline generation systems for meshes, textures, rocks, flora, fauna, materials, and procedural families must be searched before inventing new asset-generation routes.
 
 [RULE] No polish before base beauty: if the frame fails reference-level composition, material truth, water/terrain/sky readability, contact detail, or route scale, do not tune fog, bloom, exposure, color grading, vignette, decorative lights, or screenshots as the fix. Restore, replace, or rebind the base owner stack first, then prove with the same shot list.
+
+[REQ] Visual benchmark parity: before accepting player-visible visual work, identify the closest mandatory reference image set and the best-known internal baseline or current rejection matrix for the same route class. April/previously-in-development reference images in the mandatory folder outrank agent taste. Raw diagnostic captures can reject obvious failure only; acceptance requires repeated shot-list comparison that beats the reference/baseline on base geometry, material truth, waterline/contact, sky/Aegir/terrain readability, route cues, and compact-tier composition before any polish pass is credited.
 
 [RULE] Until `Docs\ARCHITECTURE\FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` is proven, gameplay, runtime, player-visible visual, UI, audio, world, asset, system, and in-world content tasks must state which first-20-minutes route moment they improve or which route blocker they remove. Pure rule routing, tool-shim upkeep, generated snapshot sync, narrow typo fixes, and read-only governance checks may instead state `FIRST_20_NOT_APPLICABLE: <reason>`.
 
@@ -119,7 +123,7 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 
 Normative scene flow: `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`. `01_ORBIT`, sandbox scenes, and `_Recovery` are not production handoff unless a route bible or current task says otherwise.
 
-First-party content lives under `Assets\_Project`. Preferred third-party quarantine is `Assets\_ThirdParty`. Existing third-party contamination under `Assets\Plugins`, `Assets\AstarPathfindingProject`, `Assets\Resources`, and physical `Packages` is contamination, not approval to use.
+First-party content lives under `Assets\_Project`. Preferred third-party quarantine is `Assets\_ThirdParty`. Existing third-party/vendor contamination under `Assets\Plugins`, `Assets\Resources`, physical `Packages`, and any legacy vendor folder such as `Assets\AstarPathfindingProject` when present is contamination, not approval to use.
 
 Naming defaults:
 - scripts: `PascalCase.cs`;
@@ -259,7 +263,17 @@ Use these defaults unless a current route bible, mandate, or live source owner p
 
 [FORBID] Do not launch dotnet/build/import/profiler/Unity actions unless needed for the current task and allowed by current process state.
 
+[REQ] Before launching any `dotnet`, Unity batchmode build, import, profiler capture, or player build, perform a local process preflight: check current CPU load and active `dotnet`, `csc.exe`, Unity, Unity Hub, build, and import processes. If CPU is above `50%`, a compile/import/build is already active, or Unity is importing/compiling, do not start another heavy action; report `BUILD_GATE_BLOCKED: <reason>` and use static/scoped review instead.
+
 [FORBID] Never launch dotnet build when CPU is under work (>50%) or another `dotnet`/`csc.exe` is running.
+
+[FORBID] Do not run parallel full builds/imports across subagents, terminals, task lanes, or GUI sessions. One active compile owner per target.
+
+[RULE] Prefer scoped checks before full builds: targeted source reads, `rg`, static analyzers, or narrow project/asmdef compile only when they answer the current task. Full solution builds, player builds, restore, clean, `--no-incremental`, and Unity reimport require explicit current-task need or an assigned proof gate.
+
+[REQ] Heavy proof actions must back off after a blocked preflight. Wait for load to clear or stop with the exact blocker; do not retry in a tight loop. After two blocked attempts over unchanged state, report the blocker instead of polling.
+
+[REQ] Heavy commands must be reported with exact command, target, timestamp, exit code, and warning/error count. If skipped by a build gate, final chat or batch log must name the gate reason and keep compile/import/player readiness at `PENDING VERIFICATION`.
 
 [REQ] If code breaks compile, do not stop at the first error. Read compiler errors and fix manually. If the same external dependency wall blocks three consecutive attempts, revert your broken chunk, mark explicit batch task blocked only when batch logging exists, and report the dependency.
 
@@ -387,7 +401,7 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 [FORBID] Do not read `HECTON8_ORCHESTRATOR.md`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1` merely because you spawn internal subagents. Internal subagents are ordinary delegation and are governed by `Delegation And Subagents`.
 
-[REQ] Explicit standalone multi-agent waves, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging standalone agents.
+[REQ] Explicit standalone multi-agent waves, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, `DELIVERABLE_CLASS`, valid completion, invalid completion, kill switch, `PROOF_ROUTE`, and evidence budget before dispatching or judging standalone agents.
 
 [REQ] Explicit autonomous local VS Code Codex GUI control must also read `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md`. That file is process-control law only for current workstation/Codex GUI operation; it is not a normal implementation, docs, or internal-subagent authority.
 

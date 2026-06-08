@@ -1,0 +1,83 @@
+{
+  "schema": "hecton8.generated_flora_imported_normalization.v1",
+  "date": "2026-06-07",
+  "operation": "resize_and_losslessly_png_optimize_existing_generated_flora_same_paths",
+  "maxSize": 1024,
+  "families": [
+    "family.kelp.abyssal"
+  ],
+  "records": [
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/albedo___family.kelp.abyssal.png",
+      "beforeBytes": 6497653,
+      "afterBytes": 1784759,
+      "deltaBytes": -4712894,
+      "beforeSize": [
+        2048,
+        2048
+      ],
+      "afterSize": [
+        1024,
+        1024
+      ],
+      "mode": "RGB",
+      "familyId": "family.kelp.abyssal",
+      "mapToken": "albedo"
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/detail___family.kelp.abyssal.png",
+      "beforeBytes": 8155023,
+      "afterBytes": 2391430,
+      "deltaBytes": -5763593,
+      "beforeSize": [
+        2048,
+        2048
+      ],
+      "afterSize": [
+        1024,
+        1024
+      ],
+      "mode": "RGB",
+      "familyId": "family.kelp.abyssal",
+      "mapToken": "detail"
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/normal___family.kelp.abyssal.png",
+      "beforeBytes": 6152906,
+      "afterBytes": 1507996,
+      "deltaBytes": -4644910,
+      "beforeSize": [
+        2048,
+        2048
+      ],
+      "afterSize": [
+        1024,
+        1024
+      ],
+      "mode": "RGB",
+      "familyId": "family.kelp.abyssal",
+      "mapToken": "normal"
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/mask___family.kelp.abyssal.png",
+      "beforeBytes": 5949421,
+      "afterBytes": 1654961,
+      "deltaBytes": -4294460,
+      "beforeSize": [
+        2048,
+        2048
+      ],
+      "afterSize": [
+        1024,
+        1024
+      ],
+      "mode": "RGB",
+      "familyId": "family.kelp.abyssal",
+      "mapToken": "mask"
+    }
+  ],
+  "missing": [],
+  "totalBeforeBytes": 26755003,
+  "totalAfterBytes": 7339146,
+  "totalSavedBytes": 19415857
+}

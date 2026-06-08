@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Доказательство задержки карантинного release"
+title: "Карантинное удержание выпуска"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Доказательство задержки карантинного release
+# Карантинное удержание выпуска
 
-Quarantine не автоматически злодейство. Доказательство в timing: language protection появляется после rescue windows и evidence custody.
+Запись удержания не делает карантин злом. Она показывает время. Deep Reach могла назвать неопределенность, задержать выпуск, сохранить страховую позицию и удерживать рабочего внутри зоны, пока маршрут не умер.
 
 ## Scanner
 
-Quarantine hold plate. Слово protection появляется только после lock exit route.
+Пластина карантинного удержания. Язык защиты появляется после того, как выходной маршрут уже заперт.
 
 ## Terminal
 
-RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
 
 ## Audio
 
-Quarantine может спасти тело. И может заставить тело ждать, пока оно станет paperwork.
+Карантин может спасти тело. Он же может заставить тело ждать, пока оно станет бумагой.
 
 ## Field Note
 
-Для мест, где rescue легко спутать с custody.
+Заметка мародера: слово protection не доказывает защиту. Смотри на часы.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/ru_RU. -->

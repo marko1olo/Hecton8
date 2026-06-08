@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Field Systems Specialist Record"
+title: "Registro de especialista en sistemas de campo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Field Systems Specialist Record
+# Registro de especialista en sistemas de campo
 
-ES LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.
+Este registro explica la primera competencia del operador sin convertirlo en un testigo elegido. Deep Reach lo formó junto a bombas, índices de sellado, salas de relé, tarjetas de derivación, colas de evacuación y lenguaje route-safe. Los sistemas antiguos rechazan su nombre, pero todavía exponen procedimientos familiares. La culpa empieza como reconocimiento: una orden de drenaje, un índice de abrazadera, una frase de retención saneada, una sala que falló en el orden que le enseñaron a impedir.
 
 ## Scanner
 
-ES LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+Antigua credencial de sistemas de campo. No era mando. Trabajo de infraestructura con acceso suficiente para reconocer dónde se enterró una ruta.
 
 ## Terminal
 
-ES LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+RASTRO DE PERSONAL: sistemas de campo, infraestructura de evacuación, certificación route-safe. Autorización revocada tras la revisión del silencio de Aegir. La caché de procedimientos aún coincide con la secuencia del operador.
 
 ## Audio
 
-ES LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+Tú nunca firmaste la mentira. Conocías la gramática que la dejaba pasar la inspección.
 
 ## Field Note
 
-ES LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+La placa dejó de abrir puertas. No borró de las manos el orden del fallo.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/es_ES. -->

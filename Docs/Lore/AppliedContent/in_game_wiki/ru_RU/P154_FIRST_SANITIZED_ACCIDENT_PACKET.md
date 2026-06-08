@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: First Sanitized Accident Packet"
+title: "Первый очищенный аварийный пакет"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: First Sanitized Accident Packet
+# Первый очищенный аварийный пакет
 
-RU LOC HOLD: The first sanitized accident packet gives a useful lie: real Great Tide physics stripped of accepted margins, delayed authorization and missing workers.
+Первый очищенный аварийный пакет дает полезную ложь: настоящую физику Great Tide без принятых рисковых запасов, задержанной авторизации и пропавших работников.
 
 ## Scanner
 
-RU LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+Найден аварийный пакет Deep Reach. Чистая формулировка расходится с дверными часами и следами затопления.
 
 ## Terminal
 
-RU LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+АВАРИЙНОЕ УВЕДОМЛЕНИЕ DEEP REACH / ЛОКАЛЬНЫЙ ГЕОТЕХНИЧЕСКИЙ КАСКАД: сбой разрешения на эвакуацию остается на рассмотрении; biological-pressure quarantine активен; журналы Atlas повреждены; внешний релиз отложен до сверки свидетельств.
 
 ## Audio
 
-RU LOC HOLD: The packet says cascade. Door clocks say delay.
+В пакете сказано: каскад. Дверные часы говорят: задержка.
 
 ## Field Note
 
-RU LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+Они написали «каскад». Линия налета на шкафчике выше эвакуационной метки.
 
 <!-- In-Game Wiki; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/ru_RU. -->

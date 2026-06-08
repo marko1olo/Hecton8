@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Glass Grazer Codex Card"
+title: "Codexkaart: glasgrazer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Glass Grazer Codex Card
+# Codexkaart: glasgrazer
 
-NL LOC HOLD: Glass Grazer Codex Card turns a benign animal into a readable safety instrument.
+Glasgrazers zijn geen huisdieren, buit of decoratie. Het zijn kleine transparante schaaleters die het lichtplateau leesbaar maken door mineraalfilm te schrapen van pressure glass, losse randen van fotische matten, oude kabelmantels en kalksteenlippen. Een etende school laat bleke banen in de groei achter. Die banen kunnen recente stroming tonen, een schone houvast, een naad die niet te warm is, of een plek waar roofdieren de laatste minuten niet zijn gekruist. De nuttige aanwijzing is niet alleen beweging. Het is onderbreking. Als voedsel blijft liggen en de schaaltikken stoppen, heeft de school drukverandering, schaduwbeweging, cutter-trilling of een groter dier buiten de scannerkegel gehoord. De geschraapte baan is bewijs, geen toestemming. Volg de rand. Vertrek wanneer de rand naar binnen vouwt.
 
 ## Scanner
 
-NL LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+School glasgrazers. Niet-vijandige schaaleters schrapen mineraalfilm. Regelmatig tikken betekent werkbaar water; plotselinge stilte betekent dat iets groters de open plek veranderde.
 
 ## Terminal
 
-NL LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+SPECIMEN / SCHOOL GLASGRAZERS / rol: schraper van ondiepe film, getuige van stroming, aanwijzing voor roofdierverplaatsing / veilige lezing: voederrand, verse bleke schraapbaan, stabiele schaaltikken / afwijzen: verlaten voedselveld, strak bevroren school, geen terugkerende tikken na pinger / routenotitie: afwezigheid na eten is gevarendata.
 
 ## Audio
 
-NL LOC HOLD: When they stop eating, you stop moving.
+Als de kleine monden stoppen met tikken en het voedsel blijft liggen, word dan niet het volgende dat wacht.
 
 ## Field Note
 
-NL LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Etende school: lees de baan. Bevroren school: lees het water. Lege baan met voedsel over: vertrek.
 
 <!-- In-Game Wiki; generated from P292_GLASS_GRAZER_CODEX_CARD/nl_NL. -->

@@ -56,6 +56,8 @@ namespace Hecton8.Building
     public sealed class PlayerBuilder : PlayerTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001PlayerBuilderSignalPushDropCount;
+        private const double DefaultSeaLevelAupY = 14.02d;
+
         public enum BuildReadiness
         {
             Offline = 0,
@@ -702,7 +704,7 @@ namespace Hecton8.Building
                         TryRegisterLateFrameTick();
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _cachedObjectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.HabitatDeconstructionRuntime:
                     _cachedHabitatDeconstructionSystem = currentService as IHabitatDeconstructionSystem;
@@ -748,7 +750,7 @@ namespace Hecton8.Building
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1496,7 +1498,7 @@ namespace Hecton8.Building
             if (_cachedConstructionManager == null)
                 _cachedConstructionManager = ResolveConstructionManager();
             if (_cachedObjectPool == null)
-                _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+                CacheObjectPoolService(null);
             if (_cachedHabitatDeconstructionSystem == null)
                 _cachedHabitatDeconstructionSystem = GlobalRegistry.HabitatDeconstruction;
             if (_cachedInteractionSignalService == null)
@@ -1725,8 +1727,42 @@ namespace Hecton8.Building
 
         private bool TryGetObjectPool(out IObjectPoolService pool)
         {
-            pool = _cachedObjectPool;
-            return pool != null;
+            return TryResolveCachedObjectPool(out pool);
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _cachedObjectPool = pool;
+                return;
+            }
+
+            _cachedObjectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _cachedObjectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _cachedObjectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _cachedObjectPool = null;
+            pool = null;
+            return false;
         }
 
         private GameObject SpawnPlacedModule(BuildableData data, Vector3 placePos, Quaternion placeRot, IObjectPoolService pool)
@@ -2879,7 +2915,7 @@ namespace Hecton8.Building
 
             uint hash = unchecked((uint)data.ModuleHashId);
             if (hash == 0u && data.ModuleTemplate != null)
-                hash = unchecked((uint)data.ModuleTemplate.TemplateHashId);
+                hash = unchecked((uint)data.ModuleTemplate.ResolvePersistentHashId());
             return hash;
         }
 
@@ -3685,7 +3721,9 @@ namespace Hecton8.Building
 
         private static float EstimateDepthPressure(double3 pivotAup)
         {
-            float depthMeters = math.isfinite(pivotAup.y) ? math.max(0f, -(float)pivotAup.y) : 0f;
+            float depthMeters = math.isfinite(pivotAup.y)
+                ? (float)math.max(0d, DefaultSeaLevelAupY - pivotAup.y)
+                : 0f;
             return depthMeters * 0.0125f;
         }
 
@@ -3940,7 +3978,7 @@ namespace Hecton8.Building
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int itemHashId = Hecton.Localization.LocHash.Compute(cost.item.PersistentId);
+                int itemHashId = ItemData.ResolvePersistentHashId(cost.item);
                 if (itemHashId == 0)
                     continue;
 

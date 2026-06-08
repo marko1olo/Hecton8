@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Penahanan Rute Papan Shift
 
-Bukti ini menunjukkan bahasa logistik menyembunyikan tubuh dan menyebar salah.
+Papan shift mengubah bencana menjadi prosedur yang terbaca. Deep Reach dan Atlas membunuh lewat klasifikasi, penundaan, dan prioritas, bukan niat jahat teatrikal.
 
 ## Scanner
 

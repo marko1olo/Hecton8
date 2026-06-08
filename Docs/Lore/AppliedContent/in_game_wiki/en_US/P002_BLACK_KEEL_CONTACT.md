@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Black Keel Contact
 
-The Black Keel is a system carrier, not a home ship. It moves capsules, cargo tugs, claim packages, sealed samples, and unlucky operators through Aegir traffic. It can help, but help is filtered through geometry, weather, automation, debt, and whatever priority hooks were hidden in the contract before the player ever touched water.
+Black Keel is an Aegir-system claim tender, not a home ship. It moves capsules, cargo tugs, sealed samples, lien records, and unlucky operators through local traffic. It can help, but help passes through orbit geometry, weather, automation, debt, and beneficiary hooks hidden in the contract before the player ever touched the ocean.
 
 ## Scanner
 
-Old relay mast. Salted, bent, still pointed at the right sky.
+Old relay mast. Salted, bent, still pointed at the right slice of Aegir sky.
 
 ## Terminal
 
-OPERATOR STATE: alive. DROPCRAFT STATE: unrecoverable. CLAIM STATE: open. SAMPLE STATE: unknown. RECOVERY STATE: pending window.
+OPERATOR STATE: ALIVE. DROPCRAFT STATE: UNRECOVERABLE. CLAIM STATE: OPEN. SAMPLE STATE: UNKNOWN. RECOVERY STATE: PENDING WINDOW. LIEN MASS: 4.8 TONNE-WINDOW BASELINE.
 
 ## Audio
 

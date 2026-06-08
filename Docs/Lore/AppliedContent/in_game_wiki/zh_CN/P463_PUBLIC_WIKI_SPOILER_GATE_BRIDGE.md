@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: 剧透门控"
+title: "剧透门控"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: 剧透门控
+# 剧透门控
 
-ZH LOC HOLD: 公共档案门控。外部和wiki页面可提到 HECTON-8、Aegir、Black Keel、Deep Reach、Atlas-6 公共历史和 Xenon-Omega 传闻。更强条目只在回收保管证据后解锁。
+公共档案门控。外部网站和wiki可以提到HECTON-8、Aegir、Black Keel、Deep Reach、Atlas-6公开历史和Xenon-Omega传闻。更强条目只在保管链回收后解锁。
 
 ## Scanner
 
-ZH LOC HOLD: 公共档案门控 // 剧透层级0/1。仅限公开背景。深层证据在图鉴扩展前需要已回收的保管链。
+公共档案门控 // 剧透层级0/1。仅限公开背景。深层证据在扩展图鉴前需要已回收的保管链。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC/WIKI导出过滤器 // 证据前允许：设定、路线压力、公开事故语言、已知机构和早期打捞前提。深层证据保留。
+PUBLIC/WIKI导出过滤 // 证据前允许：设定、路线压力、公开事故语言、已知机构和早期打捞前提。深层证据等待回收。
 
 ## Audio
 
-ZH LOC HOLD: Black Keel中继：公开文案可以说出这颗月的名字。证明需要封签。把封签带回来。
+Black Keel中继：公开文案可以说出这颗月的名字。证据需要封签。把封签带回来。
 
 ## Field Note
 
-ZH LOC HOLD: 公开页面告诉你往哪儿潜。它不告诉你是谁付钱让门保持关闭。
+公共页面告诉你往哪里潜。它不会告诉你是谁花钱让门继续关着。
 
 <!-- In-Game Wiki; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/zh_CN. -->

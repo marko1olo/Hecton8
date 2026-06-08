@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 잠수함 기술 및 약탈자 잠수복
 
 > **출처:** 킬마크 손실 전담 부서(Keelmark Loss Desk), 독립 인양 작업을 위한 보험 계리적 위험 평가.

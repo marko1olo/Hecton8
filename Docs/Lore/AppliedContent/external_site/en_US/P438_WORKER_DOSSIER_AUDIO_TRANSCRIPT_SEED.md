@@ -19,22 +19,12 @@ localization_flags: 0
 
 # Worker Dossier Audio Transcript
 
-The dead colony reads as a workplace that failed under physics and policy, not a melodrama prop.
+## A Colony Before It Becomes Evidence
 
-## Scanner
+The worker dossier audio should not introduce victims as shrine objects. It should let them work. A pump chief checks a valve. A relay notary complains about a board. A medic argues with a water ledger. A fabricator logs a tool certificate because the tool matters more than any speech about courage.
 
-Worker audio ties pump cadence to route safety and shift fatigue.
+That routine is what gives the ruins weight. The player should hear names before memorials, jobs before tragedy, and small irritations before the larger lie closes around them. HECTON-8 was not a stage built for the Marauder. It was a workplace with habits, grudges, jokes, debt notices and pressure math.
 
-## Terminal
-
-WORKER AUDIO M-VENN-07: pump cadence clean; upper route safe only while sump climbs under mark six.
-
-## Audio
-
-Mara Venn, pump chief. If the pump sings clean, log it. If it coughs twice, stop arguing and take the upper stairs.
-
-## Field Note
-
-Recovered worker voice. Keep the human detail inside job pressure, route safety and worn equipment.
+This layer also protects the canon from melodrama. There is no family hook making the player special. The guilt is professional. You recognize procedures, badges and bad decisions because you belonged to this kind of system, and now the system is speaking through drowned work orders.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/en_US. -->

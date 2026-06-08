@@ -9,32 +9,26 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Erste PressureSeal-Reparatur"
+title: "Erste PressureSeal-Reparatur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Erste PressureSeal-Reparatur
+# Erste PressureSeal-Reparatur
 
-DE LOC HOLD: Die erste nützliche Reparatur in Shallow Annex P-63 beginnt bei Tageslicht. FiberKelp vom hellen Schelf wird FiberMesh und trägt ein temporäres PressureSeal für Kragen oder Servicesockel. Es kauft Zeit und Routensicherheit, keine Flucht.
+## Reparatur Im Licht
 
-## Scanner
+Die erste nützliche Reparatur in Shallow Annex P-63 beginnt dort, wo das Wasser noch hell genug ist, um zu lügen. Draußen bewegt sich FiberKelp in der Schelfströmung. Drinnen schwitzt ein Druckkragen durch eine Naht, die Deep Reach als servicefähig markierte.
 
-DE LOC HOLD: PRESSURESEAL-ZIEL // Leck am P-63-Kragen. FiberMesh-Träger kompatibel. Nur lokale Stabilisierung; Aufstiegszertifizierung verweigert.
+FiberKelp ist eine flache Biofaser, kein seltener Schatz. Es wächst dort, wo Licht, Strömung und alte Industriehitze zusammentreffen. Gewaschene und gekämmte Stränge werden zu FiberMesh. Ein P-63-Feldfabrikator kann dieses Mesh in die Trägerschicht eines temporären PressureSeal pressen.
 
-## Terminal
+Das Teil ist nützlich, weil es begrenzt ist. Ein PressureSeal kann ein lokales Leck bremsen, eine Rückkehrtasche stabilisieren und eine kurze Reparaturrunde überlebbar machen. Er zertifiziert den Bathydrop nicht für den Aufstieg, ersetzt keinen Klemmring und macht eine Black-Keel-Bestätigung nicht zur Bergung.
 
-DE LOC HOLD: DEEP REACH P-63 TOLERANZNOTIZ // Kragenersatz verschieben. Zugelassenen weichen Dichtungsträger anwenden, solange das Leck im lokalen Servicegrenzwert bleibt.
+Der Widerspruch ist vor dem Archiv sichtbar. Das Terminal sagt Druckvarianz innerhalb der Servicetoleranz. Der Kragen zeigt verbogene Bolzen, Salzblüte unter dem Inspektionsstreifen und Fasern in einem Riss, der sauberes Metall hätte sein sollen.
 
-## Audio
-
-DE LOC HOLD: Black-Keel-Relais: P-63-Patch liest lokal sicher, nicht aufstiegssicher. Nimm die Dichtung, behalte die Seriennummer.
-
-## Field Note
-
-DE LOC HOLD: Helles Wasser draußen. Nasser Kragen drinnen. Deep Reach nannte das nominal, weil das Wort weniger kostet als ein Klemmring.
+Für den Marauder ist die Lektion praktisch: FiberKelp sauber schneiden, keinen Sand ins Mesh bringen, Seriennummer am Siegel behalten und keiner Reparatur trauen, die lokal sicher sagt, wenn die Route aufstiegssicher braucht.
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/de_DE. -->

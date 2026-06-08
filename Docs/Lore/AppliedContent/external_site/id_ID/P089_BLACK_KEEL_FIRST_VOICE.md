@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Suara Pertama Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Suara Pertama Black Keel
 
-ID LOC HOLD: Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue.
-
-## Scanner
-
-ID LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
-
-## Terminal
-
-ID LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
-
-## Audio
-
-ID LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
-
-## Field Note
-
-ID LOC HOLD: The first voice should feel useful before it feels bought.
+Suara pertama Black Keel harus terasa seperti pintu yang hanya terbuka setengah. Audionya rusak, kanal teksnya bersih, dan carrier tidak membuang kata untuk penghiburan. Ketidakhadiran itu penting. AI ramah akan melunakkan laut. Penjahat dramatis akan membuat bahaya terlalu manusiawi. Black Keel lebih berguna daripada keduanya karena mengatakan kebenaran dalam format yang tetap menolak rasa aman. Sinyal diperoleh. Kelangsungan hidup diakui. Recovery belum selesai. Pemain belajar bahwa didengar bukan berarti diselamatkan, dan satu-satunya suara di atas air terikat pada ledger yang belum dilihat pemain.
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/id_ID. -->

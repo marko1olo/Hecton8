@@ -8,7 +8,7 @@ biome_tags: biome.tide_pump;biome.drowned_admin
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Great Tide Physics Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Great Tide Physics Record
 
-Great Tide Physics Record defines the disaster logic for HECTON-8: the ocean is physically dangerous, and the corporate crime is designing around optimistic margins until a moon-sized system collected the debt.
+The Great Tide Physics Record is not an excuse for Deep Reach. It is the reason the excuse fails. Aegir spring geometry, cryosphere shear, resonant ocean lift, industrial heat discharge and storm stacking made HECTON-8 dangerous in ways the colony could measure. The model did not need perfect certainty; it showed that the evacuation envelope was already broken.
 
-## Scanner
-
-Flood model intact. The sea did not need a villain. It needed bad margins.
-
-## Terminal
-
-GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
-
-## Audio
-
-The report was right. That is why they buried it.
-
-## Field Note
-
-Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+The crime lives in the margins. Independent ascent reserve was not funded. Lift capacity was treated as a future budget line. Public language later called the flood unreadable, but the buried record says otherwise: the ocean was real, the physics was real, and the victims were created by choosing optimism as policy.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/en_US. -->

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Guidance Timing Core Assembly"
+title: "誘導タイミングコアアセンブリ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Guidance Timing Core Assembly
+# 誘導タイミングコアアセンブリ
 
-JA LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.
+誘導タイミングコアアセンブリは HECTON-8 の宇宙飛行を硬く保つ。extraction は時計、影、傷んだ信頼でできた航路問題だ。
 
 ## Scanner
 
-JA LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+空白の timing core。Aegir の幾何が、上昇を recovery、capture、または沈黙に変える。
 
 ## Terminal
 
-JA LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: カプセル時計を Aegir window、Black Keel receiver lane、月 relay shutter、storm-plume drift に同期。遅い packets は証拠喪失に、早い packets は capture noise になる。
 
 ## Audio
 
-JA LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+上は方向ではない。証人付きの窓だ。
 
 ## Field Note
 
-JA LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+HECTON-8 から単純な“上”はない。受信機、影、嵐のドリフト、そして君の恐怖より古い packet queue がある。
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/ja_JP. -->

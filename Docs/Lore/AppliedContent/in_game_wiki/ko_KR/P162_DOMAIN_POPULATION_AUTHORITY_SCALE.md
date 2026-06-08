@@ -9,32 +9,34 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Population And Authority Scale"
+title: "인구와 권한 척도"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Population And Authority Scale
+# 인구와 권한 척도
 
-KO LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
+인구 숫자는 대략으로 둔다. 플레이어에게 census opera는 필요 없다. 유용한 질문은 더 단순하다. 누가 멀리서 너에게 작용할 수 있는가. 붐비는 내부 도메인은 HECTON-8을 인증 줄 하나로만 건드릴 수 있다. 작은 depot은 패킷 custody를 통제하기 때문에 더 중요할 수 있다. 죽은 frontier shell은 방 안의 하드웨어를 소유하기 때문에 가장 중요할 수 있다.
+
+플레이어가 느끼는 척도는 이것이다. Sol은 물건이 누구의 것인지 결정할 수 있다. Centauri는 Deep Reach의 낡은 언어를 존중받는 것처럼 보이게 만든다. Barnard는 Marauders를 가두는 일을 정상화한다. Tau Ceti는 산소에는 늦지만 결과에는 늦지 않게 증거를 공개 압력으로 바꿀 수 있다. Luyten은 메시지 체인을 증명한다. Aegir는 서명이 압력, 물, 잠긴 해치, 청구 가능한 질량이 되는 곳이다.
 
 ## Scanner
 
-KO LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+AUTHORITY CENSUS STUB // 인구는 배경이다. 중요한 것은 어느 도메인이 claim을 인증, 공개, 이동, 보험 처리, 공증, 매장할 수 있는가다.
 
 ## Terminal
 
-KO LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AUTHORITY SCALE // Sol은 소유권을 인증한다. Centauri는 헌장을 정당화한다. Barnard는 dead-claim 노동을 공급한다. Tau Ceti는 지연 뒤 증거를 공개한다. Luyten은 custody를 증명한다. Aegir는 더러운 물리 claim을 실행한다.
 
 ## Audio
 
-KO LOC HOLD: The largest domain is not the nearest hand.
+가장 큰 도메인은 가장 가까운 손이 아니다. 지연을 견디는 도장이다.
 
 ## Field Note
 
-KO LOC HOLD: Do not turn the setting into census space opera.
+몸, 항로, claim, 증거 체인에 압력을 바꾸지 않는 census trivia는 넣지 않는다.
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/ko_KR. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Sortie matérielle
 
-La sortie matérielle est une fin partielle valide. Elle paie avec ressources ou échantillon mais laisse la vérité majeure ouverte.
+La sortie matérielle est une vraie issue partielle, pas une voie morte. Des ressources ou un échantillon peuvent acheter le retrait tandis que la vérité plus vaste reste irrésolue et qu'un retour ultérieur coupe plus net.
 
 ## Scanner
 

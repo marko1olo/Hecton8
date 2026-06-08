@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "سلسلة مسؤولية المد العظيم"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# سلسلة مسؤولية المد العظيم
 
-AR LOC HOLD: Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure.
+سلسلة مسؤولية المد العظيم هي نموذج الجريمة المركزي لدى Deep Reach. غرق HECTON-8 فشل على مقياس كوكبي لا تخريب رخيص؛ ذنب الشركة يأتي من الهوامش، وقدرة الإخلاء، ووزن الأولويات الذاتي، ولغة التأمين، والاحتواء القانوني بعد أن أصبح الغرق حتمياً. بهذا يبقى العالم خيالاً علمياً صلباً ويصبح عمل اللاعب على الأدلة مهماً: السؤال ليس من سحب الرافعة، بل من وقّع على نظام يستطيع تحويل الناس إلى أوراق قبل أن يتحولوا إلى جثث.
 
 ## Scanner
 
-AR LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+كان الغرق فيزياء حقيقية: اقتران مدّي، انهيار جليد، كيمياء ضغط وهوامش سُعّرت أرق مما ينبغي. الجريمة كانت طبقة الأولويات المبنية حول ذلك.
 
 ## Terminal
 
-AR LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+ملخص الحادث: تأكدت سلسلة جيوتقنية. قدرة الإخلاء دون طلب خطر الذيل. بقي وزن الاستمرارية في Atlas نشطاً. استخراج البشر ينتظر التصديق.
 
 ## Audio
 
-AR LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+البحر صنع الغرق. الشركة قررت أي الأبواب سيبقى ورقاً.
 
 ## Field Note
 
-AR LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+لم تحتج Deep Reach إلى إغراق القمر. كان يكفي أن تجعل الإخلاء اختيارياً.
 
 <!-- External Site; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/ar_SA. -->

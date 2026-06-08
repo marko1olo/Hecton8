@@ -3,38 +3,40 @@ packet_id: P078_INNER_MOON_RELAY_HAZARDS
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.inner_moon_relay_hazards
 unlock_id: unlock.first_inner_moon_relay_hazards
-poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
-biome_tags: biome.orbital_window;biome.drowned_comms
+poi_tags: poi.relay_noise_log;poi.skarn_surge_alarm
+biome_tags: biome.orbital_window;biome.surface_relay
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relay-опасности внутренних лун"
+title: "Ретрансляционные опасности внутренних лун"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay-опасности внутренних лун
+# Ретрансляционные опасности внутренних лун
 
-Опасности внутренних лун объясняют, почему contact, rescue и ascent windows срываются без магического вмешательства. Radiation belts, ice scatter, eclipses и magnetic weather - реальные физические ограничения, которые Deep Reach и контракты Black Keel используют.
+Опасности внутренних лун делают провал связи физическим. Всплеск, выровненный со Skarn, может портить антенны, не убивая их. Пыль и лед Vela закрывают оптику, пока маршрут все еще утверждает, что существует.
+
+Claw и Lumen хуже, потому что несут старую маршрутную логику. Handshake может быть формально валидным и операционно бесполезным. Поэтому Black Keel может записать пакет, сохранить custody и все равно оставить тело в воде.
 
 ## Scanner
 
-Лог inner-moon relay shutter. Aegir не глушит тебя намеренно; у неба плохой тайминг.
+ВНУТРЕННЯЯ ЛЕСТНИЦА // Skarn насыщает антенны. Vela рассеивает оптику. Старые маршруты Claw и Lumen могут держать просроченные handshakes живыми.
 
 ## Terminal
 
-INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
+ЗАМЕТКА О РЕТРАНСЛЯТОРАХ // Потеря связи может быть геометрией, погодой заряженных частиц, пылевой шторкой или унаследованным buoy law. В окна всплеска считай чистый UI подозрительным.
 
 ## Audio
 
-Орбитальная модель невиновна. Пункт контракта вокруг нее - нет.
+Ретранслятор не замолчал. Он повторил не тот век.
 
 ## Field Note
 
-Radiation и eclipse могут выглядеть как заговор, пока контракт ими не воспользуется.
+Чистая иконка все еще может врать через старое небо.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/ru_RU. -->

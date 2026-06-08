@@ -9,32 +9,36 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "JA LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach：本物の水中の責任"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Deep Reach Liability Chain
+# Deep Reach：本物の水中の責任
 
-JA LOC HOLD: Deep Reach did not need to invent the ocean. HECTON-8 failed under real pressure, real tide force and real infrastructure limits. That is what makes the liability harder to bury. The official record names a localized geotechnical cascade, corrupted Atlas logs and incomplete evacuation. Each phrase has enough truth to survive a hearing. The physical site adds what the public sentence omits: margin approvals signed before the tide window, evacuation routes held behind authorization, quarantine doors certified late, Atlas continuity weights that protected system function before worker recovery, and loss ledgers that turned names into categories after the water had already won. The accusation is not that Deep Reach caused the ocean to rise by command. It is that the company priced known risk, delayed human exit, kept records clean and let recovery offices convert disaster into manageable custody. On HECTON-8, the rooms testify more precisely than the statement.
+## 役に立つ半分の真実
 
-## Scanner
+Deep Reachの報告は、本物の水を含むから正しく聞こえる。HECTON-8にはGreat Tideがあった。氷圏応力、共鳴潮汐、嵐、熱、圧力が植民地を裂いた。
 
-JA LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+責任は削られた層にある。受け入れたセンサー余白、足りない避難能力、人間の抽出より上に置かれたAtlas continuity、時間を買う検疫語、claimカテゴリに変えられた行方不明者。
 
-## Terminal
+Varnekは警告を予定リスクにした。Arendtは安全をプロセス内に閉じた。Haldaneは抽出を認証待ちにした。Ibarraは身体を積荷と損失へ翻訳した。Sato-Renはいまも、救助の言葉の前に座標、XO証拠、沈黙を求める。
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+きれいな文書は告白しない。浸水した部屋が費用を示す。ひとつのmemoは疑い。連鎖が証拠だ。プレイヤーはBlack Keel custodyを通す価値のある文脈を選ぶ。
 
-## Audio
+## 罪の形
 
-JA LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Deep Reachを、きれいなボタンを押す一人の悪役にしてはいけない。罪が強いのは分散しているからだ。Varnekはtide marginを受け入れる。ArendtはAtlas weightsを作業員より上に置く。Haldaneはquarantineの言葉を清潔に保つ。Ibarraは名前をloss categoriesに変える。Sato-Renは、損傷がすでに系内に入った後でreturn actionを動かそうとする。
 
-## Field Note
+各文書は小さく、普通に見える。合わせると、致命的選択を局所的、一時的、手続き上正しいものに見せて生き延びた組織が見える。作業員はその文法の中で死んだ。
 
-JA LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+## 証拠に質量がある理由
+
+プレイヤーは信念だけでは解決できない。packetは遅延、異議、黒塗り、価格化される。物理証拠は運ばなければならない。sensor margins、壊れた避難装置、Atlas trace、custody ledger、sample chain。HECTON-8では真実が酸素、工具、貨物と場所を奪い合う。
+
+物語の中心圧はそこにある。プレイヤーは出来事を知るだけではない。それを消しにくくするため、どれだけの生存を使うか決める。
 
 <!-- External Site; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/ja_JP. -->

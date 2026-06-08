@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Acoustic Relay Spine Assembly"
+title: "Zespół akustycznego kręgosłupa przekaźnikowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Acoustic Relay Spine Assembly
+# Zespół akustycznego kręgosłupa przekaźnikowego
 
-PL LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.
+Zespół akustycznego kręgosłupa przekaźnikowego osadza pętlę ucieczki HECTON-8 w inżynierii salvage: dźwięk musi przetrwać ciśnienie, geometrię trasy i custody, zanim orbita mu uwierzy.
 
 ## Scanner
 
-PL LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+Pęknięty kręgosłup akustyczny. Może wystukać pressure-code przez wodę; orbita nadal słyszy to jako uszkodzony custody noise.
 
 ## Terminal
 
-PL LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY: odbudować niskopasmowy kręgosłup akustyczny przed recovery window. High-gain mast utracony. Emergency buoy zawodny. Odbiornik Black Keel przyjmuje pressure-code tylko po route proof.
 
 ## Audio
 
-PL LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
+Jeśli Keel nas usłyszy, usłyszy ranę stukającą w rurę.
 
 ## Field Note
 
-PL LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+Pierwsze wezwanie kapsuły nie jest głosem. To ceramiczne żebra, skóra kabla, pinger floats i dość dyscypliny timingu, by ocean powtórzył cię poprawnie.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/pl_PL. -->

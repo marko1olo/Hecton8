@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "全球海洋深度帯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# 全球海洋深度帯
 
-JP LOC HOLD: HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
-
-## Scanner
-
-JP LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
-
-## Terminal
-
-JP LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
-
-## Audio
-
-JP LOC HOLD: Every band changes what the world allows you to do.
-
-## Field Note
-
-JP LOC HOLD: Depth is not a number. It is a ruleset.
+HECTON-8は数字だけ深くなる平らな海ではない。圧力で境界を書かれた縦の国だ。0から250メートルでは、光性サルベージ棚がまだ光、藻、柔らかい残骸、初歩の失敗への猶予を持つ。250から1200メートルでは、工業棚とケーブル礁が始まる。切れた係留、配管フレーム、中継器の骨、古い企業航路。1200から2800メートルでは塩水階段がソナーを曲げ熱を隠す。2800から4300メートルでは修理が機械野との交渉になる。4300から5600メートルではAtlasが圧力を権限に変える。
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ja_JP. -->

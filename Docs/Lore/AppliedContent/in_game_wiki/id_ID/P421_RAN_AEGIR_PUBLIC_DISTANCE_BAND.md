@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_distance_band;poi.no_ftl_route_index
 biome_tags: biome.human_space;biome.publication
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "ID LOC HOLD: Ran/Aegir Distance Band"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Pita Jarak Ran/Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ran/Aegir Distance Band
+# Pita Jarak Ran/Aegir
 
-ID LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.
+Pita jarak Ran/Aegir menjaga setting tetap terbaca tanpa berpura-pura prosa saat ini adalah simulation data final. Aegir dapat dicapai probe, freight dan debt-backed settlement, tetapi bukan rescue santai saat sebuah ruangan mulai banjir.
 
 ## Scanner
 
-ID LOC HOLD: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+Pita publik: Ran/Aegir adalah rute tanpa FTL kelas sepuluh tahun cahaya dari Sol.
 
 ## Terminal
 
-ID LOC HOLD: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+PITA EPHEMERIS: gunakan kelas sepuluh tahun cahaya untuk teks publik sampai konstanta langit dibekukan di tabel. Tidak ada penyelamatan FTL di rute ini.
 
 ## Audio
 
-ID LOC HOLD: Ten light-years is close on a map and brutal for a contract.
+Sepuluh tahun cahaya dekat di peta dan kejam di kontrak.
 
 ## Field Note
 
-ID LOC HOLD: Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
+Catatan astronomi publik: pita jarak dan peta rute adalah rentang penjelas, bukan konstanta ephemeris final.
 
 <!-- In-Game Wiki; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/id_ID. -->

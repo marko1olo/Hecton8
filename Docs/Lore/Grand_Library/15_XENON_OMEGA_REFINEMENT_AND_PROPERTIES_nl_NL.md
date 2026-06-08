@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # XENON-OMEGA: RAFFINAGE EN EIGENSCHAPPEN
 
 > **Bron:** Deep Reach Megacorporation, Geclassificeerd Chemisch Manifest.

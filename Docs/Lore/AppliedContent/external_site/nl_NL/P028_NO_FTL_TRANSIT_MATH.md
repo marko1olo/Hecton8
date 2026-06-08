@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Transitwiskunde zonder FTL
 
-Afstand wordt speldruk: late orders, oude autoriteit en fysieke ontsnappingsvensters.
+Transitwiskunde zonder FTL verandert interstellaire afstand in druk: late orders, oude autoriteit, bewaringsvertraging en fysieke ontsnappingsvensters.
 
 ## Scanner
 

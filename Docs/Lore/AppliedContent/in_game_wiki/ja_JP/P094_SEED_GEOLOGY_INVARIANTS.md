@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "シード地質不変項"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# シード地質不変項
 
-JP LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+シード地質不変項は、長いリプレイでもHECTON-8を一貫させる。峡谷は違う順に開き、証拠は移動し、安定ポケットはずれ、種の圧力も変わる。星はAegirのまま、月はHECTON-8のまま、深度帯は順序を保ち、Great Tideは間隔を保ち、Atlas盆地は最深の真実との関係を保つ。
 
 ## Scanner
 
-JP LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+ルート生成メモ。サルベージ地図は変わるが、月は同じ骨を保つ。
 
 ## Terminal
 
-JP LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+不変項: Aegir主星、HECTON-8軌道梯子、Great Tide間隔、深度帯順序、Atlas盆地関係、blue debt圧力挙動。可変: 峡谷接近、POI順、安定ポケット、bloom密度、サルベージ露出。
 
 ## Audio
 
-JP LOC HOLD: New seed, same moon. Different wound.
+違う傷の模様。その下は同じ月。
 
 ## Field Note
 
-JP LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+新しいランは証拠を別に埋めてよい。重力、潮汐、罪を書き換えてはならない。
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/ja_JP. -->

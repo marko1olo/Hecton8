@@ -2,39 +2,41 @@
 packet_id: P012_RELAY_SPINE
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: transit.relay_spine
-unlock_id: unlock.first_relay_buffer
-poi_tags: poi.relay_buffer;poi.packet_spool
+unlock_id: unlock.first_stale_relay_buffer
+poi_tags: poi.relay_buffer;poi.packet_age_tag
 biome_tags: biome.drowned_colony;biome.service_canyons
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relay Spine"
+title: "Релейний хребет"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Spine
+# Релейний хребет
 
-Relay Spine - повільна нервова система людського простору: beam schedules, packet buffers, custody stamps, route insurance і відкладена легітимність.
+Релейний хребет - повільний скелет зв'язку: променеві вікна, пакетні буфери, штампи зберігання й графіки повторів. Він переносить докази, претензії й накази, але не кисень у затоплений відсік.
+
+На HECTON-8 повідомлення може бути чинним, засвідченим і все одно запізнілим. Правда й порятунок - різні логістичні задачі.
 
 ## Scanner
 
-Старий relay buffer. Вік вихідного пакета перевищує локальну рятувальну цінність.
+Старий буфер ретранслятора. Вік вихідного пакета вже поза користю для місцевого порятунку. Хеш зберігання цілий; вікно відповіді мертве.
 
 ## Terminal
 
-Packet queued. Light-delay route accepted. Priority dispute unresolved. Human-response estimate: non-operational.
+РЕЛЕЙНИЙ ХРЕБЕТ // Пакет у черзі через місцевий Aegir, Luyten Junction і архівний шлях Sol. Маршрут зі світловою затримкою прийнято. Спір пріоритету не вирішено. Людська відповідь неопераційна для поточного вікна виживання.
 
 ## Audio
 
-Relay не зламаний. У цьому й проблема. Він робить саме те, що дозволяє відстань.
+Реле не зламане. У цьому й проблема. Воно робить саме те, що дозволяє відстань.
 
 ## Field Note
 
-Повідомлення може бути правдою і все одно прийти, коли ти вже кістки.
+Повідомлення може бути правдивим і все одно прийти після твоїх кісток.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/uk_UA. -->

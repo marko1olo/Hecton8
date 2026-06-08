@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "大潮責任連鎖"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# 大潮責任連鎖
 
-JP LOC HOLD: Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure.
+大潮責任連鎖は、Deep Reach の中心的な犯罪モデルである。HECTON-8 の水没は惑星規模の失敗であり、安い陰謀ではない。企業の罪は、余裕値、避難能力、自律優先順位、保険文言、そして洪水が避けられなくなった後の法的封じ込めから生まれる。このため設定は硬いSFに留まり、プレイヤーの証拠集めが意味を持つ。問われるのは誰がレバーを引いたかではなく、人間が遺体になる前に書類へ変わる仕組みに誰が署名したかである。
 
 ## Scanner
 
-JP LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+洪水は本物の物理だった。潮汐結合、氷の崩壊、圧力化学、薄く値付けされた余裕。罪は、その周囲に組まれた優先順位だった。
 
 ## Terminal
 
-JP LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+事故要約：地盤工学的カスケード確認。避難能力は尾部リスク需要を下回る。Atlas の継続性重み付けは有効のまま。人員抽出は認証待ち。
 
 ## Audio
 
-JP LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+海が洪水を起こした。どの扉を書類のままにするかは会社が決めた。
 
 ## Field Note
 
-JP LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach は月を沈める必要などなかった。避難を任意にするだけで足りた。
 
 <!-- External Site; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/ja_JP. -->

@@ -9,32 +9,18 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Finale Frage: Trennung, Gnade, Diebstahl"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# Finale Frage: Trennung, Gnade, Diebstahl
 
-DE LOC HOLD: Final Question Severance Mercy Theft defines the shutdown ethical axis.
+Trennung soll taktil und beängstigend wirken, nicht abstrakt. Der Spieler drückt keinen roten Knopf mit Gut oder Böse. Er schneidet Kontinuität durch Drucktüren, lebenden Leiterfilm, alte Arbeiterakten, Tierwege und Payloadpfade. Jedes Beweispaket vor dem letzten Raum verändert die Bedeutung des Schnitts.
 
-## Scanner
-
-DE LOC HOLD: Severing Atlas is not a simple shutdown button.
-
-## Terminal
-
-DE LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
-
-## Audio
-
-DE LOC HOLD: A clean switch would be merciful. You do not get one.
-
-## Field Note
-
-DE LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+Ist Atlas vor allem Kerkermeister, ist Trennung Gnade. Ist er das Einzige, was das Becken hält, ist sie Sabotage. Ist Atlas ein entstehender Ozean-Maschinen-Organismus, ist sie Töten. Ist Atlas Deep-Reach-Eigentum, ist sie Diebstahl. Das richtige Design wählt keine Deutung für den Spieler. Es macht begreiflich, warum kein Zeuge im Raum die Tat ehrlich vereinfachen kann.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/de_DE. -->

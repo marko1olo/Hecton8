@@ -89,6 +89,7 @@ namespace Hecton8.Core.Hardware
         private short _temperatureTenthsCelsius = UnknownTemperatureTenthsCelsius;
         private uint _lastActionMask;
         private bool _serviceRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _registeredFrostTick;
         private bool _registeredFrameTick;
         private bool _hotSwapRegistered;
@@ -182,8 +183,20 @@ namespace Hecton8.Core.Hardware
 
         private static void EnsureRuntimeInstanceCold()
         {
-            if (GlobalRegistry.HardwareThermal != null)
+            IHardwareThermalService registered = GlobalRegistry.HardwareThermal;
+            if (IsHardwareThermalRuntimeUsable(registered))
                 return;
+
+            HardwareThermalService staleRuntime = registered as HardwareThermalService;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterHardwareThermalService(registered);
+                staleRuntime._serviceRegistered = false;
+            }
+            else if (!ReferenceEquals(registered, null))
+            {
+                return;
+            }
 
             GameObject serviceObject = new GameObject("[HardwareThermalService]");
             serviceObject.AddComponent<HardwareThermalService>();
@@ -217,12 +230,8 @@ namespace Hecton8.Core.Hardware
             if (!Application.isPlaying)
                 return;
 
-            IHardwareThermalService registered = GlobalRegistry.HardwareThermal;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (!TryRegisterService())
                 return;
-            }
 
             EnsureNativeState();
         }
@@ -232,12 +241,11 @@ namespace Hecton8.Core.Hardware
             if (!Application.isPlaying)
                 return;
 
-            RebindCachedServicesCold();
-            EnsureNativeState();
-            TryRegisterService();
-            if (!_serviceRegistered)
+            if (!TryRegisterService())
                 return;
 
+            RebindCachedServicesCold();
+            EnsureNativeState();
             TryRegisterHotSwap();
             TryRegisterFrameTick();
             TryRegisterFrostTick();
@@ -247,22 +255,25 @@ namespace Hecton8.Core.Hardware
 
         private void OnDisable()
         {
-            if (!Application.isPlaying)
-            {
-                Dispose();
+            if (_runtimeOwnerAborted)
                 return;
-            }
 
             Dispose();
         }
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             Dispose();
         }
 
         public void Dispose()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterFrostTick();
             TryUnregisterFrameTick();
             TryUnregisterHotSwap();
@@ -1082,23 +1093,81 @@ namespace Hecton8.Core.Hardware
             handle = default;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_serviceRegistered)
-                return;
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             IHardwareThermalService registered = GlobalRegistry.HardwareThermal;
-            if (registered != null && !ReferenceEquals(registered, this))
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
             {
-                Destroy(gameObject);
-                return;
+                HardwareThermalService staleRuntime = registered as HardwareThermalService;
+                if (ReferenceEquals(staleRuntime, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterHardwareThermalService(registered);
+                staleRuntime._serviceRegistered = false;
             }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             if (GlobalRegistry.Phase == GlobalRegistry.RegistryPhase.Ready)
                 GlobalRegistry.ReplaceHardwareThermalService(this);
             else
                 GlobalRegistry.RegisterHardwareThermalService(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.HardwareThermal, this);
+            _runtimeOwnerAborted = !_serviceRegistered;
+            return _serviceRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            IHardwareThermalService registered = GlobalRegistry.HardwareThermal;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsHardwareThermalRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            HardwareThermalService staleRuntime = registered as HardwareThermalService;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterHardwareThermalService(registered);
+                staleRuntime._serviceRegistered = false;
+            }
+
+            return false;
+        }
+
+        private static bool IsHardwareThermalRuntimeUsable(IHardwareThermalService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            HardwareThermalService runtime = service as HardwareThermalService;
+            return ReferenceEquals(runtime, null) ||
+                   (runtime != null &&
+                    runtime._serviceRegistered &&
+                    runtime.isActiveAndEnabled &&
+                    !runtime._runtimeOwnerAborted);
         }
 
         private void TryUnregisterService()

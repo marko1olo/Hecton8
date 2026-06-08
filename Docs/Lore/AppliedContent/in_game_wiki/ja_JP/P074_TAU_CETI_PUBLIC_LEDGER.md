@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "タウ・セティ公開台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# タウ・セティ公開台帳
 
-JP LOC HOLD: The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.
+Tau Ceti League は、Aegir 時代の公法に信頼できる釣り合いを与える。証拠保管と Deep Reach への外圧では重要だが、距離のせいで HECTON-8 に閉じ込められた潜水者をリアルタイムで引き上げることはできない。
 
 ## Scanner
 
-JP LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+タウ・セティ市民台帳の断片。Deep Reach を怖がらせるには十分公開され、植民地を救うには遅すぎる。
 
 ## Terminal
 
-JP LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+TAU CETI LEDGER MIRROR: 封印済み証拠はリレー認証後に受理可能。予想公開審査窓は現地生存間隔を 31.4 年超過。
 
 ## Audio
 
-JP LOC HOLD: A court can be honest and useless when light itself is late.
+光そのものが遅れる時、裁判所は誠実でも役に立たない。
 
 ## Field Note
 
-JP LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+監督は清潔に、そして遅れて到着できる。遅いなら、死は死だ。
 
 <!-- In-Game Wiki; generated from P074_TAU_CETI_PUBLIC_LEDGER/ja_JP. -->

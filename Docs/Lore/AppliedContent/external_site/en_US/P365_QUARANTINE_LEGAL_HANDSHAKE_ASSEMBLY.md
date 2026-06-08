@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Quarantine Legal Handshake Assembly
 
-HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.
+Quarantine Legal Handshake Assembly makes extraction deliberately dirty: a working engine can still deliver the survivor into corporate custody, delayed public truth or unresolved quarantine.
 
 ## Scanner
 
-Handshake socket. The capsule can be mechanically ready and still legally captured.
+Handshake socket. The capsule can be mechanically ready and still belong to the wrong receiver.
 
 ## Terminal
 
-RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.
+RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates and quarantine status. Public ledger accepts proof after delay. Unkeyed launch defaults to custody dispute.
 
 ## Audio
 
-The last part is not metal. It is who gets to call you recovered.
+Who answers decides what rescue means.
 
 ## Field Note
 
-Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+The last component is not metal. It is the name of the system allowed to call you recovered.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/en_US. -->

@@ -565,6 +565,7 @@ namespace Hecton8.Quest
         private readonly IDataVault _vault;
         private QuestDagBufferHandles _handles;
         private NativeParallelMultiHashMap<int, int> _triggerSpatialHash;
+        private int _triggerSpatialHashSentinelId;
         private JobHandle _scheduledHandle;
         private long _scheduledTimestamp;
         private uint _scheduledFrame;
@@ -597,27 +598,63 @@ namespace Hecton8.Quest
             _triggerSpatialHash = new NativeParallelMultiHashMap<int, int>(
                 spatialHashCapacity,
                 Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[triggerCapacity*27] - expanded trigger-cell occupancy, quest truth remains in GlobalDataVault - owner: QuestDagResolverService
-            int triggerSpatialHashSentinelId = 0;
+            _triggerSpatialHashSentinelId = 0;
             try
             {
-                triggerSpatialHashSentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
+                _triggerSpatialHashSentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMapInstance(
                     _triggerSpatialHash,
                     OwnerLabel,
                     SpatialHashLabel,
                     NativeAllocationLifetime.Session);
-                if (triggerSpatialHashSentinelId <= 0)
+                if (_triggerSpatialHashSentinelId <= 0)
                     throw new InvalidOperationException("Native memory sentinel registration failed for quest DAG trigger spatial hash.");
             }
-            catch
+            catch (Exception exception)
             {
+                Exception cleanupException = null;
+
+                if (_triggerSpatialHashSentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(_triggerSpatialHashSentinelId);
+                    }
+                    catch (Exception unregisterException)
+                    {
+                        cleanupException = unregisterException;
+                    }
+                    finally
+                    {
+                        _triggerSpatialHashSentinelId = 0;
+                    }
+                }
+
                 if (_triggerSpatialHash.IsCreated)
                 {
-                    if (triggerSpatialHashSentinelId > 0)
-                        NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(OwnerLabel, SpatialHashLabel);
-
-                    _triggerSpatialHash.Dispose();
+                    try
+                    {
+                        _triggerSpatialHash.Dispose();
+                    }
+                    catch (Exception disposeException)
+                    {
+                        if (cleanupException == null)
+                            cleanupException = disposeException;
+                    }
+                    finally
+                    {
+                        _triggerSpatialHash = default;
+                    }
+                }
+                else
+                {
                     _triggerSpatialHash = default;
                 }
+
+                if (cleanupException != null)
+                    throw new AggregateException(
+                        "QuestDagResolverService native spatial hash initialization failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
 
                 throw;
             }
@@ -992,14 +1029,21 @@ namespace Hecton8.Quest
                 _hasScheduled = false;
             }
 
+            bool unregisterTriggerSpatialHash = _triggerSpatialHashSentinelId > 0;
             if (_triggerSpatialHash.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(OwnerLabel, SpatialHashLabel);
                 disposeDependency = _triggerSpatialHash.Dispose(disposeDependency);
                 _triggerSpatialHash = default;
             }
 
-            DispatcherJobFence.TryComplete(ref disposeDependency, forceComplete: true);
+            if (!DispatcherJobFence.TryComplete(ref disposeDependency, forceComplete: true))
+                return disposeDependency;
+
+            if (unregisterTriggerSpatialHash)
+            {
+                NativeMemorySentinel.Unregister(_triggerSpatialHashSentinelId);
+                _triggerSpatialHashSentinelId = 0;
+            }
             ReleaseScheduledBufferPins();
             bool releasedBuffers = QuestDagVault.ReleaseBuffers(_vault, ref _handles);
 

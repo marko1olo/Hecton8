@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "CN LOC HOLD: Drop Capsule Damage Parts"
+title: "降落舱损坏部件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# CN LOC HOLD: Drop Capsule Damage Parts
+# 降落舱损坏部件
 
-CN LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+降落舱损坏部件移除了HECTON-8里方便的救援逻辑。Marauder被困，是因为具体系统失败：ascent sleeve、guidance gimbal、relay mast、compressor和heat tile。每个故障都映射到路线、材料、工具升级或证据对象，而不是模糊的坠毁借口。
 
 ## Scanner
 
-CN LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve变形，guidance gimbal刮伤，relay mast剪断，compressor堵塞，heat tile开裂。
 
 ## Terminal
 
-CN LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-CN LOC HOLD: It landed well enough to strand you properly.
+它降落得足够好，正好把你困住。
 
 ## Field Note
 
-CN LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+这只舱能让Marauder活过第一个小时。没有深度等级替换件，它无法离开。
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/zh_CN. -->

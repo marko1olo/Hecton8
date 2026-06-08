@@ -9,32 +9,20 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Transit Duration Bands"
+title: "רצועות משך מעבר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Transit Duration Bands
+# רצועות משך מעבר
 
-HE LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
+## שעונים שונים
 
-## Scanner
+אותו נתיב אינו אותו זמן. probe packet יכולה לצאת מוקדם, לשרוף אור ולהפוך ל-claim עשרות שנים לפני ש-crew רואה מים. Heavy freight דורש staged launches, braking rights, pellet lanes, מקרנים וביטוח שמקבל עקומת הפסד. Human crew דורש את כל זה ועוד life support, liability language וסיבה לשלם return mass.
 
-HE LOC HOLD: The same route means different time for packets, freight and people.
-
-## Terminal
-
-HE LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
-
-## Audio
-
-HE LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
-
-## Field Note
-
-HE LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+HECTON-8 לוכד את השחקן בשעונים לא מתואמים אלה. distress hash יכול להיות תקף וחסר תועלת. הזדמנות cargo יכולה להיפתח בזמן ש-rescue נשאר סגור. תוצאה ציבורית יכולה להיות שנים משם ועדיין ראויה להגנה. האימה אינה שהנתיב שבור. האימה היא שהוא עובד לכל דבר חוץ מהגוף שמבקש ממנו לדאוג.
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/he_IL. -->

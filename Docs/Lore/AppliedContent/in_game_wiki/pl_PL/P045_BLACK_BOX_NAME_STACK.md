@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Stos nazwisk z czarnych skrzynek
 
-Stos nazwisk czyni prawdę przenośną. To, co gracz wyniesie, zmienia broadcast, dossier i finał.
+Stos nazwisk z czarnej skrzynki czyni ostateczną prawdę przenośną. Dowody, pakiety broadcast i publiczne dossier zależą od tego, które nazwiska, hashe i pokwitowania wyjdą z wody.
 
 ## Scanner
 

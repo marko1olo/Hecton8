@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Финальный вопрос публичной правды без контроля"
+title: "Финальный вопрос: публичная правда, потерянный контроль"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Финальный вопрос публичной правды без контроля
+# Финальный вопрос: публичная правда, потерянный контроль
 
-Финальный вопрос публичной правды без контроля задает pressure public ledger ending.
+Публичная утечка не должна быть волшебной кнопкой справедливости. В HECTON-8 информация уходит дальше кораблей и приходит раньше помощи. Когда доказательства покидают бассейн, они могут обвинить Deep Reach, заставить Black Keel отвечать, разбудить регуляторов Sol Core и дать семьям что-то тверже слуха. Это настоящие победы.
 
-## Scanner
-
-Публикация правды предотвращает стирание, но забирает у игрока контроль над последствиями.
-
-## Terminal
-
-PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates и payload route можно отправить вне Deep Reach. После release игрок больше не контролирует receiver action.
-
-## Audio
-
-Правда уходит из рук быстрее, чем когда-либо могло прийти спасение.
-
-## Field Note
-
-Публичная правда - не чистое правосудие. Она создает auctions, sanctions, cults, claims и cleanup politics.
+Но утечка создает кормовое событие. Рынки оценивают синий долг. Суды доменов замораживают маршруты. Частные культы превращают Atlas в писание. Конкуренты бегут за координатами. Спасение становится политически необходимым и операционно хаотичным. Игрок выбирает правду вместо контроля, и игра должна честно держать обе половины этого выбора.
 
 <!-- External Site; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/ru_RU. -->

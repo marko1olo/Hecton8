@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "חדר משאבות P-63 בנספח הרדוד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Shallow Annex P-63 Pump Room
+# חדר משאבות P-63 בנספח הרדוד
 
-HE LOC HOLD: Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside.
+Shallow Annex P-63 נותן את הכיס הבטוח הראשון בלי להקטין את HECTON-8: משאבה, cold seal, מד ומדף מואר בחוץ.
 
 ## Scanner
 
-HE LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+חדר משאבות P-63. לחץ הבור הידני מחזיק עם פחות ממרווח שירות.
 
 ## Terminal
 
-HE LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+פקודת עבודה P-63 / SHALLOW ANNEX: לשאוב ידנית את הבור עד 0.3 m; להושיב cold seal על תפר C; לחתוך מנעול תא מותך רק אחרי שהמד מתייצב; לא לסמוך על האור הירוק עד ש-return pinger עונה.
 
 ## Audio
 
-HE LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+קודם משאבה. אחר כך איטום. חותך רק אחרי שהמד מפסיק לנדוד.
 
 ## Field Note
 
-HE LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+ידית המשאבה מבריקה במקום שבו ידיים מפוחדות המשיכו להשתמש בה. הרצפה היבשה מתחילה בקו הגיר.
 
 <!-- External Site; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/he_IL. -->

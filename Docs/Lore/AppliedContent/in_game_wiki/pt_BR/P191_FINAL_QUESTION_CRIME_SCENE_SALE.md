@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "Pergunta final: venda da cena do crime"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# Pergunta final: venda da cena do crime
 
-PT LOC HOLD: Crime-scene sale is a material success route that keeps the moral damage visible.
+Venda da cena do crime é a rota de sucesso material. O jogador sobrevive, pode quitar dívida e até sair com dinheiro. O custo é que as provas da colônia viram alavanca para a mesma rede de autoridade que enterrou o sítio, cortou massa de resgate e tratou corpos como clima contratual.
 
 ## Scanner
 
-PT LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
+Coordenadas, prova XO e uma cadeia de custódia limpa podem comprar saída. Também vendem a sala do assassinato de volta a quem pôs preço nela.
 
 ## Terminal
 
-PT LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
+EIXO DE VENDA FINAL: coordenadas da bacia Atlas, amostra viável de dívida azul, prova de testemunha XO e hash de custódia do carrier podem quitar o lien do operador. Sem notarização separada, a Deep Reach recebe um caminho de volta para HECTON-8 mais limpo do que os trabalhadores mortos jamais tiveram para resgate.
 
 ## Audio
 
-PT LOC HOLD: You can pay the debt with a grave map.
+Você pode pagar a dívida com um mapa de túmulo. O ledger vai chamar isso de trabalho.
 
 ## Field Note
 
-PT LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+Isto não é final ruim de piada. É final pago, com recibo, ônus quitado e futuro pior para quem continua abaixo.
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/pt_BR. -->

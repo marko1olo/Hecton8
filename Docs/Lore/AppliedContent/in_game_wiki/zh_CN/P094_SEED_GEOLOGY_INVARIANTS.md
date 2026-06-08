@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "种子地质不变量"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# 种子地质不变量
 
-CN LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+种子地质不变量让HECTON-8在长时间重复游玩中保持一致。峡谷能以不同顺序开启，证据能移动，安全口袋能偏移，物种压力能变化。恒星仍是Aegir，月球仍是HECTON-8，深度带保持顺序，Great Tide保持节律，Atlas盆地保持与最深真相的关系。
 
 ## Scanner
 
-CN LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+路线生成记录。打捞地图会变，但月球保留同一副骨架。
 
 ## Terminal
 
-CN LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+不变量：Aegir主星、HECTON-8轨道梯、Great Tide间隔、深度带顺序、Atlas盆地关系、blue debt压力行为。变量：峡谷入口、POI顺序、安全口袋、bloom密度、打捞暴露度。
 
 ## Audio
 
-CN LOC HOLD: New seed, same moon. Different wound.
+不同的伤口图案。下面仍是同一颗月球。
 
 ## Field Note
 
-CN LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+新的一轮可以用不同方式埋藏证据；它不能改写重力、潮汐或罪责。
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/zh_CN. -->

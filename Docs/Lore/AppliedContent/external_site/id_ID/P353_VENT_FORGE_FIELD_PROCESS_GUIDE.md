@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Vent Forge Field Process Guide"
+title: "Panduan Proses Lapangan Vent-Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Vent Forge Field Process Guide
+# Panduan Proses Lapangan Vent-Forge
 
-ID LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.
+Panduan Proses Lapangan Vent-Forge mengikat nilai sumber daya pada penanganan lapangan: yang penting bukan hanya apa yang ditemukan, tetapi bagaimana pressure dan cooling membuatnya selamat sampai recovery.
 
 ## Scanner
 
-ID LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+Vent-forge chemistry aktif. Kualitas mengikuti pressure history, heat pulse, dan pendinginan lambat, bukan kilau sampel.
 
 ## Terminal
 
-ID LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: vent forges memasak sulfides, noble-gas pockets, ceramics, dan sealant precursors. Rute sampel melalui heat, brine, dan pressure lebih penting daripada namanya.
 
 ## Audio
 
-ID LOC HOLD: The vent did not make ore. It made a process you interrupted.
+Vent tidak membuat bijih. Ia membuat proses yang kau sela.
 
 ## Field Note
 
-ID LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+Jangan angkat lot segar langsung ke air dingin. Biarkan vent menyelesaikan anneal atau shell akan retak halus.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/id_ID. -->

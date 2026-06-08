@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Pressure Containment Failure
 
-Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating.
-
-## Scanner
-
-Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
-
-## Terminal
-
-CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
-
-## Audio
-
-The sample does not hate you. It just remembers the wrong pressure.
-
-## Field Note
-
-Containment gives gameplay thresholds without making the resource magic.
+Blue debt is not cursed treasure. It is material memory under pressure. Xenon-Omega residue stays useful while its lattice believes it is still deep, cold, and compressed. Remove it too fast, store it badly, or let signal shear creep through the casket, and the sample starts failing in readable stages. First comes drift: meters lie, resonance jitters, containment alarms argue with each other. Then the lattice fractures. Brine enters. Biology follows the chemistry. By stage 4, the sample is dead as value but alive as contamination. That makes every salvage decision physical: carry it now, repressure it, abandon it, or let the route pay for greed.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/en_US. -->

@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Частичный выход с возвратом в тот же seed"
+title: "Частичный выход: возврат в тот же seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Частичный выход с возвратом в тот же seed
+# Частичный выход: возврат в тот же seed
 
-Partial Exit - не кнопка retry. Это реальное окно extraction, которое возвращает игрока в тот же сгенерированный HECTON-8. Океан, открытые маршруты, нерешенные доказательства и pressure geography остаются ждать.
+Частичный выход - окно восстановления, а не сброс. Игрок получает воздух, время на ремонт и дистанцию от воды, затем возвращается на тот же HECTON-8 с теми же маршрутами, шрамами и нерешенными доказательствами. Знание сохраняется как давление, а не как унаследованная сила.
 
 ## Scanner
 
-Extraction possible. Closure not included.
+Временный вектор подбора подтвержден. Тот же океан остается под тем же контрактом.
 
 ## Terminal
 
-PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
+УВЕДОМЛЕНИЕ ЧАСТИЧНОГО ВЫХОДА: временный подбор Black Keel принят; возврат в тот же seed разрешен при продлении lien; маршрутные предупреждения, custody-записи и открытые пакеты доказательств сохраняются; геология и правда мира не меняются.
 
 ## Audio
 
-Ты ушел от давления. Ты не ушел от контракта.
+Ты ушел от давления. Контракт сохранил твое место.
 
 ## Field Note
 
-Дай игроку вдохнуть, а потом оставь тот же океан на месте.
+Глоток воздуха на орбите не свобода, если слот возврата уже выставлен в счет.
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/ru_RU. -->

@@ -14,15 +14,17 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Registre de freinage du sillage à pellets
 
-HECTON-8 n'a pas besoin d'un mur magique pour isoler le joueur. La distance suffit. La route Aegir fut ouverte par des sondes à faisceau de pellets: petits éclaireurs autonomes poussés par d'immenses installations à Luyten Junction. Une sonde peut être tirée, perdue et passée en perte. Un vaisseau colonial non.
+HECTON-8 est isolé parce que voyager pèse lourd. La route Aegir a commencé avec des scouts à faisceau de pellets: petites sondes autonomes poussées depuis Luyten Junction et censées mourir utilement. Elles portaient cartes, calages stellaires et paquets témoins légaux. Une sonde perdue était une ligne de coût. Un vaisseau colonial perdu était une génération de dette.
 
-Le fret Atlas est autre chose. Il transporte usines, baies cryo, systèmes de forage, contrats de dette scellés et travailleurs assez bon marché pour signer. Ses moteurs à impulsion fusion-électrique passent des années à gagner de la vitesse. À l'arrivée, le vaisseau doit perdre cette vitesse. Les voiles magnétiques se déploient sur des portées absurdes pour freiner contre les particules chargées. Les passes suivantes raclent atmosphère, enveloppe de tempête et bord de géante gazeuse. Une petite erreur dans le registre de freinage peut effacer cargaison, équipage et claim.
+L'ère du fret Atlas a déplacé de la masse réelle. Un transporteur traversait avec noyaux d'usine, baies cryo, systèmes de forage, récepteurs de route, contrats scellés et personnes assez bon marché pour signer. Ses piles fusion-électriques passaient des années à bâtir de la vitesse. Rien dans cette architecture ne ressemblait à un miracle. Chaque correction brûlait du stock. Chaque plaque de bouclier était un pari. Chaque kilogramme arrivait avec un nom dans le registre.
 
-C'est pourquoi le sauvetage dans HECTON-8 paraît cruel sans briser la physique. Sol peut recevoir un paquet après l'expiration de la décision. Deep Reach peut posséder une dette plus vite qu'elle ne déplace une coque. Black Keel peut être en orbite locale d'Aegir et chiffrer une fenêtre de récupération, mais c'est une machine locale de salvage, pas une promesse du foyer. La civilisation arrive d'abord en paperasse, puis en signal, bien plus tard en masse.
+Le registre de freinage est la page cruelle. Un transporteur proche de la lumière doit redevenir lent avant de livrer quoi que ce soit. Les voiles magnétiques s'ouvrent sur des portées impossibles et tirent contre les particules chargées. Les voies de pellets mordent le bord de voile. Les dernières passes utilisent atmosphère, enveloppe de tempête et gravité de géante gazeuse comme frein. Manque la marge et le vaisseau ne survit nulle part d'utile. Coupe trop fin et la route reçoit un panache, pas une cargaison.
+
+C'est pourquoi le sauvetage dans HECTON-8 peut paraître obscène sans casser la physique. Sol peut répondre après l'expiration de la décision. Deep Reach peut hériter d'une dette plus vite qu'elle ne déplace une coque. Black Keel peut rester en orbite locale et vendre une fenêtre de récupération parce qu'il fait déjà partie de la machine Aegir. Le survivant n'est pas hors civilisation. Il est dans son ordre d'arrivée: paperasse, signal, puis masse.
 
 <!-- External Site; generated from P1091_PELLET_WAKE_BRAKING_LEDGER/fr_FR. -->

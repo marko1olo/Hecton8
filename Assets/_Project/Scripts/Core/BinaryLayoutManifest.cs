@@ -247,7 +247,7 @@ namespace Hecton8.Core
             AssertOffset(scatterParity, "EligibleSpawnCells", 48);
             AssertOffset(scatterParity, "DirtyCellCount", 52);
             AssertOffset(scatterParity, "SuppressedCellCount", 56);
-            AssertOffset(scatterParity, "_pad0", 60);
+            AssertOffset(scatterParity, "EvaluationFlags", 60);
 
             string scatterConfig = WorldLayoutNamespace + "ScatterSimulationConfig";
             AssertExternalContractSize(scatterConfig, 128);

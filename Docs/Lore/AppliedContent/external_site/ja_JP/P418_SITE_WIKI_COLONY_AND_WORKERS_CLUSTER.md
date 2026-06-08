@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "JA LOC HOLD: コロニーと作業員"
+title: "植民地と労働者"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: コロニーと作業員
+# 植民地と労働者
 
-JA LOC HOLD: Deep Reachは嵐、崩落、自律避難の失敗、Atlasの救助、失われたデータとして処理した。HECTON-8の作業記録は、名前をポンプ、リレー、brine経路、triage、vent-forgeの仕事に結びつけて残す。
-
-## Scanner
-
-JA LOC HOLD: WORKER INDEX // 経路に結びついた5件の名前記録。pump, relay, brine, triage, forge。部品回収前にtag chainを保存。
-
-## Terminal
-
-JA LOC HOLD: KEELMARK LOSS DESK: route, claim, custody, pressure workに結びつくname tagは保存。
-
-## Audio
-
-JA LOC HOLD: Mara Venn, pump chief: pumpが澄んで鳴るなら記録しろ。鳴り止んだら上へ走れ。
-
-## Field Note
-
-JA LOC HOLD: 家族ではない。仕事だ。pump cardの名前が、なぜ扉が開いたままだったかを示す。
+植民地と労働者のクラスターは、HECTON-8を空室の地図にしないためにある。Deep Reachの公式版は人間を損失カテゴリへ押し込むが、残った記録は仕事を通して人を保持する。pump chiefはpressure boardに、relay operatorはwitness traysに、brine crewは塩の経路とration ledgersに、triage technicianはrepair tagsに、forge shiftは隠す時間のなかったrejectsに残る。これは主人公の家族フックではない。労働の証拠だ。Marauderは、なぜ扉が開いたままだったか、なぜポンプ再始動が遅れたか、小さなname tagがきれいなloss summaryより強くなる理由を読む。
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/ja_JP. -->

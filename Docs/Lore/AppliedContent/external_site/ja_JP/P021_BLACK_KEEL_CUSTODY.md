@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel保管
 
-Black Keel保管は、軌道支援を救助路、債務機械、Deep Reach圧力面として定義する。
+Black Keel Custody は、軌道支援を有用で汚染されたインフラとして定義する。救助経路、債務機械、Deep Reach の圧力面が一つの物体に重なる。
 
 ## Scanner
 

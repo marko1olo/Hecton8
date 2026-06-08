@@ -846,12 +846,62 @@ namespace Hecton8.Audio.Editor
                     !IsFuzzerThreadAlive(consumerThread);
                 if (canReleaseThreadSharedState && samples.IsCreated)
                 {
+                    System.Exception nativeSentinelCleanupException0 = null;
+
                     if (samplesSentinelId > 0)
-                        NativeMemorySentinel.Unregister(samplesSentinelId);
+                    {
+                        try
+                        {
+                            NativeMemorySentinel.Unregister(samplesSentinelId);
+                        }
+                        catch (System.Exception nativeSentinelException0)
+                        {
+                            nativeSentinelCleanupException0 = nativeSentinelException0;
+                        }
+                        finally
+                        {
+                            samplesSentinelId = 0;
+                        }
+
+                        try
+                        {
+                            samples.Dispose();
+                        }
+                        catch (System.Exception nativeSentinelException0)
+                        {
+                            if (nativeSentinelCleanupException0 == null)
+                                nativeSentinelCleanupException0 = nativeSentinelException0;
+                        }
+                    }
                     else
-                        NativeMemorySentinel.UnregisterNativeArray(samples);
-                    samples.Dispose();
+                    {
+                        void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(samples);
+
+                        try
+                        {
+                            NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                        }
+                        catch (System.Exception nativeSentinelException0)
+                        {
+                            nativeSentinelCleanupException0 = nativeSentinelException0;
+                        }
+
+                        try
+                        {
+                            samples.Dispose();
+                        }
+                        catch (System.Exception nativeSentinelException0)
+                        {
+                            if (nativeSentinelCleanupException0 == null)
+                                nativeSentinelCleanupException0 = nativeSentinelException0;
+                        }
+
+                    }
+
                     samples = default;
+
+                    if (nativeSentinelCleanupException0 != null)
+                        throw nativeSentinelCleanupException0;
                 }
 
                 if (canReleaseThreadSharedState)

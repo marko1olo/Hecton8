@@ -21,7 +21,6 @@
 //   4. Connect OnOpenInventory to inventory UI system.
 // ============================================================================
 
-using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Construction;
 using Hecton8.Core;
@@ -29,6 +28,9 @@ using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
+using Hecton8.SaveSystem;
+using Hecton8.World;
+using Hecton.Localization;
 using System;
 using UnityEngine;
 using UnityEngine.Events;
@@ -220,9 +222,193 @@ namespace Hecton8.Gameplay
 
         internal PowerNode LogisticsPowerNode => _logisticsPowerNode;
 
+        internal void PopulateSaveData(ref ModuleDTO dto)
+        {
+            dto.storageCrateContentsSerialized = true;
+            dto.storageCrateSlotCount = 0;
+
+            string[] itemIds = dto.storageCrateItemIds;
+            int[] quantities = dto.storageCrateQuantities;
+            if (itemIds == null || quantities == null)
+                return;
+
+            int clearCount = Mathf.Min(
+                ModuleDTO.MaxStorageCrateSlots,
+                Mathf.Min(itemIds.Length, quantities.Length));
+            for (int i = 0; i < clearCount; i++)
+            {
+                itemIds[i] = string.Empty;
+                quantities[i] = 0;
+            }
+
+            ItemData[] items = containedItems;
+            if (items == null || items.Length == 0)
+                return;
+
+            EnsureReservationCapacity();
+
+            int writeCount = 0;
+            for (int i = 0; i < items.Length; i++)
+            {
+                ItemData item = items[i];
+                if (item == null)
+                    continue;
+
+                if (IsReservedSlot(i))
+                    continue;
+
+                string persistentId = item.PersistentId;
+                if (string.IsNullOrWhiteSpace(persistentId))
+                    continue;
+
+                if (!TryAppendStorageCrateSaveEntry(itemIds, quantities, ref writeCount, persistentId))
+                    break;
+            }
+
+            dto.storageCrateSlotCount = writeCount;
+        }
+
+        internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)
+        {
+            if (!dto.storageCrateContentsSerialized)
+                return;
+
+            if (!CanResolveStorageCrateRestoreState(in dto, itemCatalog))
+                return;
+
+            int requiredSlotCount = CountStorageCrateRestoreSlots(in dto);
+            EnsureContainedItemStorageCapacityForRestore(requiredSlotCount);
+            ClearContainedItemsForRestore();
+
+            if (requiredSlotCount <= 0 ||
+                dto.storageCrateItemIds == null ||
+                dto.storageCrateQuantities == null ||
+                containedItems == null ||
+                containedItems.Length == 0)
+            {
+                return;
+            }
+
+            int entryCount = Mathf.Clamp(
+                dto.storageCrateSlotCount,
+                0,
+                Mathf.Min(
+                    ModuleDTO.MaxStorageCrateSlots,
+                    Mathf.Min(dto.storageCrateItemIds.Length, dto.storageCrateQuantities.Length)));
+            int writeIndex = 0;
+            for (int entryIndex = 0; entryIndex < entryCount && writeIndex < containedItems.Length; entryIndex++)
+            {
+                string itemId = dto.storageCrateItemIds[entryIndex];
+                int quantity = Mathf.Clamp(dto.storageCrateQuantities[entryIndex], 0, ModuleDTO.MaxStorageCrateSlots);
+                if (quantity <= 0 || string.IsNullOrWhiteSpace(itemId))
+                    continue;
+
+                ItemData item = itemCatalog.FindById(itemId);
+                if (item == null)
+                    continue;
+
+                for (int quantityIndex = 0; quantityIndex < quantity && writeIndex < containedItems.Length; quantityIndex++)
+                {
+                    containedItems[writeIndex] = item;
+                    if (_reservedSlotIds != null && writeIndex < _reservedSlotIds.Length)
+                        _reservedSlotIds[writeIndex] = 0;
+
+                    SetContainedItemHash(writeIndex, item);
+                    writeIndex++;
+                }
+            }
+        }
+
+        internal void ClearRuntimeContentsForLegacyLoad()
+        {
+            ClearContainedItemsForRestore();
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
+
+        internal bool CanEjectContainedContents(
+            BaseModule owner,
+            PlayerInventory inventory,
+            IObjectPoolService pool,
+            Vector3 dropPosition)
+        {
+            if (owner == null || containedItems == null || containedItems.Length == 0)
+                return true;
+
+            EnsureReservationCapacity();
+
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            int persistentWorldDropCandidateCount = 0;
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                ItemData item = containedItems[i];
+                if (item == null)
+                    continue;
+
+                if (IsReservedSlot(i))
+                    continue;
+
+                int itemHashId = ItemData.ResolvePersistentHashId(item);
+                if (!owner.CanDropItemQuantityToInventoryOrWorld(itemHashId, 1, inventory, pool, dropPosition))
+                    return false;
+
+                if (persistentWorldRegistry != null &&
+                    (inventory == null || !inventory.CanAcceptItemQuantity(itemHashId, 1)) &&
+                    persistentWorldRegistry.CanRegisterDroppedItem(item, 1, dropPosition))
+                {
+                    persistentWorldDropCandidateCount++;
+                }
+            }
+
+            return persistentWorldRegistry == null ||
+                   persistentWorldRegistry.CanRegisterDroppedItemBatch(persistentWorldDropCandidateCount);
+        }
+
+        internal bool EjectContainedContents(
+            BaseModule owner,
+            PlayerInventory inventory,
+            IObjectPoolService pool,
+            ref Vector3 dropPosition)
+        {
+            if (owner == null || containedItems == null || containedItems.Length == 0)
+                return true;
+
+            EnsureReservationCapacity();
+
+            bool anyRemoved = false;
+            bool allDelivered = true;
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                ItemData item = containedItems[i];
+                if (item == null)
+                    continue;
+
+                if (IsReservedSlot(i))
+                    continue;
+
+                int itemHashId = ItemData.ResolvePersistentHashId(item);
+                if (itemHashId == 0 ||
+                    owner.DropItemQuantityToInventoryOrWorld(itemHashId, 1, inventory, pool, ref dropPosition) != 1)
+                {
+                    allDelivered = false;
+                    continue;
+                }
+
+                containedItems[i] = null;
+                if (_reservedSlotIds != null && i < _reservedSlotIds.Length)
+                    _reservedSlotIds[i] = 0;
+
+                SetContainedItemHash(i, null);
+                anyRemoved = true;
+            }
+
+            if (anyRemoved)
+                OnEmpty?.Invoke();
+
+            return allDelivered;
+        }
 
         private void Awake()
         {
@@ -378,7 +564,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -602,6 +788,8 @@ namespace Hecton8.Gameplay
         {
             if (_state != CrateState.Open) return false;
             if (containedItems == null || itemIndex < 0 || itemIndex >= containedItems.Length) return false;
+            EnsureReservationCapacity();
+            if (IsReservedSlot(itemIndex)) return false;
 
             ItemData item = containedItems[itemIndex];
             if (item == null) return false;
@@ -616,7 +804,8 @@ namespace Hecton8.Gameplay
             }
 
             // Try to add to player inventory
-            if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
+            int itemHashId = ItemData.ResolvePersistentHashId(item);
+            if (itemHashId == 0 || !playerInventory.TryAddItem(itemHashId, 1))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 H8Debug.Log($"[StorageCrate] Player inventory full. Cannot take {item.itemName}.");
@@ -631,6 +820,10 @@ namespace Hecton8.Gameplay
             if (removeItemsOnTake)
             {
                 containedItems[itemIndex] = null;
+                if (_reservedSlotIds != null && itemIndex < _reservedSlotIds.Length)
+                    _reservedSlotIds[itemIndex] = 0;
+
+                SetContainedItemHash(itemIndex, null);
             }
 
             // Check if crate is now empty
@@ -1057,6 +1250,134 @@ namespace Hecton8.Gameplay
             EnsureReservationCapacity();
         }
 
+        private static bool TryAppendStorageCrateSaveEntry(
+            string[] itemIds,
+            int[] quantities,
+            ref int writeCount,
+            string persistentId)
+        {
+            int capacity = Mathf.Min(
+                ModuleDTO.MaxStorageCrateSlots,
+                Mathf.Min(itemIds != null ? itemIds.Length : 0, quantities != null ? quantities.Length : 0));
+            for (int i = 0; i < writeCount && i < capacity; i++)
+            {
+                if (!string.Equals(itemIds[i], persistentId, StringComparison.Ordinal))
+                    continue;
+
+                quantities[i] = Mathf.Min(ModuleDTO.MaxStorageCrateSlots, quantities[i] + 1);
+                return true;
+            }
+
+            if (writeCount >= capacity)
+                return false;
+
+            itemIds[writeCount] = persistentId;
+            quantities[writeCount] = 1;
+            writeCount++;
+            return true;
+        }
+
+        private static int CountStorageCrateRestoreSlots(in ModuleDTO dto)
+        {
+            if (!dto.storageCrateContentsSerialized ||
+                dto.storageCrateItemIds == null ||
+                dto.storageCrateQuantities == null)
+            {
+                return 0;
+            }
+
+            int entryCount = Mathf.Clamp(
+                dto.storageCrateSlotCount,
+                0,
+                Mathf.Min(
+                    ModuleDTO.MaxStorageCrateSlots,
+                    Mathf.Min(dto.storageCrateItemIds.Length, dto.storageCrateQuantities.Length)));
+            int totalQuantity = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                if (string.IsNullOrWhiteSpace(dto.storageCrateItemIds[i]))
+                    continue;
+
+                int quantity = Mathf.Clamp(dto.storageCrateQuantities[i], 0, ModuleDTO.MaxStorageCrateSlots);
+                if (quantity <= 0)
+                    continue;
+
+                totalQuantity = Mathf.Min(ModuleDTO.MaxStorageCrateSlots, totalQuantity + quantity);
+            }
+
+            return totalQuantity;
+        }
+
+        private static bool CanResolveStorageCrateRestoreState(in ModuleDTO dto, ItemCatalog itemCatalog)
+        {
+            if (!dto.storageCrateContentsSerialized)
+                return true;
+
+            if (dto.storageCrateSlotCount <= 0)
+                return true;
+
+            if (dto.storageCrateItemIds == null || dto.storageCrateQuantities == null)
+                return false;
+
+            int entryCount = Mathf.Clamp(
+                dto.storageCrateSlotCount,
+                0,
+                ModuleDTO.MaxStorageCrateSlots);
+            if (dto.storageCrateItemIds.Length < entryCount ||
+                dto.storageCrateQuantities.Length < entryCount)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < entryCount; i++)
+            {
+                int quantity = Mathf.Clamp(dto.storageCrateQuantities[i], 0, ModuleDTO.MaxStorageCrateSlots);
+                if (quantity <= 0)
+                    continue;
+
+                string itemId = dto.storageCrateItemIds[i];
+                if (string.IsNullOrWhiteSpace(itemId))
+                    return false;
+
+                if (itemCatalog == null || itemCatalog.FindById(itemId.Trim()) == null)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private void EnsureContainedItemStorageCapacityForRestore(int requiredSlotCount)
+        {
+            int safeRequiredSlotCount = Mathf.Clamp(requiredSlotCount, 0, ModuleDTO.MaxStorageCrateSlots);
+            int currentSlotCount = containedItems != null ? containedItems.Length : 0;
+            if (currentSlotCount < safeRequiredSlotCount)
+                System.Array.Resize(ref containedItems, safeRequiredSlotCount);
+
+            EnsureReservationCapacity();
+        }
+
+        private void ClearContainedItemsForRestore()
+        {
+            int itemCount = containedItems != null ? containedItems.Length : 0;
+            if (itemCount <= 0)
+            {
+                EnsureReservationCapacity();
+                if (_containedItemHashIds != null && _containedItemHashIds.Length != 0)
+                    System.Array.Resize(ref _containedItemHashIds, 0);
+                return;
+            }
+
+            EnsureReservationCapacity();
+            for (int i = 0; i < itemCount; i++)
+            {
+                containedItems[i] = null;
+                if (_reservedSlotIds != null && i < _reservedSlotIds.Length)
+                    _reservedSlotIds[i] = 0;
+
+                SetContainedItemHash(i, null);
+            }
+        }
+
         private bool IsReservedSlot(int index)
         {
             return _reservedSlotIds != null &&
@@ -1075,7 +1396,7 @@ namespace Hecton8.Gameplay
 
         private static int ComputeContainedItemHash(ItemData item)
         {
-            return item != null ? LocHash.Compute(item.PersistentId) : 0;
+            return ItemData.ResolvePersistentHashId(item);
         }
 
         /// <summary>

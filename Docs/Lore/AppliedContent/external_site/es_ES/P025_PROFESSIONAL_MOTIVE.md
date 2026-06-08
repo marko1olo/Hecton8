@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Motivo profesional
 
-El motivo profesional da agencia sin cerrar biografía: marauder capaz que se implica por pruebas.
+Professional Motive da agencia al merodeador sin cerrar demasiado la biografía: la competencia viene primero, la inversión personal llega por la evidencia.
 
 ## Scanner
 

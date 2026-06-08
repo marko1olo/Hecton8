@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Tariff Table"
+title: "טבלת התעריפים של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Tariff Table
+# טבלת התעריפים של Black Keel
 
-HE LOC HOLD: Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.
+התמיכה של Black Keel שימושית, אך לעולם אינה ניטרלית. מצוקה, דגימות, חמצן, חותמות אחריות, חילוץ מפעיל ונזק גוף נכנסים לתורים שונים. השחקן יכול לנצל את הכללים האלה, אך אותם כללים מראים למה עזרה תמיד מגיעה עם תג מחיר.
 
 ## Scanner
 
-HE LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
+הלוח מתמחר מצוקה, משמורת דגימות, עתודת חמצן, ציוד לחץ וחילוץ גוף כשורות נפרדות.
 
 ## Terminal
 
-HE LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
+מחלקת תעריף: חירום חילוץ. נספח רווחה ממתין. משמורת דגימה מאומתת מקדמת עדיפות יציאה בשתי דרגות חיוב.
 
 ## Audio
 
-HE LOC HOLD: The table has a price for rescue and a discount for evidence.
+יש הנחה על ראיות ותוספת מחיר על נשימה.
 
 ## Field Note
 
-HE LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
+המחלקה המהירה ביותר אינה הצלה. היא רכוש מאומת שעולה למעלה.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/he_IL. -->

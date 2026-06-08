@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Pula odzysku Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Pula odzysku Aegir
 
-PL LOC HOLD: The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.
+Pula odzysku Aegir to publiczna powłoka salvage stojąca za Black Keel. Pozwala małym licencjom marauder dotrzeć do opuszczonych roszczeń Aegir bez własnego międzyplanetarnego carriera. Ten układ jest użyteczny i trujący jednocześnie: ta sama pula, która może wysłać tender, decyduje, czy oddychający operator, zapieczętowany payload, blokada kwarantanny albo pakiet dowodów zasługuje na następny burn.
 
 ## Scanner
 
-PL LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
+Stempel puli roszczeń. Black Keel przydzielono przez dług trasy, nie podarowano operatorowi.
 
 ## Terminal
 
-PL LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+AEGIR RECLAMATION POOL: autonomiczny tender Black Keel przydzielony do opuszczonego roszczenia ciśnieniowego HECTON-8. Klasa dobrostanu załogi: kontraktor. Klasa custody payloadu: zmienna priorytetowość. Ekstrakcja człowieka pozostaje warunkowa do zamknięcia arbitrażu puli.
 
 ## Audio
 
-PL LOC HOLD: The pool owns the route. You only rent the answer.
+Pula posiada trasę. Ty wynajmujesz odpowiedź, przeżywając dość długo, by zapytać.
 
 ## Field Note
 
-PL LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+Wspólna pula czyni ratunek tańszym, wolniejszym i łatwiejszym do wyparcia przez każdego sygnatariusza.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/pl_PL. -->

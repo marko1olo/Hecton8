@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS193_FIRST_SAFETY_STATION_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1240_FIRE_BLANKET_FOLD_SHADOW",
+    "P1241_EXTINGUISHER_BRACKET_DUST_CRESCENT",
+    "P1242_ALARM_PULL_SALT_CRUST",
+    "P1243_MUSTER_TAG_MISSING_SCREW",
+    "P1244_EXIT_ARROW_PAINT_GHOST"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1240_FIRE_BLANKET_FOLD_SHADOW.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1241_EXTINGUISHER_BRACKET_DUST_CRESCENT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1242_ALARM_PULL_SALT_CRUST.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1243_MUSTER_TAG_MISSING_SCREW.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1244_EXIT_ARROW_PAINT_GHOST.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

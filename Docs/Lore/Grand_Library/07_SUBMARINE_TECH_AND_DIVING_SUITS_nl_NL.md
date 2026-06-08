@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ONDERZEETECHNOLOGIE EN DUIKPAKKEN VOOR DE PLUNDERAARS
 
 > **Bron:** Keelmark Loss Desk, Actuariële Risicobeoordeling voor Onafhankelijke Bergingsoperaties.

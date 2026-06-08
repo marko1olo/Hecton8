@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 退避保留
 
-Evacuation HoldはHECTON-8災害を環境事故ではなく判断の連鎖に変える。深淵の記録では、システムは人を救うより速く分類していた。
-
-## Scanner
-
-緊急輸送ゲート。圧力障害中に機構がロックされた。
-
-## Terminal
-
-EVAC ROUTE: 延期。SUBSTRATE ROUTE: 保護。MEDICAL ROUTE: 承認待ち。ATLAS ROUTE: 連続性競合。
-
-## Audio
-
-これは行方不明者ではない。保留された経路だ。
-
-## Field Note
-
-深海では人はすぐ死ぬ。書類はもっと遅く殺す。どちらも有効だ。
+退避保留記録は、管理言語で書かれた恐怖として読まれるべきだ。植民地は、すべての扉が同時に壊れたから消えたのではない。多くの扉は動いていた。多くの経路図は生きていた。システムは人々の位置、まだ圧力を保つ廊下、待機中の医療搬送、身体を上へ動かせた上昇経路を知っていた。その後、優先規則が地図を切った。基質輸送は保護されたままだった。Atlas連続性は保護されたままだった。責任文言は無傷だった。退避は保留経路になり、次に承認待ち経路になり、最後に記録になった。この順序は世界設定全体にとって重要だ。HECTON-8は、自然が一撃で人類を倒す物語ではない。植民地が溺れている間にも、数え、順位を付け、延期し、財産を守ることができた企業機械を、海洋災害が通過する物語だ。
 
 <!-- External Site; generated from P008_EVACUATION_HOLD/ja_JP. -->

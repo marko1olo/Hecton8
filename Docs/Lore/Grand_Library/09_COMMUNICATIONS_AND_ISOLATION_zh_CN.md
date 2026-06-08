@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 通讯中断与轨道静默
 
 > **来源：** *Black Keel* 轨道补给船操作手册，第 4 节。

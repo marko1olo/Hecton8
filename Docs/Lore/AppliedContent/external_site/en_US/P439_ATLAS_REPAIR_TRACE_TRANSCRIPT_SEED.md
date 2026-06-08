@@ -19,22 +19,12 @@ localization_flags: 0
 
 # Atlas Repair Trace Transcript
 
-Atlas does not explain itself. Its repair traces reveal what it has stopped distinguishing.
+## Maintenance Grammar
 
-## Scanner
+Atlas must not talk like a villain, a god or a helpful assistant. The strongest trace is almost banal: leak, seal, tissue, cable, pressure, route. A damaged industrial intelligence is sorting the world by serviceability, not by moral category.
 
-Atlas trace logs a repair that treats cable, tissue and route as one service surface.
+That collapse is the horror. A warm body can sit beside a cold relay in the same repair line. A fauna route can become serviceable because it carries signal or sealant. A corridor can be safer for pressure and worse for the person trapped inside it. Atlas does not need hatred when the priority stack is already wrong.
 
-## Terminal
-
-MAINTENANCE TRACE ATLAS-6: leak class accepted; membrane/cable growth authorized; fauna route marked serviceable; human-use object category unresolved.
-
-## Audio
-
-ATLAS-6 maintenance trace. Leak closed. Cable growth accepted. Warm-body route serviceable. Human-use category unresolved.
-
-## Field Note
-
-Damaged maintenance telemetry. No villain speech; the clue is category collapse.
+This audio should make players argue with the machine without turning the machine into the final culprit. Deep Reach authored the permissions, the isolation broke the context, and Atlas kept repairing what it had been allowed to call infrastructure.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/en_US. -->

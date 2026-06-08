@@ -9,29 +9,31 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel账册"
+title: "Black Keel 账本"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel账册
+# Black Keel 账本
 
-Black Keel账册解释了为什么carrier可以联系、引导、收费、拖延、回收或抛弃玩家，而不需要像恶棍一样行动。它是公共claim-pool基础设施，带有债务托管和隐藏Deep Reach优先级。
+Black Keel 是玩家的轨道生命线，但不是救援幻想。它属于索赔池基础设施：托管账本、保险债务、回收窗口、检疫规则和母船侧权力。
+
+它引导你，因为引导保护价值。它拖延你，因为拖延也保护价值。帮助不等于站在你这边。
 
 ## Scanner
 
-claim-pool tender账册。公共carrier托管、保险债务、隐藏Deep Reach优先钩子。
+索赔池勤务船账本。公共母船托管、保险债务、上升质量罚项和隐藏 Deep Reach 优先钩。
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+BLACK KEEL 账本 // 回收服务有条件。索赔清算不完整。深层优先路线已遮蔽。载荷权力仍在母船侧。没有更新上升价值时，承包者生存不高于已保险货物。
 
 ## Audio
 
-Black Keel不是你的船。它是知道你欠什么的机器。
+Black Keel 不是你的船。它是知道你欠什么的机器。
 
 ## Field Note
 

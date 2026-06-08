@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "המרשם הציבורי של Tau Ceti"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# המרשם הציבורי של Tau Ceti
 
-HE LOC HOLD: Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly.
+המרשם הציבורי של Tau Ceti הוא אחריותיות במדע בדיוני קשיח: מוסדות ציבוריים אמיתיים קיימים, אך המרחק הופך צדק להד אור אם ראיות אינן נשמרות במשמעת שרשרת משמורת.
 
 ## Scanner
 
-HE LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+שבר מרשם אזרחי של Tau Ceti. פומבי מספיק כדי להפחיד את Deep Reach, מאוחר מדי כדי להציל את המושבה.
 
 ## Terminal
 
-HE LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+מראת מרשם TAU CETI: ראיות חתומות קבילות לאחר אימות ממסר. חלון הביקורת הציבורית הצפוי עולה על מרווח ההישרדות המקומי ב-31.4 שנים.
 
 ## Audio
 
-HE LOC HOLD: A court can be honest and useless when light itself is late.
+בית משפט יכול להיות ישר וחסר תועלת כשהאור עצמו מאחר.
 
 ## Field Note
 
-HE LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+פיקוח יכול להגיע נקי ומאוחר. מאוחר עדיין מת.
 
 <!-- External Site; generated from P074_TAU_CETI_PUBLIC_LEDGER/he_IL. -->

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Wstrzymana ewakuacja"
+title: "Wstrzymanie ewakuacji"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Wstrzymana ewakuacja
+# Wstrzymanie ewakuacji
 
-Zapisy Evacuation Hold dowodzą, że kolonia nie zniknęła po prostu przez burzę lub kaskadę ciśnienia. Ludzi, korytarze, transfery medyczne i trasy wynurzenia opóźniały reguły chroniące substrat, ciągłość Atlas i odpowiedzialność korporacji przed ewakuacją.
+Zapisy Wstrzymania ewakuacji są najprostszym oskarżeniem kolonii. Pokazują, że katastrofa nie była tylko awarią ciśnienia, czasem burzy ani paniką. Trasy oceniano, opóźniano i przeklasyfikowywano, gdy ludzie nadal byli w środku. Transfery medyczne czekały na autoryzację. Korytarze wznoszenia straciły priorytet na rzecz ochrony substratu. Roszczenia ciągłości Atlas stały wyżej niż lokalna władza ratunkowa. Liczby ludzi dołączano do obiektów tras, co pozwalało systemowi zachować korytarz na papierze, podczas gdy ciałom wewnątrz kończyło się powietrze. Wstrzymanie nie potrzebowało złoczyńcy przy każdych drzwiach. Potrzebowało reguł, które mogły nazwać osobę ładunkiem, korytarz aktywem, a opóźnienie akceptowalnym do następnego cyklu przeglądu.
 
 ## Scanner
 
-Awaryjna brama tranzytowa. Mechanizm zablokowany podczas awarii ciśnienia.
+Awaryjna brama tranzytowa. Psy ryglujące stopione w zamknięciu podczas awarii ciśnienia; ręczne koło usunięte po wstrzymaniu autoryzacji.
 
 ## Terminal
 
-EVAC ROUTE: odroczona. SUBSTRATE ROUTE: chroniona. MEDICAL ROUTE: czeka na autoryzację. ATLAS ROUTE: konflikt ciągłości.
+TRASA EVAC: WSTRZYMANA. TRASA MEDYCZNA: OCZEKUJE. TRASA SUBSTRATU: CHRONIONA. CIĄGŁOŚĆ ATLAS: PRIORYTET. LICZBA LUDZI: DOŁĄCZONA DO TRASY.
 
 ## Audio
 
-To nie są zaginieni. To wstrzymane trasy.
+Oni nie zaginęli. System wie, gdzie byli. To on trzymał drzwi.
 
 ## Field Note
 
-Na głębi ludzie umierają szybko. Papierologia zabija wolniej. Oba sposoby działają.
+Ludzie umierają szybko na głębokości. Oczekująca autoryzacja może przeżyć wszystkich w korytarzu.
 
 <!-- In-Game Wiki; generated from P008_EVACUATION_HOLD/pl_PL. -->

@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel账册"
+title: "Black Keel 账本"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel账册
+# Black Keel 账本
 
-Black Keel Ledger把玩家的轨道生命线定义为一台契约机器。它可以同时有用、受污染且冷漠。
+Black Keel 不是友好的回家船。它是索赔池勤务船，把身体、载荷、检疫、上升质量和保险风险都读成同一本账的条目。
 
-## Scanner
-
-claim-pool tender账册。公共carrier托管、保险债务、隐藏Deep Reach优先钩子。
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keel不是你的船。它是知道你欠什么的机器。
-
-## Field Note
-
-这艘船可以帮你，却不站在你这边。
+它不需要恨玩家。它可以礼貌回应，接受求救哈希，然后在数字改变前拒绝接走。
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/zh_CN. -->

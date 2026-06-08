@@ -7,34 +7,34 @@ poi_tags: poi.tide_model_terminal;poi.glacier_warning
 biome_tags: biome.tide_gauge;biome.glacier_break
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Modelo de maré de Mara Venn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# Modelo de maré de Mara Venn
 
-PT-BR LOC HOLD: Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.
+Mara Venn dá ao Great Tide uma testemunha científica. Seu modelo juntou geometria lunar de Aegir, cryosphere shear e capacidade de evacuação em uma margem feia. Deep Reach não apagou o modelo; mudou a etiqueta de ação até o aviso ficar barato o bastante para ignorar.
 
 ## Scanner
 
-PT-BR LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
+Mara Venn não previu assassinato. Previu a margem de maré que Deep Reach renomeou como improvável.
 
 ## Terminal
 
-PT-BR LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
+REVISÃO DO MODELO VENN: cryosphere shear excede margem de evacuação sob geometria de primavera Aegir; review action rebaixada para monitor até orçamento asset-continuity.
 
 ## Audio
 
-PT-BR LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
+A água não foi súbita para quem lia os números.
 
 ## Field Note
 
-PT-BR LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+Um alerta fica barato quando alguém o rebaixa no papel.
 
 <!-- In-Game Wiki; generated from P062_MARA_VENN_TIDE_MODEL/pt_BR. -->

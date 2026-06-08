@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Brine Vane Codex Card
 
-Brine vanes grow along density shear and make the canyon readable. Aligned edges can guide descent. Open glow and false-floor sonar returns are not safe routes.
+Brine vanes are not plants in the comfortable sense. They are flat salt-mineral membranes that survive where brine, pressure and temperature make a boundary sharp enough to behave like a wall. In the canyon they turn invisible water structure into something a Marauder can read with eyes, sonar and buoyancy trim. An intact vane sheet usually means the far side is denser and will bend a ping or pull a suit off expectation. A torn mouth can mark recent animal passage, current damage, or the only weak window through the layer. A curled tip means the shear is loosening. Pale ribs shed from dead strips can be useful material, but cutting a live sheet can erase the route marker that keeps the canyon legible. Do not cross open glow because it looks vertical. Keep one vane edge in sight, keep trim conservative, and treat any floor return without a visible vane boundary as a lie until another reading confirms it.
 
 ## Scanner
 
-Brine vane: density-shear root. Follow aligned edges; avoid open glow and false-floor returns.
+Brine vane sheet. Salt-mineral membrane fixed to density shear. Intact edge means wall; torn mouth means passage; black water without vane edge means false floor risk.
 
 ## Terminal
 
-SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+SPECIMEN / BRINE VANE / role: density wall marker, sonar-bend warning, shed-rib material source / safe read: intact sheet, torn downstream mouth, curled shear-window tip / reject: cutting live lane sheet, crossing open glow, trusting false-floor return / route note: harvest shed ribs, not the membrane holding your map open.
 
 ## Audio
 
-The plant is not pointing up. It is pointing through.
+The vane is not pointing up. It is showing where the ocean turns sideways.
 
 ## Field Note
 
-Vertical beauty, bad floor. Keep one vane edge in sight and one hand on buoyancy trim.
+Intact sheet: wall. Torn mouth: possible route. Shed rib: sample. Live sheet holding a lane: leave it.
 
 <!-- In-Game Wiki; generated from P294_BRINE_VANE_CODEX_CARD/en_US. -->

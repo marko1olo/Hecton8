@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS192_FIRST_COMM_HARDWARE_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1235_ANTENNA_CLAMP_SALT_CRACK",
+    "P1236_CABLE_LABEL_UV_GHOST",
+    "P1237_SIGNAL_BOX_CONDENSATION_LINE",
+    "P1238_GROUND_STRAP_GREEN_BLOOM",
+    "P1239_SERVICE_PORT_DUST_PLUG"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1235_ANTENNA_CLAMP_SALT_CRACK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1236_CABLE_LABEL_UV_GHOST.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1237_SIGNAL_BOX_CONDENSATION_LINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1238_GROUND_STRAP_GREEN_BLOOM.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1239_SERVICE_PORT_DUST_PLUG.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

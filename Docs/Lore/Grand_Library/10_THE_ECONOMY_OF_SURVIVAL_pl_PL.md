@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # EKONOMIA PRZETRWANIA I DŁUG KEELMARK
 
 > **Źródło:** Umowa Niezależnego Podwykonawcy Keelmark, Aneks 14-B (Zobowiązania Finansowe).

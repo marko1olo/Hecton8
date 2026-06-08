@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "Montage van de ontsnappingsketen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# Montage van de ontsnappingsketen
 
-NL LOC HOLD: Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.
+Ontsnappen is een montageketen, geen enkel gerepareerd voertuig. Het beschadigde droppakket kan de speler in leven houden, maar kan niet alleen een vertrouwde opstijging maken. De route naar huis heeft een akoestische relaisspine nodig die door water en stormruis hoorbaar is, een drukafdichting die opstijging niet in breuk verandert, een geleidingskern die HECTON-8s lokale gevaren overleeft, een opstijgenergielading, een quarantaine- en juridische handdruk en, als de speler macht over het herstelrecord wil, een bewijsvracht die Black Keel niet kan wegprijzen. Elk deel ligt dieper dan comfort, omdat het oorspronkelijke systeem gebouwd was om activa te verplaatsen, niet om achtergelaten arbeiders op eigen voorwaarden te laten vertrekken.
 
 ## Scanner
 
-NL LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+Vertrek vraagt zes harde bewijzen: relais, afdichting, geleiding, opstijglading, juridische handdruk en een vracht die de drager niet kan negeren.
 
 ## Terminal
 
-NL LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+OPSTIJGPAKKET: akoestische relaisspine ontbreekt. Klemmingsringclassificatie onvoldoende. Geleidingskern afwezig. Laadwieg leeg. Quarantainehanddruk onopgelost. Bewijsvracht optioneel, maar verandert herstelautoriteit.
 
 ## Audio
 
-NL LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+Je repareert de capsule niet. Je bouwt de eerste eerlijke uitgang die de kolonie nooit had.
 
 ## Field Note
 
-NL LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+De weg omhoog wordt gebouwd uit delen die nooit bedoeld waren om arbeiders zelfstandig te laten vertrekken.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/nl_NL. -->

@@ -19,22 +19,26 @@ localization_flags: 0
 
 # Photic Mat Codex Card
 
-A photic mat is a living oxygen surface, not decoration. It brightens shallow routes, feeds glass grazers, and flags places where mineral film, pressure chemistry, and life are meeting too quickly. Small samples are useful. Tearing a sheet near a sealed seam can release trapped gas, wake grazers, or turn a safe-looking patch into a route hazard.
+Photic mats make the shallow shelves feel alive without making them safe. They are layered biofilm sheets that grow where light, mineral skin, weak gas seepage and pressure chemistry meet. A healthy mat can add oxygen to a pocket, feed glass grazers, tint limestone with green-gold edges and stabilize thin sediment that would otherwise lift into the water. That usefulness is exactly why the player should not treat it as decoration or free food. Small loose-edge samples are safe enough for scanner work. A mat stretched over a crack, gasket seam, cable scar or pale gas blister is already part of the route. Tear it there and the shelf can change: trapped gas vents, grazers scatter, sediment clouds, and a bright patch becomes a visibility problem. The rule is simple. Harvest the edge. Do not steal the bandage.
 
 ## Scanner
 
-Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Photic mat. Oxygen-positive biofilm sheet over mineral skin. Bright, useful, pressure-fragile. Do not peel it from sealed cracks.
 
 ## Terminal
 
-SPECIMEN: photic mat. Oxygen-positive, pressure-fragile. Do not harvest large sheets near sealed seams.
+SPECIMEN / PHOTIC MAT
+role: shallow oxygen surface, grazer food, mineral-film stabilizer
+safe sample: loose edge less than palm width
+reject: seam-sealing sheets, gas-blistered mats, fresh grazer bite fields
+route note: torn mats can vent trapped gas and turn a clear shelf into a hazard.
 
 ## Audio
 
-Light here is work, not comfort.
+It looks soft because it is working. If it is holding a seam, leave it there.
 
 ## Field Note
 
-Cut samples only from loose edges. If the mat is sealing a crack, it is already doing a job you may need later.
+Loose edge: sample. Seam cover: leave. If the mat is sealing a wound, the wound is still there.
 
 <!-- In-Game Wiki; generated from P291_PHOTIC_MAT_CODEX_CARD/en_US. -->

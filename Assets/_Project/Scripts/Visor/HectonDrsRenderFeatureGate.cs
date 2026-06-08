@@ -39,7 +39,10 @@ namespace Hecton8.Visor
 
             s_cachedScaler = GlobalRegistry.ResolutionScaler;
             if (!s_hotSwapRegistered)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(s_hotSwapListener);
                 s_hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(s_hotSwapListener);
+            }
         }
 
         internal static float ResolveSurvivalPressure01()

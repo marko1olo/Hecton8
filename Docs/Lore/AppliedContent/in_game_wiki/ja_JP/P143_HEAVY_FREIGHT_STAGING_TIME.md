@@ -7,34 +7,34 @@ poi_tags: poi.freight_stage_mass_board;poi.seed_ship_burn_schedule
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "重貨物ステージング時間"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# 重貨物ステージング時間
 
-JP LOC HOLD: Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.
+重貨物のタイミングはno-FTL年表を守る。企業が前駆貨物を早く打ち上げ、前方に配置し、無人リスクを受け入れ、失敗窓を計画用語に埋めるため、Atlas機材は大量入植の前に到着できる。緊急事態が始まった後で、救助はその手を借りられない。
 
 ## Scanner
 
-JP LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
+Atlas級貨物は装甲に包まれた前払いの忍耐だ。
 
 ## Terminal
 
-JP LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
+貨物記録: Atlasおよびseed貨物はステージング、ペレット核融合補助、長い惰行、制動インフラを用いる。公開日付は前駆打上げと前方領域出発を隠すことがある。
 
 ## Audio
 
-JP LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
+あれほど重い船は単に旅をしない。航跡を持つ請求書になる。
 
 ## Field Note
 
-JP LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+重航路はデポ、ビーム窓、制動質量、政治的胆力から組み立てられる。
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/ja_JP. -->

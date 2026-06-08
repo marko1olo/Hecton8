@@ -553,9 +553,7 @@ namespace Hecton8.Scavenging
             get
             {
                 ItemData item = ExtractorYieldItem;
-                return item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
-                    ? LocHash.Compute(item.PersistentId)
-                    : 0;
+                return ItemData.ResolvePersistentHashId(item);
             }
         }
 
@@ -693,7 +691,7 @@ namespace Hecton8.Scavenging
 
                 YieldRuntimeEntry runtimeEntry = new YieldRuntimeEntry
                 {
-                    ItemHashId = LocHash.Compute(source.item.PersistentId),
+                    ItemHashId = ItemData.ResolvePersistentHashId(source.item),
                     MinimumAmount = source.minimumAmount,
                     MaximumAmount = source.maximumAmount,
                     Weight = source.weight,
@@ -730,7 +728,7 @@ namespace Hecton8.Scavenging
 
                 RarityDropRuntimeEntry runtimeEntry = new RarityDropRuntimeEntry
                 {
-                    ItemHashId = LocHash.Compute(source.item.PersistentId),
+                    ItemHashId = ItemData.ResolvePersistentHashId(source.item),
                     Amount = source.amount,
                     RarityTier = source.rarityTier,
                     ProbabilityByte = (byte)math.clamp(math.round(source.probability * 255f), 1f, 255f),
@@ -882,11 +880,11 @@ namespace Hecton8.Scavenging
             if (!IsValidYieldEntry(in current))
                 return false;
 
-            int currentHash = LocHash.Compute(current.item.PersistentId);
+            int currentHash = ItemData.ResolvePersistentHashId(current.item);
             for (int i = 0; i < index; i++)
             {
                 YieldAuthoringEntry previous = harvestYield[i];
-                if (IsValidYieldEntry(in previous) && LocHash.Compute(previous.item.PersistentId) == currentHash)
+                if (IsValidYieldEntry(in previous) && ItemData.ResolvePersistentHashId(previous.item) == currentHash)
                     return true;
             }
 
@@ -902,14 +900,14 @@ namespace Hecton8.Scavenging
             if (!IsValidRarityDropEntry(in current))
                 return false;
 
-            int currentHash = LocHash.Compute(current.item.PersistentId);
+            int currentHash = ItemData.ResolvePersistentHashId(current.item);
             int currentTier = current.rarityTier;
             for (int i = 0; i < index; i++)
             {
                 RarityDropAuthoringEntry previous = rarityDrops[i];
                 if (IsValidRarityDropEntry(in previous) &&
                     previous.rarityTier == currentTier &&
-                    LocHash.Compute(previous.item.PersistentId) == currentHash)
+                    ItemData.ResolvePersistentHashId(previous.item) == currentHash)
                 {
                     return true;
                 }

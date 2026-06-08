@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "Atlas 분지 검열선"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# Atlas 분지 검열선
 
-KO LOC HOLD: Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.
+달 항로 기사는 Atlas basin을 일찍 열지 않고도 Aegir가 어떻게 작동하는지 설명할 수 있다. 하늘은 공개 기록으로 이해할 수 있지만, 바닥은 아직 어둠 속에서 얻어야 한다.
 
 ## Scanner
 
-KO LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+공개 달 atlas는 하늘 위험의 이름을 댈 수 있다. Atlas basin payload가 무엇을 하는지는 인쇄할 수 없다.
 
 ## Terminal
 
-KO LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+ATLAS REDACTION: 공개 달 페이지는 이름, 항로 창, 위험, salvage economy, HECTON-8 재난 사실을 나열할 수 있다. payload 효과, basin receiver 동작, 최종 결정 결과는 게이트 뒤에 남는다.
 
 ## Audio
 
-KO LOC HOLD: Publish the sky. Redact the bottom.
+하늘은 공개하라. 바닥은 봉인하라.
 
 ## Field Note
 
-KO LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+구름 위에서 항로는 공개된다. basin 아래에서 모든 답은 아직 잠겨 있다.
 
 <!-- In-Game Wiki; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/ko_KR. -->

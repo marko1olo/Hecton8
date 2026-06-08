@@ -1,16 +1,18 @@
 using System;
 using Unity.Collections;
-using UnityEngine;
 using ScatterWorkingMemory = Hecton8.World.WorldProceduralScatterDirector.ScatterWorkingMemory;
 
 namespace Hecton8.World
 {
     /// <summary>
     /// Owner-local binding state for the scatter backend seam.
-    /// The current shadow backend is fail-closed, so this class retains only lookup metadata.
+    /// Retains representative family lookup and read-only views into director-owned sampling buffers.
     /// </summary>
     internal sealed class ScatterBackendBindingState : IDisposable
     {
+        private NativeArray<float>.ReadOnly _heightSamples;
+        private NativeArray<ScatterSimulationCellState>.ReadOnly _cellStates;
+
         public ScatterBackendBindingState()
         {
             ResetLookup();
@@ -21,8 +23,8 @@ namespace Hecton8.World
         public int StructureFamilyIndex { get; private set; }
         public int SpawnFamilyIndex { get; private set; }
 
-        public NativeArray<float>.ReadOnly HeightSamples => default;
-        public NativeArray<ScatterSimulationCellState>.ReadOnly CellStates => default;
+        public NativeArray<float>.ReadOnly HeightSamples => _heightSamples;
+        public NativeArray<ScatterSimulationCellState>.ReadOnly CellStates => _cellStates;
 
         public void ResetLookup()
         {
@@ -30,13 +32,14 @@ namespace Hecton8.World
             ClusterFamilyIndex = -1;
             StructureFamilyIndex = -1;
             SpawnFamilyIndex = -1;
+            ClearCellDataViews();
         }
 
         public bool TryRegisterRepresentativeFamilyIndex(
             WorldPrefabFamilyProfile family,
             int familyIndex)
         {
-            if (family == null || familyIndex == 0)
+            if (family == null || familyIndex <= 0)
                 return false;
 
             return RegisterRepresentativeFamilyIndex(family, familyIndex);
@@ -44,15 +47,38 @@ namespace Hecton8.World
 
         public bool TryPopulateCellData(ScatterWorkingMemory memory, int cellCount)
         {
-            if (memory == null || !memory.CellSamplingOutputs.IsCreated || !memory.ScatterBackendCellStates.IsCreated || cellCount <= 0)
-                return false;
+            ClearCellDataViews();
 
-            return Mathf.Min(cellCount, Mathf.Min(memory.CellSamplingOutputs.Length, memory.ScatterBackendCellStates.Length)) > 0;
+            if (memory == null ||
+                !memory.CellSamplingOutputs.IsCreated ||
+                !memory.ScatterBackendHeightSamples.IsCreated ||
+                !memory.ScatterBackendCellStates.IsCreated ||
+                cellCount <= 0)
+            {
+                return false;
+            }
+
+            if (memory.CellSamplingOutputs.Length < cellCount ||
+                memory.ScatterBackendHeightSamples.Length < cellCount ||
+                memory.ScatterBackendCellStates.Length < cellCount)
+            {
+                return false;
+            }
+
+            _heightSamples = memory.ScatterBackendHeightSamples.GetSubArray(0, cellCount).AsReadOnly();
+            _cellStates = memory.ScatterBackendCellStates.GetSubArray(0, cellCount).AsReadOnly();
+            return true;
         }
 
         public void Dispose()
         {
             ResetLookup();
+        }
+
+        public void ClearCellDataViews()
+        {
+            _heightSamples = default;
+            _cellStates = default;
         }
 
         private bool RegisterRepresentativeFamilyIndex(WorldPrefabFamilyProfile family, int familyIndex)

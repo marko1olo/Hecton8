@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Professioneel motief
 
-De speler is geen lege toerist. Hij begint met vakmanschap en reden voor een dode claim; bewijs maakt het persoonlijk.
+De Marauder is geen lege toerist. De run begint met professioneel belang, salvagevaardigheid en een reden om een dode claim aan te nemen. Persoonlijk motief groeit door bewijs, vertrouwde markeringen en het besef dat HECTON-8 bij dezelfde harde wereld hoort die dit werk normaal maakte.
 
 ## Scanner
 

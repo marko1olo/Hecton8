@@ -7,34 +7,34 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Salvage Tool Custody"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "משמורת כלי salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Salvage Tool Custody
+# משמורת כלי salvage
 
-Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.
+כלי salvage אינם ציוד ניטרלי. חותכים, מתקני טלאי ומעגני fabricator יכולים לרשום מי פתח פנל, תיקן קו או הזיז דגימה. היומן הזה יכול להגן על ראיה, לחבר זכויות payout או לחזק claim נגד השחקן. משמורת כלי היא המקום שבו הישרדות מדקה לדקה נוגעת בכלכלת salvage הרחבה.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+מעגן הכלי מחזיק יומן משמורת חתום. החיתוך האחרון, התיקון ושקית הדגימה קשורים לטוקן claim של Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: שימוש בחותך התקבל תחת salvage claim. פעולת תיקון נצפתה. זכויות דגימה מחוברות לטוקן Keelmark Mutual. ייצוא ראיות מתנגש עם מסלול payout חומרי.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+כל חיתוך מועיל משאיר עד.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+חותך יכול להציל את האוויר שלך ולמכור את הידיים שלך באותה תנועה. בדוק מה הוא רושם לפני שתקרא לו שלך.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/he_IL. -->

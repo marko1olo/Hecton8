@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 2
-title: "HE LOC HOLD: Endings and Payload Custody"
+title: "סיומים ו-payload custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Endings and Payload Custody
+# סיומים ו-payload custody
 
-HE LOC HOLD: Ending dossier hub: custody, evidence, Atlas' future and the price of leaving.
+מרכז תיקי סיום: custody, evidence, עתיד Atlas ומחיר העזיבה.
 
 ## Scanner
 
-HE LOC HOLD: Spoiler hub: payload receivers, false exits, custody, public truth, Atlas continuity and after-action records.
+Spoiler hub: payload receivers, false exits, custody, אמת ציבורית, Atlas continuity ו-after-action records.
 
 ## Terminal
 
-HE LOC HOLD: SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver and proof ownership.
+SITE NAV: להשאיר final payload pages מאחורי spoiler gates. לארגן לפי receiver ו-proof ownership.
 
 ## Audio
 
-HE LOC HOLD: The ending is who owns the proof afterward.
+הסיום הוא מי מחזיק בראיה אחרי העלייה.
 
 ## Field Note
 
-HE LOC HOLD: Navigation cluster record: endings stay spoiler-gated and organized by receiver and custody consequence, not moral labels.
+סיומים נשארים spoiler-gated ומאורגנים לפי receiver ו-custody consequence, לא לפי תוויות מוסריות.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/he_IL. -->

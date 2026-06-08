@@ -8,33 +8,19 @@ biome_tags: biome.tide_pump;biome.drowned_admin
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+spoiler_tier: 1
+title: "Physikprotokoll der Großen Flut"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# Physikprotokoll der Großen Flut
 
-DE LOC HOLD: Great Tide Physics Record defines the disaster logic for HECTON-8: the ocean is physically dangerous, and the corporate crime is designing around optimistic margins until a moon-sized system collected the debt.
+Das Physikprotokoll der Großen Flut hält die Katastrophe ehrlich. HECTON-8 war anfällig für Gezeitenresonanz, Eisbruch, Sturmflut und industrielle Wärmeabgabe. Deep Reachs Schuld liegt in Margen, Evakuierungskapazität und Entscheidungsprioritäten, nicht in einer erfundenen magischen Ursache.
 
-## Scanner
-
-DE LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
-
-## Terminal
-
-DE LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
-
-## Audio
-
-DE LOC HOLD: The report was right. That is why they buried it.
-
-## Field Note
-
-DE LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+Das Physikprotokoll der Großen Flut definiert die Katastrophenlogik von HECTON-8: Der Ozean ist physisch gefährlich, und das Unternehmensverbrechen bestand darin, mit optimistischen Margen zu planen. Beschönige es nicht: echte Physik tötete Menschen, und Deep Reach sorgte dafür, dass diese Physik Opfer hatte.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/de_DE. -->

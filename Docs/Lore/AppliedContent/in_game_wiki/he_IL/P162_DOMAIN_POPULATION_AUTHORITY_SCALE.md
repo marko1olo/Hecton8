@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Population And Authority Scale"
+title: "סולם אוכלוסייה וסמכות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Population And Authority Scale
+# סולם אוכלוסייה וסמכות
 
-HE LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
+מספרי האוכלוסייה נשארים מקורבים כי השחקן לא צריך census opera. השאלה המועילה פשוטה יותר: מי יכול לפעול עליך מרחוק? דומיין ליבה צפוף אולי נוגע ב-HECTON-8 רק כשורת אישור. depot קטן יכול להיות חשוב יותר כי הוא שולט ב-custody של חבילות. frontier shell מתה יכולה להיות החשובה ביותר כי היא בעלת החומרה בחדר.
+
+זה הסולם שהשחקן מרגיש. Sol יכול להחליט שחפץ שייך למישהו. Centauri יכול לגרום לשפה הישנה של Deep Reach להיראות מכובדת. Barnard מנרמל את העבודה שלוכדת Marauders. Tau Ceti יכול להפוך ראיה ללחץ ציבורי, מאוחר מדי לחמצן אך לא מאוחר מדי להשלכות. Luyten יכול להוכיח את שרשרת ההודעות. Aegir הוא המקום שבו חתימות הופכות ללחץ, מים, פתחים נעולים ומסה שניתן לחייב עליה.
 
 ## Scanner
 
-HE LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+AUTHORITY CENSUS STUB // אוכלוסייה היא רק רקע. מה שחשוב הוא איזה דומיין יכול לאשר, לפרסם, להזיז, לבטח, לנטר או לקבור claim.
 
 ## Terminal
 
-HE LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AUTHORITY SCALE // Sol מאשר בעלות. Centauri מעניק לגיטימציה לצ'רטרים. Barnard מספק עבודה ל-claims מתים. Tau Ceti מפרסם ראיות לאחר עיכוב. Luyten מוכיח custody. Aegir מבצע את ה-claim הפיזי המלוכלך.
 
 ## Audio
 
-HE LOC HOLD: The largest domain is not the nearest hand.
+הדומיין הגדול ביותר אינו היד הקרובה ביותר. הוא החותמת ששורדת את העיכוב.
 
 ## Field Note
 
-HE LOC HOLD: Do not turn the setting into census space opera.
+אל תוסיף טריוויה של מפקד אלא אם היא משנה לחץ על גוף, נתיב, claim או שרשרת ראיות.
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/he_IL. -->

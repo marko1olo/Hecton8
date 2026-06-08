@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Лунная лестница Aegir
 
-Лунная лестница Aegir дает игре рабочий слой локальной астрономии. Другие луны объясняют route windows, dead claims, salvage rumors и почему Black Keel не может всегда ответить с удобной орбиты.
+Лунная лестница Aegir дает HECTON-8 рабочую локальную астрономию: другие луны объясняют маршрутные окна, мертвые claims, слухи salvage и проваленное время возврата.
 
 ## Scanner
 
-Карта moon ladder. HECTON-8 - один рабочий риск в движущейся системе, не изолированный уровень.
+Карта лунной лестницы. HECTON-8 является рабочей опасностью в движущейся системе, а не изолированным уровнем.
 
 ## Terminal
 
-MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+ОСНОВНЫЕ ЛУНЫ AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Модель transfer и eclipse приложена.
 
 ## Audio
 
@@ -35,6 +35,6 @@ MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7
 
 ## Field Note
 
-Skarn жжет, Vela сбрасывает лед, Anvil кормит металлом, Kestrel режет relays, HECTON-8 тонет.
+Skarn жжет. Vela сбрасывает лед. Anvil кормит металлом. Kestrel режет ретрансляторы. HECTON тонет.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/ru_RU. -->

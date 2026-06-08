@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "Begegnungsgrammatik: Salzlakenfächer-Navigation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Brine Vane Navigation Encounter Grammar
+# Begegnungsgrammatik: Salzlakenfächer-Navigation
 
-DE LOC HOLD: The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
+Salzlakenfächer-Navigation macht HECTON-8s Canyons ohne Pfeile lesbar. Die Route steht in Dichte, Membranschaden, Sonarverzerrung und der Auftriebsdisziplin des Spielers.
 
 ## Scanner
 
-DE LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+Salzlakenfächer-Feld. Ausgerichtete Blätter markieren Dichtekurven; gekräuselte Spitzen schwache Fenster; Sonar verzieht sich nahe offener Glut. Eine Kante im Blick behalten.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+BEGEGNUNGSGRAMMATIK / SALZLAKENFÄCHER-NAVIGATION / Rolle: Mittentiefen-Routenlese, Handlauf der Dichtewand, Korrektur falscher Böden / sichere Lesung: intakte Fächerkante, zerrissene Öffnung, Sonarbiegung passt zu Auftriebsdrift / verwerfen: schwarzes offenes Wasser queren, Leitblatt schneiden, Bodenrücklauf ohne Fächergrenze vertrauen / Routennotiz: Der Fächer führt nicht mit Absicht; er gehorcht dem Wasser laut genug, um ihm zu folgen.
 
 ## Audio
 
-DE LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+Der Fächer ist kein Schild. Er ist Wasser, das eine Wand macht und eine Naht lässt.
 
 ## Field Note
 
-DE LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+Behandle die Fächerkante als Handlauf. Wenn die Linie falsch biegt, ist deine Auftriebslesung schon spät.
 
 <!-- External Site; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/de_DE. -->

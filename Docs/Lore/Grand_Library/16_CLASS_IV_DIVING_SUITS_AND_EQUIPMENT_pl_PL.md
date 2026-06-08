@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # SKAFANDRY NURKOWE KLASY IV I SPRZĘT GŁĘBINOWY
 
 > **Źródło:** Megakorporacja Deep Reach, Instrukcja Kwatermistrza ds. Sprzętu.

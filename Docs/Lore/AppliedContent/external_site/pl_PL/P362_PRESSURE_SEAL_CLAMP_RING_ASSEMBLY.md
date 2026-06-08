@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "Zespół pierścienia zaciskowego uszczelki ciśnieniowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Pressure Seal Clamp Ring Assembly
+# Zespół pierścienia zaciskowego uszczelki ciśnieniowej
 
-PL LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.
+Zespół pierścienia zaciskowego uszczelki ciśnieniowej zmienia naprawę kapsuły w targ z ciśnieniem: deep-rated metal, osadzenie szkła i Atlas bio-sealant mogą uratować albo uwięzić ścieżkę wznoszenia.
 
 ## Scanner
 
-PL LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Blizna clamp-ring. Tuleja wznoszenia przeżyła uderzenie, zużywając uszczelkę, która miała zabrać ją do domu.
 
 ## Terminal
 
-PL LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch trzyma tylko ciśnienie przedziału. Ascent seal wymaga deep-rated clamp ring, pressure-glass seat, shell-sealant map i zweryfikowanego profilu Deep Reach. Atlas-grown sealant może ocalić habitat, blokując czyste oddzielenie.
 
 ## Audio
 
-PL LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+Użyteczna uszczelka żyje w złą stronę.
 
 ## Field Note
 
-PL LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+Łata safe-room może kupić godzinę powietrza. Nie utrzyma impulsu startowego.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/pl_PL. -->

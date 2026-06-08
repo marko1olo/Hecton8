@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Опіка Black Keel
 
-Black Keel не особиста розкіш гравця. Це майже автоматичний salvage carrier у режимі claim-pool custody, страхового боргу й орбітальних вікон.
+Black Keel - не розкішний особистий корабель. Це майже автоматичний salvage carrier, що працює через custody пулу претензій, страховий борг і затримані орбітальні вікна. Він дає реальний шлях назад на орбіту, але не робить порятунок простим або вірним.
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Black Keel第一声"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Black Keel第一声
 
-CN LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+Black Keel的第一声以损坏音频和干净文本抵达玩家。它不是同伴,也不是反派演讲。它是carrier监控器,正在做自己被制造来做的事:确认信号、保留航线选项、排列义务、避免承诺。这个声音有用,因为它给出硬信息。它可怕,因为每个正确句子都让救援保持有条件。
 
 ## Scanner
 
-CN LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
+carrier语音缓存。音频破碎,文本干净,没有同情。
 
 ## Terminal
 
-CN LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE:音频通道降级。文本通道有效。操作员生存已确认。recovery优先级未解决,等待payload、隔离、lien和信号完整性状态。
 
 ## Audio
 
-CN LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
+已获取操作员信号。不要把确认和救援混为一谈。
 
 ## Field Note
 
-CN LOC HOLD: The first voice should feel useful before it feels bought.
+第一句有用的话背后带着计费等级。
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/zh_CN. -->

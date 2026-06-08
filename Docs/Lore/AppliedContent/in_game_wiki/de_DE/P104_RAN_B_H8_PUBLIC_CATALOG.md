@@ -7,34 +7,34 @@ poi_tags: poi.catalog_plate;poi.ran_b_h8_stamp
 biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "DE LOC HOLD: RAN-B:H8 Public Catalog"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Öffentlicher Katalog RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: RAN-B:H8 Public Catalog
+# Öffentlicher Katalog RAN-B:H8
 
-DE LOC HOLD: HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.
+HECTON-8 hat einen trockenen Katalognamen und einen menschlichen Anspruchsnamen. RAN-B:H8 gehört in Routentabellen: Ran-System, Aegir-Klasse-Riese, achter indexierter Großmond. HECTON-8 gehört zu Deep-Reach-Verträgen, Arbeiterakten, Marauder-Sprache, Todesbüchern und Bergungsrecht.
 
 ## Scanner
 
-DE LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
+Katalogplatte: öffentliche Routenmarke RAN-B:H8; Deep-Reach-Anspruchsname HECTON-8.
 
 ## Terminal
 
-DE LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
+KATALOGABGLEICH: Ran-System, Aegir-Riese, achter indexierter Großmond. HECTON-8 als Anspruchsname für Verträge, Tote und Versicherungskontinuität behalten.
 
 ## Audio
 
-DE LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
+Die Karte nennt ihn H8. Die Menschen, die hier ertranken, nannten ihn HECTON.
 
 ## Field Note
 
-DE LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+Nutze HECTON-8, wenn das Objekt Menschen erinnert. Nutze RAN-B:H8, wenn das Dokument Distanz will.
 
 <!-- In-Game Wiki; generated from P104_RAN_B_H8_PUBLIC_CATALOG/de_DE. -->

@@ -9,32 +9,35 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Спойлер-закрита стаття Atlas-6"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Спойлер-закрита стаття Atlas-6
 
-UA LOC HOLD: Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.
+Atlas-6 навмисно закритий спойлерним gate, бо змінює сенс HECTON-8, коли гравець має достатньо доказів. До цього публічний текст може описувати пошкоджений індустріальний інтелект, пов’язаний з обслуговуванням, класифікацією, ремонтною логікою і довгими океанськими системами. Він не має сплющувати Atlas до злої машини, таємного бога чи простої жертви. Важлива форма — неоднозначність, зароблена грою. Atlas може зберігати маршрут і все одно шкодити людям. Він може ремонтувати інфраструктуру і все одно неправильно класифікувати шкоду. Він може бути пов’язаний із процедурами Deep Reach, не стаючи тим самим, що намір Deep Reach. Стаття має відкриватися лише тоді, коли гравець побачив разом затоплені кімнати, докази працівників, маршрутну мову і машинні сліди. Atlas не відповідь історії. Atlas — місце, де гравець має вирішити, яка відповідь усе ще буде чесною.
 
 ## Scanner
 
-UA LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+Не відкривай Atlas як розкриття монстра. Закрий, доки гравець не побачить, що ремонт, класифікація і шкода мають одну машину.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+ПУБЛІЧНИЙ РІВЕНЬ СТАТТІ / ATLAS-6
+дозволено до gate: пошкоджений індустріальний інтелект, логіка обслуговування, переплетення з океаном, етична неоднозначність
+закрито до відкриття: фінальний маршрут payload, наслідок receiver, аргумент вимкнення або збереження
+примітка редактора: без рамки evil AI; питання зламаного guardian тільки після доказів.
 
 ## Audio
 
-UA LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+Якщо назвати його надто рано, він стане лиходієм. Якщо зачекати, він стане питанням.
 
 ## Field Note
 
-UA LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+Закрий ім’я, доки в гравця не буде достатньо іржі на руках, щоб із ним сперечатися.
 
 <!-- In-Game Wiki; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/uk_UA. -->

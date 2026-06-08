@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Atmosphere;
 using Hecton8.Core.Contracts.Physiology;
@@ -32,7 +33,6 @@ namespace Hecton8.Physiology
         private const string SuitCsvRelativePath = "suit_thermal_profiles.csv";
 #endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_320.bin";
-        private const uint ToxicityExposureLaneHash = 0x54584F58u; // TOX
         private const uint MetabolicToxicChemicalHash = 0x4D54584Eu; // MTXN
 
         private static readonly ProfilerMarker _ScheduleMarker = new ProfilerMarker("ShinobuMetabolism.Schedule");
@@ -169,6 +169,12 @@ namespace Hecton8.Physiology
         private bool _vaultRepairRequested;
         private bool _pendingShaderGlobals;
         private int _shaderWriteIndex;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            Volatile.Write(ref s_x001ShinobuMetabolismRuntimeSignalPushDropCount, 0);
+        }
 
         private void Awake()
         {
@@ -1119,24 +1125,38 @@ namespace Hecton8.Physiology
             for (int i = 0; i < exposureLimit; i++)
             {
                 MetabolicExposureSignalDTO signal = exposureSignals[i];
-                if (signal.EntityHash == 0u || signal.Frame == 0u || signal.ToxemiaDelta <= 0f)
+                if (signal.EntityHash == 0u ||
+                    signal.Frame == 0u ||
+                    !math.isfinite(signal.Exposure01) ||
+                    !math.isfinite(signal.ToxemiaDelta) ||
+                    signal.ToxemiaDelta <= 0f)
+                {
                     continue;
+                }
 
                 int slot = i % ShinobuMetabolismConstants.MetabolicExposureSignalsPerEntity;
                 if (slot == ShinobuMetabolismConstants.MetabolicExposureSignalSlotToxic)
                 {
+                    float exposure01 = math.saturate(signal.Exposure01);
+                    float toxemiaDelta = math.saturate(math.max(0f, signal.ToxemiaDelta));
+                    if (exposure01 <= 0.0001f && toxemiaDelta <= 0f)
+                        continue;
+
+                    bool hasSourceAup = math.all(math.isfinite(signal.AUP)) && math.lengthsq(signal.AUP) > 0.000001d;
+
                     ToxicityExposureSignal exposure = default;
-                    exposure.AUP = signal.AUP;
-                    exposure.Exposure01 = math.saturate(signal.Exposure01);
-                    exposure.ToxemiaDelta = math.saturate(signal.ToxemiaDelta);
+                    exposure.Exposure01 = exposure01;
+                    exposure.ToxemiaDelta = toxemiaDelta;
                     exposure.EntityId = signal.EntityHash;
                     exposure.ChemicalHash = signal.ChemicalHash != 0u ? signal.ChemicalHash : MetabolicToxicChemicalHash;
                     exposure.Frame = signal.Frame;
-                    exposure.Flags = 1;
-                    if (exposure.EntityId != 0u)
+                    if (hasSourceAup)
                     {
-                        SignalBus<ToxicityExposureSignal>.TryPushTracked(in exposure, ref s_x001ShinobuMetabolismRuntimeSignalPushDropCount);
+                        exposure.AUP = signal.AUP;
+                        exposure.Flags = ToxicityExposureSignal.FlagHasSourceAup;
                     }
+
+                    SignalBus<ToxicityExposureSignal>.TryPushTracked(in exposure, ref s_x001ShinobuMetabolismRuntimeSignalPushDropCount);
 
                     continue;
                 }

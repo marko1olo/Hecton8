@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel 보관권
 
-Black Keel은 개인 호화선이 아니다. claim-pool 보관, 보험 부채, 궤도 창에 묶인 거의 자동화된 salvage carrier다.
+Black Keel은 호화 개인선이 아니다. 청구 풀 보관, 보험 부채, 지연된 궤도 창을 통해 움직이는 거의 자동화된 salvage carrier다. 궤도로 돌아가는 실제 길을 주지만, 구조를 단순하거나 충성스럽게 만들지는 않는다.
 
 ## Scanner
 

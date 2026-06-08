@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "Pytanie finałowe: sprzedaż miejsca zbrodni"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# Pytanie finałowe: sprzedaż miejsca zbrodni
 
-PL LOC HOLD: Crime-scene sale is a material success route that keeps the moral damage visible.
+Sprzedaż miejsca zbrodni to droga materialnego sukcesu. Gracz przeżywa, może wyczyścić dług, a nawet odejść z pieniędzmi. Ceną jest to, że dowody kolonii stają się dźwignią dla tej samej sieci władzy, która pogrzebała obiekt, przycięła masę ratunkową i traktowała ciała jak pogodę kontraktową.
 
 ## Scanner
 
-PL LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
+Współrzędne, dowód XO i czysty łańcuch pieczy mogą kupić wyjście. Sprzedają też salę mordu tym, którzy ją wycenili.
 
 ## Terminal
 
-PL LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
+OŚ SPRZEDAŻY FINAŁOWEJ: współrzędne basenu Atlas, użyteczna próbka niebieskiego długu, dowód świadka XO i hash pieczy carriera mogą zdjąć zastaw operatora. Bez osobnego poświadczenia Deep Reach dostaje czystszy powrót na HECTON-8 niż martwi pracownicy kiedykolwiek mieli do ratunku.
 
 ## Audio
 
-PL LOC HOLD: You can pay the debt with a grave map.
+Dług można spłacić mapą grobu. Rejestr nazwie to pracą.
 
 ## Field Note
 
-PL LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+To nie żartobliwa porażka. To opłacone zakończenie z pokwitowaniem, zdjętym zastawem i gorszą przyszłością dla tych, którzy zostali na dole.
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/pl_PL. -->

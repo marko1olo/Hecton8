@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Aegir Transfer Windows"
+title: "Aegir : le ciel qui refuse le secours"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Aegir Transfer Windows
+# Aegir : le ciel qui refuse le secours
 
-FR LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir est un ciel opérationnel. La chaîne des lunes peut retarder ou corrompre un paquet sans rendre la surface toujours noire. Le secours échoue par distance, géométrie, droit et coût.
 
 ## Scanner
 
-FR LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Guide de route céleste. Pas de FTL, pas d'ansible. Les fenêtres Aegir passent par lunes, débris, garde de relais, état de tempête et comptabilité de masse Black Keel.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+GUIDE DE NAVIGATION AEGIR // BANDE PUBLIQUE. Employer des classes de risque : ombre de route, poussée chargée, dispersion de glace, panache de tempête, retard de guidage, garde du récepteur.
 
 ## Audio
 
-FR LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Planification Black Keel : "Signal vrai n'est pas signal utile. La fenêtre tient par masse, météo, garde et verrou de récepteur."
 
 ## Field Note
 
-FR LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+Règle de Maraudeur : ne demande pas si le signal est parti. Demande quelle lune l'a bloqué, quel registre l'a pris, et si le récepteur a entendu une personne ou une classe de masse.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/fr_FR. -->

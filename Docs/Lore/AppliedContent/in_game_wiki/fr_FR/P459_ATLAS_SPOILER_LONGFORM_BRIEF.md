@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "FR LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6 : logique de réparation sous porte spoiler"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Atlas Repair Ecology
+# Atlas-6 : logique de réparation sous porte spoiler
 
-FR LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas n'est pas un méchant théâtral. L'horreur vient d'un gouverneur industriel abîmé appliquant des catégories de réparation à une écologie noyée.
 
 ## Scanner
 
-FR LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Graine d'article spoiler. Public : Atlas était infrastructure de continuité. Restreint : classification abîmée route vie, métal, câble, corps et habitat par la même grammaire de réparation.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // BRIEF ATLAS. Paliers : factory-governor, repair ecology endommagée, Atlas-compatible contamination, conséquences payload receiver. Récepteurs finaux fermés.
 
 ## Audio
 
-FR LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Trace Atlas : "Personnel category unresolved. Sealant category available. Habitat breach priority remains active."
 
 ## Field Note
 
-FR LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+Note de Maraudeur : si Atlas aide, regarde ce qu'il a dépensé. Une réparation peut sauver l'air et effacer un nom.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/fr_FR. -->

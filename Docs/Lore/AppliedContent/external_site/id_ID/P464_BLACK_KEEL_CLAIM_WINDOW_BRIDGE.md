@@ -9,32 +9,26 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Jendela Klaim Black Keel"
+title: "Jendela Klaim Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Jendela Klaim Black Keel
+# Jendela Klaim Black Keel
 
-ID LOC HOLD: Black Keel dapat mendengar sinyal sebelum bisa mengangkat tubuh. Di Aegir, respons carrier adalah jalur berbayar melalui geometri relay, cuaca, karantina, penerimaan muatan, dan pemulihan massa. Kontak adalah fakta rute. Penyelamatan adalah rantai yang selesai.
+## Diterima Bukan Diangkat
 
-## Scanner
+Black Keel dapat mendengar sinyal sebelum bisa mengangkat tubuh. Selisih itu adalah jendela klaim.
 
-ID LOC HOLD: JENDELA KLAIM // Relay Aegir hanya memprediksi jendela terima. Pemulihan butuh paket naik, salaman karantina, dan alokasi tonne-window.
+Di Aegir, respons carrier bukan janji penyelamatan. Itu jalur bertimed melalui geometri relay, cuaca, tinjauan karantina, penerimaan muatan, dan pemulihan massa. Jendela yang sama menilai kargo, bukti, utang oksigen, dan kesejahteraan operator karena setiap kilogram yang meninggalkan HECTON-8 menghabiskan kesempatan orbital yang sama.
 
-## Terminal
+Keelmark Mutual mencatat jendela itu sebagai waktu kustodi. Black Keel mencatat penerimaan dikonfirmasi, pengangkatan tertunda. Klausul Deep Reach masih bisa menempatkan sampel, paket koordinat, atau tahanan karantina di depan operator jika bahasa prioritasnya sah.
 
-ID LOC HOLD: PEMBERITAHUAN KEELMARK // Sinyal operator diterima. Prioritas pemulihan belum selesai. Penerimaan sinyal atau paket bukti tidak menjamin operator dipulihkan.
+P-63 memperlihatkan aturan ini lebih awal. Panel relay dapat menunjukkan pengakuan bersih saat bathydrop masih tanpa paket naik, tanpa salaman karantina, dan tanpa tonne-window yang dialokasikan. Carrier tahu operator hidup. Ia dapat menagih operator. Ia dapat memberi harga pada paket. Ia tetap tidak bisa mengabaikan tekanan HECTON-8, waktu Aegir, atau urutan kontrak.
 
-## Audio
-
-ID LOC HOLD: Relay Black Keel: sinyal operator telah dinilai. Jendela pemulihan tertunda. Jangan samakan penerimaan dengan pengangkatan.
-
-## Field Note
-
-ID LOC HOLD: Jika Black Keel menjawab, hitung tagihannya, bukan penyelamatan. Paket diterima hanya tempat antrean sampai massa, segel, karantina, dan cuaca sepakat.
+Kontak adalah fakta rute. Penyelamatan adalah rantai yang selesai.
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/id_ID. -->

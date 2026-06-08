@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Penahanan Karantina: Udara Apak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Penahanan Karantina: Udara Apak
 
-ID LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+Penahanan karantina adalah false exit paling sunyi. Ia tidak membutuhkan penjahat di ruangan. Formulir berkata dipulihkan hidup, penghitung udara berkata ransum aktif, dan pintu berikutnya hanya terbuka setelah review kontaminasi, tantangan claimant, dan review asuransi.
 
-## Scanner
-
-ID LOC HOLD: You are alive, sealed, and still not free.
-
-## Terminal
-
-ID LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-ID LOC HOLD: The hatch opens only to another closed hatch.
-
-## Field Note
-
-ID LOC HOLD: This is the bureaucratic version of drowning.
+Hasilnya kejam karena dapat dipertahankan. Tidak ada yang membunuh saksi. Tidak ada yang menghancurkan sampel. Sistem hanya membuat setiap pernyataan menunggu lebih lama daripada yang pernah bisa ditunggu tubuh. Pemain selamat dari laut dan masuk ke koridor tersegel yang dibangun dari prosedur.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/id_ID. -->

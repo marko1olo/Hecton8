@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Predator Shadow Encounter Grammar"
+title: "Ontmoetingsgrammatica: roofdierschaduw"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Predator Shadow Encounter Grammar
+# Ontmoetingsgrammatica: roofdierschaduw
 
-NL LOC HOLD: HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.
+Roofdierschaduwen bepalen HECTON-8s angst zonder goedkope onthullingslogica. Gevaar arriveert vaak als ontbrekende prooi, gebroken bloom, verkeerd sonar en een route die plots te veel zuurstof kost.
 
 ## Scanner
 
-NL LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Spoor van roofdierschaduw. Sonargat, afgesneden prooipad, plotselinge stilte van grazers, brede lichtocclusie. Lichaam onbevestigd; lichtdiscipline en uitgangshoek houden.
 
 ## Terminal
 
-NL LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+ONTMOETINGSGRAMMATICA / ROOFDIERSCHADUW / rol: routedruk vóór lichaamsonthulling, piek in zuurstofverbruik, breuk in scanvertrouwen / veilige lezing: prooipad stopt, bloomgeluid stort in, sonarretours splitsen rond leeg water / afwijzen: scripted volledige onthulling als eerste waarschuwing, onschuldige jump scare, schone boss arena / routenotitie: als alle kleine dieren stoppen voordat de scanner een doel noemt, is de route al veranderd.
 
 ## Audio
 
-NL LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+Het veilige teken is niet het zien. Het veilige teken is merken dat al het andere eerst stilte kiest.
 
 ## Field Note
 
-NL LOC HOLD: Use for AI/spawn design notes and scanner cards.
+Noem het dier laat. Laat prooi, licht en sonar eerst falen. Als de route stilvalt, bezit de schaduw haar al.
 
 <!-- External Site; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/nl_NL. -->

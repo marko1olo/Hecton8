@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Drop Capsule Damage Sequence"
+title: "تسلسل تلف كبسولة الهبوط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Drop Capsule Damage Sequence
+# تسلسل تلف كبسولة الهبوط
 
-AR LOC HOLD: The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.
+يجعل bathy-drop المتضرر الهروب سلسلة هندسية. بقي الملجأ والتشخيص، لكن عتاد الصعود إما مفقود أو مغمور.
 
 ## Scanner
 
-AR LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+تشخيص الكبسولة. أنقذ الهبوط الجسد بأن استهلك عتاد الصعود.
 
 ## Terminal
 
-AR LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+ملخص تلف BATHY-DROP: crush-frame ملتوي؛ high-gain mast مفقود؛ ascent avionics مغمورة؛ recovery/flotation ring ممزقة؛ عوامة الطوارئ تكرر no-lock. طاقة الملجأ متاحة. الصعود المستقل غير متاح.
 
 ## Audio
 
-AR LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus مغمور. Recovery ring no-lock. هذه الكبسولة تبقيك تتنفس، لكنها لا تأخذك إلى البيت.
 
 ## Field Note
 
-AR LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+الحلقة السفلية صارت بيضوية بمقدار إصبعين. ضاع high-gain mast. ما زالت العوامة تطلب إطلاقاً لا تستطيع فعله.
 
 <!-- In-Game Wiki; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/ar_SA. -->

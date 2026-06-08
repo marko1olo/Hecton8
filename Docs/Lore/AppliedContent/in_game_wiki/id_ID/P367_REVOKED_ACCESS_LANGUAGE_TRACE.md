@@ -9,32 +9,36 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Revoked Access Language Trace"
+title: "Jejak Bahasa Akses Dicabut"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Revoked Access Language Trace
+# Jejak Bahasa Akses Dicabut
 
-ID LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+Bahasa akses yang dicabut menjadi salah satu kunci Deep Reach yang paling sunyi. Sebuah pintu bisa menolak mantan pekerja, menandai permintaan sebagai pemeliharaan rutin, namun tetap membocorkan istilah tepat yang menamai rute evakuasi tersembunyi. Di HECTON-8, ini penting karena pemain tidak membutuhkan pengakuan bersih untuk mengikuti jejaknya. Frasa lama sudah cukup: protokol hitungan terdegradasi, saksi pengganti, arsip rute-aman, pengarahan pelestarian klaim. Kata-kata itu dibuat untuk peninjauan tanggung jawab, bukan penyelamatan. Penolakan membuktikan dua hal sekaligus. Kredensialnya mati. Prosedur di baliknya tidak.
 
 ## Scanner
 
-ID LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+Kuncian tidak menulis dilarang. Ia menulis reklasifikasi pemeliharaan, penahanan kontinuitas, dan materi rute. Gaya lama Deep Reach: penolakan yang tetap menunjuk ke pintu terkubur.
 
 ## Terminal
 
-ID LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+RESPONS AKSES / ARSIP RUTE-AMAN
+kredensial: dicabut
+alasan: materi kontinuitas evakuasi dibatasi untuk staf Deep Reach bersertifikat
+istilah terlihat: hitungan terdegradasi, saksi pengganti, rute pelestarian klaim, reklasifikasi pemeliharaan
+catatan: personel lapangan lama hanya boleh melihat bahasa penolakan untuk rekonsiliasi insiden.
 
 ## Audio
 
-ID LOC HOLD: That is not security. That is a memo pretending to be a door.
+Mereka tidak menghapus koridornya. Mereka membungkusnya dalam kosakata yang masih dipahami staf yang merasa bersalah.
 
 ## Field Note
 
-ID LOC HOLD: Lockout language hints at hidden liability without granting free access.
+Lencananya mati. Kuncian itu masih memakai dialek kantor yang mengubur rute.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/id_ID. -->

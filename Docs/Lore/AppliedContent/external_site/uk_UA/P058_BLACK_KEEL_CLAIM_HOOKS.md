@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Гачки претензій Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Гачки претензій Black Keel
 
-UK LOC HOLD: Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses.
+Гачки претензій Black Keel задають стартовий тиск. Black Keel не театральний корабель-лиходій; це носій, зв’язаний економікою пулу претензій, карантинним правом і сплячими важелями Deep Reach. Проблема гравця водночас практична й моральна: голос над океаном може чути сигнал лиха, але шлях додому треба зробити цінним, сертифікованим і юридично незручним для ігнорування.
 
 ## Scanner
 
-UK LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+У маніфесті Black Keel — обладнання пулу претензій, а в клаузулах — важіль Deep Reach.
 
 ## Terminal
 
-UK LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+ОПІКА НОСІЯ: повернення оператора дозволено після сортування корисного вантажу, карантинної брами, сертифіката маршруту й очищення відповідальності. Пріоритетну печатку Deep Reach збережено в сплячих клаузулах.
 
 ## Audio
 
-UK LOC HOLD: It can hear you. It just has to price the answer first.
+Він тебе чує. Просто спершу мусить оцінити ціну відповіді.
 
 ## Field Note
 
-UK LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+Корабель не злий. Його здано контракту, який уміє бути жорстоким, не звучачи живим.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/uk_UA. -->

@@ -7,34 +7,34 @@ poi_tags: poi.tide_model_terminal;poi.glacier_warning
 biome_tags: biome.tide_gauge;biome.glacier_break
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Припливна модель Мари Венн"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# Припливна модель Мари Венн
 
-UK LOC HOLD: Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.
+Мара Венн дає Great Tide наукову свідку. Її модель поєднала геометрію місяців Aegir, cryosphere shear і евакуаційну місткість в один неприємний запас. Deep Reach не стер модель; він змінював мітку дії, доки попередження не стало досить дешевим для ігнорування.
 
 ## Scanner
 
-UK LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
+Мара Венн не передбачила вбивство. Вона передбачила припливний запас, який Deep Reach перейменував на малоймовірний.
 
 ## Terminal
 
-UK LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
+ПЕРЕГЛЯД МОДЕЛІ VENN: cryosphere shear перевищує евакуаційний запас за весняної геометрії Aegir; дію review знижено до monitor до бюджету asset-continuity.
 
 ## Audio
 
-UK LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
+Для тих, хто читав числа, вода не прийшла раптово.
 
 ## Field Note
 
-UK LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+Попередження стає дешевим, коли його понижують на папері.
 
 <!-- In-Game Wiki; generated from P062_MARA_VENN_TIDE_MODEL/uk_UA. -->

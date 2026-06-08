@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Beam Sail and Pellet Lane"
+title: "光束帆与颗粒航道"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Beam Sail and Pellet Lane
+# 光束帆与颗粒航道
 
-ZH LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+光束帆、颗粒航道、聚变捕获级和磁帆让无FTL的近光速货运变得可行。船离港时带着贮箱、护盾冰、散热器和控制授权，然后向路线借走剩下的发动机：后方的光束功率、按路径计时的颗粒质量，以及同意拥有制动责任的接收方。所以Aegir可以抵达，却仍像被遗弃。走廊能移动排期货物；它不能像救援绳一样被召唤。
 
 ## Scanner
 
-ZH LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+过境航道记录：帆并不是自己推动自己。它从船后的阵列租用功率，从前方颗粒流租用质量。
 
 ## Terminal
 
-ZH LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+航道状态：光束阵列已结清。颗粒流超出合同0.8 ppm。捕获燃烧仍可执行。没有制动所有者，快速货物会变成快速残骸。
 
 ## Audio
 
-ZH LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+船之所以快，是因为半台发动机在船外。
 
 ## Field Note
 
-ZH LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+如果记录只夸光束，就继续读到它说出捕获所有者为止。
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/zh_CN. -->

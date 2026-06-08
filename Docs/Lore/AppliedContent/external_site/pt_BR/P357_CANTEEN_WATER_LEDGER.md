@@ -9,32 +9,20 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Canteen Water Ledger"
+title: "Registro de Água da Cantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Canteen Water Ledger
+# Registro de Água da Cantina
 
-PT-BR LOC HOLD: HECTON-8 makes catastrophe believable through ordinary systems under pressure: water ledgers, canteen tokens and shift accountability.
+O Registro de Água da Cantina é um dos artefatos humanos mais simples de HECTON-8: uma placa de sala de refeições que anota água potável, devolução de fichas, acesso às bombas e exceções médicas. Ele não explica o desastre. Mostra a colônia logo antes de o desastre virar história.
 
-## Scanner
+Seu valor é textura e prova. Seis fichas faltando parecem pouco até o jogador entender o que água significava numa colônia de pressão. Água potável passava por filtros, contabilidade de turno, overrides médicos e custody da sala de bombas. Um copo faltando podia ser um trabalhador cansado. Também podia ser uma equipe doente, uma linha contaminada, uma ordem de ração contornada ou um supervisor escondendo uma falha local dos relatórios da Deep Reach.
 
-PT-BR LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
-
-## Terminal
-
-PT-BR LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
-
-## Audio
-
-PT-BR LOC HOLD: The last argument was about water tokens.
-
-## Field Note
-
-PT-BR LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+O ponto não é melodrama. O registro torna a colônia legível como trabalho: pessoas saíam de turno, discutiam, corrigiam registros, pegavam ferramentas emprestadas, protegiam os seus e tentavam manter a sala normal enquanto o oceano já entrava no sistema. Em HECTON-8, esse traço comum pode virar prova.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/pt_BR. -->

@@ -4,7 +4,7 @@ release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.vent_micronode_power_nest
 unlock_id: unlock.vent_micronode_power_nest
 poi_tags: poi.vent_micronode_nest;poi.thermal_logic_patch
-biome_tags: biome.atlas;biome.vent
+biome_tags: biome.atlas;biome.abyss
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
@@ -19,8 +19,8 @@ localization_flags: 1
 
 # 噴出口マイクロノード電力巣
 
-下層海洋は小さな電力に満ちているが、豊かな電力ではない。噴出口は金属質の地殻へ熱を流し、化学勾配は鉱物の皮膚に集まり、古いハードは接点やコイルを残した。
+噴出口マイクロノード電力巣は、深層修理網の遅い心拍だ。噴出口近くでは、海が熱勾配、鉱物流、圧力振動、化学的不均衡を提供する。Deep Reachはそれらを計器と非常充電に使った。清潔な送電網が死んだ後も、Atlasはその習慣を続けた。
 
-一つのノードはリレーを鳴らし、ドローンを一回だけ這わせ、記憶を保存できる。噴出口へ近づく理由にはなるが、安全な宝箱にはならない。熱、圧力、毒、Atlas保守論理が同じ巣にいる。
+マイクロノードはAtlasを全知にはしない。その限界が重要だ。近くの膜へパルスを送り、シーラント層を硬化させ、ドローン巣に微弱充電を流し、損傷基質に局所判断記録を残すことはできる。そうしたノードが数千集まると、深淵は組織化されて感じられるが安全にはならない。底でプレイヤーが相手にするのは神ではない。人間の用途を忘れた小さな修理の都市だ。
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/ja_JP. -->

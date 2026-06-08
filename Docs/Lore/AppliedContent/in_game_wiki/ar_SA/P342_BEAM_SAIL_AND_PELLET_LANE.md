@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Beam Sail and Pellet Lane"
+title: "شراع الشعاع ومسار الحبيبات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Beam Sail and Pellet Lane
+# شراع الشعاع ومسار الحبيبات
 
-AR LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+أشرعة الشعاع ومسارات الحبيبات ومراحل الالتقاط الاندماجي والمغاسيل جعلت الشحن القريب من الضوء عمليا من دون FTL. تغادر السفينة ومعها خزانات وجليد درع ومشعات وسلطة تحكم، ثم تستعير بقية محركها من الطريق: طاقة شعاعية خلفها، وكتلة حبيبات مضبوطة في مسارها، ومستقبلا يقبل ملكية الكبح. لذلك يكون Aegir قابلا للوصول ومع ذلك مهجورا. الممر يحرك حمولة مجدولة؛ لا يمكن استدعاؤه كحبل إنقاذ.
 
 ## Scanner
 
-AR LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+سجل مسار العبور: الشراع لم يدفع نفسه. استأجر طاقة من مصفوفات خلف السفينة وكتلة من تيارات حبيبات أمامها.
 
 ## Terminal
 
-AR LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+حالة المسار: مصفوفة الشعاع مدفوعة. تيار الحبيبات خارج العقد بمقدار 0.8 ppm. حرق الالتقاط ما زال ممكنا. غياب مالك الكبح يحول الشحن السريع إلى حطام سريع.
 
 ## Audio
 
-AR LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+السفينة سريعة لأن نصف المحرك خارج السفينة.
 
 ## Field Note
 
-AR LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+إذا كان السجل يمدح الشعاع فقط، فواصل القراءة حتى يذكر مالك الالتقاط.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/ar_SA. -->

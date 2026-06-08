@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute, beacon mort extérieur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Outer Dead Beacon Moon Role
+# Mute, beacon mort extérieur
 
-FR LOC HOLD: Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.
-
-## Scanner
-
-FR LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
-
-## Terminal
-
-FR LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
-
-## Audio
-
-FR LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
-
-## Field Note
-
-FR LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Mute est l'endroit où l'ancienne infrastructure se tait sans disparaître. Son réseau de beacons morts continue de plier les solvers de route parce que personne ne peut effacer toutes les tables héritées qui en dépendaient. Parfois les données fantômes prédisent une fenêtre relais utile. Parfois elles donnent à un bureau carrier l'excuse pour retenir un message.
 
 <!-- External Site; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/fr_FR. -->

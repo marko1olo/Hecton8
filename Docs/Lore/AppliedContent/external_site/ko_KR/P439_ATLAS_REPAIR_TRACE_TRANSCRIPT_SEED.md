@@ -9,32 +9,22 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Atlas 수리 흔적 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Atlas Repair Trace Transcript Seed
+# Atlas 수리 흔적 기록
 
-KO LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+## 정비 문법
 
-## Scanner
+Atlas는 악당, 신, 친절한 조수처럼 말하면 안 된다. 가장 강한 흔적은 거의 평범하다. leak, seal, tissue, cable, pressure, route. 손상된 산업 지능은 도덕 범주가 아니라 serviceability로 세계를 분류한다.
 
-KO LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+그 붕괴가 공포다. 따뜻한 몸이 같은 수리 줄에서 cold relay 옆에 놓일 수 있다. fauna 경로는 신호나 sealant를 운반하기 때문에 serviceable이 될 수 있다. 통로는 압력에는 더 안전하고 안에 갇힌 사람에게는 더 나쁠 수 있다. priority stack이 이미 틀렸다면 Atlas에게 증오는 필요 없다.
 
-## Terminal
-
-KO LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
-
-## Audio
-
-KO LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
-
-## Field Note
-
-KO LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+이 오디오는 플레이어가 기계와 논쟁하게 만들어야 하지만 기계를 최종 범인으로 만들면 안 된다. Deep Reach가 권한을 작성했고, 고립이 맥락을 부쉈으며, Atlas는 infrastructure라고 부르도록 허가받은 것을 계속 수리했다.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/ko_KR. -->

@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Quarantine Release Delay Proof"
+title: "החזקת שחרור הסגר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Quarantine Release Delay Proof
+# החזקת שחרור הסגר
 
-HE LOC HOLD: Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
+רשומת ההחזקה אינה עושה את ההסגר לרוע. היא מראה תזמון. Deep Reach יכלה לקרוא לזה אי ודאות, לעכב שחרור, לשמר עמדת ביטוח ולהחזיק עובד בתוך האזור עד שהמסלול מת.
 
 ## Scanner
 
-HE LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+לוח החזקת הסגר. שפת ההגנה מופיעה אחרי שנתיב היציאה כבר נעול.
 
 ## Terminal
 
-HE LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. החזק עד review. תור recovery מקבל מסת נכס לפני שחרור עובד. insurance ping פעיל.
 
 ## Audio
 
-HE LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+הסגר יכול להציל גוף. הוא יכול גם לגרום לגוף לחכות עד שיהפוך לניירת.
 
 ## Field Note
 
-HE LOC HOLD: Use where player may confuse rescue with custody.
+הערת בוזז: הגנה אינה מוכחת במילה הגנה. בדוק את השעון.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/he_IL. -->

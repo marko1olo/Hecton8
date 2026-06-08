@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela 内侧中继交通角色"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Inner Relay Moon Traffic Role
+# Vela 内侧中继交通角色
 
-ZH LOC HOLD: Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
+Vela 是 Aegir 内侧工作卫星。它穿过带电航道的速度足以惩罚糟糕护盾，但旧 relay 遮蔽和反射仍塑造路线表。Black Keel 进近可以利用 Vela 的阴影隐藏几分钟链路噪声。同一片阴影也能拖延求救 ping，直到合同钟已经换手。
 
 ## Scanner
 
-ZH LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
+卫星账本。Vela 遮蔽并反射 relay 交通；船只把它当成移动收费门。
 
 ## Terminal
 
-ZH LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
+卫星阶梯 H2 VELA：relay 阴影将在四十三分钟后清除。Skarn 侧辐射计数上升。只要 carrier 质量低于申报上限，HECTON transfer burn 仍合法。
 
 ## Audio
 
-ZH LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
+没人为风景去 Vela。你计算它，等待它，并希望旧 beacon 继续用同一种方式撒谎。
 
 ## Field Note
 
-ZH LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Vela 有用，因为它会准时挡路。
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/zh_CN. -->

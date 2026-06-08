@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela als binnenste relay-verkeersmaan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Inner Relay Moon Traffic Role
+# Vela als binnenste relay-verkeersmaan
 
-NL LOC HOLD: Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
+Vela is een binnenste werkmaan van Aegir. Ze kruist geladen banen snel genoeg om slechte afscherming te straffen, maar haar oude relay-maskers en reflecties vormen nog steeds de routetabellen. Een Black Keel-nadering kan haar schaduw gebruiken om linkruis enkele minuten te verbergen. Diezelfde schaduw kan een noodping vertragen tot de contractklok al van eigenaar is veranderd.
 
 ## Scanner
 
-NL LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
+Maanledger. Vela maskeert en weerspiegelt relay-verkeer; schepen behandelen haar als een bewegende tolpoort.
 
 ## Terminal
 
-NL LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
+MAANLADDER H2 VELA: relay-schaduw klaart in drieënveertig minuten. Stralingscount stijgt aan Skarn-zijde. HECTON transfer burn blijft legaal als carrier-massa onder ingediend limiet blijft.
 
 ## Audio
 
-NL LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
+Niemand gaat naar Vela voor het uitzicht. Je telt haar, wacht op haar en hoopt dat de oude beacon op dezelfde manier blijft liegen.
 
 ## Field Note
 
-NL LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Vela is nuttig omdat ze op schema in de weg staat.
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/nl_NL. -->

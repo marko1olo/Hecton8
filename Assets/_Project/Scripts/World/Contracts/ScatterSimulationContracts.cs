@@ -128,6 +128,8 @@ namespace Hecton8.World
     [StructLayout(LayoutKind.Explicit, Size = ScatterSimulationContractLayout.ScatterSimulationParitySnapshotStrideBytes)]
     public struct ScatterSimulationParitySnapshot
     {
+        public const uint CandidateCapacitySaturatedFlag = 1u;
+
         [FieldOffset(0)]
         public ulong CandidateChecksum;
 
@@ -168,7 +170,12 @@ namespace Hecton8.World
         public int SuppressedCellCount;
 
         [FieldOffset(60)]
-        private uint _pad0;
+        public uint EvaluationFlags;
+
+        public static bool HasCandidateCapacitySaturated(in ScatterSimulationParitySnapshot snapshot)
+        {
+            return (snapshot.EvaluationFlags & CandidateCapacitySaturatedFlag) != 0u;
+        }
     }
 
     /// <summary>

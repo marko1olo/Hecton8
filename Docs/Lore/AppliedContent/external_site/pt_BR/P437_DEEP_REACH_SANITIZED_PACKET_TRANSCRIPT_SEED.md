@@ -9,32 +9,22 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Transcrição do Pacote Sanitizado da Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Transcrição do Pacote Sanitizado da Deep Reach
 
-PT LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
+## Linguagem Limpa, Atraso Sujo
 
-## Scanner
+O pacote da Deep Reach é perigoso porque soa como ajuda. Ele nomeia segurança. Reconhece um incidente. Usa os substantivos certos do desastre: pressão, quarentena, coordenadas, exposure, recovery. Depois remove os verbos que importam. Quem atrasou a evacuação? Quem precificou o hold? Quem manteve o weighting do Atlas em vigor enquanto a colônia falhava?
 
-PT LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Linguagem sanitizada não precisa negar o oceano. Negação seria fácil de derrubar. O pacote funciona aceitando o desastre físico e rearranjando responsabilidade como pending review. Coordenadas vêm primeiro porque a empresa quer custody do espaço de claim antes de se comprometer com corpos. O custo de quarentena vem depois porque trabalhadores vivos e evidência contaminada viram liabilities na mesma mesa.
 
-## Terminal
-
-PT LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
-
-## Audio
-
-PT LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
-
-## Field Note
-
-PT LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Para o jogador, essa transcrição deve criar raiva sem quebrar plausibilidade. A Deep Reach não é uma vilã de desenho gritando da órbita. É uma firma que sabe exatamente quais campos omitir de uma mensagem que depois pode virar prova.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/pt_BR. -->

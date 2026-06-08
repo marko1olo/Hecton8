@@ -9,32 +9,16 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Mutual Custody"
+title: "Опека Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Keelmark Mutual Custody
+# Опека Keelmark Mutual
 
-Keelmark Mutual Custody дает carrier правдоподобного юридического владельца: страховую оболочку с remote underwriting, lien control, quarantine reserves и payload custody rules.
-
-## Scanner
-
-Страховая оболочка цела. Keelmark Mutual владеет lien раньше, чем телом.
-
-## Terminal
-
-KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.
-
-## Audio
-
-Полис старше твоего сигнала бедствия.
-
-## Field Note
-
-Не делай страховщика тайным злодеем. Делай машину, которой никогда не нужно было заботиться.
+Keelmark Mutual страшна потому, что ей не нужна ненависть. Это страховщик, хранитель, держатель lien и маршрутный клерк, сложенные в одно удаленное расписание. Когда Black Keel слышит оператора, страховой маршрут Keelmark уже сопоставил тело с повреждением судна, массой salvage, карантинным риском и ценностью доказательств. Компании не нужно никого убивать, чтобы океан казался враждебным. Она может ждать, выставлять счет, классифицировать и просить еще одно подтверждение, пока давление съедает комнату. Так carrier остается приземленным: враг не злое лицо на экране, а контракт, достаточно старый, чтобы ответить раньше, чем закончится сигнал бедствия.
 
 <!-- External Site; generated from P087_KEELMARK_MUTUAL_CUSTODY/ru_RU. -->

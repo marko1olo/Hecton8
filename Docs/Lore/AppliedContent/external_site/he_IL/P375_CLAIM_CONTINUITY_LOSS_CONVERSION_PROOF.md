@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Claim Continuity Loss Conversion Proof"
+title: "המרת אובדן לרציפות claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Claim Continuity Loss Conversion Proof
+# המרת אובדן לרציפות claim
 
-HE LOC HOLD: The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.
+החוליה האחרונה בשקר של Deep Reach אינה קובץ הסתרה דרמטי. זו המרה חשבונאית שיודעת בדיוק איך לשרוד. ה-ledger מקבל שאנשים נעלמו, מודולים נפגעו ומסלולים נפגעו, ואז מעביר כל עובדה לקטגוריה שמערכת claim יכולה לעבד. היעדר עובדים נעשה unrecoverable loss. ראיה נעשית חומר תחת custody. מטען ששרד נעשה recoverable value. ה-claim עצמו נשאר continuous, כלומר בעלות יכולה לשרוד את המושבה. ברגע הזה HECTON-8 הופך מדוח תאונה למכונה מוסרית. שחקן שמעלה את ה-ledger יכול לחשוף את המתים, למכור את הראיה, לקבור אותה או לנתב אותה מחדש. המסמך יקר כי התאגיד כבר לימד את השוק להעריך אותו.
 
 ## Scanner
 
-HE LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
+חותמת שולחן הפסדים חולצה. ה-ledger שרד טוב יותר מהעובדים ששינה את שמם.
 
 ## Terminal
 
-HE LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. biological workforce הומרה ל-unrecoverable loss. Material and proof custody remain active pending receiver assignment.
 
 ## Audio
 
-HE LOC HOLD: This is where dead workers became a clean column.
+כאן אנשים נעשו עמודה נקייה.
 
 ## Field Note
 
-HE LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+הערת בוזז: ledger יכול לזכור את המתים ועדיין לבזבז אותם.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/he_IL. -->

@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "Autoridad de retardo lumínico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# Autoridad de retardo lumínico
 
-ES LOC HOLD: Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather.
-
-## Scanner
-
-ES LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
-
-## Terminal
-
-ES LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
-
-## Audio
-
-ES LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
-
-## Field Note
-
-ES LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+Una llamada de socorro en HECTON-8 es un cargamento físico de significado. Sale de un mástil inundado, cruza el espacio de Aegir a velocidad de la luz, espera en búferes de relé y llega a Black Keel por una cola que ya sabe poner precio al riesgo. La primera demora es distancia honesta. Las demoras posteriores son humanas: clase de custodia, ventanas de tormenta, lenguaje de responsabilidad y la costumbre del portador de contestar al activo antes que a la persona. Por eso una respuesta puede estar técnicamente fresca y aun así no servir dentro de una sala de presión que se derrumba.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/es_ES. -->

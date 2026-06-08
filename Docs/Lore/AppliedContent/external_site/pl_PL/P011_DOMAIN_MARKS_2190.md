@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Znaki domen 2190
 
-Domain Marks 2190 pokazuje HECTON-8 jako część dojrzałej, ale rzadkiej sfery ludzkiej. Odległość nadal decyduje o pomocy.
-
-## Scanner
-
-Mieszane oznaczenia domen. Tablica Sol, stempel Barnard, custody trasy Luyten.
-
-## Terminal
-
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
-
-## Audio
-
-To miejsce nie jest poza cywilizacją. Tak wygląda cywilizacja, gdy wygrywa odległość.
-
-## Field Note
-
-Ludzkość urosła. Ratunek nadal musi dolecieć.
+W 2190 jeden zepsuty przedmiot może mieć kilku właścicieli: standard Sol, naprawę Barnard, opiekę Luyten, roszczenie Aegir. Izolacja HECTON-8 nie bierze się z braku historii; historia zostaje na metalu, gdy pokój tonie.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/pl_PL. -->

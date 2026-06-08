@@ -9,32 +9,22 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Transcripción del paquete saneado de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Transcripción del paquete saneado de Deep Reach
 
-ES LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
+## Lenguaje Limpio, Demora Sucia
 
-## Scanner
+El paquete de Deep Reach es peligroso porque suena a ayuda. Nombra seguridad. Reconoce un incidente. Usa los sustantivos correctos del desastre: presión, cuarentena, coordenadas, exposure, recovery. Luego elimina los verbos importantes. ¿Quién retrasó la evacuación? ¿Quién puso precio a la retención? ¿Quién mantuvo activa la ponderación Atlas mientras la colonia fallaba?
 
-ES LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+El lenguaje saneado no necesita negar el océano. La negación sería fácil de desmontar. El paquete funciona aceptando la catástrofe física y reordenando la responsabilidad como pending review. Las coordenadas van primero porque la compañía quiere custody del espacio de claim antes de comprometerse con cuerpos. El coste de cuarentena viene después porque trabajadores vivos y evidencia contaminada se convierten en liabilities bajo el mismo escritorio.
 
-## Terminal
-
-ES LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
-
-## Audio
-
-ES LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
-
-## Field Note
-
-ES LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Para el jugador, esta transcripción debe crear rabia sin romper la plausibilidad. Deep Reach no es un villano de caricatura gritando desde la órbita. Es una firma que sabe exactamente qué campos omitir de un mensaje que más tarde puede convertirse en prueba.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/es_ES. -->

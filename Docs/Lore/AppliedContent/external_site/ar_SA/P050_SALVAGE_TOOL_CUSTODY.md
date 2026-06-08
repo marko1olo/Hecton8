@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.deep_colony
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Salvage Tool Custody"
+spoiler_tier: 1
+title: "وصاية أداة salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Salvage Tool Custody
+# وصاية أداة salvage
 
-Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder.
+على HECTON-8 يمكن للأداة أن تكون معدات نجاة وشاهدا عقديا في الوقت نفسه. سجلات وصاية salvage تربط القطع والإصلاح والعينات برموز claim، وتجعل الفعل النافع جزءا من دليل أو دين أو ضغط دفع لاحق.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+رصيف الأداة يحتوي سجل وصاية مختوما. آخر قطع وإصلاح وكيس عينة مرتبطة برمز claim من Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: استخدام القاطع مقبول تحت salvage claim. فعل الإصلاح مشهود. حقوق العينة ملحقة برمز Keelmark Mutual. تصدير الدليل يتعارض مع طريق الدفع المادي.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+كل قطع مفيد يترك شاهدا.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+القاطع قد ينقذ هواءك ويبيع يديك في الضربة نفسها. افحص ما يسجله قبل أن تسميه ملكك.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/ar_SA. -->

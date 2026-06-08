@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Bus Perbaikan Biofilm Konduktif
 
-Di terumbu kabel, infrastruktur rusak jarang tetap bersih. Air asin hangat memberi makan lapisan mikroba di atas isolasi robek; besi dan tembaga menjadi rangka; pulsa diagnostik lama memberi irama pada pertumbuhan.
+Bus perbaikan biofilm konduktif dimulai dari kecelakaan praktis. Jaket kabel Deep Reach yang tua pecah di bawah tekanan, garam tembaga merembes ke air, dan hamparan mikroba lokal yang sudah tahan panas mineral menetap di luka itu. Atlas membaca arus lemah sebagai jalur servis. Ia tidak perlu laut berbicara; ia hanya perlu lapisan basah yang mampu membawa pulsa.
 
-Bagi Marauder, itu petunjuk bernilai. Kulit kabel hidup bisa menunjuk batang layanan, pintu daya rendah, sarang drone, atau jalur data. Setiap potongan tetap berisiko karena Atlas bisa membaca jembatan hidup itu sebagai inventaris perbaikan sah.
+Bagi Marauder, ini hadiah sekaligus jebakan. Jembatan biofilm bisa membangunkan pintu kedap, membawa handshake pemindai, atau membuat pompa yang lama diam menjawab sesaat. Jembatan yang sama juga bisa berbohong. Jalur bisa menyala hijau walau kapasitas bebannya hilang, dan potongan bersih bisa mengubah koridor yang masih bisa dilalui menjadi pipa banjir. Pertanyaannya bukan apakah pertumbuhan itu alami atau buatan. Pertanyaannya adalah apa yang sudah dihitung Atlas sebagai diperbaiki.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/id_ID. -->

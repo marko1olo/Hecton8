@@ -59,7 +59,10 @@ namespace Hecton8.SaveSystem
         private const uint SaveEventListenerContextHash = 0x53455652u; // SEVR
         private const uint SaveEventListenerExceptionWarningHash = 0x53455645u; // SEVE
         private const uint SaveEventListenerExceptionContextHash = 0x53455658u; // SEVX
+        private const uint SaveEventListenerInitializationFailureWarningHash = 0x53454952u; // SEIR
         private const uint SaveEventPayloadTruncatedWarningHash = 0x53455654u; // SEVT
+        private const uint SaveEventQueueInitializationFailureWarningHash = 0x53455649u; // SEVI
+        private const uint SaveEventQueueReleaseFailureWarningHash = 0x53455246u; // SERF
         private const uint SaveEventSlotTruncatedContextHash = 0x5345534Cu; // SESL
         private const uint SaveEventMessageTruncatedContextHash = 0x53454D53u; // SEMS
         private static readonly uint Slot0Hash = ComputeHash(Slot0Name);
@@ -159,8 +162,12 @@ namespace Hecton8.SaveSystem
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: MessageSlot[16] - fixed save UI message sidecar; queued DTO carries only hashes/slot index - owner: SaveEvents
         private static readonly MessageSlot[] _messageSlots = new MessageSlot[MessageSlotCapacity];
+        // COLD ALLOC: SaveEventPayload[16] - preserves event order when terminal backpressure must skip protected failure events - owner: SaveEvents
+        private static readonly SaveEventPayload[] _eventEvictionScratch = new SaveEventPayload[PendingEventCapacity];
         private static NativeQueue<SaveEventPayload> _pendingEvents;
         private static NativeQueue<SaveEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _messageSlotWriteIndex;
         private static int _messageSlotPendingCount;
         private static int _pendingEventCount;
@@ -174,7 +181,14 @@ namespace Hecton8.SaveSystem
         private static int _lastOverflowTelemetryFrame = -1;
         private static int _lastListenerOverflowTelemetryFrame = -1;
         private static int _lastListenerExceptionTelemetryFrame = -1;
+        private static int _lastListenerInitializationFailureTelemetryFrame = -1;
         private static int _lastPayloadTruncationTelemetryFrame = -1;
+        private static int _lastQueueInitializationFailureTelemetryFrame = -1;
+        private static int _lastQueueReleaseFailureTelemetryFrame = -1;
+        private static SaveEventPayload _lastUiFailureSnapshot;
+        private static string _lastUiFailureMessage = string.Empty;
+        private static uint _lastUiFailureSequence;
+        private static bool _lastUiFailureVisible;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
@@ -339,11 +353,55 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        public static bool TryConsumeLatestFailureSnapshotForUi(
+            ref uint lastSeenSequence,
+            out SaveEventPayload payload,
+            out string message)
+        {
+            payload = _lastUiFailureSnapshot;
+            message = _lastUiFailureMessage ?? string.Empty;
+
+            uint sequence = _lastUiFailureSequence;
+            if (sequence == 0u ||
+                sequence == lastSeenSequence ||
+                !_lastUiFailureVisible ||
+                !IsFailureEvent(payload.Type))
+            {
+                return false;
+            }
+
+            lastSeenSequence = sequence;
+            return true;
+        }
+
+        public static bool TryConsumeMatchingFailureSnapshotForUi(
+            ref uint lastSeenSequence,
+            in SaveEventPayload expectedPayload,
+            out string message)
+        {
+            message = string.Empty;
+
+            uint sequence = _lastUiFailureSequence;
+            if (sequence == 0u || sequence == lastSeenSequence)
+                return false;
+
+            SaveEventPayload payload = _lastUiFailureSnapshot;
+            if (!IsFailureEvent(payload.Type) ||
+                !DoesFailureSnapshotMatch(in expectedPayload, in payload))
+            {
+                return false;
+            }
+
+            message = _lastUiFailureMessage ?? string.Empty;
+            lastSeenSequence = sequence;
+            return !string.IsNullOrEmpty(message);
+        }
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
-            ReleaseNativeQueues();
+            Exception releaseException = ReleaseNativeQueuesBestEffort();
 
             _listeners.Clear();
             ClearMessageSlots();
@@ -362,15 +420,29 @@ namespace Hecton8.SaveSystem
             _lastOverflowTelemetryFrame = -1;
             _lastListenerOverflowTelemetryFrame = -1;
             _lastListenerExceptionTelemetryFrame = -1;
+            _lastListenerInitializationFailureTelemetryFrame = -1;
             _lastPayloadTruncationTelemetryFrame = -1;
+            _lastQueueInitializationFailureTelemetryFrame = -1;
+            _lastQueueReleaseFailureTelemetryFrame = -1;
+            ClearUiFailureSnapshot();
+            _lastUiFailureSequence = 0u;
             _isDispatching = false;
+
+            ReportQueueReleaseFailure(releaseException);
         }
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
         internal static void PrewarmRuntimeQueues()
         {
-            EnsureInitialized();
+            try
+            {
+                EnsureInitialized();
+            }
+            catch (Exception exception)
+            {
+                ReportQueueInitializationFailure(SaveEventType.SaveStarted, exception);
+            }
         }
 
 #if UNITY_EDITOR
@@ -389,7 +461,16 @@ namespace Hecton8.SaveSystem
             if (listener == null)
                 return;
 
-            EnsureInitialized();
+            try
+            {
+                EnsureInitialized();
+            }
+            catch (Exception exception)
+            {
+                ReportListenerInitializationFailure(exception);
+                return;
+            }
+
             if (_isDispatching)
             {
                 QueueDeferredRegister(listener);
@@ -415,6 +496,9 @@ namespace Hecton8.SaveSystem
 
         public static void FlushPending()
         {
+            if (_isDispatching)
+                return;
+
             if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
             {
                 // No callbacks will run here; silent stale-event cleanup must not steal shared LateFrame dispatch budget.
@@ -573,7 +657,13 @@ namespace Hecton8.SaveSystem
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogException(exception);
+            try
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch
+            {
+            }
 #endif
         }
 
@@ -717,25 +807,26 @@ namespace Hecton8.SaveSystem
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<SaveEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SaveEventPayload>[16] — deferred save event lane flushed by SystemDispatcher LateUpdate — owner: SaveEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<SaveEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SaveEventPayload>[16] — next-frame save event lane prevents same-frame reentrant dispatch — owner: SaveEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
             catch
             {
-                ReleaseNativeQueues();
+                Exception releaseException = ReleaseNativeQueuesBestEffort();
                 ClearMessageSlots();
                 _messageSlotWriteIndex = 0;
                 _messageSlotPendingCount = 0;
                 _pendingEventCount = 0;
                 _nextFrameEventCount = 0;
+                ReportQueueReleaseFailure(releaseException);
                 throw;
             }
         }
@@ -743,10 +834,12 @@ namespace Hecton8.SaveSystem
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(SaveEvents),
@@ -755,25 +848,68 @@ namespace Hecton8.SaveSystem
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
-        private static void ReleaseNativeQueues()
+        private static Exception ReleaseNativeQueuesBestEffort()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            Exception firstException = ReleaseNativeQueueBestEffort(ref _pendingEvents, ref _pendingEventsSentinelId);
+            Exception nextFrameException = ReleaseNativeQueueBestEffort(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
+            return firstException ?? nextFrameException;
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception releaseException = ReleaseNativeQueueBestEffort(ref queue, ref sentinelId);
+            if (releaseException != null)
+                throw releaseException;
+        }
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(SaveEvents), label);
-            queue.Dispose();
-            queue = default;
+        private static Exception ReleaseNativeQueueBestEffort<T>(ref NativeQueue<T> queue, ref int sentinelId)
+            where T : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            return firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -792,33 +928,53 @@ namespace Hecton8.SaveSystem
 
         private static bool TryEnqueue(SaveEventType type, uint slotHash, uint messageHash, string message)
         {
-            EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            if (slotHash == 0u)
+                slotHash = UnknownSlotHash;
+
+            if (!string.IsNullOrEmpty(message) && messageHash == 0u)
+                messageHash = ComputeHash(message);
+
+            ulong timestampTicks = unchecked((ulong)Stopwatch.GetTimestamp());
+            bool isFailureEvent = IsFailureEvent(type);
+            bool hideFailureSnapshotAfterEnqueue =
+                !isFailureEvent &&
+                ShouldHideUiFailureSnapshotFromLateReplay(type);
+            if (isFailureEvent)
+                UpdateUiFailureSnapshot(type, slotHash, messageHash, message, timestampTicks);
+
+            try
             {
-                ReportOverflow(type);
+                EnsureInitialized();
+            }
+            catch (Exception exception)
+            {
+                ReportQueueInitializationFailure(type, exception);
                 return false;
             }
 
-            if (slotHash == 0u)
-                slotHash = UnknownSlotHash;
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                if (!TryMakeRoomForTerminalEvent(type))
+                {
+                    ReportOverflow(type);
+                    return false;
+                }
+            }
 
             int messageSlot = -1;
             if (!string.IsNullOrEmpty(message))
             {
-                if (messageHash == 0u)
-                    messageHash = ComputeHash(message);
-
                 if (!TryReserveMessageSlot(messageHash, message, out messageSlot))
                 {
                     ReportPayloadTruncated(SaveEventMessageTruncatedContextHash);
-                    return false;
+                    messageSlot = -1;
                 }
             }
 
             SaveEventPayload payload = new SaveEventPayload
             {
                 Type = type,
-                TimestampTicks = unchecked((ulong)Stopwatch.GetTimestamp()),
+                TimestampTicks = timestampTicks,
                 SlotHash = slotHash,
                 MessageHash = messageHash,
                 MessageSlot = messageSlot
@@ -828,24 +984,204 @@ namespace Hecton8.SaveSystem
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
+                if (hideFailureSnapshotAfterEnqueue)
+                    HideUiFailureSnapshotFromLateReplay();
+
                 return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            if (hideFailureSnapshotAfterEnqueue)
+                HideUiFailureSnapshotFromLateReplay();
+
+            return true;
+        }
+
+        private static bool TryMakeRoomForTerminalEvent(SaveEventType type)
+        {
+            if (!IsTerminalEvent(type))
+                return false;
+
+            bool preserveFailureEvents = !IsFailureEvent(type);
+            if (_isDispatching &&
+                TryEvictOldestQueuedEvent(ref _nextFrameEvents, ref _nextFrameEventCount, preserveFailureEvents))
+            {
+                return true;
+            }
+
+            return TryEvictOldestQueuedEvent(ref _pendingEvents, ref _pendingEventCount, preserveFailureEvents) ||
+                   TryEvictOldestQueuedEvent(ref _nextFrameEvents, ref _nextFrameEventCount, preserveFailureEvents);
+        }
+
+        private static bool IsTerminalEvent(SaveEventType type)
+        {
+            return type == SaveEventType.SaveCompleted ||
+                   type == SaveEventType.SaveFailed ||
+                   type == SaveEventType.LoadCompleted ||
+                   type == SaveEventType.LoadFailed ||
+                   type == SaveEventType.EmergencyBackupRestoreRequested;
+        }
+
+        private static bool IsFailureEvent(SaveEventType type)
+        {
+            return type == SaveEventType.SaveFailed ||
+                   type == SaveEventType.LoadFailed;
+        }
+
+        private static bool ShouldHideUiFailureSnapshotFromLateReplay(SaveEventType type)
+        {
+            return type == SaveEventType.SaveStarted ||
+                   type == SaveEventType.SaveCompleted ||
+                   type == SaveEventType.LoadStarted ||
+                   type == SaveEventType.LoadCompleted ||
+                   type == SaveEventType.MappedWriteStarted ||
+                   type == SaveEventType.EmergencyBackupRestoreRequested;
+        }
+
+        private static void UpdateUiFailureSnapshot(
+            SaveEventType type,
+            uint slotHash,
+            uint messageHash,
+            string message,
+            ulong timestampTicks)
+        {
+            if (IsFailureEvent(type))
+            {
+                CaptureUiFailureSnapshot(type, slotHash, messageHash, message, timestampTicks);
+                return;
+            }
+
+            if (ShouldHideUiFailureSnapshotFromLateReplay(type))
+                HideUiFailureSnapshotFromLateReplay();
+        }
+
+        private static void CaptureUiFailureSnapshot(
+            SaveEventType type,
+            uint slotHash,
+            uint messageHash,
+            string message,
+            ulong timestampTicks)
+        {
+            unchecked
+            {
+                _lastUiFailureSequence++;
+                if (_lastUiFailureSequence == 0u)
+                    _lastUiFailureSequence = 1u;
+            }
+
+            _lastUiFailureMessage = message ?? string.Empty;
+            _lastUiFailureVisible = true;
+            _lastUiFailureSnapshot = new SaveEventPayload
+            {
+                Type = type,
+                TimestampTicks = timestampTicks,
+                SlotHash = slotHash != 0u ? slotHash : UnknownSlotHash,
+                MessageHash = messageHash,
+                MessageSlot = -1
+            };
+        }
+
+        private static void HideUiFailureSnapshotFromLateReplay()
+        {
+            _lastUiFailureVisible = false;
+        }
+
+        private static void ClearUiFailureSnapshot()
+        {
+            _lastUiFailureSnapshot = default;
+            _lastUiFailureMessage = string.Empty;
+            _lastUiFailureVisible = false;
+        }
+
+        private static bool DoesFailureSnapshotMatch(
+            in SaveEventPayload expectedPayload,
+            in SaveEventPayload snapshotPayload)
+        {
+            return expectedPayload.Type == snapshotPayload.Type &&
+                   expectedPayload.SlotHash == snapshotPayload.SlotHash &&
+                   expectedPayload.MessageHash == snapshotPayload.MessageHash &&
+                   expectedPayload.TimestampTicks == snapshotPayload.TimestampTicks;
+        }
+
+        private static bool TryEvictOldestQueuedEvent(
+            ref NativeQueue<SaveEventPayload> queue,
+            ref int pendingCount,
+            bool preserveFailureEvents)
+        {
+            if (!queue.IsCreated || queue.IsEmpty())
+                return false;
+
+            if (!preserveFailureEvents)
+                return TryEvictQueueHead(ref queue, ref pendingCount);
+
+            int capturedCount = 0;
+            int evictedIndex = -1;
+            int scanCount = math.min(pendingCount, PendingEventCapacity);
+            for (int i = 0; i < scanCount; i++)
+            {
+                if (!queue.TryDequeue(out SaveEventPayload candidate))
+                    break;
+
+                _eventEvictionScratch[capturedCount] = candidate;
+                if (evictedIndex < 0 && !IsFailureEvent(candidate.Type))
+                    evictedIndex = capturedCount;
+
+                capturedCount++;
+            }
+
+            pendingCount = 0;
+            if (capturedCount == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < capturedCount; i++)
+            {
+                if (i == evictedIndex)
+                    continue;
+
+                queue.Enqueue(_eventEvictionScratch[i]);
+                pendingCount++;
+            }
+
+            if (evictedIndex < 0)
+                return false;
+
+            SaveEventPayload evicted = _eventEvictionScratch[evictedIndex];
+            _eventEvictionScratch[evictedIndex] = default;
+
+            ReleaseMessageSlot(evicted.MessageSlot);
+            ReportOverflow(evicted.Type);
+            return true;
+        }
+
+        private static bool TryEvictQueueHead(ref NativeQueue<SaveEventPayload> queue, ref int pendingCount)
+        {
+            if (!queue.TryDequeue(out SaveEventPayload evicted))
+            {
+                pendingCount = 0;
+                return false;
+            }
+
+            if (pendingCount > 0)
+                pendingCount--;
+
+            ReleaseMessageSlot(evicted.MessageSlot);
+            ReportOverflow(evicted.Type);
             return true;
         }
 
         private static void ReportOverflow(SaveEventType type)
         {
             _droppedEventCount++;
-            int frame = SystemDispatcher.CurrentFrameIndex;
+            int frame = ResolveCurrentFrameIndexSafe();
             if (_lastOverflowTelemetryFrame == frame)
                 return;
 
             _lastOverflowTelemetryFrame = frame;
             uint contextHash = SaveEventQueueContextHash ^ ((uint)type << 24);
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningBestEffort(
                 SaveEventOverflowWarningHash,
                 contextHash,
                 math.max(1, _droppedEventCount));
@@ -854,12 +1190,12 @@ namespace Hecton8.SaveSystem
         private static void ReportListenerRegistrationOverflow()
         {
             _droppedListenerRegistrationCount++;
-            int frame = SystemDispatcher.CurrentFrameIndex;
+            int frame = ResolveCurrentFrameIndexSafe();
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
             _lastListenerOverflowTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningBestEffort(
                 SaveEventListenerOverflowWarningHash,
                 SaveEventListenerContextHash,
                 math.max(1, _droppedListenerRegistrationCount));
@@ -868,29 +1204,119 @@ namespace Hecton8.SaveSystem
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = SystemDispatcher.CurrentFrameIndex;
+            int frame = ResolveCurrentFrameIndexSafe();
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
             _lastListenerExceptionTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningBestEffort(
                 SaveEventListenerExceptionWarningHash,
                 SaveEventListenerExceptionContextHash,
                 math.max(1, _listenerExceptionCount));
         }
 
+        private static void ReportListenerInitializationFailure(Exception exception)
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (_lastListenerInitializationFailureTelemetryFrame != frame)
+            {
+                _lastListenerInitializationFailureTelemetryFrame = frame;
+                PublishPerformanceWarningBestEffort(
+                    SaveEventListenerInitializationFailureWarningHash,
+                    SaveEventListenerContextHash,
+                    math.max(1, _droppedListenerRegistrationCount));
+            }
+
+            LogQueueInitializationException(exception);
+        }
+
         private static void ReportPayloadTruncated(uint contextHash)
         {
             _truncatedPayloadCount++;
-            int frame = SystemDispatcher.CurrentFrameIndex;
+            int frame = ResolveCurrentFrameIndexSafe();
             if (_lastPayloadTruncationTelemetryFrame == frame)
                 return;
 
             _lastPayloadTruncationTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningBestEffort(
                 SaveEventPayloadTruncatedWarningHash,
                 contextHash,
                 math.max(1, _truncatedPayloadCount));
+        }
+
+        private static void ReportQueueInitializationFailure(SaveEventType type, Exception exception)
+        {
+            _droppedEventCount++;
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (_lastQueueInitializationFailureTelemetryFrame != frame)
+            {
+                _lastQueueInitializationFailureTelemetryFrame = frame;
+                uint contextHash = SaveEventQueueContextHash ^ ((uint)type << 24);
+                PublishPerformanceWarningBestEffort(
+                    SaveEventQueueInitializationFailureWarningHash,
+                    contextHash,
+                    math.max(1, _droppedEventCount));
+            }
+
+            LogQueueInitializationException(exception);
+        }
+
+        private static void ReportQueueReleaseFailure(Exception exception)
+        {
+            if (exception == null)
+                return;
+
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (_lastQueueReleaseFailureTelemetryFrame != frame)
+            {
+                _lastQueueReleaseFailureTelemetryFrame = frame;
+                PublishPerformanceWarningBestEffort(
+                    SaveEventQueueReleaseFailureWarningHash,
+                    SaveEventQueueContextHash,
+                    1f);
+            }
+
+            LogQueueInitializationException(exception);
+        }
+
+        private static int ResolveCurrentFrameIndexSafe()
+        {
+            try
+            {
+                return SystemDispatcher.CurrentFrameIndex;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
+            }
+            catch (Exception telemetryException)
+            {
+                LogQueueInitializationException(telemetryException);
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogQueueInitializationException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            try
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch
+            {
+            }
+#endif
         }
 
         private static bool TryReserveMessageSlot(uint messageHash, string message, out int slot)
@@ -1002,6 +1428,9 @@ namespace Hecton8.SaveSystem
             NativeQueue<SaveEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }

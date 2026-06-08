@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Native Sulfide Salt Stack
 
-Native sulfide salt stacks are one of the first proofs that HECTON-8 is not just a corporate crime scene. They grow where vent heat, brine seepage and metal-rich crust keep grinding against each other under pressure, leaving black-green salts in shelves, ribs and brittle chimneys. They clean conductors, wake emergency cells, tune ceramic flux and ruin tools when a crew treats them like ordinary ore. For the player, they should appear before blue debt: the moon has native chemistry, native value and native hazards before Deep Reach ever stamped a claim on it.
+Native sulfide salt stacks are one of the first proofs that HECTON-8 had a dangerous chemistry of its own before the corporate crime scene covered it. They grow where vent heat, brine seepage and metal-rich crust grind against each other under pressure, leaving black-green salts in shelves, ribs and brittle chimneys. They clean conductors, wake emergency cells, tune ceramic flux and ruin tools when a crew treats them like ordinary ore. For the player, they should appear before blue debt: the moon has native chemistry, native value and native hazards before Deep Reach ever stamped a claim on it.
 
 ## Scanner
 

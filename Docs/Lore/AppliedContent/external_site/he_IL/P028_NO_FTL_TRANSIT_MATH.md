@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # חישוב מעבר ללא FTL
 
-המרחק הופך ללחץ משחק: פקודות מאוחרות, סמכות ישנה וחלונות בריחה פיזיים.
+חישוב מעבר ללא FTL הופך מרחק בין-כוכבי ללחץ: פקודות מאוחרות, סמכות ישנה, שיהוי משמורת וחלונות יציאה פיזיים.
 
 ## Scanner
 

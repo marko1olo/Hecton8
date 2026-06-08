@@ -7,34 +7,34 @@ poi_tags: poi.black_keel_transfer_band;poi.carrier_custody_orbit
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "HE LOC HOLD: Black Keel Transfer Band"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "רצועת העברה Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Black Keel Transfer Band
+# רצועת העברה Black Keel
 
-HE LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.
+רצועת ההעברה של Black Keel מסבירה למה contact, payload pickup ו-human extraction הן בעיות שונות. Carrier יכול לשמוע, לתמחר ולקבל cargo לפני שהוא מוציא מסה בבטחה על אדם.
 
 ## Scanner
 
-HE LOC HOLD: Carrier band: Black Keel loiters high, not above HECTON-8.
+רצועת carrier: Black Keel ממתין גבוה, לא מעל HECTON-8.
 
 ## Terminal
 
-HE LOC HOLD: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+CARRIER ORBIT: custody lane גבוהה; descent mass מוגבלת ו-weather-gated.
 
 ## Audio
 
-HE LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.
+הוא לא חונה מעליך. הוא מחכה במקום שהביטוח מרשה לו לחכות.
 
 ## Field Note
 
-HE LOC HOLD: Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
+רשומת מסלול carrier: Black Keel יכול לקבל payloads לפני אנשים; הפער הזה מניע partial-exit logic.
 
 <!-- In-Game Wiki; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/he_IL. -->

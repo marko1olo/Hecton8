@@ -8,33 +8,19 @@ biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+spoiler_tier: 1
+title: "Powstawanie szkła ciśnieniowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Powstawanie szkła ciśnieniowego
 
-PL LOC HOLD: Pressure Glass Formation turns Xenon-Omega into hard-sci-fi material ecology instead of magic ore. It is a pressure-made substrate tied to Atlas, containment and computation.
+Szkło ciśnieniowe to techniczna nazwa tego, co Marauderzy nazywają blue debt, a Deep Reach ukrywa jako Xenon-Omega. Powstaje tam, gdzie spotykają się ciśnienie, kieszenie gazów szlachetnych, solanka, minerały, ciepło i zmieniona biologia.
 
-## Scanner
-
-PL LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
-
-## Terminal
-
-PL LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
-
-## Audio
-
-PL LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
-
-## Field Note
-
-PL LOC HOLD: It is not ore. It is a process that remembers where it was made.
+Powstawanie szkła ciśnieniowego robi z Xenon-Omega materialną ekologię hard science fiction, nie magiczną rudę. To nie ruda. To proces, który pamięta miejsce powstania.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/pl_PL. -->

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Evacuation Queue Delay Proof"
+title: "Zapis opóźnienia kolejki ewakuacji"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Evacuation Queue Delay Proof
+# Zapis opóźnienia kolejki ewakuacji
 
-PL LOC HOLD: Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
+Ten dowód zmienia ewakuację w sekwencję. Bramy nie odcięła po prostu woda; została w trybie review, gdy alarmy ciśnienia weszły do zajętych korytarzy. Puste pole świadka ma znaczenie, bo system żądał potwierdzenia człowieka po tym, jak ludzie stracili dostęp do panelu.
 
 ## Scanner
 
-PL LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Odzyskano zegar kolejki. Brama zwolnienia pozostała zamknięta po tym, jak alarmy ciśnienia przeszły z prognozy do korytarza.
 
 ## Terminal
 
-PL LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Brak ręcznego potwierdzenia. Przegląd kwarantanny w toku. Ciśnienie trasy przekroczyło klasę uszczelnienia przed końcem autoryzacji.
 
 ## Audio
 
-PL LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Oni nie zawiedli przy ratowaniu wszystkich. Czekali, aż uratowanie kogokolwiek stanie się trudniejsze.
 
 ## Field Note
 
-PL LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Notatka Maraudera: zamknięta brama z oczekującym polem to nie wypadek. To decyzja czekająca na podpis.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/pl_PL. -->

@@ -1,0 +1,430 @@
+{
+  "schema": "hecton8.batch34.source_atlas_alpha_candidates.v1",
+  "sourceManifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+  "preview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaReview/PREVIEW_Batch34_SourceAtlasAlphaCandidates.png",
+  "entries": [
+    {
+      "id": "B34-3423",
+      "title": "Leak Rust Biofilm Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3423_leak_rust_biofilm_decal_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/decal_atlas/TX_B34_3423_leak_rust_biofilm_decal_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          33,
+          33,
+          33
+        ],
+        "alphaNonZeroPct": 31.165,
+        "alphaOpaquePct": 13.994,
+        "alphaMean": 54.317
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3425",
+      "title": "Salt Mineral Deposit Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3425_salt_mineral_deposit_decal_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/decal_atlas/TX_B34_3425_salt_mineral_deposit_decal_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          52,
+          52,
+          52
+        ],
+        "alphaNonZeroPct": 34.993,
+        "alphaOpaquePct": 22.203,
+        "alphaMean": 69.903
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3426",
+      "title": "Instrument Glass Smudge Alpha Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3426_instrument_glass_smudge_alpha_decal_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/decal_atlas/TX_B34_3426_instrument_glass_smudge_alpha_decal_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          1,
+          1,
+          1
+        ],
+        "alphaNonZeroPct": 24.106,
+        "alphaOpaquePct": 13.609,
+        "alphaMean": 46.112
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3427",
+      "title": "Pressure Crack Glass Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3427_pressure_crack_glass_decal_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/decal_atlas/TX_B34_3427_pressure_crack_glass_decal_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          44,
+          44,
+          44
+        ],
+        "alphaNonZeroPct": 36.484,
+        "alphaOpaquePct": 17.945,
+        "alphaMean": 61.63
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3428",
+      "title": "Warning Paint Stripe Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3428_warning_paint_stripe_decal_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/decal_atlas/TX_B34_3428_warning_paint_stripe_decal_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          30,
+          34,
+          35
+        ],
+        "alphaNonZeroPct": 61.381,
+        "alphaOpaquePct": 56.294,
+        "alphaMean": 148.367
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3429",
+      "title": "Cutter Burn Scorch Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3429_cutter_burn_scorch_decal_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/decal_atlas/TX_B34_3429_cutter_burn_scorch_decal_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          39,
+          39,
+          39
+        ],
+        "alphaNonZeroPct": 42.975,
+        "alphaOpaquePct": 16.492,
+        "alphaMean": 71.131
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3430",
+      "title": "Barnacle Colony Decal Variants",
+      "sourceType": "DECAL_ATLAS",
+      "family": "organic_decal",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3430_barnacle_colony_decal_variants_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/decal_atlas/TX_B34_3430_barnacle_colony_decal_variants_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          33,
+          35,
+          34
+        ],
+        "alphaNonZeroPct": 57.551,
+        "alphaOpaquePct": 23.487,
+        "alphaMean": 92.592
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3431",
+      "title": "Wetness Rivulet Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3431_wetness_rivulet_decal_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/decal_atlas/TX_B34_3431_wetness_rivulet_decal_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          42,
+          42,
+          42
+        ],
+        "alphaNonZeroPct": 18.083,
+        "alphaOpaquePct": 0.22,
+        "alphaMean": 14.015
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3432",
+      "title": "Contamination Biohazard Stain Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "organic_decal",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3432_contamination_biohazard_stain_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/decal_atlas/TX_B34_3432_contamination_biohazard_stain_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          64,
+          64,
+          64
+        ],
+        "alphaNonZeroPct": 25.427,
+        "alphaOpaquePct": 5.728,
+        "alphaMean": 33.623
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3433",
+      "title": "Brine Vane Flora UV Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3433_brine_vane_flora_uv_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/uv_atlas/TX_B34_3433_brine_vane_flora_uv_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          1,
+          1,
+          1
+        ],
+        "alphaNonZeroPct": 42.252,
+        "alphaOpaquePct": 35.357,
+        "alphaMean": 98.094
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3434",
+      "title": "Shallow Alien Seagrass Blade Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3434_shallow_alien_seagrass_blade_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/uv_atlas/TX_B34_3434_shallow_alien_seagrass_blade_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          40,
+          40,
+          40
+        ],
+        "alphaNonZeroPct": 35.537,
+        "alphaOpaquePct": 28.947,
+        "alphaMean": 79.993
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3435",
+      "title": "Plate Coral Rim UV Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3435_plate_coral_rim_uv_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/uv_atlas/TX_B34_3435_plate_coral_rim_uv_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          63,
+          63,
+          63
+        ],
+        "alphaNonZeroPct": 63.983,
+        "alphaOpaquePct": 61.428,
+        "alphaMean": 159.106
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3436",
+      "title": "Sponge Pore Organic Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3436_sponge_pore_organic_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/uv_atlas/TX_B34_3436_sponge_pore_organic_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          40,
+          40,
+          40
+        ],
+        "alphaNonZeroPct": 66.064,
+        "alphaOpaquePct": 42.115,
+        "alphaMean": 136.593
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3437",
+      "title": "Kelp Holdfast Root Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3437_kelp_holdfast_root_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/uv_atlas/TX_B34_3437_kelp_holdfast_root_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          131,
+          131,
+          131
+        ],
+        "alphaNonZeroPct": 99.113,
+        "alphaOpaquePct": 91.614,
+        "alphaMean": 244.363
+      },
+      "status": "ALPHA_CANDIDATE_REJECT_HIGH_COVERAGE"
+    },
+    {
+      "id": "B34-3439",
+      "title": "Spore Pod And Seed Sac Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3439_spore_pod_and_seed_sac_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/uv_atlas/TX_B34_3439_spore_pod_and_seed_sac_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          29,
+          29,
+          29
+        ],
+        "alphaNonZeroPct": 67.125,
+        "alphaOpaquePct": 42.352,
+        "alphaMean": 138.032
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3441",
+      "title": "Neutral Grazer Skin UV Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3441_neutral_grazer_skin_uv_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/uv_atlas/TX_B34_3441_neutral_grazer_skin_uv_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          25,
+          25,
+          25
+        ],
+        "alphaNonZeroPct": 70.993,
+        "alphaOpaquePct": 52.852,
+        "alphaMean": 161.804
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3442",
+      "title": "Filter Feeder Gill Membrane Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3442_filter_feeder_gill_membrane_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/uv_atlas/TX_B34_3442_filter_feeder_gill_membrane_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          1,
+          1,
+          1
+        ],
+        "alphaNonZeroPct": 60.575,
+        "alphaOpaquePct": 59.009,
+        "alphaMean": 152.51
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3445",
+      "title": "Translucent Larva Egg Sac Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3445_translucent_larva_egg_sac_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/uv_atlas/TX_B34_3445_translucent_larva_egg_sac_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          31,
+          35,
+          36
+        ],
+        "alphaNonZeroPct": 55.587,
+        "alphaOpaquePct": 42.033,
+        "alphaMean": 123.553
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3446",
+      "title": "Scavenged Carcass Bone Flesh Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3446_scavenged_carcass_bone_flesh_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/uv_atlas/TX_B34_3446_scavenged_carcass_bone_flesh_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          1,
+          1,
+          1
+        ],
+        "alphaNonZeroPct": 51.773,
+        "alphaOpaquePct": 49.873,
+        "alphaMean": 129.778
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3448",
+      "title": "Resource Nodule Pickup UV Atlas",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_resource",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PickupAtlases/TX_B34_3448_resource_nodule_pickup_uv_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/pickup_atlas/TX_B34_3448_resource_nodule_pickup_uv_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          20,
+          20,
+          20
+        ],
+        "alphaNonZeroPct": 65.945,
+        "alphaOpaquePct": 35.262,
+        "alphaMean": 108.947
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    },
+    {
+      "id": "B34-3449",
+      "title": "Industrial Salvage Small Parts Atlas",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_salvage",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PickupAtlases/TX_B34_3449_industrial_salvage_small_parts_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/pickup_atlas/TX_B34_3449_industrial_salvage_small_parts_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          134,
+          134,
+          134
+        ],
+        "alphaNonZeroPct": 100.0,
+        "alphaOpaquePct": 90.397,
+        "alphaMean": 243.826
+      },
+      "status": "ALPHA_CANDIDATE_REJECT_HIGH_COVERAGE"
+    },
+    {
+      "id": "B34-3450",
+      "title": "Data Core Wet Circuit Ceramic Atlas",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_salvage",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PickupAtlases/TX_B34_3450_data_core_wet_circuit_ceramic_atlas_BaseColorCandidate.jpg",
+      "alphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/pickup_atlas/TX_B34_3450_data_core_wet_circuit_ceramic_atlas_AlphaCandidate.png",
+      "alphaStats": {
+        "background": [
+          36,
+          36,
+          36
+        ],
+        "alphaNonZeroPct": 70.398,
+        "alphaOpaquePct": 44.445,
+        "alphaMean": 136.217
+      },
+      "status": "ALPHA_CANDIDATE_STATIC_REVIEW_REQUIRED"
+    }
+  ],
+  "warnings": [
+    "B34-3437: very high alpha coverage 99.113%",
+    "B34-3449: very high alpha coverage 100.0%"
+  ],
+  "status": "STATIC_REVIEW_REQUIRED"
+}

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # EL SISTEMA AEGIR: NUEVE LUNAS Y UNA TUMBA
 
 > **Fuente:** Archivo Público, Oficina de Registros de Frontera, Astilleros Barnard. Compilador: J. Elkin-Torres, Archivero Jefe. Última revisión: 2188. Nivel de acceso: público / sin censurar.  

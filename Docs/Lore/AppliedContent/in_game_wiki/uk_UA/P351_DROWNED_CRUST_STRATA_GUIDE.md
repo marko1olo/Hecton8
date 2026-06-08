@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Drowned Crust Strata Guide"
+title: "Польовий довідник затоплених пластів кори"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Drowned Crust Strata Guide
+# Польовий довідник затоплених пластів кори
 
-UK LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.
+Затоплена кора - читабельна історія HECTON-8: старі колоніальні різи, полиці льодового обвалу, шви pressure-glass і мінеральні смуги показують, де маршрут утримається, зріжеться або зірветься від дотику.
 
 ## Scanner
 
-UK LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+Затоплені пласти відкривають старі сліди різання, шви pressure-glass і мінеральні смуги, що двічі не ламаються в один бік.
 
 ## Terminal
 
-UK LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: затоплена кора HECTON-8 - це складений поселенський камінь, пам'ять обваленого льоду, pressure glass і extraction scars під рухомою brine. Лінії тріщин важливіші за чисті поверхні.
 
 ## Audio
 
-UK LOC HOLD: The map is not terrain. It is a stack of drownings.
+Карта - не місцевість. Це стос утоплень.
 
 ## Field Note
 
-UK LOC HOLD: Use for geology codex and procedural world labels.
+Якщо смуга дзвенить порожньо, не вір рівній площині. Познач тріщину, візьми зразок, залиш стіну триматися.
 
 <!-- In-Game Wiki; generated from P351_DROWNED_CRUST_STRATA_GUIDE/uk_UA. -->

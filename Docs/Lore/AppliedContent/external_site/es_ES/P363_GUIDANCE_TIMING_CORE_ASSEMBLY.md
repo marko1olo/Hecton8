@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Guidance Timing Core Assembly"
+title: "Conjunto de núcleo de sincronía de guiado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Guidance Timing Core Assembly
+# Conjunto de núcleo de sincronía de guiado
 
-ES LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.
+El Conjunto de núcleo de sincronía de guiado mantiene duro el vuelo espacial de HECTON-8: extraction es un problema de ruta hecho de relojes, sombras y confianza dañada.
 
 ## Scanner
 
-ES LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+Núcleo de timing en blanco. La geometría de Aegir decide si el ascenso es recovery, capture o silencio.
 
 ## Terminal
 
-ES LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: alinear reloj de cápsula con Aegir window, Black Keel receiver lane, moon relay shutter y deriva storm-plume. Packets tardíos se vuelven pérdida de evidencia; packets tempranos se vuelven capture noise.
 
 ## Audio
 
-ES LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+Arriba no es una dirección. Es una ventana con testigo.
 
 ## Field Note
 
-ES LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+No hay un arriba simple desde HECTON-8. Hay un receptor, una sombra, deriva de tormenta y una packet queue ya más vieja que tu pánico.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/es_ES. -->

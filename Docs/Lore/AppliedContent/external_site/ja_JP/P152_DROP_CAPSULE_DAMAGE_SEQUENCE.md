@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Drop Capsule Damage Sequence"
+title: "降下カプセル損傷シーケンス"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Drop Capsule Damage Sequence
+# 降下カプセル損傷シーケンス
 
-JA LOC HOLD: The drop capsule explains stranding through broken parts: warped frame, drowned avionics, lost antenna and a recovery ring that cannot lock.
+降下カプセルは、歪んだフレーム、沈んだアビオニクス、失われたアンテナ、ロック不能な recovery ring という部品で孤立を説明する。
 
 ## Scanner
 
-JA LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+カプセル診断。降下は上昇装備を使い潰して身体を残した。
 
 ## Terminal
 
-JA LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+BATHY-DROP 損傷要約: crush-frame 歪曲; high-gain mast 喪失; ascent avionics 浸水; recovery/flotation ring 破断; emergency buoy は no-lock 反復。シェルター電力あり。独立上昇不可。
 
 ## Audio
 
-JA LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus 浸水。Recovery ring no-lock。このカプセルは呼吸を保てるが、家には帰せない。
 
 ## Field Note
 
-JA LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+下部リングは指二本ぶん楕円になっている。High-gain mast は消えた。ブイは不可能な発進をまだ求めている。
 
 <!-- External Site; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/ja_JP. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # REJESTR DŁUGÓW
 
 > **Źródło:** Megakorporacja Deep Reach, Dział Kadr i Aktuariat.

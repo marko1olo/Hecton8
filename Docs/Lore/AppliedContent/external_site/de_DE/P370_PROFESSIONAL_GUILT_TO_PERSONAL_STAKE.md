@@ -9,32 +9,35 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Professional Guilt To Personal Stake"
+title: "Von Berufsschuld zu persönlichem Einsatz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Professional Guilt To Personal Stake
+# Von Berufsschuld zu persönlichem Einsatz
 
-DE LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.
+Die Motivation des Protagonisten wächst aus Expertise zu Verantwortung. HECTON-8 vermeidet erzwungenes Familiendrama: Der frühere Deep-Reach-Arbeiter sorgt sich, weil er die Verfahrensmaschine versteht, die Zurücklassen abgeschlossen aussehen ließ.
 
 ## Scanner
 
-DE LOC HOLD: Signature match. The form language is old. The names are new.
+Signaturmuster passt zum alten Verfahrenscache. Die Namen änderten sich. Der Raum versagte auf dieselbe Weise. Expertise ist keine Distanz mehr.
 
 ## Terminal
 
-DE LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+DOSSIER-AUFLÖSUNG / BERUFLICHER EINSATZ
+auslösende Beweise: Verfahrenserkennung, geborgene Arbeiter-Tags, Konflikt mit Anspruchsempfänger
+ausgeschlossenes Motiv: Familienbeziehung, Rachelinie, Status als erwählter Zeuge
+aktives Motiv: ehemaliger Systemarbeiter erkennt vermeidbares Zurücklassen und kann die Maschine, die es ablegte, noch lesen.
 
 ## Audio
 
-DE LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+Du kamst wegen eines Anspruchs. Du bliebst, weil der Papierkram deine Hände kannte.
 
 ## Field Note
 
-DE LOC HOLD: Use near late dossier and final payload route.
+Nicht deine Signatur. Trotzdem dein Handwerk. Darum bleibt der Raum nicht still.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/de_DE. -->

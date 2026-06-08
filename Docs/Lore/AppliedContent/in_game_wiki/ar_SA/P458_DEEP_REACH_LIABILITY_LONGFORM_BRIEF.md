@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "AR LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: مسؤولية تحت ماء حقيقي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: مسؤولية تحت ماء حقيقي
 
-AR LOC HOLD: Deep Reach guilt is strongest where clean reports meet broken hardware. The flood was real; the avoidable part is recorded in margins, clocks, doors and custody labels.
+Deep Reach مذنبة من دون محيط مزيف. المد والجليد والعواصف وكيمياء الضغط صنعت الكارثة؛ الإجراء اختار هوامش سيئة ثم نظف الورق.
 
 ## Scanner
 
-AR LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+ملخص دليل عام. تبقى فيزياء Great Tide حقيقية؛ تظهر مسؤولية Deep Reach في هوامش مقبولة وإخلاء ناقص وأولوية Atlas وتأخير الحجر وتحويل الخسائر.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+عقدة مسؤولية عامة // DEEP REACH. السلسلة: Varnek margin acceptance وArendt Atlas waiver وHaldane quarantine hold وIbarra loss ledger وSato-Ren return action.
 
 ## Audio
 
-AR LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+صوت قانوني مستعاد: "لا تسموه تأخيرا. سموه review. سيقدم الماء الفاصل."
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+ملاحظة Marauder: الفيزياء قتلت. Procedure قررت من يحسب recoverable.
 
 <!-- In-Game Wiki; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/ar_SA. -->

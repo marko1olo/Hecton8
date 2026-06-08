@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -279,6 +280,7 @@ namespace Hecton8.Gameplay
         private const int TelemetryEntrySizeBytes = 64;
         private const float HazardStepIntervalSeconds = 0.1f;
         private const float MinHazardRadius = 0.01f;
+        private const float MaxHazardRadius = 2500f;
         private const double HazardSpatialCellSizeMeters = 12d;
         private const int HazardSpatialQueryCapacity = 64;
         private const int HazardSpatialLayerMask = 1 << 30;
@@ -289,6 +291,7 @@ namespace Hecton8.Gameplay
         private const uint HazardManagerContextHash = 0x485A4D47u; // HZMG
         private const uint TelemetryDumpMagic = 0x4838485Au; // H8HZ
         private const int TelemetryDumpFormatVersion = 1;
+        private const int TelemetryDumpHeaderBytes = 24;
         private const string TelemetryDumpPayloadLabel = "HazardZoneBlackBox";
         private const string TelemetryDumpRelativePathPrefix = "Docs/AgentLogs/Dump_HAZARD_ZONE_BLACKBOX_";
         private const string TelemetryDumpRelativePathSuffix = ".bin";
@@ -305,8 +308,10 @@ namespace Hecton8.Gameplay
         private const float ToxicityDamagePerPulse = 1.1f;
         private const float ToxicityOverdoseDamageScale = 0.85f;
         private const float ToxicityPoisonStatusDurationSeconds = 5f;
+        private const int MaxToxicityDamagePulsesPerTick = 4;
         private const float ToxicityExposureToxemiaScale = 0.08f;
         private const float MaxPersistedToxicityDose = SaveData.HazardZoneMaxPersistedToxicityDose;
+        private const uint PlayerToxicityFallbackEntityHash = ToxicityExposureSignal.PlayerEntityFallbackHash;
         private const float RadiationClarityTransferScale = 0.85f;
         private const float ThermalClarityTransferDenominator = 18f;
         private const float ToxicClarityTransferScale = 1.35f;
@@ -382,6 +387,7 @@ namespace Hecton8.Gameplay
         private Transform _playerTransform;
         private IDataVault _pendingDataVault;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private IDataVault _exposureJobGuardVault;
         private IDataVault _hazardStateGuardVault;
         private HectonSurvivalSystem _playerSurvival;
@@ -725,7 +731,7 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             if (type == HazardType.Radiation)
-                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? radiation01 : 0f;
+                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? ClampExposure(radiation01) : 0f;
 
             if (!_volumes.IsCreated || _activeCount <= 0)
                 return 0f;
@@ -809,10 +815,16 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>Current toxicity dose accumulated by the local player.</summary>
-        public float ToxicityDose => _toxicityDose;
+        public float ToxicityDose => ClampPersistedToxicityDose(_toxicityDose);
 
         public int SavePriority => 55;
         public int LoadPriority => 55;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            Volatile.Write(ref s_x001HazardZoneManagerSignalPushDropCount, 0);
+        }
 
         public void PopulateSaveData(SaveData data)
         {
@@ -911,15 +923,27 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
-                if (_playerRuntimeContext != null)
-                    ApplyPlayerContextReferences(
-                        _playerRuntimeContext.PlayerTransform,
-                        _playerRuntimeContext.PlayerCollider,
-                        _playerRuntimeContext.PlayerHealth,
-                        _playerRuntimeContext.SurvivalSystem,
-                        _playerRuntimeContext.TraumaDispatcher,
-                        _playerRuntimeContext.PlayerTransportCoordinator);
+                IPlayerRuntimeContext nextPlayerContext = currentService as IPlayerRuntimeContext;
+                if (!IsPlayerRuntimeContextBound(nextPlayerContext))
+                {
+                    ClearPlayerRuntimeBindings();
+                    UpdateDiagnostics();
+                    return;
+                }
+
+                if (!ReferenceEquals(_playerRuntimeContext, nextPlayerContext))
+                    ClearPlayerRuntimeBindings();
+
+                _playerRuntimeContext = nextPlayerContext;
+                ApplyPlayerContextReferences(
+                    nextPlayerContext.PlayerTransform,
+                    nextPlayerContext.PlayerCollider,
+                    nextPlayerContext.PlayerHealth,
+                    nextPlayerContext.SurvivalSystem,
+                    nextPlayerContext.TraumaDispatcher,
+                    nextPlayerContext.PlayerTransportCoordinator);
+                RefreshActiveTransportOwner();
+                UpdateDiagnostics();
                 return;
             }
 
@@ -949,11 +973,15 @@ namespace Hecton8.Gameplay
 
         private void ApplyDataVaultSwap(IDataVault nextVault)
         {
+            ClearExposureState();
+            ClearPendingMutations();
             ReleaseHazardExposureResultBuffer();
             ReleaseHazardVaultBuffers();
+            ReleaseHazardSpatialHash();
             CacheHazardVaultCold(nextVault);
             if (!_jobRunning)
                 AllocateNativeState();
+            UpdateDiagnostics();
         }
 
         private void TryApplyPendingDataVaultSwap()
@@ -1046,27 +1074,40 @@ namespace Hecton8.Gameplay
             _pendingDataVaultSwap = false;
             ReleaseHazardExposureResultBuffer();
             ReleaseHazardVaultBuffers();
+            ReleaseHazardSpatialHash();
+        }
 
+        private void ReleaseHazardSpatialHash()
+        {
             _spatialHash?.Dispose();
             _spatialHash = null;
         }
 
         private void ResolvePlayerContext()
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            IPlayerRuntimeContext activeRuntimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            bool hasActiveRuntimeContext = activeRuntimeContext != null;
+            if (IsPlayerRuntimeContextBound(activeRuntimeContext))
             {
+                _playerRuntimeContext = activeRuntimeContext;
                 ApplyPlayerContextReferences(
-                    runtimeContext.PlayerTransform,
-                    runtimeContext.PlayerCollider,
-                    runtimeContext.PlayerHealth,
-                    runtimeContext.SurvivalSystem,
-                    runtimeContext.TraumaDispatcher,
-                    runtimeContext.PlayerTransportCoordinator);
+                    activeRuntimeContext.PlayerTransform,
+                    activeRuntimeContext.PlayerCollider,
+                    activeRuntimeContext.PlayerHealth,
+                    activeRuntimeContext.SurvivalSystem,
+                    activeRuntimeContext.TraumaDispatcher,
+                    activeRuntimeContext.PlayerTransportCoordinator);
+            }
+            else if (hasActiveRuntimeContext)
+            {
+                ClearPlayerRuntimeBindings();
+                RefreshActiveTransportOwner();
+                return;
             }
             else
             {
                 IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-                if (playerContext != null)
+                if (IsPlayerRuntimeContextBound(playerContext))
                 {
                     ApplyPlayerContextReferences(
                         playerContext.PlayerTransform,
@@ -1081,47 +1122,37 @@ namespace Hecton8.Gameplay
             if (_playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
 
-            if (_playerTransform == null)
-                return;
-
-            IPlayerTransportLifecycleOwner resolvedOwner = null;
-            if (_playerTransportCoordinator != null)
-                _playerTransportCoordinator.TryResolveTransportLifecycleOwner(out resolvedOwner);
-
-            if (ReferenceEquals(_activeTransportOwner, resolvedOwner))
-                return;
-
-            _activeTransportOwner = resolvedOwner;
-            _activeTransportBehaviour = resolvedOwner as MonoBehaviour;
-            _activeTransportCollider = ResolveTransportColliderCold(_activeTransportBehaviour);
+            RefreshActiveTransportOwner();
         }
 
         private void RefreshPlayerContextSnapshot()
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            IPlayerRuntimeContext activeRuntimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            bool hasActiveRuntimeContext = activeRuntimeContext != null;
+            if (IsPlayerRuntimeContextBound(activeRuntimeContext))
             {
+                _playerRuntimeContext = activeRuntimeContext;
                 ApplyPlayerContextReferences(
-                    runtimeContext.PlayerTransform,
-                    runtimeContext.PlayerCollider,
-                    runtimeContext.PlayerHealth,
-                    runtimeContext.SurvivalSystem,
-                    runtimeContext.TraumaDispatcher,
-                    runtimeContext.PlayerTransportCoordinator);
+                    activeRuntimeContext.PlayerTransform,
+                    activeRuntimeContext.PlayerCollider,
+                    activeRuntimeContext.PlayerHealth,
+                    activeRuntimeContext.SurvivalSystem,
+                    activeRuntimeContext.TraumaDispatcher,
+                    activeRuntimeContext.PlayerTransportCoordinator);
+            }
+            else if (hasActiveRuntimeContext)
+            {
+                ClearPlayerRuntimeBindings();
+                RefreshActiveTransportOwner();
+                return;
+            }
+            else if (_playerRuntimeContext != null && !IsPlayerRuntimeContextBound(_playerRuntimeContext))
+            {
+                ClearPlayerRuntimeBindings();
+                return;
             }
 
-            if (_playerTransform == null)
-                return;
-
-            IPlayerTransportLifecycleOwner resolvedOwner = null;
-            if (_playerTransportCoordinator != null)
-                _playerTransportCoordinator.TryResolveTransportLifecycleOwner(out resolvedOwner);
-
-            if (ReferenceEquals(_activeTransportOwner, resolvedOwner))
-                return;
-
-            _activeTransportOwner = resolvedOwner;
-            _activeTransportBehaviour = resolvedOwner as MonoBehaviour;
-            _activeTransportCollider = ResolveTransportColliderCold(_activeTransportBehaviour);
+            RefreshActiveTransportOwner();
         }
 
         private void ApplyPlayerContextReferences(
@@ -1140,6 +1171,9 @@ namespace Hecton8.Gameplay
                 _playerHealth = null;
                 _playerTraumaDispatcher = null;
                 _playerTransportCoordinator = null;
+                _activeTransportOwner = null;
+                _activeTransportBehaviour = null;
+                _activeTransportCollider = null;
             }
 
             if (playerCollider != null)
@@ -1156,6 +1190,50 @@ namespace Hecton8.Gameplay
 
             if (transportCoordinator != null)
                 _playerTransportCoordinator = transportCoordinator;
+        }
+
+        private static bool IsPlayerRuntimeContextBound(IPlayerRuntimeContext playerContext)
+        {
+            return playerContext != null &&
+                   playerContext.IsInitialized &&
+                   playerContext.PlayerTransform != null;
+        }
+
+        private void ClearPlayerRuntimeBindings()
+        {
+            ClearExposureState();
+            _playerRuntimeContext = null;
+            _playerTransform = null;
+            _playerCollider = null;
+            _playerSurvival = null;
+            _playerHealth = null;
+            _playerTraumaDispatcher = null;
+            _playerTransportCoordinator = null;
+            _activeTransportOwner = null;
+            _activeTransportBehaviour = null;
+            _activeTransportCollider = null;
+        }
+
+        private void RefreshActiveTransportOwner()
+        {
+            if (_playerTransform == null)
+            {
+                _activeTransportOwner = null;
+                _activeTransportBehaviour = null;
+                _activeTransportCollider = null;
+                return;
+            }
+
+            IPlayerTransportLifecycleOwner resolvedOwner = null;
+            if (_playerTransportCoordinator != null)
+                _playerTransportCoordinator.TryResolveTransportLifecycleOwner(out resolvedOwner);
+
+            if (ReferenceEquals(_activeTransportOwner, resolvedOwner))
+                return;
+
+            _activeTransportOwner = resolvedOwner;
+            _activeTransportBehaviour = resolvedOwner as MonoBehaviour;
+            _activeTransportCollider = ResolveTransportColliderCold(_activeTransportBehaviour);
         }
 
         private static Collider ResolveTransportColliderCold(MonoBehaviour transportBehaviour)
@@ -1241,13 +1319,35 @@ namespace Hecton8.Gameplay
                     _toxicityPulseAccumulatorSeconds = 0f;
             }
 
-            if (_toxicityDose <= ToxicityDoseThreshold || _playerSurvival == null)
+            if (_toxicityDose <= ToxicityDoseThreshold)
+            {
+                _toxicityPulseAccumulatorSeconds = 0f;
+                return;
+            }
+
+            if (_playerSurvival == null)
+            {
+                _toxicityPulseAccumulatorSeconds = ClampPersistedToxicityPulseAccumulator(_toxicityPulseAccumulatorSeconds);
+                return;
+            }
+
+            if (ToxicityDamagePulseIntervalSeconds <= 0f)
                 return;
 
-            _toxicityPulseAccumulatorSeconds = FiniteNonNegativeOrZero(_toxicityPulseAccumulatorSeconds) + safeDt;
-            while (_toxicityPulseAccumulatorSeconds >= ToxicityDamagePulseIntervalSeconds)
+            float maxPulseAccumulatorSeconds = ToxicityDamagePulseIntervalSeconds * (MaxToxicityDamagePulsesPerTick + 1);
+            _toxicityPulseAccumulatorSeconds = math.min(
+                FiniteNonNegativeOrZero(_toxicityPulseAccumulatorSeconds) + safeDt,
+                maxPulseAccumulatorSeconds);
+
+            int pulseCount = math.min(
+                MaxToxicityDamagePulsesPerTick,
+                (int)math.floor(_toxicityPulseAccumulatorSeconds / ToxicityDamagePulseIntervalSeconds));
+            _toxicityPulseAccumulatorSeconds = math.min(
+                ToxicityDamagePulseIntervalSeconds,
+                _toxicityPulseAccumulatorSeconds - pulseCount * ToxicityDamagePulseIntervalSeconds);
+
+            for (int pulseIndex = 0; pulseIndex < pulseCount; pulseIndex++)
             {
-                _toxicityPulseAccumulatorSeconds -= ToxicityDamagePulseIntervalSeconds;
                 ApplyToxicityDamagePulse(currentToxicityIntensity);
             }
         }
@@ -1262,7 +1362,7 @@ namespace Hecton8.Gameplay
                                     (1f + overdose * ToxicityOverdoseDamageScale);
 
             int targetId = ResolvePlayerCombatTargetId();
-            PublishToxicityExposureSignal(targetId, damageMagnitude, safeCurrentIntensity);
+            PublishToxicityExposureSignal(damageMagnitude, safeCurrentIntensity);
             _ = TryQueueToxicityPoisonStatus(targetId, damageMagnitude, safeCurrentIntensity);
         }
 
@@ -1272,6 +1372,21 @@ namespace Hecton8.Gameplay
             return playerHealth != null
                 ? CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject)
                 : 0;
+        }
+
+        private uint ResolvePlayerToxicitySignalEntityId()
+        {
+            GameObject playerObject = null;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null)
+                playerObject = playerContext.PlayerObject;
+            if (playerObject == null && _playerTransform != null)
+                playerObject = _playerTransform.gameObject;
+            if (playerObject == null)
+                playerObject = BootstrapState.CurrentPlayerObject;
+
+            uint entityHash = playerObject != null ? unchecked((uint)EntityId.ToULong(playerObject.GetEntityId())) : 0u;
+            return entityHash != 0u ? entityHash : PlayerToxicityFallbackEntityHash;
         }
 
         private static bool TryQueueToxicityPoisonStatus(int targetId, float damageMagnitude, float currentIntensity)
@@ -1289,30 +1404,30 @@ namespace Hecton8.Gameplay
                 severity01);
         }
 
-        private void PublishToxicityExposureSignal(int targetId, float damageMagnitude, float currentIntensity)
+        private void PublishToxicityExposureSignal(float damageMagnitude, float currentIntensity)
         {
-            if (targetId == 0)
-                return;
-
-            if (!TryResolvePlayerPredictedAup(out AbsoluteUniversePosition playerAup) &&
-                (_playerTransform == null || !TryResolveAupFromRuntimeOrigin(_playerTransform.position, out playerAup)))
-            {
-                return;
-            }
-
-            float exposure01 = math.saturate(currentIntensity);
-            float toxemiaDelta = math.saturate(exposure01 * math.max(0.1f, damageMagnitude) * ToxicityExposureToxemiaScale);
+            uint signalEntityId = ResolvePlayerToxicitySignalEntityId();
+            float exposure01 = FiniteSaturate01(currentIntensity, 0f);
+            float safeDamageMagnitude = FiniteNonNegativeOrZero(damageMagnitude);
+            float toxemiaDelta = math.saturate(exposure01 * math.max(0.1f, safeDamageMagnitude) * ToxicityExposureToxemiaScale);
             if (exposure01 <= 0.0001f && toxemiaDelta <= 0f)
                 return;
 
+            bool hasSourceAup = TryResolvePlayerPredictedAup(out AbsoluteUniversePosition playerAup) ||
+                (_playerTransform != null && TryResolveAupFromRuntimeOrigin(_playerTransform.position, out playerAup));
+
             ToxicityExposureSignal signal = default;
-            signal.AUP = playerAup.ToAbsoluteDouble3();
             signal.Exposure01 = exposure01;
             signal.ToxemiaDelta = toxemiaDelta;
-            signal.EntityId = unchecked((uint)targetId);
+            signal.EntityId = signalEntityId;
             signal.ChemicalHash = ToxicityHazardChemicalHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
-            signal.Flags = 1;
+            if (hasSourceAup)
+            {
+                signal.AUP = playerAup.ToAbsoluteDouble3();
+                signal.Flags = ToxicityExposureSignal.FlagHasSourceAup;
+            }
+
             SignalBus<ToxicityExposureSignal>.TryPushTracked(in signal, ref s_x001HazardZoneManagerSignalPushDropCount);
         }
 
@@ -1666,7 +1781,11 @@ namespace Hecton8.Gameplay
         {
             bool ringReady = TryEnsureHazardTelemetryRing();
             bool cursorReady = TryEnsureHazardTelemetryCursor();
-            return ringReady && cursorReady;
+            bool ready = ringReady && cursorReady;
+            if (ready)
+                RestoreHazardTelemetryRuntimeStateFromVault();
+
+            return ready;
         }
 
         private bool TryEnsureHazardTelemetryRing()
@@ -1737,6 +1856,61 @@ namespace Hecton8.Gameplay
             handle = acquired;
             ownsHandle = true;
             return true;
+        }
+
+        private void RestoreHazardTelemetryRuntimeStateFromVault()
+        {
+            if (!IsHazardTelemetryRingReady() || !IsHazardTelemetryCursorReady())
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<HazardZoneTelemetryEntry>.ReadOnly telemetryRing) ||
+                !vault.TryReadOnlyHandle(in _telemetryCursorHandle, out NativeArray<int>.ReadOnly cursorBuffer) ||
+                !telemetryRing.IsCreated ||
+                !cursorBuffer.IsCreated ||
+                telemetryRing.Length < TelemetryCapacity ||
+                cursorBuffer.Length <= 0)
+            {
+                return;
+            }
+
+            int telemetryLength = math.min(telemetryRing.Length, TelemetryCapacity);
+            int restoredWriteIndex = NormalizeHazardTelemetryCursor(cursorBuffer[0], telemetryLength);
+            uint restoredSequence = RestoreHazardTelemetrySequence(telemetryRing, telemetryLength, restoredWriteIndex);
+            if (restoredSequence == 0u)
+                restoredWriteIndex = 0;
+
+            _telemetryWriteIndex = restoredWriteIndex;
+            _telemetrySequence = restoredSequence;
+        }
+
+        private static uint RestoreHazardTelemetrySequence(
+            NativeArray<HazardZoneTelemetryEntry>.ReadOnly telemetryRing,
+            int telemetryLength,
+            int nextWriteIndex)
+        {
+            if (!telemetryRing.IsCreated || telemetryLength <= 0)
+                return 0u;
+
+            int newestIndex = nextWriteIndex > 0 ? nextWriteIndex - 1 : telemetryLength - 1;
+            if ((uint)newestIndex < (uint)telemetryLength)
+            {
+                uint newestSequence = telemetryRing[newestIndex].Sequence;
+                if (newestSequence != 0u)
+                    return newestSequence;
+            }
+
+            uint restoredSequence = 0u;
+            int safeLength = math.min(telemetryRing.Length, telemetryLength);
+            for (int i = 0; i < safeLength; i++)
+            {
+                uint sequence = telemetryRing[i].Sequence;
+                if (sequence > restoredSequence)
+                    restoredSequence = sequence;
+            }
+
+            return restoredSequence;
         }
 
         private void ReleaseHazardTelemetryBuffers()
@@ -1852,20 +2026,18 @@ namespace Hecton8.Gameplay
             }
 
             int nextWriteIndex = _telemetryWriteIndex;
+            int telemetryLengthForCursor = TelemetryCapacity;
             bool wrote = false;
             try
             {
                 if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
                     return false;
 
-                int telemetryLength = telemetryRing.Length;
-                int writeIndex = _telemetryWriteIndex;
-                if ((uint)writeIndex >= (uint)telemetryLength)
-                    writeIndex = 0;
+                int telemetryLength = math.min(telemetryRing.Length, TelemetryCapacity);
+                telemetryLengthForCursor = telemetryLength;
+                int writeIndex = NormalizeHazardTelemetryCursor(_telemetryWriteIndex, telemetryLength);
 
-                nextWriteIndex = writeIndex + 1;
-                if (nextWriteIndex >= telemetryLength)
-                    nextWriteIndex = 0;
+                nextWriteIndex = NormalizeHazardTelemetryCursor(writeIndex + 1, telemetryLength);
 
                 entry.PackedOwner = ((ulong)_telemetryRingHandle.BufferID << 32) | _telemetryRingHandle.SystemID;
                 entry.BufferGeneration = _telemetryRingHandle.Generation;
@@ -1879,12 +2051,12 @@ namespace Hecton8.Gameplay
                 if (wrote)
                 {
                     _telemetryWriteIndex = nextWriteIndex;
-                    _ = TryWriteHazardTelemetryCursor(nextWriteIndex);
+                    _ = TryWriteHazardTelemetryCursor(nextWriteIndex, telemetryLengthForCursor);
                 }
             }
         }
 
-        private bool TryWriteHazardTelemetryCursor(int nextWriteIndex)
+        private bool TryWriteHazardTelemetryCursor(int nextWriteIndex, int telemetryLength)
         {
             if (!IsHazardTelemetryCursorReady())
                 return false;
@@ -1902,13 +2074,20 @@ namespace Hecton8.Gameplay
                 if (!cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
                     return false;
 
-                cursorBuffer[0] = nextWriteIndex;
+                cursorBuffer[0] = NormalizeHazardTelemetryCursor(nextWriteIndex, telemetryLength);
                 return true;
             }
             finally
             {
                 vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.GameplayHazards);
             }
+        }
+
+        private static int NormalizeHazardTelemetryCursor(int cursor, int telemetryLength)
+        {
+            return telemetryLength > 0 && (uint)cursor < (uint)telemetryLength
+                ? cursor
+                : 0;
         }
 
         private bool TryReadHazardTelemetryRing(out NativeArray<HazardZoneTelemetryEntry>.ReadOnly telemetryRing)
@@ -1966,38 +2145,40 @@ namespace Hecton8.Gameplay
             int payloadBytes = 0;
             try
             {
-                int entryCount = telemetryRing.Length;
-                payloadBytes = 24 + entryCount * TelemetryEntrySizeBytes;
+                int entryCount = math.min(telemetryRing.Length, TelemetryCapacity);
+                payloadBytes = TelemetryDumpHeaderBytes + entryCount * TelemetryEntrySizeBytes;
                 payload = NativeFaultDumpWriter.CreateTransientPayload(
                     payloadBytes,
                     nameof(HazardZoneManager),
                     TelemetryDumpPayloadLabel);
 
                 int cursor = 0;
-                WriteUInt32LittleEndian(payload, ref cursor, TelemetryDumpMagic);
-                WriteInt32LittleEndian(payload, ref cursor, TelemetryDumpFormatVersion);
-                WriteInt32LittleEndian(payload, ref cursor, TelemetryEntrySizeBytes);
-                WriteInt32LittleEndian(payload, ref cursor, entryCount);
-                WriteInt32LittleEndian(payload, ref cursor, _telemetryWriteIndex);
-                WriteUInt32LittleEndian(payload, ref cursor, _telemetrySequence);
+                if (!TryWriteHazardTelemetryDumpHeader(
+                        payload,
+                        ref cursor,
+                        entryCount,
+                        NormalizeHazardTelemetryCursor(_telemetryWriteIndex, entryCount),
+                        _telemetrySequence))
+                {
+                    GlobalTelemetryBus.PublishUnityLogFault(TelemetryDumpMagic, 0u, 1u);
+                    return;
+                }
+
                 for (int i = 0; i < entryCount; i++)
                 {
-                    HazardZoneTelemetryEntry entry = telemetryRing[i];
-                    WriteUInt64LittleEndian(payload, ref cursor, entry.PackedOwner);
-                    WriteUInt32LittleEndian(payload, ref cursor, entry.FrameIndex);
-                    WriteUInt32LittleEndian(payload, ref cursor, entry.Sequence);
-                    WriteUInt32LittleEndian(payload, ref cursor, entry.StateHash);
-                    WriteUInt32LittleEndian(payload, ref cursor, entry.Flags);
-                    WriteInt32LittleEndian(payload, ref cursor, entry.ActiveZoneCount);
-                    WriteInt32LittleEndian(payload, ref cursor, entry.PendingMutationCount);
-                    WriteInt32LittleEndian(payload, ref cursor, entry.PublishedExposureMask);
-                    WriteUInt32LittleEndian(payload, ref cursor, entry.BufferGeneration);
-                    WriteFloatLittleEndian(payload, ref cursor, entry.ToxicityDose);
-                    WriteFloatLittleEndian(payload, ref cursor, entry.ToxicityPulseAccumulatorSeconds);
-                    WriteFloatLittleEndian(payload, ref cursor, entry.PlayerToxicity);
-                    WriteFloatLittleEndian(payload, ref cursor, entry.VehicleToxicity);
-                    WriteFloatLittleEndian(payload, ref cursor, entry.PlayerRadiation);
-                    WriteFloatLittleEndian(payload, ref cursor, entry.VehicleRadiation);
+                    HazardZoneTelemetryEntry rawEntry = telemetryRing[i];
+                    HazardZoneTelemetryEntry entry = SanitizeHazardTelemetryDumpEntry(in rawEntry);
+                    if (!TryWriteHazardTelemetryDumpEntry(payload, ref cursor, in entry))
+                    {
+                        GlobalTelemetryBus.PublishUnityLogFault(TelemetryDumpMagic, 0u, 1u);
+                        return;
+                    }
+                }
+
+                if (cursor != payloadBytes)
+                {
+                    GlobalTelemetryBus.PublishUnityLogFault(TelemetryDumpMagic, 0u, 1u);
+                    return;
                 }
 
                 _hazardBlackBoxDumped = NativeFaultDumpWriter.TryWriteAll(BuildHazardTelemetryDumpRelativePath(), payload, cursor);
@@ -2032,6 +2213,34 @@ namespace Hecton8.Gameplay
 
             flags |= TelemetryFlagNonFinite;
             return 0f;
+        }
+
+        private static HazardZoneTelemetryEntry SanitizeHazardTelemetryDumpEntry(in HazardZoneTelemetryEntry entry)
+        {
+            if (!HasNonFiniteHazardTelemetryEntry(in entry))
+                return entry;
+
+            HazardZoneTelemetryEntry sanitized = entry;
+            uint flags = sanitized.Flags;
+            sanitized.ToxicityDose = FiniteTelemetryValue(sanitized.ToxicityDose, ref flags);
+            sanitized.ToxicityPulseAccumulatorSeconds = FiniteTelemetryValue(sanitized.ToxicityPulseAccumulatorSeconds, ref flags);
+            sanitized.PlayerToxicity = FiniteTelemetryValue(sanitized.PlayerToxicity, ref flags);
+            sanitized.VehicleToxicity = FiniteTelemetryValue(sanitized.VehicleToxicity, ref flags);
+            sanitized.PlayerRadiation = FiniteTelemetryValue(sanitized.PlayerRadiation, ref flags);
+            sanitized.VehicleRadiation = FiniteTelemetryValue(sanitized.VehicleRadiation, ref flags);
+            sanitized.Flags = flags;
+            sanitized.StateHash = ComputeHazardTelemetryStateHash(in sanitized);
+            return sanitized;
+        }
+
+        private static bool HasNonFiniteHazardTelemetryEntry(in HazardZoneTelemetryEntry entry)
+        {
+            return !math.isfinite(entry.ToxicityDose) ||
+                   !math.isfinite(entry.ToxicityPulseAccumulatorSeconds) ||
+                   !math.isfinite(entry.PlayerToxicity) ||
+                   !math.isfinite(entry.VehicleToxicity) ||
+                   !math.isfinite(entry.PlayerRadiation) ||
+                   !math.isfinite(entry.VehicleRadiation);
         }
 
         private static bool HasNonFiniteExposureJobResult(in HazardExposureJobResult result)
@@ -2083,28 +2292,89 @@ namespace Hecton8.Gameplay
             return unchecked((hash ^ value) * 16777619u);
         }
 
-        private static void WriteFloatLittleEndian(NativeArray<byte> target, ref int cursor, float value)
+        private static bool TryWriteHazardTelemetryDumpHeader(
+            NativeArray<byte> target,
+            ref int cursor,
+            int entryCount,
+            int writeIndex,
+            uint sequence)
         {
-            WriteUInt32LittleEndian(target, ref cursor, math.asuint(value));
+            return TryWriteUInt32LittleEndian(target, ref cursor, TelemetryDumpMagic) &&
+                   TryWriteInt32LittleEndian(target, ref cursor, TelemetryDumpFormatVersion) &&
+                   TryWriteInt32LittleEndian(target, ref cursor, TelemetryEntrySizeBytes) &&
+                   TryWriteInt32LittleEndian(target, ref cursor, entryCount) &&
+                   TryWriteInt32LittleEndian(target, ref cursor, writeIndex) &&
+                   TryWriteUInt32LittleEndian(target, ref cursor, sequence);
         }
 
-        private static void WriteInt32LittleEndian(NativeArray<byte> target, ref int cursor, int value)
+        private static bool TryWriteHazardTelemetryDumpEntry(
+            NativeArray<byte> target,
+            ref int cursor,
+            in HazardZoneTelemetryEntry entry)
         {
-            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)value));
+            return TryWriteUInt64LittleEndian(target, ref cursor, entry.PackedOwner) &&
+                   TryWriteUInt32LittleEndian(target, ref cursor, entry.FrameIndex) &&
+                   TryWriteUInt32LittleEndian(target, ref cursor, entry.Sequence) &&
+                   TryWriteUInt32LittleEndian(target, ref cursor, entry.StateHash) &&
+                   TryWriteUInt32LittleEndian(target, ref cursor, entry.Flags) &&
+                   TryWriteInt32LittleEndian(target, ref cursor, entry.ActiveZoneCount) &&
+                   TryWriteInt32LittleEndian(target, ref cursor, entry.PendingMutationCount) &&
+                   TryWriteInt32LittleEndian(target, ref cursor, entry.PublishedExposureMask) &&
+                   TryWriteUInt32LittleEndian(target, ref cursor, entry.BufferGeneration) &&
+                   TryWriteFloatLittleEndian(target, ref cursor, entry.ToxicityDose) &&
+                   TryWriteFloatLittleEndian(target, ref cursor, entry.ToxicityPulseAccumulatorSeconds) &&
+                   TryWriteFloatLittleEndian(target, ref cursor, entry.PlayerToxicity) &&
+                   TryWriteFloatLittleEndian(target, ref cursor, entry.VehicleToxicity) &&
+                   TryWriteFloatLittleEndian(target, ref cursor, entry.PlayerRadiation) &&
+                   TryWriteFloatLittleEndian(target, ref cursor, entry.VehicleRadiation);
         }
 
-        private static void WriteUInt32LittleEndian(NativeArray<byte> target, ref int cursor, uint value)
+        private static bool TryWriteFloatLittleEndian(NativeArray<byte> target, ref int cursor, float value)
         {
+            return TryWriteUInt32LittleEndian(target, ref cursor, math.asuint(value));
+        }
+
+        private static bool TryWriteInt32LittleEndian(NativeArray<byte> target, ref int cursor, int value)
+        {
+            return TryWriteUInt32LittleEndian(target, ref cursor, unchecked((uint)value));
+        }
+
+        private static bool TryWriteUInt32LittleEndian(NativeArray<byte> target, ref int cursor, uint value)
+        {
+            const int WriteBytes = sizeof(uint);
+            if (!CanWriteLittleEndianBytes(target, cursor, WriteBytes))
+                return false;
+
             target[cursor++] = (byte)value;
             target[cursor++] = (byte)(value >> 8);
             target[cursor++] = (byte)(value >> 16);
             target[cursor++] = (byte)(value >> 24);
+            return true;
         }
 
-        private static void WriteUInt64LittleEndian(NativeArray<byte> target, ref int cursor, ulong value)
+        private static bool TryWriteUInt64LittleEndian(NativeArray<byte> target, ref int cursor, ulong value)
         {
-            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)value));
-            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)(value >> 32)));
+            const int WriteBytes = sizeof(ulong);
+            if (!CanWriteLittleEndianBytes(target, cursor, WriteBytes))
+                return false;
+
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
+            target[cursor++] = (byte)(value >> 32);
+            target[cursor++] = (byte)(value >> 40);
+            target[cursor++] = (byte)(value >> 48);
+            target[cursor++] = (byte)(value >> 56);
+            return true;
+        }
+
+        private static bool CanWriteLittleEndianBytes(NativeArray<byte> target, int cursor, int byteCount)
+        {
+            return target.IsCreated &&
+                   byteCount >= 0 &&
+                   cursor >= 0 &&
+                   cursor <= target.Length - byteCount;
         }
 
         private void ClearHazardExposureResultDescriptor()
@@ -2250,15 +2520,27 @@ namespace Hecton8.Gameplay
         private static bool TryResolvePlayerPredictedAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null)
                 return false;
 
-            PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-            if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
+            if (runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                IsFiniteAup(in snapshot.Aup))
+            {
+                playerAup = snapshot.Aup;
+                return true;
+            }
+
+            if (!runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !IsFiniteAup(in movementState.PredictedAup))
+            {
                 return false;
+            }
 
             playerAup = movementState.PredictedAup;
-            return IsFiniteAup(in playerAup);
+            return true;
         }
 
         private int CollectCandidateVolumes(
@@ -2619,7 +2901,7 @@ namespace Hecton8.Gameplay
 
         private HazardVolumeData BuildVolumeData(int volumeIndex, int volumeId, in AbsoluteUniversePosition positionAup, float intensity, float radius, HazardType type, float visorGlitchBias)
         {
-            float safeRadius = math.max(MinHazardRadius, FiniteNonNegativeOrZero(radius));
+            float safeRadius = NormalizeHazardRadius(radius);
             HazardVolumeData data = default;
             data.AbsoluteUniversePosition = positionAup.ToAbsoluteDouble3();
             data.Radius = safeRadius;
@@ -2768,13 +3050,8 @@ namespace Hecton8.Gameplay
             _activeCount = 0;
             _toxicityDose = 0f;
             _toxicityPulseAccumulatorSeconds = 0f;
-            _publishedExposureMask = 0;
             _lastExposureJobResultNonFinite = false;
-            _activeTransportOwner = null;
-            _activeTransportBehaviour = null;
-            _activeTransportCollider = null;
-            _playerCollider = null;
-            _playerRuntimeContext = null;
+            ClearPlayerRuntimeBindings();
 
             for (int i = 0; i < HazardTypeCount; i++)
             {
@@ -2818,7 +3095,7 @@ namespace Hecton8.Gameplay
             mutation.Id = id;
             mutation.PositionAup = positionAup;
             mutation.Intensity = intensity;
-            mutation.Radius = radius;
+            mutation.Radius = NormalizeHazardRadius(radius);
             mutation.Type = type;
             mutation.VisorGlitchBias = visorGlitchBias;
             mutation.Profile = profile;
@@ -2941,6 +3218,14 @@ namespace Hecton8.Gameplay
         private static float FiniteNonNegativeOrZero(float value)
         {
             return math.isfinite(value) && value > 0f ? value : 0f;
+        }
+
+        private static float NormalizeHazardRadius(float value)
+        {
+            if (!math.isfinite(value) || value <= 0f)
+                return MinHazardRadius;
+
+            return math.clamp(value, MinHazardRadius, MaxHazardRadius);
         }
 
         private static float ClampPersistedToxicityDose(float value)
@@ -3086,6 +3371,7 @@ namespace Hecton8.Gameplay
 
         private void PublishExposureMask(int nextMask)
         {
+            nextMask &= HazardTypeMaskNonRadiation;
             if (nextMask == _publishedExposureMask)
                 return;
 
@@ -3144,9 +3430,31 @@ namespace Hecton8.Gameplay
             signal.localPoint = float3.zero;
             signal.damageType = damageMask;
             signal.integrityDelta = 0;
-            signal.depth = _playerSurvival != null ? _playerSurvival.Depth : 0f;
+            signal.depth = ResolvePlayerSignalDepthMeters();
             signal.sourceID = DamageSourceIds.EnvironmentHazard;
             _playerTraumaDispatcher.OnClarityChanged(0f, clarityImpulse, signal);
+        }
+
+        private float ResolvePlayerSignalDepthMeters()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
+                return 0f;
+
+            HectonSurvivalSystem survival = _playerSurvival;
+            if (survival != null && math.isfinite(survival.Depth))
+                return math.max(0f, survival.Depth);
+
+            return 0f;
         }
 
         private float ResolveHazardResistance(HazardType hazardType)
@@ -3324,24 +3632,36 @@ namespace Hecton8.Gameplay
             if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveRegistered = false;
             _saveService = null;
         }
@@ -3376,13 +3696,15 @@ namespace Hecton8.Gameplay
         [Conditional("UNITY_EDITOR")]
         private void UpdateDiagnostics()
         {
+            float playerToxicity = ClampExposure(_playerHazardIntensity[(int)HazardType.Toxicity]);
+            float vehicleToxicity = ClampExposure(_vehicleHazardIntensity[(int)HazardType.Toxicity]);
             _debugActiveZoneCount = _activeCount;
-            _debugToxicityDose = _toxicityDose;
-            _debugPlayerToxicityIntensity = _playerHazardIntensity[(int)HazardType.Toxicity];
-            _debugVehicleToxicityIntensity = _vehicleHazardIntensity[(int)HazardType.Toxicity];
+            _debugToxicityDose = ToxicityDose;
+            _debugPlayerToxicityIntensity = playerToxicity;
+            _debugVehicleToxicityIntensity = vehicleToxicity;
             _debugJobRunning = _jobRunning;
             _debugPlayerExposureActive = (_publishedExposureMask & (1 << (int)HazardType.Toxicity)) != 0;
-            _debugVehicleExposureActive = _vehicleHazardIntensity[(int)HazardType.Toxicity] > 0.001f;
+            _debugVehicleExposureActive = vehicleToxicity > 0.001f;
             _debugPendingMutationCount = _pendingMutationCount + _pendingOverflowUnregisterCount;
         }
 

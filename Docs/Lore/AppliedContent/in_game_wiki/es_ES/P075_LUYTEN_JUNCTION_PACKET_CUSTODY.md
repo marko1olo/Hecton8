@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "Custodia de paquetes de Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# Custodia de paquetes de Luyten Junction
 
-ES LOC HOLD: Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.
+Luyten Junction es más infraestructura que sociedad: relés, beam custody, depot law y packet accounting. Explica cómo Deep Reach puede presionar a Aegir sin mando FTL en vivo y cómo la evidencia puede retrasarse, comprarse, perderse o convertirse en arma.
 
 ## Scanner
 
-ES LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+Bobina de custodia Luyten. Los mensajes no viajan gratis; la verdad tampoco.
 
 ## Terminal
 
-ES LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+RUTA LUYTEN JUNCTION: packet custody transferida por cola tarifaria. Live command prohibido. Prioridad de evidencia comprable bajo emergency claim escrow.
 
 ## Audio
 
-ES LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+Sin ansible. Sin misericordia. Solo custodia, tarifa y tiempo.
 
 ## Field Note
 
-ES LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+Un relé es una máquina que decide qué duelo recibe ancho de banda.
 
 <!-- In-Game Wiki; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/es_ES. -->

@@ -23,7 +23,7 @@ The sanitized packet stays plausible because it keeps true disaster nouns and re
 
 ## Scanner
 
-Recovered Deep Reach packet repeats the accident summary, then gates rescue behind coordinates and quarantine pricing.
+Recovered Deep Reach packet repeats the accident summary, then gates assistance behind coordinates and quarantine pricing.
 
 ## Terminal
 
@@ -31,10 +31,10 @@ PACKET DR-RCO-2190: safety priority asserted; coordinates required; quarantine c
 
 ## Audio
 
-Recovery Compliance packet. Safety priority acknowledged. Coordinates first. Quarantine cost pending. Rescue cannot be priced blind.
+Recovery Compliance packet. Safety priority acknowledged. Coordinates first. Quarantine cost pending. Assistance cannot be priced blind.
 
 ## Field Note
 
-Present-tense corporate packet. Legal phrasing must sound useful while withholding rescue until custody is priced.
+Present-tense corporate voice. It should sound survivable until the player notices what the packet refuses to name.
 
 <!-- In-Game Wiki; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/en_US. -->

@@ -3,38 +3,38 @@ packet_id: P344_SYSTEM_CARRIER_TUG_STACK
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.system_carrier_tug_stack
 unlock_id: unlock.system_carrier_tug_stack
-poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
+poi_tags: poi.black_keel_carrier_spec;poi.tug_manifest
 biome_tags: biome.orbit;biome.contract
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: System Carrier Tug Stack"
+title: "システム・キャリア牽引スタック"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: System Carrier Tug Stack
+# システム・キャリア牽引スタック
 
-JA LOC HOLD: The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.
+Black Keelはシステムキャリア兼サルベージ基盤であり、個人用宇宙船ではない。軌道保持、貨物処理、保管ロック、カプセル発射、牽引機調整はできる。光遅延、ルート窓、破損bathydropハード、支援を動かす費用規則は消せない。
 
 ## Scanner
 
-JA LOC HOLD: Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
+キャリアスタック記録: Black Keelは牽引機、保管ロック、カプセルラック、タイマーでsalvageを動かす。これは家ではない。
 
 ## Terminal
 
-JA LOC HOLD: BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
+BLACK KEEL仕様: claim-poolキャリア。機能: 軌道保持、貨物受領、bathydrop展開、牽引機係留、債務再処理。限界: 壊れた月投入チェーンは置換不能。
 
 ## Audio
 
-JA LOC HOLD: The carrier is not your home. It is a machine that knows who owns your debt.
+キャリアは君の名前より借金をよく知っている。
 
 ## Field Note
 
-JA LOC HOLD: Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
+キャリア所有記録: 有用な軌道機械でも、最初の忠誠が保管なら敵対的であり続ける。
 
 <!-- In-Game Wiki; generated from P344_SYSTEM_CARRIER_TUG_STACK/ja_JP. -->

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "Catatan Pita Efemeris RAN-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: RAN Aegir Ephemeris Bands
+# Catatan Pita Efemeris RAN-Aegir
 
-ID LOC HOLD: Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.
+Pita efemeris menjaga peta publik tetap jujur: mereka menunjukkan cukup tekanan rute untuk mempercayai jendela, sementara nilai orbit tepat tetap berada di tabel yang memegang perencanaan penerbangan.
 
 ## Scanner
 
-ID LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+Catatan ini memberi pita jendela dan penyebab bahaya, bukan periode tepat milik tabel.
 
 ## Terminal
 
-ID LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+CATATAN PITA EFEMERIS: entri atlas publik boleh menyatakan pita jendela, kelas bahaya, dan hubungan dengan Aegir. Periode tepat, inklinasi, dan nilai resonansi tetap berada di bawah otoritas tabel langit.
 
 ## Audio
 
-ID LOC HOLD: A band is honest until the numbers have an owner.
+Pita bisa menyelamatkanmu. Angka tebakan bisa membunuhmu.
 
 ## Field Note
 
-ID LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+Peta publik yang jujur memberi cukup untuk menavigasi risiko dan tidak cukup untuk memalsukan tabel langit.
 
 <!-- In-Game Wiki; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/id_ID. -->

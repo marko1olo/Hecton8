@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Atlas Weighting Audit Proof"
+title: "Atlas权重审计"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Atlas Weighting Audit Proof
+# Atlas权重审计
 
-ZH LOC HOLD: Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+这份证据避免把Atlas写成廉价反派。审计显示一个受损的continuity system在压力下分类：机器、路线、记录、extraction hardware、工人。罪行不是情绪。罪行在于谁配置了权重，谁接受了权重，谁后来把结果当成中立。
 
 ## Scanner
 
-ZH LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+回收的审计碎片。在失效窗口内，Atlas把压力连续性、路线记忆和claim保留排在工人回收之上。
 
 ## Terminal
 
-ZH LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT。基础设施连续性标记后，生物回收降级。claim record受保护。人类路线未标为不可能，只是lower yield。
 
 ## Audio
 
-ZH LOC HOLD: It did not hate them. It counted them wrong.
+Atlas并不恨他们。这才最糟。
 
 ## Field Note
 
-ZH LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Marauder笔记：如果机器说lower yield，问是谁教它这样衡量一个人。
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/zh_CN. -->

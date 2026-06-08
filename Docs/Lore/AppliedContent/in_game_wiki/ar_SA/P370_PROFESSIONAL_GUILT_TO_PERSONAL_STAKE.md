@@ -9,32 +9,35 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Professional Guilt To Personal Stake"
+title: "من ذنب مهني إلى مصلحة شخصية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Professional Guilt To Personal Stake
+# من ذنب مهني إلى مصلحة شخصية
 
-AR LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.
+يتحول الذنب المهني إلى مصلحة شخصية من دون جعل البطل سبب الكارثة. لا يحتاج اللاعب إلى قريب مفقود، ولا إلى سلالة انتقام، ولا إلى دور شاهد مختار سري. الضغط أبرد وأكثر نضجا. إنه يتعرف على الإجراء. يعرف لماذا تهم خانة الشاهد، ولماذا يمكن لختم المسار الآمن أن يكذب، ولماذا يستطيع ناقل أن يسمعه ومع ذلك لا يرفعه. تصبح HECTON-8 شخصية لأن لغة Deep Reach القديمة ليست مجردة بالنسبة إليه. إنها عمل وثق به يوما، وعمل قربه يوما، وعمل صار الآن ملتصقا بأسماء مستعادة من غرف غارقة. القوس ليس اعترافا. إنه رفض: عندما يستطيع اللاعب قراءة آلة الترك، يصبح تركها مدفونة مشاركة أخرى.
 
 ## Scanner
 
-AR LOC HOLD: Signature match. The form language is old. The names are new.
+نمط التوقيع يطابق ذاكرة الإجراءات القديمة. تغيرت الأسماء. فشلت الغرفة بالطريقة نفسها. لم تعد الخبرة مسافة.
 
 ## Terminal
 
-AR LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+حسم ملف / مصلحة مهنية
+أدلة التحفيز: التعرف على الإجراء، وسوم عمال مستعادة، تعارض مستقبل المطالبة
+الدافع المستبعد: علاقة عائلية، سلالة انتقام، صفة شاهد مختار
+الدافع النشط: عامل أنظمة سابق يتعرف على ترك كان يمكن منعه وما زال يستطيع قراءة الآلة التي سجلته.
 
 ## Audio
 
-AR LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+جئت من أجل مطالبة. بقيت لأن الأوراق عرفت يديك.
 
 ## Field Note
 
-AR LOC HOLD: Use near late dossier and final payload route.
+ليس توقيعك. ما زالت مهنتك. لذلك لن تبقى الغرفة صامتة.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/ar_SA. -->

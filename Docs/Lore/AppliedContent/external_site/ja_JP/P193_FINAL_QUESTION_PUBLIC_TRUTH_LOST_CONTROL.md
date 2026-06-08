@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "最終問い: 公開された真実、失われた制御"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# 最終問い: 公開された真実、失われた制御
 
-JP LOC HOLD: Final Question Public Truth Lost Control defines the public ledger ending pressure.
+公開リークは魔法の正義ボタンとして書いてはいけない。HECTON-8では情報は船より遠くへ届き、助けより早く到着する。証拠が盆地を離れれば、Deep Reachを告発し、Black Keelに返答を迫り、Sol Core規制官を起こし、家族に噂より硬いものを渡せる。それらは本物の勝利だ。
 
-## Scanner
-
-JP LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
-
-## Terminal
-
-JP LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
-
-## Audio
-
-JP LOC HOLD: Truth leaves your hand faster than rescue ever could.
-
-## Field Note
-
-JP LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+同時に、リークは捕食の合図でもある。市場はblue debtを値付けする。ドメイン裁判所は航路を凍結する。私的カルトはAtlasを聖典にする。競合は座標へ走る。救助は政治的に必要で、作戦的には混乱する。プレイヤーは制御ではなく真実を選んだ。ゲームはその両方を尊重すべきだ。
 
 <!-- External Site; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/ja_JP. -->

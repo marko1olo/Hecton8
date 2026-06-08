@@ -9,32 +9,16 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "Власть световой задержки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# Власть световой задержки
 
-RU LOC HOLD: Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather.
-
-## Scanner
-
-RU LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
-
-## Terminal
-
-RU LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
-
-## Audio
-
-RU LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
-
-## Field Note
-
-RU LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+Сигнал бедствия на HECTON-8 — это физический груз смысла. Он уходит с затопленной мачты, пересекает пространство Aegir со скоростью света, ждет внутри ретрансляционных буферов и приходит на Black Keel через очередь, которая уже умеет назначать цену риску. Первая задержка честная: расстояние. Поздние задержки человеческие: класс опеки, штормовые окна, язык ответственности и привычка носителя отвечать активу раньше человека. Поэтому ответ может быть технически свежим и все равно бесполезным в схлопывающейся комнате давления. Читатель должен сначала почувствовать жестокость обычной физики, а потом увидеть корпоративную жестокость поверх нее.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/ru_RU. -->

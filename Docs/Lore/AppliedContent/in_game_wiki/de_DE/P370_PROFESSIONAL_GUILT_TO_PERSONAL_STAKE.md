@@ -9,32 +9,35 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Professional Guilt To Personal Stake"
+title: "Von Berufsschuld zu persönlichem Einsatz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Professional Guilt To Personal Stake
+# Von Berufsschuld zu persönlichem Einsatz
 
-DE LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.
+Berufliche Schuld wird zu persönlichem Einsatz, ohne den Protagonisten zur Ursache der Katastrophe zu machen. Der Spieler braucht kein verlorenes Geschwister, keine Blutlinie der Rache und keine geheime Erwähltenrolle. Der Druck ist kälter und erwachsener. Er erkennt das Verfahren. Er weiß, warum ein Zeugenfeld zählt, warum ein Routen-Safe-Stempel lügen kann, warum ein Träger ihn hören und trotzdem nicht herausheben kann. HECTON-8 wird persönlich, weil die alte Deep-Reach-Sprache für ihn nicht abstrakt ist. Sie ist Arbeit, der er einst vertrauen musste, Arbeit, neben der er einst tätig war, und diese Arbeit hängt jetzt an Namen aus ertrunkenen Räumen. Der Bogen ist kein Geständnis. Er ist Verweigerung: Wenn der Spieler die Maschine des Zurücklassens lesen kann, wird sie begraben zu lassen zu einer weiteren Teilnahme.
 
 ## Scanner
 
-DE LOC HOLD: Signature match. The form language is old. The names are new.
+Signaturmuster passt zum alten Verfahrenscache. Die Namen änderten sich. Der Raum versagte auf dieselbe Weise. Expertise ist keine Distanz mehr.
 
 ## Terminal
 
-DE LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+DOSSIER-AUFLÖSUNG / BERUFLICHER EINSATZ
+auslösende Beweise: Verfahrenserkennung, geborgene Arbeiter-Tags, Konflikt mit Anspruchsempfänger
+ausgeschlossenes Motiv: Familienbeziehung, Rachelinie, Status als erwählter Zeuge
+aktives Motiv: ehemaliger Systemarbeiter erkennt vermeidbares Zurücklassen und kann die Maschine, die es ablegte, noch lesen.
 
 ## Audio
 
-DE LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+Du kamst wegen eines Anspruchs. Du bliebst, weil der Papierkram deine Hände kannte.
 
 ## Field Note
 
-DE LOC HOLD: Use near late dossier and final payload route.
+Nicht deine Signatur. Trotzdem dein Handwerk. Darum bleibt der Raum nicht still.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/de_DE. -->

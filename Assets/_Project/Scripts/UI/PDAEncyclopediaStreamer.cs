@@ -41,34 +41,46 @@ namespace Hecton8.UI
         [FieldOffset(40)] public ulong Reserved1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 224)]
     public struct EncyclopediaStateDTO
     {
         [FieldOffset(0)] public ulong Mask0;
         [FieldOffset(8)] public ulong Mask1;
         [FieldOffset(16)] public ulong Mask2;
         [FieldOffset(24)] public ulong Mask3;
-        [FieldOffset(32)] public long LastDiscoveryGridX;
-        [FieldOffset(40)] public long LastDiscoveryGridY;
-        [FieldOffset(48)] public long LastDiscoveryGridZ;
-        [FieldOffset(56)] public float LastDiscoveryLocalX;
-        [FieldOffset(60)] public float LastDiscoveryLocalY;
-        [FieldOffset(64)] public float LastDiscoveryLocalZ;
-        [FieldOffset(68)] public float GlobalQualityWeight;
-        [FieldOffset(72)] public uint LastEntryHash;
-        [FieldOffset(76)] public uint UnlockedCount;
-        [FieldOffset(80)] public uint Revision;
-        [FieldOffset(84)] public uint Magic;
-        [FieldOffset(88)] public uint Flags;
-        [FieldOffset(92)] public uint MetadataCount;
-        [FieldOffset(96)] public uint MockEntryCount;
-        [FieldOffset(100)] public uint LastFrame;
-        [FieldOffset(104)] public uint LastSourceId;
-        [FieldOffset(108)] public uint ActiveBitIndex;
-        [FieldOffset(112)] public uint CursorByte;
-        [FieldOffset(116)] public uint DecodedChars;
-        [FieldOffset(120)] public uint VisibleChars;
-        [FieldOffset(124)] public uint StreamState;
+        [FieldOffset(32)] public ulong Mask4;
+        [FieldOffset(40)] public ulong Mask5;
+        [FieldOffset(48)] public ulong Mask6;
+        [FieldOffset(56)] public ulong Mask7;
+        [FieldOffset(64)] public ulong Mask8;
+        [FieldOffset(72)] public ulong Mask9;
+        [FieldOffset(80)] public ulong Mask10;
+        [FieldOffset(88)] public ulong Mask11;
+        [FieldOffset(96)] public ulong Mask12;
+        [FieldOffset(104)] public ulong Mask13;
+        [FieldOffset(112)] public ulong Mask14;
+        [FieldOffset(120)] public ulong Mask15;
+        [FieldOffset(128)] public long LastDiscoveryGridX;
+        [FieldOffset(136)] public long LastDiscoveryGridY;
+        [FieldOffset(144)] public long LastDiscoveryGridZ;
+        [FieldOffset(152)] public float LastDiscoveryLocalX;
+        [FieldOffset(156)] public float LastDiscoveryLocalY;
+        [FieldOffset(160)] public float LastDiscoveryLocalZ;
+        [FieldOffset(164)] public float GlobalQualityWeight;
+        [FieldOffset(168)] public uint LastEntryHash;
+        [FieldOffset(172)] public uint UnlockedCount;
+        [FieldOffset(176)] public uint Revision;
+        [FieldOffset(180)] public uint Magic;
+        [FieldOffset(184)] public uint Flags;
+        [FieldOffset(188)] public uint MetadataCount;
+        [FieldOffset(192)] public uint MockEntryCount;
+        [FieldOffset(196)] public uint LastFrame;
+        [FieldOffset(200)] public uint LastSourceId;
+        [FieldOffset(204)] public uint ActiveBitIndex;
+        [FieldOffset(208)] public uint CursorByte;
+        [FieldOffset(212)] public uint DecodedChars;
+        [FieldOffset(216)] public uint VisibleChars;
+        [FieldOffset(220)] public uint StreamState;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 128)]
@@ -169,8 +181,8 @@ namespace Hecton8.UI
         IGlobalRegistryHotSwapListener
     {
         private static int s_x001PdaEncyclopediaStreamerSignalPushDropCount;
-        private const int UnlockBitCount = 256;
-        private const int UnlockWordCount = 4;
+        public const int UnlockBitCount = 1024;
+        public const int UnlockWordCount = 16;
         private const int MaxMetadataEntries = UnlockBitCount;
         private const int TelemetryFrameCount = 300;
         private const int MockUtf8Bytes = 64 * 1024;
@@ -190,6 +202,9 @@ namespace Hecton8.UI
         private const uint FaultMetadataFull = 0x4D455441u;
         private const uint FaultMetadataCollision = 0x434F4C4Cu;
         private const uint FaultInvalidHash = 0x494E5648u;
+        private const uint FaultLoreSignalDrop = 0x4C445250u;
+        private const uint FaultPdaEventSignalDrop = 0x50445250u;
+        private const uint FaultBlackBoxWrite = 0x42424457u;
         private const string BlackBoxDumpFileName = "Dump_PDAEncyclopediaStreamer_BlackBox.bin";
         private const uint DefaultEntryHash = 0xAEC57EACu;
         private const uint H8lrSourceId = PdaH8lrLoreStore.MagicH8lr;
@@ -211,8 +226,10 @@ namespace Hecton8.UI
         private const uint TextSourceVaultMock = 3u;
         private const uint TextSourceDataMonolith = 4u;
         private const uint DataMonolithSourceId = H8DataLayoutConstants.BlobMagic;
+        private const uint PdaLogReplaySourceId = 0x504C4F47u;
         private const int DataMonolithSeedMinRecordsPerFrame = 16;
         private const int DataMonolithSeedMaxRecordsPerFrame = 96;
+        private const int PdaLogEventReplayMaxPerFrame = 16;
         private const BufferID UnlockMaskBufferId = (BufferID)70560;
         private const BufferID RuntimeStateBufferId = (BufferID)70561;
         private const BufferID MetadataBufferId = (BufferID)70562;
@@ -318,7 +335,17 @@ namespace Hecton8.UI
         private uint _dataMonolithMetadataSeedLocaleHash = H8AppliedLoreRuntime.DefaultLocaleHash;
         private int _dataMonolithMetadataSeedCursor;
         private int _dataMonolithMetadataSeedStage;
+        private int _pdaLogEventReplayCursor;
+        private uint _pdaLogReplayObservedVersion;
+        private uint _pdaLogReplayObservedCount;
+        private uint _pdaLogReplayObservedLatestHash;
+        private int _observedPdaEventTypedSignalDropCount;
+        private int _observedPdaEventQueueRefusalCount;
+        private int _observedPdaEventListenerRegistrationRefusalCount;
+        private bool _pdaLogEventReplayComplete = true;
         private uint _lastFaultHash;
+        private uint _pendingTelemetryFaultHash;
+        private uint _pendingBlackBoxFaultHash;
         private uint _activeUtf8SourceFlags;
         private bool _hasActiveAppliedLoreRecord;
         private bool _blackBoxDumpQueued;
@@ -361,6 +388,7 @@ namespace Hecton8.UI
             RefreshVisibility();
             _pendingSelectHash = initialEntryHash != 0u ? initialEntryHash : DefaultEntryHash;
             _needsEntryReload = true;
+            ResetPdaLogEventReplay();
         }
 
         private void Start()
@@ -385,6 +413,7 @@ namespace Hecton8.UI
             _dataMonolithMetadataSeeded = false;
             _playerContext = null;
             ResetActiveSourceCache();
+            ResetPdaLogEventReplay();
             _forceRevealDecodedTextNextVisualSync = false;
 
             if (_h8lrLoreStore != null)
@@ -439,6 +468,11 @@ namespace Hecton8.UI
                 return;
 
             ConsumeScanSignals();
+            if (!_dataMonolithMetadataSeeded && openDataMonolithAppliedLoreOnEnable)
+                SeedDataMonolithAppliedLoreMetadata();
+
+            RefreshPdaLogEventReplayState();
+            ReplayPersistedPdaLogEvents();
             if (!_registeredPdaEvents)
                 RefreshVisibility();
 
@@ -480,7 +514,7 @@ namespace Hecton8.UI
                 _streamState == PdaEncyclopediaStreamState.Fault ||
                 _streamState == PdaEncyclopediaStreamState.Complete)
             {
-                RecordTelemetry(0u, 0L, 0L);
+                RecordTelemetry(0u, 0L, 0L, faultHash: ConsumeTelemetryFaultHash());
                 return;
             }
 
@@ -516,9 +550,10 @@ namespace Hecton8.UI
                 _streamState = PdaEncyclopediaStreamState.Complete;
 
             bool hasRuntimeStateSnapshot = WriteRuntimeState(quality, decodeTicks, canvasTicks, out uint unlockedCountSnapshot);
-            RecordTelemetry(charsRenderedThisFrame, decodeTicks, canvasTicks, unlockedCountSnapshot, hasRuntimeStateSnapshot);
+            uint telemetryFaultHash = ConsumeTelemetryFaultHash();
+            RecordTelemetry(charsRenderedThisFrame, decodeTicks, canvasTicks, unlockedCountSnapshot, hasRuntimeStateSnapshot, telemetryFaultHash);
 
-            if (_lastFaultHash != 0u || HasInvalidNumbers(quality, decodeTicks, canvasTicks, decodedThisFrame))
+            if (telemetryFaultHash != 0u || HasInvalidNumbers(quality, decodeTicks, canvasTicks, decodedThisFrame))
                 QueueBlackBoxDump();
         }
 
@@ -543,8 +578,8 @@ namespace Hecton8.UI
                     _isPdaVisible = false;
                     return;
                 case PDAEventType.LogbookChanged:
-                    if (payload.LogEventHashID != 0u)
-                        _pendingSelectHash = payload.LogEventHashID;
+                    ResetPdaLogEventReplay();
+                    TryQueuePdaLogEventSelection(payload.LogEventHashID);
                     return;
             }
         }
@@ -583,6 +618,7 @@ namespace Hecton8.UI
 
             TryColdBootstrap();
             _needsEntryReload = true;
+            ResetPdaLogEventReplay();
         }
 
 #if UNITY_EDITOR
@@ -714,12 +750,13 @@ namespace Hecton8.UI
         }
 #endif
 
-        public static bool ValidateEncyclopediaStateLayout(out int sizeBytes, out int mask0Offset, out int mask3Offset)
+        public static bool ValidateEncyclopediaStateLayout(out int sizeBytes, out int mask0Offset, out int mask7Offset)
         {
             sizeBytes = UnsafeUtility.SizeOf<EncyclopediaStateDTO>();
             mask0Offset = Marshal.OffsetOf<EncyclopediaStateDTO>(nameof(EncyclopediaStateDTO.Mask0)).ToInt32();
-            mask3Offset = Marshal.OffsetOf<EncyclopediaStateDTO>(nameof(EncyclopediaStateDTO.Mask3)).ToInt32();
-            return sizeBytes == 128 && mask0Offset == 0 && mask3Offset == 24;
+            mask7Offset = Marshal.OffsetOf<EncyclopediaStateDTO>(nameof(EncyclopediaStateDTO.Mask7)).ToInt32();
+            int mask15Offset = Marshal.OffsetOf<EncyclopediaStateDTO>(nameof(EncyclopediaStateDTO.Mask15)).ToInt32();
+            return sizeBytes == 224 && mask0Offset == 0 && mask7Offset == 56 && mask15Offset == 120;
         }
 
         public static bool ValidatePdaStreamerLayouts(
@@ -750,7 +787,7 @@ namespace Hecton8.UI
             typewriterReserved3Offset = Marshal.OffsetOf<PdaTypewriterStateDTO>(nameof(PdaTypewriterStateDTO.Reserved3)).ToInt32();
             aupReserved1Offset = Marshal.OffsetOf<PdaAup48>(nameof(PdaAup48.Reserved1)).ToInt32();
             h8lrRecordReserved0Offset = Marshal.OffsetOf<PdaH8lrRecordDTO>(nameof(PdaH8lrRecordDTO.Reserved0)).ToInt32();
-            return encyclopediaSizeBytes == 128 &&
+            return encyclopediaSizeBytes == 224 &&
                    runtimeSizeBytes == 128 &&
                    entryMetaSizeBytes == 64 &&
                    telemetrySizeBytes == 64 &&
@@ -835,6 +872,48 @@ namespace Hecton8.UI
 
         private void ConsumeScanSignals()
         {
+            int pdaEventTypedSignalDrops = PDAEvents.DroppedTypedSignalCount;
+            if (pdaEventTypedSignalDrops < _observedPdaEventTypedSignalDropCount)
+            {
+                _observedPdaEventTypedSignalDropCount = pdaEventTypedSignalDrops;
+            }
+            else if (pdaEventTypedSignalDrops != _observedPdaEventTypedSignalDropCount)
+            {
+                _observedPdaEventTypedSignalDropCount = pdaEventTypedSignalDrops;
+                MarkTransientFault(FaultPdaEventSignalDrop);
+            }
+
+            int pdaEventQueueRefusals = PDAEvents.RefusedQueuedEventCount;
+            if (pdaEventQueueRefusals < _observedPdaEventQueueRefusalCount)
+            {
+                _observedPdaEventQueueRefusalCount = pdaEventQueueRefusals;
+            }
+            else if (pdaEventQueueRefusals != _observedPdaEventQueueRefusalCount)
+            {
+                _observedPdaEventQueueRefusalCount = pdaEventQueueRefusals;
+                MarkTransientFault(FaultPdaEventSignalDrop);
+            }
+
+            int pdaEventListenerRegistrationRefusals = PDAEvents.RefusedListenerRegistrationCount;
+            if (pdaEventListenerRegistrationRefusals < _observedPdaEventListenerRegistrationRefusalCount)
+            {
+                _observedPdaEventListenerRegistrationRefusalCount = pdaEventListenerRegistrationRefusals;
+            }
+            else if (pdaEventListenerRegistrationRefusals != _observedPdaEventListenerRegistrationRefusalCount)
+            {
+                _observedPdaEventListenerRegistrationRefusalCount = pdaEventListenerRegistrationRefusals;
+                MarkTransientFault(FaultPdaEventSignalDrop);
+            }
+
+            if (SignalBus<PDAEventPayload>.DroppedLastFlush > 0)
+                MarkTransientFault(FaultPdaEventSignalDrop);
+
+            if (SignalBus<ScanCompleteSignal>.DroppedLastFlush > 0 ||
+                SignalBus<LoreFragmentScannedSignal>.DroppedLastFlush > 0)
+            {
+                MarkTransientFault(FaultLoreSignalDrop);
+            }
+
             ReadOnlySpan<ScanCompleteSignal> scanSignals = SignalBus<ScanCompleteSignal>.GetFrameSnapshot();
             for (int i = 0; i < scanSignals.Length; i++)
             {
@@ -900,6 +979,95 @@ namespace Hecton8.UI
                     _pendingSelectHash = signal.Hash;
                 }
             }
+        }
+
+        private void RefreshPdaLogEventReplayState()
+        {
+            if (!UIStateStore.IsInitialized)
+                return;
+
+            UIStateData pdaState = UIStateStore.GetPDAState();
+            if (_pdaLogReplayObservedVersion == pdaState.Version &&
+                _pdaLogReplayObservedCount == pdaState.LogEntryCount &&
+                _pdaLogReplayObservedLatestHash == pdaState.LatestLogEventHash)
+            {
+                return;
+            }
+
+            _pdaLogReplayObservedVersion = pdaState.Version;
+            _pdaLogReplayObservedCount = pdaState.LogEntryCount;
+            _pdaLogReplayObservedLatestHash = pdaState.LatestLogEventHash;
+            _pdaLogEventReplayCursor = 0;
+            _pdaLogEventReplayComplete = pdaState.LogEntryCount == 0u || pdaState.LatestLogEventHash == 0u;
+        }
+
+        private void ReplayPersistedPdaLogEvents()
+        {
+            if (_pdaLogEventReplayComplete ||
+                !_vaultReady ||
+                !UIStateStore.IsInitialized ||
+                (openDataMonolithAppliedLoreOnEnable && !_dataMonolithMetadataSeeded) ||
+                !EnsureVaultBuffers())
+            {
+                return;
+            }
+
+            int replayBudget = math.min(PdaLogEventReplayMaxPerFrame, UIStateStore.MaxPdaLogEvents);
+            int replayed = 0;
+            while (replayed < replayBudget && _pdaLogEventReplayCursor < UIStateStore.MaxPdaLogEvents)
+            {
+                int newestFirstIndex = _pdaLogEventReplayCursor++;
+                if (!UIStateStore.TryGetPDALogEventHash(newestFirstIndex, out uint eventHash))
+                {
+                    _pdaLogEventReplayComplete = true;
+                    return;
+                }
+
+                replayed++;
+                if (eventHash == 0u)
+                    continue;
+
+                if (!TryResolveLorePayloadForUnlock(eventHash))
+                {
+                    RejectLoreHash(eventHash);
+                    continue;
+                }
+
+                PdaAup48 aup = default;
+                if (UnlockEntry(
+                        eventHash,
+                        in aup,
+                        PdaLogReplaySourceId,
+                        ResolvePdaFrame(),
+                        false,
+                        validatePayload: false,
+                        wasNewUnlock: out _))
+                {
+                    if (_pendingSelectHash == 0u)
+                        TryQueuePdaLogEventSelection(eventHash);
+                }
+            }
+
+            if (_pdaLogEventReplayCursor >= UIStateStore.MaxPdaLogEvents)
+                _pdaLogEventReplayComplete = true;
+        }
+
+        private void ResetPdaLogEventReplay()
+        {
+            _pdaLogEventReplayCursor = 0;
+            _pdaLogReplayObservedVersion = 0u;
+            _pdaLogReplayObservedCount = 0u;
+            _pdaLogReplayObservedLatestHash = 0u;
+            _pdaLogEventReplayComplete = false;
+        }
+
+        private bool TryQueuePdaLogEventSelection(uint eventHash)
+        {
+            if (eventHash == 0u || !TryResolveLorePayloadForUnlock(eventHash))
+                return false;
+
+            _pendingSelectHash = eventHash;
+            return true;
         }
 
         private void BeginEntry(uint hash)
@@ -1257,10 +1425,7 @@ namespace Hecton8.UI
 
                 bool changedThisPass = false;
                 uint promotedThisPass = 0u;
-                ulong clearMask0 = 0UL;
-                ulong clearMask1 = 0UL;
-                ulong clearMask2 = 0UL;
-                ulong clearMask3 = 0UL;
+                EncyclopediaStateDTO clearMask = default;
                 PdaEncyclopediaRuntimeStateDTO state = states[0];
                 EncyclopediaStateDTO mask = masks[0];
 
@@ -1276,7 +1441,7 @@ namespace Hecton8.UI
 
                     int wordIndex = bitIndex >> 6;
                     ulong bit = 1UL << (bitIndex & 63);
-                    OrMaskWord(ref clearMask0, ref clearMask1, ref clearMask2, ref clearMask3, wordIndex, bit);
+                    OrMaskWord(ref clearMask, wordIndex, bit);
                     ref ulong word = ref GetMaskWordRef(ref mask, wordIndex);
                     if ((word & bit) == 0UL)
                     {
@@ -1299,7 +1464,7 @@ namespace Hecton8.UI
 
                 if (!TryWriteUnlockMask(in mask) ||
                     !TryWriteRuntimeState(in state) ||
-                    !TryClearPromotedMetadataFlags(frame, clearMask0, clearMask1, clearMask2, clearMask3))
+                    !TryClearPromotedMetadataFlags(frame, in clearMask))
                 {
                     return;
                 }
@@ -2261,7 +2426,9 @@ namespace Hecton8.UI
             PdaEncyclopediaRuntimeStateDTO state = states[0];
             if (!ZeroGCFormatter.AppendToSpan("UNLOCKED ".AsSpan(), span, ref cursor) ||
                 !ZeroGCFormatter.AppendInt((int)state.UnlockedCount, span, ref cursor) ||
-                !ZeroGCFormatter.AppendToSpan("/256 | BIT ".AsSpan(), span, ref cursor))
+                !ZeroGCFormatter.AppendChar('/', span, ref cursor) ||
+                !ZeroGCFormatter.AppendInt(UnlockBitCount, span, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan(" | BIT ".AsSpan(), span, ref cursor))
             {
                 FailMetaWrite();
                 return;
@@ -2425,7 +2592,8 @@ namespace Hecton8.UI
             long decodeTicks,
             long canvasTicks,
             uint unlockedCountSnapshot = 0u,
-            bool hasUnlockedCountSnapshot = false)
+            bool hasUnlockedCountSnapshot = false,
+            uint faultHash = 0u)
         {
             if (!EnsureVaultBuffers() ||
                 !TryReadVaultBuffer(in _telemetryCursorHandle, TelemetryCursorBufferId, out NativeArray<int>.ReadOnly cursorSnapshot) ||
@@ -2462,7 +2630,7 @@ namespace Hecton8.UI
             entry.Flags = ((uint)_streamState & 0xFFu) |
                           ((_activeUtf8SourceFlags & 7u) << StateFlagSourceShift) |
                           (_canvasSplitReady ? TelemetryFlagCanvasSplit : 0u);
-            entry.FaultHash = _lastFaultHash;
+            entry.FaultHash = faultHash != 0u ? faultHash : _lastFaultHash;
             entry.CursorByte = (uint)math.max(0, _sourceByteCursor);
             entry.Capacity = CharBufferPool.EncyclopediaPageCapacity;
             entry.StateHash = ComputeTelemetryHash(in entry);
@@ -2709,7 +2877,7 @@ namespace Hecton8.UI
             }
         }
 
-        private bool TryClearPromotedMetadataFlags(uint frame, ulong clearMask0, ulong clearMask1, ulong clearMask2, ulong clearMask3)
+        private bool TryClearPromotedMetadataFlags(uint frame, in EncyclopediaStateDTO clearMask)
         {
             IDataVault vault = _vault;
             if (!CanUsePdaVaultHandles() ||
@@ -2728,7 +2896,7 @@ namespace Hecton8.UI
                 for (ushort bitIndex = 0; bitIndex < MaxMetadataEntries; bitIndex++)
                 {
                     ulong bit = 1UL << (bitIndex & 63);
-                    if ((ReadPromoteMaskWord(clearMask0, clearMask1, clearMask2, clearMask3, bitIndex >> 6) & bit) == 0UL)
+                    if ((ReadMaskWord(in clearMask, bitIndex >> 6) & bit) == 0UL)
                         continue;
 
                     PdaEncyclopediaEntryMetaDTO meta = metadata[bitIndex];
@@ -3660,8 +3828,7 @@ namespace Hecton8.UI
             if (_registeredPdaEvents || !Application.isPlaying)
                 return;
 
-            PDAEvents.Register(this);
-            _registeredPdaEvents = PDAEvents.IsRegistered(this);
+            _registeredPdaEvents = PDAEvents.TryRegister(this);
         }
 
         private void UnregisterPdaEvents()
@@ -3813,6 +3980,34 @@ namespace Hecton8.UI
             }
         }
 
+        private void MarkTransientFault(uint faultHash)
+        {
+            if (faultHash == 0u)
+                return;
+
+            _pendingTelemetryFaultHash = faultHash;
+            _pendingBlackBoxFaultHash = faultHash;
+            QueueBlackBoxDump();
+        }
+
+        private void MarkBlackBoxWriteFailure()
+        {
+            _pendingTelemetryFaultHash = FaultBlackBoxWrite;
+            _pendingBlackBoxFaultHash = FaultBlackBoxWrite;
+        }
+
+        private uint ConsumeTelemetryFaultHash()
+        {
+            uint faultHash = _lastFaultHash != 0u ? _lastFaultHash : _pendingTelemetryFaultHash;
+            _pendingTelemetryFaultHash = 0u;
+            return faultHash;
+        }
+
+        private uint ResolveBlackBoxFaultHash()
+        {
+            return _lastFaultHash != 0u ? _lastFaultHash : _pendingBlackBoxFaultHash;
+        }
+
         private void QueueBlackBoxDump()
         {
             _blackBoxDumpQueued = true;
@@ -3824,15 +4019,16 @@ namespace Hecton8.UI
                 return;
 
             _blackBoxDumpQueued = false;
-            DumpBlackBox();
+            if (DumpBlackBox())
+                _pendingBlackBoxFaultHash = 0u;
         }
 
-        private void DumpBlackBox()
+        private bool DumpBlackBox()
         {
             if (!EnsureVaultBuffers())
             {
                 _blackBoxDumpQueued = true;
-                return;
+                return false;
             }
 
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -3840,6 +4036,7 @@ namespace Hecton8.UI
             try
             {
                 WriteBlackBoxDump(Path.Combine(directory, BlackBoxDumpFileName));
+                return true;
             }
             catch (IOException)
             {
@@ -3859,6 +4056,9 @@ namespace Hecton8.UI
             catch (NotSupportedException)
             {
             }
+
+            MarkBlackBoxWriteFailure();
+            return false;
         }
 
         private void WriteBlackBoxDump(string path)
@@ -3885,7 +4085,7 @@ namespace Hecton8.UI
                 Span<byte> header = buffer.Slice(0, headerBytes);
                 WriteUIntLittleEndian(header.Slice(0, 4), StateMagic);
                 WriteUIntLittleEndian(header.Slice(4, 4), ResolvePdaFrame());
-                WriteUIntLittleEndian(header.Slice(8, 4), _lastFaultHash);
+                WriteUIntLittleEndian(header.Slice(8, 4), ResolveBlackBoxFaultHash());
                 WriteUIntLittleEndian(header.Slice(12, 4), (uint)TelemetryFrameCount);
                 WriteUIntLittleEndian(header.Slice(16, 4), (uint)UnsafeUtility.SizeOf<PdaEncyclopediaTelemetryEntry>());
                 WriteUIntLittleEndian(header.Slice(20, 4), _activeEntryHash);
@@ -3986,7 +4186,19 @@ namespace Hecton8.UI
                 case 0: return ref mask.Mask0;
                 case 1: return ref mask.Mask1;
                 case 2: return ref mask.Mask2;
-                default: return ref mask.Mask3;
+                case 3: return ref mask.Mask3;
+                case 4: return ref mask.Mask4;
+                case 5: return ref mask.Mask5;
+                case 6: return ref mask.Mask6;
+                case 7: return ref mask.Mask7;
+                case 8: return ref mask.Mask8;
+                case 9: return ref mask.Mask9;
+                case 10: return ref mask.Mask10;
+                case 11: return ref mask.Mask11;
+                case 12: return ref mask.Mask12;
+                case 13: return ref mask.Mask13;
+                case 14: return ref mask.Mask14;
+                default: return ref mask.Mask15;
             }
         }
 
@@ -3998,40 +4210,27 @@ namespace Hecton8.UI
                 case 0: return mask.Mask0;
                 case 1: return mask.Mask1;
                 case 2: return mask.Mask2;
-                default: return mask.Mask3;
+                case 3: return mask.Mask3;
+                case 4: return mask.Mask4;
+                case 5: return mask.Mask5;
+                case 6: return mask.Mask6;
+                case 7: return mask.Mask7;
+                case 8: return mask.Mask8;
+                case 9: return mask.Mask9;
+                case 10: return mask.Mask10;
+                case 11: return mask.Mask11;
+                case 12: return mask.Mask12;
+                case 13: return mask.Mask13;
+                case 14: return mask.Mask14;
+                default: return mask.Mask15;
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void OrMaskWord(ref ulong mask0, ref ulong mask1, ref ulong mask2, ref ulong mask3, int wordIndex, ulong bit)
+        private static void OrMaskWord(ref EncyclopediaStateDTO mask, int wordIndex, ulong bit)
         {
-            switch (wordIndex)
-            {
-                case 0:
-                    mask0 |= bit;
-                    break;
-                case 1:
-                    mask1 |= bit;
-                    break;
-                case 2:
-                    mask2 |= bit;
-                    break;
-                default:
-                    mask3 |= bit;
-                    break;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ulong ReadPromoteMaskWord(ulong mask0, ulong mask1, ulong mask2, ulong mask3, int wordIndex)
-        {
-            switch (wordIndex)
-            {
-                case 0: return mask0;
-                case 1: return mask1;
-                case 2: return mask2;
-                default: return mask3;
-            }
+            ref ulong word = ref GetMaskWordRef(ref mask, wordIndex);
+            word |= bit;
         }
 
         private static int IndexOfSeparator(ReadOnlySpan<byte> line)

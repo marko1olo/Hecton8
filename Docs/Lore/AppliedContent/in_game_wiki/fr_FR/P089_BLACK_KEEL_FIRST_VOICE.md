@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Première voix de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Première voix de Black Keel
 
-FR LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+La première voix de Black Keel atteint le joueur sous forme d'audio endommagé et de texte propre. Ce n'est pas un compagnon ni un discours de méchant. C'est un moniteur carrier qui fait exactement son travail : confirmer le signal, préserver les options de route, classer les obligations et éviter les promesses. La voix est utile parce qu'elle donne des informations dures. Elle fait peur parce que chaque phrase correcte laisse le secours conditionnel.
 
 ## Scanner
 
-FR LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
+Cache vocale du carrier. Audio haché, texte propre, sympathie absente.
 
 ## Terminal
 
-FR LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE : canal audio dégradé. Canal texte valide. Survie opérateur reconnue. Priorité de recovery non résolue, en attente état payload, quarantaine, lien et intégrité signal.
 
 ## Audio
 
-FR LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
+Signal opérateur acquis. Ne confonds pas reconnaissance et sauvetage.
 
 ## Field Note
 
-FR LOC HOLD: The first voice should feel useful before it feels bought.
+La première phrase utile arrive avec une classe de facturation derrière elle.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/fr_FR. -->

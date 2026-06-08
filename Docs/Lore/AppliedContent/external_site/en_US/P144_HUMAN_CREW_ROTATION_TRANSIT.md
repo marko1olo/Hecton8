@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Human Crew Rotation Transit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Human Crew Rotation Transit
 
-Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt.
-
-## Scanner
-
-Humans do not commute to Aegir. They spend years being cargo with opinions.
-
-## Terminal
-
-CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
-
-## Audio
-
-By the time home asks where you are, the room has already flooded.
-
-## Field Note
-
-A frontier worker sells time before they sell labor.
+Human transit is the place where the route stops being abstract. Workers are not teleported to Aegir; they are scheduled, chilled, insured, indexed, and handed between authorities over years. A contract can age in one direction while the person inside it ages in another. By the time a crew wakes, the employer, liability owner, and emergency they trained for may all have changed. That makes abandonment feel procedural rather than melodramatic.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/en_US. -->

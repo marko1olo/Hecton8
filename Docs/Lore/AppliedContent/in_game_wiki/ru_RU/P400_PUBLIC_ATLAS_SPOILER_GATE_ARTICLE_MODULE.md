@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Atlas Access Boundary"
+title: "Граница доступа Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Atlas Access Boundary
+# Граница доступа Atlas
 
-RU LOC HOLD: Atlas can be described early as damaged industrial continuity that learned through repair ecology. Final receiver records remain evidence-gated because they change the meaning of earlier repairs.
+Atlas можно рано описывать как поврежденную industrial continuity, которая научилась через repair ecology. Финальные receiver records остаются за evidence gate, потому что меняют смысл ранних ремонтов: seal, preserve, sever, quarantine и release внизу не нейтральные глаголы.
 
 ## Scanner
 
-RU LOC HOLD: Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+Запись границы Atlas. Открытые доказательства показывают industrial continuity logic и repair ecology; receiver custody, последствия payload и финальные слои выбора требуют найденного доказательства.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+ПУБЛИЧНЫЙ АРХИВНЫЙ УЗЕЛ // ГРАНИЦА ДОСТУПА ATLAS. Текущий слой: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue и shell seal. Ограниченный слой: receiver custody и final payload consequence.
 
 ## Audio
 
-RU LOC HOLD: Say it repairs. Wait before naming what it counts as repaired.
+Скажи, что он ремонтирует. Подожди, прежде чем назвать, что он считает отремонтированным.
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: a machine can preserve proof and still damage the person inside it.
+Заметка Marauder: машина может сохранить доказательство и все равно повредить человека внутри.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/ru_RU. -->

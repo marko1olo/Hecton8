@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "UK LOC HOLD: Колонія і робітники"
+title: "Колонія та працівники"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Колонія і робітники
+# Колонія та працівники
 
-UK LOC HOLD: Відновлений індекс робітників: water ledgers, relay witness trays, brine route stamps, triage repair tags і vent-forge rejects зберігають імена через роботу.
+Відновлений worker index: water ledgers, relay witness trays, brine route stamps, triage repair tags і vent-forge rejects зберігають імена через роботу.
 
 ## Scanner
 
-UK LOC HOLD: WORKER INDEX // П'ять іменних записів, прив'язаних до маршруту. pump, relay, brine, triage, forge. Зберегти tag chain до демонтажу.
+WORKER INDEX // П'ять іменних записів, пов'язаних із маршрутом. Pump, relay, brine, triage, forge. Зберігати tag chain перед зняттям hardware.
 
 ## Terminal
 
-UK LOC HOLD: KEELMARK LOSS DESK: зберігати name tags, якщо вони пов'язані з route, claim, custody або pressure work.
+KEELMARK LOSS DESK: зберігати name tags, якщо вони пов'язані з route, claim, custody або pressure work.
 
 ## Audio
 
-UK LOC HOLD: Mara Venn, pump chief: якщо pump співає чисто, внеси в log. Якщо замовкла - біжи вгору.
+Mara Venn, pump chief: якщо насос співає чисто, запиши. Якщо перестає співати, біжи вгору.
 
 ## Field Note
 
-UK LOC HOLD: Не родина. Робота. Ім'я на pump card пояснює, чому двері лишались відкритими.
+Не родина. Робота. Ім'я на pump card пояснює, чому двері лишилися відкритими.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/uk_UA. -->

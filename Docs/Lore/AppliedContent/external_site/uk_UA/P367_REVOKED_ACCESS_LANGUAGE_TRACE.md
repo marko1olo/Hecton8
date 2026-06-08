@@ -9,32 +9,36 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Revoked Access Language Trace"
+title: "Слід мови відкликаного доступу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Revoked Access Language Trace
+# Слід мови відкликаного доступу
 
-UA LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+Протагоніст читає блокування Deep Reach як докази. Відкликані облікові дані закривають доступ, але формулювання все ще відкриває похований маршрут: деградовані обліки, замінних свідків, перекласифікацію обслуговування і мову збереження претензій.
 
 ## Scanner
 
-UK LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+Блокування не пише заборонено. Воно пише: перекласифікація обслуговування, утримання безперервності, маршрутні матеріали. Старі формулювання Deep Reach: відмова, яка все одно вказує на поховані двері.
 
 ## Terminal
 
-UK LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+ВІДПОВІДЬ ДОСТУПУ / АРХІВ БЕЗПЕЧНОГО МАРШРУТУ
+облікові дані: відкликані
+причина: матеріали евакуаційної безперервності доступні лише сертифікованому персоналу Deep Reach
+видимі терміни: деградований облік, замінний свідок, маршрут збереження претензії, перекласифікація обслуговування
+примітка: колишній польовий персонал може бачити мову відмови лише для звірки інциденту.
 
 ## Audio
 
-UK LOC HOLD: That is not security. That is a memo pretending to be a door.
+Вони не стерли коридор. Вони загорнули його у словник, який досі розуміють тільки винні співробітники.
 
 ## Field Note
 
-UA LOC HOLD: Lockout language hints at hidden liability without granting free access.
+Значок мертвий. Блокування досі говорить офісним діалектом, яким поховали маршрут.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/uk_UA. -->

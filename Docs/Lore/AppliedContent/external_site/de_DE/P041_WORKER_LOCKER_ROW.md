@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Reihe der Arbeiter-Spinde
@@ -27,7 +27,7 @@ Objekte machen die Kolonie menschlich: Namen, Werkzeuge, Essensguthaben und Arbe
 
 ## Terminal
 
-Kolonieaudit: persönliche Fächer und Barnard-Markierungen verbinden den Spieler mit echten Crewmitgliedern.
+KOLONIEAUDIT: persönliche Fächer und Barnard-Markierungen binden die Spindreihe an benannte Crew und Arbeitsrouten.
 
 ## Audio
 

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "遭遇语法：带传感器标记动物的追逐"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# 遭遇语法：带传感器标记动物的追逐
 
-ZH LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+带传感器标记的追逐把 Atlas 表现为受损的解释系统，而不是恶意命令。无害或受惊的动物也会变危险，因为旧基础设施仍把它的伤疤当作遥测数据。
 
 ## Scanner
 
-ZH LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+带传感器标记动物追逐。旧生物金属标记正在回传修复网络回声。动物的移动是局部的；网络的解释不是。
 
 ## Terminal
 
-ZH LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+遭遇语法 / 传感器标记追逐 / 作用：损坏的维护反馈、避难点污染风险、非反派式压力 / 安全解读：标记脉冲滞后于动作，动物会避痛，Atlas 路线回声跟随最后已知路径 / 拒绝：精神控制框架、干净的敌对AI行为、把带标记动物引向基地避难点 / 路线备注：用角度、静默和遮挡打断回声；不要教网络哪里是家。
 
 ## Audio
 
-ZH LOC HOLD: It follows because the network thinks following is a repair.
+它跟着你，是因为某个旧东西以为“跟随”是修复步骤。
 
 ## Field Note
 
-ZH LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+别把标记带回家。断开视线，断开声音，断开解释。动物不是网络。
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/zh_CN. -->

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Great Tide Sensor Margin Proof"
+title: "Jejak Margin Pasang Besar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Great Tide Sensor Margin Proof
+# Jejak Margin Pasang Besar
 
-ID LOC HOLD: Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.
+Jejak ini membuktikan dua hal sekaligus: Pasang Besar nyata, dan margin mematikan terlihat sebelum laporan mengakuinya. Deep Reach tidak memerintah air naik. Mereka menerima jendela rute ketika selubung tekanan koloni sudah kehilangan cadangan, lalu menerbitkan cascade tanpa tanda tangan peringatan.
 
 ## Scanner
 
-ID LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Sensor pasang berhasil dipulihkan. Geser puncak melampaui desain koloni, tetapi pelanggaran margin peringatan tercatat sebelum stempel cascade publik.
 
 ## Terminal
 
-ID LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Ambang tail-risk diterima otoritas rute. Catatan operator dihapus dari rantai insiden publik. Jejak mentah bertahan di memori brine-buffer.
 
 ## Audio
 
-ID LOC HOLD: Physics did the damage. A person signed the margin.
+Laut tidak berbohong. Laporannya berbohong.
 
 ## Field Note
 
-ID LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Catatan Marauder: jangan cari pidato penjahat. Cari baris yang dihapus.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/id_ID. -->

@@ -14,27 +14,29 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel台帳
 
-Black Keel台帳は、carrierが悪役にならずに通信、誘導、課金、遅延、回収、放棄できる理由を説明する。公共claim-poolインフラであり、債務保管と隠れたDeep Reach優先度を持つ。
+Black Keelは軌道上の命綱だが、救助の夢ではない。保管台帳、保険債務、回収窓、検疫、キャリア権限を持つ請求プール基盤だ。
+
+価値を守るから誘導する。価値を守るから遅らせる。助けることと味方であることは別だ。
 
 ## Scanner
 
-claim-pool tender台帳。公共carrier保管、保険債務、隠れたDeep Reach優先フック。
+請求プール・テンダー台帳。公共キャリア保管、保険債務、上昇質量ペナルティ、隠れたDeep Reach優先フック。
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+BLACK KEEL台帳 // 回収サービス条件付き。請求クリアランス未完了。深層優先ルート秘匿。ペイロード権限はキャリア側。契約者生存は、更新された上昇価値なしでは保険貨物を上回らない。
 
 ## Audio
 
-Black Keelはお前の船ではない。お前の負債を知る機械だ。
+Black Keelはお前の船じゃない。お前の負債を知っている機械だ。
 
 ## Field Note
 
-船は味方でなくても助けられる。
+船は味方でなくても助けることがある。
 
 <!-- In-Game Wiki; generated from P015_BLACK_KEEL_LEDGER/ja_JP. -->

@@ -14,24 +14,26 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Marcas de dominio 2190
 
-Las marcas de dominio muestran el mundo humano por objetos: normas Sol, reparación Barnard, rutas Luyten, ley Tau Ceti, hardware Centauri y custodia Aegir.
+Las marcas de dominio muestran la esfera humana mediante objetos: placas, sellos de par, códigos de custodia y permisos viejos. Cada marca ata una puerta, herramienta o carga a una autoridad lejana.
+
+La colonia queda distante, no primitiva. La ley, la industria y la deuda llegaron al agua. El rescate aún necesita masa, nave y ventana.
 
 ## Scanner
 
-Marcas de dominios mezclados. Placa Sol, sello Barnard, custodia de ruta Luyten.
+Marcas humanas mezcladas: placa de seguridad Sol, sello de herramienta Barnard, ruta de custodia Luyten y código de reclamo Aegir en el mismo soporte corroído.
 
 ## Terminal
 
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+RECONCILIACIÓN DE DOMINIO // Formato de seguridad Sol Core aceptado. Sello Barnard Yards válido. Custodia Luyten Junction adjunta. Ley local Aegir anula prioridad de recuperación tras pérdida de descenso.
 
 ## Audio
 
-Este lugar no está fuera de la civilización. Es la civilización cuando gana la distancia.
+Este lugar no está más allá de la civilización. Es civilización después de que la distancia le arrancó las partes cálidas.
 
 ## Field Note
 

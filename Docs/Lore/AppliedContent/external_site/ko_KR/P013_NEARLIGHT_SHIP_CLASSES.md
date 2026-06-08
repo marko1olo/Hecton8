@@ -2,9 +2,9 @@
 packet_id: P013_NEARLIGHT_SHIP_CLASSES
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: ships.nearlight_classes
-unlock_id: unlock.first_transit_manifest
-poi_tags: poi.transit_manifest;poi.sleeper_tag
-biome_tags: biome.drowned_colony;biome.crash_shelf
+unlock_id: unlock.first_nearlight_manifest
+poi_tags: poi.transit_manifest;poi.old_ship_class_table
+biome_tags: biome.drowned_colony;biome.black_keel_link
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 근광속 선박 등급
 
-Nearlight Ship Classes는 HECTON-8을 hard-sci-fi로 유지한다. 성간 여행은 있지만 느리고, 자금과 인프라에 묶여 있다.
+HECTON-8은 FTL 없이도 충분히 거대하다. 탐사기는 잃을 수 있고, 시드선은 지시를 나르며, Atlas급은 비싼 질량을 옮긴다.
 
-## Scanner
-
-수송 명세서: needleprobe, seed ship, mass carrier, sleeper transport, system carrier.
-
-## Terminal
-
-No FTL lane registered. Transit class requires launch infrastructure, braking plan, shielding mass, and route custody.
-
-## Audio
-
-배는 별을 건널 수 있어도 침수된 방에는 쓸모없을 수 있다.
-
-## Field Note
-
-배는 자유가 아니다. 엔진 달린 일정표다.
+도착은 출발만큼 어렵다. 얻은 속도는 자기돛과 가스 거성 기하로 버려야 한다. 그래서 청구는 인간의 것이어도 플레이어는 물속에서 혼자다.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/ko_KR. -->

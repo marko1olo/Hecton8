@@ -3,8 +3,8 @@ packet_id: P078_INNER_MOON_RELAY_HAZARDS
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.inner_moon_relay_hazards
 unlock_id: unlock.first_inner_moon_relay_hazards
-poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
-biome_tags: biome.orbital_window;biome.drowned_comms
+poi_tags: poi.relay_noise_log;poi.skarn_surge_alarm
+biome_tags: biome.orbital_window;biome.surface_relay
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -19,22 +19,24 @@ localization_flags: 0
 
 # Inner Moon Relay Hazards
 
-Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.
+Inner moon relay hazards make failed contact physical. Skarn-aligned surge can corrupt antennas without killing them. Vela dust and ice can shutter optics while the route still claims to exist.
+
+Claw and Lumen are worse because they carry old route logic. A handshake can be formally valid and operationally useless. That is why Black Keel can log a packet, preserve custody and still leave a body in the water.
 
 ## Scanner
 
-Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.
+INNER LADDER // Skarn saturates antennas. Vela scatters optics. Old Claw and Lumen routes can keep stale handshakes alive.
 
 ## Terminal
 
-INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
+RELAY HAZARD NOTE // Contact loss can be geometry, charged-particle weather, dust shutter or inherited buoy law. Treat clean UI as suspect during surge windows.
 
 ## Audio
 
-The orbital model is innocent. The clause written around it is not.
+The relay did not go silent. It repeated the wrong century.
 
 ## Field Note
 
-Radiation and eclipse can look like conspiracy until the contract uses them.
+A clean icon can still be lying through old sky.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/en_US. -->

@@ -9,32 +9,37 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Old Procedure Recognition Cue"
+title: "Señal de reconocimiento de antiguo procedimiento"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Old Procedure Recognition Cue
+# Señal de reconocimiento de antiguo procedimiento
 
-ES LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+HECTON-8 apoya la motivación del personaje en el procedimiento. El protagonista reconoce un antiguo formulario de seguridad de evacuación y ve cómo fue invertido: recuentos degradados, campos de testigo sellados y lenguaje de ruta segura usado para preservar reclamaciones en vez de vidas.
 
 ## Scanner
 
-ES LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+Sello de ruta segura presente. Recuento de trabajadores sobrescrito con dos tintas. Campo de testigo manual sellado. El formulario se creó para detectar esta clase de mentira antes de que alguien la volviera política.
 
 ## Terminal
 
-ES LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+FORMULARIO DE CONTINUIDAD DE EVACUACIÓN / CERTIFICACIÓN DE RUTA SEGURA
+ruta: línea auxiliar de salida
+ocupantes declarados: recuento degradado aceptado
+testigo manual: sellado por la oficina de continuidad
+corrección de campo: recuento de trabajadores incompatible con etiquetas de sala de bombas
+estado: preservación de reclamación, sin autorización de extracción.
 
 ## Audio
 
-ES LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+Conoces este formulario. Debía impedir que una sala se contara vacía mientras aún había personas respirando dentro.
 
 ## Field Note
 
-ES LOC HOLD: Use where room evidence contradicts a clean procedural label.
+El formulario debía forzar otro recuento. Aquí forzó silencio.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/es_ES. -->

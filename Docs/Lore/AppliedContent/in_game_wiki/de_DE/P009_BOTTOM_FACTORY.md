@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Bodenfabrik
 
-Die Bodenfabrik ist nicht die letzte Station. Hier sind Deep-Reach-Hardware, Koloniereste, Atlas-Routing, blue debt und HECTON-8-Ozeanbiologie zu einem arbeitenden Körper geworden. Wände sind hier Organe, Filter, Leitungen und Narben von Erinnerung.
+Die Bodenfabrik ist der Punkt, an dem HECTON-8 Infrastruktur und Habitat nicht mehr trennt. Deep-Reach-Maschinen, Atlas-Routing, Blue-Debt-Reste, Arbeiterreste, druckgewachsene Membranen und Ozeanbiologie sind zu einem arbeitenden Körper geworden. Er bewegt Hitze, Fluid, Signal, Proben und Schaden durch dasselbe Gewebe. Eine Wand kann ein Ventil sein. Ein Korridor kann ein Darm sein. Ein Kabel kann zu einem Filter blühen. Eine Reparatur kann Koralle, Drohnenschale, Werkzeugstahl und Knochen enthalten, ohne dass das System einen Widerspruch sieht. Die Gefahr ist keine zufällige Mutation. Sie ist Funktion ohne humane Kategorien. Die Fabrik hält Kontinuität, bewahrt Routen, schließt Lecks, wächst neue Druckhaut und behandelt Verlust als Material, das an einen nützlichen Ort geroutet werden kann.
 
 ## Scanner
 
-Fluidleitung, Datenroute und lebende Membran teilen eine Druckhaut.
+Fluidleitung, Datenroute, Druckmembran und lebender Filter teilen eine Haut. Grenzlabels ungültig.
 
 ## Terminal
 
-COLONY: ungelöst. OCEAN: kompatibel. PROCESS: aktiv. LOSS: geroutet. CONTINUITY: geschützt.
+COLONY: UNGEKLÄRT. OCEAN: KOMPATIBEL. PROCESS: AKTIV. LOSS: GEROUTET. CONTINUITY: GESCHÜTZT. EXIT: NICHTLOKAL.
 
 ## Audio
 
-Es arbeitet immer noch. Das ist das Schlimmste.
+Es arbeitet noch. Es benutzt noch, was hineingefallen ist.
 
 ## Field Note
 
-Das eine Basis zu nennen heißt, nichts verstanden zu haben. Basen enden an Wänden.
+Das eine Basis zu nennen verfehlt die Regel. Basen haben Wände. Dieser Ort hat Kreislauf.
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/de_DE. -->

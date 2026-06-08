@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Wyjście materiałowe: gorzkie kredyty"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Wyjście materiałowe: gorzkie kredyty
 
-PL LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.
+Wyjście materiałowe to prawdziwe zakończenie dla Maraudera, który traktuje HECTON-8 jak płatną robotę. Gracz może odejść ze zmniejszonym długiem i zadowolonym rejestrem carrier. Koszt jest widoczny: kolonia pozostaje miejscem zbrodni przerobionym na wartość roszczenia, a Deep Reach dostaje lepszą drogę powrotu niż robotnicy kiedykolwiek dostali drogę ucieczki.
 
 ## Scanner
 
-PL LOC HOLD: You can leave richer and still fail the place.
+Materiał ciśnieniowy przyjęty. Okno wyjścia można wykupić. Nazwiska pracowników nadal nieuzgodnione.
 
 ## Terminal
 
-PL LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+POTWIERDZENIE WYJŚCIA MATERIAŁOWEGO: materiał ciśnieniowy custody-grade przyjęty; lien zmniejszony; payload dowodowy niepełny; rejestr zaginionych pracowników pozostaje w sporze roszczeniowym; priorytet Recovery Compliance podniesiony.
 
 ## Audio
 
-PL LOC HOLD: The invoice clears before the names do.
+Faktura czyści się przed nazwiskami.
 
 ## Field Note
 
-PL LOC HOLD: This ending should be real credits, not a fake game over.
+Black Keel wyceni próbkę wcześniej niż zmarłych. To nie jest błąd w kontrakcie.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/pl_PL. -->

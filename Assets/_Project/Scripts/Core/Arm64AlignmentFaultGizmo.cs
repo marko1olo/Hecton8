@@ -80,8 +80,7 @@ namespace Hecton8.Core.Memory
             if (_hotSwapRegistered || !Application.isPlaying)
                 return;
 
-            _hotSwapRegistered = GlobalRegistry.IsHotSwapListenerRegistered(this) ||
-                                 GlobalRegistry.TryRegisterHotSwapListener(this);
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwapListener()

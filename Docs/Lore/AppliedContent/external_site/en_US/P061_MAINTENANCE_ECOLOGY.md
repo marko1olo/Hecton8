@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Maintenance Ecology"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Maintenance Ecology
 
-Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlas did not discover a friendly ocean. It discovered load-bearing life. Conductive biofilm could bridge a weak circuit for a few hours. Shell growth could seal a fracture until the next pressure swing. Filter colonies could repeat an acoustic pulse farther than a drowned relay. Tagged fauna could return sensor packets after metal drones failed.
 
-## Scanner
-
-Conductive biofilm, shell growth, tagged fauna, vent heat, and drones are carrying repair traffic.
-
-## Terminal
-
-ATLAS ECOLOGY: biofilm bridge stable. Filter colony repeats pulse. Shell seal closes fracture. Fauna tag returns sensor packets.
-
-## Audio
-
-The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-Do not cut every living seam. Some are holding pressure. Scan for signal first, then decide what can be stripped.
+That makes the repair network seductive and ugly. The player can cut living material for salvage, or leave it in place because it is holding pressure. A wall can be infrastructure, habitat and crime evidence at once. Maintenance Ecology is the first proof that HECTON-8 is not magic; it is worse than magic, because every miracle has a work order behind it.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/en_US. -->

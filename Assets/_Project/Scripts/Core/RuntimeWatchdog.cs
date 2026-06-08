@@ -342,9 +342,7 @@ namespace Hecton8.Core
             ResetMemorySpikeTracker();
             ResetRegistryHeartbeatGuard(ResolveWatchdogRealtimeSeconds());
             TryRegisterHotSwapListener();
-            TryRegisterUpdatable();
-            TryRegisterSlowTickable();
-            TryRegisterLateFrameTickable();
+            TryRegisterDispatcherLanes();
         }
 
         private void Awake()
@@ -369,9 +367,7 @@ namespace Hecton8.Core
                 return;
 
             BlackBoxHeartbeatThread.Start();
-            TryRegisterUpdatable();
-            TryRegisterSlowTickable();
-            TryRegisterLateFrameTickable();
+            TryRegisterDispatcherLanes();
         }
 
         private void Start()
@@ -379,30 +375,12 @@ namespace Hecton8.Core
             if (_runtimeOwnerRejected)
                 return;
 
-            TryRegisterUpdatable();
-            TryRegisterSlowTickable();
-            TryRegisterLateFrameTickable();
+            TryRegisterDispatcherLanes();
         }
 
         private void OnDisable()
         {
-            if (_registeredSlowTick)
-            {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
-                _registeredSlowTick = false;
-            }
-
-            if (_registeredLateFrameTick)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
-                _registeredLateFrameTick = false;
-            }
-
-            if (_registeredUpdatable)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-                _registeredUpdatable = false;
-            }
+            TryUnregisterDispatcherLanes();
 
             if (_registeredHotSwapListener)
             {
@@ -1195,6 +1173,34 @@ namespace Hecton8.Core
             _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
+        private void TryRegisterDispatcherLanes()
+        {
+            TryRegisterUpdatable();
+            TryRegisterSlowTickable();
+            TryRegisterLateFrameTickable();
+        }
+
+        private void TryUnregisterDispatcherLanes()
+        {
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrameTick = false;
+            }
+
+            if (_registeredUpdatable)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                _registeredUpdatable = false;
+            }
+        }
+
         private void RefreshRegistryDependenciesCold()
         {
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
@@ -1226,6 +1232,14 @@ namespace Hecton8.Core
         private void RebindRegistryDependency(GlobalRegistryServiceSlot serviceSlot, object currentService)
         {
             CacheHeartbeatService(serviceSlot, currentService);
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterDispatcherLanes();
+                if (currentService != null && isActiveAndEnabled && !_runtimeOwnerRejected)
+                    TryRegisterDispatcherLanes();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.PersistentWorldRegistry)
                 _persistentWorldRegistry = currentService as IRuntimeWatchdogWorldHealthBridge;
         }

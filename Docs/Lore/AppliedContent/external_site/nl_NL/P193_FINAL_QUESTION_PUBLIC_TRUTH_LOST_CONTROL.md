@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Laatste vraag: publieke waarheid, verloren controle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Laatste vraag: publieke waarheid, verloren controle
 
-NL LOC HOLD: Final Question Public Truth Lost Control defines the public ledger ending pressure.
+Een publieke lek mag geen magische rechtvaardigheidsknop worden. Op HECTON-8 reist informatie verder dan schepen en komt ze voor hulp aan. Zodra bewijs het bekken verlaat, kan het Deep Reach aanklagen, Black Keel tot antwoord dwingen, Sol Core-regulators wekken en families iets harders dan gerucht geven. Dat zijn echte overwinningen.
 
-## Scanner
-
-NL LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
-
-## Terminal
-
-NL LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
-
-## Audio
-
-NL LOC HOLD: Truth leaves your hand faster than rescue ever could.
-
-## Field Note
-
-NL LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+Het lek maakt ook een voedermoment. Markten prijzen blauwe schuld. Domeinrechtbanken bevriezen routes. Privéculten maken Atlas tot schrift. Concurrenten rennen naar coördinaten. Redding wordt politiek noodzakelijk en operationeel chaotisch. De speler kiest waarheid boven controle, en het spel moet beide helften eer aandoen.
 
 <!-- External Site; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/nl_NL. -->

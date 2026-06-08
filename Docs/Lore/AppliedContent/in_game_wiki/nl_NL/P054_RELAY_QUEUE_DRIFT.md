@@ -3,38 +3,38 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relay Queue Drift"
+title: "Drift in relaiswachtrij"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Queue Drift
+# Drift in relaiswachtrij
 
-NL LOC HOLD: Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.
+Vertraagde communicatie is gevaarlijk omdat ze accuraat kan blijven in de verkeerde tijd. Een carrierwaarschuwing kan een echte klep, een echt lek en een echte route beschrijven die onder druk al veranderd is. De speler moet pakketleeftijd vergelijken met lokaal bewijs.
 
 ## Scanner
 
-NL LOC HOLD: The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
+De relaisstempel is ouder dan het lek dat hij noemt; de instructie was waar voor een kamer die niet meer bestaat.
 
 ## Terminal
 
-NL LOC HOLD: QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
+WACHTRIJDRIFT: pakketleeftijd overschrijdt routegeldigheid. Lokaal bewijs gaat boven carrierinstructie tot een vers relaisvenster opent.
 
 ## Audio
 
-NL LOC HOLD: The message is correct. That is the problem.
+Het bericht klopt. Dat is het probleem.
 
 ## Field Note
 
-NL LOC HOLD: A late truth can still kill.
+Een late waarheid kan nog steeds doden.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/nl_NL. -->

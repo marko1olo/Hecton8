@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Deep Reach Liability Evidence"
+title: "Deep Reach 책임 증거"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Deep Reach Liability Evidence
+# Deep Reach 책임 증거
 
-KO LOC HOLD: Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
+Deep Reach의 liability는 홍수가 가짜 물리를 필요로 하지 않기 때문에 작동한다. Great Tide는 실제였다. 막을 수 있었던 피해는 margins, 시계, access holds, 그리고 누구도 회수되기 전에 노동자를 범주로 정리한 기록에 나타난다.
 
 ## Scanner
 
-KO LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+liability 기록. 실제 조석 물리, 승인된 margin risk, 대피 지연, quarantine holds, Atlas weighting, 정리된 손실 언어가 같은 증거 사슬로 모인다.
 
 ## Terminal
 
-KO LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+공개 아카이브 노드 // LIABILITY 증거. Great Tide 인정. sensor margins, evacuation queue 지연, quarantine holds, Atlas weighting, worker classification, loss conversion은 검토 중.
 
 ## Audio
 
-KO LOC HOLD: A disaster can be natural and still have signatures on it.
+재난은 자연적일 수 있고 동시에 서명을 가질 수 있다.
 
 ## Field Note
 
-KO LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Marauder 메모: 조수와 다투지 마라. 그 옆의 서명과 다퉈라.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/ko_KR. -->

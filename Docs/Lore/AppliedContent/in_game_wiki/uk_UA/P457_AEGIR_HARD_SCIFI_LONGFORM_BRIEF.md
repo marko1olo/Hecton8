@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: небо, що відмовляє в порятунку"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Aegir Transfer Windows
+# Aegir: небо, що відмовляє в порятунку
 
-UK LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir - робоче небо. Місяці можуть затримати або зіпсувати пакет без вічної темряви на поверхні. Порятунок ламають дистанція, геометрія, право й ціна.
 
 ## Scanner
 
-UK LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Праймер небесного маршруту. Немає FTL чи ansible. Вікна Aegir проходять через місяці, уламки, custody реле, шторми й облік маси Black Keel.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+ПРАЙМЕР НАВІГАЦІЇ AEGIR // ПУБЛІЧНИЙ ДІАПАЗОН. Використовувати класи загроз: тінь маршруту, заряджений сплеск, льодове розсіювання, штормовий шлейф, затримка наведення, custody приймача.
 
 ## Audio
 
-UK LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Розклад Black Keel: "Сигнал правдивий ще не означає сигнал корисний. Вікно тримається на масі, погоді, custody і фіксації приймача."
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+Правило мародера: не питай, чи сигнал відправили. Питай, який місяць його закрив, який ledger його спіймав і чи приймач почув людину або клас маси.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/uk_UA. -->

@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Vent forge field process guide"
+title: "Полевой справочник vent-forge процесса"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent forge field process guide
+# Полевой справочник vent-forge процесса
 
-Vent forges делают ресурсы научными: heat, brine, cooling paths и pressure history без magic ore.
+Vent forges - природно-индустриальные реакторы. Они превращают тепло, brine и pressure history в полезную ceramics, sealants и charge materials, оставляя каждый образец привязанным к его тепловому пути.
 
 ## Scanner
 
-Vent-forge chemistry активна. Resource quality зависит от pressure history и cooling path.
+Vent-forge chemistry активна. Качество зависит от pressure history, heat pulse и медленного охлаждения, а не от блеска образца.
 
 ## Terminal
 
-FIELD GUIDE: vent forges готовят sulfides, noble-gas pockets, ceramics and sealant precursors. Путь sample через heat and pressure важнее label.
+FIELD GUIDE: vent forges варят sulfides, noble-gas pockets, ceramics и sealant precursors. Путь образца через heat, brine и pressure важнее его названия.
 
 ## Audio
 
-Vent сделал не ore. Он сделал процесс, который ты прервал.
+Vent не сделал руду. Он сделал процесс, который ты прервал.
 
 ## Field Note
 
-Для resource taxonomy и crafting-table handoff.
+Не вытаскивай свежую партию прямо в холодную воду. Дай vent закончить anneal, иначе shell пойдет сеткой трещин.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/ru_RU. -->

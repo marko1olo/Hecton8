@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "Фінальне питання: продаж місця злочину"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# Фінальне питання: продаж місця злочину
 
-UA LOC HOLD: Crime-scene sale is a material success route that keeps the moral damage visible.
+Продаж місця злочину - маршрут матеріального успіху. Гравець виживає, може закрити борг і навіть піти з грошима. Ціна в тому, що докази колонії стають важелем для тієї самої мережі влади, яка поховала об'єкт, урізала масу порятунку і записала тіла у контрактну погоду.
 
 ## Scanner
 
-UA LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
+Координати, доказ XO і чистий ланцюг зберігання можуть купити вихід. Вони ж продають кімнату вбивства назад тим, хто призначив їй ціну.
 
 ## Terminal
 
-UA LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
+ВІСЬ ФІНАЛЬНОГО ПРОДАЖУ: координати басейну Atlas, придатний зразок синього боргу, свідчення XO і hash зберігання carrier можуть закрити lien оператора. Якщо докази не засвідчені окремо, Deep Reach отримує чистіший шлях назад до HECTON-8, ніж мертві працівники мали до порятунку.
 
 ## Audio
 
-UA LOC HOLD: You can pay the debt with a grave map.
+Борг можна сплатити картою могили. Реєстр назве це роботою.
 
 ## Field Note
 
-UA LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+Це не жартівливий провал. Це оплачений фінал з квитанцією, закритим боргом і гіршим майбутнім для тих, хто лишився внизу.
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/uk_UA. -->

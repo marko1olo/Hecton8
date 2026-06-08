@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DER KOMMUNIKATIONS-BLACKOUT UND DIE ORBITALE STILLE
 
 > **Quelle:** Betriebshandbuch des orbitalen Trägerschiffs *Black Keel*, Abschnitt 4.

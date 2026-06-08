@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Lantern Drift Codex Card"
+title: "Картка кодексу: ліхтарний дрейф"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Lantern Drift Codex Card
+# Картка кодексу: ліхтарний дрейф
 
-UK LOC HOLD: Lantern Drift Codex Card links visual wonder with storm-window route pressure.
+Ліхтарний bloom дрейфу — найкрасивіша система попередження шельфу. У тихій воді клітини обводять течію, завислий пісок, петлі кабелів, уламки pressure glass, зламані shell clamps і малі зубчасті загрози раніше, ніж їх знайде лампа. Тому bloom корисний, коли маршрут візуально засмічений або гравцеві потрібен чистий силует у рифовому безладі. Але він робить читаним і гравця. Вібрація cutter, кашель помпи, повторний pinger, удар корпусу або панічний thruster можуть збурити bloom у світний слід, що несе позицію харчовою мережею. Штормовий заряд додає хибні коридори, пересвічений осад і плаский контраст, який ховає дрібну шкоду в надмірній красі. Іди за світлом лише тоді, коли течія, осад і фауна узгоджуються. Працюй гучно всередині bloom тільки якщо бути знайденим — частина плану.
 
 ## Scanner
 
-UK LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Ліхтарний bloom дрейфу. Біолюмінесцентний планктон смугами позначає течію й уламки. Корисний для силуетів; небезпечний, коли шум інструментів робить із нього світний слід.
 
 ## Terminal
 
-UK LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+ЗРАЗОК / ЛІХТАРНИЙ BLOOM ДРЕЙФУ / роль: подія видимості мілководдя, ескіз течії, реєстратор збурення / безпечне читання: стабільне крайове світло, ореоли уламків, збіг течії й осаду / відмова: хибний коридор від штормового заряду, bloom сплющує малі загрози, інструментальний слід яснішає за оператором / примітка маршруту: світло — дані, не укриття.
 
 ## Audio
 
-UK LOC HOLD: Pretty is not safe. Pretty is a reading.
+Світіння не допомагає тобі. Воно доповідає, що почула вода.
 
 ## Field Note
 
-UK LOC HOLD: Card teaches that beauty can be route information and route deception.
+Використовуй bloom для силуетів. Не ремонтуй гучно всередині. Якщо світло йде за тобою, за ним може піти ще хтось.
 
 <!-- In-Game Wiki; generated from P293_LANTERN_DRIFT_CODEX_CARD/uk_UA. -->

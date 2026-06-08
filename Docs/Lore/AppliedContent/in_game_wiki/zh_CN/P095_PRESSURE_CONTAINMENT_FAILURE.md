@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "压力封存失效"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# 压力封存失效
 
-CN LOC HOLD: Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.
+压力封存失效给blue debt一个可读的物质行为。它有价值，是因为深压让它保持相干；它危险，是因为浅层处理会拆散这种相干。阶段0为密封。阶段1发生漂移，有时可用喷口再加压恢复。阶段2晶格断裂。阶段3引入盐卤和生物。阶段4留下死样本，但仍会污染装备、水和路线。
 
 ## Scanner
 
-CN LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+匣体阶段图。blue debt会因压力记忆、信号剪切和bloom失效；迷信只会浪费氧气。
 
 ## Terminal
 
-CN LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+封存阶段：0密封晶格；1信号漂移；2晶格断裂；3盐卤/生物bloom；4死样本伴随活污染。喷口再加压只能恢复阶段1。
 
 ## Audio
 
-CN LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
+样本并不恨你。它只是想回到自己形成的地方。
 
 ## Field Note
 
-CN LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+一个样本在某个深度价值连城，十米之后就可能变成负债。
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/zh_CN. -->

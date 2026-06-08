@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Glass Grazer Codex Card"
+title: "Kartu Kodex Glass Grazer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Glass Grazer Codex Card
+# Kartu Kodex Glass Grazer
 
-ID LOC HOLD: HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+Glass grazer mengubah ekologi HECTON-8 menjadi bahasa survival. Saat makan, mereka membuka bekas rute terang melalui film dan mat, tetapi diamnya sering lebih penting daripada geraknya. Hewan harmless bisa memperingatkan pemain sebelum meter melakukannya.
 
 ## Scanner
 
-ID LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+Kawanan glass grazer. Pemakan bercangkang non-hostile mengikis film mineral. Ketukan stabil berarti air kerja; sunyi mendadak berarti sesuatu yang lebih besar mengubah clearing.
 
 ## Terminal
 
-ID LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+SPESIMEN / KAWANAN GLASS GRAZER / peran: pengikis film dangkal, saksi arus, petunjuk perpindahan predator / baca aman: tepi makan, jalur kikis pucat baru, ketukan cangkang stabil / tolak: ladang makanan ditinggal, kawanan membeku rapat, tak ada ketukan balik setelah pinger / catatan rute: absensi setelah makan adalah data bahaya.
 
 ## Audio
 
-ID LOC HOLD: When they stop eating, you stop moving.
+Saat mulut kecil berhenti mengetuk dan makanan masih ada, jangan jadi hal berikutnya yang menunggu.
 
 ## Field Note
 
-ID LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Kawanan makan: baca jalur. Kawanan membeku: baca air. Jalur kosong dengan makanan tersisa: pergi.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/id_ID. -->

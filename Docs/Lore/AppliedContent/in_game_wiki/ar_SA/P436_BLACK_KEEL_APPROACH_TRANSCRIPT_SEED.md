@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Black Keel Approach Transcript Seed"
+title: "تفريغ اقتراب Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Black Keel Approach Transcript Seed
+# تفريغ اقتراب Black Keel
 
-AR LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+تفريغ الاقتراب يجعل Black Keel مفيدا من غير أن يجعله رحيما. يعطي الحامل Marauder خطا إلى المدار، ثم يسمي الدين ونافذة الاستقبال وحد الصحة وحد الكتلة وشرط الدليل قبل أن يحاول الأمل إعادة كتابة الفيزياء.
 
 ## Scanner
 
-AR LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+صوت حامل مستعاد يؤكد نزولا مدفوعا، عودة مشروطة، تأخير أربع ثوان وحزمة دليل مطلوبة.
 
 ## Terminal
 
-AR LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
-AR LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+ناقلة Black Keel إلى المطالب. التأخير أربع ثوان. النزول محسوب. العودة غير مضمونة. أرسل الصحة والكتلة والدليل.
 
 ## Field Note
 
-AR LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+مخزن مؤقت لناقلة مطالبات، مقطوع بحامل العاصفة. اجعل الصوت إجرائيا: حقائق الطريق أولا، والراحة أبدا.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/ar_SA. -->

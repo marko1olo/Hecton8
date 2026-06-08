@@ -7,8 +7,8 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Rute Pulang Sonar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Rute Pulang Sonar
 
-Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.
+Beacon pulang merekam bagaimana rute terdengar saat terakhir aman. Ia tidak berjanji rute tetap aman. Gelombang badai, kabel longgar, lumpur bergerak, fauna, dan potongan salvage baru bisa membengkokkan balik sonar tanpa menghapus koridor. Sebelum membawa kargo atau turun lebih dalam, ping jalur itu. Jika nada bergeser, simpan muatan atau tandai jalan kedua.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+Beacon pulang sudah basi. Ping aman lama tidak lagi cocok dengan gema koridor; massa kargo akan memperlambat jendela mundur.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: gema bersih terakhir tidak valid. Ping Black Keel diterima dengan kepercayaan rendah. Pergeseran rintangan dan kepadatan lumpur melebihi toleransi peta. Tandai garis kedua sebelum ekstraksi kargo.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+Rutenya masih ada. Gemanya tidak sama.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+Ping sebelum memuat. Jika jalan pulang berubah saat tanganmu kosong, ia tidak akan memaafkan tas penuh.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/id_ID. -->

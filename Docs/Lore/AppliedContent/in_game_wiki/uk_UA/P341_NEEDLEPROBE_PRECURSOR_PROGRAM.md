@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Needleprobe Precursor Program"
+title: "Програма предтеч Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Needleprobe Precursor Program
+# Програма предтеч Needleprobe
 
-UK LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Needleprobes принесли першу людську претензію в Aegir. Вузькі екрановані розвідувальні вантажі відправляли попереду екіпажів, щоб читати гравітацію, радіацію, океанські спектри, орбіти місяців і лінії ретрансляторів. Їхні затримані пакети зробили HECTON-8 читабельним для інвесторів раніше, ніж він став придатним для робітників.
 
 ## Scanner
 
-UK LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+Архів needleprobe: Aegir був ціллю в реєстрі задовго до того, як став робочим місцем. Машинні очі дісталися місяців першими.
 
 ## Terminal
 
-UK LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+АРХІВ RAN: ланцюг зондів повернув паралакс, радіацію, океанські сигнатури, геометрію ретрансляторів і впевненість pellet-lane. Рейтинг для екіпажу утримано до стабілізації третьої моделі ризику.
 
 ## Audio
 
-UK LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+Першою людською річчю в Aegir була не людина. Це була машина, що питала, чи будуть люди тут прибутковими.
 
 ## Field Note
 
-UK LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Архіви зондів — докази маршруту. Стара телеметрія може бути старішою за колонію і все одно вирішувати, кому належить вода.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/uk_UA. -->

@@ -9,32 +9,36 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "FR LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach : responsabilité sous vraie eau"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Deep Reach Liability Chain
+# Deep Reach : responsabilité sous vraie eau
 
-FR LOC HOLD: Deep Reach did not need to invent the ocean. HECTON-8 failed under real pressure, real tide force and real infrastructure limits. That is what makes the liability harder to bury. The official record names a localized geotechnical cascade, corrupted Atlas logs and incomplete evacuation. Each phrase has enough truth to survive a hearing. The physical site adds what the public sentence omits: margin approvals signed before the tide window, evacuation routes held behind authorization, quarantine doors certified late, Atlas continuity weights that protected system function before worker recovery, and loss ledgers that turned names into categories after the water had already won. The accusation is not that Deep Reach caused the ocean to rise by command. It is that the company priced known risk, delayed human exit, kept records clean and let recovery offices convert disaster into manageable custody. On HECTON-8, the rooms testify more precisely than the statement.
+## La demi-vérité utile
 
-## Scanner
+Le rapport Deep Reach contient assez d'eau réelle pour paraître honnête. HECTON-8 a connu une Great Tide. Stress de cryosphère, marées, tempêtes, chaleur et pression ont ouvert la colonie.
 
-FR LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+La faute est dans le cadre retiré : marges de capteurs acceptées, évacuation sous-dimensionnée, continuité Atlas au-dessus de l'extraction humaine, quarantaine employée comme délai, disparus convertis en catégories de claim.
 
-## Terminal
+Varnek transforme l'alerte en risque de calendrier. Arendt enferme la sécurité dans la continuité de processus. Haldane fait attendre l'extraction. Ibarra convertit les corps en charge et perte. Sato-Ren exige encore coordonnées, preuve XO et silence avant le vocabulaire du secours.
 
-FR LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+Un document propre ne confesse rien. La pièce noyée fournit le coût manquant. Un mémo est soupçon. La chaîne devient preuve, et le joueur décide quel contexte mérite sa masse dans la garde Black Keel.
 
-## Audio
+## La Forme De La Culpabilite
 
-FR LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Deep Reach ne doit pas devenir un seul mechant avec un bouton propre. Sa culpabilite est plus forte parce qu'elle est distribuee. Varnek accepte la tide margin. Arendt place Atlas weights au-dessus des travailleurs. Haldane garde le langage de quarantine propre. Ibarra convertit les noms en loss categories. Sato-Ren tente une return action quand le dommage est deja dans le systeme.
 
-## Field Note
+Chaque document est assez petit pour paraitre ordinaire. Ensemble, ils montrent une institution qui survit en rendant chaque choix mortel local, temporaire et correct selon procedure. Les travailleurs sont morts dans cette grammaire.
 
-FR LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+## Pourquoi La Preuve A Une Masse
+
+Le joueur ne resout pas cela par croyance. Les paquets peuvent etre retardes, contestes, caviardes ou tarifes. La preuve physique doit etre portee : sensor margins, evacuation brisee, Atlas trace, custody ledger, sample chain. La preuve est lourde parce que HECTON-8 fait partager a la verite l'espace de l'oxygene, des outils et du fret.
+
+C'est le coeur de la pression. Le joueur n'apprend pas seulement ce qui s'est passe. Il decide combien de survie peut etre depensee pour rendre l'effacement plus difficile.
 
 <!-- External Site; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/fr_FR. -->

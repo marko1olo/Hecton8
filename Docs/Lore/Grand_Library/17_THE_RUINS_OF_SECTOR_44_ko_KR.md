@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 44 구역의 폐허
 
 > **출처:** 측량 드론 지도 제작 로그 99-델타 (회수됨).

@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Aegir Primary Light and Radiation"
+title: "Aegir主星光と放射線"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Aegir Primary Light and Radiation
+# Aegir主星光と放射線
 
-JA LOC HOLD: Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
-
-## Scanner
-
-JA LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
-
-## Terminal
-
-JA LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
-
-## Audio
-
-JA LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
-
-## Field Note
-
-JA LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegirは空虚な黒ではない。K型主星はデッキに琥珀色の光と長い影を落とし、帯のカウントを見なければ露出機器をずらすだけの流束を与える。ガス巨星は第二の時計だ。磁気圏の航路は、月が荷電と影を横切るたび硬化し、緩み、また硬化する。Deep Reachはその数字を通常の作業窓として売った。現場の答えは違った。暖かい空でも安いシールは煮え、リンクは黙り、救助は分単位で請求される。 そのため、Aegirの昼は安心ではなく、作業許可、遮蔽等級、救助費用を同時に刻む時計として扱われる。
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/ja_JP. -->

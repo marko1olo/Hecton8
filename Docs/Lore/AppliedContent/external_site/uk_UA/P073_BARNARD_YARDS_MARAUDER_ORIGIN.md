@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Barnard Yards Marauder Origin"
+title: "Мародерське походження Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Barnard Yards Marauder Origin
+# Мародерське походження Barnard Yards
 
-UK LOC HOLD: Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math.
+Мародерське походження Barnard Yards задає борговий salvage-клас HECTON-8. Мародер приходить із робочої культури, де мертва претензія - не містичний туризм, а робота з поганою арифметикою.
 
 ## Scanner
 
-UK LOC HOLD: Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.
+Клеймо інструмента Barnard. Культура розбирання кораблів. Місце, де вчать не довіряти чистим пунктам про порятунок.
 
 ## Terminal
 
-UK LOC HOLD: BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.
+СЕРВІСНА МІТКА BARNARD YARDS: аварійний затискач прийнято. Сертифікація salvage чинна для покинутого гермосередовища, мертвого відсіку carrier і залишеного claim hull.
 
 ## Audio
 
-UK LOC HOLD: You learned this hand motion before HECTON-8. That is the problem.
+Ти вивчив цей рух руки ще до HECTON-8. У цьому й проблема.
 
 ## Field Note
 
-UK LOC HOLD: This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.
+Ближче за Землю: орендовані різаки, старі звички тиску, борг і обдерті корпуси.
 
 <!-- External Site; generated from P073_BARNARD_YARDS_MARAUDER_ORIGIN/uk_UA. -->

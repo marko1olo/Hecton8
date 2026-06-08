@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Black Keel Naderingstranscript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Black Keel Approach Transcript Seed
+# Black Keel Naderingstranscript
 
-NL LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+Het naderingstranscript maakt Black Keel bruikbaar zonder het genadig te maken. De carrier geeft de Marauder een lijn naar de baan, en noemt daarna schuld, ontvangervenster, gezondheidslimiet, massalimiet en bewijsvereiste voordat hoop de fysica kan herschrijven.
 
 ## Scanner
 
-NL LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Herstelde carrier-audio bevestigt betaalde afdaling, voorwaardelijke terugkeer, vier seconden vertraging en verplicht bewijspakket.
 
 ## Terminal
 
-NL LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
-NL LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+Black Keel-tender aan claimant. Vertraging vier seconden. Afdaling gefactureerd. Terugkeer niet gegarandeerd. Stuur gezondheid, massa, bewijs.
 
 ## Field Note
 
-NL LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+Claim-tenderbuffer, afgekapt door stormcarrier. Stem procedureel houden: routefeiten eerst, troost nooit.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/nl_NL. -->

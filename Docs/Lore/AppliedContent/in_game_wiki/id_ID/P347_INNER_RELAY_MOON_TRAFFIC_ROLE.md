@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela sebagai Bulan Relay Dalam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Inner Relay Moon Traffic Role
+# Vela sebagai Bulan Relay Dalam
 
-ID LOC HOLD: Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
+Vela adalah bulan kerja bagian dalam Aegir. Ia melintasi jalur bermuatan cukup cepat untuk menghukum pelindung buruk, tetapi topeng relay dan pantulan lamanya masih membentuk tabel rute. Pendekatan Black Keel dapat memakai bayang Vela untuk menyembunyikan derau tautan selama beberapa menit. Bayang yang sama dapat menunda ping darurat sampai jam kontrak sudah pindah tangan.
 
 ## Scanner
 
-ID LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
+Ledger bulan. Vela menutup dan memantulkan lalu lintas relay; kapal memperlakukannya seperti gerbang tol bergerak.
 
 ## Terminal
 
-ID LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
+TANGGA BULAN H2 VELA: bayang relay bersih dalam empat puluh tiga menit. Hitung radiasi naik di sisi Skarn. Burn transfer HECTON tetap legal jika massa carrier berada di bawah batas arsip.
 
 ## Audio
 
-ID LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
+Tidak ada yang pergi ke Vela untuk pemandangan. Mereka menghitungnya, menunggu, lalu berharap beacon lama tetap berbohong dengan cara sama.
 
 ## Field Note
 
-ID LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Vela berguna karena menghalangi jalan tepat waktu.
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/id_ID. -->

@@ -1,0 +1,255 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS223_RAN_AEGIR_NAME_AUTHORITY_LEDGER",
+  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+  },
+  "packets": [
+    {
+      "packet_id": "P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER",
+      "release_set_id": "RS223_RAN_AEGIR_NAME_AUTHORITY_LEDGER",
+      "article_id": "applied_lore.ran_aegir_name_authority_ledger",
+      "title_key": "LORE_RAN_AEGIR_NAME_AUTHORITY_LEDGER_TITLE",
+      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+        "Docs/Lore/Grand_Library/01_ASTRONOMY_AND_HISTORY_en_US.md",
+        "Docs/Lore/Grand_Library/25_ASTRONOMY_AND_THE_BLACK_KEEL_en_US.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.ran_aegir_name_authority_ledger",
+        "secondary": [
+          "unlock.first_ran_catalog_plate",
+          "unlock.first_aegir_claim_shorthand",
+          "unlock.first_ran_b_h8_insurance_key"
+        ],
+        "poi_tags": [
+          "poi.public_catalog_plate",
+          "poi.aegir_claim_map",
+          "poi.h8_insurance_nameplate",
+          "poi.black_keel_catalog_resolver"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.route_archive",
+          "biome.surface_orbit_context"
+        ],
+        "first_20_boundary": "Locks the early naming grammar: Ran is the star, Aegir is the gas giant and claim-system shorthand, RAN-B:H8 is the insured moon record, and HECTON-8 is the player-facing operational name."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "PDA Catalog Resolver",
+          "terminal": "Black Keel Name Authority Ledger",
+          "audio": "Black Keel Catalog Warning",
+          "in_game_wiki": "PDA Astronomy And Claim Primer",
+          "external_site": "Public Site Setting Primer",
+          "field_note": "Marauder Field Note"
+        },
+        "spoiler_tier": "0",
+        "runtime_layer": "Narrative",
+        "route_moment": "first_ran_or_aegir_name_conflict",
+        "truth_payload": "Ran, Aegir, RAN-B:H8 and HECTON-8 are not interchangeable labels. They expose which office is speaking: astronomy, claim ownership, insurance catalog or field survival.",
+        "player_question": "Why do terminals and route plates use different names for the same place?"
+      },
+      "localized": {
+        "en_US": {
+          "localization_status": "source_authority",
+          "title": "Ran / Aegir Name Authority Ledger",
+          "scanner": "ROUTE PLATE RESOLVED // Ran is the host star. Aegir is the giant and claim-system shorthand. RAN-B:H8 is the HECTON-8 catalog key.",
+          "terminal": "CATALOG NORMALIZATION NOTICE // AEGIR shorthand accepted for claim-system index. Use RAN-B:H8 for insured moon record and HECTON-8 for field-operational surface.",
+          "audio": "Black Keel catalog resolver: Ran is light source, Aegir is claimant sky, HECTON-8 is where the invoice gets wet.",
+          "in_game_wiki": "HECTON-8 uses several names because several authorities are trying to own the same water. Ran is the star: an astronomical anchor and the name used when route physics matters. Aegir is the gas giant: the bright parent in the sky, the gravity well that makes the moons expensive, and the shorthand used by claim offices that prefer to discuss a whole system instead of one ruined moon. RAN-B:H8 is the catalog key: cold, insurable, sortable and legal enough for ledgers. HECTON-8 is the field name the player actually bleeds inside.\n\nThe difference matters. A route plate saying Ran is talking about light, distance and transit. A Deep Reach memo saying Aegir is often talking about ownership, orbital assets and claim continuity. A Black Keel receipt saying RAN-B:H8 is pricing a specific moon record. A Marauder note saying HECTON-8 is talking about rooms, bodies, pressure doors and the ocean that does not care what the lawyers call it.\n\nGood evidence preserves the name it found. Normalizing too early can erase motive. If a quarantine order says Aegir asset, it may be hiding a moon-scale death inside system-scale language. If a tender quote says RAN-B:H8, it has moved from story to billable mass. If a worker scratched HECTON on a panel, the scratched name is not slang. It is the version of the place that still had people in it.",
+          "external_site": "Ran, Aegir, RAN-B:H8 and HECTON-8 name different layers of the same frontier: star, giant, insured catalog record and lived ocean.",
+          "external_site_article": "The naming system in HECTON-8 is not flavor trivia. It is one of the cleanest ways to tell which power is speaking. Astronomy says Ran because a star fixes routes, light delay and navigation math. Claim offices say Aegir because the giant planet lets them bundle moons, infrastructure and liabilities into a larger asset field. Insurance tables say RAN-B:H8 because sorted ledgers do not care about memory. The people below the water say HECTON-8 because that is where the hatch fails.\n\nThis creates a useful reading rule for the game and wiki. When a document shifts names, the document is often shifting jurisdiction. Ran language tends to belong to route timing, carrier windows and physics. Aegir language tends to belong to ownership and public shorthand. RAN-B:H8 language belongs to catalog, insurance and custody. HECTON-8 language belongs to field use, player memory and the colony as a place rather than an asset.\n\nThe player should learn the grammar slowly. At first the names can feel like a system being large and messy. Later they become evidence. A corporation choosing the largest possible name can hide a local crime. A salvage office choosing the catalog key can make a dead habitat look like a recoverable line item. A worker choosing the field name can pull the moon back from paperwork into lived fact.",
+          "field_note": "If a lawyer says Aegir when the plate says RAN-B:H8, check what column got cheaper."
+        },
+        "ar_SA": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "سجل سلطة الأسماء Ran / Aegir",
+          "scanner": "لوحة المسار محلولة // Ran هو النجم المضيف. Aegir هو العملاق واختصار نظام المطالبة. RAN-B:H8 هو مفتاح كتالوج HECTON-8.",
+          "terminal": "إشعار تطبيع الكتالوج // اختصار AEGIR مقبول لفهرس نظام المطالبة. استخدم RAN-B:H8 لسجل القمر المؤمن وHECTON-8 للسطح التشغيلي الميداني.",
+          "audio": "محلل كتالوج Black Keel: Ran مصدر الضوء، Aegir سماء المطالبة، وHECTON-8 هو المكان الذي تبتل فيه الفاتورة.",
+          "in_game_wiki": "يستخدم HECTON-8 عدة أسماء لأن عدة سلطات تحاول امتلاك الماء نفسه. Ran هو النجم ومرساة الحسابات الفلكية. Aegir هو العملاق الغازي، سماء المطالبة واختصار المكاتب التي تفضل الحديث عن نظام كامل بدل قمر ميت. RAN-B:H8 هو مفتاح الكتالوج: بارد، قابل للتأمين، قابل للفرز. HECTON-8 هو الاسم الميداني حيث ينزف اللاعب فعلا.\n\nالفارق مهم. لوحة تقول Ran تتحدث عن الضوء والمسافة والعبور. مذكرة Deep Reach تقول Aegir غالبا تتحدث عن ملكية واستمرارية مطالبة. إيصال Black Keel يقول RAN-B:H8 يضع سعرا لسجل قمر محدد. ملاحظة Marauder تقول HECTON-8 تتحدث عن غرف وأجساد وأبواب ضغط ومحيط لا يهتم بأسماء المحامين.",
+          "external_site": "Ran وAegir وRAN-B:H8 وHECTON-8 تسمي طبقات مختلفة من الجبهة نفسها: نجم، عملاق، سجل مؤمن ومحيط معاش.",
+          "external_site_article": "نظام الأسماء في HECTON-8 ليس زخرفة. إنه طريقة لمعرفة من يتكلم. الفلك يقول Ran لأن النجم يثبت المسارات وتأخير الضوء. مكاتب المطالبة تقول Aegir لأنها تستطيع جمع الأقمار والبنية والمسؤوليات داخل أصل أكبر. جداول التأمين تقول RAN-B:H8 لأن الدفاتر المرتبة لا تهتم بالذاكرة. الناس تحت الماء يقولون HECTON-8 لأن ذلك هو المكان الذي يفشل فيه الباب.\n\nعندما يغير مستند الاسم، غالبا يغير الاختصاص. لغة Ran تخص التوقيت والفيزياء. لغة Aegir تخص الملكية والاختصار العام. لغة RAN-B:H8 تخص الكتالوج والتأمين والعهدة. لغة HECTON-8 تخص الذاكرة الميدانية والمستعمرة كمكان لا كأصل.",
+          "field_note": "إذا قال محام Aegir واللوحة تقول RAN-B:H8، فتش عن العمود الذي صار أرخص."
+        },
+        "de_DE": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Ran-/Aegir-Namenshoheitsbuch",
+          "scanner": "ROUTENPLATTE GELÖST // Ran ist der Wirtsstern. Aegir ist der Riese und die Claim-System-Kurzform. RAN-B:H8 ist der HECTON-8-Katalogschlüssel.",
+          "terminal": "KATALOGNORMALISIERUNG // AEGIR-Kurzform für Claim-Systemindex akzeptiert. Nutze RAN-B:H8 für den versicherten Monddatensatz und HECTON-8 für die operative Feldoberfläche.",
+          "audio": "Black-Keel-Kataloglöser: Ran ist Lichtquelle, Aegir ist Anspruchshimmel, HECTON-8 ist dort, wo die Rechnung nass wird.",
+          "in_game_wiki": "HECTON-8 hat mehrere Namen, weil mehrere Autoritäten dasselbe Wasser besitzen wollen. Ran ist der Stern: astronomischer Anker und Name für Routenphysik. Aegir ist der Gasriese, der helle Elternkörper und die Kurzform der Claim-Büros. RAN-B:H8 ist der Katalogschlüssel: kalt, versicherbar, sortierbar. HECTON-8 ist der Feldname, in dem der Spieler blutet.\n\nDer Unterschied zählt. Eine Routenplatte mit Ran spricht über Licht, Distanz und Transit. Ein Deep-Reach-Memo mit Aegir spricht oft über Eigentum und Kontinuität. Eine Black-Keel-Quittung mit RAN-B:H8 bepreist einen bestimmten Monddatensatz. Eine Marauder-Notiz mit HECTON-8 spricht über Räume, Körper, Drucktüren und einen Ozean, dem Anwaltsnamen egal sind.",
+          "external_site": "Ran, Aegir, RAN-B:H8 und HECTON-8 benennen verschiedene Schichten derselben Grenze: Stern, Riese, versicherter Datensatz und gelebter Ozean.",
+          "external_site_article": "Das Namenssystem von HECTON-8 ist keine Nebensache. Es zeigt, welche Macht spricht. Astronomie sagt Ran, weil ein Stern Routen und Lichtverzug fixiert. Claim-Büros sagen Aegir, weil der Riese Monde, Infrastruktur und Haftung bündeln lässt. Versicherungen sagen RAN-B:H8, weil sortierte Bücher kein Gedächtnis haben. Die Menschen unter Wasser sagen HECTON-8, weil dort die Luke versagt.\n\nWenn ein Dokument den Namen wechselt, wechselt es oft die Zuständigkeit. Ran-Sprache gehört zu Physik und Zeitfenstern. Aegir-Sprache gehört zu Eigentum. RAN-B:H8 gehört zu Katalog, Versicherung und Verwahrung. HECTON-8 gehört zu Feldgebrauch und Erinnerung.",
+          "field_note": "Wenn ein Anwalt Aegir sagt, während die Platte RAN-B:H8 sagt, prüf, welche Spalte billiger wurde."
+        },
+        "es_ES": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Libro de Autoridad de Nombres Ran / Aegir",
+          "scanner": "PLACA DE RUTA RESUELTA // Ran es la estrella anfitriona. Aegir es el gigante y la abreviatura del sistema de reclamación. RAN-B:H8 es la clave de catálogo de HECTON-8.",
+          "terminal": "AVISO DE NORMALIZACIÓN DE CATÁLOGO // Abreviatura AEGIR aceptada para índice del sistema de reclamación. Use RAN-B:H8 para el registro lunar asegurado y HECTON-8 para la superficie operativa de campo.",
+          "audio": "Resolvedor de catálogo Black Keel: Ran es fuente de luz, Aegir es cielo reclamante, HECTON-8 es donde la factura se moja.",
+          "in_game_wiki": "HECTON-8 usa varios nombres porque varias autoridades intentan poseer la misma agua. Ran es la estrella: ancla astronómica y nombre para física de ruta. Aegir es el gigante gaseoso, el cielo padre y la abreviatura de oficinas de reclamación. RAN-B:H8 es la clave de catálogo: fría, asegurable y ordenable. HECTON-8 es el nombre de campo donde el jugador sangra.\n\nLa diferencia importa. Una placa que dice Ran habla de luz, distancia y tránsito. Un memorando de Deep Reach que dice Aegir suele hablar de propiedad y continuidad. Un recibo Black Keel con RAN-B:H8 pone precio a un registro lunar específico. Una nota Marauder con HECTON-8 habla de habitaciones, cuerpos, puertas de presión y un océano al que no le importan los nombres legales.",
+          "external_site": "Ran, Aegir, RAN-B:H8 y HECTON-8 nombran capas distintas de la misma frontera: estrella, gigante, registro asegurado y océano vivido.",
+          "external_site_article": "El sistema de nombres de HECTON-8 no es color de fondo. Es una forma de saber qué poder habla. La astronomía dice Ran porque una estrella fija rutas y retraso de luz. Las oficinas de reclamación dicen Aegir porque el gigante permite agrupar lunas, infraestructura y responsabilidad. Las tablas de seguro dicen RAN-B:H8 porque los libros ordenados no recuerdan. La gente bajo el agua dice HECTON-8 porque ahí falla la escotilla.\n\nCuando un documento cambia de nombre, a menudo cambia de jurisdicción. El lenguaje Ran pertenece al tiempo y la física. El lenguaje Aegir pertenece a propiedad. RAN-B:H8 pertenece a catálogo, seguro y custodia. HECTON-8 pertenece al uso de campo, la memoria y la colonia como lugar.",
+          "field_note": "Si un abogado dice Aegir cuando la placa dice RAN-B:H8, mira qué columna se volvió más barata."
+        },
+        "fr_FR": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Registre d'Autorité des Noms Ran / Aegir",
+          "scanner": "PLAQUE DE ROUTE RÉSOLUE // Ran est l'étoile hôte. Aegir est la géante et le raccourci du système de réclamation. RAN-B:H8 est la clé catalogue de HECTON-8.",
+          "terminal": "AVIS DE NORMALISATION CATALOGUE // Raccourci AEGIR accepté pour l'index du système de réclamation. Utilisez RAN-B:H8 pour le registre lunaire assuré et HECTON-8 pour la surface opérationnelle de terrain.",
+          "audio": "Résolveur catalogue Black Keel : Ran est la source de lumière, Aegir le ciel des réclamants, HECTON-8 l'endroit où la facture se mouille.",
+          "in_game_wiki": "HECTON-8 porte plusieurs noms parce que plusieurs autorités veulent posséder la même eau. Ran est l'étoile, l'ancre astronomique et le nom de la physique de route. Aegir est la géante gazeuse, le parent lumineux et le raccourci des bureaux de réclamation. RAN-B:H8 est la clé de catalogue: froide, assurable, triable. HECTON-8 est le nom de terrain où le joueur saigne.\n\nLa différence compte. Une plaque Ran parle de lumière, distance et transit. Un mémo Deep Reach qui dit Aegir parle souvent de propriété et de continuité. Un reçu Black Keel avec RAN-B:H8 chiffre un registre lunaire précis. Une note Marauder disant HECTON-8 parle de pièces, de corps, de portes pressurisées et d'un océan qui ignore les noms des juristes.",
+          "external_site": "Ran, Aegir, RAN-B:H8 et HECTON-8 nomment différentes couches de la même frontière: étoile, géante, registre assuré et océan vécu.",
+          "external_site_article": "Le système de noms de HECTON-8 n'est pas un détail décoratif. Il indique quelle puissance parle. L'astronomie dit Ran parce qu'une étoile fixe routes et délai lumineux. Les bureaux de réclamation disent Aegir parce que la géante permet de regrouper lunes, infrastructure et responsabilité. Les tables d'assurance disent RAN-B:H8 parce que les registres triés n'ont pas de mémoire. Les gens sous l'eau disent HECTON-8 parce que c'est là que l'écoutille cède.\n\nQuand un document change de nom, il change souvent de juridiction. Le vocabulaire Ran appartient au temps et à la physique. Aegir appartient à la propriété. RAN-B:H8 appartient au catalogue, à l'assurance et à la garde. HECTON-8 appartient au terrain, à la mémoire et à la colonie comme lieu.",
+          "field_note": "Si un juriste dit Aegir quand la plaque dit RAN-B:H8, regardez quelle colonne est devenue moins chère."
+        },
+        "he_IL": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "יומן סמכות שמות Ran / Aegir",
+          "scanner": "לוח נתיב נפתר // Ran הוא הכוכב המארח. Aegir הוא הענק וקיצור מערכת התביעה. RAN-B:H8 הוא מפתח הקטלוג של HECTON-8.",
+          "terminal": "הודעת נרמול קטלוג // קיצור AEGIR מאושר לאינדקס מערכת התביעה. השתמש ב-RAN-B:H8 לרשומת הירח המבוטחת וב-HECTON-8 לפני השטח המבצעיים.",
+          "audio": "פותר קטלוג Black Keel: Ran הוא מקור האור, Aegir הוא שמי התביעה, HECTON-8 הוא המקום שבו החשבונית נרטבת.",
+          "in_game_wiki": "HECTON-8 משתמש בכמה שמות כי כמה רשויות מנסות להחזיק באותם מים. Ran הוא הכוכב, עוגן אסטרונומי ושם לפיזיקת נתיבים. Aegir הוא ענק הגז, הגוף הזוהר בשמיים וקיצור של משרדי התביעה. RAN-B:H8 הוא מפתח קטלוג: קר, מבוטח וניתן למיון. HECTON-8 הוא שם השטח שבו השחקן מדמם.\n\nההבדל חשוב. לוח שאומר Ran מדבר על אור, מרחק ומעבר. מזכר Deep Reach שאומר Aegir מדבר לעיתים על בעלות והמשכיות תביעה. קבלת Black Keel עם RAN-B:H8 מתמחרת רשומת ירח מסוימת. הערת Marauder שאומרת HECTON-8 מדברת על חדרים, גופות, דלתות לחץ ואוקיינוס שלא אכפת לו משמות עורכי הדין.",
+          "external_site": "Ran, Aegir, RAN-B:H8 ו-HECTON-8 מציינים שכבות שונות של אותו גבול: כוכב, ענק, רשומת ביטוח ואוקיינוס חי.",
+          "external_site_article": "מערכת השמות של HECTON-8 אינה קישוט. היא דרך לדעת איזה כוח מדבר. אסטרונומיה אומרת Ran כי כוכב מקבע נתיבים ועיכוב אור. משרדי תביעה אומרים Aegir כי הענק מאפשר לאגד ירחים, תשתית ואחריות. טבלאות ביטוח אומרות RAN-B:H8 כי ספרים ממוינים לא זוכרים. האנשים מתחת למים אומרים HECTON-8 כי שם הדלת נכשלת.\n\nכאשר מסמך מחליף שם, לעיתים הוא מחליף סמכות. שפת Ran שייכת לזמן ולפיזיקה. שפת Aegir שייכת לבעלות. RAN-B:H8 שייך לקטלוג, ביטוח ומשמורת. HECTON-8 שייך לשימוש שדה, זיכרון והמושבה כמקום.",
+          "field_note": "אם עורך דין אומר Aegir כשהלוח אומר RAN-B:H8, בדוק איזה טור נעשה זול יותר."
+        },
+        "id_ID": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Buku Otoritas Nama Ran / Aegir",
+          "scanner": "PLAT RUTE TERPECAHKAN // Ran adalah bintang induk. Aegir adalah raksasa dan singkatan sistem klaim. RAN-B:H8 adalah kunci katalog HECTON-8.",
+          "terminal": "PEMBERITAHUAN NORMALISASI KATALOG // Singkatan AEGIR diterima untuk indeks sistem klaim. Gunakan RAN-B:H8 untuk catatan bulan berasuransi dan HECTON-8 untuk permukaan operasi lapangan.",
+          "audio": "Resolver katalog Black Keel: Ran sumber cahaya, Aegir langit klaim, HECTON-8 tempat faktur menjadi basah.",
+          "in_game_wiki": "HECTON-8 memakai beberapa nama karena beberapa otoritas ingin memiliki air yang sama. Ran adalah bintang, jangkar astronomi dan nama untuk fisika rute. Aegir adalah raksasa gas, induk terang di langit dan singkatan kantor klaim. RAN-B:H8 adalah kunci katalog: dingin, bisa diasuransikan, bisa diurutkan. HECTON-8 adalah nama lapangan tempat pemain berdarah.\n\nPerbedaannya penting. Plat bertuliskan Ran bicara tentang cahaya, jarak dan transit. Memo Deep Reach yang memakai Aegir sering bicara tentang kepemilikan dan kontinuitas klaim. Resi Black Keel dengan RAN-B:H8 memberi harga pada catatan bulan tertentu. Catatan Marauder yang memakai HECTON-8 bicara tentang ruangan, tubuh, pintu tekanan dan samudra yang tidak peduli nama pengacara.",
+          "external_site": "Ran, Aegir, RAN-B:H8 dan HECTON-8 menamai lapisan berbeda dari frontier yang sama: bintang, raksasa, catatan berasuransi dan samudra yang dihuni.",
+          "external_site_article": "Sistem nama HECTON-8 bukan trivia. Ia menunjukkan kekuasaan mana yang sedang berbicara. Astronomi berkata Ran karena bintang menetapkan rute dan jeda cahaya. Kantor klaim berkata Aegir karena raksasa gas memungkinkan bulan, infrastruktur dan liabilitas dibundel. Tabel asuransi berkata RAN-B:H8 karena buku yang rapi tidak punya ingatan. Orang di bawah air berkata HECTON-8 karena di sanalah palka gagal.\n\nSaat dokumen mengganti nama, sering kali ia mengganti yurisdiksi. Bahasa Ran milik waktu dan fisika. Bahasa Aegir milik kepemilikan. RAN-B:H8 milik katalog, asuransi dan kustodi. HECTON-8 milik penggunaan lapangan, memori dan koloni sebagai tempat.",
+          "field_note": "Kalau pengacara bilang Aegir saat plat bilang RAN-B:H8, cek kolom mana yang jadi lebih murah."
+        },
+        "ja_JP": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Ran / Aegir名称権限台帳",
+          "scanner": "ルートプレート解決 // Ranは主星。Aegirは巨大惑星であり請求系の略称。RAN-B:H8はHECTON-8のカタログキー。",
+          "terminal": "カタログ正規化通知 // AEGIR略称は請求系インデックスで承認。保険対象の月記録にはRAN-B:H8、現場運用面にはHECTON-8を使用。",
+          "audio": "Black Keelカタログ解決: Ranは光源、Aegirは請求の空、HECTON-8は請求書が濡れる場所だ。",
+          "in_game_wiki": "HECTON-8に複数の名前があるのは、複数の権限が同じ水を所有しようとしているからだ。Ranは恒星であり、天文上の基準、ルート物理の名前である。Aegirはガス巨大惑星で、空の親であり、請求オフィスが好む系全体の略称だ。RAN-B:H8はカタログキーで、冷たく、保険可能で、並べ替えられる。HECTON-8はプレイヤーが血を流す現場名だ。\n\n違いは重要だ。Ranと書かれたルート板は光、距離、輸送を語る。Aegirと書くDeep Reachメモは所有と請求継続を語ることが多い。RAN-B:H8のBlack Keel受領は特定の月記録に値を付ける。HECTON-8と書くMarauderのメモは部屋、身体、圧力扉、弁護士名を気にしない海を語る。",
+          "external_site": "Ran、Aegir、RAN-B:H8、HECTON-8は同じ辺境の別層を名付ける。星、巨大惑星、保険記録、そして生きられた海だ。",
+          "external_site_article": "HECTON-8の命名体系は小ネタではない。誰が話しているかを示す道具だ。天文学は、星がルートと光遅延を固定するのでRanと言う。請求オフィスは、巨大惑星が月とインフラと責任を束ねられるのでAegirと言う。保険表は、整理された台帳が記憶を持たないのでRAN-B:H8と言う。水の下の人々は、ハッチが壊れる場所だからHECTON-8と言う。\n\n文書が名前を変える時、管轄も変わっていることが多い。Ran語は時間と物理に属する。Aegir語は所有に属する。RAN-B:H8はカタログ、保険、保管に属する。HECTON-8は現場使用、記憶、場所としての植民地に属する。",
+          "field_note": "弁護士がAegirと言い、プレートがRAN-B:H8なら、安くなった列を調べろ。"
+        },
+        "ko_KR": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Ran / Aegir 명칭 권한 장부",
+          "scanner": "항로 플레이트 해석 완료 // Ran은 주성이다. Aegir는 거대 행성이자 청구 시스템 약칭이다. RAN-B:H8은 HECTON-8 카탈로그 키다.",
+          "terminal": "카탈로그 정규화 공지 // AEGIR 약칭은 청구 시스템 인덱스에서 허용. 보험된 위성 기록에는 RAN-B:H8, 현장 운용 표면에는 HECTON-8을 사용.",
+          "audio": "Black Keel 카탈로그 해석기: Ran은 광원, Aegir는 청구의 하늘, HECTON-8은 청구서가 젖는 곳이다.",
+          "in_game_wiki": "HECTON-8에 여러 이름이 있는 것은 여러 권한이 같은 물을 소유하려 하기 때문이다. Ran은 별, 천문 기준점, 항로 물리의 이름이다. Aegir는 가스 거인, 하늘의 부모, 청구 사무실이 선호하는 시스템 약칭이다. RAN-B:H8은 카탈로그 키로, 차갑고 보험 가능하며 정렬 가능하다. HECTON-8은 플레이어가 피 흘리는 현장 이름이다.\n\n차이는 중요하다. Ran이라고 쓰인 항로 플레이트는 빛, 거리, 운송을 말한다. Aegir라고 쓰는 Deep Reach 메모는 소유와 청구 연속성을 말할 때가 많다. RAN-B:H8이 적힌 Black Keel 영수증은 특정 위성 기록의 가격을 매긴다. HECTON-8이라고 쓰는 Marauder 메모는 방, 몸, 압력문, 변호사의 이름을 신경 쓰지 않는 바다를 말한다.",
+          "external_site": "Ran, Aegir, RAN-B:H8, HECTON-8은 같은 변경지의 다른 층을 부른다: 별, 거인, 보험 기록, 살아 있는 바다.",
+          "external_site_article": "HECTON-8의 명명 체계는 장식이 아니다. 어떤 권력이 말하는지 알려준다. 천문학은 별이 항로와 빛 지연을 고정하므로 Ran이라고 한다. 청구 사무실은 거대 행성이 위성, 인프라, 책임을 묶게 해주므로 Aegir라고 한다. 보험 표는 정렬된 장부가 기억을 갖지 않으므로 RAN-B:H8이라고 한다. 물 아래 사람들은 해치가 망가지는 곳이기 때문에 HECTON-8이라고 한다.\n\n문서가 이름을 바꾸면 관할도 바뀌는 경우가 많다. Ran 언어는 시간과 물리에 속한다. Aegir 언어는 소유에 속한다. RAN-B:H8은 카탈로그, 보험, 보관에 속한다. HECTON-8은 현장 사용, 기억, 장소로서의 식민지에 속한다.",
+          "field_note": "변호사가 Aegir라고 하는데 플레이트가 RAN-B:H8이면, 어떤 열이 싸졌는지 봐라."
+        },
+        "nl_NL": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Ran / Aegir Naamautoriteitsregister",
+          "scanner": "ROUTEPLAAT OPGELOST // Ran is de gastster. Aegir is de reus en claim-systeemafkorting. RAN-B:H8 is de HECTON-8-catalogussleutel.",
+          "terminal": "CATALOGUSNORMALISATIE // AEGIR-afkorting geaccepteerd voor claim-systeemindex. Gebruik RAN-B:H8 voor verzekerd maanrecord en HECTON-8 voor operationeel veldoppervlak.",
+          "audio": "Black Keel-catalogusresolver: Ran is lichtbron, Aegir is claimhemel, HECTON-8 is waar de factuur nat wordt.",
+          "in_game_wiki": "HECTON-8 gebruikt meerdere namen omdat meerdere autoriteiten hetzelfde water willen bezitten. Ran is de ster, astronomisch anker en naam voor routefysica. Aegir is de gasreus, de heldere ouder aan de hemel en de afkorting van claimkantoren. RAN-B:H8 is de catalogussleutel: koud, verzekerbaar en sorteerbaar. HECTON-8 is de veldnaam waarin de speler bloedt.\n\nHet verschil telt. Een routeplaat met Ran spreekt over licht, afstand en transit. Een Deep Reach-memo met Aegir spreekt vaak over eigendom en claimcontinuïteit. Een Black Keel-ontvangst met RAN-B:H8 prijst een specifiek maanrecord. Een Marauder-notitie met HECTON-8 spreekt over kamers, lichamen, drukdeuren en een oceaan die niets geeft om advocatennamen.",
+          "external_site": "Ran, Aegir, RAN-B:H8 en HECTON-8 benoemen lagen van dezelfde frontier: ster, reus, verzekerd record en geleefde oceaan.",
+          "external_site_article": "Het namingsysteem van HECTON-8 is geen achtergrondkleur. Het vertelt welke macht spreekt. Astronomie zegt Ran omdat een ster routes en lichtvertraging vastzet. Claimkantoren zeggen Aegir omdat de reus manen, infrastructuur en aansprakelijkheid bundelt. Verzekeringstabellen zeggen RAN-B:H8 omdat gesorteerde boeken geen geheugen hebben. Mensen onder water zeggen HECTON-8 omdat daar de hatch faalt.\n\nWanneer een document van naam wisselt, wisselt het vaak van jurisdictie. Ran-taal hoort bij tijd en fysica. Aegir-taal hoort bij eigendom. RAN-B:H8 hoort bij catalogus, verzekering en bewaring. HECTON-8 hoort bij veldgebruik, geheugen en de kolonie als plaats.",
+          "field_note": "Als een jurist Aegir zegt terwijl de plaat RAN-B:H8 zegt, kijk welke kolom goedkoper werd."
+        },
+        "pl_PL": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Rejestr Władzy Nazw Ran / Aegir",
+          "scanner": "PŁYTA TRASY ROZWIĄZANA // Ran to gwiazda macierzysta. Aegir to olbrzym i skrót systemu roszczeń. RAN-B:H8 to klucz katalogowy HECTON-8.",
+          "terminal": "POWIADOMIENIE NORMALIZACJI KATALOGU // Skrót AEGIR dopuszczony dla indeksu systemu roszczeń. Użyj RAN-B:H8 dla ubezpieczonego rekordu księżyca i HECTON-8 dla powierzchni operacyjnej w terenie.",
+          "audio": "Resolver katalogu Black Keel: Ran jest źródłem światła, Aegir niebem roszczeń, HECTON-8 miejscem, gdzie faktura moknie.",
+          "in_game_wiki": "HECTON-8 ma kilka nazw, bo kilka władz próbuje posiadać tę samą wodę. Ran to gwiazda, kotwica astronomiczna i nazwa dla fizyki tras. Aegir to gazowy olbrzym, jasny rodzic na niebie i skrót biur roszczeń. RAN-B:H8 to klucz katalogowy: zimny, ubezpieczalny i sortowalny. HECTON-8 to nazwa polowa, w której gracz krwawi.\n\nRóżnica ma znaczenie. Płyta Ran mówi o świetle, dystansie i tranzycie. Memo Deep Reach mówiące Aegir często mówi o własności i ciągłości roszczeń. Potwierdzenie Black Keel z RAN-B:H8 wycenia konkretny rekord księżyca. Notatka Maraudera mówiąca HECTON-8 mówi o pokojach, ciałach, drzwiach ciśnieniowych i oceanie, którego nie obchodzą nazwy prawników.",
+          "external_site": "Ran, Aegir, RAN-B:H8 i HECTON-8 nazywają różne warstwy tej samej granicy: gwiazdę, olbrzyma, rekord ubezpieczeniowy i przeżywany ocean.",
+          "external_site_article": "System nazw HECTON-8 nie jest ozdobą. Pokazuje, która władza mówi. Astronomia mówi Ran, bo gwiazda ustala trasy i opóźnienie światła. Biura roszczeń mówią Aegir, bo olbrzym pozwala spiąć księżyce, infrastrukturę i odpowiedzialność. Tabele ubezpieczeń mówią RAN-B:H8, bo uporządkowane księgi nie pamiętają. Ludzie pod wodą mówią HECTON-8, bo tam zawodzi właz.\n\nGdy dokument zmienia nazwę, często zmienia jurysdykcję. Język Ran należy do czasu i fizyki. Język Aegir należy do własności. RAN-B:H8 należy do katalogu, ubezpieczenia i pieczy. HECTON-8 należy do terenu, pamięci i kolonii jako miejsca.",
+          "field_note": "Jeśli prawnik mówi Aegir, gdy płyta mówi RAN-B:H8, sprawdź, która kolumna potaniała."
+        },
+        "pt_BR": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Livro de Autoridade de Nomes Ran / Aegir",
+          "scanner": "PLACA DE ROTA RESOLVIDA // Ran é a estrela hospedeira. Aegir é o gigante e a abreviação do sistema de reivindicação. RAN-B:H8 é a chave de catálogo de HECTON-8.",
+          "terminal": "AVISO DE NORMALIZAÇÃO DE CATÁLOGO // Abreviação AEGIR aceita para índice do sistema de reivindicação. Use RAN-B:H8 para registro lunar segurado e HECTON-8 para superfície operacional de campo.",
+          "audio": "Resolvedor de catálogo Black Keel: Ran é fonte de luz, Aegir é céu reclamante, HECTON-8 é onde a fatura molha.",
+          "in_game_wiki": "HECTON-8 usa vários nomes porque várias autoridades tentam possuir a mesma água. Ran é a estrela, âncora astronômica e nome da física de rota. Aegir é o gigante gasoso, o pai brilhante no céu e a abreviação dos escritórios de reivindicação. RAN-B:H8 é a chave de catálogo: fria, segurável e ordenável. HECTON-8 é o nome de campo onde o jogador sangra.\n\nA diferença importa. Uma placa Ran fala de luz, distância e trânsito. Um memorando Deep Reach dizendo Aegir muitas vezes fala de propriedade e continuidade de reivindicação. Um recibo Black Keel com RAN-B:H8 precifica um registro lunar específico. Uma nota Marauder dizendo HECTON-8 fala de salas, corpos, portas de pressão e um oceano que não liga para nomes de advogados.",
+          "external_site": "Ran, Aegir, RAN-B:H8 e HECTON-8 nomeiam camadas da mesma fronteira: estrela, gigante, registro segurado e oceano vivido.",
+          "external_site_article": "O sistema de nomes de HECTON-8 não é curiosidade. Ele mostra qual poder está falando. A astronomia diz Ran porque uma estrela fixa rotas e atraso de luz. Escritórios de reivindicação dizem Aegir porque o gigante permite agrupar luas, infraestrutura e responsabilidade. Tabelas de seguro dizem RAN-B:H8 porque livros ordenados não têm memória. As pessoas sob a água dizem HECTON-8 porque é ali que a escotilha falha.\n\nQuando um documento troca de nome, muitas vezes troca de jurisdição. Linguagem Ran pertence a tempo e física. Linguagem Aegir pertence a propriedade. RAN-B:H8 pertence a catálogo, seguro e custódia. HECTON-8 pertence a uso de campo, memória e colônia como lugar.",
+          "field_note": "Se um advogado diz Aegir quando a placa diz RAN-B:H8, veja qual coluna ficou mais barata."
+        },
+        "ru_RU": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Реестр полномочий имен Ran / Aegir",
+          "scanner": "МАРШРУТНАЯ ТАБЛИЧКА РАЗОБРАНА // Ran - звезда-хозяин. Aegir - гигант и сокращение системы претензий. RAN-B:H8 - каталожный ключ HECTON-8.",
+          "terminal": "УВЕДОМЛЕНИЕ НОРМАЛИЗАЦИИ КАТАЛОГА // Сокращение AEGIR допустимо для индекса системы претензий. Используйте RAN-B:H8 для застрахованной записи луны и HECTON-8 для полевой операционной поверхности.",
+          "audio": "Разборщик каталога Black Keel: Ran - источник света, Aegir - небо претензий, HECTON-8 - место, где счет намокает.",
+          "in_game_wiki": "У HECTON-8 несколько имен, потому что несколько властей пытаются владеть одной и той же водой. Ran - это звезда, астрономический якорь и имя для физики маршрутов. Aegir - газовый гигант, яркий родитель в небе и сокращение, удобное офисам претензий. RAN-B:H8 - каталожный ключ: холодный, страхуемый, сортируемый. HECTON-8 - полевое имя места, где игрок реально истекает кровью.\n\nРазница важна. Маршрутная табличка с Ran говорит о свете, расстоянии и транзите. Мемо Deep Reach с Aegir часто говорит о собственности и непрерывности претензии. Квитанция Black Keel с RAN-B:H8 оценивает конкретную запись луны. Заметка мародера с HECTON-8 говорит о комнатах, телах, гермодверях и океане, которому безразличны юридические названия.",
+          "external_site": "Ran, Aegir, RAN-B:H8 и HECTON-8 называют разные слои одной границы: звезду, гигант, страховую запись и прожитый океан.",
+          "external_site_article": "Система имен HECTON-8 не декоративная мелочь. Она показывает, какая власть говорит. Астрономия говорит Ran, потому что звезда фиксирует маршруты и световую задержку. Офисы претензий говорят Aegir, потому что гигант позволяет упаковать луны, инфраструктуру и ответственность в общий актив. Страховые таблицы говорят RAN-B:H8, потому что отсортированные книги не помнят. Люди под водой говорят HECTON-8, потому что именно там отказывает люк.\n\nКогда документ меняет имя, он часто меняет юрисдикцию. Язык Ran принадлежит времени и физике. Язык Aegir принадлежит собственности. RAN-B:H8 принадлежит каталогу, страхованию и опеке. HECTON-8 принадлежит полю, памяти и колонии как месту.",
+          "field_note": "Если юрист говорит Aegir, когда табличка говорит RAN-B:H8, проверь, какая колонка подешевела."
+        },
+        "uk_UA": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Реєстр повноважень назв Ran / Aegir",
+          "scanner": "МАРШРУТНА ТАБЛИЧКА РОЗІБРАНА // Ran - зірка-господар. Aegir - гігант і скорочення системи претензій. RAN-B:H8 - каталожний ключ HECTON-8.",
+          "terminal": "ПОВІДОМЛЕННЯ НОРМАЛІЗАЦІЇ КАТАЛОГУ // Скорочення AEGIR прийняте для індексу системи претензій. Використовуйте RAN-B:H8 для застрахованого запису місяця і HECTON-8 для польової операційної поверхні.",
+          "audio": "Розв'язувач каталогу Black Keel: Ran - джерело світла, Aegir - небо претензії, HECTON-8 - місце, де рахунок намокає.",
+          "in_game_wiki": "HECTON-8 має кілька назв, бо кілька влад намагаються володіти однією водою. Ran - це зірка, астрономічний якір і назва для фізики маршрутів. Aegir - газовий гігант, яскравий батько в небі й скорочення офісів претензій. RAN-B:H8 - каталожний ключ: холодний, страховий, придатний до сортування. HECTON-8 - польова назва, де гравець реально кровоточить.\n\nРізниця важлива. Маршрутна табличка з Ran говорить про світло, відстань і транзит. Мемо Deep Reach з Aegir часто говорить про власність і безперервність претензії. Квитанція Black Keel з RAN-B:H8 оцінює конкретний запис місяця. Нотатка Marauder з HECTON-8 говорить про кімнати, тіла, гермодвері й океан, якому байдуже до юридичних назв.",
+          "external_site": "Ran, Aegir, RAN-B:H8 і HECTON-8 називають різні шари одного фронтиру: зірку, гігант, страховий запис і прожитий океан.",
+          "external_site_article": "Система назв HECTON-8 не є декором. Вона показує, яка влада говорить. Астрономія каже Ran, бо зірка фіксує маршрути й світлову затримку. Офіси претензій кажуть Aegir, бо гігант дозволяє зібрати місяці, інфраструктуру й відповідальність в один актив. Страхові таблиці кажуть RAN-B:H8, бо впорядковані книги не пам'ятають. Люди під водою кажуть HECTON-8, бо саме там відмовляє люк.\n\nКоли документ змінює назву, він часто змінює юрисдикцію. Мова Ran належить часу й фізиці. Мова Aegir належить власності. RAN-B:H8 належить каталогу, страхуванню й опіці. HECTON-8 належить полю, пам'яті та колонії як місцю.",
+          "field_note": "Якщо юрист каже Aegir, коли табличка каже RAN-B:H8, перевір, яка колонка подешевшала."
+        },
+        "zh_CN": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Ran / Aegir名称权限账册",
+          "scanner": "路线牌已解析 // Ran是主恒星。Aegir是巨行星，也是索赔系统简称。RAN-B:H8是HECTON-8的目录键。",
+          "terminal": "目录规范化通知 // AEGIR简称可用于索赔系统索引。投保月球记录使用RAN-B:H8，现场操作表面使用HECTON-8。",
+          "audio": "Black Keel目录解析器：Ran是光源，Aegir是索赔天空，HECTON-8是账单变湿的地方。",
+          "in_game_wiki": "HECTON-8有多个名字，因为多个权力都想拥有同一片水。Ran是恒星，是天文锚点，也是路线物理使用的名字。Aegir是气态巨行星，是天空中的明亮母体，也是索赔办公室偏爱的系统简称。RAN-B:H8是目录键：冰冷、可投保、可排序。HECTON-8是玩家真正流血的现场名称。\n\n差异很重要。写着Ran的路线牌在谈光、距离和运输。Deep Reach备忘录写Aegir，往往在谈所有权和索赔连续性。Black Keel回执写RAN-B:H8，是在给某个具体月球记录定价。Marauder笔记写HECTON-8，是在谈房间、身体、压力门，以及不在乎律师名字的海洋。",
+          "external_site": "Ran、Aegir、RAN-B:H8和HECTON-8命名同一边疆的不同层：恒星、巨行星、投保记录和被生活过的海洋。",
+          "external_site_article": "HECTON-8的命名系统不是装饰。它告诉你哪种权力在说话。天文学说Ran，因为恒星固定路线和光延迟。索赔办公室说Aegir，因为巨行星让月球、基础设施和责任能打包成更大的资产字段。保险表说RAN-B:H8，因为排序账册没有记忆。水下的人说HECTON-8，因为舱门就是在那里失效。\n\n当文件改换名称时，它通常也在改换管辖权。Ran语言属于时间和物理。Aegir语言属于所有权。RAN-B:H8属于目录、保险和托管。HECTON-8属于现场使用、记忆，以及作为地点而非资产的殖民地。",
+          "field_note": "如果律师说Aegir而牌子写RAN-B:H8，查查哪一列变便宜了。"
+        }
+      }
+    }
+  ]
+}

@@ -9,32 +9,24 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Domain Distance Scale"
+title: "Domein-Afstandsschaal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Domain Distance Scale
+# Domein-Afstandsschaal
 
-NL LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language.
+## Afstand Als Druk
 
-## Scanner
+De domeinkaart van Marauders is niet getekend voor verwondering. Ze is getekend voor facturering. Sol, Centauri, Barnard, Tau Ceti, Luyten en Ran/Aegir verschijnen als routebanden omdat ze zo een werker in een overstroomde maan raken: certificering, chartertaal, salvage-arbeid, openbaar bewijs, pakket-custody en vuile frontier-uitvoering.
 
-NL LOC HOLD: The domain map uses distance bands, not romantic shortcuts.
+Sol Core is fysiek ver weg en blijft gevaarlijk. Het kan een bezit houden dat het niet kan bereiken, een verlies verzekeren dat het nooit zal ruiken, en een claim accepteren terwijl de persoon die eraan vastzit scrubber time verliest. Centauri telt omdat vroege extrasolaire legitimiteit oude taal geeft aan nieuw misbruik. Barnard telt omdat de speler uit een cultuur komt waar dode claims werk zijn, geen mythe.
 
-## Terminal
+Tau Ceti en Luyten zijn het koude midden van de kaart. Tau Ceti kan bewijs luid genoeg maken om een corporation te verwonden, maar pas nadat licht en custody het laten aankomen. Luyten kan een pakket eerlijk houden zonder zich af te vragen of de afzender leeft. Ran/Aegir is het einde van dat systeem: een corporate claim waar wet, vracht en bewijs aanwezig kunnen zijn terwijl redding te duur blijft.
 
-NL LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.
-
-## Audio
-
-NL LOC HOLD: Ten light-years is a number. The bill is the story.
-
-## Field Note
-
-NL LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.
+Zo blijft HECTON-8 hard zonder magie. De speler is niet verlaten omdat de mensheid klein is. De speler is verlaten omdat menselijke ruimte op de verkeerde manier groot is. Eigendom steekt het donker sneller over dan genade. Een gestempeld recht kan Aegir bereiken vóór een ademende crew en begint bij aankomst meteen rente te dragen.
 
 <!-- External Site; generated from P161_DOMAIN_DISTANCE_SCALE/nl_NL. -->

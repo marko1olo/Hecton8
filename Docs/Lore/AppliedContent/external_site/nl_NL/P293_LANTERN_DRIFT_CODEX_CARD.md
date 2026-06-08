@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Lantern Drift Codex Card"
+title: "Codexkaart: lantarendrift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Lantern Drift Codex Card
+# Codexkaart: lantarendrift
 
-NL LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+Lantarendrift voorkomt dat HECTON-8s schoonheid behang wordt. Ze kan de speler door heldere lichtstructuur leiden en daarna verraden door lawaai, paniek en stormlading vast te leggen. Helder water is tegelijk navigatie en blootstelling.
 
 ## Scanner
 
-NL LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Lantarendrift-bloom. Bioluminescent plankton zet stroming en puin in banden. Nuttig voor contouren; gevaarlijk wanneer gereedschapslawaai er een verlicht spoor van maakt.
 
 ## Terminal
 
-NL LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+SPECIMEN / LANTARENDRIFT-BLOOM / rol: zichtgebeurtenis in ondiep water, stromingsschets, verstoringsrecorder / veilige lezing: stabiel randlicht, puinhalo’s, stroming en residu komen overeen / afwijzen: stormgeladen valse corridor, bloom vlakt kleine gevaren af, gereedschapsspoor licht op achter operator / routenotitie: licht is data, geen schuilplaats.
 
 ## Audio
 
-NL LOC HOLD: Pretty is not safe. Pretty is a reading.
+De gloed helpt je niet. Ze meldt wat het water heeft gehoord.
 
 ## Field Note
 
-NL LOC HOLD: Card teaches that beauty can be route information and route deception.
+Gebruik bloom voor silhouetten. Repareer er niet luid in. Als de gloed je volgt, kan iets anders haar ook volgen.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/nl_NL. -->

@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Predator Shadow Encounter Grammar"
+title: "Grammar Encounter Bayangan Predator"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Predator Shadow Encounter Grammar
+# Grammar Encounter Bayangan Predator
 
-ID LOC HOLD: HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.
+Bayangan predator mendefinisikan rasa takut HECTON-8 tanpa logika reveal murahan. Bahaya sering datang sebagai mangsa yang hilang, bloom patah, sonar salah, dan rute yang tiba-tiba terlalu mahal oksigen.
 
 ## Scanner
 
-ID LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Jejak bayangan predator. Celah sonar, jalur mangsa terpotong, grazer tiba-tiba diam, occlusion cahaya lebar. Tubuh belum terkonfirmasi; jaga disiplin cahaya dan sudut keluar.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+GRAMMAR ENCOUNTER / BAYANGAN PREDATOR / peran: tekanan rute sebelum tubuh terlihat, lonjakan belanja oksigen, patah kepercayaan scan / baca aman: jalur mangsa berhenti, suara bloom runtuh, return sonar terbelah di sekitar air kosong / tolak: scripted full-body reveal sebagai peringatan pertama, jump scare tanpa biaya, boss arena bersih / catatan rute: jika semua hewan kecil berhenti sebelum scanner memberi nama target, rute sudah berubah.
 
 ## Audio
 
-ID LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+Tanda aman bukan melihatnya. Tanda aman adalah sadar bahwa semuanya memilih diam lebih dulu.
 
 ## Field Note
 
-ID LOC HOLD: Use for AI/spawn design notes and scanner cards.
+Namai hewannya terlambat. Biarkan mangsa, cahaya, dan sonar gagal dulu. Jika rute menjadi sunyi, bayangan sudah memilikinya.
 
 <!-- External Site; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/id_ID. -->

@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "Begegnungsgrammatik: Verfolgung durch sensormarkierte Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# Begegnungsgrammatik: Verfolgung durch sensormarkierte Fauna
 
-DE LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+Sensormarkierte Verfolgung zeigt Atlas als beschädigte Interpretation, nicht als Schurkenbefehl. Ein harmloses oder verängstigtes Tier kann gefährlich werden, weil alte Infrastruktur seine Narbe noch als Telemetrie behandelt.
 
 ## Scanner
 
-DE LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+Verfolgung durch sensormarkierte Fauna. Alte Biometallmarke sendet Echo des Reparaturnetzes zurück. Tierbewegung ist lokal; Netzinterpretation nicht.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+BEGEGNUNGSGRAMMATIK / SENSORMARKIERTE VERFOLGUNG / Rolle: korrupte Wartungsrückkopplung, Schutzraum-Kontaminationsrisiko, Druck ohne Bösewicht / sichere Lesung: Markenpuls hängt der Bewegung nach, Tier meidet Schmerz, Atlas-Routenecho folgt letztem bekannten Pfad / verwerfen: Gedankenkontroll-Rahmung, sauberes feindliches KI-Verhalten, markiertes Tier zum Basisschutzraum führen / Routennotiz: Brich das Echo mit Winkel, Stille und Deckung; lehre dem Netz nicht, wo Zuhause ist.
 
 ## Audio
 
-DE LOC HOLD: It follows because the network thinks following is a repair.
+Es folgt, weil etwas Altes glaubt, Folgen sei ein Reparaturschritt.
 
 ## Field Note
 
-DE LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+Führe die Marke nicht nach Hause. Brich Linie, Ton und Interpretation. Das Tier ist nicht das Netz.
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/de_DE. -->

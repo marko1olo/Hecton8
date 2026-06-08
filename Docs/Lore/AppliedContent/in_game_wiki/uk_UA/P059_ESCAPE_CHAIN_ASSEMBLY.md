@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "Збірка ланцюга втечі"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# Збірка ланцюга втечі
 
-UK LOC HOLD: Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.
+Втеча — це збірний ланцюг, а не один відремонтований апарат. Пошкоджений drop-пакет може втримати гравця живим, але сам не створить довіреного підйому. Дорозі додому потрібен акустичний релейний хребет, щоб бути почутою крізь воду й шум шторму; ущільнення тиску, що не перетворить підйом на розрив; ядро наведення, здатне пережити локальні загрози HECTON-8; заряд енергії підйому; карантинно-юридичне рукостискання і, якщо гравець хоче влади над записом повернення, доказовий вантаж, який Black Keel не зможе знецінити. Кожна частина лежить глибше за комфорт, бо початкова система будувалася для руху активів, а не для виходу покинутих робітників на власних умовах.
 
 ## Scanner
 
-UK LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+Відхід потребує шести твердих доказів: реле, ущільнення, наведення, заряду підйому, юридичного рукостискання і вантажу, який носій не зможе ігнорувати.
 
 ## Terminal
 
-UK LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+ПАКЕТ ПІДЙОМУ: акустичний релейний хребет відсутній. Рейтинг затискного кільця недостатній. Ядра наведення немає. Люлька заряду порожня. Карантинне рукостискання не вирішене. Доказовий вантаж необов’язковий, але змінює владу над поверненням.
 
 ## Audio
 
-UK LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+Ти не ремонтуєш капсулу. Ти будуєш перший чесний вихід, якого колонія ніколи не мала.
 
 ## Field Note
 
-UK LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+Маршрут угору будується з деталей, які ніколи не призначалися для самостійного виходу робітників.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/uk_UA. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # КСЕНОН-ОМЕГА: ОЧИЩЕННЯ ТА ВЛАСТИВОСТІ
 
 > **Джерело:** Мегакорпорація Deep Reach, Секретний хімічний маніфест.

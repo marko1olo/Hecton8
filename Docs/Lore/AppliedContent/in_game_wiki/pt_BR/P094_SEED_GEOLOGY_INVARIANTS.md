@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Invariantes geologicas de seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Invariantes geologicas de seed
 
-PT-BR LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+Invariantes geologicas de seed mantem HECTON-8 coerente em replays longos. Canions podem abrir em outra ordem, provas podem mudar, bolsos seguros podem deslocar e pressao de especies pode variar. A estrela continua Aegir, a lua continua HECTON-8, as faixas preservam a ordem, Great Tide preserva o tempo e a bacia Atlas preserva a relacao com a verdade mais profunda.
 
 ## Scanner
 
-PT-BR LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+Nota de geracao de rota. O mapa de resgate muda, mas a lua mantem os mesmos ossos.
 
 ## Terminal
 
-PT-BR LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+INVARIANTES: primaria Aegir, escada orbital de HECTON-8, intervalo de Great Tide, ordem das faixas de profundidade, relacao da bacia Atlas, comportamento de pressao do blue debt. VARIAVEL: acesso a canion, ordem de POI, bolsos seguros, densidade de bloom, exposicao de resgate.
 
 ## Audio
 
-PT-BR LOC HOLD: New seed, same moon. Different wound.
+Padrao de ferida diferente. A mesma lua por baixo.
 
 ## Field Note
 
-PT-BR LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+Uma nova run pode enterrar provas de outro jeito; ela nao pode reescrever gravidade, mare ou culpa.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/pt_BR. -->

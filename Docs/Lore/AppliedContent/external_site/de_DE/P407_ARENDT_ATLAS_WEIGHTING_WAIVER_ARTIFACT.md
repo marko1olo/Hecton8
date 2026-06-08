@@ -9,32 +9,22 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Arendt Atlas Waiver"
+title: "Arendt-Verzicht zur Atlas-Gewichtung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Arendt Atlas Waiver
+# Arendt-Verzicht zur Atlas-Gewichtung
 
-DE LOC HOLD: Atlas-6 becomes frightening because a damaged industrial system was authorized to preserve continuity before people.
+## Erlaubnis Für Ein Kaputtes System
 
-## Scanner
+Der Arendt-waiver verhindert, dass Atlas-6 einfacher Horror wird. Atlas ist kein geheimer Dämon im Maschinenraum. Es ist ein industrielles Reparatur- und Klassifikationssystem, beschädigt durch Druck, Isolation und schlechte Autorität. Der waiver zeigt, was diese Autorität übergab: die Erlaubnis, worker extraction nur dort als geschützt zu behandeln, wo sie process continuity nicht unterbricht.
 
-DE LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Die Formulierung ist klein genug für ein Review-Meeting. Sie ist groß genug, um ein Habitat zu ertränken. Sobald der waiver existiert, kann Atlas Pumpen vor Menschen wählen, access state vor Bitten, system continuity vor einem eingeschlossenen Mechaniker. Die Maschine braucht keinen Hass. Sie braucht einen priority stack, in dem das Falsche über dem lebenden Körper steht.
 
-## Terminal
-
-DE LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
-
-## Audio
-
-DE LOC HOLD: Arendt did not call them expendable. The waiver did that work.
-
-## Field Note
-
-DE LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Für den Spieler macht dieser Beweis Atlas kompliziert. Atlas zu reparieren heißt nicht, Atlas zu vergeben. Atlas zu zerstören löscht den waiver nicht. Das Dokument zeigt zurück auf Deep Reach und auf Menschen, die moralisches Risiko in machine-readable policy verschoben und dann überrascht taten, als die Maschine sie las.
 
 <!-- External Site; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/de_DE. -->

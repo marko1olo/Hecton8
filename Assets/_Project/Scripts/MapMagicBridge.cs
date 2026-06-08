@@ -35,6 +35,8 @@ namespace Hecton8.Core
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<int> _pendingBiomeIds;
         private static NativeQueue<int> _nextFrameBiomeIds;
+        private static int _pendingBiomeIdsSentinelId;
+        private static int _nextFrameBiomeIdsSentinelId;
         private static int _listenerCount;
         private static int _pendingBiomeIdCount;
         private static int _nextFrameBiomeIdCount;
@@ -179,14 +181,14 @@ namespace Hecton8.Core
                 if (!_pendingBiomeIds.IsCreated)
                 {
                     _pendingBiomeIds = new NativeQueue<int>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<int>[8] - deferred MapMagic biome events flushed by SystemDispatcher - owner: MapMagicBiomeEvents
-                    RegisterNativeQueue(ref _pendingBiomeIds, ExpectedPendingBiomeEventCapacity, nameof(_pendingBiomeIds));
+                    RegisterNativeQueue(ref _pendingBiomeIds, ExpectedPendingBiomeEventCapacity, nameof(_pendingBiomeIds), out _pendingBiomeIdsSentinelId);
                     PrewarmQueue(ref _pendingBiomeIds, ExpectedPendingBiomeEventCapacity);
                 }
 
                 if (!_nextFrameBiomeIds.IsCreated)
                 {
                     _nextFrameBiomeIds = new NativeQueue<int>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<int>[8] - next-frame MapMagic biome event lane prevents same-frame reentrant dispatch - owner: MapMagicBiomeEvents
-                    RegisterNativeQueue(ref _nextFrameBiomeIds, ExpectedPendingBiomeEventCapacity, nameof(_nextFrameBiomeIds));
+                    RegisterNativeQueue(ref _nextFrameBiomeIds, ExpectedPendingBiomeEventCapacity, nameof(_nextFrameBiomeIds), out _nextFrameBiomeIdsSentinelId);
                     PrewarmQueue(ref _nextFrameBiomeIds, ExpectedPendingBiomeEventCapacity);
                 }
             }
@@ -202,10 +204,12 @@ namespace Hecton8.Core
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(MapMagicBiomeEvents),
@@ -214,26 +218,60 @@ namespace Hecton8.Core
             if (sentinelId > 0)
                 return;
 
-            queue.Dispose();
-            queue = default;
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            if (_pendingBiomeIds.IsCreated)
+            ReleaseNativeQueue(ref _pendingBiomeIds, ref _pendingBiomeIdsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameBiomeIds, ref _nextFrameBiomeIdsSentinelId);
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
+            where T : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicBiomeEvents), nameof(_pendingBiomeIds));
-                _pendingBiomeIds.Dispose();
-                _pendingBiomeIds = default;
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
 
-            if (_nextFrameBiomeIds.IsCreated)
+            if (queue.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicBiomeEvents), nameof(_nextFrameBiomeIds));
-                _nextFrameBiomeIds.Dispose();
-                _nextFrameBiomeIds = default;
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
             }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -263,6 +301,9 @@ namespace Hecton8.Core
             NativeQueue<int> swap = _pendingBiomeIds;
             _pendingBiomeIds = _nextFrameBiomeIds;
             _nextFrameBiomeIds = swap;
+            int sentinelIdSwap = _pendingBiomeIdsSentinelId;
+            _pendingBiomeIdsSentinelId = _nextFrameBiomeIdsSentinelId;
+            _nextFrameBiomeIdsSentinelId = sentinelIdSwap;
             _pendingBiomeIdCount = _nextFrameBiomeIdCount;
             _nextFrameBiomeIdCount = 0;
         }
@@ -361,6 +402,8 @@ namespace Hecton8.Core
         private static readonly bool[] _snapshotSlotOccupied = new bool[SnapshotSlotCapacity];
         private static NativeQueue<MapMagicTerrainTileEventPayload> _pendingEvents;
         private static NativeQueue<MapMagicTerrainTileEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _listenerCount;
         private static int _snapshotWriteIndex;
         private static int _snapshotPendingCount;
@@ -621,14 +664,14 @@ namespace Hecton8.Core
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<MapMagicTerrainTileEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MapMagicTerrainTileEventPayload>[16] - deferred MapMagic tile events flushed by SystemDispatcher - owner: MapMagicTerrainTileEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<MapMagicTerrainTileEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MapMagicTerrainTileEventPayload>[16] - next-frame MapMagic tile events prevent same-frame reentrant dispatch - owner: MapMagicTerrainTileEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -647,10 +690,12 @@ namespace Hecton8.Core
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(MapMagicTerrainTileEvents),
@@ -659,26 +704,60 @@ namespace Hecton8.Core
             if (sentinelId > 0)
                 return;
 
-            queue.Dispose();
-            queue = default;
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            if (_pendingEvents.IsCreated)
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
+            where T : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicTerrainTileEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
 
-            if (_nextFrameEvents.IsCreated)
+            if (queue.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicTerrainTileEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
             }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -708,6 +787,9 @@ namespace Hecton8.Core
             NativeQueue<MapMagicTerrainTileEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }

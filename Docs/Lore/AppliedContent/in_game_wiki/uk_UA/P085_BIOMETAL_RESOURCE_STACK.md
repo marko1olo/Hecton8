@@ -7,34 +7,34 @@ poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
 biome_tags: biome.factory_temple;biome.deep_abyss
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Стек біометалевих ресурсів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# Стек біометалевих ресурсів
 
-UK LOC HOLD: The resource stack prevents HECTON-8 from collapsing into one magic material. Xenon-Omega matters, but the moon also has metals, salts, vent chemistry, pressure ceramics, biofibers, photoproteins, salvage, and Atlas-altered biometal.
+Ресурсний стек не дає HECTON-8 згорнутися в один магічний матеріал. Xenon-Omega важливий, але місяць також має метали, солі, жерлову хімію, тискову кераміку, біоволокна, фотопротеїни, salvage і змінений Atlas біометал.
 
 ## Scanner
 
-UK LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
+Дошка ресурсного стека. Blue debt на вершині, але решта місяця теж досить прибуткова, щоб за неї вбивати.
 
 ## Terminal
 
-UK LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
+РЕСУРСНИЙ СТЕК HECTON-8: сульфідні метали, солі, кишені благородних газів, тискова кераміка, жерлові каталізатори, біоволокна, фотопротеїни, salvage hardware, змінений Atlas біометал і XO continuity substrate.
 
 ## Audio
 
-UK LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
+Одна чудо-руда була б лінивою. HECTON-8 має цілу економіку ран тиску.
 
 ## Field Note
 
-UK LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+Якщо кожен зразок каже Xenon-Omega, світ тупішає. Рахуй і інші причини.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/uk_UA. -->

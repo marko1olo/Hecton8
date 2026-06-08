@@ -7,34 +7,34 @@ poi_tags: poi.freight_stage_mass_board;poi.seed_ship_burn_schedule
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Temps de staging du fret lourd"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# Temps de staging du fret lourd
 
-FR LOC HOLD: Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.
+Le timing du fret lourd protège la chronologie sans FTL. Le matériel Atlas peut arriver avant la colonisation de masse parce que les corporations lancent tôt des cargaisons précurseurs, les stagient en avant, acceptent le risque non habité et enterrent les fenêtres d'échec dans le langage de programme. Le secours ne peut pas emprunter cette astuce après le début de l'urgence.
 
 ## Scanner
 
-FR LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
+Le fret de classe Atlas est une patience prépayée enveloppée d'armure.
 
 ## Terminal
 
-FR LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
+NOTE FRET : Atlas et cargaison seed utilisent staging, assistance fusion-pellets, longues dérives et infrastructure de freinage. Les dates publiques peuvent cacher lancements précurseurs et départs forward-domain.
 
 ## Audio
 
-FR LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
+Un vaisseau aussi lourd ne voyage pas simplement. Il devient une facture avec sillage.
 
 ## Field Note
 
-FR LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+Une route lourde s'assemble avec dépôts, fenêtres faisceau, masse de freinage et nerf politique.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/fr_FR. -->

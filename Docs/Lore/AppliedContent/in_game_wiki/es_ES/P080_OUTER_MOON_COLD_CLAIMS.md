@@ -9,32 +9,34 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "Reclamaciones frías de lunas exteriores"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# Reclamaciones frías de lunas exteriores
 
-ES LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.
+Las reclamaciones frías de lunas exteriores prueban que Aegir es un sistema, no una sola luna embrujada. Prospecciones de salmuera fallidas, rutas metálicas archivadas y balizas muertas crean la economía salvage que trae Marauders a la red de tráfico.
+
+Lo importante no es la distancia. Es el patrón. Una ruta puede estar muerta y seguir siendo facturable. Una baliza puede repetir custodia sin tripulación viva. HECTON-8 es el peor caso visible, pero no el primer lugar donde Aegir aprendió a archivar pérdida como infraestructura.
 
 ## Scanner
 
-ES LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+Baliza de reclamación exterior. No todo lo muerto en Aegir está en HECTON-8.
 
 ## Terminal
 
-ES LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+ARCHIVO DE ESCALERA EXTERIOR // Prospección de salmuera Thorne fallida. Ruta de exportación Anvil archivada. Baliza Mute repite ping de custodia sin declaración de tripulación activa.
 
 ## Audio
 
-ES LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegir aprendió a perder gente antes de que HECTON-8 terminara la lección.
 
 ## Field Note
 
-ES LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+Las reclamaciones frías hacen posibles a los Marauders. También enseñan a las compañías a enterrar patrones.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/es_ES. -->

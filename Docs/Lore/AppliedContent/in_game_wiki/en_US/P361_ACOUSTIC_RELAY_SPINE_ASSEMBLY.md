@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Acoustic Relay Spine Assembly
 
-The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.
+Escape begins underwater. The acoustic relay spine lets a damaged capsule prove position, clock and survival state before orbital receivers will treat it as recoverable mass.
 
 ## Scanner
 
-Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+Broken acoustic spine. It can tap pressure-code through water; orbit still hears it as damaged custody noise.
 
 ## Terminal
 
-ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY: restore low-band acoustic spine before recovery window. High-gain mast lost. Emergency buoy unreliable. Black Keel receiver accepts pressure-code only after route proof.
 
 ## Audio
 
-If Black Keel hears this, it hears a pressure code, not a voice.
+If the Keel hears us, it hears a wound tapping a pipe.
 
 ## Field Note
 
-Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+The capsule's first call is not a voice. It is ceramic ribs, cable skin, pinger floats and enough timing discipline to make the ocean repeat you correctly.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/en_US. -->

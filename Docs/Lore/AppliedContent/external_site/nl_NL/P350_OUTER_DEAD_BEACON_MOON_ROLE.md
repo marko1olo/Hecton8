@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute buitenste dode beacon-rol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Outer Dead Beacon Moon Role
+# Mute buitenste dode beacon-rol
 
-NL LOC HOLD: Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.
-
-## Scanner
-
-NL LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
-
-## Terminal
-
-NL LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
-
-## Audio
-
-NL LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
-
-## Field Note
-
-NL LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Mute is waar oude infrastructuur zwijgt zonder te verdwijnen. Het dode beacon-netwerk buigt nog steeds route-solvers omdat niemand elke legacy-tabel kan wissen die ervan afhing. Soms voorspelt spookdata een bruikbaar relay-venster. Soms geeft het een carrierdesk de reden om een bericht vast te houden. Rond HECTON-8 is stilte zelden pure afwezigheid; ze kan orbitale vertraging, kapotte hardware, juridische bewaring of een bewuste keuze zijn.
 
 <!-- External Site; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/nl_NL. -->

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "سجل الاستجابة المؤسسية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# سجل الاستجابة المؤسسية
 
-AR LOC HOLD: Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+السجل هو طريقة كلام Black Keel عندما لا يرتجل أحد. يستطيع الاعتراف بالخطر وفتح طابور وحفظ مطالبة، ومع ذلك يترك المشغل ينتظر خلف قواعد الأصول. يجب قراءة سجلات الاستجابة كإشارات مفيدة وأوراق عدائية صارت قابلة للتنفيذ.
 
 ## Scanner
 
-AR LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+كل رد يصل بلغة العقود: حيازة الأصول، أقفال المسؤولية، مسار العينات، خطر البدن، ثم استرداد المشغل.
 
 ## Terminal
 
-AR LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+فئة الاستجابة: حفظ الأصول. أضيف استرداد المشغل بعد حيازة العينة وختم المسؤولية وتدقيق البدن ومسار الدفع.
 
 ## Audio
 
-AR LOC HOLD: The reply was automatic. The rescue was conditional.
+كان الرد آليا. كان الإنقاذ مشروطا.
 
 ## Field Note
 
-AR LOC HOLD: Immediate response is not immediate rescue.
+الاستجابة الفورية ليست إنقاذا فوريا.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/ar_SA. -->

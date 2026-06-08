@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Fenêtre de charge utile
 
-Payload Window définit la structure finale de HECTON-8. La dernière question n'est pas seulement ce que le joueur croit, mais ce qu'il peut sortir de l'océan.
-
-## Scanner
-
-Paquet de remontée improvisé. Il peut quitter l'océan si masse, météo et géométrie carrier concordent.
-
-## Terminal
-
-PAYLOAD SLOT: limité. WINDOW: ouverte. ROUTE: contestée. CLAIM VALUE: variable. EVIDENCE STATE: insuffisant pour litige propre.
-
-## Audio
-
-La fenêtre est ouverte. Elle ne restera pas ouverte pour tout.
-
-## Field Note
-
-Sortir est une route. Sortir proprement est un mythe.
+Le dernier problème sur HECTON-8 n’est pas un menu moral suspendu au-dessus de l’océan. C’est une fenêtre de charge utile. Le paquet de remontée a des limites de masse, la météo a son timing, Aegir impose radiation et orbite, et Black Keel possède des règles de récepteur avant toute pitié. Chaque fin demande donc ce qui quitte la lune et qui le reçoit. Les coordonnées peuvent acheter la récupération et livrer la scène de crime à Deep Reach. Les preuves peuvent atteindre un registre public et retirer au joueur le contrôle des conséquences. Les échantillons peuvent payer la dette tout en renforçant le système qui a enterré les noms des ouvriers. Le silence peut priver la corporation et laisser la preuve sous l’eau. La fenêtre n’est pas la justice. C’est la forme par laquelle la justice doit passer.
 
 <!-- External Site; generated from P010_PAYLOAD_WINDOW/fr_FR. -->

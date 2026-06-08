@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Needleprobe Precursor Program"
+title: "Program Pendahulu Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Needleprobe Precursor Program
+# Program Pendahulu Needleprobe
 
-ID LOC HOLD: HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
-
-## Scanner
-
-ID LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
-
-## Terminal
-
-ID LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
-
-## Audio
-
-ID LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
-
-## Field Note
-
-ID LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Kehadiran manusia pertama di Aegir tidak heroik. Itu rangkaian mesin kecil mahal yang menyeberangi rute yang belum pernah dinilai aman oleh kru hidup. Needleprobe mengukur paralaks, radiasi, kimia samudra, efemeris bulan, dan garis pandang relai, lalu menunggu bertahun-tahun sampai jawabannya berguna. Deep Reach tidak menemukan HECTON-8 dengan bendera di tangan; ia membeli cukup keyakinan mesin untuk menyebut bulan itu aset. Asal itu penting karena koloni mewarisi kebohongan nada, bukan kebohongan data. Datanya nyata. Keyakinan yang dibangun darinya terlalu bersih untuk orang-orang yang kemudian dikirim ke air.
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/id_ID. -->

@@ -14,20 +14,22 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Реєстр Black Keel
 
-Реєстр Black Keel пояснює, чому carrier може контактувати, вести, стягувати борг, затримувати, піднімати або кинути гравця, не стаючи лиходієм. Це публічна claim-pool інфраструктура з debt custody і прихованими пріоритетами Deep Reach.
+Black Keel - орбітальна нитка гравця, але не фантазія про порятунок. Це інфраструктура claim-pool: реєстри зберігання, страховий борг, вікна підйому, карантин і влада носія.
+
+Він веде, бо навігація захищає цінність. Він затримує, бо затримка теж захищає цінність. Корабель може допомагати, не будучи на твоєму боці.
 
 ## Scanner
 
-Реєстр claim-pool tender. Публічна carrier custody, страховий борг, приховані hooks Deep Reach.
+Реєстр тендера claim-pool. Публічне зберігання носія, страховий борг, штрафи маси підйому й приховані пріоритетні гачки Deep Reach.
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+РЕЄСТР BLACK KEEL // Служба підйому умовна. Очищення претензії неповне. Глибинний пріоритетний маршрут прихований. Влада над корисним вантажем лишається на боці носія. Виживання контрактника не важливіше застрахованого вантажу без оновленої цінності підйому.
 
 ## Audio
 

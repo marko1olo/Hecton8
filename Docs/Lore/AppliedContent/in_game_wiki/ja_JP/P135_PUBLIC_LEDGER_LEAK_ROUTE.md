@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "公開台帳リーク"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# 公開台帳リーク
 
-JP LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.
+公開台帳リークは部分的真実の結末である。プレイヤーは抹消を難しくするだけの証拠を送るが、Atlas、Deep Reachの報復、または公的機関がそのパケットをどう使うかまでは支配できない。
 
 ## Scanner
 
-JP LOC HOLD: You can leak truth before you understand all of it.
+witness hash受理。完全custodyより先に部分的真実が出る。
 
 ## Terminal
 
-JP LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
+公開台帳ルート：Tau Ceti packet notaryがwitness hashを受理。payload不完全。claimant異議の可能性高。relay確認後、Deep Reach報復窓が開始。
 
 ## Audio
 
-JP LOC HOLD: The truth leaves first. You may not like who reads it.
+真実が先に出る。誰が読むかは気に入らないかもしれない。
 
 ## Field Note
 
-JP LOC HOLD: Public does not mean safe. It means harder to erase.
+公開は安全ではない。消しにくくなるだけだ。
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/ja_JP. -->

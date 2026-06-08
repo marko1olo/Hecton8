@@ -9,32 +9,22 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Sato-Ren Return Packet"
+title: "חבילת Sato-Ren Return Action"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Sato-Ren Return Packet
+# חבילת Sato-Ren Return Action
 
-HE LOC HOLD: Deep Reach returns to HECTON-8 as paperwork moving through rare signal windows: coordinates, custody, access, then maybe rescue.
+## הצלה הנאמרת בסדר Claim
 
-## Scanner
+ה-packet של Sato-Ren הוא לחץ בזמן הווה. הוא מגיע אחרי שהשחקן למד מה Deep Reach עשתה ב-memo וב-ledger הישנים, ומוכיח שהחברה אינה רק גופה בארכיון. Deep Reach עדיין מדברת. היא פשוט מדברת בסדר שהמערכות שלה מבינות: coordinates, access state, sample custody, silence acknowledgement, extraction language.
 
-HE LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+הסדר הזה הוא האיום. שירות הצלה שואל איפה נפגעת. recovery desk שואל מה אתה נושא, מי יכול certify, האם Atlas עדיין יכול לפתוח route, והאם אתה מקבל silence כתנאי להעברה. Sato-Ren אינה צריכה ספינת מלחמה מעל HECTON-8. ה-packet עצמו הוא leverage, כי הודעות נדירות, מסה יקרה, והשחקן debt-bound.
 
-## Terminal
-
-HE LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
-
-## Audio
-
-HE LOC HOLD: The packet knows where the asset is. It is less certain where you are.
-
-## Field Note
-
-HE LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+כאן ה-late game צריך להיעשות צפוף מוסרית. אותו מסמך יכול להיראות כמו עזרה, repossession או סחיטה לפי מה שהשחקן כבר יודע. הוא מחבר את הבירוקרטיה הטבועה הישנה אל הבחירה החיה לפני Marauder: למכור קואורדינטות, לשמור proof, sever Atlas, לפרסם ledger, או להמשיך באוקיינוס שבו אפילו rescue נושא claim number.
 
 <!-- External Site; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/he_IL. -->

@@ -9,32 +9,34 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "Холодні претензії зовнішніх місяців"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# Холодні претензії зовнішніх місяців
 
-UK LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.
+Холодні претензії зовнішніх місяців доводять, що Aegir - система, а не один проклятий місяць. Провалені соляні проспекти, законсервовані металеві маршрути й мертві маяки створюють salvage-економіку, що заводить Marauder у транспортну мережу.
+
+Важлива не відстань, а повторюваність. Маршрут може бути мертвим і все одно оплачуваним. Маяк може повторювати опіку без живого екіпажу. HECTON-8 - найгірший видимий випадок, але не перше місце, де Aegir навчилася оформлювати втрату як інфраструктуру.
 
 ## Scanner
 
-UK LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+Маяк зовнішньої претензії. Не все мертве в Aegir лежить на HECTON-8.
 
 ## Terminal
 
-UK LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+АРХІВ ЗОВНІШНЬОЇ ДРАБИНИ // Соляний проспект Thorne провалено. Експортний маршрут Anvil законсервовано. Маяк Mute повторює ping опіки без заяви активного екіпажу.
 
 ## Audio
 
-UK LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegir навчилася втрачати людей до того, як HECTON-8 закінчила урок.
 
 ## Field Note
 
-UK LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+Холодні претензії роблять Marauder можливими. Вони ж навчають компанії ховати закономірності.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/uk_UA. -->

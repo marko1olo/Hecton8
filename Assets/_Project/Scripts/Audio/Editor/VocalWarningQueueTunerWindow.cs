@@ -78,6 +78,12 @@ namespace Hecton8.Audio.Editor
             };
             root.Add(powerButton);
 
+            Button toxicityButton = new Button(() => InjectWarning(VocalWarningId.Toxicity, 0.55f))
+            {
+                text = "Inject Toxicity"
+            };
+            root.Add(toxicityButton);
+
             Button hullButton = new Button(() => InjectWarning(VocalWarningId.HullBreach, 1f))
             {
                 text = "Inject Water Breach"
@@ -117,9 +123,13 @@ namespace Hecton8.Audio.Editor
             return element;
         }
 
-        private static VocalWarningSystem ResolveRuntime()
+        private static VocalWarningSystem ResolveRuntime(bool requireReady = true)
         {
-            return GlobalRegistry.VocalWarnings as VocalWarningSystem;
+            VocalWarningSystem runtime = GlobalRegistry.VocalWarnings as VocalWarningSystem;
+            if (!requireReady)
+                return runtime;
+
+            return runtime != null && runtime.IsVocalWarningRuntimeReady ? runtime : null;
         }
 
         private void OnEditorHeartbeat()
@@ -133,7 +143,7 @@ namespace Hecton8.Audio.Editor
 
         private void RefreshStatus()
         {
-            VocalWarningSystem runtime = ResolveRuntime();
+            VocalWarningSystem runtime = ResolveRuntime(false);
             if (runtime == null)
             {
                 if (_status != null)
@@ -141,8 +151,9 @@ namespace Hecton8.Audio.Editor
                 return;
             }
 
+            bool ready = runtime.IsVocalWarningRuntimeReady;
             _refreshing = true;
-            if (runtime.EditorTryReadTuning(out VocalWarningSystem.VocalWarningTuningDTO tuning))
+            if (ready && runtime.EditorTryReadTuning(out VocalWarningSystem.VocalWarningTuningDTO tuning))
             {
                 _hullPriority?.SetValueWithoutNotify(tuning.BasePriorityHull);
                 _oxygenPriority?.SetValueWithoutNotify(tuning.BasePriorityOxygen);
@@ -152,7 +163,7 @@ namespace Hecton8.Audio.Editor
 
             for (int i = 0; i < GraphSampleCount; i++)
             {
-                if (runtime.EditorTryGetTelemetrySample(GraphSampleCount - 1 - i, out VocalWarningSystem.VocalWarningTelemetrySnapshot sample))
+                if (ready && runtime.EditorTryGetTelemetrySample(GraphSampleCount - 1 - i, out VocalWarningSystem.VocalWarningTelemetrySnapshot sample))
                 {
                     _prioritySamples[i] = math.saturate(sample.CurrentPriorityScore * (1f / 1400f));
                     _alarmMaskSamples[i] = math.saturate(sample.ActivePriorityCount * (1f / math.max(1f, runtime.EditorQueueCapacity)));
@@ -168,6 +179,7 @@ namespace Hecton8.Audio.Editor
             {
                 _statusBuilder.Clear();
                 _statusBuilder.Append("Initialized: ").Append(runtime.IsInitialized).Append('\n');
+                _statusBuilder.Append("Ready owner: ").Append(ready).Append('\n');
                 _statusBuilder.Append("Active alarm slots: ").Append(runtime.PendingCount).Append('/').Append(runtime.EditorQueueCapacity).Append('\n');
                 _statusBuilder.Append("Current ID: ").Append(runtime.CurrentWarningId).Append('\n');
                 _statusBuilder.Append("Current priority: ").Append(runtime.EditorCurrentPriorityScore.ToString("0.0")).Append('\n');

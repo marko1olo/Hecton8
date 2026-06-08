@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Black Keel Claim Acceptance"
+title: "Black Keel Anspruchsannahme"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Black Keel Claim Acceptance
+# Black Keel Anspruchsannahme
 
-DE LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+Ein Black-Keel-Anspruchsterminal rahmt die Eröffnung mit Schulden, Sauerstoffzusätzen und custody, bevor der Ozean den Bildschirm berührt.
 
 ## Scanner
 
-DE LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+Vertragskonsole. Aegir Reclamation Pool nennt zuerst ein Pfand von 4.8 tonne-window und erst danach Sauerstoff.
 
 ## Terminal
 
-DE LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / TERMINAL ZUR ANSPRUCHSANNAHME: Route RAN-B:H8 salvage descent; Pfandentlastung 4.8 tonne-window bedingt; Sauerstoff-Welfare-Addenda nach Bergung berechnet; payload custody vorrangig Black Keel, Zeuge Keelmark Mutual; Ablehnung hält Barnard blacklist review aktiv.
 
 ## Audio
 
-DE LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel an Auftragnehmer: Anspruchsfenster offen. Sauerstoff wird nach Bergung berechnet. Bestätigen, wenn arbeitsfähig.
 
 ## Field Note
 
-DE LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+Der Stylus hängt mit Druckkabel am Bildschirm. Jemand rechnete mit zitternden Händen.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/de_DE. -->

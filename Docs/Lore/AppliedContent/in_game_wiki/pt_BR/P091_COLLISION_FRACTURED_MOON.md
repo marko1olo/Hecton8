@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Lua fraturada por colisao"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Lua fraturada por colisao
 
-PT-BR LOC HOLD: HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.
+HECTON-8 se formou no sistema de Aegir e depois foi rachada por uma colisao de raspao. A ferida nao partiu a lua. Ela ergueu prateleiras de crosta, abriu falhas de salmoura, alimentou corredores termais e deixou solo antigo acessivel por janelas raras de pressao. Mapas de resgate seguem esse dano, porque as rotas seguras sao feridas antigas cheias de agua.
 
 ## Scanner
 
-PT-BR LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
+Amostra de crosta antiga. A lua nasceu no cinturao de detritos de Aegir, depois um impacto a abriu o bastante para o oceano lembrar.
 
 ## Terminal
 
-PT-BR LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+MODELO DE ORIGEM: acrecao ao redor de Aegir, impacto obliquo posterior, ressonancia de mares apos travamento. Resultado: crosta em degraus, escadas de falha quentes, bacias de salmoura, veios de vidro de pressao, acesso irregular ao fundo profundo.
 
 ## Audio
 
-PT-BR LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
+Nasceu aqui. Depois algo bateu forte o suficiente para dar um mapa ao mar.
 
 ## Field Note
 
-PT-BR LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+O mito de uma lua capturada seria limpo demais. HECTON-8 carrega uma ferida local: crosta erguida, salmoura mais pesada, respiradouros ainda cobrando juros.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/pt_BR. -->

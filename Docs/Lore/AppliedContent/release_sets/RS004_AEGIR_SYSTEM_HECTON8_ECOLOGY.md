@@ -1,15 +1,15 @@
-# RS004 - Aegir System / HECTON-8 Ecology Release Set
+# RS004_AEGIR_SYSTEM_HECTON8_ECOLOGY
 
-Status: production-facing draft.
+Status: production article source candidate pending importer admission, route-card bake, native review and Unity placement.
 Purpose: fourth bundled content set for the physical system around HECTON-8: host star, moon ladder, drowned geology, resource economy, and ecology contrast.
 
 ## Included Content
 
-- P016 Aegir Host Star.
-- P017 Aegir Moon Ladder.
-- P018 HECTON-8 Drowned Geology.
-- P019 HECTON-8 Resource Stack.
-- P020 HECTON-8 Ecology Registry.
+- `P016_AEGIR_HOST_STAR`: K-type primary light, with darkness produced by depth, weather, orbit and industry.
+- `P017_AEGIR_MOON_LADDER`: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 and Mute as route/tide timing pressure.
+- `P018_HECTON8_DROWNED_GEOLOGY`: shelf, canyon, brine stair and vent scar as playable pressure routing.
+- `P019_HECTON8_RESOURCE_STACK`: reef fiber, brine salts, relay cores, valves, blue debt, pressure glass and Atlas lattice as layered resource economy.
+- `P020_HECTON8_ECOLOGY_REGISTRY`: native shelf life, cable-adapted biota and Atlas-routed repair organisms as separate harvest categories.
 
 ## Player-Facing Arc
 
@@ -21,4 +21,6 @@ Purpose: fourth bundled content set for the physical system around HECTON-8: hos
 
 ## Runtime Boundary
 
-Authoring/export only. Runtime consumes baked packet IDs, route records, LocID hashes, string-pool offsets and unlock flags. Runtime must not parse markdown or JSON.
+Authoring/export source only. Runtime consumes baked packet IDs, route records, LocID hashes, string-pool offsets and unlock flags.
+No runtime markdown parsing, JSON parsing, live translation or scene search.
+No source packet is native/publication/runtime ready until importer admission, route-card bake, native review and runtime placement evidence exist.

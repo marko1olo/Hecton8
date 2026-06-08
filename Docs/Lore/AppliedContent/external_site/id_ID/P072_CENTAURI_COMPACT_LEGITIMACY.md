@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "Legitimasi Centauri Compact"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# Legitimasi Centauri Compact
 
-ID LOC HOLD: Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt.
+Legitimasi Centauri Compact membuat latar luas tetap membumi: ekspansi manusia sudah berjalan di beberapa tempat, sehingga Aegir terasa kurang heroik dan lebih korup.
 
 ## Scanner
 
-ID LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+Tag audit Centauri. Legitimasi ekstrasurya awal, lalu alasan perbatasan.
 
 ## Terminal
 
-ID LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+PERANGKAT CENTAURI COMPACT: peti tekanan tersertifikasi untuk transit sipil. Kanal audit tidak aktif. Garansi batal setelah retrofit pihak ketiga Deep Reach.
 
 ## Audio
 
-ID LOC HOLD: First legitimacy became old metal under a newer lie.
+Legitimasi pertama menjadi logam tua di bawah kebohongan yang lebih baru.
 
 ## Field Note
 
-ID LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+Compact membuat klaim jauh terlihat terhormat. Kehormatan bukan penyelamatan.
 
 <!-- External Site; generated from P072_CENTAURI_COMPACT_LEGITIMACY/id_ID. -->

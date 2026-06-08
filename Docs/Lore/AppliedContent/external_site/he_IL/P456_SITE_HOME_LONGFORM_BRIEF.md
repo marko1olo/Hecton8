@@ -9,32 +9,38 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: תביעת לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: תביעת לחץ
 
-HE LOC HOLD: HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## העבודה הראשונה
 
-## Scanner
+HECTON-8 מתחיל בחוזה. Black Keel פותח חלון Aegir, רושם שעבוד של 4.8 tonne-window ומפיל bathydrop פגום אל P-63. יש מספיק אור לקריאת מסלול ומספיק כשל כדי להרוג.
 
-HE LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+העבודות הראשונות קטנות: לשאוב מים, לאטום לפי דירוג, לקרוא תקלות קפסולה, לסרוק מתכת. הסורק אינו מספר היסטוריה. הוא בודק למה הדוח הרשמי לא מכיר את הסימנים.
 
-## Terminal
+P-63 יפה באור. יופי אינו בטיחות. אבן גיר, קצות מודולים, צלקות כבלים וברזל פינוי שבור עומדים מול הנייר הנקי.
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+החוזה מבקש מטען. החדר נותן ראיה. טבעת התאוששות קרועה, אוויוניקה מוצפת ושלדה עקומה מוכיחים שה-bathydrop הוציא את החזרה שלו כדי לשרוד את הנפילה. תיקון מוביל מטה: כלים, ממסרים, brine, pressure glass ולחיצת יד משפטית.
 
-## Audio
+Deep Reach לא יצרה אוקיינוס מרושע. האשמה נמצאת בסיכון שאושר, בפינוי קטן מדי ובשפה שהופכת עובדים לסעיפי הפסד.
 
-HE LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+## איך קוראים את הירידה
 
-## Field Note
+הכלל המעשי של HECTON-8 הוא שכל פיסת לור צריכה להשאיר סימן שהשחקן יכול לבדוק. מספר חוזה אינו קישוט אם הוא משנה mass window. שריטה על bathydrop אינה רק רקע אם היא מוכיחה שמערכת העלייה הופעלה לפני הפגיעה. חדר מוצף אינו תפאורה אם המשאבה, האטם, route log וscanner return סותרים את החבילה הרשמית.
 
-HE LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+לכן הפתיחה חוזרת שוב לעבודה. P-63 מלמד שיופי אינו בטיחות, שגם מים רדודים יכולים להיות מלכודת claim, ושהישרדות בנויה ממילים קשוחות: seal rating, intake pressure, relay drift, battery reserve, custody grade.
+
+## ההבטחה
+
+הסיפור הגדול אינו נאום על הצלת הגלקסיה. זו בעיית לחץ ארוכה סביב עובד עם lien רע וזיכרון שימושי. האוקיינוס מצמצם אפשרויות. החוזה מצמצם אפשרויות. route window מצמצם אפשרויות. השחקן עונה בשרשרת ראיות: scan אחד, sample אחד, מערכת אחת שתוקנה.
+
+HECTON-8 צריך להיות קריא כי הוא פיזי. לדבר חשוב יש פני שטח, מחיר, מצב כשל ועד.
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/he_IL. -->

@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Marca Barnard
 
-A primeira marca Barnard em HECTON-8 é pequena o bastante para passar despercebida: selo de ferramenta, hábito de manutenção, etiqueta de suprimento. Por isso importa. HECTON-8 deixa de ser um contrato distante quando as mesmas marcas aparecem ao lado de nomes, rotas de evacuação e autorizações falhas.
+A primeira marca Barnard em HECTON-8 é pequena o bastante para passar despercebida: selo de ferramenta, etiqueta de armário, hábito de suprimento, cicatriz de aço barato de estaleiro. Por isso importa. A lua deixa de ser um contrato distante quando marcas de trabalho conhecidas começam a aparecer ao lado de bloqueios de evacuação, nomes de trabalhadores e permissões de rota que falharam.
 
 ## Scanner
 
-Selo da Barnard Yards. Não é equipamento Deep Reach. Alguém levou ferramenta de casa ao fundo desta lua.
+Selo da Barnard Yards. Não é equipamento Deep Reach. Alguém levou hardware de estaleiro ao fundo desta lua.
 
 ## Terminal
 
-ROTA DE PESSOAL: HOLD. ROTA DE RECURSO: ACTIVE. ROTA DE SUBSTRATO: PROTECTED.
+ROTA DE PESSOAL: HOLD. ROTA DE RECURSO: ACTIVE. ROTA DE SUBSTRATO: PROTECTED. ORIGEM DA FERRAMENTA: BARNARD YARDS / ESTOQUE DE REPARO DE TERCEIRO DONO.
 
 ## Audio
 
-Essa marca é Barnard. Mesmo padrão de corte. Mesma liga barata. Quem trouxe isso aqui conhecia as mesmas oficinas que você.
+Esse corte é Barnard. Liga barata, selo de mão esquerda, tratamento térmico ruim. Quem trouxe isso para cá conhecia as mesmas oficinas que você.
 
 ## Field Note
 
-Você pode ignorar uma corporação morta. Mais difícil ignorar uma chave da sua própria oficina.
+Você pode dar de ombros para uma corporação morta. Uma chave do seu próprio estaleiro é mais difícil de largar na lama.
 
 <!-- In-Game Wiki; generated from P003_BARNARD_MARK/pt_BR. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # МЕДИЧНІ ТРАВМИ ТА СИНТЕТИЧНІ ЗАМІННИКИ
 
 > **Джерело:** Автоматизована процедура операційної Медичного відсіку *Black Keel*.

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Hak priorytetu Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Hak priorytetu Deep Reach
 
-PL LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+Obecna presja Deep Reach nie wymaga niemożliwego zdalnego sterowania. Stare certyfikaty continuity, klauzule kwarantanny, tokeny dostępu Atlas i payload priority hooks już siedzą w prawnej ścieżce Black Keel. Firma może wpływać na to, co carrier wycenia, bez widocznego posiadania carriera. Dlatego antagonistę trudniej odciąć: to nie sygnał do zagłuszenia, lecz klauzula, która wciąż się budzi.
 
 ## Scanner
 
-PL LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+Stary hak certyfikatu. Deep Reach nie posiada statku; posiada klauzulę.
 
 ## Terminal
 
-PL LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: legacy continuity certificate Deep Reach może przyspieszyć payload recovery, blokadę kwarantanny, token dostępu Atlas albo kolejkę tłumienia dowodów pod prawem claim Aegir. Priorytet ekstrakcji człowieka bez zmian, chyba że dowód zagrożenia przewyższy wartość custody.
 
 ## Audio
 
-PL LOC HOLD: They do not need to be on the bridge to steer the answer.
+Nie muszą stać na mostku, by kierować odpowiedzią.
 
 ## Field Note
 
-PL LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+Czyściej niż spisek: papierologia nadal żyje i nadal jest głodna.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/pl_PL. -->

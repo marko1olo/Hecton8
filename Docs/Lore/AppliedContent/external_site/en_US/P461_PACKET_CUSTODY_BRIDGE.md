@@ -19,22 +19,18 @@ localization_flags: 0
 
 # Packet Custody
 
-A message from HECTON-8 matters only when its route, seal, receiver, and damage state survive with it. Packet custody lets a fact cross Aegir delay, claimant pressure, and physical extraction without becoming disposable cargo.
+## What The Seal Means
 
-## Scanner
+A message from HECTON-8 is not useful because it was spoken. It is useful because the route can prove who carried it, when it left, what it crossed, and which claimant failed to erase it.
 
-PACKET SEAL // Witness hash strip damaged but readable. Preserve before salvage cut. Unsealed evidence converts to claim material.
+Black Keel handles testimony like cargo: mass, seal, serial, receiver, delay. A sample that reaches the carrier without a custody strip is filed as claim material. A worker name without a witness hash can become a loss category. A pressure record without route stamps can be dismissed as sensor noise before the next relay window opens.
 
-## Terminal
+That is why early salvage work keeps returning to small ugly objects: bent packet plates, wet notary strips, route stamps, relay slips, salt-swollen connector tags. They look like paperwork until the ocean makes them physical. The player is preserving the chain that lets a fact survive Aegir.
 
-KEELMARK PACKET NOTARY // Preserve seal plate, witness hash, route stamp, and connector tag before transfer. Unstamped material may be processed as claim loss.
+Packet custody is not justice. It is the minimum condition for justice to have a route. Break the seal, and Deep Reach can argue corruption. Keep the seal, and the same piece of metal becomes a witness that crossed pressure, distance, debt, and claimant law.
 
-## Audio
+## Player Use
 
-Black Keel relay: Cargo is mass. Proof is custody. Bring both, or the window bills you for the difference.
-
-## Field Note
-
-Seal first, cut second. A clean sample with a broken tag belongs to whoever owns the ledger.
+Scan the plate before cutting the hardware around it. Keep the route stamp, receiver lane, witness hash, and damage state together. If the tag separates from the sample, the evidence may still be valuable, but it no longer proves the same thing.
 
 <!-- External Site; generated from P461_PACKET_CUSTODY_BRIDGE/en_US. -->

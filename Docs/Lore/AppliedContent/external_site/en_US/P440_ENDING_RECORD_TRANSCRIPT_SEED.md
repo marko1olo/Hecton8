@@ -19,22 +19,12 @@ localization_flags: 0
 
 # Ending Record Transcript
 
-Spoiler ending pages read as after-action custody records: what left, who owns it, and what stayed damaged.
+## Closure Written As Custody
 
-## Scanner
+HECTON-8 endings should not hand the player clean absolution. The record names a receiver, a payload hash, a debt state and a survival state because institutions remember those fields better than they remember people. That coldness is useful. It lets each outcome become comparable without turning truth into a trophy.
 
-Ending record fragment itemizes receiver, payload hash, debt state and unresolved cost.
+The unresolved fields matter most. Suppression flag unknown. Truth custody unresolved. Atlas continuity unclear. Public ledger status pending. These gaps keep the ending honest: something left the ocean, but ownership is not the same as justice, and survival is not the same as repair.
 
-## Terminal
-
-AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.
-
-## Audio
-
-After-action record. Receiver accepted payload hash. Claim closed for accounting. Suppression flag unreadable. Truth custody unresolved.
-
-## Field Note
-
-Ending dossier record. It must name receiver, custody and unresolved cost, not clean moral closure.
+The transcript format also protects replay. A player can return with knowledge, but the next run should not inherit power. It inherits suspicion, taste and dread. The record is a receipt, not forgiveness.
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/en_US. -->

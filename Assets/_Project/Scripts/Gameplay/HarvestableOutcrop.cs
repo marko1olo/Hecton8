@@ -1,4 +1,3 @@
-using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -6,6 +5,7 @@ using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.World;
+using Hecton.Localization;
 using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
@@ -22,9 +22,14 @@ namespace Hecton8.Gameplay
     public sealed class HarvestableOutcrop : MonoBehaviour, ICuttable, IInteractable, IInteractableTextProvider, IInteractionSignalConsumer, ILocalizationLanguageChangedListener, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001HarvestableOutcropSignalPushDropCount;
+        private static int s_YieldDeliveryBlockedCount;
         private const string DefaultInteractText = "Break Rock";
         private const float MinimumToolPower = 0.05f;
         private const uint OutcropShardSpeciesHash = 0xC0DEFACEu;
+        private static readonly uint s_YieldDeliveryBlockedWarningHash =
+            unchecked((uint)LocHash.Compute("HarvestableOutcrop.YieldDeliveryBlocked"));
+        private static readonly uint s_YieldDeliveryContextHash =
+            unchecked((uint)LocHash.Compute("HarvestableOutcrop.YieldDelivery"));
 
         [Header("Health")]
         [SerializeField, Range(1, 10)]
@@ -261,6 +266,12 @@ namespace Hecton8.Gameplay
             if (_isBroken)
                 return;
 
+            if (!CanDispatchYield(toolPower, hitPoint))
+            {
+                _currentHealth = math.max(_currentHealth, MinimumToolPower);
+                return;
+            }
+
             _isBroken = true;
             QueueBreakEffects();
             QueueIntactRendererState(false);
@@ -297,17 +308,7 @@ namespace Hecton8.Gameplay
 
         private void DispatchYield(float toolPower, Vector3 dropPoint)
         {
-            if (_resolvedLootItems == null || _resolvedLootItems.Length == 0)
-                return;
-
-            ItemData item = ResolveYieldItem(toolPower);
-            if (item == null)
-                return;
-
-            int quantity = (int)math.ceil(math.max(MinimumToolPower, toolPower) * math.max(rockDensity, 0.1f));
-            quantity = math.max(math.max(1, minLootCount), quantity);
-            quantity = math.min(math.max(quantity, 1), math.max(1, maxLootCount));
-            if (quantity <= 0)
+            if (!TryResolveYield(toolPower, out ItemData item, out int quantity))
                 return;
 
             IPlayerInventoryService playerInventoryService = _playerInventoryService;
@@ -315,7 +316,7 @@ namespace Hecton8.Gameplay
             int rejectedQuantity = quantity;
             if (playerInventory != null)
             {
-                int itemHashId = LocHash.Compute(item.PersistentId);
+                int itemHashId = ItemData.ResolvePersistentHashId(item);
                 Transform inventoryTransform = playerInventory.transform;
                 PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(itemHashId, quantity, inventoryTransform);
                 if (result.AnyAdded)
@@ -342,6 +343,64 @@ namespace Hecton8.Gameplay
             IPersistentDroppedItemRegistry registry = _persistentWorldRegistry;
             if (registry != null && rejectedQuantity > 0)
                 registry.TryRegisterDroppedItem(item, rejectedQuantity, dropPoint);
+        }
+
+        private bool CanDispatchYield(float toolPower, Vector3 dropPoint)
+        {
+            if (!TryResolveYield(toolPower, out ItemData item, out int quantity))
+                return true;
+
+            int itemHashId = ItemData.ResolvePersistentHashId(item);
+            if (itemHashId == 0)
+            {
+                ReportYieldDeliveryBlocked(itemHashId, quantity);
+                return false;
+            }
+
+            IPlayerInventoryService playerInventoryService = _playerInventoryService;
+            PlayerInventory playerInventory = playerInventoryService != null ? playerInventoryService.Inventory : null;
+            if (playerInventory != null &&
+                playerInventory.CanAcceptItemQuantity(itemHashId, quantity))
+            {
+                return true;
+            }
+
+            IPersistentDroppedItemRegistry registry = _persistentWorldRegistry;
+            if (registry != null &&
+                registry.CanRegisterDroppedItem(item, quantity, dropPoint))
+            {
+                return true;
+            }
+
+            ReportYieldDeliveryBlocked(itemHashId, quantity);
+            return false;
+        }
+
+        private bool TryResolveYield(float toolPower, out ItemData item, out int quantity)
+        {
+            item = null;
+            quantity = 0;
+            if (_resolvedLootItems == null || _resolvedLootItems.Length == 0)
+                return false;
+
+            item = ResolveYieldItem(toolPower);
+            if (item == null)
+                return false;
+
+            quantity = (int)math.ceil(math.max(MinimumToolPower, toolPower) * math.max(rockDensity, 0.1f));
+            quantity = math.max(math.max(1, minLootCount), quantity);
+            quantity = math.min(math.max(quantity, 1), math.max(1, maxLootCount));
+            return quantity > 0;
+        }
+
+        private static void ReportYieldDeliveryBlocked(int itemHashId, int quantity)
+        {
+            s_YieldDeliveryBlockedCount++;
+            uint contextHash = s_YieldDeliveryContextHash ^ unchecked((uint)itemHashId);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                s_YieldDeliveryBlockedWarningHash,
+                contextHash,
+                math.max(1, math.max(quantity, s_YieldDeliveryBlockedCount)));
         }
 
         private ItemData ResolveYieldItem(float toolPower)
@@ -417,7 +476,7 @@ namespace Hecton8.Gameplay
             }
 
             IAudioService audio = ResolveAudioService();
-            IObjectPoolService pool = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
 
             if (_pendingHitAudio)
             {
@@ -630,7 +689,7 @@ namespace Hecton8.Gameplay
                     CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localizationManager = currentService as ILocalizationTextReadModel;
@@ -661,8 +720,43 @@ namespace Hecton8.Gameplay
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _persistentWorldRegistry = GlobalRegistry.PersistentDroppedItems;
             CacheAudioService(GlobalRegistry.Audio);
-            _objectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             _localizationManager = GlobalRegistry.LocalizationText;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                return;
+            }
+
+            _objectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
         }
 
         private void CacheAudioService(IAudioService audioService)
@@ -682,7 +776,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)

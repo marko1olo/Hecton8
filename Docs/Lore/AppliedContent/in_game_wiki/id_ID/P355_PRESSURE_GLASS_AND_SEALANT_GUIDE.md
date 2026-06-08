@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Pressure Glass and Sealant Guide"
+title: "Panduan Kaca Tekanan dan Sealant"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Pressure Glass and Sealant Guide
+# Panduan Kaca Tekanan dan Sealant
 
-ID LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.
+Pressure glass adalah tempat geologi bertemu Atlas. Repair network menggunakan retakan yang ada, tepi mineral, dan pressure memories sebagai rute, jadi lensa berguna juga bisa menjadi batas hidup.
 
 ## Scanner
 
-ID LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+Retakan pressure-glass disegel oleh kimia Atlas. Lens stock aman hanya jika seal map tetap utuh.
 
 ## Terminal
 
-ID LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: pressure glass merekam tide stress lama. Atlas sealant mengikuti retakan itu karena retakan sudah menggambarkan garis kegagalan sistem.
 
 ## Audio
 
-ID LOC HOLD: The repair network reads fractures the way you read a map.
+Jaringan perbaikan membaca retakan seperti kau membaca peta.
 
 ## Field Note
 
-ID LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+Jangan gerinda tepi yang cantik. Ikuti fracture map dan potong dari sisi mati seal.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/id_ID. -->

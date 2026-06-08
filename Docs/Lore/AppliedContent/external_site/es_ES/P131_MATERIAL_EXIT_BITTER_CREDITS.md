@@ -9,32 +9,18 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Salida material: créditos amargos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Salida material: créditos amargos
 
-ES LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
+La salida material debe sentirse fría y legítima. El jugador recupera material de presión, mantiene intacta la custody, satisface la contabilidad de masa por ventana de Black Keel y obtiene una reducción real del lien. Ninguna alarma declara fracaso; el sistema actúa exactamente como fue diseñado.
 
-## Scanner
-
-ES LOC HOLD: You can leave richer and still fail the place.
-
-## Terminal
-
-ES LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
-
-## Audio
-
-ES LOC HOLD: The invoice clears before the names do.
-
-## Field Note
-
-ES LOC HOLD: This ending should be real credits, not a fake game over.
+El daño está en lo que el recibo excluye. Los nombres de trabajadores desaparecidos siguen sin conciliar, la cadena de pruebas está incompleta y Deep Reach gana una razón comercial más limpia para volver. HECTON-8 no castiga al jugador por ser profesional. Muestra lo que cuesta el éxito profesional cuando el lugar de trabajo también es una tumba.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/es_ES. -->

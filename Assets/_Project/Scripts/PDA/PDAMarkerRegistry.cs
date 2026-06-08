@@ -103,12 +103,18 @@ namespace Hecton8.PDA
         private bool _registeredToSave;
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
+        private bool _runtimeOwnerAborted;
         private int _markerCount;
         private int _nextSequence = 1;
+        private uint _revision;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
 
         /// <summary>Current number of persisted markers.</summary>
         public int MarkerCount => _markerCount;
+
+        /// <summary>Monotonic source-of-truth revision for marker UI consumers that miss a lossy PDA event.</summary>
+        public uint Revision => _revision;
 
         /// <inheritdoc />
         public int SavePriority => 210;
@@ -118,21 +124,29 @@ namespace Hecton8.PDA
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted || !TryRegisterService())
+                return;
+
             _saveService = GlobalRegistry.Save;
             TryRegisterHotSwapListener();
             TryRegisterWithSaveManager();
-            TryRegisterService();
             HectonFloatingOrigin.RegisterListener(this);
         }
 
         private void Start()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryRegisterHotSwapListener();
             TryRegisterWithSaveManager();
         }
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterService();
             UnregisterFromSaveManager();
@@ -141,6 +155,9 @@ namespace Hecton8.PDA
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterService();
             UnregisterFromSaveManager();
@@ -180,7 +197,7 @@ namespace Hecton8.PDA
 
             _markers[_markerCount++] = record;
             marker = ToSnapshot(record);
-            Hecton8.UI.PDAEvents.TryRaiseMarkerChanged(record.markerHashId, _markerCount);
+            CommitMarkerRevision(record.markerHashId);
             return true;
         }
 
@@ -286,7 +303,7 @@ namespace Hecton8.PDA
                 SetVisibleOnHud(ref existing, visibleOnHud);
                 _markers[markerIndex] = existing;
                 marker = ToSnapshot(existing);
-                Hecton8.UI.PDAEvents.TryRaiseMarkerChanged(existing.markerHashId, _markerCount);
+                CommitMarkerRevision(existing.markerHashId);
                 return true;
             }
 
@@ -307,7 +324,7 @@ namespace Hecton8.PDA
 
             _markers[_markerCount++] = record;
             marker = ToSnapshot(record);
-            Hecton8.UI.PDAEvents.TryRaiseMarkerChanged(record.markerHashId, _markerCount);
+            CommitMarkerRevision(record.markerHashId);
             return true;
         }
 
@@ -336,7 +353,7 @@ namespace Hecton8.PDA
             if (markerIndex < _markerCount)
                 _markers[markerIndex] = lastRecord;
 
-            Hecton8.UI.PDAEvents.TryRaiseMarkerChanged(removedRecord.markerHashId, _markerCount);
+            CommitMarkerRevision(removedRecord.markerHashId);
             return true;
         }
 
@@ -363,7 +380,7 @@ namespace Hecton8.PDA
             record.positionAup = positionAup;
             record.runtimePosition = position;
             _markers[markerIndex] = record;
-            Hecton8.UI.PDAEvents.TryRaiseMarkerChanged(record.markerHashId, _markerCount);
+            CommitMarkerRevision(record.markerHashId);
             return true;
         }
 
@@ -389,7 +406,7 @@ namespace Hecton8.PDA
 
             SetVisibleOnHud(ref record, visibleOnHud);
             _markers[markerIndex] = record;
-            Hecton8.UI.PDAEvents.TryRaiseMarkerChanged(record.markerHashId, _markerCount);
+            CommitMarkerRevision(record.markerHashId);
             return true;
         }
 
@@ -574,13 +591,17 @@ namespace Hecton8.PDA
                 _nextSequence = math.max(1, dto.nextSequence);
             }
 
-            if (Application.isPlaying)
-                Hecton8.UI.PDAEvents.TryRaiseMarkerChanged(0u, _markerCount);
+            CommitMarkerRevision(0u);
         }
 
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)
+                return;
+
             if (_markerCount == 0)
                 return;
 
@@ -599,33 +620,47 @@ namespace Hecton8.PDA
                 _markers[i] = record;
             }
 
-            Hecton8.UI.PDAEvents.TryRaiseMarkerChanged(0u, _markerCount);
+            CommitMarkerRevision(0u);
         }
 
         private void TryRegisterWithSaveManager()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_registeredToSave || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _registeredToSave = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void UnregisterFromSaveManager()
         {
-            if (!_registeredToSave)
+            if (!_registeredToSave && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _registeredToSave = false;
         }
 
@@ -634,6 +669,9 @@ namespace Hecton8.PDA
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot != GlobalRegistryServiceSlot.Save)
                 return;
 
@@ -644,6 +682,9 @@ namespace Hecton8.PDA
 
         private void TryRegisterHotSwapListener()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_registeredHotSwapListener || !Application.isPlaying)
                 return;
 
@@ -659,20 +700,31 @@ namespace Hecton8.PDA
             _registeredHotSwapListener = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
-                return;
+                return !_runtimeOwnerAborted;
+
+            if (_runtimeOwnerAborted || TryAbortForUsableExistingRuntime())
+                return false;
 
             PDAMarkerRegistry registeredRuntime = Hecton8.Core.GlobalRegistry.PDAMarkers;
-            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
+            if (!ReferenceEquals(registeredRuntime, null) && !ReferenceEquals(registeredRuntime, this))
             {
-                Destroy(this);
-                return;
+                if (IsPdaMarkerRuntimeUsable(registeredRuntime))
+                {
+                    AbortDuplicateRuntimeOwner();
+                    return false;
+                }
+
+                Hecton8.Core.GlobalRegistry.UnregisterPDAMarkerRuntime(registeredRuntime);
             }
 
             Hecton8.Core.GlobalRegistry.RegisterPDAMarkerRuntime(this);
             _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.PDAMarkers, this);
+            if (!_serviceRegistered)
+                AbortDuplicateRuntimeOwner();
+            return _serviceRegistered;
         }
 
         private void TryUnregisterService()
@@ -682,6 +734,41 @@ namespace Hecton8.PDA
 
             Hecton8.Core.GlobalRegistry.UnregisterPDAMarkerRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            PDAMarkerRegistry registeredRuntime = Hecton8.Core.GlobalRegistry.PDAMarkers;
+            if (ReferenceEquals(registeredRuntime, null) || ReferenceEquals(registeredRuntime, this))
+                return false;
+
+            if (IsPdaMarkerRuntimeUsable(registeredRuntime))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            Hecton8.Core.GlobalRegistry.UnregisterPDAMarkerRuntime(registeredRuntime);
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            _runtimeOwnerAborted = true;
+            _serviceRegistered = false;
+            _registeredToSave = false;
+            _registeredSaveService = null;
+            _registeredHotSwapListener = false;
+            enabled = false;
+            Destroy(this);
+        }
+
+        private static bool IsPdaMarkerRuntimeUsable(PDAMarkerRegistry registry)
+        {
+            return registry != null &&
+                   registry.isActiveAndEnabled &&
+                   registry._serviceRegistered &&
+                   !registry._runtimeOwnerAborted;
         }
 
         private string BuildNextMarkerId()
@@ -743,6 +830,16 @@ namespace Hecton8.PDA
                 _markers[i] = default;
 
             _markerCount = 0;
+        }
+
+        private void CommitMarkerRevision(uint markerHashId)
+        {
+            _revision++;
+            if (_revision == 0u)
+                _revision = 1u;
+
+            if (Application.isPlaying)
+                Hecton8.UI.PDAEvents.TryRaiseMarkerChanged(markerHashId, _markerCount);
         }
 
         private static string ResolveMarkerTitleOrFallback(string title, MarkerIconType iconType)

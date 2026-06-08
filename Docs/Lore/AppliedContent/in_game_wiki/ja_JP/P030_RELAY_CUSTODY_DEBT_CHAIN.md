@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 中継保管の債務鎖
 
-中継保管は宇宙物流を圧力に変える。助けは来るが、同じ経路が債務、優先フック、企業権限も運ぶ。
+中継保管は宇宙物流を圧力に変える。助けは届き得るが、助けを運ぶ経路は債務、優先フック、企業権限も運ぶ。
 
 ## Scanner
 

@@ -3,8 +3,11 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Generated;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
+using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
 using Hecton8.Vehicles.Automation;
@@ -727,6 +730,28 @@ namespace Hecton8.Construction
     internal static partial class DroneFleetManager
     {
         private static int s_SignalPushDropCount;
+        internal static int SignalPushDropCount => System.Threading.Volatile.Read(ref s_SignalPushDropCount);
+        private static int s_DockingCompleteSignalDropCount;
+        private static int s_DockingFailedSignalDropCount;
+        private static int s_ItemAcquiredSignalDropCount;
+        private static int s_InventoryTransactionSignalDropCount;
+        private static int s_InventoryCommandSignalDropCount;
+        private static int s_DroneMiningCommitFailureCount;
+        private static int s_LastDroneMiningCommitFailureReason;
+        private static int s_StorageReservationStaleAckCount;
+        private static int s_StorageReservationMismatchAckCount;
+        private static readonly uint s_StorageReservationStaleAckWarningHash = unchecked((uint)LocHash.Compute("DroneFleet.StorageReservationStaleAck"));
+        private static readonly uint s_StorageReservationMismatchAckWarningHash = unchecked((uint)LocHash.Compute("DroneFleet.StorageReservationMismatchAck"));
+        private static readonly uint s_StorageReservationAckContextHash = unchecked((uint)LocHash.Compute("DroneFleet.StorageReservationAck"));
+        internal static int DockingCompleteSignalDropCount => System.Threading.Volatile.Read(ref s_DockingCompleteSignalDropCount);
+        internal static int DockingFailedSignalDropCount => System.Threading.Volatile.Read(ref s_DockingFailedSignalDropCount);
+        internal static int ItemAcquiredSignalDropCount => System.Threading.Volatile.Read(ref s_ItemAcquiredSignalDropCount);
+        internal static int InventoryTransactionSignalDropCount => System.Threading.Volatile.Read(ref s_InventoryTransactionSignalDropCount);
+        internal static int InventoryCommandSignalDropCount => System.Threading.Volatile.Read(ref s_InventoryCommandSignalDropCount);
+        internal static int DroneMiningCommitFailureCount => System.Threading.Volatile.Read(ref s_DroneMiningCommitFailureCount);
+        internal static int LastDroneMiningCommitFailureReason => System.Threading.Volatile.Read(ref s_LastDroneMiningCommitFailureReason);
+        internal static int StorageReservationStaleAckCount => System.Threading.Volatile.Read(ref s_StorageReservationStaleAckCount);
+        internal static int StorageReservationMismatchAckCount => System.Threading.Volatile.Read(ref s_StorageReservationMismatchAckCount);
         private const int InitialTaskCapacity = 64;
         private const int MaxOperationalDroneCount = 500;
         private const int HeadlessDroneCapacity = 512;
@@ -758,6 +783,23 @@ namespace Hecton8.Construction
         private const string DroneFleetLegacyBlackBoxDumpPath = "Docs/AgentLogs/Dump_1306_Construction_DroneFleetLegacy.bin";
         private const string DroneFleetShinobu334BlackBoxDumpPath = "Docs/AgentLogs/Dump_1306_Construction_DroneFleet.bin";
         private const string DroneFleetBlackBoxH8DumpPath = "Docs/AgentLogs/Dump_1306_Construction_DroneFleet.h8dump";
+        private const int DroneFleetBlackBoxFlagNonFiniteState = 1;
+        private const int DroneFleetBlackBoxFlagAStarFailure = 2;
+        private const int DroneFleetBlackBoxFlagDockingCompleteSignalRejected = 4;
+        private const int DroneFleetBlackBoxFlagDockingFailedSignalRejected = 8;
+        private const int DroneFleetBlackBoxFlagInventoryCommandSignalRejected = 16;
+        private const int DroneFleetBlackBoxFlagInventoryTransactionSignalRejected = 32;
+        private const int DroneFleetBlackBoxFlagItemAcquiredSignalRejected = 64;
+        private const int DroneFleetBlackBoxFlagMiningCommitFailed = 128;
+        private const byte DroneMiningCommitFailureNone = 0;
+        private const byte DroneMiningCommitFailureInvalidPayload = 1;
+        private const byte DroneMiningCommitFailureItemCatalogUnavailable = 2;
+        private const byte DroneMiningCommitFailureItemMissing = 3;
+        private const byte DroneMiningCommitFailureHubMissing = 4;
+        private const byte DroneMiningCommitFailureHubUnpowered = 5;
+        private const byte DroneMiningCommitFailureGridMissing = 6;
+        private const byte DroneMiningCommitFailureStorageFull = 7;
+        private const byte DroneMiningCommitFailureDuplicateHub = 8;
 #if UNITY_EDITOR
         private const string DroneNavigationProfilesCsvFileName = "drone_navigation_profiles.csv";
         private const string DroneHardwareProfilesCsvFileName = "drone_hardware_profiles.csv";
@@ -841,8 +883,10 @@ namespace Hecton8.Construction
         private const float HeadlessWeldPowerNormalized = 0.75f;
         private const float HeadlessWeldRangeMeters = 1.25f;
         private const uint DroneRepairSparksSignalHash = 0x44525350u;
-        private const int DroneInventoryCopperHash = 0x43555052;
+        private const int DroneInventoryCopperHash = unchecked((int)H8Hashes.Items.DataCopperHash);
         private const byte DroneRepairSparkDebrisKind = 1;
+        private const float DefaultRepairTorchAcousticVolume = 0.32f;
+        private const float DefaultRepairTorchAcousticPitch = 1f;
         private const float SolderIntegrityUnitsPerBundle = 10f;
         private const float OrphanWanderDistanceMeters = 4f;
         private const float DroneFlowDragCoefficient = 0.85f;
@@ -1029,6 +1073,8 @@ namespace Hecton8.Construction
         private static bool[] s_PendingHostileBySlot;
         private static bool[] s_PendingResupplyGrantBySlot;
         private static bool[] s_PendingResupplyFailureBySlot;
+        private static int[] s_PendingResupplyReservationIdsBySlot;
+        private static byte[] s_DroneMiningCommitFailureReasonsBySlot;
         private static BaseModule[] s_TargetModulesByDroneSlot;
         private static HectonVoxelVolume[] s_TargetVoxelVolumesByDroneSlot;
         private static DroneFleetTaskKind[] s_DroneTaskKindsBySlot;
@@ -1043,9 +1089,11 @@ namespace Hecton8.Construction
         private static int s_HeadlessDroneIdSequence;
         private static int s_HeadlessStasisSlotCount;
         private static bool s_Initialized;
+        private static int s_StorageReservationCommitResolvedListenerGeneration = -1;
         private static bool s_RuntimeRegistryCacheInitialized;
         private static ILogisticsService s_CachedLogisticsService;
         private static IPlayerRuntimeContext s_CachedPlayerRuntime;
+        private static IPlayerInventoryService s_CachedPlayerInventoryService;
         private static ISubmarineRuntimeContext s_CachedSubmarineRuntime;
         private static IFluidSurfaceCurrentReadModel s_CachedFluidRuntime;
         private static FloraInteractionManager s_CachedFloraInteractionManager;
@@ -1076,6 +1124,7 @@ namespace Hecton8.Construction
         private static HectonDroneFleetSnapshot s_LastSnapshot;
         private static FleetStatusSnapshot s_LastFleetStatusSnapshot;
         private static Material s_DroneProceduralMaterial;
+        private static AudioClip s_RepairTorchAcousticClip;
         private static GraphicsBuffer s_DroneMatrixBuffer;
         private static GraphicsBuffer s_DroneMatrixBufferBackBuffer;
         private static GraphicsBuffer s_DroneStateGpuBuffer;
@@ -1115,6 +1164,8 @@ namespace Hecton8.Construction
         private static float s_LastDroneAStarAveragePathfindingTimeMs;
         private static int s_LastDronePathFailureSignalFrame = -1;
         private static int s_DroneTasksCompletedCount;
+        private static float s_RepairTorchAcousticVolume = DefaultRepairTorchAcousticVolume;
+        private static float s_RepairTorchAcousticPitch = DefaultRepairTorchAcousticPitch;
         private static int s_LastDroneSteeringTickModulo = 1;
         private static DroneFleetFormationMode s_FleetFormationMode;
         private static bool s_DroneCullingKernelsResolved;
@@ -1212,6 +1263,16 @@ namespace Hecton8.Construction
             s_PendingLaunchCount = 0;
             s_HeadlessTaskCount = 0;
             s_HeadlessDroneIdSequence = 0;
+            s_SignalPushDropCount = 0;
+            s_DockingCompleteSignalDropCount = 0;
+            s_DockingFailedSignalDropCount = 0;
+            s_ItemAcquiredSignalDropCount = 0;
+            s_InventoryTransactionSignalDropCount = 0;
+            s_InventoryCommandSignalDropCount = 0;
+            s_DroneMiningCommitFailureCount = 0;
+            s_LastDroneMiningCommitFailureReason = DroneMiningCommitFailureNone;
+            s_StorageReservationStaleAckCount = 0;
+            s_StorageReservationMismatchAckCount = 0;
             s_HeadlessStasisSlotCount = 0;
             s_FleetSacrificeRequested = false;
             s_DestroyedDroneCount = 0;
@@ -1219,9 +1280,11 @@ namespace Hecton8.Construction
             s_LastSnapshot = default;
             s_LastFleetStatusSnapshot = default;
             s_Initialized = false;
+            s_StorageReservationCommitResolvedListenerGeneration = -1;
             s_RuntimeRegistryCacheInitialized = false;
             s_CachedLogisticsService = null;
             s_CachedPlayerRuntime = null;
+            s_CachedPlayerInventoryService = null;
             s_CachedSubmarineRuntime = null;
             s_CachedFluidRuntime = null;
             s_CachedFloraInteractionManager = null;
@@ -1239,6 +1302,7 @@ namespace Hecton8.Construction
             s_HeadlessFrameTuning = default;
             s_HeadlessFrameTuningValid = false;
             s_DroneProceduralMaterial = null;
+            s_RepairTorchAcousticClip = null;
             s_PhantomDronesCompute = null;
             s_DroneRenderLayer = 0;
             s_HeadlessTaskRebuildTimer = 0f;
@@ -1262,6 +1326,8 @@ namespace Hecton8.Construction
             s_LastDroneAStarAveragePathfindingTimeMs = 0f;
             s_LastDronePathFailureSignalFrame = -1;
             s_DroneTasksCompletedCount = 0;
+            s_RepairTorchAcousticVolume = DefaultRepairTorchAcousticVolume;
+            s_RepairTorchAcousticPitch = DefaultRepairTorchAcousticPitch;
             s_FleetFormationMode = DroneFleetFormationMode.Repair;
             s_DroneCullingCompute = null;
             s_DroneCullingKernelsResolved = false;
@@ -1378,6 +1444,24 @@ namespace Hecton8.Construction
             EnsurePhantomRenderResources();
         }
 
+        internal static void ConfigureRepairTorchAcoustic(AudioClip clip, float volume, float pitch)
+        {
+            if (clip == null)
+                return;
+
+            EnsureInitialized();
+            s_RepairTorchAcousticClip = clip;
+            s_RepairTorchAcousticVolume = Mathf.Clamp01(volume);
+            s_RepairTorchAcousticPitch = Mathf.Clamp(pitch, 0.25f, 2f);
+        }
+
+        internal static void ClearRepairTorchAcousticBinding()
+        {
+            s_RepairTorchAcousticClip = null;
+            s_RepairTorchAcousticVolume = DefaultRepairTorchAcousticVolume;
+            s_RepairTorchAcousticPitch = DefaultRepairTorchAcousticPitch;
+        }
+
         internal static bool TryLaunchHeadlessDrone(
             RepairDroneHub hub,
             in DroneFleetTask task,
@@ -1408,6 +1492,7 @@ namespace Hecton8.Construction
             s_PendingReleaseBySlot[slot] = false;
             s_PendingAbortBySlot[slot] = false;
             s_PendingHostileBySlot[slot] = false;
+            ClearDroneMiningCommitFailureLatch(slot);
             s_PendingLaunches[s_PendingLaunchCount++] = new PendingDroneLaunch
             {
                 Active = 1,
@@ -1687,12 +1772,27 @@ namespace Hecton8.Construction
             {
                 HectonSubmarineOsEvents.Unregister(s_SubmarineOsEventBridge);
                 HectonSubmarineOsEvents.Register(s_SubmarineOsEventBridge);
-                ThreadSafeCommandQueue.Unregister(s_StorageReservationCommitResolvedBridge);
-                ThreadSafeCommandQueue.Register(s_StorageReservationCommitResolvedBridge);
                 s_Initialized = true;
             }
 
+            EnsureStorageReservationCommitResolvedBridge();
             TryRegisterHeadlessDriver();
+        }
+
+        private static void EnsureStorageReservationCommitResolvedBridge()
+        {
+            int listenerGeneration = ThreadSafeCommandQueue.StorageReservationCommitListenerGeneration;
+            if (s_StorageReservationCommitResolvedListenerGeneration == listenerGeneration)
+                return;
+
+            ThreadSafeCommandQueue.Unregister(s_StorageReservationCommitResolvedBridge);
+            if (ThreadSafeCommandQueue.Register(s_StorageReservationCommitResolvedBridge))
+            {
+                s_StorageReservationCommitResolvedListenerGeneration = ThreadSafeCommandQueue.StorageReservationCommitListenerGeneration;
+                return;
+            }
+
+            s_StorageReservationCommitResolvedListenerGeneration = -1;
         }
 
         private static void EnsureRuntimeRegistryCache()
@@ -1702,9 +1802,10 @@ namespace Hecton8.Construction
 
             s_CachedLogisticsService = GlobalRegistry.Logistics;
             s_CachedPlayerRuntime = GlobalRegistry.Player;
+            s_CachedPlayerInventoryService = GlobalRegistry.PlayerInventory;
             s_CachedSubmarineRuntime = GlobalRegistry.Submarine;
             s_CachedFluidRuntime = GlobalRegistry.FluidSurfaceCurrent;
-            s_CachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref s_CachedVegetationBridge);
             s_CachedDataVault = GlobalRegistry.DataVault;
             s_CachedVoxelSdfReadLeaseModel = GlobalRegistry.VoxelSonarSdf as IVoxelSonarSdfReadLeaseModel;
             HectonDroneFleetEvents.BindDataVault(s_CachedDataVault);
@@ -1724,6 +1825,9 @@ namespace Hecton8.Construction
                 case GlobalRegistryServiceSlot.Player:
                     s_CachedPlayerRuntime = currentService as IPlayerRuntimeContext;
                     break;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    s_CachedPlayerInventoryService = currentService as IPlayerInventoryService;
+                    break;
                 case GlobalRegistryServiceSlot.Submarine:
                     s_CachedSubmarineRuntime = currentService as ISubmarineRuntimeContext;
                     break;
@@ -1732,6 +1836,7 @@ namespace Hecton8.Construction
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     s_CachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref s_CachedVegetationBridge);
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     RebindDroneDataVault(currentService is IDataVault currentVault ? currentVault : null);
@@ -2073,6 +2178,17 @@ namespace Hecton8.Construction
             DropHeadlessManagedMemory();
         }
 
+        internal static void ClearSceneTransitionRuntimeState()
+        {
+            CompletePendingHeadlessJobForReset();
+            ReleaseHeadlessSdfReadLease();
+            ClearAllHeadlessSlots();
+            ClearHeadlessManagedState();
+            s_HeadlessStasisSlotCount = 0;
+            s_LastSnapshot = default;
+            s_LastFleetStatusSnapshot = default;
+        }
+
         internal static int ConfiguredDroneBoneJointCount => s_ConfiguredDroneBoneJointCount;
 
         internal static int ConfiguredDroneAttachmentCount => s_ConfiguredDroneAttachmentCount;
@@ -2284,6 +2400,10 @@ namespace Hecton8.Construction
                 s_PendingResupplyGrantBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[512] - command-queue storage commit success acks - owner: DroneFleetManager
             if (s_PendingResupplyFailureBySlot == null || s_PendingResupplyFailureBySlot.Length != HeadlessDroneCapacity)
                 s_PendingResupplyFailureBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[512] - command-queue storage commit failure acks - owner: DroneFleetManager
+            if (s_PendingResupplyReservationIdsBySlot == null || s_PendingResupplyReservationIdsBySlot.Length != HeadlessDroneCapacity)
+                s_PendingResupplyReservationIdsBySlot = new int[HeadlessDroneCapacity]; // COLD ALLOC: int[512] - expected storage reservation ids for deferred resupply acks - owner: DroneFleetManager
+            if (s_DroneMiningCommitFailureReasonsBySlot == null || s_DroneMiningCommitFailureReasonsBySlot.Length != HeadlessDroneCapacity)
+                s_DroneMiningCommitFailureReasonsBySlot = new byte[HeadlessDroneCapacity]; // COLD ALLOC: byte[512] - per-slot mining commit failure latch - owner: DroneFleetManager
             if (s_TargetModulesByDroneSlot == null || s_TargetModulesByDroneSlot.Length != HeadlessDroneCapacity)
                 s_TargetModulesByDroneSlot = new BaseModule[HeadlessDroneCapacity]; // COLD ALLOC: BaseModule[512] - managed target lookup for late-frame repair application - owner: DroneFleetManager
             if (s_TargetVoxelVolumesByDroneSlot == null || s_TargetVoxelVolumesByDroneSlot.Length != HeadlessDroneCapacity)
@@ -2316,6 +2436,8 @@ namespace Hecton8.Construction
                 s_PendingHostileBySlot != null &&
                 s_PendingResupplyGrantBySlot != null &&
                 s_PendingResupplyFailureBySlot != null &&
+                s_PendingResupplyReservationIdsBySlot != null &&
+                s_DroneMiningCommitFailureReasonsBySlot != null &&
                 s_TargetModulesByDroneSlot != null &&
                 s_TargetVoxelVolumesByDroneSlot != null &&
                 s_DroneTaskKindsBySlot != null &&
@@ -2336,6 +2458,10 @@ namespace Hecton8.Construction
                     slotCount = s_PendingResupplyGrantBySlot.Length;
                 if (s_PendingResupplyFailureBySlot.Length < slotCount)
                     slotCount = s_PendingResupplyFailureBySlot.Length;
+                if (s_PendingResupplyReservationIdsBySlot.Length < slotCount)
+                    slotCount = s_PendingResupplyReservationIdsBySlot.Length;
+                if (s_DroneMiningCommitFailureReasonsBySlot.Length < slotCount)
+                    slotCount = s_DroneMiningCommitFailureReasonsBySlot.Length;
                 if (s_TargetModulesByDroneSlot.Length < slotCount)
                     slotCount = s_TargetModulesByDroneSlot.Length;
                 if (s_TargetVoxelVolumesByDroneSlot.Length < slotCount)
@@ -2355,6 +2481,8 @@ namespace Hecton8.Construction
                     s_PendingHostileBySlot[slot] = false;
                     s_PendingResupplyGrantBySlot[slot] = false;
                     s_PendingResupplyFailureBySlot[slot] = false;
+                    s_PendingResupplyReservationIdsBySlot[slot] = 0;
+                    s_DroneMiningCommitFailureReasonsBySlot[slot] = DroneMiningCommitFailureNone;
                     s_TargetModulesByDroneSlot[slot] = null;
                     s_TargetVoxelVolumesByDroneSlot[slot] = null;
                     s_DroneTaskKindsBySlot[slot] = DroneFleetTaskKind.None;
@@ -2397,6 +2525,8 @@ namespace Hecton8.Construction
             s_PendingHostileBySlot = null;
             s_PendingResupplyGrantBySlot = null;
             s_PendingResupplyFailureBySlot = null;
+            s_PendingResupplyReservationIdsBySlot = null;
+            s_DroneMiningCommitFailureReasonsBySlot = null;
             s_TargetModulesByDroneSlot = null;
             s_TargetVoxelVolumesByDroneSlot = null;
             s_DroneTaskKindsBySlot = null;
@@ -4676,31 +4806,26 @@ namespace Hecton8.Construction
                     s_PendingHostileBySlot[slot] = false;
                     s_PendingResupplyGrantBySlot[slot] = false;
                     s_PendingResupplyFailureBySlot[slot] = false;
+                    s_PendingResupplyReservationIdsBySlot[slot] = 0;
                     continue;
                 }
 
                 HeadlessDroneState drone = droneStates[slot];
-                if (s_PendingResupplyGrantBySlot[slot] &&
-                    drone.State == (byte)HeadlessDroneRuntimeState.ResupplyCommitPending)
+                bool droneMutated = false;
+                if (s_PendingResupplyGrantBySlot[slot])
                 {
-                    GrantDroneResupply(ref drone, 1);
-                    s_PendingResupplyGrantBySlot[slot] = false;
+                    if (TryConsumeResolvedResupplyCommitAck(slot, true, ref drone, out bool resupplyDroneChanged))
+                        droneMutated |= resupplyDroneChanged;
                 }
 
-                if (s_PendingResupplyFailureBySlot[slot] &&
-                    drone.State == (byte)HeadlessDroneRuntimeState.ResupplyCommitPending)
+                if (s_PendingResupplyFailureBySlot[slot])
                 {
-                    drone.SolderUnits = 0;
-                    drone.TransactionProgress = 0f;
-                    ReturnDroneToHub(ref drone);
-                    s_PendingResupplyFailureBySlot[slot] = false;
+                    if (TryConsumeResolvedResupplyCommitAck(slot, false, ref drone, out bool resupplyDroneChanged))
+                        droneMutated |= resupplyDroneChanged;
                 }
 
                 if (drone.State != (byte)HeadlessDroneRuntimeState.ResupplyCommitPending)
-                {
-                    s_PendingResupplyGrantBySlot[slot] = false;
-                    s_PendingResupplyFailureBySlot[slot] = false;
-                }
+                    ClearPendingResupplyCommitAck(slot);
 
                 if (s_PendingHostileBySlot[slot])
                 {
@@ -4712,6 +4837,7 @@ namespace Hecton8.Construction
                         drone.TargetPosition = ToFloat3(playerPosition);
                         drone.TargetAup = playerAup;
                         drone.State = (byte)HeadlessDroneRuntimeState.Travel;
+                        droneMutated = true;
                     }
                 }
 
@@ -4721,12 +4847,143 @@ namespace Hecton8.Construction
                     drone.TargetPosition = drone.HomePosition;
                     drone.TargetAup = drone.HomeAup;
                     drone.State = (byte)HeadlessDroneRuntimeState.Return;
+                    droneMutated = true;
                 }
 
                 s_PendingAbortBySlot[slot] = false;
                 s_PendingHostileBySlot[slot] = false;
+                if (droneMutated)
+                {
+                    if (droneStateBackBuffer.IsCreated && (uint)slot < (uint)droneStateBackBuffer.Length)
+                        droneStateBackBuffer[slot] = drone;
+
+                    float4x4 renderMatrix = float4x4.TRS(drone.Position, drone.Rotation, new float3(1f, 1f, 1f));
+                    if (droneRenderMatrices.IsCreated && (uint)slot < (uint)droneRenderMatrices.Length)
+                        droneRenderMatrices[slot] = renderMatrix;
+                    if (droneRenderMatrixBackBuffer.IsCreated && (uint)slot < (uint)droneRenderMatrixBackBuffer.Length)
+                        droneRenderMatrixBackBuffer[slot] = renderMatrix;
+
+                    MirrorDroneSoA(slot, in drone, positionsSoA, stateBytes, stateDtos, targetDtos);
+                }
+
                 droneStates[slot] = drone;
             }
+        }
+
+        private static bool TryApplyResolvedResupplyCommitToLiveSlot(int slot, bool committed)
+        {
+            bool consumedAck = false;
+            bool publishSnapshotAfterGuardRelease = false;
+            if (!TryAcquireDroneCoreMirrorMutationViews(
+                    out NativeArray<HeadlessDroneState> droneStates,
+                    out NativeArray<HeadlessDroneState> droneStateBackBuffer,
+                    out NativeArray<float4x4> droneRenderMatrices,
+                    out NativeArray<float4x4> droneRenderMatrixBackBuffer,
+                    out NativeArray<float3> positionsSoA,
+                    out NativeArray<byte> stateBytes,
+                    out NativeArray<DroneStateDTO> stateDtos,
+                    out NativeArray<DroneTargetDTO> targetDtos,
+                    out IDataVault coreMirrorVault))
+            {
+                return false;
+            }
+
+            try
+            {
+                if ((uint)slot >= (uint)HeadlessDroneCapacity ||
+                    s_DroneSlotDroneIds == null ||
+                    s_DroneSlotDroneIds[slot] <= 0)
+                {
+                    return consumedAck;
+                }
+
+                HeadlessDroneState drone = droneStates[slot];
+                if (!TryConsumeResolvedResupplyCommitAck(slot, committed, ref drone, out bool droneChanged))
+                    return consumedAck;
+
+                consumedAck = true;
+
+                if (droneChanged)
+                {
+                    droneStates[slot] = drone;
+                    if (droneStateBackBuffer.IsCreated && (uint)slot < (uint)droneStateBackBuffer.Length)
+                        droneStateBackBuffer[slot] = drone;
+
+                    float4x4 renderMatrix = float4x4.TRS(drone.Position, drone.Rotation, new float3(1f, 1f, 1f));
+                    if (droneRenderMatrices.IsCreated && (uint)slot < (uint)droneRenderMatrices.Length)
+                        droneRenderMatrices[slot] = renderMatrix;
+                    if (droneRenderMatrixBackBuffer.IsCreated && (uint)slot < (uint)droneRenderMatrixBackBuffer.Length)
+                        droneRenderMatrixBackBuffer[slot] = renderMatrix;
+
+                    MirrorDroneSoA(slot, in drone, positionsSoA, stateBytes, stateDtos, targetDtos);
+                    RefreshHeadlessCounters(droneStates);
+                    RefreshFleetStatusSnapshotFromDroneStates(droneStates);
+                    UpdateDrawBounds();
+                    publishSnapshotAfterGuardRelease = true;
+                }
+            }
+            finally
+            {
+                ReleaseDroneMutationGuard(coreMirrorVault, DroneCoreMirrorMutationGuardMask);
+            }
+
+            if (publishSnapshotAfterGuardRelease)
+                PublishSnapshot();
+
+            return consumedAck;
+        }
+
+        private static bool TryConsumeResolvedResupplyCommitAck(
+            int slot,
+            bool committed,
+            ref HeadlessDroneState drone,
+            out bool droneChanged)
+        {
+            droneChanged = false;
+            if (!HasPendingResupplyCommitAckSlot(slot))
+                return false;
+
+            if (drone.State != (byte)HeadlessDroneRuntimeState.ResupplyCommitPending)
+            {
+                ClearPendingResupplyCommitAck(slot);
+                return true;
+            }
+
+            if (committed)
+            {
+                GrantDroneResupply(ref drone, 1);
+            }
+            else
+            {
+                drone.SolderUnits = 0;
+                drone.TransactionProgress = 0f;
+                ReturnDroneToHub(ref drone);
+            }
+
+            ClearPendingResupplyCommitAck(slot);
+            droneChanged = true;
+            return true;
+        }
+
+        private static bool HasPendingResupplyCommitAckSlot(int slot)
+        {
+            return slot >= 0 &&
+                   s_PendingResupplyGrantBySlot != null &&
+                   s_PendingResupplyFailureBySlot != null &&
+                   s_PendingResupplyReservationIdsBySlot != null &&
+                   slot < s_PendingResupplyGrantBySlot.Length &&
+                   slot < s_PendingResupplyFailureBySlot.Length &&
+                   slot < s_PendingResupplyReservationIdsBySlot.Length;
+        }
+
+        private static void ClearPendingResupplyCommitAck(int slot)
+        {
+            if (!HasPendingResupplyCommitAckSlot(slot))
+                return;
+
+            s_PendingResupplyGrantBySlot[slot] = false;
+            s_PendingResupplyFailureBySlot[slot] = false;
+            s_PendingResupplyReservationIdsBySlot[slot] = 0;
         }
 
         private static void ApplyDockingRequestSignals(
@@ -5007,12 +5264,13 @@ namespace Hecton8.Construction
                 DockForward = dockForward,
                 RequestId = drone.DockingRequestId,
                 Flags = drone.DockingFlags,
-                Reserved0 = 0,
+                SourceKind = DockingSignalSourceKinds.DroneFleet,
                 Reserved1 = 0,
                 Reserved2 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingCompleteSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
+            if (!SignalBus<DockingCompleteSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount))
+                RecordDockingCompleteSignalRejected();
         }
 
         private static void PublishDockingFailed(int slot, in HeadlessDroneState drone, Vector3 hitPoint, DockingFailureReason reason)
@@ -5041,11 +5299,12 @@ namespace Hecton8.Construction
                 RequestId = requestId,
                 Reason = (byte)reason,
                 Flags = 0,
-                Reserved0 = 0,
+                SourceKind = DockingSignalSourceKinds.DroneFleet,
                 Reserved1 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingFailedSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
+            if (!SignalBus<DockingFailedSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount))
+                RecordDockingFailedSignalRejected();
         }
 
         private static void PublishDockingFailedForMissingDrone(in DockingRequestSignal request)
@@ -5059,11 +5318,106 @@ namespace Hecton8.Construction
                 RequestId = request.RequestId,
                 Reason = (byte)DockingFailureReason.InvalidRequest,
                 Flags = 0,
-                Reserved0 = 0,
+                SourceKind = DockingSignalSourceKinds.DroneFleet,
                 Reserved1 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingFailedSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
+            if (!SignalBus<DockingFailedSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount))
+                RecordDockingFailedSignalRejected();
+        }
+
+        private static void RecordDockingCompleteSignalRejected()
+        {
+            System.Threading.Interlocked.Increment(ref s_DockingCompleteSignalDropCount);
+        }
+
+        private static void RecordDockingFailedSignalRejected()
+        {
+            System.Threading.Interlocked.Increment(ref s_DockingFailedSignalDropCount);
+        }
+
+        private static void RecordInventoryCommandSignalRejected()
+        {
+            System.Threading.Interlocked.Increment(ref s_InventoryCommandSignalDropCount);
+        }
+
+        private static void RecordItemAcquiredSignalRejected()
+        {
+            System.Threading.Interlocked.Increment(ref s_ItemAcquiredSignalDropCount);
+        }
+
+        private static void RecordInventoryTransactionSignalRejected()
+        {
+            System.Threading.Interlocked.Increment(ref s_InventoryTransactionSignalDropCount);
+        }
+
+        private static void RecordDroneMiningCommitFailed(int slot, byte reason)
+        {
+            byte safeReason = reason != DroneMiningCommitFailureNone
+                ? reason
+                : DroneMiningCommitFailureInvalidPayload;
+            if ((uint)slot < (uint)HeadlessDroneCapacity &&
+                s_DroneMiningCommitFailureReasonsBySlot != null &&
+                slot < s_DroneMiningCommitFailureReasonsBySlot.Length)
+            {
+                if (s_DroneMiningCommitFailureReasonsBySlot[slot] == safeReason)
+                    return;
+
+                s_DroneMiningCommitFailureReasonsBySlot[slot] = safeReason;
+            }
+
+            System.Threading.Interlocked.Increment(ref s_DroneMiningCommitFailureCount);
+            System.Threading.Volatile.Write(ref s_LastDroneMiningCommitFailureReason, safeReason);
+            RecordInventoryTransactionSignalRejected();
+        }
+
+        private static void ClearDroneMiningCommitFailureLatch(int slot)
+        {
+            if ((uint)slot >= (uint)HeadlessDroneCapacity ||
+                s_DroneMiningCommitFailureReasonsBySlot == null ||
+                slot >= s_DroneMiningCommitFailureReasonsBySlot.Length)
+            {
+                return;
+            }
+
+            s_DroneMiningCommitFailureReasonsBySlot[slot] = DroneMiningCommitFailureNone;
+        }
+
+        private static void ReportStorageReservationStaleAck(int requesterId)
+        {
+            System.Threading.Interlocked.Increment(ref s_StorageReservationStaleAckCount);
+            PublishStorageReservationAckWarningBestEffort(
+                s_StorageReservationStaleAckWarningHash,
+                math.max(0, requesterId));
+        }
+
+        private static void ReportStorageReservationMismatchAck(int reservationId)
+        {
+            System.Threading.Interlocked.Increment(ref s_StorageReservationMismatchAckCount);
+            PublishStorageReservationAckWarningBestEffort(
+                s_StorageReservationMismatchAckWarningHash,
+                math.max(0, reservationId));
+        }
+
+        private static void PublishStorageReservationAckWarningBestEffort(uint warningHash, float value)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, s_StorageReservationAckContextHash, value);
+            }
+            catch (System.Exception exception) when (!(exception is FatalArchitectureException))
+            {
+                LogStorageReservationAckTelemetryException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogStorageReservationAckTelemetryException(System.Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            H8Debug.LogException(exception);
+#endif
         }
 
         private static void ApplyCompletedHeadlessServices(
@@ -5253,20 +5607,23 @@ namespace Hecton8.Construction
         private static void ApplyHeadlessResupply(int slot, ref HeadlessDroneState drone)
         {
             RepairDroneHub hub = s_DroneHubs[slot];
-            if (hub == null || !hub.TryQueueDroneResupplyCommit(1, drone.DroneId, out bool committedImmediately))
+            if (hub == null || !hub.TryQueueDroneResupplyCommit(1, drone.DroneId, out bool committedImmediately, out int queuedReservationId))
             {
                 drone.State = (byte)HeadlessDroneRuntimeState.Stasis;
                 drone.Velocity = float3.zero;
                 drone.TransactionProgress = 0f;
+                s_PendingResupplyReservationIdsBySlot[slot] = 0;
                 return;
             }
 
             if (committedImmediately)
             {
+                s_PendingResupplyReservationIdsBySlot[slot] = 0;
                 GrantDroneResupply(ref drone, 1);
                 return;
             }
 
+            s_PendingResupplyReservationIdsBySlot[slot] = queuedReservationId;
             drone.State = (byte)HeadlessDroneRuntimeState.ResupplyCommitPending;
             drone.Velocity = float3.zero;
             drone.TransactionProgress = 0.5f;
@@ -5293,7 +5650,8 @@ namespace Hecton8.Construction
                 Flags = 1u,
                 Reserved0 = 0u
             };
-            SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
+            if (!SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount))
+                RecordInventoryTransactionSignalRejected();
         }
 
         private static void TryQueueStasisWakeRequest(int slot, ref HeadlessDroneState drone)
@@ -5473,30 +5831,168 @@ namespace Hecton8.Construction
             int sourceId = drone.TargetModuleId != 0
                 ? drone.TargetModuleId
                 : unchecked((int)math.hash(drone.TargetPosition));
-            PublishDroneMiningItemAcquiredSignal(in drone, unchecked((uint)DroneInventoryCopperHash), 1, sourceId);
-            DroneFleetInventoryTransactionSignal signal = new DroneFleetInventoryTransactionSignal
+            int depositedQuantity;
+            if (!TryCommitDroneMiningOutputToHub(
+                    in drone,
+                    unchecked((uint)DroneInventoryCopperHash),
+                    1,
+                    out depositedQuantity,
+                    out byte commitFailureReason))
             {
-                DroneId = drone.DroneId,
-                SourceId = sourceId,
-                DestinationId = drone.HubGridId,
-                ItemHash = DroneInventoryCopperHash,
-                Quantity = 1,
-                Position = drone.Position,
-                Flags = 2u,
-                Reserved0 = 0u
-            };
-            SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
-            SignalBus<InventoryCommandSignal>.TryPushTracked(new InventoryCommandSignal
+                RecordDroneMiningCommitFailed(slot, commitFailureReason);
+                drone.RepairAccumulator = holdSeconds;
+                drone.TransactionProgress = 1f;
+                return;
+            }
+
+            if (depositedQuantity > 0)
             {
-                InventoryHash = (uint)Mathf.Max(0, drone.HubGridId),
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Sequence = (uint)Mathf.Max(0, drone.DroneId),
-                Command = InventoryCommandSignalCommands.Sort,
-                Flags = 2
-            }, ref s_SignalPushDropCount);
+                PublishDroneMiningItemAcquiredSignal(in drone, unchecked((uint)DroneInventoryCopperHash), depositedQuantity, sourceId);
+                DroneFleetInventoryTransactionSignal signal = new DroneFleetInventoryTransactionSignal
+                {
+                    DroneId = drone.DroneId,
+                    SourceId = sourceId,
+                    DestinationId = drone.HubGridId,
+                    ItemHash = DroneInventoryCopperHash,
+                    Quantity = depositedQuantity,
+                    Position = drone.Position,
+                    Flags = 2u,
+                    Reserved0 = 0u
+                };
+                if (!SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount))
+                    RecordInventoryTransactionSignalRejected();
+
+                InventoryCommandSignal inventoryCommand = new InventoryCommandSignal
+                {
+                    InventoryHash = (uint)Mathf.Max(0, drone.HubGridId),
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                    Sequence = (uint)Mathf.Max(0, drone.DroneId),
+                    Command = InventoryCommandSignalCommands.Sort,
+                    Flags = 2
+                };
+                if (!SignalBus<InventoryCommandSignal>.TryPushTracked(in inventoryCommand, ref s_SignalPushDropCount))
+                    RecordInventoryCommandSignalRejected();
+            }
+
             drone.RepairAccumulator = 0f;
             drone.TransactionProgress = 1f;
+            ClearDroneMiningCommitFailureLatch(slot);
             ReturnDroneToHub(ref drone);
+        }
+
+        private static bool TryCommitDroneMiningOutputToHub(
+            in HeadlessDroneState drone,
+            uint itemHash,
+            int requestedQuantity,
+            out int depositedQuantity,
+            out byte failureReason)
+        {
+            depositedQuantity = 0;
+            failureReason = DroneMiningCommitFailureNone;
+            if (itemHash == 0u || requestedQuantity <= 0)
+            {
+                failureReason = DroneMiningCommitFailureInvalidPayload;
+                return false;
+            }
+
+            if (!TryResolveDroneMiningItem(itemHash, out ItemData item, out failureReason))
+                return false;
+
+            if (!TryResolveDroneHubByKey(drone.HubGridId, out RepairDroneHub hub, out failureReason))
+                return false;
+
+            if (!hub.HasOperationalPower)
+            {
+                failureReason = hub.CurrentGrid == null
+                    ? DroneMiningCommitFailureGridMissing
+                    : DroneMiningCommitFailureHubUnpowered;
+                return false;
+            }
+
+            PowerGrid grid = hub.CurrentGrid;
+            if (grid == null)
+            {
+                failureReason = DroneMiningCommitFailureGridMissing;
+                return false;
+            }
+
+            int safeQuantity = Mathf.Max(1, requestedQuantity);
+            if (!BaseLogisticsNetwork.TryDepositItem(grid, item, safeQuantity, out int routedQuantity))
+            {
+                failureReason = DroneMiningCommitFailureStorageFull;
+                return false;
+            }
+
+            depositedQuantity = Mathf.Clamp(routedQuantity, 0, safeQuantity);
+            if (depositedQuantity <= 0)
+            {
+                failureReason = DroneMiningCommitFailureStorageFull;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveDroneMiningItem(uint itemHash, out ItemData item, out byte failureReason)
+        {
+            item = null;
+            failureReason = DroneMiningCommitFailureNone;
+            IPlayerInventoryService inventoryService = s_CachedPlayerInventoryService;
+            PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
+                ? inventoryService.Inventory
+                : null;
+            ItemCatalog catalog = inventory != null ? inventory.ItemCatalog : null;
+            if (catalog == null)
+            {
+                failureReason = DroneMiningCommitFailureItemCatalogUnavailable;
+                return false;
+            }
+
+            item = catalog.FindByHash(unchecked((int)itemHash));
+            if (item == null)
+            {
+                failureReason = DroneMiningCommitFailureItemMissing;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveDroneHubByKey(int hubKey, out RepairDroneHub hub, out byte failureReason)
+        {
+            hub = null;
+            failureReason = DroneMiningCommitFailureNone;
+            if (hubKey == 0)
+            {
+                failureReason = DroneMiningCommitFailureHubMissing;
+                return false;
+            }
+
+            int scanHubCount = RepairDroneHub.ActiveHubCount;
+            for (int i = 0; i < scanHubCount; i++)
+            {
+                RepairDroneHub candidate = RepairDroneHub.GetActiveHubAt(i);
+                if (candidate == null || !candidate.isActiveAndEnabled)
+                    continue;
+
+                if (ResolveHubTaskKey(candidate) != hubKey)
+                    continue;
+
+                if (hub != null)
+                {
+                    hub = null;
+                    failureReason = DroneMiningCommitFailureDuplicateHub;
+                    return false;
+                }
+
+                hub = candidate;
+            }
+
+            if (hub != null)
+                return true;
+
+            failureReason = DroneMiningCommitFailureHubMissing;
+            return false;
         }
 
         private static void ApplyParasiteAttackService(int slot, ref HeadlessDroneState drone, float dt)
@@ -5773,6 +6269,23 @@ namespace Hecton8.Construction
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
             SignalBus<Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal>.TryPushTracked(in spark, ref s_SignalPushDropCount);
+            PublishDroneRepairTorchAcoustic(ToVector3(hitRuntime), safeIntensity);
+        }
+
+        private static void PublishDroneRepairTorchAcoustic(Vector3 runtimePosition, float intensity01)
+        {
+            AudioClip clip = s_RepairTorchAcousticClip;
+            if (clip == null)
+                return;
+
+            float safeIntensity = Mathf.Clamp01(intensity01);
+            RepairDroneTorchAcousticEvent acousticEvent = new RepairDroneTorchAcousticEvent(
+                runtimePosition,
+                clip,
+                Mathf.Clamp01(s_RepairTorchAcousticVolume * Mathf.Lerp(0.6f, 1f, safeIntensity)),
+                s_RepairTorchAcousticPitch);
+            if (!RepairDroneTorchAcousticEvents.TryNotify(in acousticEvent) && s_SignalPushDropCount < int.MaxValue)
+                s_SignalPushDropCount++;
         }
 
         private static void ApplyPendingLaunches(
@@ -5792,6 +6305,7 @@ namespace Hecton8.Construction
             for (int i = 0; i < s_PendingLaunchCount; i++)
             {
                 PendingDroneLaunch launch = s_PendingLaunches[i];
+                s_PendingLaunches[i] = default;
                 if (launch.Active == 0)
                     continue;
 
@@ -5910,7 +6424,6 @@ namespace Hecton8.Construction
                 droneRenderMatrices[slot] = float4x4.TRS(state.Position, state.Rotation, new float3(1f, 1f, 1f));
                 droneRenderMatrixBackBuffer[slot] = droneRenderMatrices[slot];
                 MirrorDroneSoA(slot, in state, positionsSoA, stateBytes, stateDtos, targetDtos);
-                s_PendingLaunches[i] = default;
             }
 
             s_PendingLaunchCount = 0;
@@ -6030,6 +6543,8 @@ namespace Hecton8.Construction
             s_PendingHostileBySlot[slot] = false;
             s_PendingResupplyGrantBySlot[slot] = false;
             s_PendingResupplyFailureBySlot[slot] = false;
+            s_PendingResupplyReservationIdsBySlot[slot] = 0;
+            ClearDroneMiningCommitFailureLatch(slot);
 
             if (notifyHub && hub != null && droneId > 0)
                 hub.NotifyHeadlessDroneReturned(droneId);
@@ -6180,6 +6695,50 @@ namespace Hecton8.Construction
 
                 s_DronePositions[i] = ToVector3(drone.Position);
             }
+        }
+
+        private static void RefreshFleetStatusSnapshotFromDroneStates(NativeArray<HeadlessDroneState> droneStates)
+        {
+            if (s_DroneSlotDroneIds == null ||
+                !droneStates.IsCreated)
+            {
+                return;
+            }
+
+            int limit = math.min(HeadlessDroneCapacity, math.min(s_DroneSlotDroneIds.Length, droneStates.Length));
+            int activeCount = 0;
+            int batteryMilliPercent = 0;
+            int solderReserve = 0;
+            int hostileCount = 0;
+            for (int slot = 0; slot < limit; slot++)
+            {
+                if (s_DroneSlotDroneIds[slot] <= 0)
+                    continue;
+
+                HeadlessDroneState drone = droneStates[slot];
+                if (drone.State == (byte)HeadlessDroneRuntimeState.Empty ||
+                    drone.State == (byte)HeadlessDroneRuntimeState.Sacrificed ||
+                    drone.State == (byte)HeadlessDroneRuntimeState.Completed)
+                {
+                    continue;
+                }
+
+                activeCount++;
+                batteryMilliPercent += (int)math.round(math.clamp(drone.BatteryPercent, 0f, 100f) * 1000f);
+                solderReserve += math.max(0, drone.SolderUnits);
+                if (drone.FactionBit == (byte)HeadlessDroneFactionBit.Hostile)
+                    hostileCount++;
+            }
+
+            float averageBattery = activeCount > 0
+                ? Mathf.Clamp(batteryMilliPercent * math.rcp(activeCount * 1000f), 0f, 100f)
+                : 0f;
+            s_LastFleetStatusSnapshot = new FleetStatusSnapshot(
+                activeCount,
+                averageBattery,
+                solderReserve,
+                s_DestroyedDroneCount,
+                hostileCount);
         }
 
         private static void BuildHeadlessTaskMap(
@@ -6524,21 +7083,26 @@ namespace Hecton8.Construction
                 return false;
 
             if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                math.all(math.isfinite(snapshot.RuntimePosition)))
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.all(math.isfinite(snapshot.RuntimePosition)) &&
+                snapshot.Aup.IsFinite())
             {
                 position = new Vector3(snapshot.RuntimePosition.x, snapshot.RuntimePosition.y, snapshot.RuntimePosition.z);
                 return true;
             }
 
-            var playerMovement = playerContext.PlayerMovement;
-            if (playerMovement == null)
+            if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite() ||
+                !math.all(math.isfinite(movementState.WorldPosition)))
+            {
                 return false;
+            }
 
-            AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
-            if (!TryResolveRuntimeFloat3AupDelta(in playerAup, out float3 runtime))
-                return false;
-
-            position = new Vector3(runtime.x, runtime.y, runtime.z);
+            position = new Vector3(
+                movementState.WorldPosition.x,
+                movementState.WorldPosition.y,
+                movementState.WorldPosition.z);
             return true;
         }
 
@@ -6711,7 +7275,13 @@ namespace Hecton8.Construction
                     out horizontalCellSize,
                     out verticalCellSize,
                     out surfaceY,
-                    out depthMeters))
+                    out depthMeters) &&
+                math.isfinite(surfaceY) &&
+                math.abs(surfaceY) <= 1000f &&
+                math.isfinite(depthMeters) &&
+                depthMeters > 0f &&
+                horizontalCellSize > 0f &&
+                verticalCellSize > 0f)
             {
                 return true;
             }
@@ -7662,12 +8232,39 @@ namespace Hecton8.Construction
                     !IsFiniteFloat3(drone.TargetPosition) ||
                     !IsFiniteFloat3(drone.Velocity))
                 {
-                    flags |= 1;
+                    flags |= DroneFleetBlackBoxFlagNonFiniteState;
                 }
             }
 
             if (s_LastDroneAStarStatus == 2)
-                flags |= 2;
+                flags |= DroneFleetBlackBoxFlagAStarFailure;
+
+            int completeSignalDropCount = DockingCompleteSignalDropCount;
+            int failedSignalDropCount = DockingFailedSignalDropCount;
+            int itemAcquiredDropCount = ItemAcquiredSignalDropCount;
+            int inventoryTransactionDropCount = InventoryTransactionSignalDropCount;
+            int inventoryCommandDropCount = InventoryCommandSignalDropCount;
+            int miningCommitFailureCount = DroneMiningCommitFailureCount;
+            int miningCommitFailureReason = LastDroneMiningCommitFailureReason;
+            if (completeSignalDropCount > 0)
+                flags |= DroneFleetBlackBoxFlagDockingCompleteSignalRejected;
+            if (failedSignalDropCount > 0)
+                flags |= DroneFleetBlackBoxFlagDockingFailedSignalRejected;
+            if (itemAcquiredDropCount > 0)
+                flags |= DroneFleetBlackBoxFlagItemAcquiredSignalRejected;
+            if (inventoryTransactionDropCount > 0)
+                flags |= DroneFleetBlackBoxFlagInventoryTransactionSignalRejected;
+            if (inventoryCommandDropCount > 0)
+                flags |= DroneFleetBlackBoxFlagInventoryCommandSignalRejected;
+            if (miningCommitFailureCount > 0)
+                flags |= DroneFleetBlackBoxFlagMiningCommitFailed;
+            stateHash = unchecked((stateHash * 31) ^ completeSignalDropCount);
+            stateHash = unchecked((stateHash * 31) ^ failedSignalDropCount);
+            stateHash = unchecked((stateHash * 31) ^ itemAcquiredDropCount);
+            stateHash = unchecked((stateHash * 31) ^ inventoryTransactionDropCount);
+            stateHash = unchecked((stateHash * 31) ^ inventoryCommandDropCount);
+            stateHash = unchecked((stateHash * 31) ^ miningCommitFailureCount);
+            stateHash = unchecked((stateHash * 31) ^ miningCommitFailureReason);
 
             return new DroneFleetBlackBoxEntry
             {
@@ -8656,20 +9253,50 @@ namespace Hecton8.Construction
 
         private static void HandleStorageReservationCommitResolved(int requesterId, int reservationId, bool committed)
         {
-            if (requesterId <= 0 || reservationId <= 0 || s_DroneSlotDroneIds == null)
+            if (requesterId <= 0 ||
+                s_DroneSlotDroneIds == null ||
+                s_PendingResupplyGrantBySlot == null ||
+                s_PendingResupplyFailureBySlot == null ||
+                s_PendingResupplyReservationIdsBySlot == null)
                 return;
 
             int slot = ResolveHeadlessSlot(requesterId);
-            if (slot < 0)
+            if (slot < 0 ||
+                slot >= s_PendingResupplyGrantBySlot.Length ||
+                slot >= s_PendingResupplyFailureBySlot.Length ||
+                slot >= s_PendingResupplyReservationIdsBySlot.Length)
+            {
+                ReportStorageReservationStaleAck(requesterId);
+                return;
+            }
+
+            int expectedReservationId = s_PendingResupplyReservationIdsBySlot[slot];
+            if (expectedReservationId <= 0)
+            {
+                ReportStorageReservationStaleAck(requesterId);
+                return;
+            }
+
+            if (reservationId != expectedReservationId)
+            {
+                ReportStorageReservationMismatchAck(reservationId);
+                return;
+            }
+
+            bool commitSucceeded = committed && reservationId > 0;
+            if (TryApplyResolvedResupplyCommitToLiveSlot(slot, commitSucceeded))
                 return;
 
-            if (committed)
+            if (commitSucceeded)
             {
                 s_PendingResupplyGrantBySlot[slot] = true;
                 s_PendingResupplyFailureBySlot[slot] = false;
             }
             else
             {
+                if (s_PendingResupplyGrantBySlot[slot])
+                    return;
+
                 s_PendingResupplyGrantBySlot[slot] = false;
                 s_PendingResupplyFailureBySlot[slot] = true;
             }
@@ -9161,6 +9788,9 @@ namespace Hecton8.Construction
                     return dockAup.ToAbsoluteDouble3();
             }
 
+            if (s_CachedPlayerRuntime != null)
+                return double3.zero;
+
             return RuntimeOriginRoute.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
         }
 
@@ -9172,21 +9802,21 @@ namespace Hecton8.Construction
                 return false;
 
             if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
                 snapshot.Aup.IsFinite())
             {
                 playerAup = snapshot.Aup.ToAbsoluteDouble3();
                 return math.all(math.isfinite(playerAup));
             }
 
-            var playerMovement = playerContext.PlayerMovement;
-            if (playerMovement == null)
+            if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
                 return false;
+            }
 
-            AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-            if (!currentAup.IsFinite())
-                return false;
-
-            playerAup = currentAup.ToAbsoluteDouble3();
+            playerAup = movementState.PredictedAup.ToAbsoluteDouble3();
             return math.all(math.isfinite(playerAup));
         }
 

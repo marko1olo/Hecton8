@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "וו עדיפות Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# וו עדיפות Deep Reach
 
-HE LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+הלחץ הנוכחי של Deep Reach אינו דורש שליטה מרחוק בלתי אפשרית. תעודות המשכיות ישנות, סעיפי הסגר, אסימוני גישה Atlas ו-priority hooks של payload כבר יושבים במסלול המשפטי של Black Keel. החברה יכולה להשפיע על מה שה-carrier מעריך בלי להחזיק בו בגלוי. כך קשה יותר לחתוך את האנטגוניסט: זה לא אות לשיבוש, אלא סעיף שממשיך להתעורר.
 
 ## Scanner
 
-HE LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+וו תעודה ישנה. Deep Reach אינה מחזיקה בספינה; היא מחזיקה בסעיף.
 
 ## Terminal
 
-HE LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: תעודת המשכיות legacy של Deep Reach עשויה לקדם recovery של payload, נעילת הסגר, אסימון גישה Atlas או תור דיכוי ראיות תחת חוק claim של Aegir. עדיפות חילוץ אדם ללא שינוי אלא אם הוכחת סכנה עולה על ערך custody.
 
 ## Audio
 
-HE LOC HOLD: They do not need to be on the bridge to steer the answer.
+הם לא צריכים לעמוד על הגשר כדי לכוון את התשובה.
 
 ## Field Note
 
-HE LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+נקי יותר מקנוניה: הניירת עדיין חיה ועדיין רעבה.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/he_IL. -->

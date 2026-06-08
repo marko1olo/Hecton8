@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Porte anti-divulgation"
+title: "Porte anti-divulgation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Porte anti-divulgation
+# Porte anti-divulgation
 
-FR LOC HOLD: Porte d'archive publique. Les pages externes et wiki peuvent nommer HECTON-8, Aegir, Black Keel, Deep Reach, l'histoire publique d'Atlas-6 et les rumeurs Xenon-Omega. Les entrées fortes s'ouvrent après garde récupérée.
+Porte d'archive publique. Site et wiki peuvent nommer HECTON-8, Aegir, Black Keel, Deep Reach, l'histoire publique d'Atlas-6 et les rumeurs Xenon-Omega. Les entrées plus fortes s'ouvrent seulement après garde récupérée.
 
 ## Scanner
 
-FR LOC HOLD: PORTE D'ARCHIVE PUBLIQUE // Niveau spoiler 0/1. Contexte public seulement. Les preuves profondes exigent une garde récupérée avant l'extension du codex.
+PORTE D'ARCHIVE PUBLIQUE // Niveau spoiler 0/1. Contexte public seulement. Les preuves profondes exigent une garde récupérée avant l'extension du codex.
 
 ## Terminal
 
-FR LOC HOLD: FILTRE PUBLIC/WIKI // Autorisé avant preuve : décor, pression de route, langage d'accident public, institutions connues et prémisse de salvage. Retenir les preuves profondes.
+FILTRE PUBLIC/WIKI // Avant preuve: cadre, pression de route, langage public d'accident, institutions connues et prémisse de salvage initiale. Retenir les preuves profondes.
 
 ## Audio
 
-FR LOC HOLD: Relais Black Keel : le texte public nomme la lune. La preuve a besoin d'un sceau. Rapporte le sceau.
+Relais Black Keel : le texte public nomme la lune. La preuve a besoin d'un sceau. Rapporte le sceau.
 
 ## Field Note
 
-FR LOC HOLD: La page publique te dit où plonger. Elle ne dit pas qui a payé pour garder la porte fermée.
+La page publique te dit où plonger. Elle ne dit pas qui a payé pour garder la porte fermée.
 
 <!-- In-Game Wiki; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/fr_FR. -->

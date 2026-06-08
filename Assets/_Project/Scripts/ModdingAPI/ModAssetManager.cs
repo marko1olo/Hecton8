@@ -18,6 +18,8 @@ namespace Hecton8.Modding
         private static readonly Dictionary<uint, AssetBundle> _loadedBundles = new Dictionary<uint, AssetBundle>(32);
         // COLD ALLOC: Dictionary<uint,Texture2D>[32] - legacy cached raw PNG textures by asset hash - owner: ModAssetManager
         private static readonly Dictionary<uint, Texture2D> _rawTextures = new Dictionary<uint, Texture2D>(32);
+        // COLD ALLOC: Dictionary<uint,uint>[32] - raw PNG cache key to owning mod hash - owner: ModAssetManager
+        private static readonly Dictionary<uint, uint> _rawTextureModHashes = new Dictionary<uint, uint>(32);
         // COLD ALLOC: HashSet<uint>[128] - FNV-hashed MOD_COMPATIBLE ledger prefab references - owner: ModAssetManager
         private static readonly HashSet<uint> _modCompatibleAssetHashes = new HashSet<uint>(128);
         private const string ModCompatibleLedgerTag = "MOD_COMPATIBLE";
@@ -52,16 +54,35 @@ namespace Hecton8.Modding
             if (ModLoader.GetIsFutureCommandEnvelopeOnly())
             {
                 _bundlePaths.Remove(modHash);
+                UnloadModAssets(modHash);
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(bundlePath))
             {
                 _bundlePaths.Remove(modHash);
+                UnloadModAssets(modHash);
                 return;
             }
 
+            if (_bundlePaths.ContainsKey(modHash))
+                UnloadModAssets(modHash);
+
             _bundlePaths[modHash] = bundlePath;
+        }
+
+        /// <summary>
+        /// Removes the AssetBundle binding for a mod and releases its cached bundle.
+        /// </summary>
+        /// <param name="modId">Stable mod identifier.</param>
+        internal static void UnregisterBundlePath(string modId)
+        {
+            if (string.IsNullOrWhiteSpace(modId))
+                return;
+
+            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
+            _bundlePaths.Remove(modHash);
+            UnloadModAssets(modHash);
         }
 
         /// <summary>
@@ -168,9 +189,13 @@ namespace Hecton8.Modding
             if (!TryValidateRawTextureFile(filePath))
                 return null;
 
-            uint cacheKey = ComputeAssetCacheHash(modId, filePath);
+            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
+            uint cacheKey = ComputeAssetCacheHash(modHash, filePath);
             if (_rawTextures.TryGetValue(cacheKey, out Texture2D cachedTexture) && cachedTexture != null)
                 return cachedTexture;
+
+            _rawTextures.Remove(cacheKey);
+            _rawTextureModHashes.Remove(cacheKey);
 
             byte[] pngBytes;
             try
@@ -213,6 +238,7 @@ namespace Hecton8.Modding
             }
 
             _rawTextures[cacheKey] = texture;
+            _rawTextureModHashes[cacheKey] = modHash;
             return texture;
 #endif
         }
@@ -267,13 +293,58 @@ namespace Hecton8.Modding
             }
 
             _rawTextures.Clear();
+            _rawTextureModHashes.Clear();
         }
 
-        private static uint ComputeAssetCacheHash(string modId, string filePath)
+        private static void UnloadModAssets(uint modHash)
+        {
+            UnloadBundle(modHash);
+            UnloadRawTexturesForMod(modHash);
+        }
+
+        private static void UnloadBundle(uint modHash)
+        {
+            if (!_loadedBundles.TryGetValue(modHash, out AssetBundle bundle))
+                return;
+
+            if (bundle != null)
+                bundle.Unload(false);
+
+            _loadedBundles.Remove(modHash);
+        }
+
+        private static void UnloadRawTexturesForMod(uint modHash)
+        {
+            List<uint> cacheKeysToRemove = null;
+            Dictionary<uint, uint>.Enumerator enumerator = _rawTextureModHashes.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                if (enumerator.Current.Value != modHash)
+                    continue;
+
+                cacheKeysToRemove ??= new List<uint>(4); // COLD ALLOC: List<uint>[4] - raw texture cache eviction keys - owner: ModAssetManager
+                cacheKeysToRemove.Add(enumerator.Current.Key);
+            }
+
+            if (cacheKeysToRemove == null)
+                return;
+
+            for (int i = 0; i < cacheKeysToRemove.Count; i++)
+            {
+                uint cacheKey = cacheKeysToRemove[i];
+                if (_rawTextures.TryGetValue(cacheKey, out Texture2D texture) && texture != null)
+                    UnityEngine.Object.Destroy(texture);
+
+                _rawTextures.Remove(cacheKey);
+                _rawTextureModHashes.Remove(cacheKey);
+            }
+        }
+
+        private static uint ComputeAssetCacheHash(uint modHash, string filePath)
         {
             unchecked
             {
-                uint hash = ModCommandDispatcher.ComputeModHash(modId);
+                uint hash = modHash;
                 hash ^= ModCommandDispatcher.ComputeModHash(filePath) + 0x9E3779B9u + (hash << 6) + (hash >> 2);
                 return hash;
             }

@@ -14,41 +14,41 @@ namespace Hecton8.Optimization
     public sealed class VisorRTManager : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         // ── REGISTRY SLOT ──────────────────────────────────────────────────────────
-        
-        
+
+
         // ── CONSTANTS ──────────────────────────────────────────────────────────────
-        
+
         private const long VisorBudgetBytes = 64L * 1024L * 1024L; // 64 MB
         private const float LogThrottleInterval = 5f; // Log once per 5s
-        
+
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
-        
+
         private bool _registeredSlowTick;
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
         private IRenderTextureLifecycleService _cachedRenderTextureLifecycle;
-        
+
         // COLD ALLOC: List<RenderTextureAllocationRecord>[32] — RT query — owner: VisorRTManager
         private readonly List<RenderTextureAllocationRecord> _visorRTs = new List<RenderTextureAllocationRecord>(32);
-        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextLogTime;
 #endif
-        
+
         // ── PUBLIC PROPERTIES ──────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// Current Visor RT memory consumption in bytes.
         /// </summary>
         public long VisorRTMemoryBytes { get; private set; }
-        
+
         /// <summary>
         /// Returns whether Visor RT memory exceeds 64 MB budget.
         /// </summary>
         public bool IsOverBudget => VisorRTMemoryBytes > VisorBudgetBytes;
-        
+
         // ── LIFECYCLE ──────────────────────────────────────────────────────────────
-        
+
         private void OnEnable()
         {
             if (TryRegisterService())
@@ -58,14 +58,14 @@ namespace Hecton8.Optimization
                 TryRegister();
             }
         }
-        
+
         private void OnDisable()
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
-        
+
         private void OnDestroy()
         {
             TryUnregister();
@@ -78,12 +78,20 @@ namespace Hecton8.Optimization
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregister();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
                 _cachedRenderTextureLifecycle = currentService as IRenderTextureLifecycleService;
         }
-        
+
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// ISlowTickable implementation. Monitors Visor RT memory every ~0.5s.
         /// Zero GC: pre-allocated buffers, no LINQ, no string concat.
@@ -93,9 +101,9 @@ namespace Hecton8.Optimization
             MeasureVisorRTMemory();
             CheckBudget();
         }
-        
+
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
-        
+
         private void MeasureVisorRTMemory()
         {
             IRenderTextureLifecycleService lifecycle = _cachedRenderTextureLifecycle;
@@ -104,11 +112,11 @@ namespace Hecton8.Optimization
                 VisorRTMemoryBytes = 0L;
                 return;
             }
-            
+
             // Query all Visor-owned RTs (zero-GC)
             _visorRTs.Clear();
             lifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.Visor, _visorRTs);
-            
+
             // Calculate total Visor RT memory (zero-GC loop)
             long totalBytes = 0L;
             for (int i = 0; i < _visorRTs.Count; i++)
@@ -116,15 +124,15 @@ namespace Hecton8.Optimization
                 if (!_visorRTs[i].IsDisposed)
                     totalBytes += _visorRTs[i].MemoryBytes;
             }
-            
+
             VisorRTMemoryBytes = totalBytes;
         }
-        
+
         private void CheckBudget()
         {
             if (!IsOverBudget)
                 return;
-            
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now >= _nextLogTime)
@@ -164,16 +172,38 @@ namespace Hecton8.Optimization
             if (!Application.isPlaying)
                 return false;
 
-            VisorRTManager registered = GlobalRegistry.VisorRT;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterVisorRTRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.VisorRT, this);
             return _serviceRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            VisorRTManager registered = GlobalRegistry.VisorRT;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsVisorRTRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterVisorRTRuntime(registered);
+            return false;
+        }
+
+        private static bool IsVisorRTRuntimeUsable(VisorRTManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()
@@ -206,7 +236,7 @@ namespace Hecton8.Optimization
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
         }
-        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void LogBudgetViolation()
         {

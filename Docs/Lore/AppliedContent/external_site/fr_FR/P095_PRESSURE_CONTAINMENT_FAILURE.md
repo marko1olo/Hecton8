@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Defaillance de confinement par pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Defaillance de confinement par pression
 
-FR LOC HOLD: Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating.
-
-## Scanner
-
-FR LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
-
-## Terminal
-
-FR LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
-
-## Audio
-
-FR LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
-
-## Field Note
-
-FR LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Le blue debt n'est pas un tresor maudit. C'est une memoire materielle sous pression. Le residu Xenon-Omega reste utile tant que son reseau croit etre encore profond, froid et comprime. Sortez-le trop vite, stockez-le mal, laissez le cisaillement de signal entrer dans le caisson, et l'echantillon commence a ceder par etapes lisibles. D'abord vient la derive: les metres mentent, la resonance tremble, les alarmes se contredisent. Puis le reseau fracture. La saumure entre. La biologie suit la chimie. A l'etape 4, la valeur est morte, mais la contamination vit.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/fr_FR. -->

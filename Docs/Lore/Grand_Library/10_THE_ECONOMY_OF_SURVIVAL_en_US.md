@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # THE ECONOMY OF SURVIVAL AND KEELMARK DEBT
 
 > **Source:** Keelmark Independent Contractor Agreement, Addendum 14-B (Financial Obligations).

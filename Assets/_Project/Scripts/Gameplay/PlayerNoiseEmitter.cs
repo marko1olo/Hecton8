@@ -133,6 +133,9 @@ namespace Hecton8.Gameplay
             }
             else
             {
+                if (HasPlayerRuntimeContext())
+                    return;
+
                 playerPosition = ResolveCachedRuntimePosition();
                 if (!TryResolveRuntimeAup(playerPosition, out playerAup))
                     return;
@@ -291,24 +294,72 @@ namespace Hecton8.Gameplay
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (_playerMovement != null)
+            playerAup = default;
+
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null)
             {
-                playerAup = _playerMovement.CurrentAup;
-                return true;
+                return TryResolvePlayerAupFromRuntimeContext(playerContext, out playerAup);
             }
 
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext != null)
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                return TryResolvePlayerAupFromRuntimeContext(runtimeContext, out playerAup);
+            }
+
+            if (_playerMovement != null)
+            {
+                AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup;
+                if (currentAup.IsFinite())
                 {
-                    playerAup = movementState.PredictedAup;
+                    playerAup = currentAup;
                     return true;
                 }
             }
 
-            playerAup = default;
             return false;
+        }
+
+        private bool HasPlayerRuntimeContext()
+        {
+            return _cachedPlayerContext != null ||
+                   PlayerRuntimeContextService.ActiveRuntimeContext != null;
+        }
+
+        private static bool TryResolvePlayerAupFromRuntimeContext(
+            IPlayerRuntimeContext playerContext,
+            out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                snapshot.Aup.IsFinite())
+            {
+                playerAup = snapshot.Aup;
+                return true;
+            }
+
+            return playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                   TryResolvePlayerAupFromMovementState(in movementState, out playerAup);
+        }
+
+        private static bool TryResolvePlayerAupFromMovementState(
+            in PlayerMovementRuntimeState movementState,
+            out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
+                return false;
+            }
+
+            playerAup = movementState.PredictedAup;
+            return true;
         }
 
         private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)

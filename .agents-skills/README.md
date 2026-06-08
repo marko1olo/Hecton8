@@ -19,6 +19,10 @@ Current inventory: `80` `.txt` mandates plus this `README.md` registry index.
 
 Before coding or writing a technical report, read `2-8` mandates that match the task domain. Do not bulk-load the whole registry as context noise.
 
+If the selected route bible has no obvious mandate bucket, treat that as a routing gap: update this registry or the missing mandate before production implementation. Do not proceed from memory or from stale reports.
+
+After editing mandate files or this registry, run `python -B Tools/Docs/TestMandateRegistry.py`. It checks inventory count, command-language discipline, weak wording, false readiness labels, truncated mandate bodies, and proof/evidence language. After editing the registry lint tool itself, also run `python -B Tools/Docs/TestMandateRegistry.py --self-test`. `--strict-format` additionally turns exported top-level markdown fences into blocking format errors.
+
 Minimum examples:
 
 - physics, movement, vehicles, collision: `PHYS_Physics_Integrity_Determinism_ForceMode.txt`, `CORE_Submarine_Vehicles_Kinematics_AUP.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `OPT_Premium_Approximation_Protocol.txt`
@@ -32,6 +36,7 @@ Minimum examples:
 ## Current Doctrine
 
 - Premium approximation first. Simulate only gameplay truth.
+- Player-visible visual mandates inherit the Visual Reference Parity Gate from `Docs/QUALITY_GATES.md`: mandatory references plus best-known internal baseline/current rejection matrix beat agent taste, raw diagnostic captures are reject-only, and `VISUAL_ROUTE_INVALID` triggers owner-stack recovery before polish.
 - Any runtime system over `0.1ms` is suspicious until profiler proof and load-shed behavior exist.
 - No per-proton, per-droplet, per-bubble, per-cable-segment, or per-flora-blade truth by default.
 - Zero GC in hot paths remains non-negotiable.
@@ -46,7 +51,8 @@ Minimum examples:
 - New gameplay broadcasts use typed SignalBus lanes and ReadOnlySpan-style snapshots. A monolithic EventBus is not a gameplay transport.
 - AUP authority uses a 300-frame Sync-Fence and millimeter quantization after every origin shift.
 - Designer-tunable unmanaged data requires a human-readable bridge: CSV/SO/Editor facade to validated binary, with runtime parsing kept out of hot paths.
-- Mandate language is command language. "Consider", "maybe", "should", and "recommended" are rejected in new mandate text unless quoted as a banned pattern.
+- Mandate language is command language. "Consider", "maybe", "should", "recommended", "best effort", "if possible", "when possible", "assume", "stub", and "placeholder" are rejected in new mandate text unless quoted as a banned/rejected/legacy/diagnostic/template pattern.
+- Legacy or illustrative mandate snippets must not show dangerous runtime APIs as active routes. `Camera.main`, `FindObjectOfType`, `GameObject.Find`, `DontDestroyOnLoad`, `Resources.Load`, `StartCoroutine`, `BinaryFormatter`, `JsonUtility.FromJson`, `File.ReadAllText`, and `File.ReadAllBytes` must be marked as `[FORBID]`, banned, legacy, historical, injected/cached replacement context, or rejected by `python -B Tools/Docs/TestMandateRegistry.py`.
 - Unity import, Console, Play Mode, profiler, GCMonitor, player-build, memory, frame-time, scene wiring, and visual quality are `PENDING VERIFICATION` unless fresh artifacts prove them.
 - Verification has a budget. One scoped static scan and one scoped triage pass may route action; repeated checks over unchanged source/assets/proof are bureaucracy theater.
 - After `PENDING VERIFICATION` is known, the next useful step is proof run, source/asset fix, or concrete blocker report. More boards, CSVs, task packets, and validation summaries are rejected unless they name a new command/file/proof action.
@@ -55,7 +61,7 @@ Minimum examples:
 
 | Fact | Current Value | Enforcement |
 |---|---:|---|
-| Mandate files | 80 | Registry audit must update this value when files are added or removed. |
+| Mandate files | 80 | `python -B Tools/Docs/TestMandateRegistry.py` must pass when files are added, removed, or edited. |
 | Runtime coroutine tolerance | 0 | `IEnumerator`, `yield return`, and `StartCoroutine` are rejected in gameplay hot paths. |
 | Unity 6000 render path | RenderGraph | New URP renderer features use `RecordRenderGraph`; Compatibility Mode is legacy debt. |
 | Async Unity object path | `UnityEngine.Awaitable` | `Task` is reserved for owned persistent workers or non-Unity background work. |

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "Grammar Encounter Navigasi Brine Vane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Brine Vane Navigation Encounter Grammar
+# Grammar Encounter Navigasi Brine Vane
 
-ID LOC HOLD: Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.
+Encounter navigasi brine vane mengajarkan bahwa air mid-depth dibangun, bukan kosong. Pemain harus membaca ladang vane seperti tangga rusak: lembar utuh adalah dinding, mulut sobek adalah bukaan mungkin, ujung melengkung adalah shear yang melemah, dan celah hitam tanpa tepi vane terlihat adalah tempat sonar bisa menciptakan lantai. Encounter harus meminta gerak lambat, buoyancy trim konservatif, dan perubahan sudut, bukan berenang lurus ke glow tercantik. Atlas dapat mengeksploitasi batas densitas yang sama untuk repair routing, tetapi arus tetap fisik. Perbedaan ini penting. Laut tidak berbicara. Ia membuat proses terlihat. Rute vane yang baik membiarkan pemain mengikuti satu tepi, ping dari sudut kedua, menguji drift, dan merasa cerdas karena menolak shortcut terbuka.
 
 ## Scanner
 
-ID LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+Ladang brine vane. Lembar sejajar menandai belokan densitas; ujung melengkung menandai jendela lemah; sonar warps dekat glow terbuka. Simpan satu tepi dalam pandangan.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+GRAMMAR ENCOUNTER / NAVIGASI BRINE VANE / peran: literasi rute mid-depth, handrail dinding densitas, koreksi false floor / baca aman: tepi vane utuh, mulut sobek, bengkok sonar cocok dengan buoyancy drift / tolak: menyeberangi air hitam terbuka, memotong lembar pemandu, percaya floor return tanpa batas vane / catatan rute: vane tidak membimbing dengan niat; ia mematuhi air cukup keras untuk diikuti.
 
 ## Audio
 
-ID LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+Vane bukan penunjuk jalan. Itu air yang membuat dinding dan meninggalkan sambungan.
 
 ## Field Note
 
-ID LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+Perlakukan tepi vane seperti pegangan. Jika garis membengkok salah, bacaan buoyancy-mu sudah terlambat.
 
 <!-- In-Game Wiki; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/id_ID. -->

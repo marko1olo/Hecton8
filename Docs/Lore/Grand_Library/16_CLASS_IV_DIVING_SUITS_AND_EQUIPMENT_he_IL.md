@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # חליפות צלילה CLASS-IV וציוד מצולות
 
 > **מקור:** תאגיד הענק Deep Reach, מדריך קצין ציוד.

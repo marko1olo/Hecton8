@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+spoiler_tier: 1
+title: "Stagingtijd voor zware vracht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# Stagingtijd voor zware vracht
 
-NL LOC HOLD: Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships.
-
-## Scanner
-
-NL LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
-
-## Terminal
-
-NL LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
-
-## Audio
-
-NL LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
-
-## Field Note
-
-NL LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+Zware vracht verbergt tijd in infrastructuur. Atlas-hardware, seedlading, schildvoorraad en remonderdelen kunnen vroeg aankomen omdat ze jaren worden gelanceerd voordat publieke kolonietaal ze inhaalt. Dat maakt noodredding niet makkelijk. Een voorbereide route kan massa verplaatsen omdat depots, bundelvensters, pelletstromen en vangstadia al stonden te wachten. Een rampenroute heeft die geduld niet meer.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/nl_NL. -->

@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Global Ocean Depth Bands
 
-HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
-
-## Scanner
-
-Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
-
-## Terminal
-
-BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
-
-## Audio
-
-Every band changes what the world allows you to do.
-
-## Field Note
-
-Depth is not a number. It is a ruleset.
+HECTON-8 is not a flat ocean with deeper numbers. It is a vertical country with borders written in pressure. From 0 to 250 meters, the photic salvage shelf still has light, algae, soft wreckage, and enough forgiveness for new mistakes. From 250 to 1200 meters, the industrial shelf and cable reef begin: broken moorings, pipe frames, relay bones, and old corporate routes. From 1200 to 2800 meters, brine stairs and canyons bend sonar, hide heat, and make ballast feel political. From 2800 to 4300 meters, abyssal machine fields turn maintenance into a negotiation with broken systems. From 4300 to 5600 meters, the Atlas basin stops feeling like an environment and starts feeling like an authority.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/en_US. -->

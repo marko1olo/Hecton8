@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Acoustic Relay Spine Assembly"
+title: "音響リレー脊柱アセンブリ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Acoustic Relay Spine Assembly
+# 音響リレー脊柱アセンブリ
 
-JA LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.
+音響リレー脊柱アセンブリは HECTON-8 の脱出ループをサルベージ工学に固定する。音は圧力、航路幾何、custody を生き延びてからでなければ、軌道に信じられない。
 
 ## Scanner
 
-JA LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+壊れた音響脊柱。水中へ pressure-code を叩き込めるが、軌道にはまだ損傷した custody noise として聞こえる。
 
 ## Terminal
 
-JA LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY: recovery window 前に低帯域音響脊柱を復旧。High-gain mast 喪失。Emergency buoy 不安定。Black Keel 受信機は route proof 後のみ pressure-code を受理。
 
 ## Audio
 
-JA LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
+Keel が聞くなら、それは管を叩く傷の音だ。
 
 ## Field Note
 
-JA LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+カプセルの最初の呼びかけは声ではない。セラミック肋材、ケーブル外皮、pinger floats、そして海が正しく反復するだけのタイミング規律だ。
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/ja_JP. -->

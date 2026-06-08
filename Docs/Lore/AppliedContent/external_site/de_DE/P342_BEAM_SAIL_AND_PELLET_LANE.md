@@ -9,32 +9,18 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Beam Sail and Pellet Lane"
+title: "Strahlsegel und Pellet-Lane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Beam Sail and Pellet Lane
+# Strahlsegel und Pellet-Lane
 
-DE LOC HOLD: Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.
+Schnelle Schiffe in HECTON-8 sind keine kleinen Kometen mit Wundermotor. Sie sind Rechnungen mit Hüllen darum. Ein Strahlsegel nimmt Leistung aus Arrays, die gebaut, gewartet, versichert und ausgerichtet wurden, lange bevor das Schiff in die Lane kommt. Pelletströme werfen Reaktionsmasse mit brutaler Timing-Disziplin in den Pfad; zu dünn und das Fahrzeug hungert, zu dicht und es wird ein Schrotmuster. Das Schiff trägt weiterhin Fusionsstufen, Schildeis, Radiatoren, Pumpen und die Autorität zu entscheiden, wann es sie ausgibt, aber die teure Hälfte des Motors liegt außerhalb der Hülle.
 
-## Scanner
-
-DE LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
-
-## Terminal
-
-DE LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
-
-## Audio
-
-DE LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
-
-## Field Note
-
-DE LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Dieses Design machte den menschlichen Raum weiter, ohne ihn klein zu machen. Aegir ist erreichbar, weil ältere Domänen für Beschleunigungskorridore, Notare, Empfangsstationen und Bremsreserven bezahlt haben. Ein gestrandeter Körper auf HECTON-8 kann eine Notmeldung nicht in diesen Korridor verwandeln. Jemand muss das Catch-Fenster besitzen, Hitzemarge zuteilen, Quarantänegewahrsam akzeptieren und riskieren, aus einem schnellen Bergungslauf schnellen Schrott zu machen. Black Keel überlebt in dieser Ökonomie, weil sie Fenster kauft und Beweise verkauft; der Spieler überlebt, wenn er begreift, dass Entfernung nicht leer ist. Sie ist geplant, beliehen und schon vergeben.
 
 <!-- External Site; generated from P342_BEAM_SAIL_AND_PELLET_LANE/de_DE. -->

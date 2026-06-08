@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LE REGISTRE DES DETTES
 
 > **Source :** Mégacorporation Deep Reach, Division des Ressources Humaines et de l'Actuariat.

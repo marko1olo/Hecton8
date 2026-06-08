@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Marauder Starting Claim"
+title: "Marauder起始索赔"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Marauder Starting Claim
+# Marauder起始索赔
 
-ZH LOC HOLD: The first HECTON-8 claim is personal only in the professional sense. The Marauder knows pressure systems, Deep Reach procedure and the kind of paperwork that turns risk into someone else's debt. Black Keel offers a salvage window because the route is valuable, not because the carrier has become generous. That starting frame keeps the descent grounded: repair the capsule, read the site, recover cargo or proof, and decide how much of the old company language can survive contact with the rooms below.
+Black Keel关于HECTON-8的第一份文件看起来像salvage任务，直到措辞本身开始暴露责任。背债的Marauder接受路线，因为lien真实存在，回收窗口很窄。他在Deep Reach field-systems的过去马上变得重要：压力规程、维护缩写、liability措辞和撤离标签在成为证据之前已经眼熟。Black Keel提供的是通行权，不是仁慈。下降从P-63周边的具体工作开始：修补bathydrop，检查密封，扫描陆架，重启机械，带回货物或证据，并在orbital timing和legal custody围住claim前离开。真正的钩子是职业识别。玩家能看出精致语言和物理损伤讲的是两套故事。
 
 ## Scanner
 
-ZH LOC HOLD: Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+公开claim记录。起始路线确认一名背负债务的Marauder：曾有Deep Reach field-systems经历，bathydrop受损，P-63上方存在Black Keel回收窗口。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+公共档案节点 // 起始索赔。承包者记录：前Deep Reach field-systems专家。当前状态：受lien约束的Marauder。路线：Black Keel recovery claim，下降至P-63陆架，在custody window关闭前交回证据与货物。
 
 ## Audio
 
-ZH LOC HOLD: You are returning to paperwork you know too well.
+你不是来参观HECTON-8。你是在回到自己太熟悉的文书里。
 
 ## Field Note
 
-ZH LOC HOLD: Marauder note: the contract knows your past. That does not make it honest.
+Marauder笔记：合同知道你的过去。这并不让它诚实。
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/zh_CN. -->

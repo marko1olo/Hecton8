@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import subprocess
 import sys
@@ -17,6 +18,10 @@ ROOT = Path(__file__).resolve().parents[1]
 INTAKE_ROOT = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607"
 ATLAS_ROOT = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases"
 ATLAS_BATCH = "Batch20260607_MicroPanel"
+WATERMARK_PROFILES = {
+    "transparent_pressure_glass_edge_wear": (0.883, 0.883, 0.16),
+    "salvage_worn_repair_metal": (0.735, 0.745, 0.18),
+}
 
 INPUTS = (
     {
@@ -127,10 +132,21 @@ INPUTS = (
         "heightScale": 0.007,
     },
     {
-        "kind": "reject",
+        "kind": "single",
         "path": r"C:\Users\danat\Downloads\Orange Safety Composite Panel.png",
         "id": "orange_safety_composite_panel",
-        "reason": "Prompt drift: output is dark ribbed metal, not orange safety composite.",
+        "title": "Orange Safety Composite Panel",
+        "surfaceClass": "safety_composite_panel",
+        "role": "orange-red polymer composite for readable safety accents on tools and survival equipment",
+        "heldToolAllowed": True,
+        "stationPropAllowed": True,
+        "salvageAllowed": False,
+        "worldPanelAllowed": False,
+        "tilingScale": 1.15,
+        "metallic": 0.0,
+        "smoothness": 0.30,
+        "normalScale": 0.46,
+        "heightScale": 0.003,
     },
     {
         "kind": "single",
@@ -182,22 +198,13 @@ def clamp_rect(x0: int, y0: int, size: int, width: int, height: int) -> tuple[in
     return x0, y0, min(width, x0 + size), min(height, y0 + size)
 
 
-def feathered_diamond_mask(size: tuple[int, int]) -> Image.Image:
+def feathered_patch_mask(size: tuple[int, int]) -> Image.Image:
     width, height = size
     mask = Image.new("L", size, 0)
     draw = ImageDraw.Draw(mask)
-    cx = width * 0.52
-    cy = height * 0.52
-    rx = width * 0.43
-    ry = height * 0.43
-    points = (
-        (cx, cy - ry),
-        (cx + rx, cy),
-        (cx, cy + ry),
-        (cx - rx, cy),
-    )
-    draw.polygon(points, fill=255)
-    return mask.filter(ImageFilter.GaussianBlur(radius=max(10, int(width * 0.10))))
+    margin = max(4, int(min(width, height) * 0.08))
+    draw.rounded_rectangle((margin, margin, width - margin, height - margin), radius=max(8, margin), fill=255)
+    return mask.filter(ImageFilter.GaussianBlur(radius=max(14, int(width * 0.08))))
 
 
 def candidate_score(target: Image.Image, candidate: Image.Image) -> float:
@@ -215,21 +222,22 @@ def candidate_score(target: Image.Image, candidate: Image.Image) -> float:
     return float(np.mean(np.abs(target_sample.mean(axis=0) - cand_sample.mean(axis=0))) + np.mean(np.abs(target_sample.std(axis=0) - cand_sample.std(axis=0))) * 0.35)
 
 
-def repair_watermark(image: Image.Image) -> Image.Image:
+def repair_watermark(image: Image.Image, profile: tuple[float, float, float] | None = None) -> Image.Image:
     base = image.convert("RGB")
     width, height = base.size
-    size = int(min(width, height) * 0.125)
-    center_x = int(width * 0.944)
-    center_y = int(height * 0.944)
+    center_u, center_v, size_fraction = profile or (0.944, 0.944, 0.125)
+    size = int(min(width, height) * size_fraction)
+    center_x = int(width * center_u)
+    center_y = int(height * center_v)
     x0, y0, x1, y1 = clamp_rect(center_x - size // 2, center_y - size // 2, size, width, height)
     patch_size = (x1 - x0, y1 - y0)
     target = base.crop((x0, y0, x1, y1))
 
     offsets = (
-        (-size - int(width * 0.025), 0),
+        (-size - int(width * 0.035), 0),
         (-size * 2, 0),
-        (0, -size - int(height * 0.025)),
-        (-size - int(width * 0.025), -size - int(height * 0.025)),
+        (0, -size - int(height * 0.035)),
+        (-size - int(width * 0.035), -size - int(height * 0.035)),
         (-int(width * 0.18), -int(height * 0.08)),
     )
     best_patch = None
@@ -247,19 +255,110 @@ def repair_watermark(image: Image.Image) -> Image.Image:
         return base
 
     donor = best_patch.filter(ImageFilter.GaussianBlur(radius=0.35))
-    mask = feathered_diamond_mask(patch_size)
+    mask = feathered_patch_mask(patch_size)
     repaired = base.copy()
     repaired.paste(donor, (x0, y0), mask)
     return repaired
 
 
-def save_jpeg(image: Image.Image, path: Path, size: int, quality: int) -> Image.Image:
+def save_jpeg(image: Image.Image, path: Path, size: int, quality: int, max_bytes: int | None = None) -> Image.Image:
     output = image.convert("RGB")
     if size > 0 and max(output.size) > size:
         output.thumbnail((size, size), Image.Resampling.LANCZOS)
     path.parent.mkdir(parents=True, exist_ok=True)
-    output.save(path, "JPEG", quality=quality, optimize=True, progressive=True, subsampling=0)
+    if max_bytes is None:
+        output.save(path, "JPEG", quality=quality, optimize=True, progressive=True, subsampling=0)
+        return output
+
+    best_blob: bytes | None = None
+    for subsampling in (0, 1, 2):
+        for current_quality in range(quality, 70, -4):
+            buffer = io.BytesIO()
+            output.save(
+                buffer,
+                "JPEG",
+                quality=current_quality,
+                optimize=True,
+                progressive=True,
+                subsampling=subsampling,
+            )
+            blob = buffer.getvalue()
+            best_blob = blob
+            if len(blob) <= max_bytes:
+                path.write_bytes(blob)
+                return output
+
+    if best_blob is None:
+        output.save(path, "JPEG", quality=quality, optimize=True, progressive=True, subsampling=0)
+    else:
+        path.write_bytes(best_blob)
     return output
+
+
+def seam_score(image: Image.Image, strip: int = 18) -> float:
+    rgb = image.convert("RGB")
+    data = np.asarray(rgb, dtype=np.float32) / 255.0
+    height, width, _ = data.shape
+    strip = max(4, min(strip, width // 8, height // 8))
+    left = data[:, :strip, :]
+    right = data[:, -strip:, :][:, ::-1, :]
+    top = data[:strip, :, :]
+    bottom = data[-strip:, :, :][::-1, :, :]
+    lr = float(np.mean(np.abs(left - right)))
+    tb = float(np.mean(np.abs(top - bottom)))
+    return (lr + tb) * 50.0
+
+
+def repair_tile_seams(
+    image: Image.Image,
+    border_fraction: float = 0.075,
+    strength_multiplier: float = 1.0,
+) -> Image.Image:
+    rgb = image.convert("RGB")
+    data = np.asarray(rgb, dtype=np.float32).copy()
+    height, width, _ = data.shape
+    margin = max(8, min(int(min(width, height) * border_fraction), min(width, height) // 4))
+
+    for index in range(margin):
+        strength = ((1.0 - (index / float(margin))) ** 2) * strength_multiplier
+        left_index = index
+        right_index = width - 1 - index
+        average = (data[:, left_index, :] + data[:, right_index, :]) * 0.5
+        data[:, left_index, :] = data[:, left_index, :] * (1.0 - strength) + average * strength
+        data[:, right_index, :] = data[:, right_index, :] * (1.0 - strength) + average * strength
+
+    for index in range(margin):
+        strength = ((1.0 - (index / float(margin))) ** 2) * strength_multiplier
+        top_index = index
+        bottom_index = height - 1 - index
+        average = (data[top_index, :, :] + data[bottom_index, :, :]) * 0.5
+        data[top_index, :, :] = data[top_index, :, :] * (1.0 - strength) + average * strength
+        data[bottom_index, :, :] = data[bottom_index, :, :] * (1.0 - strength) + average * strength
+
+    return Image.fromarray(np.uint8(np.clip(data, 0.0, 255.0)), "RGB")
+
+
+def prepare_tileable_base(image: Image.Image, threshold: float) -> tuple[Image.Image, float, float, bool]:
+    before = seam_score(image)
+    target = min(threshold, 1.55)
+    if before <= target:
+        return image.convert("RGB"), before, before, False
+
+    repaired = repair_tile_seams(image)
+    after = seam_score(repaired)
+    best = repaired
+    best_after = after
+    if best_after > target:
+        for border_fraction in (0.10, 0.125, 0.15):
+            candidate = repair_tile_seams(repaired, border_fraction=border_fraction, strength_multiplier=1.0)
+            candidate_score_value = seam_score(candidate)
+            if candidate_score_value < best_after:
+                best = candidate
+                best_after = candidate_score_value
+            if best_after <= target:
+                break
+
+    return best, before, best_after, True
 
 
 def height_from_base(base: Image.Image) -> Image.Image:
@@ -355,10 +454,10 @@ def process(args: argparse.Namespace) -> int:
         if not source.exists():
             raise FileNotFoundError(str(source))
         with Image.open(source) as image:
-            repaired = repair_watermark(image)
+            repaired = repair_watermark(image, WATERMARK_PROFILES.get(spec["id"]))
 
         cleaned_source = source_root / f"TX_GM_{spec['id']}_Cleaned_2k.jpg"
-        save_jpeg(repaired, cleaned_source, 2048, args.source_quality)
+        save_jpeg(repaired, cleaned_source, 2048, args.source_quality, args.source_max_mb * 1024 * 1024)
         processed += 1
 
         if spec["kind"] == "atlas":
@@ -377,13 +476,15 @@ def process(args: argparse.Namespace) -> int:
                 str(ATLAS_ROOT),
                 "--max-tile-size",
                 str(args.atlas_tile_size),
+                "--margin-fraction",
+                "0.0",
             ]
             subprocess.run(cmd, cwd=str(ROOT), check=True)
             continue
 
         if spec["kind"] == "reject":
             reject_path = rejected_root / f"TX_GM_{spec['id']}_Rejected_Cleaned_2k.jpg"
-            save_jpeg(repaired, reject_path, 2048, args.source_quality)
+            save_jpeg(repaired, reject_path, 2048, args.source_quality, args.source_max_mb * 1024 * 1024)
             rejected.append(
                 {
                     "id": spec["id"],
@@ -397,7 +498,8 @@ def process(args: argparse.Namespace) -> int:
         asset_id = f"gemini_20260607_{spec['id']}"
         asset_dir = singles_root / asset_id
         base_path = asset_dir / f"TX_GM_{asset_id}_BaseColor.jpg"
-        base = save_jpeg(repaired, base_path, args.single_size, args.base_quality)
+        tileable, seam_before, seam_after, seam_repaired = prepare_tileable_base(repaired, args.seam_threshold)
+        base = save_jpeg(tileable, base_path, args.single_size, args.base_quality, args.base_max_mb * 1024 * 1024)
         maps = {"BaseColor": display_path(base_path)}
         maps.update(save_maps(base, spec, asset_dir, asset_id))
 
@@ -421,6 +523,9 @@ def process(args: argparse.Namespace) -> int:
                 "heightScale": spec["heightScale"],
                 "provisionalPbrMaps": True,
                 "watermarkRepaired": True,
+                "seamScoreBefore": round(seam_before, 4),
+                "seamScoreAfter": round(seam_after, 4),
+                "seamRepaired": seam_repaired,
                 "maps": maps,
             }
         )
@@ -462,6 +567,9 @@ def main() -> int:
     parser.add_argument("--atlas-tile-size", type=int, default=512)
     parser.add_argument("--source-quality", type=int, default=90)
     parser.add_argument("--base-quality", type=int, default=86)
+    parser.add_argument("--source-max-mb", type=float, default=1.5)
+    parser.add_argument("--base-max-mb", type=float, default=0.75)
+    parser.add_argument("--seam-threshold", type=float, default=2.8)
     return process(parser.parse_args())
 
 

@@ -9,24 +9,24 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "PT LOC HOLD: Aegir Route and Ships"
+title: "Rota Aegir e Naves"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Aegir Route and Ships
+# Rota Aegir e Naves
 
-PT LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegir é perto o suficiente para ser explorado e longe o suficiente para ser abandonado. Nenhum motor supraluz cruza a lacuna, e nenhum ansible leva ordens à frente da física. Toda mensagem, contrato e pedido de resgate passa por atraso: pacotes de sondas, custódia de relé, agendas de feixe, frete pellet-fusion, janelas de transferência e clima indiferente à urgência humana.
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+O primeiro tráfego de Aegir não foi humano. Sondas-agulha mapearam o sistema da anã quente e devolveram dados minerais, radiológicos e orbitais suficientes para justificar investimento mais pesado. Depois vieram pacotes de vela de feixe, carga mais lenta e massa seed-ship que precisou frear dentro de uma rede de infraestrutura planejada anos antes de qualquer trabalhador ver o oceano. Quando a Deep Reach chegou a HECTON-8, a rota já pertencia a instituições: carriers, seguradoras, escritórios de domínio, pools de recuperação e empresas treinadas em tornar a propriedade difícil de nomear.
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+A Black Keel vive dentro dessa ambiguidade. Não é nave militar nem serviço de resgate. É uma plataforma de claim com massa de docagem, embarcações tender, livros de dívida e autoridade de salvage. Sua cadeia contratual permite que a Deep Reach pressione sem aparecer como a mão direta na escotilha. A nave só pode extrair uma pessoa, amostra ou carga selada quando massa, clima, órbita, margem térmica e custódia se alinham.
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+O bathydrop danificado vira, portanto, uma fronteira séria. Um impacto de descida pode deixar a casca íntegra o bastante para sobreviver enquanto arruína tolerâncias de subida: compressão de selos, retorno acústico, tabelas de guiagem, buffer de energia e handshake de quarentena. A cápsula vira abrigo e prova ao mesmo tempo: certifica chegada, mas não fuga.
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+No sistema Aegir, distância não é fundo. É por isso que ajuda chega como papelada antes de chegar como hardware.
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/pt_BR. -->

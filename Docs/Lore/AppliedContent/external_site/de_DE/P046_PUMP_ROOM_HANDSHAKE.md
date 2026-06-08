@@ -8,33 +8,33 @@ biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pumpenraum-Handschlag"
+spoiler_tier: 1
+title: "Pumpenraum-Ventilhandshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pumpenraum-Handschlag
+# Pumpenraum-Ventilhandshake
 
-Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive.
+Pumpenräume auf HECTON-8 sind keine einfachen Abflüsse. Lokale Ventile, Handräder und müde Rückschlagventile zwingen zur Frage, wohin das Wasser nach dem trockenen Boden geht. Eine laufende Pumpe kann eine Tür öffnen, einen Korridor wecken, Sonarrauschen erzeugen und den Rückweg zum nächsten Problem machen.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+Lokale Sumpfpumpe akzeptiert Handradeingabe. Ansaugkorb ist mit Kapselschaum verschmutzt; Auslasspuls belastet Rückkehrkorridor B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 SUMP CONTROL / LOKALER HANDSHAKE: Handradautorität akzeptiert. Fernübersteuerung verweigert. Ansaugfluss mit niedriger Rate wiederhergestellt. Auslassdruck steigt in RETURN CORRIDOR B; Neustart nur nach Prüfung der nachgeschalteten Luke.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+Ventil hat gegriffen. Der Auslass klopft. Nenn es noch nicht sicher.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Ein trockener Pumpenraum kann den Rückweg fluten. Hör auf Wasserschlag am Auslass, bevor du das Ventil ausbaust.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/de_DE. -->

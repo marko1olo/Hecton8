@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Relay Message Lag"
+spoiler_tier: 1
+title: "Opóźnienie wiadomości przekaźnikowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# Opóźnienie wiadomości przekaźnikowych
 
-PL LOC HOLD: Relay Message Lag makes communication a route system, not a magic voice channel.
-
-## Scanner
-
-PL LOC HOLD: A message can be legally binding and still arrive too late to save air.
-
-## Terminal
-
-PL LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
-
-## Audio
-
-PL LOC HOLD: The reply is late. The lien is current.
-
-## Field Note
-
-PL LOC HOLD: No ansible means truth moves as freight.
+Opóźnienie przekaźnika pozwala HECTON-8 otrzymywać władzę bez opieki. Pakiet może nieść prawo, dług, własność albo ostrzeżenie przez godziny, dni lub lata, ale nie może sprowadzić rąk do zalanego pokoju. Ten podział jest główną presją komunikacji: zdalne systemy pozostają potężne, bo napisano je wcześnie, wcześnie ustawiono w kolejce i wyceniono tak, by przetrwały dystans. Współczucie przychodzi jako osoba; kontrakt przychodzi jako dane.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/pl_PL. -->

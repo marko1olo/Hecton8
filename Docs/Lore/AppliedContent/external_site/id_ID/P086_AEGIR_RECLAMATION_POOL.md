@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Pool Reklamasi Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Pool Reklamasi Aegir
 
-ID LOC HOLD: Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
-
-## Scanner
-
-ID LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
-
-## Terminal
-
-ID LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
-
-## Audio
-
-ID LOC HOLD: The pool owns the route. You only rent the answer.
-
-## Field Note
-
-ID LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+Pool Reklamasi Aegir membuat pemain tetap sendirian di HECTON-8 sambil tetap membuat kedatangan terasa masuk akal. Tidak ada marauder kecil yang memiliki Black Keel secara langsung. Tender carrier itu milik sistem klaim bersama untuk infrastruktur mati, kargo sengketa, dan dunia yang terlalu mahal bagi kru biasa. Stempel pool dapat membeli akses ke rute, tetapi juga menyerahkan rute itu kepada arbitrase. Begitu operator berada di bawah garis air, setiap permintaan bersaing dengan custody payload, cadangan karantina, nilai bukti, dan jendela bahan bakar. Ketakutan pool bersifat prosedural. Ia bisa mengirim bantuan dan tetap menolak penyelamatan, karena dalam hukum klaim Aegir bantuan hanya satu layanan yang dapat ditagih di antara banyak layanan lain.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/id_ID. -->

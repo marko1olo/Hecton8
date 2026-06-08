@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Łańcuch długu relay custody
 
-Relay custody zmienia logistykę w presję: pomoc niesie też dług, priorytety i władzę korporacji.
+Relay custody zmienia logistykę kosmiczną w presję. Pomoc może nadejść, ale trasa, która niesie pomoc, niesie też dług, haki priorytetu i władzę korporacji.
 
 ## Scanner
 

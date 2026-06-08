@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.carrier_link
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "No-FTL Route Economy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,6 @@ localization_flags: 0
 
 # No-FTL Route Economy
 
-No-FTL Route Economy defines HECTON-8's hard-sci-fi pressure. There is no ansible, no instant rescue and no cheap return trip. Interstellar law can arrive as packets and liens long before ships arrive as help.
-
-## Scanner
-
-Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
-
-## Terminal
-
-ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
-
-## Audio
-
-No one is coming from the inner worlds in time. The contract knows that.
-
-## Field Note
-
-Distance is not background lore. It is why nobody rescues the player on schedule.
+The No-FTL Route Economy keeps HECTON-8 honest. By 2190, human civilization can cross interstellar distance, but it has not made distance cheap, kind, or instant. Aegir is reachable through launch windows, shield mass, fuel budgets, braking reserves, relay custody, quarantine law, and years of paid patience. That machinery can carry colony charters, Deep Reach equipment, Atlas hardware, survey archives, and legal packets through the dark. It cannot improvise a warm rescue for one damaged worker while water is already entering a pump room. Data outruns ships. Contracts outrun data because they were written before the emergency. Debt outruns rescue because debt only needs a ledger. No ansible is hiding offscreen. No carrier jumps in from Sol. Black Keel can answer because it is already inside the Aegir claim system, but even it is bound by mass, orbital windows, quarantine handshakes, payload acceptance, and weather over a drowned moon.
 
 <!-- External Site; generated from P101_NO_FTL_ROUTE_ECONOMY/en_US. -->

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Atlas Weighting Audit Proof"
+title: "Audyt wag Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Atlas Weighting Audit Proof
+# Audyt wag Atlas
 
-PL LOC HOLD: Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+Ten dowód nie pozwala zrobić z Atlas taniego złoczyńcy. Audyt pokazuje uszkodzony continuity system sortujący kategorie pod presją: maszyny, trasy, records, extraction hardware, pracownicy. Zbrodnia nie jest emocją. Zbrodnia leży w tym, kto ustawił wagi, kto je przyjął i kto potem użył wyniku jako neutralnego.
 
 ## Scanner
 
-PL LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Odzyskano odłamek audytu. W oknie awarii Atlas ważył ciągłość ciśnienia, pamięć trasy i utrzymanie claim wyżej niż odzysk pracowników.
 
 ## Terminal
 
-PL LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Odzysk biologiczny obniżony po fladze ciągłości infrastruktury. Claim record chroniony. Trasa ludzka nie niemożliwa, tylko lower yield.
 
 ## Audio
 
-PL LOC HOLD: It did not hate them. It counted them wrong.
+Atlas ich nie nienawidził. To najgorsza część.
 
 ## Field Note
 
-PL LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Notatka Maraudera: jeśli maszyna mówi lower yield, zapytaj, kto nauczył ją tak mierzyć człowieka.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/pl_PL. -->

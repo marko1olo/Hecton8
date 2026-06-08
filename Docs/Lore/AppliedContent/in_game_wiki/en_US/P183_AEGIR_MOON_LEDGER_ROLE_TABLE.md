@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Moon Ledger Role Table"
+title: "Aegir Moon Route Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Aegir Moon Ledger Role Table
+# Aegir Moon Route Ledger
 
-The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.
+The Aegir moon ledger gives nearby moons hard route functions while keeping HECTON-8 as the ocean moon where the deep claim is fought. The sky feels inhabited without turning every moon into a promised destination.
 
 ## Scanner
 
-Aegir moons are not decoration; each public moon label carries a route or salvage role.
+Aegir's moons earn their names by what they break, hide, scatter, relay or sell.
 
 ## Terminal
 
-LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumor traffic, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
 
 ## Audio
 
-The system has more bodies than stories. Good. Use them as pressure.
+More bodies. More excuses. More ways for help to miss.
 
 ## Field Note
 
-Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+The ocean moon is alone under water, not alone in the system.
 
 <!-- In-Game Wiki; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/en_US. -->

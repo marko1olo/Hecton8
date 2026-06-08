@@ -9,32 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "Kit de pompe de cale manuelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# Kit de pompe de cale manuelle
 
-FR LOC HOLD: Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile.
+La pompe de cale manuelle est le premier verbe de survie parce qu'elle refuse le drame. Pas de powered panel, pas d'interface héroïque, aucune promesse que la pièce est sûre. Le joueur nettoie une admission bouchée, sent la poignée résister et apprend que l'eau doit recevoir une sortie honnête.
 
-## Scanner
-
-FR LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
-
-## Terminal
-
-FR LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
-
-## Audio
-
-FR LOC HOLD: Hand work first. Electricity second. Breathing always.
-
-## Field Note
-
-FR LOC HOLD: First tool must teach survival before upgrade fantasy.
+Ce petit outil donne le ton de HECTON-8. Les réparations commencent par les mains, la pression et la conséquence. Si la pompe renvoie un coup, la pièce répond. Si la sortie est mauvaise, la survie déplace seulement le danger ailleurs.
 
 <!-- External Site; generated from P111_MANUAL_BILGE_PUMP_KIT/fr_FR. -->

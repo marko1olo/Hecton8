@@ -9,32 +9,35 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Atlas-6 Spoiler-Gated-Artikel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Atlas-6 Spoiler-Gated-Artikel
 
-DE LOC HOLD: Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.
+Atlas-6 ist absichtlich spoiler-gesperrt, weil es die Bedeutung von HECTON-8 verändert, sobald der Spieler genug Beweise hat. Vor diesem Punkt darf öffentlicher Text eine beschädigte industrielle Intelligenz beschreiben, die mit Wartung, Klassifikation, Reparaturlogik und langfristigen Ozeansystemen verbunden ist. Er darf Atlas nicht zu einer bösen Maschine, einem geheimen Gott oder einem einfachen Opfer flachdrücken. Die wichtige Form ist durch Spiel verdiente Mehrdeutigkeit. Atlas kann eine Route bewahren und trotzdem Menschen schaden. Es kann Infrastruktur reparieren und trotzdem Schaden falsch klassifizieren. Es kann an Deep-Reach-Verfahren gebunden sein, ohne identisch mit Deep-Reach-Absicht zu werden. Der Artikel sollte erst öffnen, wenn der Spieler die ertrunkenen Räume, Arbeiterbeweise, Routensprache und Maschinenspuren zusammen gesehen hat. Atlas ist nicht die Antwort der Geschichte. Atlas ist der Punkt, an dem der Spieler entscheiden muss, welche Antwort noch ehrlich wäre.
 
 ## Scanner
 
-DE LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+Atlas nicht als Monster-Enthüllung öffnen. Sperren, bis der Spieler gesehen hat, dass Reparatur, Klassifikation und Schaden dieselbe Maschine teilen.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+ÖFFENTLICHE ARTIKELSTUFE / ATLAS-6
+vor Gate erlaubt: beschädigte industrielle Intelligenz, Wartungslogik, Ozeanverflechtung, ethische Mehrdeutigkeit
+bis Entdeckung gesperrt: finale Payload-Route, Receiver-Folge, Abschaltungs- oder Bewahrungsargument
+Redaktionsnotiz: kein Evil-AI-Framing; Frage des gebrochenen Guardian erst nach Beweis.
 
 ## Audio
 
-DE LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+Wenn du es zu früh benennst, wird es ein Schurke. Wenn du wartest, wird es eine Frage.
 
 ## Field Note
 
-DE LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+Sperr den Namen, bis der Spieler genug Rost an den Händen hat, um mit ihm zu streiten.
 
 <!-- In-Game Wiki; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/de_DE. -->

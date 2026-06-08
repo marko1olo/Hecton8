@@ -25,6 +25,7 @@ namespace Hecton8.Physiology
         private const ulong DumpMagic = 0x5333323350524553UL; // S323PRES
         private const uint DumpVersion = 1u;
         private const float SlowTickNominalSeconds = 0.1f;
+        private const double DefaultSeaLevelAupY = 14.02d;
         private static readonly ulong JobMutationGuardMask =
             MutationGuardBit(ShinobuSuitIntegrityConstants.StateBuffer) |
             MutationGuardBit(ShinobuSuitIntegrityConstants.ProfileBuffer) |
@@ -60,7 +61,7 @@ namespace Hecton8.Physiology
 
         [Header("AUP Pressure")]
         [Tooltip("Sea-level Y in AUP meters. Depth is seaLevelAup.y - playerAup.y in double precision.")]
-        [SerializeField] private double seaLevelAupY;
+        [SerializeField] private double seaLevelAupY = DefaultSeaLevelAupY;
 
         [Tooltip("Use the 0m..8000m synthetic AUP pressure profile when no player AUP is available.")]
         [SerializeField] private bool enableEmergencyMockPressureProfile = true;
@@ -238,9 +239,10 @@ namespace Hecton8.Physiology
             try
             {
                 tuningArray[0] = tuning;
-                double3 playerDouble = hasPlayerAup ? _lastPlayerAupDouble : new double3(0d, seaLevelAupY, 0d);
+                double resolvedSeaLevelAupY = ResolveSeaLevelAupY(seaLevelAupY);
+                double3 playerDouble = hasPlayerAup ? _lastPlayerAupDouble : new double3(0d, resolvedSeaLevelAupY, 0d);
                 AbsoluteUniversePosition playerAup = hasPlayerAup ? _lastPlayerAup : AbsoluteUniversePosition.FromAbsolutePosition(playerDouble);
-                double3 seaLevelAup = new double3(playerDouble.x, seaLevelAupY, playerDouble.z);
+                double3 seaLevelAup = new double3(playerDouble.x, resolvedSeaLevelAupY, playerDouble.z);
                 long scheduleTimestamp = Stopwatch.GetTimestamp();
 
                 JobHandle handle = new EvaluateHydrostaticPressureJob
@@ -396,7 +398,7 @@ namespace Hecton8.Physiology
                 return false;
 
             SuitIntegrityTuningDTO tuning = ShinobuSuitIntegrityJobMath.SanitizeTuning(tuningArray[0]);
-            double3 seaLevel = new double3(0d, seaLevelAupY, 0d);
+            double3 seaLevel = new double3(0d, ResolveSeaLevelAupY(seaLevelAupY), 0d);
             if (System.Threading.Interlocked.CompareExchange(ref s_mockAupScratchBusy, 1, 0) != 0)
                 return false;
 
@@ -681,6 +683,15 @@ namespace Hecton8.Physiology
             }
 
             return count;
+        }
+
+        private static double ResolveSeaLevelAupY(double candidateSeaLevelAupY)
+        {
+            return math.isfinite(candidateSeaLevelAupY) &&
+                   math.abs(candidateSeaLevelAupY) > 0.0001d &&
+                   math.abs(candidateSeaLevelAupY) <= 1000d
+                ? candidateSeaLevelAupY
+                : DefaultSeaLevelAupY;
         }
 
         private static void CommitMockHydrostaticPressure(

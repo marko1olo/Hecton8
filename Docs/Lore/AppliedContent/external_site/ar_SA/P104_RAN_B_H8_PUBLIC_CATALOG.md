@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "AR LOC HOLD: RAN-B:H8 Public Catalog"
+spoiler_tier: 1
+title: "الكتالوج العام RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: RAN-B:H8 Public Catalog
+# الكتالوج العام RAN-B:H8
 
-AR LOC HOLD: RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name.
-
-## Scanner
-
-AR LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
-
-## Terminal
-
-AR LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
-
-## Audio
-
-AR LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
-
-## Field Note
-
-AR LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+RAN-B:H8 هو الاسم عندما يكون القمر إحداثية. HECTON-8 هو الاسم عندما يكون القمر جرحا. هذا الانقسام مهم لأن المكان نفسه يجب أن يعمل في جداول فلكية، نماذج تأمين، كلام العمال، death ledgers وBlack Keel custody. يجعل الفهرس العام الوجهة نظيفة وقابلة للفرز؛ أما claim name فيبقي بقايا البشر عالقة. يجب أن يجعل اللور الجيد اللاعب يشعر بالاسمين معا: الجسم المفهرس ومكان العمل الغارق.
 
 <!-- External Site; generated from P104_RAN_B_H8_PUBLIC_CATALOG/ar_SA. -->

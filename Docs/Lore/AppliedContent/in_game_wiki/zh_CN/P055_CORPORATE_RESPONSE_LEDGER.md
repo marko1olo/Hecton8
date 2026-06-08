@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "公司响应账本"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# 公司响应账本
 
-CN LOC HOLD: Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+账本是Black Keel在无人即兴处理时的语言。它能承认危险、打开队列、保留索赔，同时仍把操作员留在资产规则之后。玩家应该把响应账本当作有用信号，也当作已变成可执行代码的敌意文书。
 
 ## Scanner
 
-CN LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+每个回复都以合同语言到达：资产托管、责任锁、样本路线、船体风险，然后才是操作员回收。
 
 ## Terminal
 
-CN LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+响应等级：资产保存。操作员回收附加在样本托管、责任封印、船体审计和付款路线之后。
 
 ## Audio
 
-CN LOC HOLD: The reply was automatic. The rescue was conditional.
+回复是自动的。救援是有条件的。
 
 ## Field Note
 
-CN LOC HOLD: Immediate response is not immediate rescue.
+立即响应不是立即救援。
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/zh_CN. -->

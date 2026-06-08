@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "أسر شركة: إنقاذ نظيف"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# أسر شركة: إنقاذ نظيف
 
-AR LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call.
+ينجح أسر الشركة لأنه يبدأ كمساعدة. الإشارة نظيفة، والالتقاط مهني، والغرفة فيها هواء. ثم يظهر ترتيب العمليات: الإحداثيات أولا، ثم XO custody، ثم وصول Atlas، ورفاه المتعاقد بعد المراجعة.
 
-## Scanner
-
-AR LOC HOLD: Rescue offer. Payload first. Witness second.
-
-## Terminal
-
-AR LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
-
-## Audio
-
-AR LOC HOLD: The clean room is not for you.
-
-## Field Note
-
-AR LOC HOLD: A rescue that demands silence is a capture with better lighting.
+يتوقف المحيط عن سحق اللاعب، لكن Deep Reach يبدأ حفظ القصة. تُختم الشهادة بلغة التلوث، وتتحرك custody الخاصة بالـ payload قبل التفريغ الطبي، وكل اسم حمله اللاعب يتحول إلى شاشة مسؤولية. هذا ليس موتا. إنه بقاء داخل آلة احتاجت إلى الصمت.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/ar_SA. -->

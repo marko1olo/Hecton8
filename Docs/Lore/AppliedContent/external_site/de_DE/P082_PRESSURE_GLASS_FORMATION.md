@@ -8,33 +8,19 @@ biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+spoiler_tier: 1
+title: "Bildung von Druckglas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Bildung von Druckglas
 
-DE LOC HOLD: Pressure Glass Formation turns Xenon-Omega into hard-sci-fi material ecology instead of magic ore. It is a pressure-made substrate tied to Atlas, containment and computation.
+Druckglas ist der technische Name hinter Marauder blue debt und Deep Reachs Xenon-Omega-Sprache. Es entsteht dort, wo Druck, Edelgastaschen, Sole, Mineralien, Hitze und veränderte Biologie zusammentreffen.
 
-## Scanner
-
-DE LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
-
-## Terminal
-
-DE LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
-
-## Audio
-
-DE LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
-
-## Field Note
-
-DE LOC HOLD: It is not ore. It is a process that remembers where it was made.
+Die Bildung von Druckglas macht Xenon-Omega zu materieller Ökologie harter Science-Fiction, nicht zu magischem Erz. Das ist kein Erz. Es ist ein Prozess, der sich erinnert, wo er entstanden ist.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/de_DE. -->

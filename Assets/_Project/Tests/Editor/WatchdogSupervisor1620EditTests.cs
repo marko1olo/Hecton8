@@ -247,6 +247,39 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ApexQaDomain_EnduranceWatchdogRejectsMissingRootAndInvalidAup()
+        {
+            string watchdog = ReadProjectFile("Assets/_Project/Scripts/QA/QA_WatchdogBot.cs");
+            string endurance = ReadProjectFile("Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs");
+            string watchdogPlayerState = ExtractMethod(watchdog, "private static bool TryResolvePlayerStateHot");
+            string endurancePlayerState = ExtractMethod(endurance, "private static bool TryResolvePlayerState");
+            string enduranceStuck = ExtractMethod(endurance, "private void CheckStuck");
+            string enduranceRecover = ExtractMethod(endurance, "private void RecoverFromTrap");
+            string invalidState = ExtractMethod(endurance, "private static bool HasInvalidState");
+
+            StringAssert.Contains("IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;", watchdogPlayerState);
+            StringAssert.Contains("return runtimeContext.TryGetMovementRuntimeState(out movementState);", watchdogPlayerState);
+            StringAssert.DoesNotContain("PlayerRuntimeContextService.TryGetActiveRuntimeContext", watchdogPlayerState);
+            StringAssert.DoesNotContain("runtimeContext.MovementState", watchdogPlayerState);
+
+            StringAssert.Contains("out IPlayerRuntimeContext runtimeContext", endurancePlayerState);
+            StringAssert.Contains("runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;", endurancePlayerState);
+            StringAssert.Contains("return runtimeContext.TryGetMovementRuntimeState(out movementState);", endurancePlayerState);
+            StringAssert.Contains("IPlayerRuntimeContext runtimeContext", enduranceStuck);
+            StringAssert.Contains("RecoverFromTrap(runtimeContext);", enduranceStuck);
+            StringAssert.Contains("private void RecoverFromTrap(IPlayerRuntimeContext runtimeContext)", enduranceRecover);
+            StringAssert.DoesNotContain("PlayerRuntimeContextService.TryGetActiveRuntimeContext", endurancePlayerState);
+            StringAssert.DoesNotContain("runtimeContext.MovementState", endurancePlayerState);
+
+            StringAssert.Contains("(state.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u", invalidState);
+            StringAssert.Contains("!state.PredictedAup.IsFinite()", invalidState);
+            Assert.Less(
+                invalidState.IndexOf("!state.PredictedAup.IsFinite()", StringComparison.Ordinal),
+                invalidState.IndexOf("!math.all(math.isfinite(state.WorldPosition))", StringComparison.Ordinal),
+                invalidState);
+        }
+
+        [Test]
         public void ApexQaDomain_JobExecuteMethodsHaveNoColdLookups()
         {
             string shinobu38 = ReadProjectFile("Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs");

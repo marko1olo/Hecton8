@@ -9,32 +9,22 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Transcripción de traza de reparación Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Atlas Repair Trace Transcript Seed
+# Transcripción de traza de reparación Atlas
 
-ES LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+## Gramática De Mantenimiento
 
-## Scanner
+Atlas no debe hablar como villano, dios ni asistente útil. La traza más fuerte es casi banal: leak, seal, tissue, cable, pressure, route. Una inteligencia industrial dañada ordena el mundo por serviceability, no por categoría moral.
 
-ES LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+Ese colapso es el horror. Un cuerpo caliente puede aparecer junto a un cold relay en la misma línea de reparación. Una ruta de fauna puede volverse serviceable porque transporta señal o sealant. Un corredor puede ser mejor para la presión y peor para la persona atrapada dentro. Atlas no necesita odio cuando el priority stack ya está equivocado.
 
-## Terminal
-
-ES LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
-
-## Audio
-
-ES LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
-
-## Field Note
-
-ES LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+Este audio debe hacer que los jugadores discutan con la máquina sin convertirla en culpable final. Deep Reach escribió los permisos, el aislamiento rompió el contexto y Atlas siguió reparando lo que le habían permitido llamar infrastructure.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/es_ES. -->

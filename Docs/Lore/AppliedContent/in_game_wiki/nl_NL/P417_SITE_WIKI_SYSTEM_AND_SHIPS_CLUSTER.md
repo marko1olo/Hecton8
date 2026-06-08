@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "NL LOC HOLD: Aegir Route and Ships"
+title: "Aegir-route en Schepen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Aegir Route and Ships
+# Aegir-route en Schepen
 
-NL LOC HOLD: Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
+Route- en schepenhub: menselijke domeinen zonder FTL, het Aegir-maansysteem, Black Keel-bewaringsgrenzen, transfervensters en een beschadigde bathydrop die aankomst bewijst maar ontsnapping niet certificeert.
 
 ## Scanner
 
-NL LOC HOLD: Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
+Publicatiehub: geen FTL, Aegir-routeschema, Black Keel-grenzen en de harde reden waarom redding niet op verzoek arriveert.
 
 ## Terminal
 
-NL LOC HOLD: SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
+SITE-NAV: naaldsondes, bundel- en pelletbanen, seed-ship-remming, Black Keel-bewaring, transferbaan, bathydrop-storing.
 
 ## Audio
 
-NL LOC HOLD: Distance is not lore trivia. It is the pressure on every decision.
+Afstand is geen lore-trivia. Het drukt op elke beslissing.
 
 ## Field Note
 
-NL LOC HOLD: Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
+Lees scheepspagina's als overlevingsmechaniek: vertraging, bewaring, massa, weer, baan en een kapotte afdalingsinterface bepalen de uitkomst.
 
 <!-- In-Game Wiki; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/nl_NL. -->

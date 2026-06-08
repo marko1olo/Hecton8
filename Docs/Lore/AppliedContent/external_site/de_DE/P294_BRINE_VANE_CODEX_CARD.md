@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Brine Vane Codex Card"
+title: "Kodexkarte: Salzlakenfächer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Brine Vane Codex Card
+# Kodexkarte: Salzlakenfächer
 
-DE LOC HOLD: In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+Salzlakenfächer lassen HECTON-8s Mittentiefenwasser physisch wirken. Sie zeigen, dass der Canyon aus Dichte gebaut ist, nicht aus leerem blauem Volumen: eine Membran kann Warnschild, Materialquelle und Rand eines falschen Bodens zugleich sein.
 
 ## Scanner
 
-DE LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Salzlakenfächer-Blatt. Salz-Mineral-Membran an Dichtescherung fixiert. Intakte Kante heißt Wand; zerrissener Mund heißt Passage; schwarzes Wasser ohne Fächerkante heißt Falschbodenrisiko.
 
 ## Terminal
 
-DE LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+PROBE / SALZLAKENFÄCHER / Rolle: Marker für Dichtewand, Warnung vor Sonarbiegung, Quelle abgeworfener Rippen / sichere Lesung: intaktes Blatt, zerrissene stromabwärtige Öffnung, gekräuselte Scherfensterspitze / verwerfen: lebendes Routenblatt schneiden, offene Glut queren, Falschbodenrücklauf vertrauen / Routennotiz: sammle abgeworfene Rippen, nicht die Membran, die deine Karte offen hält.
 
 ## Audio
 
-DE LOC HOLD: The plant is not pointing up. It is pointing through.
+Der Fächer zeigt nicht nach oben. Er zeigt, wo der Ozean seitwärts kippt.
 
 ## Field Note
 
-DE LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Intaktes Blatt: Wand. Zerrissene Öffnung: mögliche Route. Abgeworfene Rippe: Probe. Lebendes Blatt hält die Bahn: liegen lassen.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/de_DE. -->

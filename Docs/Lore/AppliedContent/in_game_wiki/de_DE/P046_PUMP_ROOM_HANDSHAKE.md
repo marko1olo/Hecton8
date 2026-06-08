@@ -7,34 +7,34 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pumpenraum-Handschlag"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Pumpenraum-Ventilhandshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pumpenraum-Handschlag
+# Pumpenraum-Ventilhandshake
 
-Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.
+Ein Pumpen-Handshake ist der Moment, in dem ein ertrunkener Raum lokale Kontrolle annimmt. Er schafft Zugang, verschiebt aber Wasser, Lärm und Druck in einen anderen Teil der Route. Lies Ansaugkorb, Auslasspuls und Wasserschlag im Rückkehrkorridor, bevor ein trockener Boden als Sicherheit gilt. Frühe P-63-Pumpenräume lehren die Grundregel der Reparatur: Eine Maschine kann ein Abteil verbessern und zugleich den Heimweg verschlechtern.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+Lokale Sumpfpumpe akzeptiert Handradeingabe. Ansaugkorb ist mit Kapselschaum verschmutzt; Auslasspuls belastet Rückkehrkorridor B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 SUMP CONTROL / LOKALER HANDSHAKE: Handradautorität akzeptiert. Fernübersteuerung verweigert. Ansaugfluss mit niedriger Rate wiederhergestellt. Auslassdruck steigt in RETURN CORRIDOR B; Neustart nur nach Prüfung der nachgeschalteten Luke.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+Ventil hat gegriffen. Der Auslass klopft. Nenn es noch nicht sicher.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Ein trockener Pumpenraum kann den Rückweg fluten. Hör auf Wasserschlag am Auslass, bevor du das Ventil ausbaust.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/de_DE. -->

@@ -173,7 +173,7 @@ namespace Hecton8.Tools
         public static uint HashModuleId(string moduleId)
         {
             uint hash = 2166136261u;
-            if (string.IsNullOrEmpty(moduleId))
+            if (string.IsNullOrWhiteSpace(moduleId))
                 return hash;
 
             for (int i = 0; i < moduleId.Length; i++)

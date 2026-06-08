@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Transit Duration Bands"
+title: "Диапазоны Длительности Транзита"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Transit Duration Bands
+# Диапазоны Длительности Транзита
 
-RU LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+Диапазоны транзита объясняют, почему HECTON-8 достижим и все равно жесток. Пакеты идут первыми: они малы, дешевы и юридически полезны. Груз движется, когда сходятся staging, braking rights и loss margins. Люди движутся медленно, потому что дышащее тело требует массу, liability, life support и того, кто оплатит обратный путь. Локальные окна Aegir короче, но не добрее: орбита, шум штормов, радиация и геометрия Black Keel решают, что может двигаться - данные, груз или человек.
 
 ## Scanner
 
-RU LOC HOLD: The same route means different time for packets, freight and people.
+DURATION BAND CHART // Зондовые пакеты, heavy freight, human crews и локальные окна Aegir живут по разным часам.
 
 ## Terminal
 
-RU LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // Локальные окна: часы-дни. Внутрисистемные индустриальные перемещения: месяцы-годы. Crew rotation: годы custody и долга. Heavy interdomain freight и последствия: годы-десятилетия.
 
 ## Audio
 
-RU LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
+Груз может прийти раньше милосердия. Это не сбой. Это доктрина.
 
 ## Field Note
 
-RU LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+Если все часы совпадут, сеттинг станет фантазией о спасении. Держи часы враждебными.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/ru_RU. -->

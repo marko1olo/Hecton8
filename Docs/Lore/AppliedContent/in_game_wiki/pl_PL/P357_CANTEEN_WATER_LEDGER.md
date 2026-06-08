@@ -9,32 +9,36 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Canteen Water Ledger"
+title: "Rejestr wody w kantynie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Canteen Water Ledger
+# Rejestr wody w kantynie
 
-PL LOC HOLD: The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.
+Rejestr kantyny jest dość mały, by go przegapić, i zbyt ludzki, by nazwać go śmieciem. To laminowana pod ciśnienie tablica z zatopionej jadalni: po jednej stronie żetony wody, po drugiej dostęp do pomp, a wyj?tki medyczne wciśnięte w margines, gdzie oprogramowanie nie zostawiło ludzkiego pola. Nikt nie napisał na niej pożegnania. Nikt nie wyjaśnił Wielkiej Fali. Ostatni widoczny spór dotyczy sześciu brakujących kubków, złego północnego filtra i tego, czy ekipa pomp powinna dostać wodę przed nocnym zejściem.
+
+Dlatego to ważne. HECTON-8 staje się prawdziwe, gdy kolonia przestaje być miejscem katastrofy, a staje się miejscem, gdzie zmęczeni robotnicy liczyli wodę pitną jak custody narzędzi. Żeton posiłku nie był tylko racją. Dowodził, że ktoś wrócił ze zmiany, oddał klucz pompy, miał sprawdzone objawy ciśnieniowe albo powinien być w koi, a nie pod podłogą. Rejestr zmienia anonimową stratę w rutynę: skrócone imiona, parafowane poprawki, długi przeniesione dalej, bo system nie miał czasu stać się dobry.
+
+Dla maraudera obiekt jest użyteczny, zanim stanie się smutny. Korekta pompowni łączy kantynę z trasą konserwacji. Wyj?tki medyczne wskazują chorobę ciśnieniową, zanim oficjalny pakiet uzna cluster obrażeń. Brakujące żetony mogą oznaczać kradzież, nagły triage, skażenie albo kogoś, kto po cichu karmił ekipę już wymazaną z grafiku. Zachowaj tablicę przed rozebraniem pokoju. Linia o kubkach może udowodnić więcej niż pomnik.
 
 ## Scanner
 
-PL LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
+REJESTR WODY KANTYNY // Laminowana tablica, narożniki spuchnięte. Brakuje sześciu żetonów wody do posiłku, dwa wyj?tki medyczne, jedna korekta pompowni tłustym ołówkiem. Kolonia nadal kłóciła się o kubki, gdy ocean zaczął zabierać pokoje.
 
 ## Terminal
 
-PL LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
+REJESTR KANTYNY: przydział pitny zapieczętowany przez lidera zmiany. Brakujące żetony: 6. Override medyczne: 2. Korekta pompowni: Mara Venn. Spór racji wstrzymany po tonie 2, bo północny filtr skwaśniał i nikt nie chciał jeszcze pisać contamination.
 
 ## Audio
 
-PL LOC HOLD: The last argument was about water tokens.
+Ostatnia kłótnia nie była heroiczna. Była o to, kto pił, kto pracował mokry i kto podpisał zwrot kubka.
 
 ## Field Note
 
-PL LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+Sze?? brakuj?cych ?eton?w, dwa wyj?tki medyczne, jedna korekta pompowni. Nie czy?? marginesu. Sp?r o kubki jest tras?.
 
 <!-- In-Game Wiki; generated from P357_CANTEEN_WATER_LEDGER/pl_PL. -->

@@ -10,6 +10,7 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -517,15 +518,40 @@ namespace Hecton8.Debugging
             return array;
         }
 
-        private static void DisposeSmokeArray<T>(ref NativeArray<T> array)
+        private static unsafe void DisposeSmokeArray<T>(ref NativeArray<T> array)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+            finally
+            {
+                array = default;
+            }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

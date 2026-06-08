@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "最佳结局：没有干净的手"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# 最佳结局：没有干净的手
 
-CN LOC HOLD: Best Ending No Clean Hands defines the moral standard for final outcomes.
+HECTON-8的最佳结局不应是所有东西都被修好的结局。那会让海洋、死去工人和合同机器变得小于玩家清单。最强版本让玩家救下具体事物：公共记录、活盆地、被拒绝的企业payload、获得自由的操作者、无法再被删除的名字。
 
-## Scanner
-
-CN LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
-
-## Terminal
-
-CN LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
-
-## Audio
-
-CN LOC HOLD: If it feels clean, it forgot where you are.
-
-## Field Note
-
-CN LOC HOLD: A strong ending lets the player save something real and lose something real.
+它也必须留下残余。Atlas也许在隔离下存活。切断也许救人并杀死一种生命形态。真相也许公开却无法控制。玩家也许无债离开，并带着会继续伤人的证据。没有干净的手不是犬儒，而是对尺度的尊重。玩家可以有意义地行动，但不能变回无辜。
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/zh_CN. -->

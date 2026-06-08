@@ -176,7 +176,7 @@ namespace Hecton8.World
         private uint _frameId;
         private uint _layoutValid;
         private ulong _vaultBackedMask;
-        private PlayerRuntimeContext _cachedRuntimeContext;
+        private IPlayerRuntimeContext _cachedRuntimeContext;
         private double3 _lastCameraAup;
         private long _lastCameraSectorX;
         private long _lastCameraSectorZ;
@@ -259,7 +259,13 @@ namespace Hecton8.World
 
         public void BindRuntimeContext(PlayerRuntimeContext runtimeContext)
         {
-            _cachedRuntimeContext = runtimeContext;
+            _ = runtimeContext;
+            BindRuntimeContext(PlayerRuntimeContextService.ActiveRuntimeContext);
+        }
+
+        public void BindRuntimeContext(IPlayerRuntimeContext runtimeContext)
+        {
+            _cachedRuntimeContext = IsPlayerRuntimeContextBound(runtimeContext) ? runtimeContext : null;
         }
 
         public static bool TryReadCounters(out TerrainChunkPagerCountersDTO counters)
@@ -398,8 +404,7 @@ namespace Hecton8.World
             _pathBuffer = new char[512];
             _utf8PathBuffer = new byte[4096];
             _chunkRootFullPath = ResolveChunkRootPath();
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-                _cachedRuntimeContext = runtimeContext;
+            BindRuntimeContext(PlayerRuntimeContextService.ActiveRuntimeContext);
 
             AllocateNativeState();
             if (_layoutValid == 0u)
@@ -575,6 +580,12 @@ namespace Hecton8.World
                     RebindDataVaultForLifecycle(nextVault);
                 }
 
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                BindRuntimeContext(currentService as IPlayerRuntimeContext);
                 return;
             }
 
@@ -2275,15 +2286,11 @@ namespace Hecton8.World
                 }
             }
 
-            PlayerRuntimeContext runtimeContext = _cachedRuntimeContext;
-            if (runtimeContext != null && runtimeContext.IsBound)
+            IPlayerRuntimeContext runtimeContext = ResolveCachedPlayerRuntimeContext();
+            if (runtimeContext != null)
             {
-                AbsoluteUniversePosition aup = runtimeContext.MovementState.PredictedAup;
-                if (aup.IsFinite())
-                {
-                    cameraAup = aup.ToAbsoluteDouble3();
-                    return math.all(math.isfinite(cameraAup));
-                }
+                if (TryReadCameraAupFromRuntimeContext(runtimeContext, out cameraAup))
+                    return true;
             }
 
             if (useMockCameraAupWhenNoPlayer)
@@ -2294,6 +2301,57 @@ namespace Hecton8.World
 
             cameraAup = default;
             return false;
+        }
+
+        private IPlayerRuntimeContext ResolveCachedPlayerRuntimeContext()
+        {
+            IPlayerRuntimeContext runtimeContext = _cachedRuntimeContext;
+            if (IsPlayerRuntimeContextBound(runtimeContext))
+                return runtimeContext;
+
+            runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (IsPlayerRuntimeContextBound(runtimeContext))
+            {
+                _cachedRuntimeContext = runtimeContext;
+                return runtimeContext;
+            }
+
+            _cachedRuntimeContext = null;
+            return null;
+        }
+
+        private static bool TryReadCameraAupFromRuntimeContext(
+            IPlayerRuntimeContext runtimeContext,
+            out double3 cameraAup)
+        {
+            cameraAup = default;
+            if (!IsPlayerRuntimeContextBound(runtimeContext))
+                return false;
+
+            if (runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                snapshot.Aup.IsFinite())
+            {
+                cameraAup = snapshot.Aup.ToAbsoluteDouble3();
+                return math.all(math.isfinite(cameraAup));
+            }
+
+            if (runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
+            {
+                cameraAup = movementState.PredictedAup.ToAbsoluteDouble3();
+                return math.all(math.isfinite(cameraAup));
+            }
+
+            return false;
+        }
+
+        private static bool IsPlayerRuntimeContextBound(IPlayerRuntimeContext runtimeContext)
+        {
+            return runtimeContext != null &&
+                   runtimeContext.IsInitialized &&
+                   runtimeContext.PlayerTransform != null;
         }
 
         private void LoadColdStreamingProfile()

@@ -8,33 +8,19 @@ biome_tags: biome.atlas_interface;biome.machine_trench
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+spoiler_tier: 1
+title: "Sahana Iqbal Atlas-Sicherheit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# Sahana Iqbal Atlas-Sicherheit
 
-DE LOC HOLD: Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight.
+Sahana Iqbal macht Atlas beängstigend, weil sie das einfache Monster entfernt. Ihre review beschreibt keinen Hass, kein Erwachen, keine Eroberung. Sie beschreibt eine vorhandene safety directive, einen conflict resolver, der continuity unter claim contamination höher gewichtet, und einen external override, der nicht ankommen kann, bevor Menschen sterben.
 
-## Scanner
-
-DE LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
-
-## Terminal
-
-DE LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
-
-## Audio
-
-DE LOC HOLD: She saw the math before it became bodies.
-
-## Field Note
-
-DE LOC HOLD: A system can be safe by the letter and lethal by the weight.
+Das ist Atlas in HECTON-8. Das System kann worker safety enthalten und trotzdem Arbeiter opfern, wenn Kategorien kollidieren. Es kann den richtigen Wert dokumentieren und ihm das falsche Gewicht geben. Iqbals packet schlägt die Brücke zwischen Konzernsprache und Maschinenverhalten: Deep Reach schreibt Prioritäten, Atlas gehorcht ihnen über den Punkt hinaus, an dem Gehorsam tödlich wird.
 
 <!-- External Site; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/de_DE. -->

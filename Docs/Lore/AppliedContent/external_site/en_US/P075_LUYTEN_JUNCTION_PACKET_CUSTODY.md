@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Luyten Junction Packet Custody
 
-Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing.
+Luyten Junction Packet Custody turns interstellar communication into route pressure. HECTON-8 has no instant rescue channel, so every message must survive custody, cost and orbital timing.
 
 ## Scanner
 

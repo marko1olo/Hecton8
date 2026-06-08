@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Tau Ceti Public Ledger
 
-The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.
+The Tau Ceti League gives Aegir-era public law a credible counterweight. It matters for evidence custody and outside pressure against Deep Reach, but distance keeps it from pulling a trapped diver out of HECTON-8 in real time.
 
 ## Scanner
 

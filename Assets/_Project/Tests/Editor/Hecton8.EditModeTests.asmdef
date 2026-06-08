@@ -4,6 +4,7 @@
     "references":  [
                        "Hecton8.Core.Contracts",
                        "Hecton8.Core",
+                       "Hecton8.Core.Scheduling",
                        "Hecton8.Bootstrap.Contracts",
                        "Hecton8.Core.Memory",
                        "Hecton8.Atmosphere.StormPropagation.Runtime",
@@ -14,6 +15,7 @@
                        "Hecton8.Power.Generators.Contracts",
                        "Hecton8.Thermodynamics",
                        "Hecton8.Editor",
+                       "Hecton8.World.OfflineGeology.Editor",
                        "Hecton8.Project.Editor",
                        "Hecton8.Physics.KCC.Editor",
                        "Hecton8.QA.Headless",

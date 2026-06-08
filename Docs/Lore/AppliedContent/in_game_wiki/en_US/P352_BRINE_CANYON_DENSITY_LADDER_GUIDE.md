@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Brine Canyon Density Ladder Guide
 
-Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.
+Brine canyons make depth physical. They teach density layers, hull limits, pressure failures and resource pockets before the lower routes open.
 
 ## Scanner
 
-Brine ladder detected: layered density, false floors, sonar bend. Follow edges; avoid blind drops.
+Brine ladder detected: layered density, false floor, sonar bend. Follow the edges; open water lies here.
 
 ## Terminal
 
-FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: brine canyons hide pressure shelves, current ledges, resource pockets and scanner false positives. Hull rating and density transition decide which ledge is a route and which is a drop.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A canyon is a staircase if your hull can pay for each step.
 
 ## Field Note
 
-Use the vane shadows like steps. Open water here is not empty; it is a bad reading waiting to happen.
+Use vane shadows like steps. A blank reading in brine is not empty space; it is the instrument losing the argument.
 
 <!-- In-Game Wiki; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/en_US. -->

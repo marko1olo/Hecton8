@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 潜水艦技術とマローダーの潜水服
 
 > **出典:** Keelmark損失処理デスク、独立サルベージ作業に関するアクチュアリー（保険数理士）的リスク評価。

@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Quarantine Legal Handshake Assembly"
+title: "Quarantäne-Rechtshandshake-Baugruppe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Quarantine Legal Handshake Assembly
+# Quarantäne-Rechtshandshake-Baugruppe
 
-DE LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.
+Die letzte Fluchtkomponente ist rechtlich, medizinisch und beweisbezogen zugleich. Quarantine status, receiver identity, payload custody und evidence state entscheiden, ob ascent Rettung, claim capture oder public proof wird.
 
 ## Scanner
 
-DE LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.
+Handshake-Buchse. Die Kapsel kann mechanisch bereit sein und trotzdem dem falschen receiver gehören.
 
 ## Terminal
 
-DE LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.
+RECOVERY HANDSHAKE: receiver key erforderlich. Keelmark akzeptiert mass und lien. Recovery Compliance akzeptiert coordinates und quarantine status. Public ledger akzeptiert proof nach Verzögerung. Unkeyed launch wird standardmäßig custody dispute.
 
 ## Audio
 
-DE LOC HOLD: The last part is not metal. It is who gets to call you recovered.
+Wer antwortet, entscheidet, was Rettung bedeutet.
 
 ## Field Note
 
-DE LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+Die letzte Komponente ist kein Metall. Es ist der Name des Systems, das dich recovered nennen darf.
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/de_DE. -->

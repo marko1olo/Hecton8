@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "Pumpenraum P-63 Im Flachwasseranbau"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Shallow Annex P-63 Pump Room
+# Pumpenraum P-63 Im Flachwasseranbau
 
-DE LOC HOLD: P-63 teaches survival through work: pumping, sealing, pressure reading and a return pinger. The room is safe only while its machine keeps winning.
+P-63 lehrt Überleben durch Arbeit: pumpen, abdichten, Druck lesen und auf einen return pinger warten. Der Raum ist nur sicher, solange seine Maschine weiter gewinnt.
 
 ## Scanner
 
-DE LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+Pumpenraum P-63. Der manuelle Sumpfdruck hält mit weniger als einer Servicemarge.
 
 ## Terminal
 
-DE LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+ARBEITSAUFTRAG P-63 / SHALLOW ANNEX: Sumpf per Hand auf 0.3 m pumpen; cold seal auf Naht C setzen; verschmolzenen Spindriegel erst schneiden, wenn die Anzeige stabil ist; grüner Lampe nicht trauen, bis return pinger antwortet.
 
 ## Audio
 
-DE LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+Erst pumpen. Dann abdichten. Cutter erst, wenn die Anzeige nicht mehr driftet.
 
 ## Field Note
 
-DE LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+Der Pumpengriff ist dort blank, wo verängstigte Hände ihn weiter benutzt haben. Trockener Boden beginnt an der Kreidelinie.
 
 <!-- In-Game Wiki; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/de_DE. -->

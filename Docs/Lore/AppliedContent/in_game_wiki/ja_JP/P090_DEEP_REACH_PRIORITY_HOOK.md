@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Deep Reach優先フック"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Deep Reach優先フック
 
-JP LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+現在のDeep Reachの圧力は不可能な遠隔操作を必要としない。古いcontinuity証明書、隔離条項、Atlasアクセストークン、payload優先フックはすでにBlack Keelの法的経路にある。会社はcarrierを目に見えて所有せずに、carrierが何を価値として扱うかへ影響できる。だから敵は切り離しにくい。妨害する信号ではなく、何度も目覚める条項なのだ。
 
 ## Scanner
 
-JP LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+古い証明書フック。Deep Reachは船を所有していない。条項を所有している。
 
 ## Terminal
 
-JP LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: Deep Reach legacy continuity証明書は、Aegir claim法の下でpayload recovery、隔離ロック、Atlasアクセストークン、証拠抑制キューを前進させ得る。危険証拠がcustody価値を超えない限り、人員抽出優先度は不変。
 
 ## Audio
 
-JP LOC HOLD: They do not need to be on the bridge to steer the answer.
+答えを操るために、彼らがブリッジに立つ必要はない。
 
 ## Field Note
 
-JP LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+陰謀より清潔だ。書類はまだ生きていて、まだ飢えている。
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/ja_JP. -->

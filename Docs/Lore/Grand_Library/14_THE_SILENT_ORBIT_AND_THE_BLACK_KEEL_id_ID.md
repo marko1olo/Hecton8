@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ORBIT SUNYI DAN BLACK KEEL
 
 > **Sumber:** Megakorporasi Deep Reach, Registri Aset Orbital.

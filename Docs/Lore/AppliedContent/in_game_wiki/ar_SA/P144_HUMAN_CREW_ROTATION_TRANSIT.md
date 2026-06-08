@@ -7,34 +7,34 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "عبور تدوير الطواقم البشرية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# عبور تدوير الطواقم البشرية
 
-AR LOC HOLD: Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
+يجعل تدوير البشر هجر HECTON-8 قابلا للتصديق. يتحرك العمال والمختصون وطاقم الاستبدال أبطأ من لغة المطالبات. قد يغادر شخص Sol بعقد، ويستيقظ تحت عقد آخر، ويكتشف أن الطارئ الذي تدرب له صار دليلا بالفعل.
 
 ## Scanner
 
-AR LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
+البشر لا يداومون إلى Aegir. يقضون سنوات كحمولة لها آراء.
 
 ## Terminal
 
-AR LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+تدوير الطاقم: يستخدم نقل البشر نوافذ بطيئة وأقسام سكن مدرعة ودورات أيض منخفض وتدويرا مرحليا. العامل المفقود يصبح مشكلة custody مؤجلة.
 
 ## Audio
 
-AR LOC HOLD: By the time home asks where you are, the room has already flooded.
+عندما يسأل الوطن أين أنت، تكون الغرفة قد غرقت.
 
 ## Field Note
 
-AR LOC HOLD: A frontier worker sells time before they sell labor.
+عامل التخوم يبيع الوقت قبل أن يبيع العمل.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/ar_SA. -->

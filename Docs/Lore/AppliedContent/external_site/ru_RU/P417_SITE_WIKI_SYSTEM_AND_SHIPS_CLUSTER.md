@@ -9,24 +9,24 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "RU LOC HOLD: Aegir Route and Ships"
+title: "Маршрут Aegir и корабли"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Aegir Route and Ships
+# Маршрут Aegir и корабли
 
-RU LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegir достаточно близок, чтобы его эксплуатировать, и достаточно далек, чтобы его бросить. Через разрыв не летит FTL-двигатель, и никакой ansible не несет приказы быстрее физики. Каждое сообщение, контракт и заявление о спасении проходят через задержку: пакеты зондов, опеку ретрансляторов, расписания лучевых массивов, пеллетно-термоядерный груз, переходные окна и погоду, которой все равно, насколько громко просит выживший.
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+Первым трафиком Aegir были не люди. Игольчатые зонды нанесли на карту систему теплого карлика и вернули достаточно данных о минералах, радиации и орбитах, чтобы оправдать более тяжелые вложения. За ними пришли пакеты лучевых парусов, затем медленный груз, затем масса seed-ship, которой нужно было тормозить в инфраструктурной сети, спланированной за годы до того, как первый рабочий увидел океан. К прибытию Deep Reach на HECTON-8 маршрут уже принадлежал институциям: carrier-пулам, страховщикам, офисам доменов, reclamation pool и компаниям, умеющим прятать владельца за цепочкой договоров.
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+Black Keel живет внутри этой неоднозначности. Это не военный корабль и не служба спасения. Это платформа претензий с доковой массой, тендерами, долговыми реестрами и правом на salvage. Контрактная цепочка позволяет Deep Reach давить, не выглядя рукой на люке. Корабль может поднять человека, образец или запечатанный груз только тогда, когда масса, погода, орбита, тепловой запас и опека совпадают.
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+Поврежденный bathydrop становится серьезной границей. Удар при спуске может оставить оболочку пригодной для выживания, но уничтожить допуски подъема: сжатие уплотнений, акустический возврат, таблицы наведения, буфер энергии и карантинное рукопожатие. Капсула становится убежищем и доказательством одновременно: транспортом, который подтверждает прибытие, но не может заверить побег.
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+В системе Aegir дистанция не фон. Это причина, почему помощь сначала приходит как бумага и только потом как железо.
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/ru_RU. -->

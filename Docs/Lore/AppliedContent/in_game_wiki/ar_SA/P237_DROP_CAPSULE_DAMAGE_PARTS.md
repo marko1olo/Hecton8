@@ -9,32 +9,36 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Drop Capsule Damage Parts"
+title: "أجزاء كبسولة الهبوط المتضررة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Drop Capsule Damage Parts
+# أجزاء كبسولة الهبوط المتضررة
 
-AR LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.
+لم تفشل كبسولة الهبوط كحطام درامي واحد. فشلت كسلسلة من قطع مسماة كادت تنجز عملها. Ascent sleeve ملتوية، لذلك لا يمكن للجسم أن يعيد الختم ضد ضغط الصعود. Guidance gimbal مخدوش، لذلك سيتحول أي صعود نظيف إلى دوران قبل أن يقبله Black Keel. Relay mast مقصوص، وcompressor ملوث بحصى ملحي، وheat tiles المشقوقة تحول أي burn متخيل إلى حقل حطام.
+
+HECTON-8 لا يعطي زر إنقاذ نظيف. كبسولة تحفظ الهواء ساعة ليست كبسولة تستطيع مغادرة المحيط. كل جزء مكسور يشير إلى طريق حقيقي: العثور على pressure-rated sleeve stock، استعادة محامل gimbal، إعادة بناء عمود المرحل، تنظيف مسار compressor، أو إثبات ضرر كاف ليحسب Black Keel نافذة أخرى.
+
+الحطام ليس خلفية. إنه أول خريطة هندسية. عندما تكتب الكبسولة FAIL، يكون المحيط قد حوّل الهبوط إلى قائمة قطع.
 
 ## Scanner
 
-AR LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve ملتوية، guidance gimbal مخدوش، relay mast مقصوص، compressor مسدود، heat tile مشقوقة.
 
 ## Terminal
 
-AR LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-AR LOC HOLD: It landed well enough to strand you properly.
+هبطت جيدا بما يكفي لتتركك عالقا كما يجب.
 
 ## Field Note
 
-AR LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+تستطيع الكبسولة إبقاء Marauder حيا في الساعة الأولى. لكنها لا تغادر بلا قطع بديلة مصنفة للعمق.
 
 <!-- In-Game Wiki; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/ar_SA. -->

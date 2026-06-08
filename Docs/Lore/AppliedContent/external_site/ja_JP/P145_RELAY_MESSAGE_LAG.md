@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Relay Message Lag"
+spoiler_tier: 1
+title: "リレー通信遅延"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# リレー通信遅延
 
-JP LOC HOLD: Relay Message Lag makes communication a route system, not a magic voice channel.
-
-## Scanner
-
-JP LOC HOLD: A message can be legally binding and still arrive too late to save air.
-
-## Terminal
-
-JP LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
-
-## Audio
-
-JP LOC HOLD: The reply is late. The lien is current.
-
-## Field Note
-
-JP LOC HOLD: No ansible means truth moves as freight.
+relay lagは、HECTON-8に世話なしの権威を届ける。packetは法律、負債、ownership、警告を何時間、何日、何年もかけて運べるが、浸水した部屋へ手を運べない。この分裂こそ通信圧である。遠隔システムは早く書かれ、早くqueueされ、距離を生き残るよう価格化されたため力を保つ。思いやりは人として来る。契約はデータとして来る。データがあまりに頻繁に勝つ。
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/ja_JP. -->

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "Bedrijfsrespons-grootboek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# Bedrijfsrespons-grootboek
 
-NL LOC HOLD: Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+Het grootboek is hoe Black Keel spreekt wanneer niemand improviseert. Het kan gevaar erkennen, een wachtrij openen, een claim bewaren en de operator toch achter assetregels laten wachten. Lees responsgrootboeken als nuttige signalen en vijandig papierwerk dat uitvoerbaar werd.
 
 ## Scanner
 
-NL LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+Elk antwoord komt in contracttaal: assetbewaring, aansprakelijkheidssloten, monsterroute, romprisico, dan operatorberging.
 
 ## Terminal
 
-NL LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+RESPONS-KLASSE: assetbehoud. Operatorberging toegevoegd na monsterbewaring, aansprakelijkheidszegel, rompaudit en betaalroute.
 
 ## Audio
 
-NL LOC HOLD: The reply was automatic. The rescue was conditional.
+Het antwoord was automatisch. De redding was voorwaardelijk.
 
 ## Field Note
 
-NL LOC HOLD: Immediate response is not immediate rescue.
+Directe respons is geen directe redding.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/nl_NL. -->

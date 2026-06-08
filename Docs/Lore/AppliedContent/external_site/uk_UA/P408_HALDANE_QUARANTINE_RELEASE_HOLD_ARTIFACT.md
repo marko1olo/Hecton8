@@ -9,32 +9,22 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Haldane Quarantine Hold"
+title: "Карантинний hold Халдейна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Haldane Quarantine Hold
+# Карантинний hold Халдейна
 
-UK LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## Правильна Процедура У Неправильну Хвилину
 
-## Scanner
+Hold Халдейна не має читатися як проста підробка. На HECTON-8 були ризик забруднення, пошкоджені seals, проблеми sample custody і біологічна невизначеність. Карантинний протокол мав сенс до того, як катастрофа стала кінетичною. Тому документ і ріже: процедура достатньо реальна, щоб її захищати, і достатньо повільна, щоб убивати.
 
-UK LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Release certification стає зброєю через час. Поки тиск зростає і маршрути валяться, hold вимагає XO sample custody, seal-read variance і downstream exposure review. Кожна фраза звучить відповідально. Разом вони тримають евакуйованих, механіків і свідків у колонії, що відмовляє, доки rescue перестає бути головним дієсловом.
 
-## Terminal
-
-UK LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-UK LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-UK LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Це місце добре показує Deep Reach як інституцію. Халдейну не треба сміятися з замкнених працівників. Desk має лише зберегти chain of custody, знизити майбутню liability і не випустити забруднений доказ у claim space, який він не контролює. Жах у тому, що всі ці мотиви можуть звучати правильно саме в хвилину, коли треба було відчинити двері.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/uk_UA. -->

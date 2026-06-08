@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: First Sanitized Accident Packet"
+title: "חבילת התאונה המחוטאת הראשונה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: First Sanitized Accident Packet
+# חבילת התאונה המחוטאת הראשונה
 
-HE LOC HOLD: The first sanitized accident packet gives a useful lie: real Great Tide physics stripped of accepted margins, delayed authorization and missing workers.
+חבילת התאונה המחוטאת הראשונה נותנת שקר שימושי: פיזיקת Great Tide אמיתית בלי המרווחים שהתקבלו, האישור שהתעכב והעובדים שנעלמו.
 
 ## Scanner
 
-HE LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+חבילת תקרית Deep Reach שנמצאה. ניסוח נקי מתנגש עם שעוני הדלת וסימני ההצפה.
 
 ## Terminal
 
-HE LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+הודעת תקרית DEEP REACH / מפל גאוטכני מקומי: evacuation authorization failure עדיין בבדיקה; biological-pressure quarantine פעיל; יומני Atlas פגומים; פרסום חיצוני נדחה עד witness reconciliation.
 
 ## Audio
 
-HE LOC HOLD: The packet says cascade. Door clocks say delay.
+החבילה אומרת cascade. שעוני הדלת אומרים עיכוב.
 
 ## Field Note
 
-HE LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+הם כתבו cascade. קו הלכלוך על הארונית גבוה מחותמת הפינוי.
 
 <!-- In-Game Wiki; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/he_IL. -->

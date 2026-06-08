@@ -917,6 +917,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MovementAcousticSignal : ISignal
     {
+        public const int ExpectedCapacity = 128;
+        public const int MaxFrameSignals = 128;
+        public const int LowTierFrameSignals = 32;
+        public const uint LaneHash = 1747418347u; // FNV32("MovementAcousticSignal")
+
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
         [FieldOffset(48)] public float Volume;
         [FieldOffset(52)] public float VelocitySq;

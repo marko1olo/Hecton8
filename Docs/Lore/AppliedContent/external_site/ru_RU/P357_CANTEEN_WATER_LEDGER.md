@@ -9,32 +9,20 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Canteen Water Ledger"
+title: "Журнал воды в столовой"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Canteen Water Ledger
+# Журнал воды в столовой
 
-RU LOC HOLD: HECTON-8 makes catastrophe believable through ordinary systems under pressure: water ledgers, canteen tokens and shift accountability.
+Журнал воды в столовой - один из самых простых человеческих артефактов HECTON-8: табличка комнаты питания, где записаны питьевая вода, возврат жетонов, доступ к насосам и медицинские исключения. Она не объясняет катастрофу. Она показывает колонию прямо перед тем, как катастрофа стала историей.
 
-## Scanner
+Ее ценность - в фактуре и доказательстве. Шесть пропавших жетонов звучат мелко, пока игрок не поймет, чем была вода в колонии под давлением. Питьевая вода проходила через фильтры, сменный учет, медицинские override и custody насосной. Пропавшая кружка могла быть просто усталым рабочим. А могла быть больной бригадой, загрязненной линией, обходом пайка или старшим, который скрывал локальный отказ от отчетности Deep Reach.
 
-RU LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
-
-## Terminal
-
-RU LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
-
-## Audio
-
-RU LOC HOLD: The last argument was about water tokens.
-
-## Field Note
-
-RU LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+Смысл не в мелодраме. Журнал столовой делает колонию читаемой как труд: люди выходили со смены, спорили, правили записи, брали инструменты, прикрывали своих и пытались держать комнату нормальной, пока океан уже входил в систему. В HECTON-8 такой обычный след может стать доказательством.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/ru_RU. -->

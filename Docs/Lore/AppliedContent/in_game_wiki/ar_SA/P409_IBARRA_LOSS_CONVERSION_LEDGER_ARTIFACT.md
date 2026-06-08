@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Ibarra Loss Ledger"
+title: "دفتر إيبارا لتحويل الخسائر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Ibarra Loss Ledger
+# دفتر إيبارا لتحويل الخسائر
 
-AR LOC HOLD: The Ibarra ledger is the accounting form of the cover. It keeps asset rights active while missing workers become unresolved load.
+دفتر إيبارا هو الشكل المحاسبي للغطاء. يسمح لـ Deep Reach بالاعتراف بالخسارة من دون تسليم الملكية: يصبح الناس unresolved personnel load، وتصبح الأدلة material custody، ويبقى claim حيا بعد المستعمرة.
 
 ## Scanner
 
-AR LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Keelmark loss ledger. العمال المفقودون والوحدات المتضررة وclaims الباقية تشترك في جدول تحويل واحد.
 
 ## Terminal
 
-AR LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel unresolved. Habitat modules, tool banks and claim rights retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-AR LOC HOLD: The ledger did not forget names. It made them payable later.
+لم ينس ledger الأسماء. تعلم كيف ينفقها.
 
 ## Field Note
 
-AR LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+ملاحظة Marauder: يستطيع ledger أن يتذكر الموتى وأن يجعلهم يعملون بعد موتهم.
 
 <!-- In-Game Wiki; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/ar_SA. -->

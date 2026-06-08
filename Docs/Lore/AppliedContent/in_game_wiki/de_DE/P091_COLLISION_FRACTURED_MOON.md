@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Kollisionsgebrochener Mond"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Kollisionsgebrochener Mond
 
-DE LOC HOLD: HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.
+HECTON-8 entstand im Aegir-System und wurde spaeter von einer streifenden Kollision aufgebrochen. Die Wunde zerriss den Mond nicht. Sie hob Krustenregale, oeffnete Salzlaugenstoerungen, speiste Schlottunnel und liess alten Boden durch seltene Druckfenster erreichbar werden. Bergungskarten folgen diesem Schaden, weil sichere Routen alte Verletzungen mit Wasser darin sind.
 
 ## Scanner
 
-DE LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
+Alte Krustenprobe. Der Mond entstand im Truemmerguertel von Aegir, dann riss ihn ein Einschlag weit genug auf, dass der Ozean es behielt.
 
 ## Terminal
 
-DE LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+URSPRUNGSMODELL: Akkretion um Aegir, spaeter schraeger Einschlag, Gezeitenresonanz nach der Bindung. Ergebnis: Stufenkruste, heisse Stoerungsleitern, Salzlaugenbecken, Druckglasadern, ungleichmaessiger Zugang zum Tiefboden.
 
 ## Audio
 
-DE LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
+Er wurde hier geboren. Dann traf ihn etwas hart genug, um dem Meer eine Karte zu geben.
 
 ## Field Note
 
-DE LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+Die Legende vom eingefangenen Mond waere zu sauber. HECTON-8 traegt eine lokale Wunde: gehobene Kruste, versalzene Lauge, Schlote mit offenen Zinsen.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/de_DE. -->

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "مجمع استرداد Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# مجمع استرداد Aegir
 
-AR LOC HOLD: The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.
+مجمع استرداد Aegir هو الغلاف العام للإنقاذ خلف Black Keel. يسمح لرخص marauder الصغيرة بالوصول إلى مطالبات Aegir المهجورة من دون امتلاك carrier بين الكواكب. هذه الصفقة نافعة وسامة معا: المجمع الذي يرسل العطاء هو نفسه من يقرر هل المشغل الحي أو الحمولة المختومة أو قفل الحجر أو حزمة الدليل تستحق الحرق التالي.
 
 ## Scanner
 
-AR LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
+ختم مجمع مطالبات. تم تعيين Black Keel بدين مسار، لا كهدية للمشغل.
 
 ## Terminal
 
-AR LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+AEGIR RECLAMATION POOL: تم تعيين العطاء الذاتي Black Keel لمطالبة HECTON-8 المهجورة تحت الضغط. فئة رعاية الطاقم: متعاقد. فئة حيازة الحمولة: أولوية متغيرة. استخراج الإنسان مشروط حتى يغلق تحكيم المجمع.
 
 ## Audio
 
-AR LOC HOLD: The pool owns the route. You only rent the answer.
+المجمع يملك الطريق. أنت تستأجر الجواب إذا بقيت حيا بما يكفي لتسأل.
 
 ## Field Note
 
-AR LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+المجمع المشترك يجعل الإنقاذ أرخص وأبطأ وأسهل لكل موقع أن ينكره.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/ar_SA. -->

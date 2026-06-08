@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: HECTON-8 Mid-Orbit Tide Role"
+title: "HECTON-8 et la marée d'orbite moyenne"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: HECTON-8 Mid-Orbit Tide Role
+# HECTON-8 et la marée d'orbite moyenne
 
-FR LOC HOLD: HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.
-
-## Scanner
-
-FR LOC HOLD: Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
-
-## Terminal
-
-FR LOC HOLD: ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
-
-## Audio
-
-FR LOC HOLD: It sits in the part of the ladder where work looks possible until the water starts doing math.
-
-## Field Note
-
-FR LOC HOLD: HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 occupe le milieu rentable. L'orbite donne à Deep Reach un océan qui refroidit les machines, cache les actifs, nourrit l'industrie de pression et déplace assez de chimie pour justifier le claim. Elle donne aussi à la colonie un plafond qui ne cesse jamais de bouger. Les marées chargent les canyons de service, plient la croûte noyée, ruinent les calendriers propres et décident quand la masse d'ascension peut partir.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/fr_FR. -->

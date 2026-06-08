@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Needleprobe Precursor Program"
+title: "Program prekursorów Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Needleprobe Precursor Program
+# Program prekursorów Needleprobe
 
-PL LOC HOLD: HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
-
-## Scanner
-
-PL LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
-
-## Terminal
-
-PL LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
-
-## Audio
-
-PL LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
-
-## Field Note
-
-PL LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Pierwsza ludzka obecność w Aegir nie była heroiczna. Była sekwencją małych, drogich maszyn na trasie, której żadna żywa załoga nie oceniła. Needleprobes mierzyły paralaksę, promieniowanie, chemię oceanów, efemerydy księżyców i linie widzenia przekaźników, a potem czekały lata, aż ich odpowiedzi stały się użyteczne. Deep Reach nie odkryło HECTON-8 z flagą w dłoni; kupiło dość maszynowego zaufania, by nazwać księżyc aktywem. Ten początek ma znaczenie, bo kolonia odziedziczyła kłamstwo tonu, nie danych. Dane były prawdziwe. Zbudowane z nich zaufanie było zbyt czyste dla ludzi wysłanych później do wody.
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/pl_PL. -->

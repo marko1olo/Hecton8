@@ -220,6 +220,7 @@ namespace Hecton8.Dev
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
+        private bool _runtimeOwnerAborted;
         private float _sampleElapsed;
         private float _peakFrameTimeMs;
         private float _peakMainThreadMs;
@@ -286,7 +287,10 @@ namespace Hecton8.Dev
 #endif
         private static RuntimePerformanceProfiler s_activeRuntime;
 
-        internal static RuntimePerformanceProfiler ActiveRuntime => s_activeRuntime;
+        internal static RuntimePerformanceProfiler ActiveRuntime =>
+            IsRuntimePerformanceProfilerRuntimeUsable(s_activeRuntime)
+                ? s_activeRuntime
+                : ResolveUsableRuntime();
 
         /// <summary>
         /// Returns whether runtime profiling is currently sampling and recording trace windows.
@@ -425,23 +429,8 @@ namespace Hecton8.Dev
 
         private void Awake()
         {
-            RuntimePerformanceProfiler runtime = ActiveRuntime != null
-                ? ActiveRuntime
-                : GlobalRegistry.RuntimePerformanceProfilerRuntime;
-            if (runtime != null && runtime != this)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                RuntimeDiagnosticsTrace.WriteEvent(
-                    "runtime.lifecycle",
-                    $"duplicate-awake destroy id={GetEntityId()} existing={runtime.GetEntityId()} name={gameObject.name}");
-#endif
-                Destroy(gameObject);
+            if (!EnsureRuntimeOwnership())
                 return;
-            }
-
-            GlobalRegistry.RegisterRuntimePerformanceProfilerRuntime(this);
-            if (ReferenceEquals(GlobalRegistry.RuntimePerformanceProfilerRuntime, this))
-                s_activeRuntime = this;
 
             ClampSettings();
             _debugCurrentScene = SceneManager.GetActiveScene().name;
@@ -458,7 +447,7 @@ namespace Hecton8.Dev
             if (!Application.isPlaying)
                 return;
 
-            if (!IsActiveRuntimeOwner())
+            if (_runtimeOwnerAborted || !EnsureRuntimeOwnership())
                 return;
 
             SceneManager.sceneLoaded -= HandleSceneLoaded;
@@ -483,7 +472,7 @@ namespace Hecton8.Dev
             if (!Application.isPlaying)
                 return;
 
-            if (!IsActiveRuntimeOwner())
+            if (_runtimeOwnerAborted || !EnsureRuntimeOwnership())
                 return;
 
             if (_registeredTick && _registeredSlowTick && _registeredLateFrame)
@@ -501,6 +490,9 @@ namespace Hecton8.Dev
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!Application.isPlaying)
                 return;
 
@@ -529,6 +521,12 @@ namespace Hecton8.Dev
                 "runtime.lifecycle",
                 $"on-destroy id={GetEntityId()} scene={SceneManager.GetActiveScene().name} active={_debugProfilingActive} instanceMatch={(GlobalRegistry.RuntimePerformanceProfilerRuntime == this)}");
 #endif
+            if (_runtimeOwnerAborted)
+            {
+                ClearRuntimeMirrorIfOwnedBy(this);
+                return;
+            }
+
             if (!IsActiveRuntimeOwner())
                 return;
 
@@ -546,8 +544,126 @@ namespace Hecton8.Dev
 
         private bool IsActiveRuntimeOwner()
         {
-            return ReferenceEquals(s_activeRuntime, this) ||
-                   ReferenceEquals(GlobalRegistry.RuntimePerformanceProfilerRuntime, this);
+            return !_runtimeOwnerAborted &&
+                   (ReferenceEquals(s_activeRuntime, this) ||
+                    ReferenceEquals(GlobalRegistry.RuntimePerformanceProfilerRuntime, this));
+        }
+
+        private bool EnsureRuntimeOwnership()
+        {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            RuntimePerformanceProfiler runtime = s_activeRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                runtime._runtimeOwnerAborted = true;
+                ClearRuntimeMirrorIfOwnedBy(runtime);
+            }
+
+            runtime = GlobalRegistry.RuntimePerformanceProfilerRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                runtime._runtimeOwnerAborted = true;
+                ClearRuntimeMirrorIfOwnedBy(runtime);
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            GlobalRegistry.RegisterRuntimePerformanceProfilerRuntime(this);
+            if (ReferenceEquals(GlobalRegistry.RuntimePerformanceProfilerRuntime, this))
+                s_activeRuntime = this;
+
+            bool ownsRuntime =
+                ReferenceEquals(s_activeRuntime, this) &&
+                ReferenceEquals(GlobalRegistry.RuntimePerformanceProfilerRuntime, this);
+            _runtimeOwnerAborted = !ownsRuntime;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return ownsRuntime;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            RuntimePerformanceProfiler runtime = s_activeRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsRuntimePerformanceProfilerRuntimeUsable(runtime))
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "runtime.lifecycle",
+                        $"duplicate-awake destroy id={GetEntityId()} existing={runtime.GetEntityId()} name={gameObject.name}");
+#endif
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                runtime._runtimeOwnerAborted = true;
+                ClearRuntimeMirrorIfOwnedBy(runtime);
+            }
+
+            runtime = GlobalRegistry.RuntimePerformanceProfilerRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsRuntimePerformanceProfilerRuntimeUsable(runtime))
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    RuntimeDiagnosticsTrace.WriteEvent(
+                        "runtime.lifecycle",
+                        $"duplicate-awake destroy id={GetEntityId()} existing={runtime.GetEntityId()} name={gameObject.name}");
+#endif
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                runtime._runtimeOwnerAborted = true;
+                ClearRuntimeMirrorIfOwnedBy(runtime);
+            }
+
+            return false;
+        }
+
+        private static RuntimePerformanceProfiler ResolveUsableRuntime()
+        {
+            RuntimePerformanceProfiler runtime = s_activeRuntime;
+            if (IsRuntimePerformanceProfilerRuntimeUsable(runtime))
+                return runtime;
+
+            ClearRuntimeMirrorIfOwnedBy(runtime);
+
+            runtime = GlobalRegistry.RuntimePerformanceProfilerRuntime;
+            if (IsRuntimePerformanceProfilerRuntimeUsable(runtime))
+            {
+                s_activeRuntime = runtime;
+                return runtime;
+            }
+
+            ClearRuntimeMirrorIfOwnedBy(runtime);
+            return null;
+        }
+
+        private static bool IsRuntimePerformanceProfilerRuntimeUsable(RuntimePerformanceProfiler runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
+        }
+
+        private static void ClearRuntimeMirrorIfOwnedBy(RuntimePerformanceProfiler runtime)
+        {
+            if (ReferenceEquals(runtime, null))
+                return;
+
+            GlobalRegistry.ClearRuntimePerformanceProfilerRuntime(runtime);
+            if (ReferenceEquals(s_activeRuntime, runtime))
+                s_activeRuntime = null;
         }
 
 #if UNITY_EDITOR
@@ -565,6 +681,9 @@ namespace Hecton8.Dev
         [ContextMenu("Start Runtime Performance Profiling")]
         public void StartProfiling()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             StopProfiling();
 
             if (writeTraceToFile)
@@ -731,6 +850,9 @@ namespace Hecton8.Dev
 
         public void Tick(float deltaTime)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_debugProfilingActive)
                 return;
 
@@ -740,6 +862,9 @@ namespace Hecton8.Dev
 
         public void SlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_debugProfilingActive)
                 return;
 
@@ -780,7 +905,7 @@ namespace Hecton8.Dev
 
         private void RegisterWithTickManager()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_runtimeOwnerAborted || !IsActiveRuntimeOwner() || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredTick)
@@ -801,6 +926,9 @@ namespace Hecton8.Dev
 
         public void LateFrameTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             float sampleDeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             PumpPendingRuntimeRoutes(sampleDeltaTime);
             FlushPendingRendererOwnershipAudit();
@@ -811,6 +939,9 @@ namespace Hecton8.Dev
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted || !IsActiveRuntimeOwner())
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 if (currentService != null)
@@ -1301,7 +1432,7 @@ namespace Hecton8.Dev
             long textureBytes = monitor.TextureMemoryBytes;
             long renderTextureBytes = monitor.RenderTextureMemoryBytes;
             long totalBytes = monitor.TotalVRAMBytes;
-            
+
             _debugLastTextureMB = textureBytes / BytesPerMegabyte;
             _debugLastRenderTextureMB = renderTextureBytes / BytesPerMegabyte;
             _debugLastTotalVRAMMB = totalBytes / BytesPerMegabyte;

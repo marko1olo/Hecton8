@@ -554,7 +554,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("bool shouldKeepBlocked = _transiting;", rebind);
             StringAssert.Contains("RestoreInputBlock();", rebind);
             StringAssert.Contains("_inputBlockService = currentService;", rebind);
-            StringAssert.Contains("InputDispatcher.ActiveRuntimeInstance", rebind);
+            StringAssert.Contains("InputDispatcher.TryResolveActiveRuntime(ref dispatcher)", rebind);
             StringAssert.Contains("if (TryBlockInput())", rebind);
             StringAssert.Contains("AbortTransitForLostInputRoute();", rebind);
             Assert.IsFalse(rebind.Contains("PublishCommand(", StringComparison.Ordinal));

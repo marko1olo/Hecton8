@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute jako zewnętrzny martwy beacon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Outer Dead Beacon Moon Role
+# Mute jako zewnętrzny martwy beacon
 
-PL LOC HOLD: The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.
+Mute to zewnętrzny księżyc martwego beacon w drabinie Aegir. Jego relay są zawodne, zimne i częściowo nieobecne na aktualnych mapach publicznych. Nadal występują w starych solverach, klauzulach ubezpieczeniowych i tablicach recovery. Dlatego łączność z HECTON-8 jest rzadka i brzydka, a nie magiczna. Wiadomość może opóźnić fizyka, złe dane albo reguła pieczy udająca, że to jedno i to samo.
 
 ## Scanner
 
-PL LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
+Ping martwego beacon. Mute nie odpowiada już czysto, ale stare route solvery nadal wydają jego ducha.
 
 ## Terminal
 
-PL LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
+ZAPIS BEACON H9 MUTE: archiwalna efemeryda nie zgadza się z bieżącym echem relay. Solver ratunkowy oznacza użyteczną niejednoznaczność. Contract desk zezwala na opóźnioną pieczę wiadomości do potwierdzenia okna.
 
 ## Audio
 
-PL LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
+Martwy beacon wciąż jest beacon, jeśli faktura wie, gdzie go znaleźć.
 
 ## Field Note
 
-PL LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Martwa infrastruktura nie opuszcza Aegir. Staje się składnikiem błędu, za który ktoś wystawi rachunek.
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/pl_PL. -->

@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "Era Probe Layar-Sinar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Era Probe Layar-Sinar
 
-ID LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-ID LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-ID LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-ID LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-ID LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Era Probe Layar-Berkas adalah awal sunyi cerita Aegir. Payload kecil menunggang daya dari array jauh, menyeberang lebih dulu, lalu mengembalikan paket yang cukup tua untuk diperdebatkan tetapi cukup baik untuk dijual. Probe tidak membuat Aegir aman. Mereka membuatnya terbaca: sumur gravitasi, sabuk radiasi, tanda samudra, garis relai, dan rute yang bisa menguntungkan bila cukup banyak ketidakpedulian.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/id_ID. -->

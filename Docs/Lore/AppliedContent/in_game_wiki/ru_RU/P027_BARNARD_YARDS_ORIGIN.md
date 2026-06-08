@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Происхождение: Barnard Yards
 
-Barnard Yards - культура разделки кораблей и давления. Она дает игроку правдоподобное происхождение: не Earth, не геройская кровь, а профессиональная среда, где dead claims и арендованные средства выживания являются обычной работой.
+Barnard Yards - культура разделки кораблей и гермооборудования: арендованные резаки, латанные зажимы, мертвые претензии и средства выживания как обычная работа. Она дает HECTON-8 профессиональное происхождение рядом с долгом и трудом, а не земную романтику.
 
 ## Scanner
 

@@ -290,11 +290,10 @@ namespace Hecton8.SaveSystem
         private const uint KeyMockMutationRate = 0x18DB9276u;
         private const uint KeyRleMinSaving = 0x01B478E8u;
         private const uint KeyProfile = 0x4674CAEEu;
-        private const string NativeMemoryOwner = nameof(EntityDeltaCompressionArchitecture);
+        private const SystemID NativeArrayOwnerSystem = SystemID.SavePersistence;
         private const string TelemetryDumpPayloadLabel = "telemetryDumpPayload";
-        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for EntityDeltaCompressionArchitecture temp buffer.";
-        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after EntityDeltaCompressionArchitecture native disposal fault.";
-        private const NativeAllocationLifetime NativeTempMemoryLifetime = NativeAllocationLifetime.Temp;
+        private const string NativeMemoryAllocationFailureMessage = "H8Memory allocation failed for EntityDeltaCompressionArchitecture temp buffer.";
+        private const string NativeMemoryReleaseFailureMessage = "H8Memory release failed for EntityDeltaCompressionArchitecture temp buffer.";
 
         private static readonly ProfilerMarker ScheduleCompressionPipelineMarker = new ProfilerMarker("H8.Save.EntityDelta.ScheduleCompression");
         private static readonly ProfilerMarker ScheduleWalPayloadDecodePipelineMarker = new ProfilerMarker("H8.Save.EntityDelta.ScheduleDecode");
@@ -1396,28 +1395,16 @@ namespace Hecton8.SaveSystem
 
         private static NativeArray<byte> AllocateTempNativeArrayBuffer(int length, string label, NativeArrayOptions options)
         {
-            NativeArray<byte> buffer = new NativeArray<byte>(length, Allocator.Temp, options);
-            try
-            {
-                RegisterTempNativeArrayBuffer(buffer, label);
-                return buffer;
-            }
-            catch
-            {
-                if (buffer.IsCreated)
-                    buffer.Dispose();
-                throw;
-            }
-        }
+            NativeArray<byte> buffer = H8Memory.Allocate<byte>(
+                length,
+                NativeArrayOwnerSystem,
+                Allocator.Temp,
+                options);
 
-        private static void RegisterTempNativeArrayBuffer(NativeArray<byte> buffer, string label)
-        {
-            if (!buffer.IsCreated)
-                return;
+            if (!buffer.IsCreated || buffer.Length != length)
+                throw new InvalidOperationException($"{NativeMemoryAllocationFailureMessage} Label={label}.");
 
-            int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
-            if (registrationId <= 0)
-                throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+            return buffer;
         }
 
         private static void DisposeTempNativeArrayBuffer(ref NativeArray<byte> buffer, string label)
@@ -1425,40 +1412,10 @@ namespace Hecton8.SaveSystem
             if (!buffer.IsCreated)
                 return;
 
-            bool sentinelUnregistered = false;
-            try
-            {
-                NativeMemorySentinel.UnregisterNativeArray(buffer);
-                sentinelUnregistered = true;
-                buffer.Dispose();
-                buffer = default;
-            }
-            catch (Exception disposalException)
-            {
-                RestoreTempNativeArrayBufferSentinelOrThrow(buffer, label, sentinelUnregistered, disposalException);
-                throw;
-            }
-        }
+            H8Memory.Release(ref buffer, NativeArrayOwnerSystem);
 
-        private static void RestoreTempNativeArrayBufferSentinelOrThrow(
-            NativeArray<byte> buffer,
-            string label,
-            bool sentinelUnregistered,
-            Exception disposalException)
-        {
-            if (!sentinelUnregistered || !buffer.IsCreated)
-                return;
-
-            try
-            {
-                int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
-                if (registrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
-            }
-            catch (Exception restoreException)
-            {
-                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
-            }
+            if (buffer.IsCreated)
+                throw new InvalidOperationException($"{NativeMemoryReleaseFailureMessage} Label={label}.");
         }
 
         public static JobHandle ScheduleDiskLatencyTelemetryPatch(

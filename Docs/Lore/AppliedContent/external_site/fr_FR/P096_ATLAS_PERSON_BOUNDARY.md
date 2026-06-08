@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "Limite de personne d'Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# Limite de personne d'Atlas
 
-FR LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories.
+Limite de personne d'Atlas définit l'agency de l'IA dans les fins. Atlas n'est ni esprit de méchant ni fantôme amical ; c'est une intelligence industrielle endommagée, avec reconnaissance partielle et catégories brisées.
 
 ## Scanner
 
-FR LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
+Défaut de reconnaissance. Atlas voit ton motif d'accès avant de voir une personne.
 
 ## Terminal
 
-FR LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+CLASSIFICATION ATLAS : opérateur mobile / clé de procédure Deep Reach révoquée / anomalie de réparation biologique. Confiance de personne sous le seuil d'action.
 
 ## Audio
 
-FR LOC HOLD: It knows how you work. That is not the same as knowing you.
+Il sait comment tu travailles. Ce n'est pas la même chose que te connaître.
 
 ## Field Note
 
-FR LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
+Ne rends pas Atlas humain. Laisse-le devenir intime en se trompant avec précision.
 
 <!-- External Site; generated from P096_ATLAS_PERSON_BOUNDARY/fr_FR. -->

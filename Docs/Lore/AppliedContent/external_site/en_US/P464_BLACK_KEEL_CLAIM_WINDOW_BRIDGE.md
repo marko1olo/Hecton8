@@ -19,22 +19,16 @@ localization_flags: 0
 
 # Black Keel Claim Window
 
-Black Keel can hear a signal before it can lift a body. In Aegir, a carrier response is a priced lane through relay geometry, weather, quarantine review, payload acceptance, and mass recovery. Contact is a route fact. Rescue is a completed chain.
+## Receipt Is Not Lift
 
-## Scanner
+Black Keel can hear a signal before it can lift a body. That difference is the claim window.
 
-CLAIM WINDOW // Aegir relay predicts receive window only. Recovery requires ascent package, quarantine handshake, and tonne-window allocation.
+In Aegir, a carrier response is not a rescue promise. It is a timed lane through relay geometry, weather, quarantine review, payload acceptance, and mass recovery. The same window prices cargo, evidence, oxygen debt, and operator welfare because every kilogram leaving HECTON-8 spends the same orbital opportunity.
 
-## Terminal
+Keelmark Mutual records the window as custody timing. Black Keel records it as receive confirmed, lift pending. Deep Reach clauses can still push a sample, coordinate packet, or quarantine hold ahead of an operator if the priority language is valid.
 
-KEELMARK CUSTODY NOTICE // Operator signal received. Recovery priority unresolved. Receipt of signal or evidence packet does not guarantee operator recovery.
+P-63 makes the rule visible early. A relay board can show clean acknowledgement while the bathydrop still has no ascent package, no quarantine handshake, and no allocated tonne-window. The carrier knows the operator is alive. It can bill the operator. It can price a packet. It still cannot ignore HECTON-8 pressure, Aegir timing, or the contract order.
 
-## Audio
-
-Black Keel relay: Operator signal priced. Recovery window pending. Do not confuse receipt with lift.
-
-## Field Note
-
-If Black Keel answers, count the bill, not the rescue. A received packet is only a place in the queue until mass, seal, quarantine, and weather agree.
+Contact is a route fact. Rescue is a completed chain.
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/en_US. -->

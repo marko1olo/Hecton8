@@ -9,32 +9,26 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Gerbang Spoiler"
+title: "Gerbang Spoiler"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Gerbang Spoiler
+# Gerbang Spoiler
 
-ID LOC HOLD: Halaman publik HECTON-8 boleh menyebut pekerjaan tanpa membocorkan bukti. Lapisan terbuka memberi konteks aman; segel, cap rute, scan, fragmen terminal, tag pekerja, dan rekaman black-box membuka klaim yang lebih kuat nanti.
+## Konteks Publik
 
-## Scanner
+Halaman publik HECTON-8 boleh menyebut pekerjaan tanpa menyerahkan bukti. Lapisan terbuka dapat mengatakan HECTON-8 adalah bulan samudra di bawah Aegir, koloninya gagal, Black Keel membawa tekanan salvase bukan penyelamatan bersih, dan Deep Reach meninggalkan laporan publik dari badai, runtuh, kegagalan otonom, bahasa penyelamatan Atlas-6, dan data hilang.
 
-ID LOC HOLD: GERBANG ARSIP PUBLIK // Tingkat spoiler 0/1. Hanya konteks publik. Bukti dalam butuh kustodi pulih sebelum perluasan kodeks.
+Itu cukup agar pembaca memahami premis. Itu tidak cukup untuk membuktikan kejahatan.
 
-## Terminal
+Halaman yang lebih dalam membutuhkan objek pulih: segel paket, cap rute, catatan scan, tag pekerja, fragmen terminal, baris kotak hitam, atau sampel dengan kustodi utuh. Sebelum objek itu ditemukan dalam game, wiki publik berhenti pada konteks aman. Setelah penemuan, kodeks dapat memakai bahasa lebih keras karena pemain melihat asal fakta.
 
-ID LOC HOLD: FILTER PUBLIC/WIKI // Sebelum bukti: setting, tekanan rute, bahasa kecelakaan publik, institusi dikenal, dan premis salvase awal boleh tampil. Bukti dalam ditahan.
+Gerbang melindungi lima hal: penyelaman pertama pemain, bukti pekerja koloni, rantai tanggung jawab Deep Reach, kebenaran jaringan perbaikan Atlas-6, dan hasil muatan final. Halaman publik dapat menunjuk ke sana. Halaman itu tidak membawa penerima, rute, atau konsekuensi final.
 
-## Audio
-
-ID LOC HOLD: Relay Black Keel: teks publik menyebut nama bulan. Bukti butuh segel. Bawa segelnya.
-
-## Field Note
-
-ID LOC HOLD: Halaman publik memberi tahu tempat menyelam. Ia tidak memberi tahu siapa yang membayar agar pintu tetap tertutup.
+Artikel publik adalah peta. Bukti yang dipulihkan adalah bukti.
 
 <!-- External Site; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/id_ID. -->

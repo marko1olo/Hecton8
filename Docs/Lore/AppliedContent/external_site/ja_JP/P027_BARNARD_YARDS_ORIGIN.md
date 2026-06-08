@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Barnard Yards出身
 
-Barnard Yardsは主人公をサルベージ経済に接地し、固定メロドラマでなく職能文化からHECTON-8を個人的にする。
+Barnard Yards はマローダー階級をサルベージ経済と職能文化に結び付ける。HECTON-8 は固定メロドラマではなく、作業癖、工具痕、負債によって個人的になる。
 
 ## Scanner
 

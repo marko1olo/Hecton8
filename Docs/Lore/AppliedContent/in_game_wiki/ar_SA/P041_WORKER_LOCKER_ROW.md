@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # صف خزائن العمال
 
-هذا الاكتشاف يحول HECTON-8 إلى مكان عمل بعادات وديون وثقافة حدودية.
+تثبت صفوف خزائن العمال HECTON-8 في العمل العادي. تظهر الأدوات والطلاء وأرصدة الطعام وعلامات التخوم قبل أن تتحول الكارثة إلى نظرية.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ localization_flags: 0
 
 ## Terminal
 
-تدقيق المستعمرة: التخزين الشخصي وعلامات Barnard يربطان اللاعب بطاقم حقيقي.
+تدقيق المستعمرة: التخزين الشخصي وعلامات Barnard تربط صف الخزائن بطاقم مسمى ومسارات عمل.
 
 ## Audio
 

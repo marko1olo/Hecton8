@@ -372,8 +372,7 @@ namespace Hecton8.UI
             if (_pdaEventsRegistered)
                 return;
 
-            PDAEvents.Register(this);
-            _pdaEventsRegistered = true;
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
         }
 
         private void UnregisterPDAEvents()

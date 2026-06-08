@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Dette de fenêtre-tonne"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Dette de fenêtre-tonne
 
-FR LOC HOLD: Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-FR LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-FR LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-FR LOC HOLD: You owe the orbit before you owe the money.
-
-## Field Note
-
-FR LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Une fenêtre-tonne est une tranche de capacité carrier mesurée en masse, timing de burn, volume de quarantaine et priorité légale. Pour l'opérateur, elle ressemble à une dette parce que chaque objet utile de HECTON-8 entre dans le même registre que le corps qui l'a trouvé. Une caisse scellée peut être légère mais légalement lourde. Un rack d'échantillons peut coûter peu de masse et réclamer du volume propre. Une extraction humaine paraît évidente jusqu'à ce que ballast, réserve d'oxygène et custody payload aient dépensé la fenêtre disponible. L'économie de HECTON-8 devient physique au lieu d'abstraite. Le joueur n'est pas puni par un faux compteur moral. Le joueur est coincé dans une machine qui chiffre la survie en carburant, masse, contamination et papiers.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/fr_FR. -->

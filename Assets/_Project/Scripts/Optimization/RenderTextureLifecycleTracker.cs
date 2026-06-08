@@ -15,17 +15,17 @@ namespace Hecton8.Optimization
     public sealed class RenderTextureLifecycleTracker : MonoBehaviour, IRenderTextureLifecycleService, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         // ── REGISTRY CACHE ─────────────────────────────────────────────────────────
-        
-        
+
+
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
-        
+
         private bool _registeredSlowTick;
         private bool _registeredService;
         private bool _hotSwapRegistered;
-        
+
         // COLD ALLOC: Dictionary<EntityId, RenderTextureAllocationRecord>[256] — RT tracking — owner: RenderTextureLifecycleTracker
         private readonly Dictionary<EntityId, RenderTextureAllocationRecord> _allocations = new Dictionary<EntityId, RenderTextureAllocationRecord>(256);
-        
+
         // COLD ALLOC: List<RenderTextureAllocationRecord>[32] — leak query — owner: RenderTextureLifecycleTracker
         private readonly List<RenderTextureAllocationRecord> _leakQueryResults = new List<RenderTextureAllocationRecord>(32);
 
@@ -43,17 +43,17 @@ namespace Hecton8.Optimization
 
         // COLD ALLOC: List<RenderTextureAllocationRecord>[64] — audit report uncategorized bucket — owner: RenderTextureLifecycleTracker
         private readonly List<RenderTextureAllocationRecord> _reportOtherRTs = new List<RenderTextureAllocationRecord>(64);
-        
+
         // COLD ALLOC: StringBuilder[2048] — zero-GC reporting — owner: RenderTextureLifecycleTracker
         private readonly StringBuilder _auditBuilder = new StringBuilder(2048);
-        
+
         // ── PUBLIC PROPERTIES ──────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// Returns total number of tracked RenderTextures.
         /// </summary>
         public int TrackedRenderTextureCount => _allocations.Count;
-        
+
         /// <summary>
         /// Returns total memory consumed by tracked RenderTextures in bytes.
         /// </summary>
@@ -72,9 +72,9 @@ namespace Hecton8.Optimization
                 return total;
             }
         }
-        
+
         // ── LIFECYCLE ──────────────────────────────────────────────────────────────
-        
+
         private void OnEnable()
         {
             if (TryRegisterService())
@@ -83,14 +83,14 @@ namespace Hecton8.Optimization
                 TryRegister();
             }
         }
-        
+
         private void OnDisable()
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
-        
+
         private void OnDestroy()
         {
             TryUnregister();
@@ -110,9 +110,9 @@ namespace Hecton8.Optimization
             if (currentService != null && _registeredService && isActiveAndEnabled)
                 TryRegister();
         }
-        
+
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// ISlowTickable implementation. Checks for leaks every ~0.5s.
         /// </summary>
@@ -120,9 +120,9 @@ namespace Hecton8.Optimization
         {
             CheckForLeaks();
         }
-        
+
         // ── PUBLIC API ─────────────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// Registers a RenderTexture allocation with owner component.
         /// </summary>
@@ -138,7 +138,7 @@ namespace Hecton8.Optimization
 #endif
                 return;
             }
-            
+
             if (owner == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -146,9 +146,9 @@ namespace Hecton8.Optimization
 #endif
                 return;
             }
-            
+
             EntityId instanceID = rt.GetEntityId();
-            
+
             if (_allocations.ContainsKey(instanceID))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -169,7 +169,7 @@ namespace Hecton8.Optimization
                 _allocations[instanceID] = existing;
                 return;
             }
-            
+
             var record = new RenderTextureAllocationRecord
             {
                 RenderTexture = rt,
@@ -182,10 +182,10 @@ namespace Hecton8.Optimization
                 AllocationStackTrace = allocationStackTrace,
                 IsDisposed = false
             };
-            
+
             _allocations[instanceID] = record;
         }
-        
+
         /// <summary>
         /// Registers a RenderTexture disposal.
         /// </summary>
@@ -194,16 +194,16 @@ namespace Hecton8.Optimization
         {
             if (rt == null)
                 return;
-            
+
             EntityId instanceID = rt.GetEntityId();
-            
+
             if (_allocations.TryGetValue(instanceID, out var record))
             {
                 record.IsDisposed = true;
                 _allocations[instanceID] = record;
             }
         }
-        
+
         /// <summary>
         /// Generates audit report grouped by owner (Visor, Camera, PostFX, UI).
         /// </summary>
@@ -217,7 +217,7 @@ namespace Hecton8.Optimization
             reportBuilder.AppendLine();
 
             ClearReportBuckets();
-            
+
             Dictionary<EntityId, RenderTextureAllocationRecord>.Enumerator enumerator = _allocations.GetEnumerator();
             while (enumerator.MoveNext())
             {
@@ -248,14 +248,14 @@ namespace Hecton8.Optimization
                         break;
                 }
             }
-            
+
             AppendCategoryReport(reportBuilder, "Visor", _reportVisorRTs);
             AppendCategoryReport(reportBuilder, "Camera", _reportCameraRTs);
             AppendCategoryReport(reportBuilder, "PostFX", _reportPostFXRTs);
             AppendCategoryReport(reportBuilder, "UI", _reportUIRTs);
             AppendCategoryReport(reportBuilder, "Other", _reportOtherRTs);
         }
-        
+
         /// <summary>
         /// Returns list of leaked RenderTextures (owner destroyed but RT not disposed).
         /// </summary>
@@ -264,7 +264,7 @@ namespace Hecton8.Optimization
         {
             results.Clear();
             float now = ResolveLifecycleClockSeconds();
-            
+
             Dictionary<EntityId, RenderTextureAllocationRecord>.Enumerator enumerator = _allocations.GetEnumerator();
             while (enumerator.MoveNext())
             {
@@ -275,7 +275,7 @@ namespace Hecton8.Optimization
                 }
             }
         }
-        
+
         /// <summary>
         /// Returns list of RenderTextures filtered by owner category.
         /// Zero-GC: clears results list, iterates allocations, filters by owner type name.
@@ -306,9 +306,9 @@ namespace Hecton8.Optimization
                 results.Add(record);
             }
         }
-        
+
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
-        
+
         private void TryRegister()
         {
             if (_registeredSlowTick)
@@ -328,16 +328,38 @@ namespace Hecton8.Optimization
             if (!Application.isPlaying)
                 return false;
 
-            RenderTextureLifecycleTracker registered = GlobalRegistry.RenderTextureLifecycle;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterRenderTextureLifecycleRuntime(this);
             _registeredService = ReferenceEquals(GlobalRegistry.RenderTextureLifecycle, this);
             return _registeredService;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            RenderTextureLifecycleTracker registered = GlobalRegistry.RenderTextureLifecycle;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsRenderTextureLifecycleRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterRenderTextureLifecycleRuntime(registered);
+            return false;
+        }
+
+        private static bool IsRenderTextureLifecycleRuntimeUsable(RenderTextureLifecycleTracker tracker)
+        {
+            return tracker != null &&
+                   tracker._registeredService &&
+                   tracker.isActiveAndEnabled;
         }
 
         private void TryUnregister()
@@ -380,7 +402,7 @@ namespace Hecton8.Optimization
         {
             _leakQueryResults.Clear();
             GetLeakedRenderTextures(_leakQueryResults);
-            
+
             if (_leakQueryResults.Count > 0)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -429,22 +451,22 @@ namespace Hecton8.Optimization
             _reportUIRTs.Clear();
             _reportOtherRTs.Clear();
         }
-        
+
         private void AppendCategoryReport(StringBuilder builder, string category, List<RenderTextureAllocationRecord> records)
         {
             if (records.Count == 0)
                 return;
-            
+
             long totalMemory = 0;
             for (int i = 0; i < records.Count; i++)
             {
                 RenderTextureAllocationRecord record = records[i];
                 totalMemory += record.MemoryBytes;
             }
-            
+
             builder.Append("--- ").Append(category).Append(" (").Append(records.Count).Append(" RTs, ")
                    .Append((totalMemory / (1024f * 1024f)).ToString("0.00")).AppendLine(" MB) ---");
-            
+
             for (int i = 0; i < records.Count; i++)
             {
                 RenderTextureAllocationRecord record = records[i];
@@ -454,7 +476,7 @@ namespace Hecton8.Optimization
                        .Append((record.MemoryBytes / (1024f * 1024f)).ToString("0.00")).Append(" MB) - Owner: ")
                        .AppendLine(record.Owner != null ? record.Owner.name : "NULL");
             }
-            
+
             builder.AppendLine();
         }
 

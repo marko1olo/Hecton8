@@ -7,34 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Tijdperk van bundelzeilsondes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Tijdperk van bundelzeilsondes
 
-NL LOC HOLD: Early extrasolar expansion leaned on beam-assisted probes and small autonomous packets. They could map, listen and seed relay assumptions faster than heavy crewed ships could move. That asymmetry explains how Deep Reach could prepare Aegir infrastructure before ordinary workers understood the full risk.
+Vroege extrasolaire expansie stuurde bundelzeilsondes en autonome pakketten vóór mensen uit. Ze kaartten zwaartekracht, straling, maanbanen, relaiszichtlijnen en mogelijke oceaanwerelden terwijl zware schepen nog papieren verplichtingen waren. Deep Reach erfde machinegemaakt vertrouwen en behandelde het als toestemming.
 
 ## Scanner
 
-NL LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+Surveyrol: Aegirs eerste kaarten kwamen als lichte vracht, niet als bemande belofte.
 
 ## Terminal
 
-NL LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+SURVEYLIJN: bundelzeilpakketten kaartten Ran en Aegir voordat vrachtroutes geschikt waren voor levende lading. Vertrouwensverval genoteerd vóór kolonie-uitbouw.
 
 ## Audio
 
-NL LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
+Het eerste menselijke ding hier was geen persoon. Het was een surveypakket met bon.
 
 ## Field Note
 
-NL LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Sondes zagen eerst. Machines bereidden als tweede voor. Werkers kwamen toen vertrouwen factureerbaar werd.
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/nl_NL. -->

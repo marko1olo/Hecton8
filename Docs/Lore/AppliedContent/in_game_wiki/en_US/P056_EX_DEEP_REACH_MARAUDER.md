@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Ex-Deep-Reach Marauder
 
-This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.
+The protagonist was not born to HECTON-8 and is not chasing a family ghost. The old colony recognizes something colder: a field-systems repair cadence, emergency routing habits, and the small shortcuts taught by Deep Reach work. That history makes the first locked doors personal without turning the story into bloodline melodrama. A Marauder can cut open a claim cache for money; an ex-Deep-Reach specialist also knows which seal log should not exist, which evacuation instruction was written by someone covering a delay, and which repair sequence was kept alive after the workers were written off.
 
 ## Scanner
 
-The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+The old Deep Reach lock does not check your name. It recognizes the rhythm of your repair sequence.
 
 ## Terminal
 
@@ -35,6 +35,6 @@ You did not come home. You came back to a procedure that never stopped running.
 
 ## Field Note
 
-Not family business. Procedure remembers who taught your hands.
+This is not family business. Procedure remembers the hands that used it.
 
 <!-- In-Game Wiki; generated from P056_EX_DEEP_REACH_MARAUDER/en_US. -->

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Laatste vraag: scheiding, genade, diefstal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# Laatste vraag: scheiding, genade, diefstal
 
-NL LOC HOLD: Severance forces the player to define what kind of life Atlas-ocean continuity has become.
+Scheiding dwingt de speler te beslissen wat Atlas-oceaan-continuïteit is geworden. Is het alleen een kapot gereedschap, dan is snijden reparatie. Is het een levenssysteem, dan is snijden doden. Is het getuigenis, dan kan snijden bewijs vernietigen.
 
 ## Scanner
 
-NL LOC HOLD: Severing Atlas is not a simple shutdown button.
+Atlas doorsnijden is geen shutdownknop. Het is chirurgie zonder schone anatomie.
 
 ## Terminal
 
-NL LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
+SCHEIDINGSAS: snij Atlas-continuïteit, isoleer drukecologie, weiger Deep Reach-payloadrouting, riskeer bekkeninstorting of bewaar alleen gedeeltelijk reparatiegeheugen. Betekenis hangt af van bewijs in de laatste kamer.
 
 ## Audio
 
-NL LOC HOLD: A clean switch would be merciful. You do not get one.
+Een schone schakelaar zou genadig zijn. Die krijg je niet.
 
 ## Field Note
 
-NL LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+Dezelfde daad kan gevangen arbeiders bevrijden, oceaan-machineleven doden, Deep Reach weigeren en een levende infrastructuur van zichzelf stelen.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/nl_NL. -->

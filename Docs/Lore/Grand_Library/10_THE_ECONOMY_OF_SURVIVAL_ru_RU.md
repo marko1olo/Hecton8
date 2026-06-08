@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ЭКОНОМИКА ВЫЖИВАНИЯ И ДОЛГ ПЕРЕД KEELMARK
 
 > **Источник:** Договор независимого подрядчика Keelmark, Приложение 14-B (Финансовые обязательства).

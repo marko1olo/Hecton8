@@ -128,6 +128,9 @@ Material:
     - _ControlScale: 0.001953125
     - _DarkenPower: 2.2
     - _FadeDistance: 2600
+    - _FallbackHeightRange: 96
+    - _FallbackShoreWidth: 22
+    - _FallbackWaterlineY: 14.02
     - _FlowNormalScale: 0.035
     - _FlowNormalStrength: 0.68
     - _HeightTransition: 0.26
@@ -152,14 +155,14 @@ Material:
     - _Smoothness1: 0.28
     - _Smoothness2: 0.22
     - _Smoothness3: 0.16
-    - _StochasticStrength: 0.5
+    - _StochasticStrength: 0.62
     m_Colors:
-    - _BaseColor: {r: 0.56, g: 0.6, b: 0.6, a: 1}
-    - _BiomeTint: {r: 0.54, g: 0.58, b: 0.59, a: 1}
+    - _BaseColor: {r: 0.5, g: 0.53, b: 0.55, a: 1}
+    - _BiomeTint: {r: 0.58, g: 0.61, b: 0.64, a: 1}
     - _CaveGlowColor: {r: 0.2, g: 0.78, b: 1, a: 1}
     - _DepthColor: {r: 0.025, g: 0.052, b: 0.085, a: 1}
-    - _RockColor: {r: 0.62, g: 0.66, b: 0.68, a: 1}
-    - _SandColor: {r: 0.66, g: 0.7, b: 0.71, a: 1}
-    - _SiltColor: {r: 0.56, g: 0.6, b: 0.6, a: 1}
+    - _RockColor: {r: 0.48, g: 0.52, b: 0.55, a: 1}
+    - _SandColor: {r: 0.78, g: 0.76, b: 0.68, a: 1}
+    - _SiltColor: {r: 0.42, g: 0.47, b: 0.5, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

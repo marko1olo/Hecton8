@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # משמורת Black Keel
 
-משמורת Black Keel מגדירה את הסיוע המסלולי כתשתית מועילה ומזוהמת: חילוץ, מכונת חוב ולחץ Deep Reach.
+Black Keel Custody מגדירה תמיכה מסלולית כתשתית שימושית ומזוהמת: נתיב חילוץ, מכונת חוב ומשטח לחץ של Deep Reach באובייקט אחד.
 
 ## Scanner
 

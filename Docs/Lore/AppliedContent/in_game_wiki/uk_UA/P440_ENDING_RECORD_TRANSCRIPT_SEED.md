@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Ending Record Transcript Seed"
+title: "Транскрипт фінального запису"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Ending Record Transcript Seed
+# Транскрипт фінального запису
 
-UK LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
+Транскрипти фінальних записів роблять наслідки логованими й порівнюваними в replay, не перетворюючи знання на успадковану силу.
 
 ## Scanner
 
-UK LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Фрагмент фінального запису перелічує приймача, hash payload, стан боргу й невирішену ціну.
 
 ## Terminal
 
-UK LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.
 
 ## Audio
 
-UK LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
+Післяопераційний запис. Приймач прийняв hash payload. Claim закрито для обліку. Прапор придушення нечитний. Custody правди не вирішено.
 
 ## Field Note
 
-UK LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Фінальний запис dossier. Має називати receiver, custody і невирішену ціну, а не чисте моральне закриття.
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/uk_UA. -->

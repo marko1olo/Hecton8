@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "עידן גשושי מפרש-קרן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# עידן גשושי מפרש-קרן
 
-HE LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-HE LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-HE LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-HE LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-HE LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+עידן גשושי מפרש-קרן הוא ההתחלה השקטה של סיפור Aegir. מטענים קטנים רכבו על כוח ממערכים רחוקים, חצו ראשונים, והחזירו packets ישנים מספיק לוויכוח אך טובים מספיק למכירה. הגשושים לא הפכו את Aegir לבטוח. הם הפכו אותו לקריא: בארות כבידה, חגורות קרינה, חתימות אוקיינוס, relay sightlines ונתיב שאפשר להפוך לרווחי עם מספיק אדישות. בין קריא לבטוח נכנסת Deep Reach.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/he_IL. -->

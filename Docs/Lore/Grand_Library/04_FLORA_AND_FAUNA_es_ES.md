@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # BIOTA LOCAL: FLORA, FAUNA Y COLAPSO ECOLÓGICO
 
 > **Fuente:** PDA recuperada, cápsula de descenso clase Styx designada 'Lazarus'.  

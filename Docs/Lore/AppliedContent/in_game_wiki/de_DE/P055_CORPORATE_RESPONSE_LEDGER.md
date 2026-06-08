@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "Konzern-Antwortledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# Konzern-Antwortledger
 
-DE LOC HOLD: Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+Der Ledger ist Black Keels Sprache, wenn niemand improvisiert. Er kann Gefahr anerkennen, eine Warteschlange öffnen, einen Anspruch sichern und den Operator dennoch hinter Assetregeln warten lassen. Antwortledger sind zugleich nützliche Signale und feindlicher Papierkram, der ausführbar wurde.
 
 ## Scanner
 
-DE LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+Jede Antwort kommt in Vertragssprache: Assetverwahrung, Haftungssperren, Probenroute, Rumpfrisiko, dann Operatorbergung.
 
 ## Terminal
 
-DE LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+ANTWORTKLASSE: Asseterhalt. Operatorbergung angehängt nach Probenverwahrung, Haftungssiegel, Rumpfaudit und Zahlungsroute.
 
 ## Audio
 
-DE LOC HOLD: The reply was automatic. The rescue was conditional.
+Die Antwort war automatisch. Die Rettung war bedingt.
 
 ## Field Note
 
-DE LOC HOLD: Immediate response is not immediate rescue.
+Sofortige Antwort ist keine sofortige Rettung.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/de_DE. -->

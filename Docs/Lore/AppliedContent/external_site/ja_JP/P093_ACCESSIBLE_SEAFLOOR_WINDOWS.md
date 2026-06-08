@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "到達可能な海底窓"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# 到達可能な海底窓
 
-JP LOC HOLD: Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map.
-
-## Scanner
-
-JP LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
-
-## Terminal
-
-JP LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-JP LOC HOLD: You land where the moon lets stone show through.
-
-## Field Note
-
-JP LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+HECTON-8の海底の大半は普通の勇気では届かない。底が見える前に圧力が壁を作る。到達可能な窓は例外だ。崩落棚、露出尾根、熱を戻した噴出口傷、濃い塩水柱が下降曲線を変える裂け目である。安全な洞窟ではない。地質との狭い取引だ。乗員は古い地殻に触れ、圧力育ちの鉱物を回収し、封じた植民地機材を見つけ、海がまた道を閉じる前に埋もれた出来事を読む。
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ja_JP. -->

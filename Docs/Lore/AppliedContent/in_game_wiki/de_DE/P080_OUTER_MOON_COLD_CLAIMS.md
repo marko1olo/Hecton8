@@ -9,32 +9,34 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "Kalte Claims der Außenmonde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# Kalte Claims der Außenmonde
 
-DE LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.
+Kalte Claims der Außenmonde beweisen, dass Aegir ein System ist, nicht ein einzelner Spukmond. Gescheiterte Soleprospekte, eingemottete Metallrouten und tote Beacons schaffen die salvage-Ökonomie, die Marauders ins Verkehrsnetz zieht.
+
+Wichtig ist nicht Entfernung, sondern Muster. Eine Route kann tot und trotzdem abrechenbar sein. Ein Beacon kann Verwahrung ohne lebende Crew wiederholen. HECTON-8 ist der schlimmste sichtbare Fall, aber nicht der erste Ort, an dem Aegir lernte, Verlust als Infrastruktur abzulegen.
 
 ## Scanner
 
-DE LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+Äußerer Claim-Beacon. Nicht alles Tote in Aegir liegt auf HECTON-8.
 
 ## Terminal
 
-DE LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+ARCHIV DER ÄUSSEREN LEITER // Thorne-Soleprospekt gescheitert. Anvil-Exportroute eingemottet. Mute-Beacon wiederholt Verwahrungsping ohne aktive Crew-Erklärung.
 
 ## Audio
 
-DE LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegir lernte Menschen zu verlieren, bevor HECTON-8 die Lektion beendete.
 
 ## Field Note
 
-DE LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+Kalte Claims machen Marauders möglich. Sie lehren Firmen auch, Muster zu begraben.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/de_DE. -->

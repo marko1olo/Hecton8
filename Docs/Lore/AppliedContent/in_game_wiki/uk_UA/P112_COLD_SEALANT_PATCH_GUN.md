@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Пістолет холодного герметика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Пістолет холодного герметика
 
-UA LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+Пістолет холодного герметика дає перший чесний ремонт після помпи. Він може зупинити точкову течу або втримати край прокладки достатньо довго, щоб відновити малу кімнату, але не робить пошкоджену конструкцію безпечною. Корисний урок на етикетці класу: HECTON-8 карає кожен ремонт поза його класом тиску.
 
 ## Scanner
 
-UA LOC HOLD: Patch gun. Rated for pinholes, not miracles.
+Пістолет холодної латки. Картридж розрахований лише на точкові течі та спокійні шви; активний зсув зірве шар.
 
 ## Terminal
 
-UA LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+МЕЖА ЛАТКИ / ХОЛОДНИЙ ГЕРМЕТИК: схоплюється на мокрій низькоглибинній обшивці після протирання. Дозволено для точкових теч, кромок прокладок і тихого просочування шва. Відхилити активні зсувні тріщини, тепле цвітіння blue debt і рухомі кабельні шви.
 
 ## Audio
 
-UA LOC HOLD: A patch is not safety. It is a countdown that looks solid.
+Не називай це герметичністю. Називай це часом.
 
 ## Field Note
 
-UA LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Латка купує хвилини. Якщо тріщина ще рухається, витрать ці хвилини на відхід.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/uk_UA. -->

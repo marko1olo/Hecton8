@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel-bewaring
 
-Black Keel is geen persoonlijke luxeschip. Het is een bijna automatische bergingscarrier onder claim-poolbewaring, verzekeringsschuld en orbitale vensters.
+Black Keel is geen luxe privéschip. Het is een bijna geautomatiseerde salvagecarrier die werkt via claimpoolbewaring, verzekeringsschuld en vertraagde orbitale vensters. Het biedt een echte route terug naar de baan zonder redding eenvoudig of loyaal te maken.
 
 ## Scanner
 

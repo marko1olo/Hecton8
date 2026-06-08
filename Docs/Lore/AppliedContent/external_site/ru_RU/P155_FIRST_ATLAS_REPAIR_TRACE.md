@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: First Atlas Repair Trace"
+title: "Первый след ремонта Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: First Atlas Repair Trace
+# Первый след ремонта Atlas
 
-RU LOC HOLD: The first repair trace keeps shallow beauty intact while showing the deeper threat: Atlas can fix the system and misclassify the person inside it.
+Первый след ремонта оставляет красоту мелководья нетронутой и показывает более глубокую угрозу: Atlas может починить систему и неверно классифицировать человека внутри нее.
 
 ## Scanner
 
-RU LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+Ремонтная биопленка на ране кабеля. Акустические повторы совпадают с ритмом обслуживания Atlas, а не с кодом колониального маяка.
 
 ## Terminal
 
-RU LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+СЛЕД ОБСЛУЖИВАНИЯ ATLAS: трещина запечатана; целостность кабеля восстановлена; органическое препятствие сохранено как pressure-compatible substrate; human ID plate не классифицирована как приоритет извлечения.
 
 ## Audio
 
-RU LOC HOLD: Atlas repair complete. Person not in work order.
+Ремонт Atlas завершен. Человека нет в наряде.
 
 ## Field Note
 
-RU LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+Она запечатала кабель вокруг жетона с именем. Полезный ремонт. Плохая категория.
 
 <!-- External Site; generated from P155_FIRST_ATLAS_REPAIR_TRACE/ru_RU. -->

@@ -8,33 +8,33 @@ biome_tags: biome.human_space;biome.publication
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "PT LOC HOLD: Ran/Aegir Distance Band"
+spoiler_tier: 1
+title: "Faixa de distância Ran/Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Ran/Aegir Distance Band
+# Faixa de distância Ran/Aegir
 
-PT LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.
+O sistema Aegir fica numa faixa no-FTL alcançável, mas punitiva: perto o bastante para indústria, longe o bastante para abandono importar.
 
 ## Scanner
 
-PT LOC HOLD: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+Faixa pública: Ran/Aegir é uma rota sem FTL de classe dez anos-luz a partir de Sol.
 
 ## Terminal
 
-PT LOC HOLD: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+FAIXA DE EFEMÉRIDES: usar a classe dez anos-luz na prosa pública até as constantes celestes serem congeladas em tabela. Não há resgate FTL nesta rota.
 
 ## Audio
 
-PT LOC HOLD: Ten light-years is close on a map and brutal for a contract.
+Dez anos-luz é perto no mapa e brutal no contrato.
 
 ## Field Note
 
-PT LOC HOLD: Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
+Registro astronômico público: faixas de distância e mapas de rota são intervalos explicativos, não constantes finais de efemérides.
 
 <!-- External Site; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/pt_BR. -->

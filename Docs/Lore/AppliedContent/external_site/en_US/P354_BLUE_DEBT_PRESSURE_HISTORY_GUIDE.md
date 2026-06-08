@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Blue Debt Pressure History Guide
 
-Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.
+Xenon-Omega, called blue debt by salvagers, ties HECTON-8's geology to computation, debt law and the reason Deep Reach still wants a drowned claim back.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ Blue debt is what people call it after the invoice arrives.
 
 ## Field Note
 
-Color is not grade. A quiet container with clean custody pays; a singing one buys you a drone wake.
+Color is not grade. A quiet container with clean custody pays; a singing one buys a drone wake.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/en_US. -->

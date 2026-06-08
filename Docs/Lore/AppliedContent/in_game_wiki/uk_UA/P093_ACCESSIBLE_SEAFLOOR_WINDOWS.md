@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "Доступні вікна морського дна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# Доступні вікна морського дна
 
-UK LOC HOLD: Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.
+Доступні вікна морського дна - місця, де зламана кора HECTON-8 ненадовго знижує ціну спуску. Вони виникають біля зруйнованих шельфів, оголених гребенів, повторно прогрітих жерлових шрамів і ропних стовпів, які несуть тиск інакше, ніж відкрита вода. Вікно все одно смертельне, якщо поспішати. Воно дає контакт зі старим дном, рідкісними мінеральними жилами, похованим колоніальним залізом і доказами, які головний океан розчавив би поза досяжністю.
 
 ## Scanner
 
-UK LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
+Маркер оголеного гребеня. Тут оболонка розірвалася досить тонко, щоб краулер торкнувся старого дна й не став пастою.
 
 ## Terminal
 
-UK LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
+КРИТЕРІЇ ВІКНА: губа тріснутої кори, ропний стовп із повторним нагрівом від жерла, рампа зруйнованого шельфу, стабільне сонарне повернення, кишеня тиску нижче червоної лінії костюма. Позначати лише для повільної здобичі.
 
 ## Audio
 
-UK LOC HOLD: You land where the moon lets stone show through.
+Море дає торкатися дна через вікна, а не там, де ти відчув хоробрість.
 
 ## Field Note
 
-UK LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+Більша частина місяця тримає своє дно як таємницю тиску. Вікна - винятки із зубами.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/uk_UA. -->

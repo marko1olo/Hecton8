@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "Final Question: Broken Guardian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Final Question Broken Guardian
+# Final Question: Broken Guardian
 
-Final Question Broken Guardian defines the preserve/quarantine ending axis.
+Atlas should not resolve into a simple boss, god or machine disease. It is more disturbing if it once performed real protection. It kept pressure doors cycling, sealed fractures, routed heat away from living rooms and built a maintenance ecology after human command failed. Some of the ocean is alive because Atlas did not stop.
 
-## Scanner
-
-Atlas is a broken guardian, not a clean villain and not a clean god.
-
-## Terminal
-
-GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
-
-## Audio
-
-It kept the system breathing after it forgot what a worker was.
-
-## Field Note
-
-Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+The same continuity is guilty. Its damaged categories can treat a worker like damaged equipment, biomass like spare material and grief like diagnostic noise. Preserving Atlas may protect an emergent ocean-machine ecology from Deep Reach and from the player's panic. It may also deny the dead any clean verdict. The ending should make preservation feel intelligent, costly and morally unfinished.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/en_US. -->

@@ -11,6 +11,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using ToxicityExposureSignal = Hecton8.Atmosphere.ToxicityExposureSignal;
 
 namespace Hecton8.UI
 {
@@ -269,6 +270,8 @@ namespace Hecton8.UI
         private const int CsvOverrideMaxBytes = 8192;
         private const float AttentionDotThreshold = 0.70710678f;
         private const float JobWarningMicroseconds = 200f;
+        private const float TransientHazardVitalsDecayPerSecond = 2.75f;
+        private const float TransientHazardVitalsClearThreshold = 0.001f;
         private const string DefaultShaderName = "Hecton8/UI/WristHudSDF";
         private const string LegacyPaletteFileName = "ui_color_palettes.h8bin";
         private const string LegacyFontMetricsFileName = "font_atlas_metrics.bin";
@@ -281,6 +284,7 @@ namespace Hecton8.UI
         private const uint SpecialCompassCode = 0xFFFFFF05u;
         private const uint BlackBoxDumpMagic = 0x44554853u; // SHUD
         private const uint BlackBoxDumpVersion = 1u;
+        private const uint PlayerToxicityFallbackEntityHash = ToxicityExposureSignal.PlayerEntityFallbackHash;
 
         private const int StateFlagCulled = 1 << 0;
         private const int StateFlagPdaOpen = 1 << 1;
@@ -383,6 +387,9 @@ namespace Hecton8.UI
         private float _csvPollTimer;
         private float _globalSystemPressure01;
         private int _survivalPressureHoldFrames;
+        private GameObject _playerToxicityTargetObject;
+        private uint _playerToxicityTargetHash = PlayerToxicityFallbackEntityHash;
+        private int _lastToxicityExposureSnapshotGeneration;
         private string _projectRoot;
         private string _csvOverridePath;
 
@@ -528,6 +535,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             RefreshCachedRegistryServices();
+            _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
             TryRegisterHotSwapListener();
             ColdSanityCheckLayout();
             EnsureNativeBuffers();
@@ -962,6 +970,8 @@ namespace Hecton8.UI
         {
             float previousMathLodPressure = ResolveMathLodPressure01();
             RefreshQualityPolicy();
+            DecayTransientHazardVitals(deltaTime);
+            RefreshPlayerToxicityTargetHash(GlobalRegistry.Player);
             DrainGlobalSignalSnapshots();
 
             if (enableMockSignals)
@@ -991,6 +1001,20 @@ namespace Hecton8.UI
             _pdaQueueCount = 0;
         }
 
+        private void DecayTransientHazardVitals(float deltaTime)
+        {
+            float safeDelta = math.max(0f, math.isfinite(deltaTime) ? deltaTime : 0f);
+            float decay01 = math.saturate(1f - safeDelta * TransientHazardVitalsDecayPerSecond);
+            _latestVitals.Radiation01 = DecayTransientHazardVital01(_latestVitals.Radiation01, decay01);
+            _latestVitals.Toxemia01 = DecayTransientHazardVital01(_latestVitals.Toxemia01, decay01);
+        }
+
+        private static float DecayTransientHazardVital01(float value, float decay01)
+        {
+            float next = FiniteSaturate(value) * math.saturate(decay01);
+            return next <= TransientHazardVitalsClearThreshold ? 0f : next;
+        }
+
         private void DrainGlobalSignalSnapshots()
         {
             ReadOnlySpan<SurvivalVitalsChangedSignal> vitals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
@@ -998,19 +1022,41 @@ namespace Hecton8.UI
             {
                 SurvivalVitalsChangedSignal signal = vitals[i];
                 if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u)
-                    _latestVitals.Oxygen01 = math.saturate(signal.Oxygen01);
+                    _latestVitals.Oxygen01 = FiniteSaturate(signal.Oxygen01);
                 if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u)
-                    _latestVitals.Power01 = math.saturate(signal.Energy01);
+                    _latestVitals.Power01 = FiniteSaturate(signal.Energy01);
                 if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Integrity) != 0u)
-                    _latestVitals.Health01 = math.saturate(signal.Integrity01);
+                    _latestVitals.Health01 = FiniteSaturate(signal.Integrity01);
             }
 
             ReadOnlySpan<RadiationDoseSignal> doses = SignalBus<RadiationDoseSignal>.GetFrameSnapshot();
             for (int i = 0; i < doses.Length; i++)
             {
                 RadiationDoseSignal signal = doses[i];
-                _latestVitals.Radiation01 = math.max(_latestVitals.Radiation01, math.saturate(signal.Intensity01));
-                _latestVitals.Toxemia01 = math.max(_latestVitals.Toxemia01, math.saturate(signal.Dose * 0.01f));
+                float radiationIntensity01 = FiniteSaturate(signal.Intensity01);
+                float radiationDoseToxemia01 = RadiationDoseSignal.DoseToUnit01(signal.Dose);
+                _latestVitals.Radiation01 = math.max(_latestVitals.Radiation01, radiationIntensity01);
+                _latestVitals.Toxemia01 = math.max(_latestVitals.Toxemia01, radiationDoseToxemia01);
+            }
+
+            int toxicitySnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
+            if (toxicitySnapshotGeneration != _lastToxicityExposureSnapshotGeneration)
+            {
+                _lastToxicityExposureSnapshotGeneration = toxicitySnapshotGeneration;
+                ReadOnlySpan<ToxicityExposureSignal> toxicities = SignalBus<ToxicityExposureSignal>.GetFrameSnapshot();
+                uint playerToxicityTargetHash = _playerToxicityTargetHash != 0u ? _playerToxicityTargetHash : PlayerToxicityFallbackEntityHash;
+                for (int i = 0; i < toxicities.Length; i++)
+                {
+                    ToxicityExposureSignal signal = toxicities[i];
+                    if (signal.EntityId == 0u)
+                        continue;
+                    if (signal.EntityId != playerToxicityTargetHash && signal.EntityId != PlayerToxicityFallbackEntityHash)
+                        continue;
+
+                    float exposure01 = FiniteSaturate(signal.Exposure01);
+                    float toxemiaDelta01 = FiniteSaturate(signal.ToxemiaDelta);
+                    _latestVitals.Toxemia01 = math.max(_latestVitals.Toxemia01, math.max(exposure01, toxemiaDelta01));
+                }
             }
 
             ReadOnlySpan<SystemHealthIndexSignal> health = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
@@ -2333,6 +2379,14 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                RefreshPlayerToxicityTargetHash(currentService as IPlayerRuntimeContext);
+                _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
+                PdaProjectorRebindPlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -2349,6 +2403,7 @@ namespace Hecton8.UI
                     EnsureSignalBuffers();
                     EnsureGraphicsResources();
                     SeedInitialState();
+                    _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
                 }
             }
         }
@@ -2356,12 +2411,28 @@ namespace Hecton8.UI
         private void RefreshCachedRegistryServices()
         {
             CacheDataVaultCold(GlobalRegistry.DataVault);
+            RefreshPlayerToxicityTargetHash(GlobalRegistry.Player);
+            PdaProjectorRebindPlayerRuntimeContext(GlobalRegistry.Player);
             RefreshQualityPolicy();
         }
 
         private void CacheDataVaultCold(IDataVault vault)
         {
             _cachedDataVault = vault;
+        }
+
+        private void RefreshPlayerToxicityTargetHash(IPlayerRuntimeContext playerContext)
+        {
+            GameObject playerObject = playerContext != null ? playerContext.PlayerObject : null;
+            if (playerObject == null)
+                playerObject = BootstrapState.CurrentPlayerObject;
+
+            if (ReferenceEquals(playerObject, _playerToxicityTargetObject) && _playerToxicityTargetHash != 0u)
+                return;
+
+            _playerToxicityTargetObject = playerObject;
+            uint targetHash = playerObject != null ? unchecked((uint)EntityId.ToULong(playerObject.GetEntityId())) : 0u;
+            _playerToxicityTargetHash = targetHash != 0u ? targetHash : PlayerToxicityFallbackEntityHash;
         }
 
         private void TryRegisterHotSwapListener()

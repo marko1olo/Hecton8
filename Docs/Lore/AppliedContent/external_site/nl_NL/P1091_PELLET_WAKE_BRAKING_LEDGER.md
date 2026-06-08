@@ -14,15 +14,17 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Remboek van het pelletspoor
 
-HECTON-8 heeft geen magische muur nodig om de speler te isoleren. Afstand is genoeg. De Aegir-route werd geopend door pelletstraal-sondes: kleine autonome scouts, geduwd door enorme beam-installaties bij Luyten Junction. Een sonde kan worden afgevuurd, verloren en afgeschreven. Een kolonieschip niet.
+HECTON-8 is geïsoleerd omdat reizen zwaar is. De Aegir-route begon met pelletstraal-scouts: kleine autonome sondes die vanaf Luyten Junction werden geduwd en bedoeld waren om nuttig te sterven. Ze droegen kaarten, sterfixes en juridische getuigenpakketten. Een verloren sonde was een kostenregel. Een verloren kolonieschip was een generatie schuld.
 
-Atlas-vracht is iets anders. Het draagt fabrieken, cryobaaien, boorsystemen, verzegelde schuldcontracten en mensen die goedkoop genoeg tekenden. De fusie-elektrische pulsmotoren besteden jaren aan snelheid maken. Vlak voor aankomst moet het schip die snelheid verliezen. Magnetische zeilen ontvouwen zich over absurde afstanden om tegen geladen deeltjes te remmen. Laatste passages schrapen atmosfeer, stormomhulsel en gasreusrand. Een kleine fout in het remboek kan vracht, bemanning en claim wissen.
+Het Atlas-vrachttijdperk bewoog echte massa. Een carrier stak over met fabriekskernen, cryobaaien, boorsystemen, routeontvangers, verzegelde contracten en mensen goedkoop genoeg om te tekenen. De fusie-elektrische stapels bouwden jarenlang snelheid. Niets in die architectuur leek op een wonder. Elke correctie verbrandde voorraad. Elke schildplaat was een weddenschap. Elke kilogram kwam aan met een naam aan het boek.
 
-Daarom voelt redding in HECTON-8 wreed zonder natuurkunde te breken. Sol kan een pakket ontvangen nadat de beslissing is verlopen. Deep Reach kan een schuld sneller bezitten dan een romp verplaatsen. Black Keel kan in lokale Aegir-baan een herstelvenster prijzen, maar dat is lokale salvage-machinerie, geen belofte van thuis. Beschaving bereikt je eerst als papierwerk, dan als signaal, veel later als massa.
+Het remboek is de wrede pagina. Een bijna-lichtcarrier moet weer langzaam worden voordat hij iets kan leveren. Magnetische zeilen openen over onmogelijke overspanningen en trekken tegen geladen deeltjes. Pelletbanen bijten in de zeilrand. Laatste passes gebruiken atmosfeer, stormomhulsel en gasreuszwaartekracht als rem. Mist hij de marge, dan overleeft het schip nergens nuttigs. Snijdt hij te fijn, dan ontvangt de route een pluim, geen vracht.
+
+Daarom kan redding in HECTON-8 obsceen voelen zonder fysica te breken. Sol kan antwoorden nadat de beslissing verlopen is. Deep Reach kan een schuld sneller erven dan het een romp beweegt. Black Keel kan in lokale baan zitten en een herstelvenster verkopen omdat het al deel is van de Aegir-machine. De overlevende staat niet buiten de beschaving. Hij zit in haar aankomstvolgorde: papierwerk, signaal, daarna massa.
 
 <!-- External Site; generated from P1091_PELLET_WAKE_BRAKING_LEDGER/nl_NL. -->

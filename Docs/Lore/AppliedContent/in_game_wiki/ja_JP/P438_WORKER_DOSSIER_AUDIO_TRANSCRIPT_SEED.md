@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "作業員ドシエ音声記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Worker Dossier Audio Transcript Seed
+# 作業員ドシエ音声記録
 
-JA LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.
+作業員ドシエ記録は、彼らが証拠になる前に、沈んだコロニーへ労働人口を与える。重要なのは日常だ。名前、作業、工具、悪い水量計算、次のシフトを期待する習慣。
 
 ## Scanner
 
-JA LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+回収された作業員音声。名前、職務、ロッカー、水量カウント、route holdを一つの人間的custody線につなぐ。
 
 ## Terminal
 
-JA LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
+DOSSIER AUDIO WKR-SET: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold.
 
 ## Audio
 
-JA LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
+シフト記録。ポンプ室はまだ息をしている。ロッカー封印が固着。水量カウント不足。Kadeに、掲示板は嘘をついたと伝えろ。
 
 ## Field Note
 
-JA LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+dossier barks、ロッカー字幕、作業員wiki用。声は忙しく、詩的にしない。
 
 <!-- In-Game Wiki; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/ja_JP. -->

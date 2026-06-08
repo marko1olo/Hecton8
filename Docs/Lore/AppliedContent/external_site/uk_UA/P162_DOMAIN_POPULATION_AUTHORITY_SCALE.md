@@ -9,32 +9,24 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Population And Authority Scale"
+title: "Шкала Населення І Влади"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Population And Authority Scale
+# Шкала Населення І Влади
 
-UK LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
+## Кількість Не Є Владою
 
-## Scanner
+Доменна таблиця навмисно тримає населення м'яким. Точні census-числа можна налаштувати пізніше, але зв'язок тиску зафіксований: Sol має старі фінанси й сертифікацію, Centauri має мову легітимності, Barnard має salvage-культуру, Tau Ceti має публічний тиск доказів, Luyten має custody пакетів, а Aegir має брудне місце, де все це стає механікою.
 
-UK LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+На HECTON-8 назва домену не має читатися як довідкова дрібниця. Sol Core - це печатка на власності й страховій безперервності. Він може зробити мертвий океан юридично активним. Centauri Compact - пам'ять про робочу експансію, тому Deep Reach може позичати його тон хартій і виглядати менш гнилим. Barnard Yards пояснює, чому протагоніст знає затискачі, різаки, pressure tools і погану роботу без героїчного міфу.
 
-## Terminal
+Tau Ceti цінний, бо може зробити доказ публічно важливим. Це не означає, що він урятує дайвера до зміни припливу. Luyten Junction холодніший: він може зберегти custody, hash chains і packet notary records без моральної влади. Aegir - dirty claim node, де локальні shells, вікна Black Keel і priority hooks Deep Reach перетворюють віддалені влади на негайну небезпеку.
 
-UK LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
-
-## Audio
-
-UK LOC HOLD: The largest domain is not the nearest hand.
-
-## Field Note
-
-UK LOC HOLD: Do not turn the setting into census space opera.
+Тому малий desk може важити більше за планету. HECTON-8 керує не найбільше населення. Ним керує той, хто може провести claim крізь відстань і виставити рахунок тому, хто вижив і торкнувся його.
 
 <!-- External Site; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/uk_UA. -->

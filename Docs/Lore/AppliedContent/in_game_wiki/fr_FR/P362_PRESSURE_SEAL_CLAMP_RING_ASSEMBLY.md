@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "Assemblage d'anneau de serrage d'étanchéité pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Pressure Seal Clamp Ring Assembly
+# Assemblage d'anneau de serrage d'étanchéité pression
 
-FR LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.
+Les joints de pression expliquent pourquoi la réparation doit descendre plus profond. Les matériaux qui gardent l'eau hors d'une salle peuvent aussi coller la capsule à l'épave lorsqu'une mauvaise chaîne d'étanchéité est acceptée.
 
 ## Scanner
 
-FR LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Cicatrice d'anneau de serrage. Le manchon d'ascension a survécu à l'impact en dépensant le joint qui devait le ramener chez lui.
 
 ## Terminal
 
-FR LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT : shallow patch maintient seulement la pression de compartiment. Ascent seal exige deep-rated clamp ring, pressure-glass seat, shell-sealant map et profil Deep Reach vérifié. Atlas-grown sealant peut préserver l'habitat tout en bloquant une séparation propre.
 
 ## Audio
 
-FR LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+Le joint utile est vivant dans la mauvaise direction.
 
 ## Field Note
 
-FR LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+Une rustine de safe-room peut acheter une heure d'air. Elle ne tient pas une impulsion de lancement.
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/fr_FR. -->

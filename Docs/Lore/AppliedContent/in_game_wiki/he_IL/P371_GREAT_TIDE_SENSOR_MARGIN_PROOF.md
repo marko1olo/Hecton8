@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Great Tide Sensor Margin Proof"
+title: "עקבת שולי הגאות הגדולה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Great Tide Sensor Margin Proof
+# עקבת שולי הגאות הגדולה
 
-HE LOC HOLD: Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.
+העקבה מוכיחה שני דברים יחד: הגאות הגדולה היתה אמיתית, והשוליים הקטלניים נראו לפני שהדוח הודה בהם. Deep Reach לא פקדה על המים לעלות. היא אישרה חלון מסלול כשמעטפת הלחץ של המושבה כבר איבדה מרווח, ואז פרסמה cascade בלי חתימת האזהרה.
 
 ## Scanner
 
-HE LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+חיישן גאות שחולץ. גזירת השיא עברה את תכן המושבה, אבל פריצת שולי האזהרה נרשמה לפני חותמת ה-cascade הציבורית.
 
 ## Terminal
 
-HE LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. סף tail-risk אושר בידי סמכות המסלול. הערת מפעיל הוסרה משרשרת האירוע הציבורית. העקבה הגולמית נשמרה בזיכרון brine-buffer.
 
 ## Audio
 
-HE LOC HOLD: Physics did the damage. A person signed the margin.
+האוקיינוס לא שיקר. הדוח שיקר.
 
 ## Field Note
 
-HE LOC HOLD: Use to anchor the public lie against real sensor evidence.
+הערת בוזז: אל תחפש נאום נבל. חפש את השורה שמישהו מחק.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/he_IL. -->

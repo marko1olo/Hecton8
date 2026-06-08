@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Dégâts de capsule
 
-Ces dégâts justifient l'isolement: la descente a fonctionné, la survie tient, l'ascension est morte.
+Les dégâts de capsule de largage expliquent pourquoi l'isolement tient : la descente a fonctionné, les systèmes de survie ont survécu, le matériel d'ascension non.
 
 ## Scanner
 

@@ -27,6 +27,7 @@ namespace Hecton8.Environment.Fluids
         public const int TelemetryCapacity = 300;
         public const int ProfileCapacity = 16;
         public const int CsvScratchBytes = 65536;
+        public const float DefaultWaterLevel = 14.02f;
         public const BufferID RequestBufferID = (BufferID)72960;
         public const BufferID ResultBufferID = (BufferID)72961;
         public const BufferID TelemetryRingBufferID = (BufferID)72962;
@@ -96,7 +97,7 @@ namespace Hecton8.Environment.Fluids
             try
             {
                 OceanGlobalWaterLevelDTO row = default;
-                row.WaterLevel = math.select(0f, waterLevel, math.isfinite(waterLevel));
+                row.WaterLevel = ResolveWaterLevel(waterLevel);
                 row.GlobalQualityWeight = math.saturate(math.select(0f, globalQualityWeight, math.isfinite(globalQualityWeight)));
                 row.FrameIndex = frameIndex;
                 row.Flags = 1u;
@@ -107,6 +108,15 @@ namespace Hecton8.Environment.Fluids
             {
                 vault.ReleaseWriteLock(in handle, OwnerSystem);
             }
+        }
+
+        private static float ResolveWaterLevel(float candidateWaterLevel)
+        {
+            return math.isfinite(candidateWaterLevel) &&
+                math.abs(candidateWaterLevel) > 0.0001f &&
+                math.abs(candidateWaterLevel) <= 1000f
+                ? candidateWaterLevel
+                : DefaultWaterLevel;
         }
 
         public static bool TryRecordTelemetry(

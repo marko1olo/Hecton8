@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # セクター44の廃墟
 
 > **出典:** 測量ドローン地図作成ログ 99-デルタ（回収済み）。

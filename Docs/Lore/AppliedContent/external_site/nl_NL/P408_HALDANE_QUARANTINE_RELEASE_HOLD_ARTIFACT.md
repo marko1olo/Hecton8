@@ -9,32 +9,22 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Haldane Quarantine Hold"
+title: "Haldane-hold voor quarantainevrijgave"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Haldane Quarantine Hold
+# Haldane-hold voor quarantainevrijgave
 
-NL LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## Een Juiste Procedure Op De Verkeerde Minuut
 
-## Scanner
+De Haldane-hold moet niet als simpele fraude lezen. HECTON-8 had besmettingsrisico, beschadigde seals, sample custody-problemen en biologische onzekerheid. Een quarantaineprotocol was logisch voordat de ramp kinetisch werd. Daarom snijdt het document: de procedure was echt genoeg om te verdedigen en traag genoeg om te doden.
 
-NL LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Release certification wordt een wapen door timing. Terwijl druk stijgt en routes falen, vraagt de hold om XO sample custody, seal-read variance en downstream exposure review. Elke frase klinkt verantwoordelijk. Samen houden ze evacués, monteurs en getuigen in een falende kolonie tot rescue niet meer het bepalende werkwoord is.
 
-## Terminal
-
-NL LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-NL LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-NL LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Hier voelt Deep Reach institutioneel. Haldane hoeft niet te lachen om opgesloten werkers. De desk hoeft alleen chain of custody te bewaren, toekomstige liability te verminderen en besmet bewijs niet los te laten in een claim space die hij niet beheerst. De horror is dat al die motieven correct kunnen klinken in de minuut waarin mensen de deur open nodig hadden.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/nl_NL. -->

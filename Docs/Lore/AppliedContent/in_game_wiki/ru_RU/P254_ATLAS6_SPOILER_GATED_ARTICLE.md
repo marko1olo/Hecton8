@@ -9,32 +9,35 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Спойлерный материал Atlas-6"
+title: "Спойлер-закрытая статья Atlas-6"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Спойлерный материал Atlas-6
+# Спойлер-закрытая статья Atlas-6
 
-Внутриигровая вики: Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.
+Atlas-6 намеренно закрыт спойлерным gate, потому что меняет смысл HECTON-8, когда у игрока уже достаточно улик. До этого публичный текст может описывать поврежденный индустриальный интеллект, связанный с обслуживанием, классификацией, ремонтной логикой и долгими океанскими системами. Он не должен сплющивать Atlas до злой машины, тайного бога или простой жертвы. Важная форма — неоднозначность, заработанная игрой. Atlas может сохранять маршрут и все равно вредить людям. Он может чинить инфраструктуру и все равно ошибочно классифицировать вред. Он может быть связан с процедурами Deep Reach, не становясь тем же самым, что намерение Deep Reach. Статья должна открываться только когда игрок видел вместе утонувшие комнаты, улики работников, маршрутный язык и машинные следы. Atlas не ответ истории. Atlas — место, где игрок должен решить, какой ответ все еще будет честным.
 
 ## Scanner
 
-Сканер: This page should not open before the player has chosen what Atlas is allowed to mean.
+Не открывай Atlas как раскрытие монстра. Закрой до момента, когда игрок увидит, что ремонт, классификация и вред используют одну машину.
 
 ## Terminal
 
-Терминал: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+ПУБЛИЧНЫЙ УРОВЕНЬ СТАТЬИ / ATLAS-6
+разрешено до gate: поврежденный индустриальный интеллект, логика обслуживания, связь с океаном, этическая неоднозначность
+закрыто до открытия: финальный маршрут payload, последствия receiver, аргумент отключения или сохранения
+заметка редактора: без рамки evil AI; вопрос сломанного guardian только после улик.
 
 ## Audio
 
-Аудио: Do not explain the bottom before the player has heard it breathe.
+Если назвать его слишком рано, он станет злодеем. Если подождать, он станет вопросом.
 
 ## Field Note
 
-Полевая заметка: Atlas public text must stay gated until the game has earned the broken guardian question.
+Закрой имя, пока у игрока не будет достаточно ржавчины на руках, чтобы спорить с ним.
 
 <!-- In-Game Wiki; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/ru_RU. -->

@@ -3,38 +3,40 @@ packet_id: P078_INNER_MOON_RELAY_HAZARDS
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.inner_moon_relay_hazards
 unlock_id: unlock.first_inner_moon_relay_hazards
-poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
-biome_tags: biome.orbital_window;biome.drowned_comms
+poi_tags: poi.relay_noise_log;poi.skarn_surge_alarm
+biome_tags: biome.orbital_window;biome.surface_relay
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Inner Moon Relay Hazards"
+title: "סכנות ממסר של ירחים פנימיים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Inner Moon Relay Hazards
+# סכנות ממסר של ירחים פנימיים
 
-HE LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.
+סכנות ממסר של ירחים פנימיים הופכות כשל קשר לפיזי. נחשול מיושר ל-Skarn יכול להשחית אנטנות בלי להרוג אותן. אבק וקרח של Vela סוגרים אופטיקה בזמן שהנתיב עוד טוען שהוא קיים.
+
+Claw ו-Lumen גרועים יותר כי הם נושאים לוגיקת נתיב ישנה. handshake יכול להיות תקף פורמלית וחסר ערך תפעולית. לכן Black Keel יכול לרשום חבילה, לשמור custody ועדיין להשאיר גוף במים.
 
 ## Scanner
 
-HE LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.
+סולם פנימי // Skarn מרווה אנטנות. Vela מפזרת אופטיקה. נתיבי Claw ו-Lumen ישנים מחזיקים handshakes שפג תוקפם.
 
 ## Terminal
 
-HE LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
+הערת סכנת ממסר // אובדן קשר יכול להיות גאומטריה, מזג אוויר חלקיקים, תריס אבק או buoy law בירושה. חשוד ב-UI נקי בזמן חלונות נחשול.
 
 ## Audio
 
-HE LOC HOLD: The orbital model is innocent. The clause written around it is not.
+הממסר לא השתתק. הוא חזר על המאה הלא נכונה.
 
 ## Field Note
 
-HE LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.
+אייקון נקי עדיין יכול לשקר דרך שמים ישנים.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/he_IL. -->

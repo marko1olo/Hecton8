@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "קבועי גיאולוגיית זרע"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# קבועי גיאולוגיית זרע
 
-HE LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+קבועי גיאולוגיית זרע שומרים את HECTON-8 עקבי לאורך ריצות ארוכות. קניונים יכולים להיפתח בסדר אחר, ראיות לזוז, כיסים בטוחים להשתנות ולחץ מינים להתחלף. הכוכב נשאר Aegir, הירח נשאר HECTON-8, רצועות העומק שומרות סדר, Great Tide שומר קצב, ואגן Atlas נשאר קשור לאמת העמוקה ביותר.
 
 ## Scanner
 
-HE LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+הערת יצירת נתיב. מפת החילוץ משתנה, אבל הירח שומר את אותן עצמות.
 
 ## Terminal
 
-HE LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+קבועים: Aegir כראשי, סולם מסלול HECTON-8, מרווח Great Tide, סדר רצועות עומק, יחס אגן Atlas, התנהגות לחץ של blue debt. משתנה: גישת קניון, סדר נקודות, כיסים בטוחים, צפיפות bloom, חשיפת חילוץ.
 
 ## Audio
 
-HE LOC HOLD: New seed, same moon. Different wound.
+דפוס פצע אחר. אותו ירח מתחת.
 
 ## Field Note
 
-HE LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+ריצה חדשה יכולה לקבור ראיות אחרת; היא לא יכולה לשכתב כבידה, גאות או אשמה.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/he_IL. -->

@@ -9,32 +9,20 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Deep Reach Suboffice Registry"
+title: "Реестр Субофисов Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Deep Reach Suboffice Registry
+# Реестр Субофисов Deep Reach
 
-RU LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## Малые Офисы, Большие Последствия
 
-## Scanner
+Deep Reach страшнее, когда перестает звучать как заговор и начинает звучать как администрация. Реестр полезен потому, что каждое имя офиса достаточно скучно, чтобы быть настоящим. Contract Continuity Desk держит obligations живыми после того, как работник хотел бы их смерти. Packet Notary Interface решает, станет сообщение доказательством или шумом. Quarantine Hold Desk делает задержку медицински ответственной. Asset Silence Board превращает свидетелей в exposure. Return Action Queue оценивает тело против payload, orbit и public risk.
 
-RU LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-RU LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-RU LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-RU LOC HOLD: Use dull names. Dull names are where liability hides.
+Ни одному desk не нужно ненавидеть игрока. Каждому достаточно делать свою работу внутри priority stack, написанного до того, как поднялась вода. Поэтому evidence HECTON-8 должен собираться как печати, routing fragments и мелкие противоречия. Преступление не спрятано за театральным злом. Оно размазано по формам, которые выглядят defensible, пока игрок не выложит их в ряд.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/ru_RU. -->

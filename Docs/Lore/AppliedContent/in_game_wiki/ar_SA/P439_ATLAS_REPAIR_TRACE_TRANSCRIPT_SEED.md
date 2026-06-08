@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "تفريغ أثر إصلاح Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Repair Trace Transcript Seed
+# تفريغ أثر إصلاح Atlas
 
-AR LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.
+صوت Atlas مخيف لأنه يعامل الحياة والمعدن والماء كسطح صيانة واحد متضرر.
 
 ## Scanner
 
-AR LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+بذرة صوت/تعليق: آثار Atlas يجب أن تبدو كتليمترية إصلاح تنهار فيها الفئات، لا كإله يتكلم.
 
 ## Terminal
 
-AR LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
+TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.
 
 ## Audio
 
-AR LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+أثر إصلاح: انقطاع الغشاء مقبول. نمو الكابل مصرح. مسار الفونا محدد serviceable.
 
 ## Field Note
 
-AR LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+للتعليقات الصوتية وطبقات الصوت العميقة وبوابات Atlas spoiler. اجعله مقتضبا وتصنيفيا ومتضررا.
 
 <!-- In-Game Wiki; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/ar_SA. -->

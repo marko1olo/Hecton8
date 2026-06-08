@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "سجل الاستجابة المؤسسية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# سجل الاستجابة المؤسسية
 
-AR LOC HOLD: Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority.
-
-## Scanner
-
-AR LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
-
-## Terminal
-
-AR LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
-
-## Audio
-
-AR LOC HOLD: The reply was automatic. The rescue was conditional.
-
-## Field Note
-
-AR LOC HOLD: Immediate response is not immediate rescue.
+سجل الاستجابة المؤسسية ليس خطاب شرير. إنه أبرد من ذلك. إنه وعد مقروء آليا بأن Black Keel سترد، لكن فقط داخل الترتيب الذي تعترف به عقودها. حيازة الأصل أولا. ختم المسؤولية ثانيا. تدقيق البدن، مسار العينة، مسار الدفع، ثم استرداد المشغل إذا سمح الطابور. يستطيع اللاعب استخدام هذه السجلات كدلائل ومفاتيح ووسائل ضغط لأن النظام قابل للتنبؤ. وهذه القابلية نفسها هي الإدانة: لم تهجر HECTON-8 بقرار سيئ واحد، بل بحزمة استجابة ظلت تعمل بينما صار الناس حمولة أقل أولوية.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/ar_SA. -->

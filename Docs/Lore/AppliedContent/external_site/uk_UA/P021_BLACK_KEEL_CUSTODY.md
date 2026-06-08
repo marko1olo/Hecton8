@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Опіка Black Keel
 
-Опіка Black Keel визначає орбітальну підтримку як корисну, скомпрометовану інфраструктуру: порятунок, борг і тиск Deep Reach.
+Black Keel Custody задає орбітальну підтримку як корисну, скомпрометовану інфраструктуру: маршрут порятунку, боргову машину й поверхню тиску Deep Reach в одному об'єкті.
 
 ## Scanner
 

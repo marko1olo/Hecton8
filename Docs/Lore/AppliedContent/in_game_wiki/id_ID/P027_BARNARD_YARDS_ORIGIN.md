@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Asal Barnard Yards
 
-Barnard Yards adalah budaya bongkar kapal dan hardware tekanan. Ini memberi pemain asal profesional yang masuk akal.
+Barnard Yards adalah budaya bongkar kapal dan perangkat tekanan: pemotong sewaan, klem tambalan, klaim mati, dan alat bertahan hidup yang diperlakukan sebagai kerja biasa. Ia memberi HECTON-8 asal profesional yang dekat dengan utang dan kerja, bukan romansa Bumi.
 
 ## Scanner
 

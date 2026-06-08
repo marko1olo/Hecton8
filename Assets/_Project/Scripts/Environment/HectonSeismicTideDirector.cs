@@ -1083,6 +1083,7 @@ namespace Hecton8.Environment
         private bool _registeredSlowTickable;
         private bool _registeredLateFrameTickable;
         private bool _registeredService;
+        private bool _runtimeOwnerAborted;
         private bool _seismicVaultReady;
         private bool _celestialVaultReady;
         private bool _celestialBuffersInitialized;
@@ -1308,9 +1309,21 @@ namespace Hecton8.Environment
         /// </summary>
         public static HectonSeismicTideDirector EnsureRuntimeInstance()
         {
-            HectonSeismicTideDirector registered = GlobalRegistry.SeismicDirector as HectonSeismicTideDirector;
-            if (registered != null)
-                return registered;
+            ISeismicDirector registeredService = GlobalRegistry.SeismicDirector;
+            if (IsSeismicRuntimeUsable(registeredService))
+                return registeredService as HectonSeismicTideDirector;
+
+            HectonSeismicTideDirector staleDirector = registeredService as HectonSeismicTideDirector;
+            if (!ReferenceEquals(staleDirector, null))
+            {
+                GlobalRegistry.UnregisterSeismicDirector(registeredService);
+                staleDirector._registeredService = false;
+                staleDirector._isInitialized = false;
+            }
+            else if (!ReferenceEquals(registeredService, null))
+            {
+                return null;
+            }
 
             GameObject runtimeRoot = new GameObject("[HectonSeismicTideDirector]"); // COLD ALLOC: GameObject[1] - bootstrap-owned seismic tide runtime root - owner: HectonSeismicTideDirector
             return runtimeRoot.AddComponent<HectonSeismicTideDirector>();
@@ -1321,22 +1334,13 @@ namespace Hecton8.Environment
         /// </summary>
         public void InitializeService()
         {
-            ISeismicDirector registered = GlobalRegistry.SeismicDirector;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                enabled = false;
+            if (!TryRegisterService())
                 return;
-            }
 
             RefreshCachedRuntimeState();
             EnsureTelemetryRing();
             EnsureSeismicVaultBuffers();
             PrewarmSeismicSignalLanes();
-            if (!_registeredService)
-            {
-                GlobalRegistry.RegisterSeismicDirector(this);
-                _registeredService = ReferenceEquals(GlobalRegistry.SeismicDirector, this);
-            }
 
             _isInitialized = _registeredService;
             if (_isInitialized && Application.isPlaying)
@@ -1393,6 +1397,9 @@ namespace Hecton8.Environment
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_isInitialized && Application.isPlaying)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
 
@@ -1405,6 +1412,9 @@ namespace Hecton8.Environment
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             CompleteSeismicEvaluationJob(force: true);
             CompleteCelestialMechanicsJobForBarrier();
             TryUnregisterTickLanes();
@@ -1423,6 +1433,9 @@ namespace Hecton8.Environment
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
@@ -1434,6 +1447,9 @@ namespace Hecton8.Environment
 
         private void ShutdownServiceState()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             CompleteSeismicEvaluationJob(force: true);
             CompleteCelestialMechanicsJobForBarrier();
             TryUnregisterTickLanes();
@@ -1449,6 +1465,81 @@ namespace Hecton8.Environment
             FlushSeismicVisualSync();
             DisposeTelemetryRing();
             ClearCachedRuntimeState();
+        }
+
+        private bool TryRegisterService()
+        {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (_registeredService)
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            ISeismicDirector registered = GlobalRegistry.SeismicDirector;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                HectonSeismicTideDirector staleDirector = registered as HectonSeismicTideDirector;
+                if (ReferenceEquals(staleDirector, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    enabled = false;
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterSeismicDirector(registered);
+                staleDirector._registeredService = false;
+                staleDirector._isInitialized = false;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            GlobalRegistry.RegisterSeismicDirector(this);
+            _registeredService = ReferenceEquals(GlobalRegistry.SeismicDirector, this);
+            _runtimeOwnerAborted = !_registeredService;
+            if (_runtimeOwnerAborted)
+                enabled = false;
+            return _registeredService;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            ISeismicDirector registered = GlobalRegistry.SeismicDirector;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsSeismicRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                enabled = false;
+                return true;
+            }
+
+            HectonSeismicTideDirector staleDirector = registered as HectonSeismicTideDirector;
+            if (!ReferenceEquals(staleDirector, null))
+            {
+                GlobalRegistry.UnregisterSeismicDirector(registered);
+                staleDirector._registeredService = false;
+                staleDirector._isInitialized = false;
+            }
+
+            return false;
+        }
+
+        private static bool IsSeismicRuntimeUsable(ISeismicDirector service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            HectonSeismicTideDirector director = service as HectonSeismicTideDirector;
+            return ReferenceEquals(director, null) ||
+                   (director != null &&
+                    director._registeredService &&
+                    director.isActiveAndEnabled &&
+                    !director._runtimeOwnerAborted);
         }
 
         private void TryRegisterTickLanes()

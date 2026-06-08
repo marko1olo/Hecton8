@@ -7,8 +7,8 @@ poi_tags: poi.hatch_seal;poi.airlock_frame
 biome_tags: biome.drowned_colony;biome.service_corridor
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Hatch Seal Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Hatch Seal Ledger
 
-Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.
+Hatch frames keep useful lies. A green seal light means the gasket held, not that the closure was fair, safe or reversible. Seal ledgers preserve pressure cuts, override stamps and the direction of the last manual closure. In abandoned colony spaces, a hatch can be route blocker, survival tool and worker evidence in the same object.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+Seal memory recovered. Gasket took three pressure cuts and one evacuation override; return-side access was locked from the wet side.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Operator count on return side unresolved. Reopen only after pressure equalization and hinge inspection.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+It sealed. That is all the hatch promised.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+A sealed hatch is a receipt. Before opening it, ask which side paid.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/en_US. -->

@@ -7,34 +7,34 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "Akustyczna linia pingera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# Akustyczna linia pingera
 
-PL LOC HOLD: The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.
+Akustyczna linia pingera to pierwsza dyscyplina nawigacji. Pozwala graczowi zrobić drogę powrotną, zanim światło, prąd albo panika uczynią trasę obcą. Późniejsza praca nad ucieczką wyrasta z tej samej idei: dźwięk przez wodę, timing przekaźników, handshakes z nośnikiem i dowód, że ścieżka nadal istnieje.
 
 ## Scanner
 
-PL LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
+Szpula pingera akustycznego. Potwierdzono impuls krótkiego zasięgu; zakotwiczyć przed mętną wodą lub migotaniem solanki.
 
 ## Terminal
 
-PL LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
+LINIA POWROTU / PINGER: zakotwiczyć przed mętnością, migotaniem solanki, zalanymi kolanami lub długimi przejściami półki. Lokalny ping wspiera tylko nawigację powrotną. Handshake z nośnikiem wymaga akustycznego kręgosłupa przekaźnikowego.
 
 ## Audio
 
-PL LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
+Gdy zgaśnie światło, idź za dźwiękiem, który sam postawiłeś.
 
 ## Field Note
 
-PL LOC HOLD: Navigation should become physical early.
+Postaw pinger, póki jeszcze znasz drogę z powrotem. Duma nie jest znacznikiem trasy.
 
 <!-- In-Game Wiki; generated from P114_ACOUSTIC_PINGER_LINE/pl_PL. -->

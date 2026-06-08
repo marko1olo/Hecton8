@@ -41,7 +41,7 @@ The provided screenshot fails HECTON-8 taste for these concrete reasons:
 - The composition has broad empty space without tension, depth, machinery, or navigational purpose.
 - Typography scale is inconsistent: the brand is readable, but operational copy is too small and low-value.
 - The cyan/orange palette is present but under-authored: color roles are not strict enough to distinguish command, warning, selected route, disabled state, or fatal state.
-- The screen reads like a placeholder graphic rather than a fragile industrial instrument under pressure.
+- The screen reads like a disposable mock graphic rather than a fragile industrial instrument under pressure.
 
 The fix is not "more lines". The fix is a functional interface model: physical substrate, state hierarchy, route logic, instrument behavior, readable control grouping, material treatment, and proof screenshots.
 

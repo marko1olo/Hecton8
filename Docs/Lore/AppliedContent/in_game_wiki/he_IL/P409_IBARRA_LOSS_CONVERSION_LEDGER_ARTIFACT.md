@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Ibarra Loss Ledger"
+title: "ספר איברה להמרת אובדן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Ibarra Loss Ledger
+# ספר איברה להמרת אובדן
 
-HE LOC HOLD: The Ibarra ledger is the accounting form of the cover. It keeps asset rights active while missing workers become unresolved load.
+ספר איברה הוא הצורה החשבונאית של הכיסוי. הוא מאפשר ל-Deep Reach להודות באובדן בלי למסור בעלות: אנשים נעשים unresolved personnel load, ראיות נעשות material custody, וה-claim שורד את המושבה.
 
 ## Scanner
 
-HE LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Keelmark loss ledger. עובדים נעדרים, מודולים פגועים ו-claims ששרדו חולקים אותה טבלת המרה.
 
 ## Terminal
 
-HE LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel unresolved. Habitat modules, tool banks and claim rights retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-HE LOC HOLD: The ledger did not forget names. It made them payable later.
+ה-ledger לא שכח את השמות. הוא למד איך לבזבז אותם.
 
 ## Field Note
 
-HE LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+הערת Marauder: ledger יכול לזכור את המתים ועדיין להפעיל אותם.
 
 <!-- In-Game Wiki; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/he_IL. -->

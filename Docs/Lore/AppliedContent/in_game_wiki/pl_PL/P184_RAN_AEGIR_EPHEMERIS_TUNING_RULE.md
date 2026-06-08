@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "Zapis pasm efemeryd RAN-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: RAN Aegir Ephemeris Bands
+# Zapis pasm efemeryd RAN-Aegir
 
-PL LOC HOLD: Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.
+Pasma efemeryd utrzymują uczciwość publicznych map: pokazują dość presji trasy, by ufać oknu, a dokładne wartości orbitalne zostają w tabelach odpowiedzialnych za planowanie lotu.
 
 ## Scanner
 
-PL LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+Ten zapis podaje pasma okien i przyczyny zagrożeń, nie dokładne okresy należące do tabel.
 
 ## Terminal
 
-PL LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+ZAPIS PASM EFEMERYD: publiczne wpisy atlasu mogą podawać pasmo okna, klasę zagrożenia i relację z Aegir. Dokładne okresy, nachylenia i wartości rezonansu pozostają pod władzą tabeli nieba.
 
 ## Audio
 
-PL LOC HOLD: A band is honest until the numbers have an owner.
+Pasmo może cię uratować. Zgadnięta liczba może zabić.
 
 ## Field Note
 
-PL LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+Uczciwa publiczna mapa mówi dość, by prowadzić przez ryzyko, i za mało, by sfałszować tabelę nieba.
 
 <!-- In-Game Wiki; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/pl_PL. -->

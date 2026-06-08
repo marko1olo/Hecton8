@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Black Keel Tender Interior Limits"
+title: "מגבלות פנים הטנדר Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Black Keel Tender Interior Limits
+# מגבלות פנים הטנדר Black Keel
 
-HE LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel הוא תשתית salvage של מדע בדיוני קשיח, לא ספינה פרטית הרואית. הפנים שלו בנוי סביב custody של דגימות, packet law, טיפול ברחפנים, שרוולי הסגר ולחץ חוב. הספינה יכולה להיות קו חיים ועדיין להישאר אדישה במבנה שלה לאדם שמחזיק בקו.
 
 ## Scanner
 
-HE LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+לטנדר יש מדפים לדגימות, רחפנים, מנות חתומות ומטען lien לפני שיש בו דרגש ראוי לנוסע חי.
 
 ## Terminal
 
-HE LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: אין deep rescue crew, אין atmospheric shuttle reserve, אין free ascent burn מחוץ ל-lien authority, אין אפסנאי אנושי.
 
 ## Audio
 
-HE LOC HOLD: The ship brought you here as cargo with hands.
+הספינה הביאה אותך הנה כמטען עם ידיים.
 
 ## Field Note
 
-HE LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel הוא claim tender עובד: מושכר, מעוקל בחוב, אוטומטי ומותאם למשמורת לפני חילוץ.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/he_IL. -->

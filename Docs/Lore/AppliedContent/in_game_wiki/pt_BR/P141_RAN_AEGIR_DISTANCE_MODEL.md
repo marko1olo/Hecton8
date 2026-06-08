@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "PT LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Modelo de distância Ran-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Ran-Aegir Distance Model
+# Modelo de distância Ran-Aegir
 
-PT LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+O modelo Ran-Aegir dá a HECTON-8 uma escala que o jogador sente. Aegir é perto o bastante para sondas, frete, hardware seed e assentamento apoiado por dívida até 2190. Ainda é longe o bastante para uma câmara inundada não esperar misericórdia dos mundos internos. Distância aparece como atraso, custody, combustível, frenagem e propriedade.
 
 ## Scanner
 
-PT LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+Placa de rota: Aegir é alcançável por infraestrutura e inalcançável por simpatia.
 
 ## Terminal
 
-PT LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+MODELO DE ROTA: Ran/Aegir é tratado como alvo classe dez anos-luz de Sol. Texto de jogo usa Aegir; catálogos secos usam RAN-B:H8. Efeméride exata segue trabalho de tabela de rota.
 
 ## Audio
 
-PT LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+Dez anos-luz é pouco numa carta estelar. É grande o bastante para falir um resgate.
 
 ## Field Note
 
-PT LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+Distância aproximada é pressão, não decoração. Dez anos-luz ainda podem matar uma sala.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/pt_BR. -->

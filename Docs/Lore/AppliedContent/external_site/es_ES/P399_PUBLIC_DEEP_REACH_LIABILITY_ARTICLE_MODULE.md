@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Deep Reach Liability Evidence"
+title: "Pruebas de responsabilidad Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Deep Reach Liability Evidence
+# Pruebas de responsabilidad Deep Reach
 
-ES LOC HOLD: Deep Reach is culpable because the HECTON-8 disaster can be both natural and managed badly. The ocean supplied real force. The company supplied thin margins, late authorization, quarantine delays, Atlas priority rules and paperwork clean enough to outlive the workers it described. The strongest evidence is physical: doors, clocks, sensor tolerances, route holds and loss ledgers.
+Deep Reach es culpable porque el desastre de HECTON-8 puede ser natural y estar mal gestionado al mismo tiempo. El océano aportó fuerza real: tide resonance, cryosphere shear, storm stacking y pressure failure. La compañía aportó margins finos, authorization tardía, quarantine delay, Atlas priority rules y papeleo lo bastante limpio para sobrevivir a las personas que describía. Las pruebas más fuertes son físicas y procedimentales: una puerta retenida bajo executive authority, una sensor tolerance cambiada antes del cierre de ventana, una cola retrasada por legal clearance, un loss ledger que convertía trabajadores en claim categories mientras el agua seguía moviéndose. El jugador aprende a desconfiar del lenguaje oficial comparándolo con abolladuras, relojes y rutas.
 
 ## Scanner
 
-ES LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Registro de liability. Física real de mareas, margin risk aceptado, retraso de evacuación, quarantine holds, Atlas weighting y lenguaje de pérdida saneado convergen en la misma cadena de pruebas.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+NODO DE ARCHIVO PÚBLICO // PRUEBAS DE LIABILITY. Great Tide aceptado. Revisión abierta para sensor margins, retraso de evacuation queue, quarantine holds, Atlas weighting, worker classification y loss conversion.
 
 ## Audio
 
-ES LOC HOLD: A disaster can be natural and still have signatures on it.
+Un desastre puede ser natural y aun así llevar firmas.
 
 ## Field Note
 
-ES LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Nota de Marauder: no discutas con la marea. Discute con las firmas junto a ella.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/es_ES. -->

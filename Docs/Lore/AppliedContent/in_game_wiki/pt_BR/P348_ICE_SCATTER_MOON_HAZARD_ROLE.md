@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw e o risco de gelo disperso"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw e o risco de gelo disperso
 
-PT LOC HOLD: The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Claw é uma lua de gelo disperso com halo sujo de estilhaços, poeira de claim e lixo industrial congelado. Suas faixas de detritos podem revelar material útil depois de tempestades, mantendo rumores vivos. As mesmas faixas destroem confiança nos sensores. Salvagers falam de gelo limpo e carga perdida; pilotos falam de pontos cegos, radar de poeira e custo de trocar placas frontais.
 
 ## Scanner
 
-PT LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+Registro externo de gelo disperso. Claw derrama detritos brilhantes em rotas onde rumores de salvage viajam rápido demais.
 
 ## Terminal
 
-PT LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+ESCADA LUNAR H3 CLAW: faixa de detritos aberta apenas para drones survey. Tráfego de casco exige radar frontal de poeira, blindagem sacrificável e renúncia de payout por impactos de estilhaços não registrados.
 
 ## Audio
 
-PT LOC HOLD: Every system has one moon that accountants love and pilots curse.
+Todo sistema tem uma lua que contadores amam e pilotos amaldiçoam.
 
 ## Field Note
 
-PT LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw parece lucrativa no papel porque papel não precisa desviar de gelo.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/pt_BR. -->

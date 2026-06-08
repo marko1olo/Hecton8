@@ -574,12 +574,27 @@ namespace Hecton8.Physics
         /// </summary>
         public void QueueExternalCableSnare(Vector3 anchorWS, float tension01, float cutProgress01)
         {
+            float safeTension01 = math.isfinite(tension01) ? math.saturate(tension01) : 0f;
+            float safeCutProgress01 = math.isfinite(cutProgress01) ? math.saturate(cutProgress01) : 1f;
+            float effectiveTension01 = safeTension01 * (1f - safeCutProgress01);
+            if (!IsFinite(anchorWS) || effectiveTension01 <= 0.0001f)
+            {
+                _bioCableRequestedThisStep = true;
+                _bioCableRequestedAnchorWS = Vector3.zero;
+                _bioCableRequestedTension01 = 0f;
+                _bioCableRequestedCutProgress01 = 1f;
+                _bioCableCurrentAnchorWS = Vector3.zero;
+                _bioCableCurrentTension01 = 0f;
+                _bioCableCurrentCutProgress01 = 1f;
+                _bioCableHoldTimer = 0f;
+                return;
+            }
+
             _bioCableRequestedThisStep = true;
-            _bioCableRequestedAnchorWS = IsFinite(anchorWS) ? anchorWS : _bioCableCurrentAnchorWS;
-            _bioCableRequestedTension01 = math.isfinite(tension01) ? math.saturate(tension01) : 0f;
-            _bioCableRequestedCutProgress01 = math.isfinite(cutProgress01) ? math.saturate(cutProgress01) : 1f;
-            if (_bioCableRequestedTension01 > 0f)
-                _bioCableHoldTimer = _bioCableHoldTime;
+            _bioCableRequestedAnchorWS = anchorWS;
+            _bioCableRequestedTension01 = safeTension01;
+            _bioCableRequestedCutProgress01 = safeCutProgress01;
+            _bioCableHoldTimer = math.isfinite(_bioCableHoldTime) ? math.max(0f, _bioCableHoldTime) : 0f;
         }
 
         /// <summary>
@@ -3987,7 +4002,7 @@ namespace Hecton8.Physics
             if (_bioCableRequestedThisStep)
             {
                 if (_bioCableRequestedTension01 > 0f)
-                    _bioCableHoldTimer = _bioCableHoldTime;
+                    _bioCableHoldTimer = math.isfinite(_bioCableHoldTime) ? math.max(0f, _bioCableHoldTime) : 0f;
             }
             else if (_bioCableHoldTimer > 0f)
             {
@@ -5090,8 +5105,19 @@ namespace Hecton8.Physics
                     SolverAnchorPositionSlot(i) -= shiftOffset;
             }
 
-            _bioCableRequestedAnchorWS -= shiftOffset;
-            _bioCableCurrentAnchorWS -= shiftOffset;
+            float requestedEffectiveTension01 = math.saturate(math.isfinite(_bioCableRequestedTension01) ? _bioCableRequestedTension01 : 0f) *
+                (1f - math.saturate(math.isfinite(_bioCableRequestedCutProgress01) ? _bioCableRequestedCutProgress01 : 1f));
+            if (_bioCableRequestedThisStep && requestedEffectiveTension01 > 0.0001f && IsFinite(_bioCableRequestedAnchorWS))
+                _bioCableRequestedAnchorWS -= shiftOffset;
+            else
+                _bioCableRequestedAnchorWS = Vector3.zero;
+
+            float currentEffectiveTension01 = math.saturate(math.isfinite(_bioCableCurrentTension01) ? _bioCableCurrentTension01 : 0f) *
+                (1f - math.saturate(math.isfinite(_bioCableCurrentCutProgress01) ? _bioCableCurrentCutProgress01 : 1f));
+            if (currentEffectiveTension01 > 0.0001f && IsFinite(_bioCableCurrentAnchorWS))
+                _bioCableCurrentAnchorWS -= shiftOffset;
+            else
+                _bioCableCurrentAnchorWS = Vector3.zero;
             _visualBounds.SetMinMax(_visualBounds.min - shiftOffset, _visualBounds.max - shiftOffset);
         }
 

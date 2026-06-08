@@ -9,32 +9,35 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Blue Debt Public Resource Article"
+title: "Artigo Público do Recurso Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Blue Debt Public Resource Article
+# Artigo Público do Recurso Blue Debt
 
-PT-BR LOC HOLD: Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure.
+Blue debt é o nome de fronteira para Xenon-Omega-bearing pressure substrate em HECTON-8. Pode aparecer como mineral rico em salmoura, bolsa de clatrato, contaminação de pressure glass, rede ligada a biofilme ou containment material industrial danificado. Seu valor vem de computação, containment e armazenamento de ambiente extremo. Seu perigo vem da custódia: cada amostra pergunta quem a possui, quem a certificou e quem recebe a culpa se ela mudar de estado.
 
 ## Scanner
 
-PT-BR LOC HOLD: The public name sounds like slang because the official name is built to hide liability.
+A gíria é honesta. O nome oficial é o que esconde a responsabilidade: Xenon-Omega-bearing pressure substrate.
 
 ## Terminal
 
-PT-BR LOC HOLD: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+NÍVEL DE ARTIGO PÚBLICO / BLUE DEBT
+permitido: comportamento de amostra, química de pressão, portadores de clatrato e salmoura, valor de containment, uso computacional, risco de custódia
+bloqueado: tabelas exatas de receita, ajuste de payout, rotas substrate de Atlas tardias
+nota editorial: sem minério mágico, sem fantasia de loot brilhante, sem propriedade limpa.
 
 ## Audio
 
-PT-BR LOC HOLD: Ore is what people call it when they want to forget the paperwork.
+Chamaram de blue debt porque cada grama útil já chegava devendo a alguém pressão, papelada ou sangue.
 
 ## Field Note
 
-PT-BR LOC HOLD: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+Se brilha como tesouro, reescreva. Blue debt deve parecer útil, molhado, regulado, instável e já disputado.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/pt_BR. -->

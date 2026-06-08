@@ -9,32 +9,36 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Revoked Access Language Trace"
+title: "Jejak Bahasa Akses Dicabut"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Revoked Access Language Trace
+# Jejak Bahasa Akses Dicabut
 
-ID LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+Protagonis membaca kuncian Deep Reach sebagai bukti. Kredensial yang dicabut menutup akses, tetapi redaksinya masih menyingkap rute terkubur: hitungan terdegradasi, saksi pengganti, reklasifikasi pemeliharaan, dan bahasa pelestarian klaim.
 
 ## Scanner
 
-ID LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+Kuncian tidak menulis dilarang. Ia menulis reklasifikasi pemeliharaan, penahanan kontinuitas, dan materi rute. Gaya lama Deep Reach: penolakan yang tetap menunjuk ke pintu terkubur.
 
 ## Terminal
 
-ID LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+RESPONS AKSES / ARSIP RUTE-AMAN
+kredensial: dicabut
+alasan: materi kontinuitas evakuasi dibatasi untuk staf Deep Reach bersertifikat
+istilah terlihat: hitungan terdegradasi, saksi pengganti, rute pelestarian klaim, reklasifikasi pemeliharaan
+catatan: personel lapangan lama hanya boleh melihat bahasa penolakan untuk rekonsiliasi insiden.
 
 ## Audio
 
-ID LOC HOLD: That is not security. That is a memo pretending to be a door.
+Mereka tidak menghapus koridornya. Mereka membungkusnya dalam kosakata yang masih dipahami staf yang merasa bersalah.
 
 ## Field Note
 
-ID LOC HOLD: Lockout language hints at hidden liability without granting free access.
+Lencananya mati. Kuncian itu masih memakai dialek kantor yang mengubur rute.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/id_ID. -->

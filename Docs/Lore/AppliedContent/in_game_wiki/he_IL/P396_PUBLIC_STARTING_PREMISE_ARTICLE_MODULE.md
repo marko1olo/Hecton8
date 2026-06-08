@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Marauder Starting Claim"
+title: "תביעת הפתיחה של Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Marauder Starting Claim
+# תביעת הפתיחה של Marauder
 
-HE LOC HOLD: The opening record frames the player as a professional under pressure, not a tourist and not a family avenger. Old Deep Reach history matters because the procedures on HECTON-8 are familiar before they become evidence.
+הרשומה הפותחת מציבה את השחקן כמפעיל מיומן תחת לחץ חוב. הוא לא תייר, לא יורש נבחר ולא נוקם משפחתי; הוא מבין משאבות, אטמים, טפסי מסלול וקיצורי Deep Reach לפני שההריסות מתחילות לסתור את הטפסים האלה. השעה הראשונה נשארת מעשית: לאטום את ה-bathydrop, להחזיר לחץ, לקרוא מכונות פגועות, להשיב מטען ולהחליט אילו שורות רשמיות כבר משקרות.
 
 ## Scanner
 
-HE LOC HOLD: Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+רשומת claim ציבורית. המסלול הפותח מזהה Marauder תחת חוב, עם עבר ב-Deep Reach field-systems, bathydrop פגוע וחלון שחזור של Black Keel מעל P-63.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+צומת ארכיון ציבורי // תביעת פתיחה. תיק קבלן: מומחה Deep Reach field-systems לשעבר. מצב נוכחי: Marauder תחת lien. מסלול: recovery claim של Black Keel, ירידה אל shelf P-63, החזרת ראיה ומטען לפני סגירת custody window.
 
 ## Audio
 
-HE LOC HOLD: You are returning to paperwork you know too well.
+אתה לא מבקר ב-HECTON-8. אתה חוזר לניירת שאתה מכיר טוב מדי.
 
 ## Field Note
 
-HE LOC HOLD: Marauder note: the contract knows your past. That does not make it honest.
+הערת Marauder: החוזה מכיר את העבר שלך. זה לא הופך אותו לישר.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/he_IL. -->

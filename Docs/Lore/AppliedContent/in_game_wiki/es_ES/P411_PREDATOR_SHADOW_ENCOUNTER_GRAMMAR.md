@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Predator Shadow Encounter Grammar"
+title: "Gramática de encuentro: sombra depredadora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Predator Shadow Encounter Grammar
+# Gramática de encuentro: sombra depredadora
 
-ES LOC HOLD: Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.
+Los encuentros de sombra depredadora deben hacer que el océano parezca ocupado antes de que el animal sea visible. La cadena útil de aviso es ambiental: los raspadores de cristal se paran con comida aún expuesta, el lantern bloom adelgaza por un lado, el pressureweed se pliega sin oleaje, el sonar muestra un hueco demasiado ancho para ser restos y la luz del jugador cruza una forma amplia que nunca resuelve una silueta limpia. El animal no es un boss esperando en una arena. Es presión de ruta. Cambia gasto de oxígeno, disciplina de return-line, tiempo de reparación y confianza de scan. Un buen encuentro de sombra deja vivir a quien lee ausencia: no añadas ruido, estrecha la lámpara, no persigas el carril limpio y sal en ángulo, no recto por el agua marcada.
 
 ## Scanner
 
-ES LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Rastro de sombra depredadora. Hueco sonar, ruta de presa cortada, silencio súbito de raspadores, amplia oclusión de luz. Cuerpo no confirmado; disciplina de luz y ángulo de salida.
 
 ## Terminal
 
-ES LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+GRAMÁTICA DE ENCUENTRO / SOMBRA DEPREDADORA / función: presión de ruta antes de revelar cuerpo, pico de gasto de oxígeno, ruptura de confianza de scan / lectura segura: la ruta de presa se corta, el ruido de bloom colapsa, los retornos sonar se parten alrededor de agua vacía / rechazo: revelación scripted de cuerpo completo como primer aviso, jump scare inocuo, boss arena limpia / nota de ruta: si los animales pequeños paran antes de que el scanner nombre un objetivo, la ruta ya cambió.
 
 ## Audio
 
-ES LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+La señal segura no es verlo. Es notar que todo lo demás eligió silencio primero.
 
 ## Field Note
 
-ES LOC HOLD: Use for AI/spawn design notes and scanner cards.
+Nombra al animal tarde. Deja que presa, luz y sonar fallen primero. Si la ruta se calla, la sombra ya la posee.
 
 <!-- In-Game Wiki; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/es_ES. -->

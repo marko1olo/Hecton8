@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "Espinha da primeira hora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# Espinha da primeira hora
 
-PT-BR LOC HOLD: First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+Espinha da primeira hora define o ritmo de abertura de HECTON-8. O jogador começa com tarefas de engenharia tangíveis e maravilha visual, depois vê essas tarefas se conectarem a uma mentira corporativa e a uma ecologia de manutenção que entrou na biologia. Isso mantém a primeira rota jogável e atmosférica enquanto planta a investigação maior: o oceano não está escondendo a história; ele preserva as evidências na pressão, no sal e no procedimento.
 
 ## Scanner
 
-PT-BR LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Contrato, queda danificada, ar, rasos luminosos, abrigo da bomba, mentira saneada, então a primeira cicatriz de reparo que usa vida como junta.
 
 ## Terminal
 
-PT-BR LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+ANEXO RASO: reinício manual da bomba válido. Pacote de incidente Deep Reach em cache. Crescimento de reparo da Atlas detectado ao redor de cabo, fragmento de ferramenta e resíduo biológico.
 
 ## Audio
 
-PT-BR LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+A primeira sala segura não está limpa. Ela só prende a respiração melhor que você.
 
 ## Field Note
 
-PT-BR LOC HOLD: The opening must be beautiful before it becomes accusing.
+A abertura precisa ser bonita antes de se tornar acusação.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/pt_BR. -->

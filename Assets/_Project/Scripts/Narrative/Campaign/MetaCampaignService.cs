@@ -211,6 +211,7 @@ namespace Hecton8.Narrative.Campaign
         private bool _cartographyStateDirty;
         private bool _saveServiceRegistered;
         private bool _registeredHotSwapListener;
+        private bool _runtimeOwnerAborted;
         private bool _updatableRegistered;
         private bool _lateFrameRegistered;
         private bool _shutdown;
@@ -228,6 +229,7 @@ namespace Hecton8.Narrative.Campaign
         private uint _pendingVisualFrame;
         private ushort _sequence;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private IEcosystemDirectorService _ecosystemDirector;
 
         public bool IsInitialized =>
@@ -259,6 +261,9 @@ namespace Hecton8.Narrative.Campaign
 
         private void Awake()
         {
+            if (!TryRegisterService())
+                return;
+
             AllocateRuntimeState();
             SeedDefaultState();
         }
@@ -266,12 +271,13 @@ namespace Hecton8.Narrative.Campaign
         private void OnEnable()
         {
             _shutdown = false;
+            if (!TryRegisterService())
+                return;
+
             AllocateRuntimeState();
             EnsureDefaultVariables();
             RefreshCachedStateFromVariables();
-            TryRegisterService();
-            if (!_serviceRegistered)
-                return;
+            TryRegisterTickLanes();
 
             _saveService = GlobalRegistry.Save;
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
@@ -284,10 +290,13 @@ namespace Hecton8.Narrative.Campaign
 
         private void Start()
         {
-            TryRegisterService();
+            if (!TryRegisterService())
+                return;
+
+            TryRegisterTickLanes();
             if (_serviceRegistered)
             {
-                if (_saveService == null)
+                if (!IsSaveServiceUsable(_saveService))
                     _saveService = GlobalRegistry.Save;
                 if (_ecosystemDirector == null)
                     _ecosystemDirector = GlobalRegistry.EcosystemDirector;
@@ -298,11 +307,17 @@ namespace Hecton8.Narrative.Campaign
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
@@ -494,25 +509,56 @@ namespace Hecton8.Narrative.Campaign
             };
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (!Application.isPlaying)
-                return;
+                return true;
 
             if (!_serviceRegistered)
             {
+                if (TryAbortForUsableExistingRuntime())
+                    return false;
+
                 IMetaCampaignService registered = GlobalRegistry.MetaCampaign;
-                if (registered != null && !ReferenceEquals(registered, this))
+                if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
                 {
-                    Destroy(this);
-                    return;
+                    MetaCampaignService staleService = registered as MetaCampaignService;
+                    if (ReferenceEquals(staleService, null))
+                    {
+                        _runtimeOwnerAborted = true;
+                        Destroy(this);
+                        return false;
+                    }
+
+                    GlobalRegistry.UnregisterMetaCampaignService(registered);
+                    staleService._serviceRegistered = false;
+                    staleService._serviceReady = false;
                 }
+
+                if (TryAbortForUsableExistingRuntime())
+                    return false;
 
                 GlobalRegistry.RegisterMetaCampaignService(this);
                 _serviceRegistered = ReferenceEquals(GlobalRegistry.MetaCampaign, this);
                 if (!_serviceRegistered)
-                    return;
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(this);
+                    return false;
+                }
             }
+
+            _runtimeOwnerAborted = false;
+            return true;
+        }
+
+        private void TryRegisterTickLanes()
+        {
+            if (!_serviceRegistered || _runtimeOwnerAborted || _shutdown)
+                return;
 
             if (!_updatableRegistered)
                 _updatableRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
@@ -521,19 +567,81 @@ namespace Hecton8.Narrative.Campaign
             _serviceReady = _updatableRegistered && _lateFrameRegistered;
         }
 
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            IMetaCampaignService registered = GlobalRegistry.MetaCampaign;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsMetaCampaignRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(this);
+                return true;
+            }
+
+            MetaCampaignService staleService = registered as MetaCampaignService;
+            if (!ReferenceEquals(staleService, null))
+            {
+                GlobalRegistry.UnregisterMetaCampaignService(registered);
+                staleService._serviceRegistered = false;
+                staleService._serviceReady = false;
+            }
+
+            return false;
+        }
+
+        private static bool IsMetaCampaignRuntimeUsable(IMetaCampaignService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            MetaCampaignService runtime = service as MetaCampaignService;
+            return ReferenceEquals(runtime, null) ||
+                   (runtime != null &&
+                    runtime._serviceRegistered &&
+                    runtime.isActiveAndEnabled &&
+                    !runtime._shutdown &&
+                    !runtime._runtimeOwnerAborted);
+        }
+
         private void TryRegisterSaveService()
         {
             if (_saveServiceRegistered || _shutdown || !_serviceRegistered)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
+            _saveService = saveService;
             _saveServiceRegistered = true;
+        }
+
+        private void TryUnregisterSaveService()
+        {
+            if (!_saveServiceRegistered && _registeredSaveService == null)
+                return;
+
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
+            _saveServiceRegistered = false;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -574,14 +682,7 @@ namespace Hecton8.Narrative.Campaign
             if (serviceSlot != GlobalRegistryServiceSlot.Save)
                 return;
 
-            if (_saveServiceRegistered)
-            {
-                ISaveService previousSave = _saveService ?? previousService as ISaveService;
-                if (previousSave != null)
-                    previousSave.Unregister(this);
-                _saveServiceRegistered = false;
-            }
-
+            TryUnregisterSaveService();
             _saveService = currentService as ISaveService;
             TryRegisterSaveService();
         }
@@ -605,16 +706,13 @@ namespace Hecton8.Narrative.Campaign
 
         private void ShutdownServiceState()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_shutdown)
                 return;
 
-            if (_saveServiceRegistered)
-            {
-                ISaveService saveService = _saveService;
-                if (saveService != null)
-                    saveService.Unregister(this);
-                _saveServiceRegistered = false;
-            }
+            TryUnregisterSaveService();
 
             TryUnregisterHotSwapListener();
 

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 의료 외상 및 인공 장기 대체
 
 > **출처:** *Black Keel* 자동 의료실 운영 절차.

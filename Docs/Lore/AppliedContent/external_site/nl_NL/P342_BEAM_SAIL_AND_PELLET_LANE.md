@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Beam Sail and Pellet Lane"
+title: "Bundelzeil en pelletbaan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Beam Sail and Pellet Lane
+# Bundelzeil en pelletbaan
 
-NL LOC HOLD: Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.
+Snelle schepen in HECTON-8 zijn geen kleine kometen met een wondermotor. Het zijn facturen met rompen eromheen. Een bundelzeil neemt vermogen uit arrays die gebouwd, onderhouden, verzekerd en gericht zijn lang voordat het schip de baan binnenkomt. Pelletstromen gooien reactiemassa met harde timingdiscipline in het pad; te dun en het voertuig verhongert, te rijk en het wordt een schotpatroon. Het schip draagt nog steeds fusiefasen, schildijs, radiatoren, pompen en de bevoegdheid om te kiezen wanneer die worden uitgegeven, maar de dure helft van de motor ligt buiten de romp.
 
-## Scanner
-
-NL LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
-
-## Terminal
-
-NL LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
-
-## Audio
-
-NL LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
-
-## Field Note
-
-NL LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Dat ontwerp maakte de menselijke ruimte wijder zonder haar klein te maken. Aegir is bereikbaar omdat oudere domeinen betaalden voor versnellingscorridors, notarissen, ontvangststations en remreserves. Een gestrand lichaam op HECTON-8 kan een noodbericht niet in die corridor veranderen. Iemand moet het catch-venster bezitten, hittemarge toewijzen, quarantainebewaring accepteren en riskeren dat een snelle reddingsrun snelle brokstukken wordt. Black Keel overleeft in die economie omdat het vensters koopt en bewijs verkoopt; de speler overleeft door te begrijpen dat afstand niet leeg is. Ze is gepland, gehypothekeerd en al opgeëist.
 
 <!-- External Site; generated from P342_BEAM_SAIL_AND_PELLET_LANE/nl_NL. -->

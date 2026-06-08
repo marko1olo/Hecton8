@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # XENON-OMEGA: RAFFINIERUNG UND EIGENSCHAFTEN
 
 > **Quelle:** Deep Reach Megacorporation, Geheimes chemisches Manifest.

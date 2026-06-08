@@ -7,34 +7,34 @@ poi_tags: poi.relay_packet_delay_meter;poi.legal_reply_timestamp
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Relay Message Lag"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Relaisberichtvertraging"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# Relaisberichtvertraging
 
-NL LOC HOLD: Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.
+Relaisvertraging laat Deep Reach de speler bedreigen zonder levende stem in de kamer. Contractmachines, notarissen, claimvensters en carrierclausules kunnen vóór mededogen aankomen omdat ze eerder geschreven, eerder in de rij gezet en geprijsd zijn om afstand te overleven.
 
 ## Scanner
 
-NL LOC HOLD: A message can be legally binding and still arrive too late to save air.
+Een bericht kan juridisch bindend zijn en toch te laat komen om lucht te redden.
 
 ## Terminal
 
-NL LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
+RELAISVERTRAGING: lokale Aegir-berichten kunnen uren of dagen duren. Interdomein juridische pakketten kunnen jaren duren. Deep Reach-druk is oud, geautomatiseerd, contractueel en nog steeds gevaarlijk.
 
 ## Audio
 
-NL LOC HOLD: The reply is late. The lien is current.
+Het antwoord is laat. Het pandrecht is actueel.
 
 ## Field Note
 
-NL LOC HOLD: No ansible means truth moves as freight.
+Geen ansible betekent dat waarheid als vracht beweegt.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/nl_NL. -->

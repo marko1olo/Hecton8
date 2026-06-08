@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Black Keel Claim Acceptance"
+title: "قبول مطالبة Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Black Keel Claim Acceptance
+# قبول مطالبة Black Keel
 
-AR LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+طرفية مطالبة Black Keel تجعل الافتتاح يدور حول الدين وملحقات الأكسجين وcustody قبل أن يلمس المحيط الشاشة.
 
 ## Scanner
 
-AR LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+وحدة عقد. يعرض Aegir Reclamation Pool رهن 4.8 tonne-window قبل أن يعرض الأكسجين.
 
 ## Terminal
 
-AR LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / طرفية قبول المطالبة: مسار RAN-B:H8 salvage descent؛ تخفيف رهن 4.8 tonne-window مشروط؛ ملحقات رعاية الأكسجين تحسب بعد الاسترداد؛ custody الحمولة أولاً لدى Black Keel، وشاهدها Keelmark Mutual؛ الرفض يبقي مراجعة Barnard blacklist نشطة.
 
 ## Audio
 
-AR LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel إلى المتعاقد: نافذة المطالبة مفتوحة. الأكسجين يحاسب بعد الاسترداد. أكد إذا كنت قادراً على العمل.
 
 ## Field Note
 
-AR LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+القلم مربوط بالشاشة بسلك ضغط. كان أحدهم يتوقع يداً ترتجف.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/ar_SA. -->

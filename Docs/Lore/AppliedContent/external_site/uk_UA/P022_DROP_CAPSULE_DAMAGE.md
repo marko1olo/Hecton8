@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Пошкодження спускової капсули
 
-Пошкодження пояснює пастку: спуск спрацював, виживання лишилось, підйомне залізо мертве.
+Пошкодження спускової капсули пояснює, чому ізоляція правдоподібна: спуск спрацював, системи виживання вціліли, обладнання підйому - ні.
 
 ## Scanner
 

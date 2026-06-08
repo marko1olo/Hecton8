@@ -7,34 +7,34 @@ poi_tags: poi.moon_ladder_public_band;poi.hecton8_mid_orbit_card
 biome_tags: biome.aegir_system;biome.publication
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "RU LOC HOLD: HECTON-8 Moon Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Лунная лестница HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: HECTON-8 Moon Ladder
+# Лунная лестница HECTON-8
 
-RU LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
+Лунная лестница дает Aegir масштаб, сохраняя кампанию на HECTON-8. Соседние тела формируют реле, ледяную пыль, quarantine timing, salvage traffic и silence windows, не обещая дополнительные playable moons.
 
 ## Scanner
 
-RU LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+Лунная лестница: HECTON-8 - один claim, а не вся система Aegir.
 
 ## Terminal
 
-RU LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER: только публичные role labels; точные orbital elements остаются table-owned data.
 
 ## Audio
 
-RU LOC HOLD: Other moons are not side quests. They are why the route has teeth.
+Другие луны не side quests. Они причина, по которой у маршрута есть зубы.
 
 ## Field Note
 
-RU LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
+Запись лунной лестницы: публичные карты могут показывать масштаб Aegir без обещания playable moons.
 
 <!-- In-Game Wiki; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/ru_RU. -->

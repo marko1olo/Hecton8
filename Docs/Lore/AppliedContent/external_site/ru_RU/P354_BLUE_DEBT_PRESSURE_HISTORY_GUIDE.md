@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Blue debt pressure history guide"
+title: "Справочник pressure history синего долга"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue debt pressure history guide
+# Справочник pressure history синего долга
 
-Xenon-Omega, blue debt для salvagers, связывает HECTON-8, Atlas, Deep Reach и цену возвращения.
+Xenon-Omega, который salvage-команды зовут blue debt, связывает геологию HECTON-8 с computation, debt law и причиной, по которой Deep Reach все еще хочет вернуть утонувшую претензию.
 
 ## Scanner
 
-Blue debt sample tagged. Pressure history важнее surface color.
+Образец blue debt помечен. Перед export проверь pressure history, containment stage и signal drift.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt - salvage slang для Xenon-Omega-bearing pressure-stable substrate. Ценность в extreme computation и energy isolation, не в свечении.
+MARAUDER NOTE: blue debt - salvage-сленг для Xenon-Omega-bearing pressure-stable substrate. Он ценен потому, что extreme computation и energy isolation любят его, а не потому, что он светится.
 
 ## Audio
 
-Blue debt - так это называют после счёта.
+Синий долг - так это называют после прихода счета.
 
 ## Field Note
 
-Для resource glossary и Deep Reach motive articles.
+Цвет - не grade. Тихий контейнер с чистой custody платит; поющий покупает тебе drone wake.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/ru_RU. -->

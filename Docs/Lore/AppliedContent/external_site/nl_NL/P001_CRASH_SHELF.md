@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Crashplateau
 
-HECTON-8 begint aan de waterlijn: een beschadigde afdaalcapsule, een helder buitenaards plateau en een carrier die te ver weg is om helder te antwoorden. Het eerste mysterie is niet wat eronder leeft, maar waarom de reddingsketen al vijandig aanvoelt.
-
-## Scanner
-
-Wrak van een bathy-dropcapsule. Drukframe intact, opstijgpakket vernietigd. Dit houdt je in leven, maar brengt je niet thuis.
-
-## Terminal
-
-OPSTIJGPAKKET: ontbreekt. UPLINK-KERN: breuk gedetecteerd. CARRIERCONTACT: vertraagd.
-
-## Audio
-
-Black Keel-handshake ontvangen. Pakketintegriteit onder hersteldrempel. Herhaal: drempel niet gehaald.
-
-## Field Note
-
-Als de capsule nog druk houdt, strip haar dan niet kaal. Een slecht onderkomen is meer waard dan een nette inventaris.
+Het Crashplateau is de eerste kamer van de speler en de eerste plaats delict. Een afdaalcapsule ligt half begraven in zoutwier en warm keramiek, te beschadigd om te vertrekken en te nuttig om achter te laten. Het overlevende frame geeft de speler onderdak, bergingsmateriaal, scandoelen en een lijn naar Black Keel die procedureel klinkt voordat ze menselijk klinkt. Die toon telt. De carrier antwoordt niet als een vriend. Hij inventariseert de mislukking: opstijgpakket weg, uplink gebroken, operator levend, bergingsbevoegdheid onopgelost. De openingslocatie leert HECTON-8 zonder lezing. Schoonheid is echt: ondiepe bioluminescentie, rifkleur, stormlicht onder Aegir. Industriële geweld is even echt: gestempelde onderdelen, inslaglittekens, claimtaal, een reddingsketen die al kosten telt. De eerste vraag is praktisch: blijf leven. De tweede komt in hetzelfde wrak binnen: wie heeft er baat bij als jij dat doet?
 
 <!-- External Site; generated from P001_CRASH_SHELF/nl_NL. -->

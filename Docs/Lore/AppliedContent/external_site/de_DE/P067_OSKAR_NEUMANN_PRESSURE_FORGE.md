@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "Oskar Neumanns Druckschmiede"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# Oskar Neumanns Druckschmiede
 
-DE LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
+Oskar Neumanns Druckschmiede ist der Fertigungsartikel für die Fluchtlogik von HECTON-8: Der Spieler muss einen Aufstiegsweg aus Druckwelt-Handwerk bauen, statt einen generischen Raketenschlüssel zu finden.
 
 ## Scanner
 
-DE LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+Oskar Neumann hinterließ ein Schmiederezept für Klemmringe, stark genug, damit die Aufstiegsschale mehr als ein Sarg wird.
 
 ## Terminal
 
-DE LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+NEUMANN, O. Schmiedenotiz: Druckglasstaub ruiniert die erste Dichtung, wenn er kalt gemischt wird. Ring unter Schlotsog erhitzen, im Salzlaugenmantel abschrecken, dann mit doppelter Aufstiegslast testen.
 
 ## Audio
 
-DE LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+Ein Start ist nur eine Drucktür, die sich nach oben bewegt. Baut ihn wie eine Tür.
 
 ## Field Note
 
-DE LOC HOLD: The exit needs craft, not courage.
+Der Ausgang braucht Handwerk, keinen Mut.
 
 <!-- External Site; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/de_DE. -->

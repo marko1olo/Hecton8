@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "Keluar Parsial: Kembali ke Seed yang Sama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# Keluar Parsial: Kembali ke Seed yang Sama
 
-ID LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.
+Keluar Parsial adalah jendela pemulihan, bukan reset. Pemain mendapat udara, waktu perbaikan, dan jarak dari air, lalu kembali ke HECTON-8 yang sama dengan rute, bekas luka, dan bukti belum selesai yang sama. Pengetahuan bertahan sebagai tekanan, bukan kekuatan warisan.
 
 ## Scanner
 
-ID LOC HOLD: Extraction possible. Closure not included.
+Vektor penjemputan sementara dikonfirmasi. Laut yang sama tetap berada di bawah kontrak yang sama.
 
 ## Terminal
 
-ID LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
+PEMBERITAHUAN KELUAR PARSIAL: penjemputan sementara Black Keel diterima; kembali ke seed yang sama diotorisasi dengan perpanjangan lien; peringatan rute, catatan custody, dan paket bukti terbuka bertahan; geologi dan kebenaran dunia tidak berubah.
 
 ## Audio
 
-ID LOC HOLD: You left the pressure. You did not leave the contract.
+Kau meninggalkan tekanan. Kontrak menjaga kursimu tetap hangat.
 
 ## Field Note
 
-ID LOC HOLD: Let the player breathe, then make the same ocean still be there.
+Napas di orbit bukan kebebasan saat slot kembali sudah ditagihkan.
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/id_ID. -->

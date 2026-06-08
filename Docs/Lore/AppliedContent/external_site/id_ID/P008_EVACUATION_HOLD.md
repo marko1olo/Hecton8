@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Evakuasi Ditahan"
+title: "Penahanan Evakuasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Evakuasi Ditahan
+# Penahanan Evakuasi
 
-Evacuation Hold mengubah bencana HECTON-8 dari kecelakaan lingkungan menjadi rantai keputusan. Arsip abyssal menunjukkan sistem yang mengklasifikasi manusia lebih cepat daripada menyelamatkan mereka.
-
-## Scanner
-
-Gerbang transit darurat. Mekanisme terkunci saat kegagalan tekanan.
-
-## Terminal
-
-EVAC ROUTE: ditunda. SUBSTRATE ROUTE: dilindungi. MEDICAL ROUTE: menunggu otorisasi. ATLAS ROUTE: konflik kontinuitas.
-
-## Audio
-
-Ini bukan orang hilang. Ini rute yang ditahan.
-
-## Field Note
-
-Manusia mati cepat di kedalaman. Dokumen membunuh lebih lambat. Keduanya bekerja.
+Catatan Penahanan Evakuasi harus terbaca seperti horor dalam bahasa administrasi. Koloni tidak menghilang karena semua pintu gagal sekaligus. Banyak pintu bekerja. Banyak peta rute masih hidup. Sistem tahu di mana orang berada, koridor mana yang masih menahan tekanan, transfer medis mana yang menunggu, dan jalur naik mana yang bisa memindahkan tubuh ke atas. Lalu aturan prioritas memotong peta. Transport substrat tetap dilindungi. Kontinuitas Atlas tetap dilindungi. Bahasa tanggung jawab tetap utuh. Evakuasi menjadi rute ditahan, lalu rute tertunda, lalu catatan. Urutan itu penting bagi seluruh latar. HECTON-8 bukan kisah tentang alam yang mengalahkan manusia dalam satu pukulan bersih. Ini kisah tentang bencana samudra yang melewati mesin korporat yang masih bisa menghitung, memberi peringkat, menunda, dan melindungi properti saat koloni tenggelam.
 
 <!-- External Site; generated from P008_EVACUATION_HOLD/id_ID. -->

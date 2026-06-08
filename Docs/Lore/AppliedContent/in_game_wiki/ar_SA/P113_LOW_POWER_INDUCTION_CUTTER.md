@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "قاطع حثي منخفض الطاقة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# قاطع حثي منخفض الطاقة
 
-AR LOC HOLD: The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+القاطع الحثي منخفض الطاقة هو أول أداة دخول، وليس مفتاحا عاما. يفتح فتحات خدمة عالقة ومسامير ألواح وصناديق salvage، بينما يجبر اللاعب على قراءة وظيفة كل جزء. pressure glass والإطارات النشطة والدروز النامية من Atlas تنتظر أدوات لاحقة أو دليلا أفضل.
 
 ## Scanner
 
-AR LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+قاطع حثي منخفض الطاقة. معدن الخدمة فقط؛ الإطار الحامل وpressure glass خارج التصنيف.
 
 ## Terminal
 
-AR LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+تحذير أداة / قاطع حثي: الأهداف المصرح بها هي فتحات الخدمة، مسامير الألواح، الحوامل الخفيفة وأقفال الصناديق. لا تقطع إطارات نشطة أو شبكة pressure glass أو دروزا نامية من Atlas بلا شهادة فئة لاحقة.
 
 ## Audio
 
-AR LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
+اقطع المسمار. اترك الضلع.
 
 ## Field Note
 
-AR LOC HOLD: The cutter should feel valuable because it is limited.
+قاطع جيد وإيمان سيئ. يفتح الألواح. لكنه لا يغفر قطع الضلع الذي يبقي الغرفة مربعة.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/ar_SA. -->

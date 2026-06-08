@@ -408,6 +408,13 @@ namespace Hecton8.Thermodynamics
             if (!_nativeReady)
                 return;
 
+            float3 shiftOffset = new float3(
+                shiftData.ShiftOffset.x,
+                shiftData.ShiftOffset.y,
+                shiftData.ShiftOffset.z);
+            if (!math.all(math.isfinite(shiftOffset)) || math.lengthsq(shiftOffset) <= 0.000001f)
+                return;
+
             _lastShiftSequence = shiftData.Sequence;
             IDataVault vault = _vault;
             if (vault == null)

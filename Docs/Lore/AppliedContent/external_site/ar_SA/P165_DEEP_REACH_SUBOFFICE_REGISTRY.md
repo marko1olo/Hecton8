@@ -9,32 +9,20 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Deep Reach Suboffice Registry"
+title: "سجل المكاتب الفرعية في Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Deep Reach Suboffice Registry
+# سجل المكاتب الفرعية في Deep Reach
 
-AR LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## مكاتب صغيرة، عواقب كبيرة
 
-## Scanner
+تصير Deep Reach أخطر حين لا تبدو كمؤامرة بل كإدارة. يعمل السجل لأن كل اسم مكتب ممل بما يكفي ليبدو حقيقيا. Contract Continuity Desk يبقي obligations حية بعدما يفضل العامل موتها. Packet Notary Interface يقرر هل تصبح الرسالة دليلا أم ضجيجا. Quarantine Hold Desk يجعل التأخير يبدو مسؤولية طبية. Asset Silence Board يحول الشهود إلى exposure. Return Action Queue يسعر الجسد مقابل payload وorbit وpublic risk.
 
-AR LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-AR LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-AR LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-AR LOC HOLD: Use dull names. Dull names are where liability hides.
+لا يحتاج أي desk إلى كراهية اللاعب. يكفي أن يؤدي عمله داخل priority stack كتب قبل ارتفاع الماء. لذلك يجب أن تتراكم أدلة HECTON-8 كأختام وrouting fragments وتناقضات صغيرة. الجريمة لا تختبئ خلف شر مسرحي. إنها موزعة على نماذج تبدو defensible حتى يصفها اللاعب معا.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/ar_SA. -->

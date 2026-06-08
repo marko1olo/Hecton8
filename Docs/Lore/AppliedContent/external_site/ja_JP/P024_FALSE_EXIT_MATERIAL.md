@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 物資離脱
 
-物資離脱は、戦利品と生存を選ぶプレイヤー向けの利益あるが汚れた結末としてリプレイ性を支える。
+Material Exit は、利益のあるが妥協した撤退を支える。戦利品、契約、生存は上昇を勝ち取れるが、完全な降下の真実は下に残る。
 
 ## Scanner
 

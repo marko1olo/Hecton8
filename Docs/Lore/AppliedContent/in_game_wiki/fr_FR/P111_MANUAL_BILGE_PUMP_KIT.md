@@ -7,34 +7,34 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "Kit de pompe de cale manuelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# Kit de pompe de cale manuelle
 
-FR LOC HOLD: The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.
+La pompe de cale manuelle est le premier outil utile après la chute, parce qu'elle fonctionne quand l'électricité de la capsule est dangereuse. Elle ne vide que de petites poches inondées et oblige à surveiller l'admission, la sortie et la résistance du clapet au lieu de croire un voyant vert. Le kit donne la première règle de HECTON-8 : une réparation commence par l'eau, la pression et les mains.
 
 ## Scanner
 
-FR LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
+Kit de cale manuel détecté. La crépine d'admission est bouchée par la mousse de capsule; nettoyez-la avant d'alimenter le panneau.
 
 ## Terminal
 
-FR LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
+DOTATION P-63 / KIT DE CALE : pompe manuelle, collier de flexible, crépine d'admission, clapet antiretour. Évacuer l'eau stagnante avant tout test de panneau sous tension. Ne pas rejeter la sortie dans les chemins de câbles scellés.
 
 ## Audio
 
-FR LOC HOLD: Hand work first. Electricity second. Breathing always.
+L'eau d'abord. Le courant après. Si la poignée revient, la pièce répond.
 
 ## Field Note
 
-FR LOC HOLD: First tool must teach survival before upgrade fantasy.
+Les pompes mentent moins que les jauges. Si la poignée renvoie un coup, arrêtez et vérifiez où part l'eau.
 
 <!-- In-Game Wiki; generated from P111_MANUAL_BILGE_PUMP_KIT/fr_FR. -->

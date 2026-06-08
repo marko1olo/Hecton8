@@ -228,6 +228,12 @@ namespace Hecton8.Gameplay
         private static NativeQueue<RandomEventType> _nextFrameEnded;
         private static NativeQueue<SeismicShockwaveEvent> _pendingSeismicShockwaves;
         private static NativeQueue<SeismicShockwaveEvent> _nextFrameSeismicShockwaves;
+        private static int _pendingStartedSentinelId;
+        private static int _nextFrameStartedSentinelId;
+        private static int _pendingEndedSentinelId;
+        private static int _nextFrameEndedSentinelId;
+        private static int _pendingSeismicShockwavesSentinelId;
+        private static int _nextFrameSeismicShockwavesSentinelId;
         private static int _pendingStartedCount;
         private static int _nextFrameStartedCount;
         private static int _pendingEndedCount;
@@ -455,37 +461,37 @@ namespace Hecton8.Gameplay
                 if (!_pendingStarted.IsCreated)
                 {
                     _pendingStarted = new NativeQueue<RandomEventStartedPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - deferred random-event starts - owner: RandomEventEvents
-                    RegisterNativeQueue(ref _pendingStarted, PendingStartedCapacity, nameof(_pendingStarted));
+                    RegisterNativeQueue(ref _pendingStarted, PendingStartedCapacity, nameof(_pendingStarted), out _pendingStartedSentinelId);
                     PrewarmQueue(ref _pendingStarted, PendingStartedCapacity);
                 }
                 if (!_nextFrameStarted.IsCreated)
                 {
                     _nextFrameStarted = new NativeQueue<RandomEventStartedPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - next-frame random-event starts - owner: RandomEventEvents
-                    RegisterNativeQueue(ref _nextFrameStarted, PendingStartedCapacity, nameof(_nextFrameStarted));
+                    RegisterNativeQueue(ref _nextFrameStarted, PendingStartedCapacity, nameof(_nextFrameStarted), out _nextFrameStartedSentinelId);
                     PrewarmQueue(ref _nextFrameStarted, PendingStartedCapacity);
                 }
                 if (!_pendingEnded.IsCreated)
                 {
                     _pendingEnded = new NativeQueue<RandomEventType>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventType>[16] - deferred random-event ends - owner: RandomEventEvents
-                    RegisterNativeQueue(ref _pendingEnded, PendingEndedCapacity, nameof(_pendingEnded));
+                    RegisterNativeQueue(ref _pendingEnded, PendingEndedCapacity, nameof(_pendingEnded), out _pendingEndedSentinelId);
                     PrewarmQueue(ref _pendingEnded, PendingEndedCapacity);
                 }
                 if (!_nextFrameEnded.IsCreated)
                 {
                     _nextFrameEnded = new NativeQueue<RandomEventType>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventType>[16] - next-frame random-event ends - owner: RandomEventEvents
-                    RegisterNativeQueue(ref _nextFrameEnded, PendingEndedCapacity, nameof(_nextFrameEnded));
+                    RegisterNativeQueue(ref _nextFrameEnded, PendingEndedCapacity, nameof(_nextFrameEnded), out _nextFrameEndedSentinelId);
                     PrewarmQueue(ref _nextFrameEnded, PendingEndedCapacity);
                 }
                 if (!_pendingSeismicShockwaves.IsCreated)
                 {
                     _pendingSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - deferred seismic shockwaves - owner: RandomEventEvents
-                    RegisterNativeQueue(ref _pendingSeismicShockwaves, PendingSeismicShockwaveCapacity, nameof(_pendingSeismicShockwaves));
+                    RegisterNativeQueue(ref _pendingSeismicShockwaves, PendingSeismicShockwaveCapacity, nameof(_pendingSeismicShockwaves), out _pendingSeismicShockwavesSentinelId);
                     PrewarmQueue(ref _pendingSeismicShockwaves, PendingSeismicShockwaveCapacity);
                 }
                 if (!_nextFrameSeismicShockwaves.IsCreated)
                 {
                     _nextFrameSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - next-frame seismic shockwaves - owner: RandomEventEvents
-                    RegisterNativeQueue(ref _nextFrameSeismicShockwaves, PendingSeismicShockwaveCapacity, nameof(_nextFrameSeismicShockwaves));
+                    RegisterNativeQueue(ref _nextFrameSeismicShockwaves, PendingSeismicShockwaveCapacity, nameof(_nextFrameSeismicShockwaves), out _nextFrameSeismicShockwavesSentinelId);
                     PrewarmQueue(ref _nextFrameSeismicShockwaves, PendingSeismicShockwaveCapacity);
                 }
             }
@@ -505,10 +511,12 @@ namespace Hecton8.Gameplay
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(RandomEventEvents),
@@ -517,29 +525,64 @@ namespace Hecton8.Gameplay
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingStarted, nameof(_pendingStarted));
-            ReleaseNativeQueue(ref _nextFrameStarted, nameof(_nextFrameStarted));
-            ReleaseNativeQueue(ref _pendingEnded, nameof(_pendingEnded));
-            ReleaseNativeQueue(ref _nextFrameEnded, nameof(_nextFrameEnded));
-            ReleaseNativeQueue(ref _pendingSeismicShockwaves, nameof(_pendingSeismicShockwaves));
-            ReleaseNativeQueue(ref _nextFrameSeismicShockwaves, nameof(_nextFrameSeismicShockwaves));
+            ReleaseNativeQueue(ref _pendingStarted, ref _pendingStartedSentinelId);
+            ReleaseNativeQueue(ref _nextFrameStarted, ref _nextFrameStartedSentinelId);
+            ReleaseNativeQueue(ref _pendingEnded, ref _pendingEndedSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEnded, ref _nextFrameEndedSentinelId);
+            ReleaseNativeQueue(ref _pendingSeismicShockwaves, ref _pendingSeismicShockwavesSentinelId);
+            ReleaseNativeQueue(ref _nextFrameSeismicShockwaves, ref _nextFrameSeismicShockwavesSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -933,6 +976,7 @@ namespace Hecton8.Gameplay
         private bool _registeredRuntime;
         private bool _hotSwapListenerRegistered;
         private ILocalizationTextReadModel _cachedLocalization;
+        private object _cachedSpatialAudioRuntime;
         private IMeteorShowerAudioSink _cachedSpatialAudioManager;
         private IObjectPoolService _cachedObjectPool;
         private IPlayerRuntimeContext _cachedPlayerContext;
@@ -943,7 +987,7 @@ namespace Hecton8.Gameplay
         private uint _eventRandomState = 0xA341316Cu;
         private float _meteorSeed = 99173f;
         private int _meteorLastBoomIndex = -1;
-        private const float MeteorWaterPlaneY = 0f;
+        private const float MeteorWaterPlaneY = 14.02f;
         private const float MeteorThunderSoundSpeedMetersPerSecond = HectonPhysicsContract.SoundSpeedAirMetersPerSecondConst;
         private const float InvSqrtTwo = 0.70710678118f;
         private const byte GlobalTimeSyncValidFlag = 1;
@@ -966,6 +1010,8 @@ namespace Hecton8.Gameplay
         private Vector4 _pendingMeteorWaterImpactPosition;
         private Vector4 _pendingMeteorWaterImpactParams;
         [SerializeField] private float _debugMeteorFlash;
+        private int _eventNotificationMissCount;
+        private int _eventLaneDropCount;
 
         // Shader IDs
         private static readonly int _ShaderBiolumStorm  = Shader.PropertyToID("_BiolumStormActive");
@@ -974,6 +1020,16 @@ namespace Hecton8.Gameplay
         private static readonly int _ShaderMeteorShowerDirection = Shader.PropertyToID("_MeteorShowerDirection");
         private static readonly int _ShaderMeteorWaterImpactPosition = Shader.PropertyToID("_MeteorWaterImpactPosition");
         private static readonly int _ShaderMeteorWaterImpactParams = Shader.PropertyToID("_MeteorWaterImpactParams");
+        private static readonly uint _EventNotificationMissWarningHash = unchecked((uint)LocHash.Compute("RandomEventSystem.NotificationMiss"));
+        private static readonly uint _EventLaneDropWarningHash = unchecked((uint)LocHash.Compute("RandomEventSystem.EventLaneDrop"));
+        private static readonly uint _RandomEventSystemContextHash = unchecked((uint)LocHash.Compute("RandomEventSystem"));
+        private static readonly uint _EventNotificationContextHash = unchecked((uint)LocHash.Compute("RandomEventSystem.Notification"));
+        private static readonly uint _EventStartedContextHash = unchecked((uint)LocHash.Compute("RandomEventSystem.EventStarted"));
+        private static readonly uint _EventEndedContextHash = unchecked((uint)LocHash.Compute("RandomEventSystem.EventEnded"));
+        private static readonly uint _SeismicShockwaveContextHash = unchecked((uint)LocHash.Compute("RandomEventSystem.SeismicShockwave"));
+
+        public int EventNotificationMissCount => _eventNotificationMissCount;
+        public int EventLaneDropCount => _eventLaneDropCount;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -1003,7 +1059,7 @@ namespace Hecton8.Gameplay
                 if (_eventTimers[i] > 0f)
                 {
                     _eventTimers[i] = 0f;
-                    RandomEventEvents.TryRaiseEnded((RandomEventType)i);
+                    TryRaiseRandomEventEnded((RandomEventType)i);
                 }
             }
 
@@ -1012,6 +1068,11 @@ namespace Hecton8.Gameplay
             PublishMeteorShowerGlobalsImmediate(0f, 0f, 0f);
             PublishMeteorWaterImpactGlobalsImmediate(Vector3.zero, 0f, 0f, 0f);
             ClearPendingMeteorWaterBoom();
+            ClearEventNotificationDiagnostics();
+            ClearEventLaneDiagnostics();
+            _cachedSpatialAudioRuntime = null;
+            _cachedSpatialAudioManager = null;
+            _cachedSargassumDrag = null;
         }
 
         private void OnDestroy()
@@ -1020,6 +1081,11 @@ namespace Hecton8.Gameplay
             TryUnregister();
             TryUnregisterLateFrame();
             TryUnregisterRuntime();
+            ClearEventNotificationDiagnostics();
+            ClearEventLaneDiagnostics();
+            _cachedSpatialAudioRuntime = null;
+            _cachedSpatialAudioManager = null;
+            _cachedSargassumDrag = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1028,11 +1094,10 @@ namespace Hecton8.Gameplay
 
         public void SlowTick()
         {
-            if (survivalSystem == null && !ResolveSurvivalSystem())
-                return;
+            ResolveSurvivalSystem();
 
             const float dt = 0.1f;
-            float depth = survivalSystem != null ? survivalSystem.Depth : 0f;
+            float depth = ResolveCurrentDepthMeters();
             TickMeteorWaterBoomDelay(dt);
 
             // Obnovlyaem taymery aktivnyh sobytiy
@@ -1171,9 +1236,12 @@ namespace Hecton8.Gameplay
 
             StartEvent(RandomEventType.BiolumStorm, biolumStormDuration, 0.8f);
             PublishBiolumStormGlobal(1f);
-            NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
-                LocalizationKeys.RANDOM_EVENT_BIOLUM_STORM,
-                "BIOLUMINESCENT STORM - VISIBILITY +30%. FAUNA AGITATED."));
+            TryPushEventNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.RANDOM_EVENT_BIOLUM_STORM,
+                    "BIOLUMINESCENT STORM - VISIBILITY +30%. FAUNA AGITATED."),
+                warning: false,
+                RandomEventType.BiolumStorm);
         }
 
         private void TryTriggerThermalEruption(float depth)
@@ -1183,9 +1251,12 @@ namespace Hecton8.Gameplay
             if (NextEventRandom01() > thermalEruptionChance) return;
 
             StartEvent(RandomEventType.ThermalEruption, thermalEruptionDuration, 1f);
-            NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
-                LocalizationKeys.RANDOM_EVENT_THERMAL_ERUPTION,
-                "THERMAL ERUPTION - BURN HAZARD. RARE MINERALS EXPOSED."));
+            TryPushEventNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.RANDOM_EVENT_THERMAL_ERUPTION,
+                    "THERMAL ERUPTION - BURN HAZARD. RARE MINERALS EXPOSED."),
+                warning: true,
+                RandomEventType.ThermalEruption);
 
             QueueThermalEruptionBurnStatus();
         }
@@ -1215,9 +1286,12 @@ namespace Hecton8.Gameplay
             if (NextEventRandom01() > faunaMigrationChance) return;
 
             StartEvent(RandomEventType.FaunaMigration, faunaMigrationDuration, 0.5f);
-            NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
-                LocalizationKeys.RANDOM_EVENT_FAUNA_MIGRATION,
-                "PACK MIGRATION - FAUNA BEHAVIOR SHIFT DETECTED."));
+            TryPushEventNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.RANDOM_EVENT_FAUNA_MIGRATION,
+                    "PACK MIGRATION - FAUNA BEHAVIOR SHIFT DETECTED."),
+                warning: false,
+                RandomEventType.FaunaMigration);
         }
 
         private void TryTriggerGlitch(float depth)
@@ -1228,9 +1302,12 @@ namespace Hecton8.Gameplay
 
             StartEvent(RandomEventType.HectonOSGlitch, glitchDuration, 0.6f);
             PublishGlitchGlobal(1f);
-            NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
-                LocalizationKeys.RANDOM_EVENT_HECTON_OS_GLITCH,
-                "HECTON-OS GLITCH - RADIATION INTERFERENCE. READINGS MAY BE INACCURATE."));
+            TryPushEventNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.RANDOM_EVENT_HECTON_OS_GLITCH,
+                    "HECTON-OS GLITCH - RADIATION INTERFERENCE. READINGS MAY BE INACCURATE."),
+                warning: true,
+                RandomEventType.HectonOSGlitch);
         }
 
         private void TryTriggerCaveCollapse(float depth)
@@ -1252,10 +1329,13 @@ namespace Hecton8.Gameplay
                 return;
 
             StartEvent(RandomEventType.CaveCollapse, caveCollapseDuration, 1f);
-            RandomEventEvents.TryRaiseSeismicShockwave(in seismicEvent);
-            NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
-                LocalizationKeys.RANDOM_EVENT_CAVE_COLLAPSE,
-                "CAVE COLLAPSE - ROUTE BLOCKED. POSSIBLE NEW OPENING."));
+            TryRaiseRandomEventSeismicShockwave(in seismicEvent);
+            TryPushEventNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.RANDOM_EVENT_CAVE_COLLAPSE,
+                    "CAVE COLLAPSE - ROUTE BLOCKED. POSSIBLE NEW OPENING."),
+                warning: true,
+                RandomEventType.CaveCollapse);
         }
 
         private void TryTriggerMeteorShower()
@@ -1265,9 +1345,12 @@ namespace Hecton8.Gameplay
 
             BeginMeteorShower();
             StartEvent(RandomEventType.MeteorShower, meteorShowerDuration, meteorShowerIntensity);
-            NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
-                LocalizationKeys.RANDOM_EVENT_METEOR_SHOWER,
-                "METEOR SHOWER - SKY FLASHES DETECTED. LOW-FREQUENCY ACOUSTIC BOOMS EXPECTED."));
+            TryPushEventNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.RANDOM_EVENT_METEOR_SHOWER,
+                    "METEOR SHOWER - SKY FLASHES DETECTED. LOW-FREQUENCY ACOUSTIC BOOMS EXPECTED."),
+                warning: false,
+                RandomEventType.MeteorShower);
         }
 
         private void TryTriggerSolarFlare()
@@ -1276,20 +1359,53 @@ namespace Hecton8.Gameplay
             if (NextEventRandom01() > solarFlareChance) return;
 
             StartEvent(RandomEventType.SolarFlare, solarFlareDuration, solarFlareIntensity);
-            NotificationEvents.TryPushWarning("SOLAR FLARE - ELECTROMAGNETIC PULSE DETECTED. BASE POWER COLLAPSE EXPECTED.".AsSpan());
+            TryPushEventNotification(
+                "SOLAR FLARE - ELECTROMAGNETIC PULSE DETECTED. BASE POWER COLLAPSE EXPECTED.".AsSpan(),
+                warning: true,
+                RandomEventType.SolarFlare);
+        }
+
+        private void TryPushEventNotification(ReadOnlySpan<char> message, bool warning, RandomEventType eventType)
+        {
+            bool pushed = warning
+                ? NotificationEvents.TryPushWarning(message)
+                : NotificationEvents.TryPushInfo(message);
+            if (pushed)
+                return;
+
+            ReportEventNotificationMiss(eventType);
+        }
+
+        private void ReportEventNotificationMiss(RandomEventType eventType)
+        {
+            _eventNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _EventNotificationMissWarningHash,
+                _RandomEventSystemContextHash ^ _EventNotificationContextHash ^ unchecked((uint)eventType),
+                math.max(1, _eventNotificationMissCount));
+        }
+
+        private void ClearEventNotificationDiagnostics()
+        {
+            _eventNotificationMissCount = 0;
+        }
+
+        private void ClearEventLaneDiagnostics()
+        {
+            _eventLaneDropCount = 0;
         }
 
         private void StartEvent(RandomEventType type, float duration, float intensity)
         {
             _eventTimers[(int)type] = duration;
-            RandomEventEvents.TryRaiseStarted(type, intensity);
+            TryRaiseRandomEventStarted(type, intensity);
 
             LogEventStarted(type, duration, intensity);
         }
 
         private void OnEventEnd(RandomEventType type)
         {
-            RandomEventEvents.TryRaiseEnded(type);
+            TryRaiseRandomEventEnded(type);
 
             // Sbrasyvaem sheydernye effekty
             switch (type)
@@ -1307,6 +1423,42 @@ namespace Hecton8.Gameplay
             }
 
             LogEventEnded(type);
+        }
+
+        private void TryRaiseRandomEventStarted(RandomEventType type, float intensity)
+        {
+            if (RandomEventEvents.TryRaiseStarted(type, intensity))
+                return;
+
+            ReportRandomEventLaneDropIfBackpressured(_EventStartedContextHash ^ unchecked((uint)type));
+        }
+
+        private void TryRaiseRandomEventEnded(RandomEventType type)
+        {
+            if (RandomEventEvents.TryRaiseEnded(type))
+                return;
+
+            ReportRandomEventLaneDropIfBackpressured(_EventEndedContextHash ^ unchecked((uint)type));
+        }
+
+        private void TryRaiseRandomEventSeismicShockwave(in SeismicShockwaveEvent payload)
+        {
+            if (RandomEventEvents.TryRaiseSeismicShockwave(in payload))
+                return;
+
+            ReportRandomEventLaneDropIfBackpressured(_SeismicShockwaveContextHash);
+        }
+
+        private void ReportRandomEventLaneDropIfBackpressured(uint contextHash)
+        {
+            if (RandomEventEvents.PendingCount <= 0)
+                return;
+
+            _eventLaneDropCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _EventLaneDropWarningHash,
+                _RandomEventSystemContextHash ^ contextHash,
+                math.max(1, _eventLaneDropCount));
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1332,9 +1484,46 @@ namespace Hecton8.Gameplay
             if (survivalSystem != null)
                 return true;
 
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            CachePlayerRuntimeContext(_cachedPlayerContext, null);
             return survivalSystem != null;
+        }
+
+        private void CachePlayerRuntimeContext(
+            IPlayerRuntimeContext currentPlayerContext,
+            IPlayerRuntimeContext previousPlayerContext)
+        {
+            if (previousPlayerContext != null &&
+                ReferenceEquals(survivalSystem, previousPlayerContext.SurvivalSystem))
+            {
+                survivalSystem = null;
+            }
+
+            _cachedPlayerContext = currentPlayerContext;
+            HectonSurvivalSystem contextSurvival = currentPlayerContext != null
+                ? currentPlayerContext.SurvivalSystem
+                : null;
+
+            if (contextSurvival != null)
+                survivalSystem = contextSurvival;
+        }
+
+        private float ResolveCurrentDepthMeters()
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            HectonSurvivalSystem currentSurvival = survivalSystem;
+            if (currentSurvival != null && math.isfinite(currentSurvival.Depth))
+                return math.max(0f, currentSurvival.Depth);
+
+            return 0f;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1360,14 +1549,12 @@ namespace Hecton8.Gameplay
                     CacheMeteorShowerAudioSink(currentService);
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _cachedObjectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.Player:
-                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-                    if (_cachedPlayerContext == null)
-                        survivalSystem = null;
-                    else if (survivalSystem == null)
-                        survivalSystem = _cachedPlayerContext.SurvivalSystem;
+                    CachePlayerRuntimeContext(
+                        currentService as IPlayerRuntimeContext,
+                        previousService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _cachedPhysicsService = currentService as IPhysicsService;
@@ -1379,6 +1566,7 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.SargassumDragRuntime:
                     _cachedSargassumDrag = currentService as SargassumGlobalDragManager;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _cachedSargassumDrag);
                     break;
             }
         }
@@ -1404,33 +1592,81 @@ namespace Hecton8.Gameplay
         {
             _cachedLocalization = GlobalRegistry.LocalizationText;
             CacheMeteorShowerAudioSink(GlobalRegistry.Audio);
-            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            CacheObjectPoolService(null);
+            CachePlayerRuntimeContext(GlobalRegistry.Player, null);
             _cachedVoxelEngine = GlobalRegistry.VoxelEngine;
-            _cachedSargassumDrag = GlobalRegistry.SargassumDrag;
+            WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _cachedSargassumDrag);
             _cachedPhysicsService = GlobalRegistry.Physics;
 
             if (voxelEngine == null)
                 voxelEngine = _cachedVoxelEngine;
-            if (survivalSystem == null && _cachedPlayerContext != null)
-                survivalSystem = _cachedPlayerContext.SurvivalSystem;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _cachedObjectPool = pool;
+                return;
+            }
+
+            _cachedObjectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _cachedObjectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _cachedObjectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _cachedObjectPool = null;
+            pool = null;
+            return false;
         }
 
         private void CacheMeteorShowerAudioSink(object audioRuntime)
         {
-            _cachedSpatialAudioManager = IsAudioRuntimeObjectUsable(audioRuntime)
-                ? audioRuntime as IMeteorShowerAudioSink
-                : null;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _cachedSpatialAudioRuntime = null;
+                _cachedSpatialAudioManager = null;
+                return;
+            }
+
+            _cachedSpatialAudioRuntime = audioRuntime;
+            _cachedSpatialAudioManager = audioRuntime as IMeteorShowerAudioSink;
         }
 
         private IMeteorShowerAudioSink ResolveMeteorShowerAudioSink()
         {
+            object audioRuntime = _cachedSpatialAudioRuntime;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _cachedSpatialAudioRuntime = null;
+                _cachedSpatialAudioManager = null;
+                return null;
+            }
+
             IMeteorShowerAudioSink spatialAudioManager = _cachedSpatialAudioManager;
-            if (IsAudioRuntimeObjectUsable(spatialAudioManager))
+            if (ReferenceEquals(spatialAudioManager, audioRuntime) && IsAudioRuntimeObjectUsable(spatialAudioManager))
                 return spatialAudioManager;
 
-            _cachedSpatialAudioManager = null;
-            return null;
+            spatialAudioManager = audioRuntime as IMeteorShowerAudioSink;
+            _cachedSpatialAudioManager = spatialAudioManager;
+            return IsAudioRuntimeObjectUsable(spatialAudioManager) ? spatialAudioManager : null;
         }
 
         private static bool IsAudioRuntimeObjectUsable(object runtime)
@@ -1438,7 +1674,7 @@ namespace Hecton8.Gameplay
             if (runtime == null)
                 return false;
 
-            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+            if (runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (runtime is Behaviour behaviour)
@@ -1715,8 +1951,7 @@ namespace Hecton8.Gameplay
             if (meteorWaterSplashPrefab == null)
                 return;
 
-            IObjectPoolService pool = _cachedObjectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             GameObject instance = pool.Spawn(meteorWaterSplashPrefab, impactPosition, Quaternion.identity, false);

@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold sealant patch gun"
+title: "Пистолет холодного герметика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold sealant patch gun
+# Пистолет холодного герметика
 
-Cold sealant patch gun превращает engineering horror в читаемый gameplay. Он дает игроку agency, сохраняя pressure постоянной угрозой.
+Пистолет холодного герметика учит первому честному пределу. Он может закрыть pinhole, удержать кромку прокладки или купить минуты на спокойном шве. Он не освящает движущуюся конструкцию. Rating label важнее надежды игрока.
 
-## Scanner
-
-Patch gun. Рассчитан на pinholes, не на чудеса.
-
-## Terminal
-
-PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-Заплатка - не безопасность. Это countdown, который выглядит твердым.
-
-## Field Note
-
-Sealant repairs должны покупать время, а не отменять pressure.
+Поэтому инструмент должен появляться рано. Он дает игроку действие, не притворяясь, что каждую течь можно решить. Хорошая заплатка создает время; плохая создает уверенность там, где океан позже заберет плату.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/ru_RU. -->

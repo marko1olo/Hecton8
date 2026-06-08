@@ -227,12 +227,8 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            ConnectionSplineBatchRenderer activeRuntime = GlobalRegistry.ConnectionSplineBatchRenderer;
-            if (activeRuntime != null && activeRuntime != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             s_activeRuntimeInstance = this;
 
@@ -249,6 +245,9 @@ namespace Hecton8.Core
             if (_serviceRegistered)
                 return;
 
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             _shutdownComplete = false;
             GlobalRegistry.RegisterConnectionSplineBatchRendererRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ConnectionSplineBatchRenderer, this);
@@ -260,6 +259,9 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             EnsureRuntimeRegistrations();
         }
 
@@ -508,6 +510,48 @@ namespace Hecton8.Core
             _dispatcherAvailable = false;
             _serviceRegistered = false;
             _shutdownComplete = true;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (TryAbortForRuntimeCandidate(GlobalRegistry.ConnectionSplineBatchRenderer))
+                return true;
+
+            if (TryAbortForRuntimeCandidate(s_activeRuntimeInstance))
+                return true;
+
+            if (TryAbortForRuntimeCandidate(s_activeService as ConnectionSplineBatchRenderer))
+                return true;
+
+            return false;
+        }
+
+        private bool TryAbortForRuntimeCandidate(ConnectionSplineBatchRenderer active)
+        {
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsConnectionSplineRuntimeUsable(active))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            if (ReferenceEquals(GlobalRegistry.ConnectionSplineBatchRenderer, active))
+                GlobalRegistry.UnregisterConnectionSplineBatchRendererRuntime(active);
+
+            if (ReferenceEquals(s_activeService, active))
+                s_activeService = null;
+
+            if (ReferenceEquals(s_activeRuntimeInstance, active))
+                s_activeRuntimeInstance = null;
+
+            return false;
+        }
+
+        private static bool IsConnectionSplineRuntimeUsable(ConnectionSplineBatchRenderer renderer)
+        {
+            return renderer != null && renderer._serviceRegistered && renderer.isActiveAndEnabled;
         }
 
         private void InitializeBatch(int index, BatchKind kind, Color color, float radius)

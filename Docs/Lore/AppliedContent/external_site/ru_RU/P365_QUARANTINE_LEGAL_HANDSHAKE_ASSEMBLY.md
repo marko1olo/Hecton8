@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Сборка карантинно-правового handshake"
+title: "Сборка карантинно-правового рукопожатия"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Сборка карантинно-правового handshake
+# Сборка карантинно-правового рукопожатия
 
-Extraction в HECTON-8 грязный намеренно. Механический ascent может стать corporate custody, public truth или unresolved quarantine.
+Сборка карантинно-правового рукопожатия делает extraction намеренно грязной: рабочий двигатель все еще может доставить выжившего в corporate custody, отложенную публичную правду или нерешенный карантин.
 
 ## Scanner
 
-Handshake socket. Капсула может быть механически готова и все равно юридически захвачена.
+Handshake socket. Капсула может быть механически готова и все равно принадлежать неправильному receiver.
 
 ## Terminal
 
-RECOVERY HANDSHAKE: receiver key required. Keelmark принимает mass and lien. Recovery Compliance принимает coordinates. Public ledger принимает proof with delay.
+RECOVERY HANDSHAKE: требуется receiver key. Keelmark принимает mass и lien. Recovery Compliance принимает coordinates и quarantine status. Public ledger принимает proof после задержки. Unkeyed launch по умолчанию становится custody dispute.
 
 ## Audio
 
-Последняя деталь не металл. Последняя деталь - кто имеет право назвать тебя recovered.
+Кто отвечает, тот решает, что значит спасение.
 
 ## Field Note
 
-RU LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+Последний компонент - не металл. Это имя системы, которой разрешено назвать тебя recovered.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/ru_RU. -->

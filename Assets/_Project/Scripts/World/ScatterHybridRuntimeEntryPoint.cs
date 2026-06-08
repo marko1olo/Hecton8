@@ -129,7 +129,7 @@ namespace Hecton8.World
                 return null;
             }
 
-            if (currentFacade != null && currentFacade.BackendKind != plan.ResolvedBackendKind)
+            if (currentFacade != null && ShouldReplaceFacadeForPlan(currentFacade, in plan))
             {
                 currentFacade.Dispose();
                 currentFacade = null;
@@ -144,6 +144,17 @@ namespace Hecton8.World
 
             currentFacade?.Initialize();
             return currentFacade;
+        }
+
+        private static bool ShouldReplaceFacadeForPlan(
+            ScatterRuntimeBackendFacade currentFacade,
+            in ScatterHybridRuntimePlan plan)
+        {
+            if (currentFacade.RequestedBackendKind != plan.ResolvedBackendKind)
+                return true;
+
+            return plan.ResolvedBackendKind == ScatterSimulationBackendKind.EntitiesDots &&
+                currentFacade.BackendProviderVersion != ScatterSimulationBackendRegistry.Version;
         }
 
         public static string GetBackendKindLabel(ScatterSimulationBackendKind backendKind)

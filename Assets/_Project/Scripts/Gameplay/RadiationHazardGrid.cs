@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -42,6 +43,8 @@ namespace Hecton8.Gameplay
         private const float MinCellSizeMeters = SaveData.RadiationGridMinCellSizeMeters;
         private const float MaxCellSizeMeters = SaveData.RadiationGridMaxCellSizeMeters;
         private const float DefaultSourceRadiusMeters = 18f;
+        private const float DefaultSeaLevelY = 14.02f;
+        private const float MaxSourceRadiusMeters = SaveData.RadiationGridMaxCellSizeMeters * GridResolution;
         private const float StaticVfxThreshold = 0.5f;
         private const float IodineDoseReduction = 50f;
         private const uint GeigerSourceId = 0x52414447u;
@@ -84,6 +87,13 @@ namespace Hecton8.Gameplay
         private static readonly int _HectonHandRadiationMutationId = Shader.PropertyToID("_HectonHandRadiationMutation01");
         private static readonly int _HectonHandRadiationTintId = Shader.PropertyToID("_HectonHandRadiationTint");
         internal static RadiationHazardGrid ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            ActiveRuntimeInstance = null;
+            Volatile.Write(ref _signalPushDropCount, 0);
+        }
 
         private struct VaultBufferView<T> where T : struct
         {
@@ -238,6 +248,7 @@ namespace Hecton8.Gameplay
         private bool _pendingDataVaultSwap;
         private bool _blackBoxDumpAttempted;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
 
         public int SavePriority => 54;
         public int LoadPriority => 54;
@@ -268,15 +279,13 @@ namespace Hecton8.Gameplay
             }
 
             float safeIntensity = NormalizeSourceIntensity(intensity);
-            if (safeIntensity <= 0f ||
-                !math.isfinite(radiusMeters) ||
-                radiusMeters <= 0f)
+            float safeRadius = NormalizeSourceRadius(radiusMeters);
+            if (safeIntensity <= 0f || safeRadius <= 0f)
             {
                 UnregisterSource(sourceId);
                 return;
             }
 
-            float safeRadius = math.max(0.5f, radiusMeters);
             RadiationSourceSignal signal = new RadiationSourceSignal
             {
                 PositionAup = sourceAup,
@@ -353,9 +362,10 @@ namespace Hecton8.Gameplay
                 return false;
 
             float gridIntensity = grid.SampleGridNearest(in sampleAup);
-            intensity01 = grid._radiationSimulationJobActive
+            float sampleIntensity = grid._radiationSimulationJobActive
                 ? gridIntensity
                 : math.max(grid.SampleInverseSquare(in sampleAup), gridIntensity);
+            intensity01 = SanitizeNonNegative(sampleIntensity);
             return intensity01 > 0f;
         }
 
@@ -438,14 +448,15 @@ namespace Hecton8.Gameplay
             }
 
             _radiationEvaluatedThisFrame = false;
-            PlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
+            PlayerRuntimeContext playerContext = ResolveMutablePlayerRuntimeContext();
+            IPlayerRuntimeContext playerReadContext = ResolveActivePlayerRuntimeContext();
             DrainRadiationSourceSignals();
             DrainExternalDoseSignals();
             DrainItemAcquiredSignals(playerContext);
 
-            AbsoluteUniversePosition playerAup = ResolvePlayerAup(playerContext);
+            bool hasPlayerAup = TryResolvePlayerAup(playerReadContext, out AbsoluteUniversePosition playerAup);
             _lastSimulationPlayerContext = playerContext;
-            _lastSimulationPlayerAup = playerAup;
+            _lastSimulationPlayerAup = hasPlayerAup ? playerAup : AbsoluteUniversePosition.Invalid();
             JobHandle dependency = dependsOn;
 
             float qualityWeight = ResolveGlobalQualityWeight();
@@ -466,9 +477,11 @@ namespace Hecton8.Gameplay
                 dependency = ScheduleDiffusionJobIfIdle(dependency);
             }
 
-            dependency = ScheduleEmergencyMockSourceIfNeeded(in playerAup, dependency);
+            if (hasPlayerAup)
+                dependency = ScheduleEmergencyMockSourceIfNeeded(in playerAup, dependency);
+
             JobHandle radiationHandle = ScheduleRadiationExposureKernel(
-                playerContext,
+                playerReadContext,
                 in playerAup,
                 qualityWeight,
                 _lastExternalIntensity01,
@@ -513,45 +526,35 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            RadiationStateDTO state = _radiationStates.IsCreated && _radiationStates.Length > 0
-                ? _radiationStates[0]
-                : _lastRadiationState;
-            if (!IsRadiationStateFinite(in state))
-            {
-                DumpBlackBox();
-                state = default;
-                if (_radiationStates.IsCreated && _radiationStates.Length > 0)
-                    _radiationStates[0] = state;
-            }
-
-            state.CumulativeDoseRad = SanitizeNonNegative(state.CumulativeDoseRad);
-            state.CurrentExposureRate = SanitizeNonNegative(state.CurrentExposureRate);
-            state.ShieldingFactor01 = Sanitize01(state.ShieldingFactor01);
-            state.CellularDegradation01 = Sanitize01(state.CellularDegradation01);
-            if (_radiationStates.IsCreated && _radiationStates.Length > 0)
-                _radiationStates[0] = state;
-
-            _lastRadiationState = state;
-            _lastGridIntensity01 = state.CurrentExposureRate;
-            _accumulatedRadiationDose = state.CumulativeDoseRad;
-            _lastShieldingFactor01 = state.ShieldingFactor01;
-            _lastCellularDegradation01 = state.CellularDegradation01;
+            CaptureSanitizedRadiationStateFromRuntimeBuffer();
 
             PlayerRuntimeContext playerContext = _lastSimulationPlayerContext != null
                 ? _lastSimulationPlayerContext
-                : ResolvePlayerRuntimeContext();
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.IsFinite(in _lastSimulationPlayerAup)
+                : ResolveMutablePlayerRuntimeContext();
+            bool hasPlayerAup = AbsoluteUniversePosition.IsFinite(in _lastSimulationPlayerAup);
+            AbsoluteUniversePosition playerAup = hasPlayerAup
                 ? _lastSimulationPlayerAup
-                : ResolvePlayerAup(playerContext);
+                : AbsoluteUniversePosition.Invalid();
+            if (!hasPlayerAup)
+                hasPlayerAup = TryResolvePlayerAup(ResolveActivePlayerRuntimeContext(), out playerAup);
+
             float safeCompletedDelta = SanitizeNonNegative(_lastCompletedIntegrationDeltaSeconds);
             float doseAdd = _radiationEvaluatedThisFrame
                 ? SanitizeNonNegative(_lastGridIntensity01 * safeCompletedDelta)
                 : 0f;
             ApplyDoseToPlayerContext(playerContext, _accumulatedRadiationDose, _lastGridIntensity01);
             PublishPendingRadiationStatusSignal();
-            PublishDoseSignal(in playerAup, doseAdd, _lastGridIntensity01, RadiationDoseGridKind);
-            EmitGeigerIfNeeded(in playerAup, _lastGridIntensity01);
-            RecordTelemetry(playerAup, _lastGridIntensity01, _accumulatedRadiationDose, 0u);
+            if (hasPlayerAup)
+            {
+                PublishDoseSignal(in playerAup, doseAdd, _lastGridIntensity01, RadiationDoseGridKind);
+                EmitGeigerIfNeeded(in playerAup, _lastGridIntensity01);
+            }
+
+            RecordTelemetry(
+                playerAup,
+                _lastGridIntensity01,
+                _accumulatedRadiationDose,
+                hasPlayerAup ? 0u : RadiationTelemetryFlagSkippedEvaluation);
             _lastExternalIntensity01 *= 0.5f;
         }
 
@@ -570,6 +573,15 @@ namespace Hecton8.Gameplay
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
+                return;
+            }
+
             _lastShiftSequence = shiftData.Sequence;
             RecordTelemetry(_gridOriginAup, _lastGridIntensity01, _accumulatedRadiationDose, RadiationTelemetryFlagOriginShift);
         }
@@ -580,7 +592,7 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureNativeBuffers();
-            CompleteDiffusionJobIfReady();
+            CompleteRadiationJobsForSaveSnapshot();
             data.radiationDose = math.max(0f, math.isfinite(_accumulatedRadiationDose) ? _accumulatedRadiationDose : 0f);
             data.radiationGridCellSizeMeters = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, MinCellSizeMeters, MaxCellSizeMeters);
             double3 origin = _hasGridOrigin ? _gridOriginAup.ToAbsoluteDouble3() : double3.zero;
@@ -627,21 +639,13 @@ namespace Hecton8.Gameplay
 
             if (data == null)
             {
-                _accumulatedRadiationDose = 0f;
+                StoreRestoredRadiationState(0f, 0f, 0f);
                 RestoreGridOriginFromActiveSourceOrDefault();
-                if (_radiationStates.IsCreated && _radiationStates.Length > 0)
-                    _radiationStates[0] = default;
                 return;
             }
 
-            _accumulatedRadiationDose = math.max(0f, math.isfinite(data.radiationDose) ? data.radiationDose : 0f);
-            if (_radiationStates.IsCreated && _radiationStates.Length > 0)
-            {
-                RadiationStateDTO state = _radiationStates[0];
-                state.CumulativeDoseRad = _accumulatedRadiationDose;
-                state.CurrentExposureRate = SanitizeNonNegative(_lastGridIntensity01);
-                _radiationStates[0] = state;
-            }
+            float restoredRadiationDose = math.max(0f, math.isfinite(data.radiationDose) ? data.radiationDose : 0f);
+            StoreRestoredRadiationState(restoredRadiationDose, 0f, 0f);
             cellSizeMeters = SanitizeRange(data.radiationGridCellSizeMeters, DefaultCellSizeMeters, MinCellSizeMeters, MaxCellSizeMeters);
             int persistedRleLength = ClampPersistedRadiationRleLength(data.radiationGridRle, data.radiationGridRleLength);
             if (persistedRleLength >= RlePacketSizeBytes &&
@@ -664,7 +668,7 @@ namespace Hecton8.Gameplay
                 DecodeSparseRle(data.radiationGridRle, persistedRleLength);
 
             if (applyPlayerContext)
-                ApplyDoseToPlayerContext(ResolvePlayerRuntimeContext(), _accumulatedRadiationDose, _lastGridIntensity01);
+                ApplyDoseToPlayerContext(ResolveMutablePlayerRuntimeContext(), _accumulatedRadiationDose, _lastGridIntensity01);
         }
 
         private void RegisterSourceInternal(int sourceId, in AbsoluteUniversePosition sourceAup, float intensity, float radiusMeters)
@@ -679,9 +683,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float sourceRadiusMeters = math.isfinite(radiusMeters) && radiusMeters > 0f
-                ? math.max(0.5f, radiusMeters)
-                : DefaultSourceRadiusMeters;
+            float sourceRadiusMeters = NormalizeSourceRadius(radiusMeters);
+            if (sourceRadiusMeters <= 0f)
+            {
+                UnregisterSourceInternal(sourceId);
+                return;
+            }
+
             if (!_hasGridOrigin)
             {
                 _gridOriginAup = sourceAup;
@@ -779,23 +787,47 @@ namespace Hecton8.Gameplay
         private void RepairRadiationSourceCountFromBuffer()
         {
             int activeCount = 0;
+            bool sourceSlotsChanged = false;
             if (_sources.IsCreated)
             {
                 int capacity = math.clamp(MaxSourceCount, 0, _sources.Length);
                 for (int i = 0; i < capacity; i++)
                 {
                     RadiationSource source = _sources[i];
-                    if (source.Active == 0 || source.Intensity01 <= 0f)
+                    if (source.Active == 0)
                         continue;
+
+                    float safeIntensity01 = NormalizeSourceIntensity(source.Intensity01);
+                    float safeRadiusMeters = NormalizeSourceRadius(source.RadiusMeters);
+                    if (source.SourceId == 0 ||
+                        safeIntensity01 <= 0f ||
+                        safeRadiusMeters <= 0f ||
+                        !math.all(math.isfinite(source.PositionAup)))
+                    {
+                        _sources[i] = default;
+                        sourceSlotsChanged = true;
+                        continue;
+                    }
+
+                    if (source.Intensity01 != safeIntensity01 || source.RadiusMeters != safeRadiusMeters)
+                    {
+                        source.Intensity01 = safeIntensity01;
+                        source.RadiusMeters = safeRadiusMeters;
+                        _sources[i] = source;
+                        sourceSlotsChanged = true;
+                    }
 
                     activeCount++;
                 }
             }
 
-            if (_activeSourceCount == activeCount)
+            bool sourceCountChanged = _activeSourceCount != activeCount;
+            if (!sourceCountChanged)
             {
                 if (_sourceCountLane.IsCreated && _sourceCountLane.Length > 0 && _sourceCountLane[0] != activeCount)
                     _sourceCountLane[0] = activeCount;
+                if (sourceSlotsChanged)
+                    _sourceVersion++;
                 return;
             }
 
@@ -1144,7 +1176,8 @@ namespace Hecton8.Gameplay
             }
 
             profile.IntensityScale = math.max(0f, math.isfinite(profile.IntensityScale) ? profile.IntensityScale : 1f);
-            profile.RadiusMeters = math.max(0.5f, math.isfinite(profile.RadiusMeters) ? profile.RadiusMeters : DefaultSourceRadiusMeters);
+            float profileRadiusMeters = NormalizeSourceRadius(profile.RadiusMeters);
+            profile.RadiusMeters = profileRadiusMeters > 0f ? profileRadiusMeters : DefaultSourceRadiusMeters;
             profile.ShieldAttenuation01 = math.saturate(math.isfinite(profile.ShieldAttenuation01) ? profile.ShieldAttenuation01 : 1f);
             profile.MutationScale = math.max(0f, math.isfinite(profile.MutationScale) ? profile.MutationScale : 1f);
             profile.Flags = 1u;
@@ -1349,23 +1382,13 @@ namespace Hecton8.Gameplay
                 _registeredOriginShift = true;
             }
 
-            ISaveService saveService = GlobalRegistry.Save;
-            if (_registeredSave && !ReferenceEquals(_saveService, saveService))
+            if (_registeredSave &&
+                (!ReferenceEquals(_registeredSaveService, GlobalRegistry.Save) || !IsSaveServiceUsable(_registeredSaveService)))
             {
-                ISaveService registeredSave = _saveService;
-                if (registeredSave != null)
-                    registeredSave.Unregister(this);
-
-                _registeredSave = false;
-                _saveService = null;
+                TryUnregisterSaveParticipant();
             }
 
-            if (!_registeredSave && saveService != null)
-            {
-                saveService.Register(this);
-                _saveService = saveService;
-                _registeredSave = true;
-            }
+            TryRegisterSaveParticipant();
         }
 
         private void TryUnregisterRuntimeLanes()
@@ -1400,14 +1423,7 @@ namespace Hecton8.Gameplay
                 _registeredOriginShift = false;
             }
 
-            ISaveService saveService = _saveService;
-            if (_registeredSave && saveService != null)
-            {
-                saveService.Unregister(this);
-                _registeredSave = false;
-            }
-
-            _saveService = null;
+            TryUnregisterSaveParticipant();
         }
 
         private void TryUnregisterDispatcherLanes()
@@ -1435,6 +1451,46 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_registeredSave)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
+                return;
+
+            saveService.Register(this);
+            _registeredSaveService = saveService;
+            _saveService = saveService;
+            _registeredSave = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_registeredSave && _registeredSaveService == null)
+                return;
+
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
+            _registeredSave = false;
+            _saveService = null;
         }
 
         private void RefreshColdRegistryReferences()
@@ -1477,16 +1533,8 @@ namespace Hecton8.Gameplay
                         TryRegisterRuntimeLanes();
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    if (_registeredSave)
-                    {
-                        ISaveService previousSave = previousService as ISaveService ?? _saveService;
-                        if (previousSave != null)
-                            previousSave.Unregister(this);
-
-                        _registeredSave = false;
-                    }
-
-                    _saveService = null;
+                    TryUnregisterSaveParticipant();
+                    _saveService = currentService as ISaveService;
                     TryRegisterRuntimeLanes();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
@@ -1528,17 +1576,24 @@ namespace Hecton8.Gameplay
 
                 double3 sourceAbsolute = source.PositionAup;
                 double3 sourceOffset = sourceAbsolute - origin;
+                if (!math.all(math.isfinite(sourceAbsolute)) || !math.all(math.isfinite(sourceOffset)))
+                    continue;
+
+                float safeRadius = NormalizeSourceRadius(source.RadiusMeters);
+                if (safeRadius <= 0f)
+                    continue;
+
                 int centerX = (int)math.floor(sourceOffset.x / safeCellSize) + half;
                 int centerY = (int)math.floor(sourceOffset.y / safeCellSize) + half;
                 int centerZ = (int)math.floor(sourceOffset.z / safeCellSize) + half;
-                int radiusCells = math.max(1, (int)math.ceil(source.RadiusMeters / safeCellSize));
+                int radiusCells = math.max(1, (int)math.ceil(safeRadius / safeCellSize));
                 int minX = math.max(0, centerX - radiusCells);
                 int maxX = math.min(GridResolution - 1, centerX + radiusCells);
                 int minY = math.max(0, centerY - radiusCells);
                 int maxY = math.min(GridResolution - 1, centerY + radiusCells);
                 int minZ = math.max(0, centerZ - radiusCells);
                 int maxZ = math.min(GridResolution - 1, centerZ + radiusCells);
-                float radiusSq = math.max(0.25f, source.RadiusMeters * source.RadiusMeters);
+                float radiusSq = math.max(0.25f, safeRadius * safeRadius);
 
                 for (int z = minZ; z <= maxZ; z++)
                 {
@@ -1602,7 +1657,7 @@ namespace Hecton8.Gameplay
             _gridVersion++;
         }
 
-        private void CompleteDiffusionJobForTeardownRelease()
+        private void CompleteDiffusionJobForForcedSwapWindow()
         {
             if (!_diffusionJobActive)
                 return;
@@ -1651,21 +1706,183 @@ namespace Hecton8.Gameplay
 
         private void ApplyDataVaultSwap(IDataVault nextVault)
         {
+            float preservedAccumulatedDose = SanitizeNonNegative(_accumulatedRadiationDose);
             ReleaseVaultHandles();
             _dataVault = nextVault;
             EnsureNativeBuffers();
+            RestoreRadiationRuntimeStateFromVaultAfterSwap(preservedAccumulatedDose);
+        }
+
+        private void RestoreRadiationRuntimeStateFromVaultAfterSwap(float preservedAccumulatedDose)
+        {
+            _lastExternalIntensity01 = 0f;
+            _pendingExternalDoseRad = 0f;
+            _pendingIodineDoseReductionRad = 0f;
+            _radiationEvaluatedThisFrame = false;
+            _lastSimulationPlayerAup = default;
+            _lastSimulationPlayerContext = null;
+            _lastCompletedIntegrationDeltaSeconds = 0f;
+            _lastBurstExecutionMicroseconds = 0f;
+            _lastItemSignalDrainFrame = -1;
+            _lastItemSignalDeferFrame = -1;
+            _lastSourceSignalDrainFrame = -1;
+            _lastSourceSignalPreserveFrame = -1;
+            _lastExternalDoseSignalDrainFrame = -1;
+            _geigerPhase = 0f;
+            _hasGridOrigin = false;
+
+            ClearGrid(_gridSource);
+            RepairRadiationSourceCountFromBuffer();
+            RestoreGridOriginFromActiveSourceOrDefault();
+
+            RadiationStateDTO state = default;
+            float safePreservedDose = SanitizeNonNegative(preservedAccumulatedDose);
+            if (_radiationStates.IsCreated && _radiationStates.Length > 0)
+            {
+                state = _radiationStates[0];
+                if (!IsRadiationStateFinite(in state))
+                    state = default;
+
+                float vaultDose = SanitizeNonNegative(state.CumulativeDoseRad);
+                state.CumulativeDoseRad = vaultDose > 0f ? vaultDose : safePreservedDose;
+                state.CurrentExposureRate = 0f;
+                state.ShieldingFactor01 = Sanitize01(state.ShieldingFactor01);
+                state.CellularDegradation01 = Sanitize01(state.CellularDegradation01);
+                state.EntityHashID = RadiationSystemHash;
+                state.Flags = ResolveRestoredRadiationStateFlags(state.CellularDegradation01);
+                _radiationStates[0] = state;
+            }
+            else
+            {
+                state.CumulativeDoseRad = safePreservedDose;
+                state.EntityHashID = RadiationSystemHash;
+                state.Flags = ResolveRestoredRadiationStateFlags(state.CellularDegradation01);
+            }
+
+            _accumulatedRadiationDose = state.CumulativeDoseRad;
+            _lastRadiationState = state;
+            _lastGridIntensity01 = 0f;
+            _lastShieldingFactor01 = state.ShieldingFactor01;
+            _lastCellularDegradation01 = state.CellularDegradation01;
+
+            if (_statusSignalLane.IsCreated && _statusSignalLane.Length > 0)
+                _statusSignalLane[0] = default;
+
+            _telemetryWriteIndex = 0;
+            if (_telemetryCursorLane.IsCreated && _telemetryCursorLane.Length > 0)
+                _telemetryCursorLane[0] = 0u;
+        }
+
+        private static uint ResolveRestoredRadiationStateFlags(float cellularDegradation01)
+        {
+            float safeDegradation = Sanitize01(cellularDegradation01);
+            uint flags = safeDegradation >= 0.01f ? RadiationStateFlagMutated : 0u;
+            if (safeDegradation >= RadiationCriticalDegradation01)
+                flags |= RadiationStateFlagCritical;
+
+            return flags;
+        }
+
+        private void StoreRestoredRadiationState(float cumulativeDoseRad, float exposureRate, float cellularDegradation01)
+        {
+            RadiationStateDTO state = new RadiationStateDTO
+            {
+                CumulativeDoseRad = SanitizeNonNegative(cumulativeDoseRad),
+                CurrentExposureRate = SanitizeNonNegative(exposureRate),
+                ShieldingFactor01 = 0f,
+                CellularDegradation01 = Sanitize01(cellularDegradation01),
+                EntityHashID = RadiationSystemHash,
+                Flags = ResolveRestoredRadiationStateFlags(cellularDegradation01)
+            };
+
+            if (_radiationStates.IsCreated && _radiationStates.Length > 0)
+                _radiationStates[0] = state;
+
+            _accumulatedRadiationDose = state.CumulativeDoseRad;
+            _lastRadiationState = state;
+            _lastGridIntensity01 = state.CurrentExposureRate;
+            _lastShieldingFactor01 = state.ShieldingFactor01;
+            _lastCellularDegradation01 = state.CellularDegradation01;
+        }
+
+        private void CompleteRadiationJobsForSaveSnapshot()
+        {
+            if (HasActiveRadiationJobs() || _radiationSdfSnapshotLocked)
+            {
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    CompleteRadiationSimulationJobForForcedSwapWindow();
+                    CompleteDiffusionJobForForcedSwapWindow();
+                    ReleaseRadiationSdfSnapshotLock();
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+            }
+
+            CaptureSanitizedRadiationStateFromRuntimeBuffer();
+
+            if (HasDeferredStructuralOperations() && !HasActiveRadiationJobs())
+            {
+                TryApplyDeferredStructuralOperations();
+                CaptureSanitizedRadiationStateFromRuntimeBuffer();
+            }
+        }
+
+        private void CaptureSanitizedRadiationStateFromRuntimeBuffer()
+        {
+            RadiationStateDTO state = _radiationStates.IsCreated && _radiationStates.Length > 0
+                ? _radiationStates[0]
+                : _lastRadiationState;
+            if (!IsRadiationStateFinite(in state))
+            {
+                DumpBlackBox();
+                state = default;
+            }
+
+            state.CumulativeDoseRad = SanitizeNonNegative(state.CumulativeDoseRad);
+            state.CurrentExposureRate = SanitizeNonNegative(state.CurrentExposureRate);
+            state.ShieldingFactor01 = Sanitize01(state.ShieldingFactor01);
+            state.CellularDegradation01 = Sanitize01(state.CellularDegradation01);
+            if (_radiationStates.IsCreated && _radiationStates.Length > 0)
+                _radiationStates[0] = state;
+
+            _lastRadiationState = state;
+            _lastGridIntensity01 = state.CurrentExposureRate;
+            _accumulatedRadiationDose = state.CumulativeDoseRad;
+            _lastShieldingFactor01 = state.ShieldingFactor01;
+            _lastCellularDegradation01 = state.CellularDegradation01;
         }
 
         private void CompleteRadiationJobsForTeardownRelease()
         {
-            if (_radiationSimulationJobActive)
+            if (!HasActiveRadiationJobs() && !_radiationSdfSnapshotLocked)
+                return;
+
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
             {
-                DispatcherJobFence.TryComplete(ref _radiationSimulationJobHandle, forceComplete: true);
-                _radiationSimulationJobActive = false;
+                CompleteRadiationSimulationJobForForcedSwapWindow();
+                CompleteDiffusionJobForForcedSwapWindow();
                 ReleaseRadiationSdfSnapshotLock();
             }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+        }
 
-            CompleteDiffusionJobForTeardownRelease();
+        private void CompleteRadiationSimulationJobForForcedSwapWindow()
+        {
+            if (!_radiationSimulationJobActive)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _radiationSimulationJobHandle, forceComplete: true);
+            _radiationSimulationJobActive = false;
+            ReleaseRadiationSdfSnapshotLock();
+            _lastBurstExecutionMicroseconds = TicksToMicroseconds(Stopwatch.GetTimestamp() - _radiationSimulationStartTicks);
         }
 
         private void ReleaseRadiationSdfSnapshotLock()
@@ -1717,7 +1934,10 @@ namespace Hecton8.Gameplay
                 if (!math.isfinite(distanceSq))
                     continue;
 
-                float radius = math.max(0.5f, source.RadiusMeters);
+                float radius = NormalizeSourceRadius(source.RadiusMeters);
+                if (radius <= 0f)
+                    continue;
+
                 float radiusSq = radius * radius;
                 float inverseSq = radiusSq * math.rcp(math.max((float)distanceSq, 0.0001f));
                 total += source.Intensity01 * math.saturate(inverseSq);
@@ -1727,7 +1947,7 @@ namespace Hecton8.Gameplay
         }
 
         private JobHandle ScheduleRadiationExposureKernel(
-            PlayerRuntimeContext playerContext,
+            IPlayerRuntimeContext playerContext,
             in AbsoluteUniversePosition playerAup,
             float qualityWeight,
             float externalExposureRate,
@@ -1750,12 +1970,21 @@ namespace Hecton8.Gameplay
             float3 sdfVolumeOrigin = default;
             float3 sdfCellSize = default;
             float sdfRange = 0f;
-            float3 playerRuntime = playerAup.ToRuntimeFloat3();
+            bool hasPlayerAup = AbsoluteUniversePosition.IsFinite(in playerAup);
+            float3 playerRuntime = default;
+            double3 playerAbsolute = default;
+            if (hasPlayerAup)
+            {
+                playerRuntime = playerAup.ToRuntimeFloat3();
+                playerAbsolute = playerAup.ToAbsoluteDouble3();
+                hasPlayerAup = math.all(math.isfinite(playerRuntime)) && math.all(math.isfinite(playerAbsolute));
+            }
+
             IVoxelSonarSdfReadLeaseModel sdfReadLeaseModel = _voxelSdfReadLeaseModel;
             VoxelSonarSdfReadLease sdfReadLease = default;
             bool sdfReadLeaseLocked = false;
             bool sdfSnapshotLocked = false;
-            if (sdfReadLeaseModel != null)
+            if (hasPlayerAup && sdfReadLeaseModel != null)
             {
                 sdfReadLeaseLocked = sdfReadLeaseModel.TryAcquireNearestSonarSdfReadLease(
                     playerRuntime,
@@ -1799,7 +2028,6 @@ namespace Hecton8.Gameplay
             int maxBulkheadSamples = ResolveBulkheadSampleLimit(sanitizedQuality, bulkheadStates, bulkheadPlanes);
             int sdfSampleCount = ResolveSdfSampleCount(sanitizedQuality, tuning);
             uint playerTargetId = ResolvePlayerCombatTargetId(playerContext);
-            double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
             RadiationStateDTO seedState = _radiationStates[0];
             if (_accumulatedRadiationDose > seedState.CumulativeDoseRad && math.isfinite(_accumulatedRadiationDose))
             {
@@ -1821,6 +2049,7 @@ namespace Hecton8.Gameplay
                 BulkheadCount = maxBulkheadSamples,
                 PlayerAup = playerAbsolute,
                 PlayerRuntime = playerRuntime,
+                HasPlayerAup = hasPlayerAup ? 1u : 0u,
                 SimulationTickDelta = SanitizeNonNegative(simulationTickDelta),
                 ExternalExposureRate = Sanitize01(externalExposureRate),
                 ExternalDoseDelta = math.max(0f, math.isfinite(externalDoseDelta) ? externalDoseDelta : 0f),
@@ -1975,7 +2204,7 @@ namespace Hecton8.Gameplay
                 vault.TryReadHandle(in _bulkheadPlanesReadHandle, out bulkheadPlanes);
         }
 
-        private static uint ResolvePlayerCombatTargetId(PlayerRuntimeContext playerContext)
+        private static uint ResolvePlayerCombatTargetId(IPlayerRuntimeContext playerContext)
         {
             if (playerContext == null || playerContext.PlayerObject == null)
                 return 0u;
@@ -2169,7 +2398,7 @@ namespace Hecton8.Gameplay
                     continue;
 
                 float quantity = SanitizeSignalQuantity(signal.Quantity);
-                ApplyIodineDoseReduction(playerContext, IodineDoseReduction * quantity, in signal.PositionAup);
+                ApplyIodineDoseReduction(playerContext, IodineDoseReduction * quantity);
             }
         }
 
@@ -2209,13 +2438,10 @@ namespace Hecton8.Gameplay
             }
 
             _pendingIodineDoseReductionRad = 0f;
-            AbsoluteUniversePosition doseAup = AbsoluteUniversePosition.IsFinite(in _lastSimulationPlayerAup)
-                ? _lastSimulationPlayerAup
-                : ResolvePlayerAup(playerContext);
-            ApplyIodineDoseReduction(playerContext, pendingReduction, in doseAup);
+            ApplyIodineDoseReduction(playerContext, pendingReduction);
         }
 
-        private void ApplyIodineDoseReduction(PlayerRuntimeContext playerContext, float doseReductionRad, in AbsoluteUniversePosition doseAup)
+        private void ApplyIodineDoseReduction(PlayerRuntimeContext playerContext, float doseReductionRad)
         {
             if (!(doseReductionRad > 0f) || !math.isfinite(doseReductionRad))
                 return;
@@ -2235,8 +2461,6 @@ namespace Hecton8.Gameplay
             }
 
             ApplyDoseToPlayerContext(playerContext, _accumulatedRadiationDose, _lastGridIntensity01);
-            if (AbsoluteUniversePosition.IsFinite(in doseAup))
-                PublishDoseSignal(in doseAup, -doseReductionRad, _lastGridIntensity01, RadiationDoseAtmosphereKind);
         }
 
         private void DrainRadiationSourceSignals()
@@ -2315,38 +2539,58 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private PlayerRuntimeContext ResolvePlayerRuntimeContext()
+        private PlayerRuntimeContext ResolveMutablePlayerRuntimeContext()
         {
             return PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext)
                 ? runtimeContext
                 : null;
         }
 
-        private static AbsoluteUniversePosition ResolvePlayerAup(PlayerRuntimeContext playerContext)
+        private static IPlayerRuntimeContext ResolveActivePlayerRuntimeContext()
         {
+            return PlayerRuntimeContextService.ActiveRuntimeContext;
+        }
+
+        private static bool TryResolvePlayerAup(IPlayerRuntimeContext playerContext, out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = AbsoluteUniversePosition.Invalid();
             if (playerContext != null)
             {
-                var playerMovement = playerContext.PlayerMovement;
-                if (playerMovement != null)
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
-                    AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                    if (currentAup.IsFinite())
-                        return currentAup;
+                    AbsoluteUniversePosition snapshotAup = snapshot.Aup;
+                    if (snapshotAup.IsFinite())
+                    {
+                        playerAup = snapshotAup;
+                        return true;
+                    }
                 }
 
-                AbsoluteUniversePosition predictedAup = playerContext.MovementState.PredictedAup;
-                if (predictedAup.IsFinite())
-                    return predictedAup;
+                if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                {
+                    AbsoluteUniversePosition predictedAup = movementState.PredictedAup;
+                    if (predictedAup.IsFinite())
+                    {
+                        playerAup = predictedAup;
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
-            return TryResolveAupFromRuntimeOrigin(Vector3.zero, out AbsoluteUniversePosition fallbackAup)
-                ? fallbackAup
-                : default;
+            if (TryResolveAupFromRuntimeOrigin(Vector3.zero, out playerAup))
+                return true;
+
+            playerAup = AbsoluteUniversePosition.Invalid();
+            return false;
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
-            positionAup = default;
+            positionAup = AbsoluteUniversePosition.Invalid();
             if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
                 return false;
 
@@ -2393,7 +2637,13 @@ namespace Hecton8.Gameplay
 
         private void PublishDoseSignal(in AbsoluteUniversePosition positionAup, float dose, float intensity01, byte doseKind)
         {
-            float safeDose = math.isfinite(dose) ? dose : 0f;
+            if (!AbsoluteUniversePosition.IsFinite(in positionAup))
+            {
+                DumpBlackBox();
+                return;
+            }
+
+            float safeDose = SanitizeNonNegative(dose);
             float safeIntensity = Sanitize01(intensity01);
             RadiationDoseSignal signal = new RadiationDoseSignal
             {
@@ -2413,6 +2663,13 @@ namespace Hecton8.Gameplay
             if (safeIntensity <= 0.001f)
             {
                 _geigerPhase = 0f;
+                return;
+            }
+
+            if (!AbsoluteUniversePosition.IsFinite(in playerAup))
+            {
+                _geigerPhase = 0f;
+                DumpBlackBox();
                 return;
             }
 
@@ -2565,13 +2822,23 @@ namespace Hecton8.Gameplay
             return capacity > 0 ? (int)(value % (uint)capacity) : 0;
         }
 
+        private static float ResolvePlayerDepthMeters(double3 playerAbsolute)
+        {
+            if (!math.isfinite(playerAbsolute.y))
+                return 0f;
+
+            double depthMeters = DefaultSeaLevelY - playerAbsolute.y;
+            return (float)math.min(1000000d, math.max(0d, depthMeters));
+        }
+
         private void RecordTelemetry(in AbsoluteUniversePosition playerAup, float intensity01, float accumulatedRads, uint flags)
         {
             IDataVault vault = _dataVault;
             if (vault == null || _telemetryHandle.BufferID == 0u)
                 return;
 
-            double3 playerAbsolute = AbsoluteUniversePosition.IsFinite(in playerAup) ? playerAup.ToAbsoluteDouble3() : double3.zero;
+            bool hasPlayerAbsolute = AbsoluteUniversePosition.IsFinite(in playerAup);
+            double3 playerAbsolute = hasPlayerAbsolute ? playerAup.ToAbsoluteDouble3() : double3.zero;
             float safeIntensity = SanitizeNonNegative(intensity01);
             float safeDose = SanitizeNonNegative(accumulatedRads);
             float safeShielding = Sanitize01(_lastShieldingFactor01);
@@ -2579,7 +2846,7 @@ namespace Hecton8.Gameplay
             RadiationTelemetryEntry entry = new RadiationTelemetryEntry
             {
                 PlayerAup = playerAbsolute,
-                PlayerDepthMeters = (float)math.max(0d, -playerAbsolute.y),
+                PlayerDepthMeters = hasPlayerAbsolute ? ResolvePlayerDepthMeters(playerAbsolute) : 0f,
                 CurrentExposureRate = safeIntensity,
                 CumulativeDoseRad = safeDose,
                 ShieldingFactor01 = safeShielding,
@@ -2589,7 +2856,7 @@ namespace Hecton8.Gameplay
                 SourceVersion = (ushort)math.clamp(_sourceVersion, 0, ushort.MaxValue),
                 Frame = _currentSimulationFrame,
                 ShiftSequence = _lastShiftSequence,
-                Flags = _signalPushDropCount > 0 ? flags | RadiationTelemetryFlagSignalDrops : flags
+                Flags = flags
             };
 
             int nextWriteIndex = _telemetryWriteIndex;
@@ -2608,6 +2875,7 @@ namespace Hecton8.Gameplay
 
                 int writeIndex = WrapTelemetryIndex(_telemetryWriteIndex, telemetryCapacity);
                 nextWriteIndex = writeIndex + 1 >= telemetryCapacity ? 0 : writeIndex + 1;
+                entry.Flags = ConsumeSignalDropFlags(flags);
                 telemetryRing[writeIndex] = entry;
                 wrote = true;
             }
@@ -2621,6 +2889,13 @@ namespace Hecton8.Gameplay
 
             _telemetryWriteIndex = nextWriteIndex;
             TryWriteTelemetryCursor(unchecked((uint)nextWriteIndex));
+        }
+
+        private static uint ConsumeSignalDropFlags(uint flags)
+        {
+            return Interlocked.Exchange(ref _signalPushDropCount, 0) > 0
+                ? flags | RadiationTelemetryFlagSignalDrops
+                : flags;
         }
 
         private void TryWriteTelemetryCursor(uint nextWriteIndex)
@@ -2706,7 +2981,9 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || !_sources.IsCreated)
                 return;
 
-            AbsoluteUniversePosition playerAup = ResolvePlayerAup(ResolvePlayerRuntimeContext());
+            if (!TryResolvePlayerAup(ResolveActivePlayerRuntimeContext(), out AbsoluteUniversePosition playerAup))
+                return;
+
             float3 playerRuntime = playerAup.ToRuntimeFloat3();
             NativeArray<BulkheadStateDTO> bulkheadStates = default;
             NativeArray<BulkheadPlaneDTO> bulkheadPlanes = default;
@@ -2722,7 +2999,10 @@ namespace Hecton8.Gameplay
                     continue;
 
                 float3 sourceRuntime = ResolveRuntimeFromAbsolute(source.PositionAup);
-                float radius = math.max(0.5f, source.RadiusMeters);
+                float radius = NormalizeSourceRadius(source.RadiusMeters);
+                if (radius <= 0f)
+                    continue;
+
                 Gizmos.color = new Color(1f, 0.18f, 0.05f, 0.35f);
                 Gizmos.DrawWireSphere(ToVector3(sourceRuntime), radius);
 
@@ -2813,6 +3093,14 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             return math.min(intensity, 1000000f);
+        }
+
+        private static float NormalizeSourceRadius(float radiusMeters)
+        {
+            if (!math.isfinite(radiusMeters) || radiusMeters <= 0f)
+                return 0f;
+
+            return math.clamp(radiusMeters, 0.5f, MaxSourceRadiusMeters);
         }
 
         private static int Flatten(int x, int y, int z)
@@ -2978,7 +3266,10 @@ namespace Hecton8.Gameplay
                 if (safeIntensity <= 0f)
                     return;
 
-                float safeRadius = math.isfinite(RadiusMeters) ? math.max(0.5f, RadiusMeters) : 0.5f;
+                float safeRadius = NormalizeSourceRadius(RadiusMeters);
+                if (safeRadius <= 0f)
+                    safeRadius = DefaultSourceRadiusMeters;
+
                 Sources[0] = new RadiationSource
                 {
                     PositionAup = PlayerAup + (double3)OffsetMeters,
@@ -3005,6 +3296,7 @@ namespace Hecton8.Gameplay
             public int BulkheadCount;
             public double3 PlayerAup;
             public float3 PlayerRuntime;
+            public uint HasPlayerAup;
             public float SimulationTickDelta;
             public float ExternalExposureRate;
             public float ExternalDoseDelta;
@@ -3036,46 +3328,53 @@ namespace Hecton8.Gameplay
                 float safeLeadEffect = math.saturate(SanitizeNonNegative(LeadShieldingEffectiveness));
                 int capacity = math.clamp(SourceCapacity, 0, MaxSourceCount);
                 int activeSeen = 0;
-                for (int i = 0; i < capacity; i++)
+                bool hasPlayerAup =
+                    HasPlayerAup != 0u &&
+                    math.all(math.isfinite(PlayerAup)) &&
+                    math.all(math.isfinite(PlayerRuntime));
+                if (hasPlayerAup)
                 {
-                    RadiationSource source = Sources[i];
-                    if (source.Active == 0 || source.Intensity01 <= 0f)
-                        continue;
-
-                    if (!math.all(math.isfinite(source.PositionAup)) ||
-                        !math.isfinite(source.Intensity01) ||
-                        !math.isfinite(source.RadiusMeters))
+                    for (int i = 0; i < capacity; i++)
                     {
-                        flags |= RadiationStateFlagNonFinite;
-                        continue;
-                    }
+                        RadiationSource source = Sources[i];
+                        if (source.Active == 0 || source.Intensity01 <= 0f)
+                            continue;
 
-                    activeSeen++;
-                    double3 sourceToPlayer = PlayerAup - source.PositionAup;
-                    if (!math.all(math.isfinite(sourceToPlayer)))
-                    {
-                        flags |= RadiationStateFlagNonFinite;
-                        continue;
-                    }
+                        if (!math.all(math.isfinite(source.PositionAup)) ||
+                            !math.isfinite(source.Intensity01) ||
+                            !math.isfinite(source.RadiusMeters))
+                        {
+                            flags |= RadiationStateFlagNonFinite;
+                            continue;
+                        }
 
-                    double distanceSqDouble = math.lengthsq(sourceToPlayer);
-                    if (!math.isfinite(distanceSqDouble))
-                    {
-                        flags |= RadiationStateFlagNonFinite;
-                        continue;
-                    }
+                        activeSeen++;
+                        double3 sourceToPlayer = PlayerAup - source.PositionAup;
+                        if (!math.all(math.isfinite(sourceToPlayer)))
+                        {
+                            flags |= RadiationStateFlagNonFinite;
+                            continue;
+                        }
 
-                    float distanceSq = (float)math.max(0.0001d, distanceSqDouble);
-                    float sourceExposure = SanitizeNonNegative(source.Intensity01) * math.rcp(math.max(distanceSq, 0.0001f));
-                    uint sourceShieldingFlags = 0u;
-                    float sourceShielding = CalculateSourceShielding(source.PositionAup, PlayerAup, PlayerRuntime, ref sourceShieldingFlags) * safeLeadEffect;
-                    flags |= sourceShieldingFlags;
-                    shielding = math.max(shielding, sourceShielding);
-                    float unshieldedSourceExposure = sourceExposure * (1f - sourceShielding);
-                    exposure += unshieldedSourceExposure;
-                    integratedExposure += unshieldedSourceExposure;
-                    if (activeSeen >= ActiveSourceCount && ActiveSourceCount > 0)
-                        break;
+                        double distanceSqDouble = math.lengthsq(sourceToPlayer);
+                        if (!math.isfinite(distanceSqDouble))
+                        {
+                            flags |= RadiationStateFlagNonFinite;
+                            continue;
+                        }
+
+                        float distanceSq = (float)math.max(0.0001d, distanceSqDouble);
+                        float sourceExposure = SanitizeNonNegative(source.Intensity01) * math.rcp(math.max(distanceSq, 0.0001f));
+                        uint sourceShieldingFlags = 0u;
+                        float sourceShielding = CalculateSourceShielding(source.PositionAup, PlayerAup, PlayerRuntime, ref sourceShieldingFlags) * safeLeadEffect;
+                        flags |= sourceShieldingFlags;
+                        shielding = math.max(shielding, sourceShielding);
+                        float unshieldedSourceExposure = sourceExposure * (1f - sourceShielding);
+                        exposure += unshieldedSourceExposure;
+                        integratedExposure += unshieldedSourceExposure;
+                        if (activeSeen >= ActiveSourceCount && ActiveSourceCount > 0)
+                            break;
+                    }
                 }
 
                 shielding = math.saturate(shielding);

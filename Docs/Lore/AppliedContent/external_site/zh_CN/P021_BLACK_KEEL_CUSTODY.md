@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel托管
 
-Black Keel托管把玩家的轨道支援定义为有用但被污染的基础设施：救援路线、债务机器和Deep Reach压力面。
+Black Keel Custody 把轨道支援定义为有用但被污染的基础设施：救援路线、债务机器和 Deep Reach 压力面集中在同一个物体上。
 
 ## Scanner
 

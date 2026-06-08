@@ -3,38 +3,38 @@ packet_id: P344_SYSTEM_CARRIER_TUG_STACK
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.system_carrier_tug_stack
 unlock_id: unlock.system_carrier_tug_stack
-poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
+poi_tags: poi.black_keel_carrier_spec;poi.tug_manifest
 biome_tags: biome.orbit;biome.contract
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: System Carrier Tug Stack"
+title: "مكدس الناقل والقاطرات النظامي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: System Carrier Tug Stack
+# مكدس الناقل والقاطرات النظامي
 
-AR LOC HOLD: The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.
+Black Keel ناقل نظام ومنصة انتشال، لا سفينة شخصية. يمكنها حفظ المدار والتعامل مع الحمولة وتشغيل أقفال الحيازة وإطلاق الكبسولات وتنسيق القاطرات. لا تستطيع محو تأخر الضوء أو نوافذ الطريق أو عتاد bathydrop التالف أو قواعد الكلفة التي تحدد متى تتحرك المساعدة.
 
 ## Scanner
 
-AR LOC HOLD: Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
+سجل مكدس الناقل: تحرك Black Keel الخردة بالقاطرات وأقفال الحيازة ورفوف الكبسولات والمؤقتات. إنها ليست سفينة منزل.
 
 ## Terminal
 
-AR LOC HOLD: BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
+مواصفة BLACK KEEL: ناقل claim-pool. الوظائف: تثبيت المدار، استلام الحمولة، نشر bathydrops، إرساء القاطرات، تدوير الدين. الحد: لا يمكنها استبدال سلسلة إدخال قمرية مكسورة.
 
 ## Audio
 
-AR LOC HOLD: The carrier is not your home. It is a machine that knows who owns your debt.
+الناقل يعرف دينك أفضل مما يعرف اسمك.
 
 ## Field Note
 
-AR LOC HOLD: Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
+سجل ملكية الناقل: الآلة المدارية المفيدة قد تبقى عدائية عندما يكون ولاؤها الأول للحيازة.
 
 <!-- In-Game Wiki; generated from P344_SYSTEM_CARRIER_TUG_STACK/ar_SA. -->

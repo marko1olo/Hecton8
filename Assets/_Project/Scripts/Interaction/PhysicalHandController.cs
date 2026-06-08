@@ -1167,7 +1167,7 @@ namespace Hecton8.Interaction
         {
             _inputDispatcher = GlobalRegistry.RegisteredInput as InputDispatcher;
             if (_inputDispatcher == null)
-                _inputDispatcher = InputDispatcher.ActiveRuntimeInstance;
+                InputDispatcher.TryResolveActiveRuntime(ref _inputDispatcher);
         }
 
         private void TryRegisterHotSwapListener()

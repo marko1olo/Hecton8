@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Drop Capsule Damage Parts"
+title: "降下カプセル損傷部位"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Drop Capsule Damage Parts
+# 降下カプセル損傷部位
 
-JP LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+降下カプセル損傷部位は、HECTON-8から都合のいい救助論理を取り除く。Marauderが閉じ込められるのは、ascent sleeve、guidance gimbal、relay mast、compressor、heat tileという具体的な系統が壊れたからだ。各故障は曖昧な墜落理由ではなく、ルート、素材、工具更新、証拠へつながる。
 
 ## Scanner
 
-JP LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve変形、guidance gimbal損傷、relay mast切断、compressor汚損、heat tile亀裂。
 
 ## Terminal
 
-JP LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-JP LOC HOLD: It landed well enough to strand you properly.
+きちんと閉じ込めるには十分うまく着水した。
 
 ## Field Note
 
-JP LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+カプセルは最初の一時間、Marauderを生かせる。だが深度対応の交換部品なしでは上がれない。
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/ja_JP. -->

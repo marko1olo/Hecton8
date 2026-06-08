@@ -8,14 +8,16 @@ namespace Hecton8.Environment.Fluids
 {
     public readonly struct EmergencyMockOceanKinematicsAdapter : IHectonOceanKinematics
     {
+        private const float DefaultSeaLevel = 14.02f;
+
         private readonly float _seaLevel;
 
         private EmergencyMockOceanKinematicsAdapter(float seaLevel)
         {
-            _seaLevel = math.select(0f, seaLevel, math.isfinite(seaLevel));
+            _seaLevel = ResolveSeaLevel(seaLevel);
         }
 
-        public static EmergencyMockOceanKinematicsAdapter GenerateEmergencyMockOceanAdapter(float seaLevel = 0f)
+        public static EmergencyMockOceanKinematicsAdapter GenerateEmergencyMockOceanAdapter(float seaLevel = DefaultSeaLevel)
         {
             return new EmergencyMockOceanKinematicsAdapter(seaLevel);
         }
@@ -62,6 +64,16 @@ namespace Hecton8.Environment.Fluids
                 return 32;
 
             return 16;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveSeaLevel(float seaLevel)
+        {
+            return math.isfinite(seaLevel) &&
+                math.abs(seaLevel) > 0.0001f &&
+                math.abs(seaLevel) <= 1000f
+                ? seaLevel
+                : DefaultSeaLevel;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

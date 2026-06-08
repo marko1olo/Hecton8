@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Drop Capsule Damage Parts"
+title: "Pièces endommagées de la capsule de chute"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Drop Capsule Damage Parts
+# Pièces endommagées de la capsule de chute
 
-FR LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+Les pièces endommagées de la capsule retirent la logique de sauvetage commode de HECTON-8. Le Marauder est coincé parce que des systèmes précis ont cédé: ascent sleeve, guidance gimbal, relay mast, compressor et heat tiles. Chaque panne mène à une route, un matériau, une amélioration d'outil ou un objet de preuve.
 
 ## Scanner
 
-FR LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve voilée, guidance gimbal marqué, relay mast cisaillé, compressor encrassé, heat tile fissurée.
 
 ## Terminal
 
-FR LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-FR LOC HOLD: It landed well enough to strand you properly.
+Elle a assez bien atterri pour t'échouer correctement.
 
 ## Field Note
 
-FR LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+La capsule peut garder un Marauder vivant pendant la première heure. Elle ne peut pas repartir sans pièces de remplacement profondes.
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/fr_FR. -->

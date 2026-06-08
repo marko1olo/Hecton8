@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "외곽 달 냉각 클레임"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# 외곽 달 냉각 클레임
 
-KO LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy.
+외곽 달 냉각 클레임은 Aegir를 HECTON-8 너머로 넓힌다. 죽은 항로, 차가운 캐시, 버려진 비컨은 salvage 법과 반복 손실 은폐를 먹여 살린다.
 
 ## Scanner
 
-KO LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+외곽 클레임 비컨. Aegir에서 죽은 모든 것이 HECTON-8에 있는 것은 아니다.
 
 ## Terminal
 
-KO LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+외곽 사다리 기록 // Thorne 염수 탐사는 실패했다. Anvil 수출 항로는 휴면 처리됐다. Mute 비컨은 활성 승무원 선언 없이 보관 ping을 반복한다.
 
 ## Audio
 
-KO LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegir는 HECTON-8이 수업을 끝내기 전부터 사람을 잃는 법을 배웠다.
 
 ## Field Note
 
-KO LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+냉각 클레임은 Marauder를 가능하게 한다. 또한 회사가 패턴을 묻는 법을 가르친다.
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/ko_KR. -->

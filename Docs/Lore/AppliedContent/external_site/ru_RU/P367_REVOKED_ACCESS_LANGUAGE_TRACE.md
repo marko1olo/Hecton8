@@ -9,32 +9,36 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "След языка отозванного доступа"
+title: "След отозванного доступа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# След языка отозванного доступа
+# След отозванного доступа
 
-RU LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+Протагонист читает блокировки Deep Reach как улику. Отозванные учетные данные закрывают доступ, но формулировка все еще раскрывает похороненный маршрут: деградированные учеты, замещающие свидетели, переклассификация обслуживания и язык сохранения претензий.
 
 ## Scanner
 
-Access trace совпадает со старой фразировкой Deep Reach. Denial написан как maintenance.
+Блокировка не говорит «запрещено». Она пишет: переклассификация обслуживания, удержание непрерывности, маршрутные материалы. Старый язык Deep Reach: отказ, который все равно указывает на похороненную дверь.
 
 ## Terminal
 
-LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because former staff know them.
+ОТВЕТ ДОСТУПА / АРХИВ БЕЗОПАСНОГО МАРШРУТА
+учетные данные: отозваны
+причина: материалы эвакуационной непрерывности доступны только сертифицированному персоналу Deep Reach
+видимые термины: деградированный учет, замещающий свидетель, маршрут сохранения претензии, переклассификация обслуживания
+примечание: бывший полевой персонал может видеть язык отказа только для сверки инцидента.
 
 ## Audio
 
-Это не security. Это memo, притворяющийся дверью.
+Они не стерли коридор. Они завернули его в словарь, который до сих пор понимают только виноватые сотрудники.
 
 ## Field Note
 
-RU LOC HOLD: Lockout language hints at hidden liability without granting free access.
+Значок мертв. Блокировка все еще говорит на канцелярском диалекте, которым похоронили маршрут.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ru_RU. -->

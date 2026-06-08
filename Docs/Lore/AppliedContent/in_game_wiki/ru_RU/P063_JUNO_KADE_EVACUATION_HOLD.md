@@ -7,19 +7,19 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Эвакуационная задержка Джуно Кейд"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Эвакуационное удержание Джуно Кейд"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Эвакуационная задержка Джуно Кейд
+# Эвакуационное удержание Джуно Кейд
 
-Джуно Кейд представляет человеческий провал эвакуации. Ее запись показывает, что людей, пытавшихся уйти, блокировали authorization, quarantine и priority language, пока Великий Прилив уже становился необратимым.
+Джуно Кейд доказывает, что колония не просто застыла. Люди вставали в очередь, маршалы выдавали маршруты, а система выхода отвечала authorization holds, карантинными проверками и приоритетом payload. Катастрофа становится хуже, потому что дверь была настоящей.
 
 ## Scanner
 
@@ -27,14 +27,14 @@ localization_flags: 0
 
 ## Terminal
 
-KADE, J. Эвакуационный маршрут красный. Ручной override отклонен. Карантинный gate ожидает Atlas continuity check. Payload lift получает приоритет до разрешения claim seal.
+EVAC STATUS KADE: маршрут красный; ручной override отклонен; карантинные ворота ждут continuity check Atlas; payload lift получает приоритет до закрытия claim seal.
 
 ## Audio
 
-Она продолжала считать людей после того, как система начала считать комнаты.
+Выход существовал. Поэтому удержание имеет вес.
 
 ## Field Note
 
-Маршал эвакуации может двигать людей. Она не может двигать пункт договора, который владеет дверью.
+Эвакуационный маршал может двигать людей. Она не может двигать пункт, которому принадлежит дверь.
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/ru_RU. -->

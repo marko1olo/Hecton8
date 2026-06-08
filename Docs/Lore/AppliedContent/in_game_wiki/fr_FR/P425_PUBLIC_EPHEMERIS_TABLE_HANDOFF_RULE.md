@@ -7,34 +7,34 @@ poi_tags: poi.ephemeris_handoff_rule;poi.celestial_table_boundary
 biome_tags: biome.authoring;biome.aegir_system
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "FR LOC HOLD: Ephemeris Data Boundary Rule"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Règle de frontière des éphémérides"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Ephemeris Data Boundary Rule
+# Règle de frontière des éphémérides
 
-FR LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.
+Cette frontière garde le hard-sci-fi lore utile sans figer les simulation constants dans la prose. Le texte public explique ce que fait une lune, une route ou une fenêtre pendant que les nombres finaux restent dans les data tables.
 
 ## Scanner
 
-FR LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
+Frontière de données : la prose possède les bandes ; les nombres orbitaux finaux restent table-owned.
 
 ## Terminal
 
-FR LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY : la prose peut dire rôles, dangers et bandes. Les orbital values exactes restent hors narrative copy.
 
 ## Audio
 
-FR LOC HOLD: Numbers are allowed when the table owns them.
+Les nombres sont permis quand la table les possède.
 
 ## Field Note
 
-FR LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
+Les éphémérides expliquent la logique de route ; les constantes exactes restent table-owned data.
 
 <!-- In-Game Wiki; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/fr_FR. -->

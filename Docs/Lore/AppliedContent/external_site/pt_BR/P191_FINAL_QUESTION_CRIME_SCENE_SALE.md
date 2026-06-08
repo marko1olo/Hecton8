@@ -9,32 +9,18 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "Pergunta final: venda da cena do crime"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# Pergunta final: venda da cena do crime
 
-PT LOC HOLD: Final Question Crime Scene Sale defines the material ending axis.
+Este final funciona melhor quando não pune o jogador mecanicamente. Um Marauder desesperado pode fazer tudo que o contrato pediu: chegar à bacia, recuperar coordenadas, provar valor da amostra, manter o registro XO intacto e entregar um payload que a Black Keel consiga precificar. O resultado deve parecer legal e frio. A dívida some porque o sistema reconhece valor, não justiça.
 
-## Scanner
-
-PT LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
-
-## Terminal
-
-PT LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
-
-## Audio
-
-PT LOC HOLD: You can pay the debt with a grave map.
-
-## Field Note
-
-PT LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+Esse é o horror. HECTON-8 não se perdeu porque ninguém consegue ler provas. Perdeu-se porque provas podem virar propriedade. Se o jogador vende a cena sem uma cadeia pública de testemunhas, a Deep Reach ganha papéis mais limpos, geometria de aproximação melhor e motivo para voltar com advogados antes dos resgatistas. O final paga o jogador e mostra que tipo de civilização consegue bancar salvage interestelar.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/pt_BR. -->

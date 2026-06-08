@@ -9,32 +9,34 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "علامات النطاقات 2190"
+title: "علامات النطاق 2190"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# علامات النطاقات 2190
+# علامات النطاق 2190
 
-علامات النطاقات تكشف العالم البشري الأكبر عبر الأشياء: معايير Sol، ثقافة إصلاح Barnard، توجيه Luyten، قانون Tau Ceti، عتاد Centauri، وحضانة claim في Aegir.
+تظهر HECTON-8 العالم البشري الأكبر عبر علامات صغيرة: لوحات أمان، أختام عزم، أكواد عهدة، وتراخيص قديمة لا تتوافق دائما. كل علامة تربط الباب أو الأداة أو الحاوية بسلطة بشرية بعيدة.
+
+هذه العلامات تجعل المستعمرة بعيدة لا بدائية. القانون والصناعة والدين وصلوا إلى الماء، لكن الإنقاذ ما زال يحتاج كتلة وسفينة ونافذة.
 
 ## Scanner
 
-علامات نطاقات مختلطة. لوحة Sol، ختم Barnard، عهدة مسار Luyten.
+علامات نطاق بشرية مختلطة: لوحة Sol، ختم أداة Barnard، مسار عهدة Luyten، ورمز مطالبة Aegir على حامل واحد متآكل.
 
 ## Terminal
 
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+مطابقة النطاق // صيغة أمان Sol Core مقبولة. ختم Barnard Yards صالح. عهدة Luyten Junction مرفقة. قانون مطالبة Aegir المحلي يتجاوز أولوية الاسترداد بعد فقدان النزول.
 
 ## Audio
 
-هذا المكان ليس خارج الحضارة. إنه شكل الحضارة عندما تنتصر المسافة.
+هذا المكان ليس خارج الحضارة. إنه الحضارة بعد أن انتزعت المسافة دفئها.
 
 ## Field Note
 
-كبرت البشرية. الإنقاذ ما زال يحتاج إلى السفر.
+كبرت البشرية. الإنقاذ ما زال عليه أن يسافر.
 
 <!-- In-Game Wiki; generated from P011_DOMAIN_MARKS_2190/ar_SA. -->

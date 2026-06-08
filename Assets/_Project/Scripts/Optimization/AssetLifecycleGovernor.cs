@@ -94,6 +94,7 @@ namespace Hecton8.Optimization
         private bool _registeredLateFrame;
         private bool _registeredService;
         private bool _registeredHotSwap;
+        private bool _runtimeOwnerAborted;
         private readonly Component[] _pendingPresentationDisableOwners = new Component[MaxHardReaperEvictions];
         private int _pendingPresentationDisableCount;
         private long _frameSequence;
@@ -174,6 +175,9 @@ namespace Hecton8.Optimization
 
         private void Awake()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             int bootstrapHandleCapacity = Mathf.Clamp(maxTrackedAddressableHandles, 1, MaxTrackedAddressableCapacity);
             maxTrackedAddressableHandles = bootstrapHandleCapacity;
             maxRegistryCapacity = Mathf.Max(Mathf.Max(1, maxRegistryCapacity), bootstrapHandleCapacity);
@@ -190,16 +194,27 @@ namespace Hecton8.Optimization
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
+            if (!TryRegisterService())
+                return;
+
             CacheDependencies();
             EnsureNativeHandleStorage();
             EnsureFallbackAssets();
             TryRegisterHotSwap();
-            if (TryRegisterService())
-                TryRegister();
+            TryRegister();
         }
 
         private void Start()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
+            if (!_registeredService && !TryRegisterService())
+                return;
+
             CacheDependencies();
             if (!_nativeStorageInitialized)
                 EnsureNativeHandleStorage();
@@ -211,6 +226,9 @@ namespace Hecton8.Optimization
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregister();
             TryUnregisterHotSwap();
             TryUnregisterService();
@@ -219,6 +237,9 @@ namespace Hecton8.Optimization
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregister();
             TryUnregisterHotSwap();
             TryUnregisterService();
@@ -3767,18 +3788,41 @@ namespace Hecton8.Optimization
             if (!Application.isPlaying)
                 return false;
 
-            AssetLifecycleGovernor registered = GlobalRegistry.AssetLifecycle;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterAssetLifecycleRuntime(this);
             _registeredService = ReferenceEquals(GlobalRegistry.AssetLifecycle, this);
             if (_registeredService)
                 CacheDependencies();
             return _registeredService;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            AssetLifecycleGovernor registered = GlobalRegistry.AssetLifecycle;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsAssetLifecycleRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterAssetLifecycleRuntime(registered);
+            return false;
+        }
+
+        private static bool IsAssetLifecycleRuntimeUsable(AssetLifecycleGovernor governor)
+        {
+            return governor != null &&
+                   governor._registeredService &&
+                   governor.isActiveAndEnabled;
         }
 
         private void TryUnregister()
@@ -3868,6 +3912,9 @@ namespace Hecton8.Optimization
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _cachedDispatcher = currentService as SystemDispatcher;
+                    TryUnregister();
+                    if (currentService != null && isActiveAndEnabled && !_runtimeOwnerAborted)
+                        TryRegister();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     IDataVault previousVault = previousService as IDataVault;

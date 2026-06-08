@@ -135,6 +135,7 @@ namespace Hecton8.Progression
         private AdvisoryFlags _issuedFlags;
         private uint _lastSessionLifecycleSequence;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private IPDALogbookService _logbookManager;
         private ILocalizationTextReadModel _localization;
         private IPlayerRuntimeContext _cachedPlayerContext;
@@ -179,6 +180,7 @@ namespace Hecton8.Progression
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
+            ClearAdvisoryNotificationDiagnostics();
         }
 
         private void OnDestroy()
@@ -190,6 +192,7 @@ namespace Hecton8.Progression
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
+            ClearAdvisoryNotificationDiagnostics();
         }
 
         /// <summary>
@@ -217,7 +220,7 @@ namespace Hecton8.Progression
             CacheAdvisoryNotifications();
             ReadOnlySpan<char> localizedMessage = ResolveAdvisoryMessageSpan(advisoryHash, message);
             if (!TryPushRegisteredAdvisoryNotification(advisoryHash))
-                PushAdvisorySpan(localizedMessage);
+                PushAdvisorySpan(advisoryHash, localizedMessage);
 
             IPDALogbookService logbookManager = _logbookManager;
             if (logbookManager != null)
@@ -271,6 +274,7 @@ namespace Hecton8.Progression
         /// <inheritdoc />
         public void LoadFromSaveData(SaveData data)
         {
+            ClearAdvisoryNotificationDiagnostics();
             _issuedFlags = AdvisoryFlags.None;
             _oxygenDeathCount = 0;
             _inventoryFullAttemptCount = 0;
@@ -463,7 +467,7 @@ namespace Hecton8.Progression
             _cachedPlayerContext = GlobalRegistry.Player;
             CacheSurvivalFromPlayerContext();
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(_saveService))
                 _saveService = GlobalRegistry.Save;
             _logbookManager = GlobalRegistry.PDALogbook;
             _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
@@ -582,11 +586,13 @@ namespace Hecton8.Progression
             _advisoryNotificationsCached = true;
         }
 
-        private static void PushAdvisorySpan(ReadOnlySpan<char> message)
+        private void PushAdvisorySpan(uint advisoryHash, ReadOnlySpan<char> message)
         {
             uint messageHash = NotificationEvents.RegisterMessage(message);
-            if (messageHash != 0u)
-                NotificationEvents.TryPushRegisteredWarning(messageHash);
+            if (messageHash != 0u && NotificationEvents.TryPushRegisteredWarning(messageHash))
+                return;
+
+            ReportAdvisoryNotificationMiss(advisoryHash);
         }
 
         private void RefreshAdvisoryNotifications()
@@ -606,16 +612,16 @@ namespace Hecton8.Progression
             uint notificationHash = ResolveAdvisoryNotificationHash(advisoryHash);
             if (notificationHash != 0u && NotificationEvents.TryResolveMessage(notificationHash, out _))
             {
-                NotificationEvents.TryPushRegisteredWarning(notificationHash);
-                return true;
+                if (NotificationEvents.TryPushRegisteredWarning(notificationHash))
+                    return true;
             }
 
             RefreshAdvisoryNotifications();
             notificationHash = ResolveAdvisoryNotificationHash(advisoryHash);
             if (notificationHash != 0u && NotificationEvents.TryResolveMessage(notificationHash, out _))
             {
-                NotificationEvents.TryPushRegisteredWarning(notificationHash);
-                return true;
+                if (NotificationEvents.TryPushRegisteredWarning(notificationHash))
+                    return true;
             }
 
             ReportAdvisoryNotificationMiss(advisoryHash);
@@ -635,6 +641,12 @@ namespace Hecton8.Progression
                 _advisoryNotificationMissWarningHash,
                 advisoryHash != 0u ? advisoryHash : _advisoryNotificationContextHash,
                 _advisoryNotificationMissCount);
+        }
+
+        private void ClearAdvisoryNotificationDiagnostics()
+        {
+            _advisoryNotificationMissCount = 0;
+            _lastAdvisoryNotificationMissTelemetryFrame = 0;
         }
 
         private uint ResolveAdvisoryNotificationHash(uint advisoryHash)
@@ -846,25 +858,36 @@ namespace Hecton8.Progression
             if (_registeredToSave || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _registeredToSave = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void UnregisterFromSaveManager()
         {
-            if (!_registeredToSave)
+            if (!_registeredToSave && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _registeredToSave = false;
         }
 

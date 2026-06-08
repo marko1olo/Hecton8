@@ -3,38 +3,40 @@ packet_id: P078_INNER_MOON_RELAY_HAZARDS
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.inner_moon_relay_hazards
 unlock_id: unlock.first_inner_moon_relay_hazards
-poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
-biome_tags: biome.orbital_window;biome.drowned_comms
+poi_tags: poi.relay_noise_log;poi.skarn_surge_alarm
+biome_tags: biome.orbital_window;biome.surface_relay
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Inner Moon Relay Hazards"
+title: "Bahaya Relai Bulan Dalam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Inner Moon Relay Hazards
+# Bahaya Relai Bulan Dalam
 
-ID LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.
+Bahaya relai bulan dalam membuat kegagalan kontak menjadi fisik. Lonjakan sejajar Skarn dapat merusak antena tanpa mematikannya. Debu dan es Vela menutup optik sementara rute masih mengaku ada.
+
+Claw dan Lumen lebih buruk karena membawa logika rute tua. Handshake dapat sah secara formal dan tidak berguna secara operasi. Black Keel dapat mencatat paket, menjaga custody, dan tetap meninggalkan tubuh di air.
 
 ## Scanner
 
-ID LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.
+TANGGA DALAM // Skarn menjenuhkan antena. Vela menyebar optik. Rute tua Claw dan Lumen menjaga handshakes basi tetap hidup.
 
 ## Terminal
 
-ID LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
+CATATAN BAHAYA RELAI // Hilang kontak bisa berupa geometri, cuaca partikel, tirai debu, atau buoy law warisan. Curigai UI bersih saat jendela lonjakan.
 
 ## Audio
 
-ID LOC HOLD: The orbital model is innocent. The clause written around it is not.
+Relai tidak diam. Ia mengulang abad yang salah.
 
 ## Field Note
 
-ID LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.
+Ikon bersih masih bisa berbohong lewat langit lama.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/id_ID. -->

@@ -19,10 +19,13 @@ namespace Hecton8.World
         private const string DefaultIntroChainId = "intro_service_route";
         private const string DefaultRelayFallback =
             "HOLD TO THE SERVICE TRACE. RELAYS AND CACHES GIVE LORE, SUPPLIES, AND THE NEXT FOOTHOLD.";
+        private static readonly uint _RouteNotificationMissWarningHash = unchecked((uint)LocHash.Compute("EmergencyServiceRelayDirector.RouteNotificationMiss"));
+        private static readonly uint _RouteNotificationContextHash = unchecked((uint)LocHash.Compute("EmergencyServiceRelayDirector.RouteNotification"));
 
         private static EmergencyServiceRelayDirector s_activeRuntime;
 
         public static EmergencyServiceRelayDirector ActiveRuntimeInstance => s_activeRuntime;
+        public int RouteNotificationMissCount => _routeNotificationMissCount;
 
         internal static void NotifyRelayRegistryChanged()
         {
@@ -53,10 +56,12 @@ namespace Hecton8.World
         private EmergencyServiceRelay _currentRouteTarget;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
+        private bool _runtimeOwnerAborted;
         private IFirstHourReadModel _firstHourReadModel;
         private IFirstHourRouteContactSink _firstHourRouteContactSink;
         private IAtlasSignalReadModel _atlasSignalSystem;
         private ILocalizationTextReadModel _localizationManager;
+        private int _routeNotificationMissCount;
         // COLD ALLOC: EmergencyServiceRelay[8] — driven relay chain cache — owner: EmergencyServiceRelayDirector
         private readonly List<EmergencyServiceRelay> _drivenChainRelays = new List<EmergencyServiceRelay>(8);
         // COLD ALLOC: Dictionary<uint, EmergencyServiceRelay>[8] - relay-hash lookup cache - owner: EmergencyServiceRelayDirector
@@ -75,6 +80,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             RefreshCachedHashes();
             CacheRegistryServicesCold();
             if (!TryRegisterService())
@@ -93,18 +101,26 @@ namespace Hecton8.World
             EmergencyServiceRelayEvents.Unregister(this);
             InvalidateRelayCache();
             _currentRouteTarget = null;
+            ClearRouteNotificationDiagnostics();
         }
 
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
             TryUnregisterService();
+            ClearRouteNotificationDiagnostics();
         }
 
         private bool TryRegisterService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_serviceRegistered || !Application.isPlaying)
                 return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterEmergencyRelayRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EmergencyRelay, this);
@@ -114,8 +130,53 @@ namespace Hecton8.World
                 return true;
             }
 
-            Destroy(gameObject);
+            AbortDuplicateRuntimeOwner();
             return false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            EmergencyServiceRelayDirector registeredRuntime = GlobalRegistry.EmergencyRelay;
+            if (!ReferenceEquals(registeredRuntime, null) && !ReferenceEquals(registeredRuntime, this))
+            {
+                if (IsEmergencyRelayRuntimeUsable(registeredRuntime))
+                {
+                    s_activeRuntime = registeredRuntime;
+                    AbortDuplicateRuntimeOwner();
+                    return true;
+                }
+
+                GlobalRegistry.UnregisterEmergencyRelayRuntime(registeredRuntime);
+                if (ReferenceEquals(s_activeRuntime, registeredRuntime))
+                    s_activeRuntime = null;
+            }
+
+            EmergencyServiceRelayDirector activeRuntime = s_activeRuntime;
+            if (ReferenceEquals(activeRuntime, null) || ReferenceEquals(activeRuntime, this))
+                return false;
+
+            if (IsEmergencyRelayRuntimeUsable(activeRuntime))
+            {
+                if (GlobalRegistry.EmergencyRelay == null)
+                    GlobalRegistry.RegisterEmergencyRelayRuntime(activeRuntime);
+
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            if (ReferenceEquals(GlobalRegistry.EmergencyRelay, activeRuntime))
+                GlobalRegistry.UnregisterEmergencyRelayRuntime(activeRuntime);
+
+            s_activeRuntime = null;
+            return false;
+        }
+
+        private static bool IsEmergencyRelayRuntimeUsable(EmergencyServiceRelayDirector runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   runtime._serviceRegistered &&
+                   !runtime._runtimeOwnerAborted;
         }
 
         private void TryUnregisterService()
@@ -131,12 +192,34 @@ namespace Hecton8.World
                 s_activeRuntime = null;
         }
 
+        private void AbortDuplicateRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            TryUnregisterHotSwapListener();
+            TryUnregisterService();
+            EmergencyServiceRelayEvents.Unregister(this);
+            InvalidateRelayCache();
+            _currentRouteTarget = null;
+            _firstHourReadModel = null;
+            _firstHourRouteContactSink = null;
+            _atlasSignalSystem = null;
+            _localizationManager = null;
+            ClearRouteNotificationDiagnostics();
+            _runtimeOwnerAborted = true;
+            enabled = false;
+        }
+
         /// <inheritdoc />
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.FirstHourRuntime:
@@ -301,7 +384,7 @@ namespace Hecton8.World
 
             ReadOnlySpan<char> routeMessage = relay.BuildDownloadedRouteMessageSpan(nextRelay);
             if (!IsWhiteSpace(routeMessage))
-                NotificationEvents.TryPushInfo(routeMessage);
+                TryPushRouteNotification(routeMessage, relay.RelayHash);
 
         }
 
@@ -458,6 +541,31 @@ namespace Hecton8.World
                 return true;
 
             return explicitNextRelay.RelayOrder > currentRelay.RelayOrder;
+        }
+
+        private void TryPushRouteNotification(ReadOnlySpan<char> message, uint relayHash)
+        {
+            if (IsWhiteSpace(message))
+                return;
+
+            if (NotificationEvents.TryPushInfo(message))
+                return;
+
+            ReportRouteNotificationMiss(relayHash);
+        }
+
+        private void ReportRouteNotificationMiss(uint relayHash)
+        {
+            _routeNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _RouteNotificationMissWarningHash,
+                _RouteNotificationContextHash ^ relayHash,
+                Mathf.Max(1, _routeNotificationMissCount));
+        }
+
+        private void ClearRouteNotificationDiagnostics()
+        {
+            _routeNotificationMissCount = 0;
         }
 
         private void RefreshRelayCacheIfVersionChanged()

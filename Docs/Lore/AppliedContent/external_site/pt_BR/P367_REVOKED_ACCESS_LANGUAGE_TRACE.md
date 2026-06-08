@@ -9,32 +9,36 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Revoked Access Language Trace"
+title: "Rastro de Linguagem de Acesso Revogado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Revoked Access Language Trace
+# Rastro de Linguagem de Acesso Revogado
 
-PT LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+O protagonista lê bloqueios da Deep Reach como evidência. Credenciais revogadas barram o acesso, mas a redação ainda expõe a rota enterrada: contagens degradadas, testemunhas substitutas, reclassificação de manutenção e linguagem de preservação de reivindicação.
 
 ## Scanner
 
-PT LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+O bloqueio não diz proibido. Diz reclassificação de manutenção, retenção de continuidade e materiais de rota. Fraseado antigo da Deep Reach: uma recusa que ainda aponta para a porta enterrada.
 
 ## Terminal
 
-PT LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+RESPOSTA DE ACESSO / ARQUIVO DE ROTA SEGURA
+credencial: revogada
+motivo: materiais de continuidade de evacuação restritos a pessoal certificado da Deep Reach
+termos visíveis: contagem degradada, testemunha substituta, rota de preservação de reivindicação, reclassificação de manutenção
+nota: ex-pessoal de campo pode ver a linguagem de negação apenas para reconciliação de incidente.
 
 ## Audio
 
-PT LOC HOLD: That is not security. That is a memo pretending to be a door.
+Eles não apagaram o corredor. Eles o embrulharam em um vocabulário que só funcionários culpados ainda entenderiam.
 
 ## Field Note
 
-PT LOC HOLD: Lockout language hints at hidden liability without granting free access.
+O crachá morreu. O bloqueio ainda fala o dialeto de escritório que enterrou a rota.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/pt_BR. -->

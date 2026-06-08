@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Herkomst Barnard Yards
 
-Barnard Yards is cultuur van scheepssloop en drukhardware. Het geeft de speler een geloofwaardige professionele herkomst.
+Barnard Yards is een cultuur van scheepssloop en drukhardware: gehuurde snijders, opgelapte klemmen, dode claims en overlevingstools als gewoon werk. Het geeft HECTON-8 een professionele herkomst dicht bij schuld en arbeid, niet bij aardse romantiek.
 
 ## Scanner
 

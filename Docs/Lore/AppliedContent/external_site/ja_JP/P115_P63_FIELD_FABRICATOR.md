@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "P-63現場ファブリケータ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# P-63現場ファブリケータ
 
-JP LOC HOLD: P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure.
+P-63はクラフトを魔法ではなく工業にする。汚れたスクラップを受け取り、certification tableを確認し、pressure limits付きの小部品を返す。ガスケット、接点、pinger floats、sealant clamps。拒否できるから有用なのだ。
 
-## Scanner
-
-JP LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
-
-## Terminal
-
-JP LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
-
-## Audio
-
-JP LOC HOLD: The machine can make parts. It cannot make permission.
-
-## Field Note
-
-JP LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+その拒否が重要だ。fabricatorは未知のpressure materialを奇跡の装備に変えず、脱出を承認することもできない。HECTON-8のクラフトはrepair certificationとして始まる。実用的で、限定され、植民地を閉じ込めた同じ官僚制に結ばれている。
 
 <!-- External Site; generated from P115_P63_FIELD_FABRICATOR/ja_JP. -->

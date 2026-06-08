@@ -44,6 +44,7 @@ namespace Hecton8.Construction
         private string _lookupAmbiguitySummary;
         private List<BuildableData> _runtimeModules;
         private Dictionary<string, string> _runtimeCategoryByPersistentId;
+        private Dictionary<string, string> _runtimeModuleOwnerByPersistentId;
         private List<BuildableData> _combinedModulesView;
         private bool _combinedModulesDirty = true;
         private bool _registeredHotSwap;
@@ -91,8 +92,9 @@ namespace Hecton8.Construction
         /// <returns>BuildableData ili null.</returns>
         public BuildableData FindDataById(string prefabId)
         {
-            if (string.IsNullOrEmpty(prefabId)) return null;
+            if (string.IsNullOrWhiteSpace(prefabId)) return null;
 
+            prefabId = prefabId.Trim();
             if (_lookup == null) RebuildLookup();
 
             _lookup.TryGetValue(prefabId, out BuildableData result);
@@ -204,6 +206,11 @@ namespace Hecton8.Construction
         /// <returns>True when the buildable was accepted into the runtime overlay.</returns>
         public bool TryRegisterRuntimeModule(BuildableData data, string customCategory, out string error)
         {
+            return TryRegisterRuntimeModule(data, customCategory, string.Empty, out error);
+        }
+
+        internal bool TryRegisterRuntimeModule(BuildableData data, string customCategory, string ownerId, out string error)
+        {
             error = null;
 
             if (data == null)
@@ -228,13 +235,19 @@ namespace Hecton8.Construction
                 return false;
             }
 
+            persistentId = persistentId.Trim();
             if (ContainsRuntimeModule(data))
+            {
+                RecordRuntimeModuleOwnerIfUnownedOrSameOwner(persistentId, ownerId);
                 return true;
+            }
 
             if (HasAliasConflict(persistentId, data, out error))
                 return false;
 
             string legacyAlias = data.name;
+            if (!string.IsNullOrWhiteSpace(legacyAlias))
+                legacyAlias = legacyAlias.Trim();
             if (!string.Equals(legacyAlias, persistentId, StringComparison.Ordinal) &&
                 HasAliasConflict(legacyAlias, data, out error))
             {
@@ -249,10 +262,65 @@ namespace Hecton8.Construction
 
             _runtimeModules.Add(data);
             _runtimeCategoryByPersistentId[persistentId] = NormalizeRuntimeCategory(customCategory);
+            RecordRuntimeModuleOwner(persistentId, ownerId);
             AddLookupAlias(persistentId, data);
             AddLookupAlias(legacyAlias, data);
             _combinedModulesDirty = true;
             return !_hasLookupAmbiguity;
+        }
+
+        internal bool UnregisterRuntimeModulesForOwner(string ownerId)
+        {
+            ownerId = NormalizeRuntimeOwnerId(ownerId);
+            if (string.IsNullOrEmpty(ownerId) ||
+                _runtimeModules == null ||
+                _runtimeModules.Count == 0 ||
+                _runtimeModuleOwnerByPersistentId == null ||
+                _runtimeModuleOwnerByPersistentId.Count == 0)
+            {
+                return false;
+            }
+
+            bool removed = false;
+            for (int i = _runtimeModules.Count - 1; i >= 0; i--)
+            {
+                BuildableData data = _runtimeModules[i];
+                string persistentId = NormalizeRuntimeModulePersistentId(data);
+                if (string.IsNullOrEmpty(persistentId) ||
+                    !_runtimeModuleOwnerByPersistentId.TryGetValue(persistentId, out string registeredOwner) ||
+                    !string.Equals(registeredOwner, ownerId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                _runtimeModuleOwnerByPersistentId.Remove(persistentId);
+                _runtimeCategoryByPersistentId?.Remove(persistentId);
+                _runtimeModules.RemoveAt(i);
+                removed = true;
+            }
+
+            if (removed)
+                RebuildLookup();
+
+            return removed;
+        }
+
+        internal bool TryPromoteRuntimeModuleOwnerIfPresent(BuildableData data, string customCategory, string ownerId)
+        {
+            string persistentId = NormalizeRuntimeModulePersistentId(data);
+            if (string.IsNullOrEmpty(persistentId) || !ContainsRuntimeModule(data))
+                return false;
+
+            if (RecordRuntimeModuleOwnerIfUnownedOrSameOwner(persistentId, ownerId))
+            {
+                if (_runtimeCategoryByPersistentId == null)
+                    _runtimeCategoryByPersistentId = new Dictionary<string, string>(16); // COLD ALLOC: Dictionary<string,string>[16] - runtime buildable category map restore during owner promotion - owner: ModuleCatalog
+
+                _runtimeCategoryByPersistentId[persistentId] = NormalizeRuntimeCategory(customCategory);
+                _combinedModulesDirty = true;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -268,7 +336,12 @@ namespace Hecton8.Construction
             if (data == null || _runtimeCategoryByPersistentId == null)
                 return false;
 
-            return _runtimeCategoryByPersistentId.TryGetValue(data.PersistentId, out customCategory);
+            string persistentId = data.PersistentId;
+            if (string.IsNullOrWhiteSpace(persistentId))
+                return false;
+
+            persistentId = persistentId.Trim();
+            return _runtimeCategoryByPersistentId.TryGetValue(persistentId, out customCategory);
         }
 
         /// <summary>
@@ -471,9 +544,10 @@ namespace Hecton8.Construction
 
         private void AddLookupAlias(string id, BuildableData data)
         {
-            if (string.IsNullOrEmpty(id) || data == null)
+            if (string.IsNullOrWhiteSpace(id) || data == null)
                 return;
 
+            id = id.Trim();
             if (_lookup.TryGetValue(id, out BuildableData existing))
             {
                 if (!ReferenceEquals(existing, data))
@@ -563,6 +637,54 @@ namespace Hecton8.Construction
             return false;
         }
 
+        private void RecordRuntimeModuleOwner(string persistentId, string ownerId)
+        {
+            persistentId = NormalizeRuntimeModulePersistentId(persistentId);
+            if (string.IsNullOrEmpty(persistentId))
+                return;
+
+            ownerId = NormalizeRuntimeOwnerId(ownerId);
+            if (string.IsNullOrEmpty(ownerId))
+            {
+                _runtimeModuleOwnerByPersistentId?.Remove(persistentId);
+                return;
+            }
+
+            if (_runtimeModuleOwnerByPersistentId == null)
+                _runtimeModuleOwnerByPersistentId = new Dictionary<string, string>(16); // COLD ALLOC: Dictionary<string,string>[16] — mod owner index for runtime buildable overlay cleanup — owner: ModuleCatalog
+
+            _runtimeModuleOwnerByPersistentId[persistentId] = ownerId;
+        }
+
+        private bool RecordRuntimeModuleOwnerIfUnownedOrSameOwner(string persistentId, string ownerId)
+        {
+            persistentId = NormalizeRuntimeModulePersistentId(persistentId);
+            ownerId = NormalizeRuntimeOwnerId(ownerId);
+            if (string.IsNullOrEmpty(persistentId) || string.IsNullOrEmpty(ownerId))
+                return false;
+
+            if (_runtimeModuleOwnerByPersistentId != null &&
+                _runtimeModuleOwnerByPersistentId.TryGetValue(persistentId, out string registeredOwner) &&
+                !string.IsNullOrEmpty(registeredOwner) &&
+                !string.Equals(registeredOwner, ownerId, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            RecordRuntimeModuleOwner(persistentId, ownerId);
+            return true;
+        }
+
+        private static string NormalizeRuntimeModulePersistentId(BuildableData data)
+        {
+            return data != null ? NormalizeRuntimeModulePersistentId(data.PersistentId) : string.Empty;
+        }
+
+        private static string NormalizeRuntimeModulePersistentId(string persistentId)
+        {
+            return string.IsNullOrWhiteSpace(persistentId) ? string.Empty : persistentId.Trim();
+        }
+
         private bool HasAliasConflict(string alias, BuildableData data, out string error)
         {
             error = null;
@@ -570,6 +692,7 @@ namespace Hecton8.Construction
             if (string.IsNullOrWhiteSpace(alias))
                 return false;
 
+            alias = alias.Trim();
             if (_lookup.TryGetValue(alias, out BuildableData existing) && !ReferenceEquals(existing, data))
             {
                 error = $"Alias '{alias}' already belongs to '{existing.name}'.";
@@ -582,6 +705,11 @@ namespace Hecton8.Construction
         private static string NormalizeRuntimeCategory(string customCategory)
         {
             return string.IsNullOrWhiteSpace(customCategory) ? "Mods" : customCategory.Trim();
+        }
+
+        private static string NormalizeRuntimeOwnerId(string ownerId)
+        {
+            return string.IsNullOrWhiteSpace(ownerId) ? string.Empty : ownerId.Trim();
         }
     }
 }

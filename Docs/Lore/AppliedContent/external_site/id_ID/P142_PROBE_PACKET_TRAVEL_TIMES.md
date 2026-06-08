@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+spoiler_tier: 1
+title: "Waktu Perjalanan Paket Probe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# Waktu Perjalanan Paket Probe
 
-ID LOC HOLD: Probe Packet Travel Times explain how Aegir became a claim before it became a place.
-
-## Scanner
-
-ID LOC HOLD: The first Aegir witnesses were packets, not colonists.
-
-## Terminal
-
-ID LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
-
-## Audio
-
-ID LOC HOLD: The probe saw the ocean before anyone had a grave there.
-
-## Field Note
-
-ID LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+Waktu paket probe membuat Aegir bernilai sebelum menjadi akrab. Mesin kecil bisa menyeberang, mengukur, dan melapor saat institusi manusia masih berdebat soal anggaran dan liabilitas. Saat Deep Reach menjual keyakinan, paket sudah tua dan model risiko sudah dipoles. Itulah bahaya eksplorasi yang dimulai mesin: samudra bisa diberi harga dari kebenaran basi jauh sebelum orang memahami biaya bekerja di sana.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/id_ID. -->

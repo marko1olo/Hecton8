@@ -82,6 +82,7 @@ namespace Hecton8.UI
         private IAudioService _audioManager;
         private float _lastSliderTickTime;
         private bool _runtimeRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _hotSwapRegistered;
         private bool _controlsRegistered;
         private float _nextDebugLogTime;
@@ -96,8 +97,8 @@ namespace Hecton8.UI
         private int _totalSoundsPlayed;
         private int _throttledSounds;
         private static UIAudioFeedback s_activeRuntime;
-        public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
-        public bool IsServiceReady => _runtimeRegistered;
+        public ServiceHeartbeatState HeartbeatState => !_runtimeOwnerAborted && _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+        public bool IsServiceReady => !_runtimeOwnerAborted && _runtimeRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetActiveRuntimeForSubsystemRegistration()
@@ -123,6 +124,9 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_runtimeRegistered && !TryRegisterRuntime())
                 return;
 
@@ -132,6 +136,9 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!TryRegisterRuntime())
                 return;
 
@@ -168,36 +175,31 @@ namespace Hecton8.UI
 
         public static void PlayPanelOpen()
         {
-            UIAudioFeedback instance = s_activeRuntime;
-            if (instance != null && instance.panelOpen != null)
+            if (TryGetActiveRuntime(out UIAudioFeedback instance) && instance.panelOpen != null)
                 instance.PlaySound(instance.panelOpen, instance.volume);
         }
 
         public static void PlayPanelClose()
         {
-            UIAudioFeedback instance = s_activeRuntime;
-            if (instance != null && instance.panelClose != null)
+            if (TryGetActiveRuntime(out UIAudioFeedback instance) && instance.panelClose != null)
                 instance.PlaySound(instance.panelClose, instance.volume);
         }
 
         public static void PlayClickPrimary()
         {
-            UIAudioFeedback instance = s_activeRuntime;
-            if (instance != null && instance.clickPrimary != null)
+            if (TryGetActiveRuntime(out UIAudioFeedback instance) && instance.clickPrimary != null)
                 instance.PlaySound(instance.clickPrimary, instance.volume);
         }
 
         public static void PlayClickSecondary()
         {
-            UIAudioFeedback instance = s_activeRuntime;
-            if (instance != null && instance.clickSecondary != null)
+            if (TryGetActiveRuntime(out UIAudioFeedback instance) && instance.clickSecondary != null)
                 instance.PlaySound(instance.clickSecondary, instance.volume);
         }
 
         public static void PlayClickDestructive()
         {
-            UIAudioFeedback instance = s_activeRuntime;
-            if (instance != null && instance.clickDestructive != null)
+            if (TryGetActiveRuntime(out UIAudioFeedback instance) && instance.clickDestructive != null)
                 instance.PlaySound(instance.clickDestructive, instance.volume);
         }
 
@@ -206,8 +208,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void GetStats(out int totalPlayed, out int throttled)
         {
-            UIAudioFeedback instance = s_activeRuntime;
-            if (instance != null)
+            if (TryGetActiveRuntime(out UIAudioFeedback instance))
             {
                 totalPlayed = instance._totalSoundsPlayed;
                 throttled = instance._throttledSounds;
@@ -224,8 +225,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void ResetStats()
         {
-            UIAudioFeedback instance = s_activeRuntime;
-            if (instance != null)
+            if (TryGetActiveRuntime(out UIAudioFeedback instance))
             {
                 instance._totalSoundsPlayed = 0;
                 instance._throttledSounds = 0;
@@ -234,6 +234,9 @@ namespace Hecton8.UI
 
         public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot != GlobalRegistryServiceSlot.Audio)
                 return;
 
@@ -245,12 +248,18 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
                 CacheAudioService(currentService as IAudioService);
         }
 
         private bool TryRegisterRuntime()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_runtimeRegistered)
                 return true;
 
@@ -269,13 +278,19 @@ namespace Hecton8.UI
 
         private bool TryAbortForUsableExistingRuntime()
         {
+            if (_runtimeOwnerAborted)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
             UIAudioFeedback registered = GlobalRegistry.UIAudioFeedback;
             if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
                 return false;
 
             if (IsUIAudioFeedbackRuntimeUsable(registered))
             {
-                Destroy(gameObject);
+                AbortDuplicateRuntimeOwner();
                 return true;
             }
 
@@ -287,7 +302,30 @@ namespace Hecton8.UI
 
         private static bool IsUIAudioFeedbackRuntimeUsable(UIAudioFeedback feedback)
         {
-            return feedback != null && feedback._runtimeRegistered && feedback.isActiveAndEnabled;
+            return feedback != null &&
+                   feedback._runtimeRegistered &&
+                   !feedback._runtimeOwnerAborted &&
+                   feedback.isActiveAndEnabled;
+        }
+
+        private static bool TryGetActiveRuntime(out UIAudioFeedback instance)
+        {
+            instance = s_activeRuntime;
+            return IsUIAudioFeedbackRuntimeUsable(instance);
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            _runtimeOwnerAborted = true;
+            TryUnregisterControls();
+            TryUnregisterHotSwapListener();
+            TryUnregisterRuntime();
+            _audioManager = null;
+            enabled = false;
+            Destroy(gameObject);
         }
 
         private void TryUnregisterRuntime()
@@ -303,7 +341,7 @@ namespace Hecton8.UI
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapRegistered || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _hotSwapRegistered || !_runtimeRegistered || !Application.isPlaying)
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -314,12 +352,15 @@ namespace Hecton8.UI
             if (!_hotSwapRegistered)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
         }
 
         private void BindAudioAndRegisterControls()
         {
+            if (_runtimeOwnerAborted || !_runtimeRegistered)
+                return;
+
             CacheAudioService(GlobalRegistry.Audio);
 
             if (_controlsRegistered)
@@ -564,6 +605,9 @@ namespace Hecton8.UI
 
         private void OnButtonClicked(ButtonType type)
         {
+            if (_runtimeOwnerAborted || !_runtimeRegistered)
+                return;
+
             AudioClip clip = type switch
             {
                 ButtonType.Primary => clickPrimary,
@@ -577,6 +621,9 @@ namespace Hecton8.UI
 
         private void OnButtonHover()
         {
+            if (_runtimeOwnerAborted || !_runtimeRegistered)
+                return;
+
             if (hoverButton != null)
                 PlaySound(hoverButton, hoverVolume);
         }
@@ -588,6 +635,9 @@ namespace Hecton8.UI
 
         private void OnSliderChanged(float value)
         {
+            if (_runtimeOwnerAborted || !_runtimeRegistered)
+                return;
+
             float currentTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (currentTime - _lastSliderTickTime < sliderTickThrottle)
             {
@@ -603,6 +653,9 @@ namespace Hecton8.UI
 
         private void OnToggleChanged(bool isOn)
         {
+            if (_runtimeOwnerAborted || !_runtimeRegistered)
+                return;
+
             AudioClip clip = isOn ? toggleOn : toggleOff;
             if (clip != null)
                 PlaySound(clip, volume);
@@ -614,6 +667,9 @@ namespace Hecton8.UI
 
         private void PlaySound(AudioClip clip, float vol)
         {
+            if (_runtimeOwnerAborted || !_runtimeRegistered)
+                return;
+
             IAudioService audioManager = ResolveAudioService();
             if (audioManager == null)
                 return;
@@ -651,7 +707,7 @@ namespace Hecton8.UI
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)

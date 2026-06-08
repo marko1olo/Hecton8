@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # קסנון-אומגה: זיקוק ותכונות
 
 > **מקור:** תאגיד הענק Deep Reach, מניפסט כימי מסווג.

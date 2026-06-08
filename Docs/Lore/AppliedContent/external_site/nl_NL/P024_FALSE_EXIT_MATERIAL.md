@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Materiële exit
 
-Het steunt herspeelbaarheid als winstgevend, besmet einde voor buit, contract en overleving.
+Material Exit ondersteunt een winstgevende maar gecompromitteerde terugtocht: buit, contracten en overleving kunnen de opstijging winnen terwijl de volledige afdalingswaarheid beneden blijft.
 
 ## Scanner
 

@@ -19,15 +19,17 @@ localization_flags: 0
 
 # Black Keel Ledger
 
-The Black Keel Ledger explains why the carrier can contact, guide, charge, delay, recover, or abandon the player without acting like a villain. It is public claim-pool infrastructure with legal debt custody and hidden Deep Reach priorities.
+Black Keel is the player's orbital lifeline, but it is not a rescue fantasy. It belongs to public claim-pool infrastructure: custody ledgers, insurance debt, recovery windows, quarantine rules and carrier-side authority. It can guide because guidance protects value. It can delay because delay protects value too.
+
+The carrier is more frightening than a villain because it can be correct. It may transmit a route, price an ascent, demand manifest proof, mask Deep Reach priorities or abandon a recovery attempt after the mass ledger goes bad. Black Keel can help without being on the player's side. Its mercy has accounting behind it.
 
 ## Scanner
 
-Claim-pool tender ledger. Public carrier custody, insurance debt, hidden Deep Reach priority hooks.
+Claim-pool tender ledger. Public carrier custody, insurance debt, ascent mass penalties and hidden Deep Reach priority hooks.
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+BLACK KEEL LEDGER // Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side. Contractor survival does not outrank insured cargo without updated ascent value.
 
 ## Audio
 

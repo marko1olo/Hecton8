@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TRAUMA MEDIS DAN PENGGANTIAN SINTETIS
 
 > **Sumber:** Prosedur Operasi Ruang Medis Otomatis *Black Keel*.

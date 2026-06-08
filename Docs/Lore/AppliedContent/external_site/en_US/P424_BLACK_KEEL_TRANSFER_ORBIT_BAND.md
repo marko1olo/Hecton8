@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Black Keel Transfer Band"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -27,7 +27,7 @@ Carrier band: Black Keel loiters high, not above HECTON-8.
 
 ## Terminal
 
-CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+CARRIER ORBIT: high custody lane; descent mass is limited and weather-gated.
 
 ## Audio
 

@@ -74,6 +74,12 @@ namespace Hecton8.Gameplay
         private const float PlayerDockingSnapInverseDuration = 1f / PlayerDockingSnapDurationSeconds;
         private const float PlayerDockingSnapCompletionSeconds = PlayerDockingSnapDurationSeconds - 0.0001f;
         private const float FallbackEqualizationSeconds = 5f;
+        private const int PressurizationBridgeWarningCooldownFrames = 90;
+        private const uint PressurizationSnapshotPoseInvalidWarningHash = 0x41505350u; // "APSP"
+        private const uint PressurizationSnapshotWriteFailedWarningHash = 0x41505357u; // "APSW"
+        private const uint PressurizationSnapshotClearFailedWarningHash = 0x41505343u; // "APSC"
+        private static readonly uint AirlockEventLaneDropWarningHash = unchecked((uint)LocHash.Compute("BaseAirlock.EventLaneDrop"));
+        private static readonly uint AirlockEventLaneContextHash = unchecked((uint)LocHash.Compute("BaseAirlock.EventLane"));
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -222,6 +228,13 @@ namespace Hecton8.Gameplay
         private float3 _bulkheadPoseUp;
         private uint _bulkheadPoseShiftSequence;
         private bool _bulkheadPoseSnapshotValid;
+        private bool _pressurizationPublishPending;
+        private bool _pressurizationSnapshotPublished;
+        private byte _pressurizationRetryTicks;
+        private uint _pressurizationSnapshotEdgeHash;
+        private int _nextPressurizationBridgeWarningFrame;
+        private uint _lastPressurizationBridgeWarningHash;
+        private int _eventLaneDropCount;
         private bool _originShiftRegistered;
         private bool _hotSwapListenerRegistered;
         private IAudioService _cachedAudioService;
@@ -263,6 +276,9 @@ namespace Hecton8.Gameplay
         public bool IsEmergencyLockedDown => _emergencyLockedDown;
         /// <summary>True when the habitat graph forbids manual lockdown override because the sealed neighbor is still flooded.</summary>
         public bool IsManualOverrideBlocked => _lockdownOverrideBlockedByFloodedNeighbor;
+
+        /// <summary>Number of visible base-airlock event lane drops from this airlock.</summary>
+        public int EventLaneDropCount => _eventLaneDropCount;
 
         /// <summary>Normalized welding progress toward a manual emergency override.</summary>
         public float WeldOverrideProgress01
@@ -311,6 +327,7 @@ namespace Hecton8.Gameplay
             _weldOverrideProgressSeconds = 0f;
             UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
             PublishBulkheadContainmentState(_emergencyLockedDown);
+            PublishPressurizationSnapshot();
         }
 
         private void Start()
@@ -320,6 +337,7 @@ namespace Hecton8.Gameplay
             TryRegisterOriginShiftListener();
             RefreshBulkheadPoseSnapshot();
             PublishBulkheadContainmentState(_emergencyLockedDown);
+            PublishPressurizationSnapshot();
         }
 
         private void OnDisable()
@@ -331,6 +349,8 @@ namespace Hecton8.Gameplay
             TryUnregister();
             TryUnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
+            TryClearPressurizationSnapshot();
+            ClearEventLaneDiagnostics();
             ClearCachedRegistryServices();
             ClearInteractorComponentCache();
         }
@@ -343,6 +363,8 @@ namespace Hecton8.Gameplay
             TryUnregister();
             TryUnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
+            TryClearPressurizationSnapshot();
+            ClearEventLaneDiagnostics();
             ClearCachedRegistryServices();
         }
 
@@ -362,15 +384,31 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.Physics:
                     _cachedPhysicsService = currentService as IPhysicsService;
                     break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
+                    if (currentService != null)
+                        TryRegister();
+                    RequestRuntimeBridgeRepublish(currentService != null);
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    RequestRuntimeBridgeRepublish(currentService != null);
+                    break;
             }
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)
+                return;
+
             _bulkheadPoseSnapshotValid = false;
             _bulkheadPoseShiftSequence = shiftData.Sequence;
             _bulkheadContainmentPublishPending = true;
             _bulkheadContainmentRetryTicks = 0;
+            _pressurizationPublishPending = true;
+            _pressurizationRetryTicks = 0;
         }
 
         private void TryRegister()
@@ -455,7 +493,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -493,11 +531,14 @@ namespace Hecton8.Gameplay
         {
             if (_bulkheadContainmentPublishPending)
                 RetryBulkheadContainmentPublish();
+            if (_pressurizationPublishPending)
+                RetryPressurizationSnapshotPublish();
 
             QueuePressureDifferentialWhistle();
 
             if (_playerDockingSnapActive)
             {
+                PublishPressurizationSnapshot();
                 AdvancePlayerDockingSnap(deltaTime);
                 return;
             }
@@ -505,6 +546,7 @@ namespace Hecton8.Gameplay
             if (_state != AirlockState.Cycling)
                 return;
 
+            PublishPressurizationSnapshot();
             _cycleTimer -= deltaTime;
 
             if (_cycleTimer <= 0f)
@@ -813,11 +855,12 @@ namespace Hecton8.Gameplay
             _hasPendingDestination = true;
             CacheInteractorComponentsCold(player);
             CaptureCycleInputLock();
+            PublishPressurizationSnapshot();
 
             // Update status light to red
             UpdateStatusLight(cyclingColor);
 
-            BaseAirlockEvents.TryRaiseCycleStarted(this, player);
+            TryRaiseAirlockCycleStarted(player);
 
             // Play cycle start sound
             IAudioService audio = ResolveAudioService();
@@ -851,6 +894,7 @@ namespace Hecton8.Gameplay
         private void FinalizeCompletedCycle(Transform completedInteractor)
         {
             _state = AirlockState.Ready;
+            PublishPressurizationSnapshot();
 
             // Restore state light after the cycle ends.
             UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
@@ -858,7 +902,7 @@ namespace Hecton8.Gameplay
             // Play cycle end sound
             QueueCycleEndSound();
 
-            BaseAirlockEvents.TryRaiseCycleCompleted(this, completedInteractor);
+            TryRaiseAirlockCycleCompleted(completedInteractor);
             _cycleInteractor = null;
             _hasPendingDestination = false;
             ReleaseCycleInputLock();
@@ -911,7 +955,7 @@ namespace Hecton8.Gameplay
             try
             {
                 if (TryResolveHydroPlayerMotor(player, _cachedInteractorMotor, out HectonPlayerMotor hydroMotor))
-                    TeleportHydroPlayer(player, hydroMotor, destinationPosition, destinationRotation);
+                    TeleportHydroPlayer(hydroMotor, destinationPosition, destinationRotation);
                 else if (playerBody != null)
                     TeleportBody(playerBody, _cachedInteractorMotor, destinationPosition, destinationRotation, _cachedPhysicsService);
                 else
@@ -1005,9 +1049,7 @@ namespace Hecton8.Gameplay
 
             if (_snapMotor != null)
             {
-                _snapMotor.MovePosition(worldPosition);
-                if (_snapInteractor != null)
-                    _snapInteractor.SetPositionAndRotation(worldPosition, worldRotation);
+                _snapMotor.MovePose(worldPosition, worldRotation);
                 return;
             }
 
@@ -1073,7 +1115,7 @@ namespace Hecton8.Gameplay
         {
             _isPlayerInside = !_isPlayerInside;
             QueueAirlockAudioSnapshot(_isPlayerInside);
-            BaseAirlockEvents.TryRaiseEnvironmentChanged(this, player);
+            TryRaiseAirlockEnvironmentChanged(player);
             OnEnvironmentChanged?.Invoke(_isPlayerInside);
         }
 
@@ -1123,20 +1165,18 @@ namespace Hecton8.Gameplay
         {
             if (playerMotor != null && playerMotor.HydrodynamicKccOwnsCollisionAuthority)
             {
-                TeleportHydroPlayer(body.transform, playerMotor, position, rotation);
+                TeleportHydroPlayer(playerMotor, position, rotation);
                 return;
             }
 
             bool wasKinematic = body.isKinematic;
             bool wasDetectingCollisions = body.detectCollisions;
             bool wasSleeping = body.IsSleeping();
-
             body.isKinematic = true;
             body.detectCollisions = false;
             body.position = position;
             body.rotation = rotation;
             body.PublishTransform();
-            body.isKinematic = false;
             body.isKinematic = wasKinematic;
             body.detectCollisions = wasDetectingCollisions;
 
@@ -1177,19 +1217,15 @@ namespace Hecton8.Gameplay
         }
 
         private static void TeleportHydroPlayer(
-            Transform player,
             HectonPlayerMotor playerMotor,
             Vector3 position,
             Quaternion rotation)
         {
             if (playerMotor != null)
             {
-                playerMotor.MovePosition(position);
+                playerMotor.MovePose(position, rotation);
                 playerMotor.SetLinearVelocity(Vector3.zero);
             }
-
-            if (player != null)
-                player.SetPositionAndRotation(position, rotation);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1267,6 +1303,294 @@ namespace Hecton8.Gameplay
             if (published)
                 _bulkheadContainmentRetryTicks = 0;
             return published;
+        }
+
+        private bool PublishPressurizationSnapshot()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            uint edgeHash = ResolveBulkheadEdgeHash();
+            if (!IsBulkheadPoseSnapshotCurrent() && !RefreshBulkheadPoseSnapshot())
+            {
+                MarkPressurizationSnapshotStale(PressurizationSnapshotPoseInvalidWarningHash, edgeHash);
+                return false;
+            }
+
+            if (!TryReadBulkheadPoseSnapshot(out _, out float3 normal))
+            {
+                MarkPressurizationSnapshotStale(PressurizationSnapshotPoseInvalidWarningHash, edgeHash);
+                return false;
+            }
+
+            AirlockPressurizationAuthoringSnapshot snapshot = BuildPressurizationSnapshot(edgeHash, normal);
+            bool published = AirlockPressurizationVault.TryWriteAirlockSnapshot(
+                GlobalRegistry.DataVault,
+                in snapshot,
+                out _);
+            _pressurizationPublishPending = !published;
+            if (published)
+            {
+                _pressurizationRetryTicks = 0;
+                _pressurizationSnapshotEdgeHash = edgeHash;
+                _pressurizationSnapshotPublished = true;
+            }
+            else
+            {
+                PublishPressurizationBridgeWarning(PressurizationSnapshotWriteFailedWarningHash, edgeHash);
+            }
+
+            return published;
+        }
+
+        private void RetryPressurizationSnapshotPublish()
+        {
+            if (_pressurizationRetryTicks > 0)
+            {
+                _pressurizationRetryTicks--;
+                return;
+            }
+
+            _pressurizationRetryTicks = 15;
+            PublishPressurizationSnapshot();
+        }
+
+        private void RequestRuntimeBridgeRepublish(bool tryImmediate)
+        {
+            _bulkheadContainmentPublishPending = true;
+            _bulkheadContainmentRetryTicks = 0;
+            _pressurizationPublishPending = true;
+            _pressurizationRetryTicks = 0;
+
+            if (!tryImmediate || !Application.isPlaying)
+                return;
+
+            PublishBulkheadContainmentState(_emergencyLockedDown);
+            PublishPressurizationSnapshot();
+        }
+
+        private bool TryClearPressurizationSnapshot()
+        {
+            if (!_pressurizationSnapshotPublished || _pressurizationSnapshotEdgeHash == 0u)
+                return false;
+
+            bool cleared = AirlockPressurizationVault.TryClearAirlockSnapshot(
+                GlobalRegistry.DataVault,
+                _pressurizationSnapshotEdgeHash);
+            if (cleared)
+            {
+                _pressurizationSnapshotPublished = false;
+                _pressurizationSnapshotEdgeHash = 0u;
+                _pressurizationPublishPending = false;
+                _pressurizationRetryTicks = 0;
+            }
+
+            return cleared;
+        }
+
+        private void MarkPressurizationSnapshotStale(uint warningHash, uint edgeHash)
+        {
+            if (_pressurizationSnapshotPublished && !TryClearPressurizationSnapshot())
+                PublishPressurizationBridgeWarning(PressurizationSnapshotClearFailedWarningHash, edgeHash);
+
+            _pressurizationPublishPending = true;
+            PublishPressurizationBridgeWarning(warningHash, edgeHash);
+        }
+
+        private void PublishPressurizationBridgeWarning(uint warningHash, uint edgeHash)
+        {
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            if (warningHash == _lastPressurizationBridgeWarningHash &&
+                currentFrame < _nextPressurizationBridgeWarningFrame)
+            {
+                return;
+            }
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                warningHash,
+                AirlockPressurizationConstants.AgentHash,
+                edgeHash != 0u ? 1f : 0f);
+            _lastPressurizationBridgeWarningHash = warningHash;
+            _nextPressurizationBridgeWarningFrame = currentFrame + PressurizationBridgeWarningCooldownFrames;
+        }
+
+        private void TryRaiseAirlockCycleStarted(Transform interactor)
+        {
+            if (BaseAirlockEvents.TryRaiseCycleStarted(this, interactor))
+                return;
+
+            ReportAirlockEventLaneDropIfBackpressured(BaseAirlockEventType.CycleStarted);
+        }
+
+        private void TryRaiseAirlockCycleCompleted(Transform interactor)
+        {
+            if (BaseAirlockEvents.TryRaiseCycleCompleted(this, interactor))
+                return;
+
+            ReportAirlockEventLaneDropIfBackpressured(BaseAirlockEventType.CycleCompleted);
+        }
+
+        private void TryRaiseAirlockEnvironmentChanged(Transform interactor)
+        {
+            if (BaseAirlockEvents.TryRaiseEnvironmentChanged(this, interactor))
+                return;
+
+            ReportAirlockEventLaneDropIfBackpressured(BaseAirlockEventType.EnvironmentChanged);
+        }
+
+        private void TryRaiseAirlockEmergencyLockdownChanged()
+        {
+            if (BaseAirlockEvents.TryRaiseEmergencyLockdownChanged(this))
+                return;
+
+            ReportAirlockEventLaneDropIfBackpressured(BaseAirlockEventType.EmergencyLockdownChanged);
+        }
+
+        private void TryRaiseAirlockManualOverrideBlockedChanged()
+        {
+            if (BaseAirlockEvents.TryRaiseManualOverrideBlockedChanged(this))
+                return;
+
+            ReportAirlockEventLaneDropIfBackpressured(BaseAirlockEventType.ManualOverrideBlockedChanged);
+        }
+
+        private void TryRaiseAirlockManualOverrideCompleted()
+        {
+            if (BaseAirlockEvents.TryRaiseManualOverrideCompleted(this))
+                return;
+
+            ReportAirlockEventLaneDropIfBackpressured(BaseAirlockEventType.ManualOverrideCompleted);
+        }
+
+        private void ReportAirlockEventLaneDropIfBackpressured(BaseAirlockEventType eventType)
+        {
+            if (BaseAirlockEvents.PendingCount <= 0)
+                return;
+
+            _eventLaneDropCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                AirlockEventLaneDropWarningHash,
+                AirlockEventLaneContextHash ^ unchecked((uint)eventType),
+                math.max(1, _eventLaneDropCount));
+        }
+
+        private void ClearEventLaneDiagnostics()
+        {
+            _eventLaneDropCount = 0;
+        }
+
+        internal void RequestPressurizationSnapshotRefresh()
+        {
+            _pressurizationPublishPending = true;
+            _pressurizationRetryTicks = 0;
+            PublishPressurizationSnapshot();
+        }
+
+        private AirlockPressurizationAuthoringSnapshot BuildPressurizationSnapshot(
+            uint edgeHash,
+            float3 normal)
+        {
+            float maxWaterLiters = SanitizePositive(airlockVolumeM3, 18f) * AirlockPressurizationConstants.LitersPerCubicMeter;
+            float externalPressureAtm = ResolveExternalPressureAtm();
+            float transition01 = ResolveCurrentCycleTransition01();
+            float dryWaterLiters = 0f;
+            float wetWaterLiters = maxWaterLiters;
+            float startWaterLiters = _isPlayerInside ? dryWaterLiters : wetWaterLiters;
+            float targetWaterLiters = _isPlayerInside ? wetWaterLiters : dryWaterLiters;
+            float waterLiters = IsAirlockTransitioning()
+                ? math.lerp(startWaterLiters, targetWaterLiters, transition01)
+                : startWaterLiters;
+            float startPressureAtm = _isPlayerInside ? AirlockPressurizationConstants.SurfacePressureAtm : externalPressureAtm;
+            float targetPressureAtm = _isPlayerInside ? externalPressureAtm : AirlockPressurizationConstants.SurfacePressureAtm;
+            float pressureAtm = IsAirlockTransitioning()
+                ? math.lerp(startPressureAtm, targetPressureAtm, transition01)
+                : startPressureAtm;
+            uint flags = ResolvePressurizationCycleFlags();
+
+            return new AirlockPressurizationAuthoringSnapshot
+            {
+                DoorAup = _bulkheadPoseCenterAup,
+                DoorNormal = normal,
+                CurrentWaterVolumeLiters = waterLiters,
+                CurrentPressureAtm = pressureAtm,
+                CycleTimer = math.max(0f, _cycleTimer),
+                MaxWaterVolumeLiters = maxWaterLiters,
+                ChamberVolumeLiters = math.max(maxWaterLiters + 1f, maxWaterLiters + 400f),
+                PumpEvacuationSpeedLps = AirlockPressurizationConstants.DefaultPumpEvacuationSpeedLps,
+                EqualizationCurveExponent = AirlockPressurizationConstants.DefaultEqualizationCurveExponent,
+                PowerDrawWatts = AirlockPressurizationConstants.DefaultPowerDrawWatts,
+                AvailablePower01 = _emergencyLockedDown ? 0f : 1f,
+                ExternalDepthMeters = ResolveExternalDepthMeters(externalPressureAtm),
+                BreachAreaM2 = AirlockPressurizationConstants.DefaultBreachAreaM2,
+                DischargeCoefficient = AirlockPressurizationConstants.DefaultDischargeCoefficient,
+                GlobalQualityWeight = AirlockPressurizationConstants.AuthoritativeQualityWeight,
+                PressureEqualizedAtm = AirlockPressurizationConstants.PressureEqualizedAtm,
+                WaterEqualizedLiters = AirlockPressurizationConstants.WaterEqualizedLiters,
+                ExternalPressureAtm = externalPressureAtm,
+                RoomPressureAtm = AirlockPressurizationConstants.SurfacePressureAtm,
+                WidthMeters = emergencyBulkheadWidthMeters,
+                HeightMeters = emergencyBulkheadHeightMeters,
+                HeadMeters = ResolveExternalDepthMeters(externalPressureAtm),
+                InnerRoomHashID = ResolveBulkheadSiblingHash(edgeHash),
+                OuterRoomHashID = HashBulkheadLane(edgeHash, 0x0CE00000u),
+                DoorHashID = HashBulkheadLane(edgeHash, 0xD0000000u),
+                EdgeHashID = edgeHash,
+                CycleStateFlags = flags,
+                Frame = SystemDispatcher.CurrentFrameId != 0u ? SystemDispatcher.CurrentFrameId : 1u
+            };
+        }
+
+        private bool IsAirlockTransitioning()
+        {
+            return _state == AirlockState.Cycling || _playerDockingSnapActive;
+        }
+
+        private float ResolveCurrentCycleTransition01()
+        {
+            if (!IsAirlockTransitioning())
+                return _isPlayerInside ? 0f : 1f;
+
+            float totalSeconds = math.max(0.001f, ResolveEqualizationDurationSeconds());
+            return math.saturate(1f - math.max(0f, _cycleTimer) * math.rcp(totalSeconds));
+        }
+
+        private uint ResolvePressurizationCycleFlags()
+        {
+            uint flags = _isPlayerInside ? AirlockCycleFlags.InnerOpen : AirlockCycleFlags.OuterOpen;
+            if (IsAirlockTransitioning())
+            {
+                flags = AirlockCycleFlags.Equalizing | AirlockCycleFlags.CollisionBlocked;
+                flags |= _isPlayerInside ? AirlockCycleFlags.OuterOpen : AirlockCycleFlags.Pumping;
+            }
+
+            if (_emergencyLockedDown || _lockdownOverrideBlockedByFloodedNeighbor)
+                flags |= AirlockCycleFlags.CollisionBlocked | AirlockCycleFlags.ForceInnerOpen;
+
+            return flags;
+        }
+
+        private float ResolveExternalPressureAtm()
+        {
+            BaseModule module = owningModule;
+            if (module == null)
+                return AirlockPressurizationConstants.SurfacePressureAtm;
+
+            float pressureDeltaKPa = math.abs(module.ResolveExternalPressureDeltaKPa());
+            if (!math.isfinite(pressureDeltaKPa))
+                return AirlockPressurizationConstants.SurfacePressureAtm;
+
+            return math.max(
+                AirlockPressurizationConstants.SurfacePressureAtm,
+                AirlockPressurizationConstants.SurfacePressureAtm + pressureDeltaKPa * math.rcp(HectonSurvivalContract.KPaPerAtmosphere));
+        }
+
+        private static float ResolveExternalDepthMeters(float externalPressureAtm)
+        {
+            return math.max(
+                0f,
+                (externalPressureAtm - AirlockPressurizationConstants.SurfacePressureAtm) *
+                10f *
+                math.rcp(AirlockPressurizationConstants.AtmospherePerTenMeters));
         }
 
         private bool TryReadBulkheadPoseSnapshot(out double3 centerAup, out float3 normal)
@@ -1880,12 +2204,12 @@ namespace Hecton8.Gameplay
 
                     owningModule.ForceFloodFromBulkheadOverride(breachAnchor);
                 }
-                BaseAirlockEvents.TryRaiseManualOverrideCompleted(this);
+                TryRaiseAirlockManualOverrideCompleted();
                 return;
             }
 
             SetEmergencyLockdown(false);
-            BaseAirlockEvents.TryRaiseManualOverrideCompleted(this);
+            TryRaiseAirlockManualOverrideCompleted();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1973,7 +2297,7 @@ namespace Hecton8.Gameplay
             if (_state == AirlockState.Ready)
                 UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
 
-            BaseAirlockEvents.TryRaiseEmergencyLockdownChanged(this);
+            TryRaiseAirlockEmergencyLockdownChanged();
         }
 
         /// <summary>
@@ -1988,7 +2312,7 @@ namespace Hecton8.Gameplay
             if (blocked)
                 _weldOverrideProgressSeconds = 0f;
 
-            BaseAirlockEvents.TryRaiseManualOverrideBlockedChanged(this);
+            TryRaiseAirlockManualOverrideBlockedChanged();
         }
     }
 }

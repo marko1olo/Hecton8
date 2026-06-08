@@ -59,6 +59,10 @@ namespace Hecton8.Gameplay
         private VaultGenerationHandle<HydrodynamicKccCollisionHitDTO> _kccCollisionHitsHandle;
         private VaultGenerationHandle<HydrodynamicKccDebugOutputDTO> _kccDebugOutputsHandle;
         private Vector3 _lastKnownLinearVelocity;
+        private Vector3 _queuedPosePosition;
+        private Quaternion _queuedPoseRotation;
+        private int _queuedPoseFrame = -1;
+        private bool _hasQueuedPoseTarget;
         private float _encumbranceMovementMultiplier = 1f;
         private float _wakeSiltEmissionCooldown;
         private Vector3 _lastKccContactNormal;
@@ -341,6 +345,7 @@ namespace Hecton8.Gameplay
             ResetKccContactState();
             ResetWallSlideContactState();
             ResetDisabledProbeState();
+            ClearQueuedPoseTarget();
         }
 
         private void OnDestroy()
@@ -353,6 +358,7 @@ namespace Hecton8.Gameplay
             ResetKccContactState();
             ResetWallSlideContactState();
             ResetDisabledProbeState();
+            ClearQueuedPoseTarget();
         }
 
         /// <summary>Updates grounded state mirror for external systems.</summary>
@@ -636,7 +642,7 @@ namespace Hecton8.Gameplay
             SetLinearVelocity(projectedVelocity);
         }
 
-        /// <summary>Moves the body kinematically after finite validation.</summary>
+        /// <summary>Queues a kinematic body position through the current collision owner after finite validation.</summary>
         public void MovePosition(Vector3 position)
         {
             if (_body == null)
@@ -649,11 +655,15 @@ namespace Hecton8.Gameplay
             Vector3 snappedPosition = SnapMillimeter(position);
             if (HydrodynamicKccOwnsCollision())
             {
+                ClearQueuedPoseTarget();
                 _hydrodynamicKccRuntime?.TryQueueExternalPositionTarget(snappedPosition);
                 return;
             }
 
-            _body.MovePosition(snappedPosition);
+            Quaternion targetRotation = TryResolveQueuedPoseTargetInCurrentFrame(out _, out Quaternion queuedRotation)
+                ? queuedRotation
+                : _body.rotation;
+            TryQueuePhysicsPoseSet(snappedPosition, targetRotation);
         }
 
         bool IPlayerSeatLockMotorSink.HasControllableBody => _body != null;
@@ -668,16 +678,50 @@ namespace Hecton8.Gameplay
             SetLinearVelocity(velocity);
         }
 
-        /// <summary>Moves the body rotation kinematically after finite validation.</summary>
+        /// <summary>Queues a kinematic body rotation through the physics owner after finite validation.</summary>
         public void MoveRotation(Quaternion rotation)
         {
-            if (_body == null || HydrodynamicKccOwnsCollision())
+            if (_body == null)
                 return;
 
             if (!TryNormalizeRotation(rotation, out Quaternion normalizedRotation))
                 return;
 
-            _body.MoveRotation(normalizedRotation);
+            if (HydrodynamicKccOwnsCollision())
+            {
+                ClearQueuedPoseTarget();
+                _hydrodynamicKccRuntime?.TryQueueExternalRotationTarget(normalizedRotation);
+                return;
+            }
+
+            Vector3 targetPosition = TryResolveQueuedPoseTargetInCurrentFrame(out Vector3 queuedPosition, out _)
+                ? queuedPosition
+                : _body.position;
+            TryQueuePhysicsPoseSet(targetPosition, normalizedRotation);
+        }
+
+        /// <summary>Queues an atomic kinematic pose through the active collision owner after finite validation.</summary>
+        public void MovePose(Vector3 position, Quaternion rotation)
+        {
+            if (_body == null)
+                return;
+
+            float3 position3 = new float3(position.x, position.y, position.z);
+            if (!math.all(math.isfinite(position3)) ||
+                !TryNormalizeRotation(rotation, out Quaternion normalizedRotation))
+            {
+                return;
+            }
+
+            Vector3 snappedPosition = SnapMillimeter(position);
+            if (HydrodynamicKccOwnsCollision())
+            {
+                ClearQueuedPoseTarget();
+                _hydrodynamicKccRuntime?.TryQueueExternalPoseTarget(snappedPosition, normalizedRotation);
+                return;
+            }
+
+            TryQueuePhysicsPoseSet(snappedPosition, normalizedRotation);
         }
 
         /// <summary>
@@ -850,6 +894,7 @@ namespace Hecton8.Gameplay
         {
             RefreshKccContactState();
             TryEmitWakeSiltDecal(fixedDeltaTime);
+            ClearQueuedPoseTarget();
         }
 
         /// <inheritdoc />
@@ -857,6 +902,7 @@ namespace Hecton8.Gameplay
         {
             if (_kinematicRepairSnapReady)
                 DiscardKinematicRepairTargetProbe();
+            ClearQueuedPoseTarget();
         }
 
         private static bool IsFiniteNonZero(Vector3 value)
@@ -1396,8 +1442,10 @@ namespace Hecton8.Gameplay
             if (_registeredHotSwap || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _registeredHotSwap = true;
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+            if (!_registeredHotSwap)
+                return;
+
             _playerRuntimeContext = GlobalRegistry.Player;
             _fluidDecals = GlobalRegistry.FluidDecalPresentation;
             _physicsService = GlobalRegistry.Physics;
@@ -1409,7 +1457,7 @@ namespace Hecton8.Gameplay
             if (!_registeredHotSwap)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
             _playerRuntimeContext = null;
             _fluidDecals = null;
@@ -1420,6 +1468,47 @@ namespace Hecton8.Gameplay
         private IPhysicsService ResolvePhysicsService()
         {
             return _physicsService;
+        }
+
+        private bool TryQueuePhysicsPoseSet(Vector3 position, Quaternion rotation)
+        {
+            IPhysicsService physicsService = ResolvePhysicsService();
+            bool queuedPoseSet = physicsService != null
+                ? physicsService.QueuePoseSet(_body, position, rotation)
+                : Hecton8.Physics.PhysicsForceRouter.QueuePoseSet(_body, position, rotation);
+            if (!queuedPoseSet)
+            {
+                ClearQueuedPoseTarget();
+                return false;
+            }
+
+            _queuedPosePosition = position;
+            _queuedPoseRotation = rotation;
+            _queuedPoseFrame = SystemDispatcher.CurrentFrameIndex;
+            _hasQueuedPoseTarget = true;
+            return true;
+        }
+
+        private bool TryResolveQueuedPoseTargetInCurrentFrame(out Vector3 position, out Quaternion rotation)
+        {
+            if (_hasQueuedPoseTarget && _queuedPoseFrame == SystemDispatcher.CurrentFrameIndex)
+            {
+                position = _queuedPosePosition;
+                rotation = _queuedPoseRotation;
+                return true;
+            }
+
+            position = default;
+            rotation = default;
+            return false;
+        }
+
+        private void ClearQueuedPoseTarget()
+        {
+            _hasQueuedPoseTarget = false;
+            _queuedPoseFrame = -1;
+            _queuedPosePosition = default;
+            _queuedPoseRotation = default;
         }
 
         private static Vector3 ResolveDominantPlanarDirection(Vector3 direction, Vector3 fallback)

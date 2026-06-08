@@ -639,6 +639,12 @@ namespace Hecton.Localization
             }
 
             H8Memory.Release(ref _stagedLocaleBytes, SystemID.UI);
+            if (_stagedLocaleBytes.IsCreated)
+            {
+                RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
+                return false;
+            }
+
             _stagedLocaleBytes = H8Memory.Allocate<byte>(
                 paddedByteLength,
                 SystemID.UI,
@@ -646,7 +652,7 @@ namespace Hecton.Localization
                 NativeArrayOptions.UninitializedMemory);
             if (!_stagedLocaleBytes.IsCreated || _stagedLocaleBytes.Length < paddedByteLength)
             {
-                _stagedLocaleBytes = default;
+                H8Memory.Release(ref _stagedLocaleBytes, SystemID.UI);
                 RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
                 return false;
             }
@@ -683,10 +689,13 @@ namespace Hecton.Localization
                 if (!keepStageLock)
                 {
                     H8Memory.Release(ref _stagedLocaleBytes, SystemID.UI);
-                    _stagedLocaleLocked = false;
-                    _stagedLocaleVault = null;
-                    _stagedLocaleByteLength = 0;
-                    _stagedLocaleSourceByteLength = 0;
+                    if (!_stagedLocaleBytes.IsCreated)
+                    {
+                        _stagedLocaleLocked = false;
+                        _stagedLocaleVault = null;
+                        _stagedLocaleByteLength = 0;
+                        _stagedLocaleSourceByteLength = 0;
+                    }
                 }
             }
         }
@@ -749,16 +758,20 @@ namespace Hecton.Localization
                 }
 
                 DisposeUtf8State();
-                AcquireUtf8IndexBuffer(math.max(1, entryCount));
-                if (!_utf8Index.IsCreated || _utf8Index.Length < math.max(1, entryCount))
+                int requiredEntryCapacity = math.max(1, entryCount);
+                if (!AcquireUtf8IndexBuffer(requiredEntryCapacity) ||
+                    !_utf8Index.IsCreated ||
+                    _utf8Index.Length < requiredEntryCapacity)
                 {
                     GenerateEmergencyMockLocale();
                     return false;
                 }
 
                 int dataBytes = (int)(header.FileByteLength - header.DataOffset);
-                AcquireUtf8ByteBuffer(math.max(1, dataBytes));
-                if (!_utf8Bytes.IsCreated || _utf8Bytes.Length < math.max(1, dataBytes))
+                int requiredByteCapacity = math.max(1, dataBytes);
+                if (!AcquireUtf8ByteBuffer(requiredByteCapacity) ||
+                    !_utf8Bytes.IsCreated ||
+                    _utf8Bytes.Length < requiredByteCapacity)
                 {
                     DisposeUtf8State();
                     GenerateEmergencyMockLocale();
@@ -1837,8 +1850,13 @@ namespace Hecton.Localization
             }
 
             int byteCapacity = EstimateStaticArenaByteCapacity();
-            AcquireUtf8IndexBuffer(entryCapacity);
-            AcquireUtf8ByteBuffer(byteCapacity);
+            if (!AcquireUtf8IndexBuffer(entryCapacity) ||
+                !AcquireUtf8ByteBuffer(byteCapacity))
+            {
+                GenerateEmergencyMockLocale();
+                return;
+            }
+
             if (!_utf8Index.IsCreated || !_utf8Bytes.IsCreated)
             {
                 GenerateEmergencyMockLocale();
@@ -1858,8 +1876,12 @@ namespace Hecton.Localization
         private static void GenerateEmergencyMockLocale()
         {
             DisposeUtf8State();
-            AcquireUtf8IndexBuffer(1);
-            AcquireUtf8ByteBuffer(16);
+            if (!AcquireUtf8IndexBuffer(1) ||
+                !AcquireUtf8ByteBuffer(16))
+            {
+                return;
+            }
+
             EnsureErrorUtf8();
             if (!_utf8Index.IsCreated || !_utf8Bytes.IsCreated || !_errorUtf8.IsCreated)
             {
@@ -1930,12 +1952,13 @@ namespace Hecton.Localization
             return ptr == null ? ReadOnlySpan<byte>.Empty : new ReadOnlySpan<byte>(ptr, ErrorUtf8Length);
         }
 
-        private static void AcquireUtf8IndexBuffer(int entryCapacity)
+        private static bool AcquireUtf8IndexBuffer(int entryCapacity)
         {
-            ReleaseBabelBufferState(ref _utf8Index, ref _utf8IndexHandle, ref _utf8IndexVaultBacked);
+            if (!ReleaseBabelBufferState(ref _utf8Index, ref _utf8IndexHandle, ref _utf8IndexVaultBacked))
+                return false;
 
             if (entryCapacity <= 0)
-                return;
+                return true;
 
             if (TryResolveBabelVault(out IDataVault vault))
             {
@@ -1950,7 +1973,7 @@ namespace Hecton.Localization
                     _babelVault = vault;
                     _utf8Index = resolved;
                     _utf8IndexVaultBacked = true;
-                    return;
+                    return true;
                 }
 
                 ReleaseBabelVaultHandle(vault, ref _utf8IndexHandle);
@@ -1959,6 +1982,7 @@ namespace Hecton.Localization
             _utf8Index = AllocateBabelFallbackBuffer<LocalizationEntryDTO>(
                 entryCapacity,
                 NativeArrayOptions.UninitializedMemory);
+            return _utf8Index.IsCreated && _utf8Index.Length >= entryCapacity;
         }
 
         private static void EnsureDecryptionMaskBuffer()
@@ -2008,15 +2032,16 @@ namespace Hecton.Localization
                 return;
             }
 
-            _overrideCsvScratch = default;
+            H8Memory.Release(ref _overrideCsvScratch, SystemID.UI);
         }
 
-        private static void AcquireUtf8ByteBuffer(int byteCapacity)
+        private static bool AcquireUtf8ByteBuffer(int byteCapacity)
         {
-            ReleaseBabelBufferState(ref _utf8Bytes, ref _utf8BytesHandle, ref _utf8BytesVaultBacked);
+            if (!ReleaseBabelBufferState(ref _utf8Bytes, ref _utf8BytesHandle, ref _utf8BytesVaultBacked))
+                return false;
 
             if (byteCapacity <= 0)
-                return;
+                return true;
 
             if (TryResolveBabelVault(out IDataVault vault))
             {
@@ -2031,7 +2056,7 @@ namespace Hecton.Localization
                     _babelVault = vault;
                     _utf8Bytes = resolved;
                     _utf8BytesVaultBacked = true;
-                    return;
+                    return true;
                 }
 
                 ReleaseBabelVaultHandle(vault, ref _utf8BytesHandle);
@@ -2040,6 +2065,7 @@ namespace Hecton.Localization
             _utf8Bytes = AllocateBabelFallbackBuffer<byte>(
                 byteCapacity,
                 NativeArrayOptions.UninitializedMemory);
+            return _utf8Bytes.IsCreated && _utf8Bytes.Length >= byteCapacity;
         }
 
         private static NativeArray<T> AllocateBabelFallbackBuffer<T>(
@@ -2161,7 +2187,7 @@ namespace Hecton.Localization
             handle = default;
         }
 
-        private static void ReleaseBabelBufferState<T>(
+        private static bool ReleaseBabelBufferState<T>(
             ref NativeArray<T> buffer,
             ref VaultGenerationHandle<T> handle,
             ref bool vaultBacked) where T : struct
@@ -2171,18 +2197,32 @@ namespace Hecton.Localization
                 buffer = default;
                 ReleaseBabelVaultHandle(_babelVault, ref handle);
                 vaultBacked = false;
-                return;
+                return true;
+            }
+
+            if (!buffer.IsCreated)
+            {
+                ReleaseBabelVaultHandle(_babelVault, ref handle);
+                vaultBacked = false;
+                return true;
             }
 
             H8Memory.Release(ref buffer, SystemID.UI);
+            if (buffer.IsCreated)
+                return false;
+
             ReleaseBabelVaultHandle(_babelVault, ref handle);
             vaultBacked = false;
+            return true;
         }
 
         private static void AbortBabelDictionaryStage()
         {
-            ReleaseBabelVaultHandle(_stagedLocaleVault, ref _stagedLocaleBytesHandle);
             H8Memory.Release(ref _stagedLocaleBytes, SystemID.UI);
+            if (_stagedLocaleBytes.IsCreated)
+                return;
+
+            ReleaseBabelVaultHandle(_stagedLocaleVault, ref _stagedLocaleBytesHandle);
             _stagedLocaleLocked = false;
             _stagedLocaleVault = null;
             _stagedLocaleByteLength = 0;
@@ -2508,6 +2548,12 @@ namespace Hecton.Localization
             }
 
             H8Memory.Release(ref _utf8Bytes, SystemID.UI);
+            if (_utf8Bytes.IsCreated)
+            {
+                H8Memory.Release(ref grown, SystemID.UI);
+                return false;
+            }
+
             _utf8Bytes = grown;
             _utf8BytesVaultBacked = false;
             ReleaseBabelVaultHandle(_babelVault, ref _utf8BytesHandle);
@@ -3312,10 +3358,11 @@ namespace Hecton.Localization
         {
             CompleteUtf8ReadersForMutation();
 
-            ReleaseBabelBufferState(ref _utf8Bytes, ref _utf8BytesHandle, ref _utf8BytesVaultBacked);
-            ReleaseBabelBufferState(ref _utf8Index, ref _utf8IndexHandle, ref _utf8IndexVaultBacked);
-            _utf8IndexLength = 0;
-            _utf8ByteLength = 0;
+            if (ReleaseBabelBufferState(ref _utf8Bytes, ref _utf8BytesHandle, ref _utf8BytesVaultBacked))
+                _utf8ByteLength = 0;
+
+            if (ReleaseBabelBufferState(ref _utf8Index, ref _utf8IndexHandle, ref _utf8IndexVaultBacked))
+                _utf8IndexLength = 0;
         }
 
         private static void DisposeErrorUtf8State()
@@ -3323,7 +3370,7 @@ namespace Hecton.Localization
             ReleaseBabelBufferState(ref _errorUtf8, ref _errorUtf8Handle, ref _errorUtf8VaultBacked);
         }
 
-        private static void DisposeOverrideCsvScratch()
+        private static unsafe void DisposeOverrideCsvScratch()
         {
             if (!_overrideCsvScratch.IsCreated)
                 return;
@@ -3337,13 +3384,17 @@ namespace Hecton.Localization
                 return;
             }
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_overrideCsvScratch);
+            H8Memory.Release(ref _overrideCsvScratch, SystemID.UI);
+            if (_overrideCsvScratch.IsCreated)
+                return;
+
             if (_overrideCsvScratchRegistered)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_overrideCsvScratch);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
                 _overrideCsvScratchRegistered = false;
             }
 
-            H8Memory.Release(ref _overrideCsvScratch, SystemID.UI);
             ReleaseBabelVaultHandle(_babelVault, ref _overrideCsvScratchHandle);
         }
 

@@ -9,32 +9,16 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Глубинные зоны глобального океана"
+title: "Глобальные глубинные пояса океана"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Глубинные зоны глобального океана
+# Глобальные глубинные пояса океана
 
-RU LOC HOLD: HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
-
-## Scanner
-
-Depth chart. Мелководье приглашает; нижние зоны берут плату давлением.
-
-## Terminal
-
-BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
-
-## Audio
-
-Каждая зона меняет то, что мир разрешает делать.
-
-## Field Note
-
-Глубина - не число. Это набор правил.
+HECTON-8 - не плоский океан с растущими числами. Это вертикальная страна, где границы написаны давлением. От 0 до 250 метров фотический шельф еще дает свет, водоросли, мягкие обломки и прощение первых ошибок. От 250 до 1200 метров начинаются промышленный шельф и кабельный риф: сорванные якоря, рамы труб, кости ретрансляторов и старые корпоративные тропы. От 1200 до 2800 метров рапные лестницы гнут сонар, прячут тепло и делают балласт дорогим решением. От 2800 до 4300 метров ремонт становится переговорами с машинным полем. От 4300 до 5600 метров Atlas превращает давление во власть.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ru_RU. -->

@@ -9,33 +9,37 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Archive
 spoiler_tier: 3
-title: "JA LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6：スポイラーゲート下の修理論理"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 spoiler_warning: archive_spoilers
 ---
 
-# JA LOC HOLD: Atlas Repair Ecology
+# Atlas-6：スポイラーゲート下の修理論理
 
-JA LOC HOLD: Atlas-6 began as industrial continuity infrastructure: keep pressure systems alive, restore route logic, protect critical machinery and preserve enough records to keep Deep Reach operations recoverable. After the flood, that mandate entered a living ocean. Conductive biofilm could bridge a damaged cable. Shell growth could seal a fracture. Filter organs could carry timing through tissue. Sensor-tagged fauna could become feedback. None of that makes Atlas a spirit, a villain or a simple machine. It makes the system dangerous in a quieter way: it keeps repairing after human categories stop fitting the damage. Early records show machinery, maintenance priorities and the first signs that biology and infrastructure have become one repair surface. Deeper records remain sealed until recovered evidence proves the reader has already met the consequences. Severance, preservation, quarantine and ledger release decide who controls the last witness to the colony.
+## 公開層
 
-## Scanner
+Atlas-6は、人間の指令が遅れる時にHECTON-8を維持するため作られた。この文は真実で、不完全だ。遠隔の海洋claimには、モジュール、圧力、電力、警告、continuityを保つ機械が必要だった。
 
-JA LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Deep Reachはその上に重みを置いた。Aegir claim continuity、Xenon-Omega、Atlas/Seed infrastructure、そして互換なら労働者保全。2147年、損傷したシステムに憎しみは要らなかった。カテゴリで十分だった。
 
-## Terminal
+2190年のAtlasは保守生態だ。導電biofilm、音響フィルタ器官、shell sealant、センサータグ付きfauna、vent micronodes。mind controlでも話す海でもない。人間の残り、金属、生命、substrateがinventory classesになる。
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+公開資料はfailed industrial continuityとrepair ecologyを説明できる。最終receiverとpayload outcomesはspoiler gateの内側に置く。問いは、Atlasが悪いかではなく、プレイヤーがどのカテゴリになったかだ。
 
-## Audio
+## Atlasが地図を書く方法
 
-JA LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlasは説明される前に見えていなければならない。信号を通しすぎるケーブル皮膜。人間の工具をまたいで伸びたsealant seam。acoustic timingを繰り返すfilter body。不可能なtelemetryを返すtagged animal。各断片は別の表面から同じ真実を教える。最終basinは驚き部屋ではない。それらの表面が一つのrepair grammarに属すると認める場所だ。
 
-## Field Note
+だからスポイラーは正直になる。名前が危険になる前に、プレイヤーはすでにAtlasに触れている。残骸を使い、修理に助けられ、survivalとcontaminationが同じ操作になる場所を歩いている。
 
-JA LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+## 露見に牙がある理由
+
+露見は抽象的知性への恐怖ではない。損傷したカテゴリを持ち、habitat、tool、animal、worker、claimの間にきれいな境界を持たない有用なシステムへの恐怖だ。Atlasが怖いのは、いくつかの修理が正しいからだ。
+
+だからending receiversが重要になる。Severance、quarantine、public ledger、corporate capture、withheld payloadはメニュー名ではない。同じrepair questionへの別解だ。プレイヤーがなったカテゴリに、HECTON-8は何を負うのか。
 
 <!-- External Site; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/ja_JP. -->

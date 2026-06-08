@@ -7,34 +7,34 @@ poi_tags: poi.probe_packet_spool;poi.beam_sail_archive
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Waktu Perjalanan Paket Probe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# Waktu Perjalanan Paket Probe
 
-ID LOC HOLD: Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.
+Waktu perjalanan probe adalah alasan Deep Reach bisa menilai HECTON-8 sebelum bisa melindungi orang di sana. Catatan pertama sempit, tua saat tiba, dan sudah finansial. Paket bisa membuat klaim tampak matang sementara rencana manusia di baliknya masih dugaan.
 
 ## Scanner
 
-ID LOC HOLD: The first Aegir witnesses were packets, not colonists.
+Saksi pertama Aegir adalah paket, bukan kolonis.
 
 ## Terminal
 
-ID LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
+RANTAI SURVEI: probe berbantu sinar dan wahana paket menyeberang lebih dulu, mengembalikan kebenaran basi, menetapkan matematika pengereman, dan membiarkan korporasi menjual rute sebelum rute itu manusiawi.
 
 ## Audio
 
-ID LOC HOLD: The probe saw the ocean before anyone had a grave there.
+Probe melihat samudra sebelum siapa pun punya kubur di sana.
 
 ## Field Note
 
-ID LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+Probe bisa menghabiskan satu karier manusia menyeberangi rute sebelum siapa pun mempertaruhkan tubuh.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/id_ID. -->

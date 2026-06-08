@@ -8,33 +8,33 @@ biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Rota de retorno por sonar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Rota de retorno por sonar
 
-Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work.
+A navegação em HECTON-8 trata o caminho de volta como trabalho, não conforto. Um beacon velho ainda pode apontar o corredor certo enquanto esconde um novo obstáculo, um leito de silte deslocado ou uma porta de pressão que mudou o eco.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+Beacon de retorno obsoleto. O ping seguro antigo já não corresponde ao eco do corredor; a massa da carga vai atrasar a janela de retirada.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: último eco limpo inválido. Ping da Black Keel recebido com baixa confiança. Deriva de obstáculos e densidade de silte excedem tolerância do mapa. Marcar linha secundária antes da extração de carga.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+A rota ainda está lá. O eco não é o mesmo.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+Dê ping antes de carregar. Se o caminho para casa mudou com suas mãos vazias, ele não vai perdoar uma mochila cheia.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/pt_BR. -->

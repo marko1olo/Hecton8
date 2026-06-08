@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LA ÓRBITA SILENCIOSA Y EL BLACK KEEL
 
 > **Fuente:** Megacorporación Deep Reach, Registro de Activos Orbitales.

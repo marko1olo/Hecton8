@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Геотермальний двигун жерлової кузні"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# Геотермальний двигун жерлової кузні
 
-UK LOC HOLD: Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+Жерлові кузні пов'язують геологію з крафтом, виживанням і жахом. Вони дають тепло й цикли тиску для кераміки, ущільнень і тискового скла, але ті самі цикли створюють киплячі кишені, хибний кисень, корозійні хмари й міграцію фауни.
 
 ## Scanner
 
-UK LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
+Колектор жерлової кузні. Тепло, отрута й енергія йдуть однією трубою.
 
 ## Terminal
 
-UK LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+ГЕОТЕРМАЛЬНИЙ ДВИГУН: імпульс жерла придатний для випалу кераміки, відпалу тискового скла й підігріву аварійного підйомного заряду. Ризики: киплячий зсув, хибний кисневий сигнал і корозійний викид.
 
 ## Audio
 
-UK LOC HOLD: The vent does not care whether you call it power or weather.
+Жерлу байдуже, назвеш ти його енергією чи погодою.
 
 ## Field Note
 
-UK LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+Кожне корисне жерло також карає за поганий таймінг.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/uk_UA. -->

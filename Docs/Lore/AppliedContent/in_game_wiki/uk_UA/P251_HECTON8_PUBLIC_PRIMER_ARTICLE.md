@@ -9,32 +9,35 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: HECTON-8 Public Primer Article"
+title: "Публічний вступ до HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: HECTON-8 Public Primer Article
+# Публічний вступ до HECTON-8
 
-UA LOC HOLD: The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
+HECTON-8 подається як місце, де варто виживати, а не лише як місце злочину. Місяць належить системі Aegir: холодний, припливний, цінний і надто незручно далекий для швидкого порятунку. Його фотичні шельфи можуть бути прозорими й живими, з колоніальним залізом, видимим крізь яскраву воду. Нижче цієї краси старі маршрути Deep Reach спускаються в насосні, гермокоридори, соляні розрізи, зламані релейні двори і машини, які продовжили працювати після того, як люди перестали відповідати. Публічний праймер лишається без спойлерів. Він може сказати, що гравець повертається як борговий Marauder. Він може сказати, що колонія провалилася, salvage-контракт примусовий, а океан зберігає докази. Він не розкриває фінальний вибір payload і повне питання Atlas. Мета в тому, щоб впустити гравця у світ і не сточити йому зуби.
 
 ## Scanner
 
-UA LOC HOLD: A public primer is allowed to be beautiful. It is not allowed to lie.
+Дозвіл публічного праймера: спершу показати місяць красивим. Не продавати океан через приховування злочину.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+ПУБЛІЧНИЙ ПРАЙМЕР / БЕЗ СПОЙЛЕРІВ
+дозволено: океанський місяць Aegir, яскраві шельфи, затонула індустріальна колонія, повернення Marauder по salvage, руїни Deep Reach
+закрито: фінальний маршрут payload, розв’язка Atlas, наслідки receiver у кінцівках
+примітка редактора: спершу краса, потім докази, без фальшивої обіцянки порятунку.
 
 ## Audio
 
-UA LOC HOLD: First sell the ocean. Then earn the crime.
+Мілководдя не маска. Це те, що вони майже встигли збудувати, доки глибина не зберегла квитанції.
 
 ## Field Note
 
-UA LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+Спершу продай океан. Потім нехай іржа, мітки й маршрутні штампи доведуть, що океан не невинний.
 
 <!-- In-Game Wiki; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/uk_UA. -->

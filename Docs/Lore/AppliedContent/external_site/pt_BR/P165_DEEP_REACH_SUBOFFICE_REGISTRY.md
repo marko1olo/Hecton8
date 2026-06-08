@@ -9,32 +9,20 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Deep Reach Suboffice Registry"
+title: "Registro De Subescritórios Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Deep Reach Suboffice Registry
+# Registro De Subescritórios Deep Reach
 
-PT LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## Escritórios Pequenos, Consequências Grandes
 
-## Scanner
+A Deep Reach fica mais assustadora quando para de soar como conspiração e começa a soar como administração. O registro funciona porque cada nome de escritório é sem graça o bastante para parecer real. Contract Continuity Desk mantém obligations vivas depois que o trabalhador preferiria vê-las mortas. Packet Notary Interface decide se uma mensagem vira prova ou ruído. Quarantine Hold Desk faz atraso parecer responsabilidade médica. Asset Silence Board transforma testemunhas em exposure. Return Action Queue precifica corpo contra payload, orbit e public risk.
 
-PT LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-PT LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-PT LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-PT LOC HOLD: Use dull names. Dull names are where liability hides.
+Nenhum desk precisa odiar o jogador. Cada um só precisa fazer seu trabalho dentro de um priority stack escrito antes da água subir. Por isso as provas de HECTON-8 devem se acumular como carimbos, routing fragments e pequenas contradições. O crime não fica escondido atrás de mal teatral. Ele se espalha por formulários que parecem defensible até o jogador alinhá-los.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/pt_BR. -->

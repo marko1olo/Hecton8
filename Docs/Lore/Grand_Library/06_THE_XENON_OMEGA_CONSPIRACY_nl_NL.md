@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DE XENON-OMEGA-RICHTLIJN EN ATLAS-6-PROTOCOLLEN
 
 > **Bron:** Openbaar Onderzoek Luyten-comité, Zaak Nr. CF-2148-0071. Bewijsstuk 44-B: Auditlogboek van de Atlas-6-kern.  

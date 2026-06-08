@@ -210,7 +210,7 @@ namespace Hecton8.Meta
             if (_discoveryManager == null)
                 _discoveryManager = GlobalRegistry.Discovery;
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(_saveService))
                 _saveService = GlobalRegistry.Save;
 
             RefreshSurvivalSignalBinding();
@@ -223,7 +223,7 @@ namespace Hecton8.Meta
             if (_discoveryManager == null)
                 _discoveryManager = GlobalRegistry.Discovery;
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(_saveService))
                 _saveService = GlobalRegistry.Save;
         }
 
@@ -397,10 +397,21 @@ namespace Hecton8.Meta
         private float ResolveTelemetryTimeSeconds()
         {
             ISaveService saveService = _saveService;
-            if (saveService != null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (IsSaveServiceUsable(saveService))
                 return math.max(0f, saveService.CurrentPlayTimeSeconds);
 
             return math.max(0f, (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         public void OnGlobalRegistryServiceReplaced(

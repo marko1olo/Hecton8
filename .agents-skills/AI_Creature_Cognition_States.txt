@@ -1,4 +1,3 @@
-```markdown
 # AI_Creature_Cognition_States.md
 ## HECTON-8 | Deep Cognition Mandate v1.0
 

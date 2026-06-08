@@ -8,33 +8,33 @@ biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Sonar Return Route"
+spoiler_tier: 1
+title: "声呐返回路线"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sonar Return Route
+# 声呐返回路线
 
-CN LOC HOLD: Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work.
+HECTON-8的导航把回程当成工作，而不是安慰。陈旧信标仍可能指向正确走廊，同时藏起新障碍、移动淤泥床，或一扇改变回声的压力门。
 
 ## Scanner
 
-CN LOC HOLD: The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+返回信标已陈旧。旧安全 ping 不再匹配走廊回声；货物质量会拖慢撤离窗口。
 
 ## Terminal
 
-CN LOC HOLD: Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09：最后一次干净回声无效。Black Keel ping 低置信接收。障碍漂移和淤泥密度超过地图公差。货物抽取前标记第二条线。
 
 ## Audio
 
-CN LOC HOLD: The way back is not gone. It is different enough to kill you.
+路线还在。回声已经不同。
 
 ## Field Note
 
-CN LOC HOLD: Return route is a living cost, not a minimap line.
+装载前先 ping。空手时回家的路已经变了，满包时它不会原谅你。
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/zh_CN. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Deep Reach Liability Evidence"
+title: "Докази відповідальності Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Deep Reach Liability Evidence
+# Докази відповідальності Deep Reach
 
-UK LOC HOLD: Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
+Liability Deep Reach працює, бо потоп не потребує фальшивої фізики. Great Tide був реальним. Запобіжна шкода видно в margins, годинниках, access holds і записах, які очищали працівників у категорії ще до того, як когось можна було повернути.
 
 ## Scanner
 
-UK LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Запис liability. Реальна припливна фізика, прийнятий margin risk, затримка евакуації, quarantine holds, Atlas weighting і очищена мова втрат сходяться в одному ланцюзі доказів.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+ВУЗОЛ ПУБЛІЧНОГО АРХІВУ // ДОКАЗИ LIABILITY. Great Tide прийнято. Перевірка відкрита щодо sensor margins, затримки evacuation queue, quarantine holds, Atlas weighting, worker classification і loss conversion.
 
 ## Audio
 
-UK LOC HOLD: A disaster can be natural and still have signatures on it.
+Катастрофа може бути природною і все одно мати підписи.
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Нотатка Marauder: не сперечайся з припливом. Сперечайся з підписами поруч.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/uk_UA. -->

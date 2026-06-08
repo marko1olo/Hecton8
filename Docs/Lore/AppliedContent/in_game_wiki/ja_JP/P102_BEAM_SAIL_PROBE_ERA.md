@@ -7,34 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "ビームセイル探査機時代"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# ビームセイル探査機時代
 
-JP LOC HOLD: Early extrasolar expansion leaned on beam-assisted probes and small autonomous packets. They could map, listen and seed relay assumptions faster than heavy crewed ships could move. That asymmetry explains how Deep Reach could prepare Aegir infrastructure before ordinary workers understood the full risk.
+初期の系外拡張では、ビームセイル探査機と自律パケットが人間より先に送られた。重船がまだ紙上の約束だった時期に、それらは重力、放射、月軌道、リレー視線、海洋世界候補を地図化した。Deep Reachは機械の確信を引き継ぎ、それを許可として扱った。
 
 ## Scanner
 
-JP LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+調査リール: Aegir最初の地図は有人の約束ではなく、軽い貨物として届いた。
 
 ## Terminal
 
-JP LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+調査系譜: ビームセイルパケットは、生体貨物に貨物路が認可される前にRanとAegirを地図化した。コロニー建設前から確信の劣化を記録。
 
 ## Audio
 
-JP LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
+ここに来た最初の人間の物は人間ではない。領収書付きの調査パケットだった。
 
 ## Field Note
 
-JP LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+最初に見たのは探査機。次に準備したのは機械。作業員が来たのは、確信が請求可能になってからだ。
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/ja_JP. -->

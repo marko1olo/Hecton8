@@ -113,16 +113,16 @@ namespace Hecton8.AI
         [Header("Detection")]
         public float aggroDistance = 25f;
         [FormerlySerializedAs("deaggroDistance")]
-        public float deaggroDistance = 35f; 
+        public float deaggroDistance = 35f;
         public float sleepDistance = 100f;
         [FormerlySerializedAs("reactToPlayerNoise")]
-        public bool reactToPlayerNoise = true; 
+        public bool reactToPlayerNoise = true;
         [FormerlySerializedAs("reactToPlayerLight")]
-        public bool reactToPlayerLight = true; 
+        public bool reactToPlayerLight = true;
         public float distractorDetectRadius = 30f;
         public LayerMask distractorMask;
         public LayerMask territoryMask;
-        
+
         [Header("Internal State")]
         public bool canSeePlayer;
         public bool hasVisualPlayerContact;
@@ -207,7 +207,7 @@ namespace Hecton8.AI
         private AbsoluteUniversePosition _cachedScavengeToolAup;
         private Component _cachedScavengeToolOwner;
         private float _flashBlindUntilTimeSeconds;
-        
+
         /// <summary>
         /// True if the creature has been failing to move forward due to obstacles.
         /// </summary>
@@ -711,7 +711,7 @@ namespace Hecton8.AI
             hasCurrentThreat = false;
             currentThreatPosition = default;
             currentThreatOwner = null;
-            
+
             if (territoryMask == 0 || _profile == null)
                 return;
 

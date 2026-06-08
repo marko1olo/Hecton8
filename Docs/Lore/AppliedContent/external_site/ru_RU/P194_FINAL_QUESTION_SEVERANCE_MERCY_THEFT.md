@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Финальный вопрос severance: mercy, theft, murder"
+title: "Финальный вопрос: отсечение, милость, кража"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Финальный вопрос severance: mercy, theft, murder
+# Финальный вопрос: отсечение, милость, кража
 
-Финальный вопрос severance задает ethical axis shutdown.
+Отсечение должно ощущаться физическим и страшным, а не абстрактным. Игрок не жмет красную кнопку с подписью хорошо или плохо. Он режет непрерывность через двери давления, живую проводящую пленку, старые записи рабочих, маршруты животных и пути payload. Каждый пакет доказательств, принесенный до финальной комнаты, меняет смысл разреза.
 
-## Scanner
-
-Severing Atlas - не простая кнопка shutdown.
-
-## Terminal
-
-SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse или preserve partial repair memory. Meaning зависит от proof, принесенного в final room.
-
-## Audio
-
-Чистый выключатель был бы милосерден. Его не будет.
-
-## Field Note
-
-Действие может быть mercy для workers, murder для ocean-machine life, liberation от Deep Reach или theft живой infrastructure.
+Если Atlas прежде всего тюремщик, отсечение является милостью. Если он единственное, что держит бассейн, это саботаж. Если Atlas стал возникающим океан-машинным организмом, это убийство. Если Atlas остается собственностью Deep Reach, это кража. Правильный дизайн не выбирает одну трактовку за игрока. Он заставляет понять, почему ни один свидетель в комнате не может честно упростить действие.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/ru_RU. -->

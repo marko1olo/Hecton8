@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black-Keel-Ledger
 
-Black Keel Ledger definiert die orbitale Lebenslinie des Spielers als Vertragsmaschine: nützlich, kompromittiert und gleichgültig zugleich.
+Black Keel ist kein freundliches Heimatschiff, sondern ein Claim-Pool-Tender. Es liest Körper, Nutzlast, Quarantänerisiko, Aufstiegsmasse und Versicherung als Ledgerposten.
 
-## Scanner
-
-Claim-Pool-Tender-Ledger. Öffentliche Carrier-Gewahrsamkeit, Versicherungs debt, versteckte Deep-Reach-Prioritäten.
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keel ist nicht dein Schiff. Es ist die Maschine, die weiß, was du schuldest.
-
-## Field Note
-
-Das Schiff kann dir helfen, ohne auf deiner Seite zu sein.
+Es muss den Spieler nicht hassen. Es kann höflich antworten, einen Distress-Hash akzeptieren und Pickup verweigern, bis die Zahlen anders aussehen.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/de_DE. -->

@@ -9,24 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "HE LOC HOLD: Resources and Ecology"
+title: "משאבים ואקולוגיה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Resources and Ecology
+# משאבים ואקולוגיה
 
-HE LOC HOLD: The useful matter of HECTON-8 is rarely clean. It comes out of pressure seams, brine traps, vent heat, dead machinery and living tissue that has learned to grow around metal. A sample can be mineral, biological, industrial and legal evidence at the same time.
-
-Blue debt is the best known example. The name began as salvage slang for pressure-formed value that carried unpaid risk with it. A blue debt sample records the conditions that made it: depth, heat, contamination, extraction method and contact with Atlas-altered lattice. Two pieces with the same shine may not have the same custody value. One is a payout. Another is proof.
-
-The ocean's biology is not a speaking mind. It is a set of processes under extreme pressure. Mats conduct current across damaged surfaces. Shell growth can seal a fracture. Filter organs can carry acoustic timing through tissue. Brine vanes mark density flow. Grazers clear mineral film and expose safe scrape zones. Predators follow vibration, heat and disturbed silt.
-
-Atlas changed the meaning of those processes. After the flood, its emergency maintenance model expanded through anything that could carry signal, seal pressure or move material. Conductive biofilm became cable skin. Sensor-tagged fauna became feedback. Vent micronodes became power nests. Some routes look natural until they answer a machine need too precisely.
-
-Nothing in the HECTON-8 ocean is just scenery, and nothing valuable is just loot. The question attached to every sample is older than the claim stamped on it: what made this, and what was damaged while it formed?
+אשכול המשאבים צריך להראות שרשראות תהליך, לא רשימת שלל. מינרל יכול להגיע מ-drowned crust, משקע brine trap, עקבת vent heat, מכונה ישנה או רקמה שגדלה סביב מתכת אחרי התערבות Atlas. Blue debt קושר כלכלה לגאולוגיה: מה שאפשר להעלות למעלה כבר תומחר שם. אקולוגיה אינה רקע ואינה גן חיות. פאונה מגיבה לצליל, לחץ, אור, עקבת מלח ו-repair paths פגומים. לכן משאבים, ביוטה וראיות צריכים להיקרא יחד: דגימה אחת יכולה להזין כלי, לחשוף תאונה ולהראות איפה Atlas בלבל תיקון עם שימוש בחי.
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/he_IL. -->

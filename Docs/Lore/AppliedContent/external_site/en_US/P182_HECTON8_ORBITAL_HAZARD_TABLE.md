@@ -19,22 +19,22 @@ localization_flags: 0
 
 # HECTON-8 Orbital Hazard Table
 
-HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure.
+HECTON-8 Orbital Hazard Table shows rescue as a chain of moving gates: radiation shear, debris, eclipse, legal beacons and custody windows, each able to close an otherwise repaired ascent.
 
 ## Scanner
 
-HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+Extraction from HECTON-8 is gated by eclipse, radiation surge, relay shutter, ice scatter and storm-plume windows.
 
 ## Terminal
 
-ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be cleared before ascent.
 
 ## Audio
 
-The sky is not empty. It is a machine with bad timing.
+The sky above the ocean is a machine with teeth in the timing.
 
 ## Field Note
 
-This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+No one is parking rescue for drama. Ascent has to meet the sky's bad schedule.
 
 <!-- External Site; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/en_US. -->

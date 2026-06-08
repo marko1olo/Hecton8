@@ -41,6 +41,7 @@ namespace Hecton8.Core
         private static bool _registered;
         private static bool _lateFrameRegistered;
         private static bool _hotSwapRegistered;
+        private static SystemDispatcher _registeredDispatcher;
         private static bool _platformRenderScaleApplied;
         private static bool _dynamicResolutionDirty;
         private static bool _pendingDynamicResolutionPressure;
@@ -101,9 +102,11 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            TryUnregisterDispatcherLanes();
             TryUnregisterHotSwap();
             _registered = false;
             _lateFrameRegistered = false;
+            _registeredDispatcher = null;
             _platformRenderScaleApplied = false;
             _dynamicResolutionDirty = false;
             _pendingDynamicResolutionPressure = false;
@@ -181,13 +184,37 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
+            if (dispatcher == null)
                 return;
+
+            if ((_registered || _lateFrameRegistered) && !ReferenceEquals(_registeredDispatcher, dispatcher))
+                TryUnregisterDispatcherLanes();
 
             if (!_registered)
                 _registered = GlobalRegistry.TryRegisterUpdatable(s_tickable, PriorityLayer.Core);
             if (_registered && !_lateFrameRegistered)
                 _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(s_tickable, PriorityLayer.Core);
+
+            if (_registered || _lateFrameRegistered)
+                _registeredDispatcher = dispatcher;
+        }
+
+        private static void TryUnregisterDispatcherLanes()
+        {
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(s_tickable, PriorityLayer.Core);
+                _lateFrameRegistered = false;
+            }
+
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(s_tickable, PriorityLayer.Core);
+                _registered = false;
+            }
+
+            _registeredDispatcher = null;
         }
 
         private static bool IsVramNearBudget()
@@ -501,6 +528,14 @@ namespace Hecton8.Core
 
         private static void RebindService(GlobalRegistryServiceSlot serviceSlot, object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterDispatcherLanes();
+                if (currentService != null)
+                    TryRegister();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.HardwareThermalService)
             {
                 Volatile.Write(ref _hardwareThermalService, currentService as IHardwareThermalService);

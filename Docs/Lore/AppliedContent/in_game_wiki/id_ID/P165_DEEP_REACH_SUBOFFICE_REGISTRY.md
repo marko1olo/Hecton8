@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Deep Reach Suboffice Registry"
+title: "Registri Subkantor Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Suboffice Registry
+# Registri Subkantor Deep Reach
 
-ID LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+Registri subkantor penting karena menamai mesin tanpa menciptakan ruang takhta. Deep Reach tidak butuh satu orang yang memerintah setiap kematian. Ia butuh offices bernama sempit, masing-masing mampu menunda, mengklasifikasi ulang, atau meneruskan paket. Contract Continuity menjaga obligations hidup. Packet Notary menentukan apa yang disebut proof. Quarantine Hold membuat rescue terdengar berbahaya. Asset Silence menurunkan nilai saksi. Return Action menentukan siapa layak mendapat massa.
 
 ## Scanner
 
-ID LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, dan Return Action Queue.
 
 ## Terminal
 
-ID LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach menaruh keputusan mematikan di bawah level satu penjahat. Desk kecil merutekan clauses, packets, quarantine, silence, dan return priority sampai tidak ada satu stempel pun tampak seperti pembunuhan.
 
 ## Audio
 
-ID LOC HOLD: A small desk can kill more quietly than a director.
+Desk kecil bisa membunuh lebih senyap daripada direktur.
 
 ## Field Note
 
-ID LOC HOLD: Use dull names. Dull names are where liability hides.
+Biarkan nama tetap membosankan. Liability bersembunyi di nama membosankan.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/id_ID. -->

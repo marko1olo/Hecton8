@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Задержка relay-сообщений"
+spoiler_tier: 1
+title: "Задержка релейных сообщений"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Задержка relay-сообщений
+# Задержка релейных сообщений
 
-Задержка relay-сообщений делает связь route system, а не magic voice channel.
-
-## Scanner
-
-Сообщение может быть юридически обязательным и все равно прийти слишком поздно для воздуха.
-
-## Terminal
-
-RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
-
-## Audio
-
-Ответ опоздал. Lien актуален.
-
-## Field Note
-
-Без ansible правда движется как freight.
+Relay lag позволяет HECTON-8 получать власть без заботы. Packet может нести закон, долг, ownership или предупреждение через часы, дни или годы, но не может принести руки в затопленную комнату. Этот разрыв является главным давлением связи: удаленные системы остаются сильными, потому что были написаны рано, поставлены в очередь рано и оценены так, чтобы пережить расстояние. Сочувствие приходит человеком; контракт приходит данными. Данные слишком часто побеждают.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/ru_RU. -->

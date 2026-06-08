@@ -8,33 +8,19 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Maintenance Ecology"
+spoiler_tier: 1
+title: "Écologie de maintenance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Écologie de maintenance
 
-FR LOC HOLD: Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlas n'a pas découvert un océan amical. Il a découvert une vie capable de porter une charge. Un biofilm conducteur pouvait ponter un circuit faible pendant quelques heures. Une croissance coquillière pouvait sceller une fracture jusqu'à la prochaine variation de pression. Une colonie filtrante pouvait répéter une impulsion acoustique plus loin qu'un relais noyé. Une faune balisée pouvait renvoyer des sensor packets après l'échec des drones métalliques.
 
-## Scanner
-
-FR LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
-
-## Terminal
-
-FR LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
-
-## Audio
-
-FR LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-FR LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Ce réseau de réparation est attirant et sale. Le joueur peut couper une matière vivante pour le salvage, ou la laisser parce qu'elle tient la pression. Un mur peut être infrastructure, habitat et preuve criminelle à la fois. L'Écologie de maintenance prouve d'abord que HECTON-8 n'est pas magique. C'est pire que la magie, car chaque miracle porte un ordre de travail.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/fr_FR. -->

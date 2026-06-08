@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Tumpukan Nama Kotak Hitam
 
-Stack nama membuat kebenaran bisa dibawa. Yang pemain angkat memengaruhi broadcast, dossier, dan ending.
+Stack nama black box membuat kebenaran akhir bisa dibawa. Bukti, paket broadcast, dan dossier publik bergantung pada nama, hash, dan tanda terima mana yang keluar dari air.
 
 ## Scanner
 

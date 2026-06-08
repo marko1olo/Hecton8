@@ -7,34 +7,34 @@ poi_tags: poi.brine_density_marker;poi.canyon_current_gate
 biome_tags: biome.brine_canyon;biome.drop_zone
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Маршрутна драбина розсільного каньйону"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# Маршрутна драбина розсільного каньйону
 
-UK LOC HOLD: Brine canyons make depth progression physical. Dense brine layers, mineral walls, thermal leaks and acoustic distortion create routes that teach the player why deeper travel requires better instruments and better pressure discipline.
+Розсільні каньйони роблять рух углиб фізичним. Щільні шари, мінеральні стіни, теплові витоки й акустичні викривлення вчать, чому глибша подорож потребує кращих приладів і дисципліни тиску.
 
 ## Scanner
 
-UK LOC HOLD: Brine density marker. The descent route is chemistry with walls.
+Маркер густини розсолу. Спусковий маршрут є хімією зі стінами.
 
 ## Terminal
 
-UK LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
+КОНТРОЛЬ РОЗСІЛЬНОГО КАНЬЙОНУ: межа густини досить стабільна для ступінчастого спуску. Попередження: викривлення акустичного реле, помилка плавучості машини та фальшиве дно нижче 1800 м.
 
 ## Audio
 
-UK LOC HOLD: The canyon is a staircase made of wrong water.
+Каньйон - це сходи з неправильної води.
 
 ## Field Note
 
-UK LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+Каньйоном не пливуть. З ним домовляються через шари, важчі за костюм.
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/uk_UA. -->

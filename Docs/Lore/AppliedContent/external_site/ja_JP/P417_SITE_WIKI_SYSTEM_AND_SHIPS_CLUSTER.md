@@ -9,24 +9,24 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "JA LOC HOLD: Aegir Route and Ships"
+title: "Aegirルートと船"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Aegir Route and Ships
+# Aegirルートと船
 
-JA LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegirは利用できるほど近く、見捨てられるほど遠い。光速超過ドライブは隙間を渡らず、ansibleも物理に先回りして命令を運ばない。すべてのメッセージ、契約、救助請求は遅延を通る。探査プローブのパケット、リレー保管、ビーム予定、ペレット核融合貨物、遷移窓、そして生存者の切迫に無関心な天候だ。
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+Aegir最初の交通は人間ではなかった。ニードルプローブが温かな矮星系を測り、鉱物、放射線、軌道データを返して重い投資を正当化した。次にビームセイルのパケット、遅い貨物、そして作業員が海を見る何年も前に計画された網の中で制動するseed-shipの質量が来た。Deep ReachがHECTON-8に着く頃には、航路はすでに組織のものだった。輸送者、保険者、ドメイン事務所、回収プール、所有者の名前を見えにくくする企業だ。
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+Black Keelはその曖昧さの中にいる。軍艦でも救助サービスでもない。ドック質量、テンダー艇、債務台帳、salvage権限を持つ請求プラットフォームだ。契約の鎖は、Deep Reachがハッチに置いた手に見えずに圧力をかけることを許す。人、試料、封印貨物を引き上げられるのは、質量、天候、軌道、熱余裕、保管が合ったときだけだ。
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+損傷したbathydropは本物の境界になる。降下衝撃は殻を生存に足るだけ残しながら、上昇許容を壊す。シール圧縮、音響帰還、誘導表、エネルギーバッファ、検疫ハンドシェイク。カプセルは避難所であり証拠でもある。到着は証明するが、脱出は保証しない。
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+Aegir系で距離は背景ではない。助けがハードウェアより先に書類として届く理由だ。
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/ja_JP. -->

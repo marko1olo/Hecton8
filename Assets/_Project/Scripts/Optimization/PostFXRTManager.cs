@@ -16,44 +16,44 @@ namespace Hecton8.Optimization
     public sealed class PostFXRTManager : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         // ── REGISTRY SLOT ──────────────────────────────────────────────────────────
-        
-        
+
+
         // ── CONSTANTS ──────────────────────────────────────────────────────────────
-        
+
         private const long PostFXBudgetBytes = 128L * 1024L * 1024L; // 128 MB
         private const float LogThrottleInterval = 5f; // Log once per 5s
-        
+
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
-        
+
         private bool _registeredSlowTick;
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
         private IRenderTextureLifecycleService _cachedRenderTextureLifecycle;
-        
+
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: PostFXRTManager
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
-        
+
         // COLD ALLOC: List<RenderTextureAllocationRecord>[32] — RT query — owner: PostFXRTManager
         private readonly List<RenderTextureAllocationRecord> _postFXRTs = new List<RenderTextureAllocationRecord>(32);
-        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextLogTime;
 #endif
-        
+
         // ── PUBLIC PROPERTIES ──────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// Current PostFX RT memory consumption in bytes.
         /// </summary>
         public long PostFXRTMemoryBytes { get; private set; }
-        
+
         /// <summary>
         /// Returns whether PostFX RT memory exceeds 128 MB budget.
         /// </summary>
         public bool IsOverBudget => PostFXRTMemoryBytes > PostFXBudgetBytes;
-        
+
         // ── LIFECYCLE ──────────────────────────────────────────────────────────────
-        
+
         private void OnEnable()
         {
             if (TryRegisterService())
@@ -63,14 +63,14 @@ namespace Hecton8.Optimization
                 TryRegister();
             }
         }
-        
+
         private void OnDisable()
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
-        
+
         private void OnDestroy()
         {
             TryUnregister();
@@ -83,12 +83,20 @@ namespace Hecton8.Optimization
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregister();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
                 _cachedRenderTextureLifecycle = currentService as IRenderTextureLifecycleService;
         }
-        
+
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// ISlowTickable implementation. Monitors PostFX RT memory every ~0.5s.
         /// Zero GC: pre-allocated buffers, no LINQ, no string concat.
@@ -98,9 +106,9 @@ namespace Hecton8.Optimization
             MeasurePostFXRTMemory();
             CheckBudget();
         }
-        
+
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
-        
+
         private void MeasurePostFXRTMemory()
         {
             IRenderTextureLifecycleService lifecycle = _cachedRenderTextureLifecycle;
@@ -109,11 +117,11 @@ namespace Hecton8.Optimization
                 PostFXRTMemoryBytes = 0L;
                 return;
             }
-            
+
             // Query all PostFX-owned RTs (zero-GC)
             _postFXRTs.Clear();
             lifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.PostFX, _postFXRTs);
-            
+
             // Calculate total PostFX RT memory (zero-GC loop)
             long totalBytes = 0L;
             for (int i = 0; i < _postFXRTs.Count; i++)
@@ -121,15 +129,15 @@ namespace Hecton8.Optimization
                 if (!_postFXRTs[i].IsDisposed)
                     totalBytes += _postFXRTs[i].MemoryBytes;
             }
-            
+
             PostFXRTMemoryBytes = totalBytes;
         }
-        
+
         private void CheckBudget()
         {
             if (!IsOverBudget)
                 return;
-            
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now >= _nextLogTime)
@@ -166,16 +174,38 @@ namespace Hecton8.Optimization
             if (!Application.isPlaying)
                 return false;
 
-            PostFXRTManager registered = GlobalRegistry.PostFXRT;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterPostFXRTRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PostFXRT, this);
             return _serviceRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            PostFXRTManager registered = GlobalRegistry.PostFXRT;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsPostFXRTRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterPostFXRTRuntime(registered);
+            return false;
+        }
+
+        private static bool IsPostFXRTRuntimeUsable(PostFXRTManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()
@@ -208,7 +238,7 @@ namespace Hecton8.Optimization
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
         }
-        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void LogBudgetViolation()
         {
@@ -216,7 +246,7 @@ namespace Hecton8.Optimization
             _reportBuilder.Append("[PostFXRTManager] BUDGET EXCEEDED: ");
             _reportBuilder.Append((PostFXRTMemoryBytes / (1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture)).Append(" MB / ");
             _reportBuilder.Append((PostFXBudgetBytes / (1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture)).Append(" MB");
-            
+
             Hecton8.Core.H8Debug.LogWarning(_reportBuilder.ToString(), this);
         }
 #endif

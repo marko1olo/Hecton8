@@ -1455,7 +1455,7 @@ namespace Hecton8.UI
             _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedFieldOfView = value;
-            
+
             // ZERO-GC: Use cached strings and dirty flags
             if (txtFieldOfView != null)
             {
@@ -1492,7 +1492,7 @@ namespace Hecton8.UI
             _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedShadowDistance = value;
-            
+
             // ZERO-GC: Use cached strings and dirty flags
             if (txtShadowDistance != null)
             {
@@ -1901,7 +1901,7 @@ namespace Hecton8.UI
             _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedMasterVolume = value;
-            
+
             // ZERO-GC: Use cached strings and dirty flags
             if (txtMasterVolume != null)
             {
@@ -1920,7 +1920,7 @@ namespace Hecton8.UI
             _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedMusicVolume = value;
-            
+
             // ZERO-GC: Use cached strings and dirty flags
             if (txtMusicVolume != null)
             {
@@ -1939,7 +1939,7 @@ namespace Hecton8.UI
             _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedSfxVolume = value;
-            
+
             // ZERO-GC: Use cached strings and dirty flags
             if (txtSfxVolume != null)
             {
@@ -1958,7 +1958,7 @@ namespace Hecton8.UI
             _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedAmbientVolume = value;
-            
+
             // ZERO-GC: Use cached strings and dirty flags
             if (txtAmbientVolume != null)
             {
@@ -2119,7 +2119,7 @@ namespace Hecton8.UI
                 int messageLength = CopyLocalizedSpanToModalBuffer(
                     ErrorSettingsUnavailableKeyHash,
                     "Some settings failed to apply. Check console for details.\n\nRetry or revert to defaults?");
-                
+
                 Hecton.UI.MainMenu.ModalWindow.ShowWithCustomLabels(
                     "Settings Apply Failed",
                     _modalMessageBuffer,

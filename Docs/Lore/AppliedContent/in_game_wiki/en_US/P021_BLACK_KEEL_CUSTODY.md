@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Keel Custody
 
-Black Keel is not a luxury personal ship. It is a nearly automated salvage carrier operating through claim-pool custody, insurance debt and delayed orbital windows. It gives the player a real route back to orbit without making rescue simple or loyal.
+Black Keel is not a luxury personal ship. It is a nearly automated salvage carrier operating through claim-pool custody, insurance debt and delayed orbital windows. It offers a real route back to orbit without making rescue simple or loyal.
 
 ## Scanner
 

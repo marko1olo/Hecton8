@@ -7,34 +7,34 @@ poi_tags: poi.tide_physics_archive;poi.cryosphere_stress_record
 biome_tags: biome.tide_pump;biome.drowned_admin
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Registro físico de la Gran Marea"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# Registro físico de la Gran Marea
 
-ES LOC HOLD: The Great Tide Physics Record keeps the catastrophe honest. HECTON-8 was vulnerable to tide resonance, ice collapse, storm surge and heat discharge. Deep Reach's guilt is visible in margins, evacuation capacity and decision priority, not in a fake magic cause.
+El Registro físico de la Gran Marea mantiene honesta la catástrofe. HECTON-8 era vulnerable a resonancia de marea, colapso de hielo, marejada y descarga de calor. La culpa de Deep Reach aparece en márgenes, capacidad de evacuación y prioridad de decisión, no en una falsa causa mágica.
 
 ## Scanner
 
-ES LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
+El modelo de inundación está intacto. El mar no necesitaba un villano, sino malos márgenes.
 
 ## Terminal
 
-ES LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
+MODELO GRAN MAREA: cizalla criosférica, elevación oceánica resonante, descarga térmica artificial y apilado de tormentas superan la envolvente segura de evacuación por factor 3,7. Reserva de ascenso independiente: no financiada.
 
 ## Audio
 
-ES LOC HOLD: The report was right. That is why they buried it.
+El informe tenía razón. Por eso lo enterraron.
 
 ## Field Note
 
-ES LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+No lo suavices: la física real mató gente, y Deep Reach se aseguró de que esa física tuviera víctimas.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/es_ES. -->

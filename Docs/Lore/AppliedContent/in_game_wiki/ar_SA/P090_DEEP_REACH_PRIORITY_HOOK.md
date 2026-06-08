@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "خطاف أولوية Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# خطاف أولوية Deep Reach
 
-AR LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+ضغط Deep Reach الحالي لا يحتاج إلى تحكم بعيد مستحيل. شهادات الاستمرارية القديمة وبنود الحجر ورموز وصول Atlas وخطافات أولوية payload موجودة أصلا داخل مسار Black Keel القانوني. تستطيع الشركة التأثير في ما يقدره carrier من دون أن تملكه ظاهرا. وهذا يجعل الخصم أصعب في القطع: ليس إشارة تشوش، بل بندا يستيقظ مرارا.
 
 ## Scanner
 
-AR LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+خطاف شهادة قديمة. Deep Reach لا تملك السفينة؛ تملك البند.
 
 ## Terminal
 
-AR LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: شهادة استمرارية Deep Reach legacy قد تقدم recovery للـ payload أو قفل الحجر أو رمز وصول Atlas أو طابور كبت الدليل تحت قانون claim في Aegir. أولوية استخراج الإنسان لا تتغير إلا إذا تجاوز دليل الخطر قيمة custody.
 
 ## Audio
 
-AR LOC HOLD: They do not need to be on the bridge to steer the answer.
+لا يحتاجون إلى الوقوف على الجسر كي يوجهوا الجواب.
 
 ## Field Note
 
-AR LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+أنظف من المؤامرة: الأوراق لا تزال حية ولا تزال جائعة.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/ar_SA. -->

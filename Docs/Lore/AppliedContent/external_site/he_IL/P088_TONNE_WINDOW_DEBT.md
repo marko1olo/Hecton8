@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "חוב חלון-טון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# חוב חלון-טון
 
-HE LOC HOLD: Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-HE LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-HE LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-HE LOC HOLD: You owe the orbit before you owe the money.
-
-## Field Note
-
-HE LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+חלון-טון הוא פרוסה של קיבולת carrier הנמדדת במסה, תזמון burn, נפח הסגר ועדיפות משפטית. למפעיל זה מרגיש כמו חוב כי כל חפץ שימושי מ-HECTON-8 נכנס לאותו ספר עם הגוף שמצא אותו. תיבה חתומה יכולה להיות קלה אך כבדה משפטית. מתקן דגימות יכול לעלות מעט מסה ולדרוש נפח נקי. חילוץ אדם נראה מובן מאליו עד שזבורית, עתודת חמצן ו-payload custody כבר בזבזו את החלון הזמין. כך כלכלת HECTON-8 נעשית פיזית ולא מופשטת. השחקן אינו נענש במד מוסר מזויף. השחקן לכוד במכונה שמתמחרת הישרדות דרך דלק, מסה, זיהום וניירת.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/he_IL. -->

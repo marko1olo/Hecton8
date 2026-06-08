@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "Handmatige lenspompset"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# Handmatige lenspompset
 
-NL LOC HOLD: Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile.
+De handmatige bilgepomp is het eerste overlevingswerkwoord omdat ze drama weigert. Geen powered panel, geen heldeninterface, geen belofte dat de kamer veilig is. De speler maakt een verstopte inlaat vrij, voelt de hendel terugvechten en leert dat water een eerlijke weg nodig heeft.
 
-## Scanner
-
-NL LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
-
-## Terminal
-
-NL LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
-
-## Audio
-
-NL LOC HOLD: Hand work first. Electricity second. Breathing always.
-
-## Field Note
-
-NL LOC HOLD: First tool must teach survival before upgrade fantasy.
+Dit kleine gereedschap zet de toon van HECTON-8. Reparatie begint met handen, druk en gevolg. Als de pomp terugtrapt, antwoordt de kamer. Als de uitlaat fout is, verplaatst overleven het gevaar alleen naar een andere plek.
 
 <!-- External Site; generated from P111_MANUAL_BILGE_PUMP_KIT/nl_NL. -->

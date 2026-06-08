@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Predator Shadow Encounter Grammar"
+title: "דקדוק מפגש: צל טורף"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Predator Shadow Encounter Grammar
+# דקדוק מפגש: צל טורף
 
-HE LOC HOLD: HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.
+צללי טורפים מגדירים את הפחד של HECTON-8 בלי לוגיקת חשיפה זולה. סכנה מגיעה לעיתים כטרף חסר, bloom שבור, sonar שגוי ומסלול שפתאום עולה יותר מדי חמצן.
 
 ## Scanner
 
-HE LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+עקבת צל טורף. פער sonar, נתיב טרף חתוך, דממה פתאומית של מגרדים, חסימת אור רחבה. גוף לא אושר; שמור על משמעת אור וזווית יציאה.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+דקדוק מפגש / צל טורף / תפקיד: לחץ מסלול לפני חשיפת גוף, קפיצת צריכת חמצן, שבר אמון ב-scan / קריאה בטוחה: נתיב טרף נעצר, רעש bloom קורס, החזרי sonar מתפצלים סביב מים ריקים / דחה: חשיפת גוף scripted כאזהרה ראשונה, jump scare חסר עלות, boss arena נקייה / הערת מסלול: אם כל החיות הקטנות נעצרות לפני שה-scanner קורא למטרה בשם, המסלול כבר השתנה.
 
 ## Audio
 
-HE LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+הסימן הבטוח אינו לראות אותו. הסימן הבטוח הוא לשים לב שכל השאר בחר בשקט קודם.
 
 ## Field Note
 
-HE LOC HOLD: Use for AI/spawn design notes and scanner cards.
+קרא לחיה בשם מאוחר. תן לטרף, לאור ול-sonar להיכשל קודם. אם המסלול משתתק, הצל כבר מחזיק בו.
 
 <!-- External Site; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/he_IL. -->

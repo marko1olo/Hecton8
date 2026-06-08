@@ -566,16 +566,13 @@ namespace Hecton8.SaveSystem
             ClearCacheEntry(slotName);
 
             string path = GetThumbnailPath(slotName);
-            if (File.Exists(path))
-                File.Delete(path);
+            DeleteThumbnailFile(path);
 
             string tempPath = GetTempThumbnailPath(slotName);
-            if (File.Exists(tempPath))
-                File.Delete(tempPath);
+            DeleteThumbnailFile(tempPath);
 
             string legacyPath = GetLegacyThumbnailPath(slotName);
-            if (File.Exists(legacyPath))
-                File.Delete(legacyPath);
+            DeleteThumbnailFile(legacyPath);
         }
 
         /// <summary>
@@ -723,11 +720,10 @@ namespace Hecton8.SaveSystem
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
 
-                if (File.Exists(tempPath))
-                    File.Delete(tempPath);
+                DeleteThumbnailFile(tempPath);
 
                 NativeArray<byte> encodedJpg = default;
-                bool encodedJpgRegistered = false;
+                int encodedJpgSentinelId = 0;
                 try
                 {
                     encodedJpg = ImageConversion.EncodeNativeArrayToJPG(
@@ -744,7 +740,7 @@ namespace Hecton8.SaveSystem
                     encodedByteLength = encodedJpg.Length;
                     encodedByteHash = ComputeNativeByteHash(encodedJpg);
 
-                    int encodedJpgSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    encodedJpgSentinelId = NativeMemorySentinel.RegisterNativeArray(
                         encodedJpg,
                         NativeMemoryOwner,
                         "thumbnailEncodedJpg",
@@ -752,23 +748,56 @@ namespace Hecton8.SaveSystem
                     if (encodedJpgSentinelId <= 0)
                         throw new InvalidOperationException("Native memory sentinel registration failed for thumbnailEncodedJpg.");
 
-                    encodedJpgRegistered = true;
-
                     unsafe
                     {
                         void* dataPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(encodedJpg);
                         if (!AsyncWriteManager.WriteAll(tempPath, dataPtr, encodedJpg.Length, out string writeError))
                             throw new IOException(writeError);
                     }
+
+                    if (!AsyncWriteManager.TryGetFileLength(tempPath, out long tempThumbnailBytes, out string tempLengthError))
+                        throw new IOException(string.IsNullOrEmpty(tempLengthError) ? "Thumbnail temp file length could not be resolved before promotion." : tempLengthError);
+
+                    if (tempThumbnailBytes != encodedByteLength)
+                        throw new IOException("Thumbnail temp file length changed before promotion.");
+
+                    if (!AsyncWriteManager.FlushCriticalSavePath(tempPath, tempThumbnailBytes, out string tempFlushError))
+                        throw new IOException(string.IsNullOrEmpty(tempFlushError) ? "Thumbnail temp critical flush failed before promotion." : tempFlushError);
                 }
                 finally
                 {
                     if (encodedJpg.IsCreated)
                     {
-                        if (encodedJpgRegistered)
-                            NativeMemorySentinel.UnregisterNativeArray(encodedJpg);
+                        System.Exception nativeSentinelCleanupException0 = null;
 
-                        encodedJpg.Dispose();
+                        if (encodedJpgSentinelId > 0)
+                        {
+                            try
+                            {
+                                NativeMemorySentinel.Unregister(encodedJpgSentinelId);
+                            }
+                            catch (System.Exception nativeSentinelException0)
+                            {
+                                nativeSentinelCleanupException0 = nativeSentinelException0;
+                            }
+                            finally
+                            {
+                                encodedJpgSentinelId = 0;
+                            }
+                        }
+
+                        try
+                        {
+                            encodedJpg.Dispose();
+                        }
+                        catch (System.Exception nativeSentinelException0)
+                        {
+                            if (nativeSentinelCleanupException0 == null)
+                                nativeSentinelCleanupException0 = nativeSentinelException0;
+                        }
+
+                        if (nativeSentinelCleanupException0 != null)
+                            throw nativeSentinelCleanupException0;
                     }
                 }
 
@@ -779,11 +808,26 @@ namespace Hecton8.SaveSystem
                     return;
                 }
 
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
                 if (File.Exists(path))
-                    File.Delete(path);
+                    File.Replace(tempPath, path, null);
+                else
+                    File.Move(tempPath, path);
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
 
-                File.Move(tempPath, path);
+                if (!AsyncWriteManager.TryGetFileLength(path, out long persistedThumbnailBytes, out string lengthError))
+                    throw new IOException(string.IsNullOrEmpty(lengthError) ? "Thumbnail file length could not be resolved after promotion." : lengthError);
+
+                if (persistedThumbnailBytes != encodedByteLength)
+                    throw new IOException("Thumbnail file length changed during promotion.");
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(path, persistedThumbnailBytes, out string flushError))
+                    throw new IOException(string.IsNullOrEmpty(flushError) ? "Thumbnail critical flush failed after promotion." : flushError);
+
                 await Awaitable.MainThreadAsync();
+                ClearCacheEntry(slotName);
                 if (!IsCurrentGeneration(request.Generation))
                     publishCompletion = false;
             }
@@ -1129,11 +1173,27 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                if (File.Exists(path))
-                    File.Delete(path);
+                DeleteThumbnailFile(path);
             }
             catch
             {
+            }
+        }
+
+        private static void DeleteThumbnailFile(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            AsyncWriteManager.InvalidateCachedReadWindows(path);
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
             }
         }
 

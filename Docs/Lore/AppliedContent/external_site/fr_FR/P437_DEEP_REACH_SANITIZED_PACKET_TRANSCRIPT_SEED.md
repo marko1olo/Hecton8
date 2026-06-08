@@ -9,32 +9,22 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Transcription du paquet assaini Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Transcription du paquet assaini Deep Reach
 
-FR LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
+## Langage Propre, Retard Sale
 
-## Scanner
+Le paquet Deep Reach est dangereux parce qu'il sonne comme de l'aide. Il nomme la sécurité. Il reconnaît un incident. Il emploie les bons noms du désastre: pression, quarantaine, coordonnées, exposure, recovery. Puis il retire les verbes qui comptent. Qui a retardé l'évacuation? Qui a chiffré le hold? Qui a maintenu la pondération Atlas pendant que la colonie cédait?
 
-FR LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Le langage assaini n'a pas besoin de nier l'océan. Le déni serait trop facile à prouver faux. Le paquet fonctionne en acceptant la catastrophe physique et en réorganisant la responsabilité en pending review. Les coordonnées passent d'abord parce que la compagnie veut custody sur l'espace de claim avant de s'engager sur des corps. Le coût de quarantaine suit parce que travailleurs vivants et preuves contaminées deviennent liabilities au même bureau.
 
-## Terminal
-
-FR LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
-
-## Audio
-
-FR LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
-
-## Field Note
-
-FR LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Pour le joueur, cette transcription doit créer de la colère sans casser la crédibilité. Deep Reach n'est pas un méchant de dessin animé criant depuis l'orbite. C'est une firme qui sait exactement quels champs retirer d'un message susceptible de devenir une preuve.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/fr_FR. -->

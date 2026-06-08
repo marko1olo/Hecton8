@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "החזקת הסגר: אוויר עומד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# החזקת הסגר: אוויר עומד
 
-HE LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+החזקת הסגר מצילה את הגוף ומשעה את ה-agency. השחקן נמלט מהלחץ, אבל לא מה-custody. כל נשימה נמדדת בזמן שהראיה ממתינה מאחורי שפת הבדיקה.
 
 ## Scanner
 
-HE LOC HOLD: You are alive, sealed, and still not free.
+גוף חולץ. עד נחתם. מנת אוויר פעילה.
 
 ## Terminal
 
-HE LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+החזקת הסגר: הקבלן חולץ חי; מנת אוויר פעילה; sample custody לא פתור; עדות חיצונית נדחית עד סקירת זיהום, ערעור claimant וסקירת אובדן Keelmark.
 
 ## Audio
 
-HE LOC HOLD: The hatch opens only to another closed hatch.
+הפתח נפתח לפתח סגור אחר.
 
 ## Field Note
 
-HE LOC HOLD: This is the bureaucratic version of drowning.
+זו הצורה המנהלית של טביעה.
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/he_IL. -->

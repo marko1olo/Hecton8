@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Cold Sealant Patch Gun
 
-Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+The cold sealant patch gun teaches the first honest limit. It can stop a pinhole, hold a gasket lip, or buy minutes on a quiet seam. It cannot bless moving structure. The rating label matters more than the player's hope.
 
-## Scanner
-
-Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-Sealant repairs should buy time, not erase pressure.
+That is why the tool belongs early. It lets the player act without pretending every leak is solvable. A good patch creates time; a bad patch creates confidence where the ocean will collect payment.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/en_US. -->

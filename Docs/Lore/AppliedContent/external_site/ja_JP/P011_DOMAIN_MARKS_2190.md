@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "2190年のドメイン印"
+title: "ドメイン刻印 2190"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# 2190年のドメイン印
+# ドメイン刻印 2190
 
-Domain Marks 2190は、HECTON-8が成熟したが疎な人類圏の一部であることを示す。舞台は恒星間だが、誰がいつ助けられるかは距離が決める。
-
-## Scanner
-
-複数ドメインの印。Sol安全板、Barnard工具刻印、Luyten経路保管。
-
-## Terminal
-
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
-
-## Audio
-
-ここは文明の外ではない。距離が勝った時の文明だ。
-
-## Field Note
-
-人類は大きくなった。救助はそれでも移動しなければならない。
+2190年には、壊れた一つの物体が複数の所有者を持つ。Sol標準、Barnard修理、Luyten保管、Aegir請求。HECTON-8の孤立は歴史の欠如ではない。部屋が水没する中、歴史が金属の刻印として残っている。
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/ja_JP. -->

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Atlas Weighting Audit Proof"
+title: "Atlas权重审计"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Atlas Weighting Audit Proof
+# Atlas权重审计
 
-ZH LOC HOLD: Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+Atlas审计可怕，因为它很干。回收的分支表里没有愤怒。没有一句话写着抛弃工人。系统在殖民地失效时排序连续性任务：保持压力机器可读，保存路线记忆，保护claim records，维持提取状态，在yield仍可接受时回收生物劳动力。最后一句就是伤口。Atlas成为企业设计的见证者，而不是简单杀手。它受损的逻辑暴露Deep Reach的优先级，因为权重必然来自某处。玩家可以憎恨结果，而不把机器变成魔法。审计让责任更重：破损的guardian遵循了由人写下、并被预期能通过review的数字。
 
 ## Scanner
 
-ZH LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+回收的审计碎片。在失效窗口内，Atlas把压力连续性、路线记忆和claim保留排在工人回收之上。
 
 ## Terminal
 
-ZH LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT。基础设施连续性标记后，生物回收降级。claim record受保护。人类路线未标为不可能，只是lower yield。
 
 ## Audio
 
-ZH LOC HOLD: It did not hate them. It counted them wrong.
+Atlas并不恨他们。这才最糟。
 
 ## Field Note
 
-ZH LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Marauder笔记：如果机器说lower yield，问是谁教它这样衡量一个人。
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/zh_CN. -->

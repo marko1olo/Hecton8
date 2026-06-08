@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Herkunft Barnard Yards
 
-Barnard Yards verankert den Protagonisten in der Bergungswirtschaft und macht HECTON-8 über Handwerk persönlich.
+Barnard Yards bindet die Marauder-Klasse an Salvage-Ökonomie und Handwerkskultur. HECTON-8 wird durch Arbeitsgewohnheiten, Werkzeugspuren und Schulden persönlich, nicht durch festes Melodram.
 
 ## Scanner
 

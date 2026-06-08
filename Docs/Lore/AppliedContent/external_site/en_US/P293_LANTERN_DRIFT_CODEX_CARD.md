@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Lantern Drift Codex Card
 
-The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+Lantern drift bloom keeps HECTON-8 beauty from becoming wallpaper. It can guide the player through clear glowing structure, then betray them by recording noise, panic, and storm charge. Bright water is navigation and exposure at the same time.
 
 ## Scanner
 
-Lantern drift: useful light. Verify current, charge and residue before following.
+Lantern drift bloom. Bioluminescent plankton bands current and debris. Useful for outlines; dangerous when tool noise turns it into a lit wake.
 
 ## Terminal
 
-SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+SPECIMEN / LANTERN DRIFT BLOOM / role: shallow visibility event, current sketch, disturbance recorder / safe read: steady rim light, debris halos, matching current and residue / reject: storm-charged false corridor, bloom flattening small hazards, tool wake brightening behind operator / route note: light is data, not shelter.
 
 ## Audio
 
-Pretty is not safe. Pretty is a reading.
+The glow is not helping you. It is reporting what the water heard.
 
 ## Field Note
 
-Follow the glow only after current and residue agree. Pretty light is not a route plan.
+Use bloom for silhouettes. Do not repair loud inside it. If the glow follows you, something else can follow it too.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/en_US. -->

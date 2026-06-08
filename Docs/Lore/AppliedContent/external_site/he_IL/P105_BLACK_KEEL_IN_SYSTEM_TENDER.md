@@ -8,33 +8,17 @@ biome_tags: biome.carrier_link;biome.shallow_annex
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Black Keel In-System Tender"
+spoiler_tier: 1
+title: "מכרז תוך-מערכתי של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel In-System Tender
+# מכרז תוך-מערכתי של Black Keel
 
-HE LOC HOLD: Black Keel In-System Tender prevents the carrier from becoming a magic rescue vehicle. It is a hard-sci-fi salvage asset: useful, conditional, debt-bound and limited by local orbital mechanics.
-
-## Scanner
-
-HE LOC HOLD: Tender limit. Black Keel can recover mass through a window; it cannot cross light-years for you.
-
-## Terminal
-
-HE LOC HOLD: CARRIER LIMIT: Aegir-system claim tender. Interstellar custody is inherited from route owners; local recovery requires ascent package, quarantine handshake and payload acceptance.
-
-## Audio
-
-HE LOC HOLD: Black Keel is close enough to bill you. Not close enough to save you for free.
-
-## Field Note
-
-HE LOC HOLD: Black Keel is leverage and logistics, not cavalry.
+Black Keel קרוב בדרך המתסכלת ביותר. הוא נמצא בתוך מרחב Aegir, מסוגל להחזיק custody, לקבל payloads, לחייב חוב ולדבר דרך חלונות, אבל הוא לא ספינת כוכבים טובה שמאלתרת חילוץ. כוחו מקומי ופרוצדורלי. הוא יכול לקבל ascent package נקי; הוא לא יכול להחזיר bathydrop chain שבור למסלול באמצעות רצון. הגבול הזה עושה את ה-carrier שימושי, מפחיד ואמין: קרוב מספיק כדי לשנות, מוגבל מספיק כדי להכשיל אותך.
 
 <!-- External Site; generated from P105_BLACK_KEEL_IN_SYSTEM_TENDER/he_IL. -->

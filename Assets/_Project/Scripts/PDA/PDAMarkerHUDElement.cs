@@ -93,6 +93,7 @@ namespace Hecton8.PDA
         private bool _hotSwapListenerRegistered;
         private bool _markerRegistryColdResolved;
         private bool _playerContextColdResolved;
+        private uint _observedMarkerRevision = uint.MaxValue;
 
         private void Awake()
         {
@@ -107,6 +108,8 @@ namespace Hecton8.PDA
             TryRegisterHotSwapListener();
             TryRegisterWithTickManager();
             TryRegisterWithPDAEvents();
+            _observedMarkerRevision = uint.MaxValue;
+            RefreshMarkerRevisionFallback(force: true);
             _markersDirty = true;
             _cameraRetryTimer = 0f;
         }
@@ -146,10 +149,12 @@ namespace Hecton8.PDA
             PDAMarkerRegistry markerRegistry = _cachedMarkerRegistry;
             if (markerRegistry == null)
             {
+                _observedMarkerRevision = 0u;
                 HideAllDisplays();
                 return;
             }
 
+            RefreshMarkerRevisionFallback(force: false);
             if (_markersDirty)
             {
                 _markerCount = markerRegistry.CopyMarkers(_markerBuffer, hudOnly: true);
@@ -225,6 +230,7 @@ namespace Hecton8.PDA
                 case GlobalRegistryServiceSlot.PDAMarkerRuntime:
                     _cachedMarkerRegistry = currentService as PDAMarkerRegistry;
                     _markerRegistryColdResolved = true;
+                    _observedMarkerRevision = uint.MaxValue;
                     _markersDirty = true;
                     if (_cachedMarkerRegistry == null)
                     {
@@ -241,6 +247,17 @@ namespace Hecton8.PDA
                     _markersDirty = true;
                     break;
             }
+        }
+
+        private void RefreshMarkerRevisionFallback(bool force)
+        {
+            PDAMarkerRegistry markerRegistry = _cachedMarkerRegistry;
+            uint revision = markerRegistry != null ? markerRegistry.Revision : 0u;
+            if (!force && _observedMarkerRevision == revision)
+                return;
+
+            _observedMarkerRevision = revision;
+            _markersDirty = true;
         }
 
         private void BuildIconPool()
@@ -300,14 +317,18 @@ namespace Hecton8.PDA
 
         private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
         {
+            observerAup = default;
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext != null && playerContext.PlayerMovement != null)
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
             {
-                observerAup = playerContext.PlayerMovement.CurrentAup;
+                observerAup = movementState.PredictedAup;
                 return true;
             }
 
-            observerAup = default;
             return false;
         }
 
@@ -628,8 +649,7 @@ namespace Hecton8.PDA
             if (_registeredToPDAEvents || !Application.isPlaying)
                 return;
 
-            PDAEvents.Register(this);
-            _registeredToPDAEvents = PDAEvents.IsRegistered(this);
+            _registeredToPDAEvents = PDAEvents.TryRegister(this);
         }
 
         private void UnregisterFromPDAEvents()

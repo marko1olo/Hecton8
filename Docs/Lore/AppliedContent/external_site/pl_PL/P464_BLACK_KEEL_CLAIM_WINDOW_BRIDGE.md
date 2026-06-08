@@ -9,32 +9,26 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Okno roszczenia Black Keel"
+title: "Okno roszczenia Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Okno roszczenia Black Keel
+# Okno roszczenia Black Keel
 
-PL LOC HOLD: Black Keel może usłyszeć sygnał, zanim podniesie ciało. W Aegir odpowiedź carriera to opłacony pas przez geometrię przekaźników, pogodę, kwarantannę, akceptację ładunku i odzysk masy. Kontakt jest faktem trasy. Ratunek jest ukończonym łańcuchem.
+## Odbiór To Nie Podniesienie
 
-## Scanner
+Black Keel może usłyszeć sygnał, zanim podniesie ciało. Ta różnica to okno roszczenia.
 
-PL LOC HOLD: OKNO ROSZCZENIA // Przekaźnik Aegir przewiduje tylko okno odbioru. Odzysk wymaga pakietu wznoszenia, uzgodnienia kwarantanny i przydziału tonne-window.
+W Aegir odpowiedź carriera nie jest obietnicą ratunku. Jest czasowym pasem przez geometrię przekaźników, pogodę, kontrolę kwarantanny, akceptację ładunku i odzysk masy. To samo okno wycenia ładunek, dowód, dług tlenowy i dobrostan operatora, bo każdy kilogram opuszczający HECTON-8 zużywa tę samą okazję orbitalną.
 
-## Terminal
+Keelmark Mutual zapisuje okno jako czas kustodii. Black Keel zapisuje odbiór potwierdzony, podniesienie wstrzymane. Klauzule Deep Reach nadal mogą umieścić próbkę, pakiet współrzędnych albo blokadę kwarantanny przed operatorem, jeśli język priorytetu jest ważny.
 
-PL LOC HOLD: ZAWIADOMIENIE KEELMARK // Sygnał operatora odebrany. Priorytet odzysku nierozstrzygnięty. Odbiór sygnału lub pakietu dowodu nie gwarantuje odzysku operatora.
+P-63 pokazuje regułę wcześnie. Tablica przekaźnika może dać czyste potwierdzenie, gdy bathydrop nie ma pakietu wznoszenia, uzgodnienia kwarantanny ani przydzielonego tonne-window. Carrier wie, że operator żyje. Może go obciążyć. Może wycenić pakiet. Nie może zignorować ciśnienia HECTON-8, czasu Aegir ani kolejności kontraktu.
 
-## Audio
-
-PL LOC HOLD: Przekaźnik Black Keel: sygnał operatora wyceniony. Okno odzysku w toku. Nie myl odbioru z podniesieniem.
-
-## Field Note
-
-PL LOC HOLD: Jeśli Black Keel odpowiada, licz rachunek, nie ratunek. Odebrany pakiet to tylko miejsce w kolejce, dopóki masa, pieczęć, kwarantanna i pogoda się nie zgodzą.
+Kontakt jest faktem trasy. Ratunek jest ukończonym łańcuchem.
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/pl_PL. -->

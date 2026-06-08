@@ -7,34 +7,34 @@ poi_tags: poi.probe_packet_spool;poi.beam_sail_archive
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "探测包旅行时间"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# 探测包旅行时间
 
-CN LOC HOLD: Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.
+探测旅行时间说明Deep Reach为何能在保护人类之前就知道HECTON-8有价值。最早记录狭窄、抵达即陈旧，并且已经金融化。一个数据包能让索赔显得成熟，而背后的人类计划仍只是猜测。
 
 ## Scanner
 
-CN LOC HOLD: The first Aegir witnesses were packets, not colonists.
+Aegir最早的见证者是数据包，不是殖民者。
 
 ## Terminal
 
-CN LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
+测绘链：光束辅助探测器和数据包飞行器先跨越，返回陈旧真相，建立制动数学，并让公司在航线变得人道之前出售它。
 
 ## Audio
 
-CN LOC HOLD: The probe saw the ocean before anyone had a grave there.
+在那里有人埋葬之前，探测器已经看见了海洋。
 
 ## Field Note
 
-CN LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+探测器可以用一个人的职业生涯穿越航线，之后才有人拿身体下注。
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/zh_CN. -->

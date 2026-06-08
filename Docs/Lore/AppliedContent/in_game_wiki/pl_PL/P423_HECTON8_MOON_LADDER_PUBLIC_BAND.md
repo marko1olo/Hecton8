@@ -7,34 +7,34 @@ poi_tags: poi.moon_ladder_public_band;poi.hecton8_mid_orbit_card
 biome_tags: biome.aegir_system;biome.publication
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "PL LOC HOLD: HECTON-8 Moon Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Drabina księżyców HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: HECTON-8 Moon Ladder
+# Drabina księżyców HECTON-8
 
-PL LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
+Drabina księżyców daje Aegir skalę, ale kampania zostaje na HECTON-8. Sąsiednie ciała kształtują relay, ice-scatter, quarantine timing, salvage traffic i silence windows bez obietnicy dodatkowych playable moons.
 
 ## Scanner
 
-PL LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+Drabina księżyców: HECTON-8 to jeden claim, nie cały system Aegir.
 
 ## Terminal
 
-PL LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER: tylko publiczne role labels; dokładne orbital elements zostają table-owned data.
 
 ## Audio
 
-PL LOC HOLD: Other moons are not side quests. They are why the route has teeth.
+Inne księżyce nie są side quests. To przez nie trasa ma zęby.
 
 ## Field Note
 
-PL LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
+Zapis drabiny: mapy publiczne mogą pokazać skalę Aegir bez obiecywania playable moons.
 
 <!-- In-Game Wiki; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/pl_PL. -->

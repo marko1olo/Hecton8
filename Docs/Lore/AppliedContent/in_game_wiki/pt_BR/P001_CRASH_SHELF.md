@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Plataforma do impacto
 
-A bathy-drop foi construída para uma tarefa violenta: entrar na atmosfera, sobreviver ao cisalhamento da tempestade, atingir o oceano, descartar calor e manter um operador vivo tempo suficiente para começar o trabalho. Nunca foi uma nave. Era uma discussão descartável com a física. A Black Keel ainda está acima da lua em algum ponto do tráfego de Aegir, mas o núcleo de uplink está rachado e o hardware de subida desapareceu. Um resgate limpo exige energia, tempo, uma janela orbital e um transmissor capaz de atravessar clima, água e o ruído magnético de Aegir.
+A bathy-drop era uma ferramenta de descida, não uma nave de resgate. Foi construída para entrar no clima de Aegir, bater no oceano de HECTON-8, descartar calor e manter um trabalhador respirando até o primeiro abrigo ficar online. O impacto levou o pacote de subida. A carcaça restante é bruta, barulhenta e valiosa: estrutura de pressão, cacos cerâmicos, nervuras de bateria, cavidades secas, uplink meio morto. A plataforma ao redor é clara o bastante para parecer gentil, mas todo objeto útil também é prova. A Black Keel sabe que existe uma reivindicação viva. Ela ainda não decidiu quanto essa reivindicação vale.
 
 ## Scanner
 
-Destroços da cápsula bathy-drop. Estrutura de pressão intacta, pacote de subida destruído. Ela mantém você vivo, mas não leva você para casa.
+Destroços da bathy-drop. Estrutura de pressão intacta; pacote de subida perdido. A carcaça consegue segurar pressão e calor. Não consegue levantar você.
 
 ## Terminal
 
-PACOTE DE SUBIDA: ausente. NÚCLEO DE UPLINK: fratura detectada. CONTATO COM CARRIER: atrasado.
+BATHY-DROP BD-K8-113: IMPACTO SOBREVIVIDO. PACOTE DE SUBIDA: PERDIDO. NÚCLEO UPLINK: FRATURADO. BLACK KEEL: APENAS HANDSHAKE.
 
 ## Audio
 
-Handshake da Black Keel recebido. Integridade do pacote abaixo do limite de recuperação. Repetindo: limite não atingido.
+Handshake da Black Keel recebido. Operador vivo. Autoridade de recuperação sem resolução. Mantenha abrigo e aguarde uma janela usável.
 
 ## Field Note
 
-Se a carcaça ainda segura pressão, não desmonte tudo. Um abrigo ruim vale mais que um inventário limpo.
+Não desmonte a carcaça de descida até sobrar só a estrutura. A primeira base em HECTON-8 é qualquer coisa que mantenha a chuva fora, a pressão dentro e as ferramentas secas.
 
 <!-- In-Game Wiki; generated from P001_CRASH_SHELF/pt_BR. -->

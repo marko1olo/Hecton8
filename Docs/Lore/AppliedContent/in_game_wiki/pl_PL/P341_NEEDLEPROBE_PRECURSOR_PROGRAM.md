@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Needleprobe Precursor Program"
+title: "Program prekursorów Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Needleprobe Precursor Program
+# Program prekursorów Needleprobe
 
-PL LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Needleprobes przyniosły pierwszy ludzki roszczeniowy ślad do Aegir. Wąskie, osłonięte ładunki pomiarowe wysyłano przed załogami, by czytały grawitację, promieniowanie, widma oceanów, orbity księżyców i linie przekaźników. Ich opóźnione pakiety uczyniły HECTON-8 czytelnym dla inwestorów przed warunkami dla robotników.
 
 ## Scanner
 
-PL LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+Archiwum needleprobe: Aegir był celem w księgach długo przed tym, jak stał się miejscem pracy. Oczy maszyn dotarły do księżyców pierwsze.
 
 ## Terminal
 
-PL LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+ARCHIWUM RAN: łańcuch sond zwrócił paralaksę, promieniowanie, sygnatury oceaniczne, geometrię przekaźników i zaufanie pellet-lane. Klasyfikację załogi wstrzymano do stabilizacji trzeciego modelu ryzyka.
 
 ## Audio
 
-PL LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+Pierwsza ludzka rzecz w Aegir nie była człowiekiem. Była maszyną pytającą, czy ludzie będą tu opłacalni.
 
 ## Field Note
 
-PL LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Archiwa sond są dowodem trasy. Stara telemetria może być starsza od kolonii i nadal decydować, kto posiada wodę.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/pl_PL. -->

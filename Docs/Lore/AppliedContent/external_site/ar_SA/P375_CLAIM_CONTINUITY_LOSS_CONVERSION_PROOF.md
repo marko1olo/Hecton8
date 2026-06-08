@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Claim Continuity Loss Conversion Proof"
+title: "تحويل الخسارة لاستمرارية claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Claim Continuity Loss Conversion Proof
+# تحويل الخسارة لاستمرارية claim
 
-AR LOC HOLD: The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.
+الحلقة الأخيرة في كذبة Deep Reach ليست ملف تستر دراميا. إنها تحويل محاسبي يعرف كيف يبقى. يقبل ledger أن الناس اختفوا، والوحدات تضررت، والمسارات تعرضت للخطر، ثم ينقل كل حقيقة إلى فئة يستطيع نظام claim معالجتها. غياب العمال يصير خسارة غير قابلة للاسترداد. الدليل يصير مادة تحت custody. الحمولة الباقية تصير قيمة قابلة للاسترجاع. يبقى claim مستمرا، أي أن الملكية تستطيع النجاة بعد المستعمرة. هنا يتحول HECTON-8 من سجل حادث إلى آلة أخلاقية. اللاعب الذي يرفع ledger يمكنه كشف الموتى أو بيع الدليل أو دفنه أو إعادة توجيهه. الوثيقة ثمينة لأن الشركة دربت السوق مسبقا على تقييمها.
 
 ## Scanner
 
-AR LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
+ختم مكتب خسائر مستعاد. نجا ledger أفضل من العمال الذين أعاد تسميتهم.
 
 ## Terminal
 
-AR LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. حُولت workforce بيولوجية إلى خسارة غير قابلة للاسترداد. تبقى material وproof custody نشطة بانتظار receiver assignment.
 
 ## Audio
 
-AR LOC HOLD: This is where dead workers became a clean column.
+هنا صار الناس عمودا نظيفا.
 
 ## Field Note
 
-AR LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+ملاحظة مغير: يمكن للledger أن يتذكر الموتى وأن يصرفهم في الوقت نفسه.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/ar_SA. -->

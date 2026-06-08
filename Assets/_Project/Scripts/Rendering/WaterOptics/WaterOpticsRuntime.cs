@@ -119,10 +119,13 @@ namespace Hecton8.Rendering.WaterOptics
         private const uint TelemetryFlagProfileMissing = 1u << 4;
         private const uint TelemetryFlagEstimatedGpuBudgetBreach = 1u << 6;
         private const uint TelemetryFlagUploadUnchanged = 1u << 7;
+        private const uint TelemetryFlagCelestialLightMissing = 1u << 8;
+        private const uint TelemetryFlagCelestialLightFallback = 1u << 9;
         private const uint TelemetrySourceHash = 0x574F5054u;
         private const uint TelemetryDumpVersion = 1u;
         private const SystemID VaultOwnerSystemId = SystemID.Vfx;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13KRA.bin";
+        private const float DefaultOceanSurfaceWorldY = 14.02f;
 
         [SerializeField, Range(0f, 4f)] private float _absorptionR = 0.42f;
         [SerializeField, Range(0f, 4f)] private float _absorptionG = 0.105f;
@@ -138,7 +141,7 @@ namespace Hecton8.Rendering.WaterOptics
         [SerializeField, Range(0f, 8f)] private float _lightIntensity = 0.85f;
         [SerializeField, Range(-1f, 1f)] private float _qualityBias;
         [SerializeField, Range(1f, 12000f)] private float _maxDistanceMeters = 5000f;
-        [SerializeField] private float _oceanSurfaceWorldY;
+        [SerializeField] private float _oceanSurfaceWorldY = DefaultOceanSurfaceWorldY;
         [SerializeField] private bool _active = true;
         [SerializeField] private bool _loadProfilesOnEnable = true;
         [SerializeField, Range(1f, 250f)] private float _opaqueGpuBudgetMicroseconds = 80f;
@@ -155,6 +158,7 @@ namespace Hecton8.Rendering.WaterOptics
         private GraphicsBuffer _shaderParamsBufferB;
         private GraphicsBuffer _activeShaderParamsBuffer;
         private IPlayerRuntimeContext _playerRuntimeContext;
+        private ICelestialLightReadabilityReadModel _celestialLightReadModel;
         private VisualSyncUploadSystem _visualSyncSystem;
 #if UNITY_EDITOR
         private byte[] _editorCsvScratch;
@@ -173,6 +177,8 @@ namespace Hecton8.Rendering.WaterOptics
         private uint _lastTelemetryDumpHash;
         private bool _hasUploadedDto;
         private bool _supportsConstantBuffers;
+        private uint _lastCelestialLightFlags;
+        private uint _lastCelestialLightSequence;
         private WaterOpticsDTO _lastUploadedDto;
 
         private static readonly int GlobalWaterOpticsCBufferId = Shader.PropertyToID("_GlobalWaterOptics");
@@ -202,6 +208,7 @@ namespace Hecton8.Rendering.WaterOptics
             TryColdBootstrapVault(clearExisting: true);
             TryColdBootstrapShaderParamsBuffers();
             RefreshPlayerCameraBindingCold();
+            _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
         }
 
         private void OnEnable()
@@ -217,6 +224,7 @@ namespace Hecton8.Rendering.WaterOptics
             TryColdBootstrapVault(clearExisting: !_vaultBootstrapped);
             TryColdBootstrapShaderParamsBuffers();
             RefreshPlayerCameraBindingCold();
+            _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
 
             _visualSyncSystem = new VisualSyncUploadSystem(this); // COLD ALLOC: IDispatcherSystem[1] - 13KRA VisualSync constant-buffer upload bridge.
             _registered = GlobalRegistry.TryRegisterDispatcherSystem(this);
@@ -229,6 +237,7 @@ namespace Hecton8.Rendering.WaterOptics
             CacheGraphicsCapabilitiesCold();
             TryColdBootstrapVault(clearExisting: !_vaultBootstrapped);
             TryColdBootstrapShaderParamsBuffers();
+            _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
         }
 
         private void OnDisable()
@@ -254,7 +263,7 @@ namespace Hecton8.Rendering.WaterOptics
 
             if (_hotSwapRegistered)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _hotSwapRegistered = false;
             }
 
@@ -266,6 +275,7 @@ namespace Hecton8.Rendering.WaterOptics
             _hasUploadedDto = false;
             _lastUploadedDto = default;
             _playerRuntimeContext = null;
+            _celestialLightReadModel = null;
 #if UNITY_EDITOR
             _editorCsvScratch = null;
 #endif
@@ -294,6 +304,12 @@ namespace Hecton8.Rendering.WaterOptics
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+            {
+                _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
                 return;
             }
 
@@ -472,7 +488,7 @@ namespace Hecton8.Rendering.WaterOptics
             _lightG = Mathf.Max(0f, lightAndIntensity.y);
             _lightB = Mathf.Max(0f, lightAndIntensity.z);
             _lightIntensity = Mathf.Max(0f, lightAndIntensity.w);
-            _oceanSurfaceWorldY = oceanSurfaceWorldY;
+            _oceanSurfaceWorldY = SanitizeOceanSurfaceWorldY(oceanSurfaceWorldY);
             _maxDistanceMeters = Mathf.Max(1f, maxDistanceMeters);
             _qualityBias = Mathf.Clamp(qualityBias, -1f, 1f);
             _active = active;
@@ -772,10 +788,26 @@ namespace Hecton8.Rendering.WaterOptics
         private WaterOpticsDTO BuildMockOpticsParams(NativeArray<WaterOpticsTuningDTO>.ReadOnly tuning)
         {
             WaterOpticsTuningDTO tuningDto = tuning.IsCreated && tuning.Length > 0 ? tuning[0] : DefaultTuning();
-            return BuildWaterOpticsDto(in tuningDto, ResolveGlobalQualityWeight(), ResolveLocalSurfaceY());
+            CelestialLightReadabilitySnapshot light = ResolveCelestialLightReadability();
+            return BuildWaterOpticsDto(in tuningDto, ResolveGlobalQualityWeight(), ResolveLocalSurfaceY(), in light);
         }
 
-        private static WaterOpticsDTO BuildWaterOpticsDto(in WaterOpticsTuningDTO tuning, float globalQualityWeight, float localSurfaceY)
+        private CelestialLightReadabilitySnapshot ResolveCelestialLightReadability()
+        {
+            ICelestialLightReadabilityReadModel readModel = _celestialLightReadModel;
+            CelestialLightReadabilitySnapshot light = readModel != null
+                ? readModel.LightReadabilitySnapshot
+                : default;
+            _lastCelestialLightFlags = light.Flags;
+            _lastCelestialLightSequence = readModel != null ? readModel.LightReadabilitySequence : 0u;
+            return light;
+        }
+
+        private static WaterOpticsDTO BuildWaterOpticsDto(
+            in WaterOpticsTuningDTO tuning,
+            float globalQualityWeight,
+            float localSurfaceY,
+            in CelestialLightReadabilitySnapshot light)
         {
             float qualityBias = math.isfinite(tuning.MaxDistanceQualityFlagsProfile.y)
                 ? math.clamp(tuning.MaxDistanceQualityFlagsProfile.y, -1f, 1f)
@@ -786,10 +818,12 @@ namespace Hecton8.Rendering.WaterOptics
             WaterOpticsDTO dto = default;
             dto.AbsorptionCoefficientsRGB = SanitizeCoefficients(tuning.AbsorptionCoefficientsRGB, new float4(0.42f, 0.105f, 0.028f, 1f));
             dto.ScatteringCoefficientsRGB = SanitizeCoefficients(tuning.ScatteringCoefficientsRGB, new float4(0.035f, 0.09f, 0.16f, 0.42f));
-            dto.DirectionalLightColorAndIntensity = SanitizeLight(tuning.DirectionalLightColorAndIntensity);
+            dto.DirectionalLightColorAndIntensity = CelestialLightReadabilityUtility.ModulateWaterDirectionalLight(
+                SanitizeLight(tuning.DirectionalLightColorAndIntensity),
+                in light);
             dto.QualityAndDepthLimits = new float4(
                 quality,
-                math.isfinite(localSurfaceY) ? localSurfaceY : 0f,
+                math.isfinite(localSurfaceY) ? localSurfaceY : DefaultOceanSurfaceWorldY,
                 maxDistance,
                 active);
             return dto;
@@ -837,7 +871,8 @@ namespace Hecton8.Rendering.WaterOptics
                 DirectionalLightColorAndIntensity = new float4(_lightR, _lightG, _lightB, _lightIntensity),
                 MaxDistanceQualityFlagsProfile = new float4(_maxDistanceMeters, _qualityBias, _active ? 1f : 0f, 0f)
             };
-            WaterOpticsDTO dto = BuildWaterOpticsDto(in tuning, ResolveGlobalQualityWeight(), ResolveLocalSurfaceY());
+            CelestialLightReadabilitySnapshot light = ResolveCelestialLightReadability();
+            WaterOpticsDTO dto = BuildWaterOpticsDto(in tuning, ResolveGlobalQualityWeight(), ResolveLocalSurfaceY(), in light);
             if (!vault.TryAcquireWriteLock(in _paramsHandle, VaultOwnerSystemId, out NativeArray<WaterOpticsDTO> parameters))
                 return;
 
@@ -1012,23 +1047,32 @@ namespace Hecton8.Rendering.WaterOptics
 
         private float ResolveLocalSurfaceY()
         {
+            float surfaceWorldY = SanitizeOceanSurfaceWorldY(_oceanSurfaceWorldY);
             Camera camera = ResolveActiveCamera();
             if (camera == null)
-                return 0f;
+                return surfaceWorldY;
 
             double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             Vector3 cameraPosition = camera.transform.position;
             if (!math.isfinite(origin.y) ||
-                !math.isfinite(cameraPosition.y) ||
-                !math.isfinite(_oceanSurfaceWorldY))
+                !math.isfinite(cameraPosition.y))
             {
-                return 0f;
+                return surfaceWorldY;
             }
 
             double cameraAupY = origin.y + cameraPosition.y;
-            double surfaceAupY = origin.y + _oceanSurfaceWorldY;
+            double surfaceAupY = origin.y + surfaceWorldY;
             double local = surfaceAupY - cameraAupY;
-            return math.isfinite(local) ? (float)math.clamp(local, -100000d, 100000d) : 0f;
+            return math.isfinite(local) ? (float)math.clamp(local, -100000d, 100000d) : surfaceWorldY;
+        }
+
+        private static float SanitizeOceanSurfaceWorldY(float value)
+        {
+            return math.isfinite(value) &&
+                math.abs(value) > 0.0001f &&
+                math.abs(value) <= 1000f
+                ? value
+                : DefaultOceanSurfaceWorldY;
         }
 
         private void RefreshPlayerCameraBindingCold()
@@ -1091,6 +1135,11 @@ namespace Hecton8.Rendering.WaterOptics
             uint flags = ValidateParams(in dto) ? 0u : TelemetryFlagInvalidNumber;
             if (_loadedProfileCount == 0u)
                 flags |= TelemetryFlagProfileMissing;
+            if (_lastCelestialLightSequence == 0u ||
+                (_lastCelestialLightFlags & (uint)CelestialLightReadabilityFlags.Valid) == 0u)
+                flags |= TelemetryFlagCelestialLightMissing;
+            if ((_lastCelestialLightFlags & (uint)CelestialLightReadabilityFlags.Fallback) != 0u)
+                flags |= TelemetryFlagCelestialLightFallback;
             return flags;
         }
 

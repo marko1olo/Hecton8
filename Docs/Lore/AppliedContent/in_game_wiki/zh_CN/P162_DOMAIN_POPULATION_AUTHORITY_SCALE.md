@@ -9,32 +9,34 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Population And Authority Scale"
+title: "人口与权力尺度"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Population And Authority Scale
+# 人口与权力尺度
 
-ZH LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
+人口数字保持近似，因为玩家不需要 census opera。真正有用的问题更简单：谁能从远处作用于你？一个拥挤的核心域也许只以认证行触碰 HECTON-8。一个小 depot 也许更重要，因为它控制数据包 custody。一个死亡边境 shell 也许最重要，因为它拥有房间里的硬件。
+
+这就是玩家感受到的尺度。Sol 可以裁定某个物件属于谁。Centauri 可以让 Deep Reach 的旧语言显得体面。Barnard 可以把困住 Marauders 的工作正常化。Tau Ceti 可以把证据变成公共压力，对氧气太晚，对后果不晚。Luyten 能证明消息链。Aegir 则让签名变成压力、海水、锁死舱门和可计费质量。
 
 ## Scanner
 
-ZH LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+AUTHORITY CENSUS STUB // 人口只是背景。关键是哪个域能认证、公开、移动、承保、公证或埋葬一个 claim。
 
 ## Terminal
 
-ZH LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AUTHORITY SCALE // Sol 认证所有权。Centauri 赋予宪章合法性。Barnard 提供死亡 claim 劳工。Tau Ceti 在延迟后公开证据。Luyten 证明 custody。Aegir 执行肮脏的实体 claim。
 
 ## Audio
 
-ZH LOC HOLD: The largest domain is not the nearest hand.
+最大的域不是最近的手，而是能熬过延迟的印章。
 
 ## Field Note
 
-ZH LOC HOLD: Do not turn the setting into census space opera.
+除非人口细节会改变身体、航路、claim 或证据链上的压力，否则不要添加。
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/zh_CN. -->

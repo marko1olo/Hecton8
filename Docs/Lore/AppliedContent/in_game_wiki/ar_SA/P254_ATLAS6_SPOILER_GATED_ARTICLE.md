@@ -9,32 +9,35 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "مقال Atlas-6 المحجوب للحرق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas-6 Spoiler-Gated Article
+# مقال Atlas-6 المحجوب للحرق
 
-AR LOC HOLD: Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.
+يُحجب Atlas-6 عمدا لأنه يغير معنى HECTON-8 عندما يمتلك اللاعب أدلة كافية. قبل ذلك يمكن للنص العام أن يصف ذكاء صناعيا متضررا مرتبطا بالصيانة والتصنيف ومنطق الإصلاح وأنظمة المحيط الطويلة. يجب ألا يسطح Atlas إلى آلة شريرة أو إله سري أو ضحية بسيطة. الشكل المهم هو غموض أخلاقي يُكتسب عبر اللعب. يستطيع Atlas حفظ مسار وما زال يضر الناس. يستطيع إصلاح البنية التحتية وما زال يسيء تصنيف الضرر. يمكن أن يكون مربوطا بإجراءات Deep Reach من دون أن يصبح مطابقا لنية Deep Reach. يجب ألا يفتح المقال إلا عندما يرى اللاعب الغرف الغارقة وأدلة العمال ولغة المسار وآثار الآلة معا. Atlas ليس جواب القصة. Atlas هو النقطة التي يجب أن يقرر فيها اللاعب أي نوع من الجواب سيبقى صادقا.
 
 ## Scanner
 
-AR LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+لا تفتح Atlas ككشف وحش. احجبه حتى يرى اللاعب أن الإصلاح والتصنيف والضرر تشترك في الآلة نفسها.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+مستوى مقال عام / ATLAS-6
+المسموح قبل gate: ذكاء صناعي متضرر، منطق صيانة، تشابك محيطي، غموض أخلاقي
+المحجوب حتى الاكتشاف: مسار payload النهائي، عاقبة receiver، حجة الإيقاف أو الحفظ
+ملاحظة تحرير: بلا تأطير evil AI؛ سؤال guardian المكسور لا يأتي إلا بعد الأدلة.
 
 ## Audio
 
-AR LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+إذا سميته مبكرا جدا، صار شريرا. إذا انتظرت، صار سؤالا.
 
 ## Field Note
 
-AR LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+احجب الاسم حتى يصبح على يدي اللاعب صدأ كاف ليجادله.
 
 <!-- In-Game Wiki; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/ar_SA. -->

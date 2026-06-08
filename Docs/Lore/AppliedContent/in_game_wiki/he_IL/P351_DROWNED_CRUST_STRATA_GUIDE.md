@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Drowned Crust Strata Guide"
+title: "מדריך שכבות הקרום הטבוע"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Drowned Crust Strata Guide
+# מדריך שכבות הקרום הטבוע
 
-HE LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.
+הקרום הטבוע הוא ההיסטוריה הקריאה של HECTON-8: חיתוכי מושבה ישנים, מדפי קריסת קרח, תפרי pressure-glass ורצועות מינרלים מראים היכן נתיב יחזיק, ייגזר או ייכשל ממגע.
 
 ## Scanner
 
-HE LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+שכבות מוצפות חושפות סימני חיתוך ישנים, תפרי pressure-glass ורצועות מינרלים שאינן קורסות פעמיים לאותו כיוון.
 
 ## Terminal
 
-HE LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: הקרום הטבוע של HECTON-8 הוא סלע התיישבות מוערם, זיכרון קרח שקרס, pressure glass ו-extraction scars תחת brine נע. קווי שבר חשובים ממשטחים נקיים.
 
 ## Audio
 
-HE LOC HOLD: The map is not terrain. It is a stack of drownings.
+המפה אינה שטח. היא ערימת טביעות.
 
 ## Field Note
 
-HE LOC HOLD: Use for geology codex and procedural world labels.
+אם רצועה מצלצלת חלול, אל תסמוך על הפנים השטוחות. סמן את השבר, קח את הדגימה, השאר את הקיר מחזיק.
 
 <!-- In-Game Wiki; generated from P351_DROWNED_CRUST_STRATA_GUIDE/he_IL. -->

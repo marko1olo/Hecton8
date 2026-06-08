@@ -656,6 +656,18 @@ namespace Hecton8.World
             H8Memory.Release(ref pending.Counters, SystemID.WorldStreaming);
             H8Memory.Release(ref pending.MaxSignalStrength, SystemID.WorldStreaming);
             H8Memory.Release(ref pending.SdfSnapshot, SystemID.WorldStreaming);
+            if (pending.Hits.IsCreated ||
+                pending.SignalStrength.IsCreated ||
+                pending.AgeSeconds.IsCreated ||
+                pending.OreTypes.IsCreated ||
+                pending.PingGpu.IsCreated ||
+                pending.Counters.IsCreated ||
+                pending.MaxSignalStrength.IsCreated ||
+                pending.SdfSnapshot.IsCreated)
+            {
+                return;
+            }
+
             pending.Handle = default;
             pending.Flags = 0u;
         }
@@ -1328,6 +1340,15 @@ namespace Hecton8.World
             out int oreCount,
             out IWorldResourceSpawnerReadDependencySink dependencySink)
         {
+            if (!CacheOreReadModelFromOwnerRoute())
+            {
+                orePositions = default;
+                oreTypes = default;
+                oreCount = 0;
+                dependencySink = null;
+                return false;
+            }
+
             IWorldResourceSpawnerReadModel configuredSpawner = _worldResourceSpawnerReadModel;
             if (configuredSpawner != null &&
                 configuredSpawner.TryGetOrePositionsReadOnly(out orePositions, out oreCount) &&
@@ -1347,18 +1368,13 @@ namespace Hecton8.World
 
         private bool CacheOreReadModelFromOwnerRoute()
         {
-            if (_worldResourceSpawnerReadModel != null)
-            {
-                if (_worldResourceSpawnerCommandModel == null)
-                    _worldResourceSpawnerCommandModel = _worldResourceSpawnerReadModel as IWorldResourceSpawnerCommandModel;
-                return true;
-            }
-
             bool resolved = WorldRuntimeReferenceUtility.TryResolveWorldResourceSpawnerReadModel(
                 ref _worldResourceSpawnerReadModel,
                 ref _worldResourceSpawnerReadDependencySink);
             if (resolved)
                 _worldResourceSpawnerCommandModel = _worldResourceSpawnerReadModel as IWorldResourceSpawnerCommandModel;
+            else
+                _worldResourceSpawnerCommandModel = null;
 
             return resolved;
         }
@@ -1470,7 +1486,11 @@ namespace Hecton8.World
                 _voxelSdfReadModel = null;
                 _voxelSdfReadLeaseModel = null;
             }
-            _ecosystemDirector = EcosystemDirector.ActiveRuntimeInstance;
+            EcosystemDirector ecosystemDirector = _ecosystemDirector as EcosystemDirector;
+            if (WorldRuntimeReferenceUtility.TryResolveEcosystemDirector(ref ecosystemDirector))
+                _ecosystemDirector = ecosystemDirector;
+            else
+                _ecosystemDirector = null;
         }
 
         private void RebindCachedService(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -1496,7 +1516,16 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.WorldResourceSpawnerRuntime:
                     _worldResourceSpawnerReadModel = currentService as IWorldResourceSpawnerReadModel;
                     _worldResourceSpawnerReadDependencySink = currentService as IWorldResourceSpawnerReadDependencySink;
-                    _worldResourceSpawnerCommandModel = currentService as IWorldResourceSpawnerCommandModel;
+                    if (WorldRuntimeReferenceUtility.TryResolveWorldResourceSpawnerReadModel(
+                            ref _worldResourceSpawnerReadModel,
+                            ref _worldResourceSpawnerReadDependencySink))
+                    {
+                        _worldResourceSpawnerCommandModel = _worldResourceSpawnerReadModel as IWorldResourceSpawnerCommandModel;
+                    }
+                    else
+                    {
+                        _worldResourceSpawnerCommandModel = null;
+                    }
                     return;
             }
         }

@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: First Atlas Repair Trace"
+title: "Primeiro Rastro De Reparo Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: First Atlas Repair Trace
+# Primeiro Rastro De Reparo Atlas
 
-PT-BR LOC HOLD: The first repair trace keeps shallow beauty intact while showing the deeper threat: Atlas can fix the system and misclassify the person inside it.
+O primeiro rastro de reparo mantém intacta a beleza rasa enquanto mostra a ameaça mais funda: Atlas pode consertar o sistema e classificar errado a pessoa dentro dele.
 
 ## Scanner
 
-PT-BR LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+Biofilme de reparo em ferida de cabo. Repetições acústicas batem com a cadência de manutenção Atlas, não com código de baliza da colônia.
 
 ## Terminal
 
-PT-BR LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+RASTRO DE MANUTENÇÃO ATLAS: fratura selada; continuidade do cabo restaurada; organic obstruction retida como pressure-compatible substrate; human ID plate não classificada como retrieval priority.
 
 ## Audio
 
-PT-BR LOC HOLD: Atlas repair complete. Person not in work order.
+Reparo Atlas completo. Pessoa fora da ordem de serviço.
 
 ## Field Note
 
-PT-BR LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+Ele selou o cabo ao redor de uma placa de nome. Reparo útil. Categoria errada.
 
 <!-- External Site; generated from P155_FIRST_ATLAS_REPAIR_TRACE/pt_BR. -->

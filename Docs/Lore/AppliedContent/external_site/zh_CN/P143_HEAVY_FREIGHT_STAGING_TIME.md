@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+spoiler_tier: 1
+title: "重型货运准备时间"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# 重型货运准备时间
 
-CN LOC HOLD: Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships.
-
-## Scanner
-
-CN LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
-
-## Terminal
-
-CN LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
-
-## Audio
-
-CN LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
-
-## Field Note
-
-CN LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+重型货运把时间藏在基础设施里。Atlas hardware、seed cargo、防护库存和braking parts可以提前抵达，因为它们在公开殖民话语赶上之前很多年就已发射。这并不会让紧急救援变得容易。准备好的航路能移动质量，是因为depot、beam windows、pellet streams和catch stages已经在等待。灾难航路没有那种耐心。HECTON-8充满按旧计划抵达的机器，以及按新时钟需要帮助的人。
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/zh_CN. -->

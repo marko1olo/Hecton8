@@ -9,32 +9,34 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Domain Distance Scale"
+title: "Skala Jarak Domain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Domain Distance Scale
+# Skala Jarak Domain
 
-ID LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.
+Skala domain adalah peta tekanan, bukan peta wisata. Sol Core masih bisa mengesahkan kepemilikan dari jauh. Centauri bisa membuat piagam tua terdengar bersih. Barnard bisa mengirim cutter dan Marauder berutang untuk pekerjaan kotor. Tau Ceti bisa mempublikasikan bukti setelah jeda. Luyten bisa membuktikan custody paket. Ran/Aegir adalah tempat semua kuasa jauh itu menjadi air di atas helm.
+
+Itulah sebabnya HECTON-8 terasa sendirian tanpa perlu ruang kosong. Sebuah pesan bisa menyeberangi rute dan tetap tiba setelah oksigen, pasang, suhu lambung, dan recovery window Black Keel selesai memutuskan. Jarak tidak menghapus hukum. Jarak membuat hukum lebih dingin daripada penyelamatan.
 
 ## Scanner
 
-ID LOC HOLD: The domain map uses distance bands, not romantic shortcuts.
+DOMAIN DISTANCE PLATE // Sol, Centauri, Barnard, Tau Ceti, Luyten, dan Ran/Aegir bukan latar. Mereka adalah jeda, custody, massa, bukti, dan biaya penyelamatan.
 
 ## Terminal
 
-ID LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.
+DOMAIN SCALE // Ran/Aegir tetap target kelas kira-kira 10,5 tahun cahaya dari Sol sampai tabel efemeris final mengganti band itu. Tidak ada vektor bantuan FTL. Tidak ada jawaban instan. Otoritas rute tiba sebelum bantuan manusia.
 
 ## Audio
 
-ID LOC HOLD: Ten light-years is a number. The bill is the story.
+Sepuluh tahun cahaya bukan bagian tersulit. Yang tersulit adalah tahu siapa yang membayar massa pulang.
 
 ## Field Note
 
-ID LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.
+Jika tabel mulai terdengar megah, potong. Pemain butuh biaya jarak, bukan poster bintang.
 
 <!-- In-Game Wiki; generated from P161_DOMAIN_DISTANCE_SCALE/id_ID. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 埃吉尔星系：九颗卫星与一座坟墓
 
 > **来源：** 公共档案，边境注册局，巴纳德船坞。编纂者：J·埃尔金-托雷斯，高级档案员。最后修订：2188年。准入级别：公开 / 未删节。  

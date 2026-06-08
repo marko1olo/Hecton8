@@ -342,6 +342,21 @@ namespace Hecton8.Core
 
         internal static InputDispatcher ActiveRuntimeInstance;
 
+        internal static bool TryResolveActiveRuntime(ref InputDispatcher target)
+        {
+            InputDispatcher active = ActiveRuntimeInstance;
+            if (active == null || !active.isActiveAndEnabled)
+            {
+                target = null;
+                return false;
+            }
+
+            if (!ReferenceEquals(target, active))
+                target = active;
+
+            return true;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {

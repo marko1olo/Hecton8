@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "המרשם הציבורי של Tau Ceti"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# המרשם הציבורי של Tau Ceti
 
-HE LOC HOLD: The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.
+Tau Ceti League נותנת למשפט הציבורי של עידן Aegir משקל נגד אמין. היא חשובה למשמורת ראיות וללחץ חיצוני נגד Deep Reach, אבל המרחק מונע ממנה למשוך בזמן אמת צולל הלכוד מתחת ל-HECTON-8.
 
 ## Scanner
 
-HE LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+שבר מרשם אזרחי של Tau Ceti. פומבי מספיק כדי להפחיד את Deep Reach, מאוחר מדי כדי להציל את המושבה.
 
 ## Terminal
 
-HE LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+מראת מרשם TAU CETI: ראיות חתומות קבילות לאחר אימות ממסר. חלון הביקורת הציבורית הצפוי עולה על מרווח ההישרדות המקומי ב-31.4 שנים.
 
 ## Audio
 
-HE LOC HOLD: A court can be honest and useless when light itself is late.
+בית משפט יכול להיות ישר וחסר תועלת כשהאור עצמו מאחר.
 
 ## Field Note
 
-HE LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+פיקוח יכול להגיע נקי ומאוחר. מאוחר עדיין מת.
 
 <!-- In-Game Wiki; generated from P074_TAU_CETI_PUBLIC_LEDGER/he_IL. -->

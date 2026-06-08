@@ -1,4 +1,5 @@
-﻿# LE PROGRAMME SEMENCE ET LA DIRECTIVE ATLAS
+<!-- localization_status: source_draft_pending_native_review -->
+# LE PROGRAMME SEMENCE ET LA DIRECTIVE ATLAS
 
 > **Source:** Division d'Ingénierie des Systèmes de Deep Reach, Registre de Logique des Directives.
 > **Speaker:** Directeur des Opérations Autonomes.

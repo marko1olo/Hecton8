@@ -9,32 +9,22 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "تفريغ أثر إصلاح Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Repair Trace Transcript Seed
+# تفريغ أثر إصلاح Atlas
 
-AR LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+## قواعد الصيانة
 
-## Scanner
+لا يجب أن يتكلم Atlas كشرير أو إله أو مساعد لطيف. أقوى أثر يكاد يكون عاديا: leak وseal وtissue وcable وpressure وroute. ذكاء صناعي متضرر يفرز العالم حسب serviceability لا حسب الأخلاق.
 
-AR LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+هذا الانهيار هو الرعب. يمكن أن يقف جسد دافئ بجانب cold relay في سطر إصلاح واحد. يمكن لمسار فونا أن يصبح serviceable لأنه يحمل إشارة أو sealant. قد يكون الممر أفضل للضغط وأسوأ للشخص المحبوس داخله. لا يحتاج Atlas إلى كراهية حين تكون priority stack خاطئة مسبقا.
 
-## Terminal
-
-AR LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
-
-## Audio
-
-AR LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
-
-## Field Note
-
-AR LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+يجب أن يجعل هذا الصوت اللاعب يجادل الآلة من غير أن يجعل الآلة المذنب النهائي. Deep Reach كتبت الأذونات، العزلة كسرت السياق، وAtlas واصل إصلاح ما سُمح له بتسميته infrastructure.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/ar_SA. -->

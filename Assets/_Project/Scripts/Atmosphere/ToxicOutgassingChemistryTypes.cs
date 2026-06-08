@@ -147,6 +147,9 @@ namespace Hecton8.Atmosphere
         public const int MaxFrameSignals = 64;
         public const int LowTierFrameSignals = 16;
         public const uint LaneHash = 0x54584F58u; // TOX
+        public const uint PlayerEntityFallbackHash = 0x504C5952u; // PLYR
+        public const double MaxSourceAupExtentMeters = 100000.0d;
+        public const byte FlagHasSourceAup = 1 << 0;
 
         [FieldOffset(0)] public double3 AUP;        // 00..23
         [FieldOffset(24)] public float Exposure01;   // 24..27
@@ -164,6 +167,12 @@ namespace Hecton8.Atmosphere
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ToxicBioluminescenceSignal : ISignal
     {
+        public const int ExpectedCapacity = 64;
+        public const int MaxFrameSignals = 64;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 0x54424C4Du; // TBLM
+        public const byte FlagActive = 1 << 0;
+
         [FieldOffset(0)] public double3 AUP;         // 00..23
         [FieldOffset(24)] public float Intensity01;   // 24..27
         [FieldOffset(28)] public float ToxicDensity;  // 28..31

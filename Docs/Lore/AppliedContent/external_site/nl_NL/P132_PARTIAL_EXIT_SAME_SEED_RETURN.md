@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "Gedeeltelijke uitgang: terugkeer naar dezelfde seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# Gedeeltelijke uitgang: terugkeer naar dezelfde seed
 
-NL LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed.
+De gedeeltelijke uitgang beschermt de lange campagne tegen valse afsluiting. Black Keel kan de operator voor een beperkt venster optillen, het pak repareren, teruggevonden pakketten loggen en de pauze als welzijn verkopen. De wereld beneden rolt niet over naar een schonere versie.
 
-## Scanner
-
-NL LOC HOLD: Extraction possible. Closure not included.
-
-## Terminal
-
-NL LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
-
-## Audio
-
-NL LOC HOLD: You left the pressure. You did not leave the contract.
-
-## Field Note
-
-NL LOC HOLD: Let the player breathe, then make the same ocean still be there.
+Wanneer de speler terugkeert, is dezelfde seed er nog. De pekeltrap heeft dezelfde val, hetzelfde relais dezelfde slechte hoek, en hetzelfde bewijs blijft gevaarlijk. Dit einde geeft verlichting zonder absolutie: lucht in de longen, meer schuld in het contract en geen uitwissing van wat werd gevonden.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/nl_NL. -->

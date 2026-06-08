@@ -7,34 +7,34 @@ poi_tags: poi.tide_physics_archive;poi.cryosphere_stress_record
 biome_tags: biome.tide_pump;biome.drowned_admin
 locale: ko_KR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "대조석 물리 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# 대조석 물리 기록
 
-KO LOC HOLD: The Great Tide Physics Record keeps the catastrophe honest. HECTON-8 was vulnerable to tide resonance, ice collapse, storm surge and heat discharge. Deep Reach's guilt is visible in margins, evacuation capacity and decision priority, not in a fake magic cause.
+대조석 물리 기록은 재난을 정직하게 붙잡는다. HECTON-8은 조석 공명, 얼음 붕괴, 폭풍 해일, 산업 열 방출에 취약했다. Deep Reach의 죄는 가짜 마법 원인이 아니라 margin, evacuation capacity, decision priority에 보인다.
 
 ## Scanner
 
-KO LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
+홍수 모델은 온전하다. 바다에는 악당이 필요 없었다. 나쁜 여유율이면 충분했다.
 
 ## Terminal
 
-KO LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
+GREAT TIDE MODEL: cryosphere shear, 공명 ocean lift, 인공 열 방출, 폭풍 적층이 안전 evacuation envelope를 3.7배 초과. 독립 ascent reserve: 미지원.
 
 ## Audio
 
-KO LOC HOLD: The report was right. That is why they buried it.
+보고서는 맞았다. 그래서 묻힌 것이다.
 
 ## Field Note
 
-KO LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+부드럽게 말하지 마라. 실제 물리가 사람을 죽였고, Deep Reach는 그 물리에 희생자를 배정했다.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/ko_KR. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Dette de fenêtre-tonne"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Dette de fenêtre-tonne
 
-FR LOC HOLD: Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.
+La dette de fenêtre-tonne est le moment où la physique devient finance. Black Keel n'a pas une marge de levage infinie, ni du carburant de transit infini, ni un volume de quarantaine propre sans limite. Chaque kilogramme remonté de HECTON-8 rivalise avec chaque kilogramme nécessaire pour garder l'opérateur en vie. Le compteur de dette rend le carrier cruel sans briser la science dure : le secours est possible, mais le budget de route demande toujours ce qui mérite de la masse.
 
 ## Scanner
 
-FR LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
+Compteur de fenêtre de masse. Chaque kilogramme d'aide a un prix de route.
 
 ## Terminal
 
-FR LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER : marge de recovery burn réduite. Masse d'extraction opérateur en conflit avec payload scellé, réserve ballast, dette oxygène et custody d'échantillon de quarantaine. Override manuel exige priorité payée ou preuve de danger.
 
 ## Audio
 
-FR LOC HOLD: You owe the orbit before you owe the money.
+Le vaisseau peut porter toi ou ce que tu as trouvé. Il préfère un nombre.
 
 ## Field Note
 
-FR LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Oxygène, ballast, preuve, payload, corps : le carrier les pèse avant de peser la pitié.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/fr_FR. -->

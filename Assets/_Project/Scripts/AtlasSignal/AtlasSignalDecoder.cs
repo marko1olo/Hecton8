@@ -72,6 +72,7 @@ namespace Hecton8.AtlasSignal
         private bool _serviceRegistered;
         private bool _atlasSignalEventRegistered;
         private bool _hotSwapRegistered;
+        private bool _runtimeOwnerAborted;
         private IAtlasSignalReadModel _atlasSignal;
         private IFirstHourReadModel _firstHourDirector;
         private bool _decodeWindowOpen;
@@ -125,6 +126,9 @@ namespace Hecton8.AtlasSignal
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
             TryUnregisterAtlasSignalEvents();
@@ -135,6 +139,9 @@ namespace Hecton8.AtlasSignal
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
             TryUnregisterAtlasSignalEvents();
@@ -149,6 +156,7 @@ namespace Hecton8.AtlasSignal
 
         public void SlowTick()
         {
+            if (_runtimeOwnerAborted) return;
             if (_fullyDecoded) return;
 
             IAtlasSignalReadModel sys = _atlasSignal;
@@ -195,7 +203,7 @@ namespace Hecton8.AtlasSignal
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_runtimeOwnerAborted || _registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
@@ -215,6 +223,9 @@ namespace Hecton8.AtlasSignal
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.AtlasSignalRuntime)
                 _atlasSignal = currentService as IAtlasSignalReadModel;
             else if (serviceSlot == GlobalRegistryServiceSlot.FirstHourRuntime)
@@ -229,6 +240,9 @@ namespace Hecton8.AtlasSignal
 
         private void CacheAtlasSignalCold()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_atlasSignal == null)
                 _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
 
@@ -238,7 +252,7 @@ namespace Hecton8.AtlasSignal
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapRegistered || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _hotSwapRegistered || !Application.isPlaying)
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -255,18 +269,33 @@ namespace Hecton8.AtlasSignal
 
         private bool TryRegisterToGlobalRegistry()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_serviceRegistered || !Application.isPlaying)
                 return true;
 
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             AtlasSignalDecoder registeredRuntime = GlobalRegistry.AtlasSignalDecoder;
-            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
+            if (IsAtlasSignalDecoderRuntimeUsable(registeredRuntime))
             {
-                Destroy(gameObject);
+                AbortDuplicateRuntimeOwner();
                 return false;
             }
 
+            if (!ReferenceEquals(registeredRuntime, null) && !ReferenceEquals(registeredRuntime, this))
+                GlobalRegistry.UnregisterAtlasSignalDecoderRuntime(registeredRuntime);
+
             GlobalRegistry.RegisterAtlasSignalDecoderRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AtlasSignalDecoder, this);
+            if (!_serviceRegistered)
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
+
             return _serviceRegistered;
         }
 
@@ -281,7 +310,7 @@ namespace Hecton8.AtlasSignal
 
         private void TryRegisterAtlasSignalEvents()
         {
-            if (_atlasSignalEventRegistered)
+            if (_runtimeOwnerAborted || _atlasSignalEventRegistered)
                 return;
 
             AtlasSignalEvents.Register(this);
@@ -299,12 +328,18 @@ namespace Hecton8.AtlasSignal
 
         public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if ((AtlasSignalEventType)payload.EventType == AtlasSignalEventType.Pulse)
                 HandleSignalPulse(payload.SignalStrength);
         }
 
         private void HandleSignalPulse(float intensity)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             // Signal pulse accelerates decode; check phase immediately.
             if (_fullyDecoded) return;
 
@@ -330,6 +365,9 @@ namespace Hecton8.AtlasSignal
 
         private void TrySynchronizePhaseFromSignal()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_fullyDecoded)
                 return;
 
@@ -345,7 +383,7 @@ namespace Hecton8.AtlasSignal
 
         private void SynchronizePhaseFromSignal(IAtlasSignalReadModel sys)
         {
-            if (sys == null || _fullyDecoded)
+            if (_runtimeOwnerAborted || sys == null || _fullyDecoded)
                 return;
 
             int synchronizedPhase = math.min(MaximumSynchronizedPhase, CalculatePhase(sys.CurrentAtlasSignalStrength01));
@@ -356,7 +394,7 @@ namespace Hecton8.AtlasSignal
 
         private bool CanDecodeSignal(IAtlasSignalReadModel sys)
         {
-            if (sys == null || sys.CurrentAtlasSignalRevealStage <= 0)
+            if (_runtimeOwnerAborted || sys == null || sys.CurrentAtlasSignalRevealStage <= 0)
                 return false;
 
             IFirstHourReadModel firstHourDirector = _firstHourDirector;
@@ -368,11 +406,17 @@ namespace Hecton8.AtlasSignal
 
         internal bool TryAdvanceDecode(float dt)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             return _decodeWindowOpen && AdvanceDecodeProgress(dt);
         }
 
         public float SubmitWaveMatch(float carrierFrequencyHz, float carrierPhase01)
         {
+            if (_runtimeOwnerAborted)
+                return 0f;
+
             _submittedCarrierFrequencyHz = SanitizeFrequencyHz(carrierFrequencyHz);
             _submittedCarrierPhase01 = SanitizePhase01(carrierPhase01);
             _waveMatch01 = SignalBeaconMath.EvaluateSineWaveMatch(
@@ -389,7 +433,7 @@ namespace Hecton8.AtlasSignal
 
         private bool AdvanceDecodeProgress(float dt)
         {
-            if (_fullyDecoded || !_decodeWindowOpen)
+            if (_runtimeOwnerAborted || _fullyDecoded || !_decodeWindowOpen)
                 return false;
 
             float unlockThreshold01 = ResolveWaveMatchUnlockThreshold01();
@@ -410,7 +454,7 @@ namespace Hecton8.AtlasSignal
 
         private void CompleteDecode()
         {
-            if (_fullyDecoded)
+            if (_runtimeOwnerAborted || _fullyDecoded)
                 return;
 
             _fullyDecoded = true;
@@ -450,6 +494,49 @@ namespace Hecton8.AtlasSignal
         private static float SanitizePositive(float value, float fallback)
         {
             return math.isfinite(value) ? math.max(0f, value) : math.max(0f, fallback);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            AtlasSignalDecoder registeredRuntime = GlobalRegistry.AtlasSignalDecoder;
+            if (ReferenceEquals(registeredRuntime, this))
+                return false;
+
+            if (IsAtlasSignalDecoderRuntimeUsable(registeredRuntime))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            if (!ReferenceEquals(registeredRuntime, null))
+                GlobalRegistry.UnregisterAtlasSignalDecoderRuntime(registeredRuntime);
+
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            TryUnregister();
+            TryUnregisterAtlasSignalEvents();
+            TryUnregisterHotSwapListener();
+            _runtimeOwnerAborted = true;
+            _registered = false;
+            _serviceRegistered = false;
+            _atlasSignalEventRegistered = false;
+            _hotSwapRegistered = false;
+            _atlasSignal = null;
+            _firstHourDirector = null;
+            enabled = false;
+            Destroy(gameObject);
+        }
+
+        private static bool IsAtlasSignalDecoderRuntimeUsable(AtlasSignalDecoder decoder)
+        {
+            return !ReferenceEquals(decoder, null) &&
+                   decoder != null &&
+                   decoder._serviceRegistered &&
+                   decoder.isActiveAndEnabled &&
+                   !decoder._runtimeOwnerAborted;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]

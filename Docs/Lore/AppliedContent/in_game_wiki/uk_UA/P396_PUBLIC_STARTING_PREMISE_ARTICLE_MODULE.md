@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Marauder Starting Claim"
+title: "Стартова претензія Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Marauder Starting Claim
+# Стартова претензія Marauder
 
-UK LOC HOLD: The opening record frames the player as a professional under pressure, not a tourist and not a family avenger. Old Deep Reach history matters because the procedures on HECTON-8 are familiar before they become evidence.
+Початковий запис ставить гравця як підготовленого оператора під тиском боргу. Це не турист, не обраний спадкоємець і не родинний месник; він розуміє насоси, ущільнення, маршрутні форми й скорочення Deep Reach ще до того, як уламки почнуть суперечити цим формам. Перша година лишається практичною: запечатати bathydrop, повернути тиск, прочитати пошкоджені машини, забрати вантаж і вирішити, які офіційні рядки вже брешуть.
 
 ## Scanner
 
-UK LOC HOLD: Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+Публічний запис claim. Початковий маршрут показує боргового Marauder з минулим Deep Reach field-systems, пошкодженим bathydrop і вікном відновлення Black Keel над P-63.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+ВУЗОЛ ПУБЛІЧНОГО АРХІВУ // СТАРТОВА ПРЕТЕНЗІЯ. Досьє підрядника: колишній спеціаліст Deep Reach field-systems. Поточний статус: Marauder під lien. Маршрут: recovery claim Black Keel, спуск на shelf P-63, повернення доказу й вантажу до закриття custody window.
 
 ## Audio
 
-UK LOC HOLD: You are returning to paperwork you know too well.
+Ти не оглядаєш HECTON-8. Ти повертаєшся до паперів, які знаєш надто добре.
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: the contract knows your past. That does not make it honest.
+Нотатка Marauder: контракт знає твоє минуле. Від цього він не стає чесним.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/uk_UA. -->

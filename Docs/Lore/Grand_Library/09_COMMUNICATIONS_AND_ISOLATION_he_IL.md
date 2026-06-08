@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # הפסקת תקשורת והדממה מסלולית
 
 > **מקור:** מדריך תפעול של ספינת העזר המסלולית *Black Keel*, סעיף 4.

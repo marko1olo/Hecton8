@@ -3,38 +3,38 @@ packet_id: P053_MARAUDER_GRAFFITI_MASKS
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
 unlock_id: unlock.first_marauder_graffiti_masks
-poi_tags: poi.graffiti_mask;poi.pressure_arrow
-biome_tags: biome.scrap_canyon;biome.marauder_route
+poi_tags: poi.graffiti_mask;poi.scavenger_route
+biome_tags: biome.service_corridor;biome.salvage_route
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Graffiti Masks"
+title: "掠夺者涂鸦伪装"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Marauder Graffiti Masks
+# 掠夺者涂鸦伪装
 
-CN LOC HOLD: Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.
+掠夺者标记是现场导航、社会警告和反监控语言。它们粗糙，是因为必须经受水、恐惧、坏灯和公司摄像头。玩家会学习哪些标记表示噪音、压力、巡逻风险、隐藏储藏和已经不符合官方地图的路线。
 
 ## Scanner
 
-CN LOC HOLD: The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
+油漆代码：斜线数量表示噪音纪律，黑环表示载体ping危险，断箭表示压力漂移。
 
 ## Terminal
 
-CN LOC HOLD: MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
+路线伪装索引：三道斜线表示只能用手势。黑环表示载体扫描。断箭表示自上次标记后压力已变化。
 
 ## Audio
 
-CN LOC HOLD: They made a language that looks like vandalism to the company.
+如果墙看起来愤怒，就把它当作天气来读。
 
 ## Field Note
 
-CN LOC HOLD: Bad paint. Good map.
+掠夺者写给那些不能信任无线电、也买不起地图的人。
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/zh_CN. -->

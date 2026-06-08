@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Долг тонна-окна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Долг тонна-окна
 
-Стартовый долг перед Black Keel считается как lien на 4.8 tonne-window: масса, тайминг и риск carrier, а не просто валюта. Это объясняет, почему спасение, доказательства и образцы нельзя воображать отдельными задачами. Каждый килограмм, который выходит с HECTON-8, тратит одно и то же окно.
+Долг тонна-окна — точка, где физика становится финансами. У Black Keel нет бесконечного запаса подъема, транзитного топлива или чистого карантинного объема. Каждый килограмм, поднятый с HECTON-8, конкурирует с каждым килограммом, нужным, чтобы оператор остался жив. Счетчик долга делает carrier жестоким, не ломая hard science: спасение возможно, но бюджет маршрута снова спрашивает, что заслуживает массы.
 
 ## Scanner
 
-Debt meter. 4.8 tonne-window до кислорода, образцов и доказательств.
+Счетчик массового окна. У каждого килограмма помощи есть цена маршрута.
 
 ## Terminal
 
-OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER: запас recovery burn сужен. Масса извлечения оператора конфликтует с запечатанным payload, балластным резервом, кислородным долгом и custody карантинного образца. Ручной override требует оплаченного приоритета или доказательства опасности.
 
 ## Audio
 
-Ты должен орбите раньше, чем деньгам.
+Корабль может унести тебя или то, что ты нашел. Он предпочитает число.
 
 ## Field Note
 
-Деньги слишком мягкие. В Aegir долг - это масса через окно.
+Кислород, балласт, доказательство, payload, тело: carrier взвешивает их раньше, чем милость.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/ru_RU. -->

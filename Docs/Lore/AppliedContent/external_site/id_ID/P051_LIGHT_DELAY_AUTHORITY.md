@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "Otoritas Tunda-Cahaya"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# Otoritas Tunda-Cahaya
 
-ID LOC HOLD: Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather.
-
-## Scanner
-
-ID LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
-
-## Terminal
-
-ID LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
-
-## Audio
-
-ID LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
-
-## Field Note
-
-ID LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+Panggilan darurat di HECTON-8 adalah kiriman fisik berisi makna. Ia keluar dari tiang yang terendam, menyeberangi ruang Aegir dengan kecepatan cahaya, menunggu di buffer relai, lalu tiba di Black Keel lewat antrean yang sudah tahu cara memberi harga pada risiko. Jeda pertama adalah jarak yang jujur. Jeda berikutnya buatan manusia: kelas kustodi, jendela badai, bahasa tanggung jawab, dan kebiasaan kapal induk menjawab aset sebelum orang. Karena itu balasan bisa masih baru secara teknis dan tetap tidak berguna di ruang tekanan yang runtuh.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/id_ID. -->

@@ -179,6 +179,15 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
+                return;
+            }
+
             _lastScreenWidth = -1;
             _lastScreenHeight = -1;
             _lastAppliedScale = -1f;

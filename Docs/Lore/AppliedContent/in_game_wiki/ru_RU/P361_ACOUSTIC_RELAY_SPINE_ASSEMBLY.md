@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Сборка акустического релейного хребта
 
-Первый компонент побега не радиочудо. Это физическая цепь акустической связи: pinger float, ceramic ribs, cable skin и точное окно.
+Побег начинается под водой. Акустический релейный хребет позволяет поврежденной капсуле доказать позицию, часы и состояние выживания до того, как орбитальные приемники сочтут ее recoverable mass.
 
 ## Scanner
 
-Неполный релейный хребет. Капсула может стучать через воду, но не говорить с орбитой чистым каналом.
+Разбитый акустический хребет. Он может простучать pressure-code сквозь воду; орбита все равно слышит это как поврежденный custody-noise.
 
 ## Terminal
 
-ASCENT RELAY: сначала восстановить низкочастотный акустический хребет. High-gain mast lost. Emergency buoy unreliable. Rescue без route proof запрещен.
+ASCENT RELAY: восстановить низкополосный акустический хребет до окна recovery. High-gain mast потеряна. Emergency buoy ненадежен. Приемник Black Keel принимает pressure-code только после route proof.
 
 ## Audio
 
-Если Black Keel это услышит, он услышит код давления, а не голос.
+Если Keel нас услышит, он услышит рану, стучащую по трубе.
 
 ## Field Note
 
-Ставить на сломанную мачту, pinger-line или капсульный/P-63 маршрут.
+Первый вызов капсулы - не голос. Это керамические ребра, кабельная кожа, pinger-floats и достаточно дисциплины тайминга, чтобы океан повторил тебя правильно.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/ru_RU. -->

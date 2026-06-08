@@ -7,34 +7,34 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Retención de evacuación de Juno Kade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# Retención de evacuación de Juno Kade
 
-ES LOC HOLD: Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+Juno Kade prueba que la colonia no se congeló sin más. La gente hizo cola, los marshals emitieron rutas y el sistema de salida respondió con authorization holds, controles de cuarentena y precedencia payload. El desastre empeora porque la puerta era real.
 
 ## Scanner
 
-ES LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
+Juno Kade abrió la cola y chocó contra un muro de cuarentena, certificación y rango payload.
 
 ## Terminal
 
-ES LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+ESTADO EVAC KADE: ruta roja; manual override rechazado; puerta de cuarentena espera continuity check Atlas; payload lift recibe precedencia hasta resolver claim seal.
 
 ## Audio
 
-ES LOC HOLD: She kept counting people after the system started counting rooms.
+La salida existía. Por eso importa la retención.
 
 ## Field Note
 
-ES LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+Una marshal de evacuación puede mover personas. No puede mover una cláusula que posee la puerta.
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/es_ES. -->

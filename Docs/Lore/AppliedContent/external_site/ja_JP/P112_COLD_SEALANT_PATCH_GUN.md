@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "低温シーラントパッチガン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# 低温シーラントパッチガン
 
-JP LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+冷間シーラントガンは最初の正直な限界を教える。pinholeを止め、ガスケットの縁を押さえ、静かな継ぎ目で数分を買える。動いている構造を祝福することはできない。rating labelはプレイヤーの希望より重い。
 
-## Scanner
-
-JP LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-JP LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-JP LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-JP LOC HOLD: Sealant repairs should buy time, not erase pressure.
+だからこの道具は序盤に属する。すべての漏れを解決できるふりをせず、プレイヤーに行動を与える。良いパッチは時間を作る。悪いパッチは、海が後で徴収する場所に自信を作る。
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/ja_JP. -->

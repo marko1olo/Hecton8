@@ -7,8 +7,10 @@
 [RULE] Default water proof is screen-space depth fade, authored flow masks, GPU-side drift, and event-driven pooled emitters.
 [RULE] CPU never reads particle state except diagnostics; CPU also must not pretend particle motion is gameplay physics.
 [RULE] MX350 path must use sprite/impostor drift and shader wobble over compute-heavy particle simulation.
+[REQ] Water, bubble, snow, debris, flow, and fluid-VFX acceptance inherits the Visual Reference Parity Gate. Captures must beat mandatory references plus best-known internal baseline/current rejection matrix for the same route class before VFX polish is credited.
 [FORBID] Full bubble/debris/snow physical simulation as a default path.
 [FORBID] Per-cluster probe sampling on MX350 unless profiler proof shows it is below the 0.1ms suspicion threshold.
+[FORBID] Particle density, marine snow, bubbles, caustic sparkle, tint, or flow noise as acceptance when waterline/contact, depth readability, route cue, material truth, and compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and recover water/material/scene owners first.
 
 ---
 
@@ -309,7 +311,8 @@ SpeedSq = dot(Vel, Vel)
 if SpeedSq > MaxSpeed^2:
     Vel *= MaxSpeed / sqrt(SpeedSq)   // Normalize + scale
 
-// Sub-step guard: if displacement > voxel size (assume 0.25m min wall)
+// Sub-step guard: route geometry contract min wall thickness = 0.25m.
+// If the owner changes min thickness, this constant must change in the same route review.
 MaxDisplacement = 0.20   // 80% of min wall thickness
 StepDist = length(Vel) * DeltaTime
 if StepDist > MaxDisplacement:

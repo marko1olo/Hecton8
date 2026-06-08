@@ -303,6 +303,9 @@ namespace Hecton8.Core.Contracts.Signals
         public const byte Completed = 2;
         public const byte Failed = 3;
         public const byte Rejected = 4;
+        public const byte FailureFlag = 1 << 0;
+        public const byte SaveOperationFlag = 1 << 1;
+        public const byte LoadOperationFlag = 1 << 2;
 
         [FieldOffset(0)] public uint SlotHash;
         [FieldOffset(4)] public uint OperationId;

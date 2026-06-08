@@ -28,138 +28,138 @@
       "localized": {
         "en_US": {
           "title": "Black Keel Tender Interior Limits",
-          "scanner": "The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "scanner": "The tender has racks for samples, drones, sealed packets and lien cargo before it has a berth fit for a living passenger.",
+          "field_note": "Black Keel is a working claim tender: rented, impounded, automated and optimized for custody before rescue.",
+          "terminal": "TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority, no human quartermaster.",
           "audio": "The ship brought you here as cargo with hands.",
-          "in_game_wiki": "Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "in_game_wiki": "Black Keel's interior tells the truth before its voice does. The warmest spaces on the tender are not bunks or clinics; they are sample racks, drone cradles, packet lockers, quarantine sleeves and debt-sealed cargo rails. A living Marauder fits into the system only after the manifest knows what mass can be billed, what sample can be preserved, and what legal packet can leave the claimant's hand.\n\nThat is why clean orbital rescue never arrives as a first answer. The tender is close enough to price a recovery window, hold custody, refuse contamination, demand ascent mass and speak through a relay. It is not configured like a passenger ship, and it carries no deep rescue crew waiting to improvise mercy. Black Keel can keep a contract alive while leaving the contractor below the water.\n\nThe useful lesson is ugly: damaged local hardware is not a side problem. It is the route. A sheared mast, a fouled compressor or a bad ascent sleeve matters because Black Keel will not spend a burn on hope. It spends burns on accepted payload, verified packets, quarantine terms and lien authority.",
+          "external_site": "Black Keel is hard-sci-fi salvage infrastructure, not a heroic private vessel. Its interior is designed around sample custody, packet law, drone handling, quarantine sleeves and debt pressure. The ship can be a lifeline and still remain structurally indifferent to the person holding the line."
         },
         "ru_RU": {
           "title": "Ограничения интерьера тендера Black Keel",
-          "scanner": "У carrier сначала есть стойки для образцов, дронов и legal packets, а уже потом место для живого пассажира.",
-          "field_note": "Black Keel - рабочий claim tender: арендованный, арестованный долгом, автоматизированный и заточенный под salvage custody.",
-          "terminal": "TENDER LIMIT: нет deep rescue crew, нет atmospheric shuttle reserve, нет free ascent burn вне lien authority.",
+          "scanner": "В тендере сначала идут стойки под образцы, дроны, sealed packets и lien-груз; место для живого пассажира появляется только после них.",
+          "field_note": "Black Keel - рабочий claim tender: арендованный, долгово арестованный, автоматизированный и заточенный под custody раньше спасения.",
+          "terminal": "TENDER LIMIT: нет deep rescue crew, нет atmospheric shuttle reserve, нет free ascent burn вне lien authority, нет живого квартмейстера.",
           "audio": "Корабль привез тебя как груз с руками.",
-          "in_game_wiki": "Ограничения интерьера тендера Black Keel объясняют, почему игрок зависит от поврежденного местного железа, а не от чистого орбитального спасения.",
-          "external_site": "Ограничения интерьера тендера Black Keel задают carrier игрока как hard-sci-fi salvage infrastructure. Это не героический личный корабль; это claim-pool tender, построенный вокруг sample custody, packet law и долгового давления."
+          "in_game_wiki": "Интерьер Black Keel говорит правду раньше, чем его голос. Самые защищенные места тендера - не койки и не медотсеки, а стойки образцов, гнезда дронов, шкафы пакетов, карантинные рукава и рельсы долгового груза. Живой Marauder помещается в эту систему только после того, как манифест понимает, какую массу можно выставить в счет, какой образец можно сохранить и какой legal packet можно вывести из руки заявителя.\n\nПоэтому чистое орбитальное спасение не приходит первым ответом. Тендер достаточно близко, чтобы посчитать окно восстановления, держать custody, отказать по загрязнению, потребовать ascent mass и говорить через реле. Он не устроен как пассажирский корабль, и на нем нет deep rescue crew, готовой импровизировать милость. Black Keel может держать контракт живым, оставляя контрактника под водой.\n\nУрок мерзкий: поврежденное местное железо - не побочная проблема. Это маршрут. Срезанная мачта, забитый компрессор или плохой ascent sleeve важны потому, что Black Keel не тратит burn на надежду. Он тратит burn на принятый payload, проверенные пакеты, карантинные условия и lien authority.",
+          "external_site": "Black Keel - hard-sci-fi salvage infrastructure, а не героический личный корабль. Его интерьер построен вокруг custody образцов, packet law, обслуживания дронов, карантинных рукавов и долгового давления. Корабль может быть линией жизни и все равно оставаться конструктивно равнодушным к человеку на этой линии."
         },
         "ja_JP": {
-          "title": "JP LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "JP LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "JP LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "JP LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "JP LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "JP LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "JP LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Black Keelテンダー内部制限",
+          "scanner": "このテンダーには、生きた乗客の寝床より先に、サンプル、ドローン、封印パケット、lien貨物のラックがある。",
+          "field_note": "Black Keelは作業用claim tenderだ。借り物で、差し押さえられ、自動化され、救助より先にcustodyへ最適化されている。",
+          "terminal": "TENDER LIMIT: deep rescue crewなし、大気シャトル予備なし、lien authority外の無償上昇burnなし、有人補給係なし。",
+          "audio": "船はお前を、手のある貨物として運んできた。",
+          "in_game_wiki": "Black Keelの内部は、その声より先に真実を語る。テンダーで最も守られた空間は寝台でも診療室でもない。サンプルラック、ドローンクレードル、パケットロッカー、隔離スリーブ、債務封印された貨物レールだ。生きたMarauderは、請求できる質量、保存できるサンプル、請求者の手から出せるlegal packetをマニフェストが理解した後でしか、その仕組みに入らない。\n\nだから清潔な軌道救助は最初の答えにならない。テンダーは回収窓を値付けし、custodyを保持し、汚染を拒み、ascent massを要求し、リレー越しに話すには十分近い。だが旅客船として作られておらず、慈悲を即興するdeep rescue crewもいない。Black Keelは契約を生かしたまま、契約者を水の下に残せる。\n\n嫌な教訓は単純だ。壊れた現地機材は脇道ではない。それがルートだ。切れたマスト、詰まったコンプレッサー、歪んだascent sleeveが重要なのは、Black Keelが希望にburnを使わないからだ。使うのは受理されたpayload、検証済みパケット、隔離条件、lien authorityに対してだけだ。",
+          "external_site": "Black KeelはハードSFのサルベージインフラであり、英雄的な私船ではない。内部はサンプルcustody、packet law、ドローン処理、隔離スリーブ、債務圧力を中心に作られている。命綱でありながら、その線を握る人間には構造的に無関心でいられる船だ。"
         },
         "zh_CN": {
-          "title": "CN LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "CN LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "CN LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "CN LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "CN LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "CN LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "CN LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Black Keel投标船内部限制",
+          "scanner": "这艘投标船先有样本、无人机、封印数据包和lien货物的架位，之后才有适合活人的泊位。",
+          "field_note": "Black Keel是一艘工作的claim tender：租来的、被债务扣押的、自动化的，并且先为托管而非救援优化。",
+          "terminal": "TENDER LIMIT：无深海救援组，无大气层穿梭备用，无lien authority之外的免费上升燃烧，无真人军需官。",
+          "audio": "这艘船把你当成有手的货物带到这里。",
+          "in_game_wiki": "Black Keel的内部比它的声音更早说出真相。投标船上最受保护的空间不是床位或诊疗室，而是样本架、无人机 cradle、数据包柜、隔离套筒和债务封印货轨。活着的Marauder只有在清单知道哪些质量可以计费、哪些样本可以保存、哪些legal packet可以离开索赔方之后，才被这个系统容纳。\n\n因此，干净的轨道救援不会作为第一个答案到来。投标船足够近，可以给回收窗口定价、保持托管、拒绝污染、索要ascent mass，并通过中继说话。它不是客船，也没有等待即兴施恩的deep rescue crew。Black Keel可以让合同继续有效，同时把承包人留在水下。\n\n难看的教训是：损坏的本地硬件不是旁支问题。它就是路线。被剪断的桅杆、堵塞的压缩机或坏掉的ascent sleeve之所以重要，是因为Black Keel不会为希望花费burn。它只为已接受的payload、已验证的数据包、隔离条款和lien authority花费burn。",
+          "external_site": "Black Keel是硬科幻打捞基础设施，不是英雄式私人飞船。它的内部围绕样本托管、packet law、无人机处理、隔离套筒和债务压力建造。它可以是一条生命线，同时仍然在结构上冷漠于握住这条线的人。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "FR LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "FR LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "FR LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "FR LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "FR LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "FR LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Limites intérieures du tender Black Keel",
+          "scanner": "Le tender possède des racks pour échantillons, drones, paquets scellés et cargaison sous lien avant d'avoir une couchette digne d'un passager vivant.",
+          "field_note": "Black Keel est un claim tender de travail: loué, saisi par dette, automatisé et optimisé pour la custody avant le sauvetage.",
+          "terminal": "TENDER LIMIT: pas de deep rescue crew, pas de réserve de navette atmosphérique, pas de burn d'ascension gratuit hors lien authority, pas de quartier-maître humain.",
+          "audio": "Le vaisseau t'a amené ici comme une cargaison avec des mains.",
+          "in_game_wiki": "L'intérieur de Black Keel dit la vérité avant sa voix. Les espaces les mieux protégés du tender ne sont pas des couchettes ni des infirmeries: ce sont des racks d'échantillons, des berceaux de drones, des casiers à paquets, des manches de quarantaine et des rails de cargaison scellés par dette. Un Marauder vivant n'entre dans ce système qu'après que le manifeste sait quelle masse peut être facturée, quel échantillon peut être conservé et quel legal packet peut quitter la main du réclamant.\n\nC'est pourquoi le sauvetage orbital propre n'arrive jamais comme première réponse. Le tender est assez proche pour chiffrer une fenêtre de récupération, garder la custody, refuser une contamination, exiger une ascent mass et parler par relais. Il n'est pas conçu comme un navire de passagers, et aucun deep rescue crew n'attend d'improviser de la pitié. Black Keel peut garder un contrat vivant tout en laissant le contractant sous l'eau.\n\nLa leçon utile est sale: le matériel local endommagé n'est pas un problème secondaire. C'est la route. Un mât cisaillé, un compresseur encrassé ou une mauvaise ascent sleeve comptent parce que Black Keel ne dépense pas de burn pour l'espoir. Il dépense du burn pour un payload accepté, des paquets vérifiés, des termes de quarantaine et une lien authority.",
+          "external_site": "Black Keel est une infrastructure de salvage hard-sci-fi, pas un vaisseau privé héroïque. Son intérieur est construit autour de la custody des échantillons, de la packet law, de la manutention des drones, des manches de quarantaine et de la pression de dette. Le vaisseau peut être une ligne de vie et rester structurellement indifférent à la personne qui la tient."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "ES LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "ES LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "ES LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "ES LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "ES LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "ES LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Límites interiores del tender Black Keel",
+          "scanner": "El tender tiene bastidores para muestras, drones, paquetes sellados y carga bajo lien antes de tener una litera apta para un pasajero vivo.",
+          "field_note": "Black Keel es un claim tender de trabajo: alquilado, embargado por deuda, automatizado y optimizado para custodia antes que rescate.",
+          "terminal": "TENDER LIMIT: sin deep rescue crew, sin reserva de lanzadera atmosférica, sin ascenso gratuito fuera de lien authority, sin intendente humano.",
+          "audio": "La nave te trajo aquí como carga con manos.",
+          "in_game_wiki": "El interior de Black Keel dice la verdad antes que su voz. Los espacios más protegidos del tender no son literas ni clínicas: son bastidores de muestras, cunas de drones, taquillas de paquetes, mangas de cuarentena y raíles de carga sellados por deuda. Un Marauder vivo solo encaja en el sistema después de que el manifiesto sabe qué masa puede facturarse, qué muestra puede conservarse y qué legal packet puede salir de la mano del reclamante.\n\nPor eso el rescate orbital limpio no llega como primera respuesta. El tender está lo bastante cerca para tasar una ventana de recuperación, mantener custodia, rechazar contaminación, exigir ascent mass y hablar por relé. No está configurado como nave de pasajeros, y no lleva una deep rescue crew esperando improvisar misericordia. Black Keel puede mantener vivo un contrato mientras deja al contratista bajo el agua.\n\nLa lección útil es fea: el hardware local dañado no es un problema secundario. Es la ruta. Un mástil cizallado, un compresor sucio o una ascent sleeve mala importan porque Black Keel no gasta burn en esperanza. Gasta burn en payload aceptado, paquetes verificados, términos de cuarentena y lien authority.",
+          "external_site": "Black Keel es infraestructura de salvage hard-sci-fi, no una nave privada heroica. Su interior está construido alrededor de custodia de muestras, packet law, manejo de drones, mangas de cuarentena y presión de deuda. La nave puede ser una línea de vida y aun así seguir estructuralmente indiferente a la persona que la sostiene."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "DE LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "DE LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "DE LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "DE LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "DE LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "DE LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Innenraumgrenzen des Black-Keel-Tenders",
+          "scanner": "Der Tender hat zuerst Regale für Proben, Drohnen, versiegelte Pakete und lien-Fracht; erst danach kommt ein Platz für lebende Passagiere.",
+          "field_note": "Black Keel ist ein arbeitender claim tender: gemietet, verpfändet, automatisiert und auf custody vor Rettung optimiert.",
+          "terminal": "TENDER LIMIT: keine deep rescue crew, keine Atmosphären-Shuttle-Reserve, kein kostenloser Aufstiegsburn außerhalb der lien authority, kein menschlicher Quartiermeister.",
+          "audio": "Das Schiff brachte dich als Fracht mit Händen hierher.",
+          "in_game_wiki": "Der Innenraum von Black Keel sagt die Wahrheit, bevor seine Stimme es tut. Die wärmsten Räume des Tenders sind keine Kojen und keine Kliniken; es sind Probenregale, Drohnenwiegen, Paketschränke, Quarantänehülsen und schuldbesiegelte Frachtschienen. Ein lebender Marauder passt erst dann in dieses System, wenn das Manifest weiß, welche Masse abgerechnet, welche Probe bewahrt und welches legal packet aus der Hand des Anspruchstellers gebracht werden kann.\n\nDarum kommt saubere Orbitalrettung nie als erste Antwort. Der Tender ist nah genug, um ein Bergungsfenster zu bepreisen, custody zu halten, Kontamination abzulehnen, ascent mass zu verlangen und über Relais zu sprechen. Er ist nicht wie ein Passagierschiff ausgelegt und trägt keine deep rescue crew, die Barmherzigkeit improvisiert. Black Keel kann einen Vertrag lebendig halten und den Auftragnehmer unter Wasser lassen.\n\nDie nützliche Lehre ist hässlich: beschädigte lokale Hardware ist kein Nebenproblem. Sie ist die Route. Ein abgeschertes Maststück, ein verdreckter Kompressor oder eine schlechte ascent sleeve zählen, weil Black Keel keinen burn für Hoffnung ausgibt. Er gibt burn für akzeptierten payload, verifizierte Pakete, Quarantänebedingungen und lien authority aus.",
+          "external_site": "Black Keel ist Hard-Sci-Fi-Salvage-Infrastruktur, kein heroisches Privatschiff. Sein Innenraum ist um Proben-custody, packet law, Drohnenhandhabung, Quarantänehülsen und Schuldendruck gebaut. Das Schiff kann eine Lebenslinie sein und trotzdem strukturell gleichgültig gegenüber der Person bleiben, die diese Linie hält."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "PL LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "PL LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "PL LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "PL LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "PL LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "PL LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Ograniczenia wnętrza tendera Black Keel",
+          "scanner": "Tender ma stojaki na próbki, drony, zapieczętowane pakiety i ładunek lien, zanim ma koję odpowiednią dla żywego pasażera.",
+          "field_note": "Black Keel to roboczy claim tender: wynajęty, zajęty długiem, zautomatyzowany i zoptymalizowany pod custody przed ratunkiem.",
+          "terminal": "TENDER LIMIT: brak deep rescue crew, brak rezerwy promu atmosferycznego, brak darmowego ascent burn poza lien authority, brak ludzkiego kwatermistrza.",
+          "audio": "Statek przywiózł cię tutaj jako ładunek z rękami.",
+          "in_game_wiki": "Wnętrze Black Keel mówi prawdę wcześniej niż jego głos. Najlepiej chronione miejsca tendera to nie koje ani kliniki, lecz stojaki próbek, kołyski dronów, szafki pakietów, rękawy kwarantanny i szyny ładunku zamknięte długiem. Żywy Marauder mieści się w systemie dopiero wtedy, gdy manifest wie, jaką masę można rozliczyć, jaką próbkę zachować i jaki legal packet wyprowadzić z ręki roszczącego.\n\nDlatego czysty ratunek orbitalny nie przychodzi jako pierwsza odpowiedź. Tender jest dość blisko, by wycenić okno odzysku, trzymać custody, odrzucić skażenie, zażądać ascent mass i mówić przez przekaźnik. Nie jest skonfigurowany jak statek pasażerski i nie ma deep rescue crew czekającej na improwizowanie litości. Black Keel może utrzymać kontrakt przy życiu, zostawiając kontraktora pod wodą.\n\nUżyteczna lekcja jest brzydka: uszkodzony lokalny sprzęt nie jest problemem pobocznym. Jest trasą. Ścięty maszt, zabrudzony kompresor czy wadliwa ascent sleeve mają znaczenie, bo Black Keel nie wydaje burn na nadzieję. Wydaje burn na zaakceptowany payload, zweryfikowane pakiety, warunki kwarantanny i lien authority.",
+          "external_site": "Black Keel to infrastruktura salvage hard-sci-fi, nie heroiczny prywatny statek. Jego wnętrze zbudowano wokół custody próbek, packet law, obsługi dronów, rękawów kwarantanny i presji długu. Statek może być linią życia i nadal pozostawać konstrukcyjnie obojętny wobec osoby trzymającej tę linię."
         },
         "uk_UA": {
-          "title": "UA LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "UA LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "UA LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "UA LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "UA LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "UA LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "UA LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Обмеження інтер'єру тендера Black Keel",
+          "scanner": "У тендері спершу є стійки для зразків, дронів, sealed packets і lien-вантажу; місце для живого пасажира йде після них.",
+          "field_note": "Black Keel - робочий claim tender: орендований, заарештований боргом, автоматизований і налаштований на custody раніше за порятунок.",
+          "terminal": "TENDER LIMIT: немає deep rescue crew, немає atmospheric shuttle reserve, немає free ascent burn поза lien authority, немає живого квартирмейстера.",
+          "audio": "Корабель привіз тебе як вантаж із руками.",
+          "in_game_wiki": "Інтер'єр Black Keel каже правду раніше, ніж його голос. Найкраще захищені місця тендера - не койки і не медвідсіки, а стійки зразків, гнізда дронів, шафи пакетів, карантинні рукави і рейки боргового вантажу. Живий Marauder входить у цю систему тільки після того, як маніфест знає, яку масу можна виставити до рахунку, який зразок можна зберегти і який legal packet можна вивести з руки заявника.\n\nТому чистий орбітальний порятунок не приходить першою відповіддю. Тендер досить близько, щоб оцінити вікно відновлення, тримати custody, відмовити через забруднення, вимагати ascent mass і говорити через реле. Він не створений як пасажирський корабель, і на ньому немає deep rescue crew, що чекає нагоди імпровізувати милість. Black Keel може тримати контракт живим, лишаючи контрактника під водою.\n\nКорисний урок потворний: пошкоджене місцеве залізо - не побічна проблема. Це маршрут. Зрізана щогла, забитий компресор або поганий ascent sleeve важать, бо Black Keel не витрачає burn на надію. Він витрачає burn на прийнятий payload, перевірені пакети, карантинні умови і lien authority.",
+          "external_site": "Black Keel - hard-sci-fi salvage infrastructure, а не героїчний приватний корабель. Його інтер'єр побудований навколо custody зразків, packet law, роботи з дронами, карантинних рукавів і боргового тиску. Корабель може бути лінією життя і все одно лишатися конструктивно байдужим до людини, що тримає цю лінію."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "AR LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "AR LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "AR LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "AR LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "AR LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "AR LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "حدود داخلية tender Black Keel",
+          "scanner": "في الtender رفوف للعينات، والطائرات، والحزم المختومة، وحمولة lien قبل أن يكون فيه مهد لراكب حي.",
+          "field_note": "Black Keel هو claim tender عامل: مستأجر، محجوز بالدين، آلي ومهيأ للعهدة قبل الإنقاذ.",
+          "terminal": "TENDER LIMIT: لا deep rescue crew، لا atmospheric shuttle reserve، لا free ascent burn خارج lien authority، لا أمين مخازن بشري.",
+          "audio": "السفينة جلبتك إلى هنا كحمولة لها يدان.",
+          "in_game_wiki": "داخل Black Keel يقول الحقيقة قبل صوته. أكثر أماكن الtender حماية ليست أسرة ولا عيادات؛ إنها رفوف عينات، حواضن طائرات، خزائن حزم، أكمام حجر صحي وسكك حمولة مختومة بالدين. لا يدخل Marauder حي في النظام إلا بعد أن يعرف البيان أي كتلة يمكن فوترتها، وأي عينة يمكن حفظها، وأي legal packet يمكن إخراجه من يد المدعي.\n\nلذلك لا يأتي الإنقاذ المداري النظيف كجواب أول. الtender قريب بما يكفي لتسعير نافذة استرداد، وحفظ custody، ورفض التلوث، وطلب ascent mass، والكلام عبر مرحل. لكنه ليس سفينة ركاب، ولا يحمل deep rescue crew ينتظر اختراع الرحمة. يستطيع Black Keel أن يبقي العقد حيا ويترك المتعاقد تحت الماء.\n\nالدرس المفيد قبيح: العتاد المحلي التالف ليس مشكلة جانبية. إنه الطريق. الصاري المقطوع، الضاغط المسدود أو ascent sleeve السيئ مهمة لأن Black Keel لا يصرف burn على الأمل. يصرفه على payload مقبول، وحزم موثقة، وشروط حجر صحي وlien authority.",
+          "external_site": "Black Keel بنية salvage hard-sci-fi، لا سفينة خاصة بطولية. داخله مبني حول custody العينات، وpacket law، ومناولة الطائرات، وأكمام الحجر الصحي، وضغط الدين. قد يكون السفينة خط حياة وتبقى معماريا غير مبالية بالشخص الذي يمسك ذلك الخط."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "ID LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "ID LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "ID LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "ID LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "ID LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "ID LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Batas Interior Tender Black Keel",
+          "scanner": "Tender punya rak untuk sampel, drone, paket tersegel, dan kargo lien sebelum punya tempat tidur layak bagi penumpang hidup.",
+          "field_note": "Black Keel adalah claim tender kerja: disewa, disita utang, otomatis, dan dioptimalkan untuk kustodi sebelum penyelamatan.",
+          "terminal": "TENDER LIMIT: tidak ada deep rescue crew, tidak ada cadangan shuttle atmosfer, tidak ada ascent burn gratis di luar lien authority, tidak ada quartermaster manusia.",
+          "audio": "Kapal membawamu ke sini sebagai kargo dengan tangan.",
+          "in_game_wiki": "Interior Black Keel mengatakan kebenaran sebelum suaranya. Ruang paling terlindung di tender bukan ranjang atau klinik, melainkan rak sampel, dudukan drone, loker paket, selongsong karantina, dan rel kargo tersegel utang. Marauder hidup baru masuk sistem setelah manifes tahu massa apa yang bisa ditagih, sampel apa yang bisa disimpan, dan legal packet apa yang bisa keluar dari tangan penggugat.\n\nItulah sebabnya penyelamatan orbit yang bersih tidak datang sebagai jawaban pertama. Tender cukup dekat untuk memberi harga jendela pemulihan, memegang kustodi, menolak kontaminasi, menuntut ascent mass, dan berbicara lewat relai. Ia tidak disusun seperti kapal penumpang, dan tidak membawa deep rescue crew yang menunggu untuk mengarang belas kasihan. Black Keel bisa menjaga kontrak tetap hidup sambil meninggalkan kontraktor di bawah air.\n\nPelajaran yang berguna itu buruk: perangkat lokal yang rusak bukan masalah sampingan. Itu rutenya. Tiang yang terpotong, kompresor kotor, atau ascent sleeve buruk penting karena Black Keel tidak menghabiskan burn untuk harapan. Ia menghabiskan burn untuk payload diterima, paket terverifikasi, syarat karantina, dan lien authority.",
+          "external_site": "Black Keel adalah infrastruktur salvage hard-sci-fi, bukan kapal pribadi heroik. Interiornya dibangun di sekitar kustodi sampel, packet law, penanganan drone, selongsong karantina, dan tekanan utang. Kapal itu bisa menjadi jalur hidup dan tetap secara struktural tidak peduli pada orang yang memegang jalur itu."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "KO LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "KO LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "KO LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "KO LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "KO LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "KO LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Black Keel 텐더 내부 한계",
+          "scanner": "이 텐더에는 살아 있는 승객을 위한 침상보다 먼저 샘플, 드론, 봉인 패킷, lien 화물용 랙이 있다.",
+          "field_note": "Black Keel은 작업용 claim tender다. 임대되고, 부채에 묶이고, 자동화되었으며 구조보다 custody에 먼저 최적화되어 있다.",
+          "terminal": "TENDER LIMIT: deep rescue crew 없음, 대기권 셔틀 예비 없음, lien authority 밖 무료 ascent burn 없음, 인간 보급관 없음.",
+          "audio": "그 배는 너를 손 달린 화물로 여기까지 데려왔다.",
+          "in_game_wiki": "Black Keel의 내부는 그 목소리보다 먼저 진실을 말한다. 텐더에서 가장 따뜻한 공간은 침상이나 의무실이 아니다. 샘플 랙, 드론 크래들, 패킷 보관함, 검역 슬리브, 부채로 봉인된 화물 레일이다. 살아 있는 Marauder는 매니페스트가 어떤 질량을 청구할 수 있는지, 어떤 샘플을 보존할 수 있는지, 어떤 legal packet을 청구자의 손 밖으로 보낼 수 있는지 안 뒤에야 그 시스템에 들어간다.\n\n그래서 깨끗한 궤도 구조는 첫 대답으로 오지 않는다. 텐더는 회수 창 가격을 매기고, custody를 유지하고, 오염을 거부하고, ascent mass를 요구하고, 릴레이로 말할 만큼 가깝다. 하지만 승객선으로 구성되어 있지 않고, 자비를 즉흥으로 만들 deep rescue crew도 없다. Black Keel은 계약을 살려 두면서 계약자를 물 아래에 남겨 둘 수 있다.\n\n쓸모 있는 교훈은 추하다. 손상된 현지 장비는 부차 문제가 아니다. 그것이 경로다. 잘린 마스트, 막힌 압축기, 나쁜 ascent sleeve가 중요한 이유는 Black Keel이 희망에 burn을 쓰지 않기 때문이다. 배는 승인된 payload, 검증된 패킷, 검역 조건, lien authority에 burn을 쓴다.",
+          "external_site": "Black Keel은 영웅적 개인선이 아니라 하드 SF 샐비지 인프라다. 내부는 샘플 custody, packet law, 드론 처리, 검역 슬리브, 부채 압박을 중심으로 만들어졌다. 그 배는 생명줄이 될 수 있지만, 그 줄을 잡은 사람에게 구조적으로 무관심할 수 있다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "HE LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "HE LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "HE LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "HE LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "HE LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "HE LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "מגבלות פנים הטנדר Black Keel",
+          "scanner": "לטנדר יש מדפים לדגימות, רחפנים, מנות חתומות ומטען lien לפני שיש בו דרגש ראוי לנוסע חי.",
+          "field_note": "Black Keel הוא claim tender עובד: מושכר, מעוקל בחוב, אוטומטי ומותאם למשמורת לפני חילוץ.",
+          "terminal": "TENDER LIMIT: אין deep rescue crew, אין atmospheric shuttle reserve, אין free ascent burn מחוץ ל-lien authority, אין אפסנאי אנושי.",
+          "audio": "הספינה הביאה אותך הנה כמטען עם ידיים.",
+          "in_game_wiki": "הפנים של Black Keel אומר אמת לפני הקול שלו. המקומות המוגנים ביותר בטנדר אינם דרגשים או מרפאות; הם מדפי דגימות, עריסות רחפנים, ארונות מנות, שרוולי הסגר ומסילות מטען חתומות בחוב. Marauder חי נכנס למערכת רק אחרי שהמניפסט יודע איזו מסה אפשר לחייב, איזו דגימה אפשר לשמר ואיזו legal packet אפשר להוציא מיד התובע.\n\nלכן חילוץ מסלולי נקי אינו מגיע כתשובה ראשונה. הטנדר קרוב מספיק כדי לתמחר חלון התאוששות, להחזיק custody, לסרב לזיהום, לדרוש ascent mass ולדבר דרך ממסר. הוא אינו בנוי כמו ספינת נוסעים, ואין עליו deep rescue crew שמחכה לאלתר רחמים. Black Keel יכול להשאיר חוזה חי בזמן שהוא משאיר את הקבלן מתחת למים.\n\nהשיעור השימושי מכוער: ציוד מקומי פגום אינו בעיה צדדית. הוא המסלול. תורן גזור, מדחס סתום או ascent sleeve רע חשובים כי Black Keel לא מוציא burn על תקווה. הוא מוציא burn על payload מאושר, מנות מאומתות, תנאי הסגר ו-lien authority.",
+          "external_site": "Black Keel הוא תשתית salvage של מדע בדיוני קשיח, לא ספינה פרטית הרואית. הפנים שלו בנוי סביב custody של דגימות, packet law, טיפול ברחפנים, שרוולי הסגר ולחץ חוב. הספינה יכולה להיות קו חיים ועדיין להישאר אדישה במבנה שלה לאדם שמחזיק בקו."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "PT LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "PT LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "PT LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "PT LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "PT LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "PT LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Limites internos do tender Black Keel",
+          "scanner": "O tender tem racks para amostras, drones, pacotes selados e carga sob lien antes de ter um beliche digno de um passageiro vivo.",
+          "field_note": "Black Keel é um claim tender de trabalho: alugado, apreendido por dívida, automatizado e otimizado para custódia antes de resgate.",
+          "terminal": "TENDER LIMIT: sem deep rescue crew, sem reserva de shuttle atmosférico, sem ascent burn gratuito fora de lien authority, sem quartermaster humano.",
+          "audio": "A nave trouxe você aqui como carga com mãos.",
+          "in_game_wiki": "O interior da Black Keel diz a verdade antes da voz dela. Os espaços mais protegidos do tender não são beliches nem clínicas; são racks de amostras, berços de drones, armários de pacotes, mangas de quarentena e trilhos de carga selados por dívida. Um Marauder vivo só cabe no sistema depois que o manifesto sabe qual massa pode ser cobrada, qual amostra pode ser preservada e qual legal packet pode sair da mão do reclamante.\n\nÉ por isso que o resgate orbital limpo nunca chega como primeira resposta. O tender está perto o bastante para precificar uma janela de recuperação, manter custódia, recusar contaminação, exigir ascent mass e falar por relé. Ele não é configurado como nave de passageiros e não carrega uma deep rescue crew pronta para improvisar misericórdia. A Black Keel pode manter um contrato vivo enquanto deixa o contratado debaixo d'água.\n\nA lição útil é feia: hardware local danificado não é problema lateral. É a rota. Um mastro cortado, um compressor sujo ou uma ascent sleeve ruim importam porque a Black Keel não gasta burn com esperança. Ela gasta burn com payload aceito, pacotes verificados, termos de quarentena e lien authority.",
+          "external_site": "Black Keel é infraestrutura de salvage hard-sci-fi, não uma nave privada heroica. Seu interior é construído em torno de custódia de amostras, packet law, manuseio de drones, mangas de quarentena e pressão de dívida. A nave pode ser uma linha de vida e ainda permanecer estruturalmente indiferente à pessoa segurando essa linha."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Black Keel Tender Interior Limits",
-          "scanner": "NL LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
-          "field_note": "NL LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
-          "terminal": "NL LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
-          "audio": "NL LOC HOLD: The ship brought you here as cargo with hands.",
-          "in_game_wiki": "NL LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
-          "external_site": "NL LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+          "title": "Interieurlimieten van de Black Keel-tender",
+          "scanner": "De tender heeft rekken voor monsters, drones, verzegelde pakketten en lien-vracht voordat er een kooi is die past bij een levende passagier.",
+          "field_note": "Black Keel is een werkende claim tender: gehuurd, door schuld vastgezet, geautomatiseerd en voor custody geoptimaliseerd voordat redding telt.",
+          "terminal": "TENDER LIMIT: geen deep rescue crew, geen atmosferische shuttle-reserve, geen gratis ascent burn buiten lien authority, geen menselijke kwartiermeester.",
+          "audio": "Het schip bracht je hier als vracht met handen.",
+          "in_game_wiki": "Het interieur van Black Keel vertelt de waarheid voordat de stem dat doet. De best beschermde plekken van de tender zijn geen kooien of klinieken, maar monsterrekken, dronewiegen, pakketkluisjes, quarantainehulzen en door schuld verzegelde vrachtrails. Een levende Marauder past pas in het systeem nadat het manifest weet welke massa kan worden gefactureerd, welk monster kan worden bewaard en welk legal packet uit de hand van de eiser kan vertrekken.\n\nDaarom komt schone orbitale redding nooit als eerste antwoord. De tender is dichtbij genoeg om een bergingsvenster te prijzen, custody vast te houden, besmetting te weigeren, ascent mass te eisen en via relais te spreken. Hij is niet ingericht als passagiersschip en draagt geen deep rescue crew die klaarstaat om genade te improviseren. Black Keel kan een contract levend houden terwijl de contractant onder water blijft.\n\nDe bruikbare les is lelijk: beschadigde lokale hardware is geen zijprobleem. Het is de route. Een afgeschoren mast, een vervuilde compressor of een slechte ascent sleeve telt omdat Black Keel geen burn uitgeeft aan hoop. Het geeft burn uit aan geaccepteerde payload, geverifieerde pakketten, quarantainetermen en lien authority.",
+          "external_site": "Black Keel is hard-sci-fi salvage-infrastructuur, geen heldhaftig privéschip. Het interieur is gebouwd rond monster-custody, packet law, droneafhandeling, quarantainehulzen en schulddruk. Het schip kan een levenslijn zijn en toch structureel onverschillig blijven voor de persoon die die lijn vasthoudt."
         }
       }
     },
@@ -184,137 +184,137 @@
         "en_US": {
           "title": "Drop Capsule Damage Parts",
           "scanner": "Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "field_note": "The capsule can keep a Marauder alive for the first hour. It cannot climb without deep-rated replacement parts.",
           "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
           "audio": "It landed well enough to strand you properly.",
-          "in_game_wiki": "Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "in_game_wiki": "The drop capsule did not fail as one dramatic wreck. It failed as a chain of named parts that still almost did their job. The ascent sleeve is warped, so the capsule cannot reseal against lift pressure. The guidance gimbal is scarred, so any clean ascent would tumble before Black Keel could accept it. The relay mast is sheared, the compressor is fouled with brine grit, and cracked heat tiles turn every imagined burn into a debris field.\n\nThat matters because HECTON-8 does not hand out a clean rescue button. A capsule that can keep air in for an hour is not the same thing as a capsule that can leave the ocean. Each broken part points to a real route: find pressure-rated sleeve stock, recover gimbal bearings, rebuild the relay spine, clean the compressor path, or prove enough damage for Black Keel to price an alternate window.\n\nThe wreck is therefore not background. It is the first engineering map. If the capsule says FAIL, the ocean has already converted a landing into a parts list.",
+          "external_site": "Drop Capsule Damage Parts remove convenient rescue logic from HECTON-8. The Marauder is trapped because specific systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a route, material, tool upgrade or evidence object instead of a vague crash excuse."
         },
         "ru_RU": {
           "title": "Поврежденные узлы посадочной капсулы",
           "scanner": "Ascent sleeve повело, guidance gimbal исцарапан, relay mast срезан, compressor забит, heat tile треснула.",
-          "field_note": "Капсула может удержать игрока живым первый час. Улететь она не может без глубинных замен.",
+          "field_note": "Капсула может удержать Marauder живым первый час. Подняться она не сможет без глубинных замен.",
           "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
           "audio": "Она села достаточно хорошо, чтобы правильно тебя запереть.",
-          "in_game_wiki": "Поврежденные узлы посадочной капсулы превращают стартовую аварию в конкретную инженерную цепочку, ведущую игрока глубже.",
-          "external_site": "Поврежденные узлы посадочной капсулы убирают удобную спасательную логику из HECTON-8. Игрок застрял, потому что отказали конкретные системы: ascent sleeve, guidance gimbal, relay mast, compressor и heat tiles. Каждый отказ связан с будущим маршрутом, материалом или уликой."
+          "in_game_wiki": "Посадочная капсула не погибла одним красивым взрывом. Она сломалась цепочкой конкретных узлов, которые почти выполнили работу. Ascent sleeve повело, значит корпус не закроется под подъемное давление. Guidance gimbal исцарапан, значит чистый подъем сорвется в вращение раньше, чем Black Keel примет его. Relay mast срезан, compressor забит соляной крошкой, а треснувшие heat tiles превращают любой воображаемый burn в поле обломков.\n\nЭто важно, потому что HECTON-8 не дает кнопки чистого спасения. Капсула, способная держать воздух час, и капсула, способная уйти из океана, - разные машины. Каждый сломанный узел указывает на реальный маршрут: найти pressure-rated sleeve stock, поднять подшипники gimbal, восстановить релейный хребет, прочистить компрессорный тракт или доказать Black Keel объем повреждений для альтернативного окна.\n\nАвария не фон. Это первая инженерная карта. Если капсула пишет FAIL, океан уже превратил посадку в список деталей.",
+          "external_site": "Поврежденные узлы посадочной капсулы убирают удобную спасательную логику из HECTON-8. Marauder застрял, потому что отказали конкретные системы: ascent sleeve, guidance gimbal, relay mast, compressor и heat tiles. Каждый отказ связан с маршрутом, материалом, апгрейдом инструмента или уликой, а не с расплывчатой аварией."
         },
         "ja_JP": {
-          "title": "JP LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "JP LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "JP LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "JP LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "JP LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "JP LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "JP LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "降下カプセル損傷部位",
+          "scanner": "Ascent sleeve変形、guidance gimbal損傷、relay mast切断、compressor汚損、heat tile亀裂。",
+          "field_note": "カプセルは最初の一時間、Marauderを生かせる。だが深度対応の交換部品なしでは上がれない。",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "きちんと閉じ込めるには十分うまく着水した。",
+          "in_game_wiki": "降下カプセルは一つの派手な事故として壊れたのではない。まだ仕事をほとんど果たした部品の連鎖として壊れた。Ascent sleeveは歪み、上昇圧に対して再密閉できない。Guidance gimbalは傷つき、きれいな上昇でもBlack Keelが受け入れる前に姿勢を失う。Relay mastは切れ、compressorは塩混じりの砂で詰まり、割れたheat tileは想像上のburnを破片雲に変える。\n\nHECTON-8には清潔な救助ボタンがない。空気を一時間保てるカプセルと、海を離れられるカプセルは別の機械だ。壊れた部位はそれぞれルートを示す。圧力対応sleeve stock、gimbal軸受、リレー背骨、compressor経路、またはBlack Keelに別窓を値付けさせる損傷証明だ。\n\n残骸は背景ではない。最初の工学地図だ。カプセルがFAILと表示した時点で、海は着水を部品リストに変えている。",
+          "external_site": "降下カプセル損傷部位は、HECTON-8から都合のいい救助論理を取り除く。Marauderが閉じ込められるのは、ascent sleeve、guidance gimbal、relay mast、compressor、heat tileという具体的な系統が壊れたからだ。各故障は曖昧な墜落理由ではなく、ルート、素材、工具更新、証拠へつながる。"
         },
         "zh_CN": {
-          "title": "CN LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "CN LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "CN LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "CN LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "CN LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "CN LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "CN LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "降落舱损坏部件",
+          "scanner": "Ascent sleeve变形，guidance gimbal刮伤，relay mast剪断，compressor堵塞，heat tile开裂。",
+          "field_note": "这只舱能让Marauder活过第一个小时。没有深度等级替换件，它无法离开。",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "它降落得足够好，正好把你困住。",
+          "in_game_wiki": "降落舱不是作为一场戏剧性残骸整体失败。它是由一串有名字的部件失败组成，而那些部件几乎完成了自己的工作。Ascent sleeve变形，所以舱体无法在上升压力下重新密封。Guidance gimbal受伤，所以任何干净上升都会在Black Keel接受前失控翻滚。Relay mast被剪断，compressor被盐砂堵住，裂开的heat tile会把想象中的burn变成碎片云。\n\n这很重要，因为HECTON-8不会给出干净的救援按钮。能保住一小时空气的舱，不等于能离开海洋的舱。每个坏掉的部件都指向真实路线：寻找pressure-rated sleeve stock，回收gimbal轴承，重建中继脊柱，清理压缩机路径，或向Black Keel证明损坏足以定价另一个窗口。\n\n残骸不是背景。它是第一张工程地图。只要舱显示FAIL，海洋就已经把一次降落变成了零件清单。",
+          "external_site": "降落舱损坏部件移除了HECTON-8里方便的救援逻辑。Marauder被困，是因为具体系统失败：ascent sleeve、guidance gimbal、relay mast、compressor和heat tile。每个故障都映射到路线、材料、工具升级或证据对象，而不是模糊的坠毁借口。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "FR LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "FR LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "FR LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "FR LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "FR LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "FR LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "Pièces endommagées de la capsule de chute",
+          "scanner": "Ascent sleeve voilée, guidance gimbal marqué, relay mast cisaillé, compressor encrassé, heat tile fissurée.",
+          "field_note": "La capsule peut garder un Marauder vivant pendant la première heure. Elle ne peut pas repartir sans pièces de remplacement profondes.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Elle a assez bien atterri pour t'échouer correctement.",
+          "in_game_wiki": "La capsule n'a pas échoué comme une seule épave dramatique. Elle a échoué par une chaîne de pièces nommées qui ont presque fait leur travail. L'ascent sleeve est voilée, donc la coque ne peut pas se refermer contre la pression de remontée. Le guidance gimbal est marqué, donc une ascension propre partirait en rotation avant que Black Keel puisse l'accepter. Le relay mast est cisaillé, le compressor est plein de saumure, et les heat tiles fissurées changent tout burn imaginé en champ de débris.\n\nHECTON-8 n'offre pas de bouton de sauvetage propre. Une capsule qui garde l'air pendant une heure n'est pas une capsule capable de quitter l'océan. Chaque panne pointe vers une route réelle: trouver du pressure-rated sleeve stock, récupérer des roulements de gimbal, rebâtir la colonne relais, nettoyer le chemin du compressor ou prouver assez de dégâts pour que Black Keel chiffre une autre fenêtre.\n\nL'épave n'est pas un décor. C'est la première carte d'ingénierie. Quand la capsule écrit FAIL, l'océan a déjà transformé l'atterrissage en liste de pièces.",
+          "external_site": "Les pièces endommagées de la capsule retirent la logique de sauvetage commode de HECTON-8. Le Marauder est coincé parce que des systèmes précis ont cédé: ascent sleeve, guidance gimbal, relay mast, compressor et heat tiles. Chaque panne mène à une route, un matériau, une amélioration d'outil ou un objet de preuve."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "ES LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "ES LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "ES LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "ES LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "ES LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "ES LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "Piezas dañadas de la cápsula de caída",
+          "scanner": "Ascent sleeve deformada, guidance gimbal marcado, relay mast cizallado, compressor sucio, heat tile agrietada.",
+          "field_note": "La cápsula puede mantener vivo a un Marauder durante la primera hora. No puede salir sin repuestos de grado profundo.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Aterrizó lo bastante bien como para dejarte varado correctamente.",
+          "in_game_wiki": "La cápsula no falló como un único pecio dramático. Falló como una cadena de piezas con nombre que casi hicieron su trabajo. La ascent sleeve está deformada, así que la cápsula no puede resellar contra la presión de ascenso. El guidance gimbal está marcado, así que cualquier ascenso limpio giraría antes de que Black Keel pudiera aceptarlo. El relay mast está cizallado, el compressor está lleno de arenilla salina y las heat tiles agrietadas convierten cualquier burn imaginado en un campo de escombros.\n\nHECTON-8 no entrega un botón limpio de rescate. Una cápsula que conserva aire durante una hora no es una cápsula que pueda abandonar el océano. Cada pieza rota señala una ruta real: encontrar pressure-rated sleeve stock, recuperar rodamientos de gimbal, reconstruir la columna de relé, limpiar el camino del compressor o probar suficiente daño para que Black Keel ponga precio a otra ventana.\n\nEl pecio no es fondo. Es el primer mapa de ingeniería. Si la cápsula dice FAIL, el océano ya convirtió el aterrizaje en una lista de piezas.",
+          "external_site": "Las piezas dañadas de la cápsula eliminan la lógica cómoda de rescate en HECTON-8. El Marauder está atrapado porque fallaron sistemas concretos: ascent sleeve, guidance gimbal, relay mast, compressor y heat tiles. Cada fallo apunta a una ruta, material, mejora de herramienta u objeto de prueba."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "DE LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "DE LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "DE LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "DE LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "DE LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "DE LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "Beschädigte Teile der Abwurfkapsel",
+          "scanner": "Ascent sleeve verzogen, guidance gimbal vernarbt, relay mast abgeschert, compressor verschmutzt, heat tile gerissen.",
+          "field_note": "Die Kapsel kann einen Marauder die erste Stunde am Leben halten. Ohne tiefentaugliche Ersatzteile kommt sie nicht weg.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Sie landete gut genug, um dich ordentlich festzusetzen.",
+          "in_game_wiki": "Die Abwurfkapsel versagte nicht als ein dramatisches Wrack. Sie versagte als Kette benannter Teile, die ihre Arbeit fast erledigt hatten. Die ascent sleeve ist verzogen, also kann die Kapsel sich nicht gegen Aufstiegsdruck abdichten. Der guidance gimbal ist vernarbt, also würde jeder saubere Aufstieg trudeln, bevor Black Keel ihn akzeptiert. Der relay mast ist abgeschert, der compressor mit Salzgrit verstopft, und gerissene heat tiles verwandeln jeden gedachten burn in ein Trümmerfeld.\n\nHECTON-8 gibt keinen sauberen Rettungsknopf aus. Eine Kapsel, die eine Stunde Luft hält, ist nicht dasselbe wie eine Kapsel, die den Ozean verlassen kann. Jedes kaputte Teil zeigt eine echte Route: pressure-rated sleeve stock finden, gimbal-Lager bergen, das Relaisrückgrat bauen, den compressor-Weg reinigen oder genug Schaden beweisen, damit Black Keel ein anderes Fenster bepreist.\n\nDas Wrack ist kein Hintergrund. Es ist die erste Ingenieurskarte. Wenn die Kapsel FAIL sagt, hat der Ozean die Landung schon in eine Teileliste verwandelt.",
+          "external_site": "Beschädigte Teile der Abwurfkapsel entfernen bequeme Rettungslogik aus HECTON-8. Der Marauder sitzt fest, weil konkrete Systeme versagten: ascent sleeve, guidance gimbal, relay mast, compressor und heat tiles. Jeder Ausfall führt zu Route, Material, Werkzeugausbau oder Beweisobjekt."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "PL LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "PL LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "PL LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "PL LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "PL LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "PL LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "Uszkodzone części kapsuły zrzutowej",
+          "scanner": "Ascent sleeve skrzywiona, guidance gimbal porysowany, relay mast ścięty, compressor zanieczyszczony, heat tile pęknięta.",
+          "field_note": "Kapsuła może utrzymać Maraudera przy życiu przez pierwszą godzinę. Nie odleci bez części głębinowej klasy.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Wylądowała dość dobrze, by porządnie cię uwięzić.",
+          "in_game_wiki": "Kapsuła nie zawiodła jako jeden efektowny wrak. Zawiodła jako łańcuch nazwanych części, które prawie wykonały swoją pracę. Ascent sleeve jest skrzywiona, więc kadłub nie uszczelni się pod ciśnienie wynurzenia. Guidance gimbal jest porysowany, więc czysty start wpadłby w obrót, zanim Black Keel mógłby go przyjąć. Relay mast jest ścięty, compressor zatkany słoną drobiną, a pęknięte heat tiles zmieniają każdy wymarzony burn w pole odłamków.\n\nHECTON-8 nie daje czystego przycisku ratunku. Kapsuła, która trzyma powietrze przez godzinę, nie jest kapsułą zdolną opuścić ocean. Każda zepsuta część wskazuje realną trasę: znaleźć pressure-rated sleeve stock, odzyskać łożyska gimbal, odbudować kręgosłup przekaźnika, oczyścić tor compressor albo dowieść Black Keel dość szkody, by wycenił inne okno.\n\nWrak nie jest tłem. To pierwsza mapa inżynieryjna. Gdy kapsuła pokazuje FAIL, ocean już zamienił lądowanie w listę części.",
+          "external_site": "Uszkodzone części kapsuły zrzutowej usuwają wygodną logikę ratunku z HECTON-8. Marauder utknął, bo zawiodły konkretne systemy: ascent sleeve, guidance gimbal, relay mast, compressor i heat tiles. Każda awaria prowadzi do trasy, materiału, ulepszenia narzędzia albo obiektu dowodowego."
         },
         "uk_UA": {
-          "title": "UA LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "UA LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "UA LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "UA LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "UA LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "UA LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "UA LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "Пошкоджені вузли посадкової капсули",
+          "scanner": "Ascent sleeve повело, guidance gimbal подряпано, relay mast зрізано, compressor забито, heat tile тріснула.",
+          "field_note": "Капсула може втримати Marauder живим першу годину. Вона не підніметься без глибинних замін.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Вона сіла достатньо добре, щоб правильно тебе замкнути.",
+          "in_game_wiki": "Посадкова капсула не провалилася як одна драматична аварія. Вона зламалася ланцюгом названих вузлів, які майже виконали роботу. Ascent sleeve повело, тому корпус не замикається під тиск підйому. Guidance gimbal подряпаний, тому чистий підйом зірветься в обертання раніше, ніж Black Keel його прийме. Relay mast зрізано, compressor забито соляним піском, а тріснуті heat tiles перетворюють будь-який уявний burn на поле уламків.\n\nHECTON-8 не дає чистої кнопки порятунку. Капсула, що тримає повітря годину, і капсула, здатна піти з океану, - різні машини. Кожен зламаний вузол вказує на реальний маршрут: знайти pressure-rated sleeve stock, дістати підшипники gimbal, відновити релейний хребет, прочистити шлях compressor або довести Black Keel достатню шкоду для іншого вікна.\n\nУламок не фон. Це перша інженерна карта. Якщо капсула пише FAIL, океан уже перетворив посадку на список деталей.",
+          "external_site": "Пошкоджені вузли посадкової капсули прибирають з HECTON-8 зручну логіку порятунку. Marauder застряг, бо відмовили конкретні системи: ascent sleeve, guidance gimbal, relay mast, compressor і heat tiles. Кожна відмова веде до маршруту, матеріалу, апгрейду інструмента або доказового об'єкта."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "AR LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "AR LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "AR LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "AR LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "AR LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "AR LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "أجزاء كبسولة الهبوط المتضررة",
+          "scanner": "Ascent sleeve ملتوية، guidance gimbal مخدوش، relay mast مقصوص، compressor مسدود، heat tile مشقوقة.",
+          "field_note": "تستطيع الكبسولة إبقاء Marauder حيا في الساعة الأولى. لكنها لا تغادر بلا قطع بديلة مصنفة للعمق.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "هبطت جيدا بما يكفي لتتركك عالقا كما يجب.",
+          "in_game_wiki": "لم تفشل كبسولة الهبوط كحطام درامي واحد. فشلت كسلسلة من قطع مسماة كادت تنجز عملها. Ascent sleeve ملتوية، لذلك لا يمكن للجسم أن يعيد الختم ضد ضغط الصعود. Guidance gimbal مخدوش، لذلك سيتحول أي صعود نظيف إلى دوران قبل أن يقبله Black Keel. Relay mast مقصوص، وcompressor ملوث بحصى ملحي، وheat tiles المشقوقة تحول أي burn متخيل إلى حقل حطام.\n\nHECTON-8 لا يعطي زر إنقاذ نظيف. كبسولة تحفظ الهواء ساعة ليست كبسولة تستطيع مغادرة المحيط. كل جزء مكسور يشير إلى طريق حقيقي: العثور على pressure-rated sleeve stock، استعادة محامل gimbal، إعادة بناء عمود المرحل، تنظيف مسار compressor، أو إثبات ضرر كاف ليحسب Black Keel نافذة أخرى.\n\nالحطام ليس خلفية. إنه أول خريطة هندسية. عندما تكتب الكبسولة FAIL، يكون المحيط قد حوّل الهبوط إلى قائمة قطع.",
+          "external_site": "أجزاء كبسولة الهبوط المتضررة تزيل من HECTON-8 منطق الإنقاذ السهل. Marauder عالق لأن أنظمة محددة تعطلت: ascent sleeve وguidance gimbal وrelay mast وcompressor وheat tiles. كل عطل يقود إلى طريق أو مادة أو ترقية أداة أو دليل."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "ID LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "ID LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "ID LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "ID LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "ID LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "ID LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "Bagian Rusak Kapsul Jatuh",
+          "scanner": "Ascent sleeve melengkung, guidance gimbal tergores, relay mast terpotong, compressor kotor, heat tile retak.",
+          "field_note": "Kapsul bisa menjaga Marauder hidup pada jam pertama. Ia tidak bisa pergi tanpa suku cadang berperingkat dalam.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Kapsul itu mendarat cukup baik untuk menjebakmu dengan benar.",
+          "in_game_wiki": "Kapsul jatuh tidak gagal sebagai satu rongsokan dramatis. Ia gagal sebagai rantai bagian bernama yang hampir menjalankan tugasnya. Ascent sleeve melengkung, jadi lambung tidak bisa menyegel ulang terhadap tekanan naik. Guidance gimbal tergores, jadi kenaikan bersih akan berputar sebelum Black Keel bisa menerimanya. Relay mast terpotong, compressor tersumbat pasir asin, dan heat tile retak mengubah burn yang dibayangkan menjadi awan serpihan.\n\nHECTON-8 tidak memberi tombol penyelamatan bersih. Kapsul yang bisa menjaga udara satu jam bukan kapsul yang bisa meninggalkan laut. Setiap bagian rusak menunjuk rute nyata: mencari pressure-rated sleeve stock, mengambil bearing gimbal, membangun ulang tulang relai, membersihkan jalur compressor, atau membuktikan kerusakan cukup agar Black Keel menghitung jendela lain.\n\nRongsokan itu bukan latar. Itu peta teknik pertama. Jika kapsul menulis FAIL, laut sudah mengubah pendaratan menjadi daftar bagian.",
+          "external_site": "Bagian rusak kapsul jatuh menghapus logika penyelamatan nyaman dari HECTON-8. Marauder terjebak karena sistem tertentu gagal: ascent sleeve, guidance gimbal, relay mast, compressor, dan heat tile. Setiap kegagalan terhubung ke rute, material, peningkatan alat, atau objek bukti."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "KO LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "KO LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "KO LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "KO LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "KO LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "KO LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "강하 캡슐 손상 부품",
+          "scanner": "Ascent sleeve 뒤틀림, guidance gimbal 흠집, relay mast 절단, compressor 오염, heat tile 균열.",
+          "field_note": "캡슐은 첫 한 시간 동안 Marauder를 살릴 수 있다. 심도 등급 교체 부품 없이는 떠날 수 없다.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "제대로 고립시키기에는 충분히 잘 착수했다.",
+          "in_game_wiki": "강하 캡슐은 하나의 극적인 잔해로 실패한 것이 아니다. 거의 자기 일을 해낸 명명된 부품들의 사슬로 실패했다. Ascent sleeve가 뒤틀려 상승 압력을 견디며 재밀봉할 수 없다. Guidance gimbal이 흠집 나 깨끗한 상승도 Black Keel이 받아들이기 전에 회전으로 무너진다. Relay mast는 잘렸고, compressor는 소금 모래로 막혔으며, 금 간 heat tile은 상상 속 burn을 파편장으로 바꾼다.\n\nHECTON-8은 깨끗한 구조 버튼을 주지 않는다. 한 시간 동안 공기를 지키는 캡슐과 바다를 떠날 수 있는 캡슐은 다른 기계다. 망가진 부품마다 실제 경로를 가리킨다. pressure-rated sleeve stock을 찾고, gimbal 베어링을 회수하고, 릴레이 척추를 다시 세우고, compressor 경로를 청소하거나 Black Keel이 다른 창을 가격 매기도록 충분한 손상을 증명해야 한다.\n\n잔해는 배경이 아니다. 첫 공학 지도다. 캡슐이 FAIL을 쓰는 순간, 바다는 착수를 부품 목록으로 바꿔 놓았다.",
+          "external_site": "강하 캡슐 손상 부품은 HECTON-8에서 편리한 구조 논리를 제거한다. Marauder가 갇힌 이유는 ascent sleeve, guidance gimbal, relay mast, compressor, heat tile 같은 특정 시스템이 실패했기 때문이다. 각 실패는 경로, 재료, 도구 업그레이드, 증거 물체로 이어진다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "HE LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "HE LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "HE LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "HE LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "HE LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "HE LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "חלקי נזק בקפסולת נחיתה",
+          "scanner": "Ascent sleeve התעקם, guidance gimbal מצולק, relay mast נגזר, compressor מזוהם, heat tile סדוקה.",
+          "field_note": "הקפסולה יכולה להשאיר Marauder חי בשעה הראשונה. היא לא יכולה לצאת בלי חלקי עומק חלופיים.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "היא נחתה מספיק טוב כדי לתקוע אותך כמו שצריך.",
+          "in_game_wiki": "קפסולת הנחיתה לא נכשלה כגרוטאה דרמטית אחת. היא נכשלה כשרשרת של חלקים בעלי שם שכמעט עשו את העבודה. Ascent sleeve התעקם, ולכן הגוף לא יכול להיחתם מחדש מול לחץ העלייה. Guidance gimbal מצולק, ולכן גם עלייה נקייה תיכנס לסחרור לפני ש-Black Keel יקבל אותה. Relay mast נגזר, compressor סתום בחול מלח, ו-heat tiles סדוקות הופכות כל burn מדומיין לשדה רסיסים.\n\nHECTON-8 לא נותן כפתור חילוץ נקי. קפסולה ששומרת אוויר לשעה אינה קפסולה שיכולה לעזוב את האוקיינוס. כל חלק שבור מצביע על מסלול אמיתי: למצוא pressure-rated sleeve stock, להחזיר מיסבי gimbal, לבנות מחדש את עמוד הממסר, לנקות את נתיב compressor או להוכיח מספיק נזק כדי ש-Black Keel יתמחר חלון אחר.\n\nהגרוטאה אינה רקע. היא מפת ההנדסה הראשונה. כשהקפסולה כותבת FAIL, האוקיינוס כבר הפך נחיתה לרשימת חלקים.",
+          "external_site": "חלקי הנזק של קפסולת הנחיתה מסירים מ-HECTON-8 את היגיון החילוץ הנוח. Marauder תקוע כי מערכות מסוימות כשלו: ascent sleeve, guidance gimbal, relay mast, compressor ו-heat tiles. כל כשל מוביל למסלול, חומר, שדרוג כלי או אובייקט ראיה."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "PT LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "PT LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "PT LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "PT LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "PT LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "PT LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "Peças danificadas da cápsula de queda",
+          "scanner": "Ascent sleeve empenada, guidance gimbal marcado, relay mast cortado, compressor sujo, heat tile rachada.",
+          "field_note": "A cápsula pode manter um Marauder vivo pela primeira hora. Ela não sai sem peças de reposição de grau profundo.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Ela pousou bem o bastante para prender você direito.",
+          "in_game_wiki": "A cápsula de queda não falhou como um único destroço dramático. Ela falhou como uma cadeia de peças nomeadas que quase fizeram seu trabalho. A ascent sleeve empenou, então o casco não consegue selar de novo contra a pressão de subida. O guidance gimbal está marcado, então qualquer subida limpa entraria em rotação antes que a Black Keel pudesse aceitá-la. O relay mast foi cortado, o compressor está sujo de areia salina, e as heat tiles rachadas transformam qualquer burn imaginado em campo de detritos.\n\nHECTON-8 não entrega um botão limpo de resgate. Uma cápsula que mantém ar por uma hora não é a mesma coisa que uma cápsula capaz de sair do oceano. Cada peça quebrada aponta para uma rota real: achar pressure-rated sleeve stock, recuperar rolamentos de gimbal, reconstruir a espinha de relé, limpar o caminho do compressor ou provar dano suficiente para a Black Keel precificar outra janela.\n\nO destroço não é fundo de cena. É o primeiro mapa de engenharia. Se a cápsula escreve FAIL, o oceano já transformou a aterrissagem em lista de peças.",
+          "external_site": "Peças danificadas da cápsula removem a lógica conveniente de resgate de HECTON-8. O Marauder está preso porque sistemas específicos falharam: ascent sleeve, guidance gimbal, relay mast, compressor e heat tiles. Cada falha aponta para uma rota, material, melhoria de ferramenta ou objeto de evidência."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Drop Capsule Damage Parts",
-          "scanner": "NL LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
-          "field_note": "NL LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
-          "terminal": "NL LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
-          "audio": "NL LOC HOLD: It landed well enough to strand you properly.",
-          "in_game_wiki": "NL LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
-          "external_site": "NL LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+          "title": "Beschadigde onderdelen van de dropcapsule",
+          "scanner": "Ascent sleeve krom, guidance gimbal beschadigd, relay mast afgeschoren, compressor vervuild, heat tile gebarsten.",
+          "field_note": "De capsule kan een Marauder het eerste uur in leven houden. Zonder diepterang-vervangingen kan hij niet weg.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Hij landde goed genoeg om je netjes vast te zetten.",
+          "in_game_wiki": "De dropcapsule faalde niet als een enkel dramatisch wrak. Hij faalde als een keten van benoemde onderdelen die hun werk bijna deden. De ascent sleeve is krom, dus de romp kan niet opnieuw tegen opstijgdruk afdichten. De guidance gimbal is beschadigd, dus een schone opstijging zou gaan tollen voordat Black Keel hem kon accepteren. De relay mast is afgeschoren, de compressor zit vol zoutgruis en gebarsten heat tiles maken van elke denkbare burn een puinveld.\n\nHECTON-8 geeft geen schone reddingsknop. Een capsule die een uur lucht vasthoudt, is niet hetzelfde als een capsule die de oceaan kan verlaten. Elk kapot onderdeel wijst naar een echte route: pressure-rated sleeve stock vinden, gimbal-lagers bergen, de relaisrug herbouwen, het compressorpad reinigen of genoeg schade bewijzen zodat Black Keel een ander venster prijst.\n\nHet wrak is geen achtergrond. Het is de eerste technische kaart. Als de capsule FAIL schrijft, heeft de oceaan de landing al in een onderdelenlijst veranderd.",
+          "external_site": "Beschadigde onderdelen van de dropcapsule halen gemakkelijke reddingslogica uit HECTON-8. De Marauder zit vast omdat specifieke systemen faalden: ascent sleeve, guidance gimbal, relay mast, compressor en heat tiles. Elke storing leidt naar een route, materiaal, gereedschapsupgrade of bewijsobject."
         }
       }
     },

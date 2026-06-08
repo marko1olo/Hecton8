@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LASY ŻELAZNEGO KRASNOROSTU
 
 > **Źródło:** Wydział Ksenobiologii Deep Reach, Dziennik Zagrożeń.

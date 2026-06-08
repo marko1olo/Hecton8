@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: No-FTL Route Delay"
+title: "Tunda Rute Tanpa FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: No-FTL Route Delay
+# Tunda Rute Tanpa FTL
 
-ID LOC HOLD: Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
+Jarak adalah aturan bertahan hidup di rute Aegir. Hukum, utang, dan packets lama dapat mencapai pemain jauh sebelum carrier, tender, suku cadang, atau penyelamat manusia. Jawaban relay tidak membatalkan kerja tekanan di depanmu; itu hanya membuktikan seseorang memasukkan claim-mu ke antrean.
 
 ## Scanner
 
-ID LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+Catatan transit. Lalu lintas Aegir bergantung pada precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody, dan penundaan hukum.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+SIMPUL ARSIP PUBLIK // BATAS TRANSIT. FTL tidak ada. Ansible tidak ada. Penyelamatan hidup memerlukan transfer fisik, braking architecture, carrier position, descent mass, dan local window yang sah.
 
 ## Audio
 
-ID LOC HOLD: Help can be legally present and physically years away.
+Bantuan bisa hadir secara hukum dan tetap berjarak fisik bertahun-tahun.
 
 ## Field Note
 
-ID LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+Catatan Marauder: saat relay menjawab, tanyakan umur jawabannya dan massa apa yang bisa ia gerakkan.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/id_ID. -->

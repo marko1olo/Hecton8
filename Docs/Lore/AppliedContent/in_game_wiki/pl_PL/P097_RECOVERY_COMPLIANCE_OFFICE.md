@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "Biuro Zgodności Odzysku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# Biuro Zgodności Odzysku
 
-PL LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+Biuro Zgodności Odzysku to obecna frakcja Deep Reach, która naciska z powrotem na HECTON-8. Działa przez okna, władzę proxy, pakiety prawne i rozkazy sprzątania. Nie potrzebuje natychmiastowego rozkazu; potrzebuje, by gracz najpierw wysłał zły payload.
 
 ## Scanner
 
-PL LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+Stempel biura w czasie teraźniejszym. Deep Reach nie jest duchem; to kolejka z prawnikami.
 
 ## Terminal
 
-PL LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+BIURO ZGODNOŚCI ODZYSKU: otwarto działanie powrotne Aegir. Priorytety: custody XO, dostęp Atlas, ograniczenie odpowiedzialności, milczenie kontraktora jeśli dostępne.
 
 ## Audio
 
-PL LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+Są dość spóźnieni, by być legalni, i dość obecni, by być niebezpieczni.
 
 ## Field Note
 
-PL LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+Żywa frakcja czyni presję aktualną, nie zmieniając całej korporacji w jednego wrzeszczącego złoczyńcę.
 
 <!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/pl_PL. -->

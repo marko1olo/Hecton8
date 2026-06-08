@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "قواعد لقاء فسحة كاشطات الزجاج"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# قواعد لقاء فسحة كاشطات الزجاج
 
-AR LOC HOLD: Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.
+تعلم فسحات كاشطات الزجاج الثقة ذات المهلة. يستطيع سرب حي أن يفتح خطوطا باهتة في الغشاء المعدني، ويكشف حواف حصائر غنية بالأكسجين، ويبين للسابح أين تحرك التيار بنظافة مؤخرا. يجب أن تبدو الفسحة سخية. تحتاج HECTON-8 إلى أماكن تساعد فيها الجماليات. الفخ هو الديمومة. ممر الكاشطات ليس safe room. إنه حالة حالية صنعتها حيوانات ما زالت راغبة في الأكل هناك. إذا بقيت نقرات الأصداف مزدوجة واستمر السرب يعمل على الحافة، فقد يدعم المسار scan أو إصلاحا منخفض الضجيج أو منعطف return-line حذرا. إذا بقي الطعام وتجمد السرب أو انطوى إلى الداخل أو اختفى في جانب واحد من الشعاب، فقد تغيرت الفسحة. لا تنه task bar لأن الماء بدا ودودا قبل ثلاثين ثانية.
 
 ## Scanner
 
-AR LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+فسحة كاشطات زجاجية. آثار كشط جديدة، وغشاء أكسجين، ونقر أصداف ثابت تشير إلى ضغط قريب منخفض. حقل طعام فارغ يعني حالة تحذير.
 
 ## Terminal
 
-AR LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+قواعد لقاء / فسحة كاشطات الزجاج / الدور: تباين ضحل، مسار مقروء شبه آمن، اختبار غياب مفترس / قراءة آمنة: تغذية نشطة، نقرات عودة مزدوجة، حافة معدنية مكشوطة، خط خروج ظاهر / ارفض: اعتبار الكاشطات ضمان أمان، فسحة صامتة، طعام متروك، return-line محجوبة / ملاحظة مسار: الممر نافع لأن الحيوانات تستخدمه الآن، لا لأن المحيط وعد بشيء.
 
 ## Audio
 
-AR LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+تصنع الكاشطات ممرات ساطعة. لكنها لا تقرر كم من الوقت يبقى الممر لها.
 
 ## Field Note
 
-AR LOC HOLD: Use for safe-zone literacy and shallow contrast.
+تغذية نشطة: استخدم المسار. نقرات مزدوجة: اثبت. طعام متروك: توقف عن الثقة بالفسحة.
 
 <!-- In-Game Wiki; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/ar_SA. -->

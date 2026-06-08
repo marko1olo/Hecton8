@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Запись полевого системного специалиста
 
-Игрок - бывший Deep Reach systems worker, ставший Marauder. Его опыт делает каждый broken pump, route stamp и liability phrase личным.
+Игрок в HECTON-8 входит в океан с практическим шрамом: бывшая работа в полевых системах Deep Reach, доступ к эвакуационной инфраструктуре, отозванный допуск и процедурная память, достаточная, чтобы читать утонувшие машины как улики. Теперь он Marauder, не офицер компании и не героический пассажир. Сломанный насос, штамп маршрута или фраза об ответственности важны потому, что оператор понимает, как эти системы должны были защищать работников до того, как стали бумагой.
 
 ## Scanner
 
-Старый field-systems credential. Не command staff. Инфраструктурная работа с доступом, достаточным чтобы понять, где похоронили route.
+Старый допуск к полевым системам. Не командный состав. Инфраструктурная работа с доступом, достаточным, чтобы узнать, где был похоронен маршрут.
 
 ## Terminal
 
-PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+СЛЕД ПЕРСОНАЛА: полевые системы, эвакуационная инфраструктура, сертификация route-safe. Допуск отозван после пересмотра тишины Aegir. Кэш процедур все еще совпадает с последовательностью оператора.
 
 ## Audio
 
-Ты не был тем, кто подписал ложь. Ты знал язык, на котором она работала.
+Ты не подписывал ложь. Ты знал грамматику, которая помогала ей проходить проверку.
 
 ## Field Note
 
-RU LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+Значок перестал открывать двери. Он не стер порядок отказов из рук.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/ru_RU. -->

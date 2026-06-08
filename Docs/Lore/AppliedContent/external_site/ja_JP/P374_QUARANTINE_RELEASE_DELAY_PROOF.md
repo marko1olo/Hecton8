@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Quarantine Release Delay Proof"
+title: "検疫解放保留"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Quarantine Release Delay Proof
+# 検疫解放保留
 
-JA LOC HOLD: HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.
+HECTON-8で検疫が信じられるのは、汚染が偽物ではないからだ。圧力曝露、塩水化学、Atlas互換成長は不用意な救助を致命的にする。その真実がDeep Reachに隠れ場所を与える。release holdは、実用的な出口がすでに狭まった後で、保護の言葉がどうシステムを流れたかを示す。ゲートは誰かを処刑せよとは言わない。hold until review、生物学的不確実性を保持、asset massを受理、insurance pingを維持、と言う。各句は単独なら弁護できる。沈むコロニーでは、それらがcustodyになる。このpacketはプレイヤーを不安にさせるべきだ。検疫は必要であり得る。その同じ道具で、人を遅らせ、claimだけを残すこともできる。
 
 ## Scanner
 
-JA LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+検疫保留プレート。出口経路がすでに施錠された後で、保護という言葉が現れる。
 
 ## Terminal
 
-JA LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY。reviewまで保留。worker releaseより先にasset massをrecovery queueへ受理。insurance ping有効。
 
 ## Audio
 
-JA LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+検疫は身体を救える。身体を紙になるまで待たせることもできる。
 
 ## Field Note
 
-JA LOC HOLD: Use where player may confuse rescue with custody.
+Marauderメモ: protectionという言葉だけで保護は証明されない。時計を見ろ。
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/ja_JP. -->

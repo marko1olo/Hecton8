@@ -9,17 +9,17 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Приоритетный крюк Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Приоритетный крюк Deep Reach
 
-Настоящее давление Deep Reach не требует магической remote command. Старые certificates, quarantine clauses и continuity payload rules сидят внутри юридического маршрута Black Keel. Компания может сдвигать ценность carrier, не владея им явно.
+Нынешнее давление Deep Reach не требует невозможного удаленного управления. Старые continuity certificates, карантинные clauses, токены доступа Atlas и priority hooks для payload уже сидят в юридическом пути Black Keel. Компания может влиять на то, что carrier считает ценным, не владея carrier явно. Поэтому антагониста труднее отрезать: это не сигнал, который можно заглушить, а clause, которая снова просыпается.
 
 ## Scanner
 
@@ -27,14 +27,14 @@ localization_flags: 0
 
 ## Terminal
 
-ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: legacy continuity certificate Deep Reach может продвинуть payload recovery, карантинный замок, токен доступа Atlas или очередь подавления доказательств по claim-праву Aegir. Приоритет извлечения человека не меняется, если доказательство опасности не превышает custody value.
 
 ## Audio
 
-Им не нужно быть на мостике, чтобы рулить ответом.
+Им не нужно стоять на мостике, чтобы рулить ответом.
 
 ## Field Note
 
-Это чище заговора: бумаги еще живы.
+Чище заговора: бумаги все еще живы и все еще голодны.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/ru_RU. -->

@@ -9,32 +9,16 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Deep-Reach-Priority-Hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Deep-Reach-Priority-Hook
 
-DE LOC HOLD: Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control.
-
-## Scanner
-
-DE LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
-
-## Terminal
-
-DE LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
-
-## Audio
-
-DE LOC HOLD: They do not need to be on the bridge to steer the answer.
-
-## Field Note
-
-DE LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+Der Priority Hook ist der sauberste Weg, Deep Reach nach dem Verstummen der Kolonie gefährlich zu halten. Das Unternehmen muss Black Keel nicht per Fernwunder fliegen. Es braucht nur ein altes Zertifikat, das der Carrier noch anerkennt, eine Continuity-Regel mit Atlas-Zugang und eine Payload-Klasse, die unter bestimmten Gefahrenbedingungen einen Contractor-Körper überrangt. Das reicht. Eine Route kann verschoben werden. Eine versiegelte Kiste kann in der Queue steigen. Eine Quarantänesperre kann geschlossen bleiben, während der Sauerstoffzähler des Operators ein weiterer Schuldeneintrag wird. Das Ergebnis ist kälter als Sabotage: Das System arbeitet wie geschrieben, und Deep Reach lernte, sich in die Teile zu schreiben, die Katastrophen überleben.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/de_DE. -->

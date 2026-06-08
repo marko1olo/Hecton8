@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "Grammar Encounter False-Safe Lantern Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# Grammar Encounter False-Safe Lantern Drift
 
-ID LOC HOLD: HECTON-8's bright shallows are readable, but never innocent.
+False-safe lantern drift menjaga dangkalan terang HECTON-8 tetap jujur. Glow itu berguna, menggoda, dan berbahaya karena merekam lebih dari satu kebenaran sekaligus.
 
 ## Scanner
 
-ID LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Lane lantern drift. Air terang bisa berarti tepi oksigen, noise sinyal, jejak alat, atau traffic yang digeser predator. Verifikasi arus sebelum mengikuti.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+GRAMMAR ENCOUNTER / FALSE-SAFE LANTERN DRIFT / peran: beauty sebagai data ambigu, godaan rute, penalti stealth / baca aman: arus cocok dengan glow, fauna normal, residu di sisi yang diharapkan / tolak: menganggap cahaya biru aman, mengikuti koridor palsu bermuatan badai, memperbaiki bising di dalam jejak terang / catatan rute: satu glow bisa menjadi jalan, umpan, catatan panik, atau exposure.
 
 ## Audio
 
-ID LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+Cahaya bukan belas kasihan. Itu data yang belum bisa dipisahkan suit-mu.
 
 ## Field Note
 
-ID LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+Tanyakan apa yang dibawa cahaya: arus, oksigen, suaramu, atau sesuatu yang membuat semuanya menyingkir.
 
 <!-- External Site; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/id_ID. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # כלכלת ההישרדות והחוב לקילמרק
 
 > **מקור:** הסכם קבלן עצמאי של קילמרק, נספח 14-B (התחייבויות פיננסיות).

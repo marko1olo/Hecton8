@@ -13,6 +13,7 @@ namespace Hecton8.Editor.GeologyForge
         private const string NativeMemoryOwner = nameof(TopographyBiomeRecipeStore);
         private const string RecipesLabel = "_recipes";
         private NativeList<TopographyBiomeRecipeDTO> _recipes;
+        private int _recipesSentinelId;
 
         internal bool IsCreated => _recipes.IsCreated;
 
@@ -23,13 +24,13 @@ namespace Hecton8.Editor.GeologyForge
         internal static TopographyBiomeRecipeStore Create(Allocator allocator, int capacity)
         {
             TopographyBiomeRecipeStore store = default;
-            store._recipes = GeologyForgeNativeMemory.AllocateList<TopographyBiomeRecipeDTO>(capacity, allocator, NativeMemoryOwner, RecipesLabel);
+            store._recipes = GeologyForgeNativeMemory.AllocateList<TopographyBiomeRecipeDTO>(capacity, allocator, NativeMemoryOwner, RecipesLabel, out store._recipesSentinelId);
             return store;
         }
 
         public void Dispose()
         {
-            GeologyForgeNativeMemory.DisposeList(ref _recipes, NativeMemoryOwner, RecipesLabel);
+            GeologyForgeNativeMemory.DisposeList(ref _recipes, ref _recipesSentinelId);
         }
 
         internal void Clear()

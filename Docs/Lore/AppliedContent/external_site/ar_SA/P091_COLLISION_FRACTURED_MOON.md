@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "قمر تصدعه الاصطدام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# قمر تصدعه الاصطدام
 
-AR LOC HOLD: Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy.
-
-## Scanner
-
-AR LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
-
-## Terminal
-
-AR LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
-
-## Audio
-
-AR LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
-
-## Field Note
-
-AR LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+لم يكن HECTON-8 جسما شاردا أُسر للدهشة. تراكم في حزام حطام أيغير، وبرد كقمر محيطي طبقي، ثم تلقى اصطداما مائلا شوه القشرة من غير أن يمحو العالم. رفعت الضربة الرفوف، وأغرقت الأحواض، وفتحت سلالم صدوع طويلة تتحرك فيها كيمياء حارة داخل ماء مالح. أبقى الرنين المدي تلك الجروح نشطة بعد القفل المداري. لذلك يملك المحيط ندوبا مقروءة: أخاديد ملحية، مصاهر فوهية، عروق زجاج ضغط، حواف مكشوفة، ونوافذ نادرة إلى الأرض القديمة.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/ar_SA. -->

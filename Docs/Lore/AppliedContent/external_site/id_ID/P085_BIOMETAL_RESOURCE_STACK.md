@@ -8,33 +8,19 @@ biome_tags: biome.factory_temple;biome.deep_abyss
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+spoiler_tier: 1
+title: "Tumpukan Sumber Daya Biometal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# Tumpukan Sumber Daya Biometal
 
-ID LOC HOLD: Biometal Resource Stack frames HECTON-8 as a full pressure economy. The game can reward exploration with many resources while keeping blue debt as the strategic apex.
+Tumpukan sumber daya mencegah HECTON-8 menyusut menjadi satu bahan ajaib. Xenon-Omega penting, tetapi bulan juga punya logam, garam, kimia vent, keramik tekanan, biofiber, fotoprotein, salvage dan biometal yang diubah Atlas.
 
-## Scanner
-
-ID LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
-
-## Terminal
-
-ID LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
-
-## Audio
-
-ID LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
-
-## Field Note
-
-ID LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+Tumpukan Sumber Daya Biometal membingkai HECTON-8 sebagai ekonomi tekanan penuh, memberi banyak alasan eksplorasi sambil menjaga blue debt sebagai puncak strategis. Jika setiap sampel berkata Xenon-Omega, dunia menjadi bodoh. Hitung alasan lain juga.
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/id_ID. -->

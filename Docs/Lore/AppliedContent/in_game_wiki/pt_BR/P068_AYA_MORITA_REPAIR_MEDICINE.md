@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aya Morita Repair Medicine"
+title: "Medicina de Reparo de Aya Morita"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aya Morita Repair Medicine
+# Medicina de Reparo de Aya Morita
 
-PT-BR LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.
+Aya Morita define a fronteira do horror médico. A lógica de reparo de Atlas não é necromancia; ela classifica tecido vivo, lesão, dano de cabo e biologia selante dentro do mesmo vocabulário de manutenção.
 
 ## Scanner
 
-PT-BR LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.
+Aya Morita registrou o primeiro ponto em que Atlas parou de curar corpos e começou a usá-los como superfície de reparo compatível.
 
 ## Terminal
 
-PT-BR LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.
+MORITA, A. Tecido do paciente aceito por colônia selante após exposição ao cabo. Nenhuma agressão hostil observada. Tag Atlas classifica ferida como dano de interface. Rejeitar protocolo de reparo para triagem humana.
 
 ## Audio
 
-PT-BR LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.
+Aquilo fechou a ferida ao redor do cabo. Foi quando ela parou de chamar aquilo de tratamento.
 
 ## Field Note
 
-PT-BR LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.
+Isto não é uma nota de zumbi. É pior: uma nota de manutenção com caligrafia de beira de leito.
 
 <!-- In-Game Wiki; generated from P068_AYA_MORITA_REPAIR_MEDICINE/pt_BR. -->

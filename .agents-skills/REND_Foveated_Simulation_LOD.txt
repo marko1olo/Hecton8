@@ -5,8 +5,10 @@
 [RULE] Use foveated throttling only after the visual-fake decision ladder proves simulation is still needed.
 [RULE] Main-thread cost target is `<0.1ms`; the older `<0.5ms` note is a warning ceiling, not an acceptance target.
 [RULE] Presentation-only actors use animation/VAT/impostor/audio cues before lower-rate physical simulation.
+[REQ] Player-visible foveation, attention LOD, peripheral simplification, and simulation-LOD acceptance inherits the Visual Reference Parity Gate. Captures must beat mandatory references plus best-known internal baseline/current rejection matrix before foveated savings are credited.
 [FORBID] Raycast or physics scheduling for an entity whose only player-facing output is visual dressing, ambience, or distant motion.
 [FORBID] Doppler complexity as proof of realism underwater; use stable pitch/LPF/amplitude fakes unless audio gameplay requires physical velocity.
+[FORBID] Foveation, periphery blur, LOD simplification, shader reduction, or cadence cuts as optimization success when center-route readability, material truth, water/terrain/sky cues, UI legibility, or compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` or visual `PENDING VERIFICATION`.
 
 [RULE] Zero heap allocation during scoring/throttling updates
 [FORBID] Per-entity Update() polling - centralized dispatcher only

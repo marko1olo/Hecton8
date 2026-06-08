@@ -9,32 +9,36 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: השמיים שמסרבים להציל"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Aegir Transfer Windows
+# Aegir: השמיים שמסרבים להציל
 
-HE LOC HOLD: Aegir is reachable by machinery, timing and debt. No faster-than-light drive crosses the route. Probe packets mapped the warm dwarf system first, then beam infrastructure and pellet-fusion freight built enough traffic to move seed mass, claim platforms and slow human decisions into the same ledger. HECTON-8 sits inside that machinery as a pressure moon under Aegir, bright at the surface, dangerous by depth and useful enough that nobody could leave it alone. Black Keel does not ignore a survivor because rescue is impossible. It waits because recovery requires several clocks to agree: relay delay, carrier position, descent mass, storm shutters, custody signatures and a window narrow enough to close while a person is still sealing a capsule. Every visible moon, relay path and transfer band is part of the same route accounting. That is why help reaches HECTON-8 first as a number, then as a signal, and only much later as hardware.
+## שמיים שאינם ריקים
 
-## Scanner
+Aegir אינו רקע. זו מכונה מעל האוקיינוס: כבידה, קרינה, גאומטריית ממסרים, מזג פסולת, זמן חוזה וחוק חילוץ.
 
-HE LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+אין ansible ואין FTL. מסלול Ran/Aegir הוא בקנה מידה של שנות אור; חלונות מקומיים תלויים במסלול, סערה, צל ירחים ותורי custody. חבילה נכונה יכולה לאחר. חבילה נקייה יכולה להיות חסרת ערך משפטי.
 
-## Terminal
+הסולם קורא ל-Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON ו-Mute. קבועים מדויקים שייכים לטבלאות עתידיות. בשטח משתמשים ב-shadow, surge, scatter, plume, lag ו-receiver.
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+Black Keel נשאר גבוה כי ירידה עולה חום, דלק, חשיפה, לוח זמנים ואחריות. חזרה צריכה ממסר אקוסטי, חומרת עלייה, תזמון, מזג אוויר, הסגר, hash מטען וחלון מסה. אם חוליה אחת חסרה, ה-carrier עדיין נשמע רגוע. הרוגע הוא אוטומציה עם ledger.
 
-## Audio
+## השמים הם מכונה
 
-HE LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Aegir אינו צריך להיקרא כרקע מצויר. זו המכונה הגדולה בסיפור: כוכב ראשי, סולם ירחים, relay shadows, pellet lanes, braking wakes, ice scatter, storm plume וguidance lag בלוח זמנים עוין. השחקן לא חייב לראות הכול מיד. הוא צריך להרגיש שלכל הודעה, הטלה ואיסוף יש גיאומטריה.
 
-## Field Note
+לכן חילוץ לא יכול פשוט להגיע. אין תיקון FTL, אין ansible מוסתר, אין carrier גיבור שמתעלם ממסה. route window הוא קודם רשות של פיזיקה ואחר כך של חוק. Black Keel יכול להוריד tender כי העבודה המקומית צרה, לא כי יש לו נס.
 
-HE LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+## מה פירוש להסתכל למעלה
+
+להסתכל למעלה ב-HECTON-8 צריך להיות מעשי ומר. השמים אינם תקווה. הם timing. Aegir קובע מתי packet יעלה, מתי receiver יענה, מתי claim יאושר ומתי השחקן יישאר לבד עם הוראות ישנות.
+
+מאמר אסטרונומיה טוב גורם לאור ירח להיקרא כסיכון. אם Kestrel זז, relay shadow משתנה. אם ice scatter עולה, ניווט הופך לשמועה. אם Silent Orbit שותק, מתכת ישנה עדיין יכולה להחליט את ההווה.
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/he_IL. -->

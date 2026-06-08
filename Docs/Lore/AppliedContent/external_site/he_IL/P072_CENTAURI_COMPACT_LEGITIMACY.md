@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "הלגיטימיות של Centauri Compact"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# הלגיטימיות של Centauri Compact
 
-HE LOC HOLD: Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt.
+הלגיטימיות של Centauri Compact מקרקעת את העולם הרחב: התפשטות אנושית כבר עובדת במקומות מסוימים, ולכן Aegir נראה פחות הירואי ויותר מושחת.
 
 ## Scanner
 
-HE LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+תג ביקורת של Centauri. לגיטימיות חוץ-שמשית מוקדמת, ואחר כך תירוצי ספר.
 
 ## Terminal
 
-HE LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+חומרת CENTAURI COMPACT: מארז לחץ מאושר לתעבורה אזרחית. ערוץ ביקורת לא פעיל. האחריות בטלה לאחר הסבה של Deep Reach בידי צד שלישי.
 
 ## Audio
 
-HE LOC HOLD: First legitimacy became old metal under a newer lie.
+הלגיטימיות הראשונה הפכה למתכת ישנה מתחת לשקר חדש יותר.
 
 ## Field Note
 
-HE LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+ה-Compact הפך תביעות רחוקות למכובדות. מכובדות אינה חילוץ.
 
 <!-- External Site; generated from P072_CENTAURI_COMPACT_LEGITIMACY/he_IL. -->

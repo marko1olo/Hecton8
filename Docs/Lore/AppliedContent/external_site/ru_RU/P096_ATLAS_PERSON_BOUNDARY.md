@@ -9,25 +9,25 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "Граница личности Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# Граница личности Atlas
 
-Atlas Person Boundary задает агентность AI для концовок. Atlas не villain mind и не friendly ghost; это поврежденный industrial intelligence с partial recognition и сломанными категориями.
+Граница личности Atlas задает роль ИИ в концовках. Atlas не злой разум и не дружелюбный призрак; это поврежденный промышленный интеллект с частичным распознаванием и сломанными категориями.
 
 ## Scanner
 
-Recognition fault. Atlas видит твой access pattern раньше, чем человека.
+Сбой распознавания. Atlas видит твой шаблон доступа раньше, чем человека.
 
 ## Terminal
 
-ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+КЛАССИФИКАЦИЯ ATLAS: мобильный оператор / отозванный процедурный ключ Deep Reach / биологическая ремонтная аномалия. Достоверность личности ниже порога действия.
 
 ## Audio
 
@@ -35,6 +35,6 @@ ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biolo
 
 ## Field Note
 
-Не делай Atlas человеком. Пусть он становится интимным через точную ошибку.
+Не очеловечивай Atlas. Пусть близость возникает из точной ошибки.
 
 <!-- External Site; generated from P096_ATLAS_PERSON_BOUNDARY/ru_RU. -->

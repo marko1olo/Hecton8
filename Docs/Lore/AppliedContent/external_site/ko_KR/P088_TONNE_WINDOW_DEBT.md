@@ -9,32 +9,16 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "톤-윈도 부채"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# 톤-윈도 부채
 
-KO LOC HOLD: Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-KO LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-KO LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-KO LOC HOLD: You owe the orbit before you owe the money.
-
-## Field Note
-
-KO LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+톤-윈도는 질량, burn 타이밍, 격리 용적, 법적 우선순위로 측정되는 carrier 용량의 조각이다. 오퍼레이터에게는 부채처럼 느껴진다. HECTON-8에서 나온 모든 유용한 물체가 그것을 발견한 몸과 같은 ledger에 들어가기 때문이다. 봉인 상자는 가벼워도 법적으로 무거울 수 있다. 샘플 랙은 질량은 적어도 청정 용적을 요구할 수 있다. 인간 추출은 당연해 보이지만 밸러스트, 산소 예비, payload custody가 이미 창을 써 버렸다면 당연하지 않다. HECTON-8의 경제는 추상이 아니라 물리적이다. 플레이어는 가짜 도덕 미터로 벌받지 않는다. 플레이어는 연료, 질량, 오염, 서류로 생존을 가격 매기는 기계 안에 갇힌다.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/ko_KR. -->

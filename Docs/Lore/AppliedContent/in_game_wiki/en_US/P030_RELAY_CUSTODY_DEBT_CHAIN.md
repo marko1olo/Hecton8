@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Relay Custody Debt Chain
 
-Relay custody turns space logistics into pressure. The player can receive help, but the route that carries help also carries debt, priority hooks and corporate authority.
+Relay custody turns space logistics into pressure. Help can arrive, but the route that carries help also carries debt, priority hooks and corporate authority.
 
 ## Scanner
 

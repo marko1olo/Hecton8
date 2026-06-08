@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: No-FTL Route Delay"
+title: "Затримка маршруту без FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: No-FTL Route Delay
+# Затримка маршруту без FTL
 
-UK LOC HOLD: Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
+Відстань є правилом виживання на маршруті Aegir. Закон, борг і старі packets можуть дістатися гравця задовго до carrier, tender, запчастини або живого рятівника. Відповідь relay не скасовує роботу з тиском перед тобою; вона лише доводить, що хтось поставив твій claim у чергу.
 
 ## Scanner
 
-UK LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+Транзитний запис. Рух Aegir залежить від precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody і юридичної затримки.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+ВУЗОЛ ПУБЛІЧНОГО АРХІВУ // МЕЖА ТРАНЗИТУ. FTL відсутній. Ansible відсутній. Живий порятунок потребує фізичного transfer, braking architecture, carrier position, descent mass і чинного local window.
 
 ## Audio
 
-UK LOC HOLD: Help can be legally present and physically years away.
+Допомога може бути юридично присутня й фізично віддалена на роки.
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+Нотатка Marauder: коли relay відповідає, спитай, скільки років відповіді і яку масу вона може зрушити.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/uk_UA. -->

@@ -8,33 +8,19 @@ biome_tags: biome.factory_temple;biome.deep_abyss
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+spoiler_tier: 1
+title: "バイオメタル資源スタック"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# バイオメタル資源スタック
 
-JP LOC HOLD: Biometal Resource Stack frames HECTON-8 as a full pressure economy. The game can reward exploration with many resources while keeping blue debt as the strategic apex.
+資源スタックはHECTON-8を一つの魔法素材に縮めない。Xenon-Omegaは重要だが、金属、塩、噴出口化学、圧力セラミック、バイオ繊維、光タンパク、salvage、Atlas改変バイオメタルも存在する。
 
-## Scanner
-
-JP LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
-
-## Terminal
-
-JP LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
-
-## Audio
-
-JP LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
-
-## Field Note
-
-JP LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+バイオメタル資源スタックはHECTON-8を完全な圧力経済として示す。探索は多様な資源で報酬を与え、blue debtを戦略的頂点に保てる。 すべてのサンプルがXenon-Omegaと言うなら、世界は愚かになる。他の理由も数えろ。
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/ja_JP. -->

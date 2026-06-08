@@ -9,32 +9,26 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Perbaikan PressureSeal Pertama"
+title: "Perbaikan PressureSeal Pertama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Perbaikan PressureSeal Pertama
+# Perbaikan PressureSeal Pertama
 
-ID LOC HOLD: Perbaikan berguna pertama di Shallow Annex P-63 dimulai dalam cahaya. FiberKelp dari paparan terang menjadi FiberMesh, lalu membawa PressureSeal sementara untuk collar atau soket layanan yang bocor. Itu membeli waktu dan keamanan rute, bukan pelarian.
+## Perbaikan Dalam Cahaya
 
-## Scanner
+Perbaikan berguna pertama di Shallow Annex P-63 dimulai di tempat air masih cukup terang untuk berbohong. Di luar, FiberKelp bergerak dalam arus paparan. Di dalam, collar tekanan berkeringat melalui sambungan yang dicatat Deep Reach sebagai layak servis.
 
-ID LOC HOLD: TARGET PRESSURESEAL // Kebocoran collar P-63. Pembawa FiberMesh cocok. Stabilisasi lokal saja; sertifikasi naik ditolak.
+FiberKelp adalah biofiber dangkal, bukan harta langka. Ia tumbuh di tempat cahaya, arus, dan panas industri lama bertemu. Serat yang dicuci dan disisir menjadi FiberMesh. Fabricator lapangan P-63 dapat menekan mesh itu menjadi lapisan pembawa untuk PressureSeal sementara.
 
-## Terminal
+Komponen itu berguna karena terbatas. PressureSeal dapat memperlambat kebocoran lokal, menstabilkan kantong kembali, dan membuat putaran perbaikan pendek bisa diselamatkan. Ia tidak mensertifikasi bathydrop untuk naik, tidak mengganti clamp ring, dan tidak mengubah jawaban Black Keel menjadi pemulihan.
 
-ID LOC HOLD: CATATAN TOLERANSI DEEP REACH P-63 // Tunda penggantian collar. Terapkan pembawa segel lunak yang disetujui jika bocor masih dalam ambang layanan lokal.
+Kontradiksi terlihat sebelum arsip menjelaskannya. Terminal menyebut variansi tekanan dalam toleransi servis. Collar menunjukkan baut melengkung, garam di bawah strip inspeksi, dan serat terjepit di retakan yang seharusnya logam bersih.
 
-## Audio
-
-ID LOC HOLD: Relay Black Keel: tambalan P-63 terbaca aman lokal, bukan aman naik. Ambil segel, simpan serialnya.
-
-## Field Note
-
-ID LOC HOLD: Air terang di luar. Collar basah di dalam. Deep Reach menyebutnya nominal karena kata itu lebih murah daripada clamp ring.
+Bagi Marauder, pelajarannya praktis: potong FiberKelp dengan bersih, jauhkan pasir dari mesh, simpan serial pada segel, dan jangan percaya perbaikan yang berkata aman lokal saat rute membutuhkan aman untuk naik.
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/id_ID. -->

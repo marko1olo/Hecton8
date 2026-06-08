@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+spoiler_tier: 1
+title: "探测包旅行时间"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# 探测包旅行时间
 
-CN LOC HOLD: Probe Packet Travel Times explain how Aegir became a claim before it became a place.
-
-## Scanner
-
-CN LOC HOLD: The first Aegir witnesses were packets, not colonists.
-
-## Terminal
-
-CN LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
-
-## Audio
-
-CN LOC HOLD: The probe saw the ocean before anyone had a grave there.
-
-## Field Note
-
-CN LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+probe packet时间让Aegir在变得熟悉之前先变得有价值。狭小机器可以穿越、测量并汇报，而背后的人类制度仍在争论预算与责任。当Deep Reach出售信心时，packets已经陈旧，risk models已经被打磨光滑。机器先行探索的危险就在这里：在人们理解在那里工作的代价之前，海洋已经可以被旧真相定价。
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/zh_CN. -->

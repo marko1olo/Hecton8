@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Drowned Crust Strata Guide"
+title: "Panduan Lapisan Kerak Tenggelam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Drowned Crust Strata Guide
+# Panduan Lapisan Kerak Tenggelam
 
-ID LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.
+Panduan Lapisan Kerak Tenggelam membuat dasar laut HECTON-8 terasa dibangun sekaligus rusak: terrain, salvage routes, dan sampel mineral semua berasal dari riwayat tekanan berlapis yang sama.
 
 ## Scanner
 
-ID LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+Lapisan banjir membuka bekas potong lama, sambungan pressure-glass, dan pita mineral yang tidak gagal dua kali ke arah yang sama.
 
 ## Terminal
 
-ID LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: kerak tenggelam HECTON-8 adalah batu permukiman bertumpuk, ingatan es runtuh, pressure glass, dan extraction scars di bawah brine bergerak. Garis retakan lebih penting daripada permukaan bersih.
 
 ## Audio
 
-ID LOC HOLD: The map is not terrain. It is a stack of drownings.
+Peta bukan medan. Itu tumpukan tenggelam.
 
 ## Field Note
 
-ID LOC HOLD: Use for geology codex and procedural world labels.
+Jika sebuah pita berbunyi kosong, jangan percaya muka datarnya. Tandai retakan, ambil sampel, biarkan dinding tetap menahan.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/id_ID. -->

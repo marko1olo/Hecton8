@@ -1,12 +1,77 @@
-AsyncWriteManager.Write(fileHandle, buffer.GetUnsafePtr(), total_compressed_size);
+# HECTON-8 | Save Persistence | Binary Delta Checksum Law
 
----
+Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Owner: Persistence / SaveSystem / DataVault
+Scope: save slots, world pages, WAL, migration, corruption recovery, black-box dump persistence.
+
+## Primary Law
+
+[RULE] Runtime save data is owner-authored binary state, not reflective object dumps.
+[RULE] Hot or large save domains use fixed headers, schema versions, bounded entry counts, payload lengths, checksums, and compressed blocks where profiling justifies compression.
+[RULE] Save identity comes from stable owner IDs, schema IDs, sector/page keys, persistent object IDs, and domain route names. GameObject names, hierarchy order, transient instance IDs, and presentation-only state are not save identity.
+[RULE] Writes use temp-write, validate/checksum, then atomic replace. The active save file is never overwritten directly.
+[RULE] World paging and WAL writes use one owned persistent worker route or Unity-approved async storage primitive with fixed unmanaged/native buffers and bounded queues.
+[RULE] Loading restores owner-approved gameplay truth first. Presentation rebuilds after truth is valid.
+[RULE] Every schema change defines from-version, to-version, field mapping, defaults, rejected fields, validation, and a sample blob or test artifact.
+
+## Forbidden
+
+[FORBID] JSON, BinaryFormatter, reflection-heavy serializers, or full scene-graph serialization for runtime save truth.
+[FORBID] Main-thread blocking file I/O from gameplay/UI/presentation hot paths.
+[FORBID] `File.ReadAllBytes`, `File.WriteAllBytes`, `BinaryReader`, or `BinaryWriter` on runtime hot paths.
+[FORBID] Save writes from UI button code without persistence-owner routing.
+[FORBID] Silent corruption recovery that invents gameplay truth.
+[FORBID] Claiming save/load readiness from schema prose, a static scan, or a UI button alone.
+
+## Required Binary Shape
+
+Minimum domain block:
+
+- magic;
+- schema version;
+- domain or chunk/page ID;
+- entry count;
+- payload byte length;
+- checksum/hash;
+- flags;
+- optional compressed payload with explicit codec and dictionary/version route;
+- owner-specific telemetry/error code.
+
+The writer must reject malformed length/count/checksum combinations before data reaches gameplay owners.
+
+## Runtime Route
+
+- Manual slots default to `slot_0`, `slot_1`, and `slot_2` unless current source proves a migrated slot table.
+- Primary save writes use `.sav`; backup uses `.sav.bak`; temp writes use `.sav.tmp` or a route-owned temp page extension.
+- Autosave cadence must not be faster than 30 seconds unless the route is an emergency black-box/checkpoint path.
+- Large world state uses page/WAL style writes instead of one monolithic full-save spike.
+- Save/load application order follows `persistence.md` load bands unless a source-owned migration route proves a narrower dependency.
+
+## DataVault And Memory
+
+[RULE] Save staging buffers that cross Burst/native/persistence boundaries are ARM64-safe and use explicit unmanaged layout.
+[RULE] Persistent native staging belongs to `GlobalDataVault` or a documented source owner with lifecycle, capacity, disposal, failure mode, and telemetry.
+[RULE] Worker handoff uses fixed queues or bounded unmanaged/native buffers. Per-request managed allocation storms are rejected.
+
+## Proof Required
+
+Before any `VERIFIED`, `READY`, `0 GC`, or corruption-safe claim, provide:
+
+- exact save file path, size, and schema version;
+- command/tool or Unity/player route used to write and read it;
+- checksum/hash result;
+- migration range and sample blob if schema changed;
+- write/read/corruption/backup recovery artifact;
+- save/load gameplay restoration artifact for player-facing state;
+- profiler/GC evidence for runtime save/load paths;
+- explicit `PENDING VERIFICATION` for any missing runtime, player, profiler, GC, or platform proof.
 
 ## Engineering Data
 
 | Gate | Requirement | Evidence |
 |---|---|---|
 | Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
-| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
-| Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
-| Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |
+| Binary integrity | magic, version, count, length, checksum, and reject path | Save/load artifact |
+| Atomicity | temp, validate, replace, backup fallback | File artifact / corruption test |
+| Ownership | domain owner, schema route, DataVault/native lifecycle | Code review / source proof |
+| Failure mode | safe fallback, telemetry flag, Black Box dump path | Test log / dump artifact |

@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Pregunta final: corte, misericordia, robo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# Pregunta final: corte, misericordia, robo
 
-ES LOC HOLD: Severance forces the player to define what kind of life Atlas-ocean continuity has become.
+El corte obliga al jugador a decidir qué se ha vuelto la continuidad Atlas-océano. Si solo es una herramienta rota, cortar es reparar. Si es un sistema vivo, cortar es matar. Si es testimonio, cortar quizá destruya evidencia.
 
 ## Scanner
 
-ES LOC HOLD: Severing Atlas is not a simple shutdown button.
+Cortar Atlas no es pulsar un botón de apagado. Es cirugía sin anatomía limpia.
 
 ## Terminal
 
-ES LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
+EJE DE CORTE: cortar continuidad de Atlas, aislar ecología de presión, negar rutas de payload a Deep Reach, arriesgar colapso de cuenca o preservar solo memoria parcial de reparación. El sentido depende de la prueba llevada a la sala final.
 
 ## Audio
 
-ES LOC HOLD: A clean switch would be merciful. You do not get one.
+Un interruptor limpio sería misericordioso. No tienes uno.
 
 ## Field Note
 
-ES LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+El mismo acto puede liberar trabajadores atrapados, matar vida océano-máquina, negar a Deep Reach y robar una infraestructura viva de sí misma.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/es_ES. -->

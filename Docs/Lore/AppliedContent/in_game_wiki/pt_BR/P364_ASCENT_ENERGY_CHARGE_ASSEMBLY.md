@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Ascent Energy Charge Assembly"
+title: "Conjunto de Carga de Energia de Subida"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Ascent Energy Charge Assembly
+# Conjunto de Carga de Energia de Subida
 
-PT LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.
+A carga de subida transforma recursos profundos em troca mecânica e moral. Materiais de alta pressão podem erguer a cápsula, preservar evidências por custody ou virar pagamento que enfraquece a rota para casa.
 
 ## Scanner
 
-PT LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+Berço de energia marcado por pressure pulse. Carga barata vira caixão limpo.
 
 ## Terminal
 
-PT LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: vent-forged heat cell, pressure-history insulator e custody stamp exigidos. Raw fuel rejeitado. Blue debt não certificado fratura sob launch impulse e anula recovery claim.
 
 ## Audio
 
-PT LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+Você pode vender o impulso ou subir nele. Não os dois.
 
 ## Field Note
 
-PT LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+Cada grama no berço é fuga, evidência ou blue-debt payout. A cápsula não perdoa ganância.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/pt_BR. -->

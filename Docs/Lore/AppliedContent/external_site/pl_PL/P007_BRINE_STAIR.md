@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Schody solankowe
 
-Brine Stair zmienia geologię HECTON-8 w trasę. Głębię trzeba czytać, nie tylko wytrzymać.
-
-## Scanner
-
-Warstwa solanki o dużej gęstości. Echo sonaru załamuje się na granicy. Model wyporu zawodny.
-
-## Terminal
-
-Wyrównanie ujęcia termicznego zakończone. Wzrost substratu ponad normę. Żądanie Atlas odroczone.
-
-## Audio
-
-Tu na dole są całe schody, jeśli przestaniesz traktować wodę jak jedną rzecz.
-
-## Field Note
-
-Klasa kadłuba mówi, kiedy metal się podda. Solanka mówi, kiedy byłeś arogancki.
+Schody solankowe to miejsce, gdzie HECTON-8 przestaje być prostym zejściem i staje się maszyną z wody. Gęsta solanka nie miesza się czysto z warstwami nad sobą. Leży w półkach, kurtynach i wolnych rzekach na dnie, ugina sonar i zmienia wypór w najgorszym momencie. To zagrożenie daje graczowi nową umiejętność czytania. Mocniejszy kadłub pomaga, ale czytanie wody liczy się bardziej: gdzie ciepło unosi, gdzie sól opada, gdzie granicą można jechać jak drogą, i gdzie nieostrożna zmiana balastu przyciśnie pojazd pod niewidzialnym sufitem. Wartość lore jest równie ważna. Schody solankowe zachowują to, co kolonia próbowała zgubić. Trzymają stare znaczniki tras, kasety ciśnieniowe, martwe drony, ślady chemiczne i czasem ciała w warstwach, które nie mieszały się od dekad. Każdy stopień w dół może być jednocześnie nawigacją, archeologią i oskarżeniem.
 
 <!-- External Site; generated from P007_BRINE_STAIR/pl_PL. -->

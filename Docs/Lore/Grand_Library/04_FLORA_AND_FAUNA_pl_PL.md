@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LOKALNA FAUNA I FLORA: ROŚLINNOŚĆ, ZWIERZĘTA I UPADEK EKOLOGICZNY
 
 > **Źródło:** Odzyskane PDA, kapsuła zejściowa klasy Styx oznaczona jako 'Lazarus'.  

@@ -9,32 +9,36 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JP LOC HOLD: Black Keel Tender Interior Limits"
+title: "Black Keelテンダー内部制限"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Black Keel Tender Interior Limits
+# Black Keelテンダー内部制限
 
-JP LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.
+Black Keelの内部は、その声より先に真実を語る。テンダーで最も守られた空間は寝台でも診療室でもない。サンプルラック、ドローンクレードル、パケットロッカー、隔離スリーブ、債務封印された貨物レールだ。生きたMarauderは、請求できる質量、保存できるサンプル、請求者の手から出せるlegal packetをマニフェストが理解した後でしか、その仕組みに入らない。
+
+だから清潔な軌道救助は最初の答えにならない。テンダーは回収窓を値付けし、custodyを保持し、汚染を拒み、ascent massを要求し、リレー越しに話すには十分近い。だが旅客船として作られておらず、慈悲を即興するdeep rescue crewもいない。Black Keelは契約を生かしたまま、契約者を水の下に残せる。
+
+嫌な教訓は単純だ。壊れた現地機材は脇道ではない。それがルートだ。切れたマスト、詰まったコンプレッサー、歪んだascent sleeveが重要なのは、Black Keelが希望にburnを使わないからだ。使うのは受理されたpayload、検証済みパケット、隔離条件、lien authorityに対してだけだ。
 
 ## Scanner
 
-JP LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+このテンダーには、生きた乗客の寝床より先に、サンプル、ドローン、封印パケット、lien貨物のラックがある。
 
 ## Terminal
 
-JP LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: deep rescue crewなし、大気シャトル予備なし、lien authority外の無償上昇burnなし、有人補給係なし。
 
 ## Audio
 
-JP LOC HOLD: The ship brought you here as cargo with hands.
+船はお前を、手のある貨物として運んできた。
 
 ## Field Note
 
-JP LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keelは作業用claim tenderだ。借り物で、差し押さえられ、自動化され、救助より先にcustodyへ最適化されている。
 
 <!-- In-Game Wiki; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/ja_JP. -->

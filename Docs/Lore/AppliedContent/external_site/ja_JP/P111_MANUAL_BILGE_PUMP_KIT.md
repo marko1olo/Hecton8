@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "手動ビルジポンプキット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# 手動ビルジポンプキット
 
-JP LOC HOLD: Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile.
+手動ビルジポンプが最初の生存動詞になるのは、劇的であることを拒むからだ。powered panelも英雄的な画面も、この部屋が安全だという約束もない。プレイヤーは詰まった吸入口を掃除し、押し返すハンドルを感じ、水には正直な逃げ先が必要だと学ぶ。
 
-## Scanner
-
-JP LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
-
-## Terminal
-
-JP LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
-
-## Audio
-
-JP LOC HOLD: Hand work first. Electricity second. Breathing always.
-
-## Field Note
-
-JP LOC HOLD: First tool must teach survival before upgrade fantasy.
+この小さな工具がHECTON-8の調子を決める。修理は手、圧力、結果から始まる。ポンプが跳ね返るなら部屋が返事をしている。出口を誤れば、生存は危険を別の場所へ移すだけだ。
 
 <!-- External Site; generated from P111_MANUAL_BILGE_PUMP_KIT/ja_JP. -->

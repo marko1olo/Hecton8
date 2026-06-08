@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # キセノン・オメガ：精製と特性
 
 > **情報源：** ディープ・リーチ・メガコーポレーション、機密化学物質マニフェスト。

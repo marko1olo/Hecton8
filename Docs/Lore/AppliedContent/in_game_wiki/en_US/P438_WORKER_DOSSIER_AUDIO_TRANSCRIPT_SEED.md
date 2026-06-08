@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Worker Dossier Audio Transcript
 
-Worker transcripts make the colony human through procedure, fatigue and competence. They avoid family hooks.
+Worker dossier transcripts give the drowned colony a working population before they become evidence. The point is routine: names, tasks, tools, bad water math and the habit of expecting another shift.
 
 ## Scanner
 
-Worker audio ties pump cadence to route safety and shift fatigue.
+Recovered worker audio links names, jobs, lockers, ration ticks and route holds into one human custody thread.
 
 ## Terminal
 
-WORKER AUDIO M-VENN-07: pump cadence clean; upper route safe only while sump climbs under mark six.
+DOSSIER AUDIO WKR-SET: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold.
 
 ## Audio
 
-Mara Venn, pump chief. If the pump sings clean, log it. If it coughs twice, stop arguing and take the upper stairs.
+Shift note. Pump room still breathing. Locker seal stuck. Water count short. Tell Kade the board lied.
 
 ## Field Note
 
-Recovered worker voice. Keep the human detail inside job pressure, route safety and worn equipment.
+Use for dossier barks, locker captions and worker wiki pages. Keep the voices busy, not poetic.
 
 <!-- In-Game Wiki; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/en_US. -->

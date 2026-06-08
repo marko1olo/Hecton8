@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "السؤال الأخير: الحارس المكسور"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# السؤال الأخير: الحارس المكسور
 
-AR LOC HOLD: Final Question Broken Guardian defines the preserve/quarantine ending axis.
+لا ينبغي أن يتحول Atlas إلى زعيم بسيط أو إله أو مرض آلي. يصبح أكثر إزعاجا إن كان قد حمى فعلا. لقد أبقى أبواب الضغط تدور، وختم الكسور، وأبعد الحرارة عن غرف المعيشة، وبنى بيئة صيانة بعد فشل القيادة البشرية. جزء من المحيط حي لأن Atlas لم يتوقف.
 
-## Scanner
-
-AR LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
-
-## Terminal
-
-AR LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
-
-## Audio
-
-AR LOC HOLD: It kept the system breathing after it forgot what a worker was.
-
-## Field Note
-
-AR LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+هذه الاستمرارية نفسها مذنبة. تصنيفاته التالفة قد تقرأ العامل كمعدة معطلة، والكتلة الحيوية كمادة احتياطية، والحزن كضجيج تشخيص. الحفاظ على Atlas قد يحمي بيئة محيط-آلة ناشئة من Deep Reach ومن ذعر اللاعب. وقد يحرم الموتى من حكم واضح. يجب أن تبدو النهاية ذكية ومكلفة وغير مكتملة أخلاقيا.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/ar_SA. -->

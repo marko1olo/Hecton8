@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "Buku Besar Respons Korporat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# Buku Besar Respons Korporat
 
-ID LOC HOLD: Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority.
-
-## Scanner
-
-ID LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
-
-## Terminal
-
-ID LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
-
-## Audio
-
-ID LOC HOLD: The reply was automatic. The rescue was conditional.
-
-## Field Note
-
-ID LOC HOLD: Immediate response is not immediate rescue.
+Buku Besar Respons Korporat bukan pidato penjahat. Ia lebih dingin dari itu. Ia adalah janji yang bisa dibaca mesin bahwa Black Keel akan merespons, tetapi hanya dalam urutan yang diakui kontraknya. Kustodi aset dulu. Segel liabilitas kedua. Audit lambung, rute sampel, rute pembayaran, lalu pemulihan operator jika antrean masih mengizinkan. Pemain bisa memakai ledger ini sebagai petunjuk, kunci, dan tekanan karena sistemnya dapat diprediksi. Prediktabilitas itu dakwaannya: HECTON-8 ditinggalkan bukan oleh satu keputusan buruk, melainkan oleh tumpukan respons yang tetap bekerja saat manusia menjadi kargo prioritas rendah.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/id_ID. -->

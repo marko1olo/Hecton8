@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Accessible Seafloor Windows
 
-Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.
+Accessible seafloor windows are places where HECTON-8's broken crust briefly lowers the cost of descent. They form at collapsed shelves, exposed ridges, reheated vent scars, and brine columns that carry pressure differently from open water. A window is still lethal if rushed. It grants contact with old floor, rare mineral seams, buried colony hardware, and evidence the main ocean would crush out of reach.
 
 ## Scanner
 
-Ridge window. The bottom is not a floor; it is a rare exposure.
+Exposed ridge marker. Here the shell tore thin enough for a crawler to touch old floor without becoming paste.
 
 ## Terminal
 
-SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Mark for slow salvage only.
 
 ## Audio
 
-You land where the moon lets stone show through.
+The sea lets you touch bottom in windows, not wherever you feel brave.
 
 ## Field Note
 
-Good traversal comes from scarce footholds, not endless flat seabed.
+Most of the moon keeps its floor as a pressure secret. The windows are exceptions with teeth.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/en_US. -->

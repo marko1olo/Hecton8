@@ -154,6 +154,7 @@ namespace Hecton8.Atmosphere
         private uint _lastStateHash;
         private uint _lastUploadedWaveHash;
         private uint _lastPublishedShaderStateHash;
+        private uint _surfaceTelemetryFlags;
         private uint _lastTelemetryDumpFrame;
         private uint _observedWavePayloadMutationVersion;
         private uint _simulationFrameCounter;
@@ -252,15 +253,7 @@ namespace Hecton8.Atmosphere
                 _registeredCold = false;
             }
 
-            if (TryDisposeWaveReadbackGraphicsBuffers())
-            {
-                DisposeWaveGraphicsBuffers();
-                if (_registeredLate)
-                {
-                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                    _registeredLate = false;
-                }
-            }
+            TryCompleteReadbackDisposalOrKeepLateTickCold();
 
             TryUnregisterHotSwapListener();
             ClearRuntimePlayerContext();
@@ -313,6 +306,24 @@ namespace Hecton8.Atmosphere
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLate = false;
             }
+        }
+
+        private void TryCompleteReadbackDisposalOrKeepLateTickCold()
+        {
+            if (TryDisposeWaveReadbackGraphicsBuffers())
+            {
+                DisposeWaveGraphicsBuffers();
+                if (_registeredLate)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                    _registeredLate = false;
+                }
+
+                return;
+            }
+
+            if (!_registeredLate && GlobalRegistry.Dispatcher != null)
+                _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
 #if UNITY_EDITOR
@@ -674,6 +685,13 @@ namespace Hecton8.Atmosphere
             bool hasResults = TryReadExistingVaultView(vault, BufferID.ShinobuOceanWaveReadbackResults, out completedResults);
             bool hasTelemetry = TryReadExistingVaultView(vault, BufferID.ShinobuOceanTelemetryRing, out telemetry);
             return hasQueries && hasResults && hasTelemetry;
+        }
+
+        public static bool TryGetTelemetrySnapshot(out NativeArray<OceanSurfaceTelemetryEntry>.ReadOnly telemetry)
+        {
+            telemetry = default;
+            return TryResolveDiagnosticVault(out IDataVault vault) &&
+                   TryReadExistingVaultView(vault, BufferID.ShinobuOceanTelemetryRing, out telemetry);
         }
 
         public static bool TryApplyTunerValues(float windSpeed, float waveSteepness, float gasGiantGlow, float foamThreshold, float qualityMin = 0f, float qualityMax = 1f)
@@ -1059,6 +1077,7 @@ namespace Hecton8.Atmosphere
                 !ResolveWeatherArray(out NativeArray<WeatherStateDTO> weather) ||
                 !ResolveAtmosphereArray(out NativeArray<AtmosphereDTO> atmosphere))
             {
+                _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData;
                 return;
             }
 
@@ -1076,6 +1095,7 @@ namespace Hecton8.Atmosphere
                 SimulationFrame = _simulationFrameCounter
             };
             mockStormJob.Execute();
+            _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagEmergencyWeatherFallback;
             _waveParameterPayloadDirty = true;
             RefreshCachedSurfaceSnapshot();
         }
@@ -1831,6 +1851,9 @@ namespace Hecton8.Atmosphere
                     return true;
 
                 H8Memory.Release(ref _waveReadback.Data0, SystemID.HabitatAtmosphere);
+                if (_waveReadback.Data0.IsCreated)
+                    return false;
+
                 _waveReadback.Data0 = H8Memory.Allocate<float4>(
                     OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity,
                     SystemID.HabitatAtmosphere,
@@ -1845,6 +1868,9 @@ namespace Hecton8.Atmosphere
                     return true;
 
                 H8Memory.Release(ref _waveReadback.Data1, SystemID.HabitatAtmosphere);
+                if (_waveReadback.Data1.IsCreated)
+                    return false;
+
                 _waveReadback.Data1 = H8Memory.Allocate<float4>(
                     OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity,
                     SystemID.HabitatAtmosphere,
@@ -1857,6 +1883,9 @@ namespace Hecton8.Atmosphere
                 return true;
 
             H8Memory.Release(ref _waveReadback.Data2, SystemID.HabitatAtmosphere);
+            if (_waveReadback.Data2.IsCreated)
+                return false;
+
             _waveReadback.Data2 = H8Memory.Allocate<float4>(
                 OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity,
                 SystemID.HabitatAtmosphere,
@@ -2068,6 +2097,7 @@ namespace Hecton8.Atmosphere
                 !ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves) ||
                 !ResolveWeather(out WeatherStateDTO weather))
             {
+                _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData;
                 return;
             }
 
@@ -2089,7 +2119,10 @@ namespace Hecton8.Atmosphere
                 math.min(waves.Length, OceanSurfaceAtmosphereConstants.WaveCapacity),
                 _timeSeconds,
                 _globalQualityWeight);
-            entry.Flags = _lastReadbackLatencyFrames > 4 || _lastWaveComputeNs > OceanSurfaceAtmosphereConstants.TelemetryDumpBudgetNs ? 1u : 0u;
+            uint telemetryFlags = _surfaceTelemetryFlags;
+            if (_lastReadbackLatencyFrames > 4 || _lastWaveComputeNs > OceanSurfaceAtmosphereConstants.TelemetryDumpBudgetNs)
+                telemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagReadbackOrComputeBudget;
+            entry.Flags = telemetryFlags;
             entry.ReadbackLatencyFrames = _lastReadbackLatencyFrames;
             entry.ReadbackSampleCount = _lastReadbackSampleCount;
             _lastStateHash = entry.StateHash;
@@ -2170,6 +2203,7 @@ namespace Hecton8.Atmosphere
                 !ResolveWeather(out WeatherStateDTO weather) ||
                 !ResolveAtmosphere(out AtmosphereDTO atmosphere))
             {
+                _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData;
                 return;
             }
 
@@ -2236,18 +2270,20 @@ namespace Hecton8.Atmosphere
             if (player != null)
             {
                 if (player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
                     snapshot.Aup.IsFinite())
                 {
                     return snapshot.Aup.ToAbsoluteDouble3();
                 }
 
-                var playerMovement = player.PlayerMovement;
-                if (playerMovement != null)
+                if (player.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite())
                 {
-                    AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                    if (currentAup.IsFinite())
-                        return currentAup.ToAbsoluteDouble3();
+                    return movementState.PredictedAup.ToAbsoluteDouble3();
                 }
+
+                return double3.zero;
             }
 
             Hecton8.World.AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
@@ -2356,13 +2392,36 @@ namespace Hecton8.Atmosphere
         {
             if (!ResolveWeather(out WeatherStateDTO weather))
             {
-                _cachedSeaLevel = math.isfinite(seaLevel) ? seaLevel : OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+                _cachedSeaLevel = ResolveSeaLevelY(seaLevel);
                 _cachedSurfaceFlow = float3.zero;
                 return;
             }
 
-            _cachedSeaLevel = math.isfinite(weather.SurfaceScalars.x) ? weather.SurfaceScalars.x : seaLevel;
+            _cachedSeaLevel = TryResolveSeaLevelY(weather.SurfaceScalars.x, out float weatherSeaLevel)
+                ? weatherSeaLevel
+                : ResolveSeaLevelY(seaLevel);
             _cachedSurfaceFlow = CalculateSurfaceFlow(weather);
+        }
+
+        private static float ResolveSeaLevelY(float candidateSeaLevelY)
+        {
+            return TryResolveSeaLevelY(candidateSeaLevelY, out float seaLevelY)
+                ? seaLevelY
+                : OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+        }
+
+        private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) > 0.0001f &&
+                math.abs(candidateSeaLevelY) <= 1000f)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+            return false;
         }
 
         private static float3 CalculateSurfaceFlow(in WeatherStateDTO weather)
@@ -2590,6 +2649,12 @@ namespace Hecton8.Atmosphere
 
             _vault = vault;
             _vaultBuffersReady = false;
+            _initializedWeather = false;
+            _shaderGlobalsDirty = true;
+            _waveParameterPayloadDirty = true;
+            _lastUploadedWaveCount = -1;
+            _lastUploadedWaveHash = 0u;
+            _lastPublishedShaderStateHash = 0u;
             _waveHandle = default;
             _atmosphereHandle = default;
             _weatherHandle = default;
@@ -2601,6 +2666,8 @@ namespace Hecton8.Atmosphere
             _readbackRingQueryHandle = default;
             _beaufortProfileHandle = default;
             _surfaceSwellHandle = default;
+            if (vault == null)
+                _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData;
         }
 
         private void TryRegisterHotSwapListener()
@@ -2635,8 +2702,18 @@ namespace Hecton8.Atmosphere
                     CompleteWaveParameterKernelForShutdown();
                     IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
                     CacheDataVaultCold(nextVault);
-                    EnsureVaultBuffersCold();
+                    if (EnsureVaultBuffersCold())
+                    {
+                        _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagDataVaultRehydrated;
+                        LoadLegacyWeatherOrGenerateEmergency();
+                    }
+                    else
+                    {
+                        _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData;
+                    }
+
                     RefreshCachedSurfaceSnapshot();
+                    _shaderGlobalsDirty = true;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregisterDispatcherTicks();

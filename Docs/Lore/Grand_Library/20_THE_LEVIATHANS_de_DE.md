@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DIE LEVIATHANE VON HECTON-8
 
 > **Quelle:** Deep Reach Megacorporation, Xenobiologische Bedrohungsbewertung.

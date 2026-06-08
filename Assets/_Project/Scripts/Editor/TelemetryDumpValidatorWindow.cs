@@ -18,6 +18,8 @@ namespace Hecton8.EditorTools
         private const int MaxDisplayedFrames = 300;
         private const uint HazardZoneDumpMagic = 0x4838485Au; // H8HZ
         private const int HazardZoneDumpHeaderBytes = 24;
+        private const int HazardZoneDumpEntrySizeBytes = 64;
+        private const int HazardZoneTelemetryCapacity = 300;
         private const uint GlobalTelemetryDumpMagic = 0x4838444Du; // H8DM
         private const int GlobalTelemetryMetadataOffset = 16;
         private const int GlobalTelemetryDumpHeaderBytes = 1024;
@@ -261,12 +263,14 @@ namespace Hecton8.EditorTools
 
             if (!indexedLayout)
             {
-                if (magic == HazardZoneDumpMagic &&
-                    bytes.Length >= HazardZoneDumpHeaderBytes &&
-                    IsSaneEntrySize(field2) &&
-                    IsSaneCount(field3) &&
-                    HazardZoneDumpHeaderBytes + (long)field3 * field2 <= bytes.Length)
+                if (magic == HazardZoneDumpMagic)
                 {
+                    if (!IsValidHazardZoneDumpHeader(bytes.Length, span, field2, field3))
+                    {
+                        SetSummary(BuildInvalidHazardZoneHeaderSummary(path, bytes.Length, field2, field3, ReadU32(span, 16)));
+                        return;
+                    }
+
                     headerBytes = HazardZoneDumpHeaderBytes;
                     entrySize = (int)field2;
                     entryCount = (int)field3;
@@ -3468,6 +3472,46 @@ namespace Hecton8.EditorTools
         private static bool IsSaneEntrySize(uint value)
         {
             return value >= 16u && value <= 1024u && (value & 3u) == 0u;
+        }
+
+        private static bool IsValidHazardZoneDumpHeader(
+            int byteCount,
+            ReadOnlySpan<byte> span,
+            uint entrySize,
+            uint entryCount)
+        {
+            if (byteCount < HazardZoneDumpHeaderBytes ||
+                entrySize != HazardZoneDumpEntrySizeBytes ||
+                entryCount == 0u ||
+                entryCount > HazardZoneTelemetryCapacity ||
+                HazardZoneDumpHeaderBytes + (long)entryCount * entrySize > byteCount)
+            {
+                return false;
+            }
+
+            uint writeIndex = ReadU32(span, 16);
+            return writeIndex < entryCount;
+        }
+
+        private static string BuildInvalidHazardZoneHeaderSummary(
+            string path,
+            int byteCount,
+            uint entrySize,
+            uint entryCount,
+            uint writeIndex)
+        {
+            StringBuilder builder = new StringBuilder(160);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | invalid hazard-zone header");
+            builder.Append(" | bytes=");
+            builder.Append(byteCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | writeIndex=");
+            builder.Append(writeIndex.ToString(CultureInfo.InvariantCulture));
+            return builder.ToString();
         }
 
         private static int ResolveFallbackEntrySize(int payloadBytes)

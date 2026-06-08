@@ -33,34 +33,87 @@ namespace Hecton8.World
             _SceneRootBuffer.Clear();
         }
 
+        private static bool IsLiveBehaviour(Behaviour behaviour)
+        {
+            return behaviour != null && behaviour.isActiveAndEnabled;
+        }
+
+        private static bool IsLiveTransform(Transform transform)
+        {
+            return transform != null &&
+                   transform.gameObject != null &&
+                   transform.gameObject.activeInHierarchy;
+        }
+
+        private static bool TryResolveLiveActiveRuntime<T>(ref T target, T active) where T : Behaviour
+        {
+            if (!IsLiveBehaviour(active))
+            {
+                target = null;
+                return false;
+            }
+
+            if (IsLiveBehaviour(target) && ReferenceEquals(target, active))
+                return true;
+
+            target = active;
+            return true;
+        }
+
+        private static bool TryResolveLiveCachedActiveRuntime<T>(ref T target, ref T cache, T active) where T : Behaviour
+        {
+            if (!TryResolveLiveActiveRuntime(ref target, active))
+            {
+                cache = null;
+                return false;
+            }
+
+            cache = target;
+            return true;
+        }
+
         public static bool TryResolvePlayerTransform(ref Transform target)
         {
-            if (target != null)
+            if (!TryResolveCurrentPlayerTransform(out Transform active))
+            {
+                target = null;
+                _CachedPlayerTransform = null;
+                return false;
+            }
+
+            if (ReferenceEquals(target, active))
                 return true;
 
+            _CachedPlayerTransform = active;
+            target = active;
+            return true;
+        }
+
+        private static bool TryResolveCurrentPlayerTransform(out Transform active)
+        {
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Transform registryPlayer = playerContext != null ? playerContext.PlayerTransform : null;
-            if (registryPlayer != null)
+            if (IsLiveTransform(registryPlayer))
             {
-                _CachedPlayerTransform = registryPlayer;
-                target = registryPlayer;
+                active = registryPlayer;
                 return true;
             }
 
-            if (BootstrapState.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer))
+            if (BootstrapState.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer) &&
+                IsLiveTransform(bootstrapPlayer))
             {
-                _CachedPlayerTransform = bootstrapPlayer;
-                target = bootstrapPlayer;
+                active = bootstrapPlayer;
                 return true;
             }
 
-            if (_CachedPlayerTransform != null)
-            {
-                target = _CachedPlayerTransform;
-                return true;
-            }
-
+            active = null;
             return false;
+        }
+
+        public static void InvalidatePlayerTransformCache(Transform instance)
+        {
+            if (instance == null || ReferenceEquals(_CachedPlayerTransform, instance))
+                _CachedPlayerTransform = null;
         }
 
         public static bool TryResolveSceneObject(ref Transform target, string relativePath)
@@ -149,238 +202,278 @@ namespace Hecton8.World
 
         public static bool TryResolveBiomeSamplerCache(ref BiomeSamplerCache target)
         {
-            if (target != null)
-                return true;
-
-            target = BiomeSamplerCache.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, BiomeSamplerCache.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveScatterBudgetController(ref ScatterBudgetController target)
         {
-            if (target != null)
-                return true;
-
-            target = ScatterBudgetController.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, ScatterBudgetController.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldSliceDirector(ref WorldSliceDirector target)
         {
-            if (target != null)
-                return true;
-
-            target = WorldSliceDirector.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, WorldSliceDirector.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldZoneDirector(ref WorldZoneDirector target)
         {
-            if (target != null)
-                return true;
-
-            target = WorldZoneDirector.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, WorldZoneDirector.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldContentDirector(ref WorldContentDirector target)
         {
-            if (target != null)
-                return true;
-
-            target = WorldContentDirector.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, WorldContentDirector.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveProximityColliderSystem(ref ProximityColliderSystem target)
         {
-            if (target != null)
-                return true;
-
-            target = ProximityColliderSystem.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, ProximityColliderSystem.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveBiomeMatrixDirector(ref BiomeMatrixDirector target)
         {
-            if (target != null)
-                return true;
-
-            target = BiomeMatrixDirector.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, BiomeMatrixDirector.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldProceduralStateRegistry(ref WorldProceduralStateRegistry target)
         {
-            if (target != null)
-                return true;
+            return TryResolveLiveActiveRuntime(ref target, WorldProceduralStateRegistry.ActiveRuntimeInstance);
+        }
 
-            target = WorldProceduralStateRegistry.ActiveRuntimeInstance;
-            return target != null;
+        public static bool TryResolveWorldProceduralScatterDirector(ref WorldProceduralScatterDirector target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, WorldProceduralScatterDirector.ActiveRuntimeInstance);
+        }
+
+        public static bool TryResolveEcosystemDirector(ref EcosystemDirector target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, EcosystemDirector.ActiveRuntimeInstance);
+        }
+
+        public static bool TryResolveResourceDistributionDirector(ref ResourceDistributionDirector target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, ResourceDistributionDirector.ActiveRuntimeInstance);
+        }
+
+        public static bool TryResolveDestructibleOrganicManager(ref DestructibleOrganicManager target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, DestructibleOrganicManager.ActiveRuntimeInstance);
+        }
+
+        public static bool TryResolveAbyssalThermalManager(ref AbyssalThermalManager target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, AbyssalThermalManager.ActiveRuntimeInstance);
+        }
+
+        public static bool TryResolveFloraInteractionManager(ref FloraInteractionManager target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, FloraInteractionManager.ActiveRuntimeInstance);
+        }
+
+        public static bool TryResolveHectonUnderwaterVisuals(ref HectonUnderwaterVisuals target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, HectonUnderwaterVisuals.ActiveRuntimeInstance);
+        }
+
+        public static bool TryResolveWorldReadabilityDirector(ref WorldReadabilityDirector target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, WorldReadabilityDirector.ActiveRuntimeInstance);
+        }
+
+        public static bool TryResolveEmergencyServiceRelayDirector(ref EmergencyServiceRelayDirector target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, EmergencyServiceRelayDirector.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldFaunaSpawnRegistry(ref WorldFaunaSpawnRegistry target)
         {
-            if (target != null)
-                return true;
-
-            target = WorldFaunaSpawnRegistry.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, WorldFaunaSpawnRegistry.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldProceduralFieldSampler(ref WorldProceduralFieldSampler target)
         {
-            if (target != null)
-                return true;
-
-            target = WorldProceduralFieldSampler.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, WorldProceduralFieldSampler.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldProceduralFillDirector(ref WorldProceduralFillDirector target)
         {
-            if (target != null)
-                return true;
-
-            target = WorldProceduralFillDirector.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, WorldProceduralFillDirector.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldCaveDirector(ref WorldCaveDirector target)
         {
-            if (target != null)
-                return true;
-
-            target = WorldCaveDirector.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, WorldCaveDirector.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveFaunaDirector(ref FaunaDirector target)
         {
-            if (target != null)
-                return true;
-
-            target = FaunaDirector.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, FaunaDirector.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldGenerativeGeologyService(ref WorldGenerativeGeologyService target)
         {
-            if (target != null)
-                return true;
-
-            target = WorldGenerativeGeologyService.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, WorldGenerativeGeologyService.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldGenerativeGeologyIntegrationDirector(ref WorldGenerativeGeologyIntegrationDirector target)
         {
-            if (target != null)
-                return true;
-
-            target = WorldGenerativeGeologyIntegrationDirector.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, WorldGenerativeGeologyIntegrationDirector.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveWorldGenerativeGeologySeamExecutionDirector(ref WorldGenerativeGeologySeamExecutionDirector target)
         {
-            if (target != null)
-                return true;
-
-            target = WorldGenerativeGeologySeamExecutionDirector.ActiveRuntimeInstance;
-            return target != null;
+            return TryResolveLiveActiveRuntime(ref target, WorldGenerativeGeologySeamExecutionDirector.ActiveRuntimeInstance);
         }
 
         public static bool TryResolveVoxelEngine(ref HectonVoxelEngine target)
         {
-            if (target != null)
-                return true;
+            return TryResolveLiveActiveRuntime(ref target, HectonVoxelEngine.ActiveRuntimeInstance);
+        }
 
-            target = HectonVoxelEngine.ActiveRuntimeInstance;
-            return target != null;
+        public static bool TryResolveSargassumGlobalDragManager(ref SargassumGlobalDragManager target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, SargassumGlobalDragManager.Instance);
+        }
+
+        public static bool TryResolveSargassumCutManager(ref SargassumCutManager target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, SargassumCutManager.Instance);
+        }
+
+        public static bool TryResolveSargassumMicroFaunaBoids(ref SargassumMicroFaunaBoids target)
+        {
+            return TryResolveLiveActiveRuntime(ref target, SargassumMicroFaunaBoids.Instance);
+        }
+
+        public static bool TryResolveSargassumDragReadModel(ref ISargassumDragReadModel target)
+        {
+            SargassumGlobalDragManager active = SargassumGlobalDragManager.Instance;
+            if (!IsLiveBehaviour(active))
+            {
+                target = null;
+                return false;
+            }
+
+            if (target is Behaviour targetBehaviour && IsLiveBehaviour(targetBehaviour))
+            {
+                if (ReferenceEquals(targetBehaviour, active))
+                    return true;
+            }
+
+            target = active;
+            return true;
+        }
+
+        public static bool TryResolveSargassumCutWriteService(ref ISargassumCutWriteService target)
+        {
+            SargassumCutManager active = SargassumCutManager.Instance;
+            if (!IsLiveBehaviour(active))
+            {
+                target = null;
+                return false;
+            }
+
+            if (target is Behaviour targetBehaviour && IsLiveBehaviour(targetBehaviour))
+            {
+                if (ReferenceEquals(targetBehaviour, active))
+                    return true;
+            }
+
+            target = active;
+            return true;
+        }
+
+        public static bool TryResolveMicroFaunaPresentationPulseSink(ref IMicroFaunaPresentationPulseSink target)
+        {
+            SargassumMicroFaunaBoids active = SargassumMicroFaunaBoids.Instance;
+            if (!IsLiveBehaviour(active))
+            {
+                target = null;
+                return false;
+            }
+
+            if (target is Behaviour targetBehaviour && IsLiveBehaviour(targetBehaviour))
+            {
+                if (ReferenceEquals(targetBehaviour, active))
+                    return true;
+            }
+
+            target = active;
+            return true;
         }
 
         public static bool TryResolveWorldResourceSpawnerReadModel(
             ref IWorldResourceSpawnerReadModel target,
             ref IWorldResourceSpawnerReadDependencySink dependencySink)
         {
-            if (target != null)
-            {
-                if (dependencySink == null)
-                    dependencySink = target as IWorldResourceSpawnerReadDependencySink;
-                return true;
-            }
-
             IWorldResourceSpawnerReadModel active = GlobalRegistry.WorldResourceSpawner;
             if (active == null)
+            {
+                target = null;
+                dependencySink = null;
                 return false;
+            }
 
-            target = active;
+            if (!ReferenceEquals(target, active))
+                target = active;
+
             dependencySink = active as IWorldResourceSpawnerReadDependencySink;
             return true;
         }
 
         public static bool TryResolveMapMagicBridge(ref MapMagicBridge target)
         {
-            if (target != null)
-                return true;
+            return TryResolveLiveCachedActiveRuntime(ref target, ref _CachedMapMagicBridge, MapMagicBridge.ActiveRuntimeInstance);
+        }
 
-            MapMagicBridge active = MapMagicBridge.ActiveRuntimeInstance;
-            if (active != null && active.isActiveAndEnabled)
-            {
-                _CachedMapMagicBridge = active;
-                target = active;
-                return true;
-            }
-
-            if (_CachedMapMagicBridge != null && _CachedMapMagicBridge.isActiveAndEnabled)
-            {
-                target = _CachedMapMagicBridge;
-                return true;
-            }
-
-            _CachedMapMagicBridge = null;
-            return false;
+        public static void InvalidateMapMagicBridgeCache(MapMagicBridge instance)
+        {
+            if (instance == null || ReferenceEquals(_CachedMapMagicBridge, instance))
+                _CachedMapMagicBridge = null;
         }
 
         public static bool TryResolveHectonMapMagicVegetationBridge(ref HectonMapMagicVegetationBridge target)
         {
-            if (target != null)
-                return true;
+            return TryResolveLiveCachedActiveRuntime(ref target, ref _CachedVegetationBridge, HectonMapMagicVegetationBridge.ActiveRuntimeInstance);
+        }
 
-            HectonMapMagicVegetationBridge active = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (active != null && active.isActiveAndEnabled)
-            {
-                _CachedVegetationBridge = active;
-                target = active;
-                return true;
-            }
-
-            if (_CachedVegetationBridge != null && _CachedVegetationBridge.isActiveAndEnabled)
-            {
-                target = _CachedVegetationBridge;
-                return true;
-            }
-
-            _CachedVegetationBridge = null;
-            return false;
+        public static void InvalidateHectonMapMagicVegetationBridgeCache(HectonMapMagicVegetationBridge instance)
+        {
+            if (instance == null || ReferenceEquals(_CachedVegetationBridge, instance))
+                _CachedVegetationBridge = null;
         }
 
         public static bool TryResolveScavengePopulator(ref ScavengePopulator target)
         {
-            if (target != null)
+            if (target != null && target.IsRuntimeOwnerUsable)
                 return true;
 
-            if (_CachedScavengePopulator != null)
+            target = null;
+
+            ScavengePopulator registered = GlobalRegistry.ScavengePopulator;
+            if (ReferenceEquals(_CachedScavengePopulator, registered) &&
+                _CachedScavengePopulator != null &&
+                _CachedScavengePopulator.IsRuntimeOwnerUsable)
             {
                 target = _CachedScavengePopulator;
                 return true;
             }
 
-            target = GlobalRegistry.ScavengePopulator;
-            if (target != null)
-                _CachedScavengePopulator = target;
-            return target != null;
+            if (registered != null && registered.IsRuntimeOwnerUsable)
+            {
+                _CachedScavengePopulator = registered;
+                target = registered;
+                return true;
+            }
+
+            _CachedScavengePopulator = null;
+            return false;
+        }
+
+        public static void InvalidateScavengePopulatorCache(ScavengePopulator instance)
+        {
+            if (instance == null || ReferenceEquals(_CachedScavengePopulator, instance))
+                _CachedScavengePopulator = null;
         }
 
         private static Transform ResolveScenePath(string scenePath)

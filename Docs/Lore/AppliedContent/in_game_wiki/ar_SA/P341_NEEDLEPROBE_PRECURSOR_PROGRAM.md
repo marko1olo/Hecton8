@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Needleprobe Precursor Program"
+title: "برنامج الطلائع Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Needleprobe Precursor Program
+# برنامج الطلائع Needleprobe
 
-AR LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+حملت needleprobes أول مطالبة بشرية إلى Aegir. كانت حمولات مسح ضيقة ومحمية أرسلت قبل الطواقم لقراءة الجاذبية والإشعاع وأطياف المحيط ومدارات الأقمار وخطوط الترحيل. جعلت حزمها المتأخرة HECTON-8 مفهوما للمستثمرين قبل أن يصبح صالحا للعمال.
 
 ## Scanner
 
-AR LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+أرشيف needleprobe: كان Aegir هدفا في الدفاتر قبل أن يصبح مكان عمل. عيون الآلات وصلت إلى الأقمار أولا.
 
 ## Terminal
 
-AR LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+أرشيف RAN: أعادت سلسلة المجسات اختلاف المنظر والإشعاع وبصمات المحيط وهندسة الترحيل وثقة مسار الحبيبات. تم حجب تصنيف الطاقم حتى استقر نموذج الخطر الثالث.
 
 ## Audio
 
-AR LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+أول شيء بشري في Aegir لم يكن شخصا. كان آلة تسأل إن كان الناس سيكونون مربحين هنا.
 
 ## Field Note
 
-AR LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+أرشيفات المجسات دليل طريق. القياس القديم قد يسبق المستعمرة ومع ذلك يقرر من يملك الماء.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/ar_SA. -->

@@ -19,22 +19,24 @@ localization_flags: 0
 
 # Public Route Names
 
-Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.
+Public route names are not poetic lanes through the dark. They are working labels that survive contracts, hull plates, relay queues and courtroom exhibits. A Marauder reads them the way a diver reads current: not for romance, but because one wrong assumption can strand a body.
+
+The Sol-Centauri Charter Spine carries legitimacy language. Barnard Breaker Run smells of shipbreaking, salvage yards and debt labor. Luyten Packet Ladder is the chain that makes evidence admissible or worthless. Tau Public Ledger Lane is slow public pressure. Ran Long Claim is the far dirty edge: the route name that says the work is already expensive before the ocean starts charging.
 
 ## Scanner
 
-Route names make travel feel owned before it feels adventurous.
+ROUTE NAME SLATE // Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, Ran Long Claim.
 
 ## Terminal
 
-ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.
+PUBLIC ROUTES // Route names are tariff language. They tell crews who can certify, who can break hulls, who can hold packets, who can publish proof, and who gets billed when Ran/Aegir answers late.
 
 ## Audio
 
-A route is a road only after somebody sells the delay twice.
+A pretty name is for passengers. A route name is for invoices and blame.
 
 ## Field Note
 
-Every route name should sound like a tariff, not a wonder.
+Route names must sound used, stamped and billable. If they sound like tourism, rewrite.
 
 <!-- In-Game Wiki; generated from P163_PUBLIC_ROUTE_NAMES/en_US. -->

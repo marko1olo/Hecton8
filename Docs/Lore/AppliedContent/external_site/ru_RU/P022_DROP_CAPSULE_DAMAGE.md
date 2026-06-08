@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Повреждение спусковой капсулы
 
-Повреждение капсулы объясняет, почему игрок заперт без глупости сеттинга: спуск сработал, системы выживания живы, взлетное железо мертво.
+Повреждение спусковой капсулы объясняет, почему изоляция правдоподобна: спуск сработал, системы выживания уцелели, оборудование подъема - нет.
 
 ## Scanner
 

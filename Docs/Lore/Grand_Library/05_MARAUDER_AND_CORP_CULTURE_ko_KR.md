@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 기업 규정 준수 및 머로더 서브컬처
 
 > **출처:** 회수 규정 준수국, 하청업체 온보딩 가이드 (양식 88-C).  

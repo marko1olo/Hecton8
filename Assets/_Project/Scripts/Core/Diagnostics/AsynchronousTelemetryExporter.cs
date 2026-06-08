@@ -731,6 +731,7 @@ namespace Hecton8.Core.Diagnostics
         private uint _lastKccHeatmapFrame;
         private uint _lastFrameTimeSignalFrame;
         private uint _lastSurvivalDeathFrame;
+        private int _lastSurvivalDeathSignalSequence;
         private uint _fallbackFrameCounter;
         private uint _sessionTimestampSeconds;
         private double3 _lastKnownPlayerAup;
@@ -741,6 +742,7 @@ namespace Hecton8.Core.Diagnostics
         private bool _dispatcherRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _storageReady;
+        private IDataVault _workerStorageVault;
 
         private Thread _workerThread;
         private AutoResetEvent _flushSignal;
@@ -776,6 +778,7 @@ namespace Hecton8.Core.Diagnostics
         private string _endpointUrl;
         private string _apiKey;
         private string _fallbackDirectory;
+        private IDataVault _workerBufferGuardVault;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticExporterState()
@@ -982,14 +985,14 @@ namespace Hecton8.Core.Diagnostics
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            RebindDataVault(currentService as IDataVault);
+            RebindDataVault(currentService as IDataVault, previousService as IDataVault);
         }
 
         private void TeardownStoppedWorkerState()
         {
             ResetHotPathCounters();
             _storageReady = false;
-            ReleaseVaultHandles();
+            ReleaseVaultHandles(_workerStorageVault ?? _dataVault);
             _dataVault = null;
             if (s_active == this)
                 s_active = null;
@@ -1056,13 +1059,17 @@ namespace Hecton8.Core.Diagnostics
             return true;
         }
 
-        private void ReleaseVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        private void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
             try
             {
-                IDataVault vault = _dataVault;
                 if (vault != null && IsVaultHandleCreated(in handle))
                     vault.ReleaseBuffer(in handle);
+                else if (IsVaultHandleCreated(in handle))
+                {
+                    Interlocked.Increment(ref _workerFaultCount);
+                    SetWorkerFlag(WorkerFlagFaulted);
+                }
             }
             catch (Exception)
             {
@@ -1075,27 +1082,29 @@ namespace Hecton8.Core.Diagnostics
             }
         }
 
-        private void ReleaseVaultHandles()
+        private void ReleaseVaultHandles(IDataVault releaseVaultFallback = null)
         {
             UnlockWorkerVaultBuffers();
 
-            ReleaseVaultHandle(ref _eventRingHandle);
-            ReleaseVaultHandle(ref _stagingHandle);
-            ReleaseVaultHandle(ref _routineIngressHandle);
-            ReleaseVaultHandle(ref _criticalIngressHandle);
-            ReleaseVaultHandle(ref _ingressCursorHandle);
-            ReleaseVaultHandle(ref _countersHandle);
-            ReleaseVaultHandle(ref _telemetryHandle);
-            ReleaseVaultHandle(ref _telemetryCursorHandle);
-            ReleaseVaultHandle(ref _tuningHandle);
-            ReleaseVaultHandle(ref _csvScratchHandle);
-            ReleaseVaultHandle(ref _compressedScratchHandle);
-            ReleaseVaultHandle(ref _heatmapDebugHandle);
-            ReleaseVaultHandle(ref _handoffAHandle);
-            ReleaseVaultHandle(ref _handoffBHandle);
-            ReleaseVaultHandle(ref _workerAccumHandle);
-            ReleaseVaultHandle(ref _rawBatchScratchHandle);
-            ReleaseVaultHandle(ref _dumpSnapshotHandle);
+            IDataVault vault = _workerStorageVault ?? releaseVaultFallback ?? _dataVault;
+            ReleaseVaultHandle(vault, ref _eventRingHandle);
+            ReleaseVaultHandle(vault, ref _stagingHandle);
+            ReleaseVaultHandle(vault, ref _routineIngressHandle);
+            ReleaseVaultHandle(vault, ref _criticalIngressHandle);
+            ReleaseVaultHandle(vault, ref _ingressCursorHandle);
+            ReleaseVaultHandle(vault, ref _countersHandle);
+            ReleaseVaultHandle(vault, ref _telemetryHandle);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+            ReleaseVaultHandle(vault, ref _tuningHandle);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseVaultHandle(vault, ref _compressedScratchHandle);
+            ReleaseVaultHandle(vault, ref _heatmapDebugHandle);
+            ReleaseVaultHandle(vault, ref _handoffAHandle);
+            ReleaseVaultHandle(vault, ref _handoffBHandle);
+            ReleaseVaultHandle(vault, ref _workerAccumHandle);
+            ReleaseVaultHandle(vault, ref _rawBatchScratchHandle);
+            ReleaseVaultHandle(vault, ref _dumpSnapshotHandle);
+            _workerStorageVault = null;
         }
 
         private bool TryAcquireVaultStorage()
@@ -1108,6 +1117,7 @@ namespace Hecton8.Core.Diagnostics
                 return false;
 
             _dataVault = vault;
+            _workerStorageVault = vault;
             _eventRingHandle = vault.EnsureGenerationHandle<AnalyticEventDTO>(
                 AnalyticsVaultBufferIds.EventRing,
                 _eventRingCapacity,
@@ -1235,13 +1245,13 @@ namespace Hecton8.Core.Diagnostics
             if (!ready)
             {
                 UnlockWorkerVaultBuffers();
-                ReleaseVaultHandles();
+                ReleaseVaultHandles(vault);
             }
 
             return ready;
         }
 
-        private void RebindDataVault(IDataVault nextVault)
+        private void RebindDataVault(IDataVault nextVault, IDataVault previousVault = null)
         {
             if (ReferenceEquals(_dataVault, nextVault))
                 return;
@@ -1255,7 +1265,7 @@ namespace Hecton8.Core.Diagnostics
 
             ResetHotPathCounters();
             _storageReady = false;
-            ReleaseVaultHandles();
+            ReleaseVaultHandles(_workerStorageVault ?? _dataVault ?? previousVault);
             _dataVault = nextVault;
             if (_dataVault == null || !isActiveAndEnabled)
                 return;
@@ -1320,6 +1330,8 @@ namespace Hecton8.Core.Diagnostics
                 return _workerBuffersLocked;
 
             _workerBuffersLocked = vault.TryAcquireMutationGuard(WorkerVaultMutationGuardMask);
+            if (_workerBuffersLocked)
+                _workerBufferGuardVault = vault;
             return _workerBuffersLocked;
         }
 
@@ -1330,9 +1342,14 @@ namespace Hecton8.Core.Diagnostics
 
             try
             {
-                IDataVault vault = _dataVault;
+                IDataVault vault = _workerBufferGuardVault ?? _workerStorageVault ?? _dataVault;
                 if (vault != null)
                     vault.ReleaseMutationGuard(WorkerVaultMutationGuardMask);
+                else
+                {
+                    Interlocked.Increment(ref _workerFaultCount);
+                    SetWorkerFlag(WorkerFlagFaulted);
+                }
             }
             catch (Exception)
             {
@@ -1342,6 +1359,7 @@ namespace Hecton8.Core.Diagnostics
             finally
             {
                 _workerBuffersLocked = false;
+                _workerBufferGuardVault = null;
             }
         }
 
@@ -1546,6 +1564,7 @@ namespace Hecton8.Core.Diagnostics
             _sessionTimestampAccumulator = 0f;
             _lastFrameTimeSignalFrame = 0u;
             _lastSurvivalDeathFrame = 0u;
+            _lastSurvivalDeathSignalSequence = 0;
             _lastKnownPlayerAup = double3.zero;
             _hasLastKnownPlayerAup = false;
         }
@@ -1693,10 +1712,26 @@ namespace Hecton8.Core.Diagnostics
             ReadOnlySpan<ItemAcquiredSignal> signals = SignalBus<ItemAcquiredSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
             {
-                double3 aup = signals[i].PositionAup.ToAbsoluteDouble3();
+                ItemAcquiredSignal signal = signals[i];
+                if (!IsResourceDeltaSource(signal.SourceKind))
+                    continue;
+
+                double3 aup = signal.PositionAup.ToAbsoluteDouble3();
                 if (math.all(math.isfinite(aup)))
                     TryRecordEvent(AnalyticsEventHashes.ResourceDelta, timestampSeconds, aup);
             }
+        }
+
+        private static bool IsResourceDeltaSource(byte sourceKind)
+        {
+            return sourceKind == ItemAcquiredSignalSourceKinds.Unknown ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.ResourceNode ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.ProceduralOreSpawner ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.DeployableSdfDrill ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.VoxelCarve ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.ScavengingLootOracle ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.HarvestableOutcrop ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.DroneMining;
         }
 
         private void IngestSurvivalDeathSignals(uint timestampSeconds, uint frameId)
@@ -1704,20 +1739,51 @@ namespace Hecton8.Core.Diagnostics
             if (!_hasLastKnownPlayerAup)
                 return;
 
+            IngestLatestSurvivalDeathSignal(timestampSeconds, frameId);
+
             ReadOnlySpan<SurvivalVitalsChangedSignal> signals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
             {
                 SurvivalVitalsChangedSignal signal = signals[i];
-                uint signalFrame = signal.Frame != 0u ? signal.Frame : frameId;
-                if (signalFrame == _lastSurvivalDeathFrame ||
-                    ((signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u && signal.DeathCause == 0))
-                {
-                    continue;
-                }
-
-                _lastSurvivalDeathFrame = signalFrame;
-                TryRecordEvent(AnalyticsEventHashes.Death, timestampSeconds, _lastKnownPlayerAup);
+                uint signalFrame = ResolveSurvivalDeathSignalFrame(in signal, frameId);
+                TryRecordSurvivalDeathTelemetry(in signal, timestampSeconds, signalFrame);
             }
+        }
+
+        private void IngestLatestSurvivalDeathSignal(uint timestampSeconds, uint frameId)
+        {
+            if (!SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence))
+                return;
+
+            if (sequence == _lastSurvivalDeathSignalSequence)
+                return;
+
+            uint signalFrame = ResolveSurvivalDeathSignalFrame(in signal, frameId);
+            if (TryRecordSurvivalDeathTelemetry(in signal, timestampSeconds, signalFrame))
+                _lastSurvivalDeathSignalSequence = sequence;
+        }
+
+        private bool TryRecordSurvivalDeathTelemetry(
+            in SurvivalVitalsChangedSignal signal,
+            uint timestampSeconds,
+            uint signalFrame)
+        {
+            if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)
+                return false;
+
+            if (signalFrame != 0u && signalFrame == _lastSurvivalDeathFrame)
+                return true;
+
+            if (!TryRecordEvent(AnalyticsEventHashes.Death, timestampSeconds, _lastKnownPlayerAup))
+                return false;
+
+            _lastSurvivalDeathFrame = signalFrame;
+            return true;
+        }
+
+        private static uint ResolveSurvivalDeathSignalFrame(in SurvivalVitalsChangedSignal signal, uint fallbackFrameId)
+        {
+            return signal.Frame != 0u ? signal.Frame : fallbackFrameId;
         }
 
         private void IngestFrameTimeSignals(uint timestampSeconds, uint frameId)
@@ -1943,7 +2009,7 @@ namespace Hecton8.Core.Diagnostics
         {
             Volatile.Write(ref _acceptingIngress, 0);
             _storageReady = false;
-            ReleaseVaultHandles();
+            ReleaseVaultHandles(_workerStorageVault ?? _dataVault);
             DisposeWorkerSignalNoThrow();
         }
 
@@ -2343,18 +2409,43 @@ namespace Hecton8.Core.Diagnostics
             string tmpPath = finalPath + ".tmp";
             try
             {
-                using (FileStream stream = new FileStream(tmpPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096))
+                using (FileStream stream = new FileStream(tmpPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
                 {
                     stream.Write(AsReadOnlySpan(payload, byteCount));
                     stream.Flush(true);
+                    if (stream.Length != byteCount)
+                        throw new IOException("Analytics disk fallback temp length mismatch.");
                 }
 
                 File.Move(tmpPath, finalPath);
+                if (!TryGetFallbackFileLength(finalPath, out long finalBytes) || finalBytes != byteCount)
+                {
+                    TryDeleteReplayFile(finalPath);
+                    throw new IOException("Analytics disk fallback final length mismatch.");
+                }
             }
             catch
             {
                 TryDeleteTempFallbackFile(tmpPath);
                 throw;
+            }
+        }
+
+        private static bool TryGetFallbackFileLength(string path, out long bytes)
+        {
+            bytes = 0L;
+            try
+            {
+                if (string.IsNullOrEmpty(path))
+                    return false;
+
+                bytes = new FileInfo(path).Length;
+                return bytes >= 0L;
+            }
+            catch
+            {
+                bytes = 0L;
+                return false;
             }
         }
 
@@ -2620,7 +2711,8 @@ namespace Hecton8.Core.Diagnostics
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(4, 4), reason);
                 int count = math.min(telemetry.Length, DefaultTelemetryCapacity);
                 int normalizedCursor = NormalizeTelemetryRingIndex(cursor[0], telemetry.Length);
-                bool ringHasWrapped = count > 0 && IsTelemetryEntryWritten(in telemetry[normalizedCursor]);
+                AnalyticsExporterTelemetryEntry normalizedEntry = telemetry[normalizedCursor];
+                bool ringHasWrapped = count > 0 && IsTelemetryEntryWritten(in normalizedEntry);
                 int startIndex = ResolveTelemetryDumpStartIndex(cursor[0], telemetry.Length, ringHasWrapped);
 
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(8, 4), (uint)count);

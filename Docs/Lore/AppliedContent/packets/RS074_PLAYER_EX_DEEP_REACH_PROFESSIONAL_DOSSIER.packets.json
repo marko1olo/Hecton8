@@ -28,138 +28,138 @@
       "localized": {
         "en_US": {
           "title": "Field Systems Specialist Record",
-          "scanner": "Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "scanner": "Old field-systems credential. Not command staff. Infrastructure labor with enough access to recognize where a route was buried.",
+          "terminal": "PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review. Procedure cache still matches operator sequence.",
+          "audio": "You never signed the lie. You knew the grammar that made it pass inspection.",
+          "in_game_wiki": "This record explains the operator's first competence without turning them into a chosen witness. Deep Reach trained them around pumps, seal ratings, relay rooms, bypass cards, evacuation queues, and route-safe language. The old systems reject their name and still expose familiar procedure. The guilt begins as recognition: a drain order, a clamp rating, a sanitized hold phrase, a room that failed in the order they were taught to prevent.",
+          "external_site": "HECTON-8's player character enters the ocean with a practical scar: former Deep Reach field-systems work, evacuation-infrastructure access, revoked clearance, and enough procedural memory to read drowned machinery as evidence. They are a Marauder now, not a company officer and not a passenger hero. A broken pump, a route stamp, or a liability phrase matters because the operator understands how those systems were supposed to protect workers before they became paperwork.",
+          "field_note": "The badge stopped opening doors. It did not unteach the order of failure."
         },
         "ru_RU": {
           "title": "Запись полевого системного специалиста",
-          "scanner": "Старый field-systems credential. Не command staff. Инфраструктурная работа с доступом, достаточным чтобы понять, где похоронили route.",
-          "terminal": "PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "Ты не был тем, кто подписал ложь. Ты знал язык, на котором она работала.",
-          "in_game_wiki": "Прошлое героя в Deep Reach практическое: field systems, evacuation hardware и procedure language. Вина начинается с узнавания, не с родни.",
-          "external_site": "Игрок - бывший Deep Reach systems worker, ставший Marauder. Его опыт делает каждый broken pump, route stamp и liability phrase личным.",
-          "field_note": "RU LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "scanner": "Старый допуск к полевым системам. Не командный состав. Инфраструктурная работа с доступом, достаточным, чтобы узнать, где был похоронен маршрут.",
+          "terminal": "СЛЕД ПЕРСОНАЛА: полевые системы, эвакуационная инфраструктура, сертификация route-safe. Допуск отозван после пересмотра тишины Aegir. Кэш процедур все еще совпадает с последовательностью оператора.",
+          "audio": "Ты не подписывал ложь. Ты знал грамматику, которая помогала ей проходить проверку.",
+          "in_game_wiki": "Эта запись объясняет первую компетентность оператора без мифа об избранном свидетеле. Deep Reach обучала его насосам, рейтингам уплотнений, релейным комнатам, обходным картам, эвакуационным очередям и языку route-safe. Старые системы отвергают имя, но все еще выдают знакомую процедуру. Вина начинается как узнавание: порядок осушения, рейтинг хомута, стерильная фраза удержания, комната, отказавшая ровно в той последовательности, которую его учили предотвращать.",
+          "external_site": "Игрок в HECTON-8 входит в океан с практическим шрамом: бывшая работа в полевых системах Deep Reach, доступ к эвакуационной инфраструктуре, отозванный допуск и процедурная память, достаточная, чтобы читать утонувшие машины как улики. Теперь он Marauder, не офицер компании и не героический пассажир. Сломанный насос, штамп маршрута или фраза об ответственности важны потому, что оператор понимает, как эти системы должны были защищать работников до того, как стали бумагой.",
+          "field_note": "Значок перестал открывать двери. Он не стер порядок отказов из рук."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Field Systems Specialist Record",
-          "scanner": "JA LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "JA LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "JA LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "JA LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "JA LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "JP LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "フィールドシステム担当記録",
+          "scanner": "古いフィールドシステム資格。指揮要員ではない。どこで経路が埋められたかを見抜けるだけのアクセスを持った、インフラ作業員の記録。",
+          "terminal": "人員痕跡: フィールドシステム、避難インフラ、route-safe認証。Aegir沈黙審査後に許可は失効。手順キャッシュはまだオペレーターの作業順と一致。",
+          "audio": "お前は嘘に署名していない。その嘘が検査を通る文法を知っていただけだ。",
+          "in_game_wiki": "この記録は、オペレーターの最初の有能さを、選ばれた証人という神話にせず説明する。Deep Reachはポンプ、シール等級、リレー室、バイパスカード、避難待ち列、route-safe文言の近くで彼らを訓練した。古いシステムは名前を拒むが、見覚えのある手順だけは漏らす。罪悪感は認識として始まる。排水順、クランプ等級、きれいすぎる保留文、そして防ぐよう教えられた順番で壊れた部屋。",
+          "external_site": "HECTON-8のプレイヤーキャラクターは実用的な傷を抱えて海へ入る。Deep Reachの元フィールドシステム勤務、避難インフラへのアクセス、失効した許可、沈んだ機械を証拠として読めるだけの手順記憶。今の彼らはMarauderであり、会社役員でも乗客ヒーローでもない。壊れたポンプ、経路スタンプ、責任文言が重いのは、作業員を守るはずだった仕組みが紙に変わる前の姿を知っているからだ。",
+          "field_note": "バッジは扉を開けなくなった。だが故障の順番までは忘れさせなかった。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Field Systems Specialist Record",
-          "scanner": "ZH LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "ZH LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "ZH LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "ZH LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "ZH LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "CN LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "现场系统专员记录",
+          "scanner": "旧现场系统凭证。不是指挥人员。只是基础设施劳工，但权限足够看出一条路线在哪里被掩埋。",
+          "terminal": "人员痕迹：现场系统，撤离基础设施，route-safe认证。Aegir静默审查后权限撤销。程序缓存仍与操作员序列匹配。",
+          "audio": "你从未签下那个谎言。你只是懂得让它通过审查的语法。",
+          "in_game_wiki": "这份记录解释了操作员最初的能力，而不把他们写成被选中的见证人。Deep Reach训练他们接触泵、密封等级、中继室、旁路卡、撤离队列和route-safe用语。旧系统拒绝他们的名字，却仍泄露熟悉的程序。内疚从识别开始：排水顺序、夹环等级、被清洗过的搁置措辞，以及一个按他们受训要防止的顺序失效的房间。",
+          "external_site": "HECTON-8的玩家角色带着一处实际伤痕进入海洋：曾在Deep Reach现场系统工作，接触过撤离基础设施，权限已被撤销，却还保留足够的程序记忆，能把淹没的机械读成证据。现在他们是Marauder，不是公司官员，也不是乘客英雄。坏掉的泵、路线戳记或责任措辞之所以重要，是因为操作员知道这些系统在变成文件之前，本该怎样保护工人。",
+          "field_note": "徽章不再开门。它没有抹掉故障发生的顺序。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Field Systems Specialist Record",
-          "scanner": "FR LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "FR LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "FR LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "FR LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "FR LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "FR LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "Dossier de spécialiste des systèmes de terrain",
+          "scanner": "Ancienne accréditation systèmes de terrain. Pas un cadre de commandement. Travail d'infrastructure avec assez d'accès pour reconnaître l'endroit où une route a été enterrée.",
+          "terminal": "TRACE PERSONNELLE : systèmes de terrain, infrastructure d'évacuation, certification route-safe. Accès révoqué après révision du silence d'Aegir. Le cache de procédure correspond encore à la séquence de l'opérateur.",
+          "audio": "Tu n'as jamais signé le mensonge. Tu connaissais la grammaire qui le faisait passer l'inspection.",
+          "in_game_wiki": "Ce dossier explique la première compétence de l'opérateur sans en faire un témoin élu. Deep Reach l'a formé près des pompes, des cotes de joint, des salles relais, des cartes de dérivation, des files d'évacuation et du langage route-safe. Les anciens systèmes rejettent son nom, mais révèlent encore une procédure familière. La culpabilité commence comme reconnaissance : un ordre de vidange, une cote de bride, une phrase de maintien aseptisée, une pièce qui a cédé dans l'ordre exact qu'on lui avait appris à empêcher.",
+          "external_site": "Le personnage joueur de HECTON-8 entre dans l'océan avec une cicatrice pratique : ancien travail sur les systèmes de terrain de Deep Reach, accès à l'infrastructure d'évacuation, accréditation révoquée et mémoire procédurale suffisante pour lire les machines noyées comme des preuves. Il est Marauder désormais, pas officier de compagnie ni héros passager. Une pompe brisée, un tampon de route ou une formule de responsabilité comptent parce que l'opérateur sait comment ces systèmes devaient protéger les travailleurs avant de devenir du papier.",
+          "field_note": "Le badge n'ouvrait plus les portes. Il n'a pas désappris l'ordre des pannes."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Field Systems Specialist Record",
-          "scanner": "ES LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "ES LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "ES LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "ES LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "ES LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "ES LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "Registro de especialista en sistemas de campo",
+          "scanner": "Antigua credencial de sistemas de campo. No era mando. Trabajo de infraestructura con acceso suficiente para reconocer dónde se enterró una ruta.",
+          "terminal": "RASTRO DE PERSONAL: sistemas de campo, infraestructura de evacuación, certificación route-safe. Autorización revocada tras la revisión del silencio de Aegir. La caché de procedimientos aún coincide con la secuencia del operador.",
+          "audio": "Tú nunca firmaste la mentira. Conocías la gramática que la dejaba pasar la inspección.",
+          "in_game_wiki": "Este registro explica la primera competencia del operador sin convertirlo en un testigo elegido. Deep Reach lo formó junto a bombas, índices de sellado, salas de relé, tarjetas de derivación, colas de evacuación y lenguaje route-safe. Los sistemas antiguos rechazan su nombre, pero todavía exponen procedimientos familiares. La culpa empieza como reconocimiento: una orden de drenaje, un índice de abrazadera, una frase de retención saneada, una sala que falló en el orden que le enseñaron a impedir.",
+          "external_site": "El personaje jugador de HECTON-8 entra en el océano con una cicatriz práctica: antiguo trabajo de sistemas de campo en Deep Reach, acceso a infraestructura de evacuación, autorización revocada y memoria procedimental suficiente para leer maquinaria ahogada como prueba. Ahora es Marauder, no oficial de la compañía ni héroe pasajero. Una bomba rota, un sello de ruta o una frase de responsabilidad importan porque el operador entiende cómo esos sistemas debían proteger a los trabajadores antes de volverse papeleo.",
+          "field_note": "La placa dejó de abrir puertas. No borró de las manos el orden del fallo."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Field Systems Specialist Record",
-          "scanner": "DE LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "DE LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "DE LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "DE LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "DE LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "DE LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "Akte eines Feldsystem-Spezialisten",
+          "scanner": "Alte Feldsystem-Berechtigung. Kein Führungspersonal. Infrastrukturarbeit mit genug Zugriff, um zu erkennen, wo eine Route begraben wurde.",
+          "terminal": "PERSONALSPUR: Feldsysteme, Evakuierungsinfrastruktur, route-safe-Zertifizierung. Freigabe nach Aegir-Schweigeprüfung widerrufen. Prozedurcache passt weiterhin zur Sequenz des Operators.",
+          "audio": "Du hast die Lüge nie unterschrieben. Du kanntest die Grammatik, mit der sie durch die Prüfung kam.",
+          "in_game_wiki": "Diese Akte erklärt die erste Kompetenz des Operators, ohne ihn zum auserwählten Zeugen zu machen. Deep Reach schulte ihn an Pumpen, Dichtwerten, Relaisräumen, Bypass-Karten, Evakuierungswarteschlangen und route-safe-Sprache. Die alten Systeme lehnen seinen Namen ab und legen trotzdem vertraute Prozedur offen. Die Schuld beginnt als Wiedererkennen: eine Entwässerungsreihenfolge, ein Klemmenwert, eine bereinigte Halteformel, ein Raum, der genau in der Reihenfolge versagte, die er verhindern sollte.",
+          "external_site": "Die Spielerfigur von HECTON-8 betritt den Ozean mit einer praktischen Narbe: frühere Deep-Reach-Feldsystemarbeit, Zugriff auf Evakuierungsinfrastruktur, widerrufene Freigabe und genug Prozedurgedächtnis, um ertrunkene Maschinen als Beweise zu lesen. Jetzt ist sie Marauder, kein Firmenoffizier und kein Passagierheld. Eine kaputte Pumpe, ein Routenstempel oder eine Haftungsformel zählt, weil der Operator versteht, wie diese Systeme Arbeiter schützen sollten, bevor sie zu Papier wurden.",
+          "field_note": "Der Ausweis öffnete keine Türen mehr. Er löschte nicht die Reihenfolge des Versagens."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Field Systems Specialist Record",
-          "scanner": "PL LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "PL LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "PL LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "PL LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "PL LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "PL LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "Kartoteka specjalisty systemów terenowych",
+          "scanner": "Stare uprawnienie systemów terenowych. Nie kadra dowódcza. Praca przy infrastrukturze z dostępem wystarczającym, by rozpoznać, gdzie pogrzebano trasę.",
+          "terminal": "ŚLAD PERSONELU: systemy terenowe, infrastruktura ewakuacyjna, certyfikacja route-safe. Dostęp cofnięty po przeglądzie ciszy Aegir. Pamięć procedur nadal pasuje do sekwencji operatora.",
+          "audio": "Nigdy nie podpisałeś kłamstwa. Znałeś gramatykę, dzięki której przechodziło kontrolę.",
+          "in_game_wiki": "Ta kartoteka wyjaśnia pierwszą kompetencję operatora bez robienia z niego wybranego świadka. Deep Reach szkoliło go przy pompach, klasach uszczelnień, salach przekaźnikowych, kartach obejścia, kolejkach ewakuacyjnych i języku route-safe. Stare systemy odrzucają nazwisko, lecz wciąż odsłaniają znajomą procedurę. Wina zaczyna się jako rozpoznanie: kolejność osuszania, klasa zacisku, oczyszczona formuła wstrzymania, pomieszczenie, które zawiodło w porządku, którego miał pilnować.",
+          "external_site": "Postać gracza w HECTON-8 schodzi do oceanu z praktyczną blizną: dawną pracą przy systemach terenowych Deep Reach, dostępem do infrastruktury ewakuacyjnej, cofniętym uprawnieniem i pamięcią procedur wystarczającą, by czytać zatopione maszyny jak dowody. Teraz jest Marauderem, nie oficerem firmy ani pasażerskim bohaterem. Zepsuta pompa, stempel trasy albo formuła odpowiedzialności mają wagę, bo operator rozumie, jak te systemy miały chronić pracowników, zanim stały się papierem.",
+          "field_note": "Identyfikator przestał otwierać drzwi. Nie wymazał kolejności awarii."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Field Systems Specialist Record",
-          "scanner": "UK LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "UK LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "UK LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "UK LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "UK LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "UA LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "Запис фахівця польових систем",
+          "scanner": "Старий допуск до польових систем. Не командний склад. Інфраструктурна робота з доступом, достатнім, щоб упізнати, де поховали маршрут.",
+          "terminal": "СЛІД ПЕРСОНАЛУ: польові системи, евакуаційна інфраструктура, сертифікація route-safe. Допуск відкликано після перегляду мовчання Aegir. Кеш процедур досі збігається з послідовністю оператора.",
+          "audio": "Ти не підписував брехню. Ти знав граматику, що допомагала їй проходити перевірку.",
+          "in_game_wiki": "Цей запис пояснює першу компетентність оператора без міфу про обраного свідка. Deep Reach навчала його насосів, рейтингів ущільнень, релейних кімнат, карт обходу, евакуаційних черг і мови route-safe. Старі системи відхиляють ім'я, але все ще показують знайому процедуру. Провина починається як упізнавання: порядок осушення, рейтинг хомута, стерильна фраза утримання, кімната, що відмовила саме в тій послідовності, яку його вчили не допустити.",
+          "external_site": "Гравець у HECTON-8 входить в океан із практичним шрамом: колишньою роботою в польових системах Deep Reach, доступом до евакуаційної інфраструктури, відкликаним допуском і процедурною пам'яттю, достатньою, щоб читати втоплені машини як докази. Тепер він Marauder, не офіцер компанії і не герой-пасажир. Зламаний насос, штамп маршруту чи фраза про відповідальність важать тому, що оператор розуміє, як ці системи мали захищати працівників до того, як стали папером.",
+          "field_note": "Значок перестав відчиняти двері. Він не стер порядок відмов із рук."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Field Systems Specialist Record",
-          "scanner": "AR LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "AR LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "AR LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "AR LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "AR LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "AR LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "سجل اختصاصي الأنظمة الميدانية",
+          "scanner": "اعتماد قديم للأنظمة الميدانية. ليس طاقم قيادة. عمل بنية تحتية مع وصول يكفي لمعرفة أين دُفن المسار.",
+          "terminal": "أثر موظف: أنظمة ميدانية، بنية إخلاء، اعتماد route-safe. أُلغي التصريح بعد مراجعة صمت Aegir. مخبأ الإجراءات ما زال يطابق تسلسل المشغل.",
+          "audio": "أنت لم توقع الكذبة. كنت تعرف القواعد التي جعلتها تمر من التفتيش.",
+          "in_game_wiki": "يفسر هذا السجل كفاءة المشغل الأولى من دون تحويله إلى شاهد مختار. دربته Deep Reach قرب المضخات، وتصنيفات الأختام، وغرف المرحلات، وبطاقات التجاوز، وطوابير الإخلاء، ولغة route-safe. الأنظمة القديمة ترفض اسمه، لكنها ما زالت تكشف إجراءً مألوفاً. يبدأ الذنب كتعرف: ترتيب تصريف، تصنيف مشبك، عبارة احتجاز نظيفة أكثر من اللازم، وغرفة فشلت بالترتيب الذي تعلم أن يمنعه.",
+          "external_site": "يدخل لاعب HECTON-8 المحيط ومعه ندبة عملية: عمل سابق في أنظمة Deep Reach الميدانية، ووصول إلى بنية الإخلاء، وتصريح ملغى، وذاكرة إجراءات تكفي لقراءة الآلات الغارقة كأدلة. هو الآن Marauder، لا ضابط شركة ولا بطل راكب. المضخة المكسورة أو ختم المسار أو عبارة المسؤولية مهمة لأن المشغل يفهم كيف كان يفترض بهذه الأنظمة أن تحمي العمال قبل أن تتحول إلى أوراق.",
+          "field_note": "توقفت الشارة عن فتح الأبواب. لكنها لم تمح ترتيب الفشل."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Field Systems Specialist Record",
-          "scanner": "ID LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "ID LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "ID LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "ID LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "ID LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "ID LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "Catatan Spesialis Sistem Lapangan",
+          "scanner": "Kredensial sistem lapangan lama. Bukan staf komando. Pekerja infrastruktur dengan akses cukup untuk mengenali di mana sebuah rute dikubur.",
+          "terminal": "JEJAK PERSONEL: sistem lapangan, infrastruktur evakuasi, sertifikasi route-safe. Izin dicabut setelah tinjauan kebisuan Aegir. Cache prosedur masih cocok dengan urutan operator.",
+          "audio": "Kamu tidak pernah menandatangani kebohongan itu. Kamu tahu tata bahasa yang membuatnya lolos inspeksi.",
+          "in_game_wiki": "Catatan ini menjelaskan kompetensi awal operator tanpa menjadikannya saksi terpilih. Deep Reach melatihnya di sekitar pompa, rating segel, ruang relay, kartu bypass, antrean evakuasi, dan bahasa route-safe. Sistem lama menolak namanya, tetapi masih membocorkan prosedur yang akrab. Rasa bersalah bermula sebagai pengenalan: urutan pengurasan, rating klem, frasa penahanan yang terlalu bersih, dan ruangan yang gagal dalam urutan yang diajarkan untuk dicegah.",
+          "external_site": "Karakter pemain HECTON-8 masuk ke laut dengan luka praktis: bekas pekerjaan sistem lapangan Deep Reach, akses ke infrastruktur evakuasi, izin yang dicabut, dan ingatan prosedur yang cukup untuk membaca mesin tenggelam sebagai bukti. Ia kini Marauder, bukan pejabat perusahaan dan bukan pahlawan penumpang. Pompa rusak, cap rute, atau frasa liabilitas penting karena operator memahami bagaimana sistem itu seharusnya melindungi pekerja sebelum berubah menjadi berkas.",
+          "field_note": "Lencana itu berhenti membuka pintu. Ia tidak menghapus urutan kegagalan."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Field Systems Specialist Record",
-          "scanner": "KO LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "KO LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "KO LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "KO LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "KO LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "KO LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "현장 시스템 전문 기록",
+          "scanner": "오래된 현장 시스템 자격. 지휘 인력은 아니다. 어느 경로가 묻혔는지 알아볼 만큼의 접근권을 가진 기반시설 노동 기록.",
+          "terminal": "인원 흔적: 현장 시스템, 대피 인프라, route-safe 인증. Aegir 침묵 검토 후 권한 취소. 절차 캐시는 아직 오퍼레이터의 순서와 일치한다.",
+          "audio": "너는 거짓에 서명하지 않았다. 그 거짓이 검사를 통과하는 문법을 알고 있었을 뿐이다.",
+          "in_game_wiki": "이 기록은 오퍼레이터의 첫 능력을 선택받은 증인 신화로 만들지 않고 설명한다. Deep Reach는 펌프, 실 등급, 릴레이실, 우회 카드, 대피 대기열, route-safe 문구 근처에서 그들을 훈련했다. 낡은 시스템은 이름을 거부하지만 익숙한 절차는 아직 드러낸다. 죄책감은 인식으로 시작된다. 배수 순서, 클램프 등급, 살균된 보류 문구, 그리고 막으라고 배운 순서 그대로 고장 난 방.",
+          "external_site": "HECTON-8의 플레이어 캐릭터는 실용적인 상처를 안고 바다에 들어간다. Deep Reach 현장 시스템 근무 이력, 대피 인프라 접근권, 취소된 허가, 잠긴 기계를 증거로 읽을 만큼의 절차 기억이다. 지금은 Marauder이지 회사 장교도 승객 영웅도 아니다. 망가진 펌프, 경로 도장, 책임 문구가 중요한 이유는, 그 시스템들이 문서가 되기 전 노동자를 보호해야 했던 방식을 오퍼레이터가 알기 때문이다.",
+          "field_note": "배지는 문을 열지 못하게 됐다. 실패의 순서까지 지우지는 못했다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Field Systems Specialist Record",
-          "scanner": "HE LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "HE LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "HE LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "HE LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "HE LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "HE LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "רשומת מומחה מערכות שטח",
+          "scanner": "אישור ישן למערכות שטח. לא סגל פיקוד. עבודת תשתית עם גישה מספיקה לזהות היכן נקבר נתיב.",
+          "terminal": "עקבת כוח אדם: מערכות שטח, תשתית פינוי, הסמכת route-safe. ההרשאה בוטלה אחרי סקירת שתיקת Aegir. מטמון הנהלים עדיין תואם את רצף המפעיל.",
+          "audio": "אתה לא חתמת על השקר. הכרת את הדקדוק שעזר לו לעבור בדיקה.",
+          "in_game_wiki": "הרשומה הזאת מסבירה את הכשירות הראשונה של המפעיל בלי להפוך אותו לעד נבחר. Deep Reach הכשירה אותו סביב משאבות, דירוגי אטימה, חדרי ממסר, כרטיסי מעקף, תורי פינוי ושפת route-safe. המערכות הישנות דוחות את שמו, אבל עדיין חושפות נוהל מוכר. האשמה מתחילה כזיהוי: סדר ניקוז, דירוג מהדק, ניסוח עיכוב נקי מדי, וחדר שכשל בדיוק בסדר שלימדו אותו למנוע.",
+          "external_site": "דמות השחקן של HECTON-8 נכנסת לאוקיינוס עם צלקת מעשית: עבודה קודמת במערכות השטח של Deep Reach, גישה לתשתית פינוי, הרשאה שבוטלה וזיכרון נהלים שמספיק לקרוא מכונות שטבעו כראיות. עכשיו הוא Marauder, לא קצין חברה ולא גיבור נוסע. משאבה שבורה, חותמת נתיב או ניסוח אחריות חשובים מפני שהמפעיל מבין איך המערכות האלה היו אמורות להגן על עובדים לפני שנהפכו לניירת.",
+          "field_note": "התג הפסיק לפתוח דלתות. הוא לא מחק את סדר הכשל."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Field Systems Specialist Record",
-          "scanner": "PT LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "PT LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "PT LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "PT LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "PT LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "PT LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "Registro de especialista em sistemas de campo",
+          "scanner": "Credencial antiga de sistemas de campo. Não era comando. Trabalho de infraestrutura com acesso suficiente para reconhecer onde uma rota foi enterrada.",
+          "terminal": "RASTRO DE PESSOAL: sistemas de campo, infraestrutura de evacuação, certificação route-safe. Autorização revogada após a revisão do silêncio de Aegir. O cache de procedimentos ainda combina com a sequência do operador.",
+          "audio": "Você nunca assinou a mentira. Você conhecia a gramática que fazia ela passar pela inspeção.",
+          "in_game_wiki": "Este registro explica a primeira competência do operador sem transformá-lo em testemunha escolhida. A Deep Reach o treinou perto de bombas, classificações de vedação, salas de relé, cartões de bypass, filas de evacuação e linguagem route-safe. Os sistemas antigos rejeitam seu nome, mas ainda expõem procedimento familiar. A culpa começa como reconhecimento: uma ordem de drenagem, uma classificação de grampo, uma frase de retenção higienizada, uma sala que falhou na ordem que ele foi treinado para impedir.",
+          "external_site": "O personagem do jogador em HECTON-8 entra no oceano com uma cicatriz prática: antigo trabalho em sistemas de campo da Deep Reach, acesso à infraestrutura de evacuação, autorização revogada e memória procedural suficiente para ler máquinas afogadas como prova. Agora é Marauder, não oficial da companhia nem herói passageiro. Uma bomba quebrada, um carimbo de rota ou uma frase de responsabilidade importam porque o operador entende como esses sistemas deveriam proteger trabalhadores antes de virarem papelada.",
+          "field_note": "O crachá parou de abrir portas. Não apagou a ordem das falhas."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Field Systems Specialist Record",
-          "scanner": "NL LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.",
-          "terminal": "NL LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.",
-          "audio": "NL LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.",
-          "in_game_wiki": "NL LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
-          "external_site": "NL LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "NL LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
+          "title": "Dossier veldsystemenspecialist",
+          "scanner": "Oude veldsystemenmachtiging. Geen commandostaf. Infrastructuurwerk met genoeg toegang om te herkennen waar een route werd begraven.",
+          "terminal": "PERSONEELSSPOOR: veldsystemen, evacuatie-infrastructuur, route-safe-certificering. Machtiging ingetrokken na Aegir-stiltereview. Procedurecache past nog steeds bij de volgorde van de operator.",
+          "audio": "Jij hebt de leugen nooit ondertekend. Je kende de grammatica waardoor hij door de keuring kwam.",
+          "in_game_wiki": "Dit dossier verklaart de eerste bekwaamheid van de operator zonder hem tot uitverkoren getuige te maken. Deep Reach trainde hem rond pompen, afdichtingswaarden, relaykamers, bypasskaarten, evacuatiewachtrijen en route-safe-taal. De oude systemen weigeren zijn naam, maar tonen nog altijd vertrouwde procedure. Schuld begint als herkenning: een afwateringsvolgorde, een klemwaarde, een schoongepoetste wachtzin, een kamer die faalde in precies de volgorde die hij moest voorkomen.",
+          "external_site": "Het spelerpersonage van HECTON-8 gaat de oceaan in met een praktische litteken: voormalig Deep Reach-veldsysteemwerk, toegang tot evacuatie-infrastructuur, ingetrokken machtiging en genoeg proceduregeheugen om verdronken machines als bewijs te lezen. Nu is hij Marauder, geen bedrijfsofficier en geen passagiersheld. Een kapotte pomp, routestempel of aansprakelijkheidszin telt omdat de operator begrijpt hoe die systemen arbeiders moesten beschermen voordat ze papierwerk werden.",
+          "field_note": "De badge opende geen deuren meer. Hij wiste de volgorde van falen niet uit."
         }
       }
     },
@@ -183,138 +183,138 @@
       "localized": {
         "en_US": {
           "title": "Revoked Access Language Trace",
-          "scanner": "Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "Lockout language hints at hidden liability without granting free access."
+          "scanner": "The lockout does not say forbidden. It says maintenance reclassification, continuity hold, and route materials. Old Deep Reach phrasing: a denial that still points at the buried door.",
+          "terminal": "ACCESS RESPONSE / ROUTE-SAFE ARCHIVE\ncredential: revoked\nreason: evacuation-continuity materials restricted to certified Deep Reach staff\nvisible terms: degraded-count, substitute witness, claim-preservation route, maintenance reclassification\nnote: legacy field personnel may view denial language for incident reconciliation only.",
+          "audio": "They did not erase the corridor. They wrapped it in vocabulary only guilty staff would still understand.",
+          "in_game_wiki": "Revoked access language became one of Deep Reach's quieter locks. A door could deny a former worker, mark the request as routine maintenance, and still leak the exact terms that named the hidden evacuation route. On HECTON-8, this matters because the player does not need a clean confession to follow the trail. The old phrasing is enough: degraded-count protocol, substitute witness, route-safe archive, claim-preservation routing. Those words were built for liability review, not rescue. The denial proves two things at once. The credential is dead. The procedure behind it is not.",
+          "external_site": "The protagonist reads Deep Reach lockouts as evidence. Revoked credentials block access, but the wording still exposes the buried route: degraded counts, substitute witnesses, maintenance reclassification, and claim-preservation language.",
+          "field_note": "The badge is dead. The lockout still speaks the office dialect that buried the route."
         },
         "ru_RU": {
-          "title": "След языка отозванного доступа",
-          "scanner": "Access trace совпадает со старой фразировкой Deep Reach. Denial написан как maintenance.",
-          "terminal": "LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because former staff know them.",
-          "audio": "Это не security. Это memo, притворяющийся дверью.",
-          "in_game_wiki": "RU LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "RU LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "RU LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "След отозванного доступа",
+          "scanner": "Блокировка не говорит «запрещено». Она пишет: переклассификация обслуживания, удержание непрерывности, маршрутные материалы. Старый язык Deep Reach: отказ, который все равно указывает на похороненную дверь.",
+          "terminal": "ОТВЕТ ДОСТУПА / АРХИВ БЕЗОПАСНОГО МАРШРУТА\nучетные данные: отозваны\nпричина: материалы эвакуационной непрерывности доступны только сертифицированному персоналу Deep Reach\nвидимые термины: деградированный учет, замещающий свидетель, маршрут сохранения претензии, переклассификация обслуживания\nпримечание: бывший полевой персонал может видеть язык отказа только для сверки инцидента.",
+          "audio": "Они не стерли коридор. Они завернули его в словарь, который до сих пор понимают только виноватые сотрудники.",
+          "in_game_wiki": "Язык отозванного доступа стал одним из самых тихих замков Deep Reach. Дверь могла отказать бывшему работнику, назвать запрос рядовым обслуживанием и все равно выдать точные термины, которыми был обозначен скрытый эвакуационный маршрут. На HECTON-8 это важно потому, что игроку не нужно чистое признание, чтобы идти по следу. Старой формулировки достаточно: протокол деградированного учета, замещающий свидетель, архив безопасного маршрута, маршрут сохранения претензии. Эти слова создавали для разбора ответственности, не для спасения. Отказ доказывает две вещи сразу. Допуск мертв. Процедура за ним нет.",
+          "external_site": "Протагонист читает блокировки Deep Reach как улику. Отозванные учетные данные закрывают доступ, но формулировка все еще раскрывает похороненный маршрут: деградированные учеты, замещающие свидетели, переклассификация обслуживания и язык сохранения претензий.",
+          "field_note": "Значок мертв. Блокировка все еще говорит на канцелярском диалекте, которым похоронили маршрут."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Revoked Access Language Trace",
-          "scanner": "JA LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "JA LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "JA LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "JP LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "JP LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "JP LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "取り消されたアクセス文言の痕跡",
+          "scanner": "ロックアウトは「禁止」とは言わない。保守再分類、継続性保留、経路資料と記す。古いDeep Reachの言い回しだ。拒否でありながら、埋められた扉を指している。",
+          "terminal": "アクセス応答 / ルート安全アーカイブ\n資格情報: 取り消し済み\n理由: 避難継続性資料は認定済みDeep Reach職員に限定\n表示語句: 劣化人数算定、代替証人、請求保全経路、保守再分類\n注記: 旧現場職員は事故照合の目的に限り拒否文言を閲覧できる。",
+          "audio": "彼らは通路を消していない。罪を知る職員だけが今も読める語彙で包んだだけだ。",
+          "in_game_wiki": "取り消されたアクセス文言は、Deep Reachの静かな錠前の一つになった。扉は元作業員を拒み、その要求を通常保守として記録しながら、隠された避難経路を名指す正確な語句だけを漏らすことができた。HECTON-8では、それだけで十分な手掛かりになる。プレイヤーにはきれいな自白はいらない。古い言い回し、劣化人数算定、代替証人、ルート安全アーカイブ、請求保全経路があれば足りる。これらの言葉は救助ではなく責任審査のために作られた。拒否は同時に二つの事実を示す。資格は死んだ。だが、その奥の手順はまだ生きている。",
+          "external_site": "主人公はDeep Reachのロックアウトを証拠として読む。取り消された資格情報はアクセスを塞ぐが、文言はなお埋められた経路を露出させる。劣化人数算定、代替証人、保守再分類、請求保全の言葉が残っている。",
+          "field_note": "バッジは死んだ。ロックアウトは、経路を埋めた事務方言をまだ話す。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Revoked Access Language Trace",
-          "scanner": "ZH LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "ZH LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "ZH LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "CN LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "CN LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "CN LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "被撤销访问语句痕迹",
+          "scanner": "封锁没有写“禁止”。它写的是维护重分类、连续性搁置、路线材料。旧Deep Reach措辞：一次拒绝，却仍指向被埋掉的门。",
+          "terminal": "访问响应 / 路线安全档案\n凭据: 已撤销\n原因: 疏散连续性材料仅限认证Deep Reach人员\n可见术语: 降级人数、替代见证、索赔保全路线、维护重分类\n备注: 旧现场人员仅可为事故核对查看拒绝措辞。",
+          "audio": "他们没有抹掉走廊。他们只是把它包进一套只有心里有罪的职员还看得懂的词汇里。",
+          "in_game_wiki": "被撤销的访问语言，成了Deep Reach最安静的锁之一。一扇门可以拒绝前雇员，把请求登记成例行维护，却仍泄出命名隐藏疏散路线的准确术语。在HECTON-8，这很重要，因为玩家不需要一份干净的认罪书才能追踪下去。旧措辞已经足够：降级人数协议、替代见证、路线安全档案、索赔保全路径。这些词是为责任审查制造的，不是为救援制造的。拒绝同时证明两件事。凭据死了。凭据背后的程序没有。",
+          "external_site": "主角把Deep Reach封锁读作证据。被撤销的凭据阻断访问，但措辞仍暴露被埋掉的路线：降级人数、替代见证、维护重分类，以及索赔保全语言。",
+          "field_note": "徽章死了。封锁仍在说那套埋葬路线的办公室方言。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Revoked Access Language Trace",
-          "scanner": "FR LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "FR LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "FR LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "FR LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "FR LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "FR LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "Trace de langage d’accès révoqué",
+          "scanner": "Le verrouillage ne dit pas interdit. Il dit reclassification de maintenance, gel de continuité et matériaux de route. Ancienne formulation Deep Reach: un refus qui pointe encore vers la porte enterrée.",
+          "terminal": "RÉPONSE D’ACCÈS / ARCHIVE ROUTE-SÛRE\nidentifiant: révoqué\nraison: matériaux de continuité d’évacuation réservés au personnel Deep Reach certifié\ntermes visibles: comptage dégradé, témoin substitut, route de préservation de réclamation, reclassification de maintenance\nnote: les anciens personnels de terrain peuvent voir le langage de refus uniquement pour rapprochement d’incident.",
+          "audio": "Ils n’ont pas effacé le couloir. Ils l’ont enveloppé dans un vocabulaire que seuls les employés coupables comprennent encore.",
+          "in_game_wiki": "Le langage d’accès révoqué est devenu l’un des verrous les plus discrets de Deep Reach. Une porte pouvait refuser un ancien travailleur, classer la demande comme maintenance ordinaire et laisser tout de même filtrer les termes exacts qui nommaient la route d’évacuation cachée. Sur HECTON-8, cela compte, car le joueur n’a pas besoin d’un aveu propre pour suivre la piste. L’ancienne formulation suffit: protocole de comptage dégradé, témoin substitut, archive route-sûre, routage de préservation de réclamation. Ces mots ont été construits pour l’examen de responsabilité, pas pour le sauvetage. Le refus prouve deux choses à la fois. L’identifiant est mort. La procédure derrière lui ne l’est pas.",
+          "external_site": "Le protagoniste lit les verrouillages Deep Reach comme des preuves. Les identifiants révoqués bloquent l’accès, mais la formulation expose encore la route enterrée: comptages dégradés, témoins substituts, reclassification de maintenance et langage de préservation de réclamation.",
+          "field_note": "Le badge est mort. Le verrouillage parle encore le dialecte de bureau qui a enterré la route."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Revoked Access Language Trace",
-          "scanner": "ES LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "ES LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "ES LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "ES LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "ES LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "ES LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "Rastro de lenguaje de acceso revocado",
+          "scanner": "El bloqueo no dice prohibido. Dice reclasificación de mantenimiento, retención de continuidad y materiales de ruta. Vieja fraseología de Deep Reach: una negativa que aún apunta a la puerta enterrada.",
+          "terminal": "RESPUESTA DE ACCESO / ARCHIVO DE RUTA SEGURA\ncredencial: revocada\nmotivo: materiales de continuidad de evacuación restringidos a personal certificado de Deep Reach\ntérminos visibles: recuento degradado, testigo sustituto, ruta de preservación de reclamación, reclasificación de mantenimiento\nnota: el antiguo personal de campo puede ver el lenguaje de denegación solo para conciliación de incidente.",
+          "audio": "No borraron el pasillo. Lo envolvieron en un vocabulario que solo el personal culpable sigue entendiendo.",
+          "in_game_wiki": "El lenguaje de acceso revocado se convirtió en uno de los cierres más silenciosos de Deep Reach. Una puerta podía negar a un antiguo trabajador, registrar la solicitud como mantenimiento rutinario y aun así filtrar los términos exactos que nombraban la ruta de evacuación oculta. En HECTON-8 eso importa porque el jugador no necesita una confesión limpia para seguir el rastro. Basta la vieja fraseología: protocolo de recuento degradado, testigo sustituto, archivo de ruta segura, encaminamiento de preservación de reclamación. Esas palabras se construyeron para revisión de responsabilidad, no para rescate. La denegación prueba dos cosas a la vez. La credencial está muerta. El procedimiento detrás de ella no.",
+          "external_site": "El protagonista lee los bloqueos de Deep Reach como evidencia. Las credenciales revocadas cierran el acceso, pero la redacción todavía expone la ruta enterrada: recuentos degradados, testigos sustitutos, reclasificación de mantenimiento y lenguaje de preservación de reclamación.",
+          "field_note": "La placa está muerta. El bloqueo todavía habla el dialecto de oficina que enterró la ruta."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Revoked Access Language Trace",
-          "scanner": "DE LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "DE LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "DE LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "DE LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "DE LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "DE LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "Spur widerrufener Zugriffssprache",
+          "scanner": "Die Sperre sagt nicht verboten. Sie sagt Wartungsneuklassifizierung, Kontinuitätssperre und Routenmaterial. Alte Deep-Reach-Formulierung: eine Ablehnung, die trotzdem auf die vergrabene Tür zeigt.",
+          "terminal": "ZUGRIFFSANTWORT / ROUTEN-SAFE-ARCHIV\nNachweis: widerrufen\nGrund: Evakuierungskontinuitätsmaterial nur für zertifiziertes Deep-Reach-Personal\nsichtbare Begriffe: degradierte Zählung, Ersatzzeuge, Anspruchserhaltungsroute, Wartungsneuklassifizierung\nHinweis: ehemaliges Feldpersonal darf Ablehnungssprache nur zum Vorfallabgleich sehen.",
+          "audio": "Sie haben den Korridor nicht gelöscht. Sie haben ihn in Vokabular gewickelt, das nur schuldiges Personal noch versteht.",
+          "in_game_wiki": "Widerrufene Zugriffssprache wurde zu einem der leiseren Schlösser von Deep Reach. Eine Tür konnte einen ehemaligen Arbeiter abweisen, die Anfrage als normale Wartung markieren und trotzdem genau die Begriffe lecken, die die versteckte Evakuierungsroute benannten. Auf HECTON-8 zählt das, weil der Spieler kein sauberes Geständnis braucht, um der Spur zu folgen. Die alte Formulierung reicht: Protokoll degradierter Zählung, Ersatzzeuge, Routen-Safe-Archiv, Anspruchserhaltungsrouting. Diese Worte wurden für Haftungsprüfung gebaut, nicht für Rettung. Die Ablehnung beweist zwei Dinge zugleich. Der Nachweis ist tot. Das Verfahren dahinter nicht.",
+          "external_site": "Der Protagonist liest Deep-Reach-Sperren als Beweise. Widerrufene Nachweise blockieren Zugriff, doch die Formulierung legt die vergrabene Route offen: degradierte Zählungen, Ersatzzeugen, Wartungsneuklassifizierung und Anspruchserhaltungssprache.",
+          "field_note": "Die Marke ist tot. Die Sperre spricht noch den Bürodialekt, der die Route begraben hat."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Revoked Access Language Trace",
-          "scanner": "PL LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "PL LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "PL LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "PL LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "PL LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "PL LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "Ślad języka cofniętego dostępu",
+          "scanner": "Blokada nie mówi zakazano. Mówi: reklasyfikacja konserwacji, wstrzymanie ciągłości, materiały trasy. Stare sformułowania Deep Reach: odmowa, która nadal wskazuje zakopane drzwi.",
+          "terminal": "ODPOWIEDŹ DOSTĘPU / ARCHIWUM TRASY BEZPIECZNEJ\npoświadczenie: cofnięte\npowód: materiały ciągłości ewakuacji ograniczone do certyfikowanego personelu Deep Reach\nwidoczne terminy: zdegradowany stan osobowy, świadek zastępczy, trasa zachowania roszczeń, reklasyfikacja konserwacji\nuwaga: dawny personel terenowy może widzieć język odmowy wyłącznie do uzgodnienia incydentu.",
+          "audio": "Nie usunęli korytarza. Owinęli go słownictwem, które wciąż rozumie tylko winny personel.",
+          "in_game_wiki": "Język cofniętego dostępu stał się jednym z cichszych zamków Deep Reach. Drzwi mogły odmówić dawnemu pracownikowi, oznaczyć żądanie jako rutynową konserwację i mimo to ujawnić dokładne terminy nazywające ukrytą trasę ewakuacji. Na HECTON-8 ma to znaczenie, bo gracz nie potrzebuje czystego przyznania się do winy, aby pójść tropem. Wystarczy stare brzmienie: protokół zdegradowanego stanu, świadek zastępczy, archiwum trasy bezpiecznej, trasowanie zachowania roszczeń. Te słowa zbudowano dla przeglądu odpowiedzialności, nie dla ratunku. Odmowa dowodzi dwóch rzeczy naraz. Poświadczenie jest martwe. Procedura za nim nie.",
+          "external_site": "Protagonista czyta blokady Deep Reach jak dowody. Cofnięte poświadczenia zamykają dostęp, ale treść wciąż odsłania zakopaną trasę: zdegradowane stany, świadków zastępczych, reklasyfikację konserwacji i język zachowania roszczeń.",
+          "field_note": "Identyfikator jest martwy. Blokada nadal mówi biurowym dialektem, którym zakopano trasę."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Revoked Access Language Trace",
-          "scanner": "UK LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "UK LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "UK LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "UA LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "UA LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "UA LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "Слід мови відкликаного доступу",
+          "scanner": "Блокування не пише заборонено. Воно пише: перекласифікація обслуговування, утримання безперервності, маршрутні матеріали. Старі формулювання Deep Reach: відмова, яка все одно вказує на поховані двері.",
+          "terminal": "ВІДПОВІДЬ ДОСТУПУ / АРХІВ БЕЗПЕЧНОГО МАРШРУТУ\nоблікові дані: відкликані\nпричина: матеріали евакуаційної безперервності доступні лише сертифікованому персоналу Deep Reach\nвидимі терміни: деградований облік, замінний свідок, маршрут збереження претензії, перекласифікація обслуговування\nпримітка: колишній польовий персонал може бачити мову відмови лише для звірки інциденту.",
+          "audio": "Вони не стерли коридор. Вони загорнули його у словник, який досі розуміють тільки винні співробітники.",
+          "in_game_wiki": "Мова відкликаного доступу стала одним із тихіших замків Deep Reach. Двері могли відмовити колишньому працівнику, позначити запит як звичайне обслуговування і все ж видати точні терміни, якими називали прихований евакуаційний маршрут. На HECTON-8 це важливо, бо гравцеві не потрібне чисте зізнання, щоб іти слідом. Старого формулювання достатньо: протокол деградованого обліку, замінний свідок, архів безпечного маршруту, маршрутизація збереження претензії. Ці слова створювали для перевірки відповідальності, не для порятунку. Відмова доводить дві речі одночасно. Допуск мертвий. Процедура за ним ні.",
+          "external_site": "Протагоніст читає блокування Deep Reach як докази. Відкликані облікові дані закривають доступ, але формулювання все ще відкриває похований маршрут: деградовані обліки, замінних свідків, перекласифікацію обслуговування і мову збереження претензій.",
+          "field_note": "Значок мертвий. Блокування досі говорить офісним діалектом, яким поховали маршрут."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Revoked Access Language Trace",
-          "scanner": "AR LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "AR LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "AR LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "AR LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "AR LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "AR LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "أثر لغة الوصول الملغى",
+          "scanner": "القفل لا يقول ممنوع. إنه يقول إعادة تصنيف صيانة، تعليق استمرارية، ومواد مسار. صياغة Deep Reach القديمة: رفض ما زال يشير إلى الباب المدفون.",
+          "terminal": "استجابة الوصول / أرشيف المسار الآمن\nالاعتماد: ملغى\nالسبب: مواد استمرارية الإخلاء مقصورة على موظفي Deep Reach المعتمدين\nالمصطلحات الظاهرة: تعداد متدهور، شاهد بديل، مسار حفظ مطالبة، إعادة تصنيف صيانة\nملاحظة: يمكن للموظفين الميدانيين السابقين رؤية لغة الرفض لغرض مطابقة الحادث فقط.",
+          "audio": "لم يمحوا الممر. لقد لفوه بمفردات لا يزال يفهمها إلا الموظفون الذين يعرفون ذنبهم.",
+          "in_game_wiki": "أصبحت لغة الوصول الملغى أحد أقفال Deep Reach الهادئة. يستطيع باب أن يرفض عاملا سابقا، وأن يسجل الطلب كصيانة روتينية، ومع ذلك يسرّب المصطلحات الدقيقة التي سمّت مسار الإخلاء المخفي. على HECTON-8 يهم هذا لأن اللاعب لا يحتاج إلى اعتراف نظيف كي يتبع الأثر. تكفي الصياغة القديمة: بروتوكول التعداد المتدهور، الشاهد البديل، أرشيف المسار الآمن، وتوجيه حفظ المطالبة. صُنعت هذه الكلمات لمراجعة المسؤولية، لا للإنقاذ. يثبت الرفض أمرين في وقت واحد. الاعتماد مات. أما الإجراء خلفه فلم يمت.",
+          "external_site": "يقرأ البطل أقفال Deep Reach كأدلة. الاعتمادات الملغاة تمنع الوصول، لكن الصياغة ما زالت تكشف المسار المدفون: تعدادات متدهورة، شهود بدلاء، إعادة تصنيف صيانة، ولغة حفظ المطالبات.",
+          "field_note": "الشارة ماتت. القفل ما زال يتكلم لهجة المكتب التي دفنت المسار."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Revoked Access Language Trace",
-          "scanner": "ID LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "ID LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "ID LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "ID LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "ID LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "ID LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "Jejak Bahasa Akses Dicabut",
+          "scanner": "Kuncian tidak menulis dilarang. Ia menulis reklasifikasi pemeliharaan, penahanan kontinuitas, dan materi rute. Gaya lama Deep Reach: penolakan yang tetap menunjuk ke pintu terkubur.",
+          "terminal": "RESPONS AKSES / ARSIP RUTE-AMAN\nkredensial: dicabut\nalasan: materi kontinuitas evakuasi dibatasi untuk staf Deep Reach bersertifikat\nistilah terlihat: hitungan terdegradasi, saksi pengganti, rute pelestarian klaim, reklasifikasi pemeliharaan\ncatatan: personel lapangan lama hanya boleh melihat bahasa penolakan untuk rekonsiliasi insiden.",
+          "audio": "Mereka tidak menghapus koridornya. Mereka membungkusnya dalam kosakata yang masih dipahami staf yang merasa bersalah.",
+          "in_game_wiki": "Bahasa akses yang dicabut menjadi salah satu kunci Deep Reach yang paling sunyi. Sebuah pintu bisa menolak mantan pekerja, menandai permintaan sebagai pemeliharaan rutin, namun tetap membocorkan istilah tepat yang menamai rute evakuasi tersembunyi. Di HECTON-8, ini penting karena pemain tidak membutuhkan pengakuan bersih untuk mengikuti jejaknya. Frasa lama sudah cukup: protokol hitungan terdegradasi, saksi pengganti, arsip rute-aman, pengarahan pelestarian klaim. Kata-kata itu dibuat untuk peninjauan tanggung jawab, bukan penyelamatan. Penolakan membuktikan dua hal sekaligus. Kredensialnya mati. Prosedur di baliknya tidak.",
+          "external_site": "Protagonis membaca kuncian Deep Reach sebagai bukti. Kredensial yang dicabut menutup akses, tetapi redaksinya masih menyingkap rute terkubur: hitungan terdegradasi, saksi pengganti, reklasifikasi pemeliharaan, dan bahasa pelestarian klaim.",
+          "field_note": "Lencananya mati. Kuncian itu masih memakai dialek kantor yang mengubur rute."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Revoked Access Language Trace",
-          "scanner": "KO LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "KO LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "KO LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "KO LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "KO LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "KO LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "철회된 접근 문구 흔적",
+          "scanner": "잠금은 금지라고 말하지 않는다. 유지보수 재분류, 연속성 보류, 경로 자료라고 적는다. 오래된 Deep Reach 문구다. 거부이면서도 묻힌 문을 가리킨다.",
+          "terminal": "접근 응답 / 경로-안전 기록보관소\n자격: 철회됨\n사유: 대피 연속성 자료는 인증된 Deep Reach 직원에게만 제한됨\n표시 용어: 저하 인원 산정, 대체 증인, 청구 보존 경로, 유지보수 재분류\n비고: 전 현장 인력은 사고 대조 목적에 한해 거부 문구를 볼 수 있음.",
+          "audio": "그들은 복도를 지우지 않았다. 죄를 아는 직원들만 아직 이해하는 어휘로 감쌌을 뿐이다.",
+          "in_game_wiki": "철회된 접근 문구는 Deep Reach의 더 조용한 자물쇠 중 하나가 되었다. 문은 전직 작업자를 거부하고 요청을 일상 유지보수로 표시하면서도 숨겨진 대피 경로를 부르는 정확한 용어를 흘릴 수 있었다. HECTON-8에서 이것은 중요하다. 플레이어는 흔적을 따라가기 위해 깔끔한 자백을 필요로 하지 않는다. 오래된 문구만으로 충분하다. 저하 인원 산정 프로토콜, 대체 증인, 경로-안전 기록보관소, 청구 보존 라우팅. 그 말들은 구조가 아니라 책임 검토를 위해 만들어졌다. 거부는 동시에 두 가지를 증명한다. 자격은 죽었다. 그 뒤의 절차는 아니다.",
+          "external_site": "주인공은 Deep Reach 잠금을 증거로 읽는다. 철회된 자격은 접근을 막지만, 문구는 여전히 묻힌 경로를 드러낸다. 저하 인원 산정, 대체 증인, 유지보수 재분류, 청구 보존 언어가 남아 있다.",
+          "field_note": "배지는 죽었다. 잠금은 아직 그 경로를 묻은 사무실 방언으로 말한다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Revoked Access Language Trace",
-          "scanner": "HE LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "HE LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "HE LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "HE LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "HE LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "HE LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "עקבת שפת גישה שבוטלה",
+          "scanner": "הנעילה לא אומרת אסור. היא אומרת סיווג מחדש לתחזוקה, החזקת רציפות, וחומרי מסלול. ניסוח ישן של Deep Reach: סירוב שעדיין מצביע אל הדלת הקבורה.",
+          "terminal": "תגובת גישה / ארכיון מסלול בטוח\nאישור: בוטל\nסיבה: חומרי רציפות פינוי מוגבלים לאנשי Deep Reach מוסמכים\nמונחים גלויים: ספירה מדורדרת, עד חלופי, מסלול שימור תביעה, סיווג מחדש לתחזוקה\nהערה: אנשי שטח לשעבר רשאים לראות את שפת הסירוב רק לצורך התאמת אירוע.",
+          "audio": "הם לא מחקו את המסדרון. הם עטפו אותו באוצר מילים שרק עובדים אשמים עדיין מבינים.",
+          "in_game_wiki": "שפת גישה שבוטלה הפכה לאחד המנעולים השקטים יותר של Deep Reach. דלת יכלה לדחות עובד לשעבר, לסמן את הבקשה כתחזוקה שגרתית, ועדיין לדלוף את המונחים המדויקים שקראו בשם למסלול הפינוי הנסתר. על HECTON-8 זה חשוב מפני שהשחקן אינו זקוק להודאה נקייה כדי ללכת בעקבות הסימן. הניסוח הישן מספיק: פרוטוקול ספירה מדורדרת, עד חלופי, ארכיון מסלול בטוח, ניתוב שימור תביעה. המילים האלה נבנו לבדיקת אחריות, לא להצלה. הסירוב מוכיח שני דברים בבת אחת. האישור מת. ההליך שמאחוריו לא.",
+          "external_site": "הפרוטגוניסט קורא נעילות של Deep Reach כראיות. אישורים שבוטלו חוסמים גישה, אבל הניסוח עדיין חושף את המסלול הקבור: ספירות מדורדרות, עדים חלופיים, סיווג תחזוקה מחדש ושפת שימור תביעות.",
+          "field_note": "התג מת. הנעילה עדיין מדברת בניב המשרדי שקבר את המסלול."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Revoked Access Language Trace",
-          "scanner": "PT LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "PT LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "PT LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "PT LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "PT LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "PT LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "Rastro de Linguagem de Acesso Revogado",
+          "scanner": "O bloqueio não diz proibido. Diz reclassificação de manutenção, retenção de continuidade e materiais de rota. Fraseado antigo da Deep Reach: uma recusa que ainda aponta para a porta enterrada.",
+          "terminal": "RESPOSTA DE ACESSO / ARQUIVO DE ROTA SEGURA\ncredencial: revogada\nmotivo: materiais de continuidade de evacuação restritos a pessoal certificado da Deep Reach\ntermos visíveis: contagem degradada, testemunha substituta, rota de preservação de reivindicação, reclassificação de manutenção\nnota: ex-pessoal de campo pode ver a linguagem de negação apenas para reconciliação de incidente.",
+          "audio": "Eles não apagaram o corredor. Eles o embrulharam em um vocabulário que só funcionários culpados ainda entenderiam.",
+          "in_game_wiki": "A linguagem de acesso revogado virou uma das fechaduras mais silenciosas da Deep Reach. Uma porta podia negar um ex-trabalhador, marcar o pedido como manutenção comum e ainda vazar os termos exatos que nomeavam a rota de evacuação escondida. Em HECTON-8, isso importa porque o jogador não precisa de uma confissão limpa para seguir o rastro. O fraseado antigo basta: protocolo de contagem degradada, testemunha substituta, arquivo de rota segura, roteamento de preservação de reivindicação. Essas palavras foram feitas para revisão de responsabilidade, não para resgate. A negação prova duas coisas ao mesmo tempo. A credencial está morta. O procedimento por trás dela não.",
+          "external_site": "O protagonista lê bloqueios da Deep Reach como evidência. Credenciais revogadas barram o acesso, mas a redação ainda expõe a rota enterrada: contagens degradadas, testemunhas substitutas, reclassificação de manutenção e linguagem de preservação de reivindicação.",
+          "field_note": "O crachá morreu. O bloqueio ainda fala o dialeto de escritório que enterrou a rota."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Revoked Access Language Trace",
-          "scanner": "NL LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
-          "terminal": "NL LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
-          "audio": "NL LOC HOLD: That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "NL LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
-          "external_site": "NL LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
-          "field_note": "NL LOC HOLD: Lockout language hints at hidden liability without granting free access."
+          "title": "Spoor van Ingetrokken Toegangstaal",
+          "scanner": "De blokkade zegt niet verboden. Ze zegt onderhoudsherclassificatie, continuïteitsstop en routemateriaal. Oude Deep Reach-taal: een weigering die nog steeds naar de begraven deur wijst.",
+          "terminal": "TOEGANGSANTWOORD / ROUTE-VEILIG ARCHIEF\ncredential: ingetrokken\nreden: evacuatiecontinuïteitsmateriaal beperkt tot gecertificeerd Deep Reach-personeel\nzichtbare termen: gedegradeerde telling, vervangende getuige, claimbehoudroute, onderhoudsherclassificatie\nnotitie: voormalig veldpersoneel mag weigeringstaal alleen zien voor incidentafstemming.",
+          "audio": "Ze hebben de gang niet gewist. Ze hebben hem ingepakt in woordenschat die alleen schuldig personeel nog begrijpt.",
+          "in_game_wiki": "Ingetrokken toegangstaal werd een van de stillere sloten van Deep Reach. Een deur kon een voormalige werker weigeren, het verzoek als routinematig onderhoud markeren en toch de exacte termen lekken die de verborgen evacuatieroute benoemden. Op HECTON-8 telt dat, omdat de speler geen nette bekentenis nodig heeft om het spoor te volgen. De oude formulering is genoeg: protocol voor gedegradeerde telling, vervangende getuige, route-veilig archief, claimbehoudrouting. Die woorden zijn gebouwd voor aansprakelijkheidscontrole, niet voor redding. De weigering bewijst twee dingen tegelijk. De credential is dood. De procedure erachter niet.",
+          "external_site": "De protagonist leest Deep Reach-blokkades als bewijs. Ingetrokken credentials blokkeren toegang, maar de formulering legt nog steeds de begraven route bloot: gedegradeerde tellingen, vervangende getuigen, onderhoudsherclassificatie en claimbehoudtaal.",
+          "field_note": "De badge is dood. De blokkade spreekt nog het kantoordialect dat de route heeft begraven."
         }
       }
     },
@@ -338,138 +338,138 @@
       "localized": {
         "en_US": {
           "title": "Old Procedure Recognition Cue",
-          "scanner": "Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "Use where room evidence contradicts a clean procedural label."
+          "scanner": "Route-safe stamp present. Worker count overwritten in two inks. Manual witness field sealed. The form was built to catch this kind of lie before someone made it policy.",
+          "terminal": "EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION\nroute: auxiliary egress line\ndeclared occupants: degraded-count accepted\nmanual witness: sealed by Continuity Office\nfield correction: worker tally inconsistent with pump-room tags\nstatus: claim-preserving, not extraction-cleared.",
+          "audio": "You know this form. It was supposed to stop the room from being counted empty while people were still breathing in it.",
+          "in_game_wiki": "Old procedure recognition turns the protagonist's past into a playable tool. The player is not following a mystical clue or a personal prophecy. They are reading a safety form they once had to trust. A route-safe stamp says the line was certified. The room evidence says the worker count was changed. The manual witness field, the part meant to force a second human check, has been sealed by a continuity office. That contradiction is the hook. Deep Reach did not merely hide a route. It used worker-protection language to make abandonment look administratively complete. The protagonist's stake begins as professional recognition: this form was designed to prevent exactly this failure.",
+          "external_site": "HECTON-8 grounds character motive in procedure. The protagonist recognizes an old evacuation safety form and sees how it was inverted: worker counts degraded, witness fields sealed, and route-safe language used to preserve claims instead of lives.",
+          "field_note": "The form was supposed to force another count. Here it forced silence."
         },
         "ru_RU": {
-          "title": "Сигнал узнавания старой процедуры",
-          "scanner": "Знакомая procedure line. Worker count и route-safe stamp не сходятся.",
-          "terminal": "EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "Ты знаешь эту форму. Она должна была защищать людей именно от такого.",
-          "in_game_wiki": "Личный мотив растет, когда знакомая safety procedure перевернута: форма защиты работников стала liability shield.",
-          "external_site": "HECTON-8 делает мотив процедурным. Игроку не все равно, потому что он понимает, как safety language превратили в оружие.",
-          "field_note": "Ставить там, где room evidence спорит с clean procedural label."
+          "title": "Узнавание старой процедуры",
+          "scanner": "Штамп безопасного маршрута на месте. Учет работников переписан двумя чернилами. Поле ручного свидетеля запечатано. Форму создавали, чтобы ловить такую ложь, пока кто-то не сделал ее политикой.",
+          "terminal": "ФОРМА ЭВАКУАЦИОННОЙ НЕПРЕРЫВНОСТИ / СЕРТИФИКАЦИЯ БЕЗОПАСНОГО МАРШРУТА\nмаршрут: вспомогательная линия выхода\nзаявленные люди: деградированный учет принят\nручной свидетель: запечатано офисом непрерывности\nполевая правка: список работников не совпадает с метками насосной\nстатус: сохраняет претензию, не разрешает извлечение.",
+          "audio": "Ты знаешь эту форму. Она должна была не дать комнате считаться пустой, пока в ней еще дышали люди.",
+          "in_game_wiki": "Узнавание старой процедуры превращает прошлое протагониста в игровой инструмент. Игрок идет не за мистической подсказкой и не за личным пророчеством. Он читает форму безопасности, которой когда-то приходилось доверять. Штамп безопасного маршрута говорит, что линия сертифицирована. Улики в комнате говорят, что учет работников изменили. Поле ручного свидетеля, часть формы, которая должна была требовать вторую человеческую проверку, запечатано офисом непрерывности. В этом противоречии и крючок. Deep Reach не просто спрятала маршрут. Она использовала язык защиты работников, чтобы брошенные люди выглядели как административно закрытый случай. Ставка протагониста начинается как профессиональное узнавание: эта форма была создана, чтобы предотвратить именно такой отказ.",
+          "external_site": "HECTON-8 держит мотивацию персонажа на процедуре. Протагонист узнает старую эвакуационную форму безопасности и видит, как ее вывернули: учет работников деградирован, поля свидетелей запечатаны, а язык безопасного маршрута сохраняет претензии вместо жизней.",
+          "field_note": "Форма должна была заставить пересчитать еще раз. Здесь она заставила молчать."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "JA LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "JA LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "JA LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "JA LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "JA LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "JA LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "古い手順を認識する合図",
+          "scanner": "ルート安全印が残っている。作業員数は二種類のインクで上書きされている。手動証人欄は封印済み。この種の嘘を捕まえるための様式だったが、誰かが方針に変えた。",
+          "terminal": "避難継続性様式 / ルート安全認証\n経路: 補助退避ライン\n申告人数: 劣化人数算定を承認\n手動証人: 継続性オフィスにより封印\n現場訂正: 作業員名簿がポンプ室タグと不一致\n状態: 請求保全、抽出許可なし。",
+          "audio": "君はこの様式を知っている。まだ人が息をしている部屋を空室として数えさせないためのものだった。",
+          "in_game_wiki": "古い手順の認識は、主人公の過去をプレイ可能な道具に変える。プレイヤーは神秘的な手掛かりや個人的な予言を追っているのではない。かつて信じるしかなかった安全様式を読んでいる。ルート安全印は、そのラインが認証済みだと告げる。部屋の証拠は、作業員数が書き換えられたと告げる。二度目の人間による確認を強制するはずだった手動証人欄は、継続性オフィスによって封印されている。その矛盾がフックになる。Deep Reachは単に経路を隠したのではない。作業員保護の言葉を使って、置き去りを行政上完了したように見せた。主人公の利害は職能的な認識から始まる。この様式は、まさにこの失敗を防ぐために作られていた。",
+          "external_site": "HECTON-8はキャラクター動機を手順に接地する。主人公は古い避難安全様式を認識し、それがどう反転されたかを見る。作業員数は劣化処理され、証人欄は封印され、ルート安全の言葉は命ではなく請求を守るために使われた。",
+          "field_note": "この様式はもう一度数えさせるためのものだった。ここでは沈黙を強制した。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "ZH LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "ZH LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "ZH LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "ZH LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "ZH LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "ZH LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "旧程序识别线索",
+          "scanner": "路线安全章还在。工人数量被两种墨迹改写。人工见证栏已封存。这张表本来是为了抓住这种谎言，直到有人把谎言变成政策。",
+          "terminal": "疏散连续性表 / 路线安全认证\n路线: 辅助撤离线\n申报人数: 已接受降级人数\n人工见证: 由连续性办公室封存\n现场修正: 工人清单与泵房标签不一致\n状态: 保全索赔，未准许撤离。",
+          "audio": "你认识这张表。它本该阻止一间还有人呼吸的房间被算成空房。",
+          "in_game_wiki": "旧程序识别把主角的过去变成可游玩的工具。玩家追随的不是神秘线索，也不是私人预言，而是一张他曾经必须信任的安全表格。路线安全章说这条线已经认证。房间里的证据说工人数量被改过。人工见证栏原本要强制第二个人进行核对，如今却被连续性办公室封存。矛盾就在这里。Deep Reach不只是隐藏了一条路线。它把保护工人的语言拿来使用，让遗弃看起来像行政上已经完成。主角的切身利益从专业识别开始：这张表本来就是为了防止这种失败。",
+          "external_site": "HECTON-8把角色动机扎在程序里。主角认出一张旧疏散安全表，看见它如何被倒置：工人数量被降级，见证栏被封存，路线安全语言被用于保护索赔而不是生命。",
+          "field_note": "这张表本该强制再数一次。到了这里，它强制沉默。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "FR LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "FR LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "FR LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "FR LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "FR LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "FR LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "Indice de reconnaissance d’ancienne procédure",
+          "scanner": "Tampon route-sûre présent. Comptage des travailleurs réécrit avec deux encres. Champ de témoin manuel scellé. Le formulaire avait été conçu pour attraper ce genre de mensonge avant qu’on en fasse une politique.",
+          "terminal": "FORMULAIRE DE CONTINUITÉ D’ÉVACUATION / CERTIFICATION ROUTE-SÛRE\nroute: ligne d’issue auxiliaire\noccupants déclarés: comptage dégradé accepté\ntémoin manuel: scellé par le bureau de continuité\ncorrection terrain: décompte des travailleurs incohérent avec les étiquettes de salle des pompes\nstatut: préservation de réclamation, pas d’autorisation d’extraction.",
+          "audio": "Tu connais ce formulaire. Il devait empêcher qu’une pièce soit comptée vide pendant que des gens y respiraient encore.",
+          "in_game_wiki": "La reconnaissance d’une ancienne procédure transforme le passé du protagoniste en outil jouable. Le joueur ne suit pas un indice mystique ni une prophétie personnelle. Il lit un formulaire de sécurité auquel il a jadis dû faire confiance. Un tampon route-sûre affirme que la ligne a été certifiée. Les preuves dans la pièce disent que le comptage des travailleurs a été modifié. Le champ de témoin manuel, censé imposer une deuxième vérification humaine, a été scellé par un bureau de continuité. C’est cette contradiction qui accroche. Deep Reach n’a pas seulement caché une route. Elle a utilisé le langage de protection des travailleurs pour faire passer l’abandon pour un dossier administrativement complet. L’enjeu du protagoniste commence par une reconnaissance professionnelle: ce formulaire avait été conçu pour empêcher exactement cet échec.",
+          "external_site": "HECTON-8 ancre la motivation du personnage dans la procédure. Le protagoniste reconnaît un ancien formulaire de sécurité d’évacuation et voit comment il a été inversé: comptages dégradés, champs de témoins scellés, langage route-sûre utilisé pour préserver des réclamations plutôt que des vies.",
+          "field_note": "Le formulaire devait imposer un autre comptage. Ici, il a imposé le silence."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "ES LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "ES LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "ES LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "ES LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "ES LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "ES LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "Señal de reconocimiento de antiguo procedimiento",
+          "scanner": "Sello de ruta segura presente. Recuento de trabajadores sobrescrito con dos tintas. Campo de testigo manual sellado. El formulario se creó para detectar esta clase de mentira antes de que alguien la volviera política.",
+          "terminal": "FORMULARIO DE CONTINUIDAD DE EVACUACIÓN / CERTIFICACIÓN DE RUTA SEGURA\nruta: línea auxiliar de salida\nocupantes declarados: recuento degradado aceptado\ntestigo manual: sellado por la oficina de continuidad\ncorrección de campo: recuento de trabajadores incompatible con etiquetas de sala de bombas\nestado: preservación de reclamación, sin autorización de extracción.",
+          "audio": "Conoces este formulario. Debía impedir que una sala se contara vacía mientras aún había personas respirando dentro.",
+          "in_game_wiki": "El reconocimiento de un antiguo procedimiento convierte el pasado del protagonista en una herramienta jugable. El jugador no sigue una pista mística ni una profecía personal. Lee un formulario de seguridad en el que antes tuvo que confiar. Un sello de ruta segura afirma que la línea fue certificada. La evidencia de la sala dice que el recuento de trabajadores fue cambiado. El campo de testigo manual, la parte destinada a forzar una segunda revisión humana, está sellado por una oficina de continuidad. Esa contradicción es el gancho. Deep Reach no solo ocultó una ruta. Usó el lenguaje de protección laboral para hacer que el abandono pareciera administrativamente completo. El interés del protagonista comienza como reconocimiento profesional: este formulario se diseñó para evitar exactamente este fallo.",
+          "external_site": "HECTON-8 apoya la motivación del personaje en el procedimiento. El protagonista reconoce un antiguo formulario de seguridad de evacuación y ve cómo fue invertido: recuentos degradados, campos de testigo sellados y lenguaje de ruta segura usado para preservar reclamaciones en vez de vidas.",
+          "field_note": "El formulario debía forzar otro recuento. Aquí forzó silencio."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "DE LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "DE LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "DE LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "DE LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "DE LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "DE LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "Hinweis auf alte Verfahrenskenntnis",
+          "scanner": "Routen-Safe-Stempel vorhanden. Arbeiterzahl in zwei Tinten überschrieben. Manuelles Zeugenfeld versiegelt. Das Formular sollte genau solche Lügen auffangen, bevor jemand daraus Richtlinie machte.",
+          "terminal": "EVAKUIERUNGSKONTINUITÄTSFORMULAR / ROUTEN-SAFE-ZERTIFIZIERUNG\nRoute: Hilfsausstiegslinie\ngemeldete Insassen: degradierte Zählung akzeptiert\nmanueller Zeuge: durch Kontinuitätsbüro versiegelt\nFeldkorrektur: Arbeiterzählung widerspricht Pumpenraum-Tags\nStatus: anspruchserhaltend, nicht für Extraktion freigegeben.",
+          "audio": "Du kennst dieses Formular. Es sollte verhindern, dass ein Raum leer gezählt wird, während darin noch Menschen atmen.",
+          "in_game_wiki": "Die Wiedererkennung alter Verfahren macht die Vergangenheit des Protagonisten zu einem spielbaren Werkzeug. Der Spieler folgt keinem mystischen Hinweis und keiner persönlichen Prophezeiung. Er liest ein Sicherheitsformular, dem er einst vertrauen musste. Ein Routen-Safe-Stempel sagt, die Linie sei zertifiziert. Die Beweise im Raum sagen, die Arbeiterzahl wurde geändert. Das manuelle Zeugenfeld, das eine zweite menschliche Prüfung erzwingen sollte, wurde von einem Kontinuitätsbüro versiegelt. Dieser Widerspruch ist der Haken. Deep Reach hat nicht nur eine Route versteckt. Es nutzte Arbeiterschutzsprache, um Zurücklassen administrativ abgeschlossen aussehen zu lassen. Der Einsatz des Protagonisten beginnt als berufliche Wiedererkennung: Dieses Formular wurde entwickelt, um genau dieses Versagen zu verhindern.",
+          "external_site": "HECTON-8 verankert Charaktermotivation in Verfahren. Der Protagonist erkennt ein altes Evakuierungssicherheitsformular und sieht, wie es umgedreht wurde: degradierte Arbeiterzahlen, versiegelte Zeugenfelder und Routen-Safe-Sprache, die Ansprüche statt Leben schützt.",
+          "field_note": "Das Formular sollte eine weitere Zählung erzwingen. Hier erzwang es Schweigen."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "PL LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "PL LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "PL LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "PL LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "PL LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "PL LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "Sygnał rozpoznania starej procedury",
+          "scanner": "Stempel trasy bezpiecznej obecny. Liczba pracowników nadpisana dwoma atramentami. Pole świadka ręcznego zapieczętowane. Formularz zbudowano, by łapać takie kłamstwo, zanim ktoś zrobił z niego politykę.",
+          "terminal": "FORMULARZ CIĄGŁOŚCI EWAKUACJI / CERTYFIKACJA TRASY BEZPIECZNEJ\ntrasa: pomocnicza linia wyjścia\nzadeklarowani obecni: zdegradowany stan zaakceptowany\nświadek ręczny: zapieczętowany przez biuro ciągłości\npoprawka terenowa: wykaz pracowników niezgodny z tagami pompowni\nstatus: zachowanie roszczeń, brak zgody na wydobycie.",
+          "audio": "Znasz ten formularz. Miał nie dopuścić, by pomieszczenie uznano za puste, gdy ludzie nadal w nim oddychali.",
+          "in_game_wiki": "Rozpoznanie starej procedury zmienia przeszłość protagonisty w narzędzie gry. Gracz nie podąża za mistyczną wskazówką ani osobistą przepowiednią. Czyta formularz bezpieczeństwa, któremu kiedyś musiał ufać. Stempel trasy bezpiecznej mówi, że linię certyfikowano. Dowody w pomieszczeniu mówią, że liczba pracowników została zmieniona. Pole świadka ręcznego, część mająca wymusić drugą ludzką kontrolę, zostało zapieczętowane przez biuro ciągłości. Ten konflikt jest zaczepem. Deep Reach nie tylko ukryło trasę. Użyło języka ochrony pracowników, by porzucenie wyglądało na administracyjnie zakończone. Stawka protagonisty zaczyna się od zawodowego rozpoznania: ten formularz miał zapobiegać dokładnie takiej awarii.",
+          "external_site": "HECTON-8 osadza motywację postaci w procedurze. Protagonista rozpoznaje stary formularz bezpieczeństwa ewakuacji i widzi, jak go odwrócono: zdegradowane liczby pracowników, zapieczętowane pola świadków i język trasy bezpiecznej użyty do ochrony roszczeń zamiast życia.",
+          "field_note": "Formularz miał wymusić kolejne liczenie. Tutaj wymusił ciszę."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "UK LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "UK LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "UK LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "UK LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "UK LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "UK LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "Ознака впізнання старої процедури",
+          "scanner": "Штамп безпечного маршруту на місці. Облік працівників переписано двома чорнилами. Поле ручного свідка запечатано. Форму створили, щоб ловити таку брехню, доки хтось не зробив її політикою.",
+          "terminal": "ФОРМА ЕВАКУАЦІЙНОЇ БЕЗПЕРЕРВНОСТІ / СЕРТИФІКАЦІЯ БЕЗПЕЧНОГО МАРШРУТУ\nмаршрут: допоміжна лінія виходу\nзаявлені люди: деградований облік прийнято\nручний свідок: запечатано офісом безперервності\nпольова правка: перелік працівників не збігається з мітками насосної\nстатус: збереження претензії, дозвіл на вилучення не надано.",
+          "audio": "Ти знаєш цю форму. Вона мала не дати кімнаті вважатися порожньою, поки в ній ще дихали люди.",
+          "in_game_wiki": "Впізнання старої процедури перетворює минуле протагоніста на ігровий інструмент. Гравець іде не за містичною підказкою і не за особистим пророцтвом. Він читає форму безпеки, якій колись мусив довіряти. Штамп безпечного маршруту каже, що лінію сертифіковано. Докази в кімнаті кажуть, що облік працівників змінили. Поле ручного свідка, частина, яка мала примусити другу людську перевірку, запечатано офісом безперервності. У цьому протиріччі і є гачок. Deep Reach не просто сховала маршрут. Вона використала мову захисту працівників, щоб покинуті люди виглядали як адміністративно завершена справа. Ставка протагоніста починається як професійне впізнання: цю форму створили, щоб запобігти саме такій відмові.",
+          "external_site": "HECTON-8 тримає мотивацію персонажа на процедурі. Протагоніст упізнає стару евакуаційну форму безпеки й бачить, як її вивернули: облік працівників деградовано, поля свідків запечатано, а мову безпечного маршруту використано для збереження претензій замість життів.",
+          "field_note": "Форма мала змусити перерахувати ще раз. Тут вона змусила мовчати."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "AR LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "AR LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "AR LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "AR LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "AR LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "AR LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "إشارة تعرف على إجراء قديم",
+          "scanner": "ختم المسار الآمن موجود. عُدل عدد العمال بحبرين. خانة الشاهد اليدوي مختومة. صُمم النموذج ليمسك هذا النوع من الكذب قبل أن يحوله أحدهم إلى سياسة.",
+          "terminal": "نموذج استمرارية الإخلاء / اعتماد المسار الآمن\nالمسار: خط خروج مساعد\nالأشخاص المعلنون: قُبل التعداد المتدهور\nالشاهد اليدوي: مختوم من مكتب الاستمرارية\nتصحيح ميداني: تعداد العمال لا يطابق وسوم غرفة المضخات\nالحالة: حفظ مطالبة، لا تصريح استخراج.",
+          "audio": "أنت تعرف هذا النموذج. كان يفترض أن يمنع اعتبار الغرفة فارغة بينما ما زال الناس يتنفسون فيها.",
+          "in_game_wiki": "يحوّل التعرف على إجراء قديم ماضي البطل إلى أداة قابلة للعب. اللاعب لا يتبع إشارة غامضة ولا نبوءة شخصية. إنه يقرأ نموذج سلامة اضطر يوما إلى الوثوق به. ختم المسار الآمن يقول إن الخط اعتُمد. أدلة الغرفة تقول إن عدد العمال غُيّر. خانة الشاهد اليدوي، وهي الجزء الذي كان يجب أن يفرض فحصا بشريا ثانيا، ختمها مكتب الاستمرارية. هذا التناقض هو الخطاف. لم تخف Deep Reach مسارا فحسب. استخدمت لغة حماية العمال كي يبدو التخلي عنهم كأنه ملف مكتمل إداريا. تبدأ مصلحة البطل من تعرف مهني: صُمم هذا النموذج لمنع هذا الفشل بالضبط.",
+          "external_site": "ترسخ HECTON-8 دافع الشخصية في الإجراء. يتعرف البطل على نموذج سلامة إخلاء قديم ويرى كيف انقلب: أعداد عمال متدهورة، خانات شهود مختومة، ولغة مسار آمن استُخدمت لحفظ المطالبات بدلا من الأرواح.",
+          "field_note": "كان يفترض أن يفرض النموذج عدا آخر. هنا فرض الصمت."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "ID LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "ID LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "ID LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "ID LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "ID LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "ID LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "Isyarat Pengenalan Prosedur Lama",
+          "scanner": "Stempel rute-aman ada. Hitungan pekerja ditimpa dua tinta. Kolom saksi manual disegel. Formulir ini dibuat untuk menangkap kebohongan seperti ini sebelum seseorang menjadikannya kebijakan.",
+          "terminal": "FORMULIR KONTINUITAS EVAKUASI / SERTIFIKASI RUTE-AMAN\nrute: jalur keluar tambahan\npenghuni dinyatakan: hitungan terdegradasi diterima\nsaksi manual: disegel oleh Kantor Kontinuitas\nkoreksi lapangan: daftar pekerja tidak cocok dengan tag ruang pompa\nstatus: pelestarian klaim, bukan izin ekstraksi.",
+          "audio": "Kau mengenal formulir ini. Ia seharusnya mencegah ruangan dihitung kosong sementara orang masih bernapas di dalamnya.",
+          "in_game_wiki": "Pengenalan prosedur lama mengubah masa lalu protagonis menjadi alat yang bisa dimainkan. Pemain tidak mengikuti petunjuk mistis atau ramalan pribadi. Mereka membaca formulir keselamatan yang dulu harus dipercaya. Stempel rute-aman menyatakan jalur itu tersertifikasi. Bukti di ruangan menyatakan hitungan pekerja diubah. Kolom saksi manual, bagian yang semestinya memaksa pemeriksaan manusia kedua, disegel oleh kantor kontinuitas. Kontradiksi itu menjadi kaitnya. Deep Reach tidak sekadar menyembunyikan rute. Mereka memakai bahasa perlindungan pekerja untuk membuat penelantaran tampak selesai secara administratif. Kepentingan protagonis dimulai sebagai pengenalan profesional: formulir ini dirancang untuk mencegah kegagalan persis seperti ini.",
+          "external_site": "HECTON-8 menambatkan motivasi karakter pada prosedur. Protagonis mengenali formulir keselamatan evakuasi lama dan melihat bagaimana ia dibalik: hitungan pekerja didegradasi, kolom saksi disegel, dan bahasa rute-aman dipakai untuk melestarikan klaim, bukan nyawa.",
+          "field_note": "Formulir itu seharusnya memaksa hitungan lagi. Di sini ia memaksa diam."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "KO LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "KO LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "KO LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "KO LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "KO LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "KO LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "오래된 절차 인식 단서",
+          "scanner": "경로-안전 도장이 남아 있다. 작업자 수는 두 가지 잉크로 덮어쓴 상태다. 수동 증인 칸은 봉인됐다. 이 양식은 이런 거짓말을 잡기 위해 만들어졌지만, 누군가 그것을 정책으로 만들었다.",
+          "terminal": "대피 연속성 양식 / 경로-안전 인증\n경로: 보조 탈출선\n신고 인원: 저하 산정 승인\n수동 증인: 연속성 사무소가 봉인\n현장 수정: 작업자 집계가 펌프실 태그와 불일치\n상태: 청구 보존, 추출 허가 아님.",
+          "audio": "너는 이 양식을 안다. 아직 사람들이 숨 쉬는 방을 빈방으로 세지 못하게 하려던 양식이었다.",
+          "in_game_wiki": "오래된 절차 인식은 주인공의 과거를 플레이 가능한 도구로 바꾼다. 플레이어는 신비한 단서나 개인적 예언을 따르는 것이 아니다. 한때 신뢰해야 했던 안전 양식을 읽고 있다. 경로-안전 도장은 그 선이 인증되었다고 말한다. 방 안의 증거는 작업자 수가 바뀌었다고 말한다. 두 번째 인간 확인을 강제하기 위한 수동 증인 칸은 연속성 사무소에 의해 봉인되었다. 그 모순이 고리다. Deep Reach는 단순히 경로를 숨긴 것이 아니다. 노동자 보호 언어를 사용해 버려진 사람들을 행정적으로 완료된 사건처럼 보이게 했다. 주인공의 이해관계는 전문적 인식에서 시작된다. 이 양식은 바로 이런 실패를 막기 위해 설계되었다.",
+          "external_site": "HECTON-8은 캐릭터 동기를 절차에 고정한다. 주인공은 오래된 대피 안전 양식을 알아보고 그것이 어떻게 뒤집혔는지 본다. 작업자 수는 저하 처리되고, 증인 칸은 봉인되었으며, 경로-안전 언어는 생명 대신 청구를 보존하는 데 쓰였다.",
+          "field_note": "그 양식은 한 번 더 세게 하려던 것이었다. 여기서는 침묵을 강제했다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "HE LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "HE LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "HE LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "HE LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "HE LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "HE LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "רמז זיהוי נוהל ישן",
+          "scanner": "חותמת מסלול בטוח קיימת. ספירת העובדים נדרסה בשני סוגי דיו. שדה העד הידני נאטם. הטופס נבנה כדי לתפוס שקר כזה לפני שמישהו הפך אותו למדיניות.",
+          "terminal": "טופס רציפות פינוי / אישור מסלול בטוח\nמסלול: קו יציאה מסייע\nנוכחים מוצהרים: ספירה מדורדרת התקבלה\nעד ידני: נאטם בידי משרד הרציפות\nתיקון שטח: מפקד העובדים אינו תואם תגי חדר משאבות\nמצב: משמר תביעה, לא מאושר לחילוץ.",
+          "audio": "אתה מכיר את הטופס הזה. הוא היה אמור למנוע מחדר להיספר כריק בזמן שאנשים עדיין נושמים בו.",
+          "in_game_wiki": "זיהוי נוהל ישן הופך את עברו של הפרוטגוניסט לכלי משחקי. השחקן אינו עוקב אחרי רמז מיסטי או נבואה אישית. הוא קורא טופס בטיחות שפעם היה עליו לסמוך עליו. חותמת מסלול בטוח אומרת שהקו אושר. הראיות בחדר אומרות שספירת העובדים שונתה. שדה העד הידני, החלק שנועד לכפות בדיקה אנושית שנייה, נאטם בידי משרד רציפות. הסתירה הזאת היא הקרס. Deep Reach לא רק הסתירה מסלול. היא השתמשה בשפת הגנת עובדים כדי לגרום לנטישה להיראות מושלמת מבחינה מנהלית. העניין האישי של הפרוטגוניסט מתחיל כהכרה מקצועית: הטופס הזה נועד למנוע בדיוק את הכשל הזה.",
+          "external_site": "HECTON-8 מעגנת מניע של דמות בנוהל. הפרוטגוניסט מזהה טופס בטיחות פינוי ישן ורואה כיצד הפכו אותו: ספירות עובדים דורדרו, שדות עדים נאטמו, ושפת מסלול בטוח שימשה לשימור תביעות במקום חיים.",
+          "field_note": "הטופס היה אמור לכפות ספירה נוספת. כאן הוא כפה שתיקה."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "PT LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "PT LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "PT LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "PT LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "PT LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "PT LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "Pista de Reconhecimento de Procedimento Antigo",
+          "scanner": "Selo de rota segura presente. Contagem de trabalhadores sobrescrita em duas tintas. Campo de testemunha manual selado. O formulário foi criado para pegar esse tipo de mentira antes que alguém a transformasse em política.",
+          "terminal": "FORMULÁRIO DE CONTINUIDADE DE EVACUAÇÃO / CERTIFICAÇÃO DE ROTA SEGURA\nrota: linha auxiliar de saída\nocupantes declarados: contagem degradada aceita\ntestemunha manual: selada pelo Escritório de Continuidade\ncorreção de campo: contagem de trabalhadores inconsistente com etiquetas da sala de bombas\nstatus: preservação de reivindicação, sem liberação para extração.",
+          "audio": "Você conhece este formulário. Ele deveria impedir que uma sala fosse contada como vazia enquanto ainda havia pessoas respirando nela.",
+          "in_game_wiki": "O reconhecimento de um procedimento antigo transforma o passado do protagonista em uma ferramenta jogável. O jogador não segue uma pista mística nem uma profecia pessoal. Ele lê um formulário de segurança no qual já precisou confiar. Um selo de rota segura diz que a linha foi certificada. As evidências na sala dizem que a contagem de trabalhadores foi alterada. O campo de testemunha manual, a parte feita para exigir uma segunda checagem humana, foi selado por um escritório de continuidade. Essa contradição é o gancho. A Deep Reach não apenas escondeu uma rota. Ela usou linguagem de proteção ao trabalhador para fazer o abandono parecer administrativamente concluído. O interesse do protagonista começa como reconhecimento profissional: este formulário foi criado para impedir exatamente essa falha.",
+          "external_site": "HECTON-8 fundamenta a motivação do personagem em procedimento. O protagonista reconhece um antigo formulário de segurança de evacuação e vê como ele foi invertido: contagens degradadas, campos de testemunha selados e linguagem de rota segura usada para preservar reivindicações em vez de vidas.",
+          "field_note": "O formulário deveria forçar outra contagem. Aqui, forçou silêncio."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Old Procedure Recognition Cue",
-          "scanner": "NL LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.",
-          "terminal": "NL LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.",
-          "audio": "NL LOC HOLD: You know this form. It was supposed to protect people from exactly this.",
-          "in_game_wiki": "NL LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.",
-          "external_site": "NL LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.",
-          "field_note": "NL LOC HOLD: Use where room evidence contradicts a clean procedural label."
+          "title": "Herkenningscue voor Oude Procedure",
+          "scanner": "Route-veilig-stempel aanwezig. Werknemertelling overschreven in twee inkten. Handmatig getuigenveld verzegeld. Het formulier was gebouwd om dit soort leugen te vangen voordat iemand er beleid van maakte.",
+          "terminal": "EVACUATIECONTINUÏTEITSFORMULIER / ROUTE-VEILIG-CERTIFICERING\nroute: hulplijn voor uitgang\naangegeven aanwezigen: gedegradeerde telling geaccepteerd\nhandmatige getuige: verzegeld door continuïteitskantoor\nveldcorrectie: werknemertelling komt niet overeen met pompkamertags\nstatus: claimbehoudend, niet vrijgegeven voor extractie.",
+          "audio": "Je kent dit formulier. Het moest voorkomen dat een kamer leeg werd geteld terwijl er nog mensen in ademden.",
+          "in_game_wiki": "Herkenning van een oude procedure verandert het verleden van de protagonist in een speelbaar hulpmiddel. De speler volgt geen mystieke aanwijzing en geen persoonlijke voorspelling. Die leest een veiligheidsformulier dat ooit vertrouwd moest worden. Een route-veilig-stempel zegt dat de lijn gecertificeerd was. Het bewijs in de kamer zegt dat de werknemertelling werd gewijzigd. Het handmatige getuigenveld, het deel dat een tweede menselijke controle moest afdwingen, is verzegeld door een continuïteitskantoor. Die tegenstelling is de haak. Deep Reach heeft niet alleen een route verborgen. Het gebruikte taal voor werknemersbescherming om achterlating administratief voltooid te laten lijken. De inzet van de protagonist begint als professionele herkenning: dit formulier was ontworpen om precies dit falen te voorkomen.",
+          "external_site": "HECTON-8 grondt personagemotivatie in procedure. De protagonist herkent een oud evacuatieveiligheidsformulier en ziet hoe het werd omgekeerd: werknemertellingen gedegradeerd, getuigenvelden verzegeld en route-veilige taal gebruikt om claims te bewaren in plaats van levens.",
+          "field_note": "Het formulier moest nog een telling afdwingen. Hier dwong het stilte af."
         }
       }
     },
@@ -493,138 +493,138 @@
       "localized": {
         "en_US": {
           "title": "Debt Blacklist Contract Pressure",
-          "scanner": "Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "scanner": "Lien notice tied to Black Keel custody. Refusal stays legal, but grounded: no berth, no clean oxygen credit, no route window out of Aegir.",
+          "terminal": "CLAIM ACCEPTANCE / BLACKLIST RELIEF WINDOW\ncontractor status: debt-bound Marauder\ncarrier: Black Keel claim-pool custody\nrelief terms: recoverable mass, custody proof, receiver compliance\nfailure state: blacklist remains active; berth access denied; oxygen welfare converted to billable support.",
+          "audio": "This was not kidnapping. It was the kind of choice the frontier sells as freedom: sign, dive, or stay clean on paper and trapped in practice.",
+          "in_game_wiki": "Debt pressure keeps the opening honest. The protagonist is not dragged to HECTON-8 by melodrama, and they are not free in any useful sense. Black Keel can offer a contract because claim pools, debt windows, oxygen credits, berth access, and custody proof all belong to the same frontier economy. Refusing the claim would be legal. It would also leave the player blacklisted, grounded, and priced out of the route. Accepting it does not make Black Keel a villain with a face. It makes the carrier a machine for turning risk into paperwork. The player dives because the contract is ugly, survivable, and plausibly the only route back to motion.",
+          "external_site": "HECTON-8 frames its protagonist through frontier economics rather than destiny. Debt, blacklists, claim-pool custody, oxygen credit, berth access, and old Deep Reach credentials make the salvage contract feel coercive without making the player helpless.",
+          "field_note": "The lien did not point a gun. It pointed at the air bill, the berth list, and the next route window."
         },
         "ru_RU": {
-          "title": "Долг и blacklist как давление контракта",
-          "scanner": "Lien notice. Отказ оставил бы игрока законным, голодным и на земле.",
-          "terminal": "CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "Это не похищение. Это выбор, который frontier продает как свободу.",
-          "in_game_wiki": "Игрок стартует как профессиональный Marauder под финансовым и юридическим давлением. Это заземляет контракт и не делает героя беспомощным.",
-          "external_site": "HECTON-8 описывает протагониста через экономику фронтира: debt, blacklists, claim pools и старый corporate access.",
-          "field_note": "RU LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "Долг, черный список и давление контракта",
+          "scanner": "Уведомление о залоге привязано к хранению Black Keel. Отказ остается законным, но приземляет: без койки, без чистого кислородного кредита, без маршрутного окна из Aegir.",
+          "terminal": "ПРИНЯТИЕ ПРЕТЕНЗИИ / ОКНО СНЯТИЯ ЧЕРНОГО СПИСКА\nстатус подрядчика: долговой Marauder\nперевозчик: хранение claim-pool Black Keel\nусловия облегчения: извлекаемая масса, доказательство хранения, соответствие приемника\nсостояние отказа: черный список активен; доступ к койке запрещен; кислородная поддержка переведена в оплачиваемую услугу.",
+          "audio": "Это не было похищением. Это был тот выбор, который фронтир продает как свободу: подпиши, ныряй или оставайся чистым на бумаге и запертым на практике.",
+          "in_game_wiki": "Долговое давление делает начало честным. Протагониста не тащит на HECTON-8 мелодрама, но и свободным в полезном смысле он не является. Black Keel может предложить контракт потому, что claim-pool, долговые окна, кислородные кредиты, доступ к койке и доказательство хранения принадлежат одной фронтирной экономике. Отказ от претензии был бы законным. Он также оставил бы игрока в черном списке, без рейса и с ценой маршрута выше доступной. Принятие контракта не превращает Black Keel в злодея с лицом. Оно делает перевозчик машиной, которая превращает риск в документы. Игрок ныряет потому, что контракт уродливый, переживаемый и, правдоподобно, единственный путь обратно к движению.",
+          "external_site": "HECTON-8 описывает протагониста через экономику фронтира, а не через судьбу. Долги, черные списки, хранение claim-pool, кислородный кредит, доступ к койке и старые учетные данные Deep Reach делают salvage-контракт принудительным, но не беспомощным.",
+          "field_note": "Залог не наставил пистолет. Он указал на счет за воздух, список коек и следующее маршрутное окно."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "JA LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "JA LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "JA LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "JA LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "JA LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "JP LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "債務ブラックリスト契約圧力",
+          "scanner": "先取特権通知はBlack Keelの保管責任に紐づいている。拒否は合法だが、足止めになる。寝台なし、清算済み酸素クレジットなし、Aegirを出る経路窓なし。",
+          "terminal": "請求受諾 / ブラックリスト救済窓\n契約者状態: 債務拘束Marauder\n運搬者: Black Keel請求プール保管\n救済条件: 回収可能質量、保管証明、受領者遵守\n失敗状態: ブラックリスト継続、寝台アクセス拒否、酸素福祉支援は請求対象へ変換。",
+          "audio": "これは誘拐ではなかった。フロンティアが自由として売る種類の選択だった。署名して潜るか、書類上は清潔なまま、実際には閉じ込められるか。",
+          "in_game_wiki": "債務圧力は導入を正直にする。主人公はメロドラマでHECTON-8へ引きずられるわけではないが、役に立つ意味で自由でもない。Black Keelが契約を提示できるのは、請求プール、債務窓、酸素クレジット、寝台アクセス、保管証明が同じフロンティア経済に属しているからだ。請求を拒否することは合法だ。だがそれは、プレイヤーをブラックリストに残し、足止めし、経路の価格から締め出すことでもある。受諾はBlack Keelを顔のある悪役にしない。リスクを書類に変える機械として見せる。プレイヤーは潜る。契約は醜く、生き残れる範囲にあり、運動へ戻る唯一の道に見えるからだ。",
+          "external_site": "HECTON-8は運命ではなくフロンティア経済で主人公を描く。債務、ブラックリスト、請求プール保管、酸素クレジット、寝台アクセス、古いDeep Reach資格情報が、サルベージ契約を強制的でありながら無力ではないものにする。",
+          "field_note": "先取特権は銃を向けなかった。空気の請求書、寝台名簿、次の経路窓を指した。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "ZH LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "ZH LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "ZH LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "ZH LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "ZH LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "CN LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "债务黑名单合同压力",
+          "scanner": "留置通知绑定Black Keel监管。拒绝仍然合法，但会被困住：没有铺位，没有干净氧气额度，没有离开Aegir的路线窗口。",
+          "terminal": "索赔接受 / 黑名单减免窗口\n承包者状态: 债务绑定Marauder\n承运方: Black Keel索赔池监管\n减免条件: 可回收质量、监管证明、接收方合规\n失败状态: 黑名单保持激活；铺位访问拒绝；氧气福利转为可计费支持。",
+          "audio": "这不是绑架。这是边境把它包装成自由的那种选择：签字，下潜，或者在纸面上保持清白，在现实里被困住。",
+          "in_game_wiki": "债务压力让开场保持诚实。主角不是被情节剧拖到HECTON-8来的，但在任何有用意义上也并不自由。Black Keel能够提供合同，是因为索赔池、债务窗口、氧气额度、铺位访问和监管证明都属于同一套边境经济。拒绝索赔是合法的。它也会让玩家留在黑名单里，被困在原地，并被路线价格排除在外。接受合同不会把Black Keel变成有面孔的反派。它让承运方成为一台把风险转换成文件的机器。玩家下潜，是因为合同丑陋、可承受，而且很可能是重新获得行动能力的唯一路线。",
+          "external_site": "HECTON-8通过边境经济而不是命运塑造主角。债务、黑名单、索赔池监管、氧气额度、铺位访问和旧Deep Reach凭据让打捞合同显得强迫，但不让玩家变成无助的人。",
+          "field_note": "留置权没有举枪。它指向空气账单、铺位名单和下一个路线窗口。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "FR LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "FR LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "FR LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "FR LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "FR LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "FR LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "Pression de contrat par dette et liste noire",
+          "scanner": "Avis de privilège lié à la garde Black Keel. Refuser reste légal, mais cloue au sol: pas de couchette, pas de crédit oxygène propre, pas de fenêtre de route hors d’Aegir.",
+          "terminal": "ACCEPTATION DE RÉCLAMATION / FENÊTRE DE LEVÉE DE LISTE NOIRE\nstatut contractuel: Marauder lié par dette\ntransporteur: garde de pool de réclamations Black Keel\nconditions de levée: masse récupérable, preuve de garde, conformité du receveur\néchec: liste noire active; accès couchette refusé; soutien oxygène converti en service facturable.",
+          "audio": "Ce n’était pas un enlèvement. C’était le genre de choix que la frontière vend comme liberté: signer, plonger, ou rester propre sur le papier et piégé en pratique.",
+          "in_game_wiki": "La pression de la dette rend l’ouverture honnête. Le protagoniste n’est pas traîné vers HECTON-8 par le mélodrame, et il n’est pas libre dans un sens utile. Black Keel peut offrir un contrat parce que les pools de réclamations, les fenêtres de dette, les crédits oxygène, l’accès aux couchettes et les preuves de garde appartiennent à la même économie de frontière. Refuser la réclamation serait légal. Cela laisserait aussi le joueur sur liste noire, immobilisé et exclu du prix de la route. Accepter ne transforme pas Black Keel en méchant à visage humain. Cela fait du transporteur une machine qui convertit le risque en papiers. Le joueur plonge parce que le contrat est laid, survivable et plausiblement la seule route pour retrouver du mouvement.",
+          "external_site": "HECTON-8 cadre son protagoniste par l’économie de frontière plutôt que par le destin. Dette, listes noires, garde de pool de réclamations, crédit oxygène, accès aux couchettes et anciens identifiants Deep Reach rendent le contrat de salvage coercitif sans rendre le joueur impuissant.",
+          "field_note": "Le privilège n’a pas pointé une arme. Il a pointé la facture d’air, la liste des couchettes et la prochaine fenêtre de route."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "ES LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "ES LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "ES LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "ES LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "ES LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "ES LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "Presión contractual de deuda y lista negra",
+          "scanner": "Aviso de gravamen ligado a custodia de Black Keel. Negarse sigue siendo legal, pero deja en tierra: sin litera, sin crédito de oxígeno limpio, sin ventana de ruta fuera de Aegir.",
+          "terminal": "ACEPTACIÓN DE RECLAMACIÓN / VENTANA DE ALIVIO DE LISTA NEGRA\nestado del contratista: Marauder atado por deuda\ntransportista: custodia de fondo de reclamaciones Black Keel\ntérminos de alivio: masa recuperable, prueba de custodia, cumplimiento del receptor\nestado de fallo: lista negra activa; acceso a litera denegado; apoyo de oxígeno convertido en servicio facturable.",
+          "audio": "No fue un secuestro. Fue la clase de elección que la frontera vende como libertad: firma, bucea, o quédate limpio en el papel y atrapado en la práctica.",
+          "in_game_wiki": "La presión de la deuda mantiene honesto el inicio. El protagonista no es arrastrado a HECTON-8 por melodrama, pero tampoco es libre en ningún sentido útil. Black Keel puede ofrecer un contrato porque los fondos de reclamaciones, las ventanas de deuda, los créditos de oxígeno, el acceso a literas y la prueba de custodia pertenecen a la misma economía de frontera. Rechazar la reclamación sería legal. También dejaría al jugador en la lista negra, en tierra y fuera del precio de la ruta. Aceptarla no convierte a Black Keel en un villano con cara. Convierte al transportista en una máquina para transformar riesgo en papeleo. El jugador bucea porque el contrato es feo, sobrevivible y plausiblemente la única ruta de vuelta al movimiento.",
+          "external_site": "HECTON-8 enmarca a su protagonista mediante economía de frontera, no destino. Deuda, listas negras, custodia de fondo de reclamaciones, crédito de oxígeno, acceso a literas y viejas credenciales de Deep Reach hacen que el contrato de salvamento sea coercitivo sin volver indefenso al jugador.",
+          "field_note": "El gravamen no apuntó un arma. Apuntó a la factura de aire, la lista de literas y la próxima ventana de ruta."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "DE LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "DE LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "DE LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "DE LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "DE LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "DE LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "Druck durch Schulden-Blacklist-Vertrag",
+          "scanner": "Pfandhinweis an Black-Keel-Verwahrung gebunden. Ablehnung bleibt legal, aber macht bewegungslos: kein Liegeplatz, kein sauberer Sauerstoffkredit, kein Routenfenster aus Aegir.",
+          "terminal": "ANSPRUCHSANNAHME / BLACKLIST-ENTLASTUNGSFENSTER\nAuftragnehmerstatus: schuldengebundener Marauder\nTräger: Black-Keel-Claim-Pool-Verwahrung\nEntlastungsbedingungen: verwertbare Masse, Verwahrungsnachweis, Empfänger-Compliance\nFehlerzustand: Blacklist bleibt aktiv; Liegeplatzzugang verweigert; Sauerstofffürsorge wird abrechenbare Unterstützung.",
+          "audio": "Das war keine Entführung. Es war die Art von Wahl, die die Grenze als Freiheit verkauft: unterschreiben, tauchen, oder auf Papier sauber bleiben und praktisch gefangen sein.",
+          "in_game_wiki": "Schuldendruck hält den Einstieg ehrlich. Der Protagonist wird nicht durch Melodrama nach HECTON-8 gezerrt, ist aber in keinem nützlichen Sinn frei. Black Keel kann einen Vertrag anbieten, weil Claim Pools, Schuldenfenster, Sauerstoffkredite, Liegeplatzzugang und Verwahrungsnachweis zur selben Grenzökonomie gehören. Den Anspruch abzulehnen wäre legal. Es würde den Spieler auch auf der Blacklist lassen, bewegungslos machen und aus dem Routenpreis drängen. Die Annahme macht Black Keel nicht zu einem Schurken mit Gesicht. Sie macht den Träger zu einer Maschine, die Risiko in Papier verwandelt. Der Spieler taucht, weil der Vertrag hässlich, überlebbar und plausibel der einzige Weg zurück in Bewegung ist.",
+          "external_site": "HECTON-8 rahmt seinen Protagonisten durch Grenzökonomie statt Schicksal. Schulden, Blacklists, Claim-Pool-Verwahrung, Sauerstoffkredit, Liegeplatzzugang und alte Deep-Reach-Nachweise machen den Bergungsvertrag zwanghaft, ohne den Spieler hilflos zu machen.",
+          "field_note": "Das Pfand zeigte nicht mit einer Waffe. Es zeigte auf die Luftrechnung, die Liegeplatzliste und das nächste Routenfenster."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "PL LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "PL LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "PL LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "PL LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "PL LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "PL LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "Presja długu, czarnej listy i kontraktu",
+          "scanner": "Zawiadomienie o zastawie powiązane z pieczą Black Keel. Odmowa pozostaje legalna, ale uziemia: bez koi, bez czystego kredytu tlenowego, bez okna trasy z Aegir.",
+          "terminal": "AKCEPTACJA ROSZCZENIA / OKNO ZDJĘCIA Z CZARNEJ LISTY\nstatus wykonawcy: Marauder związany długiem\nprzewoźnik: piecza puli roszczeń Black Keel\nwarunki ulgi: masa odzyskiwalna, dowód pieczy, zgodność odbiorcy\nstan porażki: czarna lista aktywna; dostęp do koi odmówiony; wsparcie tlenowe zmienione w usługę rozliczaną.",
+          "audio": "To nie było porwanie. To był wybór, który pogranicze sprzedaje jako wolność: podpisz, nurkuj, albo pozostań czysty na papierze i uwięziony w praktyce.",
+          "in_game_wiki": "Presja długu utrzymuje początek w uczciwym tonie. Protagonisty nie ciągnie na HECTON-8 melodramat, ale nie jest też wolny w żadnym użytecznym sensie. Black Keel może zaoferować kontrakt, bo pule roszczeń, okna długu, kredyty tlenowe, dostęp do koi i dowód pieczy należą do tej samej ekonomii pogranicza. Odmowa roszczenia byłaby legalna. Zostawiłaby też gracza na czarnej liście, uziemionego i wypchniętego poza cenę trasy. Przyjęcie nie czyni Black Keel złoczyńcą z twarzą. Czyni przewoźnika maszyną do zamiany ryzyka w dokumenty. Gracz nurkuje, bo kontrakt jest brzydki, możliwy do przeżycia i wiarygodnie jedyną trasą powrotu do ruchu.",
+          "external_site": "HECTON-8 opisuje protagonistę przez ekonomię pogranicza, nie przeznaczenie. Dług, czarne listy, piecza puli roszczeń, kredyt tlenowy, dostęp do koi i stare poświadczenia Deep Reach sprawiają, że kontrakt salvage jest przymusowy, ale nie czyni gracza bezradnym.",
+          "field_note": "Zastaw nie wycelował broni. Wskazał rachunek za powietrze, listę koi i następne okno trasy."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "UK LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "UK LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "UK LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "UK LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "UK LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "UA LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "Тиск боргу, чорного списку й контракту",
+          "scanner": "Повідомлення про заставу прив’язане до зберігання Black Keel. Відмова залишається законною, але приземляє: без койки, без чистого кисневого кредиту, без маршрутного вікна з Aegir.",
+          "terminal": "ПРИЙНЯТТЯ ПРЕТЕНЗІЇ / ВІКНО ЗНЯТТЯ З ЧОРНОГО СПИСКУ\nстатус підрядника: борговий Marauder\nперевізник: зберігання claim-pool Black Keel\nумови полегшення: видобувна маса, доказ зберігання, відповідність приймача\nстан відмови: чорний список активний; доступ до койки заборонено; кисневу підтримку переведено в оплачувану послугу.",
+          "audio": "Це не було викраденням. Це був той вибір, який фронтир продає як свободу: підпиши, пірнай або лишайся чистим на папері й замкненим на практиці.",
+          "in_game_wiki": "Борговий тиск робить початок чесним. Протагоніста не тягне на HECTON-8 мелодрама, але й вільним у корисному сенсі він не є. Black Keel може запропонувати контракт тому, що claim-pool, боргові вікна, кисневі кредити, доступ до койки і доказ зберігання належать одній фронтирній економіці. Відмова від претензії була б законною. Вона також залишила б гравця у чорному списку, без рейсу й поза доступною ціною маршруту. Прийняття контракту не робить Black Keel лиходієм з обличчям. Воно робить перевізник машиною, яка перетворює ризик на папери. Гравець пірнає, бо контракт потворний, переживаний і, ймовірно, єдиний шлях назад до руху.",
+          "external_site": "HECTON-8 описує протагоніста через економіку фронтиру, а не через долю. Борг, чорні списки, зберігання claim-pool, кисневий кредит, доступ до койки і старі облікові дані Deep Reach роблять salvage-контракт примусовим, але не безпорадним.",
+          "field_note": "Застава не наставила зброю. Вона вказала на рахунок за повітря, список койок і наступне маршрутне вікно."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "AR LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "AR LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "AR LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "AR LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "AR LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "AR LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "ضغط عقد الدين والقائمة السوداء",
+          "scanner": "إشعار رهن مرتبط بحيازة Black Keel. الرفض يبقى قانونيا، لكنه يبقيك على الأرض: لا مرقد، لا رصيد أكسجين نظيف، ولا نافذة مسار للخروج من Aegir.",
+          "terminal": "قبول مطالبة / نافذة تخفيف القائمة السوداء\nحالة المتعاقد: Marauder مقيد بالدين\nالناقل: حيازة مجمع مطالبات Black Keel\nشروط التخفيف: كتلة قابلة للاسترداد، إثبات حيازة، امتثال المستلم\nحالة الفشل: تبقى القائمة السوداء نشطة؛ يرفض وصول المرقد؛ تتحول رعاية الأكسجين إلى دعم قابل للفوترة.",
+          "audio": "لم يكن هذا اختطافا. كان ذلك النوع من الاختيار الذي تبيعه الحدود كحرية: وقّع، اغص، أو ابق نظيفا على الورق ومحاصرا في الواقع.",
+          "in_game_wiki": "يضبط ضغط الدين افتتاح القصة بصدق. لا ينجرف البطل إلى HECTON-8 بسبب ميلودراما، لكنه ليس حرا بأي معنى مفيد. تستطيع Black Keel عرض عقد لأن مجمعات المطالبات، ونوافذ الدين، وأرصدة الأكسجين، ووصول المراقد، وإثبات الحيازة كلها تنتمي إلى اقتصاد حدودي واحد. رفض المطالبة سيكون قانونيا. وسيترك اللاعب أيضا في القائمة السوداء، مثبتا في مكانه، وخارج سعر المسار. قبول العقد لا يجعل Black Keel شريرا ذا وجه. إنه يجعل الناقل آلة لتحويل الخطر إلى أوراق. يغوص اللاعب لأن العقد قبيح، قابل للنجاة، ومنطقيا هو الطريق الوحيد للعودة إلى الحركة.",
+          "external_site": "تؤطر HECTON-8 بطلها عبر اقتصاد الحدود لا عبر القدر. الدين، القوائم السوداء، حيازة مجمع المطالبات، رصيد الأكسجين، وصول المراقد، واعتمادات Deep Reach القديمة تجعل عقد الإنقاذ قسريا من دون جعل اللاعب عاجزا.",
+          "field_note": "لم يوجه الرهن مسدسا. أشار إلى فاتورة الهواء، وقائمة المراقد، ونافذة المسار التالية."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "ID LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "ID LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "ID LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "ID LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "ID LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "ID LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "Tekanan Kontrak Utang dan Daftar Hitam",
+          "scanner": "Pemberitahuan hak tanggungan terikat pada kustodi Black Keel. Menolak tetap legal, tetapi membuatmu tertahan: tanpa ranjang, tanpa kredit oksigen bersih, tanpa jendela rute keluar dari Aegir.",
+          "terminal": "PENERIMAAN KLAIM / JENDELA KERINGANAN DAFTAR HITAM\nstatus kontraktor: Marauder terikat utang\npengangkut: kustodi claim-pool Black Keel\nsyarat keringanan: massa dapat dipulihkan, bukti kustodi, kepatuhan penerima\nstatus gagal: daftar hitam tetap aktif; akses ranjang ditolak; dukungan kesejahteraan oksigen menjadi layanan tertagih.",
+          "audio": "Ini bukan penculikan. Ini jenis pilihan yang dijual perbatasan sebagai kebebasan: tanda tangan, menyelam, atau tetap bersih di kertas dan terjebak dalam praktik.",
+          "in_game_wiki": "Tekanan utang membuat pembuka tetap jujur. Protagonis tidak diseret ke HECTON-8 oleh melodrama, dan juga tidak bebas dalam arti yang berguna. Black Keel dapat menawarkan kontrak karena claim-pool, jendela utang, kredit oksigen, akses ranjang, dan bukti kustodi berada dalam ekonomi perbatasan yang sama. Menolak klaim itu legal. Itu juga akan membuat pemain tetap masuk daftar hitam, tertahan, dan tidak mampu membeli rute. Menerimanya tidak menjadikan Black Keel penjahat berwajah. Itu menjadikan pengangkut sebagai mesin untuk mengubah risiko menjadi dokumen. Pemain menyelam karena kontraknya buruk, masih bisa dilalui, dan masuk akal sebagai satu-satunya rute kembali ke gerak.",
+          "external_site": "HECTON-8 membingkai protagonis lewat ekonomi perbatasan, bukan takdir. Utang, daftar hitam, kustodi claim-pool, kredit oksigen, akses ranjang, dan kredensial Deep Reach lama membuat kontrak salvage terasa memaksa tanpa membuat pemain tak berdaya.",
+          "field_note": "Hak tanggungan tidak menodongkan senjata. Ia menunjuk tagihan udara, daftar ranjang, dan jendela rute berikutnya."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "KO LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "KO LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "KO LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "KO LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "KO LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "KO LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "채무 블랙리스트 계약 압박",
+          "scanner": "유치권 통지가 Black Keel 보관 책임에 묶여 있다. 거부는 합법이지만 발이 묶인다. 침상 없음, 깨끗한 산소 크레딧 없음, Aegir 밖으로 나갈 경로 창 없음.",
+          "terminal": "청구 수락 / 블랙리스트 완화 창\n계약자 상태: 채무 구속 Marauder\n운송체: Black Keel 청구 풀 보관\n완화 조건: 회수 가능 질량, 보관 증명, 수령자 준수\n실패 상태: 블랙리스트 활성 유지, 침상 접근 거부, 산소 복지 지원은 청구 가능 서비스로 전환.",
+          "audio": "이건 납치가 아니었다. 개척지가 자유라고 팔아먹는 종류의 선택이었다. 서명하고 잠수하거나, 서류상 깨끗하게 남아 실제로는 갇히거나.",
+          "in_game_wiki": "채무 압박은 도입부를 정직하게 만든다. 주인공은 멜로드라마 때문에 HECTON-8로 끌려온 것이 아니지만, 쓸모 있는 의미에서 자유롭지도 않다. Black Keel이 계약을 제시할 수 있는 이유는 청구 풀, 채무 창, 산소 크레딧, 침상 접근, 보관 증명이 모두 같은 개척지 경제에 속하기 때문이다. 청구를 거부하는 것은 합법이다. 동시에 플레이어를 블랙리스트에 남기고, 발을 묶고, 경로 가격 밖으로 밀어낸다. 수락은 Black Keel을 얼굴 있는 악당으로 만들지 않는다. 위험을 서류로 바꾸는 기계로 만든다. 플레이어는 잠수한다. 계약은 추하고, 살아남을 수 있으며, 다시 움직일 수 있는 유일한 길처럼 보이기 때문이다.",
+          "external_site": "HECTON-8은 운명이 아니라 개척지 경제로 주인공을 규정한다. 채무, 블랙리스트, 청구 풀 보관, 산소 크레딧, 침상 접근, 오래된 Deep Reach 자격이 salvage 계약을 강압적으로 만들지만 플레이어를 무력하게 만들지는 않는다.",
+          "field_note": "유치권은 총을 겨누지 않았다. 공기 청구서, 침상 명단, 다음 경로 창을 가리켰다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "HE LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "HE LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "HE LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "HE LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "HE LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "HE LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "לחץ חוזה של חוב ורשימה שחורה",
+          "scanner": "הודעת שעבוד קשורה למשמורת Black Keel. סירוב נשאר חוקי, אבל מקרקע: בלי דרגש, בלי אשראי חמצן נקי, בלי חלון מסלול מחוץ ל-Aegir.",
+          "terminal": "קבלת תביעה / חלון הקלה מרשימה שחורה\nסטטוס קבלן: Marauder כבול בחוב\nמוביל: משמורת מאגר תביעות Black Keel\nתנאי הקלה: מסה ניתנת להשבה, הוכחת משמורת, ציות מקבל\nמצב כשל: הרשימה השחורה נשארת פעילה; גישת דרגש נדחית; תמיכת רווחת חמצן מומרת לשירות מחויב.",
+          "audio": "זה לא היה חטיפה. זה היה סוג הבחירה שהספר מוכר כחופש: לחתום, לצלול, או להישאר נקי על הנייר ולכוד בפועל.",
+          "in_game_wiki": "לחץ החוב שומר על פתיחה כנה. הפרוטגוניסט אינו נגרר ל-HECTON-8 בגלל מלודרמה, והוא גם אינו חופשי בשום מובן שימושי. Black Keel יכולה להציע חוזה מפני שמאגרי תביעות, חלונות חוב, אשראי חמצן, גישת דרגש והוכחת משמורת שייכים לאותה כלכלת ספר. סירוב לתביעה יהיה חוקי. הוא גם ישאיר את השחקן ברשימה שחורה, מקורקע, ומחוץ למחיר המסלול. קבלה לא הופכת את Black Keel לנבל עם פנים. היא הופכת את המוביל למכונה שממירה סיכון לניירת. השחקן צולל כי החוזה מכוער, ניתן לשרוד אותו, וסביר שהוא המסלול היחיד חזרה לתנועה.",
+          "external_site": "HECTON-8 ממסגרת את הפרוטגוניסט דרך כלכלת ספר ולא דרך גורל. חוב, רשימות שחורות, משמורת מאגר תביעות, אשראי חמצן, גישת דרגש ואישורי Deep Reach ישנים גורמים לחוזה ה-salvage להרגיש כופה בלי להפוך את השחקן לחסר אונים.",
+          "field_note": "השעבוד לא כיוון אקדח. הוא הצביע על חשבון האוויר, רשימת הדרגשים וחלון המסלול הבא."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "PT LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "PT LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "PT LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "PT LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "PT LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "PT LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "Pressão de Contrato por Dívida e Lista Negra",
+          "scanner": "Aviso de penhor ligado à custódia da Black Keel. Recusar continua legal, mas deixa em terra: sem beliche, sem crédito limpo de oxigênio, sem janela de rota para fora de Aegir.",
+          "terminal": "ACEITAÇÃO DE REIVINDICAÇÃO / JANELA DE ALÍVIO DE LISTA NEGRA\nstatus do contratado: Marauder preso por dívida\ntransportadora: custódia de claim-pool Black Keel\ntermos de alívio: massa recuperável, prova de custódia, conformidade do recebedor\nestado de falha: lista negra permanece ativa; acesso a beliche negado; suporte de bem-estar de oxigênio convertido em serviço faturável.",
+          "audio": "Isso não foi sequestro. Foi o tipo de escolha que a fronteira vende como liberdade: assine, mergulhe, ou fique limpo no papel e preso na prática.",
+          "in_game_wiki": "A pressão da dívida mantém a abertura honesta. O protagonista não é arrastado para HECTON-8 por melodrama, e também não é livre em nenhum sentido útil. A Black Keel pode oferecer um contrato porque pools de reivindicação, janelas de dívida, créditos de oxigênio, acesso a beliche e prova de custódia pertencem à mesma economia de fronteira. Recusar a reivindicação seria legal. Também deixaria o jogador na lista negra, em terra, e fora do preço da rota. Aceitar não transforma a Black Keel em vilã com rosto. Transforma a transportadora numa máquina de converter risco em papelada. O jogador mergulha porque o contrato é feio, sobrevivível e plausivelmente a única rota de volta ao movimento.",
+          "external_site": "HECTON-8 enquadra seu protagonista pela economia de fronteira, não pelo destino. Dívida, listas negras, custódia de claim-pool, crédito de oxigênio, acesso a beliche e antigas credenciais da Deep Reach tornam o contrato de salvage coercitivo sem deixar o jogador indefeso.",
+          "field_note": "O penhor não apontou uma arma. Apontou para a conta do ar, a lista de beliches e a próxima janela de rota."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Debt Blacklist Contract Pressure",
-          "scanner": "NL LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.",
-          "terminal": "NL LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.",
-          "audio": "NL LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
-          "in_game_wiki": "NL LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
-          "external_site": "NL LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "NL LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
+          "title": "Contractdruk door Schuld en Blacklist",
+          "scanner": "Retentierechtmelding gekoppeld aan Black Keel-bewaring. Weigeren blijft legaal, maar houdt je aan de grond: geen kooi, geen schone zuurstofkrediet, geen routevenster uit Aegir.",
+          "terminal": "CLAIMAANVAARDING / BLACKLIST-VERLICHTINGSVENSTER\ncontractorstatus: schuldgebonden Marauder\ndrager: Black Keel claim-pool-bewaring\nverlichtingsvoorwaarden: terugwinbare massa, bewijs van bewaring, ontvanger-compliance\nfoutstatus: blacklist blijft actief; toegang tot kooi geweigerd; zuurstofwelzijn wordt factureerbare steun.",
+          "audio": "Dit was geen ontvoering. Het was het soort keuze dat de grens als vrijheid verkoopt: teken, duik, of blijf schoon op papier en vast in de praktijk.",
+          "in_game_wiki": "Schulddruk houdt de opening eerlijk. De protagonist wordt niet door melodrama naar HECTON-8 gesleept, maar is ook niet vrij in een bruikbare zin. Black Keel kan een contract aanbieden omdat claim pools, schuldvensters, zuurstofkredieten, kooi-toegang en bewijs van bewaring tot dezelfde grenseconomie behoren. De claim weigeren zou legaal zijn. Het zou de speler ook op de blacklist laten, aan de grond houden en buiten de routeprijs duwen. Acceptatie maakt Black Keel geen schurk met een gezicht. Het maakt de drager een machine die risico in papierwerk omzet. De speler duikt omdat het contract lelijk, overleefbaar en waarschijnlijk de enige route terug naar beweging is.",
+          "external_site": "HECTON-8 kadert zijn protagonist via grenseconomie in plaats van lot. Schuld, blacklists, claim-pool-bewaring, zuurstofkrediet, kooi-toegang en oude Deep Reach-credentials maken het salvage-contract dwingend zonder de speler hulpeloos te maken.",
+          "field_note": "Het retentierecht wees geen wapen aan. Het wees naar de luchtrekening, de kooienlijst en het volgende routevenster."
         }
       }
     },
@@ -648,138 +648,138 @@
       "localized": {
         "en_US": {
           "title": "Professional Guilt To Personal Stake",
-          "scanner": "Signature match. The form language is old. The names are new.",
-          "terminal": "DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "Use near late dossier and final payload route."
+          "scanner": "Signature pattern matches the old procedure cache. The names changed. The room failed the same way. Expertise is no longer distance.",
+          "terminal": "DOSSIER RESOLUTION / PROFESSIONAL STAKE\ntrigger evidence: procedure recognition, recovered worker tags, claim receiver conflict\nexcluded motive: family relation, revenge lineage, chosen-witness status\nactive motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.",
+          "audio": "You came for a claim. You stayed because the paperwork knew your hands.",
+          "in_game_wiki": "Professional guilt becomes personal stake without turning the protagonist into the cause of the catastrophe. The player does not need a lost sibling, a revenge bloodline, or a secret chosen role. The pressure is colder and more adult. They recognize the procedure. They know why a witness field matters, why a route-safe stamp can lie, why a carrier can hear them and still not lift them out. HECTON-8 becomes personal because the old Deep Reach language is not abstract to them. It is work they once trusted, work they once performed near, and work now attached to names recovered from drowned rooms. The arc is not confession. It is refusal: once the player can read the abandonment machine, leaving it buried becomes another act of participation.",
+          "external_site": "The protagonist's motive grows from expertise into responsibility. HECTON-8 avoids forced family melodrama: the former Deep Reach worker cares because they understand the procedural machinery that made abandonment look complete.",
+          "field_note": "Not your signature. Still your trade. That is why the room will not stay quiet."
         },
         "ru_RU": {
-          "title": "Профессиональная вина как личная ставка",
-          "scanner": "Signature match. Язык формы старый. Имена новые.",
-          "terminal": "DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "Ты пришел за контрактом. Ты остался, потому что понял paperwork.",
-          "in_game_wiki": "Арка героя: профессиональный интерес становится личной ответственностью. Без натянутой family melodrama.",
-          "external_site": "Мотив игрока в HECTON-8 растет из экспертизы. Бывший Deep Reach worker понимает преступление, потому что понимает machinery of responsibility.",
-          "field_note": "Использовать рядом с late dossier и final payload route."
+          "title": "От профессиональной вины к личной ставке",
+          "scanner": "Узор подписи совпадает со старым кэшем процедур. Имена изменились. Комната отказала тем же способом. Компетенция больше не держит дистанцию.",
+          "terminal": "ИТОГ ДОСЬЕ / ПРОФЕССИОНАЛЬНАЯ СТАВКА\nулики-триггеры: узнавание процедуры, найденные метки работников, конфликт приемника претензии\nисключенный мотив: семейная связь, линия мести, статус избранного свидетеля\nактивный мотив: бывший системный работник узнает предотвратимое оставление и все еще умеет читать машину, которая его оформила.",
+          "audio": "Ты пришел за претензией. Остался потому, что документы знали твои руки.",
+          "in_game_wiki": "Профессиональная вина становится личной ставкой, не превращая протагониста в причину катастрофы. Игроку не нужен пропавший родственник, кровная месть или тайная роль избранного. Давление холоднее и взрослее. Он узнает процедуру. Он знает, почему поле свидетеля важно, почему штамп безопасного маршрута может лгать, почему перевозчик может слышать его и все равно не поднимать наверх. HECTON-8 становится личным, потому что старый язык Deep Reach для него не абстракция. Это работа, которой он когда-то доверял, рядом с которой работал, и теперь эта работа привязана к именам, поднятым из утонувших комнат. Арка не про признание. Она про отказ: когда игрок умеет читать машину оставления, оставить ее похороненной становится еще одним участием.",
+          "external_site": "Мотив протагониста растет из экспертизы в ответственность. HECTON-8 избегает навязанной семейной мелодрамы: бывший работник Deep Reach заботится потому, что понимает процедурную машину, которая сделала оставление людей похожим на закрытое дело.",
+          "field_note": "Не твоя подпись. Но твое ремесло. Поэтому комната не замолчит."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "JA LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "JA LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "JA LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "JA LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "JA LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "JA LOC HOLD: Use near late dossier and final payload route."
+          "title": "職能上の罪悪感から個人的な賭けへ",
+          "scanner": "署名パターンが古い手順キャッシュと一致する。名前は変わった。部屋は同じ失敗をした。専門知識はもう距離にならない。",
+          "terminal": "ドシエ結論 / 職能上の賭け\n発火証拠: 手順認識、回収された作業員タグ、請求受領者の衝突\n除外動機: 家族関係、復讐の血筋、選ばれた証人の地位\n有効動機: 元システム作業員が防げた置き去りを認識し、それを記録した機械を今も読める。",
+          "audio": "君は請求のために来た。残ったのは、書類が君の手を知っていたからだ。",
+          "in_game_wiki": "職能上の罪悪感は、主人公を災害の原因にすることなく個人的な賭けへ変わる。プレイヤーには失われた兄弟姉妹も、復讐の血筋も、秘密の選ばれた役割も必要ない。圧力はもっと冷たく、大人びている。主人公は手順を認識する。証人欄がなぜ重要か、ルート安全印がなぜ嘘をつけるか、運搬船が声を聞けてもなぜ引き上げないかを知っている。HECTON-8が個人的になるのは、古いDeep Reachの言葉が抽象ではないからだ。それはかつて信じた仕事であり、近くで行った仕事であり、今は水没した部屋から回収された名前に結びついている。これは自白の弧ではない。拒否の弧だ。置き去りの機械を読めるなら、それを埋めたままにすることも参加の一つになる。",
+          "external_site": "主人公の動機は専門性から責任へ成長する。HECTON-8は無理な家族メロドラマを避ける。元Deep Reach作業員が気にかけるのは、置き去りを完了済みに見せた手続きの機械を理解しているからだ。",
+          "field_note": "君の署名ではない。それでも君の職能だ。だから部屋は黙らない。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "ZH LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "ZH LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "ZH LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "ZH LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "ZH LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "ZH LOC HOLD: Use near late dossier and final payload route."
+          "title": "从职业愧疚到个人牵连",
+          "scanner": "签名模式匹配旧程序缓存。名字变了。房间以同样方式失败。专业知识不再保持距离。",
+          "terminal": "档案结论 / 职业牵连\n触发证据: 程序识别、回收工人标签、索赔接收方冲突\n排除动机: 家族关系、复仇血统、被选中见证者身份\n有效动机: 前系统工人认出本可避免的遗弃，并且仍能读懂把它归档的机器。",
+          "audio": "你为一项索赔而来。你留下，是因为文件认识你的手。",
+          "in_game_wiki": "职业愧疚变成个人牵连，但不会把主角变成灾难的原因。玩家不需要失散亲人、复仇血统，也不需要秘密的被选中身份。压力更冷，也更成熟。主角认得程序。他知道为什么见证栏重要，为什么路线安全章会说谎，为什么承运方能听见他却仍不把他拉出去。HECTON-8变得私人，是因为旧Deep Reach语言对他并不抽象。那是他曾经信任的工作，是他曾经在旁执行的工作，而现在那份工作连接着从溺水房间里找回的名字。这条弧线不是忏悔，而是拒绝：当玩家已经能读懂遗弃机器时，把它继续埋着就成了另一种参与。",
+          "external_site": "主角的动机从专业知识长成责任。HECTON-8避开强行家族情节：前Deep Reach工人在乎，是因为他理解那套把遗弃伪装成完成事项的程序机器。",
+          "field_note": "不是你的签名。仍是你的行当。所以这间房不会安静。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "FR LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "FR LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "FR LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "FR LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "FR LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "FR LOC HOLD: Use near late dossier and final payload route."
+          "title": "De la culpabilité professionnelle à l’enjeu personnel",
+          "scanner": "Le motif de signature correspond à l’ancien cache de procédure. Les noms ont changé. La pièce a échoué de la même façon. L’expertise n’est plus une distance.",
+          "terminal": "RÉSOLUTION DE DOSSIER / ENJEU PROFESSIONNEL\npreuves déclencheuses: reconnaissance de procédure, étiquettes de travailleurs récupérées, conflit de receveur de réclamation\nmotif exclu: lien familial, lignée de vengeance, statut de témoin choisi\nmotif actif: ancien travailleur systèmes reconnaissant un abandon évitable et sachant encore lire la machine qui l’a classé.",
+          "audio": "Tu es venu pour une réclamation. Tu es resté parce que les papiers connaissaient tes mains.",
+          "in_game_wiki": "La culpabilité professionnelle devient enjeu personnel sans faire du protagoniste la cause de la catastrophe. Le joueur n’a pas besoin d’un frère disparu, d’une lignée de vengeance ou d’un rôle secret de témoin choisi. La pression est plus froide et plus adulte. Il reconnaît la procédure. Il sait pourquoi un champ de témoin compte, pourquoi un tampon route-sûre peut mentir, pourquoi un transporteur peut l’entendre sans le remonter. HECTON-8 devient personnel parce que l’ancien langage Deep Reach n’est pas abstrait pour lui. C’est un travail auquel il a déjà fait confiance, un travail près duquel il a déjà opéré, et ce travail est maintenant attaché aux noms récupérés dans des pièces noyées. L’arc n’est pas un aveu. C’est un refus: quand le joueur sait lire la machine de l’abandon, la laisser enterrée devient une autre participation.",
+          "external_site": "La motivation du protagoniste grandit de l’expertise vers la responsabilité. HECTON-8 évite le mélodrame familial forcé: l’ancien travailleur Deep Reach se sent concerné parce qu’il comprend la machine procédurale qui a rendu l’abandon administrativement complet.",
+          "field_note": "Pas ta signature. Toujours ton métier. C’est pour cela que la pièce ne restera pas silencieuse."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "ES LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "ES LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "ES LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "ES LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "ES LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "ES LOC HOLD: Use near late dossier and final payload route."
+          "title": "De culpa profesional a interés personal",
+          "scanner": "El patrón de firma coincide con la vieja caché de procedimiento. Los nombres cambiaron. La sala falló de la misma manera. La experiencia ya no es distancia.",
+          "terminal": "RESOLUCIÓN DE DOSIER / INTERÉS PROFESIONAL\nevidencia activadora: reconocimiento de procedimiento, etiquetas de trabajadores recuperadas, conflicto del receptor de reclamación\nmotivo excluido: relación familiar, linaje de venganza, estado de testigo elegido\nmotivo activo: antiguo trabajador de sistemas reconoce un abandono evitable y aún puede leer la máquina que lo archivó.",
+          "audio": "Viniste por una reclamación. Te quedaste porque el papeleo conocía tus manos.",
+          "in_game_wiki": "La culpa profesional se convierte en interés personal sin convertir al protagonista en la causa de la catástrofe. El jugador no necesita un hermano perdido, una línea de venganza ni un papel secreto de testigo elegido. La presión es más fría y más adulta. Reconoce el procedimiento. Sabe por qué importa un campo de testigo, por qué un sello de ruta segura puede mentir, por qué un transportista puede oírlo y aun así no sacarlo. HECTON-8 se vuelve personal porque el viejo lenguaje de Deep Reach no es abstracto para él. Es trabajo en el que antes tuvo que confiar, trabajo cerca del cual operó, y ahora ese trabajo está unido a nombres recuperados de salas ahogadas. El arco no es confesión. Es rechazo: cuando el jugador puede leer la máquina del abandono, dejarla enterrada se convierte en otra forma de participación.",
+          "external_site": "La motivación del protagonista crece de la experiencia a la responsabilidad. HECTON-8 evita el melodrama familiar forzado: el antiguo trabajador de Deep Reach se implica porque entiende la maquinaria procedimental que hizo que el abandono pareciera completo.",
+          "field_note": "No es tu firma. Sigue siendo tu oficio. Por eso la sala no se quedará callada."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "DE LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "DE LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "DE LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "DE LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "DE LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "DE LOC HOLD: Use near late dossier and final payload route."
+          "title": "Von Berufsschuld zu persönlichem Einsatz",
+          "scanner": "Signaturmuster passt zum alten Verfahrenscache. Die Namen änderten sich. Der Raum versagte auf dieselbe Weise. Expertise ist keine Distanz mehr.",
+          "terminal": "DOSSIER-AUFLÖSUNG / BERUFLICHER EINSATZ\nauslösende Beweise: Verfahrenserkennung, geborgene Arbeiter-Tags, Konflikt mit Anspruchsempfänger\nausgeschlossenes Motiv: Familienbeziehung, Rachelinie, Status als erwählter Zeuge\naktives Motiv: ehemaliger Systemarbeiter erkennt vermeidbares Zurücklassen und kann die Maschine, die es ablegte, noch lesen.",
+          "audio": "Du kamst wegen eines Anspruchs. Du bliebst, weil der Papierkram deine Hände kannte.",
+          "in_game_wiki": "Berufliche Schuld wird zu persönlichem Einsatz, ohne den Protagonisten zur Ursache der Katastrophe zu machen. Der Spieler braucht kein verlorenes Geschwister, keine Blutlinie der Rache und keine geheime Erwähltenrolle. Der Druck ist kälter und erwachsener. Er erkennt das Verfahren. Er weiß, warum ein Zeugenfeld zählt, warum ein Routen-Safe-Stempel lügen kann, warum ein Träger ihn hören und trotzdem nicht herausheben kann. HECTON-8 wird persönlich, weil die alte Deep-Reach-Sprache für ihn nicht abstrakt ist. Sie ist Arbeit, der er einst vertrauen musste, Arbeit, neben der er einst tätig war, und diese Arbeit hängt jetzt an Namen aus ertrunkenen Räumen. Der Bogen ist kein Geständnis. Er ist Verweigerung: Wenn der Spieler die Maschine des Zurücklassens lesen kann, wird sie begraben zu lassen zu einer weiteren Teilnahme.",
+          "external_site": "Die Motivation des Protagonisten wächst aus Expertise zu Verantwortung. HECTON-8 vermeidet erzwungenes Familiendrama: Der frühere Deep-Reach-Arbeiter sorgt sich, weil er die Verfahrensmaschine versteht, die Zurücklassen abgeschlossen aussehen ließ.",
+          "field_note": "Nicht deine Signatur. Trotzdem dein Handwerk. Darum bleibt der Raum nicht still."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "PL LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "PL LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "PL LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "PL LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "PL LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "PL LOC HOLD: Use near late dossier and final payload route."
+          "title": "Od winy zawodowej do osobistej stawki",
+          "scanner": "Wzór podpisu pasuje do starej pamięci procedur. Nazwiska się zmieniły. Pomieszczenie zawiodło tak samo. Ekspertyza nie jest już dystansem.",
+          "terminal": "ROZSTRZYGNIĘCIE DOSSIER / STAWKA ZAWODOWA\ndowody wyzwalające: rozpoznanie procedury, odzyskane tagi pracowników, konflikt odbiorcy roszczenia\nmotyw wykluczony: więź rodzinna, linia zemsty, status wybranego świadka\nmotyw aktywny: dawny pracownik systemów rozpoznaje możliwe do uniknięcia porzucenie i nadal potrafi czytać maszynę, która je złożyła do akt.",
+          "audio": "Przyszedłeś po roszczenie. Zostałeś, bo papiery znały twoje ręce.",
+          "in_game_wiki": "Wina zawodowa staje się osobistą stawką, nie czyniąc protagonisty przyczyną katastrofy. Gracz nie potrzebuje zaginionego rodzeństwa, krwawej zemsty ani sekretnej roli wybranego świadka. Nacisk jest chłodniejszy i bardziej dorosły. Rozpoznaje procedurę. Wie, dlaczego pole świadka ma znaczenie, dlaczego stempel trasy bezpiecznej może kłamać, dlaczego przewoźnik może go słyszeć i nadal go nie podnieść. HECTON-8 staje się osobisty, bo dawny język Deep Reach nie jest dla niego abstrakcją. To praca, której kiedyś musiał ufać, praca, przy której działał, a teraz praca przywiązana do nazwisk wydobytych z zatopionych pomieszczeń. Ten łuk nie jest wyznaniem. Jest odmową: gdy gracz potrafi czytać maszynę porzucenia, pozostawienie jej pogrzebanej staje się kolejnym udziałem.",
+          "external_site": "Motywacja protagonisty rośnie od ekspertyzy do odpowiedzialności. HECTON-8 unika wymuszonego rodzinnego melodramatu: dawny pracownik Deep Reach przejmuje się, bo rozumie maszynę procedur, która sprawiła, że porzucenie wyglądało na zakończone.",
+          "field_note": "Nie twój podpis. Wciąż twój fach. Dlatego pomieszczenie nie zamilknie."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "UK LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "UK LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "UK LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "UK LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "UK LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "UK LOC HOLD: Use near late dossier and final payload route."
+          "title": "Від професійної провини до особистої ставки",
+          "scanner": "Візерунок підпису збігається зі старим кешем процедур. Імена змінилися. Кімната відмовила тим самим способом. Компетенція більше не є дистанцією.",
+          "terminal": "ПІДСУМОК ДОСЬЄ / ПРОФЕСІЙНА СТАВКА\nдокази-тригери: упізнання процедури, знайдені мітки працівників, конфлікт приймача претензії\nвиключений мотив: родинний зв’язок, лінія помсти, статус обраного свідка\nактивний мотив: колишній системний працівник упізнає відвернене залишення і досі може читати машину, яка його оформила.",
+          "audio": "Ти прийшов по претензію. Залишився, бо папери знали твої руки.",
+          "in_game_wiki": "Професійна провина стає особистою ставкою, не перетворюючи протагоніста на причину катастрофи. Гравцеві не потрібні зниклий родич, кровна помста чи таємна роль обраного свідка. Тиск холодніший і доросліший. Він упізнає процедуру. Він знає, чому поле свідка важливе, чому штамп безпечного маршруту може брехати, чому перевізник може чути його і все одно не підняти. HECTON-8 стає особистим, бо стара мова Deep Reach для нього не абстракція. Це робота, якій він колись довіряв, робота, поруч із якою працював, і тепер ця робота прив’язана до імен, знайдених у затоплених кімнатах. Арка не про зізнання. Вона про відмову: коли гравець уміє читати машину залишення, залишити її похованою стає ще однією участю.",
+          "external_site": "Мотив протагоніста виростає з експертизи у відповідальність. HECTON-8 уникає нав’язаної родинної мелодрами: колишній працівник Deep Reach переймається, бо розуміє процедурну машину, яка зробила залишення людей схожим на завершену справу.",
+          "field_note": "Не твій підпис. Але твій фах. Тому кімната не замовкне."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "AR LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "AR LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "AR LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "AR LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "AR LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "AR LOC HOLD: Use near late dossier and final payload route."
+          "title": "من ذنب مهني إلى مصلحة شخصية",
+          "scanner": "نمط التوقيع يطابق ذاكرة الإجراءات القديمة. تغيرت الأسماء. فشلت الغرفة بالطريقة نفسها. لم تعد الخبرة مسافة.",
+          "terminal": "حسم ملف / مصلحة مهنية\nأدلة التحفيز: التعرف على الإجراء، وسوم عمال مستعادة، تعارض مستقبل المطالبة\nالدافع المستبعد: علاقة عائلية، سلالة انتقام، صفة شاهد مختار\nالدافع النشط: عامل أنظمة سابق يتعرف على ترك كان يمكن منعه وما زال يستطيع قراءة الآلة التي سجلته.",
+          "audio": "جئت من أجل مطالبة. بقيت لأن الأوراق عرفت يديك.",
+          "in_game_wiki": "يتحول الذنب المهني إلى مصلحة شخصية من دون جعل البطل سبب الكارثة. لا يحتاج اللاعب إلى قريب مفقود، ولا إلى سلالة انتقام، ولا إلى دور شاهد مختار سري. الضغط أبرد وأكثر نضجا. إنه يتعرف على الإجراء. يعرف لماذا تهم خانة الشاهد، ولماذا يمكن لختم المسار الآمن أن يكذب، ولماذا يستطيع ناقل أن يسمعه ومع ذلك لا يرفعه. تصبح HECTON-8 شخصية لأن لغة Deep Reach القديمة ليست مجردة بالنسبة إليه. إنها عمل وثق به يوما، وعمل قربه يوما، وعمل صار الآن ملتصقا بأسماء مستعادة من غرف غارقة. القوس ليس اعترافا. إنه رفض: عندما يستطيع اللاعب قراءة آلة الترك، يصبح تركها مدفونة مشاركة أخرى.",
+          "external_site": "ينمو دافع البطل من الخبرة إلى المسؤولية. تتجنب HECTON-8 الميلودراما العائلية المفروضة: يهتم عامل Deep Reach السابق لأنه يفهم الآلة الإجرائية التي جعلت التخلي يبدو مكتملا.",
+          "field_note": "ليس توقيعك. ما زالت مهنتك. لذلك لن تبقى الغرفة صامتة."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "ID LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "ID LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "ID LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "ID LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "ID LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "ID LOC HOLD: Use near late dossier and final payload route."
+          "title": "Dari Rasa Bersalah Profesional ke Kepentingan Pribadi",
+          "scanner": "Pola tanda tangan cocok dengan cache prosedur lama. Namanya berubah. Ruangan gagal dengan cara yang sama. Keahlian bukan lagi jarak.",
+          "terminal": "RESOLUSI DOSSIER / KEPENTINGAN PROFESIONAL\nbukti pemicu: pengenalan prosedur, tag pekerja yang ditemukan, konflik penerima klaim\nmotif dikecualikan: hubungan keluarga, garis balas dendam, status saksi terpilih\nmotif aktif: mantan pekerja sistem mengenali penelantaran yang bisa dicegah dan masih dapat membaca mesin yang mengarsipkannya.",
+          "audio": "Kau datang untuk klaim. Kau tinggal karena dokumen itu mengenal tanganmu.",
+          "in_game_wiki": "Rasa bersalah profesional berubah menjadi kepentingan pribadi tanpa menjadikan protagonis penyebab bencana. Pemain tidak membutuhkan saudara hilang, garis balas dendam, atau peran rahasia sebagai saksi terpilih. Tekanannya lebih dingin dan lebih dewasa. Ia mengenali prosedur. Ia tahu mengapa kolom saksi penting, mengapa stempel rute-aman bisa berbohong, mengapa pengangkut bisa mendengarnya namun tetap tidak mengangkatnya keluar. HECTON-8 menjadi pribadi karena bahasa Deep Reach lama bukan abstraksi baginya. Itu pekerjaan yang dulu harus dipercaya, pekerjaan yang dulu ia dekati, dan kini pekerjaan itu melekat pada nama-nama yang dipulihkan dari ruangan tenggelam. Busurnya bukan pengakuan. Itu penolakan: setelah pemain bisa membaca mesin penelantaran, membiarkannya terkubur menjadi bentuk partisipasi lain.",
+          "external_site": "Motif protagonis tumbuh dari keahlian menjadi tanggung jawab. HECTON-8 menghindari melodrama keluarga yang dipaksakan: mantan pekerja Deep Reach peduli karena ia memahami mesin prosedural yang membuat penelantaran tampak selesai.",
+          "field_note": "Bukan tanda tanganmu. Tetap keahlianmu. Karena itu ruangan tidak akan diam."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "KO LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "KO LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "KO LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "KO LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "KO LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "KO LOC HOLD: Use near late dossier and final payload route."
+          "title": "전문적 죄책감에서 개인적 이해관계로",
+          "scanner": "서명 패턴이 오래된 절차 캐시와 일치한다. 이름은 바뀌었다. 방은 같은 방식으로 실패했다. 전문성은 더 이상 거리감이 아니다.",
+          "terminal": "서류 결론 / 전문적 이해관계\n촉발 증거: 절차 인식, 회수된 작업자 태그, 청구 수령자 충돌\n제외 동기: 가족 관계, 복수 혈통, 선택된 증인 지위\n활성 동기: 전직 시스템 작업자가 막을 수 있었던 유기를 인식하고 그것을 접수한 기계를 아직 읽을 수 있음.",
+          "audio": "너는 청구를 위해 왔다. 서류가 네 손을 알고 있었기 때문에 남았다.",
+          "in_game_wiki": "전문적 죄책감은 주인공을 재앙의 원인으로 만들지 않고 개인적 이해관계로 변한다. 플레이어에게는 잃어버린 형제자매, 복수의 혈통, 비밀스러운 선택받은 역할이 필요 없다. 압력은 더 차갑고 더 성숙하다. 그는 절차를 알아본다. 증인 칸이 왜 중요한지, 경로-안전 도장이 왜 거짓말할 수 있는지, 운송체가 그를 들을 수 있으면서도 왜 끌어올리지 않는지 안다. HECTON-8은 오래된 Deep Reach 언어가 그에게 추상이 아니기 때문에 개인적인 것이 된다. 그것은 한때 신뢰해야 했던 일이고, 가까이서 수행했던 일이며, 이제 물에 잠긴 방에서 회수된 이름들과 연결된 일이다. 이 흐름은 고백이 아니다. 거부다. 플레이어가 유기의 기계를 읽을 수 있게 된 순간, 그것을 묻힌 채 두는 것도 또 하나의 참여가 된다.",
+          "external_site": "주인공의 동기는 전문성에서 책임으로 자란다. HECTON-8은 억지 가족 멜로드라마를 피한다. 전직 Deep Reach 작업자가 신경 쓰는 이유는 유기를 완료된 것처럼 보이게 만든 절차 기계를 이해하기 때문이다.",
+          "field_note": "네 서명은 아니다. 그래도 네 업종이다. 그래서 방은 조용해지지 않는다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "HE LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "HE LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "HE LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "HE LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "HE LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "HE LOC HOLD: Use near late dossier and final payload route."
+          "title": "מאשמה מקצועית למעורבות אישית",
+          "scanner": "דפוס החתימה תואם למטמון הנוהל הישן. השמות השתנו. החדר כשל באותה דרך. מומחיות כבר אינה מרחק.",
+          "terminal": "סיכום דוסייה / מעורבות מקצועית\nראיות מפעילות: זיהוי נוהל, תגי עובדים ששוחזרו, סכסוך מקבל תביעה\nמניע מוחרג: קשר משפחתי, שושלת נקמה, מעמד עד נבחר\nמניע פעיל: עובד מערכות לשעבר מזהה נטישה שניתן היה למנוע ועדיין מסוגל לקרוא את המכונה שתייקה אותה.",
+          "audio": "באת בשביל תביעה. נשארת כי הניירת הכירה את הידיים שלך.",
+          "in_game_wiki": "אשמה מקצועית הופכת למעורבות אישית בלי להפוך את הפרוטגוניסט לסיבת האסון. השחקן אינו צריך אח אבוד, שושלת נקמה או תפקיד סודי של עד נבחר. הלחץ קר יותר ובוגר יותר. הוא מזהה את הנוהל. הוא יודע למה שדה עד חשוב, למה חותמת מסלול בטוח יכולה לשקר, למה מוביל יכול לשמוע אותו ועדיין לא להרים אותו החוצה. HECTON-8 נעשה אישי מפני ששפת Deep Reach הישנה אינה מופשטת עבורו. זו עבודה שפעם היה עליו לסמוך עליה, עבודה שלידה פעל, ועכשיו היא מחוברת לשמות שחולצו מחדרים שטבעו. הקשת אינה וידוי. היא סירוב: ברגע שהשחקן יכול לקרוא את מכונת הנטישה, השארתה קבורה נעשית עוד צורת השתתפות.",
+          "external_site": "המניע של הפרוטגוניסט צומח ממומחיות לאחריות. HECTON-8 נמנעת ממלודרמה משפחתית כפויה: עובד Deep Reach לשעבר אכפת לו מפני שהוא מבין את המכונה הפרוצדורלית שגרמה לנטישה להיראות שלמה.",
+          "field_note": "לא החתימה שלך. עדיין המקצוע שלך. לכן החדר לא ישתוק."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "PT LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "PT LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "PT LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "PT LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "PT LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "PT LOC HOLD: Use near late dossier and final payload route."
+          "title": "Da Culpa Profissional ao Interesse Pessoal",
+          "scanner": "O padrão de assinatura combina com o cache antigo de procedimento. Os nomes mudaram. A sala falhou do mesmo jeito. Especialização já não é distância.",
+          "terminal": "RESOLUÇÃO DE DOSSIÊ / INTERESSE PROFISSIONAL\nevidência gatilho: reconhecimento de procedimento, etiquetas de trabalhadores recuperadas, conflito do recebedor da reivindicação\nmotivo excluído: relação familiar, linhagem de vingança, status de testemunha escolhida\nmotivo ativo: ex-trabalhador de sistemas reconhece abandono evitável e ainda consegue ler a máquina que o arquivou.",
+          "audio": "Você veio por uma reivindicação. Ficou porque a papelada conhecia suas mãos.",
+          "in_game_wiki": "A culpa profissional vira interesse pessoal sem transformar o protagonista na causa da catástrofe. O jogador não precisa de um irmão perdido, de uma linhagem de vingança ou de um papel secreto de testemunha escolhida. A pressão é mais fria e mais adulta. Ele reconhece o procedimento. Sabe por que um campo de testemunha importa, por que um selo de rota segura pode mentir, por que uma transportadora pode ouvi-lo e ainda assim não içá-lo para fora. HECTON-8 se torna pessoal porque a velha linguagem da Deep Reach não é abstrata para ele. É trabalho em que já precisou confiar, trabalho perto do qual já atuou, e agora esse trabalho está preso a nomes recuperados de salas afogadas. O arco não é confissão. É recusa: quando o jogador consegue ler a máquina do abandono, deixá-la enterrada vira outra forma de participação.",
+          "external_site": "A motivação do protagonista cresce de especialização para responsabilidade. HECTON-8 evita melodrama familiar forçado: o ex-trabalhador da Deep Reach se importa porque entende a máquina procedural que fez o abandono parecer concluído.",
+          "field_note": "Não é sua assinatura. Ainda é seu ofício. Por isso a sala não vai ficar quieta."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Professional Guilt To Personal Stake",
-          "scanner": "NL LOC HOLD: Signature match. The form language is old. The names are new.",
-          "terminal": "NL LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.",
-          "audio": "NL LOC HOLD: You came for a contract. You stayed because you understood the paperwork.",
-          "in_game_wiki": "NL LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.",
-          "external_site": "NL LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.",
-          "field_note": "NL LOC HOLD: Use near late dossier and final payload route."
+          "title": "Van Professionele Schuld naar Persoonlijke Inzet",
+          "scanner": "Het handtekeningpatroon komt overeen met de oude procedurecache. De namen veranderden. De kamer faalde op dezelfde manier. Expertise is geen afstand meer.",
+          "terminal": "DOSSIERAFRONDING / PROFESSIONELE INZET\ntriggerbewijs: procedureherkenning, teruggevonden werknemertags, conflict met claimontvanger\nuitgesloten motief: familieband, wraaklijn, status als gekozen getuige\nactief motief: voormalig systeemwerker herkent voorkombare achterlating en kan de machine die haar archiveerde nog lezen.",
+          "audio": "Je kwam voor een claim. Je bleef omdat het papierwerk je handen kende.",
+          "in_game_wiki": "Professionele schuld wordt persoonlijke inzet zonder de protagonist tot oorzaak van de ramp te maken. De speler heeft geen verloren familielid nodig, geen bloedlijn van wraak en geen geheime rol als gekozen getuige. De druk is kouder en volwassener. Die herkent de procedure. Die weet waarom een getuigenveld telt, waarom een route-veilig-stempel kan liegen, waarom een drager je kan horen en je toch niet uitlicht. HECTON-8 wordt persoonlijk omdat de oude Deep Reach-taal voor hem niet abstract is. Het is werk dat hij ooit moest vertrouwen, werk waar hij ooit naast opereerde, en werk dat nu vastzit aan namen uit verdronken kamers. De boog is geen bekentenis. Het is weigering: zodra de speler de achterlatingsmachine kan lezen, wordt haar begraven laten nog een vorm van deelname.",
+          "external_site": "De motivatie van de protagonist groeit van expertise naar verantwoordelijkheid. HECTON-8 vermijdt geforceerd familiemelodrama: de voormalige Deep Reach-werker geeft erom omdat die de procedurele machine begrijpt die achterlating voltooid liet lijken.",
+          "field_note": "Niet jouw handtekening. Nog steeds jouw vak. Daarom blijft de kamer niet stil."
         }
       }
     }

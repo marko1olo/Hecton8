@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Pile de noms boîte noire
 
-La pile de noms rend la vérité transportable. Ce que le joueur remonte influence broadcast, dossier et fin.
+La pile de noms de boîte noire rend la vérité finale transportable. Preuves, paquets broadcast et dossiers publics dépendent des noms, hash et reçus qui sortent de l'eau.
 
 ## Scanner
 

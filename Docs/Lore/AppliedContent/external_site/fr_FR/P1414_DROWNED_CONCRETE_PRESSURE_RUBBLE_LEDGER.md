@@ -1,0 +1,28 @@
+---
+packet_id: P1414_DROWNED_CONCRETE_PRESSURE_RUBBLE_LEDGER
+release_set_id: RS244_DROWNED_CONCRETE_PRESSURE_RUBBLE_ARTICLE
+article_id: applied_lore.drowned_concrete_pressure_rubble_ledger
+unlock_id: unlock.drowned_concrete_pressure_rubble_ledger
+poi_tags: poi.drowned_concrete_rubble_slab;poi.pressure_door_gasket_trace
+biome_tags: biome.photic_shelf;biome.industrial_shelf
+locale: fr_FR
+surface: external_site
+source_voice: Public Site Drowned Concrete Article
+spoiler_tier: 1
+title: "Registre du béton pressurisé noyé"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# Registre du béton pressurisé noyé
+
+Le béton noyé est la grammaire matérielle d'un bâtiment mort. Une masse pâle peut sembler naturelle, mais les lignes droites, les vides de joint et les bandes d'agrégat gardent une intention humaine.
+
+La bonne question n'est pas la récolte, mais ce que la dalle retenait. Taches, cassures, rayures de câble et poussière de boulon disent quel côté était sec.
+
+Deep Reach pouvait renommer un accident; il ne pouvait pas faire vieillir une mauvaise coulée comme une bonne. Le joueur lit la construction comme une preuve.
+
+<!-- External Site; generated from P1414_DROWNED_CONCRETE_PRESSURE_RUBBLE_LEDGER/fr_FR. -->

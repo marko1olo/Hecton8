@@ -7,34 +7,34 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Sonar Return Route"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "声呐返回路线"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sonar Return Route
+# 声呐返回路线
 
-CN LOC HOLD: Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.
+返回信标记录路线最后安全时的声音。它不保证路线仍然安全。风暴涌动、松脱电缆、移动淤泥、 fauna 和新的打捞切口都能扭曲声呐返回，而不抹掉走廊。搬运货物或继续下潜前先 ping 线。如果音调偏移，就缓存货物或标第二条回路。
 
 ## Scanner
 
-CN LOC HOLD: The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+返回信标已陈旧。旧安全 ping 不再匹配走廊回声；货物质量会拖慢撤离窗口。
 
 ## Terminal
 
-CN LOC HOLD: Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09：最后一次干净回声无效。Black Keel ping 低置信接收。障碍漂移和淤泥密度超过地图公差。货物抽取前标记第二条线。
 
 ## Audio
 
-CN LOC HOLD: The way back is not gone. It is different enough to kill you.
+路线还在。回声已经不同。
 
 ## Field Note
 
-CN LOC HOLD: Return route is a living cost, not a minimap line.
+装载前先 ping。空手时回家的路已经变了，满包时它不会原谅你。
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/zh_CN. -->

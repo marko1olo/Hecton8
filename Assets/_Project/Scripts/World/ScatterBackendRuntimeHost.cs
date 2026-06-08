@@ -15,6 +15,9 @@ namespace Hecton8.World
         private ScatterHybridRuntimePlan _plan;
         private ScatterSimulationBackendKind _resolvedBackendKind = ScatterSimulationBackendKind.ClassicJobs;
         private ScatterBackendParityReference _shadowPendingClassicParity;
+        private string _lastScheduleFailureReason;
+        private string _lastCompletionFailureReason;
+        private int _interruptedShadowPassCount;
 
         public ScatterBackendBindingState BindingState => _bindingState;
         public bool HasFacade => _facade != null;
@@ -31,6 +34,9 @@ namespace Hecton8.World
             if (_facade != null && _facade.BackendKind != _plan.ResolvedBackendKind)
                 resolutionReason = $"{resolutionReason}|provider-fallback-{ScatterHybridRuntimeEntryPoint.GetBackendKindLabel(_facade.BackendKind)}";
 
+            resolutionReason = AppendScheduleFailureReason(resolutionReason);
+            resolutionReason = AppendCompletionFailureReason(resolutionReason);
+
             return new ScatterBackendRuntimeStatus(
                 ActiveBackendKind,
                 ActiveBackendKindLabel,
@@ -39,7 +45,8 @@ namespace Hecton8.World
                 resolutionReason,
                 HasFacade,
                 IsFacadeJobActive,
-                IsFacadeJobCompleted);
+                IsFacadeJobCompleted,
+                _interruptedShadowPassCount);
         }
 
         public ScatterHybridRuntimePlan RefreshPlan(
@@ -54,6 +61,7 @@ namespace Hecton8.World
 
         public bool SyncFacade()
         {
+            bool hadActiveFacadeJob = IsFacadeJobActive;
             _facade = ScatterHybridRuntimeEntryPoint.SyncFacadeForPlan(
                 _facade,
                 _plan,
@@ -62,10 +70,22 @@ namespace Hecton8.World
             if (_facade == null)
             {
                 DisposeBindingState();
+                if (!_plan.RequiresFacade)
+                {
+                    ClearScheduleFailureReason();
+                    ClearCompletionFailureReason();
+                }
             }
 
             if (resetPendingState)
+            {
                 _shadowPendingClassicParity = default;
+                _bindingState?.ClearCellDataViews();
+                ClearScheduleFailureReason();
+                ClearCompletionFailureReason();
+                if (hadActiveFacadeJob)
+                    _interruptedShadowPassCount++;
+            }
 
             return resetPendingState;
         }
@@ -85,24 +105,68 @@ namespace Hecton8.World
             _bindingState?.ResetLookup();
         }
 
-        public void SetShadowPendingClassicParity(in ScatterBackendParityReference parityReference)
+        public void ResetTelemetry()
         {
-            _shadowPendingClassicParity = parityReference;
+            _interruptedShadowPassCount = 0;
+            ClearScheduleFailureReason();
+            ClearCompletionFailureReason();
         }
 
         public bool TrySchedule(in ScatterBackendScheduleRequest request, ScatterWorkingMemory memory)
         {
-            if (_facade == null || _bindingState == null || !_bindingState.TryPopulateCellData(memory, request.TotalCells))
+            if (_facade == null)
+            {
+                MarkScheduleFailure("facade-unavailable");
                 return false;
+            }
 
-            return _facade.TrySchedule(BuildConfig(request), _bindingState.HeightSamples, _bindingState.CellStates);
+            if (!_facade.IsInitialized)
+            {
+                MarkScheduleFailure("backend-not-initialized");
+                return false;
+            }
+
+            if (_bindingState == null)
+            {
+                MarkScheduleFailure("binding-state-unavailable");
+                return false;
+            }
+
+            if (!_bindingState.TryPopulateCellData(memory, request.TotalCells))
+            {
+                MarkScheduleFailure("cell-data-unavailable");
+                return false;
+            }
+
+            if (!_facade.TrySchedule(BuildConfig(request), _bindingState.HeightSamples, _bindingState.CellStates))
+            {
+                _bindingState.ClearCellDataViews();
+                MarkScheduleFailure(_facade.IsJobActive ? "facade-busy" : "backend-schedule-rejected");
+                return false;
+            }
+
+            _bindingState.ClearCellDataViews();
+            _shadowPendingClassicParity = request.ParityReference;
+            ClearScheduleFailureReason();
+            ClearCompletionFailureReason();
+            return true;
         }
 
         public bool TryCompleteShadowPass(out ScatterBackendShadowCompletion completion)
         {
             completion = default;
-            if (_facade == null || !_facade.IsJobCompleted || !_facade.TryCompleteSimulation(out ScatterSimulationResult result))
+            if (_facade == null || !_facade.IsJobCompleted)
                 return false;
+
+            if (!_facade.TryCompleteSimulation(out ScatterSimulationResult result))
+            {
+                _facade.Dispose();
+                _facade = null;
+                _shadowPendingClassicParity = default;
+                _bindingState?.ClearCellDataViews();
+                MarkCompletionFailure("backend-complete-failed");
+                return false;
+            }
 
             completion = new ScatterBackendShadowCompletion(
                 result.ParitySnapshot,
@@ -110,6 +174,9 @@ namespace Hecton8.World
                 _facade.IsJobActive);
 
             _shadowPendingClassicParity = default;
+            _bindingState?.ClearCellDataViews();
+            ClearScheduleFailureReason();
+            ClearCompletionFailureReason();
             return true;
         }
 
@@ -125,6 +192,9 @@ namespace Hecton8.World
             _plan = default;
             _resolvedBackendKind = ScatterSimulationBackendKind.ClassicJobs;
             _shadowPendingClassicParity = default;
+            _interruptedShadowPassCount = 0;
+            ClearScheduleFailureReason();
+            ClearCompletionFailureReason();
         }
 
         private void DisposeBindingState()
@@ -134,6 +204,43 @@ namespace Hecton8.World
 
             _bindingState.Dispose();
             _bindingState = null;
+        }
+
+        private void MarkScheduleFailure(string reason)
+        {
+            _lastScheduleFailureReason = string.IsNullOrWhiteSpace(reason) ? "unknown" : reason;
+            ClearCompletionFailureReason();
+        }
+
+        private void ClearScheduleFailureReason()
+        {
+            _lastScheduleFailureReason = null;
+        }
+
+        private void MarkCompletionFailure(string reason)
+        {
+            _lastCompletionFailureReason = string.IsNullOrWhiteSpace(reason) ? "unknown" : reason;
+        }
+
+        private void ClearCompletionFailureReason()
+        {
+            _lastCompletionFailureReason = null;
+        }
+
+        private string AppendScheduleFailureReason(string resolutionReason)
+        {
+            if (string.IsNullOrWhiteSpace(_lastScheduleFailureReason))
+                return resolutionReason;
+
+            return $"{resolutionReason}|schedule-failed-{_lastScheduleFailureReason}";
+        }
+
+        private string AppendCompletionFailureReason(string resolutionReason)
+        {
+            if (string.IsNullOrWhiteSpace(_lastCompletionFailureReason))
+                return resolutionReason;
+
+            return $"{resolutionReason}|completion-failed-{_lastCompletionFailureReason}";
         }
 
         private ScatterSimulationConfig BuildConfig(in ScatterBackendScheduleRequest request)

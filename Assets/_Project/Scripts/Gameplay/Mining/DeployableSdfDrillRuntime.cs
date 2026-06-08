@@ -368,6 +368,11 @@ namespace Hecton8.Gameplay.Mining
         /// </summary>
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteVector3(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)
+                return;
+
             Vector3 runtime = _anchorAup.ToRuntimeFloat3();
             if (!IsFiniteVector3(runtime))
             {
@@ -392,6 +397,12 @@ namespace Hecton8.Gameplay.Mining
                     break;
                 case GlobalRegistryServiceSlot.TerrainProviderRuntime:
                     _terrainProvider = currentService as ITerrainProvider;
+                    _mapMagic = currentService as MapMagicBridge;
+                    WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagic);
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    _mapMagic = currentService as MapMagicBridge;
+                    WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagic);
                     break;
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     _voxelSdfReadModel = currentService as IVoxelSonarSdfReadModel;
@@ -737,7 +748,8 @@ namespace Hecton8.Gameplay.Mining
             _powerGrid = GlobalRegistry.PowerGrid;
             _terrainProvider = GlobalRegistry.Terrain;
             _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
-            _mapMagic = MapMagicBridge.Instance;
+            _mapMagic = null;
+            WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagic);
             _cachedMathLod = AuthoritativeMathLod;
             _targetMathLod = _cachedMathLod;
             _mathLodChangeEligibleUnscaledTime = 0d;
@@ -1282,7 +1294,7 @@ namespace Hecton8.Gameplay.Mining
                 ItemHash = itemHash != 0u ? itemHash : DeployableSdfDrillMath.DefaultItemHash,
                 OreHash = oreHash != 0u ? oreHash : DeployableSdfDrillMath.DefaultOreHash,
                 Quantity = quantity,
-                SourceKind = 7,
+                SourceKind = ItemAcquiredSignalSourceKinds.DeployableSdfDrill,
                 Flags = 0,
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
@@ -1342,9 +1354,10 @@ namespace Hecton8.Gameplay.Mining
         private int ResolveBiomeId()
         {
             MapMagicBridge mapMagic = _mapMagic;
-            if (mapMagic == null || !mapMagic.IsAvailable)
+            if (!WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagic) || !mapMagic.IsAvailable)
                 return 0;
 
+            _mapMagic = mapMagic;
             Vector3 position = _cachedTransform != null ? _cachedTransform.position : ToVector3(_anchorRuntimePosition);
             if (mapMagic.TryGetMatrixBiomeId(position.x, position.z, out int matrixBiomeId))
                 return matrixBiomeId;

@@ -887,7 +887,7 @@ namespace Hecton8.Audio.Synthesis
                 _activeInstance = null;
             ClearCachedRuntimeServices();
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
             if (Interlocked.Exchange(ref _registeredColdTick, 0) != 0)
                 GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
             if (Interlocked.Exchange(ref _registeredLateFrame, 0) != 0)
@@ -931,7 +931,7 @@ namespace Hecton8.Audio.Synthesis
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)

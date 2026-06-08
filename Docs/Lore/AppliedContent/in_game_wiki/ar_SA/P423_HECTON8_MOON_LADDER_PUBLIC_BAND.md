@@ -7,34 +7,34 @@ poi_tags: poi.moon_ladder_public_band;poi.hecton8_mid_orbit_card
 biome_tags: biome.aegir_system;biome.publication
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "AR LOC HOLD: HECTON-8 Moon Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "سلم أقمار HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: HECTON-8 Moon Ladder
+# سلم أقمار HECTON-8
 
-AR LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
+يعطي سلم الأقمار Aegir حجما مع إبقاء الحملة القابلة للعب على HECTON-8. الأجسام القريبة تشكل relay وice-scatter وquarantine timing وsalvage traffic وsilence windows من دون وعد بأقمار قابلة للعب إضافية.
 
 ## Scanner
 
-AR LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+سلم الأقمار: HECTON-8 هو claim واحد، وليس نظام Aegir كله.
 
 ## Terminal
 
-AR LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER: role labels عامة فقط؛ orbital elements الدقيقة تبقى table-owned data.
 
 ## Audio
 
-AR LOC HOLD: Other moons are not side quests. They are why the route has teeth.
+الأقمار الأخرى ليست side quests. إنها سبب أن للطريق أسنانا.
 
 ## Field Note
 
-AR LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
+سجل سلم الأقمار: الخرائط العامة يمكن أن تظهر حجم Aegir من دون وعد بـ playable moons.
 
 <!-- In-Game Wiki; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/ar_SA. -->

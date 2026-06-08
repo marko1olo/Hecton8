@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "Columna de la primera hora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# Columna de la primera hora
 
-ES LOC HOLD: First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+Columna de la primera hora define el ritmo de apertura de HECTON-8. El jugador empieza con tareas de ingeniería tangibles y asombro visual, y luego ve esas tareas conectarse con una mentira corporativa y una ecología de mantenimiento que ha entrado en la biología. Así la primera ruta sigue siendo jugable y atmosférica mientras planta la investigación mayor: el océano no oculta la historia; conserva la evidencia en presión, sal y procedimiento.
 
 ## Scanner
 
-ES LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Contrato, descenso dañado, aire, bajíos luminosos, refugio de bomba, mentira saneada y luego la primera cicatriz de reparación que usa vida como junta.
 
 ## Terminal
 
-ES LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+ANEXO SOMERO: reinicio manual de bomba válido. Paquete de incidente Deep Reach en caché. Crecimiento de reparación de Atlas detectado alrededor de cable, fragmento de herramienta y residuo biológico.
 
 ## Audio
 
-ES LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+La primera sala segura no está limpia. Solo contiene la respiración mejor que tú.
 
 ## Field Note
 
-ES LOC HOLD: The opening must be beautiful before it becomes accusing.
+La apertura debe ser hermosa antes de volverse acusadora.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/es_ES. -->

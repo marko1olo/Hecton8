@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Brine Vane Codex Card"
+title: "盐水叶片图鉴卡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Brine Vane Codex Card
+# 盐水叶片图鉴卡
 
-ZH LOC HOLD: In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+盐水叶片让HECTON-8的中深层水体具有实体感。它们让玩家明白峡谷由密度构成，而不是空蓝体积：一片膜可以同时是警告牌、材料来源和假地面的边缘。
 
 ## Scanner
 
-ZH LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+盐水叶片膜。固定在密度剪切上的盐矿物膜。完整边缘表示墙；撕裂口表示通道；没有叶片边界的黑水有假地面风险。
 
 ## Terminal
 
-ZH LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+样本 / 盐水叶片 / 作用: 密度墙标记、sonar弯折警告、脱落肋材料来源 / 安全读取: 完整膜片、下游撕裂口、卷曲剪切窗口尖端 / 拒绝: 切割活的路线膜、横穿开放亮光、相信假地面回波 / 路线备注: 采集脱落肋，不要采那片撑开地图的膜。
 
 ## Audio
 
-ZH LOC HOLD: The plant is not pointing up. It is pointing through.
+叶片不是指向上方。它在显示海水转向侧面的地方。
 
 ## Field Note
 
-ZH LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+完整膜：墙。撕裂口：可能路线。脱落肋：样本。活膜正在撑住通道：留下。
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/zh_CN. -->

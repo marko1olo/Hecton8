@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Collections;
@@ -132,6 +133,8 @@ namespace Hecton8.Core
 
         private static NativeQueue<VehicleCommandSignal> _pendingCommands;
         private static NativeQueue<VehicleCommandSignal> _nextFrameCommands;
+        private static int _pendingCommandsSentinelId;
+        private static int _nextFrameCommandsSentinelId;
         private static int _pendingCommandCount;
         private static int _nextFrameCommandCount;
         private static int _droppedCommandCount;
@@ -230,8 +233,8 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            DisposeQueue(ref _pendingCommands, nameof(_pendingCommands));
-            DisposeQueue(ref _nextFrameCommands, nameof(_nextFrameCommands));
+            DisposeQueue(ref _pendingCommands, ref _pendingCommandsSentinelId);
+            DisposeQueue(ref _nextFrameCommands, ref _nextFrameCommandsSentinelId);
             _pendingCommandCount = 0;
             _nextFrameCommandCount = 0;
             _droppedCommandCount = 0;
@@ -247,21 +250,21 @@ namespace Hecton8.Core
                 if (!_pendingCommands.IsCreated)
                 {
                     _pendingCommands = new NativeQueue<VehicleCommandSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<VehicleCommandSignal>[32] - fixed vehicle command ingress lane - owner: VehicleCommandSignalBus
-                    RegisterNativeQueue(ref _pendingCommands, PendingCommandCapacity, nameof(_pendingCommands));
+                    RegisterNativeQueue(ref _pendingCommands, PendingCommandCapacity, nameof(_pendingCommands), out _pendingCommandsSentinelId);
                     PrewarmQueue(ref _pendingCommands, PendingCommandCapacity);
                 }
 
                 if (!_nextFrameCommands.IsCreated)
                 {
                     _nextFrameCommands = new NativeQueue<VehicleCommandSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<VehicleCommandSignal>[32] - next-frame command lane for reentrant publishes - owner: VehicleCommandSignalBus
-                    RegisterNativeQueue(ref _nextFrameCommands, PendingCommandCapacity, nameof(_nextFrameCommands));
+                    RegisterNativeQueue(ref _nextFrameCommands, PendingCommandCapacity, nameof(_nextFrameCommands), out _nextFrameCommandsSentinelId);
                     PrewarmQueue(ref _nextFrameCommands, PendingCommandCapacity);
                 }
             }
             catch
             {
-                DisposeQueue(ref _pendingCommands, nameof(_pendingCommands));
-                DisposeQueue(ref _nextFrameCommands, nameof(_nextFrameCommands));
+                DisposeQueue(ref _pendingCommands, ref _pendingCommandsSentinelId);
+                DisposeQueue(ref _nextFrameCommands, ref _nextFrameCommandsSentinelId);
                 _pendingCommandCount = 0;
                 _nextFrameCommandCount = 0;
                 throw;
@@ -271,10 +274,12 @@ namespace Hecton8.Core
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(VehicleCommandSignalBus),
@@ -283,7 +288,7 @@ namespace Hecton8.Core
             if (sentinelId > 0)
                 return;
 
-            DisposeQueue(ref queue, label);
+            DisposeQueue(ref queue, ref sentinelId);
             throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
@@ -303,6 +308,9 @@ namespace Hecton8.Core
             NativeQueue<VehicleCommandSignal> oldPending = _pendingCommands;
             _pendingCommands = _nextFrameCommands;
             _nextFrameCommands = oldPending;
+            int sentinelIdSwap = _pendingCommandsSentinelId;
+            _pendingCommandsSentinelId = _nextFrameCommandsSentinelId;
+            _nextFrameCommandsSentinelId = sentinelIdSwap;
             _pendingCommandCount = _nextFrameCommandCount;
             _nextFrameCommandCount = 0;
         }
@@ -316,15 +324,50 @@ namespace Hecton8.Core
                 queue.TryDequeue(out _);
         }
 
-        private static void DisposeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void DisposeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(VehicleCommandSignalBus), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
     }
 }

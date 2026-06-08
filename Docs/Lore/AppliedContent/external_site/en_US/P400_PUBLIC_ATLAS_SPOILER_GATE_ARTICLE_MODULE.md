@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Atlas Access Boundary
 
-Atlas-6 is not a single reveal. The safe public layer is industrial: a continuity system trying to keep pressure machinery, routes and records alive after the flood. The unsettling layer appears when repair crosses into living infrastructure: conductive biofilm, acoustic organs, shell sealant and sensor-tagged fauna. The final layer stays sealed until the player has evidence for receiver custody and payload consequence.
+Atlas-6 is not a simple rogue machine, monster or miracle. The public layer is industrial: a continuity system built to keep pressure machinery, routes, records and extraction hardware alive after failure. The unsettling layer appears when repair crosses into living infrastructure. Conductive biofilm bridges cables. Acoustic organs carry timing. Shell sealant closes fractures. Sensor-tagged fauna becomes feedback. The final layer stays sealed until the player has proof for receiver custody and payload consequence, because those facts rewrite earlier scenes. A spoiler-safe Atlas article can let readers understand the horror of maintenance without naming the last witness too early.
 
 ## Scanner
 
-Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+Atlas boundary record. Open evidence shows industrial continuity logic and repair ecology; receiver custody, payload consequence and final choice layers require recovered proof.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue and shell seal. Restricted layer: receiver custody and final payload consequence.
 
 ## Audio
 

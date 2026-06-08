@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "מארודר לשעבר של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# מארודר לשעבר של Deep Reach
 
-HE LOC HOLD: This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.
+הפרוטגוניסט לא נולד על HECTON-8 ואינו רודף רוח משפחתית. המושבה הישנה מזהה משהו קר יותר: קצב תיקון של מערכות שטח, הרגלי ניתוב חירום וקיצורי דרך קטנים שעבודת Deep Reach לימדה. העבר הזה הופך את הדלתות הנעולות הראשונות לאישיות בלי להפוך את הסיפור למלודרמת דם. מארודר יכול לפתוח מטמון תביעה בשביל כסף; מומחה Deep Reach לשעבר יודע גם איזה יומן אטימה לא אמור להתקיים, איזו הוראת פינוי נכתבה כדי לכסות עיכוב, ואיזה רצף תיקון המשיך לפעול אחרי שהעובדים נמחקו מהחשבון.
 
 ## Scanner
 
-HE LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+המנעול הישן של Deep Reach אינו בודק את שמך. הוא מזהה את קצב רצף התיקון שלך.
 
 ## Terminal
 
-HE LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+עקבת הרשאה: חוזה מערכות שטח לשעבר. גישה לתשתית פינוי בוטלה. מעמד חילוץ ופירוק התקבל תחת משמורת חוב של מאגר תביעות.
 
 ## Audio
 
-HE LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+לא חזרת הביתה. חזרת אל נוהל שמעולם לא הפסיק לפעול.
 
 ## Field Note
 
-HE LOC HOLD: Not family business. Procedure remembers who taught your hands.
+זה אינו עניין משפחתי. הנוהל זוכר את הידיים שהשתמשו בו.
 
 <!-- In-Game Wiki; generated from P056_EX_DEEP_REACH_MARAUDER/he_IL. -->

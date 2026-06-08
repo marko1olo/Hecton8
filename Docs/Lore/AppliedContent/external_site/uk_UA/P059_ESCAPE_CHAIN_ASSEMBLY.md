@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "Збірка ланцюга втечі"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# Збірка ланцюга втечі
 
-UK LOC HOLD: Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems.
+Збірка ланцюга втечі — інженерний хребет кампанії. HECTON-8 не дає чистого поверхневого витягу після першого ремонту; відхід стає набором фізичних, юридичних і доказових компонентів, розкиданих утопленою інфраструктурою. Це дає довгому спуску практичну й моральну причину: гравець не просто залишає океан, а збирає маршрут, який доводить, чому колонія ніколи не мала чесного виходу.
 
 ## Scanner
 
-UK LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+Відхід потребує шести твердих доказів: реле, ущільнення, наведення, заряду підйому, юридичного рукостискання і вантажу, який носій не зможе ігнорувати.
 
 ## Terminal
 
-UK LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+ПАКЕТ ПІДЙОМУ: акустичний релейний хребет відсутній. Рейтинг затискного кільця недостатній. Ядра наведення немає. Люлька заряду порожня. Карантинне рукостискання не вирішене. Доказовий вантаж необов’язковий, але змінює владу над поверненням.
 
 ## Audio
 
-UK LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+Ти не ремонтуєш капсулу. Ти будуєш перший чесний вихід, якого колонія ніколи не мала.
 
 ## Field Note
 
-UK LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+Маршрут угору будується з деталей, які ніколи не призначалися для самостійного виходу робітників.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/uk_UA. -->

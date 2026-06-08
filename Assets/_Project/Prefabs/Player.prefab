@@ -951,7 +951,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HectonSurvivalSystem
   stats: {fileID: 11400000, guid: 0f3f8f9307ea99f45a4039ed79ee8515, type: 2}
-  surfaceWorldY: 4900
+  surfaceWorldY: 14.02
   surfaceOxygenRefillRate: 15
   internalTemperatureTimeConstantSeconds: 45
   survivalDatabaseSource: {fileID: 4900000, guid: 6bbac9ab5e924bc78c53429d6a6a9e1c, type: 3}
@@ -1021,7 +1021,7 @@ MonoBehaviour:
   currentSuitData: {fileID: 11400000, guid: 0ac4df6679641f2488e9fb8e11c34d5b, type: 2}
   controlScheme: {fileID: 0}
   leanIntoTurn: 1
-  waterSurfaceY: 4900
+  waterSurfaceY: 14.02
   playerHeight: 1.8
   swimTransitionThreshold: 0.7
   surfaceSwimDepthBand: 0.85

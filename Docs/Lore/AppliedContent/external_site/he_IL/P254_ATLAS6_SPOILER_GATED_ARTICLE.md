@@ -9,32 +9,35 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "מאמר Atlas-6 נעול ספוילרים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas-6 Spoiler-Gated Article
+# מאמר Atlas-6 נעול ספוילרים
 
-HE LOC HOLD: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6 הוא שאלת המכונה נעולת הספוילרים של HECTON-8: מודיעין תעשייתי פגוע השזור בתחזוקה, תיקון, סיווג והאוקיינוס עצמו. טקסט ציבורי צריך להגן על הגילוי. הוא יכול לסמן עמימות אתית, אבל אסור לו לפתור מראש את הבחירה הסופית או לצמצם את Atlas לנבל מצויר.
 
 ## Scanner
 
-HE LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+אל תפתח את Atlas כחשיפת מפלצת. נעל אותו עד שהשחקן ראה שתיקון, סיווג ופגיעה חולקים אותה מכונה.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+רמת מאמר ציבורי / ATLAS-6
+מותר לפני gate: מודיעין תעשייתי פגוע, לוגיקת תחזוקה, הסתבכות עם האוקיינוס, עמימות אתית
+נעול עד גילוי: מסלול payload סופי, השלכת receiver, טיעון כיבוי או שימור
+הערת עורך: בלי מסגור evil AI; שאלת guardian שבור רק אחרי ראיות.
 
 ## Audio
 
-HE LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+אם תקרא לו בשם מוקדם מדי, הוא יהפוך לנבל. אם תחכה, הוא יהפוך לשאלה.
 
 ## Field Note
 
-HE LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+נעל את השם עד שיש מספיק חלודה על ידי השחקן כדי להתווכח איתו.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/he_IL. -->

@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "トン窓債務"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# トン窓債務
 
-JP LOC HOLD: Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-JP LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-JP LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-JP LOC HOLD: You owe the orbit before you owe the money.
-
-## Field Note
-
-JP LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+トン窓とは、質量、burnタイミング、隔離容積、法的優先度で測られるcarrier容量の一片だ。操作者には債務のように感じられる。HECTON-8で見つけた有用な物体すべてが、それを見つけた身体と同じledgerに入るからだ。封印ケースは軽くても法的に重い。サンプルラックは質量が小さくても清浄容積を要求する。人間の抽出は当然に見えるが、バラスト、酸素予備、payload custodyがすでに窓を使っていれば当然ではなくなる。HECTON-8の経済は抽象ではなく物理になる。プレイヤーは偽の道徳メーターで罰せられない。燃料、質量、汚染、書類で生存を値付けする機械の中に閉じ込められる。
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/ja_JP. -->

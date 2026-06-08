@@ -8,33 +8,19 @@ biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+spoiler_tier: 1
+title: "압력 유리 형성"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# 압력 유리 형성
 
-KO LOC HOLD: Pressure Glass Formation turns Xenon-Omega into hard-sci-fi material ecology instead of magic ore. It is a pressure-made substrate tied to Atlas, containment and computation.
+압력 유리는 Marauder의 blue debt와 Deep Reach의 Xenon-Omega 언어 뒤에 있는 기술명이다. 압력, 희가스 포켓, 염수, 광물, 열, 변형 생물이 만나는 곳에서 형성된다.
 
-## Scanner
-
-KO LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
-
-## Terminal
-
-KO LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
-
-## Audio
-
-KO LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
-
-## Field Note
-
-KO LOC HOLD: It is not ore. It is a process that remembers where it was made.
+압력 유리 형성은 Xenon-Omega를 마법 광석이 아니라 Atlas, containment, computation과 연결된 물질 생태로 만든다. 이것은 광석이 아니다. 어디서 만들어졌는지 기억하는 과정이다.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/ko_KR. -->

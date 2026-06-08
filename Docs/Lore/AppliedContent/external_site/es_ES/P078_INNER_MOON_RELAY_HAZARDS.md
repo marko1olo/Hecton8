@@ -3,38 +3,38 @@ packet_id: P078_INNER_MOON_RELAY_HAZARDS
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.inner_moon_relay_hazards
 unlock_id: unlock.first_inner_moon_relay_hazards
-poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
-biome_tags: biome.orbital_window;biome.drowned_comms
+poi_tags: poi.relay_noise_log;poi.skarn_surge_alarm
+biome_tags: biome.orbital_window;biome.surface_relay
 locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Inner Moon Relay Hazards"
+title: "Peligros de relé de lunas internas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Inner Moon Relay Hazards
+# Peligros de relé de lunas internas
 
-ES LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage.
+Estos peligros explican cómo HECTON-8 pierde contacto por radiación, polvo, oclusión y route law heredada, no por interferencia mágica.
 
 ## Scanner
 
-ES LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.
+ESCALERA INTERNA // Skarn satura antenas. Vela dispersa óptica. Rutas viejas de Claw y Lumen mantienen handshakes caducados vivos.
 
 ## Terminal
 
-ES LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
+NOTA DE PELIGRO DE RELÉ // La pérdida de contacto puede ser geometría, clima de partículas, persiana de polvo o buoy law heredada. Sospecha de UI limpia en ventanas de oleada.
 
 ## Audio
 
-ES LOC HOLD: The orbital model is innocent. The clause written around it is not.
+El relé no calló. Repitió el siglo equivocado.
 
 ## Field Note
 
-ES LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.
+Un icono limpio aún puede mentir a través de cielo viejo.
 
 <!-- External Site; generated from P078_INNER_MOON_RELAY_HAZARDS/es_ES. -->

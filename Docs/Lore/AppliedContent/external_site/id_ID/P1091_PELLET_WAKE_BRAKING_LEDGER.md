@@ -14,15 +14,17 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Buku Rem Jejak Pelet
 
-HECTON-8 tidak memerlukan dinding ajaib untuk mengisolasi pemain. Jarak sudah cukup. Rute Aegir dibuka oleh probe sinar pelet: pengintai otonom kecil yang didorong instalasi sinar raksasa di Luyten Junction. Probe bisa ditembakkan, hilang dan dihapus. Kapal koloni tidak.
+HECTON-8 terisolasi karena perjalanan itu berat. Rute Aegir dimulai dengan pramuka sinar pelet: probe otonom kecil yang didorong dari Luyten Junction dan diharapkan mati secara berguna. Mereka membawa peta, kunci bintang, dan paket saksi hukum. Probe hilang adalah baris biaya. Kapal koloni hilang adalah satu generasi utang.
 
-Kargo Atlas adalah makhluk lain. Ia membawa pabrik, ruang cryo, sistem pengeboran, kontrak utang tersegel dan orang-orang yang cukup murah untuk menandatanganinya. Mesin pulsa fusi-listriknya menghabiskan tahun-tahun untuk membangun kecepatan. Menjelang tiba, kapal harus kehilangan kecepatan itu. Layar magnetik mengembang pada rentang absurd untuk mengerem melawan partikel bermuatan. Lintasan akhir mengikis atmosfer, selubung badai dan tepi raksasa gas. Kesalahan kecil di buku rem dapat menghapus kargo, kru dan klaim.
+Era kargo Atlas memindahkan massa nyata. Pengangkut melintas dengan inti pabrik, ruang krio, sistem bor, penerima rute, kontrak tertutup, dan orang-orang yang cukup murah untuk menandatangani. Tumpukan fusi-listriknya menghabiskan tahun membangun kecepatan. Tidak ada keajaiban dalam arsitektur itu. Setiap koreksi membakar persediaan. Setiap pelat perisai adalah taruhan. Setiap kilogram tiba dengan nama yang terikat pada buku.
 
-Karena itu penyelamatan di HECTON-8 terasa kejam tanpa melanggar fisika. Sol bisa menerima paket setelah keputusan kedaluwarsa. Deep Reach bisa memiliki utang lebih cepat daripada memindahkan lambung. Black Keel bisa duduk di orbit lokal Aegir dan memberi harga pada jendela pemulihan, tetapi itu mesin salvage lokal, bukan janji dari rumah. Peradaban datang dulu sebagai dokumen, lalu sinyal, jauh kemudian sebagai massa.
+Buku pengereman adalah halaman kejam. Pengangkut dekat cahaya harus menjadi lambat lagi sebelum mengirim apa pun. Layar magnetik terbuka pada bentang mustahil dan menarik partikel bermuatan. Jalur pelet menggigit tepi layar. Lintasan akhir memakai atmosfer, selubung badai, dan gravitasi raksasa gas sebagai rem. Salah margin, kapal bertahan di tempat yang tidak berguna. Terlalu tipis, rute menerima semburan, bukan kargo.
+
+Inilah sebabnya penyelamatan dalam HECTON-8 terasa cabul tanpa merusak fisika. Sol bisa menjawab setelah keputusan kedaluwarsa. Deep Reach bisa mewarisi utang lebih cepat daripada memindahkan lambung. Black Keel bisa duduk di orbit lokal dan menjual jendela pemulihan karena ia sudah bagian dari mesin Aegir. Penyintas tidak berada di luar peradaban. Ia berada di dalam urutan kedatangannya: dokumen, sinyal, lalu massa.
 
 <!-- External Site; generated from P1091_PELLET_WAKE_BRAKING_LEDGER/id_ID. -->

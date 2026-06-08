@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Transit Duration Bands
 
-Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+Transit bands explain why HECTON-8 can be reachable and still cruel. Packets move first because they are small, cheap and legally useful. Freight moves when staging, braking rights and loss margins line up. Human crews move slowly because a breathing body requires mass, liability, life support and someone willing to pay for the return. Local Aegir windows are shorter but not kinder: orbit, storm noise, radiation and Black Keel geometry decide whether data, cargo or a person can move.
 
 ## Scanner
 
-The same route means different time for packets, freight and people.
+DURATION BAND CHART // Probe packets, heavy freight, human crews and local Aegir windows do not share one clock.
 
 ## Terminal
 
-DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // Local windows: hours to days. In-system industrial movement: months to years. Crew rotation: years of custody and debt. Heavy interdomain freight and consequence: years to decades.
 
 ## Audio
 
-Cargo can arrive before mercy. That is the doctrine.
+Cargo can arrive before mercy. That is not failure. That is doctrine.
 
 ## Field Note
 
-Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+If every clock matches, the setting becomes rescue fantasy. Keep the clocks hostile.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/en_US. -->

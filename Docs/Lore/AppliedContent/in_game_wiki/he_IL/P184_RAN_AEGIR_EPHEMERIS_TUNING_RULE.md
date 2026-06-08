@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "רשומת רצועות אפמריס RAN-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: RAN Aegir Ephemeris Bands
+# רשומת רצועות אפמריס RAN-Aegir
 
-HE LOC HOLD: Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.
+רצועות אפמריס שומרות על מפות ציבוריות כנות: הן מראות מספיק לחץ נתיב כדי לסמוך על החלון, בעוד ערכי המסלול המדויקים נשארים בטבלאות שמחזיקות בתכנון הטיסה.
 
 ## Scanner
 
-HE LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+הרשומה הזו נותנת רצועות חלון וסיבות סיכון, לא מחזורים מדויקים השייכים לטבלאות.
 
 ## Terminal
 
-HE LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+רשומת רצועות אפמריס: ערכי atlas ציבוריים רשאים לציין רצועת חלון, מחלקת סיכון וקשר ל-Aegir. מחזורים מדויקים, נטיות וערכי תהודה נשארים תחת סמכות הטבלה השמימית.
 
 ## Audio
 
-HE LOC HOLD: A band is honest until the numbers have an owner.
+רצועה יכולה להציל אותך. מספר מנוחש יכול להרוג אותך.
 
 ## Field Note
 
-HE LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+המפה הציבורית הישרה אומרת מספיק כדי לנווט סיכון, ולא מספיק כדי לזייף את הטבלה השמימית.
 
 <!-- In-Game Wiki; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/he_IL. -->

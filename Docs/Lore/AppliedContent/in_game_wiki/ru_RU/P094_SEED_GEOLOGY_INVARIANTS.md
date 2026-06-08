@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Инварианты геологии сида"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Инварианты геологии сида
 
-Seed geology invariants определяют, что может менять replayability. Canyons, loot, evidence order, species density и safe routes могут сдвигаться. Star, Aegir, moon ladder, depth bands, Great Tide physics и Atlas-basin truth остаются стабильными.
+Инварианты геологии сида держат HECTON-8 цельной при долгих повторах. Каньоны могут открываться в другом порядке, улики могут сдвигаться, безопасные карманы могут мигрировать, давление видов может меняться. Звезда остается Эгиром, луна остается HECTON-8, глубинные пояса держат порядок, Great Tide держит ритм, а бассейн Atlas сохраняет связь с самой глубокой правдой.
 
 ## Scanner
 
-Procedural note. Маршрут меняется; луна не забывает свои законы.
+Заметка генерации маршрута. Карта добычи меняется, но у луны остаются те же кости.
 
 ## Terminal
 
-SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+ИНВАРИАНТЫ: звезда Эгир, орбитальная лестница HECTON-8, интервал Great Tide, порядок глубинных поясов, связь бассейна Atlas, поведение blue debt под давлением. ПЕРЕМЕННОЕ: подход к каньону, порядок POI, безопасные карманы, плотность bloom, обнажение добычи.
 
 ## Audio
 
-Новый seed, та же луна. Другая рана.
+Другой рисунок раны. Та же луна под ним.
 
 ## Field Note
 
-Реиграбельность должна двигать evidence и geography, а не переписывать physics в каждом seed.
+Новый заход может закопать улику иначе; он не может переписать гравитацию, прилив или вину.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/ru_RU. -->

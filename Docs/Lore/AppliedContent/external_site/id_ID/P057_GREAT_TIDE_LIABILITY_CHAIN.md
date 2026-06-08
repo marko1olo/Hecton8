@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "Rantai Tanggung Jawab Gelombang Besar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# Rantai Tanggung Jawab Gelombang Besar
 
-ID LOC HOLD: Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure.
+Rantai Tanggung Jawab Gelombang Besar adalah model utama kejahatan Deep Reach. Tenggelamnya HECTON-8 adalah kegagalan skala planet, bukan sabotase murahan; kesalahan korporat berasal dari margin, kapasitas evakuasi, pembobotan prioritas otonom, bahasa asuransi, dan penahanan hukum setelah banjir menjadi tak terelakkan. Ini menjaga latar sebagai fiksi ilmiah keras dan membuat kerja bukti pemain berarti: pertanyaannya bukan siapa yang menarik tuas, tetapi siapa yang menandatangani sistem tempat manusia bisa menjadi berkas sebelum menjadi jasad.
 
 ## Scanner
 
-ID LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+Banjir itu fisika nyata: penggandengan pasang, runtuhnya es, kimia tekanan, dan margin yang dihargai terlalu tipis. Kejahatannya adalah tumpukan prioritas yang dibangun di sekitarnya.
 
 ## Terminal
 
-ID LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+RINGKASAN INSIDEN: kaskade geoteknis terkonfirmasi. Kapasitas evakuasi di bawah kebutuhan risiko ekor. Pembobotan kontinuitas Atlas tetap aktif. Ekstraksi manusia menunggu sertifikasi.
 
 ## Audio
 
-ID LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+Laut yang melakukan banjir. Perusahaan yang memutuskan pintu mana tetap menjadi kertas.
 
 ## Field Note
 
-ID LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach tidak perlu menenggelamkan bulan. Mereka hanya perlu membuat evakuasi menjadi opsional.
 
 <!-- External Site; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/id_ID. -->

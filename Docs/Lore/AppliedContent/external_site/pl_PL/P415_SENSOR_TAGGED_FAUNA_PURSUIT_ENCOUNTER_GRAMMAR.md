@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "Gramatyka spotkania: pościg fauny z czujnikową metką"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# Gramatyka spotkania: pościg fauny z czujnikową metką
 
-PL LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+Pościg fauny z czujnikową metką pokazuje Atlas jako uszkodzoną interpretację, nie rozkaz złoczyńcy. Nieszkodliwe lub przestraszone zwierzę może stać się groźne, bo stara infrastruktura wciąż traktuje jego bliznę jak telemetrię.
 
 ## Scanner
 
-PL LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+Pościg fauny z czujnikową metką. Stara biometalowa metka zwraca echo sieci naprawczej. Ruch zwierzęcia jest lokalny; interpretacja sieci nie.
 
 ## Terminal
 
-PL LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+GRAMATYKA SPOTKANIA / POŚCIG Z METKĄ CZUJNIKOWĄ / rola: skażone sprzężenie utrzymania, ryzyko skażenia schronienia, presja bez złoczyńcy / bezpieczny odczyt: puls metki spóźnia się za ruchem, zwierzę unika bólu, echo trasy Atlas podąża za ostatnią znaną drogą / odrzucić: ramę kontroli umysłu, czyste wrogie zachowanie AI, prowadzenie oznaczonego zwierzęcia do schronienia bazy / notatka trasy: zerwij echo kątem, ciszą i zasłoną; nie ucz sieci, gdzie jest dom.
 
 ## Audio
 
-PL LOC HOLD: It follows because the network thinks following is a repair.
+Podąża, bo coś starego uważa podążanie za krok naprawy.
 
 ## Field Note
 
-PL LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+Nie prowadź metki do domu. Zerwij linię, dźwięk i interpretację. Zwierzę nie jest siecią.
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/pl_PL. -->

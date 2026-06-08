@@ -72,6 +72,10 @@ namespace Hecton8.Construction
         private const BufferID NextFrameEventBufferId = (BufferID)72040;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents"));
+        private static readonly uint _duplicateListenerWarningHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents.DuplicateListener"));
+        private static readonly uint _listenerRejectedWarningHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents.ListenerRejected"));
+        private static readonly uint _listenerExceptionWarningHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents.ListenerException"));
+        private static readonly uint _listenerHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents.Listener"));
 
         private struct ListenerSlot
         {
@@ -85,10 +89,16 @@ namespace Hecton8.Construction
 
         // COLD ALLOC: ListenerSlot[8] - repair drone torch acoustic listeners drained by SystemDispatcher LateUpdate - owner: RepairDroneTorchAcousticEvents
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener additions deferred during acoustic dispatch - owner: RepairDroneTorchAcousticEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener removals deferred during acoustic dispatch - owner: RepairDroneTorchAcousticEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: AudioClip[32] - managed clip sidecar for deferred repair drone torch acoustic payloads - owner: RepairDroneTorchAcousticEvents
         private static readonly AudioClip[] _clipReferenceSlots = new AudioClip[ReferenceSlotCapacity];
         // COLD ALLOC: bool[32] - clip sidecar occupancy map prevents wrap overwrite before deferred flush - owner: RepairDroneTorchAcousticEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
+        // COLD ALLOC: ushort[32] - generation tokens reject stale clip sidecar payloads after release/reuse - owner: RepairDroneTorchAcousticEvents
+        private static readonly ushort[] _referenceSlotGenerations = new ushort[ReferenceSlotCapacity];
         private static IDataVault _vault;
         private static VaultGenerationHandle<RepairDroneTorchAcousticPayload> _pendingEventsHandle;
         private static VaultGenerationHandle<RepairDroneTorchAcousticPayload> _nextFrameEventsHandle;
@@ -97,12 +107,25 @@ namespace Hecton8.Construction
         private static int _pendingEventReadIndex;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _duplicateListenerRegistrationCount;
+        private static int _listenerRejectCount;
+        private static int _listenerExceptionCount;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
         private static int _lastOverflowWarningFrame = -1;
+        private static int _lastDuplicateListenerWarningFrame = -1;
+        private static int _lastListenerRejectedWarningFrame = -1;
+        private static int _lastListenerExceptionWarningFrame = -1;
 
         /// <summary>Number of repair drone torch acoustic payloads waiting for late-frame dispatch.</summary>
         public static int PendingCount => math.max(0, _pendingEventCount - _pendingEventReadIndex) + _nextFrameEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+        public static int DuplicateListenerRegistrationCount => _duplicateListenerRegistrationCount;
+        public static int ListenerRejectCount => _listenerRejectCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -114,7 +137,19 @@ namespace Hecton8.Construction
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
 
+            for (int i = 0; i < _deferredRegisterCount; i++)
+                _deferredRegisterListeners[i].Clear();
+
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+                _deferredUnregisterListeners[i].Clear();
+
             _listenerCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _duplicateListenerRegistrationCount = 0;
+            _listenerRejectCount = 0;
+            _listenerExceptionCount = 0;
             ClearReferenceSlots();
             _pendingEventCount = 0;
             _pendingEventReadIndex = 0;
@@ -123,6 +158,9 @@ namespace Hecton8.Construction
             _referenceWriteIndex = 0;
             _referencePendingCount = 0;
             _lastOverflowWarningFrame = -1;
+            _lastDuplicateListenerWarningFrame = -1;
+            _lastListenerRejectedWarningFrame = -1;
+            _lastListenerExceptionWarningFrame = -1;
         }
 
         internal static void BindDataVault(IDataVault vault)
@@ -144,18 +182,13 @@ namespace Hecton8.Construction
             if (listener == null)
                 return;
 
-            for (int i = 0; i < _listenerCount; i++)
+            if (_isDispatching)
             {
-                if (ReferenceEquals(_listeners[i].Listener, listener))
-                    return;
+                QueueDeferredRegister(listener);
+                return;
             }
 
-            if (_listenerCount >= ListenerCapacity)
-                return;
-
-            _listeners[_listenerCount++].Listener = listener;
-            if (_listenerCount == 1)
-                TryEnsureInitialized();
+            RegisterImmediate(listener);
         }
 
         /// <summary>Unregisters one deferred repair-drone torch acoustic listener.</summary>
@@ -164,6 +197,41 @@ namespace Hecton8.Construction
             if (listener == null)
                 return;
 
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            TryUnregisterImmediate(listener);
+            if (_listenerCount <= 0)
+                DropQueuedPayloads();
+        }
+
+        private static void RegisterImmediate(IRepairDroneTorchAcousticListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                {
+                    ReportDuplicateListenerRegistration();
+                    return;
+                }
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _listeners[_listenerCount++].Listener = listener;
+            if (_listenerCount == 1)
+                TryEnsureInitialized();
+        }
+
+        private static bool TryUnregisterImmediate(IRepairDroneTorchAcousticListener listener)
+        {
             for (int i = 0; i < _listenerCount; i++)
             {
                 if (!ReferenceEquals(_listeners[i].Listener, listener))
@@ -174,13 +242,10 @@ namespace Hecton8.Construction
                     _listeners[i].Listener = _listeners[lastIndex].Listener;
 
                 _listeners[lastIndex].Clear();
-                if (_listenerCount <= 0)
-                    DropQueuedPayloads();
-                return;
+                return true;
             }
 
-            if (_listenerCount <= 0)
-                DropQueuedPayloads();
+            return false;
         }
 
         /// <summary>Flushes queued repair-drone torch acoustic payloads.</summary>
@@ -216,7 +281,12 @@ namespace Hecton8.Construction
                 RepairDroneTorchAcousticPayload payload = pendingEvents[_pendingEventReadIndex++];
 
                 Dispatch(in payload);
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
+                if (_listenerCount <= 0)
+                {
+                    DropQueuedPayloads();
+                    return;
+                }
             }
 
             if (_pendingEventReadIndex >= _pendingEventCount)
@@ -232,15 +302,28 @@ namespace Hecton8.Construction
         }
 
         /// <summary>Queues one repair-drone torch acoustic pulse.</summary>
+        [Obsolete("Use TryNotify(in RepairDroneTorchAcousticEvent) so bounded queue rejection stays visible at the producer.", true)]
         public static void Notify(in RepairDroneTorchAcousticEvent acousticEvent)
         {
-            if (_listenerCount <= 0 || acousticEvent.Clip == null)
-                return;
+            TryNotify(in acousticEvent);
+        }
 
-            if (!TryReserveReferenceSlot(out int referenceSlot))
+        public static bool TryNotify(in RepairDroneTorchAcousticEvent acousticEvent)
+        {
+            if (_listenerCount <= 0)
+                return false;
+
+            if (acousticEvent.Clip == null)
             {
+                RecordDroppedEvent();
+                return false;
+            }
+
+            if (!TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration))
+            {
+                RecordDroppedEvent();
                 ReportOverflowOncePerFrame();
-                return;
+                return false;
             }
 
             _clipReferenceSlots[referenceSlot] = acousticEvent.Clip;
@@ -251,8 +334,8 @@ namespace Hecton8.Construction
             payload.ClipHashId = unchecked((uint)EntityId.ToULong(acousticEvent.Clip.GetEntityId()));
             payload.ReferenceSlot = referenceSlot;
             payload.EventType = TorchAcousticEventType;
-            payload.Reserved = 0;
-            Enqueue(in payload);
+            payload.Reserved = referenceGeneration;
+            return Enqueue(in payload);
         }
 
         private static bool TryEnsureInitialized()
@@ -290,14 +373,16 @@ namespace Hecton8.Construction
         {
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
+                RecordDroppedEvent();
                 ReportOverflowOncePerFrame();
                 return false;
             }
 
             if (!TryEnsureInitialized())
             {
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
+                RecordDroppedEvent();
                 ReportOverflowOncePerFrame();
                 return false;
             }
@@ -306,7 +391,8 @@ namespace Hecton8.Construction
             {
                 if (!TryWritePayload(ref _nextFrameEventsHandle, _nextFrameEventCount, in payload))
                 {
-                    ReleaseReferenceSlot(payload.ReferenceSlot);
+                    ReleaseReferenceSlotForPayload(in payload);
+                    RecordDroppedEvent();
                     ReportOverflowOncePerFrame();
                     return false;
                 }
@@ -317,7 +403,8 @@ namespace Hecton8.Construction
 
             if (!TryWritePayload(ref _pendingEventsHandle, _pendingEventCount, in payload))
             {
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
+                RecordDroppedEvent();
                 ReportOverflowOncePerFrame();
                 return false;
             }
@@ -329,7 +416,7 @@ namespace Hecton8.Construction
         private static void Dispatch(in RepairDroneTorchAcousticPayload payload)
         {
             if (payload.EventType != TorchAcousticEventType ||
-                !IsValidReferenceSlot(payload.ReferenceSlot))
+                !IsReferenceSlotPayloadCurrent(in payload))
             {
                 return;
             }
@@ -352,18 +439,166 @@ namespace Hecton8.Construction
                 {
                     IRepairDroneTorchAcousticListener listener = _listeners[i].Listener;
                     if (listener != null)
-                        listener.OnRepairDroneTorchAcoustic(in acousticEvent);
+                        DispatchToListener(listener, in acousticEvent);
                 }
             }
             finally
             {
                 _isDispatching = false;
+                ApplyDeferredListenerMutations();
             }
         }
 
-        private static bool TryReserveReferenceSlot(out int referenceSlot)
+        private static void DispatchToListener(
+            IRepairDroneTorchAcousticListener listener,
+            in RepairDroneTorchAcousticEvent acousticEvent)
+        {
+            try
+            {
+                listener.OnRepairDroneTorchAcoustic(in acousticEvent);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException(exception);
+            }
+        }
+
+        private static void QueueDeferredRegister(IRepairDroneTorchAcousticListener listener)
+        {
+            if (CancelDeferredUnregister(listener))
+                return;
+
+            if (ContainsImmediate(listener) || IsDeferredRegisterPending(listener))
+            {
+                ReportDuplicateListenerRegistration();
+                return;
+            }
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
+        }
+
+        private static void QueueDeferredUnregister(IRepairDroneTorchAcousticListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!ContainsImmediate(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
+        }
+
+        private static bool CancelDeferredRegister(IRepairDroneTorchAcousticListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = --_deferredRegisterCount;
+                if (i != lastIndex)
+                    _deferredRegisterListeners[i].Listener = _deferredRegisterListeners[lastIndex].Listener;
+
+                _deferredRegisterListeners[lastIndex].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool CancelDeferredUnregister(IRepairDroneTorchAcousticListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = --_deferredUnregisterCount;
+                if (i != lastIndex)
+                    _deferredUnregisterListeners[i].Listener = _deferredUnregisterListeners[lastIndex].Listener;
+
+                _deferredUnregisterListeners[lastIndex].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsImmediate(IRepairDroneTorchAcousticListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredRegisterPending(IRepairDroneTorchAcousticListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IRepairDroneTorchAcousticListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            int unregisterCount = _deferredUnregisterCount;
+            _deferredUnregisterCount = 0;
+            for (int i = 0; i < unregisterCount; i++)
+            {
+                IRepairDroneTorchAcousticListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
+                if (listener != null)
+                    TryUnregisterImmediate(listener);
+            }
+
+            int registerCount = _deferredRegisterCount;
+            _deferredRegisterCount = 0;
+            for (int i = 0; i < registerCount; i++)
+            {
+                IRepairDroneTorchAcousticListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            if (_listenerCount <= 0)
+                DropQueuedPayloads();
+        }
+
+        private static bool TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration)
         {
             referenceSlot = -1;
+            referenceGeneration = 0;
             if (_referencePendingCount >= ReferenceSlotCapacity)
                 return false;
 
@@ -378,12 +613,29 @@ namespace Hecton8.Construction
                     continue;
 
                 referenceSlot = candidateSlot;
+                referenceGeneration = AdvanceReferenceSlotGeneration(referenceSlot);
                 _referenceSlotOccupied[referenceSlot] = true;
                 _referencePendingCount++;
                 return true;
             }
 
             return false;
+        }
+
+        private static ushort AdvanceReferenceSlotGeneration(int referenceSlot)
+        {
+            ushort generation = unchecked((ushort)(_referenceSlotGenerations[referenceSlot] + 1));
+            if (generation == 0)
+                generation = 1;
+
+            _referenceSlotGenerations[referenceSlot] = generation;
+            return generation;
+        }
+
+        private static void ReleaseReferenceSlotForPayload(in RepairDroneTorchAcousticPayload payload)
+        {
+            if (IsReferenceSlotPayloadCurrent(in payload))
+                ReleaseReferenceSlot(payload.ReferenceSlot);
         }
 
         private static void ReleaseReferenceSlot(int referenceSlot)
@@ -402,12 +654,22 @@ namespace Hecton8.Construction
             return (uint)referenceSlot < ReferenceSlotCapacity;
         }
 
+        private static bool IsReferenceSlotPayloadCurrent(in RepairDroneTorchAcousticPayload payload)
+        {
+            int referenceSlot = payload.ReferenceSlot;
+            return IsValidReferenceSlot(referenceSlot) &&
+                   _referenceSlotOccupied[referenceSlot] &&
+                   payload.Reserved != 0 &&
+                   _referenceSlotGenerations[referenceSlot] == payload.Reserved;
+        }
+
         private static void ClearReferenceSlots()
         {
             for (int i = 0; i < ReferenceSlotCapacity; i++)
             {
                 _clipReferenceSlots[i] = null;
                 _referenceSlotOccupied[i] = false;
+                AdvanceReferenceSlotGeneration(i);
             }
         }
 
@@ -421,6 +683,44 @@ namespace Hecton8.Construction
             _referencePendingCount = 0;
         }
 
+        private static void RecordDroppedEvent()
+        {
+            _droppedEventCount = SaturatingIncrement(_droppedEventCount);
+        }
+
+        private static void ReportDuplicateListenerRegistration()
+        {
+            _duplicateListenerRegistrationCount = SaturatingIncrement(_duplicateListenerRegistrationCount);
+            PublishWarningOncePerFrame(
+                _duplicateListenerWarningHash,
+                _listenerHash,
+                _duplicateListenerRegistrationCount,
+                ref _lastDuplicateListenerWarningFrame);
+        }
+
+        private static void ReportListenerRejected()
+        {
+            _listenerRejectCount = SaturatingIncrement(_listenerRejectCount);
+            PublishWarningOncePerFrame(
+                _listenerRejectedWarningHash,
+                _listenerHash,
+                _listenerRejectCount,
+                ref _lastListenerRejectedWarningFrame);
+        }
+
+        private static void ReportListenerDispatchException(Exception exception)
+        {
+            _listenerExceptionCount = SaturatingIncrement(_listenerExceptionCount);
+            PublishWarningOncePerFrame(
+                _listenerExceptionWarningHash,
+                _listenerHash,
+                _listenerExceptionCount,
+                ref _lastListenerExceptionWarningFrame);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            H8Debug.LogException(exception);
+#endif
+        }
+
         private static void ReportOverflowOncePerFrame()
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
@@ -429,6 +729,25 @@ namespace Hecton8.Construction
 
             _lastOverflowWarningFrame = frame;
             GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
+        }
+
+        private static void PublishWarningOncePerFrame(
+            uint warningHash,
+            uint contextHash,
+            int count,
+            ref int lastFrame)
+        {
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (lastFrame == frame)
+                return;
+
+            lastFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, math.max(1, count));
+        }
+
+        private static int SaturatingIncrement(int value)
+        {
+            return value == int.MaxValue ? int.MaxValue : value + 1;
         }
 
         private static void PromoteNextFrameEventsIfFrontEmpty()

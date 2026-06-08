@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "مطالبات الأقمار الخارجية الباردة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# مطالبات الأقمار الخارجية الباردة
 
-AR LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy.
+مطالبات الأقمار الخارجية الباردة توسع Aegir وراء HECTON-8: الطرق الميتة والمخابئ الباردة والمنارات المهجورة تغذي قانون salvage وتخفي الخسائر المتكررة.
 
 ## Scanner
 
-AR LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+منارة مطالبة خارجية. ليس كل شيء ميت في Aegir موجودا على HECTON-8.
 
 ## Terminal
 
-AR LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+أرشيف السلم الخارجي // فشل مشروع محلول Thorne. تم تجميد طريق تصدير Anvil. منارة Mute تكرر ping الحيازة بلا إعلان طاقم نشط.
 
 ## Audio
 
-AR LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+تعلم Aegir كيف يفقد الناس قبل أن تنهي HECTON-8 الدرس.
 
 ## Field Note
 
-AR LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+المطالبات الباردة تجعل Marauders ممكنين. كما تعلم الشركات كيف تدفن الأنماط.
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/ar_SA. -->

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "Beste einde: geen schone handen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# Beste einde: geen schone handen
 
-NL LOC HOLD: No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.
+Geen Schone Handen is de regel voor de finale toon. HECTON-8 beloont begrip, voorbereiding en getuigenwerk, niet zuiverheid. Het beste einde moet de speler tegelijk bekwaam en betrokken laten voelen.
 
 ## Scanner
 
-NL LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
+Het beste einde moet iets echts redden zonder te doen alsof onschuld de afdaling heeft overleefd.
 
 ## Terminal
 
-NL LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
+GEEN-SCHONE-HANDEN-REGEL: criteria voor het best bekende einde vereisen agency, bewijs, gevolg en residu. Als elke beschadigde partij tevreden is, is het einde HECTON-8 vergeten.
 
 ## Audio
 
-NL LOC HOLD: If it feels clean, it forgot where you are.
+Als het schoon voelt, is het vergeten waar je bent.
 
 ## Field Note
 
-NL LOC HOLD: A strong ending lets the player save something real and lose something real.
+Een sterke route kan waarheid onthullen, Deep Reach weigeren, een deel van de ecologie bewaren en de speler bevrijden, maar de kost moet zichtbaar blijven.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/nl_NL. -->

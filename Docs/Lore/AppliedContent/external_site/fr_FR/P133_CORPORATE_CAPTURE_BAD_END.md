@@ -9,32 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "Capture corporative : secours propre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# Capture corporative : secours propre
 
-FR LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call.
+La capture corporative fonctionne parce qu'elle commence comme une aide. Le signal est propre, le ramassage professionnel, et la pièce contient de l'air. Puis l'ordre des opérations apparaît : coordonnées d'abord, custody XO ensuite, accès Atlas en troisième, bien-être du contractant après examen.
 
-## Scanner
-
-FR LOC HOLD: Rescue offer. Payload first. Witness second.
-
-## Terminal
-
-FR LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
-
-## Audio
-
-FR LOC HOLD: The clean room is not for you.
-
-## Field Note
-
-FR LOC HOLD: A rescue that demands silence is a capture with better lighting.
+L'océan cesse d'écraser le joueur, mais Deep Reach commence à préserver l'histoire. Le témoignage est scellé sous langage de contamination, la custody du payload bouge avant le débrief médical, et chaque nom porté par le joueur devient un écran de responsabilité. Ce n'est pas la mort. C'est survivre dans la machine qui avait besoin de silence.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/fr_FR. -->

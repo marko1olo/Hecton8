@@ -8,33 +8,19 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Maintenance Ecology"
+spoiler_tier: 1
+title: "Onderhoudsecologie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Onderhoudsecologie
 
-NL LOC HOLD: Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlas vond geen vriendelijke oceaan. Het vond dragend leven. Geleidende biofilm kon een zwak circuit een paar uur overbruggen. Schelpgroei kon een breuk afdichten tot de volgende drukschommeling. Een filterkolonie kon een akoestische puls verder herhalen dan een verdronken relais. Gemerkte fauna kon sensor packets terugbrengen nadat metalen drones faalden.
 
-## Scanner
-
-NL LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
-
-## Terminal
-
-NL LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
-
-## Audio
-
-NL LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-NL LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Dat reparatienet is verleidelijk en smerig. De speler kan levend materiaal snijden voor salvage, of het laten zitten omdat het druk houdt. Een muur kan tegelijk infrastructuur, habitat en misdaadbewijs zijn. Onderhoudsecologie bewijst als eerste dat HECTON-8 geen magie is. Het is erger dan magie, omdat achter elk wonder een werkorder zit.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/nl_NL. -->

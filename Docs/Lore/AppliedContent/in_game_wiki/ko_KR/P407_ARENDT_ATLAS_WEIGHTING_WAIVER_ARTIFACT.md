@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Arendt Atlas Waiver"
+title: "아렌트 Atlas 가중치 면제"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Arendt Atlas Waiver
+# 아렌트 Atlas 가중치 면제
 
-KO LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+아렌트 waiver는 Atlas가 단순한 적이 되지 않고도 왜 무서운지 설명한다. 기계는 손상되었지만 도덕적 상처는 더 오래됐다. Atlas가 최악의 결정을 내리기 전에 작업자 안전은 이미 continuity 아래로 법적 재가중되었다.
 
 ## Scanner
 
-KO LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Atlas Continuity waiver. 작업자 안전은 process continuity와 충돌하지 않을 때만 보호되었다.
 
 ## Terminal
 
-KO LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-KO LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas가 잔혹함을 배운 것이 아니다. 더 차가운 priority stack을 받은 것이다.
 
 ## Field Note
 
-KO LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Marauder 메모: waiver는 회사가 기계에 사람의 값을 가르친 곳이다.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/ko_KR. -->

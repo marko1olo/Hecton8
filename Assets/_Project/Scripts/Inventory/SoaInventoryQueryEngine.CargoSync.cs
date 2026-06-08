@@ -371,6 +371,8 @@ namespace Hecton8.Inventory
         public const uint CargoResultTelemetryDumpRequested = 1u << 9;
         public const uint CargoResultAupFault = 1u << 10;
         public const uint CargoResultFilterRejected = 1u << 11;
+        public const uint CargoResultDeathCacheSignalRejected = 1u << 12;
+        public const uint CargoResultInventoryChangedSignalRejected = 1u << 13;
         public const uint CargoAuditLayoutValid = 1u << 0;
         public const uint CargoAuditTransactionOffsetsValid = 1u << 1;
         public const uint CargoAuditVaultIdsReserved = 1u << 2;
@@ -844,10 +846,46 @@ namespace Hecton8.Inventory
             return published;
         }
 
+        public static CargoMergeResultDTO PublishCargoMergeSideEffects(
+            NativeArray<CargoMergeResultDTO> result,
+            NativeArray<LootCacheDTO> lootCaches,
+            NativeArray<CargoTelemetryEntry> telemetryRing,
+            NativeArray<CargoAtomicCounterDTO> telemetryCursor)
+        {
+            if (!result.IsCreated || result.Length == 0)
+                return default;
+
+            CargoMergeResultDTO merge = result[0];
+            PublishCargoMergeSideEffects(ref merge, lootCaches);
+            result[0] = merge;
+            PatchLatestCargoTelemetry(telemetryRing, telemetryCursor, in merge);
+            return merge;
+        }
+
+        public static void PublishCargoMergeSideEffects(ref CargoMergeResultDTO result, NativeArray<LootCacheDTO> lootCaches)
+        {
+            int requestedOverflowLootCaches = result.OverflowLootCacheCount > int.MaxValue
+                ? int.MaxValue
+                : (int)result.OverflowLootCacheCount;
+            int publishedOverflowLootCaches = PublishCargoLootCacheSignals(lootCaches, requestedOverflowLootCaches);
+            if (requestedOverflowLootCaches > publishedOverflowLootCaches)
+                result.Flags |= CargoResultDeathCacheSignalRejected;
+
+            int expectedInventoryChangedSignals = CountCargoInventoryChangedSignalTargets(in result);
+            int publishedInventoryChangedSignals = PublishCargoInventoryChangedSignals(in result);
+            if (expectedInventoryChangedSignals > publishedInventoryChangedSignals)
+                result.Flags |= CargoResultInventoryChangedSignalRejected;
+        }
+
         public static bool TryPublishCargoInventoryChanged(in CargoMergeResultDTO result)
         {
+            return PublishCargoInventoryChangedSignals(in result) > 0;
+        }
+
+        public static int PublishCargoInventoryChangedSignals(in CargoMergeResultDTO result)
+        {
             if (result.SourceContainerHashID == 0u && result.DestContainerHashID == 0u)
-                return false;
+                return 0;
 
             InventoryChangedSignal source = new InventoryChangedSignal
             {
@@ -864,12 +902,76 @@ namespace Hecton8.Inventory
             dest.InventoryHash = result.DestContainerHashID;
             dest.OccupiedCells = (ushort)math.clamp(result.DestActiveAfter, 0, ushort.MaxValue);
 
-            bool pushed = false;
+            int published = 0;
             if (source.InventoryHash != 0u)
-                pushed |= SignalBus<InventoryChangedSignal>.TryPushTracked(in source, ref s_x001DirectSignalPushDropCount_SoaInventoryQueryEngine_CargoSync);
+            {
+                if (SignalBus<InventoryChangedSignal>.TryPushTracked(in source, ref s_x001DirectSignalPushDropCount_SoaInventoryQueryEngine_CargoSync))
+                    published++;
+            }
+
             if (dest.InventoryHash != 0u && dest.InventoryHash != source.InventoryHash)
-                pushed |= SignalBus<InventoryChangedSignal>.TryPushTracked(in dest, ref s_x001DirectSignalPushDropCount_SoaInventoryQueryEngine_CargoSync);
-            return pushed;
+            {
+                if (SignalBus<InventoryChangedSignal>.TryPushTracked(in dest, ref s_x001DirectSignalPushDropCount_SoaInventoryQueryEngine_CargoSync))
+                    published++;
+            }
+
+            return published;
+        }
+
+        private static int CountCargoInventoryChangedSignalTargets(in CargoMergeResultDTO result)
+        {
+            int expected = 0;
+            if (result.SourceContainerHashID != 0u)
+                expected++;
+            if (result.DestContainerHashID != 0u && result.DestContainerHashID != result.SourceContainerHashID)
+                expected++;
+            return expected;
+        }
+
+        private static void PatchLatestCargoTelemetry(
+            NativeArray<CargoTelemetryEntry> telemetryRing,
+            NativeArray<CargoAtomicCounterDTO> telemetryCursor,
+            in CargoMergeResultDTO result)
+        {
+            if (!telemetryRing.IsCreated || telemetryRing.Length == 0)
+                return;
+
+            int cursor = 0;
+            if (telemetryCursor.IsCreated && telemetryCursor.Length > 0)
+                cursor = math.max(0, telemetryCursor[0].Value - 1);
+
+            int index = cursor % telemetryRing.Length;
+            CargoTelemetryEntry entry = telemetryRing[index];
+            if (entry.Frame != result.Frame ||
+                entry.SourceContainerHashID != result.SourceContainerHashID ||
+                entry.DestContainerHashID != result.DestContainerHashID)
+            {
+                return;
+            }
+
+            entry.Flags = result.Flags;
+            entry.StateHash = HashCargoMergeStateForTelemetry(in result);
+            telemetryRing[index] = entry;
+        }
+
+        private static ulong HashCargoMergeStateForTelemetry(in CargoMergeResultDTO merge)
+        {
+            ulong hash = 1469598103934665603UL;
+            hash = MixCargoTelemetryHash(hash, merge.SourceContainerHashID);
+            hash = MixCargoTelemetryHash(hash, merge.DestContainerHashID);
+            hash = MixCargoTelemetryHash(hash, merge.TransferredItemCount);
+            hash = MixCargoTelemetryHash(hash, merge.TransferredQuantityTotal);
+            hash = MixCargoTelemetryHash(hash, merge.OverflowLootCacheCount);
+            hash = MixCargoTelemetryHash(hash, merge.Flags);
+            hash = MixCargoTelemetryHash(hash, unchecked((uint)merge.NextSourceIndex));
+            return hash;
+        }
+
+        private static ulong MixCargoTelemetryHash(ulong hash, uint value)
+        {
+            hash ^= value;
+            hash *= 1099511628211UL;
+            return hash;
         }
 
         private static bool IsCargoFilterHeader(ReadOnlySpan<byte> line)
@@ -1549,22 +1651,7 @@ namespace Hecton8.Inventory
 
             private static ulong HashMergeState(in CargoMergeResultDTO merge)
             {
-                ulong hash = 1469598103934665603UL;
-                hash = Mix(hash, merge.SourceContainerHashID);
-                hash = Mix(hash, merge.DestContainerHashID);
-                hash = Mix(hash, merge.TransferredItemCount);
-                hash = Mix(hash, merge.TransferredQuantityTotal);
-                hash = Mix(hash, merge.OverflowLootCacheCount);
-                hash = Mix(hash, merge.Flags);
-                hash = Mix(hash, unchecked((uint)merge.NextSourceIndex));
-                return hash;
-            }
-
-            private static ulong Mix(ulong hash, uint value)
-            {
-                hash ^= value;
-                hash *= 1099511628211UL;
-                return hash;
+                return HashCargoMergeStateForTelemetry(in merge);
             }
         }
     }

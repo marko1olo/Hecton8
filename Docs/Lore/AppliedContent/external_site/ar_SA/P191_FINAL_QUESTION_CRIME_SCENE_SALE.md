@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "السؤال الأخير: بيع مسرح الجريمة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# السؤال الأخير: بيع مسرح الجريمة
 
-AR LOC HOLD: Final Question Crime Scene Sale defines the material ending axis.
+تكون هذه النهاية أقوى عندما لا تعاقب اللعبة اللاعب آليا. يستطيع Marauder يائس أن يفعل كل ما طلبه العقد: يصل إلى الحوض، يستعيد الإحداثيات، يثبت قيمة العينة، يحافظ على سجل XO، ويسلم payload تستطيع Black Keel تسعيره. يجب أن يبدو الناتج قانونيا وباردا. يمحى الدين لأن النظام تعرف إلى القيمة، لا إلى العدالة.
 
-## Scanner
-
-AR LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
-
-## Terminal
-
-AR LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
-
-## Audio
-
-AR LOC HOLD: You can pay the debt with a grave map.
-
-## Field Note
-
-AR LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+هنا يكمن الرعب. لم تضيع HECTON-8 لأن أحدا لا يستطيع قراءة الأدلة. ضاعت لأن الأدلة يمكن تحويلها إلى ملكية. إذا باع اللاعب المسرح من دون سلسلة شهود عامة، تحصل Deep Reach على أوراق أنظف، وهندسة اقتراب أفضل، وسببا للعودة بالمحامين قبل فرق الإنقاذ. النهاية تدفع للاعب وتكشف أي نوع من الحضارة يستطيع تمويل salvage بين النجوم.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/ar_SA. -->

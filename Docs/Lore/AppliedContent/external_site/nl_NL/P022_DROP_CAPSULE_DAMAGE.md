@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Schade aan daalcapsule
 
-Capsuleschade verklaart de stranding: daling werkte, overleving bleef, opstijghardware stierf.
+Schade aan de daalcapsule verklaart waarom de stranding geloofwaardig is: de afdaling werkte, overlevingssystemen overleefden, opstijghardware niet.
 
 ## Scanner
 

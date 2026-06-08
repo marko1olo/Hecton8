@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "最初の一時間の背骨"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# 最初の一時間の背骨
 
-JP LOC HOLD: First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.
+最初の一時間は暗闇で始まってはならない。契約の声、損傷した降下、呼吸管理、明るい浅瀬、そしてポンプを再起動する実務から始まる。美しさは罠の一部だ。HECTON-8 は、書類が致命的になる前に、欲しくなる場所として見えなければならない。そこから開幕の背骨は生存を証拠へ変える。最初の避難室は役に立つが汚れている。洗浄された事故パケットはきれいすぎる。最初の Atlas 修理痕は、ケーブル、工具金属、生体残渣が一つの保守判断に押し込まれた姿を見せる。プレイヤーは説明ではなく行動で基本循環を学ぶ。息をする、直す、読む、疑う、さらに深く行く。
 
 ## Scanner
 
-JP LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+契約、損傷した降下、空気、明るい浅瀬、ポンプ避難所、洗浄された嘘、そして生命をガスケットとして使う最初の修理痕。
 
 ## Terminal
 
-JP LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+浅瀬附属区：手動ポンプ再起動有効。Deep Reach 事故パケット保存済み。ケーブル、工具片、生体残渣の周辺で Atlas 修理成長を検出。
 
 ## Audio
 
-JP LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+最初の安全室は清潔ではない。君より少し上手に息を止めているだけだ。
 
 ## Field Note
 
-JP LOC HOLD: The opening must be beautiful before it becomes accusing.
+オープニングは、告発になる前に美しくなければならない。
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/ja_JP. -->

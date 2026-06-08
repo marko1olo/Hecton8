@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Motyw zawodowy
 
-Gracz nie jest pustym turystą. Zaczyna z fachowością i powodem, by przyjąć martwy claim; dowody czynią sprawę osobistą.
+Marauder nie jest pustym turystą. Wyprawa zaczyna się od zawodowego interesu, umiejętności salvage i powodu, by przyjąć martwy claim. Osobisty motyw rośnie przez dowody, znajome znaki i zrozumienie, że HECTON-8 należy do tego samego twardego świata, który uczynił tę pracę normalną.
 
 ## Scanner
 

@@ -9,32 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Question finale : vérité publique, contrôle perdu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Question finale : vérité publique, contrôle perdu
 
-FR LOC HOLD: Final Question Public Truth Lost Control defines the public ledger ending pressure.
+Une fuite publique ne doit pas être écrite comme un bouton magique de justice. Sur HECTON-8, l'information voyage plus loin que les navires et arrive avant l'aide. Une fois hors du bassin, la preuve peut accuser Deep Reach, forcer Black Keel à répondre, réveiller les régulateurs Sol Core et donner aux familles quelque chose de plus dur qu'une rumeur. Ce sont de vraies victoires.
 
-## Scanner
-
-FR LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
-
-## Terminal
-
-FR LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
-
-## Audio
-
-FR LOC HOLD: Truth leaves your hand faster than rescue ever could.
-
-## Field Note
-
-FR LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+La fuite crée aussi un événement de prédation. Les marchés chiffrent la dette bleue. Les tribunaux de domaine gèlent des routes. Des cultes privés transforment Atlas en écriture sacrée. Des concurrents courent vers les coordonnées. Le secours devient politiquement nécessaire et opérationnellement chaotique. Le joueur choisit la vérité au lieu du contrôle; le jeu doit honorer les deux moitiés.
 
 <!-- External Site; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/fr_FR. -->

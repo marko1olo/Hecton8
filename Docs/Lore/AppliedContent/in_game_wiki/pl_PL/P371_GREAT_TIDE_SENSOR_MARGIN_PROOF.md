@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Great Tide Sensor Margin Proof"
+title: "Ślad marginesu Wielkiego Pływu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Great Tide Sensor Margin Proof
+# Ślad marginesu Wielkiego Pływu
 
-PL LOC HOLD: Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.
+Ślad dowodzi dwóch rzeczy naraz: Wielki Pływ był realny, a śmiertelny margines był widoczny, zanim raport go uznał. Deep Reach nie kazało wodzie rosnąć. Firma zaakceptowała okno trasy, gdy osłona ciśnieniowa kolonii nie miała już zapasu, a potem opublikowała cascade bez podpisu ostrzeżenia.
 
 ## Scanner
 
-PL LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Odzyskany czujnik pływu. Szczytowe ścinanie przekroczyło projekt kolonii, lecz naruszenie marginesu ostrzegawczego zapisano przed publicznym znacznikiem cascade.
 
 ## Terminal
 
-PL LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Próg tail-risk zaakceptowany przez władzę trasy. Notatka operatora usunięta z publicznego łańcucha incydentu. Surowy ślad zachowany w pamięci brine-buffer.
 
 ## Audio
 
-PL LOC HOLD: Physics did the damage. A person signed the margin.
+Ocean nie kłamał. Raport tak.
 
 ## Field Note
 
-PL LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Notatka Maraudera: nie szukaj mowy złoczyńcy. Szukaj usuniętej linii.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/pl_PL. -->

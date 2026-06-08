@@ -45,6 +45,7 @@ namespace Hecton8.Physics.KCC.Editor
         private const double MaxProfileAupMagnitudeMeters = 250000.0d;
         private const float MaxProfileSpeedMetersPerSecond = 2000f;
         private const float MaxProfileInputBiasMagnitude = 4f;
+        private const float ProductionWaterSurfaceY = 14.02f;
         public const float ConeFallProofSpeedMetersPerSecond = 100f;
         public const float ConeFallProofMinimumTuningSpeedMetersPerSecond = ConeFallProofSpeedMetersPerSecond;
         private const uint BlackBoxDumpVersion = 1u;
@@ -876,7 +877,7 @@ namespace Hecton8.Physics.KCC.Editor
                 CapsuleHeight = 1.8f,
                 SkinWidth = 0.035f,
                 GlobalQualityWeight = 1f,
-                WaterSurfaceY = 0f,
+                WaterSurfaceY = ProductionWaterSurfaceY,
                 MockInputFrequency = 7.5f,
                 MockInputAmplitude = 1f,
                 VisualSyncSharpness = 48f,

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "Ruggengraat van het eerste uur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# Ruggengraat van het eerste uur
 
-NL LOC HOLD: First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+Ruggengraat van het eerste uur bepaalt het openingsritme van HECTON-8. De speler begint met tastbare technische taken en visuele verwondering, en ziet daarna hoe die taken verbonden raken met een bedrijfsleugen en een onderhoudsecologie die de biologie is binnengedrongen. Zo blijft de eerste route speelbaar en atmosferisch, terwijl het grotere onderzoek wordt geplant: de oceaan verbergt het verhaal niet, hij bewaart het bewijs in druk, zout en procedure.
 
 ## Scanner
 
-NL LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Contract, beschadigde drop, lucht, helder ondiep water, pompschuilplek, opgeschoonde leugen, daarna het eerste reparatielitteken dat leven als pakking gebruikt.
 
 ## Terminal
 
-NL LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+ONDIEPE ANNEX: handmatige pompstart geldig. Deep-Reach-incidentpakket opgeslagen. Atlas-reparatiegroei gevonden rond kabel, gereedschapsfragment en biologisch residu.
 
 ## Audio
 
-NL LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+De eerste veilige kamer is niet schoon. Ze houdt alleen beter haar adem in dan jij.
 
 ## Field Note
 
-NL LOC HOLD: The opening must be beautiful before it becomes accusing.
+De opening moet mooi zijn voordat ze beschuldigend wordt.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/nl_NL. -->

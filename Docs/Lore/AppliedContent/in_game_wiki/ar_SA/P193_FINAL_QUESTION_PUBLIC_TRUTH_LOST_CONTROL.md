@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "السؤال الأخير: حقيقة علنية وفقدان السيطرة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# السؤال الأخير: حقيقة علنية وفقدان السيطرة
 
-AR LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+طريق الحقيقة العلنية يكسر التغطية النظيفة. وهو يكسر أيضا ملكية العواقب. الأدلة قد تنقذ أسماء من الحذف، وتخلق ضغط إنقاذ حقيقيا، وتدعو كل مفترس لديه مكتب قانوني أو قناة صلاة.
 
 ## Scanner
 
-AR LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+نشر الدليل يمنع المحو. لكنه يعطي الاكتشاف أيضا لكل من يستطيع إساءة استخدامه بسرعة.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+محور الحقيقة العلنية: hash شاهد، سلسلة مسؤولية، حالة Atlas، إحداثيات blue debt ومسار payload يمكن أن تخرج من سيطرة Deep Reach. بعد النشر، لا يعود المشغل يتحكم بفعل المستلمين أو رد السوق أو من يصل أولا.
 
 ## Audio
 
-AR LOC HOLD: Truth leaves your hand faster than rescue ever could.
+الحقيقة تغادر يدك أسرع مما يستطيع الإنقاذ الوصول.
 
 ## Field Note
 
-AR LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+الحقيقة العلنية ليست عدالة صافية. إنها تصنع عقوبات وطوائف ومزادات ودعاوى وضغط إنقاذ وclaims مقلدة.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/ar_SA. -->

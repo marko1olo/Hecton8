@@ -9,32 +9,36 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Revoked Access Language Trace"
+title: "Ślad języka cofniętego dostępu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Revoked Access Language Trace
+# Ślad języka cofniętego dostępu
 
-PL LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+Język cofniętego dostępu stał się jednym z cichszych zamków Deep Reach. Drzwi mogły odmówić dawnemu pracownikowi, oznaczyć żądanie jako rutynową konserwację i mimo to ujawnić dokładne terminy nazywające ukrytą trasę ewakuacji. Na HECTON-8 ma to znaczenie, bo gracz nie potrzebuje czystego przyznania się do winy, aby pójść tropem. Wystarczy stare brzmienie: protokół zdegradowanego stanu, świadek zastępczy, archiwum trasy bezpiecznej, trasowanie zachowania roszczeń. Te słowa zbudowano dla przeglądu odpowiedzialności, nie dla ratunku. Odmowa dowodzi dwóch rzeczy naraz. Poświadczenie jest martwe. Procedura za nim nie.
 
 ## Scanner
 
-PL LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+Blokada nie mówi zakazano. Mówi: reklasyfikacja konserwacji, wstrzymanie ciągłości, materiały trasy. Stare sformułowania Deep Reach: odmowa, która nadal wskazuje zakopane drzwi.
 
 ## Terminal
 
-PL LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+ODPOWIEDŹ DOSTĘPU / ARCHIWUM TRASY BEZPIECZNEJ
+poświadczenie: cofnięte
+powód: materiały ciągłości ewakuacji ograniczone do certyfikowanego personelu Deep Reach
+widoczne terminy: zdegradowany stan osobowy, świadek zastępczy, trasa zachowania roszczeń, reklasyfikacja konserwacji
+uwaga: dawny personel terenowy może widzieć język odmowy wyłącznie do uzgodnienia incydentu.
 
 ## Audio
 
-PL LOC HOLD: That is not security. That is a memo pretending to be a door.
+Nie usunęli korytarza. Owinęli go słownictwem, które wciąż rozumie tylko winny personel.
 
 ## Field Note
 
-PL LOC HOLD: Lockout language hints at hidden liability without granting free access.
+Identyfikator jest martwy. Blokada nadal mówi biurowym dialektem, którym zakopano trasę.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/pl_PL. -->

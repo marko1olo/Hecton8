@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Brine Canyon Density Ladder Guide"
+title: "Guia de Escada de Densidade do Cânion de Salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Brine Canyon Density Ladder Guide
+# Guia de Escada de Densidade do Cânion de Salmoura
 
-PT LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.
+O Guia de Escada de Densidade do Cânion de Salmoura trata as trincheiras de HECTON-8 como geografia de engenharia: o caminho para baixo é feito de densidade, não de cenário.
 
 ## Scanner
 
-PT LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
+Brine ladder detectada: densidade em camadas, falso piso, dobra de sonar. Siga as bordas; água aberta mente aqui.
 
 ## Terminal
 
-PT LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: cânions de brine escondem pressure shelves, current ledges, resource pockets e scanner false positives. Hull rating e density transition decidem qual saliência é rota e qual é queda.
 
 ## Audio
 
-PT LOC HOLD: A canyon is a staircase if your hull can pay for each step.
+Um cânion é uma escada se seu casco puder pagar por cada degrau.
 
 ## Field Note
 
-PT LOC HOLD: Use for scanner tutorials and resource route articles.
+Use sombras de vane como degraus. Uma leitura vazia em brine não é espaço vazio; é o instrumento perdendo a discussão.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/pt_BR. -->

@@ -22,7 +22,8 @@ namespace Hecton8.Editor.Tests
         public void RecycledHandle_AdvancesGeneration_AndRejectsStaleHandle()
         {
             HectonSpatialHash spatialHash = new HectonSpatialHash(8, 64, 8d);
-            NativeList<int> results = AllocateTrackedResults(8, RecycledHandleResultsLabel);
+            int resultsSentinelId = 0;
+            NativeList<int> results = AllocateTrackedResults(8, RecycledHandleResultsLabel, out resultsSentinelId);
 
             try
             {
@@ -71,7 +72,7 @@ namespace Hecton8.Editor.Tests
             }
             finally
             {
-                DisposeTrackedResults(ref results, RecycledHandleResultsLabel);
+                DisposeTrackedResults(ref results, ref resultsSentinelId);
 
                 spatialHash.Dispose();
             }
@@ -81,7 +82,8 @@ namespace Hecton8.Editor.Tests
         public void UpdateEntry_MovesBetweenCells_WithoutLeavingGhostOccupancy()
         {
             HectonSpatialHash spatialHash = new HectonSpatialHash(4, 32, 8d);
-            NativeList<int> results = AllocateTrackedResults(4, MoveResultsLabel);
+            int resultsSentinelId = 0;
+            NativeList<int> results = AllocateTrackedResults(4, MoveResultsLabel, out resultsSentinelId);
 
             try
             {
@@ -100,7 +102,7 @@ namespace Hecton8.Editor.Tests
             }
             finally
             {
-                DisposeTrackedResults(ref results, MoveResultsLabel);
+                DisposeTrackedResults(ref results, ref resultsSentinelId);
 
                 spatialHash.Dispose();
             }
@@ -110,7 +112,8 @@ namespace Hecton8.Editor.Tests
         public void LargeAupCoordinates_QueryWithoutRuntimeFloatDrift()
         {
             HectonSpatialHash spatialHash = new HectonSpatialHash(4, 32, 16d);
-            NativeList<int> results = AllocateTrackedResults(4, LargeAupResultsLabel);
+            int resultsSentinelId = 0;
+            NativeList<int> results = AllocateTrackedResults(4, LargeAupResultsLabel, out resultsSentinelId);
 
             try
             {
@@ -126,47 +129,107 @@ namespace Hecton8.Editor.Tests
             }
             finally
             {
-                DisposeTrackedResults(ref results, LargeAupResultsLabel);
+                DisposeTrackedResults(ref results, ref resultsSentinelId);
 
                 spatialHash.Dispose();
             }
         }
 
-        private static NativeList<int> AllocateTrackedResults(int capacity, string label)
+        private static NativeList<int> AllocateTrackedResults(int capacity, string label, out int sentinelId)
         {
+            sentinelId = 0;
             NativeList<int> results = new NativeList<int>(capacity, Allocator.Temp);
             if (!results.IsCreated)
                 throw new System.InvalidOperationException("[HectonSpatialHashEditorSelfTests] NativeList allocation failed for " + label + ".");
 
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeList(results, NativeMemoryOwner, label, NativeAllocationLifetime.Temp);
+                sentinelId = NativeMemorySentinel.RegisterNativeListInstance(results, NativeMemoryOwner, label, NativeAllocationLifetime.Temp);
                 if (sentinelId <= 0)
                     throw new System.InvalidOperationException("[HectonSpatialHashEditorSelfTests] NativeMemorySentinel rejected NativeList registration for " + label + ".");
             }
             catch
             {
-                results.Dispose();
+                System.Exception nativeSentinelCleanupException0 = null;
+
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (System.Exception nativeSentinelException0)
+                    {
+                        nativeSentinelCleanupException0 = nativeSentinelException0;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                try
+                {
+                    results.Dispose();
+                }
+                catch (System.Exception nativeSentinelException0)
+                {
+                    if (nativeSentinelCleanupException0 == null)
+                        nativeSentinelCleanupException0 = nativeSentinelException0;
+                }
+
+                if (nativeSentinelCleanupException0 != null)
+                    throw nativeSentinelCleanupException0;
+
                 throw;
             }
 
             return results;
         }
 
-        private static void DisposeTrackedResults(ref NativeList<int> results, string label)
+        private static void DisposeTrackedResults(ref NativeList<int> results, ref int sentinelId)
         {
-            if (!results.IsCreated)
-                return;
+            System.Exception firstException = null;
 
-            try
-            {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
-            }
-            finally
-            {
-                results.Dispose();
-                results = default;
-            }
+if (sentinelId > 0)
+{
+    try
+    {
+        NativeMemorySentinel.Unregister(sentinelId);
+    }
+    catch (System.Exception exception)
+    {
+        firstException = exception;
+    }
+    finally
+    {
+        sentinelId = 0;
+    }
+}
+
+if (results.IsCreated)
+{
+    try
+    {
+        results.Dispose();
+    }
+    catch (System.Exception exception)
+    {
+        if (firstException == null)
+            firstException = exception;
+    }
+    finally
+    {
+        results = default;
+    }
+}
+else
+{
+    results = default;
+}
+
+if (firstException != null)
+    throw firstException;
         }
     }
 }

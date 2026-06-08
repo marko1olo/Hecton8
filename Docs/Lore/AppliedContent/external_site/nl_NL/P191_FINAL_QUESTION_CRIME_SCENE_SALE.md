@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "Laatste vraag: verkoop van de plaats delict"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# Laatste vraag: verkoop van de plaats delict
 
-NL LOC HOLD: Final Question Crime Scene Sale defines the material ending axis.
+Dit einde is het sterkst wanneer het de speler mechanisch niet straft. Een wanhopige Marauder kan alles leveren wat het contract vroeg: het bekken bereiken, coördinaten bergen, samplewaarde bewijzen, het XO-record intact houden en een payload leveren dat Black Keel kan prijzen. Het resultaat moet wettig en koud voelen. De schuld verdwijnt omdat het systeem waarde herkent, geen rechtvaardigheid.
 
-## Scanner
-
-NL LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
-
-## Terminal
-
-NL LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
-
-## Audio
-
-NL LOC HOLD: You can pay the debt with a grave map.
-
-## Field Note
-
-NL LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+Daar zit de horror. HECTON-8 is niet verloren omdat niemand bewijs kan lezen. Het is verloren omdat bewijs in eigendom kan worden omgezet. Verkoopt de speler de plaats zonder publieke getuigenketen, dan krijgt Deep Reach schonere papieren, betere naderingsgeometrie en een reden om met juristen terug te keren voor redders. Het einde betaalt de speler en toont welke beschaving interstellair salvage kan betalen.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/nl_NL. -->

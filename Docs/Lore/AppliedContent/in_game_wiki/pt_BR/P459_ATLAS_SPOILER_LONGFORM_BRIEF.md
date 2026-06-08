@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "PT LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: lógica de reparo abaixo do spoiler gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Repair Ecology
+# Atlas-6: lógica de reparo abaixo do spoiler gate
 
-PT LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas não é vilão teatral. O horror vem de um governador industrial danificado aplicando categorias de reparo a uma ecologia inundada.
 
 ## Scanner
 
-PT LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Semente de artigo spoiler. Camada pública: Atlas era infraestrutura de continuidade. Restrita: classificação danificada passa vida, metal, cabo, corpos e habitat pela mesma gramática de reparo.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // BRIEF ATLAS. Níveis: factory-governor, repair ecology danificada, Atlas-compatible contamination, consequências de payload receiver. Receptores finais fechados.
 
 ## Audio
 
-PT LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Traço Atlas: "Personnel category unresolved. Sealant category available. Habitat breach priority remains active."
 
 ## Field Note
 
-PT LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+Nota de saqueador: se Atlas ajudar, veja o que ele gastou. Um reparo pode salvar ar e apagar um nome.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/pt_BR. -->

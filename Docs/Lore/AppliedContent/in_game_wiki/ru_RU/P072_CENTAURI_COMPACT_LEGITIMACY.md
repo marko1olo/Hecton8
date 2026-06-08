@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Легитимность Centauri Compact
 
-Centauri Compact - ранний якорь внеземной легитимности: настоящие колонии, настоящие стандарты, настоящий гражданский престиж. На HECTON-8 он виден как импортные pressure cases и audit tags, которые Deep Reach могла цитировать, игнорируя их смысл.
+Centauri Compact - ранняя внесолнечная опора человеческой легитимности: настоящие колонии, настоящие стандарты, настоящий гражданский престиж. На HECTON-8 он появляется как импортные гермокейсы и аудитные метки, на которые Deep Reach могла ссылаться, игнорируя смысл, ради которого они существовали.
 
 ## Scanner
 
-Аудиторская бирка Centauri. Ранняя extrasolar legitimacy, поздние frontier excuses.
+Аудитная метка Centauri. Ранняя внесолнечная легитимность, позднее - фронтирные оправдания.
 
 ## Terminal
 
-CENTAURI COMPACT HARDWARE: pressure case сертифицирован для civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+ОБОРУДОВАНИЕ CENTAURI COMPACT: гермокейс сертифицирован для гражданского транзита. Аудитный канал неактивен. Гарантия аннулирована после сторонней модернизации Deep Reach.
 
 ## Audio
 
@@ -35,6 +35,6 @@ CENTAURI COMPACT HARDWARE: pressure case сертифицирован для civ
 
 ## Field Note
 
-Compact сделал дальние claims респектабельными. Респектабельность не спасает.
+Compact сделал далекие претензии респектабельными. Респектабельность не спасает.
 
 <!-- In-Game Wiki; generated from P072_CENTAURI_COMPACT_LEGITIMACY/ru_RU. -->

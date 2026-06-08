@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Name Lock Policy"
+title: "سجل أدوار أقمار Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Name Lock Policy
+# سجل أدوار أقمار Aegir
 
-AR LOC HOLD: Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed.
+يسجل سجل أدوار أقمار Aegir سبب انجراف الأسماء العامة بينما يبقى العمل المداري ثابتا: حجب المرحلات، ودفع المد، وشائعة الحجر، ومرور النوافذ العالية تحدد من يستطيع التحرك.
 
 ## Scanner
 
-AR LOC HOLD: Moon labels can change; orbital roles cannot.
+تنجرف الأسماء العامة بين الخرائط؛ أما المدارات فتحتفظ بوظائفها.
 
 ## Terminal
 
-AR LOC HOLD: ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.
+سجل ATLAS: تختلف التسميات العامة حسب شركة التأمين وخريطة المسار. تبقى الأدوار ثابتة: قص إشعاعي، قناع مرحل، دفع مدي، تشتت جليدي، توجيه عام، شائعة حجر، salvage صناعي، مرور النوافذ العالية، مطالبة عميقة، واقتصاد المنارات الميتة.
 
 ## Audio
 
-AR LOC HOLD: A name can be repainted. An orbit keeps the bill.
+يمكنك تغيير اسم قمر. لكن المدار يطالبك بالفاتورة.
 
 ## Field Note
 
-AR LOC HOLD: Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.
+Skarn يمزق الجسيمات. Vela يحجب المرحلات. Claw يقذف الجليد. Lumen يطبع المسارات. Thorne يحمل شائعات الحجر. Anvil يغذي salvage. Kestrel يملك النوافذ العالية. HECTON يحتفظ بالمطالبة العميقة. Mute يبيع منارات ميتة.
 
 <!-- External Site; generated from P181_MOON_NAME_LOCK_POLICY/ar_SA. -->

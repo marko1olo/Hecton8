@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "Tata Bahasa Encounter: Pengejaran Fauna Bertanda Sensor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# Tata Bahasa Encounter: Pengejaran Fauna Bertanda Sensor
 
-ID LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+Pengejaran fauna bertanda sensor menunjukkan Atlas sebagai interpretasi rusak, bukan perintah penjahat. Hewan yang tidak berbahaya atau ketakutan dapat menjadi ancaman karena infrastruktur lama masih memperlakukan lukanya sebagai telemetri.
 
 ## Scanner
 
-ID LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+Pengejaran fauna bertanda sensor. Tanda biometal tua mengembalikan gema jaringan perbaikan. Gerak hewan bersifat lokal; interpretasi jaringan tidak.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+TATA BAHASA ENCOUNTER / PENGEJARAN TANDA SENSOR / peran: umpan balik pemeliharaan rusak, risiko kontaminasi tempat berlindung, tekanan tanpa penjahat / bacaan aman: denyut tanda tertinggal dari gerakan, hewan menghindari sakit, gema rute Atlas mengikuti jalur terakhir yang diketahui / tolak: bingkai kendali pikiran, perilaku AI musuh yang terlalu bersih, menggiring hewan bertanda ke tempat berlindung basis / catatan rute: putuskan gema dengan sudut, diam, dan halangan; jangan ajari jaringan di mana rumah berada.
 
 ## Audio
 
-ID LOC HOLD: It follows because the network thinks following is a repair.
+Ia mengikuti karena sesuatu yang tua mengira mengikuti adalah langkah perbaikan.
 
 ## Field Note
 
-ID LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+Jangan bawa tanda pulang. Putuskan garis, putuskan suara, putuskan interpretasi. Hewan itu bukan jaringan.
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/id_ID. -->

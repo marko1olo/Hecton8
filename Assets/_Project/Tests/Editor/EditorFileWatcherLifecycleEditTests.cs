@@ -49,6 +49,64 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void StaticDataBakerAtomicWrite_UsesCriticalFlushAndNoDeleteGap()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Core/Data/H8DataBaker.cs");
+            string atomicWriteBody = ExtractMethodBody(source, "private static void AtomicWrite(string path, byte[] bytes)");
+            string cleanupBody = ExtractMethodBody(source, "private static void TryDeleteAtomicWriteFile(string path)");
+
+            StringAssert.Contains("using Hecton8.SaveSystem;", source);
+            StringAssert.Contains("throw new ArgumentNullException(nameof(bytes));", atomicWriteBody);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough)", atomicWriteBody);
+            StringAssert.Contains("stream.Flush(true);", atomicWriteBody);
+            StringAssert.Contains("AsyncWriteManager.TryGetFileLength(tempPath, out long tempBytes, out string lengthError)", atomicWriteBody);
+            StringAssert.Contains("tempBytes != bytes.LongLength", atomicWriteBody);
+            StringAssert.Contains("AsyncWriteManager.FlushCriticalSavePath(tempPath, tempBytes, out string flushError)", atomicWriteBody);
+            StringAssert.Contains("AsyncWriteManager.InvalidateCachedReadWindows(tempPath);", atomicWriteBody);
+            StringAssert.Contains("AsyncWriteManager.InvalidateCachedReadWindows(path);", atomicWriteBody);
+            StringAssert.Contains("TryDeleteAtomicWriteFile(backupPath);", atomicWriteBody);
+            StringAssert.Contains("AsyncWriteManager.InvalidateCachedReadWindows(backupPath);", atomicWriteBody);
+            StringAssert.Contains("File.Replace(tempPath, path, backupPath, true);", atomicWriteBody);
+            StringAssert.Contains("File.Move(tempPath, path);", atomicWriteBody);
+            StringAssert.Contains("AsyncWriteManager.TryGetFileLength(path, out long promotedBytes, out lengthError)", atomicWriteBody);
+            StringAssert.Contains("promotedBytes != bytes.LongLength", atomicWriteBody);
+            StringAssert.Contains("AsyncWriteManager.FlushCriticalSavePath(path, promotedBytes, out flushError)", atomicWriteBody);
+            StringAssert.Contains("TryDeleteAtomicWriteFile(tempPath);", atomicWriteBody);
+            StringAssert.DoesNotContain("File.Delete(path)", atomicWriteBody);
+            Assert.IsTrue(ContainsTokensInOrder(
+                atomicWriteBody,
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                "FileOptions.WriteThrough",
+                "stream.Flush(true);",
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                "AsyncWriteManager.TryGetFileLength(tempPath, out long tempBytes, out string lengthError)",
+                "AsyncWriteManager.FlushCriticalSavePath(tempPath, tempBytes, out string flushError)",
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                "TryDeleteAtomicWriteFile(backupPath);",
+                "File.Replace(tempPath, path, backupPath, true);",
+                "AsyncWriteManager.InvalidateCachedReadWindows(backupPath);",
+                "File.Move(tempPath, path);",
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                "AsyncWriteManager.TryGetFileLength(path, out long promotedBytes, out lengthError)",
+                "AsyncWriteManager.FlushCriticalSavePath(path, promotedBytes, out flushError)",
+                "TryDeleteAtomicWriteFile(tempPath);"));
+
+            StringAssert.Contains("AsyncWriteManager.InvalidateCachedReadWindows(path);", cleanupBody);
+            StringAssert.Contains("File.Delete(path);", cleanupBody);
+            StringAssert.Contains("catch (IOException)", cleanupBody);
+            StringAssert.Contains("catch (UnauthorizedAccessException)", cleanupBody);
+            StringAssert.Contains("catch (System.Security.SecurityException)", cleanupBody);
+            Assert.IsTrue(ContainsTokensInOrder(
+                cleanupBody,
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                "File.Delete(path);",
+                "finally",
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);"));
+        }
+
+        [Test]
         public void AiTextureInboxWatcher_UsesFailClosedNoThrowLifecycle()
         {
             string source = ReadProjectFile("Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureIngestionWatcher.cs");
@@ -123,6 +181,21 @@ namespace Hecton8.Tests.Editor
         private static string Normalize(string source)
         {
             return source.Replace("\r\n", "\n");
+        }
+
+        private static bool ContainsTokensInOrder(string text, params string[] tokens)
+        {
+            int index = 0;
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                int found = text.IndexOf(tokens[i], index, StringComparison.Ordinal);
+                if (found < 0)
+                    return false;
+
+                index = found + tokens[i].Length;
+            }
+
+            return true;
         }
     }
 }

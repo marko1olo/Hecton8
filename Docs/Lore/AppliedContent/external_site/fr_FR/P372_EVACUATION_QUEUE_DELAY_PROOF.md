@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Evacuation Queue Delay Proof"
+title: "Registre de retard de file d'évacuation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Evacuation Queue Delay Proof
+# Registre de retard de file d'évacuation
 
-FR LOC HOLD: Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.
+Une salle noyée peut garder le temps. L'horloge récupérée montre un ordre cruel : alarme, révision, retard, dépassement de classe de joint, eau. La langue publique de Deep Reach réduit cela à une évacuation incomplète pendant une défaillance structurelle soudaine. La salle contredit. Son registre garde un champ témoin vide et une révision quarantaine active après le moment où une voie de secours restait physiquement utile. Il ne dit pas que tous pouvaient être sauvés. C'est plus précis et pire : l'autorisation a attendu que le nombre de personnes sauvables baisse. Quand le joueur trouve ce registre, le secours ne sonne plus comme une promesse mais comme un système de permission.
 
 ## Scanner
 
-FR LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Horloge de file récupérée. La porte de libération est restée verrouillée après le passage des alarmes de pression de la prévision au couloir.
 
 ## Terminal
 
-FR LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Confirmation manuelle absente. Révision quarantaine en attente. Pression de route au-delà de la classe de joint avant résolution d'autorisation.
 
 ## Audio
 
-FR LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Ils n'ont pas échoué à sauver tout le monde. Ils ont attendu jusqu'à rendre plus difficile de sauver qui que ce soit.
 
 ## Field Note
 
-FR LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Note de maraudeur : une porte fermée avec un champ en attente n'est pas un accident. C'est une décision qui attend une signature.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/fr_FR. -->

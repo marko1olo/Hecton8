@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ŻYCIE W KOLONII PRZED KATASTROFĄ: SEKTOR 44
 
 > **Źródło:** Osobisty log odzyskany z kwater mieszkalnych Sektora 44, jednostka 8-B.

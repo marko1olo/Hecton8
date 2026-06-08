@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "Legitimiteit van het Centauri Compact"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# Legitimiteit van het Centauri Compact
 
-NL LOC HOLD: The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.
+Het Centauri Compact is de vroege extrasolaire legitimiteitsanker van de mensheid: echte kolonies, echte normen, echt civiel prestige. Op HECTON-8 verschijnt het als ingevoerde drukcases en auditlabels die Deep Reach kon citeren terwijl het de geest erachter negeerde.
 
 ## Scanner
 
-NL LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+Centauri-auditlabel. Vroege extrasolaire legitimiteit, later grensland-excuses.
 
 ## Terminal
 
-NL LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+CENTAURI COMPACT HARDWARE: drukcase gecertificeerd voor civiel transport. Auditkanaal inactief. Garantie vervallen na retrofit door derde partij Deep Reach.
 
 ## Audio
 
-NL LOC HOLD: First legitimacy became old metal under a newer lie.
+De eerste legitimiteit werd oud metaal onder een nieuwere leugen.
 
 ## Field Note
 
-NL LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+Het Compact maakte verre claims respectabel. Respectabiliteit is geen redding.
 
 <!-- In-Game Wiki; generated from P072_CENTAURI_COMPACT_LEGITIMACY/nl_NL. -->

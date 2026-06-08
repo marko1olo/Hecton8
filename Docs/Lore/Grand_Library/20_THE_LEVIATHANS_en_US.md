@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # THE LEVIATHANS OF HECTON-8
 
 > **Source:** Deep Reach Megacorporation, Xenobiology Threat Assessment.
@@ -10,7 +11,7 @@
 
 HECTON-8 is an oceanic hellscape, and the Leviathans are its undisputed lords.
 
-They are biological anomalies, growing to scales that defy conventional understanding of deep-sea gigantism. The smallest confirmed specimen measured over 120 meters in length, while anomalous sonar shadows suggest the existence of creatures more than three times that size lurking in the deepest, unexplored trenches. They move with an unnatural, sinuous grace through the crushing pressure of the abyss, completely unbothered by the 400 atmospheres of force that would instantly pulverize a human. To a Leviathan, a Marauder in a Class-IV diving suit is not a threat; it is barely even a snack.
+They are biological anomalies, growing to scales that defy conventional understanding of deep-sea gigantism. The smallest confirmed specimen measured over 120 meters in length, while anomalous sonar shadows suggest the existence of creatures more than three times that size lurking in the deepest, uncharted trenches. They move with an unnatural, sinuous grace through the crushing pressure of the abyss, completely unbothered by the 400 atmospheres of force that would instantly pulverize a human. To a Leviathan, a Marauder in a Class-IV diving suit is not a threat; it is barely even a snack.
 
 ## 2. Abyssal Anatomy
 

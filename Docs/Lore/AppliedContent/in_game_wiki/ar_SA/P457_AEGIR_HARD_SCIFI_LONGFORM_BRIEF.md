@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: السماء التي ترفض الإنقاذ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Aegir Transfer Windows
+# Aegir: السماء التي ترفض الإنقاذ
 
-AR LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir سماء تشغيلية. تستطيع أقمار السلم تأخير حزمة نظيفة أو إفسادها من دون جعل السطح مظلما دائما. يفشل الإنقاذ بسبب المسافة والهندسة والقانون والكلفة.
 
 ## Scanner
 
-AR LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+تمهيد مسار سماوي. لا يوجد FTL ولا ansible. تمر نوافذ Aegir عبر الأقمار والحطام وcustody المرحل وحالة العاصفة وحساب كتلة Black Keel.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+تمهيد ملاحة AEGIR // نطاق عام. استخدم فئات الخطر: ظل المسار، اندفاع مشحون، تبعثر جليد، عمود عاصفة، تأخر توجيه، custody المستقبل.
 
 ## Audio
 
-AR LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+جدولة Black Keel: "الإشارة الصحيحة ليست إشارة مفيدة. النافذة تثبت بالكتلة والطقس وcustody وقفل المستقبل."
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+قاعدة Marauder للسماء: لا تسأل هل أرسلت الإشارة. اسأل أي قمر حجبها، وأي ledger أمسكها، وهل سمع المستقبل إنسانا أم فئة كتلة.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/ar_SA. -->

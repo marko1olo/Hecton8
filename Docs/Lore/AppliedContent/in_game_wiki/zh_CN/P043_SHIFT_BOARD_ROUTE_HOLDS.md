@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 班次板路线搁置
 
-班次板把灾难变成可读程序。玩家看到Deep Reach和Atlas通过分类、延迟和优先级杀人。
+排班板把灾难变成可读程序。Deep Reach 和 Atlas 通过分类、延迟和优先级杀人，而不是靠戏剧化恶意。
 
 ## Scanner
 

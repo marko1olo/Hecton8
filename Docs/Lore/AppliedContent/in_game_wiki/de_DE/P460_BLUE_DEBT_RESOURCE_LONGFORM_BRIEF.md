@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "DE LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: Druckgeschichte in Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Blue Debt Custody
+# Blue Debt: Druckgeschichte in Custody
 
-DE LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt ist nützlich, teuer und moralisch schmutzig. Kein magisches Erz, sondern pressure-grown substrate, dessen Wert von Handling, Contamination, Custody und Atlas-Kompatibilität abhängt.
 
 ## Scanner
 
-DE LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Ressourcenarchiv. Blue debt ist Xenon-Omega pressure substrate in Custody: pressure history, brine exposure, noble-gas capture, contamination stage, sample grade und mass-through-window payout.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+ÖFFENTLICHER RESSOURCENKNOTEN // BLUE DEBT. Wert braucht pressure-rated containment, extraction scar record, contamination status, custody receipt und recoverable tonne-window allocation.
 
 ## Audio
 
-DE LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+Black-Keel-Payout: "Poliere die Probe nicht. Versiegle sie, grade sie und halte den receipt trocken."
 
 ## Field Note
 
-DE LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Marauder-Notiz: Grade die Probe zuerst, dann frag, was sie berührt hat. Preis ohne Custody ist Köder.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/de_DE. -->

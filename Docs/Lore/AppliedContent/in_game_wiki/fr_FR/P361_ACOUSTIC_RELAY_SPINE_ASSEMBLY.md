@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Acoustic Relay Spine Assembly"
+title: "Assemblage de colonne relais acoustique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Acoustic Relay Spine Assembly
+# Assemblage de colonne relais acoustique
 
-FR LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.
+La fuite commence sous l'eau. La colonne relais acoustique permet à une capsule endommagée de prouver position, horloge et état de survie avant que les récepteurs orbitaux la traitent comme recoverable mass.
 
 ## Scanner
 
-FR LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+Colonne acoustique brisée. Elle peut frapper un pressure-code dans l'eau ; l'orbite l'entend encore comme du custody noise endommagé.
 
 ## Terminal
 
-FR LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY : restaurer la colonne acoustique bas débit avant la recovery window. High-gain mast perdue. Emergency buoy peu fiable. Le récepteur Black Keel n'accepte le pressure-code qu'après route proof.
 
 ## Audio
 
-FR LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
+Si le Keel nous entend, il entend une plaie qui tape sur un tuyau.
 
 ## Field Note
 
-FR LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+Le premier appel de la capsule n'est pas une voix. Ce sont des nervures céramiques, une peau de câble, des pinger floats et assez de discipline de timing pour que l'océan te répète correctement.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/fr_FR. -->

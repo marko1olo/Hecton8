@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # XENÔNIO-ÔMEGA: REFINAMENTO E PROPRIEDADES
 
 > **Fonte:** Megacorporação Deep Reach, Manifesto Químico Classificado.

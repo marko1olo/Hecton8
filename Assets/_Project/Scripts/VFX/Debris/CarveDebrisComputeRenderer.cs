@@ -197,6 +197,7 @@ namespace Hecton8.VFX.Debris
         private bool _cachedDrawMeshValid;
         private bool _hotSwapRegistered;
         private bool _computeServiceRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _lateFrameRegistered;
         private bool _slowTickRegistered;
         private bool _pendingVisualSync;
@@ -214,15 +215,22 @@ namespace Hecton8.VFX.Debris
 
         private void Awake()
         {
+            if (Application.isPlaying && !TryRegisterComputeService())
+                return;
+
             CacheGraphicsCapabilitiesCold();
             EnsureFallbackRenderResources();
         }
 
         private void OnEnable()
         {
+            if (Application.isPlaying && !TryRegisterComputeService())
+                return;
+
             CacheGraphicsCapabilitiesCold();
             EnsureFallbackRenderResources();
-            TryRegisterComputeService();
+            if (!Application.isPlaying)
+                TryRegisterComputeService();
             TryRegisterHotSwapListener();
             TryRegisterLateFrameTick();
             TryRegisterSlowTick();
@@ -231,8 +239,10 @@ namespace Hecton8.VFX.Debris
 
         private void Start()
         {
+            if (!TryRegisterComputeService())
+                return;
+
             CacheGraphicsCapabilitiesCold();
-            TryRegisterComputeService();
             TryRegisterHotSwapListener();
             TryRegisterLateFrameTick();
             TryRegisterSlowTick();
@@ -241,6 +251,9 @@ namespace Hecton8.VFX.Debris
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterComputeService();
             TryUnregisterHotSwapListener();
             TryUnregisterLateFrameTick();
@@ -441,14 +454,79 @@ namespace Hecton8.VFX.Debris
             TryRegisterLateFrameTick();
         }
 
-        private void TryRegisterComputeService()
+        private bool TryRegisterComputeService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (_computeServiceRegistered)
+                return true;
+
+            if (Application.isPlaying && TryAbortForUsableExistingRuntime())
+                return false;
+
             IDebrisComputeService registered = GlobalRegistry.DebrisCompute;
-            if (registered != null && !ReferenceEquals(registered, this))
-                return;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                CarveDebrisComputeRenderer staleRenderer = registered as CarveDebrisComputeRenderer;
+                if (ReferenceEquals(staleRenderer, null))
+                {
+                    if (Application.isPlaying)
+                    {
+                        _runtimeOwnerAborted = true;
+                        Destroy(gameObject);
+                    }
+
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterDebrisComputeService(registered);
+                staleRenderer._computeServiceRegistered = false;
+            }
+
+            if (Application.isPlaying && TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterDebrisComputeService(this);
             _computeServiceRegistered = ReferenceEquals(GlobalRegistry.DebrisCompute, this);
+            _runtimeOwnerAborted = Application.isPlaying && !_computeServiceRegistered;
+            return _computeServiceRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            IDebrisComputeService registered = GlobalRegistry.DebrisCompute;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsDebrisComputeRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            CarveDebrisComputeRenderer staleRenderer = registered as CarveDebrisComputeRenderer;
+            if (!ReferenceEquals(staleRenderer, null))
+            {
+                GlobalRegistry.UnregisterDebrisComputeService(registered);
+                staleRenderer._computeServiceRegistered = false;
+            }
+
+            return false;
+        }
+
+        private static bool IsDebrisComputeRuntimeUsable(IDebrisComputeService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            CarveDebrisComputeRenderer renderer = service as CarveDebrisComputeRenderer;
+            return ReferenceEquals(renderer, null) ||
+                   (renderer != null &&
+                    renderer._computeServiceRegistered &&
+                    renderer.isActiveAndEnabled &&
+                    !renderer._runtimeOwnerAborted);
         }
 
         private void TryUnregisterComputeService()

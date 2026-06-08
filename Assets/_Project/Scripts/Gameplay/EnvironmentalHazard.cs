@@ -18,6 +18,7 @@
 //   • Player injury authority remains status/signal based, not UnityEvent based.
 // ============================================================================
 
+using System.Threading;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -38,9 +39,12 @@ namespace Hecton8.Gameplay
     {
         private static int s_x001EnvironmentalHazardSignalPushDropCount;
         private const float HazardSlowTickDeltaSeconds = 0.1f;
+        private const float MinDamageIntervalSeconds = 0.1f;
+        private const float MaxDamageIntervalSeconds = 2f;
         private const float ToxicityExposureToxemiaScale = 0.08f;
         private const float ToxicityPoisonStatusDurationSeconds = 6f;
         private const uint EnvironmentalToxicityChemicalHash = 0x45544F58u; // ETOX
+        private const uint PlayerToxicityFallbackEntityHash = ToxicityExposureSignal.PlayerEntityFallbackHash;
         private static int PlayerLayerIndex = -1;
 
         // ══════════════════════════════════════════════════════════
@@ -149,6 +153,7 @@ namespace Hecton8.Gameplay
         private static void ResetStaticState()
         {
             PlayerLayerIndex = -1;
+            Volatile.Write(ref s_x001EnvironmentalHazardSignalPushDropCount, 0);
         }
 
         private static void EnsureLayerCache()
@@ -299,8 +304,21 @@ namespace Hecton8.Gameplay
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                _playerRuntime = currentService as IPlayerRuntimeContext;
-                _playerHealth = _playerRuntime != null ? _playerRuntime.PlayerHealth : null;
+                IPlayerRuntimeContext nextPlayerRuntime = currentService as IPlayerRuntimeContext;
+                if (!IsPlayerRuntimeContextBound(nextPlayerRuntime))
+                {
+                    _playerRuntime = null;
+                    _playerHealth = null;
+                    ClearExposureState();
+                    QueueIndicatorUpdate();
+                    return;
+                }
+
+                if (_playerTransform != null && !ReferenceEquals(_playerTransform, nextPlayerRuntime.PlayerTransform))
+                    ClearExposureState();
+
+                _playerRuntime = nextPlayerRuntime;
+                _playerHealth = nextPlayerRuntime.PlayerHealth;
                 return;
             }
 
@@ -362,8 +380,11 @@ namespace Hecton8.Gameplay
             }
 
             // Apply damage at intervals
-            _damageTimer += HazardSlowTickDeltaSeconds;
-            if (_damageTimer >= damageInterval)
+            float safeDamageInterval = ResolveSafeDamageInterval(damageInterval);
+            _damageTimer = math.isfinite(_damageTimer)
+                ? _damageTimer + HazardSlowTickDeltaSeconds
+                : safeDamageInterval;
+            if (_damageTimer >= safeDamageInterval)
             {
                 _damageTimer = 0f;
                 ApplyDamage();
@@ -435,10 +456,17 @@ namespace Hecton8.Gameplay
         private Transform ResolveRuntimePlayerTransform()
         {
             IPlayerRuntimeContext playerContext = _playerRuntime;
-            if (playerContext != null && playerContext.PlayerTransform != null)
-                return playerContext.PlayerTransform;
+            if (playerContext != null)
+                return IsPlayerRuntimeContextBound(playerContext) ? playerContext.PlayerTransform : null;
 
             return _playerTransform;
+        }
+
+        private static bool IsPlayerRuntimeContextBound(IPlayerRuntimeContext playerContext)
+        {
+            return playerContext != null &&
+                   playerContext.IsInitialized &&
+                   playerContext.PlayerTransform != null;
         }
 
         private bool IsPlayerInsideHazardRadius(Transform playerTransform)
@@ -544,21 +572,22 @@ namespace Hecton8.Gameplay
             if (_playerTransform == null || _currentIntensity <= 0f)
                 return;
 
-            float damage = baseDamagePerSecond * _currentIntensity * damageInterval;
+            float safeDamageInterval = ResolveSafeDamageInterval(damageInterval);
+            float damage = baseDamagePerSecond * _currentIntensity * safeDamageInterval;
             if (!(damage > 0f) || !math.isfinite(damage))
                 return;
 
             // ── Interrupt player action (eating, healing) ──
             _playerActionInterrupts?.OnDamageTaken();
             HectonPlayerHealth playerHealth = ResolvePlayerHealth();
-            if (playerHealth == null)
-                return;
-
             if (IsToxicHazardType())
             {
                 ApplyToxicityExposure(playerHealth, damage);
                 return;
             }
+
+            if (playerHealth == null)
+                return;
 
             if (!TryQueueCentralHazardDamage(playerHealth, damage))
                 ApplyOwnerHazardDamageFallback(playerHealth, damage);
@@ -582,14 +611,20 @@ namespace Hecton8.Gameplay
 
         private void ApplyToxicityExposure(HectonPlayerHealth playerHealth, float damageMagnitude)
         {
-            if (playerHealth == null)
+            GameObject playerObject = playerHealth != null ? playerHealth.gameObject : null;
+            Transform playerTransform = playerHealth != null ? playerHealth.transform : _playerTransform;
+            if (playerTransform == null)
+                playerTransform = _playerTransform;
+            if (playerTransform == null)
                 return;
 
-            int targetId = CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
-            float exposure01 = math.saturate(_currentIntensity);
+            int targetId = playerObject != null ? CombatDamageRuntime.ResolveTargetId(playerObject) : 0;
+            uint signalEntityId = ResolveToxicitySignalEntityId(playerObject);
+            float exposure01 = SafeSaturate01(_currentIntensity);
+            float safeDamageMagnitude = SafeNonNegative(damageMagnitude);
             if (targetId != 0 && CombatDamageRuntime.IsTargetRegistered(targetId))
             {
-                float severity01 = math.saturate(math.max(exposure01, damageMagnitude * 0.05f));
+                float severity01 = math.saturate(math.max(exposure01, safeDamageMagnitude * 0.05f));
                 if (severity01 > 0.0001f)
                 {
                     CombatDamageRuntime.TryQueueStatusEffect(
@@ -601,22 +636,42 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            float toxemiaDelta = math.saturate(exposure01 * math.max(0.1f, damageMagnitude) * ToxicityExposureToxemiaScale);
-            if (targetId == 0 || (exposure01 <= 0.0001f && toxemiaDelta <= 0f))
+            float toxemiaDelta = math.saturate(exposure01 * math.max(0.1f, safeDamageMagnitude) * ToxicityExposureToxemiaScale);
+            if (exposure01 <= 0.0001f && toxemiaDelta <= 0f)
                 return;
 
-            if (!TryResolveAupFromRuntimeOrigin(playerHealth.transform.position, out AbsoluteUniversePosition playerAup))
-                return;
+            bool hasSourceAup = TryResolveAupFromRuntimeOrigin(playerTransform.position, out AbsoluteUniversePosition playerAup);
 
             ToxicityExposureSignal signal = default;
-            signal.AUP = playerAup.ToAbsoluteDouble3();
             signal.Exposure01 = exposure01;
             signal.ToxemiaDelta = toxemiaDelta;
-            signal.EntityId = unchecked((uint)targetId);
+            signal.EntityId = signalEntityId;
             signal.ChemicalHash = EnvironmentalToxicityChemicalHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
-            signal.Flags = 1;
+            if (hasSourceAup)
+            {
+                signal.AUP = playerAup.ToAbsoluteDouble3();
+                signal.Flags = ToxicityExposureSignal.FlagHasSourceAup;
+            }
+
             SignalBus<ToxicityExposureSignal>.TryPushTracked(in signal, ref s_x001EnvironmentalHazardSignalPushDropCount);
+        }
+
+        private uint ResolveToxicitySignalEntityId(GameObject playerObject)
+        {
+            GameObject resolvedPlayerObject = playerObject;
+            IPlayerRuntimeContext playerContext = _playerRuntime;
+            if (resolvedPlayerObject == null && playerContext != null)
+                resolvedPlayerObject = playerContext.PlayerObject;
+            if (resolvedPlayerObject == null && _playerTransform != null)
+                resolvedPlayerObject = _playerTransform.gameObject;
+            if (resolvedPlayerObject == null)
+                resolvedPlayerObject = BootstrapState.CurrentPlayerObject;
+
+            uint entityHash = resolvedPlayerObject != null
+                ? unchecked((uint)EntityId.ToULong(resolvedPlayerObject.GetEntityId()))
+                : 0u;
+            return entityHash != 0u ? entityHash : PlayerToxicityFallbackEntityHash;
         }
 
         private bool TryQueueCentralHazardDamage(HectonPlayerHealth playerHealth, float damage)
@@ -655,7 +710,7 @@ namespace Hecton8.Gameplay
                 LocalPoint = localPoint,
                 ArmorNormal = -direction,
                 LocalTemperatureCelsius = 0f,
-                StatusDurationSeconds = math.max(damageInterval, HazardSlowTickDeltaSeconds)
+                StatusDurationSeconds = math.max(ResolveSafeDamageInterval(damageInterval), HazardSlowTickDeltaSeconds)
             };
 
             double3 impactAup = double3.zero;
@@ -775,7 +830,10 @@ namespace Hecton8.Gameplay
         private void TryRegisterRadiationSource()
         {
             if (hazardType != HazardType.Radiation || _cachedTransform == null)
+            {
+                TryUnregisterRadiationSource();
                 return;
+            }
 
             float intensity = baseDamagePerSecond * 10f;
             if (!TryResolveValidHazardSourcePayload(
@@ -861,6 +919,23 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        private static float ResolveSafeDamageInterval(float interval)
+        {
+            return math.isfinite(interval)
+                ? math.clamp(interval, MinDamageIntervalSeconds, MaxDamageIntervalSeconds)
+                : MinDamageIntervalSeconds;
+        }
+
+        private static float SafeSaturate01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SafeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
         /// <summary>
         /// Gets the hazard name for UI display.
         /// </summary>
@@ -886,7 +961,7 @@ namespace Hecton8.Gameplay
             if (!math.isfinite(baseDamagePerSecond) || baseDamagePerSecond < 0.1f) baseDamagePerSecond = 0.1f;
             if (!math.isfinite(fullDamageRadius) || fullDamageRadius < 0f) fullDamageRadius = 0f;
             if (!math.isfinite(hazardRadius) || hazardRadius < fullDamageRadius) hazardRadius = fullDamageRadius + 1f;
-            if (!math.isfinite(damageInterval) || damageInterval < 0.1f) damageInterval = 0.1f;
+            damageInterval = ResolveSafeDamageInterval(damageInterval);
         }
 
         private void OnDrawGizmosSelected()

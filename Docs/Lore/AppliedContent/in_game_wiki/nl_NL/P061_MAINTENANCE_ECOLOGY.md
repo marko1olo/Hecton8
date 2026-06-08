@@ -7,34 +7,34 @@ poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
 biome_tags: biome.cable_reef;biome.repair_fauna
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Maintenance Ecology"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Onderhoudsecologie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Onderhoudsecologie
 
-NL LOC HOLD: Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.
+Onderhoudsecologie maakt HECTON-8 nuttig en verkeerd tegelijk. Atlas leerde dat biofilm zwak signaal kan dragen, filterkolonies pings kunnen herhalen, schelpgroei scheuren kan sluiten en gemerkte fauna beschadigde sensor packets kan terugbrengen. De oceaan is geen persoon. Het reparatienet leeft toch genoeg om elk cable reef tot gereedschap, gevaar en bewijsspoor te maken.
 
 ## Scanner
 
-NL LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+Geleidende biofilm, schelpgroei, gemerkte fauna en schoorsteenwarmte dragen reparatieverkeer.
 
 ## Terminal
 
-NL LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+ATLAS ONDERHOUDSECOLOGIE: biofilmbrug stabiel; filterkolonie herhaalt akoestische puls; schelpafdichting sluit breuk; gemerkte fauna geeft beschadigde sensor packets terug.
 
 ## Audio
 
-NL LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
+De kabel leeft omdat de machine hem levend nodig had.
 
 ## Field Note
 
-NL LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Strip niet elke levende naad. Sommige houden druk beter dan metaal.
 
 <!-- In-Game Wiki; generated from P061_MAINTENANCE_ECOLOGY/nl_NL. -->

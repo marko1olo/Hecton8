@@ -9,32 +9,34 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Public Route Names"
+title: "Публичные Названия Маршрутов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Public Route Names
+# Публичные Названия Маршрутов
 
-RU LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.
+Публичные названия маршрутов - не поэтические тропы через темноту. Это рабочие ярлыки, которые переживают контракты, hull plates, relay queues и судебные экспонаты. Marauder читает их как водолаз читает течение: не ради романтики, а потому что одна неверная догадка может оставить тело без выхода.
+
+Sol-Centauri Charter Spine несет язык легитимности. Barnard Breaker Run пахнет shipbreaking, salvage yards и debt labor. Luyten Packet Ladder - цепь, делающая доказательство допустимым или бесполезным. Tau Public Ledger Lane - медленное публичное давление. Ran Long Claim - дальний грязный край: название маршрута, которое говорит, что работа уже дорогая до того, как океан начнет брать свое.
 
 ## Scanner
 
-RU LOC HOLD: Route names make travel feel owned before it feels adventurous.
+ROUTE NAME SLATE // Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, Ran Long Claim.
 
 ## Terminal
 
-RU LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.
+PUBLIC ROUTES // Названия маршрутов - язык тарифов. Они говорят, кто сертифицирует, кто ломает корпуса, кто держит пакеты, кто публикует proof и кому выставят счет, когда Ran/Aegir ответит поздно.
 
 ## Audio
 
-RU LOC HOLD: A route is a road only after somebody sells the delay twice.
+Красивое название нужно пассажирам. Название маршрута нужно счетам и вине.
 
 ## Field Note
 
-RU LOC HOLD: Every route name should sound like a tariff, not a wonder.
+Маршрутные названия должны звучать использованно, проштампованно и оплачиваемо. Если звучат как туризм - переписать.
 
 <!-- In-Game Wiki; generated from P163_PUBLIC_ROUTE_NAMES/ru_RU. -->

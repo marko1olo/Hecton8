@@ -59,6 +59,8 @@ namespace Hecton8.Quest
         private NativeArray<QuestPrerequisiteDescriptor> _prerequisites;
         private NativeList<int> _activatedQuestIndices;
         private NativeList<int> _completedQuestIndices;
+        private int _activatedQuestIndicesSentinelId;
+        private int _completedQuestIndicesSentinelId;
         private Dictionary<uint, QuestBitAddress> _bitAddressByHash;
         private Dictionary<uint, int> _questIndexByHash;
         private Dictionary<uint, int> _revertDescriptorIndexByItemHash;
@@ -114,19 +116,18 @@ namespace Hecton8.Quest
 
         public uint StateChecksum => _stateChecksum;
 
+        private bool HasLiveNativeState =>
+            _activatedQuestIndices.IsCreated ||
+            _completedQuestIndices.IsCreated ||
+            _nodes.IsCreated ||
+            _validPackedWordMasks.IsCreated ||
+            _prerequisites.IsCreated ||
+            _globalPrerequisites.IsCreated;
+
         public void Dispose()
         {
-            if (_activatedQuestIndices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_activatedQuestIndices));
-                _activatedQuestIndices.Dispose();
-            }
-
-            if (_completedQuestIndices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_completedQuestIndices));
-                _completedQuestIndices.Dispose();
-            }
+            ReleaseNativeList(ref _activatedQuestIndices, ref _activatedQuestIndicesSentinelId);
+            ReleaseNativeList(ref _completedQuestIndices, ref _completedQuestIndicesSentinelId);
 
             if (_nodes.IsCreated)
                 H8Memory.Release(ref _nodes, NativeArrayOwnerSystem);
@@ -139,6 +140,9 @@ namespace Hecton8.Quest
 
             if (_globalPrerequisites.IsCreated)
                 H8Memory.Release(ref _globalPrerequisites, NativeArrayOwnerSystem);
+
+            if (HasLiveNativeState)
+                return;
 
             _runtimeResults.Clear();
             _bitAddressByHash = null;
@@ -172,6 +176,9 @@ namespace Hecton8.Quest
         public bool Initialize(QuestData[] allQuests, ILocalizationTextReadModel localizationManager)
         {
             Dispose();
+            if (HasLiveNativeState)
+                return false;
+
             _localizationManager = localizationManager;
 
             _authoredQuestCount = allQuests != null ? allQuests.Length : 0;
@@ -469,8 +476,8 @@ namespace Hecton8.Quest
             _completedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), DataVaultExemptQuestStateAllocator);
             try
             {
-                RegisterNativeList(_activatedQuestIndices, nameof(_activatedQuestIndices));
-                RegisterNativeList(_completedQuestIndices, nameof(_completedQuestIndices));
+                RegisterNativeList(_activatedQuestIndices, nameof(_activatedQuestIndices), out _activatedQuestIndicesSentinelId);
+                RegisterNativeList(_completedQuestIndices, nameof(_completedQuestIndices), out _completedQuestIndicesSentinelId);
             }
             catch
             {
@@ -485,12 +492,58 @@ namespace Hecton8.Quest
             return !HasCompileErrors;
         }
 
-        private static void RegisterNativeList<T>(NativeList<T> list, string label)
+        private static void RegisterNativeList<T>(NativeList<T> list, string label, out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, NativeMemoryLifetime);
+            sentinelId = NativeMemorySentinel.RegisterNativeListInstance(list, NativeMemoryOwner, label, NativeMemoryLifetime);
             if (sentinelId <= 0)
                 throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeList<T>(ref NativeList<T> list, ref int sentinelId)
+            where T : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (list.IsCreated)
+            {
+                try
+                {
+                    list.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    list = default;
+                }
+            }
+            else
+            {
+                list = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         public void RebindLocalization(ILocalizationTextReadModel localizationManager, QuestData[] allQuests)

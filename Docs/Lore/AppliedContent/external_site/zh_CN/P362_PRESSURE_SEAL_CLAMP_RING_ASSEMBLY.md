@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "压力密封夹环组件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Pressure Seal Clamp Ring Assembly
+# 压力密封夹环组件
 
-ZH LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.
+压力密封夹环组件让胶囊维修成为选择，而不是清单：deep-rated 金属、玻璃座和 Atlas bio-sealant 可能拯救升空路径，也可能锁死它。
 
 ## Scanner
 
-ZH LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+夹环伤痕。升空套筒靠耗掉本该带它回家的密封件，才活过撞击。
 
 ## Terminal
 
-ZH LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch 只保持舱室压力。Ascent seal 需要 deep-rated clamp ring、pressure-glass seat、shell-sealant map 和已验证 Deep Reach profile。Atlas-grown sealant 可能保住 habitat，同时阻断干净分离。
 
 ## Audio
 
-ZH LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+有用的密封件活在错误方向。
 
 ## Field Note
 
-ZH LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+安全室补丁能买来一小时空气。它撑不住发射冲量。
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/zh_CN. -->

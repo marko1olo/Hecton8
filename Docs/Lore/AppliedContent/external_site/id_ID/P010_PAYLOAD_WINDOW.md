@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Jendela Payload
 
-Payload Window mendefinisikan struktur akhir HECTON-8. Pertanyaan terakhir bukan hanya apa yang dipercaya pemain, tetapi apa yang bisa dibawa keluar dari samudra.
-
-## Scanner
-
-Paket naik improvisasi. Bisa meninggalkan samudra jika massa, cuaca, dan geometri carrier cocok.
-
-## Terminal
-
-PAYLOAD SLOT: terbatas. WINDOW: terbuka. ROUTE: diperebutkan. CLAIM VALUE: berubah. EVIDENCE STATE: tidak cukup untuk sengketa bersih.
-
-## Audio
-
-Jendela terbuka. Itu tidak akan tetap terbuka untuk semuanya.
-
-## Field Note
-
-Keluar adalah rute. Keluar bersih adalah mitos.
+Masalah terakhir di HECTON-8 bukan menu moral yang melayang di atas laut. Itu jendela payload. Paket naik punya batas massa, cuaca punya waktu, Aegir punya batas radiasi dan orbit, dan Black Keel punya aturan penerima sebelum punya belas kasihan. Maka setiap akhir bertanya apa yang meninggalkan bulan dan siapa yang menerimanya. Koordinat dapat membeli pemulihan dan menyerahkan tempat perkara ke Deep Reach. Bukti dapat mencapai buku publik dan menghapus kendali pemain atas akibat. Sampel dapat membayar utang sambil menguatkan sistem yang mengubur nama pekerja. Diam dapat menolak korporasi dan membiarkan bukti di bawah air. Jendela itu bukan keadilan. Itu bentuk yang harus dilewati keadilan.
 
 <!-- External Site; generated from P010_PAYLOAD_WINDOW/id_ID. -->

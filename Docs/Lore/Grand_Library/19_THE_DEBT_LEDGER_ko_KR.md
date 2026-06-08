@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 부채 장부
 
 > **출처:** Deep Reach 거대 기업, 인사 및 보험 계리 부서.

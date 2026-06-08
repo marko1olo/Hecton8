@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Tanda Barnard
 
-Tanda Barnard mengubah salvage menjadi motif. Ia menghubungkan pemain ke HECTON-8 lewat kerja, alat, dan nama, bukan paparan langsung.
-
-## Scanner
-
-Cap Barnard Yards. Bukan keluaran Deep Reach. Seseorang membawa peralatan rumah ke dasar bulan ini.
-
-## Terminal
-
-RUTE PERSONEL: HOLD. RUTE SUMBER DAYA: ACTIVE. RUTE SUBSTRAT: PROTECTED.
-
-## Audio
-
-Itu tanda Barnard. Pola potong yang sama. Paduan murah yang sama. Siapa pun yang membawanya ke sini tahu bengkel yang sama denganmu.
-
-## Field Note
-
-Kau bisa mengabaikan korporasi mati. Lebih sulit mengabaikan kunci dari galanganmu sendiri.
+Barnard Yards bukan tempat asal yang mulia. Itu bekas luka kerja: pembongkaran kapal, pemotong sewaan, klem tekanan, alat pemilik ketiga, dan orang-orang yang tahu persis berapa biaya kontrak buruk. Cap Barnard pertama di HECTON-8 harus terasa hampir terlalu kecil untuk lore. Itu bukan pidato. Itu tanda pada kunci, paduan yang salah di engsel loker, kebiasaan reparasi yang tidak akan ditentukan Deep Reach. Bagi pemain, detail itu mengubah kontrak. HECTON-8 bukan lagi sekadar klaim korporat mati di bawah air asing. Seseorang dari budaya galangan yang sama pernah mencapai tempat ini, bekerja di sini, masuk ke buku besar yang sama, dan meninggalkan bukti yang cukup kecil untuk dihapus kecuali seorang Marauder memperhatikannya.
 
 <!-- External Site; generated from P003_BARNARD_MARK/id_ID. -->

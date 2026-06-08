@@ -7,34 +7,34 @@ poi_tags: poi.catalog_plate;poi.ran_b_h8_stamp
 biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "ES LOC HOLD: RAN-B:H8 Public Catalog"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Catálogo público RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: RAN-B:H8 Public Catalog
+# Catálogo público RAN-B:H8
 
-ES LOC HOLD: HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.
+HECTON-8 tiene un nombre seco de catálogo y un nombre humano de reclamación. RAN-B:H8 pertenece a tablas de ruta: sistema Ran, gigante clase Aegir, octava luna mayor indexada. HECTON-8 pertenece a contratos Deep Reach, registros de trabajadores, habla Marauder, libros de muertos y ley de salvamento.
 
 ## Scanner
 
-ES LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
+Placa de catálogo: etiqueta pública de ruta RAN-B:H8; nombre de reclamación Deep Reach HECTON-8.
 
 ## Terminal
 
-ES LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
+CRUCE DE CATÁLOGO: sistema Ran, gigante Aegir, octava luna mayor indexada. HECTON-8 retenido como nombre de reclamación para contratos, muertes y continuidad de seguro.
 
 ## Audio
 
-ES LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
+La carta lo llama H8. Quienes se ahogaron aquí lo llamaban HECTON.
 
 ## Field Note
 
-ES LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+Usa HECTON-8 cuando el objeto recuerde personas. Usa RAN-B:H8 cuando el documento quiera distancia.
 
 <!-- In-Game Wiki; generated from P104_RAN_B_H8_PUBLIC_CATALOG/es_ES. -->

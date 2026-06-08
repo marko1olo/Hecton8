@@ -298,6 +298,399 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void VehicleDockingSignals_RecordRejectedLaneAndDoNotFalseComplete()
+        {
+            string vehicleDock = File.ReadAllText(VehicleDockingModulePath());
+            string recordTelemetry = ExtractMethodBody(vehicleDock, "RecordDockTelemetry");
+            string resetRuntime = ExtractMethodBody(vehicleDock, "ResetDockingRuntimeCaches");
+            string recordReject = ExtractMethodBody(vehicleDock, "RecordDockSignalRejected");
+            string tick = ExtractMethodBodyFromDeclaration(vehicleDock, "public void Tick(float deltaTime)", "VehicleDockingModule.Tick");
+            string retryComplete = ExtractMethodBody(vehicleDock, "RetryDockingCompleteSignalIfNeeded");
+            string wakeSignals = ExtractMethodBody(vehicleDock, "QueueDockingWakeSignals");
+            string completeSignal = ExtractMethodBody(vehicleDock, "TryPublishDockingCompleteSignal");
+            string failedSignal = ExtractMethodBody(vehicleDock, "PublishDockingFailedSignal");
+
+            Assert.That(vehicleDock, Does.Contain("DockTelemetrySignalRejectedFlag"));
+            Assert.That(vehicleDock, Does.Contain("DockTelemetryWakeSignalRejectedFlag"));
+            Assert.That(vehicleDock, Does.Contain("DockTelemetryImpulseSignalRejectedFlag"));
+            Assert.That(vehicleDock, Does.Contain("DockTelemetryCompleteSignalRejectedFlag"));
+            Assert.That(vehicleDock, Does.Contain("DockTelemetryFailedSignalRejectedFlag"));
+            Assert.That(vehicleDock, Does.Contain("public int DroppedDockingSignalCount => _droppedDockingSignalCount;"));
+            Assert.That(recordTelemetry, Does.Contain("RuntimeFlags = _activeDockingSpline.Flags | _dockSignalRuntimeFlags"));
+            Assert.That(resetRuntime, Does.Contain("_dockSignalRuntimeFlags = 0u;"));
+            Assert.That(recordReject, Does.Contain("_droppedDockingSignalCount++;"));
+            Assert.That(recordReject, Does.Contain("_dockSignalRuntimeFlags |= DockTelemetrySignalRejectedFlag | runtimeFlag;"));
+            Assert.That(tick, Does.Contain("RetryDockingCompleteSignalIfNeeded();"));
+            Assert.That(retryComplete, Does.Contain("if (_dockingCompletionSignalPublished || !_isDocked)"));
+            Assert.That(retryComplete, Does.Contain("TryPublishDockingCompleteSignal(1f, anchor.position, anchor.forward);"));
+            Assert.That(wakeSignals, Does.Contain("RecordDockSignalRejected(DockTelemetryWakeSignalRejectedFlag);"));
+            Assert.That(wakeSignals, Does.Contain("RecordDockSignalRejected(DockTelemetryImpulseSignalRejectedFlag);"));
+            Assert.That(completeSignal, Does.Contain("SourceKind = DockingSignalSourceKinds.VehicleDockingModule"));
+            Assert.That(completeSignal, Does.Contain("RecordDockSignalRejected(DockTelemetryCompleteSignalRejectedFlag);"));
+            Assert.That(completeSignal, Does.Contain("return;"));
+            Assert.That(completeSignal, Does.Contain("_dockingCompletionSignalPublished = true;"));
+            Assert.That(failedSignal, Does.Contain("SourceKind = DockingSignalSourceKinds.VehicleDockingModule"));
+            Assert.That(failedSignal, Does.Contain("RecordDockSignalRejected(DockTelemetryFailedSignalRejectedFlag);"));
+            Assert.That(failedSignal, Does.Contain("RecordDockTelemetry();"));
+            Assert.Less(
+                failedSignal.IndexOf("RecordDockSignalRejected(DockTelemetryFailedSignalRejectedFlag);", StringComparison.Ordinal),
+                failedSignal.IndexOf("RecordDockTelemetry();", StringComparison.Ordinal));
+        }
+
+        [Test]
+        public void DroneFleetSignals_RecordRejectedTransitionsInLiveBlackBox()
+        {
+            string droneFleet = File.ReadAllText(DroneFleetManagerPath());
+            string droneFleetTransactions = File.ReadAllText(DroneFleetManagerTransactionsPath());
+            string reset = ExtractMethodBody(droneFleet, "ResetStaticState");
+            string completeSignal = ExtractMethodBody(droneFleet, "PublishDockingComplete");
+            string failedSignal = ExtractMethodBodyFromDeclaration(
+                droneFleet,
+                "private static void PublishDockingFailed(int slot, in HeadlessDroneState drone, Vector3 hitPoint, uint requestId, DockingFailureReason reason)",
+                "DroneFleetManager.PublishDockingFailed");
+            string missingDrone = ExtractMethodBody(droneFleet, "PublishDockingFailedForMissingDrone");
+            string resupply = ExtractMethodBody(droneFleet, "GrantDroneResupply");
+            string miningService = ExtractMethodBody(droneFleet, "ApplyMiningService");
+            string recordMiningFailure = ExtractMethodBody(droneFleet, "RecordDroneMiningCommitFailed");
+            string clearMiningFailureLatch = ExtractMethodBody(droneFleet, "ClearDroneMiningCommitFailureLatch");
+            string commitMining = ExtractMethodBody(droneFleet, "TryCommitDroneMiningOutputToHub");
+            string resolveMiningItem = ExtractMethodBody(droneFleet, "TryResolveDroneMiningItem");
+            string resolveDroneHub = ExtractMethodBody(droneFleet, "TryResolveDroneHubByKey");
+            string miningItemSignal = ExtractMethodBody(droneFleetTransactions, "PublishDroneMiningItemAcquiredSignal");
+            string transactionMining = ExtractMethodBody(droneFleetTransactions, "ApplyDroneMiningTransactionResult");
+            string blackBox = ExtractMethodBody(droneFleet, "BuildFleetBlackBoxEntry");
+
+            Assert.That(droneFleet, Does.Contain("internal static int DockingCompleteSignalDropCount =>"));
+            Assert.That(droneFleet, Does.Contain("internal static int DockingFailedSignalDropCount =>"));
+            Assert.That(droneFleet, Does.Contain("internal static int ItemAcquiredSignalDropCount =>"));
+            Assert.That(droneFleet, Does.Contain("internal static int InventoryTransactionSignalDropCount =>"));
+            Assert.That(droneFleet, Does.Contain("internal static int InventoryCommandSignalDropCount =>"));
+            Assert.That(droneFleet, Does.Contain("internal static int DroneMiningCommitFailureCount =>"));
+            Assert.That(droneFleet, Does.Contain("internal static int LastDroneMiningCommitFailureReason =>"));
+            Assert.That(droneFleet, Does.Contain("private static byte[] s_DroneMiningCommitFailureReasonsBySlot;"));
+            Assert.That(droneFleet, Does.Contain("DroneFleetBlackBoxFlagDockingCompleteSignalRejected"));
+            Assert.That(droneFleet, Does.Contain("DroneFleetBlackBoxFlagDockingFailedSignalRejected"));
+            Assert.That(droneFleet, Does.Contain("DroneFleetBlackBoxFlagItemAcquiredSignalRejected"));
+            Assert.That(droneFleet, Does.Contain("DroneFleetBlackBoxFlagInventoryTransactionSignalRejected"));
+            Assert.That(droneFleet, Does.Contain("DroneFleetBlackBoxFlagInventoryCommandSignalRejected"));
+            Assert.That(droneFleet, Does.Contain("DroneFleetBlackBoxFlagMiningCommitFailed"));
+            Assert.That(droneFleet, Does.Contain("DroneMiningCommitFailureInvalidPayload"));
+            Assert.That(droneFleet, Does.Contain("DroneMiningCommitFailureItemCatalogUnavailable"));
+            Assert.That(droneFleet, Does.Contain("DroneMiningCommitFailureItemMissing"));
+            Assert.That(droneFleet, Does.Contain("DroneMiningCommitFailureHubMissing"));
+            Assert.That(droneFleet, Does.Contain("DroneMiningCommitFailureHubUnpowered"));
+            Assert.That(droneFleet, Does.Contain("DroneMiningCommitFailureGridMissing"));
+            Assert.That(droneFleet, Does.Contain("DroneMiningCommitFailureStorageFull"));
+            Assert.That(droneFleet, Does.Contain("DroneMiningCommitFailureDuplicateHub"));
+            Assert.That(reset, Does.Contain("s_DockingCompleteSignalDropCount = 0;"));
+            Assert.That(reset, Does.Contain("s_DockingFailedSignalDropCount = 0;"));
+            Assert.That(reset, Does.Contain("s_ItemAcquiredSignalDropCount = 0;"));
+            Assert.That(reset, Does.Contain("s_InventoryTransactionSignalDropCount = 0;"));
+            Assert.That(reset, Does.Contain("s_InventoryCommandSignalDropCount = 0;"));
+            Assert.That(reset, Does.Contain("s_DroneMiningCommitFailureCount = 0;"));
+            Assert.That(reset, Does.Contain("s_LastDroneMiningCommitFailureReason = DroneMiningCommitFailureNone;"));
+            Assert.That(droneFleet, Does.Contain("s_DroneMiningCommitFailureReasonsBySlot = new byte[HeadlessDroneCapacity];"));
+            Assert.That(droneFleet, Does.Contain("s_DroneMiningCommitFailureReasonsBySlot[slot] = DroneMiningCommitFailureNone;"));
+            Assert.That(droneFleet, Does.Contain("s_DroneMiningCommitFailureReasonsBySlot = null;"));
+            Assert.That(recordMiningFailure, Does.Contain("if (s_DroneMiningCommitFailureReasonsBySlot[slot] == safeReason)"));
+            Assert.That(recordMiningFailure, Does.Contain("return;"));
+            Assert.That(recordMiningFailure, Does.Contain("s_DroneMiningCommitFailureReasonsBySlot[slot] = safeReason;"));
+            Assert.That(recordMiningFailure, Does.Contain("System.Threading.Interlocked.Increment(ref s_DroneMiningCommitFailureCount);"));
+            Assert.That(clearMiningFailureLatch, Does.Contain("s_DroneMiningCommitFailureReasonsBySlot[slot] = DroneMiningCommitFailureNone;"));
+            Assert.That(completeSignal, Does.Contain("RecordDockingCompleteSignalRejected();"));
+            Assert.That(failedSignal, Does.Contain("RecordDockingFailedSignalRejected();"));
+            Assert.That(missingDrone, Does.Contain("RecordDockingFailedSignalRejected();"));
+            Assert.That(completeSignal, Does.Contain("SourceKind = DockingSignalSourceKinds.DroneFleet"));
+            Assert.That(failedSignal, Does.Contain("SourceKind = DockingSignalSourceKinds.DroneFleet"));
+            Assert.That(missingDrone, Does.Contain("SourceKind = DockingSignalSourceKinds.DroneFleet"));
+            Assert.That(resupply, Does.Contain("if (!SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount))"));
+            Assert.That(resupply, Does.Contain("RecordInventoryTransactionSignalRejected();"));
+            Assert.That(droneFleet, Does.Contain("private const int DroneInventoryCopperHash = unchecked((int)H8Hashes.Items.DataCopperHash);"));
+            Assert.That(droneFleet, Does.Contain("s_CachedPlayerInventoryService = GlobalRegistry.PlayerInventory;"));
+            Assert.That(droneFleet, Does.Contain("s_CachedPlayerInventoryService = currentService as IPlayerInventoryService;"));
+            Assert.That(commitMining, Does.Contain("TryResolveDroneMiningItem(itemHash, out ItemData item, out failureReason)"));
+            Assert.That(commitMining, Does.Contain("TryResolveDroneHubByKey(drone.HubGridId, out RepairDroneHub hub, out failureReason)"));
+            Assert.That(commitMining, Does.Contain("if (!hub.HasOperationalPower)"));
+            Assert.That(commitMining, Does.Contain("failureReason = hub.CurrentGrid == null"));
+            Assert.That(commitMining, Does.Contain("? DroneMiningCommitFailureGridMissing"));
+            Assert.That(commitMining, Does.Contain(": DroneMiningCommitFailureHubUnpowered;"));
+            Assert.That(commitMining, Does.Contain("PowerGrid grid = hub.CurrentGrid;"));
+            Assert.That(commitMining, Does.Contain("failureReason = DroneMiningCommitFailureStorageFull;"));
+            Assert.That(commitMining, Does.Contain("BaseLogisticsNetwork.TryDepositItem(grid, item, safeQuantity, out int routedQuantity)"));
+            Assert.That(commitMining, Does.Contain("depositedQuantity = Mathf.Clamp(routedQuantity, 0, safeQuantity);"));
+            Assert.That(resolveMiningItem, Does.Contain("out byte failureReason"));
+            Assert.That(resolveMiningItem, Does.Contain("IPlayerInventoryService inventoryService = s_CachedPlayerInventoryService;"));
+            Assert.That(resolveMiningItem, Does.Contain("ItemCatalog catalog = inventory != null ? inventory.ItemCatalog : null;"));
+            Assert.That(resolveMiningItem, Does.Contain("failureReason = DroneMiningCommitFailureItemCatalogUnavailable;"));
+            Assert.That(resolveMiningItem, Does.Contain("item = catalog.FindByHash(unchecked((int)itemHash));"));
+            Assert.That(resolveMiningItem, Does.Contain("failureReason = DroneMiningCommitFailureItemMissing;"));
+            Assert.That(resolveDroneHub, Does.Contain("out byte failureReason"));
+            Assert.That(resolveDroneHub, Does.Contain("int scanHubCount = RepairDroneHub.ActiveHubCount;"));
+            Assert.That(resolveDroneHub, Does.Contain("candidate == null || !candidate.isActiveAndEnabled"));
+            Assert.That(resolveDroneHub, Does.Contain("ResolveHubTaskKey(candidate) != hubKey"));
+            Assert.That(resolveDroneHub, Does.Contain("failureReason = DroneMiningCommitFailureDuplicateHub;"));
+            Assert.That(resolveDroneHub, Does.Contain("failureReason = DroneMiningCommitFailureHubMissing;"));
+            Assert.That(miningService, Does.Contain("out depositedQuantity,"));
+            Assert.That(miningService, Does.Contain("out byte commitFailureReason"));
+            Assert.That(miningService, Does.Contain("RecordDroneMiningCommitFailed(slot, commitFailureReason);"));
+            Assert.That(miningService, Does.Contain("drone.RepairAccumulator = holdSeconds;"));
+            Assert.That(miningService, Does.Contain("drone.TransactionProgress = 1f;"));
+            Assert.That(miningService, Does.Contain("if (depositedQuantity > 0)"));
+            Assert.That(miningService, Does.Contain("ClearDroneMiningCommitFailureLatch(slot);"));
+            Assert.Less(
+                miningService.IndexOf("TryCommitDroneMiningOutputToHub", StringComparison.Ordinal),
+                miningService.IndexOf("PublishDroneMiningItemAcquiredSignal", StringComparison.Ordinal));
+            Assert.That(miningService, Does.Contain("if (!SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount))"));
+            Assert.That(miningService, Does.Contain("RecordInventoryTransactionSignalRejected();"));
+            Assert.That(transactionMining, Does.Contain("out depositedQuantity,"));
+            Assert.That(transactionMining, Does.Contain("out byte commitFailureReason"));
+            Assert.That(transactionMining, Does.Contain("RecordDroneMiningCommitFailed(slot, commitFailureReason);"));
+            Assert.That(transactionMining, Does.Contain("drone.RepairAccumulator = holdSeconds;"));
+            Assert.That(transactionMining, Does.Contain("drone.TransactionProgress = 1f;"));
+            Assert.That(transactionMining, Does.Contain("else if (depositedQuantity < quantity)"));
+            Assert.That(transactionMining, Does.Contain("RecordDroneMiningCommitFailed(slot, DroneMiningCommitFailureStorageFull);"));
+            Assert.That(transactionMining, Does.Contain("if (depositedQuantity > 0)"));
+            Assert.That(transactionMining, Does.Contain("ClearDroneMiningCommitFailureLatch(slot);"));
+            Assert.Less(
+                transactionMining.IndexOf("TryCommitDroneMiningOutputToHub", StringComparison.Ordinal),
+                transactionMining.IndexOf("PublishDroneMiningItemAcquiredSignal", StringComparison.Ordinal));
+            Assert.That(transactionMining, Does.Contain("if (!SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in transactionSignal, ref s_x001DroneFleetManagerTransactionsSignalPushDropCount))"));
+            Assert.That(transactionMining, Does.Contain("RecordInventoryTransactionSignalRejected();"));
+            Assert.That(miningItemSignal, Does.Contain("if (!SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref s_x001DroneFleetManagerTransactionsSignalPushDropCount))"));
+            Assert.That(miningItemSignal, Does.Contain("RecordItemAcquiredSignalRejected();"));
+            Assert.That(miningService, Does.Contain("InventoryCommandSignal inventoryCommand = new InventoryCommandSignal"));
+            Assert.That(miningService, Does.Contain("if (!SignalBus<InventoryCommandSignal>.TryPushTracked(in inventoryCommand, ref s_SignalPushDropCount))"));
+            Assert.That(miningService, Does.Contain("RecordInventoryCommandSignalRejected();"));
+            Assert.That(blackBox, Does.Contain("int completeSignalDropCount = DockingCompleteSignalDropCount;"));
+            Assert.That(blackBox, Does.Contain("int failedSignalDropCount = DockingFailedSignalDropCount;"));
+            Assert.That(blackBox, Does.Contain("int itemAcquiredDropCount = ItemAcquiredSignalDropCount;"));
+            Assert.That(blackBox, Does.Contain("int inventoryTransactionDropCount = InventoryTransactionSignalDropCount;"));
+            Assert.That(blackBox, Does.Contain("int inventoryCommandDropCount = InventoryCommandSignalDropCount;"));
+            Assert.That(blackBox, Does.Contain("int miningCommitFailureCount = DroneMiningCommitFailureCount;"));
+            Assert.That(blackBox, Does.Contain("int miningCommitFailureReason = LastDroneMiningCommitFailureReason;"));
+            Assert.That(blackBox, Does.Contain("flags |= DroneFleetBlackBoxFlagDockingCompleteSignalRejected;"));
+            Assert.That(blackBox, Does.Contain("flags |= DroneFleetBlackBoxFlagDockingFailedSignalRejected;"));
+            Assert.That(blackBox, Does.Contain("flags |= DroneFleetBlackBoxFlagItemAcquiredSignalRejected;"));
+            Assert.That(blackBox, Does.Contain("flags |= DroneFleetBlackBoxFlagInventoryTransactionSignalRejected;"));
+            Assert.That(blackBox, Does.Contain("flags |= DroneFleetBlackBoxFlagInventoryCommandSignalRejected;"));
+            Assert.That(blackBox, Does.Contain("flags |= DroneFleetBlackBoxFlagMiningCommitFailed;"));
+            Assert.That(blackBox, Does.Contain("stateHash = unchecked((stateHash * 31) ^ completeSignalDropCount);"));
+            Assert.That(blackBox, Does.Contain("stateHash = unchecked((stateHash * 31) ^ failedSignalDropCount);"));
+            Assert.That(blackBox, Does.Contain("stateHash = unchecked((stateHash * 31) ^ itemAcquiredDropCount);"));
+            Assert.That(blackBox, Does.Contain("stateHash = unchecked((stateHash * 31) ^ inventoryTransactionDropCount);"));
+            Assert.That(blackBox, Does.Contain("stateHash = unchecked((stateHash * 31) ^ inventoryCommandDropCount);"));
+            Assert.That(blackBox, Does.Contain("stateHash = unchecked((stateHash * 31) ^ miningCommitFailureCount);"));
+            Assert.That(blackBox, Does.Contain("stateHash = unchecked((stateHash * 31) ^ miningCommitFailureReason);"));
+            Assert.That(droneFleet, Does.Contain("const int expectedEntryBytes = 80;"));
+            Assert.That(droneFleet, Does.Contain("[StructLayout(LayoutKind.Explicit, Size = 80)]"));
+        }
+
+        [Test]
+        public void DockingSignals_KeepSourceKindInsideStablePayloadLayout()
+        {
+            string payloads = File.ReadAllText(GlobalSignalPayloadsCoreFoundationPath());
+            int completeDeclaration = payloads.IndexOf("public struct DockingCompleteSignal", StringComparison.Ordinal);
+            int failedDeclaration = payloads.IndexOf("public struct DockingFailedSignal", StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(completeDeclaration, 0, "Missing DockingCompleteSignal");
+            Assert.GreaterOrEqual(failedDeclaration, 0, "Missing DockingFailedSignal");
+
+            string complete = ExtractBodyFromDeclaration(payloads, completeDeclaration, "DockingCompleteSignal");
+            string failed = ExtractBodyFromDeclaration(payloads, failedDeclaration, "DockingFailedSignal");
+
+            Assert.That(payloads, Does.Contain("public static class DockingSignalSourceKinds"));
+            Assert.That(payloads, Does.Contain("public const byte Unknown = 0;"));
+            Assert.That(payloads, Does.Contain("public const byte VehicleDockingModule = 1;"));
+            Assert.That(payloads, Does.Contain("public const byte DroneFleet = 2;"));
+            Assert.AreEqual(1, Count(payloads, @"\[StructLayout\(LayoutKind\.Explicit,\s*Size\s*=\s*128\)\]\s*public\s+struct\s+DockingCompleteSignal\b"), "DockingCompleteSignal ABI size");
+            Assert.AreEqual(1, Count(payloads, @"\[StructLayout\(LayoutKind\.Explicit,\s*Size\s*=\s*128\)\]\s*public\s+struct\s+DockingFailedSignal\b"), "DockingFailedSignal ABI size");
+            Assert.That(complete, Does.Contain("[FieldOffset(73)] public byte SourceKind;"));
+            Assert.That(failed, Does.Contain("[FieldOffset(74)] public byte SourceKind;"));
+            Assert.That(complete, Does.Not.Contain("[FieldOffset(73)] public byte Reserved0;"));
+            Assert.That(failed, Does.Not.Contain("[FieldOffset(74)] public byte Reserved0;"));
+        }
+
+        [Test]
+        public void ItemAcquiredSignalLane_UsesContractCapacityForDroneMiningIngress()
+        {
+            string payloads = File.ReadAllText(GlobalSignalPayloadsPhysicsInventoryPath());
+            string globalState = File.ReadAllText(GlobalSignalsStatePath());
+            string runtimeLifecycle = File.ReadAllText(GlobalSignalsRuntimeLifecyclePath());
+            string signalBus = File.ReadAllText(SignalBusRuntimePath());
+            string playerInventory = File.ReadAllText(PlayerInventoryPath());
+            int declaration = payloads.IndexOf("public struct ItemAcquiredSignal", StringComparison.Ordinal);
+            string sanitizer = ExtractMethodBody(signalBus, "SanitizeItemAcquiredSignal");
+            string captureScavenging = ExtractMethodBody(playerInventory, "CaptureScavengingLootOracleSignals");
+            string scavengingFilter = ExtractMethodBody(playerInventory, "IsPendingScavengingInventorySignal");
+            string inventoryOnDisable = ExtractMethodBody(playerInventory, "OnDisable");
+            string inventoryOnDestroy = ExtractMethodBody(playerInventory, "OnDestroy");
+            string populateSave = ExtractMethodBody(playerInventory, "PopulateSaveData");
+
+            Assert.GreaterOrEqual(declaration, 0, "Missing ItemAcquiredSignal");
+            string itemAcquired = ExtractBodyFromDeclaration(payloads, declaration, "ItemAcquiredSignal");
+
+            Assert.AreEqual(1, Count(payloads, @"\[StructLayout\(LayoutKind\.Explicit,\s*Size\s*=\s*64\)\]\s*public\s+struct\s+ItemAcquiredSignal\b"), "ItemAcquiredSignal ABI size");
+            Assert.That(itemAcquired, Does.Contain("public const int ExpectedCapacity = 256;"));
+            Assert.That(itemAcquired, Does.Contain("public const int MaxFrameSignals = 256;"));
+            Assert.That(itemAcquired, Does.Contain("public const int LowTierFrameSignals = 64;"));
+            Assert.That(itemAcquired, Does.Contain("public const uint LaneHash = 571345398u;"));
+            Assert.That(globalState, Does.Contain("private const int ItemAcquiredSignalCapacity = ItemAcquiredSignal.ExpectedCapacity;"));
+            Assert.That(runtimeLifecycle, Does.Contain("RegisterLegacyLane<ItemAcquiredSignal>(ItemAcquiredSignalCapacity, nameof(ItemAcquiredSignal));"));
+            Assert.That(runtimeLifecycle, Does.Contain("SignalBus<ItemAcquiredSignal>.Configure("));
+            Assert.That(runtimeLifecycle, Does.Contain("ItemAcquiredSignal.ExpectedCapacity"));
+            Assert.That(runtimeLifecycle, Does.Contain("maxFrameSignals: ItemAcquiredSignal.MaxFrameSignals"));
+            Assert.That(runtimeLifecycle, Does.Contain("lowTierFrameSignals: ItemAcquiredSignal.LowTierFrameSignals"));
+            Assert.That(runtimeLifecycle, Does.Contain("laneHash: ItemAcquiredSignal.LaneHash"));
+            Assert.That(signalBus, Does.Contain("if (type == typeof(ItemAcquiredSignal))"));
+            Assert.That(signalBus, Does.Contain("expectedCapacity = ItemAcquiredSignal.ExpectedCapacity;"));
+            Assert.That(signalBus, Does.Contain("maxFrameSignals = ItemAcquiredSignal.MaxFrameSignals;"));
+            Assert.That(signalBus, Does.Contain("lowTierFrameSignals = ItemAcquiredSignal.LowTierFrameSignals;"));
+            Assert.That(signalBus, Does.Contain("laneHash = ItemAcquiredSignal.LaneHash;"));
+            Assert.That(sanitizer, Does.Contain("if (SanitizeAup(ref signal.PositionAup) ||"));
+            Assert.That(sanitizer, Does.Contain("signal.ItemHash == 0u ||"));
+            Assert.That(sanitizer, Does.Contain("signal.Quantity == 0"));
+            Assert.That(sanitizer, Does.Contain("return ItemAcquiredSignalGuardCode;"));
+            Assert.That(sanitizer, Does.Contain("return 0;"));
+            Assert.That(scavengingFilter, Does.Contain("signal.SourceKind == ItemAcquiredSignalSourceKinds.ScavengingLootOracle"));
+            Assert.That(scavengingFilter, Does.Not.Contain("ItemAcquiredSignalSourceKinds.DroneMining"));
+            Assert.That(playerInventory, Does.Contain("private const int PendingScavengingItemSignalCapacity = ItemAcquiredSignal.ExpectedCapacity;"));
+            Assert.That(playerInventory, Does.Not.Contain("ItemAcquiredSignal[128]"));
+            Assert.That(playerInventory, Does.Contain("private int _lastScavengingItemSignalCaptureGeneration = -1;"));
+            Assert.That(captureScavenging, Does.Contain("int snapshotGeneration = SignalBus<ItemAcquiredSignal>.SnapshotGeneration;"));
+            Assert.That(captureScavenging, Does.Contain("if (_lastScavengingItemSignalCaptureGeneration == snapshotGeneration)"));
+            Assert.That(inventoryOnDisable, Does.Contain("CaptureScavengingLootOracleSignals();"));
+            Assert.That(inventoryOnDestroy, Does.Contain("CaptureScavengingLootOracleSignals();"));
+            Assert.That(populateSave, Does.Contain("CaptureScavengingLootOracleSignals();"));
+            Assert.Less(inventoryOnDisable.IndexOf("CaptureScavengingLootOracleSignals();", StringComparison.Ordinal), inventoryOnDisable.IndexOf("ApplyDeferredScavengingLootOracleSignals();", StringComparison.Ordinal));
+            Assert.Less(inventoryOnDestroy.IndexOf("CaptureScavengingLootOracleSignals();", StringComparison.Ordinal), inventoryOnDestroy.IndexOf("ApplyDeferredScavengingLootOracleSignals();", StringComparison.Ordinal));
+            Assert.Less(populateSave.IndexOf("CaptureScavengingLootOracleSignals();", StringComparison.Ordinal), populateSave.IndexOf("ApplyDeferredScavengingLootOracleSignals();", StringComparison.Ordinal));
+        }
+
+        [Test]
+        public void SignalBusSnapshotOwnerMutationAdvancesGeneration()
+        {
+            string signalBus = File.ReadAllText(SignalBusRuntimePath());
+            string transformSnapshot = ExtractMethodBody(signalBus, "TransformSnapshot");
+            string filterSnapshot = ExtractMethodBody(signalBus, "FilterSnapshot");
+            string flushPostSimulation = ExtractMethodBody(signalBus, "FlushPostSimulation");
+            string advanceGeneration = ExtractMethodBody(signalBus, "AdvanceFrameSnapshotGeneration");
+
+            Assert.That(signalBus, Does.Contain("private static void AdvanceFrameSnapshotGeneration()"));
+            Assert.That(advanceGeneration, Does.Contain("_frameSnapshotGeneration = _frameSnapshotGeneration == int.MaxValue ? 1 : _frameSnapshotGeneration + 1;"));
+            Assert.That(transformSnapshot, Does.Contain("AdvanceFrameSnapshotGeneration();"));
+            Assert.That(filterSnapshot, Does.Contain("AdvanceFrameSnapshotGeneration();"));
+            Assert.That(flushPostSimulation, Does.Contain("AdvanceFrameSnapshotGeneration();"));
+            AssertSourceOrder(transformSnapshot, "transformer.Transform(ref signal);", "AdvanceFrameSnapshotGeneration();");
+            AssertSourceOrder(filterSnapshot, "_frameSnapshotCount = writeIndex;", "AdvanceFrameSnapshotGeneration();");
+            AssertSourceOrder(flushPostSimulation, "_legacyReadCursor = 0;", "AdvanceFrameSnapshotGeneration();");
+            Assert.That(flushPostSimulation, Does.Not.Contain("_frameSnapshotGeneration = _frameSnapshotGeneration == int.MaxValue ? 1 : _frameSnapshotGeneration + 1;"));
+        }
+
+        [Test]
+        public void InventoryCommandSignalLane_UsesContractAndRejectsUnknownCommands()
+        {
+            string payloads = File.ReadAllText(GlobalSignalPayloadsPhysicsInventoryPath());
+            string globalState = File.ReadAllText(GlobalSignalsStatePath());
+            string runtimeLifecycle = File.ReadAllText(GlobalSignalsRuntimeLifecyclePath());
+            string signalBus = File.ReadAllText(SignalBusRuntimePath());
+            int declaration = payloads.IndexOf("public struct InventoryCommandSignal", StringComparison.Ordinal);
+            string sanitizer = ExtractMethodBody(signalBus, "SanitizeInventoryCommandSignal");
+
+            Assert.GreaterOrEqual(declaration, 0, "Missing InventoryCommandSignal");
+            string command = ExtractBodyFromDeclaration(payloads, declaration, "InventoryCommandSignal");
+
+            Assert.AreEqual(1, Count(payloads, @"\[StructLayout\(LayoutKind\.Explicit,\s*Size\s*=\s*32\)\]\s*public\s+struct\s+InventoryCommandSignal\b"), "InventoryCommandSignal ABI size");
+            Assert.That(command, Does.Contain("public const int ExpectedCapacity = 16;"));
+            Assert.That(command, Does.Contain("public const int MaxFrameSignals = 16;"));
+            Assert.That(command, Does.Contain("public const int LowTierFrameSignals = 16;"));
+            Assert.That(command, Does.Contain("public const uint LaneHash = 2566130472u;"));
+            Assert.That(globalState, Does.Contain("private const int InventoryCommandSignalCapacity = InventoryCommandSignal.ExpectedCapacity;"));
+            Assert.That(runtimeLifecycle, Does.Contain("SignalBus<InventoryCommandSignal>.Configure("));
+            Assert.That(runtimeLifecycle, Does.Contain("maxFrameSignals: InventoryCommandSignal.MaxFrameSignals"));
+            Assert.That(runtimeLifecycle, Does.Contain("lowTierFrameSignals: InventoryCommandSignal.LowTierFrameSignals"));
+            Assert.That(runtimeLifecycle, Does.Contain("laneHash: InventoryCommandSignal.LaneHash"));
+            Assert.That(signalBus, Does.Contain("if (type == typeof(InventoryCommandSignal))"));
+            Assert.That(signalBus, Does.Contain("expectedCapacity = InventoryCommandSignal.ExpectedCapacity;"));
+            Assert.That(signalBus, Does.Contain("maxFrameSignals = InventoryCommandSignal.MaxFrameSignals;"));
+            Assert.That(signalBus, Does.Contain("lowTierFrameSignals = InventoryCommandSignal.LowTierFrameSignals;"));
+            Assert.That(signalBus, Does.Contain("laneHash = InventoryCommandSignal.LaneHash;"));
+            Assert.That(signalBus, Does.Contain("return GuardInventoryCommand;"));
+            Assert.That(sanitizer, Does.Contain("signal.Command == InventoryCommandSignalCommands.Sort"));
+            Assert.That(sanitizer, Does.Contain("signal.Command == InventoryCommandSignalCommands.DropNonEquippedResources"));
+            Assert.That(sanitizer, Does.Contain("return InventoryCommandSignalGuardCode;"));
+        }
+
+        [Test]
+        public void DroneMiningSignals_DoNotRouteHubInventoryThroughPlayerScavenging()
+        {
+            string droneFleetTransactions = File.ReadAllText(DroneFleetManagerTransactionsPath());
+            string droneFleet = File.ReadAllText(DroneFleetManagerPath());
+            string playerInventory = File.ReadAllText(PlayerInventoryPath());
+            string transactionMining = ExtractMethodBody(droneFleetTransactions, "ApplyDroneMiningTransactionResult");
+            string miningItemSignal = ExtractMethodBody(droneFleetTransactions, "PublishDroneMiningItemAcquiredSignal");
+            string commitMining = ExtractMethodBody(droneFleet, "TryCommitDroneMiningOutputToHub");
+            string scavengingFilter = ExtractMethodBody(playerInventory, "IsPendingScavengingInventorySignal");
+            string applyDeferred = ExtractMethodBody(playerInventory, "ApplyDeferredScavengingLootOracleSignals");
+
+            Assert.That(droneFleet, Does.Contain("private const int DroneInventoryCopperHash = unchecked((int)H8Hashes.Items.DataCopperHash);"));
+            Assert.That(commitMining, Does.Contain("BaseLogisticsNetwork.TryDepositItem(grid, item, safeQuantity, out int routedQuantity)"));
+            Assert.That(transactionMining, Does.Contain("transactionSignal.DestinationId = drone.HubGridId;"));
+            Assert.That(transactionMining, Does.Contain("TryCommitDroneMiningOutputToHub("));
+            Assert.That(transactionMining, Does.Contain("result.InventoryHash"));
+            Assert.That(transactionMining, Does.Contain("out depositedQuantity,"));
+            Assert.That(transactionMining, Does.Contain("out byte commitFailureReason"));
+            Assert.Less(
+                transactionMining.IndexOf("TryCommitDroneMiningOutputToHub", StringComparison.Ordinal),
+                transactionMining.IndexOf("PublishDroneMiningItemAcquiredSignal", StringComparison.Ordinal));
+            Assert.That(transactionMining, Does.Contain("SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked"));
+            Assert.That(miningItemSignal, Does.Contain("signal.SourceKind = ItemAcquiredSignalSourceKinds.DroneMining;"));
+            Assert.That(scavengingFilter, Does.Contain("ItemAcquiredSignalSourceKinds.ScavengingLootOracle"));
+            Assert.That(scavengingFilter, Does.Not.Contain("ItemAcquiredSignalSourceKinds.DroneMining"));
+            Assert.That(applyDeferred, Does.Contain("TryAddItemWithStateInternal("));
+        }
+
+        [Test]
+        public void LogisticsRouter_ConsumesDockingFailureWithoutCreatingPhantomPort()
+        {
+            string router = File.ReadAllText(ShinobuLogisticsRouterPath());
+            string docking = ExtractMethodBody(router, "TryConsumeDockingSignals");
+            string findDockingSignal = ExtractMethodBodyFromDeclaration(router, "private int FindDockingNode(in DockingCompleteSignal signal)", "ShinobuLogisticsRouter.FindDockingNode signal");
+            string nearestDocking = ExtractMethodBody(router, "FindNearestDockingPortNode");
+            string resolveDockingAup = ExtractMethodBody(router, "TryResolveDockingSignalAup");
+
+            Assert.That(docking, Does.Contain("ReadOnlySpan<DockingCompleteSignal> dockingSignals = SignalBus<DockingCompleteSignal>.GetFrameSnapshot();"));
+            Assert.That(docking, Does.Contain("ReadOnlySpan<DockingFailedSignal> failedSignals = SignalBus<DockingFailedSignal>.GetFrameSnapshot();"));
+            Assert.That(docking, Does.Contain("bool hasSubmarineDockingCompleteSignal = TryGetSubmarineDockingCompleteSignal(dockingSignals, out DockingCompleteSignal dockingCompleteSignal);"));
+            Assert.That(docking, Does.Contain("bool hasSubmarineDockingFailedSignal = HasSubmarineDockingFailedSignal(failedSignals);"));
+            Assert.That(docking, Does.Contain("if ((!hasSubmarineDockingCompleteSignal && !hasSubmarineDockingFailedSignal) || _nodeCount <= 0)"));
+            Assert.That(router, Does.Contain("public const int DockingFailed = 1 << 9;"));
+            Assert.That(docking, Does.Contain("if (hasSubmarineDockingFailedSignal)"));
+            Assert.That(docking, Does.Contain("OrNative(_counters, CounterFaultFlags, LogisticsGraphFaultFlags.DockingFailed);"));
+            Assert.That(docking, Does.Contain("if (!hasSubmarineDockingCompleteSignal)"));
+            Assert.That(docking, Does.Contain("int dockingNode = FindDockingNode(in dockingCompleteSignal);"));
+            Assert.That(docking, Does.Contain("ulong flags = _stateFlags[dockingNode] | LogisticsStateFlags.SubmarineAttached | LogisticsStateFlags.DockingPort;"));
+            Assert.That(docking, Does.Not.Contain("~LogisticsStateFlags.SubmarineAttached"));
+            Assert.That(docking, Does.Not.Contain("dockingSignals.Length > 0"));
+            Assert.That(docking, Does.Not.Contain("failedSignals.Length > 0"));
+            Assert.That(router, Does.Contain("private static bool TryGetSubmarineDockingCompleteSignal(ReadOnlySpan<DockingCompleteSignal> signals, out DockingCompleteSignal signal)"));
+            Assert.That(router, Does.Contain("private static bool HasSubmarineDockingFailedSignal(ReadOnlySpan<DockingFailedSignal> signals)"));
+            Assert.That(router, Does.Contain("signals[i].SourceKind == DockingSignalSourceKinds.VehicleDockingModule"));
+            Assert.That(findDockingSignal, Does.Contain("TryResolveDockingSignalAup(in signal.DockAup, out double3 dockAup)"));
+            Assert.That(findDockingSignal, Does.Contain("return FindNearestDockingPortNode(dockAup);"));
+            Assert.That(findDockingSignal, Does.Contain("return -1;"));
+            Assert.That(nearestDocking, Does.Contain("(_stateFlags[i] & LogisticsStateFlags.DockingPort) == 0"));
+            Assert.That(nearestDocking, Does.Contain("double3 delta = _nodeAup[i] - dockAup;"));
+            Assert.That(nearestDocking, Does.Contain("double distanceSq = math.lengthsq(delta);"));
+            Assert.That(nearestDocking, Does.Contain("distanceSq > DockingSignalNodeMatchMaxDistanceSq"));
+            Assert.That(nearestDocking, Does.Contain("distanceSq >= bestDistanceSq"));
+            Assert.That(resolveDockingAup, Does.Contain("dockAup = position.ToAup().ToAbsoluteDouble3();"));
+            Assert.That(resolveDockingAup, Does.Contain("return math.all(math.isfinite(dockAup));"));
+            Assert.That(router, Does.Contain("private const double DockingSignalNodeMatchMaxDistanceMeters = 128.0;"));
+            Assert.That(router, Does.Contain("FaultFlags = faultFlags"));
+            Assert.That(router, Does.Not.Contain("return _nodeCount > 0 ? _nodeCount - 1 : -1;"));
+        }
+
+        [Test]
         public void GlobalShaderDispatcherLateFrame_UsesGuardedSnapshotsNotVaultPins()
         {
             string text = File.ReadAllText(GlobalShaderDispatcherPath());
@@ -841,6 +1234,88 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void LootMagnetDeathCachePendingAcquisitions_RequeueBeforeLifecycleClear()
+        {
+            string text = File.ReadAllText(LootMagnetSystemPath());
+            string ensureSidecars = ExtractMethodBody(text, "EnsureManagedSidecars");
+            string clearQueues = ExtractMethodBody(text, "ClearPendingAcquisitionQueues");
+            string requeueBarrier = ExtractMethodBody(text, "RequeuePendingDeathCacheAcquisitionsForBarrier");
+            string requeueVaultSlots = ExtractMethodBody(text, "RequeueDataOnlyDeathCacheSlotsForBarrier");
+            string clearDataOnlySlot = ExtractMethodBody(text, "ClearDataOnlyDeathCacheVaultSlot");
+            string clearRuntime = ExtractMethodBody(text, "ClearRuntimeVaultState");
+            string clearDataVault = ExtractMethodBody(text, "ClearDataVaultRuntimeState");
+
+            Assert.That(ensureSidecars, Does.Contain("ClearPendingAcquisitionQueues(requeueDeathCache: true);"));
+            Assert.That(clearQueues, Does.Contain("if (requeueDeathCache)"));
+            Assert.That(clearQueues, Does.Contain("RequeuePendingDeathCacheAcquisitionsForBarrier();"));
+            Assert.That(clearQueues, Does.Contain("ClearPendingDeathCacheAcquisitionSlots();"));
+            Assert.That(clearQueues, Does.Contain("ClearPendingPresentationSlots();"));
+            Assert.That(requeueBarrier, Does.Contain("_pendingDeathCacheAcquisitionCount <= 0"));
+            Assert.That(requeueBarrier, Does.Contain("int count = math.clamp(_pendingDeathCacheAcquisitionCount, 0, _pendingDeathCacheAcquisitions.Length);"));
+            Assert.That(requeueBarrier, Does.Contain("_dependencyTelemetryFlags |= TelemetryDeathCacheDeferredFlag;"));
+            Assert.That(requeueBarrier, Does.Contain("signal.ItemHash == 0u"));
+            Assert.That(requeueBarrier, Does.Contain("signal.Quantity == 0"));
+            Assert.That(requeueBarrier, Does.Contain("!IsFiniteAup(in signal.PositionAup)"));
+            Assert.That(requeueBarrier, Does.Contain("SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref _signalPushDropCount)"));
+            Assert.That(requeueBarrier, Does.Contain("TelemetryDeathCacheRequeueRejectedFlag"));
+            Assert.That(clearRuntime, Does.Contain("ClearPendingAcquisitionQueues(requeueDeathCache: true);"));
+            Assert.That(clearRuntime, Does.Contain("RequeueDataOnlyDeathCacheSlotsForBarrier();"));
+            Assert.That(clearDataVault, Does.Contain("ClearPendingAcquisitionQueues(requeueDeathCache: true);"));
+            Assert.That(clearDataVault, Does.Contain("RequeueDataOnlyDeathCacheSlotsForBarrier();"));
+            Assert.That(requeueVaultSlots, Does.Contain("_activeCount <= 0"));
+            Assert.That(requeueVaultSlots, Does.Contain("TryReadExistingVaultViews(vault, math.max(_activeCount, 1), out LootMagnetVaultViews views)"));
+            Assert.That(requeueVaultSlots, Does.Contain("int count = math.clamp(_activeCount, 0, views.EntityFlags.Length);"));
+            Assert.That(requeueVaultSlots, Does.Contain("count = math.min(count, views.EntityItemHashes.Length);"));
+            Assert.That(requeueVaultSlots, Does.Contain("count = math.min(count, views.EntityQuantities.Length);"));
+            Assert.That(requeueVaultSlots, Does.Contain("count = math.min(count, views.EntityAups.Length);"));
+            Assert.That(requeueVaultSlots, Does.Contain("if (!IsDataOnlyDeathCacheSlot(in views, index))"));
+            Assert.That(requeueVaultSlots, Does.Contain("signal.PositionAup = views.EntityAups[index];"));
+            Assert.That(requeueVaultSlots, Does.Contain("signal.ItemHash = views.EntityItemHashes[index];"));
+            Assert.That(requeueVaultSlots, Does.Contain("signal.Quantity = views.EntityQuantities[index];"));
+            Assert.That(requeueVaultSlots, Does.Contain("SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref _signalPushDropCount)"));
+            Assert.That(requeueVaultSlots, Does.Contain("ClearDataOnlyDeathCacheVaultSlot(views, index);"));
+            Assert.That(clearDataOnlySlot, Does.Contain("views.EntityAups[index] = default;"));
+            Assert.That(clearDataOnlySlot, Does.Contain("views.EntityFlags[index] = 0u;"));
+            Assert.That(clearDataOnlySlot, Does.Contain("views.EntityItemHashes[index] = 0u;"));
+            Assert.That(clearDataOnlySlot, Does.Contain("views.EntityQuantities[index] = 0;"));
+            Assert.That(clearDataOnlySlot, Does.Not.Contain("_pickupRefs[index]"));
+            Assert.That(text, Does.Not.Contain("private void ClearPendingAcquisitionQueues()\r\n"));
+            Assert.That(text, Does.Not.Contain("private void ClearPendingAcquisitionQueues()\n"));
+        }
+
+        [Test]
+        public void LootMagnetPresentationSignals_RecordRejectedLanesInTelemetryFlags()
+        {
+            string text = File.ReadAllText(LootMagnetSystemPath());
+            string itemAcquired = ExtractMethodBody(text, "PublishItemAcquired");
+            string snapSpark = ExtractMethodBody(text, "PublishItemSnapSpark");
+            string publish = ExtractMethodBody(text, "PublishPresentationSignals");
+
+            Assert.That(text, Does.Contain("TelemetryAcousticSignalRejectedFlag = 1u << 18"));
+            Assert.That(text, Does.Contain("TelemetryWakeSignalRejectedFlag = 1u << 19"));
+            Assert.That(text, Does.Contain("TelemetryFluidImpulseSignalRejectedFlag = 1u << 20"));
+            Assert.That(text, Does.Contain("TelemetryItemAcquiredSignalRejectedFlag = 1u << 21"));
+            Assert.That(text, Does.Contain("TelemetryDebrisSignalRejectedFlag = 1u << 22"));
+            Assert.That(text, Does.Contain("private uint PublishItemAcquired"));
+            Assert.That(text, Does.Contain("private static uint PublishItemSnapSpark"));
+            Assert.That(itemAcquired, Does.Contain("return SignalBus<ItemAcquiredSignal>.TryPushTracked(in itemSignal, ref _signalPushDropCount)"));
+            Assert.That(itemAcquired, Does.Contain(": TelemetryItemAcquiredSignalRejectedFlag;"));
+            Assert.That(snapSpark, Does.Contain("return SignalBus<DebrisSpawnSignal>.TryPushTracked(in debrisSignal, ref _signalPushDropCount)"));
+            Assert.That(snapSpark, Does.Contain(": TelemetryDebrisSignalRejectedFlag;"));
+            Assert.That(publish, Does.Contain("if (!SignalBus<AcousticPingSignal>.TryPushTracked(in acousticSignal, ref _signalPushDropCount))"));
+            Assert.That(publish, Does.Contain("droppedFlags |= TelemetryAcousticSignalRejectedFlag;"));
+            Assert.That(publish, Does.Contain("if (!SignalBus<WakeGeneratedSignal>.TryPushTracked(in wakeSignal, ref _signalPushDropCount))"));
+            Assert.That(publish, Does.Contain("droppedFlags |= TelemetryWakeSignalRejectedFlag;"));
+            Assert.That(publish, Does.Contain("if (!SignalBus<FluidImpulseSignal>.TryPushTracked(in fluidImpulse, ref _signalPushDropCount))"));
+            Assert.That(publish, Does.Contain("droppedFlags |= TelemetryFluidImpulseSignalRejectedFlag;"));
+            Assert.That(text, Does.Contain("telemetryFlags |= PublishItemAcquired(in queuedSignal, addedQuantity);"));
+            Assert.That(text, Does.Contain("_dependencyTelemetryFlags |= PublishItemAcquired(in resolvedSignal, quantity);"));
+            Assert.That(text, Does.Contain("telemetryFlags |= PublishItemSnapSpark(in signalEvent, quantity);"));
+            Assert.That(text, Does.Contain("telemetryFlags |= PublishPresentationSignals(in signalEvent, quantity, ref acousticBudget, ref wakeBudget);"));
+            Assert.That(text, Does.Contain("telemetryFlags |= PublishPresentationSignals(in signalEvent, 0, ref acousticBudget, ref wakeBudget);"));
+        }
+
+        [Test]
         public void DebrisManagerSimulationAndBurstFlush_UseSingleStateMutationGuard()
         {
             string text = File.ReadAllText(DebrisManagerPath());
@@ -1018,6 +1493,7 @@ namespace Hecton8.Tests.Editor
             string carrion = File.ReadAllText(NutrientDriftCarrionPath());
             string frost = ExtractMethodBody(text, "FrostTick");
             string ensure = ExtractMethodBody(text, "EnsureVaultState");
+            string gridOrigin = ExtractMethodBody(text, "ResolveGridOriginAup");
             string acquire = ExtractMethodBody(text, "TryLockJobBuffers");
             string release = ExtractMethodBody(text, "UnlockJobBuffers");
             string teardown = ExtractMethodBody(text, "CompleteScheduledJobForTeardown");
@@ -1029,6 +1505,8 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(text, Does.Contain("NutrientJobMutationGuardMask"));
             Assert.That(text, Does.Contain("CarrionJobMutationGuardMask"));
+            Assert.That(gridOrigin, Does.Contain("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u"));
+            Assert.That(gridOrigin, Does.Contain("playerAup.IsFinite()"));
             Assert.That(text, Does.Contain("CombinedJobMutationGuardMask"));
             Assert.That(text, Does.Contain("InitializationMutationGuardMask"));
             Assert.That(text, Does.Contain("unchecked((int)(uint)(int)bufferId) & 31"));
@@ -1062,13 +1540,28 @@ namespace Hecton8.Tests.Editor
         public void RespawnReconciliation_UsesSingleGuardsAndBracketedTeardown()
         {
             string text = File.ReadAllText(ShinobuRespawnReconciliationRuntimePath());
+            string jobs = File.ReadAllText(ShinobuRespawnJobsPath());
             string schedule = ExtractMethodBody(text, "ScheduleSimulation");
             string acquire = ExtractMethodBody(text, "TryLockJobBuffers");
             string release = ExtractMethodBody(text, "UnlockJobBuffers");
             string rejectedTelemetry = ExtractMethodBody(text, "TryWriteRejectedDeathTelemetry");
+            string preSimulation = ExtractMethodBody(text, "PreSimulationTick");
+            string consumeLoadStatus = ExtractMethodBody(text, "ConsumeLoadStatusSignals");
+            string queueCompletedLoadCancel = ExtractMethodBody(text, "QueueOrApplyCompletedLoadRespawnCancel");
+            string flushCompletedLoadCancel = ExtractMethodBody(text, "TryFlushCompletedLoadRespawnCancel");
+            string releaseSuppressedCommit = ExtractMethodBody(text, "TryReleaseSuppressedRespawnCommitAfterLoadFailure");
+            string cancelForLoad = ExtractMethodBody(text, "TryCancelPendingRespawnForLoad");
+            string loadCanceledTelemetry = ExtractMethodBody(text, "TryWriteLoadCanceledRespawnTelemetry");
             string droppedTelemetry = ExtractMethodBody(text, "TryWriteDroppedItemTelemetry");
+            string writeRequest = ExtractMethodBody(text, "WriteRequestFromSignal");
             string teardown = ExtractMethodBody(text, "CompleteActiveJobForTeardown");
             string finish = ExtractMethodBody(text, "TryFinalizeActiveJobNoWait");
+            string clearHandles = ExtractMethodBody(text, "ClearCachedHandles");
+            string transformCommitted = ExtractMethodBody(text, "TryTransformCommittedRespawnSignal");
+            string translateFlags = ExtractMethodBody(text, "TranslateSignalFlags");
+            int resetJobIndex = jobs.IndexOf("public unsafe struct ResetPlayerPhysiologyJob", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(resetJobIndex, 0, "Missing ResetPlayerPhysiologyJob");
+            string resetJob = jobs.Substring(resetJobIndex);
 
             Assert.That(text, Does.Contain("JobMutationGuardMask"));
             Assert.That(text, Does.Contain("TelemetryMutationGuardMask"));
@@ -1082,10 +1575,81 @@ namespace Hecton8.Tests.Editor
             Assert.That(rejectedTelemetry, Does.Contain("ReleaseMutationGuard(TelemetryMutationGuardMask)"));
             Assert.That(droppedTelemetry, Does.Contain("TryAcquireMutationGuard(TelemetryMutationGuardMask)"));
             Assert.That(droppedTelemetry, Does.Contain("ReleaseMutationGuard(TelemetryMutationGuardMask)"));
+            Assert.That(writeRequest, Does.Contain("bool invalidDeathAup = (signal.Flags & PlayerRespawnSignalFlags.InvalidDeathAup) != 0u"));
+            Assert.Greater(
+                writeRequest.IndexOf("(signal.Flags & PlayerRespawnSignalFlags.InvalidDeathAup) != 0u", StringComparison.Ordinal),
+                writeRequest.IndexOf("NativeArray<RespawnRequestDTO> requestArray", StringComparison.Ordinal));
+            Assert.That(writeRequest, Does.Contain("uint invalidRouteFlags = invalidDeathAup"));
+            Assert.That(writeRequest, Does.Contain("ShinobuRespawnFlags.NanDetected | ShinobuRespawnFlags.InvalidTargetAup"));
+            Assert.That(writeRequest, Does.Contain("ShinobuRespawnFlags.DeathSequenceBlackoutPrimed |"));
+            Assert.That(writeRequest, Does.Contain("invalidRouteFlags"));
+            Assert.That(text, Does.Not.Contain("SignalBus<SaveStatusSignal>.EnsureInitialized();"));
+            Assert.That(preSimulation, Does.Contain("ConsumeLoadStatusSignals(vault)"));
+            Assert.Less(
+                preSimulation.IndexOf("ConsumeLoadStatusSignals(vault)", StringComparison.Ordinal),
+                preSimulation.IndexOf("if (_jobScheduled)", StringComparison.Ordinal));
+            Assert.Less(
+                preSimulation.IndexOf("ConsumeLoadStatusSignals(vault)", StringComparison.Ordinal),
+                preSimulation.IndexOf("SignalBus<PlayerRespawnSignal>.GetFrameSnapshot()", StringComparison.Ordinal));
+            Assert.That(consumeLoadStatus, Does.Contain("SignalBus<SaveStatusSignal>.GetFrameSnapshot()"));
+            Assert.That(consumeLoadStatus, Does.Contain("SaveStatusSignal.LoadOperationFlag"));
+            Assert.That(consumeLoadStatus, Does.Contain("_loadOperationInProgress = true;"));
+            Assert.That(consumeLoadStatus, Does.Contain("_loadOperationInProgress = false;"));
+            Assert.That(consumeLoadStatus, Does.Contain("SaveStatusSignal completedLoad = default;"));
+            Assert.That(consumeLoadStatus, Does.Contain("bool loadCompleted = false;"));
+            Assert.That(consumeLoadStatus, Does.Contain("bool loadFailedOrRejected = false;"));
+            Assert.That(consumeLoadStatus, Does.Contain("if (status.State == SaveStatusSignal.Completed)"));
+            Assert.That(consumeLoadStatus, Does.Contain("QueueOrApplyCompletedLoadRespawnCancel(vault, in completedLoad);"));
+            Assert.That(consumeLoadStatus, Does.Contain("TryReleaseSuppressedRespawnCommitAfterLoadFailure();"));
+            Assert.Less(
+                consumeLoadStatus.IndexOf("QueueOrApplyCompletedLoadRespawnCancel(vault, in completedLoad);", StringComparison.Ordinal),
+                consumeLoadStatus.IndexOf("if (_loadOperationInProgress)", StringComparison.Ordinal));
+            Assert.That(consumeLoadStatus, Does.Not.Contain("TryCancelPendingRespawnForLoad(vault, in activeLoad);"));
+            Assert.That(queueCompletedLoadCancel, Does.Contain("_completedLoadPendingRespawnCancel = completedLoad;"));
+            Assert.That(queueCompletedLoadCancel, Does.Contain("if (_jobScheduled)"));
+            Assert.That(queueCompletedLoadCancel, Does.Contain("_loadCompletionRespawnCancelPending = true;"));
+            Assert.That(queueCompletedLoadCancel, Does.Contain("TryFlushCompletedLoadRespawnCancel(vault);"));
+            Assert.That(flushCompletedLoadCancel, Does.Contain("TryCancelPendingRespawnForLoad(vault, in completedLoad);"));
+            Assert.That(flushCompletedLoadCancel, Does.Contain("_completedLoadPendingRespawnCancel = default;"));
+            Assert.That(flushCompletedLoadCancel, Does.Contain("_loadCompletionRespawnCancelPending = false;"));
+            Assert.That(flushCompletedLoadCancel, Does.Contain("_respawnCommitSuppressedForLoad = false;"));
+            Assert.That(releaseSuppressedCommit, Does.Contain("if (!_respawnCommitSuppressedForLoad)"));
+            Assert.That(releaseSuppressedCommit, Does.Contain("_respawnCommitSuppressedForLoad = false;"));
+            Assert.That(releaseSuppressedCommit, Does.Contain("return TryTransformCommittedRespawnSignal();"));
+            Assert.That(schedule, Does.Contain("if (_loadOperationInProgress)"));
+            Assert.Less(
+                schedule.IndexOf("if (_loadOperationInProgress)", StringComparison.Ordinal),
+                schedule.IndexOf("if (!HasPendingRespawnWork(vault))", StringComparison.Ordinal));
+            Assert.That(cancelForLoad, Does.Contain("TryAcquireMutationGuard(RequestMutationGuardMask)"));
+            Assert.That(cancelForLoad, Does.Contain("requestArray[0] = default;"));
+            Assert.That(cancelForLoad, Does.Contain("stateArray[0] = default;"));
+            Assert.That(cancelForLoad, Does.Contain("fadeArray[0] = clearedFade;"));
+            Assert.That(cancelForLoad, Does.Contain("_lastRequestSequence = 0u;"));
+            Assert.That(cancelForLoad, Does.Contain("_lastCommittedTransformSequence = 0u;"));
+            Assert.That(cancelForLoad, Does.Contain("TryWriteLoadCanceledRespawnTelemetry(vault"));
+            Assert.That(loadCanceledTelemetry, Does.Contain("ShinobuRespawnFlags.CanceledByLoad"));
+            Assert.That(loadCanceledTelemetry, Does.Contain("TryAcquireMutationGuard(TelemetryMutationGuardMask)"));
+            Assert.That(loadCanceledTelemetry, Does.Contain("telemetryCursor.Flags = routeFlags & (ShinobuRespawnFlags.NanDetected | ShinobuRespawnFlags.InvalidTargetAup | ShinobuRespawnFlags.CanceledByLoad);"));
+            Assert.That(finish, Does.Contain("bool suppressTransform = _loadOperationInProgress || _loadCompletionRespawnCancelPending;"));
+            Assert.That(finish, Does.Contain("_respawnCommitSuppressedForLoad = true;"));
+            Assert.That(finish, Does.Contain("TryFlushCompletedLoadRespawnCancel(_dataVault);"));
+            Assert.That(teardown, Does.Contain("bool suppressTransform = _loadOperationInProgress || _loadCompletionRespawnCancelPending;"));
+            Assert.That(teardown, Does.Contain("_respawnCommitSuppressedForLoad = true;"));
+            Assert.That(teardown, Does.Contain("TryFlushCompletedLoadRespawnCancel(_dataVault);"));
+            Assert.That(transformCommitted, Does.Contain("if (_loadOperationInProgress || _loadCompletionRespawnCancelPending)"));
+            Assert.Less(
+                transformCommitted.IndexOf("if (_loadOperationInProgress || _loadCompletionRespawnCancelPending)", StringComparison.Ordinal),
+                transformCommitted.IndexOf("SignalBus<PlayerRespawnSignal>.TransformSnapshot(transformer);", StringComparison.Ordinal));
+            Assert.That(clearHandles, Does.Contain("_completedLoadPendingRespawnCancel = default;"));
+            Assert.That(clearHandles, Does.Contain("_loadCompletionRespawnCancelPending = false;"));
+            Assert.That(clearHandles, Does.Contain("_respawnCommitSuppressedForLoad = false;"));
             Assert.That(teardown, Does.Contain("DispatcherJobFence.BeginPostSimulationSwapWindow()"));
             Assert.That(teardown, Does.Contain("DispatcherJobFence.EndPostSimulationSwapWindow()"));
             Assert.That(teardown, Does.Contain("finally"));
             Assert.That(finish, Does.Contain("finally"));
+            Assert.That(resetJob, Does.Contain("ShinobuRespawnFlags.PenaltyApplied | ShinobuRespawnFlags.NanDetected"));
+            Assert.That(resetJob, Does.Contain("ShinobuRespawnFlags.Committed | (flags &"));
+            Assert.That(translateFlags, Does.Contain("if ((flags & ShinobuRespawnFlags.NanDetected) != 0u) translated |= PlayerRespawnSignalFlags.InvalidDeathAup;"));
             Assert.AreEqual(0, Count(text, @"\b(?:TryAcquireWriteLock|TryLockBuffer|ReleaseWriteLock|TryUnlockBuffer|UnlockLockedJobBuffers|TryLockJobBuffer)\b"), "respawn reconciliation legacy locks");
         }
 
@@ -1587,6 +2151,46 @@ namespace Hecton8.Tests.Editor
             return Path.Combine(RuntimeScriptsRoot(), "Construction", "VehicleDockingModule.cs");
         }
 
+        private static string DroneFleetManagerPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Construction", "DroneFleetManager.cs");
+        }
+
+        private static string DroneFleetManagerTransactionsPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Construction", "DroneFleetManager_Transactions.cs");
+        }
+
+        private static string GlobalSignalPayloadsCoreFoundationPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "Signals", "GlobalSignalPayloads.CoreFoundation.cs");
+        }
+
+        private static string GlobalSignalPayloadsPhysicsInventoryPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "Signals", "GlobalSignalPayloads.PhysicsInventory.cs");
+        }
+
+        private static string GlobalSignalsStatePath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "Signals", "GlobalSignals.State.cs");
+        }
+
+        private static string GlobalSignalsRuntimeLifecyclePath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "Signals", "GlobalSignals.RuntimeLifecycle.cs");
+        }
+
+        private static string SignalBusRuntimePath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "Signals", "SignalBusRuntime.cs");
+        }
+
+        private static string PlayerInventoryPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "PlayerInventory.cs");
+        }
+
         private static string GlobalShaderDispatcherPath()
         {
             return Path.Combine(RuntimeScriptsRoot(), "Rendering", "GlobalShaderDispatcher.cs");
@@ -1619,7 +2223,7 @@ namespace Hecton8.Tests.Editor
 
         private static string ScavengingLootOraclePath()
         {
-            return Path.Combine(RuntimeScriptsRoot(), "Scavenging", "ScavengingLootOracle.cs");
+            return Path.Combine(RuntimeScriptsRoot(), "Scavenging", "ScavengingLootOracleRuntime.cs");
         }
 
         private static string CrashTelemetryBufferPath()
@@ -1740,6 +2344,11 @@ namespace Hecton8.Tests.Editor
         private static string ShinobuRespawnReconciliationRuntimePath()
         {
             return Path.Combine(RuntimeScriptsRoot(), "Physiology", "ShinobuRespawnReconciliationRuntime.cs");
+        }
+
+        private static string ShinobuRespawnJobsPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Physiology", "ShinobuRespawnJobs.cs");
         }
 
         private static string ShinobuSensoryImpairmentRuntimePath()
@@ -1900,6 +2509,16 @@ namespace Hecton8.Tests.Editor
 
             Assert.Fail("Unclosed method body " + label);
             return string.Empty;
+        }
+
+        private static void AssertSourceOrder(string source, string before, string after)
+        {
+            int beforeIndex = source.IndexOf(before, StringComparison.Ordinal);
+            int afterIndex = source.IndexOf(after, StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(beforeIndex, 0, "Missing source token: " + before);
+            Assert.GreaterOrEqual(afterIndex, 0, "Missing source token: " + after);
+            Assert.Less(beforeIndex, afterIndex);
         }
 
         private sealed class MockVaultLockTable

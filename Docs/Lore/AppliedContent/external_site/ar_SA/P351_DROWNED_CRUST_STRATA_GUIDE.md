@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Drowned Crust Strata Guide"
+title: "دليل طبقات القشرة الغارقة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Drowned Crust Strata Guide
+# دليل طبقات القشرة الغارقة
 
-AR LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.
+يجعل دليل طبقات القشرة الغارقة قاع HECTON-8 مبنيا ومكسورا في الوقت نفسه: terrain وsalvage routes والعينات المعدنية تأتي كلها من تاريخ الضغط الطبقي نفسه.
 
 ## Scanner
 
-AR LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+تكشف الطبقات المغمورة علامات قطع قديمة، ودرزات pressure-glass، وأحزمة معدنية لا تفشل مرتين في الاتجاه نفسه.
 
 ## Terminal
 
-AR LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: قشرة HECTON-8 الغارقة صخر مستوطنة مكدس، وذاكرة جليد منهار، وpressure glass، وextraction scars تحت brine متحرك. خطوط الكسر أهم من الأسطح النظيفة.
 
 ## Audio
 
-AR LOC HOLD: The map is not terrain. It is a stack of drownings.
+الخريطة ليست أرضا. إنها كومة غرق.
 
 ## Field Note
 
-AR LOC HOLD: Use for geology codex and procedural world labels.
+إذا رن الحزام كأنه أجوف، فلا تثق بالوجه المسطح. علّم الكسر، خذ العينة، واترك الجدار ممسكا نفسه.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/ar_SA. -->

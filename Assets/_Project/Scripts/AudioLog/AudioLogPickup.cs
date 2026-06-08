@@ -434,7 +434,7 @@ namespace Hecton8.Narrative
 
         private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
         {
-            if (audioLogSystem == null)
+            if (audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady)
                 return false;
 
             if (audioLogSystem is Behaviour behaviour)

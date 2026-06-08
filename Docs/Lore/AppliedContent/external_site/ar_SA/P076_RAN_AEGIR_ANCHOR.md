@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ran / Aegir Anchor"
+title: "مرساة Ran / Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ran / Aegir Anchor
+# مرساة Ran / Aegir
 
-AR LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below.
+مرساة Ran / Aegir تثبت الطعم البصري لـ HECTON-8: ضوء خافت واقعي في الأعلى، وضغط ودين معاديان في الأسفل.
 
 ## Scanner
 
-AR LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
+لوحة نجم من الفئة K. Ran يحترق بشكل طبيعي. Aegir أخفت من Sol، لكن الظلمة هنا تأتي من العمق والطقس والدين.
 
 ## Terminal
 
-AR LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR // ضوء قزم برتقالي يدعم عمل السطح. تشتت العواصف وهندسة الكسوف وعكارة المحيط تخفض قراءة الهبوط دون هامش الأمان.
 
 ## Audio
 
-AR LOC HOLD: The star is not absent. It just cannot follow you down.
+النجم موجود. لكنه لا يستطيع أن يتبعك إلى الأسفل.
 
 ## Field Note
 
-AR LOC HOLD: A real star is enough. The ocean does the rest.
+نجم حقيقي يكفي. المحيط يتولى الباقي.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/ar_SA. -->

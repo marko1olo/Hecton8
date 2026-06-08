@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Sol-Core-Autorität"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Sol-Core-Autorität
 
-DE LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core ist die juristische und finanzielle Wurzel menschlicher Expansion, kein persönlicher Geburtsort und keine Rettungsstelle. Auf HECTON-8 überleben seine Standards als Siegel, Haftungsformulare, Sicherheitsschilder und Versicherungssprache, die die Menschen überdauert hat, die sie schützen sollte.
 
 ## Scanner
 
-DE LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+Altes Sol-Rechtssiegel. Es kann eine Grenzland-Leiche besitzen, ohne nah genug zu sein, um das Druckleck zu riechen.
 
 ## Terminal
 
-DE LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+SOL CORE STANDARD: Anspruchskontinuität anerkannt durch lizenzierte Frachtverwahrung, Routenversicherung und verzögerte Entscheidung. Priorität menschlicher Bergung bis zur lokalen Gefahrenzertifizierung ungeklärt.
 
 ## Audio
 
-DE LOC HOLD: The seal came from Earth space. The rescue clause did not.
+Das Siegel kam aus dem Erdraum. Die Rettungsklausel nicht.
 
 ## Field Note
 
-DE LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol ist hier kein Zuhause. Es ist die älteste Unterschrift auf dem Dokument, die dich immer noch ruinieren kann.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/de_DE. -->

@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "דקדוק מפגש: בטיחות כוזבת של סחף פנסים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# דקדוק מפגש: בטיחות כוזבת של סחף פנסים
 
-HE LOC HOLD: Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.
+מפגשי בטיחות כוזבת של סחף פנסים צריכים לגרום לשחקן לרצות את האור לפני שהוא לא בוטח בו. נתיב בהיר יכול לחשוף שכבת חמצן, קשתות כבל, גרגרים מרחפים ודרך נקייה דרך בלגן השונית. הוא גם יכול להיות השובל של השחקן עצמו, שארית טעונה בסערה, רעש אות מתשתית ישנה או קו הזזת טורף שבו החיות הקטנות כבר זזו הצידה. הדקדוק עובד כשהיופי עצמו נושא כמה משמעויות יחד. צבע לבדו לא צריך לפתור את המסלול. מהירות פעימה, כיוון זרם, התנהגות מגרדים, צד השארית, החזר pinger ורעש כלי צריכים להסכים לפני שסומכים על הנתיב. אם הזוהר מתחדד מאחורי השחקן, המפגש הפך לחשיפה. אם הוא מתבהר קדימה בזמן שהפאונה משתתקת, הוא הפך לפיתיון. עקוב אחרי סחף פנסים כעד, לא כהבטחה.
 
 ## Scanner
 
-HE LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+נתיב סחף פנסים. מים בהירים עשויים להיות שפת חמצן, רעש אות, שובל כלי או תנועה שהוזזה בידי טורף. בדוק את הזרם לפני מעקב.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+דקדוק מפגש / בטיחות כוזבת של סחף פנסים / תפקיד: יופי כנתונים מעורפלים, פיתוי מסלול, עונש stealth / קריאה בטוחה: זרם תואם לזוהר, פאונה רגילה, שארית בצד הצפוי / דחה: טיפול באור כחול כבטיחות, מעקב אחרי מסדרון סערה כוזב, תיקון רועש בתוך שובל מואר / הערת מסלול: זוהר אחד יכול להיות דרך, פיתיון, רשומת פאניקה או חשיפה.
 
 ## Audio
 
-HE LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+אור אינו רחמים. זה נתון שהחליפה שלך עוד לא למדה להפריד.
 
 ## Field Note
 
-HE LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+שאל מה האור נושא: זרם, חמצן, הרעש שלך, או משהו שהזיז את כל השאר.
 
 <!-- In-Game Wiki; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/he_IL. -->

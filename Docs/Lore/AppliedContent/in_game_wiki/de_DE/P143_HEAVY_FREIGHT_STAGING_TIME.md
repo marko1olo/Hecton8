@@ -7,34 +7,34 @@ poi_tags: poi.freight_stage_mass_board;poi.seed_ship_burn_schedule
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Stagingzeit schwerer Fracht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# Stagingzeit schwerer Fracht
 
-DE LOC HOLD: Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.
+Timing schwerer Fracht schützt die No-FTL-Zeitlinie. Atlas-Hardware kann vor Massensiedlung ankommen, weil Konzerne Vorläuferfracht früh starten, sie vorwärts stagen, unbemanntes Risiko akzeptieren und Fehlerfenster in Programmsprache begraben. Rettung kann diesen Trick nach Beginn des Notfalls nicht ausleihen.
 
 ## Scanner
 
-DE LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
+Atlas-Klasse-Fracht ist vorausbezahlte Geduld in Panzerung.
 
 ## Terminal
 
-DE LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
+FRACHTNOTIZ: Atlas- und Seed-Fracht nutzen Staging, Pelletfusionshilfe, lange Drift und Bremsinfrastruktur. Öffentliche Daten können Vorläuferstarts und Forward-Domain-Abflüge verbergen.
 
 ## Audio
 
-DE LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
+Ein so schweres Schiff reist nicht einfach. Es wird eine Rechnung mit Kielwasser.
 
 ## Field Note
 
-DE LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+Eine schwere Route wird aus Depots, Strahlfenstern, Bremsmasse und politischem Nerv gebaut.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/de_DE. -->

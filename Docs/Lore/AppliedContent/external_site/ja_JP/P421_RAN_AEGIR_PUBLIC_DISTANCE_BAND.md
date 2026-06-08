@@ -8,33 +8,33 @@ biome_tags: biome.human_space;biome.publication
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "JA LOC HOLD: Ran/Aegir Distance Band"
+spoiler_tier: 1
+title: "Ran/Aegir距離帯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Ran/Aegir Distance Band
+# Ran/Aegir距離帯
 
-JA LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.
+Aegir系は到達可能だが厳しいno-FTL帯にある。産業には近く、放棄が意味を持つほど遠い。
 
 ## Scanner
 
-JA LOC HOLD: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+公開帯域: Ran/AegirはSolから十光年級のFTLなし航路。
 
 ## Terminal
 
-JA LOC HOLD: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+EPHEMERIS BAND: 天体定数が表で固定されるまで、公開文では十光年級を使う。この航路にFTL救助は存在しない。
 
 ## Audio
 
-JA LOC HOLD: Ten light-years is close on a map and brutal for a contract.
+十光年は地図では近く、契約では残酷だ。
 
 ## Field Note
 
-JA LOC HOLD: Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
+公開天文学記録: 距離帯と航路図は説明用の範囲であり、最終ephemeris constantsではない。
 
 <!-- External Site; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/ja_JP. -->

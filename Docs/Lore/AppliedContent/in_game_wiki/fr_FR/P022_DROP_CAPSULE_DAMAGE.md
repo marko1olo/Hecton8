@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Dégâts de capsule
 
-La capsule amène le joueur sur HECTON-8. Le crash garde abri, énergie et journaux, mais détruit la remontée. La fuite précoce devient une chaîne d'ingénierie.
+La capsule de largage amène le Maraudeur sur HECTON-8. Le crash laisse assez de systèmes vivants pour abri, énergie et journaux, mais détruit le matériel d'ascension. La sortie précoce devient une chaîne d'ingénierie, pas un bouton.
 
 ## Scanner
 

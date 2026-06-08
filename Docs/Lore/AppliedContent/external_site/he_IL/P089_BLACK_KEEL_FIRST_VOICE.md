@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "הקול הראשון של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# הקול הראשון של Black Keel
 
-HE LOC HOLD: Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue.
-
-## Scanner
-
-HE LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
-
-## Terminal
-
-HE LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
-
-## Audio
-
-HE LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
-
-## Field Note
-
-HE LOC HOLD: The first voice should feel useful before it feels bought.
+הקול הראשון של Black Keel צריך להרגיש כמו דלת שנפתחת רק עד החצי. השמע פגום, ערוץ הטקסט נקי, וה-carrier אינו מבזבז מילה על נחמה. ההיעדר הזה חשוב. AI ידידותי היה מרכך את האוקיינוס. נבל דרמטי היה עושה את הסכנה אנושית מדי. Black Keel מועיל משניהם כי הוא אומר אמת בפורמט שעדיין מסרב לבטיחות. אות נקלט. הישרדות הוכרה. recovery לא פתורה. השחקן לומד שלהישמע אינו להינצל, ושהקול היחיד מעל המים קשור ל-ledgers שהוא עוד לא ראה.
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/he_IL. -->

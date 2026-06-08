@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Долговая цепь relay custody
 
-Relay custody превращает космическую логистику в давление. Игрок может получать помощь, но маршрут помощи несет долг, priority hooks и корпоративную власть.
+Relay custody превращает космическую логистику в давление. Помощь может прийти, но маршрут помощи несет с собой долг, priority hooks и корпоративную власть.
 
 ## Scanner
 

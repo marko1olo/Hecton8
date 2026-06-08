@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Needleprobe Precursor Program"
+title: "برنامج الطلائع Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Needleprobe Precursor Program
+# برنامج الطلائع Needleprobe
 
-AR LOC HOLD: HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
-
-## Scanner
-
-AR LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
-
-## Terminal
-
-AR LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
-
-## Audio
-
-AR LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
-
-## Field Note
-
-AR LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+أول حضور بشري في Aegir لم يكن بطوليا. كان سلسلة من آلات صغيرة ومكلفة تعبر طريقا لم يمنحه أي طاقم حي تصنيفا. قاست needleprobes اختلاف المنظر والإشعاع وكيمياء المحيط ومدارات الأقمار وخطوط رؤية الترحيل، ثم انتظرت سنوات حتى تصبح أجوبتها مفيدة. لم تكتشف Deep Reach قمر HECTON-8 براية في اليد؛ اشترت ثقة آلية كافية لتسميته أصلا. هذا الأصل مهم لأن المستعمرة ورثت كذبة في النبرة، لا في البيانات. البيانات كانت حقيقية. الثقة المبنية عليها كانت أنظف مما يصلح للبشر الذين أرسلوا لاحقا إلى الماء.
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/ar_SA. -->

@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Hecton8.Core.Memory;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Hecton8.Core
 {
@@ -19,6 +20,7 @@ namespace Hecton8.Core
         private int _writeGate;
         private long _writeCursor;
         private SystemID _ownerSystem;
+        private int _sentinelId;
 
         /// <summary>
         /// Initializes a fixed-capacity native ring buffer.
@@ -57,6 +59,7 @@ namespace Hecton8.Core
             _indexMask = capacity - 1;
             _writeGate = 0;
             _writeCursor = 0L;
+            _sentinelId = 0;
 
             if (!_buffer.IsCreated)
             {
@@ -236,33 +239,28 @@ namespace Hecton8.Core
         {
             if (!_buffer.IsCreated)
                 return;
+            if (_sentinelId > 0)
+                return;
 
             try
             {
                 int sentinelId = NativeMemorySentinel.RegisterNativeArray(_buffer, owner, label, lifetime);
                 if (sentinelId <= 0)
                     throw new InvalidOperationException($"NativeMemorySentinel rejected native ring backing registration for {owner}.{label}.");
+
+                _sentinelId = sentinelId;
             }
             catch
             {
-                NativeMemorySentinel.UnregisterNativeArray(_buffer);
                 Dispose();
                 throw;
             }
         }
 
-        public void UnregisterBackingArray()
-        {
-            if (!_buffer.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(_buffer);
-        }
-
         /// <summary>
         /// Releases the native backing block.
         /// </summary>
-        public void Dispose()
+        public unsafe void Dispose()
         {
             if (!_buffer.IsCreated)
                 return;
@@ -272,8 +270,21 @@ namespace Hecton8.Core
             {
                 if (_buffer.IsCreated)
                 {
-                    NativeMemorySentinel.UnregisterNativeArray(_buffer);
+                    void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_buffer);
+                    int sentinelId = _sentinelId;
                     H8Memory.Release(ref _buffer, _ownerSystem);
+                    if (_buffer.IsCreated)
+                        return;
+
+                    if (sentinelId > 0)
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                        _sentinelId = 0;
+                    }
+                    else
+                    {
+                        NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                    }
                 }
 
                 _buffer = default;

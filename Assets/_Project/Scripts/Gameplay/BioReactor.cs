@@ -285,14 +285,15 @@ namespace Hecton8.Gameplay
             if (!IsAcceptedFuel(item))
                 return false;
 
-            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(item.PersistentId)))
+            int itemHashId = ItemData.ResolvePersistentHashId(item);
+            if (itemHashId == 0 || !playerInventory.ContainsItem(itemHashId))
                 return false;
 
             if (!InsertFuel(item))
                 return false;
 
             // Remove one unit from player inventory
-            playerInventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1);
+            playerInventory.TryRemoveQuantity(itemHashId, 1);
             return true;
         }
 
@@ -553,7 +554,7 @@ namespace Hecton8.Gameplay
             if (!_registeredHotSwap)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
         }
 
@@ -669,7 +670,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1001,18 +1002,24 @@ namespace Hecton8.Gameplay
             return surfaceDistance * surfaceDistance;
         }
 
+        private static float ResolveFiniteSeverity01(float severity01)
+        {
+            return math.isfinite(severity01) ? math.saturate(severity01) : 0f;
+        }
+
         private void PublishReactorGasLeak(float severity01)
         {
             Vector3 origin = _cachedTransform != null ? _cachedTransform.position : transform.position;
             if (!TryResolveRuntimeAup(origin, out double3 damageAup))
                 return;
 
+            float safeSeverity01 = ResolveFiniteSeverity01(severity01);
             ReactorDamageSignal signal = new ReactorDamageSignal
             {
                 DamageAup = damageAup,
                 ReactorHash = unchecked((uint)GetRuntimeId(this)),
-                Damage01 = math.saturate(severity01),
-                ToxinLeak01 = math.saturate(severity01),
+                Damage01 = safeSeverity01,
+                ToxinLeak01 = safeSeverity01,
                 Flags = 1
             };
             SignalBus<ReactorDamageSignal>.TryPushTracked(in signal, ref s_x001BioReactorSignalPushDropCount);
@@ -1024,7 +1031,7 @@ namespace Hecton8.Gameplay
             if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
                 return;
 
-            float severity01 = math.saturate(damage01);
+            float severity01 = ResolveFiniteSeverity01(damage01);
             if (severity01 <= 0.0001f)
                 return;
 
@@ -1055,7 +1062,7 @@ namespace Hecton8.Gameplay
 
         private void PublishMeltdownRadiationDose(Vector3 origin, float damage01)
         {
-            float severity01 = math.saturate(damage01);
+            float severity01 = ResolveFiniteSeverity01(damage01);
             if (severity01 <= 0.0001f || !TryResolveRuntimeAupPosition(origin, out AbsoluteUniversePosition positionAup))
                 return;
 

@@ -315,6 +315,15 @@ namespace Hecton8.UI
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
+                return;
+            }
+
             if (_recipeListRoot != null)
                 _recipeListRoot.hasChanged = true;
 
@@ -813,9 +822,7 @@ namespace Hecton8.UI
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
-                GlobalRegistry.UnregisterHotSwapListener(this);
-
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
         }
 

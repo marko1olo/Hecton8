@@ -411,13 +411,14 @@ namespace Hecton8.Physics
 
                 DisposeSlot(slot);
                 NativeArray<float4> array = default;
+                int sentinelId = 0;
                 try
                 {
                     array = new NativeArray<float4>(
                         requiredCount,
                         Allocator.Persistent,
                         NativeArrayOptions.ClearMemory);
-                    int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    sentinelId = NativeMemorySentinel.RegisterNativeArray(
                         array,
                         NativeMemoryOwner,
                         GpuReadbackDataLabel,
@@ -431,14 +432,36 @@ namespace Hecton8.Physics
                 {
                     if (array.IsCreated)
                     {
-                        try
+                        System.Exception nativeSentinelCleanupException0 = null;
+
+                        if (sentinelId > 0)
                         {
-                            NativeMemorySentinel.UnregisterNativeArray(array);
+                            try
+                            {
+                                NativeMemorySentinel.Unregister(sentinelId);
+                            }
+                            catch (System.Exception nativeSentinelException0)
+                            {
+                                nativeSentinelCleanupException0 = nativeSentinelException0;
+                            }
+                            finally
+                            {
+                                sentinelId = 0;
+                            }
                         }
-                        finally
+
+                        try
                         {
                             array.Dispose();
                         }
+                        catch (System.Exception nativeSentinelException0)
+                        {
+                            if (nativeSentinelCleanupException0 == null)
+                                nativeSentinelCleanupException0 = nativeSentinelException0;
+                        }
+
+                        if (nativeSentinelCleanupException0 != null)
+                            throw nativeSentinelCleanupException0;
                     }
 
                     throw;
@@ -451,14 +474,39 @@ namespace Hecton8.Physics
                     DisposeSlot(i);
             }
 
-            private void DisposeSlot(int slot)
+            private unsafe void DisposeSlot(int slot)
             {
                 if (slot < 0 || slot >= _data.Length || !_data[slot].IsCreated)
                     return;
 
-                NativeMemorySentinel.UnregisterNativeArray(_data[slot]);
-                _data[slot].Dispose();
-                _data[slot] = default;
+                void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_data[slot]);
+                Exception firstException = null;
+
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+
+                try
+                {
+                    _data[slot].Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    _data[slot] = default;
+                }
+
+                if (firstException != null)
+                    throw firstException;
             }
         }
 
@@ -2063,7 +2111,7 @@ namespace Hecton8.Physics
             // Initial observer resolution. If player/camera appears later,
             // FixedTick retries on a cooldown instead of staying in full-cost mode forever.
             TryResolveObserver(force: true);
-            
+
             // Cache LOD distances once (update if parameters change via property)
             UpdateCachedLodDistances();
 
@@ -2266,23 +2314,44 @@ namespace Hecton8.Physics
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             _lastOriginShiftSequence = shiftData.Sequence;
-            if (shiftData.ShiftOffset.sqrMagnitude <= 0.000001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             if (_scheduledBuoyancyJobActive)
             {
-                _pendingOriginShiftOffset += shiftData.ShiftOffset;
+                _pendingOriginShiftOffset += shiftOffset;
+                float pendingShiftSqrMagnitude = _pendingOriginShiftOffset.sqrMagnitude;
+                if (!MathGuard.IsFinite(_pendingOriginShiftOffset) ||
+                    !MathGuard.IsFinite(pendingShiftSqrMagnitude))
+                {
+                    _pendingOriginShiftOffset = Vector3.zero;
+                    _hasPendingOriginShiftRebase = false;
+                    CrashTelemetryBuffer.ReportNanPhysicsRecovery(shiftOffset, Vector3.zero);
+                    return;
+                }
+
                 _hasPendingOriginShiftRebase = true;
                 return;
             }
 
-            ApplyOriginShiftRebase(shiftData.ShiftOffset);
+            ApplyOriginShiftRebase(shiftOffset);
         }
 
         private void ApplyOriginShiftRebase(Vector3 shiftOffset)
         {
-            if (shiftOffset.sqrMagnitude <= 0.000001f)
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             float3 runtimeOffset = new float3(
                 -shiftOffset.x,
@@ -2428,7 +2497,7 @@ namespace Hecton8.Physics
             _celestialEngine = GlobalRegistry.CelestialSkyDirection;
             _terrainBridge = GlobalRegistry.TerrainHeightSamples;
             _proceduralFieldSampler = GlobalRegistry.BiomePhysicsInfluence;
-            _sargassumDragRuntime = GlobalRegistry.SargassumDragReadModel;
+            WorldRuntimeReferenceUtility.TryResolveSargassumDragReadModel(ref _sargassumDragRuntime);
             _resourceDistributionRuntime = GlobalRegistry.BrineFluidDensity;
             _thermalRuntime = GlobalRegistry.ThermodynamicsService;
         }
@@ -6817,25 +6886,57 @@ namespace Hecton8.Physics
             }
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
+        private static unsafe void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            Exception firstException = null;
+
             if (dependency.IsCompleted)
             {
                 DispatcherJobFence.TryFinalizeCompleted(ref dependency);
-                array.Dispose();
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+
+                try
+                {
+                    array.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
             }
             else
             {
                 JobHandle disposeHandle = array.Dispose(dependency);
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                if (!DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true))
+                    throw new InvalidOperationException("HectonFluidEngine native array disposal did not complete before sentinel unregister.");
+
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
             }
 
             array = default;
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private void InitializeViscosityGradientLut()
@@ -9405,7 +9506,7 @@ namespace Hecton8.Physics
             if (abyssalFlowFieldCompute == null)
                 abyssalFlowFieldCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(AbyssalFlowFieldComputeAssetPath);
 #endif
-            
+
             // Update LOD cache when parameters change
             UpdateCachedLodDistances();
         }

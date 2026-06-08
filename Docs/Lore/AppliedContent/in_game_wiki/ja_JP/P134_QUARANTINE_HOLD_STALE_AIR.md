@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "隔離保留：よどんだ空気"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# 隔離保留：よどんだ空気
 
-JP LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+隔離保留は身体を救い、agencyを停止する。プレイヤーは圧力から逃れたが、custodyからは逃れていない。証拠が審査文言の背後で待つ間、すべての呼吸は計量される。
 
 ## Scanner
 
-JP LOC HOLD: You are alive, sealed, and still not free.
+身体回収。証人封印。空気配給作動中。
 
 ## Terminal
 
-JP LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+隔離保留：請負者は生存回収。空気配給作動中。sample custody未解決。外部証言は汚染審査、claimant異議、Keelmark損失審査まで延期。
 
 ## Audio
 
-JP LOC HOLD: The hatch opens only to another closed hatch.
+ハッチは別の閉じたハッチへ開く。
 
 ## Field Note
 
-JP LOC HOLD: This is the bureaucratic version of drowning.
+これは溺死の行政版である。
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/ja_JP. -->

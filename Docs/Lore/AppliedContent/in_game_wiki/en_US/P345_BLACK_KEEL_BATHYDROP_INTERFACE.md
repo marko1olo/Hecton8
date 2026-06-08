@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Black Keel Bathydrop Interface
 
-The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+The first escape blocker is engineering. Black Keel still exists above the water, but the damaged bathydrop interface cannot reconnect surface, orbit, and timing by intent alone. Repair needs deep-rated salvage, clean seals, working relay geometry, and a launch window the carrier will accept.
 
 ## Scanner
 
-Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+Bathydrop interface damaged: surface return chain cannot close without pressure-rated parts, relay timing, and a clean ascent latch.
 
 ## Terminal
 
-CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+CAPSULE REPORT: heat shield trim survived. Buoyancy gate bent. Comm mast flooded. Ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math, and verified window.
 
 ## Audio
 
@@ -35,6 +35,6 @@ You did not lose the whole ship. You lost the one chain that makes the ship matt
 
 ## Field Note
 
-First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+First-hour escape record: the carrier is present, but the chain between player, sea, surface, and orbit is broken in named parts.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/en_US. -->

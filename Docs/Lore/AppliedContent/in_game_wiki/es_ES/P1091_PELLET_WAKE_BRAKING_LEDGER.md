@@ -14,29 +14,33 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Libro de frenado de la estela de pellets
 
-El Libro de frenado de la estela de pellets vuelve tangible el viaje interestelar: una tira ablativa quemada, un fragmento de escuela de ruta y una cuenta de masa más vieja que el choque. Aegir fue alcanzado primero por pequeñas sondas de haz de pellets lanzadas desde Luyten Junction. Esas sondas eran lo bastante baratas para perderse. La carga humana pesada llegó después, en portadores Atlas que quemaban pulsos de fusión eléctrica, dormían tripulaciones en letargo y trataban cada kilogramo como deuda.
+A primera vista el libro parece chatarra: una tira de lámina ablativa quemada, una pizarra de escuela de rutas partida y una cuenta de masa más vieja que el choque. Juntas ponen el tránsito interestelar en la mano de un Marauder. Aegir no se abrió con naves heroicas perforando la oscuridad. Lo cartografiaron pequeños exploradores de haz de pellets disparados desde Luyten Junction, máquinas baratas con paquetes testigo y sin expectativa de retorno. La ruta se volvió legal antes de volverse segura.
 
-Lo brutal es llegar. Una nave que pasa años subiendo hacia tránsito cercano a la luz todavía debe perder esa velocidad. Las velas magnéticas muerden el medio interestelar. El aerofrenado roza gigantes gaseosos y envolturas de tormenta. Una fracción mala en el margen convierte la carga en plasma. Por eso HECTON-8 puede estar poseído, facturado e indexado por ley humana y seguir siendo inalcanzable como rescate. La corporación hereda la reclamación antes de que un casco cruce la oscuridad.
+La masa humana llegó después. Los portadores Atlas no saltaban. Fueron empujados, alimentados, blindados y facturados durante años. Las pilas de pulso de fusión eléctrica subían hacia tránsito cercano a la luz mientras las tripulaciones dormían en frío y los acreedores medían cada kilogramo como un gravamen futuro. Blindaje extra, comida, propelente, literas de rescate, herramientas de repuesto: todo tenía precio de masa. En HECTON-8, el precio de masa se convierte en blue debt antes de que nadie vea a un superviviente.
+
+La muestra de estela conserva la parte que los manuales públicos suavizan. Llegar es el quemado difícil al revés. Las velas magnéticas arrastran contra polvo cargado y plasma escaso. Los chorros de pellets muerden el borde de la vela. Las pasadas de aerofrenado usan gigantes gaseosos y envolturas de tormenta como herramientas que también pueden matar la nave. Demasiada cautela y el portador pierde la ventana. Muy poca, y la carga se vuelve una mancha brillante.
+
+Por eso Deep Reach puede presentar una reclamación más rápido de lo que puede salvarte. Un paquete cruza la ruta como información. Una deuda se mueve por contrato. Black Keel puede poner precio a una ventana de recuperación porque ya está en el espacio local de Aegir. Un casco de rescate desde los mundos interiores aún debe pagar velocidad, frenado, riesgo de tripulación y masa de seguro. La civilización llega a HECTON-8 primero como firma, luego como advertencia, y mucho después como máquina.
 
 ## Scanner
 
-MUESTRA DE ESTELA DE TRÁNSITO // Lámina ablativa picada por rociado de micro-pellets. Fibra de borde de vela magnética presente. Cicatrices isotópicas coinciden con carga saliente de Barnard Yards, no con hardware de rescate local.
+MUESTRA DE ESTELA DE TRÁNSITO // Lámina ablativa de una banda de residuos de frenado, picada por impactos de micro-pellets. Fibra de borde de vela magnética fundida en un pliegue. Cicatrices isotópicas coinciden con stock de carga saliente de Barnard Yards, no con hardware de rescate Black Keel.
 
 ## Terminal
 
-PROGRAMA BARNARD YARDS 44-A // Clase de ruta: carga interestelar lenta. Fase exploradora: sondas por haz de pellets de Luyten. Fase pesada: portador Atlas de pulso fusión-eléctrico. Llegada: frenado con vela magnética, salto de gigante gaseoso, margen de envoltura de tormenta. Nota: una respuesta de Sol no altera la autoridad local de salvamento dentro de una ventana de reclamación Aegir viva.
+PROGRAMA BARNARD YARDS 44-A // Clase de ruta: carga interestelar lenta. Fase exploradora: sondas por haz de pellets de Luyten y paquetes testigo. Fase pesada: portadores Atlas de fusión eléctrica con tripulación en letargo y ventanas de masa firmadas. Llegada: frenado con vela magnética, salto de gigante gaseoso, margen de envoltura de tormenta. Nota legal: una respuesta de Sol no altera la autoridad local de salvamento dentro de una ventana de reclamación Aegir activa. La ley viaja como señal. El rescate viaja como masa.
 
 ## Audio
 
-¿Quieres matemáticas de rescate? Cuenta los pellets, cuenta los desgarros de vela, cuenta los años. Luego pregunta quién gasta ese combustible por un deudor.
+¿Quieres matemáticas de rescate? Pon el pulgar sobre la lámina. Esos hoyos son pellets de frenado, no lluvia. Cuenta los desgarros de vela, cuenta los años, luego pregunta quién gasta esa masa por un deudor.
 
 ## Field Note
 
-Reclamaciones rápidas. Naves lentas. Esa es toda la trampa.
+Firmas rápidas. Naves lentas. Si dicen que el rescate está autorizado, pregunta dónde está la masa de frenado.
 
 <!-- In-Game Wiki; generated from P1091_PELLET_WAKE_BRAKING_LEDGER/es_ES. -->

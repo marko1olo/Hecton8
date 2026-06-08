@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Brine Vane Codex Card
 
-In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+Brine vanes make HECTON-8’s mid-depth water feel physical. They show players that the canyon is built from density, not empty blue volume: a membrane can be a warning sign, a material source, and the edge of a false floor at once.
 
 ## Scanner
 
-Brine vane: density-shear root. Follow aligned edges; avoid open glow and false-floor returns.
+Brine vane sheet. Salt-mineral membrane fixed to density shear. Intact edge means wall; torn mouth means passage; black water without vane edge means false floor risk.
 
 ## Terminal
 
-SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+SPECIMEN / BRINE VANE / role: density wall marker, sonar-bend warning, shed-rib material source / safe read: intact sheet, torn downstream mouth, curled shear-window tip / reject: cutting live lane sheet, crossing open glow, trusting false-floor return / route note: harvest shed ribs, not the membrane holding your map open.
 
 ## Audio
 
-The plant is not pointing up. It is pointing through.
+The vane is not pointing up. It is showing where the ocean turns sideways.
 
 ## Field Note
 
-Vertical beauty, bad floor. Keep one vane edge in sight and one hand on buoyancy trim.
+Intact sheet: wall. Torn mouth: possible route. Shed rib: sample. Live sheet holding a lane: leave it.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/en_US. -->

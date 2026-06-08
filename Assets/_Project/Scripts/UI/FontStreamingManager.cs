@@ -559,10 +559,11 @@ namespace Hecton8.UI
                     return overlay.TargetCanvas;
             }
 
-            if (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance == null)
+            SuitHUDV4CanvasOverlay activeOverlay = null;
+            if (!SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref activeOverlay))
                 return null;
 
-            SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.TryGetComponent(out Canvas canvas);
+            activeOverlay.TryGetComponent(out Canvas canvas);
             return canvas;
         }
 

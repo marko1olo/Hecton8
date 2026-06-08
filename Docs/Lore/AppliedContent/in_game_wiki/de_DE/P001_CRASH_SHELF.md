@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aufprall-Schelf"
+title: "Absturzschelf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aufprall-Schelf
+# Absturzschelf
 
-Die Bathy-Abwurfkapsel wurde für eine brutale Aufgabe gebaut: Atmosphäre treffen, Sturmscherung überstehen, in den Ozean schlagen, Hitze abwerfen und einen Operator lange genug am Leben halten, damit die Arbeit beginnen kann. Sie war nie ein Schiff. Sie war ein Wegwerfstreit mit der Physik. Die Black Keel ist noch irgendwo über dem Mond im Aegir-Verkehr, aber der Uplink-Kern der Kapsel ist gerissen und die Aufstiegshardware ist fort. Eine saubere Rettung braucht Energie, Timing, ein Orbitalfenster und einen Sender, der Wetter, Wasser und Aegirs Magnetrauschen durchdringt.
+Die Bathy-Drop war ein Abstiegswerkzeug, kein Rettungsfahrzeug. Sie wurde gebaut, um in Aegirs Wetter einzutreten, in HECTON-8s Ozean zu schlagen, Hitze abzuwerfen und einen Arbeiter lange genug atmen zu lassen, bis der erste Unterschlupf online war. Der Einschlag riss das Aufstiegspaket mit. Die übrige Hülle ist grob, laut und wertvoll: Druckrahmen, Keramikscherben, Batterierippen, trockene Hohlräume, halb toter Uplink. Das Schelf darum ist hell genug, um sanft zu wirken, doch jeder nützliche Gegenstand ist auch Beweisstück. Black Keel weiß, dass ein Anspruch lebt. Der Wert dieses Anspruchs ist noch offen.
 
 ## Scanner
 
-Wrack einer Bathy-Abwurfkapsel. Druckrahmen intakt, Aufstiegspaket zerstört. Sie hält dich am Leben, bringt dich aber nicht heim.
+Wrack der Bathy-Drop-Kapsel. Druckrahmen intakt; Aufstiegspaket verloren. Die Hülle kann Druck und Wärme halten. Sie kann dich nicht heben.
 
 ## Terminal
 
-AUFSTIEGSPAKET: fehlt. UPLINK-KERN: Bruch erkannt. CARRIER-KONTAKT: verzögert.
+BATHY-DROP BD-K8-113: EINSCHLAG ÜBERSTANDEN. AUFSTIEGSPAKET: VERLOREN. UPLINK-KERN: FRAKTURIERT. BLACK KEEL: NUR HANDSHAKE.
 
 ## Audio
 
-Black-Keel-Handshake empfangen. Paketintegrität unter Bergungsschwelle. Wiederhole: Schwelle nicht erreicht.
+Black-Keel-Handshake empfangen. Operator lebt. Bergungsbefugnis ungeklärt. Unterkunft halten und auf nutzbares Fenster warten.
 
 ## Field Note
 
-Wenn die Kapselhülle noch Druck hält, schlachte sie nicht aus. Ein schlechter Unterschlupf ist mehr wert als ein sauberes Inventar.
+Zerlege die Drop-Hülle nicht bis auf den Rahmen. Die erste Basis auf HECTON-8 ist alles, was Regen draußen, Druck drinnen und Werkzeuge trocken hält.
 
 <!-- In-Game Wiki; generated from P001_CRASH_SHELF/de_DE. -->

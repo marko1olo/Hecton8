@@ -7,8 +7,8 @@ poi_tags: poi.pump_room_log;poi.manual_valve
 biome_tags: biome.pump_annex;biome.shallow_wreck
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Ren Okoye Pump 63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Ren Okoye Pump 63
 
-Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.
+Ren Okoye turns colony evidence into practical control knowledge. His note teaches the player how pressure timing, manual valves and worker marks matter when Deep Reach dashboards still claim green.
 
 ## Scanner
 
-Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.
+Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the dashboard.
 
 ## Terminal
 
-OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.
+OKOYE PUMP 63 NOTE: ignore green dashboard; lower wheel manual bypass; bleed two seconds before restart or line hammer seals annex shut.
 
 ## Audio
 
-He saved a room for people who never reached it. You can still use the room.
+If the panel says safe, ask who wrote the panel.
 
 ## Field Note
 
-The colony gives the player tools through people, not exposition.
+The dead teach better than the green status light.
 
 <!-- In-Game Wiki; generated from P064_REN_OKOYE_PUMP_63/en_US. -->

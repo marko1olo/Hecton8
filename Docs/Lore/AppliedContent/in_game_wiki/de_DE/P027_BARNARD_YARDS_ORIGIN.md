@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Herkunft Barnard Yards
 
-Barnard Yards ist Schiffbruch- und Druckhardwarekultur. Sie gibt dem Spieler eine glaubwürdige professionelle Herkunft.
+Barnard Yards ist eine Kultur aus Schiffsausschlachtung und Druckhardware: gemietete Schneidgeräte, geflickte Klemmen, tote Ansprüche und Überlebenswerkzeug als normale Arbeit. Sie gibt HECTON-8 eine professionelle Herkunft nahe bei Schuld und Arbeit, nicht bei Erdromantik.
 
 ## Scanner
 

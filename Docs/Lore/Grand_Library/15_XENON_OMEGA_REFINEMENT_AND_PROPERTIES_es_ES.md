@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # XENON-OMEGA: REFINAMIENTO Y PROPIEDADES
 
 > **Fuente:** Megacorporación Deep Reach, Manifiesto Químico Clasificado.

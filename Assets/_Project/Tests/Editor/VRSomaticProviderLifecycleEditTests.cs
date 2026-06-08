@@ -44,6 +44,77 @@ namespace Hecton8.Tests.Editor
                 listener.IndexOf("_dataVault = currentService as IDataVault;", StringComparison.Ordinal));
         }
 
+        [Test]
+        public void VRSomaticProviderHotSwapStateFlagTracksSuccessfulRegistryLaneRegistration()
+        {
+            string providerSource = ReadProjectFile("Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs");
+            string register = ExtractMethodBlock(providerSource, "private void TryRegisterHotSwap()");
+            string unregister = ExtractMethodBlock(providerSource, "private void TryUnregisterHotSwap()");
+
+            Assert.That(register, Does.Contain("if (!GlobalRegistry.TryRegisterHotSwapListener(this))"));
+            Assert.That(register, Does.Contain("return;"));
+            Assert.That(register, Does.Contain("_stateFlags |= StateRegisteredHotSwap;"));
+            Assert.Less(
+                register.IndexOf("if (!GlobalRegistry.TryRegisterHotSwapListener(this))", StringComparison.Ordinal),
+                register.IndexOf("_stateFlags |= StateRegisteredHotSwap;", StringComparison.Ordinal));
+            Assert.That(register, Does.Not.Contain("GlobalRegistry.RegisterHotSwapListener(this);"));
+
+            Assert.That(unregister, Does.Contain("GlobalRegistry.TryUnregisterHotSwapListener(this);"));
+            Assert.That(unregister, Does.Contain("_stateFlags &= ~StateRegisteredHotSwap;"));
+            Assert.That(unregister, Does.Not.Contain("GlobalRegistry.UnregisterHotSwapListener(this);"));
+        }
+
+        [Test]
+        public void VRSomaticPlayerSignalsRequirePlayerRootDepthBeforeFallbacks()
+        {
+            string providerSource = ReadProjectFile("Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs");
+            string bootstrapSource = ReadProjectFile("Assets/_Project/Scripts/Gameplay/VRSomaticRuntimeBootstrap.cs");
+            string refreshGlobalState = ExtractMethodBlock(providerSource, "private void RefreshCachedGlobalState()");
+            string activeHmd = ExtractMethodBlock(providerSource, "private bool TryResolveActiveHmd(out Transform activeHmd)");
+            string playerSignals = ExtractMethodBlock(providerSource, "private void ResolvePlayerSignals(out float stress01, out float oxygen01, out float depthMeters)");
+            string bootstrapContext = ExtractMethodBlock(bootstrapSource, "private static bool TryResolvePlayerContext(out IPlayerRuntimeContext runtimeContext, out GameObject playerObject)");
+            string bootstrapHmd = ExtractMethodBlock(bootstrapSource, "private static Transform ResolveHmdTransform(IPlayerRuntimeContext runtimeContext, Transform playerTransform)");
+
+            Assert.That(refreshGlobalState, Does.Contain("IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;"));
+            Assert.That(refreshGlobalState, Does.Contain("runtimeContext = _playerRuntimeContext;"));
+            Assert.That(activeHmd, Does.Contain("IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;"));
+            Assert.That(activeHmd, Does.Contain("Camera playerCamera = runtimeContext != null ? runtimeContext.PlayerCamera : null;"));
+            Assert.That(bootstrapContext, Does.Contain("runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;"));
+            Assert.That(bootstrapContext, Does.Contain("runtimeContext.PlayerObject"));
+            Assert.That(bootstrapHmd, Does.Contain("runtimeContext.PlayerCamera"));
+            Assert.That(bootstrapHmd, Does.Contain("runtimeContext.PlayerMovement"));
+
+            Assert.That(playerSignals, Does.Contain("IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;"));
+            Assert.That(playerSignals, Does.Contain("runtimeContext = _playerRuntimeContext;"));
+            Assert.That(playerSignals, Does.Contain("bool hasPublishedMovement = runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState);"));
+            Assert.That(playerSignals, Does.Contain("bool hasPublishedSurvival = runtimeContext.TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState survivalState);"));
+            Assert.That(playerSignals, Does.Contain("bool hasMovementDepth ="));
+            Assert.That(playerSignals, Does.Contain("hasPublishedMovement &&"));
+            Assert.That(playerSignals, Does.Contain("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u"));
+            Assert.That(playerSignals, Does.Contain("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u"));
+            Assert.That(playerSignals, Does.Contain("math.isfinite(movementState.DepthMeters);"));
+            Assert.That(playerSignals, Does.Contain("depthMeters = hasMovementDepth ? SanitizeNonNegative(movementState.DepthMeters) : 0f;"));
+            Assert.That(playerSignals, Does.Contain("if (hasPublishedSurvival && hasSurvival)"));
+            Assert.That(playerSignals, Does.Contain("if (!hasMovementDepth && math.isfinite(movement.CurrentDepth))"));
+            Assert.That(playerSignals, Does.Contain("depthMeters = math.max(depthMeters, SanitizeNonNegative(movement.CurrentDepth));"));
+            Assert.That(playerSignals, Does.Contain("if (!hasMovementDepth && math.isfinite(survival.Depth))"));
+            Assert.That(playerSignals, Does.Contain("depthMeters = math.max(depthMeters, SanitizeNonNegative(survival.Depth));"));
+            Assert.That(playerSignals, Does.Contain("if (!hasSurvival)"));
+            Assert.That(playerSignals, Does.Not.Contain("bool hasMovement ="));
+            Assert.That(playerSignals, Does.Not.Contain("PlayerRuntimeContextService.TryGetActiveRuntimeContext"));
+            Assert.That(playerSignals, Does.Not.Contain("runtimeContext.MovementState"));
+            Assert.That(playerSignals, Does.Not.Contain("runtimeContext.SurvivalState"));
+            Assert.Less(
+                playerSignals.IndexOf("depthMeters = hasMovementDepth", StringComparison.Ordinal),
+                playerSignals.IndexOf("HectonPlayerMovement movement = runtimeContext.PlayerMovement;", StringComparison.Ordinal));
+            Assert.Less(
+                playerSignals.IndexOf("if (!hasMovementDepth && math.isfinite(movement.CurrentDepth))", StringComparison.Ordinal),
+                playerSignals.IndexOf("HectonSurvivalSystem survival = runtimeContext.SurvivalSystem;", StringComparison.Ordinal));
+            Assert.Less(
+                playerSignals.IndexOf("if (!hasMovementDepth && math.isfinite(survival.Depth))", StringComparison.Ordinal),
+                playerSignals.IndexOf("if (!hasSurvival)", StringComparison.Ordinal));
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

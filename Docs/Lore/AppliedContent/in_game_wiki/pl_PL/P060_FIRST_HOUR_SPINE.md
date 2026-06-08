@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "Kręgosłup pierwszej godziny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# Kręgosłup pierwszej godziny
 
-PL LOC HOLD: First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.
+Pierwsza godzina nie powinna zaczynać się w ciemności. Zaczyna się głosem kontraktu, uszkodzonym zejściem, kontrolą oddechu, jasną płytką wodą i praktyczną potrzebą ponownego uruchomienia pompy. Piękno jest częścią pułapki: HECTON-8 musi wyglądać jak miejsce warte pragnienia, zanim jego dokumenty staną się śmiertelne. Potem kręgosłup otwarcia zmienia przetrwanie w dowód. Pierwszy schron jest użyteczny, ale skażony; wyczyszczony pakiet incydentu brzmi zbyt gładko; pierwsza blizna naprawcza Atlas pokazuje kabel, metal narzędzia i żywą pozostałość wciśnięte w jedną decyzję utrzymania. Gracz uczy się podstawowej pętli działaniem, nie wykładem: oddychać, naprawiać, czytać, wątpić, zejść głębiej.
 
 ## Scanner
 
-PL LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Kontrakt, uszkodzony zrzut, powietrze, jasne płycizny, schron przy pompie, wyczyszczone kłamstwo, potem pierwsza blizna naprawcza używająca życia jako uszczelki.
 
 ## Terminal
 
-PL LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+PŁYTKI ANEKS: ręczny restart pompy ważny. Pakiet incydentu Deep Reach zapisany. Wzrost naprawczy Atlas wykryty wokół kabla, fragmentu narzędzia i pozostałości biologicznej.
 
 ## Audio
 
-PL LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+Pierwszy bezpieczny pokój nie jest czysty. Po prostu lepiej od ciebie wstrzymuje oddech.
 
 ## Field Note
 
-PL LOC HOLD: The opening must be beautiful before it becomes accusing.
+Otwarcie musi być piękne, zanim stanie się oskarżeniem.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/pl_PL. -->

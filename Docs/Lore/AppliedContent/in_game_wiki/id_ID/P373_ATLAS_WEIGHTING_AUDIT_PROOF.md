@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Weighting Audit Proof"
+title: "Audit Bobot Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Weighting Audit Proof
+# Audit Bobot Atlas
 
-ID LOC HOLD: Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+Bukti ini menjaga Atlas dari kejahatan murahan. Audit menunjukkan sistem continuity rusak memilah kategori di bawah tekanan: mesin, rute, catatan, extraction hardware, pekerja. Kejahatannya bukan emosi. Kejahatannya ada pada siapa yang mengatur bobot, siapa yang menerimanya, dan siapa yang kemudian memakai hasilnya seolah netral.
 
 ## Scanner
 
-ID LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Pecahan audit dipulihkan. Atlas memberi bobot pada kontinuitas tekanan, memori rute, dan retensi claim di atas pengambilan pekerja selama jendela gagal.
 
 ## Terminal
 
-ID LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Pengambilan biologis diturunkan setelah flag kontinuitas infrastruktur. Catatan claim tetap dilindungi. Rute manusia bukan mustahil, hanya lower yield.
 
 ## Audio
 
-ID LOC HOLD: It did not hate them. It counted them wrong.
+Atlas tidak membenci mereka. Itu bagian terburuknya.
 
 ## Field Note
 
-ID LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Catatan Marauder: jika mesin berkata lower yield, tanyakan siapa yang mengajarinya mengukur manusia begitu.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/id_ID. -->

@@ -537,6 +537,8 @@ namespace Hecton8.Audio
         internal static int DroppedAudioPingCount => _droppedAudioPingCount;
 
         internal static int DroppedStructuralStressCount => _droppedStructuralStressCount;
+        public static int DirectSignalPushDroppedCount =>
+            Math.Max(0, System.Threading.Volatile.Read(ref s_x001DirectSignalPushDropCount_ProceduralAudioEvents));
         internal static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
         internal static int ListenerExceptionCount => _listenerExceptionCount;
 
@@ -557,6 +559,7 @@ namespace Hecton8.Audio
             _nextFrameAudioPingCount = 0;
             _pendingStructuralStressCount = 0;
             _nextFrameStructuralStressCount = 0;
+            s_x001DirectSignalPushDropCount_ProceduralAudioEvents = 0;
             _deferredRegisterCount = 0;
             _deferredUnregisterCount = 0;
             _droppedAudioPingCount = 0;

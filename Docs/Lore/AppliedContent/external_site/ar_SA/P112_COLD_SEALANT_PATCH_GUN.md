@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "مسدس رقع الختم البارد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# مسدس رقع الختم البارد
 
-AR LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+يعلم مسدس مانع التسرب البارد أول حد صادق. يستطيع إيقاف pinhole أو تثبيت حافة حشية أو شراء دقائق على وصلة هادئة. لا يبارك بنية تتحرك. rating label أهم من أمل اللاعب.
 
-## Scanner
-
-AR LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-AR LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-AR LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-AR LOC HOLD: Sealant repairs should buy time, not erase pressure.
+لذلك ينتمي هذا الجهاز إلى البداية. يسمح للاعب بالفعل من دون ادعاء أن كل تسرب قابل للحل. patch جيد يصنع وقتا؛ patch سيئ يصنع ثقة في موضع سيأخذ المحيط ثمنه لاحقا.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/ar_SA. -->

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Ending Record Transcript Seed"
+title: "Endingrecord Transcript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Ending Record Transcript Seed
+# Endingrecord Transcript
 
-NL LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
+Endingrecordtranscripts maken outcomes logbaar en replay-vergelijkbaar zonder kennis in geërfde macht te veranderen.
 
 ## Scanner
 
-NL LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Endingrecordfragment noemt receiver, payload hash, schuldstatus en onopgeloste kosten.
 
 ## Terminal
 
-NL LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.
 
 ## Audio
 
-NL LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
+After-action record. Receiver accepteerde payload hash. Claim gesloten voor boekhouding. Suppression flag onleesbaar. Truth custody onopgelost.
 
 ## Field Note
 
-NL LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Ending dossier record. Receiver, custody en onopgeloste kosten noemen, geen schoon moreel slot.
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/nl_NL. -->

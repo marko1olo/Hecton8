@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "ספר תגובה תאגידית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# ספר תגובה תאגידית
 
-HE LOC HOLD: Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+הספר הוא הדרך שבה Black Keel מדברת כשאף אחד לא מאלתר. הוא יכול להכיר בסכנה, לפתוח תור, לשמר תביעה ועדיין להשאיר את המפעיל מאחורי כללי נכסים. יש לקרוא אותו כאות שימושי וכטופס עוין שקיבל כוח ביצוע.
 
 ## Scanner
 
-HE LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+כל תשובה מגיעה בשפת חוזים: משמורת נכס, נעילות אחריות, נתיב דגימה, סיכון גוף, ואז חילוץ מפעיל.
 
 ## Terminal
 
-HE LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+מחלקת תגובה: שימור נכס. חילוץ מפעיל צורף אחרי משמורת דגימה, חותם אחריות, ביקורת גוף ונתיב תשלום.
 
 ## Audio
 
-HE LOC HOLD: The reply was automatic. The rescue was conditional.
+התשובה הייתה אוטומטית. ההצלה הייתה מותנית.
 
 ## Field Note
 
-HE LOC HOLD: Immediate response is not immediate rescue.
+תגובה מיידית אינה הצלה מיידית.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/he_IL. -->

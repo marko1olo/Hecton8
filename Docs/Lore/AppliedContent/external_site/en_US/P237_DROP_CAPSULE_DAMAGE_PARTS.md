@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Drop Capsule Damage Parts
 
-Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+Drop Capsule Damage Parts remove convenient rescue logic from HECTON-8. The Marauder is trapped because specific systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a route, material, tool upgrade or evidence object instead of a vague crash excuse.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ It landed well enough to strand you properly.
 
 ## Field Note
 
-The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+The capsule can keep a Marauder alive for the first hour. It cannot climb without deep-rated replacement parts.
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/en_US. -->

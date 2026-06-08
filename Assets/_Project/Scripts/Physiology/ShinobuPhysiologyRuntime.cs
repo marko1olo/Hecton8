@@ -30,7 +30,8 @@ namespace Hecton8.Physiology
 #endif
         private const float KilopascalsPerAtmosphere = 101.325f;
         private const float AuthoritativeQualityWeight = 1f;
-        private const uint ToxicityExposureLaneHash = 0x54584F58u; // TOX
+        private const double DefaultSeaLevelAupY = 14.02d;
+        private const float ToxicityExposureFallbackDeltaScalePerSecond = 0.08f;
         private const float AuthoritativeUpdateIntervalSeconds = 0.1f;
 #if UNITY_EDITOR
         private const string CsvRelativePath = "buhlmann_3tissue_profiles.csv";
@@ -65,6 +66,8 @@ namespace Hecton8.Physiology
         private static readonly uint _AnoxiaPpo2Hash = HashLowerAsciiString("anoxia_ppo2");
         private static readonly uint _Co2ToxicityStartHash = HashLowerAsciiString("co2_toxicity_start");
         private static readonly uint _Co2ToxicityFullHash = HashLowerAsciiString("co2_toxicity_full");
+        private static readonly uint _SurvivalVitalsQueueDropWarningHash = HashLowerAsciiString("shinobu_survival_vitals_queue_drop");
+        private static readonly uint _SurvivalVitalsQueueContextHash = HashLowerAsciiString("shinobu_survival_vitals");
         private static readonly ulong JobMutationGuardMask =
             MutationGuardBit(BufferID.ShinobuPhysiologyVitals) |
             MutationGuardBit(BufferID.ShinobuDecompressionStates) |
@@ -137,7 +140,7 @@ namespace Hecton8.Physiology
         [SerializeField, Min(0f)] private float mockDepthMeters = 100f;
 
         [Tooltip("Sea-level Y in AUP meters; depth is computed in double precision before conversion to float.")]
-        [SerializeField] private double seaLevelAupY;
+        [SerializeField] private double seaLevelAupY = DefaultSeaLevelAupY;
 
         [Tooltip("Fallback thermal environment used by the mock pressure lane.")]
         [SerializeField] private float mockAmbientTemperatureCelsius = 2f;
@@ -199,8 +202,9 @@ namespace Hecton8.Physiology
         private bool _insideHabitat;
         private bool _breathingGasOverrideActive;
         private int _activeHabitatRoomId = -1;
+        private int _lastToxicityExposureSnapshotGeneration;
         private float _previousDepthMeters;
-        private uint _playerDamageTargetHash;
+        private uint _playerToxicityTargetHash;
         private BreathingGasFractionsDTO _breathingGasOverride;
 
         public static bool TryGetActive(out ShinobuPhysiologyRuntime runtime)
@@ -240,6 +244,7 @@ namespace Hecton8.Physiology
                 lowTierFrameSignals: ToxicityExposureSignal.LowTierFrameSignals,
                 laneHash: ToxicityExposureSignal.LaneHash);
             SignalBus<ToxicityExposureSignal>.EnsureInitialized();
+            _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
             TryRegisterHotSwapListener();
             RebindColdServices();
 
@@ -380,8 +385,14 @@ namespace Hecton8.Physiology
             gasTuningArray[0] = gasTuning;
 
             long scheduleTimestamp = Stopwatch.GetTimestamp();
-            uint playerTargetHash = RefreshPlayerCombatTargetHash();
-            IngestAtmosphereToxicitySignals(toxemia, playerTargetHash, frame);
+            uint playerTargetHash = RefreshPlayerToxicityTargetHash();
+            int toxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
+            if (toxicityExposureSnapshotGeneration != _lastToxicityExposureSnapshotGeneration)
+            {
+                IngestAtmosphereToxicitySignals(toxemia, playerTargetHash, frame, deltaTime);
+                _lastToxicityExposureSnapshotGeneration = toxicityExposureSnapshotGeneration;
+            }
+
             IngestRadiationDoseSignals(combat, frame);
             JobHandle handle = new MockEnvironmentDropJob
             {
@@ -1350,9 +1361,10 @@ namespace Hecton8.Physiology
                     double3 playerAup = snapshotAup.ToAbsoluteDouble3();
                     if (math.all(math.isfinite(playerAup)))
                     {
+                        double resolvedSeaLevelAupY = ResolveSeaLevelAupY(seaLevelAupY);
                         double3 seaLevelAup = default;
                         seaLevelAup.x = playerAup.x;
-                        seaLevelAup.y = seaLevelAupY;
+                        seaLevelAup.y = resolvedSeaLevelAupY;
                         seaLevelAup.z = playerAup.z;
                         double depth = ResolveDepthMetersFromAup(playerAup, seaLevelAup);
                         if (math.isfinite(depth))
@@ -1398,7 +1410,7 @@ namespace Hecton8.Physiology
             };
         }
 
-        private uint RefreshPlayerCombatTargetHash()
+        private uint RefreshPlayerToxicityTargetHash()
         {
             IPlayerRuntimeContext player = _playerContext;
             GameObject playerObject = player != null ? player.PlayerObject : null;
@@ -1406,18 +1418,19 @@ namespace Hecton8.Physiology
             {
                 uint entityHash = unchecked((uint)EntityId.ToULong(playerObject.GetEntityId()));
                 if (entityHash != 0u)
-                    _playerDamageTargetHash = entityHash;
+                    _playerToxicityTargetHash = entityHash;
             }
 
-            return _playerDamageTargetHash != 0u
-                ? _playerDamageTargetHash
+            return _playerToxicityTargetHash != 0u
+                ? _playerToxicityTargetHash
                 : ShinobuPhysiologyConstants.PlayerTargetHash;
         }
 
         private static void IngestAtmosphereToxicitySignals(
             NativeArray<MockToxemiaSignal> toxemia,
             uint playerTargetHash,
-            uint frame)
+            uint frame,
+            float deltaTime)
         {
             if (!toxemia.IsCreated || toxemia.Length <= 0)
                 return;
@@ -1426,6 +1439,7 @@ namespace Hecton8.Physiology
             if (signals.Length <= 0)
                 return;
 
+            float safeDeltaTime = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(deltaTime, 0f));
             float toxemiaDelta = 0f;
             for (int i = 0; i < signals.Length; i++)
             {
@@ -1437,7 +1451,9 @@ namespace Hecton8.Physiology
                     continue;
 
                 float exposure = ShinobuPhysiologyJobMath.SanitizeUnit(signal.Exposure01);
-                float delta = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(signal.ToxemiaDelta, 0f));
+                float explicitDelta = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(signal.ToxemiaDelta, 0f));
+                float fallbackDelta = exposure * safeDeltaTime * ToxicityExposureFallbackDeltaScalePerSecond;
+                float delta = math.saturate(explicitDelta > 0f ? explicitDelta : fallbackDelta);
                 if (exposure <= 0.0001f && delta <= 0f)
                     continue;
 
@@ -1485,7 +1501,8 @@ namespace Hecton8.Physiology
                 if (dose <= 0f && intensity <= 0.0001f)
                     continue;
 
-                severity01 = math.max(severity01, math.max(intensity, math.saturate(dose * 0.01f)));
+                float doseSeverity01 = RadiationDoseSignal.DoseToUnit01(dose);
+                severity01 = math.max(severity01, math.max(intensity, doseSeverity01));
             }
 
             if (severity01 <= 0.0001f)
@@ -1549,6 +1566,15 @@ namespace Hecton8.Physiology
         {
             double3 delta = seaLevelAup - playerAup;
             return delta.y;
+        }
+
+        private static double ResolveSeaLevelAupY(double candidateSeaLevelAupY)
+        {
+            return math.isfinite(candidateSeaLevelAupY) &&
+                   math.abs(candidateSeaLevelAupY) > 0.0001d &&
+                   math.abs(candidateSeaLevelAupY) <= 1000d
+                ? candidateSeaLevelAupY
+                : DefaultSeaLevelAupY;
         }
 
         private float ResolveGlobalQualityWeight()
@@ -1714,7 +1740,17 @@ namespace Hecton8.Physiology
             signal.Energy01 = 1f;
             signal.Integrity01 = (export.StatusMask & ShinobuPhysiologyFlags.Bends) != 0u ? 0.65f : 1f;
             signal.DeathCause = (byte)(((export.StatusMask & (ShinobuPhysiologyFlags.FatalOxygen | ShinobuPhysiologyFlags.FatalGasToxicity)) != 0u) ? 1 : 0);
-            SurvivalSignalRoute.TryQueueVitals(in signal);
+            if (!SurvivalSignalRoute.TryQueueVitals(in signal))
+                ReportSurvivalVitalsSignalDrop();
+        }
+
+        private static void ReportSurvivalVitalsSignalDrop()
+        {
+            int dropCount = System.Threading.Interlocked.Increment(ref s_x001ShinobuPhysiologyRuntimeSignalPushDropCount);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _SurvivalVitalsQueueDropWarningHash,
+                _SurvivalVitalsQueueContextHash,
+                math.max(1, dropCount));
         }
 
         private void PublishVisualSyncScalars(IDataVault vault)

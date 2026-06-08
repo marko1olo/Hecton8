@@ -95,9 +95,7 @@ namespace Hecton8.Modding
             bool hasInteractorPosition)
             : this(
                 item,
-                item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
-                    ? Hecton.Localization.LocHash.Compute(item.PersistentId)
-                    : 0,
+                ItemData.ResolvePersistentHashId(item),
                 quantity,
                 interactorEntityId,
                 interactorPosition,

@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Quarantine Release Delay Proof"
+title: "Quarantäne-Freigabehalt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Quarantine Release Delay Proof
+# Quarantäne-Freigabehalt
 
-DE LOC HOLD: HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.
+Quarantäne ist auf HECTON-8 glaubwürdig, weil Kontamination nicht erfunden ist. Druckexposition, Brine-Chemie und Atlas-kompatibles Wachstum können eine unvorsichtige Rettung tödlich machen. Diese Wahrheit gibt Deep Reach Deckung. Der Release-Hold zeigt, wie Schutzsprache durchs System wanderte, nachdem praktischer Ausgang schon eng war. Das Tor sagte nicht jemanden hinrichten. Es sagte hold until review, biologische Unsicherheit behalten, Asset-Masse akzeptieren, Insurance Ping aktiv lassen. Jeder Satz ist allein verteidigbar. Zusammen, in einer ertrinkenden Kolonie, werden sie Custody. Dieses Packet soll Spieler unruhig machen, weil das Werkzeug real ist: Quarantäne kann nötig sein und trotzdem benutzt werden, um Menschen zu verzögern, bis nur ihr Claim bleibt.
 
 ## Scanner
 
-DE LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+Quarantäne-Halteplatte. Schutzsprache erscheint, nachdem der Ausgang bereits verriegelt ist.
 
 ## Terminal
 
-DE LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
 
 ## Audio
 
-DE LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+Quarantäne kann einen Körper retten. Sie kann ihn auch warten lassen, bis er Papier wird.
 
 ## Field Note
 
-DE LOC HOLD: Use where player may confuse rescue with custody.
+Marauder-Notiz: Schutz wird nicht durch das Wort Schutz bewiesen. Prüfe die Uhr.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/de_DE. -->

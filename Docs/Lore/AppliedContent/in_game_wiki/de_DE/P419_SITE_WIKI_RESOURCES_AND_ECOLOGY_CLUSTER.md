@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "DE LOC HOLD: Resources and Ecology"
+title: "Ressourcen und Ökologie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Resources and Ecology
+# Ressourcen und Ökologie
 
-DE LOC HOLD: Resource/ecology hub: drowned crust, brine ladders, vent chemistry, living systems and Atlas' damaged repair logic.
+Ressourcen/Ökologie-Hub: drowned crust, brine ladders, vent chemistry, living systems und beschädigte Atlas-repair logic.
 
 ## Scanner
 
-DE LOC HOLD: Publication hub: geology, blue debt, fauna grammar and Atlas repair-network misuse.
+Publikationshub: geology, blue debt, Faunagrammatik und misuse des Atlas-Reparaturnetzes.
 
 ## Terminal
 
-DE LOC HOLD: SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.
+SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology und encounter grammar als eine process map.
 
 ## Audio
 
-DE LOC HOLD: Nothing here is just loot.
+Hier ist nichts bloß loot.
 
 ## Field Note
 
-DE LOC HOLD: Navigation cluster record: resources and ecology belong together when materials, biota, and evidence pressure share the same route.
+Ressourcen und Ökologie gehören zusammen, wenn Materialien, Biota und evidence pressure dieselbe Route teilen.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/de_DE. -->

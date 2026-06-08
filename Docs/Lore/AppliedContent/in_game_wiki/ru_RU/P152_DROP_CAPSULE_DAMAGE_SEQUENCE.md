@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Drop Capsule Damage Sequence"
+title: "Последовательность повреждений капсулы сброса"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Drop Capsule Damage Sequence
+# Последовательность повреждений капсулы сброса
 
-RU LOC HOLD: The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.
+Поврежденный bathy-drop превращает побег в инженерную цепь. Укрытие и диагностика выжили, но подъемное оборудование физически потеряно или затоплено.
 
 ## Scanner
 
-RU LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+Диагностика капсулы. Спуск сохранил тело, потратив оборудование подъема.
 
 ## Terminal
 
-RU LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+СВОДКА ПОВРЕЖДЕНИЙ BATHY-DROP: crush-frame поведен; high-gain mast потеряна; ascent avionics затоплена; recovery/flotation ring разорвано; аварийный буй повторяет no-lock. Питание укрытия доступно. Самостоятельный подъем недоступен.
 
 ## Audio
 
-RU LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus затоплен. Recovery ring no-lock. Эта капсула удержит дыхание, но не вернет домой.
 
 ## Field Note
 
-RU LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+Нижнее кольцо стало овальным на два пальца. High-gain mast исчезла. Буй все еще просит запуска, которого не сможет выполнить.
 
 <!-- In-Game Wiki; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/ru_RU. -->

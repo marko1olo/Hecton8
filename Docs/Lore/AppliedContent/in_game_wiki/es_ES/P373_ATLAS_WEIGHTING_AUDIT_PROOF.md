@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Atlas Weighting Audit Proof"
+title: "Auditoría de ponderación Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Atlas Weighting Audit Proof
+# Auditoría de ponderación Atlas
 
-ES LOC HOLD: Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+Esta prueba mantiene a Atlas fuera de la villanía barata. La auditoría muestra un sistema de continuidad dañado clasificando categorías bajo presión: maquinaria, rutas, registros, extraction hardware, trabajadores. El crimen no es emoción. El crimen está en quién configuró los pesos, quién los aceptó y quién usó luego el resultado como neutral.
 
 ## Scanner
 
-ES LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Fragmento de auditoría recuperado. Atlas ponderó continuidad de presión, memoria de ruta y retención de claim por encima de recuperación de trabajadores durante la ventana de fallo.
 
 ## Terminal
 
-ES LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Recuperación biológica degradada tras bandera de continuidad de infraestructura. Registro claim protegido. Ruta humana no marcada imposible, solo lower yield.
 
 ## Audio
 
-ES LOC HOLD: It did not hate them. It counted them wrong.
+Atlas no los odiaba. Eso es lo peor.
 
 ## Field Note
 
-ES LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Nota de merodeador: si una máquina dice lower yield, pregunta quién le enseñó a medir así a una persona.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/es_ES. -->

@@ -381,17 +381,23 @@ namespace Hecton8.Editor
             {
                 string registerBody = ExtractMethodBody(craftingEvents, "public static void Register(ICraftingEventListener listener)");
                 string enqueueBody = ExtractMethodBody(craftingEvents, "private static bool Enqueue(in CraftingEventPayload payload)");
-                string reserveBody = ExtractMethodBody(craftingEvents, "private static bool TryReserveReferenceSlot(CraftingEventType eventType, out int referenceSlot)");
+                string reserveBody = ExtractMethodBody(craftingEvents, "private static bool TryReserveReferenceSlot(");
+                string resolveBody = ExtractMethodBody(craftingEvents, "private static bool IsReferenceSlotPayloadCurrent(");
                 string craftingResetBody = ExtractMethodBody(craftingEvents, "internal static void ResetStaticState()");
                 string craftingOverflowBody = ExtractMethodBody(craftingEvents, "private static void ReportQueueOverflow(ushort eventType)");
                 string slotExhaustedBody = ExtractMethodBody(craftingEvents, "private static void ReportReferenceSlotExhausted(ushort eventType)");
 
                 AssertContains(craftingEvents, "public static int DroppedEventCount => _droppedEventCount", "Crafting events expose dropped-event counter", report, ref failureCount);
                 AssertContains(craftingEvents, "public static int DroppedReferenceSlotCount => _droppedReferenceSlotCount", "Crafting events expose reference-slot exhaustion counter", report, ref failureCount);
+                AssertContains(craftingEvents, "private static readonly ushort[] _referenceSlotGenerations", "Crafting events track reference-slot generations for stale-handle rejection", report, ref failureCount);
                 AssertNotContains(registerBody, "EnsureInitialized()", "Crafting listener registration does not cold-allocate event queues", report, ref failureCount);
                 AssertContains(enqueueBody, "ReportQueueOverflow(payload.EventType)", "Crafting event queue overflow preserves event-type context", report, ref failureCount);
-                AssertContains(enqueueBody, "ReleaseReferenceSlot(payload.ReferenceSlot)", "Crafting queue overflow releases reserved reference slot", report, ref failureCount);
+                AssertContains(enqueueBody, "ReleaseReferenceSlotForPayload(in payload)", "Crafting queue overflow releases only current reference-slot payloads", report, ref failureCount);
+                AssertContains(reserveBody, "out ushort referenceGeneration", "Crafting reference slot reservation returns generation token", report, ref failureCount);
+                AssertContains(reserveBody, "referenceGeneration = AdvanceReferenceSlotGeneration(referenceSlot)", "Crafting reference slot reservation advances generation before enqueue", report, ref failureCount);
                 AssertContains(reserveBody, "ReportReferenceSlotExhausted((ushort)eventType)", "Crafting reference slot exhaustion preserves event-type context", report, ref failureCount);
+                AssertContains(resolveBody, "payload.Reserved != 0", "Crafting sidecar resolve rejects payloads without generation token", report, ref failureCount);
+                AssertContains(resolveBody, "_referenceSlotGenerations[referenceSlot] == payload.Reserved", "Crafting sidecar resolve rejects stale slot generations", report, ref failureCount);
                 AssertContains(craftingOverflowBody, "_droppedEventCount++", "Crafting event overflow increments monotonic counter", report, ref failureCount);
                 AssertContains(craftingOverflowBody, "_lastQueueOverflowTelemetryFrame == frame", "Crafting event overflow telemetry is frame-rate limited", report, ref failureCount);
                 AssertContains(craftingOverflowBody, "CraftingQueueContextHash ^ ((uint)eventType << 24)", "Crafting event overflow context encodes event type", report, ref failureCount);
@@ -411,17 +417,23 @@ namespace Hecton8.Editor
             {
                 string registerBody = ExtractMethodBody(interactionEvents, "public static void Register(IInteractionEventListener listener)");
                 string enqueueBody = ExtractMethodBody(interactionEvents, "private static bool Enqueue(in InteractionEventPayload payload)");
-                string reserveBody = ExtractMethodBody(interactionEvents, "private static bool TryReserveReferenceSlot(InteractionEventType eventType, out int referenceSlot)");
+                string reserveBody = ExtractMethodBody(interactionEvents, "private static bool TryReserveReferenceSlot(");
+                string resolveBody = ExtractMethodBody(interactionEvents, "private static bool IsReferenceSlotPayloadCurrent(");
                 string interactionResetBody = ExtractMethodBody(interactionEvents, "internal static void ResetStaticState()");
                 string interactionOverflowBody = ExtractMethodBody(interactionEvents, "private static void ReportQueueOverflow(ushort eventType)");
                 string slotExhaustedBody = ExtractMethodBody(interactionEvents, "private static void ReportReferenceSlotExhausted(ushort eventType)");
 
                 AssertContains(interactionEvents, "public static int DroppedEventCount => _droppedEventCount", "Interaction events expose dropped-event counter", report, ref failureCount);
                 AssertContains(interactionEvents, "public static int DroppedReferenceSlotCount => _droppedReferenceSlotCount", "Interaction events expose reference-slot exhaustion counter", report, ref failureCount);
+                AssertContains(interactionEvents, "private static readonly ushort[] _referenceSlotGenerations", "Interaction events track reference-slot generations for stale-handle rejection", report, ref failureCount);
                 AssertNotContains(registerBody, "EnsureInitialized()", "Interaction listener registration does not cold-allocate event queues", report, ref failureCount);
                 AssertContains(enqueueBody, "ReportQueueOverflow(payload.EventType)", "Interaction event queue overflow preserves event-type context", report, ref failureCount);
-                AssertContains(enqueueBody, "ReleaseReferenceSlot(payload.ReferenceSlot)", "Interaction queue overflow releases reserved reference slot", report, ref failureCount);
+                AssertContains(enqueueBody, "ReleaseReferenceSlotForPayload(in payload)", "Interaction queue overflow releases only current reference-slot payloads", report, ref failureCount);
+                AssertContains(reserveBody, "out ushort referenceGeneration", "Interaction reference slot reservation returns generation token", report, ref failureCount);
+                AssertContains(reserveBody, "referenceGeneration = AdvanceReferenceSlotGeneration(referenceSlot)", "Interaction reference slot reservation advances generation before enqueue", report, ref failureCount);
                 AssertContains(reserveBody, "ReportReferenceSlotExhausted((ushort)eventType)", "Interaction reference slot exhaustion preserves event-type context", report, ref failureCount);
+                AssertContains(resolveBody, "payload.Reserved != 0", "Interaction sidecar resolve rejects payloads without generation token", report, ref failureCount);
+                AssertContains(resolveBody, "_referenceSlotGenerations[referenceSlot] == payload.Reserved", "Interaction sidecar resolve rejects stale slot generations", report, ref failureCount);
                 AssertContains(interactionOverflowBody, "_droppedEventCount++", "Interaction event overflow increments monotonic counter", report, ref failureCount);
                 AssertContains(interactionOverflowBody, "_lastQueueOverflowTelemetryFrame == frame", "Interaction event overflow telemetry is frame-rate limited", report, ref failureCount);
                 AssertContains(interactionOverflowBody, "InteractionQueueContextHash ^ ((uint)eventType << 24)", "Interaction event overflow context encodes event type", report, ref failureCount);
@@ -557,9 +569,12 @@ namespace Hecton8.Editor
             if (audioLogSystem.Length > 0)
             {
                 string recoverFragmentBody = ExtractMethodBody(audioLogSystem, "public bool RecoverEncryptedFragment(");
+                string onDisableBody = ExtractMethodBody(audioLogSystem, "private void OnDisable()");
+                string onDestroyBody = ExtractMethodBody(audioLogSystem, "private void OnDestroy()");
                 string populateSaveBody = ExtractMethodBody(audioLogSystem, "public void PopulateSaveData(SaveData data)");
                 string loadSaveBody = ExtractMethodBody(audioLogSystem, "public void LoadFromSaveData(SaveData data)");
                 string loadEncryptedFragmentBody = ExtractMethodBody(audioLogSystem, "private void LoadEncryptedFragmentState(SaveData data)");
+                string releaseVaultBuffersBody = ExtractMethodBody(audioLogSystem, "private void ReleaseVaultBuffers(");
                 string enqueuePlaybackBody = ExtractMethodBody(audioLogSystem, "private void EnqueuePlayback(uint logHash)");
                 string buildLogLookupBody = ExtractMethodBody(audioLogSystem, "private void BuildLogLookup()");
                 string tryResolveLogHashBody = ExtractMethodBody(audioLogSystem, "private bool TryResolveLogHash(AudioLogData data, out uint logHash)");
@@ -569,6 +584,11 @@ namespace Hecton8.Editor
                 string cacheDiscoveryNotificationBody = ExtractMethodBody(audioLogSystem, "private void CacheDiscoveryNotificationHash(uint logHash, AudioLogData data)");
                 string resolveFallbackDiscoveryNotificationBody = ExtractMethodBody(audioLogSystem, "private uint ResolveFallbackDiscoveryNotificationHash()");
                 string resolveDiscoveryNotificationBody = ExtractMethodBody(audioLogSystem, "private uint ResolveDiscoveryNotificationHash(uint logHash)");
+                string discoverLogBody = ExtractMethodBody(audioLogSystem, "public void DiscoverLog(AudioLogData data)");
+                string tryPushDiscoveryNotificationBody = ExtractMethodBody(audioLogSystem, "private void TryPushDiscoveryNotification(uint notificationHash, uint logHash)");
+                string reportDiscoveryNotificationMissBody = ExtractMethodBody(audioLogSystem, "private void ReportDiscoveryNotificationMiss(uint logHash)");
+                string clearDiscoveryNotificationDiagnosticsBody = ExtractMethodBody(audioLogSystem, "private void ClearDiscoveryNotificationDiagnostics()");
+                string clearTransientPlaybackStateBody = ExtractMethodBody(audioLogSystem, "private void ClearTransientPlaybackState()");
                 string trackResolvedLogHashBody = ExtractMethodBody(audioLogSystem, "private void TrackResolvedLogHash(uint logHash)");
 
                 AssertContains(audioLogSystem, "private const uint EncryptedLogCompleteMask = 0xFu", "Encrypted logs use 4-bit completion mask", report, ref failureCount);
@@ -582,7 +602,25 @@ namespace Hecton8.Editor
                 AssertContains(audioLogSystem, "_currentPlaybackBitCrushed = bitCrushRouteActive", "Partial playback state mirrors actual route availability", report, ref failureCount);
                 AssertContains(audioLogSystem, "_EncryptedVoiceRouteMissingWarningHash", "Missing encrypted voice route publishes telemetry once", report, ref failureCount);
                 AssertContains(audioLogSystem, "NotificationEvents.RegisterMessage(\"LOG DISCOVERED", "Audio log discovery notifications are pre-registered", report, ref failureCount);
-                AssertContains(audioLogSystem, "NotificationEvents.PushRegisteredInfo(notificationHash)", "Audio log discovery pushes notification hashes without hot string payloads", report, ref failureCount);
+                AssertContains(discoverLogBody, "TryPushDiscoveryNotification(notificationHash, discoveredHash)", "Audio log discovery notification routes through owner-visible push helper", report, ref failureCount);
+                AssertNotContains(discoverLogBody, "NotificationEvents.TryPushRegisteredInfo(notificationHash);", "Audio log discovery does not ignore registered notification queue refusal", report, ref failureCount);
+                AssertContains(tryPushDiscoveryNotificationBody, "if (notificationHash == 0u)", "Audio log discovery treats missing registered notification data as telemetry-visible failure", report, ref failureCount);
+                AssertOrder(tryPushDiscoveryNotificationBody, "if (notificationHash == 0u)", "ReportDiscoveryNotificationMiss(logHash)", "Audio log discovery reports missing notification hash before returning", report, ref failureCount);
+                AssertContains(tryPushDiscoveryNotificationBody, "if (NotificationEvents.TryPushRegisteredInfo(notificationHash))", "Audio log discovery notification success is checked before continuing", report, ref failureCount);
+                AssertContains(tryPushDiscoveryNotificationBody, "ReportDiscoveryNotificationMiss(logHash)", "Audio log discovery notification refusal reaches owner telemetry", report, ref failureCount);
+                AssertContains(reportDiscoveryNotificationMissBody, "_discoveryNotificationMissCount++", "Audio log discovery notification miss increments owner counter", report, ref failureCount);
+                AssertContains(reportDiscoveryNotificationMissBody, "_DiscoveryNotificationMissWarningHash", "Audio log discovery notification miss publishes telemetry warning", report, ref failureCount);
+                AssertContains(clearDiscoveryNotificationDiagnosticsBody, "_discoveryNotificationMissCount = 0", "Audio log discovery notification diagnostics have an owner-local lifecycle reset helper", report, ref failureCount);
+                AssertContains(onDisableBody, "ClearDiscoveryNotificationDiagnostics();", "Audio log discovery notification diagnostics clear on disable", report, ref failureCount);
+                AssertContains(onDestroyBody, "ClearDiscoveryNotificationDiagnostics();", "Audio log discovery notification diagnostics clear on destroy", report, ref failureCount);
+                AssertContains(releaseVaultBuffersBody, "ClearDiscoveryNotificationDiagnostics();", "Audio log discovery notification diagnostics clear with vault release", report, ref failureCount);
+                AssertContains(loadSaveBody, "ClearDiscoveryNotificationDiagnostics();", "Audio log discovery notification diagnostics do not survive save load", report, ref failureCount);
+                AssertNotContains(populateSaveBody, "_discoveryNotificationMissCount", "Audio log discovery notification diagnostics are not persisted into saves", report, ref failureCount);
+                AssertContains(loadSaveBody, "ClearTransientPlaybackState();", "Audio log save load clears transient playback queue before restored discovery state", report, ref failureCount);
+                AssertContains(clearTransientPlaybackStateBody, "ClearPlaybackQueue();", "Audio log transient playback clear drains queued playback hashes", report, ref failureCount);
+                AssertContains(clearTransientPlaybackStateBody, "_currentLog = null;", "Audio log transient playback clear drops stale current log", report, ref failureCount);
+                AssertNotContains(clearTransientPlaybackStateBody, "AudioLogEvents.TryRaisePlaybackStopped", "Audio log save load transient clear does not emit playback stopped events", report, ref failureCount);
+                AssertContains(audioLogSystem, "public int DiscoveryNotificationMissCount =>", "Audio log discovery notification miss counter is exposed for post-mortem", report, ref failureCount);
                 AssertContains(audioLogSystem, "private bool TryBindResolvedLogHash(uint logHash, AudioLogData data)", "Runtime-resolved audio logs use a canonical hash binding helper", report, ref failureCount);
                 AssertContains(tryBindResolvedLogHashBody, "ReferenceEquals(existingData, data)", "Resolved audio log hash binding rejects asset hash collisions", report, ref failureCount);
                 AssertContains(tryBindResolvedLogHashBody, "TrackResolvedLogHash(logHash)", "Canonical audio log binding tracks resolved hashes", report, ref failureCount);
@@ -645,7 +683,7 @@ namespace Hecton8.Editor
             {
                 AssertContains(notificationEvents, "public static uint RegisterMessage(string message)", "NotificationEvents exposes cold message registration", report, ref failureCount);
                 AssertContains(notificationEvents, "internal static void PushRegisteredInfo(uint messageHash)", "NotificationEvents exposes hash-only info publish path", report, ref failureCount);
-                AssertContains(notificationEvents, "private static void PublishRegistered(uint messageHash", "NotificationEvents dispatches registered messages without string payloads", report, ref failureCount);
+                AssertContains(notificationEvents, "private static bool TryPublishRegistered(uint messageHash", "NotificationEvents dispatches registered messages without string payloads", report, ref failureCount);
             }
         }
 
@@ -675,6 +713,7 @@ namespace Hecton8.Editor
                 AssertContains(queueUnlockBody, "ReportPendingUnlockQueueOverflow(achievementHash)", "Achievement pending side-effect queue overflow is telemetry-backed", report, ref failureCount);
                 AssertContains(tryAddUnlockedHashBody, "ReportUnlockedHashCapacityOverflow(achievementHash)", "Achievement unlocked hash capacity overflow is telemetry-backed", report, ref failureCount);
                 AssertContains(tryPushAchievementNotificationBody, "NotificationEvents.TryResolveMessage(notificationHash, out _)", "Achievement notification hash is resolved before registered push", report, ref failureCount);
+                AssertContains(tryPushAchievementNotificationBody, "if (NotificationEvents.TryPushRegisteredInfo(notificationHash))", "Achievement notification queue refusal stays visible to owner telemetry", report, ref failureCount);
                 AssertContains(tryPushAchievementNotificationBody, "RefreshAchievementPresentation()", "Achievement notification cache repairs after NotificationEvents reset", report, ref failureCount);
                 AssertContains(playerAchievementRegistry, "public int DroppedUnlockedHashCount => _droppedUnlockedHashCount", "Achievement overflow counter is exposed for post-mortem", report, ref failureCount);
                 AssertContains(playerAchievementRegistry, "public int AchievementNotificationMissCount => _achievementNotificationMissCount", "Achievement notification miss counter is exposed for post-mortem", report, ref failureCount);
@@ -688,6 +727,7 @@ namespace Hecton8.Editor
 
                 AssertContains(pushAdvisoryBody, "TryPushRegisteredAdvisoryNotification(advisoryHash)", "PDA advisory push uses registered hash path before string fallback", report, ref failureCount);
                 AssertContains(tryPushRegisteredAdvisoryBody, "NotificationEvents.TryResolveMessage(notificationHash, out _)", "PDA advisory notification hash is resolved before registered push", report, ref failureCount);
+                AssertContains(tryPushRegisteredAdvisoryBody, "if (NotificationEvents.TryPushRegisteredWarning(notificationHash))", "PDA advisory notification queue refusal stays visible to owner telemetry", report, ref failureCount);
                 AssertContains(tryPushRegisteredAdvisoryBody, "RefreshAdvisoryNotifications()", "PDA advisory notification cache repairs after NotificationEvents reset", report, ref failureCount);
                 AssertContains(tryPushRegisteredAdvisoryBody, "ReportAdvisoryNotificationMiss(advisoryHash)", "PDA advisory notification miss is telemetry-backed", report, ref failureCount);
                 AssertContains(pdaContextualAdvisorySystem, "public int AdvisoryNotificationMissCount => _advisoryNotificationMissCount", "PDA advisory miss counter is exposed for post-mortem", report, ref failureCount);
@@ -695,7 +735,10 @@ namespace Hecton8.Editor
             }
 
             if (notificationEvents.Length > 0)
+            {
                 AssertContains(notificationEvents, "public static bool TryResolveMessage(uint messageHash, out string message)", "NotificationEvents exposes registered-message resolve for cache repair", report, ref failureCount);
+                AssertContains(notificationEvents, "message = new string(_spanMessageCharacters, slot.Offset, slot.Length)", "NotificationEvents string resolver returns copy-backed registered text", report, ref failureCount);
+            }
         }
 
         private static void RunBlueprintGateAudit(

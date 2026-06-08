@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "NL LOC HOLD: Kolonie en arbeiders"
+title: "Kolonie en Werkers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Kolonie en arbeiders
+# Kolonie en Werkers
 
-NL LOC HOLD: Herstelde arbeidersindex: waterledgers, relay-getuigentrays, brine-routestempels, triage-reparatietags en vent-forge-afkeur bewaren namen via werk.
+Herstelde worker index: water ledgers, relay witness trays, brine route stamps, triage repair tags en vent-forge rejects bewaren namen via werk.
 
 ## Scanner
 
-NL LOC HOLD: WORKER INDEX // Vijf routegebonden naamrecords. pump, relay, brine, triage, forge. Tag chain bewaren voor hardware wordt gestript.
+WORKER INDEX // Vijf routegebonden naamrecords. Pump, relay, brine, triage, forge. Bewaar tag chain voordat hardware wordt gestript.
 
 ## Terminal
 
-NL LOC HOLD: KEELMARK LOSS DESK: name tags bewaren wanneer gekoppeld aan route, claim, custody of pressure work.
+KEELMARK LOSS DESK: bewaar name tags wanneer ze verbonden zijn met route, claim, custody of pressure work.
 
 ## Audio
 
-NL LOC HOLD: Mara Venn, pump chief: als de pump zuiver zingt, log het. Als hij stopt, ren omhoog.
+Mara Venn, pump chief: als de pomp zuiver zingt, log het. Als hij stopt met zingen, ren omhoog.
 
 ## Field Note
 
-NL LOC HOLD: Geen familie. Werk. Een naam op een pump card verklaart waarom een deur open bleef.
+Geen familie. Werk. Een naam op een pump card verklaart waarom een deur open bleef.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/nl_NL. -->

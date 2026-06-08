@@ -18,6 +18,7 @@ namespace Hecton8.World
             Transform targetTransform,
             Scene owningScene,
             ItemData itemData,
+            string stableWorldStateId,
             Vector3 anchorPosition,
             out long persistenceKey,
             out long chunkKey)
@@ -25,8 +26,84 @@ namespace Hecton8.World
             persistenceKey = 0L;
             chunkKey = 0L;
 
-            if (targetTransform == null || itemData == null || !owningScene.IsValid() || string.IsNullOrEmpty(owningScene.path))
+            if (targetTransform == null || !owningScene.IsValid() || string.IsNullOrWhiteSpace(owningScene.path))
                 return false;
+
+            return TryBuildIdentity(
+                owningScene.path,
+                stableWorldStateId,
+                itemData != null ? itemData.PersistentId : null,
+                anchorPosition,
+                out persistenceKey,
+                out chunkKey);
+        }
+
+        public static bool TryBuildIdentity(
+            Transform targetTransform,
+            Scene owningScene,
+            ItemData itemData,
+            Vector3 anchorPosition,
+            out long persistenceKey,
+            out long chunkKey)
+        {
+            persistenceKey = 0L;
+            chunkKey = 0L;
+            // No new fallback primary key without stableWorldStateId; legacy migration uses TryBuildLegacyIdentity.
+            return false;
+        }
+
+        internal static bool TryBuildIdentity(
+            string scenePath,
+            string stableWorldStateId,
+            string itemPersistentId,
+            Vector3 anchorPosition,
+            out long persistenceKey,
+            out long chunkKey)
+        {
+            persistenceKey = 0L;
+            chunkKey = 0L;
+
+            if (string.IsNullOrWhiteSpace(scenePath))
+                return false;
+
+            ulong sceneHash = HashString(FnvOffset, scenePath);
+            string stableId = NormalizeStableWorldStateId(stableWorldStateId);
+            if (string.IsNullOrWhiteSpace(stableId))
+                return false;
+
+            // Authored pickup slot identity deliberately ignores item content; validator owns item authoring checks.
+            ulong keyHash = HashByte(sceneHash, (byte)'#');
+            keyHash = HashDelimitedString(keyHash, stableId);
+
+            ulong chunkHash = sceneHash;
+            chunkHash = HashInt(chunkHash, Mathf.FloorToInt(anchorPosition.x / ChunkSizeMeters));
+            chunkHash = HashInt(chunkHash, Mathf.FloorToInt(anchorPosition.y / ChunkSizeMeters));
+            chunkHash = HashInt(chunkHash, Mathf.FloorToInt(anchorPosition.z / ChunkSizeMeters));
+
+            persistenceKey = EnsureNonZero(keyHash);
+            chunkKey = EnsureNonZero(chunkHash);
+            return true;
+        }
+
+        public static bool TryBuildLegacyIdentity(
+            Transform targetTransform,
+            Scene owningScene,
+            ItemData itemData,
+            Vector3 anchorPosition,
+            out long persistenceKey,
+            out long chunkKey)
+        {
+            persistenceKey = 0L;
+            chunkKey = 0L;
+
+            if (targetTransform == null ||
+                itemData == null ||
+                !owningScene.IsValid() ||
+                string.IsNullOrWhiteSpace(owningScene.path) ||
+                string.IsNullOrWhiteSpace(itemData.PersistentId))
+            {
+                return false;
+            }
 
             ulong sceneHash = HashString(FnvOffset, owningScene.path);
             ulong keyHash = HashHierarchyPath(sceneHash, targetTransform);
@@ -43,6 +120,11 @@ namespace Hecton8.World
             persistenceKey = EnsureNonZero(keyHash);
             chunkKey = EnsureNonZero(chunkHash);
             return true;
+        }
+
+        private static string NormalizeStableWorldStateId(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
         }
 
         private static int QuantizePosition(float value)
@@ -72,6 +154,12 @@ namespace Hecton8.World
             }
 
             return hash;
+        }
+
+        private static ulong HashDelimitedString(ulong hash, string value)
+        {
+            hash = HashInt(hash, string.IsNullOrEmpty(value) ? 0 : value.Length);
+            return HashString(hash, value);
         }
 
         private static ulong HashInt(ulong hash, int value)

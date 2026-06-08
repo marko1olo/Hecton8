@@ -9,32 +9,22 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Varnek Margin Memo"
+title: "Memo Varnek tentang Margin Diterima"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Varnek Margin Memo
+# Memo Varnek tentang Margin Diterima
 
-ID LOC HOLD: Deep Reach liability begins where real physics became an acceptable loss line.
+## Cap Sebelum Banjir
 
-## Scanner
+Memo Varnek penting karena nadanya tenang. Great Tide nyata. Runtuhan tekanan nyata. Laut tidak memerlukan perintah korporasi untuk menghancurkan HECTON-8. Kejahatan muncul pada baris saat margin peringatan yang diketahui berubah menjadi accepted tail exposure sementara cadangan evakuasi tetap tertidur.
 
-ID LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Dokumen itu memakai bahasa manajemen bertanggung jawab: average model, continuity cost, reserve non-triggered, independent shutdown not recommended. Itulah bahayanya. Varnek tidak terdengar seperti penjahat. Ia terdengar seperti orang yang menemukan kolom tempat bahaya menjadi payable. Saat Marauder menemukan memo itu, keputusan lama sudah menjadi lanskap: rusuk koridor bengkok, alat kerja tenggelam, pintu tekanan tertutup di depan pekerja yang masih menunggu perintah berubah.
 
-## Terminal
-
-ID LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
-
-## Audio
-
-ID LOC HOLD: No murder order. A margin acceptance.
-
-## Field Note
-
-ID LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Bukti ini harus terasa lebih berat daripada pengakuan. Pengakuan bisa ditolak sebagai panik atau niat jahat. Margin review bertanda tangan menunjukkan Deep Reach bekerja normal dengan data mematikan di meja. Perusahaan menerima laut sebagai cost center, lalu menerbitkan laporan bencana yang cukup bersih untuk audit asuransi.
 
 <!-- External Site; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/id_ID. -->

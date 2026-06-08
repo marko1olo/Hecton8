@@ -14,15 +14,17 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Livro de Frenagem do Rastro de Pellets
 
-HECTON-8 não precisa de uma parede mágica para isolar o jogador. Distância basta. A rota Aegir foi aberta por sondas de feixe de pellets: pequenos scouts autônomos empurrados por instalações enormes em Luyten Junction. Uma sonda pode ser disparada, perdida e baixada como prejuízo. Uma nave colonial não.
+HECTON-8 está isolado porque viajar pesa. A rota Aegir começou com scouts de feixe de pellets: pequenas sondas autônomas empurradas de Luyten Junction e destinadas a morrer com utilidade. Elas levavam mapas, fixos estelares e pacotes-testemunha legais. Uma sonda perdida era linha de custo. Uma nave colonial perdida era uma geração de dívida.
 
-Carga Atlas é outra coisa. Ela leva fábricas, baias crio, sistemas de perfuração, contratos de dívida selados e pessoas baratas o bastante para assinar. Seus motores de pulso fusão-elétrico passam anos criando velocidade. Perto da chegada, a nave precisa perder essa velocidade. Velas magnéticas se abrem em extensões absurdas para frear contra partículas carregadas. Passagens finais raspam atmosfera, envelope de tempestade e borda de gigante gasoso. Um erro pequeno no livro de frenagem pode apagar carga, tripulação e reivindicação.
+A era de carga Atlas movia massa real. Um cargueiro cruzava com núcleos de fábrica, baias crio, sistemas de perfuração, receptores de rota, contratos selados e gente barata o bastante para assinar. Suas pilhas fusão-elétricas passavam anos construindo velocidade. Nada nessa arquitetura parecia milagre. Cada correção queimava estoque. Cada placa de escudo era aposta. Cada quilograma chegava com um nome preso ao livro.
 
-Por isso o resgate em HECTON-8 parece cruel sem quebrar a física. Sol pode receber um pacote depois que a decisão expirou. Deep Reach pode possuir uma dívida mais rápido do que move um casco. Black Keel pode ficar em órbita local de Aegir e precificar uma janela de recuperação, mas isso é máquina local de salvage, não promessa de casa. A civilização chega primeiro como papelada, depois como sinal, muito depois como massa.
+O livro de frenagem é a página cruel. Um cargueiro quase à luz precisa voltar a ser lento antes de entregar qualquer coisa. Velas magnéticas se abrem em vãos impossíveis e puxam contra partículas carregadas. Trilhas de pellets mordem a borda da vela. Passagens finais usam atmosfera, envelope de tempestade e gravidade de gigante gasoso como freio. Erre a margem e a nave sobrevive em lugar inútil. Corte fino demais e a rota recebe uma pluma, não carga.
+
+Por isso o resgate dentro de HECTON-8 pode parecer obsceno sem quebrar a física. Sol pode responder depois que a decisão expirou. Deep Reach pode herdar uma dívida mais rápido do que move um casco. Black Keel pode ficar em órbita local e vender uma janela de recuperação porque já faz parte da máquina de Aegir. O sobrevivente não está fora da civilização. Está dentro da ordem em que ela chega: papelada, sinal, depois massa.
 
 <!-- External Site; generated from P1091_PELLET_WAKE_BRAKING_LEDGER/pt_BR. -->

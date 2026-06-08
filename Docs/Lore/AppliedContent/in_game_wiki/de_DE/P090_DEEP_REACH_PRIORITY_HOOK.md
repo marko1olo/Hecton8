@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Deep-Reach-Priority-Hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Deep-Reach-Priority-Hook
 
-DE LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+Deep Reachs heutiger Druck braucht keine unmögliche Fernsteuerung. Alte Continuity-Zertifikate, Quarantäneklauseln, Atlas-Zugriffstoken und Payload-Priority-Hooks sitzen bereits in Black Keels Rechtsweg. Das Unternehmen kann beeinflussen, was der Carrier wertet, ohne den Carrier sichtbar zu besitzen. Dadurch ist der Antagonist schwerer herauszuschneiden: kein Signal zum Jammen, sondern eine Klausel, die immer wieder erwacht.
 
 ## Scanner
 
-DE LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+Alter Zertifikatshaken. Deep Reach besitzt nicht das Schiff; es besitzt die Klausel.
 
 ## Terminal
 
-DE LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: Legacy-Continuity-Zertifikat von Deep Reach kann Payload-Recovery, Quarantänesperre, Atlas-Zugriffstoken oder Evidence-Suppression-Queue unter Aegir-Claim-Recht vorziehen. Human-Extraction-Priorität unverändert, sofern Gefahrenbeweis Custody-Wert nicht übersteigt.
 
 ## Audio
 
-DE LOC HOLD: They do not need to be on the bridge to steer the answer.
+Sie müssen nicht auf der Brücke stehen, um die Antwort zu steuern.
 
 ## Field Note
 
-DE LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+Sauberer als Verschwörung: Die Papiere leben noch und sind noch hungrig.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/de_DE. -->

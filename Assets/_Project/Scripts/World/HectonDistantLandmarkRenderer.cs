@@ -304,12 +304,17 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
             if (!isActiveAndEnabled ||
-                !IsFinite(shiftData.ShiftOffset) ||
-                shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                !IsFinite(shiftOffset) ||
+                !float.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
-            Vector3 runtimeOffset = -shiftData.ShiftOffset;
+            Vector3 runtimeOffset = -shiftOffset;
             if (_hasBoundsOverride)
             {
                 Bounds drawBounds = _drawBounds;

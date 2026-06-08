@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 엔진 설계 및 성간 물류
 
 > **출처:** 기술 실라버스, 바나드 조선소. 문서 44-A. 출발하는 모든 하청업체의 필독 자료.  

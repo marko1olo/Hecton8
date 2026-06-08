@@ -59,9 +59,16 @@ namespace Hecton8.SaveSystem
         public const int Atlas6LiabilityPersistenceVersion = 75;
         public const int VoxelDeltaPersistenceVersion = 76;
         public const int VoxelDeltaDenseCellFlagsPersistenceVersion = 77;
+        public const int PlayerHealthPersistenceVersion = 78;
+        public const int ResourceRecyclerModulePersistenceVersion = 79;
+        public const int StorageCrateModulePersistenceVersion = 80;
+        public const int FabricatorPendingOutputPersistenceVersion = 81;
+        public const int CultivationSeedHashPersistenceVersion = 82;
         public const float HazardZoneMaxPersistedToxicityDose = 64f;
         public const float HazardZoneToxicityDamageDoseThreshold = 1f;
         public const float HazardZoneMaxPersistedToxicityPulseSeconds = 0.5f;
+        public const float PlayerHealthDefault = 100f;
+        public const float PlayerEnvironmentTemperatureDefault = 20f;
         public const float Atlas6LiabilityMaxTrackedSectorYield = 1000000f;
         public const float Atlas6LiabilityMaxBiomatterExposure = 100f;
         public const int RadiationGridPersistenceVersion = 68;
@@ -83,7 +90,12 @@ namespace Hecton8.SaveSystem
         public const uint InventoryShadowPayloadHashPrime = 16777619u;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = VoxelDeltaDenseCellFlagsPersistenceVersion; // v77: dense voxel delta cell flags in binary payloads.
+        public const int CurrentVersion = CultivationSeedHashPersistenceVersion; // v82: cultivation seed hash fallback is persisted.
+
+        internal static string SanitizePersistenceString(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+        }
 
         internal static void EnsureExactArrayCapacity<T>(ref T[] values, int capacity)
         {
@@ -359,7 +371,11 @@ namespace Hecton8.SaveSystem
                 contractVersionHashHi = HectonContractVersion.HashHi,
                 timestamp     = DateTime.Now.ToString("O"),
                 totalPlayTime = playTime,
-                playerStats   = new PlayerStatsDTO(),
+                playerStats   = new PlayerStatsDTO
+                {
+                    health = PlayerHealthDefault,
+                    environmentTemperature = PlayerEnvironmentTemperatureDefault
+                },
                 playerKinematicState = new PlayerKinematicStateDTO(),
                 inventory     = new InventoryDTO(),
                 inventoryShadow = new InventoryShadowDTO(),
@@ -575,6 +591,7 @@ namespace Hecton8.SaveSystem
         public float oxygen;
         public float energy;
         public float integrity;
+        public float health;
         public float weight;
         public float hunger;
         public float thirst;
@@ -1560,7 +1577,7 @@ namespace Hecton8.SaveSystem
         internal static ScanEntryDTO SanitizeForPersistence(in ScanEntryDTO value)
         {
             ScanEntryDTO dto = value;
-            dto.id ??= string.Empty;
+            dto.id = SaveData.SanitizePersistenceString(dto.id);
             dto.title ??= string.Empty;
             dto.category ??= string.Empty;
             dto.summary ??= string.Empty;
@@ -1603,7 +1620,7 @@ namespace Hecton8.SaveSystem
         internal static BarterOfferStateDTO SanitizeForPersistence(in BarterOfferStateDTO value)
         {
             BarterOfferStateDTO dto = value;
-            dto.offerId ??= string.Empty;
+            dto.offerId = SaveData.SanitizePersistenceString(dto.offerId);
             dto.executionCount = Math.Max(0, dto.executionCount);
             return dto;
         }
@@ -1627,7 +1644,7 @@ namespace Hecton8.SaveSystem
         internal static BarterTransactionDTO SanitizeForPersistence(in BarterTransactionDTO value)
         {
             BarterTransactionDTO dto = value;
-            dto.offerId ??= string.Empty;
+            dto.offerId = SaveData.SanitizePersistenceString(dto.offerId);
             dto.offerName ??= string.Empty;
             dto.channelName ??= string.Empty;
             dto.costSummary ??= string.Empty;
@@ -1731,6 +1748,8 @@ namespace Hecton8.SaveSystem
         internal static BeaconEntryDTO SanitizeForPersistence(in BeaconEntryDTO value)
         {
             BeaconEntryDTO dto = value;
+            dto.id = SaveData.SanitizePersistenceString(dto.id);
+            dto.label = string.IsNullOrWhiteSpace(dto.label) ? string.Empty : dto.label;
             dto.posX = SanitizeFinite(dto.posX, 0f);
             dto.posY = SanitizeFinite(dto.posY, 0f);
             dto.posZ = SanitizeFinite(dto.posZ, 0f);
@@ -1929,12 +1948,15 @@ namespace Hecton8.SaveSystem
             dto.dayIndex = Math.Max(0, dto.dayIndex);
             dto.dayTimeHours = SanitizeFiniteClamp(dto.dayTimeHours, 0f, 24f);
             dto.playTimeSeconds = SanitizeNonNegativeFinite(dto.playTimeSeconds);
-            if (dto.titleHash == 0 && !string.IsNullOrWhiteSpace(dto.title))
-                dto.titleHash = LocHash.Compute(dto.title);
-            if (dto.messageHash == 0 && !string.IsNullOrWhiteSpace(dto.message))
-                dto.messageHash = LocHash.Compute(dto.message);
-            if (dto.originHash == 0 && !string.IsNullOrWhiteSpace(dto.originKey))
-                dto.originHash = LocHash.Compute(dto.originKey);
+            string title = SaveData.SanitizePersistenceString(dto.title);
+            string message = SaveData.SanitizePersistenceString(dto.message);
+            string originKey = SaveData.SanitizePersistenceString(dto.originKey);
+            if (dto.titleHash == 0 && title.Length > 0)
+                dto.titleHash = LocHash.Compute(title);
+            if (dto.messageHash == 0 && message.Length > 0)
+                dto.messageHash = LocHash.Compute(message);
+            if (dto.originHash == 0 && originKey.Length > 0)
+                dto.originHash = LocHash.Compute(originKey);
             dto.title = string.Empty;
             dto.message = string.Empty;
             dto.originKey = string.Empty;
@@ -2002,13 +2024,13 @@ namespace Hecton8.SaveSystem
             for (int i = 0; i < safeCount; i++)
             {
                 int originHash = seenOriginHashes[i];
-                string originKey = seenOriginKeys[i];
-                if (originHash == 0 && !string.IsNullOrWhiteSpace(originKey))
+                string originKey = SaveData.SanitizePersistenceString(seenOriginKeys[i]);
+                if (originHash == 0 && originKey.Length > 0)
                     originHash = LocHash.Compute(originKey);
 
                 if (originHash == 0)
                 {
-                    if (originKey != null)
+                    if (seenOriginKeys[i] != null)
                     {
                         seenOriginKeys[i] = string.Empty;
                         changed = true;
@@ -2017,7 +2039,7 @@ namespace Hecton8.SaveSystem
                     continue;
                 }
 
-                string safeOriginKey = originKey ?? string.Empty;
+                string safeOriginKey = originKey;
                 if (writeIndex != i ||
                     seenOriginHashes[writeIndex] != originHash ||
                     !string.Equals(seenOriginKeys[writeIndex], safeOriginKey, StringComparison.Ordinal))
@@ -2118,6 +2140,7 @@ namespace Hecton8.SaveSystem
         internal static PDAMarkerEntryDTO SanitizeForPersistence(in PDAMarkerEntryDTO value)
         {
             PDAMarkerEntryDTO dto = value;
+            dto.markerId = SaveData.SanitizePersistenceString(dto.markerId);
             dto.posX = SanitizeFinite(dto.posX, 0f);
             dto.posY = SanitizeFinite(dto.posY, 0f);
             dto.posZ = SanitizeFinite(dto.posZ, 0f);
@@ -2259,8 +2282,8 @@ namespace Hecton8.SaveSystem
         internal static ProceduralLorePlacementDTO SanitizeForPersistence(in ProceduralLorePlacementDTO value)
         {
             ProceduralLorePlacementDTO dto = value;
-            dto.discoveryId ??= string.Empty;
-            dto.logId ??= string.Empty;
+            dto.discoveryId = SaveData.SanitizePersistenceString(dto.discoveryId);
+            dto.logId = SaveData.SanitizePersistenceString(dto.logId);
             dto.posX = SanitizeFinite(dto.posX, 0f);
             dto.posY = SanitizeFinite(dto.posY, 0f);
             dto.posZ = SanitizeFinite(dto.posZ, 0f);
@@ -2430,7 +2453,10 @@ namespace Hecton8.SaveSystem
     public struct ModuleDTO
     {
         public const int MaxSorterBufferedSlots = 8;
+        public const int MaxRecyclerBufferedSlots = 8;
+        public const int MaxRecyclerPendingYieldSlots = 16;
         public const int MaxCultivationSlots = 4;
+        public const int MaxStorageCrateSlots = 32;
         public const ulong CultivationGeneticsSupportedMask = 0x000000000000000FUL;
 
         public string prefabId;
@@ -2445,6 +2471,20 @@ namespace Hecton8.SaveSystem
         public int sorterBufferedSlotCount;
         public string[] sorterBufferedItemIds;
         public int[] sorterBufferedQuantities;
+        public int recyclerBufferedSlotCount;
+        public string[] recyclerBufferedItemIds;
+        public int[] recyclerBufferedQuantities;
+        public string recyclerActiveSourceItemId;
+        public int recyclerPendingYieldSlotCount;
+        public string[] recyclerPendingYieldItemIds;
+        public int[] recyclerPendingYieldQuantities;
+        public string fabricatorPendingOutputItemId;
+        public int fabricatorPendingOutputQuantity;
+        public int fabricatorPendingOutputTotalQuantity;
+        public bool storageCrateContentsSerialized;
+        public int storageCrateSlotCount;
+        public string[] storageCrateItemIds;
+        public int[] storageCrateQuantities;
         public float posX;
         public float posY;
         public float posZ;
@@ -2463,6 +2503,7 @@ namespace Hecton8.SaveSystem
         public bool interiorReefInfestationActive;
         public int cultivationSlotCount;
         public string[] cultivationSeedItemIds;
+        public int[] cultivationSeedItemHashIds;
         public ulong[] cultivationGeneticsMasks;
         public float[] cultivationGrowth01;
         public float[] cultivationQuality01;
@@ -2474,7 +2515,14 @@ namespace Hecton8.SaveSystem
         {
             SaveData.EnsureExactArrayCapacity(ref sorterBufferedItemIds, MaxSorterBufferedSlots);
             SaveData.EnsureExactArrayCapacity(ref sorterBufferedQuantities, MaxSorterBufferedSlots);
+            SaveData.EnsureExactArrayCapacity(ref recyclerBufferedItemIds, MaxRecyclerBufferedSlots);
+            SaveData.EnsureExactArrayCapacity(ref recyclerBufferedQuantities, MaxRecyclerBufferedSlots);
+            SaveData.EnsureExactArrayCapacity(ref recyclerPendingYieldItemIds, MaxRecyclerPendingYieldSlots);
+            SaveData.EnsureExactArrayCapacity(ref recyclerPendingYieldQuantities, MaxRecyclerPendingYieldSlots);
+            SaveData.EnsureExactArrayCapacity(ref storageCrateItemIds, MaxStorageCrateSlots);
+            SaveData.EnsureExactArrayCapacity(ref storageCrateQuantities, MaxStorageCrateSlots);
             SaveData.EnsureExactArrayCapacity(ref cultivationSeedItemIds, MaxCultivationSlots);
+            SaveData.EnsureExactArrayCapacity(ref cultivationSeedItemHashIds, MaxCultivationSlots);
             SaveData.EnsureExactArrayCapacity(ref cultivationGeneticsMasks, MaxCultivationSlots);
             SaveData.EnsureExactArrayCapacity(ref cultivationGrowth01, MaxCultivationSlots);
             SaveData.EnsureExactArrayCapacity(ref cultivationQuality01, MaxCultivationSlots);
@@ -2482,7 +2530,10 @@ namespace Hecton8.SaveSystem
 
         public bool HasNestedArrayCapacity()
         {
-            return HasSorterSaveCapacity() && HasCultivationSaveCapacity();
+            return HasSorterSaveCapacity() &&
+                   HasRecyclerSaveCapacity() &&
+                   HasStorageCrateSaveCapacity() &&
+                   HasCultivationSaveCapacity();
         }
 
         public bool HasSorterSaveCapacity()
@@ -2493,10 +2544,32 @@ namespace Hecton8.SaveSystem
                    sorterBufferedQuantities.Length >= MaxSorterBufferedSlots;
         }
 
+        public bool HasRecyclerSaveCapacity()
+        {
+            return recyclerBufferedItemIds != null &&
+                   recyclerBufferedItemIds.Length >= MaxRecyclerBufferedSlots &&
+                   recyclerBufferedQuantities != null &&
+                   recyclerBufferedQuantities.Length >= MaxRecyclerBufferedSlots &&
+                   recyclerPendingYieldItemIds != null &&
+                   recyclerPendingYieldItemIds.Length >= MaxRecyclerPendingYieldSlots &&
+                   recyclerPendingYieldQuantities != null &&
+                   recyclerPendingYieldQuantities.Length >= MaxRecyclerPendingYieldSlots;
+        }
+
+        public bool HasStorageCrateSaveCapacity()
+        {
+            return storageCrateItemIds != null &&
+                   storageCrateItemIds.Length >= MaxStorageCrateSlots &&
+                   storageCrateQuantities != null &&
+                   storageCrateQuantities.Length >= MaxStorageCrateSlots;
+        }
+
         public bool HasCultivationSaveCapacity()
         {
             return cultivationSeedItemIds != null &&
                    cultivationSeedItemIds.Length >= MaxCultivationSlots &&
+                   cultivationSeedItemHashIds != null &&
+                   cultivationSeedItemHashIds.Length >= MaxCultivationSlots &&
                    cultivationGeneticsMasks != null &&
                    cultivationGeneticsMasks.Length >= MaxCultivationSlots &&
                    cultivationGrowth01 != null &&
@@ -2509,7 +2582,14 @@ namespace Hecton8.SaveSystem
         {
             string[] sorterItemIds = sorterBufferedItemIds;
             int[] sorterQuantities = sorterBufferedQuantities;
+            string[] recyclerItemIds = recyclerBufferedItemIds;
+            int[] recyclerQuantities = recyclerBufferedQuantities;
+            string[] recyclerYieldItemIds = recyclerPendingYieldItemIds;
+            int[] recyclerYieldQuantities = recyclerPendingYieldQuantities;
+            string[] storageItemIds = storageCrateItemIds;
+            int[] storageQuantities = storageCrateQuantities;
             string[] seedItemIds = cultivationSeedItemIds;
+            int[] seedItemHashIds = cultivationSeedItemHashIds;
             ulong[] geneticsMasks = cultivationGeneticsMasks;
             float[] growthValues = cultivationGrowth01;
             float[] qualityValues = cultivationQuality01;
@@ -2518,14 +2598,28 @@ namespace Hecton8.SaveSystem
 
             sorterBufferedItemIds = sorterItemIds;
             sorterBufferedQuantities = sorterQuantities;
+            recyclerBufferedItemIds = recyclerItemIds;
+            recyclerBufferedQuantities = recyclerQuantities;
+            recyclerPendingYieldItemIds = recyclerYieldItemIds;
+            recyclerPendingYieldQuantities = recyclerYieldQuantities;
+            storageCrateItemIds = storageItemIds;
+            storageCrateQuantities = storageQuantities;
             cultivationSeedItemIds = seedItemIds;
+            cultivationSeedItemHashIds = seedItemHashIds;
             cultivationGeneticsMasks = geneticsMasks;
             cultivationGrowth01 = growthValues;
             cultivationQuality01 = qualityValues;
 
             ClearArray(sorterBufferedItemIds);
             ClearArray(sorterBufferedQuantities);
+            ClearArray(recyclerBufferedItemIds);
+            ClearArray(recyclerBufferedQuantities);
+            ClearArray(recyclerPendingYieldItemIds);
+            ClearArray(recyclerPendingYieldQuantities);
+            ClearArray(storageCrateItemIds);
+            ClearArray(storageCrateQuantities);
             ClearArray(cultivationSeedItemIds);
+            ClearArray(cultivationSeedItemHashIds);
             ClearArray(cultivationGeneticsMasks);
             ClearArray(cultivationGrowth01);
             ClearArray(cultivationQuality01);
@@ -2546,6 +2640,12 @@ namespace Hecton8.SaveSystem
             ModuleDTO dto = SanitizeScalarsForPersistence(in value);
             SanitizeStringArrayCopyOnWrite(ref dto.sorterBufferedItemIds, dto.sorterBufferedSlotCount, MaxSorterBufferedSlots);
             SanitizeSorterQuantitiesCopyOnWrite(ref dto);
+            SanitizeStringArrayCopyOnWrite(ref dto.recyclerBufferedItemIds, dto.recyclerBufferedSlotCount, MaxRecyclerBufferedSlots);
+            SanitizeRecyclerBufferedQuantitiesCopyOnWrite(ref dto);
+            SanitizeStringArrayCopyOnWrite(ref dto.recyclerPendingYieldItemIds, dto.recyclerPendingYieldSlotCount, MaxRecyclerPendingYieldSlots);
+            SanitizeRecyclerPendingYieldQuantitiesCopyOnWrite(ref dto);
+            SanitizeStringArrayCopyOnWrite(ref dto.storageCrateItemIds, dto.storageCrateSlotCount, MaxStorageCrateSlots);
+            SanitizeStorageCrateQuantitiesCopyOnWrite(ref dto);
             SanitizeStringArrayCopyOnWrite(ref dto.cultivationSeedItemIds, dto.cultivationSlotCount, MaxCultivationSlots);
             SanitizeCultivationGeneticsCopyOnWrite(ref dto);
             SanitizeCultivationProgressCopyOnWrite(ref dto);
@@ -2565,6 +2665,19 @@ namespace Hecton8.SaveSystem
             dto.drillBufferedAmount = Math.Max(0, dto.drillBufferedAmount);
             dto.drillCycleTimerSeconds = SanitizeNonNegativeFinite(dto.drillCycleTimerSeconds);
             dto.sorterBufferedSlotCount = Math.Clamp(dto.sorterBufferedSlotCount, 0, MaxSorterBufferedSlots);
+            dto.recyclerBufferedSlotCount = Math.Clamp(dto.recyclerBufferedSlotCount, 0, MaxRecyclerBufferedSlots);
+            dto.recyclerActiveSourceItemId = SanitizePersistenceId(dto.recyclerActiveSourceItemId);
+            dto.recyclerPendingYieldSlotCount = Math.Clamp(dto.recyclerPendingYieldSlotCount, 0, MaxRecyclerPendingYieldSlots);
+            dto.fabricatorPendingOutputItemId = SanitizePersistenceId(dto.fabricatorPendingOutputItemId);
+            dto.fabricatorPendingOutputQuantity = Math.Max(0, dto.fabricatorPendingOutputQuantity);
+            dto.fabricatorPendingOutputTotalQuantity = dto.fabricatorPendingOutputQuantity > 0
+                ? Math.Max(dto.fabricatorPendingOutputQuantity, dto.fabricatorPendingOutputTotalQuantity)
+                : 0;
+            if (dto.fabricatorPendingOutputQuantity <= 0)
+                dto.fabricatorPendingOutputItemId = string.Empty;
+            dto.storageCrateSlotCount = dto.storageCrateContentsSerialized
+                ? Math.Clamp(dto.storageCrateSlotCount, 0, MaxStorageCrateSlots)
+                : 0;
             dto.cultivationSlotCount = Math.Clamp(dto.cultivationSlotCount, 0, MaxCultivationSlots);
             dto.posX = SanitizeFinite(dto.posX, 0f);
             dto.posY = SanitizeFinite(dto.posY, 0f);
@@ -2579,9 +2692,9 @@ namespace Hecton8.SaveSystem
             return dto;
         }
 
-        private static string SanitizePersistenceId(string value)
+        internal static string SanitizePersistenceId(string value)
         {
-            return string.IsNullOrWhiteSpace(value) ? string.Empty : value;
+            return SaveData.SanitizePersistenceString(value);
         }
 
         internal static bool SanitizeForPersistenceInPlace(ref ModuleDTO value)
@@ -2591,6 +2704,12 @@ namespace Hecton8.SaveSystem
             value = safeScalars;
             changed |= SanitizeStringArrayInPlace(value.sorterBufferedItemIds, value.sorterBufferedSlotCount, MaxSorterBufferedSlots);
             changed |= SanitizeSorterQuantitiesInPlace(ref value);
+            changed |= SanitizeStringArrayInPlace(value.recyclerBufferedItemIds, value.recyclerBufferedSlotCount, MaxRecyclerBufferedSlots);
+            changed |= SanitizeRecyclerBufferedQuantitiesInPlace(ref value);
+            changed |= SanitizeStringArrayInPlace(value.recyclerPendingYieldItemIds, value.recyclerPendingYieldSlotCount, MaxRecyclerPendingYieldSlots);
+            changed |= SanitizeRecyclerPendingYieldQuantitiesInPlace(ref value);
+            changed |= SanitizeStringArrayInPlace(value.storageCrateItemIds, value.storageCrateSlotCount, MaxStorageCrateSlots);
+            changed |= SanitizeStorageCrateQuantitiesInPlace(ref value);
             changed |= SanitizeStringArrayInPlace(value.cultivationSeedItemIds, value.cultivationSlotCount, MaxCultivationSlots);
             changed |= SanitizeCultivationGeneticsInPlace(ref value);
             changed |= SanitizeCultivationProgressInPlace(ref value);
@@ -2601,6 +2720,12 @@ namespace Hecton8.SaveSystem
         {
             int leftSorterSlotCount = ResolveSorterPersistenceSlotCount(in left);
             int rightSorterSlotCount = ResolveSorterPersistenceSlotCount(in right);
+            int leftRecyclerSlotCount = ResolveRecyclerBufferPersistenceSlotCount(in left);
+            int rightRecyclerSlotCount = ResolveRecyclerBufferPersistenceSlotCount(in right);
+            int leftRecyclerYieldSlotCount = ResolveRecyclerPendingYieldPersistenceSlotCount(in left);
+            int rightRecyclerYieldSlotCount = ResolveRecyclerPendingYieldPersistenceSlotCount(in right);
+            int leftStorageCrateSlotCount = ResolveStorageCratePersistenceSlotCount(in left);
+            int rightStorageCrateSlotCount = ResolveStorageCratePersistenceSlotCount(in right);
             int leftCultivationSlotCount = ResolveCultivationPersistenceSlotCount(in left);
             int rightCultivationSlotCount = ResolveCultivationPersistenceSlotCount(in right);
 
@@ -2616,6 +2741,20 @@ namespace Hecton8.SaveSystem
                    leftSorterSlotCount == rightSorterSlotCount &&
                    StringArrayPrefixEquals(left.sorterBufferedItemIds, right.sorterBufferedItemIds, leftSorterSlotCount) &&
                    IntArrayPrefixEquals(left.sorterBufferedQuantities, right.sorterBufferedQuantities, leftSorterSlotCount) &&
+                   leftRecyclerSlotCount == rightRecyclerSlotCount &&
+                   StringArrayPrefixEquals(left.recyclerBufferedItemIds, right.recyclerBufferedItemIds, leftRecyclerSlotCount) &&
+                   IntArrayPrefixEquals(left.recyclerBufferedQuantities, right.recyclerBufferedQuantities, leftRecyclerSlotCount) &&
+                   left.recyclerActiveSourceItemId == right.recyclerActiveSourceItemId &&
+                   leftRecyclerYieldSlotCount == rightRecyclerYieldSlotCount &&
+                   StringArrayPrefixEquals(left.recyclerPendingYieldItemIds, right.recyclerPendingYieldItemIds, leftRecyclerYieldSlotCount) &&
+                   IntArrayPrefixEquals(left.recyclerPendingYieldQuantities, right.recyclerPendingYieldQuantities, leftRecyclerYieldSlotCount) &&
+                   left.fabricatorPendingOutputItemId == right.fabricatorPendingOutputItemId &&
+                   left.fabricatorPendingOutputQuantity == right.fabricatorPendingOutputQuantity &&
+                   left.fabricatorPendingOutputTotalQuantity == right.fabricatorPendingOutputTotalQuantity &&
+                   left.storageCrateContentsSerialized == right.storageCrateContentsSerialized &&
+                   leftStorageCrateSlotCount == rightStorageCrateSlotCount &&
+                   StringArrayPrefixEquals(left.storageCrateItemIds, right.storageCrateItemIds, leftStorageCrateSlotCount) &&
+                   IntArrayPrefixEquals(left.storageCrateQuantities, right.storageCrateQuantities, leftStorageCrateSlotCount) &&
                    left.posX == right.posX &&
                    left.posY == right.posY &&
                    left.posZ == right.posZ &&
@@ -2634,6 +2773,7 @@ namespace Hecton8.SaveSystem
                    left.interiorReefInfestationActive == right.interiorReefInfestationActive &&
                    leftCultivationSlotCount == rightCultivationSlotCount &&
                    StringArrayPrefixEquals(left.cultivationSeedItemIds, right.cultivationSeedItemIds, leftCultivationSlotCount) &&
+                   IntArrayPrefixEquals(left.cultivationSeedItemHashIds, right.cultivationSeedItemHashIds, leftCultivationSlotCount) &&
                    ULongArrayPrefixEquals(left.cultivationGeneticsMasks, right.cultivationGeneticsMasks, leftCultivationSlotCount) &&
                    FloatArrayPrefixEquals(left.cultivationGrowth01, right.cultivationGrowth01, leftCultivationSlotCount) &&
                    FloatArrayPrefixEquals(left.cultivationQuality01, right.cultivationQuality01, leftCultivationSlotCount);
@@ -2651,6 +2791,14 @@ namespace Hecton8.SaveSystem
                    left.drillBufferedAmount == right.drillBufferedAmount &&
                    left.drillCycleTimerSeconds == right.drillCycleTimerSeconds &&
                    left.sorterBufferedSlotCount == right.sorterBufferedSlotCount &&
+                   left.recyclerBufferedSlotCount == right.recyclerBufferedSlotCount &&
+                   left.recyclerActiveSourceItemId == right.recyclerActiveSourceItemId &&
+                   left.recyclerPendingYieldSlotCount == right.recyclerPendingYieldSlotCount &&
+                   left.fabricatorPendingOutputItemId == right.fabricatorPendingOutputItemId &&
+                   left.fabricatorPendingOutputQuantity == right.fabricatorPendingOutputQuantity &&
+                   left.fabricatorPendingOutputTotalQuantity == right.fabricatorPendingOutputTotalQuantity &&
+                   left.storageCrateContentsSerialized == right.storageCrateContentsSerialized &&
+                   left.storageCrateSlotCount == right.storageCrateSlotCount &&
                    left.posX == right.posX &&
                    left.posY == right.posY &&
                    left.posZ == right.posZ &&
@@ -2673,6 +2821,33 @@ namespace Hecton8.SaveSystem
             upperBound = Math.Min(upperBound, value.sorterBufferedItemIds != null ? value.sorterBufferedItemIds.Length : 0);
             upperBound = Math.Min(upperBound, value.sorterBufferedQuantities != null ? value.sorterBufferedQuantities.Length : 0);
             return Math.Clamp(value.sorterBufferedSlotCount, 0, upperBound);
+        }
+
+        private static int ResolveRecyclerBufferPersistenceSlotCount(in ModuleDTO value)
+        {
+            int upperBound = MaxRecyclerBufferedSlots;
+            upperBound = Math.Min(upperBound, value.recyclerBufferedItemIds != null ? value.recyclerBufferedItemIds.Length : 0);
+            upperBound = Math.Min(upperBound, value.recyclerBufferedQuantities != null ? value.recyclerBufferedQuantities.Length : 0);
+            return Math.Clamp(value.recyclerBufferedSlotCount, 0, upperBound);
+        }
+
+        private static int ResolveRecyclerPendingYieldPersistenceSlotCount(in ModuleDTO value)
+        {
+            int upperBound = MaxRecyclerPendingYieldSlots;
+            upperBound = Math.Min(upperBound, value.recyclerPendingYieldItemIds != null ? value.recyclerPendingYieldItemIds.Length : 0);
+            upperBound = Math.Min(upperBound, value.recyclerPendingYieldQuantities != null ? value.recyclerPendingYieldQuantities.Length : 0);
+            return Math.Clamp(value.recyclerPendingYieldSlotCount, 0, upperBound);
+        }
+
+        private static int ResolveStorageCratePersistenceSlotCount(in ModuleDTO value)
+        {
+            if (!value.storageCrateContentsSerialized)
+                return 0;
+
+            int upperBound = MaxStorageCrateSlots;
+            upperBound = Math.Min(upperBound, value.storageCrateItemIds != null ? value.storageCrateItemIds.Length : 0);
+            upperBound = Math.Min(upperBound, value.storageCrateQuantities != null ? value.storageCrateQuantities.Length : 0);
+            return Math.Clamp(value.storageCrateSlotCount, 0, upperBound);
         }
 
         private static int ResolveCultivationPersistenceSlotCount(in ModuleDTO value)
@@ -2743,6 +2918,133 @@ namespace Hecton8.SaveSystem
 
             bool changed = false;
             int count = Math.Min(dto.sorterBufferedSlotCount, Math.Min(MaxSorterBufferedSlots, values.Length));
+            for (int i = 0; i < count; i++)
+            {
+                int safeValue = Math.Max(0, values[i]);
+                if (safeValue == values[i])
+                    continue;
+
+                values[i] = safeValue;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static void SanitizeRecyclerBufferedQuantitiesCopyOnWrite(ref ModuleDTO dto)
+        {
+            int[] values = dto.recyclerBufferedQuantities;
+            if (values == null)
+                return;
+
+            int[] replacement = null;
+            int count = Math.Min(dto.recyclerBufferedSlotCount, Math.Min(MaxRecyclerBufferedSlots, values.Length));
+            for (int i = 0; i < count; i++)
+            {
+                if (values[i] != 0)
+                    continue;
+
+                replacement ??= (int[])values.Clone();
+                replacement[i] = 0;
+            }
+
+            if (replacement != null)
+                dto.recyclerBufferedQuantities = replacement;
+        }
+
+        private static bool SanitizeRecyclerBufferedQuantitiesInPlace(ref ModuleDTO dto)
+        {
+            int[] values = dto.recyclerBufferedQuantities;
+            if (values == null)
+                return false;
+
+            bool changed = false;
+            int count = Math.Min(dto.recyclerBufferedSlotCount, Math.Min(MaxRecyclerBufferedSlots, values.Length));
+            for (int i = 0; i < count; i++)
+            {
+                if (values[i] != 0)
+                    continue;
+
+                values[i] = 0;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static void SanitizeRecyclerPendingYieldQuantitiesCopyOnWrite(ref ModuleDTO dto)
+        {
+            int[] values = dto.recyclerPendingYieldQuantities;
+            if (values == null)
+                return;
+
+            int[] replacement = null;
+            int count = Math.Min(dto.recyclerPendingYieldSlotCount, Math.Min(MaxRecyclerPendingYieldSlots, values.Length));
+            for (int i = 0; i < count; i++)
+            {
+                int safeValue = Math.Max(0, values[i]);
+                if (safeValue == values[i])
+                    continue;
+
+                replacement ??= (int[])values.Clone();
+                replacement[i] = safeValue;
+            }
+
+            if (replacement != null)
+                dto.recyclerPendingYieldQuantities = replacement;
+        }
+
+        private static bool SanitizeRecyclerPendingYieldQuantitiesInPlace(ref ModuleDTO dto)
+        {
+            int[] values = dto.recyclerPendingYieldQuantities;
+            if (values == null)
+                return false;
+
+            bool changed = false;
+            int count = Math.Min(dto.recyclerPendingYieldSlotCount, Math.Min(MaxRecyclerPendingYieldSlots, values.Length));
+            for (int i = 0; i < count; i++)
+            {
+                int safeValue = Math.Max(0, values[i]);
+                if (safeValue == values[i])
+                    continue;
+
+                values[i] = safeValue;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static void SanitizeStorageCrateQuantitiesCopyOnWrite(ref ModuleDTO dto)
+        {
+            int[] values = dto.storageCrateQuantities;
+            if (values == null)
+                return;
+
+            int[] replacement = null;
+            int count = Math.Min(dto.storageCrateSlotCount, Math.Min(MaxStorageCrateSlots, values.Length));
+            for (int i = 0; i < count; i++)
+            {
+                int safeValue = Math.Max(0, values[i]);
+                if (safeValue == values[i])
+                    continue;
+
+                replacement ??= (int[])values.Clone();
+                replacement[i] = safeValue;
+            }
+
+            if (replacement != null)
+                dto.storageCrateQuantities = replacement;
+        }
+
+        private static bool SanitizeStorageCrateQuantitiesInPlace(ref ModuleDTO dto)
+        {
+            int[] values = dto.storageCrateQuantities;
+            if (values == null)
+                return false;
+
+            bool changed = false;
+            int count = Math.Min(dto.storageCrateSlotCount, Math.Min(MaxStorageCrateSlots, values.Length));
             for (int i = 0; i < count; i++)
             {
                 int safeValue = Math.Max(0, values[i]);
@@ -3098,7 +3400,7 @@ namespace Hecton8.SaveSystem
         internal static ModuleGraphNodeDTO SanitizeForPersistence(in ModuleGraphNodeDTO value)
         {
             ModuleGraphNodeDTO dto = value;
-            dto.prefabId ??= string.Empty;
+            dto.prefabId = ModuleDTO.SanitizePersistenceId(dto.prefabId);
             dto.aupLocalX = SanitizeFinite(dto.aupLocalX, 0f);
             dto.aupLocalY = SanitizeFinite(dto.aupLocalY, 0f);
             dto.aupLocalZ = SanitizeFinite(dto.aupLocalZ, 0f);

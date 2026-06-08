@@ -9,32 +9,36 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Debt Blacklist Contract Pressure"
+title: "לחץ חוזה של חוב ורשימה שחורה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Debt Blacklist Contract Pressure
+# לחץ חוזה של חוב ורשימה שחורה
 
-HE LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+HECTON-8 ממסגרת את הפרוטגוניסט דרך כלכלת ספר ולא דרך גורל. חוב, רשימות שחורות, משמורת מאגר תביעות, אשראי חמצן, גישת דרגש ואישורי Deep Reach ישנים גורמים לחוזה ה-salvage להרגיש כופה בלי להפוך את השחקן לחסר אונים.
 
 ## Scanner
 
-HE LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+הודעת שעבוד קשורה למשמורת Black Keel. סירוב נשאר חוקי, אבל מקרקע: בלי דרגש, בלי אשראי חמצן נקי, בלי חלון מסלול מחוץ ל-Aegir.
 
 ## Terminal
 
-HE LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+קבלת תביעה / חלון הקלה מרשימה שחורה
+סטטוס קבלן: Marauder כבול בחוב
+מוביל: משמורת מאגר תביעות Black Keel
+תנאי הקלה: מסה ניתנת להשבה, הוכחת משמורת, ציות מקבל
+מצב כשל: הרשימה השחורה נשארת פעילה; גישת דרגש נדחית; תמיכת רווחת חמצן מומרת לשירות מחויב.
 
 ## Audio
 
-HE LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+זה לא היה חטיפה. זה היה סוג הבחירה שהספר מוכר כחופש: לחתום, לצלול, או להישאר נקי על הנייר ולכוד בפועל.
 
 ## Field Note
 
-HE LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+השעבוד לא כיוון אקדח. הוא הצביע על חשבון האוויר, רשימת הדרגשים וחלון המסלול הבא.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/he_IL. -->

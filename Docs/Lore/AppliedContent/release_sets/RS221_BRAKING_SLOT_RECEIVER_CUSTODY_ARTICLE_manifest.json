@@ -1,0 +1,87 @@
+{
+  "release_set_id": "RS221_BRAKING_SLOT_RECEIVER_CUSTODY_ARTICLE",
+  "title": "Braking Slot Receiver Custody Article",
+  "status": "source_candidate",
+  "evidence_class": "SOURCE",
+  "created_utc": "2026-06-08T00:00:00Z",
+  "packet_files": [
+    "Docs/Lore/AppliedContent/packets/RS221_BRAKING_SLOT_RECEIVER_CUSTODY_ARTICLE.packets.json"
+  ],
+  "packet_ids": [
+    "P1401_BRAKING_SLOT_RECEIVER_CUSTODY"
+  ],
+  "article_ids": [
+    "applied_lore.braking_slot_receiver_custody"
+  ],
+  "target_surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+  ],
+  "locales": [
+    "en_US",
+    "ar_SA",
+    "de_DE",
+    "es_ES",
+    "fr_FR",
+    "he_IL",
+    "id_ID",
+    "ja_JP",
+    "ko_KR",
+    "nl_NL",
+    "pl_PL",
+    "pt_BR",
+    "ru_RU",
+    "uk_UA",
+    "zh_CN"
+  ],
+  "localization_status_summary": {
+    "en_US": "source_authority",
+    "ar_SA": "draft_machine_or_llm",
+    "de_DE": "draft_machine_or_llm",
+    "es_ES": "draft_machine_or_llm",
+    "fr_FR": "draft_machine_or_llm",
+    "he_IL": "draft_machine_or_llm",
+    "id_ID": "draft_machine_or_llm",
+    "ja_JP": "draft_machine_or_llm",
+    "ko_KR": "draft_machine_or_llm",
+    "nl_NL": "draft_machine_or_llm",
+    "pl_PL": "draft_machine_or_llm",
+    "pt_BR": "draft_machine_or_llm",
+    "ru_RU": "draft_machine_or_llm",
+    "uk_UA": "draft_machine_or_llm",
+    "zh_CN": "draft_machine_or_llm"
+  },
+  "source_brief": {
+    "runtime_layer": "LoreCodex",
+    "surfaces": [
+      "scanner",
+      "terminal",
+      "audio",
+      "in_game_wiki",
+      "external_site",
+      "field_note"
+    ],
+    "spoiler_level": "first_20_minutes_safe",
+    "source_voice": "receiver operations notice, Black Keel claim desk archive, field salvage note",
+    "audience": "player, external website reader, in-game codex reader",
+    "date_or_era": "2190 present with historical receiver-law context",
+    "location_or_route": "Aegir receiver chain, HECTON-8 recovery route, Black Keel claim tender",
+    "unlock_context": "Receiver-slot meter or Black Keel bulletin found during early recovery-chain discovery.",
+    "evidence_object": "Receiver custody meter with heat pledge dial and packet witness hash.",
+    "what_source_knows": "Braking slots are physical/legal receiver capacity, not a comms problem.",
+    "what_source_hides": "Which Deep Reach classifications intentionally stranded recoverable workers.",
+    "player_use": "Explains why the player must rebuild relay, quarantine, ascent and custody chain instead of waiting for instant rescue.",
+    "forbidden_facts": [
+      "FTL",
+      "ansible",
+      "instant rescue",
+      "benevolent Black Keel hospital rescue",
+      "cartoon-villain Deep Reach confession"
+    ]
+  },
+  "proof_status": "json_source_created; import/export/binding pending"
+}

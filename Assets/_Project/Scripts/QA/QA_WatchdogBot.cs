@@ -779,15 +779,13 @@ namespace Hecton8.QA
         private static bool TryResolvePlayerStateHot(out PlayerMovementRuntimeState movementState)
         {
             movementState = default;
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
-                !runtimeContext.IsBound)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null)
             {
                 return false;
             }
 
-            movementState = runtimeContext.MovementState;
-            return true;
+            return runtimeContext.TryGetMovementRuntimeState(out movementState);
         }
 
         private static bool IsFinite(in PlayerMovementRuntimeState state)

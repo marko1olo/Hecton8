@@ -9,32 +9,22 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Ending Record Transcript Seed"
+title: "תמליל רשומת סיום"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Ending Record Transcript Seed
+# תמליל רשומת סיום
 
-HE LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.
+## סגירה שנכתבה כ-Custody
 
-## Scanner
+סופי HECTON-8 לא צריכים למסור לשחקן מחילה נקייה. הרשומה נוקבת receiver, payload hash, מצב חוב ומצב הישרדות כי מוסדות זוכרים את השדות האלה טוב יותר מאנשים. הקור הזה שימושי. הוא מאפשר להשוות כל תוצאה בלי להפוך אמת לגביע.
 
-HE LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+השדות הלא פתורים חשובים ביותר. Suppression flag unknown. Truth custody unresolved. Atlas continuity unclear. Public ledger status pending. הפערים האלה שומרים את הסוף ישר: משהו יצא מן האוקיינוס, אבל בעלות אינה צדק, והישרדות אינה תיקון.
 
-## Terminal
-
-HE LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
-
-## Audio
-
-HE LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
-
-## Field Note
-
-HE LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+פורמט התמליל גם מגן על replay. שחקן יכול לחזור עם ידע, אבל הריצה הבאה לא צריכה לרשת כוח. היא יורשת חשד, טעם ופחד. הרשומה היא קבלה, לא סליחה.
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/he_IL. -->

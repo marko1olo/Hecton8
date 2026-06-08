@@ -18,6 +18,7 @@ namespace Hecton8.Visor
     public sealed class HectonNoirDepthFogFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
         private const int DepthFogGlobalsStrideBytes = 64;
+        private const float DefaultSeaLevelY = 14.02f;
 
         private static bool IsUnsupportedCameraType(CameraType cameraType)
         {
@@ -452,20 +453,35 @@ namespace Hecton8.Visor
             if (renderCamera == null)
                 return 1f;
 
+            float safeDepth = math.max(0.05f, nearSurfaceBypassDepthMeters);
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-
-            if (playerMovement != null)
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
             {
-                float safeDepth = math.max(0.05f, nearSurfaceBypassDepthMeters);
-                if (!playerMovement.IsPlayerSubmerged)
+                bool underwater = (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.Underwater) != 0u;
+                if (!underwater && movementState.DepthMeters <= 0.01f)
                     return 0f;
 
-                return Smooth01(playerMovement.CurrentDepth / safeDepth);
+                return Smooth01(math.max(0f, movementState.DepthMeters) / safeDepth);
             }
 
-            float fallbackDepth = math.max(0f, -renderCamera.transform.position.y);
-            return Smooth01(fallbackDepth / math.max(0.05f, nearSurfaceBypassDepthMeters));
+            if (playerContext != null)
+                return 0f;
+
+            float fallbackDepth = ResolveCameraDepthFromProductionSeaLevel(renderCamera);
+            return Smooth01(fallbackDepth / safeDepth);
+        }
+
+        private static float ResolveCameraDepthFromProductionSeaLevel(Camera renderCamera)
+        {
+            if (renderCamera == null)
+                return 0f;
+
+            Vector3 position = renderCamera.transform.position;
+            return math.isfinite(position.y) ? math.max(0f, DefaultSeaLevelY - position.y) : 0f;
         }
 
         private static float ResolveGlobalQualityWeight01()

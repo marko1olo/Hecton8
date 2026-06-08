@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "声学信标线"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# 声学信标线
 
-CN LOC HOLD: Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean.
+声学pinger line不是救援信标。它是能被听见的纪律。玩家在浑浊、brine shimmer或恐惧让路线陌生之前固定return sound。工具教会玩家：导航是一种习惯，不是map screen。
 
-## Scanner
-
-CN LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
-
-## Terminal
-
-CN LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
-
-## Audio
-
-CN LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
-
-## Field Note
-
-CN LOC HOLD: Navigation should become physical early.
+后续系统可以从这颗种子生长：relay timing、carrier handshake、路径仍存在的声学证明。第一版故意很小。它拯救玩家免于自信。
 
 <!-- External Site; generated from P114_ACOUSTIC_PINGER_LINE/zh_CN. -->

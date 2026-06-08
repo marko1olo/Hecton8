@@ -9,32 +9,22 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Ibarra Loss Ledger"
+title: "Ibarra-Ledger zur Verlustkonversion"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Ibarra Loss Ledger
+# Ibarra-Ledger zur Verlustkonversion
 
-DE LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## Buchhaltung, Die Die Kolonie Überlebte
 
-## Scanner
+Das Ibarra-Ledger soll kälter wirken als eine Vermisstenliste. Eine Liste trauert noch, selbst wenn sie lügt. Ein Ledger konvertiert. Es nimmt beschädigte Habitatmodule, tool banks, sample custody, missing personnel und salvage rights auf und legt jeden Fakt in eine Kategorie, die nach dem Schweigen von HECTON-8 weiter durch Verträge laufen kann.
 
-DE LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Das ist die Brücke zwischen alter Deep-Reach-liability und der gegenwärtigen Schuld des Spielers. Wenn Menschen unresolved personnel load werden, kann die Firma ihr Verschwinden eingestehen, ohne Mord zu benennen. Wenn Beweise material custody werden, können sie gekauft, begraben, geroutet oder versichert werden. Bleibt der claim continuous, überlebt Eigentum die Arbeiter, die den Ort am Laufen hielten.
 
-## Terminal
-
-DE LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-DE LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-DE LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Das Ledger gibt dem Spieler harte Macht. Es nach oben zu tragen enthüllt nicht nur, was geschah. Es trägt etwas, das der Markt bereits bepreisen kann. Verkaufen, veröffentlichen, umleiten oder begraben wird schmutzig, weil das Dokument so gebaut wurde, dass jede Wahl in irgendeinem balance sheet lesbar bleibt.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/de_DE. -->

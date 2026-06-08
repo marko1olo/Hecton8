@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "Корпоративне захоплення: чистий порятунок"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# Корпоративне захоплення: чистий порятунок
 
-UA LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call.
+Корпоративне захоплення працює тому, що починається як допомога. Сигнал чистий, підбір професійний, у кімнаті є повітря. Потім видно порядок операцій: спершу координати, потім XO custody, потім доступ Atlas, а благополуччя підрядника - після review.
 
-## Scanner
-
-UA LOC HOLD: Rescue offer. Payload first. Witness second.
-
-## Terminal
-
-UA LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
-
-## Audio
-
-UA LOC HOLD: The clean room is not for you.
-
-## Field Note
-
-UA LOC HOLD: A rescue that demands silence is a capture with better lighting.
+Океан припиняє тиснути на гравця, але Deep Reach починає консервувати історію. Свідчення запечатують мовою зараження, custody payload рухається раніше медичного розбору, і кожне ім'я, яке гравець доніс, стає екраном відповідальності. Це не смерть. Це виживання всередині машини, якій потрібна була тиша.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/uk_UA. -->

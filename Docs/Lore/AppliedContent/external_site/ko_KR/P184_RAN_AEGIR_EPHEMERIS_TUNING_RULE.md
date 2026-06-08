@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "RAN-Aegir 천문력 대역 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: RAN Aegir Ephemeris Bands
+# RAN-Aegir 천문력 대역 기록
 
-KO LOC HOLD: RAN Aegir ephemeris bands separate stable route lore from exact celestial data.
+RAN-Aegir 천문력 대역 기록은 안정된 항로 기록과 정확한 천체 값을 분리한다. 공개 기사는 추정 숫자를 항법 법으로 굳히지 않고도 신뢰를 유지할 수 있다.
 
 ## Scanner
 
-KO LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+이 기록은 창 대역과 위험 원인을 제공하지, 표가 소유한 정확한 주기를 제공하지 않는다.
 
 ## Terminal
 
-KO LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+EPHEMERIS BAND RECORD: 공개 atlas 항목은 창 대역, 위험 등급, Aegir와의 관계를 명시할 수 있다. 정확한 주기, 궤도 경사, 공명 값은 celestial-table authority 아래 남는다.
 
 ## Audio
 
-KO LOC HOLD: A band is honest until the numbers have an owner.
+대역은 너를 살릴 수 있다. 추측한 숫자는 너를 죽일 수 있다.
 
 ## Field Note
 
-KO LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+정직한 공개 차트는 위험을 항해할 만큼 말하고, 천체 표를 위조할 만큼 말하지 않는다.
 
 <!-- External Site; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/ko_KR. -->

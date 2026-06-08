@@ -9,32 +9,26 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Spoilerpoort"
+title: "Spoilerpoort"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Spoilerpoort
+# Spoilerpoort
 
-NL LOC HOLD: Openbare HECTON-8-pagina's mogen de klus noemen zonder het bewijs weg te geven. De open laag geeft veilige context; zegels, routestempels, scans, terminalfragmenten, werkertags en black-boxregels openen later sterkere claims.
+## Openbare Context
 
-## Scanner
+Openbare HECTON-8-pagina's mogen de klus noemen zonder bewijs vrij te geven. De open laag kan zeggen dat HECTON-8 een oceaanmaan onder Aegir is, dat de kolonie faalde, dat Black Keel salvage-druk draagt in plaats van zuivere redding, en dat Deep Reach een openbaar rapport naliet van storm, instorting, autonoom falen, Atlas-6-reddingstaal en ontbrekende data.
 
-NL LOC HOLD: OPENBARE ARCHIEFPOORT // Spoilerniveau 0/1. Alleen openbare context. Diepe bewijzen vereisen herstelde bewaring vóór codex-uitbreiding.
+Dat is genoeg voor een lezer om de premisse te begrijpen. Het is niet genoeg om de misdaad te bewijzen.
 
-## Terminal
+Diepere pagina's hebben teruggevonden objecten nodig: pakketzegel, routestempel, scanrecord, arbeiderstag, terminalfragment, black-boxregel of monster met intacte bewaring. Voordat die objecten in het spel zijn gevonden, stopt de openbare wiki bij veilige context. Na ontdekking kan de codex sterkere bewoording gebruiken, omdat de speler de herkomst van het feit heeft gezien.
 
-NL LOC HOLD: PUBLIC/WIKI EXPORTFILTER // Toegestaan vóór bewijs: setting, routedruk, openbare ongevalstaal, bekende instellingen en vroege salvage-premisse. Diep bewijs vasthouden.
+De poort beschermt vijf dingen: de eerste afdaling van de speler, koloniewerkerbewijs, de Deep Reach-aansprakelijkheidsketen, de waarheid van het Atlas-6-reparatienetwerk en finale payload-uitkomsten. Openbare pagina's mogen naar die onderwerpen wijzen. Ze dragen geen finale ontvanger, route of consequentie.
 
-## Audio
-
-NL LOC HOLD: Black Keel-relais: publieke tekst noemt de maan. Bewijs heeft een zegel nodig. Breng het zegel.
-
-## Field Note
-
-NL LOC HOLD: De openbare pagina zegt waar je moet duiken. Ze zegt niet wie betaalde om de deur dicht te houden.
+Openbare artikelen zijn kaarten. Teruggevonden bewijs is bewijs.
 
 <!-- External Site; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/nl_NL. -->

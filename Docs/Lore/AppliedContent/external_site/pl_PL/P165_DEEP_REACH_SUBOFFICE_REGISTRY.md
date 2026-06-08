@@ -9,32 +9,20 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Deep Reach Suboffice Registry"
+title: "Rejestr Podbiur Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Deep Reach Suboffice Registry
+# Rejestr Podbiur Deep Reach
 
-PL LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## Małe Biura, Wielkie Skutki
 
-## Scanner
+Deep Reach straszy bardziej, kiedy przestaje brzmieć jak spisek, a zaczyna jak administracja. Rejestr działa, bo każda nazwa biura jest dość nudna, by być prawdziwa. Contract Continuity Desk utrzymuje obligations, które pracownik wolałby martwe. Packet Notary Interface decyduje, czy wiadomość stanie się dowodem czy szumem. Quarantine Hold Desk sprawia, że opóźnienie wygląda medycznie odpowiedzialnie. Asset Silence Board zmienia świadków w exposure. Return Action Queue wycenia ciało względem payload, orbit i public risk.
 
-PL LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-PL LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-PL LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-PL LOC HOLD: Use dull names. Dull names are where liability hides.
+Żaden desk nie musi nienawidzić gracza. Każdy musi tylko wykonywać pracę w priority stack napisanym przed podniesieniem się wody. Dlatego dowody HECTON-8 powinny narastać jako pieczęcie, routing fragments i małe sprzeczności. Zbrodnia nie kryje się za teatralnym złem. Jest rozłożona po formularzach, które wyglądają defensible, dopóki gracz ich nie ustawi w szeregu.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/pl_PL. -->

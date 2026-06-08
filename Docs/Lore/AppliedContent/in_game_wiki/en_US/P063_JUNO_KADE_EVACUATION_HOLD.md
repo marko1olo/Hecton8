@@ -7,8 +7,8 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Juno Kade Evacuation Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Juno Kade Evacuation Hold
 
-Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+Juno Kade proves the colony did not simply freeze. People queued, marshals issued routes, and the exit system answered with authorization holds, quarantine checks and payload precedence. The disaster becomes worse because the door was real.
 
 ## Scanner
 
@@ -27,11 +27,11 @@ Juno Kade opened the queue and hit a wall made from quarantine, certification an
 
 ## Terminal
 
-KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+KADE EVAC STATUS: route red; manual override rejected; quarantine gate awaiting Atlas continuity check; payload lift receives precedence until claim seal resolves.
 
 ## Audio
 
-She kept counting people after the system started counting rooms.
+The exit existed. That is why the hold matters.
 
 ## Field Note
 

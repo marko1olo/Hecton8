@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Black Keel Tender Interior Limits"
+title: "Ograniczenia wnętrza tendera Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Black Keel Tender Interior Limits
+# Ograniczenia wnętrza tendera Black Keel
 
-PL LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel to infrastruktura salvage hard-sci-fi, nie heroiczny prywatny statek. Jego wnętrze zbudowano wokół custody próbek, packet law, obsługi dronów, rękawów kwarantanny i presji długu. Statek może być linią życia i nadal pozostawać konstrukcyjnie obojętny wobec osoby trzymającej tę linię.
 
 ## Scanner
 
-PL LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+Tender ma stojaki na próbki, drony, zapieczętowane pakiety i ładunek lien, zanim ma koję odpowiednią dla żywego pasażera.
 
 ## Terminal
 
-PL LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: brak deep rescue crew, brak rezerwy promu atmosferycznego, brak darmowego ascent burn poza lien authority, brak ludzkiego kwatermistrza.
 
 ## Audio
 
-PL LOC HOLD: The ship brought you here as cargo with hands.
+Statek przywiózł cię tutaj jako ładunek z rękami.
 
 ## Field Note
 
-PL LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel to roboczy claim tender: wynajęty, zajęty długiem, zautomatyzowany i zoptymalizowany pod custody przed ratunkiem.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/pl_PL. -->

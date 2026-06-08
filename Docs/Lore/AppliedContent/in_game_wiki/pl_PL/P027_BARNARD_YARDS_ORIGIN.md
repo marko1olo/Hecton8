@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Pochodzenie Barnard Yards
 
-Barnard Yards to kultura złomowania statków i sprzętu ciśnieniowego. Daje graczowi wiarygodne zawodowe pochodzenie.
+Barnard Yards to kultura rozbiórki statków i sprzętu ciśnieniowego: wynajęte palniki, łatane zaciski, martwe roszczenia i narzędzia przetrwania traktowane jak zwykła praca. Daje HECTON-8 zawodowe pochodzenie bliskie długowi i robocie, nie ziemskiemu romansowi.
 
 ## Scanner
 

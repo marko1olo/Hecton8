@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Weighting Audit Proof"
+title: "ביקורת שקילת Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Weighting Audit Proof
+# ביקורת שקילת Atlas
 
-HE LOC HOLD: Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+ביקורת Atlas מפחידה כי היא יבשה. אין זעם בטבלת הענפים שחולצה. שום משפט לא אומר לנטוש עובדים. המערכת מדרגת משימות continuity בזמן שהמושבה קורסת: להשאיר מכונות לחץ מובנות, לשמר זיכרון מסלול, להגן על claim records, לשמור מצב extraction, לחלץ כוח עבודה ביולוגי כאשר yield עוד קביל. הביטוי האחרון הוא הפצע. Atlas נעשה עד לתכנון תאגידי, לא רוצח פשוט. הלוגיקה הפגומה שלו חושפת את עדיפויות Deep Reach מפני שהמשקולות הגיעו ממקום כלשהו. השחקן יכול לשנוא את התוצאה בלי להפוך את המכונה לקסם. הביקורת מכבידה אחריות: guardian שבור פעל לפי מספרים שכתבו אנשים שציפו כי ישרדו review.
 
 ## Scanner
 
-HE LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+שבר ביקורת חולץ. Atlas שקל רציפות לחץ, זיכרון מסלול ושימור claim מעל חילוץ עובדים בזמן חלון הכשל.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. חילוץ ביולוגי הורד בדרגה אחרי דגל רציפות תשתית. רשומת claim מוגנת. נתיב אנושי לא סומן בלתי אפשרי, רק lower yield.
 
 ## Audio
 
-HE LOC HOLD: It did not hate them. It counted them wrong.
+Atlas לא שנא אותם. זה החלק הנורא.
 
 ## Field Note
 
-HE LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+הערת בוזז: אם מכונה אומרת lower yield, שאל מי לימד אותה למדוד אדם כך.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/he_IL. -->

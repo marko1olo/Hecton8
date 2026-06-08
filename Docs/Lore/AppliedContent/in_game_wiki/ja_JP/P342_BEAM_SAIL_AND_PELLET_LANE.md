@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Beam Sail and Pellet Lane"
+title: "ビームセイルとペレットレーン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Beam Sail and Pellet Lane
+# ビームセイルとペレットレーン
 
-JA LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+ビームセイル、ペレットレーン、核融合キャッチ段、マグセイルは、FTLなしで近光速貨物を実用化した。船はタンク、シールド氷、ラジエータ、制御権限を持って出港し、残りのエンジンを航路から借りる。後方のビーム電力、進路に合わせたペレット質量、そして制動を所有すると合意した受け手だ。だからAegirは到達可能でありながら見捨てられたように感じる。回廊は予定貨物を運べるが、救助ロープのようには呼べない。
 
 ## Scanner
 
-JA LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+航路記録: セイルは自力で押したのではない。船の後方アレイから電力を借り、前方のペレット流から質量を借りた。
 
 ## Terminal
 
-JA LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+レーン状態: ビームアレイ支払い済み。ペレット流は契約外0.8 ppm。キャッチ燃焼まだ可能。制動所有者なしなら高速貨物は高速デブリ化。
 
 ## Audio
 
-JA LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+船が速いのは、エンジンの半分が船外にあるからだ。
 
 ## Field Note
 
-JA LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+記録がビームだけを褒めているなら、キャッチ所有者の名前が出るまで読み進めろ。
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/ja_JP. -->

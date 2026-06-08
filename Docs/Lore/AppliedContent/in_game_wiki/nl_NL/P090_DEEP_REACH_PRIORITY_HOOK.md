@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Deep Reach Priority Hook
 
-NL LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+Deep Reachs huidige druk vraagt geen onmogelijke afstandsbesturing. Oude continuity certificates, quarantaineclausules, Atlas access tokens en payload priority hooks zitten al in Black Keels juridische pad. Het bedrijf kan beïnvloeden wat de carrier waardeert zonder zichtbaar eigenaar te zijn. Dat maakt de antagonist moeilijker weg te snijden: geen signaal om te jammen, maar een clausule die blijft ontwaken.
 
 ## Scanner
 
-NL LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+Oude certificaathaak. Deep Reach bezit het schip niet; het bezit de clausule.
 
 ## Terminal
 
-NL LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate kan payload recovery, quarantaineslot, Atlas access token of evidence suppression queue versnellen onder Aegir-claimrecht. Human extraction priority ongewijzigd tenzij hazard proof custody value overstijgt.
 
 ## Audio
 
-NL LOC HOLD: They do not need to be on the bridge to steer the answer.
+Ze hoeven niet op de brug te staan om het antwoord te sturen.
 
 ## Field Note
 
-NL LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+Schoner dan samenzwering: het papierwerk leeft nog en heeft nog honger.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/nl_NL. -->

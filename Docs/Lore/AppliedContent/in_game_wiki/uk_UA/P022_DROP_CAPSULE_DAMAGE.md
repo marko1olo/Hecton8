@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Пошкодження спускової капсули
 
-Гравець прибуває на HECTON-8 у капсулі. Аварія лишає укриття, живлення й журнали, але вбиває підйом. Втеча стає інженерним ланцюгом.
+Спускова капсула доставляє мародера на HECTON-8. Аварія лишає достатньо живих систем для укриття, живлення й журналів, але знищує обладнання підйому. Ранній вихід стає інженерним ланцюгом, а не кнопкою.
 
 ## Scanner
 

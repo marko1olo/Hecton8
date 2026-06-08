@@ -232,6 +232,7 @@ def validate_bake_manifest(
     errors: list[str],
     warnings: list[str],
     allow_bake_review: bool,
+    enabled_sprite_stems: set[str] | None = None,
 ) -> None:
     if bake_manifest_path is None:
         return
@@ -253,11 +254,19 @@ def validate_bake_manifest(
 
     review_count = int(payload.get("reviewCount", 0) or 0)
     items = list(payload.get("items", []) or [])
-    failed_items = [
-        f"{item.get('index', '?')}:{item.get('name', '<unnamed>')}:{item.get('status', '<missing>')}"
-        for item in items
-        if str(item.get("status", "")).strip() != "OK"
-    ]
+    failed_items: list[str] = []
+    failed_enabled_items: list[str] = []
+    treat_all_failed_items_as_enabled = enabled_sprite_stems is None
+    enabled_stems = enabled_sprite_stems or set()
+    for item in items:
+        if str(item.get("status", "")).strip() == "OK":
+            continue
+
+        label = f"{item.get('index', '?')}:{item.get('name', '<unnamed>')}:{item.get('status', '<missing>')}"
+        failed_items.append(label)
+        alpha_path = normalize_asset_path(str(item.get("alpha512", "")).strip())
+        if treat_all_failed_items_as_enabled or (alpha_path and Path(alpha_path).stem in enabled_stems):
+            failed_enabled_items.append(label)
 
     if review_count > 0 or failed_items:
         message = (
@@ -266,8 +275,12 @@ def validate_bake_manifest(
         )
         if allow_bake_review:
             warnings.append(message)
+        elif failed_enabled_items:
+            errors.append(
+                f"{message}; enabledBindingItems={', '.join(failed_enabled_items[:8])}"
+            )
         else:
-            errors.append(message)
+            warnings.append(f"{message}; disabled/unbound bake review only")
 
 
 def read_source_bake_manifest_path(manifest_path: Path | None) -> Path | None:
@@ -282,7 +295,12 @@ def read_source_bake_manifest_path(manifest_path: Path | None) -> Path | None:
     return project_path(raw_path)
 
 
-def validate_spec_order(spec_path: Path | None, bindings: list[dict], errors: list[str]) -> None:
+def validate_spec_order(
+    spec_path: Path | None,
+    bindings: list[dict],
+    errors: list[str],
+    allow_disabled_spec_gaps: bool = False,
+) -> None:
     if spec_path is None:
         return
 
@@ -292,6 +310,28 @@ def validate_spec_order(spec_path: Path | None, bindings: list[dict], errors: li
 
     payload = json.loads(load_text(spec_path))
     items = list(payload.get("items", []) or [])
+    if allow_disabled_spec_gaps:
+        if len(bindings) != len(items):
+            errors.append(f"spec/binding count mismatch: spec={len(items)} bindings={len(bindings)}")
+
+        for index, item in enumerate(items):
+            if index >= len(bindings):
+                return
+
+            binding = bindings[index]
+            if not binding.get("enabled", False):
+                review_status = str(binding.get("reviewStatus", "")).strip().upper()
+                if review_status != "REJECTED":
+                    errors.append(f"binding/spec disabled gap is not visually rejected at binding[{index}]")
+                if not binding_has_review_metadata(binding):
+                    errors.append(f"binding/spec disabled rejected gap has no review metadata at binding[{index}]")
+                if not str(binding.get("spriteAsset", "")).strip():
+                    errors.append(f"binding/spec disabled rejected gap has no sprite proof at binding[{index}]")
+                continue
+
+            validate_spec_binding(index, item, binding, errors, "binding")
+        return
+
     enabled = [binding for binding in bindings if binding.get("enabled", False)]
     if len(enabled) != len(items):
         errors.append(f"spec/enabled binding count mismatch: spec={len(items)} enabled={len(enabled)}")
@@ -300,31 +340,34 @@ def validate_spec_order(spec_path: Path | None, bindings: list[dict], errors: li
         if index >= len(enabled):
             return
 
-        binding = enabled[index]
-        expected_pid = str(item.get("persistentId", "")).strip()
-        expected_asset = normalize_asset_path(str(item.get("asset", "")).strip())
-        expected_safe_name = str(item.get("safeName", "")).strip()
-        expected_index = int(item.get("index", index + 1))
-        binding_pid = str(binding.get("persistentId", "")).strip()
-        binding_asset = normalize_asset_path(str(binding.get("itemAsset", "")).strip())
-        sprite_asset = normalize_asset_path(str(binding.get("spriteAsset", "")).strip())
+        validate_spec_binding(index, item, enabled[index], errors, "enabled")
 
-        if expected_pid and binding_pid != expected_pid:
+
+def validate_spec_binding(index: int, item: dict, binding: dict, errors: list[str], label: str) -> None:
+    expected_pid = str(item.get("persistentId", "")).strip()
+    expected_asset = normalize_asset_path(str(item.get("asset", "")).strip())
+    expected_safe_name = str(item.get("safeName", "")).strip()
+    expected_index = int(item.get("index", index + 1))
+    binding_pid = str(binding.get("persistentId", "")).strip()
+    binding_asset = normalize_asset_path(str(binding.get("itemAsset", "")).strip())
+    sprite_asset = normalize_asset_path(str(binding.get("spriteAsset", "")).strip())
+
+    if expected_pid and binding_pid != expected_pid:
+        errors.append(
+            f"binding/spec persistentId mismatch at {label}[{index}]: expected={expected_pid} actual={binding_pid}"
+        )
+
+    if expected_asset and binding_asset != expected_asset:
+        errors.append(
+            f"binding/spec itemAsset mismatch at {label}[{index}]: expected={expected_asset} actual={binding_asset}"
+        )
+
+    if expected_safe_name:
+        expected_token = f"_{expected_index:02d}_{expected_safe_name}_Alpha512.png"
+        if expected_token not in sprite_asset:
             errors.append(
-                f"binding/spec persistentId mismatch at enabled[{index}]: expected={expected_pid} actual={binding_pid}"
+                f"binding/spec sprite name mismatch at {label}[{index}]: expected token {expected_token} in {sprite_asset}"
             )
-
-        if expected_asset and binding_asset != expected_asset:
-            errors.append(
-                f"binding/spec itemAsset mismatch at enabled[{index}]: expected={expected_asset} actual={binding_asset}"
-            )
-
-        if expected_safe_name:
-            expected_token = f"_{expected_index:02d}_{expected_safe_name}_Alpha512.png"
-            if expected_token not in sprite_asset:
-                errors.append(
-                    f"binding/spec sprite name mismatch at enabled[{index}]: expected token {expected_token} in {sprite_asset}"
-                )
 
 
 def binding_has_review_metadata(binding: dict) -> bool:
@@ -360,14 +403,20 @@ def validate(args: argparse.Namespace) -> int:
     source_bake_manifest_path = read_source_bake_manifest_path(manifest_path)
     if args.require_source_bake_manifest and source_bake_manifest_path is None:
         errors.append(f"atlas manifest missing sourceBakeManifest: {display_path(manifest_path) if manifest_path else '<none>'}")
+    enabled_sprite_stems = {
+        Path(normalize_asset_path(str(binding.get("spriteAsset", "")).strip())).stem
+        for binding in bindings
+        if binding.get("enabled", False) and str(binding.get("spriteAsset", "")).strip()
+    }
     validate_bake_manifest(
         source_bake_manifest_path,
         errors,
         warnings,
         args.allow_bake_review,
+        enabled_sprite_stems,
     )
     spec_path = Path(args.spec_json).resolve() if args.spec_json else None
-    validate_spec_order(spec_path, bindings, errors)
+    validate_spec_order(spec_path, bindings, errors, args.allow_disabled_spec_gaps)
     seen_persistent_ids: dict[str, int] = {}
     seen_item_assets: dict[str, int] = {}
     seen_sprite_assets: dict[str, int] = {}
@@ -457,6 +506,7 @@ def main() -> int:
     parser.add_argument("--map", required=True)
     parser.add_argument("--manifest", help="Optional atlas manifest path. Defaults to the only *_Manifest.json under the map sibling Atlas folder.")
     parser.add_argument("--spec-json", help="Optional frozen gap spec JSON. Validates enabled binding order and target identity.")
+    parser.add_argument("--allow-disabled-spec-gaps", action="store_true", help="Allow disabled visually rejected cells while preserving full spec slot order.")
     parser.add_argument("--min-coverage", type=positive_unit_float, default=0.03)
     parser.add_argument("--edge-margin-px", type=positive_int, default=12)
     parser.add_argument("--allow-cell-edge-touch", action="store_true")

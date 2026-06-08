@@ -98,6 +98,31 @@ namespace Hecton8.Editor
             Debug.Log(report.ToLogLine());
         }
 
+        public static void ApplyScenePlacementPlanFromCommandLine()
+        {
+            try
+            {
+                bool scenesOpened = TryOpenScenePlacementPlanScenesForCommandLine();
+                ScenePlacementReport report = scenesOpened
+                    ? ApplyScenePlacementPlanToOpenScene()
+                    : new ScenePlacementReport { PreflightAborted = true };
+                Debug.Log(report.ToLogLine());
+
+                bool success = scenesOpened && !HasScenePlacementApplyFailures(report);
+                if (!success)
+                    Debug.LogError("[AppliedLoreScenePlacement] Batch scene placement failed.");
+
+                if (Application.isBatchMode)
+                    EditorApplication.Exit(success ? 0 : 1);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("[AppliedLoreScenePlacement] Batch scene placement threw: " + exception.Message);
+                if (Application.isBatchMode)
+                    EditorApplication.Exit(1);
+            }
+        }
+
         public void CreateGUI()
         {
             rootVisualElement.Clear();
@@ -832,6 +857,66 @@ namespace Hecton8.Editor
             }
         }
 
+        private static bool TryOpenScenePlacementPlanScenesForCommandLine()
+        {
+            List<ScenePlacementRow> rows = new List<ScenePlacementRow>(64);
+            LoadScenePlacementRows(rows);
+            HashSet<string> openedScenePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            bool openedAny = false;
+
+            for (int i = 0; i < rows.Count; i++)
+            {
+                string scenePath = rows[i].ScenePath;
+                if (string.IsNullOrWhiteSpace(scenePath) || !openedScenePaths.Add(scenePath))
+                    continue;
+
+                string absoluteScenePath = Path.Combine(Directory.GetCurrentDirectory(), scenePath);
+                if (!File.Exists(absoluteScenePath))
+                {
+                    Debug.LogError("[AppliedLoreScenePlacement] Scene placement plan references missing scene: " + scenePath);
+                    return false;
+                }
+
+                if (FindLoadedScene(scenePath, out _))
+                {
+                    openedAny = true;
+                    continue;
+                }
+
+                OpenSceneMode mode = openedAny ? OpenSceneMode.Additive : OpenSceneMode.Single;
+                Scene scene = EditorSceneManager.OpenScene(scenePath, mode);
+                if (!scene.IsValid() || !scene.isLoaded)
+                {
+                    Debug.LogError("[AppliedLoreScenePlacement] Failed to open scene placement scene: " + scenePath);
+                    return false;
+                }
+
+                openedAny = true;
+            }
+
+            if (!openedAny)
+                Debug.LogError("[AppliedLoreScenePlacement] Scene placement plan has no usable scene paths.");
+
+            return openedAny;
+        }
+
+        private static bool HasScenePlacementApplyFailures(ScenePlacementReport report)
+        {
+            return report.PlanRows <= 0 ||
+                   report.PreflightAborted ||
+                   report.InvalidRows > 0 ||
+                   report.DuplicateSceneOwners > 0 ||
+                   report.DuplicateDiscoveryIds > 0 ||
+                   report.UnknownHashes > 0 ||
+                   report.SceneNotLoaded > 0 ||
+                   report.MissingPrefabs > 0 ||
+                   report.Conflicts > 0 ||
+                   report.UnsupportedRows > 0 ||
+                   report.SaveFailures > 0 ||
+                   report.TerminalOsRuntimeMissingRenderers > 0 ||
+                   report.TerminalOsRuntimeDuplicatePreviewIndices > 0;
+        }
+
         private static ScenePlacementReport ApplyScenePlacementPlanToOpenScene()
         {
             HashSet<uint> knownPacketHashes = new HashSet<uint>();
@@ -839,12 +924,18 @@ namespace Hecton8.Editor
 
             List<ScenePlacementRow> rows = new List<ScenePlacementRow>(64);
             LoadScenePlacementRows(rows);
-            AssignTerminalPreviewIndices(rows);
-
             ScenePlacementReport report = new ScenePlacementReport
             {
                 PlanRows = rows.Count
             };
+            MarkDuplicateScenePlacementRows(rows, ref report);
+            AssignTerminalPreviewIndices(rows);
+            if (!TryValidateScenePlacementRowsBeforeMutation(rows, knownPacketHashes, ref report))
+            {
+                report.PreflightAborted = true;
+                return report;
+            }
+
             HashSet<string> dirtyScenePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             for (int i = 0; i < rows.Count; i++)
@@ -951,13 +1042,14 @@ namespace Hecton8.Editor
             ref ScenePlacementReport report,
             HashSet<string> dirtyScenePaths)
         {
-            HashSet<string> processedScenePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> processedRuntimeKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < rows.Count; i++)
             {
                 ScenePlacementRow row = rows[i];
+                string runtimeKey = ScenePlacementRuntimeKey(row.ScenePath, row.PlacementRoot);
                 if (!row.IsValid ||
                     !string.Equals(row.AuthoringComponent, nameof(MessageTerminal), StringComparison.Ordinal) ||
-                    !processedScenePaths.Add(row.ScenePath) ||
+                    !processedRuntimeKeys.Add(runtimeKey) ||
                     !FindLoadedScene(row.ScenePath, out Scene scene))
                 {
                     continue;
@@ -1035,11 +1127,18 @@ namespace Hecton8.Editor
         {
             int maxPreviewIndex = -1;
             int validTerminalCount = 0;
+            HashSet<int> seenPreviewIndices = new HashSet<int>();
             for (int i = 0; i < terminals.Count; i++)
             {
                 int previewIndex = ReadSerializedInt(terminals[i], "terminalOsPreviewIndex", -1);
                 if (previewIndex < 0)
                     continue;
+
+                if (!seenPreviewIndices.Add(previewIndex))
+                {
+                    report.TerminalOsRuntimeDuplicatePreviewIndices++;
+                    continue;
+                }
 
                 maxPreviewIndex = Mathf.Max(maxPreviewIndex, previewIndex);
                 validTerminalCount++;
@@ -1051,12 +1150,17 @@ namespace Hecton8.Editor
             Renderer[] renderers = new Renderer[maxPreviewIndex + 1];
             Transform[] transforms = new Transform[maxPreviewIndex + 1];
             int missingRenderers = 0;
+            HashSet<int> assignedPreviewIndices = new HashSet<int>();
             for (int i = 0; i < terminals.Count; i++)
             {
                 MessageTerminal terminal = terminals[i];
                 int previewIndex = ReadSerializedInt(terminal, "terminalOsPreviewIndex", -1);
-                if (previewIndex < 0 || previewIndex >= renderers.Length)
+                if (previewIndex < 0 ||
+                    previewIndex >= renderers.Length ||
+                    !assignedPreviewIndices.Add(previewIndex))
+                {
                     continue;
+                }
 
                 Renderer renderer = ReadSerializedObject<Renderer>(terminal, "statusLightRenderer");
                 renderers[previewIndex] = renderer != null ? renderer : terminal.GetComponentInChildren<Renderer>(true);
@@ -1185,17 +1289,109 @@ namespace Hecton8.Editor
             }
         }
 
+        private static void MarkDuplicateScenePlacementRows(List<ScenePlacementRow> rows, ref ScenePlacementReport report)
+        {
+            Dictionary<string, int> sceneOwners = new Dictionary<string, int>(StringComparer.Ordinal);
+            Dictionary<string, int> discoveryIds = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (int i = 0; i < rows.Count; i++)
+            {
+                ScenePlacementRow row = rows[i];
+                if (!string.IsNullOrWhiteSpace(row.ScenePath) &&
+                    !string.IsNullOrWhiteSpace(row.PlacementRoot) &&
+                    !string.IsNullOrWhiteSpace(row.ObjectName))
+                {
+                    string sceneOwnerKey = row.ScenePath + "\n" + row.PlacementRoot + "\n" + row.ObjectName;
+                    if (sceneOwners.ContainsKey(sceneOwnerKey))
+                    {
+                        row.DuplicateSceneOwner = true;
+                        report.DuplicateSceneOwners++;
+                    }
+                    else
+                    {
+                        sceneOwners.Add(sceneOwnerKey, i);
+                    }
+                }
+
+                if (string.Equals(row.AuthoringComponent, nameof(NarrativeDiscovery), StringComparison.Ordinal) &&
+                    !string.IsNullOrWhiteSpace(row.DiscoveryId))
+                {
+                    if (discoveryIds.ContainsKey(row.DiscoveryId))
+                    {
+                        row.DuplicateDiscoveryId = true;
+                        report.DuplicateDiscoveryIds++;
+                    }
+                    else
+                    {
+                        discoveryIds.Add(row.DiscoveryId, i);
+                    }
+                }
+
+                rows[i] = row;
+            }
+        }
+
         private static void AssignTerminalPreviewIndices(List<ScenePlacementRow> rows)
         {
-            int terminalIndex = 0;
+            Dictionary<string, int> terminalIndicesByRuntime = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < rows.Count; i++)
             {
                 ScenePlacementRow row = rows[i];
                 row.TerminalPreviewIndex = -1;
                 if (row.AuthoringComponent == nameof(MessageTerminal))
-                    row.TerminalPreviewIndex = terminalIndex++;
+                {
+                    string runtimeKey = ScenePlacementRuntimeKey(row.ScenePath, row.PlacementRoot);
+                    if (!terminalIndicesByRuntime.TryGetValue(runtimeKey, out int terminalIndex))
+                        terminalIndex = 0;
+
+                    row.TerminalPreviewIndex = terminalIndex;
+                    terminalIndicesByRuntime[runtimeKey] = terminalIndex + 1;
+                }
                 rows[i] = row;
             }
+        }
+
+        private static bool TryValidateScenePlacementRowsBeforeMutation(
+            List<ScenePlacementRow> rows,
+            HashSet<uint> knownPacketHashes,
+            ref ScenePlacementReport report)
+        {
+            bool valid = true;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                ScenePlacementRow row = rows[i];
+                if (!row.IsValid)
+                {
+                    report.InvalidRows++;
+                    valid = false;
+                    continue;
+                }
+
+                if (!knownPacketHashes.Contains(row.PacketHashUInt))
+                {
+                    report.UnknownHashes++;
+                    valid = false;
+                }
+
+                if (!FindLoadedScene(row.ScenePath, out _))
+                {
+                    report.SceneNotLoaded++;
+                    valid = false;
+                }
+
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(row.SourcePrefab) == null)
+                {
+                    report.MissingPrefabs++;
+                    valid = false;
+                }
+            }
+
+            return valid;
+        }
+
+        private static string ScenePlacementRuntimeKey(string scenePath, string placementRoot)
+        {
+            return (scenePath ?? string.Empty) + "\n" +
+                   (string.IsNullOrWhiteSpace(placementRoot) ? DefaultScenePlacementRootName : placementRoot);
         }
 
         private static bool FindLoadedScene(string scenePath, out Scene scene)
@@ -2169,6 +2365,8 @@ namespace Hecton8.Editor
             public string LocalEuler;
             public string LocalScale;
             public int TerminalPreviewIndex;
+            public bool DuplicateSceneOwner;
+            public bool DuplicateDiscoveryId;
 
             public bool IsValid =>
                 !string.IsNullOrWhiteSpace(PacketId) &&
@@ -2177,7 +2375,9 @@ namespace Hecton8.Editor
                 !string.IsNullOrWhiteSpace(ObjectName) &&
                 !string.IsNullOrWhiteSpace(SourcePrefab) &&
                 !string.IsNullOrWhiteSpace(AuthoringComponent) &&
-                !string.IsNullOrWhiteSpace(SerializedField);
+                !string.IsNullOrWhiteSpace(SerializedField) &&
+                !DuplicateSceneOwner &&
+                !DuplicateDiscoveryId;
         }
 
         private struct ScenePlacementReport
@@ -2187,6 +2387,8 @@ namespace Hecton8.Editor
             public int SceneNotLoaded;
             public int MissingPrefabs;
             public int InvalidRows;
+            public int DuplicateSceneOwners;
+            public int DuplicateDiscoveryIds;
             public int UnknownHashes;
             public int RootsCreated;
             public int Instantiated;
@@ -2202,14 +2404,19 @@ namespace Hecton8.Editor
             public int TerminalOsRuntimeAlreadyCurrent;
             public int TerminalOsRuntimeTerminals;
             public int TerminalOsRuntimeMissingRenderers;
+            public int TerminalOsRuntimeDuplicatePreviewIndices;
+            public bool PreflightAborted;
 
             public string ToLogLine()
             {
                 return "[AppliedLoreScenePlacement] plan_rows=" + PlanRows +
+                       " preflight_aborted=" + PreflightAborted +
                        " rows_considered=" + RowsConsidered +
                        " scene_not_loaded=" + SceneNotLoaded +
                        " missing_prefabs=" + MissingPrefabs +
                        " invalid_rows=" + InvalidRows +
+                       " duplicate_scene_owners=" + DuplicateSceneOwners +
+                       " duplicate_discovery_ids=" + DuplicateDiscoveryIds +
                        " unknown_hashes=" + UnknownHashes +
                        " roots_created=" + RootsCreated +
                        " instantiated=" + Instantiated +
@@ -2224,16 +2431,20 @@ namespace Hecton8.Editor
                        " terminal_os_configured=" + TerminalOsRuntimeConfigured +
                        " terminal_os_already_current=" + TerminalOsRuntimeAlreadyCurrent +
                        " terminal_os_terminals=" + TerminalOsRuntimeTerminals +
-                       " terminal_os_missing_renderers=" + TerminalOsRuntimeMissingRenderers;
+                       " terminal_os_missing_renderers=" + TerminalOsRuntimeMissingRenderers +
+                       " terminal_os_duplicate_preview_indices=" + TerminalOsRuntimeDuplicatePreviewIndices;
             }
 
             public string ToDialogText()
             {
                 return "Plan rows: " + PlanRows +
+                       "\nPreflight aborted: " + PreflightAborted +
                        "\nRows considered: " + RowsConsidered +
                        "\nScene not loaded: " + SceneNotLoaded +
                        "\nMissing prefabs: " + MissingPrefabs +
                        "\nInvalid rows: " + InvalidRows +
+                       "\nDuplicate scene owners: " + DuplicateSceneOwners +
+                       "\nDuplicate discovery ids: " + DuplicateDiscoveryIds +
                        "\nUnknown hashes: " + UnknownHashes +
                        "\nRoots created: " + RootsCreated +
                        "\nInstantiated: " + Instantiated +
@@ -2248,7 +2459,8 @@ namespace Hecton8.Editor
                        "\nTerminalOS runtimes configured: " + TerminalOsRuntimeConfigured +
                        "\nTerminalOS runtimes already current: " + TerminalOsRuntimeAlreadyCurrent +
                        "\nTerminalOS terminal bindings: " + TerminalOsRuntimeTerminals +
-                       "\nTerminalOS missing renderers: " + TerminalOsRuntimeMissingRenderers;
+                       "\nTerminalOS missing renderers: " + TerminalOsRuntimeMissingRenderers +
+                       "\nTerminalOS duplicate preview indices: " + TerminalOsRuntimeDuplicatePreviewIndices;
             }
         }
 

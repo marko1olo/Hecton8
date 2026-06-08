@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # הלווייתנים של HECTON-8
 
 > **מקור:** תאגיד הענק Deep Reach, הערכת איומים אקסנוביולוגית.

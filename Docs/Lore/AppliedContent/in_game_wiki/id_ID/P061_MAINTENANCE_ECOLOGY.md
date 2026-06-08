@@ -7,34 +7,34 @@ poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
 biome_tags: biome.cable_reef;biome.repair_fauna
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Maintenance Ecology"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Ekologi Pemeliharaan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Ekologi Pemeliharaan
 
-ID LOC HOLD: Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.
+Ekologi Pemeliharaan membuat HECTON-8 berguna sekaligus salah. Atlas belajar bahwa biofilm bisa membawa sinyal lemah, koloni filter bisa mengulang ping, pertumbuhan cangkang bisa menutup retakan, dan fauna bertanda bisa mengembalikan sensor packets yang rusak. Laut bukan pribadi. Tetapi jaringan perbaikan cukup hidup untuk membuat setiap cable reef menjadi alat, bahaya, dan jejak bukti.
 
 ## Scanner
 
-ID LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+Biofilm konduktif, pertumbuhan cangkang, fauna bertanda, dan panas ventilasi membawa lalu lintas perbaikan.
 
 ## Terminal
 
-ID LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+EKOLOGI PEMELIHARAAN ATLAS: jembatan biofilm stabil; koloni filter mengulang pulsa akustik; segel cangkang menutup retakan; fauna bertanda mengembalikan sensor packets rusak.
 
 ## Audio
 
-ID LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
+Kabel itu hidup karena mesin membutuhkannya hidup.
 
 ## Field Note
 
-ID LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Jangan kupas setiap sambungan hidup. Sebagian menahan tekanan lebih baik daripada logam.
 
 <!-- In-Game Wiki; generated from P061_MAINTENANCE_ECOLOGY/id_ID. -->

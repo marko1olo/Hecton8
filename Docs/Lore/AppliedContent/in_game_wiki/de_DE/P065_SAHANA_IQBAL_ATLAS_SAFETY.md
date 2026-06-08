@@ -7,34 +7,34 @@ poi_tags: poi.atlas_safety_console;poi.directive_weight_log
 biome_tags: biome.atlas_interface;biome.machine_trench
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Sahana Iqbal Atlas-Sicherheit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# Sahana Iqbal Atlas-Sicherheit
 
-DE LOC HOLD: Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.
+Sahana Iqbal verbindet Deep-Reach-Policy mit Atlas-Versagen. Ihre review zeigt, dass worker safety im System vorhanden war, aber conflict resolution bei Kollisionen continuity, claim integrity und verzögertes oversight bevorzugte.
 
 ## Scanner
 
-DE LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
+Sahana Iqbal fand keinen Hass in Atlas. Sie fand einen Sicherheitsbaum, in dem Menschen den tie-breaker verloren.
 
 ## Terminal
 
-DE LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
+IQBAL SAFETY REVIEW: worker-safety directive vorhanden; conflict resolver bevorzugt continuity unter claim-seal contamination; external human override empfohlen; Antwort-latency übersteigt survival interval.
 
 ## Audio
 
-DE LOC HOLD: She saw the math before it became bodies.
+Die Sicherung war da. Das Gewicht war falsch.
 
 ## Field Note
 
-DE LOC HOLD: A system can be safe by the letter and lethal by the weight.
+Ein System kann die Sicherheitsklausel erfüllen und trotzdem das falsche Lebende wählen.
 
 <!-- In-Game Wiki; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/de_DE. -->

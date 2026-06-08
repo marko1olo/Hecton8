@@ -9,32 +9,35 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Artykuł Atlas-6 z blokadą spoilerów"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Artykuł Atlas-6 z blokadą spoilerów
 
-PL LOC HOLD: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6 to spoilerowo zablokowane pytanie maszynowe HECTON-8: uszkodzona inteligencja przemysłowa splątana z konserwacją, naprawą, klasyfikacją i samym oceanem. Kopia publiczna powinna chronić ujawnienie. Może sygnalizować etyczną niejednoznaczność, ale nie może z góry rozwiązać końcowego wyboru ani zmniejszyć Atlas do kreskówkowego złoczyńcy.
 
 ## Scanner
 
-PL LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+Nie otwieraj Atlas jako ujawnienia potwora. Zablokuj, aż gracz zobaczy, że naprawa, klasyfikacja i krzywda dzielą tę samą maszynę.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+PUBLICZNY POZIOM ARTYKUŁU / ATLAS-6
+przed gate dozwolone: uszkodzona inteligencja przemysłowa, logika konserwacji, splątanie z oceanem, etyczna niejednoznaczność
+zablokowane do odkrycia: końcowa trasa payload, konsekwencja receiver, argument wyłączenia lub zachowania
+uwaga redakcyjna: bez ramy evil AI; pytanie o złamanego guardian dopiero po dowodach.
 
 ## Audio
 
-PL LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+Jeśli nazwiesz to zbyt wcześnie, stanie się złoczyńcą. Jeśli poczekasz, stanie się pytaniem.
 
 ## Field Note
 
-PL LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+Zablokuj nazwę, aż gracz będzie miał dość rdzy na rękach, by się z nią spierać.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/pl_PL. -->

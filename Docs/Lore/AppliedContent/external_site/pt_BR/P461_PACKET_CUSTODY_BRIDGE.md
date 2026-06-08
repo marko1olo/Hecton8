@@ -9,32 +9,28 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Custódia do pacote"
+title: "Custódia do pacote"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Custódia do pacote
+# Custódia do pacote
 
-PT LOC HOLD: Uma mensagem de HECTON-8 só importa quando rota, selo, receptor e estado de dano sobrevivem com ela. A custódia do pacote leva um fato pelo atraso de Aegir, pressão de reivindicação e extração física sem virar carga descartável.
+## O Que O Selo Significa
 
-## Scanner
+Uma mensagem de HECTON-8 não é útil porque foi dita. Ela é útil quando a rota prova quem a carregou, quando saiu, o que atravessou e qual reclamante não conseguiu apagá-la.
 
-PT LOC HOLD: SELO DE PACOTE // Faixa de hash testemunha danificada mas legível. Preservar antes do corte. Evidência sem selo vira material de reivindicação.
+Black Keel trata testemunho como carga: massa, selo, número, receptor, atraso. Uma amostra que chega ao carrier sem faixa de custódia vira material de reivindicação. Um nome de trabalhador sem witness hash pode virar categoria de perda. Um registro de pressão sem carimbos de rota pode ser arquivado como ruído de sensor antes da próxima janela de relé.
 
-## Terminal
+Por isso o salvamento inicial volta a objetos pequenos e feios: placas de pacote tortas, faixas notariais molhadas, carimbos de rota, recibos de relé, tags de conector inchadas de sal. Parecem papelada até o oceano torná-los físicos. O jogador preserva a cadeia que deixa um fato sobreviver em Aegir.
 
-PT LOC HOLD: NOTÁRIO KEELMARK // Preserve placa de selo, hash testemunha, carimbo de rota e tag do conector antes da transferência. Material sem carimbo pode virar perda de reivindicação.
+Custódia do pacote não é justiça. É a condição mínima para a justiça ter uma rota. Quebre o selo, e Deep Reach pode alegar corrupção. Mantenha o selo, e o mesmo metal vira testemunha de pressão, distância, dívida e lei de reivindicação.
 
-## Audio
+## Uso Para O Jogador
 
-PT LOC HOLD: Relé Black Keel: carga é massa. Prova é custódia. Traga as duas, ou a janela cobrará a diferença.
-
-## Field Note
-
-PT LOC HOLD: Selo primeiro, corte depois. Uma amostra limpa com tag quebrada pertence a quem possui o livro.
+Escaneie a placa antes de cortar o hardware ao redor. Mantenha juntos o carimbo de rota, a faixa receptora, o witness hash e o estado de dano. Se a tag se separar da amostra, o achado ainda pode ter valor, mas não prova mais a mesma coisa.
 
 <!-- External Site; generated from P461_PACKET_CUSTODY_BRIDGE/pt_BR. -->

@@ -7,34 +7,34 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Transit Rotasi Kru Manusia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# Transit Rotasi Kru Manusia
 
-ID LOC HOLD: Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
+Rotasi manusia membuat ditinggalkannya HECTON-8 terasa masuk akal. Pekerja, spesialis, dan kru pengganti bergerak lebih lambat daripada bahasa klaim. Seseorang bisa meninggalkan Sol dengan satu kontrak, bangun dengan kontrak lain, dan mengetahui bahwa darurat yang ia latih sudah menjadi bukti.
 
 ## Scanner
 
-ID LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
+Manusia tidak komuter ke Aegir. Mereka menghabiskan tahun sebagai kargo yang punya pendapat.
 
 ## Terminal
 
-ID LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+ROTASI KRU: transport manusia memakai jendela lambat, seksi habitat berpelindung, siklus metabolisme rendah, dan rotasi bertahap. Pekerja hilang menjadi masalah custody yang tertunda.
 
 ## Audio
 
-ID LOC HOLD: By the time home asks where you are, the room has already flooded.
+Saat rumah bertanya di mana kamu, ruangan itu sudah kebanjiran.
 
 ## Field Note
 
-ID LOC HOLD: A frontier worker sells time before they sell labor.
+Pekerja frontier menjual waktu sebelum menjual tenaga.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/id_ID. -->

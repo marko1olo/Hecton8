@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Glass Grazer Codex Card"
+title: "Ficha de códice del raspador de cristal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Glass Grazer Codex Card
+# Ficha de códice del raspador de cristal
 
-ES LOC HOLD: HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+Los raspadores de cristal convierten la ecología de HECTON-8 en lenguaje de supervivencia. Al alimentarse abren cicatrices de ruta claras entre película y matas, pero su quietud suele importar más que su movimiento. Un animal inofensivo puede avisar al jugador antes que un medidor.
 
 ## Scanner
 
-ES LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+Banco de raspadores de cristal. Alimentadores con caparazón no hostiles; raspan película mineral. Tictac estable: agua de trabajo. Silencio repentino: algo mayor cambió el claro.
 
 ## Terminal
 
-ES LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+ESPÉCIMEN / BANCO DE RASPADORES DE CRISTAL / función: raspador de película somera, testigo de corriente, pista de desplazamiento de depredador / lectura segura: borde de alimentación, carril pálido fresco, tics de caparazón estables / rechazo: campo de alimento abandonado, banco inmóvil y apretado, sin tics de retorno tras pinger / nota de ruta: ausencia después de comer = dato de peligro.
 
 ## Audio
 
-ES LOC HOLD: When they stop eating, you stop moving.
+Si las bocas pequeñas dejan de sonar y la comida sigue ahí, no seas lo siguiente que espera.
 
 ## Field Note
 
-ES LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Banco comiendo: lee el carril. Banco congelado: lee el agua. Carril vacío con comida: vete.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/es_ES. -->

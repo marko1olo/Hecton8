@@ -986,7 +986,7 @@ namespace Hecton8.Caves
                 globalBlendK            = 6f,
                 sealMargin              = 2f,
                 floorFlatness           = 0.7f,
-                spawnContext            = SpawnContext.CaveShallow  
+                spawnContext            = SpawnContext.CaveShallow
             };
         }
 
@@ -1243,7 +1243,7 @@ namespace Hecton8.Caves
 
         /// <summary>
         /// Long winding lava tube. Single main passage with periodic widenings.
-        /// Few branches. Strong forward momentum. 
+        /// Few branches. Strong forward momentum.
         /// Volume: 96³ × 2m = 192m cube.
         /// </summary>
         public static CavePreset Tube()

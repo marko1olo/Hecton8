@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 전문가 동기
 
-전문가 동기는 전기를 과고정하지 않고 주인공에게 행위성을 준다.
+Professional Motive는 전기를 과하게 잠그지 않으면서 마로더에게 행위성을 준다. 능력이 먼저 오고, 개인적 투자는 증거를 통해 도착한다.
 
 ## Scanner
 

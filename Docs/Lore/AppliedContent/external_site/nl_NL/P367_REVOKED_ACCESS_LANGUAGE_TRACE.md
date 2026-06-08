@@ -9,32 +9,36 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Revoked Access Language Trace"
+title: "Spoor van Ingetrokken Toegangstaal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Revoked Access Language Trace
+# Spoor van Ingetrokken Toegangstaal
 
-NL LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+De protagonist leest Deep Reach-blokkades als bewijs. Ingetrokken credentials blokkeren toegang, maar de formulering legt nog steeds de begraven route bloot: gedegradeerde tellingen, vervangende getuigen, onderhoudsherclassificatie en claimbehoudtaal.
 
 ## Scanner
 
-NL LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+De blokkade zegt niet verboden. Ze zegt onderhoudsherclassificatie, continuïteitsstop en routemateriaal. Oude Deep Reach-taal: een weigering die nog steeds naar de begraven deur wijst.
 
 ## Terminal
 
-NL LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+TOEGANGSANTWOORD / ROUTE-VEILIG ARCHIEF
+credential: ingetrokken
+reden: evacuatiecontinuïteitsmateriaal beperkt tot gecertificeerd Deep Reach-personeel
+zichtbare termen: gedegradeerde telling, vervangende getuige, claimbehoudroute, onderhoudsherclassificatie
+notitie: voormalig veldpersoneel mag weigeringstaal alleen zien voor incidentafstemming.
 
 ## Audio
 
-NL LOC HOLD: That is not security. That is a memo pretending to be a door.
+Ze hebben de gang niet gewist. Ze hebben hem ingepakt in woordenschat die alleen schuldig personeel nog begrijpt.
 
 ## Field Note
 
-NL LOC HOLD: Lockout language hints at hidden liability without granting free access.
+De badge is dood. De blokkade spreekt nog het kantoordialect dat de route heeft begraven.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/nl_NL. -->

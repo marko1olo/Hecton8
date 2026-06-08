@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Deep Reach Liability Evidence
 
-Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
+Deep Reach liability works because the flood does not need fake physics. The Great Tide was real. The preventable damage appears in margins, clocks, access holds and records that cleaned workers into categories before anyone could recover them.
 
 ## Scanner
 
-Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Liability record. Real tide physics, accepted margin risk, evacuation delay, quarantine holds, Atlas weighting and sanitized loss language converge in the same evidence chain.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine holds, Atlas weighting, worker classification and loss conversion.
 
 ## Audio
 

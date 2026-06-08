@@ -9,32 +9,35 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Blue Debt Public Resource Article"
+title: "מאמר ציבורי על משאב Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Blue Debt Public Resource Article
+# מאמר ציבורי על משאב Blue Debt
 
-HE LOC HOLD: Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure.
+Blue debt הוא שם הספר עבור Xenon-Omega-bearing pressure substrate על HECTON-8. הוא יכול להופיע כמינרל עשיר בתמלחת, כיס קלתראט, זיהום pressure glass, סריג קשור ביופילם או containment material תעשייתי פגוע. ערכו מגיע מחישוב, containment ואחסון סביבה קיצונית. סכנתו מגיעה ממשמורת: כל דגימה שואלת מי הבעלים שלה, מי אישר אותה, ואת מי מאשימים אם היא משנה מצב.
 
 ## Scanner
 
-HE LOC HOLD: The public name sounds like slang because the official name is built to hide liability.
+הסלנג כן. השם הרשמי הוא שמסתיר אחריות: Xenon-Omega-bearing pressure substrate.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+רמת מאמר ציבורי / BLUE DEBT
+מותר: התנהגות דגימה, כימיית לחץ, נשאי קלתראט ותמלחת, ערך containment, שימוש חישובי, סיכון משמורת
+נעול: טבלאות מתכונים מדויקות, כוונון payout, נתיבי substrate מאוחרים של Atlas
+הערת עורך: בלי עפרת קסם, בלי פנטזיית loot זוהר, בלי בעלות נקייה.
 
 ## Audio
 
-HE LOC HOLD: Ore is what people call it when they want to forget the paperwork.
+קראו לזה blue debt כי כל גרם שימושי הגיע כשהוא כבר חייב למישהו לחץ, ניירת או דם.
 
 ## Field Note
 
-HE LOC HOLD: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+אם זה זוהר כמו אוצר, כתוב מחדש. Blue debt צריך להרגיש שימושי, רטוב, מוסדר, לא יציב וכבר שנוי במחלוקת.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/he_IL. -->

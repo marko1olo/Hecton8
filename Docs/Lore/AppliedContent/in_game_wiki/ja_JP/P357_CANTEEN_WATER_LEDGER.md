@@ -9,32 +9,36 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Canteen Water Ledger"
+title: "食堂水台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Canteen Water Ledger
+# 食堂水台帳
 
-JA LOC HOLD: The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.
+食堂台帳は見落とすほど小さく、廃物と呼ぶには人間的すぎる。水没した食事室から出た耐圧ラミネート板で、片面には水トークン、片面にはポンプアクセス、余白にはソフトが用意しなかった医療例外が押し込まれている。別れの言葉はない。???? の説明もない。最後に見える争いは、六つの消えたカップ、悪くなった北フィルター、夜間降下前のポンプ班に水を渡すべきかという話だ。
+
+だから重要になる。HECTON-8 は、コロニーが災害現場ではなく、疲れた作業員たちが飲用水を工具 custody のように数えていた場所に見えた時に本物になる。食事トークンはただの配給ではない。誰かがシフトから戻ったこと、ポンプ鍵を返したこと、圧力症状を確認されたこと、床下ではなく寝台にいるはずだったことの証明だ。台帳は匿名の喪失を日課に変える。省略名、署名された訂正、先送りされた負債。システムが優しくなる時間はなかった。
+
+????? にとって、この物は悲しい以前に役に立つ。ポンプ室訂正は食堂を保守ルートにつなげる。医療 override は公式パケットが負傷 cluster を認める前に圧力障害を示す。消えたトークンは盗み、緊急トリアージ、汚染、あるいは予定から消された班に誰かが黙って食わせた証拠かもしれない。部屋を剥がす前に板を残せ。カップの一行は記念碑より多くを証明する。
 
 ## Scanner
 
-JA LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
+食堂水台帳 // 角が膨れたラミネート板。食事用水トークン六枚不足、医療 override 二件、グリースペンシルのポンプ室訂正一件。海が部屋を奪い始めた時、コロニーはまだカップのことで揉めていた。
 
 ## Terminal
 
-JA LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
+食堂台帳: 飲用割当、シフト主任封印。欠落トークン: 6。医療 override: 2。ポンプ室訂正: Mara Venn。北フィルターが酸っぱくなり、誰もまだ ?? と記録したがらなかったため、配給争議はトーン2後に保留。
 
 ## Audio
 
-JA LOC HOLD: The last argument was about water tokens.
+最後の言い争いは英雄的ではなかった。誰が飲み、誰が濡れたまま働き、誰がカップ返却に署名したかの話だった。
 
 ## Field Note
 
-JA LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+????????????????????????????????????????
 
 <!-- In-Game Wiki; generated from P357_CANTEEN_WATER_LEDGER/ja_JP. -->

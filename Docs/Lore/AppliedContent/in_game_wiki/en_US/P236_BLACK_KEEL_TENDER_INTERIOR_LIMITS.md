@@ -19,15 +19,19 @@ localization_flags: 0
 
 # Black Keel Tender Interior Limits
 
-Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.
+Black Keel's interior tells the truth before its voice does. The warmest spaces on the tender are not bunks or clinics; they are sample racks, drone cradles, packet lockers, quarantine sleeves and debt-sealed cargo rails. A living Marauder fits into the system only after the manifest knows what mass can be billed, what sample can be preserved, and what legal packet can leave the claimant's hand.
+
+That is why clean orbital rescue never arrives as a first answer. The tender is close enough to price a recovery window, hold custody, refuse contamination, demand ascent mass and speak through a relay. It is not configured like a passenger ship, and it carries no deep rescue crew waiting to improvise mercy. Black Keel can keep a contract alive while leaving the contractor below the water.
+
+The useful lesson is ugly: damaged local hardware is not a side problem. It is the route. A sheared mast, a fouled compressor or a bad ascent sleeve matters because Black Keel will not spend a burn on hope. It spends burns on accepted payload, verified packets, quarantine terms and lien authority.
 
 ## Scanner
 
-The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+The tender has racks for samples, drones, sealed packets and lien cargo before it has a berth fit for a living passenger.
 
 ## Terminal
 
-TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority, no human quartermaster.
 
 ## Audio
 
@@ -35,6 +39,6 @@ The ship brought you here as cargo with hands.
 
 ## Field Note
 
-Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel is a working claim tender: rented, impounded, automated and optimized for custody before rescue.
 
 <!-- In-Game Wiki; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/en_US. -->

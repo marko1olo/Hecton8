@@ -81,6 +81,8 @@ namespace Hecton8.Gameplay
         private const string UnknownCategory = "Unknown";
         private const string DefaultSummary = "Scan profile archived.";
         private const string ScanArchivedMessage = "SCAN ARCHIVED";
+        private static readonly uint ScanArchivedNotificationMissWarningHash = unchecked((uint)LocHash.Compute("ScanLogSystem.NotificationMiss"));
+        private static readonly uint ScanArchivedNotificationContextHash = unchecked((uint)LocHash.Compute("ScanLogSystem.ScanArchived"));
 
         private static readonly uint GenericResourceEntryHash = ScanEvents.ComputeEntryHash(GenericResourceEntryId);
         private static readonly uint GenericResourceTitleHash = ComputeContentHash(GenericResourceTitle);
@@ -94,12 +96,14 @@ namespace Hecton8.Gameplay
         private readonly List<ScanEntryRecord> _entries = new List<ScanEntryRecord>(64);
         private readonly List<uint> _recentEntryHashes = new List<uint>(8);
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private bool _saveRegistered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private uint _scanArchivedNotificationHash;
         private uint _signalSourceId;
         private uint _changeRevision;
+        private int _scanArchivedNotificationMissCount;
 
         private static ScanLogSystem s_activeRuntimeInstance;
 
@@ -113,6 +117,7 @@ namespace Hecton8.Gameplay
         public int LoadPriority => 35;
         public int EntryCount => _entries.Count;
         public int RecentCount => _recentEntryHashes.Count;
+        public int ScanArchivedNotificationMissCount => _scanArchivedNotificationMissCount;
         public uint ChangeRevision => _changeRevision;
         public uint SourceId => _signalSourceId != 0u
             ? _signalSourceId
@@ -149,6 +154,7 @@ namespace Hecton8.Gameplay
             TryUnregisterService();
             ScanEvents.Unregister(this);
             TryUnregisterHotSwapListener();
+            ClearScanArchivedNotificationDiagnostics();
         }
 
         private void OnDestroy()
@@ -156,6 +162,7 @@ namespace Hecton8.Gameplay
             TryUnregisterSaveParticipant();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
+            ClearScanArchivedNotificationDiagnostics();
         }
 
         private void TryRegisterService()
@@ -179,6 +186,7 @@ namespace Hecton8.Gameplay
             {
                 if (IsScanLogRuntimeUsable(active))
                 {
+                    ClearScanArchivedNotificationDiagnostics();
                     Destroy(gameObject);
                     return true;
                 }
@@ -196,6 +204,7 @@ namespace Hecton8.Gameplay
             if (IsScanLogRuntimeUsable(registered))
             {
                 s_activeRuntimeInstance = registered;
+                ClearScanArchivedNotificationDiagnostics();
                 Destroy(gameObject);
                 return true;
             }
@@ -269,30 +278,41 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         private void TryRegisterSaveParticipant()
         {
             if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveRegistered = false;
         }
 
@@ -629,6 +649,12 @@ namespace Hecton8.Gameplay
             _entryIndexByHash.Clear();
             _entries.Clear();
             _recentEntryHashes.Clear();
+            ClearScanArchivedNotificationDiagnostics();
+        }
+
+        private void ClearScanArchivedNotificationDiagnostics()
+        {
+            _scanArchivedNotificationMissCount = 0;
         }
 
         private void ShowUnlockFeedback()
@@ -636,7 +662,30 @@ namespace Hecton8.Gameplay
             if (_scanArchivedNotificationHash == 0u)
                 _scanArchivedNotificationHash = NotificationEvents.RegisterMessage(ScanArchivedMessage.AsSpan());
 
-            NotificationEvents.TryPushRegisteredInfo(_scanArchivedNotificationHash);
+            TryPushScanArchivedNotification();
+        }
+
+        private void TryPushScanArchivedNotification()
+        {
+            if (_scanArchivedNotificationHash == 0u)
+            {
+                ReportScanArchivedNotificationMiss();
+                return;
+            }
+
+            if (NotificationEvents.TryPushRegisteredInfo(_scanArchivedNotificationHash))
+                return;
+
+            ReportScanArchivedNotificationMiss();
+        }
+
+        private void ReportScanArchivedNotificationMiss()
+        {
+            _scanArchivedNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ScanArchivedNotificationMissWarningHash,
+                ScanArchivedNotificationContextHash,
+                math.max(1, _scanArchivedNotificationMissCount));
         }
 
         private static ScanEntrySnapshot ToSnapshot(in ScanEntryRecord entry)

@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "Begegnungsgrammatik: falsche Sicherheit der Laternendrift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# Begegnungsgrammatik: falsche Sicherheit der Laternendrift
 
-DE LOC HOLD: HECTON-8's bright shallows are readable, but never innocent.
+Die falsche Sicherheit der Laternendrift hält HECTON-8s helle Untiefen ehrlich. Das Leuchten ist nützlich, verführerisch und gefährlich, weil es mehr als eine Wahrheit zugleich aufzeichnet.
 
 ## Scanner
 
-DE LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Laternendrift-Bahn. Helles Wasser kann Sauerstoffkante, Signalrauschen, Werkzeugspur oder durch Räuber verschobenen Verkehr bedeuten. Strömung vor dem Folgen prüfen.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+BEGEGNUNGSGRAMMATIK / LATERNENDRIFT-FALSCHSICHERHEIT / Rolle: Schönheit als mehrdeutige Daten, Routenverlockung, Stealth-Strafe / sichere Lesung: Strömung passt zum Leuchten, Fauna bleibt normal, Rückstand liegt auf erwarteter Seite / verwerfen: blaues Licht als Sicherheit behandeln, sturmgeladenem Scheinkorridor folgen, laut in leuchtender Spur reparieren / Routennotiz: Ein Leuchten kann Pfad, Köder, Panikaufzeichnung oder Enttarnung sein.
 
 ## Audio
 
-DE LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+Licht ist keine Gnade. Es sind Daten, die dein Anzug noch nicht trennen kann.
 
 ## Field Note
 
-DE LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+Frag, was das Licht trägt: Strömung, Sauerstoff, deinen Lärm oder etwas, das alles andere vertrieben hat.
 
 <!-- External Site; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/de_DE. -->

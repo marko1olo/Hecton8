@@ -1,37 +1,25 @@
 # RS095 Corporate Pressure Chain Bridge
 
-Status: STATIC_SOURCE candidate. Runtime, importer, h8bin, native localization, Unity placement, and publication readiness are false / pending verification.
+Status: canonical source localized drafts pending native review, h8bin bake, runtime placement, and Unity proof.
 
 Evidence class: STATIC_SOURCE.
 
-Scope: canonical packet JSON candidate for validated packets P465, P466, P475, P476, P477, P478, and P479 only.
+Scope: canonical AppliedLore source packet bundle for P465, P466, P475, P476, P477, P478, and P479 only.
 
 Excluded by task: active P480-P483.
 
-## Packets
+## What This Set Adds
 
-- P465_DEEP_REACH_MANAGED_VARIANCE_BRIDGE
-- P466_WORKER_TAG_EVIDENCE_BRIDGE
-- P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE
-- P476_AEGIR_CONTINUITY_HOLDINGS_SHELL_CHAIN_BRIDGE
-- P477_RECOVERY_COMPLIANCE_RETURN_ACTION_QUEUE_BRIDGE
-- P478_ATLAS_CONTINUITY_OFFICE_WORKER_SAFETY_WAIVER_BRIDGE
-- P479_KEELMARK_LOSS_DESK_CONVERSION_BRIDGE
-
-## Source Boundaries
-
-Authoring packet sources are the seven validated production packet markdown files. Production packet files were not edited. This release set is not canonical-importer-ready and not runtime-ready.
+RS095 turns the corporate pressure chain into player-readable evidence instead of placeholder lore. The set now covers the bridge from Deep Reach variance language and worker-tag custody into Centauri legitimacy, Aegir receiver shells, Return Action Queue pressure, Atlas worker-safety rerouting, and Keelmark loss conversion.
 
 ## Runtime Boundary
 
-Runtime must not read this JSON or Markdown. Future import must bake packet headers, LocID hashes, surface enums, unlock flags, relation records, spoiler bytes, and localized string-pool rows through the approved authoring bridge.
+Runtime must not read this JSON or Markdown. Importer-ready means the approved authoring bridge can bake packet headers, LocID hashes, surface enums, unlock flags, relation records, spoiler bytes, and localized string-pool rows. Runtime-ready remains false until h8bin/data-monolith placement and scene/UI/audio proof exist.
 
-## GlobalQualityWeight Consequences
+## Localization Boundary
 
-Low: after a future bake, scanner and terminal rows can carry the evidence chain while preserving Article ID, LocID, unlock identity, and claim state.
+All 15 player locales are populated for title, scanner, terminal, audio, in-game wiki, external site summary, field note, and external-site article body. Non-English rows are draft localization and require native review before final marketing or VO lock.
 
-Middle: after layout proof, in-game wiki and field-note rows can add evidence context without changing truth.
+## Route Moment
 
-High: after proof, audio/subtitle variants and crosslinks can add pressure-chain texture without adding new culpability facts.
-
-Ultra: after native review and audio/site proof, extended public/wiki branches can increase archive density without changing runtime truth, save identity, or final receiver outcomes.
+FIRST_20_NOT_APPLICABLE: this is static AppliedLore content, not a Unity runtime/input/rendering change. The improved route moment is evidence continuity: a player can now read who creates each corporate phrase, what object contradicts it, and which later packet consumes the proof.

@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "השאלה הסופית: אמת ציבורית, שליטה אבודה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# השאלה הסופית: אמת ציבורית, שליטה אבודה
 
-HE LOC HOLD: Final Question Public Truth Lost Control defines the public ledger ending pressure.
+דליפה ציבורית לא צריכה להיכתב ככפתור צדק קסום. בHECTON-8 מידע נוסע רחוק יותר מספינות ומגיע לפני עזרה. כשהראיה עוזבת את האגן, היא יכולה להאשים את Deep Reach, לאלץ את Black Keel לענות, להעיר רגולטורים של Sol Core ולתת למשפחות משהו קשה משמועה. אלה ניצחונות אמיתיים.
 
-## Scanner
-
-HE LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
-
-## Terminal
-
-HE LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
-
-## Audio
-
-HE LOC HOLD: Truth leaves your hand faster than rescue ever could.
-
-## Field Note
-
-HE LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+הדליפה יוצרת גם אירוע טרף. שווקים מתמחרים blue debt. בתי דין של תחומים מקפיאים נתיבים. כתות פרטיות הופכות את Atlas לכתב קודש. מתחרים רצים לקואורדינטות. חילוץ נעשה הכרחי פוליטית וכאוטי מבצעית. השחקן בחר אמת במקום שליטה, והמשחק צריך לכבד את שני החצאים.
 
 <!-- External Site; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/he_IL. -->

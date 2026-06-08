@@ -9,32 +9,36 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Revoked Access Language Trace"
+title: "Trace de langage d’accès révoqué"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Revoked Access Language Trace
+# Trace de langage d’accès révoqué
 
-FR LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+Le protagoniste lit les verrouillages Deep Reach comme des preuves. Les identifiants révoqués bloquent l’accès, mais la formulation expose encore la route enterrée: comptages dégradés, témoins substituts, reclassification de maintenance et langage de préservation de réclamation.
 
 ## Scanner
 
-FR LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+Le verrouillage ne dit pas interdit. Il dit reclassification de maintenance, gel de continuité et matériaux de route. Ancienne formulation Deep Reach: un refus qui pointe encore vers la porte enterrée.
 
 ## Terminal
 
-FR LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+RÉPONSE D’ACCÈS / ARCHIVE ROUTE-SÛRE
+identifiant: révoqué
+raison: matériaux de continuité d’évacuation réservés au personnel Deep Reach certifié
+termes visibles: comptage dégradé, témoin substitut, route de préservation de réclamation, reclassification de maintenance
+note: les anciens personnels de terrain peuvent voir le langage de refus uniquement pour rapprochement d’incident.
 
 ## Audio
 
-FR LOC HOLD: That is not security. That is a memo pretending to be a door.
+Ils n’ont pas effacé le couloir. Ils l’ont enveloppé dans un vocabulaire que seuls les employés coupables comprennent encore.
 
 ## Field Note
 
-FR LOC HOLD: Lockout language hints at hidden liability without granting free access.
+Le badge est mort. Le verrouillage parle encore le dialecte de bureau qui a enterré la route.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/fr_FR. -->

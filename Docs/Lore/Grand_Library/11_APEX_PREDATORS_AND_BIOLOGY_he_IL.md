@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # טורפי-על וביולוגיה תהומית
 
 > **מקור:** קטע מתוך דוח קסנוביולוגי, מעבדת המחקר של סקטור 44 (שוחזר).

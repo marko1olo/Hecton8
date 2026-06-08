@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "غرفة مضخة P-63 في الملحق الضحل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Shallow Annex P-63 Pump Room
+# غرفة مضخة P-63 في الملحق الضحل
 
-AR LOC HOLD: Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside.
+يعطي Shallow Annex P-63 أول جيب آمن من دون تصغير HECTON-8: مضخة، cold seal، مقياس، ورف مضيء في الخارج.
 
 ## Scanner
 
-AR LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+غرفة مضخة P-63. ضغط الحوض اليدوي صامد بأقل من هامش خدمة.
 
 ## Terminal
 
-AR LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+أمر عمل P-63 / SHALLOW ANNEX: ضخ الحوض يدوياً إلى 0.3 m؛ تثبيت cold seal على الدرزة C؛ قطع قفل الخزانة الملتحم فقط بعد ثبات المقياس؛ لا تثق بالمصباح الأخضر حتى يجيب return pinger.
 
 ## Audio
 
-AR LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+المضخة أولاً. الختم ثانياً. القاطع فقط بعد أن يتوقف المقياس عن الانحراف.
 
 ## Field Note
 
-AR LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+مقبض المضخة مصقول حيث واصلت الأيدي الخائفة استخدامه. الأرض الجافة تبدأ عند خط الطباشير.
 
 <!-- External Site; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/ar_SA. -->

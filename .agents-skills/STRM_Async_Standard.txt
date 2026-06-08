@@ -72,10 +72,9 @@ Forbidden:
 
 ## Current Project Audit
 
-[BROKEN] `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs` still contains `Task.Run` for background domain handshake.
-[BROKEN] `Assets/_Project/Scripts/SaveBinaryStorage.cs` still contains `Task.Run` for read prefetch worker startup.
+[PENDING SOURCE CHECK] Historical scout passes named `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs` and `Assets/_Project/Scripts/SaveBinaryStorage.cs` as `Task.Run` debt. Current owner status MUST be proven by fresh scoped scan before reporting live breakage.
 
-These are not compile failures. They are mandate debt until the owners convert them to persistent worker ownership with explicit lifecycle and no per-request allocation.
+[RULE] Runtime per-request `Task.Run` debt is broken only when source scan names an existing first-party runtime owner and exact call site. Editor/build scanners are not runtime debt.
 
 ---
 

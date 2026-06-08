@@ -7,34 +7,34 @@ poi_tags: poi.tide_model_terminal;poi.glacier_warning
 biome_tags: biome.tide_gauge;biome.glacier_break
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Model Pasang Mara Venn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# Model Pasang Mara Venn
 
-ID LOC HOLD: Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.
+Mara Venn memberi Great Tide saksi ilmiah. Modelnya mengikat geometri bulan Aegir, cryosphere shear, dan kapasitas evakuasi ke dalam satu margin buruk. Deep Reach tidak menghapus model; mereka mengubah label tindakan sampai peringatan itu cukup murah untuk diabaikan.
 
 ## Scanner
 
-ID LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
+Mara Venn tidak meramalkan pembunuhan. Ia meramalkan margin pasang yang Deep Reach namai ulang sebagai tidak mungkin.
 
 ## Terminal
 
-ID LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
+REVISI MODEL VENN: cryosphere shear melampaui margin evakuasi di bawah geometri musim semi Aegir; review action diturunkan menjadi monitor sambil menunggu anggaran asset-continuity.
 
 ## Audio
 
-ID LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
+Air itu tidak mendadak bagi orang yang membaca angka.
 
 ## Field Note
 
-ID LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+Peringatan menjadi murah ketika seseorang menurunkan statusnya di atas kertas.
 
 <!-- In-Game Wiki; generated from P062_MARA_VENN_TIDE_MODEL/id_ID. -->

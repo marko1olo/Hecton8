@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: First Sanitized Accident Packet"
+title: "Первый очищенный аварийный пакет"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: First Sanitized Accident Packet
+# Первый очищенный аварийный пакет
 
-RU LOC HOLD: The first Deep Reach notice is frightening because it is defensible. It names cascade, quarantine and corrupted logs while the room preserves the omissions.
+Первое уведомление Deep Reach пугает тем, что его можно защищать. Оно называет каскад, карантин и поврежденные журналы, пока сама комната хранит все пропуски.
 
 ## Scanner
 
-RU LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+Найден аварийный пакет Deep Reach. Чистая формулировка расходится с дверными часами и следами затопления.
 
 ## Terminal
 
-RU LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+АВАРИЙНОЕ УВЕДОМЛЕНИЕ DEEP REACH / ЛОКАЛЬНЫЙ ГЕОТЕХНИЧЕСКИЙ КАСКАД: сбой разрешения на эвакуацию остается на рассмотрении; biological-pressure quarantine активен; журналы Atlas повреждены; внешний релиз отложен до сверки свидетельств.
 
 ## Audio
 
-RU LOC HOLD: The packet says cascade. Door clocks say delay.
+В пакете сказано: каскад. Дверные часы говорят: задержка.
 
 ## Field Note
 
-RU LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+Они написали «каскад». Линия налета на шкафчике выше эвакуационной метки.
 
 <!-- External Site; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/ru_RU. -->

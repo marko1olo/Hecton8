@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Claim Continuity Loss Conversion Proof"
+title: "Claim Continuity Loss Conversion"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Claim Continuity Loss Conversion Proof
+# Claim Continuity Loss Conversion
 
-The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.
+The proof chain ends in conversion. Deep Reach can admit damage and keep ownership if workers become losses, evidence becomes material custody, and the claim remains alive. This is why the player carrying proof is not only carrying truth. They are carrying something the system knows how to buy.
 
 ## Scanner
 
-Loss conversion stamp. The ledger survived better than the people.
+Loss desk stamp recovered. The ledger survived better than the workers it renamed.
 
 ## Terminal
 
-KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
 
 ## Audio
 
-This is where dead workers became a clean column.
+This is where people became a clean column.
 
 ## Field Note
 
-Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+Marauder note: a ledger can remember the dead and still spend them.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/en_US. -->

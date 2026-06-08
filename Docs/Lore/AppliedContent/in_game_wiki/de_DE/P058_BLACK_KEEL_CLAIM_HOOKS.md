@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Black-Keel-Anspruchshaken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Black-Keel-Anspruchshaken
 
-DE LOC HOLD: Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.
+Black Keel ist Lieferroute, Bergungsversprechen und erster juristischer Käfig des Spielers. Der Träger kann antworten, aber jede Antwort läuft durch Anspruchshaken: Nutzlastwert, Quarantänestatus, Routenzertifikat, Schuldenverwahrung und alte Deep-Reach-Prioritätsklauseln, die längst hätten verfallen müssen. Darum ist die Oberfläche kein Rettungsknopf. Das Schiff ist nah genug, um zu sprechen, und fern genug, um abzulehnen; seine Verzögerungen sind keine Laune. Sie sind Vertragslogik, die genau so funktioniert, wie sie geschrieben wurde.
 
 ## Scanner
 
-DE LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+Auf dem Manifest ist Black Keel Anspruchspool-Hardware; in den Klauseln ist es Deep-Reach-Hebelwirkung.
 
 ## Terminal
 
-DE LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+TRÄGERVERWAHRUNG: Operatorbergung erlaubt nach Nutzlasttriage, Quarantänetor, Routenzertifikat und Haftungsfreigabe. Deep-Reach-Prioritätssiegel in ruhenden Klauseln erhalten.
 
 ## Audio
 
-DE LOC HOLD: It can hear you. It just has to price the answer first.
+Es kann dich hören. Es muss nur zuerst den Preis der Antwort berechnen.
 
 ## Field Note
 
-DE LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+Das Schiff ist nicht böse. Es ist an einen Vertrag verleast, der böse sein kann, ohne lebendig zu klingen.
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/de_DE. -->

@@ -1,6 +1,9 @@
 # DAMAGE_SENSORS_FEEDBACK.md
 # Hecton-8 | Trauma/Integrity/Glitch Subsystem Mandate
 
+[REQ] Player-visible damage, crack, leak, hull integrity, tool impact, and feedback VFX acceptance inherits the Visual Reference Parity Gate. Captures must beat mandatory references plus best-known internal baseline/current rejection matrix before damage/VFX polish is credited.
+[FORBID] Sparks, leaks, crack decals, shake, glow, sound, glitch, or UI alarms as visual acceptance when material truth, pressure evidence, contact, route cue, and compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and recover damage/material/VFX owners first.
+
 ---
 
 ## Section0 - FOUNDATIONAL CONTRACTS

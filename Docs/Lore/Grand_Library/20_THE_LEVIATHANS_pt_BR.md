@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # OS LEVIATÃS DE HECTON-8
 
 > **Fonte:** Megacorporação Deep Reach, Avaliação de Ameaças Xenobiológicas.

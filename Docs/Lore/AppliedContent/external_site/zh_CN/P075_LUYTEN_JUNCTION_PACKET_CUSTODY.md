@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "Luyten Junction 数据包保管"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# Luyten Junction 数据包保管
 
-CN LOC HOLD: Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing.
+Luyten Junction 数据包保管把星际通信变成航路压力。HECTON-8 没有即时救援频道，所以每条消息都必须熬过 custody、成本和轨道时机。
 
 ## Scanner
 
-CN LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+Luyten 保管卷轴。消息不会免费旅行，真相也不会。
 
 ## Terminal
 
-CN LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+LUYTEN JUNCTION ROUTE: packet custody 已通过资费队列转交。live command 禁止。证据优先级可在 emergency claim escrow 下购买。
 
 ## Audio
 
-CN LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+没有 ansible。没有慈悲。只有 custody、tariff 和时间。
 
 ## Field Note
 
-CN LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+中继是一台机器，决定哪一种悲伤能拿到 bandwidth。
 
 <!-- External Site; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/zh_CN. -->

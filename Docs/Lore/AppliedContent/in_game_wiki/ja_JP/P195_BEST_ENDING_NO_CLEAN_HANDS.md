@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "最良エンド: 清潔な手はない"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# 最良エンド: 清潔な手はない
 
-JP LOC HOLD: No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.
+清潔な手はない、は最終トーンの規則である。HECTON-8は純粋さではなく、理解、準備、証人としての仕事を報いる。最良エンドはプレイヤーを有能に感じさせると同時に、関与していると感じさせるべきだ。
 
 ## Scanner
 
-JP LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
+最良の結末は何か本物を救い、降下で無垢が生き残ったふりをしてはいけない。
 
 ## Terminal
 
-JP LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
+NO CLEAN HANDS RULE: 最良既知エンドの条件はagency、証拠、結果、残留物である。被害者全員が満足するなら、その結末はHECTON-8を忘れている。
 
 ## Audio
 
-JP LOC HOLD: If it feels clean, it forgot where you are.
+清潔に感じるなら、ここがどこかを忘れている。
 
 ## Field Note
 
-JP LOC HOLD: A strong ending lets the player save something real and lose something real.
+強いルートは真実を暴き、Deep Reachを拒み、生態の一部を守り、プレイヤーを解放できる。しかし代価は見え続けるべきだ。
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/ja_JP. -->

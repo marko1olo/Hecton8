@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Motivo profesional
 
-El jugador no es turista vacío. Empieza con oficio, contrato y razón para aceptar un claim muerto; la evidencia lo vuelve personal.
+El merodeador no es un turista vacío. La ruta empieza con interés profesional, habilidad de salvage y una razón para aceptar una reclamación muerta. El motivo personal crece mediante evidencia, marcas familiares y la comprensión de que HECTON-8 pertenece al mismo mundo duro que volvió normal este trabajo.
 
 ## Scanner
 

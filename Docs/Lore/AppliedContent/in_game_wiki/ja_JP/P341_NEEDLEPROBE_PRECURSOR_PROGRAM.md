@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Needleprobe Precursor Program"
+title: "Needleprobe先行計画"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Needleprobe Precursor Program
+# Needleprobe先行計画
 
-JA LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Needleprobeは最初の人類の請求をAegirへ運んだ。細く遮蔽された調査ペイロードが乗員より先に送られ、重力、放射線、海洋スペクトル、月軌道、リレー線を読んだ。遅れて届くパケットは、労働者にとって住める場所になる前にHECTON-8を投資家に読める対象にした。
 
 ## Scanner
 
-JA LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+Needleprobeアーカイブ: Aegirは職場になるずっと前から台帳上の標的だった。機械の目が月へ先に届いた。
 
 ## Terminal
 
-JA LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+RANアーカイブ: プローブ連鎖は視差、放射線、海洋署名、リレー幾何、pellet-lane信頼度を返した。第三リスクモデル安定まで乗員評価は保留。
 
 ## Audio
 
-JA LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+Aegirで最初の人間のものは人ではなかった。ここで人間が利益になるかを尋ねる機械だった。
 
 ## Field Note
 
-JA LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+プローブアーカイブはルート証拠だ。古いテレメトリは植民地より古くても、水の所有者を決める。
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/ja_JP. -->

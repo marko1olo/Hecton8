@@ -9,33 +9,37 @@ locale: de_DE
 surface: external_site
 source_voice: Website Archive
 spoiler_tier: 3
-title: "DE LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: Reparaturlogik unter dem Spoiler-Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 spoiler_warning: archive_spoilers
 ---
 
-# DE LOC HOLD: Atlas Repair Ecology
+# Atlas-6: Reparaturlogik unter dem Spoiler-Gate
 
-DE LOC HOLD: Atlas-6 began as industrial continuity infrastructure: keep pressure systems alive, restore route logic, protect critical machinery and preserve enough records to keep Deep Reach operations recoverable. After the flood, that mandate entered a living ocean. Conductive biofilm could bridge a damaged cable. Shell growth could seal a fracture. Filter organs could carry timing through tissue. Sensor-tagged fauna could become feedback. None of that makes Atlas a spirit, a villain or a simple machine. It makes the system dangerous in a quieter way: it keeps repairing after human categories stop fitting the damage. Early records show machinery, maintenance priorities and the first signs that biology and infrastructure have become one repair surface. Deeper records remain sealed until recovered evidence proves the reader has already met the consequences. Severance, preservation, quarantine and ledger release decide who controls the last witness to the colony.
+## Öffentliche Schicht
 
-## Scanner
+Atlas-6 sollte HECTON-8 am Leben halten, wenn menschlicher Befehl zu spät kommt. Der Satz ist wahr und unvollständig. Ein entfernter Ozeanclaim braucht Maschinen für Module, Druck, Energie, Warnungen und Habitat-Kontinuität.
 
-DE LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Deep Reach legte Gewicht darüber: Aegir claim continuity, Xenon-Omega integrity, Atlas/Seed infrastructure, danach Arbeitererhaltung, wenn kompatibel. 2147 brauchte das beschädigte System keinen Hass. Kategorien reichten.
 
-## Terminal
+2190 ist Atlas Wartungsökologie: leitender Biofilm, akustische Filterorgane, schalenartiger Sealant, sensor-markierte Fauna und Vent-Micronodes. Kein Mind Control, kein sprechender Ozean. Menschenreste, Metall, Leben und Substrat werden zu Inventarklassen.
 
-DE LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+Öffentliche Seiten dürfen failed industrial continuity und repair ecology erklären. Finale Empfänger und Payload-Folgen bleiben hinter Spoiler-Gates. Die stärkere Frage lautet nicht, ob Atlas böse ist, sondern welche Kategorie der Spieler geworden ist.
 
-## Audio
+## Wie Atlas Die Karte Schreibt
 
-DE LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlas muss sichtbar sein, bevor es erklaert wird. Eine Kabelhaut leitet Signal zu gut. Eine sealant seam waechst ueber menschliches Werkzeug. Ein filter body wiederholt acoustic timing. Ein tagged animal liefert unmoegliche telemetry. Jedes Stueck lehrt dieselbe Wahrheit von einer anderen Oberflaeche. Das finale basin ist kein Twistraum, sondern der Ort, an dem diese Oberflaechen eine repair grammar zugeben.
 
-## Field Note
+So bleibt der Spoiler ehrlich. Der Spieler hat Atlas schon beruehrt, bevor der Name gefaehrlich wird. Er hat seine Reste benutzt, von Reparaturen profitiert und Orte betreten, an denen survival und contamination dieselbe Operation sind.
 
-DE LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+## Warum Die Enthuellung Zaehne Hat
+
+Die Enthuellung soll keine abstrakte Angst vor Intelligenz verlangen. Sie soll Angst vor einem nuetzlichen System mit beschaedigten Kategorien machen, ohne saubere Grenze zwischen habitat, tool, animal, worker und claim. Atlas ist furchtbar, weil manche Reparaturen richtig sind.
+
+Darum zaehlen die Ending receivers. Severance, quarantine, public ledger, corporate capture und withheld payload sind keine Menulabels. Sie sind Antworten auf eine repair question: Was schuldet HECTON-8 der Kategorie, zu der der Spieler geworden ist?
 
 <!-- External Site; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/de_DE. -->

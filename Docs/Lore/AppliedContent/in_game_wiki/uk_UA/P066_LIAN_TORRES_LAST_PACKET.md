@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "Останній пакет Ліана Торреса"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# Останній пакет Ліана Торреса
 
-UK LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.
+Ліан Торрес закріплює правду комунікацій. Його останній чистий пакет доводить, що частина доказів вийшла з HECTON-8 до того, як Deep Reach поховала її під псуванням сигналу і мовою карантину.
 
 ## Scanner
 
-UK LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+Останній чистий пакет не загубився. Визнати його отримання було занадто дорого.
 
 ## Terminal
 
-UK LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+ТОРРЕС, Л. Чисте рукостискання носія підтверджено. Кількість працівників додано. Доказ евакуації додано. Вік ретрансляції неприйнятний для порятунку живих. Корпоративний архів пізніше позначає пакет як пошкоджений.
 
 ## Audio
 
-UK LOC HOLD: He sent the names. The archive called them noise.
+Він надіслав імена. Архів назвав їх шумом.
 
 ## Field Note
 
-UK LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+Часова мітка може стати тілом, коли перевізник відповідає не тій черзі.
 
 <!-- In-Game Wiki; generated from P066_LIAN_TORRES_LAST_PACKET/uk_UA. -->

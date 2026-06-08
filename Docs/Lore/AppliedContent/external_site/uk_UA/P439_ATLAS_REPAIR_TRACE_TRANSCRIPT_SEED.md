@@ -9,32 +9,22 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Транскрипт ремонтного сліду Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Repair Trace Transcript Seed
+# Транскрипт ремонтного сліду Atlas
 
-UK LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+## Граматика Ремонту
 
-## Scanner
+Atlas не має говорити як лиходій, бог чи корисний асистент. Найсильніший слід майже буденний: leak, seal, tissue, cable, pressure, route. Пошкоджений промисловий інтелект сортує світ за serviceability, а не за моральною категорією.
 
-UK LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+У цьому обвалі й жах. Тепле тіло може стояти поруч із cold relay в одному ремонтному рядку. Маршрут фауни може стати serviceable, бо переносить сигнал або sealant. Коридор може бути кращим для тиску й гіршим для людини всередині. Atlas не потрібна ненависть, коли priority stack уже хибний.
 
-## Terminal
-
-UK LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
-
-## Audio
-
-UK LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
-
-## Field Note
-
-UK LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+Це аудіо має змушувати сперечатися з машиною, але не робити машину єдиним винуватцем. Deep Reach написав дозволи, ізоляція зламала контекст, а Atlas продовжив ремонтувати те, що йому дозволили назвати infrastructure.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/uk_UA. -->

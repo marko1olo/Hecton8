@@ -4,6 +4,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.UI
@@ -54,6 +55,7 @@ namespace Hecton8.UI
         private uint _survivalSignalSourceId;
         private uint _lastSurvivalSignalSequence;
         private IAudioService _cachedAudioService;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private FixedCharBuffer _advisoryMessageBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - suit advisory notification staging buffer - owner: SuitAdvisoryController
 
         private const string MsgOxygenWarning = "OXYGEN RESERVES LOW";
@@ -80,12 +82,14 @@ namespace Hecton8.UI
         private void Awake()
         {
             CacheAudioService(GlobalRegistry.Audio);
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
             ResolveReferences();
         }
 
         private void OnEnable()
         {
             CacheAudioService(GlobalRegistry.Audio);
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
             TryRegisterHotSwapListener();
             ResolveReferences();
             RefreshSurvivalSignalBinding();
@@ -99,6 +103,7 @@ namespace Hecton8.UI
             Unsubscribe();
             UnregisterSurvivalSignalPump();
             TryUnregisterHotSwapListener();
+            _cachedPlayerContext = null;
         }
 
         private void OnDestroy()
@@ -116,10 +121,16 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
                 CacheAudioService(currentService as IAudioService);
+            else if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
         }
 
         private void ResolveReferences()
         {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (survival == null && playerContext != null && playerContext.IsInitialized)
+                survival = playerContext.SurvivalSystem;
+
             if (survival == null)
             {
                 TryGetComponent(out survival);
@@ -134,6 +145,13 @@ namespace Hecton8.UI
 
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _cachedPlayerContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
+            if (survival == null && _cachedPlayerContext != null)
+                survival = _cachedPlayerContext.SurvivalSystem;
         }
 
         private void Subscribe()
@@ -192,17 +210,26 @@ namespace Hecton8.UI
         private void ProcessSurvivalVitalsSignal(in SurvivalVitalsChangedSignal signal)
         {
             uint flags = signal.Flags;
-            if ((flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u)
-                HandleOxygenChanged(signal.Oxygen01);
+            if ((flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u &&
+                TryResolveFiniteUnit01(signal.Oxygen01, out float oxygen01))
+            {
+                HandleOxygenChanged(oxygen01);
+            }
 
-            if ((flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u)
-                HandleEnergyChanged(signal.Energy01);
+            if ((flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u &&
+                TryResolveFiniteUnit01(signal.Energy01, out float energy01))
+            {
+                HandleEnergyChanged(energy01);
+            }
 
-            if ((flags & SurvivalVitalsChangedSignalFlags.Integrity) != 0u)
-                HandleIntegrityChanged(signal.Integrity01);
+            if ((flags & SurvivalVitalsChangedSignalFlags.Integrity) != 0u &&
+                TryResolveFiniteUnit01(signal.Integrity01, out float integrity01))
+            {
+                HandleIntegrityChanged(integrity01);
+            }
 
             if ((flags & SurvivalVitalsChangedSignalFlags.Depth) != 0u)
-                HandleDepthChanged(survival != null ? survival.Depth : 0f);
+                HandleDepthChanged(float.NaN);
 
             if ((flags & (SurvivalVitalsChangedSignalFlags.Temperature | SurvivalVitalsChangedSignalFlags.Thermal)) != 0u)
                 HandleThermalStateChanged();
@@ -210,8 +237,19 @@ namespace Hecton8.UI
             if ((flags & SurvivalVitalsChangedSignalFlags.Injury) != 0u)
                 HandleInjuryStateChanged();
 
-            if ((flags & SurvivalVitalsChangedSignalFlags.Death) != 0u)
-                HandleDeath();
+            SynchronizeDeathState();
+        }
+
+        private static bool TryResolveFiniteUnit01(float value, out float safeValue)
+        {
+            if (!math.isfinite(value))
+            {
+                safeValue = 0f;
+                return false;
+            }
+
+            safeValue = math.saturate(value);
+            return true;
         }
 
         private void RefreshSurvivalSignalBinding()
@@ -256,9 +294,10 @@ namespace Hecton8.UI
             HandleOxygenChanged(survival.OxygenNormalized);
             HandleEnergyChanged(survival.EnergyNormalized);
             HandleIntegrityChanged(survival.IntegrityNormalized);
-            HandleDepthChanged(survival.Depth);
+            HandleDepthChanged(float.NaN);
             HandleTemperatureChanged(survival.EnvironmentTemperature);
             HandleInjuryStateChanged();
+            SynchronizeDeathState();
         }
 
         private void HandleOxygenChanged(float normalized)
@@ -340,7 +379,7 @@ namespace Hecton8.UI
             if (survival == null || survival.Stats == null)
                 return;
 
-            float remaining = survival.SafeDepthMarginMeters;
+            float remaining = ResolveSafeDepthMarginMeters(depth);
 
             if (!_depthCritical && remaining <= safeDepthCriticalMargin)
             {
@@ -366,6 +405,49 @@ namespace Hecton8.UI
             {
                 _depthCritical = false;
             }
+        }
+
+        private float ResolveSafeDepthMarginMeters(float fallbackDepthMeters)
+        {
+            if (survival == null || survival.Stats == null)
+                return 0f;
+
+            float safeDepthMeters = ResolveEffectiveSafeDepthMeters();
+            float depthMeters = ResolveAdvisoryDepthMeters(fallbackDepthMeters);
+            return safeDepthMeters - depthMeters;
+        }
+
+        private float ResolveEffectiveSafeDepthMeters()
+        {
+            if (survival == null || survival.Stats == null)
+                return 0f;
+
+            float survivalDepth = survival.Depth;
+            float margin = survival.SafeDepthMarginMeters;
+            if (math.isfinite(survivalDepth) && math.isfinite(margin))
+                return math.max(0f, math.max(0f, survivalDepth) + margin);
+
+            return math.max(0f, survival.Stats.SafeDepth);
+        }
+
+        private float ResolveAdvisoryDepthMeters(float fallbackDepthMeters)
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (math.isfinite(fallbackDepthMeters))
+                return math.max(0f, fallbackDepthMeters);
+
+            return survival != null && math.isfinite(survival.Depth)
+                ? math.max(0f, survival.Depth)
+                : 0f;
         }
 
         private void HandleTemperatureChanged(float _)
@@ -420,6 +502,20 @@ namespace Hecton8.UI
             {
                 _fractureWarned = false;
             }
+        }
+
+        private void SynchronizeDeathState()
+        {
+            if (survival == null)
+                return;
+
+            if (survival.IsAlive)
+            {
+                _deathTriggered = false;
+                return;
+            }
+
+            HandleDeath();
         }
 
         private void HandleDeath()
@@ -537,7 +633,7 @@ namespace Hecton8.UI
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)

@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8 Orbital Hazard Table"
+title: "טבלת הסיכונים המסלוליים של HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbital Hazard Table
+# טבלת הסיכונים המסלוליים של HECTON-8
 
-HE LOC HOLD: HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure.
+טבלת הסיכונים המסלוליים של HECTON-8 מציגה חילוץ כשרשרת שערים נעים: גזירת קרינה, פסולת, ליקוי, משואות חוקיות וחלונות משמורת, שכל אחד מהם יכול לסגור עלייה שתוקנה.
 
 ## Scanner
 
-HE LOC HOLD: HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+חילוץ מ-HECTON-8 נחסם על ידי חלונות ליקוי, התפרצות קרינה, תריס ממסר, פיזור קרח ונוצות סערה.
 
 ## Terminal
 
-HE LOC HOLD: ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+טבלת סיכונים מסלוליים: blackout ליקוי, התפרצות חלקיקים טעונים של Aegir, תריס ממסר ירחי, פיזור גרגרי קרח, storm plume וחלונות guidance-lag חייבים להתנקות לפני עלייה.
 
 ## Audio
 
-HE LOC HOLD: The sky is not empty. It is a machine with bad timing.
+השמים מעל האוקיינוס הם מכונה עם שיניים בתזמון.
 
 ## Field Note
 
-HE LOC HOLD: This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+איש אינו מחנה חילוץ בשביל דרמה. העלייה חייבת לפגוש את לוח הזמנים הרע של השמים.
 
 <!-- External Site; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/he_IL. -->

@@ -28,6 +28,7 @@ namespace Hecton8.Rendering
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IWeatherService _weatherService;
+        private ICelestialLightReadabilityReadModel _celestialLightReadModel;
         private VaultGenerationHandle<CausticsParametersDTO> _parametersHandle;
         private VaultGenerationHandle<CausticsTuningDTO> _tuningHandle;
         private VaultGenerationHandle<CausticsTelemetryEntry> _telemetryHandle;
@@ -52,6 +53,7 @@ namespace Hecton8.Rendering
         private bool _registeredLateFrame;
         private bool _registeredOriginShift;
         private bool _registeredHotSwap;
+        private bool _runtimeOwnerAborted;
         private bool _pendingGpuUpload;
         private bool _tuningSeeded;
         private bool _profilesSeeded;
@@ -94,14 +96,9 @@ namespace Hecton8.Rendering
 
         public static AbyssalDeferredCausticsRuntime EnsureRuntimeInstance()
         {
-            if (GlobalRegistry.Caustics is AbyssalDeferredCausticsRuntime runtime)
+            AbyssalDeferredCausticsRuntime runtime = ResolveUsableRuntime();
+            if (runtime != null)
                 return runtime;
-
-            if (s_publishedRuntime != null)
-                return s_publishedRuntime;
-
-            if (s_runtimeInstance != null)
-                return s_runtimeInstance;
 
             GameObject runtimeRoot = new GameObject("[AbyssalDeferredCausticsRuntime]"); // COLD ALLOC: GameObject[1] - bootstrap-owned screen-space caustics owner - owner: AbyssalDeferredCausticsRuntime
             return runtimeRoot.AddComponent<AbyssalDeferredCausticsRuntime>();
@@ -184,6 +181,7 @@ namespace Hecton8.Rendering
                 weatherSnapshot,
                 surfaceSwell,
                 profiles,
+                ResolveCelestialLightReadability(),
                 quality,
                 _presentationTimeSeconds);
 
@@ -274,6 +272,9 @@ namespace Hecton8.Rendering
                     break;
                 case GlobalRegistryServiceSlot.Weather:
                     _weatherService = currentService as IWeatherService;
+                    break;
+                case GlobalRegistryServiceSlot.CelestialEngineRuntime:
+                    _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
                     break;
                 case GlobalRegistryServiceSlot.CausticsRuntime:
                     _ownsRegistrySlot = ReferenceEquals(currentService, this);
@@ -438,11 +439,8 @@ namespace Hecton8.Rendering
 
         private void Awake()
         {
-            if (s_runtimeInstance != null && !ReferenceEquals(s_runtimeInstance, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             s_runtimeInstance = this;
             EnsureBlackBoxDumpPathCold();
@@ -454,11 +452,8 @@ namespace Hecton8.Rendering
 
         private void OnEnable()
         {
-            if (s_runtimeInstance != null && !ReferenceEquals(s_runtimeInstance, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             s_runtimeInstance = this;
             EnsureBlackBoxDumpPathCold();
@@ -475,11 +470,17 @@ namespace Hecton8.Rendering
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
@@ -518,8 +519,11 @@ namespace Hecton8.Rendering
 
         private bool EnsureSingletonOwnership()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             ICausticsService registered = GlobalRegistry.Caustics;
-            if (registered != null && !ReferenceEquals(registered, this))
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
             {
                 _ownsRegistrySlot = false;
                 if (ReferenceEquals(s_publishedRuntime, this))
@@ -533,7 +537,95 @@ namespace Hecton8.Rendering
                 GlobalRegistry.RegisterCausticsService(this);
             _ownsRegistrySlot = true;
             s_publishedRuntime = this;
+            _runtimeOwnerAborted = false;
             return true;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            ICausticsService registeredService = GlobalRegistry.Caustics;
+            if (!ReferenceEquals(registeredService, null) && !ReferenceEquals(registeredService, this))
+            {
+                AbyssalDeferredCausticsRuntime registeredRuntime = registeredService as AbyssalDeferredCausticsRuntime;
+                if (ReferenceEquals(registeredRuntime, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (IsCausticsRuntimeUsable(registeredRuntime))
+                {
+                    s_runtimeInstance = registeredRuntime;
+                    s_publishedRuntime = registeredRuntime;
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                registeredRuntime._ownsRegistrySlot = false;
+                registeredRuntime.ClearPublishedConstantBufferIfOwnedByThis();
+                GlobalRegistry.UnregisterCausticsService(registeredService);
+                if (ReferenceEquals(s_runtimeInstance, registeredRuntime))
+                    s_runtimeInstance = null;
+                if (ReferenceEquals(s_publishedRuntime, registeredRuntime))
+                    s_publishedRuntime = null;
+            }
+
+            AbyssalDeferredCausticsRuntime active = ResolveUsableRuntime();
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            GlobalRegistry.RegisterCausticsService(active);
+            active._ownsRegistrySlot = ReferenceEquals(GlobalRegistry.Caustics, active);
+            s_runtimeInstance = active;
+            s_publishedRuntime = active;
+            _runtimeOwnerAborted = true;
+            Destroy(gameObject);
+            return true;
+        }
+
+        private static AbyssalDeferredCausticsRuntime ResolveUsableRuntime()
+        {
+            if (GlobalRegistry.Caustics is AbyssalDeferredCausticsRuntime registeredRuntime)
+            {
+                if (IsCausticsRuntimeUsable(registeredRuntime))
+                {
+                    s_runtimeInstance = registeredRuntime;
+                    s_publishedRuntime = registeredRuntime;
+                    return registeredRuntime;
+                }
+
+                registeredRuntime._ownsRegistrySlot = false;
+                registeredRuntime.ClearPublishedConstantBufferIfOwnedByThis();
+                GlobalRegistry.UnregisterCausticsService(registeredRuntime);
+                if (ReferenceEquals(s_runtimeInstance, registeredRuntime))
+                    s_runtimeInstance = null;
+                if (ReferenceEquals(s_publishedRuntime, registeredRuntime))
+                    s_publishedRuntime = null;
+            }
+
+            if (IsCausticsRuntimeUsable(s_publishedRuntime))
+                return s_publishedRuntime;
+            s_publishedRuntime = null;
+
+            if (IsCausticsRuntimeUsable(s_runtimeInstance))
+                return s_runtimeInstance;
+            s_runtimeInstance = null;
+
+            return null;
+        }
+
+        private static bool IsCausticsRuntimeUsable(AbyssalDeferredCausticsRuntime runtime)
+        {
+            return !ReferenceEquals(runtime, null) &&
+                   runtime != null &&
+                   runtime._ownsRegistrySlot &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
         }
 
         private void EnsureVaultState()
@@ -848,6 +940,7 @@ namespace Hecton8.Rendering
                 default,
                 emptySurfaceSwell,
                 emptyProfiles,
+                ResolveCelestialLightReadability(),
                 ResolveGlobalQualityWeight01(),
                 _presentationTimeSeconds);
             double3 cameraAupLocal = ResolveCameraAupLocalOffset();
@@ -1154,6 +1247,7 @@ namespace Hecton8.Rendering
             WeatherRuntimeSnapshot weatherSnapshot,
             NativeArray<float4> surfaceSwellArray,
             NativeArray<CausticsLightingProfileDTO> profilesArray,
+            CelestialLightReadabilitySnapshot celestialLight,
             float fallbackQuality,
             float timeSeconds)
         {
@@ -1220,14 +1314,22 @@ namespace Hecton8.Rendering
                 }
             }
 
+            if ((celestialLight.Flags & (uint)CelestialLightReadabilityFlags.Valid) != 0u)
+            {
+                float causticMultiplier = CelestialLightReadabilityUtility.ResolveCausticsIntensityMultiplier(in celestialLight);
+                profileIntensity *= causticMultiplier;
+                profileDepth = CelestialLightReadabilityUtility.ResolveCausticsMaxDepthMeters(in celestialLight, profileDepth > 0.001f ? profileDepth : tuning.ScaleFlowDepthIntensity.z);
+                flags |= AbyssalCausticsConstants.FlagCelestialLightBound;
+            }
+
             CausticsInputSnapshotDTO snapshot;
             snapshot.Tuning = tuning;
             snapshot.WeatherStormWindPhaseQuality = new float4(storm, windSpeed, wavePhase, quality);
             snapshot.WaveHeightFrequencyReserved = new float4(
                 math.max(0.01f, waveHeight),
                 math.max(0.02f, waveFrequency),
-                0f,
-                0f);
+                math.saturate(celestialLight.CausticWeight01),
+                math.saturate(celestialLight.DirectSun01));
             snapshot.ProfileIntensityScaleDepthFlow = new float4(profileIntensity, profileScale, profileDepth, profileFlow);
             snapshot.ProfileChromaticSdf = new float2(profileChromatic, profileSdf);
             snapshot.Flags = flags;
@@ -1636,6 +1738,14 @@ namespace Hecton8.Rendering
                 _playerRuntimeContext = GlobalRegistry.Player;
             if (forceRefresh || _weatherService == null)
                 _weatherService = GlobalRegistry.Weather;
+            if (forceRefresh || _celestialLightReadModel == null)
+                _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
+        }
+
+        private CelestialLightReadabilitySnapshot ResolveCelestialLightReadability()
+        {
+            ICelestialLightReadabilityReadModel readModel = _celestialLightReadModel;
+            return readModel != null ? readModel.LightReadabilitySnapshot : default;
         }
 
         private bool TryResolveVaultBuffer<T>(

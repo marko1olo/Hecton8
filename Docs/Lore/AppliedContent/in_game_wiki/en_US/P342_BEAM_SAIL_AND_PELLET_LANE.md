@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Beam Sail and Pellet Lane
 
-Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+Beam sails, pellet lanes, fusion catch stages, and magsails made nearlight freight practical without FTL. A ship left port with tankage, shield ice, radiators, and control authority, then borrowed the rest of its engine from the route: beam power behind it, pellet mass timed into its path, and a receiver that agreed to own braking. That is why Aegir can be reachable and still feel abandoned. The corridor can move scheduled cargo; it cannot be summoned like a rescue rope.
 
 ## Scanner
 
-Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+Transit lane record: the sail did not push itself. It leased power from arrays behind the ship and mass from pellet streams ahead of it.
 
 ## Terminal
 
-ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+LANE STATUS: beam array paid out. Pellet stream 0.8 ppm outside contract. Catch burn still possible. Missed brake owner converts fast freight into fast debris.
 
 ## Audio
 
-The ship is not fast by magic. It is fast because half the route is machinery you never see.
+The ship is fast because half the engine is outside the ship.
 
 ## Field Note
 
-Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+If a record only praises the beam, keep reading until it names the catch owner.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/en_US. -->

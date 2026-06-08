@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "ID LOC HOLD: Aegir Window Bands"
+spoiler_tier: 1
+title: "Pita Jendela Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Aegir Window Bands
+# Pita Jendela Aegir
 
-ID LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
+Lalu lintas Aegir diatur transfer bands sempit di sekitar radiasi, gerhana, badai dan relay geometry.
 
 ## Scanner
 
-ID LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+Pita lokal: ascent menunggu jendela jam-ke-hari, bukan penyelamatan instan.
 
 ## Terminal
 
-ID LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+WINDOW BAND: shutter, eclipse, relay, storm, carrier phase dan legal handshake harus sejajar sebelum transfer aman.
 
 ## Audio
 
-ID LOC HOLD: The carrier can hear you and still be in the wrong sky.
+Carrier bisa mendengarmu dan tetap berada di langit yang salah.
 
 ## Field Note
 
-ID LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+Catatan pita jendela: Black Keel timing, label orbit lokal dan halaman spoiler-light berbagi transfer constraints yang sama.
 
 <!-- External Site; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/id_ID. -->

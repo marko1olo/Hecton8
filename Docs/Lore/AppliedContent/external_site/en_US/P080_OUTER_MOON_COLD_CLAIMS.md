@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Outer Moon Cold Claims
 
-Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy.
+Outer Moon Cold Claims expands Aegir beyond HECTON-8: dead routes, cold caches and abandoned beacons feed salvage law and teach companies how to hide repeated loss.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
 
 ## Terminal
 
-OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+OUTER LADDER ARCHIVE // Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
 
 ## Audio
 

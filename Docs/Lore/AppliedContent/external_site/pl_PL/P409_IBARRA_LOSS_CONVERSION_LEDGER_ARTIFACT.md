@@ -9,32 +9,22 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Ibarra Loss Ledger"
+title: "Ledger Ibarry konwersji strat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Ibarra Loss Ledger
+# Ledger Ibarry konwersji strat
 
-PL LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## Księgowość, Która Przeżyła Kolonię
 
-## Scanner
+Ledger Ibarry powinien być zimniejszy niż lista zaginionych. Lista jeszcze opłakuje, nawet gdy kłamie. Ledger konwertuje. Przyjmuje uszkodzone moduły mieszkalne, tool banks, sample custody, missing personnel i salvage rights, po czym wkłada każdy fakt do kategorii zdolnej iść dalej przez kontrakty po milczeniu HECTON-8.
 
-PL LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+To most między dawną liability Deep Reach a obecnym długiem gracza. Jeśli ludzie stają się unresolved personnel load, korporacja może przyznać, że zniknęli, bez nazwania morderstwa. Jeśli dowód staje się material custody, można go kupić, pogrzebać, przekierować lub ubezpieczyć. Jeśli claim pozostaje continuous, własność żyje dłużej niż pracownicy, którzy utrzymywali miejsce przy życiu.
 
-## Terminal
-
-PL LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-PL LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-PL LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Ledger daje graczowi ciężką władzę. Wyniesienie go w górę nie tylko ujawnia, co zaszło. Niesie rzecz, którą rynek umie już wycenić. Sprzedać, opublikować, przekierować albo pogrzebać dowód staje się brudne, bo dokument zaprojektowano tak, by każdy wybór dało się odczytać w czyimś balance sheet.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/pl_PL. -->

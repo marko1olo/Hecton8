@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "Kręgosłup pierwszej godziny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# Kręgosłup pierwszej godziny
 
-PL LOC HOLD: First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+Kręgosłup pierwszej godziny definiuje rytm otwarcia HECTON-8. Gracz zaczyna od namacalnych zadań inżynieryjnych i wizualnego zachwytu, a potem widzi, jak te zadania łączą się z korporacyjnym kłamstwem i ekologią utrzymania, która weszła w biologię. Dzięki temu pierwsza trasa pozostaje grywalna i atmosferyczna, a jednocześnie sadzi większe śledztwo: ocean nie ukrywa historii, tylko przechowuje dowody w ciśnieniu, soli i procedurze.
 
 ## Scanner
 
-PL LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Kontrakt, uszkodzony zrzut, powietrze, jasne płycizny, schron przy pompie, wyczyszczone kłamstwo, potem pierwsza blizna naprawcza używająca życia jako uszczelki.
 
 ## Terminal
 
-PL LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+PŁYTKI ANEKS: ręczny restart pompy ważny. Pakiet incydentu Deep Reach zapisany. Wzrost naprawczy Atlas wykryty wokół kabla, fragmentu narzędzia i pozostałości biologicznej.
 
 ## Audio
 
-PL LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+Pierwszy bezpieczny pokój nie jest czysty. Po prostu lepiej od ciebie wstrzymuje oddech.
 
 ## Field Note
 
-PL LOC HOLD: The opening must be beautiful before it becomes accusing.
+Otwarcie musi być piękne, zanim stanie się oskarżeniem.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/pl_PL. -->

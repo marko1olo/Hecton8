@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # أصل Barnard Yards
 
-Barnard Yards يربط البطل باقتصاد salvage ويجعل HECTON-8 شخصيا عبر الحرفة.
+يربط Barnard Yards طبقة المغير باقتصاد salvage وثقافة الحرفة. تصبح HECTON-8 شخصية عبر عادات العمل وآثار الأدوات والدين، لا عبر ميلودراما ثابتة.
 
 ## Scanner
 

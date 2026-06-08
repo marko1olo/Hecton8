@@ -9,32 +9,36 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Drop Capsule Damage Parts"
+title: "Пошкоджені вузли посадкової капсули"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Drop Capsule Damage Parts
+# Пошкоджені вузли посадкової капсули
 
-UA LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.
+Посадкова капсула не провалилася як одна драматична аварія. Вона зламалася ланцюгом названих вузлів, які майже виконали роботу. Ascent sleeve повело, тому корпус не замикається під тиск підйому. Guidance gimbal подряпаний, тому чистий підйом зірветься в обертання раніше, ніж Black Keel його прийме. Relay mast зрізано, compressor забито соляним піском, а тріснуті heat tiles перетворюють будь-який уявний burn на поле уламків.
+
+HECTON-8 не дає чистої кнопки порятунку. Капсула, що тримає повітря годину, і капсула, здатна піти з океану, - різні машини. Кожен зламаний вузол вказує на реальний маршрут: знайти pressure-rated sleeve stock, дістати підшипники gimbal, відновити релейний хребет, прочистити шлях compressor або довести Black Keel достатню шкоду для іншого вікна.
+
+Уламок не фон. Це перша інженерна карта. Якщо капсула пише FAIL, океан уже перетворив посадку на список деталей.
 
 ## Scanner
 
-UA LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve повело, guidance gimbal подряпано, relay mast зрізано, compressor забито, heat tile тріснула.
 
 ## Terminal
 
-UA LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-UA LOC HOLD: It landed well enough to strand you properly.
+Вона сіла достатньо добре, щоб правильно тебе замкнути.
 
 ## Field Note
 
-UA LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+Капсула може втримати Marauder живим першу годину. Вона не підніметься без глибинних замін.
 
 <!-- In-Game Wiki; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/uk_UA. -->

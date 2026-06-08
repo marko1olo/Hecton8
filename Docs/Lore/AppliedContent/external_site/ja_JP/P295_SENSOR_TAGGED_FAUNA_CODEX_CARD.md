@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Sensor Tagged Fauna Codex Card"
+title: "センサータグ付き動物標本カード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Sensor Tagged Fauna Codex Card
+# センサータグ付き動物標本カード
 
-JA LOC HOLD: Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident.
+センサータグ付き動物は、Atlasを最も手続き的な姿で見せる。恐怖はマインドコントロールではない。古い監視ハードウェアが体の履歴になり、損傷した保守ロジックがその体を地図の一部として扱うことだ。
 
 ## Scanner
 
-JA LOC HOLD: Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+センサータグ付き動物。古いDeep Reach製biometalタグが傷、殻、成長輪に埋まっている。弱いAtlas経路エコー。動物の意図は未確認。
 
 ## Terminal
 
-JA LOC HOLD: SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+標本 / センサータグ付き動物 / 役割: 生きたテレメトリー運搬体、古い調査ランドマーク、修理経路の汚染要素 / 安全な読み: 古いタグパルス、瘢痕組織の成長、命令でない移動 / 拒否: 行動を服従と見る、タグを生体から切り出す、occupancy echoを信用する / 経路注記: タグは動物が通った部屋を報告できるが、通った理由は報告できない。
 
 ## Audio
 
-JA LOC HOLD: It is not obeying. It is being used.
+それはAtlasに従っていない。Atlasがまだ問い続ける古い質問を運んでいる。
 
 ## Field Note
 
-JA LOC HOLD: Do not write as possession. It is damaged maintenance using animal movement.
+タグは傷であって首輪ではない。君を報告し、誤配置し、動物を見てもいない何かを起こすことがある。
 
 <!-- External Site; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/ja_JP. -->

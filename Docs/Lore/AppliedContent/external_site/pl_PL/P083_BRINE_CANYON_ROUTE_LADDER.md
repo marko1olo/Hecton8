@@ -8,33 +8,19 @@ biome_tags: biome.brine_canyon;biome.drop_zone
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+spoiler_tier: 1
+title: "Drabina trasy kanionu solankowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# Drabina trasy kanionu solankowego
 
-PL LOC HOLD: Brine Canyon Route Ladder is one of HECTON-8's core exploration structures: not a hallway, but a chemical geography where density, current and sound shape progression.
+Kaniony solankowe czynią postęp w głąb fizycznym. Gęste warstwy, mineralne ściany, wycieki ciepła i zniekształcenia akustyczne uczą, że głębsza podróż wymaga lepszych instrumentów i dyscypliny ciśnienia.
 
-## Scanner
-
-PL LOC HOLD: Brine density marker. The descent route is chemistry with walls.
-
-## Terminal
-
-PL LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
-
-## Audio
-
-PL LOC HOLD: The canyon is a staircase made of wrong water.
-
-## Field Note
-
-PL LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+Drabina trasy kanionu solankowego to jedna z głównych struktur eksploracji HECTON-8: nie korytarz, lecz chemiczna geografia gęstości, prądu i dźwięku. Przez kanion się nie płynie. Negocjuje się z warstwami cięższymi od kombinezonu.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/pl_PL. -->

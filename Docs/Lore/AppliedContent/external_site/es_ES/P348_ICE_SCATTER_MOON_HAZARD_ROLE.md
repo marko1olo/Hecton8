@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw y el peligro de hielo disperso"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw y el peligro de hielo disperso
 
-ES LOC HOLD: Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.
-
-## Scanner
-
-ES LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
-
-## Terminal
-
-ES LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
-
-## Audio
-
-ES LOC HOLD: Every system has one moon that accountants love and pilots curse.
-
-## Field Note
-
-ES LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw hace que el sistema parezca usado. No es una luna de hielo pura, sino un campo brillante de esquirlas, marcas de reclamación y objetos que tuvieron dueño. Tras una tormenta aparecen material nuevo, retornos de radar frescos y el tipo de rumor que mata a una tripulación barata. El peligro es física ordinaria: el hielo a velocidad orbital no pregunta si el casco lleva pruebas, comida o un cuerpo.
 
 <!-- External Site; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/es_ES. -->

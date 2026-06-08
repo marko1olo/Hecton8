@@ -9,32 +9,37 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Old Procedure Recognition Cue"
+title: "Ознака впізнання старої процедури"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Old Procedure Recognition Cue
+# Ознака впізнання старої процедури
 
-UK LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+HECTON-8 тримає мотивацію персонажа на процедурі. Протагоніст упізнає стару евакуаційну форму безпеки й бачить, як її вивернули: облік працівників деградовано, поля свідків запечатано, а мову безпечного маршруту використано для збереження претензій замість життів.
 
 ## Scanner
 
-UK LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+Штамп безпечного маршруту на місці. Облік працівників переписано двома чорнилами. Поле ручного свідка запечатано. Форму створили, щоб ловити таку брехню, доки хтось не зробив її політикою.
 
 ## Terminal
 
-UK LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+ФОРМА ЕВАКУАЦІЙНОЇ БЕЗПЕРЕРВНОСТІ / СЕРТИФІКАЦІЯ БЕЗПЕЧНОГО МАРШРУТУ
+маршрут: допоміжна лінія виходу
+заявлені люди: деградований облік прийнято
+ручний свідок: запечатано офісом безперервності
+польова правка: перелік працівників не збігається з мітками насосної
+статус: збереження претензії, дозвіл на вилучення не надано.
 
 ## Audio
 
-UK LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+Ти знаєш цю форму. Вона мала не дати кімнаті вважатися порожньою, поки в ній ще дихали люди.
 
 ## Field Note
 
-UK LOC HOLD: Use where room evidence contradicts a clean procedural label.
+Форма мала змусити перерахувати ще раз. Тут вона змусила мовчати.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/uk_UA. -->

@@ -210,8 +210,15 @@ namespace Hecton8.Biolum
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
             _needsClear = true;
             _hasLastVolumeCenter = false;

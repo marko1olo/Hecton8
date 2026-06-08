@@ -19,15 +19,15 @@ localization_flags: 0
 
 # First Hour Spine
 
-The first hour leaves a practical trail. The drop is damaged, the shelf is bright enough to read, the pump annex can hold pressure, and the first Deep Reach packet is too clean for the room around it. When you find the repair scar around cable, tool fragment, and biological residue, treat it as useful evidence first. Atlas repair logic has entered life, but the PDA does not know how far yet.
+The first hour should not begin in darkness. It begins with a contract voice, a damaged descent, breath management, bright shallow water and the practical need to restart a pump. Beauty is part of the trap: HECTON-8 has to look worth wanting before its paperwork becomes lethal. The opening spine then turns survival into evidence. The first sheltered room is useful but compromised; the sanitized accident packet sounds too clean; the first Atlas repair scar shows cable, tool metal and living residue pressed into one maintenance decision. The player learns the basic loop through action, not exposition: breathe, repair, read, doubt, go deeper.
 
 ## Scanner
 
-First-hour chain logged: damaged drop, air, bright shelf, pump shelter, sanitized accident packet, repair scar.
+Contract, damaged drop, air, bright shallows, pump shelter, sanitized lie, then the first repair scar that uses life as gasket.
 
 ## Terminal
 
-SHALLOW ANNEX: pump restart valid. Incident packet cached. Atlas repair growth found around cable, tool fragment, residue.
+SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The first safe room is not clean. It is only holding its breath better than you 
 
 ## Field Note
 
-The bright shelf is not a trick. It is the reason people wanted this place before the paperwork made it lethal.
+The opening must be beautiful before it becomes accusing.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/en_US. -->

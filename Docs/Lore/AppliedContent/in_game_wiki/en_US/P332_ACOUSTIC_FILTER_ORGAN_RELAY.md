@@ -3,8 +3,8 @@ packet_id: P332_ACOUSTIC_FILTER_ORGAN_RELAY
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.acoustic_filter_organ_relay
 unlock_id: unlock.acoustic_filter_organ_relay
-poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_resonator
-biome_tags: biome.atlas;biome.comms
+poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_chamber
+biome_tags: biome.atlas;biome.sonar
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -19,24 +19,22 @@ localization_flags: 0
 
 # Acoustic Filter Organ Relay
 
-Some reef animals grow filter organs dense enough to shape sound. Atlas repair nodes learned to use that tissue as an acoustic baffle after relay housings cracked. A ping can leave metal, pass through living chambers and come back cleaner than it should.
-
-That help has teeth around it. The same organ that carries a route ping can announce vibration to feeders, wake tagged fauna or echo a Marauder's own movement down the reef. A clean reply does not mean a safe corridor. It means the corridor has a listener.
+Acoustic filter organs grow in old relay throats where water, pressure, and sound do the work radio cannot. The tissue is not speaking. It changes impedance, dampens pump roar, and lets narrow pinger tones travel farther than they should. Atlas can use that repeated echo as a cheap relay, and a careful player can use it as a route clue.
 
 ## Scanner
 
-Filter organ resonance matches damaged relay cadence. Return is cleaner after passing through tissue. Bite marks on housing.
+Soft baffle tissue inside the relay pipe passes pinger tones and kills pump noise.
 
 ## Terminal
 
-ACOUSTIC RELAY // Local filter-organ tissue dampens storm noise and repeats service pings inside the cable reef. Signal gain unstable under pressure surges. Biological relay is route aid and predator lure.
+RELAY NOTE: living folds reject broad machinery noise, pass narrow pinger pulses, and phase-shift return echoes. Downstream map confidence reduced.
 
 ## Audio
 
-It answers like equipment because the equipment is using its throat.
+If it answers like equipment, remember equipment does not bleed.
 
 ## Field Note
 
-If the echo has a pulse behind it, keep the tool quiet and check the water before moving.
+Use where sonar feels helpful before it becomes suspect.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/en_US. -->

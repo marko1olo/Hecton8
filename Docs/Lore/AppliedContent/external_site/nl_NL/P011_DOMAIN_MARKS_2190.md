@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Domeinmarkeringen 2190
 
-Domain Marks 2190 plaatst HECTON-8 in een volwassen maar dunne menselijke sfeer. Interstellair betekent niet snel bereikbaar.
-
-## Scanner
-
-Gemengde domeinmarkeringen. Sol-veiligheidsplaat, Barnard-gereedschapsstempel, Luyten-routebewaring.
-
-## Terminal
-
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
-
-## Audio
-
-Deze plek ligt niet buiten de beschaving. Dit is beschaving wanneer afstand wint.
-
-## Field Note
-
-De mensheid werd groot. Redding moet nog steeds reizen.
+In 2190 kan één kapot object meerdere eigenaren dragen: Sol-standaard, Barnard-reparatie, Luyten-bewaring, Aegir-claim. HECTON-8 is geen ruïne zonder geschiedenis; de geschiedenis staat op het metaal terwijl de kamer onderloopt.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/nl_NL. -->

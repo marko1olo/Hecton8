@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Pochodzenie Barnard Yards
 
-Barnard Yards osadza bohatera w gospodarce salvage i czyni HECTON-8 osobistym przez fach.
+Barnard Yards wiąże klasę Marauder z gospodarką salvage i kulturą fachu. HECTON-8 staje się osobisty przez nawyki pracy, ślady narzędzi i dług, a nie przez gotowy melodramat.
 
 ## Scanner
 

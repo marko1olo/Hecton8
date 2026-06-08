@@ -8,33 +8,19 @@ biome_tags: biome.pump_annex;biome.shallow_wreck
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Ren Okoye Pump 63"
+spoiler_tier: 1
+title: "משאבה 63 של רן אוקויה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ren Okoye Pump 63
+# משאבה 63 של רן אוקויה
 
-HE LOC HOLD: Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them.
+רן אוקויה אינו שם טרגי על קיר. הוא יד עובדת שעדיין מעצבת את המסלול. Pump 63 אומרת שהלוח ירוק והקו אינו בטוח. ההערה שלו אומרת לשחקן להשתמש בגלגל התחתון, לשחרר לחץ לשתי שניות ולהפעיל מחדש לפני שה-hammer נועל את ה-annex.
 
-## Scanner
-
-HE LOC HOLD: Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.
-
-## Terminal
-
-HE LOC HOLD: OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.
-
-## Audio
-
-HE LOC HOLD: He saved a room for people who never reached it. You can still use the room.
-
-## Field Note
-
-HE LOC HOLD: The colony gives the player tools through people, not exposition.
+ה-packet הזה חשוב כי הוא מחזיר כשירות למושבה המתה. העובדים לא היו קורבנות פסיביים שחיכו ש-lore יקרה להם. הם טלאו, סימנו, שיקרו לפאנלים כשהפאנלים שיקרו ראשונים, והשאירו נהלים שמארודר יכול לסמוך עליהם. רן הופך salvage להקשבה: הדרך השימושית כתובה בעיפרון גריז, לא בליטוש של Deep Reach.
 
 <!-- External Site; generated from P064_REN_OKOYE_PUMP_63/he_IL. -->

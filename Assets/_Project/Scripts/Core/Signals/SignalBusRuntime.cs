@@ -27,6 +27,8 @@ using NarrativePoiStateSignal = Hecton8.Core.Contracts.Signals.NarrativePoiState
 using ProgressionEventSignal = Hecton8.Core.Contracts.Signals.ProgressionEventSignal;
 using SoundscapeProfileSignal = Hecton8.Core.Contracts.Signals.SoundscapeProfileSignal;
 using SurvivalVitalsChangedSignal = Hecton8.Core.Contracts.Signals.SurvivalVitalsChangedSignal;
+using ToxicBioluminescenceSignal = Hecton8.Atmosphere.ToxicBioluminescenceSignal;
+using ToxicityExposureSignal = Hecton8.Atmosphere.ToxicityExposureSignal;
 using HullRepairedSignal = Hecton8.Core.Contracts.Signals.HullRepairedSignal;
 
 namespace Hecton8.Core.Contracts.Signals
@@ -833,6 +835,8 @@ namespace Hecton8.Core.Contracts.Signals
                     transformer.Transform(ref signal);
                     frameSnapshot[i] = signal;
                 }
+
+                AdvanceFrameSnapshotGeneration();
             }
             finally
             {
@@ -872,6 +876,7 @@ namespace Hecton8.Core.Contracts.Signals
                     return 0;
 
                 _frameSnapshotCount = writeIndex;
+                AdvanceFrameSnapshotGeneration();
                 _droppedLastFlush += dropped;
                 Interlocked.Add(ref _loadShedTotal, dropped);
                 return dropped;
@@ -894,7 +899,7 @@ namespace Hecton8.Core.Contracts.Signals
             {
                 _frameSnapshotCount = 0;
                 _legacyReadCursor = 0;
-                _frameSnapshotGeneration = _frameSnapshotGeneration == int.MaxValue ? 1 : _frameSnapshotGeneration + 1;
+                AdvanceFrameSnapshotGeneration();
                 _droppedLastFlush = Interlocked.Exchange(ref _droppedPendingFlush, 0);
                 int parallelWriterDrops = ConsumeParallelWriterDropsAndResetBudget();
                 if (parallelWriterDrops > 0)
@@ -1013,6 +1018,11 @@ namespace Hecton8.Core.Contracts.Signals
             }
 
             return math.clamp(continuousLimit, 1, _maxFrameSignals);
+        }
+
+        private static void AdvanceFrameSnapshotGeneration()
+        {
+            _frameSnapshotGeneration = _frameSnapshotGeneration == int.MaxValue ? 1 : _frameSnapshotGeneration + 1;
         }
 
         private static bool TryCoalesceOrAppend(
@@ -1155,6 +1165,8 @@ namespace Hecton8.Core.Contracts.Signals
         {
             ref CombatDamageSignal incoming = ref UnsafeUtility.As<T, CombatDamageSignal>(ref signal);
             if (incoming.TargetHash == 0u)
+                return false;
+            if ((incoming.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)
                 return false;
 
             for (int i = 0; i < _frameSnapshotCount; i++)
@@ -1665,6 +1677,7 @@ namespace Hecton8.Core.Contracts.Signals
                    type == typeof(PlayerFatalPressureSignal) ||
                    type == typeof(PlayerTransportBailoutSignal) ||
                    type == typeof(VisualFlareSignal) ||
+                   type == typeof(ToxicBioluminescenceSignal) ||
                    type == typeof(DebugSignal) ||
                    type == typeof(StreamingTurbulenceSignal);
         }
@@ -1816,6 +1829,15 @@ namespace Hecton8.Core.Contracts.Signals
                 return true;
             }
 
+            if (type == typeof(MovementAcousticSignal))
+            {
+                expectedCapacity = MovementAcousticSignal.ExpectedCapacity;
+                maxFrameSignals = MovementAcousticSignal.MaxFrameSignals;
+                lowTierFrameSignals = MovementAcousticSignal.LowTierFrameSignals;
+                laneHash = MovementAcousticSignal.LaneHash;
+                return true;
+            }
+
             if (type == typeof(SubmarineLightsChangedSignal))
             {
                 expectedCapacity = SubmarineLightsChangedSignal.ExpectedCapacity;
@@ -1870,6 +1892,24 @@ namespace Hecton8.Core.Contracts.Signals
                 return true;
             }
 
+            if (type == typeof(ToxicityExposureSignal))
+            {
+                expectedCapacity = ToxicityExposureSignal.ExpectedCapacity;
+                maxFrameSignals = ToxicityExposureSignal.MaxFrameSignals;
+                lowTierFrameSignals = ToxicityExposureSignal.LowTierFrameSignals;
+                laneHash = ToxicityExposureSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(ToxicBioluminescenceSignal))
+            {
+                expectedCapacity = ToxicBioluminescenceSignal.ExpectedCapacity;
+                maxFrameSignals = ToxicBioluminescenceSignal.MaxFrameSignals;
+                lowTierFrameSignals = ToxicBioluminescenceSignal.LowTierFrameSignals;
+                laneHash = ToxicBioluminescenceSignal.LaneHash;
+                return true;
+            }
+
             if (type == typeof(ReactorDamageSignal))
             {
                 expectedCapacity = ReactorDamageSignal.ExpectedCapacity;
@@ -1897,6 +1937,15 @@ namespace Hecton8.Core.Contracts.Signals
                 return true;
             }
 
+            if (type == typeof(InventoryCommandSignal))
+            {
+                expectedCapacity = InventoryCommandSignal.ExpectedCapacity;
+                maxFrameSignals = InventoryCommandSignal.MaxFrameSignals;
+                lowTierFrameSignals = InventoryCommandSignal.LowTierFrameSignals;
+                laneHash = InventoryCommandSignal.LaneHash;
+                return true;
+            }
+
             if (type == typeof(InventoryRespawnPenaltyResultSignal))
             {
                 expectedCapacity = InventoryRespawnPenaltyResultSignal.ExpectedCapacity;
@@ -1912,6 +1961,15 @@ namespace Hecton8.Core.Contracts.Signals
                 maxFrameSignals = InventoryDeathLootCacheSignal.MaxFrameSignals;
                 lowTierFrameSignals = InventoryDeathLootCacheSignal.LowTierFrameSignals;
                 laneHash = InventoryDeathLootCacheSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(ItemAcquiredSignal))
+            {
+                expectedCapacity = ItemAcquiredSignal.ExpectedCapacity;
+                maxFrameSignals = ItemAcquiredSignal.MaxFrameSignals;
+                lowTierFrameSignals = ItemAcquiredSignal.LowTierFrameSignals;
+                laneHash = ItemAcquiredSignal.LaneHash;
                 return true;
             }
 
@@ -2452,6 +2510,9 @@ namespace Hecton8.Core.Contracts.Signals
         private const int SeismicShockwaveSignalGuardCode = unchecked((int)0x51A10066u);
         private const int ItemLifecycleSignalGuardCode = unchecked((int)0x51A10067u);
         private const int SessionLifecycleSignalGuardCode = unchecked((int)0x51A10068u);
+        private const int ToxicityExposureSignalGuardCode = unchecked((int)0x51A10069u);
+        private const int InventoryCommandSignalGuardCode = unchecked((int)0x51A1006Au);
+        private const int ToxicBioluminescenceSignalGuardCode = unchecked((int)0x51A1006Bu);
         private const double MaxSignalAupExtentMeters = 100000.0d;
         private const byte GuardNone = 0;
         private const byte GuardImpact = 2;
@@ -2557,6 +2618,9 @@ namespace Hecton8.Core.Contracts.Signals
         private const byte GuardSeismicShockwaveSignal = 102;
         private const byte GuardItemLifecycle = 103;
         private const byte GuardSessionLifecycle = 104;
+        private const byte GuardToxicityExposure = 105;
+        private const byte GuardInventoryCommand = 106;
+        private const byte GuardToxicBioluminescence = 107;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Sanitize<T>(ref T signal)
@@ -2684,6 +2748,16 @@ namespace Hecton8.Core.Contracts.Signals
                     ref RadiationDoseSignal typed = ref UnsafeUtility.As<T, RadiationDoseSignal>(ref signal);
                     return SanitizeRadiationDoseSignal(ref typed);
                 }
+                case GuardToxicityExposure:
+                {
+                    ref ToxicityExposureSignal typed = ref UnsafeUtility.As<T, ToxicityExposureSignal>(ref signal);
+                    return SanitizeToxicityExposureSignal(ref typed);
+                }
+                case GuardToxicBioluminescence:
+                {
+                    ref ToxicBioluminescenceSignal typed = ref UnsafeUtility.As<T, ToxicBioluminescenceSignal>(ref signal);
+                    return SanitizeToxicBioluminescenceSignal(ref typed);
+                }
                 case GuardTemperatureChanged:
                 {
                     ref TemperatureChangedSignal typed = ref UnsafeUtility.As<T, TemperatureChangedSignal>(ref signal);
@@ -2723,6 +2797,11 @@ namespace Hecton8.Core.Contracts.Signals
                 {
                     ref InventoryRespawnDeathAupSignal typed = ref UnsafeUtility.As<T, InventoryRespawnDeathAupSignal>(ref signal);
                     return SanitizeInventoryRespawnDeathAupSignal(ref typed);
+                }
+                case GuardInventoryCommand:
+                {
+                    ref InventoryCommandSignal typed = ref UnsafeUtility.As<T, InventoryCommandSignal>(ref signal);
+                    return SanitizeInventoryCommandSignal(ref typed);
                 }
                 case GuardCullingOverload:
                 {
@@ -3135,6 +3214,10 @@ namespace Hecton8.Core.Contracts.Signals
                 return GuardAupShift;
             if (typeof(T) == typeof(RadiationDoseSignal))
                 return GuardRadiationDose;
+            if (typeof(T) == typeof(ToxicityExposureSignal))
+                return GuardToxicityExposure;
+            if (typeof(T) == typeof(ToxicBioluminescenceSignal))
+                return GuardToxicBioluminescence;
             if (typeof(T) == typeof(TemperatureChangedSignal))
                 return GuardTemperatureChanged;
             if (typeof(T) == typeof(RadiationSourceSignal))
@@ -3225,6 +3308,8 @@ namespace Hecton8.Core.Contracts.Signals
                 return GuardInventoryDeathLootCache;
             if (typeof(T) == typeof(InventoryRespawnDeathAupSignal))
                 return GuardInventoryRespawnDeathAup;
+            if (typeof(T) == typeof(InventoryCommandSignal))
+                return GuardInventoryCommand;
             if (typeof(T) == typeof(BiomeChangedSignal))
                 return GuardBiomeChanged;
             if (typeof(T) == typeof(SectorResidencyHydratedSignal))
@@ -3653,6 +3738,84 @@ namespace Hecton8.Core.Contracts.Signals
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeToxicityExposureSignal(ref ToxicityExposureSignal signal)
+        {
+            bool repairedAup = SanitizeDouble3Zero(ref signal.AUP);
+            bool outOfRangeAup =
+                !repairedAup &&
+                (math.abs(signal.AUP.x) > ToxicityExposureSignal.MaxSourceAupExtentMeters ||
+                 math.abs(signal.AUP.y) > ToxicityExposureSignal.MaxSourceAupExtentMeters ||
+                 math.abs(signal.AUP.z) > ToxicityExposureSignal.MaxSourceAupExtentMeters);
+            if (outOfRangeAup)
+                signal.AUP = double3.zero;
+
+            int guardCode = repairedAup || outOfRangeAup ? ToxicityExposureSignalGuardCode : 0;
+            if (SanitizeUnit01(ref signal.Exposure01))
+                guardCode = ToxicityExposureSignalGuardCode;
+            if (SanitizeUnit01(ref signal.ToxemiaDelta))
+                guardCode = ToxicityExposureSignalGuardCode;
+
+            byte supportedFlags = ToxicityExposureSignal.FlagHasSourceAup;
+            byte flags = (byte)(signal.Flags & supportedFlags);
+            bool hasInvalidSourceAup = (flags & ToxicityExposureSignal.FlagHasSourceAup) != 0 &&
+                math.lengthsq(signal.AUP) <= 0.000001d;
+            if (repairedAup || outOfRangeAup || hasInvalidSourceAup)
+                flags = (byte)(flags & ~ToxicityExposureSignal.FlagHasSourceAup);
+            if (signal.Flags != flags)
+                guardCode = ToxicityExposureSignalGuardCode;
+            signal.Flags = flags;
+
+            if (signal._pad0 != 0 || signal._pad1 != 0 || signal._pad2 != 0ul || signal._pad3 != 0ul)
+                guardCode = ToxicityExposureSignalGuardCode;
+            signal._pad0 = 0;
+            signal._pad1 = 0;
+            signal._pad2 = 0ul;
+            signal._pad3 = 0ul;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeToxicBioluminescenceSignal(ref ToxicBioluminescenceSignal signal)
+        {
+            bool repairedAup = SanitizeDouble3Zero(ref signal.AUP);
+            bool outOfRangeAup =
+                !repairedAup &&
+                (math.abs(signal.AUP.x) > ToxicityExposureSignal.MaxSourceAupExtentMeters ||
+                 math.abs(signal.AUP.y) > ToxicityExposureSignal.MaxSourceAupExtentMeters ||
+                 math.abs(signal.AUP.z) > ToxicityExposureSignal.MaxSourceAupExtentMeters);
+            if (outOfRangeAup)
+                signal.AUP = double3.zero;
+
+            int guardCode = repairedAup || outOfRangeAup ? ToxicBioluminescenceSignalGuardCode : 0;
+            if (SanitizeUnit01(ref signal.Intensity01))
+                guardCode = ToxicBioluminescenceSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.ToxicDensity))
+                guardCode = ToxicBioluminescenceSignalGuardCode;
+            if (SanitizeFloat3Zero(ref signal.LocalNormal))
+                guardCode = ToxicBioluminescenceSignalGuardCode;
+
+            byte supportedFlags = ToxicBioluminescenceSignal.FlagActive;
+            byte flags = (byte)(signal.Flags & supportedFlags);
+            bool hasInvalidSourceAup = (flags & ToxicBioluminescenceSignal.FlagActive) != 0 &&
+                math.lengthsq(signal.AUP) <= 0.000001d;
+            bool hasInactiveScalar = (flags & ToxicBioluminescenceSignal.FlagActive) != 0 &&
+                (signal.Intensity01 <= 0.0001f || signal.ToxicDensity <= 0.0001f);
+            if (repairedAup || outOfRangeAup || hasInvalidSourceAup || hasInactiveScalar)
+                flags = (byte)(flags & ~ToxicBioluminescenceSignal.FlagActive);
+            if (signal.Flags != flags)
+                guardCode = ToxicBioluminescenceSignalGuardCode;
+            signal.Flags = flags;
+
+            if (signal._pad0 != 0 || signal._pad1 != 0ul)
+                guardCode = ToxicBioluminescenceSignalGuardCode;
+            signal._pad0 = 0;
+            signal._pad1 = 0ul;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SanitizeTemperatureChangedSignal(ref TemperatureChangedSignal signal)
         {
             int guardCode = SanitizeAup(ref signal.PositionAup) ? TemperatureChangedSignalGuardCode : 0;
@@ -3667,11 +3830,37 @@ namespace Hecton8.Core.Contracts.Signals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SanitizeRadiationSourceSignal(ref RadiationSourceSignal signal)
         {
-            int guardCode = SanitizeAup(ref signal.PositionAup) ? RadiationSourceSignalGuardCode : 0;
-            if (SanitizeNonNegative(ref signal.Intensity))
+            bool repairedAup = SanitizeAup(ref signal.PositionAup);
+            bool repairedIntensity = SanitizeNonNegative(ref signal.Intensity);
+            bool repairedRadius = SanitizeNonNegative(ref signal.RadiusMeters);
+            int guardCode = repairedAup || repairedIntensity || repairedRadius
+                ? RadiationSourceSignalGuardCode
+                : 0;
+
+            bool knownOperation =
+                signal.Operation == RadiationSourceSignal.OperationUpsert ||
+                signal.Operation == RadiationSourceSignal.OperationRemove;
+            if (!knownOperation)
+            {
+                signal.Operation = RadiationSourceSignal.OperationRemove;
                 guardCode = RadiationSourceSignalGuardCode;
-            if (SanitizeNonNegative(ref signal.RadiusMeters))
+            }
+
+            if (signal.Operation == RadiationSourceSignal.OperationUpsert &&
+                (repairedAup || signal.Intensity <= 0f || signal.RadiusMeters <= 0f))
+            {
+                signal.Operation = RadiationSourceSignal.OperationRemove;
+                signal.Intensity = 0f;
+                signal.RadiusMeters = 0f;
                 guardCode = RadiationSourceSignalGuardCode;
+            }
+            else if (signal.Operation == RadiationSourceSignal.OperationRemove &&
+                     (signal.Intensity != 0f || signal.RadiusMeters != 0f))
+            {
+                signal.Intensity = 0f;
+                signal.RadiusMeters = 0f;
+                guardCode = RadiationSourceSignalGuardCode;
+            }
 
             return guardCode;
         }
@@ -3679,11 +3868,19 @@ namespace Hecton8.Core.Contracts.Signals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SanitizeThermalSourceSignal(ref ThermalSourceSignal signal)
         {
-            int guardCode = SanitizeAup(ref signal.PositionAup) ? ThermalSourceSignalGuardCode : 0;
-            if (SanitizeNonNegative(ref signal.RadiusMeters))
+            bool repairedAup = SanitizeAup(ref signal.PositionAup);
+            bool repairedRadius = SanitizeNonNegative(ref signal.RadiusMeters);
+            bool repairedIntensity = SanitizeNonNegative(ref signal.IntensityCelsiusPerSecond);
+            int guardCode = repairedAup || repairedRadius || repairedIntensity
+                ? ThermalSourceSignalGuardCode
+                : 0;
+
+            if (repairedAup || signal.RadiusMeters <= 0f || signal.IntensityCelsiusPerSecond <= 0f)
+            {
+                signal.RadiusMeters = 0f;
+                signal.IntensityCelsiusPerSecond = 0f;
                 guardCode = ThermalSourceSignalGuardCode;
-            if (SanitizeNonNegative(ref signal.IntensityCelsiusPerSecond))
-                guardCode = ThermalSourceSignalGuardCode;
+            }
 
             return guardCode;
         }
@@ -3791,6 +3988,18 @@ namespace Hecton8.Core.Contracts.Signals
             }
 
             return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeInventoryCommandSignal(ref InventoryCommandSignal signal)
+        {
+            if (signal.Command == InventoryCommandSignalCommands.Sort ||
+                signal.Command == InventoryCommandSignalCommands.DropNonEquippedResources)
+            {
+                return 0;
+            }
+
+            return InventoryCommandSignalGuardCode;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4299,10 +4508,14 @@ namespace Hecton8.Core.Contracts.Signals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SanitizeItemAcquiredSignal(ref ItemAcquiredSignal signal)
         {
-            if (!SanitizeAup(ref signal.PositionAup))
-                return 0;
+            if (SanitizeAup(ref signal.PositionAup) ||
+                signal.ItemHash == 0u ||
+                signal.Quantity == 0)
+            {
+                return ItemAcquiredSignalGuardCode;
+            }
 
-            return ItemAcquiredSignalGuardCode;
+            return 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

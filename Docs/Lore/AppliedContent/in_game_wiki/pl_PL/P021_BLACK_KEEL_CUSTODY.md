@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Nadzór Black Keel
 
-Black Keel nie jest prywatnym luksusem. To prawie automatyczny carrier odzyskowy związany nadzorem claim-pool, długiem ubezpieczeniowym i oknami orbitalnymi.
+Black Keel nie jest luksusowym prywatnym statkiem. To niemal automatyczny carrier salvage działający przez custody puli roszczeń, dług ubezpieczeniowy i opóźnione okna orbitalne. Daje realną drogę na orbitę, ale nie czyni ratunku prostym ani lojalnym.
 
 ## Scanner
 

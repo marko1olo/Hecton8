@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Inner Relay Moon Traffic Role"
+title: "دور Vela المروري كقمر ترحيل داخلي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Inner Relay Moon Traffic Role
+# دور Vela المروري كقمر ترحيل داخلي
 
-AR LOC HOLD: Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
+Vela قمر عمل داخلي في Aegir. يعبر الممرات المشحونة بسرعة تعاقب الدرع السيئ، لكن أقنعة المرحلات وانعكاساتها القديمة ما زالت تصوغ جداول الطريق. اقتراب Black Keel يستطيع استخدام ظله لإخفاء ضجيج الوصلة لدقائق قليلة.
 
 ## Scanner
 
-AR LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
+سجل قمري. Vela يخفي ويعكس مرور المرحلات؛ السفن تعامله كبوابة رسوم متحركة.
 
 ## Terminal
 
-AR LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
+سلم الأقمار H2 VELA: ظل الترحيل ينقشع خلال ثلاث وأربعين دقيقة. عداد الإشعاع يرتفع جهة Skarn. حرق النقل إلى HECTON يبقى قانونيا إذا بقيت كتلة carrier دون الحد المودع.
 
 ## Audio
 
-AR LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
+لا أحد يذهب إلى Vela للمنظر. تعده وتنتظره وتأمل أن يستمر المنار القديم في الكذب بالطريقة نفسها.
 
 ## Field Note
 
-AR LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Vela مفيد لأنه يعترض الطريق في موعد معروف.
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/ar_SA. -->

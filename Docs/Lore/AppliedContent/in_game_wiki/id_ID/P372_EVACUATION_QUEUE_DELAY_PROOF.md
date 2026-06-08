@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Evacuation Queue Delay Proof"
+title: "Catatan Tunda Antrean Evakuasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Evacuation Queue Delay Proof
+# Catatan Tunda Antrean Evakuasi
 
-ID LOC HOLD: Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
+Bukti ini mengubah evakuasi menjadi urutan. Gerbang bukan sekadar terputus oleh air; ia tetap dalam status review ketika alarm tekanan memasuki koridor berpenghuni. Kolom saksi kosong penting karena sistem meminta konfirmasi manusia setelah manusia sudah kehilangan akses ke panel.
 
 ## Scanner
 
-ID LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Jam antrean dipulihkan. Gerbang pelepasan tetap terkunci setelah alarm tekanan berpindah dari prakiraan ke koridor.
 
 ## Terminal
 
-ID LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Konfirmasi manual tidak ada. Tinjauan karantina tertunda. Tekanan rute melampaui kelas segel sebelum otorisasi selesai.
 
 ## Audio
 
-ID LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Mereka bukan gagal menyelamatkan semua orang. Mereka menunggu sampai menyelamatkan siapa pun menjadi lebih sulit.
 
 ## Field Note
 
-ID LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Catatan Marauder: gerbang tertutup dengan kolom tertunda bukan kecelakaan. Itu keputusan yang menunggu tanda tangan.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/id_ID. -->

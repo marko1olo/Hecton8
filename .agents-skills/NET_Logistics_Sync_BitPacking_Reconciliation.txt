@@ -271,7 +271,7 @@ ProcessLogisticsQueue(queue, frameContext):
 // Per nearby node (20Hz):
 //   DeltaPacket = 8 bytes x 20/s = 160 B/s
 
-// Assume: 64 nearby + 256 distant nodes (typical base layout)
+// Named budget scenario: 64 nearby + 256 distant nodes (typical base layout)
 // Budget: (64 x 160) + (256 x 16) = 10240 + 4096 = 14336 B/s ~= 14 KB/s
 // Well within UDP MTU budget - no fragmentation risk at 1400B MTU
 

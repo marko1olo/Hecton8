@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Vent Forge Field Process Guide"
+title: "מדריך תהליך שטח של vent-forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Vent Forge Field Process Guide
+# מדריך תהליך שטח של vent-forge
 
-HE LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.
+Vent forges הם כורים טבעיים-תעשייתיים. הם הופכים חום, brine ו-pressure history ל-ceramics, sealants ו-charge materials שימושיים תוך שמירת כל דגימה קשורה למסלולה התרמי.
 
 ## Scanner
 
-HE LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+כימיית vent-forge פעילה. האיכות הולכת אחרי pressure history, heat pulse וקירור איטי, לא אחרי ברק הדגימה.
 
 ## Terminal
 
-HE LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: vent forges מבשלים sulfides, noble-gas pockets, ceramics ו-sealant precursors. המסלול של דגימה דרך heat, brine ו-pressure חשוב משמה.
 
 ## Audio
 
-HE LOC HOLD: The vent did not make ore. It made a process you interrupted.
+ה-vent לא יצר עפרה. הוא יצר תהליך שאתה קטעת.
 
 ## Field Note
 
-HE LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+אל תרים מנה טרייה ישר למים קרים. תן ל-vent לסיים anneal או שה-shell ייסדק.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/he_IL. -->

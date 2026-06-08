@@ -9,32 +9,26 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Black Keel索赔窗口"
+title: "Black Keel索赔窗口"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Black Keel索赔窗口
+# Black Keel索赔窗口
 
-ZH LOC HOLD: Black Keel能先听到信号，却不能立刻吊起身体。在Aegir，航母回应是穿过中继几何、天气、隔离审查、载荷接收和质量回收的计价通道。联系是路线事实。救援是完成的链条。
+## 接收不是吊升
 
-## Scanner
+Black Keel 能先听到信号，却不能立刻吊起身体。这个差值就是索赔窗口。
 
-ZH LOC HOLD: 索赔窗口 // Aegir中继只预测接收窗口。回收需要上升包、隔离握手和tonne-window分配。
+在 Aegir，carrier 回应不是救援承诺。它是一条定时通道，穿过中继几何、天气、隔离审查、载荷接收和质量回收。同一个窗口为货物、证据、氧气债和操作员状态计价，因为离开 HECTON-8 的每一千克都消耗同一次轨道机会。
 
-## Terminal
+Keelmark Mutual 把窗口记作保管时间。Black Keel 记录为接收已确认、吊升待定。如果优先级语言有效，Deep Reach 条款仍能把样本、坐标包或隔离扣留排在操作员之前。
 
-ZH LOC HOLD: KEELMARK保管通知 // 操作员信号已收到。回收优先级未解决。收到信号或证据包不保证操作员回收。
+P-63 很早就让这条规则可见。中继板可以显示干净确认，而 bathydrop 仍没有上升包、隔离握手或已分配的 tonne-window。carrier 知道操作员还活着。它能向操作员计费。它能给数据包标价。它仍不能无视 HECTON-8 的压力、Aegir 的时机和合同顺序。
 
-## Audio
-
-ZH LOC HOLD: Black Keel中继：操作员信号已计价。回收窗口待定。不要把接收当成吊升。
-
-## Field Note
-
-ZH LOC HOLD: Black Keel回应时，先数账单，别当成救援。收到的数据包只是队列里的位置，直到质量、封签、隔离和天气一致。
+联系是路线事实。救援是完成的链条。
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/zh_CN. -->

@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Aegir Primary Light and Radiation"
+title: "Aegir-Primärlicht und Strahlung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Aegir Primary Light and Radiation
+# Aegir-Primärlicht und Strahlung
 
-DE LOC HOLD: The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+Aegirs Primärstern ist ein stabiler K-Stern, warm genug für bernsteinfarbenes Arbeitslicht und ruhig genug für lange Infrastrukturpläne. Die Gefahr kommt von der Magnetosphäre des Gasriesen. Gürtel, geladene Bahnen, Mondschatten und Sturmrauschen machen Reisen zu Strahlungsfenstern statt zu einfacher Entfernung.
 
 ## Scanner
 
-DE LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+Sternkarte. Ein warmer K-Zwerg gibt Aegir lesbaren Himmel; die Gürtel des Riesen machen jede Schildwertung zum Fahrplan.
 
 ## Terminal
 
-DE LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+RAN-STERNKARTE A-346: Primärausgabe bleibt innerhalb der Arbeitstoleranzen der Kolonie. Aegirs Magnetosphäre härtet die inneren Bahnen zweimal pro Rotation; billige Hüllen warten, bezahlte Carrier brennen hindurch.
 
 ## Audio
 
-DE LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+Es gibt genug Licht zum Lesen. Das machte den Himmel nie freundlich.
 
 ## Field Note
 
-DE LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir hat Tageslicht. Deshalb hat jede billige Dichtung und jeder späte Burn trotzdem einen Preis.
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/de_DE. -->

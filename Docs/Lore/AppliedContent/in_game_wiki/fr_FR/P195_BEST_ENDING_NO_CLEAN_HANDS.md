@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "Meilleure fin : pas de mains propres"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# Meilleure fin : pas de mains propres
 
-FR LOC HOLD: No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.
+Pas de mains propres est la règle de ton final. HECTON-8 récompense compréhension, préparation et travail de témoin, pas pureté. La meilleure fin doit faire sentir au joueur sa compétence et son implication en même temps.
 
 ## Scanner
 
-FR LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
+La meilleure fin doit sauver quelque chose de réel sans prétendre que l'innocence a survécu à la descente.
 
 ## Terminal
 
-FR LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
+RÈGLE PAS DE MAINS PROPRES : la meilleure fin connue exige agency, preuve, conséquence et résidu. Si chaque partie blessée est satisfaite, la fin a oublié HECTON-8.
 
 ## Audio
 
-FR LOC HOLD: If it feels clean, it forgot where you are.
+Si cela paraît propre, cela a oublié où tu es.
 
 ## Field Note
 
-FR LOC HOLD: A strong ending lets the player save something real and lose something real.
+Une route forte peut révéler la vérité, refuser Deep Reach, préserver une part de l'écologie et libérer le joueur, mais le coût doit rester visible.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/fr_FR. -->

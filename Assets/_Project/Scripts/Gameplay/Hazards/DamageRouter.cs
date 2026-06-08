@@ -38,6 +38,7 @@ namespace Hecton8.Gameplay
         private const int PacketAlignmentBytes = 8;
         private const int CanonicalDamagePacketAlignmentBytes = 8;
         private const byte IntegrityDamageChannel = (byte)Hecton8.Core.DamageChannel.Integrity;
+        private const float DefaultSeaLevelY = 14.02f;
 #if UNITY_EDITOR
         private const string PacketLayoutError = "Damage packet layout violation. Expected DamageRouterPacket=64 bytes and DamagePacket=48 bytes, both 8-byte aligned.";
 #endif
@@ -225,7 +226,7 @@ namespace Hecton8.Gameplay
 
         private static float ResolveDepthMeters(Vector3 impactPointWorld)
         {
-            return IsFinite(impactPointWorld.y) ? Mathf.Max(0f, -impactPointWorld.y) : 0f;
+            return IsFinite(impactPointWorld.y) ? Mathf.Max(0f, DefaultSeaLevelY - impactPointWorld.y) : 0f;
         }
 
         private static float3 SanitizeFloat3(float3 value)

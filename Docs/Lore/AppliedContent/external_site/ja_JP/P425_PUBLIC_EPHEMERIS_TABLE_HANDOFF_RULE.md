@@ -8,33 +8,33 @@ biome_tags: biome.authoring;biome.aegir_system
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "JP LOC HOLD: Ephemeris Data Boundary Rule"
+spoiler_tier: 1
+title: "エフェメリスデータ境界規則"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Ephemeris Data Boundary Rule
+# エフェメリスデータ境界規則
 
-JP LOC HOLD: Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.
+公開ページはAegir、HECTON-8、transfer windows、route hazardsを説明できるが、正確なorbital constantsは固定しない。
 
 ## Scanner
 
-JP LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
+データ境界: 散文は帯域を持ち、最終軌道数値は表が持つ。
 
 ## Terminal
 
-JP LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY: 散文は役割、危険、帯域を述べてよい。正確なorbital valuesはnarrative copyに入れない。
 
 ## Audio
 
-JA LOC HOLD: Numbers are allowed when the table owns them.
+数値は表が所有するとき許される。
 
 ## Field Note
 
-JP LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
+Ephemeris recordsは航路論理を説明し、正確な定数はtable-owned dataに残る。
 
 <!-- External Site; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/ja_JP. -->

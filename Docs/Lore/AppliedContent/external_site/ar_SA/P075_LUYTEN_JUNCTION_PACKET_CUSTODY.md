@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "عهدة الحزم في Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# عهدة الحزم في Luyten Junction
 
-AR LOC HOLD: Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing.
+تحول عهدة الحزم في Luyten Junction الاتصال بين النجوم إلى ضغط مسار. لا تملك HECTON-8 قناة إنقاذ فورية، لذلك يجب على كل رسالة أن تنجو من custody والكلفة والتوقيت المداري.
 
 ## Scanner
 
-AR LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+بكرة custody من Luyten. الرسائل لا تسافر مجانا؛ والحقيقة كذلك.
 
 ## Terminal
 
-AR LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+مسار LUYTEN JUNCTION: تم نقل packet custody عبر طابور التعرفة. live command محظور. يمكن شراء أولوية الأدلة تحت emergency claim escrow.
 
 ## Audio
 
-AR LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+لا ansible. لا رحمة. فقط custody وtariff والوقت.
 
 ## Field Note
 
-AR LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+المرحل آلة تقرر أي حزن يحصل على bandwidth.
 
 <!-- External Site; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/ar_SA. -->

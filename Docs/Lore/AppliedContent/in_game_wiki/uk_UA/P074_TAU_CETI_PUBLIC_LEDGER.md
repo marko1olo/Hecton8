@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "Публічний реєстр Tau Ceti"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# Публічний реєстр Tau Ceti
 
-UK LOC HOLD: The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.
+Tau Ceti League дає публічному праву епохи Aegir правдоподібну противагу. Вона важлива для custody доказів і зовнішнього тиску на Deep Reach, але відстань не дозволяє їй у реальному часі витягнути водолаза, замкненого під HECTON-8.
 
 ## Scanner
 
-UK LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+Фрагмент громадянського реєстру Tau Ceti. Досить публічний, щоб лякати Deep Reach, надто запізнілий, щоб урятувати колонію.
 
 ## Terminal
 
-UK LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+ДЗЕРКАЛО РЕЄСТРУ TAU CETI: запечатані докази прийнятні після relay-автентифікації. Очікуване вікно публічного перегляду перевищує місцевий інтервал виживання на 31.4 року.
 
 ## Audio
 
-UK LOC HOLD: A court can be honest and useless when light itself is late.
+Суд може бути чесним і марним, коли саме світло запізнюється.
 
 ## Field Note
 
-UK LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+Нагляд може прийти чистим і пізнім. Пізно - це все одно мертво.
 
 <!-- In-Game Wiki; generated from P074_TAU_CETI_PUBLIC_LEDGER/uk_UA. -->

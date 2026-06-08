@@ -9,32 +9,35 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Professional Guilt To Personal Stake"
+title: "Від професійної провини до особистої ставки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Professional Guilt To Personal Stake
+# Від професійної провини до особистої ставки
 
-UK LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.
+Мотив протагоніста виростає з експертизи у відповідальність. HECTON-8 уникає нав’язаної родинної мелодрами: колишній працівник Deep Reach переймається, бо розуміє процедурну машину, яка зробила залишення людей схожим на завершену справу.
 
 ## Scanner
 
-UK LOC HOLD: Signature match. The form language is old. The names are new.
+Візерунок підпису збігається зі старим кешем процедур. Імена змінилися. Кімната відмовила тим самим способом. Компетенція більше не є дистанцією.
 
 ## Terminal
 
-UK LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+ПІДСУМОК ДОСЬЄ / ПРОФЕСІЙНА СТАВКА
+докази-тригери: упізнання процедури, знайдені мітки працівників, конфлікт приймача претензії
+виключений мотив: родинний зв’язок, лінія помсти, статус обраного свідка
+активний мотив: колишній системний працівник упізнає відвернене залишення і досі може читати машину, яка його оформила.
 
 ## Audio
 
-UK LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+Ти прийшов по претензію. Залишився, бо папери знали твої руки.
 
 ## Field Note
 
-UK LOC HOLD: Use near late dossier and final payload route.
+Не твій підпис. Але твій фах. Тому кімната не замовкне.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/uk_UA. -->

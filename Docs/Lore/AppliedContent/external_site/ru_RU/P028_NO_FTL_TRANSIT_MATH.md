@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Математика полета без FTL
 
-No-FTL Transit Math превращает межзвездную дистанцию в давление gameplay: задержанные приказы, устаревшая власть и физические окна побега.
+No-FTL Transit Math превращает межзвездную дистанцию в давление: задержанные приказы, устаревшая власть, custody-задержки и физические окна выхода.
 
 ## Scanner
 

@@ -901,7 +901,9 @@ namespace Hecton8.World
         private bool _dynamicTextureRefreshIncrementRevision;
         private bool _registeredHotSwap;
         private bool _saveRegistered;
+        private bool _runtimeRoutesRetiredAfterOwnershipLoss;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private int _editorValidateDepth;
         private int _cachedRenderLayer;
         private bool _hasFieldData;
@@ -1031,6 +1033,9 @@ namespace Hecton8.World
         /// <returns>True when the event was accepted or no listeners are registered; false when the fixed event lane is full.</returns>
         public static bool TryRaiseEntanglementStrain(EntanglementStrainSignal signal)
         {
+            if (!IsFiniteEntanglementStrainSignal(in signal))
+                return false;
+
             if (_listenerCount <= 0)
                 return true;
 
@@ -1069,6 +1074,9 @@ namespace Hecton8.World
         /// <returns>True when the event was accepted or no listeners are registered; false when the fixed event lane is full.</returns>
         public static bool TryRaiseMassiveDisplacement(MassiveDisplacementSignal signal)
         {
+            if (!IsFiniteMassiveDisplacementSignal(in signal))
+                return false;
+
             if (_listenerCount <= 0)
                 return true;
 
@@ -1260,12 +1268,28 @@ namespace Hecton8.World
 
         private static void DispatchEntanglementStrainToListener(ISargassumGlobalDragEventListener listener, in EntanglementStrainSignal signal)
         {
-            listener.OnSargassumEntanglementStrain(in signal);
+            try
+            {
+                listener.OnSargassumEntanglementStrain(in signal);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
         }
 
         private static void DispatchMassiveDisplacementToListener(ISargassumGlobalDragEventListener listener, in MassiveDisplacementSignal signal)
         {
-            listener.OnSargassumMassiveDisplacement(in signal);
+            try
+            {
+                listener.OnSargassumMassiveDisplacement(in signal);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1532,15 +1556,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            SargassumGlobalDragManager registered = GlobalRegistry.SargassumDrag;
-            if (registered != null && registered != this)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[SargassumGlobalDragManager] Duplicate instance detected. Destroying the newer component.", this);
-#endif
-                Destroy(this);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             TryRegisterService();
             CacheDataVaultCold();
@@ -1560,12 +1577,19 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             RefreshRenderLayerCache();
             if (!Application.isPlaying)
             {
                 SanitizeSettings();
                 return;
             }
+
+            TryRegisterService();
+            if (!_serviceRegistered)
+                return;
 
             ResolveActiveNestingPrototypes();
             RefreshColdRegistryDependencies();
@@ -1574,8 +1598,8 @@ namespace Hecton8.World
             EnsureScavengerRenderResources();
             HectonFloatingOrigin.RegisterListener(this);
             PublishShaderGlobals();
-            TryRegisterService();
             TryRegister();
+            _runtimeRoutesRetiredAfterOwnershipLoss = false;
         }
 
         private void OnDisable()
@@ -1637,6 +1661,10 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            float nestedRenderDeltaTime = math.isfinite(_pendingNestedRenderDeltaTime)
+                ? math.max(0f, _pendingNestedRenderDeltaTime)
+                : 0f;
+
             if (!HasVisualResourcesReadyForLateFrame())
                 _visualResourceRepairRequested = true;
 
@@ -1682,11 +1710,11 @@ namespace Hecton8.World
             if (_nestedRenderRequested && HasVisualResourcesReadyForLateFrame())
             {
                 if (HasScavengerRenderResourcesReady())
-                    UpdateScavengerHosts(_pendingNestedRenderDeltaTime);
+                    UpdateScavengerHosts(nestedRenderDeltaTime);
                 else
                     ClearScavengerPresentationState();
 
-                RenderNestedAttachmentsAndScavengers(_pendingNestedRenderDeltaTime);
+                RenderNestedAttachmentsAndScavengers(nestedRenderDeltaTime);
                 _nestedRenderRequested = false;
             }
             else if (_nestedRenderRequested)
@@ -1715,10 +1743,17 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !IsFiniteVector3(shiftOffset) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
-            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
+            ApplyRuntimeOffsetToCachedState(-shiftOffset);
         }
 
         /// <summary>
@@ -1727,6 +1762,7 @@ namespace Hecton8.World
         /// <param name="dt">Frame delta supplied by GameTickManager.</param>
         public void Tick(float dt)
         {
+            dt = math.isfinite(dt) ? math.max(0f, dt) : 0f;
             bool texturesChanged = UpdateDisruptionZones(dt);
             if (texturesChanged)
             {
@@ -1850,9 +1886,22 @@ namespace Hecton8.World
         /// <param name="duration">Lifetime of the tear cue in seconds.</param>
         public void RegisterMassiveDisplacement(Vector3 position, float radius, float duration)
         {
+            if (!IsFiniteVector3(position) ||
+                !math.isfinite(radius) ||
+                !math.isfinite(duration))
+            {
+                return;
+            }
+
             float clampedRadius = Mathf.Max(1f, radius);
             float clampedDuration = Mathf.Max(0.25f, duration);
             float extremePanicRadius = Mathf.Max(massiveDisplacementExtremePanicRadius, clampedRadius * 3f);
+            if (!math.isfinite(clampedRadius) ||
+                !math.isfinite(clampedDuration) ||
+                !math.isfinite(extremePanicRadius))
+            {
+                return;
+            }
 
             RegisterOrReinforceDisruptionZone(
                 position - _globalDriftOffset,
@@ -1904,8 +1953,17 @@ namespace Hecton8.World
             sample = default;
             sample.SpeedMultiplier = 1f;
             sample.DragMultiplier = 1f;
-            sample.AnchorWS = positionWS;
             sample.Window01 = 1f;
+
+            if (!IsFiniteVector3(positionWS) ||
+                !math.isfinite(radius) ||
+                !IsFiniteVector3(movementVelocityWS) ||
+                !math.isfinite(currentSpeed))
+            {
+                return false;
+            }
+
+            sample.AnchorWS = positionWS;
 
             if (!_hasFieldData || _densityCells.Count == 0)
                 return false;
@@ -2360,11 +2418,21 @@ namespace Hecton8.World
                 return false;
 
             bool changed = false;
-            float deltaTime = math.max(0f, dt);
+            float deltaTime = math.isfinite(dt) ? math.max(0f, dt) : 0f;
             int index = 0;
             while (index < _activeDisruptionZoneCount)
             {
                 DisruptionZoneState zone = _disruptionZones[index];
+                if (!IsFiniteDisruptionZone(in zone))
+                {
+                    int lastIndex = _activeDisruptionZoneCount - 1;
+                    _disruptionZones[index] = _disruptionZones[lastIndex];
+                    _disruptionZones[lastIndex] = default;
+                    _activeDisruptionZoneCount = lastIndex;
+                    changed = true;
+                    continue;
+                }
+
                 float previousStrength01 = EvaluateDisruptionZone01(zone);
                 zone.Age += deltaTime;
 
@@ -2447,6 +2515,17 @@ namespace Hecton8.World
             float fadeDuration,
             DisruptionZoneMode mode)
         {
+            if (!IsFiniteVector3(sampleSpaceCenterWS) ||
+                !math.isfinite(radiusWS) ||
+                !math.isfinite(strength01) ||
+                !math.isfinite(sinkDepthWS) ||
+                !math.isfinite(rampDuration) ||
+                !math.isfinite(holdDuration) ||
+                !math.isfinite(fadeDuration))
+            {
+                return -1;
+            }
+
             EnsureDisruptionStorage();
 
             float clampedRadius = Mathf.Max(cellSize * 0.5f, radiusWS);
@@ -2454,6 +2533,15 @@ namespace Hecton8.World
             float clampedRamp = Mathf.Max(0.01f, rampDuration);
             float clampedHold = Mathf.Max(0f, holdDuration);
             float clampedFade = Mathf.Max(0f, fadeDuration);
+            if (!math.isfinite(clampedRadius) ||
+                !math.isfinite(clampedStrength) ||
+                !math.isfinite(clampedRamp) ||
+                !math.isfinite(clampedHold) ||
+                !math.isfinite(clampedFade))
+            {
+                return -1;
+            }
+
             int zoneIndex = FindMatchingDisruptionZoneIndex(sampleSpaceCenterWS, clampedRadius, mode);
 
             if (zoneIndex < 0)
@@ -2533,8 +2621,7 @@ namespace Hecton8.World
             if (accumulatedCutAreaWS < catastrophicAreaThreshold)
                 return;
 
-            IObjectPoolService poolManager = _objectPoolService;
-            if (poolManager == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService poolManager))
                 return;
 
             DisruptionZoneState zone = _disruptionZones[zoneIndex];
@@ -2613,8 +2700,7 @@ namespace Hecton8.World
                 return;
             }
 
-            IObjectPoolService poolManager = _objectPoolService;
-            if (poolManager == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService poolManager))
                 return;
 
             float severity01 = Mathf.Clamp01((impactSpeedSq - thresholdSq) / Mathf.Max(thresholdSq, 0.001f));
@@ -2696,13 +2782,20 @@ namespace Hecton8.World
         private DisruptionSample SampleDisruptionNoDrift(Vector3 sampledPositionWS)
         {
             DisruptionSample sample = default;
-            if (_disruptionZones == null || _activeDisruptionZoneCount <= 0)
+            if (!IsFiniteVector3(sampledPositionWS) ||
+                _disruptionZones == null ||
+                _activeDisruptionZoneCount <= 0)
+            {
                 return sample;
+            }
 
             Vector2 sampleXZ = new Vector2(sampledPositionWS.x, sampledPositionWS.z);
             for (int i = 0; i < _activeDisruptionZoneCount; i++)
             {
                 DisruptionZoneState zone = _disruptionZones[i];
+                if (!IsFiniteDisruptionZone(in zone))
+                    continue;
+
                 float zone01 = EvaluateDisruptionZone01(zone);
                 if (zone01 <= 0f || zone.RadiusWS <= 0f)
                     continue;
@@ -2969,6 +3062,10 @@ namespace Hecton8.World
             if (!HasAuthoredScavengerRenderAssets())
                 return false;
 
+            Vector3 anchorWS = chunk.GetScavengerAnchorWS();
+            if (!IsFiniteVector3(anchorWS))
+                return false;
+
             EnsureScavengerStorage();
 
             for (int i = 0; i < _activeScavengerHostCount; i++)
@@ -2984,7 +3081,7 @@ namespace Hecton8.World
             _scavengerHosts[slot] = new ScavengerHostState
             {
                 Chunk = chunk,
-                AnchorWS = chunk.GetScavengerAnchorWS(),
+                AnchorWS = anchorWS,
                 SettledTime = 0f,
                 Consumed01 = 0f,
                 Seed = unchecked((uint)EntityId.ToULong(chunk.GetEntityId())) ^ NestingHashSeed
@@ -3003,7 +3100,12 @@ namespace Hecton8.World
                 if (_scavengerHosts[i].Chunk != chunk)
                     continue;
 
-                _scavengerHosts[i].Chunk = null;
+                int lastIndex = _activeScavengerHostCount - 1;
+                if (i < lastIndex)
+                    _scavengerHosts[i] = _scavengerHosts[lastIndex];
+
+                _scavengerHosts[lastIndex] = default;
+                _activeScavengerHostCount = lastIndex;
                 return;
             }
         }
@@ -3013,12 +3115,20 @@ namespace Hecton8.World
             if (!HasAuthoredScavengerRenderAssets())
                 return;
 
+            if (!IsFiniteVector3(anchorWS) || !math.isfinite(radiusWS))
+            {
+                return;
+            }
+
             EnsureScavengerStorage();
             if (_externalScavengerSites == null || _externalScavengerSites.Length == 0)
                 return;
 
             float clampedRadius = Mathf.Clamp(radiusWS, 0.2f, scavengerOrbitRadius * 3f);
             float clampedDuration = duration > 0f ? duration : externalScavengerSiteDuration;
+            if (!math.isfinite(clampedRadius) || !math.isfinite(clampedDuration))
+                return;
+
             int targetIndex = -1;
             float weakestRemaining = float.MaxValue;
 
@@ -3473,7 +3583,7 @@ namespace Hecton8.World
             bool boundsInitialized = false;
             Vector3 boundsMin = default;
             Vector3 boundsMax = default;
-            float safeDeltaTime = math.max(0f, dt);
+            float safeDeltaTime = math.isfinite(dt) ? math.max(0f, dt) : 0f;
             float consumeDurationInv = 1f / math.max(0.1f, scavengerConsumeDuration);
             float externalSiteDurationInv = 1f / math.max(0.1f, externalScavengerSiteDuration);
             int maxScavengersPerHost = ResolveActiveScavengersPerHost();
@@ -3925,7 +4035,7 @@ namespace Hecton8.World
             bool boundsInitialized = false;
             Vector3 boundsMin = default;
             Vector3 boundsMax = default;
-            float safeDeltaTime = math.max(0f, dt);
+            float safeDeltaTime = math.isfinite(dt) ? math.max(0f, dt) : 0f;
             int totalVisible = 0;
 
             for (int stateIndex = 0; stateIndex < _activeNestedAttachmentStateCount; stateIndex++)
@@ -4126,6 +4236,9 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
+            if (Application.isPlaying && !_serviceRegistered)
+                return;
+
             TryRegisterSaveOwner();
 
             if (!Application.isPlaying)
@@ -4158,8 +4271,7 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            SargassumGlobalDragManager registered = GlobalRegistry.SargassumDrag;
-            if (registered != null && registered != this)
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             GlobalRegistry.RegisterSargassumDragRuntime(this);
@@ -4173,10 +4285,123 @@ namespace Hecton8.World
             if (!_serviceRegistered)
                 return;
 
-            GlobalRegistry.UnregisterSargassumDragRuntime(this);
-            _serviceRegistered = false;
             if (ReferenceEquals(s_activeRuntimeInstance, this))
                 s_activeRuntimeInstance = null;
+            _serviceRegistered = false;
+
+            if (ReferenceEquals(GlobalRegistry.SargassumDrag, this))
+                GlobalRegistry.UnregisterSargassumDragRuntime(this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            SargassumGlobalDragManager registered = GlobalRegistry.SargassumDrag;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsSargassumDragRuntimeUsable(registered))
+                {
+                    s_activeRuntimeInstance = registered;
+                    Destroy(this);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+                GlobalRegistry.UnregisterSargassumDragRuntime(registered);
+            }
+
+            SargassumGlobalDragManager active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsSargassumDragRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterSargassumDragRuntime(active);
+                s_activeRuntimeInstance = active;
+                Destroy(this);
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeRuntimeInstance, active))
+                s_activeRuntimeInstance = null;
+            GlobalRegistry.UnregisterSargassumDragRuntime(active);
+
+            return false;
+        }
+
+        private static bool IsSargassumDragRuntimeUsable(SargassumGlobalDragManager manager)
+        {
+            return manager != null && manager._serviceRegistered && manager.isActiveAndEnabled;
+        }
+
+        private void ReconcileRuntimeOwnerFromRegistryReplacement(object previousService, object currentService)
+        {
+            if (currentService is SargassumGlobalDragManager currentRuntime)
+            {
+                s_activeRuntimeInstance = currentRuntime;
+                bool ownsRuntime = ReferenceEquals(currentRuntime, this);
+                _serviceRegistered = ownsRuntime;
+                if (ownsRuntime)
+                {
+                    if (_runtimeRoutesRetiredAfterOwnershipLoss)
+                        RestoreRuntimeRoutesAfterOwnershipGain();
+                    return;
+                }
+
+                if (ReferenceEquals(previousService, this))
+                    RetireRuntimeRoutesAfterOwnershipLoss();
+                return;
+            }
+
+            if (ReferenceEquals(previousService, this))
+            {
+                _serviceRegistered = false;
+                if (ReferenceEquals(s_activeRuntimeInstance, this))
+                    s_activeRuntimeInstance = null;
+                RetireRuntimeRoutesAfterOwnershipLoss();
+            }
+        }
+
+        private void RetireRuntimeRoutesAfterOwnershipLoss()
+        {
+            if (_runtimeRoutesRetiredAfterOwnershipLoss)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _cutManager = null;
+            TryUnregisterSaveOwner();
+            _saveService = null;
+
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+
+            _runtimeRoutesRetiredAfterOwnershipLoss = true;
+        }
+
+        private void RestoreRuntimeRoutesAfterOwnershipGain()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            RefreshColdRegistryDependencies();
+            HectonFloatingOrigin.RegisterListener(this);
+            TryRegister();
+            _runtimeRoutesRetiredAfterOwnershipLoss = false;
         }
 
         private void TryUnregister()
@@ -4216,27 +4441,29 @@ namespace Hecton8.World
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.SargassumDragRuntime:
+                    ReconcileRuntimeOwnerFromRegistryReplacement(previousService, currentService);
+                    break;
                 case GlobalRegistryServiceSlot.SargassumCutRuntime:
                     _cutManager = currentService as SargassumCutManager;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref _cutManager);
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    if (_saveRegistered && previousService is ISaveService previousSave)
-                        previousSave.Unregister(this);
-
-                    _saveRegistered = false;
+                    TryUnregisterSaveOwner();
                     _saveService = currentService as ISaveService;
 
-                    if (Application.isPlaying && isActiveAndEnabled)
+                    if (Application.isPlaying && isActiveAndEnabled && _serviceRegistered)
                         TryRegisterSaveOwner();
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPoolService = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _physicsService = currentService as IPhysicsService;
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     mapMagicVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref mapMagicVegetationBridge);
                     _nestedAttachmentRebuildRequested = true;
                     _dynamicTextureRefreshRequested = true;
                     _dynamicTextureRefreshIncrementRevision = true;
@@ -4251,32 +4478,88 @@ namespace Hecton8.World
         private void RefreshColdRegistryDependencies()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _cutManager = GlobalRegistry.SargassumCut;
-            _objectPoolService = GlobalRegistry.ObjectPoolService;
+            WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref _cutManager);
+            CacheObjectPoolService(null);
             _physicsService = GlobalRegistry.Physics;
-            mapMagicVegetationBridge = GlobalRegistry.MapMagicVegetation;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref mapMagicVegetationBridge);
             _saveService = GlobalRegistry.Save;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPoolService = pool;
+                return;
+            }
+
+            _objectPoolService = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPoolService as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPoolService = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPoolService = null;
+            pool = null;
+            return false;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryRegisterSaveOwner()
         {
-            if (!Application.isPlaying || _saveRegistered)
+            if (!Application.isPlaying ||
+                _saveRegistered ||
+                !_serviceRegistered ||
+                !ReferenceEquals(s_activeRuntimeInstance, this))
+            {
                 return;
+            }
 
             ISaveService saveService = _saveService;
-            if (saveService == null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveOwner()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            _saveService?.Unregister(this);
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
             _saveRegistered = false;
         }
 
@@ -4440,6 +4723,54 @@ namespace Hecton8.World
         {
             float magnitudeSq = vector.sqrMagnitude;
             return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
+        private static bool IsFiniteMassiveDisplacementSignal(in MassiveDisplacementSignal signal)
+        {
+            return IsFiniteVector3(signal.PositionWS) &&
+                   math.isfinite(signal.RadiusWS) &&
+                   math.isfinite(signal.Duration) &&
+                   math.isfinite(signal.ExtremePanicRadiusWS) &&
+                   signal.RadiusWS > 0.001f &&
+                   signal.Duration > 0.001f &&
+                   signal.ExtremePanicRadiusWS > 0.001f;
+        }
+
+        private static bool IsFiniteEntanglementStrainSignal(in EntanglementStrainSignal signal)
+        {
+            return IsFiniteVector3(signal.PositionWS) &&
+                   IsFiniteVector3(signal.AnchorWS) &&
+                   math.isfinite(signal.Tension01) &&
+                   math.isfinite(signal.EscapeIntent01) &&
+                   math.isfinite(signal.Shake01) &&
+                   signal.Tension01 >= 0f &&
+                   signal.EscapeIntent01 >= 0f &&
+                   signal.Shake01 >= 0f;
+        }
+
+        private static bool IsFiniteDisruptionZone(in DisruptionZoneState zone)
+        {
+            return (zone.Mode == (byte)DisruptionZoneMode.CutCollapse ||
+                    zone.Mode == (byte)DisruptionZoneMode.MassiveDisplacement) &&
+                   IsFiniteVector3(zone.SampleSpaceCenterWS) &&
+                   math.isfinite(zone.RadiusWS) &&
+                   math.isfinite(zone.Strength01) &&
+                   math.isfinite(zone.SinkDepthWS) &&
+                   math.isfinite(zone.RampDuration) &&
+                   math.isfinite(zone.HoldDuration) &&
+                   math.isfinite(zone.FadeDuration) &&
+                   math.isfinite(zone.Age) &&
+                   zone.RadiusWS > 0f &&
+                   zone.Strength01 >= 0f &&
+                   zone.SinkDepthWS >= 0f &&
+                   zone.RampDuration > 0f &&
+                   zone.HoldDuration >= 0f &&
+                   zone.FadeDuration >= 0f;
         }
 
         private static void EncapsulateRadius(Vector3 center, float radius, ref Vector3 boundsMin, ref Vector3 boundsMax, ref bool boundsInitialized)
@@ -4945,8 +5276,12 @@ namespace Hecton8.World
             float maxSinkDepthWS = 0f;
             for (int i = 0; i < _activeDisruptionZoneCount; i++)
             {
-                if (_disruptionZones[i].SinkDepthWS > maxSinkDepthWS)
-                    maxSinkDepthWS = _disruptionZones[i].SinkDepthWS;
+                DisruptionZoneState zone = _disruptionZones[i];
+                if (!IsFiniteDisruptionZone(in zone))
+                    continue;
+
+                if (zone.SinkDepthWS > maxSinkDepthWS)
+                    maxSinkDepthWS = zone.SinkDepthWS;
             }
 
             return maxSinkDepthWS;

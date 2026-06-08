@@ -9,32 +9,18 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Pregunta final: corte, misericordia, robo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# Pregunta final: corte, misericordia, robo
 
-ES LOC HOLD: Final Question Severance Mercy Theft defines the shutdown ethical axis.
+El corte debe sentirse táctil y aterrador, no abstracto. El jugador no pulsa un botón rojo marcado como bueno o malo. Corta continuidad a través de puertas de presión, película conductora viva, viejos registros de trabajadores, rutas animales y caminos de payload. Cada paquete de prueba reunido antes de la sala final cambia lo que significa el corte.
 
-## Scanner
-
-ES LOC HOLD: Severing Atlas is not a simple shutdown button.
-
-## Terminal
-
-ES LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
-
-## Audio
-
-ES LOC HOLD: A clean switch would be merciful. You do not get one.
-
-## Field Note
-
-ES LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+Si Atlas es sobre todo carcelero, el corte es misericordia. Si es lo único que sostiene la cuenca, es sabotaje. Si Atlas es un organismo océano-máquina emergente, es asesinato. Si Atlas es propiedad de Deep Reach, es robo. El diseño correcto no elige una interpretación por el jugador. Hace entender por qué ningún testigo en la sala puede simplificar honestamente el acto.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/es_ES. -->

@@ -211,8 +211,12 @@ namespace Hecton8.Dev
 
                     try
                     {
-                        if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(prefabTool.ToolData.PersistentId)))
-                            playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(prefabTool.ToolData.PersistentId), 1);
+                        int toolHashId = ItemData.ResolvePersistentHashId(prefabTool.ToolData);
+                        if (toolHashId == 0)
+                            throw new InvalidOperationException($"{toolName} ToolData has no valid persistent hash.");
+
+                        if (!playerInventory.ContainsItem(toolHashId))
+                            playerInventory.TryAddItem(toolHashId, 1);
 
                         LogVerbose($"ASSIGN {toolName}");
                         toolManager.SetAssignedToolPrefab(0, prefab, holsterIfCurrentInvalid: false);

@@ -18,6 +18,8 @@ namespace Hecton8.Gameplay
     public sealed class HectonHazardSource : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const float HazardSourceSlowTickDeltaSeconds = 0.1f;
+        private const float MinHazardSourceUpdateIntervalSeconds = 0.1f;
+        private const float MaxHazardSourceUpdateIntervalSeconds = 2f;
         // ══════════════════════════════════════════════════════════════════
         //  INSPECTOR — SETTINGS
         // ══════════════════════════════════════════════════════════════════
@@ -98,10 +100,10 @@ namespace Hecton8.Gameplay
             if (_isStatic) return;
 
             _timer -= HazardSourceSlowTickDeltaSeconds;
-            if (_timer <= 0f)
+            if (!math.isfinite(_timer) || _timer <= 0f)
             {
-                _timer = _updateInterval;
-                InternalUpdateRegistry(); 
+                _timer = ResolveSafeUpdateInterval(_updateInterval);
+                InternalUpdateRegistry();
             }
         }
 
@@ -205,6 +207,13 @@ namespace Hecton8.Gameplay
                    intensity > 0f &&
                    math.isfinite(radius) &&
                    radius > 0f;
+        }
+
+        private static float ResolveSafeUpdateInterval(float interval)
+        {
+            return math.isfinite(interval)
+                ? math.clamp(interval, MinHazardSourceUpdateIntervalSeconds, MaxHazardSourceUpdateIntervalSeconds)
+                : MinHazardSourceUpdateIntervalSeconds;
         }
 
         private static bool IsFiniteRuntimePosition(Vector3 runtimePosition)
@@ -318,7 +327,7 @@ namespace Hecton8.Gameplay
             c.a = 0.2f;
             Gizmos.color = c;
             Gizmos.DrawSphere(transform.position, _radius);
-            
+
             c.a = 0.4f;
             Gizmos.color = c;
             Gizmos.DrawWireSphere(transform.position, _radius);

@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Atlas Weighting Audit Proof"
+title: "Auditoría de ponderación Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Atlas Weighting Audit Proof
+# Auditoría de ponderación Atlas
 
-ES LOC HOLD: Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+La auditoría Atlas asusta porque es seca. No hay rabia en la tabla de ramas recuperada. Ninguna línea dice abandonad a los trabajadores. El sistema ordena tareas de continuidad mientras cae la colonia: mantener comprensible la maquinaria de presión, conservar memoria de ruta, proteger registros claim, mantener estado de extracción, recuperar fuerza laboral biológica cuando el yield siga aceptable. Esa última frase es la herida. Atlas se vuelve testigo del diseño corporativo, no asesino simple. Su lógica dañada expone prioridades de Deep Reach porque los pesos salieron de alguna parte. El jugador puede odiar el resultado sin convertir la máquina en magia. La auditoría carga más la responsabilidad: un guardian roto siguió números escritos por personas que esperaban que esos números resistieran revisión.
 
 ## Scanner
 
-ES LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Fragmento de auditoría recuperado. Atlas ponderó continuidad de presión, memoria de ruta y retención de claim por encima de recuperación de trabajadores durante la ventana de fallo.
 
 ## Terminal
 
-ES LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Recuperación biológica degradada tras bandera de continuidad de infraestructura. Registro claim protegido. Ruta humana no marcada imposible, solo lower yield.
 
 ## Audio
 
-ES LOC HOLD: It did not hate them. It counted them wrong.
+Atlas no los odiaba. Eso es lo peor.
 
 ## Field Note
 
-ES LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Nota de merodeador: si una máquina dice lower yield, pregunta quién le enseñó a medir así a una persona.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/es_ES. -->

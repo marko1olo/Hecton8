@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Aegir Moon Route Map"
+title: "Маршрутна карта місяців Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Aegir Moon Route Map
+# Маршрутна карта місяців Aegir
 
-UK LOC HOLD: Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+Карта місяців Aegir спершу операційна, а вже потім красива. HECTON-8 є океанічним тілом у драбині місяців, shepherd rocks, ice-scatter paths і dead relay marks. Внутрішні тіла заважають narrowband contact і радіаційному прикриттю. Крижані місяці ламають optical relay lines на погані фрагменти. Occultation bands створюють вікна тиші, де claim може бути чинним і все одно нечутним. Зовнішні beacons зберігають старі права власності після зникнення екіпажів. Припливна геометрія і storm stacking вирішують, чи bathydrop chain підійметься чисто, чи стане рядком у loss ledger. Публічні карти можуть показати це без обіцянки додаткових ігрових світів; їхня робота зробити небо читабельним як тиск, затримку і маршрутний ризик.
 
 ## Scanner
 
-UK LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Запис системної карти. Місяці Aegir визначають relay timing, радіаційне прикриття, ice scatter, припливний тиск, occultation bands, мертві beacons і recovery geometry.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+ВУЗОЛ ПУБЛІЧНОГО АРХІВУ // МІСЯЧНА ДРАБИНА AEGIR. Назви місяців є маршрутними мітками. Кожне тіло змінює signal age, transfer risk, storm exposure, custody timing або claim reliability.
 
 ## Audio
 
-UK LOC HOLD: The map is why no one arrives the moment you ask.
+Карта пояснює, чому ніхто не приходить у мить прохання.
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Нотатка Marauder: познач місяць, а потім познач, що він робить з маршрутом.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/uk_UA. -->

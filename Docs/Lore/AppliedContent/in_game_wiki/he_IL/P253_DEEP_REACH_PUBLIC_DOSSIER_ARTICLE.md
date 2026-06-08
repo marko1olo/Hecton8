@@ -9,32 +9,35 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Deep Reach Public Dossier Article"
+title: "דוסייה ציבורית של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Deep Reach Public Dossier Article
+# דוסייה ציבורית של Deep Reach
 
-HE LOC HOLD: Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.
+Deep Reach צריכה להיקרא כמוסד שבאמת יכול היה לבנות את HECTON-8 לפני שהכשיל אותה. בפומבי היא הייתה development combine: תשתית לחץ, אישור נתיבים, מגורי עובדים, משמורת מסלולית, אקולוגיה תעשייתית, שפת ביטוח וסמכות מקומית ארוזות במכונה אחת. זה מחדד את הפשע המאוחר יותר. Deep Reach לא הייתה אימפריה מצוירת שרצתה להטביע ירח. היא תמחרה tail risk בזול מדי, בנתה פינוי עצמאי בחסר, נתנה לשפת רציפות לגבור על חילוץ, ושמרה מבני תביעה ישנים בחיים בזמן שאנשים עוד היו בתוך חדרים שכשלו. הדוסייה הציבורית יכולה לנקוב בשם החברה ובדפוס הכשל בלי לחשוף כל חתימה. עליה ללמד את השחקן לחשוד בשמות עצם תאגידיים נקיים: release, continuity, welfare, quarantine, route-safe, recoverable. על HECTON-8 המילים האלה מסמנות לעיתים את המקום שבו בעיה אנושית הומרה לבעיית נכס.
 
 ## Scanner
 
-HE LOC HOLD: The public company name is cleaner than its route history.
+שם החברה הציבורי נקי יותר מהיסטוריית הנתיבים שלה. התחל בתשתית. תן לאחריות להופיע דרך החיבורים.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+רמת מאמר ציבורי / DEEP REACH
+מותר: development combine, מפעיל מושבה, סמכות תשתית, בעיית קיבולת פינוי, שפת כשל ציבורית
+נעול: שרשרת חתימות שמית, פנימיות weighting של Atlas, השלכות receiver סופיות
+הערת עורך: קודם מוסד סביר; אחר כך פשע דרך נוהל.
 
 ## Audio
 
-HE LOC HOLD: Never make the villain simpler than the paperwork.
+Deep Reach לא הייתה צריכה להישמע אכזרית. היא רק הייתה צריכה שכל משפט מסוכן יישמע גמור.
 
 ## Field Note
 
-HE LOC HOLD: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+אל תגרום ל-Deep Reach לשרוק. גרום לה לאשר, לדחות, לשמר ולחייב.
 
 <!-- In-Game Wiki; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/he_IL. -->

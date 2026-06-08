@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Drop Capsule Damage Parts"
+title: "أجزاء كبسولة الهبوط المتضررة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Drop Capsule Damage Parts
+# أجزاء كبسولة الهبوط المتضررة
 
-AR LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+أجزاء كبسولة الهبوط المتضررة تزيل من HECTON-8 منطق الإنقاذ السهل. Marauder عالق لأن أنظمة محددة تعطلت: ascent sleeve وguidance gimbal وrelay mast وcompressor وheat tiles. كل عطل يقود إلى طريق أو مادة أو ترقية أداة أو دليل.
 
 ## Scanner
 
-AR LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve ملتوية، guidance gimbal مخدوش، relay mast مقصوص، compressor مسدود، heat tile مشقوقة.
 
 ## Terminal
 
-AR LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-AR LOC HOLD: It landed well enough to strand you properly.
+هبطت جيدا بما يكفي لتتركك عالقا كما يجب.
 
 ## Field Note
 
-AR LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+تستطيع الكبسولة إبقاء Marauder حيا في الساعة الأولى. لكنها لا تغادر بلا قطع بديلة مصنفة للعمق.
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/ar_SA. -->

@@ -69,10 +69,10 @@ namespace Hecton8.Gameplay
             float targetCutRadius)
         {
             cutResponder = responder;
-            speedMultiplier = math.clamp(targetSpeedMultiplier, 0.1f, 1f);
-            dragMultiplier = math.max(1f, targetDragMultiplier);
-            cutSpeedThreshold = math.max(0.1f, targetCutSpeedThreshold);
-            cutRadius = math.max(0.1f, targetCutRadius);
+            speedMultiplier = ResolveSpeedMultiplier(targetSpeedMultiplier);
+            dragMultiplier = ResolveDragMultiplier(targetDragMultiplier);
+            cutSpeedThreshold = ResolveCutSpeedThreshold(targetCutSpeedThreshold);
+            cutRadius = ResolveCutRadius(targetCutRadius);
         }
 
         private void Reset()
@@ -80,6 +80,7 @@ namespace Hecton8.Gameplay
             TryGetComponent(out _triggerCollider);
             if (_triggerCollider != null)
                 _triggerCollider.isTrigger = true;
+            cutRadius = ResolveCutRadius(cutRadius);
             _cachedVolume = CachedTriggerVolume.FromCollider(_triggerCollider, cutRadius);
         }
 
@@ -89,6 +90,10 @@ namespace Hecton8.Gameplay
             TryGetComponent(out _triggerCollider);
             if (_triggerCollider != null)
                 _triggerCollider.isTrigger = true;
+            speedMultiplier = ResolveSpeedMultiplier(speedMultiplier);
+            dragMultiplier = ResolveDragMultiplier(dragMultiplier);
+            cutSpeedThreshold = ResolveCutSpeedThreshold(cutSpeedThreshold);
+            cutRadius = ResolveCutRadius(cutRadius);
             _cachedVolume = CachedTriggerVolume.FromCollider(_triggerCollider, cutRadius);
             RefreshPlayerReferencesCold();
         }
@@ -117,12 +122,26 @@ namespace Hecton8.Gameplay
 
         public void Tick(float deltaTime)
         {
+            float safeSpeedMultiplier = ResolveSpeedMultiplier(speedMultiplier);
+            float safeDragMultiplier = ResolveDragMultiplier(dragMultiplier);
+            speedMultiplier = safeSpeedMultiplier;
+            dragMultiplier = safeDragMultiplier;
+
             Transform playerTransform = _playerTransform;
             SargassumMovementInfluence influence = _playerInfluence;
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
+
             if (playerTransform == null && _playerRuntime != null)
             {
                 playerTransform = _playerRuntime.PlayerTransform;
                 _playerTransform = playerTransform;
+            }
+
+            if (playerTransform != null && !IsFiniteVector3(playerTransform.position))
+            {
+                playerTransform = null;
+                _playerTransform = null;
             }
 
             bool playerInside = playerTransform != null &&
@@ -132,9 +151,9 @@ namespace Hecton8.Gameplay
             if (playerInside)
             {
                 if (_playerInside)
-                    influence.StayZone(speedMultiplier, dragMultiplier);
+                    influence.StayZone(safeSpeedMultiplier, safeDragMultiplier);
                 else
-                    EnterPlayerInfluence(influence);
+                    EnterPlayerInfluence(influence, safeSpeedMultiplier, safeDragMultiplier);
 
                 TryRegisterPlayerCut(playerTransform);
                 return;
@@ -205,6 +224,9 @@ namespace Hecton8.Gameplay
             _playerRuntime = playerContext ?? (useRegistryFallback ? GlobalRegistry.Player : null);
             IPlayerRuntimeContext runtime = _playerRuntime;
             _playerTransform = runtime != null ? runtime.PlayerTransform : null;
+            if (_playerTransform != null && !IsFiniteVector3(_playerTransform.position))
+                _playerTransform = null;
+
             HectonPlayerMovement movement = runtime != null ? runtime.PlayerMovement : null;
             _playerInfluence = null;
             if (movement != null)
@@ -214,10 +236,13 @@ namespace Hecton8.Gameplay
                 _playerTransform.TryGetComponent(out _playerInfluence);
         }
 
-        private void EnterPlayerInfluence(SargassumMovementInfluence influence)
+        private void EnterPlayerInfluence(
+            SargassumMovementInfluence influence,
+            float safeSpeedMultiplier,
+            float safeDragMultiplier)
         {
             _playerInside = true;
-            influence.EnterZone(speedMultiplier, dragMultiplier);
+            influence.EnterZone(safeSpeedMultiplier, safeDragMultiplier);
             _debugInfluencedBodies = 1;
         }
 
@@ -252,15 +277,50 @@ namespace Hecton8.Gameplay
             if (!CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocitySargassumMaxAgeFrames, out Vector3 velocity))
                 return;
 
+            if (!IsFiniteVector3(velocity))
+                return;
+
             float speedSq = velocity.sqrMagnitude;
-            float cutSpeedThresholdSq = cutSpeedThreshold * cutSpeedThreshold;
+            if (!math.isfinite(speedSq) || speedSq <= 0f)
+                return;
+
+            float safeCutSpeedThreshold = ResolveCutSpeedThreshold(cutSpeedThreshold);
+            float cutSpeedThresholdSq = safeCutSpeedThreshold * safeCutSpeedThreshold;
             if (speedSq < cutSpeedThresholdSq)
                 return;
 
             float speed = speedSq * math.rsqrt(speedSq);
             Vector3 contactPoint = _cachedVolume.ResolveSurfacePoint(_cachedTransform, playerTransform.position);
+            if (!math.isfinite(speed) || !IsFiniteVector3(contactPoint))
+                return;
+
             cutResponder.RegisterCut(contactPoint, velocity, speed);
             _lastCutFrame = frame;
+        }
+
+        private static float ResolveSpeedMultiplier(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, 0.1f, 1f) : 0.68f;
+        }
+
+        private static float ResolveDragMultiplier(float value)
+        {
+            return math.isfinite(value) ? math.max(1f, value) : 2.15f;
+        }
+
+        private static float ResolveCutSpeedThreshold(float value)
+        {
+            return math.isfinite(value) ? math.max(0.1f, value) : 3.6f;
+        }
+
+        private static float ResolveCutRadius(float value)
+        {
+            return math.isfinite(value) ? math.max(0.1f, value) : 0.85f;
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
         }
     }
 }

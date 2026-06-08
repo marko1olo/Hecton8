@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Pressure Glass and Sealant Guide"
+title: "Gids voor drukglas en afdichtmiddel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Pressure Glass and Sealant Guide
+# Gids voor drukglas en afdichtmiddel
 
-NL LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.
+De Gids voor drukglas en afdichtmiddel verankert HECTON-8's biomechanische horror in reparatielogica: Atlas volgt scheuren, kabels, biofilms en pressure scars omdat gebroken systemen al paden leveren.
 
 ## Scanner
 
-NL LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+Pressure-glass-breuk verzegeld door Atlas-chemie. Veilige lens stock alleen als de seal map intact blijft.
 
 ## Terminal
 
-NL LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: pressure glass registreert oude tide stress. Atlas sealant volgt die scheuren omdat de scheuren de faallijnen van het systeem al beschrijven.
 
 ## Audio
 
-NL LOC HOLD: The repair network reads fractures the way you read a map.
+Het reparatienetwerk leest breuken zoals jij een kaart leest.
 
 ## Field Note
 
-NL LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+Slijp de mooie rand niet. Volg de fracture map en snijd vanaf de dode kant van de seal.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/nl_NL. -->

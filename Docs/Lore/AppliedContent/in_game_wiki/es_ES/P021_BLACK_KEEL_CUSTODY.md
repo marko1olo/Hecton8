@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Custodia Black Keel
 
-Black Keel no es una nave privada de lujo. Es un carrier de salvamento casi automático sujeto a custodia claim-pool, deuda de seguro y ventanas orbitales.
+Black Keel no es una nave personal de lujo. Es un carrier de salvage casi automatizado que opera mediante custodia de fondo de reclamaciones, deuda de seguros y ventanas orbitales retrasadas. Ofrece una ruta real de vuelta a órbita sin volver el rescate simple ni leal.
 
 ## Scanner
 

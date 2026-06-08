@@ -171,7 +171,7 @@ namespace Hecton8.Audio
         {
             TryResolveDependencies();
 
-            float depthMeters = _survivalSystem != null ? math.max(0f, _survivalSystem.Depth) : 0f;
+            float depthMeters = ResolvePlayerDepthMeters();
             float oxygenNormalized = _survivalSystem != null ? math.saturate(_survivalSystem.OxygenNormalized) : 1f;
             float deepPressure01 = math.saturate(math.unlerp(depthThreshold, depthThreshold + 350f, depthMeters));
             float oxygenDanger01 = oxygenNormalized <= oxygenThreshold
@@ -213,6 +213,31 @@ namespace Hecton8.Audio
                                         ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform);
             _playerMovement = contextMatchesPlayer ? playerContext.PlayerMovement : null;
             _survivalSystem = contextMatchesPlayer ? playerContext.SurvivalSystem : null;
+        }
+
+        private float ResolvePlayerDepthMeters()
+        {
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
+                return 0f;
+
+            HectonPlayerMovement movement = _playerMovement;
+            if (movement != null && math.isfinite(movement.CurrentDepth))
+                return math.max(0f, movement.CurrentDepth);
+
+            HectonSurvivalSystem survival = _survivalSystem;
+            if (survival != null && math.isfinite(survival.Depth))
+                return math.max(0f, survival.Depth);
+
+            return 0f;
         }
 
         private void TryRegisterTickHandlers()
@@ -364,7 +389,7 @@ namespace Hecton8.Audio
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -422,6 +447,24 @@ namespace Hecton8.Audio
 
         private bool TryResolvePlayerAupRuntimePosition(out Vector3 runtimePosition)
         {
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
+            if (playerContext != null)
+            {
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose) &&
+                    pose.Aup.IsFinite() &&
+                    math.all(math.isfinite(pose.RuntimePosition)))
+                {
+                    runtimePosition = new Vector3(
+                        pose.RuntimePosition.x,
+                        pose.RuntimePosition.y,
+                        pose.RuntimePosition.z);
+                    return true;
+                }
+
+                runtimePosition = default;
+                return false;
+            }
+
             HectonPlayerMovement movement = _playerMovement;
             if (movement == null)
             {

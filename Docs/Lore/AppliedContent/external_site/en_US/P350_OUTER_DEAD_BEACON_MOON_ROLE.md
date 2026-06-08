@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Outer Dead Beacon Moon Role"
+title: "Mute Outer Dead Beacon Role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,8 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Outer Dead Beacon Moon Role
+# Mute Outer Dead Beacon Role
 
-Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.
-
-## Scanner
-
-Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
-
-## Terminal
-
-BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
-
-## Audio
-
-Dead infrastructure does not leave. It just becomes another error term.
-
-## Field Note
-
-Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Mute is where old infrastructure goes quiet without disappearing. The moon's dead beacon network still bends route solvers because nobody can afford to erase every legacy table that depended on it. Sometimes the ghost data predicts a usable relay window. Sometimes it gives a carrier desk the excuse it needs to hold a message. Around HECTON-8, silence is rarely pure absence. It can be orbital delay, broken hardware, legal custody, or a deliberate choice wearing the language of math.
 
 <!-- External Site; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/en_US. -->

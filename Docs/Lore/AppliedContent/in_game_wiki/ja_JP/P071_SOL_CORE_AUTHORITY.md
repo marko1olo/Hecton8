@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "ソル・コア管轄局"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# ソル・コア管轄局
 
-JP LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core は人類拡張の法的、金融的な根であり、個人の故郷でも救助窓口でもない。HECTON-8 では、その標準が封印、責任書式、安全銘板、保険文言として残り、それらが守るはずだった人間より長く生き残った。
 
 ## Scanner
 
-JP LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+古いソル法の封印。圧力漏れの臭いを嗅げる距離になくても、辺境の死体を所有できる。
 
 ## Terminal
 
-JP LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+SOL CORE STANDARD: 請求権の継続は、認可輸送者の保管、航路保険、遅延審理によって承認される。人員回収の優先度は、現地危険認証まで未確定。
 
 ## Audio
 
-JP LOC HOLD: The seal came from Earth space. The rescue clause did not.
+封印は地球圏から来た。救助条項は来なかった。
 
 ## Field Note
 
-JP LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+ここでソルは故郷ではない。君をまだ破滅させられる、文書上で最も古い署名だ。
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/ja_JP. -->

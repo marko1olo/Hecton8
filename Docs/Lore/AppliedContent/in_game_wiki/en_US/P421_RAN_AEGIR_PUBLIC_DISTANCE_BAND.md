@@ -7,8 +7,8 @@ poi_tags: poi.ran_aegir_distance_band;poi.no_ftl_route_index
 biome_tags: biome.human_space;biome.publication
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Ran/Aegir Distance Band"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Ran/Aegir Distance Band
 
-Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.
+The Ran/Aegir distance band keeps the setting readable without pretending the current prose is final simulation data. Aegir is reachable by probes, freight and debt-backed settlement, but not by casual rescue once a room starts flooding.
 
 ## Scanner
 
-Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+Public band: Ran/Aegir is a ten-light-year-class no-FTL route from Sol.
 
 ## Terminal
 
-EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+EPHEMERIS BAND: Use the ten-light-year class for public prose until celestial constants are table-frozen. No FTL rescue exists on this route.
 
 ## Audio
 

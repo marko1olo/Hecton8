@@ -3,38 +3,38 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relay Queue Drift"
+title: "リレー待ち行列ドリフト"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Queue Drift
+# リレー待ち行列ドリフト
 
-JP LOC HOLD: Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.
+遅延通信は、間違った時刻に正確であり続けるから危険だ。キャリア警告は実在するバルブ、実在する漏水、実在したルートを述べるかもしれないが、そのルートは圧力ですでに変わっている。遠隔権限を信じる前に、パケット年齢と現地証拠を比べる必要がある。
 
 ## Scanner
 
-JP LOC HOLD: The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
+リレー印は、それが名指す漏水より古い。その指示は、もう存在しない部屋には正しかった。
 
 ## Terminal
 
-JP LOC HOLD: QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
+待ち行列ドリフト: パケット年齢がルート有効性を超過。新しいリレー窓が開くまで、現地証拠がキャリア指示を上回る。
 
 ## Audio
 
-JP LOC HOLD: The message is correct. That is the problem.
+メッセージは正しい。それが問題だ。
 
 ## Field Note
 
-JP LOC HOLD: A late truth can still kill.
+遅れて届いた真実でも人を殺せる。
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/ja_JP. -->

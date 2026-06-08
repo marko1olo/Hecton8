@@ -8,33 +8,33 @@ biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pump Room Handshake"
+spoiler_tier: 1
+title: "泵房阀门握手"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pump Room Handshake
+# 泵房阀门握手
 
-CN LOC HOLD: Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive.
+HECTON-8的泵房不是简单排水口。本地阀门、手轮和疲劳的止回阀会逼玩家追问地面变干后水去了哪里。一台能工作的泵可以开门、唤醒走廊、把噪声送进声呐，并把返程变成下一个问题。
 
 ## Scanner
 
-CN LOC HOLD: The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+本地污水泵接受手轮输入。进水篮被投放舱泡沫污染；出水脉冲正在给返回走廊B加压。
 
 ## Terminal
 
-CN LOC HOLD: Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 集水控制 / 本地握手：手轮权限已接受。远程覆盖被拒绝。进水以低流量恢复。RETURN CORRIDOR B 出口压力上升；仅在检查下游舱门后重启。
 
 ## Audio
 
-CN LOC HOLD: The pump does not save you. It buys time and makes another room worse.
+阀门接上了。出口在敲。还不能叫安全。
 
 ## Field Note
 
-CN LOC HOLD: The room only works when the safe path and the flooding path share the same hardware.
+干燥的泵房也能淹掉回路。拆阀门前先听出水管有没有水锤。
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/zh_CN. -->

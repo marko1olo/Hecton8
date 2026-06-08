@@ -9,32 +9,22 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Ending Record Transcript Seed"
+title: "Endingrecord Transcript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Ending Record Transcript Seed
+# Endingrecord Transcript
 
-NL LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.
+## Afsluiting Geschreven Als Custody
 
-## Scanner
+HECTON-8-eindes mogen de speler geen schone absolutie geven. Het record noemt receiver, payload hash, schuldstatus en overlevingsstatus omdat instellingen die velden beter onthouden dan mensen. Die kilte is nuttig. Ze maakt elk outcome vergelijkbaar zonder waarheid tot trofee te maken.
 
-NL LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+De onopgeloste velden tellen het meest. Suppression flag unknown. Truth custody unresolved. Atlas continuity unclear. Public ledger status pending. Die gaten houden het einde eerlijk: iets verliet de oceaan, maar bezit is geen gerechtigheid, en overleven is geen herstel.
 
-## Terminal
-
-NL LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
-
-## Audio
-
-NL LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
-
-## Field Note
-
-NL LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Het transcriptformaat beschermt ook replay. Een speler kan terugkeren met kennis, maar de volgende run mag geen macht erven. Hij erft verdenking, smaak en angst. Het record is een bon, geen vergeving.
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/nl_NL. -->

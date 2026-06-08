@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # Ekonomi Kelangsungan Hidup dan Utang Keelmark
 
 > **Sumber:** Perjanjian Kontraktor Independen Keelmark, Adendum 14-B (Kewajiban Keuangan).

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw і небезпека крижаного розсіювання"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw і небезпека крижаного розсіювання
 
-UK LOC HOLD: The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Claw - місяць крижаного розсіювання з брудним ореолом уламків, claim-пилу й замерзлого промислового сміття. Після штормів його смуги можуть показувати корисний матеріал, тому чутки не вмирають. Ті самі смуги ламають довіру до датчиків. Salvager говорять про чистий лід і загублений вантаж; пілоти - про сліпі зони, пиловий радар і ціну заміни передньої броні.
 
 ## Scanner
 
-UK LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+Зовнішній запис ice-scatter. Claw скидає яскравий брухт у траси, де чутки про salvage біжать швидше, ніж мають летіти пілоти.
 
 ## Terminal
 
-UK LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+МІСЯЧНА ДРАБИНА H3 CLAW: смуга брухту відкрита лише для survey-дронів. Рух корпусів потребує передній пиловий радар, жертовний захист і відмову від виплати за незаписані удари уламків.
 
 ## Audio
 
-UK LOC HOLD: Every system has one moon that accountants love and pilots curse.
+У кожній системі є місяць, який люблять бухгалтери й проклинають пілоти.
 
 ## Field Note
 
-UK LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw виглядає прибутковою на папері, бо паперу не треба ухилятися від льоду.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/uk_UA. -->

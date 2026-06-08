@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Marauder Mantan Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Marauder Mantan Deep Reach
 
-ID LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+Marauder Mantan Deep Reach menetapkan kanon pemain. Pemain adalah mantan spesialis korporat untuk sistem lapangan dan infrastruktur evakuasi, terdorong ke pemulungan independen oleh daftar hitam atau utang, lalu kembali ke HECTON-8 di bawah pengawasan Black Keel. Dramanya berasal dari pengenalan profesional: bulan itu menjawab dengan prosedur yang dulu dipahami pemain, dan setiap kunci yang familier membuat kebohongan korporat makin sulit dianggap kecelakaan orang lain.
 
 ## Scanner
 
-ID LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+Kunci Deep Reach tua tidak memeriksa namamu. Ia mengenali irama urutan perbaikanmu.
 
 ## Terminal
 
-ID LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+JEJAK KREDENSIAL: bekas kontrak sistem lapangan. Akses infrastruktur evakuasi dicabut. Status pemulungan diterima di bawah pengawasan utang pool klaim.
 
 ## Audio
 
-ID LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Kau tidak pulang. Kau kembali pada prosedur yang tidak pernah berhenti berjalan.
 
 ## Field Note
 
-ID LOC HOLD: Not family business. Procedure remembers who taught your hands.
+Ini bukan urusan keluarga. Prosedur mengingat tangan yang pernah memakainya.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/id_ID. -->

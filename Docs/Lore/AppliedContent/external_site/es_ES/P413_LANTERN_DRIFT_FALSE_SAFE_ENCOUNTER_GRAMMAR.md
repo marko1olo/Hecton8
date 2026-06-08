@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "Gramática de encuentro: falsa seguridad de deriva farol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# Gramática de encuentro: falsa seguridad de deriva farol
 
-ES LOC HOLD: HECTON-8's bright shallows are readable, but never innocent.
+La falsa seguridad de deriva farol mantiene honestos los bajos brillantes de HECTON-8. El brillo es útil, seductor y peligroso porque registra más de una verdad a la vez.
 
 ## Scanner
 
-ES LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Carril de deriva farol. El agua brillante puede significar borde de oxígeno, ruido de señal, estela de herramienta o tráfico desplazado por depredador. Verifica corriente antes de seguir.
 
 ## Terminal
 
-ES LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+GRAMÁTICA DE ENCUENTRO / FALSA SEGURIDAD DE DERIVA FAROL / función: belleza como dato ambiguo, tentación de ruta, penalización de stealth / lectura segura: corriente coincide con brillo, fauna normal, residuo en lado esperado / rechazo: tratar luz azul como seguridad, seguir falso corredor cargado por tormenta, reparar con ruido dentro de estela iluminada / nota de ruta: una luz puede ser camino, cebo, registro de pánico o exposición.
 
 ## Audio
 
-ES LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+La luz no es misericordia. Es dato que tu traje aún no sabe separar.
 
 ## Field Note
 
-ES LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+Pregunta qué lleva la luz: corriente, oxígeno, tu ruido o algo que apartó a todo lo demás.
 
 <!-- External Site; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/es_ES. -->

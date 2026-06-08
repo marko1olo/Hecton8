@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # UKŁAD AEGIR: DZIEWIĘĆ KSIĘŻYCÓW I JEDEN GRÓB
 
 > **Źródło:** Archiwum Publiczne, Biuro Rejestracji Pogranicza, Stocznie Barnarda. Kompilator: J. Elkin-Torres, Główny Archiwista. Ostatnia rewizja: 2188. Poziom dostępu: publiczny / bez cenzury.  

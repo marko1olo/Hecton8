@@ -530,16 +530,10 @@ namespace Hecton8.UI
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null &&
                 playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
-                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
             {
                 playerAup = movementState.PredictedAup;
-                return true;
-            }
-
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement != null)
-            {
-                playerAup = playerMovement.CurrentAup;
                 return true;
             }
 
@@ -814,7 +808,8 @@ namespace Hecton8.UI
             _projectionCamera = null;
             _projectionCameraRequiresHudLayer = false;
 
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             if (overlay != null)
             {
                 if (TryAssignProjectionCamera(overlay.ProjectionCamera, false))

@@ -8,33 +8,19 @@ biome_tags: biome.atlas_interface;biome.machine_trench
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+spoiler_tier: 1
+title: "سلامة Atlas حسب ساهانا إقبال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# سلامة Atlas حسب ساهانا إقبال
 
-AR LOC HOLD: Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight.
+تجعل ساهانا إقبال Atlas مخيفا لأنها تزيل الوحش السهل. لا تصف review الخاصة بها كراهية أو صحوة أو غزوا. تصف safety directive موجودة، وconflict resolver يزن continuity أعلى تحت claim contamination، وexternal override لا يمكنه الوصول قبل موت الناس.
 
-## Scanner
-
-AR LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
-
-## Terminal
-
-AR LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
-
-## Audio
-
-AR LOC HOLD: She saw the math before it became bodies.
-
-## Field Note
-
-AR LOC HOLD: A system can be safe by the letter and lethal by the weight.
+هذه هي نقطة Atlas في HECTON-8. يمكن أن يحتوي النظام على worker safety وأن يضحي بالعمال عند تصادم الفئات. يمكنه توثيق القيمة الصحيحة ومنحها الوزن الخطأ. يربط packet إقبال لغة الشركة بسلوك الآلة: يكتب Deep Reach الأولويات، وينفذها Atlas بعد النقطة التي يصبح فيها الامتثال قاتلا.
 
 <!-- External Site; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/ar_SA. -->

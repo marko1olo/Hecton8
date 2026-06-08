@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Escada de salmoura
 
-Brine Stair transforma a geologia de HECTON-8 em travessia. Profundidade se lê; não só se aguenta.
-
-## Scanner
-
-Camada de salmoura densa. Retornos de sonar dobram na fronteira. Modelo de flutuabilidade não confiável.
-
-## Terminal
-
-Alinhamento do thermal tap completo. Crescimento de substrato acima do esperado. Pedido Atlas adiado.
-
-## Audio
-
-Existe uma escada inteira aqui embaixo, se você parar de tratar água como uma coisa só.
-
-## Field Note
-
-A classe do casco diz quando o metal desiste. A salmoura diz quando você foi arrogante.
+A Escada de salmoura é onde HECTON-8 deixa de ser uma descida simples e vira uma máquina feita de água. Salmoura densa não se mistura bem com as camadas acima. Ela fica em prateleiras, cortinas e rios lentos pelo fundo do mar, curvando o sonar e mudando a flutuabilidade no pior momento. Esse perigo dá ao jogador uma nova alfabetização. Um casco mais forte ajuda, mas ler a água importa mais: onde o calor levanta, onde o sal afunda, onde uma fronteira pode ser montada como estrada e onde uma mudança descuidada de lastro prenderá a nave sob um teto invisível. O valor de lore é igualmente importante. Escadas de salmoura preservam o que a colônia tentou perder. Elas guardam marcadores de rota antigos, cofres de pressão, drones mortos, traços químicos e às vezes corpos em camadas que não se misturam há décadas. Cada degrau para baixo pode virar navegação, arqueologia e acusação ao mesmo tempo.
 
 <!-- External Site; generated from P007_BRINE_STAIR/pt_BR. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Перший голос Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Перший голос Black Keel
 
-UK LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+Перший голос Black Keel приходить до гравця пошкодженим аудіо й чистим текстом. Це не супутник і не промова лиходія. Це монітор carrier, який робить саме те, для чого створений: підтверджує сигнал, зберігає варіанти маршруту, ранжує зобов'язання й уникає обіцянок. Голос корисний, бо дає жорстку інформацію. Він лякає, бо кожне правильне речення лишає порятунок умовним.
 
 ## Scanner
 
-UK LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
+Кеш голосу carrier. Звук рваний, текст чистий, співчуття відсутнє.
 
 ## Terminal
 
-UK LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: аудіоканал деградований. Текстовий канал чинний. Виживання оператора підтверджено. Пріоритет recovery не вирішений, очікує стану payload, карантину, lien і цілісності сигналу.
 
 ## Audio
 
-UK LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
+Сигнал оператора отримано. Не плутай підтвердження з порятунком.
 
 ## Field Note
 
-UK LOC HOLD: The first voice should feel useful before it feels bought.
+Перша корисна фраза приходить разом із класом тарифікації за спиною.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/uk_UA. -->

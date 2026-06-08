@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Barnard Yards Origin
 
-Barnard Yards is a shipbreaking and pressure-hardware culture. It gives the player a believable origin: not Earth, not hero royalty, but a professional world where dead claims and rented survival tools are normal work.
+Barnard Yards is a shipbreaking and pressure-hardware culture: rented cutters, patched clamps, dead claims and survival tools treated as ordinary work. It gives HECTON-8 a professional origin close to debt and labor, not Earth romance.
 
 ## Scanner
 

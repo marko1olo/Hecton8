@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Packet custody Luyten Junction
 
-Luyten Junction - скорее инфраструктура, чем общество: relays, beam custody, depot law и packet accounting. Он объясняет, как Deep Reach может давить на Aegir без live FTL command и как evidence можно задержать, купить, потерять или превратить в оружие.
+Luyten Junction - скорее инфраструктура, чем общество: relays, beam custody, depot law и packet accounting. Он объясняет, как Deep Reach может давить на Aegir без живой FTL-команды и как доказательство можно задержать, купить, потерять или превратить в оружие.
 
 ## Scanner
 
-Custody spool Luyten. Сообщения не летят бесплатно; правда тоже.
+Кассета custody Luyten. Сообщения не ходят бесплатно; правда тоже.
 
 ## Terminal
 
-LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+МАРШРУТ LUYTEN JUNCTION: packet custody передана через тарифную очередь. Live command запрещена. Приоритет доказательств покупается через emergency claim escrow.
 
 ## Audio
 
-Нет ansible. Нет милости. Только custody, tariff и время.
+Никакого ansible. Никакого милосердия. Только custody, tariff и время.
 
 ## Field Note
 
-Relay - это машина, которая решает, какому горю дать bandwidth.
+Relay - это машина, решающая, чьему горю достанется bandwidth.
 
 <!-- In-Game Wiki; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/ru_RU. -->

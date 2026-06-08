@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "תביעות קרות של הירחים החיצוניים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# תביעות קרות של הירחים החיצוניים
 
-HE LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.
+תביעות קרות של הירחים החיצוניים מוכיחות ש-Aegir הוא מערכת, לא ירח רדוף אחד. סקרי מי מלח כושלים, נתיבי מתכת מוקפאים ומשואות מתות יוצרים את כלכלת ה-salvage שמביאה Marauders אל רשת התנועה.
+
+העיקר אינו המרחק אלא הדפוס. נתיב יכול להיות מת ועדיין בר חיוב. משואה יכולה לחזור על משמורת בלי צוות חי. HECTON-8 הוא המקרה הגלוי הגרוע ביותר, אבל לא המקום הראשון שבו Aegir למד לתייק אובדן כתשתית.
 
 ## Scanner
 
-HE LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+משואת תביעה חיצונית. לא כל דבר מת ב-Aegir נמצא על HECTON-8.
 
 ## Terminal
 
-HE LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+ארכיון הסולם החיצוני // סקר מי מלח Thorne נכשל. נתיב היצוא Anvil הוקפא. משואת Mute חוזרת על ping משמורת בלי הצהרת צוות פעיל.
 
 ## Audio
 
-HE LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegir למד לאבד אנשים לפני ש-HECTON-8 סיים את השיעור.
 
 ## Field Note
 
-HE LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+תביעות קרות מאפשרות Marauders. הן גם מלמדות חברות איך לקבור דפוסים.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/he_IL. -->

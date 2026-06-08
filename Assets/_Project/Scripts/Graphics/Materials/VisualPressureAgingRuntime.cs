@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -2268,6 +2269,8 @@ namespace Hecton8.Graphics.Materials
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct CompileDegradationParametersJob : IJobParallelFor
     {
+        private const double DefaultSeaLevelY = 14.02d;
+
         [ReadOnly, NoAlias] public NativeArray<IntegrityStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<double3> NodeAups;
         [ReadOnly, NoAlias] public NativeArray<StructuralTuningDTO> StructuralTuning;
@@ -2288,11 +2291,13 @@ namespace Hecton8.Graphics.Materials
             ref readonly IntegrityStateDTO state = ref UnsafeUtility.AsRef<IntegrityStateDTO>(
                 (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(States) + index * UnsafeUtility.SizeOf<IntegrityStateDTO>());
             double3 nodeAup = NodeAups[index];
-            double3 seaLevel = StructuralTuning.IsCreated && StructuralTuning.Length > 0 ? StructuralTuning[0].SeaLevelAup : new double3(0.0);
+            double3 seaLevel = StructuralTuning.IsCreated && StructuralTuning.Length > 0
+                ? StructuralTuning[0].SeaLevelAup
+                : new double3(0.0, DefaultSeaLevelY, 0.0);
             float pressureScale = math.max(1.0f, FiniteOr(Tuning.PressureScaleKPa, 5500.0f));
             float depthScale = math.max(1.0f, FiniteOr(Tuning.DepthScaleMeters, 1400.0f));
             float3 local = Localize(nodeAup, OriginAup);
-            double seaY = math.isfinite(seaLevel.y) ? seaLevel.y : 0.0;
+            double seaY = ResolveSeaLevelY(seaLevel.y);
             double nodeY = math.isfinite(nodeAup.y) ? nodeAup.y : seaY;
             float depthMeters = math.max(0.0f, (float)(seaY - nodeY));
             float pressure01 = math.saturate(FiniteOr(state.AppliedPressure, 0.0f) / pressureScale);
@@ -2332,6 +2337,16 @@ namespace Hecton8.Graphics.Materials
                 BioFouling = biomass,
                 StructuralStress = stress01
             };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double ResolveSeaLevelY(double seaLevelY)
+        {
+            return math.isfinite(seaLevelY) &&
+                   math.abs(seaLevelY) > 0.0001d &&
+                   math.abs(seaLevelY) <= 1000d
+                ? seaLevelY
+                : DefaultSeaLevelY;
         }
 
         private float ResolveTemperature(int index)

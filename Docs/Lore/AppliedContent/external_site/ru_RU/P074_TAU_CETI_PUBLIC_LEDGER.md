@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Публичный реестр Tau Ceti
 
-Публичный реестр Tau Ceti - hard-sci-fi версия ответственности: настоящие публичные институты существуют, но расстояние превращает справедливость в послесвечение, если игрок не сохранит evidence правильно.
+Публичный реестр Tau Ceti - жесткая научно-фантастическая подотчетность: реальные публичные институты существуют, но расстояние превращает правосудие в послесвечение, если доказательства не сохранены с дисциплиной цепочки custody.
 
 ## Scanner
 
-Фрагмент гражданского реестра Tau Ceti. Достаточно публичный, чтобы пугать Deep Reach, слишком задержанный, чтобы спасти колонию.
+Фрагмент гражданского реестра Tau Ceti. Достаточно публичный, чтобы пугать Deep Reach, слишком запоздалый, чтобы спасти колонию.
 
 ## Terminal
 
-TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+ЗЕРКАЛО РЕЕСТРА TAU CETI: запечатанные доказательства допустимы после relay-аутентификации. Ожидаемое окно публичного пересмотра превышает местный интервал выживания на 31.4 года.
 
 ## Audio
 
@@ -35,6 +35,6 @@ TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. E
 
 ## Field Note
 
-Надзор может прийти честно и поздно. Поздно - все равно мертво.
+Надзор может прийти чистым и поздним. Поздно - значит все равно мертвы.
 
 <!-- External Site; generated from P074_TAU_CETI_PUBLIC_LEDGER/ru_RU. -->

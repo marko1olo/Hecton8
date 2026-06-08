@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "物资撤离：苦涩账款"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# 物资撤离：苦涩账款
 
-CN LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
+物资撤离应当显得冷酷而合法。玩家回收压力材料，保持custody完整，满足Black Keel的质量窗口账务，并真正降低lien。没有警报宣布失败；系统完全按照设计运行。
 
-## Scanner
-
-CN LOC HOLD: You can leave richer and still fail the place.
-
-## Terminal
-
-CN LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
-
-## Audio
-
-CN LOC HOLD: The invoice clears before the names do.
-
-## Field Note
-
-CN LOC HOLD: This ending should be real credits, not a fake game over.
+损伤藏在收据没有列出的内容里。失踪工人的名字没有核对，证据链不完整，Deep Reach得到更干净的商业理由重返现场。HECTON-8不会因为玩家职业化而惩罚玩家。它展示的是：当工作地点同时也是坟墓时，职业成功会吃掉什么。
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/zh_CN. -->

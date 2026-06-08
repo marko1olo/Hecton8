@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_distance_band;poi.no_ftl_route_index
 biome_tags: biome.human_space;biome.publication
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "ZH LOC HOLD: Ran/Aegir Distance Band"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Ran/Aegir距离带"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Ran/Aegir Distance Band
+# Ran/Aegir距离带
 
-ZH LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.
+Ran/Aegir距离带让设定可读，同时不把叙述伪装成最终simulation data。Aegir可由探测器、货运和debt-backed settlement抵达，但当房间开始进水时，它不支持随手救援。
 
 ## Scanner
 
-ZH LOC HOLD: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+公共带：Ran/Aegir是从Sol出发的十光年级无FTL航线。
 
 ## Terminal
 
-ZH LOC HOLD: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+星历带：在天体常数被表格冻结前，公共文本使用十光年级。此航线不存在FTL救援。
 
 ## Audio
 
-ZH LOC HOLD: Ten light-years is close on a map and brutal for a contract.
+十光年在地图上很近，在合同里很残酷。
 
 ## Field Note
 
-ZH LOC HOLD: Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
+公共天文记录：距离带和航线图是解释范围，不是最终星历常数。
 
 <!-- In-Game Wiki; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/zh_CN. -->

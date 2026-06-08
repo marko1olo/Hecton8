@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Pistol Tambal Sealant Dingin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Pistol Tambal Sealant Dingin
 
-ID LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+Patch gun sealant dingin mengajarkan batas jujur pertama. Ia bisa menghentikan pinhole, menahan bibir gasket, atau membeli menit pada sambungan tenang. Ia tidak memberkati struktur yang bergerak. Rating label lebih penting daripada harapan pemain.
 
-## Scanner
-
-ID LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-ID LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-ID LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-ID LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Karena itu alat ini pantas muncul awal. Ia memberi pemain tindakan tanpa berpura-pura setiap kebocoran bisa diselesaikan. Patch baik menciptakan waktu; patch buruk menciptakan keyakinan di tempat yang nanti ditagih laut.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/id_ID. -->

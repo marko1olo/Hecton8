@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ladder"
+title: "Місячна драбина Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ladder
+# Місячна драбина Aegir
 
-UK LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit.
+Місячна драбина Aegir дає HECTON-8 робочу локальну астрономію: інші місяці пояснюють маршрутні вікна, мертві claims, чутки salvage і провалений час повернення.
 
 ## Scanner
 
-UK LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.
+Мапа місячної драбини. HECTON-8 є робочою небезпекою в рухомій системі, а не ізольованим рівнем.
 
 ## Terminal
 
-UK LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+ГОЛОВНІ МІСЯЦІ AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Модель transfer та eclipse додана.
 
 ## Audio
 
-UK LOC HOLD: The map has more moons than mercy.
+На мапі більше місяців, ніж милості.
 
 ## Field Note
 
-UK LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.
+Skarn пече. Vela скидає лід. Anvil годує металом. Kestrel ріже ретранслятори. HECTON тоне.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/uk_UA. -->

@@ -9,32 +9,22 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Ibarra Loss Ledger"
+title: "Ledger Ibarra de conversão de perdas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Ibarra Loss Ledger
+# Ledger Ibarra de conversão de perdas
 
-PT-BR LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## Contabilidade Que Sobreviveu À Colônia
 
-## Scanner
+O ledger Ibarra deve parecer mais frio que uma lista de desaparecidos. Uma lista ainda lamenta, mesmo quando mente. Um ledger converte. Recebe módulos de habitat danificados, tool banks, sample custody, missing personnel e salvage rights, então coloca cada fato em uma categoria capaz de seguir por contratos depois que HECTON-8 silencia.
 
-PT-BR LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Essa é a ponte entre a liability antiga da Deep Reach e a debt presente do jogador. Se pessoas viram unresolved personnel load, a corporação pode admitir que sumiram sem nomear assassinato. Se evidência vira material custody, pode ser comprada, enterrada, roteada ou segurada. Se o claim continua continuous, propriedade vive mais que os trabalhadores que mantinham o lugar funcionando.
 
-## Terminal
-
-PT-BR LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-PT-BR LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-PT-BR LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+O ledger dá ao jogador um poder duro. Levá-lo para cima não revela só o que aconteceu. Carrega algo que o mercado já sabe precificar. Vender, publicar, redirecionar ou enterrar evidência fica sujo porque o documento foi desenhado para tornar cada escolha legível no balance sheet de alguém.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/pt_BR. -->

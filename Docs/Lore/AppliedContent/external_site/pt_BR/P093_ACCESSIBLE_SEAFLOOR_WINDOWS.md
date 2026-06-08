@@ -9,32 +9,16 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "Janelas acessiveis do fundo do mar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# Janelas acessiveis do fundo do mar
 
-PT-BR LOC HOLD: Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map.
-
-## Scanner
-
-PT-BR LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
-
-## Terminal
-
-PT-BR LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-PT-BR LOC HOLD: You land where the moon lets stone show through.
-
-## Field Note
-
-PT-BR LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+A maior parte do fundo de HECTON-8 nao pode ser alcançada com coragem comum. A pressao cria uma parede antes de o fundo aparecer. Janelas acessiveis sao as excecoes: pontos rasgados onde uma plataforma colapsada, uma crista exposta, uma cicatriz quente de respiradouro ou uma coluna densa de salmoura muda a curva de descida. Nao sao cavernas seguras. Sao acordos estreitos com a geologia. Uma tripulacao pode tocar crosta antiga, recuperar minerais crescidos sob pressao, achar hardware colonial lacrado ou ler um evento enterrado antes que o oceano feche a rota.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/pt_BR. -->

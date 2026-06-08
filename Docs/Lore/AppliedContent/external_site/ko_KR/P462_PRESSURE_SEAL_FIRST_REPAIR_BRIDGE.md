@@ -9,32 +9,26 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: 첫 PressureSeal 수리"
+title: "첫 PressureSeal 수리"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: 첫 PressureSeal 수리
+# 첫 PressureSeal 수리
 
-KO LOC HOLD: Shallow Annex P-63의 첫 쓸모 있는 수리는 빛 속에서 시작된다. 밝은 선반의 FiberKelp는 FiberMesh가 되고, 누수 칼라나 서비스 소켓용 임시 PressureSeal을 운반한다. 그것은 시간과 경로 안전을 살 뿐 탈출은 아니다.
+## 빛 속의 수리
 
-## Scanner
+Shallow Annex P-63의 첫 유용한 수리는 물이 아직 거짓말할 만큼 밝은 곳에서 시작된다. 밖에서는 FiberKelp가 선반 해류에 흔들린다. 안에서는 Deep Reach가 사용 가능하다고 표시한 이음새로 압력 칼라가 땀을 흘린다.
 
-KO LOC HOLD: PRESSURESEAL 대상 // P-63 칼라 누출. FiberMesh 캐리어 호환. 국소 안정화만 가능; 상승 인증 거부.
+FiberKelp는 얕은 생체 섬유이지 희귀 보물이 아니다. 빛, 해류, 오래된 산업 열이 겹치는 곳에서 자란다. 씻고 빗은 가닥은 FiberMesh가 된다. P-63 현장 제작기는 그 메쉬를 임시 PressureSeal의 캐리어층으로 눌러 넣을 수 있다.
 
-## Terminal
+이 부품은 한계가 있어서 유용하다. PressureSeal은 국소 누출을 늦추고, 귀환 주머니를 안정시키며, 짧은 수리 루프를 살아남을 수 있게 만든다. bathydrop 상승 인증도 아니고, 클램프 링 대체품도 아니며, Black Keel의 응답을 회수로 바꾸지도 않는다.
 
-KO LOC HOLD: DEEP REACH P-63 허용 기록 // 칼라 교체 연기. 누출이 국소 서비스 한계 안에 있으면 승인된 연성 실 캐리어를 적용.
+모순은 기록보다 먼저 보인다. 단말은 압력 변동이 서비스 허용치 안이라고 말한다. 칼라에는 휜 볼트, 점검 스트립 아래의 소금, 깨끗한 금속이어야 할 균열 속 섬유가 있다.
 
-## Audio
-
-KO LOC HOLD: Black Keel 중계: P-63 패치는 국소 안전이지 상승 안전이 아니다. 실을 가져가고 시리얼을 보존하라.
-
-## Field Note
-
-KO LOC HOLD: 밖은 밝은 물. 안은 젖은 칼라. Deep Reach는 그것을 정상이라 불렀다. 그 말이 클램프 링보다 싸기 때문이다.
+Marauder에게 교훈은 실무다. FiberKelp를 깨끗이 자르고, 메쉬에 모래를 넣지 말고, 실의 시리얼을 보존하라. 경로가 상승 안전을 요구하는 곳에서 국소 안전이라고 쓰인 수리를 믿지 마라.
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/ko_KR. -->

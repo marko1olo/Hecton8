@@ -7,34 +7,34 @@ poi_tags: poi.pump_room_log;poi.manual_valve
 biome_tags: biome.pump_annex;biome.shallow_wreck
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Ren Okoye Pump 63"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Pumpe 63 von Ren Okoye"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ren Okoye Pump 63
+# Pumpe 63 von Ren Okoye
 
-DE LOC HOLD: Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.
+Ren Okoye macht Koloniebeweise zu praktischem Steuerwissen. Seine Notiz lehrt den Spieler, warum Drucktiming, Handventile und Arbeitermarken zählen, wenn Deep-Reach-Dashboards noch green behaupten.
 
 ## Scanner
 
-DE LOC HOLD: Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.
+Ren Okoye hielt Sector 63 lange genug trocken, um Reparaturnotizen zu hinterlassen, die noch immer besser sind als das Dashboard.
 
 ## Terminal
 
-DE LOC HOLD: OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.
+OKOYE PUMP 63 NOTIZ: grünes Dashboard ignorieren; unteres Rad manual bypass; vor restart zwei Sekunden entlüften, sonst verriegelt line hammer den annex.
 
 ## Audio
 
-DE LOC HOLD: He saved a room for people who never reached it. You can still use the room.
+Wenn das Panel safe sagt, frag, wer das Panel geschrieben hat.
 
 ## Field Note
 
-DE LOC HOLD: The colony gives the player tools through people, not exposition.
+Die Toten lehren besser als die grüne Statuslampe.
 
 <!-- In-Game Wiki; generated from P064_REN_OKOYE_PUMP_63/de_DE. -->

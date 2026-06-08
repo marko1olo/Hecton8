@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ПІДВОДНІ ТЕХНОЛОГІЇ ТА ВОДОЛАЗНІ КОСТЮМИ МАРОДЕРІВ
 
 > **Джерело:** Keelmark Loss Desk, Актуарна оцінка ризиків для незалежних рятувальних операцій.

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Voormalige Deep-Reach-Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Voormalige Deep-Reach-Marauder
 
-NL LOC HOLD: This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.
+De protagonist is niet op HECTON-8 geboren en jaagt niet op een familiespook. De oude kolonie herkent iets kouders: het reparatieritme van veldsystemen, gewoonten uit noodroutering en de kleine omwegen die Deep-Reach-werk leerde. Dat verleden maakt de eerste gesloten deuren persoonlijk zonder het verhaal in bloedlijngoedkoop bloedlijndrama te veranderen. Een Marauder kan een claimcache opensnijden voor geld; een voormalige Deep-Reach-specialist ziet ook welk afdichtingslogboek niet mag bestaan, welke evacuatie-instructie een vertraging moest verbergen en welke reparatiereeks bleef draaien nadat de arbeiders waren afgeschreven.
 
 ## Scanner
 
-NL LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+Het oude Deep-Reach-slot controleert je naam niet. Het herkent het ritme van je reparatiereeks.
 
 ## Terminal
 
-NL LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+BEVOEGDHEIDSSPOOR: voormalig veldsystemencontract. Toegang tot evacuatie-infrastructuur ingetrokken. Bergingsstatus geaccepteerd onder schuldbeheer van de claimpool.
 
 ## Audio
 
-NL LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Je kwam niet thuis. Je kwam terug bij een procedure die nooit is gestopt.
 
 ## Field Note
 
-NL LOC HOLD: Not family business. Procedure remembers who taught your hands.
+Dit is geen familiezaak. De procedure herinnert zich de handen die haar gebruikten.
 
 <!-- In-Game Wiki; generated from P056_EX_DEEP_REACH_MARAUDER/nl_NL. -->

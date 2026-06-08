@@ -7,34 +7,34 @@ poi_tags: poi.shallow_annex_p63_fabricator;poi.first_recipe_console
 biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "مصنع ميداني P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# مصنع ميداني P-63
 
-AR LOC HOLD: Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.
+يحتوي Shallow Annex P-63 على أول مصنع ميداني، ويتصرف كبنية إصلاح لا كطابعة سحرية. الوصفات الأولى هي حشيات صمامات وتلامسات قاطع وعوامات بينغر ومشابك مانعة للتسرب: أجزاء صغيرة تعيد الثقة إلى الأدوات المتضررة. يرفض المصنع مواد الضغط الخطرة حتى يمتلك اللاعب الشهادة ومعرفة الاحتواء للتعامل معها.
 
 ## Scanner
 
-AR LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
+مصنع ميداني P-63. جدول الشهادات سليم؛ يقبل خردة كمواد تغذية ويرفض مواد ضغط غير معتمدة.
 
 ## Terminal
 
-AR LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
+FAB P-63 / أول وصفات معتمدة: حشية صمام، تلامس قاطع، عوامة بينغر، مشبك مانع تسرب. ترفض شظايا blue debt المجهولة حتى تتوفر شهادة الضغط وفئة الاحتواء.
 
 ## Audio
 
-AR LOC HOLD: The machine can make parts. It cannot make permission.
+الأجزاء سهلة. السلطة هي الجزء المكلف.
 
 ## Field Note
 
-AR LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+يطبع أجزاء، لا أذونات. إذا احتاجت الوصفة ختما، فالمحيط سيطلبه أيضا.
 
 <!-- In-Game Wiki; generated from P115_P63_FIELD_FABRICATOR/ar_SA. -->

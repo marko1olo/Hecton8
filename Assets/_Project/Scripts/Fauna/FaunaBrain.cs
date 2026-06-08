@@ -709,8 +709,13 @@ namespace Hecton8.AI
             public HectonPlayerMovement PlayerMovement;
             public PlayerFlashlight Flashlight;
             public PlayerToolManager ToolManager;
+            public PlayerRuntimePoseSnapshot PoseSnapshot;
             public PlayerMovementRuntimeState MovementState;
             public PlayerLookState LookState;
+            public bool HasActiveRuntimeContext;
+            public bool HasPoseSnapshot;
+            public bool HasMovementState;
+            public bool HasLookState;
             public bool IsBound;
         }
 
@@ -888,6 +893,7 @@ namespace Hecton8.AI
             ReleaseCorpseSinkingKinematicsBuffers();
             ReleaseMimicOcclusionRuntimeOwner();
             InvalidatePlayerRuntimeContextCache();
+            _sargassumMicroFauna = null;
         }
 
         private void OnDestroy()
@@ -920,6 +926,7 @@ namespace Hecton8.AI
             ReleaseMimicOcclusionRuntimeOwner();
             ReleaseFaunaPresentationPropertyBlock();
             InvalidatePlayerRuntimeContextCache();
+            _sargassumMicroFauna = null;
         }
 
         public void OnSpawn()
@@ -1084,49 +1091,33 @@ namespace Hecton8.AI
         private FaunaPerceptionSnapshot BuildFaunaPerceptionSnapshot()
         {
             FaunaPerceptionSnapshot snapshot = default;
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
             bool hasRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
                                      runtimeContext.IsBound;
-            PlayerMovementRuntimeState movementState = hasRuntimeContext ? runtimeContext.MovementState : default;
-            bool hasMovementRoot = hasRuntimeContext &&
-                                   (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
+            bool allowLegacyPlayerFallback = !runtimeContext.HasActiveRuntimeContext;
+            PlayerRuntimePoseSnapshot poseSnapshot = hasRuntimeContext && runtimeContext.HasPoseSnapshot
+                ? runtimeContext.PoseSnapshot
+                : default;
+            bool hasPoseSnapshot = hasRuntimeContext && runtimeContext.HasPoseSnapshot;
+            PlayerMovementRuntimeState movementState = default;
             bool hasMovementState = hasRuntimeContext &&
-                                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u;
-            PlayerLookState lookState = hasRuntimeContext ? runtimeContext.LookState : default;
-            bool hasLookState = hasRuntimeContext &&
-                                (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
-                                math.lengthsq(lookState.AimForward) > 0.0001f;
+                                    TryResolveCachedMovementState(in runtimeContext, out movementState);
             Transform playerTransform = hasRuntimeContext && runtimeContext.PlayerTransform != null
                 ? runtimeContext.PlayerTransform
-                : playerContext != null ? playerContext.PlayerTransform : null;
+                : allowLegacyPlayerFallback && playerContext != null ? playerContext.PlayerTransform : null;
             if (playerTransform != null)
                 _currentCullingPlayerTransform = playerTransform;
-            else
+            else if (allowLegacyPlayerFallback)
                 playerTransform = _currentCullingPlayerTransform;
 
-            if (hasLookState || hasMovementRoot)
+            if (hasPoseSnapshot)
             {
                 snapshot.Flags |= FaunaPerceptionSnapshot.FlagHasPlayer;
-                if (hasLookState)
-                {
-                    snapshot.PlayerPosition = ToVector3(lookState.EyePosition);
-                    if (TryResolveAupFromRuntimeOrigin(snapshot.PlayerPosition, out AbsoluteUniversePosition playerAup))
-                    {
-                        snapshot.Flags |= FaunaPerceptionSnapshot.FlagHasPlayerAup;
-                        snapshot.PlayerAup = playerAup;
-                    }
-                }
-                else
-                {
-                    snapshot.Flags |= FaunaPerceptionSnapshot.FlagHasPlayerAup;
-                    snapshot.PlayerAup = movementState.PredictedAup;
-                    snapshot.PlayerPosition = ToVector3(snapshot.PlayerAup.ToRuntimeFloat3());
-                }
-
-                snapshot.PlayerForward = hasLookState
-                    ? ToVector3(lookState.AimForward)
-                    : ToVector3(movementState.Forward);
-                if (hasLookState || snapshot.PlayerForward.sqrMagnitude > 0.0001f)
+                snapshot.Flags |= FaunaPerceptionSnapshot.FlagHasPlayerAup;
+                snapshot.PlayerAup = poseSnapshot.Aup;
+                snapshot.PlayerPosition = ToVector3(poseSnapshot.RuntimePosition);
+                snapshot.PlayerForward = ToVector3(poseSnapshot.Forward);
+                if (snapshot.PlayerForward.sqrMagnitude > 0.0001f)
                     snapshot.Flags |= FaunaPerceptionSnapshot.FlagHasPlayerForward;
                 if (playerTransform != null)
                     EnsurePlayerNoiseEmitterBound(playerTransform);
@@ -1137,7 +1128,7 @@ namespace Hecton8.AI
                 snapshot.Flags |= FaunaPerceptionSnapshot.FlagHasPlayerVelocity;
                 snapshot.PlayerVelocity = ToVector3(movementState.Velocity);
             }
-            else
+            else if (hasPoseSnapshot || allowLegacyPlayerFallback)
             {
                 if (TryGetLatestKccVelocityVector(KccVelocityFaunaMaxAgeFrames, out Vector3 kccVelocity))
                 {
@@ -1148,33 +1139,24 @@ namespace Hecton8.AI
 
             PlayerFlashlight flashlight = hasRuntimeContext && runtimeContext.Flashlight != null
                 ? runtimeContext.Flashlight
-                : playerContext != null ? playerContext.Flashlight : null;
+                : allowLegacyPlayerFallback && playerContext != null ? playerContext.Flashlight : null;
             if (flashlight != null && flashlight.IsOn)
                 snapshot.Flags |= FaunaPerceptionSnapshot.FlagPlayerFlashlightOn;
 
             PlayerToolManager toolManager = hasRuntimeContext && runtimeContext.ToolManager != null
                 ? runtimeContext.ToolManager
-                : playerContext != null ? playerContext.ToolManager : null;
+                : allowLegacyPlayerFallback && playerContext != null ? playerContext.ToolManager : null;
             PlayerTool currentTool = toolManager != null ? toolManager.CurrentTool : null;
-            if (currentTool != null && (hasLookState || hasMovementState))
+            if (currentTool != null && hasPoseSnapshot)
             {
-                Vector3 scavengeToolPosition = hasLookState
-                    ? ToVector3(lookState.EyePosition + lookState.AimForward * ScavengeToolLookOffsetMeters)
-                    : ToVector3(movementState.PredictedAup.ToRuntimeFloat3());
+                Vector3 scavengeToolPosition = ToVector3(
+                    poseSnapshot.RuntimePosition + poseSnapshot.Forward * ScavengeToolLookOffsetMeters);
                 snapshot.Flags |= FaunaPerceptionSnapshot.FlagHasScavengeTool;
                 snapshot.ScavengeToolPosition = scavengeToolPosition;
-                if (hasLookState)
-                {
-                    if (TryResolveAupFromRuntimeOrigin(scavengeToolPosition, out AbsoluteUniversePosition toolAup))
-                    {
-                        snapshot.Flags |= FaunaPerceptionSnapshot.FlagHasScavengeToolAup;
-                        snapshot.ScavengeToolAup = toolAup;
-                    }
-                }
-                else
+                if (TryResolveAupFromRuntimeOrigin(scavengeToolPosition, out AbsoluteUniversePosition toolAup))
                 {
                     snapshot.Flags |= FaunaPerceptionSnapshot.FlagHasScavengeToolAup;
-                    snapshot.ScavengeToolAup = movementState.PredictedAup;
+                    snapshot.ScavengeToolAup = toolAup;
                 }
                 snapshot.ScavengeToolOwner = currentTool;
             }
@@ -1191,6 +1173,49 @@ namespace Hecton8.AI
             _playerNoiseEmitterTransform = playerTransform;
         }
 
+        private IPlayerRuntimeContext ResolveActivePlayerRuntimeContext()
+        {
+            IPlayerRuntimeContext activeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (IsUsablePlayerRuntimeContext(activeContext))
+            {
+                _playerRuntimeContext = activeContext;
+                return activeContext;
+            }
+
+            IPlayerRuntimeContext cachedContext = _playerRuntimeContext;
+            if (IsUsablePlayerRuntimeContext(cachedContext))
+                return cachedContext;
+
+            IPlayerRuntimeContext registryContext = GlobalRegistry.Player;
+            if (IsUsablePlayerRuntimeContext(registryContext))
+            {
+                _playerRuntimeContext = registryContext;
+                return registryContext;
+            }
+
+            if (activeContext != null)
+            {
+                _playerRuntimeContext = activeContext;
+                return activeContext;
+            }
+
+            if (registryContext != null)
+            {
+                _playerRuntimeContext = registryContext;
+                return registryContext;
+            }
+
+            _playerRuntimeContext = null;
+            return null;
+        }
+
+        private static bool IsUsablePlayerRuntimeContext(IPlayerRuntimeContext runtimeContext)
+        {
+            return runtimeContext != null &&
+                   runtimeContext.IsInitialized &&
+                   runtimeContext.PlayerTransform != null;
+        }
+
         private bool RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext)
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
@@ -1198,23 +1223,86 @@ namespace Hecton8.AI
             {
                 _playerRuntimeContextCacheFrame = frame;
                 _playerRuntimeContextCache = default;
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
                 if (playerContext != null)
                 {
+                    _playerRuntimeContextCache.HasActiveRuntimeContext = true;
                     _playerRuntimeContextCache.PlayerTransform = playerContext.PlayerTransform;
                     _playerRuntimeContextCache.PlayerMovement = playerContext.PlayerMovement;
                     _playerRuntimeContextCache.Flashlight = playerContext.Flashlight;
                     _playerRuntimeContextCache.ToolManager = playerContext.ToolManager;
-                    playerContext.TryGetMovementRuntimeState(out _playerRuntimeContextCache.MovementState);
-                    playerContext.TryGetLookRuntimeState(out _playerRuntimeContextCache.LookState);
-                    _playerRuntimeContextCache.IsBound = _playerRuntimeContextCache.PlayerTransform != null;
+                    _playerRuntimeContextCache.HasPoseSnapshot =
+                        playerContext.TryGetPlayerPoseSnapshot(out _playerRuntimeContextCache.PoseSnapshot) &&
+                        IsValidPlayerPoseSnapshot(in _playerRuntimeContextCache.PoseSnapshot);
+                    if (!_playerRuntimeContextCache.HasPoseSnapshot)
+                        _playerRuntimeContextCache.PoseSnapshot = default;
+
+                    _playerRuntimeContextCache.HasMovementState =
+                        playerContext.TryGetMovementRuntimeState(out _playerRuntimeContextCache.MovementState) &&
+                        IsValidPlayerMovementSnapshot(in _playerRuntimeContextCache.MovementState);
+                    if (!_playerRuntimeContextCache.HasMovementState)
+                        _playerRuntimeContextCache.MovementState = default;
+
+                    _playerRuntimeContextCache.HasLookState =
+                        playerContext.TryGetLookRuntimeState(out _playerRuntimeContextCache.LookState) &&
+                        IsValidPlayerLookSnapshot(in _playerRuntimeContextCache.LookState);
+                    if (!_playerRuntimeContextCache.HasLookState)
+                        _playerRuntimeContextCache.LookState = default;
+
+                    _playerRuntimeContextCache.IsBound =
+                        _playerRuntimeContextCache.HasPoseSnapshot ||
+                        _playerRuntimeContextCache.HasMovementState;
                 }
 
-                _playerRuntimeContextCacheValid = _playerRuntimeContextCache.IsBound;
+                _playerRuntimeContextCacheValid = _playerRuntimeContextCache.HasActiveRuntimeContext;
             }
 
             runtimeContext = _playerRuntimeContextCache;
             return _playerRuntimeContextCacheValid;
+        }
+
+        private static bool IsValidPlayerPoseSnapshot(in PlayerRuntimePoseSnapshot snapshot)
+        {
+            return (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                   snapshot.Aup.IsFinite() &&
+                   math.all(math.isfinite(snapshot.RuntimePosition)) &&
+                   math.all(math.isfinite(snapshot.Forward)) &&
+                   math.lengthsq(snapshot.Forward) > 0.0001f;
+        }
+
+        private static bool IsValidPlayerMovementSnapshot(in PlayerMovementRuntimeState snapshot)
+        {
+            return (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                   (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u &&
+                   snapshot.PredictedAup.IsFinite() &&
+                   math.all(math.isfinite(snapshot.WorldPosition)) &&
+                   math.all(math.isfinite(snapshot.PredictedWorldPosition)) &&
+                   math.all(math.isfinite(snapshot.Velocity)) &&
+                   math.all(math.isfinite(snapshot.Forward));
+        }
+
+        private static bool IsValidPlayerLookSnapshot(in PlayerLookState snapshot)
+        {
+            return (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                   math.all(math.isfinite(snapshot.EyePosition)) &&
+                   math.all(math.isfinite(snapshot.AimForward)) &&
+                   math.lengthsq(snapshot.AimForward) > 0.0001f;
+        }
+
+        private static bool TryResolveCachedMovementState(
+            in FaunaPlayerRuntimeContextSnapshot snapshot,
+            out PlayerMovementRuntimeState movementState)
+        {
+            movementState = snapshot.HasMovementState ? snapshot.MovementState : default;
+            return snapshot.HasMovementState;
+        }
+
+        private static bool TryResolveCachedLookState(
+            in FaunaPlayerRuntimeContextSnapshot snapshot,
+            out PlayerLookState lookState)
+        {
+            lookState = snapshot.HasLookState ? snapshot.LookState : default;
+            return snapshot.HasLookState;
         }
 
         private void InvalidatePlayerRuntimeContextCache()
@@ -1226,23 +1314,58 @@ namespace Hecton8.AI
 
         private void RefreshColdRegistryDependencies()
         {
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = ResolveActivePlayerRuntimeContext();
             _physicsService = GlobalRegistry.Physics;
             _steeringEngine.BindPhysicsService(_physicsService);
             _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
-            _objectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             _hazardZones = GlobalRegistry.HazardZoneReadModel;
             _atmosphereRuntime = GlobalRegistry.AtmosphereReadModel;
-            _sargassumMicroFauna = GlobalRegistry.MicroFaunaPresentationPulses;
+            WorldRuntimeReferenceUtility.TryResolveMicroFaunaPresentationPulseSink(ref _sargassumMicroFauna);
             _vegetationThreatPulseSink = GlobalRegistry.VegetationThreatPulses;
-            _vegetationBridge = GlobalRegistry.MapMagicVegetation;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
             _voxelEngine = GlobalRegistry.VoxelEngine;
             _simulationBucketerRuntime = GlobalRegistry.SimulationBucketer;
             _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
             _dispatcherRuntime = GlobalRegistry.Dispatcher;
             _sensorSuite.BindBrineDensityReadModel(GlobalRegistry.BrineFluidDensity);
             RefreshCachedEcosystemDirectorReference();
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                return;
+            }
+
+            _objectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1271,6 +1394,8 @@ namespace Hecton8.AI
             {
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    if (!IsUsablePlayerRuntimeContext(_playerRuntimeContext))
+                        _playerRuntimeContext = ResolveActivePlayerRuntimeContext();
                     InvalidatePlayerRuntimeContextCache();
                     break;
                 case GlobalRegistryServiceSlot.Physics:
@@ -1281,7 +1406,7 @@ namespace Hecton8.AI
                     _ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
                     _persistentWorldRegistry = currentService as IFaunaPersistentWorldStateService;
@@ -1294,10 +1419,12 @@ namespace Hecton8.AI
                     break;
                 case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime:
                     _sargassumMicroFauna = currentService as IMicroFaunaPresentationPulseSink;
+                    WorldRuntimeReferenceUtility.TryResolveMicroFaunaPresentationPulseSink(ref _sargassumMicroFauna);
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
-                    _vegetationThreatPulseSink = currentService as IVegetationThreatPulseSink;
                     _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
+                    _vegetationThreatPulseSink = _vegetationBridge as IVegetationThreatPulseSink;
                     break;
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     _voxelEngine = currentService as HectonVoxelEngine;
@@ -1333,14 +1460,19 @@ namespace Hecton8.AI
             if (!_sensorSuite.hasVisualPlayerContact)
                 return false;
 
-            bool hasRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
-                                     runtimeContext.IsBound;
+            bool hasActiveRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                                           runtimeContext.HasActiveRuntimeContext;
+            bool hasRuntimeContext = hasActiveRuntimeContext && runtimeContext.IsBound;
+            if (hasActiveRuntimeContext && !hasRuntimeContext)
+                return false;
+
             playerTransform = hasRuntimeContext ? runtimeContext.PlayerTransform : null;
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            playerTransform ??= playerContext != null ? playerContext.PlayerTransform : null;
+            IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
+            if (!hasActiveRuntimeContext)
+                playerTransform ??= playerContext != null ? playerContext.PlayerTransform : null;
             if (playerTransform != null)
                 _currentCullingPlayerTransform = playerTransform;
-            else
+            else if (!hasActiveRuntimeContext)
                 playerTransform = _currentCullingPlayerTransform;
 
             return playerTransform != null;
@@ -1604,7 +1736,7 @@ namespace Hecton8.AI
                 directPlayerTransform = lightPlayerTransform;
                 playerPosition = lightPlayerPosition;
 
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
                 if (playerContext != null &&
                     TryGetLatestKccVelocityVector(KccVelocityFaunaMaxAgeFrames, out Vector3 kccVelocity))
                 {
@@ -1730,35 +1862,36 @@ namespace Hecton8.AI
             if (_faunaDataTemplate == null || _faunaDataTemplate.LightReactionMode == FaunaLightReactionMode.None)
                 return 0f;
 
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            bool hasRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
-                                     runtimeContext.IsBound;
-            PlayerLookState lookState = hasRuntimeContext ? runtimeContext.LookState : default;
+            IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
+            bool hasActiveRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                                           runtimeContext.HasActiveRuntimeContext;
+            bool hasRuntimeContext = hasActiveRuntimeContext && runtimeContext.IsBound;
+            if (hasActiveRuntimeContext && !hasRuntimeContext)
+                return 0f;
+
+            PlayerRuntimePoseSnapshot poseSnapshot = hasRuntimeContext && runtimeContext.HasPoseSnapshot
+                ? runtimeContext.PoseSnapshot
+                : default;
+            bool hasPoseSnapshot = hasRuntimeContext && runtimeContext.HasPoseSnapshot;
+            PlayerLookState lookState = default;
             bool hasLookState = hasRuntimeContext &&
-                                (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
-                                math.lengthsq(lookState.AimForward) > 0.0001f;
-            PlayerMovementRuntimeState movementState = hasRuntimeContext ? runtimeContext.MovementState : default;
-            bool hasMovementRoot = hasRuntimeContext &&
-                                   (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
-            bool hasMovementForward = hasRuntimeContext &&
-                                      (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u &&
-                                      math.lengthsq(movementState.Forward) > 0.0001f;
+                                TryResolveCachedLookState(in runtimeContext, out lookState);
             Transform playerTransform = hasRuntimeContext && runtimeContext.PlayerTransform != null
                 ? runtimeContext.PlayerTransform
-                : playerContext != null ? playerContext.PlayerTransform : directPlayerTransform;
+                : !hasActiveRuntimeContext && playerContext != null ? playerContext.PlayerTransform : directPlayerTransform;
             PlayerFlashlight flashlight = hasRuntimeContext && runtimeContext.Flashlight != null
                 ? runtimeContext.Flashlight
-                : playerContext != null ? playerContext.Flashlight : null;
-            if (flashlight == null || !flashlight.IsOn || (!hasLookState && !hasMovementRoot))
+                : !hasActiveRuntimeContext && playerContext != null ? playerContext.Flashlight : null;
+            if (flashlight == null || !flashlight.IsOn || !hasPoseSnapshot)
                 return 0f;
 
             Vector3 listenerPosition = ToVector3(selfPosition);
             lightPosition = hasLookState
                 ? ToVector3(lookState.EyePosition)
-                : ToVector3(movementState.PredictedAup.ToRuntimeFloat3());
+                : ToVector3(poseSnapshot.RuntimePosition);
             float3 lightForward = hasLookState
                 ? lookState.AimForward
-                : hasMovementForward ? movementState.Forward : float3.zero;
+                : poseSnapshot.Forward;
             float forwardLenSq = math.lengthsq(lightForward);
             if (forwardLenSq <= 0.0001f)
                 return 0f;
@@ -1774,7 +1907,7 @@ namespace Hecton8.AI
             }
             else
             {
-                lightAup = movementState.PredictedAup;
+                lightAup = poseSnapshot.Aup;
             }
 
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in listenerAup, in lightAup);
@@ -1990,6 +2123,7 @@ namespace Hecton8.AI
 
             if (!RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) ||
                 !runtimeContext.IsBound ||
+                !runtimeContext.HasMovementState ||
                 runtimeContext.PlayerMovement == null)
             {
                 return;
@@ -2010,14 +2144,12 @@ namespace Hecton8.AI
                 !_faunaDataTemplate.CanDazzleHypnotize ||
                 !RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) ||
                 !runtimeContext.IsBound ||
+                !runtimeContext.HasMovementState ||
+                !TryResolveCachedLookState(in runtimeContext, out PlayerLookState lookState) ||
                 runtimeContext.PlayerMovement == null)
             {
                 return;
             }
-
-            PlayerLookState lookState = runtimeContext.LookState;
-            if ((lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
-                return;
 
             if (!TryResolveSelfLogicPosition(out Vector3 faunaPosition))
                 return;
@@ -2940,6 +3072,16 @@ namespace Hecton8.AI
         /// <param name="shiftData">Committed shift payload.</param>
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);
+            float shiftSqrMagnitude = math.lengthsq(shiftOffset);
+            if (!math.all(math.isfinite(shiftOffset)) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            {
+                return;
+            }
+
             _voxelRouteOriginShiftRefreshActive = true;
             try
             {
@@ -4166,23 +4308,27 @@ namespace Hecton8.AI
                 return;
             }
 
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            bool hasRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
-                                     runtimeContext.IsBound;
-            PlayerLookState lookState = hasRuntimeContext ? runtimeContext.LookState : default;
+            IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
+            bool hasActiveRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                                           runtimeContext.HasActiveRuntimeContext;
+            bool hasRuntimeContext = hasActiveRuntimeContext && runtimeContext.IsBound;
+            if (hasActiveRuntimeContext && !hasRuntimeContext)
+            {
+                ApplyPredatorSensoryBits(0, PredatorSensoryPhotophobicBit);
+                return;
+            }
+
+            PlayerRuntimePoseSnapshot poseSnapshot = hasRuntimeContext && runtimeContext.HasPoseSnapshot
+                ? runtimeContext.PoseSnapshot
+                : default;
+            bool hasPoseSnapshot = hasRuntimeContext && runtimeContext.HasPoseSnapshot;
+            PlayerLookState lookState = default;
             bool hasLookState = hasRuntimeContext &&
-                                (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
-                                math.lengthsq(lookState.AimForward) > 0.0001f;
-            PlayerMovementRuntimeState movementState = hasRuntimeContext ? runtimeContext.MovementState : default;
-            bool hasMovementRoot = hasRuntimeContext &&
-                                   (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
-            bool hasMovementForward = hasRuntimeContext &&
-                                      (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u &&
-                                      math.lengthsq(movementState.Forward) > 0.0001f;
+                                TryResolveCachedLookState(in runtimeContext, out lookState);
             PlayerFlashlight flashlight = hasRuntimeContext && runtimeContext.Flashlight != null
                 ? runtimeContext.Flashlight
-                : playerContext != null ? playerContext.Flashlight : null;
-            if (flashlight == null || !flashlight.IsOn || (!hasLookState && !hasMovementRoot))
+                : !hasActiveRuntimeContext && playerContext != null ? playerContext.Flashlight : null;
+            if (flashlight == null || !flashlight.IsOn || !hasPoseSnapshot)
             {
                 ApplyPredatorSensoryBits(0, PredatorSensoryPhotophobicBit);
                 return;
@@ -4190,10 +4336,10 @@ namespace Hecton8.AI
 
             Vector3 lightPosition = hasLookState
                 ? ToVector3(lookState.EyePosition)
-                : ToVector3(movementState.PredictedAup.ToRuntimeFloat3());
+                : ToVector3(poseSnapshot.RuntimePosition);
             float3 lightForward = hasLookState
                 ? lookState.AimForward
-                : hasMovementForward ? movementState.Forward : float3.zero;
+                : poseSnapshot.Forward;
             float forwardLenSq = math.lengthsq(lightForward);
             if (forwardLenSq <= 0.0001f)
             {
@@ -4218,7 +4364,7 @@ namespace Hecton8.AI
             }
             else
             {
-                lightAup = movementState.PredictedAup;
+                lightAup = poseSnapshot.Aup;
             }
 
             double distanceSqr = AbsoluteUniversePosition.DistanceSq(in predatorAup, in lightAup);
@@ -5046,7 +5192,10 @@ namespace Hecton8.AI
                 return;
             }
 
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (runtimeContext.HasActiveRuntimeContext)
+                return;
+
+            IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             if (playerTransform != null)
             {
@@ -5719,9 +5868,9 @@ namespace Hecton8.AI
         {
             if (RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
                 runtimeContext.IsBound &&
-                (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                runtimeContext.HasPoseSnapshot)
             {
-                playerAup = runtimeContext.MovementState.PredictedAup;
+                playerAup = runtimeContext.PoseSnapshot.Aup;
                 return true;
             }
 
@@ -5796,7 +5945,7 @@ namespace Hecton8.AI
             if (target == null)
                 return false;
 
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             bool targetIsPlayer = target == playerTransform || target.CompareTag("Player");
             if (targetIsPlayer)
@@ -5804,11 +5953,11 @@ namespace Hecton8.AI
                 if (_sensorSuite.TryGetPerceivedPlayerPosition(out targetPosition))
                     return true;
 
-                if (RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
-                    runtimeContext.IsBound &&
-                    (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                bool hasActiveRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                                               runtimeContext.HasActiveRuntimeContext;
+                if (runtimeContext.IsBound && runtimeContext.HasPoseSnapshot)
                 {
-                    targetPosition = ToVector3(runtimeContext.MovementState.PredictedAup.ToRuntimeFloat3());
+                    targetPosition = ToVector3(runtimeContext.PoseSnapshot.RuntimePosition);
                     return true;
                 }
 
@@ -5817,6 +5966,9 @@ namespace Hecton8.AI
                     targetPosition = ToVector3(playerAup.ToRuntimeFloat3());
                     return true;
                 }
+
+                if (hasActiveRuntimeContext)
+                    return false;
             }
 
             if (_sensorSuite.hasCurrentPrey && target.CompareTag("Prey"))
@@ -5842,11 +5994,16 @@ namespace Hecton8.AI
             if (target == null)
                 return TryResolveAupFromRuntimeOrigin(fallbackPosition, out targetAup);
 
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             if (target == playerTransform || target.CompareTag("Player"))
             {
-                return TryResolvePlayerPredictedAup(out targetAup) ||
+                if (TryResolvePlayerPredictedAup(out targetAup))
+                    return true;
+
+                bool hasActiveRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                                               runtimeContext.HasActiveRuntimeContext;
+                return !hasActiveRuntimeContext &&
                        TryResolveAupFromRuntimeOrigin(fallbackPosition, out targetAup);
             }
 
@@ -5896,7 +6053,7 @@ namespace Hecton8.AI
         private bool TryResolvePlayerListenerPosition(out Vector3 listenerPosition, out Transform playerRoot)
         {
             listenerPosition = default;
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
             playerRoot = playerContext != null ? playerContext.PlayerTransform : null;
             if (RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
                 runtimeContext.IsBound)
@@ -5904,17 +6061,15 @@ namespace Hecton8.AI
                 if (playerRoot == null)
                     playerRoot = runtimeContext.PlayerTransform;
 
-                PlayerLookState lookState = runtimeContext.LookState;
-                if ((lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                if (TryResolveCachedLookState(in runtimeContext, out PlayerLookState lookState))
                 {
                     listenerPosition = ToVector3(lookState.EyePosition);
                     return true;
                 }
 
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                if (runtimeContext.HasPoseSnapshot)
                 {
-                    listenerPosition = ToVector3(movementState.PredictedAup.ToRuntimeFloat3());
+                    listenerPosition = ToVector3(runtimeContext.PoseSnapshot.RuntimePosition);
                     return true;
                 }
             }
@@ -6362,9 +6517,13 @@ namespace Hecton8.AI
                 return;
 
             IPlayerMovementForceSink playerForceSink = null;
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext != null && ReferenceEquals(playerContext.PlayerTransform, target))
-                playerForceSink = playerContext.PlayerMovement as IPlayerMovementForceSink;
+            if (RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                runtimeContext.IsBound &&
+                runtimeContext.HasMovementState &&
+                ReferenceEquals(runtimeContext.PlayerTransform, target))
+            {
+                playerForceSink = runtimeContext.PlayerMovement as IPlayerMovementForceSink;
+            }
 
             if (playerForceSink == null)
                 return;
@@ -6410,9 +6569,13 @@ namespace Hecton8.AI
                 return;
 
             IPlayerMovementTraumaSink movement = null;
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext != null && ReferenceEquals(playerContext.PlayerTransform, target))
-                movement = playerContext.PlayerMovement as IPlayerMovementTraumaSink;
+            if (RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                runtimeContext.IsBound &&
+                runtimeContext.HasMovementState &&
+                ReferenceEquals(runtimeContext.PlayerTransform, target))
+            {
+                movement = runtimeContext.PlayerMovement as IPlayerMovementTraumaSink;
+            }
 
             if (movement == null)
                 return;
@@ -7398,14 +7561,14 @@ namespace Hecton8.AI
 
             bool hasRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
                                      runtimeContext.IsBound &&
-                                     (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
+                                     runtimeContext.HasPoseSnapshot;
             if (!hasRuntimeContext)
             {
                 SetLogicalLodTier(FaunaLogicalLodTier.FullSim);
                 return;
             }
 
-            AbsoluteUniversePosition playerAup = runtimeContext.MovementState.PredictedAup;
+            AbsoluteUniversePosition playerAup = runtimeContext.PoseSnapshot.Aup;
             FaunaLogicalLodTier resolvedTier = ecosystemDirector.ResolveLogicalLodTier(in playerAup, in selfAup);
             SetLogicalLodTier(resolvedTier);
             if (resolvedTier == FaunaLogicalLodTier.Hibernating)
@@ -7584,9 +7747,9 @@ namespace Hecton8.AI
         {
             GameObject externalTarget = _pendingExternalDespawnOrDeactivate;
             _pendingExternalDespawnOrDeactivate = null;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             if (externalTarget != null)
             {
-                IObjectPoolService pool = _objectPool;
                 if (pool != null)
                     pool.Despawn(externalTarget);
                 else
@@ -7597,9 +7760,8 @@ namespace Hecton8.AI
                 return;
 
             _pendingSelfDespawnOrDeactivate = false;
-            IObjectPoolService poolSelf = _objectPool;
-            if (poolSelf != null)
-                poolSelf.Despawn(gameObject);
+            if (pool != null)
+                pool.Despawn(gameObject);
             else
                 gameObject.SetActive(false);
         }

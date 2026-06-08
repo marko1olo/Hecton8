@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Caves;
 using Hecton.Localization;
@@ -286,6 +287,16 @@ namespace Hecton8.Modding
         private static NativeHashMap<uint, ModCommandModState> _modStatesByHash;
         private static NativeHashMap<uint, int> _modIndexByHash;
         private static NativeHashMap<uint, int> _kernelIndexByCommandKey;
+        private static int _pendingCommandsSentinelId;
+        private static int _pendingAupCommandsSentinelId;
+        private static int _pendingRenderCommandsSentinelId;
+        private static int _pendingRaycastResultsSentinelId;
+        private static int _pendingRejectEventsSentinelId;
+        private static int _pendingMemoryEvictionEventsSentinelId;
+        private static int _pendingAupResponsesSentinelId;
+        private static int _modStatesByHashSentinelId;
+        private static int _modIndexByHashSentinelId;
+        private static int _kernelIndexByCommandKeySentinelId;
         private static int _queuedCommandCount;
         private static int _queuedAupCommandCount;
         private static int _queuedRenderCommandCount;
@@ -314,61 +325,61 @@ namespace Hecton8.Modding
             if (!_pendingCommands.IsCreated)
             {
                 _pendingCommands = new NativeQueue<ModCommand>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModCommand>[4096] - sandboxed mod command ring buffer - owner: ModCommandDispatcher
-                RegisterQueue(ref _pendingCommands, CommandCapacity, nameof(_pendingCommands));
+                RegisterQueue(ref _pendingCommands, CommandCapacity, nameof(_pendingCommands), out _pendingCommandsSentinelId);
             }
 
             if (!_pendingAupCommands.IsCreated)
             {
                 _pendingAupCommands = new NativeQueue<ModAupCommand>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModAupCommand>[4096] - AUP-stable mod command ring buffer - owner: ModCommandDispatcher
-                RegisterQueue(ref _pendingAupCommands, CommandCapacity, nameof(_pendingAupCommands));
+                RegisterQueue(ref _pendingAupCommands, CommandCapacity, nameof(_pendingAupCommands), out _pendingAupCommandsSentinelId);
             }
 
             if (!_pendingRenderCommands.IsCreated)
             {
                 _pendingRenderCommands = new NativeQueue<ModRenderInstanceCommand>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModRenderInstanceCommand>[1024] - mod instancing request lane - owner: ModCommandDispatcher
-                RegisterQueue(ref _pendingRenderCommands, MaxModRenderInstancesPerFrame, nameof(_pendingRenderCommands));
+                RegisterQueue(ref _pendingRenderCommands, MaxModRenderInstancesPerFrame, nameof(_pendingRenderCommands), out _pendingRenderCommandsSentinelId);
             }
 
             if (!_pendingRaycastResults.IsCreated)
             {
                 _pendingRaycastResults = new NativeQueue<ModRaycastResultPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModRaycastResultPayload>[128] - next-frame mod raycast callback lane - owner: ModCommandDispatcher
-                RegisterQueue(ref _pendingRaycastResults, MaxModRaycasts, nameof(_pendingRaycastResults));
+                RegisterQueue(ref _pendingRaycastResults, MaxModRaycasts, nameof(_pendingRaycastResults), out _pendingRaycastResultsSentinelId);
             }
 
             if (!_pendingRejectEvents.IsCreated)
             {
                 _pendingRejectEvents = new NativeQueue<ModInteractionRejectedPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModInteractionRejectedPayload>[256] - unmanaged mod rejection event lane - owner: ModCommandDispatcher
-                RegisterQueue(ref _pendingRejectEvents, MaxDrainPerLateFrame, nameof(_pendingRejectEvents));
+                RegisterQueue(ref _pendingRejectEvents, MaxDrainPerLateFrame, nameof(_pendingRejectEvents), out _pendingRejectEventsSentinelId);
             }
 
             if (!_pendingMemoryEvictionEvents.IsCreated)
             {
                 _pendingMemoryEvictionEvents = new NativeQueue<ModCriticalMemoryEvictionPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModCriticalMemoryEvictionPayload>[32] - unmanaged mod memory eviction event lane - owner: ModCommandDispatcher
-                RegisterQueue(ref _pendingMemoryEvictionEvents, ModCapacity, nameof(_pendingMemoryEvictionEvents));
+                RegisterQueue(ref _pendingMemoryEvictionEvents, ModCapacity, nameof(_pendingMemoryEvictionEvents), out _pendingMemoryEvictionEventsSentinelId);
             }
 
             if (!_pendingAupResponses.IsCreated)
             {
                 _pendingAupResponses = new NativeQueue<ModAupResponse>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModAupResponse>[256] - unmanaged mod AUP response event lane - owner: ModCommandDispatcher
-                RegisterQueue(ref _pendingAupResponses, MaxDrainPerLateFrame, nameof(_pendingAupResponses));
+                RegisterQueue(ref _pendingAupResponses, MaxDrainPerLateFrame, nameof(_pendingAupResponses), out _pendingAupResponsesSentinelId);
             }
 
             if (!_modStatesByHash.IsCreated)
             {
                 _modStatesByHash = new NativeHashMap<uint, ModCommandModState>(ModCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeHashMap<uint,ModCommandModState>[32] - O(1) mod command security lookup - owner: ModCommandDispatcher
-                RegisterHashMap(ref _modStatesByHash, nameof(_modStatesByHash));
+                RegisterHashMap(ref _modStatesByHash, nameof(_modStatesByHash), out _modStatesByHashSentinelId);
             }
 
             if (!_modIndexByHash.IsCreated)
             {
                 _modIndexByHash = new NativeHashMap<uint, int>(ModCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) mod hash reverse-index lookup - owner: ModCommandDispatcher
-                RegisterHashMap(ref _modIndexByHash, nameof(_modIndexByHash));
+                RegisterHashMap(ref _modIndexByHash, nameof(_modIndexByHash), out _modIndexByHashSentinelId);
             }
 
             if (!_kernelIndexByCommandKey.IsCreated)
             {
                 _kernelIndexByCommandKey = new NativeHashMap<uint, int>(KernelCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) command kernel lookup - owner: ModCommandDispatcher
-                RegisterHashMap(ref _kernelIndexByCommandKey, nameof(_kernelIndexByCommandKey));
+                RegisterHashMap(ref _kernelIndexByCommandKey, nameof(_kernelIndexByCommandKey), out _kernelIndexByCommandKeySentinelId);
             }
 
         }
@@ -379,34 +390,16 @@ namespace Hecton8.Modding
 
             FutureCommandSandboxValidator.Shutdown();
 
-            DisposeQueue(ref _pendingCommands, nameof(_pendingCommands));
-            DisposeQueue(ref _pendingAupCommands, nameof(_pendingAupCommands));
-            DisposeQueue(ref _pendingRenderCommands, nameof(_pendingRenderCommands));
-            DisposeQueue(ref _pendingRaycastResults, nameof(_pendingRaycastResults));
-            DisposeQueue(ref _pendingRejectEvents, nameof(_pendingRejectEvents));
-            DisposeQueue(ref _pendingMemoryEvictionEvents, nameof(_pendingMemoryEvictionEvents));
-            DisposeQueue(ref _pendingAupResponses, nameof(_pendingAupResponses));
-
-            if (_modStatesByHash.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModCommandDispatcher), nameof(_modStatesByHash));
-                _modStatesByHash.Dispose();
-                _modStatesByHash = default;
-            }
-
-            if (_modIndexByHash.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModCommandDispatcher), nameof(_modIndexByHash));
-                _modIndexByHash.Dispose();
-                _modIndexByHash = default;
-            }
-
-            if (_kernelIndexByCommandKey.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModCommandDispatcher), nameof(_kernelIndexByCommandKey));
-                _kernelIndexByCommandKey.Dispose();
-                _kernelIndexByCommandKey = default;
-            }
+            DisposeQueue(ref _pendingCommands, ref _pendingCommandsSentinelId);
+            DisposeQueue(ref _pendingAupCommands, ref _pendingAupCommandsSentinelId);
+            DisposeQueue(ref _pendingRenderCommands, ref _pendingRenderCommandsSentinelId);
+            DisposeQueue(ref _pendingRaycastResults, ref _pendingRaycastResultsSentinelId);
+            DisposeQueue(ref _pendingRejectEvents, ref _pendingRejectEventsSentinelId);
+            DisposeQueue(ref _pendingMemoryEvictionEvents, ref _pendingMemoryEvictionEventsSentinelId);
+            DisposeQueue(ref _pendingAupResponses, ref _pendingAupResponsesSentinelId);
+            DisposeHashMap(ref _modStatesByHash, ref _modStatesByHashSentinelId);
+            DisposeHashMap(ref _modIndexByHash, ref _modIndexByHashSentinelId);
+            DisposeHashMap(ref _kernelIndexByCommandKey, ref _kernelIndexByCommandKeySentinelId);
 
             for (int i = 0; i < _kernels.Length; i++)
                 _kernels[i] = null;
@@ -476,7 +469,7 @@ namespace Hecton8.Modding
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1106,7 +1099,8 @@ namespace Hecton8.Modding
                 return;
             }
 
-            HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
+            HectonVoxelEngine engine = null;
+            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref engine);
             VoxelDeltaProcessor deltaProcessor = engine != null ? engine.DeltaProcessor : null;
             if (deltaProcessor == null)
             {
@@ -1660,13 +1654,17 @@ namespace Hecton8.Modding
                    math.abs(local.z) <= AupCellSizeMeters;
         }
 
-        private static void RegisterQueue<TPayload>(ref NativeQueue<TPayload> queue, int expectedCapacity, string label)
+        private static void RegisterQueue<TPayload>(
+            ref NativeQueue<TPayload> queue,
+            int expectedCapacity,
+            string label,
+            out int sentinelId)
             where TPayload : unmanaged
         {
-            bool registered = false;
+            sentinelId = 0;
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                     queue,
                     expectedCapacity,
                     nameof(ModCommandDispatcher),
@@ -1675,28 +1673,33 @@ namespace Hecton8.Modding
                 if (sentinelId <= 0)
                     throw new System.InvalidOperationException("NativeMemorySentinel rejected ModCommandDispatcher queue registration.");
 
-                registered = true;
                 PrewarmQueue(ref queue, expectedCapacity);
             }
-            catch
+            catch (Exception exception)
             {
-                if (registered)
-                    NativeMemorySentinel.UnregisterNativeQueue(nameof(ModCommandDispatcher), label);
-                if (queue.IsCreated)
+                try
                 {
-                    queue.Dispose();
-                    queue = default;
+                    DisposeQueue(ref queue, ref sentinelId);
                 }
+                catch (Exception releaseException)
+                {
+                    throw new AggregateException("ModCommandDispatcher queue registration cleanup failed.", exception, releaseException);
+                }
+
                 throw;
             }
         }
 
-        private static void RegisterHashMap<TValue>(ref NativeHashMap<uint, TValue> map, string label)
+        private static void RegisterHashMap<TValue>(
+            ref NativeHashMap<uint, TValue> map,
+            string label,
+            out int sentinelId)
             where TValue : unmanaged
         {
+            sentinelId = 0;
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeHashMap(
+                sentinelId = NativeMemorySentinel.RegisterNativeHashMapInstance(
                     map,
                     nameof(ModCommandDispatcher),
                     label,
@@ -1704,13 +1707,17 @@ namespace Hecton8.Modding
                 if (sentinelId <= 0)
                     throw new System.InvalidOperationException("NativeMemorySentinel rejected ModCommandDispatcher hash map registration.");
             }
-            catch
+            catch (Exception exception)
             {
-                if (map.IsCreated)
+                try
                 {
-                    map.Dispose();
-                    map = default;
+                    DisposeHashMap(ref map, ref sentinelId);
                 }
+                catch (Exception releaseException)
+                {
+                    throw new AggregateException("ModCommandDispatcher hash map registration cleanup failed.", exception, releaseException);
+                }
+
                 throw;
             }
         }
@@ -1729,15 +1736,96 @@ namespace Hecton8.Modding
             }
         }
 
-        private static void DisposeQueue<TPayload>(ref NativeQueue<TPayload> queue, string label)
+        private static void DisposeQueue<TPayload>(ref NativeQueue<TPayload> queue, ref int sentinelId)
             where TPayload : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(ModCommandDispatcher), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
+        }
+
+        private static void DisposeHashMap<TValue>(ref NativeHashMap<uint, TValue> map, ref int sentinelId)
+            where TValue : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (map.IsCreated)
+            {
+                try
+                {
+                    map.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    map = default;
+                }
+            }
+            else
+            {
+                map = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private sealed class ModRaycastReceiver : IDispatcherSurfaceProbeReceiver

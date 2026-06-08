@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "Kantor Kepatuhan Pemulihan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# Kantor Kepatuhan Pemulihan
 
-ID LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+Kantor Kepatuhan Pemulihan adalah faksi Deep Reach masa kini yang mendorong kembali ke HECTON-8. Ia bekerja lewat jendela, otoritas proksi, paket hukum, dan perintah pembersihan. Ia tidak membutuhkan komando instan; ia membutuhkan pemain mengirim payload yang salah terlebih dahulu.
 
 ## Scanner
 
-ID LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+Stempel kantor masa kini. Deep Reach bukan hantu; ia antrean dengan pengacara.
 
 ## Terminal
 
-ID LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+KANTOR KEPATUHAN PEMULIHAN: tindakan pulang Aegir dibuka. Prioritas: kustodi XO, akses Atlas, penahanan liabilitas, diamnya kontraktor jika tersedia.
 
 ## Audio
 
-ID LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+Mereka cukup terlambat untuk legal dan cukup kini untuk berbahaya.
 
 ## Field Note
 
-ID LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+Faksi yang masih hidup membuat tekanan terasa kini tanpa mengubah seluruh korporasi menjadi satu penjahat yang berteriak.
 
 <!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/id_ID. -->

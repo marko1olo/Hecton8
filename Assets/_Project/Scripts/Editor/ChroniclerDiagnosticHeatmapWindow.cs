@@ -80,20 +80,54 @@ namespace Hecton8.Editor
         private void OnDisable()
         {
             EditorApplication.update -= TickRefresh;
-            if (_signalLanes.IsCreated)
+            DisposeTrackedBuffer(ref _signalLanes, ref _signalLanesSentinelId);
+            DisposeTrackedBuffer(ref _signalFrames, ref _signalFramesSentinelId);
+        }
+
+        private static void DisposeTrackedBuffer<T>(ref NativeArray<T> buffer, ref int sentinelId)
+            where T : struct
+        {
+            System.Exception cleanupException = null;
+
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.Unregister(_signalLanesSentinelId);
-                _signalLanesSentinelId = 0;
-                _signalLanes.Dispose();
-                _signalLanes = default;
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (System.Exception exception)
+                {
+                    cleanupException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
-            if (_signalFrames.IsCreated)
+
+            if (buffer.IsCreated)
             {
-                NativeMemorySentinel.Unregister(_signalFramesSentinelId);
-                _signalFramesSentinelId = 0;
-                _signalFrames.Dispose();
-                _signalFrames = default;
+                try
+                {
+                    buffer.Dispose();
+                }
+                catch (System.Exception exception)
+                {
+                    if (cleanupException == null)
+                        cleanupException = exception;
+                }
+                finally
+                {
+                    buffer = default;
+                }
             }
+            else
+            {
+                buffer = default;
+            }
+
+            if (cleanupException != null)
+                throw cleanupException;
         }
 
         public void CreateGUI()

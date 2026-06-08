@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "盐水叶片导航遭遇语法"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Brine Vane Navigation Encounter Grammar
+# 盐水叶片导航遭遇语法
 
-ZH LOC HOLD: The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
+盐水叶片导航让HECTON-8峡谷不靠箭头也可读。路线写在密度、膜损伤、sonar畸变和玩家自己的浮力纪律里。
 
 ## Scanner
 
-ZH LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+盐水叶片场。对齐膜片标记密度转弯；卷曲尖端标记弱窗口；开放亮光附近sonar扭曲。保持一个边缘在视野内。
 
 ## Terminal
 
-ZH LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+遭遇语法 / 盐水叶片导航 / 作用: 中深层路线读写、密度墙扶手、假地面校正 / 安全读取: 完整叶片边缘、撕裂口、sonar弯折与浮力漂移一致 / 拒绝: 横穿黑色开放水域、切割引导膜、信任没有叶片边界的地面回波 / 路线备注: 叶片不是有意引导你；它只是足够明显地服从水，值得跟随。
 
 ## Audio
 
-ZH LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+叶片不是路牌。是水正在造墙，并留下了一道缝。
 
 ## Field Note
 
-ZH LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+把叶片边缘当扶手。线条弯得不对时，你的浮力读数已经晚了。
 
 <!-- External Site; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/zh_CN. -->

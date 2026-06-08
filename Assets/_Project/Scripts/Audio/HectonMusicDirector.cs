@@ -85,7 +85,7 @@ namespace Hecton8.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
         {
-            if (!Application.isPlaying || GlobalRegistry.MusicDirector != null)
+            if (!Application.isPlaying || ResolveUsableRuntime() != null)
                 return;
 
             TryInstantiateConfiguredRuntimeDirector(SceneManager.GetActiveScene(), false);
@@ -93,10 +93,44 @@ namespace Hecton8.Audio
 
         internal static void EnsureRuntimeInstanceForScene(Scene scene)
         {
-            if (!Application.isPlaying || GlobalRegistry.MusicDirector != null)
+            if (!Application.isPlaying || ResolveUsableRuntime() != null)
                 return;
 
             TryInstantiateConfiguredRuntimeDirector(scene, true);
+        }
+
+        private static HectonMusicDirector ResolveUsableRuntime()
+        {
+            HectonMusicDirector registered = GlobalRegistry.MusicDirector;
+            if (IsMusicDirectorRuntimeUsable(registered))
+            {
+                s_activeRuntimeInstance = registered;
+                return registered;
+            }
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterMusicDirectorRuntime(registered);
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+            }
+
+            HectonMusicDirector active = s_activeRuntimeInstance;
+            if (IsMusicDirectorRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterMusicDirectorRuntime(active);
+                s_activeRuntimeInstance = active;
+                return active;
+            }
+
+            if (!ReferenceEquals(active, null))
+            {
+                GlobalRegistry.UnregisterMusicDirectorRuntime(active);
+                if (ReferenceEquals(s_activeRuntimeInstance, active))
+                    s_activeRuntimeInstance = null;
+            }
+
+            return null;
         }
 
         [Header("References")]
@@ -331,6 +365,7 @@ namespace Hecton8.Audio
         private bool _pendingMusicSlowTickDirty;
         private float _pendingMusicTickDeltaTime;
         private bool _serviceRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _hotSwapRegistered;
         private PlaybackState _playbackState = PlaybackState.Silent;
         private HectonMusicBiomeProfile _resolvedProfile;
@@ -450,68 +485,68 @@ namespace Hecton8.Audio
         /// <summary>
         /// Currently resolved runtime profile.
         /// </summary>
-        public HectonMusicBiomeProfile ActiveResolvedProfile => _resolvedProfile;
-        public HectonMusicBiomeProfile ActiveMatrixBiomeMusicProfile => _matrixBiomeProfile;
+        public HectonMusicBiomeProfile ActiveResolvedProfile => _runtimeOwnerAborted ? null : _resolvedProfile;
+        public HectonMusicBiomeProfile ActiveMatrixBiomeMusicProfile => _runtimeOwnerAborted ? null : _matrixBiomeProfile;
 
         /// <summary>
         /// True while a forced override cue is active.
         /// </summary>
-        public bool IsOverrideActive => _overrideActive;
+        public bool IsOverrideActive => !_runtimeOwnerAborted && _overrideActive;
 
         /// <summary>
         /// Current normalized tension value used by the director.
         /// </summary>
-        public float CurrentTension01 => _resolvedTension01;
+        public float CurrentTension01 => _runtimeOwnerAborted ? 0f : _resolvedTension01;
 
         /// <summary>
         /// Current normalized permission for procedural music to be audible.
         /// </summary>
-        public float CurrentMusicActivity01 => math.saturate(_proceduralMusicActivity01);
+        public float CurrentMusicActivity01 => _runtimeOwnerAborted ? 0f : math.saturate(_proceduralMusicActivity01);
 
         /// <summary>
         /// Current high-level reason behind procedural music activity.
         /// </summary>
-        public MusicActivityReason CurrentMusicActivityReason => _musicActivityReason;
+        public MusicActivityReason CurrentMusicActivityReason => _runtimeOwnerAborted ? MusicActivityReason.Silent : _musicActivityReason;
 
         /// <summary>
         /// Current normalized rhythm-layer intensity.
         /// </summary>
-        public float CurrentRhythmLayer01 => math.saturate(_layerRhythm01);
+        public float CurrentRhythmLayer01 => _runtimeOwnerAborted ? 0f : math.saturate(_layerRhythm01);
 
         /// <summary>
         /// Current normalized bass-layer intensity.
         /// </summary>
-        public float CurrentBassLayer01 => math.saturate(_layerBass01);
+        public float CurrentBassLayer01 => _runtimeOwnerAborted ? 0f : math.saturate(_layerBass01);
 
         /// <summary>
         /// Current normalized atmosphere-layer intensity.
         /// </summary>
-        public float CurrentAtmosphereLayer01 => math.saturate(_layerAtmosphere01);
+        public float CurrentAtmosphereLayer01 => _runtimeOwnerAborted ? 0f : math.saturate(_layerAtmosphere01);
 
         /// <summary>
         /// Current normalized danger-layer intensity.
         /// </summary>
-        public float CurrentDangerLayer01 => math.saturate(_layerDanger01);
+        public float CurrentDangerLayer01 => _runtimeOwnerAborted ? 0f : math.saturate(_layerDanger01);
 
         /// <summary>
         /// True when at least one optional exposed music-layer mixer parameter is bound.
         /// </summary>
-        public bool CurrentLayerMixerRouteAvailable => _debugLayerMixerRouteAvailable;
+        public bool CurrentLayerMixerRouteAvailable => !_runtimeOwnerAborted && _debugLayerMixerRouteAvailable;
 
         /// <summary>
         /// Current soundscape depth tier mirrored from the world soundscape runtime.
         /// </summary>
-        public SoundscapeTier CurrentSoundscapeTier => _currentSoundscapeTier;
+        public SoundscapeTier CurrentSoundscapeTier => _runtimeOwnerAborted ? SoundscapeTier.Surface : _currentSoundscapeTier;
 
         /// <summary>
         /// Normalized musical pressure derived from the current soundscape tier.
         /// </summary>
-        public float CurrentSoundscapePressure01 => ResolveSoundscapePressure01(_currentSoundscapeTier);
+        public float CurrentSoundscapePressure01 => _runtimeOwnerAborted ? 0f : ResolveSoundscapePressure01(_currentSoundscapeTier);
 
         /// <summary>
         /// Mixer route currently used by authored music voices.
         /// </summary>
-        public AudioMixerGroup CurrentMusicMixerGroup => ResolveMusicMixerGroup();
+        public AudioMixerGroup CurrentMusicMixerGroup => _runtimeOwnerAborted ? null : ResolveMusicMixerGroup();
 
         /// <summary>
         /// Authored dedicated music mixer route, if one is assigned.
@@ -520,6 +555,9 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
+            if (Application.isPlaying && !TryRegisterToGlobalRegistry())
+                return;
+
             // COLD ALLOC: AudioSource[2] — persistent dual music voices — owner: HectonMusicDirector
             _musicSources = new AudioSource[MusicVoiceCount];
             // COLD ALLOC: HectonMusicBiomeProfile[2] — active voice profile ownership — owner: HectonMusicDirector
@@ -562,7 +600,7 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
-            if (!TryRegisterToGlobalRegistry())
+            if (_runtimeOwnerAborted || !TryRegisterToGlobalRegistry())
                 return;
 
             TryRegisterHotSwapListener();
@@ -574,7 +612,7 @@ namespace Hecton8.Audio
 
         private void Start()
         {
-            if (!TryRegisterToGlobalRegistry())
+            if (_runtimeOwnerAborted || !TryRegisterToGlobalRegistry())
                 return;
 
             TryRegisterTickHandlers();
@@ -584,6 +622,9 @@ namespace Hecton8.Audio
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             StopMusicInternal(0f);
             SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
             TryUnregisterHotSwapListener();
@@ -595,6 +636,9 @@ namespace Hecton8.Audio
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             StopMusicInternal(0f);
             TryUnregisterHotSwapListener();
             TryUnregisterWorldZoneDirectorListener();
@@ -608,6 +652,9 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             CacheReboundRuntimeService(serviceSlot, previousService, currentService);
         }
 
@@ -616,12 +663,18 @@ namespace Hecton8.Audio
         /// </summary>
         public void Tick(float deltaTime)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _pendingMusicTickDeltaTime += math.max(0f, deltaTime);
             _pendingMusicTickDirty = true;
         }
 
         public void LateFrameTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_pendingMusicSlowTickDirty)
             {
                 _pendingMusicSlowTickDirty = false;
@@ -643,6 +696,9 @@ namespace Hecton8.Audio
 
         private void RunMusicTick(float deltaTime)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             DrainAcousticZoneSignal();
             DrainDirectorAISignals();
             RefreshPlayerCriticalStressSignal();
@@ -748,11 +804,17 @@ namespace Hecton8.Audio
         /// </summary>
         public void SlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _pendingMusicSlowTickDirty = true;
         }
 
         private void RunMusicSlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             DrainAcousticZoneSignal();
             DrainDirectorAISignals();
             DrainBiomeGradientSignal();
@@ -766,6 +828,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void SetManualBiomeProfile(HectonMusicBiomeProfile profile)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _manualProfile = profile;
             ReevaluateContext(true);
         }
@@ -775,6 +840,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void SetMatrixBiomeProfile(HectonBiomeMatrixProfile matrixProfile)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             HectonMusicBiomeProfile resolvedProfile = ResolveMatrixBiomeMusicProfile(matrixProfile);
             if (_matrixBiomeProfile == resolvedProfile)
                 return;
@@ -788,6 +856,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void SetSoundscapeTierContext(SoundscapeTier tier, float depthMeters)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             SoundscapeTier safeTier = SanitizeSoundscapeTier(tier);
             float finiteDepth = math.max(0f, math.select(0f, depthMeters, math.isfinite(depthMeters)));
             float depthHint = math.max(finiteDepth, ResolveSoundscapeDepthHintMeters(safeTier));
@@ -812,6 +883,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void ClearManualBiomeProfile()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_manualProfile == null)
                 return;
 
@@ -824,6 +898,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void SetManualTension01(float tension01)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _manualTensionOverride = true;
             _manualTension01 = math.saturate(tension01);
             ReevaluateContext(true);
@@ -834,6 +911,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void ClearManualTensionOverride()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_manualTensionOverride)
                 return;
 
@@ -847,6 +927,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void ForceOverrideTrack(AudioClip clip, float volume = 1f, bool loop = false, float fadeInSeconds = -1f, float fadeOutSeconds = -1f)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (clip == null)
                 return;
 
@@ -858,6 +941,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void ClearForcedOverride(bool immediate = false)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ClearForcedOverrideInternal(immediate);
         }
 
@@ -866,6 +952,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void PlayDiscoveryStinger()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             RefreshForegroundSpeechMusicDucking();
             if (_overrideActive || _combatLatched || _currentBaseContext || IsEmergencyBreathDominant() || IsForegroundSpeechActive())
                 return;
@@ -879,6 +968,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void PlayDangerStinger()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             RefreshForegroundSpeechMusicDucking();
             if (_overrideActive || _currentBaseContext || IsEmergencyBreathDominant() || IsForegroundSpeechActive())
                 return;
@@ -892,6 +984,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void PlayRecoveryStinger()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             RefreshForegroundSpeechMusicDucking();
             if (_overrideActive || _currentBaseContext || IsEmergencyBreathDominant() || IsForegroundSpeechActive())
                 return;
@@ -956,12 +1051,15 @@ namespace Hecton8.Audio
         /// </summary>
         public void StopMusic(float fadeOutSeconds = 0.75f)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             StopMusicInternal(fadeOutSeconds);
         }
 
         private void TryRegisterTickHandlers()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_runtimeOwnerAborted || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredTick)
@@ -1004,7 +1102,7 @@ namespace Hecton8.Audio
 
         private void TryRegisterLateFrameTick()
         {
-            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_runtimeOwnerAborted || _registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -1012,7 +1110,7 @@ namespace Hecton8.Audio
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapRegistered || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _hotSwapRegistered || !Application.isPlaying)
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -1029,6 +1127,9 @@ namespace Hecton8.Audio
 
         private bool TryRegisterToGlobalRegistry()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_serviceRegistered)
             {
                 s_activeRuntimeInstance = this;
@@ -1038,12 +1139,15 @@ namespace Hecton8.Audio
             if (!Application.isPlaying)
                 return true;
 
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             HectonMusicDirector activeDirector = GlobalRegistry.MusicDirector;
             if (!ReferenceEquals(activeDirector, null) && !ReferenceEquals(activeDirector, this))
             {
                 if (IsMusicDirectorRuntimeUsable(activeDirector))
                 {
-                    Destroy(gameObject);
+                    AbortDuplicateRuntimeOwner();
                     return false;
                 }
 
@@ -1053,18 +1157,107 @@ namespace Hecton8.Audio
             GlobalRegistry.RegisterMusicDirectorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.MusicDirector, this);
             if (_serviceRegistered)
+            {
                 s_activeRuntimeInstance = this;
-            return _serviceRegistered;
+                return true;
+            }
+
+            AbortDuplicateRuntimeOwner();
+            return false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (_runtimeOwnerAborted)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
+            HectonMusicDirector registered = GlobalRegistry.MusicDirector;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsMusicDirectorRuntimeUsable(registered))
+                {
+                    s_activeRuntimeInstance = registered;
+                    AbortDuplicateRuntimeOwner();
+                    return true;
+                }
+
+                GlobalRegistry.UnregisterMusicDirectorRuntime(registered);
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+            }
+
+            HectonMusicDirector active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsMusicDirectorRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterMusicDirectorRuntime(active);
+                s_activeRuntimeInstance = active;
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            GlobalRegistry.UnregisterMusicDirectorRuntime(active);
+            if (ReferenceEquals(s_activeRuntimeInstance, active))
+                s_activeRuntimeInstance = null;
+
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            if (_musicSources != null)
+                StopMusicInternal(0f);
+
+            SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
+            TryUnregisterHotSwapListener();
+            TryUnregisterWorldZoneDirectorListener();
+            TryUnregisterTickHandlers();
+
+            if (_serviceRegistered)
+            {
+                GlobalRegistry.UnregisterMusicDirectorRuntime(this);
+                _serviceRegistered = false;
+            }
+
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
+
+            ClearCachedRuntimeServices();
+            _runtimeOwnerAborted = true;
+            _registeredTick = false;
+            _registeredSlowTick = false;
+            _registeredLateFrameTick = false;
+            _serviceRegistered = false;
+            _hotSwapRegistered = false;
+            _pendingMusicTickDirty = false;
+            _pendingMusicSlowTickDirty = false;
+            _pendingMusicTickDeltaTime = 0f;
+            _pendingDiscoveryStinger = false;
+            _pendingDangerStinger = false;
+            _pendingRecoveryStinger = false;
+            enabled = false;
+            Destroy(gameObject);
         }
 
         private static bool IsMusicDirectorRuntimeUsable(HectonMusicDirector director)
         {
-            return director != null && director.isActiveAndEnabled;
+            return director != null &&
+                   director._serviceRegistered &&
+                   director.isActiveAndEnabled &&
+                   !director._runtimeOwnerAborted;
         }
 
         private void TryUnregisterFromGlobalRegistry()
         {
-            if (!_serviceRegistered)
+            if (_runtimeOwnerAborted || !_serviceRegistered)
                 return;
 
             GlobalRegistry.UnregisterMusicDirectorRuntime(this);
@@ -1078,8 +1271,8 @@ namespace Hecton8.Audio
             HectonMusicDirectorConfig sceneConfig;
             if (!HectonMusicDirectorAnchor.TryResolveConfigForScene(activeScene, out sceneConfig))
             {
-                HectonMusicDirectorAnchor anchor = HectonMusicDirectorAnchor.ActiveRuntimeInstance;
-                sceneConfig = anchor != null ? anchor.Config : null;
+                HectonMusicDirectorAnchor anchor = null;
+                sceneConfig = HectonMusicDirectorAnchor.TryResolveActiveRuntime(ref anchor) ? anchor.Config : null;
             }
 
             if (sceneConfig == null)
@@ -1131,13 +1324,17 @@ namespace Hecton8.Audio
 
         private static IObjectPoolService ResolveRuntimeObjectPool()
         {
-            return GlobalRegistry.ObjectPoolService != null
-                ? GlobalRegistry.ObjectPoolService
-                : ObjectPoolManager.ActiveRuntimeInstance;
+            ObjectPoolManager pool = null;
+            return ObjectPoolManager.TryResolveActiveRuntime(ref pool)
+                ? pool
+                : null;
         }
 
         private void BindAuthoredVoicePool()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_musicSources == null)
                 return;
 
@@ -1169,6 +1366,9 @@ namespace Hecton8.Audio
 
         private void ResolveVoicePool()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_voicePool != null)
                 return;
 
@@ -1232,6 +1432,9 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             switch (serviceSlot)
             {
@@ -1249,7 +1452,9 @@ namespace Hecton8.Audio
                     _hasLastAcousticInteriorState = false;
                     break;
                 case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
-                    CacheBiomeMatrixDirector(currentService as BiomeMatrixDirector);
+                    BiomeMatrixDirector currentBiomeMatrix = currentService as BiomeMatrixDirector;
+                    WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref currentBiomeMatrix);
+                    CacheBiomeMatrixDirector(currentBiomeMatrix);
                     _observedMatrixProfile = null;
                     _hasObservedMatrixState = false;
                     break;
@@ -1353,6 +1558,9 @@ namespace Hecton8.Audio
 
         private void RefreshCachedRuntimeServicesCold()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             CachePlayerRuntimeContext(GlobalRegistry.Player, frame);
             CacheAudioService(GlobalRegistry.Audio, frame);
@@ -1414,11 +1622,14 @@ namespace Hecton8.Audio
 
         private void CacheBiomeMatrixDirector(BiomeMatrixDirector director)
         {
-            if (_biomeMatrixDirector != null && !_biomeMatrixDirectorRuntimeOwned)
+            if (_biomeMatrixDirector != null && !_biomeMatrixDirectorRuntimeOwned && _biomeMatrixDirector.isActiveAndEnabled)
                 return;
 
+            if (director != null && !director.isActiveAndEnabled)
+                director = null;
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref director);
             _biomeMatrixDirector = director;
-            _biomeMatrixDirectorRuntimeOwned = true;
+            _biomeMatrixDirectorRuntimeOwned = director != null;
         }
 
         private void CacheEncounterDirector(IEncounterDirectorService encounterDirector)
@@ -1450,13 +1661,23 @@ namespace Hecton8.Audio
 
         private void ResolveDependenciesCold()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ResolveDependenciesForSceneCold(SceneManager.GetActiveScene());
         }
 
         private void TryRegisterWorldZoneDirectorListenerCold()
         {
-            if (_worldZoneDirector == null || _worldZoneDirectorRuntimeOwned)
-                CacheRuntimeWorldZoneDirectorCold(WorldZoneDirector.ActiveRuntimeInstance);
+            if (_runtimeOwnerAborted)
+                return;
+
+            if (_worldZoneDirector == null || _worldZoneDirectorRuntimeOwned || !_worldZoneDirector.isActiveAndEnabled)
+            {
+                WorldZoneDirector runtimeWorldZoneDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref runtimeWorldZoneDirector);
+                CacheRuntimeWorldZoneDirectorCold(runtimeWorldZoneDirector);
+            }
 
             if (_worldZoneDirectorListenerRegistered || !Application.isPlaying)
                 return;
@@ -1476,20 +1697,32 @@ namespace Hecton8.Audio
 
         private void HandleWorldZoneDirectorChanged(WorldZoneDirector director)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             CacheRuntimeWorldZoneDirectorCold(director);
         }
 
         private void CacheRuntimeWorldZoneDirectorCold(WorldZoneDirector director)
         {
-            if (_worldZoneDirector != null && !_worldZoneDirectorRuntimeOwned)
+            if (_runtimeOwnerAborted)
                 return;
 
+            if (_worldZoneDirector != null && !_worldZoneDirectorRuntimeOwned && _worldZoneDirector.isActiveAndEnabled)
+                return;
+
+            if (director != null && !director.isActiveAndEnabled)
+                director = null;
+            WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref director);
             _worldZoneDirector = director;
-            _worldZoneDirectorRuntimeOwned = true;
+            _worldZoneDirectorRuntimeOwned = director != null;
         }
 
         private void ResolveDependenciesForSceneCold(Scene activeScene)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             RefreshCachedRuntimeServicesCold();
             ApplySceneConfigCold(activeScene);
             TryRegisterWorldZoneDirectorListenerCold();
@@ -1506,8 +1739,8 @@ namespace Hecton8.Audio
             }
             else
             {
-                HectonMusicDirectorAnchor anchor = HectonMusicDirectorAnchor.ActiveRuntimeInstance;
-                if (anchor != null)
+                HectonMusicDirectorAnchor anchor = null;
+                if (HectonMusicDirectorAnchor.TryResolveActiveRuntime(ref anchor))
                     ApplyConfig(anchor.Config);
             }
 
@@ -1516,6 +1749,9 @@ namespace Hecton8.Audio
 
         private void ResolveDependencies()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             RefreshVocalWarningRuntimeIfStale();
             RefreshAudioLogRuntimeIfStale();
             ResolveDepthZoneReadModel();
@@ -1583,7 +1819,7 @@ namespace Hecton8.Audio
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1594,7 +1830,7 @@ namespace Hecton8.Audio
 
         private static bool IsVocalWarningRuntimeUsable(IVocalWarningSystem vocalWarningSystem)
         {
-            if (vocalWarningSystem == null || !vocalWarningSystem.IsInitialized)
+            if (vocalWarningSystem == null || !vocalWarningSystem.IsVocalWarningRuntimeReady)
                 return false;
 
             if (vocalWarningSystem is Behaviour behaviour)
@@ -1605,7 +1841,7 @@ namespace Hecton8.Audio
 
         private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogRuntime)
         {
-            if (audioLogRuntime == null)
+            if (audioLogRuntime == null || !audioLogRuntime.IsAudioLogRuntimeReady)
                 return false;
 
             if (audioLogRuntime is Behaviour behaviour)
@@ -1979,7 +2215,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            if (_playerMovement == null)
+            if (!TryResolvePlayerThreatPose(out AbsoluteUniversePosition playerAup, out Vector3 playerRuntimePosition))
             {
                 _predatorProximity01 = 0f;
                 _debugPredatorProximity01 = 0f;
@@ -1988,19 +2224,6 @@ namespace Hecton8.Audio
                 _debugEmergencyAudioDominance01 = ResolveEmergencyAudioDominance01();
                 return;
             }
-
-            AbsoluteUniversePosition playerAup = _playerMovement.CurrentAup;
-            if (!TryResolveRuntimeOriginRelativeFloat3(in playerAup, out float3 playerRuntime3))
-            {
-                _predatorProximity01 = 0f;
-                _debugPredatorProximity01 = 0f;
-                _debugStormPressure01 = _stormPressure01;
-                _debugOxygenDanger01 = _oxygenDanger01;
-                _debugEmergencyAudioDominance01 = ResolveEmergencyAudioDominance01();
-                return;
-            }
-
-            Vector3 playerRuntimePosition = new Vector3(playerRuntime3.x, playerRuntime3.y, playerRuntime3.z);
 
             if (WorldSpatialHashGrid.TryGetNearestAggressiveBioform(
                 playerRuntimePosition,
@@ -2023,6 +2246,43 @@ namespace Hecton8.Audio
             _debugStormPressure01 = _stormPressure01;
             _debugOxygenDanger01 = _oxygenDanger01;
             _debugEmergencyAudioDominance01 = ResolveEmergencyAudioDominance01();
+        }
+
+        private bool TryResolvePlayerThreatPose(out AbsoluteUniversePosition playerAup, out Vector3 runtimePosition)
+        {
+            playerAup = default;
+            runtimePosition = default;
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
+            if (playerContext != null)
+            {
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose) &&
+                    pose.Aup.IsFinite() &&
+                    math.all(math.isfinite(pose.RuntimePosition)))
+                {
+                    playerAup = pose.Aup;
+                    runtimePosition = new Vector3(
+                        pose.RuntimePosition.x,
+                        pose.RuntimePosition.y,
+                        pose.RuntimePosition.z);
+                    return true;
+                }
+
+                return false;
+            }
+
+            HectonPlayerMovement movement = _playerMovement;
+            if (movement == null)
+                return false;
+
+            playerAup = movement.CurrentAup;
+            if (!playerAup.IsFinite() ||
+                !TryResolveRuntimeOriginRelativeFloat3(in playerAup, out float3 runtime3))
+            {
+                return false;
+            }
+
+            runtimePosition = new Vector3(runtime3.x, runtime3.y, runtime3.z);
+            return true;
         }
 
         private static bool TryResolveRuntimeOriginRelativeFloat3(
@@ -2147,12 +2407,21 @@ namespace Hecton8.Audio
 
         private void RefreshObservedBiomeMatrixState()
         {
-            if (_biomeMatrixDirector == null)
-                return;
+            if (!TryResolveBiomeMatrixContext(
+                    out HectonBiomeMatrixProfile currentProfile,
+                    out int currentDepthTier,
+                    out float currentDepthMeters))
+            {
+                if (_hasObservedMatrixState)
+                {
+                    _hasObservedMatrixState = false;
+                    _observedMatrixProfile = null;
+                    _observedMatrixDepthTier = 0;
+                    _observedMatrixDepthMeters = math.max(0f, _soundscapeDepthHintMeters);
+                }
 
-            HectonBiomeMatrixProfile currentProfile = _biomeMatrixDirector.CurrentProfile;
-            int currentDepthTier = _biomeMatrixDirector.CurrentDepthTier;
-            float currentDepthMeters = _biomeMatrixDirector.CurrentDepthMeters;
+                return;
+            }
 
             if (!_hasObservedMatrixState)
             {
@@ -2228,13 +2497,63 @@ namespace Hecton8.Audio
 
         private float ResolveLayerDepthMeters()
         {
-            if (_survivalSystem != null)
+            float soundscapeDepthMeters = math.max(0f, _soundscapeDepthHintMeters);
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
+            if (TryResolvePlayerMovementDepthMeters(out float playerDepthMeters))
+                return math.max(playerDepthMeters, soundscapeDepthMeters);
+
+            if (playerContext != null)
+                return 0f;
+
+            if (soundscapeDepthMeters > 0f)
+                return soundscapeDepthMeters;
+
+            if (TryResolveBiomeMatrixContext(out _, out _, out float biomeDepthMeters))
+                return math.max(0f, math.max(biomeDepthMeters, soundscapeDepthMeters));
+
+            if (_survivalSystem != null && math.isfinite(_survivalSystem.Depth))
                 return math.max(0f, _survivalSystem.Depth);
 
-            if (_biomeMatrixDirector != null)
-                return math.max(0f, math.max(_biomeMatrixDirector.CurrentDepthMeters, _soundscapeDepthHintMeters));
+            return soundscapeDepthMeters;
+        }
 
-            return math.max(0f, _soundscapeDepthHintMeters);
+        private bool TryResolvePlayerMovementDepthMeters(out float depthMeters)
+        {
+            depthMeters = 0f;
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
+            if (playerContext == null ||
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !math.isfinite(movementState.DepthMeters))
+            {
+                return false;
+            }
+
+            depthMeters = math.max(0f, movementState.DepthMeters);
+            return true;
+        }
+
+        private bool TryResolveBiomeMatrixContext(
+            out HectonBiomeMatrixProfile currentProfile,
+            out int currentDepthTier,
+            out float currentDepthMeters)
+        {
+            currentProfile = null;
+            currentDepthTier = 0;
+            currentDepthMeters = math.max(0f, _soundscapeDepthHintMeters);
+
+            BiomeMatrixDirector biomeMatrix = _biomeMatrixDirector;
+            if (biomeMatrix == null ||
+                !biomeMatrix.isActiveAndEnabled ||
+                !math.isfinite(biomeMatrix.CurrentDepthMeters))
+            {
+                return false;
+            }
+
+            currentProfile = biomeMatrix.CurrentProfile;
+            currentDepthTier = math.max(0, biomeMatrix.CurrentDepthTier);
+            currentDepthMeters = math.max(0f, biomeMatrix.CurrentDepthMeters);
+            return true;
         }
 
         private float ResolveLayerOxygenDanger01()
@@ -2339,6 +2658,7 @@ namespace Hecton8.Audio
                     return VocalWarningMusicDuckCritical01;
                 case VocalWarningId.Radiation:
                 case VocalWarningId.PowerLow:
+                case VocalWarningId.Toxicity:
                     return VocalWarningMusicDuckDefault01;
                 default:
                     return 0f;
@@ -2588,8 +2908,7 @@ namespace Hecton8.Audio
             if (_matrixBiomeProfile != null)
                 return _matrixBiomeProfile;
 
-            int depthTier = _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentDepthTier : 0;
-            if (depthTier > 0)
+            if (TryResolveBiomeMatrixContext(out _, out int depthTier, out _))
             {
                 if (depthTier <= 3)
                     return _shallowProfile != null ? _shallowProfile : _fallbackProfile;
@@ -3031,10 +3350,14 @@ namespace Hecton8.Audio
             depthBlendProfile = null;
             depthBlendWeight = 0;
 
-            if (_biomeMatrixDirector == null || _depthBlendWindowMeters <= 0f || _depthBlendMaxWeight <= 0 || rootProfile == null)
+            if (_depthBlendWindowMeters <= 0f ||
+                _depthBlendMaxWeight <= 0 ||
+                rootProfile == null ||
+                !TryResolveBiomeMatrixContext(out _, out _, out float depthMeters))
+            {
                 return;
+            }
 
-            float depthMeters = _biomeMatrixDirector.CurrentDepthMeters;
             float nearestBoundaryDistance = float.MaxValue;
             HectonMusicBiomeProfile candidate = null;
 
@@ -3762,6 +4085,9 @@ namespace Hecton8.Audio
 
         private void HandleAcousticZoneChanged(bool isInterior)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_hasLastAcousticInteriorState && _lastAcousticInteriorState == isInterior)
                 return;
 
@@ -3772,16 +4098,25 @@ namespace Hecton8.Audio
 
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             SetMatrixBiomeProfile(profile);
         }
 
         private void HandleDepthTierChanged(int depthTier, float depthMeters)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ReevaluateContext(true);
         }
 
         private void HandleDepthZoneEntered(DepthZoneProfile zone)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ReevaluateContext(true);
 
             if (zone == null || _currentBaseContext)
@@ -3804,6 +4139,9 @@ namespace Hecton8.Audio
 
         private void HandleDepthZoneExited(DepthZoneProfile zone)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ReevaluateContext(true);
 
             if (zone == null || _currentBaseContext || !ShouldPlayDepthRecoveryStinger(zone))
@@ -3814,6 +4152,9 @@ namespace Hecton8.Audio
 
         private void HandleRareDiscoveryRequested(Vector3 position)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             IFirstHourReadModel firstHourDirector = ResolveFirstHourDirector();
             if (firstHourDirector != null &&
                 !firstHourDirector.IsFirstHourMilestoneComplete((int)FirstHourMilestone.FirstCraft))
@@ -3826,6 +4167,9 @@ namespace Hecton8.Audio
 
         private void HandleSpawnHordeRequested(Vector3 position)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _combatLatched = true;
             PlayDangerStinger();
             ReevaluateContext(true);
@@ -3833,6 +4177,9 @@ namespace Hecton8.Audio
 
         private void HandlePredatorPressureChanged(bool pressureEnabled)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!pressureEnabled && _combatLatched)
                 PlayRecoveryStinger();
 
@@ -3841,6 +4188,9 @@ namespace Hecton8.Audio
 
         private void HandleThreatSpike(Vector3 position, float intensity)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _combatLatched = true;
             PlayDangerStinger();
             ReevaluateContext(true);
@@ -3848,6 +4198,9 @@ namespace Hecton8.Audio
 
         private void HandleActiveSceneChanged(Scene previousScene, Scene nextScene)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ResolveDependenciesForSceneCold(nextScene);
             ReevaluateContext(true);
         }

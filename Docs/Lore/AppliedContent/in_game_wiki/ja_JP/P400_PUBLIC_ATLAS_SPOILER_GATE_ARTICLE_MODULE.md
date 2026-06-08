@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Access Boundary"
+title: "Atlasアクセス境界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Access Boundary
+# Atlasアクセス境界
 
-JA LOC HOLD: Atlas can be described early as damaged industrial continuity that learned through repair ecology. Final receiver records remain evidence-gated because they change the meaning of earlier repairs.
+Atlasは早期には、repair ecologyを通じて学習した損傷したindustrial continuityとして説明できる。最終receiver recordsはevidence gateの奥に残す。そこではseal、preserve、sever、quarantine、releaseが下層で中立語ではなくなる。
 
 ## Scanner
 
-JA LOC HOLD: Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+Atlas境界記録。公開証拠はindustrial continuity logicとrepair ecologyを示す。receiver custody、payload consequence、最終選択層には回収証拠が必要。
 
 ## Terminal
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+公開アーカイブノード // ATLASアクセス境界。現在層: failed continuity infrastructure、repair ecology、biofilm bus、acoustic relay tissue、shell seal。制限層: receiver custodyとfinal payload consequence。
 
 ## Audio
 
-JA LOC HOLD: Say it repairs. Wait before naming what it counts as repaired.
+修理するとだけ言え。何を修理済みと数えるのか、名付けるのは待て。
 
 ## Field Note
 
-JA LOC HOLD: Marauder note: a machine can preserve proof and still damage the person inside it.
+Marauderメモ: 機械は証拠を保存しながら、中の人間を傷つけることがある。
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/ja_JP. -->

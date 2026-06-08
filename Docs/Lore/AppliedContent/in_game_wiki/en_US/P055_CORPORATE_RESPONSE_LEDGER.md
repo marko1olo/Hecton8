@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Corporate Response Ledger
 
-Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+The ledger is how Black Keel speaks when nobody is improvising. It can acknowledge danger, open a queue, preserve a claim, and still leave the operator waiting behind asset rules. Players should read response ledgers as both useful signals and hostile paperwork made executable.
 
 ## Scanner
 
-Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+Every reply arrives in contract language: asset custody, liability locks, sample route, hull risk, then operator recovery.
 
 ## Terminal
 
-RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, and payment route.
 
 ## Audio
 

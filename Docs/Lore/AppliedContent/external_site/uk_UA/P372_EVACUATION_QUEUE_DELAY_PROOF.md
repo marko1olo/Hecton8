@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Evacuation Queue Delay Proof"
+title: "Запис затримки евакуаційної черги"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Evacuation Queue Delay Proof
+# Запис затримки евакуаційної черги
 
-UK LOC HOLD: Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.
+Затоплена кімната все ще може зберігати час. Відновлений годинник черги показує жорстокий порядок: тривога, review, затримка, перевищення класу ущільнення, вода. Публічна мова Deep Reach зводить це до неповної евакуації під час раптової структурної відмови. Кімната заперечує. Її запис тримає порожнє поле свідка і незавершений карантинний review після точки, де шлях порятунку ще був фізично корисним. Це не твердження, що всіх можна було врятувати. Гірше й точніше: authorization чекала, доки людей, яких можна врятувати, стало менше. Коли гравець знаходить запис, rescue перестає звучати як обіцянка й стає системою дозволів.
 
 ## Scanner
 
-UK LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Годинник черги відновлено. Випускні ворота лишалися замкненими після того, як тривоги тиску перейшли з прогнозу в коридор.
 
 ## Terminal
 
-UK LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Ручного підтвердження немає. Карантинний review очікує. Тиск маршруту перевищив клас ущільнення до завершення authorization.
 
 ## Audio
 
-UK LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Вони не провалили порятунок усіх. Вони чекали, доки рятувати хоч когось стало важче.
 
 ## Field Note
 
-UK LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Нотатка мародера: замкнені ворота з полем в очікуванні не є випадком. Це рішення, що чекає підпису.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/uk_UA. -->

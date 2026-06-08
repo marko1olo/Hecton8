@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Brine Canyon Density Ladder Guide"
+title: "Przewodnik po drabinie gęstości kanionu solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Brine Canyon Density Ladder Guide
+# Przewodnik po drabinie gęstości kanionu solanki
 
-PL LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.
+Kaniony brine czynią głębokość fizyczną. Uczą warstw gęstości, limitów kadłuba, awarii ciśnienia i resource pockets, zanim otworzą się niższe trasy.
 
 ## Scanner
 
-PL LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
+Wykryto brine ladder: warstwowa gęstość, fałszywe dno, zgięcie sonaru. Idź krawędziami; otwarta woda tutaj kłamie.
 
 ## Terminal
 
-PL LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: kaniony brine ukrywają pressure shelves, current ledges, resource pockets i scanner false positives. Hull rating i density transition decydują, która półka jest trasą, a która spadkiem.
 
 ## Audio
 
-PL LOC HOLD: A canyon is a staircase if your hull can pay for each step.
+Kanion jest schodami, jeśli twój kadłub może zapłacić za każdy stopień.
 
 ## Field Note
 
-PL LOC HOLD: Use for scanner tutorials and resource route articles.
+Używaj cieni vane jak stopni. Pusty odczyt w brine nie jest pustą przestrzenią; to instrument przegrywa spór.
 
 <!-- In-Game Wiki; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/pl_PL. -->

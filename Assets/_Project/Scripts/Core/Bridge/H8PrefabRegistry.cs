@@ -317,7 +317,10 @@ namespace Hecton8.Core.Bridge
         {
             ValidateEntries(allowAuthoringRepair: true);
             if (bindOnValidateInPlayMode && Application.isPlaying)
-                H8BridgeLiveSyncScheduler.RequestPrefabBind(this, GlobalRegistry.DataVault, GlobalRegistry.PrefabRegistryRuntime);
+                H8BridgeLiveSyncScheduler.RequestPrefabBind(
+                    this,
+                    GlobalRegistry.DataVault,
+                    H8PrefabRegistryRuntimeBinder.ResolveRuntimeRegistryForBinding());
         }
 
         private void OnEnable()

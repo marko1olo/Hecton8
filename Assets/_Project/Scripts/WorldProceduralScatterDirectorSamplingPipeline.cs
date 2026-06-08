@@ -177,12 +177,15 @@ namespace Hecton8.World
                 return playerAup.IsFinite();
             }
 
-            var playerMovement = playerContext.PlayerMovement;
-            if (playerMovement == null)
+            if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
                 return false;
+            }
 
-            playerAup = playerMovement.CurrentAup;
-            return playerAup.IsFinite();
+            playerAup = movementState.PredictedAup;
+            return true;
         }
 
         private void HandleScatterSamplingUnavailableDependencies()
@@ -397,7 +400,6 @@ namespace Hecton8.World
             float rejectedResidencyRadius = 0f;
             int maxCandidatesBeforePrunePerCell = 0;
             int maxCandidatesAfterPrunePerCell = 0;
-            ScatterClassicParityAccumulator classicParityAccumulator = default;
             bool collectDetailedDiagnostics = completionContext.CollectDetailedDiagnostics != 0;
             WorldZoneAnchor debugZone = completionContext.DebugZone;
             WorldZoneAnchor.ZoneKind debugResolvedZoneKind = completionContext.DebugResolvedZoneKind;
@@ -421,6 +423,7 @@ namespace Hecton8.World
                     if (!fieldSampler.TryBuildFieldSample(cellOutput, out WorldProceduralFieldSampler.FieldSample fieldSample))
                     {
                         _memory.ScatterBackendCellStates[cellIndex] = backendCellState;
+                        _memory.ScatterBackendHeightSamples[cellIndex] = backendCellState.Height;
                         continue;
                     }
 
@@ -686,7 +689,11 @@ namespace Hecton8.World
                     maxCandidatesBeforePrunePerCell = cellCandidatesBeforePrune;
 
                 if (_candidateBuffer.Count == 0)
+                {
+                    _memory.ScatterBackendCellStates[cellIndex] = backendCellState;
+                    _memory.ScatterBackendHeightSamples[cellIndex] = backendCellState.Height;
                     continue;
+                }
 
                 if (_candidateBuffer.Count > maxCandidatesAfterPrunePerCell)
                     maxCandidatesAfterPrunePerCell = _candidateBuffer.Count;
@@ -719,10 +726,10 @@ namespace Hecton8.World
                         layerTopValid,
                         layerFamilyCounts,
                         layerBiomeCounts,
-                        ref classicParityAccumulator,
                         ref passiveSpawnCount,
                         ref predatorSpawnCount);
                     _memory.ScatterBackendCellStates[cellIndex] = backendCellState;
+                    _memory.ScatterBackendHeightSamples[cellIndex] = backendCellState.Height;
                 }
             }
 
@@ -814,6 +821,7 @@ namespace Hecton8.World
                 predatorSpawnCount,
                 collectDetailedDiagnostics);
 
+            ScatterBackendParityReference finalOwnerParityReference = BuildScatterBackendParityReferenceFromDesiredPlacements();
             TryScheduleScatterBackendShadowPass(new ScatterBackendShadowScheduleContext(
                 center,
                 totalCells,
@@ -821,7 +829,7 @@ namespace Hecton8.World
                 clusterBudget,
                 structureStride,
                 spawnStride,
-                classicParityAccumulator.ToReference()));
+                finalOwnerParityReference));
 
             RecordScatterRefreshSample();
             if (enableScatterRebuildProfiling)
@@ -1440,7 +1448,6 @@ namespace Hecton8.World
             bool[] layerTopValid,
             Dictionary<string, int>[] layerFamilyCounts,
             Dictionary<string, int>[] layerBiomeCounts,
-            ref ScatterClassicParityAccumulator classicParityAccumulator,
             ref int passiveSpawnCount,
             ref int predatorSpawnCount)
         {
@@ -1480,7 +1487,6 @@ namespace Hecton8.World
                         layerTopValid,
                         layerFamilyCounts,
                         layerBiomeCounts,
-                        ref classicParityAccumulator,
                         ref passiveSpawnCount,
                         ref predatorSpawnCount,
                         acceptanceContext.CollectDetailedDiagnostics != 0);
@@ -1561,7 +1567,6 @@ namespace Hecton8.World
                     layerTopValid,
                     layerFamilyCounts,
                     layerBiomeCounts,
-                    ref classicParityAccumulator,
                     ref passiveSpawnCount,
                     ref predatorSpawnCount,
                     acceptanceContext.CollectDetailedDiagnostics != 0);
@@ -1638,13 +1643,11 @@ namespace Hecton8.World
             bool[] layerTopValid,
             Dictionary<string, int>[] layerFamilyCounts,
             Dictionary<string, int>[] layerBiomeCounts,
-            ref ScatterClassicParityAccumulator classicParityAccumulator,
             ref int passiveSpawnCount,
             ref int predatorSpawnCount,
             bool collectDetailedDiagnostics)
         {
             layerPlacementCounts[layerIndex]++;
-            classicParityAccumulator.Register(candidate, layer);
             if (collectDetailedDiagnostics)
             {
                 RegisterLayerFamilyCount(layerFamilyCounts, layer, candidate.Family);

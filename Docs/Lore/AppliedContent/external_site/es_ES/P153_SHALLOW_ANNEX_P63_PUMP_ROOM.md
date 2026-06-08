@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "Sala De Bombas P-63 Del Anexo Somero"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Shallow Annex P-63 Pump Room
+# Sala De Bombas P-63 Del Anexo Somero
 
-ES LOC HOLD: Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside.
+Shallow Annex P-63 da el primer bolsillo seguro sin volver pequeño a HECTON-8: una bomba, un cold seal, un medidor y una plataforma brillante afuera.
 
 ## Scanner
 
-ES LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+Sala de bombas P-63. La presión manual del sumidero se sostiene por menos de un margen de servicio.
 
 ## Terminal
 
-ES LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+ORDEN DE TRABAJO P-63 / SHALLOW ANNEX: bombear sumidero a mano hasta 0.3 m; asentar cold seal en junta C; cortar el pestillo fundido del casillero solo cuando el medidor se estabilice; no confiar en la luz verde hasta que responda el return pinger.
 
 ## Audio
 
-ES LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+Bomba primero. Sello segundo. Cortador solo cuando el medidor deje de derivar.
 
 ## Field Note
 
-ES LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+La manija de la bomba está pulida donde manos asustadas siguieron usándola. El suelo seco empieza en la línea de tiza.
 
 <!-- External Site; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/es_ES. -->

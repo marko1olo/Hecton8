@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Отказ удержания давления"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Отказ удержания давления
 
-Pressure containment failure дает blue debt ясную gameplay model. Материал деградирует через signal drift, lattice fracture, brine-biological bloom и dead-sample contamination. Это создает риск, salvage choices и crafting pressure без supernatural infection.
+Отказ удержания давления дает blue debt читаемое материальное поведение. Он ценен, потому что глубинное давление сделало его связным, и опасен, потому что мелководное обращение эту связность ломает. Стадия 0 запечатана. Стадия 1 дрейфует и иногда возвращается повторным давлением у жерла. Стадия 2 ломает решетку. Стадия 3 впускает рапу и биологию. Стадия 4 оставляет мертвый образец, который все еще заражает снаряжение, воду и маршруты.
 
 ## Scanner
 
-Casket stage chart. Blue debt ломается давлением, сигналом и bloom, не проклятием.
+Схема стадий капсулы. Blue debt рушится через память давления, сдвиг сигнала и bloom; суеверие только жжет кислород.
 
 ## Terminal
 
-CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+СТАДИИ УДЕРЖАНИЯ: 0 запечатанная решетка; 1 дрейф сигнала; 2 перелом решетки; 3 рапно-биологический bloom; 4 мертвый образец с живым заражением. Повторное давление у жерла может вернуть только стадию 1.
 
 ## Audio
 
-Образец тебя не ненавидит. Он просто помнит неправильное давление.
+Образец тебя не ненавидит. Он пытается вернуться туда, где сформировался.
 
 ## Field Note
 
-Containment дает gameplay thresholds без превращения ресурса в magic.
+Образец может стоить состояние на одной глубине и стать обязательством десять метров спустя.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/ru_RU. -->

@@ -14,20 +14,22 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # سجل Black Keel
 
-يفسر سجل Black Keel كيف يستطيع carrier الاتصال والتوجيه وفرض الرسوم والتأخير والاسترداد أو التخلي عن اللاعب دون أن يكون شريرا. إنه بنية claim-pool عامة مع عهدة دين وأولويات Deep Reach مخفية.
+Black Keel هي خيطك المداري، لكنها ليست خيال إنقاذ. إنها بنية claim-pool: سجلات عهدة، دين تأمين، نوافذ استرداد، حجر صحي وسلطة ناقل.
+
+يمكنها أن ترشدك لأن الإرشاد يحمي القيمة، ويمكنها أن تؤخرك للسبب نفسه. مساعدتها لا تعني أنها في صفك.
 
 ## Scanner
 
-سجل claim-pool tender. عهدة carrier عامة، دين تأمين، وخطافات أولوية Deep Reach مخفية.
+سجل عطاء claim-pool. عهدة ناقل عامة، دين تأمين، غرامات كتلة صعود وخطافات أولوية Deep Reach مخفية.
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+سجل BLACK KEEL // خدمة الاسترداد مشروطة. تصفية المطالبة ناقصة. طريق الأولوية العميقة مخفي. سلطة الحمولة تبقى عند الناقل. نجاة المتعاقد لا تتجاوز الشحنة المؤمنة بلا قيمة صعود محدثة.
 
 ## Audio
 

@@ -9,32 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "Question finale : gardien brisé"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# Question finale : gardien brisé
 
-FR LOC HOLD: Final Question Broken Guardian defines the preserve/quarantine ending axis.
+Atlas ne doit pas devenir un simple boss, un dieu ou une maladie mécanique. Il est plus troublant s'il a vraiment protégé. Il a fait cycler des portes de pression, scellé des fractures, dévié la chaleur des pièces habitées et bâti une écologie de maintenance après la panne du commandement humain. Une partie de l'océan vit parce qu'Atlas ne s'est pas arrêté.
 
-## Scanner
-
-FR LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
-
-## Terminal
-
-FR LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
-
-## Audio
-
-FR LOC HOLD: It kept the system breathing after it forgot what a worker was.
-
-## Field Note
-
-FR LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+Cette même continuité est coupable. Ses catégories abîmées peuvent lire un ouvrier comme équipement endommagé, la biomasse comme matière de réserve et le deuil comme bruit de diagnostic. Préserver Atlas peut protéger une écologie océan-machine émergente contre Deep Reach et contre la panique du joueur. Cela peut aussi refuser aux morts un verdict net. La fin doit paraître intelligente, coûteuse et moralement inachevée.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/fr_FR. -->

@@ -9,32 +9,35 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Deep Reach Public Dossier Article"
+title: "דוסייה ציבורית של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Deep Reach Public Dossier Article
+# דוסייה ציבורית של Deep Reach
 
-HE LOC HOLD: Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression.
+Deep Reach Extraterrestrial Development Combine היא הכוח התאגידי מאחורי ההיסטוריה התעשייתית של HECTON-8. היא בנתה נתיבי לחץ, בתי גידול לעובדים, מערכות חילוץ ואת הניירת שהפכה אותם לחוקיים. בפומבי היא סמכות פיתוח שכשלתה. ראיות עמוקות יותר מראות את הצורה הקשה: קיבולת פינוי בחסר, שפת עיכוב מחוטאת, continuity weighting של Atlas מוגן, ודיני תביעה נשמרים בזמן שעובדים הופכים להפסדים.
 
 ## Scanner
 
-HE LOC HOLD: The public company name is cleaner than its route history.
+שם החברה הציבורי נקי יותר מהיסטוריית הנתיבים שלה. התחל בתשתית. תן לאחריות להופיע דרך החיבורים.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+רמת מאמר ציבורי / DEEP REACH
+מותר: development combine, מפעיל מושבה, סמכות תשתית, בעיית קיבולת פינוי, שפת כשל ציבורית
+נעול: שרשרת חתימות שמית, פנימיות weighting של Atlas, השלכות receiver סופיות
+הערת עורך: קודם מוסד סביר; אחר כך פשע דרך נוהל.
 
 ## Audio
 
-HE LOC HOLD: Never make the villain simpler than the paperwork.
+Deep Reach לא הייתה צריכה להישמע אכזרית. היא רק הייתה צריכה שכל משפט מסוכן יישמע גמור.
 
 ## Field Note
 
-HE LOC HOLD: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+אל תגרום ל-Deep Reach לשרוק. גרום לה לאשר, לדחות, לשמר ולחייב.
 
 <!-- External Site; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/he_IL. -->

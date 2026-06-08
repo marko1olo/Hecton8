@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Claim Continuity Loss Conversion Proof"
+title: "Conversão de perda da continuidade claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Claim Continuity Loss Conversion Proof
+# Conversão de perda da continuidade claim
 
-PT LOC HOLD: The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.
+A cadeia de prova termina em conversão. A Deep Reach pode admitir dano e manter propriedade se trabalhadores viram perdas, evidência vira material custody e o claim continua vivo. Por isso o jogador não carrega só verdade. Carrega algo que o sistema sabe comprar.
 
 ## Scanner
 
-PT LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
+Carimbo da mesa de perdas recuperado. O ledger sobreviveu melhor que os trabalhadores que renomeou.
 
 ## Terminal
 
-PT LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
 
 ## Audio
 
-PT LOC HOLD: This is where dead workers became a clean column.
+É aqui que pessoas viraram uma coluna limpa.
 
 ## Field Note
 
-PT LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+Nota de saqueador: um ledger pode lembrar dos mortos e ainda gastá-los.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/pt_BR. -->

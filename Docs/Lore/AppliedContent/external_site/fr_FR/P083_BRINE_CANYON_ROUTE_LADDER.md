@@ -8,33 +8,19 @@ biome_tags: biome.brine_canyon;biome.drop_zone
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+spoiler_tier: 1
+title: "Échelle de route du canyon de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# Échelle de route du canyon de saumure
 
-FR LOC HOLD: Brine Canyon Route Ladder is one of HECTON-8's core exploration structures: not a hallway, but a chemical geography where density, current and sound shape progression.
+Les canyons de saumure rendent la progression en profondeur physique. Couches denses, murs minéraux, fuites thermiques et distorsion acoustique apprennent au joueur pourquoi il faut de meilleurs instruments et une discipline de pression.
 
-## Scanner
-
-FR LOC HOLD: Brine density marker. The descent route is chemistry with walls.
-
-## Terminal
-
-FR LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
-
-## Audio
-
-FR LOC HOLD: The canyon is a staircase made of wrong water.
-
-## Field Note
-
-FR LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+L'Échelle de route du canyon de saumure est une structure d'exploration centrale de HECTON-8: pas un couloir, mais une géographie chimique où densité, courant et son sculptent la progression. On ne nage pas dans le canyon. On négocie avec des couches plus lourdes que la combinaison.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/fr_FR. -->

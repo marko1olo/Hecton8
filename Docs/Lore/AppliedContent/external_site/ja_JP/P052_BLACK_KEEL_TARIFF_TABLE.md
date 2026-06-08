@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Tariff Table"
+title: "Black Keel料金表"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Tariff Table
+# Black Keel料金表
 
-JP LOC HOLD: Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency.
-
-## Scanner
-
-JP LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
-
-## Terminal
-
-JP LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
-
-## Audio
-
-JP LOC HOLD: The table has a price for rescue and a discount for evidence.
-
-## Field Note
-
-JP LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
+料金表は、HECTON-8が沈黙していた本音を最もはっきり言う場所だ。Black Keelはプレイヤーを聞き、危険を分類し、システム内でパケットを動かせる。しかしすべての行動は助けになる前に請求区分へ入る。保存済みサンプルは生きている操作者より速く移動することがある。封印箱は負傷者より先にルートを格上げすることがある。これは芝居じみた悪ではない。設計通りに働く台帳だ。プレイヤーは、植民地を使い捨てにした同じ経済文法を悪用して生き延びる。
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/ja_JP. -->

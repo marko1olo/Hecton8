@@ -8,33 +8,33 @@ biome_tags: biome.aegir_system;biome.publication
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "HE LOC HOLD: HECTON-8 Moon Ladder"
+spoiler_tier: 1
+title: "סולם ירחי HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: HECTON-8 Moon Ladder
+# סולם ירחי HECTON-8
 
-HE LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.
+HECTON-8 נמצא בתוך multi-moon claim system פעיל שבו relay, ice-scatter, quarantine ו-salvage traffic חשובים.
 
 ## Scanner
 
-HE LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+סולם ירחי: HECTON-8 הוא claim אחד, לא כל מערכת Aegir.
 
 ## Terminal
 
-HE LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER: role labels ציבוריים בלבד; orbital elements מדויקים נשארים table-owned data.
 
 ## Audio
 
-HE LOC HOLD: Other moons are not side quests. They are why the route has teeth.
+ירחים אחרים אינם side quests. הם הסיבה שלנתיב יש שיניים.
 
 ## Field Note
 
-HE LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
+רשומת סולם ירחים: מפות ציבוריות יכולות להראות את קנה המידה של Aegir בלי להבטיח playable moons.
 
 <!-- External Site; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/he_IL. -->

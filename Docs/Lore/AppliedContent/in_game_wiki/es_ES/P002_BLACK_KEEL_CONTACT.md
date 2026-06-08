@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Contacto Black Keel
 
-El Black Keel es un carrier de sistema, no una nave hogar. Mueve cápsulas, remolques, paquetes de claim, muestras selladas y operadores desafortunados por el tráfico de Aegir. Puede ayudar, pero la ayuda pasa por geometría, clima, automatización, deuda y prioridades ocultas en el contrato.
+Black Keel es una tender de reclamaciones del sistema Aegir, no una nave hogar. Mueve cápsulas, remolques de carga, muestras selladas, registros de gravamen y operadores desafortunados por el tráfico local. Puede ayudar, pero la ayuda pasa por geometría orbital, clima, automatización, deuda y ganchos de beneficiario ocultos en el contrato antes de que el jugador tocara el océano.
 
 ## Scanner
 
-Viejo mástil de enlace. Salado, torcido, aún apuntando al cielo correcto.
+Viejo mástil de relevo. Salado, torcido, aún apuntado al corte correcto del cielo de Aegir.
 
 ## Terminal
 
-ESTADO OPERADOR: vivo. ESTADO CÁPSULA: irrecuperable. CLAIM: abierto. MUESTRA: desconocida. RECUPERACIÓN: esperando ventana.
+ESTADO OPERADOR: VIVO. ESTADO DROPCRAFT: IRRECUPERABLE. ESTADO CLAIM: ABIERTO. ESTADO MUESTRA: DESCONOCIDO. RECUPERACIÓN: ESPERANDO VENTANA. MASA DE GRAVAMEN: BASE 4,8 TONNE-WINDOW.
 
 ## Audio
 
@@ -35,6 +35,6 @@ La ventana se cierra. Envía un paquete. Elige antes de que la banda de tormenta
 
 ## Field Note
 
-Si un carrier pregunta qué encontraste antes de preguntar si respiras, no eres el cliente. Eres la herramienta.
+Cuando una portadora pregunta qué encontraste antes de preguntar si respiras, no eres el cliente. Eres la herramienta.
 
 <!-- In-Game Wiki; generated from P002_BLACK_KEEL_CONTACT/es_ES. -->

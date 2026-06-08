@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # ペイロード・ウィンドウ
 
-Payload WindowはHECTON-8のエンディング構造を定義する。最後の問いは何を信じるかだけでなく、海から何を持ち出せるかだ。
-
-## Scanner
-
-即席上昇パッケージ。質量、天候、carrier幾何が合えば海を出られる。
-
-## Terminal
-
-PAYLOAD SLOT: 制限。WINDOW: 開放。ROUTE: 係争中。CLAIM VALUE: 変動。EVIDENCE STATE: 清潔な異議には不足。
-
-## Audio
-
-ウィンドウは開いている。すべてのために開き続けるわけではない。
-
-## Field Note
-
-脱出は経路だ。きれいな脱出は神話だ。
+HECTON-8の最後の問題は、海の上に浮かぶ道徳メニューではない。ペイロード・ウィンドウだ。上昇パッケージには質量制限があり、天候には時刻があり、エーギルには放射線と軌道制約があり、Black Keelには慈悲より先に受取人規則がある。だからすべての結末は、何が月を離れ、誰がそれを受け取るかを問う。座標は回収を買い、Deep Reachへ犯罪現場を渡すかもしれない。証拠は公開台帳へ届き、プレイヤーから結果の制御を奪うかもしれない。サンプルは負債を払い、作業員名を埋めたシステムを強めるかもしれない。沈黙は企業を拒み、証拠を水中に残すかもしれない。窓は正義ではない。正義が押し込まれなければならない形だ。
 
 <!-- External Site; generated from P010_PAYLOAD_WINDOW/ja_JP. -->

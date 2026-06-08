@@ -7,34 +7,34 @@ poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
 biome_tags: biome.cable_reef;biome.repair_fauna
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Maintenance Ecology"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "保守生態系"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# 保守生態系
 
-JP LOC HOLD: Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.
+保守生態系は、HECTON-8を有用でありながら間違った場所にする規則である。Atlasは、バイオフィルムが弱い信号を運び、濾過コロニーがピングを反復し、殻状成長が亀裂を閉じ、タグ付き生物が破損したsensor packetsを戻せると学習した。海は人格ではない。それでも修理網は十分に生きており、すべてのcable reefを道具、危険、証拠線に変える。
 
 ## Scanner
 
-JP LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+導電性バイオフィルム、殻状成長、タグ付き生物、噴出口熱が修理トラフィックを運んでいる。
 
 ## Terminal
 
-JP LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+ATLAS保守生態系: バイオフィルム橋は安定。濾過コロニーが音響パルスを反復。殻状シールが亀裂を閉鎖。タグ付き生物が損傷sensor packetsを返送。
 
 ## Audio
 
-JP LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
+機械が必要としたから、ケーブルは生きている。
 
 ## Field Note
 
-JP LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+生きた継ぎ目を全部剥がすな。金属より圧を保つものがある。
 
 <!-- In-Game Wiki; generated from P061_MAINTENANCE_ECOLOGY/ja_JP. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # שרשרת חוב של relay custody
 
-relay custody הופך לוגיסטיקת חלל ללחץ: העזרה נושאת גם חוב, עדיפויות וסמכות תאגידית.
+relay custody הופך לוגיסטיקת חלל ללחץ. עזרה יכולה להגיע, אבל הנתיב שנושא עזרה נושא גם חוב, ווי עדיפות וסמכות תאגידית.
 
 ## Scanner
 

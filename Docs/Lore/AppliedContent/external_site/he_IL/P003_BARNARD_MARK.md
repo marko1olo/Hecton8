@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # סימן Barnard
 
-סימן Barnard הופך חילוץ למניע. הוא קושר את השחקן ל-HECTON-8 דרך עבודה, כלים ושמות, לא דרך הסבר.
-
-## Scanner
-
-חותמת Barnard Yards. לא ציוד של Deep Reach. מישהו הביא כלי ביתי לתחתית הירח הזה.
-
-## Terminal
-
-מסלול כוח אדם: HOLD. מסלול משאב: ACTIVE. מסלול מצע: PROTECTED.
-
-## Audio
-
-זה סימן Barnard. אותו דגם חיתוך. אותה סגסוגת זולה. מי שהביא את זה לכאן הכיר את אותן סדנאות כמוך.
-
-## Field Note
-
-אפשר להתעלם מתאגיד מת. קשה יותר להתעלם ממפתח מהמספנה שלך.
+Barnard Yards אינו מקום מוצא אצילי. זו צלקת עבודה: פירוק ספינות, חותכים שכורים, מהדקי לחץ, כלי יד של בעלים שלישי ואנשים שיודעים בדיוק כמה חוזה רע יכול לעלות. החותמת הראשונה של Barnard על HECTON-8 צריכה להרגיש כמעט קטנה מדי בשביל lore. זה לא נאום. זו חריטה על מפתח, הסגסוגת הלא נכונה בציר לוקר, הרגל תיקון שאף אחד ב-Deep Reach לא היה מגדיר. עבור השחקן, הפרט הזה משנה את החוזה. HECTON-8 כבר אינו רק claim תאגידי מת תחת מים זרים. מישהו מאותה תרבות מספנות הגיע לכאן לפניו, עבד כאן, נכנס לאותם ספרים והשאיר ראיה קטנה מספיק להימחק אם Marauder לא מבחין בה.
 
 <!-- External Site; generated from P003_BARNARD_MARK/he_IL. -->

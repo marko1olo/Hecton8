@@ -7,34 +7,34 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Transit de rotation d'équipage humain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# Transit de rotation d'équipage humain
 
-FR LOC HOLD: Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
+La rotation humaine rend l'abandon de HECTON-8 crédible. Ouvriers, spécialistes et équipes de remplacement bougent plus lentement que le langage de réclamation. Une personne peut quitter Sol sous un contrat, se réveiller sous un autre et découvrir que l'urgence prévue par sa formation est déjà devenue preuve.
 
 ## Scanner
 
-FR LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
+Les humains ne font pas la navette vers Aegir. Ils passent des années comme cargaison avec opinions.
 
 ## Terminal
 
-FR LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+ROTATION ÉQUIPAGE : le transport humain utilise fenêtres lentes, sections habitat blindées, cycles bas métabolisme et rotations stagées. Un ouvrier manquant devient un problème de custody retardé.
 
 ## Audio
 
-FR LOC HOLD: By the time home asks where you are, the room has already flooded.
+Quand la maison demande où tu es, la pièce est déjà noyée.
 
 ## Field Note
 
-FR LOC HOLD: A frontier worker sells time before they sell labor.
+Un ouvrier de frontière vend du temps avant de vendre du travail.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/fr_FR. -->

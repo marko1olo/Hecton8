@@ -4,8 +4,10 @@
 [RULE] The render path carries most realism. Prefer shader/post/LOD approximations over gameplay simulation.
 [RULE] MX350/MINIMAL uses cheap fog, dither, LUT haze, baked AO, impostors, HLOD cards, and authored masks before raymarching or dynamic lights.
 [RULE] Full or half-res raymarching is MED+ only unless a fresh MX350 profiler capture proves the cost.
+[REQ] Render-path visual acceptance inherits the Visual Reference Parity Gate. The repeated shot list must compare mandatory references plus best-known internal baseline/current rejection matrix before a renderer, HLOD, water, fog, post, or shader route is accepted.
 [FORBID] Bloom, full volumetrics, runtime lens flares, per-object material clones, or high-sample post stacks on MX350.
 [FORBID] A visual feature that costs more than `0.1ms` without a load-shed path.
+[FORBID] Crediting render-path polish when current captures remain below April/previously-in-development baseline on base geometry, material truth, waterline/contact, sky/Aegir/terrain readability, route cues, or compact-tier composition. Declare `VISUAL_ROUTE_INVALID` and recover the owner stack.
 
 # HECTON-8 - Distilled Technical Mandate v1.0
 # Minimal target: i3-10gen / MX350 2GB / 6-8GB RAM | URP 14+

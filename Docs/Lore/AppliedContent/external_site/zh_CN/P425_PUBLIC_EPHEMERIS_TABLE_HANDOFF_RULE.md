@@ -8,33 +8,33 @@ biome_tags: biome.authoring;biome.aegir_system
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "CN LOC HOLD: Ephemeris Data Boundary Rule"
+spoiler_tier: 1
+title: "星历数据边界规则"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# CN LOC HOLD: Ephemeris Data Boundary Rule
+# 星历数据边界规则
 
-CN LOC HOLD: Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.
+公共页面可以解释Aegir、HECTON-8、transfer windows和route hazards，而不冻结精确orbital constants。
 
 ## Scanner
 
-CN LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
+数据边界：叙述拥有范围；最终轨道数字由表格拥有。
 
 ## Terminal
 
-CN LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY：叙述可以说明角色、危险和范围。精确orbital values不进入narrative copy。
 
 ## Audio
 
-ZH LOC HOLD: Numbers are allowed when the table owns them.
+当数字属于表格时，数字才被允许。
 
 ## Field Note
 
-CN LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
+星历记录解释航线逻辑，精确常数仍为table-owned data。
 
 <!-- External Site; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/zh_CN. -->

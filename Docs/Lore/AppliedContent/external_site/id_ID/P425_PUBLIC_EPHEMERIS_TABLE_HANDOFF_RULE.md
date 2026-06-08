@@ -8,33 +8,33 @@ biome_tags: biome.authoring;biome.aegir_system
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "ID LOC HOLD: Ephemeris Data Boundary Rule"
+spoiler_tier: 1
+title: "Aturan Batas Data Ephemeris"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ephemeris Data Boundary Rule
+# Aturan Batas Data Ephemeris
 
-ID LOC HOLD: Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.
+Halaman publik dapat menjelaskan Aegir, HECTON-8, transfer windows dan route hazards tanpa membekukan orbital constants tepat.
 
 ## Scanner
 
-ID LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
+Batas data: prosa memiliki pita; angka orbit final tetap table-owned.
 
 ## Terminal
 
-ID LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY: prosa boleh menyatakan peran, bahaya dan pita. Orbital values tepat tetap keluar dari narrative copy.
 
 ## Audio
 
-ID LOC HOLD: Numbers are allowed when the table owns them.
+Angka diizinkan saat tabel memilikinya.
 
 ## Field Note
 
-ID LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
+Catatan ephemeris menjelaskan logika rute sementara konstanta tepat tetap table-owned data.
 
 <!-- External Site; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/id_ID. -->

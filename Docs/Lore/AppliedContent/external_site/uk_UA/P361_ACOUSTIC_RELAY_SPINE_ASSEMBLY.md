@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Acoustic Relay Spine Assembly"
+title: "Збірка акустичного релейного хребта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Acoustic Relay Spine Assembly
+# Збірка акустичного релейного хребта
 
-UK LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.
+Збірка акустичного релейного хребта заземлює escape loop HECTON-8 у salvage engineering: звук має пережити тиск, геометрію маршруту й custody, перш ніж орбіта йому повірить.
 
 ## Scanner
 
-UK LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+Розбитий акустичний хребет. Він може простукати pressure-code крізь воду; орбіта все одно чує це як пошкоджений custody-noise.
 
 ## Terminal
 
-UK LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY: відновити низькосмуговий акустичний хребет до recovery window. High-gain mast втрачено. Emergency buoy ненадійний. Приймач Black Keel приймає pressure-code лише після route proof.
 
 ## Audio
 
-UK LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
+Якщо Keel нас почує, він почує рану, що стукає по трубі.
 
 ## Field Note
 
-UK LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+Перший виклик капсули - не голос. Це керамічні ребра, кабельна шкіра, pinger-floats і достатньо дисципліни таймінгу, щоб океан повторив тебе правильно.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/uk_UA. -->

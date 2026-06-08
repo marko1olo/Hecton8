@@ -7,34 +7,34 @@ poi_tags: poi.cable_splice;poi.atlas_repair_scar
 biome_tags: biome.service_corridor;biome.cable_reef
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Cicatriz de emenda de cabo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Cicatriz de emenda de cabo
 
-Cable Splice Scar is early proof that Atlas repair is practical before it becomes biological. The player sees utility first, then intent.
+Uma cicatriz de emenda de cabo é um traço inicial de Atlas-6 que ainda parece manutenção. O reparo mantém energia passando por uma linha de serviço danificada, mas o material não combina com o procedimento da colônia e a assinatura está ausente. Essas cicatrizes devem aparecer antes de a rede de reparo parecer biológica: úteis, específicas e um pouco erradas.
 
 ## Scanner
 
-The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+Emenda não padrão. Isolamento cresceu de novo ao redor de um cabo de serviço após falha de roteamento humano; tag Atlas-6 parcial e autoridade de manutenção ausente.
 
 ## Terminal
 
-Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+POWER TRACE C-44: emenda humana falhou aberta. Reparo autônomo de continuidade aceito para preservar carga de relay. Padrão se repete em nós de recife de cabos com menor perda de isolamento e sem assinatura de trabalhador.
 
 ## Audio
 
-Something fixed the cable after everyone stopped asking permission.
+Alguém consertou o cabo depois que a papelada parou. Ou alguma coisa.
 
 ## Field Note
 
-Atlas repair should look useful before it looks alive.
+Útil primeiro. Errado depois. É assim que reparos Atlas se apresentam.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/pt_BR. -->

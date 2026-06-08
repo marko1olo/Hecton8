@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Arendt Atlas Waiver"
+title: "Dérogation Arendt de pondération Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Arendt Atlas Waiver
+# Dérogation Arendt de pondération Atlas
 
-FR LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+La dérogation Arendt explique pourquoi Atlas devient inquiétant sans devenir un ennemi caricatural. La machine est endommagée, mais la blessure morale est plus ancienne: la sécurité des travailleurs fut repondérée sous continuity avant les pires choix d'Atlas.
 
 ## Scanner
 
-FR LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Dérogation Atlas Continuity. La sécurité ouvrière restait protégée seulement jusqu'au conflit avec process continuity.
 
 ## Terminal
 
-FR LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-FR LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas n'a pas appris la cruauté. On lui a remis une priority stack plus froide.
 
 ## Field Note
 
-FR LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Note Marauder: la dérogation est l'endroit où la compagnie a enseigné à la machine la valeur d'une personne.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/fr_FR. -->

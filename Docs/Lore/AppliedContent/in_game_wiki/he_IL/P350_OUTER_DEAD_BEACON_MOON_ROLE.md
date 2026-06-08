@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute כ-beacon מת חיצוני"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Outer Dead Beacon Moon Role
+# Mute כ-beacon מת חיצוני
 
-HE LOC HOLD: The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.
+Mute הוא ירח ה-beacon המת החיצוני בסולם Aegir. ה-relays שלו לא אמינים, קרים וחסרים חלקית מהמפות הציבוריות הנוכחיות. הם עדיין מופיעים ב-solvers ישנים, סעיפי ביטוח וטבלאות recovery. כך תקשורת עם HECTON-8 נעשית נדירה ומכוערת, לא קסומה. הודעה יכולה להתעכב בגלל פיזיקה, נתונים רעים או כלל משמורת שמעמיד פנים ששניהם אותו דבר.
 
 ## Scanner
 
-HE LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
+ping של beacon מת. Mute כבר לא עונה נקי, אבל route solvers ישנים עדיין מוציאים את הרוח שלו.
 
 ## Terminal
 
-HE LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
+רשומת BEACON H9 MUTE: אפמריס ארכיונית סותרת את הד relay הנוכחי. solver חילוץ מסמן עמימות שמישה. שולחן חוזים מאשר משמורת הודעה מעוכבת עד אישור החלון.
 
 ## Audio
 
-HE LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
+beacon מת עדיין beacon אם החשבונית יודעת איפה למצוא אותו.
 
 ## Field Note
 
-HE LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+תשתית מתה לא עוזבת את Aegir. היא נעשית איבר שגיאה שמישהו יכול לחייב עליו.
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/he_IL. -->

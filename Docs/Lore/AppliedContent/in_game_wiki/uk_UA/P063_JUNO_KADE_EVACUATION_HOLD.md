@@ -7,34 +7,34 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Евакуаційне утримання Джуно Кейд"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# Евакуаційне утримання Джуно Кейд
 
-UK LOC HOLD: Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+Джуно Кейд доводить, що колонія не просто завмерла. Люди ставали в чергу, маршали видавали маршрути, а система виходу відповідала authorization holds, карантинними перевірками й пріоритетом payload. Катастрофа стає гіршою, бо двері були справжні.
 
 ## Scanner
 
-UK LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
+Джуно Кейд відкрила чергу й уперлася в стіну з карантину, сертифікації та рангу payload.
 
 ## Terminal
 
-UK LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+EVAC STATUS KADE: маршрут червоний; manual override відхилено; карантинні ворота чекають Atlas continuity check; payload lift має перевагу до вирішення claim seal.
 
 ## Audio
 
-UK LOC HOLD: She kept counting people after the system started counting rooms.
+Вихід існував. Саме тому утримання має вагу.
 
 ## Field Note
 
-UK LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+Евакуаційна маршалка може рухати людей. Вона не може рухати пункт, якому належать двері.
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/uk_UA. -->

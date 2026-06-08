@@ -9,32 +9,36 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "NL LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: aansprakelijkheid onder echt water"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: aansprakelijkheid onder echt water
 
-NL LOC HOLD: Deep Reach did not need to invent the ocean. HECTON-8 failed under real pressure, real tide force and real infrastructure limits. That is what makes the liability harder to bury. The official record names a localized geotechnical cascade, corrupted Atlas logs and incomplete evacuation. Each phrase has enough truth to survive a hearing. The physical site adds what the public sentence omits: margin approvals signed before the tide window, evacuation routes held behind authorization, quarantine doors certified late, Atlas continuity weights that protected system function before worker recovery, and loss ledgers that turned names into categories after the water had already won. The accusation is not that Deep Reach caused the ocean to rise by command. It is that the company priced known risk, delayed human exit, kept records clean and let recovery offices convert disaster into manageable custody. On HECTON-8, the rooms testify more precisely than the statement.
+## De nuttige halve waarheid
 
-## Scanner
+Deep Reachs rapport klinkt eerlijk omdat er echt water in zit. HECTON-8 had een Great Tide: cryosfeerstress, resonantie, storm, warmte en druk braken de kolonie open.
 
-NL LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+De schuld zit in het verwijderde kader: sensor-marges die werden aanvaard, evacuatie onder behoefte, Atlas continuity boven mensenextractie, quarantaine als tijdkoop en vermisten als claimcategorie.
 
-## Terminal
+Varnek maakt waarschuwing tot planningsrisico. Arendt houdt veiligheid in procescontinuiteit. Haldane laat extractie wachten op certificatie. Ibarra vertaalt lichamen naar last en verlies. Sato-Ren vraagt in 2190 nog om coordinaten, XO-proof en stilte voor reddingstaal.
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+Een schoon document hoeft niet te bekennen. De overstroomde kamer levert de kost. Een memo is verdenking. De keten is bewijs; de speler kiest welke context door Black Keel-custody gaat.
 
-## Audio
+## De Vorm Van Schuld
 
-NL LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Deep Reach mag geen enkele schurk met een schone knop worden. De schuld is sterker omdat ze verdeeld is. Varnek accepteert de tide margin. Arendt zet Atlas weights boven werkers. Haldane houdt quarantine-taal schoon. Ibarra zet namen om in loss categories. Sato-Ren probeert een return action te verplaatsen wanneer de schade al in het systeem zit.
 
-## Field Note
+Elk document is klein genoeg om gewoon te lijken. Samen tonen ze een instelling die overleefde door elke dodelijke keuze lokaal, tijdelijk en procedureel correct te laten lijken. De werkers stierven binnen die grammatica.
 
-NL LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+## Waarom Bewijs Massa Heeft
+
+De speler lost dit niet op met geloof. Pakketten kunnen worden vertraagd, betwist, geredigeerd of geprijsd. Fysiek bewijs moet gedragen worden: sensor margins, kapotte evacuatie, Atlas trace, custody ledger, sample chain. Bewijs is zwaar omdat HECTON-8 waarheid ruimte laat delen met zuurstof, gereedschap en vracht.
+
+Daar ligt de druk. De speler leert niet alleen wat er gebeurde. Hij beslist hoeveel overleving mag worden uitgegeven om het moeilijker uitwisbaar te maken.
 
 <!-- External Site; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/nl_NL. -->

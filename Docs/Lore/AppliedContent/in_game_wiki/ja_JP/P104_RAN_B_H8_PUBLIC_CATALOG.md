@@ -7,34 +7,34 @@ poi_tags: poi.catalog_plate;poi.ran_b_h8_stamp
 biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "JA LOC HOLD: RAN-B:H8 Public Catalog"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "RAN-B:H8公開カタログ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: RAN-B:H8 Public Catalog
+# RAN-B:H8公開カタログ
 
-JA LOC HOLD: HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.
+HECTON-8には乾いたカタログ名と人間の請求名がある。RAN-B:H8は航路表に属する。Ran星系、Aegir級巨星、第八索引主要月。HECTON-8はDeep Reach契約、作業員記録、Marauderの言葉、死亡台帳、サルベージ法に属する。
 
 ## Scanner
 
-JA LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
+カタログ板: 公開航路ラベルRAN-B:H8。Deep Reach請求名HECTON-8。
 
 ## Terminal
 
-JA LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
+カタログ照合: Ran星系、Aegir巨星、第八索引主要月。HECTON-8は契約、死亡、保険継続の請求名として保持。
 
 ## Audio
 
-JA LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
+星図はそれをH8と呼ぶ。ここで溺れた人々はHECTONと呼んだ。
 
 ## Field Note
 
-JA LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+物が人を覚えているときはHECTON-8。文書が距離を求めるときはRAN-B:H8。
 
 <!-- In-Game Wiki; generated from P104_RAN_B_H8_PUBLIC_CATALOG/ja_JP. -->

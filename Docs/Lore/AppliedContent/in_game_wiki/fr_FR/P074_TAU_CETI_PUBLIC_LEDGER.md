@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "Registre public de Tau Ceti"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# Registre public de Tau Ceti
 
-FR LOC HOLD: The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.
+La Tau Ceti League donne au droit public de l'ère Aegir un contrepoids crédible. Elle compte pour la garde des preuves et la pression extérieure contre Deep Reach, mais la distance l'empêche de sortir en temps réel un plongeur piégé sous HECTON-8.
 
 ## Scanner
 
-FR LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+Fragment de registre civique Tau Ceti. Assez public pour effrayer Deep Reach, trop retardé pour sauver la colonie.
 
 ## Terminal
 
-FR LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+MIROIR DE REGISTRE TAU CETI : preuves scellées recevables après authentification relais. Fenêtre de revue publique prévue supérieure de 31,4 ans à l'intervalle de survie local.
 
 ## Audio
 
-FR LOC HOLD: A court can be honest and useless when light itself is late.
+Un tribunal peut être honnête et inutile quand la lumière elle-même est en retard.
 
 ## Field Note
 
-FR LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+La surveillance peut arriver propre et tard. Tard, c'est quand même mort.
 
 <!-- In-Game Wiki; generated from P074_TAU_CETI_PUBLIC_LEDGER/fr_FR. -->

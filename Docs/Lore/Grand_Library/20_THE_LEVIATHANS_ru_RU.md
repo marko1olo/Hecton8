@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ЛЕВИАФАНЫ HECTON-8
 
 > **Источник:** Мегакорпорация Deep Reach, Оценка ксенобиологической угрозы.

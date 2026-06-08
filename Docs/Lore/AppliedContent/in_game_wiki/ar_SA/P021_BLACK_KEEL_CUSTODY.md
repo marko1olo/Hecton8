@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # وصاية Black Keel
 
-Black Keel ليس سفينة شخصية فاخرة. إنه carrier إنقاذ شبه آلي مرتبط بوصاية claim-pool ودين تأمين ونوافذ مدارية بطيئة.
+Black Keel ليست سفينة شخصية فاخرة. إنها carrier salvage شبه آلية تعمل عبر حيازة مجمع مطالبات ودين تأمين ونوافذ مدار متأخرة. تمنح طريقا حقيقيا إلى المدار من دون أن تجعل الإنقاذ بسيطا أو وفيا.
 
 ## Scanner
 

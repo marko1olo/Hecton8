@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # PREDADORES APEX E BIOLOGIA ABISSAL
 
 > **Fonte:** Fragmento de relatório de xenobiologia, laboratório de pesquisa do Setor 44 (Recuperado).

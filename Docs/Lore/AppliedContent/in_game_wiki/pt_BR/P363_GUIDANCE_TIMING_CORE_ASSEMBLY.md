@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Guidance Timing Core Assembly"
+title: "Conjunto de Núcleo de Timing de Orientação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Guidance Timing Core Assembly
+# Conjunto de Núcleo de Timing de Orientação
 
-PT LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.
+Uma subida funcional precisa de um núcleo de timing de orientação que entenda a geometria lunar de Aegir, intervalos blackout, sombras de relé e carrier recovery lanes. Timing ruim pode perder a cápsula sem quebrar uma peça sequer.
 
 ## Scanner
 
-PT LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+Timing core em branco. A geometria de Aegir decide se a subida vira recovery, capture ou silêncio.
 
 ## Terminal
 
-PT LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: alinhar relógio da cápsula à Aegir window, Black Keel receiver lane, moon relay shutter e drift de storm-plume. Packets atrasados viram perda de evidência; packets adiantados viram capture noise.
 
 ## Audio
 
-PT LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+Para cima não é direção. É uma janela com testemunha.
 
 ## Field Note
 
-PT LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+Não existe um para cima simples a partir de HECTON-8. Existe um receptor, uma sombra, drift de tempestade e uma packet queue já mais velha que seu pânico.
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/pt_BR. -->

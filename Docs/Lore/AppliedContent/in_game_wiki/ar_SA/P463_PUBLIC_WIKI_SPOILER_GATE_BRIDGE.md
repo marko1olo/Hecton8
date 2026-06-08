@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: بوابة حجب الحرق"
+title: "بوابة حجب الحرق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: بوابة حجب الحرق
+# بوابة حجب الحرق
 
-AR LOC HOLD: بوابة أرشيف عامة. تستطيع الصفحات الخارجية والويكي ذكر HECTON-8 وAegir وBlack Keel وDeep Reach وتاريخ Atlas-6 العام وشائعات Xenon-Omega. الإدخالات الأقوى تفتح بعد استعادة الحيازة.
+بوابة الأرشيف العام. يمكن للموقع والويكي ذكر HECTON-8 وAegir وBlack Keel وDeep Reach وتاريخ Atlas-6 العام وشائعات Xenon-Omega. لا تفتح الصياغات الأقوى إلا بعد حيازة مستعادة.
 
 ## Scanner
 
-AR LOC HOLD: بوابة الأرشيف العام // مستوى حرق 0/1. سياق عام فقط. الأدلة العميقة تحتاج حيازة مستعادة قبل توسيع الكودكس.
+بوابة الأرشيف العام // مستوى حرق 0/1. سياق عام فقط. الأدلة العميقة تحتاج حيازة مستعادة قبل توسيع الكودكس.
 
 ## Terminal
 
-AR LOC HOLD: مرشح PUBLIC/WIKI // قبل الدليل يسمح بذكر المكان وضغط المسار ولغة الحادث العامة والمؤسسات المعروفة وبداية salvage. الأدلة العميقة تبقى محجوبة.
+مرشح PUBLIC/WIKI // المسموح قبل الأدلة: المكان، ضغط المسار، لغة الحادث العامة، المؤسسات المعروفة، وبداية عمل salvage. احجب الأدلة العميقة حتى تستعاد.
 
 ## Audio
 
-AR LOC HOLD: ترحيل Black Keel: النص العام يسمي القمر. الإثبات يحتاج ختما. أحضر الختم.
+ترحيل Black Keel: النص العام يذكر اسم القمر. الإثبات يحتاج ختما. أحضر الختم.
 
 ## Field Note
 
-AR LOC HOLD: الصفحة العامة تخبرك أين تغوص. لا تخبرك من دفع كي يبقى الباب مغلقا.
+الصفحة العامة تقول لك أين تغوص. لا تقول من دفع كي يبقى الباب مغلقا.
 
 <!-- In-Game Wiki; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/ar_SA. -->

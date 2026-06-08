@@ -9,32 +9,35 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Professional Guilt To Personal Stake"
+title: "Da Culpa Profissional ao Interesse Pessoal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Professional Guilt To Personal Stake
+# Da Culpa Profissional ao Interesse Pessoal
 
-PT LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.
+A motivação do protagonista cresce de especialização para responsabilidade. HECTON-8 evita melodrama familiar forçado: o ex-trabalhador da Deep Reach se importa porque entende a máquina procedural que fez o abandono parecer concluído.
 
 ## Scanner
 
-PT LOC HOLD: Signature match. The form language is old. The names are new.
+O padrão de assinatura combina com o cache antigo de procedimento. Os nomes mudaram. A sala falhou do mesmo jeito. Especialização já não é distância.
 
 ## Terminal
 
-PT LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+RESOLUÇÃO DE DOSSIÊ / INTERESSE PROFISSIONAL
+evidência gatilho: reconhecimento de procedimento, etiquetas de trabalhadores recuperadas, conflito do recebedor da reivindicação
+motivo excluído: relação familiar, linhagem de vingança, status de testemunha escolhida
+motivo ativo: ex-trabalhador de sistemas reconhece abandono evitável e ainda consegue ler a máquina que o arquivou.
 
 ## Audio
 
-PT LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+Você veio por uma reivindicação. Ficou porque a papelada conhecia suas mãos.
 
 ## Field Note
 
-PT LOC HOLD: Use near late dossier and final payload route.
+Não é sua assinatura. Ainda é seu ofício. Por isso a sala não vai ficar quieta.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/pt_BR. -->

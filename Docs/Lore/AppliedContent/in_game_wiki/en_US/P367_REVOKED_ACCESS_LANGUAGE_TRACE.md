@@ -19,22 +19,26 @@ localization_flags: 0
 
 # Revoked Access Language Trace
 
-Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+Revoked access language became one of Deep Reach's quieter locks. A door could deny a former worker, mark the request as routine maintenance, and still leak the exact terms that named the hidden evacuation route. On HECTON-8, this matters because the player does not need a clean confession to follow the trail. The old phrasing is enough: degraded-count protocol, substitute witness, route-safe archive, claim-preservation routing. Those words were built for liability review, not rescue. The denial proves two things at once. The credential is dead. The procedure behind it is not.
 
 ## Scanner
 
-Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+The lockout does not say forbidden. It says maintenance reclassification, continuity hold, and route materials. Old Deep Reach phrasing: a denial that still points at the buried door.
 
 ## Terminal
 
-LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+ACCESS RESPONSE / ROUTE-SAFE ARCHIVE
+credential: revoked
+reason: evacuation-continuity materials restricted to certified Deep Reach staff
+visible terms: degraded-count, substitute witness, claim-preservation route, maintenance reclassification
+note: legacy field personnel may view denial language for incident reconciliation only.
 
 ## Audio
 
-That is not security. That is a memo pretending to be a door.
+They did not erase the corridor. They wrapped it in vocabulary only guilty staff would still understand.
 
 ## Field Note
 
-Lockout language hints at hidden liability without granting free access.
+The badge is dead. The lockout still speaks the office dialect that buried the route.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/en_US. -->

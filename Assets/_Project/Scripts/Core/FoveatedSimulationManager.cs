@@ -797,7 +797,8 @@ namespace Hecton8.Core
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= MinimumVelocityDelta)
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= MinimumVelocityDelta)
                 return;
 
             ForceCompleteFrameJobsInPostSimulationWindow();
@@ -1684,7 +1685,6 @@ namespace Hecton8.Core
 
         private void DisposeNativeBuffers(JobHandle dependency)
         {
-            MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
             JobHandle disposeHandle = dependency;
             DispatcherJobFence.BeginPostSimulationSwapWindow();
             try
@@ -1698,6 +1698,7 @@ namespace Hecton8.Core
             ReleaseImportanceJobBufferPins();
 
             ReleaseNativeVaultHandles(_dataVault);
+            MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
             ClearNativeBufferAliases();
         }
 
@@ -1754,8 +1755,8 @@ namespace Hecton8.Core
             if (releaseVault != null)
             {
                 ForceCompleteFrameJobsInPostSimulationWindow();
-                MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
                 ReleaseNativeVaultHandles(releaseVault);
+                MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
                 ClearNativeBufferAliases();
             }
 

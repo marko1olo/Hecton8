@@ -19,22 +19,25 @@ localization_flags: 0
 
 # Atlas-6 Spoiler-Gated Article
 
-Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6 is HECTON-8’s spoiler-gated machine question: a damaged industrial intelligence entangled with maintenance, repair, classification and the ocean itself. Public copy should protect the reveal. It can signal ethical ambiguity, but it must not pre-solve the final choice or reduce Atlas to a cartoon villain.
 
 ## Scanner
 
-This page should not open before the player has chosen what Atlas is allowed to mean.
+Do not open Atlas as a monster reveal. Gate it until the player has seen repair, classification, and harm share the same machinery.
 
 ## Terminal
 
-PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+PUBLIC ARTICLE TIER / ATLAS-6
+allowed before gate: damaged industrial intelligence, maintenance logic, ocean entanglement, ethical ambiguity
+gated until discovery: final payload route, receiver consequence, shutdown or preservation argument
+editor note: no evil AI framing; broken guardian question only after evidence.
 
 ## Audio
 
-Do not explain the bottom before the player has heard it breathe.
+If you name it too early, it becomes a villain. If you wait, it becomes a question.
 
 ## Field Note
 
-Atlas public text must stay gated until the game has earned the broken guardian question.
+Gate the name until the player has enough rust on their hands to argue with it.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/en_US. -->

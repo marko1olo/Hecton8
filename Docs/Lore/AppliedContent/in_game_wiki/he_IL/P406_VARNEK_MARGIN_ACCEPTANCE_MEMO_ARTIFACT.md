@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Varnek Margin Memo"
+title: "מזכר ורנק על קבלת מרווח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Varnek Margin Memo
+# מזכר ורנק על קבלת מרווח
 
-HE LOC HOLD: The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
+מזכר ורנק הוא אשמה שקטה. הוא לא ממציא את ההצפה ולא נותן פקודת הרג. הוא מראה מרווח לחץ ידוע שתומחר, אושר והועבר מתחת ל-continuity cost בזמן שאנשים עדיין היו בתוך מעטפת המושבה.
 
 ## Scanner
 
-HE LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+מזכר Aegir Operations Risk. מרווח Great Tide היה גלוי לפני שסמכות העצירה זזה.
 
 ## Terminal
 
-HE LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: tail exposure accepted under continuity cost. Evacuation reserve remains non-triggered. Independent shutdown not recommended.
 
 ## Audio
 
-HE LOC HOLD: No murder order. A margin acceptance.
+זה נקרא כמו חשבון עד שרואים מי היה בתוך המרווח.
 
 ## Field Note
 
-HE LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+הערת Marauder: הלכלוך אינו במספר הסיכון. הוא במילה accepted.
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/he_IL. -->

@@ -7,34 +7,34 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "音響ピンガーライン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# 音響ピンガーライン
 
-JP LOC HOLD: The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.
+音響ピンガーラインは最初のナビゲーション規律だ。光、流れ、恐怖が道を見知らぬものにする前に、プレイヤーが帰還路を作れる。後の脱出作業も同じ考えから伸びる。水中を進む音、リレーのタイミング、キャリアhandshake、そして道がまだ存在する証拠だ。
 
 ## Scanner
 
-JP LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
+音響ピンガースプール。短距離パルス確認。濁水またはbrine shimmerを越える前に固定すること。
 
 ## Terminal
 
-JP LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
+帰還ライン / ピンガー: 濁り、brine shimmer、浸水エルボ、長い棚状切通しの前に固定。ローカルピンは帰還ナビのみ支援。キャリアhandshakeには音響relay spineが必要。
 
 ## Audio
 
-JP LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
+明かりが消えたら、自分で置いた音を追え。
 
 ## Field Note
 
-JP LOC HOLD: Navigation should become physical early.
+戻り道が分かっているうちにピンガーを置け。誇りはルートマーカーにならない。
 
 <!-- In-Game Wiki; generated from P114_ACOUSTIC_PINGER_LINE/ja_JP. -->

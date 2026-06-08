@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "خطافات مطالبات Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# خطافات مطالبات Black Keel
 
-AR LOC HOLD: Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.
+Black Keel هو مسار تسليم اللاعب، ووعد الاستعادة، وأول قفص قانوني. يستطيع الناقل أن يجيب، لكن كل إجابة تمر عبر خطافات مطالبات: قيمة الحمولة، حالة الحجر، شهادة المسار، وصاية الدين، وبنود أولوية Deep Reach القديمة التي كان يجب أن تنتهي. لذلك لا يكون السطح زر إنقاذ. السفينة قريبة بما يكفي لتتكلم وبعيدة بما يكفي لترفض؛ تأخيراتها ليست مزاجاً. إنها منطق عقد يعمل تماماً كما كُتب.
 
 ## Scanner
 
-AR LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+في البيان، Black Keel عتاد لحوض المطالبات؛ وفي البنود، هو ذراع ضغط لـ Deep Reach.
 
 ## Terminal
 
-AR LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+وصاية الناقل: يُسمح باستعادة المشغل بعد فرز الحمولة، وبوابة الحجر، وشهادة المسار، وتصفية المسؤولية. خُتم أولوية Deep Reach محفوظ في بنود نائمة.
 
 ## Audio
 
-AR LOC HOLD: It can hear you. It just has to price the answer first.
+إنه يسمعك. عليه فقط أن يسعّر الإجابة أولاً.
 
 ## Field Note
 
-AR LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+السفينة ليست شريرة. إنها مؤجرة لعقد يعرف كيف يكون قاسياً من دون أن يبدو حياً.
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/ar_SA. -->

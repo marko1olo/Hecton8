@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Custódia Black Keel
 
-A custódia Black Keel define suporte orbital como infraestrutura útil e comprometida: resgate, dívida e pressão Deep Reach.
+Black Keel Custody define suporte orbital como infraestrutura útil e comprometida: rota de resgate, máquina de dívida e superfície de pressão da Deep Reach em um só objeto.
 
 ## Scanner
 

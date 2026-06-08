@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Keel Claim Hooks
 
-Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses.
+Black Keel Claim Hooks defines the opening pressure. Black Keel is not a moustache-twirling villain ship; it is a carrier bound to claim-pool economics, quarantine law and dormant Deep Reach leverage. The player’s problem is practical and moral at once: a voice above the ocean can hear the distress call, but the route home must be made valuable, certifiable and legally inconvenient to ignore.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the
 
 ## Terminal
 
-CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in dormant clauses.
 
 ## Audio
 

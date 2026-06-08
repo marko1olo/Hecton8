@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 企業のコンプライアンスとマローダーのサブカルチャー
 
 > **出典:** 回収コンプライアンス局、下請け業者オンボーディングガイド（書式88-C）。  

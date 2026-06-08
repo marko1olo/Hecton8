@@ -17,6 +17,9 @@ namespace Hecton8.UI
         private const int HistoryLineCount = 16;
         private const int HistoryLineCapacity = 64;
         private const int PendingEntryCapacity = 12;
+        private const int PendingEntryDropTelemetryCooldownFrames = 120;
+        private const uint PendingEntryDropWarningHash = 0x42504452u; // BPDR
+        private const uint PendingEntryDropContextHash = 0x42494F53u; // BIOS
         private const float CharactersPerSecond = 96f;
         private static ReadOnlySpan<char> OkPrefix => "[OK] ".AsSpan();
         private static ReadOnlySpan<char> WarnPrefix => "[WARN] ".AsSpan();
@@ -64,6 +67,9 @@ namespace Hecton8.UI
         private int _typingSourceLength;
         private int _typingVisibleLength;
         private int _typingRenderBaseLength;
+        private int _droppedQueuedPendingEntryCount;
+        private int _droppedIncomingPendingEntryCount;
+        private int _lastPendingEntryDropTelemetryFrame = -PendingEntryDropTelemetryCooldownFrames;
         private float _typingAccumulator;
         private bool _typingActive;
         private bool _registeredUpdatable;
@@ -144,6 +150,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
+            HectonSubmarineOsEvents.Unregister(this);
             HectonSubmarineOsEvents.Register(this);
             RefreshTickRegistration();
             RefreshTerminal();
@@ -260,9 +267,13 @@ namespace Hecton8.UI
         {
             if (_pendingEntryCount >= PendingEntryCapacity)
             {
-                _pendingEntries[_pendingEntryHead] = default;
-                _pendingEntryHead = (_pendingEntryHead + 1) % PendingEntryCapacity;
-                _pendingEntryCount--;
+                if (!TryDropQueuedEntryForIncomingPriority(priority))
+                {
+                    RecordPendingEntryDrop(droppedIncoming: true);
+                    return;
+                }
+
+                RecordPendingEntryDrop(droppedIncoming: false);
             }
 
             _pendingEntries[_pendingEntryTail] = new PendingEntry
@@ -272,6 +283,119 @@ namespace Hecton8.UI
             };
             _pendingEntryTail = (_pendingEntryTail + 1) % PendingEntryCapacity;
             _pendingEntryCount++;
+        }
+
+        private bool TryDropQueuedEntryForIncomingPriority(byte incomingPriority)
+        {
+            if (_pendingEntryCount <= 0)
+                return false;
+
+            for (int i = 0; i < _pendingEntryCount; i++)
+            {
+                int index = (_pendingEntryHead + i) % PendingEntryCapacity;
+                if (_pendingEntries[index].Priority > incomingPriority)
+                    continue;
+
+                RemovePendingEntryAtLogicalIndex(i);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void RemovePendingEntryAtLogicalIndex(int logicalIndex)
+        {
+            int safeLogicalIndex = math.clamp(logicalIndex, 0, math.max(0, _pendingEntryCount - 1));
+            int countBeforeRemove = _pendingEntryCount;
+            for (int i = safeLogicalIndex; i < countBeforeRemove - 1; i++)
+            {
+                int destination = (_pendingEntryHead + i) % PendingEntryCapacity;
+                int source = (_pendingEntryHead + i + 1) % PendingEntryCapacity;
+                _pendingEntries[destination] = _pendingEntries[source];
+            }
+
+            int clearedIndex = (_pendingEntryHead + countBeforeRemove - 1) % PendingEntryCapacity;
+            _pendingEntries[clearedIndex] = default;
+            _pendingEntryCount--;
+            _pendingEntryTail = (_pendingEntryHead + _pendingEntryCount) % PendingEntryCapacity;
+            if (_pendingEntryCount <= 0)
+                _pendingEntryTail = _pendingEntryHead;
+        }
+
+        private void RecordPendingEntryDrop(bool droppedIncoming)
+        {
+            if (droppedIncoming)
+                _droppedIncomingPendingEntryCount = SaturatingIncrement(_droppedIncomingPendingEntryCount);
+            else
+                _droppedQueuedPendingEntryCount = SaturatingIncrement(_droppedQueuedPendingEntryCount);
+
+            if (!TryReserveTelemetryWarningFrame(
+                    ref _lastPendingEntryDropTelemetryFrame,
+                    PendingEntryDropTelemetryCooldownFrames))
+                return;
+
+            PublishPerformanceWarningBestEffort(
+                PendingEntryDropWarningHash,
+                PendingEntryDropContextHash,
+                _droppedQueuedPendingEntryCount + _droppedIncomingPendingEntryCount);
+        }
+
+        private static bool TryReserveTelemetryWarningFrame(ref int lastTelemetryFrame, int cooldownFrames)
+        {
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (frame < 0)
+            {
+                if (lastTelemetryFrame == int.MinValue)
+                    return false;
+
+                lastTelemetryFrame = int.MinValue;
+                return true;
+            }
+
+            if (lastTelemetryFrame >= 0 && frame - lastTelemetryFrame < cooldownFrames)
+                return false;
+
+            lastTelemetryFrame = frame;
+            return true;
+        }
+
+        private static int ResolveCurrentFrameIndexSafe()
+        {
+            try
+            {
+                return SystemDispatcher.CurrentFrameIndex;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
+            }
+            catch (Exception telemetryException)
+            {
+                LogTelemetryWarningException(telemetryException);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogTelemetryWarningException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            try
+            {
+                H8Debug.LogException(exception);
+            }
+            catch
+            {
+            }
+#endif
         }
 
         private void TryStartNextEntry()
@@ -527,6 +651,11 @@ namespace Hecton8.UI
                 return safeCursor;
 
             return safeCursor + written;
+        }
+
+        private static int SaturatingIncrement(int value)
+        {
+            return value < int.MaxValue ? value + 1 : int.MaxValue;
         }
     }
 }

@@ -442,6 +442,7 @@ namespace Hecton8.Construction
                 return;
 
             string[] seedIds = moduleDto.cultivationSeedItemIds;
+            int[] seedHashIds = moduleDto.cultivationSeedItemHashIds;
             ulong[] geneticsMasks = moduleDto.cultivationGeneticsMasks;
             float[] growthValues = moduleDto.cultivationGrowth01;
             float[] qualityValues = moduleDto.cultivationQuality01;
@@ -454,10 +455,10 @@ namespace Hecton8.Construction
                     continue;
 
                 ItemData item = itemCatalog != null ? itemCatalog.FindByHash(slot.SeedItemHashId) : null;
-                if (item == null || string.IsNullOrWhiteSpace(item.PersistentId))
-                    continue;
-
-                seedIds[writeIndex] = item.PersistentId;
+                seedIds[writeIndex] = item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
+                    ? item.PersistentId.Trim()
+                    : string.Empty;
+                seedHashIds[writeIndex] = slot.SeedItemHashId;
                 geneticsMasks[writeIndex] = SanitizeGeneticsMask(slot.GeneticsMask);
                 growthValues[writeIndex] = NormalizeGrowth01(slot.Growth01);
                 qualityValues[writeIndex] = NormalizeQuality01(slot.Quality01);
@@ -475,23 +476,24 @@ namespace Hecton8.Construction
         /// </summary>
         public void RestoreFromSaveData(ModuleDTO moduleDto, ItemCatalog itemCatalog)
         {
-            ClearSlots();
             if (_slots == null)
                 return;
 
-            int safeCount = math.max(0, moduleDto.cultivationSlotCount);
-            safeCount = math.min(safeCount, moduleDto.cultivationSeedItemIds != null ? moduleDto.cultivationSeedItemIds.Length : 0);
-            safeCount = math.min(safeCount, MaxCultivationSlots);
+            int safeCount = ResolveCultivationRestoreCount(in moduleDto);
+            if (safeCount <= 0 || !HasSavedCultivationRestoreState(in moduleDto, safeCount))
+            {
+                ClearSlots();
+                return;
+            }
+
+            if (!CanResolveCultivationRestoreState(in moduleDto, itemCatalog, safeCount))
+                return;
+
+            ClearSlots();
             for (int i = 0; i < safeCount; i++)
             {
-                string persistentId = moduleDto.cultivationSeedItemIds[i];
-                if (string.IsNullOrWhiteSpace(persistentId))
-                    continue;
-
-                ItemData item = itemCatalog != null ? itemCatalog.FindById(persistentId) : null;
-                int itemHashId = item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
-                    ? LocHash.Compute(item.PersistentId)
-                    : LocHash.Compute(persistentId);
+                string persistentId = GetSavedCultivationSeedItemId(in moduleDto, i);
+                int itemHashId = ResolveSavedCultivationSeedHashId(in moduleDto, itemCatalog, i, persistentId);
                 if (itemHashId == 0)
                     continue;
 
@@ -505,6 +507,183 @@ namespace Hecton8.Construction
                         : 1f
                 };
             }
+        }
+
+        private static int ResolveCultivationRestoreCount(in ModuleDTO moduleDto)
+        {
+            if (moduleDto.cultivationSlotCount <= 0)
+                return 0;
+
+            int identityCapacity = math.max(
+                moduleDto.cultivationSeedItemIds != null ? moduleDto.cultivationSeedItemIds.Length : 0,
+                moduleDto.cultivationSeedItemHashIds != null ? moduleDto.cultivationSeedItemHashIds.Length : 0);
+            return math.min(math.min(moduleDto.cultivationSlotCount, MaxCultivationSlots), identityCapacity);
+        }
+
+        private static bool HasSavedCultivationRestoreState(in ModuleDTO moduleDto, int safeCount)
+        {
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(GetSavedCultivationSeedItemId(in moduleDto, i)) ||
+                    GetSavedCultivationSeedHashId(in moduleDto, i) != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CanResolveCultivationRestoreState(
+            in ModuleDTO moduleDto,
+            ItemCatalog itemCatalog,
+            int safeCount)
+        {
+            for (int i = 0; i < safeCount; i++)
+            {
+                string persistentId = GetSavedCultivationSeedItemId(in moduleDto, i);
+                int savedHashId = GetSavedCultivationSeedHashId(in moduleDto, i);
+                if (string.IsNullOrWhiteSpace(persistentId))
+                {
+                    if (savedHashId == 0)
+                        return false;
+
+                    continue;
+                }
+
+                if (itemCatalog != null && itemCatalog.FindById(persistentId.Trim()) != null)
+                    continue;
+
+                if (savedHashId == 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string GetSavedCultivationSeedItemId(in ModuleDTO moduleDto, int slotIndex)
+        {
+            if (moduleDto.cultivationSeedItemIds == null ||
+                slotIndex < 0 ||
+                slotIndex >= moduleDto.cultivationSeedItemIds.Length)
+            {
+                return string.Empty;
+            }
+
+            return moduleDto.cultivationSeedItemIds[slotIndex];
+        }
+
+        private static int GetSavedCultivationSeedHashId(in ModuleDTO moduleDto, int slotIndex)
+        {
+            if (moduleDto.cultivationSeedItemHashIds == null ||
+                slotIndex < 0 ||
+                slotIndex >= moduleDto.cultivationSeedItemHashIds.Length)
+            {
+                return 0;
+            }
+
+            return moduleDto.cultivationSeedItemHashIds[slotIndex];
+        }
+
+        private static int ResolveSavedCultivationSeedHashId(
+            in ModuleDTO moduleDto,
+            ItemCatalog itemCatalog,
+            int slotIndex,
+            string persistentId)
+        {
+            if (!string.IsNullOrWhiteSpace(persistentId) && itemCatalog != null)
+            {
+                ItemData item = itemCatalog.FindById(persistentId.Trim());
+                int resolvedHashId = ItemData.ResolvePersistentHashId(item);
+                if (resolvedHashId != 0)
+                    return resolvedHashId;
+            }
+
+            return GetSavedCultivationSeedHashId(in moduleDto, slotIndex);
+        }
+
+        internal bool CanEjectCultivationContents(BaseModule owner, PlayerInventory inventory, Vector3 dropPosition)
+        {
+            if (_slots == null || OccupiedSlotCount <= 0)
+                return true;
+
+            Span<int> itemHashIds = stackalloc int[MaxCultivationSlots];
+            Span<int> quantities = stackalloc int[MaxCultivationSlots];
+            Span<ulong> geneticsMasks = stackalloc ulong[MaxCultivationSlots];
+            Span<ushort> qualityMillis = stackalloc ushort[MaxCultivationSlots];
+            int occupiedCount = BuildCultivationEjectionBatch(itemHashIds, quantities, geneticsMasks, qualityMillis);
+            if (occupiedCount <= 0)
+                return true;
+
+            if (inventory != null &&
+                inventory.CanAcceptItemWithStateBatch(itemHashIds, geneticsMasks, qualityMillis, occupiedCount))
+            {
+                return true;
+            }
+
+            if (owner == null || !IsFiniteRuntimePosition(dropPosition))
+                return false;
+
+            ItemCatalog itemCatalog = ResolveEjectionItemCatalog(inventory);
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            if (itemCatalog == null || persistentWorldRegistry == null)
+                return false;
+
+            for (int i = 0; i < occupiedCount; i++)
+            {
+                ItemData item = itemCatalog.FindByHash(itemHashIds[i]);
+                if (!persistentWorldRegistry.CanRegisterDroppedItem(item, quantities[i], dropPosition))
+                    return false;
+            }
+
+            return persistentWorldRegistry.CanRegisterDroppedItemBatch(occupiedCount);
+        }
+
+        internal bool EjectCultivationContents(BaseModule owner, PlayerInventory inventory, ref Vector3 dropPosition)
+        {
+            if (_slots == null || OccupiedSlotCount <= 0)
+                return true;
+
+            if (!CanEjectCultivationContents(owner, inventory, dropPosition))
+                return false;
+
+            ItemCatalog itemCatalog = ResolveEjectionItemCatalog(inventory);
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            bool allDelivered = true;
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                CultivationSlotState slot = _slots[i];
+                if (slot.SeedItemHashId == 0)
+                    continue;
+
+                ulong geneticsMask = SanitizeGeneticsMask(slot.GeneticsMask);
+                ushort qualityMilli = ResolveCultivationQualityMilli(slot.Quality01);
+                if (inventory != null &&
+                    inventory.TryAddItemWithState(slot.SeedItemHashId, geneticsMask, qualityMilli))
+                {
+                    _slots[i] = default;
+                    continue;
+                }
+
+                ItemData item = itemCatalog != null ? itemCatalog.FindByHash(slot.SeedItemHashId) : null;
+                if (persistentWorldRegistry != null &&
+                    item != null &&
+                    persistentWorldRegistry.TryRegisterDroppedItemWithState(
+                        item,
+                        1,
+                        dropPosition,
+                        geneticsMask,
+                        qualityMilli))
+                {
+                    _slots[i] = default;
+                    dropPosition.x += 0.3f;
+                    continue;
+                }
+
+                allDelivered = false;
+            }
+
+            return allDelivered;
         }
 
         /// <summary>
@@ -635,9 +814,7 @@ namespace Hecton8.Construction
             if (inventory == null || item == null || quantity <= 0)
                 return false;
 
-            int seedItemHashId = !string.IsNullOrWhiteSpace(item.PersistentId)
-                ? LocHash.Compute(item.PersistentId)
-                : 0;
+            int seedItemHashId = ItemData.ResolvePersistentHashId(item);
             if (seedItemHashId == 0)
                 return false;
 
@@ -693,6 +870,36 @@ namespace Hecton8.Construction
         {
             if (_slots != null)
                 Array.Clear(_slots, 0, _slots.Length);
+        }
+
+        private int BuildCultivationEjectionBatch(
+            Span<int> itemHashIds,
+            Span<int> quantities,
+            Span<ulong> geneticsMasks,
+            Span<ushort> qualityMillis)
+        {
+            if (_slots == null)
+                return 0;
+
+            int count = 0;
+            int capacity = math.min(
+                math.min(itemHashIds.Length, quantities.Length),
+                math.min(geneticsMasks.Length, math.min(qualityMillis.Length, MaxCultivationSlots)));
+            for (int i = 0; i < _slots.Length && count < capacity; i++)
+            {
+                CultivationSlotState slot = _slots[i];
+                int itemHashId = slot.SeedItemHashId;
+                if (itemHashId == 0)
+                    continue;
+
+                itemHashIds[count] = itemHashId;
+                quantities[count] = 1;
+                geneticsMasks[count] = SanitizeGeneticsMask(slot.GeneticsMask);
+                qualityMillis[count] = ResolveCultivationQualityMilli(slot.Quality01);
+                count++;
+            }
+
+            return count;
         }
 
         private void ClearHazardState()
@@ -941,6 +1148,23 @@ namespace Hecton8.Construction
                 ? inventoryService.Inventory
                 : null;
             return inventory != null ? inventory.ItemCatalog : null;
+        }
+
+        private ItemCatalog ResolveEjectionItemCatalog(PlayerInventory inventory)
+        {
+            return inventory != null && inventory.ItemCatalog != null
+                ? inventory.ItemCatalog
+                : ResolveItemCatalog();
+        }
+
+        private static ushort ResolveCultivationQualityMilli(float quality01)
+        {
+            return (ushort)math.clamp((int)math.round(NormalizeQuality01(quality01) * 1000f), 0, 1000);
+        }
+
+        private static bool IsFiniteRuntimePosition(Vector3 position)
+        {
+            return math.all(math.isfinite(new float3(position.x, position.y, position.z)));
         }
 
         private void CacheRegistryServicesCold()

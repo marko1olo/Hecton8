@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Black Keel Bathydrop Interface"
+title: "واجهة bathydrop لـ Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Black Keel Bathydrop Interface
+# واجهة bathydrop لـ Black Keel
 
-AR LOC HOLD: HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.
-
-## Scanner
-
-AR LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
-
-## Terminal
-
-AR LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
-
-## Audio
-
-AR LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
-
-## Field Note
-
-AR LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+واجهة bathydrop هي المكان الذي يلمس فيه إعداد الفضاء لعبة المحيط. لا يكفي أن تكون Black Keel في المدار. يحتاج اللاعب إلى سلسلة: سلامة الكبسولة، تحكم الطفو، صاري الاتصال، مزلاج الصعود، أختام الضغط، حساب الترحيل، توقيت السطح، وقبول الناقل. اكسر رابطا واحدا ويصبح الإنقاذ كله نظرية. هذا يجعل الافتتاح صادقا. اللاعب ليس عالقا لأن القصة نسيت السفينة. اللاعب عالق لأن الآلة الوحيدة التي تصل الهاوية بالسطح والمدار فشلت بطرق تجعلها المياه أسوأ كل ساعة.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/ar_SA. -->

@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "KO LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: 실제 물 아래의 책임"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: 실제 물 아래의 책임
 
-KO LOC HOLD: Deep Reach guilt is strongest where clean reports meet broken hardware. The flood was real; the avoidable part is recorded in margins, clocks, doors and custody labels.
+Deep Reach는 바다를 가짜로 만들지 않아도 유죄다. 조석, 빙권, 폭풍, 압력 화학이 재난을 일으켰고 procedure가 나쁜 여유를 고른 뒤 문서를 닦았다.
 
 ## Scanner
 
-KO LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+공개 증거 브리프. Great Tide 물리는 실제다. Deep Reach 책임은 승인된 margin, 부족한 대피, Atlas continuity 가중, 검역 지연, 손실 전환에 있다.
 
 ## Terminal
 
-KO LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+공개 책임 노드 // DEEP REACH. 사슬: Varnek margin acceptance, Arendt Atlas waiver, Haldane quarantine hold, Ibarra loss ledger, Sato-Ren return action.
 
 ## Audio
 
-KO LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+복구된 법무 음성: "delay라고 부르지 마라. review라고 불러라. 물이 간격을 제공할 것이다."
 
 ## Field Note
 
-KO LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+Marauder 메모: 물리가 죽였다. Procedure가 누가 recoverable인지 정했다.
 
 <!-- In-Game Wiki; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/ko_KR. -->

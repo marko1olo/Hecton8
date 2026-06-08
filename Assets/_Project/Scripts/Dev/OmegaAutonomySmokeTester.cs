@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
 using Hecton8.Audio;
@@ -8,6 +8,7 @@ using Hecton8.World;
 using Hecton.UI.MainMenu;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -538,20 +539,39 @@ namespace Hecton8.Dev
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
-        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
             }
             finally
             {
-                array.Dispose();
                 array = default;
             }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Quarantine Legal Handshake Assembly"
+title: "検疫法務ハンドシェイクアセンブリ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Quarantine Legal Handshake Assembly
+# 検疫法務ハンドシェイクアセンブリ
 
-JA LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.
+検疫法務ハンドシェイクアセンブリは extraction を意図的に汚す。動くエンジンでも、生存者を corporate custody、遅延した公共の真実、未解決の検疫へ届けることがある。
 
 ## Scanner
 
-JA LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.
+ハンドシェイクソケット。カプセルは機械的に準備完了でも、まだ間違った receiver に属することがある。
 
 ## Terminal
 
-JA LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.
+RECOVERY HANDSHAKE: receiver key 必須。Keelmark は mass と lien を受理。Recovery Compliance は coordinates と quarantine status を受理。Public ledger は遅延後に proof を受理。Unkeyed launch は既定で custody dispute。
 
 ## Audio
 
-JA LOC HOLD: The last part is not metal. It is who gets to call you recovered.
+誰が応答するかで、救助の意味が決まる。
 
 ## Field Note
 
-JP LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+最後の部品は金属ではない。君を recovered と呼ぶ権限を持つシステムの名前だ。
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/ja_JP. -->

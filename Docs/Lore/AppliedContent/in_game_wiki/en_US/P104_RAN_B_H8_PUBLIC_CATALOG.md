@@ -7,8 +7,8 @@ poi_tags: poi.catalog_plate;poi.ran_b_h8_stamp
 biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "RAN-B:H8 Public Catalog"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # RAN-B:H8 Public Catalog
 
-HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.
+HECTON-8 has a dry catalog name and a human claim name. RAN-B:H8 belongs to route tables: Ran system, Aegir-class giant, eighth indexed major moon. HECTON-8 belongs to Deep Reach contracts, worker records, Marauder speech, death ledgers, and salvage law.
 
 ## Scanner
 
-Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
+Catalog plate: public route label RAN-B:H8; Deep Reach claim name HECTON-8.
 
 ## Terminal
 
-CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
+CATALOG CROSSWALK: Ran system, Aegir giant, eighth indexed major moon. HECTON-8 retained as claim name for contracts, deaths, and insurance continuity.
 
 ## Audio
 
-The star chart calls it H8. The people who died here called it HECTON.
+The chart calls it H8. The people who drowned here called it HECTON.
 
 ## Field Note
 
-Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+Use HECTON-8 when the object remembers people. Use RAN-B:H8 when the document wants distance.
 
 <!-- In-Game Wiki; generated from P104_RAN_B_H8_PUBLIC_CATALOG/en_US. -->

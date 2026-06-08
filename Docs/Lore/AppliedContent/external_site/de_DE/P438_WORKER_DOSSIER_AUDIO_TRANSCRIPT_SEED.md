@@ -9,32 +9,22 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Worker-Dossier-Audiotranskript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Worker Dossier Audio Transcript Seed
+# Worker-Dossier-Audiotranskript
 
-DE LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+## Eine Kolonie Vor Dem Beweis
 
-## Scanner
+Worker-Dossier-Audio darf Tote nicht als Altarobjekte vorstellen. Es muss sie arbeiten lassen. Ein Pump Chief prüft ein Ventil. Ein Relay-Notar beschwert sich über ein Board. Ein Medic streitet mit dem water ledger. Ein Fabricator-Operator loggt ein Werkzeugzertifikat, weil das Werkzeug wichtiger ist als jede Rede über Mut.
 
-DE LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Diese Routine gibt den Ruinen Gewicht. Der Spieler soll Namen vor Memorials hören, Jobs vor Tragödie und kleine Ärgernisse bevor die größere Lüge um sie schließt. HECTON-8 war keine Bühne für den Marauder. Es war ein Arbeitsplatz mit Gewohnheiten, Groll, Witzen, Schuldbescheiden und Druckmathematik.
 
-## Terminal
-
-DE LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
-
-## Audio
-
-DE LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
-
-## Field Note
-
-DE LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Diese Ebene schützt den Kanon vor Melodram. Es gibt keinen Familienhaken, der den Spieler besonders macht. Die Schuld ist professionell. Du erkennst Verfahren, Badges und schlechte Entscheidungen, weil du zu einem solchen System gehört hast, und jetzt spricht das System durch ertrunkene Arbeitsaufträge.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/de_DE. -->

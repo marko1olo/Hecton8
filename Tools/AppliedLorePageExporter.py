@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import argparse
 import csv
+import fnmatch
 import io
+from dataclasses import dataclass
 from pathlib import Path
 
 from AppliedLoreImporter import (
@@ -18,6 +20,7 @@ from AppliedLoreImporter import (
     sanitize_localized_text,
     write_text_if_changed,
 )
+from AppliedLoreTextIntegrity import find_text_integrity_errors
 
 
 SURFACES = (
@@ -101,6 +104,16 @@ INDEX_TITLES = {
 RTL_LOCALES = {"ar_SA", "he_IL"}
 SOURCE_AUTHORITY_STATUS = "source_authority"
 DRAFT_MACHINE_OR_LLM_STATUS = "draft_machine_or_llm"
+
+
+@dataclass(frozen=True)
+class PublicationCheckStats:
+    checked_files: int
+    stale_files: int
+    missing_files: int
+    disabled_generated_pages: int
+    integrity_issues: int
+    sample_issues: tuple[str, ...]
 
 
 def is_surface_enabled(packet: dict, surface_key: str) -> bool:
@@ -254,7 +267,7 @@ def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface
     poi_tags = metadata_list(unlock.get("poi_tags"))
     biome_tags = metadata_list(unlock.get("biome_tags"))
     localized = packet.get("localized", {}).get(locale, {})
-    flags = localized_row_flags(localized) if isinstance(localized, dict) else 0
+    flags = localized_row_flags(localized, locale, packet) if isinstance(localized, dict) else 0
     status = localization_status_from_flags(flags, locale)
     direction = "rtl" if locale in RTL_LOCALES else "ltr"
     title = clean_text(localized.get("title")) or packet_id
@@ -355,7 +368,7 @@ def count_draft_rows(packets: list[dict], locale: str) -> int:
     count = 0
     for packet in packets:
         localized = packet.get("localized", {}).get(locale, {})
-        if isinstance(localized, dict) and (localized_row_flags(localized) & ROW_FLAG_DRAFT_LOCALIZATION) != 0:
+        if isinstance(localized, dict) and (localized_row_flags(localized, locale, packet) & ROW_FLAG_DRAFT_LOCALIZATION) != 0:
             count += 1
     return count
 
@@ -437,7 +450,7 @@ def publication_surface_rows(base: Path, packets: list[dict]) -> list[dict[str, 
                     unlock = {}
 
                 localized = packet.get("localized", {}).get(locale, {})
-                flags = localized_row_flags(localized) if isinstance(localized, dict) else 0
+                flags = localized_row_flags(localized, locale, packet) if isinstance(localized, dict) else 0
                 page_path = base / folder / locale / f"{packet_id}.md"
 
                 status = localization_status_from_flags(flags, locale)
@@ -475,12 +488,29 @@ def publication_surface_rows(base: Path, packets: list[dict]) -> list[dict[str, 
     return rows
 
 
-def write_publication_surface_index(base: Path, packets: list[dict]) -> None:
+def render_csv(headers: tuple[str, ...], rows: list[dict[str, str]]) -> str:
     buffer = io.StringIO(newline="")
-    writer = csv.DictWriter(buffer, fieldnames=PUBLICATION_INDEX_HEADERS, lineterminator="\n")
+    writer = csv.DictWriter(buffer, fieldnames=headers, lineterminator="\n")
     writer.writeheader()
-    writer.writerows(publication_surface_rows(base, packets))
-    write_text_if_changed(base / "Publication_Surface_Index.csv", buffer.getvalue())
+    writer.writerows(rows)
+    return buffer.getvalue()
+
+
+def write_markdown_if_changed(path: Path, rendered: str, force: bool = False) -> bool:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not force and path.exists() and path.read_text(encoding="utf-8") == rendered:
+        return False
+
+    path.write_text(rendered, encoding="utf-8", newline="\n")
+    return True
+
+
+def render_publication_surface_index(base: Path, packets: list[dict]) -> str:
+    return render_csv(PUBLICATION_INDEX_HEADERS, publication_surface_rows(base, packets))
+
+
+def write_publication_surface_index(base: Path, packets: list[dict]) -> None:
+    write_text_if_changed(base / "Publication_Surface_Index.csv", render_publication_surface_index(base, packets))
 
 
 def navigation_cluster_graph_rows(base: Path) -> list[dict[str, str]]:
@@ -508,7 +538,7 @@ def publication_cluster_rows(base: Path, packets: list[dict]) -> list[dict[str, 
         packet_id = safe_text(cluster.get("packet_id"))
         packet = packet_by_id.get(packet_id)
         if packet is None:
-            raise ValueError(f"Navigation cluster packet missing from AppliedLore packets: {packet_id}")
+            continue
 
         release_set_id = safe_text(packet.get("release_set_id"))
         article_id = safe_text(packet.get("article_id"))
@@ -524,7 +554,7 @@ def publication_cluster_rows(base: Path, packets: list[dict]) -> list[dict[str, 
             for locale in TARGET_LOCALES:
                 direction = "rtl" if locale in RTL_LOCALES else "ltr"
                 localized = packet.get("localized", {}).get(locale, {})
-                flags = localized_row_flags(localized) if isinstance(localized, dict) else 0
+                flags = localized_row_flags(localized, locale, packet) if isinstance(localized, dict) else 0
                 page_path = base / folder / locale / f"{packet_id}.md"
                 rows.append(
                     {
@@ -554,12 +584,12 @@ def publication_cluster_rows(base: Path, packets: list[dict]) -> list[dict[str, 
     return rows
 
 
+def render_publication_cluster_index(base: Path, packets: list[dict]) -> str:
+    return render_csv(PUBLICATION_CLUSTER_INDEX_HEADERS, publication_cluster_rows(base, packets))
+
+
 def write_publication_cluster_index(base: Path, packets: list[dict]) -> None:
-    buffer = io.StringIO(newline="")
-    writer = csv.DictWriter(buffer, fieldnames=PUBLICATION_CLUSTER_INDEX_HEADERS, lineterminator="\n")
-    writer.writeheader()
-    writer.writerows(publication_cluster_rows(base, packets))
-    write_text_if_changed(base / "Publication_Cluster_Index.csv", buffer.getvalue())
+    write_text_if_changed(base / "Publication_Cluster_Index.csv", render_publication_cluster_index(base, packets))
 
 
 def remove_generated_disabled_page(path: Path, packet_id: str, surface_key: str) -> bool:
@@ -580,16 +610,59 @@ def remove_generated_disabled_page(path: Path, packet_id: str, surface_key: str)
     return True
 
 
-def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[int, int, int, int]:
-    import fnmatch
-    packets = collect_packets(root)
-    base = root / "Docs" / "Lore" / "AppliedContent"
-    written = 0
-    skipped = 0
-    removed_disabled = 0
-    indexes_written = 0
+def is_generated_disabled_page(path: Path, packet_id: str, surface_key: str) -> bool:
+    if not path.exists():
+        return False
 
-    cluster_spoiler_tiers = {}
+    text = path.read_text(encoding="utf-8")
+    generated_markers = (
+        f"packet_id: {packet_id}" in text,
+        f"surface: {surface_key}" in text,
+        "source: AppliedContent packet JSON" in text,
+        "runtime_reads_markdown: false" in text,
+    )
+    return all(generated_markers)
+
+
+def is_generated_publication_page(path: Path, surface_key: str) -> bool:
+    if not path.exists() or path.name == "INDEX.md":
+        return False
+
+    text = path.read_text(encoding="utf-8")
+    generated_markers = (
+        f"surface: {surface_key}" in text,
+        "source: AppliedContent packet JSON" in text,
+        "runtime_reads_markdown: false" in text,
+        "packet_id:" in text,
+    )
+    return all(generated_markers)
+
+
+def iter_generated_orphan_pages(base: Path, expected_paths: set[Path]) -> list[Path]:
+    orphans: list[Path] = []
+    for folder, surface_key, _surface_title in SURFACES:
+        for locale in TARGET_LOCALES:
+            surface_dir = base / folder / locale
+            if not surface_dir.exists():
+                continue
+            for path in sorted(surface_dir.glob("*.md"), key=lambda item: item.name.lower()):
+                resolved = path.resolve()
+                if resolved in expected_paths:
+                    continue
+                if is_generated_publication_page(path, surface_key):
+                    orphans.append(path)
+    return orphans
+
+
+def packet_matches_glob(packet_id: str, packet_glob: str) -> bool:
+    if not packet_glob:
+        return True
+
+    return any(fnmatch.fnmatch(packet_id, glob.strip()) for glob in packet_glob.split(",") if glob.strip())
+
+
+def cluster_spoiler_tier_map(base: Path) -> dict[str, str]:
+    cluster_spoiler_tiers: dict[str, str] = {}
     try:
         cluster_graph = navigation_cluster_graph_rows(base)
         for cluster in cluster_graph:
@@ -598,18 +671,123 @@ def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[in
                 cluster_spoiler_tiers[pid] = safe_text(cluster.get("spoiler_tier"))
     except Exception:
         pass
+    return cluster_spoiler_tiers
+
+
+def compare_expected_file(
+    root: Path,
+    path: Path,
+    rendered: str,
+    issues: list[str],
+    counts: dict[str, int],
+    *,
+    check_integrity: bool = False,
+    include_placeholder_markers: bool = True,
+) -> None:
+    counts["checked"] += 1
+    relative = path.relative_to(root).as_posix()
+    if check_integrity:
+        for issue in find_text_integrity_errors(
+            rendered,
+            include_placeholder_markers=include_placeholder_markers,
+        ):
+            counts["integrity"] += 1
+            issues.append(f"integrity: {relative}: {issue}")
+    if not path.exists():
+        counts["missing"] += 1
+        issues.append(f"missing: {relative}")
+        return
+
+    if path.read_text(encoding="utf-8") != rendered:
+        counts["stale"] += 1
+        issues.append(f"stale: {relative}")
+
+
+def check_publication_freshness(
+    root: Path,
+    packet_glob: str = "",
+    *,
+    include_placeholder_markers: bool = True,
+) -> PublicationCheckStats:
+    packets = collect_packets(root)
+    base = root / "Docs" / "Lore" / "AppliedContent"
+    selected_packets = [packet for packet in packets if packet_matches_glob(safe_text(packet.get("packet_id")), packet_glob)]
+    cluster_spoiler_tiers = cluster_spoiler_tier_map(base)
+    counts = {"checked": 0, "stale": 0, "missing": 0, "disabled": 0, "integrity": 0}
+    issues: list[str] = []
+    expected_paths: set[Path] = set()
+
+    for packet in selected_packets:
+        packet_id = safe_text(packet.get("packet_id"))
+        localized_by_locale = packet.get("localized", {})
+        if not isinstance(localized_by_locale, dict):
+            raise ValueError(f"Packet localized must be object: {packet_id}")
+
+        for locale in TARGET_LOCALES:
+            localized = localized_by_locale.get(locale)
+            if not isinstance(localized, dict):
+                raise ValueError(f"Missing locale: packet={packet_id} locale={locale}")
+
+            for folder, surface_key, surface_title in SURFACES:
+                path = base / folder / locale / f"{packet_id}.md"
+                if not is_surface_enabled(packet, surface_key):
+                    if is_generated_disabled_page(path, packet_id, surface_key):
+                        counts["disabled"] += 1
+                        issues.append(f"disabled-generated: {path.relative_to(root).as_posix()}")
+                    continue
+
+                rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers)
+                expected_paths.add(path.resolve())
+                compare_expected_file(
+                    root,
+                    path,
+                    rendered,
+                    issues,
+                    counts,
+                    check_integrity=True,
+                    include_placeholder_markers=include_placeholder_markers,
+                )
+
+    if not packet_glob:
+        for path in iter_generated_orphan_pages(base, expected_paths):
+            counts["disabled"] += 1
+            issues.append(f"orphan-generated: {path.relative_to(root).as_posix()}")
+
+    for locale in TARGET_LOCALES:
+        for folder, surface_key, _surface_title in SURFACES:
+            path = base / folder / locale / "INDEX.md"
+            surface_packets = [packet for packet in packets if is_surface_enabled(packet, surface_key)]
+            compare_expected_file(root, path, render_index(surface_packets, locale, folder, surface_key), issues, counts)
+
+    compare_expected_file(root, base / "Localization_Status_Index.md", render_localization_status_index(packets), issues, counts)
+    compare_expected_file(root, base / "Publication_Surface_Index.csv", render_publication_surface_index(base, packets), issues, counts)
+    compare_expected_file(root, base / "Publication_Cluster_Index.csv", render_publication_cluster_index(base, packets), issues, counts)
+
+    return PublicationCheckStats(
+        checked_files=counts["checked"],
+        stale_files=counts["stale"],
+        missing_files=counts["missing"],
+        disabled_generated_pages=counts["disabled"],
+        integrity_issues=counts["integrity"],
+        sample_issues=tuple(issues[:40]),
+    )
+
+
+def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[int, int, int, int]:
+    packets = collect_packets(root)
+    base = root / "Docs" / "Lore" / "AppliedContent"
+    written = 0
+    skipped = 0
+    removed_disabled = 0
+    indexes_written = 0
+    cluster_spoiler_tiers = cluster_spoiler_tier_map(base)
+    expected_paths: set[Path] = set()
 
     for packet in packets:
         packet_id = safe_text(packet.get("packet_id"))
 
-        if packet_glob and packet_id:
-            matched = False
-            for glob in packet_glob.split(','):
-                if fnmatch.fnmatch(packet_id, glob.strip()):
-                    matched = True
-                    break
-            if not matched:
-                continue
+        if not packet_matches_glob(packet_id, packet_glob):
+            continue
 
         localized_by_locale = packet.get("localized", {})
         if not isinstance(localized_by_locale, dict):
@@ -627,28 +805,30 @@ def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[in
                         removed_disabled += 1
                     continue
 
+                rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers)
+                expected_paths.add(path.resolve())
                 if path.exists() and not overwrite:
-                    rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers)
-                    existing = path.read_text(encoding="utf-8")
-                    if existing != rendered:
-                        path.write_text(rendered, encoding="utf-8", newline="\n")
+                    if write_markdown_if_changed(path, rendered):
                         written += 1
                         continue
 
                     skipped += 1
                     continue
 
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers), encoding="utf-8", newline="\n")
+                write_markdown_if_changed(path, rendered, force=overwrite)
                 written += 1
+
+    if not packet_glob:
+        for path in iter_generated_orphan_pages(base, expected_paths):
+            path.unlink()
+            removed_disabled += 1
 
     for locale in TARGET_LOCALES:
         for folder, surface_key, _surface_title in SURFACES:
             path = base / folder / locale / "INDEX.md"
             surface_packets = [packet for packet in packets if is_surface_enabled(packet, surface_key)]
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(render_index(surface_packets, locale, folder, surface_key), encoding="utf-8", newline="\n")
-            indexes_written += 1
+            if write_markdown_if_changed(path, render_index(surface_packets, locale, folder, surface_key)):
+                indexes_written += 1
 
     write_localization_status_index(base, packets)
     write_publication_surface_index(base, packets)
@@ -661,7 +841,24 @@ def main() -> int:
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing localized markdown pages.")
     parser.add_argument("--packet-glob", default="", help="Glob to filter packets to export")
+    parser.add_argument("--check", action="store_true", help="Fail if generated publication files are stale or missing.")
     args = parser.parse_args()
+    if args.check:
+        stats = check_publication_freshness(Path(args.root).resolve(), args.packet_glob)
+        print(
+            f"applied_lore_publication_check checked_files={stats.checked_files} "
+            f"stale_files={stats.stale_files} missing_files={stats.missing_files} "
+            f"disabled_generated_pages={stats.disabled_generated_pages} "
+            f"integrity_issues={stats.integrity_issues}"
+        )
+        if stats.sample_issues:
+            print("sample_issues:")
+            for issue in stats.sample_issues:
+                print(f"  {issue}")
+        if stats.stale_files or stats.missing_files or stats.disabled_generated_pages or stats.integrity_issues:
+            return 1
+        return 0
+
     written, skipped, removed_disabled, indexes_written = export_pages(Path(args.root).resolve(), args.overwrite, args.packet_glob)
     print(
         f"applied_lore_pages_written={written} skipped_existing={skipped} "

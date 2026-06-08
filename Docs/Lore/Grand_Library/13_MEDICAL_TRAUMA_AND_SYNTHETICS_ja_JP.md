@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 医療外傷と人工臓器置換
 
 > **情報源：** *Black Keel* 自動医療区画運用手順。

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Blue Debt Pressure History Guide"
+title: "دليل تاريخ ضغط الدين الأزرق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Blue Debt Pressure History Guide
+# دليل تاريخ ضغط الدين الأزرق
 
-AR LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.
+Xenon-Omega، الذي يسميه عمال salvage باسم blue debt، يربط جيولوجيا HECTON-8 بـ computation وdebt law والسبب الذي يجعل Deep Reach تريد مطالبة غارقة مرة أخرى.
 
 ## Scanner
 
-AR LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.
+تم وسم عينة blue debt. تحقق من pressure history وcontainment stage وsignal drift قبل export.
 
 ## Terminal
 
-AR LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
+MARAUDER NOTE: blue debt لغة salvage عامية لـ Xenon-Omega-bearing pressure-stable substrate. قيمته لأن extreme computation وenergy isolation تحبانه، لا لأنه يتوهج.
 
 ## Audio
 
-AR LOC HOLD: Blue debt is what people call it after the invoice arrives.
+الدين الأزرق هو ما يسميه الناس بعد وصول الفاتورة.
 
 ## Field Note
 
-AR LOC HOLD: Use for resource glossary and Deep Reach motive articles.
+اللون ليس grade. الحاوية الصامتة ذات custody نظيفة تدفع؛ والحاوية التي تغني تشتري لك drone wake.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/ar_SA. -->

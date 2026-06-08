@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "Gramatyka spotkania: polana szklanych skrobaczy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# Gramatyka spotkania: polana szklanych skrobaczy
 
-PL LOC HOLD: Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.
+Polany szklanych skrobaczy to lekcja warunkowego bezpieczeństwa HECTON-8. Jasna, użyteczna ekologia pomaga czytać trasę, lecz ta sama trasa staje się podejrzana, gdy zwierzęta przestają jej używać.
 
 ## Scanner
 
-PL LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+Polana szklanych skrobaczy. Świeże ślady, film tlenowy i stabilne tyknięcia skorup sugerują niską bliską presję. Puste pole pokarmu to stan ostrzegawczy.
 
 ## Terminal
 
-PL LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+GRAMATYKA SPOTKANIA / POLANA SZKLANYCH SKROBACZY / rola: kontrast płycizny, czytelna względnie bezpieczna linia, test nieobecności drapieżnika / bezpieczny odczyt: aktywne żerowanie, parowane tyknięcia powrotne, zeskrobana krawędź mineralna, widoczna linia wyjścia / odrzuć: skrobacze jako gwarancja bezpieczeństwa, cicha polana, porzucony pokarm, zablokowana return-line / notatka trasy: korytarz jest użyteczny, bo zwierzęta używają go teraz, nie dlatego, że ocean coś obiecał.
 
 ## Audio
 
-PL LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+Skrobacze robią jasne korytarze. Nie decydują, jak długo korytarz należy do nich.
 
 ## Field Note
 
-PL LOC HOLD: Use for safe-zone literacy and shallow contrast.
+Aktywne żerowanie: użyj linii. Parowane tyknięcia: trzymaj. Pokarm porzucony: przestań ufać polanie.
 
 <!-- External Site; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/pl_PL. -->

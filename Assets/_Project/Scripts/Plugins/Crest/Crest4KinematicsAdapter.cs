@@ -688,9 +688,9 @@ namespace Hecton8.Physics
         private static float ResolveSeaLevel(global::Crest.OceanRenderer oceanRenderer)
         {
             if (oceanRenderer != null && oceanRenderer.Root != null)
-                return oceanRenderer.Root.position.y;
+                return AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(oceanRenderer.Root.position.y);
 
-            return 0f;
+            return AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
         }
 
         private static float ResolveGlobalQualityWeight()
@@ -717,7 +717,7 @@ namespace Hecton8.Physics
         {
             OceanKinematicsTuningDTO tuning = source;
             tuning.OceanRootAUP = math.select(double3.zero, tuning.OceanRootAUP, math.isfinite(tuning.OceanRootAUP));
-            tuning.OceanSurfaceY = math.select(0f, tuning.OceanSurfaceY, math.isfinite(tuning.OceanSurfaceY));
+            tuning.OceanSurfaceY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(tuning.OceanSurfaceY);
             tuning.GlobalQualityWeight = math.saturate(math.select(1f, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight)));
             tuning.TimeSeconds = math.max(0f, math.select(0f, tuning.TimeSeconds, math.isfinite(tuning.TimeSeconds)));
             tuning.DepthCullingThresholdMeters = math.max(0f, math.select(OceanKinematicsConstants.DefaultDepthCullMeters, tuning.DepthCullingThresholdMeters, math.isfinite(tuning.DepthCullingThresholdMeters)));

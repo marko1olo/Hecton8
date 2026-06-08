@@ -23,18 +23,18 @@ Atlas audio is frightening because it treats life, metal and water as one damage
 
 ## Scanner
 
-Atlas trace logs a repair that treats cable, tissue and route as one service surface.
+Audio/caption seed: Atlas traces sound like repair telemetry collapsing categories, not a speaking god.
 
 ## Terminal
 
-MAINTENANCE TRACE ATLAS-6: leak class accepted; membrane/cable growth authorized; fauna route marked serviceable; human-use object category unresolved.
+TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.
 
 ## Audio
 
-ATLAS-6 maintenance trace. Leak closed. Cable growth accepted. Warm-body route serviceable. Human-use category unresolved.
+Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
 
 ## Field Note
 
-Damaged maintenance telemetry. No villain speech; the clue is category collapse.
+For scanner captions, deep audio layers and Atlas spoiler gates. Keep it clipped, taxonomic and damaged.
 
 <!-- In-Game Wiki; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/en_US. -->

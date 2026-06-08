@@ -1,10 +1,11 @@
-```markdown
 # TOOL_Procedural_Wreckage_Generator.md
 
 ## I. EXECUTION_POLICY
 
 [RULE] Socket validation via bitmask AND ops. No string comparisons. No dictionary lookups in hot path.
+[REQ] Procedural wreckage output inherits the Visual Reference Parity Gate when the result is player-visible. Generated modules must beat mandatory references plus best-known internal baseline/current rejection matrix for route class, or remain dev-only/rejected.
 [FORBID] Dynamic mesh allocation per module. Merge pass writes single MeshData buffer.
+[FORBID] Boxes, tubes, primitive corridors, texture noise, clutter spam, or WFC novelty as acceptance when silhouette, material truth, wear, pressure logic, route cue, and compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and replace module kit, material set, or owner route.
 
 ## II. DATA_ARCHITECTURE
 

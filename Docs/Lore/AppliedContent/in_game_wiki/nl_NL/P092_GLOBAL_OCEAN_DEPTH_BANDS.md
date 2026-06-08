@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "Wereldwijde oceaandieptebanden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# Wereldwijde oceaandieptebanden
 
-NL LOC HOLD: HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.
+HECTON-8s oceaan lees je in banden, niet als een enkele bodemlijn. De fotische richel laat nog licht, wrakken, algen en roekeloze piloten toe. De industriële richel draagt kabelrif, pijpkooien en oude laadplatforms. Daaronder buigen pekeltrappen sonar en ballast. Abyssale machinevelden straffen reparaties. In het Atlas-bekken voelt druk als jurisdictie.
 
 ## Scanner
 
-NL LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+Dieptekaart. De eerste richel vergeeft slechte ballast; lager water factureert elke fout in druk, hitte en stilte.
 
 ## Terminal
 
-NL LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+BANDEN: 0-250 m fotische bergingsrichel; 250-1200 m industriële richel en kabelrif; 1200-2800 m pekeltrap/canyon; 2800-4300 m abyssaal machineveld; 4300-5600 m Atlas-bekken.
 
 ## Audio
 
-NL LOC HOLD: Every band changes what the world allows you to do.
+Elke honderd meter neemt een gewoonte van je af.
 
 ## Field Note
 
-NL LOC HOLD: Depth is not a number. It is a ruleset.
+Diepte op HECTON-8 is wet, weer, grens en honger met hetzelfde getal.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/nl_NL. -->

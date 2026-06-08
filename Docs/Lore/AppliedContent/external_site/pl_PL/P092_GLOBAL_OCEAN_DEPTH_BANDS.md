@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "Globalne pasma glebokosci oceanu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# Globalne pasma glebokosci oceanu
 
-PL LOC HOLD: HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
-
-## Scanner
-
-PL LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
-
-## Terminal
-
-PL LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
-
-## Audio
-
-PL LOC HOLD: Every band changes what the world allows you to do.
-
-## Field Note
-
-PL LOC HOLD: Depth is not a number. It is a ruleset.
+HECTON-8 nie jest plaskim oceanem z coraz wiekszymi liczbami. To pionowy kraj z granicami zapisanymi cisnieniem. Od 0 do 250 metrow fotyczna polka daje jeszcze swiatlo, glony, miekkie wraki i wybaczenie dla pierwszych bledow. Od 250 do 1200 metrow zaczynaja sie polka przemyslowa i rafa kablowa: zerwane cumy, ramy rur, kosci przekaznikow i stare trasy korporacji. Od 1200 do 2800 metrow schody solankowe wyginaja sonar i ukrywaja cieplo. Od 2800 do 4300 metrow naprawa staje sie negocjacja z polem maszyn. Od 4300 do 5600 metrow Atlas zmienia cisnienie we wladze.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/pl_PL. -->

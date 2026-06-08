@@ -9,32 +9,16 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Needleprobe Precursor Program"
+title: "Needleprobe前导计划"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Needleprobe Precursor Program
+# Needleprobe前导计划
 
-ZH LOC HOLD: HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
-
-## Scanner
-
-ZH LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
-
-## Terminal
-
-ZH LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
-
-## Audio
-
-ZH LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
-
-## Field Note
-
-ZH LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Aegir里的第一份人类存在并不英雄。那是一串小而昂贵的机器，穿越一条还没有活人船员评级过的路线。Needleprobes测量视差、辐射、海洋化学、卫星星历和中继视线，然后等待多年，直到自己的答案变得有用。Deep Reach不是手拿旗帜发现HECTON-8的；它购买了足够的机器信心，才把这颗卫星称为资产。这个起源很重要，因为殖民地继承的不是数据谎言，而是语气谎言。数据是真实的。建立在数据上的信心，对后来被送进水里的人来说太干净了。
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/zh_CN. -->

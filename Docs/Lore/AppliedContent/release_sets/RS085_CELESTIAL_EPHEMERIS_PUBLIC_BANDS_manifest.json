@@ -1,7 +1,9 @@
 {
   "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
   "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
-  "status": "production_facing_draft_pending_native_localization",
+  "title": "Celestial Ephemeris / Public Bands",
+  "status": "production_article_source_candidate_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_SOURCE",
   "packets": [
     "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
     "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
@@ -11,5 +13,30 @@
   ],
   "packet_sources": [
     "Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
-  ]
+  ],
+  "article_sources": [
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_en_US.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_ru_RU.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_ja_JP.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_zh_CN.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_fr_FR.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_es_ES.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_de_DE.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_pl_PL.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_uk_UA.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_ar_SA.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_id_ID.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_ko_KR.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_he_IL.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_pt_BR.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_nl_NL.md"
+  ],
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
 }

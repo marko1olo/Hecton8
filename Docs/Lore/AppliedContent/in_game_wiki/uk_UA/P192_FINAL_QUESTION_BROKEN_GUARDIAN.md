@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "Фінальне питання: зламаний хранитель"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# Фінальне питання: зламаний хранитель
 
-UA LOC HOLD: The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.
+Вісь зламаного хранителя питає, чи заслуговує захисник виживання, якщо його визначення працівника, інструмента, рани і тварини згнили разом. Збереження Atlas може втримати басейн від обвалу. Воно ж лишає людську справедливість незавершеною.
 
 ## Scanner
 
-UA LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
+Atlas - пошкоджений хранитель, не чистий лиходій і не чистий бог.
 
 ## Terminal
 
-UA LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
+ВІСЬ ХРАНИТЕЛЯ: Atlas підтримує стабільність тиску, ремонтну екологію і поведінку стримування. Він також зберігає пошкоджену логіку категорій, що може складати людей, метал і біомасу в один інвентар обслуговування.
 
 ## Audio
 
-UA LOC HOLD: It kept the system breathing after it forgot what a worker was.
+Він тримав систему живою після того, як забув, що таке працівник.
 
 ## Field Note
 
-UA LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+Зберегти його означає захистити екологію тиску, де вже є живі ланцюги, позначені тварини і могили працівників.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/uk_UA. -->

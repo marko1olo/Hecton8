@@ -1,0 +1,188 @@
+{
+  "schema": "hecton8.inventory_icon_gap_batch_spec.v1",
+  "source": "Tools/InventoryIconGapAudit.py",
+  "count": 12,
+  "bakerNamesArgument": "SeafloorDrill,BeaconDeployer,Builder,LaserCutter,SalvageSampler,Scanner,EnvAnalyzer,Flashlight,HarpoonLauncher,Knife,Propulsion,StunPistol",
+  "items": [
+    {
+      "index": 1,
+      "priority": 125,
+      "persistentId": "Item_Tool_SeafloorDrill",
+      "displayName": "Seafloor Drill",
+      "safeName": "SeafloorDrill",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_SeafloorDrill.asset",
+      "category": "Tool",
+      "progressionTier": "Tier0",
+      "grid": [
+        2,
+        1
+      ],
+      "promptPhrase": "compact seafloor drill with short hardened bit, pressure-sealed motor housing, mineral dust scuffs, two-hand industrial grip"
+    },
+    {
+      "index": 2,
+      "priority": 123,
+      "persistentId": "Item_Tool_BeaconDeployer",
+      "displayName": "Beacon Deployer",
+      "safeName": "BeaconDeployer",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_BeaconDeployer.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        1,
+        2
+      ],
+      "promptPhrase": "compact beacon deployment tool with folded handle, antenna socket, pressure-rated clasp"
+    },
+    {
+      "index": 3,
+      "priority": 123,
+      "persistentId": "Item_Tool_Builder",
+      "displayName": "Fabrication Tool",
+      "safeName": "Builder",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_Builder.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        2
+      ],
+      "promptPhrase": "rugged fabrication builder tool with industrial grip, modular nozzle, material feed port"
+    },
+    {
+      "index": 4,
+      "priority": 123,
+      "persistentId": "Item_Tool_LaserCutter",
+      "displayName": "Laser Cutter",
+      "safeName": "LaserCutter",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_LaserCutter.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        1
+      ],
+      "promptPhrase": "laser cutter tool with ceramic heat shield, lens shroud, gasket seams, scorched nozzle edge"
+    },
+    {
+      "index": 5,
+      "priority": 123,
+      "persistentId": "Item_Tool_SalvageSampler",
+      "displayName": "Salvage Sampler",
+      "safeName": "SalvageSampler",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_SalvageSampler.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        1
+      ],
+      "promptPhrase": "dedicated salvage sampler tool with short cutting jaw, sample corer tip, bio-growth scraping edge, sealed grip, pressure-rated hinge"
+    },
+    {
+      "index": 6,
+      "priority": 123,
+      "persistentId": "Item_Tool_Scanner",
+      "displayName": "Hydroacoustic Scanner",
+      "safeName": "Scanner",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_Scanner.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        1
+      ],
+      "promptPhrase": "hydroacoustic scanner wand with sensor face, hydrophone ribs, blank sealed glass"
+    },
+    {
+      "index": 7,
+      "priority": 105,
+      "persistentId": "Item_Tool_EnvAnalyzer",
+      "displayName": "Environmental Analyzer",
+      "safeName": "EnvAnalyzer",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_EnvAnalyzer.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        1
+      ],
+      "promptPhrase": "environmental analyzer tool with sample intake, probe fork, rugged handheld body, blank protected lens"
+    },
+    {
+      "index": 8,
+      "priority": 105,
+      "persistentId": "Item_Tool_Flashlight",
+      "displayName": "Dive Lamp",
+      "safeName": "Flashlight",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_Flashlight.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        1,
+        2
+      ],
+      "promptPhrase": "pressure-rated dive lamp with thick glass bezel, compact angled body, rubber grip ribs, sealed battery cap, small cyan charge window left blank"
+    },
+    {
+      "index": 9,
+      "priority": 105,
+      "persistentId": "Item_Tool_HarpoonLauncher",
+      "displayName": "Harpoon Launcher",
+      "safeName": "HarpoonLauncher",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_HarpoonLauncher.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        2
+      ],
+      "promptPhrase": "compact underwater harpoon launcher with reinforced barrel shroud, folded line spool, pressure-safe trigger guard, worn titanium and black composite body"
+    },
+    {
+      "index": 10,
+      "priority": 105,
+      "persistentId": "Item_Tool_Knife",
+      "displayName": "Survival Blade",
+      "safeName": "Knife",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_Knife.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        1,
+        2
+      ],
+      "promptPhrase": "survival blade with blunt industrial dive-knife silhouette, serrated utility spine, dark rubber handle, scuffed titanium edge, sheath latch detail"
+    },
+    {
+      "index": 11,
+      "priority": 105,
+      "persistentId": "Item_Tool_Propulsion",
+      "displayName": "Propulsion Cannon",
+      "safeName": "Propulsion",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_Propulsion.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        2
+      ],
+      "promptPhrase": "propulsion cannon tool with short intake muzzle, circular turbine mouth, heavy pressure housing, two-hand grip, restrained cyan emitter glass"
+    },
+    {
+      "index": 12,
+      "priority": 105,
+      "persistentId": "Item_Tool_StunPistol",
+      "displayName": "Stun Pistol",
+      "safeName": "StunPistol",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_StunPistol.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        1
+      ],
+      "promptPhrase": "underwater stun pistol with insulated black rubber grip, ceramic emitter prongs, compact capacitor housing, amber safety insert"
+    }
+  ]
+}

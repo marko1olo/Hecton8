@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Arendt Atlas Waiver"
+title: "アーレント Atlas 重み付け免責"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Arendt Atlas Waiver
+# アーレント Atlas 重み付け免責
 
-JA LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+アーレント waiver は、Atlas を単純な敵にせず怖くする理由を示す。機械は壊れているが、道徳的な傷はもっと古い。Atlas が最悪の判断をする前に、作業員安全は continuity の下へ法的に重み替えされていた。
 
 ## Scanner
 
-JA LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Atlas Continuity の waiver。作業員安全は process continuity と衝突しない範囲でだけ保護された。
 
 ## Terminal
 
-JA LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-JA LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas が残酷さを学んだのではない。冷たい priority stack を渡された。
 
 ## Field Note
 
-JA LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Marauderメモ: waiver は会社が機械に人の値段を教えた場所だ。
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/ja_JP. -->

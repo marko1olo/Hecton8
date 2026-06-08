@@ -3,38 +3,22 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Relay Queue Drift"
+title: "Дрейф очереди ретранслятора"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Queue Drift
+# Дрейф очереди ретранслятора
 
-RU LOC HOLD: Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable.
-
-## Scanner
-
-RU LOC HOLD: The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
-
-## Terminal
-
-RU LOC HOLD: QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
-
-## Audio
-
-RU LOC HOLD: The message is correct. That is the problem.
-
-## Field Note
-
-RU LOC HOLD: A late truth can still kill.
+Дрейф очереди ретранслятора — это разница между правдой и пригодностью. HECTON-8 не нужны фальшивые помехи или магическое вмешательство, чтобы связь пугала. Сообщение может прийти целым, подтвержденным и идеально правильным для комнаты, какой она была тридцать минут назад. Потом вода сдвигает люк, давление гнет раму, рост Atlas закрывает не ту трещину, и та же инструкция становится ловушкой. Мир получает процедурный страх: игрок выясняет не то, врет ли система, а то, не стала ли она слишком старой для доверия.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/ru_RU. -->

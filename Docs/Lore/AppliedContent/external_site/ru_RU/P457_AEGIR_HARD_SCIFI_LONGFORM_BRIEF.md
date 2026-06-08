@@ -9,32 +9,44 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: небо, которое отказывает в спасении"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Aegir Transfer Windows
+# Aegir: небо, которое отказывает в спасении
 
-RU LOC HOLD: Aegir is reachable by machinery, timing and debt. No faster-than-light drive crosses the route. Probe packets mapped the warm dwarf system first, then beam infrastructure and pellet-fusion freight built enough traffic to move seed mass, claim platforms and slow human decisions into the same ledger. HECTON-8 sits inside that machinery as a pressure moon under Aegir, bright at the surface, dangerous by depth and useful enough that nobody could leave it alone. Black Keel does not ignore a survivor because rescue is impossible. It waits because recovery requires several clocks to agree: relay delay, carrier position, descent mass, storm shutters, custody signatures and a window narrow enough to close while a person is still sealing a capsule. Every visible moon, relay path and transfer band is part of the same route accounting. That is why help reaches HECTON-8 first as a number, then as a signal, and only much later as hardware.
+## Небо не пустое
 
-## Scanner
+Aegir - не фон. Это машина над океаном: гравитация, радиация, геометрия реле, мусорная погода, время контрактов и право восстановления. HECTON-8 находится внутри этой машины как восьмая луна: поверхность может быть светлой, но глубина и инфраструктура быстро забирают выбор.
 
-RU LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Ansible нет. FTL-курьера нет. Публичная шкала Ran/Aegir держится как маршрут класса 10.5 световых лет, а местные окна Aegir зависят от орбит, штормов, перекрытия лунами и custody очередей. Истинный пакет может прийти поздно. Чистый пакет может быть бесполезен. Полезный пакет может оказаться слишком дорогим для ответа.
 
-## Terminal
+## Лунная лестница
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+Публичная лестница называет Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON и Mute. Точные периоды и наклонения принадлежат будущим таблицам, поэтому статья говорит классами угроз.
 
-## Audio
+Skarn приносит заряженный всплеск. Vela грязнит оптику льдом. Claw и Lumen держат старую логику маршрутов. Thorne и Anvil несут мертвые претензии. Kestrel сжимает реле и затмения рядом с HECTON. Mute напоминает, что в Aegir есть и другие мертвые claim.
 
-RU LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+## Почему Black Keel остается высоко
 
-## Field Note
+Black Keel - claim tender, а не верный спасатель. Он держится на дорогой орбите, считая тепло, топливо, мусор, право и массу к подъему. Спуститься ниже - не героизм, а расход, который может сжечь следующее контрактное окно.
 
-RU LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+Для возврата нужны акустическое реле, pressure-rated подъем, тайминг наведения, погода, карантинное рукопожатие, hash payload и tonne-window allocation. Если рвется одно звено, носитель все равно звучит спокойно. Спокойствие - не милость. Это автоматика с ledger.
+
+## Небо как машина
+
+Aegir не должен читаться как нарисованный фон. Это самая большая машина истории: звезда, лестница лун, relay shadows, pellet lanes, braking wakes, ice scatter, storm plume и guidance lag, собранные в один враждебный график. Игроку не нужно видеть всю механику сразу. Он должен чувствовать, что у каждого сообщения, сброса и подъема есть геометрия.
+
+Поэтому спасение не может просто прилететь. Нет FTL-поправки, нет скрытого ansible, нет героического carrier без массы. Route window сначала разрешает физика, потом закон. Black Keel может опустить tender, потому что это узкая локальная работа, а не чудо.
+
+## Что значит смотреть вверх
+
+На HECTON-8 смотреть вверх должно быть практично и горько. Небо - не надежда. Небо - тайминг. Aegir решает, когда пакет поднимется, когда receiver ответит, когда claim будет заверен и когда игрок останется один со старыми инструкциями.
+
+Правильная астрономическая статья должна заставить игрока читать лунный свет как риск. Двигается Kestrel - меняется relay shadow. Поднимается ice scatter - навигация превращается в слух. Silent Orbit молчит, но старый металл все еще может решать настоящее.
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/ru_RU. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DE IJZERKELP BOSSEN
 
 > **Bron:** Deep Reach Xenobiologie Divisie, Gevarenlogboek.

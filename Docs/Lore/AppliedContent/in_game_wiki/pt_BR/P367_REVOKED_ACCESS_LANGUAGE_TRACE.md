@@ -9,32 +9,36 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Revoked Access Language Trace"
+title: "Rastro de Linguagem de Acesso Revogado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Revoked Access Language Trace
+# Rastro de Linguagem de Acesso Revogado
 
-PT LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+A linguagem de acesso revogado virou uma das fechaduras mais silenciosas da Deep Reach. Uma porta podia negar um ex-trabalhador, marcar o pedido como manutenção comum e ainda vazar os termos exatos que nomeavam a rota de evacuação escondida. Em HECTON-8, isso importa porque o jogador não precisa de uma confissão limpa para seguir o rastro. O fraseado antigo basta: protocolo de contagem degradada, testemunha substituta, arquivo de rota segura, roteamento de preservação de reivindicação. Essas palavras foram feitas para revisão de responsabilidade, não para resgate. A negação prova duas coisas ao mesmo tempo. A credencial está morta. O procedimento por trás dela não.
 
 ## Scanner
 
-PT LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+O bloqueio não diz proibido. Diz reclassificação de manutenção, retenção de continuidade e materiais de rota. Fraseado antigo da Deep Reach: uma recusa que ainda aponta para a porta enterrada.
 
 ## Terminal
 
-PT LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+RESPOSTA DE ACESSO / ARQUIVO DE ROTA SEGURA
+credencial: revogada
+motivo: materiais de continuidade de evacuação restritos a pessoal certificado da Deep Reach
+termos visíveis: contagem degradada, testemunha substituta, rota de preservação de reivindicação, reclassificação de manutenção
+nota: ex-pessoal de campo pode ver a linguagem de negação apenas para reconciliação de incidente.
 
 ## Audio
 
-PT LOC HOLD: That is not security. That is a memo pretending to be a door.
+Eles não apagaram o corredor. Eles o embrulharam em um vocabulário que só funcionários culpados ainda entenderiam.
 
 ## Field Note
 
-PT LOC HOLD: Lockout language hints at hidden liability without granting free access.
+O crachá morreu. O bloqueio ainda fala o dialeto de escritório que enterrou a rota.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/pt_BR. -->

@@ -9,32 +9,22 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Ibarra Loss Ledger"
+title: "伊瓦拉损失转换台账"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Ibarra Loss Ledger
+# 伊瓦拉损失转换台账
 
-ZH LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## 活过殖民地的会计
 
-## Scanner
+伊瓦拉台账应当比失踪名单更冷。名单即使撒谎，也还在哀悼。台账会转换。它接收受损居住模块、tool banks、sample custody、missing personnel 和 salvage rights，然后把每个事实放进一种类别，使其能在 HECTON-8 沉默后继续穿过合同。
 
-ZH LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+这是旧 Deep Reach liability 与玩家当前 debt 之间的桥。如果人变成 unresolved personnel load，公司就能承认他们不见了，却不说谋杀。如果证据变成 material custody，它就可以买卖、埋藏、转向或投保。如果 claim 保持 continuous，所有权会比让这个地方运转的工人活得更久。
 
-## Terminal
-
-ZH LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-ZH LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-ZH LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+台账给玩家一种沉重的权力。把它带上去不只是揭露发生过什么。那是在携带市场已经会定价的东西。出售、公开、转交或埋掉证据的选择之所以肮脏，是因为文件本来就被设计成能让每个选择进入某个人的 balance sheet。
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/zh_CN. -->

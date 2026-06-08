@@ -469,12 +469,18 @@ namespace Hecton8.Quest
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (_playerMovement == null)
-                ResolvePlayerContext();
-
-            if (_playerMovement != null)
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null)
             {
-                playerAup = _playerMovement.CurrentAup;
+                if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                    !movementState.PredictedAup.IsFinite())
+                {
+                    playerAup = default;
+                    return false;
+                }
+
+                playerAup = movementState.PredictedAup;
                 return true;
             }
 

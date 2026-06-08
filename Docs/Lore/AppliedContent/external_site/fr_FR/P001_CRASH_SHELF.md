@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Plateau d'impact"
+title: "Plateau du crash"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Plateau d'impact
+# Plateau du crash
 
-HECTON-8 commence à la ligne d'eau: une capsule de descente endommagée, un plateau extraterrestre lumineux et un carrier trop lointain pour répondre clairement. Le premier mystère n'est pas ce qui vit dessous, mais pourquoi la chaîne de secours paraît déjà hostile.
-
-## Scanner
-
-Epave de capsule bathy. Chassis de pression intact, module d'ascension détruit. Elle peut te garder en vie, pas te ramener.
-
-## Terminal
-
-MODULE D'ASCENSION: manquant. NOYAU UPLINK: fracture détectée. CONTACT CARRIER: retardé.
-
-## Audio
-
-Poignée de main Black Keel reçue. Intégrité du paquet sous le seuil de récupération. Répétition: seuil non atteint.
-
-## Field Note
-
-Si la coque tient encore la pression, ne la dépouille pas. Un mauvais abri vaut mieux qu'un inventaire propre.
+Le Plateau du crash est la première pièce du joueur et sa première scène de crime. Une capsule de descente repose à moitié enfouie dans les herbes salines et la céramique tiède, trop endommagée pour partir et trop utile pour être abandonnée. Son cadre survivant donne un abri, du rebut, des cibles de scanner et une ligne vers Black Keel qui sonne procédurale avant de sonner humaine. Ce ton compte. Le carrier ne répond pas comme un ami. Il inventorie l'échec : paquet d'ascension perdu, uplink fracturé, opérateur vivant, autorité de récupération non résolue. Le lieu d'ouverture enseigne HECTON-8 sans conférence. La beauté est réelle : bioluminescence peu profonde, couleur du récif, lumière d'orage sous Aegir. La violence industrielle aussi : pièces estampillées, cicatrices d'impact, langage de réclamation, chaîne de sauvetage qui compte déjà les coûts. La première question est pratique : rester en vie. La seconde arrive dans la même épave : à qui profite ta survie ?
 
 <!-- External Site; generated from P001_CRASH_SHELF/fr_FR. -->

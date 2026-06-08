@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Motif professionnel
 
-Ce motif donne de l'agence sans biographie verrouillée: un maraudeur compétent devient impliqué par les preuves.
+Professional Motive donne au Maraudeur de l'agence sans verrouiller la biographie : la compétence vient d'abord, l'investissement personnel arrive par les preuves.
 
 ## Scanner
 

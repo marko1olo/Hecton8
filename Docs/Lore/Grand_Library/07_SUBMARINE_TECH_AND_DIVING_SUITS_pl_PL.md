@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TECHNOLOGIA PODWODNA I KOMBINEZONY NURKOWE SZABROWNIKÓW
 
 > **Źródło:** Keelmark Loss Desk, Aktuarialna Ocena Ryzyka dla Niezależnych Operacji Ratunkowych.

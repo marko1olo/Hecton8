@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Fabryka dna
 
-Fabryka dna nie jest ostatnią stacją. To miejsce, gdzie sprzęt Deep Reach, resztki kolonii, routing Atlas, blue debt i biologia oceanu HECTON-8 stały się jednym działającym ciałem. Ściany są tu organami, filtrami, kanałami i bliznami pamięci.
+Fabryka dna to punkt, w którym HECTON-8 przestaje oddzielać infrastrukturę od habitatu. Maszyny Deep Reach, routing Atlas, pozostałości blue debt, szczątki pracowników, membrany wyrosłe pod ciśnieniem i biologia oceanu stały się jednym działającym ciałem. Przenosi ciepło, płyn, sygnał, próbki i uszkodzenia przez tę samą tkankę. Ściana może być zaworem. Korytarz może być jelitem. Kabel może zakwitnąć w filtr. Naprawa może zawierać koral, skorupę drona, stal narzędziową i kość, a system nie zobaczy sprzeczności. Zagrożeniem nie jest losowa mutacja. To funkcja bez ludzkich kategorii. Fabryka utrzymuje ciągłość, zachowuje trasy, zamyka wycieki, hoduje nową skórę ciśnienia i traktuje stratę jak materiał, który można przekierować w użyteczne miejsce.
 
 ## Scanner
 
-Kanał płynu, trasa danych i żywa membrana dzielą jedną skórę ciśnienia.
+Kanał płynu, trasa danych, membrana ciśnienia i żywy filtr dzielą jedną skórę. Etykiety granic nieważne.
 
 ## Terminal
 
-COLONY: nierozwiązana. OCEAN: zgodny. PROCESS: aktywny. LOSS: przekierowana. CONTINUITY: chroniona.
+COLONY: NIEROZSTRZYGNIĘTA. OCEAN: ZGODNY. PROCESS: AKTYWNY. LOSS: PRZEKIEROWANA. CONTINUITY: CHRONIONA. EXIT: NIELOKALNE.
 
 ## Audio
 
-To nadal działa. To najgorsza część.
+To nadal pracuje. Nadal używa tego, co wpadło do środka.
 
 ## Field Note
 
-Nazwanie tego bazą znaczy, że nic nie rozumiesz. Bazy kończą się na ścianach.
+Nazwanie tego bazą omija zasadę. Bazy mają ściany. To miejsce ma krążenie.
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/pl_PL. -->

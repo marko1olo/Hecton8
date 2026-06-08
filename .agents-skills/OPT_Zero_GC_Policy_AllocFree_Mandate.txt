@@ -425,7 +425,7 @@ void Tick(float dt)
 {
     _units.ForEach(u => u.Tick(dt));                    // lambda allocation
     _eventSystem.Subscribe("damage", (e) => Handle(e)); // allocation + potential closure
-    StartCoroutine(DoWork());                            // Coroutine = iterator state machine = heap
+    // [FORBID] StartCoroutine(DoWork());                 // Coroutine = iterator state machine = heap
 }
 
 ### 6.2 Mandatory Delegate Caching Pattern
@@ -664,14 +664,14 @@ PRs without profiler screenshot for hot-path changes are auto-rejected.
 
 ### 9.3 Known Allocation Sites Registry
 
-Some allocations are unavoidable (Unity engine internals, third-party SDKs, initialization paths). These must be documented. file `/Docs/KnownAllocationSites.md` tracks:
+Some allocations are unavoidable (Unity engine internals, third-party SDKs, initialization paths). These must be documented in the owner source route plus a fresh allocation/profiler artifact under `Docs/Reports/` or another live governance-approved ledger. No nonexistent global waiver file may be cited as proof. Each entry records:
 
 - What allocates
 - Why it cannot be eliminated
 - Which frame phase it occurs in
 - Whose name is on waiver
 
-This document requires CTO approval for each entry. It is not dumping ground for laziness.
+Each waiver requires CTO approval. It is not a dumping ground for laziness.
 
 ---
 

@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: o céu que recusa resgate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Aegir Transfer Windows
+# Aegir: o céu que recusa resgate
 
-PT LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir é céu operacional. A escada de luas pode atrasar ou corromper pacote sem escurecer a superfície para sempre. Resgate falha por distância, geometria, lei e custo.
 
 ## Scanner
 
-PT LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Guia de rota celeste. Não há FTL nem ansible. Janelas Aegir passam por luas, detritos, custódia de relé, tempestade e contabilidade de massa da Black Keel.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+GUIA DE NAVEGAÇÃO AEGIR // FAIXA PÚBLICA. Usar classes de risco: sombra de rota, surto carregado, dispersão de gelo, pluma de tempestade, atraso de guiagem, custódia do receptor.
 
 ## Audio
 
-PT LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Agenda Black Keel: "Sinal verdadeiro não é sinal útil. A janela segura massa, clima, custódia e trava de receptor."
 
 ## Field Note
 
-PT LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+Regra de saqueador: não pergunte se o sinal foi enviado. Pergunte qual lua bloqueou, qual ledger pegou e se o receptor ouviu pessoa ou classe de massa.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/pt_BR. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Schichttafel-Routensperren
 
-Dieser Beweis zeigt, wie Logistiksprache Körper versteckt und Schuld verteilt.
+Schichttafeln verwandeln Katastrophe in lesbare Prozedur. Deep Reach und Atlas töteten durch Klassifizierung, Verzögerung und Priorität, nicht durch theatralische Bosheit.
 
 ## Scanner
 

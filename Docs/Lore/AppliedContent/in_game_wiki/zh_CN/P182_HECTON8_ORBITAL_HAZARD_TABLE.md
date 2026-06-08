@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 Orbital Hazard Table"
+title: "HECTON-8 轨道危险表"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbital Hazard Table
+# HECTON-8 轨道危险表
 
-CN LOC HOLD: Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.
+轨道危险解释了为什么修好的胶囊还不够。离开 HECTON-8 前，上升链仍需要中继访问、制导时机、屏蔽工作和合法发射窗口。
 
 ## Scanner
 
-CN LOC HOLD: HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+从 HECTON-8 撤离受限于食、辐射激增、中继闸门、冰粒散射和风暴羽流窗口。
 
 ## Terminal
 
-CN LOC HOLD: ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+ORBITAL HAZARD TABLE: 食 blackout、Aegir 带电粒子激增、月面中继闸门、冰粒散射、storm plume 与 guidance-lag 窗口必须在升空前清除。
 
 ## Audio
 
-CN LOC HOLD: The sky is not empty. It is a machine with bad timing.
+海洋上方的天空是一台机器，齿牙咬在时机里。
 
 ## Field Note
 
-CN LOC HOLD: This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+救援不是为了戏剧效果而停在外面。升空必须对上天空糟糕的时间表。
 
 <!-- In-Game Wiki; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/zh_CN. -->

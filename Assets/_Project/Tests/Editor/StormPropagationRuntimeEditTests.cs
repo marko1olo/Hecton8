@@ -1,3 +1,4 @@
+using System.IO;
 using System.Reflection;
 using Hecton8.Atmosphere;
 using NUnit.Framework;
@@ -26,5 +27,27 @@ public sealed class StormPropagationRuntimeEditTests
             Object.DestroyImmediate(host);
             claimField.SetValue(null, 0);
         }
+    }
+
+    [Test]
+    public void StormPropagationRuntimeSeaLevelFallbackMatchesProductionWaterline()
+    {
+        string path = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "Assets",
+            "_Project",
+            "Scripts",
+            "Atmosphere",
+            "StormPropagation",
+            "ShinobuStormPropagationRuntime.cs");
+        string source = File.ReadAllText(path);
+
+        Assert.That(source, Does.Contain("private const double DefaultSeaLevelLocalY = 14.02d;"));
+        Assert.That(source, Does.Contain("[SerializeField] private double seaLevelAupY = DefaultSeaLevelLocalY;"));
+        Assert.That(source, Does.Contain("float seaLevelLocal = ResolveSeaLevelLocalY(seaLevelAupY);"));
+        Assert.That(source, Does.Contain("seaLevelLocal = ResolveSeaLevelLocalY(weather.SurfaceScalars.x);"));
+        Assert.That(source, Does.Contain("private static float ResolveSeaLevelLocalY(double value)"));
+        Assert.That(source, Does.Contain("math.abs(value) <= 1000d"));
+        Assert.That(source, Does.Not.Contain("? (float)seaLevelAupY : 0f"));
     }
 }

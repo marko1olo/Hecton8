@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Bulan Retak Tabrakan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Bulan Retak Tabrakan
 
-ID LOC HOLD: HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.
+HECTON-8 terbentuk di sistem Aegir lalu retak oleh tumbukan menyamping. Lukanya tidak memecah bulan. Luka itu mengangkat rak kerak, membuka sesar brine, memberi makan koridor panas, dan meninggalkan dasar tua yang bisa disentuh lewat jendela tekanan langka. Peta salvage mengikuti kerusakan itu, karena rute paling aman adalah luka lama berisi air.
 
 ## Scanner
 
-ID LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
+Sampel kerak tua. Bulan ini lahir di sabuk puing Aegir, lalu dihantam cukup lebar sampai samudra menyimpan bekasnya.
 
 ## Terminal
 
-ID LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+MODEL ASAL: akresi sekitar Aegir, tumbukan miring kemudian, resonansi pasang setelah terkunci. Hasil: kerak bertingkat, tangga sesar panas, cekungan brine, urat kaca-tekanan, akses tak merata ke dasar dalam.
 
 ## Audio
 
-ID LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
+Ia lahir di sini. Lalu sesuatu menghantam cukup keras untuk memberi peta pada laut.
 
 ## Field Note
 
-ID LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+Mitos bulan tangkapan terlalu rapi. HECTON-8 membawa luka lokal: kerak terangkat, air asin makin berat, ventilasi masih menagih bunga.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/id_ID. -->

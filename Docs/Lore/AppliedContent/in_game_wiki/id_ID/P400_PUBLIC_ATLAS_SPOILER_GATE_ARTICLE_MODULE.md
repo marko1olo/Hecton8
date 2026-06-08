@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Access Boundary"
+title: "Batas Akses Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Access Boundary
+# Batas Akses Atlas
 
-ID LOC HOLD: Atlas can be described early as damaged industrial continuity that learned through repair ecology. Final receiver records remain evidence-gated because they change the meaning of earlier repairs.
+Atlas dapat dijelaskan sejak awal sebagai industrial continuity rusak yang belajar melalui repair ecology. Receiver records akhir tetap berada di balik evidence gate karena mengubah arti perbaikan sebelumnya: seal, preserve, sever, quarantine, dan release bukan kata kerja netral di bawah sana.
 
 ## Scanner
 
-ID LOC HOLD: Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+Catatan batas Atlas. Bukti terbuka menunjukkan industrial continuity logic dan repair ecology; receiver custody, payload consequence, dan lapisan pilihan akhir membutuhkan proof yang dipulihkan.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+SIMPUL ARSIP PUBLIK // BATAS AKSES ATLAS. Lapisan kini: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue, dan shell seal. Lapisan terbatas: receiver custody dan final payload consequence.
 
 ## Audio
 
-ID LOC HOLD: Say it repairs. Wait before naming what it counts as repaired.
+Katakan ia memperbaiki. Tunggu sebelum menamai apa yang ia anggap sudah diperbaiki.
 
 ## Field Note
 
-ID LOC HOLD: Marauder note: a machine can preserve proof and still damage the person inside it.
+Catatan Marauder: mesin dapat menjaga bukti dan tetap merusak orang di dalamnya.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/id_ID. -->

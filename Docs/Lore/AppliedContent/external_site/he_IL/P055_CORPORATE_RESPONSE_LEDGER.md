@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "ספר תגובה תאגידית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# ספר תגובה תאגידית
 
-HE LOC HOLD: Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority.
-
-## Scanner
-
-HE LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
-
-## Terminal
-
-HE LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
-
-## Audio
-
-HE LOC HOLD: The reply was automatic. The rescue was conditional.
-
-## Field Note
-
-HE LOC HOLD: Immediate response is not immediate rescue.
+ספר התגובה התאגידית אינו נאום נבל. הוא קר מזה. זו הבטחה קריאת מכונה ש-Black Keel תגיב, אך רק לפי הסדר שהחוזים שלה מכירים. משמורת נכס ראשונה. חותם אחריות שני. ביקורת גוף, נתיב דגימה, נתיב תשלום, ואז חילוץ מפעיל אם התור עדיין מאפשר. השחקן יכול להשתמש בספרים האלה כרמזים, מפתחות ומנוף כי המערכת צפויה. הצפיות הזו היא כתב האישום: HECTON-8 לא ננטשה בגלל החלטה גרועה אחת, אלא בגלל מחסנית תגובה שהמשיכה לעבוד בזמן שאנשים נעשו מטען בעדיפות נמוכה יותר.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/he_IL. -->

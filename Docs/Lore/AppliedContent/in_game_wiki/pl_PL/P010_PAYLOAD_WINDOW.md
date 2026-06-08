@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Okno ładunku
 
-Okno ładunku zmienia zakończenia w fizykę. Gracz może przenieść tylko ograniczoną masę przez ciśnienie, pogodę, czas promieniowania i geometrię Black Keel. Pieniądze, dowody, nazwiska, koordynaty, żywe próbki, sygnał Atlas albo cisza nie mogą wyjść razem.
+Okno ładunku to miejsce, gdzie końcowe wybory stają się fizyczne. Gracz może przenieść tylko ograniczoną masę przez ciśnienie, osłonę burzy, timing promieniowania Aegira i geometrię odzysku Black Keel. Pieniądze, dowody, nazwiska pracowników, koordynaty, żywe próbki, sygnał Atlas albo cisza nie mogą wyjść razem.
 
 ## Scanner
 
-Improwizowany pakiet wynurzenia. Może opuścić ocean, jeśli zgadzają się masa, pogoda i geometria carriera.
+Improwizowany pakiet wynurzenia. Może opuścić ocean, jeśli zgadzają się masa, pogoda, timing dawki i geometria Black Keel.
 
 ## Terminal
 
-PAYLOAD SLOT: ograniczony. WINDOW: otwarte. ROUTE: sporna. CLAIM VALUE: zmienna. EVIDENCE STATE: niewystarczający do czystego sporu.
+PAYLOAD SLOT: OGRANICZONY. WINDOW: OTWARTE. ROUTE: SPORNA. ODBIORCA: NIEPOTWIERDZONY. CLAIM VALUE: ZMIENNA. EVIDENCE STATE: NIEWYSTARCZAJĄCY DO CZYSTEGO SPORU.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Okno jest otwarte. Nie pozostanie otwarte dla wszystkiego.
 
 ## Field Note
 
-Wydostanie się to trasa. Czyste wydostanie się to mit.
+Wydostanie się to trasa. Czyste wydostanie się to opowieść sprzedawana po tym, jak ktoś inny zapłacił masę.
 
 <!-- In-Game Wiki; generated from P010_PAYLOAD_WINDOW/pl_PL. -->

@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Inner Relay Moon Traffic Role"
+title: "دور Vela المروري كقمر ترحيل داخلي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Inner Relay Moon Traffic Role
+# دور Vela المروري كقمر ترحيل داخلي
 
-AR LOC HOLD: The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.
-
-## Scanner
-
-AR LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
-
-## Terminal
-
-AR LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
-
-## Audio
-
-AR LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
-
-## Field Note
-
-AR LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+قيمة Vela هي الاعتراض. القمر يعبر الممرات الداخلية حيث تتقاتل الإشعاعات والوصلة وهندسة النقل على الدقائق نفسها. معدات الترحيل قديمة ومرقعة وشبه عمياء، لكنها متوقعة بما يكفي لتبقى في جداول الناقلات. إشارة قد تنزلق خلف Vela وتصل أنظف. نداء استغاثة قد يختفي خلف الجسم نفسه ويعود كتأخير قابل للفوترة.
 
 <!-- External Site; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/ar_SA. -->

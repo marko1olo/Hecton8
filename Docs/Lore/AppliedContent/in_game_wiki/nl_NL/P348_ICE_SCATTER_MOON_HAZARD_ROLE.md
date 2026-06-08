@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw ijsstrooi-gevaar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw ijsstrooi-gevaar
 
-NL LOC HOLD: The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Claw is een ijsstrooi-maan met een vuile halo van scherven, claimstof en bevroren industrieel afval. Haar puinbanen kunnen na stormen bruikbaar materiaal tonen en houden geruchten levend. Dezelfde banen breken sensorvertrouwen. Salvagers praten over schoon ijs en verloren lading; piloten over blinde hoeken, stofradar en de kosten van voorplaten.
 
 ## Scanner
 
-NL LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+Buitenste ijsstrooi-record. Claw werpt helder puin in banen waar salvage-geruchten sneller reizen dan piloten zouden moeten.
 
 ## Terminal
 
-NL LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+MAANLADDER H3 CLAW: puinbaan alleen open voor survey-drones. Rompverkeer vereist voorwaartse stofradar, opofferingsschild en payout-waiver voor ongelogde scherfinslagen.
 
 ## Audio
 
-NL LOC HOLD: Every system has one moon that accountants love and pilots curse.
+Elk systeem heeft een maan waar boekhouders van houden en piloten op vloeken.
 
 ## Field Note
 
-NL LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw lijkt winstgevend op papier omdat papier geen ijs hoeft te ontwijken.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/nl_NL. -->

@@ -14,20 +14,22 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Rejestr Black Keel
 
-Rejestr Black Keel wyjaśnia, czemu carrier może kontaktować, prowadzić, naliczać, opóźniać, odzyskać albo porzucić gracza bez bycia złoczyńcą. To publiczna infrastruktura z debt custody i ukrytymi priorytetami Deep Reach.
+Black Keel jest orbitalną linią życia, ale nie fantazją ratunku. Należy do infrastruktury claim-pool: rejestry opieki, dług ubezpieczeniowy, okna odzysku, kwarantanna i władza carriera.
+
+Prowadzi, bo prowadzenie chroni wartość. Opóźnia, bo opóźnienie też chroni wartość. Pomoc nie oznacza strony.
 
 ## Scanner
 
-Rejestr claim-pool tender. Publiczna carrier custody, dług ubezpieczeniowy, ukryte priorytety Deep Reach.
+Rejestr tendera claim-pool. Publiczna opieka carrier, dług ubezpieczeniowy, kary masy wznoszenia i ukryte haki priorytetu Deep Reach.
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+REJESTR BLACK KEEL // Usługa odzysku warunkowa. Clearance claim niepełny. Trasa priorytetu głębi zamaskowana. Władza payload zostaje po stronie carriera. Przeżycie kontraktora nie przewyższa ubezpieczonego ładunku bez zaktualizowanej wartości wznoszenia.
 
 ## Audio
 

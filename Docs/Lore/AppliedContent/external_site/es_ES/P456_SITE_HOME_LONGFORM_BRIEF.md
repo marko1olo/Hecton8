@@ -9,32 +9,40 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: reclamación bajo presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: reclamación bajo presión
 
-ES LOC HOLD: HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## El primer trabajo
 
-## Scanner
+HECTON-8 empieza con un contrato. Black Keel abre una ventana de relé de Aegir, carga un gravamen de 4.8 tonne-window y deja caer un bathydrop dañado hacia P-63. La repisa tiene luz para navegar y sistemas rotos suficientes para matar a quien se descuide.
 
-ES LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+Lo primero es concreto: bombear agua, parchear sellos dentro de su clase, leer los fallos de la cápsula y escanear la repisa. El escáner no cuenta la historia; comprueba por qué el expediente oficial no sabe explicar las marcas del metal.
 
-## Terminal
+## Lo que prueba P-63
 
-ES LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+P-63 es bello con luz. La belleza no lo hace seguro. Piedra clara, crecimiento parecido al coral, bordes de módulos, cicatrices de cable y piezas de evacuación rotas aparecen antes de que la profundidad robe el color.
 
-## Audio
+El contrato pide carga. La sala entrega prueba. El aro de recuperación roto, la aviónica inundada y el bastidor torcido prueban que el bathydrop gastó su retorno sobreviviendo a la caída. Reparar significa bajar: herramientas someras, relés, contención de salmuera, pressure glass y un permiso legal de recuperación.
 
-ES LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+Deep Reach no fabricó un océano malvado. HECTON-8 ya tenía mareas, tormentas, química de presión y geología hostil. La culpa está en el riesgo aceptado, la evacuación insuficiente y el lenguaje limpio que convierte trabajadores en pérdidas.
 
-## Field Note
+## Como Leer El Descenso
 
-ES LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+La regla util de HECTON-8 es simple: cada pieza de lore debe dejar una marca que el jugador pueda comprobar. Un numero de contrato no es adorno si cambia la mass window. Un arañazo en el bathydrop no es decoracion si demuestra que el sistema de ascenso se disparo antes del impacto. Una sala inundada no es fondo si su bomba, junta, registro de ruta y lectura de scanner contradicen el informe oficial.
+
+Por eso el inicio vuelve siempre al trabajo. P-63 enseña que la belleza no es seguridad, que el agua somera tambien puede ser una trampa de claim, y que sobrevivir se escribe con palabras duras: seal rating, intake pressure, relay drift, battery reserve, custody grade.
+
+## La Promesa
+
+La historia grande no es un discurso para salvar la galaxia. Es un problema largo de presion alrededor de una trabajadora endeudada y con memoria util. El oceano estrecha opciones. El contrato estrecha opciones. La route window estrecha opciones. Contra eso, el jugador arma una cadena de prueba: un scan, una muestra, un sistema reparado.
+
+HECTON-8 debe leerse porque es fisico. Lo importante tiene superficie, coste, modo de fallo y testigo.
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/es_ES. -->

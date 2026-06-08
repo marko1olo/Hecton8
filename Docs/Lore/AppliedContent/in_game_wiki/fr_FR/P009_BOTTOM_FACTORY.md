@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Usine du fond
 
-L'Usine du fond n'est pas la dernière station. C'est l'endroit où le matériel Deep Reach, les restes de la colonie, le routage Atlas, la blue debt et la biologie de l'océan HECTON-8 forment un seul corps actif. Les murs y sont organes, filtres, conduits et cicatrices.
+L'Usine du fond est le point où HECTON-8 cesse de séparer infrastructure et habitat. Machines Deep Reach, routage Atlas, résidus de blue debt, restes de travailleurs, membranes poussées sous pression et biologie océanique sont devenus un seul corps opérant. Il déplace chaleur, fluide, signal, échantillons et dégâts dans le même tissu. Un mur peut être une valve. Un couloir peut être un intestin. Un câble peut fleurir en filtre. Une réparation peut contenir corail, coque de drone, acier d'outil et os sans que le système voie une contradiction. Le danger n'est pas la mutation aléatoire. C'est la fonction sans catégories humaines. L'usine garde la continuité, préserve les routes, ferme les fuites, fait pousser une nouvelle peau de pression et traite la perte comme un matériau qu'on peut router vers un endroit utile.
 
 ## Scanner
 
-Conduit fluide, route de données et membrane vivante partagent une même peau de pression.
+Conduit fluide, route de données, membrane de pression et filtre vivant partagent une seule peau. Étiquettes de limite invalides.
 
 ## Terminal
 
-COLONY: non résolue. OCEAN: compatible. PROCESS: actif. LOSS: routée. CONTINUITY: protégée.
+COLONY : NON RÉSOLUE. OCEAN : COMPATIBLE. PROCESS : ACTIF. LOSS : ROUTÉE. CONTINUITY : PROTÉGÉE. EXIT : NON LOCAL.
 
 ## Audio
 
-Ça fonctionne encore. C'est le pire.
+Ça fonctionne encore. Ça utilise encore ce qui est tombé dedans.
 
 ## Field Note
 
-Appeler ça une base, c'est n'avoir rien compris. Une base finit aux murs.
+Appeler ça une base manque la règle. Les bases ont des murs. Ce lieu a une circulation.
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/fr_FR. -->

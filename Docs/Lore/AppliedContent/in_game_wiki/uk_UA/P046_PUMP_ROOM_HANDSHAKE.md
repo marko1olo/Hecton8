@@ -7,34 +7,34 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pump Room Handshake"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Рукостискання клапана насосної"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pump Room Handshake
+# Рукостискання клапана насосної
 
-Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.
+Рукостискання насоса починається, коли затоплена кімната приймає локальне керування. Воно дає доступ, але переносить воду, шум і тиск в іншу частину маршруту. Дивись на впускний кошик, вихідний імпульс і стукіт зворотного коридору, перш ніж вважати суху підлогу безпекою. Ранні насосні P-63 вчать головної звички ремонту: машина може поліпшити один відсік і погіршити дорогу додому.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+Локальний трюмний насос прийняв ввід із маховика. Впускний кошик забруднений піною капсули; вихідний імпульс навантажує зворотний коридор B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 / КОНТРОЛЬ ЗУМПФА / ЛОКАЛЬНЕ ПОГОДЖЕННЯ: маховик прийнято. Дистанційну команду відхилено. Впуск відновлено на низькій витраті. Тиск виходу зростає в RETURN CORRIDOR B; перезапуск тільки після перевірки нижнього люка.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+Клапан узяв. Вихід стукає. Не називай це безпечним.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Суха насосна може втопити шлях назад. Послухай удар у вихідній лінії, перш ніж знімати клапан.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/uk_UA. -->

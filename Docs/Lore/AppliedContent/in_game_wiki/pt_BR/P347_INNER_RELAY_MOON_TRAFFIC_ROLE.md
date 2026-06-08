@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela como lua interna de relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Inner Relay Moon Traffic Role
+# Vela como lua interna de relay
 
-PT LOC HOLD: Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
+Vela é uma lua interna de trabalho de Aegir. Ela cruza rotas carregadas rápido o bastante para punir blindagem ruim, mas suas máscaras e reflexos antigos de relay ainda formam as tabelas de rota. Uma aproximação Black Keel pode usar a sombra de Vela para esconder ruído de link por alguns minutos. A mesma sombra pode atrasar um ping de socorro até o relógio do contrato mudar de mãos.
 
 ## Scanner
 
-PT LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
+Livro lunar. Vela mascara e reflete tráfego de relay; naves tratam a lua como um pedágio móvel.
 
 ## Terminal
 
-PT LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
+ESCADA LUNAR H2 VELA: sombra de relay limpa em quarenta e três minutos. Contagem de radiação sobe no lado Skarn. Burn de transferência para HECTON permanece legal se a massa carrier ficar abaixo do limite registrado.
 
 ## Audio
 
-PT LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
+Ninguém vai a Vela pela vista. Você conta, espera e torce para o beacon velho continuar mentindo do mesmo jeito.
 
 ## Field Note
 
-PT LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Vela é útil porque fica no caminho na hora certa.
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/pt_BR. -->

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "圧力シールクランプリングアセンブリ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Pressure Seal Clamp Ring Assembly
+# 圧力シールクランプリングアセンブリ
 
-JA LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.
+圧力シールは、修理がさらに深くへ進まざるを得ない理由を説明する。部屋から水を締め出す素材は、誤ったシール連鎖が採用された瞬間、カプセルを沈んだ船体へ貼り付けることもある。
 
 ## Scanner
 
-JA LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+クランプリングの傷跡。上昇スリーブは、本来帰還に使うはずのシールを使い切って衝撃を生き延びた。
 
 ## Terminal
 
-JA LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch は区画圧のみ保持。Ascent seal には deep-rated clamp ring、pressure-glass seat、shell-sealant map、検証済み Deep Reach profile が必要。Atlas-grown sealant は habitat を保護しつつ、清潔な分離を妨げる可能性がある。
 
 ## Audio
 
-JA LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+役に立つシールは、間違った向きに生きている。
 
 ## Field Note
 
-JA LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+安全室のパッチは一時間の空気を買える。発射衝撃は保持できない。
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/ja_JP. -->

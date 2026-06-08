@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Aegir Primary Light and Radiation"
+title: "Cahaya Primer dan Radiasi Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Aegir Primary Light and Radiation
+# Cahaya Primer dan Radiasi Aegir
 
-ID LOC HOLD: The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+Primer Aegir adalah bintang kelas K yang stabil, cukup hangat untuk memberi cahaya amber pada dek kerja dan cukup tenang untuk jadwal infrastruktur panjang. Bahaya datang dari magnetosfer raksasa gas. Sabuk, jalur bermuatan, bayang bulan, dan derau badai mengubah perjalanan menjadi kalender jendela radiasi, bukan soal jarak sederhana. Deep Reach bisa menjual operasi rutin karena angkanya berulang. Pekerja tetap membayar setiap menit di luar jendela yang benar.
 
 ## Scanner
 
-ID LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+Kartu bintang. Katai K hangat memberi Aegir langit yang bisa dibaca; sabuk raksasa mengubah setiap rating pelindung menjadi jadwal.
 
 ## Terminal
 
-ID LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+KARTU BINTANG RAN A-346: keluaran primer masih dalam toleransi kerja koloni. Magnetosfer Aegir mengeraskan jalur dalam dua kali per rotasi; lambung murah menunggu, carrier berbayar membakar lewat.
 
 ## Audio
 
-ID LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+Cahaya cukup untuk membaca. Itu tidak pernah membuat langit ramah.
 
 ## Field Note
 
-ID LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir punya siang. Karena itu segel murah dan burn terlambat tetap punya harga.
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/id_ID. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Relay-custody schuldketen
 
-Relay custody maakt ruimtelogistiek tot druk: hulp draagt ook schuld, prioriteitshaken en bedrijfsgezag.
+Relay custody maakt ruimtelogistiek tot druk. Hulp kan aankomen, maar de route die hulp draagt, draagt ook schuld, prioriteitshaken en bedrijfsgezag.
 
 ## Scanner
 

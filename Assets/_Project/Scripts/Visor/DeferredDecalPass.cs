@@ -133,6 +133,7 @@ namespace Hecton8.Visor
             {
                 _settings = settings;
                 _material = material;
+                EnsureDecalAtlasHandle(settings != null ? settings.decalAtlas : null);
                 renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;

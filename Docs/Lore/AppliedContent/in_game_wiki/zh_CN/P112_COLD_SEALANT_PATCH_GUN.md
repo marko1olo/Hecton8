@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "冷封胶补枪"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# 冷封胶补枪
 
-CN LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+冷封胶补枪是在排水后得到的第一种诚实维修工具。它能止住针孔泄漏，或让垫圈边缘维持到小房间恢复运行，但它不能让受损结构变安全。真正有用的教训在额定标签上：HECTON-8会惩罚每一次超出压力等级的修理。
 
 ## Scanner
 
-CN LOC HOLD: Patch gun. Rated for pinholes, not miracles.
+冷封补枪。胶筒只适用于针孔泄漏和平稳接缝；活跃剪切会把它剥开。
 
 ## Terminal
 
-CN LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+补丁限制 / 冷封胶：擦净表面后可在低深度湿润船壳上粘结。批准用于针孔、垫圈边缘和平稳渗漏接缝。拒绝活跃剪切裂缝、温热blue debt bloom和移动电缆接缝。
 
 ## Audio
 
-CN LOC HOLD: A patch is not safety. It is a countdown that looks solid.
+别叫它密封。叫它时间。
 
 ## Field Note
 
-CN LOC HOLD: Sealant repairs should buy time, not erase pressure.
+补丁买到的是几分钟。裂缝还在动，就把这几分钟用来撤离。
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/zh_CN. -->

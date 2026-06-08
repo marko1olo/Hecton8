@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Hecton8.Bootstrap;
+using Hecton8.Construction;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using TMPro;
@@ -114,6 +115,7 @@ namespace Hecton8.Core
         private bool _registeredUpdatable;
         private bool _registeredLateFrameTickable;
         private bool _registeredHotSwapListener;
+        private bool _runtimeOwnerAborted;
         private bool _dispatcherAvailable;
         private bool _sceneLoadInFlight;
         private string _pendingSceneName;
@@ -164,6 +166,7 @@ namespace Hecton8.Core
         private object _terminalBootPhysicsService;
         private object _terminalBootAudioService;
         private ITickDispatcher _tickDispatcher;
+        private object _sceneTransitionAudioRuntime;
         private ISceneTransitionAudioBridge _sceneTransitionAudioBridge;
         private ICameraJuiceSystem _cameraJuiceSystem;
         private uint _terminalBootSeed;
@@ -220,12 +223,16 @@ namespace Hecton8.Core
         /// <returns>Live scene service instance.</returns>
         public static SceneRuntimeService EnsureRuntimeInstance()
         {
-            SceneRuntimeService sceneRuntime = GlobalRegistry.SceneRuntime;
-            if (sceneRuntime == null)
-                sceneRuntime = GlobalRegistry.Scene as SceneRuntimeService;
+            SceneRuntimeService runtime = ResolveUsableRuntime();
+            if (runtime != null)
+                return runtime;
 
-            if (sceneRuntime != null)
-                return sceneRuntime;
+            ISceneService registeredScene = GlobalRegistry.Scene;
+            if (IsSceneServiceUsable(registeredScene) &&
+                ReferenceEquals(registeredScene as SceneRuntimeService, null))
+            {
+                return null;
+            }
 
             GameObject runtimeRoot = new GameObject("[SceneRuntimeService]");
             SceneRuntimeService sceneService = runtimeRoot.AddComponent<SceneRuntimeService>();
@@ -245,10 +252,12 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
-            if (!EnsureRuntimeOwnership())
+            if (_runtimeOwnerAborted || !EnsureRuntimeOwnership())
                 return;
 
-            GlobalRegistry.RegisterSceneRuntime(this);
+            if (!TryRegisterSceneService())
+                return;
+
             H8Memory.Initialize();
             _dataVault = GlobalRegistry.DataVault;
             _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
@@ -259,7 +268,6 @@ namespace Hecton8.Core
             {
                 TryRegisterUpdatable();
                 TryRegisterLateFrameTickable();
-                TryRegisterSceneService();
                 TryRegisterSceneCallbacks();
                 return;
             }
@@ -267,7 +275,6 @@ namespace Hecton8.Core
             _isInitialized = true;
             TryRegisterUpdatable();
             TryRegisterLateFrameTickable();
-            TryRegisterSceneService();
             TryRegisterSceneCallbacks();
         }
 
@@ -277,6 +284,14 @@ namespace Hecton8.Core
         /// <param name="sceneName">Build-settings scene name.</param>
         public void LoadScene(string sceneName)
         {
+            string requestedSceneName = NormalizeRequestedSceneName(sceneName);
+            if (requestedSceneName.Length == 0)
+            {
+                LogSceneLoadRejectedInvalidName(sceneName);
+                return;
+            }
+
+            sceneName = requestedSceneName;
             if (_sceneLoadInFlight)
             {
                 LogSceneLoadRejectedInFlight(sceneName, _pendingSceneName);
@@ -289,6 +304,14 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public async Awaitable LoadSceneAsync(string sceneName)
         {
+            string requestedSceneName = NormalizeRequestedSceneName(sceneName);
+            if (requestedSceneName.Length == 0)
+            {
+                LogSceneLoadRejectedInvalidName(sceneName);
+                return;
+            }
+
+            sceneName = requestedSceneName;
             if (!CanLoadScene)
             {
                 LogSceneLoadRejectedBootstrapIncomplete(sceneName);
@@ -413,23 +436,31 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            RejectDuplicateRuntimeOwner();
+            EnsureRuntimeOwnership();
         }
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted || !EnsureRuntimeOwnership())
+                return;
+
             TryRegisterUpdatable();
             TryRegisterLateFrameTickable();
             TryRegisterHotSwapListener();
             if (_isInitialized)
             {
-                TryRegisterSceneService();
+                if (!TryRegisterSceneService())
+                    return;
+
                 TryRegisterSceneCallbacks();
             }
         }
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterHotSwapListener();
             TryUnregisterUpdatable();
             TryUnregisterLateFrameTickable();
@@ -439,6 +470,9 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
@@ -449,6 +483,9 @@ namespace Hecton8.Core
 
         private void ShutdownServiceState()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_memoryLifecycleTransitionActive)
                 CancelMemoryLifecycleTransition();
 
@@ -486,6 +523,7 @@ namespace Hecton8.Core
 
         private static void ClearRuntimeState()
         {
+            DroneFleetManager.ClearSceneTransitionRuntimeState();
             GlobalRegistry.ClearRuntimeBuckets();
             ThreadSafeCommandQueue.Clear();
 
@@ -1292,6 +1330,11 @@ namespace Hecton8.Core
             return MixTerminalBootHash(hash, 0xB5297A4Du);
         }
 
+        private static string NormalizeRequestedSceneName(string sceneName)
+        {
+            return string.IsNullOrWhiteSpace(sceneName) ? string.Empty : sceneName.Trim();
+        }
+
         private static uint MixTerminalBootHash(uint seed, uint value)
         {
             uint state = seed ^ (TerminalBootHashSalt + (value * 0x9E3779B9u));
@@ -1494,6 +1537,14 @@ namespace Hecton8.Core
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSceneLoadRejectedInvalidName(string sceneName)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Hecton8.Core.H8Debug.LogError($"[SceneRuntimeService] Scene load rejected because scene name is empty or whitespace. value='{sceneName}'.");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogSceneLoadRejectedInFlight(string sceneName, string pendingSceneName)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1589,6 +1640,9 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
@@ -1645,25 +1699,41 @@ namespace Hecton8.Core
             _terminalBootPhysicsService = null;
             _terminalBootAudioService = null;
             _tickDispatcher = null;
+            _sceneTransitionAudioRuntime = null;
             _sceneTransitionAudioBridge = null;
             _cameraJuiceSystem = null;
         }
 
         private void CacheSceneTransitionAudioBridge(object audioRuntime)
         {
-            _sceneTransitionAudioBridge = IsAudioRuntimeObjectUsable(audioRuntime)
-                ? audioRuntime as ISceneTransitionAudioBridge
-                : null;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _sceneTransitionAudioRuntime = null;
+                _sceneTransitionAudioBridge = null;
+                return;
+            }
+
+            _sceneTransitionAudioRuntime = audioRuntime;
+            _sceneTransitionAudioBridge = audioRuntime as ISceneTransitionAudioBridge;
         }
 
         private ISceneTransitionAudioBridge ResolveSceneTransitionAudioBridge()
         {
+            object audioRuntime = _sceneTransitionAudioRuntime;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _sceneTransitionAudioRuntime = null;
+                _sceneTransitionAudioBridge = null;
+                return null;
+            }
+
             ISceneTransitionAudioBridge sceneTransitionAudioBridge = _sceneTransitionAudioBridge;
-            if (IsAudioRuntimeObjectUsable(sceneTransitionAudioBridge))
+            if (ReferenceEquals(sceneTransitionAudioBridge, audioRuntime) && IsAudioRuntimeObjectUsable(sceneTransitionAudioBridge))
                 return sceneTransitionAudioBridge;
 
-            _sceneTransitionAudioBridge = null;
-            return null;
+            sceneTransitionAudioBridge = audioRuntime as ISceneTransitionAudioBridge;
+            _sceneTransitionAudioBridge = sceneTransitionAudioBridge;
+            return IsAudioRuntimeObjectUsable(sceneTransitionAudioBridge) ? sceneTransitionAudioBridge : null;
         }
 
         private static bool IsAudioRuntimeObjectUsable(object runtime)
@@ -1671,7 +1741,7 @@ namespace Hecton8.Core
             if (runtime == null)
                 return false;
 
-            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+            if (runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (runtime is Behaviour behaviour)
@@ -1697,39 +1767,152 @@ namespace Hecton8.Core
             _registeredHotSwapListener = false;
         }
 
-        private void TryRegisterSceneService()
+        private bool TryRegisterSceneService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_registeredSceneService)
-                return;
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             ISceneService registeredScene = GlobalRegistry.Scene;
-            if (registeredScene != null && !ReferenceEquals(registeredScene, this))
-                return;
+            if (!ReferenceEquals(registeredScene, null) && !ReferenceEquals(registeredScene, this))
+            {
+                SceneRuntimeService staleRuntime = registeredScene as SceneRuntimeService;
+                if (ReferenceEquals(staleRuntime, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterSceneService(registeredScene);
+                GlobalRegistry.ClearSceneRuntime(staleRuntime);
+                staleRuntime._registeredSceneService = false;
+                staleRuntime._isInitialized = false;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterSceneService(this);
             _registeredSceneService = ReferenceEquals(GlobalRegistry.Scene, this);
+            _runtimeOwnerAborted = !_registeredSceneService;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return _registeredSceneService;
         }
 
         private bool EnsureRuntimeOwnership()
         {
-            if (RejectDuplicateRuntimeOwner())
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            SceneRuntimeService runtime = GlobalRegistry.SceneRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                GlobalRegistry.ClearSceneRuntime(runtime);
+                runtime._registeredSceneService = false;
+                runtime._isInitialized = false;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
                 return false;
 
             GlobalRegistry.RegisterSceneRuntime(this);
             return ReferenceEquals(GlobalRegistry.SceneRuntime, this);
         }
 
-        private bool RejectDuplicateRuntimeOwner()
+        private bool TryAbortForUsableExistingRuntime()
         {
-            SceneRuntimeService activeRuntime = GlobalRegistry.SceneRuntime;
-            if (activeRuntime == null)
-                activeRuntime = GlobalRegistry.Scene as SceneRuntimeService;
+            SceneRuntimeService runtime = GlobalRegistry.SceneRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsSceneRuntimeUsable(runtime))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
 
-            if (activeRuntime == null || activeRuntime == this)
+                GlobalRegistry.ClearSceneRuntime(runtime);
+                runtime._registeredSceneService = false;
+                runtime._isInitialized = false;
+            }
+
+            ISceneService registeredScene = GlobalRegistry.Scene;
+            if (ReferenceEquals(registeredScene, null) || ReferenceEquals(registeredScene, this))
                 return false;
 
-            Destroy(gameObject);
-            return true;
+            if (IsSceneServiceUsable(registeredScene))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            SceneRuntimeService staleRuntime = registeredScene as SceneRuntimeService;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterSceneService(registeredScene);
+                GlobalRegistry.ClearSceneRuntime(staleRuntime);
+                staleRuntime._registeredSceneService = false;
+                staleRuntime._isInitialized = false;
+            }
+
+            return false;
+        }
+
+        private static SceneRuntimeService ResolveUsableRuntime()
+        {
+            SceneRuntimeService runtime = GlobalRegistry.SceneRuntime;
+            if (IsSceneRuntimeUsable(runtime))
+                return runtime;
+
+            if (!ReferenceEquals(runtime, null))
+            {
+                GlobalRegistry.ClearSceneRuntime(runtime);
+                runtime._registeredSceneService = false;
+                runtime._isInitialized = false;
+            }
+
+            ISceneService registeredScene = GlobalRegistry.Scene;
+            if (IsSceneServiceUsable(registeredScene))
+                return registeredScene as SceneRuntimeService;
+
+            SceneRuntimeService staleRuntime = registeredScene as SceneRuntimeService;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterSceneService(registeredScene);
+                GlobalRegistry.ClearSceneRuntime(staleRuntime);
+                staleRuntime._registeredSceneService = false;
+                staleRuntime._isInitialized = false;
+            }
+
+            return null;
+        }
+
+        private static bool IsSceneServiceUsable(ISceneService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            SceneRuntimeService runtime = service as SceneRuntimeService;
+            return ReferenceEquals(runtime, null) ||
+                   (runtime._registeredSceneService && IsSceneRuntimeUsable(runtime));
+        }
+
+        private static bool IsSceneRuntimeUsable(SceneRuntimeService runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
         }
 
         private void TryUnregisterSceneService()

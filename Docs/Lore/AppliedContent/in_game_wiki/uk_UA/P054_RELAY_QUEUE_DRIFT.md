@@ -3,38 +3,38 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relay Queue Drift"
+title: "Дрейф черги ретранслятора"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Queue Drift
+# Дрейф черги ретранслятора
 
-UK LOC HOLD: Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.
+Затриманий зв'язок небезпечний тим, що може залишатися точним у неправильний час. Попередження носія може описувати справжній клапан, справжню течу і справжній маршрут, який уже змінився під тиском. Гравець має порівняти вік пакета з місцевими доказами перед довірою до віддаленої влади.
 
 ## Scanner
 
-UK LOC HOLD: The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
+Штамп ретранслятора старіший за течу, яку називає; інструкція була правдою для кімнати, якої вже немає.
 
 ## Terminal
 
-UK LOC HOLD: QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
+ДРЕЙФ ЧЕРГИ: вік пакета перевищує чинність маршруту. Локальні докази вищі за інструкцію носія до свіжого ретрансляційного вікна.
 
 ## Audio
 
-UK LOC HOLD: The message is correct. That is the problem.
+Повідомлення правильне. У цьому й проблема.
 
 ## Field Note
 
-UK LOC HOLD: A late truth can still kill.
+Пізня правда все ще може вбити.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/uk_UA. -->

@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Inner Relay Moon Traffic Role"
+title: "Vela Inner Relay Traffic Role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,8 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Inner Relay Moon Traffic Role
+# Vela Inner Relay Traffic Role
 
-The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.
-
-## Scanner
-
-Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
-
-## Terminal
-
-MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
-
-## Audio
-
-The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
-
-## Field Note
-
-Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Vela's value is obstruction. The moon crosses the inner lanes where radiation, uplink, and transfer geometry fight over the same minutes. Its relay hardware is old, patched, and partly blind, but predictable enough for carriers to keep it in their tables. A signal can slip behind Vela and arrive cleaner. A distress call can vanish behind the same body and return as a billable delay. The moon is a traffic law written in rock and charged dust.
 
 <!-- External Site; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/en_US. -->

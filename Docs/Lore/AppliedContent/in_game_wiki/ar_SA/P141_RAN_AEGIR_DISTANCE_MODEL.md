@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "AR LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "نموذج مسافة Ran-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Ran-Aegir Distance Model
+# نموذج مسافة Ran-Aegir
 
-AR LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+يمنح نموذج Ran-Aegir HECTON-8 مقياسا يشعر به اللاعب. Aegir قريب بما يكفي للمجسات والشحن وعتاد seed والاستيطان المدعوم بالدين بحلول 2190. لكنه بعيد بما يكفي كي لا تنتظر غرفة غارقة رحمة العوالم الداخلية. تظهر المسافة كتأخير وcustody ووقود وكبح وملكية.
 
 ## Scanner
 
-AR LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+لوحة طريق: Aegir قابل للوصول بالبنية التحتية وغير قابل للوصول بالتعاطف.
 
 ## Terminal
 
-AR LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+نموذج الطريق: يعامل Ran/Aegir كهدف من فئة عشر سنوات ضوئية من Sol. يستخدم نص اللعب Aegir؛ وتستخدم الكتالوجات الجافة RAN-B:H8. تبقى الإيفيميرس الدقيقة عمل جداول الطريق.
 
 ## Audio
 
-AR LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+عشر سنوات ضوئية صغيرة على خريطة نجوم. كبيرة بما يكفي لإفلاس إنقاذ.
 
 ## Field Note
 
-AR LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+المسافة التقريبية ضغط لا زينة. عشر سنوات ضوئية ما زالت تستطيع قتل غرفة.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/ar_SA. -->

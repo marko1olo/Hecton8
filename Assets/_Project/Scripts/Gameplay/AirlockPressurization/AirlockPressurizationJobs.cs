@@ -134,6 +134,17 @@ namespace Hecton8.Gameplay.AirlockPressurization
             AirlockEvaluationResultDTO result = default;
             BubbleSpawnSignal vfx = default;
             MovementAcousticSignal acoustic = default;
+            float doorNormalLengthSq = math.lengthsq(door.DoorNormal);
+            bool validDoorSignalSource =
+                door.EdgeHashID != 0u &&
+                (door.Flags & AirlockDoorPoseFlags.Valid) != 0u &&
+                door.DoorAup.IsFinite() &&
+                math.all(math.isfinite(door.DoorNormal)) &&
+                math.isfinite(doorNormalLengthSq) &&
+                doorNormalLengthSq > 0.0001f;
+            double3 doorCenterAup = validDoorSignalSource ? door.DoorAup.ToAbsoluteDouble3() : default;
+            validDoorSignalSource &= math.all(math.isfinite(doorCenterAup));
+            uint doorSourceHash = door.DoorHashID != 0u ? door.DoorHashID : door.EdgeHashID;
 
             float dt = math.max(0f, AirlockPressurizationMath.FiniteOr(DeltaTime, 0f));
             float visualQuality = math.saturate(AirlockPressurizationMath.FiniteOr(
@@ -256,24 +267,12 @@ namespace Hecton8.Gameplay.AirlockPressurization
             if (index < BulkheadIntents.Length)
             {
                 BulkheadContainmentIntentDTO intent = default;
-                float normalLengthSq = math.lengthsq(door.DoorNormal);
-                bool validDoor =
-                    door.EdgeHashID != 0u &&
-                    (door.Flags & AirlockDoorPoseFlags.Valid) != 0u &&
-                    door.DoorAup.IsFinite() &&
-                    math.all(math.isfinite(door.DoorNormal)) &&
-                    math.isfinite(normalLengthSq) &&
-                    normalLengthSq > 0.0001f;
-
-                double3 centerAup = validDoor ? door.DoorAup.ToAbsoluteDouble3() : default;
-                validDoor &= math.all(math.isfinite(centerAup));
-
-                if (validDoor)
+                if (validDoorSignalSource)
                 {
                     intent = new BulkheadContainmentIntentDTO
                     {
-                        CenterAup = centerAup,
-                        Normal = door.DoorNormal * math.rsqrt(math.max(normalLengthSq, 0.0001f)),
+                        CenterAup = doorCenterAup,
+                        Normal = door.DoorNormal * math.rsqrt(math.max(doorNormalLengthSq, 0.0001f)),
                         WidthMeters = math.max(0.25f, AirlockPressurizationMath.FiniteOr(door.WidthMeters, 2.6f)),
                         HeightMeters = math.max(0.25f, AirlockPressurizationMath.FiniteOr(door.HeightMeters, 3.2f)),
                         ParentIntegrity01 = math.saturate(1f - result.StressSpike01),
@@ -289,7 +288,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
             }
 
             int vfxPeriod = math.max(1, (int)math.round(math.lerp(10f, 2f, visualQuality)));
-            if (result.VfxIntensity01 > 0.2f && ((Frame + (uint)index) % (uint)vfxPeriod) == 0u)
+            if (validDoorSignalSource && result.VfxIntensity01 > 0.2f && ((Frame + (uint)index) % (uint)vfxPeriod) == 0u)
             {
                 vfx = new BubbleSpawnSignal
                 {
@@ -312,14 +311,14 @@ namespace Hecton8.Gameplay.AirlockPressurization
             }
 
             int audioPeriod = math.max(1, (int)math.round(math.lerp(18f, 5f, visualQuality)));
-            if (pumping && ((Frame + (uint)(index * 3)) % (uint)audioPeriod) == 0u)
+            if (validDoorSignalSource && pumping && ((Frame + (uint)(index * 3)) % (uint)audioPeriod) == 0u)
             {
                 acoustic = new MovementAcousticSignal
                 {
                     PositionAup = door.DoorAup,
                     Volume = math.saturate(result.PumpMovedLiters * math.rcp(math.max(1f, maxWater * 0.03f))),
                     VelocitySq = math.max(0f, result.PumpMovedLiters * result.PumpMovedLiters),
-                    SourceId = AirlockPressurizationConstants.HeavyPumpHash ^ door.DoorHashID,
+                    SourceId = AirlockPressurizationConstants.HeavyPumpHash ^ doorSourceHash,
                     LocomotionMode = 0,
                     SurfaceMode = 0,
                     Flags = 1
@@ -671,6 +670,8 @@ namespace Hecton8.Gameplay.AirlockPressurization
     {
         [ReadOnly, NoAlias] public NativeArray<AirlockStateDTO> Airlocks;
         [ReadOnly, NoAlias] public NativeArray<AirlockEvaluationResultDTO> Results;
+        [ReadOnly, NoAlias] public NativeArray<BubbleSpawnSignal> VfxSignals;
+        [ReadOnly, NoAlias] public NativeArray<MovementAcousticSignal> AcousticSignals;
         [NoAlias] public NativeArray<AirlockTelemetryEntry> Telemetry;
         [NoAlias] public NativeArray<int> TelemetryCursor;
         [NoAlias] public NativeArray<int> DumpRequested;
@@ -703,8 +704,8 @@ namespace Hecton8.Gameplay.AirlockPressurization
                 entry.MinPressureAtm = math.min(entry.MinPressureAtm, state.CurrentPressureATM);
                 entry.CollisionBlockedCount += (state.CycleStateFlags & AirlockCycleFlags.CollisionBlocked) != 0u ? 1u : 0u;
                 entry.ForcedFloodEvents += (state.CycleStateFlags & AirlockCycleFlags.CatastrophicFlood) != 0u ? 1u : 0u;
-                entry.VfxSignals += result.VfxIntensity01 > 0.2f ? 1u : 0u;
-                entry.AcousticSignals += (state.CycleStateFlags & AirlockCycleFlags.AcousticPump) != 0u ? 1u : 0u;
+                entry.VfxSignals += VfxSignals.IsCreated && i < VfxSignals.Length && VfxSignals[i].Frame != 0u ? 1u : 0u;
+                entry.AcousticSignals += AcousticSignals.IsCreated && i < AcousticSignals.Length && AcousticSignals[i].SourceId != 0u ? 1u : 0u;
                 entry.NonFiniteCount += (state.CycleStateFlags & AirlockCycleFlags.NonFinite) != 0u ? 1u : 0u;
                 hash = AirlockPressurizationMath.Hash(hash, result.StateHash);
             }

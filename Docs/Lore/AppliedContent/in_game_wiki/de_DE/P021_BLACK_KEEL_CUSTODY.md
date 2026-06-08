@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black-Keel-Gewahrsam
 
-Black Keel ist kein privates Luxusschiff. Es ist ein fast automatischer Bergungs-Carrier unter Claim-Pool-Gewahrsam, Versicherungsschuld und orbitalen Fenstern.
+Black Keel ist kein luxuriöses Privatschiff. Es ist ein nahezu automatisierter Salvage-Carrier, der über Claim-Pool-Gewahrsam, Versicherungsschuld und verspätete Orbitalfenster arbeitet. Er bietet einen echten Weg zurück in den Orbit, ohne Rettung einfach oder loyal zu machen.
 
 ## Scanner
 

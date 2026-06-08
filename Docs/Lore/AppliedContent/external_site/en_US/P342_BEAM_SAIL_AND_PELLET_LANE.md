@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Beam Sail and Pellet Lane
 
-Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.
+Fast ships in HECTON-8 are not little comets with a miracle engine. They are invoices with hulls around them. A beam sail takes power from arrays that were built, maintained, insured, and aimed long before the ship arrives in the lane. Pellet streams throw reaction mass into the path with brutal timing discipline; too thin and the vehicle starves, too rich and it becomes a shotgun pattern. The ship still carries fusion stages, shield ice, radiators, pumps, and the authority to choose when to spend them, but the expensive half of the engine is outside the hull.
 
-## Scanner
-
-Transit lane record. Slow freight survives because infrastructure does the acceleration math.
-
-## Terminal
-
-ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
-
-## Audio
-
-The ship is not fast by magic. It is fast because half the route is machinery you never see.
-
-## Field Note
-
-Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+That design made human space wider without making it small. Aegir is reachable because older domains paid for acceleration corridors, notaries, receiver stations, and braking reserves. A stranded body on HECTON-8 cannot turn a distress message into that corridor. Someone has to own the catch window, allocate heat margin, accept quarantine custody, and risk turning a fast salvage run into fast debris. Black Keel survives in that economy because it buys windows and sells proof; the player survives by understanding that distance is not empty. It is scheduled, mortgaged, and already spoken for.
 
 <!-- External Site; generated from P342_BEAM_SAIL_AND_PELLET_LANE/en_US. -->

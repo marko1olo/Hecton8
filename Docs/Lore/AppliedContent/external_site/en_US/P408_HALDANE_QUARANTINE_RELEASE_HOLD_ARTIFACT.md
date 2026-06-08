@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Haldane Quarantine Hold"
+title: "Haldane Quarantine Release Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Haldane Quarantine Hold
+# Haldane Quarantine Release Hold
 
-HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## A Correct Procedure In The Wrong Minute
 
-## Scanner
+The Haldane hold should never read as simple fraud. HECTON-8 had contamination risk, compromised seals, sample custody problems and biological uncertainty. A quarantine protocol made sense before the disaster turned kinetic. That is why the document bites: the procedure was real enough to defend and slow enough to kill.
 
-Quarantine release hold. Evacuation files stayed correct and late.
+Release certification becomes a weapon through timing. While pressure climbs and routes fail, the hold asks for XO sample custody, seal-read variance and downstream exposure review. Each phrase sounds responsible. Together they keep evacuees, mechanics and witnesses inside a failing colony until rescue is no longer the controlling verb.
 
-## Terminal
-
-QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-The folder was orderly. That was the problem.
-
-## Field Note
-
-Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+This is one of the best places to make Deep Reach feel institutional. Haldane does not need to laugh at trapped workers. The desk only has to preserve chain of custody, reduce future liability and avoid releasing contaminated evidence into a claim space it cannot control. The horror is the fact that those motives can all sound correct in the minute when people needed the door opened.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/en_US. -->

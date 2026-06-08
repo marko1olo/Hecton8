@@ -166,7 +166,7 @@ namespace Hecton8.World
         private const string SandLayerName = "L_Sand";
         private const string GreenSandLayerName = "L_sandGreen";
         private const string RockLayerName = "L_Rocks";
-        private const float DefaultWaterLevel = 4900f;
+        private const float DefaultWaterLevel = 14.02f;
         private const float OrganicKelpMaxDepthBelowSurfaceMeters = 200f;
         private const float OrganicKelpMaxSlopeNormalY = 0.8660254f;
         private const float DefaultKelpMinHeight = DefaultWaterLevel - OrganicKelpMaxDepthBelowSurfaceMeters;
@@ -433,12 +433,12 @@ namespace Hecton8.World
         private float vegetationAudioProbeRadius = 3f;
 
         [Header("World Rules")]
-        [SerializeField, Min(4900f)]
-        [Tooltip("Project water surface level. Contract fixes this at Y=4900.")]
+        [SerializeField]
+        [Tooltip("Project water surface level. Runtime syncs from the active MapMagic terrain bridge when available.")]
         private float waterLevel = DefaultWaterLevel;
 
-        [SerializeField, Min(4600f)]
-        [Tooltip("Minimum terrain height that still accepts organic kelp placement. Runtime clamp enforces the 200m depth cap.")]
+        [SerializeField]
+        [Tooltip("Minimum terrain height that still accepts organic kelp placement. Runtime clamp enforces the 200m depth cap below the active water surface.")]
         private float kelpMinHeight = DefaultKelpMinHeight;
 
         [SerializeField, Range(0f, 1f)]
@@ -2537,6 +2537,7 @@ namespace Hecton8.World
         private static void ResetStaticRuntimeState()
         {
             s_activeRuntimeInstance = null;
+            WorldRuntimeReferenceUtility.InvalidateHectonMapMagicVegetationBridgeCache(null);
             PredatorCognitionDomain.ClearVegetationThreatVoxelSource(null);
             DroneFleetManager.ClearVegetationBridge(null);
         }
@@ -2556,6 +2557,7 @@ namespace Hecton8.World
 
             PredatorCognitionDomain.ClearVegetationThreatVoxelSource(this);
             DroneFleetManager.ClearVegetationBridge(this);
+            WorldRuntimeReferenceUtility.InvalidateHectonMapMagicVegetationBridgeCache(this);
 
             if (ReferenceEquals(GlobalRegistry.MapMagicVegetation, this))
                 GlobalRegistry.UnregisterMapMagicVegetationRuntime(this);
@@ -2575,6 +2577,7 @@ namespace Hecton8.World
             if (_underwaterNativeBufferSource == null)
                 _underwaterNativeBufferSource = new IndirectVegetationNativeBufferSource(this, true); // COLD ALLOC: IndirectVegetationNativeBufferSource[1] - underwater native vegetation renderer seam - owner: HectonMapMagicVegetationBridge
 
+            SyncWaterSurfaceLevelFromTerrainBridge();
             residentRadius = math.clamp(residentRadius, 150f, 200f);
             residentHysteresisScale = math.clamp(residentHysteresisScale, 1f, 1.5f);
             maxChunkBuildsPerSlowTick = math.max(1, maxChunkBuildsPerSlowTick);
@@ -3161,25 +3164,19 @@ namespace Hecton8.World
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
+            playerAup = default;
             IPlayerRuntimeContext runtimeContext = _playerRuntimeContext;
             if (runtimeContext != null)
             {
                 if (runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
-                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite())
                 {
                     playerAup = movementState.PredictedAup;
-                    return true;
-                }
-
-                HectonPlayerMovement movement = runtimeContext.PlayerMovement;
-                if (movement != null)
-                {
-                    playerAup = movement.PredictedAup;
-                    return true;
+                    return playerAup.IsFinite();
                 }
             }
 
-            playerAup = default;
             return false;
         }
 
@@ -5118,7 +5115,16 @@ namespace Hecton8.World
 
         private bool TryApplyWorldOffsetToAllChunks(Vector3 offset, double3 newTotalUniverseOffsetDouble, bool refreshResidency)
         {
-            if (offset.sqrMagnitude <= 0.000001f)
+            float offsetSqrMagnitude = offset.sqrMagnitude;
+            if (!IsFiniteVector(offset) ||
+                !math.isfinite(offsetSqrMagnitude) ||
+                !math.all(math.isfinite(newTotalUniverseOffsetDouble)))
+            {
+                ClearPendingWorldOffset();
+                return false;
+            }
+
+            if (offsetSqrMagnitude <= 0.000001f)
                 return true;
 
             if (HasAsyncWorldJobsInFlight())
@@ -5133,7 +5139,15 @@ namespace Hecton8.World
 
         private void QueuePendingWorldOffset(Vector3 offset, double3 newTotalUniverseOffsetDouble)
         {
-            _pendingWorldOffset = _hasPendingWorldOffset ? _pendingWorldOffset + offset : offset;
+            Vector3 accumulatedOffset = _hasPendingWorldOffset ? _pendingWorldOffset + offset : offset;
+            if (!IsFiniteVector(accumulatedOffset) ||
+                !math.all(math.isfinite(newTotalUniverseOffsetDouble)))
+            {
+                ClearPendingWorldOffset();
+                return;
+            }
+
+            _pendingWorldOffset = accumulatedOffset;
             _pendingWorldOffsetDouble = newTotalUniverseOffsetDouble;
             _hasPendingWorldOffset = true;
         }
@@ -5148,8 +5162,28 @@ namespace Hecton8.World
             _pendingWorldOffset = default;
             _pendingWorldOffsetDouble = default;
             _hasPendingWorldOffset = false;
+            if (!IsFiniteVector(pendingOffset) ||
+                pendingOffset.sqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(pendingTotalOffset)))
+            {
+                return;
+            }
 
             ApplyWorldOffsetToAllChunksImmediate(pendingOffset, pendingTotalOffset, refreshResidency: false);
+        }
+
+        private void ClearPendingWorldOffset()
+        {
+            _pendingWorldOffset = default;
+            _pendingWorldOffsetDouble = default;
+            _hasPendingWorldOffset = false;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
 
         private bool HasAsyncWorldJobsInFlight()
@@ -5180,13 +5214,17 @@ namespace Hecton8.World
 
         private void ApplyWorldOffsetToAllChunksImmediate(Vector3 offset, double3 newTotalUniverseOffsetDouble, bool refreshResidency)
         {
-            if (offset.sqrMagnitude <= 0.000001f)
+            float offsetSqrMagnitude = offset.sqrMagnitude;
+            if (!IsFiniteVector(offset) ||
+                !math.isfinite(offsetSqrMagnitude) ||
+                !math.all(math.isfinite(newTotalUniverseOffsetDouble)) ||
+                offsetSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             Vector3 appliedOffset = -offset;
-            _totalUniverseOffsetDouble = math.all(math.isfinite(newTotalUniverseOffsetDouble))
-                ? newTotalUniverseOffsetDouble
-                : _totalUniverseOffsetDouble + ToDouble3(appliedOffset);
+            _totalUniverseOffsetDouble = newTotalUniverseOffsetDouble;
             _totalUniverseOffset = ToVector3(_totalUniverseOffsetDouble);
             GlobalTotalUniverseOffset = _totalUniverseOffset;
             GlobalTotalUniverseOffsetDouble = _totalUniverseOffsetDouble;
@@ -5576,9 +5614,9 @@ namespace Hecton8.World
 
             for (int i = 0; i < MaxConcurrentChunkBuildJobs; i++)
             {
-                if (!TryAllocateChunkBuildRecordBank(ref _chunkBuildGrassRecordBanks[i], grassCapacity, nameof(_chunkBuildGrassRecordBanks)) ||
-                    !TryAllocateChunkBuildRecordBank(ref _chunkBuildFloatingRecordBanks[i], sparseCapacity, nameof(_chunkBuildFloatingRecordBanks)) ||
-                    !TryAllocateChunkBuildRecordBank(ref _chunkBuildKelpRecordBanks[i], sparseCapacity, nameof(_chunkBuildKelpRecordBanks)))
+                if (!TryAllocateChunkBuildRecordBank(ref _chunkBuildGrassRecordBanks[i], grassCapacity) ||
+                    !TryAllocateChunkBuildRecordBank(ref _chunkBuildFloatingRecordBanks[i], sparseCapacity) ||
+                    !TryAllocateChunkBuildRecordBank(ref _chunkBuildKelpRecordBanks[i], sparseCapacity))
                 {
                     DisposeChunkBuildRecordBanks();
                     return false;
@@ -5631,27 +5669,26 @@ namespace Hecton8.World
 
         private static bool TryAllocateChunkBuildRecordBank(
             ref NativeArray<JobInstanceRecord> records,
-            int capacity,
-            string label)
+            int capacity)
         {
             try
             {
-                records = new NativeArray<JobInstanceRecord>(
+                records = H8Memory.Allocate<JobInstanceRecord>(
                     capacity,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
                     Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory);
                 if (!records.IsCreated || records.Length < capacity)
                 {
-                    DisposeNativeArray(ref records);
+                    DisposeChunkBuildRecordBank(ref records);
                     return false;
                 }
 
-                RegisterTrackedNativeArray(records, label);
                 return true;
             }
             catch
             {
-                DisposeNativeArray(ref records);
+                DisposeChunkBuildRecordBank(ref records);
                 throw;
             }
         }
@@ -5714,9 +5751,14 @@ namespace Hecton8.World
             }
 
             for (int i = 0; i < banks.Length; i++)
-                DisposeNativeArray(ref banks[i]);
+                DisposeChunkBuildRecordBank(ref banks[i]);
 
             banks = Array.Empty<NativeArray<JobInstanceRecord>>();
+        }
+
+        private static void DisposeChunkBuildRecordBank(ref NativeArray<JobInstanceRecord> records)
+        {
+            H8Memory.Release(ref records, VegetationMemorySovereigntyConstants.OwnerSystemId);
         }
 
         private static Matrix4x4[] AllocateMatrixArray(int count)
@@ -5860,113 +5902,99 @@ namespace Hecton8.World
                 vault.TryUnlockBuffer(bufferId, VegetationMemorySovereigntyConstants.OwnerSystemId);
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array)
+        private static unsafe void DisposeNativeArray<T>(ref NativeArray<T> array)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            Exception firstException = null;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (Exception exception)
+            {
+                firstException = exception;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (Exception exception)
+            {
+                if (firstException == null)
+                    firstException = exception;
+            }
+            finally
+            {
+                array = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
+        private static unsafe void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            Exception firstException = null;
+
             if (dependency.IsCompleted)
             {
                 DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
-                array.Dispose();
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+
+                try
+                {
+                    array.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
             }
             else
             {
                 JobHandle disposeHandle = array.Dispose(dependency);
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                if (!DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true))
+                    throw new InvalidOperationException("MapMagic vegetation native array disposal did not complete before sentinel unregister.");
+
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
             }
 
             array = default;
-        }
 
-        private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle dependency, string label = null)
-            where T : unmanaged
-        {
-            if (!list.IsCreated)
-                return;
-
-            if (!string.IsNullOrEmpty(label))
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
-
-            if (dependency.IsCompleted)
-            {
-                DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
-                list.Dispose();
-            }
-            else
-            {
-                JobHandle disposeHandle = list.Dispose(dependency);
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
-            }
-
-            list = default;
-        }
-
-        private static void RegisterTrackedNativeList<T>(NativeList<T> list, string label)
-            where T : unmanaged
-        {
-            int sentinelId = NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, NativeMemoryLifetime);
-            if (sentinelId <= 0)
-                throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label)
             where T : struct
         {
             int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-            if (sentinelId <= 0)
-                throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
-        }
-
-        private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
-            ref NativeParallelMultiHashMap<TKey, TValue> map,
-            JobHandle dependency,
-            string label = null)
-            where TKey : unmanaged
-            , IEquatable<TKey>
-            where TValue : unmanaged
-        {
-            if (!map.IsCreated)
-                return;
-
-            if (!string.IsNullOrEmpty(label))
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, label);
-
-            if (dependency.IsCompleted)
-            {
-                DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
-                map.Dispose();
-            }
-            else
-            {
-                JobHandle disposeHandle = map.Dispose(dependency);
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
-            }
-
-            map = default;
-        }
-
-        private static void RegisterTrackedNativeParallelMultiHashMap<TKey, TValue>(
-            NativeParallelMultiHashMap<TKey, TValue> map,
-            string label)
-            where TKey : unmanaged
-            , IEquatable<TKey>
-            where TValue : unmanaged
-        {
-            int sentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMap(map, NativeMemoryOwner, label, NativeMemoryLifetime);
             if (sentinelId <= 0)
                 throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
@@ -8212,8 +8240,12 @@ namespace Hecton8.World
 
         private void RefreshColdRuntimeDependencies()
         {
-            if (mapMagicBridge == null)
-                mapMagicBridge = GlobalRegistry.MapMagic;
+            if (mapMagicBridge == null || !mapMagicBridge.isActiveAndEnabled)
+            {
+                mapMagicBridge = null;
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+            }
+            SyncWaterSurfaceLevelFromTerrainBridge();
 
             if (_cachedLocalCamera == null)
                 TryGetComponent(out _cachedLocalCamera);
@@ -8350,6 +8382,39 @@ namespace Hecton8.World
             _weatherService = weatherService;
         }
 
+        private void SyncWaterSurfaceLevelFromTerrainBridge()
+        {
+            MapMagicBridge bridge = mapMagicBridge;
+            if (!WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge))
+                return;
+
+            mapMagicBridge = bridge;
+            float bridgedWaterLevel = bridge.WaterSurfaceLevel;
+            if (!TryResolveWaterLevel(bridgedWaterLevel, out float resolvedWaterLevel))
+                return;
+
+            waterLevel = resolvedWaterLevel;
+            float kelpDepthFloor = waterLevel - OrganicKelpMaxDepthBelowSurfaceMeters;
+            if (!math.isfinite(kelpMinHeight) || kelpMinHeight > waterLevel)
+                kelpMinHeight = kelpDepthFloor;
+            else
+                kelpMinHeight = math.clamp(kelpMinHeight, kelpDepthFloor, waterLevel);
+        }
+
+        private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)
+        {
+            if (math.isfinite(candidateWaterLevel) &&
+                math.abs(candidateWaterLevel) > 0.0001f &&
+                math.abs(candidateWaterLevel) <= 1000f)
+            {
+                waterLevel = candidateWaterLevel;
+                return true;
+            }
+
+            waterLevel = DefaultWaterLevel;
+            return false;
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_registeredHotSwapListener || !Application.isPlaying)
@@ -8378,8 +8443,12 @@ namespace Hecton8.World
                     CacheWeatherService(currentService as IWeatherService);
                     break;
                 case GlobalRegistryServiceSlot.MapMagicRuntime:
-                    if (mapMagicBridge == null || ReferenceEquals(mapMagicBridge, previousService))
-                        mapMagicBridge = currentService as MapMagicBridge;
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    if (ReferenceEquals(mapMagicBridge, previousService))
+                        mapMagicBridge = null;
+                    mapMagicBridge = currentService as MapMagicBridge;
+                    WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+                    SyncWaterSurfaceLevelFromTerrainBridge();
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     ClearPlayerRuntimeContext(previousService as IPlayerRuntimeContext);
@@ -8848,16 +8917,19 @@ namespace Hecton8.World
             if (state == null)
                 return;
 
-            state.HeightReadbackRepairRequested = false;
-            state.HeightReadbackRepairSampleCount = 0;
-            state.HeightReadbackDisposalDeferred = false;
             if (state.HeightReadbackData.IsCreated)
             {
                 H8Memory.Release(
                     ref state.HeightReadbackData,
                     VegetationMemorySovereigntyConstants.OwnerSystemId);
-                state.HeightReadbackData = default;
+                if (state.HeightReadbackData.IsCreated)
+                    return;
             }
+
+            state.HeightReadbackRepairRequested = false;
+            state.HeightReadbackRepairSampleCount = 0;
+            state.HeightReadbackDisposalDeferred = false;
+            state.HeightReadbackData = default;
         }
 
         private bool WriteTileSandMask(

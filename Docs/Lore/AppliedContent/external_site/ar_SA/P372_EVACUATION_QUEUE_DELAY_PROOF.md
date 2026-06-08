@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Evacuation Queue Delay Proof"
+title: "سجل تأخير طابور الإخلاء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Evacuation Queue Delay Proof
+# سجل تأخير طابور الإخلاء
 
-AR LOC HOLD: Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.
+يمكن لغرفة غارقة أن تحفظ التوقيت. ساعة الطابور المستعادة تعرض ترتيبا قاسيا: إنذار، مراجعة، تأخير، تجاوز فئة الختم، ماء. تختصر Deep Reach ذلك في إخلاء غير مكتمل أثناء فشل بنيوي مفاجئ. الغرفة لا توافق. سجلها يحتفظ بخانة شاهد فارغة ومراجعة حجر معلقة بعد اللحظة التي بقي فيها مسار الإنقاذ مفيدا جسديا. الادعاء ليس أن الجميع كان يمكن إنقاذهم. الأمر أدق وأسوأ: انتظر التفويض حتى تقلص عدد من يمكن إنقاذهم. عندما يجد اللاعب السجل، لا يبدو الإنقاذ وعدا بل نظام إذن.
 
 ## Scanner
 
-AR LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+ساعة طابور مستعادة. بقيت بوابة الإطلاق مقفلة بعد انتقال إنذارات الضغط من التوقع إلى الممر.
 
 ## Terminal
 
-AR LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. التأكيد اليدوي غائب. مراجعة الحجر معلقة. ضغط المسار تجاوز فئة الختم قبل حل التفويض.
 
 ## Audio
 
-AR LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+لم يفشلوا في إنقاذ الجميع. انتظروا حتى صار إنقاذ أي أحد أصعب.
 
 ## Field Note
 
-AR LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+ملاحظة مغير: بوابة مغلقة مع خانة معلقة ليست حادثا. إنها قرار ينتظر توقيعا.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/ar_SA. -->

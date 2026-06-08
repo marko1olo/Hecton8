@@ -25,6 +25,7 @@ namespace Hecton8.Physics.KCC.Editor
         private const BufferID ReplayResultsBuffer = BufferID.ShinobuInputReplayValidationResults;
         private const double InjectedAupDriftMeters = 0.000001d;
         private const float FuzzerEpsilonMeters = 0.0000005f;
+        private const float ProductionWaterSurfaceY = 14.02f;
 
         public static bool Run(bool injectAupDrift, out ReplayDeterminismValidation1626Summary summary)
         {
@@ -127,7 +128,7 @@ namespace Hecton8.Physics.KCC.Editor
             tuning.CapsuleHeight = 1.8f;
             tuning.SkinWidth = 0.04f;
             tuning.GlobalQualityWeight = 0.5f;
-            tuning.WaterSurfaceY = 0f;
+            tuning.WaterSurfaceY = ProductionWaterSurfaceY;
             tuning.MockInputFrequency = 0f;
             tuning.MockInputAmplitude = 0f;
             tuning.VisualSyncSharpness = 1f;

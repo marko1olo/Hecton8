@@ -51,11 +51,16 @@ NATIVE_COLLECTION_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE = re.compile(
 )
 NATIVE_ARRAY_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE = NATIVE_COLLECTION_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE
 LATEST_CREATED_FALLBACK_RE = re.compile(r"\bGlobalDataVault\s*\.\s*TryGetLatestCreated\s*\(")
+NON_NEWLINE_RE = re.compile(r"[^\r\n]")
 NATIVE_COLLECTION_DECLARATION_RE = re.compile(
     r"^\s*(?:\[[^\]]+\]\s*)*"
     r"(?:(?:public|private|protected|internal|static|readonly|volatile|unsafe|new)\s+)+"
     r"(?P<collection>NativeArray|NativeList|Native(?:Parallel)?HashMap)\s*<[^>;]+>\s+"
     r"(?P<name>[A-Za-z_]\w*)\s*(?:;|,|=\s*(?!>))"
+)
+NATIVE_COLLECTION_DECLARATION_SCAN_RE = re.compile(
+    NATIVE_COLLECTION_DECLARATION_RE.pattern,
+    re.MULTILINE,
 )
 NATIVE_ARRAY_DECLARATION_RE = NATIVE_COLLECTION_DECLARATION_RE
 TYPE_DECLARATION_RE = re.compile(
@@ -79,10 +84,25 @@ NATIVE_COLLECTION_TOKENS = (
     "NativeHashMap",
     "NativeParallelHashMap",
 )
+DIRECTORY_NATIVE_LIFETIME_HELPER_FILE_TOKENS = (
+    "bridge",
+    "helper",
+    "helpers",
+    "lifetime",
+    "memory",
+    "native",
+    "util",
+    "utilities",
+    "utility",
+)
+DIRECTORY_NATIVE_LIFETIME_HELPER_TYPE_RE = re.compile(
+    r"\b(?:static\s+)?(?:class|struct)\s+"
+    r"[A-Za-z_]\w*(?:Bridge|Helper|Helpers|Lifetime|Memory|Native|Util|Utilities|Utility)[A-Za-z_]\w*"
+)
 SENTINEL_REGISTER_METHODS_BY_COLLECTION = {
-    "NativeArray": ("RegisterNativeArray",),
+    "NativeArray": ("RegisterNativeArray", "RegisterNativeArrayInstance"),
     "NativeList": ("RegisterNativeList", "RegisterNativeListInstance"),
-    "NativeHashMap": ("RegisterNativeHashMap",),
+    "NativeHashMap": ("RegisterNativeHashMap", "RegisterNativeHashMapInstance"),
     "NativeParallelHashMap": (
         "RegisterNativeParallelHashMap",
         "RegisterNativeParallelHashMapInstance",
@@ -206,6 +226,16 @@ class TypeScope:
     burst: bool
 
 
+@dataclass(frozen=True)
+class CSharpSourceFile:
+    path: Path
+    relative_scan_path: Path
+    source: str
+    sanitized_source: str
+    sanitized_lines: tuple[str, ...]
+    original_lines: tuple[str, ...]
+
+
 def normalize_path(path: Path, repo_root: Path = REPO_ROOT) -> str:
     try:
         relative = path.resolve().relative_to(repo_root.resolve())
@@ -251,6 +281,54 @@ def should_skip(path: Path) -> bool:
     return any(part in SKIP_DIR_NAMES for part in path.parts)
 
 
+def source_needs_sanitized_snapshot(source: str) -> bool:
+    if (
+        "H8Memory" in source
+        or "NativeMemorySentinel" in source
+        or "NativeMemoryTrackingBridge" in source
+        or "TryGetLatestCreated" in source
+    ):
+        return True
+    if not contains_native_collection_token(source):
+        return False
+    return (
+        NATIVE_COLLECTION_CONSTRUCTOR_RE.search(source) is not None
+        or NATIVE_COLLECTION_DECLARATION_SCAN_RE.search(source) is not None
+    )
+
+
+def read_csharp_source_files(source_root: Path) -> list[CSharpSourceFile]:
+    if not source_root.exists():
+        raise FileNotFoundError(f"source root not found: {source_root}")
+
+    source_files: list[CSharpSourceFile] = []
+    for path in sorted(source_root.rglob("*.cs")):
+        relative_scan_path = path.relative_to(source_root)
+        if should_skip(relative_scan_path):
+            continue
+
+        try:
+            source = path.read_text(encoding="utf-8", errors="ignore")
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise OSError(f"failed to read {path}") from exc
+
+        sanitized_source = sanitize_csharp_source(source) if source_needs_sanitized_snapshot(source) else ""
+        source_files.append(
+            CSharpSourceFile(
+                path,
+                relative_scan_path,
+                source,
+                sanitized_source,
+                tuple(sanitized_source.splitlines()) if sanitized_source else (),
+                tuple(source.splitlines()) if sanitized_source else (),
+            )
+        )
+
+    return source_files
+
+
 def contains_native_collection_token(source: str) -> bool:
     return any(token in source for token in NATIVE_COLLECTION_TOKENS)
 
@@ -263,30 +341,47 @@ def contains_latest_created_fallback_token(source: str) -> bool:
     return "TryGetLatestCreated" in source
 
 
+def source_file_may_provide_directory_native_lifetime_helpers(
+    source_file: CSharpSourceFile,
+    source: str,
+) -> bool:
+    stem = source_file.path.stem.lower()
+    if any(token in stem for token in DIRECTORY_NATIVE_LIFETIME_HELPER_FILE_TOKENS):
+        return True
+
+    if any(
+        token in source
+        for token in (
+            "AllocateTrackedNative",
+            "DisposeTrackedNative",
+            "RegisterTrackedNative",
+            "UnregisterTrackedNative",
+        )
+    ):
+        return True
+
+    return DIRECTORY_NATIVE_LIFETIME_HELPER_TYPE_RE.search(source) is not None
+
+
 def scan_source_tree(
     source_root: Path,
     repo_root: Path = REPO_ROOT,
     allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_PATH_SUFFIXES,
 ) -> list[FileFinding]:
-    if not source_root.exists():
-        raise FileNotFoundError(f"source root not found: {source_root}")
-
     findings: list[FileFinding] = []
-    for path in sorted(source_root.rglob("*.cs")):
-        relative_scan_path = path.relative_to(source_root)
-        if should_skip(relative_scan_path):
-            continue
-
+    for source_file in read_csharp_source_files(source_root):
+        path = source_file.path
+        source = source_file.source
         line_numbers: list[int] = []
         allocator_kinds: list[str] = []
-        try:
-            source = path.read_text(encoding="utf-8", errors="ignore")
-        except OSError as exc:
-            raise OSError(f"failed to read {path}") from exc
         if not contains_native_collection_token(source):
             continue
+        if NATIVE_COLLECTION_CONSTRUCTOR_RE.search(source) is None:
+            continue
 
-        sanitized_lines = sanitize_csharp_source(source).splitlines()
+        sanitized_lines = source_file.sanitized_lines
+        if not sanitized_lines:
+            sanitized_lines = tuple(sanitize_csharp_source(source).splitlines())
         relative_path = normalize_path(path, repo_root)
 
         for line_index, line in enumerate(sanitized_lines):
@@ -329,94 +424,85 @@ def strip_line_comment(line: str) -> str:
 def sanitize_csharp_source(source: str) -> str:
     result: list[str] = []
     index = 0
-    in_block_comment = False
-    in_string = False
-    in_char = False
-    in_verbatim = False
-    while index < len(source):
-        char = source[index]
-        nxt = source[index + 1] if index + 1 < len(source) else ""
+    length = len(source)
 
-        if in_block_comment:
-            if char == "*" and nxt == "/":
-                result.extend((" ", " "))
-                index += 2
-                in_block_comment = False
-                continue
-            result.append("\n" if char == "\n" else " ")
-            index += 1
-            continue
+    def append_masked(segment: str) -> None:
+        if segment:
+            result.append(NON_NEWLINE_RE.sub(" ", segment))
 
-        if in_string:
-            if in_verbatim:
-                if char == '"' and nxt == '"':
-                    result.extend((" ", " "))
-                    index += 2
-                    continue
-                if char == '"':
-                    result.append(" ")
-                    index += 1
-                    in_string = False
-                    in_verbatim = False
-                    continue
-                result.append("\n" if char == "\n" else " ")
-                index += 1
-                continue
-            if char == "\\" and nxt:
-                result.extend((" ", " "))
-                index += 2
+    def find_standard_literal_end(start: int, quote: str) -> int:
+        cursor = start + 1
+        escaped = False
+        while cursor < length:
+            char = source[cursor]
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                return cursor + 1
+            cursor += 1
+
+        return length
+
+    def find_verbatim_string_end(start: int) -> int:
+        cursor = start + 2
+        while cursor < length:
+            char = source[cursor]
+            nxt = source[cursor + 1] if cursor + 1 < length else ""
+            if char == '"' and nxt == '"':
+                cursor += 2
                 continue
             if char == '"':
-                result.append(" ")
-                index += 1
-                in_string = False
-                continue
-            result.append("\n" if char == "\n" else " ")
-            index += 1
-            continue
+                return cursor + 1
+            cursor += 1
 
-        if in_char:
-            if char == "\\" and nxt:
-                result.extend((" ", " "))
-                index += 2
-                continue
-            if char == "'":
-                result.append(" ")
-                index += 1
-                in_char = False
-                continue
-            result.append("\n" if char == "\n" else " ")
-            index += 1
-            continue
+        return length
+
+    while index < length:
+        next_index = length
+        for token in ("/", "\"", "'", "@"):
+            token_index = source.find(token, index)
+            if token_index != -1 and token_index < next_index:
+                next_index = token_index
+
+        if next_index > index:
+            result.append(source[index:next_index])
+            index = next_index
+            if index >= length:
+                break
+
+        char = source[index]
+        nxt = source[index + 1] if index + 1 < length else ""
 
         if char == "/" and nxt == "/":
-            result.extend((" ", " "))
-            index += 2
-            while index < len(source) and source[index] != "\n":
-                result.append(" ")
-                index += 1
+            end = source.find("\n", index + 2)
+            if end == -1:
+                append_masked(source[index:])
+                break
+            append_masked(source[index:end])
+            index = end
             continue
         if char == "/" and nxt == "*":
-            result.extend((" ", " "))
-            index += 2
-            in_block_comment = True
+            end = source.find("*/", index + 2)
+            end = length if end == -1 else end + 2
+            append_masked(source[index:end])
+            index = end
             continue
         if char == "@" and nxt == '"':
-            result.extend((" ", " "))
-            index += 2
-            in_string = True
-            in_verbatim = True
+            end = find_verbatim_string_end(index)
+            append_masked(source[index:end])
+            index = end
             continue
         if char == '"':
-            result.append(" ")
-            index += 1
-            in_string = True
-            in_verbatim = False
+            end = find_standard_literal_end(index, '"')
+            append_masked(source[index:end])
+            index = end
             continue
         if char == "'":
-            result.append(" ")
-            index += 1
-            in_char = True
+            end = find_standard_literal_end(index, "'")
+            append_masked(source[index:end])
+            index = end
             continue
 
         result.append(char)
@@ -626,6 +712,24 @@ def csharp_blocks_containing_line(lines: Sequence[str], line_index: int) -> list
     return blocks
 
 
+def find_matching_brace(text: str, open_index: int) -> int:
+    if open_index < 0 or open_index >= len(text) or text[open_index] != "{":
+        return -1
+
+    depth = 0
+    for index in range(open_index, len(text)):
+        char = text[index]
+        if char == "{":
+            depth += 1
+            continue
+        if char == "}":
+            depth -= 1
+            if depth == 0:
+                return index
+
+    return -1
+
+
 def csharp_block_header(lines: Sequence[str], start_index: int, max_lines: int = 6) -> str:
     return "\n".join(lines[max(0, start_index - max_lines) : start_index + 1])
 
@@ -686,6 +790,36 @@ def csharp_method_bounds_for_line(lines: Sequence[str], line_index: int) -> tupl
         return max(candidates, key=lambda item: item[0])
 
     return max(0, line_index - 8), min(len(lines) - 1, line_index + 16)
+
+
+def csharp_method_signature_header_for_line(lines: Sequence[str], line_index: int) -> str:
+    start, _ = csharp_method_bounds_for_line(lines, line_index)
+    header = csharp_block_header(lines, start)
+    if is_method_like_block_header(header) and TYPE_DECLARATION_RE.search(header) is None:
+        return header
+
+    search_start = max(0, line_index - 64)
+    for brace_line in range(line_index, search_start - 1, -1):
+        if "{" not in lines[brace_line]:
+            continue
+
+        signature_lines: list[str] = []
+        for header_line in range(brace_line, search_start - 1, -1):
+            stripped = lines[header_line].strip()
+            if not stripped and not signature_lines:
+                continue
+            if signature_lines and stripped in {"}", "};"}:
+                break
+
+            signature_lines.insert(0, lines[header_line])
+            candidate = "\n".join(signature_lines)
+            if is_method_like_block_header(candidate):
+                return candidate
+
+            if len(signature_lines) > 32:
+                break
+
+    return header
 
 
 def register_native_array_helper_names(method_text: str, variable_name: str) -> list[str]:
@@ -768,17 +902,27 @@ def csharp_reference_pattern(identifier: str) -> str:
     return r"(?:[A-Za-z_]\w*\s*\.\s*)*" + re.escape(parts[0]) + r"\b"
 
 
+def csharp_helper_call_pattern() -> str:
+    return (
+        r"\b(?:[A-Za-z_]\w*\s*\.\s*)*"
+        r"(?P<helper>[A-Za-z_]\w*)\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\("
+    )
+
+
 def csharp_parameter_name(parameter: str) -> str:
     cleaned = parameter.split("=", 1)[0].strip()
     identifiers = re.findall(r"[A-Za-z_]\w*", cleaned)
     return identifiers[-1] if identifiers else ""
 
 
+@lru_cache(maxsize=8192)
 def register_native_collection_helper_calls(
     method_text: str,
     variable_name: str,
     collection_type: str,
-) -> list[tuple[str, int]]:
+) -> tuple[tuple[str, int], ...]:
     helper_pattern = re.compile(helper_name_pattern_for_collection(collection_type))
     calls: list[tuple[str, int]] = []
     for match in helper_pattern.finditer(method_text):
@@ -793,22 +937,22 @@ def register_native_collection_helper_calls(
                 calls.append((match.group("helper"), argument_index))
                 break
 
-    return calls
+    return tuple(calls)
 
 
 def register_native_collection_helper_names(
     method_text: str,
     variable_name: str,
     collection_type: str,
-) -> list[str]:
-    return [
+) -> tuple[str, ...]:
+    return tuple(
         helper_name
         for helper_name, _ in register_native_collection_helper_calls(
             method_text,
             variable_name,
             collection_type,
         )
-    ]
+    )
 
 
 def source_has_sentinel_register_helper(
@@ -868,6 +1012,59 @@ def source_has_reflective_sentinel_register_for_parameter(
     return False
 
 
+def source_has_reflective_sentinel_unregister_for_parameter(
+    method_text: str,
+    parameter_name: str,
+    collection_type: str,
+) -> bool:
+    if "NativeMemorySentinel" not in method_text or "GetMethod" not in method_text or "Invoke" not in method_text:
+        return False
+
+    unregister_methods = sentinel_unregister_methods_for_collection(collection_type)
+    if not unregister_methods:
+        return False
+
+    if not any(method_name in method_text for method_name in unregister_methods):
+        return False
+
+    for object_array_match in re.finditer(r"\bnew\s+object\s*\[\]\s*\{(?P<arguments>[^}]*)\}", method_text, re.DOTALL):
+        arguments = split_csharp_arguments(object_array_match.group("arguments"))
+        if arguments and csharp_argument_identifier(arguments[0]) == parameter_name:
+            return True
+
+    return False
+
+
+def source_has_reflective_sentinel_lifetime_tokens(source: str) -> bool:
+    return (
+        "NativeMemorySentinel" in source
+        and "GetMethod" in source
+        and "Invoke" in source
+        and "RegisterNative" in source
+        and "UnregisterNative" in source
+    )
+
+
+def source_has_h8memory_lifetime_tokens(source: str) -> bool:
+    return "H8Memory" in source and "Allocate" in source and "Release" in source
+
+
+def source_has_sentinel_registration_tokens(source: str) -> bool:
+    return "NativeMemorySentinel" in source and "Register" in source
+
+
+def source_has_sentinel_lifetime_tokens(source: str) -> bool:
+    return source_has_sentinel_registration_tokens(source) and "Unregister" in source
+
+
+def source_has_native_tracking_bridge_register_bytes_tokens(source: str) -> bool:
+    return "NativeMemoryTrackingBridge" in source and "RegisterBytes" in source
+
+
+def source_has_native_tracking_bridge_lifetime_tokens(source: str) -> bool:
+    return source_has_native_tracking_bridge_register_bytes_tokens(source) and "Unregister" in source
+
+
 @lru_cache(maxsize=4096)
 def source_method_definitions_named(
     sanitized_source: str,
@@ -882,7 +1079,6 @@ def source_method_definitions_named(
         + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
         + r"\s*\("
     )
-    lines = sanitized_source.splitlines()
     definitions: list[tuple[str, list[str]]] = []
     for method_match in method_pattern.finditer(sanitized_source):
         open_paren = sanitized_source.find("(", method_match.end() - 1)
@@ -894,13 +1090,15 @@ def source_method_definitions_named(
         if next_semicolon >= 0 and next_semicolon < next_brace:
             continue
 
-        line_index = sanitized_source[:next_brace].count("\n")
-        start, end = csharp_method_bounds_for_line(lines, line_index)
+        close_brace = find_matching_brace(sanitized_source, next_brace)
+        if close_brace < 0:
+            continue
+
         parameter_names = [
             csharp_parameter_name(parameter)
             for parameter in split_csharp_arguments(sanitized_source[open_paren + 1 : close_paren])
         ]
-        definitions.append(("\n".join(lines[start : end + 1]), parameter_names))
+        definitions.append((sanitized_source[method_match.start() : close_brace + 1], parameter_names))
 
     return definitions
 
@@ -947,6 +1145,8 @@ def source_has_sentinel_register_helper_argument(
         )
         if direct_register_pattern.search(helper_text):
             return True
+        if source_has_native_tracking_register_bytes_for_parameter(helper_text, parameter_name):
+            return True
 
         if raw_source is not None:
             for raw_helper_text, raw_parameter_names in source_method_definitions_named(raw_source, helper_name):
@@ -962,6 +1162,8 @@ def source_has_sentinel_register_helper_argument(
                     raw_parameter_name,
                     collection_type,
                 ):
+                    return True
+                if source_has_native_tracking_register_bytes_for_parameter(raw_helper_text, raw_parameter_name):
                     return True
 
         for nested_helper_name, nested_argument_index in register_native_collection_helper_calls(
@@ -983,12 +1185,13 @@ def source_has_sentinel_register_helper_argument(
 
 
 
-def bulk_sentinel_registration_method_names(method_text: str) -> list[str]:
+@lru_cache(maxsize=8192)
+def bulk_sentinel_registration_method_names(method_text: str) -> tuple[str, ...]:
     method_pattern = re.compile(
         r"\b(?:[A-Za-z_]\w*\s*\.\s*)?"
         r"(?P<method>Register[A-Za-z0-9_]*)\s*\("
     )
-    return [match.group("method") for match in method_pattern.finditer(method_text)]
+    return tuple(match.group("method") for match in method_pattern.finditer(method_text))
 
 
 def source_has_bulk_sentinel_registration_for_field(
@@ -1050,16 +1253,16 @@ def source_has_bulk_sentinel_registration_for_field(
     return False
 
 
-def native_lifetime_helper_calls(method_text: str, variable_name: str) -> list[tuple[str, int]]:
-    helper_pattern = re.compile(
-        r"\b(?P<helper>[A-Za-z_]\w*)\s*"
-        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
-        + r"\s*\("
-    )
-    calls: list[tuple[str, int]] = []
+@lru_cache(maxsize=2048)
+def native_lifetime_helper_call_entries(method_text: str) -> tuple[tuple[str, int, str], ...]:
+    if not any(token in method_text for token in ("Dispose", "Release", "Unregister")):
+        return ()
+
+    helper_pattern = re.compile(csharp_helper_call_pattern())
+    calls: list[tuple[str, int, str]] = []
     for match in helper_pattern.finditer(method_text):
         helper_name = match.group("helper")
-        if "Dispose" not in helper_name and "Release" not in helper_name:
+        if not any(token in helper_name for token in ("Dispose", "Release", "Unregister")):
             continue
 
         open_index = match.end() - 1
@@ -1069,24 +1272,33 @@ def native_lifetime_helper_calls(method_text: str, variable_name: str) -> list[t
 
         arguments = split_csharp_arguments(method_text[open_index + 1 : close_index])
         for argument_index, argument in enumerate(arguments):
-            if csharp_argument_identifier(argument) == variable_name:
-                calls.append((helper_name, argument_index))
-                break
+            argument_name = csharp_argument_identifier(argument)
+            if argument_name:
+                calls.append((helper_name, argument_index, argument_name))
 
-    return calls
+    return tuple(calls)
 
 
-def native_lifetime_helper_label_calls(method_text: str, field_name: str) -> list[tuple[str, int, int]]:
-    helper_pattern = re.compile(
-        r"\b(?P<helper>[A-Za-z_]\w*)\s*"
-        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
-        + r"\s*\("
+@lru_cache(maxsize=8192)
+def native_lifetime_helper_calls(method_text: str, variable_name: str) -> tuple[tuple[str, int], ...]:
+    if variable_name not in method_text:
+        return ()
+
+    return tuple(
+        (helper_name, argument_index)
+        for helper_name, argument_index, argument_name in native_lifetime_helper_call_entries(method_text)
+        if argument_name == variable_name
     )
+
+
+@lru_cache(maxsize=8192)
+def native_lifetime_helper_label_calls(method_text: str, field_name: str) -> tuple[tuple[str, int, int], ...]:
+    helper_pattern = re.compile(csharp_helper_call_pattern())
     calls: list[tuple[str, int, int]] = []
     label_argument_pattern = re.compile(r"\bnameof\s*\(\s*" + re.escape(field_name) + r"\s*\)")
     for match in helper_pattern.finditer(method_text):
         helper_name = match.group("helper")
-        if "Dispose" not in helper_name and "Release" not in helper_name:
+        if not any(token in helper_name for token in ("Dispose", "Release", "Unregister")):
             continue
 
         open_index = match.end() - 1
@@ -1106,16 +1318,16 @@ def native_lifetime_helper_label_calls(method_text: str, field_name: str) -> lis
         if field_argument_index >= 0 and label_argument_index >= 0:
             calls.append((helper_name, field_argument_index, label_argument_index))
 
-    return calls
+    return tuple(calls)
 
 
-def native_allocation_helper_calls(method_text: str, variable_name: str) -> list[tuple[str, int]]:
-    helper_pattern = re.compile(
-        r"\b(?P<helper>[A-Za-z_]\w*)\s*"
-        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
-        + r"\s*\("
-    )
-    calls: list[tuple[str, int]] = []
+@lru_cache(maxsize=2048)
+def native_allocation_helper_call_entries(method_text: str) -> tuple[tuple[str, int, str], ...]:
+    if not any(token in method_text for token in ("Acquire", "Allocate", "Claim", "Create", "Ensure")):
+        return ()
+
+    helper_pattern = re.compile(csharp_helper_call_pattern())
+    calls: list[tuple[str, int, str]] = []
     for match in helper_pattern.finditer(method_text):
         helper_name = match.group("helper")
         if not any(token in helper_name for token in ("Acquire", "Allocate", "Claim", "Create", "Ensure")):
@@ -1128,11 +1340,23 @@ def native_allocation_helper_calls(method_text: str, variable_name: str) -> list
 
         arguments = split_csharp_arguments(method_text[open_index + 1 : close_index])
         for argument_index, argument in enumerate(arguments):
-            if csharp_argument_identifier(argument) == variable_name:
-                calls.append((helper_name, argument_index))
-                break
+            argument_name = csharp_argument_identifier(argument)
+            if argument_name:
+                calls.append((helper_name, argument_index, argument_name))
 
-    return calls
+    return tuple(calls)
+
+
+@lru_cache(maxsize=8192)
+def native_allocation_helper_calls(method_text: str, variable_name: str) -> tuple[tuple[str, int], ...]:
+    if variable_name not in method_text:
+        return ()
+
+    return tuple(
+        (helper_name, argument_index)
+        for helper_name, argument_index, argument_name in native_allocation_helper_call_entries(method_text)
+        if argument_name == variable_name
+    )
 
 
 def source_has_h8memory_allocate_helper_argument(
@@ -1232,25 +1456,58 @@ def source_has_h8memory_allocate_factory_helper(sanitized_source: str, helper_na
     return False
 
 
+@lru_cache(maxsize=1024)
+def h8memory_direct_lifetime_name_sets(sanitized_source: str) -> tuple[frozenset[str], frozenset[str]]:
+    owner = h8memory_owner_pattern()
+    allocated: set[str] = set()
+    released: set[str] = set()
+    allocate_call_pattern = re.compile(r"\b" + owner + r"\s*\.\s*Allocate\s*<")
+    release_call_pattern = re.compile(r"\b" + owner + r"\s*\.\s*Release\s*\(")
+    assignment_lhs_pattern = re.compile(
+        r"(?P<name>(?:[A-Za-z_]\w*\s*\.\s*)*[A-Za-z_]\w*)\s*=\s*$"
+    )
+
+    for match in allocate_call_pattern.finditer(sanitized_source):
+        statement_start = max(
+            sanitized_source.rfind(";", 0, match.start()),
+            sanitized_source.rfind("{", 0, match.start()),
+            sanitized_source.rfind("}", 0, match.start()),
+        )
+        prefix = sanitized_source[statement_start + 1 : match.start()]
+        assignment_match = assignment_lhs_pattern.search(prefix)
+        if assignment_match:
+            allocated.add(csharp_argument_identifier(assignment_match.group("name")))
+
+    for match in release_call_pattern.finditer(sanitized_source):
+        open_index = match.end() - 1
+        close_index = find_matching_parenthesis(sanitized_source, open_index)
+        if close_index < 0:
+            continue
+
+        arguments = split_csharp_arguments(sanitized_source[open_index + 1 : close_index])
+        if arguments:
+            released.add(csharp_argument_identifier(arguments[0]))
+
+    return frozenset(allocated), frozenset(released)
+
+
 def source_has_h8memory_tracked_field_lifetime(
     sanitized_source: str,
     field_name: str,
 ) -> bool:
-    if "H8Memory.Allocate" not in sanitized_source or "H8Memory.Release" not in sanitized_source:
+    if not source_has_h8memory_lifetime_tokens(sanitized_source):
         return False
 
+    direct_allocated_names, direct_released_names = h8memory_direct_lifetime_name_sets(sanitized_source)
+    if field_name in direct_allocated_names and field_name in direct_released_names:
+        return True
+
     field_pattern = csharp_reference_pattern(field_name)
-    allocate_pattern = re.compile(
-        field_pattern
-        + r"\s*=\s*"
-        + h8memory_owner_pattern()
-        + r"\s*\.\s*Allocate\s*<"
-    )
-    has_allocate = allocate_pattern.search(sanitized_source) is not None
+    has_allocate = field_name in direct_allocated_names
     if not has_allocate:
         factory_assignment_pattern = re.compile(
             field_pattern
-            + r"\s*=\s*(?P<helper>[A-Za-z_]\w*)\s*"
+            + r"\s*=\s*(?:[A-Za-z_]\w*\s*\.\s*)*(?P<helper>[A-Za-z_]\w*)\s*"
             + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
             + r"\s*\("
         )
@@ -1282,10 +1539,7 @@ def source_has_h8memory_tracked_field_lifetime(
     if not has_allocate:
         return False
 
-    direct_release_pattern = re.compile(
-        r"\b" + h8memory_owner_pattern() + r"\s*\.\s*Release\s*\(\s*ref\s+" + field_pattern
-    )
-    if direct_release_pattern.search(sanitized_source):
+    if field_name in direct_released_names:
         return True
 
     for helper_name, argument_index in native_lifetime_helper_calls(sanitized_source, field_name):
@@ -1303,7 +1557,7 @@ def source_has_h8memory_constructor_alias_field_lifetime(
     sanitized_source: str,
     field_name: str,
 ) -> bool:
-    if field_name not in sanitized_source or field_name + " =" not in sanitized_source:
+    if field_name not in sanitized_source or "=" not in sanitized_source:
         return False
 
     assignment_pattern = re.compile(
@@ -1351,7 +1605,7 @@ def source_field_alias_is_h8memory_released(
     field_name: str,
     preferred_local_name: str,
 ) -> bool:
-    if "." + field_name not in sanitized_source:
+    if field_name not in sanitized_source:
         return False
 
     alias_pattern = re.compile(
@@ -1386,8 +1640,19 @@ def source_has_sentinel_registered_field_lifetime(
     sanitized_source: str,
     field_name: str,
     collection_type: str,
+    raw_source: str | None = None,
 ) -> bool:
-    if "NativeMemorySentinel.Register" not in sanitized_source:
+    raw_lookup_source = raw_source or sanitized_source
+    if (
+        not source_has_sentinel_registration_tokens(sanitized_source)
+        and not source_has_native_tracking_bridge_register_bytes_tokens(sanitized_source)
+        and not (
+            "NativeMemorySentinel" in raw_lookup_source
+            and "GetMethod" in raw_lookup_source
+            and "Invoke" in raw_lookup_source
+            and any(method_name in raw_lookup_source for method_name in sentinel_register_methods_for_collection(collection_type))
+        )
+    ):
         return False
 
     field_pattern = csharp_reference_pattern(field_name)
@@ -1399,25 +1664,35 @@ def source_has_sentinel_registered_field_lifetime(
     )
     has_registered_allocation = allocate_pattern.search(sanitized_source) is not None
     factory_registered_assignment = False
+    alias_registered_assignment = False
     if not has_registered_allocation:
         factory_registered_assignment = source_has_sentinel_registered_factory_assignment_for_field(
             sanitized_source,
             field_name,
             collection_type,
+            raw_source,
         )
         has_registered_allocation = factory_registered_assignment
 
     if not has_registered_allocation:
+        alias_registered_assignment = source_has_sentinel_registered_alias_assignment_for_field(
+            sanitized_source,
+            field_name,
+            collection_type,
+        )
+        has_registered_allocation = alias_registered_assignment
+
+    if not has_registered_allocation:
         return False
 
-    if not source_has_sentinel_registration_for_field(sanitized_source, field_name, collection_type):
-        if not factory_registered_assignment:
+    if not source_has_sentinel_registration_for_field(sanitized_source, field_name, collection_type, raw_source):
+        if not factory_registered_assignment and not alias_registered_assignment:
             return False
 
-    return source_has_sentinel_unregistration_for_field(sanitized_source, field_name, collection_type)
+    return source_has_sentinel_unregistration_for_field(sanitized_source, field_name, collection_type, raw_source)
 
 
-def source_has_sentinel_registered_factory_assignment_for_field(
+def source_has_sentinel_registered_alias_assignment_for_field(
     sanitized_source: str,
     field_name: str,
     collection_type: str,
@@ -1425,28 +1700,265 @@ def source_has_sentinel_registered_factory_assignment_for_field(
     if field_name not in sanitized_source:
         return False
 
+    assignment_pattern = re.compile(
+        csharp_reference_pattern(field_name)
+        + r"\s*=\s*(?P<local>[A-Za-z_]\w*)\s*;"
+    )
+    for assignment_match in assignment_pattern.finditer(sanitized_source):
+        local_name = assignment_match.group("local")
+        if source_local_is_sentinel_registered(sanitized_source, local_name, collection_type):
+            return True
+
+    return False
+
+
+def source_has_native_tracking_register_bytes_for_parameter(method_text: str, parameter_name: str) -> bool:
+    if not source_has_native_tracking_bridge_register_bytes_tokens(method_text):
+        return False
+
+    register_bytes_pattern = re.compile(
+        r"\b(?:Hecton8\s*\.\s*Core\s*\.\s*Contracts\s*\.)?"
+        r"NativeMemoryTrackingBridge\s*\.\s*RegisterBytes(?:Instance)?\s*\(",
+    )
+    return (
+        register_bytes_pattern.search(method_text) is not None
+        and re.search(csharp_reference_pattern(parameter_name), method_text) is not None
+    )
+
+
+def source_has_native_tracking_bridge_sidecar_field_lifetime(
+    sanitized_source: str,
+    field_name: str,
+    collection_type: str,
+) -> bool:
+    if (
+        not source_has_native_tracking_bridge_lifetime_tokens(sanitized_source)
+        or field_name not in sanitized_source
+    ):
+        return False
+
+    if not source_has_native_collection_assignment_for_field(
+        sanitized_source,
+        field_name,
+        collection_type,
+    ):
+        return False
+
+    if not source_has_native_tracking_bridge_sidecar_registration_for_field(
+        sanitized_source,
+        field_name,
+        collection_type,
+    ):
+        return False
+
+    return source_has_native_tracking_bridge_sidecar_unregistration_for_field(
+        sanitized_source,
+        field_name,
+    )
+
+
+def source_has_native_collection_assignment_for_field(
+    sanitized_source: str,
+    field_name: str,
+    collection_type: str,
+) -> bool:
+    field_pattern = csharp_reference_pattern(field_name)
+    direct_assignment_pattern = re.compile(
+        field_pattern
+        + r"\s*=\s*new\s+"
+        + re.escape(collection_type)
+        + r"\s*<"
+    )
+    if direct_assignment_pattern.search(sanitized_source):
+        return True
+
+    return source_has_sentinel_registered_factory_assignment_for_field(
+        sanitized_source,
+        field_name,
+        collection_type,
+    )
+
+
+def source_has_native_tracking_bridge_sidecar_registration_for_field(
+    sanitized_source: str,
+    field_name: str,
+    collection_type: str,
+) -> bool:
+    sentinel_field_name = field_name + "SentinelId"
+    if sentinel_field_name not in sanitized_source:
+        return False
+
+    has_registration_call = False
+    for helper_name, argument_index in register_native_collection_helper_calls(
+        sanitized_source,
+        field_name,
+        collection_type,
+    ):
+        if source_has_sentinel_register_helper_argument(
+            sanitized_source,
+            helper_name,
+            argument_index,
+            collection_type,
+        ):
+            has_registration_call = True
+            break
+
+    if not has_registration_call:
+        for bulk_method_name in bulk_sentinel_registration_method_names(sanitized_source):
+            if source_has_bulk_sentinel_registration_for_field(
+                sanitized_source,
+                bulk_method_name,
+                field_name,
+                collection_type,
+            ):
+                has_registration_call = True
+                break
+
+    if not has_registration_call:
+        return False
+
+    assignment_pattern = re.compile(
+        csharp_reference_pattern(sentinel_field_name)
+        + r"\s*=\s*(?P<body>.*?);",
+        re.DOTALL,
+    )
+    for match in assignment_pattern.finditer(sanitized_source):
+        body = match.group("body")
+        if "Register" in body and re.search(csharp_reference_pattern(field_name), body):
+            return True
+
+    return False
+
+
+def source_has_native_tracking_bridge_sidecar_unregistration_for_field(
+    sanitized_source: str,
+    field_name: str,
+) -> bool:
+    sentinel_field_name = field_name + "SentinelId"
+    if sentinel_field_name not in sanitized_source:
+        return False
+
+    direct_unregister_pattern = re.compile(
+        r"\b(?:Hecton8\s*\.\s*Core\s*\.\s*Contracts\s*\.)?"
+        r"NativeMemoryTrackingBridge\s*\.\s*Unregister\s*\(\s*"
+        + csharp_reference_pattern(sentinel_field_name)
+    )
+    if direct_unregister_pattern.search(sanitized_source):
+        return True
+
+    for helper_name, argument_index in native_lifetime_helper_calls(sanitized_source, sentinel_field_name):
+        if source_has_native_tracking_bridge_unregister_helper_argument(
+            sanitized_source,
+            helper_name,
+            argument_index,
+        ):
+            return True
+
+    return False
+
+
+def source_has_native_tracking_bridge_unregister_helper_argument(
+    sanitized_source: str,
+    helper_name: str,
+    argument_index: int,
+    visited_helper_keys: set[tuple[str, int]] | None = None,
+) -> bool:
+    if visited_helper_keys is None:
+        visited_helper_keys = set()
+    helper_key = (helper_name, argument_index)
+    if helper_key in visited_helper_keys:
+        return False
+    visited_helper_keys.add(helper_key)
+
+    for helper_text, parameter_names in source_method_definitions_named(sanitized_source, helper_name):
+        if argument_index >= len(parameter_names):
+            continue
+
+        parameter_name = parameter_names[argument_index]
+        if not parameter_name:
+            continue
+
+        direct_unregister_pattern = re.compile(
+            r"\b(?:Hecton8\s*\.\s*Core\s*\.\s*Contracts\s*\.)?"
+            r"NativeMemoryTrackingBridge\s*\.\s*Unregister\s*\(\s*"
+            + csharp_reference_pattern(parameter_name)
+        )
+        if direct_unregister_pattern.search(helper_text):
+            return True
+
+        for nested_helper_name, nested_argument_index in native_lifetime_helper_calls(helper_text, parameter_name):
+            if source_has_native_tracking_bridge_unregister_helper_argument(
+                sanitized_source,
+                nested_helper_name,
+                nested_argument_index,
+                visited_helper_keys,
+            ):
+                return True
+
+    return False
+
+
+def source_local_is_sentinel_registered(
+    sanitized_source: str,
+    local_name: str,
+    collection_type: str,
+) -> bool:
+    if local_name not in sanitized_source:
+        return False
+
+    register_methods = sentinel_register_methods_for_collection(collection_type)
+    if not register_methods:
+        return False
+
+    direct_methods_pattern = "|".join(re.escape(method) for method in register_methods)
+    direct_register_pattern = re.compile(
+        r"\bNativeMemorySentinel\s*\.\s*(?:"
+        + direct_methods_pattern
+        + r")\s*\([^;\n]*"
+        + csharp_reference_pattern(local_name)
+    )
+    if direct_register_pattern.search(sanitized_source):
+        return True
+
+    for helper_name, argument_index in register_native_collection_helper_calls(
+        sanitized_source,
+        local_name,
+        collection_type,
+    ):
+        if source_has_sentinel_register_helper_argument(
+            sanitized_source,
+            helper_name,
+            argument_index,
+            collection_type,
+        ):
+            return True
+
+    return False
+
+
+def source_has_sentinel_registered_factory_assignment_for_field(
+    sanitized_source: str,
+    field_name: str,
+    collection_type: str,
+    raw_source: str | None = None,
+) -> bool:
+    if field_name not in sanitized_source:
+        return False
+
     field_pattern = csharp_reference_pattern(field_name)
     factory_assignment_pattern = re.compile(
         field_pattern
-        + r"\s*=\s*(?P<helper>[A-Za-z_]\w*)\s*"
+        + r"\s*=\s*(?:[A-Za-z_]\w*\s*\.\s*)*(?P<helper>[A-Za-z_]\w*)\s*"
         + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
         + r"\s*\("
     )
-    label_pattern = re.compile(r"\bnameof\s*\(\s*" + re.escape(field_name) + r"\s*\)")
     for match in factory_assignment_pattern.finditer(sanitized_source):
         helper_name = match.group("helper")
-        close_index = find_matching_parenthesis(sanitized_source, match.end() - 1)
-        if close_index < 0:
-            continue
-
-        arguments = split_csharp_arguments(sanitized_source[match.end() : close_index])
-        if not any(label_pattern.search(argument) for argument in arguments):
-            continue
-
         if source_has_sentinel_registered_factory_helper(
             sanitized_source,
             helper_name,
             collection_type,
+            raw_source,
         ):
             return True
 
@@ -1457,15 +1969,38 @@ def source_has_sentinel_registered_factory_helper(
     sanitized_source: str,
     helper_name: str,
     collection_type: str,
+    raw_source: str | None = None,
 ) -> bool:
     collection_constructor_pattern = re.compile(
         r"\bnew\s+" + re.escape(collection_type) + r"\s*<"
+    )
+    constructed_local_pattern = re.compile(
+        r"(?:\b"
+        + re.escape(collection_type)
+        + r"\s*<[^>\r\n;=(){}]+>\s+)?(?P<local>[A-Za-z_]\w*)\s*=\s*new\s+"
+        + re.escape(collection_type)
+        + r"\s*<"
     )
     for helper_text in source_method_bodies_named(sanitized_source, helper_name):
         if not collection_constructor_pattern.search(helper_text):
             continue
         if source_has_sentinel_register_helper(sanitized_source, helper_name, collection_type):
             return True
+        for local_match in constructed_local_pattern.finditer(helper_text):
+            local_name = local_match.group("local")
+            for nested_helper_name, argument_index in register_native_collection_helper_calls(
+                helper_text,
+                local_name,
+                collection_type,
+            ):
+                if source_has_sentinel_register_helper_argument(
+                    sanitized_source,
+                    nested_helper_name,
+                    argument_index,
+                    collection_type,
+                    raw_source,
+                ):
+                    return True
 
     return False
 
@@ -1474,6 +2009,7 @@ def source_has_sentinel_registration_for_field(
     sanitized_source: str,
     field_name: str,
     collection_type: str,
+    raw_source: str | None = None,
 ) -> bool:
     escaped_field = re.escape(field_name)
     register_methods = sentinel_register_methods_for_collection(collection_type)
@@ -1491,8 +2027,20 @@ def source_has_sentinel_registration_for_field(
     if direct_register_pattern.search(sanitized_source):
         return True
 
-    for helper_name in register_native_collection_helper_names(sanitized_source, field_name, collection_type):
+    for helper_name, argument_index in register_native_collection_helper_calls(
+        sanitized_source,
+        field_name,
+        collection_type,
+    ):
         if source_has_sentinel_register_helper(sanitized_source, helper_name, collection_type):
+            return True
+        if source_has_sentinel_register_helper_argument(
+            sanitized_source,
+            helper_name,
+            argument_index,
+            collection_type,
+            raw_source,
+        ):
             return True
 
     for bulk_method_name in bulk_sentinel_registration_method_names(sanitized_source):
@@ -1511,6 +2059,7 @@ def source_has_sentinel_unregistration_for_field(
     sanitized_source: str,
     field_name: str,
     collection_type: str,
+    raw_source: str | None = None,
 ) -> bool:
     unregister_methods = sentinel_unregister_methods_for_collection(collection_type)
     if not unregister_methods:
@@ -1531,12 +2080,21 @@ def source_has_sentinel_unregistration_for_field(
     if direct_unregister_pattern.search(sanitized_source):
         return True
 
+    if source_has_sentinel_unregistration_alias_for_field(
+        sanitized_source,
+        field_name,
+        collection_type,
+        raw_source,
+    ):
+        return True
+
     for helper_name, argument_index in native_lifetime_helper_calls(sanitized_source, field_name):
         if source_has_sentinel_unregister_helper_argument(
             sanitized_source,
             helper_name,
             argument_index,
             collection_type,
+            raw_source,
         ):
             return True
 
@@ -1552,6 +2110,38 @@ def source_has_sentinel_unregistration_for_field(
                 field_argument_index,
                 label_argument_index,
                 collection_type,
+            ):
+                return True
+
+    return False
+
+
+def source_has_sentinel_unregistration_alias_for_field(
+    sanitized_source: str,
+    field_name: str,
+    collection_type: str,
+    raw_source: str | None = None,
+) -> bool:
+    for local_alias in csharp_local_aliases_for_parameter(sanitized_source, field_name):
+        unregister_methods = sentinel_unregister_methods_for_collection(collection_type)
+        if unregister_methods:
+            method_pattern = "|".join(re.escape(method) for method in unregister_methods)
+            direct_alias_unregister_pattern = re.compile(
+                r"\bNativeMemorySentinel\s*\.\s*(?:"
+                + method_pattern
+                + r")\s*\([^;\n]*"
+                + csharp_reference_pattern(local_alias)
+            )
+            if direct_alias_unregister_pattern.search(sanitized_source):
+                return True
+
+        for helper_name, argument_index in native_lifetime_helper_calls(sanitized_source, local_alias):
+            if source_has_sentinel_unregister_helper_argument(
+                sanitized_source,
+                helper_name,
+                argument_index,
+                collection_type,
+                raw_source,
             ):
                 return True
 
@@ -1582,9 +2172,9 @@ def source_has_sentinel_id_backed_struct_field_lifetime(
         for match in registration_assignment_pattern.finditer(sanitized_source)
     }
     if not registration_names:
-        return False
+        registration_names = set()
 
-    sentinel_field_assignment_found = False
+    sentinel_field_assignment_found = sentinel_field_name in registration_names
     for registration_name in registration_names:
         assignment_pattern = re.compile(
             r"\b"
@@ -1597,6 +2187,20 @@ def source_has_sentinel_id_backed_struct_field_lifetime(
             sentinel_field_assignment_found = True
             break
 
+    if not sentinel_field_assignment_found:
+        sentinel_field_assignment_found = source_has_sentinel_id_register_helper_call(
+            sanitized_source,
+            field_name,
+            sentinel_field_name,
+            collection_type,
+        )
+    if not sentinel_field_assignment_found:
+        sentinel_field_assignment_found = source_has_sentinel_id_assignment_from_registered_factory(
+            sanitized_source,
+            field_name,
+            sentinel_field_name,
+            collection_type,
+        )
     if not sentinel_field_assignment_found:
         return False
 
@@ -1623,11 +2227,113 @@ def source_has_sentinel_id_backed_struct_field_lifetime(
     return helper_unregisters_id and ref_dispose_pattern.search(sanitized_source) is not None
 
 
+def source_has_sentinel_id_register_helper_call(
+    sanitized_source: str,
+    field_name: str,
+    sentinel_field_name: str,
+    collection_type: str,
+) -> bool:
+    helper_name_fragments = helper_name_fragments_for_collection(collection_type)
+    helper_call_pattern = re.compile(csharp_helper_call_pattern())
+    label_argument_pattern = re.compile(r"\bnameof\s*\(\s*" + re.escape(field_name) + r"\s*\)")
+    for match in helper_call_pattern.finditer(sanitized_source):
+        helper_name = match.group("helper")
+        if "Register" not in helper_name or not any(fragment in helper_name for fragment in helper_name_fragments):
+            continue
+
+        open_index = match.end() - 1
+        close_index = find_matching_parenthesis(sanitized_source, open_index)
+        if close_index < 0:
+            continue
+
+        arguments = split_csharp_arguments(sanitized_source[open_index + 1 : close_index])
+        has_field_argument = False
+        has_sentinel_out_argument = False
+        for argument in arguments:
+            argument_identifier = csharp_argument_identifier(argument)
+            if argument_identifier == field_name:
+                has_field_argument = True
+            if "out" in argument and argument_identifier == sentinel_field_name:
+                has_sentinel_out_argument = True
+            if label_argument_pattern.search(argument):
+                has_field_argument = True
+
+        if (
+            has_field_argument
+            and has_sentinel_out_argument
+            and source_has_sentinel_register_helper(sanitized_source, helper_name, collection_type)
+        ):
+            return True
+
+    return False
+
+
+def source_has_sentinel_id_assignment_from_registered_factory(
+    sanitized_source: str,
+    field_name: str,
+    sentinel_field_name: str,
+    collection_type: str,
+) -> bool:
+    if field_name not in sanitized_source or sentinel_field_name not in sanitized_source:
+        return False
+
+    field_pattern = csharp_reference_pattern(field_name)
+    sentinel_field_pattern = csharp_reference_pattern(sentinel_field_name)
+    array_local_names = {
+        match.group("local")
+        for match in re.finditer(
+            field_pattern + r"\s*=\s*(?P<local>[A-Za-z_]\w*)\b",
+            sanitized_source,
+        )
+    }
+    sentinel_local_names = {
+        match.group("local")
+        for match in re.finditer(
+            sentinel_field_pattern + r"\s*=\s*(?P<local>[A-Za-z_]\w*)\b",
+            sanitized_source,
+        )
+    }
+    if not array_local_names or not sentinel_local_names:
+        return False
+
+    factory_assignment_pattern = re.compile(
+        r"\b(?P<array>[A-Za-z_]\w*)\s*=\s*(?:[A-Za-z_]\w*\s*\.\s*)*(?P<helper>[A-Za-z_]\w*)\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\("
+    )
+    for match in factory_assignment_pattern.finditer(sanitized_source):
+        array_name = match.group("array")
+        if array_name not in array_local_names:
+            continue
+
+        close_index = find_matching_parenthesis(sanitized_source, match.end() - 1)
+        if close_index < 0:
+            continue
+
+        arguments = split_csharp_arguments(sanitized_source[match.end() : close_index])
+        has_sentinel_out = any(
+            "out" in argument and csharp_argument_identifier(argument) in sentinel_local_names
+            for argument in arguments
+        )
+        if not has_sentinel_out:
+            continue
+
+        if source_has_sentinel_registered_factory_helper(
+            sanitized_source,
+            match.group("helper"),
+            collection_type,
+        ):
+            return True
+
+    return False
+
+
 def source_has_sentinel_unregister_helper_argument(
     sanitized_source: str,
     helper_name: str,
     argument_index: int,
     collection_type: str,
+    raw_source: str | None = None,
     visited_helper_keys: set[tuple[str, int, str]] | None = None,
 ) -> bool:
     if visited_helper_keys is None:
@@ -1659,17 +2365,168 @@ def source_has_sentinel_unregister_helper_argument(
         if direct_unregister_pattern.search(helper_text):
             return True
 
+        if source_has_sentinel_unregister_alias_for_parameter(
+            helper_text,
+            parameter_name,
+            collection_type,
+        ):
+            return True
+
+        if source_has_sentinel_owner_label_unregister_helper_for_parameter(
+            helper_text,
+            parameter_name,
+            collection_type,
+        ):
+            return True
+
+        if source_has_sentinel_id_unregister_helper_for_parameter(
+            helper_text,
+            parameter_names,
+            argument_index,
+        ):
+            return True
+
+        if raw_source is not None:
+            for raw_helper_text, raw_parameter_names in source_method_definitions_named(raw_source, helper_name):
+                if argument_index >= len(raw_parameter_names):
+                    continue
+
+                raw_parameter_name = raw_parameter_names[argument_index]
+                if not raw_parameter_name:
+                    continue
+
+                if source_has_reflective_sentinel_unregister_for_parameter(
+                    raw_helper_text,
+                    raw_parameter_name,
+                    collection_type,
+                ):
+                    return True
+
+        for local_alias in csharp_local_aliases_for_parameter(helper_text, parameter_name):
+            for nested_helper_name, nested_argument_index in native_lifetime_helper_calls(helper_text, local_alias):
+                if source_has_sentinel_unregister_helper_argument(
+                    sanitized_source,
+                    nested_helper_name,
+                    nested_argument_index,
+                    collection_type,
+                    raw_source,
+                    visited_helper_keys,
+                ):
+                    return True
+
         for nested_helper_name, nested_argument_index in native_lifetime_helper_calls(helper_text, parameter_name):
             if source_has_sentinel_unregister_helper_argument(
                 sanitized_source,
                 nested_helper_name,
                 nested_argument_index,
                 collection_type,
+                raw_source,
                 visited_helper_keys,
             ):
                 return True
 
     return False
+
+
+def source_has_sentinel_id_unregister_helper_for_parameter(
+    helper_text: str,
+    parameter_names: Sequence[str],
+    collection_parameter_index: int,
+) -> bool:
+    if (
+        collection_parameter_index >= len(parameter_names)
+        or "NativeMemorySentinel" not in helper_text
+        or "Unregister" not in helper_text
+    ):
+        return False
+
+    collection_parameter_name = parameter_names[collection_parameter_index]
+    if not collection_parameter_name:
+        return False
+
+    collection_parameter_pattern = csharp_reference_pattern(collection_parameter_name)
+    dispose_pattern = re.compile(collection_parameter_pattern + r"\s*\.\s*Dispose\s*\(")
+    default_pattern = re.compile(collection_parameter_pattern + r"\s*=\s*default\b")
+    if dispose_pattern.search(helper_text) is None and default_pattern.search(helper_text) is None:
+        return False
+
+    for parameter_index, parameter_name in enumerate(parameter_names):
+        if parameter_index == collection_parameter_index or not parameter_name:
+            continue
+
+        unregister_pattern = re.compile(
+            r"\bNativeMemorySentinel\s*\.\s*Unregister\s*\(\s*"
+            + csharp_reference_pattern(parameter_name)
+        )
+        if unregister_pattern.search(helper_text):
+            return True
+
+    return False
+
+
+def source_has_sentinel_owner_label_unregister_helper_for_parameter(
+    helper_text: str,
+    parameter_name: str,
+    collection_type: str,
+) -> bool:
+    unregister_methods = sentinel_unregister_methods_for_collection(collection_type)
+    if not unregister_methods:
+        return False
+
+    parameter_pattern = csharp_reference_pattern(parameter_name)
+    dispose_pattern = re.compile(parameter_pattern + r"\s*\.\s*Dispose\s*\(")
+    if dispose_pattern.search(helper_text) is None:
+        return False
+
+    method_pattern = "|".join(re.escape(method) for method in unregister_methods)
+    unregister_pattern = re.compile(
+        r"\bNativeMemorySentinel\s*\.\s*(?:"
+        + method_pattern
+        + r")\s*\("
+    )
+    return unregister_pattern.search(helper_text) is not None
+
+
+def source_has_sentinel_unregister_alias_for_parameter(
+    helper_text: str,
+    parameter_name: str,
+    collection_type: str,
+) -> bool:
+    unregister_methods = sentinel_unregister_methods_for_collection(collection_type)
+    if not unregister_methods:
+        return False
+
+    method_pattern = "|".join(re.escape(method) for method in unregister_methods)
+    for local_name in csharp_local_aliases_for_parameter(helper_text, parameter_name):
+        alias_unregister_pattern = re.compile(
+            r"\bNativeMemorySentinel\s*\.\s*(?:"
+            + method_pattern
+            + r")\s*\([^;\n]*"
+            + csharp_reference_pattern(local_name)
+        )
+        if alias_unregister_pattern.search(helper_text):
+            return True
+
+    return False
+
+
+@lru_cache(maxsize=8192)
+def csharp_local_aliases_for_parameter(helper_text: str, parameter_name: str) -> tuple[str, ...]:
+    parameter_pattern = csharp_reference_pattern(parameter_name)
+    alias_assignment_pattern = re.compile(
+        r"\b(?:[A-Za-z_][A-Za-z0-9_<>,\s\[\]\.?]*\s+)?"
+        r"(?P<local>[A-Za-z_]\w*)\s*=\s*"
+        + parameter_pattern
+        + r"\s*;"
+    )
+    aliases: list[str] = []
+    for alias_match in alias_assignment_pattern.finditer(helper_text):
+        local_name = alias_match.group("local")
+        if local_name == parameter_name:
+            continue
+        aliases.append(local_name)
+
+    return tuple(aliases)
 
 
 def source_has_sentinel_label_unregister_helper_argument(
@@ -1709,12 +2566,9 @@ def source_has_sentinel_label_unregister_helper_argument(
     return False
 
 
-def data_vault_alias_helper_calls(method_text: str, field_name: str) -> list[tuple[str, int]]:
-    helper_pattern = re.compile(
-        r"\b(?P<helper>[A-Za-z_]\w*)\s*"
-        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
-        + r"\s*\("
-    )
+@lru_cache(maxsize=8192)
+def data_vault_alias_helper_calls(method_text: str, field_name: str) -> tuple[tuple[str, int], ...]:
+    helper_pattern = re.compile(csharp_helper_call_pattern())
     calls: list[tuple[str, int]] = []
     for match in helper_pattern.finditer(method_text):
         helper_name = match.group("helper")
@@ -1734,7 +2588,7 @@ def data_vault_alias_helper_calls(method_text: str, field_name: str) -> list[tup
                 calls.append((helper_name, argument_index))
                 break
 
-    return calls
+    return tuple(calls)
 
 
 def source_has_datavault_alias_helper_argument(
@@ -1762,6 +2616,8 @@ def source_has_datavault_alias_helper_argument(
             "EnsureGenerationHandle" in helper_text
             or "TryResolveHandle" in helper_text
             or "TryAcquireWriteLock" in helper_text
+            or "TryReadHandle" in helper_text
+            or "TryReadOnlyHandle" in helper_text
         )
         parameter_receives_alias = (
             re.search(r"\bout\s+" + csharp_reference_pattern(parameter_name), helper_text) is not None
@@ -1785,16 +2641,19 @@ def source_has_datavault_alias_helper_argument(
 def source_has_datavault_alias_field_lifetime(
     sanitized_source: str,
     field_name: str,
+    owner_name: str = "",
 ) -> bool:
     if (
         "EnsureGenerationHandle" not in sanitized_source
         and "TryResolveHandle" not in sanitized_source
         and "TryAcquireWriteLock" not in sanitized_source
+        and "TryReadHandle" not in sanitized_source
+        and "TryReadOnlyHandle" not in sanitized_source
     ):
         return False
 
     direct_alias_pattern = re.compile(
-        r"\b(?:TryResolveHandle|TryAcquireWriteLock)\s*\([^;{}]*\bout\s+"
+        r"\b(?:TryResolveHandle|TryAcquireWriteLock|TryReadHandle|TryReadOnlyHandle)\s*\([^;{}]*\bout\s+"
         + csharp_reference_pattern(field_name),
         re.DOTALL,
     )
@@ -1802,6 +2661,9 @@ def source_has_datavault_alias_field_lifetime(
         return True
 
     if source_has_datavault_context_field_alias_assignment(sanitized_source, field_name):
+        return True
+
+    if owner_name and source_has_datavault_parameter_field_alias_assignment(sanitized_source, field_name, owner_name):
         return True
 
     for helper_name, argument_index in data_vault_alias_helper_calls(sanitized_source, field_name):
@@ -1819,7 +2681,7 @@ def source_has_datavault_context_field_alias_assignment(
     sanitized_source: str,
     field_name: str,
 ) -> bool:
-    if "." + field_name not in sanitized_source:
+    if field_name not in sanitized_source:
         return False
 
     assignment_pattern = re.compile(
@@ -1835,25 +2697,144 @@ def source_has_datavault_context_field_alias_assignment(
     return False
 
 
+def source_has_datavault_parameter_field_alias_assignment(
+    sanitized_source: str,
+    field_name: str,
+    owner_name: str,
+) -> bool:
+    for callable_name, argument_index in source_field_parameter_assignment_call_targets(
+        sanitized_source,
+        field_name,
+        owner_name,
+    ):
+        if source_call_argument_is_datavault_alias(
+            sanitized_source,
+            callable_name,
+            argument_index,
+            constructor=callable_name == owner_name,
+        ):
+            return True
+
+    return False
+
+
+@lru_cache(maxsize=4096)
+def source_field_parameter_assignment_call_targets(
+    sanitized_source: str,
+    field_name: str,
+    owner_name: str,
+) -> tuple[tuple[str, int], ...]:
+    assignment_pattern = re.compile(
+        r"(?:\bthis\s*\.\s*)?"
+        + csharp_reference_pattern(field_name)
+        + r"\s*=\s*(?P<parameter>[A-Za-z_]\w*)\s*;"
+    )
+    lines = sanitized_source.splitlines()
+    targets: list[tuple[str, int]] = []
+    for assignment_match in assignment_pattern.finditer(sanitized_source):
+        parameter_name = assignment_match.group("parameter")
+        line_index = sanitized_source[: assignment_match.start()].count("\n")
+        header = csharp_method_signature_header_for_line(lines, line_index)
+        if not header:
+            continue
+        open_index = header.rfind("(")
+        close_index = header.rfind(")")
+        if open_index < 0 or close_index < open_index:
+            continue
+
+        method_name_candidates = re.findall(r"[A-Za-z_]\w*", header[:open_index])
+        if not method_name_candidates:
+            continue
+
+        callable_name = method_name_candidates[-1]
+        if callable_name != owner_name and callable_name in {"if", "for", "foreach", "while", "switch", "using", "lock"}:
+            continue
+
+        parameter_names = [
+            csharp_parameter_name(parameter)
+            for parameter in split_csharp_arguments(header[open_index + 1 : close_index])
+        ]
+        for argument_index, candidate_name in enumerate(parameter_names):
+            if candidate_name == parameter_name:
+                targets.append((callable_name, argument_index))
+                break
+
+    return tuple(targets)
+
+
+@lru_cache(maxsize=4096)
+def source_call_argument_is_datavault_alias(
+    sanitized_source: str,
+    callable_name: str,
+    argument_index: int,
+    constructor: bool = False,
+) -> bool:
+    if constructor:
+        call_pattern = re.compile(
+            r"\bnew\s+"
+            + re.escape(callable_name)
+            + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+            + r"\s*\("
+        )
+    else:
+        call_pattern = re.compile(
+            r"\b(?:[A-Za-z_]\w*\s*\.\s*)?"
+            + re.escape(callable_name)
+            + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+            + r"\s*\("
+        )
+
+    for call_match in call_pattern.finditer(sanitized_source):
+        open_index = call_match.end() - 1
+        close_index = find_matching_parenthesis(sanitized_source, open_index)
+        if close_index < 0:
+            continue
+
+        arguments = split_csharp_arguments(sanitized_source[open_index + 1 : close_index])
+        if argument_index >= len(arguments):
+            continue
+
+        argument_name = csharp_argument_identifier(arguments[argument_index])
+        if not argument_name:
+            continue
+
+        if source_has_datavault_resolved_local_alias(sanitized_source, argument_name):
+            return True
+
+    return False
+
+
+@lru_cache(maxsize=8192)
 def source_has_datavault_resolved_local_alias(sanitized_source: str, local_name: str) -> bool:
     if local_name not in sanitized_source:
         return False
 
     local_pattern = csharp_reference_pattern(local_name)
     resolve_pattern = re.compile(
-        r"\b(?:TryResolve|TryResolveHandle|TryAcquireWriteLock)\s*\([^;{}]*\bout\s+"
+        r"\b(?:TryResolve|TryResolveHandle|TryAcquireWriteLock|TryReadHandle|TryReadOnlyHandle)\s*\([^;{}]*\bout\s+"
         + r"(?:[A-Za-z_][A-Za-z0-9_<>,\s\[\]\.?]*\s+)?"
         + local_pattern,
         re.DOTALL,
     )
-    return resolve_pattern.search(sanitized_source) is not None
+    if resolve_pattern.search(sanitized_source):
+        return True
+
+    for helper_name, argument_index in data_vault_alias_helper_calls(sanitized_source, local_name):
+        if source_has_datavault_alias_helper_argument(
+            sanitized_source,
+            helper_name,
+            argument_index,
+        ):
+            return True
+
+    return False
 
 
 def is_sentinel_tracked_constructor_wrapper(source: str, lines: Sequence[str], line_index: int) -> bool:
     sanitized_source = "\n".join(lines)
     source_mentions_native_tracking = (
-        "NativeMemorySentinel.Register" in sanitized_source
-        or "NativeMemoryTrackingBridge.Register" in sanitized_source
+        source_has_sentinel_registration_tokens(sanitized_source)
+        or ("NativeMemoryTrackingBridge" in sanitized_source and "Register" in sanitized_source)
         or (
             "NativeMemorySentinel" in source
             and any(
@@ -2128,6 +3109,20 @@ def declaration_is_gate_relevant(classification: str) -> bool:
     }
 
 
+def declaration_allowed_path_accepts_classification(
+    relative_path: str,
+    classification: str,
+    path_is_allowed: bool,
+) -> bool:
+    if not path_is_allowed:
+        return False
+    if not declaration_is_gate_relevant(classification):
+        return True
+
+    normalized = relative_path.replace("\\", "/")
+    return normalized.endswith("Assets/_Project/Scripts/Core/Memory/H8Memory.cs")
+
+
 def declaration_finding_to_dict(finding: DeclarationFinding) -> dict[str, Any]:
     return {
         "path": finding.path,
@@ -2144,12 +3139,110 @@ def declaration_finding_to_dict(finding: DeclarationFinding) -> dict[str, Any]:
     }
 
 
+def partial_type_names_in_source(sanitized_lines: Sequence[str]) -> set[str]:
+    names: set[str] = set()
+    for line in sanitized_lines:
+        type_match = TYPE_DECLARATION_RE.search(line)
+        if not type_match:
+            continue
+
+        kind = type_match.group("kind")
+        modifier_prefix = line[: type_match.start()]
+        if "partial" in kind.split() or re.search(r"\bpartial\b", modifier_prefix):
+            names.add(type_match.group("name"))
+
+    return names
+
+
+def build_h8memory_lifetime_sources_by_owner(
+    source_root: Path,
+    repo_root: Path = REPO_ROOT,
+    source_files: Sequence[CSharpSourceFile] | None = None,
+) -> dict[str, str]:
+    owner_parts: dict[str, list[str]] = {}
+    resolved_source_files = source_files if source_files is not None else read_csharp_source_files(source_root)
+    for source_file in resolved_source_files:
+        source = source_file.source
+        if "H8Memory" not in source:
+            continue
+
+        sanitized_source = source_file.sanitized_source or sanitize_csharp_source(source)
+        sanitized_lines = sanitized_source.splitlines()
+        for owner_name in partial_type_names_in_source(sanitized_lines):
+            owner_parts.setdefault(owner_name, []).append(sanitized_source)
+
+    return {
+        owner_name: "\n".join(parts)
+        for owner_name, parts in owner_parts.items()
+        if parts
+    }
+
+
+def build_native_lifetime_helper_sources_by_directory(
+    source_root: Path,
+    repo_root: Path = REPO_ROOT,
+    source_files: Sequence[CSharpSourceFile] | None = None,
+) -> dict[str, str]:
+    directory_parts: dict[str, list[str]] = {}
+    resolved_source_files = source_files if source_files is not None else read_csharp_source_files(source_root)
+    for source_file in resolved_source_files:
+        source = source_file.source
+        if (
+            "NativeMemorySentinel" not in source
+            and "NativeMemoryTrackingBridge" not in source
+            and "H8Memory" not in source
+        ):
+            continue
+        if not source_file_may_provide_directory_native_lifetime_helpers(source_file, source):
+            continue
+
+        directory = normalize_path(source_file.path.parent, repo_root)
+        directory_parts.setdefault(directory, []).append(source_file.sanitized_source or sanitize_csharp_source(source))
+
+    return {
+        directory: "\n".join(parts)
+        for directory, parts in directory_parts.items()
+        if parts
+    }
+
+
+def build_native_lifetime_helper_raw_sources_by_directory(
+    source_root: Path,
+    repo_root: Path = REPO_ROOT,
+    source_files: Sequence[CSharpSourceFile] | None = None,
+) -> dict[str, str]:
+    directory_parts: dict[str, list[str]] = {}
+    resolved_source_files = source_files if source_files is not None else read_csharp_source_files(source_root)
+    for source_file in resolved_source_files:
+        source = source_file.source
+        if (
+            "NativeMemorySentinel" not in source
+            and "NativeMemoryTrackingBridge" not in source
+            and "H8Memory" not in source
+        ):
+            continue
+        if not source_file_may_provide_directory_native_lifetime_helpers(source_file, source):
+            continue
+
+        directory = normalize_path(source_file.path.parent, repo_root)
+        directory_parts.setdefault(directory, []).append(source)
+
+    return {
+        directory: "\n".join(parts)
+        for directory, parts in directory_parts.items()
+        if parts
+    }
+
+
 def scan_native_collection_declarations_in_source(
     source: str,
     relative_path: str,
     allowed: bool = False,
     sanitized_lines: Sequence[str] | None = None,
     original_lines: Sequence[str] | None = None,
+    h8memory_lifetime_sources_by_owner: dict[str, str] | None = None,
+    native_lifetime_helper_sources_by_directory: dict[str, str] | None = None,
+    native_lifetime_helper_raw_sources_by_directory: dict[str, str] | None = None,
 ) -> list[DeclarationFinding]:
     if sanitized_lines is None:
         sanitized_lines = sanitize_csharp_source(source).splitlines()
@@ -2158,48 +3251,174 @@ def scan_native_collection_declarations_in_source(
 
     tracked_editor_preview = (
         "H8MEMORY_TRACKED_EDITOR_PREVIEW" in source
-        and "H8Memory.Allocate" in source
-        and "H8Memory.Release" in source
+        and source_has_h8memory_lifetime_tokens(source)
     )
     sanitized_source = "\n".join(sanitized_lines)
+    relative_directory = Path(relative_path.replace("\\", "/")).parent.as_posix()
+    directory_lifetime_source = ""
+    directory_lifetime_raw_source = ""
+    source_has_local_lifetime_source = (
+        source_has_sentinel_lifetime_tokens(sanitized_source)
+        or source_has_reflective_sentinel_lifetime_tokens(source)
+        or source_has_native_tracking_bridge_lifetime_tokens(sanitized_source)
+        or source_has_h8memory_lifetime_tokens(sanitized_source)
+        or (
+            "EnsureGenerationHandle" in sanitized_source
+            and (
+                "ReleaseBuffer" in sanitized_source
+                or "TryAcquireWriteLock" in sanitized_source
+                or "ReleaseWriteLock" in sanitized_source
+            )
+        )
+    )
+    if (
+        not source_has_local_lifetime_source
+        and
+        native_lifetime_helper_sources_by_directory
+        and relative_directory in native_lifetime_helper_sources_by_directory
+    ):
+        directory_lifetime_source = native_lifetime_helper_sources_by_directory[relative_directory]
+        if (
+            native_lifetime_helper_raw_sources_by_directory
+            and relative_directory in native_lifetime_helper_raw_sources_by_directory
+        ):
+            directory_lifetime_raw_source = native_lifetime_helper_raw_sources_by_directory[relative_directory]
     h8memory_lifetime_cache: dict[str, bool] = {}
     sentinel_lifetime_cache: dict[tuple[str, str], bool] = {}
+    sentinel_id_lifetime_cache: dict[tuple[str, str], bool] = {}
+    native_tracking_bridge_lifetime_cache: dict[tuple[str, str], bool] = {}
     datavault_alias_lifetime_cache: dict[str, bool] = {}
-    has_sentinel_lifetime_source = (
-        "NativeMemorySentinel.Register" in sanitized_source
-        and "NativeMemorySentinel.Unregister" in sanitized_source
+    h8memory_owner_lifetime_sources: dict[str, str] = {}
+    combined_directory_lifetime_source = (
+        sanitized_source + "\n" + directory_lifetime_source
+        if directory_lifetime_source
+        else sanitized_source
     )
+    combined_directory_raw_lifetime_source = (
+        source + "\n" + directory_lifetime_raw_source
+        if directory_lifetime_raw_source
+        else source
+    )
+    local_has_sentinel_lifetime_source = (
+        source_has_sentinel_lifetime_tokens(sanitized_source)
+        or source_has_reflective_sentinel_lifetime_tokens(source)
+        or source_has_native_tracking_bridge_lifetime_tokens(sanitized_source)
+    )
+    directory_has_sentinel_lifetime_source = (
+        source_has_sentinel_lifetime_tokens(directory_lifetime_source)
+        or source_has_reflective_sentinel_lifetime_tokens(directory_lifetime_raw_source)
+        or source_has_native_tracking_bridge_lifetime_tokens(directory_lifetime_source)
+    )
+    has_sentinel_lifetime_source = local_has_sentinel_lifetime_source or directory_has_sentinel_lifetime_source
 
-    def has_h8memory_tracked_field_lifetime(field_name: str) -> bool:
-        if field_name not in h8memory_lifetime_cache:
-            h8memory_lifetime_cache[field_name] = source_has_h8memory_tracked_field_lifetime(
+    def h8memory_owner_lifetime_source(owner_name: str) -> str:
+        if (
+            not owner_name
+            or not h8memory_lifetime_sources_by_owner
+            or owner_name not in h8memory_lifetime_sources_by_owner
+        ):
+            return ""
+        if owner_name not in h8memory_owner_lifetime_sources:
+            h8memory_owner_lifetime_sources[owner_name] = (
+                sanitized_source + "\n" + h8memory_lifetime_sources_by_owner[owner_name]
+            )
+        return h8memory_owner_lifetime_sources[owner_name]
+
+    def has_h8memory_tracked_field_lifetime(field_name: str, owner_name: str = "") -> bool:
+        cache_key = owner_name + "::" + field_name
+        if cache_key not in h8memory_lifetime_cache:
+            tracked = source_has_h8memory_tracked_field_lifetime(
                 sanitized_source,
                 field_name,
             )
-        return h8memory_lifetime_cache[field_name]
+            owner_lifetime_source = h8memory_owner_lifetime_source(owner_name)
+            if not tracked and owner_lifetime_source:
+                tracked = source_has_h8memory_tracked_field_lifetime(
+                    owner_lifetime_source,
+                    field_name,
+                )
+            if not tracked and directory_lifetime_source:
+                tracked = source_has_h8memory_tracked_field_lifetime(
+                    combined_directory_lifetime_source,
+                    field_name,
+                )
+            h8memory_lifetime_cache[cache_key] = tracked
+        return h8memory_lifetime_cache[cache_key]
 
     def has_sentinel_registered_field_lifetime(field_name: str, collection: str) -> bool:
         key = (field_name, collection)
         if key not in sentinel_lifetime_cache:
-            sentinel_lifetime_cache[key] = source_has_sentinel_registered_field_lifetime(
+            tracked = False
+            if local_has_sentinel_lifetime_source:
+                tracked = source_has_sentinel_registered_field_lifetime(
+                    sanitized_source,
+                    field_name,
+                    collection,
+                    source,
+                )
+            if not tracked and directory_has_sentinel_lifetime_source:
+                tracked = source_has_sentinel_registered_field_lifetime(
+                    combined_directory_lifetime_source,
+                    field_name,
+                    collection,
+                    combined_directory_raw_lifetime_source,
+                )
+            sentinel_lifetime_cache[key] = tracked
+        return sentinel_lifetime_cache[key]
+
+    def has_sentinel_id_backed_struct_field_lifetime(field_name: str, collection: str) -> bool:
+        key = (field_name, collection)
+        if key not in sentinel_id_lifetime_cache:
+            tracked = False
+            if local_has_sentinel_lifetime_source:
+                tracked = source_has_sentinel_id_backed_struct_field_lifetime(
+                    sanitized_source,
+                    field_name,
+                    collection,
+                )
+            if not tracked and directory_has_sentinel_lifetime_source:
+                tracked = source_has_sentinel_id_backed_struct_field_lifetime(
+                    combined_directory_lifetime_source,
+                    field_name,
+                    collection,
+                )
+            sentinel_id_lifetime_cache[key] = tracked
+        return sentinel_id_lifetime_cache[key]
+
+    def has_native_tracking_bridge_sidecar_field_lifetime(field_name: str, collection: str) -> bool:
+        key = (field_name, collection)
+        if key not in native_tracking_bridge_lifetime_cache:
+            tracked = source_has_native_tracking_bridge_sidecar_field_lifetime(
                 sanitized_source,
                 field_name,
                 collection,
             )
-        return sentinel_lifetime_cache[key]
+            if not tracked and directory_lifetime_source:
+                tracked = source_has_native_tracking_bridge_sidecar_field_lifetime(
+                    combined_directory_lifetime_source,
+                    field_name,
+                    collection,
+                )
+            native_tracking_bridge_lifetime_cache[key] = tracked
+        return native_tracking_bridge_lifetime_cache[key]
 
-    def has_datavault_alias_field_lifetime(field_name: str) -> bool:
-        if field_name not in datavault_alias_lifetime_cache:
-            datavault_alias_lifetime_cache[field_name] = source_has_datavault_alias_field_lifetime(
+    def has_datavault_alias_field_lifetime(field_name: str, owner_name: str = "") -> bool:
+        cache_key = owner_name + "::" + field_name
+        if cache_key not in datavault_alias_lifetime_cache:
+            datavault_alias_lifetime_cache[cache_key] = source_has_datavault_alias_field_lifetime(
                 sanitized_source,
                 field_name,
+                owner_name,
             )
-        return datavault_alias_lifetime_cache[field_name]
+        return datavault_alias_lifetime_cache[cache_key]
 
     scopes: list[TypeScope] = []
     pending_scope: TypeScope | None = None
     depth = 0
     findings: list[DeclarationFinding] = []
+    declaration_path_is_h8memory_owner = relative_path.replace("\\", "/").endswith(
+        "Assets/_Project/Scripts/Core/Memory/H8Memory.cs"
+    )
 
     for line_number, line in enumerate(sanitized_lines, 1):
         if pending_scope is not None and "{" in line:
@@ -2242,9 +3461,11 @@ def scan_native_collection_declarations_in_source(
                 "persistentOwnerField",
                 "unknownStructField",
             )
-            if (
+            if declaration_path_is_h8memory_owner and lifetime_checked_classification:
+                classification = "h8MemoryTrackedOwnerField"
+            elif (
                 lifetime_checked_classification
-                and has_h8memory_tracked_field_lifetime(field_name)
+                and has_h8memory_tracked_field_lifetime(field_name, owner.name if owner else "")
             ):
                 classification = "h8MemoryTrackedOwnerField"
             elif (
@@ -2252,21 +3473,22 @@ def scan_native_collection_declarations_in_source(
                 and has_sentinel_lifetime_source
                 and (
                     has_sentinel_registered_field_lifetime(field_name, collection)
-                    or source_has_sentinel_id_backed_struct_field_lifetime(
-                        sanitized_source,
-                        field_name,
-                        collection,
-                    )
+                    or has_sentinel_id_backed_struct_field_lifetime(field_name, collection)
+                    or has_native_tracking_bridge_sidecar_field_lifetime(field_name, collection)
                 )
             ):
                 classification = "sentinelTrackedOwnerField"
             elif (
                 lifetime_checked_classification
-                and has_datavault_alias_field_lifetime(field_name)
+                and has_datavault_alias_field_lifetime(field_name, owner.name if owner else "")
             ):
                 classification = "dataVaultAliasOwnerField"
             finding_allowed = (
-                allowed
+                declaration_allowed_path_accepts_classification(
+                    relative_path,
+                    classification,
+                    allowed,
+                )
                 or not declaration_is_gate_relevant(classification)
                 or (
                     classification == "editorOfflinePersistentPreviewField"
@@ -2349,25 +3571,23 @@ def scan_native_array_declaration_tree(
     repo_root: Path = REPO_ROOT,
     allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES,
 ) -> list[DeclarationFinding]:
-    if not source_root.exists():
-        raise FileNotFoundError(f"source root not found: {source_root}")
-
     findings: list[DeclarationFinding] = []
-    for path in sorted(source_root.rglob("*.cs")):
-        relative_scan_path = path.relative_to(source_root)
-        if should_skip(relative_scan_path):
-            continue
-
-        try:
-            source = path.read_text(encoding="utf-8", errors="ignore")
-        except OSError as exc:
-            raise OSError(f"failed to read {path}") from exc
-
+    source_files = read_csharp_source_files(source_root)
+    h8memory_lifetime_sources_by_owner = build_h8memory_lifetime_sources_by_owner(source_root, repo_root, source_files)
+    native_lifetime_helper_sources_by_directory = build_native_lifetime_helper_sources_by_directory(source_root, repo_root, source_files)
+    native_lifetime_helper_raw_sources_by_directory = build_native_lifetime_helper_raw_sources_by_directory(source_root, repo_root, source_files)
+    for source_file in source_files:
+        path = source_file.path
+        source = source_file.source
         if not contains_native_collection_token(source):
+            continue
+        if NATIVE_COLLECTION_DECLARATION_SCAN_RE.search(source) is None:
             continue
 
         relative_path = normalize_path(path, repo_root)
-        sanitized_lines = sanitize_csharp_source(source).splitlines()
+        sanitized_lines = source_file.sanitized_lines
+        if not sanitized_lines:
+            sanitized_lines = tuple(sanitize_csharp_source(source).splitlines())
         if not contains_native_collection_declaration_candidate(sanitized_lines):
             continue
 
@@ -2377,7 +3597,10 @@ def scan_native_array_declaration_tree(
                 relative_path,
                 is_allowed_path(relative_path, allowed_suffixes),
                 sanitized_lines=sanitized_lines,
-                original_lines=source.splitlines(),
+                original_lines=source_file.original_lines or source.splitlines(),
+                h8memory_lifetime_sources_by_owner=h8memory_lifetime_sources_by_owner,
+                native_lifetime_helper_sources_by_directory=native_lifetime_helper_sources_by_directory,
+                native_lifetime_helper_raw_sources_by_directory=native_lifetime_helper_raw_sources_by_directory,
             )
         )
 
@@ -2388,26 +3611,20 @@ def scan_latest_created_fallback_tree(
     source_root: Path,
     repo_root: Path = REPO_ROOT,
     allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_LATEST_CREATED_PATH_SUFFIXES,
+    source_files: Sequence[CSharpSourceFile] | None = None,
 ) -> list[LatestCreatedFallbackFinding]:
-    if not source_root.exists():
-        raise FileNotFoundError(f"source root not found: {source_root}")
-
     findings: list[LatestCreatedFallbackFinding] = []
-    for path in sorted(source_root.rglob("*.cs")):
-        relative_scan_path = path.relative_to(source_root)
-        if should_skip(relative_scan_path):
-            continue
-
-        try:
-            source = path.read_text(encoding="utf-8", errors="ignore")
-        except OSError as exc:
-            raise OSError(f"failed to read {path}") from exc
-
+    resolved_source_files = source_files if source_files is not None else read_csharp_source_files(source_root)
+    for source_file in resolved_source_files:
+        path = source_file.path
+        source = source_file.source
         if not contains_latest_created_fallback_token(source):
             continue
 
         relative_path = normalize_path(path, repo_root)
-        sanitized_lines = sanitize_csharp_source(source).splitlines()
+        sanitized_lines = source_file.sanitized_lines
+        if not sanitized_lines:
+            sanitized_lines = tuple(sanitize_csharp_source(source).splitlines())
         findings.extend(
             scan_latest_created_fallbacks_in_source(
                 source,
@@ -2425,29 +3642,31 @@ def scan_source_tree_with_declarations(
     repo_root: Path = REPO_ROOT,
     constructor_allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_PATH_SUFFIXES,
     declaration_allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES,
+    source_files: Sequence[CSharpSourceFile] | None = None,
 ) -> tuple[list[FileFinding], list[DeclarationFinding]]:
-    if not source_root.exists():
-        raise FileNotFoundError(f"source root not found: {source_root}")
-
     constructor_findings: list[FileFinding] = []
     declaration_findings: list[DeclarationFinding] = []
-    for path in sorted(source_root.rglob("*.cs")):
-        relative_scan_path = path.relative_to(source_root)
-        if should_skip(relative_scan_path):
-            continue
-
+    resolved_source_files = source_files if source_files is not None else read_csharp_source_files(source_root)
+    h8memory_lifetime_sources_by_owner = build_h8memory_lifetime_sources_by_owner(source_root, repo_root, resolved_source_files)
+    native_lifetime_helper_sources_by_directory = build_native_lifetime_helper_sources_by_directory(source_root, repo_root, resolved_source_files)
+    native_lifetime_helper_raw_sources_by_directory = build_native_lifetime_helper_raw_sources_by_directory(source_root, repo_root, resolved_source_files)
+    for source_file in resolved_source_files:
+        path = source_file.path
+        source = source_file.source
         constructor_lines: list[int] = []
         constructor_allocator_kinds: list[str] = []
-        try:
-            source = path.read_text(encoding="utf-8", errors="ignore")
-        except OSError as exc:
-            raise OSError(f"failed to read {path}") from exc
 
         if not contains_native_collection_token(source):
             continue
+        raw_has_constructor = NATIVE_COLLECTION_CONSTRUCTOR_RE.search(source) is not None
+        raw_has_declaration_candidate = NATIVE_COLLECTION_DECLARATION_SCAN_RE.search(source) is not None
+        if not raw_has_constructor and not raw_has_declaration_candidate:
+            continue
 
-        sanitized_lines = sanitize_csharp_source(source).splitlines()
-        original_lines = source.splitlines()
+        sanitized_lines = source_file.sanitized_lines
+        if not sanitized_lines:
+            sanitized_lines = tuple(sanitize_csharp_source(source).splitlines())
+        original_lines = source_file.original_lines or tuple(source.splitlines())
         relative_path = normalize_path(path, repo_root)
         has_declaration_candidate = False
 
@@ -2469,6 +3688,9 @@ def scan_source_tree_with_declarations(
                 is_allowed_path(relative_path, declaration_allowed_suffixes),
                 sanitized_lines=sanitized_lines,
                 original_lines=original_lines,
+                h8memory_lifetime_sources_by_owner=h8memory_lifetime_sources_by_owner,
+                native_lifetime_helper_sources_by_directory=native_lifetime_helper_sources_by_directory,
+                native_lifetime_helper_raw_sources_by_directory=native_lifetime_helper_raw_sources_by_directory,
             )
 
         if not constructor_lines and not file_declaration_findings:
@@ -3601,8 +4823,9 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    findings, declaration_findings = scan_source_tree_with_declarations(args.root)
-    latest_created_fallback_findings = scan_latest_created_fallback_tree(args.root)
+    source_files = read_csharp_source_files(args.root)
+    findings, declaration_findings = scan_source_tree_with_declarations(args.root, source_files=source_files)
+    latest_created_fallback_findings = scan_latest_created_fallback_tree(args.root, source_files=source_files)
     payload = build_audit_payload(
         findings,
         args.root,

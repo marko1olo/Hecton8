@@ -1,4 +1,4 @@
-using Hecton8.Audio;
+﻿using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
@@ -192,7 +192,7 @@ namespace Hecton8.Progression
 
         private static bool IsAudioLogSystemUsable(AudioLogSystem audioLogs)
         {
-            return audioLogs != null && audioLogs.isActiveAndEnabled;
+            return audioLogs != null && audioLogs.IsAudioLogRuntimeReady;
         }
 
         private void CacheAudioLogSystem(AudioLogSystem audioLogs)
@@ -287,9 +287,17 @@ namespace Hecton8.Progression
         private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null && playerContext.PlayerMovement != null)
+            if (playerContext != null)
             {
-                playerAup = playerContext.PlayerMovement.CurrentAup;
+                if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                    !movementState.PredictedAup.IsFinite())
+                {
+                    playerAup = default;
+                    return false;
+                }
+
+                playerAup = movementState.PredictedAup;
                 return true;
             }
 

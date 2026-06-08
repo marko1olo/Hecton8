@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "Tempa Tekanan Oskar Neumann"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# Tempa Tekanan Oskar Neumann
 
-ID LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
+Oskar Neumann menghubungkan keterampilan koloni dengan rantai pelarian. Catatan tempa tekanannya menjelaskan fabrikasi dalam, cincin penjepit, uji segel, dan kebutuhan turun mencari komponen alih-alih menunggu penyelamatan permukaan.
 
 ## Scanner
 
-ID LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+Oskar Neumann meninggalkan resep tempa untuk cincin penjepit yang cukup kuat agar dudukan naik tidak sekadar menjadi peti mati.
 
 ## Terminal
 
-ID LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+NEUMANN, O. Catatan tempa: debu kaca tekanan merusak segel pertama jika dicampur dingin. Panaskan cincin di bawah tarikan ventilasi, celupkan dalam jaket air garam, lalu uji pada dua kali beban naik.
 
 ## Audio
 
-ID LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+Peluncuran hanyalah pintu tekanan yang bergerak ke atas. Bangun seperti pintu.
 
 ## Field Note
 
-ID LOC HOLD: The exit needs craft, not courage.
+Jalan keluar butuh keterampilan, bukan keberanian.
 
 <!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/id_ID. -->

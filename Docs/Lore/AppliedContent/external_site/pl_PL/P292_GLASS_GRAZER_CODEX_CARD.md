@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Glass Grazer Codex Card"
+title: "Karta kodeksu: szklany skrobacz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Glass Grazer Codex Card
+# Karta kodeksu: szklany skrobacz
 
-PL LOC HOLD: HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+Szklane skrobacze zmieniają ekologię HECTON-8 w język przetrwania. Podczas żerowania wycinają jasne blizny trasy w filmie i matach, ale ich bezruch często mówi więcej niż ruch. Niepozorne zwierzę potrafi ostrzec gracza przed miernikiem.
 
 ## Scanner
 
-PL LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+Stado szklanych skrobaczy. Nieagresywne skorupowe żerujące organizmy zeskrobują film mineralny. Równe tykanie: woda robocza. Nagła cisza: polanę zmieniło coś większego.
 
 ## Terminal
 
-PL LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+OKAZ / STADO SZKLANYCH SKROBACZY / rola: skrobacz płytkiego filmu, świadek prądu, sygnał wyparcia przez drapieżnika / bezpieczny odczyt: krawędź żerowania, świeży blady pas, stabilne tyknięcia skorup / odrzuć: porzucone pole pokarmu, ciasno zastygłe stado, brak tyknięć po pinger / notatka trasy: nieobecność po żerowaniu to dane zagrożenia.
 
 ## Audio
 
-PL LOC HOLD: When they stop eating, you stop moving.
+Gdy małe pyski przestają tykać, a jedzenie zostaje, nie bądź następną rzeczą, która czeka.
 
 ## Field Note
 
-PL LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Stado żeruje: czytaj pas. Stado zastygło: czytaj wodę. Pusty pas z pokarmem: odejdź.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/pl_PL. -->

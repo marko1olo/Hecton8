@@ -8,33 +8,19 @@ biome_tags: biome.thermal_fields;biome.factory_temple
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+spoiler_tier: 1
+title: "热泉锻炉地热引擎"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# 热泉锻炉地热引擎
 
-CN LOC HOLD: Vent Forge Geothermal Engine shows why HECTON-8 is valuable and lethal. The moon is an industrial engine before humans build one on it.
+热泉锻炉把地质和制造、生存、恐怖连在一起。它们提供陶瓷、密封件和压力玻璃需要的热压循环，但同样的循环也制造沸腾空穴、假氧读数、腐蚀云和动物迁移。
 
-## Scanner
-
-CN LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
-
-## Terminal
-
-CN LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
-
-## Audio
-
-CN LOC HOLD: The vent does not care whether you call it power or weather.
-
-## Field Note
-
-CN LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+热泉锻炉地热引擎说明HECTON-8为何既有价值又致命：在人类造机器之前，这颗月亮本身就是工业引擎。 每个有用的热泉也是惩罚错误时机的机器。
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/zh_CN. -->

@@ -2,7 +2,7 @@
 
 Packet: P474_SOL_CORE_REMOTE_CLAIM_AUTHORITY_BRIDGE
 
-Release set candidate: RS093_LORE_SYSTEM_INTEGRATION_BRIDGE
+Release set candidate: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
 
 Article ID: applied_lore.sol_core_remote_claim_authority_bridge
 
@@ -158,69 +158,159 @@ Status: source_authority.
 
 Title: Sol Core Remote Claim Authority
 
-Site teaser: Sol Core cannot rescue the operator in real time, but its old-law claim certificates can bind debt, ownership, insurance, and witness hashes across the Aegir delay.
+Site teaser: Sol Core cannot rescue the operator in real time, but old-law claim certificates can bind debt, ownership, insurance, and witness hashes across the Aegir delay.
 
 Scanner: SOL CORE CLAIM PLATE // Certificate laminate cracked. Witness hash readable. Remote authority valid for ownership and insurance; no recovery allocation present.
 
-Field note: Sol Core is too far to hear you cough. Its stamp is still close enough to put your name under debt. Keep the plate dry.
+Terminal: SOL CORE REMOTE CLAIM REGISTRY // Route: Sol Core standard / Aegir Reclamation Pool / Black Keel receiver. Required for dispute survival: certificate, insurance standard, witness hash, receiver strip, shell owner, damage state, and custody transfer. Certification binds ownership and review; it does not allocate oxygen, lift mass, quarantine clearance, or rescue.
 
-Audio: Sol certificate accepted. Claim can bind before recovery. Bring the plate if you want the proof to outlive the window.
+Codex: Sol Core is too far to hear the operator, but close enough in law to put a name under debt. Its stamps make claims survive distance, shell ownership, insurance review, and court delay. The cruelty is structural: contract routes move before rescue routes.
+
+Field note: Keep the plate dry. A cracked certificate can turn proof back into claim material.
+
+Audio: Sol certificate accepted. Claim can bind before recovery. Bring the plate if the proof must outlive the window.
+
+External site article:
+
+## What The Record Proves
+
+Sol Core cannot rescue the operator in real time, but old-law claim certificates can bind debt, ownership, insurance, and witness hashes across the Aegir delay.
+
+Sol Core is too far to hear the operator, but close enough in law to put a name under debt. Its stamps make claims survive distance, shell ownership, insurance review, and court delay. The cruelty is structural: contract routes move before rescue routes.
+
+SOL CORE REMOTE CLAIM REGISTRY // Route: Sol Core standard / Aegir Reclamation Pool / Black Keel receiver. Required for dispute survival: certificate, insurance standard, witness hash, receiver strip, shell owner, damage state, and custody transfer. Certification binds ownership and review; it does not allocate oxygen, lift mass, quarantine clearance, or rescue.
+
+## How The Player Reads It
+
+Keep the plate dry. A cracked certificate can turn proof back into claim material. Use it as a rule for evidence handling, not as a promise that help is already moving.
 
 ### ar_SA
 
 Status: draft_machine_or_llm.
 
-Title: سلطة مطالبات سول كور البعيدة
+Title: سلطة مطالبات Sol Core البعيدة
 
-Site teaser: لا تستطيع Sol Core انقاذ المشغل فوريا، لكن شهادات المطالبة ذات القانون القديم تربط الدين والملكية والتأمين و witness hash عبر تاخير Aegir.
+Site teaser: لا تستطيع Sol Core إنقاذ المشغل في الزمن الحي، لكن شهادات المطالبة ذات القانون القديم تربط الدين والملكية والتأمين وwitness hash عبر تأخير Aegir.
 
 Scanner: لوحة مطالبة SOL CORE // طبقة الشهادة متشققة. witness hash مقروء. السلطة البعيدة صالحة للملكية والتأمين؛ لا يوجد تخصيص استرداد.
 
-Field note: Sol Core بعيدة جدا كي تسمع سعالك. ختمها قريب بما يكفي ليضع اسمك تحت الدين. ابق اللوحة جافة.
+Terminal: سجل مطالبات SOL CORE البعيد // المسار: معيار Sol Core / Aegir Reclamation Pool / مستلم Black Keel. للبقاء في نزاع: شهادة، معيار تأمين، witness hash، شريط مستلم، مالك shell، حالة ضرر، ونقل حفظ. التصديق يربط الملكية والمراجعة؛ لا يخصص أكسجينا أو كتلة رفع أو تصريح حجر أو إنقاذا.
 
-Audio: تم قبول شهادة Sol. يمكن للمطالبة ان تلزم قبل الاسترداد. احضر اللوحة اذا اردت ان يبقى الدليل بعد النافذة.
+Codex: Sol Core بعيدة جدا كي تسمع المشغل، لكنها قريبة قانونيا بما يكفي لوضع اسمه تحت الدين. أختامها تجعل المطالبات تنجو من المسافة وملكية shell ومراجعة التأمين وتأخير المحكمة. القسوة بنيوية: مسارات العقد تتحرك قبل مسارات الإنقاذ.
+
+Field note: أبق اللوحة جافة. الشهادة المتشققة قد تعيد الدليل إلى مادة مطالبة.
+
+Audio: تم قبول شهادة Sol. يمكن للمطالبة أن تلزم قبل الاسترداد. أحضر اللوحة إذا كان على الدليل أن يعيش بعد النافذة.
+
+External site article:
+
+## ما الذي يثبته السجل
+
+لا تستطيع Sol Core إنقاذ المشغل في الزمن الحي، لكن شهادات المطالبة ذات القانون القديم تربط الدين والملكية والتأمين وwitness hash عبر تأخير Aegir.
+
+Sol Core بعيدة جدا كي تسمع المشغل، لكنها قريبة قانونيا بما يكفي لوضع اسمه تحت الدين. أختامها تجعل المطالبات تنجو من المسافة وملكية shell ومراجعة التأمين وتأخير المحكمة. القسوة بنيوية: مسارات العقد تتحرك قبل مسارات الإنقاذ.
+
+سجل مطالبات SOL CORE البعيد // المسار: معيار Sol Core / Aegir Reclamation Pool / مستلم Black Keel. للبقاء في نزاع: شهادة، معيار تأمين، witness hash، شريط مستلم، مالك shell، حالة ضرر، ونقل حفظ. التصديق يربط الملكية والمراجعة؛ لا يخصص أكسجينا أو كتلة رفع أو تصريح حجر أو إنقاذا.
+
+## كيف يقرأه اللاعب
+
+أبق اللوحة جافة. الشهادة المتشققة قد تعيد الدليل إلى مادة مطالبة. استخدمه كقاعدة للتعامل مع الدليل، لا كوعد بأن النجدة بدأت تتحرك.
 
 ### de_DE
 
 Status: draft_machine_or_llm.
 
-Title: Sol-Core-Fernanspruchsautoritaet
+Title: Sol-Core-Fernanspruchsautorität
 
-Site teaser: Sol Core kann den Operator nicht sofort retten, aber seine alten Claim-Zertifikate binden Schuld, Eigentum, Versicherung und witness hash ueber die Aegir-Verzoegerung.
+Site teaser: Sol Core kann den Operator nicht in Echtzeit retten, aber alte Claim-Zertifikate können Schuld, Eigentum, Versicherung und witness hashes über die Aegir-Verzögerung binden.
 
-Scanner: SOL-CORE-CLAIMPLATTE // Zertifikatlaminat gerissen. witness hash lesbar. Fernautoritaet fuer Eigentum und Versicherung gueltig; keine Bergungszuteilung vorhanden.
+Scanner: SOL-CORE-CLAIMPLATTE // Zertifikatlaminat gerissen. witness hash lesbar. Fernautorität für Eigentum und Versicherung gültig; keine Bergungszuteilung vorhanden.
 
-Field note: Sol Core ist zu weit weg, um dein Husten zu hoeren. Der Stempel ist nah genug, um deinen Namen unter Schuld zu setzen. Halt die Platte trocken.
+Terminal: SOL CORE FERNCLAIM-REGISTER // Route: Sol-Core-Standard / Aegir Reclamation Pool / Black-Keel-Empfänger. Für Streitüberleben nötig: Zertifikat, Versicherungsstandard, witness hash, Empfängerstreifen, Shell-Eigner, Schadenszustand und Verwahrungstransfer. Zertifizierung bindet Eigentum und Prüfung; sie weist keinen Sauerstoff, keine Hebemasse, keine Quarantänefreigabe und keine Rettung zu.
 
-Audio: Sol-Zertifikat akzeptiert. Der Claim kann vor der Bergung binden. Bring die Platte, wenn der Beweis das Fenster ueberleben soll.
+Codex: Sol Core ist zu weit weg, um den Operator zu hören, aber gesetzlich nah genug, um seinen Namen unter Schuld zu setzen. Seine Stempel lassen Claims Entfernung, Shell-Eigentum, Versicherungsprüfung und Gerichtsverzug überleben. Die Grausamkeit ist strukturell: Vertragsrouten bewegen sich vor Rettungsrouten.
+
+Field note: Halte die Platte trocken. Ein gerissenes Zertifikat kann Beweis wieder in Claim-Material verwandeln.
+
+Audio: Sol-Zertifikat akzeptiert. Claim kann vor Bergung binden. Bring die Platte, wenn der Beweis das Fenster überleben muss.
+
+External site article:
+
+## Was der Eintrag beweist
+
+Sol Core kann den Operator nicht in Echtzeit retten, aber alte Claim-Zertifikate können Schuld, Eigentum, Versicherung und witness hashes über die Aegir-Verzögerung binden.
+
+Sol Core ist zu weit weg, um den Operator zu hören, aber gesetzlich nah genug, um seinen Namen unter Schuld zu setzen. Seine Stempel lassen Claims Entfernung, Shell-Eigentum, Versicherungsprüfung und Gerichtsverzug überleben. Die Grausamkeit ist strukturell: Vertragsrouten bewegen sich vor Rettungsrouten.
+
+SOL CORE FERNCLAIM-REGISTER // Route: Sol-Core-Standard / Aegir Reclamation Pool / Black-Keel-Empfänger. Für Streitüberleben nötig: Zertifikat, Versicherungsstandard, witness hash, Empfängerstreifen, Shell-Eigner, Schadenszustand und Verwahrungstransfer. Zertifizierung bindet Eigentum und Prüfung; sie weist keinen Sauerstoff, keine Hebemasse, keine Quarantänefreigabe und keine Rettung zu.
+
+## Wie der Spieler es liest
+
+Halte die Platte trocken. Ein gerissenes Zertifikat kann Beweis wieder in Claim-Material verwandeln. Lies es als Regel für Beweisführung, nicht als Versprechen, dass Hilfe bereits unterwegs ist.
 
 ### es_ES
 
 Status: draft_machine_or_llm.
 
-Title: Autoridad remota de reclamacion de Sol Core
+Title: Autoridad remota de reclamo Sol Core
 
-Site teaser: Sol Core no puede rescatar al operador en tiempo real, pero sus certificados de ley antigua atan deuda, propiedad, seguro y witness hash a traves del retraso de Aegir.
+Site teaser: Sol Core no puede rescatar al operador en tiempo real, pero los certificados de ley antigua pueden atar deuda, propiedad, seguro y witness hash a través del retraso Aegir.
 
-Scanner: PLACA DE RECLAMACION SOL CORE // Laminado de certificado agrietado. witness hash legible. Autoridad remota valida para propiedad y seguro; sin asignacion de recuperacion.
+Scanner: PLACA DE RECLAMO SOL CORE // Laminado de certificado agrietado. witness hash legible. Autoridad remota válida para propiedad y seguro; sin asignación de recuperación.
 
-Field note: Sol Core esta demasiado lejos para oir tu tos. Su sello sigue lo bastante cerca para poner tu nombre bajo deuda. Mantén seca la placa.
+Terminal: REGISTRO REMOTO DE RECLAMO SOL CORE // Ruta: estándar Sol Core / Aegir Reclamation Pool / receptor Black Keel. Para sobrevivir disputa: certificado, estándar de seguro, witness hash, tira receptora, dueño shell, estado de daño y transferencia de custodia. La certificación ata propiedad y revisión; no asigna oxígeno, masa de elevación, cuarentena ni rescate.
 
-Audio: Certificado Sol aceptado. La reclamacion puede obligar antes de la recuperacion. Trae la placa si quieres que la prueba sobreviva a la ventana.
+Codex: Sol Core está demasiado lejos para oír al operador, pero lo bastante cerca en derecho para poner su nombre bajo deuda. Sus sellos hacen sobrevivir reclamos a distancia, propiedad shell, seguro y demora judicial. La crueldad es estructural: las rutas de contrato se mueven antes que las de rescate.
+
+Field note: Mantén seca la placa. Un certificado roto puede devolver la prueba a material de reclamo.
+
+Audio: Certificado Sol aceptado. El reclamo puede obligar antes de la recuperación. Trae la placa si la prueba debe sobrevivir a la ventana.
+
+External site article:
+
+## Lo que prueba el registro
+
+Sol Core no puede rescatar al operador en tiempo real, pero los certificados de ley antigua pueden atar deuda, propiedad, seguro y witness hash a través del retraso Aegir.
+
+Sol Core está demasiado lejos para oír al operador, pero lo bastante cerca en derecho para poner su nombre bajo deuda. Sus sellos hacen sobrevivir reclamos a distancia, propiedad shell, seguro y demora judicial. La crueldad es estructural: las rutas de contrato se mueven antes que las de rescate.
+
+REGISTRO REMOTO DE RECLAMO SOL CORE // Ruta: estándar Sol Core / Aegir Reclamation Pool / receptor Black Keel. Para sobrevivir disputa: certificado, estándar de seguro, witness hash, tira receptora, dueño shell, estado de daño y transferencia de custodia. La certificación ata propiedad y revisión; no asigna oxígeno, masa de elevación, cuarentena ni rescate.
+
+## Cómo lo lee el jugador
+
+Mantén seca la placa. Un certificado roto puede devolver la prueba a material de reclamo. Úsalo como regla para manejar pruebas, no como promesa de que la ayuda ya está en marcha.
 
 ### fr_FR
 
 Status: draft_machine_or_llm.
 
-Title: Autorite de reclamation distante de Sol Core
+Title: Autorité de réclamation distante Sol Core
 
-Site teaser: Sol Core ne peut pas sauver l'operateur en temps reel, mais ses certificats d'ancienne loi lient dette, propriete, assurance et witness hash malgre le delai Aegir.
+Site teaser: Sol Core ne peut pas sauver l'opérateur en temps réel, mais les certificats d'ancienne loi peuvent lier dette, propriété, assurance et witness hashes à travers le délai Aegir.
 
-Scanner: PLAQUE DE RECLAMATION SOL CORE // Laminat de certificat fissure. witness hash lisible. Autorite distante valide pour propriete et assurance; aucune allocation de recuperation.
+Scanner: PLAQUE DE RÉCLAMATION SOL CORE // Laminat de certificat fissuré. witness hash lisible. Autorité distante valide pour propriété et assurance; aucune allocation de récupération.
 
-Field note: Sol Core est trop loin pour entendre ta toux. Son sceau reste assez proche pour mettre ton nom sous dette. Garde la plaque au sec.
+Terminal: REGISTRE DISTANT SOL CORE // Route: standard Sol Core / Aegir Reclamation Pool / récepteur Black Keel. Pour survivre au litige: certificat, standard assurance, witness hash, bande réceptrice, propriétaire shell, état des dégâts et transfert de garde. La certification lie propriété et révision; elle n'alloue ni oxygène, ni masse de levage, ni quarantaine, ni sauvetage.
 
-Audio: Certificat Sol accepte. La reclamation peut lier avant la recuperation. Apporte la plaque si tu veux que la preuve survive a la fenetre.
+Codex: Sol Core est trop loin pour entendre l'opérateur, mais assez proche en droit pour mettre son nom sous dette. Ses sceaux font survivre les claims à la distance, aux shells, à l'assurance et au délai de cour. La cruauté est structurelle: les routes de contrat bougent avant les routes de sauvetage.
+
+Field note: Garde la plaque au sec. Un certificat fissuré peut redevenir matériau de claim.
+
+Audio: Certificat Sol accepté. La réclamation peut lier avant récupération. Apporte la plaque si la preuve doit survivre à la fenêtre.
+
+External site article:
+
+## Ce que le registre prouve
+
+Sol Core ne peut pas sauver l'opérateur en temps réel, mais les certificats d'ancienne loi peuvent lier dette, propriété, assurance et witness hashes à travers le délai Aegir.
+
+Sol Core est trop loin pour entendre l'opérateur, mais assez proche en droit pour mettre son nom sous dette. Ses sceaux font survivre les claims à la distance, aux shells, à l'assurance et au délai de cour. La cruauté est structurelle: les routes de contrat bougent avant les routes de sauvetage.
+
+REGISTRE DISTANT SOL CORE // Route: standard Sol Core / Aegir Reclamation Pool / récepteur Black Keel. Pour survivre au litige: certificat, standard assurance, witness hash, bande réceptrice, propriétaire shell, état des dégâts et transfert de garde. La certification lie propriété et révision; elle n'alloue ni oxygène, ni masse de levage, ni quarantaine, ni sauvetage.
+
+## Comment le joueur le lit
+
+Garde la plaque au sec. Un certificat fissuré peut redevenir matériau de claim. Lis-le comme une règle de traitement des preuves, pas comme la promesse qu'un secours arrive déjà.
 
 ### he_IL
 
@@ -228,41 +318,95 @@ Status: draft_machine_or_llm.
 
 Title: סמכות תביעה מרחוק של Sol Core
 
-Site teaser: Sol Core אינה יכולה להציל את המפעיל בזמן אמת, אבל תעודות התביעה של החוק הישן קושרות חוב, בעלות, ביטוח ו witness hash דרך עיכוב Aegir.
+Site teaser: Sol Core לא יכולה להציל את המפעיל בזמן אמת, אבל תעודות תביעה של חוק ישן יכולות לקשור חוב, בעלות, ביטוח ו-witness hash דרך עיכוב Aegir.
 
-Scanner: לוח תביעה SOL CORE // למינצית התעודה סדוקה. witness hash קריא. סמכות מרחוק תקפה לבעלות וביטוח; אין הקצאת חילוץ.
+Scanner: לוח תביעה SOL CORE // למינציית התעודה סדוקה. witness hash קריא. סמכות מרחוק תקפה לבעלות וביטוח; אין הקצאת התאוששות.
 
-Field note: Sol Core רחוקה מדי כדי לשמוע אותך משתעל. החותמת שלה עדיין קרובה מספיק כדי לשים את שמך תחת חוב. שמור את הלוח יבש.
+Terminal: רישום תביעה מרחוק SOL CORE // נתיב: תקן Sol Core / Aegir Reclamation Pool / מקבל Black Keel. כדי לשרוד מחלוקת: תעודה, תקן ביטוח, witness hash, רצועת מקבל, בעל shell, מצב נזק והעברת משמורת. האישור קושר בעלות ובדיקה; אינו מקצה חמצן, מסת הרמה, אישור הסגר או חילוץ.
 
-Audio: תעודת Sol התקבלה. התביעה יכולה לחייב לפני החילוץ. הבא את הלוח אם אתה רוצה שההוכחה תשרוד את החלון.
+Codex: Sol Core רחוקה מדי לשמוע את המפעיל, אבל קרובה מספיק בחוק כדי לשים את שמו תחת חוב. החותמות שלה מאפשרות לתביעות לשרוד מרחק, בעלות shell, בדיקת ביטוח ועיכוב בית משפט. האכזריות מבנית: נתיבי חוזה זזים לפני נתיבי חילוץ.
+
+Field note: שמור את הלוח יבש. תעודה סדוקה יכולה להפוך ראיה חזרה לחומר תביעה.
+
+Audio: תעודת Sol התקבלה. תביעה יכולה לחייב לפני התאוששות. הבא את הלוח אם הראיה חייבת לשרוד את החלון.
+
+External site article:
+
+## מה הרשומה מוכיחה
+
+Sol Core לא יכולה להציל את המפעיל בזמן אמת, אבל תעודות תביעה של חוק ישן יכולות לקשור חוב, בעלות, ביטוח ו-witness hash דרך עיכוב Aegir.
+
+Sol Core רחוקה מדי לשמוע את המפעיל, אבל קרובה מספיק בחוק כדי לשים את שמו תחת חוב. החותמות שלה מאפשרות לתביעות לשרוד מרחק, בעלות shell, בדיקת ביטוח ועיכוב בית משפט. האכזריות מבנית: נתיבי חוזה זזים לפני נתיבי חילוץ.
+
+רישום תביעה מרחוק SOL CORE // נתיב: תקן Sol Core / Aegir Reclamation Pool / מקבל Black Keel. כדי לשרוד מחלוקת: תעודה, תקן ביטוח, witness hash, רצועת מקבל, בעל shell, מצב נזק והעברת משמורת. האישור קושר בעלות ובדיקה; אינו מקצה חמצן, מסת הרמה, אישור הסגר או חילוץ.
+
+## איך השחקן קורא את זה
+
+שמור את הלוח יבש. תעודה סדוקה יכולה להפוך ראיה חזרה לחומר תביעה. השתמש בזה ככלל לטיפול בראיות, לא כהבטחה שעזרה כבר בדרך.
 
 ### id_ID
 
 Status: draft_machine_or_llm.
 
-Title: Wewenang Klaim Jarak Jauh Sol Core
+Title: Otoritas Klaim Jarak Jauh Sol Core
 
-Site teaser: Sol Core tidak bisa menyelamatkan operator secara langsung, tetapi sertifikat hukum lamanya mengikat utang, kepemilikan, asuransi, dan witness hash melewati jeda Aegir.
+Site teaser: Sol Core tidak bisa menyelamatkan operator secara real time, tetapi sertifikat hukum lama dapat mengikat utang, kepemilikan, asuransi, dan witness hash melewati jeda Aegir.
 
-Scanner: PLAT KLAIM SOL CORE // Laminasi sertifikat retak. witness hash terbaca. Wewenang jauh sah untuk kepemilikan dan asuransi; tidak ada alokasi pemulihan.
+Scanner: PLAT KLAIM SOL CORE // Laminasi sertifikat retak. witness hash terbaca. Otoritas jauh sah untuk kepemilikan dan asuransi; tidak ada alokasi pemulihan.
 
-Field note: Sol Core terlalu jauh untuk mendengar batukmu. Capnya masih cukup dekat untuk menaruh namamu di bawah utang. Jaga plat tetap kering.
+Terminal: REGISTRI KLAIM JARAK JAUH SOL CORE // Rute: standar Sol Core / Aegir Reclamation Pool / penerima Black Keel. Agar sengketa bertahan: sertifikat, standar asuransi, witness hash, strip penerima, pemilik shell, kondisi kerusakan, dan transfer kustodi. Sertifikasi mengikat kepemilikan dan tinjauan; tidak memberi oksigen, massa angkat, izin karantina, atau penyelamatan.
 
-Audio: Sertifikat Sol diterima. Klaim dapat mengikat sebelum pemulihan. Bawa plat jika ingin bukti bertahan melewati jendela.
+Codex: Sol Core terlalu jauh untuk mendengar operator, tetapi cukup dekat secara hukum untuk menaruh nama di bawah utang. Capnya membuat klaim bertahan melewati jarak, kepemilikan shell, tinjauan asuransi, dan jeda pengadilan. Kekejamannya struktural: rute kontrak bergerak sebelum rute penyelamatan.
+
+Field note: Jaga plat tetap kering. Sertifikat retak dapat mengubah bukti kembali menjadi material klaim.
+
+Audio: Sertifikat Sol diterima. Klaim dapat mengikat sebelum pemulihan. Bawa plat jika bukti harus hidup melewati jendela.
+
+External site article:
+
+## Yang Dibuktikan Catatan
+
+Sol Core tidak bisa menyelamatkan operator secara real time, tetapi sertifikat hukum lama dapat mengikat utang, kepemilikan, asuransi, dan witness hash melewati jeda Aegir.
+
+Sol Core terlalu jauh untuk mendengar operator, tetapi cukup dekat secara hukum untuk menaruh nama di bawah utang. Capnya membuat klaim bertahan melewati jarak, kepemilikan shell, tinjauan asuransi, dan jeda pengadilan. Kekejamannya struktural: rute kontrak bergerak sebelum rute penyelamatan.
+
+REGISTRI KLAIM JARAK JAUH SOL CORE // Rute: standar Sol Core / Aegir Reclamation Pool / penerima Black Keel. Agar sengketa bertahan: sertifikat, standar asuransi, witness hash, strip penerima, pemilik shell, kondisi kerusakan, dan transfer kustodi. Sertifikasi mengikat kepemilikan dan tinjauan; tidak memberi oksigen, massa angkat, izin karantina, atau penyelamatan.
+
+## Cara Pemain Membacanya
+
+Jaga plat tetap kering. Sertifikat retak dapat mengubah bukti kembali menjadi material klaim. Baca ini sebagai aturan menangani bukti, bukan janji bahwa bantuan sudah bergerak.
 
 ### ja_JP
 
 Status: draft_machine_or_llm.
 
-Title: Sol Core遠隔請求権限
+Title: Sol Core 遠隔請求権限
 
-Site teaser: Sol Coreは作業者を即時救助できない。それでも旧法の請求証明は、Aegirの遅延を越えて債務、所有、保険、witness hashを拘束できる。
+Site teaser: Sol Core は作業者をリアルタイムで救えない。それでも旧法の請求証明は、Aegir 遅延を越えて債務、所有、保険、witness hash を拘束できる。
 
-Scanner: SOL CORE請求プレート // 証明ラミネートに亀裂。witness hash読取可能。遠隔権限は所有と保険に有効。回収割当なし。
+Scanner: SOL CORE 請求プレート // 証明ラミネートに亀裂。witness hash 読取可。遠隔権限は所有と保険に有効。回収割当なし。
 
-Field note: Sol Coreは咳を聞くには遠すぎる。だがその印章は、君の名を債務の下に置くには近い。プレートを乾かしておけ。
+Terminal: SOL CORE 遠隔請求登録 // 経路: Sol Core 標準 / Aegir Reclamation Pool / Black Keel 受領。係争を生き残るには、証明、保険標準、witness hash、受領ストリップ、shell 所有者、損傷状態、保管移転が必要。認証は所有と審査を拘束するが、酸素、揚収質量、隔離許可、救助は割り当てない。
 
-Audio: Sol証明受理。請求は回収前に拘束可能。証拠を窓の後まで残したいならプレートを持ち帰れ。
+Codex: Sol Core は作業者の声を聞くには遠すぎるが、法では名前を債務の下に置けるほど近い。その印章は距離、shell 所有、保険審査、裁判遅延を越えて請求を残す。残酷さは構造だ。契約経路は救助経路より先に動く。
+
+Field note: プレートを乾かしておけ。割れた証明は証拠を請求材料に戻す。
+
+Audio: Sol 証明受理。請求は回収前に拘束できる。証拠を窓の後まで残すならプレートを持ち帰れ。
+
+External site article:
+
+## 記録が証明するもの
+
+Sol Core は作業者をリアルタイムで救えない。それでも旧法の請求証明は、Aegir 遅延を越えて債務、所有、保険、witness hash を拘束できる。
+
+Sol Core は作業者の声を聞くには遠すぎるが、法では名前を債務の下に置けるほど近い。その印章は距離、shell 所有、保険審査、裁判遅延を越えて請求を残す。残酷さは構造だ。契約経路は救助経路より先に動く。
+
+SOL CORE 遠隔請求登録 // 経路: Sol Core 標準 / Aegir Reclamation Pool / Black Keel 受領。係争を生き残るには、証明、保険標準、witness hash、受領ストリップ、shell 所有者、損傷状態、保管移転が必要。認証は所有と審査を拘束するが、酸素、揚収質量、隔離許可、救助は割り当てない。
+
+## プレイヤーが読むべきこと
+
+プレートを乾かしておけ。割れた証明は証拠を請求材料に戻す。 これは証拠を扱うための規則であり、救助がもう動いているという約束ではない。
 
 ### ko_KR
 
@@ -270,55 +414,127 @@ Status: draft_machine_or_llm.
 
 Title: Sol Core 원격 청구 권한
 
-Site teaser: Sol Core는 운용자를 실시간으로 구조할 수 없다. 그러나 구법 청구 증명서는 Aegir 지연을 넘어 부채, 소유권, 보험, witness hash를 묶을 수 있다.
+Site teaser: Sol Core는 조작자를 실시간으로 구조할 수 없지만, 구법 청구 증명서는 Aegir 지연을 넘어 부채, 소유권, 보험, witness hash를 묶을 수 있다.
 
-Scanner: SOL CORE 청구판 // 증명 라미네이트 균열. witness hash 판독 가능. 원격 권한은 소유권과 보험에 유효함. 회수 배정 없음.
+Scanner: SOL CORE 청구판 // 증명 라미네이트 균열. witness hash 판독 가능. 원격 권한은 소유권과 보험에 유효. 회수 배정 없음.
 
-Field note: Sol Core는 네 기침을 듣기엔 너무 멀다. 그래도 그 도장은 네 이름을 부채 아래 넣기엔 충분히 가깝다. 판을 말려 둬라.
+Terminal: SOL CORE 원격 청구 등록 // 경로: Sol Core 표준 / Aegir Reclamation Pool / Black Keel 수신자. 분쟁 생존에 필요한 것: 증명서, 보험 표준, witness hash, 수신자 스트립, shell 소유자, 손상 상태, 보관 이전. 인증은 소유권과 검토를 묶지만 산소, 양력 질량, 격리 허가, 구조를 배정하지 않는다.
 
-Audio: Sol 증명서 수락. 청구는 회수 전에 구속될 수 있다. 증거가 창 이후에도 남길 원하면 판을 가져와라.
+Codex: Sol Core는 조작자 목소리를 듣기엔 너무 멀지만 법적으로는 이름을 부채 아래 넣을 만큼 가깝다. 그 도장은 거리, shell 소유권, 보험 검토, 법정 지연을 넘어 청구를 살린다. 잔혹함은 구조적이다. 계약 경로가 구조 경로보다 먼저 움직인다.
+
+Field note: 판을 말려 둬라. 금 간 증명서는 증거를 다시 청구 물질로 바꿀 수 있다.
+
+Audio: Sol 증명서 수락. 청구는 회수 전에 구속 가능. 증거가 창을 넘어 살아남아야 한다면 판을 가져와라.
+
+External site article:
+
+## 기록이 증명하는 것
+
+Sol Core는 조작자를 실시간으로 구조할 수 없지만, 구법 청구 증명서는 Aegir 지연을 넘어 부채, 소유권, 보험, witness hash를 묶을 수 있다.
+
+Sol Core는 조작자 목소리를 듣기엔 너무 멀지만 법적으로는 이름을 부채 아래 넣을 만큼 가깝다. 그 도장은 거리, shell 소유권, 보험 검토, 법정 지연을 넘어 청구를 살린다. 잔혹함은 구조적이다. 계약 경로가 구조 경로보다 먼저 움직인다.
+
+SOL CORE 원격 청구 등록 // 경로: Sol Core 표준 / Aegir Reclamation Pool / Black Keel 수신자. 분쟁 생존에 필요한 것: 증명서, 보험 표준, witness hash, 수신자 스트립, shell 소유자, 손상 상태, 보관 이전. 인증은 소유권과 검토를 묶지만 산소, 양력 질량, 격리 허가, 구조를 배정하지 않는다.
+
+## 플레이어가 읽어야 할 것
+
+판을 말려 둬라. 금 간 증명서는 증거를 다시 청구 물질로 바꿀 수 있다. 이것은 증거 처리 규칙이지, 구조가 이미 움직인다는 약속이 아니다.
 
 ### nl_NL
 
 Status: draft_machine_or_llm.
 
-Title: Sol Core autoriteit voor claims op afstand
+Title: Sol Core claimautoriteit op afstand
 
-Site teaser: Sol Core kan de operator niet direct redden, maar oude claimcertificaten binden schuld, eigendom, verzekering en witness hash door de Aegir-vertraging heen.
+Site teaser: Sol Core kan de operator niet direct redden, maar oude claimcertificaten kunnen schuld, eigendom, verzekering en witness hashes door de Aegir-vertraging heen binden.
 
 Scanner: SOL CORE CLAIMPLAAT // Certificaatlaminaat gebarsten. witness hash leesbaar. Autoriteit op afstand geldig voor eigendom en verzekering; geen bergingstoewijzing aanwezig.
 
-Field note: Sol Core is te ver weg om je hoest te horen. De stempel is nog dichtbij genoeg om je naam onder schuld te zetten. Houd de plaat droog.
+Terminal: SOL CORE CLAIMREGISTER OP AFSTAND // Route: Sol Core-standaard / Aegir Reclamation Pool / Black Keel-ontvanger. Nodig voor geschiloverleving: certificaat, verzekeringsstandaard, witness hash, ontvangerstrip, shell-eigenaar, schadestaat en bewarings overdracht. Certificering bindt eigendom en review; ze wijst geen zuurstof, liftmassa, quarantaineklaring of redding toe.
 
-Audio: Sol-certificaat geaccepteerd. De claim kan binden voor berging. Breng de plaat als het bewijs het venster moet overleven.
+Codex: Sol Core is te ver om de operator te horen, maar juridisch dichtbij genoeg om een naam onder schuld te zetten. Zijn stempels laten claims afstand, shell-eigendom, verzekeringsreview en rechtbankvertraging overleven. De wreedheid is structureel: contractroutes bewegen vóór reddingsroutes.
+
+Field note: Houd de plaat droog. Een gebarsten certificaat kan bewijs terug in claimmateriaal veranderen.
+
+Audio: Sol-certificaat geaccepteerd. Claim kan binden vóór berging. Breng de plaat als bewijs het venster moet overleven.
+
+External site article:
+
+## Wat het record bewijst
+
+Sol Core kan de operator niet direct redden, maar oude claimcertificaten kunnen schuld, eigendom, verzekering en witness hashes door de Aegir-vertraging heen binden.
+
+Sol Core is te ver om de operator te horen, maar juridisch dichtbij genoeg om een naam onder schuld te zetten. Zijn stempels laten claims afstand, shell-eigendom, verzekeringsreview en rechtbankvertraging overleven. De wreedheid is structureel: contractroutes bewegen vóór reddingsroutes.
+
+SOL CORE CLAIMREGISTER OP AFSTAND // Route: Sol Core-standaard / Aegir Reclamation Pool / Black Keel-ontvanger. Nodig voor geschiloverleving: certificaat, verzekeringsstandaard, witness hash, ontvangerstrip, shell-eigenaar, schadestaat en bewarings overdracht. Certificering bindt eigendom en review; ze wijst geen zuurstof, liftmassa, quarantaineklaring of redding toe.
+
+## Hoe de speler het leest
+
+Houd de plaat droog. Een gebarsten certificaat kan bewijs terug in claimmateriaal veranderen. Lees het als regel voor bewijsbehandeling, niet als belofte dat hulp al onderweg is.
 
 ### pl_PL
 
 Status: draft_machine_or_llm.
 
-Title: Zdalna wladza roszczen Sol Core
+Title: Zdalna władza roszczeń Sol Core
 
-Site teaser: Sol Core nie uratuje operatora w czasie rzeczywistym, ale jej stare certyfikaty roszczen wiaza dlug, wlasnosc, ubezpieczenie i witness hash przez opoznienie Aegir.
+Site teaser: Sol Core nie uratuje operatora w czasie rzeczywistym, ale certyfikaty starego prawa mogą wiązać dług, własność, ubezpieczenie i witness hash przez opóźnienie Aegir.
 
-Scanner: PLYTA ROSZCZENIA SOL CORE // Laminat certyfikatu pekniety. witness hash czytelny. Zdalna wladza wazna dla wlasnosci i ubezpieczenia; brak przydzialu odzysku.
+Scanner: PŁYTA ROSZCZENIA SOL CORE // Laminat certyfikatu pęknięty. witness hash czytelny. Zdalna władza ważna dla własności i ubezpieczenia; brak przydziału odzysku.
 
-Field note: Sol Core jest za daleko, zeby uslyszec twoj kaszel. Jej pieczec jest dosc blisko, by wpisac twoje imie pod dlug. Trzymaj plyte sucha.
+Terminal: ZDALNY REJESTR ROSZCZEŃ SOL CORE // Trasa: standard Sol Core / Aegir Reclamation Pool / odbiorca Black Keel. Do przeżycia sporu potrzebne: certyfikat, standard ubezpieczenia, witness hash, pasek odbiorcy, właściciel shell, stan szkód i transfer powiernictwa. Certyfikacja wiąże własność i przegląd; nie przydziela tlenu, masy podnoszenia, kwarantanny ani ratunku.
 
-Audio: Certyfikat Sol przyjety. Roszczenie moze wiazac przed odzyskiem. Wez plyte, jesli dowod ma przezyc okno.
+Codex: Sol Core jest za daleko, by słyszeć operatora, ale prawnie dość blisko, by wpisać nazwisko pod dług. Jej pieczęcie pozwalają roszczeniom przetrwać dystans, własność shell, przegląd ubezpieczenia i opóźnienie sądu. Okrucieństwo jest strukturalne: trasy kontraktowe ruszają przed trasami ratunku.
+
+Field note: Trzymaj płytę suchą. Pęknięty certyfikat może zmienić dowód z powrotem w materiał roszczenia.
+
+Audio: Certyfikat Sol przyjęty. Roszczenie może wiązać przed odzyskiem. Weź płytę, jeśli dowód ma przeżyć okno.
+
+External site article:
+
+## Co potwierdza zapis
+
+Sol Core nie uratuje operatora w czasie rzeczywistym, ale certyfikaty starego prawa mogą wiązać dług, własność, ubezpieczenie i witness hash przez opóźnienie Aegir.
+
+Sol Core jest za daleko, by słyszeć operatora, ale prawnie dość blisko, by wpisać nazwisko pod dług. Jej pieczęcie pozwalają roszczeniom przetrwać dystans, własność shell, przegląd ubezpieczenia i opóźnienie sądu. Okrucieństwo jest strukturalne: trasy kontraktowe ruszają przed trasami ratunku.
+
+ZDALNY REJESTR ROSZCZEŃ SOL CORE // Trasa: standard Sol Core / Aegir Reclamation Pool / odbiorca Black Keel. Do przeżycia sporu potrzebne: certyfikat, standard ubezpieczenia, witness hash, pasek odbiorcy, właściciel shell, stan szkód i transfer powiernictwa. Certyfikacja wiąże własność i przegląd; nie przydziela tlenu, masy podnoszenia, kwarantanny ani ratunku.
+
+## Jak gracz ma to czytać
+
+Trzymaj płytę suchą. Pęknięty certyfikat może zmienić dowód z powrotem w materiał roszczenia. Czytaj to jako zasadę obchodzenia się z dowodem, nie jako obietnicę, że pomoc już ruszyła.
 
 ### pt_BR
 
 Status: draft_machine_or_llm.
 
-Title: Autoridade remota de reivindicacao da Sol Core
+Title: Autoridade remota de reivindicação Sol Core
 
-Site teaser: A Sol Core nao pode resgatar o operador em tempo real, mas seus certificados de lei antiga vinculam divida, propriedade, seguro e witness hash pelo atraso de Aegir.
+Site teaser: A Sol Core não pode resgatar o operador em tempo real, mas certificados de lei antiga podem vincular dívida, propriedade, seguro e witness hash pelo atraso de Aegir.
 
-Scanner: PLACA DE REIVINDICACAO SOL CORE // Laminado do certificado rachado. witness hash legivel. Autoridade remota valida para propriedade e seguro; nenhuma alocacao de recuperacao.
+Scanner: PLACA DE REIVINDICAÇÃO SOL CORE // Laminado do certificado rachado. witness hash legível. Autoridade remota válida para propriedade e seguro; nenhuma alocação de recuperação.
 
-Field note: A Sol Core esta longe demais para ouvir sua tosse. O selo ainda esta perto o bastante para por seu nome sob divida. Mantenha a placa seca.
+Terminal: REGISTRO REMOTO DE REIVINDICAÇÃO SOL CORE // Rota: padrão Sol Core / Aegir Reclamation Pool / receptor Black Keel. Para sobreviver à disputa: certificado, padrão de seguro, witness hash, tira receptora, dono shell, estado de dano e transferência de custódia. Certificação vincula propriedade e revisão; não aloca oxigênio, massa de içamento, quarentena ou resgate.
 
-Audio: Certificado Sol aceito. A reivindicacao pode vincular antes da recuperacao. Traga a placa se quiser que a prova sobreviva a janela.
+Codex: A Sol Core está longe demais para ouvir o operador, mas perto o bastante na lei para pôr um nome sob dívida. Seus selos fazem reivindicações sobreviverem a distância, propriedade shell, revisão de seguro e atraso judicial. A crueldade é estrutural: rotas de contrato se movem antes das rotas de resgate.
+
+Field note: Mantenha a placa seca. Um certificado rachado pode transformar prova de volta em material de reivindicação.
+
+Audio: Certificado Sol aceito. Reivindicação pode vincular antes da recuperação. Traga a placa se a prova precisa sobreviver à janela.
+
+External site article:
+
+## O que o registro prova
+
+A Sol Core não pode resgatar o operador em tempo real, mas certificados de lei antiga podem vincular dívida, propriedade, seguro e witness hash pelo atraso de Aegir.
+
+A Sol Core está longe demais para ouvir o operador, mas perto o bastante na lei para pôr um nome sob dívida. Seus selos fazem reivindicações sobreviverem a distância, propriedade shell, revisão de seguro e atraso judicial. A crueldade é estrutural: rotas de contrato se movem antes das rotas de resgate.
+
+REGISTRO REMOTO DE REIVINDICAÇÃO SOL CORE // Rota: padrão Sol Core / Aegir Reclamation Pool / receptor Black Keel. Para sobreviver à disputa: certificado, padrão de seguro, witness hash, tira receptora, dono shell, estado de dano e transferência de custódia. Certificação vincula propriedade e revisão; não aloca oxigênio, massa de içamento, quarentena ou resgate.
+
+## Como o jogador lê isso
+
+Mantenha a placa seca. Um certificado rachado pode transformar prova de volta em material de reivindicação. Leia como regra para lidar com prova, não como promessa de que o socorro já está vindo.
 
 ### ru_RU
 
@@ -326,13 +542,31 @@ Status: draft_machine_or_llm.
 
 Title: Удаленная претензионная власть Sol Core
 
-Site teaser: Sol Core не может спасти оператора в реальном времени, но ее старые правовые сертификаты связывают долг, собственность, страхование и witness hash через задержку Aegir.
+Site teaser: Sol Core не может спасти оператора в реальном времени, но староправовые сертификаты связывают долг, собственность, страховку и witness hash через задержку Aegir.
 
-Scanner: ПЛАСТИНА ПРЕТЕНЗИИ SOL CORE // Ламинат сертификата треснул. witness hash читается. Удаленная власть действительна для собственности и страхования; назначения на возврат нет.
+Scanner: ПЛАСТИНА ПРЕТЕНЗИИ SOL CORE // Ламинат сертификата треснул. witness hash читается. Удаленная власть действительна для собственности и страховки; назначения на возврат нет.
 
-Field note: Sol Core слишком далеко, чтобы услышать твой кашель. Ее печать все еще достаточно близко, чтобы поставить твое имя под долг. Держи пластину сухой.
+Terminal: УДАЛЕННЫЙ РЕЕСТР ПРЕТЕНЗИЙ SOL CORE // Маршрут: стандарт Sol Core / Aegir Reclamation Pool / получатель Black Keel. Чтобы спор выжил, нужны сертификат, страховой стандарт, witness hash, полоса получателя, владелец shell, состояние повреждений и передача сохранности. Сертификация связывает собственность и проверку; она не выделяет кислород, подъемную массу, карантинный допуск или спасение.
 
-Audio: Сертификат Sol принят. Претензия может связывать до возврата. Принеси пластину, если хочешь, чтобы доказательство пережило окно.
+Codex: Sol Core слишком далеко, чтобы слышать оператора, но достаточно близко в праве, чтобы поставить имя под долг. Ее печати проводят претензии через расстояние, shell-собственность, страховую проверку и судебную задержку. Жестокость структурная: контрактные маршруты движутся раньше спасательных.
+
+Field note: Держи пластину сухой. Треснувший сертификат может вернуть доказательство в материал претензии.
+
+Audio: Сертификат Sol принят. Претензия может связать до возврата. Принеси пластину, если доказательство должно пережить окно.
+
+External site article:
+
+## Что доказывает запись
+
+Sol Core не может спасти оператора в реальном времени, но староправовые сертификаты связывают долг, собственность, страховку и witness hash через задержку Aegir.
+
+Sol Core слишком далеко, чтобы слышать оператора, но достаточно близко в праве, чтобы поставить имя под долг. Ее печати проводят претензии через расстояние, shell-собственность, страховую проверку и судебную задержку. Жестокость структурная: контрактные маршруты движутся раньше спасательных.
+
+УДАЛЕННЫЙ РЕЕСТР ПРЕТЕНЗИЙ SOL CORE // Маршрут: стандарт Sol Core / Aegir Reclamation Pool / получатель Black Keel. Чтобы спор выжил, нужны сертификат, страховой стандарт, witness hash, полоса получателя, владелец shell, состояние повреждений и передача сохранности. Сертификация связывает собственность и проверку; она не выделяет кислород, подъемную массу, карантинный допуск или спасение.
+
+## Как игрок это читает
+
+Держи пластину сухой. Треснувший сертификат может вернуть доказательство в материал претензии. Читай это как правило обращения с доказательством, а не как обещание, что помощь уже летит.
 
 ### uk_UA
 
@@ -340,27 +574,63 @@ Status: draft_machine_or_llm.
 
 Title: Віддалена претензійна влада Sol Core
 
-Site teaser: Sol Core не може врятувати оператора в реальному часі, але її старі правові сертифікати зв'язують борг, власність, страхування і witness hash через затримку Aegir.
+Site teaser: Sol Core не може врятувати оператора в реальному часі, але староправові сертифікати зв'язують борг, власність, страхування й witness hash через затримку Aegir.
 
 Scanner: ПЛАСТИНА ПРЕТЕНЗІЇ SOL CORE // Ламінат сертифіката тріснув. witness hash читається. Віддалена влада чинна для власності й страхування; призначення на повернення немає.
 
-Field note: Sol Core надто далеко, щоб почути твій кашель. Її печатка все ще досить близько, щоб поставити твоє ім'я під борг. Тримай пластину сухою.
+Terminal: ВІДДАЛЕНИЙ РЕЄСТР ПРЕТЕНЗІЙ SOL CORE // Маршрут: стандарт Sol Core / Aegir Reclamation Pool / отримувач Black Keel. Щоб спір вижив, потрібні сертифікат, страховий стандарт, witness hash, смуга отримувача, власник shell, стан пошкоджень і передача збереження. Сертифікація зв'язує власність і перевірку; вона не виділяє кисень, підйомну масу, карантинний допуск чи порятунок.
 
-Audio: Сертифікат Sol прийнято. Претензія може зобов'язувати до повернення. Принеси пластину, якщо хочеш, щоб доказ пережив вікно.
+Codex: Sol Core надто далеко, щоб чути оператора, але достатньо близько в праві, щоб поставити ім'я під борг. Її печатки проводять претензії крізь відстань, shell-власність, страхову перевірку й судову затримку. Жорстокість структурна: контрактні маршрути рухаються раніше за рятувальні.
+
+Field note: Тримай пластину сухою. Тріснутий сертифікат може повернути доказ у матеріал претензії.
+
+Audio: Сертифікат Sol прийнято. Претензія може зв'язати до повернення. Принеси пластину, якщо доказ має пережити вікно.
+
+External site article:
+
+## Що доводить запис
+
+Sol Core не може врятувати оператора в реальному часі, але староправові сертифікати зв'язують борг, власність, страхування й witness hash через затримку Aegir.
+
+Sol Core надто далеко, щоб чути оператора, але достатньо близько в праві, щоб поставити ім'я під борг. Її печатки проводять претензії крізь відстань, shell-власність, страхову перевірку й судову затримку. Жорстокість структурна: контрактні маршрути рухаються раніше за рятувальні.
+
+ВІДДАЛЕНИЙ РЕЄСТР ПРЕТЕНЗІЙ SOL CORE // Маршрут: стандарт Sol Core / Aegir Reclamation Pool / отримувач Black Keel. Щоб спір вижив, потрібні сертифікат, страховий стандарт, witness hash, смуга отримувача, власник shell, стан пошкоджень і передача збереження. Сертифікація зв'язує власність і перевірку; вона не виділяє кисень, підйомну масу, карантинний допуск чи порятунок.
+
+## Як гравець це читає
+
+Тримай пластину сухою. Тріснутий сертифікат може повернути доказ у матеріал претензії. Читай це як правило поводження з доказом, а не як обіцянку, що допомога вже летить.
 
 ### zh_CN
 
 Status: draft_machine_or_llm.
 
-Title: Sol Core远程索赔 authority
+Title: Sol Core 远程索赔权限
 
-Site teaser: Sol Core不能实时救出操作员，但旧法索赔证书能让债务、所有权、保险和witness hash穿过Aegir延迟继续有效。
+Site teaser: Sol Core 无法实时救出操作员，但旧法索赔证书可以让债务、所有权、保险和 witness hash 穿过 Aegir 延迟继续生效。
 
-Scanner: SOL CORE索赔板 // 证书覆膜开裂。witness hash可读。远程 authority 对所有权和保险有效；没有回收分配。
+Scanner: SOL CORE 索赔板 // 证书覆膜开裂。witness hash 可读。远程权限对所有权和保险有效；没有回收分配。
 
-Field note: Sol Core太远，听不见你咳嗽。它的印章仍足够近，可以把你的名字压在债务下面。保持板面干燥。
+Terminal: SOL CORE 远程索赔登记 // 路线：Sol Core 标准 / Aegir Reclamation Pool / Black Keel 接收方。争议存活所需：证书、保险标准、witness hash、接收条、shell 所有者、损坏状态和保管转移。认证约束所有权和审查；不分配氧气、升举质量、隔离许可或救援。
 
-Audio: Sol证书已接受。索赔可在回收前生效。若想让证据活过窗口，就带回这块板。
+Codex: Sol Core 太远，听不见操作员；但在法律上足够近，可以把名字压到债务下。它的印章让索赔穿过距离、shell 所有权、保险审查和法院延迟存活。残酷是结构性的：合同路线先于救援路线移动。
+
+Field note: 保持板面干燥。开裂证书会把证据重新变成索赔材料。
+
+Audio: Sol 证书已接受。索赔可在回收前生效。如果证据必须活过窗口，就带回这块板。
+
+External site article:
+
+## 记录证明了什么
+
+Sol Core 无法实时救出操作员，但旧法索赔证书可以让债务、所有权、保险和 witness hash 穿过 Aegir 延迟继续生效。
+
+Sol Core 太远，听不见操作员；但在法律上足够近，可以把名字压到债务下。它的印章让索赔穿过距离、shell 所有权、保险审查和法院延迟存活。残酷是结构性的：合同路线先于救援路线移动。
+
+SOL CORE 远程索赔登记 // 路线：Sol Core 标准 / Aegir Reclamation Pool / Black Keel 接收方。争议存活所需：证书、保险标准、witness hash、接收条、shell 所有者、损坏状态和保管转移。认证约束所有权和审查；不分配氧气、升举质量、隔离许可或救援。
+
+## 玩家该怎样读它
+
+保持板面干燥。开裂证书会把证据重新变成索赔材料。 把它当成处理证据的规则，不要当成救援已经出发的承诺。
 
 ## Runtime / Monolith Placement Notes
 
@@ -372,7 +642,7 @@ Runtime hard boundary: gameplay, PDA, scanner, terminal, audio subtitles, websit
 
 Suggested layer: Narrative for codex, terminal, field note, audio, black-box rows, and public/wiki article copy. A future bake owner may split the short scanner row into World only if the scanner string-pool route is explicitly owned and validated.
 
-Route-card candidate note only: candidate route would bind `P474_SOL_CORE_REMOTE_CLAIM_AUTHORITY_BRIDGE` to early claim certificate, Sol Core plate, Black Keel receiver strip, and `RS093_LORE_SYSTEM_INTEGRATION_BRIDGE`. This packet does not create authoritative route-card CSV, release-set manifest rows, source CSV rows, generated pages, h8bin payloads, or DataMonolith content.
+Route-card candidate note only: candidate route would bind `P474_SOL_CORE_REMOTE_CLAIM_AUTHORITY_BRIDGE` to early claim certificate, Sol Core plate, Black Keel receiver strip, and `RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION`. This packet does not create authoritative route-card CSV, release-set manifest rows, source CSV rows, generated pages, h8bin payloads, or DataMonolith content.
 
 ## GlobalQualityWeight Presentation Density
 

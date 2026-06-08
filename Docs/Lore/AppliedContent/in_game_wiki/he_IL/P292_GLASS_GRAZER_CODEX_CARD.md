@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Glass Grazer Codex Card"
+title: "כרטיס קודקס: מגרד זכוכית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Glass Grazer Codex Card
+# כרטיס קודקס: מגרד זכוכית
 
-HE LOC HOLD: Glass Grazer Codex Card turns a benign animal into a readable safety instrument.
+מגרדי זכוכית אינם חיות מחמד, שלל או תפאורה. אלה אוכלים קטנים בעלי שריון שקוף, שהופכים את המדף הפוטי לקריא כשהם מגרדים שכבת מינרלים מ-pressure glass, משפות רופפות של מחצלות פוטיות, ממעטפות כבלים ישנות ומשפות אבן גיר. להקה אוכלת משאירה נתיבים חיוורים בצמיחה. הנתיבים האלה יכולים להראות זרם טרי, אחיזה נקייה, תפר שאינו חם מדי, או אזור שטורפים לא חצו בדקות האחרונות. הרמז המועיל אינו רק תנועה. הוא ההפסקה. אם המזון נשאר ותקתוקי השריון דוממים, הלהקה שמעה שינוי לחץ, תנועת צל, רטט cutter או חיה גדולה יותר מחוץ לקונוס ה-scanner. הנתיב המגורד הוא ראיה, לא רשות. עקוב אחרי השפה. עזוב כשהשפה מתקפלת פנימה.
 
 ## Scanner
 
-HE LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+להקת מגרדי זכוכית. אוכלי שריון לא עוינים מגרדים שכבת מינרלים. תקתוק יציב אומר מים עובדים; שקט פתאומי אומר שמשהו גדול יותר שינה את הקרחה.
 
 ## Terminal
 
-HE LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+דגימה / להקת מגרדי זכוכית / תפקיד: מגרד שכבה רדודה, עד זרם, רמז לדחיקת טורף / קריאה בטוחה: שפת אכילה, נתיב גירוד חיוור טרי, תקתוקי שריון יציבים / דחה: שדה מזון נטוש, להקה קפואה וצפופה, אין תקתוק חוזר אחרי pinger / הערת מסלול: היעדרות אחרי אכילה היא נתון סכנה.
 
 ## Audio
 
-HE LOC HOLD: When they stop eating, you stop moving.
+כשהפיות הקטנים מפסיקים לתקתק והאוכל עוד שם, אל תהיה הדבר הבא שמחכה.
 
 ## Field Note
 
-HE LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+להקה אוכלת: קרא את הנתיב. להקה קפואה: קרא את המים. נתיב ריק עם אוכל שנשאר: עזוב.
 
 <!-- In-Game Wiki; generated from P292_GLASS_GRAZER_CODEX_CARD/he_IL. -->

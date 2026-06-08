@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # THE IRON KELP FORESTS
 
 > **Source:** Deep Reach Xenobiology Division, Hazard Log.

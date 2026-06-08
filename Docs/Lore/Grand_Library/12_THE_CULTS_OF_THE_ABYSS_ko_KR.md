@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 심해의 이단들과 압박 망상
 
 > **출처:** 정신의학적 평가 기록, 섹터 44 의료실 (회수됨).

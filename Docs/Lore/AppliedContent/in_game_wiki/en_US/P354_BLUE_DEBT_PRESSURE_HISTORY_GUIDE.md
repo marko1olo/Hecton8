@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Blue Debt Pressure History Guide
 
-Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.
+Blue debt is contract language wrapped around a dangerous substrate. Pressure history, custody marks and signal drift decide whether it becomes clean payout, Atlas leverage or Deep Reach return motive.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ Blue debt is what people call it after the invoice arrives.
 
 ## Field Note
 
-Color is not grade. A quiet container with clean custody pays; a singing one buys you a drone wake.
+Color is not grade. A quiet container with clean custody pays; a singing one buys a drone wake.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/en_US. -->

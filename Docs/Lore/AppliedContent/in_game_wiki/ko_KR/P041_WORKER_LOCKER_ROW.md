@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 작업자 사물함 열
 
-이 발견은 HECTON-8을 습관, 빚, 프런티어 문화가 있는 작업장으로 만든다.
+작업자 로커 열은 HECTON-8을 평범한 노동에 고정한다. 도구, 페인트, 식량 크레딧, 변방 표식은 재난이 이론이 되기 전에 나타난다.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ localization_flags: 0
 
 ## Terminal
 
-식민지 감사: 개인 보관함과 Barnard 표식이 플레이어를 실제 승무원과 연결한다.
+COLONY AUDIT: 개인 보관함과 Barnard 표식은 로커 열을 이름 있는 승무원과 작업 경로에 묶는다.
 
 ## Audio
 

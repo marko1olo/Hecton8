@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # تعليق مسارات لوحة الورديات
 
-الدليل يبين كيف تخفي لغة اللوجستيات الأجساد وتوزع الذنب.
+تحول لوحات الورديات الكارثة إلى إجراء قابل للقراءة. قتلت Deep Reach وAtlas عبر التصنيف والتأخير والأولوية، لا عبر شر مسرحي.
 
 ## Scanner
 

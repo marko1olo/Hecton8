@@ -5,8 +5,10 @@
 [RULE] Flow fields drive VFX/audio/AI hints before they drive physics.
 [RULE] Physics sampling is limited to player, vehicles, hazards, and near interactive debris. Distant ambience reads shader/VFX flow only.
 [RULE] Main-thread flow orchestration target is `<0.1ms`; older multi-ms budgets require load-shed and profiler proof.
+[REQ] Player-visible weather, surface state, current cues, silt motion, storm readability, and flow-field presentation inherits the Visual Reference Parity Gate. Captures must beat mandatory references plus best-known internal baseline/current rejection matrix before weather/current polish is credited.
 [FORBID] Per-entity main-thread current math beyond gameplay-critical entities.
 [FORBID] Global force application from current fields when visual drift and audio pressure cues are enough.
+[FORBID] Storm darkness, flow particles, tint, fog, or current math as visual acceptance when ocean color, waterline/contact, sky/Aegir/terrain readability, route cue, and compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and recover weather/water/sky owners first.
 
 # HECTON-8 | Abyssal Flow Field System | Technical Mandate v1.0
 # Architect Authority: Principal Engine / Physics Lead

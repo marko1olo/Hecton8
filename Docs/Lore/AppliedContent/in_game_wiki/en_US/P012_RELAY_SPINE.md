@@ -2,8 +2,8 @@
 packet_id: P012_RELAY_SPINE
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: transit.relay_spine
-unlock_id: unlock.first_relay_buffer
-poi_tags: poi.relay_buffer;poi.packet_spool
+unlock_id: unlock.first_stale_relay_buffer
+poi_tags: poi.relay_buffer;poi.packet_age_tag
 biome_tags: biome.drowned_colony;biome.service_canyons
 locale: en_US
 surface: in_game_wiki
@@ -19,15 +19,17 @@ localization_flags: 0
 
 # Relay Spine
 
-The Relay Spine is the slow nervous system of human space: beam schedules, packet buffers, custody stamps, route insurance, and delayed legitimacy. It keeps civilization connected, but it cannot turn a flooded room into a rescue.
+The Relay Spine is the slow communications skeleton of human space: beam slots, packet buffers, custody stamps, retry schedules and legal receipt chains. It can move evidence, claims and orders across interstellar distance. It cannot move oxygen into a flooded compartment.
+
+HECTON-8 uses that delay as pressure. A message may be valid, witnessed and impossible to act on in time. Black Keel can hear a local packet before Sol can understand the disaster. Luyten can preserve the custody hash before any crewed hull crosses the dark. The player learns that truth and rescue are separate logistics problems.
 
 ## Scanner
 
-Stale relay buffer. Outbound packet age exceeds local rescue relevance.
+Stale relay buffer. Outbound packet age exceeds local rescue relevance. Custody hash intact; response window dead.
 
 ## Terminal
 
-Packet queued. Light-delay route accepted. Priority dispute unresolved. Human-response estimate: non-operational.
+RELAY SPINE // Packet queued through Aegir local, Luyten Junction and Sol archival path. Light-delay route accepted. Priority dispute unresolved. Human-response estimate: non-operational for current survival window.
 
 ## Audio
 

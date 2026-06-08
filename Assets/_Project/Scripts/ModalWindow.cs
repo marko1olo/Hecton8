@@ -42,6 +42,7 @@ namespace Hecton.UI.MainMenu
         private UnityAction _confirmClickAction;
         private UnityAction _cancelClickAction;
         private bool _runtimeBindingsReady;
+        private bool _serviceRegistered;
         private ILocalizationTextReadModel _localization;
         private bool _hotSwapRegistered;
         private string _customConfirmLabel;
@@ -337,18 +338,53 @@ namespace Hecton.UI.MainMenu
 
         private bool TryClaimInstance()
         {
-            Hecton8.Core.IModalWindowService existing = Hecton8.Core.GlobalRegistry.ModalWindow;
-            if (existing != null && !ReferenceEquals(existing, this))
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[ModalWindow] Duplicate detected. Destroying extra instance.");
-#endif
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
+
+            Hecton8.Core.IModalWindowService existing = Hecton8.Core.GlobalRegistry.ModalWindow;
+            if (ReferenceEquals(existing, this))
+            {
+                _serviceRegistered = true;
+                return true;
             }
 
             Hecton8.Core.GlobalRegistry.RegisterModalWindowService(this);
-            return true;
+            _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.ModalWindow, this);
+            return _serviceRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            Hecton8.Core.IModalWindowService existing = Hecton8.Core.GlobalRegistry.ModalWindow;
+            if (ReferenceEquals(existing, null) || ReferenceEquals(existing, this))
+                return false;
+
+            ModalWindow active = existing as ModalWindow;
+            if (active == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[ModalWindow] Existing modal service uses another owner. Destroying extra scene component.");
+#endif
+                Destroy(gameObject);
+                return true;
+            }
+
+            if (IsModalWindowRuntimeUsable(active))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[ModalWindow] Existing usable modal service kept. Destroying extra scene component.");
+#endif
+                Destroy(gameObject);
+                return true;
+            }
+
+            Hecton8.Core.GlobalRegistry.UnregisterModalWindowService(existing);
+            return false;
+        }
+
+        private static bool IsModalWindowRuntimeUsable(ModalWindow window)
+        {
+            return window != null && window._serviceRegistered && window.isActiveAndEnabled;
         }
 
         private void CacheRegistryServicesCold()
@@ -378,6 +414,8 @@ namespace Hecton.UI.MainMenu
             Hecton8.Core.IModalWindowService existing = Hecton8.Core.GlobalRegistry.ModalWindow;
             if (ReferenceEquals(existing, this))
                 Hecton8.Core.GlobalRegistry.UnregisterModalWindowService(this);
+
+            _serviceRegistered = false;
         }
 
         void Hecton8.Core.IModalWindowService.ShowModal(

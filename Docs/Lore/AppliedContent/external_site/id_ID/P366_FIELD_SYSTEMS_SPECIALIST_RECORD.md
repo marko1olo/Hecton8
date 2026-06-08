@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Field Systems Specialist Record"
+title: "Catatan Spesialis Sistem Lapangan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Field Systems Specialist Record
+# Catatan Spesialis Sistem Lapangan
 
-ID LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.
+Karakter pemain HECTON-8 masuk ke laut dengan luka praktis: bekas pekerjaan sistem lapangan Deep Reach, akses ke infrastruktur evakuasi, izin yang dicabut, dan ingatan prosedur yang cukup untuk membaca mesin tenggelam sebagai bukti. Ia kini Marauder, bukan pejabat perusahaan dan bukan pahlawan penumpang. Pompa rusak, cap rute, atau frasa liabilitas penting karena operator memahami bagaimana sistem itu seharusnya melindungi pekerja sebelum berubah menjadi berkas.
 
 ## Scanner
 
-ID LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+Kredensial sistem lapangan lama. Bukan staf komando. Pekerja infrastruktur dengan akses cukup untuk mengenali di mana sebuah rute dikubur.
 
 ## Terminal
 
-ID LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+JEJAK PERSONEL: sistem lapangan, infrastruktur evakuasi, sertifikasi route-safe. Izin dicabut setelah tinjauan kebisuan Aegir. Cache prosedur masih cocok dengan urutan operator.
 
 ## Audio
 
-ID LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+Kamu tidak pernah menandatangani kebohongan itu. Kamu tahu tata bahasa yang membuatnya lolos inspeksi.
 
 ## Field Note
 
-ID LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+Lencana itu berhenti membuka pintu. Ia tidak menghapus urutan kegagalan.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/id_ID. -->

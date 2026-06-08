@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DE LEVIATHANS VAN HECTON-8
 
 > **Bron:** Deep Reach Megacorporation, Xenobiologische Dreigingsbeoordeling.

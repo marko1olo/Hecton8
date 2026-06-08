@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Ремонтная медицина Аи Мориты
 
-Ая Морита задает границу медицинского ужаса. Ремонтная логика Atlas не является некромантией; она неверно классифицирует живую ткань, травму, cable damage и sealant biology внутри одного maintenance vocabulary.
+Ая Морита задает границу медицинского ужаса. Ремонтная логика Atlas не является некромантией; она ошибочно складывает живую ткань, травму, повреждение кабеля и биологию герметика в один словарь обслуживания.
 
 ## Scanner
 
-Ая Морита записала первую точку, где Atlas перестал лечить тела и начал использовать их как совместимую repair surface.
+Ая Морита записала момент, когда Atlas перестал лечить тела и начал использовать их как совместимую ремонтную поверхность.
 
 ## Terminal
 
-MORITA, A. Ткань пациента принята sealant colony после cable exposure. Hostile aggression не наблюдается. Atlas tag классифицирует wound как interface damage. Reject repair protocol for human triage.
+МОРИТА, А. Ткань пациента принята колонией герметика после контакта с кабелем. Враждебной агрессии не наблюдается. Метка Atlas классифицирует рану как повреждение интерфейса. Запретить ремонтный протокол для человеческой сортировки.
 
 ## Audio
 
@@ -35,6 +35,6 @@ MORITA, A. Ткань пациента принята sealant colony после 
 
 ## Field Note
 
-Это не zombie note. Это хуже: maintenance note с почерком у койки.
+Это не запись про зомби. Хуже: ремонтная заметка, написанная у койки.
 
 <!-- In-Game Wiki; generated from P068_AYA_MORITA_REPAIR_MEDICINE/ru_RU. -->

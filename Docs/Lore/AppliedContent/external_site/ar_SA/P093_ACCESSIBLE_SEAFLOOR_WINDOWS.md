@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "نوافذ القاع القابلة للوصول"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# نوافذ القاع القابلة للوصول
 
-AR LOC HOLD: Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map.
-
-## Scanner
-
-AR LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
-
-## Terminal
-
-AR LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-AR LOC HOLD: You land where the moon lets stone show through.
-
-## Field Note
-
-AR LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+معظم قاع HECTON-8 لا تصل إليه الشجاعة العادية. الضغط يبني جدارا قبل أن يظهر القاع. النوافذ القابلة للوصول هي الاستثناء: أماكن ممزقة حيث يغير رف منهار أو حافة مكشوفة أو ندبة فوهية حارة أو عمود ملحي كثيف منحنى الهبوط. ليست كهوفا آمنة. إنها صفقات ضيقة مع الجيولوجيا. يمكن للطاقم لمس قشرة قديمة، واسترجاع معادن نمت تحت الضغط، والعثور على عتاد مستعمرة مختوم، وقراءة حدث مدفون قبل أن يغلق البحر الطريق.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ar_SA. -->

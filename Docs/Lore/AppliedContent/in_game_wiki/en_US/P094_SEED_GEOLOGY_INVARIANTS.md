@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Seed Geology Invariants
 
-Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+Seed geology invariants keep HECTON-8 coherent across long replays. Canyons can open in different order, evidence can move, safe pockets can shift, and species pressure can change. The star remains Aegir, the moon remains HECTON-8, the depth bands keep their order, the Great Tide keeps its timing, and the Atlas basin keeps its relation to the deepest truth.
 
 ## Scanner
 
-Procedural note. The route changes; the moon does not forget its laws.
+Route-generation note. The salvage map changes, but the moon keeps the same bones.
 
 ## Terminal
 
-SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+INVARIANTS: Aegir primary, HECTON-8 orbital ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI order, safe pockets, bloom density, salvage exposure.
 
 ## Audio
 
-New seed, same moon. Different wound.
+Different wound pattern. Same moon under it.
 
 ## Field Note
 
-Replayability must move evidence and geography, not rewrite physics every seed.
+A new run may bury evidence differently; it may not rewrite gravity, tide, or guilt.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/en_US. -->

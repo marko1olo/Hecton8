@@ -56,10 +56,12 @@ using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Caves;
 using Hecton8.Construction;
+using Hecton8.Crafting;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Economy;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Interaction;
@@ -301,6 +303,10 @@ namespace Hecton8.Gameplay
         private const string AirlockPersistentId = "Build_Airlock_Hatch";
         private const string LegacyAirlockPersistentId = "base.module.airlock";
         private const int DefaultHabitatBaseId = 0;
+        private static readonly uint s_baseCascadeNotificationMissWarningHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("BaseModule.CascadeNotificationMiss"));
+        private static readonly uint s_baseCascadeNotificationContextHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("BaseModule.CascadeNotification"));
 
         /// <summary>
         /// Koeffitsient vozvrata resursov pri dekonstruktsii.
@@ -785,6 +791,7 @@ namespace Hecton8.Gameplay
         private readonly ModuleIntegrityComponent _integrityComponent = new ModuleIntegrityComponent();
         private readonly ModuleLifeSupportComponent _lifeSupportComponent = new ModuleLifeSupportComponent();
         private FixedCharBuffer _fieldOperationSummaryBuffer = new FixedCharBuffer(320);
+        private int _cascadeNotificationMissCount;
         // SHINOBU_330: interior trigger remains life-support occupancy only.
         // Flood water and dry-zone physics truth is routed through HabitatFluidIncursionDirector and SignalBus.
         // COLD ALLOC: List<BaseAirlock>[2] - cached owned airlock controllers for emergency lockdown fan-out - owner: BaseModule
@@ -847,6 +854,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>Modul nahoditsya v avariynom kaskadnom sostoyanii.</summary>
         public bool HasCascadeFailure => _integrityComponent.FailureMode != BaseModuleFailureMode.None;
+        public int CascadeNotificationMissCount => _cascadeNotificationMissCount;
 
         /// <summary>Current repair ceiling after accumulated material fatigue.</summary>
         public float MaxRecoverableIntegrity => _integrityComponent.MaxRecoverableIntegrity;
@@ -1435,6 +1443,7 @@ namespace Hecton8.Gameplay
             ReleaseAllTrackedObjects();
             _cachedFloodLevel01 = 0f;
             ClearQueuedHydroStructuralLoad();
+            ClearCascadeNotificationDiagnostics();
             PublishActiveModuleWaterLevelsToShader(true);
         }
 
@@ -1456,6 +1465,7 @@ namespace Hecton8.Gameplay
             BaseDegradationSystem.ClearParasiteSporeHazard(this);
             Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState(this);
             BaseDegradationSystem.ClearPressureCompressionState(this);
+            ClearCascadeNotificationDiagnostics();
             PublishActiveModuleWaterLevelsToShader(true);
         }
 
@@ -2299,6 +2309,7 @@ namespace Hecton8.Gameplay
             _integrityComponent.TryStartDrain(_hasPower);
             UpdateDrainDiagnostics();
             BaseDegradationSystem.SynchronizeIntegrityState(this);
+            RefreshOwnedAirlockPressurizationSnapshots();
         }
 
         /// <summary>
@@ -2462,10 +2473,15 @@ namespace Hecton8.Gameplay
             ReleaseAllTrackedObjects();
         }
 
-        internal void EjectHostedContentsForDeconstruction(PlayerInventory playerInventory, IObjectPoolService pool)
+        internal bool CanEjectHostedContentsForDeconstruction(PlayerInventory playerInventory, IObjectPoolService pool)
         {
-            Vector3 dropPosition = transform.position + Vector3.up * 0.5f;
-            EjectHostedModuleContents(playerInventory, pool, ref dropPosition);
+            return CanEjectHostedModuleContents(playerInventory, pool, ResolveHostedContentsDropPosition());
+        }
+
+        internal bool EjectHostedContentsForDeconstruction(PlayerInventory playerInventory, IObjectPoolService pool)
+        {
+            Vector3 dropPosition = ResolveHostedContentsDropPosition();
+            return EjectHostedModuleContents(playerInventory, pool, ref dropPosition);
         }
 
         internal void SetDeconstructionPreview(bool enabled)
@@ -2521,7 +2537,74 @@ namespace Hecton8.Gameplay
             deconstructionSystem.EnqueueDeconstruction(in request);
         }
 
-        internal void DropItemQuantityToInventoryOrWorld(
+        internal bool CanDropItemQuantityToInventoryOrWorld(
+            int itemHashId,
+            int quantity,
+            PlayerInventory playerInventory,
+            IObjectPoolService pool)
+        {
+            return CanDropItemQuantityToInventoryOrWorld(
+                itemHashId,
+                quantity,
+                playerInventory,
+                pool,
+                ResolveHostedContentsDropPosition());
+        }
+
+        internal bool CanDropItemQuantityToInventoryOrWorld(
+            int itemHashId,
+            int quantity,
+            PlayerInventory playerInventory,
+            IObjectPoolService pool,
+            Vector3 dropPosition)
+        {
+            if (itemHashId == 0 || quantity <= 0)
+                return false;
+
+            ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);
+            if (itemCatalog == null)
+                return false;
+
+            ItemData itemData = itemCatalog.FindByHash(itemHashId);
+            if (itemData == null)
+                return false;
+
+            if (playerInventory != null &&
+                playerInventory.CanAcceptItemQuantity(itemHashId, quantity))
+            {
+                return true;
+            }
+
+            if (!IsFiniteRuntimePosition(dropPosition))
+                return false;
+
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            if (persistentWorldRegistry != null &&
+                persistentWorldRegistry.CanRegisterDroppedItem(itemData, quantity, dropPosition))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        internal bool CanSpawnPooledWorldItemFallback(
+            int itemHashId,
+            PlayerInventory playerInventory,
+            IObjectPoolService pool,
+            Vector3 position)
+        {
+            if (itemHashId == 0 || pool == null || !IsFiniteRuntimePosition(position))
+                return false;
+
+            ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);
+            return itemCatalog != null &&
+                   itemCatalog.FindByHash(itemHashId) != null &&
+                   worldItemPrefab != null &&
+                   worldItemPrefab.TryGetComponent(out HectonItem _);
+        }
+
+        internal int DropItemQuantityToInventoryOrWorld(
             int itemHashId,
             int quantity,
             PlayerInventory playerInventory,
@@ -2529,9 +2612,11 @@ namespace Hecton8.Gameplay
             ref Vector3 dropPosition)
         {
             if (itemHashId == 0 || quantity <= 0)
-                return;
+                return 0;
 
+            int delivered = 0;
             InventoryGrid targetGrid = playerInventory != null ? playerInventory.Grid : null;
+            bool persistentDropUnavailable = false;
             for (int i = 0; i < quantity; i++)
             {
                 bool addedToInventory = false;
@@ -2541,11 +2626,28 @@ namespace Hecton8.Gameplay
                     addedToInventory = true;
 
                 if (addedToInventory)
+                {
+                    delivered++;
                     continue;
+                }
 
-                SpawnWorldItem(itemHashId, dropPosition, pool, playerInventory);
+                int remainingQuantity = quantity - delivered;
+                if (!persistentDropUnavailable &&
+                    TryRegisterPersistentDroppedItemQuantity(itemHashId, remainingQuantity, dropPosition, playerInventory))
+                {
+                    delivered += remainingQuantity;
+                    break;
+                }
+
+                persistentDropUnavailable = true;
+                if (!SpawnPooledWorldItem(itemHashId, dropPosition, pool, playerInventory))
+                    break;
+
+                delivered++;
                 dropPosition.x += 0.3f;
             }
+
+            return delivered;
         }
 
         // ----------------------------------------------------------
@@ -2569,21 +2671,37 @@ namespace Hecton8.Gameplay
         /// dlya titana vs stekla), worldItemPrefab mozhet byt zamenen
         /// na per-resource world prefab, esli poyavitsya otdelnyy vizualnyy vladelets.
         /// </summary>
-        private void SpawnWorldItem(int itemHashId, Vector3 position, IObjectPoolService pool, PlayerInventory playerInventory)
+        // Persistent registry path: stores the remaining stack as one record quantity.
+        private bool TryRegisterPersistentDroppedItemQuantity(
+            int itemHashId,
+            int quantity,
+            Vector3 position,
+            PlayerInventory playerInventory)
         {
-            if (itemHashId == 0)
-                return;
+            if (itemHashId == 0 || quantity <= 0)
+                return false;
 
             ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);
             if (itemCatalog == null)
-                return;
+                return false;
 
             PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            if (persistentWorldRegistry != null &&
-                persistentWorldRegistry.TryRegisterDroppedItem(itemHashId, itemCatalog, 1, position))
-            {
-                return;
-            }
+            return persistentWorldRegistry != null &&
+                   persistentWorldRegistry.TryRegisterDroppedItem(itemHashId, itemCatalog, quantity, position);
+        }
+
+        // Pooled visual fallback: spawns one initialized world item when persistence cannot accept the drop.
+        private bool SpawnPooledWorldItem(int itemHashId, Vector3 position, IObjectPoolService pool, PlayerInventory playerInventory)
+        {
+            if (itemHashId == 0)
+                return false;
+
+            if (!IsFiniteRuntimePosition(position))
+                return false;
+
+            ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);
+            if (itemCatalog == null)
+                return false;
 
             if (worldItemPrefab == null)
             {
@@ -2593,7 +2711,7 @@ namespace Hecton8.Gameplay
                     $"Resource hash '{itemHashId}' dropped on the ground but has no world prefab. Lost.",
                     this);
 #endif
-                return;
+                return false;
             }
 
             if (pool == null)
@@ -2603,13 +2721,13 @@ namespace Hecton8.Gameplay
                     "[BaseModule] ObjectPoolManager not available. " +
                     $"Resource hash '{itemHashId}' lost.");
 #endif
-                return;
+                return false;
             }
 
             GameObject itemGO = pool.Spawn(worldItemPrefab, position, Quaternion.identity);
 
             if (itemGO == null)
-                return;
+                return false;
 
             // -- Initsializatsiya HectonItem dannymi --
             // HectonItem na worldItemPrefab initsializiruetsya hashId cherez ItemCatalog.
@@ -2620,8 +2738,12 @@ namespace Hecton8.Gameplay
             // Eto chische, chem refleksiya, i sohranyaet Zero-GC.
             if (itemGO.TryGetComponent(out HectonItem hectonItem))
             {
-                hectonItem.SetItemByHash(itemCatalog, itemHashId, 1);
+                if (hectonItem.SetItemByHash(itemCatalog, itemHashId, 1))
+                    return true;
             }
+
+            DespawnWithPoolOrDeactivate(itemGO, pool);
+            return false;
         }
 
         private ItemCatalog ResolveItemCatalog(PlayerInventory playerInventory)
@@ -2634,6 +2756,18 @@ namespace Hecton8.Gameplay
                 ? inventoryService.Inventory
                 : null;
             return inventoryInstance != null ? inventoryInstance.ItemCatalog : null;
+        }
+
+        private Vector3 ResolveHostedContentsDropPosition()
+        {
+            return transform.position + Vector3.up * 0.5f;
+        }
+
+        private static bool IsFiniteRuntimePosition(Vector3 position)
+        {
+            return math.isfinite(position.x) &&
+                   math.isfinite(position.y) &&
+                   math.isfinite(position.z);
         }
 
         // ----------------------------------------------------------
@@ -2652,25 +2786,95 @@ namespace Hecton8.Gameplay
                 : 0f;
         }
 
-        private void EjectHostedModuleContents(PlayerInventory playerInventory, IObjectPoolService pool, ref Vector3 dropPosition)
+        private bool CanEjectHostedModuleContents(PlayerInventory playerInventory, IObjectPoolService pool, Vector3 dropPosition)
         {
+            if (TryGetComponent(out MaintenanceStationModule maintenanceStation) &&
+                maintenanceStation.TryPeekSlottedToolHashForDeconstruct(out int slottedToolHashId) &&
+                !CanDropItemQuantityToInventoryOrWorld(slottedToolHashId, 1, playerInventory, pool, dropPosition))
+            {
+                return false;
+            }
+
+            if (TryGetComponent(out DeepDrillModule drillModule) &&
+                !drillModule.CanEjectBufferedOutput(this, playerInventory, pool, dropPosition))
+            {
+                return false;
+            }
+
+            if (TryGetComponent(out LogisticsSorterModule sorterModule) &&
+                !sorterModule.CanEjectBufferedContents(this, playerInventory, pool, dropPosition))
+            {
+                return false;
+            }
+
+            if (TryGetComponent(out ResourceRecyclerModule recyclerModule) &&
+                !recyclerModule.CanEjectBufferedContents(this, playerInventory, pool, dropPosition))
+            {
+                return false;
+            }
+
+            if (TryGetComponent(out Fabricator fabricator) &&
+                !fabricator.CanEjectPendingCraftOutput(playerInventory, dropPosition))
+            {
+                return false;
+            }
+
+            if (TryGetComponent(out CultivationManager cultivationManager) &&
+                !cultivationManager.CanEjectCultivationContents(this, playerInventory, dropPosition))
+            {
+                return false;
+            }
+
+            if (TryGetComponent(out StorageCrate storageCrate) &&
+                !storageCrate.CanEjectContainedContents(this, playerInventory, pool, dropPosition))
+            {
+                return false;
+            }
+
+            if (TryGetComponent(out LogisticsPipeNode pipeNode) &&
+                pipeNode.TryPeekInFlightCargoHashForDeconstruct(out int pipeItemHashId, out int pipeAmount) &&
+                !CanDropItemQuantityToInventoryOrWorld(pipeItemHashId, pipeAmount, playerInventory, pool, dropPosition))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool EjectHostedModuleContents(PlayerInventory playerInventory, IObjectPoolService pool, ref Vector3 dropPosition)
+        {
+            bool allDelivered = true;
             if (TryGetComponent(out MaintenanceStationModule maintenanceStation) &&
                 maintenanceStation.TryExtractSlottedToolHashForDeconstruct(out int slottedToolHashId))
             {
-                DropItemQuantityToInventoryOrWorld(slottedToolHashId, 1, playerInventory, pool, ref dropPosition);
+                allDelivered &= DropItemQuantityToInventoryOrWorld(slottedToolHashId, 1, playerInventory, pool, ref dropPosition) == 1;
             }
 
             if (TryGetComponent(out DeepDrillModule drillModule))
-                drillModule.EjectBufferedOutput(this, playerInventory, pool, ref dropPosition);
+                allDelivered &= drillModule.EjectBufferedOutput(this, playerInventory, pool, ref dropPosition);
 
             if (TryGetComponent(out LogisticsSorterModule sorterModule))
-                sorterModule.EjectBufferedContents(this, playerInventory, pool, ref dropPosition);
+                allDelivered &= sorterModule.EjectBufferedContents(this, playerInventory, pool, ref dropPosition);
+
+            if (TryGetComponent(out ResourceRecyclerModule recyclerModule))
+                allDelivered &= recyclerModule.EjectBufferedContents(this, playerInventory, pool, ref dropPosition);
+
+            if (TryGetComponent(out Fabricator fabricator))
+                allDelivered &= fabricator.EjectPendingCraftOutput(playerInventory, ref dropPosition);
+
+            if (TryGetComponent(out CultivationManager cultivationManager))
+                allDelivered &= cultivationManager.EjectCultivationContents(this, playerInventory, ref dropPosition);
+
+            if (TryGetComponent(out StorageCrate storageCrate))
+                allDelivered &= storageCrate.EjectContainedContents(this, playerInventory, pool, ref dropPosition);
 
             if (TryGetComponent(out LogisticsPipeNode pipeNode) &&
                 pipeNode.TryExtractInFlightCargoHashForDeconstruct(out int pipeItemHashId, out int pipeAmount))
             {
-                DropItemQuantityToInventoryOrWorld(pipeItemHashId, pipeAmount, playerInventory, pool, ref dropPosition);
+                allDelivered &= DropItemQuantityToInventoryOrWorld(pipeItemHashId, pipeAmount, playerInventory, pool, ref dropPosition) == pipeAmount;
             }
+
+            return allDelivered;
         }
 
         private void EnsureRepairIntegrityCapInitialized()
@@ -2797,17 +3001,17 @@ namespace Hecton8.Gameplay
                 case BaseModuleFailureMode.Fire:
                     PlaySpatialSfx(floodClip);
                     RecordCascadeFailure("MODULE FIRE", "Compartment ignition risk. Repair before occupancy.");
-                    NotificationEvents.TryPushWarning("BASE MODULE FIRE // SERVICE NOW".AsSpan());
+                    TryPushCascadeFailureNotification("BASE MODULE FIRE // SERVICE NOW".AsSpan(), BaseModuleFailureMode.Fire);
                     break;
                 case BaseModuleFailureMode.ShortCircuit:
                     PlaySpatialSfx(floodClip);
                     RecordCascadeFailure("SHORT CIRCUIT", "Compartment flooded and pumps offline until hull service completes.");
-                    NotificationEvents.TryPushWarning("BASE SHORT CIRCUIT // POWER LOCKOUT".AsSpan());
+                    TryPushCascadeFailureNotification("BASE SHORT CIRCUIT // POWER LOCKOUT".AsSpan(), BaseModuleFailureMode.ShortCircuit);
                     break;
                 default:
                     PlaySpatialSfx(floodClip);
                     RecordCascadeFailure("OXYGEN LEAK", "Compartment seal lost. Oxygen-safe shelter compromised.");
-                    NotificationEvents.TryPushWarning("BASE OXYGEN LEAK // COMPARTMENT BREACHED".AsSpan());
+                    TryPushCascadeFailureNotification("BASE OXYGEN LEAK // COMPARTMENT BREACHED".AsSpan(), BaseModuleFailureMode.OxygenLeak);
                     break;
             }
 
@@ -2816,6 +3020,30 @@ namespace Hecton8.Gameplay
             SyncTrackedObjectsFloodState();
             QueueLightsEnabled(ShouldLightsBeEnabled());
             SyncSpatialRole();
+        }
+
+        private void TryPushCascadeFailureNotification(ReadOnlySpan<char> message, BaseModuleFailureMode failureMode)
+        {
+            if (NotificationEvents.TryPushWarning(message))
+                return;
+
+            ReportCascadeFailureNotificationMiss(failureMode);
+        }
+
+        private void ReportCascadeFailureNotificationMiss(BaseModuleFailureMode failureMode)
+        {
+            _cascadeNotificationMissCount++;
+            uint moduleHash = unchecked((uint)CachedModuleHashId);
+            uint contextHash = s_baseCascadeNotificationContextHash ^ moduleHash ^ (uint)failureMode;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                s_baseCascadeNotificationMissWarningHash,
+                contextHash,
+                math.max(1, _cascadeNotificationMissCount));
+        }
+
+        private void ClearCascadeNotificationDiagnostics()
+        {
+            _cascadeNotificationMissCount = 0;
         }
 
         private void TryStartDrain()
@@ -4882,6 +5110,17 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void RefreshOwnedAirlockPressurizationSnapshots()
+        {
+            CacheOwnedBulkheadComponents();
+            for (int i = 0; i < _airlockBuffer.Count; i++)
+            {
+                BaseAirlock airlock = _airlockBuffer[i];
+                if (airlock != null)
+                    airlock.RequestPressurizationSnapshotRefresh();
+            }
+        }
+
         private void TryRegister()
         {
             if (_tickRegistered)
@@ -4969,10 +5208,48 @@ namespace Hecton8.Gameplay
             _atmosphereRuntime = Hecton8.Core.GlobalRegistry.AtmosphereReadModel;
             _cachedPlayerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
             CacheAudioService(Hecton8.Core.GlobalRegistry.Audio);
-            _cachedObjectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             _cachedPlayerRuntime = Hecton8.Core.GlobalRegistry.Player;
             _cachedPhysicsService = Hecton8.Core.GlobalRegistry.Physics;
             _constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            if (!ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(candidate))
+            {
+                _cachedObjectPool = null;
+                return;
+            }
+
+            _cachedObjectPool = candidate;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _cachedObjectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _cachedObjectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _cachedObjectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private static void DespawnWithPoolOrDeactivate(GameObject instance, IObjectPoolService preferredPool)
+        {
+            ObjectPoolManager.DespawnOrDeactivate(instance, preferredPool);
         }
 
         private void CacheAudioService(Hecton8.Core.IAudioService audioService)
@@ -5086,7 +5363,7 @@ namespace Hecton8.Gameplay
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
             {
-                _cachedObjectPool = currentService as IObjectPoolService;
+                CacheObjectPoolService(currentService as ObjectPoolManager);
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
@@ -5105,6 +5382,14 @@ namespace Hecton8.Gameplay
             else if (serviceSlot == GlobalRegistryServiceSlot.Logistics)
             {
                 _constructionManager = currentService as ConstructionManager;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RefreshOwnedAirlockPressurizationSnapshots();
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            {
+                RefreshOwnedAirlockPressurizationSnapshots();
             }
         }
 
@@ -5488,8 +5773,7 @@ namespace Hecton8.Gameplay
 
         private bool HasInteriorReefProxyPoolReserve()
         {
-            IObjectPoolService pool = _cachedObjectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return true;
 
             return HasProxyPoolReserve(interiorCaveWeed, pool) &&

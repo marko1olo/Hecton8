@@ -9,32 +9,16 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Aegir Primary Light and Radiation"
+title: "Aegir 主星光与辐射"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Aegir Primary Light and Radiation
+# Aegir 主星光与辐射
 
-ZH LOC HOLD: Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
-
-## Scanner
-
-ZH LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
-
-## Terminal
-
-ZH LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
-
-## Audio
-
-ZH LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
-
-## Field Note
-
-ZH LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir 从来不是空黑。K 型主星把琥珀色光落在甲板上，拖出长影，并给裸露仪器足够通量；若没人核对辐射带计数，仪器就会漂移。气巨星是第二只钟：磁层航道在卫星穿过电荷与阴影时变硬、变软、再变硬。Deep Reach 把这些数字卖成普通作业窗口。船员学到的是实用版本：温暖天空仍能煮坏廉价密封，压哑链路，并按分钟给救援定价。 因此，Aegir 的白昼不是安慰，而是工作许可、护盾等级和救援费用共同使用的时钟。天空可读，也可收费。
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/zh_CN. -->

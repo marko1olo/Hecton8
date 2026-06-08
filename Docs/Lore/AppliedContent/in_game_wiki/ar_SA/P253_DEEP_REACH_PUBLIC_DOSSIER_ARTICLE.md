@@ -9,32 +9,35 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Deep Reach Public Dossier Article"
+title: "ملف Deep Reach العام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Deep Reach Public Dossier Article
+# ملف Deep Reach العام
 
-AR LOC HOLD: Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.
+يجب أن تُقرأ Deep Reach كمؤسسة كان يمكنها فعلا بناء HECTON-8 قبل أن تخذلها. علنا كانت combine تطوير: بنية ضغط، اعتماد طرق، مساكن عمال، حيازة مدارية، بيئة صناعية، لغة تأمين، وسلطة محلية مجمعة في آلة واحدة. هذا يجعل الجريمة اللاحقة أحدّ. لم تكن Deep Reach إمبراطورية كرتونية تريد إغراق قمر. لقد سعّرت tail risk بسعر رخيص جدا، وبنت إخلاء مستقلا دون الحاجة، وتركت لغة الاستمرارية تعلو على الاستخراج، وأبقت هياكل المطالبات القديمة حية بينما كان الناس ما زالوا داخل غرف تفشل. يستطيع الملف العام تسمية الشركة ونمط الفشل من دون كشف كل توقيع. يجب أن يعلّم اللاعب الشك في الأسماء المؤسسية النظيفة: release، continuity، welfare، quarantine، route-safe، recoverable. على HECTON-8 تشير هذه الكلمات غالبا إلى المكان الذي حُولت فيه مشكلة بشرية إلى مشكلة أصل.
 
 ## Scanner
 
-AR LOC HOLD: The public company name is cleaner than its route history.
+اسم الشركة العام أنظف من تاريخ طرقها. ابدأ بالبنية التحتية. دع المسؤولية تظهر من الوصلات.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+مستوى مقال عام / DEEP REACH
+المسموح: combine تطوير، مشغل مستعمرة، سلطة بنية تحتية، مشكلة سعة إخلاء، لغة فشل عامة
+المحجوب: سلسلة توقيعات مسماة، داخليات weighting Atlas، عواقب receiver النهائية
+ملاحظة تحرير: مؤسسة معقولة أولا؛ جريمة عبر الإجراء ثانيا.
 
 ## Audio
 
-AR LOC HOLD: Never make the villain simpler than the paperwork.
+لم تكن Deep Reach بحاجة إلى أن تبدو قاسية. احتاجت فقط إلى أن تبدو كل جملة خطرة منتهية.
 
 ## Field Note
 
-AR LOC HOLD: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+لا تجعل Deep Reach تفح. اجعلها تعتمد، تؤجل، تحفظ، وتصدر فاتورة.
 
 <!-- In-Game Wiki; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/ar_SA. -->

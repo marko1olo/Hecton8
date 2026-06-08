@@ -35,6 +35,9 @@ namespace Hecton8.Narrative
         private const string IncomingOrderWarningMessage = "INCOMING CORPORATE ORDER - CHECK PDA LOG";
         private const uint ConflictHashSalt = 0xC0A5_EE11u;
         private const int OrderCapacity = SaveData.MaxCorporateOrderIds;
+        private static readonly uint _OrderNotificationMissWarningHash = unchecked((uint)LocHash.Compute("CorporateOrderSystem.NotificationMiss"));
+        private static readonly uint _CorporateOrderContextHash = unchecked((uint)LocHash.Compute("CorporateOrderSystem"));
+        private static readonly uint _OrderNotificationContextHash = unchecked((uint)LocHash.Compute("CorporateOrderSystem.Notification"));
 
         // ----------------------------------------------------------
         //  INSPECTOR
@@ -68,7 +71,9 @@ namespace Hecton8.Narrative
         private bool _saveRegistered;
         private bool _registeredHotSwapListener;
         private bool _ordersScheduled;
+        private int _orderNotificationMissCount;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private ILocalizationTextReadModel _localizationText;
 
         // ----------------------------------------------------------
@@ -79,6 +84,7 @@ namespace Hecton8.Narrative
         public int LoadPriority => 12;
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => _runtimeRegistered;
+        public int OrderNotificationMissCount => _orderNotificationMissCount;
 
         // ----------------------------------------------------------
         //  LIFECYCLE
@@ -108,6 +114,7 @@ namespace Hecton8.Narrative
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
+            ClearOrderNotificationDiagnostics();
         }
 
         private void OnDestroy()
@@ -116,6 +123,7 @@ namespace Hecton8.Narrative
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
+            ClearOrderNotificationDiagnostics();
         }
 
         public void OnServiceShutdown()
@@ -128,6 +136,7 @@ namespace Hecton8.Narrative
             _activeConflicts.Clear();
             _pendingTimers.Clear();
             _ordersScheduled = false;
+            ClearOrderNotificationDiagnostics();
             _saveService = null;
             _localizationText = null;
         }
@@ -239,30 +248,41 @@ namespace Hecton8.Narrative
             _registeredHotSwapListener = false;
         }
 
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         private void TryRegisterSaveParticipant()
         {
             if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveRegistered = false;
         }
 
@@ -355,10 +375,11 @@ namespace Hecton8.Narrative
             _receivedOrders.Add(orderId);
 
             // Use authored order id hash directly; PDA cold data holds the full text.
-            NarrativeEvents.TryRaiseDiscoveryMade(ComputeStableHash(orderId));
+            uint orderHash = ComputeStableHash(orderId);
+            NarrativeEvents.TryRaiseDiscoveryMade(orderHash);
 
             // Cinematic fake: static HUD warning avoids runtime preview string assembly.
-            NotificationEvents.TryPushWarning(IncomingOrderWarningMessage.AsSpan());
+            TryPushOrderNotification(IncomingOrderWarningMessage.AsSpan(), orderHash);
 
             // Proveryaem konflikt
             if (!string.IsNullOrEmpty(order.conflictsWithOrderId) &&
@@ -366,9 +387,11 @@ namespace Hecton8.Narrative
             {
                 if (TryRegisterConflictForOrder(orderId, in order))
                 {
-                    NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
-                        LocalizationKeys.CORP_ORDER_CONFLICT,
-                        "ORDER CONFLICT - CORPORATE FACTIONS ARE DIRECTLY CONTRADICTING EACH OTHER."));
+                    TryPushOrderNotification(
+                        ResolveLocalizedSpan(
+                            LocalizationKeys.CORP_ORDER_CONFLICT,
+                            "ORDER CONFLICT - CORPORATE FACTIONS ARE DIRECTLY CONTRADICTING EACH OTHER."),
+                        ComputeConflictHash(orderId, order.conflictsWithOrderId));
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     H8Debug.Log("[CorporateOrders] Conflict.");
@@ -379,6 +402,28 @@ namespace Hecton8.Narrative
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             H8Debug.Log("[CorporateOrders] Delivered.");
 #endif
+        }
+
+        private void TryPushOrderNotification(ReadOnlySpan<char> message, uint contextHash)
+        {
+            if (NotificationEvents.TryPushWarning(message))
+                return;
+
+            ReportOrderNotificationMiss(contextHash);
+        }
+
+        private void ReportOrderNotificationMiss(uint contextHash)
+        {
+            _orderNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _OrderNotificationMissWarningHash,
+                _CorporateOrderContextHash ^ _OrderNotificationContextHash ^ contextHash,
+                Mathf.Max(1, _orderNotificationMissCount));
+        }
+
+        private void ClearOrderNotificationDiagnostics()
+        {
+            _orderNotificationMissCount = 0;
         }
 
         private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
@@ -507,6 +552,7 @@ namespace Hecton8.Narrative
 
         public void LoadFromSaveData(SaveData data)
         {
+            ClearOrderNotificationDiagnostics();
             _receivedOrders.Clear();
             _activeConflicts.Clear();
             _pendingTimers.Clear();

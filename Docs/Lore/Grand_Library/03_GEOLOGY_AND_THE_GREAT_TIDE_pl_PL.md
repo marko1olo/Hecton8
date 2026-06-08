@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # GEOLOGIA, CIŚNIENIE I WIELKI PRZYPŁYW ROKU 2147
 
 > **Źródło:** Dział Likwidacji Szkód Keelmark, Podsumowanie Odmowy Wypłaty Odszkodowania. Załącznik: Przewodnik po Zagrożeniach Batymetrycznych.  

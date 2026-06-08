@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # زينون-أوميغا: التكرير والخصائص
 
 > **المصدر:** مؤسسة Deep Reach الكبرى، بيان كيميائي سري.

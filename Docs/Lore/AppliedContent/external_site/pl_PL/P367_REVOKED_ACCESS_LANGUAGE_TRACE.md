@@ -9,32 +9,36 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Revoked Access Language Trace"
+title: "Ślad języka cofniętego dostępu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Revoked Access Language Trace
+# Ślad języka cofniętego dostępu
 
-PL LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+Protagonista czyta blokady Deep Reach jak dowody. Cofnięte poświadczenia zamykają dostęp, ale treść wciąż odsłania zakopaną trasę: zdegradowane stany, świadków zastępczych, reklasyfikację konserwacji i język zachowania roszczeń.
 
 ## Scanner
 
-PL LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+Blokada nie mówi zakazano. Mówi: reklasyfikacja konserwacji, wstrzymanie ciągłości, materiały trasy. Stare sformułowania Deep Reach: odmowa, która nadal wskazuje zakopane drzwi.
 
 ## Terminal
 
-PL LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+ODPOWIEDŹ DOSTĘPU / ARCHIWUM TRASY BEZPIECZNEJ
+poświadczenie: cofnięte
+powód: materiały ciągłości ewakuacji ograniczone do certyfikowanego personelu Deep Reach
+widoczne terminy: zdegradowany stan osobowy, świadek zastępczy, trasa zachowania roszczeń, reklasyfikacja konserwacji
+uwaga: dawny personel terenowy może widzieć język odmowy wyłącznie do uzgodnienia incydentu.
 
 ## Audio
 
-PL LOC HOLD: That is not security. That is a memo pretending to be a door.
+Nie usunęli korytarza. Owinęli go słownictwem, które wciąż rozumie tylko winny personel.
 
 ## Field Note
 
-PL LOC HOLD: Lockout language hints at hidden liability without granting free access.
+Identyfikator jest martwy. Blokada nadal mówi biurowym dialektem, którym zakopano trasę.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/pl_PL. -->

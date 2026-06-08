@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "Запис ефемеридних смуг RAN-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: RAN Aegir Ephemeris Bands
+# Запис ефемеридних смуг RAN-Aegir
 
-UA LOC HOLD: Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.
+Ефемеридні смуги тримають публічні карти чесними: показують достатньо маршрутного тиску, щоб довіряти вікну, а точні орбітальні значення лишаються в таблицях польотного планування.
 
 ## Scanner
 
-UA LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+Цей запис дає смуги вікон і причини загроз, а не точні періоди, що належать таблицям.
 
 ## Terminal
 
-UA LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+ЗАПИС ЕФЕМЕРИДНИХ СМУГ: публічні записи atlas можуть зазначати смугу вікна, клас загрози й зв'язок з Aegir. Точні періоди, нахили та резонансні значення лишаються під владою celestial-table.
 
 ## Audio
 
-UA LOC HOLD: A band is honest until the numbers have an owner.
+Смуга може врятувати. Вгадане число може вбити.
 
 ## Field Note
 
-UA LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+Чесна публічна карта каже достатньо, щоб пройти ризик, і недостатньо, щоб підробити небесну таблицю.
 
 <!-- In-Game Wiki; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/uk_UA. -->

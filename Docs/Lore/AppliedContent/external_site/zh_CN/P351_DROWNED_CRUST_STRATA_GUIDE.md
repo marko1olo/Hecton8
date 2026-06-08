@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Drowned Crust Strata Guide"
+title: "淹没地壳层野外指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Drowned Crust Strata Guide
+# 淹没地壳层野外指南
 
-ZH LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.
+淹没地壳层野外指南让 HECTON-8 的海床像被建造又被打碎的地方：terrain、salvage routes 和矿物样本都来自同一段分层压力史。
 
 ## Scanner
 
-ZH LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+淹没地层暴露出旧切痕、pressure-glass 接缝，以及不会两次朝同一方向失效的矿物带。
 
 ## Terminal
 
-ZH LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: HECTON-8 的淹没地壳是堆叠的定居岩、崩塌冰史、pressure glass 和移动 brine 下的 extraction scars。裂纹线优先于干净表面。
 
 ## Audio
 
-ZH LOC HOLD: The map is not terrain. It is a stack of drownings.
+地图不是地形，而是一叠溺亡记录。
 
 ## Field Note
 
-ZH LOC HOLD: Use for geology codex and procedural world labels.
+如果某条层带敲起来发空，不要相信平整表面。标出裂纹，取样，让墙继续撑着。
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/zh_CN. -->

@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "RAN-Aegir 천문력 대역 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: RAN Aegir Ephemeris Bands
+# RAN-Aegir 천문력 대역 기록
 
-KO LOC HOLD: Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.
+천문력 대역은 공개 차트를 정직하게 유지한다. 창을 믿을 만큼의 항로 압력을 보여 주고, 정확한 궤도 값은 비행 계획을 소유한 표에 남긴다.
 
 ## Scanner
 
-KO LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+이 기록은 창 대역과 위험 원인을 제공하지, 표가 소유한 정확한 주기를 제공하지 않는다.
 
 ## Terminal
 
-KO LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+EPHEMERIS BAND RECORD: 공개 atlas 항목은 창 대역, 위험 등급, Aegir와의 관계를 명시할 수 있다. 정확한 주기, 궤도 경사, 공명 값은 celestial-table authority 아래 남는다.
 
 ## Audio
 
-KO LOC HOLD: A band is honest until the numbers have an owner.
+대역은 너를 살릴 수 있다. 추측한 숫자는 너를 죽일 수 있다.
 
 ## Field Note
 
-KO LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+정직한 공개 차트는 위험을 항해할 만큼 말하고, 천체 표를 위조할 만큼 말하지 않는다.
 
 <!-- In-Game Wiki; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/ko_KR. -->

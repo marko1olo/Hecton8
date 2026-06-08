@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "Останній пакет Ліана Торреса"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# Останній пакет Ліана Торреса
 
-UK LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue.
+Останній пакет Ліана Торреса робить трагедію без ансибля людською: пакет існує, імена існують, але відстань, пріоритет черги та корпоративна відповідь перетворюють правду на відповідальність замість порятунку.
 
 ## Scanner
 
-UK LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+Останній чистий пакет не загубився. Визнати його отримання було занадто дорого.
 
 ## Terminal
 
-UK LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+ТОРРЕС, Л. Чисте рукостискання носія підтверджено. Кількість працівників додано. Доказ евакуації додано. Вік ретрансляції неприйнятний для порятунку живих. Корпоративний архів пізніше позначає пакет як пошкоджений.
 
 ## Audio
 
-UK LOC HOLD: He sent the names. The archive called them noise.
+Він надіслав імена. Архів назвав їх шумом.
 
 ## Field Note
 
-UK LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+Часова мітка може стати тілом, коли перевізник відповідає не тій черзі.
 
 <!-- External Site; generated from P066_LIAN_TORRES_LAST_PACKET/uk_UA. -->

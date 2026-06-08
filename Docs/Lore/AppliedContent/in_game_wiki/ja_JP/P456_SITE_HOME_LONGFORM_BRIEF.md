@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8：圧力請求"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8：圧力請求
 
-JA LOC HOLD: Recovered P-63 route notes tie the opening contract to Black Keel's salvage window. The shelf is bright enough to navigate, but the useful facts are mechanical: bathydrop damage, pressure repair, scanner returns, and official wording that does not match the marks on the hardware. Keep the record spoiler-safe until deeper evidence is recovered.
+P-63のルート記録は、開始を救助ではなく借務下のsalvage作業として示す。有用な事実は機械的だ。消費された上昇能力、浸水した航空電子、傷んだシール、スキャナー反応、へこみを説明できない公式文言。
 
 ## Scanner
 
-JA LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+Marauder受領記録。Black Keel契約はP-63、損傷したbathydrop、4.8 tonne-windowの担保、金属痕と合わない事故記録を結ぶ。
 
 ## Terminal
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+公開アーカイブノード // H8請求。Aegir中継窓開放。作業: 圧力シール復旧、P-63走査、貨物回収、証拠保全、受信幾何が閉じる前の帰還。
 
 ## Audio
 
-JA LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+Black Keel中継抜粋:「窓は狭い。降下殻を直し、圧力痕を読み、貨物と一緒に証拠を持ち帰れ。」
 
 ## Field Note
 
-JA LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+Marauderメモ: P-63の光は安全ではない。空気を数え、貨物より先にシールを直し、へこみを説明できない記録を信用するな。
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/ja_JP. -->

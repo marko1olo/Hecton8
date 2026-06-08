@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "Tijdperk van bundelzeilsondes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Tijdperk van bundelzeilsondes
 
-NL LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-NL LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-NL LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-NL LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-NL LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Het tijdperk van bundelzeilsondes is het stille begin van Aegirs verhaal. Kleine payloads reden op vermogen van verre arrays, kruisten eerst en brachten pakketten terug die oud genoeg waren voor discussie en goed genoeg voor verkoop. De sondes maakten Aegir niet veilig. Ze maakten het leesbaar: zwaartekrachtputten, stralingsgordels, oceaansignaturen, relaislijnen en een route die winstgevend werd met genoeg onverschilligheid.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/nl_NL. -->

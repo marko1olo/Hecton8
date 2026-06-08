@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Varnek Margin Memo"
+title: "Memo Varnek tentang Margin Diterima"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Varnek Margin Memo
+# Memo Varnek tentang Margin Diterima
 
-ID LOC HOLD: The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
+Memo Varnek adalah bukti kesalahan yang tenang. Ia tidak menciptakan banjir dan tidak memberi perintah membunuh. Ia menunjukkan margin tekanan yang sudah diketahui, diberi harga, diterima, lalu ditempatkan di bawah continuity cost saat manusia masih berada di dalam selubung koloni.
 
 ## Scanner
 
-ID LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Memo Aegir Operations Risk. Margin Great Tide terlihat sebelum otoritas penghentian bergerak.
 
 ## Terminal
 
-ID LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: tail exposure accepted under continuity cost. Evacuation reserve remains non-triggered. Independent shutdown not recommended.
 
 ## Audio
 
-ID LOC HOLD: No murder order. A margin acceptance.
+Terlihat seperti aritmetika sampai kau melihat siapa yang berada di dalam margin itu.
 
 ## Field Note
 
-ID LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Catatan Marauder: yang kotor bukan angka risikonya. Yang kotor adalah kata accepted.
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/id_ID. -->

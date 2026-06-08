@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # URAZY MEDYCZNE I SYNTETYCZNE ZAMIENNIKI
 
 > **Źródło:** Automatyczna procedura operacyjna Ambulatorium *Black Keel*.

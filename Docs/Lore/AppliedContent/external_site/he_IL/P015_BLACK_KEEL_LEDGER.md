@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # ספר Black Keel
 
-Black Keel Ledger מגדיר את קו החיים המסלולי של השחקן כמכונת חוזה: שימושית, נגועה ואדישה יחד.
+Black Keel אינה ספינה ידידותית. היא tender של claim-pool שקוראת גופים, מטענים, הסגר, מסת עלייה וחשיפת ביטוח כרשומות באותו ספר.
 
-## Scanner
-
-ספר claim-pool tender. משמורת carrier ציבורית, חוב ביטוח, hook עדיפות Deep Reach מוסתרים.
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keel אינה הספינה שלך. זו המכונה שיודעת מה אתה חייב.
-
-## Field Note
-
-הספינה יכולה לעזור לך בלי להיות בצד שלך.
+היא לא צריכה לשנוא את השחקן. היא יכולה לענות בנימוס, לקבל hash מצוקה ולסרב לאיסוף עד שהמספרים ישתנו.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/he_IL. -->

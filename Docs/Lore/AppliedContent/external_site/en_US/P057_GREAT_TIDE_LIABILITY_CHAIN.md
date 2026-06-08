@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Great Tide Liability Chain
 
-Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure.
+Great Tide Liability Chain is the central Deep Reach crime model. HECTON-8’s drowning is planetary-scale failure, not cartoon sabotage; the corporate guilt comes from margins, evacuation capacity, autonomous priority weighting, insurance language and legal containment after the flood became inevitable. This keeps the setting hard-sci-fi and makes the player’s evidence work matter: the question is not who pulled a lever, but who signed off on a system where people could become paperwork before they became bodies.
 
 ## Scanner
 
-The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+The flood was real physics: tide coupling, ice collapse, pressure chemistry and margins that were priced too thin. The crime was the priority stack built around it.
 
 ## Terminal
 

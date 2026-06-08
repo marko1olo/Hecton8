@@ -454,7 +454,7 @@ namespace Hecton8.Physiology
             committedState.Flags = flags;
             *RespawnState = committedState;
 
-            request.Flags = ShinobuRespawnFlags.Committed | (flags & (ShinobuRespawnFlags.MockMedicalBay | ShinobuRespawnFlags.InvalidTargetAup | ShinobuRespawnFlags.FallbackLifepod | ShinobuRespawnFlags.PenaltyApplied));
+            request.Flags = ShinobuRespawnFlags.Committed | (flags & (ShinobuRespawnFlags.MockMedicalBay | ShinobuRespawnFlags.InvalidTargetAup | ShinobuRespawnFlags.FallbackLifepod | ShinobuRespawnFlags.PenaltyApplied | ShinobuRespawnFlags.NanDetected));
             request.MedicalBayHashID = medicalBayHash;
             *RespawnRequest = request;
         }
@@ -641,18 +641,21 @@ namespace Hecton8.Physiology
                 command.Payload3 = ShinobuRespawnConstants.SourceHash;
             }
 
-            command.PayloadFlags |= InventoryCommandSignalPayloadFlags.RespawnDeathAupSideband;
-            SignalBus<InventoryCommandSignal>.TryEnqueueBounded(InventoryCommands, InventoryCommandsBudget, command);
-
             InventoryRespawnDeathAupSignal sideband = default;
             sideband.DeathAUP = deathAup;
             sideband.InventoryHash = request.PlayerHash;
             sideband.Frame = Frame;
             sideband.Sequence = request.Sequence;
             sideband.Flags = 1u;
+            if ((request.Flags & ShinobuRespawnFlags.NanDetected) != 0u)
+                sideband.Flags |= 0x80000000u;
             sideband.SourceHash = ShinobuRespawnConstants.SourceHash;
-            SignalBus<InventoryRespawnDeathAupSignal>.TryEnqueueBounded(InventoryDeathAupSignals, InventoryDeathAupSignalsBudget, sideband);
-            return ShinobuRespawnFlags.PenaltyApplied;
+            if (SignalBus<InventoryRespawnDeathAupSignal>.TryEnqueueBounded(InventoryDeathAupSignals, InventoryDeathAupSignalsBudget, sideband))
+                command.PayloadFlags |= InventoryCommandSignalPayloadFlags.RespawnDeathAupSideband;
+
+            return SignalBus<InventoryCommandSignal>.TryEnqueueBounded(InventoryCommands, InventoryCommandsBudget, command)
+                ? ShinobuRespawnFlags.PenaltyApplied
+                : 0u;
         }
 
         private static bool ShouldSelect(float distanceSq, uint priority, double bestSq, uint bestPriority)

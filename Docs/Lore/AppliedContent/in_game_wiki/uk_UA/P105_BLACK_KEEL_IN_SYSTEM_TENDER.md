@@ -7,34 +7,34 @@ poi_tags: poi.black_keel_limit_notice;poi.tender_maintenance_tag
 biome_tags: biome.carrier_link;biome.shallow_annex
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Black Keel In-System Tender"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Внутрішньосистемний тендер Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel In-System Tender
+# Внутрішньосистемний тендер Black Keel
 
-UA LOC HOLD: Black Keel is an Aegir-system automated claim-tender, not a personal interstellar ship. It can hold custody, speak through windows, recover payload mass and enforce debt. It cannot ignore HECTON-8 weather, orbital timing, quarantine clauses or damaged descent hardware.
+Black Keel — автоматичний claim tender системи Aegir, а не особистий міжзоряний корабель. Він може тримати custody, говорити через вікна, відновлювати payload mass, стягувати борг і приймати чи відхиляти карантинні умови. Він не може ігнорувати погоду HECTON-8, орбітальний час, пошкоджене обладнання спуску або вартість руху маси.
 
 ## Scanner
 
-UA LOC HOLD: Tender limit. Black Keel can recover mass through a window; it cannot cross light-years for you.
+Межа тендера: Black Keel може відновити масу через вікно. Він не перетне світлові роки заради тебе.
 
 ## Terminal
 
-UA LOC HOLD: CARRIER LIMIT: Aegir-system claim tender. Interstellar custody is inherited from route owners; local recovery requires ascent package, quarantine handshake and payload acceptance.
+МЕЖА НОСІЯ: claim tender системи Aegir. Відновлення потребує пакета підйому, карантинного handshake, прийняття payload і вирівнювання вікна.
 
 ## Audio
 
-UA LOC HOLD: Black Keel is close enough to bill you. Not close enough to save you for free.
+Black Keel достатньо близько, щоб виставити рахунок. Не достатньо близько, щоб урятувати безкоштовно.
 
 ## Field Note
 
-UA LOC HOLD: Black Keel is leverage and logistics, not cavalry.
+Black Keel — це важіль і логістика, не кавалерія.
 
 <!-- In-Game Wiki; generated from P105_BLACK_KEEL_IN_SYSTEM_TENDER/uk_UA. -->

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "Tau Ceti 公共账簿"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# Tau Ceti 公共账簿
 
-CN LOC HOLD: The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.
+Tau Ceti League 为 Aegir 时代公共法提供可信的制衡。它影响证据保管，也能对 Deep Reach 形成外部压力，但距离让它无法实时把困在 HECTON-8 下方的潜水员拉出来。
 
 ## Scanner
 
-CN LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+Tau Ceti 公民账簿碎片。公开到足以吓住 Deep Reach，却迟到到救不了殖民地。
 
 ## Terminal
 
-CN LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+TAU CETI LEDGER MIRROR: 密封证据经中继认证后可受理。预计公共复审窗口超过本地生存间隔 31.4 年。
 
 ## Audio
 
-CN LOC HOLD: A court can be honest and useless when light itself is late.
+当光本身都迟到时，法庭可以诚实，也可以毫无用处。
 
 ## Field Note
 
-CN LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+监督可以干净地到来，也可以迟到。迟到仍然是死亡。
 
 <!-- In-Game Wiki; generated from P074_TAU_CETI_PUBLIC_LEDGER/zh_CN. -->

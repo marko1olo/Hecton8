@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "Packet custody Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# Packet custody Luyten Junction
 
-UK LOC HOLD: Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.
+Luyten Junction - радше інфраструктура, ніж суспільство: relays, beam custody, depot law і packet accounting. Він пояснює, як Deep Reach може тиснути на Aegir без живої FTL-команди і як доказ можна затримати, купити, втратити або перетворити на зброю.
 
 ## Scanner
 
-UK LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+Котушка custody Luyten. Повідомлення не ходять безкоштовно; правда теж.
 
 ## Terminal
 
-UK LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+МАРШРУТ LUYTEN JUNCTION: packet custody передано через тарифну чергу. Live command заборонено. Пріоритет доказів можна купити через emergency claim escrow.
 
 ## Audio
 
-UK LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+Жодного ansible. Жодного милосердя. Тільки custody, tariff і час.
 
 ## Field Note
 
-UK LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+Relay - це машина, яка вирішує, чиє горе отримає bandwidth.
 
 <!-- In-Game Wiki; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/uk_UA. -->

@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+spoiler_tier: 1
+title: "أزمنة سفر حزم المجسات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# أزمنة سفر حزم المجسات
 
-AR LOC HOLD: Probe Packet Travel Times explain how Aegir became a claim before it became a place.
-
-## Scanner
-
-AR LOC HOLD: The first Aegir witnesses were packets, not colonists.
-
-## Terminal
-
-AR LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
-
-## Audio
-
-AR LOC HOLD: The probe saw the ocean before anyone had a grave there.
-
-## Field Note
-
-AR LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+زمن probe packets جعل Aegir ثمينا قبل أن يصبح مألوفا. تستطيع آلة ضيقة أن تعبر وتقيس وتبلغ بينما المؤسسات البشرية ما زالت تتجادل حول الميزانيات والمسؤولية. عندما باعت Deep Reach الثقة، كانت packets قديمة وrisk models مصقولة. هذه خطورة machine-first exploration: يمكن تسعير المحيط من حقيقة قديمة قبل أن يفهم أحد كلفة العمل هناك.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/ar_SA. -->

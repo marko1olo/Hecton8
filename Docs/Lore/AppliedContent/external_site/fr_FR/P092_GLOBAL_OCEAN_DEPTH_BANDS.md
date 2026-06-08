@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "Bandes mondiales de profondeur oceanique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# Bandes mondiales de profondeur oceanique
 
-FR LOC HOLD: HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
-
-## Scanner
-
-FR LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
-
-## Terminal
-
-FR LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
-
-## Audio
-
-FR LOC HOLD: Every band changes what the world allows you to do.
-
-## Field Note
-
-FR LOC HOLD: Depth is not a number. It is a ruleset.
+HECTON-8 n'est pas un ocean plat avec des chiffres plus profonds. C'est un pays vertical dont les frontieres sont ecrites en pression. De 0 a 250 metres, le plateau photique garde lumiere, algues, epaves souples et assez de pardon pour les premieres fautes. De 250 a 1200 metres commencent le plateau industriel et le recif de cables: amarres rompues, cadres de tuyaux, os de relais et vieilles routes de compagnies. De 1200 a 2800 metres, les escaliers de saumure plient le sonar et cachent la chaleur. De 2800 a 4300 metres, reparer devient une negociation avec les machines. De 4300 a 5600 metres, Atlas change la pression en autorite.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/fr_FR. -->

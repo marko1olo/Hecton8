@@ -208,7 +208,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Konechnyy avtomat animatsii smeny instrumenta.
-        /// 
+        ///
         /// Idle → Lowering → Raising → Idle
         ///
         /// Lowering: instrument plavno uhodit vniz. Po zavershenii —
@@ -527,7 +527,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            int toolHashId = LocHash.Compute(toolData.PersistentId);
+            int toolHashId = ItemData.ResolvePersistentHashId(toolData);
             if (toolHashId == 0)
             {
                 DespawnCurrentTool();
@@ -815,12 +815,12 @@ namespace Hecton8.Gameplay
             if (tool == null || tool.ToolData == null)
                 return 0u;
 
-            string persistentId = tool.ToolData.PersistentId;
-            if (!string.IsNullOrEmpty(persistentId))
-                return unchecked((uint)LocHash.Compute(persistentId));
+            uint itemHash = unchecked((uint)ItemData.ResolvePersistentHashId(tool.ToolData));
+            if (itemHash != 0u)
+                return itemHash;
 
             ToolMetadata metadata = tool.Metadata;
-            return metadata != null && !string.IsNullOrEmpty(metadata.toolID)
+            return metadata != null && !string.IsNullOrWhiteSpace(metadata.toolID)
                 ? unchecked((uint)LocHash.Compute(metadata.toolID))
                 : 0u;
         }
@@ -1200,10 +1200,7 @@ namespace Hecton8.Gameplay
                         continue;
 
                     ItemData item = tool.ToolData;
-                    if (item == null || string.IsNullOrWhiteSpace(item.PersistentId))
-                        continue;
-
-                    int itemHash = LocHash.Compute(item.PersistentId);
+                    int itemHash = ItemData.ResolvePersistentHashId(item);
                     if (itemHash == 0 || playerInventory.CountAvailableTotal(itemHash) > 0)
                         continue;
 
@@ -1235,7 +1232,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (_objectPool == null)
+            if (!TryResolveCachedObjectPool(out _))
                 return;
 
             for (int i = 0; i < toolPrefabs.Length; i++)
@@ -1249,8 +1246,7 @@ namespace Hecton8.Gameplay
             if (prefab == null || minimumReserve <= 0)
                 return;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             int availableCount = pool.GetAvailableCount(prefab);
@@ -1326,7 +1322,7 @@ namespace Hecton8.Gameplay
                     break;
 
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     _assignedPoolsWarmed = false;
                     WarmRuntimePoolsIfNeeded();
                     break;
@@ -1429,7 +1425,7 @@ namespace Hecton8.Gameplay
             if (forceRefresh || _objectPool == null)
             {
                 IObjectPoolService previousPool = _objectPool;
-                _objectPool = GlobalRegistry.ObjectPoolService;
+                CacheObjectPoolService(null);
                 if (!ReferenceEquals(previousPool, _objectPool))
                     _assignedPoolsWarmed = false;
             }
@@ -1442,6 +1438,49 @@ namespace Hecton8.Gameplay
 
             if (forceRefresh || _submarineRuntimeContext == null)
                 _submarineRuntimeContext = GlobalRegistry.Submarine;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                return;
+            }
+
+            _objectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private bool TryResolvePoolForInstance(
+            IObjectPoolService preferredPool,
+            GameObject instance,
+            out IObjectPoolService pool)
+        {
+            return ObjectPoolManager.TryResolvePoolForInstance(instance, preferredPool, out pool);
         }
 
         private void TryRegisterHotSwapListener()
@@ -1906,11 +1945,10 @@ namespace Hecton8.Gameplay
         {
             LogToolDebug("SpawnNewTool begin");
             EnsurePoolWarmup(prefab, toolPoolWarmupCount);
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[PlayerToolManager] GlobalRegistry.ObjectPoolService is null!");
+                Hecton8.Core.H8Debug.LogError("[PlayerToolManager] ObjectPool runtime owner is unavailable.");
 #endif
                 return;
             }
@@ -2064,9 +2102,10 @@ namespace Hecton8.Gameplay
             if (instance == null)
                 return;
 
-            IObjectPoolService pool = owningPool ?? _objectPool;
-            if (pool != null)
+            if (TryResolvePoolForInstance(owningPool, instance, out IObjectPoolService pool))
                 pool.Despawn(instance);
+            else
+                instance.SetActive(false);
         }
 
         private void DespawnCurrentToolImmediate()
@@ -2090,11 +2129,10 @@ namespace Hecton8.Gameplay
                 // Ottseplyaem ot anchor pered despavnom
                 _currentInstance.transform.SetParent(null, false);
 
-                IObjectPoolService pool = _currentInstancePool ?? _objectPool;
-                if (pool != null)
-                {
+                if (TryResolvePoolForInstance(_currentInstancePool, _currentInstance, out IObjectPoolService pool))
                     pool.Despawn(_currentInstance);
-                }
+                else
+                    _currentInstance.SetActive(false);
 
                 _currentInstance = null;
                 _currentInstancePool = null;
@@ -2234,9 +2272,7 @@ namespace Hecton8.Gameplay
             batteryItem = null;
 
             ItemData installedBattery = batteryTool != null ? batteryTool.BatteryItem : null;
-            int installedBatteryHash = installedBattery != null
-                ? LocHash.Compute(installedBattery.PersistentId)
-                : 0;
+            int installedBatteryHash = ItemData.ResolvePersistentHashId(installedBattery);
 
             if (TryResolveInventoryBatteryItem(installedBatteryHash, out batteryItem))
             {
@@ -2290,10 +2326,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             ItemData targetData = prefabTool.ToolData;
-            if (targetData == null || string.IsNullOrEmpty(targetData.PersistentId))
-                return false;
-
-            int targetHashId = LocHash.Compute(targetData.PersistentId);
+            int targetHashId = ItemData.ResolvePersistentHashId(targetData);
             if (targetHashId == 0)
                 return false;
 
@@ -2316,7 +2349,7 @@ namespace Hecton8.Gameplay
                     return;
                 }
 
-                int toolHashId = LocHash.Compute(brokenToolData.PersistentId);
+                int toolHashId = ItemData.ResolvePersistentHashId(brokenToolData);
                 if (toolHashId == 0)
                 {
                     Holster();
@@ -2585,7 +2618,7 @@ namespace Hecton8.Gameplay
         private static uint ResolveActiveToolMetadataHash(PlayerTool tool)
         {
             ToolMetadata metadata = tool != null ? tool.Metadata : null;
-            if (metadata == null || string.IsNullOrEmpty(metadata.toolID))
+            if (metadata == null || string.IsNullOrWhiteSpace(metadata.toolID))
                 return 0u;
 
             return unchecked((uint)Animator.StringToHash(metadata.toolID));

@@ -1,4 +1,3 @@
-```markdown
 # PROG_Quest_State_Graph_Logic.md
 ## Hecton-8 | Underwater Horror Progression | Technical Mandate v1.0
 
@@ -50,7 +49,8 @@ struct QuestStateBlock
 
 ### Spatial Locality Rule
 
-Pack flags for same quest in contiguous 32-bit word when possible.
+Pack flags for same quest in a contiguous 32-bit word when the quest band's reserved word has capacity.
+If a quest crosses a word boundary, build validation records `CROSS_BAND_FLAG_LAYOUT` with quest ID, flag count, and added read count.
 Quest designer assigns FlagIDs in bands:
 ```
 [0..31]   = Quest_01 all sub-flags
@@ -525,8 +525,8 @@ Dependency injection at boot via ServiceLocator (static NativeArray of ptrs, not
 Quest-state-driven visual hints without GPU overhead:
 
 ```
-NarrativeFlags bit -> drives shader keyword toggle (pre-baked keyword array)
-Keyword toggle: MaterialPropertyBlock (no material instantiation)
+NarrativeFlags bit -> drives shader keyword/material variant selection through pre-baked material IDs, GraphicsBuffer instance flags, or a renderer-feature highlight buffer.
+MaterialPropertyBlock is not allowed on standard SRP-batched quest marker geometry.
 Max 4 active keyword changes per QuestTransitionEvent
 Visual LOD of quest indicators: distance-based, resolved in QuestGraphEvaluator
     dist^2 < 25.0  -> full marker

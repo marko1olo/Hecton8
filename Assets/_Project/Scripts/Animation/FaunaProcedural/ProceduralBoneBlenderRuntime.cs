@@ -1458,7 +1458,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
             if (_registeredHotSwap)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
         }

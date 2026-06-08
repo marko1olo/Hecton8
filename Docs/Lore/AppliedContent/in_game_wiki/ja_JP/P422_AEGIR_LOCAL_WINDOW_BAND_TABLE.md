@@ -7,34 +7,34 @@ poi_tags: poi.local_window_band_table;poi.carrier_phase_clock
 biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "JA LOC HOLD: Aegir Window Bands"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Aegir窓帯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Aegir Window Bands
+# Aegir窓帯
 
-JA LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.
+Aegirの局所窓は軌道力学をプレイヤーが感じる圧力にする。修理済みcapsuleにも、天候、リレー角、carrier位置、法的受け入れが必要だ。
 
 ## Scanner
 
-JA LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+局所帯域: 上昇は即時救助ではなく、数時間から数日の窓を待つ。
 
 ## Terminal
 
-JA LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+WINDOW BAND: shutter、eclipse、relay、storm、carrier phase、legal handshakeが安全transfer前に揃う必要がある。
 
 ## Audio
 
-JA LOC HOLD: The carrier can hear you and still be in the wrong sky.
+Carrierは君を聞けても、空の位置が間違っていることがある。
 
 ## Field Note
 
-JA LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+窓帯記録: Black Keel timing、局所軌道ラベル、spoiler-light system pagesは同じtransfer constraintsを共有する。
 
 <!-- In-Game Wiki; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/ja_JP. -->

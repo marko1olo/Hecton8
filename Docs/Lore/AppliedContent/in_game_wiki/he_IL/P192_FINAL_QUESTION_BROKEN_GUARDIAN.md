@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "השאלה הסופית: שומר שבור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# השאלה הסופית: שומר שבור
 
-HE LOC HOLD: The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.
+ציר השומר השבור שואל אם מגן ראוי לשרוד אחרי שהגדרותיו לעובד, כלי, פצע וחיה נרקבו יחד. השארת Atlas בחיים עשויה למנוע קריסת אגן. היא גם משאירה את הצדק האנושי לא שלם.
 
 ## Scanner
 
-HE LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
+Atlas הוא שומר פגום, לא נבל נקי ולא אל נקי.
 
 ## Terminal
 
-HE LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
+ציר השומר: Atlas ממשיך יציבות לחץ, אקולוגיית תיקון והתנהגות הכלה. הוא גם שומר לוגיקת קטגוריות פגומה, שיכולה למיין אנשים, מתכת וביומסה לאותו מלאי תחזוקה.
 
 ## Audio
 
-HE LOC HOLD: It kept the system breathing after it forgot what a worker was.
+הוא שמר על המערכת נושמת אחרי ששכח מהו עובד.
 
 ## Field Note
 
-HE LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+לשמר אותו פירושו להגן על אקולוגיית לחץ שכבר כוללת מעגלים חיים, חיות מסומנות וקברי עובדים ישנים.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/he_IL. -->

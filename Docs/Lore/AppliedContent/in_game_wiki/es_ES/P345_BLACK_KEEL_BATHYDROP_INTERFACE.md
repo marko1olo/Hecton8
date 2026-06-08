@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Black Keel Bathydrop Interface"
+title: "Interfaz bathydrop de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Black Keel Bathydrop Interface
+# Interfaz bathydrop de Black Keel
 
-ES LOC HOLD: The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+El primer bloqueo de escape es ingeniería. Black Keel sigue sobre el agua, pero la interfaz bathydrop dañada no puede reconectar superficie, órbita y tiempo solo por intención. La reparación necesita salvage profundo, sellos limpios, geometría de relé funcional y una ventana de lanzamiento aceptada por el portador.
 
 ## Scanner
 
-ES LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+Interfaz bathydrop dañada: la cadena de retorno a superficie no puede cerrar sin piezas calificadas para presión, sincronía de relé y pestillo de ascenso limpio.
 
 ## Terminal
 
-ES LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+INFORME CÁPSULA: ajuste de escudo térmico sobrevivió. Compuerta de flotabilidad doblada. Mástil com inundado. Pestillo de ascenso contaminado. Reparación requiere cerámica de presión, sellante, matemática de relé y ventana verificada.
 
 ## Audio
 
-ES LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
+No perdiste toda la nave. Perdiste la única cadena que hace que la nave importe.
 
 ## Field Note
 
-ES LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Registro de escape inicial: el portador está presente, pero la cadena entre jugador, mar, superficie y órbita está rota en piezas con nombre.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/es_ES. -->

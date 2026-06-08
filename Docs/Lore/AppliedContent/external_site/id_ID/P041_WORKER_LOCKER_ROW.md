@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Deret Loker Pekerja
@@ -27,7 +27,7 @@ Benda-benda membuat koloni manusiawi: nama, alat, kredit makan, dan jejak kerja 
 
 ## Terminal
 
-Audit koloni: loker pribadi dan tanda Barnard mengikat pemain ke kru nyata.
+AUDIT KOLONI: penyimpanan pribadi dan tanda Barnard mengikat deretan loker ke kru bernama dan rute kerja.
 
 ## Audio
 

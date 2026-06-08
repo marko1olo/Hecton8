@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Predator Shadow Encounter Grammar"
+title: "Begegnungsgrammatik: Räuberschatten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Predator Shadow Encounter Grammar
+# Begegnungsgrammatik: Räuberschatten
 
-DE LOC HOLD: HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.
+Räuberschatten definieren HECTON-8s Angst ohne billige Enthüllungslogik. Gefahr kommt oft als fehlende Beute, gebrochener Bloom, falsches Sonar und eine Route, die plötzlich zu viel Sauerstoff kostet.
 
 ## Scanner
 
-DE LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Räuberschatten-Spur. Sonarlücke, abgeschnittener Beutepfad, plötzliche Grazerstille, breite Lichtverdeckung. Körper unbestätigt; Lichtdisziplin und Austrittswinkel halten.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+BEGEGNUNGSGRAMMATIK / RÄUBERSCHATTEN / Rolle: Routendruck vor Körperenthüllung, Sauerstoffverbrauchsspitze, Scan-Vertrauensbruch / sichere Lesung: Beutepfad stoppt, Bloom-Geräusch bricht ein, Sonarrückläufe teilen sich um leeres Wasser / verwerfen: gescriptete Ganzkörperenthüllung als erste Warnung, harmloser Jump Scare, saubere Bossarena / Routennotiz: Wenn Kleintiere stoppen, bevor der Scanner ein Ziel benennt, hat sich die Route bereits geändert.
 
 ## Audio
 
-DE LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+Das sichere Zeichen ist nicht, es zu sehen. Es ist zu merken, dass alles andere zuerst die Stille wählt.
 
 ## Field Note
 
-DE LOC HOLD: Use for AI/spawn design notes and scanner cards.
+Benenne das Tier spät. Lass Beute, Licht und Sonar zuerst versagen. Wenn die Route still wird, gehört sie dem Schatten.
 
 <!-- External Site; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/de_DE. -->

@@ -9,32 +9,35 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JP LOC HOLD: Blue Debt Public Resource Article"
+title: "Blue Debt公開資源記事"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Blue Debt Public Resource Article
+# Blue Debt公開資源記事
 
-JP LOC HOLD: Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.
+Blue debtはMarauderの俗語であり、清潔な材料分類ではない。公開上はXenon-Omega-bearing pressure substrateを指す。クラスレート、塩水、鉱物格子、産業バイオフィルム、containment痕のあるハードウェアが混じり合った不安定な素材で、通常の鉱石のようには振る舞わず、極端な条件を保持できる。重要なのは、HECTON-8が圧力を有用にしたからだ。潜水者を押し潰す環境が、奇妙な化学、遮蔽計算、センサー記憶、請求を生かし続けるほど価値あるcontainment表面を保存しうる。Blue debtは魔法のlootとして読ませてはならない。危険なのは、それが形成された場所を覚えているからだ。誤って温め、誤って切り、保管証明なしで動かせば、資源ではなく証拠、毒、圧力、あるいは債務になる。公開文はMarauderがなぜ追うのかを説明できる。同時に、それを清潔と呼ぶ者をなぜ信用しないのかも説明すべきだ。
 
 ## Scanner
 
-JP LOC HOLD: The public name sounds like slang because the official name is built to hide liability.
+俗語の方が正直だ。公式名が責任を隠す: Xenon-Omega-bearing pressure substrate。
 
 ## Terminal
 
-JP LOC HOLD: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+公開記事階層 / BLUE DEBT
+許可: サンプル挙動、圧力化学、クラスレートと塩水キャリア、containment価値、計算利用、保管リスク
+制限: 正確なレシピ表、payout調整、終盤Atlas substrate経路
+編集注: 魔法鉱石禁止、光るloot fantasy禁止、清潔な所有権禁止。
 
 ## Audio
 
-JP LOC HOLD: Ore is what people call it when they want to forget the paperwork.
+彼らがblue debtと呼んだのは、有用な一グラムごとがすでに誰かに圧力、書類、血を負っていたからだ。
 
 ## Field Note
 
-JP LOC HOLD: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+宝物のように光るなら書き直せ。Blue debtは有用で、濡れていて、規制され、不安定で、すでに争われているべきだ。
 
 <!-- In-Game Wiki; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/ja_JP. -->

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Tariff Table"
+title: "جدول تعرفة Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Tariff Table
+# جدول تعرفة Black Keel
 
-AR LOC HOLD: Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.
+دعم Black Keel مفيد، لكنه ليس محايدا أبدا. الاستغاثة والعينات والأكسجين وأختام المسؤولية واسترداد المشغل وضرر البدن تدخل طوابير مختلفة. يستطيع اللاعب استغلال القواعد نفسها، لكنها تفسر أيضا لماذا تأتي المساعدة دائما ومعها ثمن.
 
 ## Scanner
 
-AR LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
+اللوحة تسعر الاستغاثة وحيازة العينات واحتياطي الأكسجين ومعدات الضغط واسترداد الجثة كبنود منفصلة.
 
 ## Terminal
 
-AR LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
+فئة التعرفة: طوارئ انتشال. ملحق الرعاية معلق. حيازة العينة الموثقة ترفع أولوية الخروج درجتين.
 
 ## Audio
 
-AR LOC HOLD: The table has a price for rescue and a discount for evidence.
+هناك خصم للدليل ورسم إضافي للتنفس.
 
 ## Field Note
 
-AR LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
+أسرع فئة ليست الإنقاذ. إنها الملكية الموثقة وهي تتحرك إلى الأعلى.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/ar_SA. -->

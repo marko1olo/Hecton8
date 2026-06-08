@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Field Systems Specialist Record"
+title: "现场系统专员记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Field Systems Specialist Record
+# 现场系统专员记录
 
-ZH LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.
+这份记录解释了操作员最初的能力，而不把他们写成被选中的见证人。Deep Reach训练他们接触泵、密封等级、中继室、旁路卡、撤离队列和route-safe用语。旧系统拒绝他们的名字，却仍泄露熟悉的程序。内疚从识别开始：排水顺序、夹环等级、被清洗过的搁置措辞，以及一个按他们受训要防止的顺序失效的房间。
 
 ## Scanner
 
-ZH LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+旧现场系统凭证。不是指挥人员。只是基础设施劳工，但权限足够看出一条路线在哪里被掩埋。
 
 ## Terminal
 
-ZH LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+人员痕迹：现场系统，撤离基础设施，route-safe认证。Aegir静默审查后权限撤销。程序缓存仍与操作员序列匹配。
 
 ## Audio
 
-ZH LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+你从未签下那个谎言。你只是懂得让它通过审查的语法。
 
 ## Field Note
 
-CN LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+徽章不再开门。它没有抹掉故障发生的顺序。
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/zh_CN. -->

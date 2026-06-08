@@ -1,4 +1,5 @@
-﻿# O PROGRAMMA SEMENTE E A DIRETRIZ ATLAS
+<!-- localization_status: source_draft_pending_native_review -->
+# O PROGRAMMA SEMENTE E A DIRETRIZ ATLAS
 
 > **Source:** Divisão de Engenharia de Sistemas da Deep Reach, Registro de Lógica de Diretrizes.
 > **Speaker:** Diretor de Operações Autônomas.

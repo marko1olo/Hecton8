@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Hecton8.SaveSystem;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -51,6 +52,13 @@ namespace Hecton8.Input
             if (vault == null)
                 return false;
 
+            bool hadRing = vault.TryGetGenerationHandle<InputBindingTelemetryEntry>(
+                InputBindingContractLayout.InputBindingTelemetryRingBufferId,
+                out _);
+            bool hadCursor = vault.TryGetGenerationHandle<int>(
+                InputBindingContractLayout.InputBindingTelemetryCursorBufferId,
+                out _);
+
             ringHandle = vault.EnsureGenerationHandle<InputBindingTelemetryEntry>(
                 InputBindingContractLayout.InputBindingTelemetryRingBufferId,
                 InputBindingContractLayout.InputBindingTelemetryCapacity,
@@ -61,7 +69,18 @@ namespace Hecton8.Input
                 1,
                 SystemID.UI,
                 NativeArrayOptions.ClearMemory);
-            return ringHandle.BufferID != 0u && cursorHandle.BufferID != 0u;
+
+            if (ringHandle.BufferID != 0u && cursorHandle.BufferID != 0u)
+                return true;
+
+            if (!hadRing && ringHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in ringHandle);
+            if (!hadCursor && cursorHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in cursorHandle);
+
+            ringHandle = default;
+            cursorHandle = default;
+            return false;
         }
 
         public static void RecordTelemetry(
@@ -109,8 +128,8 @@ namespace Hecton8.Input
                 if (nextIndex >= telemetryCapacity)
                     nextIndex = 0;
 
-                cursor[0] = nextIndex;
                 ring[index] = entry;
+                cursor[0] = nextIndex;
             }
             finally
             {
@@ -143,14 +162,30 @@ namespace Hecton8.Input
         public static bool TryDumpTelemetry(
             IDataVault vault,
             in VaultGenerationHandle<InputBindingTelemetryEntry> ringHandle,
+            in VaultGenerationHandle<int> cursorHandle,
             string path)
         {
-            if (vault == null || ringHandle.BufferID == 0u || string.IsNullOrEmpty(path))
+            if (vault == null ||
+                ringHandle.BufferID == 0u ||
+                cursorHandle.BufferID == 0u ||
+                string.IsNullOrEmpty(path))
+            {
                 return false;
+            }
 
+            if (ringHandle.BufferID != unchecked((uint)(int)InputBindingContractLayout.InputBindingTelemetryRingBufferId) ||
+                cursorHandle.BufferID != unchecked((uint)(int)InputBindingContractLayout.InputBindingTelemetryCursorBufferId))
+            {
+                return false;
+            }
+
+            string tempPath = null;
             NativeArray<byte> snapshot = default;
             try
             {
+                string absolutePath = Path.GetFullPath(path);
+                tempPath = absolutePath + ".tmp";
+
                 int maxByteCount = InputBindingContractLayout.InputBindingTelemetryCapacity *
                                    InputBindingContractLayout.InputBindingTelemetryStrideBytes;
                 if (maxByteCount <= 0)
@@ -160,63 +195,165 @@ namespace Hecton8.Input
                     return false;
 
                 int byteCount = 0;
-                bool ringLocked = false;
+                bool mutationGuardHeld = false;
                 try
                 {
-                    ringLocked = vault.TryAcquireWriteLock(in ringHandle, SystemID.UI, out NativeArray<InputBindingTelemetryEntry> ring);
-                    if (!ringLocked || !ring.IsCreated || ring.Length <= 0)
+                    mutationGuardHeld = vault.TryAcquireMutationGuard(TelemetryMutationGuardMask);
+                    if (!mutationGuardHeld ||
+                        !vault.TryResolveHandle(in cursorHandle, out NativeArray<int> cursor) ||
+                        !vault.TryResolveHandle(in ringHandle, out NativeArray<InputBindingTelemetryEntry> ring) ||
+                        !cursor.IsCreated ||
+                        cursor.Length <= 0 ||
+                        !ring.IsCreated ||
+                        ring.Length <= 0)
+                    {
+                        return false;
+                    }
+
+                    int telemetryCapacity = InputBindingContractLayout.InputBindingTelemetryCapacity < ring.Length
+                        ? InputBindingContractLayout.InputBindingTelemetryCapacity
+                        : ring.Length;
+                    if (telemetryCapacity <= 0)
                         return false;
 
-                    byteCount = ring.Length * InputBindingContractLayout.InputBindingTelemetryStrideBytes;
+                    int cursorIndex = NormalizeTelemetryCursor(cursor[0], telemetryCapacity);
+                    int stride = InputBindingContractLayout.InputBindingTelemetryStrideBytes;
+                    byteCount = telemetryCapacity * stride;
                     if (byteCount <= 0 || byteCount > snapshot.Length)
                         return false;
 
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-                    void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(snapshot);
-                    UnsafeUtility.MemCpy(destination, source, byteCount);
+                    byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(snapshot);
+                    for (int i = 0; i < telemetryCapacity; i++)
+                    {
+                        int ringIndex = cursorIndex + i;
+                        if (ringIndex >= telemetryCapacity)
+                            ringIndex -= telemetryCapacity;
+
+                        UnsafeUtility.MemCpy(destination + (i * stride), source + (ringIndex * stride), stride);
+                    }
                 }
                 finally
                 {
-                    if (ringLocked)
-                        vault.ReleaseWriteLock(in ringHandle, SystemID.UI);
+                    if (mutationGuardHeld)
+                        vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
                 }
 
-                string directory = Path.GetDirectoryName(path);
+                string directory = Path.GetDirectoryName(absolutePath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
                 void* snapshotSource = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(snapshot);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, FileStreamBufferBytes, FileOptions.WriteThrough))
+                TryDeleteTelemetryDumpTempFile(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read, FileStreamBufferBytes, FileOptions.WriteThrough))
                 {
                     stream.Write(new ReadOnlySpan<byte>(snapshotSource, byteCount));
                     stream.Flush(true);
+                    if (stream.Length != byteCount)
+                        throw new IOException("Input binding telemetry dump length mismatch.");
                 }
 
-                return true;
+                if (!AsyncWriteManager.TryGetFileLength(tempPath, out long tempBytes, out _) ||
+                    tempBytes != byteCount ||
+                    !AsyncWriteManager.FlushCriticalSavePath(tempPath, tempBytes, out _))
+                {
+                    TryDeleteTelemetryDumpTempFile(tempPath);
+                    return false;
+                }
+
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                try
+                {
+                    if (File.Exists(absolutePath))
+                        File.Replace(tempPath, absolutePath, null, true);
+                    else
+                        File.Move(tempPath, absolutePath);
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                    AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                }
+
+                return AsyncWriteManager.TryGetFileLength(absolutePath, out long promotedBytes, out _) &&
+                       promotedBytes == byteCount &&
+                       AsyncWriteManager.FlushCriticalSavePath(absolutePath, promotedBytes, out _);
             }
             catch (UnauthorizedAccessException)
             {
+                TryDeleteTelemetryDumpTempFile(tempPath);
                 return false;
             }
             catch (IOException)
             {
+                TryDeleteTelemetryDumpTempFile(tempPath);
                 return false;
             }
             catch (ArgumentException)
             {
+                TryDeleteTelemetryDumpTempFile(tempPath);
                 return false;
             }
             catch (NotSupportedException)
             {
+                TryDeleteTelemetryDumpTempFile(tempPath);
                 return false;
             }
             catch (InvalidOperationException)
             {
+                TryDeleteTelemetryDumpTempFile(tempPath);
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                TryDeleteTelemetryDumpTempFile(tempPath);
                 return false;
             }
             finally
             {
                 ReleaseScratch(ref snapshot);
+            }
+        }
+
+        private static int NormalizeTelemetryCursor(int cursor, int capacity)
+        {
+            if (capacity <= 0 || cursor < 0 || cursor >= capacity)
+                return 0;
+
+            return cursor;
+        }
+
+        private static void TryDeleteTelemetryDumpTempFile(string tempPath)
+        {
+            if (string.IsNullOrEmpty(tempPath))
+                return;
+
+            AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (IOException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (System.Security.SecurityException)
+            {
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
             }
         }
 
@@ -323,7 +460,10 @@ namespace Hecton8.Input
                 }
 
                 if (!TryWriteAtomicCold(path, tempPath, ptr, index, ref result))
+                {
+                    result.Telemetry = BuildTelemetry(InputBindingTelemetryOperation.Save, result.ResultCode, result.FaultFlags, result.ByteCount, 0, result.RecordCount, result.PathBytes, startTicks);
                     return false;
+                }
 
                 result.ResultCode = InputBindingTelemetryResult.Success;
                 result.Telemetry = BuildTelemetry(InputBindingTelemetryOperation.Save, result.ResultCode, result.FaultFlags, index, ComputeHash64(ptr, index), recordCount, pathBytes, startTicks);
@@ -349,6 +489,11 @@ namespace Hecton8.Input
                 MarkIoFailure(ref result, InputBindingTelemetryOperation.Save, startTicks);
                 return false;
             }
+            catch (System.Security.SecurityException)
+            {
+                MarkIoFailure(ref result, InputBindingTelemetryOperation.Save, startTicks);
+                return false;
+            }
             finally
             {
                 ReleaseScratch(ref buffer);
@@ -364,6 +509,7 @@ namespace Hecton8.Input
             long startTicks = Stopwatch.GetTimestamp();
             NativeArray<byte> fileBytes = default;
             NativeArray<InputActionStateDTO> records = default;
+            string absolutePath = null;
             int rollbackCount = 0;
             bool rollbackLeaseHeld = false;
             try
@@ -382,7 +528,9 @@ namespace Hecton8.Input
                     return false;
                 }
 
-                if (!File.Exists(path))
+                absolutePath = Path.GetFullPath(path);
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                if (!File.Exists(absolutePath))
                 {
                     result.ResultCode = InputBindingTelemetryResult.FileMissing;
                     result.Telemetry = BuildTelemetry(InputBindingTelemetryOperation.Load, result.ResultCode, 0u, 0, 0, 0, 0, startTicks);
@@ -396,11 +544,11 @@ namespace Hecton8.Input
                 }
 
                 byte* bytesPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(fileBytes);
-                int byteCount = TryReadAllCold(path, bytesPtr, fileBytes.Length, ref result);
+                int byteCount = TryReadAllCold(absolutePath, bytesPtr, fileBytes.Length, ref result);
                 if (byteCount <= 0)
                 {
                     result.ResultCode = result.ResultCode == 0u ? InputBindingTelemetryResult.InvalidJson : result.ResultCode;
-                    result.Telemetry = BuildTelemetry(InputBindingTelemetryOperation.Load, result.ResultCode, result.FaultFlags, 0, 0, 0, 0, startTicks);
+                    result.Telemetry = BuildTelemetry(InputBindingTelemetryOperation.Load, result.ResultCode, result.FaultFlags, result.ByteCount, 0, 0, 0, startTicks);
                     return false;
                 }
 
@@ -523,8 +671,15 @@ namespace Hecton8.Input
                 MarkIoFailure(ref result, InputBindingTelemetryOperation.Load, startTicks);
                 return false;
             }
+            catch (System.Security.SecurityException)
+            {
+                MarkIoFailure(ref result, InputBindingTelemetryOperation.Load, startTicks);
+                return false;
+            }
             finally
             {
+                if (!string.IsNullOrEmpty(absolutePath))
+                    AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
                 ReleaseScratch(ref records);
                 ReleaseScratch(ref fileBytes);
                 ClearRollbackRecords(LoadRollbackRecords, rollbackCount);
@@ -557,6 +712,11 @@ namespace Hecton8.Input
                 return false;
             }
             catch (NotSupportedException)
+            {
+                result.FaultFlags |= InputBindingFaultFlags.UnsupportedPath;
+                return false;
+            }
+            catch (System.Security.SecurityException)
             {
                 result.FaultFlags |= InputBindingFaultFlags.UnsupportedPath;
                 return false;
@@ -791,96 +951,202 @@ namespace Hecton8.Input
 
         private static int TryReadAllCold(string path, byte* destination, int capacity, ref ControlRemapIoResult result)
         {
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileStreamBufferBytes, FileOptions.SequentialScan))
+            AsyncWriteManager.InvalidateCachedReadWindows(path);
+            if (!AsyncWriteManager.TryGetFileLength(path, out long cachedLength, out _))
             {
-                long length = stream.Length;
-                if (length <= 0 || length > capacity)
-                {
-                    result.ResultCode = InputBindingTelemetryResult.InvalidJson;
-                    result.FaultFlags |= length > capacity ? InputBindingFaultFlags.BufferOverflow : InputBindingFaultFlags.InvalidSchema;
-                    return -1;
-                }
+                result.ResultCode = InputBindingTelemetryResult.IoFailure;
+                result.FaultFlags |= InputBindingFaultFlags.IoException;
+                return -1;
+            }
 
-                Span<byte> span = new Span<byte>(destination, (int)length);
-                int total = 0;
-                while (total < span.Length)
-                {
-                    int read = stream.Read(span.Slice(total));
-                    if (read <= 0)
-                        break;
-                    total += read;
-                }
+            result.ByteCount = cachedLength > int.MaxValue ? int.MaxValue : (int)Math.Max(0L, cachedLength);
+            if (cachedLength <= 0 ||
+                cachedLength > capacity)
+            {
+                result.ResultCode = InputBindingTelemetryResult.InvalidJson;
+                result.FaultFlags |= cachedLength > capacity ? InputBindingFaultFlags.BufferOverflow : InputBindingFaultFlags.InvalidSchema;
+                return -1;
+            }
 
-                if (total != span.Length)
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileStreamBufferBytes, FileOptions.SequentialScan))
                 {
-                    result.ResultCode = InputBindingTelemetryResult.IoFailure;
-                    result.FaultFlags |= InputBindingFaultFlags.IoException;
-                    return -1;
-                }
+                    long length = stream.Length;
+                    if (length != cachedLength)
+                    {
+                        result.ByteCount = length > int.MaxValue ? int.MaxValue : (int)Math.Max(0L, length);
+                        result.ResultCode = InputBindingTelemetryResult.IoFailure;
+                        result.FaultFlags |= InputBindingFaultFlags.IoException;
+                        return -1;
+                    }
 
-                result.ByteCount = total;
-                return total;
+                    if (length <= 0 || length > capacity)
+                    {
+                        result.ResultCode = InputBindingTelemetryResult.InvalidJson;
+                        result.FaultFlags |= length > capacity ? InputBindingFaultFlags.BufferOverflow : InputBindingFaultFlags.InvalidSchema;
+                        return -1;
+                    }
+
+                    Span<byte> span = new Span<byte>(destination, (int)length);
+                    int total = 0;
+                    while (total < span.Length)
+                    {
+                        int read = stream.Read(span.Slice(total));
+                        if (read <= 0)
+                            break;
+                        total += read;
+                    }
+
+                    if (total != span.Length)
+                    {
+                        result.ByteCount = total;
+                        result.ResultCode = InputBindingTelemetryResult.IoFailure;
+                        result.FaultFlags |= InputBindingFaultFlags.IoException;
+                        return -1;
+                    }
+
+                    result.ByteCount = total;
+                    return total;
+                }
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
             }
         }
 
         private static bool TryWriteAtomicCold(string path, string tempPath, byte* source, int byteCount, ref ControlRemapIoResult result)
         {
+            string absolutePath = null;
+            string absoluteTempPath = null;
             try
             {
-                string directory = Path.GetDirectoryName(path);
+                absolutePath = Path.GetFullPath(path);
+                absoluteTempPath = Path.GetFullPath(tempPath);
+                if (AreSameFullPath(absolutePath, absoluteTempPath))
+                {
+                    MarkIoFailureNoTelemetry(ref result);
+                    return false;
+                }
+
+                string directory = Path.GetDirectoryName(absolutePath);
+                string tempDirectory = Path.GetDirectoryName(absoluteTempPath);
+                if (!AreSameFullPath(directory ?? string.Empty, tempDirectory ?? string.Empty))
+                {
+                    MarkIoFailureNoTelemetry(ref result);
+                    result.FaultFlags |= InputBindingFaultFlags.UnsupportedPath;
+                    return false;
+                }
+
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
                 long writtenLength;
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, FileStreamBufferBytes, FileOptions.WriteThrough))
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+                try
                 {
-                    stream.Write(new ReadOnlySpan<byte>(source, byteCount));
-                    stream.Flush(true);
-                    writtenLength = stream.Position;
+                    using (FileStream stream = new FileStream(absoluteTempPath, FileMode.Create, FileAccess.Write, FileShare.None, FileStreamBufferBytes, FileOptions.WriteThrough))
+                    {
+                        stream.Write(new ReadOnlySpan<byte>(source, byteCount));
+                        stream.Flush(true);
+                        writtenLength = stream.Position;
+                    }
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
                 }
 
                 if (writtenLength != byteCount)
                 {
                     result.ResultCode = InputBindingTelemetryResult.IoFailure;
                     result.FaultFlags |= InputBindingFaultFlags.IoException;
+                    TryDeleteTempAfterIoFailureCold(absoluteTempPath, ref result);
                     return false;
                 }
 
-                if (File.Exists(path))
-                    File.Replace(tempPath, path, null, true);
-                else
-                    File.Move(tempPath, path);
+                if (!AsyncWriteManager.TryGetFileLength(absoluteTempPath, out long tempBytes, out _) ||
+                    tempBytes != byteCount ||
+                    !AsyncWriteManager.FlushCriticalSavePath(absoluteTempPath, tempBytes, out _))
+                {
+                    result.ResultCode = InputBindingTelemetryResult.IoFailure;
+                    result.FaultFlags |= InputBindingFaultFlags.IoException;
+                    TryDeleteTempAfterIoFailureCold(absoluteTempPath, ref result);
+                    return false;
+                }
+
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                try
+                {
+                    if (File.Exists(absolutePath))
+                        File.Replace(absoluteTempPath, absolutePath, null, true);
+                    else
+                        File.Move(absoluteTempPath, absolutePath);
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+                    AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                }
+
+                if (!AsyncWriteManager.TryGetFileLength(absolutePath, out long promotedBytes, out _) ||
+                    promotedBytes != byteCount ||
+                    !AsyncWriteManager.FlushCriticalSavePath(absolutePath, promotedBytes, out _))
+                {
+                    result.ResultCode = InputBindingTelemetryResult.IoFailure;
+                    result.FaultFlags |= InputBindingFaultFlags.IoException;
+                    TryDeleteTempAfterIoFailureCold(absoluteTempPath, ref result);
+                    return false;
+                }
 
                 return true;
             }
             catch (UnauthorizedAccessException)
             {
                 MarkIoFailureNoTelemetry(ref result);
-                TryDeleteTempAfterIoFailureCold(tempPath, ref result);
+                TryDeleteTempAfterIoFailureCold(absoluteTempPath ?? tempPath, ref result);
                 return false;
             }
             catch (IOException)
             {
                 MarkIoFailureNoTelemetry(ref result);
-                TryDeleteTempAfterIoFailureCold(tempPath, ref result);
+                TryDeleteTempAfterIoFailureCold(absoluteTempPath ?? tempPath, ref result);
                 return false;
             }
             catch (ArgumentException)
             {
                 MarkIoFailureNoTelemetry(ref result);
-                TryDeleteTempAfterIoFailureCold(tempPath, ref result);
+                TryDeleteTempAfterIoFailureCold(absoluteTempPath ?? tempPath, ref result);
                 return false;
             }
             catch (NotSupportedException)
             {
                 MarkIoFailureNoTelemetry(ref result);
-                TryDeleteTempAfterIoFailureCold(tempPath, ref result);
+                TryDeleteTempAfterIoFailureCold(absoluteTempPath ?? tempPath, ref result);
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                MarkIoFailureNoTelemetry(ref result);
+                TryDeleteTempAfterIoFailureCold(absoluteTempPath ?? tempPath, ref result);
                 return false;
             }
         }
 
+        private static bool AreSameFullPath(string left, string right)
+        {
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+            return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+#else
+            return string.Equals(left, right, StringComparison.Ordinal);
+#endif
+        }
+
         private static void TryDeleteTempAfterIoFailureCold(string tempPath, ref ControlRemapIoResult result)
         {
+            AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
             try
             {
                 if (File.Exists(tempPath))
@@ -901,6 +1167,14 @@ namespace Hecton8.Input
             catch (NotSupportedException)
             {
                 result.FaultFlags |= InputBindingFaultFlags.IoException;
+            }
+            catch (System.Security.SecurityException)
+            {
+                result.FaultFlags |= InputBindingFaultFlags.IoException;
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
             }
         }
 
@@ -932,6 +1206,41 @@ namespace Hecton8.Input
         {
             result.ResultCode = InputBindingTelemetryResult.IoFailure;
             result.FaultFlags |= InputBindingFaultFlags.IoException;
+        }
+
+        public static InputBindingTelemetryEntry BuildDeleteTelemetry(
+            uint resultCode,
+            uint faultFlags,
+            int byteCount,
+            int pathBytes,
+            long startTicks)
+        {
+            return BuildTelemetry(
+                InputBindingTelemetryOperation.Delete,
+                resultCode,
+                faultFlags,
+                byteCount,
+                0,
+                0,
+                pathBytes,
+                startTicks);
+        }
+
+        public static InputBindingTelemetryEntry BuildApplyTelemetry(
+            uint resultCode,
+            uint faultFlags,
+            int recordCount,
+            long startTicks)
+        {
+            return BuildTelemetry(
+                InputBindingTelemetryOperation.Apply,
+                resultCode,
+                faultFlags,
+                0,
+                0,
+                recordCount,
+                0,
+                startTicks);
         }
 
         private static bool TryParseBindings(
@@ -1301,6 +1610,11 @@ namespace Hecton8.Input
                 return false;
             }
             catch (ArgumentException)
+            {
+                result.FaultFlags |= InputBindingFaultFlags.UnsupportedPath;
+                return false;
+            }
+            catch (System.Security.SecurityException)
             {
                 result.FaultFlags |= InputBindingFaultFlags.UnsupportedPath;
                 return false;

@@ -271,12 +271,21 @@ namespace Hecton8.Dev
             loadError = string.Empty;
             // COLD ALLOC: NativeArray<long>[1] - smoke-only requested sector hash scratch - owner: SaveSystemRuntimeSmokeTester
             NativeArray<long> requestedSectors = default;
+            int requestedSectorsSentinelId = 0;
             // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[16+] - smoke-only restored records scratch - owner: SaveSystemRuntimeSmokeTester
             NativeList<PersistentWorldDeltaRecord> restoredRecords = default;
+            int restoredRecordsSentinelId = 0;
             try
             {
-                requestedSectors = AllocateTrackedTempJobArray<long>(1, RequestedSectorScratchLabel, NativeArrayOptions.UninitializedMemory);
-                restoredRecords = AllocateTrackedTempJobList<PersistentWorldDeltaRecord>(16, RestoredRecordsScratchLabel);
+                requestedSectors = AllocateTrackedTempJobArray<long>(
+                    1,
+                    RequestedSectorScratchLabel,
+                    NativeArrayOptions.UninitializedMemory,
+                    out requestedSectorsSentinelId);
+                restoredRecords = AllocateTrackedTempJobList<PersistentWorldDeltaRecord>(
+                    16,
+                    RestoredRecordsScratchLabel,
+                    out restoredRecordsSentinelId);
 
                 requestedSectors[0] = sectorHash;
                 if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(primaryAbsolutePath, requestedSectors, restoredRecords, out loadError))
@@ -338,18 +347,23 @@ namespace Hecton8.Dev
             }
             finally
             {
-                DisposeTrackedTempJobArray(ref requestedSectors);
-                DisposeTrackedTempJobList(ref restoredRecords, RestoredRecordsScratchLabel);
+                DisposeTrackedTempJobArray(ref requestedSectors, ref requestedSectorsSentinelId);
+                DisposeTrackedTempJobList(ref restoredRecords, ref restoredRecordsSentinelId);
             }
         }
 
-        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options)
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(
+            int length,
+            string label,
+            NativeArrayOptions options,
+            out int sentinelId)
             where T : struct
         {
+            sentinelId = 0;
             NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                sentinelId = NativeMemorySentinel.RegisterNativeArray(
                     array,
                     NativeMemoryOwner,
                     label,
@@ -357,25 +371,55 @@ namespace Hecton8.Dev
                 if (sentinelId > 0)
                     return array;
             }
-            catch
+            catch (Exception exception)
             {
-                if (array.IsCreated)
-                    array.Dispose();
+                Exception cleanupException = null;
+                try
+                {
+                    DisposeTrackedTempJobArray(ref array, ref sentinelId);
+                }
+                catch (Exception cleanupFault)
+                {
+                    cleanupException = cleanupFault;
+                }
+
+                if (cleanupException != null)
+                    throw new AggregateException(
+                        "Save system runtime TempJob NativeArray allocation failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
 
                 throw;
             }
 
-            array.Dispose();
-            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            InvalidOperationException registrationException = new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            Exception registrationCleanupException = null;
+            try
+            {
+                DisposeTrackedTempJobArray(ref array, ref sentinelId);
+            }
+            catch (Exception cleanupFault)
+            {
+                registrationCleanupException = cleanupFault;
+            }
+
+            if (registrationCleanupException != null)
+                throw new AggregateException(
+                    "Save system runtime TempJob NativeArray registration failed and cleanup also failed.",
+                    registrationException,
+                    registrationCleanupException);
+
+            throw registrationException;
         }
 
-        private static NativeList<T> AllocateTrackedTempJobList<T>(int capacity, string label)
+        private static NativeList<T> AllocateTrackedTempJobList<T>(int capacity, string label, out int sentinelId)
             where T : unmanaged
         {
+            sentinelId = 0;
             NativeList<T> list = new NativeList<T>(capacity, Allocator.TempJob);
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeList(
+                sentinelId = NativeMemorySentinel.RegisterNativeListInstance(
                     list,
                     NativeMemoryOwner,
                     label,
@@ -383,50 +427,137 @@ namespace Hecton8.Dev
                 if (sentinelId > 0)
                     return list;
             }
-            catch
+            catch (Exception exception)
             {
-                if (list.IsCreated)
-                    list.Dispose();
+                Exception cleanupException = null;
+                try
+                {
+                    DisposeTrackedTempJobList(ref list, ref sentinelId);
+                }
+                catch (Exception cleanupFault)
+                {
+                    cleanupException = cleanupFault;
+                }
+
+                if (cleanupException != null)
+                    throw new AggregateException(
+                        "Save system runtime TempJob NativeList allocation failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
 
                 throw;
             }
 
-            list.Dispose();
-            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            InvalidOperationException registrationException = new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            Exception registrationCleanupException = null;
+            try
+            {
+                DisposeTrackedTempJobList(ref list, ref sentinelId);
+            }
+            catch (Exception cleanupFault)
+            {
+                registrationCleanupException = cleanupFault;
+            }
+
+            if (registrationCleanupException != null)
+                throw new AggregateException(
+                    "Save system runtime TempJob NativeList registration failed and cleanup also failed.",
+                    registrationException,
+                    registrationCleanupException);
+
+            throw registrationException;
         }
 
-        private static void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array)
+        private static void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array, ref int sentinelId)
             where T : struct
         {
-            if (!array.IsCreated)
-                return;
+            Exception firstException = null;
 
-            try
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
-            finally
+
+            if (array.IsCreated)
             {
-                array.Dispose();
+                try
+                {
+                    array.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    array = default;
+                }
+            }
+            else
+            {
                 array = default;
             }
+
+            if (firstException != null)
+                throw firstException;
         }
 
-        private static void DisposeTrackedTempJobList<T>(ref NativeList<T> list, string label)
+        private static void DisposeTrackedTempJobList<T>(ref NativeList<T> list, ref int sentinelId)
             where T : unmanaged
         {
-            if (!list.IsCreated)
-                return;
+            Exception firstException = null;
 
-            try
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
-            finally
+
+            if (list.IsCreated)
             {
-                list.Dispose();
+                try
+                {
+                    list.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    list = default;
+                }
+            }
+            else
+            {
                 list = default;
             }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private void FailIndexedSubBlock(string issue)

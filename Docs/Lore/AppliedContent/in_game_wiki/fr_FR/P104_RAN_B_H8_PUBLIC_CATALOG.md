@@ -7,34 +7,34 @@ poi_tags: poi.catalog_plate;poi.ran_b_h8_stamp
 biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "FR LOC HOLD: RAN-B:H8 Public Catalog"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Catalogue public RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: RAN-B:H8 Public Catalog
+# Catalogue public RAN-B:H8
 
-FR LOC HOLD: HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.
+HECTON-8 porte un nom de catalogue sec et un nom de réclamation humain. RAN-B:H8 appartient aux tables de route : système Ran, géante de classe Aegir, huitième grande lune indexée. HECTON-8 appartient aux contrats Deep Reach, dossiers ouvriers, parole maraudeuse, registres de morts et droit de récupération.
 
 ## Scanner
 
-FR LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
+Plaque catalogue : étiquette de route publique RAN-B:H8 ; nom de réclamation Deep Reach HECTON-8.
 
 ## Terminal
 
-FR LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
+PASSERELLE CATALOGUE : système Ran, géante Aegir, huitième grande lune indexée. HECTON-8 conservé comme nom de réclamation pour contrats, morts et continuité d'assurance.
 
 ## Audio
 
-FR LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
+La carte l'appelle H8. Les gens qui se sont noyés ici l'appelaient HECTON.
 
 ## Field Note
 
-FR LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+Utilise HECTON-8 quand l'objet se souvient des gens. Utilise RAN-B:H8 quand le document veut de la distance.
 
 <!-- In-Game Wiki; generated from P104_RAN_B_H8_PUBLIC_CATALOG/fr_FR. -->

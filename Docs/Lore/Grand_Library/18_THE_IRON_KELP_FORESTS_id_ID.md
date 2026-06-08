@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # HUTAN KELP BESI
 
 > **Sumber:** Divisi Xenobiologi Deep Reach, Log Bahaya.

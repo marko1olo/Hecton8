@@ -3,38 +3,40 @@ packet_id: P079_HECTON8_ORBIT_TIDE_GEOMETRY
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.hecton8_orbit_tide_geometry
 unlock_id: unlock.first_hecton8_orbit_tide_geometry
-poi_tags: poi.tide_geometry_panel;poi.orbital_timing_core
-biome_tags: biome.surface_relay;biome.tide_pump
+poi_tags: poi.tide_geometry_model;poi.atlas_evacuation_forecast
+biome_tags: biome.storm_shelf;biome.brine_canyon
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 Orbit / Tide Geometry"
+title: "HECTON-8軌道 / 潮汐幾何"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbit / Tide Geometry
+# HECTON-8軌道 / 潮汐幾何
 
-JP LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.
+HECTON-8の軌道は、Great Tideを政治になる前に信じられるものにする。共鳴が海を引き、氷応力と高潮が棚を載荷し、産業熱と塞がれた排水が植民地の仕組みを悪い時刻に押し返させた。
+
+罪はDeep Reachが物理を発明したことではない。Atlas continuity、保険貨物、労働階級を中心に避難計算を組み、死者を許容予測誤差と呼んだことだ。
 
 ## Scanner
 
-JP LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.
+潮汐幾何モデル // 共鳴、氷応力、高潮、熱排出が避難予測を超過。Atlas continuityフラグが退避優先を上書き。
 
 ## Terminal
 
-JP LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.
+GREAT TIDE連鎖 // 軌道強制が海洋荷重を増幅。人工熱排出と封鎖排水が潮汐事象を植民地失敗へ変えた。
 
 ## Audio
 
-JP LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.
+物理が扉を開けた。Deep Reachが誰を通すかを決めた。
 
 ## Field Note
 
-JP LOC HOLD: A moon can drown a colony without hating it.
+月は憎まずに植民地を溺れさせる。
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/ja_JP. -->

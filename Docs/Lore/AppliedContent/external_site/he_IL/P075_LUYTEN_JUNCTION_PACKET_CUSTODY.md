@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "משמורת חבילות של Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# משמורת חבילות של Luyten Junction
 
-HE LOC HOLD: Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing.
+משמורת החבילות של Luyten Junction הופכת תקשורת בין-כוכבית ללחץ נתיב. ל-HECTON-8 אין ערוץ חילוץ מיידי, ולכן כל הודעה חייבת לשרוד custody, עלות ותזמון מסלולי.
 
 ## Scanner
 
-HE LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+סליל custody של Luyten. הודעות אינן נוסעות בחינם; גם האמת לא.
 
 ## Terminal
 
-HE LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+מסלול LUYTEN JUNCTION: packet custody הועברה דרך תור תעריף. live command אסורה. עדיפות ראיות ניתנת לרכישה תחת emergency claim escrow.
 
 ## Audio
 
-HE LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+אין ansible. אין רחמים. רק custody, tariff וזמן.
 
 ## Field Note
 
-HE LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+ממסר הוא מכונה שמחליטה לאיזה אבל מגיע bandwidth.
 
 <!-- External Site; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/he_IL. -->

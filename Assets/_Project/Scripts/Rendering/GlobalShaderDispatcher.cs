@@ -1319,11 +1319,18 @@ namespace Hecton8.Core
             for (int i = 0; i < snapshot.Length; i++)
             {
                 RadiationDoseSignal signal = snapshot[i];
-                float signalExposure = math.saturate(math.max(signal.Intensity01, signal.Dose));
+                float signalExposure = ResolveRadiationSignalExposure01(in signal);
                 exposure = math.max(exposure, signalExposure);
             }
 
             return exposure;
+        }
+
+        private static float ResolveRadiationSignalExposure01(in RadiationDoseSignal signal)
+        {
+            float intensity01 = math.saturate(math.select(0f, signal.Intensity01, math.isfinite(signal.Intensity01)));
+            float dose01 = RadiationDoseSignal.DoseToUnit01(signal.Dose);
+            return math.max(intensity01, dose01);
         }
 
         private float ResolveSectorPhase()

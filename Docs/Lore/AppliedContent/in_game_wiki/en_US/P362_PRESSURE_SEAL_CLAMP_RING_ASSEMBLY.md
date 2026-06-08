@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Pressure Seal Clamp Ring Assembly
 
-Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.
+Pressure seals explain why repair work has to move deeper. The materials that keep water out of a room can also glue the capsule to the wreck when the wrong seal chain is accepted.
 
 ## Scanner
 
-Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Clamp-ring scar. The ascent sleeve survived impact by spending the seal that should have taken it home.
 
 ## Terminal
 
-SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch holds compartment pressure only. Ascent seal requires deep-rated clamp ring, pressure-glass seat, shell-sealant map and verified Deep Reach profile. Atlas-grown sealant may preserve habitat while blocking clean separation.
 
 ## Audio
 
-The useful seal is the one Atlas grew wrong. That is the problem.
+The useful seal is alive in the wrong direction.
 
 ## Field Note
 
-Use where repair ecology and mechanical seal evidence overlap.
+A safe-room patch can buy an hour of air. It cannot hold a launch impulse.
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/en_US. -->

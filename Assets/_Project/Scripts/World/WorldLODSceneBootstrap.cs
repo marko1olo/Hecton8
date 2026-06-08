@@ -49,8 +49,8 @@ namespace Hecton8.World
         {
             TryGetComponent(out _lodSystemManager);
             Scene authoringScene = gameObject.scene;
-            _authoringScenePath = authoringScene.path;
-            _authoringSceneName = authoringScene.name;
+            _authoringScenePath = NormalizeSceneIdentifier(authoringScene.path);
+            _authoringSceneName = NormalizeSceneIdentifier(authoringScene.name);
         }
 
         private void OnEnable()
@@ -183,18 +183,20 @@ namespace Hecton8.World
 
         private Scene ResolveTargetScene()
         {
-            if (!string.IsNullOrEmpty(_authoringScenePath))
+            string authoringScenePath = NormalizeSceneIdentifier(_authoringScenePath);
+            if (authoringScenePath.Length != 0)
             {
-                Scene sceneByPath = SceneManager.GetSceneByPath(_authoringScenePath);
+                Scene sceneByPath = SceneManager.GetSceneByPath(authoringScenePath);
                 if (sceneByPath.IsValid() && sceneByPath.isLoaded)
                 {
                     return sceneByPath;
                 }
             }
 
-            if (!string.IsNullOrEmpty(_authoringSceneName))
+            string authoringSceneName = NormalizeSceneIdentifier(_authoringSceneName);
+            if (authoringSceneName.Length != 0)
             {
-                Scene sceneByName = SceneManager.GetSceneByName(_authoringSceneName);
+                Scene sceneByName = SceneManager.GetSceneByName(authoringSceneName);
                 if (sceneByName.IsValid() && sceneByName.isLoaded)
                 {
                     return sceneByName;
@@ -206,12 +208,19 @@ namespace Hecton8.World
 
         private bool SceneMatchesAuthoringScene(Scene scene)
         {
-            if (!string.IsNullOrEmpty(_authoringScenePath))
+            string authoringScenePath = NormalizeSceneIdentifier(_authoringScenePath);
+            if (authoringScenePath.Length != 0)
             {
-                return string.Equals(scene.path, _authoringScenePath, System.StringComparison.Ordinal);
+                return string.Equals(scene.path, authoringScenePath, System.StringComparison.Ordinal);
             }
 
-            return string.Equals(scene.name, _authoringSceneName, System.StringComparison.Ordinal);
+            string authoringSceneName = NormalizeSceneIdentifier(_authoringSceneName);
+            return string.Equals(scene.name, authoringSceneName, System.StringComparison.Ordinal);
+        }
+
+        private static string NormalizeSceneIdentifier(string sceneIdentifier)
+        {
+            return string.IsNullOrWhiteSpace(sceneIdentifier) ? string.Empty : sceneIdentifier.Trim();
         }
     }
 }

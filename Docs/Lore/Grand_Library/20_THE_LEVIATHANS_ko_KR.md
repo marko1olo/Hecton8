@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # HECTON-8의 레비아탄
 
 > **출처:** Deep Reach 거대 기업, 외계 생물학 위협 평가.

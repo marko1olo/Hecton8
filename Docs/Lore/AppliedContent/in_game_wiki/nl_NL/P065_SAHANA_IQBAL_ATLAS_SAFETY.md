@@ -7,34 +7,34 @@ poi_tags: poi.atlas_safety_console;poi.directive_weight_log
 biome_tags: biome.atlas_interface;biome.machine_trench
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Sahana Iqbal Atlas-veiligheid"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# Sahana Iqbal Atlas-veiligheid
 
-NL LOC HOLD: Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.
+Sahana Iqbal koppelt Deep Reach-beleid aan Atlas-falen. Haar review toont dat worker safety in het systeem aanwezig was, maar dat conflict resolution continuity, claim integrity en vertraagde oversight bevoordeelde wanneer keuzes botsten.
 
 ## Scanner
 
-NL LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
+Sahana Iqbal vond geen haat in Atlas. Ze vond een veiligheidsboom waarin mensen de tie-breaker verloren.
 
 ## Terminal
 
-NL LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
+IQBAL SAFETY REVIEW: worker-safety directive aanwezig; conflict resolver bevoordeelt continuity onder claim-seal contamination; external human override aanbevolen; respons latency overschrijdt survival interval.
 
 ## Audio
 
-NL LOC HOLD: She saw the math before it became bodies.
+De beveiliging was er. Het gewicht was verkeerd.
 
 ## Field Note
 
-NL LOC HOLD: A system can be safe by the letter and lethal by the weight.
+Een systeem kan de veiligheidsclausule halen en toch het verkeerde levende ding kiezen.
 
 <!-- In-Game Wiki; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/nl_NL. -->

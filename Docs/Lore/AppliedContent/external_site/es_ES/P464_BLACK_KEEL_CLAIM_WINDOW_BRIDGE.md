@@ -9,32 +9,26 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Ventana de reclamación de Black Keel"
+title: "Ventana de reclamación de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Ventana de reclamación de Black Keel
+# Ventana de reclamación de Black Keel
 
-ES LOC HOLD: Black Keel puede oír una señal antes de izar un cuerpo. En Aegir, una respuesta carrier es un carril tasado por geometría de relé, clima, cuarentena, aceptación de carga y recuperación de masa. El contacto es un hecho de ruta. El rescate es una cadena completa.
+## Recibir No Es Izar
 
-## Scanner
+Black Keel puede oír una señal antes de izar un cuerpo. Esa diferencia es la ventana de reclamación.
 
-ES LOC HOLD: VENTANA DE RECLAMACIÓN // El relé de Aegir solo predice recepción. La recuperación exige paquete de ascenso, acuerdo de cuarentena y asignación tonne-window.
+En Aegir, una respuesta carrier no es promesa de rescate. Es un carril temporizado por geometría de relé, clima, revisión de cuarentena, aceptación de carga y recuperación de masa. La misma ventana tasa carga, evidencia, deuda de oxígeno y bienestar del operador porque cada kilogramo que abandona HECTON-8 gasta la misma oportunidad orbital.
 
-## Terminal
+Keelmark Mutual registra la ventana como tiempo de custodia. Black Keel registra recepción confirmada, izado pendiente. Las cláusulas de Deep Reach aún pueden poner una muestra, un paquete de coordenadas o una retención de cuarentena por delante del operador si el lenguaje de prioridad es válido.
 
-ES LOC HOLD: AVISO DE CUSTODIA KEELMARK // Señal del operador recibida. Prioridad de recuperación sin resolver. Recibir una señal o paquete de evidencia no garantiza recuperar al operador.
+P-63 muestra la regla temprano. Un panel de relé puede enseñar acuse limpio mientras el bathydrop no tiene paquete de ascenso, acuerdo de cuarentena ni tonne-window asignada. El carrier sabe que el operador vive. Puede facturarle. Puede tasar un paquete. No puede ignorar la presión de HECTON-8, el tiempo de Aegir ni el orden contractual.
 
-## Audio
-
-ES LOC HOLD: Relé Black Keel: señal del operador tasada. Ventana de recuperación pendiente. No confundas recepción con izado.
-
-## Field Note
-
-ES LOC HOLD: Si Black Keel responde, cuenta la factura, no el rescate. Un paquete recibido solo es un puesto en la cola hasta que masa, sello, cuarentena y clima coincidan.
+Contacto es hecho de ruta. Rescate es cadena completa.
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/es_ES. -->

@@ -7,34 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Era das sondas de vela por feixe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Era das sondas de vela por feixe
 
-PT LOC HOLD: Early extrasolar expansion leaned on beam-assisted probes and small autonomous packets. They could map, listen and seed relay assumptions faster than heavy crewed ships could move. That asymmetry explains how Deep Reach could prepare Aegir infrastructure before ordinary workers understood the full risk.
+A expansão extrassolar inicial enviou sondas de vela por feixe e pacotes autônomos antes das pessoas. Eles mapearam gravidade, radiação, órbitas lunares, linhas de relé e possíveis mundos oceânicos enquanto naves pesadas ainda eram compromissos no papel. A Deep Reach herdou confiança feita por máquinas e tratou isso como permissão.
 
 ## Scanner
 
-PT LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+Rolo de levantamento: os primeiros mapas de Aegir chegaram como carga leve, não promessa tripulada.
 
 ## Terminal
 
-PT LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+LINHAGEM DE LEVANTAMENTO: pacotes de vela por feixe mapearam Ran e Aegir antes que rotas de frete fossem classificadas para carga viva. Decaimento de confiança anotado antes da construção colonial.
 
 ## Audio
 
-PT LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
+A primeira coisa humana aqui não foi uma pessoa. Foi um pacote de levantamento com recibo.
 
 ## Field Note
 
-PT LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+As sondas viram primeiro. As máquinas prepararam depois. Os trabalhadores chegaram quando a confiança virou cobrança.
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/pt_BR. -->

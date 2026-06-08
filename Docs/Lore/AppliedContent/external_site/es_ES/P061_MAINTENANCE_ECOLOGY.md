@@ -8,33 +8,19 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Maintenance Ecology"
+spoiler_tier: 1
+title: "Ecología de mantenimiento"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Ecología de mantenimiento
 
-ES LOC HOLD: Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlas no descubrió un océano amistoso. Descubrió vida capaz de soportar carga. El biofilm conductor podía puentear un circuito débil durante unas horas. El crecimiento de concha podía sellar una fractura hasta el siguiente cambio de presión. Una colonia filtrante podía repetir un pulso acústico más lejos que un relé ahogado. La fauna marcada podía devolver sensor packets después de fallar los drones metálicos.
 
-## Scanner
-
-ES LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
-
-## Terminal
-
-ES LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
-
-## Audio
-
-ES LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-ES LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Esa red de reparación seduce y ensucia. El jugador puede cortar material vivo para salvage, o dejarlo porque sostiene la presión. Una pared puede ser infraestructura, hábitat y prueba criminal a la vez. La Ecología de mantenimiento es la primera prueba de que HECTON-8 no es magia. Es peor que la magia, porque cada milagro tiene una orden de trabajo detrás.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/es_ES. -->

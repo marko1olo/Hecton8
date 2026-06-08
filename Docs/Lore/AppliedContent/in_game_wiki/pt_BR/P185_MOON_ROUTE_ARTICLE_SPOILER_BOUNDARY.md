@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "Linha de Redação da Bacia Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# Linha de Redação da Bacia Atlas
 
-PT LOC HOLD: Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.
+Artigos de rotas lunares podem explicar como Aegir funciona sem abrir cedo demais a bacia Atlas. O céu pode ser entendido por registros públicos; o fundo ainda precisa ser conquistado no escuro.
 
 ## Scanner
 
-PT LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+O atlas lunar público pode nomear os perigos do céu; não pode imprimir o que o payload da bacia Atlas faz.
 
 ## Terminal
 
-PT LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+REDAÇÃO ATLAS: páginas lunares públicas podem listar nomes, janelas de rota, perigos, salvage economy e fatos do desastre de HECTON-8. Efeitos do payload, comportamento do basin receiver e resultados da decisão final permanecem bloqueados.
 
 ## Audio
 
-PT LOC HOLD: Publish the sky. Redact the bottom.
+Publique o céu. Sele o fundo.
 
 ## Field Note
 
-PT LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+Acima das nuvens, a rota é pública. Sob a bacia, toda resposta ainda tem uma trava.
 
 <!-- In-Game Wiki; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/pt_BR. -->

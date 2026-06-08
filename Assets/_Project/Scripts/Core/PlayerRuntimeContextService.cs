@@ -26,6 +26,7 @@ namespace Hecton8.Core
         private bool _registeredSlowTickable;
         private bool _registeredContext;
         private bool _registeredHotSwap;
+        private bool _runtimeOwnerAborted;
         private bool _syncInProgress;
         private bool _coldContextSyncRequested;
         private bool _dynamicContextReferencesEnabled;
@@ -307,7 +308,13 @@ namespace Hecton8.Core
             state = _runtimeContext.MovementState;
             return _isInitialized &&
                    _runtimeContext.IsBound &&
-                   (state.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
+                   (state.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                   math.isfinite(state.DepthMeters) &&
+                   IsFinitePredictedAup(in state) &&
+                   math.all(math.isfinite(state.WorldPosition)) &&
+                   math.all(math.isfinite(state.PredictedWorldPosition)) &&
+                   math.all(math.isfinite(state.Velocity)) &&
+                   math.all(math.isfinite(state.Forward));
         }
 
         /// <inheritdoc />
@@ -394,9 +401,16 @@ namespace Hecton8.Core
         /// <returns>Live player context instance.</returns>
         public static PlayerRuntimeContextService EnsureRuntimeInstance()
         {
-            PlayerRuntimeContextService runtime = GlobalRegistry.PlayerRuntimeContextRuntime;
+            PlayerRuntimeContextService runtime = ResolveUsableRuntime();
             if (runtime != null)
                 return runtime;
+
+            IPlayerRuntimeContext registeredContext = GlobalRegistry.RegisteredPlayer;
+            if (IsPlayerContextUsable(registeredContext) &&
+                ReferenceEquals(registeredContext as PlayerRuntimeContextService, null))
+            {
+                return null;
+            }
 
             GameObject runtimeRoot = new GameObject("[PlayerRuntimeContextService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player runtime context root - owner: PlayerRuntimeContextService
             return runtimeRoot.AddComponent<PlayerRuntimeContextService>();
@@ -412,6 +426,9 @@ namespace Hecton8.Core
                 return false;
 
             PlayerRuntimeContextService runtimeService = EnsureRuntimeInstance();
+            if (runtimeService == null)
+                return false;
+
             runtimeService.BindPlayerRoot(playerRoot);
             runtimeContext = runtimeService._runtimeContext;
             return runtimeContext != null && runtimeContext.IsBound;
@@ -446,7 +463,7 @@ namespace Hecton8.Core
 
         internal void RefreshRuntimeContext()
         {
-            if (!_isInitialized)
+            if (_runtimeOwnerAborted || !_isInitialized)
                 return;
 
             _dynamicContextReferencesEnabled = true;
@@ -456,26 +473,29 @@ namespace Hecton8.Core
 
         private void InitializeServiceInternal(bool syncImmediately)
         {
+            if (_runtimeOwnerAborted || !EnsureSingletonOwnership())
+                return;
+
             if (_isInitialized)
             {
+                if (!TryRegisterContext())
+                    return;
+
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterSlowTickable();
-                TryRegisterContext();
                 if (syncImmediately)
                     SyncPlayerContext();
                 return;
             }
 
-            EnsureSingletonOwnership();
-            if (GlobalRegistry.PlayerRuntimeContextRuntime != this)
+            _isInitialized = true;
+            if (!TryRegisterContext())
                 return;
 
-            _isInitialized = true;
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterSlowTickable();
-            TryRegisterContext();
             if (syncImmediately)
                 SyncPlayerContext();
         }
@@ -505,18 +525,29 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_isInitialized)
             {
+                if (!EnsureSingletonOwnership())
+                    return;
+
+                if (!TryRegisterContext())
+                    return;
+
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterSlowTickable();
-                TryRegisterContext();
                 SyncPlayerContext();
             }
         }
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterUpdatable();
             TryUnregisterSlowTickable();
             TryUnregisterHotSwapListener();
@@ -525,6 +556,9 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
@@ -538,6 +572,9 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 TryUnregisterUpdatable();
@@ -571,6 +608,9 @@ namespace Hecton8.Core
 
         private void ShutdownServiceState()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterUpdatable();
             TryUnregisterSlowTickable();
             TryUnregisterHotSwapListener();
@@ -587,16 +627,119 @@ namespace Hecton8.Core
             GlobalRegistry.ClearPlayerRuntimeContextRuntime(this);
         }
 
-        private void EnsureSingletonOwnership()
+        private bool EnsureSingletonOwnership()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             PlayerRuntimeContextService runtime = GlobalRegistry.PlayerRuntimeContextRuntime;
-            if (runtime != null && runtime != this)
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
             {
-                Destroy(gameObject);
-                return;
+                GlobalRegistry.ClearPlayerRuntimeContextRuntime(runtime);
+                runtime._registeredContext = false;
+                runtime._isInitialized = false;
             }
 
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             GlobalRegistry.RegisterPlayerRuntimeContextRuntime(this);
+            return ReferenceEquals(GlobalRegistry.PlayerRuntimeContextRuntime, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            PlayerRuntimeContextService runtime = GlobalRegistry.PlayerRuntimeContextRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsPlayerRuntimeUsable(runtime))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                GlobalRegistry.ClearPlayerRuntimeContextRuntime(runtime);
+                runtime._registeredContext = false;
+                runtime._isInitialized = false;
+            }
+
+            IPlayerRuntimeContext registeredContext = GlobalRegistry.RegisteredPlayer;
+            if (ReferenceEquals(registeredContext, null) || ReferenceEquals(registeredContext, this))
+                return false;
+
+            if (IsPlayerContextUsable(registeredContext))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            PlayerRuntimeContextService staleRuntime = registeredContext as PlayerRuntimeContextService;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                WorldRuntimeReferenceUtility.InvalidatePlayerTransformCache(registeredContext.PlayerTransform);
+                GlobalRegistry.UnregisterPlayerRuntimeContext(registeredContext);
+                GlobalRegistry.ClearPlayerRuntimeContextRuntime(staleRuntime);
+                staleRuntime._registeredContext = false;
+                staleRuntime._isInitialized = false;
+                if (ReferenceEquals(s_activeRuntimeInstance, staleRuntime))
+                    s_activeRuntimeInstance = null;
+            }
+
+            return false;
+        }
+
+        private static PlayerRuntimeContextService ResolveUsableRuntime()
+        {
+            PlayerRuntimeContextService runtime = GlobalRegistry.PlayerRuntimeContextRuntime;
+            if (IsPlayerRuntimeUsable(runtime))
+                return runtime;
+
+            if (!ReferenceEquals(runtime, null))
+            {
+                GlobalRegistry.ClearPlayerRuntimeContextRuntime(runtime);
+                runtime._registeredContext = false;
+                runtime._isInitialized = false;
+            }
+
+            IPlayerRuntimeContext registeredContext = GlobalRegistry.RegisteredPlayer;
+            if (IsPlayerContextUsable(registeredContext))
+                return registeredContext as PlayerRuntimeContextService;
+
+            PlayerRuntimeContextService staleRuntime = registeredContext as PlayerRuntimeContextService;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                WorldRuntimeReferenceUtility.InvalidatePlayerTransformCache(registeredContext.PlayerTransform);
+                GlobalRegistry.UnregisterPlayerRuntimeContext(registeredContext);
+                GlobalRegistry.ClearPlayerRuntimeContextRuntime(staleRuntime);
+                staleRuntime._registeredContext = false;
+                staleRuntime._isInitialized = false;
+                if (ReferenceEquals(s_activeRuntimeInstance, staleRuntime))
+                    s_activeRuntimeInstance = null;
+            }
+
+            return null;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext context)
+        {
+            if (ReferenceEquals(context, null))
+                return false;
+
+            PlayerRuntimeContextService runtime = context as PlayerRuntimeContextService;
+            return ReferenceEquals(runtime, null) ||
+                   (runtime._registeredContext && IsPlayerRuntimeUsable(runtime));
+        }
+
+        private static bool IsPlayerRuntimeUsable(PlayerRuntimeContextService runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
         }
 
         private void BindPlayerRoot(GameObject playerRoot)
@@ -610,6 +753,7 @@ namespace Hecton8.Core
 
         private void ClearCachedPlayerReferences()
         {
+            WorldRuntimeReferenceUtility.InvalidatePlayerTransformCache(_playerTransform);
             _playerRootOverride = null;
             _playerInventoryService = null;
             _playerSensoryService = null;
@@ -785,7 +929,7 @@ namespace Hecton8.Core
         private void SyncRuntimeContextAndPublish()
         {
             if (_underwaterVisuals == null)
-                _underwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
+                WorldRuntimeReferenceUtility.TryResolveHectonUnderwaterVisuals(ref _underwaterVisuals);
 
             if (_hudNotification == null || !_hudNotification.isActiveAndEnabled)
                 HUDNotification.TryGetActive(out _hudNotification);
@@ -820,15 +964,11 @@ namespace Hecton8.Core
             if (!_runtimeContext.IsBound || _playerTransform == null)
                 return;
 
-            float3 velocity = CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityRuntimeContextMaxAgeFrames, out float3 kccVelocity)
-                ? SafeFiniteVector(kccVelocity)
-                : float3.zero;
+            float3 velocity = ResolveMovementVelocitySnapshot();
             float3 forward = SafeDirection((float3)_playerTransform.forward, new float3(0f, 0f, 1f));
             Transform playerCameraTransform = ResolvePlayerCameraTransform();
             float3 cameraForward = SafeDirection(playerCameraTransform != null ? (float3)playerCameraTransform.forward : forward, forward);
-            float depthMeters = SanitizeNonNegative(_survivalSystem != null
-                ? _survivalSystem.Depth
-                : (_playerMovement != null ? _playerMovement.CurrentDepth : 0f));
+            float depthMeters = SanitizeNonNegative(_playerMovement != null ? _playerMovement.CurrentDepth : 0f);
             float transportSpeedMultiplier = _playerTransportCoordinator != null
                 ? math.max(0.01f, SanitizeNonNegative(_playerTransportCoordinator.ResolveTransportSpeedMultiplier()))
                 : 1f;
@@ -840,7 +980,7 @@ namespace Hecton8.Core
             Vector3 fallbackPlayerPosition = default;
             bool fallbackPlayerPositionResolved = false;
 
-            uint flags = (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot;
+            uint flags = 0u;
             if (_playerMovement != null)
                 flags |= (uint)PlayerRuntimeSnapshotFlags.HasMovement;
             if (_playerRigidbody != null)
@@ -861,19 +1001,27 @@ namespace Hecton8.Core
                 flags |= (uint)PlayerRuntimeSnapshotFlags.HasTransport;
             if (_traumaDispatcher != null)
                 flags |= (uint)PlayerRuntimeSnapshotFlags.HasTrauma;
-            if (_playerMovement != null && (_playerMovement.CurrentDepth > 0f || _playerMovement.IsPlayerSubmerged))
+            if (_playerMovement != null && _playerMovement.IsPlayerSubmerged)
                 flags |= (uint)PlayerRuntimeSnapshotFlags.Underwater;
 
             PlayerMovementRuntimeState movementState = default;
             if (_playerMovement != null)
             {
-                float3 currentRuntimePosition = SafeFiniteVector(_playerMovement.CurrentAup.ToRuntimeFloat3());
+                AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup;
+                bool hasCurrentAup = currentAup.IsFinite();
+                float3 currentRuntimePosition = hasCurrentAup
+                    ? SafeFiniteVector(currentAup.ToRuntimeFloat3())
+                    : SafeFiniteVector((float3)_playerTransform.position);
                 float3 predictedRuntimePosition = SafeFiniteVector((float3)_playerMovement.PredictedRuntimePosition, currentRuntimePosition);
                 movementState.WorldPosition = currentRuntimePosition;
                 movementState.PredictedWorldPosition = predictedRuntimePosition;
-                movementState.PredictedAup = math.all(math.isfinite((float3)_playerMovement.PredictedRuntimePosition))
+                AbsoluteUniversePosition predictedAup = math.all(math.isfinite((float3)_playerMovement.PredictedRuntimePosition)) &&
+                                                        _playerMovement.PredictedAup.IsFinite()
                     ? _playerMovement.PredictedAup
-                    : _playerMovement.CurrentAup;
+                    : currentAup;
+                if (!predictedAup.IsFinite())
+                    RuntimeOriginRoute.TryRuntimePositionToAup(predictedRuntimePosition, ref predictedAup);
+                movementState.PredictedAup = predictedAup;
             }
             else
             {
@@ -884,6 +1032,12 @@ namespace Hecton8.Core
                 var predictedAup = movementState.PredictedAup;
                 if (RuntimeOriginRoute.TryRuntimePositionToAup(movementState.PredictedWorldPosition, ref predictedAup))
                     movementState.PredictedAup = predictedAup;
+            }
+
+            if (math.all(math.isfinite(movementState.WorldPosition)) &&
+                movementState.PredictedAup.IsFinite())
+            {
+                flags |= (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot;
             }
 
             movementState.Velocity = velocity;
@@ -943,6 +1097,20 @@ namespace Hecton8.Core
 
             _playerCamera = playerCamera;
             _playerCameraTransform = playerCamera != null ? playerCamera.transform : null;
+        }
+
+        private float3 ResolveMovementVelocitySnapshot()
+        {
+            if (CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityRuntimeContextMaxAgeFrames, out float3 kccVelocity))
+                return SafeFiniteVector(kccVelocity);
+
+            if (_playerMovement != null)
+                return SafeFiniteVector((float3)_playerMovement.CurrentWorldVelocity);
+
+            if (_playerRigidbody != null)
+                return SafeFiniteVector((float3)_playerRigidbody.linearVelocity);
+
+            return float3.zero;
         }
 
         private static Vector3 ToVector3(float3 value)
@@ -1039,7 +1207,7 @@ namespace Hecton8.Core
             }
 
             if (_playerPda == null)
-                _playerPda = PlayerPDA.ActiveRuntimeInstance;
+                PlayerPDA.TryResolveActiveRuntime(ref _playerPda);
         }
 
         private void RefreshDynamicContextReferencesCold()
@@ -1159,24 +1327,39 @@ namespace Hecton8.Core
             _registeredHotSwap = false;
         }
 
-        private void TryRegisterContext()
+        private bool TryRegisterContext()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_registeredContext)
-                return;
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             IPlayerRuntimeContext registeredContext = GlobalRegistry.RegisteredPlayer;
-            if (registeredContext != null && !ReferenceEquals(registeredContext, this))
+            if (!ReferenceEquals(registeredContext, null) && !ReferenceEquals(registeredContext, this))
             {
-                IServiceShutdown staleContextShutdown = registeredContext as IServiceShutdown;
-                if (staleContextShutdown == null)
-                    return;
+                PlayerRuntimeContextService staleRuntime = registeredContext as PlayerRuntimeContextService;
+                if (ReferenceEquals(staleRuntime, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return false;
+                }
 
-                staleContextShutdown.OnServiceShutdown();
-
-                registeredContext = GlobalRegistry.RegisteredPlayer;
-                if (registeredContext != null && !ReferenceEquals(registeredContext, this))
-                    return;
+                WorldRuntimeReferenceUtility.InvalidatePlayerTransformCache(registeredContext.PlayerTransform);
+                GlobalRegistry.UnregisterPlayerRuntimeContext(registeredContext);
+                GlobalRegistry.ClearPlayerRuntimeContextRuntime(staleRuntime);
+                staleRuntime._registeredContext = false;
+                staleRuntime._isInitialized = false;
+                if (ReferenceEquals(s_activeRuntimeInstance, staleRuntime))
+                    s_activeRuntimeInstance = null;
             }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterPlayerRuntimeContext(this);
             _registeredContext = ReferenceEquals(GlobalRegistry.Player, this);
@@ -1185,6 +1368,11 @@ namespace Hecton8.Core
                 s_activeRuntimeInstance = this;
                 HectonXRRuntimeState.BindPlayerContextFallbackCold(this);
             }
+
+            _runtimeOwnerAborted = !_registeredContext;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return _registeredContext;
         }
 
         private void TryUnregisterContext()
@@ -1192,6 +1380,7 @@ namespace Hecton8.Core
             if (!_registeredContext)
                 return;
 
+            WorldRuntimeReferenceUtility.InvalidatePlayerTransformCache(_playerTransform);
             GlobalRegistry.UnregisterPlayerRuntimeContext(this);
             _registeredContext = false;
             if (ReferenceEquals(s_activeRuntimeInstance, this))

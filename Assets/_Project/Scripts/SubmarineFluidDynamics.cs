@@ -1915,8 +1915,14 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (shiftData.ShiftOffset.sqrMagnitude <= 0.000001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             ResetSloshHistoryForOriginShift();
             ResetSplashDetectionState(clearQueuedEvents: true);
@@ -2605,7 +2611,7 @@ namespace Hecton8.Physics
             if (!_registeredHotSwapListener)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
         }
 
@@ -4676,7 +4682,8 @@ namespace Hecton8.Physics
                 : new Bounds(_rigidbody.worldCenterOfMass, Vector3.one * 4f);
             Vector3 center = hullBounds.center;
             float sampleRadius = math.max(floraDragMinimumSampleRadiusMeters, math.max(hullBounds.extents.x, hullBounds.extents.z));
-            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            FloraInteractionManager floraInteractionManager = null;
+            WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref floraInteractionManager);
             if (floraInteractionManager != null &&
                 floraInteractionManager.TryResolveKelpPushback(center, sampleRadius, out float spatialHashDensity01, out float bendRadiusMeters))
             {
@@ -4684,8 +4691,8 @@ namespace Hecton8.Physics
                 return math.saturate(spatialHashDensity01);
             }
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (vegetationBridge == null)
+            HectonMapMagicVegetationBridge vegetationBridge = null;
+            if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge))
                 return 0f;
 
             Vector3 forwardOffset = _cachedTransform.forward * (hullBounds.extents.z * 0.6f);

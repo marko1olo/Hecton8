@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "P-63现场制造机"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# P-63现场制造机
 
-CN LOC HOLD: P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure.
+P-63让制作变得工业化，而不是魔法化。它接收肮脏废料，检查certification table，并返回带pressure limits的小零件：垫片、触点、pinger floats、sealant clamps。它有用，因为它会说不。
 
-## Scanner
-
-CN LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
-
-## Terminal
-
-CN LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
-
-## Audio
-
-CN LOC HOLD: The machine can make parts. It cannot make permission.
-
-## Field Note
-
-CN LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+这种拒绝很重要。fabricator不会把未知pressure material变成奇迹装备，也不能批准逃离。HECTON-8里的制作始于repair certification：实用、有限，并与困住殖民地的同一套官僚体系相连。
 
 <!-- External Site; generated from P115_P63_FIELD_FABRICATOR/zh_CN. -->

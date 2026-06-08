@@ -13,6 +13,7 @@ namespace Hecton8.EditorTools
         private const string MaterialFolder = "Assets/_Project/Art/Materials/Resources";
         private const string PickupPrefabFolder = "Assets/_Project/Prefabs/Resources/Pickups";
         private const string RootPath = "--- WORLD ---/Resource_FieldSources";
+        private const float DefaultSurfaceWaterLevelY = 14.02f;
 
         [MenuItem("Hecton/Authoring/Rebuild Starter Resource Sources", priority = 172)]
         public static void RebuildStarterResourceSources()
@@ -54,6 +55,9 @@ namespace Hecton8.EditorTools
             Material sulfurMat = CreateOrUpdateMaterial(MaterialFolder + "/Mat_Resource_Sulfur.mat", new Color(0.88f, 0.82f, 0.24f, 1f));
             Material resinMat = CreateOrUpdateMaterial(MaterialFolder + "/Mat_Resource_Resin.mat", new Color(0.58f, 0.36f, 0.14f, 1f));
 
+            if (ResourcePickupGeminiMaterialApplier.AreSourceMaterialsAvailable())
+                ResourcePickupGeminiMaterialApplier.Apply(false);
+
             GameObject titaniumPickup = CreatePickupPrefab(PickupPrefabFolder + "/PFB_Resource_TitaniumScrap.prefab", titanium, scrapMat, PrimitiveType.Cube, new Vector3(0.34f, 0.24f, 0.28f));
             GameObject copperPickup = CreatePickupPrefab(PickupPrefabFolder + "/PFB_Resource_CopperOre.prefab", copper, copperMat, PrimitiveType.Cube, new Vector3(0.28f, 0.28f, 0.28f));
             GameObject silicaPickup = CreatePickupPrefab(PickupPrefabFolder + "/PFB_Resource_SilicaShards.prefab", silica, silicaMat, PrimitiveType.Sphere, new Vector3(0.24f, 0.24f, 0.24f));
@@ -65,7 +69,7 @@ namespace Hecton8.EditorTools
 
             GameObject root = EnsureWorldRoot(RootPath);
             ClearChildren(root.transform);
-            root.transform.position = new Vector3(96f, 4900f, 1678f);
+            root.transform.position = new Vector3(96f, DefaultSurfaceWaterLevelY, 1678f);
 
             GameObject scrapField = CreateSceneRoot(root.transform, "Scrap_Field", Vector3.zero);
             PlacePickup(scrapField.transform, titaniumPickup, "Scrap_A", new Vector3(-1.8f, 0.25f, -0.8f));

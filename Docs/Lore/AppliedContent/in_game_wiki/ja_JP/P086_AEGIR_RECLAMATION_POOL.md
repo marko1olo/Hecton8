@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Aegir回収プール"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Aegir回収プール
 
-JP LOC HOLD: The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.
+Aegir回収プールはBlack Keelの背後にある公的なsalvageの殻だ。小さなmarauder免許でも、私有の惑星間carrierを持たずに放棄されたAegirクレームへ届く。その取引は役に立ち、同時に毒でもある。テンダーを送れる同じプールが、呼吸している操作者、封印payload、隔離ロック、証拠束のどれが次のburnに値するかを決める。
 
 ## Scanner
 
-JP LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
+クレームプール印。Black Keelは経路債務で割り当てられたもので、操作者への贈与ではない。
 
 ## Terminal
 
-JP LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+AEGIR RECLAMATION POOL: 自律テンダーBlack Keelを放棄圧力クレームHECTON-8へ割当。乗員福祉区分: 請負。payload custody区分: 可変優先。人員抽出はプール仲裁終了まで条件付き。
 
 ## Audio
 
-JP LOC HOLD: The pool owns the route. You only rent the answer.
+プールが経路を所有する。君は、尋ねられるほど長く生きて答えを借りる。
 
 ## Field Note
 
-JP LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+共有プールは救助を安く、遅くし、署名者全員が否認しやすくする。
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/ja_JP. -->

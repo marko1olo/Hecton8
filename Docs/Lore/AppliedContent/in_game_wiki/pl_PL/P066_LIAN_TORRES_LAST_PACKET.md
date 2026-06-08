@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "Ostatni pakiet Liana Torresa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# Ostatni pakiet Liana Torresa
 
-PL LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.
+Lian Torres zakotwicza prawdę komunikacyjną. Jego ostatni czysty pakiet dowodzi, że część dowodów opuściła HECTON-8, zanim Deep Reach pogrzebało ją pod awarią sygnału i językiem kwarantanny.
 
 ## Scanner
 
-PL LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+Ostatni czysty pakiet nie zaginął. Przyznanie, że go odebrano, było zbyt kosztowne.
 
 ## Terminal
 
-PL LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+TORRES, L. Czyste uzgodnienie nośnika osiągnięte. Liczba pracowników dołączona. Dowód ewakuacji dołączony. Wiek przekaźnika niedopuszczalny dla ratunku żywych. Archiwum korporacyjne później oznacza pakiet jako uszkodzony.
 
 ## Audio
 
-PL LOC HOLD: He sent the names. The archive called them noise.
+Wysłał nazwiska. Archiwum nazwało je szumem.
 
 ## Field Note
 
-PL LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+Znacznik czasu może być ciałem, kiedy przewoźnik odpowiada niewłaściwej kolejce.
 
 <!-- In-Game Wiki; generated from P066_LIAN_TORRES_LAST_PACKET/pl_PL. -->

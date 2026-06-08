@@ -1,0 +1,62 @@
+{
+  "artifact": "WorldNestedTerrainDetailPreview",
+  "artifactVersion": 1,
+  "authoringSeed": 880031,
+  "combinedSeed": 301469796,
+  "detailDeltaMeters": {
+    "max": 2.9844196153182407,
+    "min": -0.9803013084982697
+  },
+  "extentMeters": 100.0,
+  "files": {
+    "base_height": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_base_height.png",
+    "contact_sheet": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_contact_sheet_4x3.png",
+    "curvature": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_curvature.png",
+    "detail_delta": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_detail_delta.png",
+    "detailed_height": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_detailed_height.png",
+    "detailed_hillshade": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_detailed_hillshade.png",
+    "detailed_relief": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_detailed_relief.png",
+    "erosion": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_erosion.png",
+    "local_relief": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_local_relief.png",
+    "sediment": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_sediment.png",
+    "slope": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_slope.png",
+    "talus_rubble_reef": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_talus_rubble_reef.png",
+    "terrace_slump_tributary": "Docs/GeneratedAssets/Terrain/NestedDetail/OriginX10000_Z-10000_Extent100m_Res129/ND_terrace_slump_tributary.png"
+  },
+  "heightMeters": {
+    "baseMax": -33.668623398638786,
+    "baseMin": -51.448355764333016,
+    "detailMax": -32.45715894761574,
+    "detailMin": -51.0920705623082
+  },
+  "macroArtifactVersion": 4,
+  "metersPerPixel": 0.78125,
+  "originMeters": {
+    "x": 10000.0,
+    "z": -10000.0
+  },
+  "resolution": 129,
+  "runtimeContract": {
+    "chunkSizeMeters": 512,
+    "microHeightPolicy": "100m proof may preview height detail, but final centimeter detail belongs to materials/decals/scatter unless accepted into a chunk-local bake",
+    "midTraversalHeightResolution": 257,
+    "nearPlayableHeightResolution": 513,
+    "source": "WorldMacroGeologyFields + future WorldTerrainMesoDetailFields"
+  },
+  "runtimeSeed": 0,
+  "sha256": {
+    "base_height": "1aa96196dbadfec060a323fb9048204eca74352b217650540b346bb9c5851e98",
+    "contact_sheet": "8a15bfc096bb135e28584eacb74e0caf44aa3bdc0bd246db3f5a44fd8339512a",
+    "curvature": "2c7739106799f9c1e7e5dff1c22baf54b497f6db96114e6a2af41fb8167e4d20",
+    "detail_delta": "bdb99001986248a0ffe515ed94eccd2f60643731d163e70382b23a91675eba5c",
+    "detailed_height": "42498c94c8bc5244e05b5f3bfc66d2c0e245d36c875d6738316eb0284948525a",
+    "detailed_hillshade": "82e20fc8922c22fa1cb3f05b913c0b2bf102d8fe774d5a25717407acf368396e",
+    "detailed_relief": "9af96d2e207057c5c499811f29192d898a2506a8a98d790934bb6ac2b9392eea",
+    "erosion": "662c098c9ca401127dc4246475fb396b89c38ed2186be1a479d45656a253ad1a",
+    "local_relief": "fdd63b6a84393fe5dc5f3257bb2d5629f8178a5c424fa950af70fa53f032c5ed",
+    "sediment": "2e3e0916a1997a72415bbc949eff07cbc4406170654af71d18b970692d4198b4",
+    "slope": "2b85d52637f6a9f3c7f7172c42533cb576061959264854094846f365cca7ef72",
+    "talus_rubble_reef": "5cfbc984d840766426a22f8f55e0422110a808e2e4398681b83bbb1edc466d8b",
+    "terrace_slump_tributary": "9f8b9e9a0091cea231bf4f9b71a84d100082b5f26879537dad133a43c941cba1"
+  }
+}

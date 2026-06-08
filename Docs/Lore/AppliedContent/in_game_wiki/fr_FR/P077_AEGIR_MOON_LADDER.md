@@ -9,32 +9,34 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Moon Ladder"
+title: "Échelle lunaire d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ladder
+# Échelle lunaire d'Aegir
 
-FR LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.
+L'échelle lunaire d'Aegir garde HECTON-8 dans un système physique. Les lunes internes créent radiation et dangers de relais ; les lunes médianes gardent métal, glace, bouées de route et vieux dépôts ; les lunes externes portent claims froids et balises mortes.
+
+HECTON-8 n'est ni la lune la plus interne ni la plus lointaine. C'est celle qui paie encore. Voilà pourquoi le reste de l'échelle touche ses fenêtres de secours, sa salvage law et ses routes de signal.
 
 ## Scanner
 
-FR LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.
+Carte d'échelle lunaire. HECTON-8 est un danger actif dans un système mobile, pas un niveau isolé.
 
 ## Terminal
 
-FR LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+LUNES MAJEURES D'AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Modèle de transfer et eclipse joint.
 
 ## Audio
 
-FR LOC HOLD: The map has more moons than mercy.
+La carte contient plus de lunes que de pitié.
 
 ## Field Note
 
-FR LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.
+Skarn brûle. Vela perd sa glace. Anvil nourrit le métal. Kestrel coupe les relais. HECTON se noie.
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/fr_FR. -->

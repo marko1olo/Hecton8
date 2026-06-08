@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "KO LOC HOLD: Aegir Window Bands"
+spoiler_tier: 1
+title: "Aegir 창 대역"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Aegir Window Bands
+# Aegir 창 대역
 
-KO LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
+Aegir traffic은 radiation, eclipse, storm, relay geometry 주변의 좁은 transfer bands가 지배한다.
 
 ## Scanner
 
-KO LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+현지 대역: ascent는 즉시 구조가 아니라 몇 시간에서 며칠짜리 window를 기다린다.
 
 ## Terminal
 
-KO LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+WINDOW BAND: shutter, eclipse, relay, storm, carrier phase, legal handshake가 안전 transfer 전에 맞아야 한다.
 
 ## Audio
 
-KO LOC HOLD: The carrier can hear you and still be in the wrong sky.
+Carrier는 너를 들을 수 있어도 틀린 하늘에 있을 수 있다.
 
 ## Field Note
 
-KO LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+Window band record: Black Keel timing, 현지 orbit label, spoiler-light system pages는 같은 transfer constraints를 공유한다.
 
 <!-- External Site; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/ko_KR. -->

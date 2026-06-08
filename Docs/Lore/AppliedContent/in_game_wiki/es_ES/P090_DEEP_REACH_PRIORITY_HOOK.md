@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Gancho de prioridad Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Gancho de prioridad Deep Reach
 
-ES LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+La presión presente de Deep Reach no requiere control remoto imposible. Certificados de continuidad antiguos, cláusulas de cuarentena, tokens de acceso Atlas y ganchos de prioridad de payload ya están en el camino legal de Black Keel. La compañía puede influir en lo que valora el carrier sin poseerlo de forma visible. Eso hace al antagonista más difícil de cortar: no es una señal que puedas interferir, sino una cláusula que sigue despertando.
 
 ## Scanner
 
-ES LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+Gancho de certificado antiguo. Deep Reach no posee la nave; posee la cláusula.
 
 ## Terminal
 
-ES LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: certificado de continuidad legacy de Deep Reach puede adelantar recuperación de payload, bloqueo de cuarentena, token de acceso Atlas o cola de supresión de pruebas bajo ley de reclamos Aegir. Prioridad de extracción humana sin cambios salvo que la prueba de peligro supere valor de custodia.
 
 ## Audio
 
-ES LOC HOLD: They do not need to be on the bridge to steer the answer.
+No necesitan estar en el puente para dirigir la respuesta.
 
 ## Field Note
 
-ES LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+Más limpio que una conspiración: el papeleo sigue vivo y sigue hambriento.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/es_ES. -->

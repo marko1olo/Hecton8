@@ -9,32 +9,22 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "תמליל חבילת Deep Reach מחוטאת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# תמליל חבילת Deep Reach מחוטאת
 
-HE LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
+## שפה נקייה, עיכוב מלוכלך
 
-## Scanner
+חבילת Deep Reach מסוכנת כי היא נשמעת כמו עזרה. היא אומרת בטיחות. היא מכירה באירוע. היא משתמשת בשמות הנכונים של האסון: לחץ, הסגר, קואורדינטות, exposure, recovery. ואז היא מסירה את הפעלים החשובים. מי עיכב פינוי? מי תימחר את ההחזקה? מי השאיר את שקלול Atlas בתוקף בזמן שהמושבה כשלה?
 
-HE LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+שפה מחוטאת לא צריכה להכחיש את האוקיינוס. הכחשה תהיה קלה מדי להפרכה. החבילה עובדת בכך שהיא מקבלת את האסון הפיזי ומסדרת אחריות מחדש כ-pending review. הקואורדינטות באות קודם כי החברה רוצה custody על מרחב ה-claim לפני שהיא מתחייבת לגופים. עלות ההסגר באה אחר כך כי עובדים חיים וראיות מזוהמות נעשים liabilities באותו שולחן.
 
-## Terminal
-
-HE LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
-
-## Audio
-
-HE LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
-
-## Field Note
-
-HE LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+לשחקן, התמליל הזה צריך ליצור כעס בלי לשבור אמינות. Deep Reach אינה נבל מצויר שצועק מן המסלול. זו חברה שיודעת בדיוק אילו שדות להשמיט מהודעה שעלולה להפוך לראיה.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/he_IL. -->

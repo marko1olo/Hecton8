@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # PEMADAMAN KOMUNIKASI DAN KEHENINGAN ORBITAL
 
 > **Sumber:** Manual Operasi Pembawa Orbital *Black Keel*, Bagian 4.

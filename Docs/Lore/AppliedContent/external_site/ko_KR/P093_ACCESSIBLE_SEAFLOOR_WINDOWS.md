@@ -9,32 +9,16 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "접근 가능한 해저 창"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# 접근 가능한 해저 창
 
-KO LOC HOLD: Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map.
-
-## Scanner
-
-KO LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
-
-## Terminal
-
-KO LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-KO LOC HOLD: You land where the moon lets stone show through.
-
-## Field Note
-
-KO LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+HECTON-8 해저 대부분은 보통의 용기로 닿을 수 없다. 바닥이 보이기 전에 압력이 벽을 세운다. 접근 가능한 해저 창은 예외다. 무너진 선반, 드러난 능선, 재가열된 분출구 흉터, 조밀한 염수 기둥이 하강 곡선을 바꾸는 찢긴 자리다. 안전한 동굴이 아니다. 지질과 맺는 좁은 거래다. 승무원은 오래된 지각을 만지고, 압력에서 자란 광물을 회수하고, 봉인된 식민지 장비를 찾고, 바다가 다시 루트를 닫기 전에 묻힌 사건을 읽을 수 있다.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ko_KR. -->

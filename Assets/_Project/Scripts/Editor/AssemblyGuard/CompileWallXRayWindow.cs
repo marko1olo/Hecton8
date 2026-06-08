@@ -1733,13 +1733,47 @@ namespace Hecton8.Editor
 
         private static void Dispose()
         {
+            Exception cleanupException = null;
+
+            if (_entriesSentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(_entriesSentinelId);
+                }
+                catch (Exception exception)
+                {
+                    cleanupException = exception;
+                }
+                finally
+                {
+                    _entriesSentinelId = 0;
+                }
+            }
+
             if (_entries.IsCreated)
             {
-                NativeMemorySentinel.Unregister(_entriesSentinelId);
-                _entriesSentinelId = 0;
-                _entries.Dispose();
+                try
+                {
+                    _entries.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (cleanupException == null)
+                        cleanupException = exception;
+                }
+                finally
+                {
+                    _entries = default;
+                }
+            }
+            else
+            {
                 _entries = default;
             }
+
+            if (cleanupException != null)
+                throw cleanupException;
         }
 
         private static void Write(CompileWallBlackBoxEntry entry)

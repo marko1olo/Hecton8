@@ -9,32 +9,36 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Drop Capsule Damage Parts"
+title: "Bagian Rusak Kapsul Jatuh"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Drop Capsule Damage Parts
+# Bagian Rusak Kapsul Jatuh
 
-ID LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.
+Kapsul jatuh tidak gagal sebagai satu rongsokan dramatis. Ia gagal sebagai rantai bagian bernama yang hampir menjalankan tugasnya. Ascent sleeve melengkung, jadi lambung tidak bisa menyegel ulang terhadap tekanan naik. Guidance gimbal tergores, jadi kenaikan bersih akan berputar sebelum Black Keel bisa menerimanya. Relay mast terpotong, compressor tersumbat pasir asin, dan heat tile retak mengubah burn yang dibayangkan menjadi awan serpihan.
+
+HECTON-8 tidak memberi tombol penyelamatan bersih. Kapsul yang bisa menjaga udara satu jam bukan kapsul yang bisa meninggalkan laut. Setiap bagian rusak menunjuk rute nyata: mencari pressure-rated sleeve stock, mengambil bearing gimbal, membangun ulang tulang relai, membersihkan jalur compressor, atau membuktikan kerusakan cukup agar Black Keel menghitung jendela lain.
+
+Rongsokan itu bukan latar. Itu peta teknik pertama. Jika kapsul menulis FAIL, laut sudah mengubah pendaratan menjadi daftar bagian.
 
 ## Scanner
 
-ID LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve melengkung, guidance gimbal tergores, relay mast terpotong, compressor kotor, heat tile retak.
 
 ## Terminal
 
-ID LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-ID LOC HOLD: It landed well enough to strand you properly.
+Kapsul itu mendarat cukup baik untuk menjebakmu dengan benar.
 
 ## Field Note
 
-ID LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+Kapsul bisa menjaga Marauder hidup pada jam pertama. Ia tidak bisa pergi tanpa suku cadang berperingkat dalam.
 
 <!-- In-Game Wiki; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/id_ID. -->

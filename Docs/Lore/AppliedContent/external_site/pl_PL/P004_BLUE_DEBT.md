@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Blue Debt"
+title: "Niebieski dług"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue Debt
+# Niebieski dług
 
-Blue debt sprawia, że HECTON-8 jest czymś więcej niż utraconą kolonią. Jest cenny, niestabilny i bezpośrednio związany z tym, dlaczego Deep Reach chciało jednocześnie pogrzebać i odzyskać księżyc.
-
-## Scanner
-
-Pozostałość Xenon-Omega utrzymana ciśnieniem. Stabilna tylko w wrogich warunkach. Nie odpowietrzać przy ciepłym powietrzu kabiny.
-
-## Terminal
-
-SUBSTRAT CIĄGŁOŚCI XO. Nie dekompresować. Nie wystawiać na niefiltrowaną atmosferę habitatu.
-
-## Audio
-
-Pojemnik śpiewa w sonarze. Nisko, równo. To nie stworzenie. To coś gorszego.
-
-## Field Note
-
-Blue debt płaci, bo gryzie dwa razy. Raz, gdy ją niesiesz. Drugi raz, gdy ktoś wie, że ją masz.
+Niebieski dług sprawia, że salvage na HECTON-8 wygląda opłacalnie, zanim wygląda bezpiecznie. Materiał nie jest skarbem w rafie. To pozostałość przemysłowych systemów ciśnieniowych: substraty Xenon-Omega, nieudane media izolacyjne, żużel obliczeniowy i zapieczętowany złom, który pozostał stabilny, bo ocean nigdy nie przestał na niego naciskać. Podnieś go źle, a próbka zmieni stan. Sprzedaj go źle, a ślad papierowy zmieni ciebie. To podwójne ryzyko jest sensem nazwy. Niebieski dług szybko płaci ocalałemu, ale każdy pojemnik niesie przyszły koszt: dekontaminację, zastawy carriera, zasady opieki Black Keel, język roszczeń Deep Reach i szansę, że próbka jest też dowodem. W szerszym lore zasób jest jedną z pierwszych wskazówek, że HECTON-8 nie zostało zwyczajnie opuszczone. Cenne systemy nadal działały pod ciśnieniem, tam gdzie tylko zdesperowany operator zgodziłby się ich dotknąć.
 
 <!-- External Site; generated from P004_BLUE_DEBT/pl_PL. -->

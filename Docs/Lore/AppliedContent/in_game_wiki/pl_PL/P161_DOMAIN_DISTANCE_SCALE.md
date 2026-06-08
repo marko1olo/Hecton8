@@ -9,32 +9,34 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Domain Distance Scale"
+title: "Skala Odległości Domen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Domain Distance Scale
+# Skala Odległości Domen
 
-PL LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.
+Skala domen to mapa nacisku, nie mapa turystyczna. Sol Core nadal może certyfikować własność z daleka. Centauri może sprawić, że stara karta brzmi czysto. Barnard może wysłać cutter i zadłużonego Maraudera do brudnej roboty. Tau Ceti może po opóźnieniu upublicznić dowód. Luyten może potwierdzić custody pakietu. Ran/Aegir to miejsce, gdzie te odległe siły stają się wodą nad hełmem.
+
+Dlatego HECTON-8 jest samotny bez pustego kosmosu. Wiadomość może przejść trasę i wciąż dotrzeć po tym, jak tlen, pływ, temperatura kadłuba i recovery window Black Keel już zdecydowały. Odległość nie kasuje prawa. Sprawia, że prawo jest zimniejsze od ratunku.
 
 ## Scanner
 
-PL LOC HOLD: The domain map uses distance bands, not romantic shortcuts.
+DOMAIN DISTANCE PLATE // Sol, Centauri, Barnard, Tau Ceti, Luyten i Ran/Aegir nie są dekoracją. To opóźnienie, custody, masa, dowód i koszt ratunku.
 
 ## Terminal
 
-PL LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.
+DOMAIN SCALE // Ran/Aegir pozostaje celem klasy około 10,5 roku świetlnego od Sol, dopóki finalne efemerydy nie zastąpią pasma. Brak wektora FTL. Brak natychmiastowej odpowiedzi. Władza trasy dociera przed ludzką pomocą.
 
 ## Audio
 
-PL LOC HOLD: Ten light-years is a number. The bill is the story.
+Dziesięć lat świetlnych to nie najtrudniejsza część. Najtrudniejsze jest ustalić, kto zapłacił za masę powrotną.
 
 ## Field Note
 
-PL LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.
+Jeśli tabela brzmi zbyt monumentalnie, przytnij ją. Gracz potrzebuje ceny odległości, nie plakatu z gwiazdami.
 
 <!-- In-Game Wiki; generated from P161_DOMAIN_DISTANCE_SCALE/pl_PL. -->

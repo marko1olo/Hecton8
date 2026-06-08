@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "صوت Black Keel الأول"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# صوت Black Keel الأول
 
-AR LOC HOLD: Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue.
-
-## Scanner
-
-AR LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
-
-## Terminal
-
-AR LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
-
-## Audio
-
-AR LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
-
-## Field Note
-
-AR LOC HOLD: The first voice should feel useful before it feels bought.
+يجب أن يبدو صوت Black Keel الأول كأن بابا يفتح نصف فتحة فقط. الصوت متضرر، قناة النص نظيفة، وcarrier لا يهدر كلمة على المواساة. هذا الغياب مهم. ذكاء اصطناعي ودود كان سيخفف المحيط. شرير خطابي كان سيجعل الخطر بشريا أكثر مما ينبغي. Black Keel أنفع من الاثنين لأنه يقول الحقيقة بصيغة لا تمنح الأمان. تم التقاط الإشارة. النجاة معترف بها. الاسترداد غير محسوم. يتعلم اللاعب أن سماعه لا يعني إنقاذه، وأن الصوت الوحيد فوق الماء مربوط بسجلات لم يرها بعد.
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/ar_SA. -->

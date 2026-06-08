@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Фінальне питання: публічна правда, втрачений контроль"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Фінальне питання: публічна правда, втрачений контроль
 
-UA LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+Маршрут публічної правди ламає чисте замовчування. Він також ламає власність на наслідки. Докази можуть врятувати імена від видалення, створити справжній тиск порятунку і запросити кожного хижака з юридичним столом або молитовним каналом.
 
 ## Scanner
 
-UA LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+Публікація доказів не дає стерти історію. Вона ж досить швидко віддає знахідку всім, хто може використати її погано.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+ВІСЬ ПУБЛІЧНОЇ ПРАВДИ: witness hash, ланцюг відповідальності, стан Atlas, координати синього боргу і route payload можуть вийти з-під контролю Deep Reach. Після публікації оператор більше не контролює отримувачів, реакцію ринку і того, хто прибуде першим.
 
 ## Audio
 
-UA LOC HOLD: Truth leaves your hand faster than rescue ever could.
+Правда піде з твоїх рук швидше, ніж порятунок узагалі здатен летіти.
 
 ## Field Note
 
-UA LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+Публічна правда не є чистою справедливістю. Вона створює санкції, культи, аукціони, позови, тиск порятунку і наслідувальні claims.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/uk_UA. -->

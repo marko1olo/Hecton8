@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute sebagai Beacon Mati Luar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Outer Dead Beacon Moon Role
+# Mute sebagai Beacon Mati Luar
 
-ID LOC HOLD: Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.
-
-## Scanner
-
-ID LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
-
-## Terminal
-
-ID LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
-
-## Audio
-
-ID LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
-
-## Field Note
-
-ID LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Mute adalah tempat infrastruktur lama menjadi sunyi tanpa menghilang. Jaringan beacon matinya masih membengkokkan solver rute karena tidak ada yang mampu menghapus setiap tabel warisan yang bergantung padanya. Kadang data hantu memprediksi jendela relay yang berguna. Kadang data yang sama memberi meja carrier alasan untuk menahan pesan. Di sekitar HECTON-8, diam jarang berarti kosong: ia bisa berupa tundaan orbit, perangkat rusak, kustodi hukum, atau pilihan sadar yang memakai bahasa matematika.
 
 <!-- External Site; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/id_ID. -->

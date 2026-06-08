@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Black Keel接近記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Black Keel Approach Transcript Seed
+# Black Keel接近記録
 
-JP LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+接近記録はBlack Keelを有用にするが、慈悲深くはしない。キャリアはMarauderに軌道への線を与え、それから債務、受信窓、健康限界、質量限界、証拠条件を告げる。希望が物理を書き換える前に。
 
 ## Scanner
 
-JA LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+回収されたキャリア音声。課金済み降下、条件付き帰還、4秒ラグ、必須証拠パケットを確認。
 
 ## Terminal
 
-JA LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
-JA LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+Black Keelテンダーより請求者へ。ラグ4秒。降下は課金済み。帰還保証なし。健康、質量、証拠を送れ。
 
 ## Field Note
 
-JA LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+storm carrierに切られたclaim-tenderバッファ。声は手順的に。経路事実が先、慰めはない。
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/ja_JP. -->

@@ -80,8 +80,8 @@ namespace Hecton8.World
             if (!IsFinite(absoluteUniversePosition))
                 return Vector3.up;
 
-            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
-            if (mapMagicBridge == null)
+            MapMagicBridge mapMagicBridge = null;
+            if (!WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge))
                 return Vector3.up;
 
             float safeSeamBlendRadius = ClampFinite(seamBlendRadius, MinimumFunnelLength, 0f, MaximumFunnelLength);
@@ -99,8 +99,8 @@ namespace Hecton8.World
             if (!IsFinite(absoluteUniversePosition))
                 return false;
 
-            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
-            if (mapMagicBridge == null)
+            MapMagicBridge mapMagicBridge = null;
+            if (!WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge))
                 return false;
 
             if (!mapMagicBridge.TryGetTerrainSplatColorAUP(absoluteUniversePosition, out terrainColor, out float confidence))

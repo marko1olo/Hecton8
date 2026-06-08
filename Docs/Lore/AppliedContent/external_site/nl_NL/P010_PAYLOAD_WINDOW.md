@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Ladingvenster
 
-Payload Window bepaalt de eindstructuur van HECTON-8. De laatste vraag is niet alleen wat de speler gelooft, maar wat hij uit de oceaan kan dragen.
-
-## Scanner
-
-Geïmproviseerd stijgpakket. Het kan de oceaan verlaten als massa, weer en carrier-geometrie overeenkomen.
-
-## Terminal
-
-PAYLOAD SLOT: beperkt. WINDOW: open. ROUTE: betwist. CLAIM VALUE: variabel. EVIDENCE STATE: onvoldoende voor schoon geschil.
-
-## Audio
-
-Het venster is open. Het blijft niet voor alles open.
-
-## Field Note
-
-Eruit komen is een route. Schoon eruit komen is een mythe.
+Het laatste probleem op HECTON-8 is geen moreel menu dat boven de oceaan zweeft. Het is een ladingvenster. Het stijgpakket heeft massalimieten, het weer heeft timing, Aegir heeft stralings- en orbitale beperkingen, en Black Keel heeft ontvangerregels voordat het genade heeft. Elk einde vraagt daarom wat de maan verlaat en wie het krijgt. Coördinaten kunnen recovery kopen en Deep Reach de plaats delict geven. Bewijs kan een openbaar register bereiken en de speler controle over gevolgen ontnemen. Monsters kunnen schuld betalen terwijl ze het systeem versterken dat arbeidersnamen begroef. Stilte kan de corporatie ontkennen en bewijs onder water laten. Het venster is geen gerechtigheid. Het is de vorm waar gerechtigheid doorheen moet knijpen.
 
 <!-- External Site; generated from P010_PAYLOAD_WINDOW/nl_NL. -->

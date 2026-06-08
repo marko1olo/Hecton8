@@ -1,21 +1,21 @@
 # RS029_ROUTE_TIME_DISTANCE_MODEL
 
-Status: production-facing draft, pending native localization pass.
-Runtime contract: authoring source only; runtime must consume baked static data/string-pool rows.
+Status: source candidate for production article admission; all runtime, publication, generated-page, native-localization and Unity placement gates remain false.
 
-Purpose: locks practical route-distance, freight, crew and message-delay scale so Aegir remains hard-sci-fi reachable but not rescuable.
+Purpose: make distance, probe packet age, heavy freight staging, human crew rotation and relay lag readable as hard-sci-fi pressure instead of abstract timeline flavor.
 
 ## Packets
 
-- `P141_RAN_AEGIR_DISTANCE_MODEL` - Ran-Aegir Distance Model: Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy.
-- `P142_PROBE_PACKET_TRAVEL_TIMES` - Probe Packet Travel Times: Probe Packet Travel Times explain how Aegir became a claim before it became a place.
-- `P143_HEAVY_FREIGHT_STAGING_TIME` - Heavy Freight Staging Time: Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships.
-- `P144_HUMAN_CREW_ROTATION_TRANSIT` - Human Crew Rotation Transit: Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt.
-- `P145_RELAY_MESSAGE_LAG` - Relay Message Lag: Relay Message Lag makes communication a route system, not a magic voice channel.
+- `P141_RAN_AEGIR_DISTANCE_MODEL`: ten-light-year-class reach is plausible for probes and freight, impossible for casual mercy.
+- `P142_PROBE_PACKET_TRAVEL_TIMES`: machine truth can make a claim valuable before anyone understands the human cost.
+- `P143_HEAVY_FREIGHT_STAGING_TIME`: prepared freight routes hide years inside depots, beam windows and braking infrastructure.
+- `P144_HUMAN_CREW_ROTATION_TRANSIT`: workers are scheduled, chilled, insured and handed between authorities over years.
+- `P145_RELAY_MESSAGE_LAG`: authority can arrive as data while care remains physically absent.
 
-## Production Use
+## Boundary
 
-- Scanner and terminal snippets are short enough for diegetic UI.
-- In-game wiki and external-site fields are generated from the packet bundle.
-- Route cards connect packet IDs to depth windows, replay axes and ending pressure.
-- Binding maps provide future Unity/DataMonolith placement targets without runtime markdown parsing.
+- Runtime reads baked static data only after importer admission.
+- No runtime JSON or markdown parser.
+- No runtime translation generation.
+- `en_US` is source authority; all non-EN rows are draft adaptations pending native review.
+- `canonical_importer_ready`, `runtime_ready`, `data_monolith_ready`, `h8bin_ready`, `unity_placement_ready`, `generated_page_ready`, `native_localization_ready` and `publication_ready` remain false until fresh proof exists for each gate.

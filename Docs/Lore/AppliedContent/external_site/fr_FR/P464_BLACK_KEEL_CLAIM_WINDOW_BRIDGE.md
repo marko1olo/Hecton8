@@ -9,32 +9,26 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Fenêtre de réclamation Black Keel"
+title: "Fenêtre de réclamation Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Fenêtre de réclamation Black Keel
+# Fenêtre de réclamation Black Keel
 
-FR LOC HOLD: Black Keel peut entendre un signal avant de remonter un corps. Dans Aegir, une réponse carrier est une voie tarifée à travers géométrie relais, météo, quarantaine, acceptation de charge et récupération de masse. Le contact est un fait de route. Le sauvetage est une chaîne terminée.
+## Recevoir N'Est Pas Remonter
 
-## Scanner
+Black Keel peut entendre un signal avant de remonter un corps. Cette différence est la fenêtre de réclamation.
 
-FR LOC HOLD: FENÊTRE DE RÉCLAMATION // Le relais Aegir prédit seulement une réception. Récupération: paquet d'ascension, accord de quarantaine et attribution tonne-window requis.
+Dans Aegir, une réponse carrier n'est pas une promesse de sauvetage. C'est une voie cadencée par géométrie relais, météo, contrôle de quarantaine, acceptation de charge et récupération de masse. La même fenêtre facture cargaison, preuve, dette d'oxygène et état de l'opérateur, parce que chaque kilogramme quittant HECTON-8 dépense la même occasion orbitale.
 
-## Terminal
+Keelmark Mutual note la fenêtre comme délai de garde. Black Keel note réception confirmée, levage en attente. Des clauses Deep Reach peuvent encore placer un échantillon, un paquet de coordonnées ou une retenue de quarantaine avant l'opérateur si la priorité est valide.
 
-FR LOC HOLD: AVIS DE GARDE KEELMARK // Signal opérateur reçu. Priorité de récupération non résolue. La réception d'un signal ou d'un paquet de preuve ne garantit pas la récupération.
+P-63 rend la règle visible tôt. Un panneau relais peut afficher un accusé propre alors que le bathydrop n'a ni paquet d'ascension, ni accord de quarantaine, ni tonne-window attribuée. Le carrier sait que l'opérateur est vivant. Il peut le facturer. Il peut tarifer un paquet. Il ne peut pas ignorer la pression HECTON-8, le timing Aegir ou l'ordre du contrat.
 
-## Audio
-
-FR LOC HOLD: Relais Black Keel : signal opérateur tarifé. Fenêtre de récupération en attente. Ne confonds pas réception et levage.
-
-## Field Note
-
-FR LOC HOLD: Si Black Keel répond, compte la facture, pas le sauvetage. Un paquet reçu n'est qu'une place en file tant que masse, sceau, quarantaine et météo ne s'accordent pas.
+Contact est un fait de route. Sauvetage est une chaîne terminée.
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/fr_FR. -->

@@ -776,7 +776,8 @@ namespace Hecton8.Ecosystem
         {
             IPlayerRuntimeContext player = _playerContext;
             if (player != null &&
-                player.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                player.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
                 AbsoluteUniversePosition playerAup = movementState.PredictedAup;
                 if (playerAup.IsFinite())
@@ -837,6 +838,7 @@ namespace Hecton8.Ecosystem
                 center = new float3(payloadCenter.x, payloadCenter.y, payloadCenter.z);
                 return math.all(math.isfinite(center)) &&
                        math.isfinite(waterLevel) &&
+                       math.abs(waterLevel) <= 1000f &&
                        math.isfinite(depthMeters);
             }
 

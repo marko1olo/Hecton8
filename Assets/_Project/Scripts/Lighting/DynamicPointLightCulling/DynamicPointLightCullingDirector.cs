@@ -1067,15 +1067,23 @@ namespace Hecton8.Lighting
         private double3 ResolveCameraAup()
         {
             IPlayerRuntimeContext player = _playerContext;
-            if (player != null && player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
-                return snapshot.Aup.ToAbsoluteDouble3();
-
-            var playerMovement = player != null ? player.PlayerMovement : null;
-            if (playerMovement != null)
+            if (player != null)
             {
-                AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                if (currentAup.IsFinite())
-                    return currentAup.ToAbsoluteDouble3();
+                if (player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    snapshot.Aup.IsFinite())
+                {
+                    return snapshot.Aup.ToAbsoluteDouble3();
+                }
+
+                if (player.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite())
+                {
+                    return movementState.PredictedAup.ToAbsoluteDouble3();
+                }
+
+                return double3.zero;
             }
 
             return HectonFloatingOrigin.CurrentTotalOffsetDouble;

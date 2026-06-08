@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Fondo de Reclamación Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Fondo de Reclamación Aegir
 
-ES LOC HOLD: Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
-
-## Scanner
-
-ES LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
-
-## Terminal
-
-ES LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
-
-## Audio
-
-ES LOC HOLD: The pool owns the route. You only rent the answer.
-
-## Field Note
-
-ES LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+El Fondo de Reclamación Aegir mantiene al jugador solo y aun así hace creíble la llegada. Ningún marauder pequeño posee Black Keel directamente. El tender carrier pertenece a un sistema compartido de reclamos construido para infraestructura muerta, carga disputada y mundos demasiado caros para tripulaciones comunes. Un sello del fondo compra acceso a una ruta, pero también entrega esa ruta al arbitraje. Cuando el operador está bajo la línea de agua, cada solicitud compite con custodia de payload, reservas de cuarentena, valor probatorio y ventanas de combustible. El miedo del fondo es procesal. Puede enviar ayuda y negar rescate, porque bajo la ley de reclamos de Aegir la ayuda es solo un servicio facturable entre muchos.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/es_ES. -->

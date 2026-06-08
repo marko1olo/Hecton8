@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "סימני דומיין 2190"
+title: "סימני תחום 2190"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# סימני דומיין 2190
+# סימני תחום 2190
 
-סימני דומיין מראים את העולם האנושי הגדול דרך חפצים: תקני Sol, תיקוני Barnard, ניתוב Luyten, חוק Tau Ceti, חומרת Centauri ומשמורת claim של Aegir.
+סימני תחום מציגים את המרחב האנושי דרך חפצים: לוחות בטיחות, סימני מומנט, קודי משמורת והרשאות ישנות. כל סימן מחבר דלת, כלי או מטען לסמכות רחוקה.
+
+כך הקולוניה רחוקה, לא פרימיטיבית. חוק, תעשייה וחוב הגיעו למים. חילוץ עדיין צריך מסה, ספינה וחלון.
 
 ## Scanner
 
-סימונים מעורבים. לוח Sol, חותמת Barnard, משמורת נתיב Luyten.
+סימני תחום אנושיים מעורבים: לוח בטיחות Sol, חותמת כלי Barnard, נתיב משמורת Luyten וקוד תביעה Aegir על אותה תושבת חלודה.
 
 ## Terminal
 
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+התאמת תחום // פורמט בטיחות Sol Core התקבל. חותמת Barnard Yards תקפה. משמורת חבילה Luyten Junction מצורפת. חוק תביעה מקומי Aegir גובר על עדיפות חילוץ אחרי אובדן ירידה.
 
 ## Audio
 
-המקום הזה אינו מחוץ לציוויליזציה. כך נראית ציוויליזציה כשהמרחק מנצח.
+המקום הזה לא מעבר לציוויליזציה. זו ציוויליזציה אחרי שהמרחק הוציא ממנה את החלקים החמים.
 
 ## Field Note
 
-האנושות גדלה. חילוץ עדיין צריך לנסוע.
+האנושות גדלה. החילוץ עדיין צריך לנסוע.
 
 <!-- In-Game Wiki; generated from P011_DOMAIN_MARKS_2190/he_IL. -->

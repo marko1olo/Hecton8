@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LEWIATANY Z HECTON-8
 
 > **Źródło:** Megakorporacja Deep Reach, Ocena Zagrożeń Ksenobiologicznych.

@@ -9,32 +9,35 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Aegir System Public Primer Article"
+title: "Primer Publik Sistem Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Aegir System Public Primer Article
+# Primer Publik Sistem Aegir
 
-ID LOC HOLD: Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain.
+Aegir adalah sistem inang di sekitar HECTON-8, dan ia penting dalam setiap arti praktis. Tangga bulannya membentuk pasang surut dan jendela pendekatan. Geometri relay-nya membuat bukti bergerak lebih cepat daripada massa penyelamatan. Orbit pengangkutnya membuat Black Keel hadir, tetapi tidak langsung membantu. Tidak ada mesin ajaib, tidak ada penyelamatan ansible, dan tidak ada tombol darurat bersih. Versi publik Aegir harus terasa cukup terjangkau untuk menjadi kejam: terhubung, terjadwal, diberi harga, dan tetap terlalu lambat bagi orang yang terperangkap di bawah.
 
 ## Scanner
 
-ID LOC HOLD: Aegir is not backdrop. It is a timetable with gravity.
+Aegir bukan latar. Ia jadwal dengan gravitasi, radiasi, pasang surut, jeda relay, dan jendela massa mahal.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
+TINGKAT ARTIKEL PUBLIK / SISTEM AEGIR
+diizinkan: sistem inang, peran bulan HECTON-8, jendela pasang, geometri relay, jeda pengangkut, bahasa rute tanpa FTL
+dikunci: routing payload final, prioritas receiver tersembunyi, kunci ephemeris akhir yang tepat
+catatan editor: jelaskan jeda tanpa membuat latar terasa tak terjangkau.
 
 ## Audio
 
-ID LOC HOLD: The sky is a system, not a ceiling.
+Sistem ini cukup dekat untuk menjawab. Itulah bagian kejamnya. Ia tidak cukup dekat untuk mengangkat tubuh sesuai perintah.
 
 ## Field Note
 
-ID LOC HOLD: Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
+Jangan hanya menyebut Aegir jauh lalu berhenti. Sebutkan apa yang dilakukan jarak: memberi harga pada pengangkatan, menunda tubuh, dan membiarkan bukti mendahului penyelamatan.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/id_ID. -->

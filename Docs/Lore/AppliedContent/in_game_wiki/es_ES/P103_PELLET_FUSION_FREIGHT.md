@@ -7,9 +7,9 @@ poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
 biome_tags: biome.carrier_link;biome.relay_shadow
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Flete de fusión por pellets"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Carga de fusión por pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Flete de fusión por pellets
+# Carga de fusión por pellets
 
-El viaje interestelar pesado es posible sin FTL, pero castiga. Impulso de vela de haz, fusión alimentada por pellets, masa de escudo, largas derivas y arquitectura de frenado llevaron cargas seed y luego flete colonial hasta Aegir. La misma logística vuelve lento el rescate: cada kilogramo, litera, ranura de frenado y asiento de superviviente pertenece a un horario.
+La carga de fusión por pellets hizo alcanzable Aegir sin FTL. Las estaciones de haz empujaban; las corrientes de pellets alimentaban quemas de fusión; la masa de blindaje absorbía polvo; magsails y sistemas locales de frenado devolvían velocidad con el tiempo. La misma arquitectura hace lento el rescate. Cada kilogramo tiene horario, presupuesto térmico y propietario.
 
 ## Scanner
 
-Placa de motor. El flete con fusión alimentada por pellets cruzó como infraestructura: impulso, escudo, deriva, frenado y pérdidas facturadas.
+Placa de motor: impulso, alimentación de pellets, blindaje, deriva, frenado y factura de pérdidas.
 
 ## Terminal
 
-DOCTRINA DE FLETE: cargas seed clase Atlas y flete colonial usaron impulso de vela de haz, fusión alimentada por pellets, frenado con vela magnética e intervalos largos de deriva. La carga viva llegó después de que las máquinas hicieron facturable la ruta.
+DOCTRINA DE CARGA: payloads seed y masa colonial usaron impulso por haz, fusión alimentada por pellets, masa de blindaje, frenado magsail y largos intervalos de deriva. La carga viva siguió a la infraestructura.
 
 ## Audio
 
-Una nave pesada no es un milagro. Es una hipoteca con motores.
+Las máquinas cruzaron primero porque las máquinas podían darse por pérdida.
 
 ## Field Note
 
-El tránsito pesado no es heroico. Es un contrato de ruta viejo con cicatrices de calor.
+Una nave pesada no es un milagro. Es una hipoteca con motores y cicatrices térmicas.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/es_ES. -->

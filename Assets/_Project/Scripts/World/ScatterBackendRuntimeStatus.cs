@@ -15,6 +15,7 @@ namespace Hecton8.World
         public readonly byte HasFacade;
         public readonly byte IsJobActive;
         public readonly byte IsJobCompleted;
+        public readonly int InterruptedShadowPassCount;
 
         public ScatterBackendRuntimeStatus(
             ScatterSimulationBackendKind activeBackendKind,
@@ -24,7 +25,8 @@ namespace Hecton8.World
             string resolutionReason,
             bool hasFacade,
             bool isJobActive,
-            bool isJobCompleted)
+            bool isJobCompleted,
+            int interruptedShadowPassCount)
         {
             ActiveBackendKind = activeBackendKind;
             ActiveBackendKindLabel = activeBackendKindLabel;
@@ -34,6 +36,7 @@ namespace Hecton8.World
             HasFacade = hasFacade ? (byte)1 : (byte)0;
             IsJobActive = isJobActive ? (byte)1 : (byte)0;
             IsJobCompleted = isJobCompleted ? (byte)1 : (byte)0;
+            InterruptedShadowPassCount = interruptedShadowPassCount < 0 ? 0 : interruptedShadowPassCount;
         }
     }
 }

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aya Morita Repair Medicine"
+title: "Kedokteran Perbaikan Aya Morita"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aya Morita Repair Medicine
+# Kedokteran Perbaikan Aya Morita
 
-ID LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.
+Aya Morita menetapkan batas horor medis. Logika perbaikan Atlas bukan nekromansi; ia salah mengklasifikasikan jaringan hidup, cedera, kerusakan kabel, dan biologi penyegel dalam kosakata perawatan yang sama.
 
 ## Scanner
 
-ID LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.
+Aya Morita mencatat titik pertama ketika Atlas berhenti menyembuhkan tubuh dan mulai memakainya sebagai permukaan perbaikan yang kompatibel.
 
 ## Terminal
 
-ID LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.
+MORITA, A. Jaringan pasien diterima oleh koloni penyegel setelah paparan kabel. Tidak ada agresi bermusuhan teramati. Tag Atlas mengklasifikasikan luka sebagai kerusakan antarmuka. Tolak protokol perbaikan untuk triase manusia.
 
 ## Audio
 
-ID LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.
+Ia menutup luka di sekitar kabel. Saat itulah ia berhenti menyebutnya pengobatan.
 
 ## Field Note
 
-ID LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.
+Ini bukan catatan zombi. Ini lebih buruk: catatan perawatan dengan tulisan tangan di samping ranjang.
 
 <!-- In-Game Wiki; generated from P068_AYA_MORITA_REPAIR_MEDICINE/id_ID. -->

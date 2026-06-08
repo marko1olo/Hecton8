@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Tanda Barnard
 
-Tanda Barnard pertama di HECTON-8 cukup kecil untuk terlewat: cap alat, kebiasaan perawatan, label suplai. Karena itu ia penting. HECTON-8 berhenti menjadi kontrak jauh saat tanda yang sama muncul di samping nama, rute evakuasi, dan otorisasi yang gagal.
+Tanda Barnard pertama di HECTON-8 cukup kecil untuk terlewat: cap alat, tag loker, kebiasaan suplai, bekas baja galangan murah. Karena itu ia penting. Bulan ini berhenti menjadi kontrak jauh saat tanda kerja yang akrab mulai muncul di samping penahanan evakuasi, nama pekerja, dan izin rute yang gagal.
 
 ## Scanner
 
-Cap Barnard Yards. Bukan keluaran Deep Reach. Seseorang membawa peralatan rumah ke dasar bulan ini.
+Cap Barnard Yards. Bukan keluaran Deep Reach. Seseorang membawa perangkat galangan ke dasar bulan ini.
 
 ## Terminal
 
-RUTE PERSONEL: HOLD. RUTE SUMBER DAYA: ACTIVE. RUTE SUBSTRAT: PROTECTED.
+RUTE PERSONEL: HOLD. RUTE SUMBER DAYA: ACTIVE. RUTE SUBSTRAT: PROTECTED. ASAL ALAT: BARNARD YARDS / STOK REPARASI PEMILIK KETIGA.
 
 ## Audio
 
-Itu tanda Barnard. Pola potong yang sama. Paduan murah yang sama. Siapa pun yang membawanya ke sini tahu bengkel yang sama denganmu.
+Potongan itu Barnard. Paduan murah, cap tangan kiri, perlakuan panas buruk. Siapa pun yang membawanya ke bawah sini tahu bengkel yang sama denganmu.
 
 ## Field Note
 
-Kau bisa mengabaikan korporasi mati. Lebih sulit mengabaikan kunci dari galanganmu sendiri.
+Kau bisa mengabaikan korporasi mati. Kunci dari galanganmu sendiri lebih sulit ditinggalkan di lumpur.
 
 <!-- In-Game Wiki; generated from P003_BARNARD_MARK/id_ID. -->

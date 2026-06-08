@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.shallow_annex
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Black Keel In-System Tender"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Black Keel In-System Tender
 
-Black Keel In-System Tender prevents the carrier from becoming a magic rescue vehicle. It is a hard-sci-fi salvage asset: useful, conditional, debt-bound and limited by local orbital mechanics.
-
-## Scanner
-
-Tender limit. Black Keel can recover mass through a window; it cannot cross light-years for you.
-
-## Terminal
-
-CARRIER LIMIT: Aegir-system claim tender. Interstellar custody is inherited from route owners; local recovery requires ascent package, quarantine handshake and payload acceptance.
-
-## Audio
-
-Black Keel is close enough to bill you. Not close enough to save you for free.
-
-## Field Note
-
-Black Keel is leverage and logistics, not cavalry.
+Black Keel is close in the most frustrating way. It is present inside Aegir space, able to hold custody, receive payloads, bill debt, and talk through windows, but it is not a benevolent starship waiting to improvise rescue. Its power is local and procedural. It can accept a clean ascent package; it cannot wish a broken bathydrop chain back into orbit. That limit keeps the carrier useful, frightening, and believable: the machine is near enough to matter and constrained enough to fail you.
 
 <!-- External Site; generated from P105_BLACK_KEEL_IN_SYSTEM_TENDER/en_US. -->

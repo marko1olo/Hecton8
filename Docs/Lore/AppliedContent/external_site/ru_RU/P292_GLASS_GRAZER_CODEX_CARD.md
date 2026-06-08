@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Codex card: glass grazer"
+title: "Кодекс: стеклянный скребец"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Codex card: glass grazer
+# Кодекс: стеклянный скребец
 
-Безопасная жизнь HECTON-8 - часть survival interface: движение, отсутствие и повреждения говорят игроку то, что meter не скажет.
+Стеклянные скребцы превращают экологию HECTON-8 в язык выживания. Их кормление прорезает светлые маршрутные шрамы в пленке и росте матов, но неподвижность часто важнее движения. Безобидное животное может предупредить игрока раньше прибора.
 
 ## Scanner
 
-Glass grazer: non-hostile. Если школа замирает, уходи из open water.
+Стая стеклянных скребцов. Невраждебные панцирные кормильцы счищают минеральную пленку. Ровное тиканье — рабочая вода; внезапная тишина — чистину изменило что-то крупнее.
 
 ## Terminal
 
-SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+ОБРАЗЕЦ / СТАЯ СТЕКЛЯННЫХ СКРЕБЦОВ / роль: скребок мелководной пленки, свидетель течения, признак вытеснения хищником / безопасное чтение: край кормления, свежая бледная полоса, ровные щелчки панцирей / отказ: брошенное кормовое поле, сжатая неподвижная стая, нет ответных щелчков после pinger / маршрутная заметка: отсутствие после кормления — данные опасности.
 
 ## Audio
 
-Когда они перестают есть, ты перестаешь двигаться.
+Если маленькие рты перестали щелкать, а корм остался, не становись следующим, кто ждет.
 
 ## Field Note
 
-Использовать как tutorial для absence-as-warning без UI exposition.
+Кормящаяся стая: читай полосу. Застывшая стая: читай воду. Пустая полоса с брошенным кормом: уходи.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/ru_RU. -->

@@ -9,32 +9,35 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Professional Guilt To Personal Stake"
+title: "מאשמה מקצועית למעורבות אישית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Professional Guilt To Personal Stake
+# מאשמה מקצועית למעורבות אישית
 
-HE LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.
+המניע של הפרוטגוניסט צומח ממומחיות לאחריות. HECTON-8 נמנעת ממלודרמה משפחתית כפויה: עובד Deep Reach לשעבר אכפת לו מפני שהוא מבין את המכונה הפרוצדורלית שגרמה לנטישה להיראות שלמה.
 
 ## Scanner
 
-HE LOC HOLD: Signature match. The form language is old. The names are new.
+דפוס החתימה תואם למטמון הנוהל הישן. השמות השתנו. החדר כשל באותה דרך. מומחיות כבר אינה מרחק.
 
 ## Terminal
 
-HE LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+סיכום דוסייה / מעורבות מקצועית
+ראיות מפעילות: זיהוי נוהל, תגי עובדים ששוחזרו, סכסוך מקבל תביעה
+מניע מוחרג: קשר משפחתי, שושלת נקמה, מעמד עד נבחר
+מניע פעיל: עובד מערכות לשעבר מזהה נטישה שניתן היה למנוע ועדיין מסוגל לקרוא את המכונה שתייקה אותה.
 
 ## Audio
 
-HE LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+באת בשביל תביעה. נשארת כי הניירת הכירה את הידיים שלך.
 
 ## Field Note
 
-HE LOC HOLD: Use near late dossier and final payload route.
+לא החתימה שלך. עדיין המקצוע שלך. לכן החדר לא ישתוק.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/he_IL. -->

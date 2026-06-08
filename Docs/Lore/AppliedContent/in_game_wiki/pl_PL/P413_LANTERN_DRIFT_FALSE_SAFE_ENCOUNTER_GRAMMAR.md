@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "Gramatyka spotkania: fałszywe bezpieczeństwo latarniowego dryfu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# Gramatyka spotkania: fałszywe bezpieczeństwo latarniowego dryfu
 
-PL LOC HOLD: Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.
+Spotkania fałszywego bezpieczeństwa latarniowego dryfu powinny sprawić, że gracz najpierw zapragnie światła, a potem mu nie zaufa. Jasny pas może odsłonić film tlenowy, łuki kabli, zawieszony pył i czystą drogę przez bałagan rafy. Może też być własnym śladem gracza, burzowo naładowanym osadem, szumem sygnału ze starej infrastruktury albo linią przesunięcia drapieżnika, z której małe zwierzęta już zeszły. Gramatyka działa, gdy to samo piękno niesie kilka znaczeń. Sam kolor nie może rozwiązywać trasy. Szybkość pulsu, kierunek prądu, zachowanie skrobaczy, strona osadu, powrót pinger i hałas narzędzi muszą się zgadzać, zanim pas będzie wiarygodny. Jeśli blask ostrzy się za graczem, spotkanie stało się ekspozycją. Jeśli jaśnieje z przodu, a fauna milknie, stało się przynętą. Podążaj za dryfem jak za świadkiem, nie jak za obietnicą.
 
 ## Scanner
 
-PL LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Pas latarniowego dryfu. Jasna woda może oznaczać krawędź tlenu, szum sygnału, ślad narzędzi albo ruch wyparty przez drapieżnika. Sprawdź prąd przed podążaniem.
 
 ## Terminal
 
-PL LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+GRAMATYKA SPOTKANIA / FAŁSZYWE BEZPIECZEŃSTWO LATARNIOWEGO DRYFU / rola: piękno jako dane niejednoznaczne, pokusa trasy, kara stealth / bezpieczny odczyt: prąd zgadza się z blaskiem, fauna normalna, osad po spodziewanej stronie / odrzuć: niebieskie światło jako bezpieczeństwo, podążanie za fałszywym korytarzem burzowym, głośna naprawa w świecącym śladzie / notatka trasy: jeden blask może być ścieżką, przynętą, zapisem paniki lub ekspozycją.
 
 ## Audio
 
-PL LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+Światło nie jest miłosierdziem. To dane, których twój skafander nie umie jeszcze rozdzielić.
 
 ## Field Note
 
-PL LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+Zapytaj, co niesie światło: prąd, tlen, twój hałas czy coś, co odsunęło całą resztę.
 
 <!-- In-Game Wiki; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/pl_PL. -->

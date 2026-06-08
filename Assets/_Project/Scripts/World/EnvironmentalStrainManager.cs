@@ -27,10 +27,12 @@ namespace Hecton8.World
         private bool _tickRegistered;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
+        private bool _saveRegistered;
         private bool _duplicateServiceSuppressed;
         private bool _duplicateDestroyPending;
         private uint _lastProcessedItemLifecycleSequence;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
 
         // COLD ALLOC: long[128] — packed 1 km sector keys for local ecological strain lookup — owner: EnvironmentalStrainManager
         private readonly long[] _sectorStrainKeys = new long[MaxTrackedSectorStrainSlots];
@@ -129,7 +131,7 @@ namespace Hecton8.World
             CacheSaveServiceCold();
             TryRegisterHotSwapListener();
             TryRegisterTick();
-            _saveService?.Register(this);
+            TryRegisterSaveService();
         }
 
         private void Start()
@@ -139,18 +141,16 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
-            _saveService?.Unregister(this);
+            TryUnregisterSaveService();
             TryUnregisterHotSwapListener();
-            _saveService = null;
             TryUnregisterTick();
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
-            _saveService?.Unregister(this);
+            TryUnregisterSaveService();
             TryUnregisterHotSwapListener();
-            _saveService = null;
             TryUnregisterTick();
             TryUnregisterService();
         }
@@ -262,6 +262,7 @@ namespace Hecton8.World
 
         private void SuppressDuplicateService()
         {
+            TryUnregisterSaveService();
             _duplicateServiceSuppressed = true;
             _serviceRegistered = false;
             _tickRegistered = false;
@@ -317,6 +318,48 @@ namespace Hecton8.World
             _saveService = GlobalRegistry.Save;
         }
 
+        private void TryRegisterSaveService()
+        {
+            if (_saveRegistered || _duplicateServiceSuppressed)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
+                return;
+
+            saveService.Register(this);
+            _registeredSaveService = saveService;
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveService()
+        {
+            if (!_saveRegistered && _registeredSaveService == null)
+            {
+                _saveService = null;
+                return;
+            }
+
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
+            _saveRegistered = false;
+            _saveService = null;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_hotSwapRegistered || !Application.isPlaying)
@@ -342,13 +385,11 @@ namespace Hecton8.World
             if (serviceSlot != GlobalRegistryServiceSlot.Save)
                 return;
 
-            if (Application.isPlaying && previousService is ISaveService previousSave)
-                previousSave.Unregister(this);
-
+            TryUnregisterSaveService();
             _saveService = currentService as ISaveService;
 
-            if (Application.isPlaying && _saveService != null && isActiveAndEnabled && !_duplicateServiceSuppressed)
-                _saveService.Register(this);
+            if (Application.isPlaying && isActiveAndEnabled && !_duplicateServiceSuppressed)
+                TryRegisterSaveService();
         }
 
         private void DrainItemLifecycleSignals()

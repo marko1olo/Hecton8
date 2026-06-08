@@ -9,32 +9,36 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Drop Capsule Damage Parts"
+title: "חלקי נזק בקפסולת נחיתה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Drop Capsule Damage Parts
+# חלקי נזק בקפסולת נחיתה
 
-HE LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.
+קפסולת הנחיתה לא נכשלה כגרוטאה דרמטית אחת. היא נכשלה כשרשרת של חלקים בעלי שם שכמעט עשו את העבודה. Ascent sleeve התעקם, ולכן הגוף לא יכול להיחתם מחדש מול לחץ העלייה. Guidance gimbal מצולק, ולכן גם עלייה נקייה תיכנס לסחרור לפני ש-Black Keel יקבל אותה. Relay mast נגזר, compressor סתום בחול מלח, ו-heat tiles סדוקות הופכות כל burn מדומיין לשדה רסיסים.
+
+HECTON-8 לא נותן כפתור חילוץ נקי. קפסולה ששומרת אוויר לשעה אינה קפסולה שיכולה לעזוב את האוקיינוס. כל חלק שבור מצביע על מסלול אמיתי: למצוא pressure-rated sleeve stock, להחזיר מיסבי gimbal, לבנות מחדש את עמוד הממסר, לנקות את נתיב compressor או להוכיח מספיק נזק כדי ש-Black Keel יתמחר חלון אחר.
+
+הגרוטאה אינה רקע. היא מפת ההנדסה הראשונה. כשהקפסולה כותבת FAIL, האוקיינוס כבר הפך נחיתה לרשימת חלקים.
 
 ## Scanner
 
-HE LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve התעקם, guidance gimbal מצולק, relay mast נגזר, compressor מזוהם, heat tile סדוקה.
 
 ## Terminal
 
-HE LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-HE LOC HOLD: It landed well enough to strand you properly.
+היא נחתה מספיק טוב כדי לתקוע אותך כמו שצריך.
 
 ## Field Note
 
-HE LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+הקפסולה יכולה להשאיר Marauder חי בשעה הראשונה. היא לא יכולה לצאת בלי חלקי עומק חלופיים.
 
 <!-- In-Game Wiki; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/he_IL. -->

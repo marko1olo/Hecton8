@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Drop Capsule Damage Parts"
+title: "강하 캡슐 손상 부품"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Drop Capsule Damage Parts
+# 강하 캡슐 손상 부품
 
-KO LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+강하 캡슐 손상 부품은 HECTON-8에서 편리한 구조 논리를 제거한다. Marauder가 갇힌 이유는 ascent sleeve, guidance gimbal, relay mast, compressor, heat tile 같은 특정 시스템이 실패했기 때문이다. 각 실패는 경로, 재료, 도구 업그레이드, 증거 물체로 이어진다.
 
 ## Scanner
 
-KO LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve 뒤틀림, guidance gimbal 흠집, relay mast 절단, compressor 오염, heat tile 균열.
 
 ## Terminal
 
-KO LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-KO LOC HOLD: It landed well enough to strand you properly.
+제대로 고립시키기에는 충분히 잘 착수했다.
 
 ## Field Note
 
-KO LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+캡슐은 첫 한 시간 동안 Marauder를 살릴 수 있다. 심도 등급 교체 부품 없이는 떠날 수 없다.
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/ko_KR. -->

@@ -1872,7 +1872,7 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     if (_pendingLootCount > 0)
                         TryRegisterLootTick();
                     break;
@@ -2297,8 +2297,8 @@ namespace Hecton8.World
             if (!snapToMapMagicTerrainHeight)
                 return;
 
-            MapMagicBridge bridge = MapMagicBridge.Instance;
-            if (bridge == null || !bridge.IsAvailable)
+            MapMagicBridge bridge = null;
+            if (!WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge) || !bridge.IsAvailable)
                 return;
 
             double3 absolute = aup.ToAbsoluteDouble3();
@@ -2545,8 +2545,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            if (_objectPool == null)
-                _objectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
 
             if (_dispatcher == null)
                 _dispatcher = GlobalRegistry.Dispatcher;
@@ -2559,6 +2558,41 @@ namespace Hecton8.World
 
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                return;
+            }
+
+            _objectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
         }
 
         private void ClearCachedRegistryServices()
@@ -3362,8 +3396,7 @@ namespace Hecton8.World
             if (wreckCollisionProxyPrefab == null || !IsFiniteBounds(worldBounds))
                 return;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             DespawnActiveCollisionProxy();
@@ -3453,7 +3486,7 @@ namespace Hecton8.World
             _activeCollisionProxy = null;
             _activeCollisionCollider = null;
 
-            IObjectPoolService pool = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             if (pool != null && proxy.activeInHierarchy)
                 pool.Despawn(proxy);
             else if (proxy != null)
@@ -3651,8 +3684,7 @@ namespace Hecton8.World
             if (_pendingLootCount <= 0)
                 return;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             PendingWreckLootSpawn spawn = _pendingLootSpawns[_pendingLootReadIndex];

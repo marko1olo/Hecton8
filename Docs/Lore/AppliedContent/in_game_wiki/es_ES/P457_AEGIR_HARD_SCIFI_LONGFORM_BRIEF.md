@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: el cielo que niega el rescate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Aegir Transfer Windows
+# Aegir: el cielo que niega el rescate
 
-ES LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir es un cielo operativo. La escalera de lunas puede retrasar o corromper paquetes sin oscurecer siempre la superficie. El rescate falla por distancia, geometría, ley y coste.
 
 ## Scanner
 
-ES LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Guía de ruta celeste. No existe FTL ni ansible. Las ventanas de Aegir pasan por lunas, escombros, custodia de relé, tormentas y contabilidad de masa de Black Keel.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+GUÍA DE NAVEGACIÓN AEGIR // BANDA PÚBLICA. Usar clases de peligro: sombra de ruta, pulso cargado, dispersión de hielo, penacho de tormenta, retraso de guiado, custodia de receptor.
 
 ## Audio
 
-ES LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Planificación Black Keel: "Señal verdadera no es señal útil. La ventana depende de masa, clima, custodia y bloqueo de receptor."
 
 ## Field Note
 
-ES LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+Regla de saqueador: no preguntes si se envió la señal. Pregunta qué luna la bloqueó, qué registro la capturó y si el receptor oyó a una persona o una clase de masa.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/es_ES. -->

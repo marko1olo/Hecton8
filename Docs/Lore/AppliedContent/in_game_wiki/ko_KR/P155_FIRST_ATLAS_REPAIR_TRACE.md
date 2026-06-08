@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: First Atlas Repair Trace"
+title: "첫 Atlas 수리 흔적"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: First Atlas Repair Trace
+# 첫 Atlas 수리 흔적
 
-KO LOC HOLD: The first Atlas trace is small and useful before it becomes horror: a cable is repaired around a human object, showing continuity logic without human priority.
+첫 Atlas 흔적은 공포가 되기 전에는 작고 유용하다. 인간 물체 주변으로 케이블이 수리되어 인간 우선순위 없는 연속성 논리를 보여 준다.
 
 ## Scanner
 
-KO LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+케이블 상처 위 수리 생물막. 음향 반복은 식민지 비콘 코드가 아니라 Atlas 정비 박자와 맞는다.
 
 ## Terminal
 
-KO LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+ATLAS 정비 흔적: 균열 봉합; 케이블 연속성 복구; organic obstruction은 pressure-compatible substrate로 유지; human ID plate는 retrieval priority로 분류되지 않음.
 
 ## Audio
 
-KO LOC HOLD: Atlas repair complete. Person not in work order.
+Atlas 수리 완료. 작업 명령에 사람은 없다.
 
 ## Field Note
 
-KO LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+그것은 이름표 주변으로 케이블을 봉했다. 유용한 수리. 나쁜 분류.
 
 <!-- In-Game Wiki; generated from P155_FIRST_ATLAS_REPAIR_TRACE/ko_KR. -->

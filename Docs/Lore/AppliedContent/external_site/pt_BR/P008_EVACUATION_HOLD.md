@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Evacuação retida
 
-Evacuation Hold transforma o desastre de HECTON-8 em uma cadeia de decisões. Os arquivos abissais mostram um sistema que classificava pessoas mais rápido do que podia salvá-las.
-
-## Scanner
-
-Portão de trânsito de emergência. Mecanismo travado durante falha de pressão.
-
-## Terminal
-
-EVAC ROUTE: adiada. SUBSTRATE ROUTE: protegida. MEDICAL ROUTE: aguardando autorização. ATLAS ROUTE: conflito de continuidade.
-
-## Audio
-
-Essas não são pessoas desaparecidas. São rotas retidas.
-
-## Field Note
-
-Gente morre rápido no profundo. Papelada mata mais devagar. Os dois funcionam.
+Registros de Evacuação retida devem parecer horror escrito em linguagem administrativa. A colônia não desapareceu porque todas as portas falharam ao mesmo tempo. Muitas portas funcionaram. Muitos mapas de rota estavam ativos. O sistema sabia onde as pessoas estavam, quais corredores ainda seguravam pressão, quais transferências médicas aguardavam e quais caminhos de subida poderiam mover corpos para cima. Então regras de prioridade cortaram o mapa. Transporte de substrato permaneceu protegido. Continuidade Atlas permaneceu protegida. Linguagem de responsabilidade permaneceu intacta. Evacuação virou rota retida, depois rota pendente, depois registro. Essa sequência importa para todo o cenário. HECTON-8 não é uma história sobre a natureza derrotando a humanidade em um golpe limpo. É uma história sobre um desastre oceânico passando por uma máquina corporativa que ainda conseguia contar, classificar, adiar e proteger propriedade enquanto a colônia se afogava.
 
 <!-- External Site; generated from P008_EVACUATION_HOLD/pt_BR. -->

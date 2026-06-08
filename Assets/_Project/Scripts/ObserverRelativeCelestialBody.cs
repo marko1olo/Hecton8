@@ -217,8 +217,15 @@ namespace Hecton8.Celestial
         {
             if (!Application.isPlaying)
                 return;
-            if (shiftData.ShiftOffset.sqrMagnitude <= DirectionEpsilon)
+
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= DirectionEpsilon)
+            {
                 return;
+            }
 
             QueuePlacementVisualSync();
         }

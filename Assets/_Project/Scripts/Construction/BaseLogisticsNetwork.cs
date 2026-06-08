@@ -94,30 +94,43 @@ namespace Hecton8.Construction
             public PowerNode Node;
         }
 
-        private struct RecyclerEndpoint
-        {
-            public ResourceRecyclerModule Recycler;
-            public PowerNode Node;
-        }
-
         // COLD ALLOC: StorageEndpoint[64] - fixed logistics storage registry - owner: BaseLogisticsNetwork
         private const int StorageEndpointCapacity = 64;
         private const int FabricatorEndpointCapacity = 32;
-        private const int RecyclerEndpointCapacity = 32;
+        private const uint StorageEndpointRegistrationOverflowWarningHash = 0x424C534Fu; // BLSO
+        private const uint StorageEndpointRegistrationOverflowContextHash = 0x424C5343u; // BLSC
+        private const uint FabricatorEndpointRegistrationOverflowWarningHash = 0x424C464Fu; // BLFO
+        private const uint FabricatorEndpointRegistrationOverflowContextHash = 0x424C4643u; // BLFC
+        private const uint ReservationPoolExhaustedWarningHash = 0x424C5258u; // BLRX
+        private const uint ReservationPoolInvalidSlotWarningHash = 0x424C524Eu; // BLRN
+        private const uint ReservationPoolReturnOverflowWarningHash = 0x424C5252u; // BLRR
+        private const uint ReservationPoolContextHash = 0x424C5250u; // BLRP
         private static readonly StorageEndpoint[] s_StorageEndpoints = new StorageEndpoint[StorageEndpointCapacity];
         // COLD ALLOC: FabricatorEndpoint[32] - fixed fabrication endpoint registry - owner: BaseLogisticsNetwork
         private static readonly FabricatorEndpoint[] s_FabricatorEndpoints = new FabricatorEndpoint[FabricatorEndpointCapacity];
-        // COLD ALLOC: RecyclerEndpoint[32] - fixed recycler endpoint registry - owner: BaseLogisticsNetwork
-        private static readonly RecyclerEndpoint[] s_RecyclerEndpoints = new RecyclerEndpoint[RecyclerEndpointCapacity];
         private static int s_StorageEndpointCount;
         private static int s_FabricatorEndpointCount;
-        private static int s_RecyclerEndpointCount;
+        private static int s_DroppedStorageEndpointRegistrationCount;
+        private static int s_DroppedFabricatorEndpointRegistrationCount;
+        private static int s_ReservationPoolExhaustionCount;
+        private static int s_ReservationPoolInvalidSlotCount;
+        private static int s_ReservationPoolReturnOverflowCount;
         private const int ReservationPoolCapacity = 64;
         // COLD ALLOC: LogisticsReservation[64] â€” fixed logistics reservation token pool â€” owner: BaseLogisticsNetwork
         private static readonly LogisticsReservation[] s_ReservationPool = CreateReservationPool();
         private static int s_ReservationPoolCount = ReservationPoolCapacity;
         private static int s_NextReservationId = 1;
         private static IDataVault s_DataVault;
+
+        internal static int DroppedStorageEndpointRegistrationCount => s_DroppedStorageEndpointRegistrationCount;
+
+        internal static int DroppedFabricatorEndpointRegistrationCount => s_DroppedFabricatorEndpointRegistrationCount;
+
+        internal static int ReservationPoolExhaustionCount => s_ReservationPoolExhaustionCount;
+
+        internal static int ReservationPoolInvalidSlotCount => s_ReservationPoolInvalidSlotCount;
+
+        internal static int ReservationPoolReturnOverflowCount => s_ReservationPoolReturnOverflowCount;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -126,12 +139,14 @@ namespace Hecton8.Construction
                 s_StorageEndpoints[i] = default;
             for (int i = 0; i < s_FabricatorEndpointCount; i++)
                 s_FabricatorEndpoints[i] = default;
-            for (int i = 0; i < s_RecyclerEndpointCount; i++)
-                s_RecyclerEndpoints[i] = default;
 
             s_StorageEndpointCount = 0;
             s_FabricatorEndpointCount = 0;
-            s_RecyclerEndpointCount = 0;
+            s_DroppedStorageEndpointRegistrationCount = 0;
+            s_DroppedFabricatorEndpointRegistrationCount = 0;
+            s_ReservationPoolExhaustionCount = 0;
+            s_ReservationPoolInvalidSlotCount = 0;
+            s_ReservationPoolReturnOverflowCount = 0;
             ResetReservationPool();
             s_NextReservationId = 1;
             LogisticsRouteScratchMemory.Dispose(s_DataVault);
@@ -159,7 +174,10 @@ namespace Hecton8.Construction
             }
 
             if (s_StorageEndpointCount >= StorageEndpointCapacity)
+            {
+                ReportStorageEndpointRegistrationOverflow();
                 return;
+            }
 
             s_StorageEndpoints[s_StorageEndpointCount++] = new StorageEndpoint
             {
@@ -236,7 +254,10 @@ namespace Hecton8.Construction
             }
 
             if (s_FabricatorEndpointCount >= FabricatorEndpointCapacity)
+            {
+                ReportFabricatorEndpointRegistrationOverflow();
                 return;
+            }
 
             s_FabricatorEndpoints[s_FabricatorEndpointCount++] = new FabricatorEndpoint
             {
@@ -254,34 +275,70 @@ namespace Hecton8.Construction
             }
         }
 
-        public static void RegisterRecycler(ResourceRecyclerModule recycler, PowerNode node)
+        private static void ReportStorageEndpointRegistrationOverflow()
         {
-            if (recycler == null || node == null)
-                return;
-
-            for (int i = 0; i < s_RecyclerEndpointCount; i++)
-            {
-                if (ReferenceEquals(s_RecyclerEndpoints[i].Recycler, recycler))
-                    return;
-            }
-
-            if (s_RecyclerEndpointCount >= RecyclerEndpointCapacity)
-                return;
-
-            s_RecyclerEndpoints[s_RecyclerEndpointCount++] = new RecyclerEndpoint
-            {
-                Recycler = recycler,
-                Node = node
-            };
+            s_DroppedStorageEndpointRegistrationCount++;
+            PublishPerformanceWarningBestEffort(
+                StorageEndpointRegistrationOverflowWarningHash,
+                StorageEndpointRegistrationOverflowContextHash,
+                s_DroppedStorageEndpointRegistrationCount);
         }
 
-        public static void UnregisterRecycler(ResourceRecyclerModule recycler)
+        private static void ReportFabricatorEndpointRegistrationOverflow()
         {
-            for (int i = s_RecyclerEndpointCount - 1; i >= 0; i--)
+            s_DroppedFabricatorEndpointRegistrationCount++;
+            PublishPerformanceWarningBestEffort(
+                FabricatorEndpointRegistrationOverflowWarningHash,
+                FabricatorEndpointRegistrationOverflowContextHash,
+                s_DroppedFabricatorEndpointRegistrationCount);
+        }
+
+        private static void ReportReservationPoolExhausted()
+        {
+            s_ReservationPoolExhaustionCount++;
+            PublishPerformanceWarningBestEffort(
+                ReservationPoolExhaustedWarningHash,
+                ReservationPoolContextHash,
+                s_ReservationPoolExhaustionCount);
+        }
+
+        private static void ReportReservationPoolInvalidSlot()
+        {
+            s_ReservationPoolInvalidSlotCount++;
+            PublishPerformanceWarningBestEffort(
+                ReservationPoolInvalidSlotWarningHash,
+                ReservationPoolContextHash,
+                s_ReservationPoolInvalidSlotCount);
+        }
+
+        private static void ReportReservationPoolReturnOverflow()
+        {
+            s_ReservationPoolReturnOverflowCount++;
+            PublishPerformanceWarningBestEffort(
+                ReservationPoolReturnOverflowWarningHash,
+                ReservationPoolContextHash,
+                s_ReservationPoolReturnOverflowCount);
+        }
+
+        private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)
+        {
+            try
             {
-                if (ReferenceEquals(s_RecyclerEndpoints[i].Recycler, recycler))
-                    RemoveRecyclerEndpointAt(i);
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
             }
+            catch (System.Exception exception) when (!(exception is FatalArchitectureException))
+            {
+                LogPerformanceWarningTelemetryException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPerformanceWarningTelemetryException(System.Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            H8Debug.LogException(exception);
+#endif
         }
 
         private static void RemoveStorageEndpointAt(int index)
@@ -308,19 +365,6 @@ namespace Hecton8.Construction
 
             s_FabricatorEndpoints[lastIndex] = default;
             s_FabricatorEndpointCount = lastIndex;
-        }
-
-        private static void RemoveRecyclerEndpointAt(int index)
-        {
-            int lastIndex = s_RecyclerEndpointCount - 1;
-            if ((uint)index > (uint)lastIndex)
-                return;
-
-            for (int i = index; i < lastIndex; i++)
-                s_RecyclerEndpoints[i] = s_RecyclerEndpoints[i + 1];
-
-            s_RecyclerEndpoints[lastIndex] = default;
-            s_RecyclerEndpointCount = lastIndex;
         }
 
         public static int CountAccessibleItem(PowerGrid grid, ItemData item)
@@ -671,6 +715,7 @@ namespace Hecton8.Construction
             if (!TryRentReservation(grid, out LogisticsReservation preparedReservation))
                 return false;
 
+            bool reservedAnyCost = false;
             var enumerator = costs.GetEnumerator();
             while (enumerator.MoveNext())
             {
@@ -684,6 +729,14 @@ namespace Hecton8.Construction
                     RollbackReserved(preparedReservation);
                     return false;
                 }
+
+                reservedAnyCost = true;
+            }
+
+            if (!reservedAnyCost)
+            {
+                RollbackReserved(preparedReservation);
+                return false;
             }
 
             reservation = preparedReservation;
@@ -706,6 +759,7 @@ namespace Hecton8.Construction
             if (!TryRentReservation(grid, out LogisticsReservation preparedReservation))
                 return false;
 
+            bool reservedAnyCost = false;
             for (int i = 0; i < costs.Count; i++)
             {
                 InventoryCost cost = costs[i];
@@ -717,6 +771,14 @@ namespace Hecton8.Construction
                     RollbackReserved(preparedReservation);
                     return false;
                 }
+
+                reservedAnyCost = true;
+            }
+
+            if (!reservedAnyCost)
+            {
+                RollbackReserved(preparedReservation);
+                return false;
             }
 
             reservation = preparedReservation;
@@ -745,6 +807,7 @@ namespace Hecton8.Construction
             if (!TryRentReservation(grid, out LogisticsReservation preparedReservation))
                 return false;
 
+            bool reservedAnyCost = false;
             for (int i = 0; i < costCount; i++)
             {
                 int itemHashId = itemHashIds[i];
@@ -757,6 +820,14 @@ namespace Hecton8.Construction
                     RollbackReserved(preparedReservation);
                     return false;
                 }
+
+                reservedAnyCost = true;
+            }
+
+            if (!reservedAnyCost)
+            {
+                RollbackReserved(preparedReservation);
+                return false;
             }
 
             reservation = preparedReservation;
@@ -782,9 +853,9 @@ namespace Hecton8.Construction
             ReturnReservation(reservation);
         }
 
-        public static void CommitReservedViaCommandQueue(LogisticsReservation reservation)
+        public static bool CommitReservedViaCommandQueue(LogisticsReservation reservation)
         {
-            CommitReservedViaCommandQueue(reservation, 0);
+            return CommitReservedViaCommandQueue(reservation, 0);
         }
 
         /// <summary>
@@ -792,28 +863,47 @@ namespace Hecton8.Construction
         /// </summary>
         /// <param name="reservation">Prepared logistics reservation.</param>
         /// <param name="requesterId">Optional requester id notified by the command queue after commit.</param>
-        public static void CommitReservedViaCommandQueue(LogisticsReservation reservation, int requesterId)
+        /// <returns>True when every touched crate committed synchronously because no queue command remained pending.</returns>
+        public static bool CommitReservedViaCommandQueue(LogisticsReservation reservation, int requesterId)
         {
+            return TryCommitReservedViaCommandQueue(reservation, requesterId, out bool committedImmediately) && committedImmediately;
+        }
+
+        /// <summary>
+        /// Starts the storage reservation commit phase and reports whether the commit completed synchronously.
+        /// </summary>
+        /// <returns>True when at least one touched crate either committed inline or has a queued command pending.</returns>
+        public static bool TryCommitReservedViaCommandQueue(LogisticsReservation reservation, int requesterId, out bool committedImmediately)
+        {
+            committedImmediately = false;
             if (reservation == null || !reservation.IsPrepared)
-                return;
+                return false;
 
             int reservationId = reservation.ReservationId;
             int touchedCrateCount = reservation.TouchedCrateCount;
+            bool sawTouchedCrate = false;
+            bool queuedAnyCommit = false;
             for (int i = 0; i < touchedCrateCount; i++)
             {
                 StorageCrate crate = reservation.GetTouchedCrate(i);
                 if (crate == null)
                     continue;
 
-                int token = ThreadSafeCommandQueue.RegisterGameObjectTarget(crate.gameObject);
+                sawTouchedCrate = true;
+                int token = ThreadSafeCommandQueue.RegisterOneShotGameObjectTarget(crate.gameObject);
                 if (token <= 0 ||
                     !ThreadSafeCommandQueue.TryEnqueue(EntityCommand.CreateCommitStorageReservation(token, reservationId, requesterId)))
                 {
                     crate.CommitReservation(reservationId);
+                    continue;
                 }
+
+                queuedAnyCommit = true;
             }
 
             ReturnReservation(reservation);
+            committedImmediately = sawTouchedCrate && !queuedAnyCommit;
+            return sawTouchedCrate;
         }
 
         /// <summary>
@@ -861,14 +951,21 @@ namespace Hecton8.Construction
         private static bool TryRentReservation(PowerGrid grid, out LogisticsReservation reservation)
         {
             reservation = null;
-            if (grid == null || s_ReservationPoolCount <= 0)
+            if (grid == null)
                 return false;
+
+            if (s_ReservationPoolCount <= 0)
+            {
+                ReportReservationPoolExhausted();
+                return false;
+            }
 
             int poolIndex = --s_ReservationPoolCount;
             reservation = s_ReservationPool[poolIndex];
             if (reservation == null)
             {
                 s_ReservationPoolCount++;
+                ReportReservationPoolInvalidSlot();
                 return false;
             }
 
@@ -883,7 +980,10 @@ namespace Hecton8.Construction
 
             reservation.Release();
             if (s_ReservationPoolCount >= ReservationPoolCapacity)
+            {
+                ReportReservationPoolReturnOverflow();
                 return;
+            }
 
             s_ReservationPool[s_ReservationPoolCount++] = reservation;
         }

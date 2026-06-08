@@ -711,6 +711,19 @@ public struct VoxelModifiedCellEntry
 // ════════════════════════════════════════════════════════════════════════════════
 //  REGION: BURST JOBS
 // ════════════════════════════════════════════════════════════════════════════════
+internal static class VoxelDensityPipelineFaultSlots
+{
+    public const int SlotCount = 8;
+    public const int DensityEvaluation = 0;
+    public const int QuantizeInput = 1;
+    public const int MarchingCubesCountInput = 2;
+    public const int MarchingCubesExtractInput = 3;
+    public const int MarchingCubesExtractOutput = 4;
+    public const int WeldInput = 5;
+    public const int WeldOutput = 6;
+    public const int NormalFallback = 7;
+}
+
 #region Voxel Burst Jobs
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -789,6 +802,12 @@ public struct VoxelDensityJob : IJobParallelFor
 
     public void Execute(int idx)
     {
+        if (!HasSafeDensityBuffers(idx))
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.DensityEvaluation);
+            return;
+        }
+
         int ix = idx % ptsX;
         int iy = (idx / ptsX) % ptsY;
         int iz = idx / (ptsX * ptsY);
@@ -796,13 +815,43 @@ public struct VoxelDensityJob : IJobParallelFor
         float3 wp = volumeOrigin + new float3(ix, iy, iz) * voxelStep;
         EvaluateDensityAt(wp, out float smoothDensityValue, out float finalDensityValue);
         bool invalidDensity = !math.isfinite(finalDensityValue) || !math.isfinite(smoothDensityValue);
-        if (invalidDensity && densityFaultFlags.IsCreated && densityFaultFlags.Length > 0)
-            densityFaultFlags[0] = 1;
+        if (invalidDensity)
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.DensityEvaluation);
 
         finalDensityValue = math.select(0f, finalDensityValue, math.isfinite(finalDensityValue));
         smoothDensityValue = math.select(0f, smoothDensityValue, math.isfinite(smoothDensityValue));
         density[idx] = finalDensityValue;
         smoothDensity[idx] = smoothDensityValue;
+    }
+
+    bool HasSafeDensityBuffers(int idx)
+    {
+        long totalPoints = (long)ptsX * ptsY * ptsZ;
+        long terrainGridLength = (long)ptsX * ptsZ;
+        return density.IsCreated &&
+            smoothDensity.IsCreated &&
+            terrainHeights.IsCreated &&
+            gridBiome.IsCreated &&
+            idx >= 0 &&
+            idx < density.Length &&
+            idx < smoothDensity.Length &&
+            ptsX > 0 && ptsY > 0 && ptsZ > 0 &&
+            totalPoints > 0L &&
+            terrainGridLength > 0L &&
+            idx < totalPoints &&
+            totalPoints <= density.Length &&
+            totalPoints <= smoothDensity.Length &&
+            terrainGridLength <= terrainHeights.Length &&
+            terrainGridLength <= gridBiome.Length &&
+            math.isfinite(voxelStep) &&
+            voxelStep > 0f &&
+            math.all(math.isfinite(volumeOrigin));
+    }
+
+    void MarkDensityFault(int slot)
+    {
+        if (densityFaultFlags.IsCreated && (uint)slot < (uint)densityFaultFlags.Length)
+            densityFaultFlags[slot] = 1;
     }
 
     void EvaluateDensityAt(float3 wp, out float smoothDensityValue, out float finalDensityValue)
@@ -921,8 +970,17 @@ public struct VoxelDensityJob : IJobParallelFor
 
     float SampleBiomeModifier(float2 worldXZ)
     {
-        if (!gridBiome.IsCreated || gridBiome.Length < ptsX * ptsZ || ptsX <= 1 || ptsZ <= 1 || voxelStep <= 0.0001f)
+        long biomeGridLength = (long)ptsX * ptsZ;
+        if (!gridBiome.IsCreated ||
+            ptsX <= 1 ||
+            ptsZ <= 1 ||
+            biomeGridLength <= 0L ||
+            biomeGridLength > gridBiome.Length ||
+            !math.isfinite(voxelStep) ||
+            voxelStep <= 0.0001f)
+        {
             return 0f;
+        }
 
         float invVoxelStep = math.rcp(voxelStep);
         float localX = (worldXZ.x - volumeOrigin.x) * invVoxelStep;
@@ -1275,7 +1333,8 @@ public struct VoxelDensityJob : IJobParallelFor
                 if ((uint)nodeIndex >= (uint)caveNodes.Length)
                     continue;
 
-                if (!TryResolveSafeNode(in caveNodes[nodeIndex], out CaveNode node))
+                CaveNode nodeSource = caveNodes[nodeIndex];
+                if (!TryResolveSafeNode(in nodeSource, out CaveNode node))
                     continue;
 
                 EvaluateRoom(warpedPos, absoluteWp, node, out float smoothNodeDist, out float finalNodeDist);
@@ -1287,7 +1346,8 @@ public struct VoxelDensityJob : IJobParallelFor
         {
             for (int i = 0; i < caveNodes.Length; i++)
             {
-                if (!TryResolveSafeNode(in caveNodes[i], out CaveNode node))
+                CaveNode nodeSource = caveNodes[i];
+                if (!TryResolveSafeNode(in nodeSource, out CaveNode node))
                     continue;
 
                 EvaluateRoom(warpedPos, absoluteWp, node, out float smoothNodeDist, out float finalNodeDist);
@@ -1304,7 +1364,8 @@ public struct VoxelDensityJob : IJobParallelFor
                 if ((uint)tunnelIndex >= (uint)caveTunnels.Length)
                     continue;
 
-                if (!TryResolveSafeTunnel(in caveTunnels[tunnelIndex], out CaveTunnel tunnel))
+                CaveTunnel tunnelSource = caveTunnels[tunnelIndex];
+                if (!TryResolveSafeTunnel(in tunnelSource, out CaveTunnel tunnel))
                     continue;
 
                 float tunnelDist = EvaluateTunnel(warpedPos, absoluteWp, wp, tunnel);
@@ -1316,7 +1377,8 @@ public struct VoxelDensityJob : IJobParallelFor
         {
             for (int i = 0; i < caveTunnels.Length; i++)
             {
-                if (!TryResolveSafeTunnel(in caveTunnels[i], out CaveTunnel tunnel))
+                CaveTunnel tunnelSource = caveTunnels[i];
+                if (!TryResolveSafeTunnel(in tunnelSource, out CaveTunnel tunnel))
                     continue;
 
                 float tunnelDist = EvaluateTunnel(warpedPos, absoluteWp, wp, tunnel);
@@ -1367,8 +1429,15 @@ public struct VoxelDensityJob : IJobParallelFor
 
     int ResolvePartitionBucketIndex(float3 wp)
     {
-        if (partitionDimX <= 0 || partitionDimY <= 0 || partitionDimZ <= 0)
+        if (partitionDimX <= 0 ||
+            partitionDimY <= 0 ||
+            partitionDimZ <= 0 ||
+            !IsFinite(wp) ||
+            !IsFinite(partitionOrigin) ||
+            !IsFinite(partitionInvCellSize))
+        {
             return -1;
+        }
 
         float fx = math.clamp((wp.x - partitionOrigin.x) * partitionInvCellSize.x, 0f, partitionDimX - 1.0001f);
         float fy = math.clamp((wp.y - partitionOrigin.y) * partitionInvCellSize.y, 0f, partitionDimY - 1.0001f);
@@ -1672,7 +1741,8 @@ public struct VoxelDensityJob : IJobParallelFor
 
         for (int i = 0; i < caveStructures.Length; i++)
         {
-            if (!TryResolveSafeStructure(in caveStructures[i], out CaveStructure s))
+            CaveStructure structureSource = caveStructures[i];
+            if (!TryResolveSafeStructure(in structureSource, out CaveStructure s))
                 continue;
 
             float smoothSd;
@@ -2177,6 +2247,9 @@ public struct VoxelDensityJob : IJobParallelFor
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 struct VoxelColliderChunkClassifyJob : IJobParallelFor
 {
+    private const float MinSafeBoundsExtent = 0.01f;
+    private const float MaxSafeBoundsExtent = 1048576f;
+
     [ReadOnly, NoAlias] public NativeArray<float3> positions;
     [ReadOnly, NoAlias] public NativeArray<int> triangleIndices;
     public float3 boundsMin;
@@ -2186,27 +2259,81 @@ struct VoxelColliderChunkClassifyJob : IJobParallelFor
 
     public void Execute(int triangleIndex)
     {
+        if (!triangleBuckets.IsCreated || triangleIndex < 0 || triangleIndex >= triangleBuckets.Length)
+            return;
+
+        triangleBuckets[triangleIndex] = 0;
+        if (!positions.IsCreated || !triangleIndices.IsCreated || chunkCount <= 0 || !IsFinite(boundsMin) || !IsFinite(boundsSize))
+            return;
+
+        if (triangleIndices.Length < 3 || triangleIndex > (triangleIndices.Length - 3) / 3)
+            return;
+
         int triBase = triangleIndex * 3;
         int i0 = triangleIndices[triBase];
         int i1 = triangleIndices[triBase + 1];
         int i2 = triangleIndices[triBase + 2];
+        if ((uint)i0 >= (uint)positions.Length || (uint)i1 >= (uint)positions.Length || (uint)i2 >= (uint)positions.Length)
+            return;
 
-        float3 centroid = (positions[i0] + positions[i1] + positions[i2]) * (1f / 3f);
+        float3 p0 = positions[i0];
+        float3 p1 = positions[i1];
+        float3 p2 = positions[i2];
+        if (!IsFinite(p0) || !IsFinite(p1) || !IsFinite(p2))
+            return;
+
+        float3 centroid = (p0 + p1 + p2) * (1f / 3f);
+        if (!IsFinite(centroid))
+            return;
+
         triangleBuckets[triangleIndex] = (byte)ResolveChunkIndex(centroid);
     }
 
     int ResolveChunkIndex(float3 point)
     {
-        float3 safeSize = math.max(boundsSize, new float3(0.01f));
-        float3 normalized = math.saturate((point - boundsMin) / safeSize);
+        if (!IsFinite(point) || chunkCount <= 0)
+            return 0;
+
+        float3 safeBoundsMin = SanitizeBoundsMin(boundsMin);
+        float3 safeSize = SanitizeBoundsSize(boundsSize);
+        float3 normalized = SaturateFinite((point - safeBoundsMin) / safeSize);
         int x = normalized.x >= 0.5f ? 1 : 0;
         int z = normalized.z >= 0.5f ? 1 : 0;
+        int resolvedIndex;
 
         if (chunkCount <= 4)
-            return x | (z << 1);
+        {
+            resolvedIndex = x | (z << 1);
+            return math.clamp(resolvedIndex, 0, math.max(chunkCount - 1, 0));
+        }
 
         int y = normalized.y >= 0.5f ? 1 : 0;
-        return x | (z << 1) | (y << 2);
+        resolvedIndex = x | (z << 1) | (y << 2);
+        return math.clamp(resolvedIndex, 0, math.max(chunkCount - 1, 0));
+    }
+
+    static float3 SanitizeBoundsMin(float3 value)
+    {
+        return IsFinite(value)
+            ? math.clamp(value, new float3(-MaxSafeBoundsExtent), new float3(MaxSafeBoundsExtent))
+            : float3.zero;
+    }
+
+    static float3 SanitizeBoundsSize(float3 value)
+    {
+        return IsFinite(value)
+            ? math.clamp(math.abs(value), new float3(MinSafeBoundsExtent), new float3(MaxSafeBoundsExtent))
+            : new float3(MinSafeBoundsExtent);
+    }
+
+    static float3 SaturateFinite(float3 value)
+    {
+        return IsFinite(value) ? math.saturate(value) : float3.zero;
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
     }
 }
 
@@ -2219,6 +2346,9 @@ public struct VoxelFillIntArrayJob : IJobParallelFor
 
     public void Execute(int index)
     {
+        if (!Values.IsCreated || index < 0 || index >= Values.Length)
+            return;
+
         Values[index] = Value;
     }
 }
@@ -2231,13 +2361,18 @@ public struct VoxelFillFloatArrayJob : IJobParallelFor
 
     public void Execute(int index)
     {
-        Values[index] = Value;
+        if (!Values.IsCreated || index < 0 || index >= Values.Length)
+            return;
+
+        Values[index] = math.select(0f, Value, math.isfinite(Value));
     }
 }
 
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelChunkSkirtExtrusionJob : IJobParallelFor
 {
+    private const float MaxSafeSkirtMeters = 1048576f;
+
     public int ptsX;
     public int ptsZ;
     public float3 volumeOrigin;
@@ -2251,26 +2386,57 @@ public struct VoxelChunkSkirtExtrusionJob : IJobParallelFor
 
     public void Execute(int idx)
     {
-        if (ptsX <= 1 || ptsZ <= 1 || voxelStep <= 0.0001f)
+        if (!positions.IsCreated || idx < 0 || idx >= positions.Length || ptsX <= 1 || ptsZ <= 1 ||
+            !math.isfinite(voxelStep) || voxelStep <= 0.0001f || !IsFinite(volumeOrigin))
             return;
 
         float3 position = positions[idx];
-        float volumeSizeX = (ptsX - 1) * voxelStep;
-        float volumeSizeZ = (ptsZ - 1) * voxelStep;
+        if (!IsFinite(position))
+            return;
+
+        float volumeSizeX = ClampFinite((ptsX - 1) * voxelStep, 0f, 0f, MaxSafeSkirtMeters);
+        float volumeSizeZ = ClampFinite((ptsZ - 1) * voxelStep, 0f, 0f, MaxSafeSkirtMeters);
+        if (!math.isfinite(volumeSizeX) || !math.isfinite(volumeSizeZ) || volumeSizeX <= 0f || volumeSizeZ <= 0f)
+            return;
+
         float localX = position.x - volumeOrigin.x;
         float localZ = position.z - volumeOrigin.z;
         float edgeDist = math.min(localX, math.min(volumeSizeX - localX, math.min(localZ, volumeSizeZ - localZ)));
-        float safeSkirtWidth = math.max(skirtWidthMeters, voxelStep);
-        float skirtMask = 1f - math.smoothstep(0f, safeSkirtWidth, math.max(edgeDist, 0f));
+        if (!math.isfinite(edgeDist))
+            return;
+
+        float safeSkirtWidth = ClampFinite(skirtWidthMeters, voxelStep, voxelStep, MaxSafeSkirtMeters);
+        float skirtMask = SaturateFinite(1f - math.smoothstep(0f, safeSkirtWidth, math.max(edgeDist, 0f)));
         if (skirtMask <= 0.0001f)
             return;
 
         float lodScale = lodLevel > 0 ? 1f : 0.65f;
-        position.y -= skirtMask * math.max(skirtDepthMeters, 0f) * lodScale;
+        float safeSkirtDepth = ClampFinite(skirtDepthMeters, 0f, 0f, MaxSafeSkirtMeters);
+        float snappedY = position.y - skirtMask * safeSkirtDepth * lodScale;
+        if (!math.isfinite(snappedY))
+            return;
+
+        position.y = snappedY;
         positions[idx] = position;
 
         if (skirtAlphaValues.IsCreated && idx < skirtAlphaValues.Length)
-            skirtAlphaValues[idx] = math.max(skirtAlphaValues[idx], skirtMask);
+            skirtAlphaValues[idx] = math.max(SaturateFinite(skirtAlphaValues[idx]), skirtMask);
+    }
+
+    static float ClampFinite(float value, float fallback, float minimum, float maximum)
+    {
+        float safe = math.select(fallback, value, math.isfinite(value));
+        return math.clamp(safe, minimum, maximum);
+    }
+
+    static float SaturateFinite(float value)
+    {
+        return math.select(0f, math.saturate(value), math.isfinite(value));
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
     }
 }
 
@@ -2283,7 +2449,11 @@ public struct VoxelChunkBoundsContentJob : IJob
 
     public void Execute()
     {
-        if (hasContent.Length <= 0 || density.Length <= 0 || ptsX <= 0 || ptsY <= 0 || ptsZ <= 0)
+        if (!hasContent.IsCreated || hasContent.Length <= 0)
+            return;
+
+        hasContent[0] = 0;
+        if (!density.IsCreated || ptsX <= 0 || ptsY <= 0 || ptsZ <= 0 || !HasCompleteDensityField())
             return;
 
         int maxX = ptsX - 1;
@@ -2304,7 +2474,14 @@ public struct VoxelChunkBoundsContentJob : IJob
 
     float ReadDensity(int x, int y, int z)
     {
-        return density[x + y * ptsX + z * ptsX * ptsY];
+        float value = density[x + y * ptsX + z * ptsX * ptsY];
+        return math.select(0f, value, math.isfinite(value));
+    }
+
+    bool HasCompleteDensityField()
+    {
+        long expectedLength = (long)ptsX * ptsY * ptsZ;
+        return expectedLength > 0L && expectedLength <= density.Length;
     }
 }
 
@@ -2313,6 +2490,10 @@ public struct VoxelChunkBoundsContentJob : IJob
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelMCCountJob : IJobParallelFor
 {
+    private const int MarchingCubesCubeCount = 256;
+    private const int MarchingCubesTableStride = 16;
+    private const float MaxSafeDensityDecodeScale = 1048576f;
+
     public int cellsX, cellsY, cellsZ;
     public int ptsX, ptsY, ptsZ;
     public float densityDecodeScale;
@@ -2321,9 +2502,23 @@ public struct VoxelMCCountJob : IJobParallelFor
     [ReadOnly, NoAlias] public NativeArray<int>.ReadOnly edgeTable;
     [ReadOnly, NoAlias] public NativeArray<int>.ReadOnly triTable;
     [WriteOnly, NoAlias] public NativeArray<int> cellVertexCounts;
+    [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> densityFaultFlags;
 
     public void Execute(int cellIdx)
     {
+        if (!cellVertexCounts.IsCreated || cellIdx < 0 || cellIdx >= cellVertexCounts.Length)
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.MarchingCubesCountInput);
+            return;
+        }
+
+        cellVertexCounts[cellIdx] = 0;
+        if (!HasSafeMarchingCubesInputs(cellIdx))
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.MarchingCubesCountInput);
+            return;
+        }
+
         int cx = cellIdx % cellsX;
         int cy = (cellIdx / cellsX) % cellsY;
         int cz = cellIdx / (cellsX * cellsY);
@@ -2353,6 +2548,25 @@ public struct VoxelMCCountJob : IJobParallelFor
     int GI(int ix, int iy, int iz) => ix + iy * ptsX + iz * ptsX * ptsY;
     float D(int ix, int iy, int iz) => density[GI(ix, iy, iz)] * densityDecodeScale;
 
+    bool HasSafeMarchingCubesInputs(int cellIdx)
+    {
+        long totalCells = (long)cellsX * cellsY * cellsZ;
+        long densityLength = (long)ptsX * ptsY * ptsZ;
+        return density.IsCreated &&
+            triTable.Length >= MarchingCubesCubeCount * MarchingCubesTableStride &&
+            cellsX > 0 && cellsY > 0 && cellsZ > 0 &&
+            ptsX > cellsX && ptsY > cellsY && ptsZ > cellsZ &&
+            math.isfinite(densityDecodeScale) && densityDecodeScale > 0f && densityDecodeScale <= MaxSafeDensityDecodeScale &&
+            totalCells > 0L && cellIdx < totalCells &&
+            densityLength > 0L && densityLength <= density.Length;
+    }
+
+    void MarkDensityFault(int slot)
+    {
+        if (densityFaultFlags.IsCreated && (uint)slot < (uint)densityFaultFlags.Length)
+            densityFaultFlags[slot] = 1;
+    }
+
     static int ResolveCubeIndex(float d0, float d1, float d2, float d3, float d4, float d5, float d6, float d7)
     {
         return
@@ -2370,6 +2584,8 @@ public struct VoxelMCCountJob : IJobParallelFor
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityQuantizeJob : IJobParallelFor
 {
+    private const float MaxSafeDensityEncodeInvScale = 1048576f;
+
     public float densityDecodeInvScale;
 
     [ReadOnly, NoAlias] public NativeArray<float> density;
@@ -2378,16 +2594,39 @@ public struct VoxelDensityQuantizeJob : IJobParallelFor
 
     public void Execute(int index)
     {
+        if (!quantizedDensity.IsCreated || index < 0 || index >= quantizedDensity.Length)
+            return;
+
+        quantizedDensity[index] = 0;
+        if (!density.IsCreated || index >= density.Length || !math.isfinite(densityDecodeInvScale) ||
+            densityDecodeInvScale <= 0f || densityDecodeInvScale > MaxSafeDensityEncodeInvScale)
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.QuantizeInput);
+            return;
+        }
+
         float source = density[index];
-        if (!math.isfinite(source) && densityFaultFlags.IsCreated && densityFaultFlags.Length > 0)
-            densityFaultFlags[0] = 1;
+        if (!math.isfinite(source))
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.QuantizeInput);
         source = math.select(0f, source, math.isfinite(source));
         float scaled = math.clamp(source * densityDecodeInvScale, -127f, 127f);
+        if (!math.isfinite(scaled))
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.QuantizeInput);
+            scaled = 0f;
+        }
+
         int quantized = math.select((int)(scaled - 0.5f), (int)(scaled + 0.5f), scaled >= 0f);
         int minimumSignedStep = math.select(-1, 1, source >= 0f);
         quantized = math.select(quantized, minimumSignedStep, quantized == 0 && math.abs(source) > 0.00001f);
 
         quantizedDensity[index] = (sbyte)quantized;
+    }
+
+    void MarkDensityFault(int slot)
+    {
+        if (densityFaultFlags.IsCreated && (uint)slot < (uint)densityFaultFlags.Length)
+            densityFaultFlags[slot] = 1;
     }
 }
 
@@ -2397,6 +2636,11 @@ public struct VoxelDensityQuantizeJob : IJobParallelFor
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public unsafe struct VoxelMCExtractJob : IJobParallelFor
 {
+    private const int MarchingCubesCubeCount = 256;
+    private const int MarchingCubesTableStride = 16;
+    private const int MarchingCubesMaxVertexCount = 15;
+    private const float MaxSafeDensityDecodeScale = 1048576f;
+
     public int cellsX, cellsY, cellsZ;
     public int ptsX, ptsY, ptsZ;
     public float3 volumeOrigin;
@@ -2423,9 +2667,16 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
     // No other job writes outVertices until this job handle completes.
     [NativeDisableContainerSafetyRestriction, NoAlias]
     public NativeArray<MCRawVertex> outVertices;
+    [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> densityFaultFlags;
 
     public void Execute(int cellIdx)
     {
+        if (cellIdx < 0 || !HasSafeMarchingCubesInputs(cellIdx))
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.MarchingCubesExtractInput);
+            return;
+        }
+
         int cx = cellIdx % cellsX;
         int cy = (cellIdx / cellsX) % cellsY;
         int cz = cellIdx / (cellsX * cellsY);
@@ -2445,8 +2696,11 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
         if (edgeBits == 0) return;
 
         int vertCount = cellVertexCounts[cellIdx];
-        if (vertCount <= 0)
+        if (vertCount <= 0 || vertCount > MarchingCubesMaxVertexCount || vertCount % 3 != 0)
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.MarchingCubesExtractInput);
             return;
+        }
 
         float3 p0 = P(cx, cy, cz);
         float3 p1 = P(cx+1, cy, cz);
@@ -2456,6 +2710,12 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
         float3 p5 = P(cx+1, cy, cz+1);
         float3 p6 = P(cx+1, cy+1, cz+1);
         float3 p7 = P(cx, cy+1, cz+1);
+        if (!IsFinite(p0) || !IsFinite(p1) || !IsFinite(p2) || !IsFinite(p3) ||
+            !IsFinite(p4) || !IsFinite(p5) || !IsFinite(p6) || !IsFinite(p7))
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.MarchingCubesExtractInput);
+            return;
+        }
 
         int g0=GI(cx,cy,cz); int g1=GI(cx+1,cy,cz);
         int g2=GI(cx+1,cy+1,cz); int g3=GI(cx,cy+1,cz);
@@ -2484,8 +2744,11 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
 
         int triBase = cubeIndex * 16;
         int writeOffset = cellVertexOffsets[cellIdx];
-        if (writeOffset < 0 || writeOffset + vertCount > outVertices.Length)
+        if (writeOffset < 0 || writeOffset > outVertices.Length - vertCount)
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.MarchingCubesExtractOutput);
             return;
+        }
 
         int wi = writeOffset;
         for (int t = 0; t < vertCount; t += 3)
@@ -2511,14 +2774,40 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
     float D(int ix,int iy,int iz) => density[GI(ix,iy,iz)] * densityDecodeScale;
     float3 P(int ix,int iy,int iz) => volumeOrigin+new float3(ix,iy,iz)*voxelStep;
 
+    bool HasSafeMarchingCubesInputs(int cellIdx)
+    {
+        long totalCells = (long)cellsX * cellsY * cellsZ;
+        long densityLength = (long)ptsX * ptsY * ptsZ;
+        return density.IsCreated &&
+            cellVertexOffsets.IsCreated &&
+            cellVertexCounts.IsCreated &&
+            outVertices.IsCreated &&
+            edgeTable.Length >= MarchingCubesCubeCount &&
+            triTable.Length >= MarchingCubesCubeCount * MarchingCubesTableStride &&
+            cellsX > 0 && cellsY > 0 && cellsZ > 0 &&
+            ptsX > cellsX && ptsY > cellsY && ptsZ > cellsZ &&
+            IsFinite(volumeOrigin) &&
+            math.isfinite(voxelStep) && voxelStep > 0f &&
+            math.isfinite(densityDecodeScale) && densityDecodeScale > 0f && densityDecodeScale <= MaxSafeDensityDecodeScale &&
+            totalCells > 0L && cellIdx < totalCells &&
+            cellIdx < cellVertexOffsets.Length &&
+            cellIdx < cellVertexCounts.Length &&
+            densityLength > 0L && densityLength <= density.Length;
+    }
+
     static float3 Lerp(float3 pA,float3 pB,float dA,float dB)
     {
+        if (!IsFinite(pA) || !IsFinite(pB) || !math.isfinite(dA) || !math.isfinite(dB))
+            return float3.zero;
+
         float diff=dA-dB;
         float absDiff = math.abs(diff);
         float safeSign = math.select(-1f, 1f, diff >= 0f);
         float safeDiff = math.select(safeSign * 1e-6f, diff, absDiff >= 1e-6f);
         float t=math.select(0.5f, math.clamp(dA/safeDiff,0f,1f), absDiff >= 1e-6f);
-        return pA+t*(pB-pA);
+        t = math.select(0.5f, t, math.isfinite(t));
+        float3 result = pA+t*(pB-pA);
+        return math.select(float3.zero, result, IsFinite(result));
     }
 
     static int ResolveCubeIndex(float d0, float d1, float d2, float d3, float d4, float d5, float d6, float d7)
@@ -2561,6 +2850,17 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
             case 8:return id8;case 9:return id9;case 10:return id10;case 11:return id11;
             default:return 0;}
     }
+
+    void MarkDensityFault(int slot)
+    {
+        if (densityFaultFlags.IsCreated && (uint)slot < (uint)densityFaultFlags.Length)
+            densityFaultFlags[slot] = 1;
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2570,6 +2870,7 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
 public unsafe struct VoxelWeldJob : IJob
 {
     private const int InvalidVertexIndex = -1;
+    private const int MaxSafeWeldGridPointCount = int.MaxValue;
 
     public int rawCount;
     public int ptsX;
@@ -2584,23 +2885,50 @@ public unsafe struct VoxelWeldJob : IJob
     [WriteOnly, NoAlias]
     public NativeArray<int> triangleIndices;
     [NoAlias] public NativeArray<int> weldedCounter;
+    [NoAlias] public NativeArray<int> densityFaultFlags;
 
     public void Execute()
     {
+        if (!weldedCounter.IsCreated || weldedCounter.Length <= 0)
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.WeldInput);
+            return;
+        }
+
+        weldedCounter[0] = 0;
+        if (!HasSafeWeldInputs())
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.WeldInput);
+            return;
+        }
+
         int weldedCount = 0;
         for (int i = 0; i < rawCount; i++)
         {
             MCRawVertex rv = rawVertices[i];
+            if (!IsFinite(rv.localPosition))
+            {
+                MarkDensityFault(VoxelDensityPipelineFaultSlots.WeldInput);
+                rv.localPosition = float3.zero;
+            }
+
             if (TryResolveEdgeRegistrySlot(rv.edgeId, out int axis, out int edgeSlot))
             {
                 int existingIdx = ReadEdgeVertex(axis, edgeSlot);
-                if (existingIdx != InvalidVertexIndex)
+                if (existingIdx >= 0 && existingIdx < weldedCount)
                 {
                     triangleIndices[i] = existingIdx;
                     continue;
                 }
 
                 int newIdx = weldedCount;
+                if (newIdx >= weldedPositions.Length)
+                {
+                    MarkDensityFault(VoxelDensityPipelineFaultSlots.WeldOutput);
+                    triangleIndices[i] = InvalidVertexIndex;
+                    break;
+                }
+
                 weldedPositions[newIdx] = rv.localPosition;
                 WriteEdgeVertex(axis, edgeSlot, newIdx);
                 triangleIndices[i] = newIdx;
@@ -2609,6 +2937,13 @@ public unsafe struct VoxelWeldJob : IJob
             }
 
             int fallbackIdx = weldedCount;
+            if (fallbackIdx >= weldedPositions.Length)
+            {
+                MarkDensityFault(VoxelDensityPipelineFaultSlots.WeldOutput);
+                triangleIndices[i] = InvalidVertexIndex;
+                break;
+            }
+
             weldedPositions[fallbackIdx] = rv.localPosition;
             triangleIndices[i] = fallbackIdx;
             weldedCount++;
@@ -2616,10 +2951,35 @@ public unsafe struct VoxelWeldJob : IJob
         weldedCounter[0] = weldedCount;
     }
 
+    bool HasSafeWeldInputs()
+    {
+        long totalGridPoints = (long)ptsX * ptsY * ptsZ;
+        long expectedEdgeVertexX = (long)(ptsX - 1) * ptsY * ptsZ;
+        long expectedEdgeVertexY = (long)ptsX * (ptsY - 1) * ptsZ;
+        long expectedEdgeVertexZ = (long)ptsX * ptsY * (ptsZ - 1);
+        return rawCount >= 0 &&
+            ptsX > 1 && ptsY > 1 && ptsZ > 1 &&
+            totalGridPoints > 0L && totalGridPoints <= MaxSafeWeldGridPointCount &&
+            rawVertices.IsCreated && rawCount <= rawVertices.Length &&
+            weldedPositions.IsCreated && rawCount <= weldedPositions.Length &&
+            triangleIndices.IsCreated && rawCount <= triangleIndices.Length &&
+            edgeVertexX.IsCreated && expectedEdgeVertexX > 0L && expectedEdgeVertexX <= edgeVertexX.Length &&
+            edgeVertexY.IsCreated && expectedEdgeVertexY > 0L && expectedEdgeVertexY <= edgeVertexY.Length &&
+            edgeVertexZ.IsCreated && expectedEdgeVertexZ > 0L && expectedEdgeVertexZ <= edgeVertexZ.Length;
+    }
+
     bool TryResolveEdgeRegistrySlot(long packedEdge, out int axis, out int slot)
     {
         int lo = (int)(packedEdge & 0xFFFFFFFFL);
         int hi = (int)(packedEdge >> 32);
+        long totalGridPoints = (long)ptsX * ptsY * ptsZ;
+        if (lo < 0 || hi < 0 || hi <= lo || hi >= totalGridPoints)
+        {
+            axis = -1;
+            slot = -1;
+            return false;
+        }
+
         int strideX = ptsX;
         int strideXY = ptsX * ptsY;
         int diff = hi - lo;
@@ -2634,21 +2994,21 @@ public unsafe struct VoxelWeldJob : IJob
         {
             axis = 0;
             slot = x + y * cellsX + z * cellsX * ptsY;
-            return true;
+            return slot >= 0 && slot < edgeVertexX.Length;
         }
 
         if (diff == strideX && y < cellsY)
         {
             axis = 1;
             slot = x + y * ptsX + z * ptsX * cellsY;
-            return true;
+            return slot >= 0 && slot < edgeVertexY.Length;
         }
 
         if (diff == strideXY && z < cellsZ)
         {
             axis = 2;
             slot = x + y * ptsX + z * ptsX * ptsY;
-            return true;
+            return slot >= 0 && slot < edgeVertexZ.Length;
         }
 
         axis = -1;
@@ -2686,6 +3046,17 @@ public unsafe struct VoxelWeldJob : IJob
                 break;
         }
     }
+
+    void MarkDensityFault(int slot)
+    {
+        if (densityFaultFlags.IsCreated && (uint)slot < (uint)densityFaultFlags.Length)
+            densityFaultFlags[slot] = 1;
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
+    }
 }
 
 // -------------------------------------------------------------------------------
@@ -2706,37 +3077,96 @@ public struct VoxelNormalJob : IJobParallelFor
     [WriteOnly, NoAlias] public NativeArray<float3> normals;
     [WriteOnly, NoAlias] public NativeArray<float> curvatureValues;
     [WriteOnly, NoAlias] public NativeArray<float> ambientOcclusionValues;
+    [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> densityFaultFlags;
 
     public void Execute(int idx)
     {
+        if (!normals.IsCreated || !curvatureValues.IsCreated || !ambientOcclusionValues.IsCreated ||
+            idx < 0 || idx >= normals.Length || idx >= curvatureValues.Length || idx >= ambientOcclusionValues.Length)
+        {
+            MarkDensityFault(VoxelDensityPipelineFaultSlots.NormalFallback);
+            return;
+        }
+
+        if (!positions.IsCreated || !densityField.IsCreated || idx >= positions.Length || ptsX <= 1 || ptsY <= 1 ||
+            ptsZ <= 1 || densityStrideY <= 0 || densityStrideZ <= 0 || !IsFinite(volumeOrigin) ||
+            !math.isfinite(invVoxelStep) || invVoxelStep <= 0f || !HasCompleteDensityField())
+        {
+            WriteDefault(idx);
+            return;
+        }
+
         float3 wp = positions[idx];
+        if (!IsFinite(wp))
+        {
+            WriteDefault(idx);
+            return;
+        }
+
         float3 sample = (wp - volumeOrigin) * invVoxelStep;
+        if (!IsFinite(sample))
+        {
+            WriteDefault(idx);
+            return;
+        }
+
         int x = (int)math.clamp(sample.x + 0.5f, 0f, ptsX - 1f);
         int y = (int)math.clamp(sample.y + 0.5f, 0f, ptsY - 1f);
         int z = (int)math.clamp(sample.z + 0.5f, 0f, ptsZ - 1f);
         float4 gradientAndAo = SampleNearestGridGradientAndAo(x, y, z);
+        if (!IsFinite(gradientAndAo))
+        {
+            WriteDefault(idx);
+            return;
+        }
+
         float3 normal = ApproxNormalizeOrUp(-gradientAndAo.xyz);
         normals[idx] = normal;
 
-        float horizontalMask = math.saturate((math.abs(normal.x) + math.abs(normal.z)) * 0.5f);
-        float ceilingMask = math.saturate(-normal.y);
-        float neighborCavityMask = 1f - gradientAndAo.w;
-        float curvature01 = math.saturate(0.45f + horizontalMask * 0.18f - ceilingMask * 0.22f + neighborCavityMask * 0.12f);
+        float horizontalMask = SaturateFinite((math.abs(normal.x) + math.abs(normal.z)) * 0.5f);
+        float ceilingMask = SaturateFinite(-normal.y);
+        float neighborCavityMask = SaturateFinite(1f - gradientAndAo.w);
+        float curvature01 = SaturateFinite(0.45f + horizontalMask * 0.18f - ceilingMask * 0.22f + neighborCavityMask * 0.12f);
         curvatureValues[idx] = curvature01;
 
-        float cavityMask = math.saturate((0.5f - curvature01) * 2f);
-        float overheadMask = math.saturate(0.5f - normal.y * 0.5f);
-        ambientOcclusionValues[idx] = math.saturate(gradientAndAo.w - cavityMask * 0.24f - overheadMask * 0.12f);
+        float cavityMask = SaturateFinite((0.5f - curvature01) * 2f);
+        float overheadMask = SaturateFinite(0.5f - normal.y * 0.5f);
+        ambientOcclusionValues[idx] = SaturateFinite(gradientAndAo.w - cavityMask * 0.24f - overheadMask * 0.12f);
+    }
+
+    bool HasCompleteDensityField()
+    {
+        long expectedLength = (long)ptsX * ptsY * ptsZ;
+        long maxIndex = (long)(ptsX - 1) + (long)(ptsY - 1) * densityStrideY + (long)(ptsZ - 1) * densityStrideZ;
+        return expectedLength > 0L && expectedLength <= densityField.Length && maxIndex >= 0L && maxIndex < densityField.Length;
+    }
+
+    void WriteDefault(int idx)
+    {
+        MarkDensityFault(VoxelDensityPipelineFaultSlots.NormalFallback);
+        normals[idx] = new float3(0f, 1f, 0f);
+        curvatureValues[idx] = 0.5f;
+        ambientOcclusionValues[idx] = 1f;
+    }
+
+    void MarkDensityFault(int slot)
+    {
+        if (densityFaultFlags.IsCreated && (uint)slot < (uint)densityFaultFlags.Length)
+            densityFaultFlags[slot] = 1;
     }
 
     static float3 ApproxNormalizeOrUp(float3 value)
     {
+        if (!IsFinite(value))
+            return new float3(0f, 1f, 0f);
+
         float3 axis = math.abs(value);
         float maxAxis = math.cmax(axis);
         float minAxis = math.cmin(axis);
         float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
         float invLen = math.rcp(math.max(maxAxis + midAxis * 0.375f + minAxis * 0.25f, 0.0001f));
-        return math.select(new float3(0f, 1f, 0f), value * invLen, maxAxis > 0.0001f);
+        float3 normalized = value * invLen;
+        return math.select(new float3(0f, 1f, 0f), normalized, math.isfinite(maxAxis) && maxAxis > 0.0001f && IsFinite(normalized));
     }
 
     float4 SampleNearestGridGradientAndAo(int x, int y, int z)
@@ -2769,7 +3199,22 @@ public struct VoxelNormalJob : IJobParallelFor
             math.select(center - xm, xp - center, x < ptsX - 1),
             math.select(center - ym, yp - center, y < ptsY - 1),
             math.select(center - zm, zp - center, z < ptsZ - 1),
-            neighborAo);
+            SaturateFinite(neighborAo));
+    }
+
+    static float SaturateFinite(float value)
+    {
+        return math.select(0f, math.saturate(value), math.isfinite(value));
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
+    }
+
+    static bool IsFinite(float4 value)
+    {
+        return math.all(math.isfinite(value));
     }
 }
 
@@ -2788,13 +3233,15 @@ public struct VoxelTerrainSeamSnapJob : IJobParallelFor
 
     public void Execute(int idx)
     {
+        long terrainGridLength = (long)ptsX * ptsZ;
         if (!terrainHeights.IsCreated ||
             !positions.IsCreated ||
             idx < 0 ||
             idx >= positions.Length ||
             ptsX <= 1 ||
             ptsZ <= 1 ||
-            terrainHeights.Length < ptsX * ptsZ ||
+            terrainGridLength <= 0L ||
+            terrainGridLength > terrainHeights.Length ||
             !math.isfinite(voxelStep) ||
             voxelStep <= 0.0001f ||
             !math.isfinite(seamTransitionBand) ||
@@ -2877,6 +3324,7 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
 
     public void Execute(int idx)
     {
+        long terrainGridLength = (long)ptsX * ptsZ;
         if (!terrainHeights.IsCreated ||
             !positions.IsCreated ||
             !normals.IsCreated ||
@@ -2885,7 +3333,8 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
             idx >= normals.Length ||
             ptsX <= 1 ||
             ptsZ <= 1 ||
-            terrainHeights.Length < ptsX * ptsZ ||
+            terrainGridLength <= 0L ||
+            terrainGridLength > terrainHeights.Length ||
             !math.isfinite(voxelStep) ||
             voxelStep <= 0.0001f ||
             !math.isfinite(seamTransitionBand) ||
@@ -3034,7 +3483,27 @@ public struct VoxelShiftAwareProjectionJob : IJobParallelFor
 
     public void Execute(int index)
     {
-        projectedPositions[index] = sourcePositions[index] + rebaseDelta - rootRuntimePosition;
+        if (!projectedPositions.IsCreated || index < 0 || index >= projectedPositions.Length)
+            return;
+
+        projectedPositions[index] = float3.zero;
+        if (!sourcePositions.IsCreated || index >= sourcePositions.Length || !IsFinite(rebaseDelta) || !IsFinite(rootRuntimePosition))
+            return;
+
+        float3 source = sourcePositions[index];
+        if (!IsFinite(source))
+            return;
+
+        float3 projected = source + rebaseDelta - rootRuntimePosition;
+        if (!IsFinite(projected))
+            return;
+
+        projectedPositions[index] = projected;
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
     }
 }
 
@@ -3057,12 +3526,14 @@ public struct VoxelBiomeSampleJob : IJobParallelFor
         if (!biomeValues.IsCreated || idx < 0 || idx >= biomeValues.Length)
             return;
 
+        long biomeGridLength = (long)ptsX * ptsZ;
         if (!gridBiome.IsCreated ||
             !positions.IsCreated ||
             idx >= positions.Length ||
             ptsX <= 1 ||
             ptsZ <= 1 ||
-            gridBiome.Length < ptsX * ptsZ ||
+            biomeGridLength <= 0L ||
+            biomeGridLength > gridBiome.Length ||
             !math.isfinite(voxelStep) ||
             voxelStep <= 0.0001f ||
             !IsFinite(volumeOrigin))
@@ -3147,13 +3618,19 @@ public struct VoxelColorJob : IJobParallelFor
 
     public void Execute(int idx)
     {
+        if (!colors.IsCreated || idx < 0 || idx >= colors.Length)
+            return;
+
+        if (!positions.IsCreated || idx >= positions.Length)
+        {
+            WriteClearColor(idx);
+            return;
+        }
+
         float3 p = positions[idx];
         if (!IsFinite(p))
         {
-            if (skirtAlphaValues.IsCreated && idx < skirtAlphaValues.Length)
-                skirtAlphaValues[idx] = 0f;
-
-            colors[idx] = Color.clear;
+            WriteClearColor(idx);
             return;
         }
 
@@ -3169,10 +3646,12 @@ public struct VoxelColorJob : IJobParallelFor
         float caveCenterAo = SaturateFinite(0.52f + distFromCenterSq01 * 0.48f) * localizedAo;
 
         float terrainSkirt = 0f;
+        long terrainGridLength = (long)ptsX * ptsZ;
         if (terrainHeights.IsCreated &&
             ptsX > 1 &&
             ptsZ > 1 &&
-            terrainHeights.Length >= ptsX * ptsZ &&
+            terrainGridLength > 0L &&
+            terrainGridLength <= terrainHeights.Length &&
             IsFinite(volumeOrigin) &&
             math.isfinite(voxelStep) &&
             voxelStep > 0f)
@@ -3188,8 +3667,8 @@ public struct VoxelColorJob : IJobParallelFor
         float lodEdgeSkirt = 0f;
         if (lodLevel > 0 && ptsX > 1 && ptsZ > 1 && IsFinite(volumeOrigin) && math.isfinite(voxelStep) && voxelStep > 0f)
         {
-            float volumeSizeX = (ptsX - 1) * voxelStep;
-            float volumeSizeZ = (ptsZ - 1) * voxelStep;
+            float volumeSizeX = ClampFinite((ptsX - 1) * voxelStep, 0f, 0f, MaxSafeColorVolumeExtent);
+            float volumeSizeZ = ClampFinite((ptsZ - 1) * voxelStep, 0f, 0f, MaxSafeColorVolumeExtent);
             float localX = p.x - volumeOrigin.x;
             float localZ = p.z - volumeOrigin.z;
             float edgeDist = math.min(localX, math.min(volumeSizeX - localX, math.min(localZ, volumeSizeZ - localZ)));
@@ -3211,9 +3690,17 @@ public struct VoxelColorJob : IJobParallelFor
             colorPayload.x = 1f;
 
         if (skirtAlphaValues.IsCreated && idx < skirtAlphaValues.Length)
-            skirtAlphaValues[idx] = math.max(skirtAlphaValues[idx], skirtAlpha);
+            skirtAlphaValues[idx] = math.max(SaturateFinite(skirtAlphaValues[idx]), skirtAlpha);
 
         colors[idx] = new Color(colorPayload.x, colorPayload.y, colorPayload.z, colorPayload.w);
+    }
+
+    void WriteClearColor(int idx)
+    {
+        if (skirtAlphaValues.IsCreated && idx < skirtAlphaValues.Length)
+            skirtAlphaValues[idx] = 0f;
+
+        colors[idx] = Color.clear;
     }
 
     bool IsModifiedSdfCell(float3 position)
@@ -3530,16 +4017,26 @@ public struct VoxelSpawnPointJob : IJob
 
     public void Execute()
     {
-        int count = math.min(positions.IsCreated ? positions.Length : 0, normals.IsCreated ? normals.Length : 0);
+        if (!positions.IsCreated ||
+            !normals.IsCreated ||
+            !spawnPoints.IsCreated ||
+            !spawnPointCount.IsCreated ||
+            spawnPointCount.Length <= 0)
+        {
+            return;
+        }
+
+        int capacity = math.min(spawnPointCapacity, spawnPoints.Length);
+        if (capacity <= 0)
+            return;
+
+        int count = math.min(positions.Length, normals.Length);
         for (int idx = 0; idx < count; idx++)
             TryAddSpawnPoint(idx);
     }
 
     void TryAddSpawnPoint(int idx)
     {
-        if (!spawnPoints.IsCreated || !spawnPointCount.IsCreated || spawnPointCount.Length <= 0)
-            return;
-
         int writeIndex = spawnPointCount[0];
         int capacity = math.min(spawnPointCapacity, spawnPoints.Length);
         if (writeIndex < 0 || writeIndex >= capacity)
@@ -3690,6 +4187,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     private const float VoxelPressureColliderDisableDistanceMeters = 120f;
     private const float VoxelColliderFakePressureFactor = 0.85f;
     private const float VoxelPhysicsBakeProxyMinHeightMeters = 1f;
+    private const float VoxelColliderProxyMinExtentMeters = 0.01f;
+    private const float VoxelColliderProxyMaxExtentMeters = 1048576f;
     private const float VoxelTerrainSnapHysteresisMeters = 0.05f;
     private const string VoxelBakeProxyRuntimeName = "VoxelBakeProxy";
     private const float OverhangCameraCullDotThreshold = -0.3f;
@@ -3702,6 +4201,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     private const float MinRuntimeCaveEntranceHoleRadius = 0.1f;
     private const float MaxRuntimeCaveEntranceHoleRadius = 96f;
     private const float MaxRuntimeCaveEntranceHolePadding = 24f;
+    private const float MinRuntimeMapMagicTileSize = 1f;
+    private const float MaxRuntimeMapMagicTileSize = 1048576f;
     private const float MinRuntimeCaveGraphBucketRadius = 0.1f;
     private const float MaxRuntimeCaveGraphBucketRadius = 256f;
     private const float MaxRuntimeCaveGraphBucketBlendRadius = 96f;
@@ -3725,6 +4226,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     private const uint VoxelMeshPipelineNullVolumeColliderFallbackFlag = 1u << 5;
     private const uint VoxelMeshPipelineRegistryCorruptionFlag = 1u << 6;
     private const uint VoxelMeshPipelineRebuildFailClosedFlag = 1u << 7;
+    private const uint VoxelMeshPipelineDensityEvaluationFaultFlag = 1u << 8;
+    private const uint VoxelMeshPipelineQuantizeInputFaultFlag = 1u << 9;
+    private const uint VoxelMeshPipelineMarchingCubesCountInputFaultFlag = 1u << 10;
+    private const uint VoxelMeshPipelineMarchingCubesExtractInputFaultFlag = 1u << 11;
+    private const uint VoxelMeshPipelineMarchingCubesExtractOutputFaultFlag = 1u << 12;
+    private const uint VoxelMeshPipelineWeldInputFaultFlag = 1u << 13;
+    private const uint VoxelMeshPipelineWeldOutputFaultFlag = 1u << 14;
+    private const uint VoxelMeshPipelineNormalFallbackFaultFlag = 1u << 15;
     private const uint VoxelMeshPipelineBlackBoxDumpMagic = 0x564D5042u; // VMPB
     private const string VoxelMeshPipelineBlackBoxPrimaryDumpRelativePath = "Docs/AgentLogs/Dump_VOXEL_MESH_PIPELINE.bin";
     private const string VoxelMeshPipelineBlackBoxAgentDumpRelativePath = "Docs/AgentLogs/Dump_1315_VoxelEngine.bin";
@@ -3841,6 +4350,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     const int StreamingCellScratchMax = 2097152;
     const int StreamingEdgeVertexScratchMax = 2130048;
     const int StreamingSpawnPointScratchMax = StreamingCellScratchMax / 10;
+    const int StreamingScratchSlotMax = 8;
     const double VoxelRebuildBudgetMilliseconds = 5.0d;
     const int VoxelRebuildBudgetStrikeFrames = 3;
     const uint VoxelRebuildLaneHash = 0x56584F4Cu;
@@ -4274,6 +4784,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     }
 
     private static bool IsFiniteFloat3(float3 value)
+    {
+        return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+    }
+
+    private static bool IsFiniteDouble3(double3 value)
     {
         return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
     }
@@ -4884,7 +5399,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     {
         if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
         {
-            _objectPoolService = currentService as IObjectPoolService;
+            CacheObjectPoolService(currentService as ObjectPoolManager);
             return;
         }
 
@@ -4911,12 +5426,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (serviceSlot == GlobalRegistryServiceSlot.ScavengePopulatorRuntime)
         {
             _scavengePopulator = currentService as ScavengePopulator;
+            WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref _scavengePopulator);
             return;
         }
 
         if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
         {
             _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
             return;
         }
 
@@ -4944,15 +5461,50 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     void CacheRuntimeServicesCold()
     {
-        _objectPoolService = GlobalRegistry.ObjectPoolService;
+        CacheObjectPoolService(null);
         _physicsService = GlobalRegistry.Physics;
         _vramPressureReadModel = GlobalRegistry.VRAMPressureReadModel;
         _lodSystemManager = GlobalRegistry.LODSystem;
-        _scavengePopulator = GlobalRegistry.ScavengePopulator;
-        _vegetationBridge = GlobalRegistry.MapMagicVegetation;
+        WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref _scavengePopulator);
+        WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
         _resourceDistributionDirector = GlobalRegistry.ResourceDistribution;
         s_playerRuntimeContext = GlobalRegistry.Player;
         _streamingScratchVault = GlobalRegistry.DataVault;
+    }
+
+    void CacheObjectPoolService(ObjectPoolManager candidate)
+    {
+        ObjectPoolManager pool = candidate;
+        if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+            ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+        {
+            _objectPoolService = pool;
+            return;
+        }
+
+        _objectPoolService = null;
+    }
+
+    bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+    {
+        ObjectPoolManager cached = _objectPoolService as ObjectPoolManager;
+        if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+        {
+            pool = cached;
+            return true;
+        }
+
+        ObjectPoolManager resolved = cached;
+        if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+        {
+            _objectPoolService = resolved;
+            pool = resolved;
+            return true;
+        }
+
+        _objectPoolService = null;
+        pool = null;
+        return false;
     }
 
     bool TryResolvePooledRootComponent<T>(GameObject owner, out T component) where T : Component
@@ -4961,8 +5513,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (owner == null)
             return false;
 
-        IObjectPoolService pool = _objectPoolService;
-        if (pool != null && pool.TryGetPooledComponent(owner, out component) && component != null)
+        if (TryResolveCachedObjectPool(out IObjectPoolService pool) &&
+            pool.TryGetPooledComponent(owner, out component) &&
+            component != null)
             return true;
 
 #if UNITY_EDITOR
@@ -6134,8 +6687,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (voxelVolume != null)
             voxelVolume.PrepareForReuse();
 
-        IObjectPoolService pool = _objectPoolService;
-        if (pool != null && voxelVolumePrefab != null)
+        if (TryResolveCachedObjectPool(out IObjectPoolService pool) && voxelVolumePrefab != null)
         {
             VoxelVolumeLeakSentinel.MarkReleasedToPool(voxelVolume);
             ReleaseOrDestroySurfaceMesh(mf, destroyIfUnpooled: false);
@@ -6173,8 +6725,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 if (voxelVolume != null)
                     voxelVolume.PrepareForReuse();
 
-                IObjectPoolService pool = _objectPoolService;
-                if (pool != null && voxelVolumePrefab != null)
+                if (TryResolveCachedObjectPool(out IObjectPoolService pool) && voxelVolumePrefab != null)
                 {
                     VoxelVolumeLeakSentinel.MarkReleasedToPool(voxelVolume);
                     ReleaseOrDestroySurfaceMesh(mf, destroyIfUnpooled: false);
@@ -7101,8 +7652,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         double3 pathMinAup,
         double3 pathMaxAup)
     {
-        if (hasProxyBounds == 0)
+        if (hasProxyBounds == 0 ||
+            !IsFiniteDouble3(proxyMinAup) ||
+            !IsFiniteDouble3(proxyMaxAup) ||
+            !IsFiniteDouble3(pathMinAup) ||
+            !IsFiniteDouble3(pathMaxAup))
+        {
             return false;
+        }
 
         return proxyMinAup.x <= pathMaxAup.x && proxyMaxAup.x >= pathMinAup.x &&
                proxyMinAup.y <= pathMaxAup.y && proxyMaxAup.y >= pathMinAup.y &&
@@ -7117,8 +7674,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return false;
 
         Bounds bounds = proxy.bounds;
-        if (bounds.size.sqrMagnitude <= 0.0001f)
+        if (!IsFiniteVector(bounds.min) ||
+            !IsFiniteVector(bounds.max) ||
+            !IsFiniteVector(bounds.size) ||
+            !math.isfinite(bounds.size.sqrMagnitude) ||
+            bounds.size.sqrMagnitude <= 0.0001f)
+        {
             return false;
+        }
 
         if (!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup) ||
             !TryResolveRuntimeAbsoluteDouble(bounds.min, in originAup, out double3 minAup) ||
@@ -7128,9 +7691,25 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
 
         double padding = PredictiveVoxelProxyCinematicPaddingMeters;
+        if (!math.isfinite(padding) || padding < 0d)
+            return false;
+
         proxyMinAup = minAup - new double3(padding);
         proxyMaxAup = maxAup + new double3(padding);
-        return true;
+        return IsFiniteDouble3(proxyMinAup) && IsFiniteDouble3(proxyMaxAup);
+    }
+
+    private static void EnableVoxelProxyCollider(BoxCollider proxyCollider)
+    {
+        if (proxyCollider == null)
+            return;
+
+        EnsureVoxelProxyLayerFiltering();
+        proxyCollider.gameObject.layer = HectonLayerMasks.VoxelProxy;
+        if (!proxyCollider.gameObject.activeSelf)
+            proxyCollider.gameObject.SetActive(true);
+
+        proxyCollider.enabled = true;
     }
 
     private static bool TryResolvePredictiveVoxelProxyTarget(
@@ -7227,11 +7806,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     {
         EnsureVoxelProxyLayerFiltering();
         DisableDeferredVoxelBakePresentation(owner, renderer, collider, flags);
-        if (proxyCollider != null)
-        {
-            proxyCollider.gameObject.layer = HectonLayerMasks.VoxelProxy;
-            proxyCollider.enabled = true;
-        }
+        EnableVoxelProxyCollider(proxyCollider);
 
         uint proxyShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
         bool hasProxyBounds = TryCacheDeferredVoxelProxyAupBounds(proxyCollider, out double3 proxyMinAup, out double3 proxyMaxAup);
@@ -7319,8 +7894,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
         DisableDeferredVoxelBakePresentation(owner, renderer, collider, flags);
 
-        if (proxyCollider != null)
-            proxyCollider.enabled = true;
+        EnableVoxelProxyCollider(proxyCollider);
 
         if (mesh != null)
         {
@@ -7450,18 +8024,15 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 Mathf.Ceil(frameBudget - DeferredVoxelPhysicsBakeTeardownBurstCapBias),
                 DeferredVoxelPhysicsBakeTeardownBudgetPerFrame,
                 DeferredVoxelPhysicsBakeTeardownBudgetVisualOverkillPerFrame);
-            _deferredVoxelPhysicsBakeTeardownBudgetTokens = Mathf.Min(
+            AccumulateDeferredVoxelBudgetTokens(
+                ref _deferredVoxelPhysicsBakeTeardownBudgetTokens,
                 frameCap,
-                _deferredVoxelPhysicsBakeTeardownBudgetTokens + frameBudget);
+                frameBudget);
         }
 
-        int budget = math.min(
-            (int)DeferredVoxelPhysicsBakeTeardownBudgetVisualOverkillPerFrame,
-            (int)math.floor(_deferredVoxelPhysicsBakeTeardownBudgetTokens));
-        if (budget > 0)
-            _deferredVoxelPhysicsBakeTeardownBudgetTokens -= budget;
-
-        return budget;
+        return ConsumeDeferredVoxelBudgetTokens(
+            ref _deferredVoxelPhysicsBakeTeardownBudgetTokens,
+            (int)DeferredVoxelPhysicsBakeTeardownBudgetVisualOverkillPerFrame);
     }
 
     private static float ResolveDeferredVoxelPhysicsBakeTeardownBudgetPerFrame()
@@ -7520,8 +8091,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             pending.Collider.enabled = false;
         }
 
-        if (pending.ProxyCollider != null)
-            pending.ProxyCollider.enabled = true;
+        EnableVoxelProxyCollider(pending.ProxyCollider);
 
         if (pending.Mesh != null)
         {
@@ -7536,6 +8106,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static void RemoveDeferredVoxelPhysicsBakeTeardownAt(int index)
     {
+        if ((uint)index >= (uint)_deferredVoxelPhysicsBakeTeardowns.Count)
+            return;
+
         int lastIndex = _deferredVoxelPhysicsBakeTeardowns.Count - 1;
         if (index != lastIndex)
             _deferredVoxelPhysicsBakeTeardowns[index] = _deferredVoxelPhysicsBakeTeardowns[lastIndex];
@@ -7687,11 +8260,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (collider != null)
             collider.enabled = false;
 
-        if (proxyCollider != null)
-        {
-            proxyCollider.gameObject.layer = HectonLayerMasks.VoxelProxy;
-            proxyCollider.enabled = true;
-        }
+        EnableVoxelProxyCollider(proxyCollider);
 
         return false;
     }
@@ -7704,11 +8273,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         pending.ProxyCollider = proxyCollider;
         pending.RetryCount = 0;
-        if (proxyCollider != null)
-        {
-            proxyCollider.gameObject.layer = HectonLayerMasks.VoxelProxy;
-            proxyCollider.enabled = true;
-        }
+        EnableVoxelProxyCollider(proxyCollider);
 
         RefreshDeferredVoxelUploadProxyBounds(ref pending, HectonFloatingOrigin.CurrentShiftSequence);
     }
@@ -7718,8 +8283,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if ((pending.Flags & DeferredVoxelColliderUploadVolumeFlag) != 0 && pending.Volume != null)
             pending.Volume.EnableColliderChunkProxy(pending.ChunkIndex);
 
-        if (pending.ProxyCollider != null)
-            pending.ProxyCollider.enabled = true;
+        EnableVoxelProxyCollider(pending.ProxyCollider);
 
         if (!publishRetryDropWarning || _voxelColliderUploadRetryDropWarningArmed)
             return;
@@ -7757,8 +8321,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 _deferredVoxelColliderUploads.Count);
         }
 
-        if (proxyCollider != null)
-            proxyCollider.enabled = true;
+        EnableVoxelProxyCollider(proxyCollider);
         return false;
     }
 
@@ -7847,15 +8410,43 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 Mathf.Ceil(frameBudget - DeferredVoxelColliderUploadBurstCapBias),
                 DeferredVoxelColliderUploadBudgetPerFrame,
                 DeferredVoxelColliderUploadBudgetVisualOverkillPerFrame);
-            _deferredVoxelColliderUploadBudgetTokens = Mathf.Min(frameCap, _deferredVoxelColliderUploadBudgetTokens + frameBudget);
+            AccumulateDeferredVoxelBudgetTokens(
+                ref _deferredVoxelColliderUploadBudgetTokens,
+                frameCap,
+                frameBudget);
         }
 
-        int budget = math.min(
-            (int)DeferredVoxelColliderUploadBudgetVisualOverkillPerFrame,
-            (int)math.floor(_deferredVoxelColliderUploadBudgetTokens));
-        if (budget > 0)
-            _deferredVoxelColliderUploadBudgetTokens -= budget;
+        return ConsumeDeferredVoxelBudgetTokens(
+            ref _deferredVoxelColliderUploadBudgetTokens,
+            (int)DeferredVoxelColliderUploadBudgetVisualOverkillPerFrame);
+    }
 
+    private static void AccumulateDeferredVoxelBudgetTokens(ref float tokenBucket, float frameCap, float frameBudget)
+    {
+        if (!math.isfinite(tokenBucket) || tokenBucket < 0f)
+            tokenBucket = 0f;
+
+        float safeFrameCap = math.isfinite(frameCap) && frameCap > 0f ? frameCap : 0f;
+        float safeFrameBudget = math.isfinite(frameBudget) && frameBudget > 0f ? frameBudget : 0f;
+        tokenBucket = math.min(safeFrameCap, tokenBucket + safeFrameBudget);
+    }
+
+    private static int ConsumeDeferredVoxelBudgetTokens(ref float tokenBucket, int maxBudget)
+    {
+        if (maxBudget <= 0 || !math.isfinite(tokenBucket) || tokenBucket <= 0f)
+        {
+            tokenBucket = 0f;
+            return 0;
+        }
+
+        int budget = math.min(maxBudget, (int)math.floor(tokenBucket));
+        if (budget <= 0)
+        {
+            tokenBucket = math.max(0f, tokenBucket);
+            return 0;
+        }
+
+        tokenBucket = math.max(0f, tokenBucket - budget);
         return budget;
     }
 
@@ -8028,14 +8619,64 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             _deferredVoxelColliderUploads.Count);
     }
 
-    private static void ReportVoxelInvalidDensityField()
+    private static void ReportVoxelInvalidDensityField(uint densityFaultMask = 0u)
     {
         WriteVoxelMeshPipelineBlackBoxSample(
             Hecton8.Core.SystemDispatcher.CurrentFrameId,
-            VoxelMeshPipelineInvalidMeshDataFlag,
+            VoxelMeshPipelineInvalidMeshDataFlag | densityFaultMask,
             _voxelChunksMeshedThisFrame,
             DeferredVoxelPhysicsBakePendingCount,
             _deferredVoxelColliderUploads.Count);
+    }
+
+    private static uint ResolveVoxelDensityFaultMask(NativeArray<int> densityFaultFlags)
+    {
+        if (!densityFaultFlags.IsCreated)
+            return 0u;
+
+        uint mask = 0u;
+        if (IsVoxelDensityFaultSlotSet(densityFaultFlags, VoxelDensityPipelineFaultSlots.DensityEvaluation))
+            mask |= VoxelMeshPipelineDensityEvaluationFaultFlag;
+        if (IsVoxelDensityFaultSlotSet(densityFaultFlags, VoxelDensityPipelineFaultSlots.QuantizeInput))
+            mask |= VoxelMeshPipelineQuantizeInputFaultFlag;
+        if (IsVoxelDensityFaultSlotSet(densityFaultFlags, VoxelDensityPipelineFaultSlots.MarchingCubesCountInput))
+            mask |= VoxelMeshPipelineMarchingCubesCountInputFaultFlag;
+        if (IsVoxelDensityFaultSlotSet(densityFaultFlags, VoxelDensityPipelineFaultSlots.MarchingCubesExtractInput))
+            mask |= VoxelMeshPipelineMarchingCubesExtractInputFaultFlag;
+        if (IsVoxelDensityFaultSlotSet(densityFaultFlags, VoxelDensityPipelineFaultSlots.MarchingCubesExtractOutput))
+            mask |= VoxelMeshPipelineMarchingCubesExtractOutputFaultFlag;
+        if (IsVoxelDensityFaultSlotSet(densityFaultFlags, VoxelDensityPipelineFaultSlots.WeldInput))
+            mask |= VoxelMeshPipelineWeldInputFaultFlag;
+        if (IsVoxelDensityFaultSlotSet(densityFaultFlags, VoxelDensityPipelineFaultSlots.WeldOutput))
+            mask |= VoxelMeshPipelineWeldOutputFaultFlag;
+        if (IsVoxelDensityFaultSlotSet(densityFaultFlags, VoxelDensityPipelineFaultSlots.NormalFallback))
+            mask |= VoxelMeshPipelineNormalFallbackFaultFlag;
+
+        return mask;
+    }
+
+    private static bool IsVoxelDensityFaultSlotSet(NativeArray<int> densityFaultFlags, int slot)
+    {
+        return (uint)slot < (uint)densityFaultFlags.Length && densityFaultFlags[slot] != 0;
+    }
+
+    private static void ClearVoxelDensityFaultFlags(NativeArray<int> densityFaultFlags)
+    {
+        if (!densityFaultFlags.IsCreated)
+            return;
+
+        int count = math.min(densityFaultFlags.Length, VoxelDensityPipelineFaultSlots.SlotCount);
+        for (int i = 0; i < count; i++)
+            densityFaultFlags[i] = 0;
+    }
+
+    private static void ReportAndClearVoxelDensityFaults(NativeArray<int> densityFaultFlags)
+    {
+        uint faultMask = ResolveVoxelDensityFaultMask(densityFaultFlags);
+        if (faultMask != 0u)
+            ReportVoxelInvalidDensityField(faultMask);
+
+        ClearVoxelDensityFaultFlags(densityFaultFlags);
     }
 
     private static void ReportVoxelVolumeSpawnPoolMiss()
@@ -8321,6 +8962,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static void RemoveDeferredVoxelColliderUploadAt(int index)
     {
+        if ((uint)index >= (uint)_deferredVoxelColliderUploads.Count)
+            return;
+
         int lastIndex = _deferredVoxelColliderUploads.Count - 1;
         if (index != lastIndex)
             _deferredVoxelColliderUploads[index] = _deferredVoxelColliderUploads[lastIndex];
@@ -8335,13 +8979,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     {
         if (collider == null || mesh == null)
         {
-            if (proxyCollider != null)
-                proxyCollider.enabled = true;
+            EnableVoxelProxyCollider(proxyCollider);
             return proxyCollider != null;
         }
 
-        if (proxyCollider != null)
-            proxyCollider.enabled = true;
+        EnableVoxelProxyCollider(proxyCollider);
 
         collider.enabled = false;
         return proxyCollider != null;
@@ -8460,23 +9102,22 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
     {
+        playerAup = AbsoluteUniversePosition.Invalid();
         IPlayerRuntimeContext playerRuntimeContext = s_playerRuntimeContext;
-        if (playerRuntimeContext != null &&
-            playerRuntimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
-            (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+        if (playerRuntimeContext != null)
         {
-            playerAup = movementState.PredictedAup;
-            return AbsoluteUniversePosition.IsFinite(in playerAup);
+            if (playerRuntimeContext.IsInitialized &&
+                playerRuntimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                AbsoluteUniversePosition.IsFinite(in movementState.PredictedAup))
+            {
+                playerAup = movementState.PredictedAup;
+                return true;
+            }
+
+            return false;
         }
 
-        HectonPlayerMovement playerMovement = playerRuntimeContext != null ? playerRuntimeContext.PlayerMovement : null;
-        if (playerMovement != null)
-        {
-            playerAup = playerMovement.CurrentAup;
-            return true;
-        }
-
-        playerAup = default;
         return false;
     }
 
@@ -9101,8 +9742,12 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     {
         IPlayerRuntimeContext playerContext = s_playerRuntimeContext;
         if (playerContext == null ||
+            !playerContext.IsInitialized ||
             !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
-            !playerContext.TryGetLookRuntimeState(out PlayerLookState lookState))
+            (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+            !AbsoluteUniversePosition.IsFinite(in movementState.PredictedAup) ||
+            !playerContext.TryGetLookRuntimeState(out PlayerLookState lookState) ||
+            (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
         {
             return true;
         }
@@ -9336,7 +9981,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             !chunkContentFlags.IsCreated ||
             chunkContentFlags.Length < 1 ||
             !densityFaultFlags.IsCreated ||
-            densityFaultFlags.Length < 1 ||
+            densityFaultFlags.Length < VoxelDensityPipelineFaultSlots.SlotCount ||
             !cellVertexCounts.IsCreated ||
             cellVertexCounts.Length < data.TotalCells ||
             !cellVertexOffsets.IsCreated ||
@@ -9345,7 +9990,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             ReportVoxelMeshScratchCapacityOverflow();
             return false;
         }
-        densityFaultFlags[0] = 0;
+        ClearVoxelDensityFaultFlags(densityFaultFlags);
         bool navGridScheduled = false;
         JobHandle navGridHandle = default;
 
@@ -9493,11 +10138,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         PublishVoxelAnomalySolveWarningIfNeeded(anomalySolveStartTimestamp);
         if (ct.IsCancellationRequested)
             return false;
-        if (densityFaultFlags[0] != 0)
-        {
-            ReportVoxelInvalidDensityField();
-            densityFaultFlags[0] = 0;
-        }
+        ReportAndClearVoxelDensityFaults(densityFaultFlags);
         if (chunkContentFlags[0] == 0)
         {
             data.RawCount = 0;
@@ -9553,15 +10194,15 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 density = quantizedDensityField,
                 edgeTable = mcCountTables.EdgeTable,
                 triTable = mcCountTables.TriTable,
-                cellVertexCounts = cellVertexCounts
+                cellVertexCounts = cellVertexCounts,
+                densityFaultFlags = densityFaultFlags
             }.Schedule(data.TotalCells, JOB_BATCH, quantizeDensityHandle);
 
             JobHandle firstPhaseHandle = navGridScheduled
                 ? JobHandle.CombineDependencies(mcCountHandle, navGridHandle)
                 : mcCountHandle;
             await AwaitForJobCompletionAsync(firstPhaseHandle, ct, "density/count phase");
-            if (densityFaultFlags[0] != 0)
-                ReportVoxelInvalidDensityField();
+            ReportAndClearVoxelDensityFaults(densityFaultFlags);
             if (navGridScheduled)
                 VoxelDynamicNavGridRuntime.CommitBuild(data.SourceVolume, data.SourceRuntimeStamp);
         }
@@ -9608,6 +10249,13 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         quantizedDensityField = data.ScratchLease.QuantizedDensityField;
         cellVertexCounts = data.ScratchLease.CellVertexCounts;
         cellVertexOffsets = data.ScratchLease.CellVertexOffsets;
+        densityFaultFlags = data.ScratchLease.DensityFaultFlags;
+        if (!densityFaultFlags.IsCreated || densityFaultFlags.Length < VoxelDensityPipelineFaultSlots.SlotCount)
+        {
+            ReportVoxelMeshScratchCapacityOverflow();
+            return false;
+        }
+        ClearVoxelDensityFaultFlags(densityFaultFlags);
 
         JobHandle clearEdgeXHandle = new VoxelFillIntArrayJob
         {
@@ -9652,7 +10300,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 triTable = mcExtractTables.TriTable,
                 cellVertexOffsets = cellVertexOffsets,
                 cellVertexCounts = cellVertexCounts,
-                outVertices = data.RawVertices
+                outVertices = data.RawVertices,
+                densityFaultFlags = densityFaultFlags
             }.Schedule(data.TotalCells, JOB_BATCH);
 
             await AwaitForJobCompletionAsync(mcHandle, ct, "marching-cubes extract");
@@ -9682,12 +10331,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 edgeVertexZ = data.EdgeVertexZ,
                 weldedPositions = data.WeldedPositions,
                 triangleIndices = data.TriangleIndices,
-                weldedCounter = weldedCounter
+                weldedCounter = weldedCounter,
+                densityFaultFlags = densityFaultFlags
             }.Schedule();
 
             await AwaitForJobCompletionAsync(weldHandle, ct, "vertex weld");
 
             data.WeldedCount = weldedCounter[0];
+            ReportAndClearVoxelDensityFaults(densityFaultFlags);
         }
         finally
         {
@@ -9731,6 +10382,13 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         terrainHeights = data.ScratchLease.TerrainHeights;
         gridBiome = data.ScratchLease.GridBiome;
         quantizedDensityField = data.ScratchLease.QuantizedDensityField;
+        densityFaultFlags = data.ScratchLease.DensityFaultFlags;
+        if (!densityFaultFlags.IsCreated || densityFaultFlags.Length < VoxelDensityPipelineFaultSlots.SlotCount)
+        {
+            ReportVoxelMeshScratchCapacityOverflow();
+            return false;
+        }
+        ClearVoxelDensityFaultFlags(densityFaultFlags);
 
         JobHandle clearSkirtAlphaHandle = new VoxelFillFloatArrayJob
         {
@@ -9782,7 +10440,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             positions = data.WeldedPositions,
             normals = data.Normals,
             curvatureValues = data.CurvatureValues,
-            ambientOcclusionValues = data.AmbientOcclusionValues
+            ambientOcclusionValues = data.AmbientOcclusionValues,
+            densityFaultFlags = densityFaultFlags
         }.Schedule(data.WeldedCount, JOB_BATCH, skirtHandle);
 
         JobHandle seamNormalHandle = new VoxelSeamNormalBlendJob
@@ -9893,6 +10552,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         await AwaitForJobCompletionAsync(phase5Handle, ct, "normal/color/spawn phase");
         if (ct.IsCancellationRequested)
             return false;
+        ReportAndClearVoxelDensityFaults(densityFaultFlags);
         return true;
         }
         finally
@@ -10327,7 +10987,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (_streamingScratchVault == null)
             return;
 
-        int slotCount = math.clamp(streamingScratchSlotCount, 1, 8);
+        int slotCount = math.clamp(streamingScratchSlotCount, 1, StreamingScratchSlotMax);
         if (_streamingScratchSlots != null && _streamingScratchSlots.Length == slotCount)
             return;
 
@@ -10401,6 +11061,12 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         return (BufferID)(StreamingScratchVaultBufferBase + slotIndex * StreamingScratchVaultBufferStride + lane);
     }
 
+    static bool IsStreamingScratchBufferAddressSafe(int slotIndex, int lane)
+    {
+        return (uint)slotIndex < (uint)StreamingScratchSlotMax &&
+               (uint)lane < (uint)StreamingScratchVaultBufferStride;
+    }
+
     bool TryEnsureStreamingScratchArray<T>(
         VoxelStreamingScratchSlot slot,
         int slotIndex,
@@ -10411,7 +11077,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         bool clearFirst = false)
         where T : struct
     {
-        if (slot == null)
+        if (slot == null || !IsStreamingScratchBufferAddressSafe(slotIndex, lane))
             return false;
 
         IDataVault vault = _streamingScratchVault;
@@ -10710,7 +11376,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneAnomalyFissureMask, heightCount, ref slot.AnomalyFissureMaskHandle, ref slot.AnomalyFissureMaskCapacity) &&
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneSelectedPillarFeature, 1, ref slot.SelectedPillarFeatureHandle, ref slot.SelectedPillarFeatureCapacity, true) &&
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneChunkContentFlags, 1, ref slot.ChunkContentFlagsHandle, ref slot.ChunkContentFlagsCapacity, true) &&
-               TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneDensityFaultFlags, 1, ref slot.DensityFaultFlagsHandle, ref slot.DensityFaultFlagsCapacity, true) &&
+               TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneDensityFaultFlags, VoxelDensityPipelineFaultSlots.SlotCount, ref slot.DensityFaultFlagsHandle, ref slot.DensityFaultFlagsCapacity, true) &&
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneCellVertexCounts, totalCellCount, ref slot.CellVertexCountsHandle, ref slot.CellVertexCountsCapacity) &&
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneCellVertexOffsets, totalCellCount, ref slot.CellVertexOffsetsHandle, ref slot.CellVertexOffsetsCapacity) &&
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneMeshRawVertices, meshRawScratchCapacity, ref slot.MeshRawVerticesHandle, ref slot.MeshRawVerticesCapacity) &&
@@ -11375,14 +12041,39 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         return math.max(voxelStep * 0.125f, 0.005f);
     }
 
-    static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+    static unsafe void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
     {
         if (!array.IsCreated)
             return;
 
-        NativeMemorySentinel.UnregisterNativeArray(array);
-        array.Dispose();
-        array = default;
+        void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+        System.Exception nativeSentinelCleanupException0 = null;
+
+        try
+        {
+            NativeMemorySentinel.UnregisterPointer(trackedPointer);
+        }
+        catch (System.Exception nativeSentinelException0)
+        {
+            nativeSentinelCleanupException0 = nativeSentinelException0;
+        }
+
+        try
+        {
+            array.Dispose();
+        }
+        catch (System.Exception nativeSentinelException0)
+        {
+            if (nativeSentinelCleanupException0 == null)
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+        }
+        finally
+        {
+            array = default;
+        }
+
+        if (nativeSentinelCleanupException0 != null)
+            throw nativeSentinelCleanupException0;
     }
 
     bool BuildSpatialPartitions(VoxelPipelineData data)
@@ -11481,7 +12172,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
-                if (!TryResolveNodePartitionBounds(in nodes[nodeIndex], data, out float3 boundsMin, out float3 boundsMax))
+                CaveNode node = nodes[nodeIndex];
+                if (!TryResolveNodePartitionBounds(in node, data, out float3 boundsMin, out float3 boundsMax))
                     continue;
 
                 ResolvePartitionRange(data, boundsMin, boundsMax, out int3 minCell, out int3 maxCell);
@@ -11536,7 +12228,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
-                if (!TryResolveNodePartitionBounds(in nodes[nodeIndex], data, out float3 boundsMin, out float3 boundsMax))
+                CaveNode node = nodes[nodeIndex];
+                if (!TryResolveNodePartitionBounds(in node, data, out float3 boundsMin, out float3 boundsMax))
                     continue;
 
                 ResolvePartitionRange(data, boundsMin, boundsMax, out int3 minCell, out int3 maxCell);
@@ -11610,7 +12303,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             for (int tunnelIndex = 0; tunnelIndex < tunnelCount; tunnelIndex++)
             {
-                if (!TryResolveTunnelPartitionBounds(in tunnels[tunnelIndex], data, out float3 boundsMin, out float3 boundsMax))
+                CaveTunnel tunnel = tunnels[tunnelIndex];
+                if (!TryResolveTunnelPartitionBounds(in tunnel, data, out float3 boundsMin, out float3 boundsMax))
                     continue;
 
                 ResolvePartitionRange(data, boundsMin, boundsMax, out int3 minCell, out int3 maxCell);
@@ -11665,7 +12359,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             for (int tunnelIndex = 0; tunnelIndex < tunnelCount; tunnelIndex++)
             {
-                if (!TryResolveTunnelPartitionBounds(in tunnels[tunnelIndex], data, out float3 boundsMin, out float3 boundsMax))
+                CaveTunnel tunnel = tunnels[tunnelIndex];
+                if (!TryResolveTunnelPartitionBounds(in tunnel, data, out float3 boundsMin, out float3 boundsMax))
                     continue;
 
                 ResolvePartitionRange(data, boundsMin, boundsMax, out int3 minCell, out int3 maxCell);
@@ -11780,15 +12475,26 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             1f / math.max(data.PartitionCellSize.x, 0.01f),
             1f / math.max(data.PartitionCellSize.y, 0.01f),
             1f / math.max(data.PartitionCellSize.z, 0.01f));
+        float3 minPartition = (clampedMin - data.PartitionOrigin) * invCellSize;
+        float3 maxPartition = (clampedMax - data.PartitionOrigin) * invCellSize;
 
         minCell = new int3(
-            math.clamp((int)math.floor((clampedMin.x - data.PartitionOrigin.x) * invCellSize.x), 0, data.PartitionDimX - 1),
-            math.clamp((int)math.floor((clampedMin.y - data.PartitionOrigin.y) * invCellSize.y), 0, data.PartitionDimY - 1),
-            math.clamp((int)math.floor((clampedMin.z - data.PartitionOrigin.z) * invCellSize.z), 0, data.PartitionDimZ - 1));
+            ClampFloorToPartitionCell(minPartition.x, data.PartitionDimX),
+            ClampFloorToPartitionCell(minPartition.y, data.PartitionDimY),
+            ClampFloorToPartitionCell(minPartition.z, data.PartitionDimZ));
         maxCell = new int3(
-            math.clamp((int)math.floor((clampedMax.x - data.PartitionOrigin.x) * invCellSize.x), 0, data.PartitionDimX - 1),
-            math.clamp((int)math.floor((clampedMax.y - data.PartitionOrigin.y) * invCellSize.y), 0, data.PartitionDimY - 1),
-            math.clamp((int)math.floor((clampedMax.z - data.PartitionOrigin.z) * invCellSize.z), 0, data.PartitionDimZ - 1));
+            ClampFloorToPartitionCell(maxPartition.x, data.PartitionDimX),
+            ClampFloorToPartitionCell(maxPartition.y, data.PartitionDimY),
+            ClampFloorToPartitionCell(maxPartition.z, data.PartitionDimZ));
+    }
+
+    private static int ClampFloorToPartitionCell(float coordinate, int partitionDim)
+    {
+        if (!math.isfinite(coordinate) || partitionDim <= 0)
+            return 0;
+
+        double floored = math.floor((double)coordinate);
+        return (int)math.clamp(floored, 0d, (double)partitionDim - 1d);
     }
 
     static int FlattenPartitionIndex(VoxelPipelineData data, int x, int y, int z)
@@ -12308,8 +13014,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     GameObject SpawnVolume()
     {
-        IObjectPoolService pool = _objectPoolService;
-        if (pool != null && voxelVolumePrefab != null)
+        if (TryResolveCachedObjectPool(out IObjectPoolService pool) && voxelVolumePrefab != null)
         {
             GameObject pooled = pool.Spawn(voxelVolumePrefab, Vector3.zero, Quaternion.identity);
             if (pooled != null)
@@ -12568,8 +13273,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     {
                         if (fallbackRenderer != null)
                             fallbackRenderer.enabled = true;
-                        if (fallbackBakeProxy != null)
-                            fallbackBakeProxy.enabled = true;
+                        EnableVoxelProxyCollider(fallbackBakeProxy);
                         keepFallbackBakeProxy = fallbackBakeProxy != null;
                         return true;
                     }
@@ -12844,6 +13548,33 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         return proxy;
     }
 
+    static float3 SanitizeVoxelColliderProxyBoundsMin(float3 boundsMin)
+    {
+        if (!IsFiniteFloat3(boundsMin))
+            return float3.zero;
+
+        return math.clamp(
+            boundsMin,
+            new float3(-VoxelColliderProxyMaxExtentMeters),
+            new float3(VoxelColliderProxyMaxExtentMeters));
+    }
+
+    static float3 SanitizeVoxelColliderProxyBoundsSize(float3 boundsSize, float fallbackExtent)
+    {
+        float safeFallback = ClampRuntimeFinite(
+            fallbackExtent,
+            VoxelPhysicsBakeProxyMinHeightMeters,
+            VoxelColliderProxyMinExtentMeters,
+            MaxRuntimeCaveGraphBucketVoxelStep);
+        if (!IsFiniteFloat3(boundsSize))
+            return new float3(safeFallback);
+
+        return math.clamp(
+            math.abs(boundsSize),
+            new float3(VoxelColliderProxyMinExtentMeters),
+            new float3(VoxelColliderProxyMaxExtentMeters));
+    }
+
     static void ConfigureVoxelBakeBaseProxy(
         BoxCollider proxy,
         float3 boundsMin,
@@ -12853,14 +13584,16 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (proxy == null)
             return;
 
-        float proxyHeight = math.max(VoxelPhysicsBakeProxyMinHeightMeters, voxelStep * 2f);
-        float3 safeSize = math.max(boundsSize, new float3(0.01f));
+        float safeVoxelStep = ClampRuntimeFinite(voxelStep, VoxelPhysicsBakeProxyMinHeightMeters, VoxelColliderProxyMinExtentMeters, MaxRuntimeCaveGraphBucketVoxelStep);
+        float3 safeBoundsMin = SanitizeVoxelColliderProxyBoundsMin(boundsMin);
+        float3 safeSize = SanitizeVoxelColliderProxyBoundsSize(boundsSize, safeVoxelStep);
+        float proxyHeight = math.max(VoxelPhysicsBakeProxyMinHeightMeters, safeVoxelStep * 2f);
         proxy.center = new Vector3(
-            boundsMin.x + safeSize.x * 0.5f,
-            boundsMin.y + proxyHeight * 0.5f,
-            boundsMin.z + safeSize.z * 0.5f);
+            safeBoundsMin.x + safeSize.x * 0.5f,
+            safeBoundsMin.y + proxyHeight * 0.5f,
+            safeBoundsMin.z + safeSize.z * 0.5f);
         proxy.size = new Vector3(safeSize.x, proxyHeight, safeSize.z);
-        proxy.enabled = true;
+        EnableVoxelProxyCollider(proxy);
     }
 
     static void DisableVoxelBakeProxy(BoxCollider proxy)
@@ -12878,7 +13611,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         out Vector3 center,
         out Vector3 size)
     {
-        float3 safeBoundsSize = math.max(boundsSize, new float3(0.01f));
+        float safeVoxelStep = ClampRuntimeFinite(voxelStep, VoxelPhysicsBakeProxyMinHeightMeters, VoxelColliderProxyMinExtentMeters, MaxRuntimeCaveGraphBucketVoxelStep);
+        float3 safeBoundsMin = SanitizeVoxelColliderProxyBoundsMin(boundsMin);
+        float3 safeBoundsSize = SanitizeVoxelColliderProxyBoundsSize(boundsSize, safeVoxelStep);
         bool splitY = colliderChunkCount > 4;
         int x = chunkIndex & 1;
         int z = (chunkIndex >> 1) & 1;
@@ -12887,8 +13622,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             safeBoundsSize.x * 0.5f,
             splitY ? safeBoundsSize.y * 0.5f : safeBoundsSize.y,
             safeBoundsSize.z * 0.5f);
-        float3 chunkMin = boundsMin + new float3(chunkSize.x * x, chunkSize.y * y, chunkSize.z * z);
-        float proxyHeight = math.min(chunkSize.y, math.max(VoxelPhysicsBakeProxyMinHeightMeters, voxelStep * 2f));
+        float3 chunkMin = safeBoundsMin + new float3(chunkSize.x * x, chunkSize.y * y, chunkSize.z * z);
+        float proxyHeight = math.min(chunkSize.y, math.max(VoxelPhysicsBakeProxyMinHeightMeters, safeVoxelStep * 2f));
         float3 proxySize = new float3(chunkSize.x, proxyHeight, chunkSize.z);
         float3 proxyCenter = new float3(
             chunkMin.x + proxySize.x * 0.5f,
@@ -13357,10 +14092,13 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (!math.all(math.isfinite(absoluteUniverseCenter)))
             return;
 
-        float tileSize = math.isfinite(mapMagicTileSize) && mapMagicTileSize > 0f ? mapMagicTileSize : 999f;
-        Vector2Int chunkCoord = new Vector2Int(
-            (int)math.floor(absoluteUniverseCenter.x / tileSize),
-            (int)math.floor(absoluteUniverseCenter.z / tileSize));
+        float tileSize = ClampRuntimeFinite(
+            mapMagicTileSize,
+            999f,
+            MinRuntimeMapMagicTileSize,
+            MaxRuntimeMapMagicTileSize);
+        if (!TryResolveSafeSpawnChunkCoordinate(absoluteUniverseCenter, tileSize, out Vector2Int chunkCoord))
+            return;
 
         int safeSpawnPointCount = math.min(spawnPointCount, spawnPointList.Length);
         for (int sp = 0; sp < safeSpawnPointCount; sp++)
@@ -13379,6 +14117,24 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 spawnData.hashId,
                 caveContext);
         }
+    }
+
+    private static bool TryResolveSafeSpawnChunkCoordinate(double3 absoluteUniverseCenter, float tileSize, out Vector2Int chunkCoord)
+    {
+        chunkCoord = default;
+        if (!math.all(math.isfinite(absoluteUniverseCenter)) || !math.isfinite(tileSize) || tileSize <= 0f)
+            return false;
+
+        double invTileSize = 1.0d / tileSize;
+        double chunkX = math.floor(absoluteUniverseCenter.x * invTileSize);
+        double chunkZ = math.floor(absoluteUniverseCenter.z * invTileSize);
+        if (!math.isfinite(chunkX) || !math.isfinite(chunkZ))
+            return false;
+
+        chunkCoord = new Vector2Int(
+            (int)math.clamp(chunkX, (double)int.MinValue, (double)int.MaxValue),
+            (int)math.clamp(chunkZ, (double)int.MinValue, (double)int.MaxValue));
+        return true;
     }
 
     bool TryRegisterPipelineSpawnPointsFromScratch(

@@ -9,32 +9,22 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Transkrypt podejścia Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Black Keel Approach Transcript Seed
+# Transkrypt podejścia Black Keel
 
-PL LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+## Cztery Sekundy Między Głosami
 
-## Scanner
+Pierwszy głos z orbity nie powinien brzmieć jak zbawienie. Powinien brzmieć jak infrastruktura pod obciążeniem: skompresowana, spóźniona, użyteczna i już naliczająca opłatę. Transkrypt Black Keel działa, bo daje graczowi pomoc i upokorzenie w tym samym oddechu. Carrier usłyszał zrzut. Carrier może odebrać dowód. Carrier może może zwrócić żywego claimanta. Nic z tego nie jest ratunkiem.
 
-PL LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Opóźnienie ma znaczenie. Cztery sekundy są dość krótkie na rozmowę i dość długie, by przypomnieć, że ocean odpowiada pierwszy. Utrata pakietów ma znaczenie, bo każda późniejsza kłótnia z orbitą kosztuje ciało. Zdrowie, masa i dowód nie są ozdobnikami; są kształtem okna powrotu. Marauder może żyć i nadal nie nadawać się do odzysku. Ładunek może być prawdziwy i nadal zbyt ciężki. Carrier może być uczciwy i nadal odmówić.
 
-## Terminal
-
-PL LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
-
-## Audio
-
-PL LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
-
-## Field Note
-
-PL LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+W pierwszej godzinie ten transkrypt przybija fantazję do faktów. Przyszedłeś jako zadłużony pracownik z miejscem claim, nie jako wybrany ocalały. Black Keel to linia nad tobą, nie ręka obok ciebie. Marnowanie tlenu na spór z orbitą jest już błędem.
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/pl_PL. -->

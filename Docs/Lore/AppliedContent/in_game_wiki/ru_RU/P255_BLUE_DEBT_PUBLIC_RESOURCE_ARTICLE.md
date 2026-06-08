@@ -9,32 +9,35 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Публичный материал ресурса blue debt"
+title: "Публичная статья о ресурсе Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Публичный материал ресурса blue debt
+# Публичная статья о ресурсе Blue Debt
 
-Внутриигровая вики: Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.
+Blue debt — это сленг Marauder, а не чистый класс материала. Публично он описывает Xenon-Omega-bearing pressure substrate: нестабильные смеси клатрата, рассола, минеральной решетки, индустриальной биопленки и hardware со следами containment, способные хранить экстремальные состояния и не вести себя как обычная руда. Он важен потому, что HECTON-8 сделала давление полезным. Та же среда, которая раздавит ныряльщика, может сохранить странную химию, экранированные вычисления, сенсорную память и containment-поверхности, достаточно ценные, чтобы претензии продолжали жить. Blue debt не должен читаться как магический loot. Он опасен потому, что помнит, где сформировался. Нагрей его неправильно, разрежь неправильно или перенеси без proof of custody — и он перестанет быть ресурсом, став уликой, ядом, давлением или долгом. Публичный текст может объяснять, почему Marauders гонятся за ним. Он также должен объяснять, почему они не доверяют никому, кто называет его чистым.
 
 ## Scanner
 
-Сканер: The public name sounds like slang because the official name is built to hide liability.
+Сленг честнее. Официальное имя прячет ответственность: Xenon-Omega-bearing pressure substrate.
 
 ## Terminal
 
-Терминал: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+ПУБЛИЧНЫЙ УРОВЕНЬ СТАТЬИ / BLUE DEBT
+разрешено: поведение образцов, химия давления, клатратные и рассольные носители, ценность containment, вычислительное применение, риск хранения
+закрыто: точные таблицы рецептов, настройка payout, поздние substrate-маршруты Atlas
+заметка редактора: не магическая руда, не glowing loot fantasy, не чистая собственность.
 
 ## Audio
 
-Аудио: Ore is what people call it when they want to forget the paperwork.
+Его назвали blue debt, потому что каждый полезный грамм уже кому-то задолжал давлением, бумагами или кровью.
 
 ## Field Note
 
-Полевая заметка: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+Если он светится как сокровище, перепиши. Blue debt должен ощущаться полезным, мокрым, регулируемым, нестабильным и уже оспоренным.
 
 <!-- In-Game Wiki; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/ru_RU. -->

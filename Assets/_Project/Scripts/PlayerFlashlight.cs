@@ -616,7 +616,7 @@ namespace Hecton8.Gameplay
         {
             ConsumeFlashlightInputSignals();
 
-            // Blokiruem logiku v menyu (hotya InputManager dolzhen otklyuchat Player map, 
+            // Blokiruem logiku v menyu (hotya InputManager dolzhen otklyuchat Player map,
             // my vse ravno obrabatyvaem perehody i batareyu)
             IsGameplayInputBlockedByMenu();
 
@@ -1171,7 +1171,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1261,10 +1261,10 @@ namespace Hecton8.Gameplay
         /// </summary>
         /// <summary>
         /// Obnovlyaet intensivnost volumetric beam bez refleksii.
-        /// 
+        ///
         /// Legacy beam ownership moved to the post-process shaft tracker.
         /// Refleksiya cherez PropertyInfo.SetValue vyzyvala boxing float→object
-        /// kazhdyy kadr pri transition/flickering. 
+        /// kazhdyy kadr pri transition/flickering.
         ///
         /// Keeps legacy inspector feedback without touching render components.
         /// No third-party beam component is touched here.

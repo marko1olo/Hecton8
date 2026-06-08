@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Motif professionnel
 
-Le joueur n'est pas un touriste vide. Il commence par compétence, contrat et claim mort; l'évidence rend l'affaire personnelle.
+Le Maraudeur n'est pas un touriste vide. La course commence par intérêt professionnel, compétence de salvage et raison d'accepter une réclamation morte. Le motif personnel grandit par les preuves, les marques familières et la compréhension que HECTON-8 appartient au même monde dur qui a rendu ce travail normal.
 
 ## Scanner
 

@@ -9,32 +9,36 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Photic Mat Codex Card"
+title: "Cartão de Códice do Tapete Fótico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Photic Mat Codex Card
+# Cartão de Códice do Tapete Fótico
 
-PT LOC HOLD: The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
+Tapetes fóticos são uma das primeiras lições de ecologia legível de HECTON-8. Eles iluminam os rasos, alimentam pequenos grazers e estabilizam filme mineral, mas também marcam química de pressão e emendas frágeis. O oceano parece convidativo porque superfícies vivas estão trabalhando.
 
 ## Scanner
 
-PT LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Tapete fótico. Folha de biofilme oxigênio-positiva sobre pele mineral. Brilhante, útil, frágil à pressão. Não descascar de rachaduras seladas.
 
 ## Terminal
 
-PT LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+ESPÉCIME / TAPETE FÓTICO
+função: superfície de oxigênio rasa, alimento de grazers, estabilizador de filme mineral
+amostra segura: borda solta menor que a largura da palma
+rejeitar: folhas que selam emendas, tapetes com bolhas de gás, campos frescos de mordida de grazers
+nota de rota: tapetes rasgados podem ventilar gás preso e transformar uma plataforma clara em hazard.
 
 ## Audio
 
-PT LOC HOLD: Light here is work, not comfort.
+Parece macio porque está trabalhando. Se está segurando uma emenda, deixe ali.
 
 ## Field Note
 
-PT LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+Borda solta: amostra. Cobertura de emenda: deixe. Se o tapete sela uma ferida, a ferida ainda está lá.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/pt_BR. -->

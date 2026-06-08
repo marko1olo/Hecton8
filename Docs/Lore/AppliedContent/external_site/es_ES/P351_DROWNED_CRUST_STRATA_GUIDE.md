@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Drowned Crust Strata Guide"
+title: "Guía de estratos de corteza ahogada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Drowned Crust Strata Guide
+# Guía de estratos de corteza ahogada
 
-ES LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.
+La Guía de estratos de corteza ahogada hace que el lecho marino de HECTON-8 se sienta construido y roto: terrain, salvage routes y muestras minerales vienen de la misma historia de presión en capas.
 
 ## Scanner
 
-ES LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+Los estratos inundados exponen viejas marcas de corte, costuras de pressure-glass y bandas minerales que no fallan dos veces en la misma dirección.
 
 ## Terminal
 
-ES LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: la corteza ahogada de HECTON-8 es roca de asentamiento apilada, memoria de hielo colapsado, pressure glass y extraction scars bajo brine móvil. Las líneas de fractura pesan más que las superficies limpias.
 
 ## Audio
 
-ES LOC HOLD: The map is not terrain. It is a stack of drownings.
+El mapa no es terreno. Es una pila de ahogamientos.
 
 ## Field Note
 
-ES LOC HOLD: Use for geology codex and procedural world labels.
+Si una banda suena hueca, no confíes en la cara plana. Marca la fractura, toma la muestra y deja el muro sosteniéndose.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/es_ES. -->

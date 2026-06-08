@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Brine canyon density ladder guide"
+title: "Полевой справочник плотностной лестницы brine-каньона"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine canyon density ladder guide
+# Полевой справочник плотностной лестницы brine-каньона
 
-Brine canyons делают progression физической: density layers, hull limits, pressure failures and pockets.
+Brine-каньоны делают глубину физической. Они учат слоям плотности, пределам корпуса, отказам давления и resource pockets до открытия нижних маршрутов.
 
 ## Scanner
 
-Обнаружен brine canyon ladder. Density layers превращают depth в route planning.
+Обнаружена brine ladder: слоистая плотность, ложное дно, изгиб сонара. Иди по краям; открытая вода здесь лжет.
 
 ## Terminal
 
-FIELD GUIDE: brine canyons - не просто visual depth. Они прячут pressure boundaries, current shelves, resource pockets и scanner false positives.
+FIELD GUIDE: brine-каньоны прячут pressure shelves, current ledges, resource pockets и ложные срабатывания scanner. Hull rating и density transition решают, какая полка является маршрутом, а какая - падением.
 
 ## Audio
 
-Каньон - лестница, если hull может платить за каждую ступень.
+Каньон - это лестница, если твой корпус может платить за каждую ступень.
 
 ## Field Note
 
-Для scanner tutorials и resource route articles.
+Используй тени vane как ступени. Пустое чтение в brine - не пустота, а прибор, проигрывающий спор.
 
 <!-- In-Game Wiki; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/ru_RU. -->

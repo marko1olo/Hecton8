@@ -585,8 +585,13 @@ namespace Hecton8.EditorTools
             }
             finally
             {
+                if (pointer != null)
+                {
+                    UnsafeUtility.Free(pointer, Allocator.Persistent);
+                    pointer = null;
+                }
+
                 NativeMemorySentinel.Unregister(id);
-                UnsafeUtility.Free(pointer, Allocator.Persistent);
             }
         }
 
@@ -633,14 +638,22 @@ namespace Hecton8.EditorTools
                 if (!NativeMemorySentinel.ContainsTrackedAllocationForDiagnostics(in owner, in label, NativeAllocationLifetime.Scene, scene))
                     throw new InvalidOperationException("Explicit scene registration was not visible to diagnostics.");
 
+                UnsafeUtility.Free(pointer, Allocator.Persistent);
+                pointer = null;
+
                 NativeMemorySentinel.Unregister(in owner, in label, scene);
                 if (NativeMemorySentinel.ContainsTrackedAllocationForDiagnostics(in owner, in label, NativeAllocationLifetime.Scene, scene))
                     throw new InvalidOperationException("Explicit scene unregister left a tracked allocation behind.");
             }
             finally
             {
+                if (pointer != null)
+                {
+                    UnsafeUtility.Free(pointer, Allocator.Persistent);
+                    pointer = null;
+                }
+
                 NativeMemorySentinel.Unregister(id);
-                UnsafeUtility.Free(pointer, Allocator.Persistent);
             }
         }
 

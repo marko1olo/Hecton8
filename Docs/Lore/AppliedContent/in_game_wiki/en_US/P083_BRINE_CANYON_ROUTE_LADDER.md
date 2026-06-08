@@ -7,8 +7,8 @@ poi_tags: poi.brine_density_marker;poi.canyon_current_gate
 biome_tags: biome.brine_canyon;biome.drop_zone
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Brine Canyon Route Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

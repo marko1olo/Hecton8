@@ -64,11 +64,13 @@ namespace Hecton8.UI
         private UnityAction _resetClickAction;
         private Action<Vector2> _navigateInputAction;
         private Action _submitInputAction;
+        private Action<byte> _displayStyleChangedAction;
         private Action<string, string, int> _rebindStartedAction;
         private Action<string, string, int, string> _rebindCompletedAction;
         private Action<string, string, int> _rebindCanceledAction;
         private Action<string, string, int> _rebindSaveFailedAction;
         private Action<string, string, string, Action, Action> _conflictDetectedAction;
+        private Action _bindingOverridesChangedAction;
         private uint _lastPlayerInputSignalSequence;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
@@ -93,10 +95,10 @@ namespace Hecton8.UI
         private static readonly string StatusConflictModalUnavailable = "CONFLICT UI UNAVAILABLE; REBIND CANCELED.";
         private static readonly string StatusRebindPrefix = "REBIND: ";
         private static readonly string StatusRebindSuffix = "  |  TAB NEXT = RESET ONE  |  TAB PREV = RESET ALL";
-        
+
         // ZERO-GC: Cached array for excluded control paths
         private static readonly string[] ExcludedControlPaths = { "<Pointer>/position", "<Pointer>/delta" };
-        
+
         // ZERO-GC: Cached colors for status messages
         private static readonly Color StatusColorPressKey = new Color(0.82f, 0.98f, 1f, 0.96f);
         private static readonly Color StatusBgPressKey = new Color(0.08f, 0.22f, 0.34f, 0.9f);
@@ -107,17 +109,17 @@ namespace Hecton8.UI
         private static readonly Color StatusColorReverted = new Color(0.82f, 0.98f, 1f, 0.96f);
         private static readonly Color StatusBgReverted = new Color(0.08f, 0.22f, 0.34f, 0.9f);
         private static readonly Color StatusBgDefault = new Color(0.05f, 0.1f, 0.12f, 0.82f);
-        
+
         // ZERO-GC: Cached colors for selection visuals (FIX: hardcoded colors in RefreshSelectionVisuals)
         private static readonly Color RowBgSelected = new Color(0.08f, 0.18f, 0.2f, 0.82f);
         private static readonly Color AccentDefault = new Color(0.18f, 0.32f, 0.34f, 0.78f);
         private static readonly Color AccentSelected = new Color(0.46f, 0.98f, 0.94f, 0.96f);
         private static readonly Color BindingBgSelected = new Color(0.1f, 0.24f, 0.28f, 0.86f);
-        
+
         private readonly char[] _modalMessageBuffer = new char[256]; // COLD ALLOC: char[256] — modal conflict message staging buffer — owner: PauseControlsPanel
         private readonly char[] _statusBuffer = new char[256]; // COLD ALLOC: char[256] — status message staging buffer — owner: PauseControlsPanel
         private readonly char[] _bindingDisplayBuffer = new char[64]; // COLD ALLOC: char[64] — binding display text buffer — owner: PauseControlsPanel
-        
+
         // ZERO-GC: Cached previous selection for optimized refresh
         private int _previousSelectedIndex = -1;
 
@@ -253,12 +255,16 @@ namespace Hecton8.UI
 
             input.OnNavigate += _navigateInputAction;
             input.OnSubmit += _submitInputAction;
+            input.OnInputDisplayStyleCodeChanged += _displayStyleChangedAction;
 
             rebinding.OnRebindStarted += _rebindStartedAction;
             rebinding.OnRebindCompleted += _rebindCompletedAction;
             rebinding.OnRebindCanceled += _rebindCanceledAction;
             rebinding.OnRebindSaveFailed += _rebindSaveFailedAction;
             rebinding.OnConflictDetected += _conflictDetectedAction;
+            rebinding.OnOverridesLoaded += _bindingOverridesChangedAction;
+            rebinding.OnOverridesSaved += _bindingOverridesChangedAction;
+            rebinding.OnOverridesCleared += _bindingOverridesChangedAction;
 
             _subscribedInput = input;
             _subscribedRebindingService = rebinding;
@@ -275,6 +281,7 @@ namespace Hecton8.UI
             {
                 input.OnNavigate -= _navigateInputAction;
                 input.OnSubmit -= _submitInputAction;
+                input.OnInputDisplayStyleCodeChanged -= _displayStyleChangedAction;
             }
 
             IInputBindingService rebinding = _subscribedRebindingService;
@@ -285,6 +292,9 @@ namespace Hecton8.UI
                 rebinding.OnRebindCanceled -= _rebindCanceledAction;
                 rebinding.OnRebindSaveFailed -= _rebindSaveFailedAction;
                 rebinding.OnConflictDetected -= _conflictDetectedAction;
+                rebinding.OnOverridesLoaded -= _bindingOverridesChangedAction;
+                rebinding.OnOverridesSaved -= _bindingOverridesChangedAction;
+                rebinding.OnOverridesCleared -= _bindingOverridesChangedAction;
             }
 
             _subscribedInput = null;
@@ -296,11 +306,13 @@ namespace Hecton8.UI
         {
             _navigateInputAction ??= HandleNavigate; // COLD ALLOC: Action<Vector2>[1] - cached navigation input listener - owner: PauseControlsPanel
             _submitInputAction ??= HandleSubmit; // COLD ALLOC: Action[1] - cached submit input listener - owner: PauseControlsPanel
+            _displayStyleChangedAction ??= HandleInputDisplayStyleChanged; // COLD ALLOC: Action<byte>[1] - cached display-style listener - owner: PauseControlsPanel
             _rebindStartedAction ??= HandleRebindStarted; // COLD ALLOC: Action<string,string,int>[1] - cached rebind-start listener - owner: PauseControlsPanel
             _rebindCompletedAction ??= HandleRebindCompleted; // COLD ALLOC: Action<string,string,int,string>[1] - cached rebind-complete listener - owner: PauseControlsPanel
             _rebindCanceledAction ??= HandleRebindCanceled; // COLD ALLOC: Action<string,string,int>[1] - cached rebind-cancel listener - owner: PauseControlsPanel
             _rebindSaveFailedAction ??= HandleRebindSaveFailed; // COLD ALLOC: Action<string,string,int>[1] - cached owner-local save-failed listener - owner: PauseControlsPanel
             _conflictDetectedAction ??= HandleConflictDetected; // COLD ALLOC: Action<string,string,string,Action,Action>[1] - cached conflict listener - owner: PauseControlsPanel
+            _bindingOverridesChangedAction ??= HandleBindingOverridesChanged; // COLD ALLOC: Action[1] - cached overrides-changed listener - owner: PauseControlsPanel
         }
 
         /// <inheritdoc />
@@ -310,6 +322,7 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Input &&
+                serviceSlot != GlobalRegistryServiceSlot.NativeInputManagerRuntime &&
                 serviceSlot != GlobalRegistryServiceSlot.InputBinding)
             {
                 return;
@@ -356,13 +369,21 @@ namespace Hecton8.UI
             _ownsActiveRebind = false;
         }
 
+        private void HandleBindingOverridesChanged()
+        {
+            if (!IsActive || _ownsActiveRebind)
+                return;
+
+            RefreshAllBindings();
+            UpdateStatusForSelected();
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.IsHotSwapListenerRegistered(this);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -370,9 +391,7 @@ namespace Hecton8.UI
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
-                GlobalRegistry.UnregisterHotSwapListener(this);
-
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
         }
 
@@ -555,14 +574,14 @@ namespace Hecton8.UI
         {
             if (!_ownsActiveRebind) return;
             if (!IsActive) return;
-            
+
             int statusLength = 0;
             statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusPressAKeyPrefix);
             statusLength = AppendToBuffer(_statusBuffer, statusLength, actionMap);
             statusLength = AppendToBuffer(_statusBuffer, statusLength, '/');
             statusLength = AppendToBuffer(_statusBuffer, statusLength, actionName);
             statusLength = AppendToBuffer(_statusBuffer, statusLength, ']');
-            
+
             SetStatus(_statusBuffer, statusLength, StatusColorPressKey, StatusBgPressKey);
         }
 
@@ -572,12 +591,12 @@ namespace Hecton8.UI
             _ownsActiveRebind = false;
             if (!IsActive) return;
             RefreshAllBindingsNow();
-            
+
             int statusLength = 0;
             statusLength = AppendToBuffer(_statusBuffer, statusLength, actionName);
             statusLength = AppendToBuffer(_statusBuffer, statusLength, ": ");
             statusLength = AppendToBuffer(_statusBuffer, statusLength, display);
-            
+
             SetStatus(_statusBuffer, statusLength, StatusColorComplete, StatusBgComplete);
         }
 
@@ -597,6 +616,15 @@ namespace Hecton8.UI
             if (!IsActive) return;
             RefreshAllBindingsNow();
             SetStatus(StatusBindingsSaveFailed);
+        }
+
+        private void HandleInputDisplayStyleChanged(byte styleCode)
+        {
+            if (!IsActive)
+                return;
+
+            RefreshAllBindings();
+            UpdateStatusForSelected();
         }
 
         /// <summary>
@@ -934,7 +962,7 @@ namespace Hecton8.UI
         {
             // OPTIMIZATION: Only update previous and current selection to reduce native calls
  // from 15 - 3=45 to 2 - 3=6 per navigation
-            
+
             if (_previousSelectedIndex >= 0 && _previousSelectedIndex < _rows.Length)
             {
                 // Deselect previous
@@ -1120,10 +1148,22 @@ namespace Hecton8.UI
             return index + length;
         }
 
-        private static int ResolveBindingIndex(InputAction action, int preferredIndex)
+        private static int ResolveBindingIndex(
+            INativeInputManagerRuntime input,
+            InputAction action,
+            string actionName,
+            string actionMap,
+            int preferredIndex)
         {
             if (action == null)
                 return -1;
+
+            if (input != null)
+            {
+                int displayPreferredIndex = input.GetPreferredBindingIndex(actionName, actionMap);
+                if (IsBindableActionIndex(action, displayPreferredIndex))
+                    return displayPreferredIndex;
+            }
 
             int bindingCount = action.bindings.Count;
 
@@ -1145,6 +1185,15 @@ namespace Hecton8.UI
             }
 
             return -1;
+        }
+
+        private static bool IsBindableActionIndex(InputAction action, int bindingIndex)
+        {
+            return action != null &&
+                   bindingIndex >= 0 &&
+                   bindingIndex < action.bindings.Count &&
+                   !action.bindings[bindingIndex].isComposite &&
+                   !action.bindings[bindingIndex].isPartOfComposite;
         }
 
         private static int WrapIndex(int value, int max)
@@ -1214,7 +1263,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
+            bindingIndex = ResolveBindingIndex(input, action, row.actionName, row.actionMap, row.bindingIndex);
             if (bindingIndex < 0)
             {
                 resolutionMessage = "NO REBINDABLE BINDING.";

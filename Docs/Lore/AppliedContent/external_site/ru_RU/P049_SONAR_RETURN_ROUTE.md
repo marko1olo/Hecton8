@@ -8,33 +8,33 @@ biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Sonar Return Route"
+spoiler_tier: 1
+title: "Сонарный маршрут возврата"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sonar Return Route
+# Сонарный маршрут возврата
 
-Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work.
+Навигация HECTON-8 считает обратный путь работой, а не утешением. Устаревший маяк может указывать в правильный коридор и одновременно скрывать новое препятствие, сдвинутую илистую гряду или дверь давления, изменившую эхо.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+Маяк возврата устарел. Старый безопасный пинг больше не совпадает с эхом коридора; масса груза замедлит окно отхода.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: последний чистый эхосигнал недействителен. Пинг Black Keel получен с низкой достоверностью. Смещение препятствий и плотность ила выше допуска карты. Отметить вторую линию до извлечения груза.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+Маршрут все еще там. Эхо уже другое.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+Пингуй до загрузки. Если дорога домой изменилась, пока руки были пусты, полный рюкзак она не простит.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/ru_RU. -->

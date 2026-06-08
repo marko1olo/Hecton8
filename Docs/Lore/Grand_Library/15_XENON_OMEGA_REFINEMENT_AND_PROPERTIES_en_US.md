@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # XENON-OMEGA: REFINEMENT AND PROPERTIES
 
 > **Source:** Deep Reach Megacorporation, Classified Chemical Manifest.

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Tariff Table"
+title: "Tabel Tarif Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Tariff Table
+# Tabel Tarif Black Keel
 
-ID LOC HOLD: Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.
+Dukungan Black Keel berguna, tetapi tidak pernah netral. Distress, sampel, oksigen, segel liabilitas, pemulihan operator, dan kerusakan lambung masuk antrean berbeda. Pemain bisa mengeksploitasi aturan itu, tetapi aturan yang sama menunjukkan mengapa bantuan selalu datang dengan harga.
 
 ## Scanner
 
-ID LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
+Pelat memberi harga untuk distress, kustodi sampel, cadangan oksigen, perlengkapan tekanan, dan pemulihan jenazah sebagai baris terpisah.
 
 ## Terminal
 
-ID LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
+KELAS TARIF: darurat salvage. Adendum kesejahteraan tertunda. Kustodi sampel terverifikasi menaikkan prioritas keluar dua tingkat penagihan.
 
 ## Audio
 
-ID LOC HOLD: The table has a price for rescue and a discount for evidence.
+Ada diskon untuk bukti dan biaya tambahan untuk bernapas.
 
 ## Field Note
 
-ID LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
+Kelas tercepat bukan penyelamatan. Itu properti terverifikasi yang bergerak naik.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/id_ID. -->

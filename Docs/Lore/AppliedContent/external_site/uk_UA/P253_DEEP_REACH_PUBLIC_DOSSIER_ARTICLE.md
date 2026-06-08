@@ -9,32 +9,35 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Deep Reach Public Dossier Article"
+title: "Публічне досьє Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Deep Reach Public Dossier Article
+# Публічне досьє Deep Reach
 
-UA LOC HOLD: Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression.
+Deep Reach Extraterrestrial Development Combine — корпоративна сила за індустріальною історією HECTON-8. Вона будувала тискові маршрути, житла працівників, системи вилучення і папери, які робили їх законними. Публічно це провалена development authority. Глибші докази показують жорсткішу форму: евакуаційну місткість недобудовано, мову затримок очищено, continuity weighting Atlas захищено, а claim law збережено, поки працівники ставали втратами.
 
 ## Scanner
 
-UA LOC HOLD: The public company name is cleaner than its route history.
+Публічна назва компанії чистіша за історію її маршрутів. Почни з інфраструктури. Нехай відповідальність проступить у стиках.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+ПУБЛІЧНИЙ РІВЕНЬ СТАТТІ / DEEP REACH
+дозволено: development combine, оператор колонії, інфраструктурна влада, проблема евакуаційної місткості, мова публічного провалу
+закрито: іменний ланцюг підписів, внутрішність weighting Atlas, фінальні наслідки receiver
+примітка редактора: спершу правдоподібний інститут; потім злочин через процедуру.
 
 ## Audio
 
-UA LOC HOLD: Never make the villain simpler than the paperwork.
+Deep Reach не мусила звучати жорстоко. Їй треба було лише, щоб кожне небезпечне речення звучало завершеним.
 
 ## Field Note
 
-UA LOC HOLD: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+Не змушуй Deep Reach шипіти. Змусь її сертифікувати, відкладати, зберігати і виставляти рахунок.
 
 <!-- External Site; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/uk_UA. -->

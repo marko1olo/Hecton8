@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Brine Canyon Density Ladder Guide"
+title: "Польовий довідник щільнісної драбини brine-каньйону"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Brine Canyon Density Ladder Guide
+# Польовий довідник щільнісної драбини brine-каньйону
 
-UK LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.
+Brine-каньйони роблять глибину фізичною. Вони навчають шарам щільності, межам корпусу, відмовам тиску й resource pockets до відкриття нижчих маршрутів.
 
 ## Scanner
 
-UK LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
+Виявлено brine ladder: шарувата щільність, фальшиве дно, вигин сонара. Іди краями; відкрита вода тут бреше.
 
 ## Terminal
 
-UK LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: brine-каньйони ховають pressure shelves, current ledges, resource pockets і scanner false positives. Hull rating і density transition вирішують, яка полиця є маршрутом, а яка - падінням.
 
 ## Audio
 
-UK LOC HOLD: A canyon is a staircase if your hull can pay for each step.
+Каньйон - це сходи, якщо твій корпус може заплатити за кожну сходинку.
 
 ## Field Note
 
-UK LOC HOLD: Use for scanner tutorials and resource route articles.
+Використовуй тіні vane як сходи. Порожнє читання в brine - не порожнеча, а прилад, що програє суперечку.
 
 <!-- In-Game Wiki; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/uk_UA. -->

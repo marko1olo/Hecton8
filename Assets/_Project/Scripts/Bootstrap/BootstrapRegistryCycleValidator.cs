@@ -64,6 +64,7 @@ namespace Hecton8.Bootstrap
             GlobalRegistryServiceSlot.ModWorldPersistenceRuntime,
             GlobalRegistryServiceSlot.Player,
             GlobalRegistryServiceSlot.PlayerInventory,
+            GlobalRegistryServiceSlot.PlayerActionRuntime,
             GlobalRegistryServiceSlot.PlayerSensory,
         };
 
@@ -106,6 +107,9 @@ namespace Hecton8.Bootstrap
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Player, GlobalRegistryServiceSlot.Input),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerInventory, GlobalRegistryServiceSlot.Player),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerInventory, GlobalRegistryServiceSlot.ObjectPool),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerActionRuntime, GlobalRegistryServiceSlot.Player),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerActionRuntime, GlobalRegistryServiceSlot.PlayerInventory),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerActionRuntime, GlobalRegistryServiceSlot.Audio),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerSensory, GlobalRegistryServiceSlot.Player),
         };
 
@@ -118,7 +122,7 @@ namespace Hecton8.Bootstrap
         private static readonly int[] _inDegreeScratch = new int[_startupNodes.Length];
         // COLD ALLOC: int[startup node count] - startup graph Kahn queue scratch - owner: BootstrapRegistryCycleValidator
         private static readonly int[] _queueScratch = new int[_startupNodes.Length];
-        // COLD ALLOC: long[11] - startup edge-pair duplicate bitset for O(E) graph validation - owner: BootstrapRegistryCycleValidator
+        // COLD ALLOC: long[startup edge-pair words] - startup edge-pair duplicate bitset for O(E) graph validation - owner: BootstrapRegistryCycleValidator
         private static readonly long[] _edgePairSeenScratch =
             new long[((_startupNodes.Length * _startupNodes.Length) + 63) >> 6];
         // COLD ALLOC: int[256] - byte-sized service-slot to node-index lookup - owner: BootstrapRegistryCycleValidator
@@ -345,6 +349,7 @@ namespace Hecton8.Bootstrap
                 case GlobalRegistryServiceSlot.ModWorldPersistenceRuntime: return nameof(GlobalRegistryServiceSlot.ModWorldPersistenceRuntime);
                 case GlobalRegistryServiceSlot.Player: return nameof(GlobalRegistryServiceSlot.Player);
                 case GlobalRegistryServiceSlot.PlayerInventory: return nameof(GlobalRegistryServiceSlot.PlayerInventory);
+                case GlobalRegistryServiceSlot.PlayerActionRuntime: return nameof(GlobalRegistryServiceSlot.PlayerActionRuntime);
                 case GlobalRegistryServiceSlot.PlayerSensory: return nameof(GlobalRegistryServiceSlot.PlayerSensory);
                 default: return "Unknown";
             }

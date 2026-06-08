@@ -258,6 +258,20 @@ namespace Hecton8.Tests.Editor
             }
         }
 
+        [Test]
+        public void ResolverDispose_CompletesTriggerSpatialHashDisposeBeforeSentinelUnregister()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs");
+            string dispose = ExtractBetween(source, "public JobHandle Dispose(JobHandle dependency)", "private bool TryLockScheduledBuffers()");
+
+            StringAssert.Contains("disposeDependency = _triggerSpatialHash.Dispose(disposeDependency);", dispose);
+            StringAssert.Contains("if (!DispatcherJobFence.TryComplete(ref disposeDependency, forceComplete: true))", dispose);
+            StringAssert.Contains("return disposeDependency;", dispose);
+            StringAssert.Contains("NativeMemorySentinel.Unregister(_triggerSpatialHashSentinelId);", dispose);
+            AssertTextBefore(dispose, "if (!DispatcherJobFence.TryComplete(ref disposeDependency, forceComplete: true))", "NativeMemorySentinel.Unregister(_triggerSpatialHashSentinelId);");
+            AssertTextBefore(dispose, "NativeMemorySentinel.Unregister(_triggerSpatialHashSentinelId);", "_triggerSpatialHashSentinelId = 0;");
+        }
+
         private static void PopulateFlatSpatialDag(QuestDagBuffers buffers, int nodeCount)
         {
             for (int i = 0; i < nodeCount; i++)
@@ -311,6 +325,29 @@ namespace Hecton8.Tests.Editor
                 cursor += buffers.TelemetryRing.Length;
 
             return buffers.TelemetryRing[cursor % buffers.TelemetryRing.Length];
+        }
+
+        private static string ReadProjectFile(string relativePath)
+        {
+            return File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), relativePath));
+        }
+
+        private static string ExtractBetween(string source, string startNeedle, string endNeedle)
+        {
+            int start = source.IndexOf(startNeedle, StringComparison.Ordinal);
+            int end = source.IndexOf(endNeedle, start >= 0 ? start : 0, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(start, 0, "Missing expected text: " + startNeedle);
+            Assert.Greater(end, start, "Missing expected text after start: " + endNeedle);
+            return source.Substring(start, end - start);
+        }
+
+        private static void AssertTextBefore(string source, string before, string after)
+        {
+            int beforeIndex = source.IndexOf(before, StringComparison.Ordinal);
+            int afterIndex = source.IndexOf(after, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(beforeIndex, 0, "Missing expected text: " + before);
+            Assert.GreaterOrEqual(afterIndex, 0, "Missing expected text: " + after);
+            Assert.Less(beforeIndex, afterIndex, before + " must appear before " + after);
         }
     }
 }

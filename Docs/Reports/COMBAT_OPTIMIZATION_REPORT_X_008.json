@@ -1,14 +1,14 @@
 {
   "metadata": {
     "agent": "X_008",
-    "generatedUtc": "2026-05-25T02:40:16.046935+00:00",
+    "generatedUtc": "2026-06-08T14:36:51.808798+00:00",
     "root": "C:\\hades\\Hecton8",
     "evidenceClass": "STATIC_SOURCE_SCAN_AND_SOURCE_LAYOUT_DECLARATIONS",
     "runtimeProof": "PENDING_VERIFICATION_UNITY_IMPORT_BURST_DISASSEMBLY_PROFILER_NOT_RUN"
   },
   "scope": {
-    "allCSharpFiles": 2406,
-    "combatCSharpFiles": 7,
+    "allCSharpFiles": 2575,
+    "combatCSharpFiles": 8,
     "combatBulletLikeFiles": [
       "Assets/_Project/Scripts/Gameplay/Combat/BallisticsEditorFacade.cs",
       "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs"
@@ -17,7 +17,7 @@
       "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
       "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs"
     ],
-    "shaderSourceFiles": 179
+    "shaderSourceFiles": 213
   },
   "trigonometryPurge": {
     "combatForbiddenTrigCount": 0,
@@ -25,14 +25,41 @@
     "combatForbiddenTrigHits": [],
     "combatAngleApiCount": 0,
     "combatAngleApiHits": [],
-    "projectAcosAsinInventoryCount": 0,
-    "projectAcosAsinInventory": [],
-    "projectAllTrigInventoryCount": 0,
+    "projectAcosAsinInventoryCount": 3,
+    "projectAcosAsinInventory": [
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
+        "line": 1083,
+        "text": "_lastWallSlideAngleDegrees = math.degrees(math.acos(math.clamp(math.abs(normal.y), 0f, 1f)));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Player/Movement/ZeroGMovementJobs.cs",
+        "line": 419,
+        "text": "float angle = math.acos(dot);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/MenuCameraController.cs",
+        "line": 195,
+        "text": "float theta0 = math.acos(dot);"
+      }
+    ],
+    "projectAllTrigInventoryCount": 36,
     "shaderAcosAsinInventoryCount": 0,
     "shaderAcosAsinInventory": [],
-    "shaderInverseAngleInventoryCount": 0,
-    "shaderInverseAngleInventory": [],
-    "shaderTrigInventoryCount": 54,
+    "shaderInverseAngleInventoryCount": 2,
+    "shaderInverseAngleInventory": [
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_SurfaceCloudPanorama_1428.shader",
+        "line": 111,
+        "text": "float u = frac(atan2(dir.x, dir.z) * 0.15915494309 + 0.73);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Include/HullCavitationBaker1722.compute",
+        "line": 232,
+        "text": "float angle = atan2(centered.y, centered.x);"
+      }
+    ],
+    "shaderTrigInventoryCount": 59,
     "projectAllTrigInventoryNote": "C# and shader inverse-trig are both scanned. Remaining shader sin/cos tokens are presentation/bake inventory, not armor penetration truth."
   },
   "packedMetaProof": {
@@ -113,20 +140,20 @@
     "truthCaveat": "This is vehicle hydrodynamics, not armor penetration. The edit is limited to the tensor solve used by vehicle force/torque application and keeps diagonal fallback behavior."
   },
   "hullDentVisualRotationProof": {
-    "verdict": "PASS",
+    "verdict": "FAIL",
     "submarineStructuralGridQuaternionInverseCalls": 0,
     "hullDentShaderQuaternionInverseCalls": 0,
     "mathContract": "Unity Transform.rotation is unit; inverse(q) == conjugate(q) for damage feedback local projection.",
     "truthCaveat": "This proof is for deferred visual dent projection only; central combat health truth still stays on LUT/CAS routes."
   },
   "submarineHullVisualRegistryCacheProof": {
-    "verdict": "PASS",
+    "verdict": "FAIL",
     "resolvePlayerCameraGlobalRegistryReads": 0,
     "breachScreenFeedbackFluidRegistryReads": 0,
     "coldCacheReadsGlobalRegistryPlayer": true,
-    "coldCacheReadsGlobalRegistryFluidDecals": true,
+    "coldCacheReadsGlobalRegistryFluidDecals": false,
     "hotSwapUpdatesPlayerRuntime": true,
-    "hotSwapUpdatesFluidDecals": true,
+    "hotSwapUpdatesFluidDecals": false,
     "contract": "Submarine hull damage presentation may read GlobalRegistry during OnEnable cold cache and hot-swap rebinding, but LateFrame leak plume camera and breach spray flush paths must read local cached services only."
   },
   "branchlessArmorLookupProof": {
@@ -175,7 +202,7 @@
         "mathSelectCount": 4,
         "forbiddenTrigCount": 0,
         "angleApiCount": 0,
-        "sourceBytes": 3273
+        "sourceBytes": 3140
       },
       "ResolveArmorAngleStep": {
         "explicitControlTokens": 0,
@@ -237,402 +264,397 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 206,
+        "line": 216,
         "text": "private const int ArmorAngleSteps = ShinobuArmorPenetrationTable.AngleSteps;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 582,
+        "line": 628,
         "text": "AtomicHealthCasRetryLimit,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 887,
+        "line": 902,
         "text": "tuning.GlobalArmorMultiplier = math.clamp(math.select(1f, tuning.GlobalArmorMultiplier, math.isfinite(tuning.GlobalArmorMultiplier)), 0f, 8f);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 888,
+        "line": 903,
         "text": "tuning.WeakPointDamageScalar = math.clamp(math.select(1.18f, tuning.WeakPointDamageScalar, math.isfinite(tuning.WeakPointDamageScalar)), 0.1f, 8f);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 889,
+        "line": 904,
         "text": "tuning.ChitinDeflectStrength = math.clamp(math.select(54f, tuning.ChitinDeflectStrength, math.isfinite(tuning.ChitinDeflectStrength)), 0f, 63f);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 890,
+        "line": 905,
         "text": "tuning.SteelDeflectStrength = math.clamp(math.select(58f, tuning.SteelDeflectStrength, math.isfinite(tuning.SteelDeflectStrength)), 0f, 63f);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 891,
+        "line": 906,
         "text": "tuning.MockGridSpacingMeters = math.clamp(math.select(0.45f, tuning.MockGridSpacingMeters, math.isfinite(tuning.MockGridSpacingMeters)), 0.05f, 4f);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 900,
+        "line": 915,
         "text": "return math.saturate(math.select(fallback, homeostasis, math.isfinite(homeostasis)));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1016,
-        "text": "views.SignalImpactAups[detailIndex] = math.select(double3.zero, impactAup, new bool3(IsFinite(impactAup)));"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1039,
+        "line": 1097,
         "text": "for (int angleStep = 0; angleStep < ArmorAngleSteps; angleStep++)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1041,
+        "line": 1099,
         "text": "int index = (materialRow * ArmorAngleSteps) + angleStep;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1185,
+        "line": 1229,
         "text": "views.TargetRotations[i] = new quaternion(math.select("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1195,
+        "line": 1239,
         "text": "float height = math.max(0.25f, math.select(1f, targetHeight, math.isfinite(targetHeight)));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1237,
+        "line": 1281,
         "text": "int grazingBonus = math.clamp(angleStep, 0, ArmorAngleSteps - 1) * 5;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1338,
+        "line": 1382,
         "text": "float3 localPoint = math.select(detail.LocalPoint, localFromAup, new bool3(aupValid));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1340,
+        "line": 1384,
         "text": "float3 normal = ResolveArmorSurfaceNormal(localPoint, math.max(extents, new float3(0.125f)), detail.ArmorNormal);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1342,
+        "line": 1386,
         "text": "int angleStep = ResolveArmorAngleStep(signal.Direction, normal);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1343,
+        "line": 1387,
         "text": "int lutIndex = (materialRow * ArmorAngleSteps) + angleStep;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1355,
+        "line": 1398,
         "text": "byte materialId = (byte)math.select("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1359,
+        "line": 1402,
         "text": "float deflectStrength = math.select(tuning.ChitinDeflectStrength, tuning.SteelDeflectStrength, steelMaterial);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1360,
+        "line": 1403,
         "text": "uint deflected = math.select(0u, 1u, strengthByte >= (byte)math.clamp(deflectStrength, 0f, 63f));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1380,
+        "line": 1423,
         "text": "private static ArmorPenetrationResolvedHitDTO BuildArmorPenetrationResolvedHit("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1394,
+        "line": 1437,
         "text": "float3 projectileDirection = NormalizeArmorLookup(signal.Direction, float3.zero);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1395,
+        "line": 1438,
         "text": "float3 armorNormal = NormalizeArmorLookup(sample.SurfaceNormal, float3.zero);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1396,
+        "line": 1439,
         "text": "float directionalArmorMultiplier = math.saturate(math.dot(projectileDirection, armorNormal) + 0.2f);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1399,
+        "line": 1442,
         "text": "armorMultiplier *= math.select(1f, directionalArmorMultiplier, hasDirectionalArmorProof);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1402,
+        "line": 1445,
         "text": "float weakspotMultiplier = math.select(1f, 3f, weakspotTier == (int)CombatWeakspotTier.Weakspot);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1406,
+        "line": 1449,
         "text": "weakspotMultiplier = math.select("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1411,
+        "line": 1454,
         "text": "float baseAmount = ResolveBranchlessBaseDamage(signal.Amount, signal.Direction, signal.ImpulseMagnitude, kind);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1416,
+        "line": 1459,
         "text": "uint weakFlag = math.select(0u, ArmorResolvedFlagWeakPoint, sample.LutByte <= ArmorWeakPointLutThreshold);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1417,
+        "line": 1460,
         "text": "uint deflectFlag = math.select("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1421,
+        "line": 1464,
         "text": "uint finiteFlag = math.select("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1455,
+        "line": 1498,
         "text": "private static float ResolveBranchlessBaseDamage(float amount, float3 impulseVector, float impulseMagnitude, byte kind)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1458,
+        "line": 1501,
         "text": "float safeAmount = math.select(0f, amount, amountValid);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1460,
+        "line": 1503,
         "text": "float safeImpulse = math.select(0f, impulseMagnitude, impulseValid);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1465,
+        "line": 1508,
         "text": "float kinetic = math.select(nonPlayerKinetic, playerKinetic, kind == (byte)CombatEntityKind.Player);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1466,
+        "line": 1509,
         "text": "kinetic = math.select(0f, kinetic, directionValid);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1467,
+        "line": 1510,
         "text": "float fallbackDamage = math.select(kinetic, safeImpulse, impulseValid);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1468,
+        "line": 1511,
         "text": "return math.select(fallbackDamage, safeAmount, amountValid);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1478,
+        "line": 1521,
         "text": "return math.select(1f, momentum, amountDriven & validVelocity);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1488,
+        "line": 1531,
         "text": "private static int ResolveArmorAngleStep(float3 projectileDirection, float3 armorNormal)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1490,
+        "line": 1533,
         "text": "float3 direction = NormalizeArmorLookup(projectileDirection, new float3(0f, 0f, 1f));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1491,
+        "line": 1534,
         "text": "float3 normal = NormalizeArmorLookup(armorNormal, new float3(0f, 0f, 1f));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1492,
+        "line": 1535,
         "text": "float attackDot = math.saturate(math.abs(math.dot(direction, normal)));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1493,
+        "line": 1536,
         "text": "return math.clamp((int)math.floor((1f - attackDot) * ArmorAngleSteps), 0, ArmorAngleSteps - 1);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1497,
+        "line": 1540,
         "text": "private static float3 NormalizeArmorLookup(float3 value, float3 fallback)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1501,
+        "line": 1544,
         "text": "float3 selected = math.select(fallback, value, new bool3(valid));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1506,
+        "line": 1549,
         "text": "private static float3 ResolveArmorSurfaceNormal(float3 localPoint, float3 extents, float3 fallback)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1512,
+        "line": 1555,
         "text": "float3 xNormal = new float3(math.select(-1f, 1f, scaled.x >= 0f), 0f, 0f);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1513,
+        "line": 1556,
         "text": "float3 yNormal = new float3(0f, math.select(-1f, 1f, scaled.y >= 0f), 0f);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1514,
+        "line": 1557,
         "text": "float3 zNormal = new float3(0f, 0f, math.select(-1f, 1f, scaled.z >= 0f));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1515,
+        "line": 1558,
         "text": "float3 normal = math.select(zNormal, yNormal, new bool3(yMajor));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1516,
+        "line": 1559,
         "text": "normal = math.select(normal, xNormal, new bool3(xMajor));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1517,
+        "line": 1560,
         "text": "return NormalizeArmorLookup(normal, NormalizeArmorLookup(fallback, new float3(0f, 0f, 1f)));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1523,
+        "line": 1566,
         "text": "float x = math.saturate(math.select(0f, value, math.isfinite(value)));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1530,
+        "line": 1573,
         "text": "return math.select(fallback, value, new bool3(math.all(math.isfinite(value))));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1554,
+        "line": 1597,
         "text": "FrontDot = math.dot(NormalizeArmorLookup(signal.Direction, float3.zero), sample.SurfaceNormal),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1580,
+        "line": 1623,
         "text": "float q = math.saturate(math.select(0f, visualQualityWeight01, math.isfinite(visualQualityWeight01)));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1596,
+        "line": 1639,
         "text": "internal static unsafe bool TryAtomicSubtractHealth("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1608,
+        "line": 1651,
         "text": "float safeDamage = math.max(0f, math.select(0f, damage, math.isfinite(damage)));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1612,
+        "line": 1655,
         "text": "for (int i = 0; i < AtomicHealthCasRetryLimit; i++)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1614,
+        "line": 1657,
         "text": "int observed = Interlocked.CompareExchange(ref location, 0, 0);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1624,
+        "line": 1667,
         "text": "if (Interlocked.CompareExchange(ref location, desired, observed) == observed)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1645,
+        "line": 1688,
         "text": "int count = math.clamp(math.select(pelletCount, 100, pelletCount <= 0), 1, AtomicHealthCasRetryLimit);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1726,
+        "line": 1769,
         "text": "float avgMitigated = math.select(0f, mitigatedDamageSum * math.rcp((float)math.max(1u, impactCount)), impactCount > 0u);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1727,
+        "line": 1770,
         "text": "uint flags = math.select("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1738,
+        "line": 1781,
         "text": "AvgMitigatedDamage = math.select(0f, avgMitigated, math.isfinite(avgMitigated)),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1740,
+        "line": 1783,
         "text": "GlobalQualityWeight = math.saturate(math.select(0f, globalQualityWeight, math.isfinite(globalQualityWeight))),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2071,
+        "line": 2130,
         "text": "CombatDamageTortureJob mockJob = new CombatDamageTortureJob"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2088,
+        "line": 2147,
         "text": "EvaluateArmorPenetrationJob job = new EvaluateArmorPenetrationJob"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2124,
+        "line": 2183,
         "text": "weakPointHits += math.select(0u, 1u, (hit.Flags & ArmorResolvedFlagWeakPoint) != 0u);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2125,
+        "line": 2184,
         "text": "deflectCount += math.select(0u, 1u, (hit.Flags & ArmorResolvedFlagDeflected) != 0u);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2126,
+        "line": 2185,
         "text": "flags |= math.select(0u, (uint)ArmorTelemetryFlagsNanGuard, (hit.Flags & ArmorResolvedFlagNonFinite) != 0u);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2127,
+        "line": 2186,
         "text": "mitigatedSum += math.max(0f, math.select(0f, hit.ArmorMitigated, math.isfinite(hit.ArmorMitigated)));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2176,
+        "line": 2232,
         "text": "private unsafe struct EvaluateArmorPenetrationJob : IJobParallelFor"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2210,
+        "line": 2266,
         "text": "ResolvedHits[index] = BuildArmorPenetrationResolvedHit("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2223,
+        "line": 2279,
         "text": "private struct CombatDamageTortureJob : IJobParallelFor"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2277,
+        "line": 2333,
         "text": "bool success = TryAtomicSubtractHealth(Health, 0, 1f, out previousHealth, out nextHealth);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2278,
+        "line": 2334,
         "text": "Successes[index] = math.select(0, 1, success);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2529,
+        "line": 2585,
         "text": "return math.select(fallback, parsed, math.isfinite(parsed));"
       }
     ]
@@ -730,47 +752,47 @@
     "contract": "Ballistics FrameTick must not schedule solver, VFX, or telemetry jobs from zero-length critical lanes or a primitive count that has not been clamped to actual storage."
   },
   "combatReadAccessorBoundsProof": {
-    "tryGetTargetHealthFractionChecksHealthCreated": true,
-    "tryGetTargetHealthFractionChecksInvMaxCreated": true,
-    "tryGetTargetHealthFractionChecksHealthLength": true,
-    "tryGetTargetHealthFractionChecksInvMaxLength": true,
-    "tryGetStatusEffectMaskChecksStateLength": true,
-    "tryGetStatusMobilityScaleChecksStateLength": true,
+    "tryGetTargetHealthFractionChecksHealthCreated": false,
+    "tryGetTargetHealthFractionChecksInvMaxCreated": false,
+    "tryGetTargetHealthFractionChecksHealthLength": false,
+    "tryGetTargetHealthFractionChecksInvMaxLength": false,
+    "tryGetStatusEffectMaskChecksStateLength": false,
+    "tryGetStatusMobilityScaleChecksStateLength": false,
     "tryGetStatusEffectDebugSnapshotChecksTargetCount": true,
     "tryGetStatusEffectDebugSnapshotChecksReceiverLength": true,
-    "tryGetStatusEffectDebugSnapshotChecksStateLength": true,
-    "readStatusEffectDebugTargetCountChecksStateCreated": true,
+    "tryGetStatusEffectDebugSnapshotChecksStateLength": false,
+    "readStatusEffectDebugTargetCountChecksStateCreated": false,
     "readStatusEffectDebugTargetCountChecksReceiverNull": true,
     "readStatusEffectDebugTargetCountClampsTargetCount": true,
-    "readStatusEffectDebugTargetCountClampsStateLength": true,
+    "readStatusEffectDebugTargetCountClampsStateLength": false,
     "readStatusEffectDebugTargetCountClampsReceiverLength": true,
-    "verdict": "PASS",
+    "verdict": "FAIL",
     "contract": "Read accessors that dereference target-slot NativeArrays must fail closed if a stale or corrupted slot index escapes the target-id map."
   },
   "damageJobBufferAndSlotBoundsProof": {
-    "frameTickCallsPreflightBeforeLock": true,
-    "preflightChecksSignalDetails": true,
+    "frameTickCallsPreflightBeforeLock": false,
+    "preflightChecksSignalDetails": false,
     "preflightChecksSignalImpactAups": true,
-    "preflightChecksTargetBuffers": true,
-    "preflightChecksResultCountersAndLut": true,
+    "preflightChecksTargetBuffers": false,
+    "preflightChecksResultCountersAndLut": false,
     "jobChecksSlotBeforeReads": true,
     "slotGuardChecksDirectReadArrays": true,
     "dispatchResultsChecksReceiverLength": true,
-    "dispatchStatusClampsToResultBuffers": true,
-    "clearCountersClampsLength": true,
-    "verdict": "PASS",
+    "dispatchStatusClampsToResultBuffers": false,
+    "clearCountersClampsLength": false,
+    "verdict": "FAIL",
     "contract": "Combat damage job must not trust stale target map slots or partially rebound buffers before direct NativeArray slot reads."
   },
   "damageIngressBufferBoundsProof": {
-    "queueChecksIngressSlotBeforeWrites": true,
-    "ingressSlotChecksSignalQueueAndDetails": true,
-    "ingressSlotChecksAupLane": true,
-    "writeHelperChecksAupLaneCreated": true,
-    "writeHelperSanitizesAupBranchlessly": true,
+    "queueChecksIngressSlotBeforeWrites": false,
+    "ingressSlotChecksSignalQueueAndDetails": false,
+    "ingressSlotChecksAupLane": false,
+    "writeHelperChecksAupLaneCreated": false,
+    "writeHelperSanitizesAupBranchlessly": false,
     "writeHelperUsesSignalCodecAupBounds": true,
     "combatDamageSignalCodecFromRuntimePointUsesAupBounds": true,
     "storageRejectTelemetryHashDeclared": true,
-    "verdict": "PASS",
+    "verdict": "FAIL",
     "contract": "Damage admission must prove queue detail storage and impact AUP storage before writing ingress lanes, otherwise the job preflight can never repair the corrupted queue."
   },
   "combatSignalLaneSegregationProof": {
@@ -789,23 +811,23 @@
     "predatorCognitionSkipsVisualOnlyDamage": true,
     "predatorAcousticSkipsVisualOnlyDamage": true,
     "foveatedSimulationSkipsVisualOnlyDamage": true,
-    "submarineHullDentStillUsesTypedVisualProjection": true,
-    "signalBusCoalescingKeepsVisualOnlySeparate": true,
-    "verdict": "PASS",
-    "contract": "Visual-only and owner-already-applied notifications may share the historical CombatDamageSignal lane for VFX, haptic, AI, and diagnostic consumers, but central CombatDamageRuntime must reject them before LUT/CAS health mutation. State-mutating secondary consumers must also skip visual-only payloads before deriving vehicle damage, habitat stress, or flora destruction."
+    "submarineHullDentStillUsesTypedVisualProjection": false,
+    "signalBusCoalescingKeepsVisualOnlySeparate": false,
+    "verdict": "FAIL",
+    "contract": "Visual-only and owner-already-applied notifications may share the historical CombatDamageSignal lane for VFX, haptic, AI, and diagnostic consumers, but central CombatDamageRuntime must reject them before LUT/CAS health mutation. State-mutating secondary consumers must also skip visual-only payloads before deriving vehicle damage, habitat stress, or flora destruction. SignalBus coalescing must reject incoming visual-only CombatDamageSignal payloads before target/type/channel aggregation so separate visor/projector decal events do not collapse into one payload."
   },
   "combatTelemetryBoundsProof": {
-    "recordChecksRingCreated": true,
-    "recordChecksStateCreated": true,
-    "recordChecksRingLength": true,
-    "recordChecksStateLength": true,
-    "recordUsesActualRingLength": true,
-    "dumpChecksRingLength": true,
-    "dumpUsesActualRingLength": true,
-    "dumpChecksStateLengthBeforeCursorRead": true,
-    "dumpLatchAfterWrite": true,
-    "dispatchResultCountClampedToResultsLength": true,
-    "verdict": "PASS",
+    "recordChecksRingCreated": false,
+    "recordChecksStateCreated": false,
+    "recordChecksRingLength": false,
+    "recordChecksStateLength": false,
+    "recordUsesActualRingLength": false,
+    "dumpChecksRingLength": false,
+    "dumpUsesActualRingLength": false,
+    "dumpChecksStateLengthBeforeCursorRead": false,
+    "dumpLatchAfterWrite": false,
+    "dispatchResultCountClampedToResultsLength": false,
+    "verdict": "FAIL",
     "contract": "Combat blackbox telemetry writes and dumps must index by actual ring/state lengths, not declared 300-frame capacity."
   },
   "managedMirrorBoundsProof": {
@@ -814,37 +836,37 @@
     "pushbackChecksTargetBodiesLength": true,
     "worldPointChecksReceiverTransformLength": true,
     "registeredTransformChecksReceiverTransformLength": true,
-    "ballisticRefreshClampsMirrorAndNativeLengths": true,
-    "hitProfileChecksMirrorAndNativeLengths": true,
-    "verdict": "PASS",
+    "ballisticRefreshClampsMirrorAndNativeLengths": false,
+    "hitProfileChecksMirrorAndNativeLengths": false,
+    "verdict": "FAIL",
     "contract": "Managed combat mirrors are owner-phase presentation/state bridges and must be checked against actual array lengths before side effects or ballistic registration."
   },
   "targetMutatorSlotBoundsProof": {
-    "registerExistingChecksExistingSlot": true,
-    "registerNewChecksRegistrationSlot": true,
-    "unregisterChecksSlotAndLastSlot": true,
-    "syncMutatorsCheckExistingSlot": true,
-    "storageSlotChecksNativeAndStatusArrays": true,
-    "storageSlotChecksManagedMirror": true,
-    "registrationSlotCapsMaxTargets": true,
-    "existingSlotCapsTargetCount": true,
-    "clearSlotClearsTransientStatusResult": true,
-    "armorProfileUsesFullSlotHelper": true,
-    "verdict": "PASS",
+    "registerExistingChecksExistingSlot": false,
+    "registerNewChecksRegistrationSlot": false,
+    "unregisterChecksSlotAndLastSlot": false,
+    "syncMutatorsCheckExistingSlot": false,
+    "storageSlotChecksNativeAndStatusArrays": false,
+    "storageSlotChecksManagedMirror": false,
+    "registrationSlotCapsMaxTargets": false,
+    "existingSlotCapsTargetCount": false,
+    "clearSlotClearsTransientStatusResult": false,
+    "armorProfileUsesFullSlotHelper": false,
+    "verdict": "FAIL",
     "contract": "Owner-side target mutators must not trust hash-map slots or declared target count before writing native target lanes, managed mirrors, transient status results, or armor profile state."
   },
   "armorTargetSnapshotBoundsProof": {
-    "checksAllSnapshotBuffers": true,
-    "clampsLoopToAllSnapshotLengths": true,
-    "verdict": "PASS",
+    "checksAllSnapshotBuffers": false,
+    "clampsLoopToAllSnapshotLengths": false,
+    "verdict": "FAIL",
     "contract": "Armor target snapshot refresh can be called before damage/status job preflights, so it must clamp its own managed and native target lanes before writing AUP, rotation, and extents."
   },
   "armorCsvApplyBoundsProof": {
     "checksProfileLaneCreated": true,
     "clampsLoopToProfileLength": true,
-    "checksFallbackHealthLaneLength": true,
-    "checksFallbackArmorLaneLength": true,
-    "verdict": "PASS",
+    "checksFallbackHealthLaneLength": false,
+    "checksFallbackArmorLaneLength": false,
+    "verdict": "FAIL",
     "contract": "Editor armor CSV import writes runtime armor profiles and must clamp to actual profile storage and guard fallback health/armor lanes."
   },
   "armorMockImpactBufferBoundsProof": {
@@ -869,58 +891,58 @@
     "contract": "Armor debug read accessors return only already-created Vault snapshots and clamp targetCount to the shortest target buffer, so editor/debug consumers cannot read past a stale or partially rebound target lane."
   },
   "statusTelemetryReadAccessorBoundsProof": {
-    "checksRingCreated": true,
-    "checksCursorCreated": true,
-    "checksRingLength": true,
-    "checksCursorLength": true,
-    "clampsRingModuloToActualLength": true,
-    "verdict": "PASS",
+    "checksRingCreated": false,
+    "checksCursorCreated": false,
+    "checksRingLength": false,
+    "checksCursorLength": false,
+    "clampsRingModuloToActualLength": false,
+    "verdict": "FAIL",
     "contract": "Status telemetry reads must not trust declared capacity when the actual Vault ring or cursor lane is missing, short, or partially rebound."
   },
   "statusTelemetryWriteBoundsProof": {
-    "completionChecksRingCreated": true,
-    "completionChecksCursorCreated": true,
-    "completionChecksRingLength": true,
-    "completionChecksCursorLength": true,
-    "completionClampsRingModuloToActualLength": true,
-    "appendChecksRingCreated": true,
-    "appendChecksCursorCreated": true,
-    "appendChecksRingLength": true,
-    "appendChecksCursorLength": true,
-    "appendClampsRingModuloToActualLength": true,
-    "verdict": "PASS",
+    "completionChecksRingCreated": false,
+    "completionChecksCursorCreated": false,
+    "completionChecksRingLength": false,
+    "completionChecksCursorLength": false,
+    "completionClampsRingModuloToActualLength": false,
+    "appendChecksRingCreated": false,
+    "appendChecksCursorCreated": false,
+    "appendChecksRingLength": false,
+    "appendChecksCursorLength": false,
+    "appendClampsRingModuloToActualLength": false,
+    "verdict": "FAIL",
     "contract": "Status telemetry writers use only created lanes, validate cursor storage, and modulo by the actual ring length exposed by Vault instead of the declared 300-entry capacity."
   },
   "statusTelemetryDumpBoundsProof": {
-    "checksRingCreated": true,
-    "checksRingLength": true,
-    "clampsDumpCapacityToActualLength": true,
-    "checksCursorReadable": true,
-    "writesActualRingLength": true,
+    "checksRingCreated": false,
+    "checksRingLength": false,
+    "clampsDumpCapacityToActualLength": false,
+    "checksCursorReadable": false,
+    "writesActualRingLength": false,
     "ordersByActualRingLength": true,
     "iteratesActualRingLength": true,
     "indexesActualRingLength": true,
-    "latchAfterWrite": true,
-    "verdict": "PASS",
+    "latchAfterWrite": false,
+    "verdict": "FAIL",
     "contract": "Status blackbox dumps emit and iterate only actual ring length, tolerate missing cursor storage, and latch as dumped only after telemetry rows were written."
   },
   "statusTelemetryClearBoundsProof": {
-    "clampsClearToActualRingLength": true,
-    "clampsCursorClearToActualLength": true,
-    "verdict": "PASS",
+    "clampsClearToActualRingLength": false,
+    "clampsCursorClearToActualLength": false,
+    "verdict": "FAIL",
     "contract": "Status telemetry clear never iterates past actual Vault ring or cursor lengths."
   },
   "statusJobBufferPreflightProof": {
-    "scheduleCallsPreflightAfterLock": true,
-    "unlocksStatusOnPreflightFailure": true,
-    "unlocksBorrowedArmorOnPreflightFailure": true,
-    "checksCounterLaneLength": true,
-    "checksTelemetryCursorLength": true,
-    "checksTelemetryRingLength": true,
-    "checksTuningLength": true,
-    "checksApplyJobCoreBuffers": true,
-    "checksSimulationBuffers": true,
-    "verdict": "PASS",
+    "scheduleCallsPreflightAfterLock": false,
+    "unlocksStatusOnPreflightFailure": false,
+    "unlocksBorrowedArmorOnPreflightFailure": false,
+    "checksCounterLaneLength": false,
+    "checksTelemetryCursorLength": false,
+    "checksTelemetryRingLength": false,
+    "checksTuningLength": false,
+    "checksApplyJobCoreBuffers": false,
+    "checksSimulationBuffers": false,
+    "verdict": "FAIL",
     "contract": "Status jobs use unsafe 64-byte counter lanes and cursor lanes, so scheduling must fail closed unless actual Vault buffers satisfy the lengths used by the Burst jobs."
   },
   "parallelEvaluatorProof": {
@@ -928,10 +950,10 @@
     "tortureJob": "CombatDamageTortureJob : IJobParallelFor",
     "evaluateJobActuallyScheduled": true,
     "tortureJobActuallyScheduled": true,
-    "tortureUsesVaultOwnedBuffers": true,
-    "tortureChecksTargetBuffersBeforeJobs": true,
+    "tortureUsesVaultOwnedBuffers": false,
+    "tortureChecksTargetBuffersBeforeJobs": false,
     "tempJobAllocationsInTortureProof": 0,
-    "armorRuntimeCompleteCallCount": 4,
+    "armorRuntimeCompleteCallCount": 0,
     "unannotatedArmorRuntimeCompleteCallCount": 0,
     "unannotatedArmorRuntimeCompleteCalls": [],
     "sourceContract": "EvaluateArmorPenetrationJob reads pre-resolved target slots and writes 128B ArmorPenetrationResolvedHitDTO records. Health mutation is intentionally absent from this job; CAS apply remains a separate owner phase.",
@@ -939,197 +961,177 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 33,
+        "line": 34,
         "text": "public const BufferID TortureRequests = (BufferID)73592;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 37,
+        "line": 38,
         "text": "public const BufferID TortureResolvedHits = (BufferID)73596;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 138,
+        "line": 139,
         "text": "internal struct ArmorPenetrationResolvedHitDTO"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 179,
+        "line": 180,
         "text": "public NativeArray<CombatDamageRequest> TortureRequests;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 183,
+        "line": 184,
         "text": "public NativeArray<ArmorPenetrationResolvedHitDTO> TortureResolvedHits;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 243,
+        "line": 257,
+        "text": "CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TortureRequests) |"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+        "line": 261,
+        "text": "CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TortureResolvedHits);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+        "line": 279,
         "text": "private static VaultGenerationHandle<CombatDamageRequest> _armorTortureRequestsHandle;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 247,
+        "line": 283,
         "text": "private static VaultGenerationHandle<ArmorPenetrationResolvedHitDTO> _armorTortureResolvedHitsHandle;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 285,
+        "line": 320,
         "text": "ReleaseArmorVaultHandle(vault, ref _armorTortureRequestsHandle);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 289,
+        "line": 324,
         "text": "ReleaseArmorVaultHandle(vault, ref _armorTortureResolvedHitsHandle);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 371,
+        "line": 417,
         "text": "ReleaseArmorVaultHandle(previousVault, ref _armorTortureRequestsHandle);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 375,
+        "line": 421,
         "text": "ReleaseArmorVaultHandle(previousVault, ref _armorTortureResolvedHitsHandle);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 526,
+        "line": 572,
         "text": "ref _armorTortureRequestsHandle,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 527,
+        "line": 573,
         "text": "ArmorPenetrationVaultBufferIds.TortureRequests,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 531,
+        "line": 577,
         "text": "out views.TortureRequests) &&"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 558,
+        "line": 604,
         "text": "ref _armorTortureResolvedHitsHandle,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 559,
+        "line": 605,
         "text": "ArmorPenetrationVaultBufferIds.TortureResolvedHits,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 563,
+        "line": 609,
         "text": "out views.TortureResolvedHits);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 800,
-        "text": "private static bool TryLockArmorEvaluatorTortureBuffersForJobs(out int lockedCount)"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 807,
-        "text": "if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureRequests, ArmorMemoryOwner)) return false;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 815,
-        "text": "if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureResolvedHits, ArmorMemoryOwner)) { UnlockArmorEvaluatorTortureBuffersForJobs(lockedCount); return false; }"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 826,
-        "text": "if (lockedCount >= 5) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TortureResolvedHits, ArmorMemoryOwner);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 830,
-        "text": "if (lockedCount >= 1) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TortureRequests, ArmorMemoryOwner);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1380,
+        "line": 1423,
         "text": "private static ArmorPenetrationResolvedHitDTO BuildArmorPenetrationResolvedHit("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1429,
+        "line": 1472,
         "text": "return new ArmorPenetrationResolvedHitDTO"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2022,
+        "line": 2084,
         "text": "public static bool RunArmorPenetrationTortureProof(int maxImpacts, out ArmorPenetrationTelemetryEntry proof)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2032,
+        "line": 2096,
         "text": "!views.TortureRequests.IsCreated ||"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2036,
+        "line": 2100,
         "text": "!views.TortureResolvedHits.IsCreated)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2055,
+        "line": 2120,
         "text": "if (views.TortureRequests.Length < count ||"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2059,
+        "line": 2124,
         "text": "views.TortureResolvedHits.Length < count)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2064,
-        "text": "if (!TryLockArmorEvaluatorTortureBuffersForJobs(out lockedTortureBuffers))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2079,
+        "line": 2138,
         "text": "Requests = views.TortureRequests,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2100,
+        "line": 2159,
         "text": "Requests = views.TortureRequests,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2104,
+        "line": 2163,
         "text": "ResolvedHits = views.TortureResolvedHits"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2123,
+        "line": 2182,
         "text": "ArmorPenetrationResolvedHitDTO hit = views.TortureResolvedHits[i];"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2176,
+        "line": 2232,
         "text": "private unsafe struct EvaluateArmorPenetrationJob : IJobParallelFor"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2192,
+        "line": 2248,
         "text": "[WriteOnly, NoAlias] public NativeArray<ArmorPenetrationResolvedHitDTO> ResolvedHits;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2223,
+        "line": 2279,
         "text": "private struct CombatDamageTortureJob : IJobParallelFor"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2375,
+        "line": 2431,
         "text": "if (UnsafeUtility.SizeOf<ArmorPenetrationResolvedHitDTO>() != 128)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2377,
+        "line": 2433,
         "text": "failure = \"ArmorPenetrationResolvedHitDTO size mismatch.\";"
       }
     ]
@@ -1581,242 +1583,242 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 42,
+        "line": 43,
         "text": "[StructLayout(LayoutKind.Explicit, Size = 64)]"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 43,
+        "line": 44,
         "text": "public unsafe struct ShinobuArmorPenetrationTable"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 49,
+        "line": 50,
         "text": "[FieldOffset(0)] public fixed byte Cells[CellCount];"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 50,
+        "line": 51,
         "text": "[FieldOffset(48)] public uint Revision;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 51,
+        "line": 52,
         "text": "[FieldOffset(52)] public uint AuthoringHash;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 52,
+        "line": 53,
         "text": "[FieldOffset(56)] public ulong _pad0;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 55,
+        "line": 56,
         "text": "[StructLayout(LayoutKind.Explicit, Size = 64)]"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 56,
+        "line": 57,
         "text": "public unsafe struct ArmorProfileDTO"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 58,
+        "line": 59,
         "text": "[FieldOffset(0)] public uint SpeciesHashID;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 59,
+        "line": 60,
         "text": "[FieldOffset(4)] public float BaseHealth;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 60,
+        "line": 61,
         "text": "[FieldOffset(8)] public float BaseArmor;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 61,
+        "line": 62,
         "text": "[FieldOffset(12)] public uint _pad0;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 62,
+        "line": 63,
         "text": "[FieldOffset(16)] public fixed byte ArmorGridLUT[ShinobuArmorPenetrationTable.CellCount];"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 65,
+        "line": 66,
         "text": "[StructLayout(LayoutKind.Explicit, Size = 64)]"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 68,
-        "text": "[FieldOffset(0)] public float GlobalArmorMultiplier;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
         "line": 69,
-        "text": "[FieldOffset(4)] public float WeakPointDamageScalar;"
+        "text": "[FieldOffset(0)] public float GlobalArmorMultiplier;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
         "line": 70,
-        "text": "[FieldOffset(8)] public float ChitinDeflectStrength;"
+        "text": "[FieldOffset(4)] public float WeakPointDamageScalar;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
         "line": 71,
-        "text": "[FieldOffset(12)] public float SteelDeflectStrength;"
+        "text": "[FieldOffset(8)] public float ChitinDeflectStrength;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
         "line": 72,
+        "text": "[FieldOffset(12)] public float SteelDeflectStrength;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+        "line": 73,
         "text": "[FieldOffset(16)] public float GlobalQualityWeight;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 78,
+        "line": 79,
         "text": "[FieldOffset(48)] public ulong _pad2;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 79,
+        "line": 80,
         "text": "[FieldOffset(56)] public ulong _pad3;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 82,
+        "line": 83,
         "text": "[StructLayout(LayoutKind.Explicit, Size = 64)]"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 85,
+        "line": 86,
         "text": "[FieldOffset(0)] public uint Frame;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 86,
+        "line": 87,
         "text": "[FieldOffset(4)] public uint ImpactCount;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 87,
+        "line": 88,
         "text": "[FieldOffset(8)] public uint WeakPointHits;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 88,
+        "line": 89,
         "text": "[FieldOffset(12)] public uint DeflectCount;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 89,
+        "line": 90,
         "text": "[FieldOffset(16)] public uint Flags;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 97,
+        "line": 98,
         "text": "[FieldOffset(48)] public ulong _pad0;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 98,
+        "line": 99,
         "text": "[FieldOffset(56)] public ulong _pad1;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 104,
+        "line": 105,
         "text": "[FieldOffset(0)] public double3 ImpactAup;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 107,
+        "line": 108,
         "text": "[FieldOffset(48)] public uint TargetHash;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 108,
+        "line": 109,
         "text": "[FieldOffset(52)] public uint SourceHash;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 109,
+        "line": 110,
         "text": "[FieldOffset(56)] public uint MaterialHash;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 138,
+        "line": 139,
         "text": "internal struct ArmorPenetrationResolvedHitDTO"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 140,
+        "line": 141,
         "text": "[FieldOffset(0)] public int TargetId;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 141,
+        "line": 142,
         "text": "[FieldOffset(4)] public int SourceId;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 142,
+        "line": 143,
         "text": "[FieldOffset(8)] public int TargetSlot;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 143,
+        "line": 144,
         "text": "[FieldOffset(12)] public int DetailIndex;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 144,
+        "line": 145,
         "text": "[FieldOffset(16)] public float BaseAmount;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 151,
+        "line": 152,
         "text": "[FieldOffset(52)] public float3 SurfaceNormal;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2338,
+        "line": 2394,
         "text": "if (UnsafeUtility.SizeOf<ArmorProfileDTO>() != 64)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2344,
+        "line": 2400,
         "text": "if (UnsafeUtility.SizeOf<ShinobuArmorPenetrationTable>() != 64)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2359,
+        "line": 2415,
         "text": "if ((int)Marshal.OffsetOf(typeof(ArmorProfileDTO), nameof(ArmorProfileDTO.SpeciesHashID)) != 0 ||"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2360,
+        "line": 2416,
         "text": "(int)Marshal.OffsetOf(typeof(ArmorProfileDTO), nameof(ArmorProfileDTO.BaseHealth)) != 4 ||"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2361,
+        "line": 2417,
         "text": "(int)Marshal.OffsetOf(typeof(ArmorProfileDTO), nameof(ArmorProfileDTO.BaseArmor)) != 8 ||"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2362,
+        "line": 2418,
         "text": "(int)Marshal.OffsetOf(typeof(ArmorProfileDTO), nameof(ArmorProfileDTO._pad0)) != 12 ||"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2363,
+        "line": 2419,
         "text": "(int)Marshal.OffsetOf(typeof(ArmorProfileDTO), nameof(ArmorProfileDTO.ArmorGridLUT)) != 16)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2375,
+        "line": 2431,
         "text": "if (UnsafeUtility.SizeOf<ArmorPenetrationResolvedHitDTO>() != 128)"
       }
     ]
@@ -1846,7 +1848,7 @@
       "developmentApi": true,
       "parallelSameSlotJob": true,
       "sameSlotWriteRestrictionDisabled": true,
-      "usesVaultOwnedBuffers": true,
+      "usesVaultOwnedBuffers": false,
       "tempJobAllocationsInCasTortureProof": 0,
       "editorButton": true,
       "note": "Editor/development harness initializes one health slot to pelletCount and schedules pelletCount parallel atomic subtracts of 1 HP into that same slot. The harness uses vault-owned scratch buffers; runtime execution proof still requires Unity."
@@ -1864,132 +1866,127 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 684,
+        "line": 728,
         "text": "if (_queuedSignalCount >= MaxQueuedSignals)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 717,
+        "line": 814,
         "text": "(uint)detailIndex >= (uint)MaxQueuedSignals ||"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 802,
-        "text": "SignalBudget = MaxQueuedSignals,"
+        "line": 914,
+        "text": "SignalBudget = math.min(_queuedSignalCount, MaxQueuedSignals),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 827,
-        "text": "_signalDetails.Length >= MaxQueuedSignals &&"
+        "line": 944,
+        "text": "damageViews.DamageSignals.Length >= MaxQueuedSignals &&"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 829,
+        "line": 946,
+        "text": "damageViews.SignalDetails.Length >= MaxQueuedSignals &&"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+        "line": 948,
         "text": "armorViews.SignalImpactAups.Length >= MaxQueuedSignals &&"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1128,
-        "text": "MaxQueuedSignals,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1132,
-        "text": "PrewarmQueue(ref _damageSignals, MaxQueuedSignals);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1133,
-        "text": "_signalDetails = AllocateArray<CombatDamageSignalDetail>(MaxQueuedSignals, nameof(_signalDetails));"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2257,
+        "line": 2529,
         "text": "if (!TryAtomicSubtractHealth(Health, slot, damage, out previousHealth, out float nextHealth))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 421,
+        "line": 467,
         "text": "MaxQueuedSignals,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 469,
+        "line": 515,
         "text": "MaxQueuedSignals,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 490,
+        "line": 536,
         "text": "MaxQueuedSignals,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 498,
+        "line": 544,
         "text": "MaxQueuedSignals,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 506,
+        "line": 552,
         "text": "MaxQueuedSignals,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 514,
+        "line": 560,
         "text": "MaxQueuedSignals,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 582,
+        "line": 628,
         "text": "AtomicHealthCasRetryLimit,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1596,
+        "line": 675,
+        "text": "MaxQueuedSignals,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+        "line": 1639,
         "text": "internal static unsafe bool TryAtomicSubtractHealth("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1612,
+        "line": 1655,
         "text": "for (int i = 0; i < AtomicHealthCasRetryLimit; i++)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1614,
+        "line": 1657,
         "text": "int observed = Interlocked.CompareExchange(ref location, 0, 0);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1624,
+        "line": 1667,
         "text": "if (Interlocked.CompareExchange(ref location, desired, observed) == observed)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1631,
+        "line": 1674,
         "text": "public static bool RunAtomicHealthCasTortureProof(int pelletCount, out int successCount, out float finalHealth)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1645,
+        "line": 1688,
         "text": "int count = math.clamp(math.select(pelletCount, 100, pelletCount <= 0), 1, AtomicHealthCasRetryLimit);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1662,
+        "line": 1705,
         "text": "AtomicHealthCasTortureJob job = new AtomicHealthCasTortureJob"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1979,
+        "line": 2044,
         "text": "int count = math.min(math.max(1, maxSignals), math.min(targetCount, MaxQueuedSignals));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2268,
+        "line": 2324,
         "text": "private unsafe struct AtomicHealthCasTortureJob : IJobParallelFor"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 2277,
+        "line": 2333,
         "text": "bool success = TryAtomicSubtractHealth(Health, 0, 1f, out previousHealth, out nextHealth);"
       }
     ]
@@ -1999,14 +1996,14 @@
     "combatDumpPath": "Docs/AgentLogs/Dump_SHINOBU_318_Combat.bin",
     "armorDumpPath": "Docs/AgentLogs/Dump_SHINOBU_318.bin",
     "statusDumpPath": "Docs/AgentLogs/Dump_SHINOBU_319.bin",
-    "combatDumpCursorOrdered": true,
-    "combatDumpUsesActualRingLength": true,
-    "armorDumpCursorOrdered": true,
-    "statusDumpCursorOrdered": true,
-    "statusDumpUsesActualRingLength": true,
-    "dumpLatchAfterCombatWrite": true,
-    "dumpLatchAfterArmorWrite": true,
-    "dumpLatchAfterStatusWrite": true,
+    "combatDumpCursorOrdered": false,
+    "combatDumpUsesActualRingLength": false,
+    "armorDumpCursorOrdered": false,
+    "statusDumpCursorOrdered": false,
+    "statusDumpUsesActualRingLength": false,
+    "dumpLatchAfterCombatWrite": false,
+    "dumpLatchAfterArmorWrite": false,
+    "dumpLatchAfterStatusWrite": false,
     "queueRejectTelemetryRateLimited": true,
     "sourceEvidence": [
       {
@@ -2016,78 +2013,63 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 303,
+        "line": 301,
         "text": "private const byte TelemetryFlagQueueRejected = 1 << 2;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 680,
+        "line": 724,
         "text": "PublishQueueRejectAnomaly(TelemetryAnomalyQueueBusy, signal.Amount);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 686,
+        "line": 730,
         "text": "PublishQueueRejectAnomaly(TelemetryAnomalyQueueFull, signal.Amount);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 693,
+        "line": 737,
         "text": "PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1416,
+        "line": 750,
+        "text": "PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+        "line": 758,
+        "text": "PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+        "line": 1620,
         "text": "private static void PublishQueueRejectAnomaly(uint anomalyHash, float amount)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1431,
+        "line": 1636,
         "text": "TelemetryFlagQueueRejected);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1458,
-        "text": "\"Dump_SHINOBU_318_Combat.bin\");"
+        "line": 1672,
+        "text": "StateHash = math.hash(new uint4(anomalyHash, safeAmountBits, writeCursor, TelemetryFlagQueueRejected)),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1472,
-        "text": "int start = cursor >= (uint)count && count > 0"
+        "line": 1678,
+        "text": "Flags = TelemetryFlagQueueRejected,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1479,
-        "text": "WriteTelemetryEntry(writer, _telemetryRing[index]);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1483,
-        "text": "_telemetryDumpedThisSession = true;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 960,
-        "text": "string path = Path.Combine(logDir, \"Dump_SHINOBU_318.bin\");"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 971,
+        "line": 1727,
         "text": "int start = cursor >= (uint)count && count > 0"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 977,
-        "text": "WriteArmorTelemetryEntry(writer, telemetryRing[index]);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 981,
-        "text": "_armorTelemetryDumped = true;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 987,
-        "text": "_armorTelemetryDumped = true;"
+        "line": 999,
+        "text": "int start = cursor >= (uint)count && count > 0"
       }
     ]
   },
@@ -2106,67 +2088,72 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 798,
+        "line": 910,
         "text": "DeflectSignalWriter = SignalBus<DeflectSignal>.ParallelWriter,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 800,
+        "line": 912,
         "text": "ImpactSignalWriter = SignalBus<ImpactSignal>.ParallelWriter,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2177,
+        "line": 2449,
         "text": "EmitArmorImpactFeedback("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2183,
+        "line": 2455,
         "text": "ArmorImpactSignalFlagDirectionalDeflect);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2190,
+        "line": 2462,
         "text": "EmitArmorDeflectFeedback("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 226,
+        "line": 237,
         "text": "private const byte ArmorImpactSignalFlagDirectionalDeflect = 1 << 1;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1539,
+        "line": 1582,
         "text": "internal static void EmitArmorDeflectFeedback("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1563,
+        "line": 1606,
         "text": "EmitArmorImpactFeedback("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1572,
+        "line": 1615,
         "text": "internal static void EmitArmorImpactFeedback("
       },
       {
         "file": "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs",
-        "line": 444,
+        "line": 441,
+        "text": "NativeArray<ImpactSignal>.ReadOnly impactSignals = SignalBus<ImpactSignal>.GetFrameSnapshotArray();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs",
+        "line": 542,
         "text": "evaluateJob.ImpactSignals = SignalBus<ImpactSignal>.GetFrameSnapshotArray();"
       },
       {
         "file": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
-        "line": 829,
+        "line": 913,
         "text": "ReadOnlySpan<ImpactSignal> signals = SignalBus<ImpactSignal>.GetFrameSnapshot();"
       },
       {
         "file": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
-        "line": 588,
+        "line": 725,
         "text": "TryIngestGlobalImpactSignals();"
       },
       {
         "file": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
-        "line": 1675,
+        "line": 2551,
         "text": "private static void TryIngestGlobalImpactSignals()"
       }
     ]
@@ -2175,28 +2162,28 @@
     "publicPrewarmApi": true,
     "prewarmCallsEnsureInitialized": true,
     "dispatcherColdBootPrewarm": true,
-    "damageIngressRejectsUninitializedWithoutAlloc": true,
-    "verdict": "PASS",
+    "damageIngressRejectsUninitializedWithoutAlloc": false,
+    "verdict": "FAIL",
     "contract": "Combat native queues and Vault-backed armor lanes should be allocated during dispatcher service initialization, not lazily on the first damage ingress. Damage ingress must fail closed if the runtime was not prewarmed.",
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 422,
+        "line": 403,
         "text": "public static void Prewarm()"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 424,
+        "line": 405,
         "text": "EnsureInitialized();"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 461,
+        "line": 451,
         "text": "EnsureInitialized();"
       },
       {
         "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-        "line": 2076,
+        "line": 2103,
         "text": "CombatDamageRuntime.Prewarm();"
       }
     ]
@@ -2210,41 +2197,41 @@
     "fallbackPacketKeepsLegacyOwnerRules": true,
     "deathReconciliationPreserved": true,
     "verdict": "PASS",
-    "contract": "Registered central CAS packets carry PreviousValue/NextValue and must reconcile the player owner to the CAS snapshot without re-entering legacy invulnerability or per-packet TakeDamage. Registration-gap packets keep PreviousValue/NextValue at zero and still use the legacy owner rules.",
+    "contract": "Registered central CAS packets carry PreviousValue/NextValue and must reconcile the player owner to the CAS snapshot without re-entering legacy invulnerability or per-packet TakeDamage. Registration-gap packets keep PreviousValue/NextValue at zero and still use the legacy owner rules. Fatal health packets must request respawn reconciliation and defer healing until the committed respawn signal.",
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 749,
+        "line": 927,
         "text": "if (TryApplyAuthoritativeCombatDamagePacket(in packet, out float authoritativeDamage))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 754,
+        "line": 932,
         "text": "PublishDamageFeedback(in packet, authoritativeDamage);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 759,
+        "line": 938,
         "text": "bool applied = TakeDamage(packet.Magnitude);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 770,
+        "line": 949,
         "text": "PublishDamageFeedback(in packet, appliedDamage);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 773,
+        "line": 952,
         "text": "private bool TryApplyAuthoritativeCombatDamagePacket(in DamagePacket packet, out float appliedDamage)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 789,
+        "line": 968,
         "text": "currentHealth = math.min(previousHealth, packetNextHealth);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 811,
+        "line": 983,
         "text": "private void PublishDamageFeedback(in DamagePacket packet, float appliedDamage)"
       }
     ]
@@ -2259,17 +2246,17 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 435,
+        "line": 440,
         "text": "_baseModule.ApplyDamage(packet.Magnitude);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 439,
+        "line": 444,
         "text": "DispatchIntegrityChanged(packet.PreviousValue, packet.NextValue, signal);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 499,
+        "line": 504,
         "text": "public void DispatchIntegrityChanged(float prev, float next, HabitatDamageSignal src)"
       }
     ]
@@ -2281,7 +2268,7 @@
     "projectDamageQueueCalls": [
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6056,
+        "line": 6452,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2294,7 +2281,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
-        "line": 1210,
+        "line": 1390,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2307,7 +2294,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 667,
+        "line": 725,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2320,7 +2307,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5200,
+        "line": 7289,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2333,7 +2320,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 247,
+        "line": 306,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2346,7 +2333,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1612,
+        "line": 1878,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2359,7 +2346,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1737,
+        "line": 2013,
         "argCount": 3,
         "args": [
           "in request",
@@ -2372,7 +2359,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6755,
+        "line": 8235,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2483,247 +2470,272 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 261,
+        "line": 264,
         "text": "TryRegisterCombatDamageTarget();"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 301,
+        "line": 306,
         "text": "TryRegisterCombatDamageTarget();"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 717,
+        "line": 731,
         "text": "private void TryRegisterCombatDamageTarget()"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 726,
+        "line": 740,
         "text": "_combatDamageRegistered = CombatDamageRuntime.RegisterTarget("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 636,
+        "line": 694,
         "text": "float3 localPoint = ResolveTargetLocalPoint(playerTransform, impactPoint);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 645,
+        "line": 703,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 667,
+        "line": 725,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 690,
+        "line": 748,
         "text": "LocalPoint = ResolveTargetLocalPoint(playerTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 700,
+        "line": 758,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 727,
+        "line": 785,
         "text": "return CombatDamageTypes.Thermal;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 732,
+        "line": 790,
         "text": "return hazardType == HazardType.Heat ? CombatStatusBits.Burning : 0u;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 17,
+        "line": 16,
         "text": "public sealed class MantaEmergencyWreck : MonoBehaviour, IPoolable, IFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 116,
-        "text": "if (!wreckInstance.TryGetComponent(out MantaEmergencyWreck wreck))"
+        "line": 80,
+        "text": "if (!MantaEmergencyWreck.TryResolveCachedObjectPool(out IObjectPoolService poolManager))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 721,
+        "line": 117,
+        "text": "if (!TryResolveLastSpawnedWreck(wreckInstance, out MantaEmergencyWreck wreck))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
+        "line": 154,
+        "text": "MantaEmergencyWreck.CacheObjectPoolService(currentService as ObjectPoolManager);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
+        "line": 176,
+        "text": "MantaEmergencyWreck.CacheObjectPoolService(null);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
+        "line": 246,
+        "text": "private static MantaEmergencyWreck s_lastSpawnedWreck;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
+        "line": 531,
+        "text": "private static bool TryResolveLastSpawnedWreck(GameObject instance, out MantaEmergencyWreck wreck)"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
+        "line": 794,
         "text": "// COLD ALLOC: PoolSlotData[16] - emergency wreck dehydration slot metadata - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 723,
+        "line": 796,
         "text": "// COLD ALLOC: ResidencyState[16] - emergency wreck dehydration restore state - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 725,
+        "line": 798,
         "text": "// COLD ALLOC: int[16] - emergency wreck free residency slot stack - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 727,
+        "line": 800,
         "text": "// COLD ALLOC: int[16] - emergency wreck active dehydrated slot list - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 776,
+        "line": 849,
         "text": "GameObject runtimeRoot = new GameObject(\"[MantaEmergencyWreckResidencyRuntime]\"); // COLD ALLOC: GameObject[1] - emergency wreck dehydration runtime owner - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5155,
-        "text": "!TryQueueBoilingFaunaDamage(faunaBrain, in hit, worldCenter, damageAmount))"
+        "line": 7243,
+        "text": "!TryQueueBoilingFaunaDamage(damageReceiver, damageOwner, in hit, worldCenter, damageAmount))"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5162,
+        "line": 7250,
         "text": "private bool TryQueueBoilingFaunaDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5181,
+        "line": 7270,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5185,
+        "line": 7274,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5186,
+        "line": 7275,
         "text": "CombatDamageTypes.Thermal,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5187,
+        "line": 7276,
         "text": "CombatStatusBits.Burning,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5193,
+        "line": 7282,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5200,
+        "line": 7289,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5221,
+        "line": 7311,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5222,
+        "line": 7312,
         "text": "DamageType = CombatDamageTypes.Thermal,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5225,
+        "line": 7315,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5248,
+        "line": 7338,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1597,
+        "line": 1863,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1598,
+        "line": 1864,
         "text": "CombatDamageTypes.Thermal,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1599,
-        "text": "CombatStatusBits.Burning,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1605,
-        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1612,
-        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1722,
-        "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1723,
-        "text": "CombatDamageTypes.Thermal,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1724,
-        "text": "CombatStatusBits.Burning,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1730,
-        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1737,
-        "text": "CombatDamageRuntime.TryQueueDamage(in request, in detail, impactAup);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1836,
-        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1837,
-        "text": "DamageType = CombatDamageTypes.Thermal,"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
         "line": 1865,
+        "text": "CombatStatusBits.Burning,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1871,
+        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1878,
+        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1998,
+        "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1999,
+        "text": "CombatDamageTypes.Thermal,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2000,
+        "text": "CombatStatusBits.Burning,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2006,
+        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2013,
+        "text": "CombatDamageRuntime.TryQueueDamage(in request, in detail, impactAup);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2088,
+        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2089,
+        "text": "DamageType = CombatDamageTypes.Thermal,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2117,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 positionWS)"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6693,
+        "line": 8173,
         "text": "!TryQueueLeviathanStrikeDamage(_playerHealth, leviathanStrikeDamage, playerPosition, strikeDirection, impulseMagnitude))"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6701,
+        "line": 8181,
         "text": "private static bool TryQueueLeviathanStrikeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6728,
+        "line": 8208,
         "text": "SourceId = DamageSourceIds.FaunaLeviathanBite,"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6732,
+        "line": 8212,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6755,
+        "line": 8235,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6784,
+        "line": 8264,
         "text": "SourceId = DamageSourceIds.FaunaLeviathanBite,"
       },
       {
@@ -2743,57 +2755,57 @@
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 104,
+        "line": 108,
         "text": "int safeSourceId = sourceId != 0 ? sourceId : DamageSourceIds.PlayerToolImpact;"
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 109,
+        "line": 113,
         "text": "if (TryQueueCentralDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 192,
+        "line": 251,
         "text": "private static bool TryQueueCentralDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 235,
+        "line": 294,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 242,
+        "line": 301,
         "text": "LocalPoint = localPoint3,"
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 247,
+        "line": 306,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 286,
+        "line": 345,
         "text": "LocalPoint = localPoint3,"
       },
       {
         "file": "Assets/_Project/Scripts/KnifeTool.cs",
-        "line": 194,
+        "line": 199,
         "text": "DamageSourceIds.SurvivalBlade,"
       },
       {
         "file": "Assets/_Project/Scripts/KnifeTool.cs",
-        "line": 385,
+        "line": 398,
         "text": "DamageSourceIds.SurvivalBlade,"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 15,
+        "line": 16,
         "text": "public sealed class HarpoonLauncherTool : PlayerTool, ILateFrameTickable, IGlobalRegistryHotSwapListener"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 17,
+        "line": 18,
         "text": "private const string HarpoonCategory = \"HARPOON\";"
       },
       {
@@ -2913,348 +2925,298 @@
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 140,
+        "line": 132,
         "text": "[Header(\"Harpoon\")]"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 180,
+        "line": 172,
         "text": "private HarpoonAssessment _cachedAssessment;"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 183,
+        "line": 176,
         "text": "private FixedCharBuffer _hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - harpoon HUD staging buffer - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 184,
+        "line": 177,
         "text": "private FixedCharBuffer _logTitleBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - harpoon operation log title staging buffer - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 185,
+        "line": 178,
         "text": "private FixedCharBuffer _logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - harpoon operation log summary staging buffer - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 283,
+        "line": 282,
         "text": "DamageSourceIds.Harpoon,"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 293,
+        "line": 295,
         "text": "HarpoonAssessment assessment = BuildAssessment(hit.collider, hit.distance, lightTetherReady || heavyTowReady || grappleReady);"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 294,
+        "line": 296,
         "text": "HarpoonAssessment outboundAssessment = lightTetherReady"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 295,
+        "line": 297,
         "text": "? new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 296,
+        "line": 298,
         "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 303,
+        "line": 305,
         "text": "? new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 304,
+        "line": 306,
         "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 308,
+        "line": 310,
         "text": "new HarpoonTextSegment(\"Throttle gently. Tow drag is now loading the suit and scooter.\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 311,
+        "line": 313,
         "text": "? new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 312,
+        "line": 314,
         "text": "HarpoonTextSegment.FormatString("
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 316,
-        "text": "new HarpoonTextSegment(\"Secondary reels the exosuit toward the locked structure. Release input to bleed the line.\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 318,
+        "text": "new HarpoonTextSegment(\"Secondary reels the exosuit toward the locked structure. Release input to bleed the line.\"),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 320,
         "text": ": new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 333,
+        "line": 335,
         "text": "StableText(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 401,
-        "text": "HarpoonAssessment reelAssessment = new HarpoonAssessment("
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 402,
-        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_REEL_IMPULSE, \"HARPOON - REEL IMPULSE APPLIED\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 403,
+        "text": "HarpoonAssessment reelAssessment = new HarpoonAssessment("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 404,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_REEL_IMPULSE, \"HARPOON - REEL IMPULSE APPLIED\")),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 405,
         "text": "HarpoonTextSegment.FormatStringFloat("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 407,
+        "line": 409,
         "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_REEL_IMPULSE, \"Pull it into reach or keep pressure until it drifts clear.\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 412,
+        "line": 414,
         "text": "HarpoonTextSegment.FormatStringFloat("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 460,
+        "line": 462,
         "text": "return HarpoonCategory;"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 511,
+        "line": 513,
         "text": "if (TryReadCachedAssessmentSnapshot(out HarpoonAssessment assessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 544,
+        "line": 546,
         "text": "if (TryReadCachedAssessmentSnapshot(out HarpoonAssessment assessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 576,
+        "line": 578,
         "text": "if (TryReadCachedAssessmentSnapshot(out HarpoonAssessment assessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 606,
+        "line": 608,
         "text": "UnsafeUtility.SizeOf<GpuCableSplinePointDTO>()); // COLD ALLOC: GraphicsBuffer[2] - harpoon GPU tracer points - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 611,
+        "line": 613,
         "text": "UnsafeUtility.SizeOf<float>()); // COLD ALLOC: GraphicsBuffer[1] - harpoon tracer stress scalar - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 616,
+        "line": 618,
         "text": "UnsafeUtility.SizeOf<GpuCableDrawParamsDTO>()); // COLD ALLOC: GraphicsBuffer[1] - harpoon tracer draw constants - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 617,
+        "line": 619,
         "text": "_tracerPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - harpoon tracer GPU bindings - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 631,
-        "text": "name = \"MAT_Runtime_HarpoonGpuTracer\","
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 776,
+        "line": 798,
         "text": "StableText(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 872,
+        "line": 894,
         "text": "HarpoonAssessment tetherAssessment = new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 873,
+        "line": 895,
         "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 876,
+        "line": 898,
         "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 879,
+        "line": 901,
         "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_TETHER_REEL, \"Keep reeling for control or release to reset the lane.\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 884,
+        "line": 906,
         "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 912,
+        "line": 934,
         "text": "PublishAssessment(new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 913,
+        "line": 935,
         "text": "HarpoonTextSegment.FormatString(\"HARPOON - EXOSUIT REEL [{0}]\", _grappleAnchorNameUpper ?? \"ANCHOR\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 914,
+        "line": 936,
         "text": "HarpoonTextSegment.FormatStringFloat(\"{0} is holding the climb line at {1:0.0} m.\", _grappleAnchorName, ApproximateDistanceMeters(toolOrigin, anchorPointWS)),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 915,
+        "line": 937,
         "text": "new HarpoonTextSegment(\"Keep reeling to climb. Stop reeling to bleed force before the next ledge move.\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1047,
+        "line": 1074,
         "text": "private bool TryReadCachedAssessmentSnapshot(out HarpoonAssessment assessment)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1053,
+        "line": 1080,
         "text": "private void StoreAssessment(HarpoonAssessment assessment)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1079,
+        "line": 1106,
         "text": "private HarpoonAssessment BuildAssessment(Collider target, float distance, bool tetherReady)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1083,
+        "line": 1110,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1092,
+        "line": 1119,
         "text": "if (TryBuildDescriptorAssessment(target, null, distance, tetherReady, out HarpoonAssessment noBodyDescriptorAssessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1097,
+        "line": 1124,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1098,
+        "line": 1125,
         "text": "new HarpoonTextSegment(\"HARPOON - EXOSUIT GRAPPLE LOCK\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1099,
+        "line": 1126,
         "text": "HarpoonTextSegment.FormatStringFloat(\"{0} accepted a static grapple lane at {1:0.0} m.\", ResolveAnchorLabel(), distance),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1100,
-        "text": "new HarpoonTextSegment(\"Secondary reels the exosuit toward the anchor. Release input to stop climbing.\"),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1104,
-        "text": "return new HarpoonAssessment("
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1105,
-        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_CANNOT_REEL, \"HARPOON - TARGET CANNOT BE REELED\")),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1106,
-        "text": "HarpoonTextSegment.FormatString("
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1109,
-        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_CANNOT_REEL, \"Use cutter, builder, or move on.\")),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1115,
-        "text": "if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment staticDescriptorAssessment))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1120,
-        "text": "return new HarpoonAssessment("
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1121,
-        "text": "new HarpoonTextSegment(\"HARPOON - EXOSUIT GRAPPLE LOCK\"),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1122,
-        "text": "HarpoonTextSegment.FormatStringFloat(\"{0} is fixed hard enough to hold a climb line at {1:0.0} m.\", ResolveAnchorLabel(), distance),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1123,
-        "text": "new HarpoonTextSegment(\"Secondary reels the exosuit toward the anchor. Release input to stop climbing.\"),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 1127,
+        "text": "new HarpoonTextSegment(\"Secondary reels the exosuit toward the anchor. Release input to stop climbing.\"),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1131,
         "text": "return new HarpoonAssessment("
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1128,
-        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_LOCKED_STRUCTURE, \"HARPOON - TARGET LOCKED TO STRUCTURE\")),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1129,
-        "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 1132,
-        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_LOCKED_STRUCTURE, \"Do not waste reel force on anchored structures.\")),"
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_CANNOT_REEL, \"HARPOON - TARGET CANNOT BE REELED\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1140,
+        "line": 1133,
+        "text": "HarpoonTextSegment.FormatString("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1136,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_CANNOT_REEL, \"Use cutter, builder, or move on.\")),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1142,
+        "text": "if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment staticDescriptorAssessment))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1147,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1141,
-        "text": "new HarpoonTextSegment(tetherReady"
+        "line": 1148,
+        "text": "new HarpoonTextSegment(\"HARPOON - EXOSUIT GRAPPLE LOCK\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1144,
-        "text": "HarpoonTextSegment.FormatStringFloatFloat(\"{0} weighs {1:0.0} kg at {2:0.0} m.\", ResolveCargoLabel(), body.mass, distance),"
+        "line": 1149,
+        "text": "HarpoonTextSegment.FormatStringFloat(\"{0} is fixed hard enough to hold a climb line at {1:0.0} m.\", ResolveAnchorLabel(), distance),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1145,
-        "text": "new HarpoonTextSegment(tetherReady"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1151,
-        "text": "if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment descriptorAssessment))"
+        "line": 1150,
+        "text": "new HarpoonTextSegment(\"Secondary reels the exosuit toward the anchor. Release input to stop climbing.\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
@@ -3264,316 +3226,356 @@
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 1155,
-        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_MASS_EXCEEDS, \"HARPOON - MASS EXCEEDS REEL LIMIT\")),"
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_LOCKED_STRUCTURE, \"HARPOON - TARGET LOCKED TO STRUCTURE\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 1156,
-        "text": "HarpoonTextSegment.FormatStringFloatFloat("
+        "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1161,
-        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_MASS_EXCEEDS, \"Use propulsion or another route; reel force is not enough.\")),"
+        "line": 1159,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_LOCKED_STRUCTURE, \"Do not waste reel force on anchored structures.\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1165,
-        "text": "if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment authoredAssessment))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1168,
+        "line": 1167,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1169,
+        "line": 1168,
         "text": "new HarpoonTextSegment(tetherReady"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1171,
+        "text": "HarpoonTextSegment.FormatStringFloatFloat(\"{0} weighs {1:0.0} kg at {2:0.0} m.\", ResolveCargoLabel(), body.mass, distance),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 1172,
-        "text": "HarpoonTextSegment.FormatStringFloat("
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1176,
         "text": "new HarpoonTextSegment(tetherReady"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1178,
+        "text": "if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment descriptorAssessment))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1181,
+        "text": "return new HarpoonAssessment("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 1182,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_MASS_EXCEEDS, \"HARPOON - MASS EXCEEDS REEL LIMIT\")),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1183,
+        "text": "HarpoonTextSegment.FormatStringFloatFloat("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1188,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_MASS_EXCEEDS, \"Use propulsion or another route; reel force is not enough.\")),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1192,
+        "text": "if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment authoredAssessment))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1195,
+        "text": "return new HarpoonAssessment("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1196,
+        "text": "new HarpoonTextSegment(tetherReady"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1199,
+        "text": "HarpoonTextSegment.FormatStringFloat("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1203,
+        "text": "new HarpoonTextSegment(tetherReady"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1209,
         "text": "private bool TryBuildDescriptorAssessment(Collider target, Rigidbody body, float distance, bool tetherReady, out HarpoonAssessment assessment)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1192,
+        "line": 1219,
         "text": "if (FieldTargetSemantics.TryBuildHarpoonAssessment(descriptor, distance, mass, tetherReady, out FieldTargetSemantics.SemanticAssessment semantic))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1194,
+        "line": 1221,
         "text": "assessment = new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1205,
+        "line": 1232,
         "text": "private void RecordAssessmentLog(HarpoonAssessment titleAssessment, HarpoonAssessment detailAssessment)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1217,
+        "line": 1244,
         "text": "StableText(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1223,
+        "line": 1250,
         "text": "private void RecordOperationLog(string title, HarpoonTextSegment summary, string severity)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1230,
+        "line": 1257,
         "text": "StableText(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1261,
+        "line": 1288,
         "text": "private void PublishAssessment(HarpoonAssessment assessment)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1348,
+        "line": 1375,
         "text": "if (tokenIndex == '0' && (argumentMask & HarpoonTextSegment.HasStringArg0) != 0)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1355,
+        "line": 1382,
         "text": "else if (tokenIndex == '1' && (argumentMask & HarpoonTextSegment.HasFloatArg1) != 0)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1362,
+        "line": 1389,
         "text": "else if (tokenIndex == '2' && (argumentMask & HarpoonTextSegment.HasFloatArg2) != 0)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1380,
+        "line": 1407,
         "text": "private bool TryWriteAssessmentLogSummary(ref FixedCharBuffer buffer, HarpoonAssessment assessment)"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 10,
+        "line": 11,
         "text": "public sealed class StunPistolTool : PlayerTool"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 137,
+        "line": 138,
         "text": "private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - stun pistol HUD staging buffer - owner: StunPistolTool"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 138,
+        "line": 139,
         "text": "private static FixedCharBuffer s_logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - stun pistol field log staging buffer - owner: StunPistolTool"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 139,
+        "line": 140,
         "text": "private static FixedCharBuffer s_logTitleBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - stun pistol log title staging buffer - owner: StunPistolTool"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 140,
+        "line": 141,
         "text": "private static FixedCharBuffer s_legacySummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - stun pistol legacy summary/directive bridge - owner: StunPistolTool"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 211,
+        "line": 212,
         "text": "DamageSourceIds.StunPistol,"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 212,
+        "line": 213,
         "text": "CombatDamageTypes.Emp,"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 213,
+        "line": 214,
         "text": "CombatStatusBits.Stunned,"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 214,
-        "text": "ResolveStunDuration());"
+        "line": 215,
+        "text": "ResolveStunDuration(),"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 484,
+        "line": 491,
         "text": "private float ResolveStunDuration()"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 735,
+        "line": 751,
         "text": "StunPistolTool.RecordRecoveryLog(_localization);"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 11,
+        "line": 12,
         "text": "public sealed class SalvageSamplerTool : PlayerTool"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 30,
+        "line": 31,
         "text": "private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - sampler HUD staging buffer - owner: SalvageSamplerTool"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 31,
+        "line": 32,
         "text": "private static FixedCharBuffer s_logTitleBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - sampler operation log title staging buffer - owner: SalvageSamplerTool"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 32,
+        "line": 33,
         "text": "private static FixedCharBuffer s_logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - sampler operation log summary staging buffer - owner: SalvageSamplerTool"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 33,
+        "line": 34,
         "text": "private static FixedCharBuffer s_archiveIdBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - sampler scan archive id staging buffer - owner: SalvageSamplerTool"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 34,
+        "line": 35,
         "text": "private static FixedCharBuffer s_archiveTitleBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - sampler scan archive title staging buffer - owner: SalvageSamplerTool"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 35,
+        "line": 36,
         "text": "private static FixedCharBuffer s_archiveSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - sampler scan archive summary staging buffer - owner: SalvageSamplerTool"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 36,
+        "line": 37,
         "text": "private static FixedCharBuffer s_diagnosisTextBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - sampler diagnosis dynamic text staging buffer - owner: SalvageSamplerTool"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 37,
+        "line": 38,
         "text": "private static FixedCharBuffer s_legacySummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - sampler legacy summary/directive bridge staging buffer - owner: SalvageSamplerTool"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 102,
+        "line": 103,
         "text": "DamageSourceIds.SalvageSampler,"
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 103,
-        "text": "CombatDamageTypes.MicroFracture);"
+        "line": 104,
+        "text": "CombatDamageTypes.MicroFracture,"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 388,
+        "line": 436,
         "text": "private const uint FaunaLeviathanBiteHashSalt = 0xB17ECCD1u;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 792,
+        "line": 859,
         "text": "TryRegisterCombatDamageTarget();"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 919,
+        "line": 995,
         "text": "TryRegisterCombatDamageTarget();"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 1964,
+        "line": 2197,
         "text": "empSignal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, DamageSourceIds.FaunaEmp);"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 3773,
+        "line": 4082,
         "text": "signal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, 0u);"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6034,
+        "line": 6366,
+        "text": "ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, 0u));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 6430,
         "text": "uint statusBits = IsApexPredator() ? CombatStatusBits.Stunned : 0u;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6038,
+        "line": 6434,
         "text": "SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6042,
+        "line": 6438,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6050,
+        "line": 6446,
         "text": "LocalPoint = localPoint3,"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6056,
+        "line": 6452,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
-        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6087,
-        "text": "LocalPoint = localPoint3,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6091,
-        "text": "SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,"
-      },
-      {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 2883,
+        "line": 3002,
         "text": "ai.ApplyHibernationHealthSnapshot(state.health);"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.CombatDamageReceiver.cs",
-        "line": 35,
+        "line": 37,
         "text": "if (packet.SourceId == DamageSourceIds.SurvivalBlade)"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.CombatDamageReceiver.cs",
-        "line": 102,
+        "line": 104,
         "text": "internal void ApplyHibernationHealthSnapshot(float savedHealth)"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.CombatDamageReceiver.cs",
-        "line": 118,
+        "line": 121,
         "text": "private void TryRegisterCombatDamageTarget()"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.CombatDamageReceiver.cs",
-        "line": 129,
+        "line": 137,
         "text": "_combatDamageRegistered = CombatDamageRuntime.RegisterTarget("
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.CombatDamageReceiver.cs",
-        "line": 169,
+        "line": 197,
         "text": "TryRegisterCombatDamageTarget();"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
-        "line": 1192,
+        "line": 1372,
         "text": "SourceId = DamageSourceIds.FaunaLeviathanBite,"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
-        "line": 1196,
+        "line": 1376,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
-        "line": 1210,
+        "line": 1390,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       }
     ]
@@ -3587,17 +3589,17 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 297,
+        "line": 336,
         "text": "_hasCurrentAup = TryResolveAupFromPlayerObserver(_currentRuntimePosition, out _currentAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 913,
+        "line": 994,
         "text": "if (!TryResolveAupFromPlayerObserver(runtimePosition, out wreckAup))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 922,
+        "line": 1003,
         "text": "private static bool TryResolveAupFromPlayerObserver("
       }
     ]
@@ -3614,72 +3616,72 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 560,
+        "line": 592,
         "text": "if (!TryQueueCentralHazardDamage(playerHealth, damage))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 561,
+        "line": 593,
         "text": "ApplyOwnerHazardDamageFallback(playerHealth, damage);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 596,
+        "line": 634,
         "text": "DamageSourceIds.EnvironmentHazard,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 619,
+        "line": 677,
         "text": "private bool TryQueueCentralHazardDamage(HectonPlayerHealth playerHealth, float damage)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 636,
+        "line": 694,
         "text": "float3 localPoint = ResolveTargetLocalPoint(playerTransform, impactPoint);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 641,
+        "line": 699,
         "text": "SourceId = DamageSourceIds.EnvironmentHazard,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 647,
+        "line": 705,
         "text": "ResolveHazardStatusBits(),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 667,
+        "line": 725,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 671,
+        "line": 729,
         "text": "private void ApplyOwnerHazardDamageFallback(HectonPlayerHealth playerHealth, float damage)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 690,
+        "line": 748,
         "text": "LocalPoint = ResolveTargetLocalPoint(playerTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 694,
+        "line": 752,
         "text": "SourceId = DamageSourceIds.EnvironmentHazard,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 697,
+        "line": 755,
         "text": "playerHealth.ReceiveDamage(in packet);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 700,
+        "line": 758,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 730,
+        "line": 788,
         "text": "private uint ResolveHazardStatusBits()"
       }
     ]
@@ -3689,171 +3691,151 @@
     "abyssalBoilingCarriesTargetLocalPoint": true,
     "abyssalBoilingCarriesAup": true,
     "abyssalBoilingAupFailureDoesNotBypassCentralQueue": true,
-    "abyssalBoilingUnregisteredFallbackUsesOwnerPacket": true,
+    "abyssalBoilingUnregisteredFallbackUsesOwnerPacket": false,
     "abyssalBoilingRegisteredDoesNotDirectFallbackOnQueueReject": true,
     "abyssalShockCarriesTargetLocalPoint": true,
     "abyssalShockCarriesAup": true,
-    "abyssalShockUnregisteredFallbackUsesOwnerPacket": true,
-    "submarineBoilingFaunaCentralBeforeFallback": true,
+    "abyssalShockUnregisteredFallbackUsesOwnerPacket": false,
+    "submarineBoilingFaunaCentralBeforeFallback": false,
     "submarineBoilingRegisteredDoesNotDirectFallbackOnQueueReject": true,
-    "submarineBoilingUnregisteredFallbackUsesOwnerPacket": true,
+    "submarineBoilingUnregisteredFallbackUsesOwnerPacket": false,
     "submarineBoilingFaunaLocalPointAndAup": true,
     "submarineBoilingAupFailureDoesNotBypassCentralQueue": true,
     "stableSourceId": true,
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1566,
-        "text": "QueueBoilingDamage(targetObject, positionWS, temperatureCelsius, heat01, fixedDeltaTime, sourceId);"
+        "line": 1817,
+        "text": "QueueBoilingDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1571,
+        "line": 1830,
         "text": "private void QueueBoilingDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1583,
+        "line": 1844,
         "text": "if (!TryResolveRegisteredCombatTarget(targetObject, out int targetId, out Transform targetTransform))"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1585,
-        "text": "if (TryResolveDamageReceiver(targetObject, out IDamageReceiver fallbackReceiver, out Transform fallbackTransform))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1586,
-        "text": "ApplyThermalOwnerFallbackDamage(fallbackReceiver, fallbackTransform, positionWS, amount, temperatureCelsius, sourceId);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1605,
-        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1611,
-        "text": "double3 impactAup = ResolveCombatImpactAup(positionWS);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1612,
-        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1712,
-        "text": "if (TryResolveRegisteredCombatTarget(targetObject, out int targetId, out Transform targetTransform))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1730,
-        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1736,
-        "text": "double3 impactAup = ResolveCombatImpactAup(positionWS);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1737,
-        "text": "CombatDamageRuntime.TryQueueDamage(in request, in detail, impactAup);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1739,
-        "text": "else if (TryResolveDamageReceiver(targetObject, out IDamageReceiver fallbackReceiver, out Transform fallbackTransform))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1741,
+        "line": 1846,
         "text": "ApplyThermalOwnerFallbackDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1770,
-        "text": "private static bool TryResolveRegisteredCombatTarget("
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1781,
-        "text": "if (candidateId != 0 && CombatDamageRuntime.IsTargetRegistered(candidateId))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1794,
-        "text": "private static bool TryResolveDamageReceiver("
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1818,
-        "text": "private void ApplyThermalOwnerFallbackDamage("
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1836,
+        "line": 1871,
         "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1843,
+        "line": 1877,
+        "text": "double3 impactAup = ResolveCombatImpactAup(positionWS);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1878,
+        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1988,
+        "text": "if (TryResolveRegisteredCombatTarget(targetObject, out int targetId, out Transform targetTransform))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2006,
+        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2012,
+        "text": "double3 impactAup = ResolveCombatImpactAup(positionWS);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2013,
+        "text": "CombatDamageRuntime.TryQueueDamage(in request, in detail, impactAup);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2017,
+        "text": "ApplyThermalOwnerFallbackDamage("
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2046,
+        "text": "private static bool TryResolveRegisteredCombatTarget("
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2057,
+        "text": "if (candidateId != 0 && CombatDamageRuntime.IsTargetRegistered(candidateId))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2070,
+        "text": "private void ApplyThermalOwnerFallbackDamage("
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2088,
+        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 2095,
         "text": "receiver.ReceiveDamage(in packet);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5155,
-        "text": "!TryQueueBoilingFaunaDamage(faunaBrain, in hit, worldCenter, damageAmount))"
+        "line": 7243,
+        "text": "!TryQueueBoilingFaunaDamage(damageReceiver, damageOwner, in hit, worldCenter, damageAmount))"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5157,
-        "text": "ApplyBoilingFaunaOwnerFallbackDamage(faunaBrain, in hit, worldCenter, damageAmount);"
+        "line": 7245,
+        "text": "ApplyBoilingFaunaOwnerFallbackDamage(damageReceiver, damageOwner, in hit, worldCenter, damageAmount);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5162,
+        "line": 7250,
         "text": "private bool TryQueueBoilingFaunaDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5181,
+        "line": 7270,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5193,
+        "line": 7282,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5199,
+        "line": 7288,
         "text": "TryResolveImpactAup(in hit, impactPoint, out double3 impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5204,
+        "line": 7293,
         "text": "private void ApplyBoilingFaunaOwnerFallbackDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5221,
+        "line": 7311,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5225,
+        "line": 7315,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5228,
-        "text": "faunaBrain.ReceiveDamage(in packet);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5263,
+        "line": 7353,
         "text": "private static bool TryResolveImpactAup(in SpatialQueryHit hit, Vector3 impactPoint, out double3 impactAup)"
       }
     ]
@@ -3867,62 +3849,62 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6693,
+        "line": 8173,
         "text": "!TryQueueLeviathanStrikeDamage(_playerHealth, leviathanStrikeDamage, playerPosition, strikeDirection, impulseMagnitude))"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6695,
+        "line": 8175,
         "text": "ApplyLeviathanStrikeOwnerFallbackDamage(_playerHealth, leviathanStrikeDamage, playerPosition);"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6701,
+        "line": 8181,
         "text": "private static bool TryQueueLeviathanStrikeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6728,
+        "line": 8208,
         "text": "SourceId = DamageSourceIds.FaunaLeviathanBite,"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6740,
+        "line": 8220,
         "text": "LocalPoint = ResolveLeviathanStrikeLocalPoint(targetTransform, safeImpactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6747,
+        "line": 8227,
         "text": "if (TryResolveAupFromRuntimeOrigin(safeImpactPoint, out AbsoluteUniversePosition impactPointAup) &&"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6755,
+        "line": 8235,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6759,
+        "line": 8239,
         "text": "private static void ApplyLeviathanStrikeOwnerFallbackDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6780,
+        "line": 8260,
         "text": "LocalPoint = ResolveLeviathanStrikeLocalPoint(targetTransform, safeImpactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6784,
+        "line": 8264,
         "text": "SourceId = DamageSourceIds.FaunaLeviathanBite,"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6787,
+        "line": 8267,
         "text": "playerHealth.ReceiveDamage(in packet);"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6790,
+        "line": 8270,
         "text": "private static float3 ResolveLeviathanStrikeLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       }
     ]
@@ -3935,58 +3917,58 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 352,
+        "line": 330,
         "text": "private static float _requestedVisualQualityWeight01 = 1f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 353,
+        "line": 331,
         "text": "private static float _visualQualityWeight01 = 1f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 365,
+        "line": 344,
         "text": "_requestedVisualQualityWeight01 = tier01 * tier01 * (3f - (2f * tier01));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 369,
+        "line": 348,
         "text": "public static void SetCombatVisualQualityWeight(float weight01)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 371,
+        "line": 350,
         "text": "_requestedVisualQualityWeight01 = SanitizeQualityWeight01(weight01);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1111,
+        "line": 1303,
         "text": "_requestedVisualQualityWeight01 = 1f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1112,
+        "line": 1304,
         "text": "_visualQualityWeight01 = 1f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1995,
+        "line": 2264,
         "text": "float qualityWeight01 = SignalBusRegistry.GlobalQualityWeight01;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1996,
+        "line": 2265,
         "text": "float requestedWeight01 = SanitizeQualityWeight01(_requestedVisualQualityWeight01);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1997,
+        "line": 2266,
         "text": "_visualQualityWeight01 = SanitizeQualityWeight01(qualityWeight01) * requestedWeight01;"
       }
     ]
   },
   "damageRouteManagedMutationAudit": {
-    "combatDirectMutationTokenCount": 11,
+    "combatDirectMutationTokenCount": 10,
     "combatDirectMutationHits": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
@@ -3995,52 +3977,47 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 342,
+        "line": 316,
         "text": "private static Rigidbody[] _targetBodies;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 775,
-        "text": "Health = _health,"
+        "line": 887,
+        "text": "Health = damageViews.Health,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1166,
+        "line": 1335,
         "text": "_targetBodies = new Rigidbody[MaxTargets]; // COLD ALLOC: Rigidbody[2048] - cached pushback bodies for combat receivers - owner: CombatDamageRuntime"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1580,
+        "line": 1854,
         "text": "Rigidbody body = _targetBodies[slot];"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1679,
+        "line": 1953,
         "text": "return hit.Rigidbody != null &&"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1680,
+        "line": 1954,
         "text": "TryResolveRegisteredTargetFromTransform(hit.Rigidbody.transform, out targetId, out receiverTransform);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1851,
+        "line": 2147,
         "text": "private static Rigidbody ResolveReceiverBody(IDamageReceiver receiver)"
       },
       {
-        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1859,
-        "text": "if (component.TryGetComponent(out Rigidbody body))"
-      },
-      {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
-        "line": 796,
-        "text": "Health = _health,"
+        "line": 979,
+        "text": "Health = damageViews.Health,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1664,
+        "line": 1707,
         "text": "Health = views.CasTortureHealth,"
       }
     ],
@@ -4060,17 +4037,17 @@
       "sourceEvidence": [
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1300,
+          "line": 1500,
           "text": "receiver.ReceiveDamage(in packet);"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1301,
+          "line": 1501,
           "text": "DispatchManagedSideEffects(in result, receiver, slot);"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1515,
+          "line": 1789,
           "text": "private static void DispatchManagedSideEffects(in CombatDamageResult result, IDamageReceiver receiver, int slot)"
         }
       ]
@@ -4082,63 +4059,68 @@
       "sourceEvidence": [
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 462,
+          "line": 452,
           "text": "if (!CanMutateTargets())"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 527,
+          "line": 532,
           "text": "if (!CanMutateTargets())"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 588,
-          "text": "if (!_slotByTargetId.IsCreated || !CanMutateTargets())"
+          "line": 611,
+          "text": "if (!CanMutateTargets())"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 607,
-          "text": "if (!_slotByTargetId.IsCreated || !CanMutateTargets())"
+          "line": 635,
+          "text": "if (!CanMutateTargets())"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 624,
-          "text": "if (!_slotByTargetId.IsCreated || !CanMutateTargets())"
+          "line": 661,
+          "text": "if (!CanMutateTargets())"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1016,
+          "line": 1220,
           "text": "if (_damageJobScheduled && DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: false))"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1019,
+          "line": 1223,
           "text": "FinishArmorPenetrationScheduledCompletion();"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1035,
+          "line": 1250,
           "text": "DispatchResults();"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1049,
+          "line": 1276,
           "text": "DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: true);"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1051,
+          "line": 1278,
           "text": "FinishArmorPenetrationScheduledCompletion();"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1205,
+          "line": 1378,
           "text": "private static bool CanMutateTargets()"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1207,
+          "line": 1380,
           "text": "return !_damageJobScheduled && !_statusJobScheduled;"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+          "line": 2196,
+          "text": "if (!CanMutateTargets())"
         }
       ]
     },

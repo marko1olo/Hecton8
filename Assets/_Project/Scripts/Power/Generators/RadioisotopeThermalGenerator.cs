@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -48,8 +49,8 @@ namespace Hecton8.Power.Generators
         private const uint BlackBoxMagic = 0x52475444u; // RGTD
         private const uint BlackBoxVersion = 2u;
         private const int BlackBoxHeaderBytes = 24;
-        private const int BlackBoxTelemetryRowBytes = 23;
         private const int RtgTelemetryEntrySizeBytes = 64;
+        private const int BlackBoxTelemetryRowBytes = RtgTelemetryEntrySizeBytes;
         private const uint RtgTelemetryHash = 0x52544721u; // RTG!
         private const uint ActiveRtgsHash = 0x41525447u; // ARTG
         private const uint AverageRtgHealthHash = 0x41564821u; // AVH!
@@ -88,6 +89,7 @@ namespace Hecton8.Power.Generators
         private static int s_activeCount;
         private static int s_leaderSlot = -1;
         private static int s_telemetryCursor;
+        private static int s_telemetryEntryCount;
         private static float s_averageRtgHealth01 = 1f;
         private static float s_lastDecayEvaluationSeconds = float.NegativeInfinity;
         private static IThermodynamicsService s_thermodynamics;
@@ -107,6 +109,7 @@ namespace Hecton8.Power.Generators
         private bool _registeredSave;
         private bool _registeredHotSwapListener;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
 
         public int SavePriority => 53;
         public int LoadPriority => 53;
@@ -220,6 +223,7 @@ namespace Hecton8.Power.Generators
                     rtgFlags[_slot] = (byte)(rtgFlags[_slot] | FlagWarned20);
 
                 WriteSlotStateFromInstance();
+                PublishRadiationAndHeat();
                 return;
             }
         }
@@ -312,15 +316,16 @@ namespace Hecton8.Power.Generators
             sourceId = 0u;
             outputWatts = 0f;
             normalized01 = 0f;
+            int entryCount = NormalizeRtgTelemetryEntryCount();
             if (newestFirstIndex < 0 ||
-                newestFirstIndex >= TelemetryCapacity ||
-                s_telemetryCursor <= 0 ||
+                newestFirstIndex >= entryCount ||
                 !TryResolveTelemetryRing(out NativeArray<RtgTelemetryEntry> telemetryRing))
             {
                 return false;
             }
 
-            int index = (s_telemetryCursor - 1 - newestFirstIndex + TelemetryCapacity) % TelemetryCapacity;
+            int cursor = NormalizeRtgTelemetryCursor(s_telemetryCursor);
+            int index = (cursor - 1 - newestFirstIndex + TelemetryCapacity) % TelemetryCapacity;
             RtgTelemetryEntry entry = telemetryRing[index];
             sourceId = entry.SourceId;
             outputWatts = entry.OutputWatts;
@@ -386,9 +391,11 @@ namespace Hecton8.Power.Generators
             s_activeCount = 0;
             s_leaderSlot = -1;
             s_telemetryCursor = 0;
+            s_telemetryEntryCount = 0;
             s_averageRtgHealth01 = 1f;
             s_lastDecayEvaluationSeconds = float.NegativeInfinity;
             s_thermodynamics = null;
+            Volatile.Write(ref s_x001RadioisotopeThermalGeneratorSignalPushDropCount, 0);
         }
 
         private static void EnsureNativeBuffers()
@@ -900,8 +907,14 @@ namespace Hecton8.Power.Generators
 
         private void PublishRadiationAndHeat()
         {
-            if (!Application.isPlaying || _sourceId == 0 || _reprocessed)
+            if (!Application.isPlaying || _sourceId == 0)
                 return;
+
+            if (_reprocessed)
+            {
+                RadiationHazardGrid.UnregisterSource(_sourceId);
+                return;
+            }
 
             Vector3 position = transform.position;
             if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
@@ -1002,24 +1015,36 @@ namespace Hecton8.Power.Generators
             if (_registeredSave || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _registeredSave = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_registeredSave)
+            if (!_registeredSave && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
+
+            _registeredSaveService = null;
             _registeredSave = false;
         }
 
@@ -1060,6 +1085,7 @@ namespace Hecton8.Power.Generators
             s_dataVault = currentVault;
             s_lastDecayEvaluationSeconds = float.NegativeInfinity;
             s_telemetryCursor = 0;
+            s_telemetryEntryCount = 0;
 
             if (currentVault == null)
                 return;
@@ -1266,6 +1292,7 @@ namespace Hecton8.Power.Generators
         private static void RecordTelemetry(int slot, byte flags)
         {
             if (slot < 0 ||
+                slot >= MaxRtgs ||
                 !TryResolveRtgBuffers(
                     out _,
                     out _,
@@ -1282,18 +1309,32 @@ namespace Hecton8.Power.Generators
             if (instance == null)
                 return;
 
-            int index = s_telemetryCursor % TelemetryCapacity;
+            int cursor = NormalizeRtgTelemetryCursor(s_telemetryCursor);
+            int index = cursor;
+            float outputWatts = math.max(0f, currentOutput[slot]);
+            if (!math.isfinite(outputWatts))
+                outputWatts = 0f;
+
+            float normalizedOutput = math.saturate(outputNormalized[slot]);
+            if (!math.isfinite(normalizedOutput))
+                normalizedOutput = 0f;
+
+            float averageHealth = math.saturate(s_averageRtgHealth01);
+            if (!math.isfinite(averageHealth))
+                averageHealth = 0f;
+
             telemetryRing[index] = new RtgTelemetryEntry
             {
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SourceId = unchecked((uint)instance._sourceId),
-                OutputWatts = currentOutput[slot],
-                NormalizedOutput01 = outputNormalized[slot],
-                AverageHealth01 = s_averageRtgHealth01,
+                OutputWatts = outputWatts,
+                NormalizedOutput01 = normalizedOutput,
+                AverageHealth01 = averageHealth,
                 ActiveRtgs = (ushort)math.clamp(s_activeCount, 0, ushort.MaxValue),
                 Flags = flags
             };
-            s_telemetryCursor = (s_telemetryCursor + 1) % TelemetryCapacity;
+            s_telemetryCursor = (cursor + 1) % TelemetryCapacity;
+            s_telemetryEntryCount = math.min(TelemetryCapacity, NormalizeRtgTelemetryEntryCount() + 1);
         }
 
         private static void DumpBlackBoxOnce(uint reasonFlags)
@@ -1306,7 +1347,11 @@ namespace Hecton8.Power.Generators
 
             try
             {
-                long totalBytes = BlackBoxHeaderBytes + ((long)TelemetryCapacity * BlackBoxTelemetryRowBytes);
+                int entryCount = NormalizeRtgTelemetryEntryCount();
+                if (entryCount <= 0)
+                    return;
+
+                long totalBytes = BlackBoxHeaderBytes + ((long)entryCount * BlackBoxTelemetryRowBytes);
                 if (totalBytes < BlackBoxHeaderBytes || totalBytes > int.MaxValue)
                     return;
 
@@ -1319,15 +1364,17 @@ namespace Hecton8.Power.Generators
                     WriteUInt32LittleEndian(payload, 0, BlackBoxMagic);
                     WriteUInt32LittleEndian(payload, 4, BlackBoxVersion);
                     WriteUInt32LittleEndian(payload, 8, reasonFlags);
-                    WriteInt32LittleEndian(payload, 12, TelemetryCapacity);
+                    WriteInt32LittleEndian(payload, 12, entryCount);
                     WriteInt32LittleEndian(payload, 16, RtgTelemetryEntrySizeBytes);
-                    WriteInt32LittleEndian(payload, 20, s_telemetryCursor);
+                    WriteInt32LittleEndian(payload, 20, NormalizeRtgTelemetryCursor(s_telemetryCursor));
 
                     int cursor = BlackBoxHeaderBytes;
-                    for (int i = 0; i < TelemetryCapacity; i++)
+                    int writeCursor = NormalizeRtgTelemetryCursor(s_telemetryCursor);
+                    int startIndex = (writeCursor - entryCount + TelemetryCapacity) % TelemetryCapacity;
+                    for (int i = 0; i < entryCount; i++)
                     {
-                        int index = (s_telemetryCursor + i) % TelemetryCapacity;
-                        WriteRtgTelemetryEntry(payload, cursor, telemetryRing[index]);
+                        int index = (startIndex + i) % TelemetryCapacity;
+                        WriteRtgTelemetryEntry(payload, cursor, SanitizeRtgTelemetryDumpEntry(telemetryRing[index]));
                         cursor += BlackBoxTelemetryRowBytes;
                     }
 
@@ -1346,11 +1393,45 @@ namespace Hecton8.Power.Generators
             }
         }
 
+        private static int NormalizeRtgTelemetryCursor(int cursor)
+        {
+            int normalized = cursor % TelemetryCapacity;
+            return normalized < 0 ? normalized + TelemetryCapacity : normalized;
+        }
+
+        private static int NormalizeRtgTelemetryEntryCount()
+        {
+            return math.clamp(s_telemetryEntryCount, 0, TelemetryCapacity);
+        }
+
+        private static RtgTelemetryEntry SanitizeRtgTelemetryDumpEntry(RtgTelemetryEntry entry)
+        {
+            if (!math.isfinite(entry.OutputWatts))
+                entry.OutputWatts = 0f;
+            else
+                entry.OutputWatts = math.max(0f, entry.OutputWatts);
+
+            entry.NormalizedOutput01 = math.isfinite(entry.NormalizedOutput01)
+                ? math.saturate(entry.NormalizedOutput01)
+                : 0f;
+            entry.AverageHealth01 = math.isfinite(entry.AverageHealth01)
+                ? math.saturate(entry.AverageHealth01)
+                : 0f;
+            return entry;
+        }
+
         private static void WriteRtgTelemetryEntry(
             NativeArray<byte> destination,
             int offset,
             RtgTelemetryEntry entry)
         {
+            if (!destination.IsCreated ||
+                offset < 0 ||
+                offset + BlackBoxTelemetryRowBytes > destination.Length)
+            {
+                return;
+            }
+
             WriteUInt32LittleEndian(destination, offset, entry.Frame);
             WriteUInt32LittleEndian(destination, offset + 4, entry.SourceId);
             WriteFloat32LittleEndian(destination, offset + 8, entry.OutputWatts);
@@ -1358,6 +1439,8 @@ namespace Hecton8.Power.Generators
             WriteFloat32LittleEndian(destination, offset + 16, entry.AverageHealth01);
             WriteUInt16LittleEndian(destination, offset + 20, entry.ActiveRtgs);
             destination[offset + 22] = entry.Flags;
+            for (int i = 23; i < BlackBoxTelemetryRowBytes; i++)
+                destination[offset + i] = 0;
         }
 
         private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)

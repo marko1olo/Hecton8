@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Quarantine Release Delay Proof"
+title: "Карантинне утримання випуску"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Quarantine Release Delay Proof
+# Карантинне утримання випуску
 
-UK LOC HOLD: Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
+Запис утримання не робить карантин злом. Він робить видимим timing. Deep Reach могла назвати невизначеність, затримати release, зберегти страхову позицію й тримати працівника в зоні, доки маршрут помер.
 
 ## Scanner
 
-UK LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+Пластина карантинного hold. Мова захисту з'являється після того, як шлях виходу вже замкнено.
 
 ## Terminal
 
-UK LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
 
 ## Audio
 
-UK LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+Карантин може врятувати тіло. Він також може змусити тіло чекати, доки воно стане папером.
 
 ## Field Note
 
-UK LOC HOLD: Use where player may confuse rescue with custody.
+Нотатка мародера: слово protection не доводить захист. Перевір годинник.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/uk_UA. -->

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Quarantine Legal Handshake Assembly"
+title: "Rakitan Handshake Legal Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Quarantine Legal Handshake Assembly
+# Rakitan Handshake Legal Karantina
 
-ID LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.
+Komponen pelarian terakhir sekaligus legal, medis, dan evidensial. Quarantine status, receiver identity, payload custody, dan evidence state menentukan apakah ascent menjadi penyelamatan, claim capture, atau public proof.
 
 ## Scanner
 
-ID LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.
+Soket handshake. Kapsul bisa siap secara mekanis dan tetap menjadi milik receiver yang salah.
 
 ## Terminal
 
-ID LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.
+RECOVERY HANDSHAKE: receiver key diperlukan. Keelmark menerima mass dan lien. Recovery Compliance menerima coordinates dan quarantine status. Public ledger menerima proof setelah jeda. Unkeyed launch default menjadi custody dispute.
 
 ## Audio
 
-ID LOC HOLD: The last part is not metal. It is who gets to call you recovered.
+Siapa yang menjawab menentukan arti penyelamatan.
 
 ## Field Note
 
-ID LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+Komponen terakhir bukan logam. Itu nama sistem yang diizinkan menyebutmu recovered.
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/id_ID. -->

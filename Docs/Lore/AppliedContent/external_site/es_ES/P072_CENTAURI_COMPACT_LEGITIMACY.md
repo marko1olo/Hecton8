@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "Legitimidad del Centauri Compact"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# Legitimidad del Centauri Compact
 
-ES LOC HOLD: Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt.
+La legitimidad del Centauri Compact mantiene firme el marco general: la expansión humana ya funciona en algunos lugares, lo que hace que Aegir sea menos heroico y más corrupto.
 
 ## Scanner
 
-ES LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+Etiqueta de auditoría Centauri. Legitimidad extrasolar temprana, luego excusas de frontera.
 
 ## Terminal
 
-ES LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+HARDWARE CENTAURI COMPACT: caja de presión certificada para tránsito civil. Canal de auditoría inactivo. Garantía anulada tras retrofit de Deep Reach por terceros.
 
 ## Audio
 
-ES LOC HOLD: First legitimacy became old metal under a newer lie.
+La primera legitimidad se volvió metal viejo bajo una mentira más nueva.
 
 ## Field Note
 
-ES LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+El Compact volvió respetables las reclamaciones lejanas. La respetabilidad no es rescate.
 
 <!-- External Site; generated from P072_CENTAURI_COMPACT_LEGITIMACY/es_ES. -->

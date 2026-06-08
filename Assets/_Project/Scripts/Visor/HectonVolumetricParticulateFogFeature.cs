@@ -23,6 +23,7 @@ namespace Hecton8.Visor
     {
         private const double SetupBudgetWarningMilliseconds = 0.2d;
         private const double MaxCameraLocalAupMeters = 1000000d;
+        private const float DefaultSeaLevelY = 14.02f;
         private const uint SetupWarningHash = 0xA88120F0u;
         private const uint SetupContextHash = 0xC0120F6Au;
 
@@ -1543,7 +1544,7 @@ namespace Hecton8.Visor
                 if (!profiles.IsCreated || profiles.Length <= 0)
                     return;
 
-                float cameraDepthMeters = ResolveFiniteNonNegative(-cameraPosition.y, 0f);
+                float cameraDepthMeters = ResolveCameraDepthFromProductionSeaLevel(cameraPosition);
                 for (int i = 0; i < profiles.Length; i++)
                 {
                     WaterExtinctionProfileDTO profile = profiles[i];
@@ -1572,6 +1573,11 @@ namespace Hecton8.Visor
                     extinctionCoefficient = math.lerp(extinctionCoefficient, scatter, 0.5f);
                     return;
                 }
+            }
+
+            private static float ResolveCameraDepthFromProductionSeaLevel(float3 cameraPosition)
+            {
+                return math.isfinite(cameraPosition.y) ? math.max(0f, DefaultSeaLevelY - cameraPosition.y) : 0f;
             }
 
             private static void ApplyBiomeTransitionGlobals(

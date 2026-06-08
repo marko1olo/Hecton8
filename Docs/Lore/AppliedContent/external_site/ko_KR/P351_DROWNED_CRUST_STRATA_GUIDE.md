@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Drowned Crust Strata Guide"
+title: "잠긴 지각 지층 안내서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Drowned Crust Strata Guide
+# 잠긴 지각 지층 안내서
 
-KO LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.
+잠긴 지각 지층 안내서는 HECTON-8 해저를 만들어졌고 부서진 장소로 느끼게 한다. terrain, salvage routes, 광물 표본은 모두 같은 층상 압력 역사에서 나온다.
 
 ## Scanner
 
-KO LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+침수 지층은 오래된 절단 자국, pressure-glass 이음, 같은 방향으로 두 번 무너지지 않는 광물 띠를 드러낸다.
 
 ## Terminal
 
-KO LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: HECTON-8의 잠긴 지각은 쌓인 정착지 암석, 붕괴한 얼음의 기억, pressure glass, 움직이는 brine 아래의 extraction scars다. 깨끗한 표면보다 균열선이 우선한다.
 
 ## Audio
 
-KO LOC HOLD: The map is not terrain. It is a stack of drownings.
+지도는 지형이 아니다. 익사의 층이다.
 
 ## Field Note
 
-KO LOC HOLD: Use for geology codex and procedural world labels.
+띠가 빈 소리를 내면 평평한 면을 믿지 마라. 균열을 표시하고, 표본을 채취하고, 벽은 버티게 둬라.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/ko_KR. -->

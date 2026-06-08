@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "Реєстр корпоративної відповіді"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# Реєстр корпоративної відповіді
 
-UK LOC HOLD: Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+Реєстр — це мова Black Keel, коли ніхто не імпровізує. Він може визнати небезпеку, відкрити чергу, зберегти претензію і все одно залишити оператора чекати за правилами активів. Гравець має читати реєстри відповіді як корисні сигнали і ворожу паперову роботу, що стала виконуваною.
 
 ## Scanner
 
-UK LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+Кожна відповідь приходить мовою контракту: опіка активів, замки відповідальності, маршрут зразка, ризик корпусу, потім повернення оператора.
 
 ## Terminal
 
-UK LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+КЛАС ВІДПОВІДІ: збереження активів. Повернення оператора додано після опіки зразка, печатки відповідальності, аудиту корпусу і маршруту оплати.
 
 ## Audio
 
-UK LOC HOLD: The reply was automatic. The rescue was conditional.
+Відповідь була автоматичною. Порятунок був умовним.
 
 ## Field Note
 
-UK LOC HOLD: Immediate response is not immediate rescue.
+Негайна відповідь — не негайний порятунок.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/uk_UA. -->

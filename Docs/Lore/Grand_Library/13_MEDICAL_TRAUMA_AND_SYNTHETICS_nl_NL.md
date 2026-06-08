@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # MEDISCH TRAUMA EN SYNTHETISCHE VERVANGINGEN
 
 > **Bron:** Geautomatiseerde Operations Procedure van de Krankenstation van de *Black Keel*.

@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Needleprobe Precursor Program"
+title: "Програма предтеч Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Needleprobe Precursor Program
+# Програма предтеч Needleprobe
 
-UK LOC HOLD: HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
-
-## Scanner
-
-UK LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
-
-## Terminal
-
-UK LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
-
-## Audio
-
-UK LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
-
-## Field Note
-
-UK LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Перша людська присутність в Aegir не була героїчною. Це був ланцюг малих дорогих машин, що перетинали маршрут, який жоден живий екіпаж ще не оцінив. Needleprobes міряли паралакс, радіацію, хімію океану, ефемериди місяців і лінії видимості ретрансляторів, а потім роками чекали, доки їхні відповіді стануть корисними. Deep Reach не відкрила HECTON-8 із прапором у руці; вона купила достатньо машинної впевненості, щоб назвати місяць активом. Це походження важливе, бо колонія успадкувала брехню тону, а не брехню даних. Дані були справжніми. Впевненість із них була надто чистою для людей, яких пізніше відправили у воду.
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/uk_UA. -->

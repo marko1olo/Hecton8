@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "Pompownia P-63 W Płytkim Aneksie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Shallow Annex P-63 Pump Room
+# Pompownia P-63 W Płytkim Aneksie
 
-PL LOC HOLD: P-63 teaches survival through work: pumping, sealing, pressure reading and a return pinger. The room is safe only while its machine keeps winning.
+P-63 uczy przetrwania przez pracę: pompowanie, uszczelnianie, czytanie ciśnienia i return pinger. Pokój jest bezpieczny tylko, kiedy jego maszyna dalej wygrywa.
 
 ## Scanner
 
-PL LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+Pompownia P-63. Ręczne ciśnienie studzienki trzyma się poniżej marginesu serwisowego.
 
 ## Terminal
 
-PL LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+ZLECENIE P-63 / SHALLOW ANNEX: ręcznie odpompować studzienkę do 0.3 m; osadzić cold seal na szwie C; ciąć stopiony zatrzask szafki dopiero po uspokojeniu wskaźnika; nie ufać zielonej lampie, dopóki return pinger nie odpowie.
 
 ## Audio
 
-PL LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+Najpierw pompa. Potem uszczelka. Cutter dopiero, gdy wskaźnik przestanie dryfować.
 
 ## Field Note
 
-PL LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+Uchwyt pompy jest wypolerowany tam, gdzie przestraszone ręce używały go bez przerwy. Sucha podłoga zaczyna się przy linii kredy.
 
 <!-- In-Game Wiki; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/pl_PL. -->

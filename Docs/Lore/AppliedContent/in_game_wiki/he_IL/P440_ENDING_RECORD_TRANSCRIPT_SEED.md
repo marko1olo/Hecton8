@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Ending Record Transcript Seed"
+title: "תמליל רשומת סיום"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Ending Record Transcript Seed
+# תמליל רשומת סיום
 
-HE LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
+תמלילי רשומת סיום עושים תוצאות ניתנות לרישום ולהשוואה ב-replay בלי להפוך ידע לכוח בירושה.
 
 ## Scanner
 
-HE LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+מקטע רשומת סיום מפרט receiver, payload hash, מצב חוב ועלות לא פתורה.
 
 ## Terminal
 
-HE LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.
 
 ## Audio
 
-HE LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
+רשומת אחרי פעולה. receiver קיבל payload hash. claim נסגר לחשבונאות. suppression flag לא קריא. truth custody לא פתורה.
 
 ## Field Note
 
-HE LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+רשומת dossier סופית. לנקוב receiver, custody ועלות לא פתורה, לא סגירה מוסרית נקייה.
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/he_IL. -->

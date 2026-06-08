@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel 보관권
 
-Black Keel 보관권은 궤도 지원을 구조로, 부채 기계로, Deep Reach 압력면으로 만든다.
+Black Keel Custody는 궤도 지원을 유용하지만 오염된 인프라로 정의한다. 구조 경로, 부채 기계, Deep Reach 압력면이 한 물체에 겹친다.
 
 ## Scanner
 

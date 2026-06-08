@@ -14,20 +14,22 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black-Keel-Ledger
 
-Das Black-Keel-Ledger erklärt, warum der Carrier kontaktieren, führen, abrechnen, verzögern, bergen oder verlassen kann, ohne ein Schurke zu sein. Es ist öffentliche Infrastruktur mit debt custody und versteckten Deep-Reach-Prioritäten.
+Black Keel ist die orbitale Lebenslinie, aber keine Rettungsfantasie. Es gehört zur Claim-Pool-Infrastruktur: Gewahrsamsledger, Versicherungsschuld, Bergungsfenster, Quarantäne und Carrierautorität.
+
+Es kann führen, weil Führung Wert schützt. Es kann verzögern, weil Verzögerung auch Wert schützt. Hilfe bedeutet nicht Parteinahme.
 
 ## Scanner
 
-Claim-Pool-Tender-Ledger. Öffentliche Carrier-Gewahrsamkeit, Versicherungs debt, versteckte Deep-Reach-Prioritäten.
+Claim-Pool-Tenderledger. Öffentliche Carriergewahrsamkeit, Versicherungsschuld, Aufstiegsmassenstrafen und versteckte Deep-Reach-Prioritätshaken.
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+BLACK-KEEL-LEDGER // Bergungsdienst bedingt. Claimfreigabe unvollständig. Tiefenprioritätsroute maskiert. Nutzlastautorität bleibt carrierseitig. Contractor-Überleben übertrifft versicherte Fracht nicht ohne aktualisierten Aufstiegswert.
 
 ## Audio
 

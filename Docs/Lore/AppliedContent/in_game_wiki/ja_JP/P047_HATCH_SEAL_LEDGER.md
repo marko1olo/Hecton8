@@ -7,34 +7,34 @@ poi_tags: poi.hatch_seal;poi.airlock_frame
 biome_tags: biome.drowned_colony;biome.service_corridor
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Hatch Seal Ledger"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "ハッチシール台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Hatch Seal Ledger
+# ハッチシール台帳
 
-JP LOC HOLD: Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.
+ハッチフレームは役に立つ嘘を保管する。緑のシール灯はガスケットが持ったことを示すだけで、閉鎖が公平、安全、可逆だったとは言わない。シール台帳は圧力カット、上書きスタンプ、最後の手動閉鎖の向きを残す。放棄された植民地では、ハッチは通路障害、生存道具、作業員の証拠を同時に持つ物体になる。
 
 ## Scanner
 
-JP LOC HOLD: The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+シール記憶を回収。ガスケットは三回の圧力カットと一回の避難上書きを受けた。帰還側アクセスは濡れた側から施錠。
 
 ## Terminal
 
-JP LOC HOLD: Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / FRAME H-17: ガスケット変形が整備許容値を超過。手動閉鎖はEVAC OVERRIDE下で受理。帰還側の作業員数は未解決。再開放は圧力均衡とヒンジ点検後のみ。
 
 ## Audio
 
-JP LOC HOLD: The hatch remembers who stayed on which side.
+密閉はした。ハッチの約束はそれだけだ。
 
 ## Field Note
 
-JP LOC HOLD: A sealed hatch is not safety. It is a decision with a timestamp.
+密閉ハッチは領収書だ。開ける前に、どちら側が払ったかを考えろ。
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/ja_JP. -->

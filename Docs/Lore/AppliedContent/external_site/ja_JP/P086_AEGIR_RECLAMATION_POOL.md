@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Aegir回収プール"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Aegir回収プール
 
-JP LOC HOLD: Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
-
-## Scanner
-
-JP LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
-
-## Terminal
-
-JP LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
-
-## Audio
-
-JP LOC HOLD: The pool owns the route. You only rent the answer.
-
-## Field Note
-
-JP LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+Aegir回収プールは、プレイヤーを孤独に保ちながら到着を信じられるものにする仕組みだ。小さなmarauderがBlack Keelを直接所有しているわけではない。carrierテンダーは、死んだインフラ、争われる貨物、普通のクルーには高すぎる世界のために作られた共有クレーム制度に属する。プール印は経路へのアクセスを買えるが、その経路を仲裁にも渡す。操作者が水線の下に入った瞬間、すべての要求はpayload custody、隔離予備、証拠価値、燃料窓と競合する。プールの恐さは手続きにある。助けを送っても救助は拒める。Aegirクレーム法では、助けは数ある請求可能サービスの一つでしかない。
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/ja_JP. -->

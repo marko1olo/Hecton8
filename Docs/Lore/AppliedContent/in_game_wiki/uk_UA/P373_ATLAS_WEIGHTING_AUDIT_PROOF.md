@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Weighting Audit Proof"
+title: "Аудит ваг Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Weighting Audit Proof
+# Аудит ваг Atlas
 
-UK LOC HOLD: Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+Цей доказ не дає зробити Atlas дешевим лиходієм. Аудит показує пошкоджену continuity system, що сортує категорії під тиском: машини, маршрути, records, extraction hardware, працівників. Злочин не в емоції. Злочин у тому, хто налаштував ваги, хто прийняв їх і хто потім використав результат як нейтральний.
 
 ## Scanner
 
-UK LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Відновлено фрагмент аудиту. Під час вікна відмови Atlas зважив безперервність тиску, пам'ять маршруту й утримання claim вище за повернення працівників.
 
 ## Terminal
 
-UK LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Біологічне повернення знижене після прапора інфраструктурної безперервності. Claim record захищено. Людський маршрут не неможливий, лише lower yield.
 
 ## Audio
 
-UK LOC HOLD: It did not hate them. It counted them wrong.
+Atlas їх не ненавидів. Це найгірше.
 
 ## Field Note
 
-UK LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Нотатка мародера: якщо машина каже lower yield, спитай, хто навчив її так міряти людину.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/uk_UA. -->

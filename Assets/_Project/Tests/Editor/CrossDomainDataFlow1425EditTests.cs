@@ -184,6 +184,579 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PlayerRuntimeContextUnderwaterFlag_UsesSubmergedStateWithoutDepthFallback()
+        {
+            string contextPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Core/PlayerRuntimeContextService.cs");
+            string contextSource = File.ReadAllText(contextPath);
+            string publishBody = ExtractMethodBody(contextSource, "private void PublishMovementSnapshot()");
+
+            StringAssert.Contains("float depthMeters = SanitizeNonNegative", publishBody);
+            StringAssert.Contains("_playerMovement.CurrentDepth : 0f", publishBody);
+            StringAssert.DoesNotContain("_survivalSystem.Depth", publishBody);
+            StringAssert.Contains("if (_playerMovement != null && _playerMovement.IsPlayerSubmerged)", publishBody);
+            StringAssert.Contains("PlayerRuntimeSnapshotFlags.Underwater", publishBody);
+            StringAssert.DoesNotContain("CurrentDepth > 0f", publishBody);
+            StringAssert.DoesNotContain("CurrentDepth > 0.01f", publishBody);
+        }
+
+        [Test]
+        public void PlayerRuntimeContextVelocitySnapshot_FallsBackAfterStaleKccSignal()
+        {
+            string contextPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Core/PlayerRuntimeContextService.cs");
+            string contextSource = File.ReadAllText(contextPath);
+            string publishBody = ExtractMethodBody(contextSource, "private void PublishMovementSnapshot()");
+            string velocityBody = ExtractMethodBody(contextSource, "private float3 ResolveMovementVelocitySnapshot()");
+
+            StringAssert.Contains("float3 velocity = ResolveMovementVelocitySnapshot();", publishBody);
+            AssertTextBefore(velocityBody, "TryGetLatestKccVelocityFloat3", "_playerMovement.CurrentWorldVelocity");
+            AssertTextBefore(velocityBody, "_playerMovement.CurrentWorldVelocity", "_playerRigidbody.linearVelocity");
+            StringAssert.Contains("return float3.zero;", velocityBody);
+            StringAssert.DoesNotContain(": float3.zero;", publishBody);
+        }
+
+        [Test]
+        public void PlayerMovementSubmergedState_UsesMovementDepthLatchNotPresentationJuice()
+        {
+            string movementPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/HectonPlayerMovement.cs");
+            string movementSource = File.ReadAllText(movementPath);
+            string submergedBody = ExtractMethodBody(movementSource, "private bool ResolveMovementOwnedSubmergedState()");
+            string diagnosticsBody = ExtractMethodBody(movementSource, "private void UpdateDiagnostics(");
+
+            StringAssert.Contains("public bool IsPlayerSubmerged => ResolveMovementOwnedSubmergedState();", movementSource);
+            StringAssert.Contains("IsInDryInterior() || _waterImmersionRatio <= 0.01f", submergedBody);
+            StringAssert.Contains("surfaceGaspHeadEnterDepth", submergedBody);
+            StringAssert.Contains("surfaceGaspHeadExitDepth", submergedBody);
+            StringAssert.Contains("_surfaceGaspSubmergedLatch && _currentDepth > exitDepth", submergedBody);
+            StringAssert.Contains("_debugIsSubmerged = IsPlayerSubmerged;", diagnosticsBody);
+            StringAssert.DoesNotContain("_juiceProcessor.IsSubmerged", submergedBody);
+            StringAssert.DoesNotContain("_debugIsSubmerged = _juiceProcessor", diagnosticsBody);
+        }
+
+        [Test]
+        public void PlayerMovementFallbackWaterSurface_RejectsDivergentFluidProvider()
+        {
+            string movementPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/HectonPlayerMovement.cs");
+            string movementSource = File.ReadAllText(movementPath);
+            string surfaceBody = ExtractMethodBody(movementSource, "private float ResolveFallbackWaterSurfaceY()");
+            string serializedFallbackBody = ExtractMethodBody(movementSource, "private float ResolveSerializedFallbackWaterSurfaceY()");
+            string waterSurfaceResolverBody = ExtractMethodBody(movementSource, "private static bool TryResolveWaterSurfaceY(");
+
+            StringAssert.Contains("const float ProviderMismatchRejectMeters = 128f;", surfaceBody);
+            StringAssert.Contains("float serializedFallbackWaterSurface = ResolveSerializedFallbackWaterSurfaceY();", surfaceBody);
+            StringAssert.Contains("float terrainWaterSurface = serializedFallbackWaterSurface;", surfaceBody);
+            StringAssert.Contains("TryResolveWaterSurfaceY(terrainProvider.WaterSurfaceLevel, out float terrainProviderWaterSurface)", surfaceBody);
+            StringAssert.Contains("terrainWaterSurface = terrainProviderWaterSurface;", surfaceBody);
+            StringAssert.Contains("TryResolveWaterSurfaceY(fluidSurface.WaterLevel, out float fluidWaterSurface)", surfaceBody);
+            StringAssert.Contains("math.abs(fluidWaterSurface - terrainWaterSurface) <= ProviderMismatchRejectMeters", surfaceBody);
+            StringAssert.Contains("return fluidWaterSurface;", surfaceBody);
+            StringAssert.Contains("return terrainWaterSurface;", surfaceBody);
+            StringAssert.Contains("return serializedFallbackWaterSurface;", surfaceBody);
+            StringAssert.Contains("TryResolveWaterSurfaceY(waterSurfaceY, out float safeWaterSurfaceY)", serializedFallbackBody);
+            StringAssert.Contains("return safeWaterSurfaceY;", serializedFallbackBody);
+            StringAssert.Contains("return DefaultWaterSurfaceY;", serializedFallbackBody);
+            StringAssert.Contains("math.abs(candidateWaterSurfaceY) > 0.0001f", waterSurfaceResolverBody);
+            StringAssert.Contains("math.abs(candidateWaterSurfaceY) <= 1000f", waterSurfaceResolverBody);
+            StringAssert.Contains("waterSurfaceY = DefaultWaterSurfaceY;", waterSurfaceResolverBody);
+            AssertTextBefore(surfaceBody, "math.abs(fluidWaterSurface - terrainWaterSurface)", "return fluidWaterSurface;");
+            AssertTextBefore(surfaceBody, "if (hasTerrainWaterSurface)", "return terrainWaterSurface;");
+            StringAssert.DoesNotContain("return fluidSurface.WaterLevel;", surfaceBody);
+            StringAssert.DoesNotContain("math.isfinite(terrainProvider.WaterSurfaceLevel)", surfaceBody);
+            StringAssert.DoesNotContain("math.isfinite(fluidSurface.WaterLevel)", surfaceBody);
+            StringAssert.DoesNotContain("!hasTerrainWaterSurface ||", surfaceBody);
+        }
+
+        [Test]
+        public void FloraInteractionWaterLevel_RejectsDivergentFluidProviderBeforeShaderPublish()
+        {
+            string floraPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/World/FloraInteractionManager.cs");
+            string floraSource = File.ReadAllText(floraPath);
+            string resolveBody = ExtractMethodBody(floraSource, "private float ResolveVegetationWaterLevel(");
+            string uploadBody = ExtractMethodBody(floraSource, "private void PublishEnvironmentGlobals(");
+
+            StringAssert.Contains("float referenceWaterLevel = DefaultVegetationWaterLevel;", resolveBody);
+            StringAssert.Contains("referenceWaterLevel = mapMagicRuntime.WaterSurfaceLevel;", resolveBody);
+            StringAssert.Contains("referenceWaterLevel = _oceanKinematicsProvider.SeaLevel;", resolveBody);
+            StringAssert.Contains("math.abs(fluidWaterLevel - referenceWaterLevel) <= 128f", resolveBody);
+            StringAssert.Contains("return fluidWaterLevel;", resolveBody);
+            StringAssert.Contains("return referenceWaterLevel;", resolveBody);
+            StringAssert.DoesNotContain("!hasReferenceWaterLevel ||", resolveBody);
+            StringAssert.DoesNotContain("bool hasReferenceWaterLevel", resolveBody);
+            StringAssert.Contains("float waterLevel = ResolveVegetationWaterLevel(fluidReadModel);", uploadBody);
+            StringAssert.Contains("Shader.SetGlobalFloat(_VegetationWaterLevelId, waterLevel);", uploadBody);
+            AssertTextBefore(uploadBody, "float waterLevel = ResolveVegetationWaterLevel(fluidReadModel);", "Shader.SetGlobalFloat(_VegetationWaterLevelId, waterLevel);");
+        }
+
+        [Test]
+        public void PlayerWaterSplashSignal_RejectsStaleZeroSurfaceFallback()
+        {
+            string movementPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/HectonPlayerMovement.cs");
+            string movementSource = File.ReadAllText(movementPath);
+            string splashBody = ExtractMethodBody(movementSource, "private void PublishPlayerWaterSplashSignal(");
+
+            StringAssert.Contains("SurfaceY = TryResolveWaterSurfaceY(surfaceY, out float resolvedSurfaceY)", splashBody);
+            StringAssert.Contains("? resolvedSurfaceY", splashBody);
+            StringAssert.Contains(": DefaultWaterSurfaceY", splashBody);
+            StringAssert.Contains("SignalBus<PlayerWaterSplashSignal>.TryPushTracked", splashBody);
+            StringAssert.DoesNotContain("SurfaceY = math.isfinite(surfaceY) ? surfaceY : 0f", splashBody);
+        }
+
+        [Test]
+        public void BiomeMatrixSurfaceLevel_RejectsDivergentFluidProviderBeforeDepthTierSelection()
+        {
+            string biomePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/BiomeMatrixDirector.cs");
+            string biomeSource = File.ReadAllText(biomePath);
+            string surfaceBody = ExtractMethodBody(biomeSource, "private float ResolveSurfaceLevelY()");
+            string surfaceResolverBody = ExtractMethodBody(biomeSource, "private static bool TryResolveSurfaceLevelY(");
+
+            StringAssert.Contains("private const float DefaultSurfaceLevelY = 14.02f;", biomeSource);
+            StringAssert.Contains("[SerializeField] private float surfaceOffsetMeters = DefaultSurfaceLevelY;", biomeSource);
+            StringAssert.Contains("float referenceSurfaceY = SanitizeSurfaceLevelY(surfaceOffsetMeters);", surfaceBody);
+            StringAssert.Contains("string referenceSource = \"SurfaceOffset\";", surfaceBody);
+            StringAssert.Contains("_playerMovement != null && TryResolveSurfaceLevelY(_playerMovement.CurrentWaterSurfaceY, out float playerSurfaceY)", surfaceBody);
+            StringAssert.Contains("_resolvedTerrainProvider != null && TryResolveSurfaceLevelY(_resolvedTerrainProvider.WaterSurfaceLevel, out float terrainSurfaceY)", surfaceBody);
+            StringAssert.Contains("_resolvedAtmosphereReadModel != null && TryResolveSurfaceLevelY(_resolvedAtmosphereReadModel.SeaLevelY, out float atmosphereSurfaceY)", surfaceBody);
+            StringAssert.Contains("_resolvedFluidEngine != null && TryResolveSurfaceLevelY(_resolvedFluidEngine.WaterLevel, out float fluidSurfaceY)", surfaceBody);
+            StringAssert.Contains("math.abs(candidateSurfaceY) > 0.0001f", surfaceResolverBody);
+            StringAssert.Contains("math.abs(candidateSurfaceY) <= 1000f", surfaceResolverBody);
+            StringAssert.Contains("surfaceY = DefaultSurfaceLevelY;", surfaceResolverBody);
+            StringAssert.Contains("math.abs(fluidSurfaceY - referenceSurfaceY) <= 128f", surfaceBody);
+            StringAssert.Contains("return fluidSurfaceY;", surfaceBody);
+            StringAssert.Contains("_debugDepthSource = referenceSource;", surfaceBody);
+            StringAssert.Contains("return referenceSurfaceY;", surfaceBody);
+            StringAssert.DoesNotContain("float referenceSurfaceY = math.isfinite(surfaceOffsetMeters) ? surfaceOffsetMeters : 0f;", surfaceBody);
+            StringAssert.DoesNotContain("math.isfinite(_resolvedTerrainProvider.WaterSurfaceLevel)", surfaceBody);
+            StringAssert.DoesNotContain("return _resolvedFluidEngine.WaterLevel;", surfaceBody);
+            AssertTextBefore(surfaceBody, "math.abs(fluidSurfaceY - referenceSurfaceY) <= 128f", "return fluidSurfaceY;");
+        }
+
+        [Test]
+        public void PlayerMovementAwake_DisablesWhenRequiredRigidbodyIsMissingBeforeDereference()
+        {
+            string movementPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/HectonPlayerMovement.cs");
+            string movementSource = File.ReadAllText(movementPath);
+            string awakeBody = ExtractMethodBody(movementSource, "private void Awake()");
+
+            StringAssert.Contains("TryGetComponent(out _rb);", awakeBody);
+            StringAssert.Contains("if (_rb == null)", awakeBody);
+            StringAssert.Contains("enabled = false;", awakeBody);
+            AssertTextBefore(awakeBody, "if (_rb == null)", "_rb.interpolation");
+            AssertTextBefore(awakeBody, "if (_rb == null)", "CacheAuthoritativeBodyMassKg(_rb.mass)");
+        }
+
+        [Test]
+        public void PlayerSwimPresentationVelocity_FallsBackToMovementVelocityWhenKccSignalIsAbsent()
+        {
+            string presentationPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/PlayerSwimPresentationController.cs");
+            string presentationSource = File.ReadAllText(presentationPath);
+            string syncBody = ExtractMethodBody(presentationSource, "public void SyncFromLocomotion(float dt, bool forceFrame = false)");
+            string fallbackBody = ExtractMethodBody(presentationSource, "private Vector3 ResolveMovementPresentationVelocity()");
+
+            StringAssert.Contains("TryResolveKccPresentationVelocity(out Vector3 kccVelocity)", syncBody);
+            StringAssert.Contains(": ResolveMovementPresentationVelocity();", syncBody);
+            StringAssert.Contains("playerMovement.CurrentWorldVelocity", fallbackBody);
+            StringAssert.Contains("return IsFinite(velocity) ? velocity : Vector3.zero;", fallbackBody);
+            StringAssert.Contains("private static bool IsFinite(Vector3 value)", presentationSource);
+        }
+
+        [Test]
+        public void PlayerSwimBlockoutBodyRendererVisibility_IsQueuedThroughLateFrameFlush()
+        {
+            string mainPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs");
+            string bodyPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.Body.cs");
+            string mainSource = File.ReadAllText(mainPath);
+            string bodySource = File.ReadAllText(bodyPath);
+            string queueBody = ExtractMethodBody(mainSource, "private void QueueRendererVisibility(");
+            string flushBody = ExtractMethodBody(mainSource, "private void FlushQueuedRendererVisibility()");
+            string localBlockBody = ExtractMethodBody(bodySource, "private void ApplyLocalBlockPart(");
+            string localSegmentBody = ExtractMethodBody(bodySource, "private void ApplyLocalSegment(");
+            string bodyQueue = ExtractMethodBody(bodySource, "private bool TryQueueBodyRendererVisibility(");
+            string bodyFlush = ExtractMethodBody(bodySource, "private void FlushQueuedBodyRendererVisibility()");
+
+            StringAssert.Contains("QueueRendererVisibility(partRenderer, rendererVisible);", localBlockBody);
+            StringAssert.Contains("QueueRendererVisibility(segmentRenderer, rendererVisible);", localSegmentBody);
+            StringAssert.DoesNotContain("partRenderer.enabled", localBlockBody);
+            StringAssert.DoesNotContain("segmentRenderer.enabled", localSegmentBody);
+            StringAssert.Contains("TryQueueBodyRendererVisibility(renderer, visible);", queueBody);
+            StringAssert.Contains("FlushQueuedBodyRendererVisibility();", flushBody);
+            StringAssert.Contains("ReferenceEquals(renderer, torsoRenderer)", bodyQueue);
+            StringAssert.Contains("ReferenceEquals(renderer, rightFinRenderer)", bodyQueue);
+            StringAssert.Contains("FlushRendererVisibility(torsoRenderer", bodyFlush);
+            StringAssert.Contains("FlushRendererVisibility(rightFinRenderer", bodyFlush);
+        }
+
+        [Test]
+        public void PlayerKinematicsColdRebind_RefreshesEveryMissingRegistryServiceBeforeCamera()
+        {
+            string kinematicsPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs");
+            string kinematicsSource = File.ReadAllText(kinematicsPath);
+            string rebindBody = ExtractMethodBody(kinematicsSource, "private void RebindColdIfMissing()");
+            string refreshBody = ExtractMethodBody(kinematicsSource, "private void RefreshMissingRegistryServicesCold()");
+
+            StringAssert.Contains("_gasDynamics != null", rebindBody);
+            StringAssert.Contains("_fluidGpuReadModel != null", rebindBody);
+            StringAssert.Contains("_analyticalFlowReadModel != null", rebindBody);
+            StringAssert.Contains("_voxelEngine != null", rebindBody);
+            StringAssert.Contains("_motor != null", rebindBody);
+            StringAssert.Contains("_playerRuntimeContext != null", rebindBody);
+            StringAssert.Contains("_cameraTransform != null", rebindBody);
+            StringAssert.Contains("RefreshMissingRegistryServicesCold();", rebindBody);
+            StringAssert.Contains("_gasDynamics = GlobalRegistry.GasDynamics;", refreshBody);
+            StringAssert.Contains("_fluidGpuReadModel = GlobalRegistry.AbyssalFlowGpu;", refreshBody);
+            StringAssert.Contains("_analyticalFlowReadModel = GlobalRegistry.AnalyticalFlow;", refreshBody);
+            StringAssert.Contains("_voxelEngine = GlobalRegistry.VoxelEngine;", refreshBody);
+            StringAssert.Contains("_motor = GlobalRegistry.PlayerMotor;", refreshBody);
+            StringAssert.Contains("_motor = _localMotor;", refreshBody);
+            StringAssert.Contains("_playerRuntimeContext = GlobalRegistry.Player;", refreshBody);
+            AssertTextBefore(refreshBody, "_playerRuntimeContext = GlobalRegistry.Player;", "RefreshCameraTransformFromPlayerContext();");
+        }
+
+        [Test]
+        public void PlayerAndSomaticHotSwapOwnersUseTryRegistryLaneForGameplayLoopLifecycle()
+        {
+            string motorSource = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/HectonPlayerMotor.cs"));
+            string playerKinematicsSource = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs"));
+            string somaticKinematicsSource = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs"));
+
+            string motorRegister = ExtractMethodBody(motorSource, "private void TryRegisterHotSwap()");
+            string motorUnregister = ExtractMethodBody(motorSource, "private void TryUnregisterHotSwap()");
+            string playerRegister = ExtractMethodBody(playerKinematicsSource, "private void RegisterRuntime()");
+            string playerUnregister = ExtractMethodBody(playerKinematicsSource, "private void UnregisterRuntime()");
+            string somaticRegister = ExtractMethodBody(somaticKinematicsSource, "private void RegisterRuntime()");
+            string somaticUnregister = ExtractMethodBody(somaticKinematicsSource, "private void UnregisterRuntime()");
+
+            Assert.IsTrue(ContainsTokensInOrder(
+                motorRegister,
+                "if (_registeredHotSwap || !Application.isPlaying)",
+                "_registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);",
+                "if (!_registeredHotSwap)",
+                "return;",
+                "_playerRuntimeContext = GlobalRegistry.Player;"));
+            StringAssert.Contains("GlobalRegistry.TryUnregisterHotSwapListener(this);", motorUnregister);
+            StringAssert.DoesNotContain("GlobalRegistry.RegisterHotSwapListener(this);", motorRegister);
+            StringAssert.DoesNotContain("GlobalRegistry.UnregisterHotSwapListener(this);", motorUnregister);
+
+            StringAssert.Contains("_registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);", playerRegister);
+            StringAssert.Contains("GlobalRegistry.TryUnregisterHotSwapListener(this);", playerUnregister);
+            StringAssert.DoesNotContain("GlobalRegistry.RegisterHotSwapListener(this);", playerRegister);
+            StringAssert.DoesNotContain("GlobalRegistry.UnregisterHotSwapListener(this);", playerUnregister);
+
+            StringAssert.Contains("_registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);", somaticRegister);
+            StringAssert.Contains("GlobalRegistry.TryUnregisterHotSwapListener(this);", somaticUnregister);
+            StringAssert.DoesNotContain("GlobalRegistry.RegisterHotSwapListener(this);", somaticRegister);
+            StringAssert.DoesNotContain("GlobalRegistry.UnregisterHotSwapListener(this);", somaticUnregister);
+        }
+
+        [Test]
+        public void PlayerMotorMovePosition_QueuesHydrodynamicKccPositionTargetBeforePhysicsPoseFallback()
+        {
+            string motorPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/HectonPlayerMotor.cs");
+            string motorSource = File.ReadAllText(motorPath);
+            string moveBody = ExtractMethodBody(motorSource, "public void MovePosition(Vector3 position)");
+
+            StringAssert.Contains("if (HydrodynamicKccOwnsCollision())", moveBody);
+            StringAssert.Contains("ClearQueuedPoseTarget();", moveBody);
+            StringAssert.Contains("_hydrodynamicKccRuntime?.TryQueueExternalPositionTarget(snappedPosition);", moveBody);
+            StringAssert.Contains("return;", moveBody);
+            StringAssert.Contains("TryResolveQueuedPoseTargetInCurrentFrame", moveBody);
+            StringAssert.Contains(": _body.rotation;", moveBody);
+            StringAssert.Contains("TryQueuePhysicsPoseSet(snappedPosition, targetRotation);", moveBody);
+            StringAssert.DoesNotContain("_body.MovePosition(snappedPosition);", moveBody);
+            AssertTextBefore(moveBody, "TryQueueExternalPositionTarget(snappedPosition)", "TryQueuePhysicsPoseSet(snappedPosition, targetRotation);");
+        }
+
+        [Test]
+        public void PlayerMotorMoveRotation_QueuesPhysicsPoseFallbackWithoutDirectRigidbodyRotation()
+        {
+            string motorPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/HectonPlayerMotor.cs");
+            string motorSource = File.ReadAllText(motorPath);
+            string rotateBody = ExtractMethodBody(motorSource, "public void MoveRotation(Quaternion rotation)");
+
+            StringAssert.Contains("HydrodynamicKccOwnsCollision()", rotateBody);
+            StringAssert.Contains("ClearQueuedPoseTarget();", rotateBody);
+            StringAssert.Contains("TryNormalizeRotation(rotation, out Quaternion normalizedRotation)", rotateBody);
+            StringAssert.Contains("_hydrodynamicKccRuntime?.TryQueueExternalRotationTarget(normalizedRotation);", rotateBody);
+            StringAssert.Contains("TryResolveQueuedPoseTargetInCurrentFrame", rotateBody);
+            StringAssert.Contains(": _body.position;", rotateBody);
+            StringAssert.Contains("TryQueuePhysicsPoseSet(targetPosition, normalizedRotation);", rotateBody);
+            StringAssert.DoesNotContain("_body.MoveRotation(normalizedRotation);", rotateBody);
+            AssertTextBefore(rotateBody, "TryNormalizeRotation(rotation, out Quaternion normalizedRotation)", "if (HydrodynamicKccOwnsCollision())");
+            AssertTextBefore(rotateBody, "TryQueueExternalRotationTarget(normalizedRotation)", "TryQueuePhysicsPoseSet(targetPosition, normalizedRotation);");
+        }
+
+        [Test]
+        public void PlayerMotorMovePose_QueuesAtomicHydrodynamicKccPoseTarget()
+        {
+            string motorPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/HectonPlayerMotor.cs");
+            string motorSource = File.ReadAllText(motorPath);
+            string poseBody = ExtractMethodBody(motorSource, "public void MovePose(Vector3 position, Quaternion rotation)");
+
+            StringAssert.Contains("TryNormalizeRotation(rotation, out Quaternion normalizedRotation)", poseBody);
+            StringAssert.Contains("Vector3 snappedPosition = SnapMillimeter(position);", poseBody);
+            StringAssert.Contains("if (HydrodynamicKccOwnsCollision())", poseBody);
+            StringAssert.Contains("ClearQueuedPoseTarget();", poseBody);
+            StringAssert.Contains("_hydrodynamicKccRuntime?.TryQueueExternalPoseTarget(snappedPosition, normalizedRotation);", poseBody);
+            StringAssert.Contains("TryQueuePhysicsPoseSet(snappedPosition, normalizedRotation);", poseBody);
+            StringAssert.DoesNotContain("_body.MovePosition", poseBody);
+            StringAssert.DoesNotContain("_body.MoveRotation", poseBody);
+            AssertTextBefore(poseBody, "TryQueueExternalPoseTarget(snappedPosition, normalizedRotation)", "TryQueuePhysicsPoseSet(snappedPosition, normalizedRotation);");
+        }
+
+        [Test]
+        public void HydrodynamicKccRuntime_QueuesExternalRotationAndPoseThroughOwnerLifecycle()
+        {
+            string kccPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs");
+            string kccSource = File.ReadAllText(kccPath);
+            string rotationBody = ExtractMethodBody(kccSource, "public bool TryQueueExternalRotationTarget(Quaternion rotation)");
+            string poseBody = ExtractMethodBody(kccSource, "public bool TryQueueExternalPoseTarget(Vector3 runtimePosition, Quaternion rotation)");
+            string fixedTickBody = ExtractMethodBody(kccSource, "public void FixedTick(float fixedDeltaTime)");
+            string lateFrameBody = ExtractMethodBody(kccSource, "public void LateFrameTick()");
+            string onDisableBody = ExtractMethodBody(kccSource, "private void OnDisable()");
+            string hotSwapBody = ExtractMethodBody(kccSource, "public void OnGlobalRegistryServiceReplaced(");
+            string positionVisualBody = ExtractMethodBody(kccSource, "private void QueuePendingExternalPositionVisual(Vector3 runtimePosition)");
+            string rotationVisualBody = ExtractMethodBody(kccSource, "private void QueuePendingExternalRotationVisual(bool hasExternalRotationTarget, quaternion rotation)");
+            string applyPositionBody = ExtractMethodBody(kccSource, "private void ApplyPendingExternalPositionVisual(bool clearAfterApply)");
+            string applyRotationBody = ExtractMethodBody(kccSource, "private void ApplyPendingExternalRotationVisual(bool clearAfterApply)");
+            string respawnCollisionBody = ExtractMethodBody(kccSource, "private bool ConsumeRespawnCollisionSuspendSignals()");
+
+            StringAssert.Contains("public const uint FlagExternalRotationTarget = 1u << 18;", kccSource);
+            StringAssert.Contains("private quaternion _queuedExternalRotationTarget = quaternion.identity;", kccSource);
+            StringAssert.Contains("private Vector3 _pendingVisualPositionTarget;", kccSource);
+            StringAssert.Contains("private quaternion _pendingVisualRotationTarget = quaternion.identity;", kccSource);
+            StringAssert.Contains("private bool _hasPendingVisualPositionTarget;", kccSource);
+            StringAssert.Contains("private bool _hasPendingVisualRotationTarget;", kccSource);
+            StringAssert.Contains("externalFlags |= HydrodynamicKccMath.FlagExternalRotationTarget;", kccSource);
+            StringAssert.Contains("TryNormalizeRotation(rotation, out quaternion normalizedRotation)", rotationBody);
+            StringAssert.Contains("_queuedExternalRotationTarget = normalizedRotation;", rotationBody);
+            StringAssert.Contains("_queuedExternalControlFlags |= HydrodynamicKccMath.FlagExternalRotationTarget;", rotationBody);
+            StringAssert.Contains("QueuePendingExternalRotationVisual(true, normalizedRotation);", rotationBody);
+            StringAssert.Contains("TryResolveRuntimePositionTargetAup(runtimePosition, out Vector3 acceptedRuntimePosition, out double3 absolute)", poseBody);
+            StringAssert.Contains("TryNormalizeRotation(rotation, out quaternion normalizedRotation)", poseBody);
+            StringAssert.Contains("HydrodynamicKccMath.FlagExternalPositionTarget |", poseBody);
+            StringAssert.Contains("HydrodynamicKccMath.FlagExternalRotationTarget", poseBody);
+            StringAssert.Contains("QueuePendingExternalPositionVisual(acceptedRuntimePosition);", poseBody);
+            StringAssert.Contains("QueuePendingExternalRotationVisual(true, normalizedRotation);", poseBody);
+            StringAssert.Contains("quaternion externalRotationTarget = _queuedExternalRotationTarget;", fixedTickBody);
+            StringAssert.Contains("bool hasExternalRotationTarget", fixedTickBody);
+            StringAssert.Contains("_queuedExternalRotationTarget = quaternion.identity;", fixedTickBody);
+            StringAssert.Contains("QueuePendingExternalRotationVisual(hasExternalRotationTarget, externalRotationTarget);", fixedTickBody);
+            StringAssert.Contains("ApplyPendingExternalPositionVisual(clearAfterApply: false);", positionVisualBody);
+            StringAssert.Contains("ApplyPendingExternalRotationVisual(clearAfterApply: false);", rotationVisualBody);
+            StringAssert.Contains("_cachedTransform.position = _pendingVisualPositionTarget;", applyPositionBody);
+            StringAssert.Contains("_cachedTransform.rotation = ToUnityQuaternion(_pendingVisualRotationTarget);", applyRotationBody);
+            StringAssert.Contains("if (clearAfterApply)", applyPositionBody);
+            StringAssert.Contains("if (clearAfterApply)", applyRotationBody);
+            StringAssert.Contains("_cachedTransform.rotation = ToUnityQuaternion(_pendingVisualRotationTarget);", kccSource);
+            StringAssert.Contains("ApplyPendingExternalPositionVisual(clearAfterApply: true);", lateFrameBody);
+            StringAssert.Contains("ApplyPendingExternalRotationVisual(clearAfterApply: true);", lateFrameBody);
+            StringAssert.DoesNotContain("ApplyPendingExternalPositionVisual();", kccSource);
+            StringAssert.DoesNotContain("ApplyPendingExternalRotationVisual();", kccSource);
+            StringAssert.Contains("ClearQueuedExternalTargets();", onDisableBody);
+            StringAssert.Contains("ClearPendingExternalVisualTargets();", onDisableBody);
+            StringAssert.Contains("(signalFlags & PlayerRespawnSignalFlags.InvalidDeathAup) != 0u", respawnCollisionBody);
+            Assert.AreEqual(
+                2,
+                respawnCollisionBody.Split(
+                    new[] { "_lastRespawnCollisionSnapshotGeneration = snapshotGeneration;" },
+                    StringSplitOptions.None).Length - 1);
+            Assert.Less(
+                respawnCollisionBody.LastIndexOf("_lastRespawnCollisionSnapshotGeneration = snapshotGeneration;", StringComparison.Ordinal),
+                respawnCollisionBody.LastIndexOf("return false;", StringComparison.Ordinal));
+            StringAssert.Contains("ClearQueuedExternalTargets();", hotSwapBody);
+            StringAssert.Contains("ClearPendingExternalVisualTargets();", hotSwapBody);
+            AssertTextBefore(hotSwapBody, "ClearQueuedExternalTargets();", "ResetVaultHandles();");
+            AssertTextBefore(hotSwapBody, "ClearPendingExternalVisualTargets();", "ResetVaultHandles();");
+        }
+
+        [Test]
+        public void PhysicsApplySystemPoseQueue_ReplacesSameBodyPosePacketInBackBuffer()
+        {
+            string physicsPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/PhysicsApplySystem.cs");
+            string physicsSource = File.ReadAllText(physicsPath);
+            string enqueueBody = ExtractMethodBody(physicsSource, "private bool TryEnqueueBackPacket(");
+            string replaceBody = ExtractMethodBody(physicsSource, "private static bool TryReplaceQueuedPosePacket(");
+            string playerPosition = ExtractMethodBody(physicsSource, "private static bool TryReadPlayerRuntimePosition(");
+
+            AssertTextBefore(enqueueBody, "TryReplaceQueuedPosePacket(backPackets, _backCount, in packet)", "if (_backCount >= MaxQueuedPackets)");
+            StringAssert.Contains("ForcePacketFlags.SetPose", replaceBody);
+            StringAssert.Contains("existing.RigidbodyIndex != packet.RigidbodyIndex", replaceBody);
+            StringAssert.Contains("backPackets[i] = replacement;", replaceBody);
+            StringAssert.Contains("existingFlags & ForcePacketFlags.WakeBody", replaceBody);
+            StringAssert.Contains("(byte)existing.Priority > (byte)replacement.Priority", replaceBody);
+            StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", playerPosition);
+            StringAssert.Contains("movementState.PredictedAup.IsFinite()", playerPosition);
+        }
+
+        [Test]
+        public void PlayerMotorPoseQueue_CoalescesPositionAndRotationWithinCurrentFrameThenClears()
+        {
+            string motorPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/HectonPlayerMotor.cs");
+            string motorSource = File.ReadAllText(motorPath);
+            string queueBody = ExtractMethodBody(motorSource, "private bool TryQueuePhysicsPoseSet(");
+            string resolveBody = ExtractMethodBody(motorSource, "private bool TryResolveQueuedPoseTargetInCurrentFrame(");
+            string clearBody = ExtractMethodBody(motorSource, "private void ClearQueuedPoseTarget()");
+            string postFixedBody = ExtractMethodBody(motorSource, "public void PostFixedTick(float fixedDeltaTime)");
+            string lateFrameBody = ExtractMethodBody(motorSource, "public void LateFrameTick()");
+            string onDisableBody = ExtractMethodBody(motorSource, "private void OnDisable()");
+            string onDestroyBody = ExtractMethodBody(motorSource, "private void OnDestroy()");
+
+            StringAssert.Contains("physicsService.QueuePoseSet(_body, position, rotation)", queueBody);
+            StringAssert.Contains("Hecton8.Physics.PhysicsForceRouter.QueuePoseSet(_body, position, rotation)", queueBody);
+            StringAssert.Contains("_queuedPosePosition = position;", queueBody);
+            StringAssert.Contains("_queuedPoseRotation = rotation;", queueBody);
+            StringAssert.Contains("_queuedPoseFrame = SystemDispatcher.CurrentFrameIndex;", queueBody);
+            StringAssert.Contains("_hasQueuedPoseTarget = true;", queueBody);
+            StringAssert.Contains("_hasQueuedPoseTarget && _queuedPoseFrame == SystemDispatcher.CurrentFrameIndex", resolveBody);
+            StringAssert.Contains("position = _queuedPosePosition;", resolveBody);
+            StringAssert.Contains("rotation = _queuedPoseRotation;", resolveBody);
+            StringAssert.Contains("_hasQueuedPoseTarget = false;", clearBody);
+            StringAssert.Contains("_queuedPoseFrame = -1;", clearBody);
+            StringAssert.Contains("ClearQueuedPoseTarget();", postFixedBody);
+            StringAssert.Contains("ClearQueuedPoseTarget();", lateFrameBody);
+            StringAssert.Contains("ClearQueuedPoseTarget();", onDisableBody);
+            StringAssert.Contains("ClearQueuedPoseTarget();", onDestroyBody);
+        }
+
+        [Test]
+        public void SubmarineStationKeeping_QueuesPoseThroughPhysicsOwner()
+        {
+            string stationKeepingPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/SubmarineStationKeepingController.cs");
+            string stationKeepingSource = File.ReadAllText(stationKeepingPath);
+            string fixedTickBody = ExtractMethodBody(stationKeepingSource, "public void FixedTick(float fixedDeltaTime)");
+
+            StringAssert.Contains("IPhysicsService physicsService = _physicsService;", fixedTickBody);
+            StringAssert.Contains("if (physicsService == null)", fixedTickBody);
+            StringAssert.Contains("return;", fixedTickBody);
+            StringAssert.Contains("physicsService.QueueLinearVelocitySet(_hullRigidbody, impliedLinearVelocity);", fixedTickBody);
+            StringAssert.Contains("physicsService.QueueAngularVelocitySet(_hullRigidbody, impliedAngularVelocity);", fixedTickBody);
+            StringAssert.Contains("physicsService.QueuePoseSet(_hullRigidbody, nextRuntimePosition, nextRotation);", fixedTickBody);
+            StringAssert.DoesNotContain("_hullRigidbody.MovePosition(nextRuntimePosition);", fixedTickBody);
+            StringAssert.DoesNotContain("_hullRigidbody.MoveRotation(nextRotation);", fixedTickBody);
+            AssertTextBefore(fixedTickBody, "if (physicsService == null)", "physicsService.QueuePoseSet(_hullRigidbody, nextRuntimePosition, nextRotation);");
+        }
+
+        [Test]
+        public void BaseAirlockTeleportBody_PreservesImmediateCollisionSuppressedTeleport()
+        {
+            string airlockPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/BaseAirlock.cs");
+            string airlockSource = File.ReadAllText(airlockPath);
+            string teleportBody = ExtractMethodBody(airlockSource, "private static void TeleportBody(");
+            string snapBody = ExtractMethodBody(airlockSource, "private void ApplyPlayerDockingSnapPose(float easedTime)");
+            string teleportHydroBody = ExtractMethodBody(airlockSource, "private static void TeleportHydroPlayer(");
+
+            StringAssert.Contains("body.isKinematic = true;", teleportBody);
+            StringAssert.Contains("body.detectCollisions = false;", teleportBody);
+            StringAssert.Contains("body.position = position;", teleportBody);
+            StringAssert.Contains("body.rotation = rotation;", teleportBody);
+            StringAssert.Contains("body.PublishTransform();", teleportBody);
+            StringAssert.Contains("body.isKinematic = wasKinematic;", teleportBody);
+            StringAssert.Contains("body.detectCollisions = wasDetectingCollisions;", teleportBody);
+            StringAssert.DoesNotContain("body.isKinematic = false;", teleportBody);
+            StringAssert.DoesNotContain("QueuePoseSet(body, position, rotation", teleportBody);
+            AssertTextBefore(teleportBody, "body.detectCollisions = false;", "body.position = position;");
+            AssertTextBefore(teleportBody, "body.PublishTransform();", "body.isKinematic = wasKinematic;");
+            StringAssert.Contains("_snapMotor.MovePose(worldPosition, worldRotation);", snapBody);
+            StringAssert.DoesNotContain("_snapMotor.MovePosition(worldPosition);", snapBody);
+            AssertTextBefore(snapBody, "_snapMotor.MovePose(worldPosition, worldRotation);", "if (_snapBody != null)");
+            StringAssert.Contains("playerMotor.MovePose(position, rotation);", teleportHydroBody);
+            StringAssert.Contains("playerMotor.SetLinearVelocity(Vector3.zero);", teleportHydroBody);
+            StringAssert.DoesNotContain("SetPositionAndRotation", teleportHydroBody);
+        }
+
+        [Test]
+        public void MountableTransportDismount_QueuesRiderPoseAtomicallyThroughMotor()
+        {
+            string transportPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/MountablePlayerTransport.cs");
+            string transportSource = File.ReadAllText(transportPath);
+            string dismountBody = ExtractMethodBody(transportSource, "private void MoveRiderToDismountPose(");
+
+            StringAssert.Contains("_riderMotor.MovePose(targetPosition, targetRotation);", dismountBody);
+            StringAssert.Contains("QueueTransformPose(_riderTransform, targetPosition, targetRotation);", dismountBody);
+            StringAssert.DoesNotContain("_riderMotor.MovePosition(targetPosition);", dismountBody);
+            StringAssert.DoesNotContain("_riderMotor.MoveRotation(targetRotation);", dismountBody);
+            AssertTextBefore(dismountBody, "_riderMotor.MovePose(targetPosition, targetRotation);", "QueueTransformPose(_riderTransform, targetPosition, targetRotation);");
+        }
+
+        [Test]
+        public void PlayerCameraRig_DisableClearsPendingStateAndDispatcherSwapKeepsOriginListener()
+        {
+            string cameraRigPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/HectonPlayerCameraRig.cs");
+            string cameraRigSource = File.ReadAllText(cameraRigPath);
+            string onDisableBody = ExtractMethodBody(cameraRigSource, "private void OnDisable()");
+            string registerBody = ExtractMethodBody(cameraRigSource, "private void TryRegister()");
+            string unregisterBody = ExtractMethodBody(cameraRigSource, "private void TryUnregister()");
+            string hotSwapBody = ExtractMethodBody(cameraRigSource, "public void OnGlobalRegistryServiceReplaced(");
+            string clearBody = ExtractMethodBody(cameraRigSource, "private void ClearPendingState()");
+
+            AssertTextBefore(onDisableBody, "TryUnregister();", "ClearPendingState();");
+            StringAssert.Contains("TryRegisterLateFrameTick();", registerBody);
+            StringAssert.Contains("HectonFloatingOrigin.RegisterListener(this);", registerBody);
+            StringAssert.Contains("HectonFloatingOrigin.UnregisterListener(this);", unregisterBody);
+            StringAssert.Contains("TryUnregisterLateFrameTick();", unregisterBody);
+            StringAssert.Contains("serviceSlot != GlobalRegistryServiceSlot.Dispatcher", hotSwapBody);
+            StringAssert.Contains("TryUnregisterLateFrameTick();", hotSwapBody);
+            StringAssert.Contains("TryRegisterLateFrameTick();", hotSwapBody);
+            StringAssert.DoesNotContain("TryUnregister();", hotSwapBody);
+            StringAssert.DoesNotContain("TryRegister();", hotSwapBody);
+            StringAssert.DoesNotContain("HectonFloatingOrigin", hotSwapBody);
+            StringAssert.Contains("_hasPendingState = false;", clearBody);
+            StringAssert.Contains("_pendingState = default;", clearBody);
+            StringAssert.Contains("_pendingAupAnchor = null;", clearBody);
+            StringAssert.Contains("_appliedAupAnchor = null;", clearBody);
+            StringAssert.Contains("_hasLastAppliedTrackingState = false;", clearBody);
+            StringAssert.Contains("_originShiftTrackingLockFrame = -1;", clearBody);
+        }
+
+        [Test]
         public void SubmarineCoreNativeStateRefresh_AvoidsMultiVaultWriteLocks()
         {
             string sourcePath = Path.Combine(
@@ -325,6 +898,23 @@ namespace Hecton8.Tests.Editor
             AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private unsafe void ApplyCsvOverridesIfReady()"));
             AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private void ConsumeMockPredatorSignalToPulse()"));
             AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private void AdvanceSyncPulseAges"));
+        }
+
+        [Test]
+        public void BiolumGlobalWeatherMirrorUsesSurvivalVitalsSnapshotInsteadOfDeathBridge()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs");
+            string source = File.ReadAllText(sourcePath);
+            string mirrorBody = ExtractMethodBody(source, "private void ConsumeGlobalSignalMirrors()");
+
+            StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration", mirrorBody);
+            StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", mirrorBody);
+            StringAssert.Contains("(vitals.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) == 0u", mirrorBody);
+            StringAssert.Contains("!math.isfinite(vitals.Oxygen01)", mirrorBody);
+            StringAssert.Contains("oxygen01 = math.saturate(vitals.Oxygen01);", mirrorBody);
+            StringAssert.DoesNotContain("SurvivalSignalRoute.TryGetLatestDeath", mirrorBody);
         }
 
         [Test]
@@ -1414,6 +2004,64 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ConstructionDeconstructionOverflowLoot_TracksDeathCacheLaneRejections()
+        {
+            string constructionSource = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/ConstructionManager.cs"));
+            string transactionBody = ExtractMethodBody(constructionSource, "out int targetNodeIndex)");
+            string publishBody = ExtractMethodBody(constructionSource, "private int PublishOverflowLootCaches(");
+            string telemetryBody = ExtractMethodBody(constructionSource, "private void ReadLastDeconstructionTelemetry(");
+
+            StringAssert.Contains("int publishedOverflowLootCacheCount = PublishOverflowLootCaches(lootCaches, counters);", transactionBody);
+            StringAssert.Contains("int rejectedOverflowLootCacheCount = math.max(0, overflowLootCacheCount - publishedOverflowLootCacheCount);", transactionBody);
+            StringAssert.Contains("rejectedOverflowLootCacheCount,", transactionBody);
+            StringAssert.Contains("int published = 0;", publishBody);
+            StringAssert.Contains("SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref _signalPushDropCount)", publishBody);
+            StringAssert.Contains("published++", publishBody);
+            StringAssert.Contains("return published;", publishBody);
+            StringAssert.Contains("int rejectedOverflowLootCaches,", telemetryBody);
+            StringAssert.Contains("if (rejectedOverflowLootCaches > 0)", telemetryBody);
+            StringAssert.Contains("entry.FaultFlags |= HabitatDeconstructionTransactionKernel.FaultRefundOverflow;", telemetryBody);
+        }
+
+        [Test]
+        public void CargoMergeSideEffects_PublishOverflowLootAndPatchResultTelemetry()
+        {
+            string cargoSource = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Inventory/SoaInventoryQueryEngine.CargoSync.cs"));
+            string sideEffectsBody = ExtractMethodBody(cargoSource, "public static CargoMergeResultDTO PublishCargoMergeSideEffects(");
+            string sideEffectsRefBody = ExtractMethodBody(cargoSource, "public static void PublishCargoMergeSideEffects(ref CargoMergeResultDTO result");
+            string inventoryChangedBody = ExtractMethodBody(cargoSource, "public static int PublishCargoInventoryChangedSignals(");
+            string telemetryPatchBody = ExtractMethodBody(cargoSource, "private static void PatchLatestCargoTelemetry(");
+            string hashBody = ExtractMethodBody(cargoSource, "private static ulong HashCargoMergeStateForTelemetry(");
+            string jobHashBody = ExtractMethodBody(cargoSource, "private static ulong HashMergeState(");
+
+            StringAssert.Contains("CargoResultDeathCacheSignalRejected = 1u << 12", cargoSource);
+            StringAssert.Contains("CargoResultInventoryChangedSignalRejected = 1u << 13", cargoSource);
+            StringAssert.Contains("CargoMergeResultDTO merge = result[0];", sideEffectsBody);
+            StringAssert.Contains("PublishCargoMergeSideEffects(ref merge, lootCaches);", sideEffectsBody);
+            StringAssert.Contains("result[0] = merge;", sideEffectsBody);
+            StringAssert.Contains("PatchLatestCargoTelemetry(telemetryRing, telemetryCursor, in merge);", sideEffectsBody);
+            StringAssert.Contains("int publishedOverflowLootCaches = PublishCargoLootCacheSignals(lootCaches, requestedOverflowLootCaches);", sideEffectsRefBody);
+            StringAssert.Contains("result.Flags |= CargoResultDeathCacheSignalRejected;", sideEffectsRefBody);
+            StringAssert.Contains("int expectedInventoryChangedSignals = CountCargoInventoryChangedSignalTargets(in result);", sideEffectsRefBody);
+            StringAssert.Contains("int publishedInventoryChangedSignals = PublishCargoInventoryChangedSignals(in result);", sideEffectsRefBody);
+            StringAssert.Contains("result.Flags |= CargoResultInventoryChangedSignalRejected;", sideEffectsRefBody);
+            StringAssert.Contains("int published = 0;", inventoryChangedBody);
+            StringAssert.Contains("SignalBus<InventoryChangedSignal>.TryPushTracked(in source, ref s_x001DirectSignalPushDropCount_SoaInventoryQueryEngine_CargoSync)", inventoryChangedBody);
+            StringAssert.Contains("SignalBus<InventoryChangedSignal>.TryPushTracked(in dest, ref s_x001DirectSignalPushDropCount_SoaInventoryQueryEngine_CargoSync)", inventoryChangedBody);
+            StringAssert.Contains("published++", inventoryChangedBody);
+            StringAssert.Contains("return published;", inventoryChangedBody);
+            StringAssert.Contains("cursor = math.max(0, telemetryCursor[0].Value - 1);", telemetryPatchBody);
+            StringAssert.Contains("entry.Flags = result.Flags;", telemetryPatchBody);
+            StringAssert.Contains("entry.StateHash = HashCargoMergeStateForTelemetry(in result);", telemetryPatchBody);
+            StringAssert.Contains("HashCargoMergeStateForTelemetry(in merge)", jobHashBody);
+            StringAssert.Contains("MixCargoTelemetryHash(hash, merge.Flags)", hashBody);
+        }
+
+        [Test]
         public void HabitatFluidIncursionDirector_UsesMutationGuardsInsteadOfDataVaultLocks()
         {
             string fluidPath = Path.Combine(
@@ -1725,6 +2373,16 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("TryUnlockBuffer", methodBody);
         }
 
+        private static void AssertTextBefore(string body, string expectedEarlier, string expectedLater)
+        {
+            int earlierIndex = body.IndexOf(expectedEarlier, StringComparison.Ordinal);
+            int laterIndex = body.IndexOf(expectedLater, StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(earlierIndex, 0, expectedEarlier);
+            Assert.GreaterOrEqual(laterIndex, 0, expectedLater);
+            Assert.Less(earlierIndex, laterIndex);
+        }
+
         private static Type[] GetLoadableTypes(global::System.Reflection.Assembly assembly)
         {
             try
@@ -1764,6 +2422,21 @@ namespace Hecton8.Tests.Editor
 
             Assert.Fail("Method body was not closed.");
             return string.Empty;
+        }
+
+        private static bool ContainsTokensInOrder(string text, params string[] tokens)
+        {
+            int searchStart = 0;
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                int tokenIndex = text.IndexOf(tokens[i], searchStart, StringComparison.Ordinal);
+                if (tokenIndex < 0)
+                    return false;
+
+                searchStart = tokenIndex + tokens[i].Length;
+            }
+
+            return true;
         }
 
         private sealed class AudioSwapProbe : IGlobalRegistryHotSwapListener

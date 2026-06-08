@@ -14,20 +14,22 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel-ledger
 
-Het Black Keel-ledger verklaart waarom de carrier kan contacteren, leiden, rekenen, vertragen, bergen of verlaten zonder een schurk te zijn. Het is publieke claim-pool-infrastructuur met debt custody en verborgen Deep Reach-prioriteiten.
+Black Keel is de orbitale levenslijn, maar geen reddingsfantasie. Het hoort bij claim-pool-infrastructuur: bewaringsledgers, verzekeringsschuld, bergingsvensters, quarantaine en carrierautoriteit.
+
+Het leidt omdat leiding waarde beschermt. Het vertraagt omdat vertraging ook waarde beschermt. Hulp betekent geen partij kiezen.
 
 ## Scanner
 
-Claim-pool tenderledger. Publieke carrierbewaring, verzekeringsschuld, verborgen Deep Reach-prioriteitshaken.
+Claim-pool tenderledger. Publieke carrierbewaring, verzekeringsschuld, opstijgmassastraf en verborgen Deep Reach-prioriteitshaken.
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+BLACK KEEL-LEDGER // Bergingsdienst voorwaardelijk. Claimvrijgave onvolledig. Diepe prioriteitsroute gemaskeerd. Payloadautoriteit blijft carrierzijde. Contractor-overleving overstijgt verzekerde lading niet zonder bijgewerkte opstijgwaarde.
 
 ## Audio
 

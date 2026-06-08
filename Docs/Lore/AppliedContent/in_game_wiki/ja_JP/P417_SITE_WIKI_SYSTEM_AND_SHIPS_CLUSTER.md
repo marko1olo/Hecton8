@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "JA LOC HOLD: Aegir Route and Ships"
+title: "Aegirルートと船"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Aegir Route and Ships
+# Aegirルートと船
 
-JA LOC HOLD: Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
+航路と船のハブ: FTLを持たない人類圏、Aegir衛星系、Black Keelの保管限界、遷移窓、到着を証明しても脱出を保証しない損傷bathydrop。
 
 ## Scanner
 
-JA LOC HOLD: Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
+公開ハブ: FTLなし、Aegir航路の時刻、Black Keelの限界、救助が要求通り来ない硬い理由。
 
 ## Terminal
 
-JA LOC HOLD: SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
+サイト案内: ニードルプローブ、ビーム/ペレット航路、seed-ship制動、Black Keel保管、遷移軌道、bathydrop故障。
 
 ## Audio
 
-JA LOC HOLD: Distance is not lore trivia. It is the pressure on every decision.
+距離は雑学ではない。すべての判断にかかる圧力だ。
 
 ## Field Note
 
-JA LOC HOLD: Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
+船のページは生存機構として読む。遅延、保管、質量、天候、軌道、壊れた降下系が結果を決める。
 
 <!-- In-Game Wiki; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/ja_JP. -->

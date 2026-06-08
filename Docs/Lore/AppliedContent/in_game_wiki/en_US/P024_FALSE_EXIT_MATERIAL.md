@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Material Exit
 
-The material exit is a valid partial ending, not a fake fail screen. It lets the player cash out with resources or a sample while leaving major truth unresolved and making a later return emotionally sharper.
+The material exit is a real partial outcome, not a dead route. Resources or a sample can buy withdrawal while the larger truth stays unresolved and a later return cuts sharper.
 
 ## Scanner
 

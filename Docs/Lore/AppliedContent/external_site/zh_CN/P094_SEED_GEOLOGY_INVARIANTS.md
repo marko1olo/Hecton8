@@ -9,32 +9,16 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "种子地质不变量"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# 种子地质不变量
 
-CN LOC HOLD: Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure.
-
-## Scanner
-
-CN LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
-
-## Terminal
-
-CN LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
-
-## Audio
-
-CN LOC HOLD: New seed, same moon. Different wound.
-
-## Field Note
-
-CN LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+HECTON-8上的每次打捞都可能暴露一条穿过伤口的不同路线。峡谷可能更早打开，电缆礁可能藏着安全口袋，bloom可能把生物压进上次空荡的路线，证据链也可能以新顺序浮现。月球物理不会为了娱乐重置。Aegir仍是主星。HECTON-8仍在自己的轨道梯上。Great Tide保持间隔。深度带以同样残酷的顺序堆叠。blue debt保留压力行为。Atlas仍与最深盆地相连。
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/zh_CN. -->

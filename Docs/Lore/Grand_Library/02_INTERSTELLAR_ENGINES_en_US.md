@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # ENGINE DESIGN AND INTERSTELLAR LOGISTICS
 
 > **Source:** Technical Syllabus, Barnard Yards. Document 44-A. Required reading for all outbound contractors.  

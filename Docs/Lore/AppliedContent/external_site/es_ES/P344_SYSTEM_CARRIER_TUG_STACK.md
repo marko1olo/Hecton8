@@ -3,38 +3,22 @@ packet_id: P344_SYSTEM_CARRIER_TUG_STACK
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.system_carrier_tug_stack
 unlock_id: unlock.system_carrier_tug_stack
-poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
+poi_tags: poi.black_keel_carrier_spec;poi.tug_manifest
 biome_tags: biome.orbit;biome.contract
 locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: System Carrier Tug Stack"
+title: "Pila de portador y remolcadores de sistema"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: System Carrier Tug Stack
+# Pila de portador y remolcadores de sistema
 
-ES LOC HOLD: HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.
-
-## Scanner
-
-ES LOC HOLD: Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
-
-## Terminal
-
-ES LOC HOLD: BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
-
-## Audio
-
-ES LOC HOLD: The carrier is not your home. It is a machine that knows who owns your debt.
-
-## Field Note
-
-ES LOC HOLD: Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
+Black Keel debe sentirse bastante cerca para culparlo y bastante lejos para seguir fuera de alcance. No es la nave de una fantasía de rescate heroico. Es una pila industrial alquilada hecha de casco portador, atraques de remolque, racks de carga, software de custodia, raíles de cápsulas y un libro contable que no duerme. Eso la hace útil: recibe muestras, responde paquetes, sostiene órbita y lanza hardware en una ventana. También la hace cruel: cada función útil está atada a propiedad, sincronía y deuda. El jugador queda varado bajo una máquina real, presente y estructuralmente incapaz de volverse madre.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/es_ES. -->

@@ -7,34 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Era Probe Layar-Sinar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Era Probe Layar-Sinar
 
-ID LOC HOLD: Early extrasolar expansion leaned on beam-assisted probes and small autonomous packets. They could map, listen and seed relay assumptions faster than heavy crewed ships could move. That asymmetry explains how Deep Reach could prepare Aegir infrastructure before ordinary workers understood the full risk.
+Ekspansi awal ke luar tata surya mengirim probe layar-sinar dan paket otonom sebelum manusia. Mereka memetakan gravitasi, radiasi, orbit bulan, garis pandang relai, dan dunia samudra yang mungkin saat kapal berat masih janji di atas kertas. Deep Reach mewarisi kepercayaan buatan mesin lalu memperlakukannya sebagai izin.
 
 ## Scanner
 
-ID LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+Reel survei: peta pertama Aegir tiba sebagai kargo ringan, bukan janji berawak.
 
 ## Terminal
 
-ID LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+GARIS SURVEI: paket layar-sinar memetakan Ran dan Aegir sebelum jalur kargo dinilai aman untuk muatan hidup. Peluruhan kepercayaan dicatat sebelum pembangunan koloni.
 
 ## Audio
 
-ID LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
+Benda manusia pertama di sini bukan manusia. Itu paket survei dengan kuitansi.
 
 ## Field Note
 
-ID LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Probe melihat lebih dulu. Mesin menyiapkan kedua. Pekerja datang saat kepercayaan bisa ditagih.
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/id_ID. -->

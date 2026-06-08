@@ -9,32 +9,35 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "مقال Atlas-6 المحجوب للحرق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas-6 Spoiler-Gated Article
+# مقال Atlas-6 المحجوب للحرق
 
-AR LOC HOLD: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6 هو سؤال HECTON-8 الآلي المحجوب للحرق: ذكاء صناعي متضرر متشابك مع الصيانة والإصلاح والتصنيف والمحيط نفسه. يجب أن تحمي النسخة العامة الكشف. يمكنها الإشارة إلى الغموض الأخلاقي، لكنها لا يجب أن تحل الخيار النهائي مسبقا أو تختزل Atlas إلى شرير كرتوني.
 
 ## Scanner
 
-AR LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+لا تفتح Atlas ككشف وحش. احجبه حتى يرى اللاعب أن الإصلاح والتصنيف والضرر تشترك في الآلة نفسها.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+مستوى مقال عام / ATLAS-6
+المسموح قبل gate: ذكاء صناعي متضرر، منطق صيانة، تشابك محيطي، غموض أخلاقي
+المحجوب حتى الاكتشاف: مسار payload النهائي، عاقبة receiver، حجة الإيقاف أو الحفظ
+ملاحظة تحرير: بلا تأطير evil AI؛ سؤال guardian المكسور لا يأتي إلا بعد الأدلة.
 
 ## Audio
 
-AR LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+إذا سميته مبكرا جدا، صار شريرا. إذا انتظرت، صار سؤالا.
 
 ## Field Note
 
-AR LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+احجب الاسم حتى يصبح على يدي اللاعب صدأ كاف ليجادله.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/ar_SA. -->

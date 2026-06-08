@@ -183,7 +183,8 @@ namespace Hecton8.Editor
             EmergencyServiceRelay relayTwo = TryFindComponent<EmergencyServiceRelay>(RelayTwoName);
             SuitHUDV4CanvasOverlay overlay = ResolvePreferredOverlay();
             RelayHUDElement marker = ResolveOverlayMarker(overlay);
-            EmergencyServiceRelayDirector director = EmergencyServiceRelayDirector.ActiveRuntimeInstance;
+            EmergencyServiceRelayDirector director = null;
+            WorldRuntimeReferenceUtility.TryResolveEmergencyServiceRelayDirector(ref director);
             if (director == null)
                 director = UObject.FindAnyObjectByType<EmergencyServiceRelayDirector>(FindObjectsInactive.Include);
             if (player == null || relayOne == null || relayTwo == null || marker == null || director == null || overlay == null)

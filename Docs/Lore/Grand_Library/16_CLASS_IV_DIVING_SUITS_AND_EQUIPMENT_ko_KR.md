@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # Class-IV 잠수복과 심해 장비
 
 > **출처:** Deep Reach 거대 기업, 장비 보급 장교 매뉴얼.

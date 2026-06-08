@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # LOCAL BIOTA: FLORA, FAUNA, AND ECOLOGICAL COLLAPSE
 
 > **Source:** Recovered PDA, Styx-class descent pod designated 'Lazarus'.  

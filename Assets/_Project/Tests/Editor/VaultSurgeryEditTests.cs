@@ -54,6 +54,210 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AlignmentTelemetry_DisposeDetachesOwnerAndStaleVaultFailsClosed()
+        {
+            string dumpPath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Docs",
+                "AgentLogs",
+                "Dump_SHINOBU_204.bin");
+            byte[] previousDump = File.Exists(dumpPath) ? File.ReadAllBytes(dumpPath) : null;
+            GlobalDataVault vault = null;
+            try
+            {
+                vault = GlobalDataVault.Create(32);
+                Assert.IsTrue(Arm64AlignmentTelemetry.TryRecordFault(
+                    vault,
+                    BufferID.VaultHotEntityData,
+                    0xA11A64UL,
+                    8u,
+                    11u,
+                    AlignmentTelemetryFlags.MisalignedEightByteField,
+                    new double3(1.0d, 2.0d, 3.0d)));
+                Assert.IsTrue(Arm64AlignmentTelemetry.TryGetNewestFault(vault, out AlignmentTelemetryEntry newest));
+                Assert.AreEqual(11u, newest.Frame);
+
+                vault.Dispose();
+
+                Assert.IsFalse(Arm64AlignmentTelemetry.TryRecordFault(
+                    vault,
+                    BufferID.VaultHotEntityData,
+                    0xA11A65UL,
+                    16u,
+                    12u,
+                    AlignmentTelemetryFlags.DynamicCastFault,
+                    new double3(4.0d, 5.0d, 6.0d)));
+                Assert.IsFalse(vault.TryAcquireMutationGuard(1UL));
+                Assert.IsFalse(vault.TryGetGenerationHandle<AlignmentTelemetryEntry>(
+                    BufferID.Arm64AlignmentTelemetryRing,
+                    out _));
+                Assert.IsNull(ReadPrivateStaticField<IDataVault>(typeof(Arm64AlignmentTelemetry), "_ringVault"));
+                vault = null;
+
+                using (GlobalDataVault replacement = GlobalDataVault.Create(32))
+                {
+                    Assert.IsTrue(Arm64AlignmentTelemetry.TryRecordFault(
+                        replacement,
+                        BufferID.VaultColdEntityData,
+                        0xA11A66UL,
+                        24u,
+                        13u,
+                        AlignmentTelemetryFlags.InvalidStride,
+                        new double3(7.0d, 8.0d, 9.0d)));
+                    Assert.IsTrue(Arm64AlignmentTelemetry.TryGetNewestFault(replacement, out AlignmentTelemetryEntry replacementNewest));
+                    Assert.AreEqual(13u, replacementNewest.Frame);
+                }
+            }
+            finally
+            {
+                if (vault != null)
+                    vault.Dispose();
+                RestoreFileBytes(dumpPath, previousDump);
+            }
+        }
+
+        [Test]
+        public void GlobalRegistryDataVaultUnregister_DetachesAlignmentTelemetryBeforeServiceClear()
+        {
+            string registry = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets",
+                "_Project",
+                "Scripts",
+                "Core",
+                "GlobalRegistry.cs"));
+            string unregister = ExtractMethodBlock(registry, "public static void UnregisterDataVault(IDataVault instance)");
+
+            StringAssert.Contains("Arm64AlignmentTelemetry.ReleaseOwnedBuffers(instance);", unregister);
+            StringAssert.Contains("BulkheadContainmentIntentBus.UnbindDataVault(instance);", unregister);
+            Assert.Less(
+                unregister.IndexOf("Arm64AlignmentTelemetry.ReleaseOwnedBuffers(instance);", StringComparison.Ordinal),
+                unregister.IndexOf("UnregisterService(ref _dataVault, instance);", StringComparison.Ordinal));
+            Assert.Less(
+                unregister.IndexOf("BulkheadContainmentIntentBus.UnbindDataVault(instance);", StringComparison.Ordinal),
+                unregister.IndexOf("UnregisterService(ref _dataVault, instance);", StringComparison.Ordinal));
+        }
+
+        [Test]
+        public void GlobalRegistryStaticReset_ClearsBulkheadIntentBusCache()
+        {
+            string registry = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets",
+                "_Project",
+                "Scripts",
+                "Core",
+                "GlobalRegistry.cs"));
+            string reset = ExtractMethodBlock(registry, "private static void ResetStaticState()");
+
+            StringAssert.Contains("BulkheadContainmentIntentBus.UnbindDataVault(null);", reset);
+        }
+
+        [Test]
+        public void BulkheadIntentBus_UnbindClearsOnlyMatchingOwnerAndFailsClosed()
+        {
+            BulkheadContainmentIntentBus.UnbindDataVault(null);
+            using (GlobalDataVault owner = GlobalDataVault.Create(32))
+            using (GlobalDataVault unrelated = GlobalDataVault.Create(32))
+            {
+                owner.EnsureGenerationHandle<BulkheadContainmentIntentDTO>(
+                    BufferID.Shinobu220BulkheadIntentRing,
+                    BulkheadContainmentIntentBus.IntentCapacity,
+                    SystemID.CoreDataVault,
+                    NativeArrayOptions.ClearMemory);
+                owner.EnsureGenerationHandle<BulkheadContainmentIntentControlDTO>(
+                    BufferID.Shinobu220BulkheadIntentControl,
+                    1,
+                    SystemID.CoreDataVault,
+                    NativeArrayOptions.ClearMemory);
+
+                BulkheadContainmentIntentBus.BindDataVault(owner);
+                Assert.AreSame(owner, ReadPrivateStaticField<IDataVault>(
+                    typeof(BulkheadContainmentIntentBus),
+                    "s_cachedVault"));
+
+                BulkheadContainmentIntentBus.UnbindDataVault(unrelated);
+                Assert.AreSame(owner, ReadPrivateStaticField<IDataVault>(
+                    typeof(BulkheadContainmentIntentBus),
+                    "s_cachedVault"));
+
+                BulkheadContainmentIntentBus.UnbindDataVault(owner);
+                Assert.IsNull(ReadPrivateStaticField<IDataVault>(
+                    typeof(BulkheadContainmentIntentBus),
+                    "s_cachedVault"));
+                Assert.IsFalse(BulkheadContainmentIntentBus.TryWriteAirlockBulkheadIntent(
+                    0xB011u,
+                    true,
+                    new double3(1.0d, 2.0d, 3.0d),
+                    new float3(0f, 0f, 1f),
+                    2.5f,
+                    3.0f,
+                    1.0f,
+                    0u,
+                    42u));
+            }
+        }
+
+        [Test]
+        public void AlignmentTelemetry_InterruptedInitializationReleasesOldVaultOnReplacement()
+        {
+            string dumpPath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Docs",
+                "AgentLogs",
+                "Dump_SHINOBU_204.bin");
+            byte[] previousDump = File.Exists(dumpPath) ? File.ReadAllBytes(dumpPath) : null;
+            GlobalDataVault interruptedVault = null;
+            try
+            {
+                interruptedVault = GlobalDataVault.Create(32);
+                ulong telemetryGuardMask = MutationGuardBit(BufferID.Arm64AlignmentTelemetryRing) |
+                                           MutationGuardBit(BufferID.Arm64AlignmentTelemetryCursor);
+                Assert.IsTrue(interruptedVault.TryAcquireMutationGuard(telemetryGuardMask));
+                try
+                {
+                    Assert.IsFalse(Arm64AlignmentTelemetry.TryRecordFault(
+                        interruptedVault,
+                        BufferID.VaultHotEntityData,
+                        0xA11A67UL,
+                        32u,
+                        14u,
+                        AlignmentTelemetryFlags.DynamicCastFault,
+                        new double3(10.0d, 11.0d, 12.0d)));
+                    Assert.IsTrue(interruptedVault.TryGetGenerationHandle<AlignmentTelemetryEntry>(
+                        BufferID.Arm64AlignmentTelemetryRing,
+                        out _));
+                }
+                finally
+                {
+                    interruptedVault.ReleaseMutationGuard(telemetryGuardMask);
+                }
+
+                using (GlobalDataVault replacement = GlobalDataVault.Create(32))
+                {
+                    Assert.IsTrue(Arm64AlignmentTelemetry.TryRecordFault(
+                        replacement,
+                        BufferID.VaultColdEntityData,
+                        0xA11A68UL,
+                        40u,
+                        15u,
+                        AlignmentTelemetryFlags.InvalidStride,
+                        new double3(13.0d, 14.0d, 15.0d)));
+                }
+
+                Assert.IsFalse(interruptedVault.TryGetGenerationHandle<AlignmentTelemetryEntry>(
+                    BufferID.Arm64AlignmentTelemetryRing,
+                    out _));
+            }
+            finally
+            {
+                if (interruptedVault != null)
+                    interruptedVault.Dispose();
+                RestoreFileBytes(dumpPath, previousDump);
+            }
+        }
+
+        [Test]
         public void TryAcquireSliceHandle_ReturnsPrimaryWritableSlice()
         {
             using (GlobalDataVault vault = GlobalDataVault.Create(32))
@@ -497,6 +701,59 @@ namespace Hecton8.Tests.Editor
         private static int OffsetOf(Type type, string fieldName)
         {
             return Marshal.OffsetOf(type, fieldName).ToInt32();
+        }
+
+        private static T ReadPrivateStaticField<T>(Type type, string fieldName)
+        {
+            FieldInfo field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(field, fieldName);
+            return (T)field.GetValue(null);
+        }
+
+        private static void RestoreFileBytes(string path, byte[] bytes)
+        {
+            if (bytes == null)
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+                return;
+            }
+
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+            File.WriteAllBytes(path, bytes);
+        }
+
+        private static string ExtractMethodBlock(string source, string signature)
+        {
+            int start = source.IndexOf(signature, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(start, 0, signature);
+            int brace = source.IndexOf('{', start);
+            Assert.GreaterOrEqual(brace, 0, signature);
+
+            int depth = 0;
+            for (int i = brace; i < source.Length; i++)
+            {
+                char c = source[i];
+                if (c == '{')
+                    depth++;
+                else if (c == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                        return source.Substring(start, i - start + 1);
+                }
+            }
+
+            Assert.Fail(signature);
+            return string.Empty;
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
         }
 
         private static void AssertLayout(Type type, int expectedSize, params (string Field, int Offset)[] offsets)

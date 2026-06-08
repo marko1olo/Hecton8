@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Okno roszczenia Black Keel"
+title: "Okno roszczenia Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Okno roszczenia Black Keel
+# Okno roszczenia Black Keel
 
-PL LOC HOLD: Odzyskano zawiadomienie Black Keel. Kontakt z carrierem znaczy, że sygnał dotarł do linii Aegir; nie znaczy, że odzysk jest dostępny. Ekstrakcja wymaga sprzętu wznoszenia, kwarantanny, zaakceptowanego ładunku i przydziału tonne-window.
+Odzyskano zawiadomienie Black Keel. Kontakt z carrierem znaczy, że sygnał dotarł do linii Aegir; nie znaczy, że odzysk jest dostępny. Ekstrakcja wymaga sprzętu wznoszenia, kwarantanny, zaakceptowanego ładunku i przydziału tonne-window.
 
 ## Scanner
 
-PL LOC HOLD: OKNO ROSZCZENIA // Przekaźnik Aegir przewiduje tylko okno odbioru. Odzysk wymaga pakietu wznoszenia, uzgodnienia kwarantanny i przydziału tonne-window.
+OKNO ROSZCZENIA // Przekaźnik Aegir przewiduje tylko okno odbioru. Odzysk wymaga pakietu wznoszenia, uzgodnienia kwarantanny i przydziału tonne-window.
 
 ## Terminal
 
-PL LOC HOLD: ZAWIADOMIENIE KEELMARK // Sygnał operatora odebrany. Priorytet odzysku nierozstrzygnięty. Odbiór sygnału lub pakietu dowodu nie gwarantuje odzysku operatora.
+ZAWIADOMIENIE KEELMARK // Sygnał operatora odebrany. Priorytet odzysku nierozstrzygnięty. Odbiór sygnału lub pakietu dowodu nie gwarantuje odzysku operatora.
 
 ## Audio
 
-PL LOC HOLD: Przekaźnik Black Keel: sygnał operatora wyceniony. Okno odzysku w toku. Nie myl odbioru z podniesieniem.
+Przekaźnik Black Keel: sygnał operatora wyceniony. Okno odzysku w toku. Nie myl odbioru z podniesieniem.
 
 ## Field Note
 
-PL LOC HOLD: Jeśli Black Keel odpowiada, licz rachunek, nie ratunek. Odebrany pakiet to tylko miejsce w kolejce, dopóki masa, pieczęć, kwarantanna i pogoda się nie zgodzą.
+Jeśli Black Keel odpowiada, licz rachunek, nie ratunek. Odebrany pakiet to tylko miejsce w kolejce, dopóki masa, pieczęć, kwarantanna i pogoda się nie zgodzą.
 
 <!-- In-Game Wiki; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/pl_PL. -->

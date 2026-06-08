@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 工人储物柜排
 
-工人储物柜把HECTON-8落回日常劳动。工具、油漆、食物信用和边境印记先于灾难理论出现。
+工人储物柜排把 HECTON-8 扎进普通劳动。工具、油漆、食物额度和边境标记会先出现，灾难之后才成为理论。
 
 ## Scanner
 
@@ -27,7 +27,7 @@ localization_flags: 0
 
 ## Terminal
 
-储物柜审计：个人封条在压力破裂后失效。多枚标签带Barnard工场印和未结班次预支。
+殖民地审计：个人储物和 Barnard 标记把这排柜子接到有名有姓的班组和工作路线。
 
 ## Audio
 

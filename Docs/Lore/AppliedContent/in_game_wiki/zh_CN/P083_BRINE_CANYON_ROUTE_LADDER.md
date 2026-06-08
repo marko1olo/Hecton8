@@ -7,34 +7,34 @@ poi_tags: poi.brine_density_marker;poi.canyon_current_gate
 biome_tags: biome.brine_canyon;biome.drop_zone
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "卤水峡谷路线梯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# 卤水峡谷路线梯
 
-CN LOC HOLD: Brine canyons make depth progression physical. Dense brine layers, mineral walls, thermal leaks and acoustic distortion create routes that teach the player why deeper travel requires better instruments and better pressure discipline.
+卤水峡谷让深度推进变成物理问题。高密度层、矿物墙、热泄漏和声学畸变会教玩家，越深的旅行越需要更好的仪器和压力纪律。
 
 ## Scanner
 
-CN LOC HOLD: Brine density marker. The descent route is chemistry with walls.
+卤水密度标记。下行路线是有墙的化学。
 
 ## Terminal
 
-CN LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
+卤水峡谷控制：密度界面稳定到足以分段下潜。警告：1800米以下预计出现声学中继畸变、载具浮力误差和假地板事件。
 
 ## Audio
 
-CN LOC HOLD: The canyon is a staircase made of wrong water.
+峡谷是一道由错误水体组成的楼梯。
 
 ## Field Note
 
-CN LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+你不是游过峡谷。你是在和比潜服更重的层谈判。
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/zh_CN. -->

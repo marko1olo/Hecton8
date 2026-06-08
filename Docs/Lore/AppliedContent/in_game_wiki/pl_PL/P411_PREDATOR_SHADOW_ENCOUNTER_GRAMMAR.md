@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Predator Shadow Encounter Grammar"
+title: "Gramatyka spotkania: cień drapieżnika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Predator Shadow Encounter Grammar
+# Gramatyka spotkania: cień drapieżnika
 
-PL LOC HOLD: Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.
+Spotkania z cieniem drapieżnika powinny sprawić, że ocean wydaje się zajęty, zanim zwierzę stanie się widoczne. Użyteczny łańcuch ostrzeżeń jest środowiskowy: szklane skrobacze zatrzymują się przy odsłoniętym pokarmie, lantern bloom rzednie po jednej stronie, pressureweed składa się bez fali, sonar pokazuje lukę zbyt szeroką jak na gruz, a światło gracza przecina szeroki kształt, który nigdy nie staje się czystą sylwetką. Zwierzę nie jest bossem w arenie. Jest presją trasy. Zmienia zużycie tlenu, dyscyplinę return-line, timing naprawy i zaufanie do scan. Dobre spotkanie cienia pozwala przeżyć temu, kto czyta nieobecność: nie dodawaj hałasu, zwęź lampę, nie goń czystej ścieżki i wyjdź pod kątem zamiast prosto przez oznaczoną wodę.
 
 ## Scanner
 
-PL LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Ślad cienia drapieżnika. Luka sonaru, ucięta ścieżka ofiar, nagła cisza skrobaczy, szerokie zasłonięcie światła. Ciało niepotwierdzone; dyscyplina światła i kąt wyjścia.
 
 ## Terminal
 
-PL LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+GRAMATYKA SPOTKANIA / CIEŃ DRAPIEŻNIKA / rola: presja trasy przed ujawnieniem ciała, skok zużycia tlenu, pęknięcie zaufania do scan / bezpieczny odczyt: ścieżka ofiar staje, szum bloom się zapada, powroty sonaru rozdzielają się wokół pustej wody / odrzuć: scripted pełne ujawnienie jako pierwsze ostrzeżenie, nieszkodliwy jump scare, czysta boss arena / notatka trasy: jeśli małe zwierzęta stają, zanim scanner nazwie cel, trasa już się zmieniła.
 
 ## Audio
 
-PL LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+Bezpieczny znak to nie zobaczyć go. Bezpieczny znak to zauważyć, że wszystko inne wybrało ciszę pierwsze.
 
 ## Field Note
 
-PL LOC HOLD: Use for AI/spawn design notes and scanner cards.
+Nazwij zwierzę późno. Niech ofiara, światło i sonar zawiodą pierwsze. Jeśli trasa milknie, cień już ją posiada.
 
 <!-- In-Game Wiki; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/pl_PL. -->

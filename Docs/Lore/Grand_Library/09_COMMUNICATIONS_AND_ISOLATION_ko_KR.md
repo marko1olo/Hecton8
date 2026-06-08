@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 통신 단절 및 궤도 침묵
 
 > **출처:** *Black Keel* 궤도 보급선 운영 매뉴얼, 제 4절.

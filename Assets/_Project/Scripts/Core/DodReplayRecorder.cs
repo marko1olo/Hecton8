@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -1808,9 +1809,14 @@ namespace Hecton8.Core
             _replayPath = HectonPersistentPathPolicy.CombineFile("replay.bin");
             HectonPersistentPathPolicy.EnsureParentDirectory(_replayPath);
 
-            _replayStream = new FileStream(_replayPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete, 4096, FileOptions.RandomAccess);
+            _replayStream = new FileStream(_replayPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete, 4096, FileOptions.WriteThrough | FileOptions.RandomAccess);
             if (_replayStream.Length != ReplayFileCapacityBytes)
                 _replayStream.SetLength(ReplayFileCapacityBytes);
+
+            if (_replayStream.Length != ReplayFileCapacityBytes)
+                throw new InvalidOperationException("Dod replay file capacity initialization failed.");
+
+            _replayStream.Flush(true);
         }
 
         private bool StartWriterThread()

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Invariants geologiques de graine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Invariants geologiques de graine
 
-FR LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+Les invariants geologiques de graine gardent HECTON-8 coherent sur de longues reprises. Les canyons peuvent s'ouvrir dans un autre ordre, les preuves bouger, les poches sures changer, la pression des especes varier. L'etoile reste Aegir, la lune reste HECTON-8, les bandes gardent leur ordre, Great Tide garde son rythme, et le bassin Atlas reste lie a la verite la plus profonde.
 
 ## Scanner
 
-FR LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+Note de generation de route. La carte de recuperation change, mais la lune garde les memes os.
 
 ## Terminal
 
-FR LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+INVARIANTS: primaire Aegir, echelle orbitale de HECTON-8, intervalle de Great Tide, ordre des bandes de profondeur, relation au bassin Atlas, comportement de pression du blue debt. VARIABLE: approche de canyon, ordre des POI, poches sures, densite de bloom, exposition de recuperation.
 
 ## Audio
 
-FR LOC HOLD: New seed, same moon. Different wound.
+Autre motif de blessure. Meme lune dessous.
 
 ## Field Note
 
-FR LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+Une nouvelle partie peut enterrer les preuves autrement; elle ne peut pas reecrire gravite, maree ou culpabilite.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/fr_FR. -->

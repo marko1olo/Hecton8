@@ -9,32 +9,22 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Ibarra Loss Ledger"
+title: "Ledger Ibarra untuk Konversi Kerugian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ibarra Loss Ledger
+# Ledger Ibarra untuk Konversi Kerugian
 
-ID LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## Akuntansi Yang Bertahan Dari Koloni
 
-## Scanner
+Ledger Ibarra harus terasa lebih dingin daripada daftar orang hilang. Daftar masih berduka, bahkan saat berbohong. Ledger mengonversi. Ia menerima modul habitat rusak, tool banks, sample custody, missing personnel, dan salvage rights, lalu menempatkan tiap fakta ke kategori yang dapat terus bergerak melalui kontrak setelah HECTON-8 diam.
 
-ID LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Ini jembatan antara liability lama Deep Reach dan utang pemain saat ini. Jika manusia menjadi unresolved personnel load, korporasi bisa mengakui mereka hilang tanpa menyebut pembunuhan. Jika bukti menjadi material custody, bukti itu bisa dibeli, dikubur, dialihkan, atau diasuransikan. Jika claim tetap continuous, kepemilikan hidup lebih lama daripada pekerja yang membuat tempat itu berfungsi.
 
-## Terminal
-
-ID LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-ID LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-ID LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Ledger memberi pemain kuasa yang berat. Membawanya naik bukan sekadar mengungkap kejadian. Pemain membawa sesuatu yang sudah bisa diberi harga oleh pasar. Menjual, menerbitkan, mengalihkan, atau mengubur bukti menjadi kotor karena dokumen itu dirancang agar setiap pilihan terbaca dalam balance sheet seseorang.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/id_ID. -->

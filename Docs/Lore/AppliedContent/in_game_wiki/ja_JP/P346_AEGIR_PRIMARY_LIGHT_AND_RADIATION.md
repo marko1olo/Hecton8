@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Aegir Primary Light and Radiation"
+title: "Aegir主星光と放射線"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Aegir Primary Light and Radiation
+# Aegir主星光と放射線
 
-JA LOC HOLD: The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+Aegirの主星は安定したK型星だ。作業デッキに琥珀色の昼光を与えるほど暖かく、長いインフラ予定を組めるほど静かでもある。危険はガス巨星の磁気圏から来る。帯電帯、荷電航路、月影、嵐ノイズが、移動を単純な距離ではなく放射線窓の暦に変える。Deep Reachは数値が反復するから通常運用として売れた。作業員は正しい窓の外にいる一分ごとに支払った。
 
 ## Scanner
 
-JA LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+恒星カード。暖かいK型矮星がAegirに読める空を与え、巨星の帯がすべてのシールド評価を時刻表に変える。
 
 ## Terminal
 
-JA LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+RAN恒星カードA-346：主星出力はコロニー作業許容内。Aegirの磁気圏は一回転に二度、内側航路を硬化させる。安い船殻は待ち、有料carrierは焼き抜ける。
 
 ## Audio
 
-JA LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+読むには十分な光がある。それで空が優しくなったことはない。
 
 ## Field Note
 
-JA LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegirには昼光がある。だから安いシールにも遅いburnにも値段が残る。
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/ja_JP. -->

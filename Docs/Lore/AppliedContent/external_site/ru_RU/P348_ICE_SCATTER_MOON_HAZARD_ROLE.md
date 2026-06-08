@@ -9,32 +9,16 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw и опасность ледяного рассеяния"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw и опасность ледяного рассеяния
 
-RU LOC HOLD: Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.
-
-## Scanner
-
-RU LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
-
-## Terminal
-
-RU LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
-
-## Audio
-
-RU LOC HOLD: Every system has one moon that accountants love and pilots curse.
-
-## Field Note
-
-RU LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw заставляет систему казаться истертой работой. Это не чистая ледяная луна, а яркое поле осколков, claim-меток и предметов, у которых когда-то были владельцы. После шторма появляются новый материал, свежие радарные возвраты и слухи, которые убивают дешевый экипаж. Опасность здесь обычная физика: лед на орбитальной скорости не спрашивает, везет корпус улики, еду или тело.
 
 <!-- External Site; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/ru_RU. -->

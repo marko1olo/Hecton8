@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "Herstel-Compliancekantoor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# Herstel-Compliancekantoor
 
-NL LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+Het Herstel-Compliancekantoor is de huidige Deep Reach-factie die terug HECTON-8 in duwt. Het werkt via vensters, proxyautoriteit, juridische pakketten en schoonmaakbevelen. Het heeft geen direct bevel nodig; het heeft nodig dat de speler eerst de verkeerde payload verstuurt.
 
 ## Scanner
 
-NL LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+Kantoorstempel in de tegenwoordige tijd. Deep Reach is geen geest; het is een wachtrij met advocaten.
 
 ## Terminal
 
-NL LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+HERSTEL-COMPLIANCEKANTOOR: Aegir-terugkeeractie geopend. Prioriteiten: XO-custody, Atlas-toegang, aansprakelijkheid indammen, stilte van contractant indien beschikbaar.
 
 ## Audio
 
-NL LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+Ze zijn laat genoeg om legaal te zijn en actueel genoeg om gevaarlijk te zijn.
 
 ## Field Note
 
-NL LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+Een levende factie maakt druk actueel zonder de hele onderneming in een enkele schreeuwende schurk te veranderen.
 
 <!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/nl_NL. -->

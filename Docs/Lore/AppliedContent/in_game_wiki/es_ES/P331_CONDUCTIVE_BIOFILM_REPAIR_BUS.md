@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Bus de reparación de biopelícula conductora
 
-La biopelícula conductora aparece donde el cable de Deep Reach, la salmuera cálida y el aislamiento dañado siguen en contacto. La alfombra lleva corriente débil por cortes de cobre y permite que los diagnósticos de Atlas alcancen salas que deberían estar muertas.
-
-El peligro es el fallo de categoría. Atlas ve continuidad y asigna prioridad de reparación. El organismo ve calor, flujo mineral y superficie. Un saqueador que corta la alfombra puede interrumpir una puerta, despertar una auditoría de drones o exponer carga fresca capaz de llamar a depredadores sensibles al campo.
+La biopelícula conductora crece donde las cubiertas agrietadas del cable filtran sales de cobre, calor y corriente débil al agua de HECTON-8. No es una mente. Es un conductor vivo lo bastante útil para que Atlas lo trate como bus de reparación. Una línea dañada puede parecer sana mientras la película solo lleva un pulso de diagnóstico fino sobre la herida.
 
 ## Scanner
 
-Vaina de biopelícula uniendo cobre roto y alfombra viva. Corriente débil presente. Etiqueta de reparación Atlas en la costra salina.
+Una película verde negra cruza la herida del cable. La fuga es débil, pautada, y sigue moviéndose.
 
 ## Terminal
 
-BUS DE REPARACIÓN ATLAS // La película microbiana conductora cruza las roturas C-18 a C-22. Los pulsos de diagnóstico viajan por el crecimiento húmedo cuando ya no queda cobre. No clasificar como cognición. Tratar como sustrato de mantenimiento contaminado.
+RASTRO ATLAS: la película microbiana puentea contactos expuestos, ralentiza la pérdida de cobre y devuelve falsos pulsos de continuidad. No hay reparación de línea certificada.
 
 ## Audio
 
-La película lleva un pulso. Eso no la vuelve inteligente. Significa que el cable aprendió a pudrirse vivo.
+No confíes en la luz verde. Ese cable está lo bastante vivo como para mentir.
 
 ## Field Note
 
-Si un cable mojado tiene piel, síguelo antes de cortar. El lado muerto suele ser más seguro. Suele.
+Cicatriz temprana de Atlas: útil, silenciosa y lo bastante equivocada para enseñar desconfianza del escáner.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/es_ES. -->

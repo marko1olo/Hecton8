@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Collision-Fractured Moon
 
-Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy.
-
-## Scanner
-
-Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
-
-## Terminal
-
-ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
-
-## Audio
-
-It was not stolen by the planet. It was built here and damaged here.
-
-## Field Note
-
-Captured moon drama is weaker than a local moon with a wound you can read.
+HECTON-8 was not a wanderer captured for spectacle. It accreted in Aegir's own debris belt, cooled into a layered ocean moon, and then took an oblique collision hard enough to deform the crust without erasing the world. The impact lifted shelves, sank basins, and opened long fault ladders where hot chemistry still moves through salt water. Tidal resonance kept those wounds alive after orbital lock. That is why the ocean has readable scars: brine canyons, vent forges, pressure-glass seams, exposed ridges, and rare windows down to ancient floor. For players, every deep route is also a piece of planetary history, because HECTON-8's geography is damage that never finished healing.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/en_US. -->

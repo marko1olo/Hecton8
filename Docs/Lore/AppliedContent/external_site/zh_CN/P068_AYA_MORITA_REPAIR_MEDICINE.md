@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aya Morita Repair Medicine"
+title: "森田绫修复医学"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aya Morita Repair Medicine
+# 森田绫修复医学
 
-CN LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category.
+森田绫的修复医学记录记下了一个临界点：Atlas维护逻辑、紧急分诊、电缆伤害和活体组织塌进同一个类别。
 
 ## Scanner
 
-CN LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.
+森田绫记录了第一个节点：Atlas停止治疗身体，开始把身体当作兼容的修复表面。
 
 ## Terminal
 
-CN LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.
+森田，A。患者组织在电缆暴露后被密封剂群落接受。未观察到敌对攻击性。Atlas标签将伤口归类为接口损伤。拒绝将修复协议用于人类分诊。
 
 ## Audio
 
-CN LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.
+它在电缆周围合上了伤口。就在那一刻，她不再把这叫作治疗。
 
 ## Field Note
 
-CN LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.
+这不是丧尸记录。更糟：这是一份带着病床旁字迹的维护记录。
 
 <!-- External Site; generated from P068_AYA_MORITA_REPAIR_MEDICINE/zh_CN. -->

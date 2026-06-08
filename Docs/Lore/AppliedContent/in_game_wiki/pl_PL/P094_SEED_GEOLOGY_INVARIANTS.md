@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Niezmienniki geologii seeda"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Niezmienniki geologii seeda
 
-PL LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+Niezmienniki geologii seeda utrzymuja spojnosci HECTON-8 przez dlugie powtorki. Kaniony moga otwierac sie w innej kolejnosci, dowody moga sie przesuwac, bezpieczne kieszenie zmieniac, a presja gatunkow wahac. Gwiazda pozostaje Aegirem, ksiezyc pozostaje HECTON-8, pasma glebokosci trzymaja porzadek, Great Tide trzyma rytm, a basen Atlas zostaje zwiazany z najglebsza prawda.
 
 ## Scanner
 
-PL LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+Notatka generowania trasy. Mapa zlomiarzy sie zmienia, ale ksiezyc trzyma te same kosci.
 
 ## Terminal
 
-PL LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+NIEZMIENNIKI: Aegir jako gwiazda glowna, drabina orbitalna HECTON-8, interwal Great Tide, porzadek pasm glebokosci, relacja basenu Atlas, zachowanie cisnieniowe blue debt. ZMIENNE: podejscie do kanionu, kolejnosc POI, bezpieczne kieszenie, gestosc bloom, ekspozycja zlomu.
 
 ## Audio
 
-PL LOC HOLD: New seed, same moon. Different wound.
+Inny wzor rany. Ten sam ksiezyc pod spodem.
 
 ## Field Note
 
-PL LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+Nowy run moze inaczej zakopac dowody; nie moze przepisac grawitacji, plywu ani winy.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/pl_PL. -->

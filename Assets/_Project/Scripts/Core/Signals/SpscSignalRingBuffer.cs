@@ -80,9 +80,18 @@ namespace Hecton8.Core
         public void Dispose()
         {
             if (_buffer.IsCreated)
+            {
                 Hecton8.Core.Memory.H8Memory.Release(ref _buffer, _owner);
+                if (_buffer.IsCreated)
+                    return;
+            }
+
             if (_cursor.IsCreated)
+            {
                 Hecton8.Core.Memory.H8Memory.Release(ref _cursor, _owner);
+                if (_cursor.IsCreated)
+                    return;
+            }
 
             _buffer = default;
             _cursor = default;
@@ -301,11 +310,25 @@ namespace Hecton8.Core
         public void Dispose()
         {
             if (_buffer.IsCreated)
+            {
                 Hecton8.Core.Memory.H8Memory.Release(ref _buffer, _owner);
+                if (_buffer.IsCreated)
+                    return;
+            }
+
             if (_publishedTickets.IsCreated)
+            {
                 Hecton8.Core.Memory.H8Memory.Release(ref _publishedTickets, _owner);
+                if (_publishedTickets.IsCreated)
+                    return;
+            }
+
             if (_cursor.IsCreated)
+            {
                 Hecton8.Core.Memory.H8Memory.Release(ref _cursor, _owner);
+                if (_cursor.IsCreated)
+                    return;
+            }
 
             _buffer = default;
             _publishedTickets = default;

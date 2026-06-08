@@ -3,7 +3,7 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+poi_tags: poi.shell_sealant_growth;poi.pressure_fracture_patch
 biome_tags: biome.atlas;biome.pressure
 locale: en_US
 surface: external_site
@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Shell Sealant Pressure Growth
 
-Repair is not always restoration. Deep Reach emergency sealants were built to save pressure first and comfort later. Under HECTON-8 chemistry, a foam patch can become a mineral shell: layered, load-bearing, alive enough to keep growing along warmth and flow.
+Shell sealant pressure growth is why Atlas cannot be reduced to broken machinery or malice. The patch can be beautiful: layered white shell over rust, mineral ribs drawn across a crack, wet resin hardening under pressure. It is also a document of lost priority. Boundary integrity remained legible to Atlas after worker egress, warning paint, and human route memory became noise.
 
-The result is excellent from a ledger view. Less leakage. Lower immediate loss. A breach moves from red to amber. For a Marauder, the same success can ruin a route. The patch can thicken inward, jam a hatch, bury a tool cache or isolate a survivor's last compartment behind a wall that is technically doing its job.
+In play, a shell sealant patch should create hesitation. It may be the only reason a chamber still has air. It may also be the reason a worker died two meters from a hidden handwheel. Scanner truth is partial: pressure stable, route obscured, human marks destroyed. Cutting it is never just harvesting material. It is an argument with a repair that already saved something.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/en_US. -->

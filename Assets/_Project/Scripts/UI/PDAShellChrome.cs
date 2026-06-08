@@ -115,6 +115,7 @@ namespace Hecton8.UI
         private uint _lastInventorySignalRevision;
         private uint _toolLoadoutSignalSourceId;
         private uint _lastToolLoadoutSignalSequence;
+        private bool _pdaEventsRegistered;
         private readonly char[] _localizedTitleBuffer = new char[ChromeTextBufferCapacity];
         private readonly char[] _localizedTabInventoryBuffer = new char[ChromeTextBufferCapacity];
         private readonly char[] _localizedTabLoadoutBuffer = new char[ChromeTextBufferCapacity];
@@ -322,7 +323,7 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
-            PDAEvents.Register(this);
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
             LocalizationEvents.RegisterLanguageListener(this);
         }
 
@@ -480,7 +481,11 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
             LocalizationEvents.UnregisterLanguageListener(this);
         }
 

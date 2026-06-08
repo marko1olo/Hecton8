@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Professioneel motief
 
-Het professionele motief geeft agency zonder biografie dicht te timmeren.
+Professional Motive geeft de Marauder handelingsruimte zonder de biografie te strak vast te zetten: bekwaamheid komt eerst, persoonlijke investering komt via bewijs.
 
 ## Scanner
 

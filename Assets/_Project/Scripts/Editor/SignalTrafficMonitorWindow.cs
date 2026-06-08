@@ -58,20 +58,54 @@ namespace Hecton8.Editor
         private void OnDisable()
         {
             EditorApplication.update -= RefreshUi;
-            if (_telemetry.IsCreated)
+            DisposeTrackedBuffer(ref _telemetry, ref _telemetrySentinelId);
+            DisposeTrackedBuffer(ref _frames, ref _framesSentinelId);
+        }
+
+        private static void DisposeTrackedBuffer<T>(ref NativeArray<T> buffer, ref int sentinelId)
+            where T : struct
+        {
+            System.Exception cleanupException = null;
+
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.Unregister(_telemetrySentinelId);
-                _telemetrySentinelId = 0;
-                _telemetry.Dispose();
-                _telemetry = default;
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (System.Exception exception)
+                {
+                    cleanupException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
-            if (_frames.IsCreated)
+
+            if (buffer.IsCreated)
             {
-                NativeMemorySentinel.Unregister(_framesSentinelId);
-                _framesSentinelId = 0;
-                _frames.Dispose();
-                _frames = default;
+                try
+                {
+                    buffer.Dispose();
+                }
+                catch (System.Exception exception)
+                {
+                    if (cleanupException == null)
+                        cleanupException = exception;
+                }
+                finally
+                {
+                    buffer = default;
+                }
             }
+            else
+            {
+                buffer = default;
+            }
+
+            if (cleanupException != null)
+                throw cleanupException;
         }
 
         public void CreateGUI()

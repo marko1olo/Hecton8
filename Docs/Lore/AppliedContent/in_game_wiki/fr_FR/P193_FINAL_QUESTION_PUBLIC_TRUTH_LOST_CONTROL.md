@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Question finale : vérité publique, contrôle perdu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Question finale : vérité publique, contrôle perdu
 
-FR LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+La route de vérité publique brise la couverture propre. Elle brise aussi la propriété des conséquences. Les preuves peuvent sauver des noms de l'effacement, déclencher une vraie pression de secours et inviter chaque prédateur doté d'un bureau juridique ou d'un canal de prière.
 
 ## Scanner
 
-FR LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+Publier les preuves empêche l'effacement. Cela donne aussi la découverte à tous ceux qui peuvent mal l'utiliser assez vite.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+AXE DE VÉRITÉ PUBLIQUE : hash témoin, chaîne de responsabilité, état d'Atlas, coordonnées de dette bleue et route de payload peuvent quitter le contrôle Deep Reach. Après publication, l'opérateur ne contrôle plus les receveurs, le marché ni le premier arrivant.
 
 ## Audio
 
-FR LOC HOLD: Truth leaves your hand faster than rescue ever could.
+La vérité quitte ta main plus vite que le secours ne le pourra jamais.
 
 ## Field Note
 
-FR LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+La vérité publique n'est pas une justice pure. Elle crée sanctions, cultes, enchères, procès, pression de secours et claims imitateurs.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/fr_FR. -->

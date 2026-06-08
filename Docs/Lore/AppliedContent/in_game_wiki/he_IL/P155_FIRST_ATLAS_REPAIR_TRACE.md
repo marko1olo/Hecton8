@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: First Atlas Repair Trace"
+title: "עקבת התיקון הראשונה של Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: First Atlas Repair Trace
+# עקבת התיקון הראשונה של Atlas
 
-HE LOC HOLD: The first Atlas trace is small and useful before it becomes horror: a cable is repaired around a human object, showing continuity logic without human priority.
+עקבת Atlas הראשונה קטנה ושימושית לפני שהיא נהפכת לאימה: כבל מתוקן סביב חפץ אנושי, ומראה לוגיקת המשכיות בלי עדיפות אנושית.
 
 ## Scanner
 
-HE LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+ביופילם תיקון על פצע כבל. החזרות האקוסטיות תואמות קצב תחזוקה של Atlas, לא קוד משואת מושבה.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+עקבת תחזוקת ATLAS: שבר נאטם; רציפות כבל שוחזרה; organic obstruction נשמר כ-pressure-compatible substrate; human ID plate לא סווג כ-retrieval priority.
 
 ## Audio
 
-HE LOC HOLD: Atlas repair complete. Person not in work order.
+תיקון Atlas הושלם. אדם אינו בפקודת העבודה.
 
 ## Field Note
 
-HE LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+הוא אטם את הכבל סביב תג שם. תיקון שימושי. קטגוריה רעה.
 
 <!-- In-Game Wiki; generated from P155_FIRST_ATLAS_REPAIR_TRACE/he_IL. -->

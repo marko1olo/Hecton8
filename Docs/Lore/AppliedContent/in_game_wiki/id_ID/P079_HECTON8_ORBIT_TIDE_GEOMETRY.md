@@ -3,38 +3,40 @@ packet_id: P079_HECTON8_ORBIT_TIDE_GEOMETRY
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.hecton8_orbit_tide_geometry
 unlock_id: unlock.first_hecton8_orbit_tide_geometry
-poi_tags: poi.tide_geometry_panel;poi.orbital_timing_core
-biome_tags: biome.surface_relay;biome.tide_pump
+poi_tags: poi.tide_geometry_model;poi.atlas_evacuation_forecast
+biome_tags: biome.storm_shelf;biome.brine_canyon
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 Orbit / Tide Geometry"
+title: "Orbit HECTON-8 / Geometri Pasang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbit / Tide Geometry
+# Orbit HECTON-8 / Geometri Pasang
 
-ID LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.
+Orbit HECTON-8 membuat Great Tide masuk akal sebelum menjadi politik. Resonansi menarik samudra. Tekanan es dan gelombang badai membebani paparan. Panas industri dan drainase tersumbat membuat sistem koloni mendorong balik pada jam yang salah.
+
+Kejahatannya bukan Deep Reach menciptakan fisika. Kejahatannya adalah matematika evakuasi yang dibangun di sekitar Atlas continuity, muatan diasuransikan, dan kelas kerja, lalu menyebut korban mati sebagai galat prakiraan yang dapat diterima.
 
 ## Scanner
 
-ID LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.
+MODEL GEOMETRI PASANG // Resonansi, tekanan es, gelombang badai, dan pembuangan panas melampaui prakiraan evakuasi. Flag Atlas continuity menimpa prioritas mundur.
 
 ## Terminal
 
-ID LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.
+RANTAI GREAT TIDE // Paksaan orbit memperbesar beban samudra. Pembuangan panas buatan dan drainase tersegel mengubah pasang menjadi kegagalan koloni.
 
 ## Audio
 
-ID LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.
+Fisika membuka pintu. Deep Reach memutuskan siapa yang boleh keluar.
 
 ## Field Note
 
-ID LOC HOLD: A moon can drown a colony without hating it.
+Sebuah bulan dapat menenggelamkan koloni tanpa membencinya.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/id_ID. -->

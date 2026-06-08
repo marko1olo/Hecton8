@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Quarantaine-hold: muffe lucht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Quarantaine-hold: muffe lucht
 
-NL LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+Quarantaine-hold is de stilste valse uitgang. Er hoeft geen schurk in de kamer te zijn. Het formulier zegt levend geborgen, de luchtmeter zegt rantsoen actief, en de volgende deur opent pas na contaminatiereview, claimant-uitdaging en verzekeringsreview.
 
-## Scanner
-
-NL LOC HOLD: You are alive, sealed, and still not free.
-
-## Terminal
-
-NL LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-NL LOC HOLD: The hatch opens only to another closed hatch.
-
-## Field Note
-
-NL LOC HOLD: This is the bureaucratic version of drowning.
+De uitkomst is wreed omdat ze verdedigbaar is. Niemand heeft de getuige gedood. Niemand heeft het monster vernietigd. Het systeem laat alleen elke verklaring langer wachten dan de lichamen ooit konden wachten. De speler overleeft de oceaan en betreedt een verzegelde gang gebouwd uit procedure.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/nl_NL. -->

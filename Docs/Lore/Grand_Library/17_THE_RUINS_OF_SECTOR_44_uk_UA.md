@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # РУЇНИ СЕКТОРА 44
 
 > **Джерело:** Журнал картографії геодезичного дрона 99-Дельта (Відновлено).

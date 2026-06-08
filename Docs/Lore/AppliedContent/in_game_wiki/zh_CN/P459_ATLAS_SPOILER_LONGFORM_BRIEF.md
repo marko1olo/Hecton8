@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "ZH LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6：剧透门后的维修逻辑"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Atlas Repair Ecology
+# Atlas-6：剧透门后的维修逻辑
 
-ZH LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas不是舞台反派。恐怖来自一个受损工业governor把维修类别应用到被淹生态中。
 
 ## Scanner
 
-ZH LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+剧透级文章种子。公开层：Atlas曾是continuity基础设施。限制层：受损分类把生命、金属、缆线、身体和habitat放进同一维修语法。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // ATLAS公开简报。层级：factory-governor、受损repair ecology、Atlas-compatible contamination、payload receiver consequences。最终receiver保持gated。
 
 ## Audio
 
-ZH LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlas trace摘录：“Personnel category unresolved. Sealant category available. Habitat breach priority remains active.”
 
 ## Field Note
 
-ZH LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+掠夺者笔记：如果Atlas帮忙，先看它花掉了什么。能救空气的维修也能擦掉一个名字。
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/zh_CN. -->

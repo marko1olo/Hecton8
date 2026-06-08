@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Quarantine Hold: Stale Air"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Quarantine Hold Stale Air
+# Quarantine Hold: Stale Air
 
-Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+Quarantine Hold saves the body and suspends the agency. The player has escaped pressure, but not custody. Every breath is metered while the proof waits behind review language.
 
 ## Scanner
 
-You are alive, sealed, and still not free.
+Body recovered. Witness sealed. Air ration active.
 
 ## Terminal
 
-QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+QUARANTINE HOLD: contractor recovered alive; air ration active; sample custody unresolved; external testimony delayed pending contamination review, claimant challenge and Keelmark loss review.
 
 ## Audio
 
-The hatch opens only to another closed hatch.
+The hatch opens to another closed hatch.
 
 ## Field Note
 
-This is the bureaucratic version of drowning.
+This is the administrative form of drowning.
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/en_US. -->

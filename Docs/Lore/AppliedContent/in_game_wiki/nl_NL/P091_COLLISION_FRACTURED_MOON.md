@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Door botsing gebroken maan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Door botsing gebroken maan
 
-NL LOC HOLD: HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.
+HECTON-8 vormde zich in het Aegir-systeem en werd later door een schampende botsing gespleten. De wond brak de maan niet uiteen. Ze tilde korstplaten op, opende pekelbreuken, voedde thermische gangen en liet oude bodem bereikbaar via zeldzame drukvensters. Bergingskaarten volgen die schade, omdat veilige routes oude verwondingen met water erin zijn.
 
 ## Scanner
 
-NL LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
+Oud korstmonster. De maan ontstond in Aegirs puingordel en werd daarna opengebroken door een inslag groot genoeg voor de oceaan om te onthouden.
 
 ## Terminal
 
-NL LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+OORSPRONGSMODEL: accretie rond Aegir, latere schuine inslag, getijdenresonantie na vergrendeling. Resultaat: getrapte korst, hete breukladders, pekelbekkens, drukglasaders, ongelijke toegang tot diepe bodem.
 
 ## Audio
 
-NL LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
+Hij werd hier geboren. Toen sloeg iets hard genoeg om de zee een kaart te geven.
 
 ## Field Note
 
-NL LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+Een verhaal over een gevangen maan is te schoon. HECTON-8 draagt een lokale wond: opgetilde korst, verzwaard pekelwater, bronnen die nog rente innen.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/nl_NL. -->

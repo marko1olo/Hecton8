@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "حدادة الضغط لأوسكار نويمن"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# حدادة الضغط لأوسكار نويمن
 
-AR LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
+حدادة الضغط لأوسكار نويمن هي مقالة التصنيع في منطق الهروب من HECTON-8: على اللاعب أن يبني مسار صعود من حرفة عالم الضغط، لا أن يجد مفتاح صاروخ عاديا.
 
 ## Scanner
 
-AR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+ترك أوسكار نويمن وصفة حدادة لحلقات تثبيت قوية بما يكفي كي لا يكون مهد الصعود مجرد تابوت.
 
 ## Terminal
 
-AR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+نويمن، أ. مذكرة حدادة: غبار زجاج الضغط يفسد الختم الأول إذا خلط باردا. سخن الحلقة تحت سحب الفتحة، ثم اخمدها داخل غلاف ماء ملحي، ثم اختبرها بضعف حمل الصعود.
 
 ## Audio
 
-AR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+الإطلاق ليس إلا باب ضغط يتحرك إلى أعلى. ابنوه كأنه باب.
 
 ## Field Note
 
-AR LOC HOLD: The exit needs craft, not courage.
+الخروج يحتاج إلى صنعة لا إلى شجاعة.
 
 <!-- External Site; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/ar_SA. -->

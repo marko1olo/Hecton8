@@ -34,17 +34,20 @@ namespace Hecton8.Modding
         // COLD ALLOC: List<ModMenuSettingSliderView>[16] — pooled slider row views — owner: ModMenuUIController
         private readonly List<ModMenuSettingSliderView> _sliderViews = new List<ModMenuSettingSliderView>(16);
         private ModRegistryEventAdapter _modRegistryEventAdapter;
+        private bool _modRegistryEventRegistered;
 
         private void OnEnable()
         {
-            ModRegistryEvents.Register(GetModRegistryEventAdapter());
+            TryRegisterModRegistryListener();
             RefreshView();
         }
 
         private void OnDisable()
         {
-            if (_modRegistryEventAdapter != null)
+            if (_modRegistryEventRegistered && _modRegistryEventAdapter != null)
                 ModRegistryEvents.Unregister(_modRegistryEventAdapter);
+
+            _modRegistryEventRegistered = false;
         }
 
         /// <summary>
@@ -52,6 +55,7 @@ namespace Hecton8.Modding
         /// </summary>
         public void RefreshView()
         {
+            TryRegisterModRegistryListener();
             ModLoader.CollectRuntimeInfo(_mods);
             ModSettingsRegistry.CollectSettings(_settings);
 
@@ -89,6 +93,14 @@ namespace Hecton8.Modding
                 _modRegistryEventAdapter = new ModRegistryEventAdapter(this); // COLD ALLOC: ModRegistryEventAdapter[1] - internal mod registry invalidation listener bridge - owner: ModMenuUIController
 
             return _modRegistryEventAdapter;
+        }
+
+        private void TryRegisterModRegistryListener()
+        {
+            if (_modRegistryEventRegistered || !isActiveAndEnabled)
+                return;
+
+            _modRegistryEventRegistered = ModRegistryEvents.Register(GetModRegistryEventAdapter());
         }
 
         private sealed class ModRegistryEventAdapter : IModRegistryEventListener

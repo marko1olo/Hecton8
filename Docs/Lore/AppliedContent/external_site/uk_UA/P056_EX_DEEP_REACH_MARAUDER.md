@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Колишній Deep Reach, тепер мародер"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Колишній Deep Reach, тепер мародер
 
-UK LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+Колишній Deep Reach, тепер мародер фіксує канон гравця. Гравець — колишній корпоративний спеціаліст із польових систем та евакуаційної інфраструктури, витіснений у незалежні рятувально-утилізаційні роботи чорним списком або боргом і повернений на HECTON-8 під опікою Black Keel. Драма тримається на професійному впізнаванні: місяць відповідає процедурами, які гравець колись розумів, і кожен знайомий замок робить корпоративну брехню важче списати на чужу аварію.
 
 ## Scanner
 
-UK LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+Старий замок Deep Reach перевіряє не твоє ім’я. Він упізнає ритм твоєї ремонтної послідовності.
 
 ## Terminal
 
-UK LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+СЛІД ДОПУСКУ: колишній контракт польових систем. Доступ до евакуаційної інфраструктури відкликано. Статус рятувально-утилізаційних робіт прийнято під боргову опіку пулу претензій.
 
 ## Audio
 
-UK LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Ти не повернувся додому. Ти повернувся до процедури, яка так і не зупинилася.
 
 ## Field Note
 
-UK LOC HOLD: Not family business. Procedure remembers who taught your hands.
+Це не сімейна справа. Процедура пам’ятає руки, які нею користувалися.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/uk_UA. -->

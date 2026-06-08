@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Predator Shadow Encounter Grammar"
+title: "Grammaire de rencontre: ombre prédatrice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Predator Shadow Encounter Grammar
+# Grammaire de rencontre: ombre prédatrice
 
-FR LOC HOLD: HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.
+Les ombres prédatrices définissent la peur de HECTON-8 sans logique de révélation bon marché. Le danger arrive souvent comme proie manquante, bloom cassé, mauvais sonar et route soudain trop chère en oxygène.
 
 ## Scanner
 
-FR LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Trace d’ombre prédatrice. Trou sonar, chemin de proie coupé, silence soudain des brouteurs, large occlusion de lumière. Corps non confirmé; discipline de lampe et angle de sortie.
 
 ## Terminal
 
-FR LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+GRAMMAIRE DE RENCONTRE / OMBRE PRÉDATRICE / rôle: pression de route avant révélation du corps, pic de dépense d’oxygène, rupture de confiance scan / lecture sûre: chemin de proie arrêté, bruit de bloom effondré, retours sonar fendus autour d’une eau vide / rejet: révélation scripted du corps comme premier avertissement, jump scare sans coût, boss arena propre / note de route: si les petits animaux s’arrêtent avant que le scanner nomme la cible, la route a déjà changé.
 
 ## Audio
 
-FR LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+Le signe sûr n’est pas de la voir. C’est de voir tout le reste choisir le silence avant toi.
 
 ## Field Note
 
-FR LOC HOLD: Use for AI/spawn design notes and scanner cards.
+Nomme l’animal tard. Que proie, lumière et sonar échouent d’abord. Si la route devient muette, l’ombre la possède déjà.
 
 <!-- External Site; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/fr_FR. -->

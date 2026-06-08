@@ -3,38 +3,22 @@ packet_id: P343_SEED_SHIP_BRAKING_ARCHITECTURE
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.seed_ship_braking_architecture
 unlock_id: unlock.seed_ship_braking_architecture
-poi_tags: poi.seed_ship_archive;poi.braking_debris_marker
-biome_tags: biome.archive;biome.colony
+poi_tags: poi.braking_mass_manifest;poi.seed_ship_burn_record
+biome_tags: biome.orbit;biome.archive
 locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Seed Ship Braking Architecture"
+title: "ארכיטקטורת בלימת Seed Ship"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Seed Ship Braking Architecture
+# ארכיטקטורת בלימת Seed Ship
 
-HE LOC HOLD: Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.
-
-## Scanner
-
-HE LOC HOLD: Seed ship archive. Arrival depended on braking mass, not faith in the destination.
-
-## Terminal
-
-HE LOC HOLD: COLONY LOG: early Aegir hardware arrived as seed cargo, reactor shells, printers, water chemistry rigs and braking debris. The first human phase inherited what survived deceleration.
-
-## Audio
-
-HE LOC HOLD: The colony started as cargo that managed to stop.
-
-## Field Note
-
-HE LOC HOLD: Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community.
+התאוצה מקבלת את הרומנטיקה; הבלימה מקבלת את החשבון. Seed ships ל-Aegir היו צריכים להגיע עם מספיק מסה שורדת כדי להיות שימושיים, ולכן כל שכבת מגן, עתודת קרח, מפרש מגנטי, לכידת pellet ושריפת היתוך היו חלק מהקולוניזציה לפני שבית גידול נגע במים. התשתית הראשונה לא הייתה עיר. היא הייתה מכונות שהוכנסו בידי כלי שכבר הוציא חלקים מעצמו כדי לעצור. לכן HECTON-8 מרגיש ירושה ולא ייסוד. עובדים נכנסו למקום שנבנה מפשרות בלימה, אוטומציה ישנה ועדיפויות מטען שננעלו שנים לפני ויכוחים על בטיחות.
 
 <!-- External Site; generated from P343_SEED_SHIP_BRAKING_ARCHITECTURE/he_IL. -->

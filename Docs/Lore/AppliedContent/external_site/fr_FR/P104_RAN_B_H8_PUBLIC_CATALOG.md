@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "FR LOC HOLD: RAN-B:H8 Public Catalog"
+spoiler_tier: 1
+title: "Catalogue public RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: RAN-B:H8 Public Catalog
+# Catalogue public RAN-B:H8
 
-FR LOC HOLD: RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name.
-
-## Scanner
-
-FR LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
-
-## Terminal
-
-FR LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
-
-## Audio
-
-FR LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
-
-## Field Note
-
-FR LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+RAN-B:H8 est le nom utilisé quand la lune est une coordonnée. HECTON-8 est le nom utilisé quand la lune est une blessure. La séparation compte parce que le même lieu doit fonctionner dans les tables d'astronomie, les formulaires d'assurance, la parole des travailleurs, les registres de mort et la garde Black Keel. Un catalogue public rend la destination propre et triable ; un nom de réclamation garde le résidu humain attaché. Le bon lore doit laisser sentir les deux noms à la fois : le corps indexé et le lieu de travail noyé.
 
 <!-- External Site; generated from P104_RAN_B_H8_PUBLIC_CATALOG/fr_FR. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ציות תאגידי ותת-תרבות הבוזזים (MARAUDERS)
 
 > **מקור:** המשרד לציות חילוץ, מדריך קליטת קבלני משנה (טופס 88-C).  

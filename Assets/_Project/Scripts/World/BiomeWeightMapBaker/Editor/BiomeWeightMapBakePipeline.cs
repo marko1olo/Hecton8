@@ -35,6 +35,8 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
     {
         public const string OutputFolder = "Assets/_Project/BakedGeometry/Splatmaps";
         public const string DefaultAssetName = "TX_BiomeWeightMap_SHINOBU_243.asset";
+        public const string ProductionTerrainMaterialPath = "Assets/_Project/Art/Materials/World/MAT_H8TerrainLit_BasaltSediment_1428.mat";
+        public const string TerrainControlTextureProperty = "_TerrainControlRGBA";
         private const string ReportPath = "Docs/Reports/SPLATMAP_BAKE_REPORT.json";
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_243.bin";
         private static readonly UTF8Encoding JsonEncoding = new UTF8Encoding(false);
@@ -272,6 +274,8 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
                 result.Bc7Compressed = SaveBc7TextureAsset(finalPixels, config.Width, config.Height, outputPath);
                 if (!result.Bc7Compressed)
                     result.WarningFlags |= BiomeWeightMapBakeConstants.WarningBc7CompressionFailed;
+                if (!TryBindControlTextureToProductionTerrainMaterial(outputPath))
+                    result.WarningFlags |= BiomeWeightMapBakeConstants.WarningMaterialBindingFailed;
                 result.SerializationMilliseconds = (float)stage.Elapsed.TotalMilliseconds;
                 result.AssetPath = outputPath;
                 result.DiskBytes = ResolveDiskBytes(outputPath);
@@ -532,6 +536,19 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             return texture.format == TextureFormat.BC7;
+        }
+
+        private static bool TryBindControlTextureToProductionTerrainMaterial(string textureAssetPath)
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(textureAssetPath);
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(ProductionTerrainMaterialPath);
+            if (texture == null || material == null || !material.HasProperty(TerrainControlTextureProperty))
+                return false;
+
+            material.SetTexture(TerrainControlTextureProperty, texture);
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
+            return true;
         }
 
         private static string ResolveOutputPath(string assetName)

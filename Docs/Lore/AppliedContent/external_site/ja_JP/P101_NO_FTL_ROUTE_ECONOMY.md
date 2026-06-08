@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.carrier_link
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+spoiler_tier: 1
+title: "FTLなしの航路経済"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# FTLなしの航路経済
 
-JP LOC HOLD: No-FTL Route Economy defines HECTON-8's hard-sci-fi pressure. There is no ansible, no instant rescue and no cheap return trip. Interstellar law can arrive as packets and liens long before ships arrive as help.
-
-## Scanner
-
-JP LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
-
-## Terminal
-
-JP LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
-
-## Audio
-
-JP LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
-
-## Field Note
-
-JP LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+FTLなしの航路経済は、HECTON-8を正直に保つ規則である。2190年の人類圏はAegirへ到達できるが、到着は発射窓、遮蔽質量、燃料、制動機構、custody packets、そして何年分もの支払い済み忍耐から作られる。法律はデータとして進むため船より速い。負債は救助より速い。非常事態の前に価格へ組み込まれているからだ。プレイヤーは失われた奇跡に見捨てられたのではない。最初から奇跡を約束しない経済に見捨てられている。
 
 <!-- External Site; generated from P101_NO_FTL_ROUTE_ECONOMY/ja_JP. -->

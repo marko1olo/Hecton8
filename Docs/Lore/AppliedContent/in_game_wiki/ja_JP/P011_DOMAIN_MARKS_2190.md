@@ -9,29 +9,31 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "2190年のドメイン印"
+title: "ドメイン刻印 2190"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# 2190年のドメイン印
+# ドメイン刻印 2190
 
-ドメイン印は大きな人類世界の小さな痕跡だ。Solの古い標準、Barnardの修理文化、Luytenのパケット経路、Tau Cetiの公共法、Centauriのハードウェア、Aegirのclaim管理を物体で示す。
+ドメイン刻印は、教室ではなく物で人類圏を見せる。安全板、トルク印、保管コード、古い許可が、扉や工具や貨物を遠い権限へ結びつける。
+
+コロニーは原始的ではなく遠い。法、産業、債務は水まで届いた。救助にはまだ質量、船、窓が必要だ。
 
 ## Scanner
 
-複数ドメインの印。Sol安全板、Barnard工具刻印、Luyten経路保管。
+複数の人類ドメイン刻印。Sol安全プレート、Barnard工具印、Luyten保管ルート、Aegir請求コードが同じ腐食ブラケット上にある。
 
 ## Terminal
 
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+ドメイン照合 // Sol Core安全形式承認。Barnard Yards修理印有効。Luyten Junctionパケット保管添付。降下喪失後はAegir地方請求法が回収優先度を上書き。
 
 ## Audio
 
-ここは文明の外ではない。距離が勝った時の文明だ。
+ここは文明の外じゃない。距離が温かい部分を奪った後の文明だ。
 
 ## Field Note
 

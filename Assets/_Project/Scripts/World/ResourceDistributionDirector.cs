@@ -58,6 +58,7 @@ namespace Hecton8.World
         private const float DefaultMeteoriteRadiationIntensity = 0.85f;
         private const float DefaultMeteoriteRadiationRadiusMeters = 30f;
         private const float DefaultMeteoriteRadiationVisorBias = 1.35f;
+        private const float DefaultWaterSurfaceLevelY = 14.02f;
         private const float DefaultPressureMetamorphismDepthMeters = 3500f;
         private const float DefaultPressureMetamorphismDays = 5f;
         private const string CarbonMetamorphismStableId = "resource.node.carbon_graphite_nodule";
@@ -604,8 +605,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            if (_objectPool == null)
-                _objectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
 
             if (_persistentWorldRegistry == null)
                 _persistentWorldRegistry = PersistentWorldRegistry.Instance;
@@ -618,6 +618,41 @@ namespace Hecton8.World
 
             if (_hazardZoneManager == null)
                 _hazardZoneManager = GlobalRegistry.HazardZones;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                return;
+            }
+
+            _objectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
         }
 
         private void CacheWorldgenRuntimeReferencesCold()
@@ -667,7 +702,7 @@ namespace Hecton8.World
         private void RebindVegetationRuntime(object previousService, object currentService)
         {
             HectonMapMagicVegetationBridge currentVegetation = currentService as HectonMapMagicVegetationBridge;
-            if (currentVegetation != null)
+            if (WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref currentVegetation))
             {
                 vegetationBridge = currentVegetation;
                 return;
@@ -726,7 +761,7 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     _runtimePoolReady = false;
                     ValidateAuthoredRuntimePrefabsCold();
                     EnsureRuntimePool();
@@ -760,7 +795,13 @@ namespace Hecton8.World
                     RebindVoxelEngineRuntime(previousService, currentService);
                     break;
                 case GlobalRegistryServiceSlot.HazardZoneRuntime:
-                    _hazardZoneManager = currentService as HazardZoneManager;
+                    HazardZoneManager previousHazards = previousService as HazardZoneManager;
+                    HazardZoneManager currentHazards = currentService as HazardZoneManager;
+                    if (!ReferenceEquals(previousHazards, currentHazards))
+                        UnregisterAllBrineHazards(previousHazards);
+                    _hazardZoneManager = currentHazards;
+                    if (currentHazards != null)
+                        RefreshBrineHazardRegistrations();
                     break;
             }
         }
@@ -824,8 +865,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return false;
             GameObject prefab = ResolveAuthoredOrePrefab(template);
             if (prefab == null)
@@ -871,8 +911,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return false;
             GameObject prefab = ResolveAuthoredOrePrefab(template);
             if (!HasAuthoredPoolReserve(pool, prefab))
@@ -979,8 +1018,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return false;
             GameObject prefab = ResolveAuthoredOrePrefab(template);
             if (!HasAuthoredPoolReserve(pool, prefab))
@@ -1057,8 +1095,7 @@ namespace Hecton8.World
             float3 surfaceNormalAup,
             ResourceNodeTemplate template)
         {
-            IObjectPoolService pool = _objectPool;
-            if (pool == null || template == null)
+            if (template == null || !TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return false;
             GameObject prefab = ResolveAuthoredOrePrefab(template);
             if (!HasAuthoredPoolReserve(pool, prefab))
@@ -1149,7 +1186,8 @@ namespace Hecton8.World
             if (template == null || mapMagicBridge == null)
                 return false;
 
-            IObjectPoolService pool = _objectPool;
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
+                return false;
             GameObject prefab = ResolveAuthoredOrePrefab(template);
             if (!HasAuthoredPoolReserve(pool, prefab))
                 return false;
@@ -1245,11 +1283,16 @@ namespace Hecton8.World
                 return;
             }
 
+            float safeIntensity = ResolveFiniteSaturate(meteoriteRadiationIntensity, DefaultMeteoriteRadiationIntensity);
+            float safeRadius = math.clamp(
+                ResolveFiniteAtLeast(meteoriteRadiationRadiusMeters, DefaultMeteoriteRadiationRadiusMeters, 4f),
+                4f,
+                40f);
             RadiationHazardGrid.RegisterSource(
                 zoneId,
                 in radiationAup,
-                meteoriteRadiationIntensity,
-                meteoriteRadiationRadiusMeters);
+                safeIntensity,
+                safeRadius);
             _debugLastMeteorHazardZoneId = zoneId;
         }
 
@@ -1316,12 +1359,15 @@ namespace Hecton8.World
                 return playerAup.IsFinite();
             }
 
-            var playerMovement = playerContext.PlayerMovement;
-            if (playerMovement == null)
-                return false;
+            if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
+            {
+                playerAup = movementState.PredictedAup;
+                return true;
+            }
 
-            playerAup = playerMovement.CurrentAup;
-            return playerAup.IsFinite();
+            return false;
         }
 
         private void ValidateAuthoredRuntimePrefabsCold()
@@ -1405,8 +1451,7 @@ namespace Hecton8.World
             if (_runtimePoolReady)
                 return;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             _computedPoolWarmupCount = ComputeRequiredPoolWarmupCount();
@@ -1631,7 +1676,7 @@ namespace Hecton8.World
             if (!TryResolveSurfacePlacement(surfaceAnchorPosition, template.SpawnOffsetMeters, yawDegrees, out Vector3 runtimePosition, out Quaternion rotation))
                 return false;
 
-            float waterSurface = mapMagicBridge.WaterSurfaceLevel;
+            float waterSurface = ResolveWaterSurfaceLevel();
             float depthMeters = math.max(0f, waterSurface - seabedHeight);
             float temperatureCelsius = ResolveTemperature(runtimePosition);
             float slopeDegrees = ResolveSlope(runtimePosition);
@@ -1715,8 +1760,7 @@ namespace Hecton8.World
                 return;
             }
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             int scheduledCount = math.min(_pendingGhostProxySnaps.Count, GhostProxySnapBatchCapacity);
@@ -1821,8 +1865,7 @@ namespace Hecton8.World
             if (!_runtimePoolReady || _pendingSpawns.Count == 0)
                 return;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             int processedCount = 0;
@@ -2057,7 +2100,7 @@ namespace Hecton8.World
                 return 0;
 
             int writeIndex = 0;
-            float waterSurface = mapMagicBridge.WaterSurfaceLevel;
+            float waterSurface = ResolveWaterSurfaceLevel();
             for (int sectorIndex = 0; sectorIndex < sectorStates.Length; sectorIndex++)
             {
                 SectorState state = sectorStates[sectorIndex];
@@ -2320,7 +2363,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            IObjectPoolService pool = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             DespawnKnownPooledResourceOrDisable(pool, target);
 
             return false;
@@ -2670,9 +2713,7 @@ namespace Hecton8.World
                 return brinePool;
             }
 
-            float waterSurface = mapMagicBridge.WaterSurfaceLevel;
-            if (!math.isfinite(waterSurface))
-                return brinePool;
+            float waterSurface = ResolveWaterSurfaceLevel();
 
             float depthMeters = math.max(0f, waterSurface - bowlFloorHeight);
             if (depthMeters < brinePoolMinimumDepthMeters)
@@ -2731,7 +2772,10 @@ namespace Hecton8.World
 
             HazardZoneManager hazardManager = _hazardZoneManager;
             if (hazardManager == null)
+            {
+                UnregisterBrineHazard(ref state.BrinePool);
                 return;
+            }
 
             int zoneId = ResolveBrineHazardZoneId(state.BrinePool.StableSeed);
             bool isSameRegisteredZone =
@@ -2799,12 +2843,44 @@ namespace Hecton8.World
             state.BrinePool.HazardRegistered = 1;
         }
 
-        private void UnregisterBrineHazard(ref BrinePoolState brinePool)
+        private void RefreshBrineHazardRegistrations()
+        {
+            SectorState[] sectorStates = _sectorStatePool;
+            if (sectorStates == null || sectorStates.Length == 0)
+                return;
+
+            for (int i = 0; i < sectorStates.Length; i++)
+            {
+                SectorState state = sectorStates[i];
+                if (state == null || !state.IsLeased)
+                    continue;
+
+                SyncBrineHazardRegistration(state);
+            }
+        }
+
+        private void UnregisterAllBrineHazards(HazardZoneManager managerFallback)
+        {
+            SectorState[] sectorStates = _sectorStatePool;
+            if (sectorStates == null || sectorStates.Length == 0)
+                return;
+
+            for (int i = 0; i < sectorStates.Length; i++)
+            {
+                SectorState state = sectorStates[i];
+                if (state == null || !state.IsLeased)
+                    continue;
+
+                UnregisterBrineHazard(ref state.BrinePool, managerFallback);
+            }
+        }
+
+        private void UnregisterBrineHazard(ref BrinePoolState brinePool, HazardZoneManager managerFallback = null)
         {
             if (brinePool.HazardRegistered == 0)
                 return;
 
-            HazardZoneManager manager = _hazardZoneManager;
+            HazardZoneManager manager = _hazardZoneManager != null ? _hazardZoneManager : managerFallback;
             if (manager != null)
                 manager.UnregisterZone(brinePool.HazardZoneId);
             HectonBrineToxicMudGrid.UnregisterCell(brinePool.HazardZoneId);
@@ -2991,8 +3067,7 @@ namespace Hecton8.World
             if (_authoredMagmaVentPrefab == null)
                 return;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             if (!HasAuthoredPoolReserve(pool, _authoredMagmaVentPrefab))
@@ -3070,7 +3145,7 @@ namespace Hecton8.World
 
         private void FlushPendingNodeDeactivations()
         {
-            IObjectPoolService pool = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             for (int i = 0; i < _pendingNodeDeactivations.Count; i++)
             {
                 GameObject target = _pendingNodeDeactivations[i];
@@ -3109,6 +3184,29 @@ namespace Hecton8.World
         private bool IsBlockedByVoxelSolid(Vector3 runtimePosition)
         {
             return !TryValidateSpawnRuntimePositionViaSdf(runtimePosition, math.max(0.05f, voxelSolidThreshold), out _);
+        }
+
+        private float ResolveWaterSurfaceLevel()
+        {
+            MapMagicBridge bridge = mapMagicBridge;
+            if (bridge != null && TryResolveWaterSurfaceLevel(bridge.WaterSurfaceLevel, out float waterSurfaceLevel))
+                return waterSurfaceLevel;
+
+            return DefaultWaterSurfaceLevelY;
+        }
+
+        private static bool TryResolveWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
+        {
+            if (math.isfinite(candidateWaterSurfaceLevel) &&
+                math.abs(candidateWaterSurfaceLevel) > 0.0001f &&
+                math.abs(candidateWaterSurfaceLevel) <= 1000f)
+            {
+                waterSurfaceLevel = candidateWaterSurfaceLevel;
+                return true;
+            }
+
+            waterSurfaceLevel = DefaultWaterSurfaceLevelY;
+            return false;
         }
 
         private float ResolveTemperature(Vector3 runtimePosition)

@@ -7,34 +7,34 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "Akustische Pingerleine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# Akustische Pingerleine
 
-DE LOC HOLD: The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.
+Die akustische Pingerleine ist die erste Navigationsdisziplin. Sie lässt den Spieler eine Rückroute schaffen, bevor Licht, Strömung oder Panik den Weg fremd machen. Spätere Fluchtarbeit wächst aus derselben Idee: Schall durch Wasser, Relaistiming, Carrier-Handshakes und Beweis, dass ein Pfad noch existiert.
 
 ## Scanner
 
-DE LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
+Akustische Pingerspule. Kurzstreckenpuls bestätigt; vor trübem Wasser oder Salzlakenflimmern verankern.
 
 ## Terminal
 
-DE LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
+RÜCKKEHRLEINE / PINGER: vor Trübung, Salzlakenflimmern, gefluteten Bögen oder langen Shelf-Schnitten verankern. Lokaler Ping unterstützt nur Rücknavigation. Carrier-Handshake erfordert akustische Relaisrippe.
 
 ## Audio
 
-DE LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
+Wenn das Licht ausfällt, folge dem Klang, den du gesetzt hast.
 
 ## Field Note
 
-DE LOC HOLD: Navigation should become physical early.
+Setz den Pinger, solange du den Rückweg noch kennst. Stolz ist keine Routenmarke.
 
 <!-- In-Game Wiki; generated from P114_ACOUSTIC_PINGER_LINE/de_DE. -->

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Invarian Geologi Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Invarian Geologi Seed
 
-ID LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+Invarian geologi seed menjaga HECTON-8 tetap koheren sepanjang replay panjang. Ngarai bisa terbuka dalam urutan lain, bukti bisa berpindah, kantong aman bisa bergeser, dan tekanan spesies bisa berubah. Bintang tetap Aegir, bulan tetap HECTON-8, pita kedalaman menjaga urutannya, Great Tide menjaga waktunya, dan basin Atlas tetap terhubung ke kebenaran terdalam.
 
 ## Scanner
 
-ID LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+Catatan generasi rute. Peta salvage berubah, tapi bulan menyimpan tulang yang sama.
 
 ## Terminal
 
-ID LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+INVARIAN: primer Aegir, tangga orbit HECTON-8, interval Great Tide, urutan pita kedalaman, relasi basin Atlas, perilaku tekanan blue debt. VARIABEL: pendekatan ngarai, urutan POI, kantong aman, kepadatan bloom, paparan salvage.
 
 ## Audio
 
-ID LOC HOLD: New seed, same moon. Different wound.
+Pola luka berbeda. Bulan yang sama di bawahnya.
 
 ## Field Note
 
-ID LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+Run baru boleh mengubur bukti secara berbeda; ia tidak boleh menulis ulang gravitasi, pasang, atau rasa bersalah.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/id_ID. -->

@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Ending Record Transcript Seed"
+title: "Transcripción de registro final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Ending Record Transcript Seed
+# Transcripción de registro final
 
-ES LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
+Las transcripciones de registro final vuelven los desenlaces registrables y comparables en replay sin convertir conocimiento en poder heredado.
 
 ## Scanner
 
-ES LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Fragmento de registro final enumera receptor, hash de payload, estado de deuda y coste no resuelto.
 
 ## Terminal
 
-ES LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.
 
 ## Audio
 
-ES LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
+Registro posterior. Receptor aceptó hash de payload. Claim cerrado para contabilidad. Suppression flag ilegible. Truth custody no resuelta.
 
 ## Field Note
 
-ES LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Registro de dossier final. Debe nombrar receptor, custody y coste no resuelto, no cierre moral limpio.
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/es_ES. -->

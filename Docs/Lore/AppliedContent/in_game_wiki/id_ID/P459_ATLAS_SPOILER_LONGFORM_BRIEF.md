@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "ID LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: Logika Perbaikan di Balik Spoiler Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Repair Ecology
+# Atlas-6: Logika Perbaikan di Balik Spoiler Gate
 
-ID LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas bukan penjahat teater. Horornya adalah governor industri rusak yang memakai kategori perbaikan pada ekologi banjir.
 
 ## Scanner
 
-ID LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Seed artikel spoiler. Lapisan publik: Atlas adalah infrastruktur continuity. Lapisan terbatas: klasifikasi rusak merutekan hidup, logam, kabel, tubuh, dan habitat lewat grammar perbaikan yang sama.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // BRIEF ATLAS. Tingkat: factory-governor, repair ecology rusak, Atlas-compatible contamination, konsekuensi payload receiver. Receiver final tetap gated.
 
 ## Audio
 
-ID LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Jejak Atlas: "Personnel category unresolved. Sealant category available. Habitat breach priority remains active."
 
 ## Field Note
 
-ID LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+Catatan Marauder: jika Atlas membantu, lihat apa yang ia habiskan. Perbaikan bisa menyelamatkan udara dan menghapus nama.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/id_ID. -->

@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Global Ocean Depth Bands
 
-HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.
+HECTON-8's ocean is read by bands, not by a single bottom line. The photic shelf still permits light, wreckage, algae bloom, and careless pilots. The industrial shelf carries cable reef, pipe cages, and old loading decks. Below it, brine stairs bend sound and ballast. Abyssal machine fields punish repairs. The Atlas basin is where pressure stops acting like weather and starts acting like jurisdiction.
 
 ## Scanner
 
-Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+Depth chart. The first shelf forgives bad ballast; lower water invoices every mistake in pressure, heat, and silence.
 
 ## Terminal
 
-BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-Every band changes what the world allows you to do.
+Every hundred meters takes one habit away from you.
 
 ## Field Note
 
-Depth is not a number. It is a ruleset.
+Depth on HECTON-8 is law, weather, border, and hunger wearing the same number.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/en_US. -->

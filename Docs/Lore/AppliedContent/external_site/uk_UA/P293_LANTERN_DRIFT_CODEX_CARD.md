@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Lantern Drift Codex Card"
+title: "Картка кодексу: ліхтарний дрейф"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Lantern Drift Codex Card
+# Картка кодексу: ліхтарний дрейф
 
-UK LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+Ліхтарний дрейф не дає красі HECTON-8 стати шпалерами. Він може вести чистою світною структурою, а потім зрадити, записавши шум, паніку й штормовий заряд. Яскрава вода — це навігація й викриття одночасно.
 
 ## Scanner
 
-UK LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Ліхтарний bloom дрейфу. Біолюмінесцентний планктон смугами позначає течію й уламки. Корисний для силуетів; небезпечний, коли шум інструментів робить із нього світний слід.
 
 ## Terminal
 
-UK LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+ЗРАЗОК / ЛІХТАРНИЙ BLOOM ДРЕЙФУ / роль: подія видимості мілководдя, ескіз течії, реєстратор збурення / безпечне читання: стабільне крайове світло, ореоли уламків, збіг течії й осаду / відмова: хибний коридор від штормового заряду, bloom сплющує малі загрози, інструментальний слід яснішає за оператором / примітка маршруту: світло — дані, не укриття.
 
 ## Audio
 
-UK LOC HOLD: Pretty is not safe. Pretty is a reading.
+Світіння не допомагає тобі. Воно доповідає, що почула вода.
 
 ## Field Note
 
-UK LOC HOLD: Card teaches that beauty can be route information and route deception.
+Використовуй bloom для силуетів. Не ремонтуй гучно всередині. Якщо світло йде за тобою, за ним може піти ще хтось.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/uk_UA. -->

@@ -9,32 +9,20 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Transit Duration Bands"
+title: "Transitduurbands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Transit Duration Bands
+# Transitduurbands
 
-NL LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
+## Verschillende Klokken
 
-## Scanner
+Dezelfde route betekent niet dezelfde tijd. Een probe packet kan vroeg vertrekken, licht verbranden en claim worden decennia voordat een crew water ziet. Heavy freight heeft staged launches, braking rights, pellet lanes, radiatoren en verzekering nodig die de verliescurve accepteert. Human crew heeft dat alles plus life support, liability language en een reden om return mass te betalen nodig.
 
-NL LOC HOLD: The same route means different time for packets, freight and people.
-
-## Terminal
-
-NL LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
-
-## Audio
-
-NL LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
-
-## Field Note
-
-NL LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+HECTON-8 sluit de speler op in die ongelijke klokken. Een distress hash kan geldig en nutteloos zijn. Een cargo-kans kan openen terwijl rescue gesloten blijft. Een publiek gevolg kan jaren weg zijn en toch bescherming verdienen. De horror is niet dat de route stuk is. De horror is dat de route werkt voor alles behalve het lichaam dat vraagt ertoe te doen.
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/nl_NL. -->

@@ -7,9 +7,9 @@ poi_tags: poi.hatch_seal;poi.airlock_frame
 biome_tags: biome.drowned_colony;biome.service_corridor
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Ledger Segel Palka"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Ledger Segel Hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ledger Segel Palka
+# Ledger Segel Hatch
 
-Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.
+Frame hatch menyimpan kebohongan yang berguna. Lampu segel hijau berarti gasket bertahan, bukan bahwa penutupan itu adil, aman, atau bisa dibalik. Ledger segel menyimpan potongan tekanan, stempel override, dan arah penutupan manual terakhir. Di ruang koloni terlantar, satu hatch bisa menjadi penghalang rute, alat bertahan hidup, dan bukti pekerja sekaligus.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+Memori segel dipulihkan. Gasket menerima tiga potongan tekanan dan satu override evakuasi; akses sisi pulang dikunci dari sisi basah.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / FRAME H-17: deformasi gasket melewati toleransi servis. Penutupan manual diterima di bawah EVAC OVERRIDE. Hitungan operator di sisi pulang belum selesai. Buka ulang hanya setelah penyamaan tekanan dan inspeksi engsel.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+Ia tersegel. Hanya itu janji hatch.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+Hatch tersegel adalah kuitansi. Sebelum membukanya, tanya sisi mana yang membayar.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/id_ID. -->

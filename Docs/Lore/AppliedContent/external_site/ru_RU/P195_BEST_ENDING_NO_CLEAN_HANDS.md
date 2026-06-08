@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Лучшая концовка без чистых рук"
+title: "Лучший финал: чистых рук нет"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Лучшая концовка без чистых рук
+# Лучший финал: чистых рук нет
 
-Лучшая концовка без чистых рук задает moral standard финальных outcomes.
+Лучший финал HECTON-8 не должен быть финалом, где все починили. Иначе океан, мертвые рабочие и контрактная машина станут меньше списка задач игрока. Сильнейшая версия дает спасти что-то конкретное: публичную запись, живой бассейн, отвергнутый корпоративный payload, освобожденного оператора, имя, которое больше нельзя стереть.
 
-## Scanner
-
-Лучшая концовка не должна стирать cost, uncertainty или complicity.
-
-## Terminal
-
-NO CLEAN HANDS RULE: best ending может expose truth, deny Deep Reach, preserve часть ecology и free player from lien, но обязан оставить consequence, uncertainty или damage видимыми.
-
-## Audio
-
-Если это ощущается чисто, оно забыло, где ты находишься.
-
-## Field Note
-
-Сильная концовка позволяет игроку спасти что-то реальное и потерять что-то реальное.
+Но должен остаться след. Может быть, Atlas выживет под карантином. Может быть, отсечение спасет людей и убьет форму жизни. Может быть, правда станет публичной, но неконтролируемой. Может быть, игрок уйдет без долга с доказательством, которое продолжит ранить людей. Чистых рук нет - не цинизм. Это уважение к масштабу. Игрок может действовать значимо, не становясь невиновным.
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/ru_RU. -->

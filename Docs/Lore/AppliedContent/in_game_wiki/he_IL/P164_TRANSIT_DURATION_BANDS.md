@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Transit Duration Bands"
+title: "רצועות משך מעבר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Transit Duration Bands
+# רצועות משך מעבר
 
-HE LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+רצועות המעבר מסבירות למה HECTON-8 יכול להיות נגיש ועדיין אכזרי. חבילות זזות ראשונות כי הן קטנות, זולות ושימושיות משפטית. מטען זז כש-staging, braking rights ו-loss margins מסתדרים. גוף נושם זז לאט כי הוא דורש מסה, liability, life support ומישהו שישלם על החזרה. חלונות Aegir מקומיים קצרים יותר אך לא נדיבים: מסלול, רעש סערה, קרינה וגאומטריית Black Keel קובעים אם נתונים, מטען או אדם יכולים לזוז.
 
 ## Scanner
 
-HE LOC HOLD: The same route means different time for packets, freight and people.
+DURATION BAND CHART // חבילות גשוש, מטען כבד, צוותים אנושיים וחלונות Aegir מקומיים אינם חולקים שעון אחד.
 
 ## Terminal
 
-HE LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // חלונות מקומיים: שעות עד ימים. תנועה תעשייתית במערכת: חודשים עד שנים. crew rotation: שנים של custody וחוב. Heavy interdomain freight והשלכות: שנים עד עשורים.
 
 ## Audio
 
-HE LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
+מטען יכול להגיע לפני חמלה. זו לא תקלה. זו דוקטרינה.
 
 ## Field Note
 
-HE LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+אם כל השעונים תואמים, העולם נהיה פנטזיית חילוץ. השאר את השעונים עוינים.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/he_IL. -->

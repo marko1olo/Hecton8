@@ -259,6 +259,7 @@ namespace Hecton8.World.Outposts
         private float _renderPropertyAge01;
         private int _shellUploadBufferIndex;
         private GameObject[] _spawnedInteractables;
+        private IObjectPoolService[] _spawnedInteractableOwners;
         private SealedDoor[] _spawnedDoorControllers;
         private RegistryBucket<IRenderable> _registeredRenderables;
         private MapMagicBridge _cachedMapMagicBridge;
@@ -427,10 +428,11 @@ namespace Hecton8.World.Outposts
                     _cachedWorldSeedProvider = currentService as IWorldSeedProvider;
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    _cachedPersistence = currentService as IAsyncPersistenceService;
+                    IAsyncPersistenceService persistence = currentService as IAsyncPersistenceService;
+                    _cachedPersistence = IsAsyncPersistenceUsable(persistence) ? persistence : null;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _cachedObjectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     OnDataVaultReplaced(currentService as IDataVault);
@@ -1053,12 +1055,105 @@ namespace Hecton8.World.Outposts
 
         private IAsyncPersistenceService ResolveAsyncPersistence()
         {
+            IAsyncPersistenceService persistence = _cachedPersistence;
+            if (IsAsyncPersistenceUsable(persistence))
+                return persistence;
+
+            persistence = GlobalRegistry.AsyncPersistence;
+            _cachedPersistence = IsAsyncPersistenceUsable(persistence) ? persistence : null;
             return _cachedPersistence;
         }
 
         private IObjectPoolService ResolveObjectPool()
         {
-            return _cachedObjectPool;
+            return TryResolveCachedObjectPool(out IObjectPoolService pool) ? pool : null;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            if (!ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(candidate))
+            {
+                _cachedObjectPool = null;
+                return;
+            }
+
+            _cachedObjectPool = candidate;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _cachedObjectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _cachedObjectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _cachedObjectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)
+        {
+            return instance != null &&
+                   pool is ObjectPoolManager manager &&
+                   ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(manager) &&
+                   manager.CanDespawnWithoutDestroy(instance);
+        }
+
+        private static bool TryResolvePoolForInstance(
+            GameObject instance,
+            IObjectPoolService preferredPool,
+            out IObjectPoolService pool)
+        {
+            if (CanDespawnWithPool(preferredPool, instance))
+            {
+                pool = preferredPool;
+                return true;
+            }
+
+            if (instance != null &&
+                instance.TryGetComponent(out ObjectPoolManager.PoolItemMarker marker) &&
+                marker.Owner != null &&
+                ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(marker.Owner) &&
+                marker.Owner.CanDespawnWithoutDestroy(instance))
+            {
+                pool = marker.Owner;
+                return true;
+            }
+
+            ObjectPoolManager active = null;
+            if (instance != null &&
+                ObjectPoolManager.TryResolveActiveRuntime(ref active) &&
+                active.CanDespawnWithoutDestroy(instance))
+            {
+                pool = active;
+                return true;
+            }
+
+            pool = null;
+            return false;
+        }
+
+        private static void DespawnInteractableProxyOrDeactivate(IObjectPoolService pool, GameObject instance)
+        {
+            if (TryResolvePoolForInstance(instance, pool, out IObjectPoolService ownerPool))
+            {
+                ownerPool.Despawn(instance);
+                return;
+            }
+
+            if (instance != null)
+                instance.SetActive(false);
         }
 
         private void CacheRegistryDependenciesCold()
@@ -1066,11 +1161,14 @@ namespace Hecton8.World.Outposts
             if (_cachedMapMagicBridge == null)
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _cachedMapMagicBridge);
 
-            if (_cachedPersistence == null || IsDestroyedUnityObject(_cachedPersistence))
-                _cachedPersistence = GlobalRegistry.AsyncPersistence;
+            if (!IsAsyncPersistenceUsable(_cachedPersistence))
+            {
+                IAsyncPersistenceService persistence = GlobalRegistry.AsyncPersistence;
+                _cachedPersistence = IsAsyncPersistenceUsable(persistence) ? persistence : null;
+            }
 
             if (_cachedObjectPool == null)
-                _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+                CacheObjectPoolService(null);
         }
 
         private void ClearCachedRegistryDependencies()
@@ -1173,6 +1271,9 @@ namespace Hecton8.World.Outposts
             if (_spawnedInteractables == null || _spawnedInteractables.Length != MarauderOutpostConstants.MaxInteractables)
                 _spawnedInteractables = new GameObject[MarauderOutpostConstants.MaxInteractables]; // COLD ALLOC: GameObject[16] - spawned interactable proxy handles - owner: MARAUDER_OUTPOST_ARCHITECT
 
+            if (_spawnedInteractableOwners == null || _spawnedInteractableOwners.Length != MarauderOutpostConstants.MaxInteractables)
+                _spawnedInteractableOwners = new IObjectPoolService[MarauderOutpostConstants.MaxInteractables]; // COLD ALLOC: IObjectPoolService[16] - spawned interactable proxy pool owners - owner: MARAUDER_OUTPOST_ARCHITECT
+
             if (_spawnedDoorControllers == null || _spawnedDoorControllers.Length != MarauderOutpostConstants.MaxInteractables)
                 _spawnedDoorControllers = new SealedDoor[MarauderOutpostConstants.MaxInteractables]; // COLD ALLOC: SealedDoor[16] - cached WFC door controllers for power unlocks - owner: MARAUDER_OUTPOST_ARCHITECT
 
@@ -1190,8 +1291,10 @@ namespace Hecton8.World.Outposts
                    IsExactVaultHandle(in _telemetryRingHandle, TelemetryRingBufferId) &&
                    _scratchBuffers.IsReady() &&
                    _spawnedInteractables != null &&
+                   _spawnedInteractableOwners != null &&
                    _spawnedDoorControllers != null &&
                    _spawnedInteractables.Length == MarauderOutpostConstants.MaxInteractables &&
+                   _spawnedInteractableOwners.Length == MarauderOutpostConstants.MaxInteractables &&
                    _spawnedDoorControllers.Length == MarauderOutpostConstants.MaxInteractables;
         }
 
@@ -1398,6 +1501,9 @@ namespace Hecton8.World.Outposts
                 Quaternion rotation = Quaternion.Euler(0f, spawn.RotationYRadians * Mathf.Rad2Deg, 0f);
                 _spawnedInteractables[i] = pool.Spawn(prefab, position, rotation);
                 GameObject instance = _spawnedInteractables[i];
+                if (_spawnedInteractableOwners != null && i < _spawnedInteractableOwners.Length)
+                    _spawnedInteractableOwners[i] = instance != null ? pool : null;
+
                 if (instance == null)
                     continue;
 
@@ -1529,13 +1635,16 @@ namespace Hecton8.World.Outposts
                 if (instance != null)
                 {
                     ClearInteractablePersistence(instance);
-                    if (pool != null)
-                        pool.Despawn(instance);
-                    else
-                        instance.SetActive(false);
+                    IObjectPoolService ownerPool = _spawnedInteractableOwners != null && i < _spawnedInteractableOwners.Length
+                        ? _spawnedInteractableOwners[i]
+                        : pool;
+                    DespawnInteractableProxyOrDeactivate(ownerPool, instance);
                 }
 
                 _spawnedInteractables[i] = null;
+                if (_spawnedInteractableOwners != null && i < _spawnedInteractableOwners.Length)
+                    _spawnedInteractableOwners[i] = null;
+
                 if (_spawnedDoorControllers != null && i < _spawnedDoorControllers.Length)
                     _spawnedDoorControllers[i] = null;
             }
@@ -2177,6 +2286,11 @@ namespace Hecton8.World.Outposts
         private static bool IsDestroyedUnityObject(object instance)
         {
             return instance is UnityEngine.Object unityObject && unityObject == null;
+        }
+
+        private static bool IsAsyncPersistenceUsable(IAsyncPersistenceService persistence)
+        {
+            return persistence != null && !IsDestroyedUnityObject(persistence) && persistence.IsInitialized;
         }
 
         private static float SanitizeMin(float value, float minValue, float fallback)

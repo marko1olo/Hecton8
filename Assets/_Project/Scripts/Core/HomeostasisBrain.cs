@@ -285,8 +285,8 @@ namespace Hecton8.Core
             DisposeMacThermalBridge();
 #endif
             UnregisterDependencyListeners();
-            MemoryBudgetTracker.Unregister(OwnerName);
             ReleaseHomeostasisVaultHandles(_dataVault);
+            MemoryBudgetTracker.Unregister(OwnerName);
             _dataVault = null;
             _globalHardwareMetricsHandle = default;
             _frameTimeMsHandle = default;

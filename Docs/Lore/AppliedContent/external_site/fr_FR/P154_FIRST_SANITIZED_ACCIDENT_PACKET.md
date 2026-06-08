@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: First Sanitized Accident Packet"
+title: "Premier Paquet D'Accident Assaini"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: First Sanitized Accident Packet
+# Premier Paquet D'Accident Assaini
 
-FR LOC HOLD: The first Deep Reach notice is frightening because it is defensible. It names cascade, quarantine and corrupted logs while the room preserves the omissions.
+Le premier avis Deep Reach fait peur parce qu'il est défendable. Il nomme cascade, quarantaine et journaux corrompus pendant que la pièce conserve les omissions.
 
 ## Scanner
 
-FR LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+Paquet d'incident Deep Reach récupéré. La formulation propre contredit les horloges de porte et les marques de crue.
 
 ## Terminal
 
-FR LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+AVIS D'INCIDENT DEEP REACH / CASCADE GÉOTECHNIQUE LOCALISÉE : échec d'autorisation d'évacuation toujours à l'examen; biological-pressure quarantine active; journaux Atlas corrompus; publication externe reportée jusqu'à witness reconciliation.
 
 ## Audio
 
-FR LOC HOLD: The packet says cascade. Door clocks say delay.
+Le paquet dit cascade. Les horloges de porte disent retard.
 
 ## Field Note
 
-FR LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+Ils ont écrit cascade. La ligne de dépôt sur le casier est plus haute que le tampon d'évacuation.
 
 <!-- External Site; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/fr_FR. -->

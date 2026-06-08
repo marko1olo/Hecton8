@@ -19,22 +19,12 @@ localization_flags: 0
 
 # Black Keel Approach Transcript
 
-The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+## Four Seconds Between Voices
 
-## Scanner
+The first voice from orbit should not sound like salvation. It should sound like infrastructure under load: compressed, delayed, useful and already billing. The Black Keel transcript works because it gives the player help and humiliation in the same breath. A carrier heard the drop. A carrier can receive proof. A carrier may return a living claimant. None of that makes it rescue.
 
-Recovered carrier audio confirms paid descent, conditional return, four-second lag and required proof packet.
+The lag matters. Four seconds is small enough for conversation and large enough to remind the player that the ocean answers first. Packet loss matters because every later argument with orbit has a physical cost. Health, mass and proof are not flavor terms; they are the shape of the return window. The Marauder can be alive and still not recoverable. The payload can be true and still too heavy. The carrier can be honest and still refuse.
 
-## Terminal
-
-CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
-
-## Audio
-
-Black Keel tender to claimant. Lag four seconds. Descent billed. Return not guaranteed. Send health, mass, proof.
-
-## Field Note
-
-Claim-tender buffer, clipped by storm carrier. The speaker gives route facts and refuses to promise rescue.
+For the first hour, this transcript pins the fantasy down. You came as a debt-bound worker with a claim slot, not as a chosen survivor. The Black Keel is the line above you, not the hand beside you. Spending oxygen arguing with orbit is already a mistake.
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/en_US. -->

@@ -35,6 +35,7 @@ namespace Hecton8.Power
         public const float DefaultWaterAttenuationCoefficient = 0.045f;
         public const float DefaultTurbidityMultiplier = 0.18f;
         public const float DefaultSdfRangeMeters = 64f;
+        public const float DefaultSeaLevelY = 14.02f;
         public const float InjectedSourceCapacityFloorWatts = 4096f;
         public const uint RuntimeHash = 0x53333431u; // S341
         public const uint DumpMagic = 0x53343144u; // S41D
@@ -47,6 +48,23 @@ namespace Hecton8.Power
         public const uint FlagSolverOverBudget = 1u << 5;
         public const uint FlagMockConditions = 1u << 6;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_341.bin";
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveSeaLevelDeltaMeters(float seaLevelDeltaMeters)
+        {
+            return math.isfinite(seaLevelDeltaMeters) &&
+                   math.abs(seaLevelDeltaMeters) > 0.0001f &&
+                   math.abs(seaLevelDeltaMeters) <= 1000f
+                ? seaLevelDeltaMeters
+                : DefaultSeaLevelY;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double3 BuildSeaLevelAUP(double3 runtimeOriginAUP, float seaLevelDeltaMeters)
+        {
+            double3 origin = math.all(math.isfinite(runtimeOriginAUP)) ? runtimeOriginAUP : double3.zero;
+            return origin + new double3(0.0, ResolveSeaLevelDeltaMeters(seaLevelDeltaMeters), 0.0);
+        }
     }
 
     public static class SolarPowerBufferIds
@@ -368,7 +386,7 @@ namespace Hecton8.Power
 
             SolarConditionsDTO conditions = Conditions[0];
             conditions.RuntimeOriginAUP = RuntimeOriginAUP;
-            conditions.SeaLevelAUP = RuntimeOriginAUP + new double3(0.0, TideHeightMeters, 0.0);
+            conditions.SeaLevelAUP = SolarPowerGenerationConstants.BuildSeaLevelAUP(RuntimeOriginAUP, TideHeightMeters);
             conditions.SunDirection = sunDirection;
             conditions.WaterAttenuationCoefficient = SolarPowerGenerationConstants.DefaultWaterAttenuationCoefficient;
             conditions.WaterTurbidity = math.lerp(1f, 1.8f, math.saturate(1f - height));
@@ -1580,6 +1598,8 @@ namespace Hecton8.Power
         private static SolarConditionsDTO DefaultConditions()
         {
             SolarConditionsDTO conditions = default;
+            conditions.RuntimeOriginAUP = double3.zero;
+            conditions.SeaLevelAUP = SolarPowerGenerationConstants.BuildSeaLevelAUP(conditions.RuntimeOriginAUP, SolarPowerGenerationConstants.DefaultSeaLevelY);
             conditions.SunDirection = new float3(0f, 1f, 0f);
             conditions.WaterAttenuationCoefficient = SolarPowerGenerationConstants.DefaultWaterAttenuationCoefficient;
             conditions.WaterTurbidity = 1f;
@@ -1606,10 +1626,18 @@ namespace Hecton8.Power
                 result.SunDirection = new float3(0f, 1f, 0f);
             else
                 result.SunDirection = math.normalize(result.SunDirection);
-            if (!math.all(math.isfinite(result.SeaLevelAUP)))
-                result.SeaLevelAUP = default;
             if (!math.all(math.isfinite(result.RuntimeOriginAUP)))
                 result.RuntimeOriginAUP = default;
+            double seaLevelDeltaMeters = result.SeaLevelAUP.y - result.RuntimeOriginAUP.y;
+            bool seaLevelAupDefault = math.lengthsq(result.SeaLevelAUP) <= 0.000001d;
+            if (!math.all(math.isfinite(result.SeaLevelAUP)) ||
+                seaLevelAupDefault ||
+                !math.isfinite(seaLevelDeltaMeters) ||
+                math.abs(seaLevelDeltaMeters) <= 0.0001d ||
+                math.abs(seaLevelDeltaMeters) > 1000d)
+            {
+                result.SeaLevelAUP = SolarPowerGenerationConstants.BuildSeaLevelAUP(result.RuntimeOriginAUP, (float)seaLevelDeltaMeters);
+            }
             if (!math.all(math.isfinite(result.VoxelSdfOriginAUP)))
                 result.VoxelSdfOriginAUP = result.RuntimeOriginAUP;
             result.WaterAttenuationCoefficient = math.max(0.000001f, math.isfinite(result.WaterAttenuationCoefficient) ? result.WaterAttenuationCoefficient : SolarPowerGenerationConstants.DefaultWaterAttenuationCoefficient);

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 生存の経済学とキールマークの借金
 
 > **出典:** Keelmark 独立請負業者契約、補遺14-B（財務的義務）。

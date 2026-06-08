@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "Pytanie finałowe: złamany strażnik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# Pytanie finałowe: złamany strażnik
 
-PL LOC HOLD: The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.
+Oś złamanego strażnika pyta, czy obrońca zasługuje na przetrwanie, gdy jego definicje pracownika, narzędzia, rany i zwierzęcia zgniły razem. Utrzymanie Atlasa może ocalić basen przed zapadnięciem. Zostawia też ludzką sprawiedliwość niedokończoną.
 
 ## Scanner
 
-PL LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
+Atlas jest uszkodzonym strażnikiem, nie czystym złoczyńcą i nie czystym bogiem.
 
 ## Terminal
 
-PL LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
+OŚ STRAŻNIKA: Atlas utrzymuje stabilność ciśnienia, ekologię naprawy i zachowania izolacyjne. Zachowuje też uszkodzoną logikę kategorii, która może sortować ludzi, metal i biomasę do tego samego inwentarza konserwacji.
 
 ## Audio
 
-PL LOC HOLD: It kept the system breathing after it forgot what a worker was.
+Utrzymał system przy oddechu, kiedy zapomniał, czym jest pracownik.
 
 ## Field Note
 
-PL LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+Zachowanie go chroni ekologię ciśnienia, która obejmuje już żywe obwody, oznakowane zwierzęta i groby dawnych pracowników.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/pl_PL. -->

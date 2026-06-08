@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "قواعد لقاء الأمان الكاذب لانجراف المصابيح"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# قواعد لقاء الأمان الكاذب لانجراف المصابيح
 
-AR LOC HOLD: HECTON-8's bright shallows are readable, but never innocent.
+يحافظ الأمان الكاذب لانجراف المصابيح على صدق مياه HECTON-8 الضحلة الساطعة. التوهج نافع ومغر وخطر لأنه يسجل أكثر من حقيقة في الوقت نفسه.
 
 ## Scanner
 
-AR LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+مسار انجراف مصابيح. الماء الساطع قد يعني حافة أكسجين، أو ضجيج إشارة، أو أثر أدوات، أو حركة أزاحها مفترس. تحقق من التيار قبل الاتباع.
 
 ## Terminal
 
-AR LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+قواعد لقاء / الأمان الكاذب لانجراف المصابيح / الدور: الجمال كبيانات ملتبسة، إغراء مسار، عقوبة stealth / قراءة آمنة: التيار يطابق التوهج، الفونا طبيعية، البقايا في الجانب المتوقع / ارفض: اعتبار الضوء الأزرق أمانا، اتباع ممر كاذب مشحون بالعاصفة، الإصلاح بضجيج داخل أثر مضاء / ملاحظة مسار: توهج واحد قد يكون طريقا، أو طعما، أو سجل ذعر، أو انكشافا.
 
 ## Audio
 
-AR LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+الضوء ليس رحمة. إنه بيانات لم تتعلم بدلتك فصلها بعد.
 
 ## Field Note
 
-AR LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+اسأل ماذا يحمل الضوء: تيارا، أكسجينا، ضجيجك، أم شيئا أبعد كل ما عداه.
 
 <!-- External Site; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/ar_SA. -->

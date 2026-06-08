@@ -7,34 +7,34 @@ poi_tags: poi.tide_physics_archive;poi.cryosphere_stress_record
 biome_tags: biome.tide_pump;biome.drowned_admin
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Запис фізики Великого Припливу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# Запис фізики Великого Припливу
 
-UK LOC HOLD: The Great Tide Physics Record keeps the catastrophe honest. HECTON-8 was vulnerable to tide resonance, ice collapse, storm surge and heat discharge. Deep Reach's guilt is visible in margins, evacuation capacity and decision priority, not in a fake magic cause.
+Запис фізики Великого Припливу залишає катастрофу чесною. HECTON-8 був вразливий до приливного резонансу, руйнування льоду, штормового нагону й промислового тепла. Провина Deep Reach видна в запасах, місткості евакуації та пріоритетах рішень, а не у вигаданій магії.
 
 ## Scanner
 
-UK LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
+Модель затоплення ціла. Морю не потрібен був лиходій; йому вистачило поганих запасів міцності.
 
 ## Terminal
 
-UK LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
+МОДЕЛЬ ВЕЛИКОГО ПРИПЛИВУ: зсув кріосфери, резонансне підняття океану, штучний скид тепла й накладання штормів перевищують безпечну евакуаційну оболонку у 3.7 раза. Незалежний резерв підйому: не профінансовано.
 
 ## Audio
 
-UK LOC HOLD: The report was right. That is why they buried it.
+Звіт мав рацію. Тому його й поховали.
 
 ## Field Note
 
-UK LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+Не пом'якшуй: людей убила справжня фізика, а Deep Reach зробив так, щоб у фізики були жертви.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/uk_UA. -->

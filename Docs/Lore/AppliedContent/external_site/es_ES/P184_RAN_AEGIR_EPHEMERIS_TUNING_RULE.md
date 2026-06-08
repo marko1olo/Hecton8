@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "Registro de bandas de efemérides RAN-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: RAN Aegir Ephemeris Bands
+# Registro de bandas de efemérides RAN-Aegir
 
-ES LOC HOLD: RAN Aegir ephemeris bands separate stable route lore from exact celestial data.
+El Registro de bandas de efemérides RAN-Aegir separa registros de ruta estables de valores celestes exactos, para que los artículos públicos sigan siendo fiables sin congelar números adivinados como ley de navegación.
 
 ## Scanner
 
-ES LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+Este registro da bandas de ventana y causas de peligro, no periodos exactos propiedad de las tablas.
 
 ## Terminal
 
-ES LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+REGISTRO DE BANDAS DE EFEMÉRIDES: las entradas públicas de atlas pueden indicar banda de ventana, clase de peligro y relación con Aegir. Periodos, inclinaciones y resonancias exactas quedan bajo autoridad de la tabla celeste.
 
 ## Audio
 
-ES LOC HOLD: A band is honest until the numbers have an owner.
+Una banda puede salvarte. Un número inventado puede matarte.
 
 ## Field Note
 
-ES LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+La carta pública honesta dice lo bastante para navegar el riesgo y no lo bastante para falsificar la tabla celeste.
 
 <!-- External Site; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/es_ES. -->

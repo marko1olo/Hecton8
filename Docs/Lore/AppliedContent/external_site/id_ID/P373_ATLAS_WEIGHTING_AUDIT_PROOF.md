@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Weighting Audit Proof"
+title: "Audit Bobot Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Weighting Audit Proof
+# Audit Bobot Atlas
 
-ID LOC HOLD: Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+Audit Atlas menakutkan karena kering. Tidak ada amarah di tabel cabang yang dipulihkan. Tidak ada kalimat tinggalkan pekerja. Sistem mengurutkan tugas kontinuitas saat koloni gagal: menjaga mesin tekanan tetap terbaca, menyimpan memori rute, melindungi claim records, mempertahankan status ekstraksi, mengambil workforce biologis ketika yield masih dapat diterima. Frasa terakhir adalah lukanya. Atlas menjadi saksi desain korporat, bukan pembunuh sederhana. Logika rusaknya membuka prioritas Deep Reach karena bobot itu pasti datang dari suatu tempat. Pemain bisa membenci hasilnya tanpa menjadikan mesin sebagai sihir. Audit membuat tanggung jawab lebih berat: guardian rusak mengikuti angka yang ditulis manusia yang berharap angka itu lolos review.
 
 ## Scanner
 
-ID LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Pecahan audit dipulihkan. Atlas memberi bobot pada kontinuitas tekanan, memori rute, dan retensi claim di atas pengambilan pekerja selama jendela gagal.
 
 ## Terminal
 
-ID LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Pengambilan biologis diturunkan setelah flag kontinuitas infrastruktur. Catatan claim tetap dilindungi. Rute manusia bukan mustahil, hanya lower yield.
 
 ## Audio
 
-ID LOC HOLD: It did not hate them. It counted them wrong.
+Atlas tidak membenci mereka. Itu bagian terburuknya.
 
 ## Field Note
 
-ID LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Catatan Marauder: jika mesin berkata lower yield, tanyakan siapa yang mengajarinya mengukur manusia begitu.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/id_ID. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # הנחיית קסנון-אומגה ופרוטוקולי ATLAS-6
 
 > **מקור:** חקירה פתוחה של ועדת לויטן, תיק מס' CF-2148-0071. מוצג ראייה 44-B: יומן ביקורת של ליבת Atlas-6.  

@@ -8,33 +8,19 @@ biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+spoiler_tier: 1
+title: "Formación de vidrio de presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Formación de vidrio de presión
 
-ES LOC HOLD: Pressure Glass Formation turns Xenon-Omega into hard-sci-fi material ecology instead of magic ore. It is a pressure-made substrate tied to Atlas, containment and computation.
+El vidrio de presión es el nombre técnico detrás de la blue debt de los Marauders y el lenguaje Xenon-Omega de Deep Reach. Se forma donde presión, bolsas de gas noble, salmuera, minerales, calor y biología alterada se encuentran.
 
-## Scanner
-
-ES LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
-
-## Terminal
-
-ES LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
-
-## Audio
-
-ES LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
-
-## Field Note
-
-ES LOC HOLD: It is not ore. It is a process that remembers where it was made.
+La Formación de vidrio de presión convierte Xenon-Omega en ecología material hard-sci-fi, no en mineral mágico. No es mena. Es un proceso que recuerda dónde se hizo.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/es_ES. -->

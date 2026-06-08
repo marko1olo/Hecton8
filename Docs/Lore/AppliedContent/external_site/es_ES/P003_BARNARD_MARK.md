@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Marca Barnard
 
-La marca Barnard convierte el salvamento en motivo. Une al jugador con HECTON-8 mediante trabajo, herramientas y nombres, no mediante exposición directa.
-
-## Scanner
-
-Sello de Barnard Yards. No es equipo de Deep Reach. Alguien llevó material de casa al fondo de esta luna.
-
-## Terminal
-
-RUTA PERSONAL: HOLD. RUTA RECURSO: ACTIVE. RUTA SUSTRATO: PROTECTED.
-
-## Audio
-
-Esa marca es Barnard. Mismo patrón de corte. Misma aleación barata. Quien trajo esto aquí conocía los mismos talleres que tú.
-
-## Field Note
-
-Puedes ignorar una corporación muerta. Es más difícil ignorar una llave de tu propio astillero.
+Barnard Yards no es un origen noble. Es una cicatriz de trabajo: desguace de naves, cortadores alquilados, abrazaderas de presión, herramientas de tercer dueño y gente que sabe exactamente cuánto puede costar un mal contrato. El primer sello Barnard en HECTON-8 debe parecer casi demasiado pequeño para ser lore. No es un discurso. Es una marca en una llave, la aleación equivocada en una bisagra de taquilla, un hábito de reparación que Deep Reach nunca pediría. Para el jugador, ese detalle cambia el contrato. HECTON-8 ya no es solo una reclamación corporativa muerta bajo agua alienígena. Alguien de la misma cultura de astillero llegó antes, trabajó aquí, acabó en los mismos libros y dejó una prueba tan pequeña que podría borrarse si un Marauder no la ve.
 
 <!-- External Site; generated from P003_BARNARD_MARK/es_ES. -->

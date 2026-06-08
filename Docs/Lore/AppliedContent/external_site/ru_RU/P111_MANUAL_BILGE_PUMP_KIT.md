@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ручной bilge pump kit"
+title: "Комплект ручной трюмной помпы"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ручной bilge pump kit
+# Комплект ручной трюмной помпы
 
-Ручной bilge pump kit задает первый survival verb HECTON-8. Он намеренно скромный: hard-sci-fi tutorial object, делающий pressure work тактильной.
+Ручная трюмная помпа становится первым глаголом выживания, потому что отказывается от драмы. Нет powered panel, нет героического интерфейса, нет обещания, что комната безопасна. Игрок чистит забитый впуск, чувствует сопротивление рукояти и понимает: воде нужен честный путь наружу.
 
-## Scanner
-
-Manual pump kit. Медленно, грязно, надежно; первый урок в том, что powered systems лгут.
-
-## Terminal
-
-P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
-
-## Audio
-
-Сначала ручная работа. Потом электричество. Дыхание всегда.
-
-## Field Note
-
-Первый инструмент должен учить survival до фантазии апгрейда.
+Этот маленький инструмент задает тон HECTON-8. Ремонт начинается с рук, давления и последствий. Если помпа бьет назад, комната отвечает. Если выпуск выбран плохо, выживание переносит опасность в другое место.
 
 <!-- External Site; generated from P111_MANUAL_BILGE_PUMP_KIT/ru_RU. -->

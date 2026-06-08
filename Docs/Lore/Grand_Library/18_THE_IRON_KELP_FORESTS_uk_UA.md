@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ЛІСИ ЗАЛІЗНОЇ ЛАМІНАРІЇ
 
 > **Джерело:** Відділ ксенобіології Deep Reach, Журнал небезпек.

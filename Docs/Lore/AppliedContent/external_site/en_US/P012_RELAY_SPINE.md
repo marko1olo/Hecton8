@@ -2,8 +2,8 @@
 packet_id: P012_RELAY_SPINE
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: transit.relay_spine
-unlock_id: unlock.first_relay_buffer
-poi_tags: poi.relay_buffer;poi.packet_spool
+unlock_id: unlock.first_stale_relay_buffer
+poi_tags: poi.relay_buffer;poi.packet_age_tag
 biome_tags: biome.drowned_colony;biome.service_canyons
 locale: en_US
 surface: external_site
@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Relay Spine
 
-Relay Spine defines HECTON-8's no-FTL pressure. Messages exist, law exists, and records exist, but none of them outrun light or local disaster.
+Human space in HECTON-8 is connected by relays rather than miracles. Stations and beam arrays pass packets along scheduled routes. Custody hashes prove who received what. Legal chains keep claims alive long after the people named in them are gone.
 
-## Scanner
-
-Stale relay buffer. Outbound packet age exceeds local rescue relevance.
-
-## Terminal
-
-Packet queued. Light-delay route accepted. Priority dispute unresolved. Human-response estimate: non-operational.
-
-## Audio
-
-The relay is not broken. That is the problem. It is doing exactly what distance allows.
-
-## Field Note
-
-A message can be true and still arrive after you are bones.
+That network is powerful, but it is not warm. The player can send a true message and still die before it matters. The delay is not a plot excuse; it is the shape of the setting. Civilization can know, record and bill faster than it can arrive.
 
 <!-- External Site; generated from P012_RELAY_SPINE/en_US. -->

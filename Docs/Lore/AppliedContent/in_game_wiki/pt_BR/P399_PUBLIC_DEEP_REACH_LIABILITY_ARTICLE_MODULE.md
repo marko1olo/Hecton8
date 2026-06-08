@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Deep Reach Liability Evidence"
+title: "Provas de Responsabilidade Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Deep Reach Liability Evidence
+# Provas de Responsabilidade Deep Reach
 
-PT LOC HOLD: Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
+A liability da Deep Reach funciona porque a inundação não precisa de física falsa. O Great Tide foi real. O dano evitável aparece em margins, relógios, access holds e registros que limpavam trabalhadores em categorias antes que alguém pudesse ser recuperado.
 
 ## Scanner
 
-PT LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Registro de liability. Física real de marés, margin risk aceito, atraso de evacuação, quarantine holds, Atlas weighting e linguagem de perda sanitizada convergem na mesma cadeia de provas.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+NÓ DE ARQUIVO PÚBLICO // PROVAS DE LIABILITY. Great Tide aceito. Revisão aberta para sensor margins, atraso de evacuation queue, quarantine holds, Atlas weighting, worker classification e loss conversion.
 
 ## Audio
 
-PT LOC HOLD: A disaster can be natural and still have signatures on it.
+Um desastre pode ser natural e ainda carregar assinaturas.
 
 ## Field Note
 
-PT LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Nota de Marauder: não discuta com a maré. Discuta com as assinaturas ao lado dela.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/pt_BR. -->

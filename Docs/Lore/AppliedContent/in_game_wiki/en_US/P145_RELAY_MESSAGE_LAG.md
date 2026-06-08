@@ -7,8 +7,8 @@ poi_tags: poi.relay_packet_delay_meter;poi.legal_reply_timestamp
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Relay Message Lag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Relay Message Lag
 
-Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.
+Relay lag lets Deep Reach threaten the player without a live voice in the room. Contract machines, notaries, claim windows, and carrier clauses can arrive before compassion because they were written earlier, queued earlier, and priced to survive distance.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ A message can be legally binding and still arrive too late to save air.
 
 ## Terminal
 
-RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
+RELAY LAG: local Aegir messages can take hours or days. Interdomain legal packets can take years. Deep Reach pressure is stale, automated, contractual, and still dangerous.
 
 ## Audio
 

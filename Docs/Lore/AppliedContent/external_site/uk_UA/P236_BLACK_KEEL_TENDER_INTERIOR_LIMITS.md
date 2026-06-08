@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Black Keel Tender Interior Limits"
+title: "Обмеження інтер'єру тендера Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Black Keel Tender Interior Limits
+# Обмеження інтер'єру тендера Black Keel
 
-UA LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel - hard-sci-fi salvage infrastructure, а не героїчний приватний корабель. Його інтер'єр побудований навколо custody зразків, packet law, роботи з дронами, карантинних рукавів і боргового тиску. Корабель може бути лінією життя і все одно лишатися конструктивно байдужим до людини, що тримає цю лінію.
 
 ## Scanner
 
-UA LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+У тендері спершу є стійки для зразків, дронів, sealed packets і lien-вантажу; місце для живого пасажира йде після них.
 
 ## Terminal
 
-UA LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: немає deep rescue crew, немає atmospheric shuttle reserve, немає free ascent burn поза lien authority, немає живого квартирмейстера.
 
 ## Audio
 
-UA LOC HOLD: The ship brought you here as cargo with hands.
+Корабель привіз тебе як вантаж із руками.
 
 ## Field Note
 
-UA LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel - робочий claim tender: орендований, заарештований боргом, автоматизований і налаштований на custody раніше за порятунок.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/uk_UA. -->

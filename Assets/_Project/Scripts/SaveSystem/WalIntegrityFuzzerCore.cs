@@ -1226,16 +1226,45 @@ namespace Hecton8.SaveSystem
                 if (sentinelId > 0)
                     return array;
             }
-            catch
+            catch (Exception exception)
             {
-                if (array.IsCreated)
-                    array.Dispose();
+                Exception cleanupException = null;
+                try
+                {
+                    DisposeTrackedArray(ref array);
+                }
+                catch (Exception cleanupFault)
+                {
+                    cleanupException = cleanupFault;
+                }
+
+                if (cleanupException != null)
+                    throw new AggregateException(
+                        "WAL integrity fuzzer NativeArray allocation failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
+
                 throw;
             }
 
-            if (array.IsCreated)
-                array.Dispose();
-            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            InvalidOperationException registrationException = new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            Exception registrationCleanupException = null;
+            try
+            {
+                DisposeTrackedArray(ref array);
+            }
+            catch (Exception cleanupFault)
+            {
+                registrationCleanupException = cleanupFault;
+            }
+
+            if (registrationCleanupException != null)
+                throw new AggregateException(
+                    "WAL integrity fuzzer NativeArray registration failed and cleanup also failed.",
+                    registrationException,
+                    registrationCleanupException);
+
+            throw registrationException;
         }
 
         private static void DisposeTrackedTempArray<T>(ref NativeArray<T> array)
@@ -1250,21 +1279,40 @@ namespace Hecton8.SaveSystem
             DisposeTrackedArray(ref array);
         }
 
-        private static void DisposeTrackedArray<T>(ref NativeArray<T> array)
+        private static unsafe void DisposeTrackedArray<T>(ref NativeArray<T> array)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
             }
             finally
             {
-                array.Dispose();
                 array = default;
             }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
         private static EntityDeltaHeaderDTO BuildLoopHeader(byte* payloadData, int payloadBytes, int iteration)

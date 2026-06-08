@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela jako wewnętrzny księżyc przekaźnikowy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Inner Relay Moon Traffic Role
+# Vela jako wewnętrzny księżyc przekaźnikowy
 
-PL LOC HOLD: The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.
-
-## Scanner
-
-PL LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
-
-## Terminal
-
-PL LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
-
-## Audio
-
-PL LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
-
-## Field Note
-
-PL LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Wartością Vela jest przeszkoda. Księżyc przecina wewnętrzne trasy tam, gdzie promieniowanie, uplink i geometria transferu walczą o te same minuty. Sprzęt relay jest stary, łatany i częściowo ślepy, ale dość przewidywalny, by pozostać w tablicach carrierów. Sygnał może przemknąć za Vela i dotrzeć czyściej. Wezwanie pomocy może zniknąć za tym samym ciałem i wrócić jako naliczalne opóźnienie.
 
 <!-- External Site; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/pl_PL. -->

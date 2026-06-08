@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Плохой финал корпоративного захвата"
+title: "Корпоративный захват: чистое спасение"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Плохой финал корпоративного захвата
+# Корпоративный захват: чистое спасение
 
-Corporate Capture - плохая концовка из правдоподобного rescue offer. Deep Reach забирает payload и изолирует свидетеля. Это должно ощущаться так, будто игрок сбежал из океана в более стерильный pressure vessel.
+Корпоративный захват - плохая концовка, собранная из правдоподобного спасения. Игрок выходит из океана живым, но ответившая власть считает свидетеля containment-материалом, а payload - настоящим пациентом.
 
 ## Scanner
 
-Rescue offer. Payload first. Witness second.
+Источник recovery подтвержден: прокси Deep Reach. Payload запрошен до проверки состояния.
 
 ## Terminal
 
-DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
+ПОДБОР DEEP REACH: recovery team принимает координаты, XO custody и ключ доступа Atlas до проверки благополучия подрядчика. Показания подрядчика запечатаны по протоколу заражения.
 
 ## Audio
 
-Чистая комната предназначена не для тебя.
+Чистая комната не для тебя.
 
 ## Field Note
 
-Спасение, требующее молчания, - это capture с лучшим светом.
+Чистое спасение, которое сначала хочет координаты, - это захват с лучшим воздухом.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/ru_RU. -->

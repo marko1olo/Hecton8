@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "משרד ציות השבה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# משרד ציות השבה
 
-HE LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+משרד ציות השבה הוא פלג Deep Reach הנוכחי שדוחף חזרה אל HECTON-8. הוא פועל דרך חלונות, סמכות פרוקסי, חבילות משפטיות ופקודות ניקוי. הוא לא צריך פקודה מידית; הוא צריך שהשחקן ישלח קודם את ה-payload הלא נכון.
 
 ## Scanner
 
-HE LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+חותמת משרד בזמן הווה. Deep Reach אינו רוח רפאים; הוא תור עם עורכי דין.
 
 ## Terminal
 
-HE LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+משרד ציות השבה: פעולת חזרת Aegir נפתחה. עדיפויות: משמורת XO, גישת Atlas, בלימת אחריות, שתיקת קבלן אם זמינה.
 
 ## Audio
 
-HE LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+הם מאחרים מספיק כדי להיות חוקיים, ונוכחים מספיק כדי להיות מסוכנים.
 
 ## Field Note
 
-HE LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+פלג חי הופך את הלחץ לעכשווי בלי להפוך את כל התאגיד לנבל צועק אחד.
 
 <!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/he_IL. -->

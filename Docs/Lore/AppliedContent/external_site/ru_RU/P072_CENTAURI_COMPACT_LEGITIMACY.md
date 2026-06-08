@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Легитимность Centauri Compact
 
-Легитимность Centauri Compact заземляет большой сеттинг: человеческая экспансия уже работает в некоторых местах, поэтому Aegir выглядит не героическим, а коррумпированным.
+Легитимность Centauri Compact заземляет широкий сеттинг: человеческая экспансия в некоторых местах уже работает, поэтому Aegir выглядит не героическим фронтиром, а коррумпированной окраиной.
 
 ## Scanner
 
-Аудиторская бирка Centauri. Ранняя extrasolar legitimacy, поздние frontier excuses.
+Аудитная метка Centauri. Ранняя внесолнечная легитимность, позднее - фронтирные оправдания.
 
 ## Terminal
 
-CENTAURI COMPACT HARDWARE: pressure case сертифицирован для civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+ОБОРУДОВАНИЕ CENTAURI COMPACT: гермокейс сертифицирован для гражданского транзита. Аудитный канал неактивен. Гарантия аннулирована после сторонней модернизации Deep Reach.
 
 ## Audio
 
@@ -35,6 +35,6 @@ CENTAURI COMPACT HARDWARE: pressure case сертифицирован для civ
 
 ## Field Note
 
-Compact сделал дальние claims респектабельными. Респектабельность не спасает.
+Compact сделал далекие претензии респектабельными. Респектабельность не спасает.
 
 <!-- External Site; generated from P072_CENTAURI_COMPACT_LEGITIMACY/ru_RU. -->

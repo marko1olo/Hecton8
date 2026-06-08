@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "Gramática de encuentro: navegación por aletas de salmuera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Brine Vane Navigation Encounter Grammar
+# Gramática de encuentro: navegación por aletas de salmuera
 
-ES LOC HOLD: The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
+La navegación por aletas de salmuera vuelve legibles los cañones de HECTON-8 sin flechas. La ruta está escrita en densidad, daño de membrana, distorsión sonar y disciplina de flotabilidad del jugador.
 
 ## Scanner
 
-ES LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+Campo de aletas de salmuera. Láminas alineadas marcan giros de densidad; puntas curvadas marcan ventanas débiles; sonar se deforma cerca del brillo abierto. Mantén un borde a la vista.
 
 ## Terminal
 
-ES LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+GRAMÁTICA DE ENCUENTRO / NAVEGACIÓN POR ALETAS DE SALMUERA / función: alfabetización de ruta a media profundidad, pasamanos de muro de densidad, corrección de falso suelo / lectura segura: borde intacto, boca rasgada, curva sonar acorde a deriva de flotabilidad / rechazo: cruzar agua negra abierta, cortar la lámina guía, confiar en retorno de suelo sin borde de aleta / nota de ruta: la aleta no guía con intención; obedece al agua lo bastante fuerte para seguirla.
 
 ## Audio
 
-ES LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+La aleta no es un cartel. Es agua haciendo un muro y dejando una costura.
 
 ## Field Note
 
-ES LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+Trata el borde de aleta como pasamanos. Si la línea se dobla mal, tu lectura de flotabilidad ya llega tarde.
 
 <!-- External Site; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/es_ES. -->

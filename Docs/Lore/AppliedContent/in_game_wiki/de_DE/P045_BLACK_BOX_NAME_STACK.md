@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Blackbox-Namensstapel
 
-Der Namensstapel macht Wahrheit tragbar. Was der Spieler hochbringt, beeinflusst Sendung, Dossier und Ende.
+Der Black-Box-Namensstapel macht die letzte Wahrheit tragbar. Beweise, Broadcast-Pakete und öffentliche Dossiers hängen davon ab, welche Namen, Hashes und Quittungen das Wasser verlassen.
 
 ## Scanner
 

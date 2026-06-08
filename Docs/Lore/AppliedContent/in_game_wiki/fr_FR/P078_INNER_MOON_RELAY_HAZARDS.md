@@ -3,38 +3,40 @@ packet_id: P078_INNER_MOON_RELAY_HAZARDS
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.inner_moon_relay_hazards
 unlock_id: unlock.first_inner_moon_relay_hazards
-poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
-biome_tags: biome.orbital_window;biome.drowned_comms
+poi_tags: poi.relay_noise_log;poi.skarn_surge_alarm
+biome_tags: biome.orbital_window;biome.surface_relay
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Inner Moon Relay Hazards"
+title: "Dangers de relais des lunes internes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Inner Moon Relay Hazards
+# Dangers de relais des lunes internes
 
-FR LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.
+Les dangers de relais des lunes internes rendent l'échec de contact physique. Un sursaut aligné sur Skarn peut corrompre les antennes sans les tuer. Poussière et glace de Vela ferment l'optique tandis que la route prétend encore exister.
+
+Claw et Lumen sont pires car ils transportent une vieille logique de route. Un handshake peut être valide sur papier et inutile au travail. Black Keel peut donc journaliser un paquet, préserver la custody et laisser un corps dans l'eau.
 
 ## Scanner
 
-FR LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.
+ÉCHELLE INTERNE // Skarn sature les antennes. Vela disperse l'optique. Les anciennes routes Claw et Lumen gardent des handshakes périmés vivants.
 
 ## Terminal
 
-FR LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
+NOTE DE DANGER RELAIS // Perte de contact : géométrie, météo de particules, volet de poussière ou buoy law héritée. UI propre suspecte en fenêtre de sursaut.
 
 ## Audio
 
-FR LOC HOLD: The orbital model is innocent. The clause written around it is not.
+Le relais ne s'est pas tu. Il a répété le mauvais siècle.
 
 ## Field Note
 
-FR LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.
+Une icône propre peut encore mentir à travers un vieux ciel.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/fr_FR. -->

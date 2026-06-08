@@ -1,5 +1,5 @@
 import sys
-import tempfile
+from test_temp_root import temporary_directory
 import unittest
 from pathlib import Path
 
@@ -10,7 +10,7 @@ from AppliedLoreTextIntegrityAudit import collect_production_packets, parse_pack
 
 class TestAppliedLoreTextIntegrityAudit(unittest.TestCase):
     def test_production_packet_collection_respects_packet_globs(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        with temporary_directory() as tmp:
             root = Path(tmp)
             packet_root = root / "Docs" / "Lore" / "AppliedContent" / "production_packets"
             packet_root.mkdir(parents=True)

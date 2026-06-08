@@ -569,14 +569,19 @@ namespace Hecton8.Player.Movement
         private bool TryBuildDeterministicSignalInput(uint frame, out ZeroGInputStateDTO input)
         {
             input = default;
-            if (!_consumeDeterministicInputSignal ||
-                !CoreDeterminismSignals.TryGetLatestInput(out InputSignal signal) ||
+            if (!_consumeDeterministicInputSignal)
+                return false;
+
+            quaternion viewOrientation = ResolveViewOrientation();
+            if (TryBuildInputStateSignalInput(frame, viewOrientation, out input))
+                return true;
+
+            if (!CoreDeterminismSignals.TryGetLatestInput(out InputSignal signal) ||
                 !IsFreshInputSignal(in signal))
             {
                 return false;
             }
 
-            quaternion viewOrientation = ResolveViewOrientation();
             if (TryPackDeterministicInputSignal(
                 in signal,
                 frame,
@@ -592,6 +597,79 @@ namespace Hecton8.Player.Movement
             input.Frame = frame;
             input.SimulationTick = frame;
             input.Flags = ZeroGMovementStateFlags.ExternalInput | ZeroGMovementStateFlags.SignalDrop;
+            return true;
+        }
+
+        private bool TryBuildInputStateSignalInput(uint frame, quaternion viewOrientation, out ZeroGInputStateDTO input)
+        {
+            input = default;
+            System.ReadOnlySpan<InputStateSignal> signals = SignalBus<InputStateSignal>.GetFrameSnapshot();
+            for (int i = signals.Length - 1; i >= 0; i--)
+            {
+                if (TryPackInputStateSignal(in signals[i], frame, viewOrientation, _lookAngularAxisScale, out input))
+                    return true;
+            }
+
+            return SignalBus<InputStateSignal>.TryGetLatest(out InputStateSignal latestSignal, out _) &&
+                   TryPackInputStateSignal(in latestSignal, frame, viewOrientation, _lookAngularAxisScale, out input);
+        }
+
+        public static bool TryPackInputStateSignal(
+            in InputStateSignal signal,
+            uint frame,
+            quaternion viewOrientation,
+            float lookAngularAxisScale,
+            out ZeroGInputStateDTO input)
+        {
+            input = default;
+            if (!IsFreshInputStateSignalForFrame(in signal, frame) ||
+                !math.all(math.isfinite(viewOrientation.value)) ||
+                !math.isfinite(lookAngularAxisScale))
+            {
+                return false;
+            }
+
+            InputState state = signal.State;
+            float2 move = new float2(
+                state.MoveX * InputState.AxisInvQuantizeScale,
+                state.MoveY * InputState.AxisInvQuantizeScale);
+            float2 look = new float2(
+                state.LookX * InputState.LookInvQuantizeScale,
+                state.LookY * InputState.LookInvQuantizeScale);
+            float vertical = math.clamp(state.Vertical * InputState.AxisInvQuantizeScale, -1.0f, 1.0f);
+            if (!math.all(math.isfinite(move)) ||
+                !math.all(math.isfinite(look)) ||
+                !math.isfinite(vertical))
+            {
+                return false;
+            }
+
+            uint actions = state.ButtonsBitmask;
+            float angularScale = math.clamp(ZeroGMathGuards.SanitizeFloat(lookAngularAxisScale, 0.08f), 0.001f, 0.5f);
+            float3 localThrust = new float3(move.x, vertical, move.y);
+            float3 localAngular = new float3(
+                -look.y * angularScale,
+                look.x * angularScale,
+                0.0f);
+
+            input.LocalThrustAxis = ZeroGMathGuards.ClampLength(localThrust, 1.0f);
+            input.LocalAngularAxis = ZeroGMathGuards.ClampLength(localAngular, 1.0f);
+            input.ViewOrientation = ZeroGMathGuards.SanitizeQuaternion(viewOrientation, quaternion.identity);
+            input.GlobalQualityWeight = ZeroGMathGuards.DefaultQualityWeight;
+            input.Frame = frame;
+            input.SimulationTick = frame;
+            input.Flags = ZeroGMovementStateFlags.ExternalInput;
+
+            uint actionMask = 0u;
+            if (math.lengthsq(input.LocalThrustAxis) > InputActiveEpsilonSq)
+                actionMask |= ZeroGInputActions.Thruster;
+            if ((actions & ((uint)PlayerInputAction.Jump | (uint)PlayerInputAction.Dash)) != 0u)
+                actionMask |= ZeroGInputActions.PushAndGlide;
+            if ((actions & (uint)PlayerInputAction.Interact) != 0u)
+                actionMask |= ZeroGInputActions.HorizonLock;
+            if ((actions & (uint)PlayerInputAction.Sprint) != 0u)
+                actionMask |= ZeroGInputActions.BrakeAssist;
+            input.ActionMask = actionMask;
             return true;
         }
 
@@ -667,6 +745,18 @@ namespace Hecton8.Player.Movement
                 return false;
 
             return currentFrame - signal.Frame <= InputSignalMaxFrameAge;
+        }
+
+        private static bool IsFreshInputStateSignalForFrame(in InputStateSignal signal, uint currentFrame)
+        {
+            InputState state = signal.State;
+            if (state.Sequence == 0u)
+                return false;
+
+            if (currentFrame == 0u || state.Frame == 0u || state.Frame > currentFrame)
+                return false;
+
+            return currentFrame - state.Frame <= InputSignalMaxFrameAge;
         }
 
         private void ScheduleSolver(float deltaTime, uint frame)
@@ -1440,7 +1530,7 @@ namespace Hecton8.Player.Movement
             if (!_hotSwapRegistered)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
         }
 

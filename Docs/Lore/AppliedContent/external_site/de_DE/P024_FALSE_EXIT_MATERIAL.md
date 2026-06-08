@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Materieller Ausstieg
 
-Er stärkt Wiederspielbarkeit als profitables, kompromittiertes Ende für Beute, Vertrag und Überleben.
+Material Exit trägt einen profitablen, aber kompromittierten Rückzug: Beute, Verträge und Überleben können den Aufstieg gewinnen, während die ganze Abstiegswahrheit unten bleibt.
 
 ## Scanner
 

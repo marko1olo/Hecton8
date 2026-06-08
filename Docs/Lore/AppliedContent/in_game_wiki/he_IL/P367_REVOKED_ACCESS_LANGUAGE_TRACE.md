@@ -9,32 +9,36 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Revoked Access Language Trace"
+title: "עקבת שפת גישה שבוטלה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Revoked Access Language Trace
+# עקבת שפת גישה שבוטלה
 
-HE LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+שפת גישה שבוטלה הפכה לאחד המנעולים השקטים יותר של Deep Reach. דלת יכלה לדחות עובד לשעבר, לסמן את הבקשה כתחזוקה שגרתית, ועדיין לדלוף את המונחים המדויקים שקראו בשם למסלול הפינוי הנסתר. על HECTON-8 זה חשוב מפני שהשחקן אינו זקוק להודאה נקייה כדי ללכת בעקבות הסימן. הניסוח הישן מספיק: פרוטוקול ספירה מדורדרת, עד חלופי, ארכיון מסלול בטוח, ניתוב שימור תביעה. המילים האלה נבנו לבדיקת אחריות, לא להצלה. הסירוב מוכיח שני דברים בבת אחת. האישור מת. ההליך שמאחוריו לא.
 
 ## Scanner
 
-HE LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+הנעילה לא אומרת אסור. היא אומרת סיווג מחדש לתחזוקה, החזקת רציפות, וחומרי מסלול. ניסוח ישן של Deep Reach: סירוב שעדיין מצביע אל הדלת הקבורה.
 
 ## Terminal
 
-HE LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+תגובת גישה / ארכיון מסלול בטוח
+אישור: בוטל
+סיבה: חומרי רציפות פינוי מוגבלים לאנשי Deep Reach מוסמכים
+מונחים גלויים: ספירה מדורדרת, עד חלופי, מסלול שימור תביעה, סיווג מחדש לתחזוקה
+הערה: אנשי שטח לשעבר רשאים לראות את שפת הסירוב רק לצורך התאמת אירוע.
 
 ## Audio
 
-HE LOC HOLD: That is not security. That is a memo pretending to be a door.
+הם לא מחקו את המסדרון. הם עטפו אותו באוצר מילים שרק עובדים אשמים עדיין מבינים.
 
 ## Field Note
 
-HE LOC HOLD: Lockout language hints at hidden liability without granting free access.
+התג מת. הנעילה עדיין מדברת בניב המשרדי שקבר את המסלול.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/he_IL. -->

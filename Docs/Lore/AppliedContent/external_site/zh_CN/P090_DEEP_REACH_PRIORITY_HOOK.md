@@ -9,32 +9,16 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Deep Reach优先钩"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Deep Reach优先钩
 
-CN LOC HOLD: Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control.
-
-## Scanner
-
-CN LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
-
-## Terminal
-
-CN LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
-
-## Audio
-
-CN LOC HOLD: They do not need to be on the bridge to steer the answer.
-
-## Field Note
-
-CN LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+优先钩是让Deep Reach在殖民地沉默后仍然危险的最干净办法。公司不需要用远程奇迹驾驶Black Keel。它只需要carrier仍然承认的一份旧证书、连接Atlas访问的continuity规则,以及在特定危险条件下高于承包人身体的payload等级。这就足够。航线可以被挪动。封存箱可以上升队列。隔离锁可以保持关闭,而操作员的氧气计数变成另一条债务记录。结果比破坏更冷:系统按写下的方式工作,而Deep Reach学会了把自己写进灾难后仍会存活的部分。
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/zh_CN. -->

@@ -9,32 +9,35 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Aegir System Public Primer Article"
+title: "Introdução Pública ao Sistema Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Aegir System Public Primer Article
+# Introdução Pública ao Sistema Aegir
 
-PT-BR LOC HOLD: Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain.
+Aegir é o sistema hospedeiro ao redor de HECTON-8, e importa em todos os sentidos práticos. Sua escada de luas molda marés e janelas de aproximação. Sua geometria de relé permite que evidências viajem mais rápido que massa de resgate. Suas órbitas de transportadora tornam a Black Keel presente, mas não instantaneamente útil. Não há motor milagroso, não há resgate ansible e não há botão de emergência limpo. A versão pública de Aegir deve parecer alcançável o bastante para ser cruel: conectada, programada, precificada e ainda lenta demais para as pessoas presas abaixo.
 
 ## Scanner
 
-PT-BR LOC HOLD: Aegir is not backdrop. It is a timetable with gravity.
+Aegir não é pano de fundo. É um cronograma com gravidade, radiação, marés, atraso de relé e janelas de massa caras.
 
 ## Terminal
 
-PT-BR LOC HOLD: PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
+NÍVEL DE ARTIGO PÚBLICO / SISTEMA AEGIR
+permitido: sistema hospedeiro, papel lunar de HECTON-8, janelas de maré, geometria de relé, atraso da transportadora, linguagem de rota sem FTL
+bloqueado: roteamento final do payload, prioridade oculta do receiver, travas exatas de efeméride tardia
+nota editorial: explicar o atraso sem fazer o cenário parecer inalcançável.
 
 ## Audio
 
-PT-BR LOC HOLD: The sky is a system, not a ceiling.
+O sistema é perto o bastante para responder. Essa é a parte cruel. Não é perto o bastante para içar um corpo sob comando.
 
 ## Field Note
 
-PT-BR LOC HOLD: Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
+Não chame Aegir de distante e pare aí. Diga o que a distância faz: põe preço no içamento, atrasa corpos e deixa evidências ultrapassarem o resgate.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/pt_BR. -->

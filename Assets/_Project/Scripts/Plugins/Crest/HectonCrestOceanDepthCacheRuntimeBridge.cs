@@ -183,42 +183,53 @@ namespace Hecton8.World
             ReadbackDisposalState readbackDisposalState)
         {
             if (readbackDisposalState == null ||
-                System.Threading.Interlocked.Exchange(ref readbackDisposalState.Disposed, 1) != 0)
+                System.Threading.Volatile.Read(ref readbackDisposalState.Disposed) == 2 ||
+                System.Threading.Interlocked.CompareExchange(ref readbackDisposalState.Disposed, 1, 0) != 0)
             {
                 return;
             }
 
-            bool unregistered = false;
             try
             {
+                Exception firstException = null;
+
                 if (readbackDisposalState.SentinelId > 0)
                 {
-                    NativeMemorySentinel.Unregister(readbackDisposalState.SentinelId);
-                    readbackDisposalState.SentinelId = 0;
-                    unregistered = true;
-                }
-                else
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(readbackPixels);
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(readbackDisposalState.SentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        firstException = exception;
+                    }
+                    finally
+                    {
+                        readbackDisposalState.SentinelId = 0;
+                    }
                 }
 
                 if (readbackPixels.IsCreated)
-                    readbackPixels.Dispose();
+                {
+                    try
+                    {
+                        readbackPixels.Dispose();
+                    }
+                    catch (Exception exception)
+                    {
+                        if (firstException == null)
+                            firstException = exception;
+                    }
+                }
+
+                if (firstException != null)
+                    throw firstException;
+
+                System.Threading.Volatile.Write(ref readbackDisposalState.Disposed, 2);
             }
             catch
             {
                 System.Threading.Volatile.Write(ref readbackDisposalState.Disposed, 0);
-                if (unregistered && readbackPixels.IsCreated)
-                {
-                    readbackDisposalState.SentinelId = NativeMemorySentinel.RegisterNativeArray(
-                        readbackPixels,
-                        NativeMemoryOwner,
-                        DepthCacheReadbackPixelsLabel,
-                        NativeAllocationLifetime.Session);
-                    if (readbackDisposalState.SentinelId <= 0)
-                        throw new InvalidOperationException("Native memory sentinel restore failed for Crest depth-cache readback pixels.");
-                }
-
                 throw;
             }
         }

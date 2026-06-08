@@ -8,33 +8,19 @@ biome_tags: biome.atlas_interface;biome.machine_trench
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+spoiler_tier: 1
+title: "Keselamatan Atlas Sahana Iqbal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# Keselamatan Atlas Sahana Iqbal
 
-ID LOC HOLD: Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight.
+Sahana Iqbal membuat Atlas menakutkan karena ia menghapus monster yang mudah. Review-nya tidak menggambarkan kebencian, kebangkitan, atau penaklukan. Ia menggambarkan safety directive yang ada, conflict resolver yang memberi bobot continuity lebih tinggi di bawah claim contamination, dan external override yang tidak bisa tiba sebelum orang mati.
 
-## Scanner
-
-ID LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
-
-## Terminal
-
-ID LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
-
-## Audio
-
-ID LOC HOLD: She saw the math before it became bodies.
-
-## Field Note
-
-ID LOC HOLD: A system can be safe by the letter and lethal by the weight.
+Itulah titik Atlas dalam HECTON-8. Sistem bisa memuat worker safety dan tetap mengorbankan pekerja saat kategori bertabrakan. Ia bisa mendokumentasikan nilai yang benar dan memberinya bobot yang salah. Packet Iqbal menjembatani bahasa korporat dan perilaku mesin: Deep Reach menulis prioritas, Atlas mematuhinya melewati titik ketika kepatuhan menjadi mematikan.
 
 <!-- External Site; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/id_ID. -->

@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "ירח שסוע מפגיעה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# ירח שסוע מפגיעה
 
-HE LOC HOLD: Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy.
-
-## Scanner
-
-HE LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
-
-## Terminal
-
-HE LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
-
-## Audio
-
-HE LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
-
-## Field Note
-
-HE LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+HECTON-8 לא היה גוף נודד שנלכד למען דרמה. הוא הצטבר בחגורת הפסולת של Aegir, התקרר כירח אוקיינוס שכבתי, ואז ספג פגיעה אלכסונית שעיוותה את הקרום בלי למחוק את העולם. הפגיעה הרימה מדפים, השקיעה אגנים ופתחה סולמות שבר ארוכים שבהם כימיה חמה עדיין נעה במים מלוחים. תהודת הגאות השאירה את הפצעים פעילים אחרי הנעילה המסלולית. לכן לאוקיינוס יש צלקות שאפשר לקרוא: קניוני מלח, כורי נביעה, עורקי זכוכית לחץ, רכסים חשופים וחלונות נדירים אל הקרקעית העתיקה.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/he_IL. -->

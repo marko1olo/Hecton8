@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "RU LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: ремонтная логика за spoiler gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Atlas Repair Ecology
+# Atlas-6: ремонтная логика за spoiler gate
 
-RU LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas не театральный злодей. Ужас в поврежденном industrial governor, который применяет ремонтные категории к затопленной экологии после того, как Deep Reach поставила continuity выше людей.
 
 ## Scanner
 
-RU LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Article seed spoiler-tier. Публичный слой: Atlas был infrastructure continuity. Закрытый слой: поврежденная классификация проводит жизнь, металл, кабели, тела и habitat через одну ремонтную грамматику.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // ПУБЛИЧНЫЙ BRIEF ATLAS. Уровни раскрытия: factory-governor, поврежденная repair ecology, Atlas-compatible contamination, последствия payload receiver. Финальные receiver остаются gated.
 
 ## Audio
 
-RU LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Фрагмент Atlas trace: "Personnel category unresolved. Sealant category available. Habitat breach priority remains active."
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+Заметка мародера: если Atlas помог, проверь, что он потратил. Ремонт, который спасает воздух, все еще может стереть имя.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/ru_RU. -->

@@ -9,32 +9,20 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Canteen Water Ledger"
+title: "Buku Air Kantin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Canteen Water Ledger
+# Buku Air Kantin
 
-ID LOC HOLD: HECTON-8 makes catastrophe believable through ordinary systems under pressure: water ledgers, canteen tokens and shift accountability.
+Buku Air Kantin adalah salah satu artefak manusia paling sederhana di HECTON-8: papan ruang makan yang mencatat air minum, pengembalian token, akses pompa, dan pengecualian medis. Itu tidak menjelaskan bencana. Itu menunjukkan koloni tepat sebelum bencana menjadi cerita.
 
-## Scanner
+Nilainya ada pada tekstur dan bukti. Enam token hilang terdengar kecil sampai pemain memahami arti air di koloni bertekanan. Air minum melewati filter, akuntansi sif, pengecualian medis, dan custody ruang pompa. Gelas hilang bisa berarti pekerja lelah. Bisa juga berarti kru sakit, jalur terkontaminasi, perintah ransum yang dilewati, atau pengawas yang menyembunyikan kegagalan lokal dari laporan Deep Reach.
 
-ID LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
-
-## Terminal
-
-ID LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
-
-## Audio
-
-ID LOC HOLD: The last argument was about water tokens.
-
-## Field Note
-
-ID LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+Tujuannya bukan melodrama. Buku ini membuat koloni terbaca sebagai kerja: orang pulang sif, berdebat, memperbaiki catatan, meminjam alat, melindungi teman, dan mencoba menjaga ruangan tetap normal saat laut mulai memasuki sistem. Di HECTON-8, jejak biasa seperti itu bisa menjadi bukti.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/id_ID. -->

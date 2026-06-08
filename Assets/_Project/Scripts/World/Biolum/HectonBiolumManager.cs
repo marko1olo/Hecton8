@@ -201,8 +201,12 @@ namespace Hecton8.Biolum
         private const float PredatorBlackoutFadeRate = (1f - PredatorBlackoutMinimumIntensity) * PredatorBlackoutFadeInvSeconds;
         private const float ShallowDaylightCutoffY = -50f;
         private const int MovementSignalMaxDrainPerTick = 32;
+        private const int MovementSignalOverflowWarningCooldownFrames = 90;
+        private const int TouchRippleSaturationWarningCooldownFrames = 90;
         private const int BiolumDumpCooldownFrames = 300;
         private const string BiolumDumpRelativePath = "Docs/AgentLogs/Dump_BIOLUMINESCENCE_DIRECTOR.bin";
+        private const uint MovementAcousticOverflowHash = 0x4D414F56u;
+        private const uint TouchRipplePoolSaturatedHash = 0x54525053u;
         private const uint ActiveBiolumRipplesHash = 0xB105A11Fu;
         private const uint BiolumDirectorContextHash = 0xB101D1ECu;
         private const SystemID VaultOwnerSystem = SystemID.Vfx;
@@ -227,6 +231,7 @@ namespace Hecton8.Biolum
         private bool _tickRegistered = false;
         private bool _lateFrameRegistered = false;
         private bool _hotSwapRegistered = false;
+        private bool _runtimeOwnerAborted = false;
         private IDataVault _dataVault;
         private ITickDispatcher _cachedTickDispatcher;
         private IAbyssalFlowGpuReadModel _cachedFluid;
@@ -263,6 +268,8 @@ namespace Hecton8.Biolum
         private int _predatorCandidateCount = 0;
         private int _lastRippleTelemetryCount = -1;
         private int _lastRippleTelemetryFrame = -1;
+        private int _nextMovementSignalOverflowWarningFrame = -1;
+        private int _nextTouchRippleSaturationWarningFrame = -1;
         private int _telemetryWriteIndex = 0;
         private int _lastBiolumDumpFrame = -BiolumDumpCooldownFrames;
         private uint _telemetrySequence = 0u;
@@ -322,28 +329,32 @@ namespace Hecton8.Biolum
 
         private void Awake()
         {
-            HectonBiolumManager registered = GlobalRegistry.BiolumManager;
-            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             CacheGlobalRegistryServicesCold();
+            if (!TryRegisterService())
+                return;
+
             EnsureRuntimeResources();
             ResetFloraShaderGlobals();
         }
 
         private void Start()
         {
+            if (_runtimeOwnerAborted || (!_serviceRegistered && !TryRegisterService()))
+                return;
+
             Initialize();
         }
 
         private void OnEnable()
         {
+            if (!TryRegisterService())
+                return;
+
             CacheGlobalRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterService();
             TryRegister();
             TryRegisterLateFrameTick();
             HectonFloatingOrigin.RegisterListener(this);
@@ -353,6 +364,9 @@ namespace Hecton8.Biolum
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             TryUnregister();
@@ -367,6 +381,9 @@ namespace Hecton8.Biolum
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             TryUnregister();
@@ -851,12 +868,28 @@ namespace Hecton8.Biolum
         private void DrainMovementAcousticSignals()
         {
             ReadOnlySpan<MovementAcousticSignal> signals = SignalBus<MovementAcousticSignal>.GetFrameSnapshot();
+            if (signals.Length > MovementSignalMaxDrainPerTick)
+                PublishMovementSignalOverflowWarning(signals.Length);
+
             int count = math.min(signals.Length, MovementSignalMaxDrainPerTick);
             for (int i = 0; i < count; i++)
             {
                 ref readonly MovementAcousticSignal signal = ref signals[i];
                 AddOrRefreshTouchRipple(in signal);
             }
+        }
+
+        private void PublishMovementSignalOverflowWarning(int observedCount)
+        {
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (currentFrame < _nextMovementSignalOverflowWarningFrame)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                MovementAcousticOverflowHash,
+                BiolumDirectorContextHash,
+                observedCount);
+            _nextMovementSignalOverflowWarningFrame = currentFrame + MovementSignalOverflowWarningCooldownFrames;
         }
 
         private void AddOrRefreshTouchRipple(in MovementAcousticSignal signal)
@@ -879,7 +912,10 @@ namespace Hecton8.Biolum
 
             float radius = math.lerp(4f, 18f, velocity01);
             float lifetime = math.lerp(0.65f, 2.4f, velocity01);
-            int slot = FindTouchRippleSlot(signal.SourceId);
+            int slot = FindTouchRippleSlot(signal.SourceId, out bool replacedActiveRipple);
+            if (replacedActiveRipple)
+                PublishTouchRippleSaturationWarning();
+
             _touchRipples[slot].RuntimePosition = runtimePosition;
             _touchRipples[slot].Radius = radius;
             _touchRipples[slot].Intensity = intensity;
@@ -890,8 +926,9 @@ namespace Hecton8.Biolum
             _rippleSortReady = false;
         }
 
-        private int FindTouchRippleSlot(uint sourceId)
+        private int FindTouchRippleSlot(uint sourceId, out bool replacedActiveRipple)
         {
+            replacedActiveRipple = false;
             int firstInactive = -1;
             int weakestIndex = 0;
             float weakestScore = float.MaxValue;
@@ -918,7 +955,24 @@ namespace Hecton8.Biolum
                 }
             }
 
-            return firstInactive >= 0 ? firstInactive : weakestIndex;
+            if (firstInactive >= 0)
+                return firstInactive;
+
+            replacedActiveRipple = true;
+            return weakestIndex;
+        }
+
+        private void PublishTouchRippleSaturationWarning()
+        {
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (currentFrame < _nextTouchRippleSaturationWarningFrame)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                TouchRipplePoolSaturatedHash,
+                BiolumDirectorContextHash,
+                MaxTouchRipples);
+            _nextTouchRippleSaturationWarningFrame = currentFrame + TouchRippleSaturationWarningCooldownFrames;
         }
 
         private void UpdateTouchRipples(float deltaTime)
@@ -1373,8 +1427,13 @@ namespace Hecton8.Biolum
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
             float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
-            if (!math.all(math.isfinite(shift)))
+            float shiftSqrMagnitude = math.lengthsq(shift);
+            if (!math.all(math.isfinite(shift)) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             for (int i = 0; i < MaxTouchRipples; i++)
             {
@@ -1917,22 +1976,21 @@ namespace Hecton8.Biolum
             }
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
-                return;
+                return true;
 
-            HectonBiolumManager registered = GlobalRegistry.BiolumManager;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
-                return;
-            }
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             if (!GameBootstrapper.RegisterBiolumDirector(this))
-                return;
+                return false;
 
             _serviceRegistered = ReferenceEquals(GlobalRegistry.BiolumManager, this);
+            if (_serviceRegistered)
+                _runtimeOwnerAborted = false;
+            return _serviceRegistered;
         }
 
         private void TryUnregisterService()
@@ -1942,6 +2000,35 @@ namespace Hecton8.Biolum
 
             GameBootstrapper.UnregisterBiolumDirector(this);
             _serviceRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            HectonBiolumManager registered = GlobalRegistry.BiolumManager;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsBiolumManagerRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GameBootstrapper.UnregisterBiolumDirector(registered);
+            return false;
+        }
+
+        private static bool IsBiolumManagerRuntimeUsable(HectonBiolumManager manager)
+        {
+            return !ReferenceEquals(manager, null) &&
+                   manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled &&
+                   !manager._disposed;
         }
 
         private void HandleSonarPulse(float radius)

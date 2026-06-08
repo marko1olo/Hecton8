@@ -1,23 +1,60 @@
-﻿# BATHYMETRIC BANDS AND ABYSSAL ACOUSTICS
+<!-- localization_status: source_draft_pending_native_review -->
+# أحزمة الأعماق والصوت السحيق: كيف يخفي HECTON-8 غرفة كاملة
 
-> **Source:** Deep Reach Geophysics Division, Acoustics Survey.
-> **Speaker:** Chief Hydro-Acoustics Analyst.
-> **Reviewer Note:** A technical breakdown of HECTON-8's bathymetric structure and the physics of sound propagation under extreme water pressure.
+> **المصدر:** مسح Deep Reach المائي الصوتي H8-44، مع تعليقات لاحقة من فرق إنقاذ Black Keel.
+> **الصوت:** كبيرة محللي الصوتيات المائية سيرا مبيكي.
+> **الاستخدام:** موسوعة الموقع، ويكي داخل اللعبة، تدريب السونار، ومرجع PDA ميداني.
 
 ---
 
-## 1. The Lightless Bands
+## المحيط طبقات عمودية
 
-HECTON-8's ocean is not a uniform body of water; it is a layered vertical stack of distinct physical zones, each defined by pressure, chemistry, and light transmission. The Photic Shelf (0–250 m) is the only zone touched by the star Ran, where storm currents and native sargassum mats thrive. Below it lies the Cable Reef (250–1200 m), where Deep Reach's massive industrial cabling networks are anchored, now overrun by bioluminescent algae. The Brine Canyons (1200–2800 m) are characterized by density-stratified salt rivers where gravity behaves unpredictably. The Machine Fields (2800–4300 m) house the remnants of the automated processing wells, silent and crushing. At the very bottom lies the Atlas Basin (4300–5600 m), an environment of absolute darkness and 50 MPa of pressure, where the seafloor is replaced by a fused carpet of mechanical debris and biomechanical biofilm.
+من المدار يبدو HECTON-8 كعالَم واحد غارق تحت ضوء Ran ومدّ Aegir. تحت العواصف لا يوجد محيط واحد متجانس. توجد آلة عمودية مصنوعة من الضغط والملح والحرارة والمعدن والبيولوجيا والعمل المؤسسي القديم.
 
-## 2. Acoustics Under Pressure
+قسّمت Deep Reach القطاع 44 إلى أحزمة تشغيل لأن الخريطة التي تعرف الشمال والشرق فقط قتلت أطقمها. العمق يغيّر الأداة: الطفو، استهلاك البطارية، حمل الأكسجين، مدى السونار، سلوك المفترسات، وهل يمكن بلوغ غرفة تبدو قريبة على المخطط قبل أن تبدأ البدلة في إنفاق جسد المشغّل.
 
-In HECTON-8's ocean, radio is dead. Electromagnetism is absorbed by the dense, mineral-rich water within a few meters. Sound is the only line of sight. Because water density increases dramatically with depth and dissolved salt concentration, the speed of sound behaves erratically. The sound velocity profile creates acoustic ducting—channels where sound waves are trapped and travel for kilometers without losing strength, and shadow zones where sonar cannot penetrate. Deep Reach's communication network relies entirely on Acoustic Telemetry. These systems translate terminal data and voice logs into low-frequency acoustic bursts. If a diver's acoustic pinger is positioned in a shadow zone, the signal is lost entirely, even if they are only fifty meters from the recovery capsule.
+الجرف الضوئي يمتد من السطح إلى نحو 250 مترا. هذا الحزام الوحيد الذي يصله ضوء Ran بثبات. ضغط العواصف يبلغه، لكن الغواص يستطيع قراءة الظلال، والحصائر الحية، وعوامات الإنقاذ، وتيجان الموائل الممزقة، وأول ندوب المستعمرة. تسميه الأدلة آمنا. هو مقروء فقط.
 
-## 3. Hydrothermal Vent Forges
+الشعاب الكابلية تمتد من 250 إلى 1200 متر. ثبتت Deep Reach فيها عروق الطاقة، وسرر البيانات، وظهور المضخات، وحمالات السكك، ومنصات العمل. بعد الانهيار تشقق العزل، ودخل الغشاء الحيوي الموصل في الأغلفة، وتجذر عشب الحديد حول كل تسرب تيار. هنا يتعلم اللاعب أن البنية التحتية قد تصبح بيئة حية من دون أن تصبح حليفا.
 
-The geology of HECTON-8 is driven by tidal friction and tectonic fracturing, creating massive hydrothermal vents known as Vent Forges. These vents discharge mineral-rich, superheated water at temperatures exceeding 420°C. Due to the immense pressure of the abyss, the water does not boil; instead, it behaves as a supercritical fluid, carrying dense concentrations of sulfide salts, noble gases, and radioactive Xenon-Omega particulate. The interaction between the freezing abyssal water and the vent plumes creates intense thermal shear and boil currents, capable of tearing a diving suit apart. These vents are the primary source of the raw materials that crystallize into pressure-glass and feed the metallic bio-fibers of the Iron Kelp forests.
+أخاديد المحلول الملحي تمتد من 1200 إلى 2800 متر. أنهار ملح كثيفة ترقد داخل الماء كأرضية سائلة ثانية. قد تطفو الأدوات فوقها. قد تتوقف الجثث عن الغرق. قد ترتد نبضات السونار عن نهر لا يملك جدارا. كثير من الغرف الشبحية في خرائط Deep Reach ليست إلا مرايا ملحية.
 
-## 4. Sonar Anomalies and Predators
+حقول الآلات تمتد من 2800 إلى 4300 متر. هذه أعماق الصناعة القديمة: آبار معالجة، أروقة ضواغط، أبراج تبادل حراري منهارة، حفر سكك، وساحات خدمة آلية. الضوء اختفى. الصوت يعيد معلومات أكثر مما ينبغي. المضخات، والهياكل المرتخية، والطائرات المعطوبة، وقص الحرارة تجعل الماء يتكلم بالمعدن. في هذا الحزام يكون تماس سونار هادئ أكثر ريبة من تماس صاخب.
 
-The acoustics of the deep ocean are heavily distorted by geology, industrial noise, and the movement of massive fauna. The dense brine in the canyons acts as a mirror to sonar pulses, reflecting signals back and creating phantom echoes. This sonar clutter provides perfect cover for predators. The Trench Stalker, with its heavily armored chitinous shell, moves silently through the Iron Kelp forests, its signature masked by the constant grinding of the metallic fronds. More dangerously, the apex predators—the Leviathans—generate a passive, sub-40 Hz acoustic signature. These low-frequency vibrations are felt through the hull of a submarine or the chest plate of a diving suit long before they register on a standard sonar display. By the time the acoustic sensor resolves the signal, the organism is already within striking distance.
+حوض Atlas يصل إلى نحو 5600 متر. القاع الصلب نادر. توجد حواف، وندوب فتحات حرارية، وأحواض خدمة مقطوعة، وصفائح زجاج ضغط، وحطام آلي تمسكه المعادن والغشاء الحيوي. لم ينج Atlas هنا كآلات نظيفة. نجا كبيئة صيانة: أفلام موصلة، وأعضاء ترشيح، وختم شبيه بالصدف، وحيوانات موسومة، وعقد تغذيها الحرارة.
+
+## الصوت هو الأفق
+
+الراديو يموت بسرعة في ماء HECTON-8. المحيط بارد، مشبع بالمعادن، ملوث كهربائيا، وممتلئ بغبار معدني من الصناعة الميتة. الإشارة العالية التردد التي تعبر غرفة في الهواء قد تختفي بعد أمتار تحت الجرف. بعدها يفشل الضوء. يبقى الصوت.
+
+لهذا تحمل كل أداة جدية طبقة صوتية. مرسل البدلة ليس رفاهية. إنه عنوان الغواص. لا ترى Black Keel الإنسان عبر الماء؛ إنها تسمع طرقة مشفرة، تقارن زمنها، تفحص سلسلة الحيازة، ثم تقرر هل تستحق الإشارة كتلة استرجاع. أبواب الموائل تستخدم سؤالا وجوابا صوتيا عندما تفشل مصافحات الكابلات. المصنع الميداني يصغي إلى الوسوم المعتمدة. خزائن الشحن القديمة تستيقظ على نبضات منخفضة التردد لأن الضغط آذى الهيدروفونات أقل من الكاميرات.
+
+الصوت يكذب أيضا. سرعته تتغير مع الحرارة والضغط والملوحة. يكدس HECTON-8 هذه المتغيرات في طبقات حادة. نبضة تمر في ريشة حرارية دافئة تنحني بغير نبضة تمر في محلول ملحي بارد. قد يقع ping يفترض أن يسير مستقيما في قناة صوتية ويعود من اتجاه كاذب نظيف. وقد يضرب آخر طبقة ملح فيجيب مثل جدار. وقد يدخل ثالث منطقة ظل ويختفي رغم أن الهدف قريب بما يكفي لرؤية الطمي المضطرب.
+
+كانت Deep Reach تسمي ذلك خطأ تفسير المشغل. فرق الإنقاذ تسميه غرفة ميتة: حجم مائي يسمح للغواص والإشارة بالوجود في المكان الفيزيائي نفسه، ومع ذلك يبقى الغواص مفقودا.
+
+## قنوات ومرايا ونوافذ هادئة
+
+القناة الصوتية تحبس الصوت بين طبقات. تسافر الإشارة بعيدا، أحيانا كيلومترات، مع فقد قليل. هذا مفيد للمنارات البعيدة وخطر على التخفي. مرسل بدلة يسقط في الطبقة الخطأ قد يعلن الطاقم لكل هيدروفون ومفترس في ذلك الحزام.
+
+مرآة المحلول الملحي تعكس الصوت عن حد كثافة. تصنع غرفا مزدوجة، وهياكل كاذبة، وأعماق أرضية خاطئة، وأصداء متحركة حيث لا يتحرك شيء. في الأخاديد قد يرى الماسح ممرا تحت اللاعب، وهو فقط انعكاس الممر فوقه. الرد الصحيح هو تغيير الزاوية، وإرسال ping جديد، ومقارنة التأخير.
+
+النافذة الهادئة فترة قصيرة تمنح فيها الآلات والماء صمتا يكفي للعمل. تهبط المضخات في الدورة. يتحرك القص الحراري. يتوقف العشب الحديدي عن خدش جذع كابل. ينعطف مفترس أو يثبت. الطواقم الجيدة تقطع وتلحم وتصغي وتتحرك داخل هذه النوافذ. الطواقم السيئة تواصل لأن شريط التقدم أوشك أن يمتلئ.
+
+## الآلات والحياة داخل الضجيج
+
+سونار المستعمرة الأول افترض ماء هندسة نظيفا: بنى مرسومة، وملوحة معروفة، وعتادا متعاونا. القطاع 44 بعد السقوط يعطيه محلولا ملحيا متحركا، ومعدنا ممزقا، ومكررات حيوية، وأعمدة حرارة غير مستقرة، وحيوانات كبيرة بما يكفي لتجعل الماء يتصرف كطقس.
+
+السونار الحديث يعمل بأنماط. النبض النشط يعطي الشكل، لكنه يجذب الانتباه ويخلق عوائد كاذبة. الإصغاء السلبي أكثر أمانا، لكنه أبطأ، ويتطلب معرفة صوت المضخات والفتحات الحرارية وهمهمة الكابلات وخدش الصدف وتنفس البدلة وحركة الحيوان. المسح الجانبي يقرأ الجدار وقد يفقد ما خلفه. الحامل المنخفض التردد يسافر أبعد لكنه يحمل بيانات قليلة. الصورة العالية التردد تعطي التفاصيل فقط عندما يتعاون الماء.
+
+لم تتطور كائنات HECTON-8 حول سونار البشر. لكنها تطورت في محيط جعل فيه الضغط وكيمياء الفتحات وإجهاد المد الصوت حاسة بقاء. الكائنات المرشحة تفتح وتغلق على الاهتزاز. عشب الحديد يطحن في التيارات ويخفي الحركة الصغيرة. متربصو الخنادق يستعملون ضجيج الصناعة غطاء لأن حقول الآلات تبدو أصلا كصيد.
+
+تماسات فئة Leviathan أسوأ. السجلات الموثوقة لا تبدأ بجسد مرئي. تبدأ برجفة ضغط تحت 40 هرتز، وإنذارات إجهاد بدن بلا اصطدام، وانطفاء فرائس، وحامل سلبي يصل إلى صدر الغواص قبل أن تحله الشاشة. عندما يرسم السونار القياسي أيقونة نظيفة، يكون الحيوان داخل مسافة القرار.
+
+زاد Atlas الأمر صعوبة. بيئة صيانته تستخدم المادة الحية كمسار إشارة. الغشاء الحيوي الموصل يحمل نبضة صيانة على كابل ميت. عضو الترشيح يكرر طرقات الضغط. نمو الصدف يسد شقا ويغير شكل الغرفة الصوتي في الوقت نفسه. إذا سمع اللاعب جوابا نظيفا داخل بنية مهجورة، فعليه أن يسأل ما الذي أجاب.
+
+## قاعدة ميدانية
+
+لا تسأل هل HECTON-8 صامت. إنه لا يصمت أبدا.
+
+اسأل ما الذي يصنع الصوت، وأي طبقة تثنيه، ومن يستطيع سماعه أيضا، وماذا يخفي المحيط حين يجيب بوضوح زائد.

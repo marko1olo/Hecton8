@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Ganchos de reclamación de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Ganchos de reclamación de Black Keel
 
-ES LOC HOLD: Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.
+Black Keel es la ruta de entrega del jugador, la promesa de recuperación y la primera jaula legal. El transportista puede responder, pero cada respuesta pasa por ganchos de reclamación: valor de la carga, estado de cuarentena, certificado de ruta, custodia de deuda y viejas cláusulas prioritarias de Deep Reach que deberían haber caducado. Por eso la superficie no es un botón de rescate. La nave está lo bastante cerca para hablar y lo bastante lejos para negar; sus demoras no son humor. Son lógica contractual funcionando exactamente como fue escrita.
 
 ## Scanner
 
-ES LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+En el manifiesto, Black Keel es hardware del fondo de reclamaciones; en las cláusulas, es palanca de Deep Reach.
 
 ## Terminal
 
-ES LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+CUSTODIA DEL TRANSPORTISTA: recuperación del operador permitida tras triaje de carga, puerta de cuarentena, certificado de ruta y limpieza de responsabilidad. Sello de prioridad de Deep Reach conservado en cláusulas dormidas.
 
 ## Audio
 
-ES LOC HOLD: It can hear you. It just has to price the answer first.
+Puede oírte. Solo tiene que poner precio a la respuesta primero.
 
 ## Field Note
 
-ES LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+La nave no es malvada. Está arrendada a un contrato que sabe ser cruel sin sonar vivo.
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/es_ES. -->

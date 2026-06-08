@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Brine Vane Codex Card"
+title: "Codexkaart: pekelvaan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Brine Vane Codex Card
+# Codexkaart: pekelvaan
 
-NL LOC HOLD: In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+Pekelvanen maken het midden-diepe water van HECTON-8 fysiek. Ze tonen dat de canyon is gebouwd uit dichtheid, niet uit leeg blauw volume: een membraan kan tegelijk waarschuwing, materiaalbron en rand van een valse vloer zijn.
 
 ## Scanner
 
-NL LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Pekelvaanblad. Zout-mineraalmembraan vastgezet op dichtheidsschering. Intacte rand betekent muur; gescheurde mond betekent doorgang; zwart water zonder vaanrand betekent vals-vloerrisico.
 
 ## Terminal
 
-NL LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+SPECIMEN / PEKELVAAN / rol: marker voor dichtheidsmuur, waarschuwing voor sonarbuiging, bron van afgeworpen ribben / veilige lezing: intact blad, gescheurde stroomafwaartse mond, gekrulde shear-windowpunt / afwijzen: levend routeblad snijden, open gloed kruisen, vals-vloerretour vertrouwen / routenotitie: verzamel afgeworpen ribben, niet het membraan dat je kaart openhoudt.
 
 ## Audio
 
-NL LOC HOLD: The plant is not pointing up. It is pointing through.
+De vaan wijst niet omhoog. Ze toont waar de oceaan zijwaarts draait.
 
 ## Field Note
 
-NL LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Intact blad: muur. Gescheurde mond: mogelijke route. Afgeworpen rib: monster. Levend blad houdt de baan: laten staan.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/nl_NL. -->

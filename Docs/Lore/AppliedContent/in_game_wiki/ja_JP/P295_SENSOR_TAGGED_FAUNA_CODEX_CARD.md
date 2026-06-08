@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Sensor Tagged Fauna Codex Card"
+title: "センサータグ付き動物標本カード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Sensor Tagged Fauna Codex Card
+# センサータグ付き動物標本カード
 
-JA LOC HOLD: Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.
+センサータグ付き動物は、海を一つの心に変えずにHECTON-8の機械生態を見る最も明瞭な方法の一つだ。Deep Reachは移動、耐圧、汚染研究のために動物、shell colonies、経路種へタグを付けた。何年も後、タグの一部は瘢痕組織、殻のくぼみ、鉱物キャップ、成長輪に埋まっている。Atlasはいまも弱い戻りを聞き、動く体を診断ランドマークとして扱うことがある。圧力packet、汚染の手掛かり、経路occupancy、drone sweepの錨、古い保守証人。だからといって動物が従順になるわけではない。普通の理由で食べ、逃げ、狩り、慌てる一方で、タグがその経路を壊れたインフラにとって意味あるものにしてしまう。タグの動きを意図として読んではならない。経路上の代価が残酷さと汚れたデータに見合わない限り、生きたタグを切り出すな。大事な問いは「何を望んでいるか」ではない。「どのシステムがまだこの傷をsensorだと信じているか」だ。
 
 ## Scanner
 
-JA LOC HOLD: Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+センサータグ付き動物。古いDeep Reach製biometalタグが傷、殻、成長輪に埋まっている。弱いAtlas経路エコー。動物の意図は未確認。
 
 ## Terminal
 
-JA LOC HOLD: SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+標本 / センサータグ付き動物 / 役割: 生きたテレメトリー運搬体、古い調査ランドマーク、修理経路の汚染要素 / 安全な読み: 古いタグパルス、瘢痕組織の成長、命令でない移動 / 拒否: 行動を服従と見る、タグを生体から切り出す、occupancy echoを信用する / 経路注記: タグは動物が通った部屋を報告できるが、通った理由は報告できない。
 
 ## Audio
 
-JA LOC HOLD: It is not obeying. It is being used.
+それはAtlasに従っていない。Atlasがまだ問い続ける古い質問を運んでいる。
 
 ## Field Note
 
-JA LOC HOLD: Do not write as possession. It is damaged maintenance using animal movement.
+タグは傷であって首輪ではない。君を報告し、誤配置し、動物を見てもいない何かを起こすことがある。
 
 <!-- In-Game Wiki; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/ja_JP. -->

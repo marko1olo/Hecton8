@@ -7,8 +7,8 @@ poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
 biome_tags: biome.carrier_link;biome.relay_shadow
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Frete de fusão por pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Frete de fusão por pellets
 
-Viagem interestelar pesada é possível sem FTL, mas pune. Impulso de vela de feixe, fusão alimentada por pellets, massa de escudo, longas derivas e arquitetura de frenagem levaram cargas seed e depois frete colonial até Aegir. A mesma logística torna o resgate lento: cada quilograma, leito, vaga de frenagem e assento de sobrevivente pertence a um cronograma.
+O frete de fusão por pellets tornou Aegir alcançável sem FTL. Estações de feixe empurravam; fluxos de pellets alimentavam queimas de fusão; massa de blindagem absorvia poeira; magsails e sistemas locais de frenagem devolviam velocidade com o tempo. A mesma arquitetura deixa o resgate lento. Cada quilograma tem agenda, orçamento térmico e dono.
 
 ## Scanner
 
-Placa de motor. Frete com fusão alimentada por pellets cruzou como infraestrutura: impulso, escudo, deriva, frenagem e cobrança de perdas.
+Placa de motor: impulso, alimentação por pellets, blindagem, deriva, frenagem e cobrança das perdas.
 
 ## Terminal
 
-DOUTRINA DE FRETE: cargas seed classe Atlas e frete colonial usaram impulso de vela de feixe, fusão alimentada por pellets, frenagem por vela magnética e longos intervalos de deriva. A carga viva chegou depois que máquinas tornaram a rota faturável.
+DOUTRINA DE FRETE: payloads seed e massa colonial usaram impulso por feixe, fusão alimentada por pellets, massa de blindagem, frenagem magsail e longos intervalos de deriva. Carga viva seguiu a infraestrutura.
 
 ## Audio
 
-Uma nave pesada não é milagre. É uma hipoteca com motores.
+Máquinas cruzaram primeiro porque máquinas podiam ser baixadas como perda.
 
 ## Field Note
 
-Trânsito pesado não é heroico. É um contrato de rota velho com cicatrizes de calor.
+Uma nave pesada não é milagre. É hipoteca com motores e cicatrizes de calor.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/pt_BR. -->

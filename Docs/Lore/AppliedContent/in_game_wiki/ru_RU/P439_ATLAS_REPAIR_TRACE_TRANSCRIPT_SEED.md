@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Транскрипт ремонтного следа Atlas"
+title: "Транскрипт ремонтного следа Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Транскрипт ремонтного следа Atlas
+# Транскрипт ремонтного следа Atlas
 
-Аудио Atlas пугает тем, что считает жизнь, металл и воду одной поврежденной сервисной поверхностью.
+Аудио Atlas пугает потому, что обращается с жизнью, металлом и водой как с одной поврежденной maintenance surface.
 
 ## Scanner
 
-След Atlas фиксирует ремонт, где кабель, ткань и маршрут считаются одной сервисной поверхностью.
+Аудио/caption seed: следы Atlas звучат как ремонтная телеметрия с рухнувшими категориями, а не как говорящий бог.
 
 ## Terminal
 
-СЛЕД ОБСЛУЖИВАНИЯ ATLAS-6: класс утечки принят; рост мембраны и кабеля разрешен; фаунистический маршрут помечен пригодным; категория для человека не решена.
+TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.
 
 ## Audio
 
-Ремонтный след ATLAS-6. Утечка закрыта. Рост кабеля принят. Маршрут для живого тела пригоден. Категория для человека не решена.
+Ремонтный след: разрыв мембраны принят. Рост кабеля разрешен. Маршрут фауны отмечен serviceable.
 
 ## Field Note
 
-Поврежденная maintenance telemetry. Без речи злодея; ключ в collapse категорий.
+Для scanner captions, глубоких аудиослоев и Atlas spoiler gates. Держать речь сжатой, таксономической и поврежденной.
 
 <!-- In-Game Wiki; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/ru_RU. -->

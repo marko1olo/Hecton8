@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Deep Reach净化包转录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Deep Reach净化包转录
 
-ZH LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.
+净化包之所以仍可信，是因为它保留真实灾难名词，并移除了让它们致命的决策。
 
 ## Scanner
 
-ZH LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+回收的Deep Reach包重复事故摘要，然后把援助锁在坐标和隔离定价之后。
 
 ## Terminal
 
-ZH LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
+PACKET DR-RCO-2190: safety priority asserted; coordinates required; quarantine cost pending; worker-cause fields omitted.
 
 ## Audio
 
-ZH LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
+Recovery Compliance包。安全优先已确认。坐标优先。隔离费用待定。援助不能盲目定价。
 
 ## Field Note
 
-ZH LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+现在时公司口吻。它应先听起来像能活，直到玩家发现这个包拒绝说出的东西。
 
 <!-- In-Game Wiki; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/zh_CN. -->

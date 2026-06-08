@@ -9,32 +9,35 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: HECTON-8 Public Primer Article"
+title: "Публічний вступ до HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: HECTON-8 Public Primer Article
+# Публічний вступ до HECTON-8
 
-UA LOC HOLD: HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic.
+HECTON-8 — затонулий індустріальний океанський місяць у системі Aegir. Він красивий раніше, ніж стає доказом: яскраві шельфи, живе мілководдя, жорстке синє світло, кістяк колонії під тиском і глибші руїни, де папери Deep Reach досі сперечаються з машинами. Ви прибуваєте як Marauder під контрактним тиском, не турист і не обраний рятівник. Публічна зав’язка проста: вижити в океані, прочитати уламки, повернути те, що ще може говорити, і зрозуміти, чому порятунок може чути вас задовго до того, як дістанеться.
 
 ## Scanner
 
-UA LOC HOLD: A public primer is allowed to be beautiful. It is not allowed to lie.
+Дозвіл публічного праймера: спершу показати місяць красивим. Не продавати океан через приховування злочину.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+ПУБЛІЧНИЙ ПРАЙМЕР / БЕЗ СПОЙЛЕРІВ
+дозволено: океанський місяць Aegir, яскраві шельфи, затонула індустріальна колонія, повернення Marauder по salvage, руїни Deep Reach
+закрито: фінальний маршрут payload, розв’язка Atlas, наслідки receiver у кінцівках
+примітка редактора: спершу краса, потім докази, без фальшивої обіцянки порятунку.
 
 ## Audio
 
-UA LOC HOLD: First sell the ocean. Then earn the crime.
+Мілководдя не маска. Це те, що вони майже встигли збудувати, доки глибина не зберегла квитанції.
 
 ## Field Note
 
-UA LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+Спершу продай океан. Потім нехай іржа, мітки й маршрутні штампи доведуть, що океан не невинний.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/uk_UA. -->

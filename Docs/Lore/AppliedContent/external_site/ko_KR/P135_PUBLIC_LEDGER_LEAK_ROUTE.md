@@ -9,32 +9,18 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "공개 장부 유출"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# 공개 장부 유출
 
-KO LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+공개 장부 유출은 완벽한 내부고발 판타지가 아니다. 좁은 relay 창구로 떠나는 패킷이며, witness hash와 부인하기 어려울 만큼의 custody가 있지만 안전하기에는 빠진 부분이 너무 많다. Tau Ceti는 물속의 누구를 구하기엔 너무 늦은 뒤에 기록을 공개할 수 있다.
 
-## Scanner
-
-KO LOC HOLD: You can leak truth before you understand all of it.
-
-## Terminal
-
-KO LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-KO LOC HOLD: The truth leaves first. You may not like who reads it.
-
-## Field Note
-
-KO LOC HOLD: Public does not mean safe. It means harder to erase.
+그 지연이 핵심이다. Deep Reach는 claim을 그냥 삭제할 수 없지만, 플레이어도 다음에 누가 그것을 쓸지 결정할 수 없다. 보험사, 경쟁자, 시민 법원, Marauder 풀, 기업 사무실은 같은 상처를 다르게 읽을 것이다. 이 결말은 진실을 묻기 어렵게 만들고, 소유하기도 어렵게 만든다.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/ko_KR. -->

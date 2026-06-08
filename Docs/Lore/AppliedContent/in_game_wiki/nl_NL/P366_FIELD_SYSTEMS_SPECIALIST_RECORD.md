@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Field Systems Specialist Record"
+title: "Dossier veldsystemenspecialist"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Field Systems Specialist Record
+# Dossier veldsystemenspecialist
 
-NL LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.
+Dit dossier verklaart de eerste bekwaamheid van de operator zonder hem tot uitverkoren getuige te maken. Deep Reach trainde hem rond pompen, afdichtingswaarden, relaykamers, bypasskaarten, evacuatiewachtrijen en route-safe-taal. De oude systemen weigeren zijn naam, maar tonen nog altijd vertrouwde procedure. Schuld begint als herkenning: een afwateringsvolgorde, een klemwaarde, een schoongepoetste wachtzin, een kamer die faalde in precies de volgorde die hij moest voorkomen.
 
 ## Scanner
 
-NL LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+Oude veldsystemenmachtiging. Geen commandostaf. Infrastructuurwerk met genoeg toegang om te herkennen waar een route werd begraven.
 
 ## Terminal
 
-NL LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+PERSONEELSSPOOR: veldsystemen, evacuatie-infrastructuur, route-safe-certificering. Machtiging ingetrokken na Aegir-stiltereview. Procedurecache past nog steeds bij de volgorde van de operator.
 
 ## Audio
 
-NL LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+Jij hebt de leugen nooit ondertekend. Je kende de grammatica waardoor hij door de keuring kwam.
 
 ## Field Note
 
-NL LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+De badge opende geen deuren meer. Hij wiste de volgorde van falen niet uit.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/nl_NL. -->

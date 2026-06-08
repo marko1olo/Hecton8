@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Leitender Biofilm-Reparaturbus"
+title: "Leitfähiger Biofilm-Reparaturbus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Leitender Biofilm-Reparaturbus
+# Leitfähiger Biofilm-Reparaturbus
 
-In den Kabelriffen bleibt kaputte Infrastruktur selten sauber. Warme Sole ernährt Mikrobenmatten über aufgerissener Isolierung; Eisen und Kupfer werden zum Gerüst; alte Diagnosepulse geben dem Wachstum Rhythmus.
+Der leitfähige Biofilm-Reparaturbus beginnt als praktischer Unfall. Alte Deep-Reach-Kabelmäntel reißen unter Druck, Kupfersalze bluten ins Wasser, und lokale mikrobielle Matten, die mineralische Wärme schon kennen, setzen sich in die Wunde. Atlas liest den schwachen Strom als Serviceweg. Der Ozean muss nicht sprechen; eine nasse Schicht, die einen Impuls tragen kann, reicht.
 
-Für Marauder ist das wertvoll. Lebende Kabelhaut kann Serviceleitungen, Niedrigstromtüren, Drohnennester oder Datenwege verraten. Jeder Schnitt bleibt unsicher, weil Atlas die lebende Brücke als gültiges Reparaturinventar lesen kann.
+Für einen Marauder ist das Geschenk und Falle zugleich. Eine Biofilmbrücke kann eine Schotttür wecken, einen Scanner-Handshake tragen oder eine jahrelang stumme Pumpe kurz antworten lassen. Dieselbe Brücke kann lügen. Die Leitung leuchtet grün, obwohl ihre Lastfähigkeit verschwunden ist, und ein sauberer Schnitt kann einen begehbaren Gang in ein geflutetes Rohr verwandeln. Die Frage ist nicht, ob das Wachstum natürlich oder künstlich ist. Die Frage ist, was Atlas bereits als repariert zählt.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/de_DE. -->

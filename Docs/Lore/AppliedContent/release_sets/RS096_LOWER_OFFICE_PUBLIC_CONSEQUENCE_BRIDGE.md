@@ -1,9 +1,9 @@
 # RS096 Lower Office Public Consequence Bridge
-Status: canonical source candidate pending controller review.
+Status: production article source candidate pending importer admission, route-card bake, native review and Unity placement.
 Evidence class: STATIC_SOURCE.
 Worker: 3238.
 ## Scope
-This release set normalizes the validated lower-office and public-consequence bridge packets P480-P487 into the RS095 packet-bundle shape for downstream authoring review.
+This release set normalizes lower-office and public-consequence bridge packets P480-P487 into a static source packet bundle for downstream authoring review.
 ## Packet List
 - P480_CONTRACT_CONTINUITY_DESK_RECOVERY_LANGUAGE_BRIDGE
 - P481_PACKET_NOTARY_INTERFACE_WITNESS_HASH_BRIDGE
@@ -14,7 +14,7 @@ This release set normalizes the validated lower-office and public-consequence br
 - P486_MATERIAL_PAYOUT_CLAIM_CONVERSION_BRIDGE
 - P487_PARTIAL_RETURN_CONTRACT_DEBRIEF_BRIDGE
 ## Boundary
-Static authoring candidate only. The packet bundle is not an engine/tool execution artifact, generated binary output, source CSV sync, route-card approval, scene placement, or publication result.
+Static authoring candidate only. The packet bundle is not an engine/tool execution artifact, generated binary output, source CSV sync, route-card approval, scene placement, native localization pass, publication result or runtime-ready data product.
 ## First-20 Route Contribution
 Removes a lore-system route blocker by converting lower-office recovery wording, packet custody, quarantine delay, asset suppression, ledger release, quarantine hold, payout conversion, and partial-return consequence packets into one canonical candidate bundle. The first recovery offer reads as a contract trap with evidence routes, not a clean rescue promise.
 ## GlobalQualityWeight Consequences

@@ -38,6 +38,7 @@ namespace Hecton8.Dev
             "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Knife_World.prefab",
             "Assets/_Project/Prefabs/Items/Tools/Item_Tool_StunPistol_World.prefab",
             "Assets/_Project/Prefabs/Items/Tools/Item_Tool_HarpoonLauncher_World.prefab",
+            "Assets/_Project/Prefabs/Items/Tools/Item_Tool_SeafloorDrill_World.prefab",
         };
 
         [System.NonSerialized] private bool _rebuildQueued;

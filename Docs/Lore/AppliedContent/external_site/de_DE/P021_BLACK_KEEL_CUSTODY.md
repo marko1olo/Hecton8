@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black-Keel-Gewahrsam
 
-Black-Keel-Gewahrsam macht den Orbitkontakt zu nützlicher, kompromittierter Infrastruktur: Rettung, Schuldenmaschine und Deep-Reach-Druck.
+Black Keel Custody definiert orbitale Unterstützung als nützliche, kompromittierte Infrastruktur: Rettungsroute, Schuldenmaschine und Deep-Reach-Druckfläche in einem Objekt.
 
 ## Scanner
 

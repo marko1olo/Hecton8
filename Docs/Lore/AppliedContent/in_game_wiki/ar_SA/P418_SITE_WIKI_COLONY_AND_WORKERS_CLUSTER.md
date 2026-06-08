@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "AR LOC HOLD: المستعمرة والعمال"
+title: "المستعمرة والعمال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: المستعمرة والعمال
+# المستعمرة والعمال
 
-AR LOC HOLD: فهرس عمال مستعاد: سجلات الماء، صواني شهود relay، أختام مسارات brine، بطاقات إصلاح triage ومرفوضات vent-forge تحفظ الأسماء من خلال العمل.
+worker index مستعاد: water ledgers وrelay witness trays وbrine route stamps وtriage repair tags وvent-forge rejects تحفظ الأسماء عبر العمل.
 
 ## Scanner
 
-AR LOC HOLD: WORKER INDEX // خمسة سجلات أسماء مرتبطة بالمسار. pump, relay, brine, triage, forge. احفظ tag chain قبل نزع العتاد.
+WORKER INDEX // خمسة سجلات أسماء مرتبطة بالمسار. Pump وrelay وbrine وtriage وforge. احفظ tag chain قبل نزع hardware.
 
 ## Terminal
 
-AR LOC HOLD: KEELMARK LOSS DESK: احفظ name tags إذا ارتبطت بـ route أو claim أو custody أو pressure work.
+KEELMARK LOSS DESK: احفظ name tags عندما ترتبط بroute أو claim أو custody أو pressure work.
 
 ## Audio
 
-AR LOC HOLD: Mara Venn, pump chief: إذا كان صوت pump صافيا فسجله. إذا توقف، اركض إلى الأعلى.
+Mara Venn، pump chief: إذا سمعت المضخة تغني نظيفا فسجل ذلك. إذا توقفت عن الغناء فاركض إلى أعلى.
 
 ## Field Note
 
-AR LOC HOLD: ليست عائلة. إنه عمل. الاسم على pump card يشرح لماذا بقي الباب مفتوحا.
+ليست عائلة. إنه العمل. اسم على pump card يشرح لماذا بقي الباب مفتوحا.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/ar_SA. -->

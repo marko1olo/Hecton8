@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "ID LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Model Jarak Ran-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ran-Aegir Distance Model
+# Model Jarak Ran-Aegir
 
-ID LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+Model Ran-Aegir memberi HECTON-8 skala yang bisa dirasakan pemain. Aegir cukup dekat untuk probe, kargo, perangkat seed, dan pemukiman berbasis utang pada 2190. Ia tetap cukup jauh sehingga ruang yang banjir tidak bisa menunggu belas kasihan dunia dalam. Jarak muncul sebagai jeda, custody, bahan bakar, pengereman, dan kepemilikan.
 
 ## Scanner
 
-ID LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+Pelat rute: Aegir dapat dicapai oleh infrastruktur dan tak dapat dicapai oleh simpati.
 
 ## Terminal
 
-ID LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+MODEL RUTE: Ran/Aegir diperlakukan sebagai target kelas sepuluh tahun cahaya dari Sol. Teks permainan memakai Aegir; katalog kering memakai RAN-B:H8. Efemeris tepat tetap pekerjaan tabel rute.
 
 ## Audio
 
-ID LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+Sepuluh tahun cahaya kecil di peta bintang. Cukup besar untuk membangkrutkan penyelamatan.
 
 ## Field Note
 
-ID LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+Jarak perkiraan adalah tekanan, bukan dekorasi. Sepuluh tahun cahaya masih bisa membunuh sebuah ruangan.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/id_ID. -->

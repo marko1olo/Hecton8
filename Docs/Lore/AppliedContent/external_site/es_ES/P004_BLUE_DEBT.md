@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Blue Debt"
+title: "Deuda azul"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue Debt
+# Deuda azul
 
-Blue debt es la capa de recursos que convierte HECTON-8 en algo más que una colonia perdida. Es valiosa, inestable y está ligada a por qué Deep Reach quería enterrar la luna y recuperarla a la vez.
-
-## Scanner
-
-Residuo Xenon-Omega mantenido por presión. Estable solo en condiciones hostiles. No ventilar cerca de aire cálido de cabina.
-
-## Terminal
-
-SUSTRATO DE CONTINUIDAD XO. No descomprimir. No exponer a atmósfera de hábitat sin filtrar.
-
-## Audio
-
-El contenedor canta en el sonar. Bajo, regular. No es una criatura. Es peor.
-
-## Field Note
-
-Blue debt paga porque muerde dos veces. Una cuando la llevas. Otra cuando alguien sabe que la tienes.
+La Deuda azul hace que el salvamento en HECTON-8 parezca rentable antes de parecer seguro. El material no es un cristal de tesoro esperando en el arrecife. Es residuo de sistemas industriales de presión: sustratos Xenon-Omega, medios de contención fallidos, escoria computacional y chatarra sellada que siguió estable porque el océano nunca dejó de presionar. Sube la muestra mal y cambia de estado. Véndela mal y el rastro documental te cambia a ti. Ese doble riesgo da sentido al nombre. La deuda azul paga rápido a un superviviente, pero cada contenedor trae coste futuro: descontaminación, gravámenes de carrier, reglas de custodia de Black Keel, lenguaje de reclamación de Deep Reach y la posibilidad de que la muestra también sea prueba. En el lore mayor, el recurso es una de las primeras pistas de que HECTON-8 no fue abandonada sin más. Quedó con sistemas valiosos aún funcionando bajo presión, donde solo un operador desesperado aceptaría tocarlos.
 
 <!-- External Site; generated from P004_BLUE_DEBT/es_ES. -->

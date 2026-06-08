@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Atlas Access Boundary"
+title: "Frontière d'accès Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Atlas Access Boundary
+# Frontière d'accès Atlas
 
-FR LOC HOLD: Atlas-6 is not a single reveal. The safe public layer is industrial: a continuity system trying to keep pressure machinery, routes and records alive after the flood. The unsettling layer appears when repair crosses into living infrastructure: conductive biofilm, acoustic organs, shell sealant and sensor-tagged fauna. The final layer stays sealed until the player has evidence for receiver custody and payload consequence.
+Atlas-6 n'est pas une simple rogue machine, un monstre ou un miracle. La couche publique est industrielle : un continuity system conçu pour maintenir pressure machinery, routes, archives et extraction hardware après la panne. La couche inquiétante apparaît quand la réparation traverse vers l'infrastructure vivante. Le conductive biofilm relie les câbles. Les acoustic organs portent le timing. Le shell sealant ferme les fractures. La sensor-tagged fauna devient feedback. La couche finale reste fermée jusqu'à ce que le joueur possède la proof de receiver custody et payload consequence, car ces faits réécrivent les scènes précédentes. Un article Atlas spoiler-safe peut faire comprendre l'horreur de la maintenance sans nommer trop tôt le dernier témoin.
 
 ## Scanner
 
-FR LOC HOLD: Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+Archive de frontière Atlas. Les preuves ouvertes montrent industrial continuity logic et repair ecology ; receiver custody, conséquence de payload et couches de choix final exigent une preuve récupérée.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+NOEUD D'ARCHIVE PUBLIQUE // FRONTIÈRE D'ACCÈS ATLAS. Couche actuelle : failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue et shell seal. Couche restreinte : receiver custody et final payload consequence.
 
 ## Audio
 
-FR LOC HOLD: Say it repairs. Wait before naming what it counts as repaired.
+Dis qu'il répare. Attends avant de nommer ce qu'il compte comme réparé.
 
 ## Field Note
 
-FR LOC HOLD: Marauder note: a machine can preserve proof and still damage the person inside it.
+Note de Maraudeur : une machine peut préserver une preuve et blesser encore la personne dedans.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/fr_FR. -->

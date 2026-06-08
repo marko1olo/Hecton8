@@ -19,22 +19,26 @@ localization_flags: 0
 
 # Photic Mat Codex Card
 
-The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
+Photic mats are one of HECTON-8’s first lessons in readable ecology. They brighten the shallows, feed small grazers and stabilize mineral film, but they also mark pressure chemistry and fragile seams. The ocean looks inviting because living surfaces are doing work.
 
 ## Scanner
 
-Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Photic mat. Oxygen-positive biofilm sheet over mineral skin. Bright, useful, pressure-fragile. Do not peel it from sealed cracks.
 
 ## Terminal
 
-SPECIMEN: photic mat. Oxygen-positive, pressure-fragile. Do not harvest large sheets near sealed seams.
+SPECIMEN / PHOTIC MAT
+role: shallow oxygen surface, grazer food, mineral-film stabilizer
+safe sample: loose edge less than palm width
+reject: seam-sealing sheets, gas-blistered mats, fresh grazer bite fields
+route note: torn mats can vent trapped gas and turn a clear shelf into a hazard.
 
 ## Audio
 
-Light here is work, not comfort.
+It looks soft because it is working. If it is holding a seam, leave it there.
 
 ## Field Note
 
-Cut samples only from loose edges. If the mat is sealing a crack, it is already doing a job you may need later.
+Loose edge: sample. Seam cover: leave. If the mat is sealing a wound, the wound is still there.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/en_US. -->

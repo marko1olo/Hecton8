@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DESIGN DE MOTORES E LOGÍSTICA INTERESTELAR
 
 > **Fonte:** Programa de Treinamento Técnico, Estaleiros Barnard. Documento 44-A. Leitura obrigatória para todos os contratados de saída.  

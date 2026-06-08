@@ -196,6 +196,8 @@ namespace Hecton8.AtlasSignal
         private static readonly ConflictIdSlot[] _conflictIdsByHash = new ConflictIdSlot[ConflictIdCapacity];
         private static NativeQueue<Atlas6EventPayload> _pendingEvents;
         private static NativeQueue<Atlas6EventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _conflictIdCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
@@ -517,14 +519,14 @@ namespace Hecton8.AtlasSignal
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<Atlas6EventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - deferred Atlas-6 directive lane flushed by SystemDispatcher LateUpdate - owner: Atlas6Events
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<Atlas6EventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - next-frame Atlas-6 directive lane prevents same-frame reentrant dispatch - owner: Atlas6Events
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -541,10 +543,12 @@ namespace Hecton8.AtlasSignal
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(Atlas6Events),
@@ -553,25 +557,60 @@ namespace Hecton8.AtlasSignal
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(Atlas6Events), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -664,6 +703,9 @@ namespace Hecton8.AtlasSignal
             NativeQueue<Atlas6EventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
@@ -847,6 +889,9 @@ namespace Hecton8.AtlasSignal
         private const int MinimumRevealStageForDirectiveIdentity = 3;
         private const int PendingNotificationCapacity = 4;
         private const int PendingNotificationCharCapacity = 512;
+        private static readonly uint _NotificationQueueDropWarningHash = unchecked((uint)LocHash.Compute("Atlas6DirectiveSystem.NotificationQueueDrop"));
+        private static readonly uint _NotificationPushMissWarningHash = unchecked((uint)LocHash.Compute("Atlas6DirectiveSystem.NotificationPushMiss"));
+        private static readonly uint _NotificationContextHash = unchecked((uint)LocHash.Compute("Atlas6DirectiveSystem.Notification"));
         private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
         private const string SignalFullyDecodedDiscoveryId = "atlas6_signal_fully_decoded";
         private const string TerminalSectorDiscoveryId = "atlas6_terminal_sector3";
@@ -894,6 +939,9 @@ namespace Hecton8.AtlasSignal
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
+        private bool _narrativeEventRegistered;
+        private bool _atlas6EventRegistered;
+        private bool _runtimeOwnerAborted;
         private HectonPlayerMovement _playerMovement;
         private IAtlasSignalReadModel _atlasSignal;
         private IFirstHourReadModel _firstHourDirector;
@@ -901,6 +949,7 @@ namespace Hecton8.AtlasSignal
         private IPlayerRuntimeContext _playerRuntimeContext;
         private ILocalizationTextReadModel _localization;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private uint _latestScarcityDirectiveQuestHash;
         private uint _latestScarcityDirectiveResourceHash;
         private readonly char[] _scarcityDirectiveTitleBuffer = new char[ScarcityDirectiveTitleCapacity];
@@ -909,6 +958,8 @@ namespace Hecton8.AtlasSignal
         private PendingNotificationRequest _pendingNotification2;
         private PendingNotificationRequest _pendingNotification3;
         private byte _pendingNotificationCount;
+        private int _notificationQueueDropCount;
+        private int _notificationPushMissCount;
 
         private unsafe struct PendingNotificationRequest
         {
@@ -931,6 +982,8 @@ namespace Hecton8.AtlasSignal
 
         public int SavePriority => 11;
         public int LoadPriority => 11;
+        public int NotificationQueueDropCount => _notificationQueueDropCount;
+        public int NotificationPushMissCount => _notificationPushMissCount;
 
         // ----------------------------------------------------------
         //  PUBLIC PROPERTIES
@@ -974,31 +1027,38 @@ namespace Hecton8.AtlasSignal
             TryRegister();
             TryRegisterSaveParticipant();
 
-            NarrativeEvents.Register(this);
-            Atlas6Events.Register(this);
+            TryRegisterNarrativeEvents();
+            TryRegisterAtlas6Events();
             ResolvePlayer();
         }
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregister();
             TryUnregisterLateFrameTick();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
             ClearAtlasDependencies();
             TryUnregisterSaveParticipant();
-
-            NarrativeEvents.Unregister(this);
-            Atlas6Events.Unregister(this);
+            TryUnregisterNarrativeEvents();
+            TryUnregisterAtlas6Events();
         }
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregister();
             TryUnregisterLateFrameTick();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
             TryUnregisterSaveParticipant();
+            TryUnregisterNarrativeEvents();
+            TryUnregisterAtlas6Events();
             ClearAtlasDependencies();
         }
 
@@ -1008,6 +1068,9 @@ namespace Hecton8.AtlasSignal
 
         public void SlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             IAtlasSignalReadModel signal = _atlasSignal;
             if (signal == null) return;
             if (!signal.IsAtlasSignalDetected) return;
@@ -1045,6 +1108,9 @@ namespace Hecton8.AtlasSignal
 
         public void LateFrameTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             FlushQueuedNotifications();
             if (_pendingNotificationCount == 0)
                 TryUnregisterLateFrameTick();
@@ -1052,7 +1118,7 @@ namespace Hecton8.AtlasSignal
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_runtimeOwnerAborted || _registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
@@ -1069,7 +1135,7 @@ namespace Hecton8.AtlasSignal
 
         private void TryRegisterLateFrameTick()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _lateFrameRegistered || !Application.isPlaying)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
@@ -1094,10 +1160,20 @@ namespace Hecton8.AtlasSignal
 
         private unsafe bool QueueNotification(ReadOnlySpan<char> message, NotificationEventSeverity severity)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (message.IsEmpty || message.Length > PendingNotificationCharCapacity)
+            {
+                ReportNotificationQueueDrop((uint)severity);
                 return false;
+            }
+
             if (_pendingNotificationCount >= PendingNotificationCapacity)
+            {
+                ReportNotificationQueueDrop((uint)severity);
                 return false;
+            }
 
             ref PendingNotificationRequest request = ref GetPendingNotificationSlot(_pendingNotificationCount);
             fixed (char* destination = request.Characters)
@@ -1116,6 +1192,9 @@ namespace Hecton8.AtlasSignal
 
         private unsafe void FlushQueuedNotifications()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int count = _pendingNotificationCount;
             _pendingNotificationCount = 0;
 
@@ -1140,21 +1219,49 @@ namespace Hecton8.AtlasSignal
                     if (messageHash == 0u)
                         continue;
 
-                    if (severity == (byte)NotificationEventSeverity.Warning)
-                    {
-                        NotificationEvents.TryPushRegisteredWarning(messageHash);
-                        continue;
-                    }
-
-                    if (severity == (byte)NotificationEventSeverity.Critical)
-                    {
-                        NotificationEvents.TryPushRegisteredCritical(messageHash);
-                        continue;
-                    }
-
-                    NotificationEvents.TryPushRegisteredInfo(messageHash);
+                    TryPushQueuedNotification(messageHash, severity);
                 }
             }
+        }
+
+        private void TryPushQueuedNotification(uint messageHash, byte severity)
+        {
+            bool pushed;
+            if (severity == (byte)NotificationEventSeverity.Warning)
+            {
+                pushed = NotificationEvents.TryPushRegisteredWarning(messageHash);
+            }
+            else if (severity == (byte)NotificationEventSeverity.Critical)
+            {
+                pushed = NotificationEvents.TryPushRegisteredCritical(messageHash);
+            }
+            else
+            {
+                pushed = NotificationEvents.TryPushRegisteredInfo(messageHash);
+            }
+
+            if (pushed)
+                return;
+
+            ReportNotificationPushMiss(messageHash);
+        }
+
+        private void ReportNotificationQueueDrop(uint contextHash)
+        {
+            _notificationQueueDropCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _NotificationQueueDropWarningHash,
+                _NotificationContextHash ^ contextHash,
+                math.max(1, _notificationQueueDropCount));
+        }
+
+        private void ReportNotificationPushMiss(uint messageHash)
+        {
+            _notificationPushMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _NotificationPushMissWarningHash,
+                _NotificationContextHash ^ messageHash,
+                math.max(1, _notificationPushMissCount));
         }
 
         private void ClearQueuedNotifications()
@@ -1164,6 +1271,8 @@ namespace Hecton8.AtlasSignal
             _pendingNotification1.Clear();
             _pendingNotification2.Clear();
             _pendingNotification3.Clear();
+            _notificationQueueDropCount = 0;
+            _notificationPushMissCount = 0;
         }
 
         private ref PendingNotificationRequest GetPendingNotificationSlot(int index)
@@ -1183,18 +1292,33 @@ namespace Hecton8.AtlasSignal
 
         private bool TryRegisterService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_serviceRegistered || !Application.isPlaying)
                 return true;
 
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             Atlas6DirectiveSystem registeredRuntime = Hecton8.Core.GlobalRegistry.Atlas6Directive;
-            if (registeredRuntime != null && registeredRuntime != this)
+            if (IsAtlas6DirectiveRuntimeUsable(registeredRuntime))
             {
-                Destroy(gameObject);
+                AbortDuplicateRuntimeOwner();
                 return false;
             }
 
+            if (!ReferenceEquals(registeredRuntime, null) && !ReferenceEquals(registeredRuntime, this))
+                Hecton8.Core.GlobalRegistry.UnregisterAtlas6DirectiveRuntime(registeredRuntime);
+
             Hecton8.Core.GlobalRegistry.RegisterAtlas6DirectiveRuntime(this);
             _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.Atlas6Directive, this);
+            if (!_serviceRegistered)
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
+
             return _serviceRegistered;
         }
 
@@ -1212,6 +1336,9 @@ namespace Hecton8.AtlasSignal
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
@@ -1250,6 +1377,9 @@ namespace Hecton8.AtlasSignal
 
         private void CacheAtlasDependenciesCold()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_atlasSignal == null)
                 _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
 
@@ -1268,29 +1398,41 @@ namespace Hecton8.AtlasSignal
 
         private void TryRegisterSaveParticipant()
         {
-            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+            if (_runtimeOwnerAborted || _saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
-            if (_saveService == null)
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveService = null;
             _saveRegistered = false;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void ClearAtlasDependencies()
@@ -1305,7 +1447,7 @@ namespace Hecton8.AtlasSignal
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapRegistered || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _hotSwapRegistered || !Application.isPlaying)
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -1320,6 +1462,91 @@ namespace Hecton8.AtlasSignal
             _hotSwapRegistered = false;
         }
 
+        private void TryRegisterNarrativeEvents()
+        {
+            if (_runtimeOwnerAborted || _narrativeEventRegistered)
+                return;
+
+            NarrativeEvents.Register(this);
+            _narrativeEventRegistered = true;
+        }
+
+        private void TryUnregisterNarrativeEvents()
+        {
+            if (!_narrativeEventRegistered)
+                return;
+
+            NarrativeEvents.Unregister(this);
+            _narrativeEventRegistered = false;
+        }
+
+        private void TryRegisterAtlas6Events()
+        {
+            if (_runtimeOwnerAborted || _atlas6EventRegistered)
+                return;
+
+            Atlas6Events.Register(this);
+            _atlas6EventRegistered = true;
+        }
+
+        private void TryUnregisterAtlas6Events()
+        {
+            if (!_atlas6EventRegistered)
+                return;
+
+            Atlas6Events.Unregister(this);
+            _atlas6EventRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            Atlas6DirectiveSystem registeredRuntime = Hecton8.Core.GlobalRegistry.Atlas6Directive;
+            if (ReferenceEquals(registeredRuntime, this))
+                return false;
+
+            if (IsAtlas6DirectiveRuntimeUsable(registeredRuntime))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            if (!ReferenceEquals(registeredRuntime, null))
+                Hecton8.Core.GlobalRegistry.UnregisterAtlas6DirectiveRuntime(registeredRuntime);
+
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            TryUnregister();
+            TryUnregisterLateFrameTick();
+            TryUnregisterHotSwapListener();
+            TryUnregisterSaveParticipant();
+            TryUnregisterNarrativeEvents();
+            TryUnregisterAtlas6Events();
+            ClearAtlasDependencies();
+            ClearQueuedNotifications();
+            _runtimeOwnerAborted = true;
+            _registered = false;
+            _lateFrameRegistered = false;
+            _serviceRegistered = false;
+            _hotSwapRegistered = false;
+            _saveRegistered = false;
+            _narrativeEventRegistered = false;
+            _atlas6EventRegistered = false;
+            enabled = false;
+            Destroy(gameObject);
+        }
+
+        private static bool IsAtlas6DirectiveRuntimeUsable(Atlas6DirectiveSystem system)
+        {
+            return !ReferenceEquals(system, null) &&
+                   system != null &&
+                   system._serviceRegistered &&
+                   system.isActiveAndEnabled &&
+                   !system._runtimeOwnerAborted;
+        }
+
         // ----------------------------------------------------------
         //  PUBLIC API
         // ----------------------------------------------------------
@@ -1327,6 +1554,9 @@ namespace Hecton8.AtlasSignal
         /// <summary>Zaregistrirovat barter-tranzaktsiyu.</summary>
         public void RegisterBarterTransaction()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int safeCount = BarterTransactionCount;
             _barterTransactionCount = safeCount < int.MaxValue
                 ? safeCount + 1
@@ -1386,6 +1616,9 @@ namespace Hecton8.AtlasSignal
 
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if ((NarrativeEventType)payload.EventType != NarrativeEventType.DiscoveryMade)
                 return;
 
@@ -1395,6 +1628,9 @@ namespace Hecton8.AtlasSignal
 
         public void OnAtlas6Event(in Atlas6EventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             Atlas6EventType eventType = (Atlas6EventType)payload.EventType;
             if (eventType == Atlas6EventType.PlayerStatusChanged)
             {
@@ -1516,6 +1752,9 @@ namespace Hecton8.AtlasSignal
 
         private void ResolvePlayer()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _playerMovement = null;
 
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
@@ -1525,17 +1764,27 @@ namespace Hecton8.AtlasSignal
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (_playerMovement == null)
+            if (_runtimeOwnerAborted)
             {
-                ResolvePlayer();
-                if (_playerMovement == null)
-                {
-                    playerAup = default;
-                    return false;
-                }
+                playerAup = default;
+                return false;
             }
 
-            playerAup = _playerMovement.CurrentAup;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null)
+                ResolvePlayer();
+
+            playerContext = _playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
+                playerAup = default;
+                return false;
+            }
+
+            playerAup = movementState.PredictedAup;
             return true;
         }
 
@@ -1569,7 +1818,7 @@ namespace Hecton8.AtlasSignal
 
         public void PopulateSaveData(SaveData data)
         {
-            if (data == null) return;
+            if (_runtimeOwnerAborted || data == null) return;
             data.atlas6PlayerStatus = (int)_playerStatus;
             data.atlas6BarterCount  = BarterTransactionCount;
             data.atlas6DirectiveConflictTriggered = _directiveConflictTriggered;
@@ -1577,7 +1826,8 @@ namespace Hecton8.AtlasSignal
 
         public void LoadFromSaveData(SaveData data)
         {
-            if (data == null) return;
+            ClearQueuedNotifications();
+            if (_runtimeOwnerAborted || data == null) return;
             _playerStatus = SanitizePlayerStatus(data.atlas6PlayerStatus);
             _barterTransactionCount = math.max(0, data.atlas6BarterCount);
             _directiveConflictTriggered = data.atlas6DirectiveConflictTriggered;

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Deep Reach Suboffice Registry"
+title: "Реєстр Субофісів Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Deep Reach Suboffice Registry
+# Реєстр Субофісів Deep Reach
 
-UK LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+Реєстр субофісів важливий, бо називає машинерію без вигаданого тронного залу. Deep Reach не потребував однієї людини, яка наказує кожну смерть. Йому потрібні були offices з вузькими назвами, здатні затримувати, перекласифіковувати або передавати пакет. Contract Continuity тримав obligations живими. Packet Notary вирішував, що є proof. Quarantine Hold робив rescue небезпечним на вигляд. Asset Silence знижував цінність свідків. Return Action вирішував, хто вартий маси.
 
 ## Scanner
 
-UK LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board і Return Action Queue.
 
 ## Terminal
 
-UK LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach тримав смертельні рішення нижче рівня одного лиходія. Малі desks маршрутизували clauses, packets, quarantine, silence і return priority, доки жодна печатка не виглядала як убивство.
 
 ## Audio
 
-UK LOC HOLD: A small desk can kill more quietly than a director.
+Малий desk може вбити тихіше за директора.
 
 ## Field Note
 
-UK LOC HOLD: Use dull names. Dull names are where liability hides.
+Тримай назви нудними. У нудних назвах ховається liability.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/uk_UA. -->

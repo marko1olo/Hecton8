@@ -122,7 +122,6 @@ namespace Hecton8.Caves
         private const byte DefaultMaterialId = 0;
         private const byte ThermalMeltMaterialId = 2;
         private const byte TitaniumVoxelMaterialId = 4;
-        private const byte ItemSourceVoxelCarve = 12;
         private const byte DeltaModeAdditive = VoxelDeltaChunkDTO.CellFlagAdditive;
         private const byte DeltaModeReplace = VoxelDeltaChunkDTO.CellFlagReplace;
         private const byte CarveSourceLaser = 1 << 0;
@@ -199,6 +198,7 @@ namespace Hecton8.Caves
         private IDataVault _dataVault;
         private ISimulationBucketer _simulationBucketer;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private IFluidDecalPresentationSink _fluidDecals;
         private bool _saveRegistered;
         private bool _dispatcherRegistered;
@@ -354,11 +354,7 @@ namespace Hecton8.Caves
                 _lateFrameRegistered = false;
             }
 
-            if (_saveRegistered && _saveService != null)
-            {
-                _saveService.Unregister(this);
-                _saveRegistered = false;
-            }
+            TryUnregisterSaveService();
 
             _saveService = null;
             _fluidDecals = null;
@@ -4448,20 +4444,45 @@ namespace Hecton8.Caves
         private void TryRegisterSaveService()
         {
             ISaveService saveService = _saveService;
-            if (_saveRegistered || saveService == null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (_saveRegistered)
+                return;
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
+            _registeredSaveService = saveService;
+            _saveService = saveService;
             _saveRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
+        private void TryUnregisterSaveService()
+        {
+            if (!_saveRegistered && _registeredSaveService == null)
+                return;
+
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
+            _saveRegistered = false;
         }
 
         private void ReplaceSaveService(ISaveService nextService)
         {
-            ISaveService previousService = _saveService;
-            if (_saveRegistered && previousService != null)
-                previousService.Unregister(this);
-
-            _saveRegistered = false;
+            TryUnregisterSaveService();
             _saveService = nextService;
             TryRegisterSaveService();
         }
@@ -5789,7 +5810,7 @@ namespace Hecton8.Caves
                 ItemHash = TitaniumScrapItemHash,
                 OreHash = TitaniumOreHash,
                 Quantity = (ushort)quantity,
-                SourceKind = ItemSourceVoxelCarve,
+                SourceKind = ItemAcquiredSignalSourceKinds.VoxelCarve,
                 Flags = _scheduledCarveRequest.SourceFlags,
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
@@ -7002,14 +7023,39 @@ namespace Hecton8.Caves
                 throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
-        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+            finally
+            {
+                array = default;
+            }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
         private ulong ResolveScheduledCarveVolumeId()

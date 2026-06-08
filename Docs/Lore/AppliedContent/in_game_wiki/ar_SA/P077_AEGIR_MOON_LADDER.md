@@ -9,32 +9,34 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Moon Ladder"
+title: "سلم أقمار Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ladder
+# سلم أقمار Aegir
 
-AR LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.
+يبقي سلم أقمار Aegir قمر HECTON-8 داخل نظام فيزيائي. الأقمار الداخلية تصنع أخطار إشعاع ومرحلات؛ الأقمار الوسطى تحمل المعدن والجليد وعوامات المسار والمخازن القديمة؛ الأقمار الخارجية تحمل claims باردة ومنارات ميتة.
+
+HECTON-8 ليس الأقرب ولا الأبعد. إنه القمر الذي ما زال يدفع. لذلك يلمس بقية السلم نوافذ إنقاذه وsalvage law وطرق إشارته باستمرار.
 
 ## Scanner
 
-AR LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.
+خريطة سلم الأقمار. HECTON-8 خطر عامل في نظام متحرك، وليس مستوى معزولاً.
 
 ## Terminal
 
-AR LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+أقمار AEGIR الكبرى // H1 Skarn، H2 Vela، H3 Claw، H4 Lumen، H5 Thorne، H6 Anvil، H7 Kestrel، H8 HECTON، H9 Mute. نموذج transfer وeclipse مرفق.
 
 ## Audio
 
-AR LOC HOLD: The map has more moons than mercy.
+في الخريطة أقمار أكثر من الرحمة.
 
 ## Field Note
 
-AR LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.
+Skarn يحرق. Vela تسقط الجليد. Anvil يطعم المعدن. Kestrel يقطع المرحلات. HECTON يغرق.
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/ar_SA. -->

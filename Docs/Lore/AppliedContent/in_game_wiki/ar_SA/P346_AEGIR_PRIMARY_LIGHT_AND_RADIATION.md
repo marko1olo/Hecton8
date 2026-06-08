@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Aegir Primary Light and Radiation"
+title: "ضوء النجم الأساسي في Aegir وإشعاعه"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Aegir Primary Light and Radiation
+# ضوء النجم الأساسي في Aegir وإشعاعه
 
-AR LOC HOLD: The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+النجم الأساسي في Aegir قزم K مستقر، يمنح منصات العمل ضوءا كهرمانيا وجداول بنى تحتية طويلة. الخطر يأتي من مغناطيسية العملاق الغازي. الأحزمة والممرات المشحونة وظلال الأقمار وضجيج العواصف تجعل السفر تقويما من نوافذ إشعاع، لا مسافة بسيطة.
 
 ## Scanner
 
-AR LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+بطاقة نجمية. قزم K دافئ يمنح Aegir سماء مقروءة؛ أحزمة العملاق تحول كل تصنيف درع إلى جدول.
 
 ## Terminal
 
-AR LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+بطاقة RAN النجمية A-346: خرج النجم داخل حدود عمل المستعمرة. مغناطيسية Aegir تقسو في الممرات الداخلية مرتين في كل دورة؛ الهياكل الرخيصة تنتظر، والناقلات المدفوعة تحترق عابرة.
 
 ## Audio
 
-AR LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+هناك ضوء يكفي للقراءة. هذا لم يجعل السماء رحيمة.
 
 ## Field Note
 
-AR LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+في Aegir ضوء نهار. لذلك يبقى لكل ختم رخيص وكل حرق متأخر ثمن.
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/ar_SA. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Матеріальний вихід: гіркий розрахунок"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Матеріальний вихід: гіркий розрахунок
 
-UA LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.
+Матеріальний вихід - справжня кінцівка для Marauder, який бачить HECTON-8 як оплачувану роботу. Гравець може піти зі зменшеним боргом і задоволеним реєстром carrier. Ціна видима: колонія лишається місцем злочину, перетвореним на вартість претензії, а Deep Reach отримує кращу дорогу назад, ніж працівники колись мали назовні.
 
 ## Scanner
 
-UA LOC HOLD: You can leave richer and still fail the place.
+Матеріал тиску прийнято. Вікно виходу можна викупити. Імена працівників досі не звірені.
 
 ## Terminal
 
-UA LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+КВИТАНЦІЯ МАТЕРІАЛЬНОГО ВИХОДУ: матеріал тиску custody-grade прийнято; lien зменшено; доказовий payload неповний; реєстр зниклих працівників лишається у спорі заявника; пріоритет Recovery Compliance підвищено.
 
 ## Audio
 
-UA LOC HOLD: The invoice clears before the names do.
+Рахунок закривається раніше за імена.
 
 ## Field Note
 
-UA LOC HOLD: This ending should be real credits, not a fake game over.
+Black Keel оцінить зразок раніше, ніж мертвих. Це не помилка контракту.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/uk_UA. -->

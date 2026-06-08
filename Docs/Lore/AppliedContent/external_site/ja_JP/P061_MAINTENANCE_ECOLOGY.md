@@ -8,33 +8,19 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Maintenance Ecology"
+spoiler_tier: 1
+title: "保守生態系"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# 保守生態系
 
-JP LOC HOLD: Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlasが見つけたのは友好的な海ではない。荷重を受け持てる生命だった。導電性バイオフィルムは数時間だけ弱い回路を橋渡しできた。殻状成長は次の圧力変動まで亀裂を塞げた。濾過コロニーは沈んだ中継器より遠くへ音響パルスを反復できた。タグ付き生物は金属ドローンが壊れた後もsensor packetsを戻せた。
 
-## Scanner
-
-JP LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
-
-## Terminal
-
-JP LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
-
-## Audio
-
-JP LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-JP LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+だから修理網は魅力的で醜い。プレイヤーは生きた素材をsalvageとして切り取れる。あるいは、それが圧を支えているから残すこともできる。壁はインフラであり、生息地であり、犯罪証拠でもある。保守生態系はHECTON-8が魔法ではない最初の証拠だ。魔法より悪い。すべての奇跡の背後に作業指示があるからだ。
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/ja_JP. -->

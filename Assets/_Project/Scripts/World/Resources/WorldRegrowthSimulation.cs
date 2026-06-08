@@ -429,28 +429,36 @@ namespace Hecton8.World
                 return;
 
             H8Memory.Release(ref array, NativeMemorySystemId);
-            array = default;
         }
 
-        private static JobHandle DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        private static unsafe JobHandle DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
         {
             if (!array.IsCreated)
                 return dependency;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
             JobHandle disposeHandle = H8Memory.Release(ref array, dependency, NativeMemorySystemId);
-            array = default;
+            if (array.IsCreated)
+                return disposeHandle;
+
+            if (!DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true))
+                return disposeHandle;
+
+            NativeMemorySentinel.UnregisterPointer(trackedPointer);
             return disposeHandle;
         }
 
-        private static void DisposeNativeArrayImmediate<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void DisposeNativeArrayImmediate<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
             H8Memory.Release(ref array, NativeMemorySystemId);
-            array = default;
+            if (array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterPointer(trackedPointer);
         }
 
         private void ResetState()

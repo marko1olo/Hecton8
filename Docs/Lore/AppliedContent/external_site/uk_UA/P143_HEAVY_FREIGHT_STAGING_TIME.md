@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+spoiler_tier: 1
+title: "Час підготовки важкого фрахту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# Час підготовки важкого фрахту
 
-UA LOC HOLD: Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships.
-
-## Scanner
-
-UA LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
-
-## Terminal
-
-UA LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
-
-## Audio
-
-UA LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
-
-## Field Note
-
-UA LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+Важкі вантажі ховають час усередині інфраструктури. Atlas hardware, seed cargo, shield stock і braking parts можуть прибути рано, бо їх запускають за роки до публічної мови поселення. Це не робить аварійний порятунок легким. Підготовлений маршрут рухає масу, бо depots, beam windows, pellet streams і catch stages вже чекали. У маршруту катастрофи такого терпіння немає. HECTON-8 повний машин зі старих планів і людей, яким допомога потрібна за новим годинником.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/uk_UA. -->

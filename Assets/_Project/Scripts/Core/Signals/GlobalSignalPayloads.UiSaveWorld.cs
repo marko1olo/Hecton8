@@ -171,6 +171,10 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SaveLifecycleSignal : ISignal
     {
+        public const byte FailureFlag = 1 << 0;
+        public const byte SaveOperationFlag = 1 << 1;
+        public const byte LoadOperationFlag = 1 << 2;
+
         [FieldOffset(0)] public uint SlotHash;
         [FieldOffset(4)] public uint OperationId;
         [FieldOffset(8)] public float Progress01;

@@ -209,7 +209,7 @@ namespace Hecton8.Audio
             if (!_hotSwapRegistered)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
         }
     }

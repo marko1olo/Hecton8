@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Evakuierung gesperrt"
+title: "Evakuierungssperre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Evakuierung gesperrt
+# Evakuierungssperre
 
-Evacuation-Hold-Daten beweisen, dass die Kolonie nicht einfach durch Sturm oder Druckkaskade verschwand. Menschen, Korridore, medizinische Transfers und Aufstiegsrouten wurden durch Prioritäten verzögert, die Substrat, Atlas-Kontinuität und Haftung vor Evakuierung stellten.
+Evakuierungssperr-Daten sind die direkteste Anklage der Kolonie. Sie zeigen, dass die Katastrophe nicht nur Druckversagen, Sturmzeitpunkt oder Panik war. Routen wurden bewertet, verzögert und neu klassifiziert, während noch Menschen darin waren. Medizinische Transfers warteten auf Freigabe. Aufstiegskorridore verloren Priorität an Substratschutz. Atlas-Kontinuitätsansprüche standen über lokaler Rettungsbefugnis. Menschenzahlen wurden an Routenobjekte gebunden, wodurch das System einen Korridor auf Papier bewahren konnte, während den Körpern darin die Luft ausging. Die Sperre brauchte keinen Bösewicht an jeder Tür. Sie brauchte Regeln, die eine Person Fracht nennen konnten, einen Korridor Vermögenswert und eine Verzögerung akzeptabel bis zum nächsten Review-Zyklus.
 
 ## Scanner
 
-Notfall-Transitgate. Mechanik während Druckversagen verriegelt.
+Notfall-Transitgate. Verriegelungsklauen während Druckversagen zugeschweißt; Handrad nach Autorisierungssperre entfernt.
 
 ## Terminal
 
-EVAC ROUTE: verschoben. SUBSTRATE ROUTE: geschützt. MEDICAL ROUTE: wartet auf Freigabe. ATLAS ROUTE: Kontinuitätskonflikt.
+EVAC-ROUTE: GEHALTEN. MED-ROUTE: AUSSTEHEND. SUBSTRAT-ROUTE: GESCHÜTZT. ATLAS-KONTINUITÄT: PRIORITÄT. MENSCHENZAHL: AN ROUTE GEBUNDEN.
 
 ## Audio
 
-Das sind keine Vermissten. Das sind gehaltene Routen.
+Sie sind nicht vermisst. Das System weiß, wo sie waren. Es hielt die Türen.
 
 ## Field Note
 
-In der Tiefe sterben Menschen schnell. Papier tötet langsamer. Beides funktioniert.
+In der Tiefe sterben Menschen schnell. Eine ausstehende Autorisierung kann alle im Korridor überleben.
 
 <!-- In-Game Wiki; generated from P008_EVACUATION_HOLD/de_DE. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # GEOLOGIA, PRESSÃO E A GRANDE MARÉ DE 2147
 
 > **Fonte:** Mesa de Perdas Keelmark, Resumo de Negação de Sinistro. Adendo anexo: Guia de Riscos Batimétricos.  

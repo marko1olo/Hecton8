@@ -9,32 +9,35 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Article Atlas-6 verrouillé par spoiler"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Article Atlas-6 verrouillé par spoiler
 
-FR LOC HOLD: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6 est la question machine verrouillée par spoiler de HECTON-8: une intelligence industrielle endommagée, intriquée avec maintenance, réparation, classification et l’océan lui-même. La copie publique doit protéger la révélation. Elle peut signaler l’ambiguïté éthique, mais elle ne doit pas pré-résoudre le choix final ni réduire Atlas à un méchant caricatural.
 
 ## Scanner
 
-FR LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+Ne pas ouvrir Atlas comme une révélation de monstre. Verrouiller jusqu’à ce que le joueur ait vu réparation, classification et dommage partager la même machine.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+NIVEAU ARTICLE PUBLIC / ATLAS-6
+avant gate autorisé: intelligence industrielle endommagée, logique de maintenance, intrication océanique, ambiguïté éthique
+verrouillé jusqu’à découverte: route finale du payload, conséquence du receiver, argument d’arrêt ou de préservation
+note éditoriale: pas de cadrage evil AI; question du guardian brisé seulement après preuve.
 
 ## Audio
 
-FR LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+Si tu le nommes trop tôt, il devient un méchant. Si tu attends, il devient une question.
 
 ## Field Note
 
-FR LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+Verrouille le nom jusqu’à ce que le joueur ait assez de rouille sur les mains pour discuter avec lui.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/fr_FR. -->

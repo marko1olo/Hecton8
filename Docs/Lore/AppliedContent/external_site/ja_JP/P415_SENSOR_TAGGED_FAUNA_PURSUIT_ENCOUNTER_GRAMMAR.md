@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "遭遇文法：センサータグ付き生物の追跡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# 遭遇文法：センサータグ付き生物の追跡
 
-JA LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+センサータグ付き生物の追跡は、Atlas を悪役の命令ではなく損傷した解釈として見せる。無害または怯えた動物でも、古いインフラがその傷跡をまだテレメトリとして扱うため危険になり得る。
 
 ## Scanner
 
-JA LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+センサータグ付き生物の追跡。古いバイオメタルタグが修復ネットワークの反響を返している。動物の移動は局所的だが、ネットワークの解釈は局所的ではない。
 
 ## Terminal
 
-JA LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+遭遇文法 / センサータグ追跡 / 役割：壊れた保守フィードバック、避難場所汚染リスク、悪役ではない圧力 / 安全な読み：タグの脈動が動きに遅れる、動物は痛みを避ける、Atlas の経路反響は最後に知られた道を追う / 却下：精神支配の構図、整いすぎた敵対AI行動、タグ付き動物を基地の避難場所へ導くこと / 経路メモ：角度、静音、遮蔽で反響を断て。ネットワークに家の場所を教えるな。
 
 ## Audio
 
-JA LOC HOLD: It follows because the network thinks following is a repair.
+それが追ってくるのは、古い何かが追跡を修復手順だと思っているからだ。
 
 ## Field Note
 
-JA LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+タグを家へ連れて行くな。線を断ち、音を断ち、解釈を断て。動物はネットワークではない。
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/ja_JP. -->

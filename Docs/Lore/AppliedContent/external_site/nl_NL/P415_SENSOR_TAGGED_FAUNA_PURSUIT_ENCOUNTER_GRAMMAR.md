@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "Ontmoetingsgrammatica: achtervolging door sensorgemarkeerde fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# Ontmoetingsgrammatica: achtervolging door sensorgemarkeerde fauna
 
-NL LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+Achtervolging door sensorgemarkeerde fauna toont Atlas als beschadigde interpretatie, niet als bevel van een schurk. Een onschuldig of bang dier kan gevaarlijk worden omdat oude infrastructuur zijn litteken nog als telemetrie behandelt.
 
 ## Scanner
 
-NL LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+Achtervolging door sensorgemarkeerde fauna. Oude biometalen markering stuurt echo van het reparatienetwerk terug. Dierbeweging is lokaal; netwerkinterpretatie niet.
 
 ## Terminal
 
-NL LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+ONTMOETINGSGRAMMATICA / SENSORGEMARKEERDE ACHTERVOLGING / rol: corrupte onderhoudsterugkoppeling, besmettingsrisico voor schuilplek, druk zonder schurk / veilige lezing: markeringspuls loopt achter op beweging, dier vermijdt pijn, Atlas-route-echo volgt laatst bekende pad / verwerpen: gedachtencontrolekader, schoon vijandig AI-gedrag, gemarkeerd dier naar basisschuilplek leiden / routenotitie: breek de echo met hoek, stilte en afscherming; leer het netwerk niet waar thuis is.
 
 ## Audio
 
-NL LOC HOLD: It follows because the network thinks following is a repair.
+Het volgt omdat iets ouds denkt dat volgen een reparatiestap is.
 
 ## Field Note
 
-NL LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+Leid de markering niet naar huis. Breek de lijn, breek het geluid, breek de interpretatie. Het dier is niet het netwerk.
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/nl_NL. -->

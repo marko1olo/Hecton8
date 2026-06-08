@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Борг тонна-вікна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Борг тонна-вікна
 
-UK LOC HOLD: Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-UK LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-UK LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-UK LOC HOLD: You owe the orbit before you owe the money.
-
-## Field Note
-
-UK LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Тонна-вікно — частка місткості carrier, виміряна масою, часом burn, карантинним об'ємом і юридичним пріоритетом. Для оператора це схоже на борг, бо кожен корисний предмет із HECTON-8 потрапляє в той самий ledger, що й тіло, яке його знайшло. Запечатаний кейс може бути легким і юридично важким. Стійка зразків може коштувати мало маси й вимагати чистого об'єму. Вилучення людини здається очевидним, доки баласт, кисневий резерв і payload custody вже не витратили доступне вікно. Економіка HECTON-8 стає фізичною, а не абстрактною. Гравця не карає фальшивий моральний лічильник. Гравець замкнений у машині, що оцінює виживання через паливо, масу, зараження й папери.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/uk_UA. -->

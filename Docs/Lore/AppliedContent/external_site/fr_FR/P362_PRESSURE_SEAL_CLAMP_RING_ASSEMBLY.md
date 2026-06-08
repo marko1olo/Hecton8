@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "Assemblage d'anneau de serrage d'étanchéité pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Pressure Seal Clamp Ring Assembly
+# Assemblage d'anneau de serrage d'étanchéité pression
 
-FR LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.
+L'Assemblage d'anneau de serrage d'étanchéité pression fait de la réparation capsule un marchandage avec la pression : métal deep-rated, assise de verre et Atlas bio-sealant peuvent sauver ou piéger la voie d'ascension.
 
 ## Scanner
 
-FR LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Cicatrice d'anneau de serrage. Le manchon d'ascension a survécu à l'impact en dépensant le joint qui devait le ramener chez lui.
 
 ## Terminal
 
-FR LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT : shallow patch maintient seulement la pression de compartiment. Ascent seal exige deep-rated clamp ring, pressure-glass seat, shell-sealant map et profil Deep Reach vérifié. Atlas-grown sealant peut préserver l'habitat tout en bloquant une séparation propre.
 
 ## Audio
 
-FR LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+Le joint utile est vivant dans la mauvaise direction.
 
 ## Field Note
 
-FR LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+Une rustine de safe-room peut acheter une heure d'air. Elle ne tient pas une impulsion de lancement.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/fr_FR. -->

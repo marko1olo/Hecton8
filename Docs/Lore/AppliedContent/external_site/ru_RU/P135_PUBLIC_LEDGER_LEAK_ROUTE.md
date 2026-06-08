@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Маршрут утечки в public ledger"
+title: "Утечка в публичный реестр"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Маршрут утечки в public ledger
+# Утечка в публичный реестр
 
-RU LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+Утечка в публичный реестр - не идеальная фантазия о разоблачителе. Это пакет, уходящий в узкое relay-окно с witness hash, достаточной custody, чтобы его было трудно отрицать, и слишком многими пробелами, чтобы он был безопасен. Tau Ceti может сделать запись публичной намного позже, чем способна спасти кого-то в воде.
 
-## Scanner
-
-Можно слить правду раньше, чем ты поймешь ее целиком.
-
-## Terminal
-
-PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-Правда уходит первой. Тебе может не понравиться, кто ее прочитает.
-
-## Field Note
-
-Public не значит безопасно. Это значит труднее стереть.
+В этой задержке и смысл. Deep Reach уже не может просто удалить claim, но игрок тоже не может решить, кто воспользуется им дальше. Страховщики, соперники, гражданские суды, Marauder-пулы и корпоративные офисы прочитают одну и ту же рану по-разному. Этот финал делает правду труднее похоронить и труднее присвоить.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/ru_RU. -->

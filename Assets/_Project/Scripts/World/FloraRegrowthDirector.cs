@@ -551,8 +551,8 @@ namespace Hecton8.World
 
         private float ResolveMigratorySargassumShadeOcclusion(Vector3 runtimePosition)
         {
-            WorldProceduralScatterDirector scatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;
-            if (scatterDirector == null ||
+            WorldProceduralScatterDirector scatterDirector = null;
+            if (!WorldRuntimeReferenceUtility.TryResolveWorldProceduralScatterDirector(ref scatterDirector) ||
                 !scatterDirector.TryEvaluateMigratorySargassumShade(runtimePosition, out float occlusion01))
             {
                 return 0f;
@@ -854,10 +854,17 @@ namespace Hecton8.World
         /// <param name="shiftData">Origin-shift event emitted by <see cref="HectonFloatingOrigin"/>.</param>
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.000001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
-            float3 runtimeOffset = new float3(-shiftData.ShiftOffset.x, -shiftData.ShiftOffset.y, -shiftData.ShiftOffset.z);
+            float3 runtimeOffset = new float3(-shiftOffset.x, -shiftOffset.y, -shiftOffset.z);
             ApplyOriginShiftToCachedFloraState(runtimeOffset);
         }
 
@@ -1346,9 +1353,21 @@ namespace Hecton8.World
 
         private float GetCurrentPlayTimeSeconds()
         {
-            return _saveService != null
-                ? _saveService.CurrentPlayTimeSeconds
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            return IsSaveServiceUsable(saveService)
+                ? saveService.CurrentPlayTimeSeconds
                 : (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private static Vector3 ToRuntimePosition(AbsoluteUniversePosition position)

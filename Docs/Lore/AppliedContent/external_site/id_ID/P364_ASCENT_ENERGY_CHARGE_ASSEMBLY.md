@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Ascent Energy Charge Assembly"
+title: "Rakitan Muatan Energi Pendakian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ascent Energy Charge Assembly
+# Rakitan Muatan Energi Pendakian
 
-ID LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.
+Rakitan Muatan Energi Pendakian mengikat ekonomi sumber daya ke konsekuensi naratif: blue debt dan vent-forged hardware menentukan keandalan pelarian, custody bukti, dan kompromi.
 
 ## Scanner
 
-ID LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+Dudukan energi tergores pressure pulse. Muatan murah membuat peti mati rapi.
 
 ## Terminal
 
-ID LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, dan custody stamp wajib. Raw fuel ditolak. Blue debt tanpa sertifikasi retak di bawah launch impulse dan membatalkan recovery claim.
 
 ## Audio
 
-ID LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+Kau bisa menjual daya angkat atau menungganginya. Tidak keduanya.
 
 ## Field Note
 
-ID LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+Setiap gram di dudukan adalah pelarian, bukti, atau blue-debt payout. Kapsul tidak memaafkan keserakahan.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/id_ID. -->

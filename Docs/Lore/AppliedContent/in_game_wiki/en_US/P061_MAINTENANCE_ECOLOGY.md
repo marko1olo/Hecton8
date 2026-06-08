@@ -7,8 +7,8 @@ poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
 biome_tags: biome.cable_reef;biome.repair_fauna
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Maintenance Ecology"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Maintenance Ecology
 
-Maintenance ecology is what remains after Atlas learns which living surfaces can carry work. Biofilm can bridge a weak circuit. Shell growth can close a fracture. Filter colonies can repeat acoustic pulses. Tagged fauna can return bad sensor packets. None of that makes the ocean a mind, but it makes every cable reef a possible tool, hazard, or false repair.
+Maintenance Ecology is the rule that makes HECTON-8 useful and wrong at the same time. Atlas learned that biofilm can carry weak signal, filter colonies can repeat pings, shell growth can close cracks, and tagged fauna can bring back corrupted sensor packets. The ocean is not a person. The repair network is still alive enough to make every cable reef a tool, hazard and evidence trail.
 
 ## Scanner
 
-Conductive biofilm, shell growth, tagged fauna, vent heat, and drones are carrying repair traffic.
+Conductive biofilm, shell growth, tagged fauna and vent heat are carrying repair traffic.
 
 ## Terminal
 
-ATLAS ECOLOGY: biofilm bridge stable. Filter colony repeats pulse. Shell seal closes fracture. Fauna tag returns sensor packets.
+ATLAS MAINTENANCE ECOLOGY: biofilm bridge stable; filter colony repeats acoustic pulse; shell seal closes fracture; tagged fauna returns damaged sensor packets.
 
 ## Audio
 
-The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
+The cable is alive because the machine needed it alive.
 
 ## Field Note
 
-Do not cut every living seam. Some are holding pressure. Scan for signal first, then decide what can be stripped.
+Do not strip every living seam. Some of them are holding pressure better than the metal.
 
 <!-- In-Game Wiki; generated from P061_MAINTENANCE_ECOLOGY/en_US. -->

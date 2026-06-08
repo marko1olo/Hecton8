@@ -8,33 +8,19 @@ biome_tags: biome.tide_gauge;biome.glacier_break
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+spoiler_tier: 1
+title: "Modèle de marée de Mara Venn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# Modèle de marée de Mara Venn
 
-FR LOC HOLD: Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning.
+Mara Venn n'a pas écrit une prophétie. Elle a écrit un modèle avec barres d'erreur, marges d'évacuation et mauvais calendrier. Sous la géométrie de printemps d'Aegir, le cryosphere shear pouvait dépasser la capacité de levage disponible. La colonie n'avait pas besoin d'une certitude parfaite pour agir. Elle avait besoin que quelqu'un traite la queue de la courbe comme des personnes plutôt qu'un coût.
 
-## Scanner
-
-FR LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
-
-## Terminal
-
-FR LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
-
-## Audio
-
-FR LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
-
-## Field Note
-
-FR LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+Deep Reach a gardé le modèle et affaibli la réponse. L'alerte est devenue monitor, la marge d'évacuation est devenue problème budgétaire futur, et le registre public a ensuite appelé l'inondation illisible. Le joueur doit sentir le mensonge dans la forme du papier : la marée était naturelle, mais le désastre a été édité.
 
 <!-- External Site; generated from P062_MARA_VENN_TIDE_MODEL/fr_FR. -->

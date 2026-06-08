@@ -126,23 +126,35 @@ namespace Hecton8.UI
         private static NativeQueue<PDAEventPayload> _pendingEvents;
         private static NativeQueue<PDAEventPayload> _nextFrameEvents;
         private static NativeParallelHashSet<ulong> _queuedEventKeys;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
+        private static int _queuedEventKeysSentinelId;
         private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _dedupFrame = -1;
         private static int s_x001PDAEventsSignalPushDropCount;
+        private static int s_x001PDAEventsQueueRefusalCount;
+        private static int s_x001PDAEventsListenerRegistrationRefusalCount;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
         internal static int DroppedTypedSignalCount => s_x001PDAEventsSignalPushDropCount;
+        internal static int RefusedQueuedEventCount => s_x001PDAEventsQueueRefusalCount;
+        internal static int RefusedListenerRegistrationCount => s_x001PDAEventsListenerRegistrationRefusalCount;
 
         public static void Register(IPDAEventListener listener)
         {
-            if (listener == null)
-                return;
+            TryRegister(listener);
+        }
+
+        internal static bool TryRegister(IPDAEventListener listener)
+        {
+            if (listener == null || !Application.isPlaying)
+                return false;
 
             EnsureInitialized();
-            RegisterImmediate(listener);
+            return RegisterImmediate(listener);
         }
 
         public static void Unregister(IPDAEventListener listener)
@@ -388,6 +400,8 @@ namespace Hecton8.UI
             _nextFrameEventCount = 0;
             _dedupFrame = -1;
             s_x001PDAEventsSignalPushDropCount = 0;
+            s_x001PDAEventsQueueRefusalCount = 0;
+            s_x001PDAEventsListenerRegistrationRefusalCount = 0;
             _isDispatching = false;
         }
 
@@ -410,15 +424,19 @@ namespace Hecton8.UI
         }
 #endif
 
-        private static void RegisterImmediate(IPDAEventListener listener)
+        private static bool RegisterImmediate(IPDAEventListener listener)
         {
             if (ContainsImmediate(listener))
-                return;
+                return true;
 
             if (_listenerCount >= ListenerCapacity)
-                return;
+            {
+                s_x001PDAEventsListenerRegistrationRefusalCount++;
+                return false;
+            }
 
             _listeners[_listenerCount++].Listener = listener;
+            return true;
         }
 
         private static bool TryUnregisterImmediate(IPDAEventListener listener)
@@ -458,21 +476,21 @@ namespace Hecton8.UI
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<PDAEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] — deferred PDA event lane flushed by SystemDispatcher LateUpdate — owner: PDAEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<PDAEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] — next-frame PDA events raised by listeners — owner: PDAEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
 
                 if (!_queuedEventKeys.IsCreated)
                 {
                     _queuedEventKeys = new NativeParallelHashSet<ulong>(EventDedupCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashSet<ulong>[128] - per-frame PDA duplicate suppression keys - owner: PDAEvents
-                    RegisterNativeHashSet(ref _queuedEventKeys, nameof(_queuedEventKeys));
+                    RegisterNativeHashSet(ref _queuedEventKeys, nameof(_queuedEventKeys), out _queuedEventKeysSentinelId);
                 }
 
                 SignalBus<PDAEventPayload>.Configure(
@@ -495,10 +513,12 @@ namespace Hecton8.UI
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(PDAEvents),
@@ -514,10 +534,12 @@ namespace Hecton8.UI
 
         private static void RegisterNativeHashSet<T>(
             ref NativeParallelHashSet<T> hashSet,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged, IEquatable<T>
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeParallelHashSet(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeParallelHashSetInstance(
                 hashSet,
                 nameof(PDAEvents),
                 label,
@@ -532,26 +554,55 @@ namespace Hecton8.UI
 
         private static void ReleaseNativeState()
         {
-            if (_pendingEvents.IsCreated)
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
+            ReleaseNativeHashSet(ref _queuedEventKeys, ref _queuedEventKeysSentinelId);
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
+            where T : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
 
-            if (_nextFrameEvents.IsCreated)
+            if (queue.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
             }
 
-            if (_queuedEventKeys.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashSet(nameof(PDAEvents), nameof(_queuedEventKeys));
-                _queuedEventKeys.Dispose();
-                _queuedEventKeys = default;
-            }
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -568,18 +619,73 @@ namespace Hecton8.UI
             }
         }
 
+        private static void ReleaseNativeHashSet<T>(ref NativeParallelHashSet<T> hashSet, ref int sentinelId)
+            where T : unmanaged, IEquatable<T>
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (hashSet.IsCreated)
+            {
+                try
+                {
+                    hashSet.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    hashSet = default;
+                }
+            }
+            else
+            {
+                hashSet = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
+        }
+
         private static bool Enqueue(in PDAEventPayload payload)
         {
-            EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            if (!Application.isPlaying)
                 return false;
 
+            EnsureInitialized();
             PrepareDedupFrame();
             PDAEventPayload resolvedPayload = payload;
             ResolveDedupFields(ref resolvedPayload);
             ulong dedupKey = ComposeDedupKey(in resolvedPayload);
-            if (dedupKey != 0UL && !TryRegisterDedupKey(dedupKey))
+            if (dedupKey != 0UL && ContainsDedupKey(dedupKey))
+                return true;
+
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                s_x001PDAEventsQueueRefusalCount++;
                 return false;
+            }
+
+            if (dedupKey != 0UL && !TryRegisterDedupKey(dedupKey))
+                return true;
 
             if (_isDispatching)
             {
@@ -675,6 +781,11 @@ namespace Hecton8.UI
                 return true;
 
             return _queuedEventKeys.Add(dedupKey);
+        }
+
+        private static bool ContainsDedupKey(ulong dedupKey)
+        {
+            return _queuedEventKeys.IsCreated && _queuedEventKeys.Contains(dedupKey);
         }
 
         private static void ResolveDedupFields(ref PDAEventPayload payload)
@@ -854,6 +965,21 @@ namespace Hecton8.UI
         /// </summary>
         public static bool IsOpen { get; private set; }
         internal static PlayerPDA ActiveRuntimeInstance { get; private set; }
+
+        internal static bool TryResolveActiveRuntime(ref PlayerPDA target)
+        {
+            PlayerPDA active = ActiveRuntimeInstance;
+            if (active == null || !active.isActiveAndEnabled)
+            {
+                target = null;
+                return false;
+            }
+
+            if (!ReferenceEquals(target, active))
+                target = active;
+
+            return true;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -1289,7 +1415,7 @@ namespace Hecton8.UI
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -2017,7 +2143,7 @@ namespace Hecton8.UI
 
         private void HandlePDAInput()
         {
-            // PDA toggle is usually a player-map action, but if PDA is open, 
+            // PDA toggle is usually a player-map action, but if PDA is open,
             // the UI map might also have a toggle or the Player map is disabled.
             // In our case, Open() switches to UI, but UI map might not have "PDA" action.
             // If InputManager handles "PDA" in both maps or if we stay in Player map for toggle:
@@ -2088,6 +2214,7 @@ namespace Hecton8.UI
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
+        private bool _pdaEventsRegistered;
         private bool _terminalRefreshDirty;
         private bool _terminalForceRefresh;
         private CanvasGroup _group;
@@ -2117,25 +2244,36 @@ namespace Hecton8.UI
         {
             TryRegisterHotSwapListener();
             CachePlayerRuntimeContext(GlobalRegistry.Player);
+            ResolveDiagnosticsSources();
             EnsureBuilt();
-            PDAEvents.Register(this);
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
             EvaluateTickRegistration();
             QueueTerminalRefresh(force: true);
         }
 
         private void OnDisable()
         {
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
+            _microFaunaBoids = null;
         }
 
         private void OnDestroy()
         {
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
             PDAEvents.AssertUnregistered(this, nameof(PDADiagnosticTerminal));
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
+            _microFaunaBoids = null;
         }
 
         public void SlowTick()
@@ -2296,8 +2434,7 @@ namespace Hecton8.UI
         {
             ResolvePlayerMovementFromRuntimeContext();
 
-            if (_microFaunaBoids == null)
-                _microFaunaBoids = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
+            WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref _microFaunaBoids);
         }
 
         private void ResolvePlayerMovementFromRuntimeContext()
@@ -2369,6 +2506,13 @@ namespace Hecton8.UI
                 UnregisterFromTickManager();
                 if (currentService != null)
                     EvaluateTickRegistration();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime)
+            {
+                WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref _microFaunaBoids);
+                QueueTerminalRefresh(force: true);
             }
         }
 
@@ -2538,5 +2682,3 @@ namespace Hecton8.UI
         }
     }
 }
-
-

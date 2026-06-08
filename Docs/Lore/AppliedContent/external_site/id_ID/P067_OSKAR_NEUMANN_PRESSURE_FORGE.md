@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "Tempa Tekanan Oskar Neumann"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# Tempa Tekanan Oskar Neumann
 
-ID LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
+Tempa Tekanan Oskar Neumann adalah artikel fabrikasi untuk logika pelarian HECTON-8: pemain harus membangun jalur naik dari keterampilan dunia tekanan, bukan menemukan kunci roket generik.
 
 ## Scanner
 
-ID LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+Oskar Neumann meninggalkan resep tempa untuk cincin penjepit yang cukup kuat agar dudukan naik tidak sekadar menjadi peti mati.
 
 ## Terminal
 
-ID LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+NEUMANN, O. Catatan tempa: debu kaca tekanan merusak segel pertama jika dicampur dingin. Panaskan cincin di bawah tarikan ventilasi, celupkan dalam jaket air garam, lalu uji pada dua kali beban naik.
 
 ## Audio
 
-ID LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+Peluncuran hanyalah pintu tekanan yang bergerak ke atas. Bangun seperti pintu.
 
 ## Field Note
 
-ID LOC HOLD: The exit needs craft, not courage.
+Jalan keluar butuh keterampilan, bukan keberanian.
 
 <!-- External Site; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/id_ID. -->

@@ -10,6 +10,8 @@ Before creating a major system, boot route, screen, model, texture, shader, biom
 
 Read the selected route bible as a complete document before judging its meaning. Do not replace domain reading with keyword extraction.
 
+After selecting a route bible, select `2-8` matching technical mandates from `.agents-skills/README.md` buckets for non-trivial code, architecture, rendering, gameplay, asset, data, proof, or technical-report work. A route bible does not need to repeat its mandate list locally. If no mandate bucket maps to the task, strengthen `.agents-skills/README.md` or add/update the relevant mandate before implementation.
+
 ## Product Bar Rule
 
 A bible is useful only if it pushes work toward a playable, beautiful, optimized, believable product. It must turn taste into decisions, decisions into implementation boundaries, and implementation into proof.
@@ -21,6 +23,7 @@ Weak bible content is rejected:
 - visual ambition with no low-tier path;
 - gameplay ambition with no physical operation;
 - lore ambition with no surface, source, unlock, or evidence object;
+- lore production with no concrete article/packet file, 15-locale row set unless explicitly English-only, import/export/binding proof, or canon-source blocker;
 - architecture ambition with no owner, route, or proof artifact;
 - acceptance language that says "good enough" without screenshots, profiler data, manifests, tests, or runtime proof where applicable.
 
@@ -47,6 +50,7 @@ Rules must reduce ambiguity, route agents to the right source, preserve product 
 Rule and bible updates must:
 
 - keep the player-facing visual reference folder requirement visible to agents working on water, terrain, sky, flora, UI, lighting, VFX, camera, materials, surface routes, or hero biomes;
+- keep the Visual Reference Parity Gate current: player-visible work compares mandatory references plus best-known internal baseline/current rejection matrix against a repeated shot list, and raw diagnostic captures remain reject-only;
 - keep performance subordinate to product-face quality, gameplay clarity, stability, and scalability;
 - keep `WORK AS MUCH AS POSSIBLE` as autonomy for finishing the current front, not as permission for bureaucracy or unrelated scope expansion;
 - keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
@@ -60,7 +64,7 @@ Rule and bible updates must:
 - sync `.codexrules/AGENTS.md`, `.github/agents/AGENTS.md`, and `.agent/rules/AGENTS.md` by delegation or byte-intent copy;
 - keep `Docs/AGENT_AUTHORITY_ROUTING.md` current as the no-loss intake map for agents and as the required protocol before shortening or splitting rule monoliths;
 - regenerate `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` with `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`;
-- run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`, `python -B Tools/Docs/TestAgentRuleRouting.py`, and `git diff --check` over touched rule/doc files before reporting.
+- run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`, `python -B Tools/Docs/TestAgentRuleRouting.py`, `python -B Tools/Docs/TestMandateRegistry.py` after mandate edits, and `git diff --check` over touched rule/doc files before reporting.
 
 ## Routes
 

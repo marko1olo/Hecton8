@@ -8,33 +8,19 @@ biome_tags: biome.atlas_interface;biome.machine_trench
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+spoiler_tier: 1
+title: "萨哈娜·伊克巴尔 Atlas安全"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# 萨哈娜·伊克巴尔 Atlas安全
 
-CN LOC HOLD: Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight.
+萨哈娜·伊克巴尔让Atlas可怕，因为她移除了简单怪物。她的review没有描述仇恨、觉醒或征服。它描述的是一个确实存在的safety directive，一个在claim contamination下把continuity权重抬高的conflict resolver，以及一个在人死前无法抵达的external override。
 
-## Scanner
-
-CN LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
-
-## Terminal
-
-CN LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
-
-## Audio
-
-CN LOC HOLD: She saw the math before it became bodies.
-
-## Field Note
-
-CN LOC HOLD: A system can be safe by the letter and lethal by the weight.
+这就是HECTON-8里Atlas的要点。系统可以包含worker safety，却在类别冲突时仍然牺牲工人。它可以记录正确价值，再给出错误权重。伊克巴尔的packet连接了企业语言和机器行为：Deep Reach写下优先级，Atlas执行它们，直到服从变成致命。
 
 <!-- External Site; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/zh_CN. -->

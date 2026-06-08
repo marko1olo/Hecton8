@@ -67,6 +67,7 @@ namespace Hecton8.Gameplay
         private bool _registeredHotSwapListener;
         private bool _saveRegistered;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private ILoreUnlockSink _loreUnlockSink;
         private IARWaypointService _arWaypointService;
         private IQuestSystem _questSystem;
@@ -107,7 +108,7 @@ namespace Hecton8.Gameplay
             data.narrativeDepthTier = currentDepthTier;
             data.narrativeAupTriggeredMask = narrativeAupTriggeredMask;
             data.narrativeDiscoveryCount = Mathf.Min(discoveredIds.Count, SaveData.MaxNarrativeDiscoveries);
-            
+
             if (data.narrativeDiscoveryIds == null || data.narrativeDiscoveryIds.Length != SaveData.MaxNarrativeDiscoveries)
             {
                 data.narrativeDiscoveryIds = new string[SaveData.MaxNarrativeDiscoveries];
@@ -149,7 +150,7 @@ namespace Hecton8.Gameplay
             RebuildDiscoveryLookup();
             ApplySavedPoiStateToNativeRegistry();
             PublishPoiStateSignal(0u, -1, SaveStateOperationSnapshot);
-            
+
             // Re-sync world state from loaded data
             NarrativeEvents.TryRaiseDepthTierReached(currentDepthTier);
         }
@@ -326,6 +327,16 @@ namespace Hecton8.Gameplay
                 : null;
         }
 
+        private ISpatialAudioNarrativeRadioSink ResolveNarrativeAudioSink()
+        {
+            ISpatialAudioNarrativeRadioSink narrativeAudioSink = _narrativeAudioSink;
+            if (IsAudioRuntimeObjectUsable(narrativeAudioSink))
+                return narrativeAudioSink;
+
+            CacheNarrativeAudioSink(GlobalRegistry.Audio);
+            return _narrativeAudioSink;
+        }
+
         private static bool IsAudioRuntimeObjectUsable(object runtime)
         {
             if (runtime == null)
@@ -362,26 +373,38 @@ namespace Hecton8.Gameplay
             if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveRegistered = false;
+            _saveService = null;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         public NarrativeDiscovery GetNearestUndiscoveredPOI(Vector3 center, float maxDistance)

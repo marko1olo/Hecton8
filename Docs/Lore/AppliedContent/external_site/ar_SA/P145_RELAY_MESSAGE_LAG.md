@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Relay Message Lag"
+spoiler_tier: 1
+title: "تأخر رسائل المرحلات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# تأخر رسائل المرحلات
 
-AR LOC HOLD: Relay Message Lag makes communication a route system, not a magic voice channel.
-
-## Scanner
-
-AR LOC HOLD: A message can be legally binding and still arrive too late to save air.
-
-## Terminal
-
-AR LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
-
-## Audio
-
-AR LOC HOLD: The reply is late. The lien is current.
-
-## Field Note
-
-AR LOC HOLD: No ansible means truth moves as freight.
+يسمح relay lag لـ HECTON-8 بتلقي السلطة من دون رعاية. يمكن لـ packet أن يحمل قانونا أو دينا أو ownership أو تحذيرا عبر ساعات أو أيام أو سنوات، لكنه لا يجلب أيديا إلى غرفة غارقة. هذا الانقسام هو ضغط الاتصال الأساسي: الأنظمة البعيدة تبقى قوية لأنها كتبت مبكرا، ووضعت في الطابور مبكرا، وسعرت لتنجو من المسافة. التعاطف يأتي كشخص؛ العقد يأتي كبيانات. البيانات تفوز كثيرا.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/ar_SA. -->

@@ -7,34 +7,34 @@ poi_tags: poi.shallow_annex_p63_fabricator;poi.first_recipe_console
 biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "Fabricator Lapangan P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# Fabricator Lapangan P-63
 
-ID LOC HOLD: Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.
+Shallow Annex P-63 berisi fabricator lapangan pertama, dan perilakunya seperti infrastruktur perbaikan, bukan printer ajaib. Resep awal adalah gasket katup, kontak cutter, pelampung pinger, dan klem sealant: bagian kecil yang membuat alat rusak bisa dipercaya lagi. Fabricator menolak material tekanan berbahaya sampai pemain punya sertifikasi dan pengetahuan containment untuk menanganinya.
 
 ## Scanner
 
-ID LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
+Fabricator lapangan P-63. Tabel sertifikasi utuh; menerima feedstock scrap, menolak material tekanan tanpa sertifikat.
 
 ## Terminal
 
-ID LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
+FAB P-63 / RESEP AWAL DISETUJUI: gasket katup, kontak cutter, pelampung pinger, klem sealant. Fragmen blue debt tak dikenal ditolak sampai sertifikasi tekanan dan kelas containment tersedia.
 
 ## Audio
 
-ID LOC HOLD: The machine can make parts. It cannot make permission.
+Suku cadang itu mudah. Otoritas adalah bagian mahal.
 
 ## Field Note
 
-ID LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+Ia mencetak suku cadang, bukan izin. Kalau resep minta stempel, samudra juga akan memintanya.
 
 <!-- In-Game Wiki; generated from P115_P63_FIELD_FABRICATOR/id_ID. -->

@@ -322,7 +322,7 @@ namespace Hecton8.Caves
         private static readonly CaveDressingConfig _SharedDeepConfig = CreateDeepConfig(); // COLD ALLOC: one shared deep dressing graph.
 
         [Header("═══ Cave Dressing Layers ═══")]
-        
+
         public MineralCrustConfig mineralCrust = new MineralCrustConfig();
         public SedimentShelfConfig sedimentShelves = new SedimentShelfConfig();
         public DeepFungiConfig deepFungi = new DeepFungiConfig();

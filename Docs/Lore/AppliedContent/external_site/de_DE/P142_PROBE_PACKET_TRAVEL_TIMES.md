@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+spoiler_tier: 1
+title: "Reisezeiten von Sondenpaketen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# Reisezeiten von Sondenpaketen
 
-DE LOC HOLD: Probe Packet Travel Times explain how Aegir became a claim before it became a place.
-
-## Scanner
-
-DE LOC HOLD: The first Aegir witnesses were packets, not colonists.
-
-## Terminal
-
-DE LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
-
-## Audio
-
-DE LOC HOLD: The probe saw the ocean before anyone had a grave there.
-
-## Field Note
-
-DE LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+Sondenpaketzeit machte Aegir wertvoll, bevor es vertraut wurde. Eine schmale Maschine konnte kreuzen, messen und berichten, während menschliche Institutionen noch über Budgets und Haftung stritten. Als Deep Reach Vertrauen verkaufte, waren die Pakete schon alt und die Risikomodelle schon poliert. Das ist die Gefahr maschinengetriebener Erkundung: Der Ozean kann aus veralteter Wahrheit bepreist werden, lange bevor jemand versteht, was Arbeit dort kostet.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/de_DE. -->

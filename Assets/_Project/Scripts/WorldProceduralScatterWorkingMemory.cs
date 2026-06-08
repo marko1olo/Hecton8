@@ -29,6 +29,7 @@ namespace Hecton8.World
             public NativeArray<WorldProceduralFieldSampler.CellOutputData> CellSamplingOutputs;
             public NativeArray<WorldProceduralFieldSampler.BiomeInfluenceCell> BiomeInfluenceCells;
             public NativeArray<uint> BiomeInfluencePackedCells;
+            public NativeArray<float> ScatterBackendHeightSamples;
             public NativeArray<ScatterSimulationCellState> ScatterBackendCellStates;
             public readonly System.Collections.Generic.Dictionary<long, ScatterPlacement> DesiredPlacements = new System.Collections.Generic.Dictionary<long, ScatterPlacement>(2048);
             public readonly System.Collections.Generic.Dictionary<long, ScatterPlacement> RetainedPlacements = new System.Collections.Generic.Dictionary<long, ScatterPlacement>(4096);
@@ -65,6 +66,14 @@ namespace Hecton8.World
             public NativeList<ScatterCellCandidateAcceptanceInput> CandidateAcceptanceBatchInputs;
             public NativeList<byte> CandidateAcceptanceBatchResults;
             public NativeList<ScatterPlacementSpatialMetadata> CandidateAcceptanceBatchPendingMetadata;
+            private int _gridPlacementSpatialMetadataSentinelId;
+            private int _gridPlacementPositionBucketsSentinelId;
+            private int _gridPlacementMetadataBucketsSentinelId;
+            private int _candidateAcceptanceBatchInputsSentinelId;
+            private int _candidateAcceptanceBatchResultsSentinelId;
+            private int _candidateAcceptanceBatchPendingMetadataSentinelId;
+            private int _candidateAcceptanceBatchPendingPositionBucketsSentinelId;
+            private int _candidateAcceptanceBatchPendingMetadataBucketsSentinelId;
             public NativeParallelMultiHashMap<int, float3> CandidateAcceptanceBatchPendingPositionBuckets;
             public NativeParallelMultiHashMap<int, int> CandidateAcceptanceBatchPendingMetadataBuckets;
             public NativeArray<int> CandidateAcceptanceClusterAccentCountsScratch;
@@ -212,6 +221,7 @@ namespace Hecton8.World
                 EnsureCapacity(ref CellSamplingOutputs, requiredCapacity, nameof(CellSamplingOutputs));
                 EnsureCapacity(ref BiomeInfluenceCells, requiredCapacity, nameof(BiomeInfluenceCells));
                 EnsureCapacity(ref BiomeInfluencePackedCells, requiredCapacity, nameof(BiomeInfluencePackedCells));
+                EnsureCapacity(ref ScatterBackendHeightSamples, requiredCapacity, nameof(ScatterBackendHeightSamples));
                 EnsureCapacity(ref ScatterBackendCellStates, requiredCapacity, nameof(ScatterBackendCellStates));
             }
 
@@ -276,31 +286,31 @@ namespace Hecton8.World
                 if (CandidateAcceptanceBatchInputs.Capacity < requiredCapacity)
                 {
                     CandidateAcceptanceBatchInputs.Capacity = math.max(requiredCapacity, CandidateAcceptanceBatchInputs.Capacity * 2);
-                    NativeMemorySentinel.RefreshNativeList(CandidateAcceptanceBatchInputs, NativeMemoryOwner, nameof(CandidateAcceptanceBatchInputs));
+                    NativeMemorySentinel.RefreshNativeListInstance(CandidateAcceptanceBatchInputs, _candidateAcceptanceBatchInputsSentinelId);
                 }
 
                 if (CandidateAcceptanceBatchResults.Capacity < requiredCapacity)
                 {
                     CandidateAcceptanceBatchResults.Capacity = math.max(requiredCapacity, CandidateAcceptanceBatchResults.Capacity * 2);
-                    NativeMemorySentinel.RefreshNativeList(CandidateAcceptanceBatchResults, NativeMemoryOwner, nameof(CandidateAcceptanceBatchResults));
+                    NativeMemorySentinel.RefreshNativeListInstance(CandidateAcceptanceBatchResults, _candidateAcceptanceBatchResultsSentinelId);
                 }
 
                 if (CandidateAcceptanceBatchPendingMetadata.Capacity < requiredCapacity)
                 {
                     CandidateAcceptanceBatchPendingMetadata.Capacity = math.max(requiredCapacity, CandidateAcceptanceBatchPendingMetadata.Capacity * 2);
-                    NativeMemorySentinel.RefreshNativeList(CandidateAcceptanceBatchPendingMetadata, NativeMemoryOwner, nameof(CandidateAcceptanceBatchPendingMetadata));
+                    NativeMemorySentinel.RefreshNativeListInstance(CandidateAcceptanceBatchPendingMetadata, _candidateAcceptanceBatchPendingMetadataSentinelId);
                 }
 
                 if (CandidateAcceptanceBatchPendingPositionBuckets.Capacity < requiredCapacity)
                 {
                     CandidateAcceptanceBatchPendingPositionBuckets.Capacity = math.max(requiredCapacity, CandidateAcceptanceBatchPendingPositionBuckets.Capacity * 2);
-                    NativeMemorySentinel.RefreshNativeParallelMultiHashMap(CandidateAcceptanceBatchPendingPositionBuckets, NativeMemoryOwner, nameof(CandidateAcceptanceBatchPendingPositionBuckets));
+                    NativeMemorySentinel.RefreshNativeParallelMultiHashMapInstance(CandidateAcceptanceBatchPendingPositionBuckets, _candidateAcceptanceBatchPendingPositionBucketsSentinelId);
                 }
 
                 if (CandidateAcceptanceBatchPendingMetadataBuckets.Capacity < requiredCapacity)
                 {
                     CandidateAcceptanceBatchPendingMetadataBuckets.Capacity = math.max(requiredCapacity, CandidateAcceptanceBatchPendingMetadataBuckets.Capacity * 2);
-                    NativeMemorySentinel.RefreshNativeParallelMultiHashMap(CandidateAcceptanceBatchPendingMetadataBuckets, NativeMemoryOwner, nameof(CandidateAcceptanceBatchPendingMetadataBuckets));
+                    NativeMemorySentinel.RefreshNativeParallelMultiHashMapInstance(CandidateAcceptanceBatchPendingMetadataBuckets, _candidateAcceptanceBatchPendingMetadataBucketsSentinelId);
                 }
 
                 CandidateAcceptanceBatchInputs.Clear();
@@ -376,9 +386,9 @@ namespace Hecton8.World
                 GridPlacementSpatialMetadata.Capacity = newCapacity;
                 GridPlacementPositionBuckets.Capacity = newCapacity;
                 GridPlacementMetadataBuckets.Capacity = newCapacity;
-                NativeMemorySentinel.RefreshNativeList(GridPlacementSpatialMetadata, NativeMemoryOwner, nameof(GridPlacementSpatialMetadata));
-                NativeMemorySentinel.RefreshNativeParallelMultiHashMap(GridPlacementPositionBuckets, NativeMemoryOwner, nameof(GridPlacementPositionBuckets));
-                NativeMemorySentinel.RefreshNativeParallelMultiHashMap(GridPlacementMetadataBuckets, NativeMemoryOwner, nameof(GridPlacementMetadataBuckets));
+                NativeMemorySentinel.RefreshNativeListInstance(GridPlacementSpatialMetadata, _gridPlacementSpatialMetadataSentinelId);
+                NativeMemorySentinel.RefreshNativeParallelMultiHashMapInstance(GridPlacementPositionBuckets, _gridPlacementPositionBucketsSentinelId);
+                NativeMemorySentinel.RefreshNativeParallelMultiHashMapInstance(GridPlacementMetadataBuckets, _gridPlacementMetadataBucketsSentinelId);
                 GridPlacementNativeOverflowed = false;
                 return true;
             }
@@ -419,16 +429,17 @@ namespace Hecton8.World
                 DisposeNativeArray(ref CellSamplingOutputs);
                 DisposeNativeArray(ref BiomeInfluenceCells);
                 DisposeNativeArray(ref BiomeInfluencePackedCells);
+                DisposeNativeArray(ref ScatterBackendHeightSamples);
                 DisposeNativeArray(ref ScatterBackendCellStates);
-                DisposeNativeList(ref GridPlacementSpatialMetadata, nameof(GridPlacementSpatialMetadata));
-                DisposeNativeParallelMultiHashMap(ref GridPlacementPositionBuckets, nameof(GridPlacementPositionBuckets));
-                DisposeNativeParallelMultiHashMap(ref GridPlacementMetadataBuckets, nameof(GridPlacementMetadataBuckets));
+                DisposeNativeList(ref GridPlacementSpatialMetadata, ref _gridPlacementSpatialMetadataSentinelId);
+                DisposeNativeParallelMultiHashMap(ref GridPlacementPositionBuckets, ref _gridPlacementPositionBucketsSentinelId);
+                DisposeNativeParallelMultiHashMap(ref GridPlacementMetadataBuckets, ref _gridPlacementMetadataBucketsSentinelId);
                 DisposeNativeArray(ref CandidateAcceptanceResult);
-                DisposeNativeList(ref CandidateAcceptanceBatchInputs, nameof(CandidateAcceptanceBatchInputs));
-                DisposeNativeList(ref CandidateAcceptanceBatchResults, nameof(CandidateAcceptanceBatchResults));
-                DisposeNativeList(ref CandidateAcceptanceBatchPendingMetadata, nameof(CandidateAcceptanceBatchPendingMetadata));
-                DisposeNativeParallelMultiHashMap(ref CandidateAcceptanceBatchPendingPositionBuckets, nameof(CandidateAcceptanceBatchPendingPositionBuckets));
-                DisposeNativeParallelMultiHashMap(ref CandidateAcceptanceBatchPendingMetadataBuckets, nameof(CandidateAcceptanceBatchPendingMetadataBuckets));
+                DisposeNativeList(ref CandidateAcceptanceBatchInputs, ref _candidateAcceptanceBatchInputsSentinelId);
+                DisposeNativeList(ref CandidateAcceptanceBatchResults, ref _candidateAcceptanceBatchResultsSentinelId);
+                DisposeNativeList(ref CandidateAcceptanceBatchPendingMetadata, ref _candidateAcceptanceBatchPendingMetadataSentinelId);
+                DisposeNativeParallelMultiHashMap(ref CandidateAcceptanceBatchPendingPositionBuckets, ref _candidateAcceptanceBatchPendingPositionBucketsSentinelId);
+                DisposeNativeParallelMultiHashMap(ref CandidateAcceptanceBatchPendingMetadataBuckets, ref _candidateAcceptanceBatchPendingMetadataBucketsSentinelId);
                 DisposeNativeArray(ref CandidateAcceptanceClusterAccentCountsScratch);
                 DisposeNativeArray(ref CandidateAcceptanceStructureAccentCountsScratch);
                 DisposeNativeArray(ref CandidateAcceptanceClusterAccentRoleMaxRatiosScratch);
@@ -532,28 +543,28 @@ namespace Hecton8.World
 
             private void RegisterNativeMemorySentinel()
             {
-                RegisterNativeList(GridPlacementSpatialMetadata, nameof(GridPlacementSpatialMetadata));
-                RegisterNativeParallelMultiHashMap(GridPlacementPositionBuckets, nameof(GridPlacementPositionBuckets));
-                RegisterNativeParallelMultiHashMap(GridPlacementMetadataBuckets, nameof(GridPlacementMetadataBuckets));
-                RegisterNativeList(CandidateAcceptanceBatchInputs, nameof(CandidateAcceptanceBatchInputs));
-                RegisterNativeList(CandidateAcceptanceBatchResults, nameof(CandidateAcceptanceBatchResults));
-                RegisterNativeList(CandidateAcceptanceBatchPendingMetadata, nameof(CandidateAcceptanceBatchPendingMetadata));
-                RegisterNativeParallelMultiHashMap(CandidateAcceptanceBatchPendingPositionBuckets, nameof(CandidateAcceptanceBatchPendingPositionBuckets));
-                RegisterNativeParallelMultiHashMap(CandidateAcceptanceBatchPendingMetadataBuckets, nameof(CandidateAcceptanceBatchPendingMetadataBuckets));
+                RegisterNativeList(GridPlacementSpatialMetadata, nameof(GridPlacementSpatialMetadata), out _gridPlacementSpatialMetadataSentinelId);
+                RegisterNativeParallelMultiHashMap(GridPlacementPositionBuckets, nameof(GridPlacementPositionBuckets), out _gridPlacementPositionBucketsSentinelId);
+                RegisterNativeParallelMultiHashMap(GridPlacementMetadataBuckets, nameof(GridPlacementMetadataBuckets), out _gridPlacementMetadataBucketsSentinelId);
+                RegisterNativeList(CandidateAcceptanceBatchInputs, nameof(CandidateAcceptanceBatchInputs), out _candidateAcceptanceBatchInputsSentinelId);
+                RegisterNativeList(CandidateAcceptanceBatchResults, nameof(CandidateAcceptanceBatchResults), out _candidateAcceptanceBatchResultsSentinelId);
+                RegisterNativeList(CandidateAcceptanceBatchPendingMetadata, nameof(CandidateAcceptanceBatchPendingMetadata), out _candidateAcceptanceBatchPendingMetadataSentinelId);
+                RegisterNativeParallelMultiHashMap(CandidateAcceptanceBatchPendingPositionBuckets, nameof(CandidateAcceptanceBatchPendingPositionBuckets), out _candidateAcceptanceBatchPendingPositionBucketsSentinelId);
+                RegisterNativeParallelMultiHashMap(CandidateAcceptanceBatchPendingMetadataBuckets, nameof(CandidateAcceptanceBatchPendingMetadataBuckets), out _candidateAcceptanceBatchPendingMetadataBucketsSentinelId);
             }
 
-            private static void RegisterNativeList<T>(NativeList<T> list, string label) where T : unmanaged
+            private static void RegisterNativeList<T>(NativeList<T> list, string label, out int sentinelId) where T : unmanaged
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, NativeMemoryLifetime);
+                sentinelId = NativeMemorySentinel.RegisterNativeListInstance(list, NativeMemoryOwner, label, NativeMemoryLifetime);
                 if (sentinelId <= 0)
                     throw new InvalidOperationException($"NativeMemorySentinel rejected scatter working memory list registration for {label}.");
             }
 
-            private static void RegisterNativeParallelMultiHashMap<TKey, TValue>(NativeParallelMultiHashMap<TKey, TValue> map, string label)
+            private static void RegisterNativeParallelMultiHashMap<TKey, TValue>(NativeParallelMultiHashMap<TKey, TValue> map, string label, out int sentinelId)
                 where TKey : unmanaged, IEquatable<TKey>
                 where TValue : unmanaged
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMap(map, NativeMemoryOwner, label, NativeMemoryLifetime);
+                sentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMapInstance(map, NativeMemoryOwner, label, NativeMemoryLifetime);
                 if (sentinelId <= 0)
                     throw new InvalidOperationException($"NativeMemorySentinel rejected scatter working memory multi-hash-map registration for {label}.");
             }
@@ -563,26 +574,96 @@ namespace Hecton8.World
                 H8Memory.Release(ref array, NativeArrayOwner);
             }
 
-            private static void DisposeNativeList<T>(ref NativeList<T> list, string label) where T : unmanaged
+            private static void DisposeNativeList<T>(ref NativeList<T> list, ref int sentinelId) where T : unmanaged
             {
-                if (!list.IsCreated)
-                    return;
+                Exception firstException = null;
 
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
-                list.Dispose();
-                list = default;
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        firstException = exception;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                if (list.IsCreated)
+                {
+                    try
+                    {
+                        list.Dispose();
+                    }
+                    catch (Exception exception)
+                    {
+                        if (firstException == null)
+                            firstException = exception;
+                    }
+                    finally
+                    {
+                        list = default;
+                    }
+                }
+                else
+                {
+                    list = default;
+                }
+
+                if (firstException != null)
+                    throw firstException;
             }
 
-            private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(ref NativeParallelMultiHashMap<TKey, TValue> map, string label)
+            private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(ref NativeParallelMultiHashMap<TKey, TValue> map, ref int sentinelId)
                 where TKey : unmanaged, IEquatable<TKey>
                 where TValue : unmanaged
             {
-                if (!map.IsCreated)
-                    return;
+                Exception firstException = null;
 
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, label);
-                map.Dispose();
-                map = default;
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        firstException = exception;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                if (map.IsCreated)
+                {
+                    try
+                    {
+                        map.Dispose();
+                    }
+                    catch (Exception exception)
+                    {
+                        if (firstException == null)
+                            firstException = exception;
+                    }
+                    finally
+                    {
+                        map = default;
+                    }
+                }
+                else
+                {
+                    map = default;
+                }
+
+                if (firstException != null)
+                    throw firstException;
             }
 
             private static void EnsureCapacity<T>(ref NativeArray<T> array, int requiredCapacity, string label) where T : struct

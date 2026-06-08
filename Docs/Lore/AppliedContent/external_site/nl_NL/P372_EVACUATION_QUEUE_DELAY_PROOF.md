@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Evacuation Queue Delay Proof"
+title: "Vertragingsrecord Evacuatiewachtrij"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Evacuation Queue Delay Proof
+# Vertragingsrecord Evacuatiewachtrij
 
-NL LOC HOLD: Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.
+Een verdronken kamer kan timing bewaren. De geborgen wachtrijklok toont een wrede volgorde: alarm, review, vertraging, overschreden sealklasse, water. Deep Reach-taal maakt daarvan onvolledige evacuatie tijdens plots structureel falen. De kamer spreekt tegen. Het record bewaart een leeg getuigenveld en open quarantainereview voorbij het punt waar een reddingspad fysiek nog zin had. Het beweert niet dat iedereen gered kon worden. Het is preciezer en erger: autorisatie wachtte tot het aantal redbare mensen kleiner werd. Wanneer de speler dit vindt, klinkt redding niet meer als belofte maar als machtigingssysteem.
 
 ## Scanner
 
-NL LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Wachtrijklok geborgen. De vrijgavepoort bleef vergrendeld nadat drukalarmen van prognose naar corridor gingen.
 
 ## Terminal
 
-NL LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Handmatige bevestiging ontbreekt. Quarantainereview open. Routendruk overschreed sealklasse voordat autorisatie rond was.
 
 ## Audio
 
-NL LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Ze faalden niet om iedereen te redden. Ze wachtten tot iemand redden moeilijker werd.
 
 ## Field Note
 
-NL LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Marauder-notitie: een gesloten poort met een open veld is geen ongeluk. Het is een beslissing die op handtekening wacht.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/nl_NL. -->

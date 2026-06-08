@@ -39,7 +39,7 @@ Date: 2026-05-11
 - solver flags.
 - NaN/budget flags.
 
-[RULE] On NaN, divergent replay hash, or illegal energy spike, dump to `Docs/AgentLogs/Dump_PHYS_DETERMINISM.bin`.
+[RULE] On NaN, divergent replay hash, or illegal energy spike, dump through root Black Box law: explicit batch/logging ID may use `Docs/AgentLogs/Dump_[ID].bin`; ordinary physics runtime uses a deterministic physics/system-name/timestamp project artifact.
 
 ---
 

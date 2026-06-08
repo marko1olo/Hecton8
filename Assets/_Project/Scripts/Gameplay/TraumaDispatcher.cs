@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Audio;
 using Hecton8.Atmosphere;
@@ -41,6 +42,7 @@ namespace Hecton8.Gameplay
         private const float ParasiteSporeSealedResistanceThreshold = 500f;
         private const float ParasiteSporeLosMinimumDistance = 0.05f;
         private const uint ParasiteSporeChemicalHash = 0x50535052u; // PSPR
+        private const uint PlayerToxicityFallbackEntityHash = ToxicityExposureSignal.PlayerEntityFallbackHash;
 
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerHealth _playerHealth;
@@ -74,6 +76,7 @@ namespace Hecton8.Gameplay
         private bool _parasiteAudioLoadDirty;
         private int _pendingParasiteAudioLoad;
         private int _lastPhysicsEventSnapshotGeneration;
+        private object _spatialAudioRuntime;
         private ISpatialAudioEnvironmentModulationSink _spatialAudioSink;
         private IPdaCorrosionPresentationSink _pdaCorrosionSink;
 
@@ -102,6 +105,12 @@ namespace Hecton8.Gameplay
             math.min(
                 _survivalSystem != null ? math.saturate(_survivalSystem.IntegrityNormalized) : 1f,
                 _activeTransportIntegrityNormalized));
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            Volatile.Write(ref s_x001TraumaDispatcherSignalPushDropCount, 0);
+        }
 
         /// <summary>Normalized flood ratio of the currently occupied habitat module.</summary>
         public float FloodLevelNormalized => _activeHabitatManager != null
@@ -169,6 +178,8 @@ namespace Hecton8.Gameplay
             ClearHabitatBinding();
             ClearTransportBinding();
             FlushParasiteAudioLoad();
+            _spatialAudioRuntime = null;
+            _spatialAudioSink = null;
             TryUnregister();
             TryUnregisterHotSwapListener();
             ResetChannels();
@@ -179,6 +190,8 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
+            _spatialAudioRuntime = null;
+            _spatialAudioSink = null;
         }
 
         /// <summary>
@@ -573,6 +586,11 @@ namespace Hecton8.Gameplay
             return math.max(0f, current - decayPerSecond * math.max(0f, deltaTime));
         }
 
+        private static float SafeSaturate01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
         private void AdvanceTraumaReadModel(float deltaTime)
         {
             _integrityChannel01 = DecayChannel(_integrityChannel01, IntegrityChannelDecayPerSecond, deltaTime);
@@ -680,12 +698,11 @@ namespace Hecton8.Gameplay
             int targetId = _playerHealth != null
                 ? CombatDamageRuntime.ResolveTargetId(_playerHealth.gameObject)
                 : CombatDamageRuntime.ResolveTargetId(gameObject);
-            if (targetId == 0)
-                return;
+            uint signalEntityId = ResolvePlayerToxicitySignalEntityId();
 
-            float severity01 = math.saturate(hazardIntensity);
+            float severity01 = SafeSaturate01(hazardIntensity);
             float magnitude = ParasiteSporeDamagePerSecond * severity01 * intervals;
-            if (CombatDamageRuntime.IsTargetRegistered(targetId))
+            if (targetId != 0 && CombatDamageRuntime.IsTargetRegistered(targetId))
             {
                 CombatDamageRuntime.TryQueueStatusEffect(
                     targetId,
@@ -695,18 +712,33 @@ namespace Hecton8.Gameplay
                     magnitude);
             }
 
-            if (_playerMovement == null || !_playerMovement.CurrentAup.IsFinite())
-                return;
+            bool hasSourceAup = _playerMovement != null && _playerMovement.CurrentAup.IsFinite();
 
             ToxicityExposureSignal signal = default;
-            signal.AUP = _playerMovement.CurrentAup.ToAbsoluteDouble3();
             signal.Exposure01 = severity01;
             signal.ToxemiaDelta = math.saturate(severity01 * intervals * ParasiteSporeToxemiaScale);
-            signal.EntityId = unchecked((uint)targetId);
+            signal.EntityId = signalEntityId;
             signal.ChemicalHash = ParasiteSporeChemicalHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
-            signal.Flags = 1;
+            if (hasSourceAup)
+            {
+                signal.AUP = _playerMovement.CurrentAup.ToAbsoluteDouble3();
+                signal.Flags = ToxicityExposureSignal.FlagHasSourceAup;
+            }
+
             SignalBus<ToxicityExposureSignal>.TryPushTracked(in signal, ref s_x001TraumaDispatcherSignalPushDropCount);
+        }
+
+        private uint ResolvePlayerToxicitySignalEntityId()
+        {
+            GameObject playerObject = _playerHealth != null ? _playerHealth.gameObject : null;
+            if (playerObject == null && _playerMovement != null)
+                playerObject = _playerMovement.gameObject;
+            if (playerObject == null)
+                playerObject = gameObject;
+
+            uint entityHash = playerObject != null ? unchecked((uint)EntityId.ToULong(playerObject.GetEntityId())) : 0u;
+            return entityHash != 0u ? entityHash : PlayerToxicityFallbackEntityHash;
         }
 
         private void ResolveParasiteSporeOcclusion(Vector3 hazardCenter, Vector3 playerPosition)
@@ -772,19 +804,34 @@ namespace Hecton8.Gameplay
 
         private void CacheSpatialAudioSink(object audioRuntime)
         {
-            _spatialAudioSink = IsAudioRuntimeObjectUsable(audioRuntime)
-                ? audioRuntime as ISpatialAudioEnvironmentModulationSink
-                : null;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _spatialAudioRuntime = null;
+                _spatialAudioSink = null;
+                return;
+            }
+
+            _spatialAudioRuntime = audioRuntime;
+            _spatialAudioSink = audioRuntime as ISpatialAudioEnvironmentModulationSink;
         }
 
         private ISpatialAudioEnvironmentModulationSink ResolveSpatialAudioSink()
         {
+            object audioRuntime = _spatialAudioRuntime;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _spatialAudioRuntime = null;
+                _spatialAudioSink = null;
+                return null;
+            }
+
             ISpatialAudioEnvironmentModulationSink spatialAudioSink = _spatialAudioSink;
-            if (IsAudioRuntimeObjectUsable(spatialAudioSink))
+            if (ReferenceEquals(spatialAudioSink, audioRuntime) && IsAudioRuntimeObjectUsable(spatialAudioSink))
                 return spatialAudioSink;
 
-            _spatialAudioSink = null;
-            return null;
+            spatialAudioSink = audioRuntime as ISpatialAudioEnvironmentModulationSink;
+            _spatialAudioSink = spatialAudioSink;
+            return IsAudioRuntimeObjectUsable(spatialAudioSink) ? spatialAudioSink : null;
         }
 
         private static bool IsAudioRuntimeObjectUsable(object runtime)
@@ -792,7 +839,7 @@ namespace Hecton8.Gameplay
             if (runtime == null)
                 return false;
 
-            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+            if (runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (runtime is Behaviour behaviour)

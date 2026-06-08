@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Cadeia de dívida relay custody
 
-Relay custody transforma logística espacial em pressão: ajuda carrega dívida, prioridades e autoridade corporativa.
+Relay custody transforma logística espacial em pressão. A ajuda pode chegar, mas a rota que carrega ajuda também carrega dívida, ganchos de prioridade e autoridade corporativa.
 
 ## Scanner
 

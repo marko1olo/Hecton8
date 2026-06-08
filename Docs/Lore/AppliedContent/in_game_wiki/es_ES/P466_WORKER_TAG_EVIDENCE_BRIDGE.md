@@ -1,0 +1,46 @@
+---
+packet_id: P466_WORKER_TAG_EVIDENCE_BRIDGE
+release_set_id: RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE
+article_id: applied_lore.worker_tag_evidence_bridge
+unlock_id: unlock.worker_tag_evidence_bridge
+poi_tags: poi.worker_tag_tray;poi.shift_slate
+biome_tags: 
+locale: es_ES
+surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Cadena probatoria de etiqueta laboral"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# Cadena probatoria de etiqueta laboral
+
+Una etiqueta de trabajador no prueba nada sola. Resiste el borrado si conserva turno, ruta, daño, hash testigo y receptor fuera de la reclamación. Placa suelta: débil. Placa con turno, ruta, daño, hash y receptor no reclamante: prueba. No guardes el nombre y cortes la sala. Conserva bandeja, pizarra y la ruta fea que la rodea.
+
+## Scanner
+
+ESCANEO DE PRUEBA // Placa suelta: débil. Placa con turno, ruta, daño, hash y receptor no reclamante: prueba.
+
+## Terminal
+
+EXTRACTO DE TERMINAL RECUPERADO // Cadena probatoria de etiqueta laboral
+
+Una etiqueta de trabajador no prueba nada sola. Resiste el borrado si conserva turno, ruta, daño, hash testigo y receptor fuera de la reclamación.
+
+Manejo de la prueba: Placa suelta: débil. Placa con turno, ruta, daño, hash y receptor no reclamante: prueba.
+
+No cerrar la conclusión hasta que ruta, custodia, daño, hash testigo y receptor resistan revisión.
+
+## Audio
+
+No guardes el nombre y cortes la sala. Conserva bandeja, pizarra y la ruta fea que la rodea.
+
+## Field Note
+
+No guardes el nombre y cortes la sala. Conserva bandeja, pizarra y la ruta fea que la rodea.
+
+<!-- In-Game Wiki; generated from P466_WORKER_TAG_EVIDENCE_BRIDGE/es_ES. -->

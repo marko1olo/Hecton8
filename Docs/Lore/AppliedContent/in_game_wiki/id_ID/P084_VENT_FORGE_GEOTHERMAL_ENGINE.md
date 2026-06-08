@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Mesin Geotermal Tempa Vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# Mesin Geotermal Tempa Vent
 
-ID LOC HOLD: Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+Tempa vent menghubungkan geologi dengan crafting, bertahan hidup dan horor. Ia memberi panas dan siklus tekanan untuk keramik, seal dan kaca tekanan, tetapi siklus yang sama membuat kantong mendidih, pembacaan oksigen palsu, awan korosif dan migrasi fauna.
 
 ## Scanner
 
-ID LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
+Manifold tempa vent. Panas, racun dan tenaga memakai pipa yang sama.
 
 ## Terminal
 
-ID LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+MESIN GEOTERMAL: pulsa vent cocok untuk curing keramik, anneal kaca tekanan dan pemanas awal muatan naik darurat. Risiko paparan: shear mendidih, positif oksigen palsu dan bloom korosif.
 
 ## Audio
 
-ID LOC HOLD: The vent does not care whether you call it power or weather.
+Vent tidak peduli kamu menyebutnya daya atau cuaca.
 
 ## Field Note
 
-ID LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+Setiap vent berguna juga mesin yang menghukum timing buruk.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/id_ID. -->

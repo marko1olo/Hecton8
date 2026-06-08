@@ -8,33 +8,19 @@ biome_tags: biome.factory_temple;biome.deep_abyss
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+spoiler_tier: 1
+title: "Stos zasobów biometalu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# Stos zasobów biometalu
 
-PL LOC HOLD: Biometal Resource Stack frames HECTON-8 as a full pressure economy. The game can reward exploration with many resources while keeping blue debt as the strategic apex.
+Stos zasobów chroni HECTON-8 przed redukcją do jednego magicznego materiału. Xenon-Omega jest ważne, lecz księżyc ma też metale, sole, chemię kominów, ceramikę, biowłókna, fotoproteiny, salvage i biometal zmieniony przez Atlas.
 
-## Scanner
-
-PL LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
-
-## Terminal
-
-PL LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
-
-## Audio
-
-PL LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
-
-## Field Note
-
-PL LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+Stos zasobów biometalu pokazuje HECTON-8 jako pełną ekonomię ciśnienia, w której eksploracja nagradza wieloma surowcami, a blue debt pozostaje strategicznym szczytem. Jeśli każda próbka mówi Xenon-Omega, świat głupieje. Policz też inne powody.
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/pl_PL. -->

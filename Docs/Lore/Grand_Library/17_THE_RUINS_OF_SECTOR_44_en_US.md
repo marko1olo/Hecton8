@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # THE RUINS OF SECTOR 44
 
 > **Source:** Surveyor Drone Cartography Log 99-Delta (Recovered).

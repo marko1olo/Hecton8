@@ -9,32 +9,18 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Zatrzymanie kwarantannowe: stęchłe powietrze"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Zatrzymanie kwarantannowe: stęchłe powietrze
 
-PL LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+Zatrzymanie kwarantannowe jest najcichszym fałszywym wyjściem. Nie potrzebuje złoczyńcy w pokoju. Formularz mówi odzyskany żywy, licznik powietrza mówi racja aktywna, a następne drzwi otworzą się dopiero po przeglądzie skażenia, sprzeciwie claimant i przeglądzie ubezpieczenia.
 
-## Scanner
-
-PL LOC HOLD: You are alive, sealed, and still not free.
-
-## Terminal
-
-PL LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-PL LOC HOLD: The hatch opens only to another closed hatch.
-
-## Field Note
-
-PL LOC HOLD: This is the bureaucratic version of drowning.
+Wynik jest okrutny, bo da się go obronić. Nikt nie zabił świadka. Nikt nie zniszczył próbki. System tylko każe każdemu oświadczeniu czekać dłużej, niż ciała mogły kiedykolwiek czekać. Gracz przeżywa ocean i wchodzi do uszczelnionego korytarza zbudowanego z procedury.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/pl_PL. -->

@@ -7,34 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Эра beam-sail зондов"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Эра зондов на лучевых парусах"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Эра beam-sail зондов
+# Эра зондов на лучевых парусах
 
-Ранняя межзвездная экспансия опиралась на beam-assisted probes и малые автономные пакеты. Они могли картировать, слушать и строить relay assumptions быстрее, чем тяжелые пилотируемые корабли двигались. Эта асимметрия объясняет, как Deep Reach подготовила инфраструктуру Aegir до того, как обычные работники поняли полный риск.
+Ранняя внесолнечная экспансия отправляла зонды на лучевых парусах и автономные пакеты впереди людей. Они картировали гравитацию, радиацию, орбиты лун, линии видимости реле и возможные океанские миры, пока тяжелые корабли оставались обещаниями на бумаге. Deep Reach унаследовала машинную уверенность и приняла ее за разрешение.
 
 ## Scanner
 
-Survey reel. Первые карты Aegir отправили наружу как легкий груз, а не как обет пилотируемой колонии.
+Обзорная катушка: первые карты Aegir пришли как легкий груз, а не как обещание экипажу.
 
 ## Terminal
 
-SURVEY LINEAGE: beamed sail packets картировали Ran/Aegir до того, как грузовые маршруты стали безопасны для живого груза. Confidence decayed before colony buildout.
+ЛИНИЯ ОБЗОРА: пакеты на лучевых парусах картировали Ran и Aegir до допуска грузовых линий для живого груза. Распад уверенности отмечен до строительства колонии.
 
 ## Audio
 
-Первой человеческой вещью здесь был не человек. Это была квитанция от beam station.
+Первой человеческой вещью здесь был не человек. Это был обзорный пакет с квитанцией.
 
 ## Field Note
 
-Раннее расширение должно быть тонким: сначала видят зонды, потом готовят машины, люди прибывают, когда долг говорит да.
+Зонды увидели первыми. Машины готовили вторыми. Рабочие пришли, когда уверенность стала счетом.
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/ru_RU. -->

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8 Orbital Hazard Table"
+title: "HECTON-8-orbitaalgevaarstabel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbital Hazard Table
+# HECTON-8-orbitaalgevaarstabel
 
-NL LOC HOLD: HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure.
+De HECTON-8-orbitaalgevaarstabel toont redding als een keten van bewegende poorten: stralingsschering, puin, eclips, wettelijke bakens en bewaarvensters kunnen elk een anders gerepareerde opstijging sluiten.
 
 ## Scanner
 
-NL LOC HOLD: HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+Extractie vanaf HECTON-8 wordt begrensd door eclips, stralingspiek, relaissluiter, ijsverstrooiing en stormpluimvensters.
 
 ## Terminal
 
-NL LOC HOLD: ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+ORBITAALGEVAARSTABEL: eclips-blackout, Aegir-geladen-deeltjespiek, maanrelaissluiter, ijsgruisverstrooiing, storm plume en guidance-lag-vensters moeten vrij zijn voor opstijging.
 
 ## Audio
 
-NL LOC HOLD: The sky is not empty. It is a machine with bad timing.
+De hemel boven de oceaan is een machine met tanden in de timing.
 
 ## Field Note
 
-NL LOC HOLD: This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+Niemand parkeert redding voor drama. De opstijging moet het slechte schema van de hemel raken.
 
 <!-- External Site; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/nl_NL. -->

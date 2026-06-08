@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "Livro de resposta corporativa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# Livro de resposta corporativa
 
-PT-BR LOC HOLD: Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+O livro é como a Black Keel fala quando ninguém improvisa. Ele pode reconhecer perigo, abrir fila, preservar uma reivindicação e ainda deixar o operador atrás das regras de ativo. Leia esses livros como sinais úteis e papelada hostil que virou executável.
 
 ## Scanner
 
-PT-BR LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+Toda resposta chega em linguagem de contrato: custódia de ativo, travas de responsabilidade, rota de amostra, risco de casco, depois recuperação do operador.
 
 ## Terminal
 
-PT-BR LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+CLASSE DE RESPOSTA: preservação de ativo. Recuperação do operador anexada após custódia de amostra, lacre de responsabilidade, auditoria de casco e rota de pagamento.
 
 ## Audio
 
-PT-BR LOC HOLD: The reply was automatic. The rescue was conditional.
+A resposta foi automática. O resgate era condicional.
 
 ## Field Note
 
-PT-BR LOC HOLD: Immediate response is not immediate rescue.
+Resposta imediata não é resgate imediato.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/pt_BR. -->

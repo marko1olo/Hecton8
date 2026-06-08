@@ -32,6 +32,7 @@ namespace Hecton8.World
     {
         private static int s_x001SargassumMicroFaunaBoidsSignalPushDropCount;
         private static SargassumMicroFaunaBoids s_activeRuntimeInstance;
+        private static bool s_duplicateRuntimeOwnerLogged;
         private const int MaxLeviathanNodePathIterations = 4096;
         private const int WhileLoopWatchdogLimit = 10000;
         private const float FullSimulationDistanceMeters = 50f;
@@ -41,6 +42,7 @@ namespace Hecton8.World
         private const float StatisticalDematerializeDistanceSq = StatisticalDematerializeDistanceMeters * StatisticalDematerializeDistanceMeters;
         private const float StatisticalRematerializeDistanceSq = StatisticalRematerializeDistanceMeters * StatisticalRematerializeDistanceMeters;
         private const int StatisticalMigrationKeepAliveSlowTickStride = 10;
+        private const float ParasiteModeMinDepthMeters = 2000f;
         private const float StatisticalFibonacciGoldenAngle = 2.39996323f;
         private const float StatisticalTwoPi = 6.28318530718f;
         private const int PopulationDensityCellSizeMeters = 32;
@@ -66,6 +68,7 @@ namespace Hecton8.World
         private const int PortableMaxDispatchGroupsPerDimension = 65535;
         private const int FaunaSimulationBucketMask = SimulationBucketConstants.StandardSlowBucketMask;
         private const float FaunaSimulationBucketInvCount = 1f / SimulationBucketConstants.StandardSlowBucketCount;
+        private const float DefaultWaterLevel = 14.02f;
         private const uint FaunaAmbientDriftKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
         private const uint FaunaBucketedSimulationCostHash = 0x46534255u; // FSBU
         private static uint _systemKillSwitchMaskSnapshot;
@@ -75,7 +78,16 @@ namespace Hecton8.World
         private static int _editorValidateDepth;
 #endif
 
-        internal static SargassumMicroFaunaBoids ActiveRuntimeInstance => s_activeRuntimeInstance;
+        public static SargassumMicroFaunaBoids Instance => s_activeRuntimeInstance;
+        internal static SargassumMicroFaunaBoids ActiveRuntimeInstance => Instance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_x001SargassumMicroFaunaBoidsSignalPushDropCount = 0;
+            s_activeRuntimeInstance = null;
+            s_duplicateRuntimeOwnerLogged = false;
+        }
 
         // GPU StructuredBuffer interop: explicit offsets preserve HLSL scalar packing; ValidateGpuStructLayouts gates stride.
         [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -750,6 +762,8 @@ namespace Hecton8.World
         private const float WhaleFallActiveFearAmount = 0.2f;
         private const int FoodChainTelemetryCapacity = 300;
         private const int FoodChainTelemetryEntrySizeBytes = 64;
+        private const string FoodChainTelemetryDumpPath = "Docs/AgentLogs/Dump_SARGASSUM_FOOD_CHAIN.bin";
+        private const string FoodChainTelemetryDumpPayloadLabel = "sargassumFoodChainTelemetryDumpPayload";
         private const uint FoodChainTelemetryMagicLow = 0x48454354u;
         private const uint FoodChainTelemetryMagicHigh = 0x4643484Eu;
         private const uint FoodChainTelemetryFlagTick = 1u << 0;
@@ -762,6 +776,8 @@ namespace Hecton8.World
         private const uint FoodChainTelemetryAnomalyNonFinite = 0xEFC00001u;
         private const int BoidSensoryBlackBoxCapacity = 300;
         private const int BoidSensoryBlackBoxEntrySizeBytes = 64;
+        private const string BoidSensoryBlackBoxDumpPath = "Docs/AgentLogs/Dump_SARGASSUM_BOID_SENSORY.bin";
+        private const string BoidSensoryBlackBoxDumpPayloadLabel = "sargassumBoidSensoryBlackBoxDumpPayload";
         private const uint BoidSensoryBlackBoxMagicLow = 0x424F4944u;
         private const uint BoidSensoryBlackBoxMagicHigh = 0x53454E53u;
         private const uint BoidSensoryBlackBoxFlagTick = 1u << 0;
@@ -1252,7 +1268,7 @@ namespace Hecton8.World
         [Header("â”€â”€ Vertical Band â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField, Min(0f)]
         [Tooltip("Water surface level used to clamp the vertical simulation band.")]
-        private float waterLevel = 4900f;
+        private float waterLevel = DefaultWaterLevel;
 
         [SerializeField, Min(0.1f)]
         [Tooltip("Minimum depth below the surface for the boid band.")]
@@ -1732,6 +1748,7 @@ namespace Hecton8.World
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwap;
         private bool _serviceRegistered;
+        private bool _runtimeRoutesRetiredAfterOwnershipLoss;
         private bool _hasSpawnData;
         private bool _renderCurrentBufferRequested;
         private bool _insideMicroFaunaVisualSync;
@@ -1766,7 +1783,11 @@ namespace Hecton8.World
         private float _feedingFrenzyWindowStartTime = -1f;
         private int _feedingFrenzyKillCount;
         private bool _foodChainTelemetryDumped;
+        private bool _foodChainTelemetryDumpSourceUnavailableLogged;
+        private bool _foodChainTelemetryDumpFailureLogged;
         private bool _boidSensoryBlackBoxDumped;
+        private bool _boidSensoryBlackBoxDumpSourceUnavailableLogged;
+        private bool _boidSensoryBlackBoxDumpFailureLogged;
         private float _pendingPredatorConsumptionTimeSeconds;
         private int _foodChainTelemetryCursor;
         private int _boidSensoryBlackBoxCursor;
@@ -1796,6 +1817,7 @@ namespace Hecton8.World
         private WorldZoneDirector _worldZoneDirector;
         private BiomeMatrixDirector _biomeMatrixDirector;
         private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
+        private MapMagicBridge _mapMagicRuntime;
         private WorldProceduralScatterDirector _proceduralScatterDirector;
         private IDataVault _dataVault;
         private IAbyssalFlowGpuReadModel _fluidEngine;
@@ -1923,6 +1945,9 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            if (Application.isPlaying && TryAbortForUsableExistingRuntime())
+                return;
+
             CacheGraphicsCapabilitiesCold();
             _computeDispatchDisabled = false;
             EnsureBoidMaterialBindingReady();
@@ -1941,6 +1966,13 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (Application.isPlaying && TryAbortForUsableExistingRuntime())
+                return;
+
+            TryRegisterService();
+            if (Application.isPlaying && !_serviceRegistered)
+                return;
+
             CacheGraphicsCapabilitiesCold();
             _computeDispatchDisabled = false;
             InvalidateViewPoseCache();
@@ -1960,8 +1992,8 @@ namespace Hecton8.World
             FlashlightEvents.Register(this);
             SpectrumEvents.RegisterSonarPingListener(this);
             HectonFloatingOrigin.RegisterListener(this);
-            TryRegisterService();
             TryRegister();
+            _runtimeRoutesRetiredAfterOwnershipLoss = false;
         }
 
         private void OnDisable()
@@ -2049,8 +2081,13 @@ namespace Hecton8.World
             _boidFlashlightThreatIntensity01 = 0f;
             _boidFlashlightThreatOriginWS = Vector3.zero;
             _boidFlashlightThreatForwardWS = Vector3.forward;
+            _foodChainTelemetryDumped = false;
+            _foodChainTelemetryDumpSourceUnavailableLogged = false;
+            _foodChainTelemetryDumpFailureLogged = false;
             _boidSensoryBlackBoxCursor = 0;
             _boidSensoryBlackBoxDumped = false;
+            _boidSensoryBlackBoxDumpSourceUnavailableLogged = false;
+            _boidSensoryBlackBoxDumpFailureLogged = false;
             _lastSwarmDispersedSignalTime = float.NegativeInfinity;
             _swarmDispersedSequence = 0u;
             ResetThreatVoxelSnapshot();
@@ -2115,8 +2152,10 @@ namespace Hecton8.World
                 return;
 
             Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
             if (!IsFiniteVector3(shiftOffset) ||
-                shiftOffset.sqrMagnitude <= 0.0001f)
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
             {
                 return;
             }
@@ -2397,22 +2436,42 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.WorldGen:
                     _proceduralScatterDirector = currentService as WorldProceduralScatterDirector;
+                    WorldRuntimeReferenceUtility.TryResolveWorldProceduralScatterDirector(ref _proceduralScatterDirector);
                     break;
                 case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
                     _biomeMatrixDirector = currentService as BiomeMatrixDirector;
+                    WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     _mapMagicVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _mapMagicVegetationBridge);
                     _threatVoxelPayloadRefreshRequested = _mapMagicVegetationBridge != null;
+                    SyncWaterSurfaceLevelFromTerrainBridge();
+                    break;
+                case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime:
+                    ReconcileRuntimeOwnerFromRegistryReplacement(previousService, currentService);
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    if (ReferenceEquals(_mapMagicRuntime, previousService))
+                        _mapMagicRuntime = null;
+                    MapMagicBridge currentMapMagic = currentService as MapMagicBridge;
+                    if (WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref currentMapMagic))
+                        _mapMagicRuntime = currentMapMagic;
+                    else
+                        _mapMagicRuntime = null;
+                    SyncWaterSurfaceLevelFromTerrainBridge();
                     break;
                 case GlobalRegistryServiceSlot.BiolumManagerRuntime:
                     biolumManager = currentService as HectonBiolumManager;
                     break;
                 case GlobalRegistryServiceSlot.SargassumDragRuntime:
                     dragManager = currentService as SargassumGlobalDragManager;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref dragManager);
                     break;
                 case GlobalRegistryServiceSlot.SargassumCutRuntime:
                     cutManager = currentService as SargassumCutManager;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref cutManager);
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
                     _fluidEngine = currentService as IAbyssalFlowGpuReadModel;
@@ -2424,7 +2483,11 @@ namespace Hecton8.World
                     _encounterDirector = currentService as IEncounterDirectorService;
                     break;
                 case GlobalRegistryServiceSlot.EcosystemDirector:
-                    _ecosystemDirector = currentService as IEcosystemDirectorService;
+                    EcosystemDirector ecosystemDirector = currentService as EcosystemDirector;
+                    if (WorldRuntimeReferenceUtility.TryResolveEcosystemDirector(ref ecosystemDirector))
+                        _ecosystemDirector = ecosystemDirector;
+                    else
+                        _ecosystemDirector = null;
                     break;
                 case GlobalRegistryServiceSlot.BeaconNetworkRuntime:
                     _beaconNetworkRuntime = currentService as IBeaconNetworkService;
@@ -2451,11 +2514,9 @@ namespace Hecton8.World
             if (biolumManager == null)
                 biolumManager = GlobalRegistry.BiolumManager;
 
-            if (dragManager == null)
-                dragManager = SargassumGlobalDragManager.Instance;
+            WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref dragManager);
 
-            if (cutManager == null)
-                cutManager = SargassumCutManager.Instance;
+            WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref cutManager);
 
             if (_fluidEngine == null)
                 _fluidEngine = GlobalRegistry.AbyssalFlowGpu;
@@ -2467,7 +2528,11 @@ namespace Hecton8.World
                 _encounterDirector = GlobalRegistry.EncounterDirector;
 
             if (_ecosystemDirector == null)
-                _ecosystemDirector = EcosystemDirector.ActiveRuntimeInstance;
+            {
+                EcosystemDirector ecosystemDirector = null;
+                if (WorldRuntimeReferenceUtility.TryResolveEcosystemDirector(ref ecosystemDirector))
+                    _ecosystemDirector = ecosystemDirector;
+            }
 
             if (_beaconNetworkRuntime == null)
                 _beaconNetworkRuntime = GlobalRegistry.BeaconNetworkService;
@@ -2476,13 +2541,23 @@ namespace Hecton8.World
                 _abyssalFluidDecals = GlobalRegistry.FluidDecalPresentation;
 
             if (_proceduralScatterDirector == null)
-                _proceduralScatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;
+                WorldRuntimeReferenceUtility.TryResolveWorldProceduralScatterDirector(ref _proceduralScatterDirector);
 
-            if (_biomeMatrixDirector == null)
-                _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            if (_biomeMatrixDirector == null || !_biomeMatrixDirector.isActiveAndEnabled)
+            {
+                _biomeMatrixDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
+            }
 
             if (_mapMagicVegetationBridge == null)
                 WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _mapMagicVegetationBridge);
+
+            if (_mapMagicRuntime == null || !_mapMagicRuntime.isActiveAndEnabled)
+            {
+                _mapMagicRuntime = null;
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagicRuntime);
+            }
+            SyncWaterSurfaceLevelFromTerrainBridge();
 
             _playerRuntimeContext = GlobalRegistry.Player;
             _playerRuntimeContextProbeAttempted = true;
@@ -2492,6 +2567,32 @@ namespace Hecton8.World
                 _simulationBucketer = GlobalRegistry.SimulationBucketer;
 
             _simulationBucketerProbeAttempted = true;
+        }
+
+        private void SyncWaterSurfaceLevelFromTerrainBridge()
+        {
+            MapMagicBridge bridge = _mapMagicRuntime;
+            if (!WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge))
+                return;
+
+            _mapMagicRuntime = bridge;
+            float bridgedWaterLevel = bridge.WaterSurfaceLevel;
+            if (TryResolveWaterLevel(bridgedWaterLevel, out float resolvedWaterLevel))
+                waterLevel = resolvedWaterLevel;
+        }
+
+        private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)
+        {
+            if (math.isfinite(candidateWaterLevel) &&
+                math.abs(candidateWaterLevel) > 0.0001f &&
+                math.abs(candidateWaterLevel) <= 1000f)
+            {
+                waterLevel = candidateWaterLevel;
+                return true;
+            }
+
+            waterLevel = DefaultWaterLevel;
+            return false;
         }
 
         private void RebindDataVault(IDataVault currentVault)
@@ -2530,8 +2631,11 @@ namespace Hecton8.World
         private void RefreshDependencies()
         {
             RefreshColdRegistryDependencies();
-            if (!_runtimeServiceProbeAttempted && _worldZoneDirector == null)
-                _worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+            if (!_runtimeServiceProbeAttempted && (_worldZoneDirector == null || !_worldZoneDirector.isActiveAndEnabled))
+            {
+                _worldZoneDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref _worldZoneDirector);
+            }
 
             _runtimeServiceProbeAttempted = true;
         }
@@ -2584,7 +2688,9 @@ namespace Hecton8.World
             boidBodyRadius = ClampFinite(boidBodyRadius, 0.02f, separationRadius * 0.5f);
             consumedCollapseSpeed = ClampFinite(consumedCollapseSpeed, 2f, 24f);
             gradientWorldStep = ClampMinFinite(gradientWorldStep, 0.05f);
-            waterLevel = ClampMinFinite(waterLevel, 0f);
+            waterLevel = TryResolveWaterLevel(waterLevel, out float resolvedWaterLevel)
+                ? resolvedWaterLevel
+                : DefaultWaterLevel;
             minDepthBelowSurface = ClampMinFinite(minDepthBelowSurface, 0.1f);
             maxDepthBelowSurface = ClampMinFinite(maxDepthBelowSurface, minDepthBelowSurface + 0.1f);
             panicThreshold = SaturateFinite01(panicThreshold);
@@ -3916,12 +4022,90 @@ namespace Hecton8.World
             if (!RefreshPlayerRuntimePosition(out Vector3 playerPosition) || playerPosition.y > parasiteDroneWorldYThreshold)
                 return false;
 
-            if (_worldZoneDirector == null || _biomeMatrixDirector == null || _biomeMatrixDirector.CurrentDepthMeters < 2000f)
+            if (!IsParasiteDepthGateSatisfied())
                 return false;
 
-            WorldZoneAnchor primaryZone = _worldZoneDirector.CurrentZone;
-            WorldZoneAnchor secondaryZone = _worldZoneDirector.SecondaryZone;
+            if (!TryResolveParasiteModeZones(out WorldZoneAnchor primaryZone, out WorldZoneAnchor secondaryZone))
+                return false;
+
             return IsSyntheticAbyssZone(primaryZone) || IsSyntheticAbyssZone(secondaryZone);
+        }
+
+        private bool IsParasiteDepthGateSatisfied()
+        {
+            if (TryResolvePlayerDepthMeters(out float playerDepthMeters) &&
+                playerDepthMeters >= ParasiteModeMinDepthMeters)
+            {
+                return true;
+            }
+
+            BiomeMatrixDirector matrixDirector = _biomeMatrixDirector;
+            if (matrixDirector == null || !matrixDirector.isActiveAndEnabled)
+            {
+                matrixDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref matrixDirector);
+                _biomeMatrixDirector = matrixDirector;
+            }
+
+            if (matrixDirector != null &&
+                matrixDirector.isActiveAndEnabled &&
+                math.isfinite(matrixDirector.CurrentDepthMeters))
+            {
+                return matrixDirector.CurrentDepthMeters >= ParasiteModeMinDepthMeters;
+            }
+
+            return false;
+        }
+
+        private bool TryResolveParasiteModeZones(out WorldZoneAnchor primaryZone, out WorldZoneAnchor secondaryZone)
+        {
+            WorldZoneDirector zoneDirector = _worldZoneDirector;
+            if (zoneDirector == null || !zoneDirector.isActiveAndEnabled)
+            {
+                zoneDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref zoneDirector);
+                _worldZoneDirector = zoneDirector;
+            }
+
+            if (zoneDirector == null || !zoneDirector.isActiveAndEnabled)
+            {
+                primaryZone = null;
+                secondaryZone = null;
+                return false;
+            }
+
+            primaryZone = zoneDirector.CurrentZone;
+            secondaryZone = zoneDirector.SecondaryZone;
+            return true;
+        }
+
+        private bool TryResolvePlayerDepthMeters(out float depthMeters)
+        {
+            if (RefreshPlayerRuntimeSnapshotCache(
+                    out PlayerMovementRuntimeState movementState,
+                    out PlayerLookState _) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                depthMeters = math.max(0f, movementState.DepthMeters);
+                return true;
+            }
+
+            if (_playerRuntimeContext != null)
+            {
+                depthMeters = 0f;
+                return false;
+            }
+
+            HectonPlayerMovement movement = _playerMovement;
+            if (movement != null && math.isfinite(movement.CurrentDepth))
+            {
+                depthMeters = math.max(0f, movement.CurrentDepth);
+                return true;
+            }
+
+            depthMeters = 0f;
+            return false;
         }
 
         private bool IsLeviathanModeActive()
@@ -6389,6 +6573,12 @@ namespace Hecton8.World
             if (emittedCount <= 0)
                 return 0;
 
+            RecordFoodChainTelemetry(
+                FoodChainTelemetryFlagKillJobScheduled,
+                safeTelemetryCenterWS,
+                predatorId,
+                0u);
+
             int drainedCount = DrainPredatorKillSignals(currentTimeSeconds);
             RecordFoodChainTelemetry(
                 FoodChainTelemetryFlagKillJobCompleted | (drainedCount > 0 ? FoodChainTelemetryFlagKillDrained : 0u),
@@ -6817,6 +7007,10 @@ namespace Hecton8.World
 
         private void RecordFoodChainTelemetry(uint flags, Vector3 eventPositionWS, uint sourceHash, uint anomalyHash)
         {
+            int pendingKillJob = ResolvePendingPredatorKillSignalCountForTelemetry();
+            if (pendingKillJob > 0)
+                flags |= FoodChainTelemetryFlagKillJobScheduled;
+
             if (!TryAcquireSargassumWriteLock(
                     in _foodChainTelemetryRingHandle,
                     BufferID.SargassumFoodChainTelemetryRing,
@@ -6859,12 +7053,12 @@ namespace Hecton8.World
                         unchecked((uint)math.max(0, _activeBoidCount)),
                         unchecked((uint)math.max(0, _debugConsumedBoidCount)),
                         unchecked((uint)_lastSimulationLodTier),
-                        flags)),
+                        flags ^ unchecked((uint)pendingKillJob))),
                     SourceHash = sourceHash,
                     Flags = flags,
                     ActiveBoidCount = _activeBoidCount,
                     ConsumedBoidCount = _debugConsumedBoidCount,
-                    PendingKillJob = 0,
+                    PendingKillJob = pendingKillJob,
                     LodTier = (int)_lastSimulationLodTier,
                     FieldCenterWS = new float3(safeFieldCenter.x, safeFieldCenter.y, safeFieldCenter.z),
                     EventPositionWS = new float3(safeEventPosition.x, safeEventPosition.y, safeEventPosition.z),
@@ -6880,6 +7074,21 @@ namespace Hecton8.World
 
             if (anomalyHash != 0u)
                 TryDumpFoodChainTelemetry(anomalyHash);
+        }
+
+        private int ResolvePendingPredatorKillSignalCountForTelemetry()
+        {
+            if (!TryReadOnlySargassumVaultArray(
+                    in _killSignalCountHandle,
+                    BufferID.SargassumKillSignalCount,
+                    1,
+                    out NativeArray<int>.ReadOnly killSignalCount) ||
+                killSignalCount.Length <= 0)
+            {
+                return 0;
+            }
+
+            return math.clamp(killSignalCount[0], 0, PredatorKillSignalDrainLimit);
         }
 
         private static bool IsFiniteVector3(Vector3 value)
@@ -6924,21 +7133,89 @@ namespace Hecton8.World
             return IsFiniteVector3(runtimePosition);
         }
 
-        private void TryDumpFoodChainTelemetry(uint anomalyHash)
+        private unsafe void TryDumpFoodChainTelemetry(uint anomalyHash)
         {
-            if (_foodChainTelemetryDumped ||
-                !TryReadOnlySargassumVaultArray(
+            if (_foodChainTelemetryDumped)
+                return;
+
+            if (!TryReadOnlySargassumVaultArray(
                     in _foodChainTelemetryRingHandle,
                     BufferID.SargassumFoodChainTelemetryRing,
                     FoodChainTelemetryCapacity,
                     out NativeArray<FoodChainTelemetryEntry>.ReadOnly foodChainTelemetryRing))
             {
+                if (!_foodChainTelemetryDumpSourceUnavailableLogged)
+                {
+                    _foodChainTelemetryDumpSourceUnavailableLogged = true;
+                    Hecton8.Core.H8Debug.LogError(
+                        "[SargassumMicroFaunaBoids] Food-chain telemetry dump source unavailable. path=" +
+                        FoodChainTelemetryDumpPath +
+                        " anomaly=0x" +
+                        anomalyHash.ToString("X8"));
+                }
+
                 return;
             }
 
-            _foodChainTelemetryDumped = true;
-            _ = anomalyHash;
-            _ = foodChainTelemetryRing;
+            bool wrote = TryWriteFoodChainTelemetryDump(foodChainTelemetryRing, anomalyHash);
+            _foodChainTelemetryDumped = wrote;
+            if (!wrote && !_foodChainTelemetryDumpFailureLogged)
+            {
+                _foodChainTelemetryDumpFailureLogged = true;
+                Hecton8.Core.H8Debug.LogError(
+                    "[SargassumMicroFaunaBoids] Food-chain telemetry dump failed. path=" +
+                    FoodChainTelemetryDumpPath +
+                    " anomaly=0x" +
+                    anomalyHash.ToString("X8"));
+            }
+        }
+
+        private unsafe bool TryWriteFoodChainTelemetryDump(
+            NativeArray<FoodChainTelemetryEntry>.ReadOnly foodChainTelemetryRing,
+            uint anomalyHash)
+        {
+            if (!foodChainTelemetryRing.IsCreated)
+                return false;
+
+            int capacity = math.min(foodChainTelemetryRing.Length, FoodChainTelemetryCapacity);
+            if (capacity <= 0)
+                return false;
+
+            int entrySize = UnsafeUtility.SizeOf<FoodChainTelemetryEntry>();
+            const int headerBytes = (sizeof(uint) * 3) + (sizeof(int) * 3);
+            int byteCount = headerBytes + capacity * entrySize;
+            NativeArray<byte> payload = default;
+            try
+            {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(SargassumMicroFaunaBoids),
+                    FoodChainTelemetryDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.WriteArrayElement<uint>(destination, 0, FoodChainTelemetryMagicLow);
+                UnsafeUtility.WriteArrayElement<uint>(destination + sizeof(uint), 0, FoodChainTelemetryMagicHigh);
+                UnsafeUtility.WriteArrayElement<int>(destination + sizeof(uint) * 2, 0, entrySize);
+                UnsafeUtility.WriteArrayElement<int>(destination + (sizeof(uint) * 2) + sizeof(int), 0, capacity);
+                UnsafeUtility.WriteArrayElement<int>(destination + (sizeof(uint) * 2) + (sizeof(int) * 2), 0, _foodChainTelemetryCursor);
+                UnsafeUtility.WriteArrayElement<uint>(destination + (sizeof(uint) * 2) + (sizeof(int) * 3), 0, anomalyHash);
+
+                byte* rows = destination + headerBytes;
+                for (int i = 0; i < capacity; i++)
+                {
+                    FoodChainTelemetryEntry entry = foodChainTelemetryRing[i];
+                    UnsafeUtility.CopyStructureToPtr(ref entry, rows + i * entrySize);
+                }
+
+                return NativeFaultDumpWriter.TryWriteAll(FoodChainTelemetryDumpPath, payload, byteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SargassumMicroFaunaBoids),
+                    FoodChainTelemetryDumpPayloadLabel);
+            }
         }
 
         private void RecordBoidSensoryBlackBox(
@@ -7060,16 +7337,87 @@ namespace Hecton8.World
             return math.hash(math.asuint(value));
         }
 
-        private void TryDumpBoidSensoryBlackBox(
+        private unsafe void TryDumpBoidSensoryBlackBox(
             NativeArray<BoidSensoryBlackBoxEntry> boidSensoryBlackBox,
             uint anomalyHash)
         {
-            if (_boidSensoryBlackBoxDumped || !boidSensoryBlackBox.IsCreated)
+            if (_boidSensoryBlackBoxDumped)
                 return;
 
-            _boidSensoryBlackBoxDumped = true;
-            _ = anomalyHash;
-            _ = boidSensoryBlackBox;
+            if (!boidSensoryBlackBox.IsCreated)
+            {
+                if (!_boidSensoryBlackBoxDumpSourceUnavailableLogged)
+                {
+                    _boidSensoryBlackBoxDumpSourceUnavailableLogged = true;
+                    Hecton8.Core.H8Debug.LogError(
+                        "[SargassumMicroFaunaBoids] Boid sensory blackbox dump source unavailable. path=" +
+                        BoidSensoryBlackBoxDumpPath +
+                        " anomaly=0x" +
+                        anomalyHash.ToString("X8"));
+                }
+
+                return;
+            }
+
+            bool wrote = TryWriteBoidSensoryBlackBoxDump(boidSensoryBlackBox, anomalyHash);
+            _boidSensoryBlackBoxDumped = wrote;
+            if (!wrote && !_boidSensoryBlackBoxDumpFailureLogged)
+            {
+                _boidSensoryBlackBoxDumpFailureLogged = true;
+                Hecton8.Core.H8Debug.LogError(
+                    "[SargassumMicroFaunaBoids] Boid sensory blackbox dump failed. path=" +
+                    BoidSensoryBlackBoxDumpPath +
+                    " anomaly=0x" +
+                    anomalyHash.ToString("X8"));
+            }
+        }
+
+        private unsafe bool TryWriteBoidSensoryBlackBoxDump(
+            NativeArray<BoidSensoryBlackBoxEntry> boidSensoryBlackBox,
+            uint anomalyHash)
+        {
+            if (!boidSensoryBlackBox.IsCreated)
+                return false;
+
+            int capacity = math.min(boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
+            if (capacity <= 0)
+                return false;
+
+            int entrySize = UnsafeUtility.SizeOf<BoidSensoryBlackBoxEntry>();
+            const int headerBytes = (sizeof(uint) * 3) + (sizeof(int) * 3);
+            int byteCount = headerBytes + capacity * entrySize;
+            NativeArray<byte> payload = default;
+            try
+            {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(SargassumMicroFaunaBoids),
+                    BoidSensoryBlackBoxDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.WriteArrayElement<uint>(destination, 0, BoidSensoryBlackBoxMagicLow);
+                UnsafeUtility.WriteArrayElement<uint>(destination + sizeof(uint), 0, BoidSensoryBlackBoxMagicHigh);
+                UnsafeUtility.WriteArrayElement<int>(destination + sizeof(uint) * 2, 0, entrySize);
+                UnsafeUtility.WriteArrayElement<int>(destination + (sizeof(uint) * 2) + sizeof(int), 0, capacity);
+                UnsafeUtility.WriteArrayElement<int>(destination + (sizeof(uint) * 2) + (sizeof(int) * 2), 0, _boidSensoryBlackBoxCursor);
+                UnsafeUtility.WriteArrayElement<uint>(destination + (sizeof(uint) * 2) + (sizeof(int) * 3), 0, anomalyHash);
+
+                byte* rows = destination + headerBytes;
+                for (int i = 0; i < capacity; i++)
+                {
+                    BoidSensoryBlackBoxEntry entry = boidSensoryBlackBox[i];
+                    UnsafeUtility.CopyStructureToPtr(ref entry, rows + i * entrySize);
+                }
+
+                return NativeFaultDumpWriter.TryWriteAll(BoidSensoryBlackBoxDumpPath, payload, byteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SargassumMicroFaunaBoids),
+                    BoidSensoryBlackBoxDumpPayloadLabel);
+            }
         }
 
         /// <summary>
@@ -8491,7 +8839,7 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || !_serviceRegistered)
                 return;
 
             TryRegisterHotSwapListener();
@@ -8517,7 +8865,10 @@ namespace Hecton8.World
 
         private void TryRegisterService()
         {
-            if (_serviceRegistered)
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             GlobalRegistry.RegisterSargassumMicroFaunaRuntime(this);
@@ -8531,11 +8882,145 @@ namespace Hecton8.World
             if (!_serviceRegistered)
                 return;
 
-            GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(this);
             if (ReferenceEquals(s_activeRuntimeInstance, this))
                 s_activeRuntimeInstance = null;
-
             _serviceRegistered = false;
+
+            if (ReferenceEquals(GlobalRegistry.SargassumMicroFauna, this))
+                GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            SargassumMicroFaunaBoids active = s_activeRuntimeInstance;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsSargassumMicroFaunaRuntimeUsable(active))
+                {
+                    LogDuplicateRuntimeOwnerDetected(active);
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, active))
+                    s_activeRuntimeInstance = null;
+
+                if (ReferenceEquals(GlobalRegistry.SargassumMicroFauna, active))
+                    GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(active);
+            }
+
+            SargassumMicroFaunaBoids registered = GlobalRegistry.SargassumMicroFauna;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsSargassumMicroFaunaRuntimeUsable(registered))
+            {
+                s_activeRuntimeInstance = registered;
+                LogDuplicateRuntimeOwnerDetected(registered);
+                Destroy(gameObject);
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                s_activeRuntimeInstance = null;
+
+            GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(registered);
+            return false;
+        }
+
+        private static bool IsSargassumMicroFaunaRuntimeUsable(SargassumMicroFaunaBoids runtime)
+        {
+            return runtime != null && runtime._serviceRegistered && runtime.isActiveAndEnabled;
+        }
+
+        private void ReconcileRuntimeOwnerFromRegistryReplacement(object previousService, object currentService)
+        {
+            if (currentService is SargassumMicroFaunaBoids currentRuntime)
+            {
+                s_activeRuntimeInstance = currentRuntime;
+                bool ownsRuntime = ReferenceEquals(currentRuntime, this);
+                _serviceRegistered = ownsRuntime;
+                if (ownsRuntime)
+                {
+                    if (_runtimeRoutesRetiredAfterOwnershipLoss)
+                        RestoreRuntimeRoutesAfterOwnershipGain();
+                    return;
+                }
+
+                if (ReferenceEquals(previousService, this))
+                    RetireRuntimeRoutesAfterOwnershipLoss();
+                return;
+            }
+
+            if (ReferenceEquals(previousService, this))
+            {
+                _serviceRegistered = false;
+                if (ReferenceEquals(s_activeRuntimeInstance, this))
+                    s_activeRuntimeInstance = null;
+                RetireRuntimeRoutesAfterOwnershipLoss();
+            }
+        }
+
+        private void RetireRuntimeRoutesAfterOwnershipLoss()
+        {
+            if (_runtimeRoutesRetiredAfterOwnershipLoss)
+                return;
+
+            SargassumGlobalDragManager.Unregister(this);
+            FlashlightEvents.Unregister(this);
+            SpectrumEvents.UnregisterSonarPingListener(this);
+            HectonFloatingOrigin.UnregisterListener(this);
+
+            if (_registeredFixedTick)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _registeredFixedTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+
+            _runtimeRoutesRetiredAfterOwnershipLoss = true;
+        }
+
+        private void RestoreRuntimeRoutesAfterOwnershipGain()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            RefreshColdRegistryDependencies();
+            RefreshDependencies();
+            SargassumGlobalDragManager.Register(this);
+            FlashlightEvents.Register(this);
+            SpectrumEvents.RegisterSonarPingListener(this);
+            HectonFloatingOrigin.RegisterListener(this);
+            TryRegister();
+            _runtimeRoutesRetiredAfterOwnershipLoss = false;
+        }
+
+        private void LogDuplicateRuntimeOwnerDetected(SargassumMicroFaunaBoids keptRuntime)
+        {
+            if (s_duplicateRuntimeOwnerLogged)
+                return;
+
+            s_duplicateRuntimeOwnerLogged = true;
+            string keptName = keptRuntime != null ? keptRuntime.name : "<null>";
+            H8Debug.LogError(
+                "[SargassumMicroFaunaBoids] Duplicate runtime owner detected. Keeping " +
+                keptName +
+                " and destroying duplicate " +
+                name +
+                " before service/tick registration.",
+                this);
         }
 
         private void TryUnregister()
@@ -8611,6 +9096,14 @@ namespace Hecton8.World
             _computeStaticBuffersBound = false;
             _boidIndirectArgsMesh = null;
             _boidIndirectArgsInstanceCount = -1;
+            _foodChainTelemetryCursor = 0;
+            _foodChainTelemetryDumped = false;
+            _foodChainTelemetryDumpSourceUnavailableLogged = false;
+            _foodChainTelemetryDumpFailureLogged = false;
+            _boidSensoryBlackBoxCursor = 0;
+            _boidSensoryBlackBoxDumped = false;
+            _boidSensoryBlackBoxDumpSourceUnavailableLogged = false;
+            _boidSensoryBlackBoxDumpFailureLogged = false;
             if (_fallbackAbyssalFlowTexture != null)
             {
                 _fallbackAbyssalFlowTexture = null;
@@ -8652,10 +9145,6 @@ namespace Hecton8.World
 
             _feedingFrenzyWindowStartTime = -1f;
             _feedingFrenzyKillCount = 0;
-            _foodChainTelemetryCursor = 0;
-            _foodChainTelemetryDumped = false;
-            _boidSensoryBlackBoxCursor = 0;
-            _boidSensoryBlackBoxDumped = false;
             _pendingPredatorConsumptionTimeSeconds = 0f;
             _debugConsumedBoidCount = 0;
             JobHandle.ScheduleBatchedJobs();

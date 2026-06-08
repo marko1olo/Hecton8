@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Black Keel Tender Interior Limits"
+title: "Interieurlimieten van de Black Keel-tender"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Black Keel Tender Interior Limits
+# Interieurlimieten van de Black Keel-tender
 
-NL LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel is hard-sci-fi salvage-infrastructuur, geen heldhaftig privéschip. Het interieur is gebouwd rond monster-custody, packet law, droneafhandeling, quarantainehulzen en schulddruk. Het schip kan een levenslijn zijn en toch structureel onverschillig blijven voor de persoon die die lijn vasthoudt.
 
 ## Scanner
 
-NL LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+De tender heeft rekken voor monsters, drones, verzegelde pakketten en lien-vracht voordat er een kooi is die past bij een levende passagier.
 
 ## Terminal
 
-NL LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: geen deep rescue crew, geen atmosferische shuttle-reserve, geen gratis ascent burn buiten lien authority, geen menselijke kwartiermeester.
 
 ## Audio
 
-NL LOC HOLD: The ship brought you here as cargo with hands.
+Het schip bracht je hier als vracht met handen.
 
 ## Field Note
 
-NL LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel is een werkende claim tender: gehuurd, door schuld vastgezet, geautomatiseerd en voor custody geoptimaliseerd voordat redding telt.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/nl_NL. -->

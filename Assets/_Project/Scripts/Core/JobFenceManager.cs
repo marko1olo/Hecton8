@@ -81,11 +81,15 @@ namespace Hecton8.Core
                 return;
 
             ClearRegisteredSlots(ResolveSafeCount(), NormalizeIndex(WriteIndex));
+
+            H8Memory.Release(ref Handles, NativeArrayOwnerSystem);
+            if (Handles.IsCreated)
+                return;
+
             if (SentinelId > 0)
                 SentinelId = 0;
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
-            H8Memory.Release(ref Handles, NativeArrayOwnerSystem);
             Capacity = 0;
             Count = 0;
             WriteIndex = 0;
@@ -96,11 +100,14 @@ namespace Hecton8.Core
             if (!Handles.IsCreated)
                 return inputDeps;
 
+            JobHandle disposeHandle = H8Memory.Release(ref Handles, inputDeps, NativeArrayOwnerSystem);
+            if (Handles.IsCreated)
+                return disposeHandle;
+
             if (SentinelId > 0)
                 SentinelId = 0;
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
-            JobHandle disposeHandle = H8Memory.Release(ref Handles, inputDeps, NativeArrayOwnerSystem);
             Capacity = 0;
             Count = 0;
             WriteIndex = 0;

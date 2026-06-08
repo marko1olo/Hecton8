@@ -7,34 +7,34 @@ poi_tags: poi.relay_packet_delay_meter;poi.legal_reply_timestamp
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Relay Message Lag"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "中继消息滞后"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# 中继消息滞后
 
-CN LOC HOLD: Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.
+中继滞后让Deep Reach不必在房间里有实时声音也能威胁玩家。合同机器、公证、索赔窗口和载具条款可能先于同情抵达，因为它们写得更早、排队更早，并被定价为能穿越距离。
 
 ## Scanner
 
-CN LOC HOLD: A message can be legally binding and still arrive too late to save air.
+一条消息可以具有法律约束力，却仍然来得太晚，救不了空气。
 
 ## Terminal
 
-CN LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
+中继滞后：Aegir本地消息可能需要数小时或数天。域间法律包可能需要数年。Deep Reach的压力因此陈旧、自动化、合同化，并且仍然危险。
 
 ## Audio
 
-CN LOC HOLD: The reply is late. The lien is current.
+回复迟到了。留置权仍是当前的。
 
 ## Field Note
 
-CN LOC HOLD: No ansible means truth moves as freight.
+没有ansible，真相就像货物一样移动。
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/zh_CN. -->

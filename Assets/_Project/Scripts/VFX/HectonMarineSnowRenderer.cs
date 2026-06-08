@@ -1056,10 +1056,17 @@ namespace Hecton8.Environment
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
-            Vector3 runtimeOffset = -shiftData.ShiftOffset;
+            Vector3 runtimeOffset = -shiftOffset;
             _flowFieldCenterWS += runtimeOffset;
             if (_lastUploadedFlowFieldCenterWS != Vector3.zero)
                 _lastUploadedFlowFieldCenterWS += runtimeOffset;
@@ -3593,8 +3600,8 @@ namespace Hecton8.Environment
         private void RefreshFlowFieldUpload(float dt)
         {
             _flowFieldUploadTimer -= dt;
-            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (bridge == null)
+            HectonMapMagicVegetationBridge bridge = null;
+            if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref bridge))
             {
                 ResetFlowFieldSamplingState();
                 return;
@@ -4341,8 +4348,8 @@ namespace Hecton8.Environment
             Vector4 heightRect = Vector4.zero;
             Vector4 heightScale = DisabledTerrainHeightScale;
 
-            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (bridge != null &&
+            HectonMapMagicVegetationBridge bridge = null;
+            if (WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref bridge) &&
                 bridge.TryGetActiveHeightTexturePayload(out HectonMapMagicVegetationBridge.TerrainHeightTexturePayload heightPayload) &&
                 heightPayload.HeightTexture != null &&
                 heightPayload.TerrainSize.x > 0f &&

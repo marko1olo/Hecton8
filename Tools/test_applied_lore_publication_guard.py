@@ -44,7 +44,7 @@ class TestAppliedLorePublicationGuard(unittest.TestCase):
             "article_id": "A1",
             "unlock_id": "U1",
             "localization_status": "native_reviewed",
-            "localization_flags": "none",
+            "localization_flags": "0",
             "spoiler_tier": "0",
             "source_voice": "narrator",
             "title": "Title"
@@ -77,6 +77,16 @@ class TestAppliedLorePublicationGuard(unittest.TestCase):
             ret = guard.run_guard(self.root, "", False)
         self.assertEqual(ret, 1)
         self.assertIn("Missing or empty required keys: ['title']", out.getvalue())
+
+    def test_non_numeric_localization_flags_fail(self):
+        fm = self.get_valid_fm()
+        fm["localization_flags"] = "none"
+        self.create_page("wiki", "en_US", "P123.md", fm)
+
+        with patch('sys.stdout', new=StringIO()) as out:
+            ret = guard.run_guard(self.root, "", False)
+        self.assertEqual(ret, 1)
+        self.assertIn("localization_flags must be a non-negative integer", out.getvalue())
 
     def test_locale_gap(self):
         fm = self.get_valid_fm()

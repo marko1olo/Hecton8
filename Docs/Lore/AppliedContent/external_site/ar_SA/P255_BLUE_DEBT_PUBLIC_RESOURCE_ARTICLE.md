@@ -9,32 +9,35 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Blue Debt Public Resource Article"
+title: "مقال مورد Blue Debt العام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Blue Debt Public Resource Article
+# مقال مورد Blue Debt العام
 
-AR LOC HOLD: Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure.
+Blue debt هو اسم الحدود لـ Xenon-Omega-bearing pressure substrate على HECTON-8. قد يظهر كمعدن غني بالمحلول الملحي، أو جيب كلاثرات، أو تلوث pressure glass، أو شبكة مرتبطة بغشاء حيوي، أو containment material صناعي متضرر. تأتي قيمته من الحساب وcontainment وتخزين البيئات القصوى. ويأتي خطره من custody: كل عينة تسأل من يملكها، ومن صدقها، ومن يلام إذا غيرت حالتها.
 
 ## Scanner
 
-AR LOC HOLD: The public name sounds like slang because the official name is built to hide liability.
+العامية صادقة. الاسم الرسمي هو ما يخفي المسؤولية: Xenon-Omega-bearing pressure substrate.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+مستوى مقال عام / BLUE DEBT
+المسموح: سلوك العينة، كيمياء الضغط، حوامل الكلاثرات والمحلول الملحي، قيمة containment، استخدام الحساب، خطر الحيازة
+المحجوب: جداول الوصفات الدقيقة، ضبط payout، مسارات substrate الخاصة بـ Atlas في أواخر اللعبة
+ملاحظة تحرير: لا خام سحري، لا خيال loot متوهج، لا ملكية نظيفة.
 
 ## Audio
 
-AR LOC HOLD: Ore is what people call it when they want to forget the paperwork.
+سموه blue debt لأن كل غرام مفيد وصل وهو مدين سلفا لشخص ما بضغط أو أوراق أو دم.
 
 ## Field Note
 
-AR LOC HOLD: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+إذا توهج مثل كنز، فأعد كتابته. يجب أن يبدو Blue debt نافعا ورطبا ومنظما وغير مستقر ومتنازعا عليه بالفعل.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/ar_SA. -->

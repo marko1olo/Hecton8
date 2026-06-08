@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # CONFORMIDADE CORPORATIVA E SUBCULTURA DOS SAQUEADORES
 
 > **Fonte:** Escritório de Conformidade de Resgate, Guia de Integração de Subcontratados (Formulário 88-C).  

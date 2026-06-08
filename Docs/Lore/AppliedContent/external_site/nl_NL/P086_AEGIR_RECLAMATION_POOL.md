@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Aegir-terugwinningspool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Aegir-terugwinningspool
 
-NL LOC HOLD: Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
-
-## Scanner
-
-NL LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
-
-## Terminal
-
-NL LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
-
-## Audio
-
-NL LOC HOLD: The pool owns the route. You only rent the answer.
-
-## Field Note
-
-NL LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+De Aegir-terugwinningspool houdt de speler alleen en maakt de aankomst toch geloofwaardig. Geen kleine marauder bezit Black Keel rechtstreeks. De carrier-tender hoort bij een gedeeld claimsysteem voor dode infrastructuur, betwiste lading en werelden die te duur zijn voor gewone crews. Een poolstempel kan toegang tot een route kopen, maar geeft die route ook aan arbitrage. Zodra de operator onder de waterlijn zit, concurreert elk verzoek met payload custody, quarantainereserves, bewijswaarde en brandstofvensters. De angst van de pool is procedureel. Hij kan hulp sturen en redding weigeren, omdat hulp onder Aegir-claimrecht slechts één factureerbare dienst tussen vele is.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/nl_NL. -->

@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Lantern Drift Codex Card"
+title: "Kodexkarte: Laternendrift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Lantern Drift Codex Card
+# Kodexkarte: Laternendrift
 
-DE LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+Laternendrift verhindert, dass HECTON-8s Schönheit zu Tapete wird. Sie kann mit klarer leuchtender Struktur führen und dann durch aufgezeichneten Lärm, Panik und Sturmladung verraten. Helles Wasser ist Navigation und Enttarnung zugleich.
 
 ## Scanner
 
-DE LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Laternendrift-Bloom. Biolumineszentes Plankton zeichnet Strömung und Trümmer in Bändern. Nützlich für Konturen; gefährlich, wenn Werkzeuglärm daraus eine leuchtende Spur macht.
 
 ## Terminal
 
-DE LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+PROBE / LATERNENDRIFT-BLOOM / Rolle: Sichtbarkeitsereignis im Flachwasser, Strömungsskizze, Störungsrekorder / sichere Lesung: stabiles Randlicht, Trümmerhalos, passende Strömung und Rückstände / verwerfen: sturmgeladener Scheinkorridor, Bloom verdeckt Kleingefahren, Werkzeugspur hellt hinter Operator auf / Routennotiz: Licht ist Daten, kein Schutz.
 
 ## Audio
 
-DE LOC HOLD: Pretty is not safe. Pretty is a reading.
+Das Leuchten hilft dir nicht. Es meldet, was das Wasser gehört hat.
 
 ## Field Note
 
-DE LOC HOLD: Card teaches that beauty can be route information and route deception.
+Nutze Bloom für Silhouetten. Repariere darin nicht laut. Wenn das Leuchten dir folgt, kann ihm auch etwas anderes folgen.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/de_DE. -->

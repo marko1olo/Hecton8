@@ -9,32 +9,36 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Photic Mat Codex Card"
+title: "Carte Codex du tapis photique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Photic Mat Codex Card
+# Carte Codex du tapis photique
 
-FR LOC HOLD: The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
+Les tapis photiques sont l’une des premières leçons d’écologie lisible de HECTON-8. Ils éclairent les hauts-fonds, nourrissent de petits grazers et stabilisent le film minéral, mais ils marquent aussi la chimie de pression et les jointures fragiles. L’océan paraît invitant parce que des surfaces vivantes travaillent.
 
 ## Scanner
 
-FR LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Tapis photique. Feuille de biofilm à bilan oxygène positif sur peau minérale. Claire, utile, fragile à la pression. Ne pas la décoller des fissures scellées.
 
 ## Terminal
 
-FR LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+SPÉCIMEN / TAPIS PHOTIQUE
+rôle: surface oxygène de hauts-fonds, nourriture pour grazers, stabilisateur de film minéral
+échantillon sûr: bord libre plus petit qu’une paume
+refuser: feuilles qui scellent une jointure, tapis à cloques de gaz, champs de morsures fraîches de grazers
+note de route: des tapis déchirés peuvent évacuer du gaz piégé et changer un plateau clair en hazard.
 
 ## Audio
 
-FR LOC HOLD: Light here is work, not comfort.
+Il a l’air doux parce qu’il travaille. S’il tient une jointure, laisse-le là.
 
 ## Field Note
 
-FR LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+Bord libre: échantillon. Couverture de jointure: laisser. Si le tapis scelle une blessure, la blessure est encore là.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/fr_FR. -->

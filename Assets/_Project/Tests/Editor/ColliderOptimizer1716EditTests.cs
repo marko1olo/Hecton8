@@ -581,12 +581,18 @@ namespace Hecton8.Tests.Editor
             string volumeCommit = ExtractMethodBody(
                 volume,
                 "internal bool CommitDeferredColliderChunkUpload(int index)");
+            string volumeTryUsePrewarmed = ExtractMethodBody(
+                volume,
+                "public bool TryUsePrewarmedColliderChunkCapacity(int chunkCount)");
             string volumeReady = ExtractMethodBody(
                 volume,
                 "internal bool IsDeferredColliderChunkUploadReady(int index)");
             string volumeAssign = ExtractMethodBody(
                 volume,
                 "internal bool AssignColliderChunkBakeMesh(int index, Mesh mesh)");
+            string volumeConfigureProxy = ExtractMethodBody(
+                volume,
+                "internal void ConfigureColliderChunkBakeProxy(int index, Vector3 center, Vector3 size)");
             string volumeGetOrCreate = ExtractMethodBody(
                 volume,
                 "public Mesh GetOrCreateColliderChunkMesh(int index)");
@@ -602,26 +608,136 @@ namespace Hecton8.Tests.Editor
             string forceReleaseBakeTeardown = ExtractMethodBody(
                 engine,
                 "private static void ForceReleaseDeferredVoxelPhysicsBakeTeardownForShutdownOnly");
+            string enableVoxelProxy = ExtractMethodBody(
+                engine,
+                "private static void EnableVoxelProxyCollider(BoxCollider proxyCollider)");
             string volumeDetachBakeMesh = ExtractMethodBody(
                 volume,
                 "internal void DetachColliderChunkBakeMesh(int index)");
             string volumeReleaseBakeMesh = ExtractMethodBody(
                 volume,
                 "internal void ReleaseColliderChunkBakeMesh(int index)");
+            string volumeResetChunks = ExtractMethodBody(
+                volume,
+                "public void ResetColliderChunks(bool destroyMeshes)");
+            string volumeGetColliderChunk = ExtractMethodBody(
+                volume,
+                "public MeshCollider GetColliderChunkCollider(int index)");
+            string volumeCinematicFake = ExtractMethodBody(
+                volume,
+                "internal void DisableColliderChunksForCinematicFake()");
+            string volumeSetActiveChunks = ExtractMethodBody(
+                volume,
+                "public void SetActiveColliderChunkCount(int activeCount)");
+            string volumeResetProxyShape = ExtractMethodBody(
+                volume,
+                "private void ResetColliderChunkBakeProxyShape(int index)");
+            string volumeDisableProxy = ExtractMethodBody(
+                volume,
+                "internal void DisableColliderChunkBakeProxy(int index)");
+            string volumeDisableProxies = ExtractMethodBody(
+                volume,
+                "internal void DisableColliderChunkBakeProxies()");
+            string volumeEnableProxy = ExtractMethodBody(
+                volume,
+                "internal bool EnableColliderChunkProxy(int index)");
+            string volumeClearBakeMeshes = ExtractMethodBody(
+                volume,
+                "internal void ClearColliderChunkBakeMeshes()");
+            string volumeRefreshBakePresentation = ExtractMethodBody(
+                volume,
+                "private void RefreshBakePresentation()");
             Assert.IsFalse(rootEnqueue.Contains("_deferredVoxelColliderUploads.Add", StringComparison.Ordinal));
             Assert.IsFalse(volumeEnqueue.Contains("_deferredVoxelColliderUploads.Add", StringComparison.Ordinal));
             Assert.IsFalse(volumeCommit.Contains("RefreshBakePresentation", StringComparison.Ordinal));
+            StringAssert.Contains("EnableColliderChunkProxy(index);", volumeCommit);
+            StringAssert.Contains("int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;", volumeCommit);
+            StringAssert.Contains("int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;", volumeCommit);
+            StringAssert.Contains("if (index < 0)", volumeCommit);
+            StringAssert.Contains("if (index < bakeMeshCount)", volumeCommit);
+            StringAssert.Contains("if (index < colliderCount)", volumeCommit);
+            StringAssert.Contains("if (_colliderChunkBakeMeshes == null)", volumeClearBakeMeshes);
+            StringAssert.Contains("return;", volumeClearBakeMeshes);
             Assert.IsFalse(volumeAssign.Contains("AcquireVoxelPhysicsBakeMesh", StringComparison.Ordinal));
             Assert.IsFalse(volumeGetOrCreate.Contains("AcquireVoxelPhysicsBakeMesh", StringComparison.Ordinal));
             Assert.IsFalse(volumeGetOrCreateBake.Contains("AcquireVoxelPhysicsBakeMesh", StringComparison.Ordinal));
+            StringAssert.Contains("_colliderChunkBakeProxies.Length < clampedCount", volumeTryUsePrewarmed);
+            StringAssert.Contains("_colliderChunkColliders.Length < clampedCount", volumeTryUsePrewarmed);
+            StringAssert.Contains("bool withinRequestedCapacity = i < clampedCount;", volumeTryUsePrewarmed);
+            StringAssert.Contains("proxy.center = SanitizeColliderChunkProxyCenter(proxy.center, Vector3.zero);", volumeTryUsePrewarmed);
+            StringAssert.Contains("proxy.size = SanitizeColliderChunkProxySize(proxy.size, Vector3.one * MinColliderChunkProxySize);", volumeTryUsePrewarmed);
+            StringAssert.Contains("if (!withinRequestedCapacity && proxy.enabled)", volumeTryUsePrewarmed);
+            StringAssert.Contains("_colliderChunkBakeProxies == null", volumeConfigureProxy);
+            StringAssert.Contains("SanitizeColliderChunkProxyCenter(center, proxy.center)", volumeConfigureProxy);
+            StringAssert.Contains("SanitizeColliderChunkProxySize(size, proxy.size)", volumeConfigureProxy);
+            StringAssert.Contains("proxy.gameObject.layer = HectonLayerMasks.VoxelProxy;", volumeConfigureProxy);
+            StringAssert.Contains("proxy.gameObject.SetActive(true);", volumeConfigureProxy);
+            StringAssert.Contains("MinColliderChunkProxySize", volume);
+            StringAssert.Contains("_colliderChunkBakeProxies == null", volumeDisableProxy);
+            StringAssert.Contains("ResetColliderChunkBakeProxyShape(index);", volumeDisableProxy);
+            StringAssert.Contains("if (_colliderChunkBakeProxies == null)", volumeDisableProxies);
+            StringAssert.Contains("DisableColliderChunkBakeProxy(i);", volumeDisableProxies);
+            StringAssert.Contains("_colliderChunkBakeProxies == null", volumeEnableProxy);
+            StringAssert.Contains("int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;", volumeEnableProxy);
+            StringAssert.Contains("if (index < colliderCount)", volumeEnableProxy);
+            StringAssert.Contains("proxy.gameObject.layer = HectonLayerMasks.VoxelProxy;", volumeEnableProxy);
+            StringAssert.Contains("proxy.center = SanitizeColliderChunkProxyCenter(proxy.center, Vector3.zero);", volumeEnableProxy);
+            StringAssert.Contains("proxy.size = SanitizeColliderChunkProxySize(proxy.size, Vector3.one * MinColliderChunkProxySize);", volumeEnableProxy);
+            StringAssert.Contains("DisableColliderChunkBakeProxy(i);", volumeResetChunks);
+            StringAssert.Contains("ResetColliderChunkBakeProxyShape(i);", volumeResetChunks);
+            StringAssert.Contains("int proxyCount = _colliderChunkBakeProxies != null ? _colliderChunkBakeProxies.Length : 0;", volumeCinematicFake);
+            StringAssert.Contains("int chunkCount = Mathf.Max(colliderCount, proxyCount);", volumeCinematicFake);
+            StringAssert.Contains("MeshCollider collider = i < colliderCount ? _colliderChunkColliders[i] : null;", volumeCinematicFake);
+            StringAssert.Contains("ResetColliderChunkBakeProxyShape(i);", volumeCinematicFake);
+            StringAssert.Contains("proxy.gameObject.layer = HectonLayerMasks.VoxelProxy;", volumeSetActiveChunks);
+            StringAssert.Contains("if (!shouldBeActive && proxy.enabled)", volumeSetActiveChunks);
+            StringAssert.Contains("proxy.enabled = false;", volumeSetActiveChunks);
+            StringAssert.Contains("if (_colliderChunkBakeProxies == null)", volumeSetActiveChunks);
+            StringAssert.Contains("int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;", volumeSetActiveChunks);
+            StringAssert.Contains("if (i < colliderCount)", volumeSetActiveChunks);
+            StringAssert.Contains("_colliderChunkColliders == null", volumeGetColliderChunk);
+            StringAssert.Contains("(uint)index >= (uint)_colliderChunkColliders.Length", volumeGetColliderChunk);
+            StringAssert.Contains("_colliderChunkBakeProxies == null", volumeResetProxyShape);
+            StringAssert.Contains("(uint)index >= (uint)_colliderChunkBakeProxies.Length", volumeResetProxyShape);
+            StringAssert.Contains("proxy.gameObject.layer = HectonLayerMasks.VoxelProxy;", volumeResetProxyShape);
+            StringAssert.Contains("proxy.center = Vector3.zero;", volumeResetProxyShape);
+            StringAssert.Contains("proxy.size = Vector3.one * MinColliderChunkProxySize;", volumeResetProxyShape);
+            StringAssert.Contains("EnsureVoxelProxyLayerFiltering();", enableVoxelProxy);
+            StringAssert.Contains("proxyCollider.gameObject.layer = HectonLayerMasks.VoxelProxy;", enableVoxelProxy);
+            StringAssert.Contains("proxyCollider.gameObject.SetActive(true);", enableVoxelProxy);
+            StringAssert.Contains("proxyCollider.enabled = true;", enableVoxelProxy);
+            StringAssert.Contains("EnableVoxelProxyCollider(proxyCollider);", rootEnqueue);
+            StringAssert.Contains("EnableVoxelProxyCollider(pending.ProxyCollider);", cancelDeferredUpload);
+            StringAssert.Contains("EnableVoxelProxyCollider(pending.ProxyCollider);", finalizeBakeTeardown);
+            StringAssert.Contains("EnableVoxelProxyCollider(proxyCollider);", forceReleaseBakeTeardown);
             Assert.IsFalse(cancelDeferredUpload.Contains("DisableColliderChunkBakeProxy", StringComparison.Ordinal));
             Assert.IsFalse(cancelDeferredUpload.Contains("pending.ProxyCollider.enabled = false", StringComparison.Ordinal));
             Assert.IsFalse(finalizeBakeTeardown.Contains("pending.ProxyCollider.enabled = false", StringComparison.Ordinal));
             Assert.IsFalse(forceReleaseBakeTeardown.Contains("proxyCollider.enabled = false", StringComparison.Ordinal));
             Assert.IsFalse(volumeDetachBakeMesh.Contains("DisableColliderChunkBakeProxy", StringComparison.Ordinal));
             Assert.IsFalse(volumeReleaseBakeMesh.Contains("DisableColliderChunkBakeProxy", StringComparison.Ordinal));
+            StringAssert.Contains("int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;", volumeDetachBakeMesh);
+            StringAssert.Contains("int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;", volumeDetachBakeMesh);
+            StringAssert.Contains("int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;", volumeReleaseBakeMesh);
+            StringAssert.Contains("int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;", volumeReleaseBakeMesh);
             StringAssert.Contains("EnableColliderChunkProxy(index);", volumeDetachBakeMesh);
             StringAssert.Contains("EnableColliderChunkProxy(index);", volumeReleaseBakeMesh);
+            StringAssert.Contains("if (index < bakeMeshCount)", volumeDetachBakeMesh);
+            StringAssert.Contains("if (index >= bakeMeshCount)", volumeReleaseBakeMesh);
+            Assert.Greater(
+                volumeDetachBakeMesh.IndexOf("int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;", StringComparison.Ordinal),
+                volumeDetachBakeMesh.IndexOf("EnableColliderChunkProxy(index);", StringComparison.Ordinal));
+            Assert.Greater(
+                volumeReleaseBakeMesh.IndexOf("if (index >= bakeMeshCount)", StringComparison.Ordinal),
+                volumeReleaseBakeMesh.IndexOf("EnableColliderChunkProxy(index);", StringComparison.Ordinal));
+            StringAssert.Contains("int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;", volumeResetChunks);
+            StringAssert.Contains("int proxyCount = _colliderChunkBakeProxies != null ? _colliderChunkBakeProxies.Length : 0;", volumeResetChunks);
+            StringAssert.Contains("int meshCount = _colliderChunkMeshes != null ? _colliderChunkMeshes.Length : 0;", volumeResetChunks);
+            StringAssert.Contains("int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;", volumeResetChunks);
+            StringAssert.Contains("int chunkCount = Mathf.Max(Mathf.Max(colliderCount, proxyCount), Mathf.Max(meshCount, bakeMeshCount));", volumeResetChunks);
+            StringAssert.Contains("MeshCollider collider = i < colliderCount ? _colliderChunkColliders[i] : null;", volumeResetChunks);
+            StringAssert.Contains("int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;", volumeRefreshBakePresentation);
+            StringAssert.Contains("for (int i = 0; i < colliderCount; i++)", volumeRefreshBakePresentation);
             StringAssert.Contains("return false;", rootEnqueue);
             StringAssert.Contains("return false;", volumeEnqueue);
             StringAssert.Contains("return false;", volumeCommit);

@@ -28,6 +28,7 @@ namespace Hecton8.Atmosphere
         private const float SimulationTickDeltaSeconds = 1f / 60f;
         private const float MinimumScheduleIntervalSeconds = 1f / 60f;
         private const float MaximumScheduleIntervalSeconds = 1f / 5f;
+        private const double DefaultSeaLevelLocalY = 14.02d;
         private const uint HotSwapReasonHash = 0x53504853u; // SPHS
 #if UNITY_EDITOR
         private const string ImpactCsvRelativePath = "Assets/_SourceData/Atmosphere/storm_depth_impact_profiles.csv";
@@ -37,7 +38,7 @@ namespace Hecton8.Atmosphere
 
         [SerializeField] private bool autoGenerateEmergencyMockHurricane;
         [SerializeField, Range(0f, 1f)] private float editorPreviewQualityWeight = 1f;
-        [SerializeField] private double seaLevelAupY;
+        [SerializeField] private double seaLevelAupY = DefaultSeaLevelLocalY;
 
         private IDataVault _vault;
         private ITickDispatcher _tickDispatcher;
@@ -55,6 +56,7 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<float4> _audioScalarHandle;
         private VaultGenerationHandle<float4> _biolumScalarHandle;
         private VaultGenerationHandle<float4> _fogScalarHandle;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private StormPropagationJobStagingBuffers _jobStagingBuffers;
         private ref NativeArray<WeatherStateDTO> _jobWeatherSnapshot => ref _jobStagingBuffers.WeatherSnapshot;
         private ref NativeArray<StormPropagationTuningDTO> _jobTuningSnapshot => ref _jobStagingBuffers.TuningSnapshot;
@@ -323,6 +325,16 @@ namespace Hecton8.Atmosphere
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);
+            float shiftSqrMagnitude = math.lengthsq(shiftOffset);
+            if (!math.all(math.isfinite(shiftOffset)) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            {
+                return;
+            }
+
             _cachedOriginFallbackAup = SanitizeAup(shiftData.NewTotalOffsetDouble);
         }
 
@@ -437,6 +449,7 @@ namespace Hecton8.Atmosphere
         {
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Player, GlobalRegistry.Player);
         }
 
         private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -458,6 +471,10 @@ namespace Hecton8.Atmosphere
                 case GlobalRegistryServiceSlot.DataVault:
                     IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
                     RebindDataVaultForLifecycle(nextVault);
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    IPlayerRuntimeContext nextPlayer = currentService as IPlayerRuntimeContext;
+                    _playerRuntimeContext = nextPlayer != null && nextPlayer.IsInitialized ? nextPlayer : null;
                     break;
                 case GlobalRegistryServiceSlot.FloatingOriginRuntime:
                     RefreshCachedOriginFallbackAupCold();
@@ -860,6 +877,7 @@ namespace Hecton8.Atmosphere
             }
 
             _lastOriginFallbackAup = ResolveOriginFallbackAupDouble();
+            double3 sampleAup = ResolvePropagationSampleAupDouble(_lastOriginFallbackAup);
             WeatherStateDTO weatherRow = ShinobuStormPropagationNative.ReadElement(_jobWeatherSnapshot, 0);
             _lastSeaLevelAup = ResolveSeaLevelAupDouble(_lastOriginFallbackAup, in weatherRow, weatherAvailable);
             float time = ResolveTimeSeconds();
@@ -890,7 +908,7 @@ namespace Hecton8.Atmosphere
                 WriteSnapshot = _jobWriteSnapshot,
                 Telemetry = _jobTelemetry,
                 TelemetryCursor = _jobTelemetryCursor,
-                SampleAup = _lastOriginFallbackAup,
+                SampleAup = sampleAup,
                 SeaLevelAup = _lastSeaLevelAup,
                 PreviousSurfaceIntensity01 = _previousSurfaceIntensity01,
                 DeltaTime = deltaTime,
@@ -1325,16 +1343,40 @@ namespace Hecton8.Atmosphere
             return SanitizeAup(_cachedOriginFallbackAup);
         }
 
-        private double3 ResolveSeaLevelAupDouble(double3 sampleAup, in WeatherStateDTO weather, bool weatherAvailable)
+        private double3 ResolvePropagationSampleAupDouble(double3 fallbackAup)
         {
-            float seaLevelLocal = (!double.IsNaN(seaLevelAupY) && !double.IsInfinity(seaLevelAupY)) ? (float)seaLevelAupY : 0f;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
+            {
+                return SanitizeAup(movementState.PredictedAup.ToAbsoluteDouble3());
+            }
+
+            return SanitizeAup(fallbackAup);
+        }
+
+        private double3 ResolveSeaLevelAupDouble(double3 runtimeOriginAup, in WeatherStateDTO weather, bool weatherAvailable)
+        {
+            float seaLevelLocal = ResolveSeaLevelLocalY(seaLevelAupY);
             if (weatherAvailable)
             {
                 if (math.isfinite(weather.SurfaceScalars.x))
-                    seaLevelLocal = weather.SurfaceScalars.x;
+                    seaLevelLocal = ResolveSeaLevelLocalY(weather.SurfaceScalars.x);
             }
 
-            return new double3(sampleAup.x, sampleAup.y + seaLevelLocal, sampleAup.z);
+            return new double3(runtimeOriginAup.x, runtimeOriginAup.y + seaLevelLocal, runtimeOriginAup.z);
+        }
+
+        private static float ResolveSeaLevelLocalY(double value)
+        {
+            return math.isfinite(value) &&
+                math.abs(value) > 0.0001d &&
+                math.abs(value) <= 1000d
+                ? (float)value
+                : (float)DefaultSeaLevelLocalY;
         }
 
         private void RefreshCachedOriginFallbackAupCold()

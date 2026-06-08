@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DEPREDADORES APEX Y BIOLOGÍA ABISAL
 
 > **Fuente:** Fragmento de informe de xenobiología, laboratorio de investigación del Sector 44 (Recuperado).

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Barnard Yards Marauder Origin"
+title: "Marauderskie pochodzenie Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Barnard Yards Marauder Origin
+# Marauderskie pochodzenie Barnard Yards
 
-PL LOC HOLD: Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.
+Barnard Yards to kultura pracy stojąca za Marauderem HECTON-8: przemysłowy salvage, rozbiórka statków, sprzęt ciśnieniowy i praca przy martwych roszczeniach. Wyjaśnia kompetencję, nie robiąc z pracownika salvage turysty z Ziemi ani mitu ratunkowego.
 
 ## Scanner
 
-PL LOC HOLD: Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.
+Stempel narzędziowy Barnard. Kultura rozbiórki statków. Miejsce, które uczy nie ufać czystym klauzulom ratunkowym.
 
 ## Terminal
 
-PL LOC HOLD: BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.
+ZNAK SERWISOWY BARNARD YARDS: zacisk awaryjny przyjęty. Certyfikacja salvage ważna dla opuszczonego habitatu ciśnieniowego, martwego przedziału carrier i porzuconego claim hull.
 
 ## Audio
 
-PL LOC HOLD: You learned this hand motion before HECTON-8. That is the problem.
+Nauczyłeś się tego ruchu dłoni przed HECTON-8. W tym problem.
 
 ## Field Note
 
-PL LOC HOLD: This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.
+Bliżej niż Ziemia: wynajęte palniki, stare nawyki ciśnieniowe, dług i ogołocone kadłuby.
 
 <!-- In-Game Wiki; generated from P073_BARNARD_YARDS_MARAUDER_ORIGIN/pl_PL. -->

@@ -3,7 +3,9 @@
 
 [RULE] Noir realism is carried by controlled post, fog, LUTs, dither, authored masks, and lighting eligibility, not physical atmospheric simulation.
 [RULE] MX350 path uses depth fog/LUT haze and baked AO; raymarch fog is MED+/HIGH only after profiler proof.
+[REQ] Noir, fog, LUT, exposure, dither, caustic, and post work inherits the Visual Reference Parity Gate. Current captures must beat mandatory references plus best-known internal baseline/current rejection matrix for the same route class before visual acceptance.
 [FORBID] URP SSAO. If screen-space AO is used, it is the custom half-res SSDO path from the render mandate, or baked AO only.
+[FORBID] Fog, LUT, darkness, bloom, exposure, chromatic aberration, grain, caustics, or dither as acceptance when base geometry, material truth, waterline/contact, sky/Aegir/terrain readability, route cues, or compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and recover the owner stack first.
 
 # HECTON-8 | Distilled Technical Mandate | Rev 1.0
 

@@ -7,34 +7,34 @@ poi_tags: poi.moon_ladder_public_band;poi.hecton8_mid_orbit_card
 biome_tags: biome.aegir_system;biome.publication
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "ZH LOC HOLD: HECTON-8 Moon Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "HECTON-8月梯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: HECTON-8 Moon Ladder
+# HECTON-8月梯
 
-ZH LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
+月梯让Aegir有尺度，同时让可玩战役集中在HECTON-8。邻近天体影响relay、ice-scatter、quarantine timing、salvage traffic和silence windows，但不承诺额外playable moons。
 
 ## Scanner
 
-ZH LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+月梯：HECTON-8是一项claim，不是整个Aegir系统。
 
 ## Terminal
 
-ZH LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+月梯：仅使用公共role labels；精确orbital elements保留为table-owned data。
 
 ## Audio
 
-ZH LOC HOLD: Other moons are not side quests. They are why the route has teeth.
+其他月球不是side quests。它们是航线有牙齿的原因。
 
 ## Field Note
 
-ZH LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
+月梯记录：公共地图可以展示Aegir尺度，而不承诺可玩的月球。
 
 <!-- In-Game Wiki; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/zh_CN. -->

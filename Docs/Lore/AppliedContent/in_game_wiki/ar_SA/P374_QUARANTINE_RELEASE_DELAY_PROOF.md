@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Quarantine Release Delay Proof"
+title: "تعليق إفراج الحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Quarantine Release Delay Proof
+# تعليق إفراج الحجر
 
-AR LOC HOLD: Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
+لا يجعل سجل التعليق الحجر شرا. إنه يظهر التوقيت. استطاعت Deep Reach تسمية عدم اليقين، تأخير الإفراج، حفظ موقف التأمين، وإبقاء العامل داخل المنطقة حتى يموت المسار.
 
 ## Scanner
 
-AR LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+لوحة تعليق حجر. تظهر لغة الحماية بعدما يكون طريق الخروج مقفلا.
 
 ## Terminal
 
-AR LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. تعليق حتى المراجعة. طابور recovery يقبل كتلة الأصول قبل إطلاق العمال. insurance ping نشط.
 
 ## Audio
 
-AR LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+يمكن للحجر أن ينقذ جسدا. ويمكنه أيضا أن يجعل الجسد ينتظر حتى يصير ورقا.
 
 ## Field Note
 
-AR LOC HOLD: Use where player may confuse rescue with custody.
+ملاحظة مغير: كلمة protection لا تثبت الحماية. افحص الساعة.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/ar_SA. -->

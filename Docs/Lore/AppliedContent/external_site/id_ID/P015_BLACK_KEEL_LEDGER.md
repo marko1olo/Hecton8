@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Ledger Black Keel
 
-Black Keel Ledger mendefinisikan garis hidup orbit pemain sebagai mesin kontrak: berguna, kompromi, dan acuh sekaligus.
+Black Keel bukan kapal ramah. Ia tender claim-pool yang membaca tubuh, muatan, karantina, massa naik, dan risiko asuransi sebagai satu ledger.
 
-## Scanner
-
-Ledger claim-pool tender. Custody carrier publik, utang asuransi, hook prioritas Deep Reach tersembunyi.
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keel bukan kapalmu. Itu mesin yang tahu utangmu.
-
-## Field Note
-
-Kapal bisa membantumu tanpa berpihak padamu.
+Ia tidak perlu membenci pemain. Ia bisa menjawab sopan, menerima hash darurat, dan menolak penjemputan sampai angka berubah.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/id_ID. -->

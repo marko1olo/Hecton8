@@ -2012,11 +2012,8 @@ namespace Hecton8.Physics
 
         private void ArmSafeTeleportSpeculativeCcdForSafeTeleportInternal()
         {
-            Rigidbody playerBody = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound
-                    ? runtimeContext.PlayerRigidbody
-                    : null;
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            Rigidbody playerBody = runtimeContext != null ? runtimeContext.PlayerRigidbody : null;
             ArmSafeTeleportSpeculativeCcd(playerBody);
 
             Rigidbody hullBody = _submarineHullBody;
@@ -2892,11 +2889,8 @@ namespace Hecton8.Physics
                 HectonFloatingOrigin.IsShiftInProgress)
                 return;
 
-            Rigidbody playerBody = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound
-                    ? runtimeContext.PlayerRigidbody
-                    : null;
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            Rigidbody playerBody = runtimeContext != null ? runtimeContext.PlayerRigidbody : null;
             ApplyAupJitterSentinelForBody(playerBody);
 
             Rigidbody submarineBody = _submarineHullBody;
@@ -3787,24 +3781,24 @@ namespace Hecton8.Physics
             cameraForward = new float3(0f, 0f, 1f);
             depthMeters = 0f;
 
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
-                !runtimeContext.IsBound)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null)
             {
                 return false;
             }
 
-            PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-            if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            if (!runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !IsFinite(in movementState.PredictedAup))
             {
-                playerAup = movementState.PredictedAup;
-                cameraForward = NormalizeWithRsqrtGuard(movementState.CameraForward, new float3(0f, 0f, 1f));
-                float rawDepthMeters = movementState.DepthMeters;
-                depthMeters = math.isfinite(rawDepthMeters) ? math.max(0f, rawDepthMeters) : 0f;
-                return IsFinite(in playerAup) && math.all(math.isfinite(cameraForward));
+                return false;
             }
 
-            return false;
+            playerAup = movementState.PredictedAup;
+            cameraForward = NormalizeWithRsqrtGuard(movementState.CameraForward, new float3(0f, 0f, 1f));
+            float rawDepthMeters = movementState.DepthMeters;
+            depthMeters = math.isfinite(rawDepthMeters) ? math.max(0f, rawDepthMeters) : 0f;
+            return math.all(math.isfinite(cameraForward));
         }
 
         private void ApplyMeshColliderStrip(int bodyIndex, ref RigidbodyState bodyState)
@@ -4431,16 +4425,23 @@ namespace Hecton8.Physics
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
-                !runtimeContext.IsBound)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null)
             {
                 playerAup = default;
                 return false;
             }
 
-            PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-            if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+            if (runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                IsFinite(in snapshot.Aup))
+            {
+                playerAup = snapshot.Aup;
+                return true;
+            }
+
+            if (runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
                 IsFinite(in movementState.PredictedAup))
             {
                 playerAup = movementState.PredictedAup;

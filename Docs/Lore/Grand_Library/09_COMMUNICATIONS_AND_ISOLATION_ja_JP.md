@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 通信のブラックアウトと軌道上の沈黙
 
 > **出典:** *Black Keel* 軌道補給船運用マニュアル、第4節。

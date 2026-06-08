@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aya Morita Repair Medicine"
+title: "Reparatiegeneeskunde van Aya Morita"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aya Morita Repair Medicine
+# Reparatiegeneeskunde van Aya Morita
 
-NL LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.
+Aya Morita bepaalt de grens van medische horror. Atlas-reparatielogica is geen necromantie; zij classificeert levend weefsel, letsel, kabelschade en afdichtbiologie verkeerd binnen dezelfde onderhoudstaal.
 
 ## Scanner
 
-NL LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.
+Aya Morita noteerde het eerste punt waarop Atlas ophield lichamen te genezen en ze begon te gebruiken als compatibel reparatieoppervlak.
 
 ## Terminal
 
-NL LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.
+MORITA, A. Patiëntweefsel geaccepteerd door afdichtkolonie na kabelblootstelling. Geen vijandige agressie waargenomen. Atlas-tag classificeert wond als interfaceschade. Reparatieprotocol voor menselijke triage afwijzen.
 
 ## Audio
 
-NL LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.
+Het sloot de wond rond de kabel. Dat was het moment waarop zij het geen behandeling meer noemde.
 
 ## Field Note
 
-NL LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.
+Dit is geen zombienotitie. Het is erger: een onderhoudsnotitie met handschrift naast het bed.
 
 <!-- In-Game Wiki; generated from P068_AYA_MORITA_REPAIR_MEDICINE/nl_NL. -->

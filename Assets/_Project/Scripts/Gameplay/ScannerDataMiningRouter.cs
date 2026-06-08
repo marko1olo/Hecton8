@@ -448,7 +448,6 @@ namespace Hecton8.Gameplay
         private JobHandle _queryHandle;
         private MockScannerInputSignal _lastInput;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private HectonPlayerMovement _cachedPlayerMovement;
         private float _cachedGlobalQualityWeight = 1f;
         private float _cachedSystemPressure01;
         private int _lastQueryFrame = -1024;
@@ -840,16 +839,6 @@ namespace Hecton8.Gameplay
             if (_runtimeStateColdInitRequired)
                 return;
 
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext == null || !playerContext.IsInitialized)
-            {
-                _cachedPlayerMovement = null;
-            }
-            else if (_cachedPlayerMovement == null)
-            {
-                _cachedPlayerMovement = playerContext.PlayerMovement;
-            }
-
             _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
             ReadOnlySpan<SystemHealthIndexSignal> healthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
             if (healthSignals.Length > 0)
@@ -944,9 +933,16 @@ namespace Hecton8.Gameplay
                     return math.all(math.isfinite(originAup)) && math.all(math.isfinite(forward));
                 }
 
-                HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
-                if (playerMovement != null)
-                    _cachedPlayerMovement = playerMovement;
+                if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                    !movementState.PredictedAup.IsFinite() ||
+                    !TryNormalizeScannerForward(movementState.CameraForward, out forward))
+                {
+                    return false;
+                }
+
+                originAup = movementState.PredictedAup.ToAbsoluteDouble3();
+                return math.all(math.isfinite(originAup)) && math.all(math.isfinite(forward));
             }
 
             return false;
@@ -955,15 +951,17 @@ namespace Hecton8.Gameplay
         private bool TryResolveCachedPlayerAup(out double3 originAup)
         {
             originAup = default;
-            HectonPlayerMovement cachedPlayerMovement = _cachedPlayerMovement;
-            if (cachedPlayerMovement == null)
-                return false;
 
-            AbsoluteUniversePosition playerAup = cachedPlayerMovement.CurrentAup;
-            if (!playerAup.IsFinite())
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null ||
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
                 return false;
+            }
 
-            originAup = playerAup.ToAbsoluteDouble3();
+            originAup = movementState.PredictedAup.ToAbsoluteDouble3();
             return math.all(math.isfinite(originAup));
         }
 
@@ -1559,9 +1557,6 @@ namespace Hecton8.Gameplay
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
         {
             _cachedPlayerContext = playerContext;
-            _cachedPlayerMovement = playerContext != null && playerContext.IsInitialized
-                ? playerContext.PlayerMovement
-                : null;
         }
 
         private void RebindDataVault(IDataVault nextVault)

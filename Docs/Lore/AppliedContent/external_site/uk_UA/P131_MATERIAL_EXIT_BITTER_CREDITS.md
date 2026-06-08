@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Матеріальний вихід: гіркий розрахунок"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Матеріальний вихід: гіркий розрахунок
 
-UA LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
+Матеріальний вихід має відчуватися холодно законним. Гравець повертає матеріал тиску, зберігає custody, закриває облік маси Black Keel через вікно вивозу й отримує реальне зниження lien. Жодна сирена не оголошує провал; система працює саме так, як була спроєктована.
 
-## Scanner
-
-UA LOC HOLD: You can leave richer and still fail the place.
-
-## Terminal
-
-UA LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
-
-## Audio
-
-UA LOC HOLD: The invoice clears before the names do.
-
-## Field Note
-
-UA LOC HOLD: This ending should be real credits, not a fake game over.
+Шкода міститься в тому, чого немає у квитанції. Імена зниклих працівників не звірені, доказовий ланцюг неповний, а Deep Reach отримує чистішу комерційну причину повернутися. HECTON-8 не карає гравця за професійність. Він показує, скільки коштує професійний успіх, коли місце роботи водночас є могилою.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/uk_UA. -->

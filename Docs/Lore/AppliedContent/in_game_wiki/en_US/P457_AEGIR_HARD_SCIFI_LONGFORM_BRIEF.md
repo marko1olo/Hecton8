@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Transfer Windows"
+title: "Aegir: The Sky That Refuses Rescue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Aegir Transfer Windows
+# Aegir: The Sky That Refuses Rescue
 
-Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir is an operational sky. Skarn, Vela, Kestrel, HECTON, Mute and the rest of the moon ladder can delay or corrupt a clean packet without making the surface permanently dark. Rescue fails through distance, geometry, law, and cost.
 
 ## Scanner
 
-Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Celestial route primer. No FTL or ansible path exists. Aegir windows route through moons, debris, relay custody, storm state, and Black Keel mass accounting.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+AEGIR NAVIGATION PRIMER // PUBLIC BAND. Use hazard classes, not final constants: route-shadow, charged surge, ice scatter, storm plume, guidance lag, receiver custody.
 
 ## Audio
 
-The sky is a schedule. It can be beautiful and still refuse to move for you.
+Black Keel scheduling excerpt: "Signal true is not signal useful. Window holds for mass, weather, custody, and receiver lock."
 
 ## Field Note
 
-Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+Marauder sky rule: do not ask whether the signal was sent. Ask which moon blocked it, which ledger caught it, and whether the receiver heard a person or a mass class.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/en_US. -->

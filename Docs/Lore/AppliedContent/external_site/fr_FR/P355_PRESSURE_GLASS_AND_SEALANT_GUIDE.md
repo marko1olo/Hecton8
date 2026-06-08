@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Pressure Glass and Sealant Guide"
+title: "Guide du verre de pression et du mastic"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Pressure Glass and Sealant Guide
+# Guide du verre de pression et du mastic
 
-FR LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.
+Le Guide du verre de pression et du mastic ancre l'horreur biomécanique de HECTON-8 dans une logique de réparation : Atlas suit fissures, câbles, biofilms et pressure scars parce que les systèmes cassés fournissent déjà des chemins.
 
 ## Scanner
 
-FR LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+Fracture de pressure-glass scellée par chimie Atlas. Stock de lentilles sûr seulement si la seal map reste intacte.
 
 ## Terminal
 
-FR LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE : le pressure glass enregistre ancien tide stress. L'Atlas sealant suit ces fissures parce qu'elles décrivent déjà les lignes de défaillance du système.
 
 ## Audio
 
-FR LOC HOLD: The repair network reads fractures the way you read a map.
+Le réseau de réparation lit les fractures comme tu lis une carte.
 
 ## Field Note
 
-FR LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+Ne meule pas le joli bord. Suis la fracture map et coupe depuis le côté mort du seal.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/fr_FR. -->

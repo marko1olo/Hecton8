@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # BUKU BESAR UTANG
 
 > **Sumber:** Megacorporation Deep Reach, Divisi Sumber Daya Manusia & Aktuaria.

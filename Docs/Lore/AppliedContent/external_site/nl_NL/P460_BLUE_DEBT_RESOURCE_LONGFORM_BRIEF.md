@@ -9,32 +9,38 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "NL LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: drukgeschiedenis in custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Blue Debt Custody
+# Blue Debt: drukgeschiedenis in custody
 
-NL LOC HOLD: Marauders call the material blue debt because payout, containment and liability travel with the same sample. The valuable substrate is not a magic ore. It forms where pressure history, brine chemistry, noble gas capture, vent heat and damaged industrial process leave a readable structure behind. A clean-looking piece can still carry a bad record: wrong extraction angle, heat exposure outside tolerance, Atlas-compatible contamination, or custody tags that make the owner harder to name than the mineral. Black Keel weighs blue debt by mass, grade and paperwork because each piece can be cargo and accusation at the same time. Deep Reach wanted processable material. Atlas learned to grow through damaged surfaces. The ocean kept the evidence in the lattice. A player who brings blue debt home is not only selling shine. They are moving a pressure receipt through a legal system built to decide whether proof becomes money, silence or leverage.
+## De naam
 
-## Scanner
+Blue debt is Marauder-slang voor Xenon-Omega dragend pressure substrate. Deep Reach zegt XO continuity substrate; technici zeggen pressure glass. Geen naam maakt het simpel erts.
 
-NL LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Het vormt waar drukgeschiedenis, edelgas, brine, mineraaldefecten, thermische cycli, biologische katalysatoren en beschadigde industrie een leesbare lattice achterlaten. Een monster is waardevol omdat het druk overleefde en gevaarlijk omdat het aanraking onthoudt.
 
-## Terminal
+Het heeft extraction scar, containmentdruk, brine exposure, Atlas-compatible drift, contamination stage, custody grade en massa nodig. Black Keel betaalt voor een recoverable object met twistbestendig papier, niet voor glans.
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+Containment failure verandert staat: sealed, drift, fracture, bloom, daarna materiaal dood en bewijs levend. Vent repressure helpt alleen vroeg.
 
-## Audio
+Blue debt is resource, payout, bewijs en val. De speler verplaatst een pressure receipt door Black Keel, Keelmark, Deep Reach en misschien een public ledger. De vraag is wie de stilte aan het monster koopt.
 
-NL LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+## Het Monster Heeft Een Biografie
 
-## Field Note
+Blue Debt is waardevol omdat het druk onthoudt. Een goed artikel behandelt het monster als een chemische biografie: growth depth, shock history, brine contact, vent heat, handling contamination, scanner custody, hull exposure en transport delay. Een schoon ogende chip kan waardeloos zijn. Een lelijke chip met eerlijke chain kan een route window betalen.
 
-NL LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Zo wordt grondstoftekst verhaaltekst. De speler mijnt geen kleur. Hij bergt een pressure record dat Black Keel, Deep Reach, Atlas contamination en lokale geologie allemaal voor hun ledgers willen herinterpreteren.
+
+## Hoe Het Speelt
+
+Blue Debt moet inventory choices ongemakkelijk maken. Meer massa kan rescue kopen. Beter bewijs kan veranderen wie de waarheid bezit. Een besmette sample kan een Atlas route openen en een schone payout bederven. Alles verkopen kan het lichaam levend houden en het crime intact laten.
+
+De grondstof is sterk wanneer ze tegelijk nuttig, gevaarlijk en moreel duur is. Ze mag nooit als magic ore voelen. Het is een rekening die de oceaan in druk schreef en decennia liet wachten.
 
 <!-- External Site; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/nl_NL. -->

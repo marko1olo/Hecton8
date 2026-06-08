@@ -979,6 +979,12 @@ namespace Hecton8.Audio
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    if (_playerRuntimeContext == null)
+                    {
+                        ClearCachedPlayerSceneBindings();
+                        break;
+                    }
+
                     TryBindPlayerBuoyancyFromCachedContext();
                     ResolvePlayerAmbientSourceCold();
                     ResolvePlayerListenerFiltersCold();
@@ -1152,10 +1158,28 @@ namespace Hecton8.Audio
             _cachedSoundscapeReadModel = null;
             _cachedMusicDirector = null;
             _atmosphereReadModel = null;
-            _playerRuntimeContext = null;
+            ClearCachedPlayerRuntimeContext();
             _currentMusicAmbientDuck01 = 0f;
             _debugMusicAmbientDuck = 0f;
             _nextAudioServiceResolveFrame = 0;
+        }
+
+        private void ClearCachedPlayerRuntimeContext()
+        {
+            _playerRuntimeContext = null;
+            ClearCachedPlayerSceneBindings();
+        }
+
+        private void ClearCachedPlayerSceneBindings()
+        {
+            _playerMovement = null;
+            _playerBuoyancyState = null;
+            playerBuoyancy = null;
+            _cachedPlayerAudioListener = null;
+            _lastAmbientSourceSearchRoot = null;
+            _cachedAmbientSource = null;
+            if (_playerAudioSources != null)
+                _playerAudioSources.Clear();
         }
 
         private void CacheRegistryServicesCold()
@@ -1536,6 +1560,10 @@ namespace Hecton8.Audio
                 _playerMovement = playerContext.PlayerMovement;
                 CachePlayerBuoyancyState();
             }
+            else if (force)
+            {
+                ClearCachedPlayerSceneBindings();
+            }
 
             UpdatePlayerFoundDiagnostic();
         }
@@ -1549,15 +1577,23 @@ namespace Hecton8.Audio
         {
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext == null)
+            {
+                ClearCachedPlayerSceneBindings();
                 return false;
+            }
+
+            ClearCachedPlayerSceneBindings();
+            _playerMovement = playerContext.PlayerMovement;
 
             IBuoyancyAirStateReadModel airState = playerContext.PlayerBuoyancyAirState;
             if (!IsValidUnityBackedReadModel(airState))
+            {
+                UpdatePlayerFoundDiagnostic();
                 return false;
+            }
 
             _playerBuoyancyState = airState;
             playerBuoyancy = airState as BuoyancyObject;
-            _playerMovement = playerContext.PlayerMovement;
             UpdatePlayerFoundDiagnostic();
             return true;
         }
@@ -1696,6 +1732,16 @@ namespace Hecton8.Audio
             if (_playerBuoyancyState != null && _playerBuoyancyState.IsInDryZone)
                 return AcousticZoneState.Interior;
 
+            bool hasMovementState = TryResolvePlayerMovementRuntimeState(out _);
+            if (hasMovementState || HasPlayerRuntimeContext())
+            {
+                _acousticUnderwaterState = ResolveMovementDrivenExteriorState(null);
+
+                return _acousticUnderwaterState
+                    ? AcousticZoneState.Underwater
+                    : AcousticZoneState.Surface;
+            }
+
             HectonPlayerMovement movement = ResolvePlayerMovement();
             if (movement != null)
             {
@@ -1734,9 +1780,19 @@ namespace Hecton8.Audio
 
         private bool ResolveMovementDrivenExteriorState(HectonPlayerMovement movement)
         {
-            float depth = math.max(0f, movement.CurrentDepth);
-            float immersion = math.saturate(movement.WaterImmersionRatio);
-            bool headSubmerged = movement.IsPlayerSubmerged || depth > 0f;
+            bool hasMovementState = TryResolvePlayerMovementRuntimeState(out PlayerMovementRuntimeState movementState);
+            if (!hasMovementState && HasPlayerRuntimeContext())
+                return false;
+
+            float depth = hasMovementState
+                ? math.max(0f, movementState.DepthMeters)
+                : ResolvePlayerDepthFallback();
+            float immersion = hasMovementState
+                ? ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.Underwater) != 0u ? 1f : 0f)
+                : (movement != null ? math.saturate(movement.WaterImmersionRatio) : (_acousticUnderwaterState ? 1f : 0f));
+            bool headSubmerged = hasMovementState
+                ? (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.Underwater) != 0u || depth > 0f
+                : movement != null && (movement.IsPlayerSubmerged || depth > 0f);
 
             if (headSubmerged || depth >= acousticForceUnderwaterDepth)
                 return true;
@@ -1796,9 +1852,15 @@ namespace Hecton8.Audio
 
         private float ResolvePlayerDepthFallback()
         {
+            if (TryResolvePlayerMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                return math.max(0f, movementState.DepthMeters);
+
+            if (HasPlayerRuntimeContext())
+                return 0f;
+
             HectonPlayerMovement movement = ResolvePlayerMovement();
-            if (movement != null)
-                return movement.CurrentDepth;
+            if (movement != null && math.isfinite(movement.CurrentDepth))
+                return math.max(0f, movement.CurrentDepth);
 
             IAtmosphereReadModel atmosphere = ResolveAtmosphereReadModel();
             if (atmosphere != null && atmosphere.IsUnderwaterState)
@@ -2064,6 +2126,28 @@ namespace Hecton8.Audio
             return _playerMovement;
         }
 
+        private bool TryResolvePlayerMovementRuntimeState(out PlayerMovementRuntimeState movementState)
+        {
+            movementState = default;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.IsInitialized ||
+                !playerContext.TryGetMovementRuntimeState(out movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !math.isfinite(movementState.DepthMeters))
+            {
+                movementState = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool HasPlayerRuntimeContext()
+        {
+            return _playerRuntimeContext != null;
+        }
+
         private bool TryResolvePlayerImpactDistanceSq(in PhysicsImpactSignal impactSignal, out double distanceSq)
         {
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -2079,15 +2163,27 @@ namespace Hecton8.Audio
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            HectonPlayerMovement movement = ResolvePlayerMovement();
-            if (movement == null)
+            playerAup = AbsoluteUniversePosition.Invalid();
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null)
             {
-                playerAup = default;
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    snapshot.Aup.IsFinite())
+                {
+                    playerAup = snapshot.Aup;
+                    return true;
+                }
+
                 return false;
             }
 
+            HectonPlayerMovement movement = ResolvePlayerMovement();
+            if (movement == null)
+                return false;
+
             playerAup = movement.CurrentAup;
-            return true;
+            return playerAup.IsFinite();
         }
 
         private bool TryResolvePlayerAupRuntimePosition(out Vector3 runtimePosition, out AbsoluteUniversePosition playerAup)
@@ -3218,13 +3314,15 @@ namespace Hecton8.Audio
 
         private float ResolveUnderwaterGraphDepth01()
         {
-            HectonPlayerMovement movement = ResolvePlayerMovement();
-            float depth = movement != null
-                ? math.max(0f, movement.CurrentDepth)
+            bool hasMovementState = TryResolvePlayerMovementRuntimeState(out PlayerMovementRuntimeState movementState);
+            bool hasRuntimeContext = HasPlayerRuntimeContext();
+            HectonPlayerMovement movement = hasMovementState || hasRuntimeContext ? null : ResolvePlayerMovement();
+            float depth = hasMovementState
+                ? math.max(0f, movementState.DepthMeters)
                 : ResolvePlayerDepthFallback();
-            float immersion = movement != null
-                ? math.saturate(movement.WaterImmersionRatio)
-                : (_acousticUnderwaterState ? 1f : 0f);
+            float immersion = hasMovementState
+                ? ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.Underwater) != 0u ? 1f : 0f)
+                : (!hasRuntimeContext && movement != null ? math.saturate(movement.WaterImmersionRatio) : 0f);
             float depth01 = math.saturate(depth / math.max(1f, acousticDeepWaterReferenceDepth));
             float immersion01 = math.saturate(
                 (immersion - acousticExitImmersionRatio) /

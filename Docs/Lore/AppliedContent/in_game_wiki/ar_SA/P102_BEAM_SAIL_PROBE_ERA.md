@@ -7,34 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "عصر مجسات الشراع الشعاعي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# عصر مجسات الشراع الشعاعي
 
-AR LOC HOLD: Early extrasolar expansion leaned on beam-assisted probes and small autonomous packets. They could map, listen and seed relay assumptions faster than heavy crewed ships could move. That asymmetry explains how Deep Reach could prepare Aegir infrastructure before ordinary workers understood the full risk.
+أرسلت التوسعات المبكرة خارج الشمس مجسات شراع شعاعي وحزما مستقلة قبل البشر. رسمت الجاذبية والإشعاع ومدارات الأقمار وخطوط رؤية المرحلات والعوالم المحيطية الممكنة بينما بقيت السفن الثقيلة تعهدات على الورق. ورثت Deep Reach ثقة صنعتها الآلات وتعاملت معها كإذن.
 
 ## Scanner
 
-AR LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+بكرة مسح: خرائط Aegir الأولى وصلت كحمولة خفيفة، لا كوعد مأهول.
 
 ## Terminal
 
-AR LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+نسب المسح: حزم الشراع الشعاعي رسمت Ran وAegir قبل اعتماد خطوط الشحن للحمولة الحية. سجل تآكل الثقة قبل بناء المستعمرة.
 
 ## Audio
 
-AR LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
+أول شيء بشري هنا لم يكن شخصا. كان حزمة مسح مع إيصال.
 
 ## Field Note
 
-AR LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+المجسات رأت أولا. الآلات حضرت ثانيا. وصل العمال عندما صارت الثقة قابلة للفوترة.
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/ar_SA. -->

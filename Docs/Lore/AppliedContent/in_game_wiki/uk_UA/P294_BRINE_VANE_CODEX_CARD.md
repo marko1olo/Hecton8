@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Brine Vane Codex Card"
+title: "Картка кодексу: розсільна лопать"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Brine Vane Codex Card
+# Картка кодексу: розсільна лопать
 
-UK LOC HOLD: Brine Vane Codex Card turns mid-depth flora into route-reading evidence.
+Розсільні лопаті — не рослини в зручному сенсі. Це плоскі соляно-мінеральні мембрани, що виживають там, де розсіл, тиск і температура роблять межу достатньо різкою, щоб вона поводилася як стіна. У каньйоні вони перетворюють невидиму структуру води на те, що Marauder може читати очима, sonar і тримом плавучості. Цілий лист зазвичай означає, що інший бік щільніший і може зігнути ping або зірвати костюм з очікуваної плавучості. Рване гирло може позначати недавній прохід тварини, пошкодження течією або єдине слабке вікно крізь шар. Закручений кінчик означає, що зсув слабшає. Бліді ребра, скинуті мертвими смугами, можуть бути корисним матеріалом, але зріз живого листа може стерти маршрутний знак, який робить каньйон читаним. Не перетинай відкрите світіння тільки тому, що воно здається вертикальним. Тримай один край лопаті в полі зору, тримай трим обережним і вважай будь-яке повернення підлоги без видимої межі лопаті брехнею, доки інше читання не підтвердить його.
 
 ## Scanner
 
-UK LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Лист розсільної лопаті. Соляно-мінеральна мембрана закріплена на зсуві щільності. Цілий край — стіна; рване гирло — прохід; чорна вода без краю лопаті — ризик хибної підлоги.
 
 ## Terminal
 
-UK LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+ЗРАЗОК / РОЗСІЛЬНА ЛОПАТЬ / роль: маркер стіни щільності, попередження про вигин sonar, джерело скинутих ребер / безпечне читання: цілий лист, рване нижнє гирло, закручений кінчик shear-window / відмова: різати живий лист маршруту, перетинати відкрите світіння, довіряти поверненню хибної підлоги / примітка маршруту: збирай скинуті ребра, а не мембрану, що тримає твою карту відкритою.
 
 ## Audio
 
-UK LOC HOLD: The plant is not pointing up. It is pointing through.
+Лопать не вказує вгору. Вона показує, де океан повертає боком.
 
 ## Field Note
 
-UK LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Цілий лист: стіна. Рване гирло: можливий маршрут. Скинуте ребро: зразок. Живий лист тримає лінію: залиш.
 
 <!-- In-Game Wiki; generated from P294_BRINE_VANE_CODEX_CARD/uk_UA. -->

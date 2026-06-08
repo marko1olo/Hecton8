@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Луна, расколотая столкновением"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Луна, расколотая столкновением
 
-HECTON-8 фиксируется как луна, сформированная в системе Aegir, позднее collision-fractured и resonance-heated. Это держит астрономию стабильной и дает дизайну причины для brine canyons, vent forges, fractured crust routes и неровной глубины океана.
+HECTON-8 сформировалась внутри системы Эгира, а позже была рассечена касательным столкновением. Рана не разорвала луну. Она подняла полки коры, открыла рапные разломы, накормила термальные коридоры и оставила старое дно доступным через редкие окна давления. Карты мародеров идут по этому повреждению, потому что самые безопасные маршруты здесь - старые травмы, заполненные водой.
 
 ## Scanner
 
-Old crust sample. HECTON-8 сформировалась здесь, потом сломалась достаточно плохо, чтобы стать полезной.
+Образец старой коры. Луна собралась в поясе обломков Эгира, а потом удар раскрыл ее так широко, что океан это запомнил.
 
 ## Terminal
 
-ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+МОДЕЛЬ ПРОИСХОЖДЕНИЯ: аккреция вокруг Эгира, поздний косой удар, приливный резонанс после захвата. Итог: ступенчатая кора, горячие лестницы разломов, рапные бассейны, жилы пресс-стекла, неровный доступ к глубокому дну.
 
 ## Audio
 
-Планета ее не украла. Она была собрана здесь и сломана здесь.
+Она родилась здесь. Потом что-то ударило так сильно, что у моря появилась карта.
 
 ## Field Note
 
-Драма captured moon слабее, чем местная луна с раной, которую можно читать.
+Миф о захваченной луне слишком чистый. HECTON-8 несет местную рану: поднятая кора, пересоленная рапа, жерла, которые до сих пор берут проценты.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/ru_RU. -->

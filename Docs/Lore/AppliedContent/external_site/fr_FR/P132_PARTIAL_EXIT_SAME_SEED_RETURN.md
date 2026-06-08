@@ -9,32 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "Sortie partielle : retour même seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# Sortie partielle : retour même seed
 
-FR LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed.
+La sortie partielle protège la campagne longue d'une fausse clôture. Black Keel peut remonter l'opérateur pour une fenêtre limitée, réparer la combinaison, enregistrer les paquets récupérés et vendre la pause comme du bien-être. Le monde dessous ne bascule pas vers une version plus propre.
 
-## Scanner
-
-FR LOC HOLD: Extraction possible. Closure not included.
-
-## Terminal
-
-FR LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
-
-## Audio
-
-FR LOC HOLD: You left the pressure. You did not leave the contract.
-
-## Field Note
-
-FR LOC HOLD: Let the player breathe, then make the same ocean still be there.
+Quand le joueur revient, le même seed est toujours là. L'escalier de saumure a le même piège, le même relais a le même mauvais angle, et la même preuve reste dangereuse. Cette fin donne du soulagement sans absolution : de l'air dans les poumons, plus de dette dans le contrat, et aucune suppression de ce qui a été trouvé.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/fr_FR. -->

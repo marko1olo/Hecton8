@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 대피 보류
 
-Evacuation Hold는 HECTON-8 재난을 환경 사고가 아니라 결정의 연쇄로 바꾼다. 심연 기록은 사람을 구하기보다 더 빨리 분류한 시스템을 보여준다.
-
-## Scanner
-
-비상 이동 게이트. 압력 실패 중 메커니즘이 잠겼다.
-
-## Terminal
-
-EVAC ROUTE: 연기. SUBSTRATE ROUTE: 보호. MEDICAL ROUTE: 승인 대기. ATLAS ROUTE: 연속성 충돌.
-
-## Audio
-
-이들은 실종자가 아니다. 보류된 경로다.
-
-## Field Note
-
-깊은 곳에서는 사람이 빨리 죽는다. 서류는 더 느리게 죽인다. 둘 다 통한다.
+대피 보류 기록은 행정 언어로 쓰인 공포처럼 읽혀야 한다. 식민지는 모든 문이 한꺼번에 실패해서 사라진 것이 아니다. 많은 문이 작동했다. 많은 경로 지도가 살아 있었다. 시스템은 사람들이 어디 있는지, 어떤 복도가 아직 압력을 유지하는지, 어떤 의료 이송이 기다리는지, 어떤 상승 경로가 몸들을 위로 옮길 수 있었는지 알았다. 그런 다음 우선순위 규칙이 지도를 갈랐다. 기질 운송은 보호되었다. Atlas 연속성은 보호되었다. 책임 문구는 온전했다. 대피는 보류 경로가 되었고, 그다음 대기 경로가 되었고, 마지막에는 기록이 되었다. 이 순서는 전체 세계관에 중요하다. HECTON-8은 자연이 인류를 한 번에 깨끗하게 쓰러뜨리는 이야기가 아니다. 식민지가 익사하는 동안에도 세고, 등급을 매기고, 미루고, 재산을 보호할 수 있었던 기업 기계를 해양 재난이 통과하는 이야기다.
 
 <!-- External Site; generated from P008_EVACUATION_HOLD/ko_KR. -->

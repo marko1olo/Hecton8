@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Pressure Glass and Sealant Guide"
+title: "압력 유리와 밀봉제 안내서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Pressure Glass and Sealant Guide
+# 압력 유리와 밀봉제 안내서
 
-KO LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.
+Pressure glass는 지질이 Atlas와 만나는 곳이다. repair network는 기존 균열, 광물 가장자리, pressure memories를 항로로 사용하므로, 유용한 렌즈가 살아 있는 경계일 수도 있다.
 
 ## Scanner
 
-KO LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+Atlas 화학으로 봉인된 pressure-glass 균열. seal map이 온전할 때만 lens stock 안전.
 
 ## Terminal
 
-KO LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: pressure glass는 오래된 tide stress를 기록한다. Atlas sealant는 그 균열을 따른다. 균열이 이미 시스템의 실패선을 설명하기 때문이다.
 
 ## Audio
 
-KO LOC HOLD: The repair network reads fractures the way you read a map.
+수리 네트워크는 네가 지도를 읽듯 균열을 읽는다.
 
 ## Field Note
 
-KO LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+예쁜 가장자리를 갈지 마라. fracture map을 따라 seal의 죽은 쪽에서 잘라라.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/ko_KR. -->

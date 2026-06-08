@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Nutzlastfenster
 
-Payload Window definiert HECTON-8s Endstruktur. Die letzte Frage ist nicht nur, was der Spieler glaubt, sondern was er aus dem Ozean tragen kann.
-
-## Scanner
-
-Improvisiertes Aufstiegspaket. Es kann den Ozean verlassen, wenn Masse, Wetter und Carrier-Geometrie passen.
-
-## Terminal
-
-PAYLOAD SLOT: begrenzt. WINDOW: offen. ROUTE: umstritten. CLAIM VALUE: variabel. EVIDENCE STATE: unzureichend für sauberen Streit.
-
-## Audio
-
-Das Fenster ist offen. Es bleibt nicht für alles offen.
-
-## Field Note
-
-Rauskommen ist eine Route. Sauber rauskommen ist ein Mythos.
+Das letzte Problem auf HECTON-8 ist kein Moralmenü über dem Ozean. Es ist ein Nutzlastfenster. Das Aufstiegspaket hat Massengrenzen, das Wetter hat Timing, Aegir hat Strahlungs- und Orbitgrenzen, und Black Keel hat Empfängerregeln, bevor es Mitleid hat. Jedes Ende fragt daher, was den Mond verlässt und wer es bekommt. Koordinaten können Bergung kaufen und Deep Reach den Tatort geben. Beweise können ein öffentliches Register erreichen und dem Spieler die Kontrolle über Folgen nehmen. Proben können Schulden bezahlen und das System stärken, das Arbeiternamen begrub. Schweigen kann den Konzern blenden und Beweise unter Wasser lassen. Das Fenster ist keine Gerechtigkeit. Es ist die Form, durch die Gerechtigkeit hindurchpassen muss.
 
 <!-- External Site; generated from P010_PAYLOAD_WINDOW/de_DE. -->

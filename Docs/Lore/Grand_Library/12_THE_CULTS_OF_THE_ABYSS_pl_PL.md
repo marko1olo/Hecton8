@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # KULTY OTCHŁANI I OBŁĘD CIŚNIENIOWY
 
 > **Źródło:** Dzienniki Oceny Psychologicznej, Skrzydło Medyczne Sektora 44 (Odzyskane).

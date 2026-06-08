@@ -9,32 +9,20 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Deep Reach Suboffice Registry"
+title: "Реєстр Субофісів Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Deep Reach Suboffice Registry
+# Реєстр Субофісів Deep Reach
 
-UK LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## Малі Офіси, Великі Наслідки
 
-## Scanner
+Deep Reach страшніший, коли перестає звучати як змова й починає звучати як адміністрація. Реєстр працює, бо кожна назва офісу достатньо нудна, щоб бути справжньою. Contract Continuity Desk тримає obligations живими, хоча працівник хотів би їх смерті. Packet Notary Interface вирішує, чи стане повідомлення доказом або шумом. Quarantine Hold Desk робить затримку медично відповідальною. Asset Silence Board перетворює свідків на exposure. Return Action Queue оцінює тіло проти payload, orbit і public risk.
 
-UK LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-UK LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-UK LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-UK LOC HOLD: Use dull names. Dull names are where liability hides.
+Жодному desk не треба ненавидіти гравця. Кожному досить виконувати свою роботу в priority stack, написаному до підйому води. Тому докази HECTON-8 мають накопичуватись як печатки, routing fragments і малі суперечності. Злочин не сховано за театральним злом. Він розкладений по формах, що виглядають defensible, доки гравець не поставить їх у ряд.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/uk_UA. -->

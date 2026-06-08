@@ -5070,6 +5070,8 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             H8Memory.Release(ref s_snapshotBuffer, SystemID.AIEcology);
+            if (s_snapshotBuffer.IsCreated)
+                throw new InvalidOperationException($"{nameof(ShinobuEcosystemTelemetryForensics)} native release failed for {nameof(s_snapshotBuffer)}.");
 
             s_snapshotBuffer = H8Memory.Allocate<byte>(
                 DumpSnapshotBytes,

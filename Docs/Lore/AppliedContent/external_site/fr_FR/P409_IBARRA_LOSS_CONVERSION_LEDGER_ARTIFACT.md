@@ -9,32 +9,22 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Ibarra Loss Ledger"
+title: "Ledger Ibarra de conversion des pertes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Ibarra Loss Ledger
+# Ledger Ibarra de conversion des pertes
 
-FR LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## La Comptabilité Qui A Survécu À La Colonie
 
-## Scanner
+Le ledger Ibarra doit sembler plus froid qu'une liste de disparus. Une liste porte encore un deuil, même lorsqu'elle ment. Un ledger convertit. Il reçoit modules d'habitat endommagés, tool banks, sample custody, missing personnel et salvage rights, puis range chaque fait dans une catégorie capable de circuler dans les contrats après le silence de HECTON-8.
 
-FR LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+C'est le pont entre l'ancienne liability de Deep Reach et la dette présente du joueur. Si les gens deviennent unresolved personnel load, la corporation peut reconnaître leur disparition sans nommer un meurtre. Si la preuve devient material custody, elle peut être achetée, enterrée, routée ou assurée. Si le claim reste continuous, la propriété survit aux ouvriers qui faisaient fonctionner le lieu.
 
-## Terminal
-
-FR LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-FR LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-FR LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Le ledger donne au joueur un pouvoir dur. Le remonter ne révèle pas seulement ce qui s'est passé. Il transporte quelque chose que le marché sait déjà chiffrer. Vendre, publier, rediriger ou enterrer la preuve devient sale parce que le document fut conçu pour rendre chaque choix lisible dans le balance sheet de quelqu'un.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/fr_FR. -->

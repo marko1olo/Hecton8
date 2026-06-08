@@ -7,9 +7,9 @@ poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
 biome_tags: biome.carrier_link;biome.relay_shadow
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Fracht fuzyjny na pelletach"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Fracht fuzji pelletowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fracht fuzyjny na pelletach
+# Fracht fuzji pelletowej
 
-Ciężka podróż międzygwiezdna bez FTL jest możliwa, ale karze. Rozpęd żaglem wiązkowym, fuzja karmiona pelletami, masa osłon, długie dryfy i architektura hamowania zaniosły ładunki seed i późniejszy fracht kolonialny do Aegir. Ta sama logistyka spowalnia ratunek: każdy kilogram, koja, slot hamowania i miejsce ocalałego należy do harmonogramu.
+Fracht fuzji pelletowej uczynił Aegir osiągalnym bez FTL. Stacje wiązkowe pchały; strumienie pelletów karmiły spalenia fuzyjne; masa osłonowa przyjmowała pył; magsaile i lokalne systemy hamowania spłacały prędkość w czasie. Ta sama architektura spowalnia ratunek. Każdy kilogram ma harmonogram, budżet cieplny i właściciela.
 
 ## Scanner
 
-Płyta napędu. Fracht z fuzją karmioną pelletami szedł jako infrastruktura: rozpęd, osłona, dryf, hamowanie i rozliczenie strat.
+Płyta napędowa: rozpęd, zasilanie pelletem, osłona, dryf, hamowanie i rachunek strat.
 
 ## Terminal
 
-DOKTRYNA FRACHTU: ładunki seed klasy Atlas i fracht kolonialny używały rozpędu żaglem wiązkowym, fuzji karmionej pelletami, hamowania żaglem magnetycznym i długich interwałów dryfu. Żywy ładunek przybył po tym, jak maszyny uczyniły trasę rozliczalną.
+DOKTRYNA FRACHTU: ładunki seed i masa kolonialna używały rozpędu wiązkowego, fuzji karmionej pelletem, masy osłonowej, hamowania magsail i długich odcinków dryfu. Żywy ładunek szedł za infrastrukturą.
 
 ## Audio
 
-Ciężki statek nie jest cudem. To hipoteka z silnikami.
+Maszyny przeszły pierwsze, bo maszyny można było odpisać.
 
 ## Field Note
 
-Ciężki tranzyt nie jest heroiczny. To stary kontrakt trasy z bliznami po cieple.
+Ciężki statek nie jest cudem. To hipoteka z silnikami i bliznami ciepła.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/pl_PL. -->

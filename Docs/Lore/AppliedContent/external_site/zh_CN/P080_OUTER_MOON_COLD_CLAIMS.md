@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "外层卫星冷索赔"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# 外层卫星冷索赔
 
-CN LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy.
+外层卫星冷索赔把Aegir扩展到HECTON-8之外：死亡航线、冷缓存和弃置信标滋养salvage法律，也教公司隐藏重复损失。
 
 ## Scanner
 
-CN LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+外层索赔信标。Aegir里并非所有死物都在HECTON-8上。
 
 ## Terminal
 
-CN LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+外层阶梯档案 // Thorne盐水勘探失败。Anvil出口航线封存。Mute信标在无现役船员声明下重复保管ping。
 
 ## Audio
 
-CN LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+在HECTON-8上完这一课之前，Aegir就已经学会了如何失去人。
 
 ## Field Note
 
-CN LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+冷索赔让Marauder成为可能。它们也教会公司如何埋掉模式。
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/zh_CN. -->

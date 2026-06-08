@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Black Keel Claim Acceptance"
+title: "אישור תביעת Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Black Keel Claim Acceptance
+# אישור תביעת Black Keel
 
-HE LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+מסוף התביעה של Black Keel ממסגר את הפתיחה סביב חוב, נספחי חמצן ו-custody עוד לפני שהאוקיינוס נוגע במסך.
 
 ## Scanner
 
-HE LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+מסוף חוזה. Aegir Reclamation Pool מציג שעבוד 4.8 tonne-window לפני שהוא מציג חמצן.
 
 ## Terminal
 
-HE LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / מסוף אישור תביעה: נתיב RAN-B:H8 salvage descent; הקלת שעבוד 4.8 tonne-window מותנית; נספחי רווחת חמצן מחויבים אחרי חילוץ; custody של המטען קודם ל-Black Keel, עד Keelmark Mutual; סירוב משאיר את Barnard blacklist review פעילה.
 
 ## Audio
 
-HE LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel אל הקבלן: חלון התביעה פתוח. החמצן יחויב אחרי החילוץ. אשר אם אתה מסוגל לעבוד.
 
 ## Field Note
 
-HE LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+הסטיילוס קשור למסך בכבל לחץ. מישהו ציפה לידיים רועדות.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/he_IL. -->

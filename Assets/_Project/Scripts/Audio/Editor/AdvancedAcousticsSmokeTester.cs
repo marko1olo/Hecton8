@@ -14,9 +14,12 @@ namespace Hecton8.Audio.Editor
     {
         private const string RendererPath = "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs";
         private const string GameBootstrapperPath = "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
+        private const string BootstrapRegistryCycleValidatorPath = "Assets/_Project/Scripts/Bootstrap/BootstrapRegistryCycleValidator.cs";
         private const string MainMenuScenePath = "Assets/_Project/Scenes/01_MAIN_MENU.unity";
+        private const string HectonWorldScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
         private const string MasterMixerPath = "Assets/_Project/MasterMixer.mixer";
         private const string SpatialAudioPath = "Assets/_Project/Scripts/SpatialAudioManager.cs";
+        private const string SpatialAudioManagerPrefabPath = "Assets/_Project/Prefabs/Audio/PFB_SpatialAudioManagerRoot.prefab";
         private const string PhysicsApplyPath = "Assets/_Project/Scripts/PhysicsApplySystem.cs";
         private const string SpectrumSystemPath = "Assets/_Project/Scripts/Visor/SpectrumSystem.cs";
         private const string ResourceNodePath = "Assets/_Project/Scripts/ResourceNode.cs";
@@ -40,6 +43,14 @@ namespace Hecton8.Audio.Editor
         private const string AcousticZonePath = "Assets/_Project/Scripts/AcousticZoneController.cs";
         private const string AudioLogEventsPath = "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs";
         private const string AudioLogSystemPath = "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs";
+        private const string AudioLogPickupPath = "Assets/_Project/Scripts/AudioLog/AudioLogPickup.cs";
+        private const string SabineReverbDspTunerWindowPath = "Assets/_Project/Scripts/Audio/Editor/SabineReverbDspTunerWindow.cs";
+        private const string AbyssalAcousticsTunerWindowPath = "Assets/_Project/Scripts/Audio/Editor/AbyssalAcousticsTunerWindow.cs";
+        private const string AbyssalDspTunerWindowPath = "Assets/_Project/Scripts/Audio/Editor/AbyssalDspTunerWindow.cs";
+        private const string GranularSynthTunerWindowPath = "Assets/_Project/Scripts/Audio/Editor/GranularSynthTunerWindow.cs";
+        private const string AudioEventAuthoringValidatorPath = "Assets/_Project/Scripts/Core/Content/Editor/AudioEventAuthoringValidator.cs";
+        private const string ContentAuthorityBuildValidatorsPath = "Assets/_Project/Scripts/Core/Content/Editor/ContentAuthorityBuildValidators.cs";
+        private const string SeafloorDrillItemPath = "Assets/_Project/Data/Items/Tools/Item_Tool_SeafloorDrill.asset";
         private const string SceneRuntimeServicePath = "Assets/_Project/Scripts/Core/SceneRuntimeService.cs";
         private const string HectonNarrativeDirectorPath = "Assets/_Project/Scripts/HectonNarrativeDirector.cs";
         private const string TraumaDispatcherPath = "Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs";
@@ -55,11 +66,13 @@ namespace Hecton8.Audio.Editor
         private const string AtlasSignalSystemPath = "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs";
         private const string Atlas6CorporateLiabilityManagerPath = "Assets/_Project/Scripts/Gameplay/Atlas6Liability/Atlas6CorporateLiabilityManager.cs";
         private const string NarrativeProgressionBridgePath = "Assets/_Project/Scripts/Progression/NarrativeProgressionBridge.cs";
+        private const string ProceduralLoreDirectorPath = "Assets/_Project/Scripts/Narrative/ProceduralLoreDirector.cs";
         private const string PlayerFlashlightPath = "Assets/_Project/Scripts/PlayerFlashlight.cs";
         private const string PlayerPdaPath = "Assets/_Project/Scripts/PlayerPDA.cs";
         private const string PlayerInventoryPath = "Assets/_Project/Scripts/PlayerInventory.cs";
         private const string PDAInventoryTabPath = "Assets/_Project/Scripts/PDAInventoryTab.cs";
         private const string PDAMapTabPath = "Assets/_Project/Scripts/UI/PDAMapTab.cs";
+        private const string PDADataLogTabPath = "Assets/_Project/Scripts/UI/PDADataLogTab.cs";
         private const string PlayerStressVfxPath = "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs";
         private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
         private const string HectonMusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
@@ -72,6 +85,7 @@ namespace Hecton8.Audio.Editor
         private const string DirectorAIPath = "Assets/_Project/Scripts/HectonDirectorAI.cs";
         private const string PrologueAcousticOrchestratorPath = "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs";
         private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
+        private const string VocalWarningQueueTunerWindowPath = "Assets/_Project/Scripts/Audio/Editor/VocalWarningQueueTunerWindow.cs";
         private const string VocalBankRuntimePath = "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs";
         private const string PlayerThrusterAudioPath = "Assets/_Project/Scripts/PlayerThrusterAudio.cs";
         private const string PlayerFootstepAudioPath = "Assets/_Project/Scripts/PlayerFootstepAudio.cs";
@@ -81,6 +95,8 @@ namespace Hecton8.Audio.Editor
         private const string SuitAdvisoryControllerPath = "Assets/_Project/Scripts/UI/SuitAdvisoryController.cs";
         private const string UIAudioFeedbackPath = "Assets/_Project/Scripts/UI/UIAudioFeedback.cs";
         private const string UIButtonAudioTriggerPath = "Assets/_Project/Scripts/UI/UIButtonAudioTrigger.cs";
+        private const string ActionProgressHudPath = "Assets/_Project/Scripts/UI/ActionProgressHUD.cs";
+        private const string SuitHudCanvasPrefabPath = "Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab";
         private const string SurfaceWeatherDirectorPath = "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs";
         private const string HectonUnderwaterVisualsPath = "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs";
         private const string PlayerInteractionPath = "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs";
@@ -121,6 +137,93 @@ namespace Hecton8.Audio.Editor
         private const string AcousticRadarSphereRendererPath = "Assets/_Project/Scripts/UI/AcousticRadarSphereRenderer.cs";
         private const string SonarHoloCompassPath = "Assets/_Project/Scripts/UI/SonarHoloCompass.cs";
         private const string DiegeticTooltipSystemPath = "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs";
+        private const string CelestialSyncSmokeTesterPath = "Assets/_Project/Scripts/Plugins/Crest/CelestialSyncSmokeTester.cs";
+
+        private static readonly string[] AudioReadinessGuardAuditPaths =
+        {
+            GameBootstrapperPath,
+            SpatialAudioPath,
+            RendererPath,
+            DynamicMusicGranularSynthPath,
+            DeepPsychosisPath,
+            HectonMusicDirectorPath,
+            SoundscapeSystemPath,
+            PrologueAcousticOrchestratorPath,
+            PlayerThrusterAudioPath,
+            PlayerFootstepAudioPath,
+            SpectrumSystemPath,
+            DestructibleOrganicManagerPath,
+            ModCommandDispatcherPath,
+            BaseModulePath,
+            RepairToolPath,
+            SuitHudOverlayPath,
+            SubmarineAutoLevelBallastControllerPath,
+            PlayerPdaPath,
+            PlayerFlashlightPath,
+            PDAInventoryTabPath,
+            PlayerInventoryPath,
+            HectonPlayerMovementPath,
+            PDAMapTabPath,
+            PlayerStressVfxPath,
+            PhysicalPanelDialPath,
+            PhysicalTerminalKeyboardPath,
+            PhysicalPanelButtonPath,
+            SuitAdvisoryControllerPath,
+            UIAudioFeedbackPath,
+            UIButtonAudioTriggerPath,
+            SurfaceWeatherDirectorPath,
+            HectonUnderwaterVisualsPath,
+            PlayerInteractionPath,
+            SaveStationPath,
+            PhysicalSnapSwitchPath,
+            OxygenPlantPath,
+            OxygenBubblePath,
+            StorageCratePath,
+            MessageTerminalPath,
+            PlayerActionControllerPath,
+            ScannableFragmentPath,
+            ClimbableLadderPath,
+            BioReactorPath,
+            HarvestablePlantPath,
+            HarvestableOutcropPath,
+            HostileFloraPath,
+            FloaterPath,
+            DeployableBeaconPath,
+            MountablePlayerTransportPath,
+            DropPodSeatControllerPath,
+            DropPodDashboardToggleSwitchPath,
+            DropPodAirlockControllerPath,
+            BaseAirlockPath,
+            BatteryChargerPath,
+            SealedDoorPath,
+            ConstructionManagerPath,
+            HabitatGraphManagerPath,
+            FabricatorPath,
+            PlayerBuilderPath,
+            LaserCutterPath,
+            AcousticZonePath,
+            AudioLogSystemPath,
+            HectonPlayerHealthPath,
+            SubmarineAtmosphereSystemPath,
+            SceneRuntimeServicePath,
+            SignalBeaconPath,
+            AtlasSignalSystemPath,
+            HectonNarrativeDirectorPath,
+            TraumaDispatcherPath,
+            RandomEventSystemPath,
+            EclipseGameplaySystemPath,
+            FirstHourDirectorPath,
+            EmergencyServiceRelayPath,
+            NarrativeDiscoveryPath,
+            PDADataLogTabPath,
+            Atlas6CorporateLiabilityManagerPath,
+            NarrativeProgressionBridgePath,
+            ProceduralLoreDirectorPath,
+            AudioLogPickupPath,
+            AcousticRadarSphereRendererPath,
+            SonarHoloCompassPath,
+            CelestialSyncSmokeTesterPath
+        };
 
         [MenuItem("Hecton8/Audio/Run Advanced Acoustics Smoke Test")]
         public static void RunMenuItem()
@@ -140,9 +243,12 @@ namespace Hecton8.Audio.Editor
 
             string renderer = ReadAssetText(RendererPath, builder, ref failureCount);
             string gameBootstrapper = ReadAssetText(GameBootstrapperPath, builder, ref failureCount);
+            string bootstrapRegistryCycleValidator = ReadAssetText(BootstrapRegistryCycleValidatorPath, builder, ref failureCount);
             string mainMenuScene = ReadAssetText(MainMenuScenePath, builder, ref failureCount);
+            string hectonWorldScene = ReadAssetText(HectonWorldScenePath, builder, ref failureCount);
             string masterMixer = ReadAssetText(MasterMixerPath, builder, ref failureCount);
             string spatial = ReadAssetText(SpatialAudioPath, builder, ref failureCount);
+            string spatialAudioManagerPrefab = ReadAssetText(SpatialAudioManagerPrefabPath, builder, ref failureCount);
             string physicsApply = ReadAssetText(PhysicsApplyPath, builder, ref failureCount);
             string spectrumSystem = ReadAssetText(SpectrumSystemPath, builder, ref failureCount);
             string resourceNode = ReadAssetText(ResourceNodePath, builder, ref failureCount);
@@ -167,6 +273,14 @@ namespace Hecton8.Audio.Editor
             string acousticZone = ReadAssetText(AcousticZonePath, builder, ref failureCount);
             string audioLogEvents = ReadAssetText(AudioLogEventsPath, builder, ref failureCount);
             string audioLogSystem = ReadAssetText(AudioLogSystemPath, builder, ref failureCount);
+            string audioLogPickup = ReadAssetText(AudioLogPickupPath, builder, ref failureCount);
+            string sabineReverbDspTunerWindow = ReadAssetText(SabineReverbDspTunerWindowPath, builder, ref failureCount);
+            string abyssalAcousticsTunerWindow = ReadAssetText(AbyssalAcousticsTunerWindowPath, builder, ref failureCount);
+            string abyssalDspTunerWindow = ReadAssetText(AbyssalDspTunerWindowPath, builder, ref failureCount);
+            string granularSynthTunerWindow = ReadAssetText(GranularSynthTunerWindowPath, builder, ref failureCount);
+            string audioEventAuthoringValidator = ReadAssetText(AudioEventAuthoringValidatorPath, builder, ref failureCount);
+            string contentAuthorityBuildValidators = ReadAssetText(ContentAuthorityBuildValidatorsPath, builder, ref failureCount);
+            string seafloorDrillItem = ReadAssetText(SeafloorDrillItemPath, builder, ref failureCount);
             string sceneRuntime = ReadAssetText(SceneRuntimeServicePath, builder, ref failureCount);
             string narrativeDirector = ReadAssetText(HectonNarrativeDirectorPath, builder, ref failureCount);
             string traumaDispatcher = ReadAssetText(TraumaDispatcherPath, builder, ref failureCount);
@@ -182,11 +296,13 @@ namespace Hecton8.Audio.Editor
             string atlasSignalSystem = ReadAssetText(AtlasSignalSystemPath, builder, ref failureCount);
             string atlas6CorporateLiabilityManager = ReadAssetText(Atlas6CorporateLiabilityManagerPath, builder, ref failureCount);
             string narrativeProgressionBridge = ReadAssetText(NarrativeProgressionBridgePath, builder, ref failureCount);
+            string proceduralLoreDirector = ReadAssetText(ProceduralLoreDirectorPath, builder, ref failureCount);
             string playerFlashlight = ReadAssetText(PlayerFlashlightPath, builder, ref failureCount);
             string playerPda = ReadAssetText(PlayerPdaPath, builder, ref failureCount);
             string playerInventory = ReadAssetText(PlayerInventoryPath, builder, ref failureCount);
             string pdaInventoryTab = ReadAssetText(PDAInventoryTabPath, builder, ref failureCount);
             string pdaMapTab = ReadAssetText(PDAMapTabPath, builder, ref failureCount);
+            string pdaDataLogTab = ReadAssetText(PDADataLogTabPath, builder, ref failureCount);
             string baseAirlock = ReadAssetText(BaseAirlockPath, builder, ref failureCount);
             string batteryCharger = ReadAssetText(BatteryChargerPath, builder, ref failureCount);
             string sealedDoor = ReadAssetText(SealedDoorPath, builder, ref failureCount);
@@ -209,6 +325,7 @@ namespace Hecton8.Audio.Editor
             string directorAI = ReadAssetText(DirectorAIPath, builder, ref failureCount);
             string prologueAcoustic = ReadAssetText(PrologueAcousticOrchestratorPath, builder, ref failureCount);
             string vocalWarning = ReadAssetText(VocalWarningSystemPath, builder, ref failureCount);
+            string vocalWarningQueueTunerWindow = ReadAssetText(VocalWarningQueueTunerWindowPath, builder, ref failureCount);
             string vocalBankRuntime = ReadAssetText(VocalBankRuntimePath, builder, ref failureCount);
             string playerThrusterAudio = ReadAssetText(PlayerThrusterAudioPath, builder, ref failureCount);
             string playerFootstepAudio = ReadAssetText(PlayerFootstepAudioPath, builder, ref failureCount);
@@ -218,6 +335,8 @@ namespace Hecton8.Audio.Editor
             string suitAdvisory = ReadAssetText(SuitAdvisoryControllerPath, builder, ref failureCount);
             string uiAudioFeedback = ReadAssetText(UIAudioFeedbackPath, builder, ref failureCount);
             string uiButtonAudioTrigger = ReadAssetText(UIButtonAudioTriggerPath, builder, ref failureCount);
+            string actionProgressHud = ReadAssetText(ActionProgressHudPath, builder, ref failureCount);
+            string suitHudCanvasPrefab = ReadAssetText(SuitHudCanvasPrefabPath, builder, ref failureCount);
             string surfaceWeatherDirector = ReadAssetText(SurfaceWeatherDirectorPath, builder, ref failureCount);
             string underwaterVisuals = ReadAssetText(HectonUnderwaterVisualsPath, builder, ref failureCount);
             string playerInteraction = ReadAssetText(PlayerInteractionPath, builder, ref failureCount);
@@ -264,9 +383,25 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(initializeAudio, "GlobalRegistry.Audio != null", "Bootstrap audio node does not accept raw non-null audio registration", builder, ref failureCount);
                 AssertContains(audioFallback, "return IsBootstrapAudioServiceUsable(audioService)", "NoOp audio fallback validates the final registered audio service", builder, ref failureCount);
                 AssertNotContains(audioFallback, "return audioService != null", "NoOp audio fallback does not report raw non-null audio as ready", builder, ref failureCount);
-                AssertContains(audioUsable, "audioService == null || !audioService.IsInitialized", "Bootstrap audio usability rejects uninitialized services", builder, ref failureCount);
+                AssertContains(audioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Bootstrap audio usability rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(audioUsable, "audioService is Behaviour behaviour", "Bootstrap audio usability checks Unity component liveness", builder, ref failureCount);
                 AssertContains(audioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Bootstrap audio usability rejects destroyed or disabled components", builder, ref failureCount);
+                AssertContains(gameBootstrapper, "PlayerActionRuntime = 20", "Bootstrap dependency enum models player action runtime as a first-class player service", builder, ref failureCount);
+                AssertContains(gameBootstrapper, "\"PlayerActionRuntime\"", "Bootstrap dependency names expose player action runtime failures by name", builder, ref failureCount);
+                AssertContains(gameBootstrapper, "case BootstrapDependencyNode.PlayerActionRuntime: return GlobalRegistry.PlayerActions", "Bootstrap dependency service resolver reads the player action runtime owner", builder, ref failureCount);
+                AssertContains(gameBootstrapper, "PlayerActionController playerActionController = PlayerActionController.EnsureRuntimeInstance()", "Bootstrap player layer creates a deterministic player action runtime owner", builder, ref failureCount);
+                AssertContains(gameBootstrapper, "playerActionController.InitializeService();", "Bootstrap player layer explicitly initializes the player action runtime owner", builder, ref failureCount);
+                AssertContains(gameBootstrapper, "case GlobalRegistryServiceSlot.PlayerActionRuntime:", "Bootstrap registry slot resolver accepts player action runtime graph nodes", builder, ref failureCount);
+                AssertContains(gameBootstrapper, "case BootstrapDependencyNode.PlayerActionRuntime: return GlobalRegistryServiceSlot.PlayerActionRuntime", "Bootstrap reverse slot resolver shuts down player action runtime through the registry slot", builder, ref failureCount);
+            }
+
+            if (bootstrapRegistryCycleValidator.Length > 0)
+            {
+                AssertContains(bootstrapRegistryCycleValidator, "GlobalRegistryServiceSlot.PlayerActionRuntime,", "Bootstrap startup graph includes the player action runtime node", builder, ref failureCount);
+                AssertContains(bootstrapRegistryCycleValidator, "new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerActionRuntime, GlobalRegistryServiceSlot.Player)", "Player action runtime waits for authoritative player context", builder, ref failureCount);
+                AssertContains(bootstrapRegistryCycleValidator, "new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerActionRuntime, GlobalRegistryServiceSlot.PlayerInventory)", "Player action runtime waits for item/inventory read-model ownership", builder, ref failureCount);
+                AssertContains(bootstrapRegistryCycleValidator, "new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerActionRuntime, GlobalRegistryServiceSlot.Audio)", "Player action runtime waits for audio owner readiness before item completion feedback", builder, ref failureCount);
+                AssertContains(bootstrapRegistryCycleValidator, "case GlobalRegistryServiceSlot.PlayerActionRuntime: return nameof(GlobalRegistryServiceSlot.PlayerActionRuntime)", "Bootstrap cycle telemetry can name player action runtime graph failures", builder, ref failureCount);
             }
 
             if (spatial.Length > 0)
@@ -285,13 +420,31 @@ namespace Hecton8.Audio.Editor
                 string spatialColdRuntimeServices = ExtractMethodBody(spatial, "private void RefreshCachedAudioRuntimeServicesCold()");
                 string spatialReboundRuntimeServices = ExtractMethodBody(spatial, "private void CacheReboundAudioRuntimeService(");
                 string spatialRuntimeRegister = ExtractMethodBody(spatial, "private bool TryRegisterAudioRuntimeServices()");
+                string spatialRuntimeGate = ExtractMethodBody(spatial, "private bool TryAbortForUsableExistingRuntime()");
+                string spatialAbort = ExtractMethodBody(spatial, "private void AbortDuplicateRuntimeOwner()");
+                string spatialRuntimeUsable = ExtractMethodBody(spatial, "private static bool IsSpatialAudioRuntimeUsable(");
+                string spatialSubscribeAudioEvents = ExtractMethodBody(spatial, "private void TrySubscribeAudioEvents()");
                 string spatialAudioOwnerUsable = ExtractMethodBody(spatial, "private static bool IsAudioServiceOwnerUsable(");
                 string spatialVirtualizationOwnerUsable = ExtractMethodBody(spatial, "private static bool IsAudioVirtualizationOwnerUsable(");
                 string spatialPlayerCriticalCache = ExtractMethodBody(spatial, "private void CachePlayerCriticalAudio(");
                 string spatialPlayerCriticalResolve = ExtractMethodBody(spatial, "private IPlayerCriticalAudioSignalSink ResolvePlayerCriticalAudioSignalSink()");
                 string spatialPlayerCriticalUsable = ExtractMethodBody(spatial, "private static bool IsPlayerCriticalAudioSignalSinkUsable(");
                 string spatialPrologueQueue = ExtractMethodBody(spatial, "public bool QueuePrologueAudioTransition(");
+                string spatialAudioEventQueue = ExtractMethodBody(spatial, "public bool QueueAudioEvent(");
+                string spatialAudioEventTelemetry = ExtractMethodBody(spatial, "private void PublishAudioEventQueueDropTelemetry(");
+                string spatialSoundEmissionQueue = ExtractMethodBody(spatial, "public bool QueueSoundEmissionSignal(");
+                string spatialHullStressQueue = ExtractMethodBody(spatial, "public bool QueueHullStressSignal(");
                 string spatialHighSpeedQueue = ExtractMethodBody(spatial, "public bool QueueHighSpeedImpactSignal(");
+                string spatialDelayedAudioIngress = ExtractMethodBody(spatial, "private void TryEnqueueDelayedAudioEvent(");
+                string spatialPlayAtPointResolved = ExtractMethodBody(spatial, "private int PlayAtPointResolved(");
+                string spatialPlayAtPointLowPass = ExtractMethodBody(spatial, "public void PlayAtPointWithLowPass(");
+                string spatialPlayStatic2D = ExtractMethodBody(spatial, "public void PlayStatic2D(AudioClip clip, float volume, AudioMixerGroup mixerGroup)");
+                string spatialBitCrushed2D = ExtractMethodBody(spatial, "public bool TryPlayStatic2DBitCrushed(");
+                string spatialEnqueueVirtualVoice = ExtractMethodBody(spatial, "public bool EnqueueVirtualVoice(");
+                string spatialSetVirtualListener = ExtractMethodBody(spatial, "public void SetVirtualListener(");
+                string spatialAcousticRadarPayload = ExtractMethodBody(spatial, "public bool TryGetAcousticRadarPayload(");
+                string spatialStopAll = ExtractMethodBody(spatial, "public void StopAll()");
+                string spatialLateFrameRegister = ExtractMethodBody(spatial, "private void TryRegisterLateFrameTickable()");
                 string spatialHabitatPortalGraph = ExtractMethodBody(spatial, "private bool TryBuildHabitatAcousticPortalGraph(");
                 AssertContains(spatial, "TryResolveCinematicZoneMismatch", "Delayed world events apply deterministic zone muffle", builder, ref failureCount);
                 AssertContains(spatial, "CinematicZoneMuffleTransmission = 0.25118864f", "Cinematic zone muffle applies -12 dB transmission", builder, ref failureCount);
@@ -338,6 +491,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatial, "IGlobalRegistryHotSwapRefListener", "Spatial audio caches player-critical runtime through hot-swap rebinding", builder, ref failureCount);
                 AssertContains(spatial, "TryRegisterHotSwapListener()", "Spatial audio registers for player-critical runtime hot swaps", builder, ref failureCount);
                 AssertContains(spatial, "GlobalRegistry.TryUnregisterHotSwapListener(this)", "Spatial audio unregisters player-critical runtime hot-swap listener", builder, ref failureCount);
+                AssertContains(spatialRuntimeRegister, "if (TryAbortForUsableExistingRuntime())", "Spatial audio registration routes duplicate-owner checks through the stale-owner gate", builder, ref failureCount);
                 AssertContains(spatialRuntimeRegister, "IAudioService registeredAudioService = GlobalRegistry.Audio", "Spatial audio snapshots the current audio owner once", builder, ref failureCount);
                 AssertContains(spatialRuntimeRegister, "IAudioVirtualizationService registeredVirtualization = GlobalRegistry.AudioVirtualization", "Spatial audio snapshots the current virtualization owner once", builder, ref failureCount);
                 AssertContains(spatialRuntimeRegister, "if (IsAudioServiceOwnerUsable(registeredAudioService))", "Spatial audio preserves usable existing audio owners", builder, ref failureCount);
@@ -348,11 +502,73 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatialRuntimeRegister, "GlobalRegistry.UnregisterAudioVirtualizationService(registeredVirtualization);", "Spatial audio clears stale virtualization owners before strict register", builder, ref failureCount);
                 AssertTextBefore(spatialRuntimeRegister, "GlobalRegistry.UnregisterAudioService(registeredAudioService);", "GlobalRegistry.RegisterAudioService(this);", "Spatial audio unregisters stale audio owners before self-register", builder, ref failureCount);
                 AssertTextBefore(spatialRuntimeRegister, "GlobalRegistry.UnregisterAudioVirtualizationService(registeredVirtualization);", "GlobalRegistry.RegisterAudioVirtualizationService(this);", "Spatial audio unregisters stale virtualization owners before self-register", builder, ref failureCount);
-                AssertContains(spatialRuntimeRegister, "return ReferenceEquals(GlobalRegistry.Audio, this) &&", "Spatial audio verifies both registry slots after strict register", builder, ref failureCount);
+                AssertContains(spatialRuntimeRegister, "bool ownsServices", "Spatial audio stores strict registry claim result before returning", builder, ref failureCount);
+                AssertContains(spatialRuntimeRegister, "if (!ownsServices)", "Spatial audio aborts duplicate owner when strict registry claim fails", builder, ref failureCount);
+                AssertContains(spatialRuntimeRegister, "return ownsServices", "Spatial audio returns the verified strict registry claim result", builder, ref failureCount);
+                AssertContains(spatialRuntimeGate, "if (_runtimeOwnerAborted)", "Spatial audio stale-owner gate short-circuits aborted duplicates", builder, ref failureCount);
+                AssertContains(spatialRuntimeGate, "if (!Application.isPlaying)", "Spatial audio stale-owner gate is inert outside play mode", builder, ref failureCount);
+                AssertContains(spatialRuntimeGate, "SpatialAudioManager activeRuntime = ActiveRuntimeInstance", "Spatial audio stale-owner gate checks the active runtime mirror", builder, ref failureCount);
+                AssertContains(spatialRuntimeGate, "GlobalRegistry.UnregisterAudioService(registeredAudioService);", "Spatial audio stale-owner gate clears stale audio owners", builder, ref failureCount);
+                AssertContains(spatialRuntimeGate, "GlobalRegistry.UnregisterAudioVirtualizationService(registeredVirtualization);", "Spatial audio stale-owner gate clears stale virtualization owners", builder, ref failureCount);
+                AssertContains(spatialAbort, "TryUnregisterHotSwapListener();", "Spatial audio abort cleanup unregisters hot-swap listener", builder, ref failureCount);
+                AssertContains(spatialAbort, "TryUnsubscribeAudioEvents();", "Spatial audio abort cleanup removes audio event routes", builder, ref failureCount);
+                AssertContains(spatialAbort, "GlobalRegistry.UnregisterAudioVirtualizationService(this)", "Spatial audio abort cleanup releases virtualization ownership", builder, ref failureCount);
+                AssertContains(spatialAbort, "GlobalRegistry.UnregisterAudioService(this)", "Spatial audio abort cleanup releases audio ownership", builder, ref failureCount);
+                AssertContains(spatialAbort, "_runtimeOwnerAborted = true", "Spatial audio abort cleanup latches aborted state", builder, ref failureCount);
+                AssertContains(spatialAbort, "Destroy(this);", "Spatial audio abort cleanup destroys only the duplicate component", builder, ref failureCount);
+                AssertContains(spatialRuntimeUsable, "!manager._runtimeOwnerAborted", "Spatial audio runtime usability rejects aborted owners", builder, ref failureCount);
+                AssertContains(spatialSubscribeAudioEvents, "if (_runtimeOwnerAborted)", "Spatial audio event subscription rejects aborted duplicate owners", builder, ref failureCount);
+                AssertNotContains(spatialSubscribeAudioEvents, "!_isInitialized", "Spatial audio event subscription remains valid during first service initialization", builder, ref failureCount);
+                AssertContains(globalRegistryContracts, "bool IsAudioRuntimeReady => IsInitialized", "Audio service contract exposes runtime readiness with initialized fallback semantics", builder, ref failureCount);
+                AssertContains(spatial, "public bool IsInitialized => !_runtimeOwnerAborted && _isInitialized", "Spatial audio read model reports aborted owners as uninitialized", builder, ref failureCount);
+                AssertContains(spatial, "public bool IsSpatialAudioRuntimeReady =>", "Spatial audio exposes owner readiness to editor tooling", builder, ref failureCount);
+                AssertContains(spatial, "public bool IsAudioRuntimeReady =>", "Spatial audio overrides generic audio runtime readiness", builder, ref failureCount);
+                AssertContains(spatial, "ReferenceEquals(GlobalRegistry.Audio, this)", "Spatial audio owner readiness requires audio service ownership", builder, ref failureCount);
+                AssertContains(spatial, "ReferenceEquals(GlobalRegistry.AudioVirtualization, this)", "Spatial audio owner readiness requires virtualization service ownership", builder, ref failureCount);
+                AssertContains(spatial, "IsVirtualizationReady", "Spatial audio owner readiness requires live virtual voice storage", builder, ref failureCount);
+                AssertContains(spatial, "Audio.EventQueue.Drop", "Spatial audio has a stable telemetry warning hash for live audio-event queue rejections", builder, ref failureCount);
+                AssertContains(spatial, "Audio.EventQueue.Overflow", "Spatial audio has a stable telemetry context hash for bounded audio-event queue overflow", builder, ref failureCount);
+                AssertContains(spatial, "Audio.EventQueue.BadData", "Spatial audio has a stable telemetry context hash for bad authored audio-event data", builder, ref failureCount);
+                AssertContains(globalRegistryContracts, "int DroppedAudioEventCount => 0", "Audio service contract exposes queue-drop diagnostics without forcing legacy providers to implement it", builder, ref failureCount);
+                AssertContains(spatial, "public int DroppedAudioEventCount => _runtimeOwnerAborted ? 0 : math.max(0, _audioEventQueueDroppedCount)", "Spatial audio exposes bounded event queue drops as a distinct read model", builder, ref failureCount);
+                AssertContains(spatial, "public bool IsServiceReady => IsInitialized", "Spatial audio service readiness follows the aborted-aware initialized state", builder, ref failureCount);
+                AssertContains(spatial, "public bool IsVirtualizationReady =>", "Spatial audio exposes virtualization readiness", builder, ref failureCount);
+                AssertContains(spatial, "!_runtimeOwnerAborted &&", "Spatial audio virtualization readiness rejects aborted owners", builder, ref failureCount);
+                AssertContains(spatial, "public int ActiveSourceCount", "Spatial audio exposes active source count for diagnostics", builder, ref failureCount);
+                AssertContains(spatial, "return IsInitialized ? _activeWorldCount : 0", "Spatial audio active-source read model hides stale source counts", builder, ref failureCount);
+                AssertContains(spatial, "public bool IsListenerInsideCaveVolume => IsInitialized &&", "Spatial audio cave read model hides stale cave membership", builder, ref failureCount);
+                AssertContains(spatial, "public GraphicsBuffer AcousticRadarEnergyGridBuffer => IsInitialized", "Spatial audio radar grid buffer read model rejects stale runtimes", builder, ref failureCount);
+                AssertContains(spatialPlayAtPointResolved, "if (!IsInitialized)", "Spatial audio 3D playback entrypoint rejects stale cached services", builder, ref failureCount);
+                AssertContains(spatialPlayAtPointLowPass, "if (!IsInitialized)", "Spatial audio low-pass playback entrypoint rejects stale cached services", builder, ref failureCount);
+                AssertContains(spatialPlayStatic2D, "if (!IsInitialized)", "Spatial audio 2D playback entrypoint rejects stale cached services", builder, ref failureCount);
+                AssertContains(spatialBitCrushed2D, "if (!IsInitialized)", "Spatial audio encrypted 2D route rejects stale cached services", builder, ref failureCount);
+                AssertContains(spatialAudioEventQueue, "if (!IsAudioRuntimeReady || _audioEventQueue == null)", "Spatial audio event queue rejects non-ready runtime owners and missing queue storage", builder, ref failureCount);
+                AssertContains(spatialAudioEventQueue, "_audioEventQueue == null", "Spatial audio event queue rejects missing queue storage without publishing stale diagnostics", builder, ref failureCount);
+                AssertContains(spatialAudioEventQueue, "!TryResolveAudioEventClip(audioEvent.EventID, audioEvent.ClipHash, out _)", "Spatial audio event queue treats bad authored audio-event data as a live queue rejection", builder, ref failureCount);
+                AssertContains(spatialAudioEventQueue, "_audioEventQueueDroppedCount++", "Spatial audio event queue records live overflow and bad-data rejections as readable diagnostics", builder, ref failureCount);
+                AssertContains(spatialAudioEventQueue, "PublishAudioEventQueueDropTelemetry(_audioEventQueueOverflowContextHash", "Spatial audio event queue publishes telemetry when bounded audio-event storage is full", builder, ref failureCount);
+                AssertContains(spatialAudioEventQueue, "PublishAudioEventQueueDropTelemetry(_audioEventBadDataContextHash", "Spatial audio event queue publishes telemetry when authored audio-event data cannot resolve", builder, ref failureCount);
+                AssertContains(spatialAudioEventTelemetry, "if (lastTelemetryFrame == frame)", "Spatial audio event queue drop telemetry is frame-rate limited", builder, ref failureCount);
+                AssertContains(spatialAudioEventTelemetry, "GlobalTelemetryBus.PublishPerformanceWarning", "Spatial audio event queue drop telemetry reaches the global telemetry bus", builder, ref failureCount);
+                AssertContains(spatialAudioEventTelemetry, "math.max(1, _audioEventQueueDroppedCount)", "Spatial audio event queue telemetry reports the readable drop count", builder, ref failureCount);
+                AssertContains(spatial, "_lastAudioEventQueueOverflowTelemetryFrame = -1", "Spatial audio resets queue-overflow telemetry frame gate with queue lifecycle", builder, ref failureCount);
+                AssertContains(spatial, "_lastAudioEventBadDataTelemetryFrame = -1", "Spatial audio resets bad-data telemetry frame gate with queue lifecycle", builder, ref failureCount);
+                AssertContains(spatialPrologueQueue, "if (!IsAudioRuntimeReady)", "Spatial audio prologue queue rejects non-ready runtime owners before resolving player-critical audio", builder, ref failureCount);
+                AssertContains(spatialSoundEmissionQueue, "if (!IsAudioRuntimeReady)", "Spatial audio virtual sound-emission queue rejects non-ready runtime owners", builder, ref failureCount);
+                AssertContains(spatialHullStressQueue, "if (!IsAudioRuntimeReady", "Spatial audio hull-stress queue rejects non-ready runtime owners", builder, ref failureCount);
+                AssertContains(spatialHighSpeedQueue, "if (!IsAudioRuntimeReady", "Spatial audio high-speed impact queue rejects non-ready runtime owners", builder, ref failureCount);
+                AssertContains(spatialDelayedAudioIngress, "if (!IsAudioRuntimeReady || _delayedAudioIngress == null || _pendingDelayedAudioEvents == null)", "Spatial audio delayed-event ingress rejects non-ready runtime owners and missing ring storage", builder, ref failureCount);
+                AssertContains(spatialEnqueueVirtualVoice, "if (!IsAudioRuntimeReady)", "Spatial audio direct virtual voice enqueue rejects non-ready runtime owners", builder, ref failureCount);
+                AssertContains(spatialSetVirtualListener, "if (!IsInitialized)", "Spatial audio virtual listener mutation rejects stale cached services", builder, ref failureCount);
+                AssertContains(spatialAcousticRadarPayload, "if (!IsInitialized", "Spatial audio acoustic radar payload rejects stale cached services", builder, ref failureCount);
+                AssertContains(spatialStopAll, "if (!IsInitialized)", "Spatial audio stop-all utility does not operate on stale cached services", builder, ref failureCount);
+                AssertContains(spatialLateFrameRegister, "if (_runtimeOwnerAborted || _registeredLateFrameTickable", "Spatial audio late-frame registration rejects aborted owners", builder, ref failureCount);
                 AssertContains(spatialAudioOwnerUsable, "ReferenceEquals(audioService, null)", "Spatial audio owner usability rejects missing audio owners", builder, ref failureCount);
+                AssertContains(spatialAudioOwnerUsable, "manager._runtimeOwnerAborted", "Spatial audio owner usability rejects aborted audio owners", builder, ref failureCount);
                 AssertContains(spatialAudioOwnerUsable, "audioService is Behaviour behaviour", "Spatial audio owner usability validates MonoBehaviour-backed audio owners", builder, ref failureCount);
-                AssertContains(spatialAudioOwnerUsable, "return audioService.IsInitialized", "Spatial audio owner usability requires initialized audio service owners", builder, ref failureCount);
+                AssertContains(spatialAudioOwnerUsable, "return audioService.IsAudioRuntimeReady", "Spatial audio owner usability requires runtime-ready audio service owners", builder, ref failureCount);
                 AssertContains(spatialVirtualizationOwnerUsable, "ReferenceEquals(virtualization, null)", "Spatial audio virtualization owner usability rejects missing owners", builder, ref failureCount);
+                AssertContains(spatialVirtualizationOwnerUsable, "manager._runtimeOwnerAborted", "Spatial audio virtualization usability rejects aborted owners", builder, ref failureCount);
                 AssertContains(spatialVirtualizationOwnerUsable, "virtualization is Behaviour behaviour", "Spatial audio virtualization owner usability validates MonoBehaviour-backed owners", builder, ref failureCount);
                 AssertContains(spatialVirtualizationOwnerUsable, "return virtualization.IsVirtualizationReady", "Spatial audio virtualization owner usability requires ready virtual voice storage", builder, ref failureCount);
                 AssertContains(spatial, "public void OnGlobalRegistryServiceRebound(", "Spatial audio receives ref-forwarded service rebinds", builder, ref failureCount);
@@ -385,6 +601,185 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(spatialWindOcclusion, "GlobalRegistry.AcousticZone", "Spatial audio wind occlusion does not poll acoustic-zone registry directly", builder, ref failureCount);
             }
 
+            if (audioEventAuthoringValidator.Length > 0)
+            {
+                AssertContains(audioEventAuthoringValidator, "private const string SpatialAudioClipTableProperty = \"_audioEventClipTable\"", "Audio event authoring validator reads the runtime owner's authored clip table", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "ValidateActiveScenes(table, builder, ref failureCount, ref validatedBindingCount);", "Audio event authoring validator checks open-scene gameplay bindings", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "ValidateSceneAssetFiles(table, builder, ref failureCount, ref validatedBindingCount);", "Audio event authoring validator checks closed scene asset gameplay bindings", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "ValidatePrefabAssets(table, builder, ref failureCount, ref validatedBindingCount);", "Audio event authoring validator checks prefab gameplay bindings", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "ValidateItemDataAssets(table, builder, ref failureCount, ref validatedBindingCount);", "Audio event authoring validator checks ItemData use-audio bindings", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "AssetDatabase.FindAssets(\"t:Scene\", new[] { ProjectRoot })", "Audio event authoring validator scans serialized project scenes without relying on editor-open scene state", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "SerializedAudioEventIdYamlRegex.Matches(serializedText)", "Audio event authoring validator catches AudioEventId bindings in scene YAML", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "BuildLoadedScenePathSet()", "Audio event authoring validator avoids double-checking scenes already validated through live objects", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "if (rawEventId <= 0L)", "Audio event authoring validator treats zero as disabled/fallback instead of a runtime table lookup", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "if (!table.CanResolve(eventId))", "Audio event authoring validator rejects non-zero IDs missing from the SpatialAudioManager table", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "name.EndsWith(\"AudioEventId\", StringComparison.Ordinal)", "Audio event authoring validator follows the existing serialized AudioEventId field convention", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "Duplicate SpatialAudioManager owners in open scenes", "Audio event authoring validator models duplicate runtime audio owners", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "Duplicate SpatialAudioManager owners in project prefabs", "Audio event authoring validator rejects ambiguous prefab audio-event table owners", builder, ref failureCount);
+                AssertContains(audioEventAuthoringValidator, "ClipHash fallback would be ambiguous", "Audio event authoring validator catches duplicate table clips before stale ClipHash fallback can misresolve", builder, ref failureCount);
+            }
+
+            if (contentAuthorityBuildValidators.Length > 0)
+            {
+                AssertContains(contentAuthorityBuildValidators, "using Hecton8.Audio.Editor;", "Content authority build gate can call the audio authoring validator", builder, ref failureCount);
+                AssertContains(contentAuthorityBuildValidators, "ValidateAudioEventAuthoring();", "Content authority build gate validates authored audio event bindings", builder, ref failureCount);
+                AssertContains(contentAuthorityBuildValidators, "AudioEventAuthoringValidator.Run(out string report)", "Content authority build gate fails on audio event authoring validator failures", builder, ref failureCount);
+            }
+
+            if (hectonWorldScene.Length > 0 && spatialAudioManagerPrefab.Length > 0)
+            {
+                AssertContains(hectonWorldScene, "impactClangAudioEventId: 1", "World soundscape impact clang uses the first authored spatial audio event ID", builder, ref failureCount);
+                AssertContains(spatialAudioManagerPrefab, "_audioEventClipTable:", "Spatial audio manager prefab persists the authored audio event clip table", builder, ref failureCount);
+                AssertContains(spatialAudioManagerPrefab, "guid: 9010b0eebab70e6489757621a76e09f2", "Spatial audio event slot 1 binds the first-party hard-surface impact clip", builder, ref failureCount);
+                AssertContains(spatialAudioManagerPrefab, "guid: ea91f2c240a0ee64d95f2fddc5af1ebd", "Spatial audio event slot 2 binds the first-party mechanical servo clip", builder, ref failureCount);
+            }
+
+            if (seafloorDrillItem.Length > 0 && playerAction.Length > 0 && spatialAudioManagerPrefab.Length > 0)
+            {
+                string actionCompletion = ExtractMethodBody(playerAction, "private void PlayCompletionSound(");
+                string actionComplete = ExtractMethodBody(playerAction, "private void CompleteAction()");
+                string actionFlush = ExtractMethodBody(playerAction, "private void FlushQueuedActionAudio()");
+                string actionInitialize = ExtractMethodBody(playerAction, "public void InitializeService()");
+                string actionStart = ExtractMethodBody(playerAction, "public bool StartAction(ItemData item, int anchorX, int anchorY)");
+                string actionCanUseAnchor = ExtractMethodBody(playerAction, "private bool CanUseInventoryAnchor(");
+                string actionCanApplyConsumableEffects = ExtractMethodBody(playerAction, "private bool CanApplyConsumableEffects(");
+                string actionDuplicateAbort = ExtractMethodBody(playerAction, "private void AbortDuplicateRuntimeOwner()");
+                AssertContains(seafloorDrillItem, "useAudioEventId: 2", "Seafloor drill item authoring binds completion feedback to the second spatial audio event ID", builder, ref failureCount);
+                AssertContains(playerAction, "IServiceHeartbeat, IServiceShutdown", "Player action controller exposes service heartbeat and shutdown contracts for bootstrap lifecycle", builder, ref failureCount);
+                AssertContains(playerAction, "ReferenceEquals(GlobalRegistry.PlayerActions, this)", "Player action readiness requires active registry ownership", builder, ref failureCount);
+                AssertContains(playerAction, "public static PlayerActionController EnsureRuntimeInstance()", "Player action controller has a deterministic bootstrap runtime factory", builder, ref failureCount);
+                AssertContains(playerAction, "new GameObject(\"[PlayerActionController]\")", "Player action controller creates a named bootstrap-owned runtime root when scene authoring omits it", builder, ref failureCount);
+                AssertContains(actionInitialize, "if (!TryRegisterService())", "Player action controller initialization verifies registry ownership before readiness", builder, ref failureCount);
+                AssertContains(actionInitialize, "_isInitialized = true", "Player action controller only reports ready after service registration", builder, ref failureCount);
+                AssertContains(playerAction, "ReferenceEquals(GlobalRegistry.PlayerActions, controller)", "Player action runtime usability rejects stale service handles after registry replacement", builder, ref failureCount);
+                AssertContains(playerAction, "case GlobalRegistryServiceSlot.Player:", "Player action controller listens for player runtime-context replacement", builder, ref failureCount);
+                AssertContains(playerAction, "CachePlayerRuntimeContext(GlobalRegistry.Player ?? PlayerRuntimeContextService.ActiveRuntimeContext)", "Player action controller cold-caches the authoritative player context owner", builder, ref failureCount);
+                AssertContains(playerAction, "_cachedTransform = playerRuntimeContext.PlayerTransform", "Player action controller binds completion audio position to the player transform", builder, ref failureCount);
+                AssertContains(playerAction, "_toolManager = playerRuntimeContext.ToolManager", "Player action controller binds interrupt checks to the player tool manager", builder, ref failureCount);
+                AssertContains(playerAction, "_survivalSystem = playerRuntimeContext.SurvivalSystem", "Player action controller binds consumable effects to the player survival system", builder, ref failureCount);
+                AssertContains(playerAction, "playerRuntimeContext.PlayerObject != null", "Player action controller rejects unbound player context owners", builder, ref failureCount);
+                AssertContains(playerAction, "ClearPlayerOwnedReferences();", "Player action controller clears stale player-owned handles when context disappears", builder, ref failureCount);
+                AssertContains(actionStart, "if (!CanUseInventoryAnchor(anchorX, anchorY, item)) return false", "Player action start rejects stale inventory anchors before timed use begins", builder, ref failureCount);
+                AssertContains(actionStart, "if (!CanApplyConsumableEffects(item)) return false", "Player action start rejects effectful consumables when the survival owner is missing", builder, ref failureCount);
+                AssertContains(actionStart, "PublishActionCompleted(item, anchorX, anchorY);", "Player action instant branch still publishes completion signals for UI and telemetry consumers", builder, ref failureCount);
+                AssertContains(actionCanUseAnchor, "IPlayerInventoryService inventoryService = _playerInventoryService", "Player action stale-anchor guard uses the registry-owned inventory service", builder, ref failureCount);
+                AssertContains(actionCanUseAnchor, "inventory.GetItemHashAt(anchorX, anchorY) == expectedHash", "Player action stale-anchor guard verifies the selected anchor still points at the expected item", builder, ref failureCount);
+                AssertContains(actionComplete, "RefreshPlayerOwnedReferencesCold();", "Player action completion refreshes player-owned references before inventory removal and consumable effects", builder, ref failureCount);
+                AssertTextBefore(actionComplete, "if (!CanApplyConsumableEffects(completedItem))", "TryRemoveItemFromInventory(anchorX, anchorY, completedItem)", "Player action completion revalidates the survival owner before removing an effectful consumable", builder, ref failureCount);
+                AssertContains(actionCanApplyConsumableEffects, "!ConsumableItem.HasAnyEffect(item)", "Player action effect-owner guard allows effectless authored actions without requiring survival state", builder, ref failureCount);
+                AssertContains(actionCanApplyConsumableEffects, "_survivalSystem != null", "Player action effect-owner guard requires a live survival owner before effectful consumable removal", builder, ref failureCount);
+                AssertContains(actionDuplicateAbort, "Destroy(this);", "Player action duplicate-owner abort destroys only the duplicate component", builder, ref failureCount);
+                AssertNotContains(playerAction, "Destroy(gameObject)", "Player action duplicate-owner abort cannot destroy an authored player root", builder, ref failureCount);
+                AssertContains(actionCompletion, "uint eventId = item.UseAudioEventId", "Player action completion reads item-authored audio event IDs", builder, ref failureCount);
+                AssertContains(actionFlush, "if (audioService.QueueAudioEvent(in audioEvent))", "Player action completion uses the queued spatial audio event path before clip fallback", builder, ref failureCount);
+                AssertContains(spatialAudioManagerPrefab, "guid: ea91f2c240a0ee64d95f2fddc5af1ebd", "Seafloor drill authored event ID resolves through the runtime owner's clip table", builder, ref failureCount);
+            }
+
+            if (pdaInventoryTab.Length > 0)
+            {
+                string pdaUseSelectedItem = ExtractMethodBody(pdaInventoryTab, "internal void UseSelectedItem()");
+                string pdaRouteUse = ExtractMethodBody(pdaInventoryTab, "private static bool ShouldRouteUseThroughPlayerAction(");
+                string pdaStartPlayerAction = ExtractMethodBody(pdaInventoryTab, "private bool TryStartSelectedPlayerAction(");
+                AssertContains(pdaUseSelectedItem, "ShouldRouteUseThroughPlayerAction(_selectedItem)", "PDA inventory use routes timed/audio-authored consumables through the player action runtime before direct inventory consume", builder, ref failureCount);
+                AssertTextBefore(pdaUseSelectedItem, "ShouldRouteUseThroughPlayerAction(_selectedItem)", "playerInventory.ConsumeOneItem(_selectedX, _selectedY)", "PDA inventory does not bypass delayed/audio-authored consumables with direct instant consume", builder, ref failureCount);
+                AssertContains(pdaRouteUse, "item.UseDuration > 0f", "PDA inventory routes timed consumables through the runtime action bridge", builder, ref failureCount);
+                AssertContains(pdaRouteUse, "item.UseAudioEventId != 0u", "PDA inventory routes authored audio-event consumables through the runtime action bridge", builder, ref failureCount);
+                AssertContains(pdaRouteUse, "ConsumableItem.HasAnyEffect(item)", "PDA inventory routes instant effectful consumables through the runtime action owner instead of direct inventory removal", builder, ref failureCount);
+                AssertContains(pdaStartPlayerAction, "PlayerActionController playerActions = GlobalRegistry.PlayerActions", "PDA inventory resolves the player action source of truth from GlobalRegistry", builder, ref failureCount);
+                AssertContains(pdaStartPlayerAction, "playerActions == null || !playerActions.IsInitialized", "PDA inventory exposes missing or unready player action runtime instead of silently consuming authored actions", builder, ref failureCount);
+                AssertContains(pdaStartPlayerAction, "playerActions.IsActionInProgress", "PDA inventory rejects repeated consume clicks while a runtime player action is already active", builder, ref failureCount);
+                AssertContains(pdaStartPlayerAction, "playerActions.StartAction(item, _selectedX, _selectedY)", "PDA inventory passes the selected inventory anchor into the delayed action runtime for atomic completion removal", builder, ref failureCount);
+                AssertContains(pdaUseSelectedItem, "RefreshSelectionAfterUse();", "PDA inventory refreshes selection after both runtime-action and legacy instant consume paths", builder, ref failureCount);
+            }
+
+            if (actionProgressHud.Length > 0 && suitHudCanvasPrefab.Length > 0 && suitHudOverlay.Length > 0)
+            {
+                string actionHudAwake = ExtractMethodBody(actionProgressHud, "private void Awake()");
+                string actionHudFallback = ExtractMethodBody(actionProgressHud, "private void EnsureFallbackWidgetsCold()");
+                string actionHudProgressFactory = ExtractMethodBody(actionProgressHud, "private Image CreateFallbackProgressImageCold(");
+                string actionHudTextFactory = ExtractMethodBody(actionProgressHud, "private TMPro.TMP_Text CreateFallbackActionTextCold(");
+                string actionHudProcessSignals = ExtractMethodBody(actionProgressHud, "private void ProcessPlayerActionSignals()");
+                string actionHudTerminalDrop = ExtractMethodBody(actionProgressHud, "private bool HasUnhandledTerminalActionSignalDrop()");
+                string suitHudEnsureHierarchy = ExtractMethodBody(suitHudOverlay, "private void EnsureHierarchy()");
+                string suitHudActionBinding = ExtractMethodBody(suitHudOverlay, "private void EnsureActionProgressHudBinding(");
+                AssertContains(suitHudCanvasPrefab, "m_Name: ActionProgressHUD", "Suit HUD prefab binds the delayed player action progress widget into the live HUD canvas", builder, ref failureCount);
+                AssertContains(suitHudCanvasPrefab, "guid: 989447ed0d959474097462d37ec3077c", "Suit HUD prefab owns an ActionProgressHUD component, not just an unbound source script", builder, ref failureCount);
+                AssertContains(suitHudCanvasPrefab, "m_Father: {fileID: 7761531992116127932}", "Action progress HUD is parented under HUD_V4_CanvasRoot instead of the whole-canvas alpha owner", builder, ref failureCount);
+                AssertContains(suitHudOverlay, "private const string ActionProgressHudName = \"ActionProgressHUD\"", "Suit HUD overlay has a stable runtime binding name for the action progress widget", builder, ref failureCount);
+                AssertContains(suitHudEnsureHierarchy, "EnsureActionProgressHudBinding(_root);", "Suit HUD overlay restores action progress HUD binding during live hierarchy rebuilds", builder, ref failureCount);
+                AssertContains(suitHudActionBinding, "FindChildRect(parent, ActionProgressHudName)", "Suit HUD action progress binding reuses authored children before creating runtime fallbacks", builder, ref failureCount);
+                AssertContains(suitHudActionBinding, "AddComponent<ActionProgressHUD>()", "Suit HUD action progress binding creates the runtime progress widget when authoring omits it", builder, ref failureCount);
+                AssertContains(suitHudActionBinding, "canvasGroup.blocksRaycasts = false", "Suit HUD action progress binding cannot intercept gameplay/UI input", builder, ref failureCount);
+                AssertContains(actionHudAwake, "EnsureFallbackWidgetsCold();", "Action progress HUD builds missing visual references during cold lifecycle", builder, ref failureCount);
+                AssertContains(actionHudFallback, "progressImage = CreateFallbackProgressImageCold(root)", "Action progress HUD creates a fallback radial fill when prefab refs are intentionally empty", builder, ref failureCount);
+                AssertContains(actionHudFallback, "actionText = CreateFallbackActionTextCold(root)", "Action progress HUD creates a fallback label when prefab refs are intentionally empty", builder, ref failureCount);
+                AssertContains(actionHudProgressFactory, "Image.Type.Filled", "Action progress fallback fill uses Unity's radial filled-image path", builder, ref failureCount);
+                AssertContains(actionHudTextFactory, "TextMeshProUGUI", "Action progress fallback label uses the runtime TMP text component", builder, ref failureCount);
+                AssertContains(actionHudProcessSignals, "SignalBus<PlayerActionProgressSignal>.GetFrameSnapshot()", "Action progress HUD consumes player action progress signals", builder, ref failureCount);
+                AssertContains(actionHudProcessSignals, "SignalBus<PlayerActionCompletedSignal>.GetFrameSnapshot()", "Action progress HUD consumes player action completion signals", builder, ref failureCount);
+                AssertContains(actionHudProcessSignals, "SignalBus<PlayerActionCancelledSignal>.GetFrameSnapshot()", "Action progress HUD consumes player action cancellation signals", builder, ref failureCount);
+                AssertContains(actionHudProcessSignals, "HasUnhandledTerminalActionSignalDrop()", "Action progress HUD checks terminal lane drops when no terminal action signal survived the frame", builder, ref failureCount);
+                AssertContains(actionHudTerminalDrop, "SignalBus<PlayerActionCompletedSignal>.DroppedLastFlush", "Action progress HUD detects dropped terminal completion signals instead of leaving progress stuck visible", builder, ref failureCount);
+                AssertContains(actionHudTerminalDrop, "SignalBus<PlayerActionCancelledSignal>.DroppedLastFlush", "Action progress HUD detects dropped terminal cancellation signals instead of leaving progress stuck visible", builder, ref failureCount);
+                AssertContains(actionHudTerminalDrop, "completedGeneration != _lastCompletedDropGeneration", "Action progress HUD gates completion drop fallback by snapshot generation so stale drops do not hide future actions", builder, ref failureCount);
+                AssertContains(actionHudTerminalDrop, "cancelledGeneration != _lastCancelledDropGeneration", "Action progress HUD gates cancellation drop fallback by snapshot generation so stale drops do not hide future actions", builder, ref failureCount);
+                AssertContains(actionProgressHud, "private void HandleTerminalActionSignalDrop()", "Action progress HUD has a consumer-side terminal-signal drop fallback for queue-full failure cases", builder, ref failureCount);
+            }
+
+            if (sabineReverbDspTunerWindow.Length > 0)
+            {
+                string sabineOnGui = ExtractMethodBody(sabineReverbDspTunerWindow, "private void OnGUI()");
+                string sabineSceneGui = ExtractMethodBody(sabineReverbDspTunerWindow, "private void OnSceneGui(");
+                string sabinePull = ExtractMethodBody(sabineReverbDspTunerWindow, "private void PullFromRuntime()");
+                string sabinePublish = ExtractMethodBody(sabineReverbDspTunerWindow, "private void PublishToRuntime()");
+                string sabineResolve = ExtractMethodBody(sabineReverbDspTunerWindow, "private static SpatialAudioManager ResolveSpatialAudioManager(");
+                string sabineUsable = ExtractMethodBody(sabineReverbDspTunerWindow, "private static bool IsSpatialAudioManagerUsable(");
+                AssertContains(sabineOnGui, "SpatialAudioManager statusManager = ResolveSpatialAudioManager(false)", "Sabine tuner status may inspect raw spatial-audio owner state", builder, ref failureCount);
+                AssertContains(sabineOnGui, "statusManager.IsSpatialAudioRuntimeReady", "Sabine tuner status reports registered spatial-audio readiness", builder, ref failureCount);
+                AssertContains(sabineSceneGui, "SpatialAudioManager manager = ResolveSpatialAudioManager()", "Sabine tuner scene gizmos resolve only ready spatial-audio owners", builder, ref failureCount);
+                AssertContains(sabinePull, "SpatialAudioManager manager = ResolveSpatialAudioManager()", "Sabine tuner stats read only ready spatial-audio owners", builder, ref failureCount);
+                AssertContains(sabinePull, "_proceduralAudioSignalDropCount = ProceduralAudioEvents.DirectSignalPushDroppedCount", "Sabine tuner reads procedural typed-lane producer drops before spatial-owner gating", builder, ref failureCount);
+                AssertContains(sabinePull, "_droppedAudioEventCount = 0", "Sabine tuner clears queue-drop diagnostics when the ready spatial-audio owner disappears", builder, ref failureCount);
+                AssertContains(sabinePull, "_droppedAudioEventCount = manager.DroppedAudioEventCount", "Sabine tuner reads bounded audio-event queue drops from the ready spatial-audio owner", builder, ref failureCount);
+                AssertContains(sabinePublish, "SpatialAudioManager manager = ResolveSpatialAudioManager()", "Sabine tuner tuning writes only ready spatial-audio owners", builder, ref failureCount);
+                AssertContains(sabineReverbDspTunerWindow, "Dropped Audio Events", "Sabine tuner surfaces bounded audio-event queue drops in live diagnostics", builder, ref failureCount);
+                AssertContains(sabineReverbDspTunerWindow, "Procedural Signal Drops", "Sabine tuner surfaces procedural typed-lane producer drops in live diagnostics", builder, ref failureCount);
+                AssertContains(sabineResolve, "SpatialAudioManager registeredManager = GlobalRegistry.Audio as SpatialAudioManager", "Sabine tuner resolves the registered spatial-audio owner first", builder, ref failureCount);
+                AssertContains(sabineResolve, "if (IsSpatialAudioManagerUsable(registeredManager, requireReady))", "Sabine tuner validates the registered spatial-audio owner before use", builder, ref failureCount);
+                AssertContains(sabineResolve, "return IsSpatialAudioManagerUsable(sceneManager, requireReady) ? sceneManager : null", "Sabine tuner validates scene fallback spatial-audio owner before use", builder, ref failureCount);
+                AssertContains(sabineUsable, "requireReady ? manager.IsSpatialAudioRuntimeReady : manager.isActiveAndEnabled", "Sabine tuner separates mutable ready-owner access from raw status access", builder, ref failureCount);
+                AssertNotContains(sabineSceneGui, "ResolveSpatialAudioManager(false)", "Sabine tuner scene gizmos do not use raw spatial-audio status resolution", builder, ref failureCount);
+                AssertNotContains(sabinePull, "ResolveSpatialAudioManager(false)", "Sabine tuner stats do not use raw spatial-audio status resolution", builder, ref failureCount);
+                AssertNotContains(sabinePublish, "ResolveSpatialAudioManager(false)", "Sabine tuner tuning writes do not use raw spatial-audio status resolution", builder, ref failureCount);
+            }
+
+            if (abyssalAcousticsTunerWindow.Length > 0)
+            {
+                string acousticsPull = ExtractMethodBody(abyssalAcousticsTunerWindow, "private void PullFromRuntime()");
+                string acousticsPublish = ExtractMethodBody(abyssalAcousticsTunerWindow, "private void PublishToRuntime()");
+                string acousticsReload = ExtractMethodBody(abyssalAcousticsTunerWindow, "private void ReloadMaterialCsv()");
+                string acousticsStats = ExtractMethodBody(abyssalAcousticsTunerWindow, "private void RefreshStatsLabel()");
+                string acousticsResolve = ExtractMethodBody(abyssalAcousticsTunerWindow, "private static SpatialAudioManager ResolveSpatialAudioManager(");
+                string acousticsUsable = ExtractMethodBody(abyssalAcousticsTunerWindow, "private static bool IsSpatialAudioManagerUsable(");
+                AssertContains(acousticsStats, "SpatialAudioManager statusManager = ResolveSpatialAudioManager(false)", "Abyssal acoustics tuner status may inspect raw spatial-audio owner state", builder, ref failureCount);
+                AssertContains(acousticsStats, "statusManager.IsSpatialAudioRuntimeReady", "Abyssal acoustics tuner status reports registered spatial-audio readiness", builder, ref failureCount);
+                AssertContains(acousticsStats, "\" | Event drops \" + _droppedAudioEventCount", "Abyssal acoustics tuner surfaces bounded audio-event queue drops in live diagnostics", builder, ref failureCount);
+                AssertContains(acousticsStats, "\" | Signal drops \" + _proceduralAudioSignalDropCount", "Abyssal acoustics tuner surfaces procedural typed-lane producer drops in live diagnostics", builder, ref failureCount);
+                AssertContains(acousticsPull, "SpatialAudioManager manager = ResolveSpatialAudioManager()", "Abyssal acoustics tuner stats read only ready spatial-audio owners", builder, ref failureCount);
+                AssertContains(acousticsPull, "_proceduralAudioSignalDropCount = ProceduralAudioEvents.DirectSignalPushDroppedCount", "Abyssal acoustics tuner reads procedural typed-lane producer drops before spatial-owner gating", builder, ref failureCount);
+                AssertContains(acousticsPull, "_droppedAudioEventCount = 0", "Abyssal acoustics tuner clears queue-drop diagnostics when the ready spatial-audio owner disappears", builder, ref failureCount);
+                AssertContains(acousticsPull, "_droppedAudioEventCount = manager.DroppedAudioEventCount", "Abyssal acoustics tuner reads bounded audio-event queue drops from the ready spatial-audio owner", builder, ref failureCount);
+                AssertContains(acousticsPublish, "SpatialAudioManager manager = ResolveSpatialAudioManager()", "Abyssal acoustics tuner tuning writes only ready spatial-audio owners", builder, ref failureCount);
+                AssertContains(acousticsReload, "SpatialAudioManager manager = ResolveSpatialAudioManager()", "Abyssal acoustics tuner material CSV reloads only ready spatial-audio owners", builder, ref failureCount);
+                AssertContains(acousticsResolve, "SpatialAudioManager registeredManager = GlobalRegistry.Audio as SpatialAudioManager", "Abyssal acoustics tuner resolves the registered spatial-audio owner first", builder, ref failureCount);
+                AssertContains(acousticsResolve, "if (IsSpatialAudioManagerUsable(registeredManager, requireReady))", "Abyssal acoustics tuner validates the registered spatial-audio owner before use", builder, ref failureCount);
+                AssertContains(acousticsResolve, "return IsSpatialAudioManagerUsable(sceneManager, requireReady) ? sceneManager : null", "Abyssal acoustics tuner validates scene fallback spatial-audio owner before use", builder, ref failureCount);
+                AssertContains(acousticsUsable, "requireReady ? manager.IsSpatialAudioRuntimeReady : manager.isActiveAndEnabled", "Abyssal acoustics tuner separates mutable ready-owner access from raw status access", builder, ref failureCount);
+                AssertNotContains(acousticsPull, "ResolveSpatialAudioManager(false)", "Abyssal acoustics tuner stats do not use raw spatial-audio status resolution", builder, ref failureCount);
+                AssertNotContains(acousticsPublish, "ResolveSpatialAudioManager(false)", "Abyssal acoustics tuner tuning writes do not use raw spatial-audio status resolution", builder, ref failureCount);
+                AssertNotContains(acousticsReload, "ResolveSpatialAudioManager(false)", "Abyssal acoustics tuner material CSV reload does not use raw spatial-audio status resolution", builder, ref failureCount);
+            }
+
             if (occlusion.Length > 0)
             {
                 AssertNotContains(occlusion, "Acoustic" + "CinematicOcclusionResult", "Stale cinematic voxel occlusion payload is absent", builder, ref failureCount);
@@ -407,6 +802,7 @@ namespace Hecton8.Audio.Editor
                 string rendererEnsureQuality = ExtractMethodBody(renderer, "private void EnsureAudioQualityPolicyCached()");
                 string rendererColdQuality = ExtractMethodBody(renderer, "private void RefreshAudioQualityPolicyCold()");
                 string rendererRuntimeRegister = ExtractMethodBody(renderer, "private bool TryRegisterRuntimeService()");
+                string rendererAbort = ExtractMethodBody(renderer, "private void AbortDuplicateRuntimeOwner()");
                 string rendererRuntimeUnregister = ExtractMethodBody(renderer, "private void TryUnregisterRuntimeService()");
                 string rendererKineticAudioService = ExtractMethodBody(renderer, "private IAudioService ResolveKineticImpactAudioService()");
                 string rendererSpatialAudioService = ExtractMethodBody(renderer, "private SpatialAudioManager ResolveSpatialAudioManager()");
@@ -499,10 +895,15 @@ namespace Hecton8.Audio.Editor
                 AssertContains(rendererRuntimeRegister, "!ReferenceEquals(registeredInstance, null)", "Critical renderer detects stale destroyed registry references by actual reference", builder, ref failureCount);
                 AssertContains(rendererRuntimeRegister, "!ReferenceEquals(registeredInstance, this)", "Critical renderer treats only other owners as registry conflicts", builder, ref failureCount);
                 AssertContains(rendererRuntimeRegister, "if (IsPlayerCriticalAudioRuntimeUsable(registeredInstance))", "Critical renderer preserves usable existing runtime owners", builder, ref failureCount);
-                AssertContains(rendererRuntimeRegister, "Destroy(this);", "Critical renderer destroys duplicate components only when the existing owner is usable", builder, ref failureCount);
+                AssertContains(rendererRuntimeRegister, "AbortDuplicateRuntimeOwner();", "Critical renderer duplicate-owner registration routes through explicit abort cleanup", builder, ref failureCount);
+                AssertContains(rendererAbort, "_runtimeOwnerAborted = true", "Critical renderer abort cleanup latches aborted state", builder, ref failureCount);
+                AssertContains(rendererAbort, "Destroy(this);", "Critical renderer destroys duplicate components only after abort cleanup", builder, ref failureCount);
                 AssertContains(rendererRuntimeRegister, "GlobalRegistry.UnregisterPlayerCriticalAudioRuntime(registeredInstance);", "Critical renderer clears stale existing owners before registering", builder, ref failureCount);
                 AssertTextBefore(rendererRuntimeRegister, "GlobalRegistry.UnregisterPlayerCriticalAudioRuntime(registeredInstance);", "GlobalRegistry.RegisterPlayerCriticalAudioRuntime(this);", "Critical renderer unregisters stale owners before self-register", builder, ref failureCount);
-                AssertContains(renderer, "return renderer != null && renderer.isActiveAndEnabled", "Critical renderer owner usability rejects destroyed or disabled owners", builder, ref failureCount);
+                AssertContains(renderer, "renderer._runtimeRegistered", "Critical renderer owner usability validates registration state", builder, ref failureCount);
+                AssertContains(renderer, "renderer.isActiveAndEnabled", "Critical renderer owner usability rejects destroyed or disabled owners", builder, ref failureCount);
+                AssertContains(renderer, "!renderer._runtimeOwnerAborted", "Critical renderer owner usability rejects aborted runtimes", builder, ref failureCount);
+                AssertContains(renderer, "if (!Application.isPlaying)", "Critical renderer stale-owner gate is inert outside play mode", builder, ref failureCount);
                 AssertContains(rendererRuntimeUnregister, "Volatile.Write(ref s_runtimeInstalled, GlobalRegistry.PlayerCriticalAudio != null ? 1 : 0)", "Critical renderer unregister refreshes runtime-installed flag from cold registry state", builder, ref failureCount);
                 AssertNotContains(renderer, "IScalability" + "ChangedEventListener", "Critical renderer has no legacy scalability listener interface", builder, ref failureCount);
                 AssertNotContains(renderer, "ScalabilityEvents." + "Register(this)", "Critical renderer does not subscribe to scalability listener queues", builder, ref failureCount);
@@ -527,15 +928,20 @@ namespace Hecton8.Audio.Editor
                 AssertContains(rendererStaleAudioServices, "AudioServiceLookupRetryFrames", "Critical renderer stale audio-service refresh is cadence-gated", builder, ref failureCount);
                 AssertContains(rendererStaleAudioServices, "GlobalRegistry.Audio", "Critical renderer stale audio-service refresh owns the bounded registry read", builder, ref failureCount);
                 AssertContains(rendererAudioRuntimeCache, "bool isUsable = IsAudioServiceUsable(audioService)", "Critical renderer stores spatial audio read-models only from usable audio services", builder, ref failureCount);
+                AssertContains(rendererAudioRuntimeCache, "_cachedAudioService = isUsable ? audioService : null", "Critical renderer keeps the owning audio service with dependent read-models", builder, ref failureCount);
                 AssertContains(rendererAudioRuntimeCache, "_spatialAudioListenerCaveReadModel = isUsable ? audioService as ISpatialAudioListenerCaveReadModel : null", "Critical renderer cave read-model cache is gated by usable audio service", builder, ref failureCount);
                 AssertContains(rendererAudioRuntimeCache, "_spatialAudioBinauralEmitterReadModel = isUsable ? audioService as ISpatialAudioBinauralEmitterReadModel : null", "Critical renderer binaural read-model cache is gated by usable audio service", builder, ref failureCount);
-                AssertContains(rendererCaveReadModelResolver, "if (IsAudioRuntimeObjectUsable(readModel))", "Critical renderer cave read-model resolver rejects stale Unity-backed runtimes", builder, ref failureCount);
+                AssertContains(rendererCaveReadModelResolver, "IAudioService audioService = _cachedAudioService", "Critical renderer cave read-model resolver starts from its cached audio owner", builder, ref failureCount);
+                AssertContains(rendererCaveReadModelResolver, "if (ReferenceEquals(readModel, audioService) && IsAudioRuntimeObjectUsable(readModel))", "Critical renderer cave read-model must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(rendererCaveReadModelResolver, "_spatialAudioListenerCaveReadModel = readModel", "Critical renderer cave read-model resolver refreshes dependent cached read-model field", builder, ref failureCount);
                 AssertContains(rendererCaveReadModelResolver, "_spatialAudioListenerCaveReadModel = null", "Critical renderer clears stale cave read-model references", builder, ref failureCount);
-                AssertContains(rendererBinauralReadModelResolver, "if (IsAudioRuntimeObjectUsable(readModel))", "Critical renderer binaural read-model resolver rejects stale Unity-backed runtimes", builder, ref failureCount);
+                AssertContains(rendererBinauralReadModelResolver, "IAudioService audioService = _cachedAudioService", "Critical renderer binaural read-model resolver starts from its cached audio owner", builder, ref failureCount);
+                AssertContains(rendererBinauralReadModelResolver, "if (ReferenceEquals(readModel, audioService) && IsAudioRuntimeObjectUsable(readModel))", "Critical renderer binaural read-model must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(rendererBinauralReadModelResolver, "_spatialAudioBinauralEmitterReadModel = readModel", "Critical renderer binaural read-model resolver refreshes dependent cached read-model field", builder, ref failureCount);
                 AssertContains(rendererBinauralReadModelResolver, "_spatialAudioBinauralEmitterReadModel = null", "Critical renderer clears stale binaural read-model references", builder, ref failureCount);
-                AssertContains(rendererAudioUsable, "audioService == null || !audioService.IsInitialized", "Critical renderer validates audio service initialization before spatial read-model caching", builder, ref failureCount);
+                AssertContains(rendererAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Critical renderer validates audio runtime readiness before spatial read-model caching", builder, ref failureCount);
                 AssertContains(rendererAudioUsable, "return IsAudioRuntimeObjectUsable(audioService)", "Critical renderer reuses Unity object activity validation for audio services", builder, ref failureCount);
-                AssertContains(rendererAudioObjectUsable, "runtime is IAudioService audioService && !audioService.IsInitialized", "Critical renderer rejects deinitialized cached audio runtime interfaces", builder, ref failureCount);
+                AssertContains(rendererAudioObjectUsable, "runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Critical renderer rejects non-ready cached audio runtime interfaces", builder, ref failureCount);
                 AssertContains(rendererAudioObjectUsable, "runtime is Behaviour behaviour", "Critical renderer validates MonoBehaviour-backed audio runtime activity", builder, ref failureCount);
                 AssertContains(rendererAudioObjectUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Critical renderer rejects destroyed or disabled audio runtimes", builder, ref failureCount);
                 AssertNotContains(rendererKineticAudioService, "GlobalRegistry.Audio", "Critical renderer low-tier fallback resolver does not poll audio registry directly", builder, ref failureCount);
@@ -554,6 +960,38 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "ResolveSubmarineHullReadModel()", "Structural audio stress uses a bounded hull read-model resolver", builder, ref failureCount);
                 AssertContains(renderer, "ResolveCachedBiomeId()", "Low-tier biome reverb uses cached biome policy", builder, ref failureCount);
                 AssertNotContains(renderer, "OnAudioFilterRead", "Critical renderer has no managed Unity audio callback fallback", builder, ref failureCount);
+            }
+
+            if (abyssalDspTunerWindow.Length > 0)
+            {
+                string abyssalEditorUpdate = ExtractMethodBody(abyssalDspTunerWindow, "private void OnEditorUpdate()");
+                string abyssalPublish = ExtractMethodBody(abyssalDspTunerWindow, "private void PublishToRuntime()");
+                string abyssalResolve = ExtractMethodBody(abyssalDspTunerWindow, "private static PlayerCriticalProceduralAudioRenderer ResolveRenderer(");
+                string abyssalUsable = ExtractMethodBody(abyssalDspTunerWindow, "private static bool IsRendererUsable(");
+                AssertContains(renderer, "public bool IsPlayerCriticalAudioRuntimeReady => IsPlayerCriticalAudioRuntimeUsable(this)", "Critical renderer exposes owner readiness to editor tooling", builder, ref failureCount);
+                AssertContains(abyssalEditorUpdate, "PlayerCriticalProceduralAudioRenderer renderer = ResolveRenderer(false)", "Abyssal DSP tuner status may inspect raw renderer state", builder, ref failureCount);
+                AssertContains(abyssalEditorUpdate, "bool readyOwner = hasRenderer && renderer.IsPlayerCriticalAudioRuntimeReady", "Abyssal DSP tuner reports registered renderer readiness", builder, ref failureCount);
+                AssertContains(abyssalEditorUpdate, "bool hasScope = readyOwner && renderer.TryCopyLatestGranularOscilloscope", "Abyssal DSP tuner reads oscilloscope telemetry only from ready owners", builder, ref failureCount);
+                AssertContains(abyssalPublish, "PlayerCriticalProceduralAudioRenderer renderer = ResolveRenderer()", "Abyssal DSP tuner publishes tuning only through ready renderer owners", builder, ref failureCount);
+                AssertContains(abyssalResolve, "if (IsRendererUsable(registeredRenderer, requireReady))", "Abyssal DSP tuner validates registered renderer before use", builder, ref failureCount);
+                AssertContains(abyssalResolve, "return IsRendererUsable(sceneRenderer, requireReady) ? sceneRenderer : null", "Abyssal DSP tuner validates scene fallback renderer before use", builder, ref failureCount);
+                AssertContains(abyssalUsable, "requireReady ? renderer.IsPlayerCriticalAudioRuntimeReady : renderer.isActiveAndEnabled", "Abyssal DSP tuner separates mutable ready-owner access from raw status access", builder, ref failureCount);
+                AssertNotContains(abyssalPublish, "ResolveRenderer(false)", "Abyssal DSP tuner tuning writes do not use raw renderer status resolution", builder, ref failureCount);
+            }
+
+            if (granularSynthTunerWindow.Length > 0)
+            {
+                string granularPublish = ExtractMethodBody(granularSynthTunerWindow, "private void PublishToRenderer(");
+                string granularScope = ExtractMethodBody(granularSynthTunerWindow, "private void DrawOscilloscope()");
+                string granularResolve = ExtractMethodBody(granularSynthTunerWindow, "private static PlayerCriticalProceduralAudioRenderer ResolveRenderer(");
+                string granularUsable = ExtractMethodBody(granularSynthTunerWindow, "private static bool IsRendererUsable(");
+                AssertContains(granularPublish, "PlayerCriticalProceduralAudioRenderer renderer = ResolveRenderer()", "Granular synth tuner publishes tuning only through ready renderer owners", builder, ref failureCount);
+                AssertContains(granularScope, "EditorApplication.isPlaying ? ResolveRenderer() : null", "Granular synth tuner oscilloscope reads only ready renderer owners during play", builder, ref failureCount);
+                AssertContains(granularResolve, "if (IsRendererUsable(registeredRenderer, requireReady))", "Granular synth tuner validates registered renderer before use", builder, ref failureCount);
+                AssertContains(granularResolve, "return IsRendererUsable(sceneRenderer, requireReady) ? sceneRenderer : null", "Granular synth tuner validates scene fallback renderer before use", builder, ref failureCount);
+                AssertContains(granularUsable, "requireReady ? renderer.IsPlayerCriticalAudioRuntimeReady : renderer.isActiveAndEnabled", "Granular synth tuner resolves mutable renderer access through owner readiness", builder, ref failureCount);
+                AssertNotContains(granularPublish, "ResolveRenderer(false)", "Granular synth tuner tuning writes do not use raw renderer status resolution", builder, ref failureCount);
+                AssertNotContains(granularScope, "ResolveRenderer(false)", "Granular synth tuner oscilloscope does not read raw renderer status fallback", builder, ref failureCount);
             }
 
             if (synthesis.Length > 0)
@@ -636,6 +1074,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(dynamicAudioCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Dynamic music synth stores only usable audio services", builder, ref failureCount);
                 AssertContains(dynamicAudioResolver, "if (IsAudioServiceUsable(audioService))", "Dynamic music synth resolves cached audio services only while usable", builder, ref failureCount);
                 AssertContains(dynamicAudioResolver, "_cachedAudioService = null", "Dynamic music synth clears stale audio-service references", builder, ref failureCount);
+                AssertContains(dynamicAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Dynamic music synth rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(dynamicAudioUsable, "audioService is Behaviour behaviour", "Dynamic music synth validates MonoBehaviour-backed audio service activity", builder, ref failureCount);
                 AssertContains(dynamicAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Dynamic music synth rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(dynamicMixerRoute, "musicDirector != null && musicDirector.isActiveAndEnabled ? musicDirector.DedicatedMusicMixerGroup : null", "Dynamic music synth refuses stale disabled music-director routes", builder, ref failureCount);
@@ -747,6 +1186,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(psychosisAudioCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Deep psychosis stores only usable audio services", builder, ref failureCount);
                 AssertContains(psychosisAudioResolver, "if (IsAudioServiceUsable(audioService))", "Deep psychosis resolves cached audio services only while usable", builder, ref failureCount);
                 AssertContains(psychosisAudioResolver, "_audioService = null", "Deep psychosis clears stale audio-service references", builder, ref failureCount);
+                AssertContains(psychosisAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Deep psychosis rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(psychosisAudioUsable, "audioService is Behaviour behaviour", "Deep psychosis validates MonoBehaviour-backed audio service activity", builder, ref failureCount);
                 AssertContains(psychosisAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Deep psychosis rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertNotContains(psychosisPlayerResolver, "GlobalRegistry.Player", "Deep psychosis player resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
@@ -791,6 +1231,7 @@ namespace Hecton8.Audio.Editor
                 string musicForceOpen = ExtractMethodBody(musicDirector, "private bool ShouldForceProceduralMusicOpen()");
                 string musicWait = ExtractMethodBody(musicDirector, "private void BeginProceduralWait(");
                 string musicRuntimeRegister = ExtractMethodBody(musicDirector, "private bool TryRegisterToGlobalRegistry()");
+                string musicAbort = ExtractMethodBody(musicDirector, "private void AbortDuplicateRuntimeOwner()");
                 string musicRuntimeUsable = ExtractMethodBody(musicDirector, "private static bool IsMusicDirectorRuntimeUsable(");
                 string musicPhrase = ExtractMethodBody(musicDirector, "private float ResolveProceduralPhraseSeconds(");
                 string musicActivityTarget = ExtractMethodBody(musicDirector, "private float ResolveProceduralMusicActivityTarget01()");
@@ -830,6 +1271,7 @@ namespace Hecton8.Audio.Editor
                 string soundscapeDepthTier = ExtractMethodBody(soundscapeSystem, "void IBiomeMatrixEventListener.OnDepthTierChanged(");
                 string soundscapeRebound = ExtractMethodBody(soundscapeSystem, "void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(");
                 string soundscapeHotSwap = ExtractMethodBody(soundscapeSystem, "void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(");
+                string soundscapeResolveDepth = ExtractMethodBody(soundscapeSystem, "private bool TryResolveCurrentDepthMeters(out float depthMeters)");
                 string soundscapeSyncMusic = ExtractMethodBody(soundscapeSystem, "private void SyncMusicDirectorSoundscapeContext(");
                 string soundscapeSyncCachedMusic = ExtractMethodBody(soundscapeSystem, "private void SyncCachedMusicDirectorSoundscapeContext(");
                 string soundscapeAudioCache = ExtractMethodBody(soundscapeSystem, "private void CacheAudioService(");
@@ -843,6 +1285,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicAudioCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Music director stores only usable audio services", builder, ref failureCount);
                 AssertContains(musicAudioResolver, "if (IsAudioServiceUsable(audioService))", "Music director resolves cached audio services only while usable", builder, ref failureCount);
                 AssertContains(musicAudioResolver, "_cachedAudioService = null", "Music director clears stale audio-service references", builder, ref failureCount);
+                AssertContains(musicAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Music director rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(musicAudioUsable, "audioService is Behaviour behaviour", "Music director validates MonoBehaviour-backed audio service activity", builder, ref failureCount);
                 AssertContains(musicAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Music director rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(musicDirector, "ResolveAcousticZone()", "Music director base context uses cached acoustic-zone resolution", builder, ref failureCount);
@@ -853,14 +1296,24 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicDirector, "IGlobalRegistryHotSwapListener", "Music director receives runtime service hot swaps", builder, ref failureCount);
                 AssertContains(musicDirector, "TryRegisterHotSwapListener()", "Music director registers hot-swap listener during lifecycle", builder, ref failureCount);
                 AssertContains(musicDirector, "GlobalRegistry.TryUnregisterHotSwapListener(this)", "Music director unregisters hot-swap listener during lifecycle", builder, ref failureCount);
+                AssertContains(musicDirector, "public HectonMusicBiomeProfile ActiveResolvedProfile => _runtimeOwnerAborted ? null : _resolvedProfile", "Music director resolved-profile read model is inert after duplicate-owner abort", builder, ref failureCount);
+                AssertContains(musicDirector, "public bool IsOverrideActive => !_runtimeOwnerAborted && _overrideActive", "Music director override read model is inert after duplicate-owner abort", builder, ref failureCount);
+                AssertContains(musicDirector, "public float CurrentMusicActivity01 => _runtimeOwnerAborted ? 0f : math.saturate(_proceduralMusicActivity01)", "Music director activity read model is silent after duplicate-owner abort", builder, ref failureCount);
+                AssertContains(musicDirector, "public MusicActivityReason CurrentMusicActivityReason => _runtimeOwnerAborted ? MusicActivityReason.Silent : _musicActivityReason", "Music director activity reason is silent after duplicate-owner abort", builder, ref failureCount);
+                AssertContains(musicDirector, "public AudioMixerGroup CurrentMusicMixerGroup => _runtimeOwnerAborted ? null : ResolveMusicMixerGroup()", "Music director mixer read model releases aborted duplicate routes", builder, ref failureCount);
                 AssertContains(musicRuntimeRegister, "HectonMusicDirector activeDirector = GlobalRegistry.MusicDirector", "Music director snapshots the current registry owner once", builder, ref failureCount);
                 AssertContains(musicRuntimeRegister, "!ReferenceEquals(activeDirector, null)", "Music director detects stale destroyed registry references by actual reference", builder, ref failureCount);
                 AssertContains(musicRuntimeRegister, "!ReferenceEquals(activeDirector, this)", "Music director treats only other owners as registry conflicts", builder, ref failureCount);
                 AssertContains(musicRuntimeRegister, "if (IsMusicDirectorRuntimeUsable(activeDirector))", "Music director preserves usable existing runtime owners", builder, ref failureCount);
-                AssertContains(musicRuntimeRegister, "Destroy(gameObject);", "Music director destroys duplicate runtime roots only when the existing owner is usable", builder, ref failureCount);
+                AssertContains(musicRuntimeRegister, "AbortDuplicateRuntimeOwner();", "Music director duplicate-owner registration routes through explicit abort cleanup", builder, ref failureCount);
+                AssertContains(musicAbort, "_runtimeOwnerAborted = true", "Music director abort cleanup latches aborted state", builder, ref failureCount);
+                AssertContains(musicAbort, "Destroy(gameObject);", "Music director destroys duplicate runtime roots only after abort cleanup", builder, ref failureCount);
                 AssertContains(musicRuntimeRegister, "GlobalRegistry.UnregisterMusicDirectorRuntime(activeDirector);", "Music director clears stale existing owners before registering", builder, ref failureCount);
                 AssertTextBefore(musicRuntimeRegister, "GlobalRegistry.UnregisterMusicDirectorRuntime(activeDirector);", "GlobalRegistry.RegisterMusicDirectorRuntime(this);", "Music director unregisters stale owners before self-register", builder, ref failureCount);
-                AssertContains(musicRuntimeUsable, "return director != null && director.isActiveAndEnabled", "Music director owner usability rejects destroyed or disabled owners", builder, ref failureCount);
+                AssertContains(musicRuntimeUsable, "director._serviceRegistered", "Music director owner usability validates registration state", builder, ref failureCount);
+                AssertContains(musicRuntimeUsable, "director.isActiveAndEnabled", "Music director owner usability rejects destroyed or disabled owners", builder, ref failureCount);
+                AssertContains(musicRuntimeUsable, "!director._runtimeOwnerAborted", "Music director owner usability rejects aborted runtimes", builder, ref failureCount);
+                AssertContains(musicDirector, "if (!Application.isPlaying)", "Music director stale-owner gate is inert outside play mode", builder, ref failureCount);
                 AssertContains(musicDirector, "_depthZoneDirectorRuntimeCached", "Music director distinguishes serialized depth-zone references from runtime cache", builder, ref failureCount);
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.Player", "Music director handles player service hot swaps", builder, ref failureCount);
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.Audio", "Music director handles audio service hot swaps", builder, ref failureCount);
@@ -906,7 +1359,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicVocalWarningCache, "_cachedVocalWarningSystem = IsVocalWarningRuntimeUsable(vocalWarningSystem) ? vocalWarningSystem : null", "Music director caches only usable vocal-warning runtimes", builder, ref failureCount);
                 AssertContains(musicVocalWarningStale, "if (IsVocalWarningRuntimeUsable(vocalWarningSystem))", "Music director stale vocal-warning refresh accepts only usable cached runtimes", builder, ref failureCount);
                 AssertContains(musicVocalWarningStale, "_cachedVocalWarningSystem = null", "Music director clears unusable vocal-warning runtime before retry", builder, ref failureCount);
-                AssertContains(musicVocalWarningUsable, "vocalWarningSystem == null || !vocalWarningSystem.IsInitialized", "Music director validates vocal-warning runtime initialization", builder, ref failureCount);
+                AssertContains(musicVocalWarningUsable, "vocalWarningSystem == null || !vocalWarningSystem.IsVocalWarningRuntimeReady", "Music director rejects unregistered or aborted vocal-warning runtimes", builder, ref failureCount);
                 AssertContains(musicVocalWarningUsable, "vocalWarningSystem is Behaviour behaviour", "Music director validates MonoBehaviour-backed vocal-warning runtime activity", builder, ref failureCount);
                 AssertContains(musicVocalWarningUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Music director rejects destroyed or disabled vocal-warning runtimes", builder, ref failureCount);
                 AssertContains(musicVocalWarningDuck, "IVocalWarningSystem vocalWarningSystem = ResolveVocalWarningSystem()", "Music director reads vocal-warning foreground state from the cached service", builder, ref failureCount);
@@ -930,6 +1383,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicAudioLogCache, "_cachedAudioLogRuntime = IsAudioLogRuntimeUsable(audioLogRuntime) ? audioLogRuntime : null", "Music director caches only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(musicAudioLogStale, "if (IsAudioLogRuntimeUsable(audioLogRuntime))", "Music director stale audio-log refresh accepts only usable cached runtimes", builder, ref failureCount);
                 AssertContains(musicAudioLogStale, "_cachedAudioLogRuntime = null", "Music director clears unusable audio-log runtime before retry", builder, ref failureCount);
+                AssertContains(musicAudioLogUsable, "audioLogRuntime == null || !audioLogRuntime.IsAudioLogRuntimeReady", "Music director rejects unregistered or aborted audio-log runtimes", builder, ref failureCount);
                 AssertContains(musicAudioLogUsable, "audioLogRuntime is Behaviour behaviour", "Music director validates MonoBehaviour-backed audio-log runtime activity", builder, ref failureCount);
                 AssertContains(musicAudioLogUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Music director rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
                 AssertContains(musicForegroundSpeechApply, "safeActivity01 * (1f - duck01)", "Music activity target is reduced by foreground speech duck before publishing", builder, ref failureCount);
@@ -992,23 +1446,33 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicOverrideStart, "flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", "Forced override start suppresses synth punches during emergency or speech foreground", builder, ref failureCount);
                 AssertContains(musicOverrideStart, "else if (!foregroundSpeechActive)", "Forced override start only publishes override impulse flags when speech foreground is clear", builder, ref failureCount);
                 AssertContains(soundscapeOnEnable, "CacheMusicDirector(GlobalRegistry.MusicDirector)", "Soundscape cold-seeds the music director before publishing tier context", builder, ref failureCount);
+                AssertContains(soundscapeOnEnable, "SyncMusicDirectorSoundscapeContext(_currentTier, ResolveCurrentDepthMeters())", "Soundscape cold publish uses movement-backed current depth", builder, ref failureCount);
                 AssertContains(soundscapeOnDisable, "_musicDirector = null", "Soundscape clears cached music director on disable", builder, ref failureCount);
                 AssertContains(soundscapeOnDestroy, "_musicDirector = null", "Soundscape clears cached music director on destroy", builder, ref failureCount);
+                AssertContains(soundscapeSlowTick, "float depth = ResolveCurrentDepthMeters()", "Soundscape slow tick uses one current-depth resolver", builder, ref failureCount);
                 AssertContains(soundscapeSlowTick, "SyncMusicDirectorSoundscapeContext(newTier, depth)", "Soundscape runtime mirrors depth-tier context into the music director", builder, ref failureCount);
-                AssertContains(soundscapeDepthTier, "director.SetSoundscapeTierContext(CalculateTier(depthMeters, _currentTier), depthMeters)", "Biome depth-tier events refresh music soundscape context", builder, ref failureCount);
+                AssertContains(soundscapeDepthTier, "TryResolveCurrentDepthMeters(out float playerDepthMeters)", "Biome depth-tier events prefer current player depth over stale matrix payload", builder, ref failureCount);
+                AssertContains(soundscapeDepthTier, "? playerDepthMeters", "Biome depth-tier events keep valid player depth including surface zero", builder, ref failureCount);
+                AssertContains(soundscapeDepthTier, ": math.max(0f, math.isfinite(depthMeters) ? depthMeters : 0f)", "Biome depth-tier events use finite matrix event depth only as fallback", builder, ref failureCount);
+                AssertContains(soundscapeDepthTier, "director.SetSoundscapeTierContext(CalculateTier(resolvedDepthMeters, _currentTier), resolvedDepthMeters)", "Biome depth-tier events refresh music soundscape context with resolved depth", builder, ref failureCount);
                 AssertContains(soundscapeRebound, "GlobalRegistryServiceSlot.MusicDirectorRuntime", "Soundscape ref-rebinds the cached music director runtime", builder, ref failureCount);
                 AssertContains(soundscapeRebound, "CacheMusicDirector(currentService as HectonMusicDirector)", "Soundscape ref-rebind stores the current music director service", builder, ref failureCount);
-                AssertContains(soundscapeRebound, "SyncCachedMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", "Soundscape ref-rebind immediately republishes current depth-tier music context without registry fallback", builder, ref failureCount);
+                AssertContains(soundscapeRebound, "SyncCachedMusicDirectorSoundscapeContext(_currentTier, ResolveCurrentDepthMeters())", "Soundscape ref-rebind immediately republishes current movement-backed depth-tier music context", builder, ref failureCount);
                 AssertContains(soundscapeRebound, "GlobalRegistryServiceSlot.Player", "Soundscape ref-rebind handles player runtime changes", builder, ref failureCount);
-                AssertContains(soundscapeRebound, "SyncMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", "Soundscape player ref-rebind immediately refreshes music depth context", builder, ref failureCount);
+                AssertContains(soundscapeRebound, "SyncMusicDirectorSoundscapeContext(_currentTier, ResolveCurrentDepthMeters())", "Soundscape player ref-rebind immediately refreshes music depth context from the current-depth resolver", builder, ref failureCount);
                 AssertContains(soundscapeHotSwap, "GlobalRegistryServiceSlot.MusicDirectorRuntime", "Soundscape listens for music-director runtime replacement", builder, ref failureCount);
                 AssertContains(soundscapeHotSwap, "CacheMusicDirector(currentService as HectonMusicDirector)", "Soundscape replacement stores the current music director service", builder, ref failureCount);
-                AssertContains(soundscapeHotSwap, "SyncCachedMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", "Soundscape replacement immediately republishes current depth-tier music context without registry fallback", builder, ref failureCount);
+                AssertContains(soundscapeHotSwap, "SyncCachedMusicDirectorSoundscapeContext(_currentTier, ResolveCurrentDepthMeters())", "Soundscape replacement immediately republishes current movement-backed depth-tier music context", builder, ref failureCount);
                 AssertContains(soundscapeHotSwap, "GlobalRegistryServiceSlot.Player", "Soundscape replacement handles player runtime changes", builder, ref failureCount);
-                AssertContains(soundscapeHotSwap, "SyncMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", "Soundscape player replacement immediately refreshes music depth context", builder, ref failureCount);
+                AssertContains(soundscapeHotSwap, "SyncMusicDirectorSoundscapeContext(_currentTier, ResolveCurrentDepthMeters())", "Soundscape player replacement immediately refreshes music depth context from the current-depth resolver", builder, ref failureCount);
+                AssertContains(soundscapeResolveDepth, "playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", "Soundscape current-depth resolver falls back to player movement state", builder, ref failureCount);
+                AssertContains(soundscapeResolveDepth, "(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", "Soundscape movement fallback requires a live player root snapshot", builder, ref failureCount);
+                AssertContains(soundscapeResolveDepth, "depthMeters = math.max(0f, movementState.DepthMeters)", "Soundscape movement fallback publishes non-negative depth", builder, ref failureCount);
+                AssertNotContains(soundscapeSystem, "survivalSystem != null ? survivalSystem.Depth : 0f", "Soundscape does not fall back to surface depth when survival is absent", builder, ref failureCount);
                 AssertContains(soundscapeAudioCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Soundscape stores only usable audio services", builder, ref failureCount);
                 AssertContains(soundscapeAudioResolver, "if (IsAudioServiceUsable(audioService))", "Soundscape resolves cached audio services only while usable", builder, ref failureCount);
                 AssertContains(soundscapeAudioResolver, "_audioService = null", "Soundscape clears stale audio-service references", builder, ref failureCount);
+                AssertContains(soundscapeAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Soundscape rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(soundscapeAudioUsable, "audioService is Behaviour behaviour", "Soundscape validates MonoBehaviour-backed audio service activity", builder, ref failureCount);
                 AssertContains(soundscapeAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Soundscape rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(soundscapeSignalDrain, "IAudioService audio = ResolveAudioService()", "Soundscape drains impact signals through the usable audio-service resolver", builder, ref failureCount);
@@ -1095,6 +1559,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(prologueAudioCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Prologue acoustic bridge stores only usable audio services", builder, ref failureCount);
                 AssertContains(prologueAudioResolver, "if (IsAudioServiceUsable(audioService))", "Prologue acoustic bridge resolves cached audio services only while usable", builder, ref failureCount);
                 AssertContains(prologueAudioResolver, "_audioService = null", "Prologue acoustic bridge clears stale audio-service references", builder, ref failureCount);
+                AssertContains(prologueAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Prologue acoustic bridge rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(prologueAudioUsable, "audioService is Behaviour behaviour", "Prologue acoustic bridge validates MonoBehaviour-backed audio service activity", builder, ref failureCount);
                 AssertContains(prologueAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Prologue acoustic bridge rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(prologuePublish, "IAudioService audioService = ResolveAudioService()", "Prologue transition publishing uses the usable audio-service resolver", builder, ref failureCount);
@@ -1125,27 +1590,34 @@ namespace Hecton8.Audio.Editor
                 string vocalTuningAcquire = ExtractMethodBody(vocalWarning, "private bool TryAcquireTuningMutationView(");
                 string vocalEnsureNative = ExtractMethodBody(vocalWarning, "private void EnsureNativeStorage()");
                 string vocalRuntimeRegister = ExtractMethodBody(vocalWarning, "private bool TryRegisterRuntimeService()");
+                string vocalAbort = ExtractMethodBody(vocalWarning, "private void AbortDuplicateRuntimeOwner()");
                 string vocalRuntimeUsable = ExtractMethodBody(vocalWarning, "private static bool IsVocalWarningSystemUsable(");
                 string vocalMockInject = ExtractMethodBody(vocalWarning, "public bool EditorInjectMockThreats(");
                 string vocalScheduleFrame = ExtractMethodBody(vocalWarning, "private JobHandle ScheduleVocalWarningFrame(");
                 string vocalVisualSync = ExtractMethodBody(vocalWarning, "private void VisualSyncPresentationTick()");
                 string vocalClearQueues = ExtractMethodBody(vocalWarning, "private void CancelRendererPlaybackAndClearQueues()");
+                AssertContains(globalRegistryContracts, "bool IsVocalWarningRuntimeReady { get; }", "Vocal-warning runtime contract exposes owner readiness to cross-system consumers", builder, ref failureCount);
                 AssertContains(vocalWarning, "ResolveGlobalQualityWeight01()", "Vocal warning system derives radio presentation from continuous global quality", builder, ref failureCount);
                 AssertContains(vocalWarning, "ResolveRadioDistortion01(ref views, nextId)", "Vocal warning system resolves radio degradation through the warning payload path", builder, ref failureCount);
                 AssertContains(vocalWarning, "VocalWarningTuningMutationGuardMask", "Vocal warning tuning buffer has a dedicated mutation guard", builder, ref failureCount);
+                AssertContains(vocalWarning, "public bool IsVocalWarningRuntimeReady => Volatile.Read(ref _nativeAllocated) != 0 &&", "Vocal warning runtime readiness requires allocated native storage", builder, ref failureCount);
+                AssertContains(vocalWarning, "Volatile.Read(ref _registeredRuntime) != 0", "Vocal warning runtime readiness requires the registered owner slot", builder, ref failureCount);
                 AssertContains(vocalWarning, "private bool TryResolveVwsOwnerViews(IDataVault vault, out VwsVaultViews views)", "Vocal warning owner-view resolver can bind to a specific guarded vault", builder, ref failureCount);
                 AssertContains(vocalWarning, "return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);", "Vocal warning mutation guard uses DataVault active-lock lanes", builder, ref failureCount);
                 AssertContains(vocalRuntimeRegister, "IVocalWarningSystem registeredVocalWarnings = GlobalRegistry.VocalWarnings", "Vocal warning snapshots the current registry owner once", builder, ref failureCount);
                 AssertContains(vocalRuntimeRegister, "!ReferenceEquals(registeredVocalWarnings, null)", "Vocal warning detects stale destroyed registry references by actual reference", builder, ref failureCount);
                 AssertContains(vocalRuntimeRegister, "!ReferenceEquals(registeredVocalWarnings, this)", "Vocal warning treats only other owners as registry conflicts", builder, ref failureCount);
                 AssertContains(vocalRuntimeRegister, "if (IsVocalWarningSystemUsable(registeredVocalWarnings))", "Vocal warning preserves usable existing runtime owners", builder, ref failureCount);
-                AssertContains(vocalRuntimeRegister, "Destroy(this);", "Vocal warning destroys duplicate components only when the existing owner is usable", builder, ref failureCount);
+                AssertContains(vocalRuntimeRegister, "AbortDuplicateRuntimeOwner();", "Vocal warning duplicate-owner registration routes through explicit abort cleanup", builder, ref failureCount);
+                AssertContains(vocalAbort, "Volatile.Write(ref _runtimeOwnerAborted, 1)", "Vocal warning abort cleanup latches aborted state", builder, ref failureCount);
+                AssertContains(vocalAbort, "Destroy(this);", "Vocal warning destroys duplicate components only after abort cleanup", builder, ref failureCount);
                 AssertContains(vocalRuntimeRegister, "GlobalRegistry.UnregisterVocalWarningRuntime(registeredVocalWarnings);", "Vocal warning clears stale existing owners before registering", builder, ref failureCount);
                 AssertTextBefore(vocalRuntimeRegister, "GlobalRegistry.UnregisterVocalWarningRuntime(registeredVocalWarnings);", "GlobalRegistry.RegisterVocalWarningRuntime(this);", "Vocal warning unregisters stale owners before self-register", builder, ref failureCount);
                 AssertContains(vocalRuntimeUsable, "ReferenceEquals(vocalWarningSystem, null)", "Vocal warning owner usability rejects missing owners", builder, ref failureCount);
+                AssertContains(vocalRuntimeUsable, "return runtime.IsVocalWarningRuntimeReady", "Vocal warning owner usability follows the concrete runtime-ready contract", builder, ref failureCount);
                 AssertContains(vocalRuntimeUsable, "vocalWarningSystem is Behaviour behaviour", "Vocal warning validates MonoBehaviour-backed owner activity", builder, ref failureCount);
                 AssertContains(vocalRuntimeUsable, "!behaviour.isActiveAndEnabled", "Vocal warning owner usability rejects disabled owners", builder, ref failureCount);
-                AssertContains(vocalRuntimeUsable, "return vocalWarningSystem.IsInitialized", "Vocal warning owner usability requires initialized native storage", builder, ref failureCount);
+                AssertContains(vocalRuntimeUsable, "return vocalWarningSystem.IsVocalWarningRuntimeReady", "Vocal warning owner usability follows the public runtime-ready contract", builder, ref failureCount);
                 AssertContains(vocalTuningWrite, "TryAcquireTuningMutationView", "Vocal warning editor tuning writes acquire a guarded owner view", builder, ref failureCount);
                 AssertContains(vocalTuningWrite, "ReleaseVocalWarningMutationGuard", "Vocal warning editor tuning writes release mutation guard in finally", builder, ref failureCount);
                 AssertContains(vocalTuningAcquire, "TryAcquireMutationGuard(VocalWarningTuningMutationGuardMask)", "Vocal warning tuning view uses DataVault mutation guard", builder, ref failureCount);
@@ -1183,6 +1655,26 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(vocalSlowTick, "Debug.Log", "Vocal warning SlowTick has no debug log allocation path", builder, ref failureCount);
             }
 
+            if (vocalWarningQueueTunerWindow.Length > 0)
+            {
+                string vocalTunerResolve = ExtractMethodBody(vocalWarningQueueTunerWindow, "private static VocalWarningSystem ResolveRuntime(");
+                string vocalTunerRefresh = ExtractMethodBody(vocalWarningQueueTunerWindow, "private void RefreshStatus()");
+                string vocalTunerPublish = ExtractMethodBody(vocalWarningQueueTunerWindow, "private void PublishTuning()");
+                string vocalTunerInject = ExtractMethodBody(vocalWarningQueueTunerWindow, "private void InjectWarning(");
+                string vocalTunerMock = ExtractMethodBody(vocalWarningQueueTunerWindow, "private void InjectMockThreats()");
+                AssertContains(vocalTunerResolve, "runtime != null && runtime.IsVocalWarningRuntimeReady ? runtime : null", "Vocal warning queue tuner resolves mutable runtime actions only through ready owners", builder, ref failureCount);
+                AssertContains(vocalTunerRefresh, "VocalWarningSystem runtime = ResolveRuntime(false)", "Vocal warning queue tuner status may inspect raw runtime state", builder, ref failureCount);
+                AssertContains(vocalTunerRefresh, "bool ready = runtime.IsVocalWarningRuntimeReady", "Vocal warning queue tuner status reports registered runtime readiness", builder, ref failureCount);
+                AssertContains(vocalTunerRefresh, "if (ready && runtime.EditorTryReadTuning", "Vocal warning queue tuner reads tuning only from ready owners", builder, ref failureCount);
+                AssertContains(vocalTunerRefresh, "if (ready && runtime.EditorTryGetTelemetrySample", "Vocal warning queue tuner reads telemetry only from ready owners", builder, ref failureCount);
+                AssertContains(vocalTunerPublish, "VocalWarningSystem runtime = ResolveRuntime()", "Vocal warning queue tuner tuning writes resolve only ready owners", builder, ref failureCount);
+                AssertContains(vocalTunerInject, "VocalWarningSystem runtime = ResolveRuntime()", "Vocal warning queue tuner warning injection resolves only ready owners", builder, ref failureCount);
+                AssertContains(vocalTunerMock, "VocalWarningSystem runtime = ResolveRuntime()", "Vocal warning queue tuner mock threat injection resolves only ready owners", builder, ref failureCount);
+                AssertNotContains(vocalTunerPublish, "ResolveRuntime(false)", "Vocal warning queue tuner tuning writes do not use raw runtime status resolution", builder, ref failureCount);
+                AssertNotContains(vocalTunerInject, "ResolveRuntime(false)", "Vocal warning queue tuner warning injection does not use raw runtime status resolution", builder, ref failureCount);
+                AssertNotContains(vocalTunerMock, "ResolveRuntime(false)", "Vocal warning queue tuner mock injection does not use raw runtime status resolution", builder, ref failureCount);
+            }
+
             if (vocalBankRuntime.Length > 0)
             {
                 string vocalReleaseCallback = ExtractMethodBodyAfter(vocalBankRuntime, "#if !UNITY_EDITOR && !DEVELOPMENT_BUILD", "private void OnAudioFilterRead(float[] data, int channels)");
@@ -1205,12 +1697,16 @@ namespace Hecton8.Audio.Editor
                 AssertContains(thrusterColdRuntime, "GlobalRegistry.Audio", "Player thruster fallback resolves audio service only during cold runtime refresh", builder, ref failureCount);
                 AssertContains(playerThrusterAudio, "GlobalRegistryServiceSlot.Audio", "Player thruster fallback handles audio service hot swaps", builder, ref failureCount);
                 AssertContains(thrusterCacheSpatial, "IsAudioServiceUsable(audioService)", "Player thruster fallback stores only usable audio services", builder, ref failureCount);
+                AssertContains(thrusterCacheSpatial, "_cachedAudioService = audioService", "Player thruster keeps the owning audio service with the dependent SFX route", builder, ref failureCount);
                 AssertContains(thrusterMixerRoute, "ResolveSpatialAudioSfxRoute()", "Player thruster mixer route uses the usable spatial-audio SFX route resolver", builder, ref failureCount);
-                AssertContains(thrusterRouteResolver, "if (IsAudioRuntimeObjectUsable(route))", "Player thruster spatial SFX route rejects stale Unity-backed runtimes", builder, ref failureCount);
+                AssertContains(thrusterRouteResolver, "IAudioService audioService = _cachedAudioService", "Player thruster SFX route resolver starts from its cached audio owner", builder, ref failureCount);
+                AssertContains(thrusterRouteResolver, "if (ReferenceEquals(route, audioService) && IsAudioRuntimeObjectUsable(route))", "Player thruster spatial SFX route must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(thrusterRouteResolver, "_cachedSpatialAudioSfxRoute = route", "Player thruster SFX route resolver refreshes dependent cached route field", builder, ref failureCount);
+                AssertContains(thrusterRouteResolver, "_cachedAudioService = null", "Player thruster clears stale audio owners with stale routes", builder, ref failureCount);
                 AssertContains(thrusterRouteResolver, "_cachedSpatialAudioSfxRoute = null", "Player thruster clears stale spatial SFX route references", builder, ref failureCount);
-                AssertContains(thrusterAudioUsable, "audioService == null || !audioService.IsInitialized", "Player thruster validates audio service initialization before route caching", builder, ref failureCount);
+                AssertContains(thrusterAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Player thruster validates audio service runtime readiness before route caching", builder, ref failureCount);
                 AssertContains(thrusterAudioUsable, "return IsAudioRuntimeObjectUsable(audioService)", "Player thruster reuses Unity object activity validation for audio services", builder, ref failureCount);
-                AssertContains(thrusterObjectUsable, "runtime is IAudioService audioService && !audioService.IsInitialized", "Player thruster rejects deinitialized cached audio runtime interfaces", builder, ref failureCount);
+                AssertContains(thrusterObjectUsable, "runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Player thruster rejects audio services that are initialized but not runtime-ready", builder, ref failureCount);
                 AssertContains(thrusterObjectUsable, "runtime is Behaviour behaviour", "Player thruster validates MonoBehaviour-backed audio runtime activity", builder, ref failureCount);
                 AssertContains(thrusterObjectUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Player thruster rejects destroyed or disabled audio runtimes", builder, ref failureCount);
                 AssertNotContains(thrusterMixerRoute, "GlobalRegistry.Audio", "Player thruster mixer route does not poll audio registry directly", builder, ref failureCount);
@@ -1229,6 +1725,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(footstepCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Player footstep audio stores only usable audio services", builder, ref failureCount);
                 AssertContains(footstepResolver, "if (IsAudioServiceUsable(audioService))", "Player footstep audio resolves cached audio services only while usable", builder, ref failureCount);
                 AssertContains(footstepResolver, "_audioService = null", "Player footstep audio clears stale audio-service references", builder, ref failureCount);
+                AssertContains(footstepUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Player footstep audio rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(footstepUsable, "audioService is Behaviour behaviour", "Player footstep audio validates MonoBehaviour-backed audio service activity", builder, ref failureCount);
                 AssertContains(footstepUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Player footstep audio rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(footstepHandle, "IAudioService sam = ResolveAudioService()", "Player footstep playback uses the usable audio-service resolver", builder, ref failureCount);
@@ -1255,9 +1752,11 @@ namespace Hecton8.Audio.Editor
                 string spectrumClearRegistry = ExtractMethodBody(spectrumSystem, "private void ClearCachedRegistryServices()");
                 string spectrumCache = ExtractMethodBody(spectrumSystem, "private void CacheAudioService(");
                 string spectrumResolve = ExtractMethodBody(spectrumSystem, "private IAudioService ResolveAudioService()");
+                string spectrumResolveSpatial = ExtractMethodBody(spectrumSystem, "private ISpatialAudioWorldEmitterReadModel ResolveSpatialAudioEmitterReadModel()");
                 string spectrumClearAudio = ExtractMethodBody(spectrumSystem, "private void ClearCachedAudioService()");
                 string spectrumUsable = ExtractMethodBody(spectrumSystem, "private static bool IsAudioServiceUsable(");
                 string spectrumFlushAudio = ExtractMethodBody(spectrumSystem, "private void FlushQueuedSpectrumAudio()");
+                string spectrumPassiveRadar = ExtractMethodBody(spectrumSystem, "private void StepPassiveRadar()");
                 AssertContains(spectrumSystem, "public byte AudioMaterialId", "Sonar echo events carry AudioMaterialID", builder, ref failureCount);
                 AssertContains(spectrumSystem, "Shader.SetGlobalVector(_ShaderHectonSonarPrimaryPulse", "Active sonar ping publishes primary pulse as an O(1) shader global", builder, ref failureCount);
                 AssertContains(spectrumSystem, "Shader.SetGlobalVector(_ShaderHectonSonarVisualParams", "Active sonar ping publishes visual pulse parameters without object scanning", builder, ref failureCount);
@@ -1279,13 +1778,17 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spectrumCache, "_spatialAudioEmitterReadModel = _audioService as ISpatialAudioWorldEmitterReadModel", "Spectrum system derives spatial emitter read model only from usable audio service", builder, ref failureCount);
                 AssertContains(spectrumResolve, "if (IsAudioServiceUsable(audioService))", "Spectrum system resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(spectrumResolve, "ClearCachedAudioService()", "Spectrum system resolver clears stale audio-service references", builder, ref failureCount);
+                AssertContains(spectrumResolveSpatial, "IAudioService audioService = ResolveAudioService()", "Spectrum passive radar read-model resolver validates the owning audio service", builder, ref failureCount);
+                AssertContains(spectrumResolveSpatial, "_spatialAudioEmitterReadModel = readModel", "Spectrum passive radar read-model resolver refreshes dependent cached read-model field", builder, ref failureCount);
                 AssertContains(spectrumClearAudio, "_audioService = null", "Spectrum system audio clear resets cached audio service", builder, ref failureCount);
                 AssertContains(spectrumClearAudio, "_spatialAudioEmitterReadModel = null", "Spectrum system audio clear resets dependent spatial read model", builder, ref failureCount);
-                AssertContains(spectrumUsable, "audioService == null || !audioService.IsInitialized", "Spectrum system rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(spectrumUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Spectrum system rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(spectrumUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Spectrum system rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(spectrumFlushAudio, "Hecton8.Core.IAudioService audioManager = ResolveAudioService()", "Spectrum system queued audio uses the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(spectrumFlushAudio, "audioManager.PlayStatic2D", "Spectrum system anchor-return cue remains a 2D interface sound", builder, ref failureCount);
                 AssertNotContains(spectrumFlushAudio, "Hecton8.Core.IAudioService audioManager = _audioService", "Spectrum system queued audio never trusts the raw cached audio-service field", builder, ref failureCount);
+                AssertContains(spectrumPassiveRadar, "ISpatialAudioWorldEmitterReadModel audioManager = ResolveSpatialAudioEmitterReadModel()", "Spectrum passive radar samples spatial audio through the usable read-model resolver", builder, ref failureCount);
+                AssertNotContains(spectrumPassiveRadar, "ISpatialAudioWorldEmitterReadModel audioManager = _spatialAudioEmitterReadModel", "Spectrum passive radar never trusts the raw cached spatial read-model field", builder, ref failureCount);
             }
 
             if (resourceNode.Length > 0)
@@ -1314,10 +1817,12 @@ namespace Hecton8.Audio.Editor
                 AssertContains(organicCache, "_harvestAudioSink = _audioService as ISpatialAudioHarvestPlaybackSink", "Destructible organic manager derives harvest sink only from usable audio service", builder, ref failureCount);
                 AssertContains(organicResolve, "if (IsAudioServiceUsable(audioService))", "Destructible organic manager resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(organicResolve, "ClearCachedAudioService()", "Destructible organic manager resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(organicSinkResolve, "ResolveAudioService() != null ? _harvestAudioSink : null", "Destructible organic manager gates harvest sink behind usable audio service", builder, ref failureCount);
+                AssertContains(organicSinkResolve, "IAudioService audioService = ResolveAudioService()", "Destructible organic harvest sink resolver starts from a usable audio owner", builder, ref failureCount);
+                AssertContains(organicSinkResolve, "if (ReferenceEquals(harvestAudioSink, audioService))", "Destructible organic harvest sink cache must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(organicSinkResolve, "_harvestAudioSink = harvestAudioSink", "Destructible organic harvest sink resolver refreshes dependent cached sink field", builder, ref failureCount);
                 AssertContains(organicClearAudio, "_audioService = null", "Destructible organic manager audio clear resets cached audio service", builder, ref failureCount);
                 AssertContains(organicClearAudio, "_harvestAudioSink = null", "Destructible organic manager audio clear resets dependent harvest sink", builder, ref failureCount);
-                AssertContains(organicUsable, "audioService == null || !audioService.IsInitialized", "Destructible organic manager rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(organicUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Destructible organic manager rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(organicUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Destructible organic manager rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(organicDispatchHarvest, "ResolveHarvestAudioSink() != null", "Destructible organic harvest events only mark AUP route when harvest sink is usable", builder, ref failureCount);
                 AssertContains(organicDispatchSpore, "ISpatialAudioHarvestPlaybackSink harvestAudioSink = ResolveHarvestAudioSink()", "Destructible organic spore audio resolves only usable harvest sink", builder, ref failureCount);
@@ -1404,7 +1909,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(dispatcherCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Mod command dispatcher stores only usable audio services", builder, ref failureCount);
                 AssertContains(dispatcherResolve, "if (IsAudioServiceUsable(audioService))", "Mod command dispatcher resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(dispatcherResolve, "_audioService = null", "Mod command dispatcher resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(dispatcherUsable, "audioService == null || !audioService.IsInitialized", "Mod command dispatcher rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(dispatcherUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Mod command dispatcher rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(dispatcherUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Mod command dispatcher rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(dispatcherPing, "IAudioService audioManager = ResolveAudioService()", "Mod command dispatcher acoustic ping uses the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(dispatcherPing, "audioManager.TryEmitModAcousticPing", "Mod command dispatcher acoustic ping remains engine-owned", builder, ref failureCount);
@@ -1430,9 +1935,11 @@ namespace Hecton8.Audio.Editor
                 AssertContains(baseCache, "_cachedSpatialAudioSfxRoute = audioService as ISpatialAudioSfxMixerRouteReadModel", "Base module refreshes SFX route only from usable audio service", builder, ref failureCount);
                 AssertContains(baseResolve, "if (IsAudioServiceUsable(audioService))", "Base module resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(baseResolve, "ClearCachedAudioService()", "Base module resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(baseRouteResolve, "ResolveAudioService() != null ? _cachedSpatialAudioSfxRoute : null", "Base module SFX route resolver is gated by usable audio service", builder, ref failureCount);
+                AssertContains(baseRouteResolve, "Hecton8.Core.IAudioService audioService = ResolveAudioService()", "Base module SFX route resolver starts from a usable audio owner", builder, ref failureCount);
+                AssertContains(baseRouteResolve, "if (ReferenceEquals(route, audioService))", "Base module SFX route cache must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(baseRouteResolve, "_cachedSpatialAudioSfxRoute = route", "Base module SFX route resolver refreshes dependent cached route field", builder, ref failureCount);
                 AssertContains(baseClear, "_cachedSpatialAudioSfxRoute = null", "Base module clears dependent SFX route with audio cache", builder, ref failureCount);
-                AssertContains(baseUsable, "audioService == null || !audioService.IsInitialized", "Base module rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(baseUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Base module rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(baseUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Base module rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(baseRoute, "ResolveSpatialAudioSfxRoute()", "Base module audio-source route uses the usable audio route resolver", builder, ref failureCount);
                 AssertContains(baseFlush, "Hecton8.Core.IAudioService sam = ResolveAudioService()", "Base module spatial SFX flush uses the usable audio-service resolver", builder, ref failureCount);
@@ -1450,7 +1957,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(repairHotSwap, "CacheRepairAudioMixerGroup(currentService as IAudioService)", "Repair tool caches audio hot swaps through the usable-service filter", builder, ref failureCount);
                 AssertContains(repairColdCache, "CacheRepairAudioMixerGroup(GlobalRegistry.Audio)", "Repair tool cold-caches loop mixer route through the usable-service filter", builder, ref failureCount);
                 AssertContains(repairCache, "_cachedRepairAudioMixerGroup = IsAudioServiceUsable(audioService)", "Repair tool stores only mixer groups from usable audio services", builder, ref failureCount);
-                AssertContains(repairUsable, "audioService == null || !audioService.IsInitialized", "Repair tool rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(repairUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Repair tool rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(repairUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Repair tool rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertNotContains(repairHotSwap, "_cachedRepairAudioMixerGroup = currentService is IAudioService audioService", "Repair tool hot-swap never derives mixer group from raw audio service directly", builder, ref failureCount);
                 AssertNotContains(repairColdCache, "_cachedRepairAudioMixerGroup = audioService != null", "Repair tool cold cache never derives mixer group from raw audio service directly", builder, ref failureCount);
@@ -1469,7 +1976,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(suitCache, "_spatialAudioManager = IsAudioServiceUsable(audioService) ? audioService : null", "Suit HUD stores only usable audio services", builder, ref failureCount);
                 AssertContains(suitResolve, "if (IsAudioServiceUsable(audioService))", "Suit HUD resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(suitResolve, "_spatialAudioManager = null", "Suit HUD resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(suitUsable, "audioService == null || !audioService.IsInitialized", "Suit HUD rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(suitUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Suit HUD rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(suitUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Suit HUD rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(suitRadar, "Hecton8.Core.IAudioService audioManager = ResolveAudioService()", "Suit HUD acoustic radar reads use the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(suitRadar, "audioManager = ResolveAudioService()", "Suit HUD acoustic radar upload revalidates the audio service", builder, ref failureCount);
@@ -1490,7 +1997,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(ballastRegister, "CacheAudioService(GlobalRegistry.Audio)", "Ballast controller cold-caches audio through the usable-service filter", builder, ref failureCount);
                 AssertContains(ballastCache, "_audio = IsAudioServiceUsable(audioService) ? audioService : null", "Ballast controller stores only usable audio services", builder, ref failureCount);
                 AssertContains(ballastClear, "_audio = null", "Ballast controller clears cached audio service references", builder, ref failureCount);
-                AssertContains(ballastUsable, "audioService == null || !audioService.IsInitialized", "Ballast controller rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(ballastUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Ballast controller rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(ballastUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Ballast controller rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertNotContains(ballastHotSwap, "_audio = currentService as IAudioService", "Ballast controller hot-swap never stores raw audio service directly", builder, ref failureCount);
                 AssertNotContains(ballastRegister, "_audio = GlobalRegistry.Audio", "Ballast controller cold cache never stores raw audio service directly", builder, ref failureCount);
@@ -1502,11 +2009,16 @@ namespace Hecton8.Audio.Editor
                 string beaconColdCache = ExtractMethodBody(signalBeacon, "private void CacheRegistryServicesCold()");
                 string beaconCache = ExtractMethodBody(signalBeacon, "private void CacheSpatialAudio(");
                 string beaconResolve = ExtractMethodBody(signalBeacon, "private ISpatialAudioListenerCaveReadModel ResolveSpatialAudio()");
+                string beaconSpatialUsable = ExtractMethodBody(signalBeacon, "private static bool IsAudioRuntimeObjectUsable(");
                 string beaconCave = ExtractMethodBody(signalBeacon, "private float ResolveCaveErrorMultiplier()");
                 AssertContains(beaconHotSwap, "CacheSpatialAudio(currentService)", "Signal beacon caches spatial audio hot swaps through the usable-runtime filter", builder, ref failureCount);
                 AssertContains(beaconColdCache, "CacheSpatialAudio(GlobalRegistry.Audio)", "Signal beacon cold-caches spatial audio through the usable-runtime filter", builder, ref failureCount);
-                AssertContains(beaconCache, "_spatialAudio = IsAudioRuntimeObjectUsable(audioRuntime)", "Signal beacon stores cave read-models only from usable audio runtimes", builder, ref failureCount);
-                AssertContains(beaconResolve, "if (IsAudioRuntimeObjectUsable(spatialAudio))", "Signal beacon resolves cave read-models only while usable", builder, ref failureCount);
+                AssertContains(beaconCache, "if (!IsAudioRuntimeObjectUsable(audioRuntime))", "Signal beacon rejects unusable audio runtimes while caching", builder, ref failureCount);
+                AssertContains(beaconCache, "_spatialAudioRuntime = audioRuntime", "Signal beacon keeps the owning audio runtime with the dependent cave read-model", builder, ref failureCount);
+                AssertContains(beaconResolve, "object audioRuntime = _spatialAudioRuntime", "Signal beacon cave read-model resolver starts from its cached audio owner", builder, ref failureCount);
+                AssertContains(beaconResolve, "if (ReferenceEquals(spatialAudio, audioRuntime) && IsAudioRuntimeObjectUsable(spatialAudio))", "Signal beacon cave read-model must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(beaconResolve, "_spatialAudio = spatialAudio", "Signal beacon cave read-model resolver refreshes dependent cached read-model field", builder, ref failureCount);
+                AssertContains(beaconSpatialUsable, "runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Signal beacon rejects audio services that are initialized but not runtime-ready", builder, ref failureCount);
                 AssertContains(beaconCave, "ResolveSpatialAudio()", "Signal beacon cave error reads spatial audio through the usable resolver", builder, ref failureCount);
                 AssertNotContains(beaconHotSwap, "_spatialAudio = currentService as", "Signal beacon hot-swap never stores raw spatial audio directly", builder, ref failureCount);
                 AssertNotContains(beaconColdCache, "_spatialAudio = GlobalRegistry.Audio as", "Signal beacon cold cache never stores raw spatial audio directly", builder, ref failureCount);
@@ -1517,9 +2029,16 @@ namespace Hecton8.Audio.Editor
                 string narrativeHotSwap = ExtractMethodBody(narrativeDirector, "public void OnGlobalRegistryServiceReplaced(");
                 string narrativeColdCache = ExtractMethodBody(narrativeDirector, "private void CacheRegistryReadModelsCold()");
                 string narrativeCache = ExtractMethodBody(narrativeDirector, "private void CacheNarrativeAudioSink(");
+                string narrativeResolve = ExtractMethodBody(narrativeDirector, "private ISpatialAudioNarrativeRadioSink ResolveNarrativeAudioSink()");
+                string narrativeUsable = ExtractMethodBody(narrativeDirector, "private static bool IsAudioRuntimeObjectUsable(");
                 AssertContains(narrativeHotSwap, "CacheNarrativeAudioSink(currentService)", "Narrative director caches narrative audio hot swaps through the usable-runtime filter", builder, ref failureCount);
                 AssertContains(narrativeColdCache, "CacheNarrativeAudioSink(GlobalRegistry.Audio)", "Narrative director cold-caches narrative audio through the usable-runtime filter", builder, ref failureCount);
-                AssertContains(narrativeCache, "_narrativeAudioSink = IsAudioRuntimeObjectUsable(audioRuntime)", "Narrative director stores narrative audio sinks only from usable runtimes", builder, ref failureCount);
+                AssertContains(narrativeCache, "if (!IsAudioRuntimeObjectUsable(audioRuntime))", "Narrative director rejects unusable audio runtimes while caching", builder, ref failureCount);
+                AssertContains(narrativeCache, "_narrativeAudioRuntime = audioRuntime", "Narrative director keeps the owning audio runtime with the dependent narrative sink", builder, ref failureCount);
+                AssertContains(narrativeResolve, "object audioRuntime = _narrativeAudioRuntime", "Narrative director sink resolver starts from its cached audio owner", builder, ref failureCount);
+                AssertContains(narrativeResolve, "if (ReferenceEquals(narrativeAudioSink, audioRuntime) && IsAudioRuntimeObjectUsable(narrativeAudioSink))", "Narrative director sink must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(narrativeResolve, "_narrativeAudioSink = narrativeAudioSink", "Narrative director sink resolver refreshes dependent cached sink field", builder, ref failureCount);
+                AssertContains(narrativeUsable, "runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Narrative director rejects audio services that are initialized but not runtime-ready", builder, ref failureCount);
                 AssertNotContains(narrativeHotSwap, "_narrativeAudioSink = currentService as", "Narrative director hot-swap never stores raw narrative audio directly", builder, ref failureCount);
                 AssertNotContains(narrativeColdCache, "_narrativeAudioSink = GlobalRegistry.Audio as", "Narrative director cold cache never stores raw narrative audio directly", builder, ref failureCount);
             }
@@ -1530,11 +2049,16 @@ namespace Hecton8.Audio.Editor
                 string traumaColdCache = ExtractMethodBody(traumaDispatcher, "private void CacheRegistryServicesCold()");
                 string traumaCache = ExtractMethodBody(traumaDispatcher, "private void CacheSpatialAudioSink(");
                 string traumaResolve = ExtractMethodBody(traumaDispatcher, "private ISpatialAudioEnvironmentModulationSink ResolveSpatialAudioSink()");
+                string traumaUsable = ExtractMethodBody(traumaDispatcher, "private static bool IsAudioRuntimeObjectUsable(");
                 string traumaFlush = ExtractMethodBody(traumaDispatcher, "private void FlushParasiteAudioLoad()");
                 AssertContains(traumaHotSwap, "CacheSpatialAudioSink(currentService)", "Trauma dispatcher caches spatial audio hot swaps through the usable-runtime filter", builder, ref failureCount);
                 AssertContains(traumaColdCache, "CacheSpatialAudioSink(GlobalRegistry.Audio)", "Trauma dispatcher cold-caches spatial audio through the usable-runtime filter", builder, ref failureCount);
-                AssertContains(traumaCache, "_spatialAudioSink = IsAudioRuntimeObjectUsable(audioRuntime)", "Trauma dispatcher stores modulation sinks only from usable audio runtimes", builder, ref failureCount);
-                AssertContains(traumaResolve, "if (IsAudioRuntimeObjectUsable(spatialAudioSink))", "Trauma dispatcher resolves modulation sinks only while usable", builder, ref failureCount);
+                AssertContains(traumaCache, "if (!IsAudioRuntimeObjectUsable(audioRuntime))", "Trauma dispatcher rejects unusable audio runtimes while caching", builder, ref failureCount);
+                AssertContains(traumaCache, "_spatialAudioRuntime = audioRuntime", "Trauma dispatcher keeps the owning audio runtime with the dependent modulation sink", builder, ref failureCount);
+                AssertContains(traumaResolve, "object audioRuntime = _spatialAudioRuntime", "Trauma dispatcher modulation sink resolver starts from its cached audio owner", builder, ref failureCount);
+                AssertContains(traumaResolve, "if (ReferenceEquals(spatialAudioSink, audioRuntime) && IsAudioRuntimeObjectUsable(spatialAudioSink))", "Trauma dispatcher modulation sink must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(traumaResolve, "_spatialAudioSink = spatialAudioSink", "Trauma dispatcher modulation sink resolver refreshes dependent cached sink field", builder, ref failureCount);
+                AssertContains(traumaUsable, "runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Trauma dispatcher rejects audio services that are initialized but not runtime-ready", builder, ref failureCount);
                 AssertContains(traumaFlush, "ISpatialAudioEnvironmentModulationSink spatialAudioSink = ResolveSpatialAudioSink()", "Trauma dispatcher parasite audio load uses the usable sink resolver", builder, ref failureCount);
                 AssertNotContains(traumaFlush, "_spatialAudioSink.SetParasiteRoomAcousticLoad", "Trauma dispatcher parasite audio load never trusts the raw cached sink field", builder, ref failureCount);
             }
@@ -1545,12 +2069,17 @@ namespace Hecton8.Audio.Editor
                 string randomColdCache = ExtractMethodBody(randomEventSystem, "private void CacheRegistryServicesCold()");
                 string randomCache = ExtractMethodBody(randomEventSystem, "private void CacheMeteorShowerAudioSink(");
                 string randomResolve = ExtractMethodBody(randomEventSystem, "private IMeteorShowerAudioSink ResolveMeteorShowerAudioSink()");
+                string randomUsable = ExtractMethodBody(randomEventSystem, "private static bool IsAudioRuntimeObjectUsable(");
                 string randomMeteorBoom = ExtractMethodBody(randomEventSystem, "private void TryPublishMeteorBoom(");
                 string randomWaterBoom = ExtractMethodBody(randomEventSystem, "private void TickMeteorWaterBoomDelay(");
                 AssertContains(randomHotSwap, "CacheMeteorShowerAudioSink(currentService)", "Random events cache meteor audio hot swaps through the usable-runtime filter", builder, ref failureCount);
                 AssertContains(randomColdCache, "CacheMeteorShowerAudioSink(GlobalRegistry.Audio)", "Random events cold-cache meteor audio through the usable-runtime filter", builder, ref failureCount);
-                AssertContains(randomCache, "_cachedSpatialAudioManager = IsAudioRuntimeObjectUsable(audioRuntime)", "Random events store meteor sinks only from usable audio runtimes", builder, ref failureCount);
-                AssertContains(randomResolve, "if (IsAudioRuntimeObjectUsable(spatialAudioManager))", "Random events resolve meteor sinks only while usable", builder, ref failureCount);
+                AssertContains(randomCache, "if (!IsAudioRuntimeObjectUsable(audioRuntime))", "Random events reject unusable audio runtimes while caching", builder, ref failureCount);
+                AssertContains(randomCache, "_cachedSpatialAudioRuntime = audioRuntime", "Random events keep the owning audio runtime with the dependent meteor sink", builder, ref failureCount);
+                AssertContains(randomResolve, "object audioRuntime = _cachedSpatialAudioRuntime", "Random events meteor sink resolver starts from its cached audio owner", builder, ref failureCount);
+                AssertContains(randomResolve, "if (ReferenceEquals(spatialAudioManager, audioRuntime) && IsAudioRuntimeObjectUsable(spatialAudioManager))", "Random events meteor sink must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(randomResolve, "_cachedSpatialAudioManager = spatialAudioManager", "Random events meteor sink resolver refreshes dependent cached sink field", builder, ref failureCount);
+                AssertContains(randomUsable, "runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Random events reject audio services that are initialized but not runtime-ready", builder, ref failureCount);
                 AssertContains(randomMeteorBoom, "IMeteorShowerAudioSink spatialAudioManager = ResolveMeteorShowerAudioSink()", "Random events meteor booms use the usable sink resolver", builder, ref failureCount);
                 AssertContains(randomWaterBoom, "IMeteorShowerAudioSink spatialAudioManager = ResolveMeteorShowerAudioSink()", "Random events water booms use the usable sink resolver", builder, ref failureCount);
                 AssertNotContains(randomMeteorBoom, "IMeteorShowerAudioSink spatialAudioManager = _cachedSpatialAudioManager", "Random events meteor booms never trust the raw cached sink field", builder, ref failureCount);
@@ -1560,10 +2089,19 @@ namespace Hecton8.Audio.Editor
             {
                 string eclipseOnEnable = ExtractMethodBody(eclipseGameplaySystem, "private void OnEnable()");
                 string eclipseHotSwap = ExtractMethodBody(eclipseGameplaySystem, "public void OnGlobalRegistryServiceReplaced(");
+                string eclipseCache = ExtractMethodBody(eclipseGameplaySystem, "private void CacheSpatialAudioSink(");
+                string eclipseResolve = ExtractMethodBody(eclipseGameplaySystem, "private ISpatialAudioEnvironmentModulationSink ResolveSpatialAudioSink()");
+                string eclipseUsable = ExtractMethodBody(eclipseGameplaySystem, "private static bool IsAudioRuntimeObjectUsable(");
                 string eclipsePublish = ExtractMethodBody(eclipseGameplaySystem, "private void PublishEclipseAcousticPitchShift(");
                 AssertContains(eclipseOnEnable, "CacheSpatialAudioSink(GlobalRegistry.Audio)", "Eclipse gameplay cold-caches spatial audio through the usable-runtime filter", builder, ref failureCount);
                 AssertContains(eclipseHotSwap, "CacheSpatialAudioSink(currentService)", "Eclipse gameplay caches spatial audio hot swaps through the usable-runtime filter", builder, ref failureCount);
                 AssertContains(eclipseHotSwap, "_currentAcousticPitchShiftCents = float.NaN", "Eclipse gameplay replays current pitch shift to a replacement audio runtime", builder, ref failureCount);
+                AssertContains(eclipseCache, "if (!IsAudioRuntimeObjectUsable(audioRuntime))", "Eclipse gameplay rejects unusable audio runtimes while caching", builder, ref failureCount);
+                AssertContains(eclipseCache, "_spatialAudioRuntime = audioRuntime", "Eclipse gameplay keeps the owning audio runtime with the dependent modulation sink", builder, ref failureCount);
+                AssertContains(eclipseResolve, "object audioRuntime = _spatialAudioRuntime", "Eclipse gameplay modulation sink resolver starts from its cached audio owner", builder, ref failureCount);
+                AssertContains(eclipseResolve, "if (ReferenceEquals(spatialAudioSink, audioRuntime) && IsAudioRuntimeObjectUsable(spatialAudioSink))", "Eclipse gameplay modulation sink must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(eclipseResolve, "_spatialAudioSink = spatialAudioSink", "Eclipse gameplay modulation sink resolver refreshes dependent cached sink field", builder, ref failureCount);
+                AssertContains(eclipseUsable, "runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Eclipse gameplay rejects audio services that are initialized but not runtime-ready", builder, ref failureCount);
                 AssertContains(eclipsePublish, "ISpatialAudioEnvironmentModulationSink spatialAudio = ResolveSpatialAudioSink()", "Eclipse gameplay pitch shift uses the usable sink resolver", builder, ref failureCount);
                 AssertNotContains(eclipsePublish, "GlobalRegistry.Audio is ISpatialAudioEnvironmentModulationSink", "Eclipse gameplay pitch shift does not poll audio registry directly", builder, ref failureCount);
             }
@@ -1572,15 +2110,29 @@ namespace Hecton8.Audio.Editor
             {
                 string radarHotSwap = ExtractMethodBody(acousticRadarSphereRenderer, "public void OnGlobalRegistryServiceReplaced(");
                 string radarColdCache = ExtractMethodBody(acousticRadarSphereRenderer, "private void CacheRegistryServicesCold()");
+                string radarCache = ExtractMethodBody(acousticRadarSphereRenderer, "private void CacheImpactEmitterReadModel(");
+                string radarResolve = ExtractMethodBody(acousticRadarSphereRenderer, "private ISpatialAudioImpactEmitterReadModel ResolveImpactEmitterReadModel()");
+                string radarUsable = ExtractMethodBody(acousticRadarSphereRenderer, "private static bool IsAudioRuntimeObjectUsable(");
                 string radarRefresh = ExtractMethodBody(acousticRadarSphereRenderer, "private void RefreshMatricesForLateFrame()");
                 string compassHotSwap = ExtractMethodBody(sonarHoloCompass, "public void OnGlobalRegistryServiceReplaced(");
                 string compassColdCache = ExtractMethodBody(sonarHoloCompass, "private void CacheRegistryServicesCold()");
+                string compassCache = ExtractMethodBody(sonarHoloCompass, "private void CacheImpactEmitterReadModel(");
+                string compassResolve = ExtractMethodBody(sonarHoloCompass, "private ISpatialAudioImpactEmitterReadModel ResolveImpactEmitterReadModel()");
+                string compassUsable = ExtractMethodBody(sonarHoloCompass, "private static bool IsAudioRuntimeObjectUsable(");
                 string compassProjection = ExtractMethodBody(sonarHoloCompass, "private void AdvanceCompassProjection(");
                 AssertContains(radarHotSwap, "CacheImpactEmitterReadModel(currentService)", "Acoustic radar caches impact emitters through the usable-runtime filter", builder, ref failureCount);
                 AssertContains(radarColdCache, "CacheImpactEmitterReadModel(GlobalRegistry.Audio)", "Acoustic radar cold-caches impact emitters through the usable-runtime filter", builder, ref failureCount);
+                AssertContains(radarCache, "_cachedAudioRuntime = audioRuntime", "Acoustic radar keeps the owning audio runtime with the dependent impact read-model", builder, ref failureCount);
+                AssertContains(radarResolve, "if (ReferenceEquals(audioManager, audioRuntime) && IsAudioRuntimeObjectUsable(audioManager))", "Acoustic radar impact read-model must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(radarResolve, "_cachedAudioManager = audioManager", "Acoustic radar impact read-model resolver refreshes dependent cached read-model field", builder, ref failureCount);
+                AssertContains(radarUsable, "runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Acoustic radar rejects audio services that are initialized but not runtime-ready", builder, ref failureCount);
                 AssertContains(radarRefresh, "ISpatialAudioImpactEmitterReadModel audioManager = ResolveImpactEmitterReadModel()", "Acoustic radar refresh uses the usable impact-emitter resolver", builder, ref failureCount);
                 AssertContains(compassHotSwap, "CacheImpactEmitterReadModel(currentService)", "Sonar compass caches impact emitters through the usable-runtime filter", builder, ref failureCount);
                 AssertContains(compassColdCache, "CacheImpactEmitterReadModel(GlobalRegistry.Audio)", "Sonar compass cold-caches impact emitters through the usable-runtime filter", builder, ref failureCount);
+                AssertContains(compassCache, "_cachedAudioRuntime = audioRuntime", "Sonar compass keeps the owning audio runtime with the dependent impact read-model", builder, ref failureCount);
+                AssertContains(compassResolve, "if (ReferenceEquals(audioManager, audioRuntime) && IsAudioRuntimeObjectUsable(audioManager))", "Sonar compass impact read-model must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(compassResolve, "_cachedAudioManager = audioManager", "Sonar compass impact read-model resolver refreshes dependent cached read-model field", builder, ref failureCount);
+                AssertContains(compassUsable, "runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Sonar compass rejects audio services that are initialized but not runtime-ready", builder, ref failureCount);
                 AssertContains(compassProjection, "ISpatialAudioImpactEmitterReadModel audioManager = ResolveImpactEmitterReadModel()", "Sonar compass projection uses the usable impact-emitter resolver", builder, ref failureCount);
                 AssertNotContains(radarRefresh, "ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager", "Acoustic radar never trusts the raw cached impact-emitter field", builder, ref failureCount);
                 AssertNotContains(compassProjection, "ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager", "Sonar compass never trusts the raw cached impact-emitter field", builder, ref failureCount);
@@ -1590,10 +2142,18 @@ namespace Hecton8.Audio.Editor
             {
                 string sceneHotSwap = ExtractMethodBody(sceneRuntime, "public void OnGlobalRegistryServiceReplaced(");
                 string sceneColdCache = ExtractMethodBody(sceneRuntime, "private void RefreshTerminalBootServiceHandlesCold()");
+                string sceneCache = ExtractMethodBody(sceneRuntime, "private void CacheSceneTransitionAudioBridge(");
+                string sceneResolve = ExtractMethodBody(sceneRuntime, "private ISceneTransitionAudioBridge ResolveSceneTransitionAudioBridge()");
+                string sceneUsable = ExtractMethodBody(sceneRuntime, "private static bool IsAudioRuntimeObjectUsable(");
                 string sceneBegin = ExtractMethodBody(sceneRuntime, "private void BeginWorldDroneCrossfade()");
                 string sceneUpdate = ExtractMethodBody(sceneRuntime, "private void UpdateWorldDroneCrossfade(");
                 AssertContains(sceneHotSwap, "CacheSceneTransitionAudioBridge(currentService)", "Scene runtime caches transition audio hot swaps through the usable-runtime filter", builder, ref failureCount);
                 AssertContains(sceneColdCache, "CacheSceneTransitionAudioBridge(GlobalRegistry.Audio)", "Scene runtime cold-caches transition audio through the usable-runtime filter", builder, ref failureCount);
+                AssertContains(sceneCache, "_sceneTransitionAudioRuntime = audioRuntime", "Scene runtime keeps the owning audio runtime with the dependent transition bridge", builder, ref failureCount);
+                AssertContains(sceneResolve, "object audioRuntime = _sceneTransitionAudioRuntime", "Scene runtime transition bridge resolver starts from its cached audio owner", builder, ref failureCount);
+                AssertContains(sceneResolve, "if (ReferenceEquals(sceneTransitionAudioBridge, audioRuntime) && IsAudioRuntimeObjectUsable(sceneTransitionAudioBridge))", "Scene runtime transition bridge must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(sceneResolve, "_sceneTransitionAudioBridge = sceneTransitionAudioBridge", "Scene runtime transition bridge resolver refreshes dependent cached bridge field", builder, ref failureCount);
+                AssertContains(sceneUsable, "runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Scene runtime rejects audio services that are initialized but not runtime-ready", builder, ref failureCount);
                 AssertContains(sceneBegin, "ISceneTransitionAudioBridge spatialAudio = ResolveSceneTransitionAudioBridge()", "Scene runtime world-drone begin uses the usable bridge resolver", builder, ref failureCount);
                 AssertContains(sceneUpdate, "ISceneTransitionAudioBridge spatialAudio = ResolveSceneTransitionAudioBridge()", "Scene runtime world-drone update uses the usable bridge resolver", builder, ref failureCount);
                 AssertNotContains(sceneBegin, "ISceneTransitionAudioBridge spatialAudio = _sceneTransitionAudioBridge", "Scene runtime world-drone begin never trusts the raw cached bridge", builder, ref failureCount);
@@ -1627,7 +2187,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(pdaCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "PDA stores only usable audio services", builder, ref failureCount);
                 AssertContains(pdaResolve, "if (IsAudioServiceUsable(audioService))", "PDA resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(pdaResolve, "_audioService = null", "PDA resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(pdaUsable, "audioService == null || !audioService.IsInitialized", "PDA rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(pdaUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "PDA rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(pdaUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "PDA rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(playSound, "_pendingSoundClips[index] = clip", "PDA click helper stages pending audio without immediate playback", builder, ref failureCount);
                 AssertContains(flushSounds, "IAudioService audioManager = ResolveAudioService()", "PDA pending sound flush uses the usable audio-service resolver", builder, ref failureCount);
@@ -1649,7 +2209,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(flashlightCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Player flashlight stores only usable audio services", builder, ref failureCount);
                 AssertContains(flashlightResolve, "if (IsAudioServiceUsable(audioService))", "Player flashlight resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(flashlightResolve, "_audioService = null", "Player flashlight resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(flashlightUsable, "audioService == null || !audioService.IsInitialized", "Player flashlight rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(flashlightUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Player flashlight rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(flashlightUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Player flashlight rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(flashlightFlush, "IAudioService audioService = ResolveAudioService()", "Player flashlight audio flush uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(flashlightFlush, "IAudioService audioService = _audioService", "Player flashlight audio flush never trusts the raw cached audio-service field", builder, ref failureCount);
@@ -1668,7 +2228,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(inventoryCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "PDA inventory tab stores only usable audio services", builder, ref failureCount);
                 AssertContains(inventoryResolve, "if (IsAudioServiceUsable(audioService))", "PDA inventory tab resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(inventoryResolve, "_audioService = null", "PDA inventory tab resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(inventoryUsable, "audioService == null || !audioService.IsInitialized", "PDA inventory tab rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(inventoryUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "PDA inventory tab rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(inventoryUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "PDA inventory tab rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(inventoryPlay, "IAudioService audio = ResolveAudioService()", "PDA inventory UI sound uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(inventoryPlay, "IAudioService audio = _audioService", "PDA inventory UI sound never trusts the raw cached audio-service field", builder, ref failureCount);
@@ -1687,7 +2247,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(inventoryCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Player inventory stores only usable audio services", builder, ref failureCount);
                 AssertContains(inventoryResolve, "if (IsAudioServiceUsable(audioService))", "Player inventory resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(inventoryResolve, "_cachedAudioService = null", "Player inventory resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(inventoryUsable, "audioService == null || !audioService.IsInitialized", "Player inventory rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(inventoryUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Player inventory rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(inventoryUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Player inventory rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(inventoryRunaway, "IAudioService audioService = ResolveAudioService()", "Player inventory thermal runaway audio resolves only usable audio services", builder, ref failureCount);
                 AssertContains(inventoryRunaway, "audioService is ISpatialAudioInventoryRunawaySink inventoryAudio", "Player inventory thermal runaway sink is cast only after usable audio-service resolution", builder, ref failureCount);
@@ -1709,7 +2269,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(movementCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Player movement stores only usable audio services", builder, ref failureCount);
                 AssertContains(movementResolve, "if (IsAudioServiceUsable(audioService))", "Player movement resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(movementResolve, "_audioService = null", "Player movement resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(movementUsable, "audioService == null || !audioService.IsInitialized", "Player movement rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(movementUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Player movement rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(movementUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Player movement rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(movementFlush, "IAudioService audioManager = ResolveAudioService()", "Player movement presentation audio flush uses the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(movementFlush, "audioManager.PlayStatic2D", "Player movement presentation audio still routes static cues", builder, ref failureCount);
@@ -1732,10 +2292,41 @@ namespace Hecton8.Audio.Editor
                 AssertContains(mapCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "PDA map tab stores only usable audio services", builder, ref failureCount);
                 AssertContains(mapResolve, "if (IsAudioServiceUsable(audioService))", "PDA map tab resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(mapResolve, "_audioService = null", "PDA map tab resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(mapUsable, "audioService == null || !audioService.IsInitialized", "PDA map tab rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(mapUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "PDA map tab rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(mapUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "PDA map tab rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(mapThreatPings, "IAudioService audio = ResolveAudioService()", "PDA map acoustic pings use the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(mapThreatPings, "_audioService", "PDA map acoustic pings never read the raw cached audio-service field", builder, ref failureCount);
+            }
+
+            if (pdaDataLogTab.Length > 0)
+            {
+                string dataLogHotSwap = ExtractMethodBody(pdaDataLogTab, "public void OnGlobalRegistryServiceReplaced(");
+                string dataLogReset = ExtractMethodBody(pdaDataLogTab, "private static void ResetCatalogRegistry()");
+                string dataLogColdCache = ExtractMethodBody(pdaDataLogTab, "private static void CacheRegistryServicesCold()");
+                string dataLogClearCache = ExtractMethodBody(pdaDataLogTab, "private static void ClearCachedRuntimeServices()");
+                string dataLogAudioLogCache = ExtractMethodBody(pdaDataLogTab, "private static void CacheAudioLogSystem(");
+                string dataLogAudioLogResolve = ExtractMethodBody(pdaDataLogTab, "private static AudioLogSystem ResolveAudioLogSystem()");
+                string dataLogAudioLogUsable = ExtractMethodBody(pdaDataLogTab, "private static bool IsAudioLogSystemUsable(");
+                string dataLogPlaySelected = ExtractMethodBody(pdaDataLogTab, "public void PlaySelected()");
+                string dataLogRefreshRows = ExtractMethodBody(pdaDataLogTab, "private void RefreshRowHighlights()");
+                string dataLogRefreshPlayButton = ExtractMethodBody(pdaDataLogTab, "private void RefreshPlayButton()");
+                string dataLogStressRefresh = ExtractMethodBody(pdaDataLogTab, "private void RefreshStressReactiveDetailIfNeeded()");
+                AssertContains(dataLogHotSwap, "CacheAudioLogSystem(currentService as AudioLogSystem)", "PDA data-log tab caches audio-log hot swaps through the usable-runtime filter", builder, ref failureCount);
+                AssertContains(dataLogReset, "ClearCachedRuntimeServices();", "PDA data-log tab clears static runtime services on subsystem registration", builder, ref failureCount);
+                AssertContains(dataLogColdCache, "CacheAudioLogSystem(GlobalRegistry.AudioLogs)", "PDA data-log tab cold-caches audio-log runtime through the usable-runtime filter", builder, ref failureCount);
+                AssertContains(dataLogClearCache, "s_cachedAudioLogs = null", "PDA data-log tab clears cached audio-log runtime references", builder, ref failureCount);
+                AssertContains(dataLogAudioLogCache, "s_cachedAudioLogs = IsAudioLogSystemUsable(audioLogSystem) ? audioLogSystem : null", "PDA data-log tab stores only usable audio-log runtimes", builder, ref failureCount);
+                AssertContains(dataLogAudioLogResolve, "if (IsAudioLogSystemUsable(audioLogSystem))", "PDA data-log tab resolves cached audio-log runtime only while usable", builder, ref failureCount);
+                AssertContains(dataLogAudioLogResolve, "s_cachedAudioLogs = null", "PDA data-log tab clears stale audio-log runtime references", builder, ref failureCount);
+                AssertContains(dataLogAudioLogUsable, "return audioLogSystem != null && audioLogSystem.IsAudioLogRuntimeReady", "PDA data-log tab rejects unregistered, aborted, destroyed, or disabled audio-log runtimes", builder, ref failureCount);
+                AssertContains(dataLogPlaySelected, "AudioLogSystem system = ResolveAudioLogSystem()", "PDA data-log playback resolves only usable audio-log runtimes", builder, ref failureCount);
+                AssertContains(dataLogRefreshRows, "AudioLogSystem system = ResolveAudioLogSystem()", "PDA data-log row highlight resolves only usable audio-log runtimes", builder, ref failureCount);
+                AssertContains(dataLogRefreshPlayButton, "AudioLogSystem system = ResolveAudioLogSystem()", "PDA data-log play button resolves only usable audio-log runtimes", builder, ref failureCount);
+                AssertContains(dataLogStressRefresh, "AudioLogSystem system = ResolveAudioLogSystem()", "PDA data-log stress subtitle refresh resolves only usable audio-log runtimes", builder, ref failureCount);
+                AssertNotContains(dataLogPlaySelected, "s_cachedAudioLogs", "PDA data-log playback never reads the raw cached audio-log runtime directly", builder, ref failureCount);
+                AssertNotContains(dataLogRefreshRows, "s_cachedAudioLogs", "PDA data-log row highlight never reads the raw cached audio-log runtime directly", builder, ref failureCount);
+                AssertNotContains(dataLogRefreshPlayButton, "s_cachedAudioLogs", "PDA data-log play button never reads the raw cached audio-log runtime directly", builder, ref failureCount);
+                AssertNotContains(dataLogStressRefresh, "s_cachedAudioLogs", "PDA data-log stress subtitle refresh never reads the raw cached audio-log runtime directly", builder, ref failureCount);
             }
 
             if (playerStressVfx.Length > 0)
@@ -1753,7 +2344,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(stressAudioCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Stress VFX stores only usable audio services", builder, ref failureCount);
                 AssertContains(stressAudioResolve, "if (IsAudioServiceUsable(audioService))", "Stress VFX resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(stressAudioResolve, "_cachedAudioService = null", "Stress VFX resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(stressAudioUsable, "audioService == null || !audioService.IsInitialized", "Stress VFX rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(stressAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Stress VFX rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(stressAudioUsable, "audioService is Behaviour behaviour", "Stress VFX validates MonoBehaviour-backed audio services", builder, ref failureCount);
                 AssertContains(stressAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Stress VFX rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(stressHeartbeat, "IAudioService audioManager = ResolveAudioService()", "Stress VFX heartbeat playback uses the usable audio-service resolver", builder, ref failureCount);
@@ -1764,7 +2355,11 @@ namespace Hecton8.Audio.Editor
             if (eventsSource.Length > 0)
             {
                 AssertContains(eventsSource, "LeviathanRoar", "Procedural audio event kind routes Leviathan roar", builder, ref failureCount);
-                AssertContains(eventsSource, "SignalBus<AudioEvent>.TryPush(in audioEvent)", "Procedural audio event source publishes through the typed SignalBus lane with explicit drop semantics", builder, ref failureCount);
+                AssertContains(eventsSource, "s_x001DirectSignalPushDropCount_ProceduralAudioEvents", "Procedural audio event source owns a tracked producer drop counter", builder, ref failureCount);
+                AssertContains(eventsSource, "System.Threading.Volatile.Read(ref s_x001DirectSignalPushDropCount_ProceduralAudioEvents)", "Procedural audio event source exposes typed-lane producer drops through a volatile read-model", builder, ref failureCount);
+                AssertContains(eventsSource, "s_x001DirectSignalPushDropCount_ProceduralAudioEvents = 0", "Procedural audio typed-lane producer drops reset on subsystem registration", builder, ref failureCount);
+                AssertContains(eventsSource, "SignalBus<AudioEvent>.TryPushTracked(in audioEvent, ref s_x001DirectSignalPushDropCount_ProceduralAudioEvents)", "Procedural audio event source publishes through the typed SignalBus lane with tracked drop semantics", builder, ref failureCount);
+                AssertNotContains(eventsSource, "SignalBus<AudioEvent>.TryPush(in audioEvent)", "Procedural audio event source does not bypass tracked producer drop accounting", builder, ref failureCount);
                 AssertContains(eventsSource, "GlobalSignals.InitializeAllQueues()", "Procedural audio event source enters through central signal lane authority", builder, ref failureCount);
             }
 
@@ -1788,6 +2383,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(dialCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Physical panel dial stores only usable audio services", builder, ref failureCount);
                 AssertContains(dialResolve, "if (IsAudioServiceUsable(audioService))", "Physical panel dial resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(dialResolve, "_cachedAudioService = null", "Physical panel dial resolver clears stale audio-service references", builder, ref failureCount);
+                AssertContains(dialUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Physical panel dial rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(dialUsable, "audioService is Behaviour behaviour", "Physical panel dial validates MonoBehaviour-backed audio services", builder, ref failureCount);
                 AssertContains(dialUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Physical panel dial rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(dialQueue, "IAudioService audio = ResolveAudioService()", "Physical panel dial scroll ticks use the usable audio-service resolver", builder, ref failureCount);
@@ -1807,6 +2403,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(keyboardCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Physical terminal keyboard stores only usable audio services", builder, ref failureCount);
                 AssertContains(keyboardResolve, "if (IsAudioServiceUsable(audioService))", "Physical terminal keyboard resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(keyboardResolve, "_cachedAudioService = null", "Physical terminal keyboard resolver clears stale audio-service references", builder, ref failureCount);
+                AssertContains(keyboardUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Physical terminal keyboard rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(keyboardUsable, "audioService is Behaviour behaviour", "Physical terminal keyboard validates MonoBehaviour-backed audio services", builder, ref failureCount);
                 AssertContains(keyboardUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Physical terminal keyboard rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(keyboardQueue, "IAudioService audio = ResolveAudioService()", "Physical terminal keyboard key clicks use the usable audio-service resolver", builder, ref failureCount);
@@ -1826,9 +2423,13 @@ namespace Hecton8.Audio.Editor
                 AssertContains(buttonCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Physical panel button stores only usable audio services", builder, ref failureCount);
                 AssertContains(buttonResolve, "if (IsAudioServiceUsable(audioService))", "Physical panel button resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(buttonResolve, "_cachedAudioService = null", "Physical panel button resolver clears stale audio-service references", builder, ref failureCount);
+                AssertContains(buttonUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Physical panel button rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(buttonUsable, "audioService is Behaviour behaviour", "Physical panel button validates MonoBehaviour-backed audio services", builder, ref failureCount);
                 AssertContains(buttonUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Physical panel button rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(buttonClick, "IAudioService audio = ResolveAudioService()", "Physical panel button click playback uses the usable audio-service resolver", builder, ref failureCount);
+                AssertContains(buttonClick, "pressAudioEventId != 0u && audio.IsAudioRuntimeReady", "Physical panel button event route rechecks audio runtime readiness before queueing events", builder, ref failureCount);
+                AssertContains(buttonClick, "if (audio.QueueAudioEvent(in audioEvent))", "Physical panel button falls back to clip playback when the event queue rejects a click", builder, ref failureCount);
+                AssertNotContains(buttonClick, "audio.IsInitialized", "Physical panel button click playback does not duplicate partial initialization checks after resolver", builder, ref failureCount);
                 AssertNotContains(buttonClick, "_cachedAudioService", "Physical panel button click playback never reads the raw cached audio-service field", builder, ref failureCount);
             }
 
@@ -1847,6 +2448,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(advisoryCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Suit advisory stores only usable audio services", builder, ref failureCount);
                 AssertContains(advisoryResolve, "if (IsAudioServiceUsable(audioService))", "Suit advisory resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(advisoryResolve, "_cachedAudioService = null", "Suit advisory resolver clears stale audio-service references", builder, ref failureCount);
+                AssertContains(advisoryUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Suit advisory rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(advisoryUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Suit advisory rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(advisoryPlay, "IAudioService audio = ResolveAudioService()", "Suit advisory warning playback uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(advisoryPlay, "_cachedAudioService", "Suit advisory warning playback never reads the raw cached audio-service field", builder, ref failureCount);
@@ -1857,6 +2459,7 @@ namespace Hecton8.Audio.Editor
                 string feedbackAwake = ExtractMethodBody(uiAudioFeedback, "private void Awake()");
                 string feedbackRegister = ExtractMethodBody(uiAudioFeedback, "private bool TryRegisterRuntime()");
                 string feedbackExistingRuntime = ExtractMethodBody(uiAudioFeedback, "private bool TryAbortForUsableExistingRuntime()");
+                string feedbackAbort = ExtractMethodBody(uiAudioFeedback, "private void AbortDuplicateRuntimeOwner()");
                 string feedbackRuntimeUsable = ExtractMethodBody(uiAudioFeedback, "private static bool IsUIAudioFeedbackRuntimeUsable(");
                 string feedbackRebound = ExtractMethodBody(uiAudioFeedback, "public void OnGlobalRegistryServiceRebound(");
                 string feedbackHotSwap = ExtractMethodBody(uiAudioFeedback, "public void OnGlobalRegistryServiceReplaced(");
@@ -1872,10 +2475,18 @@ namespace Hecton8.Audio.Editor
                 AssertContains(feedbackExistingRuntime, "ReferenceEquals(registered, null)", "UI audio feedback detects stale destroyed registry references by actual reference", builder, ref failureCount);
                 AssertContains(feedbackExistingRuntime, "ReferenceEquals(registered, this)", "UI audio feedback treats only other owners as registry conflicts", builder, ref failureCount);
                 AssertContains(feedbackExistingRuntime, "if (IsUIAudioFeedbackRuntimeUsable(registered))", "UI audio feedback preserves usable existing runtime owners", builder, ref failureCount);
-                AssertContains(feedbackExistingRuntime, "Destroy(gameObject);", "UI audio feedback destroys duplicate runtime roots only when the existing owner is usable", builder, ref failureCount);
+                AssertContains(feedbackExistingRuntime, "if (!Application.isPlaying)", "UI audio feedback stale-owner gate is inert outside play mode", builder, ref failureCount);
+                AssertContains(feedbackExistingRuntime, "AbortDuplicateRuntimeOwner();", "UI audio feedback duplicate-owner gate routes through explicit abort cleanup", builder, ref failureCount);
+                AssertContains(feedbackAbort, "_runtimeOwnerAborted = true", "UI audio feedback marks duplicate owners aborted before destruction", builder, ref failureCount);
+                AssertContains(feedbackAbort, "TryUnregisterControls();", "UI audio feedback abort cleanup unregisters authored controls", builder, ref failureCount);
+                AssertContains(feedbackAbort, "TryUnregisterHotSwapListener();", "UI audio feedback abort cleanup unregisters hot-swap listeners", builder, ref failureCount);
+                AssertContains(feedbackAbort, "TryUnregisterRuntime();", "UI audio feedback abort cleanup unregisters service ownership", builder, ref failureCount);
+                AssertContains(feedbackAbort, "Destroy(gameObject);", "UI audio feedback destroys duplicate runtime roots only after abort cleanup", builder, ref failureCount);
                 AssertContains(feedbackExistingRuntime, "GlobalRegistry.UnregisterUIAudioFeedbackRuntime(registered);", "UI audio feedback clears stale existing owners before registering", builder, ref failureCount);
                 AssertContains(feedbackExistingRuntime, "s_activeRuntime = null", "UI audio feedback clears stale active-runtime mirror when clearing registry owners", builder, ref failureCount);
-                AssertContains(feedbackRuntimeUsable, "feedback != null && feedback._runtimeRegistered && feedback.isActiveAndEnabled", "UI audio feedback validates existing owner readiness and activity", builder, ref failureCount);
+                AssertContains(feedbackRuntimeUsable, "feedback._runtimeRegistered", "UI audio feedback validates existing owner readiness", builder, ref failureCount);
+                AssertContains(feedbackRuntimeUsable, "!feedback._runtimeOwnerAborted", "UI audio feedback rejects aborted existing owners", builder, ref failureCount);
+                AssertContains(feedbackRuntimeUsable, "feedback.isActiveAndEnabled", "UI audio feedback validates existing owner activity", builder, ref failureCount);
                 AssertNotContains(feedbackAwake, "registered != null && registered != this", "UI audio feedback Awake no longer treats stale owners as hard conflicts", builder, ref failureCount);
                 AssertNotContains(feedbackRegister, "registered != null && registered != this", "UI audio feedback registration no longer treats stale owners as hard conflicts", builder, ref failureCount);
                 AssertContains(feedbackRebound, "CacheAudioService(currentService as IAudioService)", "UI audio feedback rebound caches audio through the usable-service filter", builder, ref failureCount);
@@ -1884,6 +2495,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(feedbackCache, "_audioManager = IsAudioServiceUsable(audioService) ? audioService : null", "UI audio feedback stores only usable audio services", builder, ref failureCount);
                 AssertContains(feedbackResolve, "if (IsAudioServiceUsable(audioService))", "UI audio feedback resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(feedbackResolve, "_audioManager = null", "UI audio feedback resolver clears stale audio-service references", builder, ref failureCount);
+                AssertContains(feedbackUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "UI audio feedback rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(feedbackUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "UI audio feedback rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(feedbackPlay, "IAudioService audioManager = ResolveAudioService()", "UI audio feedback playback uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(feedbackPlay, "_audioManager.PlayStatic2D", "UI audio feedback playback never calls through the raw cached audio manager field", builder, ref failureCount);
@@ -1904,6 +2516,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(triggerCache, "_audioManager = IsAudioServiceUsable(audioService) ? audioService : null", "UI button trigger stores only usable audio services", builder, ref failureCount);
                 AssertContains(triggerResolve, "if (IsAudioServiceUsable(audioService))", "UI button trigger resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(triggerResolve, "_audioManager = null", "UI button trigger resolver clears stale audio-service references", builder, ref failureCount);
+                AssertContains(triggerUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "UI button trigger rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(triggerUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "UI button trigger rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(triggerClick, "IAudioService audioManager = ResolveAudioService()", "UI button trigger playback uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(triggerClick, "_audioManager", "UI button trigger playback never reads the raw cached audio-manager field", builder, ref failureCount);
@@ -1922,7 +2535,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(weatherCache, "_audioRuntime = IsAudioServiceUsable(audioService) ? audioService : null", "Surface weather director stores only usable audio services", builder, ref failureCount);
                 AssertContains(weatherResolve, "if (IsAudioServiceUsable(audioService))", "Surface weather director resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(weatherResolve, "_audioRuntime = null", "Surface weather director resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(weatherUsable, "audioService == null || !audioService.IsInitialized", "Surface weather director rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(weatherUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Surface weather director rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(weatherUsable, "audioService is Behaviour behaviour", "Surface weather director validates MonoBehaviour-backed audio services", builder, ref failureCount);
                 AssertContains(weatherUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Surface weather director rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(weatherThunder, "IAudioService audioManager = ResolveAudioService()", "Surface weather thunder playback uses the usable audio-service resolver", builder, ref failureCount);
@@ -1943,7 +2556,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(visualsCache, "_audioRuntime = IsAudioServiceUsable(audioService) ? audioService : null", "Underwater visuals stores only usable audio services", builder, ref failureCount);
                 AssertContains(visualsResolve, "if (IsAudioServiceUsable(audioService))", "Underwater visuals resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(visualsResolve, "_audioRuntime = null", "Underwater visuals resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(visualsUsable, "audioService == null || !audioService.IsInitialized", "Underwater visuals rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(visualsUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Underwater visuals rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(visualsUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Underwater visuals rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(visualsThermocline, "IAudioService audioRuntime = ResolveAudioService()", "Underwater thermocline audio uses the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(visualsThermocline, "audioRuntime.PlayStatic2D", "Underwater thermocline audio remains a 2D transition cue", builder, ref failureCount);
@@ -1966,7 +2579,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(playerCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Player interaction stores only usable audio services", builder, ref failureCount);
                 AssertContains(playerResolve, "if (IsAudioServiceUsable(audioService))", "Player interaction resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(playerResolve, "_audioService = null", "Player interaction resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(playerUsable, "audioService == null || !audioService.IsInitialized", "Player interaction rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(playerUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Player interaction rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(playerUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Player interaction rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(playerQueue, "ResolveAudioService() == null", "Player interaction queue path checks usable audio service before staging clicks", builder, ref failureCount);
                 AssertNotContains(playerQueue, "_audioService", "Player interaction queue path never reads the raw cached audio-service field", builder, ref failureCount);
@@ -1987,7 +2600,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(saveCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Save station stores only usable audio services", builder, ref failureCount);
                 AssertContains(saveResolve, "if (IsAudioServiceUsable(audioService))", "Save station resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(saveResolve, "_audioService = null", "Save station resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(saveUsable, "audioService == null || !audioService.IsInitialized", "Save station rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(saveUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Save station rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(saveUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Save station rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(savePlay, "Hecton8.Core.IAudioService audioManager = ResolveAudioService()", "Save station interaction sound uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(savePlay, "_audioService", "Save station interaction sound never reads the raw cached audio-service field", builder, ref failureCount);
@@ -2006,7 +2619,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(switchCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Physical snap switch stores only usable audio services", builder, ref failureCount);
                 AssertContains(switchResolve, "if (IsAudioServiceUsable(audioService))", "Physical snap switch resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(switchResolve, "_audioService = null", "Physical snap switch resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(switchUsable, "audioService == null || !audioService.IsInitialized", "Physical snap switch rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(switchUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Physical snap switch rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(switchUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Physical snap switch rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(switchQueue, "IAudioService audio = ResolveAudioService()", "Physical snap switch queues authored audio events through the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(switchQueue, "_audioService", "Physical snap switch audio queue never reads the raw cached audio-service field", builder, ref failureCount);
@@ -2026,7 +2639,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(plantCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Oxygen plant stores only usable audio services", builder, ref failureCount);
                 AssertContains(plantResolve, "if (IsAudioServiceUsable(audioService))", "Oxygen plant resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(plantResolve, "_audioService = null", "Oxygen plant resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(plantUsable, "audioService == null || !audioService.IsInitialized", "Oxygen plant rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(plantUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Oxygen plant rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(plantUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Oxygen plant rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(plantLateFrame, "IAudioService audio = ResolveAudioService()", "Oxygen plant release audio flush uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(plantLateFrame, "IAudioService audio = _audioService", "Oxygen plant release audio flush never trusts the raw cached audio-service field", builder, ref failureCount);
@@ -2045,7 +2658,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(bubbleCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Oxygen bubble stores only usable audio services", builder, ref failureCount);
                 AssertContains(bubbleResolve, "if (IsAudioServiceUsable(audioService))", "Oxygen bubble resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(bubbleResolve, "_audioService = null", "Oxygen bubble resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(bubbleUsable, "audioService == null || !audioService.IsInitialized", "Oxygen bubble rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(bubbleUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Oxygen bubble rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(bubbleUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Oxygen bubble rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(bubbleCollect, "IAudioService audio = ResolveAudioService()", "Oxygen bubble collect audio uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(bubbleCollect, "_audioService.PlayAtPoint", "Oxygen bubble collect audio never calls through the raw cached audio-service field", builder, ref failureCount);
@@ -2065,7 +2678,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(crateCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Storage crate stores only usable audio services", builder, ref failureCount);
                 AssertContains(crateResolve, "if (IsAudioServiceUsable(audioService))", "Storage crate resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(crateResolve, "_audioService = null", "Storage crate resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(crateUsable, "audioService == null || !audioService.IsInitialized", "Storage crate rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(crateUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Storage crate rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(crateUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Storage crate rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(crateOpen, "IAudioService audio = ResolveAudioService()", "Storage crate open sound uses the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(crateClose, "IAudioService audio = ResolveAudioService()", "Storage crate close sound uses the usable audio-service resolver", builder, ref failureCount);
@@ -2087,7 +2700,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(terminalCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Message terminal stores only usable audio services", builder, ref failureCount);
                 AssertContains(terminalResolve, "if (IsAudioServiceUsable(audioService))", "Message terminal resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(terminalResolve, "_audioService = null", "Message terminal resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(terminalUsable, "audioService == null || !audioService.IsInitialized", "Message terminal rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(terminalUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Message terminal rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(terminalUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Message terminal rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(terminalQueue, "ResolveAudioService() == null", "Message terminal queue path checks usable audio service before staging static cues", builder, ref failureCount);
                 AssertNotContains(terminalQueue, "_audioService", "Message terminal queue path never reads the raw cached audio-service field", builder, ref failureCount);
@@ -2110,13 +2723,15 @@ namespace Hecton8.Audio.Editor
                 AssertContains(actionCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Player action controller stores only usable audio services", builder, ref failureCount);
                 AssertContains(actionResolve, "if (IsAudioServiceUsable(audioService))", "Player action controller resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(actionResolve, "_audioService = null", "Player action controller resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(actionUsable, "audioService == null || !audioService.IsInitialized", "Player action controller rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(actionUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Player action controller rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(actionUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Player action controller rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(actionCompletion, "ResolveAudioService() != null", "Player action completion audio queue is gated by the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(actionCancel, "ResolveAudioService() != null", "Player action cancel audio queue is gated by the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(actionFlush, "IAudioService audioService = ResolveAudioService()", "Player action queued audio flush uses the usable audio-service resolver", builder, ref failureCount);
+                AssertContains(actionFlush, "request.EventId != 0u && audioService.IsAudioRuntimeReady", "Player action queued event route rechecks audio runtime readiness before queueing events", builder, ref failureCount);
                 AssertNotContains(actionCompletion, "_audioService", "Player action completion audio never reads the raw cached audio-service field", builder, ref failureCount);
                 AssertNotContains(actionCancel, "_audioService", "Player action cancel audio never reads the raw cached audio-service field", builder, ref failureCount);
+                AssertNotContains(actionFlush, "audioService.IsInitialized", "Player action queued audio does not duplicate partial initialization checks after resolver", builder, ref failureCount);
                 AssertNotContains(actionFlush, "IAudioService audioService = _audioService", "Player action queued audio flush never trusts the raw cached audio-service field", builder, ref failureCount);
             }
 
@@ -2133,7 +2748,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(fragmentCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Scannable fragment stores only usable audio services", builder, ref failureCount);
                 AssertContains(fragmentResolve, "if (IsAudioServiceUsable(audioService))", "Scannable fragment resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(fragmentResolve, "_audioService = null", "Scannable fragment resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(fragmentUsable, "audioService == null || !audioService.IsInitialized", "Scannable fragment rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(fragmentUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Scannable fragment rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(fragmentUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Scannable fragment rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(fragmentLateFrame, "IAudioService audio = ResolveAudioService()", "Scannable fragment scan ping uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(fragmentHotSwap, "_audioService = currentService as IAudioService", "Scannable fragment hot-swap never stores raw audio service directly", builder, ref failureCount);
@@ -2154,7 +2769,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(ladderCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Climbable ladder stores only usable audio services", builder, ref failureCount);
                 AssertContains(ladderResolve, "if (IsAudioServiceUsable(audioService))", "Climbable ladder resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(ladderResolve, "_audioService = null", "Climbable ladder resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(ladderUsable, "audioService == null || !audioService.IsInitialized", "Climbable ladder rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(ladderUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Climbable ladder rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(ladderUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Climbable ladder rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(ladderMove, "IAudioService audio = ResolveAudioService()", "Climbable ladder movement sound uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(ladderHotSwap, "_audioService = currentService as IAudioService", "Climbable ladder hot-swap never stores raw audio service directly", builder, ref failureCount);
@@ -2175,7 +2790,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(reactorCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Bio reactor stores only usable audio services", builder, ref failureCount);
                 AssertContains(reactorResolve, "if (IsAudioServiceUsable(audioService))", "Bio reactor resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(reactorResolve, "_audioService = null", "Bio reactor resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(reactorUsable, "audioService == null || !audioService.IsInitialized", "Bio reactor rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(reactorUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Bio reactor rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(reactorUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Bio reactor rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(reactorLateFrame, "IAudioService audio = ResolveAudioService()", "Bio reactor fuel hum uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(reactorHotSwap, "_audioService = currentService as IAudioService", "Bio reactor hot-swap never stores raw audio service directly", builder, ref failureCount);
@@ -2196,7 +2811,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(plantCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Harvestable plant stores only usable audio services", builder, ref failureCount);
                 AssertContains(plantResolve, "if (IsAudioServiceUsable(audioService))", "Harvestable plant resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(plantResolve, "_audioService = null", "Harvestable plant resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(plantUsable, "audioService == null || !audioService.IsInitialized", "Harvestable plant rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(plantUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Harvestable plant rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(plantUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Harvestable plant rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(plantFlush, "IAudioService audio = ResolveAudioService()", "Harvestable plant cut sound uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(plantHotSwap, "_audioService = currentService as IAudioService", "Harvestable plant hot-swap never stores raw audio service directly", builder, ref failureCount);
@@ -2217,7 +2832,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(outcropCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Harvestable outcrop stores only usable audio services", builder, ref failureCount);
                 AssertContains(outcropResolve, "if (IsAudioServiceUsable(audioService))", "Harvestable outcrop resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(outcropResolve, "_audioService = null", "Harvestable outcrop resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(outcropUsable, "audioService == null || !audioService.IsInitialized", "Harvestable outcrop rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(outcropUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Harvestable outcrop rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(outcropUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Harvestable outcrop rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(outcropLateFrame, "IAudioService audio = ResolveAudioService()", "Harvestable outcrop hit and break sounds use the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(outcropHotSwap, "_audioService = currentService as IAudioService", "Harvestable outcrop hot-swap never stores raw audio service directly", builder, ref failureCount);
@@ -2238,7 +2853,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(floraCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Hostile flora stores only usable audio services", builder, ref failureCount);
                 AssertContains(floraResolve, "if (IsAudioServiceUsable(audioService))", "Hostile flora resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(floraResolve, "_audioService = null", "Hostile flora resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(floraUsable, "audioService == null || !audioService.IsInitialized", "Hostile flora rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(floraUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Hostile flora rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(floraUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Hostile flora rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(floraLateFrame, "IAudioService audio = ResolveAudioService()", "Hostile flora shot sound uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(floraHotSwap, "_audioService = currentService as IAudioService", "Hostile flora hot-swap never stores raw audio service directly", builder, ref failureCount);
@@ -2260,7 +2875,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(floaterCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Floater stores only usable audio services", builder, ref failureCount);
                 AssertContains(floaterResolve, "if (IsAudioServiceUsable(audioService))", "Floater resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(floaterResolve, "_audioService = null", "Floater resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(floaterUsable, "audioService == null || !audioService.IsInitialized", "Floater rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(floaterUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Floater rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(floaterUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Floater rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(floaterLateFrame, "IAudioService audio = ResolveAudioService()", "Floater pickup and attach sounds use the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(floaterHotSwap, "_audioService = currentService as IAudioService", "Floater hot-swap never stores raw audio service directly", builder, ref failureCount);
@@ -2281,7 +2896,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(beaconCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Deployable beacon stores only usable audio services", builder, ref failureCount);
                 AssertContains(beaconResolve, "if (IsAudioServiceUsable(audioService))", "Deployable beacon resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(beaconResolve, "_audioService = null", "Deployable beacon resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(beaconUsable, "audioService == null || !audioService.IsInitialized", "Deployable beacon rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(beaconUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Deployable beacon rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(beaconUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Deployable beacon rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(beaconLateFrame, "IAudioService audioService = ResolveAudioService()", "Deployable beacon deploy and interact sounds use the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(beaconHotSwap, "_audioService = currentService as IAudioService", "Deployable beacon hot-swap never stores raw audio service directly", builder, ref failureCount);
@@ -2302,7 +2917,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(transportCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Mountable transport stores only usable audio services", builder, ref failureCount);
                 AssertContains(transportResolve, "if (IsAudioServiceUsable(audioService))", "Mountable transport resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(transportResolve, "_cachedAudioService = null", "Mountable transport resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(transportUsable, "audioService == null || !audioService.IsInitialized", "Mountable transport rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(transportUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Mountable transport rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(transportUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Mountable transport rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(transportFlush, "IAudioService audioService = ResolveAudioService()", "Mountable transport one-shot audio flush uses the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(transportFlush, "audioService.PlayAtPoint", "Mountable transport one-shot audio remains spatial", builder, ref failureCount);
@@ -2323,7 +2938,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(seatCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Drop pod seat stores only usable audio services", builder, ref failureCount);
                 AssertContains(seatResolve, "if (IsAudioServiceUsable(audioService))", "Drop pod seat resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(seatResolve, "_audioService = null", "Drop pod seat resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(seatUsable, "audioService == null || !audioService.IsInitialized", "Drop pod seat rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(seatUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Drop pod seat rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(seatUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Drop pod seat rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(seatQueue, "IAudioService audio = ResolveAudioService()", "Drop pod seat queued audio uses the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(seatQueue, "audio.QueueAudioEvent(in audioEvent)", "Drop pod seat queued audio remains event-based", builder, ref failureCount);
@@ -2346,7 +2961,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(toggleCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Drop pod toggle stores only usable audio services", builder, ref failureCount);
                 AssertContains(toggleResolve, "if (IsAudioServiceUsable(audioService))", "Drop pod toggle resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(toggleResolve, "_audioService = null", "Drop pod toggle resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(toggleUsable, "audioService == null || !audioService.IsInitialized", "Drop pod toggle rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(toggleUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Drop pod toggle rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(toggleUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Drop pod toggle rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(toggleQueue, "IAudioService audio = ResolveAudioService()", "Drop pod toggle queued audio uses the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(toggleQueue, "audio.QueueAudioEvent(in audioEvent)", "Drop pod toggle queued audio remains event-based", builder, ref failureCount);
@@ -2369,7 +2984,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(airlockCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Drop pod airlock stores only usable audio services", builder, ref failureCount);
                 AssertContains(airlockResolve, "if (IsAudioServiceUsable(audioService))", "Drop pod airlock resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(airlockResolve, "_audioService = null", "Drop pod airlock resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(airlockUsable, "audioService == null || !audioService.IsInitialized", "Drop pod airlock rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(airlockUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Drop pod airlock rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(airlockUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Drop pod airlock rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(airlockQueue, "IAudioService audio = ResolveAudioService()", "Drop pod airlock queued audio uses the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(airlockQueue, "audio.QueueAudioEvent(in audioEvent)", "Drop pod airlock queued audio remains event-based", builder, ref failureCount);
@@ -2395,7 +3010,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(airlockCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Base airlock stores only usable audio services", builder, ref failureCount);
                 AssertContains(airlockResolve, "if (IsAudioServiceUsable(audioService))", "Base airlock resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(airlockResolve, "ClearCachedAudioService()", "Base airlock resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(airlockUsable, "audioService == null || !audioService.IsInitialized", "Base airlock rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(airlockUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Base airlock rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(airlockUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Base airlock rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(airlockStart, "IAudioService audio = ResolveAudioService()", "Base airlock cycle start sound uses the usable audio-service resolver", builder, ref failureCount);
                 AssertContains(airlockFlush, "IAudioService audio = ResolveAudioService()", "Base airlock cycle end sound uses the usable audio-service resolver", builder, ref failureCount);
@@ -2416,7 +3031,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(chargerCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Battery charger stores only usable audio services", builder, ref failureCount);
                 AssertContains(chargerResolve, "if (IsAudioServiceUsable(audioService))", "Battery charger resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(chargerResolve, "_cachedAudioService = null", "Battery charger resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(chargerUsable, "audioService == null || !audioService.IsInitialized", "Battery charger rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(chargerUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Battery charger rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(chargerUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Battery charger rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(chargerFlush, "IAudioService audio = ResolveAudioService()", "Battery charger queued audio flush uses the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(chargerFlush, "IAudioService audio = _cachedAudioService", "Battery charger queued audio never trusts the raw cached audio-service field", builder, ref failureCount);
@@ -2435,7 +3050,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(doorCache, "_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", "Sealed door stores only usable audio services", builder, ref failureCount);
                 AssertContains(doorResolve, "if (IsAudioServiceUsable(audioService))", "Sealed door resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(doorResolve, "_cachedAudioService = null", "Sealed door resolver clears stale audio-service references", builder, ref failureCount);
-                AssertContains(doorUsable, "audioService == null || !audioService.IsInitialized", "Sealed door rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(doorUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Sealed door rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(doorUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Sealed door rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(doorFlush, "IAudioService audio = ResolveAudioService()", "Sealed door cutting/open sounds use the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(doorFlush, "IAudioService audio = _cachedAudioService", "Sealed door presentation audio never trusts the raw cached audio-service field", builder, ref failureCount);
@@ -2466,7 +3081,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(constructionResolve, "if (IsAudioServiceUsable(audioService))", "Construction manager resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(constructionResolve, "ClearCachedAudioService()", "Construction manager resolver clears stale audio-service references", builder, ref failureCount);
                 AssertContains(constructionClearAudio, "_cachedAudioService = null", "Construction manager clears cached audio service explicitly", builder, ref failureCount);
-                AssertContains(constructionUsable, "audioService == null || !audioService.IsInitialized", "Construction manager rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(constructionUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Construction manager rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(constructionUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Construction manager rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(constructionHotSwap, "CacheAudioService(currentService as IAudioService)", "Construction manager caches audio hot swaps through the usable-service filter", builder, ref failureCount);
                 AssertContains(constructionHotSwap, "_habitatGraphManager?.SetAudioService(ResolveAudioService())", "Construction manager rebinds habitat graph audio through the resolver on hot swap", builder, ref failureCount);
@@ -2481,7 +3096,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(habitatGraphAudioResolve, "if (IsAudioServiceUsable(audioService))", "Habitat graph resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(habitatGraphAudioResolve, "ClearCachedAudioService()", "Habitat graph resolver clears stale audio-service references", builder, ref failureCount);
                 AssertContains(habitatGraphClearAudio, "_audioService = null", "Habitat graph clears cached audio service explicitly", builder, ref failureCount);
-                AssertContains(habitatGraphAudioUsable, "audioService == null || !audioService.IsInitialized", "Habitat graph rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(habitatGraphAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Habitat graph rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(habitatGraphAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Habitat graph rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertNotContains(habitatGraphSetRuntime, "_audioService = audioService", "Habitat graph runtime-service bind never stores raw audio service directly", builder, ref failureCount);
                 AssertNotContains(habitatGraphSetAudio, "_audioService = audioService", "Habitat graph audio hot-swap bind never stores raw audio service directly", builder, ref failureCount);
@@ -2505,7 +3120,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(fabricatorResolve, "if (IsAudioServiceUsable(audioService))", "Fabricator resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(fabricatorResolve, "ClearCachedAudioService()", "Fabricator resolver clears stale audio-service references", builder, ref failureCount);
                 AssertContains(fabricatorClear, "_audioService = null", "Fabricator clears cached audio service explicitly", builder, ref failureCount);
-                AssertContains(fabricatorUsable, "audioService == null || !audioService.IsInitialized", "Fabricator rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(fabricatorUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Fabricator rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(fabricatorUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Fabricator rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(fabricatorOnDisable, "ClearCachedAudioService()", "Fabricator clears audio service on disable", builder, ref failureCount);
                 AssertContains(fabricatorOnDestroy, "ClearCachedAudioService()", "Fabricator clears audio service on destroy", builder, ref failureCount);
@@ -2532,7 +3147,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(builderResolve, "if (IsAudioServiceUsable(audioService))", "Player builder resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(builderResolve, "ClearCachedAudioService()", "Player builder resolver clears stale audio-service references", builder, ref failureCount);
                 AssertContains(builderClear, "_cachedAudioService = null", "Player builder clears cached audio service explicitly", builder, ref failureCount);
-                AssertContains(builderUsable, "audioService == null || !audioService.IsInitialized", "Player builder rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(builderUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Player builder rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(builderUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Player builder rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(builderFlush, "IAudioService audioService = ResolveAudioService()", "Player builder queued build sounds use the usable audio-service resolver", builder, ref failureCount);
                 AssertNotContains(builderHotSwap, "_cachedAudioService = currentService as IAudioService", "Player builder hot-swap never stores raw audio service directly", builder, ref failureCount);
@@ -2563,11 +3178,13 @@ namespace Hecton8.Audio.Editor
                 AssertContains(laserCache, "_cachedCutAudioMixerGroup = audioService.AmbientGroup", "Laser cutter derives mixer cache only from usable audio service", builder, ref failureCount);
                 AssertContains(laserResolve, "if (IsAudioServiceUsable(audioService))", "Laser cutter resolver accepts only usable cached audio service", builder, ref failureCount);
                 AssertContains(laserResolve, "ClearCachedAudioService()", "Laser cutter resolver clears dependent stale audio caches", builder, ref failureCount);
-                AssertContains(laserResidencyResolve, "ResolveAudioService() != null ? _cachedAudioResidencyService : null", "Laser cutter residency route is gated by usable audio service", builder, ref failureCount);
+                AssertContains(laserResidencyResolve, "IAudioService audioService = ResolveAudioService()", "Laser cutter residency resolver starts from a usable audio owner", builder, ref failureCount);
+                AssertContains(laserResidencyResolve, "if (ReferenceEquals(residencyService, audioService))", "Laser cutter residency cache must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(laserResidencyResolve, "_cachedAudioResidencyService = residencyService", "Laser cutter residency resolver refreshes dependent cached residency field", builder, ref failureCount);
                 AssertContains(laserClearAudio, "_cachedAudioService = null", "Laser cutter clears cached audio service explicitly", builder, ref failureCount);
                 AssertContains(laserClearAudio, "_cachedAudioResidencyService = null", "Laser cutter clears cached audio residency service explicitly", builder, ref failureCount);
                 AssertContains(laserClearAudio, "_cachedCutAudioMixerGroup = null", "Laser cutter clears cached audio mixer group explicitly", builder, ref failureCount);
-                AssertContains(laserUsable, "audioService == null || !audioService.IsInitialized", "Laser cutter rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(laserUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Laser cutter rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(laserUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Laser cutter rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(laserPrewarm, "IAudioResidencyService residency = ResolveAudioResidencyService()", "Laser cutter audio prewarm uses the residency resolver", builder, ref failureCount);
                 AssertContains(laserRelease, "IAudioResidencyService residency = ResolveAudioResidencyService()", "Laser cutter audio release uses the residency resolver", builder, ref failureCount);
@@ -2579,9 +3196,11 @@ namespace Hecton8.Audio.Editor
             {
                 string acousticAwake = ExtractMethodBody(acousticZone, "private void Awake()");
                 string acousticOnEnable = ExtractMethodBody(acousticZone, "private void OnEnable()");
-                string acousticRegisterService = ExtractMethodBody(acousticZone, "private void TryRegisterService()");
+                string acousticRegisterService = ExtractMethodBody(acousticZone, "private bool TryRegisterService()");
                 string acousticExistingRuntime = ExtractMethodBody(acousticZone, "private bool TryAbortForUsableExistingRuntime()");
                 string acousticRuntimeUsable = ExtractMethodBody(acousticZone, "private static bool IsAcousticZoneRuntimeUsable(");
+                string acousticAbort = ExtractMethodBody(acousticZone, "private void AbortDuplicateRuntimeOwner()");
+                string acousticPendingClear = ExtractMethodBody(acousticZone, "private void ClearPendingAcousticPresentationState()");
                 string acousticPlayMadness = ExtractMethodBody(acousticZone, "public void PlayMadnessWhisperCue()");
                 string acousticEmitterOcclusion = ExtractMethodBody(acousticZone, "private void UpdateEmitterOcclusionState(AudioListener listener)");
                 string acousticHotSwap = ExtractMethodBody(acousticZone, "public void OnGlobalRegistryServiceReplaced(");
@@ -2596,14 +3215,15 @@ namespace Hecton8.Audio.Editor
                 string acousticMusicDuckTarget = ExtractMethodBody(acousticZone, "private float ResolveMusicAmbientDuckTarget01(");
                 string acousticMusicDuckVolume = ExtractMethodBody(acousticZone, "private float ResolveMusicAmbientDuckVolumeScale()");
                 AssertContains(acousticAwake, "if (TryAbortForUsableExistingRuntime())", "Acoustic-zone Awake routes duplicate-owner checks through the stale-owner gate", builder, ref failureCount);
-                AssertContains(acousticOnEnable, "if (TryAbortForUsableExistingRuntime())", "Acoustic-zone OnEnable routes duplicate-owner checks through the stale-owner gate", builder, ref failureCount);
-                AssertTextBefore(acousticOnEnable, "if (TryAbortForUsableExistingRuntime())", "CacheRegistryServicesCold();", "Acoustic-zone clears stale owners before OnEnable cold-cache work", builder, ref failureCount);
-                AssertTextBefore(acousticOnEnable, "if (TryAbortForUsableExistingRuntime())", "TryRegisterHotSwapListener();", "Acoustic-zone clears stale owners before OnEnable hot-swap subscription", builder, ref failureCount);
-                AssertTextBefore(acousticOnEnable, "if (TryAbortForUsableExistingRuntime())", "AtmosphereEvents.Register(this);", "Acoustic-zone clears stale owners before atmosphere event subscription", builder, ref failureCount);
+                AssertContains(acousticOnEnable, "if (!TryRegisterService())", "Acoustic-zone OnEnable uses the service owner gate before runtime routing", builder, ref failureCount);
+                AssertTextBefore(acousticOnEnable, "if (!TryRegisterService())", "CacheRegistryServicesCold();", "Acoustic-zone claims ownership before OnEnable cold-cache work", builder, ref failureCount);
+                AssertTextBefore(acousticOnEnable, "if (!TryRegisterService())", "TryRegisterHotSwapListener();", "Acoustic-zone claims ownership before OnEnable hot-swap subscription", builder, ref failureCount);
+                AssertTextBefore(acousticOnEnable, "if (!TryRegisterService())", "AtmosphereEvents.Register(this);", "Acoustic-zone claims ownership before atmosphere event subscription", builder, ref failureCount);
                 AssertContains(acousticRegisterService, "if (TryAbortForUsableExistingRuntime())", "Acoustic-zone registration routes duplicate-owner checks through the stale-owner gate", builder, ref failureCount);
                 AssertTextBefore(acousticRegisterService, "if (TryAbortForUsableExistingRuntime())", "GlobalRegistry.RegisterAcousticZoneRuntime(this);", "Acoustic-zone clears stale owners before self-register", builder, ref failureCount);
                 AssertContains(acousticExistingRuntime, "AcousticZoneController active = s_activeRuntimeInstance", "Acoustic-zone stale-owner gate checks the active runtime mirror", builder, ref failureCount);
                 AssertContains(acousticExistingRuntime, "AcousticZoneController registered = GlobalRegistry.AcousticZone", "Acoustic-zone stale-owner gate checks the registry owner", builder, ref failureCount);
+                AssertContains(acousticExistingRuntime, "if (!Application.isPlaying)", "Acoustic-zone stale-owner gate is inert outside play mode", builder, ref failureCount);
                 AssertContains(acousticExistingRuntime, "if (IsAcousticZoneRuntimeUsable(active))", "Acoustic-zone preserves usable active runtime owners", builder, ref failureCount);
                 AssertContains(acousticExistingRuntime, "if (IsAcousticZoneRuntimeUsable(registered))", "Acoustic-zone preserves usable registered runtime owners", builder, ref failureCount);
                 AssertContains(acousticExistingRuntime, "GlobalRegistry.UnregisterAcousticZoneRuntime(active);", "Acoustic-zone clears stale active registry owners before registering", builder, ref failureCount);
@@ -2611,6 +3231,19 @@ namespace Hecton8.Audio.Editor
                 AssertContains(acousticExistingRuntime, "s_activeRuntimeInstance = null", "Acoustic-zone clears stale active-runtime mirror", builder, ref failureCount);
                 AssertContains(acousticRuntimeUsable, "controller._serviceRegistered", "Acoustic-zone validates existing owner registration state", builder, ref failureCount);
                 AssertContains(acousticRuntimeUsable, "controller.isActiveAndEnabled", "Acoustic-zone validates existing owner activity", builder, ref failureCount);
+                AssertContains(acousticRuntimeUsable, "!controller._runtimeOwnerAborted", "Acoustic-zone rejects aborted runtime owners", builder, ref failureCount);
+                AssertContains(acousticZone, "private bool _runtimeOwnerAborted;", "Acoustic-zone tracks duplicate-owner abort state explicitly", builder, ref failureCount);
+                AssertContains(acousticZone, "public bool IsInterior => !_runtimeOwnerAborted &&", "Acoustic-zone read model is inert after duplicate-owner abort", builder, ref failureCount);
+                AssertContains(acousticAbort, "TryUnregisterPhysicsImpactListener();", "Acoustic-zone duplicate-owner abort removes physics impact routing", builder, ref failureCount);
+                AssertContains(acousticAbort, "SpectrumEvents.UnregisterSonarPingListener(this);", "Acoustic-zone duplicate-owner abort removes sonar event routing", builder, ref failureCount);
+                AssertContains(acousticAbort, "TryUnregisterService();", "Acoustic-zone duplicate-owner abort clears registry ownership", builder, ref failureCount);
+                AssertContains(acousticAbort, "ClearPendingAcousticPresentationState();", "Acoustic-zone duplicate-owner abort clears pending audio presentation work", builder, ref failureCount);
+                AssertContains(acousticAbort, "_runtimeOwnerAborted = true", "Acoustic-zone duplicate-owner abort latches the aborted state", builder, ref failureCount);
+                AssertContains(acousticAbort, "enabled = false", "Acoustic-zone duplicate-owner abort disables the component", builder, ref failureCount);
+                AssertContains(acousticAbort, "Destroy(gameObject);", "Acoustic-zone duplicate-owner abort destroys the duplicate GameObject", builder, ref failureCount);
+                AssertContains(acousticPendingClear, "_pendingAmbientSourceMixerRoutingSource = null", "Acoustic-zone pending clear releases queued ambient source references", builder, ref failureCount);
+                AssertContains(acousticPendingClear, "_pendingAmbientSourceMixerRoutingGroup = null", "Acoustic-zone pending clear releases queued mixer-group references", builder, ref failureCount);
+                AssertContains(acousticPendingClear, "_pendingFatalPressureCuePosition = default", "Acoustic-zone pending clear resets positional cue state", builder, ref failureCount);
                 AssertNotContains(acousticAwake, "registered != null && registered != this", "Acoustic-zone Awake no longer treats stale owners as hard conflicts", builder, ref failureCount);
                 AssertNotContains(acousticRegisterService, "registered != null && registered != this", "Acoustic-zone registration no longer treats stale owners as hard conflicts", builder, ref failureCount);
                 AssertContains(globalSignals, "[StructLayout(LayoutKind.Explicit, Size = 16)]", "Acoustic-zone typed signal has explicit ARM64 layout with manual offsets", builder, ref failureCount);
@@ -2632,9 +3265,11 @@ namespace Hecton8.Audio.Editor
                 AssertContains(acousticAudioCache, "_cachedSpatialAudioEmitterReadModel = null", "Acoustic-zone clears cached spatial read-model when audio service is unusable", builder, ref failureCount);
                 AssertContains(acousticAudioResolver, "if (IsAudioServiceUsable(audioService))", "Acoustic-zone resolves cached audio services only while usable", builder, ref failureCount);
                 AssertContains(acousticAudioResolver, "_cachedSpatialAudioEmitterReadModel = null", "Acoustic-zone clears stale spatial read-model with stale audio service", builder, ref failureCount);
+                AssertContains(acousticAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Acoustic-zone rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(acousticAudioUsable, "audioService is Behaviour behaviour", "Acoustic-zone validates MonoBehaviour-backed audio service activity", builder, ref failureCount);
                 AssertContains(acousticAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Acoustic-zone rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(acousticSpatialResolver, "if (audioService == null)", "Acoustic-zone spatial read-model resolver fails closed when audio service is stale", builder, ref failureCount);
+                AssertContains(acousticSpatialResolver, "if (ReferenceEquals(spatialAudioReadModel, audioService))", "Acoustic-zone spatial read-model cache must still belong to the usable audio owner", builder, ref failureCount);
                 AssertContains(acousticZone, "ClearCachedRegistryServices()", "Acoustic-zone clears cached registry services on disable/destroy", builder, ref failureCount);
                 AssertContains(acousticHotSwap, "GlobalRegistryServiceSlot.MusicDirectorRuntime", "Acoustic-zone listens for music-director runtime hot swaps", builder, ref failureCount);
                 AssertContains(acousticColdCache, "CacheMusicDirector(GlobalRegistry.MusicDirector)", "Acoustic-zone cold-seeds music director for ambient ducking", builder, ref failureCount);
@@ -2654,13 +3289,23 @@ namespace Hecton8.Audio.Editor
             if (audioLogEvents.Length > 0)
             {
                 string audioLogEnqueue = ExtractMethodBody(audioLogEvents, "private static bool Enqueue(");
+                string audioLogReserve = ExtractMethodBody(audioLogEvents, "private static bool TryReserveReferenceSlot(");
+                string audioLogResolve = ExtractMethodBody(audioLogEvents, "private static bool IsReferenceSlotPayloadCurrent(");
                 string queueOverflow = ExtractMethodBody(audioLogEvents, "private static void ReportQueueOverflow(AudioLogEventType type)");
                 string referenceSlotOverflow = ExtractMethodBody(audioLogEvents, "private static void ReportReferenceSlotOverflow(AudioLogEventType type)");
                 string resetBody = ExtractMethodBody(audioLogEvents, "private static void ResetStaticState()");
+                AssertContains(audioLogEvents, "[FieldOffset(22)] public ushort Reserved", "Audio-log payload reserves generation token without resizing the 32-byte lane", builder, ref failureCount);
                 AssertContains(audioLogEvents, "public static int DroppedEventCount => _droppedEventCount", "Audio-log events expose dropped queue-event counter", builder, ref failureCount);
                 AssertContains(audioLogEvents, "public static int DroppedReferenceSlotCount => _droppedReferenceSlotCount", "Audio-log events expose dropped sidecar-reference counter", builder, ref failureCount);
+                AssertContains(audioLogEvents, "private static readonly ushort[] _referenceSlotGenerations", "Audio-log sidecar slots track generations for stale-handle rejection", builder, ref failureCount);
                 AssertContains(audioLogEnqueue, "ReportQueueOverflow(type)", "Audio-log queue overflow reports the event type", builder, ref failureCount);
                 AssertContains(audioLogEnqueue, "ReportReferenceSlotOverflow(type)", "Audio-log sidecar-slot overflow reports the event type", builder, ref failureCount);
+                AssertContains(audioLogEnqueue, "Reserved = referenceGeneration", "Audio-log producers stamp sidecar generation into payload", builder, ref failureCount);
+                AssertContains(audioLogReserve, "out ushort referenceGeneration", "Audio-log sidecar reservation returns a generation token", builder, ref failureCount);
+                AssertContains(audioLogReserve, "referenceGeneration = AdvanceReferenceSlotGeneration(slot)", "Audio-log sidecar reservation advances generation before dispatch", builder, ref failureCount);
+                AssertContains(audioLogResolve, "payload.Reserved != 0", "Audio-log sidecar resolve rejects payloads without generation token", builder, ref failureCount);
+                AssertContains(audioLogResolve, "_referenceSlotGenerations[slot] == payload.Reserved", "Audio-log sidecar resolve rejects stale slot generations", builder, ref failureCount);
+                AssertContains(audioLogEvents, "private static void ReleaseReferenceSlotForPayload(in AudioLogEventPayload payload)", "Audio-log sidecar release is payload-generation aware", builder, ref failureCount);
                 AssertContains(queueOverflow, "AudioLogQueueContextHash ^ ((uint)type << 24)", "Audio-log queue overflow context encodes event type", builder, ref failureCount);
                 AssertContains(referenceSlotOverflow, "AudioLogReferenceSlotContextHash ^ ((uint)type << 24)", "Audio-log reference-slot overflow context encodes event type", builder, ref failureCount);
                 AssertContains(queueOverflow, "_lastQueueOverflowTelemetryFrame == frame", "Audio-log queue overflow telemetry is frame-rate limited", builder, ref failureCount);
@@ -2671,7 +3316,8 @@ namespace Hecton8.Audio.Editor
 
             if (audioLogSystem.Length > 0)
             {
-                string audioLogRegister = ExtractMethodBody(audioLogSystem, "private void TryRegisterService()");
+                string audioLogRegister = ExtractMethodBody(audioLogSystem, "private bool TryRegisterService()");
+                string audioLogExistingRuntime = ExtractMethodBody(audioLogSystem, "private bool TryAbortForUsableExistingRuntime()");
                 string audioLogSystemUsable = ExtractMethodBody(audioLogSystem, "private static bool IsAudioLogSystemUsable(");
                 string audioLogSlowTick = ExtractMethodBody(audioLogSystem, "public void SlowTick()");
                 string audioLogWarningBlocker = ExtractMethodBody(audioLogSystem, "private bool TickAtmosphericWarningBlocker()");
@@ -2690,15 +3336,19 @@ namespace Hecton8.Audio.Editor
                 string audioLogGlitchReset = ExtractMethodBody(audioLogSystem, "private void FlushPendingNarrativeRadioGlitchReset()");
                 string audioLogAcquire = ExtractMethodBody(audioLogSystem, "private bool TryAcquireVaultMutation");
                 string audioLogTelemetry = ExtractMethodBody(audioLogSystem, "private void RecordVaultTelemetry");
-                AssertContains(audioLogSystem, "public bool IsNarrativeQueueBlocked => _isPlaying || _atmosphericWarningActive || _queueCount > 0", "Audio-log runtime exposes queued narrative speech as foreground-blocking state", builder, ref failureCount);
+                AssertContains(globalRegistryContracts, "bool IsAudioLogRuntimeReady { get; }", "Audio-log runtime contract exposes owner readiness to cross-system consumers", builder, ref failureCount);
+                AssertContains(audioLogSystem, "public bool IsNarrativeQueueBlocked => !_runtimeOwnerAborted &&", "Audio-log runtime exposes queued narrative speech as foreground-blocking state only for the active owner", builder, ref failureCount);
+                AssertContains(audioLogSystem, "public bool IsAudioLogRuntimeReady => !_runtimeOwnerAborted && _serviceRegistered && isActiveAndEnabled", "Audio-log runtime readiness rejects aborted, unregistered, or disabled owners", builder, ref failureCount);
                 AssertContains(audioLogRegister, "AudioLogSystem registeredAudioLogs = GlobalRegistry.AudioLogs", "Audio-log owner registration snapshots the current registry owner once", builder, ref failureCount);
                 AssertContains(audioLogRegister, "!ReferenceEquals(registeredAudioLogs, null)", "Audio-log owner registration detects stale destroyed registry references by actual reference", builder, ref failureCount);
                 AssertContains(audioLogRegister, "!ReferenceEquals(registeredAudioLogs, this)", "Audio-log owner registration only treats other owners as conflicts", builder, ref failureCount);
                 AssertContains(audioLogRegister, "if (IsAudioLogSystemUsable(registeredAudioLogs))", "Audio-log owner registration preserves usable existing owners", builder, ref failureCount);
-                AssertContains(audioLogRegister, "Destroy(gameObject);", "Audio-log duplicate self-destroys only when the existing owner is usable", builder, ref failureCount);
+                AssertContains(audioLogRegister, "AbortDuplicateRuntimeOwner();", "Audio-log duplicate owner aborts through explicit runtime-owner cleanup", builder, ref failureCount);
                 AssertContains(audioLogRegister, "GlobalRegistry.UnregisterAudioLogRuntime(registeredAudioLogs);", "Audio-log owner registration clears stale existing owners before registering", builder, ref failureCount);
                 AssertTextBefore(audioLogRegister, "GlobalRegistry.UnregisterAudioLogRuntime(registeredAudioLogs);", "GlobalRegistry.RegisterAudioLogRuntime(this);", "Audio-log owner registration unregisters stale owners before self-register", builder, ref failureCount);
-                AssertContains(audioLogSystemUsable, "return audioLogSystem != null && audioLogSystem.isActiveAndEnabled", "Audio-log owner usability rejects destroyed or disabled owners", builder, ref failureCount);
+                AssertContains(audioLogExistingRuntime, "if (_runtimeOwnerAborted)", "Audio-log stale-owner gate short-circuits aborted duplicates", builder, ref failureCount);
+                AssertContains(audioLogExistingRuntime, "if (!Application.isPlaying)", "Audio-log stale-owner gate is inert outside play mode", builder, ref failureCount);
+                AssertContains(audioLogSystemUsable, "audioLogSystem != null && audioLogSystem.IsAudioLogRuntimeReady", "Audio-log owner usability follows the public runtime-ready contract", builder, ref failureCount);
                 AssertContains(audioLogStop, "bool hadPlayback = _isPlaying || stoppedLog != null || _pendingPlaybackDirty || _currentPlaybackBitCrushed", "Audio-log stop records active playback state before clearing pending speech", builder, ref failureCount);
                 AssertContains(audioLogStop, "ClearPlaybackQueue();", "Stopping audio-log playback clears pending queued speech so music does not remain ducked", builder, ref failureCount);
                 AssertContains(audioLogStop, "if (!hadPlayback)", "Audio-log stop clears queued speech before deciding whether to publish a stopped-playback event", builder, ref failureCount);
@@ -2717,9 +3367,13 @@ namespace Hecton8.Audio.Editor
                 AssertContains(audioLogAudioCache, "_cachedNarrativeAudioSink = null", "Audio-log runtime clears cached narrative sink when audio service is unusable", builder, ref failureCount);
                 AssertContains(audioLogAudioResolver, "if (IsAudioServiceUsable(audioService))", "Audio-log runtime resolves cached audio service only while usable", builder, ref failureCount);
                 AssertContains(audioLogAudioResolver, "_cachedNarrativeAudioSink = null", "Audio-log runtime clears stale narrative sink with stale audio service", builder, ref failureCount);
+                AssertContains(audioLogAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Audio-log runtime rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(audioLogAudioUsable, "audioService is Behaviour behaviour", "Audio-log runtime validates MonoBehaviour-backed audio service activity", builder, ref failureCount);
                 AssertContains(audioLogAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Audio-log runtime rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(audioLogSinkResolver, "IAudioService audioService = ResolveAudioService()", "Audio-log narrative sink resolver is gated by usable audio service", builder, ref failureCount);
+                AssertContains(audioLogSinkResolver, "if (ReferenceEquals(narrativeAudioSink, audioService) && IsNarrativeAudioSinkUsable(narrativeAudioSink))", "Audio-log narrative sink cache must still belong to the usable audio owner", builder, ref failureCount);
+                AssertContains(audioLogSinkResolver, "_cachedNarrativeAudioSink = IsNarrativeAudioSinkUsable(narrativeAudioSink) ? narrativeAudioSink : null", "Audio-log narrative sink resolver refreshes dependent cached sink field", builder, ref failureCount);
+                AssertContains(audioLogSinkUsable, "narrativeAudioSink is IAudioService audioService && !audioService.IsAudioRuntimeReady", "Audio-log runtime rejects narrative sinks whose audio owner is not runtime-ready", builder, ref failureCount);
                 AssertContains(audioLogSinkUsable, "narrativeAudioSink is Behaviour behaviour", "Audio-log runtime validates MonoBehaviour-backed narrative sinks", builder, ref failureCount);
                 AssertContains(audioLogPlaybackQueue, "ResolveNarrativeAudioSink()", "Audio-log playback queue detects bit-crush availability through usable sink resolver", builder, ref failureCount);
                 AssertContains(audioLogPlaybackFlush, "ResolveNarrativeAudioSink()", "Audio-log playback flush uses the usable narrative sink resolver", builder, ref failureCount);
@@ -2732,6 +3386,35 @@ namespace Hecton8.Audio.Editor
                 AssertContains(audioLogTelemetry, "TryResolveHandle(in _telemetryRingHandle", "Audio-log vault telemetry resolves the telemetry ring under guard", builder, ref failureCount);
                 AssertNotContains(audioLogSystem, "TryAcquireWriteLock", "Audio-log runtime avoids direct DataVault write locks", builder, ref failureCount);
                 AssertNotContains(audioLogSystem, "ReleaseWriteLock", "Audio-log runtime avoids direct DataVault write-lock release calls", builder, ref failureCount);
+            }
+
+            if (audioLogPickup.Length > 0)
+            {
+                string pickupOnDisable = ExtractMethodBody(audioLogPickup, "private void OnDisable()");
+                string pickupOnDestroy = ExtractMethodBody(audioLogPickup, "private void OnDestroy()");
+                string pickupHotSwap = ExtractMethodBody(audioLogPickup, "public void OnGlobalRegistryServiceReplaced(");
+                string pickupColdCache = ExtractMethodBody(audioLogPickup, "private void CacheRegistryServicesCold()");
+                string pickupClearCache = ExtractMethodBody(audioLogPickup, "private void ClearCachedRegistryServices()");
+                string pickupAudioLogCache = ExtractMethodBody(audioLogPickup, "private void CacheAudioLogSystem(");
+                string pickupAudioLogResolve = ExtractMethodBody(audioLogPickup, "private IAudioLogRuntime ResolveAudioLogSystem()");
+                string pickupAudioLogUsable = ExtractMethodBody(audioLogPickup, "private static bool IsAudioLogRuntimeUsable(");
+                string pickupInteract = ExtractMethodBody(audioLogPickup, "public void Interact(");
+                string pickupDiscoveryRefresh = ExtractMethodBody(audioLogPickup, "private void RefreshDiscoveryStateFromAudioLogSystem()");
+                AssertContains(pickupOnDisable, "ClearCachedRegistryServices();", "Audio-log pickup clears cached runtime services on disable", builder, ref failureCount);
+                AssertContains(pickupOnDestroy, "ClearCachedRegistryServices();", "Audio-log pickup clears cached runtime services on destroy", builder, ref failureCount);
+                AssertContains(pickupHotSwap, "CacheAudioLogSystem(currentService as IAudioLogRuntime)", "Audio-log pickup caches audio-log hot swaps through the usable-runtime filter", builder, ref failureCount);
+                AssertContains(pickupColdCache, "CacheAudioLogSystem(Hecton8.Core.GlobalRegistry.AudioLogRuntime)", "Audio-log pickup cold-caches audio-log runtime through the usable-runtime filter", builder, ref failureCount);
+                AssertContains(pickupClearCache, "_cachedAudioLogSystem = null", "Audio-log pickup clears cached audio-log runtime references", builder, ref failureCount);
+                AssertContains(pickupAudioLogCache, "_cachedAudioLogSystem = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null", "Audio-log pickup stores only usable audio-log runtimes", builder, ref failureCount);
+                AssertContains(pickupAudioLogResolve, "if (IsAudioLogRuntimeUsable(audioLogSystem))", "Audio-log pickup resolves cached audio-log runtime only while usable", builder, ref failureCount);
+                AssertContains(pickupAudioLogResolve, "_cachedAudioLogSystem = null", "Audio-log pickup clears stale audio-log runtime references", builder, ref failureCount);
+                AssertContains(pickupAudioLogUsable, "audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady", "Audio-log pickup rejects unregistered or aborted audio-log runtimes", builder, ref failureCount);
+                AssertContains(pickupAudioLogUsable, "audioLogSystem is Behaviour behaviour", "Audio-log pickup validates MonoBehaviour-backed audio-log runtimes", builder, ref failureCount);
+                AssertContains(pickupAudioLogUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Audio-log pickup rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
+                AssertContains(pickupInteract, "IAudioLogRuntime system = ResolveAudioLogSystem()", "Audio-log pickup interaction resolves only usable audio-log runtimes", builder, ref failureCount);
+                AssertContains(pickupDiscoveryRefresh, "IAudioLogRuntime audioLogSystem = ResolveAudioLogSystem()", "Audio-log pickup discovery refresh resolves only usable audio-log runtimes", builder, ref failureCount);
+                AssertNotContains(pickupInteract, "_cachedAudioLogSystem", "Audio-log pickup interaction never reads the raw cached audio-log runtime directly", builder, ref failureCount);
+                AssertNotContains(pickupDiscoveryRefresh, "_cachedAudioLogSystem", "Audio-log pickup discovery refresh never reads the raw cached audio-log runtime directly", builder, ref failureCount);
             }
 
             if (firstHourDirector.Length > 0)
@@ -2747,6 +3430,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(firstHourAudioLogCache, "_cachedAudioLogSystem = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null", "First-hour route context stores only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(firstHourAudioLogResolve, "if (IsAudioLogRuntimeUsable(audioLogSystem))", "First-hour route context resolves cached audio-log runtimes only while usable", builder, ref failureCount);
                 AssertContains(firstHourAudioLogResolve, "_cachedAudioLogSystem = null", "First-hour route context clears stale audio-log runtime references", builder, ref failureCount);
+                AssertContains(firstHourAudioLogUsable, "audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady", "First-hour route context rejects unregistered or aborted audio-log runtimes", builder, ref failureCount);
                 AssertContains(firstHourAudioLogUsable, "audioLogSystem is Behaviour behaviour", "First-hour route context validates MonoBehaviour-backed audio-log runtimes", builder, ref failureCount);
                 AssertContains(firstHourAudioLogUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "First-hour route context rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
                 AssertContains(firstHourContextSync, "IAudioLogRuntime audioLogSystem = ResolveAudioLogSystem()", "First-hour route-contact sync reads audio-log discovery state through the usable resolver", builder, ref failureCount);
@@ -2773,6 +3457,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(relayAudioLogCache, "_cachedAudioLogSystem = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null", "Emergency relay stores only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(relayAudioLogResolve, "if (IsAudioLogRuntimeUsable(audioLogSystem))", "Emergency relay resolves cached audio-log runtime only while usable", builder, ref failureCount);
                 AssertContains(relayAudioLogResolve, "_cachedAudioLogSystem = null", "Emergency relay clears stale audio-log runtime references", builder, ref failureCount);
+                AssertContains(relayAudioLogUsable, "audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady", "Emergency relay rejects unregistered or aborted audio-log runtimes", builder, ref failureCount);
                 AssertContains(relayAudioLogUsable, "audioLogSystem is Behaviour behaviour", "Emergency relay validates MonoBehaviour-backed audio-log runtimes", builder, ref failureCount);
                 AssertContains(relayAudioLogUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Emergency relay rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
                 AssertNotContains(relayInteract, "_cachedAudioLogSystem", "Emergency relay interaction never reads the raw cached audio-log runtime directly", builder, ref failureCount);
@@ -2797,6 +3482,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(discoveryAudioLogCache, "_audioLogs = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null", "Narrative discovery stores only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(discoveryAudioLogResolve, "if (IsAudioLogRuntimeUsable(audioLogSystem))", "Narrative discovery resolves cached audio-log runtime only while usable", builder, ref failureCount);
                 AssertContains(discoveryAudioLogResolve, "_audioLogs = null", "Narrative discovery clears stale audio-log runtime references", builder, ref failureCount);
+                AssertContains(discoveryAudioLogUsable, "audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady", "Narrative discovery rejects unregistered or aborted audio-log runtimes", builder, ref failureCount);
                 AssertContains(discoveryAudioLogUsable, "audioLogSystem is Behaviour behaviour", "Narrative discovery validates MonoBehaviour-backed audio-log runtimes", builder, ref failureCount);
                 AssertContains(discoveryAudioLogUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Narrative discovery rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
                 AssertContains(discoveryPlayLinkedLog, "IAudioLogRuntime audioLogs = ResolveAudioLogSystem()", "Narrative discovery linked-log playback resolves only usable audio-log runtimes", builder, ref failureCount);
@@ -2832,11 +3518,12 @@ namespace Hecton8.Audio.Editor
                 AssertContains(healthAudioCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Player health stores only usable audio services", builder, ref failureCount);
                 AssertContains(healthAudioResolve, "if (IsAudioServiceUsable(audioService))", "Player health resolves cached audio service only while usable", builder, ref failureCount);
                 AssertContains(healthAudioResolve, "_audioService = null", "Player health clears stale audio service references", builder, ref failureCount);
-                AssertContains(healthAudioUsable, "audioService == null || !audioService.IsInitialized", "Player health rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(healthAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Player health rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(healthAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Player health rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(healthAudioLogCache, "_audioLogs = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null", "Player health stores only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(healthAudioLogResolve, "if (IsAudioLogRuntimeUsable(audioLogSystem))", "Player health resolves cached audio-log runtime only while usable", builder, ref failureCount);
                 AssertContains(healthAudioLogResolve, "_audioLogs = null", "Player health clears stale audio-log runtime references", builder, ref failureCount);
+                AssertContains(healthAudioLogUsable, "audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady", "Player health rejects unregistered or aborted audio-log runtimes", builder, ref failureCount);
                 AssertContains(healthAudioLogUsable, "audioLogSystem is Behaviour behaviour", "Player health validates MonoBehaviour-backed audio-log runtimes", builder, ref failureCount);
                 AssertContains(healthAudioLogUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Player health rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
                 AssertContains(healthHeartbeat, "ResolveAudioService() == null", "Player health heartbeat queue is gated by usable audio-service resolution", builder, ref failureCount);
@@ -2873,12 +3560,12 @@ namespace Hecton8.Audio.Editor
                 AssertContains(atmosphereAudioCache, "_audioService = IsAudioServiceUsable(audioService) ? audioService : null", "Submarine atmosphere stores only usable audio services", builder, ref failureCount);
                 AssertContains(atmosphereAudioResolve, "if (IsAudioServiceUsable(audioService))", "Submarine atmosphere resolves cached audio service only while usable", builder, ref failureCount);
                 AssertContains(atmosphereAudioResolve, "_audioService = null", "Submarine atmosphere clears stale audio service references", builder, ref failureCount);
-                AssertContains(atmosphereAudioUsable, "audioService == null || !audioService.IsInitialized", "Submarine atmosphere rejects uninitialized audio services", builder, ref failureCount);
+                AssertContains(atmosphereAudioUsable, "audioService == null || !audioService.IsAudioRuntimeReady", "Submarine atmosphere rejects audio services that are not runtime-ready owners", builder, ref failureCount);
                 AssertContains(atmosphereAudioUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Submarine atmosphere rejects destroyed or disabled audio services", builder, ref failureCount);
                 AssertContains(atmosphereAudioLogCache, "_audioLogs = IsAudioLogSystemUsable(audioLogs) ? audioLogs : null", "Submarine atmosphere stores only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(atmosphereAudioLogResolve, "if (IsAudioLogSystemUsable(audioLogs))", "Submarine atmosphere resolves cached audio-log runtime only while usable", builder, ref failureCount);
                 AssertContains(atmosphereAudioLogResolve, "_audioLogs = null", "Submarine atmosphere clears stale audio-log runtime references", builder, ref failureCount);
-                AssertContains(atmosphereAudioLogUsable, "return audioLogs != null && audioLogs.isActiveAndEnabled", "Submarine atmosphere rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
+                AssertContains(atmosphereAudioLogUsable, "return audioLogs != null && audioLogs.IsAudioLogRuntimeReady", "Submarine atmosphere rejects unregistered, aborted, destroyed, or disabled audio-log runtimes", builder, ref failureCount);
                 AssertContains(atmosphereQueue, "AudioLogSystem audioLogs = ResolveAudioLogSystem()", "Submarine atmosphere low-oxygen gasping log resolves only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(atmosphereFlush, "AudioLogSystem audioLogs = ResolveAudioLogSystem()", "Submarine atmosphere audio flush resolves only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(atmosphereFlush, "IAudioService audioService = ResolveAudioService()", "Submarine atmosphere pressure screech uses the usable audio-service resolver", builder, ref failureCount);
@@ -2911,6 +3598,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(beaconAudioLogCache, "_audioLogs = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null", "Signal beacon stores only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(beaconAudioLogResolve, "if (IsAudioLogRuntimeUsable(audioLogSystem))", "Signal beacon resolves cached audio-log runtime only while usable", builder, ref failureCount);
                 AssertContains(beaconAudioLogResolve, "_audioLogs = null", "Signal beacon clears stale audio-log runtime references", builder, ref failureCount);
+                AssertContains(beaconAudioLogUsable, "audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady", "Signal beacon rejects unregistered or aborted audio-log runtimes", builder, ref failureCount);
                 AssertContains(beaconAudioLogUsable, "audioLogSystem is Behaviour behaviour", "Signal beacon validates MonoBehaviour-backed audio-log runtimes", builder, ref failureCount);
                 AssertContains(beaconAudioLogUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Signal beacon rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
                 AssertNotContains(beaconSolve, "_audioLogs", "Signal beacon telemetry never reads the raw cached audio-log runtime directly", builder, ref failureCount);
@@ -2932,6 +3620,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(atlasAudioLogCache, "_audioLogs = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null", "Atlas signal system stores only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(atlasAudioLogResolve, "if (IsAudioLogRuntimeUsable(audioLogSystem))", "Atlas signal system resolves cached audio-log runtime only while usable", builder, ref failureCount);
                 AssertContains(atlasAudioLogResolve, "_audioLogs = null", "Atlas signal system clears stale audio-log runtime references", builder, ref failureCount);
+                AssertContains(atlasAudioLogUsable, "audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady", "Atlas signal system rejects unregistered or aborted audio-log runtimes", builder, ref failureCount);
                 AssertContains(atlasAudioLogUsable, "audioLogSystem is Behaviour behaviour", "Atlas signal system validates MonoBehaviour-backed audio-log runtimes", builder, ref failureCount);
                 AssertContains(atlasAudioLogUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Atlas signal system rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
                 AssertContains(atlasReveal, "IAudioLogRuntime audioLogs = ResolveAudioLogSystem()", "Atlas signal encrypted-log reveal resolves only usable audio-log runtimes", builder, ref failureCount);
@@ -2960,6 +3649,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(atlas6AudioLogCache, "_audioLogs = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null", "Atlas-6 liability manager stores only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(atlas6AudioLogResolve, "if (IsAudioLogRuntimeUsable(audioLogSystem))", "Atlas-6 liability manager resolves cached audio-log runtime only while usable", builder, ref failureCount);
                 AssertContains(atlas6AudioLogResolve, "_audioLogs = null", "Atlas-6 liability manager clears stale audio-log runtime references", builder, ref failureCount);
+                AssertContains(atlas6AudioLogUsable, "audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady", "Atlas-6 liability manager rejects unregistered or aborted audio-log runtimes", builder, ref failureCount);
                 AssertContains(atlas6AudioLogUsable, "audioLogSystem is Behaviour behaviour", "Atlas-6 liability manager validates MonoBehaviour-backed audio-log runtimes", builder, ref failureCount);
                 AssertContains(atlas6AudioLogUsable, "return behaviour != null && behaviour.isActiveAndEnabled", "Atlas-6 liability manager rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
                 AssertNotContains(atlas6OnEnable, "TrySyncDisasterEvidenceFromAudioLogRuntime(" + "GlobalRegistry.AudioLogRuntime)", "Atlas-6 liability manager does not sync from a raw cold audio-log registry read", builder, ref failureCount);
@@ -2991,11 +3681,42 @@ namespace Hecton8.Audio.Editor
                 AssertContains(progressionAudioLogCache, "_audioLogs = IsAudioLogSystemUsable(audioLogs) ? audioLogs : null", "Narrative progression bridge stores only usable audio-log runtimes", builder, ref failureCount);
                 AssertContains(progressionAudioLogResolve, "if (IsAudioLogSystemUsable(audioLogs))", "Narrative progression bridge resolves cached audio-log runtime only while usable", builder, ref failureCount);
                 AssertContains(progressionAudioLogResolve, "_audioLogs = null", "Narrative progression bridge clears stale audio-log runtime references", builder, ref failureCount);
-                AssertContains(progressionAudioLogUsable, "return audioLogs != null && audioLogs.isActiveAndEnabled", "Narrative progression bridge rejects destroyed or disabled audio-log runtimes", builder, ref failureCount);
+                AssertContains(progressionAudioLogUsable, "return audioLogs != null && audioLogs.IsAudioLogRuntimeReady", "Narrative progression bridge rejects unregistered, aborted, destroyed, or disabled audio-log runtimes", builder, ref failureCount);
                 AssertContains(progressionBreach, "AudioLogSystem audioLogs = ResolveAudioLogSystem()", "Narrative progression hull-failure log resolves only usable audio-log runtimes", builder, ref failureCount);
                 AssertNotContains(progressionBreach, "GlobalRegistry.AudioLogs", "Narrative progression hull-failure event does not poll the audio-log registry directly", builder, ref failureCount);
                 AssertNotContains(progressionBreach, "_audioLogs", "Narrative progression hull-failure event never reads the raw cached audio-log runtime directly", builder, ref failureCount);
                 AssertNotContains(progressionAudioLogResolve, "GlobalRegistry.AudioLogs", "Narrative progression audio-log resolver does not poll the registry directly", builder, ref failureCount);
+            }
+
+            if (proceduralLoreDirector.Length > 0)
+            {
+                string loreOnEnable = ExtractMethodBody(proceduralLoreDirector, "private void OnEnable()");
+                string loreOnDisable = ExtractMethodBody(proceduralLoreDirector, "private void OnDisable()");
+                string loreOnDestroy = ExtractMethodBody(proceduralLoreDirector, "private void OnDestroy()");
+                string loreHotSwap = ExtractMethodBody(proceduralLoreDirector, "public void OnGlobalRegistryServiceReplaced(");
+                string loreRefreshOwners = ExtractMethodBody(proceduralLoreDirector, "private void RefreshCachedOwners()");
+                string loreClearCache = ExtractMethodBody(proceduralLoreDirector, "private void ClearCachedRuntimeServices()");
+                string loreAudioLogCache = ExtractMethodBody(proceduralLoreDirector, "private void CacheAudioLogSystem(");
+                string loreAudioLogResolve = ExtractMethodBody(proceduralLoreDirector, "private AudioLogSystem ResolveAudioLogSystem()");
+                string loreAudioLogUsable = ExtractMethodBody(proceduralLoreDirector, "private static bool IsAudioLogSystemUsable(");
+                string loreResolveOwners = ExtractMethodBody(proceduralLoreDirector, "private bool ResolveOwners()");
+                string loreSpawn = ExtractMethodBody(proceduralLoreDirector, "private bool TrySpawnInstance(ref ActiveLorePlacement placement)");
+                string loreSelectEntry = ExtractMethodBody(proceduralLoreDirector, "private bool TrySelectLoreEntry(out AudioLogData logData)");
+                AssertContains(loreOnEnable, "RefreshCachedOwners();", "Procedural lore director refreshes audio-log owner on enable", builder, ref failureCount);
+                AssertContains(loreOnDisable, "ClearCachedRuntimeServices();", "Procedural lore director clears cached runtime services on disable", builder, ref failureCount);
+                AssertContains(loreOnDestroy, "ClearCachedRuntimeServices();", "Procedural lore director clears cached runtime services on destroy", builder, ref failureCount);
+                AssertContains(loreHotSwap, "CacheAudioLogSystem(currentService as AudioLogSystem)", "Procedural lore director caches audio-log hot swaps through the usable-runtime filter", builder, ref failureCount);
+                AssertContains(loreRefreshOwners, "CacheAudioLogSystem(Hecton8.Core.GlobalRegistry.AudioLogs)", "Procedural lore director cold-caches audio-log runtime through the usable-runtime filter", builder, ref failureCount);
+                AssertContains(loreClearCache, "_audioLogSystem = null", "Procedural lore director clears cached audio-log runtime references", builder, ref failureCount);
+                AssertContains(loreAudioLogCache, "_audioLogSystem = IsAudioLogSystemUsable(audioLogSystem) ? audioLogSystem : null", "Procedural lore director stores only usable audio-log runtimes", builder, ref failureCount);
+                AssertContains(loreAudioLogResolve, "if (IsAudioLogSystemUsable(audioLogSystem))", "Procedural lore director resolves cached audio-log runtime only while usable", builder, ref failureCount);
+                AssertContains(loreAudioLogResolve, "_audioLogSystem = null", "Procedural lore director clears stale audio-log runtime references", builder, ref failureCount);
+                AssertContains(loreAudioLogUsable, "return audioLogSystem != null && audioLogSystem.IsAudioLogRuntimeReady", "Procedural lore director rejects unregistered, aborted, destroyed, or disabled audio-log runtimes", builder, ref failureCount);
+                AssertContains(loreResolveOwners, "ResolveAudioLogSystem() != null", "Procedural lore owner gate requires a usable audio-log runtime", builder, ref failureCount);
+                AssertContains(loreSpawn, "AudioLogSystem audioLogSystem = ResolveAudioLogSystem()", "Procedural lore pickup spawn resolves only usable audio-log runtimes", builder, ref failureCount);
+                AssertContains(loreSelectEntry, "AudioLogSystem audioLogSystem = ResolveAudioLogSystem()", "Procedural lore catalog selection resolves only usable audio-log runtimes", builder, ref failureCount);
+                AssertNotContains(loreSpawn, "_audioLogSystem", "Procedural lore pickup spawn never reads the raw cached audio-log runtime directly", builder, ref failureCount);
+                AssertNotContains(loreSelectEntry, "_audioLogSystem", "Procedural lore catalog selection never reads the raw cached audio-log runtime directly", builder, ref failureCount);
             }
 
             if (adaptiveStemMixer.Length > 0)
@@ -3038,6 +3759,8 @@ namespace Hecton8.Audio.Editor
                 AssertContains(telemetry, "SystemBits.Audio", "Crash telemetry tags audio subsystem rows", builder, ref failureCount);
             }
 
+            AssertNoPartialAudioReadinessGuards(AudioReadinessGuardAuditPaths, builder, ref failureCount);
+
             builder.Append("STATUS: ");
             builder.AppendLine(failureCount == 0 ? "PASS" : "FAIL");
             report = builder.ToString();
@@ -3046,10 +3769,7 @@ namespace Hecton8.Audio.Editor
 
         private static string ReadAssetText(string assetPath, StringBuilder builder, ref int failureCount)
         {
-            string root = Directory.GetParent(Application.dataPath)?.FullName;
-            string absolutePath = root == null
-                ? assetPath
-                : Path.Combine(root, assetPath.Replace('/', Path.DirectorySeparatorChar));
+            string absolutePath = ResolveAbsoluteAssetPath(assetPath);
             if (!File.Exists(absolutePath))
             {
                 AppendFailure(builder, ref failureCount, "Missing asset: " + assetPath);
@@ -3057,6 +3777,147 @@ namespace Hecton8.Audio.Editor
             }
 
             return File.ReadAllText(absolutePath);
+        }
+
+        private static void AssertNoPartialAudioReadinessGuards(string[] assetPaths, StringBuilder builder, ref int failureCount)
+        {
+            bool foundForbiddenGuard = false;
+            int scannedFiles = 0;
+            for (int i = 0; i < assetPaths.Length; i++)
+            {
+                string assetPath = assetPaths[i];
+                string sourcePath = ResolveAbsoluteAssetPath(assetPath);
+                if (!File.Exists(sourcePath))
+                {
+                    AppendFailure(builder, ref failureCount, "Missing audio readiness audit source: " + assetPath);
+                    continue;
+                }
+
+                scannedFiles++;
+                int lineNumber = 0;
+                foreach (string line in File.ReadLines(sourcePath))
+                {
+                    lineNumber++;
+                    string codeLine = StripStringLiteralsAndLineComments(line);
+                    if (!ContainsPartialAudioReadinessGuard(codeLine))
+                        continue;
+
+                    foundForbiddenGuard = true;
+                    AppendFailure(
+                        builder,
+                        ref failureCount,
+                        "Audio runtime readiness scan found partial IsInitialized audio guard in " +
+                        ToAssetRelativePath(sourcePath) + ":" + lineNumber);
+                }
+            }
+
+            if (!foundForbiddenGuard)
+            {
+                builder
+                    .Append("[PASS] Audio runtime readiness scan rejects partial IsInitialized audio guards across ")
+                    .Append(scannedFiles)
+                    .AppendLine(" audio-bound source files");
+            }
+        }
+
+        private static bool ContainsPartialAudioReadinessGuard(string codeLine)
+        {
+            if (codeLine.IndexOf("IsAudioRuntimeReady", StringComparison.Ordinal) >= 0)
+                return false;
+
+            return
+                codeLine.IndexOf("audioService.IsInitialized", StringComparison.Ordinal) >= 0 ||
+                codeLine.IndexOf("audio.IsInitialized", StringComparison.Ordinal) >= 0 ||
+                (codeLine.IndexOf("IAudioService", StringComparison.Ordinal) >= 0 &&
+                 codeLine.IndexOf("IsInitialized", StringComparison.Ordinal) >= 0);
+        }
+
+        private static string StripStringLiteralsAndLineComments(string line)
+        {
+            if (string.IsNullOrEmpty(line))
+                return string.Empty;
+
+            StringBuilder stripped = new StringBuilder(line.Length);
+            bool inString = false;
+            bool inChar = false;
+            bool escaped = false;
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+                char next = i + 1 < line.Length ? line[i + 1] : '\0';
+
+                if (!inString && !inChar && c == '/' && next == '/')
+                    break;
+
+                if (inString)
+                {
+                    if (escaped)
+                        escaped = false;
+                    else if (c == '\\')
+                        escaped = true;
+                    else if (c == '"')
+                        inString = false;
+
+                    stripped.Append(' ');
+                    continue;
+                }
+
+                if (inChar)
+                {
+                    if (escaped)
+                        escaped = false;
+                    else if (c == '\\')
+                        escaped = true;
+                    else if (c == '\'')
+                        inChar = false;
+
+                    stripped.Append(' ');
+                    continue;
+                }
+
+                if (c == '"')
+                {
+                    inString = true;
+                    stripped.Append(' ');
+                    continue;
+                }
+
+                if (c == '\'')
+                {
+                    inChar = true;
+                    stripped.Append(' ');
+                    continue;
+                }
+
+                stripped.Append(c);
+            }
+
+            return stripped.ToString();
+        }
+
+        private static string ResolveAbsoluteAssetPath(string assetPath)
+        {
+            string root = Directory.GetParent(Application.dataPath)?.FullName;
+            return root == null
+                ? assetPath
+                : Path.Combine(root, assetPath.Replace('/', Path.DirectorySeparatorChar));
+        }
+
+        private static string ToAssetRelativePath(string absolutePath)
+        {
+            string root = Directory.GetParent(Application.dataPath)?.FullName;
+            if (!string.IsNullOrEmpty(root) &&
+                absolutePath.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            {
+                int start = root.Length;
+                if (start < absolutePath.Length &&
+                    (absolutePath[start] == Path.DirectorySeparatorChar || absolutePath[start] == Path.AltDirectorySeparatorChar))
+                    start++;
+
+                return absolutePath.Substring(start).Replace(Path.DirectorySeparatorChar, '/');
+            }
+
+            return absolutePath.Replace(Path.DirectorySeparatorChar, '/');
         }
 
         private static string ExtractMethodBody(string source, string signature)

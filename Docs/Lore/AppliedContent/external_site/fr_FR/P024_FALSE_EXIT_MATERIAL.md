@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Sortie matérielle
 
-Cette fin soutient la rejouabilité: rentable, compromise, orientée butin et survie plutôt que vérité complète.
+Material Exit soutient un retrait rentable mais compromis : butin, contrats et survie peuvent gagner l'ascension pendant que la pleine vérité de la descente reste dessous.
 
 ## Scanner
 

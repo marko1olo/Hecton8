@@ -9,32 +9,36 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ES LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: responsabilidad bajo agua real"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: responsabilidad bajo agua real
 
-ES LOC HOLD: Deep Reach did not need to invent the ocean. HECTON-8 failed under real pressure, real tide force and real infrastructure limits. That is what makes the liability harder to bury. The official record names a localized geotechnical cascade, corrupted Atlas logs and incomplete evacuation. Each phrase has enough truth to survive a hearing. The physical site adds what the public sentence omits: margin approvals signed before the tide window, evacuation routes held behind authorization, quarantine doors certified late, Atlas continuity weights that protected system function before worker recovery, and loss ledgers that turned names into categories after the water had already won. The accusation is not that Deep Reach caused the ocean to rise by command. It is that the company priced known risk, delayed human exit, kept records clean and let recovery offices convert disaster into manageable custody. On HECTON-8, the rooms testify more precisely than the statement.
+## La media verdad útil
 
-## Scanner
+El informe de Deep Reach sobrevive porque contiene agua real. HECTON-8 sufrió una Great Tide. Estrés de criosfera, mareas, tormentas, calor industrial y presión oceánica rompieron la colonia.
 
-ES LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+La responsabilidad está en lo quitado: márgenes de sensor aceptados, capacidad de evacuación por debajo de la necesidad, continuidad de Atlas por encima de extracción humana, lenguaje de cuarentena como tiempo comprado y desaparecidos convertidos en categorías de reclamación.
 
-## Terminal
+Varnek convirtió advertencia en exposición de calendario. Arendt mantuvo seguridad laboral dentro de continuidad de proceso. Haldane hizo esperar la extracción por certificación. Ibarra tradujo cuerpos a carga y pérdida. Sato-Ren aún pide coordenadas, prueba XO y silencio antes de sonar a rescate.
 
-ES LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+Los documentos no confiesan. Una sala inundada pone el coste que falta. Un memo es sospecha. La cadena es evidencia. El jugador decide qué contexto vale la masa de llevarlo por custodia Black Keel.
 
-## Audio
+## La Forma De La Culpa
 
-ES LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Deep Reach no debe reducirse a un villano unico con un boton limpio. Su culpa pesa mas porque esta distribuida. Varnek acepta el tide margin. Arendt sube Atlas weights por encima de trabajadores. Haldane mantiene limpia la lengua de quarantine. Ibarra convierte nombres en loss categories. Sato-Ren intenta mover una return action cuando el daño ya esta dentro del sistema.
 
-## Field Note
+Cada documento parece pequeño y ordinario. Juntos muestran una institucion que sobrevivio haciendo que cada decision letal pareciera local, temporal y procedimentalmente correcta. Los trabajadores murieron dentro de esa gramatica.
 
-ES LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+## Por Que La Prueba Tiene Masa
+
+El jugador no resuelve esto con fe. Los paquetes pueden retrasarse, impugnarse, tacharse o valorarse. La prueba fisica debe cargarse: sensor margins, evacuacion rota, Atlas trace, custody ledger, sample chain. La evidencia pesa porque HECTON-8 obliga a la verdad a compartir espacio con oxigeno, herramientas y carga.
+
+Ese es el centro de presion. El jugador no solo aprende lo ocurrido. Decide cuanto de la supervivencia puede gastarse para que lo ocurrido sea mas dificil de borrar.
 
 <!-- External Site; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/es_ES. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "UK LOC HOLD: Start Here: HECTON-8"
+title: "Почати тут: HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Start Here: HECTON-8
+# Почати тут: HECTON-8
 
-UK LOC HOLD: Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.
+Стартовий кластер: контракт, роль гравця, тиск виживання HECTON-8 і перша суперечність у версії Deep Reach.
 
 ## Scanner
 
-UK LOC HOLD: Publication hub: premise, player role, first constraints and the first Deep Reach lie.
+Публікаційний вузол: premise, роль гравця, перші обмеження і перша брехня Deep Reach.
 
 ## Terminal
 
-UK LOC HOLD: SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.
+SITE NAV: контрактний вхід, колишній спеціаліст Deep Reach, борговий Marauder, пошкоджена капсула, без родинного гачка, перший слід ремонту Atlas.
 
 ## Audio
 
-UK LOC HOLD: You came for salvage. The ocean will make that motive too small.
+Ти прийшов по salvage. Океан зробить цей мотив надто малим.
 
 ## Field Note
 
-UK LOC HOLD: Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
+Spoiler-light навігація починається тут: спершу premise, потім evidence, фінали лише після здобутого доступу.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/uk_UA. -->

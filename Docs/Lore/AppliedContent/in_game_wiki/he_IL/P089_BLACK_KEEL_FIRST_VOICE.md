@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "הקול הראשון של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# הקול הראשון של Black Keel
 
-HE LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+הקול הראשון של Black Keel מגיע לשחקן כשמע פגום וטקסט נקי. הוא אינו בן לוויה ואינו נאום נבל. הוא מוניטור carrier שעושה בדיוק את מה שנבנה לעשות: לאשר אות, לשמר אפשרויות נתיב, לדרג התחייבויות ולהימנע מהבטחות. הקול שימושי כי הוא נותן מידע קשה. הוא מפחיד כי כל משפט נכון משאיר את החילוץ מותנה.
 
 ## Scanner
 
-HE LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
+מטמון קול carrier. שמע חתוך, טקסט נקי, סימפתיה נעדרת.
 
 ## Terminal
 
-HE LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: ערוץ שמע פגום. ערוץ טקסט תקף. הישרדות מפעיל הוכרה. עדיפות recovery לא פתורה, ממתינה למצב payload, הסגר, lien ושלמות אות.
 
 ## Audio
 
-HE LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
+אות מפעיל נקלט. אל תבלבל בין הכרה לבין חילוץ.
 
 ## Field Note
 
-HE LOC HOLD: The first voice should feel useful before it feels bought.
+המשפט השימושי הראשון מגיע כשמאחוריו סיווג חיוב.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/he_IL. -->

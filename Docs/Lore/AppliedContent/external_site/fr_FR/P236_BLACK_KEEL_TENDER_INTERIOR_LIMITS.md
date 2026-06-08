@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Black Keel Tender Interior Limits"
+title: "Limites intérieures du tender Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Black Keel Tender Interior Limits
+# Limites intérieures du tender Black Keel
 
-FR LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel est une infrastructure de salvage hard-sci-fi, pas un vaisseau privé héroïque. Son intérieur est construit autour de la custody des échantillons, de la packet law, de la manutention des drones, des manches de quarantaine et de la pression de dette. Le vaisseau peut être une ligne de vie et rester structurellement indifférent à la personne qui la tient.
 
 ## Scanner
 
-FR LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+Le tender possède des racks pour échantillons, drones, paquets scellés et cargaison sous lien avant d'avoir une couchette digne d'un passager vivant.
 
 ## Terminal
 
-FR LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: pas de deep rescue crew, pas de réserve de navette atmosphérique, pas de burn d'ascension gratuit hors lien authority, pas de quartier-maître humain.
 
 ## Audio
 
-FR LOC HOLD: The ship brought you here as cargo with hands.
+Le vaisseau t'a amené ici comme une cargaison avec des mains.
 
 ## Field Note
 
-FR LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel est un claim tender de travail: loué, saisi par dette, automatisé et optimisé pour la custody avant le sauvetage.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/fr_FR. -->

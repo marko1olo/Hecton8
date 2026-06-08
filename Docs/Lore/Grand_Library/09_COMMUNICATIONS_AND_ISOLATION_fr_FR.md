@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LA COUPURE DES COMMUNICATIONS ET LE SILENCE ORBITAL
 
 > **Source :** Manuel d'Opérations du Vaisseau Transporteur Orbital *Black Keel*, Section 4.

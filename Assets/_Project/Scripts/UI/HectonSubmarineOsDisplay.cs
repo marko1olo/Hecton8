@@ -18,7 +18,8 @@ namespace Hecton8.UI
         private const int HistoryLineCount = 16;
         private const int HistoryLineCapacity = 64;
         private const int PendingEntryCapacity = 12;
-        private const int MetricBufferLength = 112;
+        private const int PendingEntryDropTelemetryCooldownFrames = 120;
+        private const int MetricBufferLength = 160;
         private const int StatusBufferLength = 48;
         private const int RenderBufferLength = (HistoryLineCount * (HistoryLineCapacity + 1)) + HistoryLineCapacity;
         private const float CharactersPerSecond = 42f;
@@ -30,6 +31,8 @@ namespace Hecton8.UI
         private const float HeatBarHeight = 5f;
         private const int InvalidCachedMetric = int.MinValue;
         private const byte InvalidCachedStatus = byte.MaxValue;
+        private const uint PendingEntryDropWarningHash = 0x48504452u; // HPDR
+        private const uint PendingEntryDropContextHash = 0x48534F44u; // HSOD
         private const string RootName = "HectonSubmarineOsDisplay";
         private static readonly Color s_panelColor = new Color(0f, 0f, 0f, 1f);
         private static readonly Color s_onlineColor = new Color(0.92f, 0.96f, 0.96f, 0.98f);
@@ -83,7 +86,7 @@ namespace Hecton8.UI
         private readonly int[] _historyLineLengths = new int[HistoryLineCount]; // COLD ALLOC: int[16] — committed log line lengths — owner: HectonSubmarineOsDisplay
         private readonly char[][] _historyLineStorage = new char[HistoryLineCount][]; // COLD ALLOC: char[][16] — committed submarine OS log ring — owner: HectonSubmarineOsDisplay
         private readonly char[] _typingBuffer = new char[HistoryLineCapacity]; // COLD ALLOC: char[64] — active typed line staging buffer — owner: HectonSubmarineOsDisplay
-        private readonly char[] _metricBuffer = new char[MetricBufferLength]; // COLD ALLOC: char[112] — metrics render buffer — owner: HectonSubmarineOsDisplay
+        private readonly char[] _metricBuffer = new char[MetricBufferLength]; // COLD ALLOC: char[160] — metrics render buffer — owner: HectonSubmarineOsDisplay
         private readonly char[] _statusBuffer = new char[StatusBufferLength]; // COLD ALLOC: char[48] — status render buffer — owner: HectonSubmarineOsDisplay
         private readonly char[] _renderBuffer = new char[RenderBufferLength]; // COLD ALLOC: char[1104] — multiline log render buffer — owner: HectonSubmarineOsDisplay
 
@@ -103,6 +106,9 @@ namespace Hecton8.UI
         private int _pendingEntryCount;
         private int _pendingEntryHead;
         private int _pendingEntryTail;
+        private int _droppedQueuedPendingEntryCount;
+        private int _droppedIncomingPendingEntryCount;
+        private int _lastPendingEntryDropTelemetryFrame = -PendingEntryDropTelemetryCooldownFrames;
         private int _historyLineWriteIndex;
         private int _historyLineCount;
         private int _typingVisibleLength;
@@ -116,6 +122,7 @@ namespace Hecton8.UI
         private int _renderedNativeCopyMegabytes = InvalidCachedMetric;
         private int _renderedSpeedTenthsKnots = InvalidCachedMetric;
         private int _renderedEngineHeatPercent = InvalidCachedMetric;
+        private int _renderedEngineMaskDeltaPercent = InvalidCachedMetric;
         private int _renderedSonarContactCount = InvalidCachedMetric;
         private int _renderedNearestSonarMeters = InvalidCachedMetric;
 
@@ -123,6 +130,7 @@ namespace Hecton8.UI
         private bool _typingActive;
         private bool _registeredUpdatable;
         private bool _hotSwapListenerRegistered;
+        private bool _renderedEngineTelemetryMasked;
         private SubsystemStatus _renderedSubsystemStatus = (SubsystemStatus)InvalidCachedStatus;
         private SubmarineEmergencyLevel _renderedEmergencyLevel = (SubmarineEmergencyLevel)InvalidCachedStatus;
         private HectonSubmarineOsSnapshot _snapshot;
@@ -298,9 +306,13 @@ namespace Hecton8.UI
         {
             if (_pendingEntryCount >= PendingEntryCapacity)
             {
-                _pendingEntries[_pendingEntryHead] = default;
-                _pendingEntryHead = (_pendingEntryHead + 1) % PendingEntryCapacity;
-                _pendingEntryCount--;
+                if (!TryDropQueuedEntryForIncomingPriority(priority))
+                {
+                    RecordPendingEntryDrop(droppedIncoming: true);
+                    return;
+                }
+
+                RecordPendingEntryDrop(droppedIncoming: false);
             }
 
             _pendingEntries[_pendingEntryTail] = new PendingEntry
@@ -310,6 +322,119 @@ namespace Hecton8.UI
             };
             _pendingEntryTail = (_pendingEntryTail + 1) % PendingEntryCapacity;
             _pendingEntryCount++;
+        }
+
+        private bool TryDropQueuedEntryForIncomingPriority(byte incomingPriority)
+        {
+            if (_pendingEntryCount <= 0)
+                return false;
+
+            for (int i = 0; i < _pendingEntryCount; i++)
+            {
+                int index = (_pendingEntryHead + i) % PendingEntryCapacity;
+                if (_pendingEntries[index].Priority > incomingPriority)
+                    continue;
+
+                RemovePendingEntryAtLogicalIndex(i);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void RemovePendingEntryAtLogicalIndex(int logicalIndex)
+        {
+            int safeLogicalIndex = math.clamp(logicalIndex, 0, math.max(0, _pendingEntryCount - 1));
+            int countBeforeRemove = _pendingEntryCount;
+            for (int i = safeLogicalIndex; i < countBeforeRemove - 1; i++)
+            {
+                int destination = (_pendingEntryHead + i) % PendingEntryCapacity;
+                int source = (_pendingEntryHead + i + 1) % PendingEntryCapacity;
+                _pendingEntries[destination] = _pendingEntries[source];
+            }
+
+            int clearedIndex = (_pendingEntryHead + countBeforeRemove - 1) % PendingEntryCapacity;
+            _pendingEntries[clearedIndex] = default;
+            _pendingEntryCount--;
+            _pendingEntryTail = (_pendingEntryHead + _pendingEntryCount) % PendingEntryCapacity;
+            if (_pendingEntryCount <= 0)
+                _pendingEntryTail = _pendingEntryHead;
+        }
+
+        private void RecordPendingEntryDrop(bool droppedIncoming)
+        {
+            if (droppedIncoming)
+                _droppedIncomingPendingEntryCount = SaturatingIncrement(_droppedIncomingPendingEntryCount);
+            else
+                _droppedQueuedPendingEntryCount = SaturatingIncrement(_droppedQueuedPendingEntryCount);
+
+            if (!TryReserveTelemetryWarningFrame(
+                    ref _lastPendingEntryDropTelemetryFrame,
+                    PendingEntryDropTelemetryCooldownFrames))
+                return;
+
+            PublishPerformanceWarningBestEffort(
+                PendingEntryDropWarningHash,
+                PendingEntryDropContextHash,
+                _droppedQueuedPendingEntryCount + _droppedIncomingPendingEntryCount);
+        }
+
+        private static bool TryReserveTelemetryWarningFrame(ref int lastTelemetryFrame, int cooldownFrames)
+        {
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (frame < 0)
+            {
+                if (lastTelemetryFrame == int.MinValue)
+                    return false;
+
+                lastTelemetryFrame = int.MinValue;
+                return true;
+            }
+
+            if (lastTelemetryFrame >= 0 && frame - lastTelemetryFrame < cooldownFrames)
+                return false;
+
+            lastTelemetryFrame = frame;
+            return true;
+        }
+
+        private static int ResolveCurrentFrameIndexSafe()
+        {
+            try
+            {
+                return SystemDispatcher.CurrentFrameIndex;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
+            }
+            catch (Exception telemetryException)
+            {
+                LogTelemetryWarningException(telemetryException);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogTelemetryWarningException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            try
+            {
+                H8Debug.LogException(exception);
+            }
+            catch
+            {
+            }
+#endif
         }
 
         private bool TryStartNextTypedEntry()
@@ -388,6 +513,8 @@ namespace Hecton8.UI
             int pressureKPa = (int)math.round(_snapshot.MaxPressureKPa);
             int speedTenthsKnots = (int)math.round(math.max(0f, _snapshot.SpeedKnots) * 10f);
             int engineHeatPercent = ToPercent(_snapshot.EngineHeat01);
+            int engineMaskDeltaPercent = ToPercent(_snapshot.EngineHeatMaskDelta01);
+            bool engineTelemetryMasked = _snapshot.IsEngineTelemetryMasked;
             int sonarContactCount = math.max(0, _snapshot.SonarContactCount);
             int nearestSonarMeters = math.max(0, _snapshot.NearestSonarContactMeters);
             long nativeCopyMegabytesRaw = GlobalTelemetryBus.NativeCopyMegabyteCount;
@@ -398,6 +525,8 @@ namespace Hecton8.UI
                 pressureKPa == _renderedPressureKPa &&
                 speedTenthsKnots == _renderedSpeedTenthsKnots &&
                 engineHeatPercent == _renderedEngineHeatPercent &&
+                engineMaskDeltaPercent == _renderedEngineMaskDeltaPercent &&
+                engineTelemetryMasked == _renderedEngineTelemetryMasked &&
                 sonarContactCount == _renderedSonarContactCount &&
                 nearestSonarMeters == _renderedNearestSonarMeters &&
                 nativeCopyMegabytes == _renderedNativeCopyMegabytes)
@@ -418,6 +547,13 @@ namespace Hecton8.UI
             cursor = AppendLiteral(_metricBuffer, cursor, "  SPD ");
             cursor = AppendFixedTenths(_metricBuffer, cursor, speedTenthsKnots);
             cursor = AppendLiteral(_metricBuffer, cursor, "kt");
+            cursor = AppendLiteral(_metricBuffer, cursor, "  HT ");
+            cursor = AppendPercentValue(_metricBuffer, cursor, engineHeatPercent);
+            if (engineTelemetryMasked)
+            {
+                cursor = AppendLiteral(_metricBuffer, cursor, " MSK+");
+                cursor = AppendPercentValue(_metricBuffer, cursor, engineMaskDeltaPercent);
+            }
             cursor = AppendLiteral(_metricBuffer, cursor, "  SNR ");
             cursor = AppendInt(_metricBuffer, cursor, sonarContactCount);
             cursor = AppendLiteral(_metricBuffer, cursor, "/");
@@ -436,20 +572,22 @@ namespace Hecton8.UI
             _renderedPressureKPa = pressureKPa;
             _renderedSpeedTenthsKnots = speedTenthsKnots;
             _renderedEngineHeatPercent = engineHeatPercent;
+            _renderedEngineMaskDeltaPercent = engineMaskDeltaPercent;
+            _renderedEngineTelemetryMasked = engineTelemetryMasked;
             _renderedSonarContactCount = sonarContactCount;
             _renderedNearestSonarMeters = nearestSonarMeters;
             _renderedNativeCopyMegabytes = nativeCopyMegabytes;
-            RefreshEngineHeatBar(engineHeatPercent);
+            RefreshEngineHeatBar(engineHeatPercent, engineTelemetryMasked);
         }
 
-        private void RefreshEngineHeatBar(int engineHeatPercent)
+        private void RefreshEngineHeatBar(int engineHeatPercent, bool engineTelemetryMasked)
         {
             if (_engineHeatBarFill == null || _engineHeatBarImage == null)
                 return;
 
             float fill01 = math.saturate(engineHeatPercent * 0.01f);
             _engineHeatBarFill.sizeDelta = new Vector2(math.round(HeatBarWidth * fill01), HeatBarHeight);
-            _engineHeatBarImage.color = engineHeatPercent >= 75 ? s_heatBarHotColor : s_heatBarFillColor;
+            _engineHeatBarImage.color = engineTelemetryMasked || engineHeatPercent >= 75 ? s_heatBarHotColor : s_heatBarFillColor;
         }
 
         private void RefreshDroneFleetLabel()
@@ -621,7 +759,8 @@ namespace Hecton8.UI
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
@@ -664,9 +803,11 @@ namespace Hecton8.UI
             _renderedPressureKPa = InvalidCachedMetric;
             _renderedSpeedTenthsKnots = InvalidCachedMetric;
             _renderedEngineHeatPercent = InvalidCachedMetric;
+            _renderedEngineMaskDeltaPercent = InvalidCachedMetric;
             _renderedSonarContactCount = InvalidCachedMetric;
             _renderedNearestSonarMeters = InvalidCachedMetric;
             _renderedNativeCopyMegabytes = InvalidCachedMetric;
+            _renderedEngineTelemetryMasked = false;
         }
 
         private int BuildLogLine(HectonSubmarineOsLogCode code, char[] destination)
@@ -833,6 +974,11 @@ namespace Hecton8.UI
         private static int ToPercent(float normalizedValue)
         {
             return (int)math.round(math.saturate(normalizedValue) * 100f);
+        }
+
+        private static int SaturatingIncrement(int value)
+        {
+            return value < int.MaxValue ? value + 1 : int.MaxValue;
         }
 
         private static unsafe void CopyCharsUnsafe(char[] source, int sourceStart, char[] destination, int destinationStart, int length)

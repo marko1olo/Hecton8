@@ -9,32 +9,22 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Transkrip Audio Dossier Pekerja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Worker Dossier Audio Transcript Seed
+# Transkrip Audio Dossier Pekerja
 
-ID LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+## Koloni Sebelum Menjadi Bukti
 
-## Scanner
+Audio dossier pekerja tidak boleh memperkenalkan korban sebagai benda altar. Ia harus membiarkan mereka bekerja. Kepala pompa memeriksa katup. Notaris relay mengeluh soal papan. Medic berdebat dengan water ledger. Operator fabricator mencatat sertifikat alat karena alat lebih penting daripada pidato keberanian.
 
-ID LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Rutinitas itulah yang memberi reruntuhan bobot. Pemain harus mendengar nama sebelum memorial, pekerjaan sebelum tragedi, dan gangguan kecil sebelum kebohongan besar menutup di sekitar mereka. HECTON-8 bukan panggung untuk Marauder. Itu tempat kerja dengan kebiasaan, dendam, lelucon, pemberitahuan utang, dan matematika tekanan.
 
-## Terminal
-
-ID LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
-
-## Audio
-
-ID LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
-
-## Field Note
-
-ID LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Lapisan ini melindungi canon dari melodrama. Tidak ada kait keluarga yang membuat pemain istimewa. Rasa bersalahnya profesional. Kau mengenali prosedur, badge, dan keputusan buruk karena pernah menjadi bagian dari sistem seperti ini, dan sekarang sistem itu bicara lewat work order yang tenggelam.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/id_ID. -->

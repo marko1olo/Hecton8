@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Name Lock Policy"
+title: "Ledger Peran Bulan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Name Lock Policy
+# Ledger Peran Bulan Aegir
 
-ID LOC HOLD: Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed.
+Ledger Peran Bulan Aegir mencatat mengapa nama publik bisa bergeser sementara kerja orbit tetap: penutup relai, paksa pasang, rumor karantina, dan lalu lintas jendela tinggi menentukan siapa yang bisa bergerak.
 
 ## Scanner
 
-ID LOC HOLD: Moon labels can change; orbital roles cannot.
+Nama publik bergeser antar peta; orbit tetap menjalankan tugasnya.
 
 ## Terminal
 
-ID LOC HOLD: ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.
+LEDGER ATLAS: label publik berubah menurut asuransi dan peta rute. Peran fungsional tetap: geser radiasi, masker relai, paksa pasang, sebar es, rute publik, rumor karantina, salvage industri, lalu lintas jendela tinggi, klaim dalam, dan ekonomi suar mati.
 
 ## Audio
 
-ID LOC HOLD: A name can be repainted. An orbit keeps the bill.
+Kau bisa mengganti nama bulan. Orbit tetap menagih.
 
 ## Field Note
 
-ID LOC HOLD: Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.
+Skarn membelah partikel. Vela menutupi relai. Claw melempar es. Lumen mencetak rute. Thorne membawa rumor karantina. Anvil memberi makan salvage. Kestrel menguasai jendela tinggi. HECTON menyimpan klaim dalam. Mute menjual suar mati.
 
 <!-- External Site; generated from P181_MOON_NAME_LOCK_POLICY/id_ID. -->

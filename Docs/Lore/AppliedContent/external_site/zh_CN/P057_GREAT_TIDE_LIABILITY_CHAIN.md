@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "大潮责任链"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# 大潮责任链
 
-CN LOC HOLD: Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure.
+大潮责任链是 Deep Reach 犯罪模型的核心。HECTON-8 的淹没是行星尺度失败，不是廉价破坏；公司罪责来自余量设计、撤离容量、自主优先权重、保险措辞，以及洪水已不可避免之后的法律封锁。这让设定保持硬科幻，也让玩家收集证据有意义：问题不是谁拉下了某个开关，而是谁签署了一套能让人先变成文件、再变成尸体的系统。
 
 ## Scanner
 
-CN LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+洪水是真实物理：潮汐耦合、冰层崩塌、压力化学，以及被压得过薄的安全余量。犯罪在于围绕它建立的优先级。
 
 ## Terminal
 
-CN LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+事故摘要：地质工程级联已确认。撤离能力低于尾部风险需求。Atlas 连续性权重保持激活。人员撤出等待认证。
 
 ## Audio
 
-CN LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+海完成了淹没。公司决定哪些门继续停留在纸面上。
 
 ## Field Note
 
-CN LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach 不必亲手淹没这颗月亮。只要让撤离变成可选项就够了。
 
 <!-- External Site; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/zh_CN. -->

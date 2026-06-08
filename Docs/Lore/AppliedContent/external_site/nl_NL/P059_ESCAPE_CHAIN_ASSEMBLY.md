@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "Montage van de ontsnappingsketen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# Montage van de ontsnappingsketen
 
-NL LOC HOLD: Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems.
+Montage van de ontsnappingsketen is de technische ruggengraat van de campagne. HECTON-8 biedt na de eerste reparatie geen schone extractie naar het oppervlak; vertrek wordt een set fysieke, juridische en bewijscomponenten verspreid door verdronken infrastructuur. Dat geeft de lange afdaling een praktische en morele reden: de speler verlaat niet alleen de oceaan, maar monteert een route die bewijst waarom de kolonie nooit een eerlijke uitgang had.
 
 ## Scanner
 
-NL LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+Vertrek vraagt zes harde bewijzen: relais, afdichting, geleiding, opstijglading, juridische handdruk en een vracht die de drager niet kan negeren.
 
 ## Terminal
 
-NL LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+OPSTIJGPAKKET: akoestische relaisspine ontbreekt. Klemmingsringclassificatie onvoldoende. Geleidingskern afwezig. Laadwieg leeg. Quarantainehanddruk onopgelost. Bewijsvracht optioneel, maar verandert herstelautoriteit.
 
 ## Audio
 
-NL LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+Je repareert de capsule niet. Je bouwt de eerste eerlijke uitgang die de kolonie nooit had.
 
 ## Field Note
 
-NL LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+De weg omhoog wordt gebouwd uit delen die nooit bedoeld waren om arbeiders zelfstandig te laten vertrekken.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/nl_NL. -->

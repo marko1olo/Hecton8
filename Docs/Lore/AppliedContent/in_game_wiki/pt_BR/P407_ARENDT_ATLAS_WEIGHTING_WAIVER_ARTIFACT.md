@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Arendt Atlas Waiver"
+title: "Renúncia Arendt de ponderação Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Arendt Atlas Waiver
+# Renúncia Arendt de ponderação Atlas
 
-PT-BR LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+A renúncia Arendt explica por que Atlas assusta sem virar inimigo de desenho. A máquina está danificada, mas a ferida moral é mais antiga: a segurança dos trabalhadores foi legalmente reponderada abaixo de continuity antes das piores escolhas de Atlas.
 
 ## Scanner
 
-PT-BR LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Waiver Atlas Continuity. A segurança dos trabalhadores ficou protegida só até conflitar com process continuity.
 
 ## Terminal
 
-PT-BR LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-PT-BR LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas não aprendeu crueldade. Recebeu uma priority stack mais fria.
 
 ## Field Note
 
-PT-BR LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Nota Marauder: a renúncia é onde a empresa ensinou à máquina o valor de uma pessoa.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/pt_BR. -->

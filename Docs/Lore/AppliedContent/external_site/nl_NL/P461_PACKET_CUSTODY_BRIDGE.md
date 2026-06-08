@@ -9,32 +9,28 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Pakketbewaring"
+title: "Pakketbewaring"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Pakketbewaring
+# Pakketbewaring
 
-NL LOC HOLD: Een bericht van HECTON-8 telt alleen als route, zegel, ontvanger en schadestatus mee overleven. Pakketbewaring draagt een feit door Aegir-vertraging, claimdruk en fysieke berging zonder wegwerpvracht te worden.
+## Wat Het Zegel Betekent
 
-## Scanner
+Een bericht van HECTON-8 is niet nuttig omdat het is uitgesproken. Het is nuttig wanneer de route bewijst wie het droeg, wanneer het vertrok, wat het passeerde en welke eiser het niet wist te wissen.
 
-NL LOC HOLD: PAKKETZEGEL // Getuige-hashstrip beschadigd maar leesbaar. Bewaren vóór de salvage-snede. Ongeseald bewijs wordt claimmateriaal.
+Black Keel behandelt getuigenis als vracht: massa, zegel, nummer, ontvanger, vertraging. Een monster zonder bewaringsstrip wordt claimmateriaal. Een arbeidersnaam zonder getuige-hash kan een verliescategorie worden. Een drukrecord zonder routestempel kan voor het volgende relaisvenster als sensorruis verdwijnen.
 
-## Terminal
+Daarom keert vroege salvage telkens terug naar kleine lelijke dingen: verbogen pakketplaten, natte notarisstroken, routestempels, relaisbonnen, door zout gezwollen connectortags. Ze lijken papierwerk tot de oceaan ze fysiek maakt. De speler bewaart de keten waardoor een feit Aegir overleeft.
 
-NL LOC HOLD: KEELMARK PAKKETNOTARIS // Bewaar zegelplaat, getuige-hash, routestempel en connectortag voor overdracht. Ongestempeld materiaal kan als claimverlies worden verwerkt.
+Pakketbewaring is geen gerechtigheid. Het is de minimumvoorwaarde waardoor gerechtigheid een route krijgt. Breek het zegel, en Deep Reach kan corruptie claimen. Houd het zegel heel, en hetzelfde metaal wordt getuige van druk, afstand, schuld en claimrecht.
 
-## Audio
+## Gebruik Voor De Speler
 
-NL LOC HOLD: Black Keel-relais: vracht is massa. Bewijs is bewaring. Breng beide, anders rekent het venster het verschil af.
-
-## Field Note
-
-NL LOC HOLD: Eerst zegel, dan snijden. Een schoon monster met gebroken tag is van wie het ledger bezit.
+Scan de plaat voordat je de hardware eromheen snijdt. Houd routestempel, ontvangerbaan, getuige-hash en schadestatus samen. Als de tag van het monster losraakt, kan de vondst nog waarde hebben, maar bewijst ze niet meer hetzelfde.
 
 <!-- External Site; generated from P461_PACKET_CUSTODY_BRIDGE/nl_NL. -->

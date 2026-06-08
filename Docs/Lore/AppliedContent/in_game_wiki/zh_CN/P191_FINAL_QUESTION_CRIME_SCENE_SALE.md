@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "最终问题：出售犯罪现场"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# 最终问题：出售犯罪现场
 
-CN LOC HOLD: Crime-scene sale is a material success route that keeps the moral damage visible.
+出售犯罪现场是一条物质成功路线。玩家活下来，可能清掉债务，甚至带钱离开。代价是殖民地证据会变成同一套权力网络的筹码，而那套网络曾掩埋现场、压低救援质量预算，并把尸体当作合同天气。
 
 ## Scanner
 
-CN LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
+坐标、XO证据和干净的保管链可以买到离开。它们也会把谋杀现场卖回给给它定价的人。
 
 ## Terminal
 
-CN LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
+FINAL SALE AXIS：Atlas盆地坐标、可用的蓝债样本、XO见证证据和carrier保管hash可以清掉操作者的lien。若证据没有另行公证，Deep Reach将获得一条比死去工人曾经拥有的救援通道更干净的回归HECTON-8路径。
 
 ## Audio
 
-CN LOC HOLD: You can pay the debt with a grave map.
+你可以用坟墓地图还债。账本会把它叫作工作。
 
 ## Field Note
 
-CN LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+这不是玩笑式失败结局。它是有付款、有债务清算、有收据的结局，也会让仍在深处的人承受更坏的未来。
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/zh_CN. -->

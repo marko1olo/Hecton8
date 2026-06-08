@@ -7,34 +7,34 @@ poi_tags: poi.black_keel_limit_notice;poi.tender_maintenance_tag
 biome_tags: biome.carrier_link;biome.shallow_annex
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Black Keel In-System Tender"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "عطاء Black Keel داخل النظام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel In-System Tender
+# عطاء Black Keel داخل النظام
 
-AR LOC HOLD: Black Keel is an Aegir-system automated claim-tender, not a personal interstellar ship. It can hold custody, speak through windows, recover payload mass and enforce debt. It cannot ignore HECTON-8 weather, orbital timing, quarantine clauses or damaged descent hardware.
+Black Keel عطاء مطالبة آلي في نظام Aegir، وليس سفينة بين نجمية شخصية. يستطيع حفظ custody، والكلام عبر النوافذ، واستعادة كتلة payload، وفرض الدين، وقبول أو رفض شروط الحجر. لا يستطيع تجاهل طقس HECTON-8 أو توقيت المدار أو عتاد الهبوط المتضرر أو تكلفة تحريك الكتلة.
 
 ## Scanner
 
-AR LOC HOLD: Tender limit. Black Keel can recover mass through a window; it cannot cross light-years for you.
+حد العطاء: يستطيع Black Keel استعادة كتلة عبر نافذة. لا يستطيع عبور سنوات ضوئية من أجلك.
 
 ## Terminal
 
-AR LOC HOLD: CARRIER LIMIT: Aegir-system claim tender. Interstellar custody is inherited from route owners; local recovery requires ascent package, quarantine handshake and payload acceptance.
+حد الحاملة: عطاء مطالبة في نظام Aegir. الاستعادة تتطلب حزمة صعود، مصافحة حجر، قبول payload، ومحاذاة نافذة.
 
 ## Audio
 
-AR LOC HOLD: Black Keel is close enough to bill you. Not close enough to save you for free.
+Black Keel قريب بما يكفي ليفوترك. ليس قريبا بما يكفي لينقذك مجانا.
 
 ## Field Note
 
-AR LOC HOLD: Black Keel is leverage and logistics, not cavalry.
+Black Keel نفوذ ولوجستيات، لا فرسان إنقاذ.
 
 <!-- In-Game Wiki; generated from P105_BLACK_KEEL_IN_SYSTEM_TENDER/ar_SA. -->

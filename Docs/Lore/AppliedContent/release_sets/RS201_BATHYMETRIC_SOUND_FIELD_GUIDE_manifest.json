@@ -1,0 +1,40 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS201_BATHYMETRIC_SOUND_FIELD_GUIDE",
+  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P1094_BATHYMETRIC_SOUND_FIELD_GUIDE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS201_BATHYMETRIC_SOUND_FIELD_GUIDE.packets.json"
+  ],
+  "article_sources": [
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_en_US.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_ar_SA.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_de_DE.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_es_ES.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_fr_FR.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_he_IL.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_id_ID.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_ja_JP.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_ko_KR.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_nl_NL.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_pl_PL.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_pt_BR.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_ru_RU.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_uk_UA.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_zh_CN.md"
+  ],
+  "canonical_importer_sources": [
+    "Docs/Lore/AppliedContent/packets/RS201_BATHYMETRIC_SOUND_FIELD_GUIDE.packets.json"
+  ],
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

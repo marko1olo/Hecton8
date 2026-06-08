@@ -9,32 +9,36 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Pressão de Contrato por Dívida e Lista Negra"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Debt Blacklist Contract Pressure
+# Pressão de Contrato por Dívida e Lista Negra
 
-PT LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+HECTON-8 enquadra seu protagonista pela economia de fronteira, não pelo destino. Dívida, listas negras, custódia de claim-pool, crédito de oxigênio, acesso a beliche e antigas credenciais da Deep Reach tornam o contrato de salvage coercitivo sem deixar o jogador indefeso.
 
 ## Scanner
 
-PT LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Aviso de penhor ligado à custódia da Black Keel. Recusar continua legal, mas deixa em terra: sem beliche, sem crédito limpo de oxigênio, sem janela de rota para fora de Aegir.
 
 ## Terminal
 
-PT LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+ACEITAÇÃO DE REIVINDICAÇÃO / JANELA DE ALÍVIO DE LISTA NEGRA
+status do contratado: Marauder preso por dívida
+transportadora: custódia de claim-pool Black Keel
+termos de alívio: massa recuperável, prova de custódia, conformidade do recebedor
+estado de falha: lista negra permanece ativa; acesso a beliche negado; suporte de bem-estar de oxigênio convertido em serviço faturável.
 
 ## Audio
 
-PT LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+Isso não foi sequestro. Foi o tipo de escolha que a fronteira vende como liberdade: assine, mergulhe, ou fique limpo no papel e preso na prática.
 
 ## Field Note
 
-PT LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+O penhor não apontou uma arma. Apontou para a conta do ar, a lista de beliches e a próxima janela de rota.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/pt_BR. -->

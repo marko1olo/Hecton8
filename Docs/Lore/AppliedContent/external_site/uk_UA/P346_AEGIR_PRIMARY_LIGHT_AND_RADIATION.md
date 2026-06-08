@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Aegir Primary Light and Radiation"
+title: "Світло основної зорі Aegir і радіація"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Aegir Primary Light and Radiation
+# Світло основної зорі Aegir і радіація
 
-UK LOC HOLD: Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
-
-## Scanner
-
-UK LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
-
-## Terminal
-
-UK LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
-
-## Audio
-
-UK LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
-
-## Field Note
-
-UK LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir не виглядає порожньою темрявою. K-зоря кладе на палуби бурштинове світло, довгі тіні й потік, від якого відкриті прилади починають брехати, якщо ніхто не звіряє лічильник поясів. Газовий гігант - другий годинник: магнітосферні траси важчають, слабшають і знову важчають, коли місяці перетинають заряд і тінь. Deep Reach продавала ці числа як звичайні робочі вікна. Екіпажі вивчили практичну версію: тепле небо може зварити дешеве ущільнення, заглушити зв'язок і оцінити порятунок похвилинно.
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/uk_UA. -->

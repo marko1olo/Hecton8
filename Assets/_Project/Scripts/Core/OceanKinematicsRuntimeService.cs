@@ -21,6 +21,7 @@ namespace Hecton8.Core
         private bool _registeredUpdatable;
         private bool _registeredService;
         private bool _hotSwapRegistered;
+        private bool _runtimeOwnerAborted;
         private int _providerCount;
         private IHectonOceanKinematics _activeProvider;
         private bool _providerRefreshRequested = true;
@@ -49,12 +50,16 @@ namespace Hecton8.Core
         /// </summary>
         public static OceanKinematicsRuntimeService EnsureRuntimeInstance()
         {
-            OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
-            if (runtime == null)
-                runtime = GlobalRegistry.OceanKinematics as OceanKinematicsRuntimeService;
-
+            OceanKinematicsRuntimeService runtime = ResolveUsableRuntime();
             if (runtime != null)
                 return runtime;
+
+            IHectonOceanKinematicsService registeredService = GlobalRegistry.OceanKinematics;
+            if (IsOceanKinematicsServiceUsable(registeredService) &&
+                ReferenceEquals(registeredService as OceanKinematicsRuntimeService, null))
+            {
+                return null;
+            }
 
             GameObject runtimeRoot = new GameObject("[OceanKinematicsRuntimeService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned ocean kinematics selector root - owner: OceanKinematicsRuntimeService
             return runtimeRoot.AddComponent<OceanKinematicsRuntimeService>();
@@ -65,27 +70,26 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
+            if (_runtimeOwnerAborted || !EnsureSingletonOwnership())
+                return;
+
             if (_isInitialized)
             {
-                EnsureSingletonOwnership();
-                if (GlobalRegistry.OceanKinematicsRuntime != this)
+                if (!TryRegisterService())
                     return;
 
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
-                TryRegisterService();
                 RefreshActiveProvider();
                 return;
             }
 
-            EnsureSingletonOwnership();
-            if (GlobalRegistry.OceanKinematicsRuntime != this)
+            if (!TryRegisterService())
                 return;
 
             _isInitialized = true;
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
-            TryRegisterService();
             RefreshActiveProvider();
         }
 
@@ -94,7 +98,11 @@ namespace Hecton8.Core
         /// </summary>
         public static void RegisterProvider(IHectonOceanKinematics provider)
         {
-            EnsureRuntimeInstance().RegisterProviderInternal(provider);
+            OceanKinematicsRuntimeService runtime = EnsureRuntimeInstance();
+            if (runtime == null)
+                return;
+
+            runtime.RegisterProviderInternal(provider);
         }
 
         /// <summary>
@@ -129,21 +137,28 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_isInitialized)
             {
-                EnsureSingletonOwnership();
-                if (GlobalRegistry.OceanKinematicsRuntime != this)
+                if (!EnsureSingletonOwnership())
+                    return;
+
+                if (!TryRegisterService())
                     return;
 
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
-                TryRegisterService();
                 RefreshActiveProvider();
             }
         }
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterUpdatable();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
@@ -154,6 +169,9 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
@@ -164,6 +182,9 @@ namespace Hecton8.Core
 
         private void ShutdownServiceState()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterUpdatable();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
@@ -182,6 +203,9 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
@@ -224,19 +248,27 @@ namespace Hecton8.Core
             RefreshActiveProvider();
         }
 
-        private void EnsureSingletonOwnership()
+        private bool EnsureSingletonOwnership()
         {
-            OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
-            if (runtime == null)
-                runtime = GlobalRegistry.OceanKinematics as OceanKinematicsRuntimeService;
+            if (_runtimeOwnerAborted)
+                return false;
 
-            if (runtime != null && runtime != this)
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
             {
-                Destroy(gameObject);
-                return;
+                GlobalRegistry.ClearOceanKinematicsRuntime(runtime);
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
             }
 
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             GlobalRegistry.RegisterOceanKinematicsRuntime(this);
+            return ReferenceEquals(GlobalRegistry.OceanKinematicsRuntime, this);
         }
 
         private void RefreshActiveProvider()
@@ -346,17 +378,129 @@ namespace Hecton8.Core
             _hotSwapRegistered = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_registeredService)
-                return;
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             IHectonOceanKinematicsService registeredService = GlobalRegistry.OceanKinematics;
-            if (registeredService != null && !ReferenceEquals(registeredService, this))
-                return;
+            if (!ReferenceEquals(registeredService, null) && !ReferenceEquals(registeredService, this))
+            {
+                OceanKinematicsRuntimeService staleRuntime = registeredService as OceanKinematicsRuntimeService;
+                if (ReferenceEquals(staleRuntime, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterOceanKinematicsService(registeredService);
+                GlobalRegistry.ClearOceanKinematicsRuntime(staleRuntime);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterOceanKinematicsService(this);
             _registeredService = ReferenceEquals(GlobalRegistry.OceanKinematics, this);
+            _runtimeOwnerAborted = !_registeredService;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return _registeredService;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsOceanKinematicsRuntimeUsable(runtime))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                GlobalRegistry.ClearOceanKinematicsRuntime(runtime);
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+            }
+
+            IHectonOceanKinematicsService registeredService = GlobalRegistry.OceanKinematics;
+            if (ReferenceEquals(registeredService, null) || ReferenceEquals(registeredService, this))
+                return false;
+
+            if (IsOceanKinematicsServiceUsable(registeredService))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            OceanKinematicsRuntimeService staleRuntime = registeredService as OceanKinematicsRuntimeService;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterOceanKinematicsService(registeredService);
+                GlobalRegistry.ClearOceanKinematicsRuntime(staleRuntime);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+            }
+
+            return false;
+        }
+
+        private static OceanKinematicsRuntimeService ResolveUsableRuntime()
+        {
+            OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
+            if (IsOceanKinematicsRuntimeUsable(runtime))
+                return runtime;
+
+            if (!ReferenceEquals(runtime, null))
+            {
+                GlobalRegistry.ClearOceanKinematicsRuntime(runtime);
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+            }
+
+            IHectonOceanKinematicsService registeredService = GlobalRegistry.OceanKinematics;
+            if (IsOceanKinematicsServiceUsable(registeredService))
+                return registeredService as OceanKinematicsRuntimeService;
+
+            OceanKinematicsRuntimeService staleRuntime = registeredService as OceanKinematicsRuntimeService;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterOceanKinematicsService(registeredService);
+                GlobalRegistry.ClearOceanKinematicsRuntime(staleRuntime);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+            }
+
+            return null;
+        }
+
+        private static bool IsOceanKinematicsServiceUsable(IHectonOceanKinematicsService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            OceanKinematicsRuntimeService runtime = service as OceanKinematicsRuntimeService;
+            return ReferenceEquals(runtime, null) ||
+                   (runtime._registeredService && IsOceanKinematicsRuntimeUsable(runtime));
+        }
+
+        private static bool IsOceanKinematicsRuntimeUsable(OceanKinematicsRuntimeService runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
         }
 
         private void TryUnregisterService()

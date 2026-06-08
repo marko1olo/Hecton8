@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "شرعية ميثاق سنتوري"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# شرعية ميثاق سنتوري
 
-AR LOC HOLD: The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.
+يمثل Centauri Compact مرساة الشرعية البشرية المبكرة خارج النظام الشمسي: مستعمرات حقيقية، ومعايير حقيقية، وهيبة مدنية حقيقية. على HECTON-8 يظهر كحافظات ضغط مستوردة ووسوم تدقيق استطاعت Deep Reach الاستشهاد بها بينما تجاهلت الروح التي قامت عليها.
 
 ## Scanner
 
-AR LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+وسم تدقيق من سنتوري. شرعية مبكرة خارج النظام الشمسي، ثم أعذار للتخوم.
 
 ## Terminal
 
-AR LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+عتاد CENTAURI COMPACT: حافظة ضغط معتمدة للنقل المدني. قناة التدقيق غير نشطة. الضمان ملغى بعد تعديل Deep Reach من طرف ثالث.
 
 ## Audio
 
-AR LOC HOLD: First legitimacy became old metal under a newer lie.
+تحولت الشرعية الأولى إلى معدن قديم تحت كذبة أحدث.
 
 ## Field Note
 
-AR LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+جعل الميثاق المطالبات البعيدة محترمة. الاحترام ليس إنقاذا.
 
 <!-- In-Game Wiki; generated from P072_CENTAURI_COMPACT_LEGITIMACY/ar_SA. -->

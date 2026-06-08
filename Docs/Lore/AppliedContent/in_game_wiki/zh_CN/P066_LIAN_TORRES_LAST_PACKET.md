@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "利安·托雷斯的最后数据包"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# 利安·托雷斯的最后数据包
 
-CN LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.
+利安·托雷斯锚定了通信层面的真相。他的最后一个干净数据包证明，在Deep Reach用信号损坏和隔离措辞掩埋事实之前，部分证据已经离开HECTON-8。
 
 ## Scanner
 
-CN LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+最后一个干净数据包并没有丢失。承认收到它的代价太高。
 
 ## Terminal
 
-CN LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+托雷斯，L。干净承运握手已完成。工人名单已附。撤离证据已附。中继时龄不适用于实时救援。企业档案后来将该数据包标记为损坏。
 
 ## Audio
 
-CN LOC HOLD: He sent the names. The archive called them noise.
+他把名字发了出去。档案把它们叫作噪声。
 
 ## Field Note
 
-CN LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+当承运链路回应了错误队列，时间戳也能变成尸体。
 
 <!-- In-Game Wiki; generated from P066_LIAN_TORRES_LAST_PACKET/zh_CN. -->

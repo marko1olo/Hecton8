@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Barnard Yards出身
 
-Barnard Yards把主角放进打捞经济，让HECTON-8通过职业文化而不是固定苦情变得私人。
+Barnard Yards 把掠夺者阶层接到打捞经济和职业文化上。HECTON-8 通过工作习惯、工具痕迹和债务变得私人，而不是靠固定苦情。
 
 ## Scanner
 

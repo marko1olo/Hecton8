@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Druckcontainment-Ausfall"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Druckcontainment-Ausfall
 
-DE LOC HOLD: Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.
+Druckcontainment-Ausfall gibt blue debt ein lesbares Materialverhalten. Es ist wertvoll, weil Tiefdruck es kohärent machte, und gefaehrlich, weil flache Handhabung diese Kohärenz zerlegt. Stufe 0 ist versiegelt. Stufe 1 driftet und kann manchmal durch Schlot-Repressur gerettet werden. Stufe 2 bricht das Gitter. Stufe 3 laedt Salzlauge und Biologie ein. Stufe 4 hinterlaesst eine tote Probe, die Ausruestung, Wasser und Routen kontaminiert.
 
 ## Scanner
 
-DE LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+Casket-Stufendiagramm. Blue debt versagt durch Druckgedaechtnis, Signalscherung und Bloom; Aberglaube verschwendet Sauerstoff.
 
 ## Terminal
 
-DE LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+CONTAINMENT-STUFEN: 0 versiegeltes Gitter; 1 Signaldrift; 2 Gitterbruch; 3 Salzlauge/biologischer Bloom; 4 tote Probe mit lebender Kontamination. Schlot-Repressur kann nur Stufe 1 retten.
 
 ## Audio
 
-DE LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
+Die Probe hasst dich nicht. Sie versucht, dorthin zurueckzukehren, wo sie entstand.
 
 ## Field Note
 
-DE LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Eine Probe kann in einer Tiefe ein Vermoegen wert sein und zehn Meter spaeter zur Haftung werden.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/de_DE. -->

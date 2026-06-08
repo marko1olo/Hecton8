@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Barnard Yards Marauder Origin"
+title: "أصل المغير من ساحات بارنارد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Barnard Yards Marauder Origin
+# أصل المغير من ساحات بارنارد
 
-AR LOC HOLD: Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.
+Barnard Yards هي ثقافة العمل التي تقف خلف مغير HECTON-8: salvage صناعي، تفكيك سفن، عتاد ضغط، وعمل على مطالبات ميتة. تشرح الكفاءة من دون تحويل عامل salvage إلى سائح من الأرض أو أسطورة إنقاذ.
 
 ## Scanner
 
-AR LOC HOLD: Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.
+ختم أداة من Barnard. ثقافة تفكيك السفن. نوع المكان الذي يعلمك ألا تثق ببنود الإنقاذ النظيفة.
 
 ## Terminal
 
-AR LOC HOLD: BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.
+علامة خدمة BARNARD YARDS: مشبك طوارئ مقبول. شهادة salvage صالحة لموطن ضغط مهجور، ومقصورة carrier ميتة، وclaim hull متروك.
 
 ## Audio
 
-AR LOC HOLD: You learned this hand motion before HECTON-8. That is the problem.
+تعلمت حركة اليد هذه قبل HECTON-8. هذه هي المشكلة.
 
 ## Field Note
 
-AR LOC HOLD: This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.
+أقرب من الأرض: قواطع مستأجرة، عادات ضغط قديمة، دين، وهياكل منزوعة.
 
 <!-- In-Game Wiki; generated from P073_BARNARD_YARDS_MARAUDER_ORIGIN/ar_SA. -->

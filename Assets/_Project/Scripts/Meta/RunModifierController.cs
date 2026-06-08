@@ -23,6 +23,7 @@ namespace Hecton8.Meta
         private bool _registeredToUpdate;
         private bool _hotSwapRegistered;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private SaveManager _saveManager;
         private int _lastSurvivalDeathSignalSequence;
         private uint _lastSessionLifecycleSequence;
@@ -132,10 +133,7 @@ namespace Hecton8.Meta
             if (serviceSlot != GlobalRegistryServiceSlot.Save)
                 return;
 
-            if (_saveRegistered && previousService is ISaveService previousSave)
-                previousSave.Unregister(this);
-
-            _saveRegistered = false;
+            TryUnregisterSaveOwner();
             _saveService = currentService as ISaveService;
             _saveManager = currentService as SaveManager;
 
@@ -329,7 +327,10 @@ namespace Hecton8.Meta
                 return;
 
             SaveManager saveManager = _saveManager;
-            if (saveManager == null)
+            if (!IsSaveManagerUsable(saveManager))
+                return;
+
+            if (!SaveManager.TryResolveSafeSlotName(slotName, out slotName))
                 return;
 
             saveManager.DeleteSave(slotName);
@@ -339,12 +340,19 @@ namespace Hecton8.Meta
         private string ResolveCurrentSlotName()
         {
             GameStartContext context = GameStartContextHolder.Current;
-            if (!string.IsNullOrWhiteSpace(context.TargetSaveSlot))
-                return context.TargetSaveSlot;
+            if (!string.IsNullOrWhiteSpace(context.TargetSaveSlot) &&
+                SaveManager.TryResolveSafeSlotName(context.TargetSaveSlot, out string safeContextSlotName))
+            {
+                return safeContextSlotName;
+            }
 
             SaveManager saveManager = _saveManager;
-            if (saveManager != null && !string.IsNullOrWhiteSpace(saveManager.LastOperationSlot))
-                return saveManager.LastOperationSlot;
+            if (IsSaveManagerUsable(saveManager) &&
+                !string.IsNullOrWhiteSpace(saveManager.LastOperationSlot) &&
+                SaveManager.TryResolveSafeSlotName(saveManager.LastOperationSlot, out string safeLastOperationSlot))
+            {
+                return safeLastOperationSlot;
+            }
 
             return string.Empty;
         }
@@ -361,19 +369,31 @@ namespace Hecton8.Meta
                 return;
 
             ISaveService saveService = _saveService;
-            if (saveService == null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+                _saveManager = saveService as SaveManager;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveOwner()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            _saveService?.Unregister(this);
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
             _saveRegistered = false;
         }
 
@@ -395,6 +415,16 @@ namespace Hecton8.Meta
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredToUpdate = false;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
+        private static bool IsSaveManagerUsable(SaveManager saveManager)
+        {
+            return saveManager != null && saveManager.IsInitialized;
         }
 
         private void TryRegisterHotSwapListener()

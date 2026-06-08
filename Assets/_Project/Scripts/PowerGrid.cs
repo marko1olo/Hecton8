@@ -1387,9 +1387,15 @@ namespace Hecton8.Power
                 return;
 
             uint nodeId = unchecked((uint)EntityId.ToULong(node.GetEntityId()));
+            if (!TryResolvePowerNodeImpactAup(node, out double3 impactAup))
+            {
+                s_x001PowerGridSignalPushDropCount++;
+                return;
+            }
+
             Hecton8.Core.Contracts.Signals.CombatDamageSignal signal = new Hecton8.Core.Contracts.Signals.CombatDamageSignal
             {
-                ImpactAup = double3.zero,
+                ImpactAup = impactAup,
                 Direction = float3.zero,
                 Magnitude = math.max(0.01f, potential),
                 DamageType = (uint)DamageTypeMask.Emp,
@@ -1404,6 +1410,21 @@ namespace Hecton8.Power
                         Hecton8.Core.Contracts.Signals.CombatDamageSignal.VisualOnlyFlag
             };
             SignalBus<CombatDamageSignal>.TryPushTracked(in signal, ref s_x001PowerGridSignalPushDropCount);
+        }
+
+        private static bool TryResolvePowerNodeImpactAup(PowerNode node, out double3 impactAup)
+        {
+            impactAup = double3.zero;
+            if (node == null)
+                return false;
+
+            Vector3 position = node.transform.position;
+            float3 runtimePoint = new float3(position.x, position.y, position.z);
+            if (!math.all(math.isfinite(runtimePoint)))
+                return false;
+
+            impactAup = CombatDamageSignalCodec.FromRuntimePoint(runtimePoint);
+            return CombatDamageSignalCodec.IsFiniteAup(impactAup);
         }
 
         private void PublishNodeBrownoutSignal(uint nodeId, float supplyRatio, int priority)

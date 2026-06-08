@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Public Route Names"
+title: "Nama Rute Publik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Public Route Names
+# Nama Rute Publik
 
-ID LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.
+Nama rute publik bukan puisi di gelap. Itu label kerja yang selamat dari kontrak, pelat lambung, antrean relay, dan bukti pengadilan. Sol-Centauri Charter Spine membawa legitimasi, Barnard Breaker Run berbau galangan bongkar dan utang. Luyten Packet Ladder adalah rantai custody yang membuat bukti sah atau tak berguna, Tau Public Ledger Lane adalah tekanan publik lambat, dan Ran Long Claim berkata pekerjaan sudah mahal sebelum laut menagih.
 
 ## Scanner
 
-ID LOC HOLD: Route names make travel feel owned before it feels adventurous.
+ROUTE NAME SLATE // Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, Ran Long Claim.
 
 ## Terminal
 
-ID LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.
+PUBLIC ROUTES // Route names are tariff language: certification, salvage labor, packet custody, public proof and the bill for Ran/Aegir delay.
 
 ## Audio
 
-ID LOC HOLD: A route is a road only after somebody sells the delay twice.
+A route name is not for wonder. It is for invoices and blame.
 
 ## Field Note
 
-ID LOC HOLD: Every route name should sound like a tariff, not a wonder.
+Keep route names stamped, used and billable.
 
 <!-- In-Game Wiki; generated from P163_PUBLIC_ROUTE_NAMES/id_ID. -->

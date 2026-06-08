@@ -7,34 +7,34 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "人員ローテーション輸送"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# 人員ローテーション輸送
 
-JP LOC HOLD: Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
+人員ローテーションはHECTON-8の放棄を信じられるものにする。作業員、専門家、交代要員は請求文言より遅く動く。人はSolを一つの契約で出発し、別の契約の下で目覚め、訓練された緊急事態がすでに証拠になっていることを知る。
 
 ## Scanner
 
-JP LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
+人間はAegirへ通勤しない。意見を持つ貨物として何年も過ごす。
 
 ## Terminal
 
-JP LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+乗員ローテーション: 人間輸送は遅い窓、遮蔽居住区画、低代謝サイクル、段階的ローテーションを使う。行方不明の作業員は遅延custody問題になる。
 
 ## Audio
 
-JP LOC HOLD: By the time home asks where you are, the room has already flooded.
+故郷が君の居場所を尋ねる頃には、部屋はもう浸水している。
 
 ## Field Note
 
-JP LOC HOLD: A frontier worker sells time before they sell labor.
+フロンティア労働者は労働より先に時間を売る。
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/ja_JP. -->

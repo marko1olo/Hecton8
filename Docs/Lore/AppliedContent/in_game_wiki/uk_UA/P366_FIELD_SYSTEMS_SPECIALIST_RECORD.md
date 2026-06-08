@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Field Systems Specialist Record"
+title: "Запис фахівця польових систем"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Field Systems Specialist Record
+# Запис фахівця польових систем
 
-UK LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.
+Цей запис пояснює першу компетентність оператора без міфу про обраного свідка. Deep Reach навчала його насосів, рейтингів ущільнень, релейних кімнат, карт обходу, евакуаційних черг і мови route-safe. Старі системи відхиляють ім'я, але все ще показують знайому процедуру. Провина починається як упізнавання: порядок осушення, рейтинг хомута, стерильна фраза утримання, кімната, що відмовила саме в тій послідовності, яку його вчили не допустити.
 
 ## Scanner
 
-UK LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+Старий допуск до польових систем. Не командний склад. Інфраструктурна робота з доступом, достатнім, щоб упізнати, де поховали маршрут.
 
 ## Terminal
 
-UK LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+СЛІД ПЕРСОНАЛУ: польові системи, евакуаційна інфраструктура, сертифікація route-safe. Допуск відкликано після перегляду мовчання Aegir. Кеш процедур досі збігається з послідовністю оператора.
 
 ## Audio
 
-UK LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+Ти не підписував брехню. Ти знав граматику, що допомагала їй проходити перевірку.
 
 ## Field Note
 
-UA LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+Значок перестав відчиняти двері. Він не стер порядок відмов із рук.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/uk_UA. -->

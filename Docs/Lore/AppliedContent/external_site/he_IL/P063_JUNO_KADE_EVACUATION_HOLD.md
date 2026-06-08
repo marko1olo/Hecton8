@@ -8,33 +8,19 @@ biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+spoiler_tier: 1
+title: "החזקת פינוי של ג'ונו קייד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# החזקת פינוי של ג'ונו קייד
 
-HE LOC HOLD: Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent.
+ג'ונו קייד היא האדם שבין בהלה לנוהל. היומן שלה אינו מציג מושבה טיפשה מדי לעזוב. הוא מציג תור, מרשלית, לוחות מסלול, ניסיונות manual override ושערים שמחכים לאישור בזמן שהמים נעים מהר יותר מ-review.
 
-## Scanner
-
-HE LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
-
-## Terminal
-
-HE LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
-
-## Audio
-
-HE LOC HOLD: She kept counting people after the system started counting rooms.
-
-## Field Note
-
-HE LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+להחזקה יש כמה שמות: הסגר, הסמכה, דירוג payload, claim seal. כל שם נשמע סביר לבדו. יחד הם יוצרים דלת נעולה עם אנשים בצד הלא נכון. קייד חשובה כי היא משמרת את הצורה האנושית של הפינוי. השחקן לא מוצא רשלנות מופשטת. הוא מוצא יציאה עובדת שהפכה בלתי שמישה בגלל עיכוב מורשה.
 
 <!-- External Site; generated from P063_JUNO_KADE_EVACUATION_HOLD/he_IL. -->

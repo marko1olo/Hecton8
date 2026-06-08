@@ -1,10 +1,9 @@
 {
-  "schema": "H8.RELEASE_SET_MANIFEST.V0",
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
   "release_set_id": "RS029_ROUTE_TIME_DISTANCE_MODEL",
-  "status": "production_facing_draft_pending_native_localization",
-  "packet_sources": [
-    "Docs/Lore/AppliedContent/packets/RS029_ROUTE_TIME_DISTANCE_MODEL.packets.json"
-  ],
+  "title": "Route Time / Distance Model",
+  "status": "canonical_source_candidate_pending_unity_placement_native_localization_and_runtime_bake",
+  "evidence_class": "STATIC_SOURCE",
   "packets": [
     "P141_RAN_AEGIR_DISTANCE_MODEL",
     "P142_PROBE_PACKET_TRAVEL_TIMES",
@@ -12,59 +11,35 @@
     "P144_HUMAN_CREW_ROTATION_TRANSIT",
     "P145_RELAY_MESSAGE_LAG"
   ],
-  "locales_present_in_packet_bundle": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS029_ROUTE_TIME_DISTANCE_MODEL.packets.json"
   ],
-  "markdown_publication_locales_present": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
+  "canonical_importer_sources": [
+    "Docs/Lore/AppliedContent/packets/RS029_ROUTE_TIME_DISTANCE_MODEL.packets.json"
   ],
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
+  "article_sources": [
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_en_US.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_ru_RU.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_ja_JP.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_zh_CN.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_fr_FR.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_es_ES.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_de_DE.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_pl_PL.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_uk_UA.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_ar_SA.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_id_ID.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_ko_KR.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_he_IL.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_pt_BR.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_nl_NL.md"
   ],
-  "runtime_contract": {
-    "runtime_must_not_parse_markdown": true,
-    "runtime_must_not_generate_translation": true,
-    "expected_bake_output": [
-      "packet_id_hash",
-      "loc_id_hashes",
-      "surface_enum",
-      "unlock_id",
-      "domain_tag",
-      "route_window_id",
-      "localized_string_pool_offsets"
-    ]
-  }
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
 }

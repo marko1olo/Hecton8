@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw וסכנת פיזור הקרח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw וסכנת פיזור הקרח
 
-HE LOC HOLD: The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Claw הוא ירח פיזור קרח עם הילה מלוכלכת של שברים, אבק claim ופסולת תעשייתית קפואה. נתיבי הפסולת שלו יכולים לחשוף חומר מועיל אחרי סערות, ולכן השמועות נשארות בחיים. אותם נתיבים קורעים את האמון בחיישנים. Salvagers מדברים על קרח נקי ומטען אבוד; טייסים מדברים על שטחים מתים, מכ"ם אבק ועלות החלפת לוחות קדמיים.
 
 ## Scanner
 
-HE LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+רשומת פיזור קרח חיצונית. Claw משליך שברים בהירים למסלולים שבהם שמועות salvage נעות מהר מדי.
 
 ## Terminal
 
-HE LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+סולם ירחים H3 CLAW: נתיב פסולת פתוח רק לרחפני survey. תנועת גוף דורשת מכ"ם אבק קדמי, מגן להקרבה וויתור payout על פגיעות שברים לא רשומות.
 
 ## Audio
 
-HE LOC HOLD: Every system has one moon that accountants love and pilots curse.
+לכל מערכת יש ירח אחד שרואי חשבון אוהבים וטייסים מקללים.
 
 ## Field Note
 
-HE LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw נראה רווחי על נייר מפני שנייר לא צריך להתחמק מקרח.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/he_IL. -->

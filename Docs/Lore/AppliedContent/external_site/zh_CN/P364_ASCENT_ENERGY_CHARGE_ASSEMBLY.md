@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Ascent Energy Charge Assembly"
+title: "升空能量装药组件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Ascent Energy Charge Assembly
+# 升空能量装药组件
 
-ZH LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.
+升空能量装药组件把资源经济与叙事后果绑定：blue debt 和 vent-forged hardware 决定逃离可靠性、证据 custody 与妥协。
 
 ## Scanner
 
-ZH LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+Energy cradle 被 pressure pulse 刮伤。廉价装药会做出一具干净棺材。
 
 ## Terminal
 
-ZH LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: 需要 vent-forged heat cell、pressure-history insulator 和 custody stamp。Raw fuel 被拒收。未认证 blue debt 会在 launch impulse 下断裂，并使 recovery claim 失效。
 
 ## Audio
 
-ZH LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+你可以卖掉升力，也可以乘着它走。不能两者都要。
 
 ## Field Note
 
-CN LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+cradle 里的每一克都是逃离、证据或 blue-debt payout。胶囊不会原谅贪婪。
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/zh_CN. -->

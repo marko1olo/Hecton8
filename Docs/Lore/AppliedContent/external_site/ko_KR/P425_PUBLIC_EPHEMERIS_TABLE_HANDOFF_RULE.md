@@ -8,33 +8,33 @@ biome_tags: biome.authoring;biome.aegir_system
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "KO LOC HOLD: Ephemeris Data Boundary Rule"
+spoiler_tier: 1
+title: "Ephemeris 데이터 경계 규칙"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Ephemeris Data Boundary Rule
+# Ephemeris 데이터 경계 규칙
 
-KO LOC HOLD: Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.
+공개 페이지는 Aegir, HECTON-8, transfer windows, route hazards를 설명하되 정확한 orbital constants를 고정하지 않는다.
 
 ## Scanner
 
-KO LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
+데이터 경계: 산문은 대역을 갖고 최종 궤도 숫자는 table-owned로 남는다.
 
 ## Terminal
 
-KO LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY: 산문은 역할, 위험, 대역을 말할 수 있다. 정확한 orbital values는 narrative copy 밖에 둔다.
 
 ## Audio
 
-KO LOC HOLD: Numbers are allowed when the table owns them.
+숫자는 테이블이 소유할 때 허용된다.
 
 ## Field Note
 
-KO LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
+Ephemeris records는 항로 논리를 설명하고 정확한 상수는 table-owned data로 남는다.
 
 <!-- External Site; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/ko_KR. -->

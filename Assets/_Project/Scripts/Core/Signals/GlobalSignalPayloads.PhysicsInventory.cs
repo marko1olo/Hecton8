@@ -225,6 +225,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct InventoryCommandSignal : ISignal
     {
+        public const int ExpectedCapacity = 16;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 2566130472u; // FNV32("InventoryCommandSignal")
+
         [FieldOffset(0)] public uint InventoryHash;
         [FieldOffset(4)] public uint Frame;
         [FieldOffset(8)] public uint Sequence;
@@ -371,6 +376,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ItemAcquiredSignal : ISignal
     {
+        public const int ExpectedCapacity = 256;
+        public const int MaxFrameSignals = 256;
+        public const int LowTierFrameSignals = 64;
+        public const uint LaneHash = 571345398u; // FNV32("ItemAcquiredSignal")
+
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
         [FieldOffset(48)] public uint ItemHash;
         [FieldOffset(52)] public uint OreHash;
@@ -384,6 +394,9 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct RadiationDoseSignal : ISignal
     {
+        public const float DoseFullScaleRad = 100f;
+        public const float DoseToUnitScale = 0.01f;
+
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
         [FieldOffset(48)] public float Dose;
         [FieldOffset(52)] public float Intensity01;
@@ -391,5 +404,14 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(60)] public byte DoseKind;
         [FieldOffset(61)] public byte Flags;
         [FieldOffset(62)] private ushort _padTail0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DoseToUnit01(float dose)
+        {
+            if (!math.isfinite(dose) || dose <= 0f)
+                return 0f;
+
+            return math.min(dose, DoseFullScaleRad) * DoseToUnitScale;
+        }
     }
 }

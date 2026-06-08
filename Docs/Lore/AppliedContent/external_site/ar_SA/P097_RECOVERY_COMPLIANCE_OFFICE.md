@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "مكتب امتثال الاسترداد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# مكتب امتثال الاسترداد
 
-AR LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow.
+يبقي مكتب امتثال الاسترداد Deep Reach حية في عام 2190 كخلية ضغط مؤسسية محددة، لا كظل تاريخي غامض.
 
 ## Scanner
 
-AR LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+ختم مكتب بزمن الحاضر. Deep Reach ليس شبحا؛ إنه طابور معه محامون.
 
 ## Terminal
 
-AR LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+مكتب امتثال الاسترداد: فتح إجراء عودة Aegir. الأولويات: عهدة XO، وصول Atlas، احتواء المسؤولية، وصمت المتعاقد إن توفر.
 
 ## Audio
 
-AR LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+لقد تأخروا بما يكفي ليكونوا قانونيين، وحضروا بما يكفي ليكونوا خطرين.
 
 ## Field Note
 
-AR LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+فصيل حي يجعل الضغط حاضرا من دون تحويل الشركة كلها إلى شرير واحد يصرخ.
 
 <!-- External Site; generated from P097_RECOVERY_COMPLIANCE_OFFICE/ar_SA. -->

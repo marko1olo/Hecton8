@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Keluar Material
 
-Keluar material adalah ending parsial valid. Pemain bisa mencairkan sumber daya, tetapi kebenaran besar tetap terbuka.
+Keluar material adalah hasil parsial yang nyata, bukan rute mati. Sumber daya atau sampel dapat membeli mundur sementara kebenaran besar tetap belum selesai dan kepulangan nanti terasa lebih tajam.
 
 ## Scanner
 

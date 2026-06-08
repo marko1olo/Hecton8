@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Аудіотранскрипт робочого досьє"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Worker Dossier Audio Transcript Seed
+# Аудіотранскрипт робочого досьє
 
-UK LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.
+Транскрипти робочих досьє дають затопленій колонії населення до того, як люди стають доказами. Важлива рутина: імена, задачі, інструменти, погана водна арифметика і звичка чекати наступну зміну.
 
 ## Scanner
 
-UK LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Відновлене робоче аудіо зв'язує імена, посади, шафки, водні тики й маршрутні holds в один людський ланцюг custody.
 
 ## Terminal
 
-UK LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
+DOSSIER AUDIO WKR-SET: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold.
 
 ## Audio
 
-UK LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
+Зміна. Насосна ще дихає. Пломбу шафки заклинило. Води менше рахунку. Скажи Kade, що табло збрехало.
 
 ## Field Note
 
-UK LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Для dossier barks, підписів шафок і wiki про робітників. Голоси мають бути зайнятими, не поетичними.
 
 <!-- In-Game Wiki; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/uk_UA. -->

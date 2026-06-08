@@ -7,34 +7,34 @@ poi_tags: poi.moon_ladder_public_band;poi.hecton8_mid_orbit_card
 biome_tags: biome.aegir_system;biome.publication
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "FR LOC HOLD: HECTON-8 Moon Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Échelle lunaire HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: HECTON-8 Moon Ladder
+# Échelle lunaire HECTON-8
 
-FR LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
+L'échelle lunaire donne l'ampleur d'Aegir tout en gardant la campagne jouable sur HECTON-8. Les corps proches modèlent relais, ice-scatter, quarantine timing, salvage traffic et silence windows sans promettre d'autres lunes jouables.
 
 ## Scanner
 
-FR LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+Échelle lunaire : HECTON-8 est une claim, pas tout le système Aegir.
 
 ## Terminal
 
-FR LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER : rôles publics seulement ; les orbital elements exacts restent table-owned data.
 
 ## Audio
 
-FR LOC HOLD: Other moons are not side quests. They are why the route has teeth.
+Les autres lunes ne sont pas des side quests. Elles donnent des dents à la route.
 
 ## Field Note
 
-FR LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
+Archive d'échelle lunaire : les cartes publiques peuvent montrer Aegir sans promettre des playable moons.
 
 <!-- In-Game Wiki; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/fr_FR. -->

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ledger Role Table"
+title: "Aegir 月群航路台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ledger Role Table
+# Aegir 月群航路台帳
 
-JP LOC HOLD: Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8.
+Aegir 月群航路台帳は HECTON-8 周辺の月の梯子を描く。近い天体は安易な出口ではなく、救助タイミング、交通権、ビーコン信用を難しくする。
 
 ## Scanner
 
-JP LOC HOLD: Aegir moons are not decoration; each public moon label carries a route or salvage role.
+Aegir の月は、壊し、隠し、散らし、中継し、売るものによって名前を得る。
 
 ## Terminal
 
-JP LOC HOLD: LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+LEDGER: Skarn 放射線シア、Vela リレーマスク、Claw 氷散乱、Lumen 公開航路図、Thorne 検疫噂交通、Anvil 工業 salvage、Kestrel 高窓交通、HECTON 深部請求、Mute 死ビーコン経済。
 
 ## Audio
 
-JP LOC HOLD: The system has more bodies than stories. Good. Use them as pressure.
+天体が増える。言い訳が増える。救助が外れる道が増える。
 
 ## Field Note
 
-JP LOC HOLD: Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+海洋月は水の下で孤独だが、星系の中では孤独ではない。
 
 <!-- External Site; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/ja_JP. -->

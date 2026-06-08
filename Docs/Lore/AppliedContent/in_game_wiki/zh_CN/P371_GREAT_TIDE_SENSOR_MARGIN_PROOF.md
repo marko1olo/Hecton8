@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Great Tide Sensor Margin Proof"
+title: "大潮余量痕迹"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Great Tide Sensor Margin Proof
+# 大潮余量痕迹
 
-ZH LOC HOLD: Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.
+这条痕迹同时证明两件事：大潮真实存在，致命余量在报告承认前已经可见。Deep Reach没有命令海水上涨。它接受了一个路线窗口，而殖民地压力包络已经没有余量，然后发布了没有警告签核的cascade。
 
 ## Scanner
 
-ZH LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+回收的潮汐传感器。峰值剪切超过殖民地设计，但警戒余量破裂记录早于公开cascade时间戳。
 
 ## Terminal
 
-ZH LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE。路线授权方接受尾部风险阈值。操作员备注从公开事故链中移除。原始痕迹保存在brine-buffer记忆中。
 
 ## Audio
 
-ZH LOC HOLD: Physics did the damage. A person signed the margin.
+海洋没有撒谎。报告撒谎了。
 
 ## Field Note
 
-ZH LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Marauder笔记：别找反派演说。找被人删掉的那一行。
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/zh_CN. -->

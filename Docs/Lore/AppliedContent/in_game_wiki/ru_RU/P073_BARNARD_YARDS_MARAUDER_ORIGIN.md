@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder-корни Barnard Yards"
+title: "Мародерское происхождение Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Marauder-корни Barnard Yards
+# Мародерское происхождение Barnard Yards
 
-Barnard Yards - рабочая культура происхождения игрока: industrial salvage, shipbreaking, pressure hardware и работа с dead claims. Это делает протагониста компетентным, не превращая его в туриста с Земли или избранного героя.
+Barnard Yards - текущая рабочая культура происхождения мародера HECTON-8: промышленный salvage, разделка кораблей, гермооборудование и работа с мертвыми претензиями. Она объясняет компетентность, не превращая salvage-работника в туриста с Земли или легенду спасения.
 
 ## Scanner
 
-Штамп инструмента Barnard. Культура разборки кораблей. Место, где учат не доверять чистым rescue clauses.
+Клеймо инструмента Barnard. Культура разделки кораблей. Место, где учат не верить чистым пунктам о спасении.
 
 ## Terminal
 
-BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.
+СЕРВИСНАЯ МЕТКА BARNARD YARDS: аварийный зажим принят. Сертификация salvage действительна для заброшенной гермосреды, мертвого отсека carrier и покинутого claim hull.
 
 ## Audio
 
-Ты выучил это движение рукой до HECTON-8. В этом и проблема.
+Ты выучил это движение руки до HECTON-8. В этом и проблема.
 
 ## Field Note
 
-Это ближе к игроку, чем Земля: арендованные резаки, старые pressure habits, долг и stripped hulls.
+Ближе Земли: арендованные резаки, старые привычки давления, долг и ободранные корпуса.
 
 <!-- In-Game Wiki; generated from P073_BARNARD_YARDS_MARAUDER_ORIGIN/ru_RU. -->

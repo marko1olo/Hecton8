@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 토착 생물군: 식물군, 동물군, 그리고 생태계 붕괴
 
 > **출처:** 회수된 PDA, '나사로'로 명명된 Styx급 하강 포드.  

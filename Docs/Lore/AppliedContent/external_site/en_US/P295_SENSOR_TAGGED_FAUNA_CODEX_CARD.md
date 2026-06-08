@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Sensor Tagged Fauna Codex Card"
+title: "Sensor-Tagged Fauna Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Sensor Tagged Fauna Codex Card
+# Sensor-Tagged Fauna Codex Card
 
-Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident.
+Sensor-tagged fauna show Atlas at its most procedural. The horror is not mind control; it is old monitoring hardware becoming body history, then damaged maintenance logic treating that body as part of the map.
 
 ## Scanner
 
-Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+Sensor-tagged fauna. Old Deep Reach biometal tag embedded in scar, shell or growth ring. Weak Atlas route echo; animal intent not confirmed.
 
 ## Terminal
 
-SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+SPECIMEN / SENSOR-TAGGED FAUNA / role: living telemetry carrier, stale survey landmark, repair-route contaminant / safe read: old tag pulse, scar tissue growth, non-command movement / reject: treating behavior as obedience, cutting tag from live body, trusting occupancy echo / route note: the tag can report a room the animal crossed, not the reason it crossed.
 
 ## Audio
 
-It is not obeying. It is being used.
+It is not obeying Atlas. It is carrying an old question that Atlas still asks.
 
 ## Field Note
 
-The tag is a scar, not a leash. Expect dirty telemetry and a nervous animal.
+The tag is a scar, not a leash. It may report you, misplace you, or wake something that never saw the animal.
 
 <!-- External Site; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/en_US. -->

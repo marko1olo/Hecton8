@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Deep Reach Liability Evidence"
+title: "Доказательства ответственности Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Deep Reach Liability Evidence
+# Доказательства ответственности Deep Reach
 
-RU LOC HOLD: Deep Reach is culpable because the HECTON-8 disaster can be both natural and managed badly. The ocean supplied real force. The company supplied thin margins, late authorization, quarantine delays, Atlas priority rules and paperwork clean enough to outlive the workers it described. The strongest evidence is physical: doors, clocks, sensor tolerances, route holds and loss ledgers.
+Deep Reach виновна именно потому, что катастрофа HECTON-8 могла быть природной и плохо управляемой одновременно. Океан дал реальную силу: tide resonance, cryosphere shear, storm stacking и pressure failure. Компания дала тонкие margins, позднюю authorization, quarantine delay, priority rules Atlas и бумаги, достаточно чистые, чтобы пережить людей, которых они описывали. Самые сильные доказательства физические и процедурные: дверь удержана executive authority, sensor tolerance изменен до закрытия окна, очередь задержана ради legal clearance, loss ledger переводит работников в claim categories, пока вода еще движется. Игрок учится не верить официальному языку, сверяя его с вмятинами, часами и маршрутами.
 
 ## Scanner
 
-RU LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Запись liability. Реальная приливная физика, принятый риск по margin, задержка эвакуации, quarantine holds, Atlas weighting и очищенный язык потерь сходятся в одной цепочке доказательств.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+ПУБЛИЧНЫЙ АРХИВНЫЙ УЗЕЛ // ДОКАЗАТЕЛЬСТВА LIABILITY. Great Tide принят. Проверка остается открытой по sensor margins, задержке evacuation queue, quarantine holds, Atlas weighting, worker classification и loss conversion.
 
 ## Audio
 
-RU LOC HOLD: A disaster can be natural and still have signatures on it.
+Катастрофа может быть природной и все равно иметь подписи.
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Заметка Marauder: не спорь с приливом. Спорь с подписями рядом с ним.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/ru_RU. -->

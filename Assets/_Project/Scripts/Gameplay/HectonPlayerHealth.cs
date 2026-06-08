@@ -11,6 +11,8 @@ using Hecton8.Interaction;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Hecton8.World;
+using Hecton.Localization;
 using Sirenix.OdinInspector;
 using Unity.Mathematics;
 using UnityEngine;
@@ -53,12 +55,25 @@ namespace Hecton8.Gameplay
         private const string RadiationCriticalDiscoveryId = "radiation_critical_advisory";
         private const string LeviathanTraumaDiscoveryId = "leviathan_trauma_voice_log";
         private const string MutationDetectedMessage = "MUTATION DETECTED";
+        private const string SurvivalGraceNotification = "CARDIAC OVERRIDE";
         private const string RadiationFatigueFallbackMessage = "CRITICAL ADVISORY // RADIATION LOAD 30 PERCENT";
         private const string RadiationCriticalFallbackMessage = "CRITICAL ADVISORY // RADIATION LOAD 70 PERCENT - RAD-SHIELD REQUIRED";
         private static readonly uint _radiationFatigueDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(RadiationFatigueDiscoveryId);
         private static readonly uint _radiationCriticalDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(RadiationCriticalDiscoveryId);
         private static readonly uint _leviathanTraumaDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(LeviathanTraumaDiscoveryId);
         private static readonly uint _mutationDetectedMessageHash = NotificationEvents.ComputeMessageHash(MutationDetectedMessage);
+        private static readonly uint _MutationDetectedNotificationMissWarningHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.MutationDetectedNotificationMiss"));
+        private static readonly uint _SurvivalGraceNotificationMissWarningHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.SurvivalGraceNotificationMiss"));
+        private static readonly uint _RadiationAdvisoryNotificationMissWarningHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.RadiationAdvisoryNotificationMiss"));
+        private static readonly uint _PlayerSignalEventLaneDropWarningHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.PlayerSignalEventLaneDrop"));
+        private static readonly uint _PlayerHealthNotificationContextHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.Notification"));
+        private static readonly uint _PlayerSignalEventLaneContextHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.PlayerSignalEventLane"));
+        private static readonly uint _SurvivalGraceNotificationContextHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.SurvivalGraceNotification"));
+        private static readonly uint _RadiationAdvisoryNotificationContextHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.RadiationAdvisoryNotification"));
+        private static readonly uint _RadiationAdvisoryTraumaSignalContextHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.RadiationAdvisoryTraumaSignal"));
+        private static readonly uint _VitalWarningTraumaSignalContextHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.VitalWarningTraumaSignal"));
+        private static readonly uint _DamageFeedbackTraumaSignalContextHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.DamageFeedbackTraumaSignal"));
+        private static readonly uint _LeviathanTraumaSignalContextHash = unchecked((uint)LocHash.Compute("HectonPlayerHealth.LeviathanTraumaSignal"));
         private static readonly char[] s_radiationFatigueMessage =
         {
             'C','R','I','T','I','C','A','L',' ','A','D','V','I','S','O','R','Y',' ','/','/',' ',
@@ -103,15 +118,24 @@ namespace Hecton8.Gameplay
         [SerializeField] private HazardMutationProfile hazardMutationProfile;
         private bool _vitalWarningSignalIssued;
         private bool _lastDamageTriggeredRespawnReconciliation;
+        private uint _pendingRespawnReconciliationSequence;
+        private uint _lastAppliedRespawnReconciliationSequence;
 
         /// <summary>Gets the current health value.</summary>
-        public float CurrentHealth => currentHealth;
+        public float CurrentHealth => ResolveSafeRuntimeHealth(currentHealth, ResolveSafeRuntimeMaxHealth(maxHealth));
 
         /// <summary>Gets the maximum health value.</summary>
-        public float MaxHealth => maxHealth;
+        public float MaxHealth => ResolveSafeRuntimeMaxHealth(maxHealth);
 
         /// <summary>Gets the health percentage (0-1).</summary>
-        public float HealthPercent => currentHealth / Mathf.Max(0.0001f, maxHealth);
+        public float HealthPercent
+        {
+            get
+            {
+                float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+                return ResolveSafeRuntimeHealth(currentHealth, runtimeMaxHealth) * math.rcp(runtimeMaxHealth);
+            }
+        }
 
         /// <summary>Current forward vector used by directional armor checks.</summary>
         public Vector3 CombatForward => transform.forward;
@@ -129,13 +153,13 @@ namespace Hecton8.Gameplay
         {
             get
             {
-                float healthStress = Mathf.Clamp01(1f - HealthPercent);
-                float radiationStress = Mathf.Clamp01(_radiationExposureSeconds / Mathf.Max(1f, CriticalRadiationAdvisoryThresholdSeconds));
+                float healthStress = ResolveUnit01(1f - HealthPercent);
+                float radiationStress = ResolveUnit01(_radiationExposureSeconds / Mathf.Max(1f, CriticalRadiationAdvisoryThresholdSeconds));
                 float toxicityStress = ResolvePoisonStatus01();
-                float gasStress = Mathf.Clamp01(_gasPhysiologyStress01);
-                float pressureStress = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.PressureExposureSeverity01) : 0f;
-                float thermalStress = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.ThermalStressSeverity01) : 0f;
-                return Mathf.Clamp01(Mathf.Max(
+                float gasStress = ResolveUnit01(_gasPhysiologyStress01);
+                float pressureStress = _survivalSystem != null ? ResolveUnit01(_survivalSystem.PressureExposureSeverity01) : 0f;
+                float thermalStress = _survivalSystem != null ? ResolveUnit01(_survivalSystem.ThermalStressSeverity01) : 0f;
+                return ResolveUnit01(Mathf.Max(
                     healthStress,
                     Mathf.Max(radiationStress, Mathf.Max(toxicityStress, Mathf.Max(gasStress, Mathf.Max(pressureStress, thermalStress))))));
             }
@@ -145,19 +169,29 @@ namespace Hecton8.Gameplay
         public float Stress01 => Stress;
 
         /// <summary>Gets whether the player is alive.</summary>
-        public bool IsAlive => currentHealth > 0;
+        public bool IsAlive => CurrentHealth > 0f;
+
+        internal bool RespawnReconciliationPending => _pendingRespawnReconciliationSequence != 0u;
 
         /// <summary>Gets whether the player is currently invulnerable.</summary>
         public bool IsInvulnerable => ResolveExpiryRemainingSeconds(_invulnerabilityExpiresAt, ResolveUnscaledNowSeconds()) > 0f;
 
         /// <summary>Current cumulative radiation-fatigue exposure in seconds.</summary>
-        public float RadiationExposureSeconds => _radiationExposureSeconds;
+        public float RadiationExposureSeconds => ResolveNonNegativeRuntimeValue(_radiationExposureSeconds);
 
         /// <summary>Normalized cumulative radiation exposure used by visor degradation shaders.</summary>
-        public float RadiationExposure => Mathf.Clamp01(_radiationExposureSeconds / Mathf.Max(1f, RadiationFatigueCriticalExposureSeconds));
+        public float RadiationExposure => ResolveUnit01(_radiationExposureSeconds / Mathf.Max(1f, RadiationFatigueCriticalExposureSeconds));
 
         /// <summary>Permanent mutation bitmask unlocked by radiation exposure.</summary>
         public uint MutationFlags => _mutationFlags;
+
+        public int MutationDetectedNotificationMissCount => _mutationDetectedNotificationMissCount;
+
+        public int SurvivalGraceNotificationMissCount => _survivalGraceNotificationMissCount;
+
+        public int RadiationAdvisoryNotificationMissCount => _radiationAdvisoryNotificationMissCount;
+
+        public int PlayerSignalEventLaneDropCount => _playerSignalEventLaneDropCount;
 
         /// <summary>Predator detection multiplier applied by mutation state.</summary>
         public float PredatorVisibilityScale => HasMutation(HazardMutationProfile.BioluminescentSkinBit)
@@ -167,29 +201,34 @@ namespace Hecton8.Gameplay
         /// <summary>Runtime natural HP regeneration multiplier after food toxicity suppression.</summary>
         public float NaturalHealthRegenerationMultiplier => ResolveNaturalHealthRegenerationMultiplier(BloodToxicity01);
         /// <summary>Composite blood toxicity scalar used by medical item effects.</summary>
-        public float BloodToxicity01 => Mathf.Clamp01(Mathf.Max(Mathf.Max(ResolvePoisonStatus01(), RadiationExposure), _gasPhysiologyToxicity01));
+        public float BloodToxicity01 => Mathf.Max(
+            Mathf.Max(ResolvePoisonStatus01(), RadiationExposure),
+            ResolveUnit01(_gasPhysiologyToxicity01));
 
         /// <summary>Latest gas physiology stress scalar received from the physiology signal lane.</summary>
-        public float GasPhysiologyStress01 => Mathf.Clamp01(_gasPhysiologyStress01);
+        public float GasPhysiologyStress01 => ResolveUnit01(_gasPhysiologyStress01);
 
         /// <summary>True when mutation state removes the practical need for a flashlight.</summary>
         public bool FlashlightBypassActive => HasMutation(HazardMutationProfile.BioluminescentSkinBit);
 
         internal void ApplyRadiationExposure(float exposureSeconds)
         {
-            _radiationExposureSeconds = Mathf.Max(_radiationExposureSeconds, Mathf.Max(0f, exposureSeconds));
+            _radiationExposureSeconds = Mathf.Max(
+                ResolveNonNegativeRuntimeValue(_radiationExposureSeconds),
+                ResolveNonNegativeRuntimeValue(exposureSeconds));
             ApplyRadiationExposureExact(_radiationExposureSeconds);
         }
 
         internal void SetRadiationExposure(float exposureSeconds)
         {
-            _radiationExposureSeconds = Mathf.Max(0f, exposureSeconds);
+            _radiationExposureSeconds = ResolveNonNegativeRuntimeValue(exposureSeconds);
             ApplyRadiationExposureExact(_radiationExposureSeconds);
         }
 
         private void ApplyRadiationExposureExact(float exposureSeconds)
         {
-            float fatigueScale = ResolveRadiationFatigueScale(exposureSeconds);
+            float safeExposureSeconds = ResolveNonNegativeRuntimeValue(exposureSeconds);
+            float fatigueScale = ResolveRadiationFatigueScale(safeExposureSeconds);
             SetRuntimeMaxHealthScaleInternal(fatigueScale);
             EvaluateMutationThresholds();
             TryIssueRadiationAdvisories();
@@ -197,7 +236,7 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveRadiationFatigueScale(float exposureSeconds)
         {
-            return SomaticSurvivalMath.ResolveRadiationFatigueScale(exposureSeconds);
+            return SomaticSurvivalMath.ResolveRadiationFatigueScale(ResolveNonNegativeRuntimeValue(exposureSeconds));
         }
 
         internal static bool ShouldActivateSurvivalGrace(
@@ -207,14 +246,18 @@ namespace Hecton8.Gameplay
             bool ignoreInvulnerability,
             float lockoutTimer)
         {
+            float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maximumHealth);
+            float runtimeHealth = ResolveSafeRuntimeHealth(currentHealth, runtimeMaxHealth);
+            float safeIncomingDamage = ResolveNonNegativeRuntimeValue(incomingDamage);
+
             if (ignoreInvulnerability ||
                 lockoutTimer > 0f ||
-                incomingDamage < currentHealth)
+                safeIncomingDamage < runtimeHealth)
             {
                 return false;
             }
 
-            float healthPercent = currentHealth / Mathf.Max(0.0001f, maximumHealth);
+            float healthPercent = runtimeHealth * math.rcp(runtimeMaxHealth);
             return healthPercent > SurvivalGraceEligibilityThresholdNormalized;
         }
 
@@ -275,15 +318,17 @@ namespace Hecton8.Gameplay
                     audioLogs.NotifyAtmosphericWarningStarted(glitchDuration);
             }
 
-            PlayerSignalEvents.TryRaiseTraumaHudSignal(new TraumaHudSignal(glitchIntensity, glitchDuration, 1f, Mathf.Clamp01(HealthPercent), true));
-            ShowRadiationAdvisory(message, fallbackMessage);
+            TryRaiseTraumaHudSignal(
+                new TraumaHudSignal(glitchIntensity, glitchDuration, 1f, Mathf.Clamp01(HealthPercent), true),
+                _RadiationAdvisoryTraumaSignalContextHash ^ discoveryHash);
+            ShowRadiationAdvisory(message, fallbackMessage, discoveryHash);
         }
 
-        private static void ShowRadiationAdvisory(char[] message, string fallbackMessage)
+        private void ShowRadiationAdvisory(char[] message, string fallbackMessage, uint discoveryHash)
         {
             if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
             {
-                NotificationEvents.TryPushCritical(fallbackMessage.AsSpan());
+                TryPushRadiationAdvisoryFallbackNotification(fallbackMessage.AsSpan(), discoveryHash);
                 return;
             }
 
@@ -294,7 +339,7 @@ namespace Hecton8.Gameplay
                 if (HUDNotification.TryGetActive(out HUDNotification notification))
                     notification.ShowCritical(in buffer);
                 else
-                    NotificationEvents.TryPushCritical(fallbackMessage.AsSpan());
+                    TryPushRadiationAdvisoryFallbackNotification(fallbackMessage.AsSpan(), discoveryHash);
             }
             finally
             {
@@ -302,10 +347,47 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void TryPushRadiationAdvisoryFallbackNotification(ReadOnlySpan<char> message, uint discoveryHash)
+        {
+            if (NotificationEvents.TryPushCritical(message))
+                return;
+
+            ReportRadiationAdvisoryNotificationMiss(discoveryHash);
+        }
+
+        private void ReportRadiationAdvisoryNotificationMiss(uint discoveryHash)
+        {
+            _radiationAdvisoryNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _RadiationAdvisoryNotificationMissWarningHash,
+                _PlayerHealthNotificationContextHash ^ _RadiationAdvisoryNotificationContextHash ^ discoveryHash,
+                math.max(1, _radiationAdvisoryNotificationMissCount));
+        }
+
+        private void TryRaiseTraumaHudSignal(in TraumaHudSignal signal, uint contextHash)
+        {
+            if (PlayerSignalEvents.TryRaiseTraumaHudSignal(in signal))
+                return;
+
+            ReportPlayerSignalEventLaneDropIfBackpressured(contextHash);
+        }
+
+        private void ReportPlayerSignalEventLaneDropIfBackpressured(uint contextHash)
+        {
+            if (PlayerSignalEvents.PendingCount <= 0)
+                return;
+
+            _playerSignalEventLaneDropCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _PlayerSignalEventLaneDropWarningHash,
+                _PlayerSignalEventLaneContextHash ^ contextHash,
+                math.max(1, _playerSignalEventLaneDropCount));
+        }
+
         internal void ApplyNutritionalToxicity(float severity01, float durationSeconds)
         {
-            float clampedSeverity = Mathf.Clamp01(severity01);
-            float clampedDuration = Mathf.Max(0f, durationSeconds);
+            float clampedSeverity = ResolveUnit01(severity01);
+            float clampedDuration = ResolveNonNegativeRuntimeValue(durationSeconds);
             if (clampedSeverity <= 0f || clampedDuration <= 0f)
                 return;
 
@@ -327,7 +409,7 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveNaturalHealthRegenerationMultiplier(float toxicitySeverity01)
         {
-            return SomaticSurvivalMath.ResolveNaturalHealthRegenerationMultiplier(toxicitySeverity01);
+            return SomaticSurvivalMath.ResolveNaturalHealthRegenerationMultiplier(ResolveUnit01(toxicitySeverity01));
         }
 
         private float ResolvePoisonStatus01()
@@ -344,21 +426,23 @@ namespace Hecton8.Gameplay
 
         private void SetRuntimeMaxHealthScaleInternal(float scale)
         {
-            float minScale = MinimumRuntimeMaxHealth / Mathf.Max(MinimumRuntimeMaxHealth, _baseMaxHealth);
-            float clampedScale = Mathf.Clamp(scale, minScale, 1f);
-            float nextMaxHealth = Mathf.Max(MinimumRuntimeMaxHealth, _baseMaxHealth * clampedScale);
-            if (Mathf.Approximately(_runtimeMaxHealthScale, clampedScale) && Mathf.Approximately(maxHealth, nextMaxHealth))
-                return;
-
-            _runtimeMaxHealthScale = clampedScale;
-            maxHealth = nextMaxHealth;
-            if (currentHealth <= maxHealth)
+            float safeBaseMaxHealth = ResolveSafeRuntimeMaxHealth(_baseMaxHealth);
+            float minScale = MinimumRuntimeMaxHealth / safeBaseMaxHealth;
+            float safeScale = math.isfinite(scale) ? scale : 1f;
+            float clampedScale = Mathf.Clamp(safeScale, minScale, 1f);
+            float nextMaxHealth = ResolveSafeRuntimeMaxHealth(safeBaseMaxHealth * clampedScale);
+            float nextCurrentHealth = ResolveSafeRuntimeHealth(currentHealth, nextMaxHealth);
+            if (Mathf.Approximately(_runtimeMaxHealthScale, clampedScale) &&
+                Mathf.Approximately(maxHealth, nextMaxHealth) &&
+                Mathf.Approximately(currentHealth, nextCurrentHealth))
             {
-                MarkCombatDamageSyncDirty();
                 return;
             }
 
-            currentHealth = maxHealth;
+            _baseMaxHealth = safeBaseMaxHealth;
+            _runtimeMaxHealthScale = clampedScale;
+            maxHealth = nextMaxHealth;
+            currentHealth = nextCurrentHealth;
             MarkCombatDamageSyncDirty();
         }
 
@@ -378,6 +462,10 @@ namespace Hecton8.Gameplay
         private uint _lastGasPhysiologyFrame;
         private bool _hasCachedCombatStatusMask;
         private uint _mutationFlags;
+        private int _mutationDetectedNotificationMissCount;
+        private int _survivalGraceNotificationMissCount;
+        private int _radiationAdvisoryNotificationMissCount;
+        private int _playerSignalEventLaneDropCount;
         private bool _radiationFatigueAdvisoryIssued;
         private bool _radiationCriticalAdvisoryIssued;
         private bool _leviathanTraumaAdvisoryIssued;
@@ -394,15 +482,24 @@ namespace Hecton8.Gameplay
         private bool _pendingSurvivalGraceHeartbeatPulse;
         private bool _pendingLeviathanTraumaRoar;
         private Vector3 _pendingLeviathanTraumaRoarPosition;
+        private bool _saveRegistered;
         private IAudioService _audioService;
         private IAudioLogRuntime _audioLogs;
+        private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            s_x001HectonPlayerHealthSignalPushDropCount = 0;
+        }
 
         /// <summary>Initializes the health system.</summary>
         private void Awake()
         {
             if (!_isInitialized)
             {
-                _baseMaxHealth = Mathf.Max(MinimumRuntimeMaxHealth, maxHealth);
+                _baseMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
                 maxHealth = _baseMaxHealth;
                 currentHealth = maxHealth;
                 NotificationEvents.RegisterMessage(MutationDetectedMessage.AsSpan());
@@ -421,6 +518,7 @@ namespace Hecton8.Gameplay
         {
             TryRegisterHotSwapListener();
             CacheRegistryServicesCold();
+            TryRegisterSaveParticipant();
             TryRegisterToSlowTickManager();
             TryRegisterCombatDamageTarget();
         }
@@ -433,29 +531,38 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            TryUnregisterSaveParticipant();
             TryUnregisterCombatDamageTarget();
             TryUnregisterFromSlowTickManager();
             TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
             _pendingSurvivalGraceHeartbeatPulse = false;
             _pendingLeviathanTraumaRoar = false;
+            ClearPendingRespawnReconciliation();
+            ClearPlayerHealthNotificationDiagnostics();
+            ClearPlayerHealthSignalDiagnostics();
             ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterSaveParticipant();
             TryUnregisterCombatDamageTarget();
             TryUnregisterFromSlowTickManager();
             TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
             _pendingSurvivalGraceHeartbeatPulse = false;
             _pendingLeviathanTraumaRoar = false;
+            ClearPendingRespawnReconciliation();
+            ClearPlayerHealthNotificationDiagnostics();
+            ClearPlayerHealthSignalDiagnostics();
             ClearCachedRegistryServices();
         }
 
         /// <summary>Updates low-frequency status and physiology bridge timers.</summary>
         public void SlowTick()
         {
+            ConsumeCommittedRespawnReconciliationSignals();
             TryRegisterCombatDamageTarget();
             TryFlushCombatDamageSync();
             RefreshCombatStatusMaskCache();
@@ -464,6 +571,7 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            ConsumeCommittedRespawnReconciliationSignals();
             FlushQueuedPresentationFeedback();
         }
 
@@ -475,10 +583,12 @@ namespace Hecton8.Gameplay
         {
             _lastDamageTriggeredRespawnReconciliation = false;
 
-            if (!IsAlive || (!ignoreInvulnerability && IsInvulnerable))
+            float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+            currentHealth = ResolveSafeRuntimeHealth(currentHealth, runtimeMaxHealth);
+            if (currentHealth <= 0f || (!ignoreInvulnerability && IsInvulnerable))
                 return false;
 
-            float appliedDamage = Mathf.Max(0f, damage);
+            float appliedDamage = ResolveNonNegativeRuntimeValue(damage);
             bool graceTriggered = TryActivateSurvivalGrace(appliedDamage, ignoreInvulnerability, out float clampedDamage);
             if (graceTriggered)
                 appliedDamage = clampedDamage;
@@ -492,14 +602,7 @@ namespace Hecton8.Gameplay
             {
                 PublishDeath();
 
-                if (TryApplyRespawnReconciliation(HealthRespawnDamageHash))
-                {
-                    _lastDamageTriggeredRespawnReconciliation = true;
-                    return true;
-                }
-
-                ApplyRespawnReconciliationHealth(1f);
-                _lastDamageTriggeredRespawnReconciliation = true;
+                _lastDamageTriggeredRespawnReconciliation = TryApplyRespawnReconciliation(HealthRespawnDamageHash);
                 return true;
             }
 
@@ -511,7 +614,8 @@ namespace Hecton8.Gameplay
 
         public bool TakeLeviathanDamage(float damage)
         {
-            float previousHealth = currentHealth;
+            float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+            float previousHealth = ResolveSafeRuntimeHealth(currentHealth, runtimeMaxHealth);
             bool applied = TakeDamage(damage);
             if (!applied)
                 return false;
@@ -528,14 +632,16 @@ namespace Hecton8.Gameplay
         /// <returns>Actual amount healed.</returns>
         public float Heal(float amount)
         {
-            if (!IsAlive) return 0;
+            float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+            currentHealth = ResolveSafeRuntimeHealth(currentHealth, runtimeMaxHealth);
+            if (currentHealth <= 0f) return 0;
 
-            float positiveAmount = Mathf.Max(0f, amount);
+            float positiveAmount = ResolveNonNegativeRuntimeValue(amount);
             if (BloodToxicity01 >= HealingReversalToxicityThreshold01 && positiveAmount > 0f)
                 return 0f;
 
             float previousHealth = currentHealth;
-            currentHealth = Mathf.Min(maxHealth, currentHealth + positiveAmount);
+            currentHealth = Mathf.Min(runtimeMaxHealth, currentHealth + positiveAmount);
             float actualHeal = currentHealth - previousHealth;
 
             if (actualHeal > 0)
@@ -553,7 +659,9 @@ namespace Hecton8.Gameplay
                 return;
 
             _vitalWarningSignalIssued = true;
-            PlayerSignalEvents.TryRaiseTraumaHudSignal(new TraumaHudSignal(1f, 0.85f, 1f, Mathf.Clamp01(HealthPercent), true));
+            TryRaiseTraumaHudSignal(
+                new TraumaHudSignal(1f, 0.85f, 1f, Mathf.Clamp01(HealthPercent), true),
+                _VitalWarningTraumaSignalContextHash);
             VitalWarningSignal signal = default;
             signal.WarningHash = VocalWarningHashes.OxygenLow;
             signal.SourceId = 0u;
@@ -580,11 +688,7 @@ namespace Hecton8.Gameplay
 
             currentHealth = 0;
             PublishDeath();
-
-            if (TryApplyRespawnReconciliation(HealthRespawnDamageHash))
-                return;
-
-            ApplyRespawnReconciliationHealth(1f);
+            TryApplyRespawnReconciliation(HealthRespawnDamageHash);
         }
 
         private void PublishDeath()
@@ -595,7 +699,7 @@ namespace Hecton8.Gameplay
         /// <summary>Resets health to maximum.</summary>
         public void FullHeal()
         {
-            Heal(maxHealth);
+            Heal(ResolveSafeRuntimeMaxHealth(maxHealth));
         }
 
         private bool TryActivateSurvivalGrace(float incomingDamage, bool ignoreInvulnerability, out float clampedDamage)
@@ -617,8 +721,25 @@ namespace Hecton8.Gameplay
             ExtendInvulnerability(SurvivalGraceInvulnerabilitySeconds, now);
             _survivalGraceLockoutExpiresAt = ResolveExpirySeconds(now, SurvivalGraceLockoutSeconds);
             PlaySurvivalGraceHeartbeatPulse();
-            NotificationEvents.TryPushCritical("CARDIAC OVERRIDE".AsSpan());
+            TryPushSurvivalGraceNotification();
             return true;
+        }
+
+        private void TryPushSurvivalGraceNotification()
+        {
+            if (NotificationEvents.TryPushCritical(SurvivalGraceNotification.AsSpan()))
+                return;
+
+            ReportSurvivalGraceNotificationMiss();
+        }
+
+        private void ReportSurvivalGraceNotificationMiss()
+        {
+            _survivalGraceNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _SurvivalGraceNotificationMissWarningHash,
+                _PlayerHealthNotificationContextHash ^ _SurvivalGraceNotificationContextHash,
+                math.max(1, _survivalGraceNotificationMissCount));
         }
 
         private void ExtendInvulnerability(float durationSeconds)
@@ -678,14 +799,16 @@ namespace Hecton8.Gameplay
                                  (signal.StatusFlags & ShinobuGasStatusMask) != 0u;
                 if (!gasSignal)
                 {
-                    stress01 = Mathf.Max(stress01, Mathf.Clamp01(signal.PlayerStress01));
+                    stress01 = Mathf.Max(stress01, ResolveUnit01(signal.PlayerStress01));
                     continue;
                 }
 
                 anyGasSignal = true;
                 latestGasFrame = signal.Frame != 0u ? signal.Frame : currentFrame;
-                stress01 = Mathf.Max(stress01, Mathf.Clamp01(Mathf.Max(signal.PlayerStress01, signal.Narcosis01)));
-                toxicity01 = Mathf.Max(toxicity01, Mathf.Clamp01(signal.PlayerStress01));
+                float signalStress01 = ResolveUnit01(signal.PlayerStress01);
+                float narcosis01 = ResolveUnit01(signal.Narcosis01);
+                stress01 = Mathf.Max(stress01, Mathf.Max(signalStress01, narcosis01));
+                toxicity01 = Mathf.Max(toxicity01, signalStress01);
             }
 
             if (anyGasSignal)
@@ -706,7 +829,7 @@ namespace Hecton8.Gameplay
             if (_lastGasPhysiologySequence == sequence)
                 return;
 
-            float decay = Mathf.Max(0f, deltaTime) * 0.5f;
+            float decay = ResolveNonNegativeRuntimeValue(deltaTime) * 0.5f;
             _gasPhysiologyStress01 = Mathf.MoveTowards(_gasPhysiologyStress01, 0f, decay);
             _gasPhysiologyToxicity01 = Mathf.MoveTowards(_gasPhysiologyToxicity01, 0f, decay);
             _lastGasPhysiologySequence = sequence;
@@ -766,7 +889,8 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingSurvivalGraceHeartbeatPulse && !_pendingLeviathanTraumaRoar)
             {
-                TryUnregisterLateFrameTickable();
+                if (_pendingRespawnReconciliationSequence == 0u)
+                    TryUnregisterLateFrameTickable();
                 return;
             }
 
@@ -791,7 +915,8 @@ namespace Hecton8.Gameplay
                     ProceduralAudioPingKind.LeviathanRoar);
             }
 
-            TryUnregisterLateFrameTickable();
+            if (_pendingRespawnReconciliationSequence == 0u)
+                TryUnregisterLateFrameTickable();
         }
 
         public void ReceiveDamage(in DamagePacket packet)
@@ -808,7 +933,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float previousHealth = currentHealth;
+            float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+            float previousHealth = ResolveSafeRuntimeHealth(currentHealth, runtimeMaxHealth);
             bool applied = TakeDamage(packet.Magnitude);
             if (!applied)
             {
@@ -836,8 +962,8 @@ namespace Hecton8.Gameplay
 
             _lastDamageTriggeredRespawnReconciliation = false;
 
-            float previousHealth = currentHealth;
-            float safeMaxHealth = Mathf.Max(MinimumRuntimeMaxHealth, maxHealth);
+            float safeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+            float previousHealth = ResolveSafeRuntimeHealth(currentHealth, safeMaxHealth);
             float packetNextHealth = math.clamp(packet.NextValue, 0f, safeMaxHealth);
             currentHealth = math.min(previousHealth, packetNextHealth);
             appliedDamage = Mathf.Max(0f, previousHealth - currentHealth);
@@ -846,14 +972,7 @@ namespace Hecton8.Gameplay
             {
                 PublishDeath();
 
-                if (TryApplyRespawnReconciliation(HealthRespawnDamageHash))
-                {
-                    _lastDamageTriggeredRespawnReconciliation = true;
-                    return true;
-                }
-
-                ApplyRespawnReconciliationHealth(1f);
-                _lastDamageTriggeredRespawnReconciliation = true;
+                _lastDamageTriggeredRespawnReconciliation = TryApplyRespawnReconciliation(HealthRespawnDamageHash);
                 return true;
             }
 
@@ -866,19 +985,23 @@ namespace Hecton8.Gameplay
             if (packet.SourceId == DamageSourceIds.FaunaLeviathanBite)
                 TryIssueLeviathanTraumaAdvisory(appliedDamage);
 
-            float severity01 = Mathf.Clamp01(appliedDamage * math.rcp(Mathf.Max(MinimumRuntimeMaxHealth, maxHealth)));
-            PlayerSignalEvents.TryRaiseTraumaHudSignal(new TraumaHudSignal(
-                Mathf.Clamp01(severity01 * 2f),
-                severity01,
-                1f,
-                Mathf.Clamp01(HealthPercent),
-                false));
+            float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+            float severity01 = Mathf.Clamp01(ResolveNonNegativeRuntimeValue(appliedDamage) * math.rcp(runtimeMaxHealth));
+            TryRaiseTraumaHudSignal(
+                new TraumaHudSignal(
+                    Mathf.Clamp01(severity01 * 2f),
+                    severity01,
+                    1f,
+                    Mathf.Clamp01(HealthPercent),
+                    false),
+                _DamageFeedbackTraumaSignalContextHash ^ unchecked((uint)packet.SourceId));
         }
 
         private void TryIssueLeviathanTraumaAdvisory(float appliedDamage)
         {
+            float safeAppliedDamage = ResolveNonNegativeRuntimeValue(appliedDamage);
             if (_leviathanTraumaAdvisoryIssued ||
-                appliedDamage < Mathf.Max(MinimumRuntimeMaxHealth, maxHealth) * LeviathanTraumaDamageThreshold01)
+                safeAppliedDamage < ResolveSafeRuntimeMaxHealth(maxHealth) * LeviathanTraumaDamageThreshold01)
             {
                 return;
             }
@@ -888,11 +1011,14 @@ namespace Hecton8.Gameplay
             _pendingLeviathanTraumaRoarPosition = CapturePlayerRuntimePositionForPresentation();
             _pendingLeviathanTraumaRoar = true;
             TryRegisterLateFrameTickable();
-            PlayerSignalEvents.TryRaiseTraumaHudSignal(new TraumaHudSignal(1f, 0.7f, 1f, Mathf.Clamp01(HealthPercent), true));
+            TryRaiseTraumaHudSignal(
+                new TraumaHudSignal(1f, 0.7f, 1f, Mathf.Clamp01(HealthPercent), true),
+                _LeviathanTraumaSignalContextHash);
         }
 
         private void EvaluateMutationThresholds()
         {
+            float radiationExposureSeconds = RadiationExposureSeconds;
             HazardMutationProfile profile = hazardMutationProfile;
             HazardMutationProfile.MutationThreshold[] thresholds = profile != null && profile.Mutations != null && profile.Mutations.Length > 0
                 ? profile.Mutations
@@ -900,7 +1026,7 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < thresholds.Length; i++)
             {
                 HazardMutationProfile.MutationThreshold threshold = thresholds[i];
-                if (threshold.MutationBit == 0u || _radiationExposureSeconds < threshold.ExposureThresholdSeconds)
+                if (threshold.MutationBit == 0u || radiationExposureSeconds < threshold.ExposureThresholdSeconds)
                     continue;
 
                 if ((_mutationFlags & threshold.MutationBit) != 0u)
@@ -908,8 +1034,61 @@ namespace Hecton8.Gameplay
 
                 _mutationFlags |= threshold.MutationBit;
                 ApplyMutationRuntimeEffects();
-                NotificationEvents.TryPushRegisteredWarning(_mutationDetectedMessageHash);
+                TryPushMutationDetectedNotification();
             }
+        }
+
+        private void TryPushMutationDetectedNotification()
+        {
+            if (NotificationEvents.TryPushRegisteredWarning(_mutationDetectedMessageHash))
+                return;
+
+            ReportMutationDetectedNotificationMiss();
+        }
+
+        private void ReportMutationDetectedNotificationMiss()
+        {
+            _mutationDetectedNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _MutationDetectedNotificationMissWarningHash,
+                _PlayerHealthNotificationContextHash,
+                math.max(1, _mutationDetectedNotificationMissCount));
+        }
+
+        private void ClearPlayerHealthNotificationDiagnostics()
+        {
+            _mutationDetectedNotificationMissCount = 0;
+            _survivalGraceNotificationMissCount = 0;
+            _radiationAdvisoryNotificationMissCount = 0;
+        }
+
+        private void ClearPlayerHealthSignalDiagnostics()
+        {
+            _playerSignalEventLaneDropCount = 0;
+        }
+
+        private static float ResolveSafeRuntimeMaxHealth(float configuredMaxHealth)
+        {
+            return math.isfinite(configuredMaxHealth) && configuredMaxHealth >= MinimumRuntimeMaxHealth
+                ? configuredMaxHealth
+                : MinimumRuntimeMaxHealth;
+        }
+
+        private static float ResolveSafeRuntimeHealth(float runtimeHealth, float runtimeMaxHealth)
+        {
+            return math.isfinite(runtimeHealth)
+                ? Mathf.Clamp(runtimeHealth, 0f, runtimeMaxHealth)
+                : runtimeMaxHealth;
+        }
+
+        private static float ResolveNonNegativeRuntimeValue(float value)
+        {
+            return math.isfinite(value) ? Mathf.Max(0f, value) : 0f;
+        }
+
+        private static float ResolveUnit01(float value)
+        {
+            return math.isfinite(value) ? Mathf.Clamp01(value) : 0f;
         }
 
         private void ApplyMutationRuntimeEffects()
@@ -925,18 +1104,26 @@ namespace Hecton8.Gameplay
 
         private Vector3 CapturePlayerRuntimePositionForPresentation()
         {
+            if (TryResolveActivePlayerAup(out AbsoluteUniversePosition activeAup, out bool hasRuntimeContext))
+            {
+                if (TryResolveRuntimePositionFromAup(in activeAup, out Vector3 runtimePosition))
+                {
+                    _lastKnownRuntimePosition = runtimePosition;
+                    return _lastKnownRuntimePosition;
+                }
+            }
+
+            if (hasRuntimeContext)
+                return _lastKnownRuntimePosition;
+
             if (_playerMovement != null)
             {
-                float3 runtimePosition = _playerMovement.CurrentAup.ToRuntimeFloat3();
-                if (!math.all(math.isfinite(runtimePosition)))
+                AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup;
+                if (TryResolveRuntimePositionFromAup(in currentAup, out Vector3 runtimePosition))
+                {
+                    _lastKnownRuntimePosition = runtimePosition;
                     return _lastKnownRuntimePosition;
-
-                Vector3 resolved = default;
-                resolved.x = runtimePosition.x;
-                resolved.y = runtimePosition.y;
-                resolved.z = runtimePosition.z;
-                _lastKnownRuntimePosition = resolved;
-                return _lastKnownRuntimePosition;
+                }
             }
 
             return _lastKnownRuntimePosition;
@@ -945,6 +1132,15 @@ namespace Hecton8.Gameplay
         internal bool TryResolveRespawnDeathAup(out double3 deathAup)
         {
             deathAup = default;
+
+            if (TryResolveActivePlayerAup(out AbsoluteUniversePosition activeAup, out bool hasRuntimeContext))
+            {
+                deathAup = activeAup.ToAbsoluteDouble3();
+                return math.all(math.isfinite(deathAup));
+            }
+
+            if (hasRuntimeContext)
+                return false;
 
             if (_playerMovement != null)
             {
@@ -961,11 +1157,59 @@ namespace Hecton8.Gameplay
             return false;
         }
 
+        private static bool TryResolveActivePlayerAup(
+            out AbsoluteUniversePosition playerAup,
+            out bool hasRuntimeContext)
+        {
+            playerAup = default;
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            hasRuntimeContext = runtimeContext != null;
+            if (!hasRuntimeContext)
+                return false;
+
+            if (runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                snapshot.Aup.IsFinite())
+            {
+                playerAup = snapshot.Aup;
+                return true;
+            }
+
+            if (!runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
+                return false;
+            }
+
+            playerAup = movementState.PredictedAup;
+            return true;
+        }
+
+        private static bool TryResolveRuntimePositionFromAup(
+            in AbsoluteUniversePosition playerAup,
+            out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            if (!playerAup.IsFinite())
+                return false;
+
+            float3 runtimePosition3 = playerAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtimePosition3)))
+                return false;
+
+            runtimePosition.x = runtimePosition3.x;
+            runtimePosition.y = runtimePosition3.y;
+            runtimePosition.z = runtimePosition3.z;
+            return true;
+        }
+
         internal void ApplyRespawnReconciliationHealth(float normalizedHealth)
         {
             float safeHealth01 = Mathf.Clamp01(math.isfinite(normalizedHealth) ? normalizedHealth : 1f);
-            currentHealth = Mathf.Max(1f, Mathf.Max(MinimumRuntimeMaxHealth, maxHealth) * safeHealth01);
-            currentHealth = Mathf.Min(currentHealth, maxHealth);
+            float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+            currentHealth = Mathf.Max(1f, runtimeMaxHealth * safeHealth01);
+            currentHealth = Mathf.Min(currentHealth, runtimeMaxHealth);
             ExtendInvulnerability(SurvivalGraceInvulnerabilitySeconds);
             _survivalGraceLockoutExpiresAt = 0d;
             _vitalWarningSignalIssued = false;
@@ -977,17 +1221,48 @@ namespace Hecton8.Gameplay
         private bool TryApplyRespawnReconciliation(uint damageHash)
         {
             uint playerHash = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId()));
-            if (!TryResolveRespawnDeathAup(out double3 deathAup))
+            bool hasDeathAup = TryResolveRespawnDeathAup(out double3 deathAup);
+            if (!hasDeathAup)
                 deathAup = MissingRespawnDeathAup();
 
-            bool reconciled = PlayerDeathReconciliationBridge.RequestRespawn(deathAup, damageHash, playerHash);
-            if (reconciled)
+            bool accepted = PlayerDeathReconciliationBridge.RequestRespawn(deathAup, damageHash, playerHash, out uint sequence);
+            if (accepted)
             {
-                ApplyRespawnReconciliationHealth(1f);
+                _pendingRespawnReconciliationSequence = sequence;
+                TryRegisterLateFrameTickable();
                 return true;
             }
 
             return false;
+        }
+
+        private void ConsumeCommittedRespawnReconciliationSignals()
+        {
+            uint pendingSequence = _pendingRespawnReconciliationSequence;
+            if (pendingSequence == 0u || pendingSequence == _lastAppliedRespawnReconciliationSequence)
+                return;
+
+            ReadOnlySpan<PlayerRespawnSignal> signals = SignalBus<PlayerRespawnSignal>.GetFrameSnapshot();
+            if (signals.Length <= 0)
+                return;
+
+            uint playerHash = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId()));
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerRespawnSignal signal = signals[i];
+                if (!PlayerDeathReconciliationBridge.IsAcceptedCommittedRespawnSignal(in signal, pendingSequence, playerHash))
+                    continue;
+
+                ApplyRespawnReconciliationHealth(1f);
+                _lastAppliedRespawnReconciliationSequence = pendingSequence;
+                _pendingRespawnReconciliationSequence = 0u;
+                return;
+            }
+        }
+
+        private void ClearPendingRespawnReconciliation()
+        {
+            _pendingRespawnReconciliationSequence = 0u;
         }
 
         private static double3 MissingRespawnDeathAup()
@@ -1002,25 +1277,38 @@ namespace Hecton8.Gameplay
         #region ISaveable Implementation
 
         /// <summary>Save priority for health data.</summary>
-        public int SavePriority => 100; // High priority - save health early
+        public int SavePriority => 100; // Save after survival so this owner supplies only playerStats.health.
 
         /// <summary>Load priority for health data.</summary>
-        public int LoadPriority => 100; // Load health early
+        public int LoadPriority => 100; // Load after survival, then refresh combat/UI warning state from persisted HP.
 
         /// <summary>Populates save data with current health state.</summary>
         /// <param name="data">The save data container to populate.</param>
         public void PopulateSaveData(SaveData data)
         {
-            // Legacy component: SaveData currently has no dedicated player-health DTO.
-            // Keep interface compliance compile-safe without inventing a new persistence path here.
+            if (data == null)
+                return;
+
+            ref PlayerStatsDTO dto = ref data.playerStats;
+            float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+            dto.health = ResolveSafeRuntimeHealth(currentHealth, runtimeMaxHealth);
         }
 
         /// <summary>Loads health state from save data.</summary>
         /// <param name="data">The save data container to load from.</param>
         public void LoadFromSaveData(SaveData data)
         {
-            currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
+            ClearPlayerHealthNotificationDiagnostics();
+            ClearPlayerHealthSignalDiagnostics();
+            ClearPendingRespawnReconciliation();
+            if (data == null)
+                return;
+
+            float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+            currentHealth = ResolveSafeRuntimeHealth(data.playerStats.health, runtimeMaxHealth);
             MarkCombatDamageSyncDirty();
+            RefreshVitalWarningSignalReset();
+            TryIssueVitalWarningSignal();
         }
 
         private void CacheRegistryServicesCold()
@@ -1052,7 +1340,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1078,7 +1366,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
         {
-            if (audioLogSystem == null)
+            if (audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady)
                 return false;
 
             if (audioLogSystem is Behaviour behaviour)
@@ -1125,17 +1413,66 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
                     CacheAudioLogSystem(currentService as IAudioLogRuntime);
                     break;
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _saveService = currentService as ISaveService;
+                    if (isActiveAndEnabled)
+                        TryRegisterSaveParticipant();
+                    break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregisterFromSlowTickManager();
                     TryUnregisterLateFrameTickable();
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterToSlowTickManager();
-                        if (_pendingSurvivalGraceHeartbeatPulse || _pendingLeviathanTraumaRoar)
+                        if (_pendingSurvivalGraceHeartbeatPulse ||
+                            _pendingLeviathanTraumaRoar ||
+                            _pendingRespawnReconciliationSequence != 0u)
+                        {
                             TryRegisterLateFrameTickable();
+                        }
                     }
                     break;
             }
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered || !Application.isPlaying)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
+                return;
+
+            saveService.Register(this);
+            _registeredSaveService = saveService;
+            _saveRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered && _registeredSaveService == null)
+                return;
+
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
+            _saveService = null;
+            _saveRegistered = false;
         }
 
         private void TryRegisterToSlowTickManager()
@@ -1240,7 +1577,7 @@ namespace Hecton8.Gameplay
             if (!_combatDamageRegistered)
                 return;
 
-            _combatDamageSyncDirty = !CombatDamageRuntime.SyncTargetHealth(_combatDamageTargetId, currentHealth, maxHealth);
+            _combatDamageSyncDirty = !TrySyncCombatDamageTargetHealth();
         }
 
         private void TryFlushCombatDamageSync()
@@ -1248,7 +1585,14 @@ namespace Hecton8.Gameplay
             if (!_combatDamageRegistered || !_combatDamageSyncDirty)
                 return;
 
-            _combatDamageSyncDirty = !CombatDamageRuntime.SyncTargetHealth(_combatDamageTargetId, currentHealth, maxHealth);
+            _combatDamageSyncDirty = !TrySyncCombatDamageTargetHealth();
+        }
+
+        private bool TrySyncCombatDamageTargetHealth()
+        {
+            float runtimeMaxHealth = ResolveSafeRuntimeMaxHealth(maxHealth);
+            float runtimeHealth = ResolveSafeRuntimeHealth(currentHealth, runtimeMaxHealth);
+            return CombatDamageRuntime.SyncTargetHealth(_combatDamageTargetId, runtimeHealth, runtimeMaxHealth);
         }
 
         #endregion

@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Pistola de remendo com selante frio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Pistola de remendo com selante frio
 
-PT LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+A pistola de remendo com selante frio oferece o primeiro reparo honesto depois da bomba. Ela pode parar um vazamento de furo ou segurar a borda de uma junta tempo suficiente para recuperar uma sala pequena, mas não torna segura uma estrutura danificada. A lição útil está no rótulo de classificação: HECTON-8 pune todo reparo usado fora da sua classe de pressão.
 
 ## Scanner
 
-PT LOC HOLD: Patch gun. Rated for pinholes, not miracles.
+Pistola de selagem fria. Cartucho classificado só para vazamentos de furo e emendas calmas; cisalhamento ativo vai arrancar.
 
 ## Terminal
 
-PT LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+LIMITE DE REMENDO / SELANTE FRIO: adere à pele de casco úmida de baixa profundidade após limpeza. Aprovado para furos, bordas de junta e gotejo estável. Rejeitar rachaduras de cisalhamento ativo, bloom quente de blue debt e emendas de cabo em movimento.
 
 ## Audio
 
-PT LOC HOLD: A patch is not safety. It is a countdown that looks solid.
+Não chame de selado. Chame de tempo.
 
 ## Field Note
 
-PT LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Um remendo compra minutos. Se a rachadura ainda se mexe, gaste esses minutos indo embora.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/pt_BR. -->

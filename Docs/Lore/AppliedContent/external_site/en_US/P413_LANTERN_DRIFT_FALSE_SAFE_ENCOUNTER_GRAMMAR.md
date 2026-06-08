@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Lantern Drift False-Safe Encounter Grammar
 
-HECTON-8's bright shallows are readable, but never innocent.
+Lantern drift false-safe encounters keep HECTON-8’s bright shallows honest. The glow is useful, seductive and dangerous because it records more than one truth at a time.
 
 ## Scanner
 
-Lantern drift lane: oxygen, signal noise or displaced predators possible. Verify current before following.
+Lantern drift lane. Bright water may mean oxygen edge, signal noise, tool wake, or displaced predator traffic. Verify current before following.
 
 ## Terminal
 
-FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+ENCOUNTER GRAMMAR / LANTERN DRIFT FALSE-SAFE / role: beauty-as-ambiguous-data, route temptation, stealth penalty / safe read: current matches glow, fauna remains normal, residue sits on expected side / reject: treating blue light as safety, following storm-charged false corridor, repairing loud inside a lit wake / route note: one glow can be path, bait, panic record, or exposure.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Light is not mercy. It is data your suit has not learned to separate.
 
 ## Field Note
 
-Bright water lies three ways here: current, bait, or panic. Check pinger return before you trust it.
+Ask what the light is carrying: current, oxygen, your noise, or something that moved everything else away.
 
 <!-- External Site; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/en_US. -->

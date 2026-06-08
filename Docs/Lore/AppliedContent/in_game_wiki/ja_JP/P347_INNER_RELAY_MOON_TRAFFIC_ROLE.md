@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela内側リレー交通役"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Inner Relay Moon Traffic Role
+# Vela内側リレー交通役
 
-JA LOC HOLD: Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
+VelaはAegir内側の作業月だ。悪いシールドを罰するほど速く荷電航路を横切るが、古いrelayマスクと反射は今も航路表を形作っている。Black Keelの接近はVelaの影で数分だけリンクノイズを隠せる。同じ影が救難pingを遅らせ、契約時計が別の手に渡ってから戻すこともある。
 
 ## Scanner
 
-JA LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
+月台帳。Velaはrelay交通を隠し反射する。船はそれを動く料金門として扱う。
 
 ## Terminal
 
-JA LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
+月梯子H2 VELA：relay影は四十三分で解除。Skarn側で放射線カウント上昇。carrier質量が申告上限未満ならHECTON transfer burnは合法のまま。
 
 ## Audio
 
-JA LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
+景色を見にVelaへ行く者はいない。数えて、待って、古いbeaconが同じ嘘を続けることを願う。
 
 ## Field Note
 
-JA LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Velaが役に立つのは、予定どおり邪魔になるからだ。
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/ja_JP. -->

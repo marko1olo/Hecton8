@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "Gramática de encontro: clareira de raspadores de vidro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# Gramática de encontro: clareira de raspadores de vidro
 
-PT LOC HOLD: Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.
+Clareiras de raspadores de vidro são a lição de segurança condicional de HECTON-8. Ecologia brilhante e útil ajuda a ler uma rota, mas a mesma rota fica suspeita quando os animais param de usá-la.
 
 ## Scanner
 
-PT LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+Clareira de raspadores de vidro. Marcas frescas, filme de oxigênio e tiques estáveis sugerem baixa pressão próxima. Campo de comida vazio é estado de aviso.
 
 ## Terminal
 
-PT LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+GRAMÁTICA DE ENCONTRO / CLAREIRA DE RASPADORES DE VIDRO / função: contraste raso, faixa legível quase segura, teste de ausência predadora / leitura segura: alimentação ativa, tiques de retorno pareados, borda mineral raspada, linha de saída visível / rejeitar: usar raspadores como garantia de segurança, clareira silenciosa, comida abandonada, return-line bloqueada / nota de rota: o corredor é útil porque os animais o usam agora, não porque o oceano prometeu algo.
 
 ## Audio
 
-PT LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+Os raspadores fazem corredores brilhantes. Eles não decidem por quanto tempo o corredor pertence a eles.
 
 ## Field Note
 
-PT LOC HOLD: Use for safe-zone literacy and shallow contrast.
+Alimentação ativa: use a faixa. Tiques pareados: mantenha. Comida abandonada: pare de confiar na clareira.
 
 <!-- External Site; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/pt_BR. -->

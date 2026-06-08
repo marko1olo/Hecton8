@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw i zagrożenie lodowym rozrzutem"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw i zagrożenie lodowym rozrzutem
 
-PL LOC HOLD: The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Claw to księżyc lodowego rozrzutu z brudnym halo odłamków, pyłu claim i zamarzniętych śmieci przemysłowych. Po burzach jego pasy mogą pokazać użyteczny materiał, więc plotki nie umierają. Te same pasy niszczą zaufanie do sensorów. Salvagerzy mówią o czystym lodzie i utraconym ładunku; piloci o martwych polach, radarze pyłu i koszcie wymiany przednich płyt.
 
 ## Scanner
 
-PL LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+Zewnętrzny zapis lodowego rozrzutu. Claw zrzuca jasny gruz w trasy, gdzie plotki o salvage biegną szybciej niż powinni piloci.
 
 ## Terminal
 
-PL LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+DRABINA KSIĘŻYCÓW H3 CLAW: pas gruzu otwarty tylko dla dronów survey. Ruch kadłubów wymaga przedniego radaru pyłu, osłony ofiarnej i zrzeczenia payout za niezapisane uderzenia odłamków.
 
 ## Audio
 
-PL LOC HOLD: Every system has one moon that accountants love and pilots curse.
+Każdy system ma księżyc, który kochają księgowi i przeklinają piloci.
 
 ## Field Note
 
-PL LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw wygląda zyskownie na papierze, bo papier nie musi unikać lodu.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/pl_PL. -->

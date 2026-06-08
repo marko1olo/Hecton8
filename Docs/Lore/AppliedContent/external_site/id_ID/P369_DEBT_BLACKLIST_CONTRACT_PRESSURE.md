@@ -9,32 +9,36 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Tekanan Kontrak Utang dan Daftar Hitam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Debt Blacklist Contract Pressure
+# Tekanan Kontrak Utang dan Daftar Hitam
 
-ID LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+HECTON-8 membingkai protagonis lewat ekonomi perbatasan, bukan takdir. Utang, daftar hitam, kustodi claim-pool, kredit oksigen, akses ranjang, dan kredensial Deep Reach lama membuat kontrak salvage terasa memaksa tanpa membuat pemain tak berdaya.
 
 ## Scanner
 
-ID LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Pemberitahuan hak tanggungan terikat pada kustodi Black Keel. Menolak tetap legal, tetapi membuatmu tertahan: tanpa ranjang, tanpa kredit oksigen bersih, tanpa jendela rute keluar dari Aegir.
 
 ## Terminal
 
-ID LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+PENERIMAAN KLAIM / JENDELA KERINGANAN DAFTAR HITAM
+status kontraktor: Marauder terikat utang
+pengangkut: kustodi claim-pool Black Keel
+syarat keringanan: massa dapat dipulihkan, bukti kustodi, kepatuhan penerima
+status gagal: daftar hitam tetap aktif; akses ranjang ditolak; dukungan kesejahteraan oksigen menjadi layanan tertagih.
 
 ## Audio
 
-ID LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+Ini bukan penculikan. Ini jenis pilihan yang dijual perbatasan sebagai kebebasan: tanda tangan, menyelam, atau tetap bersih di kertas dan terjebak dalam praktik.
 
 ## Field Note
 
-ID LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+Hak tanggungan tidak menodongkan senjata. Ia menunjuk tagihan udara, daftar ranjang, dan jendela rute berikutnya.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/id_ID. -->

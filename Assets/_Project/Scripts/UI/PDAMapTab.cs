@@ -27,6 +27,7 @@ namespace Hecton8.UI
     public sealed class PDAMapTab : MonoBehaviour, ILateFrameTickable, ISlowTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private const string SonarMapConstantsBufferName = "HectonSonarMapConstants";
+        private const double DefaultSeaLevelY = 14.02d;
         private const int MaxThreatPings = 8;
         private const int MaxStatusChars = 64;
         private const float AcousticOverlayRadiusMeters = 160f;
@@ -137,6 +138,7 @@ namespace Hecton8.UI
         private int _nextMarkerVisualSlot;
         private int _activeThreatPingCount;
         private int _lastGhostSignalRejectedCycle = int.MinValue;
+        private uint _observedMarkerRevision = uint.MaxValue;
         private GraphicsBuffer _pointCloudAppendBuffer;
         private GraphicsBuffer _pointCloudIndirectArgsBuffer;
         private GraphicsBuffer _sonarMapConstantsBufferA;
@@ -205,6 +207,7 @@ namespace Hecton8.UI
             TryRegisterPDAEvents();
             RegisterToTickManager();
             RefreshMapSource();
+            RefreshMarkerRevisionFallback(force: true);
         }
 
         private void OnDisable()
@@ -240,6 +243,7 @@ namespace Hecton8.UI
             CachePresentationGlobalsLate();
             RenderHologramMap();
             RenderPointCloud();
+            RefreshMarkerRevisionFallback(force: false);
             ProcessPendingMarkerUpdates(MaxMarkerUiUpdatesPerLateFrame);
         }
 
@@ -272,6 +276,8 @@ namespace Hecton8.UI
                     break;
                 case GlobalRegistryServiceSlot.PDAMarkerRuntime:
                     _markerRegistry = currentService as PDAMarkerRegistry;
+                    _observedMarkerRevision = uint.MaxValue;
+                    RefreshMarkerRevisionFallback(force: true);
                     break;
                 case GlobalRegistryServiceSlot.EncounterDirector:
                     _encounterDirector = currentService as IEncounterDirectorService;
@@ -382,8 +388,7 @@ namespace Hecton8.UI
             if (_pdaEventsRegistered)
                 return;
 
-            PDAEvents.Register(this);
-            _pdaEventsRegistered = true;
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
         }
 
         private void UnregisterPDAEvents()
@@ -582,7 +587,7 @@ namespace Hecton8.UI
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -626,6 +631,7 @@ namespace Hecton8.UI
             _streamingBackpressureService = null;
             _uploadedHlodImpostorVersion = uint.MaxValue;
             _uploadedHlodImpostorCount = -1;
+            _observedMarkerRevision = uint.MaxValue;
         }
 
         private void CacheRegistryServicesCold()
@@ -1541,12 +1547,24 @@ namespace Hecton8.UI
             }
 
             ClearPendingMarkerUpdates();
+            ClearMarkerVisualSlotsNotInSnapshot(markerCount);
             for (int i = 0; i < markerCount; i++)
             {
                 uint markerHashId = _markerUpdateSnapshots[i].MarkerHashID;
                 _markerUpdateSnapshots[i] = default;
                 EnqueueMarkerUpdate(markerHashId);
             }
+        }
+
+        private void RefreshMarkerRevisionFallback(bool force)
+        {
+            PDAMarkerRegistry markerRegistry = ResolveMarkerRegistry();
+            uint revision = markerRegistry != null ? markerRegistry.Revision : 0u;
+            if (!force && _observedMarkerRevision == revision)
+                return;
+
+            _observedMarkerRevision = revision;
+            EnqueueAllMarkerUpdates();
         }
 
         private bool TryDequeueMarkerUpdate(out uint markerHashId)
@@ -1685,6 +1703,34 @@ namespace Hecton8.UI
             }
 
             _nextMarkerVisualSlot = 0;
+        }
+
+        private void ClearMarkerVisualSlotsNotInSnapshot(int markerCount)
+        {
+            for (int slot = 0; slot < _markerHashByVisualSlot.Length; slot++)
+            {
+                uint markerHash = _markerHashByVisualSlot[slot];
+                if (markerHash == 0u || SnapshotContainsMarker(markerHash, markerCount))
+                    continue;
+
+                _markerHashByVisualSlot[slot] = 0u;
+                ClearMarkerVisual(slot);
+            }
+        }
+
+        private bool SnapshotContainsMarker(uint markerHashId, int markerCount)
+        {
+            if (markerHashId == 0u)
+                return false;
+
+            int safeCount = math.min(markerCount, _markerUpdateSnapshots.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (_markerUpdateSnapshots[i].MarkerHashID == markerHashId)
+                    return true;
+            }
+
+            return false;
         }
 
         private void ClearMarkerVisual(int slot)
@@ -1978,10 +2024,13 @@ namespace Hecton8.UI
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             IPlayerRuntimeContext playerContext = ResolvePlayerContext();
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement != null)
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
             {
-                playerAup = playerMovement.CurrentAup;
+                playerAup = movementState.PredictedAup;
                 return true;
             }
 
@@ -2031,15 +2080,35 @@ namespace Hecton8.UI
 
         private float ResolvePlayerDepthMeters()
         {
-            BiomeMatrixDirector biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
-            if (biomeMatrixDirector != null)
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
+                return 0f;
+
+            BiomeMatrixDirector biomeMatrixDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
+            if (biomeMatrixDirector != null &&
+                biomeMatrixDirector.isActiveAndEnabled &&
+                math.isfinite(biomeMatrixDirector.CurrentDepthMeters))
+            {
                 return math.max(0f, biomeMatrixDirector.CurrentDepthMeters);
+            }
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return 0f;
 
             double absoluteY = playerAup.ToAbsoluteDouble3().y;
-            return (float)math.max(0d, -absoluteY);
+            return math.isfinite(absoluteY)
+                ? (float)math.max(0d, DefaultSeaLevelY - absoluteY)
+                : 0f;
         }
 
         private void TryPublishGhostSignalRejected(int cycleIndex, float weakestIntensity)

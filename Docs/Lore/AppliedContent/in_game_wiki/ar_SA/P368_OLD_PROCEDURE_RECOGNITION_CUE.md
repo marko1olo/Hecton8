@@ -9,32 +9,37 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Old Procedure Recognition Cue"
+title: "إشارة تعرف على إجراء قديم"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Old Procedure Recognition Cue
+# إشارة تعرف على إجراء قديم
 
-AR LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.
+يحوّل التعرف على إجراء قديم ماضي البطل إلى أداة قابلة للعب. اللاعب لا يتبع إشارة غامضة ولا نبوءة شخصية. إنه يقرأ نموذج سلامة اضطر يوما إلى الوثوق به. ختم المسار الآمن يقول إن الخط اعتُمد. أدلة الغرفة تقول إن عدد العمال غُيّر. خانة الشاهد اليدوي، وهي الجزء الذي كان يجب أن يفرض فحصا بشريا ثانيا، ختمها مكتب الاستمرارية. هذا التناقض هو الخطاف. لم تخف Deep Reach مسارا فحسب. استخدمت لغة حماية العمال كي يبدو التخلي عنهم كأنه ملف مكتمل إداريا. تبدأ مصلحة البطل من تعرف مهني: صُمم هذا النموذج لمنع هذا الفشل بالضبط.
 
 ## Scanner
 
-AR LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+ختم المسار الآمن موجود. عُدل عدد العمال بحبرين. خانة الشاهد اليدوي مختومة. صُمم النموذج ليمسك هذا النوع من الكذب قبل أن يحوله أحدهم إلى سياسة.
 
 ## Terminal
 
-AR LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+نموذج استمرارية الإخلاء / اعتماد المسار الآمن
+المسار: خط خروج مساعد
+الأشخاص المعلنون: قُبل التعداد المتدهور
+الشاهد اليدوي: مختوم من مكتب الاستمرارية
+تصحيح ميداني: تعداد العمال لا يطابق وسوم غرفة المضخات
+الحالة: حفظ مطالبة، لا تصريح استخراج.
 
 ## Audio
 
-AR LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+أنت تعرف هذا النموذج. كان يفترض أن يمنع اعتبار الغرفة فارغة بينما ما زال الناس يتنفسون فيها.
 
 ## Field Note
 
-AR LOC HOLD: Use where room evidence contradicts a clean procedural label.
+كان يفترض أن يفرض النموذج عدا آخر. هنا فرض الصمت.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/ar_SA. -->

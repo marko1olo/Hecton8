@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "קו פינגר אקוסטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# קו פינגר אקוסטי
 
-HE LOC HOLD: Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean.
+קו ה-pinger האקוסטי אינו משואת חילוץ. הוא משמעת שנעשתה נשמעת. השחקן מעגן return sound לפני שעכירות, brine shimmer או פחד הופכים את המסלול לזר. הכלי מלמד שניווט הוא הרגל, לא map screen.
 
-## Scanner
-
-HE LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
-
-## Terminal
-
-HE LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
-
-## Audio
-
-HE LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
-
-## Field Note
-
-HE LOC HOLD: Navigation should become physical early.
+מערכות מאוחרות יכולות לצמוח מהזרע הזה: relay timing, carrier handshake, הוכחה אקוסטית שדרך עדיין קיימת. הגרסה הראשונה נשארת קטנה בכוונה. היא מצילה את השחקן מביטחון עצמי.
 
 <!-- External Site; generated from P114_ACOUSTIC_PINGER_LINE/he_IL. -->

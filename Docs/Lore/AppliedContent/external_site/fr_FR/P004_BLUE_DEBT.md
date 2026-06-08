@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Blue Debt"
+title: "Dette bleue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue Debt
+# Dette bleue
 
-Blue debt est la couche de ressource qui fait de HECTON-8 plus qu'une colonie perdue. Elle est précieuse, instable, et liée à la raison pour laquelle Deep Reach voulait à la fois enterrer et récupérer la lune.
-
-## Scanner
-
-Résidu Xenon-Omega maintenu sous pression. Stable seulement en conditions hostiles. Ne pas purger près d'un air d'habitat chaud.
-
-## Terminal
-
-SUBSTRAT DE CONTINUITÉ XO. Ne pas décompresser. Ne pas exposer à l'atmosphère d'habitat non filtrée.
-
-## Audio
-
-Le conteneur chante au sonar. Bas, régulier. Ce n'est pas une créature. C'est pire.
-
-## Field Note
-
-Blue debt paie parce qu'elle mord deux fois. Quand tu la portes. Puis quand quelqu'un apprend que tu l'as.
+La Dette bleue rend la récupération sur HECTON-8 rentable avant de la rendre sûre. Le matériau n'est pas un cristal de trésor dans le récif. C'est le résidu de systèmes industriels sous pression : substrats Xenon-Omega, milieux de confinement ratés, scorie computationnelle et rebut scellé resté stable parce que l'océan n'a jamais cessé d'appuyer. Remonte-le mal et l'échantillon change d'état. Vends-le mal et la piste documentaire te change toi. Ce double risque donne son nom au matériau. La dette bleue paie vite un survivant, mais chaque conteneur porte un coût futur : décontamination, gages de carrier, règles de garde Black Keel, langage de réclamation Deep Reach et possibilité que l'échantillon soit aussi une preuve. Dans le lore large, cette ressource est l'un des premiers indices que HECTON-8 n'a pas été simplement abandonnée. Des systèmes précieux y tournaient encore sous pression, là où seul un opérateur désespéré accepterait de les toucher.
 
 <!-- External Site; generated from P004_BLUE_DEBT/fr_FR. -->

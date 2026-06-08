@@ -56,6 +56,21 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void DefaultTuning_UsesProductionSurfaceWaterLevel()
+        {
+            OceanGuillotineTuningDTO tuning = OceanSinglePassMath.CreateDefaultTuning();
+
+            Assert.AreEqual(14.02f, OceanSinglePassConstants.DefaultSeaLevelMeters, 0.0001f);
+            Assert.AreEqual(OceanSinglePassConstants.DefaultSeaLevelMeters, tuning.ShorelineParams.y, 0.0001f);
+            AssertProjectFileContains(
+                "Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs",
+                "ResolveWaterSurfaceAupY()");
+            AssertProjectFileContains(
+                "Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs",
+                "GlobalRegistryServiceSlot.TerrainProviderRuntime");
+        }
+
+        [Test]
         public void ShorelineFoam_QualityScalesActiveLimitContinuously()
         {
             int low = ShorelineFoamMath.ResolveActiveLimit(0f, ShorelineFoamConstants.MaxCapacity);
@@ -149,6 +164,32 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void CsvProfileParser_DefaultsMissingOrStaleSeaLevelToProductionWaterline()
+        {
+            byte[] bytes = Encoding.ASCII.GetBytes(
+                "biome,foamThreshold,foamIntensity,wakeStrength,wakeLifespan,shorelineFade,reflectionMix,seaLevel,quality\n" +
+                "Kelp_Forest,0.72,1.5,1.1,4.0,10.0,0.3\n" +
+                "Shallows,0.65,1.2,0.9,3.4,7.0,0.4,0,0.5\n");
+            using NativeArray<OceanAestheticProfileDTO> profiles = new NativeArray<OceanAestheticProfileDTO>(
+                4,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory);
+
+            bool parsed = OceanAestheticProfileCsvParser.TryParseProfiles(bytes, profiles, out int count, out _);
+
+            Assert.IsTrue(parsed);
+            Assert.AreEqual(2, count);
+            Assert.AreEqual(OceanSinglePassConstants.DefaultSeaLevelMeters, profiles[0].SeaLevelMeters, 0.0001f);
+            Assert.AreEqual(OceanSinglePassConstants.DefaultSeaLevelMeters, profiles[1].SeaLevelMeters, 0.0001f);
+            AssertProjectFileDoesNotContain(
+                "Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassContracts.cs",
+                "profile.SeaLevelMeters = 0f;");
+            AssertProjectFileContains(
+                "Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassContracts.cs",
+                "math.abs(value) <= 1000f");
+        }
+
+        [Test]
         public void CrestCameraConstructors_AreCutAtKnownOceanPaths()
         {
             AssertProjectFileContains("Assets/Crest/Crest/Scripts/LodData/OceanDepthCache.cs", "HectonRealtimeDepthCacheDisabled = true");
@@ -157,7 +198,23 @@ namespace Hecton8.Tests.Editor
             AssertProjectFileDoesNotContain("Assets/Crest/Crest/Scripts/LodData/OceanDepthCache.cs", "AddComponent<Camera>");
             AssertProjectFileDoesNotContain("Assets/Crest/Crest/Scripts/Reflection/OceanPlanarReflection.cs", "AddComponent<Camera>");
             AssertProjectFileContains("Assets/_Project/Prefabs/Ocean_Crest.prefab", "_createSeaFloorDepthData: 0");
-            AssertProjectFileContains("Assets/_Project/Prefabs/Ocean_Crest.prefab", "_createFoamSim: 0");
+            AssertProjectFileContains("Assets/_Project/Prefabs/Ocean_Crest.prefab", "_createFoamSim: 1");
+            AssertProjectFileContains("Assets/_Project/Prefabs/Ocean_Crest.prefab", "_createShadowData: 1");
+            AssertProjectFileContains("Assets/_Project/Prefabs/Ocean_Crest.prefab", "waterLevel: 14.02");
+        }
+
+        [Test]
+        public void ProductionScene_KeepsFallbackWaterPlanesInactiveBehindCrest()
+        {
+            string sceneYaml = ReadProjectFile("Assets/_Project/Scenes/02_HECTON_WORLD.unity");
+
+            Assert.That(sceneYaml, Does.Contain("H8_WORLD_CREST_OCEAN_RUNTIME_1428"));
+            Assert.That(sceneYaml, Does.Contain("guid: cb6742dd8bbf8d843ba150a5e6dd5eb9"));
+            AssertNamedGameObjectActive(sceneYaml, "BLACK_WATER_PLANE", false);
+            AssertNamedGameObjectActive(sceneYaml, "Water_Mass_Far_1428", false);
+            AssertNamedGameObjectActive(sceneYaml, "Water_Mass_Mid_1428", false);
+            AssertNamedGameObjectActive(sceneYaml, "H8_UnderwaterSurfaceSheet_1455", false);
+            AssertNamedGameObjectActive(sceneYaml, "H8_SURFACE_OCEAN_READ_1428", false);
         }
 
         [Test]
@@ -183,6 +240,24 @@ namespace Hecton8.Tests.Editor
             Assert.IsFalse(FileContains(path, token), relativePath + " contains forbidden token: " + token);
         }
 
+        private static void AssertNamedGameObjectActive(string sceneYaml, string objectName, bool expectedActive)
+        {
+            string nameNeedle = "m_Name: " + objectName;
+            int nameIndex = sceneYaml.IndexOf(nameNeedle, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(nameIndex, 0, "Scene missing GameObject: " + objectName);
+
+            int documentStart = sceneYaml.LastIndexOf("--- !u!1 &", nameIndex, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(documentStart, 0, "Scene GameObject document not found: " + objectName);
+
+            int nextDocument = sceneYaml.IndexOf("\n--- !u!", nameIndex, StringComparison.Ordinal);
+            if (nextDocument < 0)
+                nextDocument = sceneYaml.Length;
+
+            string objectYaml = sceneYaml.Substring(documentStart, nextDocument - documentStart);
+            string activeToken = "m_IsActive: " + (expectedActive ? "1" : "0");
+            Assert.That(objectYaml, Does.Contain(activeToken), objectName + " active-state mismatch.");
+        }
+
         private static bool FileContains(string path, string token)
         {
             foreach (string line in File.ReadLines(path))
@@ -192,6 +267,11 @@ namespace Hecton8.Tests.Editor
             }
 
             return false;
+        }
+
+        private static string ReadProjectFile(string relativePath)
+        {
+            return File.ReadAllText(ToProjectPath(relativePath));
         }
 
         private static string ToProjectPath(string relativePath)

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Materieller Ausstieg
 
-Der materielle Ausstieg ist ein gültiges Teilende. Er zahlt Ressourcen aus, lässt aber große Wahrheit ungelöst.
+Der Materialausstieg ist ein echtes Teilergebnis, keine tote Route. Ressourcen oder eine Probe können Rückzug erkaufen, während die größere Wahrheit ungelöst bleibt und eine spätere Rückkehr schärfer schneidet.
 
 ## Scanner
 

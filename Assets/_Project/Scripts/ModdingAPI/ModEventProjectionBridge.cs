@@ -48,6 +48,7 @@ namespace Hecton8.Modding
         private readonly List<SubscriptionEntry> _subscriptions = new List<SubscriptionEntry>(16);
         private NativeQueue<ModEventDto> _projectedEvents;
         private NativeArray<ModCullTelemetryEntry> _cullTelemetry;
+        private int _projectedEventsSentinelId;
         private JobHandle _projectionHandle;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private int _activeSubscriptionCount;
@@ -153,8 +154,13 @@ namespace Hecton8.Modding
             _projectedEvents = new NativeQueue<ModEventDto>(SignalLaneAllocator); // COLD ALLOC: NativeQueue<ModEventDto>[50] - projected public signal metadata for managed mods - owner: ModEventProjectionBridge
             try
             {
-                int projectedEventsSentinelId = NativeMemorySentinel.RegisterNativeQueue(_projectedEvents, HighTierProjectionCap, NativeMemoryOwner, nameof(_projectedEvents), NativeAllocationLifetime.Session);
-                if (projectedEventsSentinelId <= 0)
+                _projectedEventsSentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
+                    _projectedEvents,
+                    HighTierProjectionCap,
+                    NativeMemoryOwner,
+                    nameof(_projectedEvents),
+                    NativeAllocationLifetime.Session);
+                if (_projectedEventsSentinelId <= 0)
                     throw new InvalidOperationException("Native memory sentinel registration failed for projected mod events.");
             }
             catch
@@ -163,7 +169,15 @@ namespace Hecton8.Modding
                 throw;
             }
 
-            EnsureCullTelemetryStorage();
+            try
+            {
+                EnsureCullTelemetryStorage();
+            }
+            catch
+            {
+                ReleaseNativeState();
+                throw;
+            }
 
             _queuedProjectedEventCount = 0;
             _projectionScheduled = false;
@@ -175,14 +189,17 @@ namespace Hecton8.Modding
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
             if (!_lateFrameRegistered)
             {
-                GlobalRegistry.UnregisterModdingBridgeRuntime(this);
-                HectonEventBus.UninstallNativeQueueBindings();
-                ReleaseNativeState();
-                _playerRuntimeContext = null;
+                RollbackInstalledBridge();
                 return;
             }
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+            if (!_hotSwapRegistered)
+            {
+                RollbackInstalledBridge();
+                return;
+            }
+
             SystemDispatcher.SetModdingBridgeProjectionRuntime(this);
             IsInitialized = true;
         }
@@ -195,7 +212,7 @@ namespace Hecton8.Modding
             if (_lateFrameRegistered)
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
             if (_hotSwapRegistered)
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
             GlobalRegistry.UnregisterModdingBridgeRuntime(this);
             SystemDispatcher.ClearModdingBridgeProjectionRuntime(this);
             HectonEventBus.UninstallNativeQueueBindings();
@@ -210,19 +227,73 @@ namespace Hecton8.Modding
             IsInitialized = false;
         }
 
+        private void RollbackInstalledBridge()
+        {
+            if (_lateFrameRegistered)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+
+            GlobalRegistry.UnregisterModdingBridgeRuntime(this);
+            HectonEventBus.UninstallNativeQueueBindings();
+            _lateFrameRegistered = false;
+            _hotSwapRegistered = false;
+            _playerRuntimeContext = null;
+            ReleaseNativeState();
+        }
+
         private void ReleaseNativeState()
         {
             _projectionScheduled = false;
             _queuedProjectedEventCount = 0;
-            if (_projectedEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_projectedEvents));
-                _projectedEvents.Dispose();
-                _projectedEvents = default;
-            }
+            DisposeProjectedEvents();
 
             ReleaseCullTelemetryStorage();
         }
+
+        private void DisposeProjectedEvents()
+        {
+            Exception firstException = null;
+
+            if (_projectedEventsSentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(_projectedEventsSentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    _projectedEventsSentinelId = 0;
+                }
+            }
+
+            if (_projectedEvents.IsCreated)
+            {
+                try
+                {
+                    _projectedEvents.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    _projectedEvents = default;
+                }
+            }
+            else
+            {
+                _projectedEvents = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
+        }
+
 
         private void EnsureCullTelemetryStorage()
         {

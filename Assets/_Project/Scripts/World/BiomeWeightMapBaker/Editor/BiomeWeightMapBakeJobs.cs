@@ -21,6 +21,7 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
         public const uint RollbackExcludedFlag = 1u;
         public const uint WarningNonFiniteColor = 1u << 1;
         public const uint WarningBc7CompressionFailed = 1u << 2;
+        public const uint WarningMaterialBindingFailed = 1u << 3;
         public const uint DumpMagic = 0x53424D57u;
         public const uint ReportVersion = 1u;
     }

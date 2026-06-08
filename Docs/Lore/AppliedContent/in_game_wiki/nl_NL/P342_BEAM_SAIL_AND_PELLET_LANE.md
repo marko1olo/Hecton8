@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Beam Sail and Pellet Lane"
+title: "Bundelzeil en pelletbaan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Beam Sail and Pellet Lane
+# Bundelzeil en pelletbaan
 
-NL LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+Bundelzeilen, pelletbanen, fusie-catchfasen en magsails maakten nearlight-vracht praktisch zonder FTL. Een schip vertrok met tanks, schildijs, radiatoren en controlebevoegdheid en leende daarna de rest van zijn motor van de route: bundelvermogen achter zich, pelletmassa in zijn pad en een ontvanger die rem-eigendom accepteerde. Daarom is Aegir bereikbaar en voelt het toch verlaten. De corridor kan geplande vracht verplaatsen; hij kan niet als reddingslijn worden geroepen.
 
 ## Scanner
 
-NL LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+Transitbaanrecord: het zeil duwde zichzelf niet. Het huurde vermogen van arrays achter het schip en massa van pelletstromen ervoor.
 
 ## Terminal
 
-NL LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+BAANSTATUS: bundelarray uitbetaald. Pelletstroom 0,8 ppm buiten contract. Catch-burn nog mogelijk. Zonder rem-eigenaar wordt snelle vracht snelle brokstukken.
 
 ## Audio
 
-NL LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+Het schip is snel omdat de helft van de motor buiten het schip staat.
 
 ## Field Note
 
-NL LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Als een record alleen de bundel prijst, lees door tot het de catch-eigenaar noemt.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/nl_NL. -->

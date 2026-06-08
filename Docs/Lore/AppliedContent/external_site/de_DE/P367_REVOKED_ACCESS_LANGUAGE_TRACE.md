@@ -9,32 +9,36 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Revoked Access Language Trace"
+title: "Spur widerrufener Zugriffssprache"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Revoked Access Language Trace
+# Spur widerrufener Zugriffssprache
 
-DE LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+Der Protagonist liest Deep-Reach-Sperren als Beweise. Widerrufene Nachweise blockieren Zugriff, doch die Formulierung legt die vergrabene Route offen: degradierte Zählungen, Ersatzzeugen, Wartungsneuklassifizierung und Anspruchserhaltungssprache.
 
 ## Scanner
 
-DE LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+Die Sperre sagt nicht verboten. Sie sagt Wartungsneuklassifizierung, Kontinuitätssperre und Routenmaterial. Alte Deep-Reach-Formulierung: eine Ablehnung, die trotzdem auf die vergrabene Tür zeigt.
 
 ## Terminal
 
-DE LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+ZUGRIFFSANTWORT / ROUTEN-SAFE-ARCHIV
+Nachweis: widerrufen
+Grund: Evakuierungskontinuitätsmaterial nur für zertifiziertes Deep-Reach-Personal
+sichtbare Begriffe: degradierte Zählung, Ersatzzeuge, Anspruchserhaltungsroute, Wartungsneuklassifizierung
+Hinweis: ehemaliges Feldpersonal darf Ablehnungssprache nur zum Vorfallabgleich sehen.
 
 ## Audio
 
-DE LOC HOLD: That is not security. That is a memo pretending to be a door.
+Sie haben den Korridor nicht gelöscht. Sie haben ihn in Vokabular gewickelt, das nur schuldiges Personal noch versteht.
 
 ## Field Note
 
-DE LOC HOLD: Lockout language hints at hidden liability without granting free access.
+Die Marke ist tot. Die Sperre spricht noch den Bürodialekt, der die Route begraben hat.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/de_DE. -->

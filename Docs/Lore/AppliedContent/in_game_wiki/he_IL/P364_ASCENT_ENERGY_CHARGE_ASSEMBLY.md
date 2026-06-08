@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Ascent Energy Charge Assembly"
+title: "מכלול מטען אנרגיית עלייה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Ascent Energy Charge Assembly
+# מכלול מטען אנרגיית עלייה
 
-HE LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.
+מטען העלייה הופך משאבי עומק לעסקה מכנית ומוסרית. חומרים בלחץ גבוה יכולים להרים את הקפסולה, לשמר ראיות דרך custody, או להפוך לתשלום שמחליש את הדרך הביתה.
 
 ## Scanner
 
-HE LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+עריסת אנרגיה חרוצה מ-pressure pulse. מטען זול עושה ארון נקי.
 
 ## Terminal
 
-HE LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: נדרשים vent-forged heat cell, pressure-history insulator ו-custody stamp. Raw fuel נדחה. blue debt לא מאושר נסדק תחת launch impulse ומבטל recovery claim.
 
 ## Audio
 
-HE LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+אפשר למכור את העילוי או לרכוב עליו. לא שניהם.
 
 ## Field Note
 
-HE LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+כל גרם בעריסה הוא בריחה, ראיה או blue-debt payout. הקפסולה אינה סולחת לחמדנות.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/he_IL. -->

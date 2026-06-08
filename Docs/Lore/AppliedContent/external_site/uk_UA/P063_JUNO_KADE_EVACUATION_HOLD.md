@@ -8,33 +8,19 @@ biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+spoiler_tier: 1
+title: "Евакуаційне утримання Джуно Кейд"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# Евакуаційне утримання Джуно Кейд
 
-UK LOC HOLD: Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent.
+Джуно Кейд стоїть між панікою і процедурою. Її журнал показує не колонію, надто дурну для втечі. Він показує чергу, маршалку, маршрутні панелі, спроби manual override і ворота, які чекають дозволу, поки вода рухається швидше за review.
 
-## Scanner
-
-UK LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
-
-## Terminal
-
-UK LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
-
-## Audio
-
-UK LOC HOLD: She kept counting people after the system started counting rooms.
-
-## Field Note
-
-UK LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+Утримання має кілька назв: карантин, сертифікація, ранг payload, claim seal. Кожна назва окремо звучить розумно. Разом вони створюють замкнені двері з людьми не з того боку. Кейд важлива, бо зберігає людську форму евакуації. Гравець знаходить не абстрактну недбалість. Гравець знаходить робочий вихід, який став непридатним через дозволену затримку.
 
 <!-- External Site; generated from P063_JUNO_KADE_EVACUATION_HOLD/uk_UA. -->

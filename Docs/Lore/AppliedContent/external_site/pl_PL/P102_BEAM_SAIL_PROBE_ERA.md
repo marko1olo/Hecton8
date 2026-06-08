@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "Era sond żagla wiązkowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Era sond żagla wiązkowego
 
-PL LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-PL LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-PL LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-PL LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-PL LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Era sond żagla wiązkowego to cichy początek historii Aegir. Małe ładunki jechały na mocy odległych macierzy, przeszły pierwsze i zwróciły pakiety dość stare do sporu, ale dość czyste do sprzedaży. Sondy nie uczyniły Aegir bezpiecznym. Uczyniły go czytelnym: studnie grawitacyjne, pasy radiacji, sygnatury oceaniczne, linie widzenia przekaźników i trasę, którą firma mogła uczynić dochodową przy wystarczającej obojętności.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/pl_PL. -->

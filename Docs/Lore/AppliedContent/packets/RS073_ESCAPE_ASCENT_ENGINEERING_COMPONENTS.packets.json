@@ -28,138 +28,138 @@
       "localized": {
         "en_US": {
           "title": "Acoustic Relay Spine Assembly",
-          "scanner": "Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "scanner": "Broken acoustic spine. It can tap pressure-code through water; orbit still hears it as damaged custody noise.",
+          "field_note": "The capsule's first call is not a voice. It is ceramic ribs, cable skin, pinger floats and enough timing discipline to make the ocean repeat you correctly.",
+          "terminal": "ASCENT RELAY: restore low-band acoustic spine before recovery window. High-gain mast lost. Emergency buoy unreliable. Black Keel receiver accepts pressure-code only after route proof.",
+          "audio": "If the Keel hears us, it hears a wound tapping a pipe.",
+          "in_game_wiki": "Escape begins underwater. The acoustic relay spine lets a damaged capsule prove position, clock and survival state before orbital receivers will treat it as recoverable mass.",
+          "external_site": "Acoustic Relay Spine Assembly grounds HECTON-8's escape loop in salvage engineering: sound must survive pressure, route geometry and custody before orbit believes it."
         },
         "ru_RU": {
           "title": "Сборка акустического релейного хребта",
-          "scanner": "Неполный релейный хребет. Капсула может стучать через воду, но не говорить с орбитой чистым каналом.",
-          "terminal": "ASCENT RELAY: сначала восстановить низкочастотный акустический хребет. High-gain mast lost. Emergency buoy unreliable. Rescue без route proof запрещен.",
-          "audio": "Если Black Keel это услышит, он услышит код давления, а не голос.",
-          "in_game_wiki": "Первый компонент побега не радиочудо. Это физическая цепь акустической связи: pinger float, ceramic ribs, cable skin и точное окно.",
-          "external_site": "Побег с HECTON-8 строится как инженерная задача. Игрок сначала чинит путь для звука, и только потом просит орбиту поверить сигналу.",
-          "field_note": "Ставить на сломанную мачту, pinger-line или капсульный/P-63 маршрут."
+          "scanner": "Разбитый акустический хребет. Он может простучать pressure-code сквозь воду; орбита все равно слышит это как поврежденный custody-noise.",
+          "field_note": "Первый вызов капсулы - не голос. Это керамические ребра, кабельная кожа, pinger-floats и достаточно дисциплины тайминга, чтобы океан повторил тебя правильно.",
+          "terminal": "ASCENT RELAY: восстановить низкополосный акустический хребет до окна recovery. High-gain mast потеряна. Emergency buoy ненадежен. Приемник Black Keel принимает pressure-code только после route proof.",
+          "audio": "Если Keel нас услышит, он услышит рану, стучащую по трубе.",
+          "in_game_wiki": "Побег начинается под водой. Акустический релейный хребет позволяет поврежденной капсуле доказать позицию, часы и состояние выживания до того, как орбитальные приемники сочтут ее recoverable mass.",
+          "external_site": "Сборка акустического релейного хребта заземляет escape loop HECTON-8 в salvage engineering: звук должен пережить давление, геометрию маршрута и custody, прежде чем орбита ему поверит."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "JA LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "JA LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "JA LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "JA LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "JA LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "JA LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "音響リレー脊柱アセンブリ",
+          "scanner": "壊れた音響脊柱。水中へ pressure-code を叩き込めるが、軌道にはまだ損傷した custody noise として聞こえる。",
+          "field_note": "カプセルの最初の呼びかけは声ではない。セラミック肋材、ケーブル外皮、pinger floats、そして海が正しく反復するだけのタイミング規律だ。",
+          "terminal": "ASCENT RELAY: recovery window 前に低帯域音響脊柱を復旧。High-gain mast 喪失。Emergency buoy 不安定。Black Keel 受信機は route proof 後のみ pressure-code を受理。",
+          "audio": "Keel が聞くなら、それは管を叩く傷の音だ。",
+          "in_game_wiki": "脱出は水中で始まる。音響リレー脊柱は、損傷カプセルが回収可能質量として扱われる前に、位置、時計、生存状態を証明する手段になる。",
+          "external_site": "音響リレー脊柱アセンブリは HECTON-8 の脱出ループをサルベージ工学に固定する。音は圧力、航路幾何、custody を生き延びてからでなければ、軌道に信じられない。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "ZH LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "ZH LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "ZH LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "ZH LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "ZH LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "ZH LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "声学中继脊柱组件",
+          "scanner": "破损的声学脊柱。它能把 pressure-code 敲进水里；轨道上听到的仍像受损的 custody noise。",
+          "field_note": "胶囊的第一次呼叫不是声音，而是陶瓷肋、缆线外皮、pinger floats，以及足够让海洋正确复述你的时序纪律。",
+          "terminal": "ASCENT RELAY: 在 recovery window 前恢复低频声学脊柱。High-gain mast 丢失。Emergency buoy 不可靠。Black Keel 接收器只在 route proof 后接受 pressure-code。",
+          "audio": "如果 Keel 听见我们，它听见的是伤口在敲管道。",
+          "in_game_wiki": "逃离从水下开始。声学中继脊柱让受损胶囊在轨道接收器把它视作 recoverable mass 之前，证明位置、时钟和生存状态。",
+          "external_site": "声学中继脊柱组件把 HECTON-8 的逃离循环扎进打捞工程：声音必须熬过压力、航路几何和 custody，轨道才会相信它。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "FR LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "FR LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "FR LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "FR LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "FR LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "FR LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "Assemblage de colonne relais acoustique",
+          "scanner": "Colonne acoustique brisée. Elle peut frapper un pressure-code dans l'eau ; l'orbite l'entend encore comme du custody noise endommagé.",
+          "field_note": "Le premier appel de la capsule n'est pas une voix. Ce sont des nervures céramiques, une peau de câble, des pinger floats et assez de discipline de timing pour que l'océan te répète correctement.",
+          "terminal": "ASCENT RELAY : restaurer la colonne acoustique bas débit avant la recovery window. High-gain mast perdue. Emergency buoy peu fiable. Le récepteur Black Keel n'accepte le pressure-code qu'après route proof.",
+          "audio": "Si le Keel nous entend, il entend une plaie qui tape sur un tuyau.",
+          "in_game_wiki": "La fuite commence sous l'eau. La colonne relais acoustique permet à une capsule endommagée de prouver position, horloge et état de survie avant que les récepteurs orbitaux la traitent comme recoverable mass.",
+          "external_site": "L'Assemblage de colonne relais acoustique ancre la boucle d'évasion de HECTON-8 dans l'ingénierie de salvage : le son doit survivre à la pression, à la géométrie de route et à la custody avant que l'orbite y croie."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "ES LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "ES LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "ES LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "ES LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "ES LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "ES LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "Conjunto de espina de relé acústico",
+          "scanner": "Espina acústica rota. Puede golpear pressure-code a través del agua; la órbita aún lo oye como custody noise dañado.",
+          "field_note": "La primera llamada de la cápsula no es una voz. Son costillas cerámicas, piel de cable, pinger floats y disciplina de sincronía suficiente para que el océano te repita bien.",
+          "terminal": "ASCENT RELAY: restaurar espina acústica de baja banda antes de la recovery window. High-gain mast perdida. Emergency buoy poco fiable. El receptor Black Keel acepta pressure-code solo tras route proof.",
+          "audio": "Si el Keel nos oye, oye una herida golpeando una tubería.",
+          "in_game_wiki": "La huida empieza bajo el agua. La espina de relé acústico permite que una cápsula dañada pruebe posición, reloj y estado de supervivencia antes de que los receptores orbitales la traten como recoverable mass.",
+          "external_site": "El Conjunto de espina de relé acústico ancla el bucle de escape de HECTON-8 en ingeniería de salvage: el sonido debe sobrevivir presión, geometría de ruta y custody antes de que la órbita lo crea."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "DE LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "DE LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "DE LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "DE LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "DE LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "DE LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "Akustische Relaisspinen-Baugruppe",
+          "scanner": "Gebrochene akustische Spine. Sie kann pressure-code durch Wasser klopfen; der Orbit hört es trotzdem als beschädigtes custody noise.",
+          "field_note": "Der erste Ruf der Kapsel ist keine Stimme. Es sind Keramikrippen, Kabelhaut, pinger floats und genug Timingdisziplin, damit der Ozean dich korrekt wiederholt.",
+          "terminal": "ASCENT RELAY: niederbandige Akustikspine vor recovery window wiederherstellen. High-gain mast verloren. Emergency buoy unzuverlässig. Black-Keel-Empfänger akzeptiert pressure-code erst nach route proof.",
+          "audio": "Wenn der Keel uns hört, hört er eine Wunde, die an ein Rohr klopft.",
+          "in_game_wiki": "Flucht beginnt unter Wasser. Die akustische Relaisspine lässt eine beschädigte Kapsel Position, Uhr und Überlebenszustand beweisen, bevor Orbit-Empfänger sie als recoverable mass behandeln.",
+          "external_site": "Die Akustische Relaisspinen-Baugruppe erdet HECTON-8s Escape-Loop in Salvage-Ingenieurwesen: Schall muss Druck, Routengeometrie und custody überleben, bevor der Orbit ihm glaubt."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "PL LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "PL LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "PL LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "PL LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "PL LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "PL LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "Zespół akustycznego kręgosłupa przekaźnikowego",
+          "scanner": "Pęknięty kręgosłup akustyczny. Może wystukać pressure-code przez wodę; orbita nadal słyszy to jako uszkodzony custody noise.",
+          "field_note": "Pierwsze wezwanie kapsuły nie jest głosem. To ceramiczne żebra, skóra kabla, pinger floats i dość dyscypliny timingu, by ocean powtórzył cię poprawnie.",
+          "terminal": "ASCENT RELAY: odbudować niskopasmowy kręgosłup akustyczny przed recovery window. High-gain mast utracony. Emergency buoy zawodny. Odbiornik Black Keel przyjmuje pressure-code tylko po route proof.",
+          "audio": "Jeśli Keel nas usłyszy, usłyszy ranę stukającą w rurę.",
+          "in_game_wiki": "Ucieczka zaczyna się pod wodą. Akustyczny kręgosłup przekaźnikowy pozwala uszkodzonej kapsule udowodnić pozycję, zegar i stan przetrwania, zanim odbiorniki orbitalne potraktują ją jako recoverable mass.",
+          "external_site": "Zespół akustycznego kręgosłupa przekaźnikowego osadza pętlę ucieczki HECTON-8 w inżynierii salvage: dźwięk musi przetrwać ciśnienie, geometrię trasy i custody, zanim orbita mu uwierzy."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "UK LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "UK LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "UK LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "UK LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "UK LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "UK LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "Збірка акустичного релейного хребта",
+          "scanner": "Розбитий акустичний хребет. Він може простукати pressure-code крізь воду; орбіта все одно чує це як пошкоджений custody-noise.",
+          "field_note": "Перший виклик капсули - не голос. Це керамічні ребра, кабельна шкіра, pinger-floats і достатньо дисципліни таймінгу, щоб океан повторив тебе правильно.",
+          "terminal": "ASCENT RELAY: відновити низькосмуговий акустичний хребет до recovery window. High-gain mast втрачено. Emergency buoy ненадійний. Приймач Black Keel приймає pressure-code лише після route proof.",
+          "audio": "Якщо Keel нас почує, він почує рану, що стукає по трубі.",
+          "in_game_wiki": "Втеча починається під водою. Акустичний релейний хребет дозволяє пошкодженій капсулі довести позицію, годинник і стан виживання до того, як орбітальні приймачі визнають її recoverable mass.",
+          "external_site": "Збірка акустичного релейного хребта заземлює escape loop HECTON-8 у salvage engineering: звук має пережити тиск, геометрію маршруту й custody, перш ніж орбіта йому повірить."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "AR LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "AR LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "AR LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "AR LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "AR LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "AR LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "تجميعة عمود المرحل الصوتي",
+          "scanner": "عمود صوتي مكسور. يستطيع نقر pressure-code عبر الماء؛ وما زال المدار يسمعه كـ custody noise متضرر.",
+          "field_note": "أول نداء للكبسولة ليس صوتا. إنه أضلاع خزفية، وجلد كابلات، وpinger floats، وانضباط توقيت يكفي لكي يكرر المحيط رسالتك بشكل صحيح.",
+          "terminal": "ASCENT RELAY: استعادة العمود الصوتي منخفض النطاق قبل recovery window. High-gain mast مفقود. Emergency buoy غير موثوق. مستقبل Black Keel يقبل pressure-code فقط بعد route proof.",
+          "audio": "إذا سمعنا Keel، فسيسمع جرحا يطرق أنبوبا.",
+          "in_game_wiki": "تبدأ الهرب تحت الماء. يتيح عمود المرحل الصوتي للكبسولة المتضررة إثبات الموقع والساعة وحالة النجاة قبل أن تعاملها المستقبلات المدارية كـ recoverable mass.",
+          "external_site": "تغرس تجميعة عمود المرحل الصوتي حلقة الهرب في HECTON-8 داخل هندسة salvage: يجب أن ينجو الصوت من الضغط وهندسة المسار وcustody قبل أن يصدقه المدار."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "ID LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "ID LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "ID LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "ID LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "ID LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "ID LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "Rakitan Tulang Punggung Relai Akustik",
+          "scanner": "Tulang punggung akustik patah. Ia bisa mengetuk pressure-code melalui air; orbit masih mendengarnya sebagai custody noise rusak.",
+          "field_note": "Panggilan pertama kapsul bukan suara. Itu rusuk keramik, kulit kabel, pinger floats, dan disiplin timing yang cukup agar samudra mengulangmu dengan benar.",
+          "terminal": "ASCENT RELAY: pulihkan tulang punggung akustik pita rendah sebelum recovery window. High-gain mast hilang. Emergency buoy tidak andal. Penerima Black Keel menerima pressure-code hanya setelah route proof.",
+          "audio": "Jika Keel mendengar kita, ia mendengar luka mengetuk pipa.",
+          "in_game_wiki": "Pelarian dimulai di bawah air. Tulang punggung relai akustik membuat kapsul rusak dapat membuktikan posisi, jam, dan keadaan bertahan hidup sebelum penerima orbit memperlakukannya sebagai recoverable mass.",
+          "external_site": "Rakitan Tulang Punggung Relai Akustik menambatkan escape loop HECTON-8 pada rekayasa salvage: suara harus selamat dari tekanan, geometri rute, dan custody sebelum orbit mempercayainya."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "KO LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "KO LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "KO LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "KO LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "KO LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "KO LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "음향 중계 척추 조립체",
+          "scanner": "부서진 음향 척추. 물속으로 pressure-code를 두드려 보낼 수 있지만, 궤도는 여전히 손상된 custody noise로 듣는다.",
+          "field_note": "캡슐의 첫 호출은 목소리가 아니다. 세라믹 갈비, 케이블 피부, pinger floats, 그리고 바다가 너를 제대로 반복할 만큼의 타이밍 규율이다.",
+          "terminal": "ASCENT RELAY: recovery window 전 저대역 음향 척추 복구. High-gain mast 상실. Emergency buoy 불안정. Black Keel 수신기는 route proof 후에만 pressure-code 수락.",
+          "audio": "Keel이 우리를 듣는다면, 파이프를 두드리는 상처 소리를 듣는 것이다.",
+          "in_game_wiki": "탈출은 물속에서 시작된다. 음향 중계 척추는 손상된 캡슐이 궤도 수신기에게 recoverable mass로 취급되기 전에 위치, 시계, 생존 상태를 증명하게 한다.",
+          "external_site": "음향 중계 척추 조립체는 HECTON-8의 escape loop를 salvage 공학에 고정한다. 소리는 압력, 항로 기하, custody를 견뎌야 궤도가 믿는다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "HE LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "HE LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "HE LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "HE LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "HE LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "HE LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "מכלול שדרת ממסר אקוסטית",
+          "scanner": "שדרה אקוסטית שבורה. היא יכולה לנקוש pressure-code דרך המים; המסלול עדיין שומע זאת כ-custody noise פגום.",
+          "field_note": "הקריאה הראשונה של הקפסולה אינה קול. היא צלעות קרמיות, עור כבל, pinger floats ומשמעת תזמון שמספיקה כדי שהאוקיינוס יחזור עליך נכון.",
+          "terminal": "ASCENT RELAY: לשחזר שדרה אקוסטית נמוכת-פס לפני recovery window. High-gain mast אבד. Emergency buoy לא אמין. מקלט Black Keel מקבל pressure-code רק אחרי route proof.",
+          "audio": "אם ה-Keel שומע אותנו, הוא שומע פצע מקיש על צינור.",
+          "in_game_wiki": "הבריחה מתחילה מתחת למים. שדרת הממסר האקוסטית מאפשרת לקפסולה פגומה להוכיח מיקום, שעון ומצב הישרדות לפני שמקלטים מסלוליים יראו בה recoverable mass.",
+          "external_site": "מכלול שדרת הממסר האקוסטית מקרקע את לולאת הבריחה של HECTON-8 בהנדסת salvage: הקול חייב לשרוד לחץ, גיאומטריית נתיב ו-custody לפני שהמסלול יאמין לו."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "PT LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "PT LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "PT LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "PT LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "PT LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "PT LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "Conjunto de Espinha de Relé Acústico",
+          "scanner": "Espinha acústica quebrada. Ela consegue bater pressure-code pela água; a órbita ainda ouve isso como custody noise danificado.",
+          "field_note": "O primeiro chamado da cápsula não é voz. São nervuras cerâmicas, pele de cabo, pinger floats e disciplina de timing suficiente para o oceano repetir você direito.",
+          "terminal": "ASCENT RELAY: restaurar espinha acústica de baixa banda antes da recovery window. High-gain mast perdida. Emergency buoy pouco confiável. Receptor Black Keel aceita pressure-code só após route proof.",
+          "audio": "Se o Keel nos ouvir, vai ouvir uma ferida batendo num cano.",
+          "in_game_wiki": "A fuga começa debaixo d'água. A espinha de relé acústico permite que uma cápsula danificada prove posição, relógio e estado de sobrevivência antes que receptores orbitais a tratem como recoverable mass.",
+          "external_site": "O Conjunto de Espinha de Relé Acústico ancora o escape loop de HECTON-8 em engenharia de salvage: o som precisa sobreviver à pressão, geometria de rota e custody antes que a órbita acredite nele."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Acoustic Relay Spine Assembly",
-          "scanner": "NL LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
-          "terminal": "NL LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
-          "audio": "NL LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.",
-          "in_game_wiki": "NL LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
-          "external_site": "NL LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
-          "field_note": "NL LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+          "title": "Akoestische relaisspine-assemblage",
+          "scanner": "Gebroken akoestische spine. Hij kan pressure-code door water tikken; de baan hoort het nog steeds als beschadigd custody noise.",
+          "field_note": "De eerste roep van de capsule is geen stem. Het zijn keramische ribben, kabelhuid, pinger floats en genoeg timingdiscipline om de oceaan je correct te laten herhalen.",
+          "terminal": "ASCENT RELAY: herstel laagbandige akoestische spine vóór recovery window. High-gain mast verloren. Emergency buoy onbetrouwbaar. Black Keel-ontvanger accepteert pressure-code pas na route proof.",
+          "audio": "Als de Keel ons hoort, hoort hij een wond op een pijp tikken.",
+          "in_game_wiki": "Ontsnapping begint onder water. De akoestische relaisspine laat een beschadigde capsule positie, klok en overlevingsstatus bewijzen voordat orbitale ontvangers haar als recoverable mass behandelen.",
+          "external_site": "De Akoestische relaisspine-assemblage verankert HECTON-8's escape loop in salvage-engineering: geluid moet druk, routegeometrie en custody overleven voordat de baan het gelooft."
         }
       }
     },
@@ -183,138 +183,138 @@
       "localized": {
         "en_US": {
           "title": "Pressure Seal Clamp Ring Assembly",
-          "scanner": "Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "Use where repair ecology and mechanical seal evidence overlap."
+          "scanner": "Clamp-ring scar. The ascent sleeve survived impact by spending the seal that should have taken it home.",
+          "field_note": "A safe-room patch can buy an hour of air. It cannot hold a launch impulse.",
+          "terminal": "SEAL CERT: shallow patch holds compartment pressure only. Ascent seal requires deep-rated clamp ring, pressure-glass seat, shell-sealant map and verified Deep Reach profile. Atlas-grown sealant may preserve habitat while blocking clean separation.",
+          "audio": "The useful seal is alive in the wrong direction.",
+          "in_game_wiki": "Pressure seals explain why repair work has to move deeper. The materials that keep water out of a room can also glue the capsule to the wreck when the wrong seal chain is accepted.",
+          "external_site": "Pressure Seal Clamp Ring Assembly makes capsule repair a pressure bargain: deep-rated metal, glass seating and Atlas bio-sealant can save or trap the ascent path."
         },
         "ru_RU": {
-          "title": "Сборка прижимного кольца герметизации",
-          "scanner": "След clamp ring. Ascent sleeve не исчез; его потратили, чтобы капсула пережила удар.",
-          "terminal": "SEAL CERT: shallow patch держит комнату. Он не держит ascent. Нужны pressure glass seat, shell-sealant map и Deep Reach clamp profile.",
-          "audio": "Полезный уплотнитель здесь тот, который Atlas вырастил неправильно. В этом и проблема.",
-          "in_game_wiki": "Герметизация объясняет, почему игрок идет глубже: ремонт убежища не равен ремонту взлета, а био-герметик Atlas может спасти модуль и заблокировать отделение.",
-          "external_site": "Поврежденная капсула не может просто улететь. Ей нужны глубоководные кольца, pressure glass и решение, использовать ли материал, выращенный Atlas.",
-          "field_note": "Ставить там, где repair ecology пересекается с механикой seal evidence."
+          "title": "Сборка прижимного кольца гермоуплотнения",
+          "scanner": "Шрам clamp-ring. Взлетная муфта пережила удар, потратив уплотнение, которое должно было вернуть ее домой.",
+          "field_note": "Заплата safe-room может купить час воздуха. Она не удержит импульс старта.",
+          "terminal": "SEAL CERT: shallow patch держит только давление отсека. Ascent seal требует deep-rated clamp ring, pressure-glass seat, shell-sealant map и проверенный профиль Deep Reach. Atlas-grown sealant может сохранить habitat, одновременно блокируя чистое отделение.",
+          "audio": "Полезное уплотнение живет не в ту сторону.",
+          "in_game_wiki": "Герметичные уплотнения объясняют, почему ремонт приходится уводить глубже. Материалы, удерживающие воду вне помещения, могут так же приклеить капсулу к затонувшему корпусу, когда принята неверная цепочка уплотнений.",
+          "external_site": "Сборка прижимного кольца гермоуплотнения превращает ремонт капсулы в торг с давлением: deep-rated металл, посадка стекла и Atlas bio-sealant могут спасти или запереть путь взлета."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "JA LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "JA LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "JA LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "JA LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "JA LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "JA LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "圧力シールクランプリングアセンブリ",
+          "scanner": "クランプリングの傷跡。上昇スリーブは、本来帰還に使うはずのシールを使い切って衝撃を生き延びた。",
+          "field_note": "安全室のパッチは一時間の空気を買える。発射衝撃は保持できない。",
+          "terminal": "SEAL CERT: shallow patch は区画圧のみ保持。Ascent seal には deep-rated clamp ring、pressure-glass seat、shell-sealant map、検証済み Deep Reach profile が必要。Atlas-grown sealant は habitat を保護しつつ、清潔な分離を妨げる可能性がある。",
+          "audio": "役に立つシールは、間違った向きに生きている。",
+          "in_game_wiki": "圧力シールは、修理がさらに深くへ進まざるを得ない理由を説明する。部屋から水を締め出す素材は、誤ったシール連鎖が採用された瞬間、カプセルを沈んだ船体へ貼り付けることもある。",
+          "external_site": "圧力シールクランプリングアセンブリは、カプセル修理をチェックリストではなく決断にする。deep-rated 金属、ガラス座面、Atlas bio-sealant は上昇路を救いも閉ざしもする。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "ZH LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "ZH LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "ZH LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "ZH LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "ZH LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "ZH LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "压力密封夹环组件",
+          "scanner": "夹环伤痕。升空套筒靠耗掉本该带它回家的密封件，才活过撞击。",
+          "field_note": "安全室补丁能买来一小时空气。它撑不住发射冲量。",
+          "terminal": "SEAL CERT: shallow patch 只保持舱室压力。Ascent seal 需要 deep-rated clamp ring、pressure-glass seat、shell-sealant map 和已验证 Deep Reach profile。Atlas-grown sealant 可能保住 habitat，同时阻断干净分离。",
+          "audio": "有用的密封件活在错误方向。",
+          "in_game_wiki": "压力密封解释了为什么维修必须继续向更深处推进。把水挡在舱室外的材料，在接受错误密封链时，也会把胶囊粘死在沉船结构上。",
+          "external_site": "压力密封夹环组件让胶囊维修成为选择，而不是清单：deep-rated 金属、玻璃座和 Atlas bio-sealant 可能拯救升空路径，也可能锁死它。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "FR LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "FR LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "FR LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "FR LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "FR LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "FR LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "Assemblage d'anneau de serrage d'étanchéité pression",
+          "scanner": "Cicatrice d'anneau de serrage. Le manchon d'ascension a survécu à l'impact en dépensant le joint qui devait le ramener chez lui.",
+          "field_note": "Une rustine de safe-room peut acheter une heure d'air. Elle ne tient pas une impulsion de lancement.",
+          "terminal": "SEAL CERT : shallow patch maintient seulement la pression de compartiment. Ascent seal exige deep-rated clamp ring, pressure-glass seat, shell-sealant map et profil Deep Reach vérifié. Atlas-grown sealant peut préserver l'habitat tout en bloquant une séparation propre.",
+          "audio": "Le joint utile est vivant dans la mauvaise direction.",
+          "in_game_wiki": "Les joints de pression expliquent pourquoi la réparation doit descendre plus profond. Les matériaux qui gardent l'eau hors d'une salle peuvent aussi coller la capsule à l'épave lorsqu'une mauvaise chaîne d'étanchéité est acceptée.",
+          "external_site": "L'Assemblage d'anneau de serrage d'étanchéité pression fait de la réparation capsule un marchandage avec la pression : métal deep-rated, assise de verre et Atlas bio-sealant peuvent sauver ou piéger la voie d'ascension."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "ES LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "ES LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "ES LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "ES LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "ES LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "ES LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "Conjunto de anillo de abrazadera de sello de presión",
+          "scanner": "Cicatriz de clamp-ring. La manga de ascenso sobrevivió al impacto gastando el sello que debía llevarla a casa.",
+          "field_note": "Un parche de safe-room puede comprar una hora de aire. No puede sostener un impulso de lanzamiento.",
+          "terminal": "SEAL CERT: shallow patch solo mantiene presión de compartimento. Ascent seal requiere deep-rated clamp ring, pressure-glass seat, shell-sealant map y perfil Deep Reach verificado. Atlas-grown sealant puede conservar el habitat mientras bloquea una separación limpia.",
+          "audio": "El sello útil está vivo en la dirección equivocada.",
+          "in_game_wiki": "Los sellos de presión explican por qué la reparación tiene que ir más profundo. Los materiales que mantienen el agua fuera de una sala también pueden pegar la cápsula al pecio cuando se acepta una cadena de sellado equivocada.",
+          "external_site": "El Conjunto de anillo de abrazadera de sello de presión convierte la reparación de la cápsula en un trato con la presión: metal deep-rated, asiento de vidrio y Atlas bio-sealant pueden salvar o atrapar la ruta de ascenso."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "DE LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "DE LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "DE LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "DE LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "DE LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "DE LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "Druckdichtungs-Klemmring-Baugruppe",
+          "scanner": "Klemmringnarbe. Die Aufstiegsmanschette überlebte den Einschlag, indem sie die Dichtung verbrauchte, die sie nach Hause hätte bringen sollen.",
+          "field_note": "Ein Safe-Room-Flicken kann eine Stunde Luft kaufen. Er hält keinen Startimpuls.",
+          "terminal": "SEAL CERT: shallow patch hält nur Abteildruck. Ascent seal benötigt deep-rated clamp ring, pressure-glass seat, shell-sealant map und verifiziertes Deep-Reach-Profil. Atlas-grown sealant kann habitat erhalten und zugleich saubere Trennung blockieren.",
+          "audio": "Die nützliche Dichtung lebt in die falsche Richtung.",
+          "in_game_wiki": "Druckdichtungen erklären, warum Reparaturarbeit tiefer führen muss. Materialien, die Wasser aus einem Raum halten, können die Kapsel auch an das Wrack kleben, wenn die falsche Dichtungskette akzeptiert wird.",
+          "external_site": "Die Druckdichtungs-Klemmring-Baugruppe macht Kapselreparatur zur Entscheidung, nicht zur Checkliste: deep-rated Metall, Glassitz und Atlas bio-sealant können den Aufstiegspfad retten oder fangen."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "PL LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "PL LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "PL LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "PL LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "PL LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "PL LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "Zespół pierścienia zaciskowego uszczelki ciśnieniowej",
+          "scanner": "Blizna clamp-ring. Tuleja wznoszenia przeżyła uderzenie, zużywając uszczelkę, która miała zabrać ją do domu.",
+          "field_note": "Łata safe-room może kupić godzinę powietrza. Nie utrzyma impulsu startowego.",
+          "terminal": "SEAL CERT: shallow patch trzyma tylko ciśnienie przedziału. Ascent seal wymaga deep-rated clamp ring, pressure-glass seat, shell-sealant map i zweryfikowanego profilu Deep Reach. Atlas-grown sealant może ocalić habitat, blokując czyste oddzielenie.",
+          "audio": "Użyteczna uszczelka żyje w złą stronę.",
+          "in_game_wiki": "Uszczelnienia ciśnieniowe wyjaśniają, dlaczego naprawa musi zejść głębiej. Materiały trzymające wodę poza pomieszczeniem mogą też przykleić kapsułę do wraku, gdy zaakceptowany zostaje zły łańcuch uszczelnień.",
+          "external_site": "Zespół pierścienia zaciskowego uszczelki ciśnieniowej zmienia naprawę kapsuły w targ z ciśnieniem: deep-rated metal, osadzenie szkła i Atlas bio-sealant mogą uratować albo uwięzić ścieżkę wznoszenia."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "UK LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "UK LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "UK LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "UK LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "UK LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "UK LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "Збірка притискного кільця гермоущільнення",
+          "scanner": "Шрам clamp-ring. Підйомна муфта пережила удар, витративши ущільнення, яке мало повернути її додому.",
+          "field_note": "Латка safe-room може купити годину повітря. Вона не витримає стартовий імпульс.",
+          "terminal": "SEAL CERT: shallow patch тримає лише тиск відсіку. Ascent seal потребує deep-rated clamp ring, pressure-glass seat, shell-sealant map і перевіреного профілю Deep Reach. Atlas-grown sealant може зберегти habitat, водночас блокуючи чисте відділення.",
+          "audio": "Корисне ущільнення живе не в той бік.",
+          "in_game_wiki": "Герметичні ущільнення пояснюють, чому ремонт доводиться вести глибше. Матеріали, що тримають воду поза приміщенням, можуть так само приклеїти капсулу до затонулого корпусу, коли прийнято неправильний ланцюг ущільнень.",
+          "external_site": "Збірка притискного кільця гермоущільнення перетворює ремонт капсули на торг із тиском: deep-rated метал, посадка скла й Atlas bio-sealant можуть урятувати або замкнути шлях підйому."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "AR LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "AR LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "AR LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "AR LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "AR LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "AR LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "تجميعة حلقة مشبك ختم الضغط",
+          "scanner": "ندبة clamp-ring. نجت كم sleeve الصعود من الارتطام بإنفاق الختم الذي كان يفترض أن يعيدها إلى البيت.",
+          "field_note": "رقعة safe-room قد تشتري ساعة من الهواء. لكنها لا تمسك اندفاع الإطلاق.",
+          "terminal": "SEAL CERT: shallow patch يحفظ ضغط الحجرة فقط. يتطلب Ascent seal حلقة deep-rated clamp ring، وpressure-glass seat، وshell-sealant map، وملف Deep Reach محقق. قد يحفظ Atlas-grown sealant الـ habitat بينما يمنع انفصالا نظيفا.",
+          "audio": "الختم المفيد حي في الاتجاه الخطأ.",
+          "in_game_wiki": "تشرح أختام الضغط لماذا يجب أن ينزل الإصلاح أعمق. المواد التي تبقي الماء خارج الغرفة تستطيع أيضا لصق الكبسولة بالحطام عندما تعتمد سلسلة ختم خاطئة.",
+          "external_site": "تحول تجميعة حلقة مشبك ختم الضغط إصلاح الكبسولة إلى قرار لا قائمة فحص: معدن deep-rated، ومقعد زجاج، وAtlas bio-sealant يمكنها إنقاذ مسار الصعود أو حبسه."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "ID LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "ID LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "ID LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "ID LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "ID LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "ID LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "Rakitan Cincin Klem Segel Tekanan",
+          "scanner": "Bekas clamp-ring. Selongsong pendakian selamat dari benturan dengan menghabiskan segel yang seharusnya membawanya pulang.",
+          "field_note": "Tambalan safe-room bisa membeli satu jam udara. Ia tidak bisa menahan impuls peluncuran.",
+          "terminal": "SEAL CERT: shallow patch hanya menahan tekanan kompartemen. Ascent seal membutuhkan deep-rated clamp ring, pressure-glass seat, shell-sealant map, dan profil Deep Reach terverifikasi. Atlas-grown sealant dapat menjaga habitat sambil memblokir pemisahan bersih.",
+          "audio": "Segel yang berguna hidup ke arah yang salah.",
+          "in_game_wiki": "Segel tekanan menjelaskan mengapa pekerjaan perbaikan harus bergerak lebih dalam. Bahan yang menahan air di luar ruangan juga dapat merekatkan kapsul ke bangkai ketika rantai segel yang salah diterima.",
+          "external_site": "Rakitan Cincin Klem Segel Tekanan membuat perbaikan kapsul menjadi tawar-menawar dengan tekanan: logam deep-rated, dudukan kaca, dan Atlas bio-sealant dapat menyelamatkan atau menjebak jalur pendakian."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "KO LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "KO LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "KO LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "KO LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "KO LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "KO LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "압력 밀봉 클램프 링 조립체",
+          "scanner": "클램프 링 흉터. 상승 슬리브는 자신을 집으로 데려갔어야 할 밀봉을 써버리고 충격에서 살아남았다.",
+          "field_note": "safe-room 패치는 한 시간의 공기를 살 수 있다. 발사 충격은 버티지 못한다.",
+          "terminal": "SEAL CERT: shallow patch는 구획 압력만 유지. Ascent seal에는 deep-rated clamp ring, pressure-glass seat, shell-sealant map, 검증된 Deep Reach profile 필요. Atlas-grown sealant는 habitat을 보존하면서 깨끗한 분리를 막을 수 있음.",
+          "audio": "쓸모 있는 밀봉은 잘못된 방향으로 살아 있다.",
+          "in_game_wiki": "압력 실은 수리가 더 깊은 곳으로 내려가야 하는 이유를 설명한다. 방 안으로 물을 들이지 않는 재료는 잘못된 실 사슬이 받아들여지면 캡슐을 난파 구조물에 붙여 버릴 수도 있다.",
+          "external_site": "압력 밀봉 클램프 링 조립체는 캡슐 수리를 압력과의 거래로 만든다. deep-rated 금속, 유리 좌석, Atlas bio-sealant는 상승 경로를 살리거나 가둘 수 있다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "HE LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "HE LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "HE LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "HE LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "HE LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "HE LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "מכלול טבעת מהדק איטום לחץ",
+          "scanner": "צלקת clamp-ring. שרוול העלייה שרד את הפגיעה בכך שבזבז את האטם שהיה אמור לקחת אותו הביתה.",
+          "field_note": "טלאי safe-room יכול לקנות שעה של אוויר. הוא לא יחזיק דחף שיגור.",
+          "terminal": "SEAL CERT: shallow patch מחזיק רק לחץ מדור. Ascent seal דורש deep-rated clamp ring, pressure-glass seat, shell-sealant map ופרופיל Deep Reach מאומת. Atlas-grown sealant עשוי לשמר habitat תוך חסימת הפרדה נקייה.",
+          "audio": "האטם השימושי חי בכיוון הלא נכון.",
+          "in_game_wiki": "אטמי לחץ מסבירים מדוע עבודת תיקון חייבת לרדת עמוק יותר. החומרים שמחזיקים מים מחוץ לחדר יכולים גם להדביק את הקפסולה אל השריד כאשר מתקבלת שרשרת אטימה שגויה.",
+          "external_site": "מכלול טבעת מהדק איטום הלחץ הופך תיקון קפסולה למיקוח עם לחץ: מתכת deep-rated, מושב זכוכית ו-Atlas bio-sealant יכולים להציל או לכלוא את נתיב העלייה."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "PT LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "PT LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "PT LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "PT LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "PT LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "PT LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "Conjunto de Anel de Braçadeira de Vedação de Pressão",
+          "scanner": "Cicatriz de clamp-ring. A manga de subida sobreviveu ao impacto gastando a vedação que deveria levá-la para casa.",
+          "field_note": "Um remendo de safe-room pode comprar uma hora de ar. Não segura um impulso de lançamento.",
+          "terminal": "SEAL CERT: shallow patch segura apenas pressão de compartimento. Ascent seal exige deep-rated clamp ring, pressure-glass seat, shell-sealant map e perfil Deep Reach verificado. Atlas-grown sealant pode preservar o habitat enquanto bloqueia separação limpa.",
+          "audio": "A vedação útil está viva na direção errada.",
+          "in_game_wiki": "Vedações de pressão explicam por que o reparo precisa ir mais fundo. Os materiais que mantêm a água fora de uma sala também podem colar a cápsula ao destroço quando a cadeia de vedação errada é aceita.",
+          "external_site": "O Conjunto de Anel de Braçadeira de Vedação de Pressão transforma reparo de cápsula em barganha com pressão: metal deep-rated, assentamento de vidro e Atlas bio-sealant podem salvar ou prender a rota de subida."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Pressure Seal Clamp Ring Assembly",
-          "scanner": "NL LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
-          "terminal": "NL LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
-          "audio": "NL LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.",
-          "in_game_wiki": "NL LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
-          "external_site": "NL LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
-          "field_note": "NL LOC HOLD: Use where repair ecology and mechanical seal evidence overlap."
+          "title": "Drukafdichting-klemringassemblage",
+          "scanner": "Klemringlitteken. De opstijghuls overleefde de impact door de afdichting te verbruiken die haar thuis had moeten brengen.",
+          "field_note": "Een safe-room-lap kan een uur lucht kopen. Hij houdt geen lanceerimpuls.",
+          "terminal": "SEAL CERT: shallow patch houdt alleen compartimentdruk. Ascent seal vereist deep-rated clamp ring, pressure-glass seat, shell-sealant map en geverifieerd Deep Reach-profiel. Atlas-grown sealant kan habitat bewaren terwijl het schone scheiding blokkeert.",
+          "audio": "De nuttige afdichting leeft de verkeerde kant op.",
+          "in_game_wiki": "Drukafdichtingen verklaren waarom reparatiewerk dieper moet gaan. Materialen die water uit een ruimte houden, kunnen de capsule ook aan het wrak vastlijmen wanneer de verkeerde afdichtingsketen wordt geaccepteerd.",
+          "external_site": "De Drukafdichting-klemringassemblage maakt capsulereparatie een drukonderhandeling: deep-rated metaal, glaszitting en Atlas bio-sealant kunnen het opstijgpad redden of vangen."
         }
       }
     },
@@ -338,138 +338,138 @@
       "localized": {
         "en_US": {
           "title": "Guidance Timing Core Assembly",
-          "scanner": "Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "scanner": "Blank timing core. Aegir geometry decides whether ascent becomes recovery, capture or silence.",
+          "field_note": "There is no simple up from HECTON-8. There is a receiver, a shadow, a storm drift and a packet queue already older than your panic.",
+          "terminal": "GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver lane, moon relay shutter and storm-plume drift. Late packets become evidence loss; early packets become capture noise.",
+          "audio": "Up is not a direction. It is a window with a witness.",
+          "in_game_wiki": "A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals, relay shadows and carrier recovery lanes. Bad timing can lose the capsule without breaking a single part.",
+          "external_site": "Guidance Timing Core Assembly keeps HECTON-8's spaceflight hard: extraction is a route problem made of clocks, shadows and damaged trust."
         },
         "ru_RU": {
-          "title": "Сборка ядра наведения и тайминга",
-          "scanner": "Пустой timing core. Геометрия Aegir решает, будет ли ascent спасением, захватом или тишиной.",
-          "terminal": "GUIDANCE CORE: сверить clock капсулы с Aegir window, Black Keel receiver, moon relay shutter и storm plume drift. Late packets become evidence loss.",
-          "audio": "Тут нет просто 'вверх'. Тут окно, приемник и ложь в очереди.",
-          "in_game_wiki": "Для ascent нужно ядро тайминга, которое понимает геометрию лун Aegir, blackout intervals и lane recovery carrier.",
-          "external_site": "HECTON-8 держит космический полет жестким: orbital timing, relay shadows и мертвые beacons превращают extraction в route problem.",
-          "field_note": "Привязать к orbital-window charts, beacon fragments и guidance gimbal wreckage."
+          "title": "Сборка ядра тайминга наведения",
+          "scanner": "Пустое timing core. Геометрия Aegir решает, станет ли взлет recovery, capture или тишиной.",
+          "field_note": "С HECTON-8 нет простого “вверх”. Есть приемник, тень, штормовой дрейф и packet queue, уже старше твоей паники.",
+          "terminal": "GUIDANCE CORE: синхронизировать часы капсулы с окном Aegir, полосой приемника Black Keel, лунным relay shutter и дрейфом storm-plume. Поздние packets становятся потерей доказательств; ранние packets становятся capture noise.",
+          "audio": "Вверх - не направление. Это окно со свидетелем.",
+          "in_game_wiki": "Рабочий взлет требует guidance timing core, понимающего геометрию лун Aegir, интервалы blackout, релейные тени и recovery lanes carrier. Плохой тайминг может потерять капсулу, не сломав ни одной детали.",
+          "external_site": "Сборка ядра тайминга наведения сохраняет космополет HECTON-8 жестким: extraction - это маршрутная задача из часов, теней и поврежденного доверия."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "JA LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "JA LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "JA LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "JA LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "JA LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "JA LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "誘導タイミングコアアセンブリ",
+          "scanner": "空白の timing core。Aegir の幾何が、上昇を recovery、capture、または沈黙に変える。",
+          "field_note": "HECTON-8 から単純な“上”はない。受信機、影、嵐のドリフト、そして君の恐怖より古い packet queue がある。",
+          "terminal": "GUIDANCE CORE: カプセル時計を Aegir window、Black Keel receiver lane、月 relay shutter、storm-plume drift に同期。遅い packets は証拠喪失に、早い packets は capture noise になる。",
+          "audio": "上は方向ではない。証人付きの窓だ。",
+          "in_game_wiki": "正常な上昇には、Aegir 月群幾何、blackout 間隔、リレー影、carrier recovery lanes を理解する誘導タイミングコアが必要だ。部品が壊れていなくても、悪いタイミングはカプセルを失わせる。",
+          "external_site": "誘導タイミングコアアセンブリは HECTON-8 の宇宙飛行を硬く保つ。extraction は時計、影、傷んだ信頼でできた航路問題だ。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "ZH LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "ZH LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "ZH LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "ZH LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "ZH LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "ZH LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "制导时序核心组件",
+          "scanner": "空白 timing core。Aegir 几何决定升空会变成 recovery、capture，还是沉默。",
+          "field_note": "从 HECTON-8 出发没有简单的“向上”。只有接收器、阴影、风暴漂移，以及早已比你的恐慌更老的 packet queue。",
+          "terminal": "GUIDANCE CORE: 将胶囊时钟对齐 Aegir window、Black Keel receiver lane、月面 relay shutter 和 storm-plume drift。迟到 packets 变成证据丢失；过早 packets 变成 capture noise。",
+          "audio": "向上不是方向，而是有见证人的窗口。",
+          "in_game_wiki": "可用的升空需要一个理解 Aegir 月群几何、blackout 间隔、中继阴影和 carrier recovery lanes 的制导时序核心。糟糕时机能在不损坏任何零件的情况下丢掉胶囊。",
+          "external_site": "制导时序核心组件让 HECTON-8 的航天保持硬度：extraction 是由时钟、阴影和受损信任组成的航路问题。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "FR LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "FR LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "FR LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "FR LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "FR LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "FR LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "Assemblage de noyau de timing de guidage",
+          "scanner": "Noyau de timing vide. La géométrie d'Aegir décide si l'ascension devient recovery, capture ou silence.",
+          "field_note": "Il n'y a pas de simple haut depuis HECTON-8. Il y a un récepteur, une ombre, une dérive de tempête et une packet queue déjà plus vieille que ta panique.",
+          "terminal": "GUIDANCE CORE : aligner l'horloge capsule sur l'Aegir window, la Black Keel receiver lane, le moon relay shutter et la dérive storm-plume. Les packets tardifs deviennent perte de preuve ; les packets précoces deviennent capture noise.",
+          "audio": "Le haut n'est pas une direction. C'est une fenêtre avec témoin.",
+          "in_game_wiki": "Une ascension fonctionnelle exige un noyau de timing de guidage qui comprend la géométrie lunaire d'Aegir, les intervalles de blackout, les ombres relais et les carrier recovery lanes. Un mauvais timing peut perdre la capsule sans casser une seule pièce.",
+          "external_site": "L'Assemblage de noyau de timing de guidage garde le vol spatial de HECTON-8 dur : l'extraction est un problème de route fait d'horloges, d'ombres et de confiance abîmée."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "ES LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "ES LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "ES LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "ES LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "ES LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "ES LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "Conjunto de núcleo de sincronía de guiado",
+          "scanner": "Núcleo de timing en blanco. La geometría de Aegir decide si el ascenso es recovery, capture o silencio.",
+          "field_note": "No hay un arriba simple desde HECTON-8. Hay un receptor, una sombra, deriva de tormenta y una packet queue ya más vieja que tu pánico.",
+          "terminal": "GUIDANCE CORE: alinear reloj de cápsula con Aegir window, Black Keel receiver lane, moon relay shutter y deriva storm-plume. Packets tardíos se vuelven pérdida de evidencia; packets tempranos se vuelven capture noise.",
+          "audio": "Arriba no es una dirección. Es una ventana con testigo.",
+          "in_game_wiki": "Un ascenso funcional necesita un núcleo de sincronía de guiado que entienda la geometría lunar de Aegir, intervalos blackout, sombras de relé y carrier recovery lanes. Un mal timing puede perder la cápsula sin romper una sola pieza.",
+          "external_site": "El Conjunto de núcleo de sincronía de guiado mantiene duro el vuelo espacial de HECTON-8: extraction es un problema de ruta hecho de relojes, sombras y confianza dañada."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "DE LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "DE LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "DE LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "DE LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "DE LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "DE LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "Führungstimingkern-Baugruppe",
+          "scanner": "Leerer Timingkern. Aegir-Geometrie entscheidet, ob Aufstieg recovery, capture oder Stille wird.",
+          "field_note": "Von HECTON-8 gibt es kein einfaches Oben. Es gibt einen Empfänger, einen Schatten, Sturmdrift und eine packet queue, die schon älter ist als deine Panik.",
+          "terminal": "GUIDANCE CORE: Kapseluhr auf Aegir window, Black Keel receiver lane, moon relay shutter und storm-plume-Drift ausrichten. Späte packets werden Beweisverlust; frühe packets werden capture noise.",
+          "audio": "Oben ist keine Richtung. Es ist ein Fenster mit Zeugen.",
+          "in_game_wiki": "Ein funktionierender Aufstieg braucht einen Führungstimingkern, der Aegirs Mondgeometrie, blackout-Intervalle, Relaisschatten und carrier recovery lanes versteht. Schlechtes Timing kann die Kapsel verlieren, ohne ein einziges Teil zu brechen.",
+          "external_site": "Die Führungstimingkern-Baugruppe hält HECTON-8s Raumflug hart: extraction ist ein Routenproblem aus Uhren, Schatten und beschädigtem Vertrauen."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "PL LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "PL LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "PL LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "PL LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "PL LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "PL LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "Zespół rdzenia timingu naprowadzania",
+          "scanner": "Pusty timing core. Geometria Aegir decyduje, czy wznoszenie stanie się recovery, capture czy ciszą.",
+          "field_note": "Z HECTON-8 nie ma prostego góra. Jest odbiornik, cień, dryf burzy i packet queue starsza już od twojej paniki.",
+          "terminal": "GUIDANCE CORE: zsynchronizować zegar kapsuły z Aegir window, Black Keel receiver lane, moon relay shutter i dryfem storm-plume. Spóźnione packets stają się utratą dowodów; wczesne packets stają się capture noise.",
+          "audio": "Góra nie jest kierunkiem. To okno ze świadkiem.",
+          "in_game_wiki": "Działające wznoszenie wymaga rdzenia timingu naprowadzania, który rozumie geometrię księżyców Aegir, interwały blackout, cienie przekaźników i carrier recovery lanes. Zły timing może zgubić kapsułę bez złamania choćby jednej części.",
+          "external_site": "Zespół rdzenia timingu naprowadzania utrzymuje lot kosmiczny HECTON-8 twardym: extraction to problem trasy złożony z zegarów, cieni i uszkodzonego zaufania."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "UK LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "UK LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "UK LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "UK LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "UK LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "UK LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "Збірка ядра таймінгу наведення",
+          "scanner": "Порожнє timing core. Геометрія Aegir вирішує, чи стане підйом recovery, capture або тишею.",
+          "field_note": "З HECTON-8 немає простого “вгору”. Є приймач, тінь, штормовий дрейф і packet queue, уже старша за твою паніку.",
+          "terminal": "GUIDANCE CORE: синхронізувати годинник капсули з Aegir window, Black Keel receiver lane, moon relay shutter і дрейфом storm-plume. Пізні packets стають втратою доказів; ранні packets стають capture noise.",
+          "audio": "Вгору - не напрямок. Це вікно зі свідком.",
+          "in_game_wiki": "Робочий підйом потребує guidance timing core, що розуміє геометрію місяців Aegir, інтервали blackout, релейні тіні й carrier recovery lanes. Поганий таймінг може втратити капсулу, не зламавши жодної деталі.",
+          "external_site": "Збірка ядра таймінгу наведення зберігає космічний політ HECTON-8 жорстким: extraction - це маршрутна задача з годинників, тіней і пошкодженої довіри."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "AR LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "AR LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "AR LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "AR LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "AR LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "AR LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "تجميعة نواة توقيت التوجيه",
+          "scanner": "نواة timing core فارغة. تحدد هندسة Aegir ما إذا كان الصعود recovery أو capture أو صمتا.",
+          "field_note": "لا يوجد صعود بسيط من HECTON-8. هناك مستقبل، وظل، وانجراف عاصفة، وpacket queue أقدم من ذعرك.",
+          "terminal": "GUIDANCE CORE: مزامنة ساعة الكبسولة مع Aegir window، وBlack Keel receiver lane، وmoon relay shutter، وانجراف storm-plume. تصبح packets المتأخرة فقدان أدلة؛ وتصبح packets المبكرة capture noise.",
+          "audio": "الأعلى ليس اتجاها. إنه نافذة لها شاهد.",
+          "in_game_wiki": "يحتاج الصعود العامل إلى نواة توقيت توجيه تفهم هندسة أقمار Aegir، وفترات blackout، وظلال المرحلات، وcarrier recovery lanes. يمكن لتوقيت سيئ أن يفقد الكبسولة من دون كسر قطعة واحدة.",
+          "external_site": "تحافظ تجميعة نواة توقيت التوجيه على صلابة الطيران الفضائي في HECTON-8: extraction مشكلة مسار مكونة من ساعات وظلال وثقة متضررة."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "ID LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "ID LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "ID LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "ID LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "ID LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "ID LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "Rakitan Inti Timing Panduan",
+          "scanner": "Timing core kosong. Geometri Aegir menentukan apakah pendakian menjadi recovery, capture, atau sunyi.",
+          "field_note": "Tidak ada atas yang sederhana dari HECTON-8. Ada penerima, bayangan, drift badai, dan packet queue yang sudah lebih tua dari panikmu.",
+          "terminal": "GUIDANCE CORE: selaraskan jam kapsul dengan Aegir window, Black Keel receiver lane, moon relay shutter, dan drift storm-plume. Packets terlambat menjadi kehilangan bukti; packets terlalu awal menjadi capture noise.",
+          "audio": "Atas bukan arah. Ia jendela dengan saksi.",
+          "in_game_wiki": "Pendakian yang bekerja membutuhkan inti timing panduan yang memahami geometri bulan Aegir, interval blackout, bayangan relai, dan carrier recovery lanes. Timing buruk dapat menghilangkan kapsul tanpa merusak satu bagian pun.",
+          "external_site": "Rakitan Inti Timing Panduan menjaga penerbangan antariksa HECTON-8 tetap keras: extraction adalah masalah rute yang tersusun dari jam, bayangan, dan kepercayaan rusak."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "KO LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "KO LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "KO LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "KO LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "KO LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "KO LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "유도 타이밍 코어 조립체",
+          "scanner": "빈 timing core. Aegir 기하가 상승이 recovery, capture, 침묵 중 무엇이 될지 결정한다.",
+          "field_note": "HECTON-8에서 단순한 위쪽은 없다. 수신기, 그림자, 폭풍 표류, 그리고 네 공포보다 이미 오래된 packet queue가 있다.",
+          "terminal": "GUIDANCE CORE: 캡슐 시계를 Aegir window, Black Keel receiver lane, moon relay shutter, storm-plume drift에 정렬. 늦은 packets는 증거 손실이 되고, 이른 packets는 capture noise가 된다.",
+          "audio": "위쪽은 방향이 아니다. 증인이 있는 창이다.",
+          "in_game_wiki": "작동하는 상승에는 Aegir 달 기하, blackout 간격, 중계 그림자, carrier recovery lanes를 이해하는 유도 타이밍 코어가 필요하다. 나쁜 타이밍은 부품 하나 부수지 않고도 캡슐을 잃게 할 수 있다.",
+          "external_site": "유도 타이밍 코어 조립체는 HECTON-8의 우주비행을 단단하게 유지한다. extraction은 시계, 그림자, 손상된 신뢰로 된 항로 문제다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "HE LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "HE LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "HE LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "HE LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "HE LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "HE LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "מכלול ליבת תזמון הנחיה",
+          "scanner": "Timing core ריקה. גיאומטריית Aegir מחליטה אם העלייה תהיה recovery, capture או שתיקה.",
+          "field_note": "אין למעלה פשוט מ-HECTON-8. יש מקלט, צל, סחיפת סערה ו-packet queue שכבר ישנה יותר מהבהלה שלך.",
+          "terminal": "GUIDANCE CORE: לסנכרן את שעון הקפסולה עם Aegir window, Black Keel receiver lane, moon relay shutter וסחיפת storm-plume. packets מאוחרות הופכות לאובדן ראיות; packets מוקדמות הופכות ל-capture noise.",
+          "audio": "למעלה אינו כיוון. זה חלון עם עד.",
+          "in_game_wiki": "עלייה עובדת צריכה ליבת תזמון הנחיה שמבינה את גיאומטריית הירחים של Aegir, מרווחי blackout, צללי ממסרים ו-carrier recovery lanes. תזמון רע יכול לאבד את הקפסולה בלי לשבור אף חלק.",
+          "external_site": "מכלול ליבת תזמון ההנחיה שומר על טיסת החלל של HECTON-8 קשה: extraction היא בעיית נתיב שעשויה משעונים, צללים ואמון פגום."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "PT LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "PT LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "PT LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "PT LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "PT LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "PT LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "Conjunto de Núcleo de Timing de Orientação",
+          "scanner": "Timing core em branco. A geometria de Aegir decide se a subida vira recovery, capture ou silêncio.",
+          "field_note": "Não existe um para cima simples a partir de HECTON-8. Existe um receptor, uma sombra, drift de tempestade e uma packet queue já mais velha que seu pânico.",
+          "terminal": "GUIDANCE CORE: alinhar relógio da cápsula à Aegir window, Black Keel receiver lane, moon relay shutter e drift de storm-plume. Packets atrasados viram perda de evidência; packets adiantados viram capture noise.",
+          "audio": "Para cima não é direção. É uma janela com testemunha.",
+          "in_game_wiki": "Uma subida funcional precisa de um núcleo de timing de orientação que entenda a geometria lunar de Aegir, intervalos blackout, sombras de relé e carrier recovery lanes. Timing ruim pode perder a cápsula sem quebrar uma peça sequer.",
+          "external_site": "O Conjunto de Núcleo de Timing de Orientação mantém o voo espacial de HECTON-8 duro: extraction é um problema de rota feito de relógios, sombras e confiança danificada."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Guidance Timing Core Assembly",
-          "scanner": "NL LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
-          "terminal": "NL LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
-          "audio": "NL LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.",
-          "in_game_wiki": "NL LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
-          "external_site": "NL LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
-          "field_note": "NL LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+          "title": "Geleidingstimingkernassemblage",
+          "scanner": "Lege timing core. Aegir-geometrie beslist of opstijging recovery, capture of stilte wordt.",
+          "field_note": "Er is geen simpel omhoog vanaf HECTON-8. Er is een ontvanger, een schaduw, stormdrift en een packet queue die al ouder is dan je paniek.",
+          "terminal": "GUIDANCE CORE: capsuleklok uitlijnen op Aegir window, Black Keel receiver lane, moon relay shutter en storm-plume-drift. Late packets worden bewijsverlies; vroege packets worden capture noise.",
+          "audio": "Omhoog is geen richting. Het is een venster met een getuige.",
+          "in_game_wiki": "Een werkende opstijging heeft een geleidingstimingkern nodig die Aegirs maangeometrie, blackout-intervallen, relaisschaduwen en carrier recovery lanes begrijpt. Slechte timing kan de capsule verliezen zonder één onderdeel te breken.",
+          "external_site": "De Geleidingstimingkernassemblage houdt HECTON-8's ruimtevaart hard: extraction is een routeprobleem gemaakt van klokken, schaduwen en beschadigd vertrouwen."
         }
       }
     },
@@ -493,138 +493,138 @@
       "localized": {
         "en_US": {
           "title": "Ascent Energy Charge Assembly",
-          "scanner": "Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "scanner": "Energy cradle scored by pressure pulse. A cheap charge makes a clean coffin.",
+          "field_note": "Every gram in the cradle is escape, evidence or blue-debt payout. The capsule does not forgive greed.",
+          "terminal": "ASCENT CHARGE: vent-forged heat cell, pressure-history insulator and custody stamp required. Raw fuel rejected. Uncertified blue debt fractures under launch impulse and voids recovery claim.",
+          "audio": "You can sell the lift or ride it. Not both.",
+          "in_game_wiki": "The ascent charge turns deep resources into a mechanical and moral trade. High-pressure materials can lift the capsule, preserve evidence through custody, or become payout that weakens the route home.",
+          "external_site": "Ascent Energy Charge Assembly ties resource economy to narrative consequence: blue debt and vent-forged hardware decide escape reliability, evidence custody and compromise."
         },
         "ru_RU": {
-          "title": "Сборка энергетического заряда ascent",
-          "scanner": "Energy cradle иссечен pressure pulse. Дешевый заряд равен мертвой капсуле.",
-          "terminal": "ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "Каждый грамм здесь - побег, доказательство или деньги. Все три сразу не выйдут.",
-          "in_game_wiki": "Ascent charge делает ресурсы механическим и моральным выбором: глубокие материалы могут поднять игрока, сохранить evidence или стать payout.",
-          "external_site": "Ресурсы напрямую завязаны на сюжет: blue debt и vent-forged hardware решают escape, custody и compromise.",
-          "field_note": "RU LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "Сборка энергетического заряда взлета",
+          "scanner": "Energy cradle иссечена pressure pulse. Дешевый заряд делает аккуратный гроб.",
+          "field_note": "Каждый грамм в cradle - это побег, доказательство или выплата blue-debt. Капсула не прощает жадность.",
+          "terminal": "ASCENT CHARGE: требуются vent-forged heat cell, pressure-history insulator и custody stamp. Raw fuel отклоняется. Несертифицированный blue debt трескается под launch impulse и аннулирует recovery claim.",
+          "audio": "Можно продать подъем или лететь на нем. Не оба сразу.",
+          "in_game_wiki": "Заряд взлета превращает глубинные ресурсы в механический и моральный обмен. Материалы высокого давления могут поднять капсулу, сохранить доказательства через custody или стать выплатой, ослабляющей маршрут домой.",
+          "external_site": "Сборка энергетического заряда взлета связывает экономику ресурсов с последствиями сюжета: blue debt и vent-forged hardware решают надежность побега, custody доказательств и компромисс."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "JA LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "JA LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "JA LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "JA LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "JA LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "JP LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "上昇エネルギーチャージアセンブリ",
+          "scanner": "エネルギークレードルは pressure pulse で削られている。安いチャージは清潔な棺を作る。",
+          "field_note": "クレードル内のすべてのグラムは、脱出、証拠、または blue-debt payout だ。カプセルは欲を許さない。",
+          "terminal": "ASCENT CHARGE: vent-forged heat cell、pressure-history insulator、custody stamp 必須。Raw fuel 拒否。未認証 blue debt は launch impulse 下で割れ、recovery claim を無効化。",
+          "audio": "揚力は売るか、それに乗るかだ。両方はできない。",
+          "in_game_wiki": "上昇チャージは深部資源を機械的かつ倫理的な取引に変える。高圧材料はカプセルを持ち上げ、custody 中の証拠を守り、あるいは帰還航路を弱める支払いになる。",
+          "external_site": "上昇エネルギーチャージアセンブリは資源経済を物語の結果に結びつける。blue debt と vent-forged hardware が脱出信頼性、証拠 custody、妥協を決める。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "ZH LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "ZH LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "ZH LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "ZH LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "ZH LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "CN LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "升空能量装药组件",
+          "scanner": "Energy cradle 被 pressure pulse 刮伤。廉价装药会做出一具干净棺材。",
+          "field_note": "cradle 里的每一克都是逃离、证据或 blue-debt payout。胶囊不会原谅贪婪。",
+          "terminal": "ASCENT CHARGE: 需要 vent-forged heat cell、pressure-history insulator 和 custody stamp。Raw fuel 被拒收。未认证 blue debt 会在 launch impulse 下断裂，并使 recovery claim 失效。",
+          "audio": "你可以卖掉升力，也可以乘着它走。不能两者都要。",
+          "in_game_wiki": "升空装药把深层资源变成机械与道德交易。高压材料可以托起胶囊、通过 custody 保存证据，或变成削弱回家航路的付款。",
+          "external_site": "升空能量装药组件把资源经济与叙事后果绑定：blue debt 和 vent-forged hardware 决定逃离可靠性、证据 custody 与妥协。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "FR LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "FR LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "FR LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "FR LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "FR LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "FR LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "Assemblage de charge énergétique d'ascension",
+          "scanner": "Berceau énergétique marqué par une pressure pulse. Une charge bon marché fait un cercueil propre.",
+          "field_note": "Chaque gramme dans le berceau est fuite, preuve ou blue-debt payout. La capsule ne pardonne pas l'avidité.",
+          "terminal": "ASCENT CHARGE : vent-forged heat cell, pressure-history insulator et custody stamp requis. Raw fuel rejeté. Blue debt non certifiée se fracture sous launch impulse et annule la recovery claim.",
+          "audio": "Tu peux vendre la portance ou monter dessus. Pas les deux.",
+          "in_game_wiki": "La charge d'ascension transforme les ressources profondes en échange mécanique et moral. Les matériaux haute pression peuvent soulever la capsule, préserver les preuves en custody ou devenir un paiement qui affaiblit la route du retour.",
+          "external_site": "L'Assemblage de charge énergétique d'ascension lie l'économie de ressources aux conséquences narratives : blue debt et vent-forged hardware décident fiabilité d'évasion, custody des preuves et compromis."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "ES LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "ES LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "ES LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "ES LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "ES LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "ES LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "Conjunto de carga de energía de ascenso",
+          "scanner": "Cuna de energía marcada por pressure pulse. Una carga barata hace un ataúd limpio.",
+          "field_note": "Cada gramo en la cuna es escape, evidencia o blue-debt payout. La cápsula no perdona la codicia.",
+          "terminal": "ASCENT CHARGE: se requiere vent-forged heat cell, pressure-history insulator y custody stamp. Raw fuel rechazado. Blue debt no certificado se fractura bajo launch impulse y anula recovery claim.",
+          "audio": "Puedes vender la elevación o montarte en ella. No ambas.",
+          "in_game_wiki": "La carga de ascenso convierte recursos profundos en un intercambio mecánico y moral. Materiales de alta presión pueden levantar la cápsula, preservar evidencia en custody o convertirse en pago que debilita la ruta a casa.",
+          "external_site": "El Conjunto de carga de energía de ascenso vincula economía de recursos con consecuencia narrativa: blue debt y vent-forged hardware deciden fiabilidad de escape, custody de evidencia y compromiso."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "DE LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "DE LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "DE LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "DE LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "DE LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "DE LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "Aufstiegsenergie-Ladungsbaugruppe",
+          "scanner": "Energiekradle von pressure pulse geritzt. Eine billige Ladung macht einen sauberen Sarg.",
+          "field_note": "Jedes Gramm im Kralde ist Flucht, Beweis oder blue-debt payout. Die Kapsel vergibt keine Gier.",
+          "terminal": "ASCENT CHARGE: vent-forged heat cell, pressure-history insulator und custody stamp erforderlich. Raw fuel abgelehnt. Unzertifizierte blue debt bricht unter launch impulse und macht recovery claim ungültig.",
+          "audio": "Du kannst den Auftrieb verkaufen oder darauf reiten. Nicht beides.",
+          "in_game_wiki": "Die Aufstiegsladung verwandelt Tiefenressourcen in mechanischen und moralischen Tausch. Hochdruckmaterialien können die Kapsel heben, Beweise durch custody bewahren oder zur Auszahlung werden, die den Heimweg schwächt.",
+          "external_site": "Die Aufstiegsenergie-Ladungsbaugruppe verbindet Ressourcenökonomie mit narrativer Folge: blue debt und vent-forged hardware entscheiden Fluchtzuverlässigkeit, Beweis-custody und Kompromiss."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "PL LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "PL LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "PL LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "PL LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "PL LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "PL LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "Zespół ładunku energii wznoszenia",
+          "scanner": "Kołyska energii porysowana przez pressure pulse. Tani ładunek robi czystą trumnę.",
+          "field_note": "Każdy gram w kołysce to ucieczka, dowód albo blue-debt payout. Kapsuła nie wybacza chciwości.",
+          "terminal": "ASCENT CHARGE: wymagane vent-forged heat cell, pressure-history insulator i custody stamp. Raw fuel odrzucony. Niecertyfikowany blue debt pęka pod launch impulse i unieważnia recovery claim.",
+          "audio": "Możesz sprzedać nośność albo na niej polecieć. Nie oba.",
+          "in_game_wiki": "Ładunek wznoszenia zmienia głębinowe zasoby w mechaniczny i moralny handel. Materiały wysokociśnieniowe mogą podnieść kapsułę, zachować dowody przez custody albo stać się wypłatą osłabiającą drogę do domu.",
+          "external_site": "Zespół ładunku energii wznoszenia wiąże ekonomię zasobów z konsekwencją narracyjną: blue debt i vent-forged hardware decydują o niezawodności ucieczki, custody dowodów i kompromisie."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "UK LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "UK LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "UK LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "UK LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "UK LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "UA LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "Збірка енергетичного заряду підйому",
+          "scanner": "Energy cradle посічена pressure pulse. Дешевий заряд робить охайну труну.",
+          "field_note": "Кожен грам у cradle - це втеча, доказ або blue-debt payout. Капсула не пробачає жадібність.",
+          "terminal": "ASCENT CHARGE: потрібні vent-forged heat cell, pressure-history insulator і custody stamp. Raw fuel відхиляється. Несертифікований blue debt тріскає під launch impulse і скасовує recovery claim.",
+          "audio": "Можна продати підйом або летіти на ньому. Не обидва одразу.",
+          "in_game_wiki": "Заряд підйому перетворює глибинні ресурси на механічний і моральний обмін. Матеріали високого тиску можуть підняти капсулу, зберегти докази через custody або стати виплатою, що послаблює маршрут додому.",
+          "external_site": "Збірка енергетичного заряду підйому пов'язує економіку ресурсів із наслідком сюжету: blue debt і vent-forged hardware вирішують надійність втечі, custody доказів і компроміс."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "AR LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "AR LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "AR LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "AR LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "AR LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "AR LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "تجميعة شحنة طاقة الصعود",
+          "scanner": "حاضنة طاقة مخدوشة بضغط pulse. الشحنة الرخيصة تصنع تابوتا نظيفا.",
+          "field_note": "كل غرام في الحاضنة هو هرب، أو دليل، أو blue-debt payout. الكبسولة لا تغفر الجشع.",
+          "terminal": "ASCENT CHARGE: مطلوبة vent-forged heat cell، وpressure-history insulator، وcustody stamp. Raw fuel مرفوض. blue debt غير المعتمد يتشقق تحت launch impulse ويلغي recovery claim.",
+          "audio": "يمكنك بيع الرفع أو ركوبه. ليس الاثنين.",
+          "in_game_wiki": "تحول شحنة الصعود موارد الأعماق إلى تبادل ميكانيكي وأخلاقي. يمكن لمواد الضغط العالي رفع الكبسولة، أو حفظ الأدلة عبر custody، أو أن تصبح عائدا يضعف طريق العودة.",
+          "external_site": "تربط تجميعة شحنة طاقة الصعود اقتصاد الموارد بالنتيجة السردية: blue debt وvent-forged hardware يقرران موثوقية الهرب، وcustody الأدلة، والتسوية."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "ID LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "ID LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "ID LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "ID LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "ID LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "ID LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "Rakitan Muatan Energi Pendakian",
+          "scanner": "Dudukan energi tergores pressure pulse. Muatan murah membuat peti mati rapi.",
+          "field_note": "Setiap gram di dudukan adalah pelarian, bukti, atau blue-debt payout. Kapsul tidak memaafkan keserakahan.",
+          "terminal": "ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, dan custody stamp wajib. Raw fuel ditolak. Blue debt tanpa sertifikasi retak di bawah launch impulse dan membatalkan recovery claim.",
+          "audio": "Kau bisa menjual daya angkat atau menungganginya. Tidak keduanya.",
+          "in_game_wiki": "Muatan pendakian mengubah sumber daya dalam menjadi pertukaran mekanis dan moral. Bahan tekanan tinggi dapat mengangkat kapsul, menjaga bukti melalui custody, atau menjadi bayaran yang melemahkan rute pulang.",
+          "external_site": "Rakitan Muatan Energi Pendakian mengikat ekonomi sumber daya ke konsekuensi naratif: blue debt dan vent-forged hardware menentukan keandalan pelarian, custody bukti, dan kompromi."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "KO LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "KO LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "KO LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "KO LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "KO LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "KO LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "상승 에너지 장약 조립체",
+          "scanner": "에너지 크래들이 pressure pulse로 긁혀 있다. 싼 장약은 깔끔한 관을 만든다.",
+          "field_note": "크래들의 모든 그램은 탈출, 증거, 또는 blue-debt payout이다. 캡슐은 탐욕을 용서하지 않는다.",
+          "terminal": "ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp 필요. Raw fuel 거부. 미인증 blue debt는 launch impulse 아래 파열되며 recovery claim 무효.",
+          "audio": "양력을 팔거나 타고 가거나. 둘 다는 안 된다.",
+          "in_game_wiki": "상승 장약은 심층 자원을 기계적이자 도덕적인 거래로 바꾼다. 고압 재료는 캡슐을 들어 올리고, custody를 통해 증거를 보존하거나, 집으로 가는 항로를 약화시키는 지급금이 될 수 있다.",
+          "external_site": "상승 에너지 장약 조립체는 자원 경제를 서사적 결과와 묶는다. blue debt와 vent-forged hardware가 탈출 신뢰도, 증거 custody, 타협을 결정한다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "HE LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "HE LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "HE LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "HE LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "HE LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "HE LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "מכלול מטען אנרגיית עלייה",
+          "scanner": "עריסת אנרגיה חרוצה מ-pressure pulse. מטען זול עושה ארון נקי.",
+          "field_note": "כל גרם בעריסה הוא בריחה, ראיה או blue-debt payout. הקפסולה אינה סולחת לחמדנות.",
+          "terminal": "ASCENT CHARGE: נדרשים vent-forged heat cell, pressure-history insulator ו-custody stamp. Raw fuel נדחה. blue debt לא מאושר נסדק תחת launch impulse ומבטל recovery claim.",
+          "audio": "אפשר למכור את העילוי או לרכוב עליו. לא שניהם.",
+          "in_game_wiki": "מטען העלייה הופך משאבי עומק לעסקה מכנית ומוסרית. חומרים בלחץ גבוה יכולים להרים את הקפסולה, לשמר ראיות דרך custody, או להפוך לתשלום שמחליש את הדרך הביתה.",
+          "external_site": "מכלול מטען אנרגיית העלייה קושר כלכלת משאבים לתוצאה עלילתית: blue debt ו-vent-forged hardware מחליטים אמינות בריחה, custody של ראיות ופשרה."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "PT LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "PT LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "PT LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "PT LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "PT LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "PT LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "Conjunto de Carga de Energia de Subida",
+          "scanner": "Berço de energia marcado por pressure pulse. Carga barata vira caixão limpo.",
+          "field_note": "Cada grama no berço é fuga, evidência ou blue-debt payout. A cápsula não perdoa ganância.",
+          "terminal": "ASCENT CHARGE: vent-forged heat cell, pressure-history insulator e custody stamp exigidos. Raw fuel rejeitado. Blue debt não certificado fratura sob launch impulse e anula recovery claim.",
+          "audio": "Você pode vender o impulso ou subir nele. Não os dois.",
+          "in_game_wiki": "A carga de subida transforma recursos profundos em troca mecânica e moral. Materiais de alta pressão podem erguer a cápsula, preservar evidências por custody ou virar pagamento que enfraquece a rota para casa.",
+          "external_site": "O Conjunto de Carga de Energia de Subida liga economia de recursos a consequência narrativa: blue debt e vent-forged hardware decidem confiabilidade de fuga, custody de evidências e compromisso."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Ascent Energy Charge Assembly",
-          "scanner": "NL LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
-          "terminal": "NL LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
-          "audio": "NL LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.",
-          "in_game_wiki": "NL LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
-          "external_site": "NL LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
-          "field_note": "NL LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout."
+          "title": "Opstijgenergieladingassemblage",
+          "scanner": "Energiekradle gekerfd door pressure pulse. Een goedkope lading maakt een nette kist.",
+          "field_note": "Elke gram in de kradle is ontsnapping, bewijs of blue-debt payout. De capsule vergeeft geen hebzucht.",
+          "terminal": "ASCENT CHARGE: vent-forged heat cell, pressure-history insulator en custody stamp vereist. Raw fuel geweigerd. Ongecertificeerde blue debt breekt onder launch impulse en maakt recovery claim ongeldig.",
+          "audio": "Je kunt de lift verkopen of erop rijden. Niet allebei.",
+          "in_game_wiki": "De opstijglading verandert diepe bronnen in een mechanische en morele ruil. Hogedrukmaterialen kunnen de capsule tillen, bewijs door custody bewaren of betaling worden die de route naar huis verzwakt.",
+          "external_site": "De Opstijgenergieladingassemblage verbindt grondstoffeneconomie met narratieve gevolgen: blue debt en vent-forged hardware bepalen ontsnappingsbetrouwbaarheid, bewijscustody en compromis."
         }
       }
     },
@@ -648,138 +648,138 @@
       "localized": {
         "en_US": {
           "title": "Quarantine Legal Handshake Assembly",
-          "scanner": "Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "scanner": "Handshake socket. The capsule can be mechanically ready and still belong to the wrong receiver.",
+          "field_note": "The last component is not metal. It is the name of the system allowed to call you recovered.",
+          "terminal": "RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates and quarantine status. Public ledger accepts proof after delay. Unkeyed launch defaults to custody dispute.",
+          "audio": "Who answers decides what rescue means.",
+          "in_game_wiki": "The final escape component is legal, medical and evidentiary at once. Quarantine status, receiver identity, payload custody and evidence state decide whether ascent becomes rescue, claim capture or public proof.",
+          "external_site": "Quarantine Legal Handshake Assembly makes extraction deliberately dirty: a working engine can still deliver the survivor into corporate custody, delayed public truth or unresolved quarantine."
         },
         "ru_RU": {
-          "title": "Сборка карантинно-правового handshake",
-          "scanner": "Handshake socket. Капсула может быть механически готова и все равно юридически захвачена.",
-          "terminal": "RECOVERY HANDSHAKE: receiver key required. Keelmark принимает mass and lien. Recovery Compliance принимает coordinates. Public ledger принимает proof with delay.",
-          "audio": "Последняя деталь не металл. Последняя деталь - кто имеет право назвать тебя recovered.",
-          "in_game_wiki": "Финальный компонент escape юридический и информационный: quarantine status, receiver identity, payload custody и evidence state решают ветку ending.",
-          "external_site": "Extraction в HECTON-8 грязный намеренно. Механический ascent может стать corporate custody, public truth или unresolved quarantine.",
-          "field_note": "RU LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "Сборка карантинно-правового рукопожатия",
+          "scanner": "Handshake socket. Капсула может быть механически готова и все равно принадлежать неправильному receiver.",
+          "field_note": "Последний компонент - не металл. Это имя системы, которой разрешено назвать тебя recovered.",
+          "terminal": "RECOVERY HANDSHAKE: требуется receiver key. Keelmark принимает mass и lien. Recovery Compliance принимает coordinates и quarantine status. Public ledger принимает proof после задержки. Unkeyed launch по умолчанию становится custody dispute.",
+          "audio": "Кто отвечает, тот решает, что значит спасение.",
+          "in_game_wiki": "Финальный компонент побега одновременно юридический, медицинский и доказательный. Quarantine status, receiver identity, payload custody и evidence state решают, станет ли ascent спасением, claim capture или public proof.",
+          "external_site": "Сборка карантинно-правового рукопожатия делает extraction намеренно грязной: рабочий двигатель все еще может доставить выжившего в corporate custody, отложенную публичную правду или нерешенный карантин."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "JA LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "JA LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "JA LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "JA LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "JA LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "JP LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "検疫法務ハンドシェイクアセンブリ",
+          "scanner": "ハンドシェイクソケット。カプセルは機械的に準備完了でも、まだ間違った receiver に属することがある。",
+          "field_note": "最後の部品は金属ではない。君を recovered と呼ぶ権限を持つシステムの名前だ。",
+          "terminal": "RECOVERY HANDSHAKE: receiver key 必須。Keelmark は mass と lien を受理。Recovery Compliance は coordinates と quarantine status を受理。Public ledger は遅延後に proof を受理。Unkeyed launch は既定で custody dispute。",
+          "audio": "誰が応答するかで、救助の意味が決まる。",
+          "in_game_wiki": "最後の脱出部品は、法務、医療、証拠が同時に絡む。Quarantine status、receiver identity、payload custody、evidence state が、ascent を救助、claim capture、public proof のどれにするか決める。",
+          "external_site": "検疫法務ハンドシェイクアセンブリは extraction を意図的に汚す。動くエンジンでも、生存者を corporate custody、遅延した公共の真実、未解決の検疫へ届けることがある。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "ZH LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "ZH LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "ZH LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "ZH LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "ZH LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "CN LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "隔离法律握手组件",
+          "scanner": "握手插座。胶囊可以机械上准备完毕，却仍属于错误的 receiver。",
+          "field_note": "最后一个组件不是金属，而是有权称你为 recovered 的系统名称。",
+          "terminal": "RECOVERY HANDSHAKE: 需要 receiver key。Keelmark 接受 mass 和 lien。Recovery Compliance 接受 coordinates 和 quarantine status。Public ledger 延后接受 proof。Unkeyed launch 默认进入 custody dispute。",
+          "audio": "谁回应，谁就决定救援是什么意思。",
+          "in_game_wiki": "最终逃离组件同时是法律、医疗与证据问题。Quarantine status、receiver identity、payload custody 和 evidence state 决定 ascent 是救援、claim capture，还是 public proof。",
+          "external_site": "隔离法律握手组件让 extraction 故意变脏：可用引擎仍可能把幸存者送进 corporate custody、延迟公开真相或未解决隔离。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "FR LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "FR LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "FR LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "FR LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "FR LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "FR LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "Assemblage de handshake légal de quarantaine",
+          "scanner": "Prise de handshake. La capsule peut être mécaniquement prête et appartenir encore au mauvais receiver.",
+          "field_note": "Le dernier composant n'est pas du métal. C'est le nom du système autorisé à te déclarer recovered.",
+          "terminal": "RECOVERY HANDSHAKE : receiver key requis. Keelmark accepte mass et lien. Recovery Compliance accepte coordinates et quarantine status. Public ledger accepte proof après délai. Unkeyed launch devient par défaut custody dispute.",
+          "audio": "Celui qui répond décide ce que secours veut dire.",
+          "in_game_wiki": "Le dernier composant d'évasion est juridique, médical et probatoire à la fois. Quarantine status, receiver identity, payload custody et evidence state décident si l'ascent devient secours, claim capture ou public proof.",
+          "external_site": "L'Assemblage de handshake légal de quarantaine rend l'extraction volontairement sale : un moteur fonctionnel peut encore livrer le survivant à corporate custody, à une vérité publique différée ou à une quarantaine non résolue."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "ES LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "ES LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "ES LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "ES LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "ES LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "ES LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "Conjunto de handshake legal de cuarentena",
+          "scanner": "Conector de handshake. La cápsula puede estar mecánicamente lista y seguir perteneciendo al receiver equivocado.",
+          "field_note": "El último componente no es metal. Es el nombre del sistema autorizado a llamarte recovered.",
+          "terminal": "RECOVERY HANDSHAKE: receiver key requerido. Keelmark acepta mass y lien. Recovery Compliance acepta coordinates y quarantine status. Public ledger acepta proof tras demora. Unkeyed launch pasa por defecto a custody dispute.",
+          "audio": "Quien responde decide qué significa rescate.",
+          "in_game_wiki": "El componente final de escape es legal, médico y probatorio a la vez. Quarantine status, receiver identity, payload custody y evidence state deciden si ascent se vuelve rescate, claim capture o public proof.",
+          "external_site": "El Conjunto de handshake legal de cuarentena ensucia la extracción a propósito: un motor funcional aún puede entregar al superviviente a corporate custody, verdad pública demorada o cuarentena sin resolver."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "DE LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "DE LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "DE LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "DE LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "DE LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "DE LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "Quarantäne-Rechtshandshake-Baugruppe",
+          "scanner": "Handshake-Buchse. Die Kapsel kann mechanisch bereit sein und trotzdem dem falschen receiver gehören.",
+          "field_note": "Die letzte Komponente ist kein Metall. Es ist der Name des Systems, das dich recovered nennen darf.",
+          "terminal": "RECOVERY HANDSHAKE: receiver key erforderlich. Keelmark akzeptiert mass und lien. Recovery Compliance akzeptiert coordinates und quarantine status. Public ledger akzeptiert proof nach Verzögerung. Unkeyed launch wird standardmäßig custody dispute.",
+          "audio": "Wer antwortet, entscheidet, was Rettung bedeutet.",
+          "in_game_wiki": "Die letzte Fluchtkomponente ist rechtlich, medizinisch und beweisbezogen zugleich. Quarantine status, receiver identity, payload custody und evidence state entscheiden, ob ascent Rettung, claim capture oder public proof wird.",
+          "external_site": "Die Quarantäne-Rechtshandshake-Baugruppe macht extraction absichtlich schmutzig: Ein funktionierender Motor kann den Überlebenden trotzdem in corporate custody, verzögerte öffentliche Wahrheit oder ungelöste Quarantäne liefern."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "PL LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "PL LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "PL LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "PL LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "PL LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "PL LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "Zespół prawnego handshake kwarantanny",
+          "scanner": "Gniazdo handshake. Kapsuła może być mechanicznie gotowa i nadal należeć do złego receiver.",
+          "field_note": "Ostatni komponent nie jest metalem. To nazwa systemu, któremu wolno nazwać cię recovered.",
+          "terminal": "RECOVERY HANDSHAKE: wymagany receiver key. Keelmark przyjmuje mass i lien. Recovery Compliance przyjmuje coordinates i quarantine status. Public ledger przyjmuje proof po opóźnieniu. Unkeyed launch domyślnie staje się custody dispute.",
+          "audio": "Ten, kto odpowiada, decyduje, co znaczy ratunek.",
+          "in_game_wiki": "Ostatni komponent ucieczki jest jednocześnie prawny, medyczny i dowodowy. Quarantine status, receiver identity, payload custody i evidence state decydują, czy ascent stanie się ratunkiem, claim capture czy public proof.",
+          "external_site": "Zespół prawnego handshake kwarantanny celowo brudzi extraction: działający silnik wciąż może dostarczyć ocalałego do corporate custody, opóźnionej prawdy publicznej albo nierozstrzygniętej kwarantanny."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "UK LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "UK LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "UK LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "UK LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "UK LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "UA LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "Збірка карантинно-правового рукостискання",
+          "scanner": "Handshake socket. Капсула може бути механічно готовою і все одно належати неправильному receiver.",
+          "field_note": "Останній компонент - не метал. Це ім'я системи, якій дозволено назвати тебе recovered.",
+          "terminal": "RECOVERY HANDSHAKE: потрібен receiver key. Keelmark приймає mass і lien. Recovery Compliance приймає coordinates і quarantine status. Public ledger приймає proof після затримки. Unkeyed launch за замовчуванням стає custody dispute.",
+          "audio": "Хто відповідає, той вирішує, що означає порятунок.",
+          "in_game_wiki": "Фінальний компонент втечі одночасно юридичний, медичний і доказовий. Quarantine status, receiver identity, payload custody і evidence state вирішують, чи стане ascent порятунком, claim capture або public proof.",
+          "external_site": "Збірка карантинно-правового рукостискання робить extraction навмисно брудною: робочий двигун усе ще може доставити вцілілого в corporate custody, відкладену публічну правду або нерозв'язаний карантин."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "AR LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "AR LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "AR LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "AR LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "AR LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "AR LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "تجميعة المصافحة القانونية للحجر",
+          "scanner": "مقبس handshake. قد تكون الكبسولة جاهزة ميكانيكيا وما زالت تابعة للـ receiver الخطأ.",
+          "field_note": "العنصر الأخير ليس معدنا. إنه اسم النظام المسموح له أن يسميك recovered.",
+          "terminal": "RECOVERY HANDSHAKE: مطلوب receiver key. تقبل Keelmark الـ mass وlien. تقبل Recovery Compliance الـ coordinates وquarantine status. يقبل Public ledger الـ proof بعد تأخير. يتحول Unkeyed launch افتراضيا إلى custody dispute.",
+          "audio": "من يجيب يقرر معنى الإنقاذ.",
+          "in_game_wiki": "مكون الهرب الأخير قانوني وطبي ودليلي في الوقت نفسه. يقرر quarantine status وreceiver identity وpayload custody وevidence state ما إذا كان ascent إنقاذا أو claim capture أو public proof.",
+          "external_site": "تجعل تجميعة المصافحة القانونية للحجر extraction قذرا عمدا: يمكن لمحرك عامل أن يسلم الناجي إلى corporate custody، أو حقيقة عامة متأخرة، أو حجر غير محسوم."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "ID LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "ID LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "ID LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "ID LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "ID LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "ID LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "Rakitan Handshake Legal Karantina",
+          "scanner": "Soket handshake. Kapsul bisa siap secara mekanis dan tetap menjadi milik receiver yang salah.",
+          "field_note": "Komponen terakhir bukan logam. Itu nama sistem yang diizinkan menyebutmu recovered.",
+          "terminal": "RECOVERY HANDSHAKE: receiver key diperlukan. Keelmark menerima mass dan lien. Recovery Compliance menerima coordinates dan quarantine status. Public ledger menerima proof setelah jeda. Unkeyed launch default menjadi custody dispute.",
+          "audio": "Siapa yang menjawab menentukan arti penyelamatan.",
+          "in_game_wiki": "Komponen pelarian terakhir sekaligus legal, medis, dan evidensial. Quarantine status, receiver identity, payload custody, dan evidence state menentukan apakah ascent menjadi penyelamatan, claim capture, atau public proof.",
+          "external_site": "Rakitan Handshake Legal Karantina membuat extraction sengaja kotor: mesin yang bekerja masih bisa mengirim penyintas ke corporate custody, kebenaran publik tertunda, atau karantina tak terselesaikan."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "KO LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "KO LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "KO LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "KO LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "KO LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "KO LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "격리 법적 핸드셰이크 조립체",
+          "scanner": "핸드셰이크 소켓. 캡슐은 기계적으로 준비되어도 여전히 잘못된 receiver의 소유일 수 있다.",
+          "field_note": "마지막 부품은 금속이 아니다. 너를 recovered라고 부를 수 있는 시스템의 이름이다.",
+          "terminal": "RECOVERY HANDSHAKE: receiver key 필요. Keelmark는 mass와 lien 수락. Recovery Compliance는 coordinates와 quarantine status 수락. Public ledger는 지연 후 proof 수락. Unkeyed launch는 기본적으로 custody dispute.",
+          "audio": "누가 응답하는지가 구조의 의미를 결정한다.",
+          "in_game_wiki": "최종 탈출 구성품은 법적, 의료적, 증거적 성격을 동시에 가진다. Quarantine status, receiver identity, payload custody, evidence state가 ascent를 구조, claim capture, public proof 중 무엇으로 만들지 결정한다.",
+          "external_site": "격리 법적 핸드셰이크 조립체는 extraction을 의도적으로 더럽게 만든다. 작동하는 엔진도 생존자를 corporate custody, 지연된 공공 진실, 또는 해결되지 않은 격리로 데려갈 수 있다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "HE LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "HE LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "HE LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "HE LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "HE LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "HE LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "מכלול לחיצת יד חוקית של הסגר",
+          "scanner": "שקע handshake. הקפסולה יכולה להיות מוכנה מכנית ועדיין להשתייך ל-receiver הלא נכון.",
+          "field_note": "הרכיב האחרון אינו מתכת. זה שם המערכת שמותר לה לקרוא לך recovered.",
+          "terminal": "RECOVERY HANDSHAKE: נדרש receiver key. Keelmark מקבלת mass ו-lien. Recovery Compliance מקבלת coordinates ו-quarantine status. Public ledger מקבל proof לאחר עיכוב. Unkeyed launch הופך כברירת מחדל ל-custody dispute.",
+          "audio": "מי שעונה מחליט מה משמעות חילוץ.",
+          "in_game_wiki": "רכיב הבריחה האחרון הוא משפטי, רפואי וראייתי בו זמנית. Quarantine status, receiver identity, payload custody ו-evidence state מחליטים אם ascent הופך לחילוץ, claim capture או public proof.",
+          "external_site": "מכלול לחיצת היד החוקית של ההסגר עושה את extraction מלוכלך בכוונה: מנוע עובד עדיין יכול למסור את השורד ל-corporate custody, אמת ציבורית מעוכבת או הסגר לא פתור."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "PT LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "PT LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "PT LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "PT LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "PT LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "PT LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "Conjunto de Handshake Legal de Quarentena",
+          "scanner": "Soquete de handshake. A cápsula pode estar mecanicamente pronta e ainda pertencer ao receiver errado.",
+          "field_note": "O último componente não é metal. É o nome do sistema autorizado a chamar você de recovered.",
+          "terminal": "RECOVERY HANDSHAKE: receiver key exigida. Keelmark aceita mass e lien. Recovery Compliance aceita coordinates e quarantine status. Public ledger aceita proof após atraso. Unkeyed launch vira custody dispute por padrão.",
+          "audio": "Quem responde decide o que resgate significa.",
+          "in_game_wiki": "O componente final de fuga é legal, médico e evidencial ao mesmo tempo. Quarantine status, receiver identity, payload custody e evidence state decidem se ascent vira resgate, claim capture ou public proof.",
+          "external_site": "O Conjunto de Handshake Legal de Quarentena torna extraction deliberadamente suja: um motor funcional ainda pode entregar o sobrevivente a corporate custody, verdade pública atrasada ou quarentena sem resolução."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Quarantine Legal Handshake Assembly",
-          "scanner": "NL LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.",
-          "terminal": "NL LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
-          "audio": "NL LOC HOLD: The last part is not metal. It is who gets to call you recovered.",
-          "in_game_wiki": "NL LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
-          "external_site": "NL LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
-          "field_note": "NL LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means."
+          "title": "Quarantaine-juridische handshakeassemblage",
+          "scanner": "Handshake-socket. De capsule kan mechanisch klaar zijn en toch bij de verkeerde receiver horen.",
+          "field_note": "Het laatste onderdeel is geen metaal. Het is de naam van het systeem dat jou recovered mag noemen.",
+          "terminal": "RECOVERY HANDSHAKE: receiver key vereist. Keelmark accepteert mass en lien. Recovery Compliance accepteert coordinates en quarantine status. Public ledger accepteert proof na vertraging. Unkeyed launch wordt standaard custody dispute.",
+          "audio": "Wie antwoordt, beslist wat redding betekent.",
+          "in_game_wiki": "Het laatste ontsnappingsonderdeel is juridisch, medisch en bewijsgerelateerd tegelijk. Quarantine status, receiver identity, payload custody en evidence state bepalen of ascent redding, claim capture of public proof wordt.",
+          "external_site": "De Quarantaine-juridische handshakeassemblage maakt extraction bewust vuil: een werkende motor kan de overlevende nog steeds afleveren in corporate custody, vertraagde publieke waarheid of onopgeloste quarantaine."
         }
       }
     }

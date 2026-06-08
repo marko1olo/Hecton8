@@ -59,6 +59,8 @@ public class HectonPlayerSpawner : MonoBehaviour
     private const float SpawnSearchTwoPi = 6.2831853071795864769f;
     private const float NearshoreDiagonal = 0.70710678118f;
     private const uint KccVelocitySpawnerMaxAgeFrames = 12u;
+    private const float DefaultWaterLevel = 14.02f;
+    private const float DefaultMaxSpawnDepthMeters = 100f;
     private const string ProductionPlayerPrefabGuid = "1c4db7a430141e5408e01b6ce4ed19d7";
 
     // COLD ALLOC: float[1024] — spawn spiral trigonometry lookup — owner: HectonPlayerSpawner
@@ -120,10 +122,10 @@ public class HectonPlayerSpawner : MonoBehaviour
 
     [Header("=== Water Settings ===")]
     [Tooltip("Sea level in world-space Y.")]
-    [SerializeField] private float waterLevel = 4900f;
+    [SerializeField] private float waterLevel = DefaultWaterLevel;
 
     [Tooltip("Minimum valid sea floor height under water.")]
-    [SerializeField] private float minSeaFloorHeight = 4800f;
+    [SerializeField] private float minSeaFloorHeight = DefaultWaterLevel - DefaultMaxSpawnDepthMeters;
 
     // ══════════════════════════════════════════════════════════════
     // Inspector: ground probe settings
@@ -371,6 +373,8 @@ public class HectonPlayerSpawner : MonoBehaviour
 #endif
             return;
         }
+
+        RefreshWaterSurfaceFromTerrainBridge();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         LogSpawner("[HectonPlayerSpawner] Starting safe spawn point search.");
@@ -782,13 +786,47 @@ public class HectonPlayerSpawner : MonoBehaviour
         return true;
     }
 
-    private static bool TryResolveCachedTerrainHeight(float x, float z, out float groundY)
+        private static bool TryResolveCachedTerrainHeight(float x, float z, out float groundY)
+        {
+            groundY = 0f;
+            HectonMapMagicVegetationBridge vegetationBridge = null;
+            return WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge) &&
+                   vegetationBridge.TryGetCachedTerrainHeight(x, z, out groundY) &&
+                   float.IsFinite(groundY);
+        }
+
+    private void RefreshWaterSurfaceFromTerrainBridge()
     {
-        groundY = 0f;
-        HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-        return vegetationBridge != null &&
-               vegetationBridge.TryGetCachedTerrainHeight(x, z, out groundY) &&
-               float.IsFinite(groundY);
+        MapMagicBridge terrainBridge = null;
+        if (!WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref terrainBridge) ||
+            !TryResolveWaterLevel(terrainBridge.WaterSurfaceLevel, out float terrainWaterLevel))
+        {
+            return;
+        }
+
+        float previousWaterLevel = TryResolveWaterLevel(waterLevel, out float resolvedPreviousWaterLevel)
+            ? resolvedPreviousWaterLevel
+            : DefaultWaterLevel;
+        float spawnDepthWindow = previousWaterLevel - minSeaFloorHeight;
+        if (!math.isfinite(spawnDepthWindow) || spawnDepthWindow <= 0f || spawnDepthWindow > 1000f)
+            spawnDepthWindow = DefaultMaxSpawnDepthMeters;
+
+        waterLevel = terrainWaterLevel;
+        minSeaFloorHeight = waterLevel - spawnDepthWindow;
+    }
+
+    private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)
+    {
+        if (math.isfinite(candidateWaterLevel) &&
+            math.abs(candidateWaterLevel) > 0.0001f &&
+            math.abs(candidateWaterLevel) <= 1000f)
+        {
+            waterLevel = candidateWaterLevel;
+            return true;
+        }
+
+        waterLevel = DefaultWaterLevel;
+        return false;
     }
 
     private static IPlayerRuntimeContext ResolveProductionPlayerContext()

@@ -284,6 +284,29 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Clears event-sourced PDA log hashes before save/load replaces the journal source of truth.
+        /// </summary>
+        internal static void ClearPDALogEventHistory()
+        {
+            EnsureInitialized();
+            for (int i = 0; i < _pdaLogEventHashes.Length; i++)
+                _pdaLogEventHashes[i] = 0u;
+
+            for (int i = 0; i < _pdaLogEventTimestamps.Length; i++)
+                _pdaLogEventTimestamps[i] = 0f;
+
+            _pdaLogWriteIndex = 0;
+            _pdaLogCount = 0;
+
+            UIStateData state = _states[(int)UIStateSlot.PDA];
+            CapturePDAStateSnapshot(in state);
+            state.Version++;
+            state.LogEntryCount = 0u;
+            state.LatestLogEventHash = 0u;
+            _states[(int)UIStateSlot.PDA] = state;
+        }
+
+        /// <summary>
         /// Appends one event-sourced PDA log hash into the fixed native ring.
         /// </summary>
         internal static void AppendPDALogEventHash(uint eventHash)
@@ -461,6 +484,14 @@ namespace Hecton8.Core
             UIStateData current = _states[(int)UIStateSlot.PDA];
             restored.Version = current.Version + 1u;
             restored.CommandSequence = current.CommandSequence + 1u;
+            for (int i = 0; i < _pdaLogEventHashes.Length; i++)
+                _pdaLogEventHashes[i] = 0u;
+            for (int i = 0; i < _pdaLogEventTimestamps.Length; i++)
+                _pdaLogEventTimestamps[i] = 0f;
+            _pdaLogWriteIndex = 0;
+            _pdaLogCount = 0;
+            restored.LogEntryCount = 0u;
+            restored.LatestLogEventHash = 0u;
             _states[(int)UIStateSlot.PDA] = restored;
             return true;
         }

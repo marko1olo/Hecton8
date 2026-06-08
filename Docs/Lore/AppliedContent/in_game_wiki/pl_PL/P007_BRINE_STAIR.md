@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Schody solankowe
 
-Warstwy solanki zachowują, ukrywają, niosą i rozdzielają. Trasa niemożliwa w otwartej wodzie może być przeżywalna dzięki gęstości, ciepłu i balastowi.
+Schody solankowe powstają tam, gdzie gęsta słona woda, ciepło kominów i wolny przepływ basenu układają się w ostre granice. Dla nieuważnego pilota to niewidzialne ściany: wypór reaguje późno, sonar się ugina, światła rozmazują, a zejście może stać się poślizgiem. Dla uważnego pilota to trasy. Pojazd podwodny może jechać jedną warstwą, przebić inną, ukryć się pod kurtyną albo użyć nośności cieplnej, by przekroczyć lukę, której otwarta woda nie pozwoliłaby pokonać. Warstwy zachowują też wraki i ślady biologiczne z okrutną cierpliwością. Ciała, skrzynie narzędzi, kasety próbek i stare drony mogą latami leżeć w tym samym niezmieszanym stopniu. Schody solankowe uczą centralnej zasady HECTON-8: głębokość negocjuje się ze strukturą oceanu, a nie zdobywa samą siłą kadłuba.
 
 ## Scanner
 
-Warstwa solanki o dużej gęstości. Echo sonaru załamuje się na granicy. Model wyporu zawodny.
+Warstwa solanki o wysokiej gęstości. Sonar ugina się na granicy; reakcja balastu opóźniona. Pióropusz cieplny wznosi się przez schodkowe ścinanie.
 
 ## Terminal
 
-Wyrównanie ujęcia termicznego zakończone. Wzrost substratu ponad normę. Żądanie Atlas odroczone.
+UJĘCIE TERMICZNE WYRÓWNANE. STOPIEŃ GĘSTOŚCI ZMAPOWANY. WZROST SUBSTRATU POWYŻEJ PROGNOZY. ŻĄDANIE TRASY ATLAS ODROCZONE PRZEZ OPERATIONS.
 
 ## Audio
 
-Tu na dole są całe schody, jeśli przestaniesz traktować wodę jak jedną rzecz.
+Tu na dole są schody. Zrobione z soli, ciepła i cierpliwości.
 
 ## Field Note
 
-Klasa kadłuba mówi, kiedy metal się podda. Solanka mówi, kiedy byłeś arogancki.
+Klasa kadłuba mówi, kiedy metal się podda. Solanka mówi, kiedy potraktowałeś ocean jak płaski.
 
 <!-- In-Game Wiki; generated from P007_BRINE_STAIR/pl_PL. -->

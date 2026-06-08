@@ -7,34 +7,34 @@ poi_tags: poi.pressure_glass_vein;poi.blue_debt_casket
 biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Vorming van Drukglas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Vorming van Drukglas
 
-NL LOC HOLD: Pressure glass is the technical field name behind Marauder blue debt and Deep Reach Xenon-Omega language. It forms where pressure, noble-gas pockets, brine, minerals, heat and altered biology meet. Good samples are valuable because they stay stable under conditions normal industry cannot tolerate.
+Drukglas is de technische naam achter Marauder blue debt en Deep Reachs Xenon-Omega-taal. Het vormt waar druk, edelgaszakken, pekel, mineralen, warmte en veranderde biologie samenkomen.
 
 ## Scanner
 
-NL LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
+Blauw schuldrooster. Edelgas, pekel, mineraaldefecten en drukgeschiedenis opgesloten in één dure fout.
 
 ## Terminal
 
-NL LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
+XO CONTINUITY SUBSTRATE: xenonrijk clathraat-/defectrooster gestabiliseerd door pekelchemie, thermische cycli en biologisch katalysatorresidu. Drukverliesrisico: signaaldrift, breuk en contaminatiebloei.
 
 ## Audio
 
-NL LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
+Daarom kwamen ze terug. Niet goud. Een machineleesbaar litteken.
 
 ## Field Note
 
-NL LOC HOLD: It is not ore. It is a process that remembers where it was made.
+Het is geen erts. Het is een proces dat onthoudt waar het gemaakt werd.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/nl_NL. -->

@@ -9,24 +9,24 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "UK LOC HOLD: Aegir Route and Ships"
+title: "Маршрут Aegir і кораблі"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Aegir Route and Ships
+# Маршрут Aegir і кораблі
 
-UK LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegir досить близький, щоб його експлуатувати, і досить далекий, щоб його покинути. Жоден надсвітловий двигун не перетинає цю прірву, і жоден ansible не несе накази поперед фізики. Кожне повідомлення, контракт і запит на порятунок проходять через затримку: пакети зондів, опіку ретрансляторів, розклади променів, пелетно-термоядерний вантаж, перехідні вікна і погоду, байдужу до людської терміновості.
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+Першим трафіком Aegir були не люди. Голчасті зонди нанесли на карту систему теплого карлика й повернули досить даних про мінерали, радіацію та орбіти, щоб виправдати важчі інвестиції. Потім прийшли пакети променевих вітрил, повільніший вантаж і маса seed-ship, якій треба було гальмувати в інфраструктурній мережі, спланованій за роки до того, як робітник побачив океан. Коли Deep Reach дісталася HECTON-8, маршрут уже належав інституціям: перевізникам, страховикам, офісам доменів, reclamation pool і компаніям, які вміють ховати власника за назвами.
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+Black Keel живе всередині цієї неоднозначності. Це не військовий корабель і не служба порятунку. Це платформа претензій із доковою масою, тендерами, борговими книгами і владою salvage. Ланцюг контрактів дозволяє Deep Reach тиснути, не виглядаючи рукою просто на люку. Корабель може витягти людину, зразок або запечатаний вантаж лише тоді, коли маса, погода, орбіта, тепловий запас і опіка збігаються.
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+Пошкоджений bathydrop стає справжньою межею. Удар під час спуску може лишити оболонку придатною для виживання, але знищити допуски підйому: стиск ущільнень, акустичний відгук, таблиці наведення, буфер енергії і карантинне рукостискання. Капсула стає прихистком і доказом одночасно: вона підтверджує прибуття, але не втечу.
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+У системі Aegir відстань не фон. Це причина, чому допомога спершу приходить як документи, і лише потім як залізо.
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/uk_UA. -->

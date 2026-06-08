@@ -3,38 +3,22 @@ packet_id: P053_MARAUDER_GRAFFITI_MASKS
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
 unlock_id: unlock.first_marauder_graffiti_masks
-poi_tags: poi.graffiti_mask;poi.pressure_arrow
-biome_tags: biome.scrap_canyon;biome.marauder_route
+poi_tags: poi.graffiti_mask;poi.scavenger_route
+biome_tags: biome.service_corridor;biome.salvage_route
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Graffiti Masks"
+title: "Máscaras de grafite marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Marauder Graffiti Masks
+# Máscaras de grafite marauder
 
-PT-BR LOC HOLD: Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism.
-
-## Scanner
-
-PT-BR LOC HOLD: The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
-
-## Terminal
-
-PT-BR LOC HOLD: MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
-
-## Audio
-
-PT-BR LOC HOLD: They made a language that looks like vandalism to the company.
-
-## Field Note
-
-PT-BR LOC HOLD: Bad paint. Good map.
+Os marauders de HECTON-8 não são uma facção sem rosto de saqueadores. São trabalhadores, corredores de dívida, contratados abandonados e equipes de salvage que aprenderam a escrever nas paredes porque todo canal limpo podia ser vigiado ou cobrado. O grafite deles é feio de propósito: rápido para pintar sob estresse, claro através da condensação e ambíguo o bastante para parecer pânico ou vandalismo. Um anel preto não é decoração. Significa que a transportadora pode ouvir você. Uma seta quebrada não é desenho ruim. Significa que o corredor mudou desde a última passagem segura.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/pt_BR. -->

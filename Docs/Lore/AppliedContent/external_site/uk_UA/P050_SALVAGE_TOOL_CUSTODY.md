@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.deep_colony
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Salvage Tool Custody"
+spoiler_tier: 1
+title: "Опіка salvage-інструмента"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Salvage Tool Custody
+# Опіка salvage-інструмента
 
-Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder.
+На HECTON-8 інструмент може бути спорядженням виживання і контрактним свідком одночасно. Журнали salvage-опіки зв’язують різи, ремонти й зразки з claim-токенами, роблячи корисну дію частиною майбутніх доказів, боргу або тиску виплати.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Док інструмента містить запечатаний журнал опіки. Останній різ, ремонт і мішок зразка прив’язані до claim-токена Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: використання різака прийнято під salvage claim. Ремонтну дію засвідчено. Права на зразок прив’язані до токена Keelmark Mutual. Експорт доказів конфліктує з маршрутом матеріальної виплати.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Кожен корисний різ залишає свідка.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Різак може врятувати повітря і продати твої руки одним рухом. Перевір, що він записує, перш ніж назвати його своїм.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/uk_UA. -->

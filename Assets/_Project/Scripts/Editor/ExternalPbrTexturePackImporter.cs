@@ -9,6 +9,8 @@ namespace Hecton8.EditorTools
     {
         private const string PolyHavenManifestPath = "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/PolyHavenExternalPBR_Manifest.json";
         private const string GeminiAtlasRoot = "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases";
+        private const string GeminiSingleManifestPath = "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json";
+        private const string GeminiBiomeManifestPath = "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json";
         private const string MaterialRoot = "Assets/_Project/Art/Materials/Generated/ExternalPBR_20260607";
 
         [MenuItem("Hecton8/Art/Import External PBR Texture Packs")]
@@ -25,6 +27,8 @@ namespace Hecton8.EditorTools
             int materials = 0;
 
             imported += ImportManifest(PolyHavenManifestPath, "PolyHaven", ref materials);
+            imported += ImportManifest(GeminiSingleManifestPath, "GeminiSingles_20260607", ref materials);
+            imported += ImportManifest(GeminiBiomeManifestPath, "GeminiBiome_20260607", ref materials);
             imported += ImportGeminiAtlases(ref materials);
 
             AssetDatabase.SaveAssets();
@@ -34,15 +38,16 @@ namespace Hecton8.EditorTools
 
         private static int ImportGeminiAtlases(ref int materials)
         {
-            if (!Directory.Exists(GeminiAtlasRoot))
-                return 0;
+            string resolvedAtlasRoot = ResolveProjectFilePath(GeminiAtlasRoot);
+            if (!Directory.Exists(resolvedAtlasRoot))
+                throw new InvalidOperationException($"[ExternalPbrTexturePackImporter] Missing Gemini atlas root: {GeminiAtlasRoot}");
 
             int imported = 0;
-            string[] manifests = Directory.GetFiles(GeminiAtlasRoot, "GeminiMaterialAtlas_Manifest.json", SearchOption.AllDirectories);
+            string[] manifests = Directory.GetFiles(resolvedAtlasRoot, "GeminiMaterialAtlas_Manifest.json", SearchOption.AllDirectories);
             Array.Sort(manifests, StringComparer.Ordinal);
             for (int i = 0; i < manifests.Length; i++)
             {
-                string manifestPath = manifests[i].Replace("\\", "/");
+                string manifestPath = NormalizeAssetPath(manifests[i]);
                 string batchName = Path.GetFileName(Path.GetDirectoryName(manifestPath));
                 string providerName = "Gemini_" + SanitizeProviderName(batchName);
                 imported += ImportManifest(manifestPath, providerName, ref materials);
@@ -53,15 +58,13 @@ namespace Hecton8.EditorTools
 
         private static int ImportManifest(string manifestPath, string providerName, ref int materials)
         {
-            if (!File.Exists(manifestPath))
-            {
-                Debug.LogWarning($"[ExternalPbrTexturePackImporter] Missing manifest: {manifestPath}");
-                return 0;
-            }
+            string resolvedManifestPath = ResolveProjectFilePath(manifestPath);
+            if (!File.Exists(resolvedManifestPath))
+                throw new InvalidOperationException($"[ExternalPbrTexturePackImporter] Missing manifest: {manifestPath}");
 
-            ExternalPbrManifest manifest = JsonUtility.FromJson<ExternalPbrManifest>(File.ReadAllText(manifestPath));
+            ExternalPbrManifest manifest = JsonUtility.FromJson<ExternalPbrManifest>(File.ReadAllText(resolvedManifestPath));
             if (manifest == null || manifest.assets == null)
-                return 0;
+                throw new InvalidOperationException($"[ExternalPbrTexturePackImporter] Invalid manifest payload: {manifestPath}");
 
             EnsureFolder($"{MaterialRoot}/{providerName}");
 
@@ -70,38 +73,51 @@ namespace Hecton8.EditorTools
             {
                 ExternalPbrAsset asset = manifest.assets[i];
                 if (asset == null || asset.maps == null || string.IsNullOrWhiteSpace(asset.id))
-                    continue;
+                    throw new InvalidOperationException($"[ExternalPbrTexturePackImporter] Invalid material asset entry in {manifestPath} at index {i}");
 
-                imported += ImportTexture(asset.maps.BaseColor, TextureImporterType.Default, true);
-                imported += ImportTexture(asset.maps.NormalGL, TextureImporterType.NormalMap, false);
-                imported += ImportTexture(asset.maps.MaskMap_UnityURP, TextureImporterType.Default, false);
-                imported += ImportTexture(asset.maps.Height, TextureImporterType.Default, false);
-                imported += ImportTexture(asset.maps.ARM_AO_Rough_Metal, TextureImporterType.Default, false);
-                imported += ImportTexture(asset.maps.Roughness, TextureImporterType.Default, false);
-                imported += ImportTexture(asset.maps.AO, TextureImporterType.Default, false);
-                imported += ImportTexture(asset.maps.Metalness, TextureImporterType.Default, false);
+                imported += ImportRequiredTexture(asset.maps.BaseColor, TextureImporterType.Default, true, asset.id, "BaseColor");
+                imported += ImportRequiredTexture(asset.maps.NormalGL, TextureImporterType.NormalMap, false, asset.id, "NormalGL");
+                imported += ImportRequiredTexture(asset.maps.MaskMap_UnityURP, TextureImporterType.Default, false, asset.id, "MaskMap_UnityURP");
+                imported += ImportRequiredTexture(asset.maps.Height, TextureImporterType.Default, false, asset.id, "Height");
+                imported += ImportRequiredTexture(asset.maps.ARM_AO_Rough_Metal, TextureImporterType.Default, false, asset.id, "ARM_AO_Rough_Metal");
+                imported += ImportOptionalTexture(asset.maps.Roughness, TextureImporterType.Default, false, asset.id, "Roughness");
+                imported += ImportOptionalTexture(asset.maps.AO, TextureImporterType.Default, false, asset.id, "AO");
+                imported += ImportOptionalTexture(asset.maps.Metalness, TextureImporterType.Default, false, asset.id, "Metalness");
 
-                if (CreateMaterial(providerName, asset))
-                    materials++;
+                CreateMaterial(providerName, asset);
+                materials++;
             }
 
             return imported;
         }
 
-        private static int ImportTexture(string assetPath, TextureImporterType textureType, bool sRgb)
+        private static int ImportRequiredTexture(string assetPath, TextureImporterType textureType, bool sRgb, string materialId, string mapKey)
+        {
+            assetPath = NormalizeAssetPath(assetPath);
+            if (string.IsNullOrWhiteSpace(assetPath))
+                throw new InvalidOperationException($"[ExternalPbrTexturePackImporter] Missing required texture map {mapKey} for {materialId}");
+
+            return ImportTexture(assetPath, textureType, sRgb, materialId, mapKey);
+        }
+
+        private static int ImportOptionalTexture(string assetPath, TextureImporterType textureType, bool sRgb, string materialId, string mapKey)
         {
             assetPath = NormalizeAssetPath(assetPath);
             if (string.IsNullOrWhiteSpace(assetPath))
                 return 0;
-            if (!File.Exists(assetPath))
-            {
-                Debug.LogWarning($"[ExternalPbrTexturePackImporter] Missing texture: {assetPath}");
-                return 0;
-            }
+
+            return ImportTexture(assetPath, textureType, sRgb, materialId, mapKey);
+        }
+
+        private static int ImportTexture(string assetPath, TextureImporterType textureType, bool sRgb, string materialId, string mapKey)
+        {
+            assetPath = NormalizeAssetPath(assetPath);
+            if (!File.Exists(ResolveProjectFilePath(assetPath)))
+                throw new InvalidOperationException($"[ExternalPbrTexturePackImporter] Missing texture map {mapKey} for {materialId}: {assetPath}");
 
             TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
             if (importer == null)
-                return 0;
+                throw new InvalidOperationException($"[ExternalPbrTexturePackImporter] Missing TextureImporter for {mapKey} {materialId}: {assetPath}");
 
             importer.textureType = textureType;
             importer.sRGBTexture = sRgb;
@@ -111,31 +127,43 @@ namespace Hecton8.EditorTools
             importer.textureCompression = TextureImporterCompression.CompressedHQ;
             importer.maxTextureSize = 2048;
             importer.alphaIsTransparency = false;
+            TextureImporterFormat standaloneFormat = textureType == TextureImporterType.NormalMap
+                ? TextureImporterFormat.BC5
+                : TextureImporterFormat.BC7;
+            SetPlatformSettings(importer, "Standalone", 2048, standaloneFormat);
+            SetPlatformSettings(importer, "Android", 2048, TextureImporterFormat.ASTC_6x6);
+            SetPlatformSettings(importer, "iPhone", 2048, TextureImporterFormat.ASTC_6x6);
             importer.SaveAndReimport();
             return 1;
         }
 
-        private static bool CreateMaterial(string providerName, ExternalPbrAsset asset)
+        private static void SetPlatformSettings(
+            TextureImporter importer,
+            string platform,
+            int maxTextureSize,
+            TextureImporterFormat format)
         {
-            Texture2D baseColor = LoadTexture(asset.maps.BaseColor);
-            Texture2D normal = LoadTexture(asset.maps.NormalGL);
-            Texture2D maskMap = LoadTexture(asset.maps.MaskMap_UnityURP);
-            Texture2D arm = LoadTexture(asset.maps.ARM_AO_Rough_Metal);
-            Texture2D height = LoadTexture(asset.maps.Height);
-            if (baseColor == null || normal == null || maskMap == null)
-            {
-                Debug.LogWarning($"[ExternalPbrTexturePackImporter] Cannot create material for {providerName}/{asset.id}: missing base, normal, or mask map.");
-                return false;
-            }
+            TextureImporterPlatformSettings settings = importer.GetPlatformTextureSettings(platform);
+            settings.overridden = true;
+            settings.maxTextureSize = maxTextureSize;
+            settings.format = format;
+            settings.textureCompression = TextureImporterCompression.CompressedHQ;
+            settings.compressionQuality = 100;
+            importer.SetPlatformTextureSettings(settings);
+        }
+
+        private static void CreateMaterial(string providerName, ExternalPbrAsset asset)
+        {
+            Texture2D baseColor = RequireTexture(asset.maps.BaseColor, providerName, asset.id, "BaseColor");
+            Texture2D normal = RequireTexture(asset.maps.NormalGL, providerName, asset.id, "NormalGL");
+            Texture2D maskMap = RequireTexture(asset.maps.MaskMap_UnityURP, providerName, asset.id, "MaskMap_UnityURP");
+            Texture2D height = RequireTexture(asset.maps.Height, providerName, asset.id, "Height");
 
             Shader shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null)
                 shader = Shader.Find("Standard");
             if (shader == null)
-            {
-                Debug.LogWarning("[ExternalPbrTexturePackImporter] No supported Lit shader found.");
-                return false;
-            }
+                throw new InvalidOperationException("[ExternalPbrTexturePackImporter] No supported Lit shader found.");
 
             string materialPath = $"{MaterialRoot}/{providerName}/MAT_EXT_{providerName}_{asset.id}.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
@@ -153,7 +181,7 @@ namespace Hecton8.EditorTools
             SetTextureIfPresent(material, "_MainTex", baseColor);
             SetTextureIfPresent(material, "_BumpMap", normal);
             SetTextureIfPresent(material, "_MetallicGlossMap", maskMap);
-            SetTextureIfPresent(material, "_OcclusionMap", arm);
+            SetTextureIfPresent(material, "_OcclusionMap", maskMap);
             SetTextureIfPresent(material, "_ParallaxMap", height);
             SetTextureScaleIfPresent(material, "_BaseMap", TilingScale(asset));
             SetTextureScaleIfPresent(material, "_MainTex", TilingScale(asset));
@@ -169,11 +197,10 @@ namespace Hecton8.EditorTools
             SetFloatIfPresent(material, "_Parallax", HeightScale(asset));
             SetKeyword(material, "_NORMALMAP", normal != null);
             SetKeyword(material, "_METALLICSPECGLOSSMAP", maskMap != null);
-            SetKeyword(material, "_OCCLUSIONMAP", arm != null);
+            SetKeyword(material, "_OCCLUSIONMAP", maskMap != null);
             SetKeyword(material, "_PARALLAXMAP", height != null);
             material.enableInstancing = true;
             EditorUtility.SetDirty(material);
-            return true;
         }
 
         private static Texture2D LoadTexture(string assetPath)
@@ -182,9 +209,28 @@ namespace Hecton8.EditorTools
             return string.IsNullOrWhiteSpace(assetPath) ? null : AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
         }
 
+        private static Texture2D RequireTexture(string assetPath, string providerName, string materialId, string mapKey)
+        {
+            Texture2D texture = LoadTexture(assetPath);
+            if (texture == null)
+                throw new InvalidOperationException($"[ExternalPbrTexturePackImporter] Cannot create material for {providerName}/{materialId}: missing {mapKey} map source={NormalizeAssetPath(assetPath)}");
+
+            return texture;
+        }
+
         private static string NormalizeAssetPath(string path)
         {
             return string.IsNullOrWhiteSpace(path) ? string.Empty : path.Replace("\\", "/").Trim();
+        }
+
+        private static string ResolveProjectFilePath(string assetOrFilePath)
+        {
+            string normalized = NormalizeAssetPath(assetOrFilePath);
+            if (string.IsNullOrWhiteSpace(normalized) || Path.IsPathRooted(normalized))
+                return normalized;
+
+            string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+            return Path.Combine(projectRoot, normalized);
         }
 
         private static void SetTextureIfPresent(Material material, string property, Texture texture)

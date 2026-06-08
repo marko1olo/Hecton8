@@ -7,34 +7,34 @@ poi_tags: poi.relay_packet_delay_meter;poi.legal_reply_timestamp
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Relay Message Lag"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Opóźnienie wiadomości przekaźnikowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# Opóźnienie wiadomości przekaźnikowych
 
-PL LOC HOLD: Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.
+Opóźnienie przekaźnika pozwala Deep Reach grozić graczowi bez żywego głosu w pokoju. Maszyny kontraktowe, notariusze, okna roszczeń i klauzule nośnika mogą dotrzeć przed współczuciem, bo napisano je wcześniej, ustawiono w kolejce wcześniej i wyceniono pod przetrwanie dystansu.
 
 ## Scanner
 
-PL LOC HOLD: A message can be legally binding and still arrive too late to save air.
+Wiadomość może być prawnie wiążąca i nadal przyjść za późno, by ocalić powietrze.
 
 ## Terminal
 
-PL LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
+OPÓŹNIENIE PRZEKAŹNIKA: lokalne wiadomości Aegir mogą iść godziny lub dni. Pakiety prawne między domenami mogą iść lata. Presja Deep Reach jest stara, zautomatyzowana, kontraktowa i nadal groźna.
 
 ## Audio
 
-PL LOC HOLD: The reply is late. The lien is current.
+Odpowiedź jest spóźniona. Zastaw jest aktualny.
 
 ## Field Note
 
-PL LOC HOLD: No ansible means truth moves as freight.
+Brak ansibla oznacza, że prawda porusza się jak fracht.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/pl_PL. -->

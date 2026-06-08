@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ladder"
+title: "Drabina księżyców Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ladder
+# Drabina księżyców Aegir
 
-PL LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit.
+Drabina księżyców Aegir daje HECTON-8 użyteczną lokalną astronomię: inne księżyce tłumaczą okna tras, martwe claims, plotki salvage i spóźniony odzysk.
 
 ## Scanner
 
-PL LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.
+Mapa drabiny księżyców. HECTON-8 to działające zagrożenie w ruchomym systemie, nie odizolowany poziom.
 
 ## Terminal
 
-PL LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+GŁÓWNE KSIĘŻYCE AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Model transfer i eclipse dołączony.
 
 ## Audio
 
-PL LOC HOLD: The map has more moons than mercy.
+Mapa ma więcej księżyców niż litości.
 
 ## Field Note
 
-PL LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.
+Skarn pali. Vela zrzuca lód. Anvil karmi metalem. Kestrel tnie przekaźniki. HECTON tonie.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/pl_PL. -->

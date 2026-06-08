@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Final Question: Public Truth, Lost Control"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Final Question Public Truth Lost Control
+# Final Question: Public Truth, Lost Control
 
-Final Question Public Truth Lost Control defines the public ledger ending pressure.
+A public leak must not be written as a magic justice button. In HECTON-8, information travels farther than ships and arrives before help. Once the proof leaves the basin, it can indict Deep Reach, force Black Keel to answer, wake Sol Core regulators and give families something harder than rumor. Those are real victories.
 
-## Scanner
-
-Publishing truth prevents erasure but removes player control over consequences.
-
-## Terminal
-
-PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
-
-## Audio
-
-Truth leaves your hand faster than rescue ever could.
-
-## Field Note
-
-Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+The leak also creates a feeding event. Markets price blue debt. Domain courts freeze routes. Private cults turn Atlas into scripture. Competitors race for coordinates. Rescue becomes politically necessary and operationally chaotic. The player has chosen truth over control, and the game should honor both halves of that choice.
 
 <!-- External Site; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/en_US. -->

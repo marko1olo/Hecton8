@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Name Lock Policy"
+title: "Rejestr ról księżyców Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Name Lock Policy
+# Rejestr ról księżyców Aegir
 
-PL LOC HOLD: Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed.
+Rejestr ról księżyców Aegir zapisuje, dlaczego publiczne nazwy mogą dryfować, a praca orbitalna zostaje stała: maskowanie przekaźników, wymuszenie pływowe, plotka kwarantanny i ruch wysokich okien decydują, kto może się ruszyć.
 
 ## Scanner
 
-PL LOC HOLD: Moon labels can change; orbital roles cannot.
+Publiczne nazwy dryfują między mapami; orbity dalej wykonują swoją pracę.
 
 ## Terminal
 
-PL LOC HOLD: ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.
+REJESTR ATLAS: publiczne etykiety różnią się według ubezpieczyciela i mapy trasy. Role funkcjonalne zostają stałe: ścinanie promieniowania, maska przekaźnika, wymuszenie pływowe, rozpraszanie lodu, trasy publiczne, plotka kwarantanny, przemysłowy salvage, ruch wysokich okien, głębokie roszczenie i ekonomia martwych boi.
 
 ## Audio
 
-PL LOC HOLD: A name can be repainted. An orbit keeps the bill.
+Księżyc można przemianować. Orbita i tak wystawi rachunek.
 
 ## Field Note
 
-PL LOC HOLD: Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.
+Skarn tnie cząstki. Vela maskuje przekaźniki. Claw rzuca lodem. Lumen drukuje trasy. Thorne niesie plotki o kwarantannie. Anvil karmi salvage. Kestrel trzyma wysokie okna. HECTON przechowuje głębokie roszczenie. Mute sprzedaje martwe boje.
 
 <!-- External Site; generated from P181_MOON_NAME_LOCK_POLICY/pl_PL. -->

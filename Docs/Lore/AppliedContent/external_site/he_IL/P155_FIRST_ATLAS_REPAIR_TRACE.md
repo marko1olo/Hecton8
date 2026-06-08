@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: First Atlas Repair Trace"
+title: "עקבת התיקון הראשונה של Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: First Atlas Repair Trace
+# עקבת התיקון הראשונה של Atlas
 
-HE LOC HOLD: The first repair trace keeps shallow beauty intact while showing the deeper threat: Atlas can fix the system and misclassify the person inside it.
+עקבת התיקון הראשונה משאירה את יופי הרדודים שלם ומראה את האיום העמוק יותר: Atlas יכול לתקן את המערכת ולסווג לא נכון את האדם שבתוכה.
 
 ## Scanner
 
-HE LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+ביופילם תיקון על פצע כבל. החזרות האקוסטיות תואמות קצב תחזוקה של Atlas, לא קוד משואת מושבה.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+עקבת תחזוקת ATLAS: שבר נאטם; רציפות כבל שוחזרה; organic obstruction נשמר כ-pressure-compatible substrate; human ID plate לא סווג כ-retrieval priority.
 
 ## Audio
 
-HE LOC HOLD: Atlas repair complete. Person not in work order.
+תיקון Atlas הושלם. אדם אינו בפקודת העבודה.
 
 ## Field Note
 
-HE LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+הוא אטם את הכבל סביב תג שם. תיקון שימושי. קטגוריה רעה.
 
 <!-- External Site; generated from P155_FIRST_ATLAS_REPAIR_TRACE/he_IL. -->

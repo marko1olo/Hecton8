@@ -8,33 +8,17 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+spoiler_tier: 1
+title: "Transit Rotasi Kru Manusia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# Transit Rotasi Kru Manusia
 
-ID LOC HOLD: Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt.
-
-## Scanner
-
-ID LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
-
-## Terminal
-
-ID LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
-
-## Audio
-
-ID LOC HOLD: By the time home asks where you are, the room has already flooded.
-
-## Field Note
-
-ID LOC HOLD: A frontier worker sells time before they sell labor.
+Transit manusia adalah tempat rute berhenti menjadi abstrak. Pekerja tidak diteleportasi ke Aegir; mereka dijadwalkan, didinginkan, diasuransikan, diindeks, dan diserahkan antarotoritas selama bertahun-tahun. Kontrak menua ke satu arah, orang di dalamnya ke arah lain. Saat kru bangun, pemberi kerja, pemilik liabilitas, dan keadaan darurat yang dilatih bisa sudah berubah.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/id_ID. -->

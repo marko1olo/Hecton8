@@ -72,6 +72,12 @@ namespace Hecton8.Gameplay
         private const float MountableTransportCameraImpactTranslationGain = 0.78f;
         private const float MountableTransportCameraImpactRotationGain = 1.15f;
         private const uint KccVelocityTransportRiderMaxAgeFrames = 12u;
+        private static readonly uint EntanglementNotificationMissWarningHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("MountablePlayerTransport.EntanglementNotificationMiss"));
+        private static readonly uint MountablePlayerTransportContextHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("MountablePlayerTransport"));
+        private static readonly uint EntanglementNotificationContextHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("MountablePlayerTransport.EntanglementNotification"));
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -221,6 +227,7 @@ namespace Hecton8.Gameplay
         private HectonPlayerMotor _riderMotor;
         private HectonPlayerMovement _riderMovement;
         private HectonSurvivalSystem _riderSurvival;
+        private IPlayerRuntimeContext _riderPlayerRuntimeContext;
         private PlayerTransportCoordinator _riderTransportCoordinator;
         private PlayerToolManager _riderToolManager;
         private PlayerInteraction _riderInteraction;
@@ -238,6 +245,7 @@ namespace Hecton8.Gameplay
         private TransportHapticRequest _pendingEntanglementCriticalHaptic;
         private EntanglementStructuralStressRequest _pendingEntanglementStructuralStress;
         private TransportAudioOneShotRequest _pendingTransportOneShotAudio;
+        private int _entanglementNotificationMissCount;
 
         private bool _mounted;
         private bool _transportActive;
@@ -327,6 +335,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>Permanent safe-depth penalty accumulated from micro-fracture threshold crossings.</summary>
         public float PermanentSafeDepthPenaltyMeters => _permanentSafeDepthPenaltyMeters;
+
+        /// <summary>Number of entanglement critical notifications refused by the UI queue since this owner was enabled.</summary>
+        public int EntanglementNotificationMissCount => _entanglementNotificationMissCount;
 
         /// <summary>Current normalized transport integrity.</summary>
         public float TransportIntegrityNormalized => ResolveIntegrityNormalized();
@@ -615,8 +626,13 @@ namespace Hecton8.Gameplay
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= 0.000001f)
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteVector(shiftOffset) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             _previousPlatformPosition -= shiftOffset;
         }
@@ -900,6 +916,7 @@ namespace Hecton8.Gameplay
             _riderTransform.TryGetComponent(out _riderTransportCoordinator);
             _riderTransform.TryGetComponent(out _riderToolManager);
             _riderTransform.TryGetComponent(out _riderInteraction);
+            CacheRiderPlayerRuntimeContext(GlobalRegistry.Player);
 
             return _riderTransform != null &&
                    _riderMovement != null &&
@@ -912,10 +929,36 @@ namespace Hecton8.Gameplay
             _riderMotor = null;
             _riderMovement = null;
             _riderSurvival = null;
+            _riderPlayerRuntimeContext = null;
             _riderTransportCoordinator = null;
             _riderToolManager = null;
             _riderInteraction = null;
             _riderInteractionWasEnabled = false;
+        }
+
+        private void CacheRiderPlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _riderPlayerRuntimeContext = IsRiderPlayerRuntimeContext(playerContext)
+                ? playerContext
+                : null;
+
+            if (_riderPlayerRuntimeContext == null)
+                return;
+
+            HectonPlayerMovement contextMovement = _riderPlayerRuntimeContext.PlayerMovement;
+            if (contextMovement != null)
+                _riderMovement = contextMovement;
+
+            HectonSurvivalSystem contextSurvival = _riderPlayerRuntimeContext.SurvivalSystem;
+            if (contextSurvival != null)
+                _riderSurvival = contextSurvival;
+        }
+
+        private bool IsRiderPlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            return playerContext != null &&
+                   _riderTransform != null &&
+                   ReferenceEquals(playerContext.PlayerTransform, _riderTransform);
         }
 
         private bool HasValidMountedRider()
@@ -970,9 +1013,7 @@ namespace Hecton8.Gameplay
             float hydrodynamicSubmersionFactor = _riderMovement != null
                 ? math.saturate(_riderMovement.WaterImmersionRatio)
                 : 0f;
-            float hydrodynamicDepthMeters = _riderSurvival != null
-                ? math.max(0f, _riderSurvival.Depth)
-                : (_riderMovement != null ? math.max(0f, _riderMovement.CurrentDepth) : 0f);
+            float hydrodynamicDepthMeters = ResolveRiderDepthMeters();
 
             _vehicleMotor.ConfigureHydrodynamicSubmersion(hydrodynamicSubmersionFactor);
             _vehicleMotor.ConfigureHydrodynamicDepth(hydrodynamicDepthMeters);
@@ -1004,10 +1045,12 @@ namespace Hecton8.Gameplay
             if (_vehicleMotor == null || _transportBody == null)
                 return false;
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = null;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
             if (_vehicleMotor.IsEntangled)
             {
-                DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+                DestructibleOrganicManager organicManager = null;
+                WorldRuntimeReferenceUtility.TryResolveDestructibleOrganicManager(ref organicManager);
                 if (organicManager != null && organicManager.AreTrackedFloraDestroyed(_entanglementInstanceUids, _entanglementTrackedCount))
                 {
                     ClearMacroFloraEntanglement();
@@ -1049,7 +1092,8 @@ namespace Hecton8.Gameplay
             if (entanglementScore < entanglementThreshold)
                 return false;
 
-            DestructibleOrganicManager destructibleOrganicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            DestructibleOrganicManager destructibleOrganicManager = null;
+            WorldRuntimeReferenceUtility.TryResolveDestructibleOrganicManager(ref destructibleOrganicManager);
             if (destructibleOrganicManager == null)
                 return false;
 
@@ -1475,8 +1519,7 @@ namespace Hecton8.Gameplay
         {
             if (_riderMotor != null)
             {
-                _riderMotor.MovePosition(targetPosition);
-                _riderMotor.MoveRotation(targetRotation);
+                _riderMotor.MovePose(targetPosition, targetRotation);
                 return;
             }
 
@@ -1980,9 +2023,32 @@ namespace Hecton8.Gameplay
                 (int)math.round(math.abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
                 0,
                 byte.MaxValue);
-            signal.depth = _riderSurvival != null ? math.max(0f, _riderSurvival.Depth) : 0f;
+            signal.depth = ResolveRiderDepthMeters();
             signal.sourceID = DamageSourceIds.MountableTransport;
             return signal;
+        }
+
+        private float ResolveRiderDepthMeters()
+        {
+            IPlayerRuntimeContext playerContext = _riderPlayerRuntimeContext;
+            if (IsRiderPlayerRuntimeContext(playerContext) &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            HectonPlayerMovement movement = _riderMovement;
+            if (movement != null && math.isfinite(movement.CurrentDepth))
+                return math.max(0f, movement.CurrentDepth);
+
+            HectonSurvivalSystem survival = _riderSurvival;
+            if (survival != null && math.isfinite(survival.Depth))
+                return math.max(0f, survival.Depth);
+
+            return 0f;
         }
 
         private static float ResolvePowerChannel(float integrityNormalized)
@@ -2288,6 +2354,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                CacheRiderPlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Input &&
                 serviceSlot != GlobalRegistryServiceSlot.Audio &&
                 serviceSlot != GlobalRegistryServiceSlot.Physics &&
@@ -2324,7 +2396,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -2387,7 +2459,7 @@ namespace Hecton8.Gameplay
             if (_pendingEntanglementCriticalNotification)
             {
                 _pendingEntanglementCriticalNotification = false;
-                NotificationEvents.TryPushCritical(EntanglementCriticalNotification.AsSpan());
+                TryPushEntanglementCriticalNotification();
             }
 
             if (_pendingEntanglementStressHapticDirty)
@@ -2432,6 +2504,28 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void TryPushEntanglementCriticalNotification()
+        {
+            if (NotificationEvents.TryPushCritical(EntanglementCriticalNotification.AsSpan()))
+                return;
+
+            ReportEntanglementNotificationMiss();
+        }
+
+        private void ReportEntanglementNotificationMiss()
+        {
+            _entanglementNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                EntanglementNotificationMissWarningHash,
+                MountablePlayerTransportContextHash ^ EntanglementNotificationContextHash,
+                math.max(1, _entanglementNotificationMissCount));
+        }
+
+        private void ClearEntanglementNotificationDiagnostics()
+        {
+            _entanglementNotificationMissCount = 0;
+        }
+
         private void ClearQueuedEntanglementFeedback()
         {
             _pendingEntanglementStressHapticDirty = false;
@@ -2441,6 +2535,7 @@ namespace Hecton8.Gameplay
             _pendingEntanglementStressHaptic = default;
             _pendingEntanglementCriticalHaptic = default;
             _pendingEntanglementStructuralStress = default;
+            ClearEntanglementNotificationDiagnostics();
         }
 
         private void TryRegisterOriginShiftListener()

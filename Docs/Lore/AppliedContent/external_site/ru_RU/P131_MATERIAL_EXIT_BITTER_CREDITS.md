@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Горькие титры материального выхода"
+title: "Материальный выход: горький расчет"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Горькие титры материального выхода
+# Материальный выход: горький расчет
 
-Горькие титры материального выхода делают salvage-success морально скомпрометированным, но не недействительным.
+Материальный выход должен ощущаться холодно законным. Игрок возвращает материал давления, сохраняет цепочку custody, закрывает учет массы Black Keel через окно вывоза и получает реальное снижение lien. Никакая сирена не объявляет провал; система работает ровно так, как была устроена.
 
-## Scanner
-
-Можно улететь богаче и все равно провалить это место.
-
-## Terminal
-
-MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
-
-## Audio
-
-Счет закрывается раньше имен.
-
-## Field Note
-
-Эта концовка должна быть настоящими титрами, а не fake game over.
+Ущерб находится в том, чего нет в квитанции. Имена пропавших рабочих не сверены, доказательная цепочка неполна, а Deep Reach получает более чистую коммерческую причину вернуться. HECTON-8 не наказывает игрока за профессионализм. Он показывает, сколько стоит профессиональный успех, когда место работы одновременно является могилой.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/ru_RU. -->

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Sensor Tagged Fauna Codex Card"
+title: "传感器标记动物图鉴卡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Sensor Tagged Fauna Codex Card
+# 传感器标记动物图鉴卡
 
-ZH LOC HOLD: Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident.
+传感器标记动物展示了Atlas最程序化的一面。恐怖不是心灵控制，而是旧监测硬件变成身体历史，损坏的维护逻辑又把那具身体当成地图的一部分。
 
 ## Scanner
 
-ZH LOC HOLD: Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+传感器标记动物。旧Deep Reach生物金属tag嵌在伤疤、壳或生长环里。弱Atlas路线回声；动物意图未确认。
 
 ## Terminal
 
-ZH LOC HOLD: SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+样本 / 传感器标记动物 / 作用: 活体遥测载体、陈旧调查地标、修复路线污染源 / 安全读取: 旧tag脉冲、疤痕组织生长、非命令移动 / 拒绝: 把行为当作服从、从活体切出tag、信任occupancy echo / 路线备注: tag可以报告动物穿过的房间，不能报告它为什么穿过。
 
 ## Audio
 
-ZH LOC HOLD: It is not obeying. It is being used.
+它没有服从Atlas。它只是带着一个Atlas仍在追问的旧问题。
 
 ## Field Note
 
-ZH LOC HOLD: Do not write as possession. It is damaged maintenance using animal movement.
+tag是伤疤，不是缰绳。它可能报告你、错放你，或唤醒从未看见那只动物的东西。
 
 <!-- External Site; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/zh_CN. -->

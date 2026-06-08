@@ -9,32 +9,26 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: 最初のPressureSeal修理"
+title: "最初のPressureSeal修理"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: 最初のPressureSeal修理
+# 最初のPressureSeal修理
 
-JA LOC HOLD: Shallow Annex P-63で最初に役立つ修理は昼光の中で始まる。明るい棚のFiberKelpはFiberMeshになり、漏れたカラーやサービスソケット用の一時PressureSealを支える。買えるのは時間と経路安全で、脱出ではない。
+## 光の中の修理
 
-## Scanner
+Shallow Annex P-63で最初に役立つ修理は、水がまだ嘘をつけるほど明るい場所で始まる。外ではFiberKelpが棚の流れに揺れる。中では、Deep Reachが整備可能と記した継ぎ目から圧力カラーが汗をかいている。
 
-JA LOC HOLD: PRESSURESEAL対象 // P-63カラー漏れ。FiberMeshキャリア適合。局所安定のみ。上昇認証は拒否。
+FiberKelpは浅瀬の生体繊維で、希少な宝ではない。光、流れ、古い産業熱が重なる場所に育つ。洗って梳いた繊維はFiberMeshになる。P-63の野外ファブリケータは、そのメッシュを一時PressureSealのキャリア層に圧着できる。
 
-## Terminal
+その部品が役立つのは限界があるからだ。PressureSealは局所漏れを遅らせ、戻り用の空間を安定させ、短い修理ループを生存可能にする。bathydropの上昇認証にはならず、クランプリングの代わりにもならず、Black Keelの応答を回収には変えない。
 
-JA LOC HOLD: DEEP REACH P-63許容記録 // カラー交換を延期。漏れが局所整備閾値内なら承認済み軟質シールキャリアを適用。
+矛盾はアーカイブより先に見える。端末は圧力変動がサービス許容内だと言う。カラーには曲がったボルト、検査帯の下の塩、清潔な金属であるべき亀裂に挟まった繊維がある。
 
-## Audio
-
-JA LOC HOLD: Black Keel中継: P-63パッチは局所安全、上昇安全ではない。シールを持ち、シリアルを残せ。
-
-## Field Note
-
-JA LOC HOLD: 外は明るい水。中は濡れたカラー。Deep Reachはそれを正常と呼んだ。言葉の方がクランプリングより安いからだ。
+Marauderへの教訓は実務的だ。FiberKelpは清潔に切る。メッシュに砂を入れない。シールのシリアルを残す。経路が上昇安全を求める場所で、局所安全と書かれた修理を信用するな。
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/ja_JP. -->

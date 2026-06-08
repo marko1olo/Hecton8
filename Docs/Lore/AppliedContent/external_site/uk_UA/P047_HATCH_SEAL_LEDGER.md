@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.service_corridor
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Hatch Seal Ledger"
+spoiler_tier: 1
+title: "Журнал ущільнення люка"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Hatch Seal Ledger
+# Журнал ущільнення люка
 
-Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop.
+Люки є одними з найтихіших записів HECTON-8. Вони не пояснюють, кого залишили; вони зберігають напрям закриття, напруження прокладки й право override. Читання журналу ущільнення перетворює замкнені двері на рішення про тиск із часовою міткою.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+Пам’ять ущільнення відновлено. Прокладка прийняла три зрізи тиску й один евакуаційний override; доступ зі сторони повернення був замкнений з мокрого боку.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / РАМА H-17: деформація прокладки вище допуску обслуговування. Ручне закриття прийнято під EVAC OVERRIDE. Кількість операторів на стороні повернення не підтверджена. Відкривати лише після вирівнювання тиску й перевірки петель.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+Він запечатався. Більше люк не обіцяв.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+Запечатаний люк це квитанція. Перед відкриттям спитай, який бік заплатив.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/uk_UA. -->

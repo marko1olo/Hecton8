@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Claim Continuity Loss Conversion Proof"
+title: "claim连续性损失转换"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Claim Continuity Loss Conversion Proof
+# claim连续性损失转换
 
-ZH LOC HOLD: The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.
+证据链结束于转换。只要工人成为losses，证据成为material custody，claim继续存活，Deep Reach就能承认损害并保留所有权。所以玩家携带的不只是事实。他们携带的是系统知道如何购买的东西。
 
 ## Scanner
 
-ZH LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
+回收的损失台印章。ledger比它重新命名的工人活得更久。
 
 ## Terminal
 
-ZH LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED。biological workforce converted to unrecoverable loss。Material and proof custody remain active pending receiver assignment。
 
 ## Audio
 
-ZH LOC HOLD: This is where dead workers became a clean column.
+人在这里变成干净的列。
 
 ## Field Note
 
-CN LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+Marauder笔记：ledger可以记住死者，也仍能花掉他们。
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/zh_CN. -->

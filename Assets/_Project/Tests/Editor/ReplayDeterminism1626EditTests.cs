@@ -273,28 +273,59 @@ namespace Hecton8.Tests.Editor
         public void DataVaultSidecarNativeContainers_AreTrackedByNativeMemorySentinel()
         {
             string vault = File.ReadAllText(GlobalDataVaultPath);
-            string sentinel = File.ReadAllText(NativeMemorySentinelPath);
             string initializeBody = ExtractMethodBodyFromSignature(vault, "public void Initialize(");
             string disposeBody = ExtractMethodBodyFromSignature(vault, "public void Dispose()");
             string registerCoreBody = ExtractMethodBody(vault, "RegisterCoreSidecarSentinels");
             string registerMacroBody = ExtractMethodBody(vault, "RegisterMacroDatabasePayloadCacheSentinels");
+            string registerHashMapBody = ExtractMethodBody(vault, "RegisterUnsafeHashMapSidecar");
+            string registerListBody = ExtractMethodBody(vault, "RegisterNativeListSidecar");
+            string disposeMacroBody = ExtractMethodBody(vault, "DisposeMacroDatabasePayloadCache");
             string refreshMacroBody = ExtractMethodBody(vault, "RefreshMacroDatabasePayloadCacheSentinels");
             string unregisterBody = ExtractMethodBody(vault, "UnregisterNativeSidecarStorage");
+            string unregisterSidecarBody = ExtractMethodBody(vault, "UnregisterSidecar");
 
             StringAssert.Contains("RegisterNativeSidecarStorage();", initializeBody);
             StringAssert.Contains("UnregisterNativeSidecarStorage();", disposeBody);
-            StringAssert.Contains("RegisterUnsafeHashMapInstance", sentinel);
-            StringAssert.Contains("RefreshUnsafeHashMap", sentinel);
-            StringAssert.Contains("RegisterUnsafeHashMapInstance", registerCoreBody);
-            StringAssert.Contains("RegisterNativeListInstance", registerCoreBody);
-            StringAssert.Contains("RegisterNativeParallelHashMapInstance", registerMacroBody);
-            StringAssert.Contains("RefreshNativeParallelHashMap", refreshMacroBody);
-            StringAssert.Contains("RefreshNativeList", refreshMacroBody);
-            StringAssert.Contains("NativeMemorySentinel.Unregister(_buffersSentinelId);", unregisterBody);
+            StringAssert.Contains("RegisterUnsafeHashMapSidecar", registerCoreBody);
+            StringAssert.Contains("RegisterNativeListSidecar", registerCoreBody);
+            StringAssert.Contains("RegisterNativeParallelHashMapSidecar", registerMacroBody);
+            StringAssert.Contains("RequireSentinelRegistration", registerCoreBody);
+            StringAssert.Contains("RequireSentinelRegistration", registerMacroBody);
+            StringAssert.Contains("NativeMemoryTrackingBridge.RegisterBytesInstance(", registerHashMapBody);
+            StringAssert.Contains("NativeMemoryTrackingBridge.RegisterBytesInstance(", registerListBody);
+            StringAssert.Contains("NativeMemoryBridgeLifetime.Session", registerHashMapBody);
+            StringAssert.Contains("NativeMemoryBridgeLifetime.Session", registerListBody);
+            StringAssert.Contains("RefreshNativeParallelHashMapSidecar", refreshMacroBody);
+            StringAssert.Contains("RefreshNativeListSidecar", refreshMacroBody);
+            StringAssert.Contains("NativeMemoryTrackingBridge.Unregister(sentinelId);", unregisterSidecarBody);
+            StringAssert.Contains("UnregisterSidecar(ref _buffersSentinelId, nameof(_buffers));", unregisterBody);
+            StringAssert.Contains("UnregisterSidecar(ref _buffersSentinelId, nameof(_buffers));", disposeBody);
+            StringAssert.Contains("UnregisterSidecar(ref _metadataSentinelId, nameof(_metadata));", disposeBody);
+            StringAssert.Contains("UnregisterSidecar(ref _metadataGenerationByBufferIdSentinelId, nameof(_metadataGenerationByBufferId));", disposeBody);
+            StringAssert.Contains("UnregisterSidecar(ref _keysSentinelId, nameof(_keys));", disposeBody);
+            StringAssert.Contains("UnregisterSidecar(ref _blocksSentinelId, nameof(_blocks));", disposeBody);
+            StringAssert.Contains("UnregisterSidecar(ref _macroDatabasePayloadKeysSentinelId, nameof(_macroDatabasePayloadKeys));", disposeMacroBody);
+            StringAssert.Contains("UnregisterSidecar(ref _macroDatabasePayloadAccessTicksSentinelId, nameof(_macroDatabasePayloadAccessTicks));", disposeMacroBody);
+            StringAssert.Contains("UnregisterSidecar(ref _macroDatabasePayloadCacheSentinelId, nameof(_macroDatabasePayloadCache));", disposeMacroBody);
             StringAssert.Contains("_buffersSentinelId = 0;", unregisterBody);
             Assert.Less(
-                disposeBody.IndexOf("UnregisterNativeSidecarStorage();", StringComparison.Ordinal),
-                disposeBody.IndexOf("_buffers.Dispose();", StringComparison.Ordinal));
+                disposeBody.IndexOf("_buffers.Dispose();", StringComparison.Ordinal),
+                disposeBody.IndexOf("UnregisterSidecar(ref _buffersSentinelId, nameof(_buffers));", StringComparison.Ordinal));
+            Assert.Less(
+                disposeBody.IndexOf("_keys.Dispose();", StringComparison.Ordinal),
+                disposeBody.IndexOf("UnregisterSidecar(ref _keysSentinelId, nameof(_keys));", StringComparison.Ordinal));
+            Assert.Less(
+                disposeBody.IndexOf("_blocks.Dispose();", StringComparison.Ordinal),
+                disposeBody.IndexOf("UnregisterSidecar(ref _blocksSentinelId, nameof(_blocks));", StringComparison.Ordinal));
+            Assert.Less(
+                disposeMacroBody.IndexOf("_macroDatabasePayloadCache.Dispose();", StringComparison.Ordinal),
+                disposeMacroBody.IndexOf("UnregisterSidecar(ref _macroDatabasePayloadCacheSentinelId, nameof(_macroDatabasePayloadCache));", StringComparison.Ordinal));
+            Assert.Less(
+                disposeMacroBody.IndexOf("_macroDatabasePayloadKeys.Dispose();", StringComparison.Ordinal),
+                disposeMacroBody.IndexOf("UnregisterSidecar(ref _macroDatabasePayloadKeysSentinelId, nameof(_macroDatabasePayloadKeys));", StringComparison.Ordinal));
+            Assert.Less(
+                disposeMacroBody.IndexOf("_macroDatabasePayloadAccessTicks.Dispose();", StringComparison.Ordinal),
+                disposeMacroBody.IndexOf("UnregisterSidecar(ref _macroDatabasePayloadAccessTicksSentinelId, nameof(_macroDatabasePayloadAccessTicks));", StringComparison.Ordinal));
         }
 
         [Test]
@@ -345,14 +376,17 @@ namespace Hecton8.Tests.Editor
         public void DodReplayRecorderWriterLifecycleFailsClosed()
         {
             string recorder = File.ReadAllText(DodReplayRecorderPath);
+            string h8Memory = File.ReadAllText(H8MemoryPath);
             string onEnableBody = ExtractMethodBody(recorder, "OnEnable");
             string startUnityBody = ExtractMethodBody(recorder, "Start");
             string hotSwapBody = ExtractMethodBody(recorder, "OnGlobalRegistryServiceReplaced");
             string registerHotSwapBody = ExtractMethodBody(recorder, "TryRegisterHotSwapListener");
             string registerLateFrameBody = ExtractMethodBody(recorder, "TryRegisterLateFrameTickable");
             string initializeBody = ExtractMethodBody(recorder, "Initialize");
+            string initializeReplayFileBody = ExtractMethodBody(recorder, "InitializeReplayFile");
             string shutdownBody = ExtractMethodBody(recorder, "ShutdownForLifecycle");
             string captureBody = ExtractMethodBody(recorder, "CaptureSnapshot");
+            string writePendingBody = ExtractMethodBody(recorder, "WritePendingScratch");
             string startBody = ExtractMethodBody(recorder, "StartWriterThread");
             string loopBody = ExtractMethodBody(recorder, "WriterLoop");
             string stopBody = ExtractMethodBody(recorder, "StopWriterThread");
@@ -362,11 +396,22 @@ namespace Hecton8.Tests.Editor
             string disposeReplayBody = ExtractMethodBody(recorder, "DisposeReplayFile");
             string initializeFailureBody = ExtractMethodBody(recorder, "ShutdownAllocatedReplayStateAfterInitializeFailure");
             string disposeNativeArrayBody = ExtractMethodBody(recorder, "DisposeNativeArray");
+            string h8ReleaseBody = ExtractMethodBodyFromSignature(h8Memory, "public static void Release<T>(ref NativeArray<T> array, SystemID owner)");
 
             StringAssert.Contains("try", initializeBody);
             StringAssert.Contains("if (!StartWriterThread())", initializeBody);
             StringAssert.Contains("ShutdownAllocatedReplayStateAfterInitializeFailure();", initializeBody);
             StringAssert.Contains("enabled = false;", initializeBody);
+            StringAssert.Contains("FileOptions.WriteThrough | FileOptions.RandomAccess", initializeReplayFileBody);
+            Assert.IsTrue(ContainsTokensInOrder(
+                initializeReplayFileBody,
+                "FileMode.OpenOrCreate",
+                "FileOptions.WriteThrough | FileOptions.RandomAccess",
+                "if (_replayStream.Length != ReplayFileCapacityBytes)",
+                "_replayStream.SetLength(ReplayFileCapacityBytes);",
+                "if (_replayStream.Length != ReplayFileCapacityBytes)",
+                "throw new InvalidOperationException(\"Dod replay file capacity initialization failed.\");",
+                "_replayStream.Flush(true);"));
 
             StringAssert.Contains("if (_initialized == 0)", onEnableBody);
             Assert.Greater(onEnableBody.IndexOf("RegisterInputHook();", StringComparison.Ordinal), onEnableBody.IndexOf("if (_initialized == 0)", StringComparison.Ordinal));
@@ -380,6 +425,10 @@ namespace Hecton8.Tests.Editor
             Assert.Greater(captureBody.IndexOf("Volatile.Write(ref _pendingWriteBytes, 0);", signalFailureIndex, StringComparison.Ordinal), signalFailureIndex);
             Assert.Greater(captureBody.IndexOf("Volatile.Write(ref _writeInProgress, 0);", signalFailureIndex, StringComparison.Ordinal), signalFailureIndex);
             Assert.Greater(captureBody.IndexOf("captured = false;", signalFailureIndex, StringComparison.Ordinal), signalFailureIndex);
+            StringAssert.Contains("NativeMemorySentinel.CopySnapshotSources(_sources, _recorderOwnerHash)", captureBody);
+            StringAssert.Contains("H8Memory.CopySnapshotSources(_sources, sourceCount, _recorderOwnerHash)", captureBody);
+            StringAssert.Contains("source.SourcePointerValue == 0ul", captureBody);
+            StringAssert.Contains("IsRecorderNativeBufferSource(source.SourcePointerValue)", captureBody);
 
             StringAssert.Contains("writerThread.Start();", startBody);
             StringAssert.Contains("return true;", startBody);
@@ -392,6 +441,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("Volatile.Write(ref _writeInProgress, 0);", loopBody);
             StringAssert.Contains("Volatile.Write(ref _writerShouldStop, 1);", loopBody);
             StringAssert.Contains("signal.WaitOne();", loopBody);
+            StringAssert.Contains("_replayStream.Flush(true);", writePendingBody);
 
             StringAssert.Contains("if (!StopWriterThread())", shutdownBody);
             StringAssert.Contains("_activeRecorder = null;", shutdownBody);
@@ -429,11 +479,12 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("_activeRecorder = null;", initializeFailureBody);
             StringAssert.Contains("Volatile.Write(ref _initialized, 0);", initializeFailureBody);
 
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array);", disposeNativeArrayBody);
-            StringAssert.Contains("array.Dispose();", disposeNativeArrayBody);
-            Assert.GreaterOrEqual(CountToken(disposeNativeArrayBody, "catch (Exception)"), 2);
-            StringAssert.Contains("finally", disposeNativeArrayBody);
-            StringAssert.Contains("array = default;", disposeNativeArrayBody);
+            StringAssert.Contains("H8Memory.Release(ref array, NativeMemoryOwner);", disposeNativeArrayBody);
+            Assert.IsFalse(disposeNativeArrayBody.Contains("NativeMemorySentinel.UnregisterNativeArray(array);", StringComparison.Ordinal));
+            Assert.IsFalse(disposeNativeArrayBody.Contains("array.Dispose();", StringComparison.Ordinal));
+            StringAssert.Contains("array.Dispose();", h8ReleaseBody);
+            StringAssert.Contains("array = default;", h8ReleaseBody);
+            StringAssert.Contains("TryRestoreUnregisteredRecord(in record)", h8ReleaseBody);
         }
 
         private static void AssertHotBodyClean(string body)
@@ -531,6 +582,21 @@ namespace Hecton8.Tests.Editor
                 count++;
                 index += token.Length;
             }
+        }
+
+        private static bool ContainsTokensInOrder(string source, params string[] tokens)
+        {
+            int index = 0;
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                int found = source.IndexOf(tokens[i], index, StringComparison.Ordinal);
+                if (found < 0)
+                    return false;
+
+                index = found + tokens[i].Length;
+            }
+
+            return true;
         }
     }
 }

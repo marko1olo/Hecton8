@@ -23,14 +23,15 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveRadiationFatigueScale(float exposureSeconds)
         {
+            float safeExposureSeconds = ResolveNonNegativeFinite(exposureSeconds);
             return math.max(
                 RadiationFatigueMinimumScale,
-                1f - (math.max(0f, exposureSeconds) * RadiationFatigueScalePerSecond));
+                1f - (safeExposureSeconds * RadiationFatigueScalePerSecond));
         }
 
         internal static float ResolveNaturalHealthRegenerationMultiplier(float toxicitySeverity01)
         {
-            return math.lerp(1f, NutritionalToxicityRegenFloor, math.saturate(toxicitySeverity01));
+            return math.lerp(1f, NutritionalToxicityRegenFloor, ResolveFinite01(toxicitySeverity01));
         }
 
         internal static float ResolveHypothermiaFrostIntensity01(float internalTemperatureCelsius)
@@ -48,7 +49,7 @@ namespace Hecton8.Gameplay
             float sampledThermalTemperatureCelsius)
         {
             if (!math.isfinite(sampledThermalTemperatureCelsius))
-                return fallbackTemperatureCelsius;
+                return math.isfinite(fallbackTemperatureCelsius) ? fallbackTemperatureCelsius : 0f;
 
             if (!math.isfinite(fallbackTemperatureCelsius))
                 return sampledThermalTemperatureCelsius;
@@ -83,9 +84,9 @@ namespace Hecton8.Gameplay
             if (severity01 <= 0f)
                 return 0f;
 
-            return math.max(0f, baseTemperatureDamageRate) *
+            return ResolveNonNegativeFinite(baseTemperatureDamageRate) *
                    math.lerp(3f, 8f, severity01) *
-                   math.max(0f, damageMultiplier);
+                   ResolveNonNegativeFinite(damageMultiplier);
         }
 
         internal static float ResolveNitrogenBuildUpDelta(
@@ -156,7 +157,9 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveNutritionalToxicityDamagePerSecond(float severity01, float baseDamageRate)
         {
-            return math.max(0f, baseDamageRate) * NutritionalToxicityDamageScale * math.saturate(severity01);
+            return ResolveNonNegativeFinite(baseDamageRate) *
+                   NutritionalToxicityDamageScale *
+                   ResolveFinite01(severity01);
         }
 
         internal static bool ShouldForceSuitPunctureBleeding(float damageAmount, float maxIntegrity)
@@ -165,6 +168,16 @@ namespace Hecton8.Gameplay
                 return false;
 
             return damageAmount >= maxIntegrity * SuitPunctureBleedDamageFraction;
+        }
+
+        private static float ResolveNonNegativeFinite(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float ResolveFinite01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
         }
     }
 }

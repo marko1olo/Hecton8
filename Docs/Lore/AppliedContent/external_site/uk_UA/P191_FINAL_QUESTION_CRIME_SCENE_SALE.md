@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "Фінальне питання: продаж місця злочину"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# Фінальне питання: продаж місця злочину
 
-UA LOC HOLD: Final Question Crime Scene Sale defines the material ending axis.
+Цей фінал найсильніший тоді, коли не карає гравця механічно. Зневірений Marauder може виконати все, що вимагав контракт: дійти до басейну, повернути координати, довести цінність зразка, зберегти запис XO і передати payload, який Black Keel може оцінити. Результат має відчуватися законним і холодним. Борг закривають не тому, що система визнала справедливість, а тому, що вона визнала вартість.
 
-## Scanner
-
-UA LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
-
-## Terminal
-
-UA LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
-
-## Audio
-
-UA LOC HOLD: You can pay the debt with a grave map.
-
-## Field Note
-
-UA LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+У цьому жах. HECTON-8 втрачено не тому, що ніхто не здатен читати докази. Його втрачено тому, що докази можна перетворити на право власності. Якщо гравець продає місце без публічного ланцюга свідків, Deep Reach отримує чисті папери, кращу геометрію підходу і привід повернутися з юристами раніше за рятувальників. Фінал платить гравцеві й показує, яка цивілізація може дозволити собі міжзоряний salvage.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/uk_UA. -->

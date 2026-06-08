@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Atlas Access Boundary"
+title: "Fronteira de Acesso Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Access Boundary
+# Fronteira de Acesso Atlas
 
-PT LOC HOLD: Atlas can be described early as damaged industrial continuity that learned through repair ecology. Final receiver records remain evidence-gated because they change the meaning of earlier repairs.
+Atlas pode ser descrito cedo como industrial continuity danificada que aprendeu por repair ecology. Receiver records finais ficam atrás da evidence gate porque mudam o sentido dos reparos anteriores: seal, preserve, sever, quarantine e release não são verbos neutros lá embaixo.
 
 ## Scanner
 
-PT LOC HOLD: Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+Registro de fronteira Atlas. Evidência aberta mostra industrial continuity logic e repair ecology; receiver custody, payload consequence e camadas de escolha final exigem proof recuperada.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+NÓ DE ARQUIVO PÚBLICO // FRONTEIRA DE ACESSO ATLAS. Camada atual: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue e shell seal. Camada restrita: receiver custody e final payload consequence.
 
 ## Audio
 
-PT LOC HOLD: Say it repairs. Wait before naming what it counts as repaired.
+Diga que ele repara. Espere antes de nomear o que ele conta como reparado.
 
 ## Field Note
 
-PT LOC HOLD: Marauder note: a machine can preserve proof and still damage the person inside it.
+Nota de Marauder: uma máquina pode preservar prova e ainda ferir a pessoa dentro dela.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/pt_BR. -->

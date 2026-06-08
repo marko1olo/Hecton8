@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Deep Reach Suboffice Registry"
+title: "Реестр Субофисов Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Deep Reach Suboffice Registry
+# Реестр Субофисов Deep Reach
 
-RU LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+Реестр субофисов важен потому, что называет машинерию без тронного зала. Deep Reach не требовался один человек, лично приказывающий каждой смерти. Ему требовались офисы с узкими названиями, каждый из которых мог задержать, переклассифицировать или передать пакет. Contract Continuity держал obligations живыми. Packet Notary решал, что считается proof. Quarantine Hold делал rescue опасным на вид. Asset Silence снижал ценность свидетелей. Return Action решал, кто достоин массы.
 
 ## Scanner
 
-RU LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board и Return Action Queue.
 
 ## Terminal
 
-RU LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach держал смертельные решения ниже уровня одного злодея. Малые desk гоняли clauses, packets, quarantine, silence и return priority, пока ни одна печать не выглядела убийством.
 
 ## Audio
 
-RU LOC HOLD: A small desk can kill more quietly than a director.
+Маленький desk может убить тише директора.
 
 ## Field Note
 
-RU LOC HOLD: Use dull names. Dull names are where liability hides.
+Оставь названия скучными. В скучных названиях прячется liability.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/ru_RU. -->

@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Tariff Table"
+title: "Тарифна таблиця Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Tariff Table
+# Тарифна таблиця Black Keel
 
-UK LOC HOLD: Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency.
-
-## Scanner
-
-UK LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
-
-## Terminal
-
-UK LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
-
-## Audio
-
-UK LOC HOLD: The table has a price for rescue and a discount for evidence.
-
-## Field Note
-
-UK LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
+Тарифна таблиця — найясніше місце, де HECTON-8 вимовляє тиху правду вголос. Black Keel може чути гравця, класифікувати небезпеку і рухати пакети системою, але кожна дія спершу потрапляє до категорії рахунку, а вже потім стає допомогою. Збережений зразок може піднятися швидше за живого оператора. Опечатаний контейнер може підвищити маршрут раніше за поранене тіло. Це не театральне зло, а реєстр, який робить свою роботу. Жорстокість практична: гравець виживає, зловживаючи тією самою економічною граматикою, яка зробила колонію витратною.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/uk_UA. -->

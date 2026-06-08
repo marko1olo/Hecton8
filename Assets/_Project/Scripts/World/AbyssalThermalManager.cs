@@ -32,6 +32,7 @@ namespace Hecton8.World
     {
         private static AbyssalThermalManager s_activeRuntimeInstance;
         private static int s_x001AbyssalThermalManagerSignalPushDropCount;
+        private const float DefaultSeaLevelY = 14.02f;
 
         internal static AbyssalThermalManager ActiveRuntimeInstance => s_activeRuntimeInstance;
 
@@ -39,6 +40,7 @@ namespace Hecton8.World
         private static void ResetStaticRuntimeState()
         {
             s_activeRuntimeInstance = null;
+            Volatile.Write(ref s_x001AbyssalThermalManagerSignalPushDropCount, 0);
         }
 
         public struct ThermalFlowSample
@@ -943,7 +945,7 @@ namespace Hecton8.World
             float smokeDensity,
             float cableRadiusWS)
         {
-            if (runtimeKey == 0L)
+            if (runtimeKey == 0L || !MathGuard.IsFinite(positionWS))
                 return;
 
             RuntimeVentRegistration registration = new RuntimeVentRegistration
@@ -951,12 +953,12 @@ namespace Hecton8.World
                 RuntimeKey = runtimeKey,
                 PositionWS = positionWS,
                 CableAnchorWS = positionWS,
-                RadiusWS = Mathf.Max(2f, radiusWS),
-                HeightWS = Mathf.Max(4f, heightWS),
-                UpdraftVelocity = Mathf.Max(0.5f, updraftVelocity),
-                HeatIntensity = Mathf.Max(0.5f, heatIntensity),
-                SmokeDensity = Mathf.Max(0.1f, smokeDensity),
-                CableRadiusWS = Mathf.Max(2f, cableRadiusWS)
+                RadiusWS = ResolvePositiveFinite(radiusWS, 2f, 2f),
+                HeightWS = ResolvePositiveFinite(heightWS, 4f, 4f),
+                UpdraftVelocity = ResolvePositiveFinite(updraftVelocity, 0.5f, 0.5f),
+                HeatIntensity = ResolvePositiveFinite(heatIntensity, 0.5f, 0.5f),
+                SmokeDensity = ResolvePositiveFinite(smokeDensity, 0.1f, 0.1f),
+                CableRadiusWS = ResolvePositiveFinite(cableRadiusWS, 2f, 2f)
             };
 
             for (int i = 0; i < _runtimeVentRegistrationCount; i++)
@@ -1014,8 +1016,13 @@ namespace Hecton8.World
             {
                 if (!registry.TryGetActiveThermalVent(i, out PersistentThermalVentRecord record))
                     continue;
+                if (record.RuntimeKey == 0L)
+                    continue;
 
                 Vector3 positionWS = ResolvePersistentThermalVentRuntimePosition(in record.PositionAup);
+                if (!MathGuard.IsFinite(positionWS))
+                    continue;
+
                 if (_runtimeVentRegistrationCount >= MaxVentCapacity)
                     break;
 
@@ -1024,12 +1031,12 @@ namespace Hecton8.World
                     RuntimeKey = record.RuntimeKey,
                     PositionWS = positionWS,
                     CableAnchorWS = positionWS,
-                    RadiusWS = Mathf.Max(2f, record.RadiusWS),
-                    HeightWS = Mathf.Max(4f, record.HeightWS),
-                    UpdraftVelocity = Mathf.Max(0.5f, record.UpdraftVelocity),
-                    HeatIntensity = Mathf.Max(0.5f, record.HeatIntensity),
-                    SmokeDensity = Mathf.Max(0.1f, record.SmokeDensity),
-                    CableRadiusWS = Mathf.Max(2f, record.CableRadiusWS)
+                    RadiusWS = ResolvePositiveFinite(record.RadiusWS, 2f, 2f),
+                    HeightWS = ResolvePositiveFinite(record.HeightWS, 4f, 4f),
+                    UpdraftVelocity = ResolvePositiveFinite(record.UpdraftVelocity, 0.5f, 0.5f),
+                    HeatIntensity = ResolvePositiveFinite(record.HeatIntensity, 0.5f, 0.5f),
+                    SmokeDensity = ResolvePositiveFinite(record.SmokeDensity, 0.1f, 0.1f),
+                    CableRadiusWS = ResolvePositiveFinite(record.CableRadiusWS, 2f, 2f)
                 };
                 _runtimeVentRegistrationCount++;
             }
@@ -1066,15 +1073,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            AbyssalThermalManager registeredThermodynamics = s_activeRuntimeInstance;
-            if (registeredThermodynamics != null && registeredThermodynamics != this)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
-#endif
-                Destroy(this);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             _instanceId = unchecked((int)EntityId.ToULong(GetEntityId()));
             CacheGraphicsCapabilitiesCold();
@@ -1091,6 +1091,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             LaserCutterEvents.Register(this);
             RandomEventEvents.Register(this);
             HectonFloatingOrigin.RegisterListener(this);
@@ -1122,6 +1125,7 @@ namespace Hecton8.World
             _frameParity = 0;
             _simulationBucketer = null;
             _gasDynamics = null;
+            cutManager = null;
             _voxelDeltaProcessor = null;
             _playerThermalDamageReceiver = null;
             _playerThermalDamageTransform = null;
@@ -1148,6 +1152,7 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
             _simulationBucketer = null;
             _gasDynamics = null;
+            cutManager = null;
             _voxelDeltaProcessor = null;
             _playerThermalDamageReceiver = null;
             _playerThermalDamageTransform = null;
@@ -1161,16 +1166,24 @@ namespace Hecton8.World
             DisposeCrystallizationBuffers();
             DisposeThermalMapBuffers();
             DisposeThermalTelemetry();
+            TryUnregister();
 
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
             _lastProcessedAupShiftFrameId = shiftData.Sequence;
-            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
+            ApplyRuntimeOffsetToCachedState(-shiftOffset);
         }
 
         private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
@@ -1664,10 +1677,10 @@ namespace Hecton8.World
             sample = default;
             sample.DragMultiplier = 1f;
 
-            if (_activeVentCount <= 0)
+            if (_activeVentCount <= 0 || !MathGuard.IsFinite(positionWS))
                 return false;
 
-            float effectiveRadius = Mathf.Max(0.1f, radiusWS);
+            float effectiveRadius = ResolvePositiveFinite(radiusWS, 0.1f, 0.1f);
             float strongestCable = 0f;
             Vector3 strongestCableAnchor = positionWS;
             float strongestCableCut = 0f;
@@ -1675,16 +1688,22 @@ namespace Hecton8.World
             for (int i = 0; i < _activeVentCount; i++)
             {
                 ThermalVentState vent = _ventStates[i];
-                float eruptiveHeatScale = ResolveVentHeatScale(i);
-                float eruptiveUpdraftScale = ResolveVentUpdraftScale(i);
-                float ventRadius = Mathf.Max(0.1f, vent.RadiusWS + effectiveRadius);
+                if (!IsFiniteVent(in vent))
+                    continue;
+
+                float eruptiveHeatScale = ResolveNonNegativeFinite(ResolveVentHeatScale(i), 1f);
+                float eruptiveUpdraftScale = ResolveNonNegativeFinite(ResolveVentUpdraftScale(i), 1f);
+                float ventRadius = ResolvePositiveFinite(vent.RadiusWS + effectiveRadius, 0.1f, 0.1f);
                 Vector2 planarDelta = new Vector2(positionWS.x - vent.PositionWS.x, positionWS.z - vent.PositionWS.z);
                 float planarDistance = ComputeAupPlanarDistance(positionWS, vent.PositionWS);
+                if (!math.isfinite(planarDistance))
+                    continue;
+
                 if (planarDistance <= ventRadius)
                 {
-                    float radialFalloff = 1f - planarDistance / Mathf.Max(ventRadius, 0.001f);
+                    float radialFalloff = 1f - planarDistance / math.max(ventRadius, 0.001f);
                     float baseVentY = vent.PositionWS.y;
-                    float heightGate = 1f - Mathf.Clamp01((positionWS.y - baseVentY) / Mathf.Max(vent.HeightWS, 0.001f));
+                    float heightGate = 1f - Mathf.Clamp01((positionWS.y - baseVentY) / math.max(ResolvePositiveFinite(vent.HeightWS, 0.001f, 0.001f), 0.001f));
                     if (heightGate > 0f)
                     {
                         float ventWeight = radialFalloff * heightGate;
@@ -1692,26 +1711,29 @@ namespace Hecton8.World
                             ? new Vector3(-planarDelta.y / planarDistance, 0f, planarDelta.x / planarDistance)
                             : Vector3.zero;
                         sample.HasFlow = 1;
-                        sample.Heat01 = Mathf.Max(sample.Heat01, vent.HeatIntensity * eruptiveHeatScale * ventWeight);
-                        sample.DragMultiplier = Mathf.Max(sample.DragMultiplier, LerpClamped(1f, ventDragMultiplier, ventWeight));
-                        sample.FlowVelocityWS += Vector3.up * (vent.UpdraftVelocity * eruptiveUpdraftScale * ventWeight);
-                        sample.FlowVelocityWS += swirlDirection * (vent.UpdraftVelocity * 0.12f * ventWeight);
+                        float ventHeat = ResolveNonNegativeFinite(vent.HeatIntensity, 0f);
+                        float ventUpdraft = ResolveNonNegativeFinite(vent.UpdraftVelocity, 0f);
+                        sample.Heat01 = Mathf.Max(sample.Heat01, ventHeat * eruptiveHeatScale * ventWeight);
+                        sample.DragMultiplier = Mathf.Max(sample.DragMultiplier, LerpClamped(1f, ResolvePositiveFinite(ventDragMultiplier, 1f, 1f), ventWeight));
+                        sample.FlowVelocityWS += Vector3.up * (ventUpdraft * eruptiveUpdraftScale * ventWeight);
+                        sample.FlowVelocityWS += swirlDirection * (ventUpdraft * 0.12f * ventWeight);
                     }
                 }
 
-                float cableRadius = Mathf.Max(0.1f, vent.CableRadiusWS + effectiveRadius);
-                Vector2 cableDelta = new Vector2(positionWS.x - vent.CableAnchorWS.x, positionWS.z - vent.CableAnchorWS.z);
+                float cableRadius = ResolvePositiveFinite(vent.CableRadiusWS + effectiveRadius, 0.1f, 0.1f);
                 float cableDistance = ComputeAupPlanarDistance(positionWS, vent.CableAnchorWS);
-                if (cableDistance > cableRadius)
+                if (!math.isfinite(cableDistance) || cableDistance > cableRadius)
                     continue;
 
-                float cableWeight = 1f - cableDistance / Mathf.Max(cableRadius, 0.001f);
+                float cableWeight = math.saturate(1f - cableDistance / math.max(cableRadius, 0.001f));
                 if (cableWeight <= strongestCable)
                     continue;
 
                 strongestCable = cableWeight;
                 strongestCableAnchor = ResolveCableAnchor(positionWS, vent.CableAnchorWS);
-                strongestCableCut = ResolveCableCutProgress(positionWS, strongestCableAnchor, cableRadius);
+                if (!MathGuard.IsFinite(strongestCableAnchor))
+                    strongestCableAnchor = positionWS;
+                strongestCableCut = Resolve01Finite(ResolveCableCutProgress(positionWS, strongestCableAnchor, cableRadius));
             }
 
             if (strongestCable > 0f)
@@ -1723,7 +1745,8 @@ namespace Hecton8.World
                 sample.CableTension01 = strongestCable * sample.CableEscapeSuppression01;
             }
 
-            _debugCableCutProgress01 = strongestCableCut;
+            SanitizeThermalFlowSample(ref sample, positionWS);
+            _debugCableCutProgress01 = sample.IsCableZone != 0 ? sample.CableCutProgress01 : 0f;
             return sample.HasFlow != 0 || sample.IsCableZone != 0;
         }
 
@@ -2074,7 +2097,7 @@ namespace Hecton8.World
 
         private static float ResolveDamageDepthMeters(Vector3 positionWS)
         {
-            return math.isfinite(positionWS.y) ? math.max(0f, -positionWS.y) : 0f;
+            return math.isfinite(positionWS.y) ? math.max(0f, DefaultSeaLevelY - positionWS.y) : 0f;
         }
 
         private static double3 ResolveCombatImpactAup(Vector3 positionWS)
@@ -3090,9 +3113,9 @@ namespace Hecton8.World
 
             _crystallizationJobActive = false;
 
-            ResourceDistributionDirector director = resourceDistributionDirector != null
-                ? resourceDistributionDirector
-                : ResourceDistributionDirector.ActiveRuntimeInstance;
+            ResourceDistributionDirector director = resourceDistributionDirector;
+            WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref director);
+            resourceDistributionDirector = director;
             if (director != null)
             {
                 for (int i = 0; i < _scheduledCrystallizationSampleCount; i++)
@@ -3570,14 +3593,23 @@ namespace Hecton8.World
 
         private void ResolveDependencies()
         {
-            if (biomeMatrixDirector == null)
-                biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            if (biomeMatrixDirector == null || !biomeMatrixDirector.isActiveAndEnabled)
+            {
+                biomeMatrixDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
+            }
 
-            if (worldZoneDirector == null)
-                worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+            if (worldZoneDirector == null || !worldZoneDirector.isActiveAndEnabled)
+            {
+                worldZoneDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
+            }
 
-            if (resourceDistributionDirector == null)
-                resourceDistributionDirector = ResourceDistributionDirector.ActiveRuntimeInstance;
+            if (resourceDistributionDirector == null || !resourceDistributionDirector.isActiveAndEnabled)
+            {
+                resourceDistributionDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref resourceDistributionDirector);
+            }
 
             if (vegetationBridge == null)
                 WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
@@ -3606,7 +3638,8 @@ namespace Hecton8.World
 
         private void CacheVoxelDeltaProcessorCold()
         {
-            HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
+            HectonVoxelEngine engine = null;
+            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref engine);
             _voxelDeltaProcessor = engine != null ? engine.DeltaProcessor : null;
         }
 
@@ -3744,12 +3777,47 @@ namespace Hecton8.World
             _submarineRuntimeContext = GlobalRegistry.Submarine;
             _physicsService = GlobalRegistry.Physics;
             _gasDynamics = GlobalRegistry.GasDynamics;
-            _objectPoolService = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             _pdaCorrosionPresentationSink = GlobalRegistry.PdaCorrosionPresentationSink;
             if (cutManager == null)
-                cutManager = SargassumCutManager.Instance;
+                WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref cutManager);
             if (_simulationBucketer == null)
                 _simulationBucketer = GlobalRegistry.SimulationBucketer;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPoolService = pool;
+                return;
+            }
+
+            _objectPoolService = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPoolService as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPoolService = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPoolService = null;
+            pool = null;
+            return false;
         }
 
         private void CacheGraphicsCapabilitiesCold()
@@ -3799,7 +3867,7 @@ namespace Hecton8.World
                     _gasDynamics = currentService as IGasDynamicsSolver;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPoolService = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     ConfigureBioCableObjectPoolServiceCold();
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
@@ -3807,12 +3875,21 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.SargassumCutRuntime:
                     cutManager = currentService as SargassumCutManager;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref cutManager);
                     break;
                 case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
                     _simulationBucketer = currentService as ISimulationBucketer;
                     break;
+                case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
+                    biomeMatrixDirector = currentService as BiomeMatrixDirector;
+                    WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
+                    if (HasSlowTickStorageReady())
+                        RebuildVentField();
+                    break;
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
-                    _voxelDeltaProcessor = currentService is HectonVoxelEngine engine ? engine.DeltaProcessor : null;
+                    HectonVoxelEngine engine = currentService as HectonVoxelEngine;
+                    WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref engine);
+                    _voxelDeltaProcessor = engine != null ? engine.DeltaProcessor : null;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     DisposeThermalMapBuffers();
@@ -4257,8 +4334,7 @@ namespace Hecton8.World
             if (bioCablePrefab == null)
                 return null;
 
-            IObjectPoolService pool = _objectPoolService;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return null;
 
             GameObject prefabObject = bioCablePrefab.gameObject;
@@ -4302,7 +4378,8 @@ namespace Hecton8.World
             if (cableObject != null && !cableObject.activeSelf)
                 cableObject.SetActive(true);
 
-            cableRig.ConfigureObjectPoolServiceCold(_objectPoolService);
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
+            cableRig.ConfigureObjectPoolServiceCold(pool);
             cableRig.SetCableMaterialCold(resolvedCableMaterial);
             cableRig.InitializeAt(transform.position, Vector3.up);
             cableRig.SetCableActive(false);
@@ -4313,11 +4390,12 @@ namespace Hecton8.World
             if (_bioCableVisuals == null)
                 return;
 
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             for (int i = 0; i < _bioCableVisuals.Length; i++)
             {
                 BioCableIK cableRig = _bioCableVisuals[i];
                 if (cableRig != null)
-                    cableRig.ConfigureObjectPoolServiceCold(_objectPoolService);
+                    cableRig.ConfigureObjectPoolServiceCold(pool);
             }
         }
 
@@ -4326,7 +4404,7 @@ namespace Hecton8.World
             if (_bioCableVisuals == null || _bioCableVisualsPooled == null)
                 return;
 
-            IObjectPoolService pool = _objectPoolService;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             for (int i = 0; i < _bioCableVisuals.Length && i < _bioCableVisualsPooled.Length; i++)
             {
                 BioCableIK cableRig = _bioCableVisuals[i];
@@ -4524,6 +4602,7 @@ namespace Hecton8.World
 
         private void RebuildVentField()
         {
+            ResolveDependencies();
             _activeVentCount = 0;
             _activeCableZoneCount = 0;
             _debugAbyssalContext = IsAbyssalThermalContext();
@@ -4733,7 +4812,11 @@ namespace Hecton8.World
 
         private void RegisterThermalSpatialEvent(Vector3 positionWS, float radiusWS, float heatIntensity, uint sourceId = 0u)
         {
-            if (radiusWS <= 0f || heatIntensity <= 0f)
+            if (!MathGuard.IsFinite(positionWS) ||
+                !math.isfinite(radiusWS) ||
+                radiusWS <= 0f ||
+                !math.isfinite(heatIntensity) ||
+                heatIntensity <= 0f)
                 return;
 
             PublishThermalSourceSignal(positionWS, radiusWS, heatIntensity, sourceId);
@@ -4766,13 +4849,22 @@ namespace Hecton8.World
 
         private static void PublishThermalSourceSignal(Vector3 positionWS, float radiusWS, float heatIntensity, uint sourceId)
         {
+            if (!MathGuard.IsFinite(positionWS) ||
+                !math.isfinite(radiusWS) ||
+                radiusWS <= 0f ||
+                !math.isfinite(heatIntensity) ||
+                heatIntensity <= 0f)
+            {
+                return;
+            }
+
             if (!TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition positionAup))
                 return;
 
             ThermalSourceSignal signal = default;
             signal.PositionAup = positionAup;
-            signal.RadiusMeters = math.max(0f, radiusWS);
-            signal.IntensityCelsiusPerSecond = math.max(0f, heatIntensity);
+            signal.RadiusMeters = radiusWS;
+            signal.IntensityCelsiusPerSecond = heatIntensity;
             signal.SourceId = sourceId != 0u ? sourceId : BuildTransientThermalSourceId(positionWS, radiusWS);
             signal.Frame = unchecked((uint)math.max(0, HectonArenaAllocator.CurrentFrameSequence));
             SignalBus<ThermalSourceSignal>.TryPushTracked(in signal, ref s_x001AbyssalThermalManagerSignalPushDropCount);
@@ -5467,6 +5559,70 @@ namespace Hecton8.World
                 _fluidDecalManager.RegisterCableFluid(sourcePositionWS, 0.42f);
         }
 
+        private static bool IsFiniteVent(in ThermalVentState vent)
+        {
+            return MathGuard.IsFinite(vent.PositionWS) &&
+                   MathGuard.IsFinite(vent.CableAnchorWS) &&
+                   math.isfinite(vent.RadiusWS) &&
+                   math.isfinite(vent.HeightWS) &&
+                   math.isfinite(vent.UpdraftVelocity) &&
+                   math.isfinite(vent.HeatIntensity) &&
+                   math.isfinite(vent.SmokeDensity) &&
+                   math.isfinite(vent.CableRadiusWS);
+        }
+
+        private static void SanitizeThermalFlowSample(ref ThermalFlowSample sample, Vector3 fallbackAnchor)
+        {
+            if (!MathGuard.IsFinite(sample.FlowVelocityWS))
+                sample.FlowVelocityWS = Vector3.zero;
+
+            sample.Heat01 = Resolve01Finite(sample.Heat01);
+            sample.DragMultiplier = math.max(1f, ResolvePositiveFinite(sample.DragMultiplier, 1f, 1f));
+            if (sample.HasFlow == 0 || sample.FlowVelocityWS.sqrMagnitude <= 0.00000001f)
+                sample.HasFlow = 0;
+            else
+                sample.HasFlow = 1;
+
+            if (!MathGuard.IsFinite(sample.CableAnchorWS))
+                sample.CableAnchorWS = MathGuard.IsFinite(fallbackAnchor) ? fallbackAnchor : Vector3.zero;
+
+            sample.CableCutProgress01 = Resolve01Finite(sample.CableCutProgress01);
+            sample.CableEscapeSuppression01 = math.clamp(
+                math.isfinite(sample.CableEscapeSuppression01) ? sample.CableEscapeSuppression01 : 1f,
+                0f,
+                1f);
+            sample.CableTension01 = Resolve01Finite(sample.CableTension01);
+
+            if (sample.IsCableZone == 0 || sample.CableTension01 <= 0.0001f)
+            {
+                sample.IsCableZone = 0;
+                sample.CableTension01 = 0f;
+                sample.CableEscapeSuppression01 = 1f;
+            }
+            else
+            {
+                sample.IsCableZone = 1;
+            }
+        }
+
+        private static float Resolve01Finite(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float ResolveNonNegativeFinite(float value, float fallback)
+        {
+            float safeFallback = math.isfinite(fallback) ? math.max(0f, fallback) : 0f;
+            return math.isfinite(value) ? math.max(0f, value) : safeFallback;
+        }
+
+        private static float ResolvePositiveFinite(float value, float fallback, float minimum)
+        {
+            float safeMinimum = math.isfinite(minimum) ? math.max(0.0001f, minimum) : 0.0001f;
+            float safeFallback = math.isfinite(fallback) ? math.max(safeMinimum, fallback) : safeMinimum;
+            return math.isfinite(value) ? math.max(safeMinimum, value) : safeFallback;
+        }
+
         private static bool IsFiniteAup(in AbsoluteUniversePosition positionAup)
         {
             return math.all(math.isfinite(new double3(positionAup.LocalX, positionAup.LocalY, positionAup.LocalZ)));
@@ -5726,24 +5882,29 @@ namespace Hecton8.World
             cableAnchorWS = positionWS;
             cableTension01 = 0f;
             cableCutProgress01 = 0f;
-            if (_activeVentCount <= 0)
+            if (_activeVentCount <= 0 || !MathGuard.IsFinite(positionWS))
                 return false;
 
             for (int i = 0; i < _activeVentCount; i++)
             {
                 ThermalVentState vent = _ventStates[i];
-                float cableRadius = Mathf.Max(0.1f, vent.CableRadiusWS);
-                float planarDistance = ComputeAupPlanarDistance(positionWS, vent.CableAnchorWS);
-                if (planarDistance > cableRadius)
+                if (!IsFiniteVent(in vent))
                     continue;
 
-                float tension = 1f - planarDistance / Mathf.Max(cableRadius, 0.001f);
+                float cableRadius = ResolvePositiveFinite(vent.CableRadiusWS, 0.1f, 0.1f);
+                float planarDistance = ComputeAupPlanarDistance(positionWS, vent.CableAnchorWS);
+                if (!math.isfinite(planarDistance) || planarDistance > cableRadius)
+                    continue;
+
+                float tension = math.saturate(1f - planarDistance / math.max(cableRadius, 0.001f));
                 if (tension <= cableTension01)
                     continue;
 
                 cableTension01 = tension;
                 cableAnchorWS = ResolveCableAnchor(positionWS, vent.CableAnchorWS);
-                cableCutProgress01 = ResolveCableCutProgress(positionWS, cableAnchorWS, cableRadius);
+                if (!MathGuard.IsFinite(cableAnchorWS))
+                    cableAnchorWS = positionWS;
+                cableCutProgress01 = Resolve01Finite(ResolveCableCutProgress(positionWS, cableAnchorWS, cableRadius));
             }
 
             return cableTension01 > 0f;
@@ -5751,38 +5912,112 @@ namespace Hecton8.World
 
         private Vector3 ResolveCableAnchor(Vector3 positionWS, Vector3 cableAnchorWS)
         {
-            Vector3 planarDelta = positionWS - cableAnchorWS;
-            planarDelta.y = 0f;
-            if (planarDelta.sqrMagnitude <= 0.0001f || cableAnchorPull <= 0f)
+            if (!MathGuard.IsFinite(cableAnchorWS))
+                return MathGuard.IsFinite(positionWS) ? positionWS : Vector3.zero;
+            if (!MathGuard.IsFinite(positionWS))
                 return cableAnchorWS;
 
-            return cableAnchorWS + ResolveSafeDirection(planarDelta, Vector3.forward) * cableAnchorPull;
+            Vector3 planarDelta = positionWS - cableAnchorWS;
+            planarDelta.y = 0f;
+            float planarDeltaSq = planarDelta.sqrMagnitude;
+            if (!math.isfinite(planarDeltaSq) || planarDeltaSq <= 0.0001f || ResolveNonNegativeFinite(cableAnchorPull, 0f) <= 0f)
+                return cableAnchorWS;
+
+            return cableAnchorWS + ResolveSafeDirection(planarDelta, Vector3.forward) * ResolveNonNegativeFinite(cableAnchorPull, 0f);
         }
 
         private float ResolveCableCutProgress(Vector3 positionWS, Vector3 cableAnchorWS, float cableRadiusWS)
         {
-            if (cutManager == null)
+            if (cutManager == null || !MathGuard.IsFinite(positionWS) || !MathGuard.IsFinite(cableAnchorWS))
                 return 0f;
 
-            float queryRadius = Mathf.Min(cableRadiusWS * 0.35f, cableCutQueryRadius);
+            float queryRadius = Mathf.Min(
+                ResolvePositiveFinite(cableRadiusWS, 0.1f, 0.1f) * 0.35f,
+                ResolvePositiveFinite(cableCutQueryRadius, 0.1f, 0.1f));
             if (!cutManager.SampleRecentCutArea(positionWS, queryRadius, out float accumulatedAreaWS, out float strongestCut01))
                 return 0f;
 
-            float requiredArea = Mathf.PI * queryRadius * queryRadius * cableCutReleaseThreshold;
-            float areaProgress = requiredArea > 0.0001f ? Mathf.Clamp01(accumulatedAreaWS / requiredArea) : 0f;
-            float strengthProgress = Mathf.Clamp01(strongestCut01 / Mathf.Max(cableCutReleaseThreshold, 0.0001f));
-            return Mathf.Clamp01(Mathf.Max(areaProgress, strengthProgress));
+            float releaseThreshold = math.max(0.0001f, Resolve01Finite(cableCutReleaseThreshold));
+            float requiredArea = Mathf.PI * queryRadius * queryRadius * releaseThreshold;
+            float safeAccumulatedArea = ResolveNonNegativeFinite(accumulatedAreaWS, 0f);
+            float areaProgress = requiredArea > 0.0001f ? Mathf.Clamp01(safeAccumulatedArea / requiredArea) : 0f;
+            float strengthProgress = Mathf.Clamp01(ResolveNonNegativeFinite(strongestCut01, 0f) / releaseThreshold);
+            return Resolve01Finite(Mathf.Max(areaProgress, strengthProgress));
         }
 
         private bool IsAbyssalThermalContext()
         {
-            if (biomeMatrixDirector == null || biomeMatrixDirector.CurrentDepthMeters < abyssalVentStartDepthMeters)
+            if (!TryResolveAbyssalThermalFamily(out HectonBiomeFamilyProfile family))
                 return false;
 
-            HectonBiomeFamilyProfile family = worldZoneDirector != null && worldZoneDirector.CurrentZone != null && worldZoneDirector.CurrentZone.DominantBiomeFamily != null
-                ? worldZoneDirector.CurrentZone.DominantBiomeFamily
-                : biomeMatrixDirector.CurrentFamilyProfile;
             return IsThermalBiomeFamily(family);
+        }
+
+        private bool TryResolveAbyssalThermalFamily(out HectonBiomeFamilyProfile family)
+        {
+            family = null;
+            BiomeMatrixDirector matrixDirector = biomeMatrixDirector;
+            if (!IsAbyssalThermalDepthGateSatisfied(matrixDirector))
+                return false;
+
+            WorldZoneDirector zoneDirector = worldZoneDirector;
+            WorldZoneAnchor currentZone = zoneDirector != null && zoneDirector.isActiveAndEnabled
+                ? zoneDirector.CurrentZone
+                : null;
+
+            HectonBiomeFamilyProfile matrixFamily = matrixDirector != null && matrixDirector.isActiveAndEnabled
+                ? matrixDirector.CurrentFamilyProfile
+                : null;
+            family = currentZone != null && currentZone.DominantBiomeFamily != null
+                ? currentZone.DominantBiomeFamily
+                : matrixFamily;
+            return family != null;
+        }
+
+        private bool IsAbyssalThermalDepthGateSatisfied(BiomeMatrixDirector matrixDirector)
+        {
+            if (TryResolvePlayerDepthMeters(out float playerDepthMeters) &&
+                playerDepthMeters >= abyssalVentStartDepthMeters)
+            {
+                return true;
+            }
+
+            if (matrixDirector != null &&
+                matrixDirector.isActiveAndEnabled &&
+                math.isfinite(matrixDirector.CurrentDepthMeters) &&
+                matrixDirector.CurrentDepthMeters >= abyssalVentStartDepthMeters)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryResolvePlayerDepthMeters(out float depthMeters)
+        {
+            depthMeters = 0f;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                depthMeters = math.max(0f, movementState.DepthMeters);
+                return true;
+            }
+
+            if (playerContext != null)
+                return false;
+
+            HectonPlayerMovement movement = _playerMovement;
+            if (movement != null && math.isfinite(movement.CurrentDepth))
+            {
+                depthMeters = math.max(0f, movement.CurrentDepth);
+                return true;
+            }
+
+            return false;
         }
 
         private bool IsThermalAnchor(WorldZoneAnchor anchor)
@@ -5797,7 +6032,9 @@ namespace Hecton8.World
 
             HectonBiomeFamilyProfile family = anchor.DominantBiomeFamily != null
                 ? anchor.DominantBiomeFamily
-                : biomeMatrixDirector != null ? biomeMatrixDirector.CurrentFamilyProfile : null;
+                : biomeMatrixDirector != null && biomeMatrixDirector.isActiveAndEnabled
+                    ? biomeMatrixDirector.CurrentFamilyProfile
+                    : null;
             return IsThermalBiomeFamily(family);
         }
 
@@ -5955,6 +6192,9 @@ namespace Hecton8.World
         {
             if (!_registeredThermodynamicsRuntime && Application.isPlaying)
             {
+                if (TryAbortForUsableExistingRuntime())
+                    return;
+
                 GlobalRegistry.RegisterThermodynamicsRuntime(this);
                 _registeredThermodynamicsRuntime = ReferenceEquals(GlobalRegistry.Thermodynamics, this);
                 if (_registeredThermodynamicsRuntime)
@@ -5983,6 +6223,32 @@ namespace Hecton8.World
             {
                 _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            AbyssalThermalManager active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsAbyssalThermalRuntimeUsable(active))
+            {
+                Destroy(this);
+                return true;
+            }
+
+            if (ReferenceEquals(GlobalRegistry.Thermodynamics, active))
+                GlobalRegistry.UnregisterThermodynamicsRuntime(active);
+
+            if (ReferenceEquals(s_activeRuntimeInstance, active))
+                s_activeRuntimeInstance = null;
+
+            return false;
+        }
+
+        private static bool IsAbyssalThermalRuntimeUsable(AbyssalThermalManager manager)
+        {
+            return manager != null && manager._registeredThermodynamicsRuntime && manager.isActiveAndEnabled;
         }
 
         private void TryUnregister()

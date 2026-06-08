@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "Revendications froides des lunes externes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# Revendications froides des lunes externes
 
-FR LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy.
+Les revendications froides des lunes externes élargissent Aegir au-delà de HECTON-8 : routes mortes, caches froides et balises abandonnées nourrissent le droit du salvage et masquent les pertes répétées.
 
 ## Scanner
 
-FR LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+Balise de revendication externe. Tout ce qui est mort dans Aegir n'est pas sur HECTON-8.
 
 ## Terminal
 
-FR LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+ARCHIVE DE L'ÉCHELLE EXTERNE // Prospection de saumure Thorne échouée. Route d'export Anvil mise en sommeil. Balise Mute répète le ping de garde sans déclaration d'équipage actif.
 
 ## Audio
 
-FR LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegir a appris à perdre des gens avant que HECTON-8 termine la leçon.
 
 ## Field Note
 
-FR LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+Les revendications froides rendent les Marauders possibles. Elles apprennent aussi aux compagnies à enterrer les motifs.
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/fr_FR. -->

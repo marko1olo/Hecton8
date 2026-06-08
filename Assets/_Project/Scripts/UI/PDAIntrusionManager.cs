@@ -657,12 +657,8 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            PDAIntrusionManager activeRuntime = s_activeRuntimeInstance ?? GlobalRegistry.PDAIntrusion;
-            if (activeRuntime != null && activeRuntime != this)
-            {
-                Destroy(this);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             ResolveRuntimeOwners();
             BindInputActionOwnerCold();
@@ -672,6 +668,9 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             TryRegisterService();
             ResolveRuntimeOwners();
             BindInputActionOwnerCold();
@@ -684,6 +683,9 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             ResolveRuntimeOwners();
             BindInputActionOwnerCold();
             BindLocalizationOverrideSinkCold();
@@ -718,13 +720,8 @@ namespace Hecton8.UI
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            PDAIntrusionManager activeRuntime = s_activeRuntimeInstance ?? GlobalRegistry.PDAIntrusion;
-            if (activeRuntime != null && activeRuntime != this)
-            {
-                enabled = false;
-                Destroy(this);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterPDAIntrusionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PDAIntrusion, this);
@@ -741,6 +738,49 @@ namespace Hecton8.UI
             if (ReferenceEquals(s_activeRuntimeInstance, this))
                 s_activeRuntimeInstance = null;
             _serviceRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            PDAIntrusionManager registered = GlobalRegistry.PDAIntrusion;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsPDAIntrusionRuntimeUsable(registered))
+                {
+                    s_activeRuntimeInstance = registered;
+                    enabled = false;
+                    Destroy(this);
+                    return true;
+                }
+
+                GlobalRegistry.UnregisterPDAIntrusionRuntime(registered);
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+            }
+
+            PDAIntrusionManager active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsPDAIntrusionRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterPDAIntrusionRuntime(active);
+                s_activeRuntimeInstance = active;
+                enabled = false;
+                Destroy(this);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterPDAIntrusionRuntime(active);
+            if (ReferenceEquals(s_activeRuntimeInstance, active))
+                s_activeRuntimeInstance = null;
+
+            return false;
+        }
+
+        private static bool IsPDAIntrusionRuntimeUsable(PDAIntrusionManager manager)
+        {
+            return manager != null && manager._serviceRegistered && manager.isActiveAndEnabled;
         }
 
         /// <inheritdoc />
@@ -830,11 +870,9 @@ namespace Hecton8.UI
 
             _leviathanScanTimer = math.max(0.05f, leviathanScanInterval);
 
-            HectonPlayerMovement playerMovement = _playerMovement;
-            if (playerMovement == null)
+            if (!TryResolveIntrusionOriginAup(out AbsoluteUniversePosition originAup))
                 return;
 
-            AbsoluteUniversePosition originAup = playerMovement.CurrentAup;
             if (!TryResolveRuntimePosition(in originAup, out Vector3 origin))
                 return;
 
@@ -862,6 +900,39 @@ namespace Hecton8.UI
                 TriggerHack();
                 return;
             }
+        }
+
+        private bool TryResolveIntrusionOriginAup(out AbsoluteUniversePosition originAup)
+        {
+            originAup = default;
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext != null)
+            {
+                if (runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    snapshot.Aup.IsFinite())
+                {
+                    originAup = snapshot.Aup;
+                    return true;
+                }
+
+                if (runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite())
+                {
+                    originAup = movementState.PredictedAup;
+                    return true;
+                }
+
+                return false;
+            }
+
+            HectonPlayerMovement playerMovement = _playerMovement;
+            if (playerMovement == null)
+                return false;
+
+            originAup = playerMovement.CurrentAup;
+            return originAup.IsFinite();
         }
 
         private bool ShouldTriggerAbyssalHack(Vector3 origin)
@@ -1172,8 +1243,8 @@ namespace Hecton8.UI
             if (_playerMovement == null)
                 TryGetComponent(out _playerMovement);
 
-            if (_vegetationBridge == null)
-                _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (_vegetationBridge == null || !_vegetationBridge.isActiveAndEnabled)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
         }
 
         private void BindInputActionOwnerCold()

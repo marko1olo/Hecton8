@@ -201,6 +201,34 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void CameraAupResolverRejectsStalePlayerMovementWhenRuntimeContextExists()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs");
+            string source = File.ReadAllText(path);
+            string method = ExtractMethodBlock(source, "private double3 ResolveCameraAup()");
+
+            Assert.That(method, Does.Contain("player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)"));
+            Assert.That(method, Does.Contain("(snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u"));
+            Assert.That(method, Does.Contain("snapshot.Aup.IsFinite()"));
+            Assert.That(method, Does.Contain("player.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)"));
+            Assert.That(method, Does.Contain("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u"));
+            Assert.That(method, Does.Contain("movementState.PredictedAup.IsFinite()"));
+            Assert.That(method, Does.Contain("return movementState.PredictedAup.ToAbsoluteDouble3();"));
+            Assert.That(method, Does.Contain("return double3.zero;"));
+            Assert.That(method, Does.Contain("return HectonFloatingOrigin.CurrentTotalOffsetDouble;"));
+            Assert.That(method, Does.Not.Contain("player.PlayerMovement"));
+            Assert.That(method, Does.Not.Contain("playerMovement.CurrentAup"));
+            Assert.That(
+                method.IndexOf("player.TryGetPlayerPoseSnapshot", StringComparison.Ordinal),
+                Is.LessThan(method.IndexOf("player.TryGetMovementRuntimeState", StringComparison.Ordinal)));
+            Assert.That(
+                method.IndexOf("return double3.zero;", StringComparison.Ordinal),
+                Is.LessThan(method.IndexOf("return HectonFloatingOrigin.CurrentTotalOffsetDouble;", StringComparison.Ordinal)));
+        }
+
+        [Test]
         public void DynamicLightVaultAccessBacksOffDuringCompactionFence()
         {
             string path = Path.Combine(

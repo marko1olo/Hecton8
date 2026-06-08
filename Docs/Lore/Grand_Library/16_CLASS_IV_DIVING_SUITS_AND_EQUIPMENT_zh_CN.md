@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # IV 级潜水服与深渊装备
 
 > **来源：** Deep Reach 超级企业，装备军需官手册。

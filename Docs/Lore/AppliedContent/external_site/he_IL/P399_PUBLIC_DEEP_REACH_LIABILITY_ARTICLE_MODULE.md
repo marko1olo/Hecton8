@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Deep Reach Liability Evidence"
+title: "ראיות אחריות Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Deep Reach Liability Evidence
+# ראיות אחריות Deep Reach
 
-HE LOC HOLD: Deep Reach is culpable because the HECTON-8 disaster can be both natural and managed badly. The ocean supplied real force. The company supplied thin margins, late authorization, quarantine delays, Atlas priority rules and paperwork clean enough to outlive the workers it described. The strongest evidence is physical: doors, clocks, sensor tolerances, route holds and loss ledgers.
+Deep Reach אשמה מפני שאסון HECTON-8 יכול להיות טבעי ומנוהל רע בו זמנית. האוקיינוס סיפק כוח אמיתי: tide resonance, cryosphere shear, storm stacking ו-pressure failure. החברה סיפקה margins דקים, authorization מאוחרת, quarantine delay, Atlas priority rules וניירת נקייה מספיק כדי לשרוד את האנשים שתיארה. הראיות החזקות ביותר הן פיזיות ופרוצדורליות: דלת שהוחזקה תחת executive authority, sensor tolerance ששונה לפני סגירת החלון, תור שעוכב למען legal clearance, loss ledger שהמיר עובדים ל-claim categories בזמן שהמים עוד זזו. השחקן לומד לא לבטוח בשפה הרשמית כשהוא משווה אותה לשקעים, לשעונים ולמסלולים.
 
 ## Scanner
 
-HE LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+רשומת liability. פיזיקת גאות אמיתית, margin risk שאושר, עיכוב פינוי, quarantine holds, Atlas weighting ושפת אובדן מנוקה מתכנסים באותה שרשרת ראיות.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+צומת ארכיון ציבורי // ראיות LIABILITY. Great Tide התקבל. בדיקה פתוחה לגבי sensor margins, עיכוב evacuation queue, quarantine holds, Atlas weighting, worker classification ו-loss conversion.
 
 ## Audio
 
-HE LOC HOLD: A disaster can be natural and still have signatures on it.
+אסון יכול להיות טבעי ועדיין לשאת חתימות.
 
 ## Field Note
 
-HE LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+הערת Marauder: אל תתווכח עם הגאות. תתווכח עם החתימות שלידה.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/he_IL. -->

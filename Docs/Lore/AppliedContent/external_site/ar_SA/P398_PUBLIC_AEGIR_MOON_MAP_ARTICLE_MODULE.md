@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Aegir Moon Route Map"
+title: "خريطة مسارات أقمار Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Aegir Moon Route Map
+# خريطة مسارات أقمار Aegir
 
-AR LOC HOLD: Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+خريطة أقمار Aegir تشغيلية قبل أن تكون جميلة. HECTON-8 جرم محيطي ضمن سلم من الأقمار وshepherd rocks وice-scatter paths وdead relay marks. الأجرام الداخلية تعطل narrowband contact وغطاء الإشعاع. الأقمار الجليدية تكسر optical relay lines إلى شظايا رديئة. Occultation bands تصنع نوافذ صمت حيث يبقى claim صالحا وغير مسموع. beacons الخارجية تحفظ ملكية قديمة بعد اختفاء الطواقم. هندسة المد وstorm stacking تقرر هل تصعد bathydrop chain نظيفة أو تدخل loss ledger. تستطيع الخرائط العامة إظهار ذلك من غير وعد بعوالم إضافية قابلة للعب؛ وظيفتها جعل السماء قابلة للقراءة كضغط وتأخير ومخاطرة مسار.
 
 ## Scanner
 
-AR LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+سجل خريطة النظام. أقمار Aegir تحدد relay timing وغطاء الإشعاع وice scatter وضغط المد وoccultation bands وbeacons الميتة وrecovery geometry.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+عقدة الأرشيف العام // سلم أقمار AEGIR. أسماء الأقمار علامات مسار. كل جرم يغير signal age أو transfer risk أو storm exposure أو custody timing أو claim reliability.
 
 ## Audio
 
-AR LOC HOLD: The map is why no one arrives the moment you ask.
+الخريطة تشرح لماذا لا يصل أحد في اللحظة التي تطلب فيها ذلك.
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+ملاحظة Marauder: ضع علامة على القمر، ثم ضع علامة على ما يفعله بالمسار.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/ar_SA. -->

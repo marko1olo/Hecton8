@@ -9,32 +9,18 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "최종 질문: 절단, 자비, 절도"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# 최종 질문: 절단, 자비, 절도
 
-KO LOC HOLD: Final Question Severance Mercy Theft defines the shutdown ethical axis.
+절단은 추상적이지 않고 촉각적이며 무서워야 한다. 플레이어는 선이나 악이라고 적힌 빨간 버튼을 누르는 것이 아니다. 압력문, 살아 있는 전도막, 오래된 노동자 기록, 동물 경로, payload 길을 통과하는 연속성을 자른다. 최종 방 전에 모은 모든 증거 패킷은 그 절단의 의미를 바꾼다.
 
-## Scanner
-
-KO LOC HOLD: Severing Atlas is not a simple shutdown button.
-
-## Terminal
-
-KO LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
-
-## Audio
-
-KO LOC HOLD: A clean switch would be merciful. You do not get one.
-
-## Field Note
-
-KO LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+Atlas가 주로 간수라면 절단은 자비다. 분지를 붙잡는 유일한 것이라면 파괴 공작이다. Atlas가 새로 생긴 바다-기계 유기체라면 살해다. Atlas가 Deep Reach 소유물이라면 절도다. 올바른 설계는 플레이어 대신 하나의 해석을 고르는 것이 아니다. 그 방의 어떤 증인도 이 행위를 정직하게 단순화할 수 없는 이유를 이해시키는 것이다.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/ko_KR. -->

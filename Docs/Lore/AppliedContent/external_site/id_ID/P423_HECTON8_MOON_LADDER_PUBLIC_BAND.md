@@ -8,33 +8,33 @@ biome_tags: biome.aegir_system;biome.publication
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "ID LOC HOLD: HECTON-8 Moon Ladder"
+spoiler_tier: 1
+title: "Tangga Bulan HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: HECTON-8 Moon Ladder
+# Tangga Bulan HECTON-8
 
-ID LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.
+HECTON-8 berada dalam multi-moon claim system aktif tempat relay, ice-scatter, quarantine dan salvage traffic berarti.
 
 ## Scanner
 
-ID LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+Tangga bulan: HECTON-8 adalah satu claim, bukan seluruh sistem Aegir.
 
 ## Terminal
 
-ID LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER: hanya role labels publik; orbital elements tepat tetap menjadi table-owned data.
 
 ## Audio
 
-ID LOC HOLD: Other moons are not side quests. They are why the route has teeth.
+Bulan lain bukan side quests. Mereka alasan rute ini punya gigi.
 
 ## Field Note
 
-ID LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
+Catatan tangga bulan: peta publik dapat menunjukkan skala Aegir tanpa menjanjikan playable moons.
 
 <!-- External Site; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/id_ID. -->

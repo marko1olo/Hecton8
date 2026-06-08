@@ -7,6 +7,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -33,10 +34,17 @@ namespace Hecton8.UI
         private const int MaxNotificationQueueCapacity = 8;
         private const int FixedBufferMessageCacheSize = MaxNotificationQueueCapacity + 1;
         private const int FixedBufferMessageCharCapacity = 512;
+        private const int MaxHudNotificationSignalsPerLateFrame = MaxNotificationQueueCapacity;
+        private const string HudSignalFallbackPrefix = "HUD SIGNAL 0x";
         private const string InventoryFullMessagePrefix = "INVENTORY FULL // CANNOT STORE ";
         private const string FallbackInventoryItemName = "ITEM";
         private const SystemID VaultOwnerSystemId = SystemID.UI;
         private const BufferID QueueBufferId = BufferID.HudNotificationQueue;
+        private static readonly uint HudNotificationRegistrationMissWarningHash = unchecked((uint)LocHash.Compute("HUDNotification.MessageRegistrationMiss"));
+        private static readonly uint HudNotificationQueueDropWarningHash = unchecked((uint)LocHash.Compute("HUDNotification.QueueDrop"));
+        private static readonly uint HudNotificationQueueWriteMissWarningHash = unchecked((uint)LocHash.Compute("HUDNotification.QueueWriteMiss"));
+        private static readonly uint HudNotificationSignalMissWarningHash = unchecked((uint)LocHash.Compute("HUDNotification.SignalMessageMiss"));
+        private static readonly uint HudNotificationContextHash = unchecked((uint)LocHash.Compute("HUDNotification"));
 
         [StructLayout(LayoutKind.Explicit, Size = 8)]
         private struct NotificationRequest
@@ -79,6 +87,9 @@ namespace Hecton8.UI
         private readonly char[] _fixedBufferMessageCharacters =
             new char[FixedBufferMessageCacheSize * FixedBufferMessageCharCapacity];
 
+        // COLD ALLOC: char[512] - hash-only HUD signal localization decode buffer - owner: HUDNotification
+        private readonly char[] _hudSignalDecodeCharacters = new char[FixedBufferMessageCharCapacity];
+
         private FixedCharBuffer _inventoryFullMessageBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - inventory-full notification staging buffer - owner: HUDNotification
 
         private RectTransform _notifRoot;
@@ -109,7 +120,20 @@ namespace Hecton8.UI
         private bool _textDirty;
         private ILocalizationStressPresentationReadModel _localizationStressPresentation;
         private int _lastStressCorruptionBucket = int.MinValue;
+        private int _messageRegistrationMissCount;
+        private int _queueDropCount;
+        private int _queueWriteMissCount;
+        private int _hudSignalMessageMissCount;
+        private int _lastMessageRegistrationMissTelemetryFrame = -1;
+        private int _lastQueueDropTelemetryFrame = -1;
+        private int _lastQueueWriteMissTelemetryFrame = -1;
+        private int _lastHudSignalMessageMissTelemetryFrame = -1;
         private static HUDNotification _activeRuntime;
+
+        public int MessageRegistrationMissCount => _messageRegistrationMissCount;
+        public int QueueDropCount => _queueDropCount;
+        public int QueueWriteMissCount => _queueWriteMissCount;
+        public int HudSignalMessageMissCount => _hudSignalMessageMissCount;
 
         public static bool TryGetActive(out HUDNotification notification)
         {
@@ -172,12 +196,20 @@ namespace Hecton8.UI
             _queueCount = 0;
             _currentMessageHash = 0u;
             ClearFixedBufferMessageCache();
+            ClearNotificationDiagnostics();
         }
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(_activeRuntime, this))
+                _activeRuntime = null;
+
+            UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             InventoryEvents.Unregister(this);
+            NotificationEvents.Unregister(this);
             ReleaseQueue(_dataVault);
+            ClearNotificationDiagnostics();
         }
 
         public void Tick(float deltaTime)
@@ -219,6 +251,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            DrainHudNotificationSignalLane();
+
             if (!_presentationDirty && !_visualStyleDirty && !_textDirty)
                 return;
 
@@ -375,7 +409,10 @@ namespace Hecton8.UI
 
             uint messageHash = NotificationEvents.RegisterMessage(message);
             if (messageHash == 0u)
+            {
+                ReportMessageRegistrationMiss(severity);
                 return;
+            }
 
             Enqueue(messageHash, severity);
         }
@@ -389,7 +426,10 @@ namespace Hecton8.UI
 
             uint messageHash = RegisterFixedBufferMessage(in messageBuffer);
             if (messageHash == 0u)
+            {
+                ReportMessageRegistrationMiss(severity);
                 return;
+            }
 
             Enqueue(messageHash, severity);
         }
@@ -398,7 +438,10 @@ namespace Hecton8.UI
         {
             EnsureBuilt();
             if (messageHash == 0u)
+            {
+                ReportMessageRegistrationMiss(severity);
                 return;
+            }
 
             float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
 
@@ -429,11 +472,14 @@ namespace Hecton8.UI
             {
                 if (_currentMessageHash != 0u && _queueCount < ResolveQueueCapacity())
                 {
-                    InsertQueueFront(new NotificationRequest
+                    if (!InsertQueueFront(new NotificationRequest
                     {
                         MessageHash = _currentMessageHash,
                         Severity = (byte)_currentSeverity
-                    });
+                    }))
+                    {
+                        ReportQueueWriteMiss(_currentSeverity, _currentMessageHash);
+                    }
                 }
 
                 ShowImmediate(messageHash, severity);
@@ -442,17 +488,21 @@ namespace Hecton8.UI
 
             if (_queueCount >= ResolveQueueCapacity())
             {
+                ReportQueueDrop(severity, messageHash);
                 if (severity <= NotificationSeverity.Info)
                     return;
 
                 RemoveQueueFront();
             }
 
-            PushQueueBack(new NotificationRequest
+            if (!PushQueueBack(new NotificationRequest
             {
                 MessageHash = messageHash,
                 Severity = (byte)severity
-            });
+            }))
+            {
+                ReportQueueWriteMiss(severity, messageHash);
+            }
         }
 
         private void ShowImmediate(uint messageHash, NotificationSeverity severity)
@@ -522,6 +572,73 @@ namespace Hecton8.UI
             AppendText(ref _inventoryFullMessageBuffer, InventoryFullMessagePrefix);
             AppendUpperInvariant(ref _inventoryFullMessageBuffer, itemName);
             ShowWarning(in _inventoryFullMessageBuffer);
+        }
+
+        private void DrainHudNotificationSignalLane()
+        {
+            int budget = MaxHudNotificationSignalsPerLateFrame;
+            while (budget-- > 0 && SignalBus<HUDNotificationSignal>.TryConsumeFrame(out HUDNotificationSignal signal))
+                PushHudNotificationSignal(in signal);
+        }
+
+        private void PushHudNotificationSignal(in HUDNotificationSignal signal)
+        {
+            if (!TryWriteHudSignalMessage(in signal, out int length))
+                return;
+
+            Enqueue(_hudSignalDecodeCharacters.AsSpan(0, length), ResolveSignalSeverity(signal.Severity));
+        }
+
+        private bool TryWriteHudSignalMessage(in HUDNotificationSignal signal, out int length)
+        {
+            length = 0;
+            if (signal.MessageHash == 0u)
+            {
+                ReportHudSignalMessageMiss(in signal);
+                return false;
+            }
+
+            bool found = LocRegistry.TryWriteVisualSpanFromUtf8(
+                signal.MessageHash,
+                _hudSignalDecodeCharacters.AsSpan(),
+                out length,
+                stripRichText: true);
+            if (found && length > 0)
+                return true;
+
+            ReportHudSignalMessageMiss(in signal);
+            return TryWriteHudSignalFallback(signal.MessageHash, _hudSignalDecodeCharacters.AsSpan(), out length);
+        }
+
+        private static NotificationSeverity ResolveSignalSeverity(byte severity)
+        {
+            return severity >= 2
+                ? NotificationSeverity.Critical
+                : severity == 1
+                    ? NotificationSeverity.Warning
+                    : NotificationSeverity.Info;
+        }
+
+        private static bool TryWriteHudSignalFallback(uint messageHash, Span<char> target, out int length)
+        {
+            length = 0;
+            if (target.Length < HudSignalFallbackPrefix.Length + 8)
+                return false;
+
+            HudSignalFallbackPrefix.AsSpan().CopyTo(target);
+            length = HudSignalFallbackPrefix.Length;
+            for (int shift = 28; shift >= 0; shift -= 4)
+                target[length++] = ToUpperHexNibble((messageHash >> shift) & 0xFu);
+
+            return true;
+        }
+
+        private static char ToUpperHexNibble(uint value)
+        {
+            value &= 0xFu;
+            return value < 10u
+                ? (char)('0' + value)
+                : (char)('A' + (value - 10u));
         }
 
         private void RefreshStressCorruptionIfNeeded()
@@ -694,6 +811,18 @@ namespace Hecton8.UI
             _fixedBufferMessageCacheCursor = 0;
         }
 
+        private void ClearNotificationDiagnostics()
+        {
+            _messageRegistrationMissCount = 0;
+            _queueDropCount = 0;
+            _queueWriteMissCount = 0;
+            _hudSignalMessageMissCount = 0;
+            _lastMessageRegistrationMissTelemetryFrame = -1;
+            _lastQueueDropTelemetryFrame = -1;
+            _lastQueueWriteMissTelemetryFrame = -1;
+            _lastHudSignalMessageMissTelemetryFrame = -1;
+        }
+
         private int ResolveQueueCapacity()
         {
             int backingCapacity = _queueCapacity > 0 ? _queueCapacity : MaxNotificationQueueCapacity;
@@ -735,10 +864,10 @@ namespace Hecton8.UI
                 _queueCount = _queueCapacity;
         }
 
-        private void PushQueueBack(in NotificationRequest request)
+        private bool PushQueueBack(in NotificationRequest request)
         {
             if (!TryAcquireQueueWrite(out NativeArray<NotificationRequest> queue))
-                return;
+                return false;
 
             int capacity = ResolveQueueCapacity();
             try
@@ -746,10 +875,11 @@ namespace Hecton8.UI
                 if (queue.Length < capacity)
                     capacity = queue.Length;
                 if (_queueCount >= capacity)
-                    return;
+                    return false;
 
                 queue[_queueCount] = request;
                 _queueCount++;
+                return true;
             }
             finally
             {
@@ -757,10 +887,10 @@ namespace Hecton8.UI
             }
         }
 
-        private void InsertQueueFront(in NotificationRequest request)
+        private bool InsertQueueFront(in NotificationRequest request)
         {
             if (!TryAcquireQueueWrite(out NativeArray<NotificationRequest> queue))
-                return;
+                return false;
 
             int capacity = ResolveQueueCapacity();
             try
@@ -770,7 +900,7 @@ namespace Hecton8.UI
                 if (capacity <= 0)
                 {
                     _queueCount = 0;
-                    return;
+                    return false;
                 }
 
                 if (_queueCount >= capacity)
@@ -781,6 +911,7 @@ namespace Hecton8.UI
 
                 queue[0] = request;
                 _queueCount++;
+                return true;
             }
             finally
             {
@@ -903,6 +1034,62 @@ namespace Hecton8.UI
             _queueWriteVault = null;
             _queueCapacity = 0;
             _queueCount = 0;
+        }
+
+        private void ReportMessageRegistrationMiss(NotificationSeverity severity)
+        {
+            _messageRegistrationMissCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastMessageRegistrationMissTelemetryFrame == frame)
+                return;
+
+            _lastMessageRegistrationMissTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                HudNotificationRegistrationMissWarningHash,
+                HudNotificationContextHash ^ ((uint)severity << 24),
+                math.max(1, _messageRegistrationMissCount));
+        }
+
+        private void ReportQueueDrop(NotificationSeverity severity, uint messageHash)
+        {
+            _queueDropCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastQueueDropTelemetryFrame == frame)
+                return;
+
+            _lastQueueDropTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                HudNotificationQueueDropWarningHash,
+                HudNotificationContextHash ^ messageHash ^ ((uint)severity << 24),
+                math.max(1, _queueDropCount));
+        }
+
+        private void ReportQueueWriteMiss(NotificationSeverity severity, uint messageHash)
+        {
+            _queueWriteMissCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastQueueWriteMissTelemetryFrame == frame)
+                return;
+
+            _lastQueueWriteMissTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                HudNotificationQueueWriteMissWarningHash,
+                HudNotificationContextHash ^ messageHash ^ ((uint)severity << 24),
+                math.max(1, _queueWriteMissCount));
+        }
+
+        private void ReportHudSignalMessageMiss(in HUDNotificationSignal signal)
+        {
+            _hudSignalMessageMissCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastHudSignalMessageMissTelemetryFrame == frame)
+                return;
+
+            _lastHudSignalMessageMissTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                HudNotificationSignalMissWarningHash,
+                HudNotificationContextHash ^ signal.MessageHash ^ signal.ContextHash ^ ((uint)signal.Severity << 24),
+                math.max(1, _hudSignalMessageMissCount));
         }
 
         private static bool IsHudQueueHandle(in VaultGenerationHandle<NotificationRequest> handle)

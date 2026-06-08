@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "تسريب إلى السجل العام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# تسريب إلى السجل العام
 
-AR LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+تسريب السجل العام ليس خيال مبلّغ مثالي. إنه حزمة تغادر عبر نافذة relay ضيقة مع witness hash، وcustody تكفي لصعوبة الإنكار، وثغرات كثيرة تجعلها غير آمنة. تستطيع Tau Ceti جعل السجل عاما بعد وقت طويل من قدرتها على إنقاذ أي شخص في الماء.
 
-## Scanner
-
-AR LOC HOLD: You can leak truth before you understand all of it.
-
-## Terminal
-
-AR LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-AR LOC HOLD: The truth leaves first. You may not like who reads it.
-
-## Field Note
-
-AR LOC HOLD: Public does not mean safe. It means harder to erase.
+هذا التأخير هو المعنى. لا يستطيع Deep Reach حذف claim ببساطة، لكن اللاعب لا يستطيع أيضا تحديد من سيستخدمه لاحقا. شركات التأمين والخصوم والمحاكم المدنية ومجاميع Marauder والمكاتب corporate ستقرأ الجرح نفسه بطرق مختلفة. هذه النهاية تجعل الحقيقة أصعب في الدفن وأصعب في التملك.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/ar_SA. -->

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "Pieczę nad pakietami Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# Pieczę nad pakietami Luyten Junction
 
-PL LOC HOLD: Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.
+Luyten Junction jest bardziej infrastrukturą niż społeczeństwem: przekaźniki, beam custody, depot law i packet accounting. Wyjaśnia, jak Deep Reach może naciskać na Aegir bez żywego rozkazu FTL oraz jak dowód można opóźnić, kupić, zgubić albo zamienić w broń.
 
 ## Scanner
 
-PL LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+Szpula custody Luyten. Wiadomości nie podróżują za darmo; prawda też nie.
 
 ## Terminal
 
-PL LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+TRASA LUYTEN JUNCTION: packet custody przekazane przez kolejkę taryfową. Live command zabronione. Priorytet dowodów do kupienia pod emergency claim escrow.
 
 ## Audio
 
-PL LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+Żadnego ansible. Żadnej litości. Tylko custody, tariff i czas.
 
 ## Field Note
 
-PL LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+Przekaźnik to maszyna, która decyduje, czyja żałoba dostanie bandwidth.
 
 <!-- In-Game Wiki; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/pl_PL. -->

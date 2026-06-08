@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Black Keels eerste stem"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Black Keels eerste stem
 
-NL LOC HOLD: Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue.
-
-## Scanner
-
-NL LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
-
-## Terminal
-
-NL LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
-
-## Audio
-
-NL LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
-
-## Field Note
-
-NL LOC HOLD: The first voice should feel useful before it feels bought.
+De eerste stem van Black Keel moet voelen als een deur die maar half opengaat. De audio is beschadigd, het tekstkanaal schoon, en de carrier verspilt geen woord aan troost. Die afwezigheid telt. Een vriendelijke AI zou de oceaan zachter maken. Een dramatische schurk zou het gevaar te menselijk maken. Black Keel is nuttiger dan beide omdat het de waarheid vertelt in een vorm die veiligheid blijft weigeren. Signaal verworven. Overleving erkend. Recovery onopgelost. De speler leert dat gehoord worden niet hetzelfde is als gered worden, en dat de enige stem boven water vastzit aan ledgers die de speler nog niet heeft gezien.
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/nl_NL. -->

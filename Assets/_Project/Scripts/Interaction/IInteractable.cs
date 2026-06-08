@@ -27,8 +27,8 @@ namespace Hecton8.Interaction
         /// <summary>
         /// Called when the player presses the interact key while hovering.
         /// </summary>
-        /// <param name="interactor">The Transform of the entity performing 
-        /// the interaction (player root). Used for positioning, inventory 
+        /// <param name="interactor">The Transform of the entity performing
+        /// the interaction (player root). Used for positioning, inventory
         /// routing, etc.</param>
         void Interact(Transform interactor);
 
@@ -47,6 +47,16 @@ namespace Hecton8.Interaction
         /// Returns false when the destination is too small or no prompt is available.
         /// </summary>
         bool TryCopyInteractText(Span<char> destination, out int length);
+    }
+
+    /// <summary>
+    /// Marker for interactables whose <see cref="IInteractable.Interact"/> method owns
+    /// accepted-start event publication. PlayerInteraction skips its default attempt
+    /// event and generic confirm feedback for these targets so owner-local reject paths
+    /// do not emit false positives.
+    /// </summary>
+    public interface IInteractionStartedEventOwner
+    {
     }
 
     public static class InteractableTextCopy

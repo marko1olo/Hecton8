@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Brine Canyon Density Ladder Guide"
+title: "염수 협곡 밀도 사다리 안내서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Brine Canyon Density Ladder Guide
+# 염수 협곡 밀도 사다리 안내서
 
-KO LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.
+brine 협곡은 깊이를 물리적으로 만든다. 낮은 항로가 열리기 전에 밀도층, 선체 한계, 압력 실패, resource pockets를 가르친다.
 
 ## Scanner
 
-KO LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
+brine ladder 감지: 층상 밀도, 가짜 바닥, 소나 굴절. 가장자리를 따라가라. 열린 물은 여기서 거짓말한다.
 
 ## Terminal
 
-KO LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: brine 협곡은 pressure shelves, current ledges, resource pockets, scanner false positives를 숨긴다. Hull rating과 density transition이 어떤 선반이 길이고 어떤 선반이 추락인지 결정한다.
 
 ## Audio
 
-KO LOC HOLD: A canyon is a staircase if your hull can pay for each step.
+네 선체가 각 단을 지불할 수 있다면 협곡은 계단이다.
 
 ## Field Note
 
-KO LOC HOLD: Use for scanner tutorials and resource route articles.
+vane 그림자를 계단처럼 써라. brine 속 빈 판독은 빈 공간이 아니다. 계기가 논쟁에서 지고 있는 것이다.
 
 <!-- In-Game Wiki; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/ko_KR. -->

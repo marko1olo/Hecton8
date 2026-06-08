@@ -9,32 +9,20 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Deep Reach Suboffice Registry"
+title: "Deep Reach サブオフィス登録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Deep Reach Suboffice Registry
+# Deep Reach サブオフィス登録
 
-JA LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## 小さなオフィス、大きな結果
 
-## Scanner
+Deep Reach は陰謀ではなく管理に聞こえ始める時に恐ろしくなる。各 office 名が本物らしいほど退屈だから、この登録は役立つ。Contract Continuity Desk は worker が死んでほしい obligations を生かす。Packet Notary Interface はメッセージを証拠かノイズに分ける。Quarantine Hold Desk は遅延を医学的責任に見せる。Asset Silence Board は証人を exposure に変える。Return Action Queue は body を payload、orbit、public risk と比較して値付けする。
 
-JA LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-JA LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-JA LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-JA LOC HOLD: Use dull names. Dull names are where liability hides.
+どの desk もプレイヤーを憎む必要はない。水が上がる前に書かれた priority stack の中で仕事をするだけで十分だ。だから HECTON-8 の証拠は印章、routing fragments、小さな矛盾として積み上がるべきだ。犯罪は演劇的な悪の裏に隠れていない。プレイヤーが並べるまで defensible に見える書類に広がっている。
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/ja_JP. -->

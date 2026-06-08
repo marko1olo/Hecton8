@@ -34,6 +34,7 @@ namespace Hecton8.Visor
         private const float InternalWaterlineSubmergeOffsetMeters = 0.03f;
         private const float InternalWaterlineSubmergeFadeMeters = 0.12f;
         private const float InternalWaterlineSplitBypassDepthMeters = 10f;
+        private const float DefaultSeaLevelY = 14.02f;
         private const uint ReconstructionModeNativeHash = 0x4E415456u; // NATV
         private const uint ReconstructionModeBilateralHash = 0x42494C55u; // BILU
         private const uint ReconstructionModeTemporalHash = 0x54454D50u; // TEMP
@@ -2108,7 +2109,7 @@ namespace Hecton8.Visor
             if (!_aestheticCsvLoaded || count <= 0 || renderCamera == null)
                 return false;
 
-            float depthMeters = math.max(0f, -renderCamera.transform.position.y);
+            float depthMeters = ResolveAestheticProfileDepthMeters(renderCamera);
             float sanity01 = math.saturate(1f - runtimeState.PlayerStress01);
             for (int i = 0; i < count; i++)
             {
@@ -2127,6 +2128,29 @@ namespace Hecton8.Visor
             }
 
             return false;
+        }
+
+        private float ResolveAestheticProfileDepthMeters(Camera renderCamera)
+        {
+            IPlayerRuntimeContext playerContext = _noirPlayerContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            return ResolveCameraDepthFromProductionSeaLevel(renderCamera);
+        }
+
+        private static float ResolveCameraDepthFromProductionSeaLevel(Camera renderCamera)
+        {
+            if (renderCamera == null)
+                return 0f;
+
+            Vector3 position = renderCamera.transform.position;
+            return math.isfinite(position.y) ? math.max(0f, DefaultSeaLevelY - position.y) : 0f;
         }
 
         private static string ResolveAestheticCsvPath()

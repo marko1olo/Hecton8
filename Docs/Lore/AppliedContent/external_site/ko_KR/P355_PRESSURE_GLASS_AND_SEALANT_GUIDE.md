@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Pressure Glass and Sealant Guide"
+title: "압력 유리와 밀봉제 안내서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Pressure Glass and Sealant Guide
+# 압력 유리와 밀봉제 안내서
 
-KO LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.
+압력 유리와 밀봉제 안내서는 HECTON-8의 생체기계 공포를 수리 논리에 고정한다. Atlas는 균열, 케이블, biofilms, pressure scars를 따른다. 부서진 시스템은 이미 길을 제공하기 때문이다.
 
 ## Scanner
 
-KO LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+Atlas 화학으로 봉인된 pressure-glass 균열. seal map이 온전할 때만 lens stock 안전.
 
 ## Terminal
 
-KO LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: pressure glass는 오래된 tide stress를 기록한다. Atlas sealant는 그 균열을 따른다. 균열이 이미 시스템의 실패선을 설명하기 때문이다.
 
 ## Audio
 
-KO LOC HOLD: The repair network reads fractures the way you read a map.
+수리 네트워크는 네가 지도를 읽듯 균열을 읽는다.
 
 ## Field Note
 
-KO LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+예쁜 가장자리를 갈지 마라. fracture map을 따라 seal의 죽은 쪽에서 잘라라.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/ko_KR. -->

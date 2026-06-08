@@ -15,6 +15,8 @@ namespace Hecton8.World
         private static readonly ProfilerMarker _backendCompleteProfilerMarker = new("WorldScatter.Backend.Complete");
 
         private readonly IScatterSimulationBackend _simulationBackend;
+        private readonly ScatterSimulationBackendKind _requestedBackendKind;
+        private readonly uint _backendProviderVersion;
         private bool _disposed;
         private bool _initialized;
         private int _lastCandidateCount;
@@ -25,7 +27,7 @@ namespace Hecton8.World
         /// </summary>
         /// <param name="backendKind">Requested simulation backend kind.</param>
         public ScatterRuntimeBackendFacade(ScatterSimulationBackendKind backendKind)
-            : this(CreateSimulationBackend(backendKind))
+            : this(backendKind, CreateSimulationBackend(backendKind))
         {
         }
 
@@ -36,9 +38,24 @@ namespace Hecton8.World
         /// <param name="simulationBackend">Simulation backend implementation.</param>
         public ScatterRuntimeBackendFacade(
             IScatterSimulationBackend simulationBackend)
+            : this(
+                simulationBackend != null ? simulationBackend.BackendKind : ScatterSimulationBackendKind.ClassicJobs,
+                simulationBackend)
         {
+        }
+
+        private ScatterRuntimeBackendFacade(
+            ScatterSimulationBackendKind requestedBackendKind,
+            IScatterSimulationBackend simulationBackend)
+        {
+            _requestedBackendKind = requestedBackendKind;
+            _backendProviderVersion = ScatterSimulationBackendRegistry.Version;
             _simulationBackend = simulationBackend;
         }
+
+        /// <summary>Backend kind requested by rollout plan, distinct from actual provider fallback.</summary>
+        public ScatterSimulationBackendKind RequestedBackendKind => _requestedBackendKind;
+        public uint BackendProviderVersion => _backendProviderVersion;
 
         /// <summary>Active simulation backend kind.</summary>
         public ScatterSimulationBackendKind BackendKind => _simulationBackend != null
@@ -63,8 +80,11 @@ namespace Hecton8.World
             if (_disposed || _initialized)
                 return;
 
-            _simulationBackend?.Initialize();
-            _initialized = true;
+            if (_simulationBackend == null)
+                return;
+
+            _simulationBackend.Initialize();
+            _initialized = _simulationBackend.IsInitialized;
         }
 
         /// <summary>
@@ -161,16 +181,7 @@ namespace Hecton8.World
             NativeArray<float>.ReadOnly heightSamples,
             NativeArray<ScatterSimulationCellState>.ReadOnly cellStates)
         {
-            if (backend is ScatterClassicSimulationBackend classicBackend)
-                return classicBackend.TrySchedule(config, heightSamples, cellStates);
-
-            if (backend != null)
-                backend.ForceComplete();
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogWarning("[WorldScatter] Unknown backend provider cannot be scheduled through stale contract compatibility route.");
-#endif
-            return false;
+            return backend != null && backend.TrySchedule(config, heightSamples, cellStates);
         }
     }
 }

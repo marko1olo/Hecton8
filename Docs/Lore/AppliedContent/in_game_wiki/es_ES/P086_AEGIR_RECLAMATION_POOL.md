@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Fondo de Reclamación Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Fondo de Reclamación Aegir
 
-ES LOC HOLD: The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.
+El Fondo de Reclamación Aegir es la cáscara pública de salvamento detrás de Black Keel. Permite que pequeñas licencias marauder alcancen reclamos abandonados de Aegir sin poseer un carrier interplanetario privado. El trato sirve y envenena a la vez: el mismo fondo que puede enviar un tender decide si un operador que respira, un payload sellado, un bloqueo de cuarentena o un paquete de pruebas vale el siguiente burn.
 
 ## Scanner
 
-ES LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
+Sello de fondo de reclamos. Black Keel fue asignada por deuda de ruta, no regalada al operador.
 
 ## Terminal
 
-ES LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+AEGIR RECLAMATION POOL: tender autónomo Black Keel asignado al reclamo HECTON-8, abandonado bajo presión. Clase de bienestar de tripulación: contratista. Clase de custodia de payload: prioridad variable. La extracción humana sigue condicionada hasta cierre de arbitraje del fondo.
 
 ## Audio
 
-ES LOC HOLD: The pool owns the route. You only rent the answer.
+El fondo posee la ruta. Tú alquilas la respuesta sobreviviendo lo suficiente para pedirla.
 
 ## Field Note
 
-ES LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+Un fondo compartido hace el rescate más barato, más lento y más fácil de negar para cada firmante.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/es_ES. -->

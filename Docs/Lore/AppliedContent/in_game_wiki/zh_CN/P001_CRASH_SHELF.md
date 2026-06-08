@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 坠落浅架
 
-下潜舱只为一件粗暴的事而造：进入大气，扛过风暴剪切，砸进海里，甩掉热量，并让一名操作员活到足以开始工作。它从来不是船，只是一件一次性地与物理争辩的工具。Black Keel仍在Aegir交通区某处的轨道上方，但下潜舱的通信核心已经开裂，返升硬件也没了。干净的救援需要电力、时机、轨道窗口，以及能穿过天气、海水和Aegir磁噪声的发射器。
+bathy-drop是下降工具，不是救援艇。它被制造出来，是为了进入Aegir的天气，砸进HECTON-8的海洋，抛掉热量，并让一名工人呼吸到第一处庇护设施上线。撞击带走了返升组件。剩下的舱壳粗糙、吵闹、珍贵：抗压框架、陶瓷碎片、电池肋、干燥空腔、半死的uplink。周围的浅架亮得足以显得温和，但每件有用的东西也是证据。Black Keel知道有一项活着的索赔。它还没有决定这项索赔值多少钱。
 
 ## Scanner
 
-下潜舱残骸。抗压框架完好，返升组件已毁。它能让你活下去，不能带你回家。
+bathy-drop残骸。抗压框架完整；返升组件遗失。舱壳能保持压力和热量。它不能把你送上去。
 
 ## Terminal
 
-返升组件：缺失。通信核心：检测到裂纹。母船联系：延迟。
+BATHY-DROP BD-K8-113：撞击幸存。返升组件：遗失。UPLINK核心：断裂。BLACK KEEL：仅握手。
 
 ## Audio
 
-收到Black Keel握手。数据包完整性低于恢复阈值。重复：未达到恢复阈值。
+已接收Black Keel握手。操作员存活。回收授权未决。维持庇护，等待可用窗口。
 
 ## Field Note
 
-如果舱壳还在保压，就别把它拆空。一个糟糕的避难所比整齐的库存更值钱。
+不要把下降舱壳拆到只剩框架。HECTON-8上的第一座基地，就是任何能把雨挡在外面、把压力留在里面、把工具保持干燥的东西。
 
 <!-- In-Game Wiki; generated from P001_CRASH_SHELF/zh_CN. -->

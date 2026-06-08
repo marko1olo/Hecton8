@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ladder"
+title: "Aegir月梯子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ladder
+# Aegir月梯子
 
-JP LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit.
+Aegir月梯子はHECTON-8に使える局所天文学を与える。他の月が航路窓、死んだclaims、salvageの噂、失敗した回収タイミングを説明する。
 
 ## Scanner
 
-JP LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.
+月梯子図。HECTON-8は動く系の中の作業危険であり、孤立した階層ではない。
 
 ## Terminal
 
-JP LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+AEGIR主要月 // H1 Skarn、H2 Vela、H3 Claw、H4 Lumen、H5 Thorne、H6 Anvil、H7 Kestrel、H8 HECTON、H9 Mute。transferおよびeclipseモデル添付。
 
 ## Audio
 
-JP LOC HOLD: The map has more moons than mercy.
+その地図には慈悲より多くの月がある。
 
 ## Field Note
 
-JP LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.
+Skarnは焼く。Velaは氷を落とす。Anvilは金属を供給する。Kestrelはリレーを切る。HECTONは沈む。
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/ja_JP. -->

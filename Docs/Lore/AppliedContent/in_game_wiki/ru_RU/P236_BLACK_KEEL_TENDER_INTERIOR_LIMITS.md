@@ -14,20 +14,24 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Ограничения интерьера тендера Black Keel
 
-Ограничения интерьера тендера Black Keel объясняют, почему игрок зависит от поврежденного местного железа, а не от чистого орбитального спасения.
+Интерьер Black Keel говорит правду раньше, чем его голос. Самые защищенные места тендера - не койки и не медотсеки, а стойки образцов, гнезда дронов, шкафы пакетов, карантинные рукава и рельсы долгового груза. Живой Marauder помещается в эту систему только после того, как манифест понимает, какую массу можно выставить в счет, какой образец можно сохранить и какой legal packet можно вывести из руки заявителя.
+
+Поэтому чистое орбитальное спасение не приходит первым ответом. Тендер достаточно близко, чтобы посчитать окно восстановления, держать custody, отказать по загрязнению, потребовать ascent mass и говорить через реле. Он не устроен как пассажирский корабль, и на нем нет deep rescue crew, готовой импровизировать милость. Black Keel может держать контракт живым, оставляя контрактника под водой.
+
+Урок мерзкий: поврежденное местное железо - не побочная проблема. Это маршрут. Срезанная мачта, забитый компрессор или плохой ascent sleeve важны потому, что Black Keel не тратит burn на надежду. Он тратит burn на принятый payload, проверенные пакеты, карантинные условия и lien authority.
 
 ## Scanner
 
-У carrier сначала есть стойки для образцов, дронов и legal packets, а уже потом место для живого пассажира.
+В тендере сначала идут стойки под образцы, дроны, sealed packets и lien-груз; место для живого пассажира появляется только после них.
 
 ## Terminal
 
-TENDER LIMIT: нет deep rescue crew, нет atmospheric shuttle reserve, нет free ascent burn вне lien authority.
+TENDER LIMIT: нет deep rescue crew, нет atmospheric shuttle reserve, нет free ascent burn вне lien authority, нет живого квартмейстера.
 
 ## Audio
 
@@ -35,6 +39,6 @@ TENDER LIMIT: нет deep rescue crew, нет atmospheric shuttle reserve, не�
 
 ## Field Note
 
-Black Keel - рабочий claim tender: арендованный, арестованный долгом, автоматизированный и заточенный под salvage custody.
+Black Keel - рабочий claim tender: арендованный, долгово арестованный, автоматизированный и заточенный под custody раньше спасения.
 
 <!-- In-Game Wiki; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/ru_RU. -->

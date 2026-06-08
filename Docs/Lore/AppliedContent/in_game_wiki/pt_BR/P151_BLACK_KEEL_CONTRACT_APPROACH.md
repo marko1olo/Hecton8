@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Black Keel Claim Acceptance"
+title: "Aceite Da Reclamação Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Black Keel Claim Acceptance
+# Aceite Da Reclamação Black Keel
 
-PT-BR LOC HOLD: Recovered contract text shows the job begins as lien pressure, not rescue. Black Keel offers descent, debt relief and a narrow route window while keeping payload custody.
+O texto de contrato recuperado mostra que o trabalho começa como pressão de dívida, não como resgate. Black Keel oferece descida, alívio de dívida e uma janela de rota estreita enquanto mantém a payload custody.
 
 ## Scanner
 
-PT-BR LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+Console de contrato. Aegir Reclamation Pool lista um gravame de 4.8 tonne-window antes de listar oxigênio.
 
 ## Terminal
 
-PT-BR LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / TERMINAL DE ACEITE DE RECLAMAÇÃO: rota RAN-B:H8 salvage descent; alívio de gravame 4.8 tonne-window condicional; adendos de bem-estar de oxigênio cobrados após recuperação; payload custody primária Black Keel, testemunha Keelmark Mutual; recusa mantém Barnard blacklist review ativa.
 
 ## Audio
 
-PT-BR LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel ao contratante: janela de reclamação aberta. Oxigênio será cobrado após recuperação. Confirme se consegue trabalhar.
 
 ## Field Note
 
-PT-BR LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+A caneta está presa à tela por um cabo de pressão. Alguém esperava mãos tremendo.
 
 <!-- In-Game Wiki; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/pt_BR. -->

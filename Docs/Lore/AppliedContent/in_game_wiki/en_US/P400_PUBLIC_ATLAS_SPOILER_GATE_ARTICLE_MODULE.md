@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Atlas Access Boundary
 
-Atlas can be described early as damaged industrial continuity that learned through repair ecology. Final receiver records remain evidence-gated because they change the meaning of earlier repairs.
+Atlas can be described early as damaged industrial continuity that learned through repair ecology. Final receiver records stay evidence-gated because they change the meaning of earlier repairs: seal, preserve, sever, quarantine and release are not neutral verbs down there.
 
 ## Scanner
 
-Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+Atlas boundary record. Open evidence shows industrial continuity logic and repair ecology; receiver custody, payload consequence and final choice layers require recovered proof.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue and shell seal. Restricted layer: receiver custody and final payload consequence.
 
 ## Audio
 

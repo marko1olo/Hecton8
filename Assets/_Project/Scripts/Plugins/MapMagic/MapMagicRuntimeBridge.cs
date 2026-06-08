@@ -68,6 +68,7 @@ namespace Hecton8.Core
         private const int DistantTerrainShadowMaskMaxResolution = 256;
         private const int BiomeAlphaTextureCacheCapacity = 128;
         private const int BiomeTerrainLayerCacheCapacity = 128;
+        private const float DefaultWaterSurfaceLevel = 14.02f;
         private const int TerrainTileCacheCapacity = 512;
         private static readonly int _TerrainFadeDistanceId = Shader.PropertyToID("_FadeDistance");
         private static readonly int _TerrainFadeParamsId = Shader.PropertyToID("_HectonTerrainFadeParams");
@@ -106,7 +107,7 @@ namespace Hecton8.Core
         [Header("── Water Settings ────────────────────────────")]
         [Tooltip("Uroven poverhnosti vody (mirovaya Y-koordinata). " +
                  "Ispolzuetsya dlya opredeleniya 'pod vodoy'.")]
-        [SerializeField] private float waterSurfaceLevel = 0f;
+        [SerializeField] private float waterSurfaceLevel = DefaultWaterSurfaceLevel;
 
         [Header("── Player Reference ──────────────────────────")]
         [Tooltip("Transform igroka dlya biom-detektsii v SlowTick.\n" +
@@ -231,7 +232,7 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>Uroven poverhnosti vody (Y).</summary>
-        public override float WaterSurfaceLevel => waterSurfaceLevel;
+        public override float WaterSurfaceLevel => SanitizeWaterSurfaceLevel(waterSurfaceLevel);
 
         /// <summary>MapMagic nayden i dostupen.</summary>
         public override bool IsAvailable => mapMagicObject != null;
@@ -356,7 +357,7 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterMapMagicRuntime(this);
             GlobalRegistry.RegisterTerrainProvider(this);
-            _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);
             _registeredMapMagicRuntime = ReferenceEquals(GlobalRegistry.MapMagic, this);
             if (_registeredMapMagicRuntime)
                 PublishActiveRuntimeInstance();
@@ -365,6 +366,7 @@ namespace Hecton8.Core
         private void TryUnregisterMapMagicRuntime()
         {
             ClearActiveRuntimeInstance();
+            WorldRuntimeReferenceUtility.InvalidateMapMagicBridgeCache(this);
             if (!_registeredMapMagicRuntime)
                 return;
 
@@ -425,6 +427,7 @@ namespace Hecton8.Core
             if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
             {
                 _cachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);
                 return;
             }
 
@@ -1320,7 +1323,7 @@ namespace Hecton8.Core
         /// </summary>
         public override bool IsUnderwater(float x, float y, float z)
         {
-            return y < waterSurfaceLevel;
+            return y < WaterSurfaceLevel;
         }
 
         /// <summary>
@@ -1332,7 +1335,7 @@ namespace Hecton8.Core
             if (!TryGetHeight(x, z, out bottomHeight))
                 return false;
 
-            return y < waterSurfaceLevel && y > bottomHeight;
+            return y < WaterSurfaceLevel && y > bottomHeight;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -2116,7 +2119,14 @@ namespace Hecton8.Core
         /// </summary>
         public override void SetWaterSurfaceLevel(float y)
         {
-            waterSurfaceLevel = y;
+            waterSurfaceLevel = SanitizeWaterSurfaceLevel(y);
+        }
+
+        private static float SanitizeWaterSurfaceLevel(float y)
+        {
+            return math.isfinite(y) && math.abs(y) > 0.0001f
+                ? y
+                : DefaultWaterSurfaceLevel;
         }
 
         /// <summary>
@@ -2697,8 +2707,16 @@ namespace Hecton8.Core
                     Mathf.Abs(tile.coord.x - playerTileX),
                     Mathf.Abs(tile.coord.z - playerTileZ));
 
-                if (!Mathf.Approximately(tile.distance, tileDistance))
+                if (mapMagicObject.draftsInPlaymode && tile.draft == null)
+                {
+                    // COLD ALLOC: TerrainTile.DetailLevel[1] - keep newly streamed tiles on the runtime draft continuum - owner: MapMagicBridge
+                    tile.draft = CreateRuntimeDetailLevel(tile, isDraft: true);
                     tile.Dist(tileDistance);
+                }
+                else if (!Mathf.Approximately(tile.distance, tileDistance))
+                {
+                    tile.Dist(tileDistance);
+                }
 
                 if (tileDistance <= clampedMainRange)
                 {
@@ -2934,8 +2952,9 @@ namespace Hecton8.Core
             if (!Application.isPlaying || mapMagicObject == null)
                 return;
 
+            mapMagicObject.enabled = true;
             mapMagicObject.instantGenerate = false;
-            mapMagicObject.draftsInPlaymode = false;
+            mapMagicObject.draftsInPlaymode = true;
             mapMagicObject.serializedMultithreading = true;
             mapMagicObject.serializedAutoMaxThreads = false;
             mapMagicObject.serializedMaxThreads = 1;
@@ -2944,9 +2963,8 @@ namespace Hecton8.Core
             Den.Tools.Tasks.ThreadManager.autoMaxThreads = false;
             Den.Tools.Tasks.ThreadManager.maxThreads = 1;
             Den.Tools.Tasks.CoroutineManager.timePerFrame = 1f;
-            mapMagicObject.enabled = false;
             _pendingRuntimeMapMagicGenerationFence = false;
-            _runtimeTerrainResolutionRepairPending = false;
+            _runtimeTerrainResolutionRepairPending = true;
         }
 
         private void TryResolveCoLocatedMapMagicObject()

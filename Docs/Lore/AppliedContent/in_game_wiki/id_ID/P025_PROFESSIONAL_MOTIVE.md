@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Motif Profesional
 
-Pemain bukan turis kosong. Ia mulai dengan minat profesional, keahlian dan alasan menerima dead claim; bukti membuatnya personal.
+Marauder bukan turis kosong. Perjalanan dimulai dengan minat profesional, keahlian salvage, dan alasan menerima klaim mati. Motif pribadi tumbuh melalui bukti, tanda yang dikenal, dan kesadaran bahwa HECTON-8 milik dunia keras yang sama yang membuat pekerjaan ini normal.
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Beam Sail and Pellet Lane"
+title: "מפרש קרן ונתיב pellet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Beam Sail and Pellet Lane
+# מפרש קרן ונתיב pellet
 
-HE LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+מפרשי קרן, נתיבי pellet, שלבי לכידת היתוך ו-magsails הפכו מטען nearlight למעשי בלי FTL. ספינה יצאה עם מכלים, קרח מגן, רדיאטורים וסמכות שליטה, ואז שאלה את שאר המנוע מן הנתיב: כוח קרן מאחוריה, מסת pellet מתוזמנת לפניה, ומקלט שהסכים להיות בעל הבלימה. לכן Aegir יכול להיות נגיש ועדיין להרגיש נטוש. המסדרון מזיז מטען מתוזמן; אי אפשר לזמן אותו כחבל הצלה.
 
 ## Scanner
 
-HE LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+רישום נתיב מעבר: המפרש לא דחף את עצמו. הוא שכר כוח ממערכים מאחורי הספינה ומסה מזרמי pellet לפניה.
 
 ## Terminal
 
-HE LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+מצב נתיב: מערך קרן שולם. זרם pellet מחוץ לחוזה ב-0.8 ppm. בעירת לכידה עדיין אפשרית. בלי בעל בלימה, מטען מהיר נעשה פסולת מהירה.
 
 ## Audio
 
-HE LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+הספינה מהירה כי חצי מהמנוע נמצא מחוץ לספינה.
 
 ## Field Note
 
-HE LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+אם רישום רק משבח את הקרן, המשך לקרוא עד שהוא שם את בעל הלכידה.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/he_IL. -->

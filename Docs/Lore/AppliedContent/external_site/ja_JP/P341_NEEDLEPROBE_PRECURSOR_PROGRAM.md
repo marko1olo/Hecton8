@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Needleprobe Precursor Program"
+title: "Needleprobe先行計画"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Needleprobe Precursor Program
+# Needleprobe先行計画
 
-JA LOC HOLD: HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
-
-## Scanner
-
-JA LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
-
-## Terminal
-
-JA LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
-
-## Audio
-
-JA LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
-
-## Field Note
-
-JA LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Aegirにおける最初の人類の存在は英雄的ではなかった。生きた乗員が評価していないルートを渡る、小さく高価な機械の列だった。Needleprobeは視差、放射線、海洋化学、月の暦、リレー視線を測り、その答えが役に立つまで何年も待った。Deep Reachは旗を持ってHECTON-8を発見したのではない。月を資産と呼べるだけの機械的信頼を買ったのだ。この起源が重要なのは、植民地がデータの嘘ではなく調子の嘘を受け継いだからだ。データは本物だった。そこから作られた信頼は、後に水へ送られた人間にはきれいすぎた。
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/ja_JP. -->

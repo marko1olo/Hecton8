@@ -80,7 +80,7 @@ namespace Hecton8.Core
         private const int SystemHealthIndexSignalCapacity = 16;
         private const int ScalabilityChangedSignalCapacity = 4;
         private const int AcousticPingSignalCapacity = 64;
-        private const int MovementAcousticSignalCapacity = 128;
+        private const int MovementAcousticSignalCapacity = MovementAcousticSignal.ExpectedCapacity;
         private const int AcousticZoneChangedSignalCapacity = 4;
         private const int DirectorAIMusicSignalCapacity = 32;
         private const int DynamicMusicScalarSignalCapacity = 32;
@@ -133,14 +133,14 @@ namespace Hecton8.Core
         private const int CameraFrustumSignalCapacity = 8;
         private const int ChunkDehydratedSignalCapacity = 64;
         private const int ItemDecaySignalCapacity = 64;
-        private const int InventoryCommandSignalCapacity = 16;
+        private const int InventoryCommandSignalCapacity = InventoryCommandSignal.ExpectedCapacity;
         private const int InventoryRespawnDeathAupSignalCapacity = InventoryRespawnDeathAupSignal.ExpectedCapacity;
         private const int InventoryDeathLootCacheSignalCapacity = InventoryDeathLootCacheSignal.ExpectedCapacity;
         private const int InventoryRespawnPenaltyResultSignalCapacity = InventoryRespawnPenaltyResultSignal.ExpectedCapacity;
         private const int InventoryChangedSignalCapacity = 64;
         private const int ItemDurabilityChangedSignalCapacity = 64;
         private const int ItemLifecycleSignalCapacity = 128;
-        private const int ItemAcquiredSignalCapacity = 128;
+        private const int ItemAcquiredSignalCapacity = ItemAcquiredSignal.ExpectedCapacity;
         private const int RadiationDoseSignalCapacity = 64;
         private const int RadiationSourceSignalCapacity = 64;
         private const int TemperatureChangedSignalCapacity = 64;
@@ -154,7 +154,7 @@ namespace Hecton8.Core
         private const int TraumaSignalCapacity = 16;
         private const int WakeGeneratedSignalCapacity = 128;
         private const int FluidImpulseSignalCapacity = 32;
-        private const int BubbleSpawnSignalCapacity = 64;
+        private const int BubbleSpawnSignalCapacity = BubbleSpawnSignal.ExpectedCapacity;
         private const int SplashEventSignalCapacity = 64;
         private const int SplashEventSurvivalSignalCapacity = 32;
         private const int PhysicsEventPayloadSignalCapacity = 128;

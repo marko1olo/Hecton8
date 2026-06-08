@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Quarantine Release Delay Proof"
+title: "تعليق إفراج الحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Quarantine Release Delay Proof
+# تعليق إفراج الحجر
 
-AR LOC HOLD: HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.
+الحجر مقنع على HECTON-8 لأن التلوث ليس وهما. التعرض للضغط وكيمياء المحلول ونمو متوافق مع Atlas قد يجعل إنقاذا مهملا قاتلا. هذه الحقيقة تمنح Deep Reach غطاء. يوضح hold كيف تحركت لغة الحماية عبر النظام بعد أن ضاق الخروج العملي. البوابة لم تقل أعدموا أحدا. قالت hold until review، احتفظوا بعدم اليقين البيولوجي، اقبلوا كتلة الأصول، أبقوا insurance ping حيا. كل عبارة قابلة للدفاع وحدها. معا، في مستعمرة تغرق، تصير custody. يجب أن يترك هذا packet اللاعب غير مرتاح لأن الأداة حقيقية: الحجر قد يكون ضروريا، ومع ذلك يمكن استخدامه لتأخير الناس حتى لا يبقى إلا claim.
 
 ## Scanner
 
-AR LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+لوحة تعليق حجر. تظهر لغة الحماية بعدما يكون طريق الخروج مقفلا.
 
 ## Terminal
 
-AR LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. تعليق حتى المراجعة. طابور recovery يقبل كتلة الأصول قبل إطلاق العمال. insurance ping نشط.
 
 ## Audio
 
-AR LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+يمكن للحجر أن ينقذ جسدا. ويمكنه أيضا أن يجعل الجسد ينتظر حتى يصير ورقا.
 
 ## Field Note
 
-AR LOC HOLD: Use where player may confuse rescue with custody.
+ملاحظة مغير: كلمة protection لا تثبت الحماية. افحص الساعة.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/ar_SA. -->

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Awaria zamkniecia cisnieniowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Awaria zamkniecia cisnieniowego
 
-PL LOC HOLD: Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.
+Awaria zamkniecia cisnieniowego daje blue debt czytelne zachowanie materialu. Ma wartosc, bo glebokie cisnienie nadalo mu spojnosci, i jest grozna, bo plytkie obchodzenie rozbija te spojnosci. Etap 0 jest zapieczetowany. Etap 1 dryfuje i czasem da sie odzyskac przez repressurizacje komina. Etap 2 lamie siatke. Etap 3 wpuszcza solanke i biologie. Etap 4 zostawia martwa probke, ktora nadal skaza sprzet, wode i trasy.
 
 ## Scanner
 
-PL LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+Wykres etapow kasety. Blue debt pada przez pamiec cisnienia, scinanie sygnalu i bloom; przesad marnuje tlen.
 
 ## Terminal
 
-PL LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+ETAPY ZAMKNIECIA: 0 uszczelniona siatka; 1 dryf sygnalu; 2 pekniecie siatki; 3 bloom solankowo-biologiczny; 4 martwa probka z zywa kontaminacja. Repressurizacja komina moze odzyskac tylko etap 1.
 
 ## Audio
 
-PL LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
+Probka cie nie nienawidzi. Probuje wrocic tam, gdzie powstala.
 
 ## Field Note
 
-PL LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Probka moze byc warta fortune na jednej glebokosci i stac sie obciazeniem dziesiec metrow pozniej.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/pl_PL. -->

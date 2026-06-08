@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "Rantai Tanggung Jawab Gelombang Besar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# Rantai Tanggung Jawab Gelombang Besar
 
-ID LOC HOLD: The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.
+Gelombang Besar bukan tombol yang ditekan seseorang di ruang dewan. HECTON-8 tenggelam karena penguatan pasang, kegagalan kriosfer, kimia tekanan, dan margin rekayasa koloni yang dijual sebagai dapat diterima. Perbedaan itu penting karena membuat kejahatannya lebih kotor, bukan lebih bersih. Deep Reach tidak perlu menciptakan bencana. Mereka hanya perlu membangun evakuasi independen terlalu kecil, membiarkan pembobotan kontinuitas Atlas tetap berkuasa, menjaga aset klaim sebelum ekstraksi manusia, dan menyembunyikan penundaan di balik bahasa sertifikasi. Air adalah fisika. Rantai tanggung jawab adalah keputusan-keputusan yang mengubah fisika menjadi penelantaran.
 
 ## Scanner
 
-ID LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+Banjir itu fisika nyata: penggandengan pasang, runtuhnya es, kimia tekanan, dan margin yang dihargai terlalu tipis. Kejahatannya adalah tumpukan prioritas yang dibangun di sekitarnya.
 
 ## Terminal
 
-ID LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+RINGKASAN INSIDEN: kaskade geoteknis terkonfirmasi. Kapasitas evakuasi di bawah kebutuhan risiko ekor. Pembobotan kontinuitas Atlas tetap aktif. Ekstraksi manusia menunggu sertifikasi.
 
 ## Audio
 
-ID LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+Laut yang melakukan banjir. Perusahaan yang memutuskan pintu mana tetap menjadi kertas.
 
 ## Field Note
 
-ID LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach tidak perlu menenggelamkan bulan. Mereka hanya perlu membuat evakuasi menjadi opsional.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/id_ID. -->

@@ -9,32 +9,16 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "Konzern-Antwortledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# Konzern-Antwortledger
 
-DE LOC HOLD: Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority.
-
-## Scanner
-
-DE LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
-
-## Terminal
-
-DE LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
-
-## Audio
-
-DE LOC HOLD: The reply was automatic. The rescue was conditional.
-
-## Field Note
-
-DE LOC HOLD: Immediate response is not immediate rescue.
+Der Konzern-Antwortledger ist keine Bösewichtrede. Er ist kälter. Er ist ein maschinenlesbares Versprechen, dass Black Keel reagieren wird, aber nur in der Reihenfolge, die seine Verträge kennen. Assetverwahrung zuerst. Haftungssiegel danach. Rumpfaudit, Probenroute, Zahlungsroute, dann Operatorbergung, falls die Warteschlange es erlaubt. Der Spieler kann diese Ledger als Hinweise, Schlüssel und Druckmittel nutzen, weil das System vorhersagbar ist. Genau diese Vorhersagbarkeit ist die Anklage: HECTON-8 wurde nicht durch eine einzelne schlechte Entscheidung verlassen, sondern durch einen Antwortstapel, der weiter funktionierte, während Menschen zu Fracht niedrigerer Priorität wurden.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/de_DE. -->

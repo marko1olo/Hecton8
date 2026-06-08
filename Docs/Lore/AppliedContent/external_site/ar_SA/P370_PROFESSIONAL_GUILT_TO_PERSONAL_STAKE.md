@@ -9,32 +9,35 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Professional Guilt To Personal Stake"
+title: "من ذنب مهني إلى مصلحة شخصية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Professional Guilt To Personal Stake
+# من ذنب مهني إلى مصلحة شخصية
 
-AR LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.
+ينمو دافع البطل من الخبرة إلى المسؤولية. تتجنب HECTON-8 الميلودراما العائلية المفروضة: يهتم عامل Deep Reach السابق لأنه يفهم الآلة الإجرائية التي جعلت التخلي يبدو مكتملا.
 
 ## Scanner
 
-AR LOC HOLD: Signature match. The form language is old. The names are new.
+نمط التوقيع يطابق ذاكرة الإجراءات القديمة. تغيرت الأسماء. فشلت الغرفة بالطريقة نفسها. لم تعد الخبرة مسافة.
 
 ## Terminal
 
-AR LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+حسم ملف / مصلحة مهنية
+أدلة التحفيز: التعرف على الإجراء، وسوم عمال مستعادة، تعارض مستقبل المطالبة
+الدافع المستبعد: علاقة عائلية، سلالة انتقام، صفة شاهد مختار
+الدافع النشط: عامل أنظمة سابق يتعرف على ترك كان يمكن منعه وما زال يستطيع قراءة الآلة التي سجلته.
 
 ## Audio
 
-AR LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+جئت من أجل مطالبة. بقيت لأن الأوراق عرفت يديك.
 
 ## Field Note
 
-AR LOC HOLD: Use near late dossier and final payload route.
+ليس توقيعك. ما زالت مهنتك. لذلك لن تبقى الغرفة صامتة.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/ar_SA. -->

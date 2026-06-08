@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Фінальне питання: публічна правда, втрачений контроль"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Фінальне питання: публічна правда, втрачений контроль
 
-UA LOC HOLD: Final Question Public Truth Lost Control defines the public ledger ending pressure.
+Публічний витік не має бути магічною кнопкою справедливості. На HECTON-8 інформація подорожує далі за кораблі і приходить раніше за допомогу. Коли доказ лишає басейн, він може звинуватити Deep Reach, змусити Black Keel відповідати, розбудити регуляторів Sol Core і дати родинам щось твердіше за чутку. Це справжні перемоги.
 
-## Scanner
-
-UA LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
-
-## Terminal
-
-UA LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
-
-## Audio
-
-UA LOC HOLD: Truth leaves your hand faster than rescue ever could.
-
-## Field Note
-
-UA LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+Витік також створює подію годівлі. Ринки оцінюють синій борг. Суди доменів заморожують маршрути. Приватні культи перетворюють Atlas на писання. Конкуренти біжать за координатами. Порятунок стає політично необхідним і операційно хаотичним. Гравець обирає правду замість контролю, і гра має чесно втримати обидві половини.
 
 <!-- External Site; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/uk_UA. -->

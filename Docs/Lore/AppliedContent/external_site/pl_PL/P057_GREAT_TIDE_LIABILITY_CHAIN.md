@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "Łańcuch odpowiedzialności Wielkiego Przypływu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# Łańcuch odpowiedzialności Wielkiego Przypływu
 
-PL LOC HOLD: Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure.
+Łańcuch odpowiedzialności Wielkiego Przypływu to główny model zbrodni Deep Reach. Utopienie HECTON-8 jest awarią skali planetarnej, nie tanią dywersją; wina korporacji wyrasta z marginesów, pojemności ewakuacji, autonomicznego ważenia priorytetów, języka ubezpieczeń i prawnego zamknięcia po tym, jak powódź stała się nieunikniona. Dzięki temu świat pozostaje twardą fantastyką naukową, a praca gracza nad dowodami ma sens: pytanie nie brzmi, kto pociągnął dźwignię, lecz kto podpisał system, w którym ludzie mogli stać się papierem, zanim stali się ciałami.
 
 ## Scanner
 
-PL LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+Powódź była prawdziwą fizyką: sprzężeniem pływowym, zawaleniem lodu, chemią ciśnienia i zbyt cienko wycenionymi marginesami. Zbrodnią był zbudowany wokół tego stos priorytetów.
 
 ## Terminal
 
-PL LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+PODSUMOWANIE INCYDENTU: kaskada geotechniczna potwierdzona. Pojemność ewakuacji poniżej potrzeb ryzyka skrajnego. Ważenie ciągłości Atlas pozostało aktywne. Wydobycie ludzi oczekuje na certyfikację.
 
 ## Audio
 
-PL LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+Morze zrobiło powódź. Firma zdecydowała, które drzwi zostaną papierem.
 
 ## Field Note
 
-PL LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach nie musiało topić księżyca. Wystarczyło uczynić ewakuację opcjonalną.
 
 <!-- External Site; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/pl_PL. -->

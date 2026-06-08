@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Aegir Moon Route Map"
+title: "Маршрутная карта лун Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Aegir Moon Route Map
+# Маршрутная карта лун Aegir
 
-RU LOC HOLD: Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+Карта лун Aegir сначала операционная, а уже потом красивая. HECTON-8 является одним океаническим телом в лестнице лун, пастушьих скал, ледяных линий рассеяния и мертвых relay-меток. Внутренние тела мешают narrowband contact и радиационному прикрытию. Ледяные луны разбивают оптические relay lines на плохие фрагменты. Полосы occultation создают окна тишины, где claim остается действительным, но не слышным. Внешние маяки хранят старое право владения даже после исчезновения экипажей. Приливная геометрия и наложение штормов решают, поднимется ли bathydrop chain чисто или станет новой строкой в loss ledger. Публичные карты показывают это без обещания дополнительных игровых миров: их задача сделать небо читаемым как давление, задержку и маршрутный риск.
 
 ## Scanner
 
-RU LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Системная карта. Луны Aegir задают relay timing, радиационное прикрытие, ледяное рассеяние, приливное давление, полосы occultation, мертвые маяки и геометрию recovery.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+ПУБЛИЧНЫЙ АРХИВНЫЙ УЗЕЛ // ЛУННАЯ ЛЕСТНИЦА AEGIR. Названия лун являются маршрутными метками. Каждое тело меняет возраст сигнала, transfer risk, storm exposure, custody timing или надежность claim.
 
 ## Audio
 
-RU LOC HOLD: The map is why no one arrives the moment you ask.
+Карта объясняет, почему никто не приходит в тот момент, когда ты просишь.
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Заметка Marauder: отметь луну, потом отметь, что она делает с маршрутом.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/ru_RU. -->

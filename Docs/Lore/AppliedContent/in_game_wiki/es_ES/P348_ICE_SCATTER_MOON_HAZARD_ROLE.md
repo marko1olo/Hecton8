@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw y el peligro de hielo disperso"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw y el peligro de hielo disperso
 
-ES LOC HOLD: The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Claw es una luna de hielo disperso con halo sucio de esquirlas, polvo de reclamación y basura industrial congelada. Sus carriles pueden revelar material útil tras tormentas, manteniendo vivos los rumores. Los mismos carriles rompen la confianza del sensor.
 
 ## Scanner
 
-ES LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+Registro exterior de hielo disperso. Claw vierte escombros brillantes en rutas donde los rumores de salvage viajan demasiado rápido.
 
 ## Terminal
 
-ES LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+ESCALERA LUNAR H3 CLAW: carril de escombros abierto solo a drones de survey. Tráfico de casco exige radar de polvo frontal, blindaje sacrificable y renuncia de pago por impactos de esquirlas no registrados.
 
 ## Audio
 
-ES LOC HOLD: Every system has one moon that accountants love and pilots curse.
+Todo sistema tiene una luna que aman los contables y maldicen los pilotos.
 
 ## Field Note
 
-ES LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw parece rentable en papel porque el papel no esquiva hielo.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/es_ES. -->

@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Keelmark Mutual Custody
 
-NL LOC HOLD: Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.
+Keelmark Mutual is de insurance-custody-huls waardoor Black Keel in Aegir kan werken zonder levende reddingsautoriteit ter plaatse. Op papier is het niet Deep Reach. In de praktijk kan oud underwriting worden gestuurd door wie de juiste priority hook bezit, omdat elk lichaam, stuk gereedschap, monster en verzegelde kist al in een risicoschema zit voordat de operator om hulp vraagt.
 
 ## Scanner
 
-NL LOC HOLD: Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.
+Verzekeringshuls intact. Keelmark bezit de lien voordat het het lichaam bezit.
 
 ## Terminal
 
-NL LOC HOLD: KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.
+KEELMARK MUTUAL: claim-tender lien actief. Operatorschuld, scheepsrisico, payload custody en quarantainereserve gebundeld onder remote underwriting schedule. Distressstatus schort lien niet op.
 
 ## Audio
 
-NL LOC HOLD: The policy is older than your distress call.
+De polis is ouder dan je noodoproep.
 
 ## Field Note
 
-NL LOC HOLD: Do not make the insurer a secret villain. Make it a machine that never had to care.
+De verzekeraar is geen verborgen meesterbrein. Hij is erger: een schema dat nooit hoefde te geven om zorg.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/nl_NL. -->

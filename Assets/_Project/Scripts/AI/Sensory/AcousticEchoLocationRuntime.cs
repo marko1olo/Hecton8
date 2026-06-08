@@ -326,7 +326,10 @@ namespace Hecton8.AI.Sensory
         private const int MaxQueuedEchoTaps = MaxEchoTapsPerFrame;
         private const int GhostHapticCooldownFrames = 24;
         private const int TuningHapticCooldownFrames = 30;
+        private const int MovementSignalCapacityWarningCooldownFrames = 90;
         private const int ExternalHandleRefreshCooldownFrames = 30;
+        private const uint MovementSignalCapacityWarningHash = 0x41454D4Fu;
+        private const uint AcousticEchoContextHash = 0x41454348u;
         private const int MutationGuardBitMask = 31;
         private const ulong AcousticFrameTapGuardBit = 1UL << (((int)BufferID.AcousticEchoFrameTaps) & MutationGuardBitMask);
         private const ulong AcousticPendingTapGuardBit = 1UL << (((int)BufferID.AcousticEchoPendingTaps) & MutationGuardBitMask);
@@ -362,6 +365,7 @@ namespace Hecton8.AI.Sensory
         private static int _lastExternalHandleRefreshFrame = int.MinValue;
         private static int _lastPlayerStressSignalSequence;
         private static int _lastPlayerStressSignalSeenFrame = int.MinValue;
+        private static int _nextMovementSignalCapacityWarningFrame = int.MinValue;
         private static int _blackBoxCursor;
         private static int _blackBoxDumped;
         private static int _initializationAttempted;
@@ -465,6 +469,7 @@ namespace Hecton8.AI.Sensory
             _lastExternalHandleRefreshFrame = int.MinValue;
             _lastPlayerStressSignalSequence = 0;
             _lastPlayerStressSignalSeenFrame = int.MinValue;
+            _nextMovementSignalCapacityWarningFrame = int.MinValue;
             _blackBoxCursor = 0;
             _blackBoxDumped = 0;
             _initializationAttempted = 0;
@@ -588,6 +593,7 @@ namespace Hecton8.AI.Sensory
             _trailState = default;
             _lastRefreshFrame = int.MinValue;
             _lastBlackBoxFrame = int.MinValue;
+            _nextMovementSignalCapacityWarningFrame = int.MinValue;
             _blackBoxCursor = 0;
             _blackBoxDumped = 0;
             _initialized = 0;
@@ -1371,7 +1377,11 @@ namespace Hecton8.AI.Sensory
         private static int AppendMovementSignals(NativeArray<EchoTap> frameTaps, int count, int frame, float currentTime)
         {
             ReadOnlySpan<MovementAcousticSignal> signals = SignalBus<MovementAcousticSignal>.GetFrameSnapshot();
-            int limit = math.min(signals.Length, math.min(MaxEchoTapsPerFrame, frameTaps.Length) - count);
+            int remainingCapacity = math.min(MaxEchoTapsPerFrame, frameTaps.Length) - count;
+            if (signals.Length > math.max(0, remainingCapacity))
+                PublishMovementSignalCapacityWarning(frame, signals.Length, remainingCapacity);
+
+            int limit = math.min(signals.Length, math.max(0, remainingCapacity));
             for (int i = 0; i < limit; i++)
             {
                 ref readonly MovementAcousticSignal signal = ref signals[i];
@@ -1379,6 +1389,7 @@ namespace Hecton8.AI.Sensory
                     !math.isfinite(signal.Volume) ||
                     !math.isfinite(signal.VelocitySq))
                 {
+                    WriteFaultBlackBox(frame, in signal.PositionAup);
                     continue;
                 }
 
@@ -1403,6 +1414,22 @@ namespace Hecton8.AI.Sensory
             }
 
             return count;
+        }
+
+        private static void PublishMovementSignalCapacityWarning(int frame, int observedCount, int remainingCapacity)
+        {
+            if (frame < _nextMovementSignalCapacityWarningFrame)
+                return;
+
+            int droppedCount = math.max(0, observedCount - math.max(0, remainingCapacity));
+            if (droppedCount <= 0)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                MovementSignalCapacityWarningHash,
+                AcousticEchoContextHash,
+                droppedCount);
+            _nextMovementSignalCapacityWarningFrame = frame + MovementSignalCapacityWarningCooldownFrames;
         }
 
         private static int AppendAcousticPingSignals(NativeArray<EchoTap> frameTaps, int count, int frame, float currentTime)

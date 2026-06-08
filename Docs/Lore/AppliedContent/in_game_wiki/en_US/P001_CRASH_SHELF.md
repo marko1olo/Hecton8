@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Crash Shelf
 
-The bathy-drop was built for one violent job: enter atmosphere, survive storm shear, hit ocean, shed heat, and keep one operator alive long enough to begin work. It was never a ship. It was a disposable argument with physics. The Black Keel is still above the moon somewhere in Aegir traffic, but the drop's uplink core is cracked and the ascent hardware is gone. A clean rescue requires power, timing, an orbital window, and a transmitter that can push through weather, water, and Aegir's magnetic noise.
+The bathy-drop was a descent tool, not a rescue craft. It was built to enter Aegir's weather, punch into HECTON-8's ocean, shed heat, and keep one worker breathing until the first shelter came online. Impact took the ascent package with it. The remaining shell is crude, loud, and valuable: pressure frame, ceramic scraps, battery ribs, dry cavities, half-dead uplink. The shelf around it is bright enough to look gentle, but every useful object is also evidence. Black Keel knows a claim is alive. It has not yet decided what that claim is worth.
 
 ## Scanner
 
-Bathy-drop wreckage. Crush frame intact, ascent package destroyed. This craft can keep you alive, not take you home.
+Bathy-drop wreckage. Crush frame intact; ascent package gone. The shell can hold pressure and heat. It cannot lift you.
 
 ## Terminal
 
-ASCENT PACKAGE: missing. UPLINK CORE: fracture detected. CARRIER CONTACT: delayed.
+BATHY-DROP BD-K8-113: IMPACT SURVIVED. ASCENT PACKAGE: LOST. UPLINK CORE: FRACTURED. BLACK KEEL: HANDSHAKE ONLY.
 
 ## Audio
 
-Black Keel handshake received. Packet integrity below recovery threshold. Repeat: recovery threshold not met.
+Black Keel handshake received. Operator alive. Recovery authority unresolved. Hold shelter and wait for a usable window.
 
 ## Field Note
 
-If the drop shell is still holding pressure, do not strip it bare. A bad shelter is worth more than a clean inventory.
+Do not strip the drop shell to a frame. The first base on HECTON-8 is whatever keeps rain out, pressure in, and tools dry.
 
 <!-- In-Game Wiki; generated from P001_CRASH_SHELF/en_US. -->

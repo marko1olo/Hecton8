@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Primera voz de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Primera voz de Black Keel
 
-ES LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+La primera voz de Black Keel llega al jugador como audio dañado y texto limpio. No es compañera ni discurso de villano. Es un monitor carrier haciendo lo que fue construido para hacer: confirmar señal, preservar opciones de ruta, ordenar obligaciones y evitar promesas. La voz sirve porque entrega información dura. Asusta porque cada frase correcta deja el rescate condicionado.
 
 ## Scanner
 
-ES LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
+Caché de voz del carrier. Audio cortado, texto limpio, simpatía ausente.
 
 ## Terminal
 
-ES LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: canal de audio degradado. Canal de texto válido. Supervivencia del operador reconocida. Prioridad de recuperación sin resolver, pendiente de payload, cuarentena, lien e integridad de señal.
 
 ## Audio
 
-ES LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
+Señal de operador adquirida. No confundas reconocimiento con rescate.
 
 ## Field Note
 
-ES LOC HOLD: The first voice should feel useful before it feels bought.
+La primera frase útil llega con una clase de facturación detrás.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/es_ES. -->

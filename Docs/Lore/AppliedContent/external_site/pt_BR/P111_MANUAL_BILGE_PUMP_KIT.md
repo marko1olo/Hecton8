@@ -9,32 +9,18 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "Kit de bomba de porão manual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# Kit de bomba de porão manual
 
-PT LOC HOLD: Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile.
+A bomba de porão manual é o primeiro verbo de sobrevivência porque recusa drama. Sem powered panel, sem interface heroica, sem promessa de que a sala está segura. O jogador limpa uma entrada entupida, sente a alavanca lutar de volta e aprende que a água precisa de um caminho honesto para sair.
 
-## Scanner
-
-PT LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
-
-## Terminal
-
-PT LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
-
-## Audio
-
-PT LOC HOLD: Hand work first. Electricity second. Breathing always.
-
-## Field Note
-
-PT LOC HOLD: First tool must teach survival before upgrade fantasy.
+Essa ferramenta pequena define o tom de HECTON-8. Reparos começam com mãos, pressão e consequência. Se a bomba rebate, a sala responde. Se a saída está errada, sobreviver só desloca o perigo para outro lugar.
 
 <!-- External Site; generated from P111_MANUAL_BILGE_PUMP_KIT/pt_BR. -->

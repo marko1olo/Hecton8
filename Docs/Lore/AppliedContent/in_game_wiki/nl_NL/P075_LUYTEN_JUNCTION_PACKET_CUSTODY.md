@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "Pakketbewaring van Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# Pakketbewaring van Luyten Junction
 
-NL LOC HOLD: Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.
+Luyten Junction is meer infrastructuur dan samenleving: relays, beam custody, depot law en packet accounting. Het verklaart hoe Deep Reach druk kan zetten op Aegir zonder live FTL-commando en hoe bewijs kan worden vertraagd, gekocht, verloren of tot wapen gemaakt.
 
 ## Scanner
 
-NL LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+Luyten custody-spoel. Berichten reizen niet gratis; waarheid ook niet.
 
 ## Terminal
 
-NL LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+LUYTEN JUNCTION ROUTE: packet custody overgedragen via tariefwachtrij. Live command verboden. Bewijsprioriteit koopbaar onder emergency claim escrow.
 
 ## Audio
 
-NL LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+Geen ansible. Geen genade. Alleen custody, tariff en tijd.
 
 ## Field Note
 
-NL LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+Een relais is een machine die beslist welk verdriet bandbreedte krijgt.
 
 <!-- In-Game Wiki; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/nl_NL. -->

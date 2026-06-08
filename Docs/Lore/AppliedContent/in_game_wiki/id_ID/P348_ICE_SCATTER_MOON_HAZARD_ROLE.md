@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Bahaya Es Tersebar Claw"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ice Scatter Moon Hazard Role
+# Bahaya Es Tersebar Claw
 
-ID LOC HOLD: The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Claw adalah bulan es tersebar dengan halo kotor berisi pecahan, debu klaim, dan sampah industri beku. Jalur serpihannya dapat menunjukkan material berguna setelah badai, sehingga rumor tetap hidup. Jalur yang sama merusak kepercayaan sensor. Salvager bicara tentang es bersih dan kargo hilang; pilot bicara tentang titik buta, radar debu, dan biaya mengganti pelat depan.
 
 ## Scanner
 
-ID LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+Catatan es luar. Claw menumpahkan serpihan terang ke jalur tempat rumor salvage bergerak terlalu cepat.
 
 ## Terminal
 
-ID LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+TANGGA BULAN H3 CLAW: jalur serpihan hanya dibuka untuk drone survey. Lalu lintas lambung memerlukan radar debu depan, pelindung korban, dan pelepasan payout untuk hantaman pecahan tak tercatat.
 
 ## Audio
 
-ID LOC HOLD: Every system has one moon that accountants love and pilots curse.
+Setiap sistem punya satu bulan yang dicintai akuntan dan dikutuk pilot.
 
 ## Field Note
 
-ID LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw terlihat untung di kertas karena kertas tidak perlu menghindari es.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/id_ID. -->

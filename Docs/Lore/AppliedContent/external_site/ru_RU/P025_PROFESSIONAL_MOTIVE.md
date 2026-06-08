@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Профессиональный мотив
 
-Профессиональный мотив дает протагонисту агентность без жесткой биографии: игрок начинает как компетентный мародер и втягивается лично через доказательства.
+Professional Motive дает мародеру agency без жесткой биографической клетки: сначала идет компетентность, личная вовлеченность приходит через доказательства.
 
 ## Scanner
 

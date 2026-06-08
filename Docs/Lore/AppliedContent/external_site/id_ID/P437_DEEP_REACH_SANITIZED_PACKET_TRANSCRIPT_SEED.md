@@ -9,32 +9,22 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Transkrip Paket Deep Reach yang Dibersihkan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Transkrip Paket Deep Reach yang Dibersihkan
 
-ID LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
+## Bahasa Bersih, Penundaan Kotor
 
-## Scanner
+Paket Deep Reach berbahaya karena terdengar seperti bantuan. Ia menyebut keselamatan. Ia mengakui insiden. Ia memakai kata benda bencana yang tepat: tekanan, karantina, koordinat, exposure, recovery. Lalu ia menghapus kata kerja yang penting. Siapa menunda evakuasi? Siapa memberi harga pada hold? Siapa menjaga pembobotan Atlas tetap aktif saat koloni gagal?
 
-ID LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Bahasa yang dibersihkan tidak perlu menyangkal samudra. Penyangkalan terlalu mudah dibantah. Paket itu bekerja dengan menerima bencana fisik dan menyusun ulang tanggung jawab sebagai pending review. Koordinat datang lebih dulu karena perusahaan ingin custody atas ruang claim sebelum berkomitmen pada tubuh. Biaya karantina menyusul karena pekerja hidup dan bukti terkontaminasi sama-sama menjadi liabilities di meja yang sama.
 
-## Terminal
-
-ID LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
-
-## Audio
-
-ID LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
-
-## Field Note
-
-ID LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Bagi pemain, transkrip ini harus menimbulkan marah tanpa merusak plausibilitas. Deep Reach bukan penjahat kartun yang berteriak dari orbit. Ia perusahaan yang tahu tepat bidang mana yang harus dihapus dari pesan yang kelak bisa menjadi bukti.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/id_ID. -->

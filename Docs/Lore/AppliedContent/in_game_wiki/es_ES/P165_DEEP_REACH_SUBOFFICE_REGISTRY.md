@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Deep Reach Suboffice Registry"
+title: "Registro De Suboficinas Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Deep Reach Suboffice Registry
+# Registro De Suboficinas Deep Reach
 
-ES LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+El registro de suboficinas importa porque nombra la maquinaria sin inventar un trono. Deep Reach no necesitaba una persona ordenando cada muerte. Necesitaba oficinas con nombres estrechos, cada una capaz de demorar, reclasificar o pasar un paquete. Contract Continuity mantenía obligaciones vivas. Packet Notary decidía qué contaba como proof. Quarantine Hold hacía que el rescue sonara peligroso. Asset Silence bajaba el valor de testigos. Return Action decidía quién merecía masa.
 
 ## Scanner
 
-ES LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board y Return Action Queue.
 
 ## Terminal
 
-ES LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach mantuvo decisiones letales por debajo de un villano único. Pequeños desks rutearon cláusulas, paquetes, cuarentena, silencio y prioridad de retorno hasta que ningún sello parecía asesinato.
 
 ## Audio
 
-ES LOC HOLD: A small desk can kill more quietly than a director.
+Un desk pequeño puede matar más bajo que un director.
 
 ## Field Note
 
-ES LOC HOLD: Use dull names. Dull names are where liability hides.
+Mantén los nombres aburridos. Ahí se esconde la liability.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/es_ES. -->

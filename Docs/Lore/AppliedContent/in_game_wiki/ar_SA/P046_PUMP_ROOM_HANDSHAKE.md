@@ -7,34 +7,34 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pump Room Handshake"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "مصافحة صمام غرفة المضخات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pump Room Handshake
+# مصافحة صمام غرفة المضخات
 
-Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.
+مصافحة المضخة هي اللحظة التي تقبل فيها غرفة غارقة التحكم المحلي. تمنحك دخولا، لكنها تنقل الماء والضجيج والضغط إلى جزء آخر من الطريق. اقرأ سلة السحب ونبضة الخروج وطرق ممر العودة قبل أن تعتبر الأرض الجافة أمانا. غرف P-63 الأولى تعلم عادة الإصلاح الأساسية: يمكن لآلة أن تحسن مقصورة وتفسد طريق الرجوع.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+قبلت مضخة التجميع المحلية إدخال العجلة اليدوية. سلة السحب ملوثة برغوة الكبسولة؛ نبضة الخروج تضغط على ممر العودة B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 تحكم التجميع / مصافحة محلية: تم قبول سلطة العجلة اليدوية. رفض تجاوز التحكم البعيد. عاد تدفق السحب بمعدل منخفض. ضغط الخروج يرتفع في RETURN CORRIDOR B؛ لا تعيد التشغيل إلا بعد فحص الفتحة التالية.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+الصمام قبل. خط الخروج يطرق. لا تسمه آمنا بعد.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+غرفة مضخات جافة قد تغرق طريق الرجوع. اسمع طرق الخروج قبل أن تفك الصمام.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/ar_SA. -->

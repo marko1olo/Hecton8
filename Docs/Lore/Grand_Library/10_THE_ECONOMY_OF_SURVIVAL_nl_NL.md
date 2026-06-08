@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # De Economie van Overleven en Keelmark-schuld
 
 > **Bron:** Keelmark Overeenkomst voor Zelfstandige Contractanten, Addendum 14-B (Financiële Verplichtingen).

@@ -438,7 +438,7 @@ namespace Hecton8.World.FloraAmbientSway
 
             if (_hotSwapRegistered)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _hotSwapRegistered = false;
             }
 

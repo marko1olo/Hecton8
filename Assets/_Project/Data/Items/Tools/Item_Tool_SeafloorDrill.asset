@@ -53,7 +53,7 @@ MonoBehaviour:
   hungerRestore: 0
   thirstRestore: 0
   useSound: {fileID: 0}
-  useAudioEventId: 0
+  useAudioEventId: 2
   legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE

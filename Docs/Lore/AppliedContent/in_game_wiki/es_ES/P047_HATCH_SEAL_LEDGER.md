@@ -7,34 +7,34 @@ poi_tags: poi.hatch_seal;poi.airlock_frame
 biome_tags: biome.drowned_colony;biome.service_corridor
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Registro de sello de escotilla"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Registro de sello de escotilla
 
-Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.
+Los marcos de escotilla guardan mentiras útiles. Una luz verde de sello significa que la junta resistió, no que el cierre fuera justo, seguro o reversible. Los registros de sello conservan cortes de presión, sellos de override y la dirección del último cierre manual. En espacios de colonia abandonados, una escotilla puede ser bloqueo de ruta, herramienta de supervivencia y prueba de trabajadores en el mismo objeto.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+Memoria de sello recuperada. La junta recibió tres cortes de presión y un override de evacuación; el acceso del lado de retorno quedó cerrado desde el lado mojado.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / MARCO H-17: deformación de junta sobre tolerancia de servicio. Cierre manual aceptado bajo EVAC OVERRIDE. Recuento de operadores en lado de retorno sin resolver. Reabrir solo tras igualar presión e inspeccionar bisagras.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+Selló. Eso es todo lo que prometía la escotilla.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+Una escotilla sellada es un recibo. Antes de abrirla, pregunta qué lado pagó.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/es_ES. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Mutual Custody"
+title: "Опіка Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Keelmark Mutual Custody
+# Опіка Keelmark Mutual
 
-UK LOC HOLD: Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.
+Keelmark Mutual — страхова custody-оболонка, що дозволяє Black Keel працювати в Aegir без живої рятувальної влади на місці. На папері це не Deep Reach. На практиці старим underwriting може керувати той, хто має правильний priority hook, бо кожне тіло, інструмент, зразок і запечатаний ящик уже сидять у розкладі ризику до того, як оператор просить допомоги.
 
 ## Scanner
 
-UK LOC HOLD: Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.
+Страхова оболонка ціла. Keelmark володіє lien раніше, ніж тілом.
 
 ## Terminal
 
-UK LOC HOLD: KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.
+KEELMARK MUTUAL: claim-tender lien активний. Борг оператора, ризик судна, payload custody і карантинний резерв зведені під віддалений underwriting schedule. Статус distress не призупиняє lien.
 
 ## Audio
 
-UK LOC HOLD: The policy is older than your distress call.
+Поліс старший за твій сигнал лиха.
 
 ## Field Note
 
-UK LOC HOLD: Do not make the insurer a secret villain. Make it a machine that never had to care.
+Страховик не прихований геній. Гірше: розклад, якому ніколи не треба було співчувати.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/uk_UA. -->

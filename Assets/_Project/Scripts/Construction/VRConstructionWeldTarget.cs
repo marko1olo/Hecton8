@@ -109,6 +109,11 @@ namespace Hecton8.Construction
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)
+                return;
+
             CacheCornerRuntimePositions();
             if (_weldGlowProxyRegistered)
                 UpdateWeldGlowProxyRegistration();

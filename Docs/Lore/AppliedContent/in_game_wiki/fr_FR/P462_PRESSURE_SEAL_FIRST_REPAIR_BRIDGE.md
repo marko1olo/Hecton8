@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Première réparation PressureSeal"
+title: "Première réparation PressureSeal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Première réparation PressureSeal
+# Première réparation PressureSeal
 
-FR LOC HOLD: Note de réparation P-63 récupérée. Le FiberKelp peut devenir du FiberMesh et porter un PressureSeal temporaire. Le sceau ralentit une fuite locale, mais il n'est pas certifié pour l'ascension.
+Note de réparation P-63 récupérée. Le FiberKelp peut devenir du FiberMesh et servir de couche porteuse pour un PressureSeal temporaire. Le sceau ralentit une fuite locale, mais il n'est pas certifié pour l'ascension.
 
 ## Scanner
 
-FR LOC HOLD: CIBLE PRESSURESEAL // Fuite au collier P-63. Support FiberMesh compatible. Stabilisation locale seulement; certification d'ascension refusée.
+CIBLE PRESSURESEAL // fuite au collier P-63. Support FiberMesh compatible. Stabilisation locale seulement; certification d'ascension refusée.
 
 ## Terminal
 
-FR LOC HOLD: NOTE DE TOLÉRANCE DEEP REACH P-63 // Reporter le remplacement du collier. Appliquer un support de sceau souple approuvé si la fuite reste sous le seuil local.
+NOTE DE TOLÉRANCE P-63 DEEP REACH // Reporter le remplacement du collier. Appliquer un support souple approuvé si la fuite reste sous le seuil de service local.
 
 ## Audio
 
-FR LOC HOLD: Relais Black Keel : le patch P-63 est local-sûr, pas ascension-sûr. Prends le sceau, garde le numéro.
+Relais Black Keel : le patch P-63 est localement sûr, pas sûr pour l'ascension. Prends le sceau, garde le numéro.
 
 ## Field Note
 
-FR LOC HOLD: Eau claire dehors. Collier mouillé dedans. Deep Reach a appelé ça nominal parce que le mot coûte moins qu'un anneau de serrage.
+Eau claire dehors. Collier mouillé dedans. Deep Reach a appelé ça nominal parce que le mot coûte moins qu'un anneau de serrage.
 
 <!-- In-Game Wiki; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/fr_FR. -->

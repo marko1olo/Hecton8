@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "ثوابت جيولوجيا البذرة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# ثوابت جيولوجيا البذرة
 
-AR LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+ثوابت جيولوجيا البذرة تحفظ تماسك HECTON-8 عبر الإعادات الطويلة. قد تنفتح الوديان بترتيب مختلف، ويتحرك الدليل، وتتحول الجيوب الآمنة، ويتغير ضغط الأنواع. يبقى النجم أيغير، وتبقى القمر HECTON-8، وتحافظ نطاقات العمق على ترتيبها، ويحافظ Great Tide على وقته، ويبقى حوض Atlas مربوطا بأعمق حقيقة.
 
 ## Scanner
 
-AR LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+ملاحظة توليد طريق. خريطة النهب تتغير، لكن القمر يحتفظ بالعظام نفسها.
 
 ## Terminal
 
-AR LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+الثوابت: نجم أيغير، سلم مدار HECTON-8، فاصل Great Tide، ترتيب نطاقات العمق، علاقة حوض Atlas، سلوك ضغط blue debt. المتغير: نهج الوادي، ترتيب النقاط، الجيوب الآمنة، كثافة التفتح، تعرض الغنيمة.
 
 ## Audio
 
-AR LOC HOLD: New seed, same moon. Different wound.
+نمط جرح مختلف. القمر نفسه تحته.
 
 ## Field Note
 
-AR LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+جولة جديدة قد تدفن الدليل بشكل مختلف؛ لا يحق لها إعادة كتابة الجاذبية أو المد أو الذنب.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/ar_SA. -->

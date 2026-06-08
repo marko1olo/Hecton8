@@ -9,32 +9,26 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Brama spoilerów"
+title: "Brama spoilerów"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Brama spoilerów
+# Brama spoilerów
 
-PL LOC HOLD: Publiczne strony HECTON-8 mogą nazwać zlecenie bez oddawania dowodu. Warstwa otwarta daje bezpieczny kontekst; pieczęcie, stemple trasy, skany, terminale, tagi robotników i black-boxy otwierają później mocniejsze twierdzenia.
+## Kontekst Publiczny
 
-## Scanner
+Publiczne strony HECTON-8 mogą nazwać zlecenie bez oddawania dowodów. Warstwa otwarta może powiedzieć, że HECTON-8 jest oceanicznym księżycem pod Aegir, że kolonia upadła, że Black Keel niesie presję salvage zamiast czystego ratunku, i że Deep Reach zostawiło publiczny raport z burzy, zawalenia, awarii autonomicznej, języka ratunkowego Atlas-6 i brakujących danych.
 
-PL LOC HOLD: BRAMA ARCHIWUM PUBLICZNEGO // Poziom spoilera 0/1. Tylko kontekst publiczny. Głębokie dowody wymagają odzyskanej kustodii przed rozszerzeniem kodeksu.
+To wystarcza, aby czytelnik rozumiał założenie. Nie wystarcza, aby udowodnić zbrodnię.
 
-## Terminal
+Głębsze strony potrzebują odzyskanych obiektów: pieczęci pakietu, stempla trasy, zapisu skanu, tagu pracownika, fragmentu terminala, linii czarnej skrzynki albo próbki z nienaruszoną kustodią. Zanim te obiekty zostaną znalezione w grze, publiczna wiki zatrzymuje się na bezpiecznym kontekście. Po odkryciu kodeks może użyć ostrzejszych sformułowań, bo gracz widział, skąd pochodzi fakt.
 
-PL LOC HOLD: FILTR PUBLIC/WIKI // Przed dowodem wolno: tło, presję trasy, publiczny język wypadku, znane instytucje i wczesną przesłankę salvage. Głębokie dowody zatrzymać.
+Brama chroni pięć rzeczy: pierwsze zejście gracza, dowody pracowników kolonii, łańcuch odpowiedzialności Deep Reach, prawdę sieci naprawczej Atlas-6 i finałowe losy ładunków. Publiczne strony mogą wskazywać te tematy. Nie niosą finalnego odbiorcy, trasy ani konsekwencji.
 
-## Audio
-
-PL LOC HOLD: Przekaźnik Black Keel: tekst publiczny nazywa księżyc. Dowód potrzebuje pieczęci. Przynieś pieczęć.
-
-## Field Note
-
-PL LOC HOLD: Publiczna strona mówi, gdzie nurkować. Nie mówi, kto zapłacił za zamknięte drzwi.
+Publiczne artykuły są mapą. Odzyskane dowody są dowodem.
 
 <!-- External Site; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/pl_PL. -->

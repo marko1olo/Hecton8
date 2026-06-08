@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Vent Forge Field Process Guide"
+title: "Guía de proceso de campo de forja de ventilas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Vent Forge Field Process Guide
+# Guía de proceso de campo de forja de ventilas
 
-ES LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.
+Las vent forges son reactores naturales-industriales. Convierten calor, brine y pressure history en ceramics, sealants y charge materials útiles mientras mantienen cada muestra ligada a su ruta térmica.
 
 ## Scanner
 
-ES LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+Vent-forge chemistry activa. La calidad sigue pressure history, heat pulse y enfriamiento lento, no el brillo de la muestra.
 
 ## Terminal
 
-ES LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: las vent forges cocinan sulfides, noble-gas pockets, ceramics y sealant precursors. La ruta de una muestra por heat, brine y pressure importa más que su nombre.
 
 ## Audio
 
-ES LOC HOLD: The vent did not make ore. It made a process you interrupted.
+La ventila no hizo mena. Hizo un proceso que interrumpiste.
 
 ## Field Note
 
-ES LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+No levantes un lote fresco directo al agua fría. Deja que la ventila termine el anneal o la concha se cuarteará.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/es_ES. -->

@@ -9,32 +9,22 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Sato-Ren Return Packet"
+title: "Packet Sato-Ren Return Action"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Sato-Ren Return Packet
+# Packet Sato-Ren Return Action
 
-PT-BR LOC HOLD: Deep Reach returns to HECTON-8 as paperwork moving through rare signal windows: coordinates, custody, access, then maybe rescue.
+## Resgate Falado Em Ordem De Claim
 
-## Scanner
+O packet Sato-Ren é pressão no presente. Chega depois de o jogador aprender o que a Deep Reach fez nos antigos memo e ledger, e prova que a companhia não é só um cadáver no arquivo. A Deep Reach ainda fala. Só fala na ordem que seus sistemas entendem: coordinates, access state, sample custody, silence acknowledgement, extraction language.
 
-PT-BR LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+Essa ordem é a ameaça. Um serviço de resgate pergunta onde você está ferido. Um recovery desk pergunta o que você carrega, quem pode certify, se Atlas ainda abre a route e se você aceita silence como condição de deslocamento. Sato-Ren não precisa de navio de guerra sobre HECTON-8. O packet em si é leverage porque mensagens são raras, massa é cara e o jogador é debt-bound.
 
-## Terminal
-
-PT-BR LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
-
-## Audio
-
-PT-BR LOC HOLD: The packet knows where the asset is. It is less certain where you are.
-
-## Field Note
-
-PT-BR LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+O late game deve ficar moralmente apertado aqui. O mesmo documento pode parecer ajuda, repossession ou chantagem dependendo do que o jogador já sabe. Ele conecta a velha burocracia afogada à escolha viva diante do Marauder: vender coordenadas, preservar proof, sever Atlas, publicar o ledger ou seguir por um oceano onde até rescue tem claim number.
 
 <!-- External Site; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/pt_BR. -->

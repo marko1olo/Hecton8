@@ -9,32 +9,20 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Transit Duration Bands"
+title: "أحزمة مدة العبور"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Transit Duration Bands
+# أحزمة مدة العبور
 
-AR LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
+## ساعات مختلفة
 
-## Scanner
+الطريق نفسه لا يعني الزمن نفسه. يمكن أن تغادر probe packet مبكرا وتحرق الضوء وتصبح claim قبل عقود من رؤية crew للماء. يحتاج heavy freight إلى staged launches وbraking rights وpellet lanes ومشعات وتأمين يقبل منحنى الخسارة. يحتاج human crew إلى كل ذلك إضافة إلى life support وliability language وسبب يدفع return mass.
 
-AR LOC HOLD: The same route means different time for packets, freight and people.
-
-## Terminal
-
-AR LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
-
-## Audio
-
-AR LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
-
-## Field Note
-
-AR LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+يحبس HECTON-8 اللاعب في هذه الساعات غير المتطابقة. قد يكون distress hash صالحا وعديم النفع. قد تفتح فرصة cargo بينما يبقى rescue مغلقا. قد تكون العاقبة العلنية على بعد سنوات وتستحق الحماية. الرعب ليس أن الطريق مكسور. الرعب أنه يعمل لكل شيء إلا الجسد الذي يطلب منه الاهتمام.
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/ar_SA. -->

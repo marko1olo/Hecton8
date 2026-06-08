@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # L'ORBITE SILENCIEUSE ET LE BLACK KEEL
 
 > **Source :** Mégacorporation Deep Reach, Registre des Actifs Orbitaux.

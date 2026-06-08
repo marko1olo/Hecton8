@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TAUCHANZÜGE DER KLASSE IV UND ABYSSALE AUSRÜSTUNG
 
 > **Quelle:** Deep Reach Megacorporation, Ausrüstungs-Quartiermeister-Handbuch.

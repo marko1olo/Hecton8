@@ -7,34 +7,34 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Salvage Tool Custody"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Опека salvage-инструмента"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Salvage Tool Custody
+# Опека salvage-инструмента
 
-Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.
+Salvage-инструменты не являются нейтральным снаряжением. Резаки, патчеры и доки фабрикаторов могут записывать, кто открыл панель, починил линию или вынес образец. Этот журнал может защитить доказательство, прикрепить права выплаты или усилить claim против игрока. Опека инструмента это место, где поминутное выживание касается широкой экономики salvage.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Док инструмента хранит запечатанный журнал опеки. Последний рез, ремонт и мешок образца привязаны к claim-токену Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: использование резака принято по salvage claim. Ремонтное действие засвидетельствовано. Права на образец привязаны к токену Keelmark Mutual. Экспорт доказательств конфликтует с маршрутом материальной выплаты.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Каждый полезный рез оставляет свидетеля.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Резак может спасти воздух и продать твои руки одним движением. Проверь, что он пишет, прежде чем назвать его своим.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/ru_RU. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Transit Duration Bands"
+title: "Bandes De Durée De Transit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Transit Duration Bands
+# Bandes De Durée De Transit
 
-FR LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+Les bandes de transit expliquent pourquoi HECTON-8 peut être accessible et rester cruel. Les paquets partent d'abord parce qu'ils sont petits, bon marché et légalement utiles. Le fret bouge quand staging, braking rights et marges de perte s'alignent. Un corps vivant avance lentement parce qu'il exige masse, liability, life support et quelqu'un qui paie le retour. Les fenêtres locales d'Aegir sont plus courtes mais pas plus douces : orbite, bruit de tempête, radiation et géométrie du Black Keel décident si données, cargaison ou personne peuvent bouger.
 
 ## Scanner
 
-FR LOC HOLD: The same route means different time for packets, freight and people.
+DURATION BAND CHART // Paquets-sondes, fret lourd, équipages humains et fenêtres locales d'Aegir n'ont pas la même horloge.
 
 ## Terminal
 
-FR LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // Fenêtres locales : heures à jours. Mouvement industriel interne : mois à années. Rotation d'équipage : années de custody et de dette. Fret interdomain lourd et conséquences : années à décennies.
 
 ## Audio
 
-FR LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
+La cargaison peut arriver avant la pitié. Ce n'est pas une panne. C'est la doctrine.
 
 ## Field Note
 
-FR LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+Si toutes les horloges coïncident, le monde devient fantasme de sauvetage. Garde les horloges hostiles.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/fr_FR. -->

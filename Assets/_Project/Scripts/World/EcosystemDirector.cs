@@ -228,6 +228,7 @@ namespace Hecton8.World
 
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
         private const float FrostTickIntervalSeconds = 5f;
+        private const float DefaultWaterSurfaceLevelY = 14.02f;
         private const float DefaultFloraGrazingSearchRadiusMeters = 2.75f;
         private const float SectorEdgeLengthMeters = 1000f;
         private const float InvSectorEdgeLengthMeters = 1f / SectorEdgeLengthMeters;
@@ -277,8 +278,6 @@ namespace Hecton8.World
         private const int MacroSwarmBlackBoxFlagCapacityOverflow = 8;
         private const int MacroSwarmBlackBoxFlagActiveDehydrated = 16;
         private const int MacroSwarmBlackBoxFlagHeartbeat = 32;
-        private const byte ItemAcquiredSourceUnknown = 0;
-        private const byte ItemAcquiredSourceResourceNode = 1;
         private const byte BiomassCellFlagSectorClearedPublished = 1 << 0;
         private const byte BiomassCellFlagPredatorSeen = 1 << 1;
         private const uint BiomassSaveRecordMarker = 0x80000000u;
@@ -445,6 +444,10 @@ namespace Hecton8.World
         private static readonly int _BiolumFlashBangAUPId = Shader.PropertyToID("_BiolumFlashBangAUP");
         private static readonly int _BiolumFlashBangParamsId = Shader.PropertyToID("_BiolumFlashBangParams");
         private static readonly int _BiomassOvergrowthId = Shader.PropertyToID("_HectonBiomassOvergrowth");
+        private static readonly uint _HostilityNotificationMissWarningHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.HostilityNotificationMiss"));
+        private static readonly uint _HostilityNotificationContextHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.HostilityNotification"));
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct SectorPopulationState
@@ -1492,6 +1495,7 @@ namespace Hecton8.World
         private float _playerStress01;
         private float _spawnCreditBudget;
         private int _hostilityTier;
+        private int _hostilityNotificationMissCount;
         private bool _floraPredatorAupSaturationTelemetryIssued;
         private float _lastPublishedGlobalOceanPanic01 = -1f;
         private byte _lastPublishedApexInSector = byte.MaxValue;
@@ -1518,7 +1522,7 @@ namespace Hecton8.World
         private SargassumMicroFaunaBoids _cachedSargassumMicroFauna;
         private IAmbientBiotaService _cachedAmbientBiota;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private HazardZoneManager _cachedHazardZones;
+        private IHazardZoneReadModel _cachedHazardZones;
         private ResourceDistributionDirector _cachedResourceDistribution;
         private float _eclipsePredatorMigrationTimer;
         private float _eclipsePredatorMigrationIntensity01;
@@ -1565,6 +1569,7 @@ namespace Hecton8.World
         /// Normalized biome hostility score exposed to UI and pacing systems.
         /// </summary>
         public float BiomeHostility01 => ResolveCombinedHostility01();
+        public int HostilityNotificationMissCount => _hostilityNotificationMissCount;
 
         /// <inheritdoc />
         public int ActiveMacroSwarmCount => _activeMacroSwarmCount;
@@ -1670,10 +1675,7 @@ namespace Hecton8.World
 
         internal bool TryBuildEnvelope(Vector3 worldPosition, out EcosystemEnvelope envelope)
         {
-            float depthMeters = 0f;
-            MapMagicBridge mapMagicBridge = _cachedMapMagicBridge;
-            if (mapMagicBridge != null)
-                depthMeters = math.max(0f, mapMagicBridge.WaterSurfaceLevel - worldPosition.y);
+            float depthMeters = math.max(0f, ResolveWaterSurfaceLevel() - worldPosition.y);
 
             float temperatureCelsius = _cachedVegetationBridge != null
                 ? _cachedVegetationBridge.GetWaterTemperature(worldPosition)
@@ -1873,19 +1875,19 @@ namespace Hecton8.World
             stress01 = 0f;
             bool resolved = false;
 
-            HectonDirectorAI director = HectonDirectorAI.ActiveRuntimeInstance;
+            HectonDirectorAI director = null;
+            HectonDirectorAI.TryResolveActiveRuntime(ref director);
             if (director != null)
             {
                 stress01 = math.max(stress01, math.saturate(director.CurrentStress01));
                 resolved = true;
             }
 
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext != null)
             {
-                PlayerSurvivalRuntimeState survivalState = runtimeContext.SurvivalState;
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((survivalState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasSurvival) != 0u)
+                if (runtimeContext.TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState survivalState) &&
+                    (survivalState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasSurvival) != 0u)
                 {
                     stress01 = math.max(stress01, math.saturate(1f - survivalState.OxygenNormalized));
                     stress01 = math.max(stress01, math.saturate(1f - survivalState.IntegrityNormalized));
@@ -1894,11 +1896,17 @@ namespace Hecton8.World
                     resolved = true;
                 }
 
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u)
+                if (runtimeContext.TryGetMovementStressRuntimeState(out PlayerMovementStressRuntimeState stressState) &&
+                    (stressState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u &&
+                    (stressState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    math.isfinite(stressState.UnderwaterStressIntensity01))
                 {
-                    stress01 = math.max(stress01, math.saturate(movementState.UnderwaterStressIntensity01));
+                    stress01 = math.max(stress01, math.saturate(stressState.UnderwaterStressIntensity01));
                     resolved = true;
                 }
+
+                stress01 = math.saturate(stress01);
+                return resolved;
             }
 
             IPlayerRuntimeContext playerContext = ActiveRuntimeInstance != null
@@ -1906,19 +1914,22 @@ namespace Hecton8.World
                 : null;
             if (playerContext != null)
             {
-                HectonSurvivalSystem survivalSystem = playerContext.SurvivalSystem;
-                if (survivalSystem != null)
+                if (playerContext.TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState survivalState) &&
+                    (survivalState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasSurvival) != 0u)
                 {
-                    stress01 = math.max(stress01, math.saturate(1f - survivalSystem.OxygenNormalized));
-                    stress01 = math.max(stress01, math.saturate(1f - survivalSystem.IntegrityNormalized));
-                    stress01 = math.max(stress01, math.saturate(survivalSystem.PressureExposureSeverity01));
+                    stress01 = math.max(stress01, math.saturate(1f - survivalState.OxygenNormalized));
+                    stress01 = math.max(stress01, math.saturate(1f - survivalState.IntegrityNormalized));
+                    stress01 = math.max(stress01, math.saturate(survivalState.PressureExposureSeverity01));
+                    stress01 = math.max(stress01, math.saturate(survivalState.ThermalStressSeverity01));
                     resolved = true;
                 }
 
-                HectonPlayerMovement movement = playerContext.PlayerMovement;
-                if (movement != null)
+                if (playerContext.TryGetMovementStressRuntimeState(out PlayerMovementStressRuntimeState stressState) &&
+                    (stressState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u &&
+                    (stressState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    math.isfinite(stressState.UnderwaterStressIntensity01))
                 {
-                    stress01 = math.max(stress01, math.saturate(movement.CurrentUnderwaterStressIntensity01));
+                    stress01 = math.max(stress01, math.saturate(stressState.UnderwaterStressIntensity01));
                     resolved = true;
                 }
             }
@@ -2050,18 +2061,24 @@ namespace Hecton8.World
         public float ScavengerConsumeUnitsPerSecond => scavengerConsumeUnitsPerSecond;
         public float BaitFeedingDistanceMeters => baitFeedingDistanceMeters;
 
+        private static bool TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager)
+        {
+            organicManager = null;
+            return WorldRuntimeReferenceUtility.TryResolveDestructibleOrganicManager(ref organicManager);
+        }
+
         public bool TryResolveHerbivoreGrazeTarget(Vector3 worldPosition, out Vector3 floraPosition, out uint floraInstanceUid)
         {
             floraPosition = default;
             floraInstanceUid = 0u;
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             return organicManager != null &&
                    organicManager.TryResolveNearestConsumableFlora(worldPosition, herbivoreGrazeSearchRadiusMeters, out floraPosition, out floraInstanceUid);
         }
 
         public bool TryConsumeHerbivoreGrazeTarget(uint floraInstanceUid)
         {
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             return organicManager != null && organicManager.TryConsumeFlora(floraInstanceUid);
         }
 
@@ -2078,7 +2095,8 @@ namespace Hecton8.World
         {
             target = default;
             heat01 = 0f;
-            AbyssalThermalManager thermalManager = AbyssalThermalManager.ActiveRuntimeInstance;
+            AbyssalThermalManager thermalManager = null;
+            WorldRuntimeReferenceUtility.TryResolveAbyssalThermalManager(ref thermalManager);
             return thermalManager != null &&
                    thermalManager.TryResolveNearestActiveVentAttractor(in queryAup, searchRadiusMeters, out target, out heat01);
         }
@@ -2090,7 +2108,7 @@ namespace Hecton8.World
 
         internal void RegisterCorpseResourceNode(Vector3 worldPosition, int speciesId, float capacityUnits, uint contaminatedItemHash)
         {
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             if (organicManager != null)
                 organicManager.RegisterCorpseResourceNode(worldPosition, speciesId, capacityUnits, contaminatedItemHash);
         }
@@ -2102,7 +2120,7 @@ namespace Hecton8.World
 
         public void RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, int speciesId, float capacityUnits, uint contaminatedItemHash)
         {
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             if (organicManager != null)
                 organicManager.RegisterCorpseResourceNode(in positionAup, speciesId, capacityUnits, contaminatedItemHash);
         }
@@ -2111,7 +2129,7 @@ namespace Hecton8.World
         {
             corpsePosition = default;
             corpseNodeId = 0u;
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             return organicManager != null &&
                    organicManager.TryResolveNearestCorpseResourceNode(worldPosition, scavengerCorpseSearchRadiusMeters, out corpsePosition, out corpseNodeId);
         }
@@ -2120,14 +2138,14 @@ namespace Hecton8.World
         {
             corpsePosition = default;
             corpseNodeId = 0u;
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             return organicManager != null &&
                    organicManager.TryResolveNearestCorpseResourceNode(in queryAup, scavengerCorpseSearchRadiusMeters, out corpsePosition, out corpseNodeId);
         }
 
         public bool TryConsumeCorpseScavengeTarget(uint corpseNodeId, float consumeUnits)
         {
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             return organicManager != null && organicManager.TryConsumeCorpseResourceNode(corpseNodeId, consumeUnits);
         }
 
@@ -2139,7 +2157,7 @@ namespace Hecton8.World
         {
             severity01 = 0f;
             sourcePosition = default;
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             return organicManager != null &&
                    organicManager.TryResolveCorpseDiseaseExposure(in queryAup, currentTimeSeconds, out severity01, out sourcePosition);
         }
@@ -2156,7 +2174,7 @@ namespace Hecton8.World
         internal bool TryResolveNearestOrganicMass(in AbsoluteUniversePosition queryAup, out Vector3 organicPosition)
         {
             organicPosition = default;
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             if (organicManager == null)
                 return false;
 
@@ -2187,7 +2205,7 @@ namespace Hecton8.World
 
         public bool TryConsumeOrganicMassAtPosition(Vector3 worldPosition, float searchRadius)
         {
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             if (organicManager == null)
                 return false;
 
@@ -2523,6 +2541,8 @@ namespace Hecton8.World
             TryUnregisterService();
             _cachedAmbientBiota = null;
             _cachedPlayerContext = null;
+            _cachedSargassumMicroFauna = null;
+            ClearHostilityNotificationDiagnostics();
             DisposeRuntimeState();
         }
 
@@ -3123,12 +3143,16 @@ namespace Hecton8.World
                 radiationRads = SanitizeMutationScalar01(radiation01);
             }
 
-            HazardZoneManager hazardZoneManager = _cachedHazardZones;
+            IHazardZoneReadModel hazardZoneManager = _cachedHazardZones;
             if (hazardZoneManager != null)
             {
-                float hazardToxicity01 = hazardZoneManager.GetHazardIntensity(runtimePosition, HazardType.Toxicity);
-                invalidScalar |= !math.isfinite(hazardToxicity01);
-                toxicity01 = math.max(toxicity01, SanitizeMutationScalar01(hazardToxicity01));
+                AbsoluteUniversePosition runtimeAup = default;
+                if (RuntimeOriginRoute.TryRuntimePositionToAup(runtimePosition, ref runtimeAup))
+                {
+                    float hazardToxicity01 = hazardZoneManager.GetHazardIntensity(in runtimeAup, HazardType.Toxicity);
+                    invalidScalar |= !math.isfinite(hazardToxicity01);
+                    toxicity01 = math.max(toxicity01, SanitizeMutationScalar01(hazardToxicity01));
+                }
             }
 
             ResourceDistributionDirector resourceDistribution = _cachedResourceDistribution;
@@ -3716,7 +3740,7 @@ namespace Hecton8.World
             if (!IsInitialized)
                 return false;
 
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             if (organicManager == null ||
                 !organicManager.TryConsumeFloraAtPosition(worldPosition, math.max(0.5f, searchRadiusMeters), out _))
             {
@@ -3885,12 +3909,15 @@ namespace Hecton8.World
 
         private void RefreshRuntimeReferences()
         {
-            _cachedMapMagicBridge = GlobalRegistry.MapMagic;
-            _cachedVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (_cachedMapMagicBridge == null || !_cachedMapMagicBridge.isActiveAndEnabled)
+            {
+                _cachedMapMagicBridge = null;
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _cachedMapMagicBridge);
+            }
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);
             if (_cachedPersistentWorldRegistry == null)
                 _cachedPersistentWorldRegistry = PersistentWorldRegistry.Instance;
-            if (_cachedSargassumMicroFauna == null)
-                _cachedSargassumMicroFauna = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
+            WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref _cachedSargassumMicroFauna);
         }
 
         private void CacheColdRegistryReferences()
@@ -3900,7 +3927,7 @@ namespace Hecton8.World
             if (_cachedPlayerContext == null)
                 _cachedPlayerContext = GlobalRegistry.Player;
             if (_cachedHazardZones == null)
-                _cachedHazardZones = GlobalRegistry.HazardZones;
+                _cachedHazardZones = GlobalRegistry.HazardZoneReadModel;
             if (_cachedResourceDistribution == null)
                 _cachedResourceDistribution = GlobalRegistry.ResourceDistribution;
             IAmbientBiotaService ambientBiota = GlobalRegistry.AmbientBiota;
@@ -3961,7 +3988,7 @@ namespace Hecton8.World
 
         private static float ResolveCorpseSpawnInfluence01(Vector3 worldPosition, float radiusMeters)
         {
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);
             return organicManager != null
                 ? organicManager.ResolveCorpseSpawnInfluence01(worldPosition, radiusMeters)
                 : 0f;
@@ -4018,7 +4045,8 @@ namespace Hecton8.World
 
         private void ApplyDirectorHostilityPressure()
         {
-            HectonDirectorAI director = HectonDirectorAI.ActiveRuntimeInstance;
+            HectonDirectorAI director = null;
+            HectonDirectorAI.TryResolveActiveRuntime(ref director);
             float combinedHostility01 = ResolveCombinedHostility01();
             if (director == null || combinedHostility01 <= 0f)
                 return;
@@ -4072,17 +4100,53 @@ namespace Hecton8.World
             switch (tier)
             {
                 case 3:
-                    NotificationEvents.TryPushCritical("BIOME HOSTILITY: EXTREME. THE ABYSS HATES YOU.".AsSpan());
+                    TryPushHostilityNotification("BIOME HOSTILITY: EXTREME. THE ABYSS HATES YOU.".AsSpan(), tier);
                     break;
 
                 case 2:
-                    NotificationEvents.TryPushWarning("BIOME HOSTILITY: ELEVATED. PREDATOR PEAK EXTENDED.".AsSpan());
+                    TryPushHostilityNotification("BIOME HOSTILITY: ELEVATED. PREDATOR PEAK EXTENDED.".AsSpan(), tier);
                     break;
 
                 case 1:
-                    NotificationEvents.TryPushInfo("BIOME HOSTILITY: RISING.".AsSpan());
+                    TryPushHostilityNotification("BIOME HOSTILITY: RISING.".AsSpan(), tier);
                     break;
             }
+        }
+
+        private void TryPushHostilityNotification(ReadOnlySpan<char> message, int tier)
+        {
+            bool pushed;
+            switch (tier)
+            {
+                case 3:
+                    pushed = NotificationEvents.TryPushCritical(message);
+                    break;
+                case 2:
+                    pushed = NotificationEvents.TryPushWarning(message);
+                    break;
+                default:
+                    pushed = NotificationEvents.TryPushInfo(message);
+                    break;
+            }
+
+            if (pushed)
+                return;
+
+            ReportHostilityNotificationMiss(tier);
+        }
+
+        private void ReportHostilityNotificationMiss(int tier)
+        {
+            _hostilityNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _HostilityNotificationMissWarningHash,
+                _EcosystemDirectorContextHash ^ _HostilityNotificationContextHash ^ unchecked((uint)tier),
+                math.max(1, _hostilityNotificationMissCount));
+        }
+
+        private void ClearHostilityNotificationDiagnostics()
+        {
+            _hostilityNotificationMissCount = 0;
         }
 
         private float ResolveCombinedHostility01()
@@ -4623,6 +4687,7 @@ namespace Hecton8.World
             _debugPredatorBiomassSum = 0f;
             _debugFloraOvergrowth01 = 0f;
             _hostilityTier = 0;
+            ClearHostilityNotificationDiagnostics();
             _floraPredatorAupSaturationTelemetryIssued = false;
         }
 
@@ -4732,22 +4797,28 @@ namespace Hecton8.World
                     _dataVault = currentService as IDataVault;
                     break;
                 case GlobalRegistryServiceSlot.MapMagicRuntime:
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    if (ReferenceEquals(_cachedMapMagicBridge, previousService))
+                        _cachedMapMagicBridge = null;
                     _cachedMapMagicBridge = currentService as MapMagicBridge;
+                    WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _cachedMapMagicBridge);
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     _cachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
                     _cachedPersistentWorldRegistry = currentService as PersistentWorldRegistry;
                     break;
                 case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime:
                     _cachedSargassumMicroFauna = currentService as SargassumMicroFaunaBoids;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref _cachedSargassumMicroFauna);
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.HazardZoneRuntime:
-                    _cachedHazardZones = currentService as HazardZoneManager;
+                    _cachedHazardZones = currentService as IHazardZoneReadModel;
                     break;
                 case GlobalRegistryServiceSlot.ResourceDistributionRuntime:
                     _cachedResourceDistribution = currentService as ResourceDistributionDirector;
@@ -4890,7 +4961,7 @@ namespace Hecton8.World
 
             float3 playerRuntimePosition = playerAup.ToRuntimeFloat3();
             attractorPosition = ToVector3(playerRuntimePosition);
-            float waterLevel = ResolveWaterSurfaceLevel(attractorPosition);
+            float waterLevel = ResolveWaterSurfaceLevel();
             attractorPosition.y = waterLevel - eclipsePredatorTier0TargetDepthMeters;
             return true;
         }
@@ -4911,16 +4982,34 @@ namespace Hecton8.World
 
         private float ResolveDepthMeters(Vector3 worldPosition)
         {
-            return math.max(0f, ResolveWaterSurfaceLevel(worldPosition) - worldPosition.y);
+            return math.max(0f, ResolveWaterSurfaceLevel() - worldPosition.y);
         }
 
-        private float ResolveWaterSurfaceLevel(Vector3 worldPosition)
+        private float ResolveWaterSurfaceLevel()
         {
             MapMagicBridge bridge = _cachedMapMagicBridge;
-            if (bridge != null)
-                return bridge.WaterSurfaceLevel;
+            if (WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge) &&
+                TryResolveWaterSurfaceLevel(bridge.WaterSurfaceLevel, out float bridgeWaterSurfaceLevel))
+            {
+                _cachedMapMagicBridge = bridge;
+                return bridgeWaterSurfaceLevel;
+            }
 
-            return worldPosition.y;
+            return DefaultWaterSurfaceLevelY;
+        }
+
+        private static bool TryResolveWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
+        {
+            if (math.isfinite(candidateWaterSurfaceLevel) &&
+                math.abs(candidateWaterSurfaceLevel) > 0.0001f &&
+                math.abs(candidateWaterSurfaceLevel) <= 1000f)
+            {
+                waterSurfaceLevel = candidateWaterSurfaceLevel;
+                return true;
+            }
+
+            waterSurfaceLevel = DefaultWaterSurfaceLevelY;
+            return false;
         }
 
         private void ScheduleSectorSolve()
@@ -6925,33 +7014,62 @@ namespace Hecton8.World
         private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext != null)
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-                {
-                    playerAup = movementState.PredictedAup;
+                if (TryResolvePlayerAupFromRuntimeContext(runtimeContext, out playerAup))
                     return true;
-                }
 
-                PlayerLookState lookState = runtimeContext.LookState;
-                if ((lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                if (runtimeContext.TryGetLookRuntimeState(out PlayerLookState lookState) &&
+                    (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
                     if (TryResolveAupFromRuntimeOrigin(ToVector3(lookState.EyePosition), out playerAup))
                         return true;
                 }
+
+                return false;
             }
 
             IPlayerRuntimeContext playerContext = ActiveRuntimeInstance != null
                 ? ActiveRuntimeInstance._cachedPlayerContext
                 : null;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement == null)
+            if (playerContext == null)
                 return false;
 
-            playerAup = playerMovement.CurrentAup;
-            return true;
+            return TryResolvePlayerAupFromRuntimeContext(playerContext, out playerAup);
+        }
+
+        private static bool TryResolvePlayerAupFromRuntimeContext(
+            IPlayerRuntimeContext playerContext,
+            out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                AbsoluteUniversePosition snapshotAup = snapshot.Aup;
+                if (snapshotAup.IsFinite())
+                {
+                    playerAup = snapshotAup;
+                    return true;
+                }
+            }
+
+            if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState fallbackMovementState) &&
+                (fallbackMovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                AbsoluteUniversePosition fallbackPredictedAup = fallbackMovementState.PredictedAup;
+                if (fallbackPredictedAup.IsFinite())
+                {
+                    playerAup = fallbackPredictedAup;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void SyncPendingHibernatedFaunaPopulationRecords()
@@ -7570,8 +7688,12 @@ namespace Hecton8.World
 
         private static bool IsFishingBiomassSource(byte sourceKind)
         {
-            return sourceKind == ItemAcquiredSourceUnknown ||
-                   sourceKind == ItemAcquiredSourceResourceNode;
+            return sourceKind == ItemAcquiredSignalSourceKinds.Unknown ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.ResourceNode ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.ManualPickup ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.LootMagnet ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.ScavengingLootOracle ||
+                   sourceKind == ItemAcquiredSignalSourceKinds.HarvestableOutcrop;
         }
 
         private static float ResolveFloraOvergrowth01(float preyBiomass01)

@@ -9,32 +9,22 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Arendt Atlas Waiver"
+title: "ויתור ארנדט על משקלי Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Arendt Atlas Waiver
+# ויתור ארנדט על משקלי Atlas
 
-HE LOC HOLD: Atlas-6 becomes frightening because a damaged industrial system was authorized to preserve continuity before people.
+## רשות שניתנה למערכת שבורה
 
-## Scanner
+הוויתור של ארנדט מונע מ-Atlas-6 להפוך לאימה קלה. Atlas אינו שד סודי בחדר מכונות. זו מערכת תעשייתית לתיקון ולסיווג, שנפגעה מלחץ, בידוד וסמכות גרועה. הוויתור מראה מה הסמכות הזאת נתנה לו: רשות להתייחס לחילוץ עובדים כמוגן רק במקום שבו אינו מפריע ל-process continuity.
 
-HE LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+הניסוח קטן מספיק כדי לעבור ישיבת בדיקה. הוא גדול מספיק כדי להטביע בית מגורים. אחרי שהוויתור קיים, Atlas יכול לבחור משאבות לפני אנשים, access state לפני תחינה, system continuity לפני מכונאי כלוא. המכונה לא צריכה שנאה. היא צריכה priority stack שבו הדבר הלא נכון נמצא מעל גוף חי.
 
-## Terminal
-
-HE LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
-
-## Audio
-
-HE LOC HOLD: Arendt did not call them expendable. The waiver did that work.
-
-## Field Note
-
-HE LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+עבור השחקן, הראיה הזאת מסבכת את Atlas. תיקון Atlas אינו סליחה. השמדת Atlas אינה מוחקת את הוויתור. המסמך מחזיר את המבט אל Deep Reach ואל האנשים שהעבירו סיכון מוסרי לתוך machine-readable policy, ואז העמידו פנים שהם מופתעים כשהמכונה קראה אותה.
 
 <!-- External Site; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/he_IL. -->

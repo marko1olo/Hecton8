@@ -7,34 +7,34 @@ poi_tags: poi.relay_packet_delay_meter;poi.legal_reply_timestamp
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Relay Message Lag"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Atraso de mensagem de relé"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# Atraso de mensagem de relé
 
-PT LOC HOLD: Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.
+Atraso de relé permite que a Deep Reach ameace o jogador sem voz viva na sala. Máquinas de contrato, notários, janelas de reivindicação e cláusulas de carrier podem chegar antes de compaixão porque foram escritos antes, enfileirados antes e precificados para sobreviver à distância.
 
 ## Scanner
 
-PT LOC HOLD: A message can be legally binding and still arrive too late to save air.
+Uma mensagem pode ser legalmente vinculante e ainda chegar tarde demais para salvar ar.
 
 ## Terminal
 
-PT LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
+ATRASO DE RELÉ: mensagens locais de Aegir podem levar horas ou dias. Pacotes legais interdomínio podem levar anos. Pressão Deep Reach é velha, automatizada, contratual e ainda perigosa.
 
 ## Audio
 
-PT LOC HOLD: The reply is late. The lien is current.
+A resposta está atrasada. O gravame está vigente.
 
 ## Field Note
 
-PT LOC HOLD: No ansible means truth moves as freight.
+Sem ansible, verdade se move como frete.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/pt_BR. -->

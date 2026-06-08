@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Codex card: brine vane"
+title: "Кодекс: рассольная лопасть"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Codex card: brine vane
+# Кодекс: рассольная лопасть
 
-В brine canyons экология становится картой, потому что только pressure-adapted growth переживает маршрут.
+Рассольные лопасти делают средние глубины HECTON-8 физическими. Они показывают игроку, что каньон построен из плотности, а не из пустого синего объема: мембрана может быть предупреждением, источником материала и краем ложного пола одновременно.
 
 ## Scanner
 
-Brine vane: roots in density shear. Следовать aligned edges, не open glow.
+Лист рассольной лопасти. Соляно-минеральная мембрана закреплена на сдвиге плотности. Целый край — стена; рваное устье — проход; черная вода без края лопасти — риск ложного пола.
 
 ## Terminal
 
-SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+ОБРАЗЕЦ / РАССОЛЬНАЯ ЛОПАСТЬ / роль: маркер плотностной стены, предупреждение об изгибе sonar, источник сброшенных ребер / безопасное чтение: целый лист, рваное нижнее устье, завитый кончик shear-window / отказ: резать живой лист маршрута, пересекать открытое свечение, доверять возврату ложного пола / маршрутная заметка: собирай сброшенные ребра, а не мембрану, которая держит твою карту открытой.
 
 ## Audio
 
-Это растение указывает не вверх. Оно указывает сквозь.
+Лопасть указывает не вверх. Она показывает, где океан поворачивает боком.
 
 ## Field Note
 
-Mid-depth codex: красивые vertical structures, которые одновременно navigation logic.
+Целый лист: стена. Рваное устье: возможный маршрут. Сброшенное ребро: образец. Живой лист держит линию: оставь.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/ru_RU. -->

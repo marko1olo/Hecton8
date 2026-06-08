@@ -1,4 +1,5 @@
-﻿# DAS SEED-PROGRAMM UND DIE ATLAS-RICHTLINIE
+<!-- localization_status: source_draft_pending_native_review -->
+# DAS SEED-PROGRAMM UND DIE ATLAS-RICHTLINIE
 
 > **Source:** Abteilung für Systemtechnik von Deep Reach, Richtlinien-Logbuch.
 > **Speaker:** Direktor für autonome Operationen.

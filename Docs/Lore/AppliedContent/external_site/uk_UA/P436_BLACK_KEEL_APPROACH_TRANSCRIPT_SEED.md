@@ -9,32 +9,22 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Транскрипт підходу Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Black Keel Approach Transcript Seed
+# Транскрипт підходу Black Keel
 
-UA LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+## Чотири Секунди Між Голосами
 
-## Scanner
+Перший голос з орбіти не має звучати як спасіння. Він має звучати як інфраструктура під навантаженням: стисла, запізніла, корисна і вже виставляє рахунок. Транскрипт Black Keel працює, бо дає гравцю допомогу й приниження одним подихом. Carrier почув скидання. Carrier може прийняти доказ. Carrier, можливо, поверне живого заявника. Нічого з цього не є порятунком.
 
-UK LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Затримка важлива. Чотири секунди досить малі для розмови й досить великі, щоб нагадати: океан відповідає першим. Втрата пакетів важлива, бо кожна подальша суперечка з орбітою має фізичну ціну. Здоров'я, маса й доказ не декоративні слова; це форма вікна повернення. Marauder може бути живим і все одно непридатним до підйому. Payload може бути правдивим і все одно надто важким. Carrier може бути чесним і все одно відмовити.
 
-## Terminal
-
-UK LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
-
-## Audio
-
-UK LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
-
-## Field Note
-
-UK LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+Для першої години цей транскрипт прибиває фантазію до реальності. Ти прийшов як борговий працівник зі claim-слотом, а не як обраний уцілілий. Black Keel - лінія над тобою, не рука поруч. Витрачати кисень на суперечку з орбітою вже помилка.
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/uk_UA. -->

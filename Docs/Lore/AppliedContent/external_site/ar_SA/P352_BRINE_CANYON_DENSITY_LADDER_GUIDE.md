@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Brine Canyon Density Ladder Guide"
+title: "دليل سلم كثافة وادي الملح"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Brine Canyon Density Ladder Guide
+# دليل سلم كثافة وادي الملح
 
-AR LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.
+يعامل دليل سلم كثافة وادي الملح خنادق HECTON-8 كجغرافيا هندسية: الطريق إلى الأسفل مصنوع من الكثافة لا من المنظر.
 
 ## Scanner
 
-AR LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
+تم اكتشاف brine ladder: كثافة طبقية، قاع كاذب، وانحناء سونار. اتبع الحواف؛ فالماء المفتوح يكذب هنا.
 
 ## Terminal
 
-AR LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: تخفي أودية brine رفوف ضغط، وحواف تيار، وresource pockets، وscanner false positives. يقرر hull rating وdensity transition أي رف طريق وأي رف سقوط.
 
 ## Audio
 
-AR LOC HOLD: A canyon is a staircase if your hull can pay for each step.
+الوادي درج إذا كان هيكلك يستطيع دفع ثمن كل خطوة.
 
 ## Field Note
 
-AR LOC HOLD: Use for scanner tutorials and resource route articles.
+استخدم ظلال vane كدرجات. القراءة الفارغة في brine ليست فراغا؛ إنها الآلة تخسر الجدل.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/ar_SA. -->

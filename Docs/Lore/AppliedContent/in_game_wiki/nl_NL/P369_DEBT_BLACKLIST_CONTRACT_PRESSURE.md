@@ -9,32 +9,36 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Contractdruk door Schuld en Blacklist"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Debt Blacklist Contract Pressure
+# Contractdruk door Schuld en Blacklist
 
-NL LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.
+Schulddruk houdt de opening eerlijk. De protagonist wordt niet door melodrama naar HECTON-8 gesleept, maar is ook niet vrij in een bruikbare zin. Black Keel kan een contract aanbieden omdat claim pools, schuldvensters, zuurstofkredieten, kooi-toegang en bewijs van bewaring tot dezelfde grenseconomie behoren. De claim weigeren zou legaal zijn. Het zou de speler ook op de blacklist laten, aan de grond houden en buiten de routeprijs duwen. Acceptatie maakt Black Keel geen schurk met een gezicht. Het maakt de drager een machine die risico in papierwerk omzet. De speler duikt omdat het contract lelijk, overleefbaar en waarschijnlijk de enige route terug naar beweging is.
 
 ## Scanner
 
-NL LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Retentierechtmelding gekoppeld aan Black Keel-bewaring. Weigeren blijft legaal, maar houdt je aan de grond: geen kooi, geen schone zuurstofkrediet, geen routevenster uit Aegir.
 
 ## Terminal
 
-NL LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+CLAIMAANVAARDING / BLACKLIST-VERLICHTINGSVENSTER
+contractorstatus: schuldgebonden Marauder
+drager: Black Keel claim-pool-bewaring
+verlichtingsvoorwaarden: terugwinbare massa, bewijs van bewaring, ontvanger-compliance
+foutstatus: blacklist blijft actief; toegang tot kooi geweigerd; zuurstofwelzijn wordt factureerbare steun.
 
 ## Audio
 
-NL LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+Dit was geen ontvoering. Het was het soort keuze dat de grens als vrijheid verkoopt: teken, duik, of blijf schoon op papier en vast in de praktijk.
 
 ## Field Note
 
-NL LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+Het retentierecht wees geen wapen aan. Het wees naar de luchtrekening, de kooienlijst en het volgende routevenster.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/nl_NL. -->

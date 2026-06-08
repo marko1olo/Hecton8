@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Sensor Tagged Fauna Codex Card"
+title: "Kartu Kodex Fauna Bertag Sensor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Sensor Tagged Fauna Codex Card
+# Kartu Kodex Fauna Bertag Sensor
 
-ID LOC HOLD: Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.
+Fauna bertag sensor adalah salah satu cara paling bersih melihat ekologi mesin HECTON-8 tanpa mengubah laut menjadi pikiran. Deep Reach dulu menandai hewan, shell colonies, dan spesies rute untuk studi migrasi, toleransi tekanan, dan kontaminasi. Bertahun-tahun kemudian, beberapa tag tertanam dalam jaringan parut, soket cangkang, tutup mineral, atau cincin tumbuh. Atlas masih bisa mendengar return lemah dan mungkin memperlakukan tubuh bergerak sebagai landmark diagnostik: pressure packet, petunjuk kontaminasi, occupancy rute, jangkar drone sweep, saksi maintenance basi. Itu tidak membuat hewan patuh. Ia bisa merumput, kabur, berburu, atau panik karena alasan biasa sementara tag membuat jalurnya berarti bagi infrastruktur rusak. Jangan baca gerak tag sebagai niat. Jangan potong tag hidup kecuali biaya rute sepadan dengan kekejaman dan data kotor. Pertanyaan berguna bukan “apa yang ia mau?” melainkan “sistem mana yang masih percaya luka ini adalah sensor?”
 
 ## Scanner
 
-ID LOC HOLD: Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+Fauna bertag sensor. Tag biometal Deep Reach lama tertanam di luka, cangkang, atau cincin tumbuh. Echo rute Atlas lemah; niat hewan tidak terkonfirmasi.
 
 ## Terminal
 
-ID LOC HOLD: SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+SPESIMEN / FAUNA BERTAG SENSOR / peran: pembawa telemetry hidup, landmark survey basi, kontaminan repair-route / baca aman: pulsa tag lama, pertumbuhan jaringan luka, gerak tanpa perintah / tolak: membaca perilaku sebagai kepatuhan, memotong tag dari tubuh hidup, percaya occupancy echo / catatan rute: tag bisa melaporkan ruangan yang dilewati hewan, bukan alasan ia lewat.
 
 ## Audio
 
-ID LOC HOLD: It is not obeying. It is being used.
+Ia tidak mematuhi Atlas. Ia membawa pertanyaan lama yang masih ditanyakan Atlas.
 
 ## Field Note
 
-ID LOC HOLD: Do not write as possession. It is damaged maintenance using animal movement.
+Tag adalah luka, bukan tali. Ia bisa melaporkanmu, salah menempatkanmu, atau membangunkan sesuatu yang tidak pernah melihat hewan itu.
 
 <!-- In-Game Wiki; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/id_ID. -->

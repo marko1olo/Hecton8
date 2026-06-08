@@ -318,6 +318,7 @@ namespace Hecton8.Caves
         private const int CollapseImpulseBodyCapacity = 32;
         private const int MaxTerrainHoleHandleCount = 8;
         private const int MaxColliderChunkCount = 8;
+        private const float MinColliderChunkProxySize = 0.01f;
         private const int MaxPlasmaCutSteps = 24;
         private const int MaxQueuedRebuildPassesPerKick = 4;
         private const int MaxMagmaVeinBurnSamplesPerSegment = 16;
@@ -368,6 +369,8 @@ namespace Hecton8.Caves
         private static IDataVault s_publishedSonarPayloadReadGuardVault;
         private static ulong s_publishedSonarPayloadReadGuardMask;
         private static int s_publishedSonarPayloadReadGuardRefCount;
+        private static readonly uint _SeismicShockwaveEventLaneDropWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonVoxelVolume.SeismicShockwaveEventLaneDrop"));
+        private static readonly uint _SeismicShockwaveEventLaneContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonVoxelVolume.SeismicShockwaveEventLane"));
 
         private HectonVoxelVolume _publishedNext;
         private HectonVoxelVolume _publishedPrev;
@@ -427,6 +430,7 @@ namespace Hecton8.Caves
         private int _craterStampCount;
         private int _resourceCraterClusterCount;
         private int _runtimeStamp;
+        private int _seismicShockwaveEventLaneDropCount;
         private IDataVault _cachedDataVault;
         private IPhysicsService _physicsService;
         private bool _hotSwapRegistered;
@@ -598,6 +602,9 @@ namespace Hecton8.Caves
 
         /// <summary>Generation stamp used to reject stale async rebuild completions.</summary>
         public int RuntimeStamp => _runtimeStamp;
+
+        /// <summary>Number of visible random seismic event-lane drops from this volume.</summary>
+        public int SeismicShockwaveEventLaneDropCount => _seismicShockwaveEventLaneDropCount;
 
         /// <summary>Whether this pooled volume currently has enough data to rebuild itself.</summary>
         public bool HasRuntimeData => _runtimeDataReady;
@@ -1639,23 +1646,37 @@ namespace Hecton8.Caves
         public bool TryUsePrewarmedColliderChunkCapacity(int chunkCount)
         {
             int clampedCount = Mathf.Clamp(chunkCount, 1, MaxColliderChunkCount);
-            if (_colliderChunkRoot == null)
+            if (_colliderChunkRoot == null ||
+                _colliderChunkBakeProxies == null ||
+                _colliderChunkBakeProxies.Length < clampedCount ||
+                _colliderChunkColliders == null ||
+                _colliderChunkColliders.Length < clampedCount)
+            {
                 return false;
+            }
 
-            for (int i = 0; i < clampedCount; i++)
+            for (int i = 0; i < _colliderChunkBakeProxies.Length; i++)
             {
                 BoxCollider proxy = _colliderChunkBakeProxies[i];
-                if (proxy == null)
+                bool withinRequestedCapacity = i < clampedCount;
+                if (proxy == null && withinRequestedCapacity)
                     return false;
 
-                MeshCollider collider = _colliderChunkColliders[i];
+                MeshCollider collider = i < _colliderChunkColliders.Length ? _colliderChunkColliders[i] : null;
                 if (collider != null)
                 {
                     collider.enabled = false;
                     collider.gameObject.layer = HectonLayerMasks.VoxelCave;
                 }
 
+                if (proxy == null)
+                    continue;
+
                 proxy.gameObject.layer = HectonLayerMasks.VoxelProxy;
+                proxy.center = SanitizeColliderChunkProxyCenter(proxy.center, Vector3.zero);
+                proxy.size = SanitizeColliderChunkProxySize(proxy.size, Vector3.one * MinColliderChunkProxySize);
+                if (!withinRequestedCapacity && proxy.enabled)
+                    proxy.enabled = false;
             }
 
             if (!_colliderChunkRoot.gameObject.activeSelf)
@@ -1669,7 +1690,8 @@ namespace Hecton8.Caves
         /// </summary>
         public MeshCollider GetColliderChunkCollider(int index)
         {
-            if (index < 0 || index >= _colliderChunkColliders.Length)
+            if (_colliderChunkColliders == null ||
+                (uint)index >= (uint)_colliderChunkColliders.Length)
                 return null;
 
             return _colliderChunkColliders[index];
@@ -1680,18 +1702,22 @@ namespace Hecton8.Caves
         /// </summary>
         internal void ConfigureColliderChunkBakeProxy(int index, Vector3 center, Vector3 size)
         {
-            if (index < 0 || index >= _colliderChunkBakeProxies.Length)
+            if (_colliderChunkBakeProxies == null ||
+                (uint)index >= (uint)_colliderChunkBakeProxies.Length)
                 return;
 
             BoxCollider proxy = _colliderChunkBakeProxies[index];
             if (proxy == null)
                 return;
 
-            proxy.center = center;
-            proxy.size = new Vector3(
-                math.max(0.01f, size.x),
-                math.max(0.01f, size.y),
-                math.max(0.01f, size.z));
+            Vector3 safeCenter = SanitizeColliderChunkProxyCenter(center, proxy.center);
+            Vector3 safeSize = SanitizeColliderChunkProxySize(size, proxy.size);
+            proxy.gameObject.layer = HectonLayerMasks.VoxelProxy;
+            if (!proxy.gameObject.activeSelf)
+                proxy.gameObject.SetActive(true);
+
+            proxy.center = safeCenter;
+            proxy.size = safeSize;
             proxy.enabled = true;
         }
 
@@ -1700,7 +1726,8 @@ namespace Hecton8.Caves
         /// </summary>
         internal BoxCollider GetColliderChunkBakeProxy(int index)
         {
-            if (index < 0 || index >= _colliderChunkBakeProxies.Length)
+            if (_colliderChunkBakeProxies == null ||
+                (uint)index >= (uint)_colliderChunkBakeProxies.Length)
                 return null;
 
             return _colliderChunkBakeProxies[index];
@@ -1729,12 +1756,16 @@ namespace Hecton8.Caves
         /// </summary>
         internal void DisableColliderChunkBakeProxy(int index)
         {
-            if (index < 0 || index >= _colliderChunkBakeProxies.Length)
+            if (_colliderChunkBakeProxies == null ||
+                (uint)index >= (uint)_colliderChunkBakeProxies.Length)
                 return;
 
             BoxCollider proxy = _colliderChunkBakeProxies[index];
-            if (proxy != null)
-                proxy.enabled = false;
+            if (proxy == null)
+                return;
+
+            proxy.enabled = false;
+            ResetColliderChunkBakeProxyShape(index);
         }
 
         /// <summary>
@@ -1742,11 +1773,12 @@ namespace Hecton8.Caves
         /// </summary>
         internal void DisableColliderChunkBakeProxies()
         {
+            if (_colliderChunkBakeProxies == null)
+                return;
+
             for (int i = 0; i < _colliderChunkBakeProxies.Length; i++)
             {
-                BoxCollider proxy = _colliderChunkBakeProxies[i];
-                if (proxy != null)
-                    proxy.enabled = false;
+                DisableColliderChunkBakeProxy(i);
             }
         }
 
@@ -1757,9 +1789,11 @@ namespace Hecton8.Caves
         internal void DisableColliderChunksForCinematicFake()
         {
             int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;
-            for (int i = 0; i < colliderCount; i++)
+            int proxyCount = _colliderChunkBakeProxies != null ? _colliderChunkBakeProxies.Length : 0;
+            int chunkCount = Mathf.Max(colliderCount, proxyCount);
+            for (int i = 0; i < chunkCount; i++)
             {
-                MeshCollider collider = _colliderChunkColliders[i];
+                MeshCollider collider = i < colliderCount ? _colliderChunkColliders[i] : null;
                 if (collider != null)
                 {
                     collider.enabled = false;
@@ -1768,6 +1802,7 @@ namespace Hecton8.Caves
                 }
 
                 DisableColliderChunkBakeProxy(i);
+                ResetColliderChunkBakeProxyShape(i);
             }
 
             ClearColliderChunkBakeMeshes();
@@ -1794,8 +1829,8 @@ namespace Hecton8.Caves
         /// </summary>
         internal bool EnableColliderChunkProxy(int index)
         {
-            if (index < 0 ||
-                index >= _colliderChunkBakeProxies.Length)
+            if (_colliderChunkBakeProxies == null ||
+                (uint)index >= (uint)_colliderChunkBakeProxies.Length)
             {
                 return false;
             }
@@ -1804,16 +1839,20 @@ namespace Hecton8.Caves
             if (proxy == null)
                 return false;
 
-            if (index < _colliderChunkColliders.Length)
+            int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;
+            if (index < colliderCount)
             {
                 MeshCollider collider = _colliderChunkColliders[index];
                 if (collider != null)
                     collider.enabled = false;
             }
 
+            proxy.gameObject.layer = HectonLayerMasks.VoxelProxy;
             if (!proxy.gameObject.activeSelf)
                 proxy.gameObject.SetActive(true);
 
+            proxy.center = SanitizeColliderChunkProxyCenter(proxy.center, Vector3.zero);
+            proxy.size = SanitizeColliderChunkProxySize(proxy.size, Vector3.one * MinColliderChunkProxySize);
             proxy.enabled = true;
             return true;
         }
@@ -1823,29 +1862,31 @@ namespace Hecton8.Caves
         /// </summary>
         internal bool CommitDeferredColliderChunkUpload(int index)
         {
-            if (index < 0 ||
-                index >= _colliderChunkColliders.Length ||
-                index >= _colliderChunkBakeMeshes.Length)
-            {
+            if (index < 0)
                 return false;
-            }
 
-            Mesh stagedMesh = _colliderChunkBakeMeshes[index];
-            _colliderChunkBakeMeshes[index] = null;
-            if (stagedMesh != null)
-                stagedMesh.Clear(false);
-
-            MeshCollider collider = _colliderChunkColliders[index];
-            if (collider != null)
+            int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;
+            int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;
+            if (index < bakeMeshCount)
             {
-                collider.enabled = false;
-                if (!collider.gameObject.activeSelf)
-                    collider.gameObject.SetActive(true);
+                Mesh stagedMesh = _colliderChunkBakeMeshes[index];
+                _colliderChunkBakeMeshes[index] = null;
+                if (stagedMesh != null)
+                    stagedMesh.Clear(false);
             }
 
-            BoxCollider proxy = index < _colliderChunkBakeProxies.Length ? _colliderChunkBakeProxies[index] : null;
-            if (proxy != null)
-                proxy.enabled = true;
+            if (index < colliderCount)
+            {
+                MeshCollider collider = _colliderChunkColliders[index];
+                if (collider != null)
+                {
+                    collider.enabled = false;
+                    if (!collider.gameObject.activeSelf)
+                        collider.gameObject.SetActive(true);
+                }
+            }
+
+            EnableColliderChunkProxy(index);
 
             return false;
         }
@@ -1855,6 +1896,9 @@ namespace Hecton8.Caves
         /// </summary>
         internal void ClearColliderChunkBakeMeshes()
         {
+            if (_colliderChunkBakeMeshes == null)
+                return;
+
             for (int i = 0; i < _colliderChunkBakeMeshes.Length; i++)
             {
                 Mesh mesh = _colliderChunkBakeMeshes[i];
@@ -1869,10 +1913,11 @@ namespace Hecton8.Caves
         /// <param name="index">Collider chunk index.</param>
         internal void DetachColliderChunkBakeMesh(int index)
         {
-            if (index < 0 || index >= _colliderChunkBakeMeshes.Length)
+            if (index < 0)
                 return;
 
-            if (index < _colliderChunkColliders.Length)
+            int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;
+            if (index < colliderCount)
             {
                 MeshCollider collider = _colliderChunkColliders[index];
                 if (collider != null)
@@ -1882,7 +1927,9 @@ namespace Hecton8.Caves
             }
 
             EnableColliderChunkProxy(index);
-            _colliderChunkBakeMeshes[index] = null;
+            int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;
+            if (index < bakeMeshCount)
+                _colliderChunkBakeMeshes[index] = null;
         }
 
         /// <summary>
@@ -1890,10 +1937,11 @@ namespace Hecton8.Caves
         /// </summary>
         internal void ReleaseColliderChunkBakeMesh(int index)
         {
-            if (index < 0 || index >= _colliderChunkBakeMeshes.Length)
+            if (index < 0)
                 return;
 
-            if (index < _colliderChunkColliders.Length)
+            int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;
+            if (index < colliderCount)
             {
                 MeshCollider collider = _colliderChunkColliders[index];
                 if (collider != null)
@@ -1901,6 +1949,10 @@ namespace Hecton8.Caves
             }
 
             EnableColliderChunkProxy(index);
+            int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;
+            if (index >= bakeMeshCount)
+                return;
+
             Mesh bakeMesh = _colliderChunkBakeMeshes[index];
             _colliderChunkBakeMeshes[index] = null;
             if (bakeMesh == null)
@@ -1916,21 +1968,28 @@ namespace Hecton8.Caves
         /// </summary>
         public void ResetColliderChunks(bool destroyMeshes)
         {
-            for (int i = 0; i < _colliderChunkColliders.Length; i++)
+            int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;
+            int proxyCount = _colliderChunkBakeProxies != null ? _colliderChunkBakeProxies.Length : 0;
+            int meshCount = _colliderChunkMeshes != null ? _colliderChunkMeshes.Length : 0;
+            int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;
+            int chunkCount = Mathf.Max(Mathf.Max(colliderCount, proxyCount), Mathf.Max(meshCount, bakeMeshCount));
+            for (int i = 0; i < chunkCount; i++)
             {
-                MeshCollider collider = _colliderChunkColliders[i];
+                MeshCollider collider = i < colliderCount ? _colliderChunkColliders[i] : null;
                 if (collider != null)
                 {
                     collider.enabled = false;
                     if (destroyMeshes)
                         collider.sharedMesh = null;
-                    DisableColliderChunkBakeProxy(i);
                     if (collider.gameObject.activeSelf)
                         collider.gameObject.SetActive(false);
                 }
 
-                Mesh mesh = i < _colliderChunkMeshes.Length ? _colliderChunkMeshes[i] : null;
-                Mesh bakeMesh = i < _colliderChunkBakeMeshes.Length ? _colliderChunkBakeMeshes[i] : null;
+                DisableColliderChunkBakeProxy(i);
+                ResetColliderChunkBakeProxyShape(i);
+
+                Mesh mesh = i < meshCount ? _colliderChunkMeshes[i] : null;
+                Mesh bakeMesh = i < bakeMeshCount ? _colliderChunkBakeMeshes[i] : null;
                 if (mesh != null)
                 {
                     if (global::HectonVoxelEngine.ReleaseVoxelPhysicsBakeMesh(mesh))
@@ -1975,7 +2034,11 @@ namespace Hecton8.Caves
         /// </summary>
         public void SetActiveColliderChunkCount(int activeCount)
         {
+            if (_colliderChunkBakeProxies == null)
+                return;
+
             int clampedActive = Mathf.Clamp(activeCount, 0, _colliderChunkBakeProxies.Length);
+            int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;
             for (int i = 0; i < _colliderChunkBakeProxies.Length; i++)
             {
                 BoxCollider proxy = _colliderChunkBakeProxies[i];
@@ -1983,10 +2046,14 @@ namespace Hecton8.Caves
                     continue;
 
                 bool shouldBeActive = i < clampedActive;
+                proxy.gameObject.layer = HectonLayerMasks.VoxelProxy;
+                if (!shouldBeActive && proxy.enabled)
+                    proxy.enabled = false;
+
                 if (proxy.gameObject.activeSelf != shouldBeActive)
                     proxy.gameObject.SetActive(shouldBeActive);
 
-                if (i < _colliderChunkColliders.Length)
+                if (i < colliderCount)
                 {
                     MeshCollider collider = _colliderChunkColliders[i];
                     if (collider != null)
@@ -2039,7 +2106,8 @@ namespace Hecton8.Caves
             int validNodeCount = 0;
             for (int i = 0; i < nodes.Length; i++)
             {
-                if (!TryBuildRuntimeNodeSnapshot(in nodes[i], absoluteUniverseOffset, out CaveNode snapshot))
+                CaveNode source = nodes[i];
+                if (!TryBuildRuntimeNodeSnapshot(in source, absoluteUniverseOffset, out CaveNode snapshot))
                     continue;
 
                 nodeSnapshots[validNodeCount++] = snapshot;
@@ -2053,7 +2121,8 @@ namespace Hecton8.Caves
             int validTunnelCount = 0;
             for (int i = 0; i < tunnels.Length; i++)
             {
-                if (!TryBuildRuntimeTunnelSnapshot(in tunnels[i], absoluteUniverseOffset, out CaveTunnel snapshot))
+                CaveTunnel source = tunnels[i];
+                if (!TryBuildRuntimeTunnelSnapshot(in source, absoluteUniverseOffset, out CaveTunnel snapshot))
                     continue;
 
                 tunnelSnapshots[validTunnelCount++] = snapshot;
@@ -2067,7 +2136,8 @@ namespace Hecton8.Caves
             int validEntranceCount = 0;
             for (int i = 0; i < entrances.Length; i++)
             {
-                if (!TryBuildRuntimeEntranceSnapshot(in entrances[i], absoluteUniverseOffset, out CaveEntrance snapshot))
+                CaveEntrance source = entrances[i];
+                if (!TryBuildRuntimeEntranceSnapshot(in source, absoluteUniverseOffset, out CaveEntrance snapshot))
                     continue;
 
                 entranceSnapshots[validEntranceCount++] = snapshot;
@@ -2081,7 +2151,8 @@ namespace Hecton8.Caves
             int validStructureCount = 0;
             for (int i = 0; i < structures.Length; i++)
             {
-                if (!TryBuildRuntimeStructureSnapshot(in structures[i], absoluteUniverseOffset, out CaveStructure snapshot))
+                CaveStructure source = structures[i];
+                if (!TryBuildRuntimeStructureSnapshot(in source, absoluteUniverseOffset, out CaveStructure snapshot))
                     continue;
 
                 structureSnapshots[validStructureCount++] = snapshot;
@@ -3882,7 +3953,8 @@ namespace Hecton8.Caves
             if (_rootMeshCollider != null)
                 _rootMeshCollider.enabled = collisionAllowed && _rootMeshCollider.sharedMesh != null;
 
-            for (int i = 0; i < _colliderChunkColliders.Length; i++)
+            int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;
+            for (int i = 0; i < colliderCount; i++)
             {
                 MeshCollider collider = _colliderChunkColliders[i];
                 if (collider == null)
@@ -3987,12 +4059,14 @@ namespace Hecton8.Caves
             }
 
             HectonMapMagicVegetationBridge vegetationBridge = _cachedVegetationBridge;
-            if (vegetationBridge == null)
+            if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge))
             {
+                _cachedVegetationBridge = null;
                 _terrainHoleHandles.Clear();
                 _terrainHoleHandleCount = 0;
                 return;
             }
+            _cachedVegetationBridge = vegetationBridge;
 
             for (int i = 0; i < _terrainHoleHandleCount; i++)
             {
@@ -4021,12 +4095,14 @@ namespace Hecton8.Caves
         private void OnDisable()
         {
             InteractableRegistry.InvalidateTree(this);
+            ClearEventLaneDiagnostics();
         }
 
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
             InteractableRegistry.InvalidateTree(this);
+            ClearEventLaneDiagnostics();
             VoxelVolumeLeakSentinel.FinalizeVolume(this);
             UnregisterPublishedVolume(this);
             _deltaProcessor?.UnregisterVolume(this);
@@ -4064,6 +4140,7 @@ namespace Hecton8.Caves
             if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
             {
                 _cachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);
                 return;
             }
 
@@ -4087,7 +4164,7 @@ namespace Hecton8.Caves
             if (_engine == null)
                 _engine = GlobalRegistry.VoxelEngine;
 
-            _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);
             _cachedOrganicManager = GlobalRegistry.OrganicToolHits as DestructibleOrganicManager;
         }
 
@@ -4361,7 +4438,32 @@ namespace Hecton8.Caves
                 impulseRadius,
                 impulseMagnitude,
                 clusterCount);
-            RandomEventEvents.TryRaiseSeismicShockwave(in shockwaveEvent);
+            TryRaiseSeismicShockwaveEvent(in shockwaveEvent);
+        }
+
+        private void TryRaiseSeismicShockwaveEvent(in SeismicShockwaveEvent shockwaveEvent)
+        {
+            if (RandomEventEvents.TryRaiseSeismicShockwave(in shockwaveEvent))
+                return;
+
+            ReportSeismicShockwaveEventLaneDropIfBackpressured();
+        }
+
+        private void ReportSeismicShockwaveEventLaneDropIfBackpressured()
+        {
+            if (RandomEventEvents.PendingCount <= 0)
+                return;
+
+            _seismicShockwaveEventLaneDropCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _SeismicShockwaveEventLaneDropWarningHash,
+                _SeismicShockwaveEventLaneContextHash ^ unchecked((uint)_runtimeStamp),
+                math.max(1, _seismicShockwaveEventLaneDropCount));
+        }
+
+        private void ClearEventLaneDiagnostics()
+        {
+            _seismicShockwaveEventLaneDropCount = 0;
         }
 
         private static Vector3 ResolveCollapseTrenchDirection(Vector3 absoluteCenter)
@@ -4577,6 +4679,50 @@ namespace Hecton8.Caves
         private static float4 SaturateFinite(float4 value)
         {
             return IsFinite(value) ? math.saturate(value) : float4.zero;
+        }
+
+        private static Vector3 SanitizeColliderChunkProxyCenter(Vector3 center, Vector3 fallback)
+        {
+            if (IsFinite(center))
+                return center;
+
+            return IsFinite(fallback) ? fallback : Vector3.zero;
+        }
+
+        private void ResetColliderChunkBakeProxyShape(int index)
+        {
+            if (_colliderChunkBakeProxies == null ||
+                (uint)index >= (uint)_colliderChunkBakeProxies.Length)
+                return;
+
+            BoxCollider proxy = _colliderChunkBakeProxies[index];
+            if (proxy == null)
+                return;
+
+            proxy.gameObject.layer = HectonLayerMasks.VoxelProxy;
+            proxy.center = Vector3.zero;
+            proxy.size = Vector3.one * MinColliderChunkProxySize;
+        }
+
+        private static Vector3 SanitizeColliderChunkProxySize(Vector3 size, Vector3 fallback)
+        {
+            return new Vector3(
+                SanitizeColliderChunkProxySizeAxis(size.x, fallback.x),
+                SanitizeColliderChunkProxySizeAxis(size.y, fallback.y),
+                SanitizeColliderChunkProxySizeAxis(size.z, fallback.z));
+        }
+
+        private static float SanitizeColliderChunkProxySizeAxis(float value, float fallback)
+        {
+            if (IsFinite(value))
+            {
+                float magnitude = math.abs(value);
+                if (magnitude >= MinColliderChunkProxySize)
+                    return magnitude;
+            }
+
+            float fallbackMagnitude = IsFinite(fallback) ? math.abs(fallback) : 0f;
+            return math.max(MinColliderChunkProxySize, fallbackMagnitude);
         }
 
         private static bool TryNormalizeFinite(float3 value, out float3 normalized)

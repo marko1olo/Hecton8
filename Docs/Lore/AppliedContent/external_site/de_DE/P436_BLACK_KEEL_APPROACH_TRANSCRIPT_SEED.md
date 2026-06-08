@@ -9,32 +9,22 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Black-Keel-Anflugtranskript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Black Keel Approach Transcript Seed
+# Black-Keel-Anflugtranskript
 
-DE LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+## Vier Sekunden Zwischen Stimmen
 
-## Scanner
+Die erste Stimme aus dem Orbit darf nicht wie Erlösung klingen. Sie muss wie Infrastruktur unter Last klingen: komprimiert, verzögert, nützlich und bereits abrechnend. Das Black-Keel-Transkript funktioniert, weil es Hilfe und Demütigung in denselben Atemzug legt. Ein Carrier hat den Drop gehört. Ein Carrier kann Beweis empfangen. Ein Carrier kann vielleicht einen lebenden Anspruchsteller zurückholen. Nichts davon ist Rettung.
 
-DE LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Der Lag zählt. Vier Sekunden sind kurz genug für Gespräch und lang genug, um klarzumachen, dass der Ozean zuerst antwortet. Paketverlust zählt, weil jeder spätere Streit mit dem Orbit einen körperlichen Preis hat. Gesundheit, Masse und Beweis sind keine Dekoration; sie formen das Rückkehrfenster. Der Marauder kann leben und trotzdem nicht bergbar sein. Die Nutzlast kann wahr und trotzdem zu schwer sein. Der Carrier kann ehrlich sein und trotzdem ablehnen.
 
-## Terminal
-
-DE LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
-
-## Audio
-
-DE LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
-
-## Field Note
-
-DE LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+Für die erste Stunde nagelt dieses Transkript die Fantasie fest. Du kommst als verschuldeter Arbeiter mit Claim-Slot, nicht als erwählter Überlebender. Die Black Keel ist die Leitung über dir, nicht die Hand neben dir. Sauerstoff an eine Orbitdebatte zu verschwenden ist bereits der erste Fehler.
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/de_DE. -->

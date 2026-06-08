@@ -412,16 +412,25 @@ namespace Hecton8.Dev
         {
             if (scatterDirector == null)
                 scatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;
-            if (integrationDirector == null)
-                integrationDirector = WorldGenerativeGeologyIntegrationDirector.ActiveRuntimeInstance;
-            if (seamExecutionDirector == null)
-                seamExecutionDirector = WorldGenerativeGeologySeamExecutionDirector.ActiveRuntimeInstance;
+            if (integrationDirector == null || !integrationDirector.isActiveAndEnabled)
+            {
+                integrationDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyIntegrationDirector(ref integrationDirector);
+            }
+            if (seamExecutionDirector == null || !seamExecutionDirector.isActiveAndEnabled)
+            {
+                seamExecutionDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologySeamExecutionDirector(ref seamExecutionDirector);
+            }
             if (terrainSeamApplier == null)
                 terrainSeamApplier = WorldGenerativeGeologyTerrainSeamApplier.ActiveRuntimeInstance;
             if (voxelBridgeDirector == null)
                 voxelBridgeDirector = WorldGenerativeGeologyVoxelBridgeDirector.ActiveRuntimeInstance;
-            if (proceduralStateRegistry == null)
-                proceduralStateRegistry = WorldProceduralStateRegistry.ActiveRuntimeInstance;
+            if (proceduralStateRegistry == null || !proceduralStateRegistry.isActiveAndEnabled)
+            {
+                proceduralStateRegistry = null;
+                WorldRuntimeReferenceUtility.TryResolveWorldProceduralStateRegistry(ref proceduralStateRegistry);
+            }
         }
 
         private string DescribeRefs()

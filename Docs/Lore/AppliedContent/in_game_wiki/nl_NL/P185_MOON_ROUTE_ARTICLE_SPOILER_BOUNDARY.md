@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "Atlasbekken-redactielijn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# Atlasbekken-redactielijn
 
-NL LOC HOLD: Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.
+Maanrouteartikelen kunnen uitleggen hoe Aegir werkt zonder het Atlasbekken te vroeg te openen. De hemel kan uit publieke records worden begrepen; de bodem moet nog in het donker verdiend worden.
 
 ## Scanner
 
-NL LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+De publieke maanatlas mag de hemelgevaren noemen; hij mag niet afdrukken wat de Atlasbekken-payload doet.
 
 ## Terminal
 
-NL LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+ATLAS-REDACTIE: publieke maanpagina's mogen namen, routevensters, gevaren, salvage economy en HECTON-8-rampfeiten noemen. Payload-effecten, basin receiver-gedrag en eindbeslissingsuitkomsten blijven afgeschermd.
 
 ## Audio
 
-NL LOC HOLD: Publish the sky. Redact the bottom.
+Publiceer de hemel. Verzegel de bodem.
 
 ## Field Note
 
-NL LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+Boven de wolken is de route openbaar. Onder het bekken heeft elk antwoord nog een slot.
 
 <!-- In-Game Wiki; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/nl_NL. -->

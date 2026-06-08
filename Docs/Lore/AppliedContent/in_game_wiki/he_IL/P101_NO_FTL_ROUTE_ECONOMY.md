@@ -7,34 +7,34 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "כלכלת נתיבים ללא FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# כלכלת נתיבים ללא FTL
 
-HE LOC HOLD: Human space in 2190 runs on slow routes, relay custody, mass budgets, braking windows and old law. HECTON-8 is far enough that help is procedural before it is physical. That makes Black Keel, Deep Reach proxy packets and local evidence more important than any clean rescue fantasy.
+ב-2190 המרחב האנושי פועל על ספינות איטיות, משמורת ממסרים, חלונות בלימה וחוב. HECTON-8 נמצא מעבר להצלה מיידית. החוק יכול להגיע כחבילות; ספינות מגיעות רק עם מסה, מיגון, דלק, ארכיטקטורת בלימה ומישהו שמוכן לשלם על המסע.
 
 ## Scanner
 
-HE LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
+חותמת מעבר: עיכוב, מסה, מיגון וחוב בלימה עיצבו את העצם הזה לפני שכל מושבה נגעה במים.
 
 ## Terminal
 
-HE LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
+הודעת נתיב: אין ansible. משמורת מקומית נשארת מחייבת עד חבילת הממסר הבאה. סמכות חילוץ לא יכולה להמתין לתשובת Sol.
 
 ## Audio
 
-HE LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
+איש מהעולמות הפנימיים לא יגיע למים האלה בזמן. שעבוד החוב שלך כבר תימחר זאת.
 
 ## Field Note
 
-HE LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+אם ההצלה נראית מאוחרת, הראה את הקבלה. המרחק חויב לפני קריאת המצוקה.
 
 <!-- In-Game Wiki; generated from P101_NO_FTL_ROUTE_ECONOMY/he_IL. -->

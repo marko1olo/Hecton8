@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Garde Black Keel
 
-La garde Black Keel définit le soutien orbital comme une infrastructure utile mais compromise: sauvetage, dette et pression Deep Reach.
+Black Keel Custody définit le soutien orbital comme une infrastructure utile et compromise : route de secours, machine de dette et surface de pression Deep Reach dans un seul objet.
 
 ## Scanner
 

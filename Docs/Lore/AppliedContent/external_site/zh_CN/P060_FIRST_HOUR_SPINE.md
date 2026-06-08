@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "第一小时主脊"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# 第一小时主脊
 
-CN LOC HOLD: First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+第一小时主脊定义 HECTON-8 的开局节奏。玩家从可触摸的工程任务和视觉奇观开始，然后看见这些任务连接到公司谎言，以及已经进入生物体的维护生态。这让第一条路线既可玩又有氛围，同时埋下更大的调查：海洋不是在隐藏故事，而是在压力、盐和程序中保存证据。
 
 ## Scanner
 
-CN LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+合同、受损投送、空气、明亮浅滩、泵房避难点、被清洗过的谎言，然后是第一道把生命当密封垫使用的修复伤痕。
 
 ## Terminal
 
-CN LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+浅水附属区：手动泵重启有效。Deep Reach 事故包已缓存。Atlas 修复生长在电缆、工具碎片和生物残留周围检出。
 
 ## Audio
 
-CN LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+第一个安全房间并不干净。它只是比你更会憋气。
 
 ## Field Note
 
-CN LOC HOLD: The opening must be beautiful before it becomes accusing.
+开场必须先美丽，之后才开始控诉。
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/zh_CN. -->

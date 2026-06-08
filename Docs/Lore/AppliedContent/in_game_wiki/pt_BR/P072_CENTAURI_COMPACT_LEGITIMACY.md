@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "Legitimidade do Centauri Compact"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# Legitimidade do Centauri Compact
 
-PT-BR LOC HOLD: The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.
+O Centauri Compact é a âncora de legitimidade extrassolar inicial da humanidade: colônias reais, padrões reais, prestígio cívico real. Em HECTON-8, ele aparece como caixas de pressão importadas e etiquetas de auditoria que a Deep Reach podia citar enquanto ignorava o espírito por trás delas.
 
 ## Scanner
 
-PT-BR LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+Etiqueta de auditoria Centauri. Legitimidade extrassolar inicial, depois desculpas de fronteira.
 
 ## Terminal
 
-PT-BR LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+HARDWARE CENTAURI COMPACT: caixa de pressão certificada para trânsito civil. Canal de auditoria inativo. Garantia anulada após retrofit de terceiro da Deep Reach.
 
 ## Audio
 
-PT-BR LOC HOLD: First legitimacy became old metal under a newer lie.
+A primeira legitimidade virou metal velho sob uma mentira mais nova.
 
 ## Field Note
 
-PT-BR LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+O Compact tornou reivindicações distantes respeitáveis. Respeitabilidade não é resgate.
 
 <!-- In-Game Wiki; generated from P072_CENTAURI_COMPACT_LEGITIMACY/pt_BR. -->

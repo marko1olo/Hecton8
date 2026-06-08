@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Ascent Energy Charge Assembly"
+title: "Zespół ładunku energii wznoszenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Ascent Energy Charge Assembly
+# Zespół ładunku energii wznoszenia
 
-PL LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.
+Ładunek wznoszenia zmienia głębinowe zasoby w mechaniczny i moralny handel. Materiały wysokociśnieniowe mogą podnieść kapsułę, zachować dowody przez custody albo stać się wypłatą osłabiającą drogę do domu.
 
 ## Scanner
 
-PL LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+Kołyska energii porysowana przez pressure pulse. Tani ładunek robi czystą trumnę.
 
 ## Terminal
 
-PL LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: wymagane vent-forged heat cell, pressure-history insulator i custody stamp. Raw fuel odrzucony. Niecertyfikowany blue debt pęka pod launch impulse i unieważnia recovery claim.
 
 ## Audio
 
-PL LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+Możesz sprzedać nośność albo na niej polecieć. Nie oba.
 
 ## Field Note
 
-PL LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+Każdy gram w kołysce to ucieczka, dowód albo blue-debt payout. Kapsuła nie wybacza chciwości.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/pl_PL. -->

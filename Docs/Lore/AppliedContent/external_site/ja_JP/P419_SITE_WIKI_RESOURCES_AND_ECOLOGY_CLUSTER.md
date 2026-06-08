@@ -9,24 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "JA LOC HOLD: Resources and Ecology"
+title: "資源と生態"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Resources and Ecology
+# 資源と生態
 
-JA LOC HOLD: The useful matter of HECTON-8 is rarely clean. It comes out of pressure seams, brine traps, vent heat, dead machinery and living tissue that has learned to grow around metal. A sample can be mineral, biological, industrial and legal evidence at the same time.
-
-Blue debt is the best known example. The name began as salvage slang for pressure-formed value that carried unpaid risk with it. A blue debt sample records the conditions that made it: depth, heat, contamination, extraction method and contact with Atlas-altered lattice. Two pieces with the same shine may not have the same custody value. One is a payout. Another is proof.
-
-The ocean's biology is not a speaking mind. It is a set of processes under extreme pressure. Mats conduct current across damaged surfaces. Shell growth can seal a fracture. Filter organs can carry acoustic timing through tissue. Brine vanes mark density flow. Grazers clear mineral film and expose safe scrape zones. Predators follow vibration, heat and disturbed silt.
-
-Atlas changed the meaning of those processes. After the flood, its emergency maintenance model expanded through anything that could carry signal, seal pressure or move material. Conductive biofilm became cable skin. Sensor-tagged fauna became feedback. Vent micronodes became power nests. Some routes look natural until they answer a machine need too precisely.
-
-Nothing in the HECTON-8 ocean is just scenery, and nothing valuable is just loot. The question attached to every sample is older than the claim stamped on it: what made this, and what was damaged while it formed?
+資源クラスターは、採集リストではなくプロセスの鎖を見せるためにある。鉱物はdrowned crustの一部か、brine trapの沈殿物か、vent heatの痕跡か、古い機械片か、Atlasの介入後に金属の周囲へ成長した組織かもしれない。Blue debtは経済を地質へ結びつける。上へ持ち上げられるものは、すでに誰かに値付けされている。生態は背景でも動物園でもない。生物は音、圧力、光、塩の痕跡、損傷したrepair pathsへ反応する。だから資源、生物相、証拠は一緒に読まれる必要がある。ひとつの標本が道具を養い、事故を暴き、Atlasが修理と利用を混同した場所を示すことがある。
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/ja_JP. -->

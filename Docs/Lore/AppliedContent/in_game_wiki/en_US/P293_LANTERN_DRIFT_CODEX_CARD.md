@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Lantern Drift Codex Card
 
-Lantern drift can make a route readable, but the same bloom can hide small hazards or pull predators toward tool noise. Treat bright water as a signal first, scenery second.
+Lantern drift bloom is the shelf’s most beautiful warning system. In quiet water the cells outline current, suspended grit, cable loops, pressure-glass shards, broken shell clamps, and small tooth hazards before a lamp catches them. That makes a bloom useful when the route is visually noisy or the player needs a clean silhouette through reef clutter. It also makes the player legible. Cutter vibration, a coughing pump, repeated pinger use, hull impact, or a panicked thruster can agitate the bloom into a lit wake that carries position through the food web. Storm charge adds another problem: false corridors, overbright residue, and flattened contrast that hides small damage inside too much light. Follow the glow only when current, residue, and fauna agree. Work loud inside a bloom only if being found is part of the plan.
 
 ## Scanner
 
-Lantern drift: useful light. Verify current, charge and residue before following.
+Lantern drift bloom. Bioluminescent plankton bands current and debris. Useful for outlines; dangerous when tool noise turns it into a lit wake.
 
 ## Terminal
 
-SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+SPECIMEN / LANTERN DRIFT BLOOM / role: shallow visibility event, current sketch, disturbance recorder / safe read: steady rim light, debris halos, matching current and residue / reject: storm-charged false corridor, bloom flattening small hazards, tool wake brightening behind operator / route note: light is data, not shelter.
 
 ## Audio
 
-Pretty is not safe. Pretty is a reading.
+The glow is not helping you. It is reporting what the water heard.
 
 ## Field Note
 
-Follow the glow only after current and residue agree. Pretty light is not a route plan.
+Use bloom for silhouettes. Do not repair loud inside it. If the glow follows you, something else can follow it too.
 
 <!-- In-Game Wiki; generated from P293_LANTERN_DRIFT_CODEX_CARD/en_US. -->

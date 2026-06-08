@@ -12,6 +12,7 @@ Scope: water, light, fog, deformation, damage feedback, audio feedback, haptics,
 [RULE] Default solution is a deterministic premium presentation approximation.
 [RULE] Physical simulation is allowed only when gameplay correctness breaks without it.
 [RULE] Every new simulation proposal must first reject the cheaper premium approximation with evidence.
+[REQ] Player-visible approximation work inherits the Visual Reference Parity Gate: compare against mandatory references plus best-known internal baseline/current rejection matrix before acceptance. If the approximation looks worse than April/previously-in-development baseline or mandatory visual floor, declare `VISUAL_ROUTE_INVALID` and recover the owner stack before adding simulation or polish.
 [FORBID] Simulating invisible causes when visible consequences are enough.
 [FORBID] Per-proton, per-droplet, per-bubble, per-cable-segment, or per-flora-blade truth unless the player can interact with that truth and the profiler accepts the cost.
 

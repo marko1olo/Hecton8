@@ -3,13 +3,13 @@ packet_id: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.sensor_tagged_fauna_feedback_loop
 unlock_id: unlock.sensor_tagged_fauna_feedback_loop
-poi_tags: poi.tagged_fauna_loop;poi.old_colony_sensor
-biome_tags: biome.ecology;biome.comms
+poi_tags: poi.sensor_tagged_fauna;poi.old_colony_tag
+biome_tags: biome.atlas;biome.fauna
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Loop Umpan Balik Fauna Bertag Sensor"
+title: "Lingkar Umpan Balik Fauna Bertag Sensor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Loop Umpan Balik Fauna Bertag Sensor
+# Lingkar Umpan Balik Fauna Bertag Sensor
 
-Deep Reach menandai fauna lokal untuk memetakan arus, kimia, dan migrasi. Banyak tag bertahan lebih lama daripada kru. Atlas masih membacanya sebagai masukan survei, jadi rute hewan bisa menaikkan prioritas perbaikan atau membuka petak peta lama.
-
-Itu tidak membuat hewan patuh. Ia bisa terluka, teritorial, terinfeksi perangkat tua, atau mengikuti makanan. Mesin hanya melihat gerak plus data. Marauder melihat kebenaran lebih buruk: laut bisa melaporkanmu tanpa sengaja.
+Fauna bertag sensor membawa koloni lama di dalam lukanya. Deep Reach menandai hewan untuk studi migrasi, tekanan, dan kontaminasi; Atlas kemudian membaca tag itu sebagai telemetri lingkungan murah. Makhluk itu bukan boneka. Gerakannya tetap bisa mengubah prioritas perbaikan, membangunkan rute drone, atau membuat lorong aman tampak terisi.
 
 ## Scanner
 
-Tag sensor koloni lama di bawah jaringan parut baru. Profil gerak masuk kanal survei Atlas. Hewan gelisah oleh ping aktif.
+Tag Deep Reach tua di bawah pertumbuhan cangkang. Jejak migrasi cocok dengan sapuan survei perawatan.
 
 ## Terminal
 
-LOOP FAUNA // Tag lama 7F melaporkan suhu, gerak, dan salinitas lewat kanal survei rusak. Prioritas perbaikan Atlas naik setelah migrasi. Hewan bertag adalah sumber telemetri, bukan aset komando.
+LINGKAR FAUNA: tag tertanam mengirim paket tekanan, gerak, dan kontaminasi yang lemah. Atlas membaca gerakan sebagai keadaan lingkungan, bukan niat hewan.
 
 ## Audio
 
-Ia tidak berburu untuk Atlas. Ia berenang dengan lencana yang masih terpaku di bawah kulit.
+Ia tidak memburumu. Ia tetap bisa melaporkanmu.
 
 ## Field Note
 
-Hewan bertag mengubah peta tanpa niat. Ikuti satu hanya jika kau tahu apa lagi yang mengikutinya.
+Baik untuk pertemuan saat hewan tidak bersalah namun tetap berbahaya bagi rute.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/id_ID. -->

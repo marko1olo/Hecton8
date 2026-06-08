@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 深淵のカルトと圧力精神病
 
 > **出典:** 精神医学的評価記録（回収済）、セクター44医療室。

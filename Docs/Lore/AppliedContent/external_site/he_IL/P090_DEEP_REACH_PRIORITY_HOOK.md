@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "וו עדיפות Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# וו עדיפות Deep Reach
 
-HE LOC HOLD: Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control.
-
-## Scanner
-
-HE LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
-
-## Terminal
-
-HE LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
-
-## Audio
-
-HE LOC HOLD: They do not need to be on the bridge to steer the answer.
-
-## Field Note
-
-HE LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+וו העדיפות הוא הדרך הנקייה ביותר להשאיר את Deep Reach מסוכנת אחרי שהמושבה משתתקת. החברה אינה צריכה להטיס את Black Keel בנס מרחוק. היא צריכה רק תעודה ישנה שה-carrier עדיין מזהה, כלל המשכיות קשור לגישת Atlas, וסיווג payload שעוקף גוף קבלן בתנאי סכנה מסוימים. זה מספיק. נתיב יכול לזוז. תיבה חתומה יכולה לעלות בתור. נעילת הסגר יכולה להישאר סגורה בזמן שספירת החמצן של המפעיל נעשית עוד רשומת חוב. התוצאה קרה מחבלה: המערכת עובדת כפי שנכתבה, ו-Deep Reach למדה לכתוב את עצמה לתוך החלקים ששורדים אסונות.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/he_IL. -->

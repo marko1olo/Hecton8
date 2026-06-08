@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Wstrzymania tras zmianowych
 
-Dowód pokazuje, jak język logistyki ukrywa ciała i rozprasza winę.
+Tablice zmian zamieniają katastrofę w czytelną procedurę. Deep Reach i Atlas zabijały klasyfikacją, zwłoką i priorytetem, nie teatralną złośliwością.
 
 ## Scanner
 

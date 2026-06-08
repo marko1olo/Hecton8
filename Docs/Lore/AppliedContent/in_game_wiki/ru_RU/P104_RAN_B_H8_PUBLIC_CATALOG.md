@@ -7,34 +7,34 @@ poi_tags: poi.catalog_plate;poi.ran_b_h8_stamp
 biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "RU LOC HOLD: RAN-B:H8 Public Catalog"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Публичный каталог RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: RAN-B:H8 Public Catalog
+# Публичный каталог RAN-B:H8
 
-RU LOC HOLD: HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.
+У HECTON-8 есть сухое каталожное имя и человеческое имя претензии. RAN-B:H8 принадлежит маршрутным таблицам: система Ran, гигант класса Aegir, восьмой индексированный крупный спутник. HECTON-8 принадлежит контрактам Deep Reach, записям рабочих, речи мародеров, книгам смертей и закону о salvage.
 
 ## Scanner
 
-RU LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
+Каталожная пластина: публичная метка маршрута RAN-B:H8; claim name Deep Reach — HECTON-8.
 
 ## Terminal
 
-RU LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
+СВЕРКА КАТАЛОГА: система Ran, гигант Aegir, восьмой индексированный крупный спутник. HECTON-8 сохранен как claim name для контрактов, смертей и страховой преемственности.
 
 ## Audio
 
-RU LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
+Карта зовет его H8. Люди, утонувшие здесь, звали его HECTON.
 
 ## Field Note
 
-RU LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+Используй HECTON-8, когда объект помнит людей. Используй RAN-B:H8, когда документу нужна дистанция.
 
 <!-- In-Game Wiki; generated from P104_RAN_B_H8_PUBLIC_CATALOG/ru_RU. -->

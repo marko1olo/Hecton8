@@ -172,6 +172,7 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _playerRuntime;
         private IScanLogService _scanLogRuntime;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private IAtlas6DirectiveCommandSink _atlas6DirectiveCommandSink;
         private ExtractionGatingSystem _subscribedLiabilityExtractionGating;
         private uint _inventorySignalHash;
@@ -185,12 +186,8 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            PDAExchangeSystem registered = GlobalRegistry.PDAExchange;
-            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             _signalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
             RefreshColdRegistryReferences();
@@ -200,9 +197,11 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (!TryRegisterService())
+                return;
+
             RefreshColdRegistryReferences();
             TryRegisterHotSwapListener();
-            TryRegisterService();
             AutoResolve(true);
             RefreshSignalFilters();
             CacheCatalogRuntimeHashes();
@@ -213,6 +212,9 @@ namespace Hecton8.Gameplay
 
         private void Start()
         {
+            if (!_serviceRegistered && !TryRegisterService())
+                return;
+
             TryRegister();
             TryRegisterLiabilityEvents();
         }
@@ -226,20 +228,17 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
-                return;
+                return true;
 
-            PDAExchangeSystem registered = GlobalRegistry.PDAExchange;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
-                return;
-            }
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterPDAExchangeRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PDAExchange, this);
+            return _serviceRegistered;
         }
 
         private void TryRegister()
@@ -266,6 +265,33 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterPDAExchangeRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            PDAExchangeSystem registered = GlobalRegistry.PDAExchange;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsPDAExchangeRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterPDAExchangeRuntime(registered);
+            return false;
+        }
+
+        private static bool IsPDAExchangeRuntimeUsable(PDAExchangeSystem system)
+        {
+            return !ReferenceEquals(system, null) &&
+                   system != null &&
+                   system._serviceRegistered &&
+                   system.isActiveAndEnabled;
         }
 
         public BarterOfferData GetOfferAt(int index)
@@ -851,25 +877,36 @@ namespace Hecton8.Gameplay
             if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveRegistered = false;
         }
 

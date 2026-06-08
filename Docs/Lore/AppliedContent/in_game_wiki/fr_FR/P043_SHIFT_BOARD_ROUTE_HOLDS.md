@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Tableau des shifts retenus
 
-Cette preuve montre comment la langue logistique cache les corps et disperse la faute.
+Les tableaux de quart transforment la catastrophe en procédure lisible. Deep Reach et Atlas ont tué par classification, retard et priorité, pas par malice théâtrale.
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "Persoonsgrens van Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# Persoonsgrens van Atlas
 
-NL LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories.
+De persoonsgrens van Atlas definieert de handelingskracht van de AI in eindes. Atlas is geen schurkenbrein en geen vriendelijke geest; het is beschadigde industriële intelligentie met gedeeltelijke herkenning en gebroken categorieën.
 
 ## Scanner
 
-NL LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
+Herkenningsfout. Atlas ziet je toegangspatroon voordat het een persoon ziet.
 
 ## Terminal
 
-NL LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+ATLAS-CLASSIFICATIE: mobiele operator / ingetrokken Deep Reach-proceduresleutel / biologische herstelafwijking. Persoonlijkheidsvertrouwen onder actiedrempel.
 
 ## Audio
 
-NL LOC HOLD: It knows how you work. That is not the same as knowing you.
+Het weet hoe je werkt. Dat is niet hetzelfde als jou kennen.
 
 ## Field Note
 
-NL LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
+Maak Atlas niet menselijk. Laat intimiteit ontstaan doordat het precies verkeerd zit.
 
 <!-- External Site; generated from P096_ATLAS_PERSON_BOUNDARY/nl_NL. -->

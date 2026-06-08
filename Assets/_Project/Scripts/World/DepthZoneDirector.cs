@@ -1,17 +1,17 @@
 // ============================================================================
-// HECTON-8 � DepthZoneDirector.cs
+// HECTON-8 - DepthZoneDirector.cs
 // Opredelyaet tekuschuyu zonu igroka po glubine i publikuet sobytiya.
 //
 // ROL:
-//   � Otslezhivaet glubinu igroka cherez HectonSurvivalSystem.
-//   � Pri smene zony: publikuet sobytie, registriruet discovery,
+//   - Otslezhivaet glubinu igroka cherez HectonSurvivalSystem.
+//   - Pri smene zony: publikuet sobytie, registriruet discovery,
 //     obnovlyaet quest runtime, uvedomlyaet HUD.
-//   � Proveryaet trebovaniya k tiru korpusa � preduprezhdaet esli
+//   - Proveryaet trebovaniya k tiru korpusa - preduprezhdaet esli
 //     igrok nyryaet glubzhe dopustimogo.
 //
 // ZERO GC:
-//   � ISlowTickable � proverka zony raz v 0.5s.
-//   � Nikakih new/LINQ v SlowTick.
+//   - ISlowTickable - proverka zony raz v 0.5s.
+//   - Nikakih new/LINQ v SlowTick.
 // ============================================================================
 
 using System;
@@ -21,6 +21,7 @@ using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -337,23 +338,31 @@ namespace Hecton8.World
         private const int CachedDepthZoneCapacity = 32;
         private const int DepthZoneNotificationCharCapacity = 256;
         private const int DepthZoneAuxCharCapacity = 192;
+        private const int DepthZoneNotificationRetryFrameLimit = 3;
         private const string UnknownZoneFallback = "UNKNOWN ZONE";
         private const string ZoneEnterFallbackTemplate = "ZONE: {0}";
         private const string HullWarningFallbackTemplate = "WARNING: SUIT HULL IS NOT RATED FOR THIS DEPTH. TIER {0}.";
+        private static readonly uint _DepthZoneEventDropWarningHash = unchecked((uint)LocHash.Compute("DepthZoneDirector.EventDrop"));
+        private static readonly uint _DepthZoneNotificationMissWarningHash = unchecked((uint)LocHash.Compute("DepthZoneDirector.NotificationMiss"));
+        private static readonly uint _DepthZoneRuntimeContextHash = unchecked((uint)LocHash.Compute("DepthZoneDirector.Runtime"));
+        private static readonly uint _DepthZoneEnteredContextHash = unchecked((uint)LocHash.Compute("DepthZoneDirector.Entered"));
+        private static readonly uint _DepthZoneExitedContextHash = unchecked((uint)LocHash.Compute("DepthZoneDirector.Exited"));
+        private static readonly uint _DepthZoneEnterNotificationContextHash = unchecked((uint)LocHash.Compute("DepthZoneDirector.EnterNotification"));
+        private static readonly uint _DepthZoneHullWarningNotificationContextHash = unchecked((uint)LocHash.Compute("DepthZoneDirector.HullWarningNotification"));
 
         // ----------------------------------------------------------
         //  INSPECTOR
         // ----------------------------------------------------------
 
         [Header("-- Zones -----------------------------------")]
-        [Tooltip("Vse zony glubiny. Poryadok ne vazhen � sortiruyutsya po minDepth.")]
+        [Tooltip("Vse zony glubiny. Poryadok ne vazhen - sortiruyutsya po minDepth.")]
         [SerializeField] private DepthZoneProfile[] zones = new DepthZoneProfile[0];
 
         [Header("-- References ------------------------------")]
         [Tooltip("Sistema vyzhivaniya dlya chteniya glubiny.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
-        [Header("── Notification Cadence ─────────────────")]
+        [Header("-- Notification Cadence ----------------")]
         [Tooltip("Minimum delay between depth-zone enter HUD messages. Prevents boundary spam and early-route noise.")]
         [SerializeField, Min(0f)] private float zoneNotificationCooldown = 18f;
 
@@ -388,6 +397,10 @@ namespace Hecton8.World
         private SuitUpgradeManager _suitUpgradeManager;
         private IFirstHourReadModel _firstHourDirector;
         private ILocalizationTextReadModel _localizationText;
+        private int _depthZoneEventDropCount;
+        private int _depthZoneNotificationMissCount;
+        private int _pendingZoneNotificationRetryCount;
+        private int _pendingHullWarningNotificationRetryCount;
         // COLD ALLOC: small per-zone identity cache avoids dynamic collection work in SlowTick transition path.
         private readonly DepthZoneProfile[] _cachedMessageZones = new DepthZoneProfile[CachedDepthZoneCapacity];
         private char[] _zoneNotificationBuffer;
@@ -399,6 +412,8 @@ namespace Hecton8.World
         // ----------------------------------------------------------
 
         public DepthZoneProfile CurrentZone => _currentZone;
+        public int DepthZoneEventDropCount => _depthZoneEventDropCount;
+        public int DepthZoneNotificationMissCount => _depthZoneNotificationMissCount;
 
         // ----------------------------------------------------------
         //  LIFECYCLE
@@ -406,12 +421,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            DepthZoneDirector registered = s_activeRuntimeInstance ?? GlobalRegistry.DepthZone;
-            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             EnsureMessageBuffers();
             RebuildZoneMessageCache();
@@ -419,8 +430,10 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (!TryRegisterService())
+                return;
+
             CacheRegistryServicesCold();
-            TryRegisterService();
             TryRegister();
             TryRegisterHotSwapListener();
             RebuildZoneMessageCache();
@@ -444,6 +457,7 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnregisterService();
+            LocalizationEvents.UnregisterLanguageListener(this);
             ClearPendingPresentationEvents();
         }
 
@@ -453,13 +467,11 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
-            if (survivalSystem == null)
+            if (!TryResolveCurrentDepthMeters(out float depth))
                 return;
 
             if (zones == null || zones.Length == 0)
                 return;
-
-            float depth = survivalSystem.Depth;
 
             // Nahodim tekuschuyu zonu
             DepthZoneProfile newZone = FindZoneForDepth(depth);
@@ -501,6 +513,7 @@ namespace Hecton8.World
                 if (ShouldPublishZoneEnterNotification())
                 {
                     _pendingZoneNotification = newZone;
+                    _pendingZoneNotificationRetryCount = 0;
                     _nextZoneNotificationTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds + Mathf.Max(0f, zoneNotificationCooldown);
                 }
 
@@ -513,13 +526,13 @@ namespace Hecton8.World
         {
             if (_pendingZoneExited != null)
             {
-                DepthZoneEvents.TryRaiseZoneExited(_pendingZoneExited);
+                TryRaiseDepthZoneEvent(_pendingZoneExited, entered: false);
                 _pendingZoneExited = null;
             }
 
             if (_pendingZoneEntered != null)
             {
-                DepthZoneEvents.TryRaiseZoneEntered(_pendingZoneEntered);
+                TryRaiseDepthZoneEvent(_pendingZoneEntered, entered: true);
                 _pendingZoneEntered = null;
             }
 
@@ -531,14 +544,28 @@ namespace Hecton8.World
 
             if (_pendingZoneNotification != null)
             {
-                NotificationEvents.TryPushInfo(GetZoneEnterMessageSpan(_pendingZoneNotification));
-                _pendingZoneNotification = null;
+                if (TryPushDepthZoneNotification(
+                    GetZoneEnterMessageSpan(_pendingZoneNotification),
+                    _pendingZoneNotification,
+                    warning: false) ||
+                    ShouldDropDepthZoneNotificationAfterMiss(ref _pendingZoneNotificationRetryCount))
+                {
+                    _pendingZoneNotification = null;
+                    _pendingZoneNotificationRetryCount = 0;
+                }
             }
 
             if (_pendingHullWarningNotification != null)
             {
-                NotificationEvents.TryPushWarning(GetHullWarningMessageSpan(_pendingHullWarningNotification));
-                _pendingHullWarningNotification = null;
+                if (TryPushDepthZoneNotification(
+                    GetHullWarningMessageSpan(_pendingHullWarningNotification),
+                    _pendingHullWarningNotification,
+                    warning: true) ||
+                    ShouldDropDepthZoneNotificationAfterMiss(ref _pendingHullWarningNotificationRetryCount))
+                {
+                    _pendingHullWarningNotification = null;
+                    _pendingHullWarningNotificationRetryCount = 0;
+                }
             }
 
             if (_pendingLogZone != null)
@@ -584,6 +611,75 @@ namespace Hecton8.World
             _pendingDiscoveryHash = 0u;
             _pendingLogZone = null;
             _pendingLogDepth = 0f;
+            _depthZoneEventDropCount = 0;
+            _depthZoneNotificationMissCount = 0;
+            _pendingZoneNotificationRetryCount = 0;
+            _pendingHullWarningNotificationRetryCount = 0;
+        }
+
+        private void TryRaiseDepthZoneEvent(DepthZoneProfile zone, bool entered)
+        {
+            if (zone == null)
+                return;
+
+            bool raised = entered
+                ? DepthZoneEvents.TryRaiseZoneEntered(zone)
+                : DepthZoneEvents.TryRaiseZoneExited(zone);
+            if (raised)
+                return;
+
+            ReportDepthZoneEventDrop(zone, entered ? _DepthZoneEnteredContextHash : _DepthZoneExitedContextHash);
+        }
+
+        private bool TryPushDepthZoneNotification(ReadOnlySpan<char> message, DepthZoneProfile zone, bool warning)
+        {
+            bool pushed = warning
+                ? NotificationEvents.TryPushWarning(message)
+                : NotificationEvents.TryPushInfo(message);
+            if (pushed)
+                return true;
+
+            ReportDepthZoneNotificationMiss(
+                zone,
+                warning ? _DepthZoneHullWarningNotificationContextHash : _DepthZoneEnterNotificationContextHash);
+            return false;
+        }
+
+        private static bool ShouldDropDepthZoneNotificationAfterMiss(ref int retryCount)
+        {
+            retryCount++;
+            return retryCount >= DepthZoneNotificationRetryFrameLimit;
+        }
+
+        private void ReportDepthZoneEventDrop(DepthZoneProfile zone, uint contextHash)
+        {
+            _depthZoneEventDropCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _DepthZoneEventDropWarningHash,
+                ResolveDepthZoneTelemetryContext(zone, contextHash),
+                math.max(1, _depthZoneEventDropCount));
+        }
+
+        private void ReportDepthZoneNotificationMiss(DepthZoneProfile zone, uint contextHash)
+        {
+            _depthZoneNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _DepthZoneNotificationMissWarningHash,
+                ResolveDepthZoneTelemetryContext(zone, contextHash),
+                math.max(1, _depthZoneNotificationMissCount));
+        }
+
+        private static uint ResolveDepthZoneTelemetryContext(DepthZoneProfile zone, uint contextHash)
+        {
+            uint zoneHash = 0u;
+            if (zone != null)
+            {
+                zoneHash = zone.ZoneHash != 0u
+                    ? zone.ZoneHash
+                    : unchecked((uint)EntityId.ToULong(zone.GetEntityId()));
+            }
+
+            return _DepthZoneRuntimeContextHash ^ contextHash ^ zoneHash;
         }
 
         private void CheckHullWarning(DepthZoneProfile zone)
@@ -597,6 +693,7 @@ namespace Hecton8.World
             {
                 _hullWarningShown = true;
                 _pendingHullWarningNotification = zone;
+                _pendingHullWarningNotificationRetryCount = 0;
             }
         }
 
@@ -618,6 +715,39 @@ namespace Hecton8.World
                 return true;
 
             return TryCacheSurvivalSystemFromPlayerContext(_playerRuntimeContext);
+        }
+
+        private bool TryResolveCurrentDepthMeters(out float depth)
+        {
+            depth = 0f;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                depth = math.max(0f, movementState.DepthMeters);
+                return true;
+            }
+
+            if (playerContext != null)
+                return false;
+
+            HectonSurvivalSystem survival = survivalSystem;
+            if (survival != null && math.isfinite(survival.Depth))
+            {
+                depth = math.max(0f, survival.Depth);
+                return true;
+            }
+
+            if (ResolveSurvivalSystemCold() && survivalSystem != null && math.isfinite(survivalSystem.Depth))
+            {
+                depth = math.max(0f, survivalSystem.Depth);
+                return true;
+            }
+
+            return false;
         }
 
         private bool TryCacheSurvivalSystemFromPlayerContext(IPlayerRuntimeContext playerContext)
@@ -863,35 +993,32 @@ namespace Hecton8.World
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
             }
-
-            _registered = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
-                return;
+                return true;
 
-            DepthZoneDirector registered = s_activeRuntimeInstance ?? GlobalRegistry.DepthZone;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
-                return;
-            }
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterDepthZoneRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.DepthZone, this);
             if (_serviceRegistered)
                 s_activeRuntimeInstance = this;
+            return _serviceRegistered;
         }
 
         private void TryUnregisterService()
@@ -906,6 +1033,51 @@ namespace Hecton8.World
                 s_activeRuntimeInstance = null;
 
             _serviceRegistered = false;
+        }
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            DepthZoneDirector registered = GlobalRegistry.DepthZone;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsDepthZoneRuntimeUsable(registered))
+                {
+                    s_activeRuntimeInstance = registered;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+
+                GlobalRegistry.UnregisterDepthZoneRuntime(registered);
+            }
+
+            DepthZoneDirector active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsDepthZoneRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterDepthZoneRuntime(active);
+                Destroy(gameObject);
+                return true;
+            }
+
+            s_activeRuntimeInstance = null;
+            if (ReferenceEquals(GlobalRegistry.DepthZone, active))
+                GlobalRegistry.UnregisterDepthZoneRuntime(active);
+            return false;
+        }
+
+        private static bool IsDepthZoneRuntimeUsable(DepthZoneDirector director)
+        {
+            return !ReferenceEquals(director, null) &&
+                   director != null &&
+                   director._serviceRegistered &&
+                   director.isActiveAndEnabled;
         }
 
         /// <inheritdoc />

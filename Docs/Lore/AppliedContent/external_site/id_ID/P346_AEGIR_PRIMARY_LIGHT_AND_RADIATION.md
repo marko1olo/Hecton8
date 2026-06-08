@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Aegir Primary Light and Radiation"
+title: "Cahaya Primer dan Radiasi Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Aegir Primary Light and Radiation
+# Cahaya Primer dan Radiasi Aegir
 
-ID LOC HOLD: Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
-
-## Scanner
-
-ID LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
-
-## Terminal
-
-ID LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
-
-## Audio
-
-ID LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
-
-## Field Note
-
-ID LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir tidak terbaca sebagai gelap kosong. Primer kelas K menaruh cahaya amber di dek, bayangan panjang, dan fluks yang cukup untuk membuat instrumen terbuka meleset jika tidak ada yang memeriksa hitungan sabuk. Raksasa gas adalah jam kedua: jalur magnetosfer mengeras, melunak, lalu mengeras lagi saat bulan melintasi muatan dan bayangan. Deep Reach menjual angka itu sebagai jendela kerja biasa. Kru belajar versi lapangannya: langit hangat tetap bisa memasak segel murah, membungkam tautan, dan menghitung harga penyelamatan per menit.
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/id_ID. -->

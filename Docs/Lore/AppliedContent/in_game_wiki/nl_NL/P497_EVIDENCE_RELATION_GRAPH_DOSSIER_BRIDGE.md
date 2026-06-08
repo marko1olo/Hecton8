@@ -1,0 +1,47 @@
+---
+packet_id: P497_EVIDENCE_RELATION_GRAPH_DOSSIER_BRIDGE
+release_set_id: RS099_PUBLIC_EVIDENCE_GOVERNANCE_BRIDGE
+article_id: EVIDENCE_RELATION_GRAPH_DOSSIER_BRIDGE
+unlock_id: unlock.p497_evidence_relation_graph_dossier_bridge
+poi_tags: poi.public_ledger_mirror;poi.tau_ceti_evidence_archive
+biome_tags: biome.deep_archive
+locale: nl_NL
+surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Dossier van bewijsrelatiegrafiek"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 0
+---
+
+# Dossier van bewijsrelatiegrafiek
+
+De relatie-overlay is gebouwd voor vermoeide onderzoekers en bange bergers, niet voor rechters. Ze legt dossiers op dezelfde tafel wanneer ze bronobject, routeplaat, claimfrase, getuigehash, onderschriftfamilie, letselmerk, redactiestatus of zichtbaar gevolg delen. Patronen worden zichtbaar onder druk. Valse zekerheid ook.
+
+Een hashmatch bewijst geen getuigenwaarheid. Een onderschriftmatch bewijst geen bronherstel. Een gedeelde redactiestatus kan alleen betekenen dat dezelfde klerk twee bestanden met hetzelfde sjabloon sneed. De overlay is nuttig omdat ze aandacht stuurt: pakketbewaring, bronobject, claimtaal, getuigehash, routegevolg, redactiereden en onderschriftvolgorde. Ze wordt gevaarlijk zodra de lijn als vonnis wordt gelezen.
+
+## Scanner
+
+RELATIE-OVERLAY // Een rand betekent gedeeld object, frase, hash, gevolg, onderschrift of redactiestatus. Het is een controleteken, geen beschuldiging en geen vrijspraak.
+
+## Terminal
+
+LEGENDA DOSSIERGRAFIEK
+Groen: bronobject of routeplaat matcht.
+Amber: claimfrase of onderschriftfamilie matcht.
+Rood: getuigehash, letselmerk of onderdrukkingsgevolg matcht.
+Grijs: alleen gedeelde redactiestatus.
+Elke rand moet tegen bewaring worden gecontroleerd. Een mooie grafiek kan nog steeds een leugen met rechte lijnen zijn.
+
+## Audio
+
+Een lijn tussen dossiers zegt alleen waar je hierna kijkt. Ze zegt niet wie schuldig, veilig of gekocht is.
+
+## Field Note
+
+Laat de schone grafiek niet voor je denken. Lijnen zijn goedkoop. Onderschrift en redactiestatus zijn waar de leugen goedkoop genoeg wordt om te verzenden.
+
+<!-- In-Game Wiki; generated from P497_EVIDENCE_RELATION_GRAPH_DOSSIER_BRIDGE/nl_NL. -->

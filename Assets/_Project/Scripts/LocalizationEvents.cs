@@ -225,6 +225,8 @@ namespace Hecton.Localization
         private static readonly CorruptionListenerSlot[] _deferredCorruptionUnregisterListeners = new CorruptionListenerSlot[CorruptionListenerCapacity];
         private static NativeQueue<LocalizationEventPayload> _pendingEvents;
         private static NativeQueue<LocalizationEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _deferredLanguageRegisterCount;
@@ -832,14 +834,14 @@ namespace Hecton.Localization
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<LocalizationEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<LocalizationEventPayload>[128] - deferred localization event lane flushed by SystemDispatcher LateUpdate - owner: LocalizationEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<LocalizationEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<LocalizationEventPayload>[128] - next-frame localization lane prevents same-frame reentrant dispatch - owner: LocalizationEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -855,10 +857,12 @@ namespace Hecton.Localization
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(LocalizationEvents),
@@ -874,19 +878,54 @@ namespace Hecton.Localization
 
         private static void ReleaseNativeQueues()
         {
-            if (_pendingEvents.IsCreated)
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
+            where T : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(LocalizationEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
 
-            if (_nextFrameEvents.IsCreated)
+            if (queue.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(LocalizationEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
             }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -940,6 +979,9 @@ namespace Hecton.Localization
             NativeQueue<LocalizationEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }

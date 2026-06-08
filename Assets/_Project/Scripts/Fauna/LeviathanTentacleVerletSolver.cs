@@ -656,15 +656,15 @@ namespace Hecton8.AI
                 return;
 
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= 0.000001f || !HasPersistentBuffers())
-                return;
-
             float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
-            if (!math.all(math.isfinite(offset)))
+            if (!IsFiniteOriginShiftOffset(offset))
             {
                 DumpTelemetryBlackBoxOnce();
                 return;
             }
+
+            if (!IsUsableOriginShiftOffset(offset) || !HasPersistentBuffers())
+                return;
 
             if (_solverScheduled)
             {
@@ -1651,7 +1651,24 @@ namespace Hecton8.AI
 
         private void QueueOriginShiftRebase(float3 offset)
         {
+            if (!IsFiniteOriginShiftOffset(offset))
+            {
+                DumpTelemetryBlackBoxOnce();
+                return;
+            }
+
+            if (!IsUsableOriginShiftOffset(offset))
+                return;
+
             _pendingOriginShiftOffset += offset;
+            if (!IsFiniteOriginShiftOffset(_pendingOriginShiftOffset))
+            {
+                _pendingOriginShiftOffset = float3.zero;
+                _pendingOriginShiftRebase = false;
+                DumpTelemetryBlackBoxOnce();
+                return;
+            }
+
             _pendingOriginShiftRebase = true;
         }
 
@@ -1663,12 +1680,30 @@ namespace Hecton8.AI
             float3 offset = _pendingOriginShiftOffset;
             _pendingOriginShiftOffset = float3.zero;
             _pendingOriginShiftRebase = false;
+            if (!IsFiniteOriginShiftOffset(offset))
+            {
+                DumpTelemetryBlackBoxOnce();
+                return false;
+            }
+
+            if (!IsUsableOriginShiftOffset(offset))
+                return false;
+
             ApplyOriginShiftRebase(offset);
             return true;
         }
 
         private void ApplyOriginShiftRebase(float3 offset)
         {
+            if (!IsFiniteOriginShiftOffset(offset))
+            {
+                DumpTelemetryBlackBoxOnce();
+                return;
+            }
+
+            if (!IsUsableOriginShiftOffset(offset))
+                return;
+
             if (!TryEnterTentacleMutationGuard(out _, out bool acquiredGuard))
                 return;
 
@@ -1676,12 +1711,6 @@ namespace Hecton8.AI
             {
                 if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
                     return;
-
-                if (!math.all(math.isfinite(offset)))
-                {
-                    DumpTelemetryBlackBoxOnce();
-                    return;
-                }
 
                 for (int i = 0; i < TotalSegments; i++)
                 {
@@ -1708,6 +1737,17 @@ namespace Hecton8.AI
             {
                 ReleaseTentacleMutationGuard(acquiredGuard);
             }
+        }
+
+        private static bool IsFiniteOriginShiftOffset(float3 offset)
+        {
+            float offsetLengthSq = math.lengthsq(offset);
+            return math.all(math.isfinite(offset)) && math.isfinite(offsetLengthSq);
+        }
+
+        private static bool IsUsableOriginShiftOffset(float3 offset)
+        {
+            return IsFiniteOriginShiftOffset(offset) && math.lengthsq(offset) > 0.000001f;
         }
 
         private void WriteTelemetryFrame()

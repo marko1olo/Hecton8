@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "工人档案音频转录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Worker Dossier Audio Transcript Seed
+# 工人档案音频转录
 
-ZH LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.
+工人档案转录在他们成为证据之前，先给沉没殖民地一个工作人口。重点是日常：姓名、任务、工具、糟糕的水量算术，以及期待下一班的习惯。
 
 ## Scanner
 
-ZH LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+回收的工人音频把姓名、岗位、储物柜、水量计数和route hold连成一条人的custody链。
 
 ## Terminal
 
-ZH LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
+DOSSIER AUDIO WKR-SET: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold.
 
 ## Audio
 
-ZH LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
+班次记录。泵房还在呼吸。储物柜封条卡住。水量计数不足。告诉Kade，板子撒谎了。
 
 ## Field Note
 
-ZH LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+用于dossier barks、储物柜字幕和工人wiki。让声音忙碌，不要诗化。
 
 <!-- In-Game Wiki; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/zh_CN. -->

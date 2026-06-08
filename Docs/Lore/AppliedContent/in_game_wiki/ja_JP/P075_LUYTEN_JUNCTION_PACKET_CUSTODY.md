@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "ルイテン分岐点のパケット保管"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# ルイテン分岐点のパケット保管
 
-JP LOC HOLD: Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.
+Luyten Junction は社会というよりインフラだ。リレー、beam custody、depot law、packet accounting。Deep Reach がライブ FTL 命令なしに Aegir へ圧力をかけ、証拠が遅延し、買われ、失われ、武器化され得る理由を説明する。
 
 ## Scanner
 
-JP LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+ルイテンの custody スプール。メッセージは無料では移動しない。真実も同じだ。
 
 ## Terminal
 
-JP LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+LUYTEN JUNCTION ROUTE: packet custody は料金キュー経由で転送。live command 禁止。証拠優先度は emergency claim escrow の下で購入可能。
 
 ## Audio
 
-JP LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+ansible はない。慈悲もない。custody と tariff と時間だけだ。
 
 ## Field Note
 
-JP LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+リレーとは、どの悲嘆に bandwidth を与えるか決める機械だ。
 
 <!-- In-Game Wiki; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/ja_JP. -->

@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Field Systems Specialist Record"
+title: "רשומת מומחה מערכות שטח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Field Systems Specialist Record
+# רשומת מומחה מערכות שטח
 
-HE LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.
+דמות השחקן של HECTON-8 נכנסת לאוקיינוס עם צלקת מעשית: עבודה קודמת במערכות השטח של Deep Reach, גישה לתשתית פינוי, הרשאה שבוטלה וזיכרון נהלים שמספיק לקרוא מכונות שטבעו כראיות. עכשיו הוא Marauder, לא קצין חברה ולא גיבור נוסע. משאבה שבורה, חותמת נתיב או ניסוח אחריות חשובים מפני שהמפעיל מבין איך המערכות האלה היו אמורות להגן על עובדים לפני שנהפכו לניירת.
 
 ## Scanner
 
-HE LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+אישור ישן למערכות שטח. לא סגל פיקוד. עבודת תשתית עם גישה מספיקה לזהות היכן נקבר נתיב.
 
 ## Terminal
 
-HE LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+עקבת כוח אדם: מערכות שטח, תשתית פינוי, הסמכת route-safe. ההרשאה בוטלה אחרי סקירת שתיקת Aegir. מטמון הנהלים עדיין תואם את רצף המפעיל.
 
 ## Audio
 
-HE LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+אתה לא חתמת על השקר. הכרת את הדקדוק שעזר לו לעבור בדיקה.
 
 ## Field Note
 
-HE LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+התג הפסיק לפתוח דלתות. הוא לא מחק את סדר הכשל.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/he_IL. -->

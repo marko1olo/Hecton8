@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: претензия под давлением"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: претензия под давлением
 
-RU LOC HOLD: Recovered P-63 route notes tie the opening contract to Black Keel's salvage window. The shelf is bright enough to navigate, but the useful facts are mechanical: bathydrop damage, pressure repair, scanner returns, and official wording that does not match the marks on the hardware. Keep the record spoiler-safe until deeper evidence is recovered.
+Маршрутные записи P-63 показывают начало как долговую salvage-работу, а не спасательную историю. Полезные факты механические: потраченный запас подъема, затопленная авионика, поврежденные уплотнения, ответы сканера и официальная речь, которая не объясняет вмятины.
 
 ## Scanner
 
-RU LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+Запись приема мародера. Контракт Black Keel связывает P-63, поврежденный bathydrop, залог в 4.8 tonne-window и акт аварии, который не сходится с металлом.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+ПУБЛИЧНЫЙ АРХИВ // СВОДКА ПРЕТЕНЗИИ H8. Окно контракта: реле Aegir открыто. Работы: восстановить уплотнения, просканировать P-63, забрать груз, сохранить доказательства, вернуться до закрытия геометрии приема.
 
 ## Audio
 
-RU LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+Фрагмент реле Black Keel: "Окно узкое. Почини спусковую оболочку, прочитай следы давления и принеси доказательство вместе с грузом."
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+Заметка мародера: дневной свет на P-63 не равен безопасности. Считай воздух, чини уплотнения до груза и не верь акту, который не объясняет вмятины.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/ru_RU. -->

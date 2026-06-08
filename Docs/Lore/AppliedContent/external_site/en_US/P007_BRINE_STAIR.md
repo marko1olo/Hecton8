@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Brine Stair
 
-The Brine Stair turns HECTON-8 geology into traversal. Depth is not solved only with stronger hulls; the ocean must be read as layered machinery.
-
-## Scanner
-
-High-density brine layer. Sonar returns bend at the boundary. Buoyancy model unreliable.
-
-## Terminal
-
-Thermal tap alignment complete. Substrate growth exceeds expected rate. Atlas maintenance request deferred by operations.
-
-## Audio
-
-There is a whole staircase down here, if you stop treating water like one thing.
-
-## Field Note
-
-Your hull rating tells you when metal gives up. Brine tells you when you were arrogant.
+The Brine Stair is where HECTON-8 stops being a simple descent and becomes a machine made of water. Dense brine does not mix cleanly with the layers above it. It sits in shelves, curtains, and slow rivers along the seafloor, bending sonar and changing buoyancy at the worst possible moment. That danger gives the player a new kind of literacy. A stronger hull helps, but reading the water matters more: where heat lifts, where salt drops, where a boundary can be ridden like a road, and where a careless ballast change will pin a craft under an invisible ceiling. The lore value is just as important. Brine stairs preserve what the colony tried to lose. They hold old route markers, pressure caskets, dead drones, chemical traces, and sometimes bodies in layers that have not mixed for decades. Every step downward can become navigation, archaeology, and accusation at the same time.
 
 <!-- External Site; generated from P007_BRINE_STAIR/en_US. -->

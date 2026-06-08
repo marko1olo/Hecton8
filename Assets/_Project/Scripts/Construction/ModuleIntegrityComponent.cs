@@ -318,7 +318,7 @@ namespace Hecton8.Construction
         {
             int hash = 17;
 
-            if (!string.IsNullOrEmpty(prefabId))
+            if (!string.IsNullOrWhiteSpace(prefabId))
             {
                 int length = prefabId.Length;
                 for (int i = 0; i < length; i++)

@@ -1,0 +1,40 @@
+---
+packet_id: P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE
+release_set_id: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
+article_id: applied_lore.tau_ceti_public_ledger_pressure_bridge
+unlock_id: unlock.tau_ceti_public_ledger_pressure_bridge
+poi_tags: route.tau_public_ledger_lane;route.luyten_packet_ladder
+biome_tags: 
+locale: ru_RU
+surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Давление публичного реестра Tau Ceti"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# Давление публичного реестра Tau Ceti
+
+Tau Ceti превращает частный подводный факт в будущую публичную запись только если выжила сохранность. Реестр давит на отрицание, страховку и политическое прикрытие; он не отправляет спасательный корабль через задержку. Deep Reach все еще может переждать человека. Чистое публичное дело переждать сложнее.
+
+## Scanner
+
+МАРШРУТ ПУБЛИЧНОГО РЕЕСТРА // witness hash цел. Сохранность Luyten может донести доказательство до Tau Ceti после задержки реле. Немедленной спасательной власти не обнаружено.
+
+## Terminal
+
+ПРИЕМ РЕЕСТРА TAU CETI // Для публичного дела нужны witness hash, сохранность Luyten, маршрут пакета, метка претендента, состояние повреждений и история получателя. Давление дела может повлиять на ответственность и страховой пересмотр. Оно не выделяет живое спасение.
+
+## Audio
+
+Публичное не значит близкое. Это значит - труднее похоронить.
+
+## Field Note
+
+Сделай доказательство переносимым до того, как сделаешь его громким.
+
+<!-- In-Game Wiki; generated from P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE/ru_RU. -->

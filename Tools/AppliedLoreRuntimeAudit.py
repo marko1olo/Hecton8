@@ -9,10 +9,16 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import re
 import struct
+import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+from AppliedLoreImporter import check_import_outputs as check_applied_lore_import_outputs
+from AppliedLorePageExporter import check_publication_freshness as check_applied_lore_publication_freshness
+from AppliedLoreTextIntegrity import find_text_integrity_errors
 
 
 TARGET_LOCALES = (
@@ -95,6 +101,27 @@ PUBLICATION_CLUSTER_INDEX_HEADERS = (
     "truth_payload",
     "player_question",
 )
+
+
+def configure_console_encoding() -> None:
+    """Keep audit failures printable when stale diffs contain non-ASCII locale text."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (OSError, ValueError):
+            continue
+
+DATA_MONOLITH_OUTPUT_RELATIVE_PATH = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin"
+DATA_MONOLITH_BAKE_METHOD = "Hecton8.EditorValidation.H8DataMonolithCompiler.BakeFromCommandLine"
+DATA_MONOLITH_STALE_BAKE_HINT = (
+    "stale static_data.h8bin; rebake via Unity batchmode -executeMethod "
+    + DATA_MONOLITH_BAKE_METHOD
+    + ". For packet/route deltas, run Tools/AppliedLoreBlobDeltaAudit.py --root . --max-packets 40"
+    + " (add --json for automation)"
+)
 NAVIGATION_CLUSTER_GRAPH_PATH = "graphs/RS084_SITE_WIKI_NAVIGATION_CLUSTERS_evidence_graph.csv"
 
 SURFACES = (
@@ -110,6 +137,7 @@ PUBLICATION_SURFACE_BITS = {
     "in_game_wiki": 1 << 4,
     "external_site": 1 << 5,
 }
+ROW_FLAG_DRAFT_LOCALIZATION = 1 << 0
 
 PLAYER_VISIBLE_TEXT_FIELDS = (
     "title",
@@ -126,15 +154,6 @@ FORBIDDEN_LOCALIZATION_MARKERS = (
     "Draf ID menunggu native review.",
     "NL-concept wacht op native review.",
 )
-MOJIBAKE_PATTERNS = (
-    re.compile("\ufffd"),
-    re.compile("[\u00c2\u00c3][\u0080-\u00bf]"),
-    re.compile("[\u00d0\u00d1][\u0080-\u00bf]"),
-    re.compile("[\u00d8\u00d9][\u0080-\u00bf]"),
-    re.compile("\u00e2(?:[\u0080-\u009f]|\u20ac)"),
-    re.compile("\u00e3(?:[\u0080-\u009f]|\u0192|\u201a)"),
-)
-
 FNV_OFFSET = 2166136261
 FNV_PRIME = 16777619
 TERMINAL_OS_RUNTIME_OBJECT_NAME = "__APPLIED_LORE_TERMINAL_OS_RUNTIME"
@@ -268,6 +287,7 @@ ROUTE_CARD_ENDING_PRESSURES = {
     "truth",
     "partial_exit",
     "material_or_partial",
+    "quarantine_hold",
 }
 ROUTE_CARD_SOURCE_HEADERS = (
     "route_card_id",
@@ -376,6 +396,12 @@ class AppliedLoreRouteRecord:
     record_index: int
     reserved: tuple[int, ...]
     index: int
+
+
+@dataclass(frozen=True)
+class ProductionGateFailure:
+    gate: str
+    message: str
 
 
 @dataclass
@@ -518,6 +544,55 @@ def iter_applied_content_csv_sources(root: Path, folder: str, pattern: str) -> l
     return paths
 
 
+def source_manifest_is_not_canonical(root: Path, release_prefix: str) -> bool:
+    manifest_dir = root / "Docs" / "Lore" / "AppliedContent" / "release_sets"
+    manifests = sorted(manifest_dir.glob(f"{release_prefix}*_manifest.json"), key=lambda path: path.name.lower())
+    if len(manifests) != 1:
+        return False
+    try:
+        data = json.loads(manifests[0].read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        fail(f"Bad AppliedLore manifest JSON: {manifests[0]}: {exc}")
+    return data.get("canonical_importer_ready") is False
+
+
+def noncanonical_manifest_packet_ids(root: Path) -> set[str]:
+    manifest_dir = root / "Docs" / "Lore" / "AppliedContent" / "release_sets"
+    packet_ids: set[str] = set()
+    for path in sorted(manifest_dir.glob("*_manifest.json"), key=lambda item: item.name.lower()):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            fail(f"Bad AppliedLore manifest JSON: {path}: {exc}")
+        if data.get("canonical_importer_ready") is not False:
+            continue
+        for packet_id in data.get("packets", []):
+            if isinstance(packet_id, str) and packet_id:
+                packet_ids.add(packet_id)
+    return packet_ids
+
+
+def applied_content_csv_is_draft_authoring_source(root: Path, path: Path, suffix: str) -> bool:
+    if not path.name.endswith(suffix):
+        return False
+    release_prefix = path.name[: -len(suffix)]
+    if not release_prefix:
+        return False
+    return source_manifest_is_not_canonical(root, release_prefix)
+
+
+def binding_map_is_draft_authoring_source(root: Path, path: Path) -> bool:
+    return applied_content_csv_is_draft_authoring_source(root, path, "_runtime_binding_map.csv")
+
+
+def scene_binding_targets_are_draft_authoring_source(root: Path, path: Path) -> bool:
+    return applied_content_csv_is_draft_authoring_source(root, path, "_scene_binding_targets.csv")
+
+
+def evidence_graph_is_draft_authoring_source(root: Path, path: Path) -> bool:
+    return applied_content_csv_is_draft_authoring_source(root, path, "_evidence_graph.csv")
+
+
 def load_csv(path: Path) -> list[CsvPacketRow]:
     if not path.exists():
         fail(f"Missing AppliedLore CSV: {path}")
@@ -570,6 +645,36 @@ def load_csv(path: Path) -> list[CsvPacketRow]:
     return rows
 
 
+def validate_import_outputs_current(root: Path) -> None:
+    stats = check_applied_lore_import_outputs(root)
+    if stats.stale_files == 0 and stats.missing_files == 0:
+        return
+
+    preview = "\n".join(stats.sample_issues[:20])
+    fail(
+        "AppliedLore importer outputs are stale or missing; run Tools/AppliedLoreImporter.py before runtime audit.\n"
+        f"checked_files={stats.checked_files} stale_files={stats.stale_files} missing_files={stats.missing_files}"
+        + (f"\n{preview}" if preview else "")
+    )
+
+
+def validate_publication_outputs_current(root: Path) -> None:
+    stats = check_applied_lore_publication_freshness(root, include_placeholder_markers=False)
+    integrity_issues = getattr(stats, "integrity_issues", 0)
+    if stats.stale_files == 0 and stats.missing_files == 0 and stats.disabled_generated_pages == 0 and integrity_issues == 0:
+        return
+
+    preview = "\n".join(stats.sample_issues[:20])
+    fail(
+        "AppliedLore publication pages are stale, missing, disabled-generated, or text-corrupt; "
+        "run Tools/AppliedLorePageExporter.py --packet-glob \"P*\" before runtime audit.\n"
+        f"checked_files={stats.checked_files} stale_files={stats.stale_files} "
+        f"missing_files={stats.missing_files} disabled_generated_pages={stats.disabled_generated_pages} "
+        f"integrity_issues={integrity_issues}"
+        + (f"\n{preview}" if preview else "")
+    )
+
+
 def require_cell(row: dict[str, str], field: str, line_number: int) -> str:
     value = row.get(field, "")
     if value == "":
@@ -599,12 +704,17 @@ def has_forbidden_localization_marker(value: str) -> bool:
     return False
 
 
-def has_mojibake_marker(value: str) -> bool:
+def has_text_integrity_issue(value: str) -> bool:
     if not value:
         return False
 
-    for pattern in MOJIBAKE_PATTERNS:
-        if pattern.search(value) is not None:
+    for issue in find_text_integrity_errors(value, include_placeholder_markers=False):
+        if (
+            issue.startswith("forbidden_marker=") or
+            issue.startswith("suspicious_question_mark=") or
+            issue.startswith("mojibake=") or
+            issue == "c1_control_character"
+        ):
             return True
 
     return False
@@ -612,7 +722,7 @@ def has_mojibake_marker(value: str) -> bool:
 
 def validate_no_visible_localization_markers(root: Path, rows: list[CsvPacketRow]) -> tuple[int, int]:
     hits: list[str] = []
-    mojibake_hits: list[str] = []
+    integrity_hits: list[str] = []
     csv_fields_scanned = 0
     pages_scanned = 0
     for row in rows:
@@ -623,13 +733,13 @@ def validate_no_visible_localization_markers(root: Path, rows: list[CsvPacketRow
                 hits.append(f"csv:{row.packet_id}/{row.locale}/{field}")
                 if len(hits) >= 12:
                     break
-            if has_mojibake_marker(value):
-                mojibake_hits.append(f"csv:{row.packet_id}/{row.locale}/{field}")
-                if len(mojibake_hits) >= 12:
+            if has_text_integrity_issue(value):
+                integrity_hits.append(f"csv:{row.packet_id}/{row.locale}/{field}")
+                if len(integrity_hits) >= 12:
                     break
         if len(hits) >= 12:
             break
-        if len(mojibake_hits) >= 12:
+        if len(integrity_hits) >= 12:
             break
 
     publication_base = root / "Docs" / "Lore" / "AppliedContent"
@@ -649,22 +759,83 @@ def validate_no_visible_localization_markers(root: Path, rows: list[CsvPacketRow
                 hits.append(f"page:{path.relative_to(root).as_posix()}")
                 if len(hits) >= 12:
                     break
-            if has_mojibake_marker(text):
-                mojibake_hits.append(f"page:{path.relative_to(root).as_posix()}")
-                if len(mojibake_hits) >= 12:
+            if has_text_integrity_issue(text):
+                integrity_hits.append(f"page:{path.relative_to(root).as_posix()}")
+                if len(integrity_hits) >= 12:
                     break
 
         if len(hits) >= 12:
             break
-        if len(mojibake_hits) >= 12:
+        if len(integrity_hits) >= 12:
             break
 
     if hits:
         fail("Player-visible localization draft markers leaked: " + "; ".join(hits))
-    if mojibake_hits:
-        fail("Player-visible localization mojibake marker leaked: " + "; ".join(mojibake_hits))
+    if integrity_hits:
+        fail("Player-visible text integrity marker leaked: " + "; ".join(integrity_hits))
 
     return csv_fields_scanned, pages_scanned
+
+
+def validate_native_localization_gate(
+    rows: list[CsvPacketRow],
+    *,
+    strict_native_localization: bool = False,
+) -> int:
+    draft_rows = [row for row in rows if row.flags & ROW_FLAG_DRAFT_LOCALIZATION]
+    english_by_packet = {row.packet_id: row for row in rows if row.locale == "en_US"}
+    english_clone_rows: list[CsvPacketRow] = []
+    for row in rows:
+        if row.locale == "en_US" or (row.flags & ROW_FLAG_DRAFT_LOCALIZATION):
+            continue
+
+        source = english_by_packet.get(row.packet_id)
+        if source is None:
+            continue
+
+        source_fields = [
+            field
+            for field in PLAYER_VISIBLE_TEXT_FIELDS
+            if normalize_visible_text_for_localization_identity(source.fields.get(field, "")) != ""
+        ]
+        if not source_fields:
+            continue
+
+        if all(
+            normalize_visible_text_for_localization_identity(row.fields.get(field, "")) ==
+            normalize_visible_text_for_localization_identity(source.fields.get(field, ""))
+            for field in source_fields
+        ):
+            english_clone_rows.append(row)
+
+    if strict_native_localization and (draft_rows or english_clone_rows):
+        details: list[str] = []
+        if draft_rows:
+            samples = ", ".join(f"{row.packet_id}/{row.locale}" for row in draft_rows[:12])
+            details.append(
+                f"draft_rows={len(draft_rows)}. "
+                "Generated pages may be useful for routing, but production publication/player-facing acceptance "
+                "requires clearing RowFlagDraftLocalization after native review. "
+                f"sample_draft_rows={samples}"
+            )
+        if english_clone_rows:
+            samples = ", ".join(f"{row.packet_id}/{row.locale}" for row in english_clone_rows[:12])
+            details.append(
+                f"english_clone_rows={len(english_clone_rows)}. "
+                "Rows marked non-draft must not keep every player-visible field identical to en_US. "
+                f"sample_english_clone_rows={samples}"
+            )
+        fail(
+            "AppliedLore native localization incomplete: "
+            + " ".join(details)
+            + " For locale/release-set/surface breakdown, run "
+            "Tools/AppliedLoreLocalizationDeltaAudit.py --root . --max-rows 40 --json"
+        )
+    return len(draft_rows)
+
+
+def normalize_visible_text_for_localization_identity(value: str) -> str:
+    return " ".join((value or "").split())
 
 
 def localization_status_from_flags(flags: int, locale: str) -> str:
@@ -912,7 +1083,11 @@ def validate_applied_records(
 ) -> None:
     expected_by_key = {row.key: row for row in rows}
     if applied.count != len(rows):
-        fail(f"AppliedLore count mismatch: blob={applied.count} csv={len(rows)}")
+        fail(
+            "AppliedLore count mismatch: "
+            f"blob={applied.count} csv={len(rows)} "
+            f"artifact={DATA_MONOLITH_OUTPUT_RELATIVE_PATH}; {DATA_MONOLITH_STALE_BAKE_HINT}"
+        )
 
     records = parse_applied_records(data, applied)
     previous_key: tuple[int, int] | None = None
@@ -1016,12 +1191,16 @@ def validate_record_text(
 
 
 def extract_csharp_method_body(text: str, method_name: str) -> str:
-    signature = f"public static void {method_name}("
-    signature_index = text.find(signature)
-    if signature_index < 0:
+    signature_match = re.search(
+        r"\b(?:public|private|internal|protected)\s+(?:static\s+)?[^{;()]*\b"
+        + re.escape(method_name)
+        + r"\s*\(",
+        text,
+    )
+    if signature_match is None:
         fail(f"AppliedLore editor bridge missing method: {method_name}")
 
-    brace_index = text.find("{", signature_index)
+    brace_index = text.find("{", signature_match.start())
     if brace_index < 0:
         fail(f"AppliedLore editor bridge method has no body: {method_name}")
 
@@ -1038,7 +1217,447 @@ def extract_csharp_method_body(text: str, method_name: str) -> str:
     fail(f"AppliedLore editor bridge method body is not closed: {method_name}")
 
 
+def validate_pda_data_log_event_sourced_detail_refresh(text: str) -> None:
+    late_frame_body = extract_csharp_method_body(text, "LateFrameTick")
+    dirty_branch_match = re.search(
+        r"else\s+if\s*\(\s*_dirty\s*\)\s*\{(?P<body>.*?)_dirty\s*=\s*false\s*;",
+        late_frame_body,
+        re.DOTALL,
+    )
+    if dirty_branch_match is None:
+        fail("PDADataLogTab LateFrameTick must keep an explicit _dirty refresh branch")
+
+    dirty_branch = dirty_branch_match.group("body")
+    for symbol in ("RefreshList();", "RefreshDetail();", "RefreshPlayButton();"):
+        if symbol not in dirty_branch:
+            fail(
+                "PDADataLogTab UIStateStore fallback must refresh list, detail, and play button "
+                f"before clearing _dirty; missing {symbol}"
+            )
+
+
+def validate_pda_replay_missing_payload_fault(text: str) -> None:
+    replay_body = extract_csharp_method_body(text, "ReplayPersistedPdaLogEvents")
+    missing_payload_branch = re.search(
+        r"if\s*\(\s*!\s*TryResolveLorePayloadForUnlock\s*\(\s*eventHash\s*\)\s*\)\s*\{(?P<body>.*?)continue\s*;",
+        replay_body,
+        re.DOTALL,
+    )
+    if missing_payload_branch is None:
+        fail("PDA logbook replay must branch explicitly when a persisted lore hash no longer resolves")
+
+    if "RejectLoreHash(eventHash)" not in missing_payload_branch.group("body"):
+        fail("PDA logbook replay must route stale saved lore hashes through RejectLoreHash(eventHash)")
+
+
+def validate_pda_blackbox_write_failure_visible(text: str) -> None:
+    for symbol in (
+        "FaultBlackBoxWrite",
+        "_pendingTelemetryFaultHash = FaultBlackBoxWrite;",
+        "_pendingBlackBoxFaultHash = FaultBlackBoxWrite;",
+    ):
+        if symbol not in text:
+            fail(f"PDA blackbox write failure must be visible in telemetry; missing {symbol!r}")
+
+    dump_body = extract_csharp_method_body(text, "DumpBlackBox")
+    mark_body = extract_csharp_method_body(text, "MarkBlackBoxWriteFailure")
+    if "WriteBlackBoxDump(Path.Combine(directory, BlackBoxDumpFileName));" not in dump_body:
+        fail("PDA blackbox dump must attempt the real dump write path")
+    if "return true;" not in dump_body:
+        fail("PDA blackbox dump must return true only after the dump write succeeds")
+    if "MarkBlackBoxWriteFailure();" not in dump_body or "return false;" not in dump_body:
+        fail("PDA blackbox dump write failures must mark telemetry fault and return false")
+    if "QueueBlackBoxDump" in mark_body or "_blackBoxDumpQueued = true" in mark_body:
+        fail("PDA blackbox write failure must not self-requeue into an IO retry loop")
+
+
+def validate_pda_ui_state_rollback_ring_consistency(text: str) -> None:
+    rollback_body = extract_csharp_method_body(text, "TryRollbackPDAState")
+    for symbol in (
+        "_pdaLogEventHashes[i] = 0u;",
+        "_pdaLogEventTimestamps[i] = 0f;",
+        "_pdaLogWriteIndex = 0;",
+        "_pdaLogCount = 0;",
+        "restored.LogEntryCount = 0u;",
+        "restored.LatestLogEventHash = 0u;",
+    ):
+        if symbol not in rollback_body:
+            fail(
+                "UIStateStore PDA rollback must clear the event ring and public log counters "
+                f"because the ring has no history snapshot; missing {symbol!r}"
+            )
+
+
+def validate_terminal_os_scene_runtime_keying(editor_text: str) -> None:
+    ensure_body = extract_csharp_method_body(editor_text, "EnsureTerminalOsRuntimeForLoadedScenes")
+    assign_body = extract_csharp_method_body(editor_text, "AssignTerminalPreviewIndices")
+    array_body = extract_csharp_method_body(editor_text, "TrySetTerminalOsRuntimeArrays")
+
+    if "processedScenePaths" in ensure_body:
+        fail("TerminalOS runtime placement must deduplicate by scene+placement root, not scene only")
+
+    if (
+        "processedRuntimeKeys" not in ensure_body
+        or "ScenePlacementRuntimeKey(row.ScenePath, row.PlacementRoot)" not in ensure_body
+    ):
+        fail("TerminalOS runtime placement must use ScenePlacementRuntimeKey for lifecycle ownership")
+
+    if "terminalIndicesByRuntime" not in assign_body:
+        fail("TerminalOS preview indices must be local to each scene+placement root runtime owner")
+
+    if "ScenePlacementRuntimeKey(row.ScenePath, row.PlacementRoot)" not in assign_body:
+        fail("TerminalOS preview index assignment must key by scene+placement root")
+
+    if (
+        "TerminalOsRuntimeDuplicatePreviewIndices" not in array_body
+        or "assignedPreviewIndices" not in array_body
+    ):
+        fail("TerminalOS runtime array binding must surface duplicate preview-index failures")
+
+
+def validate_scene_placement_preflight_abort(editor_text: str) -> None:
+    apply_body = extract_csharp_method_body(editor_text, "ApplyScenePlacementPlanToOpenScene")
+    preflight_body = extract_csharp_method_body(editor_text, "TryValidateScenePlacementRowsBeforeMutation")
+
+    preflight_call_index = apply_body.find("TryValidateScenePlacementRowsBeforeMutation")
+    instantiate_index = apply_body.find("PrefabUtility.InstantiatePrefab")
+    root_index = apply_body.find("FindOrCreatePlacementRoot(scene")
+    if preflight_call_index < 0:
+        fail("AppliedLore scene placement apply must preflight all rows before mutating scenes")
+    if root_index >= 0 and root_index < preflight_call_index:
+        fail("AppliedLore scene placement preflight must run before creating placement roots")
+    if instantiate_index >= 0 and instantiate_index < preflight_call_index:
+        fail("AppliedLore scene placement preflight must run before instantiating prefabs")
+
+    required = (
+        "report.PreflightAborted = true;",
+        "return report;",
+        "knownPacketHashes.Contains(row.PacketHashUInt)",
+        "report.UnknownHashes++",
+        "FindLoadedScene(row.ScenePath, out _)",
+        "report.SceneNotLoaded++",
+        "AssetDatabase.LoadAssetAtPath<GameObject>(row.SourcePrefab)",
+        "report.MissingPrefabs++",
+        "report.InvalidRows++",
+        "return valid;",
+    )
+    combined = apply_body + "\n" + preflight_body
+    for symbol in required:
+        if symbol not in combined:
+            fail(f"AppliedLore scene placement preflight missing {symbol!r}")
+
+
+def validate_scene_placement_commandline_apply(editor_text: str) -> None:
+    command_body = extract_csharp_method_body(editor_text, "ApplyScenePlacementPlanFromCommandLine")
+    open_body = extract_csharp_method_body(editor_text, "TryOpenScenePlacementPlanScenesForCommandLine")
+    failure_body = extract_csharp_method_body(editor_text, "HasScenePlacementApplyFailures")
+
+    open_call_index = command_body.find("TryOpenScenePlacementPlanScenesForCommandLine()")
+    apply_call_index = command_body.find("ApplyScenePlacementPlanToOpenScene()")
+    if open_call_index < 0 or apply_call_index < 0 or open_call_index > apply_call_index:
+        fail("Scene placement commandline route must open plan scenes before applying scene placement")
+
+    for required in (
+        "HasScenePlacementApplyFailures(report)",
+        "Debug.Log(report.ToLogLine())",
+        "Application.isBatchMode",
+        "EditorApplication.Exit(success ? 0 : 1)",
+        "catch (Exception exception)",
+        "Batch scene placement threw",
+        "EditorApplication.Exit(1)",
+    ):
+        if required not in command_body:
+            fail(f"Scene placement commandline route missing {required}")
+
+    for required in (
+        "LoadScenePlacementRows(rows)",
+        "File.Exists(absoluteScenePath)",
+        "EditorSceneManager.OpenScene(scenePath, mode)",
+        "OpenSceneMode.Additive",
+        "OpenSceneMode.Single",
+        "FindLoadedScene(scenePath, out _)",
+        "return openedAny;",
+    ):
+        if required not in open_body:
+            fail(f"Scene placement commandline scene opener missing {required}")
+
+    for required in (
+        "report.PlanRows <= 0",
+        "report.PreflightAborted",
+        "report.InvalidRows > 0",
+        "report.DuplicateSceneOwners > 0",
+        "report.DuplicateDiscoveryIds > 0",
+        "report.UnknownHashes > 0",
+        "report.SceneNotLoaded > 0",
+        "report.MissingPrefabs > 0",
+        "report.Conflicts > 0",
+        "report.UnsupportedRows > 0",
+        "report.SaveFailures > 0",
+        "report.TerminalOsRuntimeMissingRenderers > 0",
+        "report.TerminalOsRuntimeDuplicatePreviewIndices > 0",
+    ):
+        if required not in failure_body:
+            fail(f"Scene placement commandline failure gate missing {required}")
+
+
+def validate_pda_logbook_save_load_bridge(root: Path) -> None:
+    required_symbols = {
+        "Assets/_Project/Scripts/Core/UIStateStore.cs": (
+            "ClearPDALogEventHistory",
+            "_pdaLogWriteIndex = 0;",
+            "_pdaLogCount = 0;",
+            "state.LatestLogEventHash = 0u;",
+        ),
+        "Assets/_Project/Scripts/PDA/PDALogbookManager.cs": (
+            "UIStateStore.ClearPDALogEventHistory();",
+            "UIStateStore.AppendPDALogEventHash",
+            "PDAEvents.TryRaiseLogbookChanged(0, 0u)",
+        ),
+        "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs": (
+            "PdaLogEventReplayMaxPerFrame",
+            "ReplayPersistedPdaLogEvents",
+            "UIStateStore.TryGetPDALogEventHash",
+            "openDataMonolithAppliedLoreOnEnable && !_dataMonolithMetadataSeeded",
+            "pdaState.Version",
+            "TryResolveLorePayloadForUnlock(eventHash)",
+            "validatePayload: false",
+            "TryQueuePdaLogEventSelection",
+        ),
+        "Assets/_Project/Scripts/UI/PDADataLogTab.cs": (
+            "RefreshEventSourcedLogStateFromUIStore",
+            "ResetObservedPdaLogState",
+            "PDAEvents.TryRegister(this)",
+            "_observedPdaLogVersion",
+            "_observedPdaLogCount",
+            "_observedPdaLatestLogHash",
+            "pdaState.LogEntryCount",
+            "pdaState.LatestLogEventHash",
+            "UIStateStore.TryGetPDALogEvent(0, out uint latestHash, out float timestampSeconds)",
+            "_visualLateFrameDirty = true;",
+        ),
+    }
+
+    for relative_path, symbols in required_symbols.items():
+        path = root / relative_path
+        if not path.exists():
+            fail(f"Missing PDA logbook save/load bridge file: {relative_path}")
+
+        text = path.read_text(encoding="utf-8")
+        for symbol in symbols:
+            if symbol not in text:
+                fail(f"Missing PDA logbook save/load bridge symbol {symbol!r} in {relative_path}")
+
+        if relative_path == "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs":
+            validate_pda_replay_missing_payload_fault(text)
+            validate_pda_blackbox_write_failure_visible(text)
+
+        if relative_path == "Assets/_Project/Scripts/Core/UIStateStore.cs":
+            validate_pda_ui_state_rollback_ring_consistency(text)
+
+        if relative_path == "Assets/_Project/Scripts/UI/PDADataLogTab.cs":
+            validate_pda_data_log_event_sourced_detail_refresh(text)
+
+
+def validate_data_monolith_bake_cli_program_contract(text: str) -> None:
+    normalized_text = text.replace("\\", "/")
+    core_symbols = (
+        "Directory.SetCurrentDirectory(projectRoot)",
+        "UnityEngine.Application.dataPath",
+        "UnityEngine.Application.version",
+        "ReadUnityBundleVersion(projectRoot)",
+        "H8DataMonolithCompiler.BakeAll(logSummary: true)",
+        "H8DataMonolithCompiler.TryValidateOutputBlob",
+        "H8DataMonolithCorruptionFuzzer.Run()",
+        "DataMonolithLoadStressProbe.Run(projectRoot)",
+        "DataMonolithFailClosedProbe.Run(projectRoot)",
+        "DataMonolithPlayerParserAbsenceProbe.Run(projectRoot)",
+        "DataMonolithSourceInventoryProbe.Run(projectRoot)",
+    )
+    for symbol in core_symbols:
+        if symbol.replace("\\", "/") not in normalized_text:
+            fail(f"Missing DataMonolith bake CLI Program.cs symbol {symbol!r}")
+
+    if re.search(r"catch\s*\(\s*Exception\s+exception\s*\)", text) is None:
+        fail("DataMonolith bake CLI must catch (Exception exception) at the process boundary")
+    if "Data Monolith CLI crashed" not in text:
+        fail("DataMonolith bake CLI process boundary must print 'Data Monolith CLI crashed'")
+
+    for exit_code in range(1, 9):
+        symbol = f"return {exit_code};"
+        if symbol not in text:
+            fail(f"DataMonolith bake CLI Program.cs missing failure exit code {symbol}")
+    if "return 0;" not in text:
+        fail("DataMonolith bake CLI Program.cs missing success exit code return 0;")
+
+
+def validate_data_monolith_bake_cli_project_contract(text: str) -> None:
+    compact = re.sub(r"\s+", "", text)
+    required_properties = (
+        ("<OutputType>Exe</OutputType>", "DataMonolith bake CLI project must be runnable OutputType=Exe"),
+        ("<TargetFramework>net10.0</TargetFramework>", "DataMonolith bake CLI project must target net10.0"),
+        (
+            "<SelfContained>false</SelfContained>",
+            "DataMonolith bake CLI project must be framework-dependent, not self-contained",
+        ),
+        (
+            "<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>",
+            "DataMonolith bake CLI project must generate runtimeconfig.json for dotnet run",
+        ),
+    )
+    for marker, message in required_properties:
+        if marker not in compact:
+            fail(message)
+
+
+def validate_data_monolith_bake_cli_bridge(root: Path) -> None:
+    required_files = {
+        "Tools/DataMonolithBakeCli/DataMonolithBakeCli.csproj": (
+            "UNITY_EDITOR",
+            "H8AppliedLoreWorldImpactRecord.cs",
+            "H8DataHash.cs",
+            "H8DataMonolithTypes.cs",
+            "H8DataMonolithCompiler.cs",
+            "H8DataMonolithCorruptionFuzzer.cs",
+            "Unity.Collections/xxHash3.cs",
+        ),
+        "Tools/DataMonolithBakeCli/UnityHashStubs.cs": (
+            "public struct StreamingState",
+            "Hash64(ptr, _length)",
+            "Avx2HashLongInternalLoop",
+            "DefaultHashLongInternalLoop",
+        ),
+        "Tools/DataMonolithBakeCli/UnityEditorStubs.cs": (
+            "namespace UnityEngine",
+            "public static class Application",
+            "public static class Debug",
+            "public static class JsonUtility",
+            "namespace UnityEditor",
+            "public sealed class MenuItem",
+            "public static class AssetDatabase",
+            "public static class EditorApplication",
+            "namespace Unity.Collections.LowLevel.Unsafe",
+            "public static unsafe class UnsafeUtility",
+        ),
+        "Tools/DataMonolithBakeCli/Program.cs": (),
+        "Tools/DataMonolithBakeCli/DataMonolithLoadStressProbe.cs": (
+            "NativeMemory.AlignedAlloc",
+            "NativeMemory.AlignedFree",
+            "TryReadFileToNative",
+            "ValidateResidentBlob",
+            "badChecksumRejected",
+            "badOffsetRejected",
+            "validationAllocatedBytes",
+        ),
+        "Tools/DataMonolithBakeCli/DataMonolithFailClosedProbe.cs": (
+            "CaseCount = 13",
+            "RunTruncatedCase(\"truncated_blob\"",
+            "MutatePayloadByte",
+            "ValidateResidentBlob",
+            "validationAllocated",
+            "validationPasses == ValidationIterations",
+        ),
+        "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs": (
+            "developmentBuild: false",
+            "developmentBuild: true",
+            "IsPlayerLineActive",
+            "IsAllowedRuntimePersistencePath",
+            "PASS_PLAYER_STATIC_CONFIG_PARSER_ABSENCE",
+            "DirectFileStreamReadByteCount",
+        ),
+        "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs": (
+            "DATA_MONOLITH_SOURCE_INVENTORY",
+            "BlobRelativePath",
+            "ReadBlobInventory",
+            "BuildCsvInventory",
+            "HeaderValid",
+            "SectionTableValid",
+        ),
+        "Assets/_Project/Scripts/Data/Monolith/H8AppliedLoreWorldImpactRecord.cs": (
+            "public struct H8AppliedLoreWorldImpactRecord",
+            "public const int SizeBytes = 24;",
+            "StructLayout(LayoutKind.Explicit, Size = 24)",
+            "FieldOffset(20)",
+        ),
+        "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs": (
+            "BakeFromCommandLine",
+            "BakeAll",
+            "TryRunAppliedLoreImporter",
+            "TryRunAppliedLoreRouteCardExporter",
+        ),
+        "Hecton8.slnx": (
+            "Tools/DataMonolithBakeCli/DataMonolithBakeCli.csproj",
+        ),
+        ".gitignore": (
+            "*.csproj",
+            "!Tools/DataMonolithBakeCli/DataMonolithBakeCli.csproj",
+        ),
+    }
+
+    for relative_path, symbols in required_files.items():
+        path = root / relative_path
+        if not path.exists():
+            fail(f"Missing DataMonolith bake CLI bridge file: {relative_path}")
+
+        text = path.read_text(encoding="utf-8")
+        normalized_text = text.replace("\\", "/")
+        for symbol in symbols:
+            normalized_symbol = symbol.replace("\\", "/")
+            if normalized_symbol not in normalized_text:
+                fail(f"Missing DataMonolith bake CLI bridge symbol {symbol!r} in {relative_path}")
+        if relative_path == "Tools/DataMonolithBakeCli/Program.cs":
+            validate_data_monolith_bake_cli_program_contract(text)
+
+    csproj_path = root / "Tools" / "DataMonolithBakeCli" / "DataMonolithBakeCli.csproj"
+    csproj_text = csproj_path.read_text(encoding="utf-8")
+    validate_data_monolith_bake_cli_project_contract(csproj_text)
+    validate_csproj_compile_includes_exist(csproj_path)
+    xxhash_includes = re.findall(
+        r'Include="([^"]*Library[\\/]+PackageCache[\\/]+com\.unity\.collections@[^"]+[\\/]+Unity\.Collections[\\/]+xxHash3\.cs)"',
+        csproj_text,
+    )
+    if not xxhash_includes:
+        fail("DataMonolith bake CLI project must include the Unity Collections xxHash3.cs source file")
+    for include in xxhash_includes:
+        include_path = (csproj_path.parent / include).resolve()
+        if not include_path.exists():
+            fail(f"DataMonolith bake CLI xxHash3 include does not exist: {include}")
+
+    xxhash_sources = sorted((root / "Library" / "PackageCache").glob("com.unity.collections@*/Unity.Collections/xxHash3.cs"))
+    if not xxhash_sources:
+        fail("Missing Unity Collections xxHash3 source for DataMonolith bake CLI: Library/PackageCache/com.unity.collections@*/Unity.Collections/xxHash3.cs")
+
+    runtime_text = (root / "Assets" / "_Project" / "Scripts" / "Data" / "Monolith" / "H8AppliedLoreRuntime.cs").read_text(encoding="utf-8")
+    if "public struct H8AppliedLoreWorldImpactRecord" in runtime_text:
+        fail("H8AppliedLoreWorldImpactRecord must stay in its data-contract file, not inside H8AppliedLoreRuntime.cs")
+
+
+def validate_csproj_compile_includes_exist(csproj_path: Path) -> None:
+    text = csproj_path.read_text(encoding="utf-8")
+    for include in re.findall(r'<Compile\s+Include="([^"]+)"', text):
+        normalized_include = include.replace("\\", "/")
+        if "$(" in normalized_include:
+            continue
+        if "Unity.Collections/xxHash3.cs" in normalized_include:
+            continue
+
+        if "*" in normalized_include or "?" in normalized_include:
+            matches = list(csproj_path.parent.glob(normalized_include))
+            if not matches:
+                fail(
+                    "DataMonolith bake CLI compile include does not match any files: "
+                    f"{include}"
+                )
+            continue
+
+        include_path = (csproj_path.parent / include).resolve()
+        if not include_path.exists():
+            fail(f"DataMonolith bake CLI compile include does not exist: {include}")
+
+
 def validate_source_route(root: Path) -> None:
+    validate_pda_logbook_save_load_bridge(root)
+    validate_data_monolith_bake_cli_bridge(root)
+
     required_symbols = {
         "Tools/AppliedLoreImporter.py": (
             "TARGET_LOCALES",
@@ -1054,6 +1673,24 @@ def validate_source_route(root: Path) -> None:
             "applied_lore_route_cards.csv",
             "route_card_hash_uint",
             "required_packet_hashes_uint",
+        ),
+        "Tools/AppliedLoreBlobDeltaAudit.py": (
+            "compute_blob_delta",
+            "compute_route_delta",
+            "collect_artifact_state",
+            "blob_older_than_csv",
+            "render_route_delta",
+            "combined_delta_to_json_payload",
+            "--json",
+        ),
+        "Tools/AppliedLoreScenePlacementDeltaAudit.py": (
+            "compute_scene_placement_delta",
+            "classify_scene_placement_row",
+            "object_missing_in_scene",
+            "binding_hash_missing_in_scene_and_prefab",
+            "duplicate_discovery_id_in_scene",
+            "delta_to_json_payload",
+            "--json",
         ),
         "Assets/_Project/Scripts/Core/Generated/H8AppliedLoreHashes.cs": (
             "public static class H8AppliedLoreHashes",
@@ -1093,6 +1730,50 @@ def validate_source_route(root: Path) -> None:
             "LoreFragmentScannedSignal",
             "SeedDataMonolithAppliedLoreMetadata",
             "TryGetAppliedLoreUtf8",
+            "public const int UnlockBitCount = 1024;",
+            "public const int UnlockWordCount = 16;",
+            "Mask15",
+            "encyclopediaSizeBytes == 224",
+            "FaultLoreSignalDrop",
+            "FaultPdaEventSignalDrop",
+            "_observedPdaEventTypedSignalDropCount",
+            "_observedPdaEventQueueRefusalCount",
+            "_observedPdaEventListenerRegistrationRefusalCount",
+            "PDAEvents.DroppedTypedSignalCount",
+            "PDAEvents.RefusedQueuedEventCount",
+            "PDAEvents.RefusedListenerRegistrationCount",
+            "SignalBus<PDAEventPayload>.DroppedLastFlush",
+            "SignalBus<ScanCompleteSignal>.DroppedLastFlush",
+            "SignalBus<LoreFragmentScannedSignal>.DroppedLastFlush",
+            "PdaLogEventReplayMaxPerFrame",
+            "ReplayPersistedPdaLogEvents",
+            "UIStateStore.TryGetPDALogEventHash",
+            "openDataMonolithAppliedLoreOnEnable && !_dataMonolithMetadataSeeded",
+            "pdaState.Version",
+            "TryResolveLorePayloadForUnlock(eventHash)",
+            "validatePayload: false",
+            "TryQueuePdaLogEventSelection",
+        ),
+        "Assets/_Project/Scripts/Core/UIStateStore.cs": (
+            "ClearPDALogEventHistory",
+            "_pdaLogWriteIndex = 0;",
+            "_pdaLogCount = 0;",
+            "state.LatestLogEventHash = 0u;",
+        ),
+        "Assets/_Project/Scripts/PDA/PDALogbookManager.cs": (
+            "UIStateStore.ClearPDALogEventHistory();",
+            "UIStateStore.AppendPDALogEventHash",
+            "PDAEvents.TryRaiseLogbookChanged(0, 0u)",
+        ),
+        "Assets/_Project/Scripts/PlayerPDA.cs": (
+            "RefusedQueuedEventCount",
+            "RefusedListenerRegistrationCount",
+            "s_x001PDAEventsQueueRefusalCount",
+            "s_x001PDAEventsListenerRegistrationRefusalCount",
+            "s_x001PDAEventsQueueRefusalCount++;",
+            "s_x001PDAEventsListenerRegistrationRefusalCount++;",
+            "internal static bool TryRegister",
+            "SignalBus<PDAEventPayload>.TryPushTracked",
         ),
         "Assets/_Project/Scripts/ScannableTarget.cs": (
             "TryWriteLoreEntityTitle",
@@ -1109,7 +1790,11 @@ def validate_source_route(root: Path) -> None:
         "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs": (
             "ApplyTerminalAppliedLoreLine",
             "ConsumeAppliedLoreTerminalPreviewSignals",
+            "FaultAppliedLorePreviewMiss",
+            "FaultAppliedLorePreviewDrop",
+            "uint terminalPreviewFaultFlags = ConsumeAppliedLoreTerminalPreviewSignals();",
             "SignalBus<AppliedLoreTerminalPreviewSignal>",
+            "SignalBus<AppliedLoreTerminalPreviewSignal>.DroppedLastFlush",
             "H8AppliedLoreRuntime.TryGetUtf8",
         ),
         "Assets/_Project/Scripts/NarrativeDiscovery.cs": (
@@ -1152,12 +1837,27 @@ def validate_source_route(root: Path) -> None:
             "PFB_AppliedLore_MessageTerminalAnchor.prefab",
             "Apply Applied Lore Scene Placement Plan",
             "ApplyScenePlacementPlanToOpenScene",
+            "ApplyScenePlacementPlanFromCommandLine",
+            "TryOpenScenePlacementPlanScenesForCommandLine",
+            "HasScenePlacementApplyFailures",
+            "EditorSceneManager.OpenScene(scenePath, mode)",
+            "EditorApplication.Exit(success ? 0 : 1)",
+            "MarkDuplicateScenePlacementRows",
+            "DuplicateSceneOwner",
+            "DuplicateDiscoveryId",
+            "duplicate_scene_owners",
+            "duplicate_discovery_ids",
+            "ScenePlacementRuntimeKey",
+            "processedRuntimeKeys",
+            "terminalIndicesByRuntime",
             "terminalOsPreviewIndex",
             "TerminalOsRuntimeObjectName",
             "EnsureTerminalOsRuntimeForScene",
             "TrySetTerminalOsRuntimeArrays",
             "statusLightRenderer",
             "terminal_os_missing_renderers",
+            "TerminalOsRuntimeDuplicatePreviewIndices",
+            "terminal_os_duplicate_preview_indices",
             "TerminalOsBlitComputePath",
             "TerminalOsRuntimeTerminals +=",
             "LoadScenePlacementRows",
@@ -1196,6 +1896,9 @@ def validate_source_route(root: Path) -> None:
             fail("AppliedLore binding catalog must validate backlog candidates, not scan every project prefab")
 
         if relative_path == "Assets/_Project/Scripts/Editor/Narrative/H8AppliedLoreBindingCatalogWindow.cs":
+            validate_scene_placement_preflight_abort(text)
+            validate_scene_placement_commandline_apply(text)
+            validate_terminal_os_scene_runtime_keying(text)
             for method_name in (
                 "ValidateBindingsMenu",
                 "ApplyTargetBacklogToPrefabsMenu",
@@ -1206,6 +1909,190 @@ def validate_source_route(root: Path) -> None:
                 method_body = extract_csharp_method_body(text, method_name)
                 if "EditorUtility.DisplayDialog" in method_body:
                     fail(f"AppliedLore menu method must be MCP-safe/log-only: {method_name}")
+
+    validate_pda_lore_signal_drop_visibility(root)
+    validate_pda_event_queue_refusal_visibility(root)
+    validate_pda_event_try_register_lifecycle(root)
+    validate_terminal_preview_drop_visibility(root)
+
+
+def validate_pda_runtime_capacity(root: Path, packet_count: int) -> int:
+    path = root / "Assets" / "_Project" / "Scripts" / "UI" / "PDAEncyclopediaStreamer.cs"
+    if not path.exists():
+        fail(f"Missing PDA encyclopedia runtime source: {path}")
+
+    text = path.read_text(encoding="utf-8")
+    bit_match = re.search(r"public\s+const\s+int\s+UnlockBitCount\s*=\s*(\d+)\s*;", text)
+    if bit_match is None:
+        fail("PDAEncyclopediaStreamer must expose UnlockBitCount for AppliedLore capacity audit")
+    word_match = re.search(r"public\s+const\s+int\s+UnlockWordCount\s*=\s*(\d+)\s*;", text)
+    if word_match is None:
+        fail("PDAEncyclopediaStreamer must expose UnlockWordCount for AppliedLore capacity audit")
+
+    capacity = int(bit_match.group(1))
+    word_count = int(word_match.group(1))
+    if capacity <= 0 or (capacity & (capacity - 1)) != 0:
+        fail(f"PDA AppliedLore unlock capacity must stay power-of-two for hash masking: {capacity}")
+    if word_count * 64 != capacity:
+        fail(f"PDA AppliedLore unlock word count {word_count} does not cover capacity {capacity}")
+    if capacity < packet_count:
+        fail(f"PDA AppliedLore unlock capacity {capacity} is smaller than imported packet count {packet_count}")
+
+    if "Mask15" not in text or "Size = 224" not in text:
+        fail("PDA AppliedLore unlock mask must expose 16x64-bit words for 1024 packet capacity")
+
+    return capacity
+
+
+def pda_unlock_free_slots(capacity: int, packet_count: int) -> int:
+    return capacity - packet_count
+
+
+def validate_pda_lore_signal_drop_visibility(root: Path) -> None:
+    relative_path = "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs"
+    path = root / relative_path
+    if not path.exists():
+        fail(f"Missing AppliedLore PDA consumer source: {relative_path}")
+
+    text = path.read_text(encoding="utf-8", errors="replace")
+    required = (
+        "FaultLoreSignalDrop",
+        "FaultPdaEventSignalDrop",
+        "_observedPdaEventTypedSignalDropCount",
+        "_observedPdaEventQueueRefusalCount",
+        "_observedPdaEventListenerRegistrationRefusalCount",
+        "PDAEvents.DroppedTypedSignalCount",
+        "PDAEvents.RefusedQueuedEventCount",
+        "PDAEvents.RefusedListenerRegistrationCount",
+        "pdaEventTypedSignalDrops < _observedPdaEventTypedSignalDropCount",
+        "pdaEventQueueRefusals < _observedPdaEventQueueRefusalCount",
+        "pdaEventListenerRegistrationRefusals < _observedPdaEventListenerRegistrationRefusalCount",
+        "SignalBus<PDAEventPayload>.DroppedLastFlush",
+        "MarkTransientFault(FaultPdaEventSignalDrop);",
+        "SignalBus<ScanCompleteSignal>.DroppedLastFlush",
+        "SignalBus<LoreFragmentScannedSignal>.DroppedLastFlush",
+        "MarkTransientFault(FaultLoreSignalDrop);",
+        "RecordTelemetry(0u, 0L, 0L, faultHash: ConsumeTelemetryFaultHash());",
+        "uint telemetryFaultHash = ConsumeTelemetryFaultHash();",
+        "RecordTelemetry(charsRenderedThisFrame, decodeTicks, canvasTicks, unlockedCountSnapshot, hasRuntimeStateSnapshot, telemetryFaultHash);",
+        "entry.FaultHash = faultHash != 0u ? faultHash : _lastFaultHash;",
+        "WriteUIntLittleEndian(header.Slice(8, 4), ResolveBlackBoxFaultHash());",
+    )
+    for symbol in required:
+        if symbol not in text:
+            fail(f"AppliedLore PDA lore signal drop path missing {symbol!r} in {relative_path}")
+
+
+def validate_pda_event_queue_refusal_visibility(root: Path) -> None:
+    relative_path = "Assets/_Project/Scripts/PlayerPDA.cs"
+    path = root / relative_path
+    if not path.exists():
+        fail(f"Missing PDA event producer source: {relative_path}")
+
+    text = path.read_text(encoding="utf-8", errors="replace")
+    required = (
+        "DroppedTypedSignalCount",
+        "RefusedQueuedEventCount",
+        "RefusedListenerRegistrationCount",
+        "s_x001PDAEventsSignalPushDropCount",
+        "s_x001PDAEventsQueueRefusalCount",
+        "s_x001PDAEventsListenerRegistrationRefusalCount",
+        "s_x001PDAEventsQueueRefusalCount++;",
+        "s_x001PDAEventsListenerRegistrationRefusalCount++;",
+        "internal static bool TryRegister",
+        "SignalBus<PDAEventPayload>.TryPushTracked",
+        "ContainsDedupKey",
+    )
+    for symbol in required:
+        if symbol not in text:
+            fail(f"PDA event queue refusal visibility missing {symbol!r} in {relative_path}")
+
+    try_register_body = extract_csharp_method_body(text, "TryRegister")
+    if "!Application.isPlaying" not in try_register_body:
+        fail("PDA listener registration must refuse edit-mode/domain-transition registration before native queues exist")
+
+    enqueue_body = extract_csharp_method_body(text, "Enqueue")
+    if "!Application.isPlaying" not in enqueue_body:
+        fail("PDA event enqueue must refuse edit-mode/domain-transition raises before native queues exist")
+
+    dedup_duplicate_match = re.search(
+        r"if\s*\(\s*dedupKey\s*!=\s*0UL\s*&&\s*ContainsDedupKey\s*\(\s*dedupKey\s*\)\s*\)"
+        r"\s*(?:\{\s*)?return\s+(true|false)\s*;",
+        enqueue_body,
+        re.DOTALL,
+    )
+    if dedup_duplicate_match is None or dedup_duplicate_match.group(1) != "true":
+        fail("PDA event duplicate suppression must return true because an equivalent event is already queued")
+    dedup_index = dedup_duplicate_match.start()
+    refusal_index = enqueue_body.find("s_x001PDAEventsQueueRefusalCount++;")
+    register_index = enqueue_body.find("TryRegisterDedupKey")
+    if refusal_index < 0 or dedup_index > refusal_index:
+        fail("PDA event duplicate suppression must run before queue-capacity refusal")
+    if register_index >= 0 and refusal_index >= 0 and register_index < refusal_index:
+        fail("PDA event must not register a new dedup key before queue-capacity refusal")
+
+
+def validate_pda_event_try_register_lifecycle(root: Path) -> None:
+    scripts_root = root / "Assets" / "_Project" / "Scripts"
+    if not scripts_root.exists():
+        return
+
+    direct_register_pattern = re.compile(r"PDAEvents\s*\.\s*Register\s*\(\s*this\s*\)\s*;")
+    try_register_pattern = re.compile(r"PDAEvents\s*\.\s*TryRegister\s*\(\s*this\s*\)")
+    assigned_try_register_pattern = re.compile(
+        r"(?P<flag>_[A-Za-z0-9_]+)\s*=\s*PDAEvents\s*\.\s*TryRegister\s*\(\s*this\s*\)"
+    )
+    for path in sorted(scripts_root.rglob("*.cs"), key=lambda item: item.as_posix().lower()):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        relative_path = path.relative_to(root).as_posix()
+        if direct_register_pattern.search(text) is not None:
+            fail(
+                "PDA listener lifecycle must use PDAEvents.TryRegister(this) so listener "
+                f"registration refusal is visible: {relative_path}"
+            )
+
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            match = try_register_pattern.search(line)
+            if match is None:
+                continue
+            assigned_match = assigned_try_register_pattern.search(line)
+            if assigned_match is not None:
+                flag_name = assigned_match.group("flag")
+                if "PDAEvents.Unregister(this)" not in text:
+                    fail(
+                        "PDA listener lifecycle must unregister PDAEvents when using "
+                        f"{flag_name}: {relative_path}:{line_number}"
+                    )
+                if f"{flag_name} = false;" not in text:
+                    fail(
+                        "PDA listener lifecycle must clear the local PDAEvents registration "
+                        f"flag {flag_name}: {relative_path}:{line_number}"
+                    )
+                continue
+            fail(
+                "PDA listener lifecycle must assign PDAEvents.TryRegister(this) to a local "
+                f"registration flag: {relative_path}:{line_number}"
+            )
+
+
+def validate_terminal_preview_drop_visibility(root: Path) -> None:
+    relative_path = "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs"
+    path = root / relative_path
+    if not path.exists():
+        fail(f"Missing AppliedLore terminal preview consumer source: {relative_path}")
+
+    text = path.read_text(encoding="utf-8", errors="replace")
+    required = (
+        "FaultAppliedLorePreviewDrop",
+        "SignalBus<AppliedLoreTerminalPreviewSignal>.DroppedLastFlush",
+        "uint terminalPreviewFaultFlags = ConsumeAppliedLoreTerminalPreviewSignals();",
+        "uint faultFlags = _lastFaultFlags | terminalPreviewFaultFlags;",
+        "QueueTerminalBlackBoxDump(faultFlags);",
+        "RecordTelemetry(ownerFrame, dirtyCount, dispatchedCount, faultFlags);",
+    )
+    for symbol in required:
+        if symbol not in text:
+            fail(f"AppliedLore terminal preview drop path missing {symbol!r} in {relative_path}")
 
 
 def count_serialized_authoring_bindings(root: Path) -> SerializedBindingStats:
@@ -1243,8 +2130,12 @@ def count_serialized_authoring_bindings(root: Path) -> SerializedBindingStats:
 def validate_binding_map(root: Path, rows: list[CsvPacketRow]) -> int:
     packet_ids = sorted({row.packet_id for row in rows})
     expected = set(packet_ids)
+    draft_packet_ids = noncanonical_manifest_packet_ids(root)
     seen: set[str] = set()
+    errors: list[str] = []
     for path in iter_applied_content_csv_sources(root, "binding_maps", "*_runtime_binding_map.csv"):
+        if binding_map_is_draft_authoring_source(root, path):
+            continue
         with path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             required_columns = {
@@ -1262,18 +2153,20 @@ def validate_binding_map(root: Path, rows: list[CsvPacketRow]) -> int:
 
             for line_number, row in enumerate(reader, start=2):
                 packet_id = require_cell(row, "packet_id", line_number)
+                if packet_id not in expected and packet_id in draft_packet_ids:
+                    continue
                 if packet_id in seen:
-                    fail(f"Binding map duplicate packet_id at {path}:{line_number}: {packet_id}")
+                    errors.append(f"duplicate packet_id at {path}:{line_number}: {packet_id}")
                 seen.add(packet_id)
                 if packet_id not in expected:
-                    fail(f"Binding map packet is not in baked CSV at {path}:{line_number}: {packet_id}")
+                    errors.append(f"packet is not in baked CSV at {path}:{line_number}: {packet_id}")
 
                 expected_hash = fnv1a32(packet_id)
                 actual_hex = parse_int(require_cell(row, "packet_hash_hex", line_number), "packet_hash_hex", line_number)
                 actual_uint = parse_int(require_cell(row, "packet_hash_uint", line_number), "packet_hash_uint", line_number)
                 if actual_hex != expected_hash or actual_uint != expected_hash:
-                    fail(
-                        f"Binding map hash mismatch at {path}:{line_number}: {packet_id} "
+                    errors.append(
+                        f"hash mismatch at {path}:{line_number}: {packet_id} "
                         f"expected=0x{expected_hash:08X} hex=0x{actual_hex:08X} uint={actual_uint}"
                     )
 
@@ -1284,7 +2177,12 @@ def validate_binding_map(root: Path, rows: list[CsvPacketRow]) -> int:
 
     missing_packets = sorted(expected.difference(seen))
     if missing_packets:
-        fail("Binding map missing packets: " + ", ".join(missing_packets))
+        errors.append("missing packets: " + ", ".join(missing_packets))
+    if errors:
+        preview = "\n".join(errors[:50])
+        if len(errors) > 50:
+            preview += f"\n... {len(errors) - 50} more"
+        fail("Binding map validation failed:\n" + preview)
     return len(seen)
 
 
@@ -1296,6 +2194,7 @@ def parse_candidate_paths(value: str) -> tuple[str, ...]:
 
 def validate_scene_binding_targets(root: Path, rows: list[CsvPacketRow]) -> SceneBindingTargetStats:
     packet_ids = {row.packet_id for row in rows}
+    draft_packet_ids = noncanonical_manifest_packet_ids(root)
     base = root / "Docs" / "Lore" / "AppliedContent" / "binding_maps"
     paths = sorted(base.glob("*_scene_binding_targets.csv"), key=lambda path: path.name.lower())
     if not paths:
@@ -1304,6 +2203,8 @@ def validate_scene_binding_targets(root: Path, rows: list[CsvPacketRow]) -> Scen
     seen: set[str] = set()
     stats = SceneBindingTargetStats()
     for path in paths:
+        if scene_binding_targets_are_draft_authoring_source(root, path):
+            continue
         with path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             if tuple(reader.fieldnames or ()) != SCENE_BINDING_TARGET_HEADERS:
@@ -1311,6 +2212,8 @@ def validate_scene_binding_targets(root: Path, rows: list[CsvPacketRow]) -> Scen
 
             for line_number, row in enumerate(reader, start=2):
                 packet_id = require_cell(row, "packet_id", line_number)
+                if packet_id not in packet_ids and packet_id in draft_packet_ids:
+                    continue
                 if packet_id in seen:
                     fail(f"Scene binding target duplicate packet_id at {path}:{line_number}: {packet_id}")
                 seen.add(packet_id)
@@ -1373,6 +2276,8 @@ def load_scene_binding_target_rows(root: Path) -> dict[str, dict[str, str]]:
     paths = sorted(base.glob("*_scene_binding_targets.csv"), key=lambda path: path.name.lower())
     targets: dict[str, dict[str, str]] = {}
     for path in paths:
+        if scene_binding_targets_are_draft_authoring_source(root, path):
+            continue
         with path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             if tuple(reader.fieldnames or ()) != SCENE_BINDING_TARGET_HEADERS:
@@ -1408,6 +2313,7 @@ def validate_manual_binding_policy(root: Path, rows: list[CsvPacketRow]) -> Manu
         fail(f"Missing AppliedLore manual binding policy: {path}")
 
     seen: set[str] = set()
+    seen_discovery_ids: dict[str, tuple[str, int]] = {}
     stats = ManualBindingPolicyStats()
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
@@ -1416,11 +2322,11 @@ def validate_manual_binding_policy(root: Path, rows: list[CsvPacketRow]) -> Manu
 
         for line_number, row in enumerate(reader, start=2):
             packet_id = require_cell(row, "packet_id", line_number)
+            if packet_id not in packet_ids:
+                continue
             if packet_id in seen:
                 fail(f"Manual binding policy duplicate packet_id at {path}:{line_number}: {packet_id}")
             seen.add(packet_id)
-            if packet_id not in packet_ids:
-                fail(f"Manual binding policy packet is not in baked CSV at {path}:{line_number}: {packet_id}")
 
             target = manual_targets.get(packet_id)
             if target is None:
@@ -1478,7 +2384,15 @@ def validate_manual_binding_policy(root: Path, rows: list[CsvPacketRow]) -> Manu
                     fail(f"NarrativeDiscovery manual policy must require marked world prop at {path}:{line_number}: {packet_id}")
                 if template_prefab:
                     fail(f"NarrativeDiscovery manual policy must not use a generic prefab template at {path}:{line_number}: {packet_id}")
-                require_cell(row, "discovery_id", line_number)
+                discovery_id = require_cell(row, "discovery_id", line_number)
+                previous_discovery = seen_discovery_ids.get(discovery_id)
+                if previous_discovery is not None:
+                    previous_packet_id, previous_line = previous_discovery
+                    fail(
+                        f"Manual binding policy duplicate discovery_id at {path}:{line_number}: "
+                        f"{discovery_id} for {packet_id} already used by {previous_packet_id} at line {previous_line}"
+                    )
+                seen_discovery_ids[discovery_id] = (packet_id, line_number)
                 stats.discovery_rows += 1
             else:
                 fail(f"Manual binding policy unsupported component at {path}:{line_number}: {component}")
@@ -1491,12 +2405,13 @@ def validate_manual_binding_policy(root: Path, rows: list[CsvPacketRow]) -> Manu
     return stats
 
 
-def load_manual_binding_policy_rows(root: Path) -> dict[str, dict[str, str]]:
+def load_manual_binding_policy_rows(root: Path, packet_ids: set[str] | None = None) -> dict[str, dict[str, str]]:
     path = root / "Docs" / "Lore" / "AppliedContent" / "binding_maps" / "RS001_RS010_manual_binding_policy.csv"
     if not path.exists():
         fail(f"Missing AppliedLore manual binding policy: {path}")
 
     rows: dict[str, dict[str, str]] = {}
+    seen_discovery_ids: dict[str, tuple[str, int]] = {}
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         if tuple(reader.fieldnames or ()) != MANUAL_BINDING_POLICY_HEADERS:
@@ -1504,8 +2419,20 @@ def load_manual_binding_policy_rows(root: Path) -> dict[str, dict[str, str]]:
 
         for line_number, row in enumerate(reader, start=2):
             packet_id = require_cell(row, "packet_id", line_number)
+            if packet_ids is not None and packet_id not in packet_ids:
+                continue
             if packet_id in rows:
                 fail(f"Manual binding policy duplicate packet_id at {path}:{line_number}: {packet_id}")
+            if row.get("authoring_component", "") == "NarrativeDiscovery":
+                discovery_id = require_cell(row, "discovery_id", line_number)
+                previous_discovery = seen_discovery_ids.get(discovery_id)
+                if previous_discovery is not None:
+                    previous_packet_id, previous_line = previous_discovery
+                    fail(
+                        f"Manual binding policy duplicate discovery_id at {path}:{line_number}: "
+                        f"{discovery_id} for {packet_id} already used by {previous_packet_id} at line {previous_line}"
+                    )
+                seen_discovery_ids[discovery_id] = (packet_id, line_number)
             rows[packet_id] = row
 
     return rows
@@ -1526,12 +2453,14 @@ def parse_vector3_pipe(value: str, field: str, line_number: int, *, positive: bo
 
 def validate_scene_placement_plan(root: Path, rows: list[CsvPacketRow]) -> ScenePlacementPlanStats:
     packet_ids = {row.packet_id for row in rows}
-    manual_policy_rows = load_manual_binding_policy_rows(root)
+    manual_policy_rows = load_manual_binding_policy_rows(root, packet_ids)
     path = root / "Docs" / "Lore" / "AppliedContent" / "binding_maps" / "RS001_RS010_scene_placement_plan.csv"
     if not path.exists():
         fail(f"Missing AppliedLore scene placement plan: {path}")
 
     seen: set[str] = set()
+    seen_scene_objects: dict[tuple[str, str, str], tuple[str, int]] = {}
+    seen_discovery_ids: dict[str, tuple[str, int]] = {}
     stats = ScenePlacementPlanStats()
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
@@ -1540,11 +2469,11 @@ def validate_scene_placement_plan(root: Path, rows: list[CsvPacketRow]) -> Scene
 
         for line_number, row in enumerate(reader, start=2):
             packet_id = require_cell(row, "packet_id", line_number)
+            if packet_id not in packet_ids:
+                continue
             if packet_id in seen:
                 fail(f"Scene placement plan duplicate packet_id at {path}:{line_number}: {packet_id}")
             seen.add(packet_id)
-            if packet_id not in packet_ids:
-                fail(f"Scene placement plan packet is not in baked CSV at {path}:{line_number}: {packet_id}")
 
             policy = manual_policy_rows.get(packet_id)
             if policy is None:
@@ -1566,8 +2495,18 @@ def validate_scene_placement_plan(root: Path, rows: list[CsvPacketRow]) -> Scene
             scene_path = require_cell(row, "scene_path", line_number)
             if not (root / scene_path).exists():
                 fail(f"Scene placement plan scene missing at {path}:{line_number}: {scene_path}")
-            require_cell(row, "placement_root", line_number)
-            require_cell(row, "object_name", line_number)
+            placement_root = require_cell(row, "placement_root", line_number)
+            object_name = require_cell(row, "object_name", line_number)
+            scene_object_key = (scene_path, placement_root, object_name)
+            previous_object = seen_scene_objects.get(scene_object_key)
+            if previous_object is not None:
+                previous_packet_id, previous_line = previous_object
+                fail(
+                    f"Scene placement plan duplicate scene owner at {path}:{line_number}: "
+                    f"{object_name} for {packet_id} already used by {previous_packet_id} at line {previous_line}"
+                )
+            seen_scene_objects[scene_object_key] = (packet_id, line_number)
+
             source_prefab = require_cell(row, "source_prefab", line_number)
             if not (root / source_prefab).exists():
                 fail(f"Scene placement plan source prefab missing at {path}:{line_number}: {source_prefab}")
@@ -1604,6 +2543,14 @@ def validate_scene_placement_plan(root: Path, rows: list[CsvPacketRow]) -> Scene
                 discovery_id = require_cell(row, "discovery_id", line_number)
                 if discovery_id != policy.get("discovery_id", ""):
                     fail(f"Scene placement plan discovery_id mismatch at {path}:{line_number}: {packet_id}")
+                previous_discovery = seen_discovery_ids.get(discovery_id)
+                if previous_discovery is not None:
+                    previous_packet_id, previous_line = previous_discovery
+                    fail(
+                        f"Scene placement plan duplicate discovery_id at {path}:{line_number}: "
+                        f"{discovery_id} for {packet_id} already used by {previous_packet_id} at line {previous_line}"
+                    )
+                seen_discovery_ids[discovery_id] = (packet_id, line_number)
                 stats.discovery_rows += 1
             else:
                 fail(f"Scene placement plan unsupported component at {path}:{line_number}: {component}")
@@ -1664,6 +2611,59 @@ def count_serialized_scene_placement_rows(root: Path) -> int:
     return count
 
 
+def scene_placement_row_is_covered(
+    root: Path,
+    row: dict[str, str],
+    line_number: int,
+    scene_cache: dict[str, str],
+    prefab_cache: dict[str, str],
+) -> bool:
+    scene_path = require_cell(row, "scene_path", line_number)
+    scene_text = scene_cache.get(scene_path)
+    if scene_text is None:
+        absolute_scene = root / scene_path
+        if not absolute_scene.exists():
+            scene_text = ""
+        else:
+            try:
+                scene_text = absolute_scene.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                scene_text = ""
+        scene_cache[scene_path] = scene_text
+
+    object_name = require_cell(row, "object_name", line_number)
+    if object_name not in scene_text:
+        return False
+
+    packet_hash = parse_int(require_cell(row, "packet_hash_decimal", line_number), "packet_hash_decimal", line_number)
+    serialized_field = require_cell(row, "serialized_field", line_number)
+    scene_has_hash = f"{serialized_field}: {packet_hash}" in scene_text
+
+    source_prefab = require_cell(row, "source_prefab", line_number)
+    prefab_text = prefab_cache.get(source_prefab)
+    if prefab_text is None:
+        absolute_prefab = root / source_prefab
+        if not absolute_prefab.exists():
+            prefab_text = ""
+        else:
+            try:
+                prefab_text = absolute_prefab.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                prefab_text = ""
+        prefab_cache[source_prefab] = prefab_text
+
+    prefab_has_hash = f"{serialized_field}: {packet_hash}" in prefab_text
+    if not scene_has_hash and not prefab_has_hash:
+        return False
+
+    if row.get("authoring_component", "") == "NarrativeDiscovery":
+        discovery_id = require_cell(row, "discovery_id", line_number)
+        if f"discoveryId: {discovery_id}" not in scene_text:
+            return False
+
+    return True
+
+
 def count_scene_placement_covered_rows(root: Path) -> int:
     path = root / "Docs" / "Lore" / "AppliedContent" / "binding_maps" / "RS001_RS010_scene_placement_plan.csv"
     if not path.exists():
@@ -1678,54 +2678,73 @@ def count_scene_placement_covered_rows(root: Path) -> int:
             fail(f"Scene placement plan header mismatch in {path}")
 
         for line_number, row in enumerate(reader, start=2):
-            scene_path = require_cell(row, "scene_path", line_number)
-            scene_text = scene_cache.get(scene_path)
-            if scene_text is None:
-                absolute_scene = root / scene_path
-                if not absolute_scene.exists():
-                    scene_cache[scene_path] = ""
-                    scene_text = ""
-                else:
-                    try:
-                        scene_text = absolute_scene.read_text(encoding="utf-8")
-                    except UnicodeDecodeError:
-                        scene_text = ""
-                    scene_cache[scene_path] = scene_text
-
-            object_name = require_cell(row, "object_name", line_number)
-            if object_name not in scene_text:
-                continue
-
-            packet_hash = parse_int(require_cell(row, "packet_hash_decimal", line_number), "packet_hash_decimal", line_number)
-            serialized_field = require_cell(row, "serialized_field", line_number)
-            scene_has_hash = f"{serialized_field}: {packet_hash}" in scene_text
-
-            source_prefab = require_cell(row, "source_prefab", line_number)
-            prefab_text = prefab_cache.get(source_prefab)
-            if prefab_text is None:
-                absolute_prefab = root / source_prefab
-                if not absolute_prefab.exists():
-                    prefab_cache[source_prefab] = ""
-                    prefab_text = ""
-                else:
-                    try:
-                        prefab_text = absolute_prefab.read_text(encoding="utf-8")
-                    except UnicodeDecodeError:
-                        prefab_text = ""
-                    prefab_cache[source_prefab] = prefab_text
-
-            prefab_has_hash = f"{serialized_field}: {packet_hash}" in prefab_text
-            if not scene_has_hash and not prefab_has_hash:
-                continue
-
-            if row.get("authoring_component", "") == "NarrativeDiscovery":
-                discovery_id = require_cell(row, "discovery_id", line_number)
-                if f"discoveryId: {discovery_id}" not in scene_text:
-                    continue
-
-            count += 1
+            if scene_placement_row_is_covered(root, row, line_number, scene_cache, prefab_cache):
+                count += 1
 
     return count
+
+
+def collect_uncovered_scene_placement_samples(
+    root: Path,
+    canonical_packet_ids: set[str] | None = None,
+    sample_limit: int = 8,
+) -> tuple[str, ...]:
+    path = root / "Docs" / "Lore" / "AppliedContent" / "binding_maps" / "RS001_RS010_scene_placement_plan.csv"
+    if not path.exists() or sample_limit <= 0:
+        return ()
+
+    scene_cache: dict[str, str] = {}
+    prefab_cache: dict[str, str] = {}
+    samples: list[str] = []
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if tuple(reader.fieldnames or ()) != SCENE_PLACEMENT_PLAN_HEADERS:
+            fail(f"Scene placement plan header mismatch in {path}")
+
+        for line_number, row in enumerate(reader, start=2):
+            packet_id = require_cell(row, "packet_id", line_number)
+            if canonical_packet_ids is not None and packet_id not in canonical_packet_ids:
+                continue
+            if scene_placement_row_is_covered(root, row, line_number, scene_cache, prefab_cache):
+                continue
+
+            scene_path = require_cell(row, "scene_path", line_number)
+            object_name = require_cell(row, "object_name", line_number)
+            samples.append(f"{packet_id}@{scene_path}/{object_name}")
+            if len(samples) >= sample_limit:
+                break
+
+    return tuple(samples)
+
+
+def validate_scene_placement_runtime_coverage(
+    root: Path,
+    scene_placement_plan_stats: ScenePlacementPlanStats,
+    scene_placement_serialized_rows: int,
+    scene_placement_covered_rows: int,
+    *,
+    canonical_packet_ids: set[str] | None = None,
+    strict_scene_placement: bool = False,
+) -> int:
+    uncovered_rows = max(scene_placement_plan_stats.rows - scene_placement_covered_rows, 0)
+    if strict_scene_placement and uncovered_rows:
+        samples = collect_uncovered_scene_placement_samples(root, canonical_packet_ids=canonical_packet_ids)
+        sample_text = "; sample_uncovered=" + ", ".join(samples) if samples else ""
+        fail(
+            "AppliedLore scene placement coverage incomplete: "
+            f"planned={scene_placement_plan_stats.rows} "
+            f"scene_serialized={scene_placement_serialized_rows} "
+            f"scene_or_prefab_covered={scene_placement_covered_rows} "
+            f"uncovered={uncovered_rows}. "
+            "Open Assets/_Project/Scenes/02_HECTON_WORLD.unity in Unity, run menu "
+            "'Hecton8/Lore/Apply Applied Lore Scene Placement Plan', save the scene, or run Unity batchmode "
+            "-executeMethod Hecton8.Editor.H8AppliedLoreBindingCatalogWindow.ApplyScenePlacementPlanFromCommandLine, "
+            "then rerun Tools/AppliedLoreRuntimeAudit.py --source-only --strict-scene-placement. "
+            "For row-level reasons, run Tools/AppliedLoreScenePlacementDeltaAudit.py --root . --max-rows 40 "
+            "(add --json for automation)"
+            f"{sample_text}"
+        )
+    return uncovered_rows
 
 
 def terminal_os_hash_index(index: int) -> int:
@@ -2156,9 +3175,12 @@ def collect_yaml_reference_array(block: str, field_name: str, scene_path: str) -
 
 def validate_evidence_graph(root: Path, rows: list[CsvPacketRow]) -> int:
     expected = {row.packet_id for row in rows}
+    staged_packet_ids = noncanonical_manifest_packet_ids(root)
     seen: set[str] = set()
     prerequisite_graph: dict[str, set[str]] = {packet_id: set() for packet_id in expected}
     for path in iter_applied_content_csv_sources(root, "graphs", "*_evidence_graph.csv"):
+        if evidence_graph_is_draft_authoring_source(root, path):
+            continue
         with path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             if tuple(reader.fieldnames or ()) != EVIDENCE_GRAPH_HEADERS:
@@ -2195,6 +3217,11 @@ def validate_evidence_graph(root: Path, rows: list[CsvPacketRow]) -> int:
                     for ref in parse_packet_refs(row.get(ref_field, "")):
                         if ref == packet_id:
                             fail(f"Evidence graph {path}:{line_number}: {packet_id} references itself in {ref_field}")
+                        if ref in staged_packet_ids and ref not in expected:
+                            fail(
+                                f"Evidence graph {path}:{line_number}: runtime-active {ref_field} "
+                                f"ref points at staged packet {ref!r}"
+                            )
                         if ref not in expected:
                             fail(f"Evidence graph {path}:{line_number}: unknown {ref_field} ref {ref!r}")
                         if ref_field == "prereq_packet_ids":
@@ -2351,18 +3378,23 @@ def load_navigation_cluster_graph(root: Path, expected_packet_ids: set[str]) -> 
 
     graph_rows: list[dict[str, str]] = []
     seen_packets: set[str] = set()
+    staged_packet_ids = noncanonical_manifest_packet_ids(root)
+    authoring_packet_ids = expected_packet_ids.union(staged_packet_ids)
+    raw_row_count = 0
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         if tuple(reader.fieldnames or ()) != EVIDENCE_GRAPH_HEADERS:
             fail(f"Navigation cluster graph header mismatch: {path}")
 
         for line_number, row in enumerate(reader, start=2):
+            raw_row_count += 1
             packet_id = require_cell(row, "packet_id", line_number)
             if packet_id in seen_packets:
                 fail(f"Navigation cluster graph line {line_number}: duplicate packet_id={packet_id}")
             seen_packets.add(packet_id)
-            if packet_id not in expected_packet_ids:
+            if packet_id not in authoring_packet_ids:
                 fail(f"Navigation cluster graph line {line_number}: unknown packet_id={packet_id}")
+            packet_is_runtime_active = packet_id in expected_packet_ids
             if require_cell(row, "arc_id", line_number) != "site_wiki_navigation_clusters":
                 fail(f"Navigation cluster graph line {line_number}: unexpected arc_id")
             if require_cell(row, "primary_surface", line_number) != "external_site":
@@ -2383,13 +3415,20 @@ def load_navigation_cluster_graph(root: Path, expected_packet_ids: set[str]) -> 
 
             for ref_field in ("prereq_packet_ids", "next_packet_ids"):
                 for ref in parse_packet_refs(row.get(ref_field, "")):
-                    if ref not in expected_packet_ids:
+                    allowed_refs = expected_packet_ids if packet_is_runtime_active else authoring_packet_ids
+                    if packet_is_runtime_active and ref in staged_packet_ids and ref not in expected_packet_ids:
+                        fail(
+                            f"Navigation cluster graph line {line_number}: runtime-active {ref_field} "
+                            f"ref points at staged packet {ref!r}"
+                        )
+                    if ref not in allowed_refs:
                         fail(f"Navigation cluster graph line {line_number}: unknown {ref_field} ref {ref!r}")
 
-            graph_rows.append({key: row.get(key, "") for key in EVIDENCE_GRAPH_HEADERS})
+            if packet_is_runtime_active:
+                graph_rows.append({key: row.get(key, "") for key in EVIDENCE_GRAPH_HEADERS})
 
-    if len(graph_rows) != 5:
-        fail(f"Navigation cluster graph row count mismatch: expected=5 actual={len(graph_rows)}")
+    if raw_row_count != 5:
+        fail(f"Navigation cluster graph row count mismatch: expected=5 actual={raw_row_count}")
     return graph_rows
 
 
@@ -2505,15 +3544,18 @@ def validate_route_cards(root: Path, rows: list[CsvPacketRow]) -> int:
                 fail(f"Route cards header mismatch: {path}")
 
             for line_number, row in enumerate(reader, start=2):
+                packet_refs = parse_packet_refs(require_cell(row, "packet_ids", line_number))
+                if not packet_refs:
+                    fail(f"Route cards {path}:{line_number}: packet_ids is empty")
+                if not any(packet_id in expected for packet_id in packet_refs):
+                    continue
+
                 route_card_id = require_cell(row, "route_card_id", line_number)
                 if route_card_id in seen_cards:
                     fail(f"Route cards duplicate route_card_id at {path}:{line_number}: {route_card_id}")
                 seen_cards.add(route_card_id)
 
                 require_cell(row, "phase_id", line_number)
-                packet_refs = parse_packet_refs(require_cell(row, "packet_ids", line_number))
-                if not packet_refs:
-                    fail(f"Route cards {path}:{line_number}: packet_ids is empty")
                 for packet_id in packet_refs:
                     if packet_id not in expected:
                         fail(f"Route cards {path}:{line_number}: unknown packet_id {packet_id!r}")
@@ -2573,6 +3615,9 @@ def validate_route_card_source_export(root: Path, rows: list[CsvPacketRow]) -> i
             if tuple(reader.fieldnames or ()) != ROUTE_CARD_HEADERS:
                 fail(f"Route cards header mismatch: {source_path}")
             for line_number, row in enumerate(reader, start=2):
+                packet_ids = parse_packet_refs(row.get("packet_ids", ""))
+                if not any(packet_id in expected_packet_ids for packet_id in packet_ids):
+                    continue
                 route_card_id = require_cell(row, "route_card_id", line_number)
                 if route_card_id in expected_by_route:
                     fail(f"Route cards duplicate route_card_id at {source_path}:{line_number}: {route_card_id}")
@@ -2698,7 +3743,11 @@ def validate_applied_route_records(root: Path, data: bytes, routes: SectionEntry
     if len(expected_by_hash) != len(expected_records):
         fail("Route-card source export contains duplicate route hashes.")
     if routes.count != len(expected_records):
-        fail(f"AppliedLoreRoutes count mismatch: blob={routes.count} source={len(expected_records)}")
+        fail(
+            "AppliedLoreRoutes count mismatch: "
+            f"blob={routes.count} source={len(expected_records)} "
+            f"artifact={DATA_MONOLITH_OUTPUT_RELATIVE_PATH}; {DATA_MONOLITH_STALE_BAKE_HINT}"
+        )
 
     records = parse_applied_route_records(data, routes)
     previous_hash: int | None = None
@@ -2756,16 +3805,34 @@ def validate_applied_route_records(root: Path, data: bytes, routes: SectionEntry
     return len(records)
 
 
-def run(root: Path, *, source_only: bool = False) -> str:
+def run(
+    root: Path,
+    *,
+    source_only: bool = False,
+    strict_scene_placement: bool = False,
+    strict_native_localization: bool = False,
+    validate_freshness: bool = True,
+) -> str:
     csv_path = root / "Assets" / "_SourceData" / "DataMonolith" / "Narrative" / "applied_lore_packets.csv"
     constants_path = root / "Assets" / "_Project" / "Scripts" / "Core" / "Generated" / "H8AppliedLoreHashes.cs"
     blob_path = root / "Assets" / "StreamingAssets" / "Hecton8" / "DataMonolith" / "static_data.h8bin"
 
+    if validate_freshness:
+        validate_import_outputs_current(root)
+        validate_publication_outputs_current(root)
     rows = load_csv(csv_path)
+    packets = len({row.packet_id for row in rows})
+    locales = len({row.locale for row in rows})
     marker_csv_fields, marker_pages = validate_no_visible_localization_markers(root, rows)
+    draft_localization_rows = validate_native_localization_gate(
+        rows,
+        strict_native_localization=strict_native_localization,
+    )
     constants = parse_generated_constants(constants_path)
     validate_generated_hashes(rows, constants)
     validate_source_route(root)
+    pda_unlock_capacity = validate_pda_runtime_capacity(root, packets)
+    pda_unlock_slots = pda_unlock_free_slots(pda_unlock_capacity, packets)
     binding_map_rows = validate_binding_map(root, rows)
     target_backlog_stats = validate_scene_binding_targets(root, rows)
     manual_policy_stats = validate_manual_binding_policy(root, rows)
@@ -2779,6 +3846,14 @@ def run(root: Path, *, source_only: bool = False) -> str:
     serialized_bindings = count_serialized_authoring_bindings(root)
     scene_placement_serialized_rows = count_serialized_scene_placement_rows(root)
     scene_placement_covered_rows = count_scene_placement_covered_rows(root)
+    scene_placement_uncovered_rows = validate_scene_placement_runtime_coverage(
+        root,
+        scene_placement_plan_stats,
+        scene_placement_serialized_rows,
+        scene_placement_covered_rows,
+        canonical_packet_ids={row.packet_id for row in rows},
+        strict_scene_placement=strict_scene_placement,
+    )
     scene_terminal_preview_rows = count_scene_terminal_preview_rows(root)
     scene_terminal_os_runtime_stats = count_scene_terminal_os_runtime_rows(
         root,
@@ -2786,14 +3861,15 @@ def run(root: Path, *, source_only: bool = False) -> str:
     )
     scene_world_core_stats = validate_world_scene_core(root)
 
-    packets = len({row.packet_id for row in rows})
-    locales = len({row.locale for row in rows})
     if source_only:
         return (
             "AppliedLore source audit OK: "
             f"packets={packets} locales={locales} rows={len(rows)} "
+            f"pda_unlock_capacity={pda_unlock_capacity} "
+            f"pda_unlock_free_slots={pda_unlock_slots} "
             f"visible_marker_csv_fields={marker_csv_fields} "
             f"visible_marker_pages={marker_pages} "
+            f"draft_localization_rows={draft_localization_rows} "
             "source_route=ok "
             f"binding_map_rows={binding_map_rows} "
             f"target_backlog_rows={target_backlog_stats.rows} "
@@ -2811,6 +3887,7 @@ def run(root: Path, *, source_only: bool = False) -> str:
             f"placement_discovery_rows={scene_placement_plan_stats.discovery_rows} "
             f"scene_placement_serialized_rows={scene_placement_serialized_rows} "
             f"scene_placement_covered_rows={scene_placement_covered_rows} "
+            f"scene_placement_uncovered_rows={scene_placement_uncovered_rows} "
             f"scene_terminal_preview_rows={scene_terminal_preview_rows} "
             f"scene_terminal_os_runtime_rows={scene_terminal_os_runtime_stats.rows} "
             f"scene_terminal_os_runtime_renderer_slots={scene_terminal_os_runtime_stats.renderer_slots} "
@@ -2843,8 +3920,11 @@ def run(root: Path, *, source_only: bool = False) -> str:
     return (
         "AppliedLore audit OK: "
         f"packets={packets} locales={locales} rows={len(rows)} "
+        f"pda_unlock_capacity={pda_unlock_capacity} "
+        f"pda_unlock_free_slots={pda_unlock_slots} "
         f"visible_marker_csv_fields={marker_csv_fields} "
         f"visible_marker_pages={marker_pages} "
+        f"draft_localization_rows={draft_localization_rows} "
         f"blob_bytes={len(blob)} localization_bytes={localization.count} "
         f"applied_records={applied.count} applied_routes={applied_routes} source_route=ok "
         f"binding_map_rows={binding_map_rows} "
@@ -2863,6 +3943,7 @@ def run(root: Path, *, source_only: bool = False) -> str:
         f"placement_discovery_rows={scene_placement_plan_stats.discovery_rows} "
         f"scene_placement_serialized_rows={scene_placement_serialized_rows} "
         f"scene_placement_covered_rows={scene_placement_covered_rows} "
+        f"scene_placement_uncovered_rows={scene_placement_uncovered_rows} "
         f"scene_terminal_preview_rows={scene_terminal_preview_rows} "
         f"scene_terminal_os_runtime_rows={scene_terminal_os_runtime_stats.rows} "
         f"scene_terminal_os_runtime_renderer_slots={scene_terminal_os_runtime_stats.renderer_slots} "
@@ -2890,7 +3971,97 @@ def run(root: Path, *, source_only: bool = False) -> str:
     )
 
 
+def collect_production_gate_failures(root: Path) -> tuple[ProductionGateFailure, ...]:
+    checks = (
+        (
+            "native localization",
+            {"source_only": True, "strict_native_localization": True},
+        ),
+        (
+            "scene placement",
+            {"source_only": True, "strict_scene_placement": True},
+        ),
+        (
+            "baked runtime artifact",
+            {"source_only": False},
+        ),
+    )
+    failures: list[ProductionGateFailure] = []
+    try:
+        validate_import_outputs_current(root)
+    except AuditFailure as exc:
+        failures.append(ProductionGateFailure("source import freshness", str(exc)))
+
+    try:
+        validate_publication_outputs_current(root)
+    except AuditFailure as exc:
+        failures.append(ProductionGateFailure("publication freshness", str(exc)))
+
+    for label, kwargs in checks:
+        try:
+            run(root, validate_freshness=False, **kwargs)
+        except AuditFailure as exc:
+            failures.append(ProductionGateFailure(label, str(exc)))
+
+    return tuple(failures)
+
+
+PRODUCTION_GATE_DIAGNOSTIC_COMMANDS = {
+    "source import freshness": (
+        "python -B Tools/AppliedLoreRuntimeAudit.py --source-only --json",
+    ),
+    "publication freshness": (
+        "python -B Tools/AppliedLoreRuntimeAudit.py --source-only --json",
+    ),
+    "native localization": (
+        "python -B Tools/AppliedLoreLocalizationDeltaAudit.py --root . --max-rows 40 --json",
+    ),
+    "scene placement": (
+        "python -B Tools/AppliedLoreScenePlacementDeltaAudit.py --root . --max-rows 40 --json",
+    ),
+    "baked runtime artifact": (
+        "python -B Tools/AppliedLoreBlobDeltaAudit.py --root . --max-packets 40 --json",
+    ),
+}
+
+
+def production_gate_diagnostic_commands(gate: str) -> tuple[str, ...]:
+    return PRODUCTION_GATE_DIAGNOSTIC_COMMANDS.get(gate, ())
+
+
+def production_gate_json_payload(root: Path) -> dict[str, object]:
+    failures = collect_production_gate_failures(root)
+    return {
+        "clean": len(failures) == 0,
+        "failure_count": len(failures),
+        "failures": [
+            {
+                "gate": failure.gate,
+                "message": failure.message,
+                "diagnostic_commands": list(production_gate_diagnostic_commands(failure.gate)),
+            }
+            for failure in failures
+        ],
+    }
+
+
+def run_production_gate(root: Path) -> str:
+    failures = collect_production_gate_failures(root)
+
+    if failures:
+        fail(
+            "AppliedLore production gate blocked:\n"
+            + "\n".join(f"- {failure.gate}: {failure.message}" for failure in failures)
+        )
+
+    return (
+        "AppliedLore production gate OK: source/export/pages, native localization, "
+        "scene placement, and static_data.h8bin runtime artifact are synchronized"
+    )
+
+
 def main() -> int:
+    configure_console_encoding()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument(
@@ -2898,10 +4069,62 @@ def main() -> int:
         action="store_true",
         help="Validate AppliedLore source/export/page coverage without requiring static_data.h8bin to be freshly baked.",
     )
+    parser.add_argument(
+        "--strict-scene-placement",
+        action="store_true",
+        help="Fail when the AppliedLore scene placement plan is not serialized into current scenes/prefabs.",
+    )
+    parser.add_argument(
+        "--strict-native-localization",
+        action="store_true",
+        help="Fail when any generated AppliedLore row still carries RowFlagDraftLocalization.",
+    )
+    parser.add_argument(
+        "--production-gate",
+        action="store_true",
+        help=(
+            "Run the release-facing AppliedLore gate: strict native localization, strict scene "
+            "placement, and full static_data.h8bin synchronization."
+        ),
+    )
+    parser.add_argument("--json", action="store_true", help="Write a machine-readable result payload to stdout.")
     args = parser.parse_args()
     root = Path(args.root).resolve()
+    if args.json:
+        try:
+            if args.production_gate:
+                if args.source_only:
+                    fail("--production-gate cannot be combined with --source-only")
+                payload = production_gate_json_payload(root)
+                print(json.dumps(payload, ensure_ascii=False, indent=2))
+                return 0 if payload["clean"] else 1
+
+            message = run(
+                root,
+                source_only=args.source_only,
+                strict_scene_placement=args.strict_scene_placement,
+                strict_native_localization=args.strict_native_localization,
+            )
+            print(json.dumps({"clean": True, "message": message}, ensure_ascii=False, indent=2))
+            return 0
+        except AuditFailure as exc:
+            print(json.dumps({"clean": False, "message": str(exc)}, ensure_ascii=False, indent=2))
+            return 1
+
     try:
-        print(run(root, source_only=args.source_only))
+        if args.production_gate:
+            if args.source_only:
+                fail("--production-gate cannot be combined with --source-only")
+            print(run_production_gate(root))
+        else:
+            print(
+                run(
+                    root,
+                    source_only=args.source_only,
+                    strict_scene_placement=args.strict_scene_placement,
+                    strict_native_localization=args.strict_native_localization,
+                )
+            )
         return 0
     except AuditFailure as exc:
         print(f"AppliedLore audit FAILED: {exc}")

@@ -8,33 +8,33 @@ biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pump Room Handshake"
+spoiler_tier: 1
+title: "Рукостискання клапана насосної"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pump Room Handshake
+# Рукостискання клапана насосної
 
-Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive.
+Насосні HECTON-8 не є простими зливами. Їхні локальні клапани, маховики й втомлені зворотні клапани змушують питати, куди пішла вода після сухої підлоги. Робочий насос може відкрити двері, розбудити коридор, дати шум у сонар і перетворити шлях назад на наступну проблему.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+Локальний трюмний насос прийняв ввід із маховика. Впускний кошик забруднений піною капсули; вихідний імпульс навантажує зворотний коридор B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 / КОНТРОЛЬ ЗУМПФА / ЛОКАЛЬНЕ ПОГОДЖЕННЯ: маховик прийнято. Дистанційну команду відхилено. Впуск відновлено на низькій витраті. Тиск виходу зростає в RETURN CORRIDOR B; перезапуск тільки після перевірки нижнього люка.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+Клапан узяв. Вихід стукає. Не називай це безпечним.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Суха насосна може втопити шлях назад. Послухай удар у вихідній лінії, перш ніж знімати клапан.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/uk_UA. -->

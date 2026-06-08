@@ -373,20 +373,39 @@ namespace Hecton8.Editor.OfflineGeometry
             return array;
         }
 
-        private static void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
             }
             finally
             {
-                array.Dispose();
                 array = default;
             }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
         private static void SkipBlank(NativeArray<byte> bytes, int length, ref int cursor)

@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Name Lock Policy"
+title: "יומן תפקידי הירחים של Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Name Lock Policy
+# יומן תפקידי הירחים של Aegir
 
-HE LOC HOLD: Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed.
+יומן תפקידי הירחים של Aegir מתעד מדוע שמות ציבוריים יכולים לנדוד בזמן שעבודת המסלול נשארת קבועה: הסתרת ממסרים, אילוץ גאות, שמועת הסגר ותנועת חלון גבוה קובעים מי יכול לזוז.
 
 ## Scanner
 
-HE LOC HOLD: Moon labels can change; orbital roles cannot.
+השמות הציבוריים נודדים בין מפות; המסלולים שומרים על עבודתם.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.
+יומן ATLAS: תוויות ציבוריות משתנות לפי מבטח ומפת נתיב. התפקידים קבועים: גזירת קרינה, מסכת ממסר, אילוץ גאות, פיזור קרח, ניתוב ציבורי, שמועת הסגר, salvage תעשייתי, תנועת חלון גבוה, תביעה עמוקה וכלכלת משואות מתות.
 
 ## Audio
 
-HE LOC HOLD: A name can be repainted. An orbit keeps the bill.
+אפשר לשנות שם של ירח. המסלול עדיין מגיש חשבון.
 
 ## Field Note
 
-HE LOC HOLD: Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.
+Skarn גוזר חלקיקים. Vela מסתיר ממסרים. Claw זורק קרח. Lumen מדפיס נתיבים. Thorne נושא שמועות הסגר. Anvil מזין salvage. Kestrel מחזיק חלונות גבוהים. HECTON שומר את התביעה העמוקה. Mute מוכר משואות מתות.
 
 <!-- External Site; generated from P181_MOON_NAME_LOCK_POLICY/he_IL. -->

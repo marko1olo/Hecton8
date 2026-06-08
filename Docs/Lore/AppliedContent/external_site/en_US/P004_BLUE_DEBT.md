@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Blue Debt
 
-Blue debt is the resource layer that makes HECTON-8 more than a lost colony. It is valuable, unstable, and tied directly to why Deep Reach wanted the moon buried and recovered at the same time.
-
-## Scanner
-
-Pressure-kept Xenon-Omega residue. Stable only inside hostile conditions. Do not vent near warm cabin air.
-
-## Terminal
-
-XO CONTINUITY SUBSTRATE. Do not decompress. Do not expose to unfiltered habitat atmosphere.
-
-## Audio
-
-Container is singing on sonar. Low, regular. That is not a creature. That is worse.
-
-## Field Note
-
-Blue debt pays because it bites twice. Once when you carry it. Again when somebody learns you have it.
+Blue Debt is what makes salvage on HECTON-8 feel profitable before it feels safe. The material is not a treasure crystal waiting in the reef. It is residue from industrial pressure systems: Xenon-Omega substrates, failed containment media, computational slag, and sealed scrap that stayed stable because the ocean never stopped pressing on it. Bring it up wrong and the sample changes state. Sell it wrong and the paper trail changes you. That double risk is the point of the name. Blue debt pays a survivor quickly, but every container carries future cost: decontamination, carrier liens, Black Keel custody rules, Deep Reach claim language, and the chance that the sample is also evidence. In the larger lore, the resource is one of the first clues that HECTON-8 was not merely abandoned. It was left with valuable systems still running under pressure, where only a desperate operator would be willing to touch them.
 
 <!-- External Site; generated from P004_BLUE_DEBT/en_US. -->

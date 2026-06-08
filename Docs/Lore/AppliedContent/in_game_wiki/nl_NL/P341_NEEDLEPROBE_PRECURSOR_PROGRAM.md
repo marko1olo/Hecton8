@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Needleprobe Precursor Program"
+title: "Needleprobe-voorloperprogramma"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Needleprobe Precursor Program
+# Needleprobe-voorloperprogramma
 
-NL LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Needleprobes brachten de eerste menselijke claim naar Aegir. Smalle, afgeschermde surveypayloads gingen voor crews uit om zwaartekracht, straling, oceaanspectra, maanbanen en relaislijnen te lezen. Hun vertraagde pakketten maakten HECTON-8 leesbaar voor investeerders voordat het leefbaar werd voor werkers.
 
 ## Scanner
 
-NL LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+Needleprobe-archief: Aegir was een ledgerdoel lang voordat het werkplek werd. Machineogen bereikten de manen eerst.
 
 ## Terminal
 
-NL LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+RAN-ARCHIEF: probeketen leverde parallax, straling, oceaansignaturen, relaisgeometrie en pellet-lane-vertrouwen. Crewclassificatie vastgehouden tot het derde risicomodel stabiel was.
 
 ## Audio
 
-NL LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+Het eerste menselijke ding in Aegir was geen persoon. Het was een machine die vroeg of mensen hier winstgevend zouden zijn.
 
 ## Field Note
 
-NL LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Probearchieven zijn routebewijs. Oude telemetrie kan ouder zijn dan de kolonie en toch bepalen wie het water bezit.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/nl_NL. -->

@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS196_FIRST_GALLEY_PREP_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1245_HEAT_PLATE_BLUE_RING",
+    "P1246_MEAL_TRAY_GREASE_MOON",
+    "P1247_WATER_TAP_LIME_TOOTH",
+    "P1248_RATION_SLEEVE_ADHESIVE_STRIP",
+    "P1249_CUP_RAIL_STEAM_SHADOW"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1245_HEAT_PLATE_BLUE_RING.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1246_MEAL_TRAY_GREASE_MOON.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1247_WATER_TAP_LIME_TOOTH.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1248_RATION_SLEEVE_ADHESIVE_STRIP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1249_CUP_RAIL_STEAM_SHADOW.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

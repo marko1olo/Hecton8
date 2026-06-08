@@ -7,34 +7,34 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "人员轮换运输"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# 人员轮换运输
 
-CN LOC HOLD: Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
+人员轮换让HECTON-8的废弃感可信。工人、专家和替补船员移动得比索赔语言更慢。一个人可以按一份合同离开Sol，在另一份合同下醒来，然后发现自己训练应对的紧急情况已经变成证据。
 
 ## Scanner
 
-CN LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
+人类不会通勤到Aegir。他们花多年时间当有意见的货物。
 
 ## Terminal
 
-CN LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+船员轮换：人类运输使用慢窗口、屏蔽居住段、低代谢周期和分段轮换。失踪工人会变成延迟custody问题。
 
 ## Audio
 
-CN LOC HOLD: By the time home asks where you are, the room has already flooded.
+等家乡问你在哪里时，房间早已进水。
 
 ## Field Note
 
-CN LOC HOLD: A frontier worker sells time before they sell labor.
+边疆工人先出售时间，再出售劳动。
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/zh_CN. -->

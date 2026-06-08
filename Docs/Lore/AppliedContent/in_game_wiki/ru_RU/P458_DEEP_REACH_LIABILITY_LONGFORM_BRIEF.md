@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "RU LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: ответственность под настоящей водой"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: ответственность под настоящей водой
 
-RU LOC HOLD: Deep Reach guilt is strongest where clean reports meet broken hardware. The flood was real; the avoidable part is recorded in margins, clocks, doors and custody labels.
+Deep Reach виновна без фальшивого океана. Приливы, криосферный стресс, штормы и химия давления сделали катастрофу физической; corporate procedure выбрала плохие margin и зачистила бумаги.
 
 ## Scanner
 
-RU LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+Публичная справка доказательств. Физика Great Tide реальна; вина Deep Reach видна в принятых margin, недостроенной эвакуации, Atlas continuity weighting, карантинной задержке и конверсии убытков.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+УЗЕЛ ПУБЛИЧНОЙ ОТВЕТСТВЕННОСТИ // DEEP REACH. Цепь: Varnek margin acceptance, Arendt Atlas waiver, Haldane quarantine hold, Ibarra loss ledger, Sato-Ren return action.
 
 ## Audio
 
-RU LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Восстановленное аудио counsel: "Не называйте это задержкой. Назовите review. Вода даст интервал."
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+Заметка мародера: убивала физика. Procedure решала, кого считать recoverable.
 
 <!-- In-Game Wiki; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/ru_RU. -->

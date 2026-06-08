@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Beam Sail and Pellet Lane"
+title: "Żagiel wiązkowy i tor pelletów"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Beam Sail and Pellet Lane
+# Żagiel wiązkowy i tor pelletów
 
-PL LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+Żagle wiązkowe, tory pelletów, etapy chwytu fuzyjnego i magsaile uczyniły fracht nearlight praktycznym bez FTL. Statek wychodził z portu ze zbiornikami, lodem osłonowym, radiatorami i prawem kontroli, a resztę silnika pożyczał od trasy: moc wiązki za sobą, masę pelletów w swoim torze i odbiorcę gotowego posiadać hamowanie. Dlatego Aegir może być osiągalny i nadal wyglądać na porzucony. Korytarz przenosi zaplanowany fracht; nie da się go wezwać jak liny ratunkowej.
 
 ## Scanner
 
-PL LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+Zapis toru tranzytowego: żagiel nie pchał się sam. Wynajmował moc z macierzy za statkiem i masę ze strumieni pelletów przed nim.
 
 ## Terminal
 
-PL LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+STATUS TORU: macierz wiązki opłacona. Strumień pelletów 0,8 ppm poza kontraktem. Chwytowy burn wciąż możliwy. Brak właściciela hamowania zmienia szybki fracht w szybki złom.
 
 ## Audio
 
-PL LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+Statek jest szybki, bo połowa silnika jest poza statkiem.
 
 ## Field Note
 
-PL LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Jeśli zapis chwali tylko wiązkę, czytaj dalej, aż poda właściciela chwytu.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/pl_PL. -->

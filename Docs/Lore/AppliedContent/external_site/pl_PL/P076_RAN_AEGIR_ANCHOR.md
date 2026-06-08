@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ran / Aegir Anchor"
+title: "Kotwica Ran / Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ran / Aegir Anchor
+# Kotwica Ran / Aegir
 
-PL LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below.
+Kotwica Ran / Aegir ustala smak wizualny HECTON-8: twarde SF ze słabszym światłem u góry, wrogim ciśnieniem i długiem na dole.
 
 ## Scanner
 
-PL LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
+Tablica gwiazdy klasy K. Ran pali się normalnie. Aegir jest ciemniejszy niż Sol, ale mrok tutaj pochodzi z głębokości, pogody i długu.
 
 ## Terminal
 
-PL LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR // Światło pomarańczowego karła wspiera prace powierzchniowe. Rozpraszanie burzy, geometria zaćmień i mętność oceanu spychają czytelność zejścia poniżej marginesu bezpieczeństwa.
 
 ## Audio
 
-PL LOC HOLD: The star is not absent. It just cannot follow you down.
+Gwiazda jest obecna. Po prostu nie może zejść za tobą.
 
 ## Field Note
 
-PL LOC HOLD: A real star is enough. The ocean does the rest.
+Prawdziwa gwiazda wystarczy. Resztę robi ocean.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/pl_PL. -->

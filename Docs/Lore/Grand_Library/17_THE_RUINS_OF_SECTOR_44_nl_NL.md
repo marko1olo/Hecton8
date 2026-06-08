@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DE RUÏNES VAN SECTOR 44
 
 > **Bron:** Landmeter Drone Cartografie Log 99-Delta (Gerecupereerd).

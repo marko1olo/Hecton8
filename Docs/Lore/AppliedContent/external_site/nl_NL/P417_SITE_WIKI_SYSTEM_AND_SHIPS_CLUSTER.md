@@ -9,24 +9,24 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "NL LOC HOLD: Aegir Route and Ships"
+title: "Aegir-route en Schepen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Aegir Route and Ships
+# Aegir-route en Schepen
 
-NL LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegir is dichtbij genoeg om te exploiteren en ver genoeg om te verlaten. Geen sneller-dan-lichtmotor kruist de kloof, en geen ansible draagt bevelen voor de fysica uit. Elk bericht, contract en reddingsclaim beweegt door vertraging: sondepakketten, relaisbewaring, bundelschema's, pellet-fusievracht, transfervensters en weer dat niets geeft om menselijke urgentie.
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+Het eerste Aegir-verkeer was niet menselijk. Naaldsondes brachten het warme dwergsysteem in kaart en stuurden genoeg mineraal-, stralings- en baangegevens terug om zwaardere investeringen te rechtvaardigen. Daarna kwamen bundelzeilpakketten, tragere vracht en seed-ship-massa die moest remmen binnen een infrastructuurweb dat jaren was gepland voordat een arbeider de oceaan zag. Tegen de tijd dat Deep Reach HECTON-8 bereikte, behoorde de route al toe aan instituties: carriers, verzekeraars, domeinkantoren, terugwinningspools en bedrijven die goed zijn in eigendom moeilijk benoembaar maken.
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+Black Keel zit in die dubbelzinnigheid. Het is geen marineschip en geen reddingsdienst. Het is een claimplatform met dokmassa, tenders, schuldboeken en salvage-bevoegdheid. De contractketen laat Deep Reach druk zetten zonder te lijken op de directe hand op het luik. Het schip kan een persoon, monster of verzegelde lading alleen ophalen wanneer massa, weer, baan, hittemarge en bewaring samenvallen.
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+De beschadigde bathydrop is daarom een serieuze grens. Een landingsinslag kan de schaal intact genoeg laten om te overleven en tegelijk opstijgtoleranties ruïneren: sealcompressie, akoestische terugkeer, geleidingstabellen, energiebuffer en quarantaine-handshake. De capsule wordt tegelijk schuilplaats en bewijs: ze certificeert aankomst, maar geen ontsnapping.
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+In het Aegir-systeem is afstand geen achtergrond. Het is de reden waarom hulp eerst als papierwerk arriveert en pas later als hardware.
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/nl_NL. -->

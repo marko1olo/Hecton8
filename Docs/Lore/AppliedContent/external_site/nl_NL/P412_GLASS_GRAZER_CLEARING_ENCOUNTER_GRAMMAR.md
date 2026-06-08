@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "Ontmoetingsgrammatica: glasgrazer-open plek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# Ontmoetingsgrammatica: glasgrazer-open plek
 
-NL LOC HOLD: Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.
+Glasgrazer-open plekken zijn HECTON-8s les in voorwaardelijke veiligheid. Heldere nuttige ecologie helpt een route lezen, maar dezelfde route wordt verdacht zodra de dieren haar niet meer gebruiken.
 
 ## Scanner
 
-NL LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+Glasgrazer-open plek. Verse schraapbanen, zuurstoffilm en stabiele schaaltikken suggereren lage nabije druk. Leeg voedselveld betekent waarschuwingstoestand.
 
 ## Terminal
 
-NL LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+ONTMOETINGSGRAMMATICA / GLASGRAZER-OPEN PLEK / rol: ondiep contrast, leesbare halfveilige baan, test op afwezigheid van roofdieren / veilige lezing: actief eten, gepaarde terugtikken, geschraapte mineraalrand, zichtbare uitgangslijn / afwijzen: grazers als veiligheidsgarantie, stille open plek, achtergelaten voedsel, geblokkeerde return-line / routenotitie: de corridor is nuttig omdat dieren hem nu gebruiken, niet omdat de oceaan iets beloofde.
 
 ## Audio
 
-NL LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+De grazers maken heldere corridors. Ze beslissen niet hoe lang de corridor van hen blijft.
 
 ## Field Note
 
-NL LOC HOLD: Use for safe-zone literacy and shallow contrast.
+Actief eten: gebruik de baan. Gepaarde tikken: houden. Voedsel blijft liggen: vertrouw de open plek niet meer.
 
 <!-- External Site; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/nl_NL. -->

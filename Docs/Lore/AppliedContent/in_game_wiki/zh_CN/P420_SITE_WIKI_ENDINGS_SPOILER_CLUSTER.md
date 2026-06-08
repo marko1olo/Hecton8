@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 2
-title: "ZH LOC HOLD: Endings and Payload Custody"
+title: "结局与payload custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Endings and Payload Custody
+# 结局与payload custody
 
-ZH LOC HOLD: Ending dossier hub: custody, evidence, Atlas' future and the price of leaving.
+结局dossier枢纽：custody、evidence、Atlas的未来以及离开的代价。
 
 ## Scanner
 
-ZH LOC HOLD: Spoiler hub: payload receivers, false exits, custody, public truth, Atlas continuity and after-action records.
+Spoiler hub：payload receivers、false exits、custody、公共真相、Atlas continuity和after-action records。
 
 ## Terminal
 
-ZH LOC HOLD: SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver and proof ownership.
+SITE NAV：final payload pages隐藏在spoiler gates之后。按receiver和proof ownership组织。
 
 ## Audio
 
-ZH LOC HOLD: The ending is who owns the proof afterward.
+结局是上升之后谁拥有证据。
 
 ## Field Note
 
-ZH LOC HOLD: Navigation cluster record: endings stay spoiler-gated and organized by receiver and custody consequence, not moral labels.
+结局保持spoiler-gated，并按receiver与custody consequence组织，而非道德标签。
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/zh_CN. -->

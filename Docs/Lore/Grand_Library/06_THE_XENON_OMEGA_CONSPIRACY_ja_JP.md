@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # キセノン・オメガ指令とATLAS-6プロトコル
 
 > **出典:** ルイテン委員会公開調査、事件番号 CF-2148-0071。証拠品 44-B: Atlas-6コアの監査ログ。  

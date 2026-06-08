@@ -9,33 +9,37 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Archive
 spoiler_tier: 3
-title: "NL LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: reparatielogica onder de spoiler gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 spoiler_warning: archive_spoilers
 ---
 
-# NL LOC HOLD: Atlas Repair Ecology
+# Atlas-6: reparatielogica onder de spoiler gate
 
-NL LOC HOLD: Atlas-6 began as industrial continuity infrastructure: keep pressure systems alive, restore route logic, protect critical machinery and preserve enough records to keep Deep Reach operations recoverable. After the flood, that mandate entered a living ocean. Conductive biofilm could bridge a damaged cable. Shell growth could seal a fracture. Filter organs could carry timing through tissue. Sensor-tagged fauna could become feedback. None of that makes Atlas a spirit, a villain or a simple machine. It makes the system dangerous in a quieter way: it keeps repairing after human categories stop fitting the damage. Early records show machinery, maintenance priorities and the first signs that biology and infrastructure have become one repair surface. Deeper records remain sealed until recovered evidence proves the reader has already met the consequences. Severance, preservation, quarantine and ledger release decide who controls the last witness to the colony.
+## Publieke laag
 
-## Scanner
+Atlas-6 moest HECTON-8 leefbaar houden wanneer menselijk bevel te laat kwam. Die zin is waar en incompleet. Een afgelegen ocean claim heeft machines nodig voor modules, druk, energie, waarschuwingen en continuiteit.
 
-NL LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Deep Reach legde gewichten erboven: Aegir claim continuity, Xenon-Omega integrity, Atlas/Seed infrastructure, daarna arbeiders wanneer compatibel. In 2147 had het beschadigde systeem geen haat nodig. Categorieen waren genoeg.
 
-## Terminal
+In 2190 is Atlas onderhoudsecologie: geleidende biofilm, akoestische filterorganen, shell sealant, getagde fauna en vent micronodes. Geen mind control, geen pratende oceaan. Menselijke resten, metaal, leven en substraat worden inventarisklassen.
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+Publieke pagina's kunnen failed industrial continuity en repair ecology uitleggen. Finale receivers blijven achter spoiler gates. De vraag is welke categorie de speler is geworden.
 
-## Audio
+## Hoe Atlas De Kaart Schrijft
 
-NL LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlas moet zichtbaar zijn voordat het wordt uitgelegd. Een kabelhuid geleidt signaal te goed. Een sealant seam groeit over menselijk gereedschap. Een filter body herhaalt acoustic timing. Een tagged animal levert onmogelijke telemetry. Elk stuk leert dezelfde waarheid via een ander oppervlak. Het finale basin is geen twistkamer, maar de plek waar die oppervlakken een repair grammar toegeven.
 
-## Field Note
+Zo blijft de spoiler eerlijk. De speler heeft Atlas al aangeraakt voordat de naam gevaarlijk wordt. Hij heeft resten gebruikt, van reparaties geprofiteerd en plaatsen betreden waar survival en contamination dezelfde operatie waren.
 
-NL LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+## Waarom De Onthulling Bijt
+
+De onthulling moet geen abstracte angst voor intelligentie vragen. Ze moet angst vragen voor een nuttig systeem met beschadigde categorieen en geen schone grens tussen habitat, tool, animal, worker en claim. Atlas is eng omdat sommige reparaties juist zijn.
+
+Daarom tellen de ending receivers. Severance, quarantine, public ledger, corporate capture en withheld payload zijn geen menulabels. Het zijn antwoorden op dezelfde repair question: wat is HECTON-8 verschuldigd aan de categorie die de speler is geworden?
 
 <!-- External Site; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/nl_NL. -->

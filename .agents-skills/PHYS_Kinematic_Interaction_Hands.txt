@@ -1,4 +1,3 @@
-```markdown
 # PHYS_Kinematic_Interaction_Hands.md
 
 ## 2026-05-11 PHYSICS OWNERSHIP OVERRIDE

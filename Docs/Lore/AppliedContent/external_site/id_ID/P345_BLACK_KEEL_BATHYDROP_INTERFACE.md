@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Black Keel Bathydrop Interface"
+title: "Antarmuka Bathydrop Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Black Keel Bathydrop Interface
+# Antarmuka Bathydrop Black Keel
 
-ID LOC HOLD: HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.
-
-## Scanner
-
-ID LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
-
-## Terminal
-
-ID LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
-
-## Audio
-
-ID LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
-
-## Field Note
-
-ID LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Antarmuka bathydrop adalah tempat latar ruang angkasa menyentuh game samudra. Tidak cukup Black Keel ada di orbit. Pemain butuh rantai: integritas kapsul, kontrol apung, tiang komunikasi, kait naik, segel rating tekanan, matematika relai, timing permukaan, dan penerimaan carrier. Putus satu tautan dan seluruh penyelamatan menjadi teori. Ini membuat pembukaan jujur. Pemain bukan terjebak karena cerita lupa kapal. Pemain terjebak karena satu-satunya mesin yang bisa menghubungkan abyss, permukaan, dan orbit gagal dengan cara yang bisa dibuat lebih buruk oleh air setiap jam.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/id_ID. -->

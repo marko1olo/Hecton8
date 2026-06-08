@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Ascent Energy Charge Assembly"
+title: "تجميعة شحنة طاقة الصعود"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Ascent Energy Charge Assembly
+# تجميعة شحنة طاقة الصعود
 
-AR LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.
+تحول شحنة الصعود موارد الأعماق إلى تبادل ميكانيكي وأخلاقي. يمكن لمواد الضغط العالي رفع الكبسولة، أو حفظ الأدلة عبر custody، أو أن تصبح عائدا يضعف طريق العودة.
 
 ## Scanner
 
-AR LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+حاضنة طاقة مخدوشة بضغط pulse. الشحنة الرخيصة تصنع تابوتا نظيفا.
 
 ## Terminal
 
-AR LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: مطلوبة vent-forged heat cell، وpressure-history insulator، وcustody stamp. Raw fuel مرفوض. blue debt غير المعتمد يتشقق تحت launch impulse ويلغي recovery claim.
 
 ## Audio
 
-AR LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+يمكنك بيع الرفع أو ركوبه. ليس الاثنين.
 
 ## Field Note
 
-AR LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+كل غرام في الحاضنة هو هرب، أو دليل، أو blue-debt payout. الكبسولة لا تغفر الجشع.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/ar_SA. -->

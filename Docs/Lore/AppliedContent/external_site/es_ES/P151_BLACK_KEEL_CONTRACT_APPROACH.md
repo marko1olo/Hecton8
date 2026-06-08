@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Black Keel Claim Acceptance"
+title: "Aceptación De Reclamo Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Black Keel Claim Acceptance
+# Aceptación De Reclamo Black Keel
 
-ES LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+Un terminal de reclamo de Black Keel encuadra la apertura en deuda, anexos de oxígeno y custody antes de que el océano toque la pantalla.
 
 ## Scanner
 
-ES LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+Consola de contrato. Aegir Reclamation Pool enumera un gravamen de 4.8 tonne-window antes de mencionar el oxígeno.
 
 ## Terminal
 
-ES LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / TERMINAL DE ACEPTACIÓN DE RECLAMO: ruta RAN-B:H8 salvage descent; alivio de gravamen 4.8 tonne-window condicionado; anexos de bienestar de oxígeno facturados tras recuperación; payload custody primaria para Black Keel, Keelmark Mutual como testigo; negarse mantiene activa la revisión Barnard blacklist.
 
 ## Audio
 
-ES LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel al contratista: la ventana de reclamo está abierta. El oxígeno se factura después de la recuperación. Confirma si puedes trabajar.
 
 ## Field Note
 
-ES LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+El lápiz está atado a la pantalla con cable de presión. Alguien esperaba manos temblorosas.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/es_ES. -->

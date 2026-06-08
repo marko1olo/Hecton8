@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LOKALE BIOTA: FLORA, FAUNA UND ÖKOLOGISCHER KOLLAPS
 
 > **Quelle:** Geborgener PDA, Abstiegskapsel der Styx-Klasse mit der Bezeichnung 'Lazarus'.  

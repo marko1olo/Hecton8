@@ -9,32 +9,36 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Debt Blacklist Contract Pressure"
+title: "債務ブラックリスト契約圧力"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Debt Blacklist Contract Pressure
+# 債務ブラックリスト契約圧力
 
-JA LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+HECTON-8は運命ではなくフロンティア経済で主人公を描く。債務、ブラックリスト、請求プール保管、酸素クレジット、寝台アクセス、古いDeep Reach資格情報が、サルベージ契約を強制的でありながら無力ではないものにする。
 
 ## Scanner
 
-JA LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+先取特権通知はBlack Keelの保管責任に紐づいている。拒否は合法だが、足止めになる。寝台なし、清算済み酸素クレジットなし、Aegirを出る経路窓なし。
 
 ## Terminal
 
-JA LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+請求受諾 / ブラックリスト救済窓
+契約者状態: 債務拘束Marauder
+運搬者: Black Keel請求プール保管
+救済条件: 回収可能質量、保管証明、受領者遵守
+失敗状態: ブラックリスト継続、寝台アクセス拒否、酸素福祉支援は請求対象へ変換。
 
 ## Audio
 
-JA LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+これは誘拐ではなかった。フロンティアが自由として売る種類の選択だった。署名して潜るか、書類上は清潔なまま、実際には閉じ込められるか。
 
 ## Field Note
 
-JP LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+先取特権は銃を向けなかった。空気の請求書、寝台名簿、次の経路窓を指した。
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/ja_JP. -->

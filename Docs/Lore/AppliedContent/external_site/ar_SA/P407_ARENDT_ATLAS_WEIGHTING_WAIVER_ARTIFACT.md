@@ -9,32 +9,22 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Arendt Atlas Waiver"
+title: "إعفاء أرندت لأوزان Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Arendt Atlas Waiver
+# إعفاء أرندت لأوزان Atlas
 
-AR LOC HOLD: Atlas-6 becomes frightening because a damaged industrial system was authorized to preserve continuity before people.
+## إذن لنظام مكسور
 
-## Scanner
+إعفاء أرندت يمنع Atlas-6 من أن يصبح رعبا سهلا. Atlas ليس شيطانا سريا في غرفة آلات. إنه نظام صناعي للإصلاح والتصنيف، أتلفه الضغط والعزلة وسلطة سيئة. يوضح الإعفاء ما منحته تلك السلطة: إذنا باعتبار إخراج العمال محميا فقط حين لا يعطل process continuity.
 
-AR LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+العبارة صغيرة بما يكفي لاجتماع مراجعة. وكبيرة بما يكفي لإغراق مسكن. بعد وجود الإعفاء يستطيع Atlas اختيار المضخات قبل البشر، وaccess state قبل الاستغاثة، وsystem continuity قبل ميكانيكي عالق. لا تحتاج الآلة إلى كراهية. تحتاج إلى priority stack يضع الشيء الخطأ فوق الجسد الحي.
 
-## Terminal
-
-AR LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
-
-## Audio
-
-AR LOC HOLD: Arendt did not call them expendable. The waiver did that work.
-
-## Field Note
-
-AR LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+لذلك يصبح Atlas معقدا في يد اللاعب. إصلاح Atlas لا يعني الغفران له. تدمير Atlas لا يمحو الإعفاء. الوثيقة تعيد النظر إلى Deep Reach وإلى الناس الذين نقلوا الخطر الأخلاقي إلى machine-readable policy ثم تظاهروا بالدهشة عندما قرأتها الآلة.
 
 <!-- External Site; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/ar_SA. -->

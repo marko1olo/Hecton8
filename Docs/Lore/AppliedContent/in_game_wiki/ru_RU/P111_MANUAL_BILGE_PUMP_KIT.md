@@ -7,34 +7,34 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Ручной bilge pump kit"
+title: "Комплект ручной трюмной помпы"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ручной bilge pump kit
+# Комплект ручной трюмной помпы
 
-Первая цепочка инструментов начинается с manual bilge pump kit. Он дает игроку очистить маленькое затопленное пространство, не доверяя сломанному питанию. Это заземляет opening в работе: воздух, уровень воды, усилие рук, клапаны и терпение до героической резки.
+Ручная трюмная помпа становится первым полезным инструментом после сброса, потому что работает, пока капсуле нельзя доверять электричество. Она очищает только небольшие затопленные карманы и заставляет смотреть на впуск, выпуск и сопротивление клапана, а не на зеленую лампу. Комплект задает первое правило HECTON-8: ремонт начинается с воды, давления и рук.
 
 ## Scanner
 
-Manual pump kit. Медленно, грязно, надежно; первый урок в том, что powered systems лгут.
+Обнаружена ручная трюмная помпа. Впускная сетка забита пеной капсулы; очистите ее перед подачей питания на панель.
 
 ## Terminal
 
-P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
+ВЫДАЧА P-63 / ТРЮМНАЯ ПОМПА: ручная помпа, хомут шланга, впускная сетка, обратный клапан. Перед проверкой любой панели под питанием убрать стоячую воду. Не сбрасывать выход в герметичные кабельные лотки.
 
 ## Audio
 
-Сначала ручная работа. Потом электричество. Дыхание всегда.
+Сначала вода. Потом питание. Если рукоять бьет назад, комната отвечает.
 
 ## Field Note
 
-Первый инструмент должен учить survival до фантазии апгрейда.
+Помпы врут реже датчиков. Если рукоять бьет назад, остановись и проверь, куда уходит вода.
 
 <!-- In-Game Wiki; generated from P111_MANUAL_BILGE_PUMP_KIT/ru_RU. -->

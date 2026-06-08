@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Ending Record Transcript Seed"
+title: "Transkrip Catatan Akhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ending Record Transcript Seed
+# Transkrip Catatan Akhir
 
-ID LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
+Transkrip catatan akhir membuat outcome bisa dicatat dan dibandingkan dalam replay tanpa mengubah pengetahuan menjadi kekuatan warisan.
 
 ## Scanner
 
-ID LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Fragmen catatan akhir merinci receiver, payload hash, status utang, dan biaya yang belum selesai.
 
 ## Terminal
 
-ID LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.
 
 ## Audio
 
-ID LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
+Catatan after-action. Receiver menerima payload hash. Claim ditutup untuk akuntansi. Suppression flag tak terbaca. Truth custody belum selesai.
 
 ## Field Note
 
-ID LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Catatan dossier ending. Harus menyebut receiver, custody, dan biaya belum selesai, bukan penutupan moral bersih.
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/id_ID. -->

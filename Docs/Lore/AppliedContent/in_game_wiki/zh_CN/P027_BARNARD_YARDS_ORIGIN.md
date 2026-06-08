@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Barnard Yards出身
 
-Barnard Yards是一种拆船和压力硬件文化。它让玩家不是地球游客，也不是英雄血统，而是把dead claim和租来的生存工具当工作的人。
+Barnard Yards 是拆船和压力硬件文化：租来的切割器、补过的夹具、死亡索赔和生存工具都被当作普通工作。它给 HECTON-8 一个靠近债务与劳动的职业出身，而不是地球浪漫。
 
 ## Scanner
 

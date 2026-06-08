@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.relay_shadow
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Frete de fusão por pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,6 @@ localization_flags: 1
 
 # Frete de fusão por pellets
 
-Frete de fusão por pellets é a história industrial por trás de HECTON-8. Máquinas e carga pesada chegaram a Aegir porque infraestrutura podia por décadas empurrar, alimentar, proteger e frear massa; a rota continua cruel porque a contabilidade vive mais que a emergência.
-
-## Scanner
-
-Placa de motor. Frete com fusão alimentada por pellets cruzou como infraestrutura: impulso, escudo, deriva, frenagem e cobrança de perdas.
-
-## Terminal
-
-DOUTRINA DE FRETE: cargas seed classe Atlas e frete colonial usaram impulso de vela de feixe, fusão alimentada por pellets, frenagem por vela magnética e longos intervalos de deriva. A carga viva chegou depois que máquinas tornaram a rota faturável.
-
-## Audio
-
-Uma nave pesada não é milagre. É uma hipoteca com motores.
-
-## Field Note
-
-Trânsito pesado não é heroico. É um contrato de rota velho com cicatrizes de calor.
+O frete de fusão alimentado por pellets é a camada industrial entre sonhos de sondagem e corpos humanos. Estações de feixe empurram, fluxos de pellets alimentam queimas de fusão, massa de blindagem morre no lugar da carga e sistemas de frenagem recompram velocidade com tempo. Essa arquitetura move coisas pesadas pela distância escura, mas não perdoa improviso. Cada quilograma é lançado contra cronograma, orçamento térmico, reserva de frenagem e proprietário.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/pt_BR. -->

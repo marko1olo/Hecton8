@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "Реєстр корпоративної відповіді"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# Реєстр корпоративної відповіді
 
-UK LOC HOLD: Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority.
-
-## Scanner
-
-UK LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
-
-## Terminal
-
-UK LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
-
-## Audio
-
-UK LOC HOLD: The reply was automatic. The rescue was conditional.
-
-## Field Note
-
-UK LOC HOLD: Immediate response is not immediate rescue.
+Реєстр корпоративної відповіді — не промова лиходія. Він холодніший. Це машинозчитувана обіцянка, що Black Keel відповість, але лише в порядку, який визнають його контракти. Спершу опіка активу. Потім печатка відповідальності. Аудит корпусу, маршрут зразка, маршрут оплати, тоді повернення оператора, якщо черга ще дозволить. Гравець може використовувати ці реєстри як підказки, ключі і важелі, бо система передбачувана. Ця передбачуваність і є обвинуваченням: HECTON-8 покинули не одним поганим рішенням, а стеком відповіді, який працював далі, поки люди ставали вантажем нижчого пріоритету.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/uk_UA. -->

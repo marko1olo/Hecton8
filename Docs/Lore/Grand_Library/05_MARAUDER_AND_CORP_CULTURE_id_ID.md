@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # KEPATUHAN KORPORAT DAN SUBKULTUR MARAUDER
 
 > **Sumber:** Kantor Kepatuhan Pemulihan, Panduan Perekrutan Subkontraktor (Formulir 88-C).  

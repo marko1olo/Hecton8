@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "JA LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6：スポイラーゲート下の修理論理"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Repair Ecology
+# Atlas-6：スポイラーゲート下の修理論理
 
-JA LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlasは劇場型の悪役ではない。恐怖は、損傷した産業governorが浸水生態に修理カテゴリを適用することにある。
 
 ## Scanner
 
-JA LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+スポイラー記事種。公開層: Atlasはcontinuityインフラだった。制限層: 損傷した分類が生命、金属、ケーブル、身体、habitatを同じ修理文法で扱う。
 
 ## Terminal
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // ATLAS公開ブリーフ。段階: factory-governor、損傷repair ecology、Atlas-compatible contamination、payload receiver consequences。最終受信者はgated。
 
 ## Audio
 
-JA LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlas trace抜粋:「Personnel category unresolved. Sealant category available. Habitat breach priority remains active.」
 
 ## Field Note
 
-JA LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+Marauderメモ: Atlasが助けたら、何を消費したか確認しろ。空気を救う修理でも名前を消せる。
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/ja_JP. -->

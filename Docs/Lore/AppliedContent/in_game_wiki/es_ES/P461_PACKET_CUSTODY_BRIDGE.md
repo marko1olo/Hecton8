@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Custodia del paquete"
+title: "Custodia del paquete"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Custodia del paquete
+# Custodia del paquete
 
-ES LOC HOLD: Sello de paquete recuperado. Black Keel puede recibir carga, pero la prueba necesita origen, sello, hash testigo, marca de relé, carril receptor y estado de daño. Conserva las etiquetas antes de desmontar hardware.
+Sello de paquete recuperado. Black Keel puede recibir carga, pero la prueba necesita origen, sello, hash testigo, marca de relé, carril receptor y estado de daño. Conserva las etiquetas antes de desmontar hardware.
 
 ## Scanner
 
-ES LOC HOLD: SELLO DE PAQUETE // Tira de hash testigo dañada pero legible. Preservar antes del corte. La prueba sin sello pasa a material de reclamación.
+SELLO DE PAQUETE // Tira de hash testigo dañada pero legible. Preservar antes del corte de salvamento. La prueba sin sello pasa a material de reclamación.
 
 ## Terminal
 
-ES LOC HOLD: NOTARÍA KEELMARK // Conservar placa de sello, hash testigo, sello de ruta y etiqueta de conector antes de transferir. El material sin sello puede procesarse como pérdida de reclamación.
+NOTARÍA DE PAQUETES KEELMARK // Conservar placa de sello, hash testigo, sello de ruta y etiqueta de conector antes de transferir. El material sin sello puede procesarse como pérdida de reclamación.
 
 ## Audio
 
-ES LOC HOLD: Relé Black Keel: la carga es masa. La prueba es custodia. Trae ambas, o la ventana cobrará la diferencia.
+Relé Black Keel: la carga es masa. La prueba es custodia. Trae ambas, o la ventana cobrará la diferencia.
 
 ## Field Note
 
-ES LOC HOLD: Primero el sello, luego el corte. Una muestra limpia con una etiqueta rota pertenece a quien tenga el libro.
+Primero el sello, luego el corte. Una muestra limpia con una etiqueta rota pertenece a quien tenga el libro.
 
 <!-- In-Game Wiki; generated from P461_PACKET_CUSTODY_BRIDGE/es_ES. -->

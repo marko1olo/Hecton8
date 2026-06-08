@@ -1,14 +1,15 @@
 # RS016_AEGIR_SYSTEM_MOON_LADDER - Aegir System / Moon Ladder
 
-Status: production-facing draft pending native localization.
+Status: production article source candidate pending importer admission, route-card bake, DataMonolith bake, Unity placement, native localization and runtime proof.
 
 Purpose: make Aegir and its moons useful for navigation, site lore, route pressure, and hard-sci-fi constraints around HECTON-8.
 
 Runtime contract:
-- runtime reads baked static data only;
+- runtime must use baked static data only after importer admission;
 - no runtime JSON or markdown parser;
 - no runtime translation generation;
-- packet and route identity are stable hashes.
+- packet and route identity remain stable hashes;
+- this source file does not prove DataMonolith, h8bin, Unity placement, native localization, generated page or publication readiness.
 
 Packets:
 - P076_RAN_AEGIR_ANCHOR

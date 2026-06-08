@@ -19,22 +19,27 @@ localization_flags: 0
 
 # Old Procedure Recognition Cue
 
-HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+HECTON-8 grounds character motive in procedure. The protagonist recognizes an old evacuation safety form and sees how it was inverted: worker counts degraded, witness fields sealed, and route-safe language used to preserve claims instead of lives.
 
 ## Scanner
 
-Procedure line familiar. Worker count and route-safe stamp do not agree.
+Route-safe stamp present. Worker count overwritten in two inks. Manual witness field sealed. The form was built to catch this kind of lie before someone made it policy.
 
 ## Terminal
 
-EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION
+route: auxiliary egress line
+declared occupants: degraded-count accepted
+manual witness: sealed by Continuity Office
+field correction: worker tally inconsistent with pump-room tags
+status: claim-preserving, not extraction-cleared.
 
 ## Audio
 
-You know this form. It was supposed to protect people from exactly this.
+You know this form. It was supposed to stop the room from being counted empty while people were still breathing in it.
 
 ## Field Note
 
-Use where room evidence contradicts a clean procedural label.
+The form was supposed to force another count. Here it forced silence.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/en_US. -->

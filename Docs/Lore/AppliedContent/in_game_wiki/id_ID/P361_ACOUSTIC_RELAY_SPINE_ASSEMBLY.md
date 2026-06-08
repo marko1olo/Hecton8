@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Acoustic Relay Spine Assembly"
+title: "Rakitan Tulang Punggung Relai Akustik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Acoustic Relay Spine Assembly
+# Rakitan Tulang Punggung Relai Akustik
 
-ID LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.
+Pelarian dimulai di bawah air. Tulang punggung relai akustik membuat kapsul rusak dapat membuktikan posisi, jam, dan keadaan bertahan hidup sebelum penerima orbit memperlakukannya sebagai recoverable mass.
 
 ## Scanner
 
-ID LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+Tulang punggung akustik patah. Ia bisa mengetuk pressure-code melalui air; orbit masih mendengarnya sebagai custody noise rusak.
 
 ## Terminal
 
-ID LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY: pulihkan tulang punggung akustik pita rendah sebelum recovery window. High-gain mast hilang. Emergency buoy tidak andal. Penerima Black Keel menerima pressure-code hanya setelah route proof.
 
 ## Audio
 
-ID LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
+Jika Keel mendengar kita, ia mendengar luka mengetuk pipa.
 
 ## Field Note
 
-ID LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+Panggilan pertama kapsul bukan suara. Itu rusuk keramik, kulit kabel, pinger floats, dan disiplin timing yang cukup agar samudra mengulangmu dengan benar.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/id_ID. -->

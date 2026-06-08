@@ -22,7 +22,7 @@ namespace Hecton8.World
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(FieldTargetDescriptor))]
     [AddComponentMenu("Hecton8/World/Emergency Service Relay")]
-    public sealed class EmergencyServiceRelay : MonoBehaviour, IInteractable, IInteractableTextProvider, IGlobalRegistryHotSwapListener
+    public sealed class EmergencyServiceRelay : MonoBehaviour, IInteractable, IInteractableTextProvider, IGlobalRegistryHotSwapListener, IInteractionStartedEventOwner
     {
         [Serializable]
         public struct RewardEntry
@@ -55,6 +55,11 @@ namespace Hecton8.World
         private const string RewardEmptyFallback = "RELAY CACHE DISPENSED";
         private const string DefaultOpenInteractText = "OPEN RELAY EMERGENCY SERVICE RELAY";
         private const string DefaultReviewInteractText = "REVIEW RELAY EMERGENCY SERVICE RELAY";
+        private static readonly uint _RelayNotificationMissWarningHash = unchecked((uint)LocHash.Compute("EmergencyServiceRelay.NotificationMiss"));
+        private static readonly uint _RelayNotificationContextHash = unchecked((uint)LocHash.Compute("EmergencyServiceRelay.Notification"));
+        private static readonly uint _RelayLoreNotificationContextHash = unchecked((uint)LocHash.Compute("EmergencyServiceRelay.LoreNotification"));
+        private static readonly uint _RelayRewardNotificationContextHash = unchecked((uint)LocHash.Compute("EmergencyServiceRelay.RewardNotification"));
+        private static readonly uint _RelayInventoryFullNotificationContextHash = unchecked((uint)LocHash.Compute("EmergencyServiceRelay.InventoryFullNotification"));
 
         // COLD ALLOC: EmergencyServiceRelay[16] - active authored relay registry - owner: EmergencyServiceRelay
         private static readonly List<EmergencyServiceRelay> s_ActiveRelays = new List<EmergencyServiceRelay>(16);
@@ -128,6 +133,7 @@ namespace Hecton8.World
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ILocalizationTextReadModel _cachedLocalization;
         private bool _registeredHotSwapListener;
+        private int _relayNotificationMissCount;
 
         /// <summary>Unique discovery ID for this relay.</summary>
         public string RelayId => relayId;
@@ -194,6 +200,7 @@ namespace Hecton8.World
         /// <summary>Number of active relay nodes in the scene.</summary>
         public static int ActiveCount => s_ActiveRelays.Count;
         internal static int RegistryVersion => s_RegistryVersion;
+        public int RelayNotificationMissCount => _relayNotificationMissCount;
 
         private void Awake()
         {
@@ -237,6 +244,7 @@ namespace Hecton8.World
                 highlightObject.SetActive(false);
 
             _highlighter?.SetHighlight(false);
+            ClearRelayNotificationDiagnostics();
             ClearCachedRegistryServices();
         }
 
@@ -248,6 +256,7 @@ namespace Hecton8.World
             if (s_ActiveRelays.Remove(this))
                 MarkRegistryDirty();
 
+            ClearRelayNotificationDiagnostics();
             ClearCachedRegistryServices();
         }
 
@@ -289,7 +298,7 @@ namespace Hecton8.World
 
             ReadOnlySpan<char> resolvedLoreMessage = FallbackOrLocalizedSpan(loreMessage, LocalizationKeys.RELAY_LORE_DEFAULT, DefaultLoreMessage);
             if (!IsWhiteSpace(resolvedLoreMessage))
-                NotificationEvents.TryPushInfo(resolvedLoreMessage);
+                TryPushRelayNotification(resolvedLoreMessage, _RelayLoreNotificationContextHash, warning: false);
 
             IAudioLogRuntime audioLogSystem = ResolveAudioLogSystem();
             if (audioLogSystem != null && _linkedAudioLogHash != 0u)
@@ -468,7 +477,7 @@ namespace Hecton8.World
 
         private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
         {
-            if (audioLogSystem == null)
+            if (audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady)
                 return false;
 
             if (audioLogSystem is Behaviour behaviour)
@@ -541,7 +550,8 @@ namespace Hecton8.World
                 if (item == null || quantity <= 0)
                     continue;
 
-                if (item != null && inventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), quantity))
+                int itemHashId = ItemData.ResolvePersistentHashId(item);
+                if (itemHashId != 0 && inventory.TryAddItem(itemHashId, quantity))
                 {
                     grantedAny = true;
                     continue;
@@ -551,13 +561,46 @@ namespace Hecton8.World
             }
 
             if (grantedAny)
-                NotificationEvents.TryPushInfo(BuildRewardGrantedMessageSpan());
+                TryPushRelayNotification(
+                    BuildRewardGrantedMessageSpan(),
+                    _RelayRewardNotificationContextHash,
+                    warning: false);
 
             if (inventoryFull)
-                NotificationEvents.TryPushWarning(
+                TryPushRelayNotification(
                     ResolveLocalizedSpan(
                         LocalizationKeys.RELAY_REWARD_INVENTORY_FULL,
-                        RewardInventoryFullFallback));
+                        RewardInventoryFullFallback),
+                    _RelayInventoryFullNotificationContextHash,
+                    warning: true);
+        }
+
+        private void TryPushRelayNotification(ReadOnlySpan<char> message, uint contextHash, bool warning)
+        {
+            if (IsWhiteSpace(message))
+                return;
+
+            bool pushed = warning
+                ? NotificationEvents.TryPushWarning(message)
+                : NotificationEvents.TryPushInfo(message);
+            if (pushed)
+                return;
+
+            ReportRelayNotificationMiss(contextHash);
+        }
+
+        private void ReportRelayNotificationMiss(uint contextHash)
+        {
+            _relayNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _RelayNotificationMissWarningHash,
+                _RelayNotificationContextHash ^ contextHash ^ _relayHash,
+                math.max(1, _relayNotificationMissCount));
+        }
+
+        private void ClearRelayNotificationDiagnostics()
+        {
+            _relayNotificationMissCount = 0;
         }
 
         private ReadOnlySpan<char> BuildRewardGrantedMessageSpan()

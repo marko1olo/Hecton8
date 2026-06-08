@@ -7,34 +7,34 @@ poi_tags: poi.freight_stage_mass_board;poi.seed_ship_burn_schedule
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Tempo de preparação de frete pesado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# Tempo de preparação de frete pesado
 
-PT LOC HOLD: Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.
+O timing de frete pesado protege a linha do tempo sem FTL. Hardware Atlas pode chegar antes do assentamento em massa porque corporações lançam carga precursora cedo, adiantam o staging, aceitam risco não tripulado e enterram janelas de falha em linguagem de programa. O resgate não pode tomar esse truque emprestado depois que a emergência começa.
 
 ## Scanner
 
-PT LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
+Frete classe Atlas é paciência pré-paga envolta em blindagem.
 
 ## Terminal
 
-PT LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
+NOTA DE FRETE: Atlas e carga seed usam staging, assistência de fusão por pellets, longas derivas e infraestrutura de frenagem. Datas públicas podem esconder lançamentos precursores e partidas forward-domain.
 
 ## Audio
 
-PT LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
+Uma nave tão pesada não simplesmente viaja. Vira uma fatura com esteira.
 
 ## Field Note
 
-PT LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+Uma rota pesada é montada com depósitos, janelas de feixe, massa de frenagem e coragem política.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/pt_BR. -->

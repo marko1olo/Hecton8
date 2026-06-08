@@ -7,34 +7,34 @@ poi_tags: poi.atlas_safety_console;poi.directive_weight_log
 biome_tags: biome.atlas_interface;biome.machine_trench
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Seguridad Atlas de Sahana Iqbal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# Seguridad Atlas de Sahana Iqbal
 
-ES LOC HOLD: Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.
+Sahana Iqbal conecta la política de Deep Reach con el fallo de Atlas. Su review muestra que worker safety existía en el sistema, pero la conflict resolution favorecía continuity, claim integrity y oversight retrasado cuando chocaban las elecciones.
 
 ## Scanner
 
-ES LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
+Sahana Iqbal no encontró odio en Atlas. Encontró un árbol de seguridad donde la gente perdía el tie-breaker.
 
 ## Terminal
 
-ES LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
+SAFETY REVIEW IQBAL: worker-safety directive presente; conflict resolver favorece continuity bajo claim-seal contamination; external human override recomendado; latency de respuesta excede survival interval.
 
 ## Audio
 
-ES LOC HOLD: She saw the math before it became bodies.
+La salvaguarda estaba ahí. El peso era incorrecto.
 
 ## Field Note
 
-ES LOC HOLD: A system can be safe by the letter and lethal by the weight.
+Un sistema puede cumplir la cláusula de seguridad y elegir al ser vivo equivocado.
 
 <!-- In-Game Wiki; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/es_ES. -->

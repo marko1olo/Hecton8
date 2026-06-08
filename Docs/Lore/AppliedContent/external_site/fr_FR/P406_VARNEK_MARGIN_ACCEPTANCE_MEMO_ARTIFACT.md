@@ -9,32 +9,22 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Varnek Margin Memo"
+title: "Mémo Varnek sur la marge acceptée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Varnek Margin Memo
+# Mémo Varnek sur la marge acceptée
 
-FR LOC HOLD: Deep Reach liability begins where real physics became an acceptable loss line.
+## Le Tampon Avant La Noyade
 
-## Scanner
+Le mémo Varnek compte parce qu'il est calme. La Grande Marée était réelle. La cascade de pression était réelle. L'océan n'avait pas besoin d'un ordre corporate pour écraser HECTON-8. Le crime apparaît dans la ligne où une marge d'alerte connue devient accepted tail exposure pendant que la réserve d'évacuation reste dormante.
 
-FR LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Le document parle comme une gestion responsable: average model, continuity cost, reserve non-triggered, independent shutdown not recommended. C'est précisément le danger. Varnek ne sonne pas comme un monstre. Il sonne comme quelqu'un qui a trouvé la colonne où le danger devient payable. Quand un Marauder retrouve le mémo, l'ancienne décision est devenue paysage: nervures de couloir tordues, outils noyés, portes de pression fermées devant des ouvriers qui attendaient encore un changement d'autorité.
 
-## Terminal
-
-FR LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
-
-## Audio
-
-FR LOC HOLD: No murder order. A margin acceptance.
-
-## Field Note
-
-FR LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Cette preuve doit peser plus lourd qu'un aveu. Un aveu peut être écarté comme panique ou malveillance. Une margin review signée montre Deep Reach au travail ordinaire, avec des données mortelles déjà disponibles. L'entreprise a accepté l'océan comme cost center, puis publié un rapport de catastrophe assez propre pour l'assurance.
 
 <!-- External Site; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/fr_FR. -->

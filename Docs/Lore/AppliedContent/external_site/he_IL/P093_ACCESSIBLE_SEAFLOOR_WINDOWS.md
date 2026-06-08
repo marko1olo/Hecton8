@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "חלונות קרקעית נגישים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# חלונות קרקעית נגישים
 
-HE LOC HOLD: Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map.
-
-## Scanner
-
-HE LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
-
-## Terminal
-
-HE LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-HE LOC HOLD: You land where the moon lets stone show through.
-
-## Field Note
-
-HE LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+רוב קרקעית הים של HECTON-8 אינה נגישה באומץ רגיל. הלחץ בונה קיר לפני שהקרקעית מופיעה. החלונות הנגישים הם החריגים: מקומות קרועים שבהם מדף שקרס, רכס חשוף, צלקת נביעה חמה או עמוד מלח צפוף משנים את עקומת הירידה. אלה לא מערות בטוחות. אלה עסקאות צרות עם גאולוגיה. צוות יכול לגעת בקרום עתיק, להוציא מינרלים שגדלו בלחץ, למצוא ציוד מושבה אטום או לקרוא אירוע קבור לפני שהים סוגר שוב את הנתיב.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/he_IL. -->

@@ -148,6 +148,7 @@ namespace Hecton8.UI
         private float _cachedVrHeadRelativeSwimBias = DefaultVrHeadRelativeSwimBias;
         private int _persistenceBatchDepth;
         private bool _persistenceDirty;
+        private bool _persistenceNeedsFullStage;
 
         public event Action<MenuVisualStyle> MenuVisualStyleChanged;
         public event Action<MenuVisualConcept> MenuVisualConceptChanged;
@@ -228,8 +229,7 @@ namespace Hecton8.UI
                     return;
                 }
 
-                LoadAllSettings();
-                ApplyAllSettings();
+                RefreshSettingsAfterPersistenceOwnerChanged();
                 return;
             }
 
@@ -1344,8 +1344,8 @@ namespace Hecton8.UI
             try
             {
                 float safeScale = ValidateTextScale(scale);
-                AccessibilitySettings accessibilitySettings = AccessibilitySettings.ActiveRuntimeInstance;
-                if (accessibilitySettings != null)
+                AccessibilitySettings accessibilitySettings = null;
+                if (AccessibilitySettings.TryResolveActiveRuntime(ref accessibilitySettings))
                 {
                     accessibilitySettings.SetTextScale(safeScale);
                     return true;
@@ -1365,8 +1365,8 @@ namespace Hecton8.UI
             try
             {
                 float safeScale = ValidateUiMotionScale(scale);
-                AccessibilitySettings accessibilitySettings = AccessibilitySettings.ActiveRuntimeInstance;
-                if (accessibilitySettings != null)
+                AccessibilitySettings accessibilitySettings = null;
+                if (AccessibilitySettings.TryResolveActiveRuntime(ref accessibilitySettings))
                 {
                     accessibilitySettings.SetUiMotionScale(safeScale);
                     return true;
@@ -1546,8 +1546,7 @@ namespace Hecton8.UI
             if (!TryRefreshPersistenceReference(out bool changed) || !changed)
                 return;
 
-            LoadAllSettings();
-            ApplyAllSettings();
+            RefreshSettingsAfterPersistenceOwnerChanged();
         }
 
         private bool TryRefreshPersistenceReference(out bool changed)
@@ -1563,7 +1562,11 @@ namespace Hecton8.UI
 
             changed = !ReferenceEquals(_persistence, persistence);
             if (changed)
+            {
                 _persistence = persistence;
+                if (_persistenceDirty)
+                    _persistenceNeedsFullStage = true;
+            }
 
             return _persistence != null;
         }
@@ -1930,14 +1933,14 @@ namespace Hecton8.UI
             {
                 // Try to set the parameter - SetFloat returns false if parameter doesn't exist
                 bool success = audioMixer.SetFloat(parameterName, db);
-                
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (!success)
                 {
                     H8Debug.LogWarning("[SettingsManager] AudioMixer parameter not found or not exposed.");
                 }
 #endif
-                
+
                 return success;
             }
             catch (System.Exception)
@@ -1976,7 +1979,10 @@ namespace Hecton8.UI
         private void SaveInt(string key, int value)
         {
             if (!TryRefreshPersistenceReference(out _))
+            {
+                MarkPersistenceDirtyForMissingOwner();
                 return;
+            }
 
             _persistence.SetInt(key, value);
             MarkPersistenceDirty();
@@ -1985,7 +1991,10 @@ namespace Hecton8.UI
         private void SaveFloat(string key, float value)
         {
             if (!TryRefreshPersistenceReference(out _))
+            {
+                MarkPersistenceDirtyForMissingOwner();
                 return;
+            }
 
             _persistence.SetFloat(key, value);
             MarkPersistenceDirty();
@@ -1994,10 +2003,20 @@ namespace Hecton8.UI
         private void SaveBool(string key, bool value)
         {
             if (!TryRefreshPersistenceReference(out _))
+            {
+                MarkPersistenceDirtyForMissingOwner();
                 return;
+            }
 
             _persistence.SetBool(key, value);
             MarkPersistenceDirty();
+        }
+
+        private void MarkPersistenceDirtyForMissingOwner()
+        {
+            _persistence = null;
+            _persistenceDirty = true;
+            _persistenceNeedsFullStage = true;
         }
 
         private void MarkPersistenceDirty()
@@ -2008,10 +2027,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (IsUserOptionsPersistenceUsable(_persistence))
-                _persistence.Save();
-            else
-                _persistence = null;
+            if (!TrySavePersistenceNow())
+                _persistenceDirty = true;
         }
 
         private void FlushPendingPersistenceSave()
@@ -2020,8 +2037,82 @@ namespace Hecton8.UI
                 return;
 
             _persistenceDirty = false;
-            if (TryRefreshPersistenceReference(out _))
-                _persistence.Save();
+            if (!TryRefreshPersistenceReference(out _) || !TrySavePersistenceNow())
+                _persistenceDirty = true;
+        }
+
+        private bool TrySavePersistenceNow()
+        {
+            if (IsUserOptionsPersistenceUsable(_persistence))
+            {
+                if (_persistenceNeedsFullStage)
+                    StageCachedSettingsForPersistence();
+
+                if (_persistence.TrySave())
+                {
+                    _persistenceNeedsFullStage = false;
+                    return true;
+                }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                H8Debug.LogWarning("[SettingsManager] Failed to persist options.h8cfg.");
+#endif
+                return false;
+            }
+
+            _persistence = null;
+            return false;
+        }
+
+        private void RefreshSettingsAfterPersistenceOwnerChanged()
+        {
+            if (_persistenceDirty)
+            {
+                FlushPendingPersistenceSave();
+                if (_persistenceDirty)
+                    return;
+
+                ApplyAllSettings();
+                return;
+            }
+
+            LoadAllSettings();
+            ApplyAllSettings();
+        }
+
+        private void StageCachedSettingsForPersistence()
+        {
+            if (!IsUserOptionsPersistenceUsable(_persistence))
+                return;
+
+            _persistence.SetInt(QualityLevelKey, _cachedQualityLevel);
+            _persistence.SetInt(QualityScaleVersionKey, CurrentQualityScaleVersion);
+            _persistence.SetFloat(MasterVolumeKey, _cachedMasterVolume);
+            _persistence.SetFloat(MusicVolumeKey, _cachedMusicVolume);
+            _persistence.SetFloat(SfxVolumeKey, _cachedSfxVolume);
+            _persistence.SetFloat(AmbientVolumeKey, _cachedAmbientVolume);
+            _persistence.SetBool(VsyncKey, _cachedVsync);
+            _persistence.SetBool(FullscreenKey, _cachedFullscreen);
+            _persistence.SetInt(ResolutionWidthKey, _cachedResolutionWidth);
+            _persistence.SetInt(ResolutionHeightKey, _cachedResolutionHeight);
+            _persistence.SetFloat(FieldOfViewKey, _cachedFieldOfView);
+            _persistence.SetInt(ShadowQualityKey, _cachedShadowQuality);
+            _persistence.SetFloat(ShadowDistanceKey, _cachedShadowDistance);
+            _persistence.SetInt(AntiAliasingKey, _cachedAntiAliasing);
+            _persistence.SetBool(AmbientOcclusionKey, _cachedAmbientOcclusion);
+            _persistence.SetBool(BloomKey, _cachedBloom);
+            _persistence.SetBool(MotionBlurKey, _cachedMotionBlur);
+            _persistence.SetInt(TextureQualityKey, _cachedTextureQuality);
+            _persistence.SetInt(GraphicsPresetKey, _cachedGraphicsPreset);
+            _persistence.SetInt(MenuVisualStyleKey, _cachedMenuVisualStyleIndex);
+            _persistence.SetInt(MenuVisualConceptKey, _cachedMenuVisualConceptIndex);
+            _persistence.SetFloat(TextScaleKey, _cachedTextScale);
+            _persistence.SetFloat(UiMotionScaleKey, _cachedUiMotionScale);
+            _persistence.SetBool(VrComfortModeKey, _cachedVrComfortMode);
+            _persistence.SetBool(VrSnapTurnKey, _cachedVrSnapTurn);
+            _persistence.SetBool(VrHorizonLockKey, _cachedVrHorizonLock);
+            _persistence.SetBool(VrComfortVignetteKey, _cachedVrComfortVignette);
+            _persistence.SetFloat(VrHeadRelativeSwimBiasKey, _cachedVrHeadRelativeSwimBias);
         }
     }
 }

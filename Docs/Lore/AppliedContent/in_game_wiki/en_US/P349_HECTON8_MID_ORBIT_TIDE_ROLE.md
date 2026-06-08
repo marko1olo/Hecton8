@@ -19,15 +19,15 @@ localization_flags: 0
 
 # HECTON-8 Mid-Orbit Tide Role
 
-HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.
+HECTON-8 is the moon where Aegir's orbital math becomes personal. It is far enough from the worst inner radiation for long operations, close enough for tides to keep the ocean moving, and valuable enough for Deep Reach to build under pressure. The same position makes rescue dirty. Tide phase, carrier mass, storm noise, and legal custody all meet above the player's head.
 
 ## Scanner
 
-Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
+HECTON-8 tide record. Mid-orbit position makes the ocean useful enough to mine and violent enough to bury the proof.
 
 ## Terminal
 
-ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
+ORBIT NOTE H8 HECTON: tide load within industrial tolerance during current Black Keel window. Drowned crust flex increasing near service canyons. Atlas repair traffic remains below public disclosure threshold.
 
 ## Audio
 
@@ -35,6 +35,6 @@ It sits in the part of the ladder where work looks possible until the water star
 
 ## Field Note
 
-HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 pays because it sits where pressure, tide, and liability overlap.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/en_US. -->

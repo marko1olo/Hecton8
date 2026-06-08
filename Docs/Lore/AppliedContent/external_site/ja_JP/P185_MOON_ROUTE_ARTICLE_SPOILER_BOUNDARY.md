@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "Atlas Basin 編集線"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# Atlas Basin 編集線
 
-JP LOC HOLD: Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons.
+Atlas Basin 編集線は、公開 Aegir 情報が月、航路、救助圧力について何を語れるかを示し、封印された盆地を開示チャートの外に置く。
 
 ## Scanner
 
-JP LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+公開月面アトラスは空の危険を名指しできるが、Atlas basin の payload が何をするかは印刷できない。
 
 ## Terminal
 
-JP LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+ATLAS REDACTION: 公開月ページは名称、航路窓、危険、salvage economy、HECTON-8 災害事実を記載できる。payload 効果、basin receiver 挙動、最終決定結果はゲート下に残る。
 
 ## Audio
 
-JP LOC HOLD: Publish the sky. Redact the bottom.
+空を公開しろ。底を封じろ。
 
 ## Field Note
 
-JP LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+雲の上では航路は公開される。basin の下では、すべての答えにまだ鍵がかかっている。
 
 <!-- External Site; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/ja_JP. -->

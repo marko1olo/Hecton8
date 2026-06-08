@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.deep_abyss
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Biometal Resource Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Biometal Resource Stack
 
-Biometal Resource Stack frames HECTON-8 as a full pressure economy. The game can reward exploration with many resources while keeping blue debt as the strategic apex.
+The Biometal Resource Stack keeps HECTON-8 from becoming a one-ore setting. Blue debt sits at the apex, but the moon is valuable through many pressure-made economies: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and Xenon-Omega continuity substrate.
 
-## Scanner
-
-Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
-
-## Terminal
-
-HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
-
-## Audio
-
-One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
-
-## Field Note
-
-If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+That variety matters for play and fiction. It gives the player reasons to scan, cut, leave, mark, trade and return. It also makes Deep Reach's violence more believable. A company does not build a world-sized lie for a single shiny rock; it builds one when every layer of the ocean can be turned into a ledger entry.
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/en_US. -->

@@ -108,6 +108,7 @@ namespace Hecton8.UI
         private INativeInputManagerRuntime _subscribedInput;
         private IInputBindingService _subscribedRebindingService;
         private bool _hotSwapListenerRegistered;
+        private bool _pdaEventsRegistered;
         private Image[] _rowBackgrounds = Array.Empty<Image>();
         private Image[] _rowAccentBars = Array.Empty<Image>();
         private Image[] _bindingBackgrounds = Array.Empty<Image>();
@@ -237,7 +238,7 @@ namespace Hecton8.UI
             rebinding.OnOverridesSaved += _bindingOverridesChangedAction;
             rebinding.OnOverridesCleared += _bindingOverridesChangedAction;
 
-            PDAEvents.Register(this);
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
 
             _subscribedInput = input;
             _subscribedRebindingService = rebinding;
@@ -269,7 +270,11 @@ namespace Hecton8.UI
                 rebinding.OnOverridesCleared -= _bindingOverridesChangedAction;
             }
 
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
 
             _subscribedInput = null;
             _subscribedRebindingService = null;
@@ -296,6 +301,7 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Input &&
+                serviceSlot != GlobalRegistryServiceSlot.NativeInputManagerRuntime &&
                 serviceSlot != GlobalRegistryServiceSlot.InputBinding)
             {
                 return;
@@ -303,10 +309,10 @@ namespace Hecton8.UI
 
             CancelOwnedRebindIfNeeded(_subscribedRebindingService);
             Unsubscribe();
-            if (serviceSlot == GlobalRegistryServiceSlot.Input)
-                _cachedInput = currentService as INativeInputManagerRuntime;
-            else
+            if (serviceSlot == GlobalRegistryServiceSlot.InputBinding)
                 _cachedRebindingService = currentService as IInputBindingService;
+            else
+                _cachedInput = currentService as INativeInputManagerRuntime ?? GlobalRegistry.NativeInputRuntime;
 
             if (!isActiveAndEnabled)
                 return;
@@ -320,8 +326,7 @@ namespace Hecton8.UI
             if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.IsHotSwapListenerRegistered(this);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -329,9 +334,7 @@ namespace Hecton8.UI
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
-                GlobalRegistry.UnregisterHotSwapListener(this);
-
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
         }
 

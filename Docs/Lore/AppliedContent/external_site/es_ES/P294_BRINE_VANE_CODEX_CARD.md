@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Brine Vane Codex Card"
+title: "Ficha de códice de la aleta de salmuera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Brine Vane Codex Card
+# Ficha de códice de la aleta de salmuera
 
-ES LOC HOLD: In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+Las aletas de salmuera hacen física el agua de media profundidad de HECTON-8. Muestran que el cañón está construido por densidad, no por volumen azul vacío: una membrana puede ser advertencia, material y borde de falso suelo al mismo tiempo.
 
 ## Scanner
 
-ES LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Lámina de aleta de salmuera. Membrana sal-mineral fijada a cizalla de densidad. Borde intacto: muro; boca rasgada: paso; agua negra sin borde de aleta: riesgo de falso suelo.
 
 ## Terminal
 
-ES LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+ESPÉCIMEN / ALETA DE SALMUERA / función: marcador de muro de densidad, aviso de curvatura de sonar, fuente de costillas desprendidas / lectura segura: lámina intacta, boca rasgada corriente abajo, punta curvada de ventana de cizalla / rechazo: cortar lámina viva de ruta, cruzar brillo abierto, confiar en retorno de falso suelo / nota de ruta: recolecta costillas desprendidas, no la membrana que mantiene abierto tu mapa.
 
 ## Audio
 
-ES LOC HOLD: The plant is not pointing up. It is pointing through.
+La aleta no apunta arriba. Muestra dónde el océano gira de lado.
 
 ## Field Note
 
-ES LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Lámina intacta: muro. Boca rasgada: posible ruta. Costilla desprendida: muestra. Lámina viva sosteniendo una vía: déjala.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/es_ES. -->

@@ -7,34 +7,34 @@ poi_tags: poi.pressure_glass_vein;poi.blue_debt_casket
 biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Formation du verre de pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Formation du verre de pression
 
-FR LOC HOLD: Pressure glass is the technical field name behind Marauder blue debt and Deep Reach Xenon-Omega language. It forms where pressure, noble-gas pockets, brine, minerals, heat and altered biology meet. Good samples are valuable because they stay stable under conditions normal industry cannot tolerate.
+Le verre de pression est le nom technique derrière la blue debt des Marauders et le langage Xenon-Omega de Deep Reach. Il se forme là où pression, poches de gaz noble, saumure, minéraux, chaleur et biologie altérée se rejoignent.
 
 ## Scanner
 
-FR LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
+Treillis de dette bleue. Gaz noble, saumure, défauts minéraux et historique de pression enfermés dans une erreur coûteuse.
 
 ## Terminal
 
-FR LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
+SUBSTRAT DE CONTINUITÉ XO: treillis de défauts/clathrates riche en xénon stabilisé par chimie de saumure, cycles thermiques et résidu catalytique biologique. Risque de dépressurisation: dérive du signal, fracture et floraison contaminante.
 
 ## Audio
 
-FR LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
+Voilà pourquoi ils sont revenus. Pas pour de l'or: pour une cicatrice lisible par machine.
 
 ## Field Note
 
-FR LOC HOLD: It is not ore. It is a process that remembers where it was made.
+Ce n'est pas du minerai. C'est un processus qui se souvient de son lieu de naissance.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/fr_FR. -->

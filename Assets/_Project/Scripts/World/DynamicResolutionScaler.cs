@@ -44,7 +44,7 @@ namespace Hecton8.World
     ///   • No allocations in Tick
     ///   • Simple frame time monitoring
     ///   • Smooth scale adjustments
-    /// 
+    ///
     /// PERFORMANCE TARGET:
     ///   • Processing: < 0.1ms per frame
     ///   • Target frame time: 16.67ms (60 FPS)
@@ -153,6 +153,7 @@ namespace Hecton8.World
         private bool _thermalOverrideActive;
         private DynamicResolutionRuntimeSnapshot _snapshot;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
 
         private UniversalRenderPipelineAsset _urpAsset;
 
@@ -411,28 +412,41 @@ namespace Hecton8.World
             return scaler != null && scaler._serviceRegistered && scaler.isActiveAndEnabled;
         }
 
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         private void TryRegisterSaveParticipant()
         {
             if (_saveRegistered)
                 return;
 
             ISaveService saveService = _saveService;
-            if (saveService == null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveService = null;
             _saveRegistered = false;
         }
@@ -440,7 +454,7 @@ namespace Hecton8.World
         // ══════════════════════════════════════════════════════════
         private void CacheRegistryServicesCold()
         {
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(_saveService))
                 _saveService = GlobalRegistry.Save;
         }
 

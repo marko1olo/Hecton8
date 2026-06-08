@@ -212,6 +212,7 @@ namespace Hecton8.World
             public Transform OriginalTransform;
             public GameObject BillboardObject;
             public Renderer BillboardRenderer;
+            public IObjectPoolService BillboardPoolOwner;
             public EntityId ImpostorID;
             public float ActivationDistanceSqr;
             public float DeactivationDistanceSqr;
@@ -254,7 +255,7 @@ namespace Hecton8.World
         private Transform _cameraTransform;
         private int _playerRuntimeContextCacheFrame = -1;
         private bool _playerRuntimeContextCacheValid;
-        private PlayerRuntimeContext _playerRuntimeContextCache;
+        private IPlayerRuntimeContext _playerRuntimeContextCache;
         private int _viewerAupCacheFrame = -1;
         private AbsoluteUniversePosition _viewerAupCache;
         private IPlayerRuntimeContext _playerRuntimeContext;
@@ -325,15 +326,8 @@ namespace Hecton8.World
                 return;
             }
 
-            ImpostorSystem registered = GlobalRegistry.Impostors;
-            if (registered != null && registered != this)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Duplicate registry owner detected. Destroying duplicate.");
-#endif
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             CacheRegistryServicesCold();
         }
@@ -350,6 +344,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CacheRegistryServicesCold();
             ValidateAuthoredAtlasMaterialCold();
             CacheAtlasDrawSupportCold();
@@ -464,6 +461,9 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             GlobalRegistry.RegisterImpostorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Impostors, this);
             if (_serviceRegistered)
@@ -484,6 +484,47 @@ namespace Hecton8.World
             _serviceRegistered = false;
         }
 
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            ImpostorSystem registered = GlobalRegistry.Impostors;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsImpostorRuntimeUsable(registered))
+                {
+                    s_activeRuntimeInstance = registered;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                GlobalRegistry.UnregisterImpostorRuntime(registered);
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+            }
+
+            ImpostorSystem active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsImpostorRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterImpostorRuntime(active);
+                s_activeRuntimeInstance = active;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterImpostorRuntime(active);
+            if (ReferenceEquals(s_activeRuntimeInstance, active))
+                s_activeRuntimeInstance = null;
+
+            return false;
+        }
+
+        private static bool IsImpostorRuntimeUsable(ImpostorSystem system)
+        {
+            return system != null && system._serviceRegistered && system.isActiveAndEnabled;
+        }
+
         private void CacheRegistryServicesCold()
         {
             if (_playerRuntimeContext == null)
@@ -493,7 +534,7 @@ namespace Hecton8.World
                 _dispatcher = GlobalRegistry.Dispatcher;
 
             if (_objectPool == null)
-                _objectPool = GlobalRegistry.ObjectPoolService;
+                CacheObjectPoolService(null);
 
             if (_lodSystemManager == null)
                 _lodSystemManager = GlobalRegistry.LODSystem;
@@ -582,7 +623,7 @@ namespace Hecton8.World
                     }
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.LODSystemRuntime:
                     _lodSystemManager = currentService as LODSystemManager;
@@ -591,6 +632,46 @@ namespace Hecton8.World
                     _dynamicResolutionScaler = currentService as DynamicResolutionScaler;
                     break;
             }
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                return;
+            }
+
+            _objectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private static void DespawnBillboardOrDeactivate(IObjectPoolService pool, GameObject billboardObject)
+        {
+            ObjectPoolManager.DespawnOrDeactivate(billboardObject, pool);
         }
 
         /// <summary>
@@ -803,7 +884,7 @@ namespace Hecton8.World
             }
 
             if (_mainCamera == null &&
-                TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                TryResolveCachedPlayerRuntimeContext(out IPlayerRuntimeContext runtimeContext) &&
                 runtimeContext != null)
             {
                 _mainCamera = runtimeContext.PlayerCamera;
@@ -829,6 +910,7 @@ namespace Hecton8.World
 
                 instance.BillboardObject = null;
                 instance.BillboardRenderer = null;
+                instance.BillboardPoolOwner = null;
                 instance.IsActive = true;
                 IncrementActiveIndirectAtlasCount();
                 _impostorBillboards.Remove(instance.ImpostorID);
@@ -836,8 +918,7 @@ namespace Hecton8.World
                 return;
             }
 
-            IObjectPoolService pool = _objectPool;
-            if (_billboardPrefab == null || pool == null)
+            if (_billboardPrefab == null || !TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             GameObject originalObject = instance.OriginalObject;
@@ -858,7 +939,7 @@ namespace Hecton8.World
             TryResolveBillboardRenderer(billboard, pool, out Renderer renderer);
             if (renderer == null)
             {
-                pool.Despawn(billboard);
+                DespawnBillboardOrDeactivate(pool, billboard);
                 return;
             }
 
@@ -871,21 +952,23 @@ namespace Hecton8.World
             renderer.forceRenderingOff = false;
             if (!ApplyBillboardAtlasProperties(renderer, in data))
             {
-                pool.Despawn(billboard);
+                DespawnBillboardOrDeactivate(pool, billboard);
                 return;
             }
 
             instance.BillboardObject = billboard;
             instance.BillboardRenderer = renderer;
+            instance.BillboardPoolOwner = pool;
             instance.IsActive = true;
             if (!TryTrackBillboardNoGrowth(instance.ImpostorID, billboard))
             {
                 ClearBillboardAtlasProperties(renderer);
                 instance.BillboardObject = null;
                 instance.BillboardRenderer = null;
+                instance.BillboardPoolOwner = null;
                 instance.IsActive = false;
                 renderer = null;
-                pool.Despawn(billboard);
+                DespawnBillboardOrDeactivate(pool, billboard);
                 return;
             }
 
@@ -1117,16 +1200,13 @@ namespace Hecton8.World
             if (instance.BillboardObject != null)
             {
                 ClearBillboardAtlasProperties(instance.BillboardRenderer);
-                IObjectPoolService pool = _objectPool;
-                if (pool != null)
-                    pool.Despawn(instance.BillboardObject);
-                else
-                    instance.BillboardObject.SetActive(false);
+                DespawnBillboardOrDeactivate(instance.BillboardPoolOwner, instance.BillboardObject);
             }
 
             _impostorBillboards.Remove(instance.ImpostorID);
             instance.BillboardObject = null;
             instance.BillboardRenderer = null;
+            instance.BillboardPoolOwner = null;
         }
 
         private void RestoreAllOriginalVisibility()
@@ -1565,26 +1645,56 @@ namespace Hecton8.World
 
             _viewerAupCacheFrame = frame;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement != null)
+            if (playerContext == null)
+                TryResolveCachedPlayerRuntimeContext(out playerContext);
+
+            if (TryResolvePlayerAupFromRuntimeContext(playerContext, out AbsoluteUniversePosition playerAup))
             {
-                _viewerAupCache = playerMovement.CurrentAup;
+                _viewerAupCache = playerAup;
                 return _viewerAupCache;
             }
 
-            if (TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
+            if (playerContext != null)
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-                {
-                    _viewerAupCache = movementState.PredictedAup;
-                    return _viewerAupCache;
-                }
+                _viewerAupCache = default;
+                return _viewerAupCache;
             }
 
             _viewerAupCache = default;
             return _viewerAupCache;
+        }
+
+        private static bool TryResolvePlayerAupFromRuntimeContext(
+            IPlayerRuntimeContext playerContext,
+            out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                AbsoluteUniversePosition snapshotAup = snapshot.Aup;
+                if (snapshotAup.IsFinite())
+                {
+                    playerAup = snapshotAup;
+                    return true;
+                }
+            }
+
+            if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                AbsoluteUniversePosition predictedAup = movementState.PredictedAup;
+                if (predictedAup.IsFinite())
+                {
+                    playerAup = predictedAup;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
@@ -1607,17 +1717,18 @@ namespace Hecton8.World
             return absoluteAup.IsFinite();
         }
 
-        private bool TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext)
+        private bool TryResolveCachedPlayerRuntimeContext(out IPlayerRuntimeContext runtimeContext)
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
             if (_playerRuntimeContextCacheFrame != frame)
             {
                 _playerRuntimeContextCacheFrame = frame;
-                _playerRuntimeContextCacheValid =
-                    PlayerRuntimeContextService.TryGetActiveRuntimeContext(out _playerRuntimeContextCache) &&
-                    _playerRuntimeContextCache != null;
+                _playerRuntimeContextCache = _playerRuntimeContext != null
+                    ? _playerRuntimeContext
+                    : PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntimeContextCacheValid = _playerRuntimeContextCache != null;
                 if (!_playerRuntimeContextCacheValid)
-                    _playerRuntimeContextCache = default;
+                    _playerRuntimeContextCache = null;
             }
 
             runtimeContext = _playerRuntimeContextCache;

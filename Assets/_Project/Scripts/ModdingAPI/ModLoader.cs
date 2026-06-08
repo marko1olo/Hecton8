@@ -1119,6 +1119,7 @@ namespace Hecton8.Modding
                 if (!ExecuteModCallback(loadedMod.Metadata.Id, loadedMod.Instance.OnLoad, "OnLoad"))
                 {
                     ModCommandDispatcher.UnregisterMod(loadedMod.Metadata.Id);
+                    DisableCandidate(candidate, "OnLoad failed.");
                     return;
                 }
 
@@ -1167,6 +1168,14 @@ namespace Hecton8.Modding
         {
             candidate.IsDisabled = true;
             candidate.DisabledReason = reason;
+            ModAssetManager.UnregisterBundlePath(candidate.Metadata.Id);
+            ModResourceRegistry.UnregisterModResources(candidate.Metadata.Id);
+            ModSettingsRegistry.UnregisterModSettings(candidate.Metadata.Id);
+            ModItemRegistry.UnregisterModItems(candidate.Metadata.Id);
+            ModRecipeRegistry.UnregisterModRecipes(candidate.Metadata.Id);
+            ModRecycleRegistry.UnregisterModRecycleYields(candidate.Metadata.Id);
+            ModEcosystemRegistry.UnregisterModBiomeMutations(candidate.Metadata.Id);
+            ModBuildableRegistry.UnregisterModBuildables(candidate.Metadata.Id);
             Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", candidate.Metadata.Id, "': ", reason));
 
             RecordRuntimeInfo(new ModRuntimeInfo
@@ -1193,6 +1202,14 @@ namespace Hecton8.Modding
 
             HectonEventBus.DisableSubscriber(modId);
             ModCommandDispatcher.QuarantineMod(modId);
+            ModAssetManager.UnregisterBundlePath(modId);
+            ModResourceRegistry.UnregisterModResources(modId);
+            ModSettingsRegistry.UnregisterModSettings(modId);
+            ModItemRegistry.UnregisterModItems(modId);
+            ModRecipeRegistry.UnregisterModRecipes(modId);
+            ModRecycleRegistry.UnregisterModRecycleYields(modId);
+            ModEcosystemRegistry.UnregisterModBiomeMutations(modId);
+            ModBuildableRegistry.UnregisterModBuildables(modId);
 
             for (int i = _loadedMods.Count - 1; i >= 0; i--)
             {
@@ -1217,6 +1234,11 @@ namespace Hecton8.Modding
 
                 _loadedMods.RemoveAt(i);
                 ModCommandDispatcher.UnregisterMod(modId);
+                ModItemRegistry.UnregisterModItems(modId);
+                ModRecipeRegistry.UnregisterModRecipes(modId);
+                ModRecycleRegistry.UnregisterModRecycleYields(modId);
+                ModEcosystemRegistry.UnregisterModBiomeMutations(modId);
+                ModBuildableRegistry.UnregisterModBuildables(modId);
                 ModRuntimeInfo info = new ModRuntimeInfo
                 {
                     Metadata = loadedMod.Metadata,
@@ -1371,6 +1393,14 @@ namespace Hecton8.Modding
             {
                 ExecuteModCallback(_loadedMods[i].Metadata.Id, _loadedMods[i].Instance.OnUnload, "OnUnload");
                 ModCommandDispatcher.UnregisterMod(_loadedMods[i].Metadata.Id);
+                ModAssetManager.UnregisterBundlePath(_loadedMods[i].Metadata.Id);
+                ModResourceRegistry.UnregisterModResources(_loadedMods[i].Metadata.Id);
+                ModSettingsRegistry.UnregisterModSettings(_loadedMods[i].Metadata.Id);
+                ModItemRegistry.UnregisterModItems(_loadedMods[i].Metadata.Id);
+                ModRecipeRegistry.UnregisterModRecipes(_loadedMods[i].Metadata.Id);
+                ModRecycleRegistry.UnregisterModRecycleYields(_loadedMods[i].Metadata.Id);
+                ModEcosystemRegistry.UnregisterModBiomeMutations(_loadedMods[i].Metadata.Id);
+                ModBuildableRegistry.UnregisterModBuildables(_loadedMods[i].Metadata.Id);
             }
 
             _loadedMods.Clear();

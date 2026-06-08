@@ -1,0 +1,40 @@
+---
+packet_id: P470_KEELMARK_TONNE_WINDOW_BRIDGE
+release_set_id: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
+article_id: applied_lore.keelmark_tonne_window_bridge
+unlock_id: unlock.keelmark_tonne_window_bridge
+poi_tags: poi.black_keel_contract_approach;poi.capsule_diagnostic
+biome_tags: biome.photic_shelf
+locale: ru_RU
+surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Тонно-окно Keelmark"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# Тонно-окно Keelmark
+
+Tonne-window - это возвращаемая масса, которую Black Keel может поднять через одну орбитальную возможность после топлива, шторма, карантина, страховки и приоритета. Keelmark Mutual делает игрока читаемым как массу раньше, чем как человека. Каждый сохраненный образец, пакет доказательств, кислородный долг и welfare rider двигают число.
+
+## Scanner
+
+ЗАЛОГ TONNE-WINDOW // Записан эквивалент 4.8. Кислород, welfare-добавки, сохранность образцов и доказательный груз могут менять приоритет массы возврата.
+
+## Terminal
+
+РЕЕСТР ОКНА KEELMARK MUTUAL // Базовый залог: эквивалент 4.8 tonne-window. Поправки включают кислородный риск, welfare-добавку, сохранность образца, доказательный груз, карантинное удержание и подъемную квоту carrier. Реестр оценивает возврат; он не обещает спасение.
+
+## Audio
+
+Окно считает массу раньше, чем милость.
+
+## Field Note
+
+Не читай 4.8 только как деньги. Это вес твоего следующего шанса.
+
+<!-- In-Game Wiki; generated from P470_KEELMARK_TONNE_WINDOW_BRIDGE/ru_RU. -->

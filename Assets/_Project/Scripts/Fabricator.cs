@@ -696,6 +696,11 @@ namespace Hecton8.Crafting
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteRuntimePosition(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)
+                return;
+
             _fabricatorAupCached = false;
             CacheFabricatorAup();
             if (_assemblyPreviewActive && !_assemblyMaterialSwapped)
@@ -2141,6 +2146,104 @@ namespace Hecton8.Crafting
             _pendingCraftOutputTotalQuantity = 0;
         }
 
+        internal void PopulateSaveData(ref ModuleDTO dto)
+        {
+            dto.fabricatorPendingOutputItemId = string.Empty;
+            dto.fabricatorPendingOutputQuantity = 0;
+            dto.fabricatorPendingOutputTotalQuantity = 0;
+            if (!HasPendingCraftOutput)
+                return;
+
+            ItemData result = _pendingCraftOutputItem;
+            string persistentId = result != null ? result.PersistentId : string.Empty;
+            int quantity = math.max(0, _pendingCraftOutputQuantity);
+            if (string.IsNullOrWhiteSpace(persistentId) || quantity <= 0)
+                return;
+
+            dto.fabricatorPendingOutputItemId = persistentId;
+            dto.fabricatorPendingOutputQuantity = quantity;
+            dto.fabricatorPendingOutputTotalQuantity = math.max(quantity, _pendingCraftOutputTotalQuantity);
+        }
+
+        internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)
+        {
+            int quantity = math.max(0, dto.fabricatorPendingOutputQuantity);
+            if (quantity <= 0)
+            {
+                ClearPendingCraftOutput();
+                return;
+            }
+
+            string itemId = dto.fabricatorPendingOutputItemId;
+            if (itemCatalog == null || string.IsNullOrWhiteSpace(itemId))
+                return;
+
+            ItemData result = itemCatalog.FindById(itemId);
+            if (result == null)
+                return;
+
+            ClearPendingCraftOutput();
+            _pendingCraftOutputItem = result;
+            _pendingCraftOutputQuantity = quantity;
+            _pendingCraftOutputTotalQuantity = math.max(quantity, dto.fabricatorPendingOutputTotalQuantity);
+            if (TryResolveRecipeForResultItem(result, out RecipeData recipe))
+                _pendingCraftOutputRecipe = recipe;
+        }
+
+        internal bool CanEjectPendingCraftOutput(PlayerInventory inventory, Vector3 dropPosition)
+        {
+            if (!HasPendingCraftOutput)
+                return true;
+
+            ItemData result = _pendingCraftOutputItem;
+            int itemHashId = ComputeItemHash(result);
+            int quantity = math.max(1, _pendingCraftOutputQuantity);
+            if (result == null || itemHashId == 0 || quantity <= 0)
+                return false;
+
+            if (inventory != null &&
+                inventory.CanAcceptItemQuantity(itemHashId, quantity))
+            {
+                return true;
+            }
+
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
+            return IsFiniteRuntimePosition(dropPosition) &&
+                   registry != null &&
+                   registry.CanRegisterDroppedItem(result, quantity, dropPosition);
+        }
+
+        internal bool EjectPendingCraftOutput(PlayerInventory inventory, ref Vector3 dropPosition)
+        {
+            if (!HasPendingCraftOutput)
+                return true;
+
+            if (!CanEjectPendingCraftOutput(inventory, dropPosition))
+                return false;
+
+            ItemData result = _pendingCraftOutputItem;
+            int itemHashId = ComputeItemHash(result);
+            int quantity = math.max(1, _pendingCraftOutputQuantity);
+            if (inventory != null &&
+                inventory.CanAcceptItemQuantity(itemHashId, quantity) &&
+                inventory.TryAddItem(itemHashId, quantity))
+            {
+                ClearPendingCraftOutput();
+                return true;
+            }
+
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
+            if (registry != null &&
+                registry.TryRegisterDroppedItem(result, quantity, dropPosition))
+            {
+                ClearPendingCraftOutput();
+                dropPosition.x += 0.3f;
+                return true;
+            }
+
+            return false;
+        }
+
         private bool TryFlushPendingCraftOutput()
         {
             if (!HasPendingCraftOutput)
@@ -2657,30 +2760,37 @@ namespace Hecton8.Crafting
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null)
+            {
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    snapshot.Aup.IsFinite())
+                {
+                    playerAup = snapshot.Aup;
+                    return true;
+                }
+
+                if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite())
+                {
+                    playerAup = movementState.PredictedAup;
+                    return true;
+                }
+
+                playerAup = default;
+                return false;
+            }
+
             if (_playerMovement != null)
             {
-                playerAup = _playerMovement.CurrentAup;
-                return true;
-            }
-
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonPlayerMovement cachedMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (cachedMovement != null)
-            {
-                _playerMovement = cachedMovement;
-                if (_playerTransform == null)
-                    _playerTransform = playerContext.PlayerTransform;
-
-                playerAup = cachedMovement.CurrentAup;
-                return true;
-            }
-
-            if (playerContext != null &&
-                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                snapshot.Aup.IsFinite())
-            {
-                playerAup = snapshot.Aup;
-                return true;
+                AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup;
+                if (currentAup.IsFinite())
+                {
+                    playerAup = currentAup;
+                    return true;
+                }
             }
 
             playerAup = default;
@@ -4338,4 +4448,3 @@ namespace Hecton8.Crafting
 #endif
     }
 }
-

@@ -9,32 +9,36 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Photic Mat Codex Card"
+title: "Karta kodeksu maty fotycznej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Photic Mat Codex Card
+# Karta kodeksu maty fotycznej
 
-PL LOC HOLD: Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.
+Maty fotyczne sprawiają, że płytkie szelfy wydają się żywe, ale nie czynią ich bezpiecznymi. To warstwowe arkusze biofilmu rosnące tam, gdzie światło, skóra mineralna, słaby wyciek gazu i chemia ciśnienia spotykają się zbyt szybko. Zdrowa mata może dodać tlen do kieszeni, karmić glass grazers, zabarwić wapień zielono-złotą krawędzią i ustabilizować drobny osad, który inaczej uniósłby się w wodzie. Ta użyteczność jest właśnie powodem, by gracz nie traktował jej jak dekoracji ani darmowego jedzenia. Małe próbki z luźnego brzegu są dość bezpieczne dla skanera. Mata rozpięta nad pęknięciem, szwem gasket, blizną kabla albo bladym pęcherzem gazu jest już częścią trasy. Zerwij ją tam, a szelf może się zmienić: uwięziony gaz uchodzi, grazers się rozpraszają, osad mąci wodę, a jasna plama staje się problemem widoczności. Zasada jest prosta. Pobieraj brzeg. Nie kradnij bandaża.
 
 ## Scanner
 
-PL LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Mata fotyczna. Tlenododatnia warstwa biofilmu na skórze mineralnej. Jasna, użyteczna, krucha pod ciśnieniem. Nie odrywać od uszczelnionych pęknięć.
 
 ## Terminal
 
-PL LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+OKAZ / MATA FOTYCZNA
+rola: płytka powierzchnia tlenowa, pokarm grazers, stabilizator filmu mineralnego
+bezpieczna próbka: luźny brzeg mniejszy niż szerokość dłoni
+odrzuć: arkusze uszczelniające szwy, maty z pęcherzami gazu, świeże pola ugryzień grazers
+uwaga trasy: rozdarte maty mogą uwolnić uwięziony gaz i zmienić czysty szelf w hazard.
 
 ## Audio
 
-PL LOC HOLD: Light here is work, not comfort.
+Wygląda miękko, bo pracuje. Jeśli trzyma szew, zostaw ją tam.
 
 ## Field Note
 
-PL LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+Luźny brzeg: próbka. Pokrycie szwu: zostaw. Jeśli mata uszczelnia ranę, rana wciąż tam jest.
 
 <!-- In-Game Wiki; generated from P291_PHOTIC_MAT_CODEX_CARD/pl_PL. -->

@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Fieldguide drowned crust strata"
+title: "Полевой справочник затопленных пластов коры"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Fieldguide drowned crust strata
+# Полевой справочник затопленных пластов коры
 
-Геология HECTON-8 поддерживает реиграбельность: меняются strata и routes, сохраняются hard-sci-fi rules.
+Полевой справочник затопленных пластов коры делает дно HECTON-8 построенным и сломанным одновременно: terrain, salvage routes и минеральные образцы происходят из одной слоистой истории давления.
 
 ## Scanner
 
-Strata guide. Затопленная кора открывает старую индустрию, pressure glass и unstable mineral bands.
+Затопленные пласты открывают старые следы резки, швы pressure-glass и минеральные полосы, которые дважды не рушатся в одну сторону.
 
 ## Terminal
 
-FIELD GUIDE: drowned crust HECTON-8 - не плоское дно. Это folded settlement rock, collapsed ice history, pressure glass и extraction scars под moving brine.
+FIELD GUIDE: затопленная кора HECTON-8 - это сложенный поселковый камень, память обрушенного льда, pressure glass и extraction scars под движущейся brine. Линии трещин важнее чистых поверхностей.
 
 ## Audio
 
-Карта - не terrain. Это стопка затоплений.
+Карта - не местность. Это стопка утоплений.
 
 ## Field Note
 
-Для geology codex и world labels.
+Если слой звенит пусто, не верь ровной плоскости. Отметь трещину, возьми образец, оставь стену держаться.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/ru_RU. -->

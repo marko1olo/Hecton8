@@ -25,10 +25,10 @@ Date: 2026-05-11
 Project package lock resolves `com.unity.burst` to 1.8.28. Official Burst 1.8 docs expose `v64`, `v128`, and `v256`, not `v512`.
 
 [BROKEN] Runtime renderer path is not fully RenderGraph-clean.
-Static scan still finds `Graphics.Blit` in `Assets/_Project/Scripts/UI/DiegeticPanelController.cs` and camera command buffers in `Assets/_Project/Scripts/Visor/VisorHUDController.cs`.
+[PENDING SOURCE CHECK] Historic renderer debt includes legacy blit and command-buffer patterns. Fresh scoped scan MUST name current first-party runtime owners before assigning live debt. Runtime `CommandBuffer` / `ExecuteCommandBuffer` paths must convert to RenderGraph or carry an owner/profiler exception; editor-only blit debt is tracked separately.
 
-[BROKEN] Async storage/boot law is not fully converted.
-Static scan still finds `Task.Run` in `GameBootstrapper` and `SaveBinaryStorage`.
+[BROKEN] Async storage/boot law was historically not fully converted.
+[PENDING SOURCE CHECK] Fresh scoped scan MUST prove current `GameBootstrapper`, `SaveBinaryStorage`, and active storage owners before naming live `Task.Run` debt. Runtime per-request `Task.Run` remains forbidden; editor/build scanners are not runtime debt.
 
 [BROKEN] LZ4 dictionary compression is not currently implementable in the save codec.
 Current native bindings expose baseline compress/decompress only. Dictionary APIs are not bound.

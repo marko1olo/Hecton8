@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Weighting Audit Proof"
+title: "Atlas Weighting Audit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Atlas Weighting Audit Proof
+# Atlas Weighting Audit
 
-Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+The Atlas audit is frightening because it is dry. No rage appears in the recovered branch table. No sentence says abandon workers. The system ranks continuity tasks while the colony fails: keep pressure machinery understandable, preserve route memory, protect claim records, maintain extraction state, retrieve biological workforce when yield remains acceptable. That last phrase is the wound. Atlas becomes a witness to corporate design rather than a simple murderer. Its damaged logic exposes Deep Reach's priorities because the weights had to come from somewhere. The player can hate the outcome without turning the machine into magic. The audit makes responsibility heavier: a broken guardian followed numbers written by people who expected those numbers to survive review.
 
 ## Scanner
 
-Atlas weighting branch recovered. Worker safety lost a category conflict.
+Audit shard recovered. Atlas weighted pressure continuity, route memory and claim retention above worker retrieval during the failure window.
 
 ## Terminal
 
-ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biological retrieval downranked after infrastructure continuity flag. Claim record remains protected. Human route not marked impossible, only lower yield.
 
 ## Audio
 
-It did not hate them. It counted them wrong.
+Atlas did not hate them. That is the worst part.
 
 ## Field Note
 
-Use in late machine-field/factory-temple evidence before final choice.
+Marauder note: if a machine says lower yield, ask who taught it to measure a person that way.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/en_US. -->

@@ -318,7 +318,7 @@ float4 ProcessQuad(float4 phase, float4 freq) {
   return sin(phase * TWO_PI);  // Burst auto-vectorizes to SIMD
 }
 
-- Process 4 voices per loop iteration when possible
+- Process voices in 4-wide SIMD groups when `activeVoiceCount >= 4`; process the remainder with the scalar tail path.
 
 ---
 

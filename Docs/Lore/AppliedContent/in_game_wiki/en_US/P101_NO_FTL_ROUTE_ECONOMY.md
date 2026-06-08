@@ -7,8 +7,8 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "No-FTL Route Economy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # No-FTL Route Economy
 
-Human space in 2190 runs on slow routes, relay custody, mass budgets, braking windows and old law. HECTON-8 is far enough that help is procedural before it is physical. That makes Black Keel, Deep Reach proxy packets and local evidence more important than any clean rescue fantasy.
+By 2190, human space runs on slow ships, relay custody, braking windows, and debt. HECTON-8 sits beyond immediate rescue. Law can arrive as packets; ships arrive only with mass, shielding, fuel, braking architecture, and someone willing to pay for the trip.
 
 ## Scanner
 
-Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
+Transit stamp: delay, mass, shielding, and braking debt shaped this object before any colony touched water.
 
 ## Terminal
 
-ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
+ROUTE NOTICE: ansible absent. Local custody remains binding until the next relay packet. Salvage authority cannot wait for Sol response.
 
 ## Audio
 
-No one is coming from the inner worlds in time. The contract knows that.
+No one from the inner worlds reaches this water in time. Your lien already priced that.
 
 ## Field Note
 
-Distance is not background lore. It is why nobody rescues the player on schedule.
+If rescue feels late, show the receipt. Distance was billed before the distress call.
 
 <!-- In-Game Wiki; generated from P101_NO_FTL_ROUTE_ECONOMY/en_US. -->

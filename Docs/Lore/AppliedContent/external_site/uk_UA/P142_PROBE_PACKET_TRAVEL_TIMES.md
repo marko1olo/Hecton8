@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+spoiler_tier: 1
+title: "Час подорожі зондових пакетів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# Час подорожі зондових пакетів
 
-UA LOC HOLD: Probe Packet Travel Times explain how Aegir became a claim before it became a place.
-
-## Scanner
-
-UA LOC HOLD: The first Aegir witnesses were packets, not colonists.
-
-## Terminal
-
-UA LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
-
-## Audio
-
-UA LOC HOLD: The probe saw the ocean before anyone had a grave there.
-
-## Field Note
-
-UA LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+Час probe packets зробив Aegir цінним раніше, ніж він став знайомим. Вузька машина могла пройти маршрут, виміряти й доповісти, поки людські інституції ще сперечалися про бюджети й liability. Коли Deep Reach продала впевненість, packets уже були старими, а risk models відполірованими. Небезпека machine-first exploration у тому, що океан можна оцінити за застарілою правдою задовго до розуміння ціни роботи там.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/uk_UA. -->

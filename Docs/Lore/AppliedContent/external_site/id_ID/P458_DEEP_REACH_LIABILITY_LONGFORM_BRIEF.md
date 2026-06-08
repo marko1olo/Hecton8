@@ -9,32 +9,36 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ID LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: Liabilitas di Bawah Air Nyata"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: Liabilitas di Bawah Air Nyata
 
-ID LOC HOLD: Deep Reach did not need to invent the ocean. HECTON-8 failed under real pressure, real tide force and real infrastructure limits. That is what makes the liability harder to bury. The official record names a localized geotechnical cascade, corrupted Atlas logs and incomplete evacuation. Each phrase has enough truth to survive a hearing. The physical site adds what the public sentence omits: margin approvals signed before the tide window, evacuation routes held behind authorization, quarantine doors certified late, Atlas continuity weights that protected system function before worker recovery, and loss ledgers that turned names into categories after the water had already won. The accusation is not that Deep Reach caused the ocean to rise by command. It is that the company priced known risk, delayed human exit, kept records clean and let recovery offices convert disaster into manageable custody. On HECTON-8, the rooms testify more precisely than the statement.
+## Setengah benar yang berguna
 
-## Scanner
+Laporan Deep Reach terdengar jujur karena berisi air nyata. HECTON-8 mengalami Great Tide: tekanan kriyosfer, pasang resonan, badai, panas, dan tekanan membuka koloni.
 
-ID LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+Kesalahan ada pada lapisan yang dihapus: margin sensor diterima, kapasitas evakuasi kurang, Atlas continuity di atas ekstraksi manusia, bahasa karantina sebagai pembeli waktu, dan orang hilang menjadi kategori klaim.
 
-## Terminal
+Varnek mengubah peringatan menjadi risiko jadwal. Arendt menahan keselamatan dalam proses. Haldane membuat ekstraksi menunggu sertifikasi. Ibarra menerjemahkan tubuh menjadi beban dan rugi. Sato-Ren masih meminta koordinat, bukti XO, dan diam sebelum bahasa penyelamatan.
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+Dokumen bersih tidak perlu mengaku. Ruang banjir menunjukkan biaya. Satu memo adalah curiga. Rantai adalah bukti, dan pemain memilih konteks mana yang layak dibawa melalui custody Black Keel.
 
-## Audio
+## Bentuk Kesalahan
 
-ID LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Deep Reach tidak boleh dipipihkan menjadi satu penjahat dengan tombol bersih. Kesalahannya lebih kuat karena tersebar. Varnek menerima tide margin. Arendt menaruh Atlas weights di atas pekerja. Haldane menjaga bahasa quarantine tetap bersih. Ibarra mengubah nama menjadi loss categories. Sato-Ren mencoba memindahkan return action ketika kerusakan sudah berada di dalam sistem.
 
-## Field Note
+Setiap dokumen cukup kecil untuk tampak biasa. Bersama-sama, mereka menunjukkan institusi yang bertahan dengan membuat tiap keputusan mematikan tampak lokal, sementara, dan benar secara prosedur. Para pekerja mati di dalam tata bahasa itu.
 
-ID LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+## Mengapa Bukti Punya Massa
+
+Pemain tidak menyelesaikan ini dengan keyakinan. Paket bisa ditunda, ditantang, disunting, atau diberi harga. Bukti fisik harus dibawa: sensor margins, evakuasi rusak, Atlas trace, custody ledger, sample chain. Bukti berat karena HECTON-8 membuat kebenaran berbagi ruang dengan oksigen, alat, dan kargo.
+
+Di situlah tekanan cerita. Pemain bukan sekadar mempelajari yang terjadi. Mereka memutuskan berapa banyak keselamatan dapat dibelanjakan agar kejadian itu lebih sulit dihapus.
 
 <!-- External Site; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/id_ID. -->

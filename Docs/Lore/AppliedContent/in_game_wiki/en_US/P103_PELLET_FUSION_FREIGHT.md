@@ -7,8 +7,8 @@ poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
 biome_tags: biome.carrier_link;biome.relay_shadow
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Pellet-Fusion Freight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Pellet-Fusion Freight
 
-Heavy interstellar travel is possible without FTL, but it is punishing. Beam-sail boost, pellet-fed fusion, shield mass, long coasts and braking architecture let seed payloads and later colony freight reach Aegir. The same logistics make rescue slow: every kilogram, berth, brake slot and survivor seat belongs to a schedule.
+Pellet-fusion freight made Aegir reachable without FTL. Beam stations pushed; pellet streams fed fusion burns; shield mass absorbed dust; magsails and local braking systems paid back velocity over time. The same architecture makes rescue slow. Every kilogram has a schedule, a heat budget, and an owner.
 
 ## Scanner
 
-Drive plate. Pellet-fed fusion freight crossed as infrastructure: boost, shield, coast, brake, and bill the loss.
+Drive plate: boost, pellet feed, shield, coast, brake, and bill the losses.
 
 ## Terminal
 
-FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used beam-sail boost, pellet-fed fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+FREIGHT DOCTRINE: seed payloads and colony mass used beam boost, pellet-fed fusion, shield mass, magsail braking, and long coast intervals. Living cargo followed infrastructure.
 
 ## Audio
 
-A heavy ship is not a miracle. It is a mortgage with engines.
+Machines crossed first because machines could be written off.
 
 ## Field Note
 
-Heavy transit is not heroic. It is an old route contract with heat scars.
+A heavy ship is not a miracle. It is a mortgage with engines and heat scars.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/en_US. -->

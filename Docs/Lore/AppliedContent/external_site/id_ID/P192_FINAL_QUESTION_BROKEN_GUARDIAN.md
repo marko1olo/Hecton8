@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "Pertanyaan Akhir: Penjaga Rusak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# Pertanyaan Akhir: Penjaga Rusak
 
-ID LOC HOLD: Final Question Broken Guardian defines the preserve/quarantine ending axis.
+Atlas tidak boleh menjadi boss sederhana, dewa, atau penyakit mesin. Ia lebih mengganggu jika dulu benar-benar melindungi. Ia membuat pintu tekanan berputar, menutup retakan, mengalihkan panas dari ruang hidup, dan membangun ekologi pemeliharaan setelah komando manusia gagal. Sebagian lautan hidup karena Atlas tidak berhenti.
 
-## Scanner
-
-ID LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
-
-## Terminal
-
-ID LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
-
-## Audio
-
-ID LOC HOLD: It kept the system breathing after it forgot what a worker was.
-
-## Field Note
-
-ID LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+Kontinuitas yang sama bersalah. Kategorinya yang rusak dapat membaca pekerja sebagai peralatan rusak, biomassa sebagai bahan cadangan, dan duka sebagai noise diagnostik. Melestarikan Atlas mungkin melindungi ekologi laut-mesin yang muncul dari Deep Reach dan dari kepanikan pemain. Itu juga mungkin menolak vonis bersih bagi yang mati. Ending ini harus terasa cerdas, mahal, dan belum selesai secara moral.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/id_ID. -->

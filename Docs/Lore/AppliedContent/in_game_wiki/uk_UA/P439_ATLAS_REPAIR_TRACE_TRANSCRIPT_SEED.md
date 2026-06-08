@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Транскрипт ремонтного сліду Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Repair Trace Transcript Seed
+# Транскрипт ремонтного сліду Atlas
 
-UK LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.
+Аудіо Atlas лякає тим, що поводиться з життям, металом і водою як з однією пошкодженою maintenance surface.
 
 ## Scanner
 
-UK LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+Аудіо/caption seed: сліди Atlas звучать як ремонтна телеметрія зі зламаними категоріями, а не як бог, що говорить.
 
 ## Terminal
 
-UK LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
+TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.
 
 ## Audio
 
-UK LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+Ремонтний слід: розрив мембрани прийнято. Ріст кабелю дозволено. Маршрут фауни позначено serviceable.
 
 ## Field Note
 
-UK LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+Для scanner captions, глибоких аудіошарів і Atlas spoiler gates. Тримати мову стислою, таксономічною й пошкодженою.
 
 <!-- In-Game Wiki; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/uk_UA. -->

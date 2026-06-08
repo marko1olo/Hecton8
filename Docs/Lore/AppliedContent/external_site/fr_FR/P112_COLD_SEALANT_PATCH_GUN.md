@@ -9,32 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Pistolet de colmatage à froid"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Pistolet de colmatage à froid
 
-FR LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+Le pistolet de colmatage à froid enseigne la première limite honnête. Il peut stopper un pinhole, tenir une lèvre de joint ou acheter des minutes sur une couture calme. Il ne bénit pas une structure en mouvement. Le rating label compte plus que l'espoir du joueur.
 
-## Scanner
-
-FR LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-FR LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-FR LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-FR LOC HOLD: Sealant repairs should buy time, not erase pressure.
+C'est pourquoi l'outil arrive tôt. Il permet d'agir sans prétendre que chaque fuite se résout. Un bon patch crée du temps ; un mauvais patch crée de la confiance là où l'océan viendra encaisser.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/fr_FR. -->

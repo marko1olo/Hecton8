@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "Montaż łańcucha ucieczki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# Montaż łańcucha ucieczki
 
-PL LOC HOLD: Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems.
+Montaż łańcucha ucieczki jest inżynieryjnym kręgosłupem kampanii. HECTON-8 nie daje czystej ewakuacji na powierzchnię po pierwszej naprawie; odejście staje się zestawem fizycznych, prawnych i dowodowych komponentów rozsianych po zatopionej infrastrukturze. To daje długiemu zejściu powód praktyczny i moralny: gracz nie tylko opuszcza ocean, ale montuje trasę, która dowodzi, dlaczego kolonia nigdy nie miała uczciwego wyjścia.
 
 ## Scanner
 
-PL LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+Odlot wymaga sześciu twardych dowodów: przekaźnika, uszczelnienia, naprowadzania, ładunku wznoszenia, prawnego uzgodnienia i ładunku, którego przewoźnik nie może zignorować.
 
 ## Terminal
 
-PL LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+PAKIET WZNOSZENIA: brak akustycznego kręgosłupa przekaźnikowego. Ocena pierścienia zaciskowego niewystarczająca. Brak rdzenia naprowadzania. Kołyska ładunku pusta. Uzgodnienie kwarantanny nierozwiązane. Ładunek dowodowy opcjonalny, ale zmienia władzę odzysku.
 
 ## Audio
 
-PL LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+Nie naprawiasz kapsuły. Budujesz pierwsze uczciwe wyjście, którego kolonia nigdy nie miała.
 
 ## Field Note
 
-PL LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+Droga w górę powstaje z części, których nigdy nie projektowano po to, by robotnicy mogli odejść samodzielnie.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/pl_PL. -->

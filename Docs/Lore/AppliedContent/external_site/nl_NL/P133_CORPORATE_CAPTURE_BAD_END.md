@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "Corporate gevangenneming: schone redding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# Corporate gevangenneming: schone redding
 
-NL LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call.
+Corporate gevangenneming werkt omdat het als hulp begint. Het signaal is schoon, het ophalen professioneel, en de kamer heeft lucht. Dan wordt de volgorde duidelijk: coördinaten eerst, XO custody daarna, Atlas-toegang als derde, welzijn van de contractant na review.
 
-## Scanner
-
-NL LOC HOLD: Rescue offer. Payload first. Witness second.
-
-## Terminal
-
-NL LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
-
-## Audio
-
-NL LOC HOLD: The clean room is not for you.
-
-## Field Note
-
-NL LOC HOLD: A rescue that demands silence is a capture with better lighting.
+De oceaan stopt met de speler verpletteren, maar Deep Reach begint het verhaal te conserveren. Getuigenis wordt verzegeld in contaminatietaal, payload-custody beweegt vóór medische debriefing, en elke naam die de speler droeg wordt een aansprakelijkheidsscherm. Dit is geen dood. Het is overleven in de machine die stilte nodig had.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/nl_NL. -->

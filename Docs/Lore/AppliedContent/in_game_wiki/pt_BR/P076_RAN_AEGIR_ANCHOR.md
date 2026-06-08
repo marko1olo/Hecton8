@@ -9,32 +9,34 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ran / Aegir Anchor"
+title: "Âncora Ran / Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ran / Aegir Anchor
+# Âncora Ran / Aegir
 
-PT-BR LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.
+Ran ancora o sistema Aegir como uma estrela normal de classe K, não como lâmpada morta nem fonte de escuridão sobrenatural. HECTON-8 pode ter águas rasas brilhantes porque a luz existe.
+
+O horror começa quando atmosfera, tempestade, água mineral, profundidade e lodo industrial apagam essa luz mais rápido do que um contrato de resgate consegue reagir. Acima da água, o sistema é astronômico. Abaixo, cada lúmen vira tempo alugado.
 
 ## Scanner
 
-PT-BR LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
+Placa de estrela classe K. Ran queima normalmente. Aegir é mais fraco que Sol, mas a escuridão aqui vem de profundidade, clima e dívida.
 
 ## Terminal
 
-PT-BR LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR // Luz de anã laranja sustenta trabalho de superfície. Dispersão de tempestade, geometria de eclipse e turbidez oceânica empurram leitura de descida abaixo da margem segura.
 
 ## Audio
 
-PT-BR LOC HOLD: The star is not absent. It just cannot follow you down.
+A estrela está presente. Ela só não consegue te seguir para baixo.
 
 ## Field Note
 
-PT-BR LOC HOLD: A real star is enough. The ocean does the rest.
+Uma estrela real basta. O oceano faz o resto.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/pt_BR. -->

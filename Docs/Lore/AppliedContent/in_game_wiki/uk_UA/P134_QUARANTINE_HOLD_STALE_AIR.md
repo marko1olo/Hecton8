@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Карантинне утримання: сперте повітря"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Карантинне утримання: сперте повітря
 
-UA LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+Карантинне утримання рятує тіло й підвішує agency. Гравець утік від тиску, але не від custody. Кожен подих відміряний, доки доказ чекає за мовою review.
 
 ## Scanner
 
-UA LOC HOLD: You are alive, sealed, and still not free.
+Тіло вилучено. Свідка запечатано. Раціон повітря активний.
 
 ## Terminal
 
-UA LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+КАРАНТИННЕ УТРИМАННЯ: підрядника вилучено живим; раціон повітря активний; sample custody не вирішено; зовнішні свідчення відкладено до перевірки зараження, спору claimant і review збитку Keelmark.
 
 ## Audio
 
-UA LOC HOLD: The hatch opens only to another closed hatch.
+Люк відкривається до іншого закритого люка.
 
 ## Field Note
 
-UA LOC HOLD: This is the bureaucratic version of drowning.
+Це адміністративна форма утоплення.
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/uk_UA. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # خروج مادي
 
-يدعم إعادة اللعب بنهاية رابحة ومخترقة لمن يختار الغنيمة والعقد والنجاة.
+يدعم Material Exit انسحابا مربحا لكنه ملوث: الغنيمة والعقود والبقاء يمكن أن تكسب الصعود، بينما تبقى حقيقة النزول الكاملة في الأسفل.
 
 ## Scanner
 

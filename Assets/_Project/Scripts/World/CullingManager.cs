@@ -41,7 +41,7 @@ namespace Hecton8.World
     ///   • Struct-based CullableObject data
     ///   • No LINQ, no string operations in hot paths
     ///   • Hysteresis prevents activation thrashing
-    /// 
+    ///
     /// PERFORMANCE TARGET:
     ///   • SlowTick processing: < 0.5ms
     ///   • Supports 1000+ cullable objects
@@ -329,35 +329,35 @@ namespace Hecton8.World
 
         private bool TryAbortForUsableExistingRuntime()
         {
-            CullingManager active = s_activeRuntimeInstance;
-            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            CullingManager registered = GlobalRegistry.Culling;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
             {
-                if (IsCullingRuntimeUsable(active))
+                if (IsCullingRuntimeUsable(registered))
                 {
-                    GlobalRegistry.RegisterCullingRuntime(active);
-                    s_activeRuntimeInstance = active;
                     Destroy(gameObject);
+                    s_activeRuntimeInstance = registered;
                     return true;
                 }
 
-                GlobalRegistry.UnregisterCullingRuntime(active);
-                if (ReferenceEquals(s_activeRuntimeInstance, active))
+                GlobalRegistry.UnregisterCullingRuntime(registered);
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
                     s_activeRuntimeInstance = null;
             }
 
-            CullingManager registered = GlobalRegistry.Culling;
-            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+            CullingManager active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
                 return false;
 
-            if (IsCullingRuntimeUsable(registered))
+            if (IsCullingRuntimeUsable(active))
             {
-                s_activeRuntimeInstance = registered;
+                GlobalRegistry.RegisterCullingRuntime(active);
+                s_activeRuntimeInstance = active;
                 Destroy(gameObject);
                 return true;
             }
 
-            GlobalRegistry.UnregisterCullingRuntime(registered);
-            if (ReferenceEquals(s_activeRuntimeInstance, registered))
+            GlobalRegistry.UnregisterCullingRuntime(active);
+            if (ReferenceEquals(s_activeRuntimeInstance, active))
                 s_activeRuntimeInstance = null;
 
             return false;

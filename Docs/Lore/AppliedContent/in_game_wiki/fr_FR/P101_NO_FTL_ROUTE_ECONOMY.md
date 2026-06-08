@@ -7,34 +7,34 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Économie de route sans FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# Économie de route sans FTL
 
-FR LOC HOLD: Human space in 2190 runs on slow routes, relay custody, mass budgets, braking windows and old law. HECTON-8 is far enough that help is procedural before it is physical. That makes Black Keel, Deep Reach proxy packets and local evidence more important than any clean rescue fantasy.
+En 2190, l'espace humain fonctionne avec des vaisseaux lents, la garde relais, des fenêtres de freinage et la dette. HECTON-8 se trouve au-delà du secours immédiat. La loi peut arriver par paquets ; les vaisseaux n'arrivent qu'avec masse, blindage, carburant, architecture de freinage et quelqu'un prêt à payer le trajet.
 
 ## Scanner
 
-FR LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
+Tampon de transit : délai, masse, blindage et dette de freinage ont façonné cet objet avant que la colonie touche l'eau.
 
 ## Terminal
 
-FR LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
+AVIS DE ROUTE : aucun ansible. La garde locale reste contraignante jusqu'au prochain paquet relais. L'autorité de récupération ne peut pas attendre la réponse de Sol.
 
 ## Audio
 
-FR LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
+Personne des mondes intérieurs n'atteindra cette eau à temps. Ton privilège de dette l'avait déjà prévu.
 
 ## Field Note
 
-FR LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+Si le secours semble tardif, montre le reçu. La distance était facturée avant l'appel de détresse.
 
 <!-- In-Game Wiki; generated from P101_NO_FTL_ROUTE_ECONOMY/fr_FR. -->

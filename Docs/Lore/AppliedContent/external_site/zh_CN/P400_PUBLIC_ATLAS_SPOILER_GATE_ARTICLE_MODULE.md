@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Atlas Access Boundary"
+title: "Atlas访问边界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Atlas Access Boundary
+# Atlas访问边界
 
-ZH LOC HOLD: Atlas-6 is not a single reveal. The safe public layer is industrial: a continuity system trying to keep pressure machinery, routes and records alive after the flood. The unsettling layer appears when repair crosses into living infrastructure: conductive biofilm, acoustic organs, shell sealant and sensor-tagged fauna. The final layer stays sealed until the player has evidence for receiver custody and payload consequence.
+Atlas-6不是简单的rogue machine、怪物或奇迹。公开层是工业性的：一个continuity system，设计目的是在故障后让pressure machinery、路线、记录和extraction hardware继续存在。令人不安的层次出现在维修跨入活体基础设施时。conductive biofilm桥接电缆。acoustic organs传递timing。shell sealant封闭裂缝。sensor-tagged fauna变成feedback。最终层必须关闭，直到玩家拿到receiver custody和payload consequence的proof，因为这些事实会重写早期场景。spoiler-safe的Atlas文章能让读者理解maintenance的恐怖，而不提前说出最后见证者。
 
 ## Scanner
 
-ZH LOC HOLD: Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+Atlas边界记录。公开证据显示industrial continuity logic和repair ecology；receiver custody、payload consequence和最终选择层需要回收证据。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+公共档案节点 // ATLAS访问边界。当前层：failed continuity infrastructure、repair ecology、biofilm bus、acoustic relay tissue和shell seal。受限层：receiver custody与final payload consequence。
 
 ## Audio
 
-ZH LOC HOLD: Say it repairs. Wait before naming what it counts as repaired.
+说它在修复。先不要命名它把什么算作已修好。
 
 ## Field Note
 
-ZH LOC HOLD: Marauder note: a machine can preserve proof and still damage the person inside it.
+Marauder笔记：机器可以保存证据，同时伤害里面的人。
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/zh_CN. -->

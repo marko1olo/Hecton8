@@ -91,7 +91,7 @@ namespace Hecton8.AI.Pathfinding
 
             if (_registeredHotSwap)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
 

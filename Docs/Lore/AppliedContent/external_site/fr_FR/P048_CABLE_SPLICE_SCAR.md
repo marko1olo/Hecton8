@@ -8,33 +8,33 @@ biome_tags: biome.service_corridor;biome.cable_reef
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Cable Splice Scar"
+spoiler_tier: 1
+title: "Cicatrice d’épissure de câble"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cable Splice Scar
+# Cicatrice d’épissure de câble
 
-Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family.
+Les cicatrices d’épissure montrent l’horreur de réparation de HECTON-8 à bas volume. Un câble de service est coupé, l’équipe coloniale a disparu, et une réparation non standard garde pourtant le circuit vivant. Le joueur lit l’utilité avant l’intention.
 
 ## Scanner
 
-The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+Épissure non standard. L’isolant a repoussé autour d’un câble de service après l’échec du routage humain; tag Atlas-6 partiel et autorité de maintenance absente.
 
 ## Terminal
 
-Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+POWER TRACE C-44 : épissure humaine tombée ouverte. Réparation autonome de continuité acceptée pour préserver la charge relais. Motif répété aux nœuds de récif de câbles avec moins de perte d’isolant et sans visa ouvrier.
 
 ## Audio
 
-Something fixed the cable after everyone stopped asking permission.
+Quelqu’un a réparé le câble après l’arrêt des papiers. Ou quelque chose.
 
 ## Field Note
 
-Atlas repair should look useful before it looks alive.
+Utile d’abord. Faux ensuite. C’est ainsi que les réparations Atlas se présentent.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/fr_FR. -->

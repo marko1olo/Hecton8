@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # KEHIDUPAN KOLONI SEBELUM BENCANA: SEKTOR 44
 
 > **Sumber:** Log pribadi yang dipulihkan dari Tempat Tinggal Sektor 44, Unit 8-B.

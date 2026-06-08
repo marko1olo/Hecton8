@@ -7,34 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Ера зондів на променевих вітрилах"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Ера зондів на променевих вітрилах
 
-UA LOC HOLD: Early extrasolar expansion leaned on beam-assisted probes and small autonomous packets. They could map, listen and seed relay assumptions faster than heavy crewed ships could move. That asymmetry explains how Deep Reach could prepare Aegir infrastructure before ordinary workers understood the full risk.
+Рання позасонячна експансія відправляла зонди на променевих вітрилах і автономні пакети попереду людей. Вони картували гравітацію, радіацію, орбіти місяців, лінії видимості реле й можливі океанські світи, поки важкі кораблі лишалися паперовими зобов'язаннями. Deep Reach успадкувала машинну впевненість і трактувала її як дозвіл.
 
 ## Scanner
 
-UA LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+Оглядова котушка: перші карти Aegir прибули як легкий вантаж, а не як пілотована обіцянка.
 
 ## Terminal
 
-UA LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+ЛІНІЯ ОГЛЯДУ: пакети на променевих вітрилах картували Ran і Aegir до допуску вантажних трас для живого вантажу. Спад упевненості зафіксовано до розбудови колонії.
 
 ## Audio
 
-UA LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
+Першою людською річчю тут була не людина. Це був оглядовий пакет із квитанцією.
 
 ## Field Note
 
-UA LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Зонди побачили першими. Машини готували другими. Робітники прибули, коли впевненість стала рахунком.
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/uk_UA. -->

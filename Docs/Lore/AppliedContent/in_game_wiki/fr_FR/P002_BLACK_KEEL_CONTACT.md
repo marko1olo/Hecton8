@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Contact Black Keel
 
-Le Black Keel est un carrier de système, pas un vaisseau refuge. Il déplace capsules, remorqueurs, paquets de claim, échantillons scellés et opérateurs malchanceux dans le trafic d'Aegir. Il peut aider, mais cette aide passe par géométrie, météo, automatisme, dette et priorités cachées du contrat.
+Black Keel est un tender de revendication du système Aegir, pas un vaisseau-refuge. Il déplace capsules, remorqueurs de fret, échantillons scellés, registres de lien et opérateurs malchanceux dans le trafic local. Il peut aider, mais cette aide passe par géométrie orbitale, météo, automatisation, dette et clauses bénéficiaires cachées dans le contrat avant que le joueur touche l’océan.
 
 ## Scanner
 
-Ancien mât relais. Salé, tordu, encore pointé vers le bon ciel.
+Vieux mât relais. Salé, tordu, encore pointé vers la bonne tranche du ciel d’Aegir.
 
 ## Terminal
 
-ETAT OPERATEUR: vivant. ETAT DROPCRAFT: irrécupérable. CLAIM: ouvert. ECHANTILLON: inconnu. RECUPERATION: fenêtre en attente.
+ÉTAT OPÉRATEUR : VIVANT. ÉTAT DROPCRAFT : IRRÉCUPÉRABLE. ÉTAT CLAIM : OUVERT. ÉTAT ÉCHANTILLON : INCONNU. RÉCUPÉRATION : FENÊTRE EN ATTENTE. MASSE DE LIEN : BASE 4,8 TONNE-WINDOW.
 
 ## Audio
 
-La fenêtre se ferme. Envoie un seul paquet. Choisis avant que la bande de tempête passe sur le mât.
+La fenêtre se ferme. Envoie un paquet. Choisis avant que la bande de tempête passe sur le mât.
 
 ## Field Note
 
-Quand un carrier demande ce que tu as trouvé avant de demander si tu respires, tu n'es pas le client. Tu es l'outil.
+Quand un transporteur demande ce que tu as trouvé avant de demander si tu respires, tu n’es pas le client. Tu es l’outil.
 
 <!-- In-Game Wiki; generated from P002_BLACK_KEEL_CONTACT/fr_FR. -->

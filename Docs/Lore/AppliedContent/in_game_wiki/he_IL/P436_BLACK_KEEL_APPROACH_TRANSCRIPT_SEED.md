@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Black Keel Approach Transcript Seed"
+title: "תמליל גישת Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Black Keel Approach Transcript Seed
+# תמליל גישת Black Keel
 
-HE LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+תמליל הגישה הופך את Black Keel לשימושי בלי להפוך אותו לרחום. ה-carrier נותן ל-Marauder קו למסלול, ואז מונה חוב, חלון מקלט, גבול בריאות, גבול מסה ודרישת הוכחה לפני שהתקווה תוכל לשכתב את הפיזיקה.
 
 ## Scanner
 
-HE LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+שמע משוחזר של carrier מאשר ירידה בתשלום, חזרה מותנית, השהיה של ארבע שניות וחבילת הוכחה נדרשת.
 
 ## Terminal
 
-HE LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
-HE LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+מכרז Black Keel לתובע. השהיה ארבע שניות. הירידה חויבה. חזרה אינה מובטחת. שלח בריאות, מסה, הוכחה.
 
 ## Field Note
 
-HE LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+חוצץ claim-tender, קטוע בידי carrier סערה. לשמור קול פרוצדורלי: עובדות נתיב קודם, נחמה אף פעם.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/he_IL. -->

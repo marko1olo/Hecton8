@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "דקדוק מפגש: קרחת מגרדי זכוכית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# דקדוק מפגש: קרחת מגרדי זכוכית
 
-HE LOC HOLD: Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.
+קרחות מגרדי זכוכית הן שיעור הבטיחות המותנית של HECTON-8. אקולוגיה בהירה ומועילה עוזרת לקרוא מסלול, אבל אותו מסלול נעשה חשוד ברגע שהחיות מפסיקות להשתמש בו.
 
 ## Scanner
 
-HE LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+קרחת מגרדי זכוכית. נתיבי גירוד טריים, שכבת חמצן ותקתוקי שריון יציבים מרמזים על לחץ קרוב נמוך. שדה מזון ריק הוא מצב אזהרה.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+דקדוק מפגש / קרחת מגרדי זכוכית / תפקיד: ניגוד רדוד, נתיב כמעט בטוח וקריא, בדיקת היעדרות טורף / קריאה בטוחה: אכילה פעילה, תקתוקי חזרה זוגיים, שפת מינרל מגורדת, קו יציאה נראה / דחה: שימוש במגרדים כהבטחת בטיחות, קרחת שקטה, מזון נטוש, return-line חסומה / הערת מסלול: המסדרון מועיל כי החיות משתמשות בו עכשיו, לא כי האוקיינוס הבטיח משהו.
 
 ## Audio
 
-HE LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+המגרדים יוצרים מסדרונות בהירים. הם לא מחליטים כמה זמן המסדרון שייך להם.
 
 ## Field Note
 
-HE LOC HOLD: Use for safe-zone literacy and shallow contrast.
+אכילה פעילה: השתמש בנתיב. תקתוקים זוגיים: החזק. מזון ננטש: הפסק לבטוח בקרחת.
 
 <!-- External Site; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/he_IL. -->

@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ibarra Loss Ledger"
+title: "Ibarra Loss Conversion Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Ibarra Loss Ledger
+# Ibarra Loss Conversion Ledger
 
-The Ibarra ledger is the accounting form of the cover. It keeps asset rights active while missing workers become unresolved load.
+The Ibarra ledger is the accounting form of the cover. It lets Deep Reach admit loss without surrendering ownership: people become unresolved personnel load, evidence becomes material custody, and the claim survives the colony.
 
 ## Scanner
 
-Keelmark loss ledger. People, modules and claims share a conversion column.
+Keelmark loss ledger. Missing workers, damaged modules and surviving claims share the same conversion table.
 
 ## Terminal
 
-KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel unresolved. Habitat modules, tool banks and claim rights retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-The ledger did not forget names. It made them payable later.
+The ledger did not forget the names. It learned how to spend them.
 
 ## Field Note
 
-The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Marauder note: a ledger can remember the dead and still put them to work.
 
 <!-- In-Game Wiki; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/en_US. -->

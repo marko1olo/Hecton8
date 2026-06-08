@@ -9,24 +9,24 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ZH LOC HOLD: Aegir Route and Ships"
+title: "Aegir路线与船只"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Aegir Route and Ships
+# Aegir路线与船只
 
-ZH LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegir近到足以被开采，远到足以被遗弃。没有超光速引擎跨过间隙，也没有ansible抢在物理之前传递命令。每一条消息、合同和救援申请都要穿过延迟：探针包、 relay监管、光束排期、颗粒聚变货运、转移窗口，以及不在乎幸存者有多急的天气。
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+Aegir最早的交通不是人类。针式探针测绘了这颗暖矮星系统，带回足够的矿物、辐射和轨道数据，证明更重投资值得进行。随后是光束帆包、更慢的货物，以及必须在基础设施网内制动的seed-ship质量。那张网在任何工人看见海洋之前几年就已规划好。Deep Reach抵达HECTON-8时，路线已经属于机构：承运者、保险人、域办公室、回收池，以及擅长让所有权难以命名的公司。
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+Black Keel就坐在这种含混里。它不是军舰，也不是救援服务。它是带有泊位质量、 tender艇、债务账本和salvage权力的索赔平台。合同链让Deep Reach施压，却不必像直接把手放在舱门上。只有当质量、天气、轨道、热余量和监管都对齐时，它才能带走一个人、一个样本或一件封存货物。
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+损坏的bathydrop因此是一条真正的边界。下降撞击可以让外壳足够完整以维持生存，同时毁掉上升容差：密封压缩、声学回传同步、制导表、能量缓冲和检疫握手。胶囊同时成为避难所和证据：它证明你到达了，却不能证明你能离开。
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+在Aegir系统里，距离不是背景。它解释了为什么帮助先以文件抵达，然后才可能以硬件抵达。
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/zh_CN. -->

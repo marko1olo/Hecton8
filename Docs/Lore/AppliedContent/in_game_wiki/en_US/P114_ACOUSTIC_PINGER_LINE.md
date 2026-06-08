@@ -7,7 +7,7 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
 title: "Acoustic Pinger Line"
 source: AppliedContent packet JSON
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Acoustic Pinger Line
 
-The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.
+The acoustic pinger line is the first navigation discipline. It lets the player make a return route before light, current or panic makes the route unfamiliar. Later escape work grows from the same idea: sound through water, relay timing, carrier handshakes and proof that a path still exists.
 
 ## Scanner
 
-Pinger spool. The first map is a sound you can still find when light fails.
+Acoustic pinger spool. Short-range pulse confirmed; anchor before crossing turbid water or brine shimmer.
 
 ## Terminal
 
-RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
+RETURN LINE / PINGER: anchor before turbidity, brine shimmer, flooded elbows or long shelf cuts. Local ping supports return navigation only. Carrier handshake requires an acoustic relay spine.
 
 ## Audio
 
-When the light is gone, follow the sound you had the discipline to place.
+If the lights go out, follow the sound you placed.
 
 ## Field Note
 
-Navigation should become physical early.
+Put the pinger down while you still know the way back. Pride is not a route marker.
 
 <!-- In-Game Wiki; generated from P114_ACOUSTIC_PINGER_LINE/en_US. -->

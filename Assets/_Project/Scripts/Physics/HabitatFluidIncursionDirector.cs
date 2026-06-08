@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Physics;
@@ -26,6 +27,7 @@ namespace Hecton8.Physics
         private const uint FloodMuffleLaneHash = 0x464C4D46u; // FLMF
         private const int FloodMuffleSignalCapacity = 32;
         private const int FloodMuffleMinimumQualityFrameSignals = 8;
+        private const float DefaultExternalWaterlineRuntimeY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
         private const ulong FluidSimulationMutationGuardMask = 0x00000000F00C4FFFUL;
         private const uint FluidPinFront = 1u << 0;
         private const uint FluidPinBack = 1u << 1;
@@ -54,7 +56,7 @@ namespace Hecton8.Physics
         [SerializeField, Range(1, HabitatFluidIncursionConstants.MaxCompartments)] private int compartmentCount = 16;
         [SerializeField, Min(1f)] private float defaultCompartmentVolumeM3 = HabitatFluidIncursionConstants.DefaultCompartmentVolumeM3;
         [SerializeField] private float defaultFloorHeightLocal = HabitatFluidIncursionConstants.DefaultFloorHeightLocal;
-        [SerializeField, Min(0f)] private float externalWaterlineRuntimeY = 0f;
+        [SerializeField, Min(0f)] private float externalWaterlineRuntimeY = DefaultExternalWaterlineRuntimeY;
         [SerializeField, Min(1f)] private float baseMassKg = 18000f;
         [SerializeField, Min(0.0001f)] private float mockBreachAreaM2 = 0.08f;
         [SerializeField, Min(0f)] private int mockBreachIndex = 0;
@@ -1505,8 +1507,17 @@ namespace Hecton8.Physics
                 : default;
             AbsoluteUniversePosition waterlineAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
-                new double3(0d, externalWaterlineRuntimeY, 0d));
+                new double3(0d, ResolveExternalWaterlineRuntimeY(externalWaterlineRuntimeY), 0d));
             return ToFluidAup48(in waterlineAup);
+        }
+
+        private static float ResolveExternalWaterlineRuntimeY(float candidateWaterlineY)
+        {
+            return math.isfinite(candidateWaterlineY) &&
+                math.abs(candidateWaterlineY) > 0.0001f &&
+                math.abs(candidateWaterlineY) <= 1000f
+                ? candidateWaterlineY
+                : DefaultExternalWaterlineRuntimeY;
         }
 
         private static FluidAup48 ToFluidAup48(in AbsoluteUniversePosition position)

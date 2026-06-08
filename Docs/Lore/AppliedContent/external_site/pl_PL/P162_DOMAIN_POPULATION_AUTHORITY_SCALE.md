@@ -9,32 +9,24 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Population And Authority Scale"
+title: "Skala Populacji I Władzy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Population And Authority Scale
+# Skala Populacji I Władzy
 
-PL LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
+## Liczba Głów To Nie Władza
 
-## Scanner
+Tabela domen celowo zostawia populację miękką. Dokładne wartości census można dostroić później, ale relacja nacisku jest zamknięta: Sol ma starą finansowość i certyfikację, Centauri ma język legitymacji, Barnard ma kulturę salvage, Tau Ceti ma publiczną presję dowodową, Luyten ma custody pakietów, a Aegir ma brudne miejsce, gdzie wszystko to staje się maszynerią.
 
-PL LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+Na HECTON-8 nazwa domeny nie powinna być ciekawostką. Sol Core jest pieczęcią własności i ciągłości ubezpieczenia. Może prawnie ożywić martwy ocean. Centauri Compact to pamięć sprawnej ekspansji, dlatego Deep Reach może pożyczać jego ton kart i wyglądać mniej zgniłe. Barnard Yards wyjaśnia, czemu protagonista zna zaciski, cuttery, narzędzia ciśnieniowe i złą robotę bez heroicznego mitu.
 
-## Terminal
+Tau Ceti jest cenne, bo może nadać dowodowi publiczne znaczenie. To nie znaczy, że uratuje nurka przed zmianą pływu. Luyten Junction jest chłodniejsze: może zachować custody, hash chains i packet notary records bez moralnej władzy. Aegir jest dirty claim node, gdzie lokalne shells, okna Black Keel i priority hooks Deep Reach zmieniają zdalne autorytety w natychmiastowe zagrożenie.
 
-PL LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
-
-## Audio
-
-PL LOC HOLD: The largest domain is not the nearest hand.
-
-## Field Note
-
-PL LOC HOLD: Do not turn the setting into census space opera.
+Dlatego mały desk może znaczyć więcej niż planeta. HECTON-8 nie rządzi największa populacja. Rządzi ten, kto potrafi utrzymać claim przez odległość i wystawić rachunek ocalałemu za dotknięcie go.
 
 <!-- External Site; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/pl_PL. -->

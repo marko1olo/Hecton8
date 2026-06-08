@@ -957,8 +957,6 @@ namespace Hecton8.UI
             if (_resolvedFaunaDirector == null)
             {
                 WorldRuntimeReferenceUtility.TryResolveFaunaDirector(ref _resolvedFaunaDirector);
-                if (_resolvedFaunaDirector == null)
-                    _resolvedFaunaDirector = FaunaDirector.ActiveRuntimeInstance;
             }
 
             if (_resolvedMusicDirector == null)
@@ -973,7 +971,7 @@ namespace Hecton8.UI
 
             if (_resolvedUnderwaterVisuals == null)
             {
-                _resolvedUnderwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
+                WorldRuntimeReferenceUtility.TryResolveHectonUnderwaterVisuals(ref _resolvedUnderwaterVisuals);
             }
 
             if (_resolvedCameraJuiceSystem == null)

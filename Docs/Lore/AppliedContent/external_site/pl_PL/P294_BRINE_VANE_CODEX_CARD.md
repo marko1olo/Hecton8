@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Brine Vane Codex Card"
+title: "Karta kodeksu: wachlarz solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Brine Vane Codex Card
+# Karta kodeksu: wachlarz solanki
 
-PL LOC HOLD: In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+Wachlarze solanki nadają wodzie średnich głębokości HECTON-8 fizyczność. Pokazują, że kanion jest zbudowany z gęstości, nie z pustej niebieskiej objętości: błona może być ostrzeżeniem, źródłem materiału i krawędzią fałszywej podłogi naraz.
 
 ## Scanner
 
-PL LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Płat wachlarza solanki. Błona solno-mineralna przytwierdzona do ścinania gęstości. Cała krawędź: ściana. Rozdarte usta: przejście. Czarna woda bez krawędzi: ryzyko fałszywej podłogi.
 
 ## Terminal
 
-PL LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+OKAZ / WACHLARZ SOLANKI / rola: znacznik ściany gęstości, ostrzeżenie o zginaniu sonaru, źródło zrzuconych żeber / bezpieczny odczyt: cały płat, rozdarte ujście z prądem, zwinięty czubek okna ścinania / odrzuć: cięcie żywego płata trasy, przejście przez otwarty blask, zaufanie odbiciu fałszywej podłogi / notatka trasy: zbieraj zrzucone żebra, nie błonę trzymającą mapę otwartą.
 
 ## Audio
 
-PL LOC HOLD: The plant is not pointing up. It is pointing through.
+Wachlarz nie wskazuje góry. Pokazuje, gdzie ocean skręca bokiem.
 
 ## Field Note
 
-PL LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Cały płat: ściana. Rozdarte usta: możliwa trasa. Zrzucone żebro: próbka. Żywy płat trzyma linię: zostaw.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/pl_PL. -->

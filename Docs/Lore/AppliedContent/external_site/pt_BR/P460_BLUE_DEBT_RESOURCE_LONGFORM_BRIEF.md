@@ -9,32 +9,38 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "PT LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: histórico de pressão em custódia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Blue Debt Custody
+# Blue Debt: histórico de pressão em custódia
 
-PT LOC HOLD: Marauders call the material blue debt because payout, containment and liability travel with the same sample. The valuable substrate is not a magic ore. It forms where pressure history, brine chemistry, noble gas capture, vent heat and damaged industrial process leave a readable structure behind. A clean-looking piece can still carry a bad record: wrong extraction angle, heat exposure outside tolerance, Atlas-compatible contamination, or custody tags that make the owner harder to name than the mineral. Black Keel weighs blue debt by mass, grade and paperwork because each piece can be cargo and accusation at the same time. Deep Reach wanted processable material. Atlas learned to grow through damaged surfaces. The ocean kept the evidence in the lattice. A player who brings blue debt home is not only selling shine. They are moving a pressure receipt through a legal system built to decide whether proof becomes money, silence or leverage.
+## O nome
 
-## Scanner
+Blue debt é gíria de saqueador para substrato com Xenon-Omega. Deep Reach diz XO continuity substrate; técnicos dizem pressure glass. Nenhum nome transforma isso em minério simples.
 
-PT LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Ele se forma onde histórico de pressão, gases nobres, salmoura, defeitos minerais, ciclos térmicos, catalisadores biológicos e indústria danificada deixam uma lattice legível. A amostra vale porque sobreviveu à pressão. Ela é perigosa porque lembra o que a tocou.
 
-## Terminal
+Mesmo limpa, precisa de extraction scar, pressão de containment, brine exposure, drift compatível com Atlas, contamination stage, custody grade e massa. Black Keel paga por objeto recuperável com documento, não por brilho.
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+Falha de containment muda estado: sealed, drift, fracture, bloom, depois material morto e prova viva. Vent repressure só recupera drift inicial.
 
-## Audio
+Blue debt é recurso, pagamento, prova e armadilha. O jogador move um pressure receipt por Black Keel, Keelmark, Deep Reach e talvez um ledger público. A pergunta é quem compra o silêncio preso à amostra.
 
-PT LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+## A Amostra Tem Biografia
 
-## Field Note
+Blue Debt vale porque lembra pressao. Um bom artigo trata a amostra como biografia escrita em quimica: growth depth, shock history, brine contact, vent heat, handling contamination, scanner custody, hull exposure e transport delay. Um fragmento limpo pode nao valer nada. Um fragmento feio com chain honesta pode pagar uma route window.
 
-PT LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Assim o texto de recurso vira historia. O jogador nao minera cor. Recupera um pressure record que Black Keel, Deep Reach, Atlas contamination e a geologia local tentarao reinterpretar para seus ledgers.
+
+## Como Isso Joga
+
+Blue Debt deve tornar inventory choices desconfortaveis. Mais massa pode comprar rescue. Prova melhor pode mudar quem possui a verdade. Uma sample contaminada pode abrir uma Atlas route e estragar pagamento limpo. Vender tudo pode manter o corpo vivo e deixar o crime intact.
+
+O recurso funciona quando e util, perigoso e moralmente caro ao mesmo tempo. Nunca deve parecer magic ore. E uma conta que o oceano escreveu em pressao e esperou decadas para cobrar.
 
 <!-- External Site; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/pt_BR. -->

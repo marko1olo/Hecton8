@@ -1,10 +1,9 @@
 {
-  "schema": "H8.RELEASE_SET_MANIFEST.V0",
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
   "release_set_id": "RS013_COLONY_ATLAS_MAINTENANCE",
-  "status": "production_facing_draft_pending_native_localization",
-  "packet_sources": [
-    "Docs/Lore/AppliedContent/packets/RS013_COLONY_ATLAS_MAINTENANCE.packets.json"
-  ],
+  "title": "Colony / Atlas Maintenance",
+  "status": "production_facing_localized_pending_native_review",
+  "evidence_class": "STATIC_SOURCE",
   "packets": [
     "P061_MAINTENANCE_ECOLOGY",
     "P062_MARA_VENN_TIDE_MODEL",
@@ -12,59 +11,32 @@
     "P064_REN_OKOYE_PUMP_63",
     "P065_SAHANA_IQBAL_ATLAS_SAFETY"
   ],
-  "locales_present_in_packet_bundle": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS013_COLONY_ATLAS_MAINTENANCE.packets.json"
   ],
-  "markdown_publication_locales_present": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
+  "article_sources": [
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_en_US.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_ru_RU.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_ja_JP.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_zh_CN.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_fr_FR.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_es_ES.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_de_DE.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_pl_PL.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_uk_UA.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_ar_SA.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_id_ID.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_ko_KR.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_he_IL.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_pt_BR.md",
+    "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_nl_NL.md"
   ],
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
-  ],
-  "runtime_contract": {
-    "runtime_must_not_parse_markdown": true,
-    "runtime_must_not_generate_translation": true,
-    "expected_bake_output": [
-      "packet_id_hash",
-      "loc_id_hashes",
-      "surface_enum",
-      "unlock_id",
-      "domain_tag",
-      "route_window_id",
-      "localized_string_pool_offsets"
-    ]
-  }
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
 }

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 負債帳簿
 
 > **出典:** Deep Reach メガコーポレーション、人事・保険数理部門。

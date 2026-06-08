@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Доказательство задержки карантинного release"
+title: "Карантинное удержание выпуска"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Доказательство задержки карантинного release
+# Карантинное удержание выпуска
 
-Вина Deep Reach конкретна: quarantine и insurance language задерживают помощь, сохраняя claim continuity.
+Карантин на HECTON-8 убедителен, потому что заражение не выдумка. Воздействие давления, химия рассола и рост, совместимый с Atlas, могут сделать неосторожное спасение смертельным. Эта правда прикрывает Deep Reach. Release hold показывает, как язык защиты прошел через систему после того, как практический выход уже сузился. Ворота не сказали казнить кого-то. Они сказали hold until review, сохранить биологическую неопределенность, принять asset mass, держать insurance ping активным. Каждая фраза по отдельности защитима. Вместе, в тонущей колонии, они становятся custody. Этот packet должен тревожить игрока, потому что инструмент реален: карантин может быть необходим и все равно использоваться, чтобы задержать людей, пока от них не останется claim.
 
 ## Scanner
 
-Quarantine hold plate. Слово protection появляется только после lock exit route.
+Пластина карантинного удержания. Язык защиты появляется после того, как выходной маршрут уже заперт.
 
 ## Terminal
 
-RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
 
 ## Audio
 
-Quarantine может спасти тело. И может заставить тело ждать, пока оно станет paperwork.
+Карантин может спасти тело. Он же может заставить тело ждать, пока оно станет бумагой.
 
 ## Field Note
 
-Для мест, где rescue легко спутать с custody.
+Заметка мародера: слово protection не доказывает защиту. Смотри на часы.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/ru_RU. -->

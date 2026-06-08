@@ -1,23 +1,60 @@
-﻿# BATHYMETRISCHE BÄNDER UND ABYSSALE AKUSTIK
+<!-- localization_status: source_draft_pending_native_review -->
+# BATHYMETRISCHE BÄNDER UND ABYSSALER SCHALL: WIE HECTON-8 EINEN RAUM VERSTECKT
 
-> **Source:** Geophysikalische Abteilung von Deep Reach, Akustik-Untersuchung.
-> **Speaker:** Leitender Hydroakustik-Analyst.
-> **Reviewer Note:** Eine technische Aufschlüsselung der bathymetrischen Struktur von HECTON-8 und der Physik der Schallausbreitung unter extremem Wasserdruck.
+> **Quelle:** Hydroakustische Vermessung Deep Reach H8-44, später von Bergungsteams der Black Keel ergänzt.
+> **Stimme:** Chefanalystin für Hydroakustik Sera Mbeki.
+> **Verwendung:** Website-Enzyklopädie, Ingame-Wiki, Sonar-Tutorial und PDA-Feldreferenz.
 
 ---
 
-## 1. Die lichtlosen Bänder
+## Der Ozean Ist Ein Vertikaler Stapel
 
-Der Ozean von HECTON-8 ist kein einheitliches Gewässer. Er ist ein geschichteter vertikaler Stapel unterschiedlicher physikalischer Zonen, von denen jede durch Druck, Chemie und Lichtdurchlässigkeit definiert ist. Das Photic-Schelf (0–250 m) ist die einzige Zone, die vom Stern Ran berührt wird, wo Sturmströmungen und einheimische Sargassum-Matten gedeihen. Darunter liegt das Kabelriff (250–1200 m), an dem die massiven industriellen Verkabelungsnetze von Deep Reach verankert sind, die heute von biolumineszierenden Algen überwuchert sind. Die Sole-Canyons (1200–2800 m) sind durch dichtegeschichtete Salzflüsse gekennzeichnet, in denen sich die Schwerkraft unvorhersehbar verhält. Die Maschinenfelder (2800–4300 m) beherbergen die Überreste der automatischen Verarbeitungsbrunnen, stumm und erdrückend. Ganz unten liegt das Atlas-Becken (4300–5600 m), eine Umgebung absoluter Dunkelheit und eines Drucks von 50 MPa, in der der Meeresboden durch einen verschmolzenen Teppich aus mechanischen Trümmern und biomechanischem Biofilm ersetzt wurde.
+Aus dem Orbit wirkt HECTON-8 wie eine einzige ertrunkene Welt unter Rans Licht und Aegirs Gezeiten. Unter den Stürmen ist es kein einheitlicher Ozean. Es ist eine vertikale Maschine aus Druck, Salz, Wärme, Metall, Biologie und alter Konzernarbeit.
 
-## 2. Akustik unter Druck
+Deep Reach teilte Sektor 44 in Einsatzbänder, weil Karten mit Nord und Ost allein Besatzungen töteten. Tiefe verändert Werkzeuge: Auftrieb, Batterielast, Sauerstoffarbeit, Sonarreichweite, Raubtierverhalten und die Frage, ob ein nah wirkender Raum erreicht wird, bevor der Anzug den Körper des Operators verbraucht.
 
-Im Ozean von HECTON-8 ist die Funkverbindung tot. Elektromagnetismus wird durch das dichte, mineralreiche Wasser innerhalb weniger Meter absorbiert. Schall ist die einzige Sichtlinie. Da die Wasserdichte mit der Tiefe und der Konzentration gelöster Salze dramatisch zunimmt, verhält sich die Schallgeschwindigkeit unregelmäßig. Das Schallgeschwindigkeitsprofil erzeugt eine akustische Kanalführung – Kanäle, in denen Schallwellen gefangen sind und kilometerweit wandern, ohne an Stärke zu verlieren, sowie Schattenzonen, in die das Sonar nicht eindringen kann. Das Kommunikationsnetzwerk von Deep Reach verlässt sich ausschließlich auf akustische Telemetrie. Diese Systeme übersetzen Terminaldaten und Sprachprotokolle in niederfrequente akustische Impulse. Befindet sich der akustische Pinger eines Tauchers in einer Schattenzone, geht das Signal vollständig verloren, selbst wenn er nur fünfzig Meter von der Rettungskapsel entfernt ist.
+Der Photische Schelf reicht bis etwa 250 Meter. Hier gibt es verlässliches Ran-Licht, aber auch Sturmstoß, treibende Matten, abgerissene Habitatkronen und die ersten Narben der Kolonie. Sicher ist dieses Band nicht. Es ist lesbar.
 
-## 3. Hydrothermale Ventilschmieden
+Das Kabelriff liegt zwischen 250 und 1200 Metern. Energieadern, Datenumbilicals, Pumpenrücken, Schienenhänger und Arbeitsplattformen wurden hier verankert. Nach dem Kollaps platzte Isolation auf, leitfähiger Biofilm wuchs in die Ummantelung, und Eisenkelp wurzelte um alles, das Strom verlor. Hier lernt der Spieler, dass Infrastruktur zu Ökologie werden kann, ohne hilfreich zu werden.
 
-Die Geologie von HECTON-8 wird durch Gezeitenreibung und tektonische Frakturierung angetrieben, wodurch massive hydrothermale Quellen entstehen, die als Ventilschmieden bekannt sind. Diese Quellen geben mineralreiches, überhitztes Wasser mit Temperaturen von über 420°C ab. Aufgrund des immensen Drucks des Abgrunds kocht das Wasser nicht. Stattdessen verhält es sich wie ein überkritisches Fluid, das dichte Konzentrationen von Sulfidsalzen, Edelgasen und radioaktiven Xenon-Omega-Partikeln transportiert. Die Wechselwirkung zwischen dem eiskalten abyssalen Wasser und den Quellfahnen erzeugt eine intensive thermische Scherung und Strömung, die einen Tauchanzug zereißen kann. Diese Quellen sind die Hauptquelle für die Rohstoffe, die zu Druckglas kristallisieren und die metallischen Biofasern der Eisenkelpwälder nähren.
+Die Salzlaugen-Canyons reichen von 1200 bis 2800 Meter. Dichte Soleströme liegen im Wasser wie ein zweiter flüssiger Boden. Werkzeuge können auf ihnen treiben. Körper können aufhören zu sinken. Sonarpulse können von einem Fluss ohne Wand zurückprallen. Viele Geisterräume auf Deep-Reach-Karten sind nur Spiegel aus Lauge.
 
-## 4. Sonaranomalien und Raubtiere
+Die Maschinenfelder reichen von 2800 bis 4300 Meter. Das ist die alte Industrietiefe: Prozessschächte, Kompressorgalerien, eingestürzte Wärmetauschertürme, Schienengruben und automatische Servicehöfe. Licht ist verschwunden. Klang liefert zu viel. Pumpen, lose Träger, beschädigte Drohnen und Scherung an heißen Quellen lassen das Wasser in Metall sprechen. Ein leiser Sonarkontakt ist hier verdächtiger als ein lauter.
 
-Die Akustik der Tiefsee wird durch Geologie, Industrielärm und die Bewegung massiver Fauna stark verzerrt. Die dichte Sole in den Canyons wirkt wie ein Spiegel für Sonarimpulse, reflektiert Signale zurück und erzeugt Phantomechos. Dieses Sonarrauschen bietet Raubtieren den perfekten Schutz. Der Graben-Pirscher mit seinem stark gepanzerten Chitinpanzer bewegt sich geräuschlos durch die Eisenkelpwälder, wobei seine Signatur durch das ständige Knirschen der metallischen Wedel maskiert wird. Noch gefährlicher ist, dass die Spitzenprädatoren – die Leviathane – eine passive Akustiksignatur von unter 40 Hz erzeugen. Diese niederfrequenten Schwingungen sind durch den Rumpf eines U-Bootes oder die Brustplatte eines Tauchanzugs zu spüren, lange bevor sie auf einer Standard-Sonaranzeige erscheinen. Bis der akustische Sensor das Signal auflöst, ist der Organismus bereits in Reichweite.
+Das Atlas-Becken liegt darunter bis etwa 5600 Meter. Fester Meeresboden ist selten. Es gibt Rücken, Ventnarben, ausgeschnittene Servicebecken, Druckglasschichten und mechanische Trümmer, die Biofilm und Mineralwuchs zusammenhalten. Atlas überlebte hier nicht als saubere Maschine, sondern als Wartungsökologie: leitende Filme, Filterorgane, schalenartige Dichtungen, markierte Tiere und wärmegespeiste Knoten.
+
+## Schall Ist Der Horizont
+
+Funk stirbt im Wasser von HECTON-8 schnell. Der Ozean ist kalt, mineralreich, elektrisch schmutzig und voller Metallstaub aus toter Industrie. Ein Hochfrequenzsignal, das in Luft einen Raum durchquert, verschwindet unter dem Schelf nach wenigen Metern. Danach stirbt Licht. Schall bleibt.
+
+Darum besitzt fast jedes ernsthafte Werkzeug eine akustische Schicht. Der Pinger am Anzug ist keine Bequemlichkeit. Er ist die Adresse des Tauchers. Die Black Keel sieht keinen Menschen durch Wasser; sie hört ein codiertes Klopfen, vergleicht Laufzeit, prüft Verwahrung und entscheidet, ob das Signal Bergungsmasse verdient. Habitat-Türen nutzen akustische Challenge-Response, wenn Kabel-Handshakes versagen. Feldfabrikatoren lauschen auf zertifizierte Tags. Alte Frachtschränke erwachen auf Niederfrequenzimpulse, weil Druck Hydrophone weniger zerstörte als Kameras.
+
+Schall lügt ebenfalls. Seine Geschwindigkeit ändert sich mit Temperatur, Druck und Salzgehalt. HECTON-8 stapelt diese Variablen in scharfen Schichten. Ein Puls durch eine warme Ventfahne krümmt sich anders als einer durch kalte Lauge. Ein Ping kann in einen akustischen Kanal fallen und von einer sauberen falschen Peilung zurückkehren. Ein anderer trifft eine Laugenschicht und klingt wie eine Wand. Ein dritter tritt in eine Schattenzone ein und verschwindet, obwohl das Ziel nah genug ist, um aufgewirbelten Schlamm zu sehen.
+
+Deep Reach nannte solche Fälle Interpretationsfehler des Operators. Bergungsteams nennen sie tote Räume: Volumen, in denen ein Taucher am selben physischen Ort wie ein Signal sein kann und trotzdem verloren bleibt.
+
+## Kanäle, Spiegel Und Leise Fenster
+
+Ein akustischer Kanal fängt Schall zwischen Schichten. Das Signal reist weit, manchmal Kilometer, mit wenig Verlust. Das hilft Langstreckenbaken und zerstört Heimlichkeit. Ein Anzugpinger in der falschen Schicht kann eine Crew jedem Hydrophon und Raubtier des Bandes melden.
+
+Ein Laugenspiegel reflektiert Schall an einer Dichtegrenze. Er erzeugt doppelte Räume, falsche Rümpfe, falsche Bodentiefen und wandernde Echos, wo nichts wandert. In den Canyons zeigt ein Scanner vielleicht einen Korridor unter dem Spieler, der nur der Korridor über ihm ist. Die richtige Antwort ist Winkel ändern, erneut pingen, Verzögerung vergleichen.
+
+Ein leises Fenster ist ein kurzer Zeitraum, in dem Maschinen und Wasser genug Ruhe zum Arbeiten geben. Pumpen fahren herunter. Thermische Scherung verschiebt sich. Kelp kratzt nicht mehr am Kabelstamm. Ein Raubtier dreht ab oder hält still. Gute Crews schneiden, schweißen, lauschen und bewegen sich in diesen Fenstern. Schlechte Crews arbeiten weiter, weil der Fortschrittsbalken fast voll ist.
+
+## Maschinen Und Tiere Im Lärm
+
+Koloniesonar der ersten Generation erwartete sauberes Ingenieurwasser: kartierte Strukturen, bekannte Salinität und kooperative Hardware. Sektor 44 liefert bewegte Lauge, zerrissenes Metall, biologische Repeater, instabile Wärmesäulen und Tiere, groß genug, damit Wasser sich wie Wetter verhält.
+
+Moderne Bergungssonare wechseln Modi. Aktives Pingen gibt Form, zieht aber Aufmerksamkeit an und erzeugt falsche Rückläufe. Passives Hören ist sicherer, aber langsamer, und der Operator muss Pumpen, Vents, Kabelbrummen, Schalenkratzen, Anzugatem und Tierbewegung unterscheiden. Seitenscan liest eine Wand und verpasst, was dahinter liegt. Tieffrequente Träger reichen weit, tragen aber wenig Daten. Hochfrequenzbilder liefern Details nur, wenn das Wasser mitspielt.
+
+Die Fauna von HECTON-8 entwickelte sich nicht um menschliches Sonar, aber in einem Ozean, in dem Druck, Ventchemie und Gezeitenstress Schall zum Überlebenssinn machten. Filterwesen öffnen und schließen auf Vibration. Eisenkelp mahlt in Strömungen und maskiert kleine Bewegungen. Graser folgen Drucknähten. Grabenpirscher benutzen Industrielärm als Deckung, weil die Maschinenfelder ohnehin wie eine Jagd klingen.
+
+Leviathan-Kontakte beginnen selten mit einem sichtbaren Körper. Verlässliche Aufzeichnungen beginnen mit Druckzittern unter 40 Hz, Rumpfspannungsalarmen ohne Einschlag, Beuteblackout und einem passiven Träger, der in der Brust ankommt, bevor der Bildschirm ihn löst. Wenn Standardsonar ein klares Symbol zeichnet, ist das Tier bereits innerhalb der Entscheidungsdistanz.
+
+Atlas erschwerte alles. Seine Wartungsökologie nutzt lebende Materie als Signalweg. Leitender Biofilm trägt Wartungspulse über tote Kabel. Filterorgane wiederholen Druckklopfen. Schalenwuchs dichtet einen Riss und verändert zugleich die akustische Form des Raums. Wenn der Spieler in einer verlassenen Struktur eine saubere Antwort hört, muss er fragen, was geantwortet hat.
+
+## Feldregel
+
+Frage nicht, ob HECTON-8 still ist. Es ist nie still.
+
+Frage, was den Klang macht, welche Schicht ihn biegt, wer ihn sonst hören kann und was der Ozean durch eine zu klare Antwort versteckt.

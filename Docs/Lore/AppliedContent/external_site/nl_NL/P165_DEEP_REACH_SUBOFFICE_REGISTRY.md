@@ -9,32 +9,20 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Deep Reach Suboffice Registry"
+title: "Deep Reach Subkantoorregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Deep Reach Suboffice Registry
+# Deep Reach Subkantoorregister
 
-NL LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## Kleine Kantoren, Grote Gevolgen
 
-## Scanner
+Deep Reach wordt enger wanneer het niet meer als samenzwering klinkt maar als administratie. Het register werkt omdat elke kantoornaam saai genoeg is om echt te zijn. Contract Continuity Desk houdt obligations levend nadat de werker ze liever dood had. Packet Notary Interface beslist of een bericht bewijs of ruis wordt. Quarantine Hold Desk laat vertraging medisch verantwoord lijken. Asset Silence Board verandert getuigen in exposure. Return Action Queue prijst het lichaam tegenover payload, orbit en public risk.
 
-NL LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-NL LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-NL LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-NL LOC HOLD: Use dull names. Dull names are where liability hides.
+Geen desk hoeft de speler te haten. Elke desk hoeft alleen zijn werk te doen in een priority stack die werd geschreven voordat het water steeg. Daarom moeten HECTON-8-bewijzen zich ophopen als stempels, routing fragments en kleine tegenstrijdigheden. De misdaad is niet verborgen achter theatraal kwaad. Ze zit verspreid door formulieren die defensible lijken tot de speler ze op een rij legt.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/nl_NL. -->

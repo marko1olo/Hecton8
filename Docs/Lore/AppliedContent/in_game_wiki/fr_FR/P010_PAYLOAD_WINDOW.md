@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Fenêtre de charge utile
 
-La Fenêtre de charge utile rend les fins physiques. Le joueur ne peut déplacer qu'une masse limitée à travers pression, météo, timing de radiation et géométrie Black Keel. Argent, preuves, noms, coordonnées, échantillons vivants, signal Atlas ou silence ne peuvent pas tous partir ensemble.
+La Fenêtre de charge utile est l’endroit où les choix finaux deviennent physiques. Le joueur ne peut déplacer qu’une masse limitée à travers pression, couverture de tempête, timing radiatif d’Aegir et géométrie de récupération Black Keel. Argent, preuves, noms d’ouvriers, coordonnées, échantillons vivants, signal Atlas ou silence ne peuvent pas tous partir ensemble.
 
 ## Scanner
 
-Paquet de remontée improvisé. Il peut quitter l'océan si masse, météo et géométrie carrier concordent.
+Paquet de remontée improvisé. Il peut quitter l’océan si masse, météo, timing de dose et géométrie Black Keel s’accordent.
 
 ## Terminal
 
-PAYLOAD SLOT: limité. WINDOW: ouverte. ROUTE: contestée. CLAIM VALUE: variable. EVIDENCE STATE: insuffisant pour litige propre.
+SLOT PAYLOAD : LIMITÉ. FENÊTRE : OUVERTE. ROUTE : CONTESTÉE. RÉCEPTEUR : NON CONFIRMÉ. VALEUR CLAIM : VARIABLE. ÉTAT PREUVE : INSUFFISANT POUR LITIGE PROPRE.
 
 ## Audio
 
@@ -35,6 +35,6 @@ La fenêtre est ouverte. Elle ne restera pas ouverte pour tout.
 
 ## Field Note
 
-Sortir est une route. Sortir proprement est un mythe.
+Sortir est une route. Sortir proprement est une histoire que les gens vendent après que quelqu’un d’autre a payé la masse.
 
 <!-- In-Game Wiki; generated from P010_PAYLOAD_WINDOW/fr_FR. -->

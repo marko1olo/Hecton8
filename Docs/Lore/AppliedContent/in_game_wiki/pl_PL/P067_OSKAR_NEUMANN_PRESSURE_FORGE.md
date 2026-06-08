@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "Kuźnia ciśnieniowa Oskara Neumanna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# Kuźnia ciśnieniowa Oskara Neumanna
 
-PL LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
+Oskar Neumann łączy rzemiosło kolonii z łańcuchem ucieczki. Jego notatki o kuźni ciśnieniowej uzasadniają głęboką fabrykację, pierścienie zaciskowe, próby uszczelnień i potrzebę zejścia po komponenty zamiast czekania na ratunek z powierzchni.
 
 ## Scanner
 
-PL LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+Oskar Neumann zostawił przepis kuźniczy na pierścienie zaciskowe dość mocne, by kołyska wznoszenia była czymś więcej niż trumną.
 
 ## Terminal
 
-PL LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+NEUMANN, O. Notatka kuźnicza: pył szkła ciśnieniowego niszczy pierwszą uszczelkę, jeśli wmieszać go na zimno. Rozgrzać pierścień pod ciągiem komina, zahartować w płaszczu solankowym, potem testować przy podwójnym obciążeniu wznoszenia.
 
 ## Audio
 
-PL LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+Start to tylko drzwi ciśnieniowe poruszające się w górę. Zbudujcie go jak drzwi.
 
 ## Field Note
 
-PL LOC HOLD: The exit needs craft, not courage.
+Wyjście wymaga rzemiosła, nie odwagi.
 
 <!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/pl_PL. -->

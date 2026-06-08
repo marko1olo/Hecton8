@@ -8,33 +8,19 @@ biome_tags: biome.pump_annex;biome.shallow_wreck
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Ren Okoye Pump 63"
+spoiler_tier: 1
+title: "Pompa 63 Ren Okoye"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ren Okoye Pump 63
+# Pompa 63 Ren Okoye
 
-ID LOC HOLD: Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them.
+Ren Okoye bukan nama tragis di dinding. Ia tangan kerja yang masih membentuk rute. Pump 63 mengatakan dashboard hijau dan jalurnya tidak aman. Catatannya menyuruh pemain memakai roda bawah, membuang tekanan dua detik, dan restart sebelum hammer mengunci annex.
 
-## Scanner
-
-ID LOC HOLD: Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.
-
-## Terminal
-
-ID LOC HOLD: OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.
-
-## Audio
-
-ID LOC HOLD: He saved a room for people who never reached it. You can still use the room.
-
-## Field Note
-
-ID LOC HOLD: The colony gives the player tools through people, not exposition.
+Packet ini penting karena mengembalikan kompetensi kepada koloni mati. Pekerja bukan korban pasif yang menunggu lore terjadi kepada mereka. Mereka menambal, menandai, membohongi panel ketika panel berbohong lebih dulu, dan meninggalkan prosedur yang bisa dipercaya Marauder. Ren mengubah salvage menjadi mendengarkan: jalur berguna ditulis dengan pensil gemuk, bukan kilap Deep Reach.
 
 <!-- External Site; generated from P064_REN_OKOYE_PUMP_63/id_ID. -->

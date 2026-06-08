@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "Openbaar Tau Ceti-ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# Openbaar Tau Ceti-ledger
 
-NL LOC HOLD: Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly.
+Het openbare Tau Ceti-ledger is hard-SF-verantwoording: echte publieke instellingen bestaan, maar afstand verandert gerechtigheid in een nabeeld als bewijs niet met chain-of-custody-discipline wordt bewaard.
 
 ## Scanner
 
-NL LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+Fragment van een Tau Ceti-burgerledger. Openbaar genoeg om Deep Reach bang te maken, te vertraagd om de kolonie te redden.
 
 ## Terminal
 
-NL LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+TAU CETI LEDGER MIRROR: verzegeld bewijs toelaatbaar na relaisauthenticatie. Verwacht publiek beoordelingsvenster overschrijdt lokaal overlevingsinterval met 31,4 jaar.
 
 ## Audio
 
-NL LOC HOLD: A court can be honest and useless when light itself is late.
+Een rechtbank kan eerlijk en nutteloos zijn wanneer licht zelf te laat komt.
 
 ## Field Note
 
-NL LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+Toezicht kan schoon en laat arriveren. Laat is nog steeds dood.
 
 <!-- External Site; generated from P074_TAU_CETI_PUBLIC_LEDGER/nl_NL. -->

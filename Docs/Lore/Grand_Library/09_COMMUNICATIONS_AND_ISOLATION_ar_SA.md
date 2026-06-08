@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # انقطاع الاتصالات والصمت المداري
 
 > **المصدر:** دليل تشغيل الناقل المداري *Black Keel*، القسم 4.

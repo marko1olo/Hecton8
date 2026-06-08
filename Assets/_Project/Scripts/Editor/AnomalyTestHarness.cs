@@ -1,6 +1,8 @@
 using Hecton8.Core;
 using Hecton8.World;
+using System;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor;
@@ -521,6 +523,8 @@ namespace Hecton8.Editor
             NativeArray<int> deferredStateBudget = default;
             NativeQueue<AnomalyBasinFloodFillState> pendingFloodStates = default;
             NativeQueue<AnomalyBasinFloodFillState> deferredFloodStates = default;
+            int pendingFloodStatesSentinelId = 0;
+            int deferredFloodStatesSentinelId = 0;
 
             try
             {
@@ -537,9 +541,9 @@ namespace Hecton8.Editor
                 // COLD ALLOC: NativeArray<int>[2] - sliced flood-fill deferred-state budget/drop slots - owner: AnomalyTestHarness
                 deferredStateBudget = AllocateTrackedTempJobArray<int>(2, DeferredStateBudgetLabel, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - current sliced flood-fill state lane - owner: AnomalyTestHarness
-                pendingFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, PendingFloodStatesLabel);
+                pendingFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, PendingFloodStatesLabel, out pendingFloodStatesSentinelId);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - deferred sliced flood-fill state lane - owner: AnomalyTestHarness
-                deferredFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, DeferredFloodStatesLabel);
+                deferredFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, DeferredFloodStatesLabel, out deferredFloodStatesSentinelId);
 
                 FillPerfectBowl(heightmap);
                 var settings = new AnomalyBasinDetectionSettings
@@ -620,8 +624,8 @@ namespace Hecton8.Editor
                 DisposeTracked(ref acceptedCells);
                 DisposeTracked(ref sliceStatus);
                 DisposeTracked(ref deferredStateBudget);
-                DisposeTrackedQueue(ref pendingFloodStates, PendingFloodStatesLabel);
-                DisposeTrackedQueue(ref deferredFloodStates, DeferredFloodStatesLabel);
+                DisposeTrackedQueue(ref pendingFloodStates, ref pendingFloodStatesSentinelId);
+                DisposeTrackedQueue(ref deferredFloodStates, ref deferredFloodStatesSentinelId);
             }
         }
 
@@ -643,6 +647,8 @@ namespace Hecton8.Editor
             NativeArray<int> deferredStateBudget = default;
             NativeQueue<AnomalyBasinFloodFillState> pendingFloodStates = default;
             NativeQueue<AnomalyBasinFloodFillState> deferredFloodStates = default;
+            int pendingFloodStatesSentinelId = 0;
+            int deferredFloodStatesSentinelId = 0;
 
             try
             {
@@ -659,9 +665,9 @@ namespace Hecton8.Editor
                 // COLD ALLOC: NativeArray<int>[2] - stamp-overflow deferred-state budget/drop slots - owner: AnomalyTestHarness
                 deferredStateBudget = AllocateTrackedTempJobArray<int>(2, DeferredStateBudgetLabel, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - stamp-overflow current state lane - owner: AnomalyTestHarness
-                pendingFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, PendingFloodStatesLabel);
+                pendingFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, PendingFloodStatesLabel, out pendingFloodStatesSentinelId);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - stamp-overflow deferred state lane - owner: AnomalyTestHarness
-                deferredFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, DeferredFloodStatesLabel);
+                deferredFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, DeferredFloodStatesLabel, out deferredFloodStatesSentinelId);
 
                 FillPerfectBowl(heightmap);
                 candidateMask[seedIndex] = 1;
@@ -788,8 +794,8 @@ namespace Hecton8.Editor
                 DisposeTracked(ref acceptedCells);
                 DisposeTracked(ref sliceStatus);
                 DisposeTracked(ref deferredStateBudget);
-                DisposeTrackedQueue(ref pendingFloodStates, PendingFloodStatesLabel);
-                DisposeTrackedQueue(ref deferredFloodStates, DeferredFloodStatesLabel);
+                DisposeTrackedQueue(ref pendingFloodStates, ref pendingFloodStatesSentinelId);
+                DisposeTrackedQueue(ref deferredFloodStates, ref deferredFloodStatesSentinelId);
             }
         }
 
@@ -809,6 +815,8 @@ namespace Hecton8.Editor
             NativeArray<int> deferredStateBudget = default;
             NativeQueue<AnomalyBasinFloodFillState> pendingFloodStates = default;
             NativeQueue<AnomalyBasinFloodFillState> deferredFloodStates = default;
+            int pendingFloodStatesSentinelId = 0;
+            int deferredFloodStatesSentinelId = 0;
 
             try
             {
@@ -825,9 +833,9 @@ namespace Hecton8.Editor
                 // COLD ALLOC: NativeArray<int>[2] - corrupt-state deferred-state budget/drop slots - owner: AnomalyTestHarness
                 deferredStateBudget = AllocateTrackedTempJobArray<int>(2, DeferredStateBudgetLabel, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - corrupt-state current state lane - owner: AnomalyTestHarness
-                pendingFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, PendingFloodStatesLabel);
+                pendingFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, PendingFloodStatesLabel, out pendingFloodStatesSentinelId);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - corrupt-state deferred state lane - owner: AnomalyTestHarness
-                deferredFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, DeferredFloodStatesLabel);
+                deferredFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, DeferredFloodStatesLabel, out deferredFloodStatesSentinelId);
 
                 pendingFloodStates.Enqueue(new AnomalyBasinFloodFillState
                 {
@@ -888,8 +896,8 @@ namespace Hecton8.Editor
                 DisposeTracked(ref acceptedCells);
                 DisposeTracked(ref sliceStatus);
                 DisposeTracked(ref deferredStateBudget);
-                DisposeTrackedQueue(ref pendingFloodStates, PendingFloodStatesLabel);
-                DisposeTrackedQueue(ref deferredFloodStates, DeferredFloodStatesLabel);
+                DisposeTrackedQueue(ref pendingFloodStates, ref pendingFloodStatesSentinelId);
+                DisposeTrackedQueue(ref deferredFloodStates, ref deferredFloodStatesSentinelId);
             }
         }
 
@@ -1261,52 +1269,129 @@ namespace Hecton8.Editor
             throw new System.InvalidOperationException($"[AnomalyTestHarness] NativeMemorySentinel rejected NativeArray registration for {label}.");
         }
 
-        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
             }
-            finally
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
             {
                 array.Dispose();
-                array = default;
             }
-        }
-
-        private static void DisposeTrackedQueue<T>(ref NativeQueue<T> queue, string label) where T : unmanaged
-        {
-            if (!queue.IsCreated)
-                return;
-
-            try
+            catch (System.Exception nativeSentinelException0)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, label);
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
             }
             finally
             {
-                queue.Dispose();
-                queue = default;
+                array = default;
             }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
-        private static NativeQueue<T> AllocateTrackedTempJobQueue<T>(int capacity, string label)
+        private static void DisposeTrackedQueue<T>(ref NativeQueue<T> queue, ref int sentinelId) where T : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
+        }
+
+        private static NativeQueue<T> AllocateTrackedTempJobQueue<T>(int capacity, string label, out int sentinelId)
             where T : unmanaged
         {
+            sentinelId = 0;
             NativeQueue<T> queue = new NativeQueue<T>(Allocator.TempJob);
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(queue, capacity, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(queue, capacity, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
                 if (sentinelId > 0)
                     return queue;
             }
             catch
             {
-                if (queue.IsCreated)
+                System.Exception nativeSentinelCleanupException1 = null;
+
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (System.Exception nativeSentinelException1)
+                    {
+                        nativeSentinelCleanupException1 = nativeSentinelException1;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                try
+                {
                     queue.Dispose();
+                }
+                catch (System.Exception nativeSentinelException1)
+                {
+                    if (nativeSentinelCleanupException1 == null)
+                        nativeSentinelCleanupException1 = nativeSentinelException1;
+                }
+
+                if (nativeSentinelCleanupException1 != null)
+                    throw nativeSentinelCleanupException1;
 
                 throw;
             }

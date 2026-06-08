@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 灾难前的殖民地生活：44号扇区
 
 > **来源:** 从44号扇区居住区8-B单元回收的个人日志。

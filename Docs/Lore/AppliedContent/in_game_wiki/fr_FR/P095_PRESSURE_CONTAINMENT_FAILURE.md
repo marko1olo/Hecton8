@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Defaillance de confinement par pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Defaillance de confinement par pression
 
-FR LOC HOLD: Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.
+La defaillance de confinement donne au blue debt un comportement materiel lisible. Sa valeur vient de la pression profonde qui l'a rendu coherent, et son danger du maniement peu profond qui defait cette coherence. L'etape 0 est scellee. L'etape 1 derive et peut parfois etre sauvee par repression d'event. L'etape 2 fracture le reseau. L'etape 3 invite saumure et biologie. L'etape 4 laisse un echantillon mort qui contamine equipement, eau et routes.
 
 ## Scanner
 
-FR LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+Tableau d'etapes du caisson. Le blue debt cede par memoire de pression, cisaillement de signal et bloom; la superstition gaspille l'oxygene.
 
 ## Terminal
 
-FR LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+ETAPES DE CONFINEMENT: 0 reseau scelle; 1 derive de signal; 2 fracture de reseau; 3 bloom saumure/biologie; 4 echantillon mort avec contamination vivante. Repression par event peut sauver l'etape 1 seulement.
 
 ## Audio
 
-FR LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
+L'echantillon ne te hait pas. Il essaie de revenir la ou il s'est forme.
 
 ## Field Note
 
-FR LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Un echantillon peut valoir une fortune a une profondeur et devenir une charge dix metres plus loin.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/fr_FR. -->

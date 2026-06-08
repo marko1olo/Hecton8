@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Habitat.Deformation.Editor",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
         "Hecton8.Habitat.Deformation.Contracts",
         "Unity.Burst",
         "Unity.Collections",

@@ -3,38 +3,38 @@ packet_id: P053_MARAUDER_GRAFFITI_MASKS
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
 unlock_id: unlock.first_marauder_graffiti_masks
-poi_tags: poi.graffiti_mask;poi.pressure_arrow
-biome_tags: biome.scrap_canyon;biome.marauder_route
+poi_tags: poi.graffiti_mask;poi.scavenger_route
+biome_tags: biome.service_corridor;biome.salvage_route
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Graffiti Masks"
+title: "Marodeur-Graffitimasken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Marauder Graffiti Masks
+# Marodeur-Graffitimasken
 
-DE LOC HOLD: Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.
+Marodeurmarken sind Feldnavigation, soziale Warnung und Sprache gegen Überwachung. Sie wirken grob, weil sie Wasser, Angst, schlechte Lampen und Firmenkameras überstehen mussten. Der Spieler lernt, welche Zeichen Lärm, Druck, Patrouillenrisiko, versteckte Vorräte und Routen anzeigen, die nicht mehr zu offiziellen Karten passen.
 
 ## Scanner
 
-DE LOC HOLD: The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
+Farbcode: Strichzahl markiert Lärmdisziplin, schwarze Ringe markieren Trägerping-Gefahr, gebrochene Pfeile markieren Druckdrift.
 
 ## Terminal
 
-DE LOC HOLD: MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
+ROUTENMASKENINDEX: drei Striche nur für Handzeichen sicher. Schwarzer Ring bedeutet Trägerscan. Gebrochener Pfeil bedeutet Druckänderung seit der letzten Markierung.
 
 ## Audio
 
-DE LOC HOLD: They made a language that looks like vandalism to the company.
+Wenn die Wand wütend aussieht, lies sie als Wetter.
 
 ## Field Note
 
-DE LOC HOLD: Bad paint. Good map.
+Marodeure schrieben für Leute, die Funk nicht trauen und Karten nicht bezahlen konnten.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/de_DE. -->

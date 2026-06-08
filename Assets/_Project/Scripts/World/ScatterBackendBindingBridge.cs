@@ -54,8 +54,14 @@ namespace Hecton8.World
                     }
 
                     hash = (hash * 31) + unchecked((int)EntityId.ToULong(family.GetEntityId()));
-                    return hash;
+                    return NormalizeFamilyIndex(hash);
                 }
+            }
+
+            private static int NormalizeFamilyIndex(int hash)
+            {
+                int normalized = hash & int.MaxValue;
+                return normalized == 0 ? 1 : normalized;
             }
         }
     }

@@ -19,22 +19,25 @@ localization_flags: 0
 
 # Professional Guilt To Personal Stake
 
-The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.
+Professional guilt becomes personal stake without turning the protagonist into the cause of the catastrophe. The player does not need a lost sibling, a revenge bloodline, or a secret chosen role. The pressure is colder and more adult. They recognize the procedure. They know why a witness field matters, why a route-safe stamp can lie, why a carrier can hear them and still not lift them out. HECTON-8 becomes personal because the old Deep Reach language is not abstract to them. It is work they once trusted, work they once performed near, and work now attached to names recovered from drowned rooms. The arc is not confession. It is refusal: once the player can read the abandonment machine, leaving it buried becomes another act of participation.
 
 ## Scanner
 
-Signature match. The form language is old. The names are new.
+Signature pattern matches the old procedure cache. The names changed. The room failed the same way. Expertise is no longer distance.
 
 ## Terminal
 
-DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+DOSSIER RESOLUTION / PROFESSIONAL STAKE
+trigger evidence: procedure recognition, recovered worker tags, claim receiver conflict
+excluded motive: family relation, revenge lineage, chosen-witness status
+active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
 
 ## Audio
 
-You came for a contract. You stayed because you understood the paperwork.
+You came for a claim. You stayed because the paperwork knew your hands.
 
 ## Field Note
 
-Use near late dossier and final payload route.
+Not your signature. Still your trade. That is why the room will not stay quiet.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/en_US. -->

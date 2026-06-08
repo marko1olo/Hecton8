@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Moteur géothermique de forge hydrothermale"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# Moteur géothermique de forge hydrothermale
 
-FR LOC HOLD: Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+Les forges hydrothermales relient géologie, fabrication, survie et horreur. Elles fournissent chaleur et cycles de pression pour céramiques, joints et verre de pression, mais les mêmes cycles créent poches d'ébullition, faux oxygène, nuages corrosifs et migrations de faune.
 
 ## Scanner
 
-FR LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
+Collecteur de forge hydrothermale. Chaleur, poison et énergie passent par le même tuyau.
 
 ## Terminal
 
-FR LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+MOTEUR GÉOTHERMIQUE: impulsion d'évent adaptée à la cuisson céramique, au recuit du verre de pression et au préchauffage de charge d'ascension d'urgence. Risques: cisaillement bouillant, faux positif oxygène, floraison corrosive.
 
 ## Audio
 
-FR LOC HOLD: The vent does not care whether you call it power or weather.
+L'évent se moque que tu l'appelles énergie ou météo.
 
 ## Field Note
 
-FR LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+Chaque évent utile est aussi une machine qui punit le mauvais timing.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/fr_FR. -->

@@ -71,8 +71,15 @@ namespace Hecton8.Core.Bridge
                 return false;
 
             bool publishRuntimeSignals = Application.isPlaying;
-            if (!publishRuntimeSignals)
+            if (publishRuntimeSignals)
+            {
+                if (!PrefabRegistry.TryResolveActiveRuntime(ref runtimeRegistry))
+                    return false;
+            }
+            else
+            {
                 runtimeRegistry = null;
+            }
 
             uint frame = publishRuntimeSignals ? Hecton8.Core.SystemDispatcher.CurrentFrameId : 0u;
 
@@ -111,6 +118,15 @@ namespace Hecton8.Core.Bridge
             return PrepareBuffers(registry, vault, null);
         }
 
+        public static PrefabRegistry ResolveRuntimeRegistryForBinding()
+        {
+            if (!Application.isPlaying)
+                return null;
+
+            PrefabRegistry runtimeRegistry = null;
+            return PrefabRegistry.TryResolveActiveRuntime(ref runtimeRegistry) ? runtimeRegistry : null;
+        }
+
         public static bool PrepareBuffers(H8PrefabRegistry registry, IDataVault vault, PrefabRegistry runtimeRegistry)
         {
             if (registry == null || vault == null)
@@ -126,6 +142,16 @@ namespace Hecton8.Core.Bridge
 
             if (runtimeBindableCount <= 0)
                 return true;
+
+            if (Application.isPlaying)
+            {
+                if (!PrefabRegistry.TryResolveActiveRuntime(ref runtimeRegistry))
+                    return false;
+            }
+            else
+            {
+                runtimeRegistry = null;
+            }
 
             int rawCount = registry.EntryCount;
             if (!TryValidateRuntimeBindableCount(registry, rawCount, runtimeBindableCount))
@@ -509,7 +535,7 @@ namespace Hecton8.Core.Bridge
             if (Application.isPlaying)
             {
                 IDataVault vault = GlobalRegistry.DataVault;
-                PrefabRegistry runtimeRegistry = GlobalRegistry.PrefabRegistryRuntime;
+                PrefabRegistry runtimeRegistry = H8PrefabRegistryRuntimeBinder.ResolveRuntimeRegistryForBinding();
                 if (!H8PrefabRegistryRuntimeBinder.PrepareBuffers(registry, vault, runtimeRegistry))
                     return;
 
@@ -517,7 +543,7 @@ namespace Hecton8.Core.Bridge
                 return;
             }
 
-            H8PrefabRegistryRuntimeBinder.Bind(registry, GlobalRegistry.DataVault, GlobalRegistry.PrefabRegistryRuntime);
+            H8PrefabRegistryRuntimeBinder.Bind(registry, GlobalRegistry.DataVault, null);
         }
     }
 }

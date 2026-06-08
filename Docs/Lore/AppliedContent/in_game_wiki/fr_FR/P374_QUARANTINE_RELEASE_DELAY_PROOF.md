@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Quarantine Release Delay Proof"
+title: "Maintien de libération quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Quarantine Release Delay Proof
+# Maintien de libération quarantaine
 
-FR LOC HOLD: Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
+Le record de maintien ne rend pas la quarantaine mauvaise. Il rend le timing visible. Deep Reach pouvait nommer l'incertitude, retarder la libération, préserver sa position assurance et garder le travailleur dans la zone assez longtemps pour que la route meure.
 
 ## Scanner
 
-FR LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+Plaque de maintien quarantaine. Le langage de protection apparaît après verrouillage de la route de sortie.
 
 ## Terminal
 
-FR LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
 
 ## Audio
 
-FR LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+La quarantaine peut sauver un corps. Elle peut aussi le faire attendre jusqu'à le transformer en dossier.
 
 ## Field Note
 
-FR LOC HOLD: Use where player may confuse rescue with custody.
+Note de maraudeur : le mot protection ne prouve pas la protection. Regarde l'horloge.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/fr_FR. -->

@@ -142,8 +142,12 @@ namespace Hecton8.Gameplay
         private static readonly PlayerExpressionReferenceSlot[] _referenceSlots = new PlayerExpressionReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[8] - reference slot occupancy map prevents overwrite before deferred flush - owner: PlayerExpressionEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
+        // COLD ALLOC: ushort[8] - generation tokens reject stale profile sidecar payloads after release/reuse - owner: PlayerExpressionEvents
+        private static readonly ushort[] _referenceSlotGenerations = new ushort[ReferenceSlotCapacity];
         private static NativeQueue<PlayerExpressionEventPayload> _pendingEvents;
         private static NativeQueue<PlayerExpressionEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
         private static int _pendingEventCount;
@@ -230,7 +234,7 @@ namespace Hecton8.Gameplay
                     _isDispatching = false;
                 }
 
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
             }
 
             if (_pendingEvents.IsEmpty())
@@ -250,7 +254,7 @@ namespace Hecton8.Gameplay
         public static bool TryResolveProfile(in PlayerExpressionEventPayload payload, out PlayerExpressionProfile profile)
         {
             profile = null;
-            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+            if (!IsReferenceSlotPayloadCurrent(in payload))
                 return false;
 
             profile = _referenceSlots[payload.ReferenceSlot].Profile;
@@ -268,7 +272,7 @@ namespace Hecton8.Gameplay
             if (_listeners.Count <= 0)
                 return false;
 
-            if (!TryReserveReferenceSlot(out int referenceSlot))
+            if (!TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration))
             {
                 _droppedReferenceSlotCount++;
                 return false;
@@ -279,7 +283,7 @@ namespace Hecton8.Gameplay
             {
                 ReferenceSlot = referenceSlot,
                 EventType = (ushort)PlayerExpressionEventType.ProfileChanged,
-                Reserved = 0
+                Reserved = referenceGeneration
             });
         }
 
@@ -306,14 +310,14 @@ namespace Hecton8.Gameplay
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<PlayerExpressionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - deferred player-expression lane flushed by SystemDispatcher LateUpdate - owner: PlayerExpressionEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<PlayerExpressionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - next-frame player-expression lane prevents same-frame reentrant dispatch - owner: PlayerExpressionEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -321,6 +325,7 @@ namespace Hecton8.Gameplay
             {
                 ReleaseNativeQueues();
                 ClearReferenceSlots();
+                _referencePendingCount = 0;
                 _pendingEventCount = 0;
                 _nextFrameEventCount = 0;
                 throw;
@@ -330,10 +335,12 @@ namespace Hecton8.Gameplay
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(PlayerExpressionEvents),
@@ -342,25 +349,60 @@ namespace Hecton8.Gameplay
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerExpressionEvents), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -383,7 +425,7 @@ namespace Hecton8.Gameplay
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 _droppedEventCount++;
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
                 return false;
             }
 
@@ -399,9 +441,10 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static bool TryReserveReferenceSlot(out int referenceSlot)
+        private static bool TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration)
         {
             referenceSlot = -1;
+            referenceGeneration = 0;
             if (_referencePendingCount >= ReferenceSlotCapacity)
                 return false;
 
@@ -416,12 +459,29 @@ namespace Hecton8.Gameplay
                     continue;
 
                 referenceSlot = candidateSlot;
+                referenceGeneration = AdvanceReferenceSlotGeneration(referenceSlot);
                 _referenceSlotOccupied[referenceSlot] = true;
                 _referencePendingCount++;
                 return true;
             }
 
             return false;
+        }
+
+        private static ushort AdvanceReferenceSlotGeneration(int referenceSlot)
+        {
+            ushort generation = unchecked((ushort)(_referenceSlotGenerations[referenceSlot] + 1));
+            if (generation == 0)
+                generation = 1;
+
+            _referenceSlotGenerations[referenceSlot] = generation;
+            return generation;
+        }
+
+        private static void ReleaseReferenceSlotForPayload(in PlayerExpressionEventPayload payload)
+        {
+            if (IsReferenceSlotPayloadCurrent(in payload))
+                ReleaseReferenceSlot(payload.ReferenceSlot);
         }
 
         private static void ReleaseReferenceSlot(int referenceSlot)
@@ -441,6 +501,15 @@ namespace Hecton8.Gameplay
         private static bool IsValidReferenceSlot(int referenceSlot)
         {
             return (uint)referenceSlot < ReferenceSlotCapacity;
+        }
+
+        private static bool IsReferenceSlotPayloadCurrent(in PlayerExpressionEventPayload payload)
+        {
+            int referenceSlot = payload.ReferenceSlot;
+            return IsValidReferenceSlot(referenceSlot) &&
+                   _referenceSlotOccupied[referenceSlot] &&
+                   payload.Reserved != 0 &&
+                   _referenceSlotGenerations[referenceSlot] == payload.Reserved;
         }
 
         private static void DrainWithoutDispatch()
@@ -481,7 +550,7 @@ namespace Hecton8.Gameplay
                 if (pendingCount > 0)
                     pendingCount--;
 
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
             }
 
             if (queue.IsEmpty())
@@ -503,6 +572,9 @@ namespace Hecton8.Gameplay
             NativeQueue<PlayerExpressionEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
@@ -513,6 +585,7 @@ namespace Hecton8.Gameplay
             {
                 _referenceSlots[i].Clear();
                 _referenceSlotOccupied[i] = false;
+                AdvanceReferenceSlotGeneration(i);
             }
         }
     }
@@ -567,6 +640,7 @@ namespace Hecton8.Gameplay
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(160); // COLD ALLOC: char[160] - identity HUD notification staging buffer - owner: PlayerExpressionManager
 
@@ -1009,19 +1083,35 @@ namespace Hecton8.Gameplay
                 return;
 
             ISaveService saveService = _saveService;
-            if (saveService == null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterSaveOwner()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            _saveService?.Unregister(this);
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
             _saveRegistered = false;
         }
 
@@ -1039,10 +1129,7 @@ namespace Hecton8.Gameplay
                     SyncDiagnostics();
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    if (_saveRegistered && previousService is ISaveService previousSave)
-                        previousSave.Unregister(this);
-
-                    _saveRegistered = false;
+                    TryUnregisterSaveOwner();
                     _saveService = currentService as ISaveService;
 
                     if (Application.isPlaying && isActiveAndEnabled)

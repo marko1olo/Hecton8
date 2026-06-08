@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Salida material
 
-Sostiene rejugabilidad con un final rentable y comprometido para quienes eligen botín, contrato y supervivencia.
+Material Exit sostiene una retirada rentable pero comprometida: botín, contratos y supervivencia pueden ganar el ascenso mientras la verdad completa del descenso queda abajo.
 
 ## Scanner
 

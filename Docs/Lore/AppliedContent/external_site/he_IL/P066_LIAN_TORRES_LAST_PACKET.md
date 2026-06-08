@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "החבילה האחרונה של ליאן טורס"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# החבילה האחרונה של ליאן טורס
 
-HE LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue.
+החבילה האחרונה של ליאן טורס נותנת פנים אנושיות לטרגדיה בלי אנסיבל: החבילה קיימת, השמות קיימים, אבל המרחק, עדיפות התור והתגובה התאגידית הופכים את האמת לאחריות במקום להצלה.
 
 ## Scanner
 
-HE LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+החבילה הנקייה האחרונה לא אבדה. ההודאה בקבלתה הייתה יקרה מדי.
 
 ## Terminal
 
-HE LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+טורס, ל. לחיצת יד נקייה עם המוביל הושלמה. ספירת עובדים צורפה. הוכחת פינוי צורפה. גיל הממסר אינו קביל להצלה חיה. הארכיון התאגידי סימן אחר כך את החבילה כפגומה.
 
 ## Audio
 
-HE LOC HOLD: He sent the names. The archive called them noise.
+הוא שלח את השמות. הארכיון קרא להם רעש.
 
 ## Field Note
 
-HE LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+חותמת זמן יכולה להיות גופה כשהמוביל עונה לתור הלא נכון.
 
 <!-- External Site; generated from P066_LIAN_TORRES_LAST_PACKET/he_IL. -->

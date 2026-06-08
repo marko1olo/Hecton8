@@ -9,24 +9,16 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ZH LOC HOLD: Resources and Ecology"
+title: "资源与生态"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Resources and Ecology
+# 资源与生态
 
-ZH LOC HOLD: The useful matter of HECTON-8 is rarely clean. It comes out of pressure seams, brine traps, vent heat, dead machinery and living tissue that has learned to grow around metal. A sample can be mineral, biological, industrial and legal evidence at the same time.
-
-Blue debt is the best known example. The name began as salvage slang for pressure-formed value that carried unpaid risk with it. A blue debt sample records the conditions that made it: depth, heat, contamination, extraction method and contact with Atlas-altered lattice. Two pieces with the same shine may not have the same custody value. One is a payout. Another is proof.
-
-The ocean's biology is not a speaking mind. It is a set of processes under extreme pressure. Mats conduct current across damaged surfaces. Shell growth can seal a fracture. Filter organs can carry acoustic timing through tissue. Brine vanes mark density flow. Grazers clear mineral film and expose safe scrape zones. Predators follow vibration, heat and disturbed silt.
-
-Atlas changed the meaning of those processes. After the flood, its emergency maintenance model expanded through anything that could carry signal, seal pressure or move material. Conductive biofilm became cable skin. Sensor-tagged fauna became feedback. Vent micronodes became power nests. Some routes look natural until they answer a machine need too precisely.
-
-Nothing in the HECTON-8 ocean is just scenery, and nothing valuable is just loot. The question attached to every sample is older than the claim stamped on it: what made this, and what was damaged while it formed?
+资源集群要展示过程链，而不是掉落清单。矿物可能来自drowned crust，来自brine trap沉积，来自vent heat痕迹，来自旧机器，或来自Atlas介入后围绕金属生长的组织。Blue debt把经济同地质绑在一起：能被带上去的东西，早已被上方某人定价。生态不是背景，也不是动物园。生物会响应声音、压力、光、盐迹和受损repair paths。因此资源、生物与证据必须一起阅读：一个样本可以喂给工具，揭露事故，并指出Atlas在哪里把修复误当成使用活物。
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/zh_CN. -->

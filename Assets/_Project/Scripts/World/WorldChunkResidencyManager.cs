@@ -598,6 +598,7 @@ namespace Hecton8.World
         private const int MemoryGuardBytes = 500 * 1024 * 1024;
         private const float DefaultLoadRadiusMeters = 500f;
         private const float DefaultUnloadRadiusMeters = 600f;
+        private const double DefaultSeaLevelY = 14.02d;
         private const float ChunkFadeSeconds = 2f;
         private const float ChunkFadeSecondsRcp = 0.5f;
         private const float PredictiveLookaheadSeconds = 5f;
@@ -960,6 +961,28 @@ namespace Hecton8.World
         private VaultGenerationHandle<ulong> _macroDatabaseEvictionScratchHandle;
         private VaultGenerationHandle<ChunkHydrationApplyRecord> _hydrationApplyRecordsHandle;
         private VaultGenerationHandle<byte> _dehydrationMetadataPayloadHandle;
+        private int _chunkIdsSentinelId;
+        private int _chunkCentersSentinelId;
+        private int _chunkStateSlotsSentinelId;
+        private int _loadRequestsSentinelId;
+        private int _residencyDecisionsSentinelId;
+        private int _residencyTelemetrySentinelId;
+        private int _loadStartTimesSentinelId;
+        private int _loadImmediateRadiusFlagsSentinelId;
+        private int _activeImpostorsSentinelId;
+        private int _impostorTypesSentinelId;
+        private int _activeImpostorChunkIdsSentinelId;
+        private int _activeImpostorSpawnTimesSentinelId;
+        private int _activeImpostorCentersSentinelId;
+        private int _activeImpostorSizesSentinelId;
+        private int _activeImpostorFlagsSentinelId;
+        private int _activeImpostorCartographyPointsSentinelId;
+        private int _activeImpostorCountSentinelId;
+        private int _activeImpostorFadeOutCountSentinelId;
+        private int _pagerReadTicketsSentinelId;
+        private int _macroDatabaseEvictionScratchSentinelId;
+        private int _hydrationApplyRecordsSentinelId;
+        private int _dehydrationMetadataPayloadSentinelId;
         private long[] _chunkIdsByDefinitionIndex;
         private GameObject[][] _spawnedInstancesByChunk;
         private int[] _spawnedCountsByChunk;
@@ -1687,7 +1710,7 @@ namespace Hecton8.World
         private void RequestAsyncPagerRead(long chunkId)
         {
             IAsyncPersistenceService persistence = _asyncPersistenceService;
-            if (persistence == null)
+            if (!IsAsyncPersistenceUsable(persistence))
                 return;
 
             if (!TryResolveWorldStreamingVaultBuffer(
@@ -1740,7 +1763,7 @@ namespace Hecton8.World
                 return;
 
             IAsyncPersistenceService persistence = _asyncPersistenceService;
-            if (persistence == null)
+            if (!IsAsyncPersistenceUsable(persistence))
                 return;
 
             int retired = 0;
@@ -1918,20 +1941,20 @@ namespace Hecton8.World
             {
             if (TryResolveChunkTableBuffers(out NativeArray<long> chunkIds, out NativeArray<AbsoluteUniversePositionBlit> chunkCenters))
             {
-                RegisterStreamingLedgerArray(chunkIds, nameof(_chunkIdsHandle));
-                RegisterStreamingLedgerArray(chunkCenters, nameof(_chunkCentersHandle));
+                RegisterStreamingLedgerArray(chunkIds, nameof(_chunkIdsHandle), out _chunkIdsSentinelId);
+                RegisterStreamingLedgerArray(chunkCenters, nameof(_chunkCentersHandle), out _chunkCentersSentinelId);
             }
             if (TryResolveChunkStateSlots(out NativeArray<ChunkStateSlotDTO> chunkStateSlots))
-                RegisterStreamingLedgerArray(chunkStateSlots, nameof(_chunkStateSlotsHandle));
+                RegisterStreamingLedgerArray(chunkStateSlots, nameof(_chunkStateSlotsHandle), out _chunkStateSlotsSentinelId);
             if (TryResolveLoadRequestQueue(out NativeArray<ChunkLoadRequest> loadRequests))
-                RegisterStreamingLedgerArray(loadRequests, nameof(_loadRequestsHandle));
+                RegisterStreamingLedgerArray(loadRequests, nameof(_loadRequestsHandle), out _loadRequestsSentinelId);
             if (TryResolveWorldStreamingVaultBuffer(
                     in _residencyDecisionsHandle,
                     ResidencyDecisionsVaultBufferId,
                     capacity,
                     out NativeArray<ResidencyDecisionDTO> residencyDecisions))
             {
-                RegisterStreamingLedgerArray(residencyDecisions, nameof(_residencyDecisionsHandle));
+                RegisterStreamingLedgerArray(residencyDecisions, nameof(_residencyDecisionsHandle), out _residencyDecisionsSentinelId);
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _residencyTelemetryHandle,
@@ -1939,7 +1962,7 @@ namespace Hecton8.World
                     TelemetryCapacity,
                     out NativeArray<ChunkResidencyTelemetryEntry> residencyTelemetry))
             {
-                RegisterStreamingLedgerArray(residencyTelemetry, nameof(_residencyTelemetryHandle));
+                RegisterStreamingLedgerArray(residencyTelemetry, nameof(_residencyTelemetryHandle), out _residencyTelemetrySentinelId);
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _loadStartTimesHandle,
@@ -1947,7 +1970,7 @@ namespace Hecton8.World
                     capacity,
                     out NativeArray<double> loadStartTimes))
             {
-                RegisterStreamingLedgerArray(loadStartTimes, nameof(_loadStartTimesHandle));
+                RegisterStreamingLedgerArray(loadStartTimes, nameof(_loadStartTimesHandle), out _loadStartTimesSentinelId);
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _loadImmediateRadiusFlagsHandle,
@@ -1955,7 +1978,7 @@ namespace Hecton8.World
                     capacity,
                     out NativeArray<byte> loadImmediateRadiusFlags))
             {
-                RegisterStreamingLedgerArray(loadImmediateRadiusFlags, nameof(_loadImmediateRadiusFlagsHandle));
+                RegisterStreamingLedgerArray(loadImmediateRadiusFlags, nameof(_loadImmediateRadiusFlagsHandle), out _loadImmediateRadiusFlagsSentinelId);
             }
             IDataVault vault = _streamingLedgerVault ?? _dataVault;
             if (TryResolveActiveImpostorBuffers(
@@ -1971,16 +1994,16 @@ namespace Hecton8.World
                     out NativeArray<int> activeImpostorCount,
                     out NativeArray<int> activeImpostorFadeOutCount))
             {
-                RegisterStreamingLedgerArray(activeImpostors, nameof(_activeImpostorsHandle));
-                RegisterStreamingLedgerArray(impostorTypes, nameof(_impostorTypesHandle));
-                RegisterStreamingLedgerArray(activeImpostorChunkIds, nameof(_activeImpostorChunkIdsHandle));
-                RegisterStreamingLedgerArray(activeImpostorSpawnTimes, nameof(_activeImpostorSpawnTimesHandle));
-                RegisterStreamingLedgerArray(activeImpostorCenters, nameof(_activeImpostorCentersHandle));
-                RegisterStreamingLedgerArray(activeImpostorSizes, nameof(_activeImpostorSizesHandle));
-                RegisterStreamingLedgerArray(activeImpostorFlags, nameof(_activeImpostorFlagsHandle));
-                RegisterStreamingLedgerArray(activeImpostorCartographyPoints, nameof(_activeImpostorCartographyPointsHandle));
-                RegisterStreamingLedgerArray(activeImpostorCount, nameof(_activeImpostorCountHandle));
-                RegisterStreamingLedgerArray(activeImpostorFadeOutCount, nameof(_activeImpostorFadeOutCountHandle));
+                RegisterStreamingLedgerArray(activeImpostors, nameof(_activeImpostorsHandle), out _activeImpostorsSentinelId);
+                RegisterStreamingLedgerArray(impostorTypes, nameof(_impostorTypesHandle), out _impostorTypesSentinelId);
+                RegisterStreamingLedgerArray(activeImpostorChunkIds, nameof(_activeImpostorChunkIdsHandle), out _activeImpostorChunkIdsSentinelId);
+                RegisterStreamingLedgerArray(activeImpostorSpawnTimes, nameof(_activeImpostorSpawnTimesHandle), out _activeImpostorSpawnTimesSentinelId);
+                RegisterStreamingLedgerArray(activeImpostorCenters, nameof(_activeImpostorCentersHandle), out _activeImpostorCentersSentinelId);
+                RegisterStreamingLedgerArray(activeImpostorSizes, nameof(_activeImpostorSizesHandle), out _activeImpostorSizesSentinelId);
+                RegisterStreamingLedgerArray(activeImpostorFlags, nameof(_activeImpostorFlagsHandle), out _activeImpostorFlagsSentinelId);
+                RegisterStreamingLedgerArray(activeImpostorCartographyPoints, nameof(_activeImpostorCartographyPointsHandle), out _activeImpostorCartographyPointsSentinelId);
+                RegisterStreamingLedgerArray(activeImpostorCount, nameof(_activeImpostorCountHandle), out _activeImpostorCountSentinelId);
+                RegisterStreamingLedgerArray(activeImpostorFadeOutCount, nameof(_activeImpostorFadeOutCountHandle), out _activeImpostorFadeOutCountSentinelId);
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _pagerReadTicketsHandle,
@@ -1988,7 +2011,7 @@ namespace Hecton8.World
                     PagerReadTicketCapacity,
                     out NativeArray<H8WorldPageReadTicket> pagerReadTickets))
             {
-                RegisterStreamingLedgerArray(pagerReadTickets, nameof(_pagerReadTicketsHandle));
+                RegisterStreamingLedgerArray(pagerReadTickets, nameof(_pagerReadTicketsHandle), out _pagerReadTicketsSentinelId);
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _macroDatabaseEvictionScratchHandle,
@@ -1996,7 +2019,7 @@ namespace Hecton8.World
                     MacroDatabaseEvictionScratchCapacity,
                     out NativeArray<ulong> macroDatabaseEvictionScratch))
             {
-                RegisterStreamingLedgerArray(macroDatabaseEvictionScratch, nameof(_macroDatabaseEvictionScratchHandle));
+                RegisterStreamingLedgerArray(macroDatabaseEvictionScratch, nameof(_macroDatabaseEvictionScratchHandle), out _macroDatabaseEvictionScratchSentinelId);
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _hydrationApplyRecordsHandle,
@@ -2004,7 +2027,7 @@ namespace Hecton8.World
                     capacity,
                     out NativeArray<ChunkHydrationApplyRecord> hydrationApplyRecords))
             {
-                RegisterStreamingLedgerArray(hydrationApplyRecords, nameof(_hydrationApplyRecordsHandle));
+                RegisterStreamingLedgerArray(hydrationApplyRecords, nameof(_hydrationApplyRecordsHandle), out _hydrationApplyRecordsSentinelId);
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _dehydrationMetadataPayloadHandle,
@@ -2012,7 +2035,7 @@ namespace Hecton8.World
                     DehydrationMetadataPayloadBytes,
                     out NativeArray<byte> dehydrationMetadataPayload))
             {
-                RegisterStreamingLedgerArray(dehydrationMetadataPayload, nameof(_dehydrationMetadataPayloadHandle));
+                RegisterStreamingLedgerArray(dehydrationMetadataPayload, nameof(_dehydrationMetadataPayloadHandle), out _dehydrationMetadataPayloadSentinelId);
             }
 
             NativeArray<ChunkResidencyDTO> residencyDtos = ResolveChunkResidencyDtos();
@@ -2034,9 +2057,13 @@ namespace Hecton8.World
             }
         }
 
-        private static void RegisterStreamingLedgerArray<T>(NativeArray<T> array, string label) where T : struct
+        private static void RegisterStreamingLedgerArray<T>(
+            NativeArray<T> array,
+            string label,
+            out int sentinelId) where T : struct
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeArray(
                 array,
                 nameof(WorldChunkResidencyManager),
                 label,
@@ -2066,35 +2093,40 @@ namespace Hecton8.World
                     ChunkIdsVaultBufferId,
                     capacity,
                     NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<long> chunkIds) &&
+                    out NativeArray<long> chunkIds,
+                    ref _chunkIdsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _chunkCentersHandle,
                     ChunkCentersVaultBufferId,
                     capacity,
                     NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<AbsoluteUniversePositionBlit> chunkCenters) &&
+                    out NativeArray<AbsoluteUniversePositionBlit> chunkCenters,
+                    ref _chunkCentersSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _chunkStateSlotsHandle,
                     ChunkStateSlotsVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<ChunkStateSlotDTO> chunkStateSlots) &&
+                    out NativeArray<ChunkStateSlotDTO> chunkStateSlots,
+                    ref _chunkStateSlotsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _loadRequestsHandle,
                     LoadRequestsVaultBufferId,
                     ResolveLoadRequestQueueCapacity(),
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<ChunkLoadRequest> loadRequests) &&
+                    out NativeArray<ChunkLoadRequest> loadRequests,
+                    ref _loadRequestsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _residencyDecisionsHandle,
                     ResidencyDecisionsVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<ResidencyDecisionDTO> residencyDecisions) &&
+                    out NativeArray<ResidencyDecisionDTO> residencyDecisions,
+                    ref _residencyDecisionsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _chunkResidencyDtoHandle,
@@ -2136,119 +2168,136 @@ namespace Hecton8.World
                     ResidencyTelemetryVaultBufferId,
                     TelemetryCapacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<ChunkResidencyTelemetryEntry> residencyTelemetry) &&
+                    out NativeArray<ChunkResidencyTelemetryEntry> residencyTelemetry,
+                    ref _residencyTelemetrySentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _loadStartTimesHandle,
                     LoadStartTimesVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<double> loadStartTimes) &&
+                    out NativeArray<double> loadStartTimes,
+                    ref _loadStartTimesSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _loadImmediateRadiusFlagsHandle,
                     LoadImmediateRadiusFlagsVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<byte> loadImmediateRadiusFlags) &&
+                    out NativeArray<byte> loadImmediateRadiusFlags,
+                    ref _loadImmediateRadiusFlagsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _activeImpostorsHandle,
                     ActiveImpostorsVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<float4x4> activeImpostors) &&
+                    out NativeArray<float4x4> activeImpostors,
+                    ref _activeImpostorsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _impostorTypesHandle,
                     ImpostorTypesVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<int> impostorTypes) &&
+                    out NativeArray<int> impostorTypes,
+                    ref _impostorTypesSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _activeImpostorChunkIdsHandle,
                     ActiveImpostorChunkIdsVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<long> activeImpostorChunkIds) &&
+                    out NativeArray<long> activeImpostorChunkIds,
+                    ref _activeImpostorChunkIdsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _activeImpostorSpawnTimesHandle,
                     ActiveImpostorSpawnTimesVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<float> activeImpostorSpawnTimes) &&
+                    out NativeArray<float> activeImpostorSpawnTimes,
+                    ref _activeImpostorSpawnTimesSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _activeImpostorCentersHandle,
                     ActiveImpostorCentersVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<float3> activeImpostorCenters) &&
+                    out NativeArray<float3> activeImpostorCenters,
+                    ref _activeImpostorCentersSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _activeImpostorSizesHandle,
                     ActiveImpostorSizesVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<float3> activeImpostorSizes) &&
+                    out NativeArray<float3> activeImpostorSizes,
+                    ref _activeImpostorSizesSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _activeImpostorFlagsHandle,
                     ActiveImpostorFlagsVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<uint> activeImpostorFlags) &&
+                    out NativeArray<uint> activeImpostorFlags,
+                    ref _activeImpostorFlagsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _activeImpostorCartographyPointsHandle,
                     ActiveImpostorCartographyVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<StreamingHlodImpostorPoint> activeImpostorCartographyPoints) &&
+                    out NativeArray<StreamingHlodImpostorPoint> activeImpostorCartographyPoints,
+                    ref _activeImpostorCartographyPointsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _activeImpostorCountHandle,
                     ActiveImpostorCountVaultBufferId,
                     1,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<int> activeImpostorCount) &&
+                    out NativeArray<int> activeImpostorCount,
+                    ref _activeImpostorCountSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _activeImpostorFadeOutCountHandle,
                     ActiveImpostorFadeOutCountVaultBufferId,
                     1,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<int> activeImpostorFadeOutCount) &&
+                    out NativeArray<int> activeImpostorFadeOutCount,
+                    ref _activeImpostorFadeOutCountSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _pagerReadTicketsHandle,
                     PagerReadTicketsVaultBufferId,
                     PagerReadTicketCapacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<H8WorldPageReadTicket> pagerReadTickets) &&
+                    out NativeArray<H8WorldPageReadTicket> pagerReadTickets,
+                    ref _pagerReadTicketsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _macroDatabaseEvictionScratchHandle,
                     MacroDatabaseEvictionScratchVaultBufferId,
                     MacroDatabaseEvictionScratchCapacity,
                     NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<ulong> macroDatabaseEvictionScratch) &&
+                    out NativeArray<ulong> macroDatabaseEvictionScratch,
+                    ref _macroDatabaseEvictionScratchSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _hydrationApplyRecordsHandle,
                     HydrationApplyRecordVaultBufferId,
                     capacity,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<ChunkHydrationApplyRecord> hydrationApplyRecords) &&
+                    out NativeArray<ChunkHydrationApplyRecord> hydrationApplyRecords,
+                    ref _hydrationApplyRecordsSentinelId) &&
                 EnsureWorldStreamingVaultBuffer(
                     vault,
                     ref _dehydrationMetadataPayloadHandle,
                     DehydrationMetadataVaultBufferId,
                     DehydrationMetadataPayloadBytes,
                     NativeArrayOptions.ClearMemory,
-                    out NativeArray<byte> dehydrationMetadataPayload))
+                    out NativeArray<byte> dehydrationMetadataPayload,
+                    ref _dehydrationMetadataPayloadSentinelId))
             {
                 _streamingVaultBacked =
                     chunkIds.IsCreated &&
@@ -2434,17 +2483,7 @@ namespace Hecton8.World
         {
             RefreshColdServiceCache();
             TryRegisterHotSwap();
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            if (!_registeredTick)
-                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-
-            if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            TryRegisterDispatcherLanes();
 
             if (!_registeredBackpressureService)
             {
@@ -2459,6 +2498,21 @@ namespace Hecton8.World
             }
         }
 
+        private void TryRegisterDispatcherLanes()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_registeredTick)
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
         private void RefreshColdServiceCache()
         {
             _dataVault = GlobalRegistry.DataVault;
@@ -2469,21 +2523,80 @@ namespace Hecton8.World
             _vramPressure = GlobalRegistry.VRAMPressureReadModel;
             _predictiveVramCeilingBytes = ComputePredictiveVramCeilingBytesCold();
 
-            _objectPoolManager = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
 
             IAmbientBiotaService ambientBiota = GlobalRegistry.AmbientBiota;
             if (ambientBiota != null)
                 _ambientBiotaService = ambientBiota;
 
             IAsyncPersistenceService persistence = GlobalRegistry.AsyncPersistence;
-            if (persistence == null)
+            if (!IsAsyncPersistenceUsable(persistence))
                 persistence = GlobalRegistry.Save as IAsyncPersistenceService;
 
-            if (persistence != null)
+            if (IsAsyncPersistenceUsable(persistence))
                 _asyncPersistenceService = persistence;
+            else
+                _asyncPersistenceService = null;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPoolManager = pool;
+                return;
+            }
+
+            _objectPoolManager = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPoolManager as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPoolManager = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPoolManager = null;
+            pool = null;
+            return false;
+        }
+
+        private static bool IsAsyncPersistenceUsable(IAsyncPersistenceService persistence)
+        {
+            return persistence != null && persistence.IsInitialized;
         }
 
         private void TryUnregister()
+        {
+            TryUnregisterDispatcherLanes();
+
+            if (_registeredAirlockEvents)
+            {
+                BaseAirlockEvents.Unregister(this);
+                _registeredAirlockEvents = false;
+            }
+
+            if (_registeredBackpressureService)
+            {
+                GlobalRegistry.UnregisterStreamingBackpressureRuntime(this);
+                _registeredBackpressureService = false;
+            }
+        }
+
+        private void TryUnregisterDispatcherLanes()
         {
             if (_registeredTick)
             {
@@ -2501,18 +2614,6 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
-            }
-
-            if (_registeredAirlockEvents)
-            {
-                BaseAirlockEvents.Unregister(this);
-                _registeredAirlockEvents = false;
-            }
-
-            if (_registeredBackpressureService)
-            {
-                GlobalRegistry.UnregisterStreamingBackpressureRuntime(this);
-                _registeredBackpressureService = false;
             }
         }
 
@@ -2554,6 +2655,11 @@ namespace Hecton8.World
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterDispatcherLanes();
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegisterDispatcherLanes();
+                    break;
                 case GlobalRegistryServiceSlot.DataVault:
                     CompleteResidencyJobForTeardown();
                     ReleaseStreamingLedgerBuffers(previousService as IDataVault);
@@ -2577,13 +2683,14 @@ namespace Hecton8.World
                     _vramPressure = currentService as IVramPressureReadModel;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPoolManager = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.AmbientBiotaRuntime:
                     _ambientBiotaService = currentService as IAmbientBiotaService;
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    _asyncPersistenceService = currentService as IAsyncPersistenceService;
+                    IAsyncPersistenceService persistence = currentService as IAsyncPersistenceService;
+                    _asyncPersistenceService = IsAsyncPersistenceUsable(persistence) ? persistence : null;
                     break;
             }
         }
@@ -2617,15 +2724,22 @@ namespace Hecton8.World
                 _habitatTransitionPauseFrames--;
 
             _transportPredictivePauseActive = false;
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (IsPlayerRuntimeContextBound(runtimeContext) &&
                 runtimeContext.PlayerTransportCoordinator != null)
             {
                 PlayerTransportCoordinator coordinator = runtimeContext.PlayerTransportCoordinator;
                 _transportPredictivePauseActive = coordinator.HasActiveTransportSource() &&
-                                                 !coordinator.IsTransportActive() &&
-                                                 coordinator.BlocksHandheldToolUsage();
+                                                  !coordinator.IsTransportActive() &&
+                                                  coordinator.BlocksHandheldToolUsage();
             }
+        }
+
+        private static bool IsPlayerRuntimeContextBound(IPlayerRuntimeContext runtimeContext)
+        {
+            return runtimeContext != null &&
+                   runtimeContext.IsInitialized &&
+                   runtimeContext.PlayerTransform != null;
         }
 
         private void DetectAndHandleTeleport()
@@ -3224,7 +3338,8 @@ namespace Hecton8.World
                 return;
 
             ChunkDefinition definition = chunkDefinitions[index];
-            RecordAddressablesRequestDto(index, chunkId, definition.addressableAddress);
+            string addressableAddress = ResolveUsableAddressableAddress(in definition);
+            RecordAddressablesRequestDto(index, chunkId, addressableAddress);
             AdditiveSceneLoadState additiveSceneState = BeginOrTrackAdditiveSceneLoad(index, chunkId, in definition);
             if (additiveSceneState == AdditiveSceneLoadState.Failed)
             {
@@ -3238,7 +3353,7 @@ namespace Hecton8.World
                 WarmChunkPrefabDependencies(index);
 
 #if UNITY_ADDRESSABLES_EXIST
-            if (!string.IsNullOrEmpty(definition.addressableAddress))
+            if (!string.IsNullOrEmpty(addressableAddress))
             {
                 if (_addressableHandles == null ||
                     _hasAddressableHandle == null ||
@@ -3256,12 +3371,12 @@ namespace Hecton8.World
                 if (!_hasAddressableHandle[index])
                 {
                     RecordAddressableLoadStart(index, predictive ? (byte)0 : (byte)1);
-                    uint assetHash = StableHash(definition.addressableAddress, chunkId);
+                    uint assetHash = StableHash(addressableAddress, chunkId);
                     AssetLifecycleGovernor assetLifecycle = _assetLifecycleGovernor;
                     if (assetLifecycle == null ||
                         !assetLifecycle.TryAcquireAddressableGameObject(
                             assetHash,
-                            definition.addressableAddress,
+                            addressableAddress,
                             this,
                             predictive ? AssetPriorityTier.Tier6Speculative : AssetPriorityTier.Tier2Proximity,
                             AssetResidencyKind.Addressable,
@@ -3308,7 +3423,7 @@ namespace Hecton8.World
                 return;
             }
 #else
-            if (!string.IsNullOrEmpty(definition.addressableAddress))
+            if (!string.IsNullOrEmpty(addressableAddress))
             {
                 WriteTelemetrySample(chunkId, TelemetryAddressablesFaultFlag);
                 ReleaseChunkHandles(index);
@@ -3325,7 +3440,8 @@ namespace Hecton8.World
 
         private AdditiveSceneLoadState BeginOrTrackAdditiveSceneLoad(int index, long chunkId, in ChunkDefinition definition)
         {
-            if (!definition.useAdditiveScene || string.IsNullOrEmpty(definition.additiveSceneName))
+            string additiveSceneName = ResolveUsableAdditiveSceneName(in definition);
+            if (!definition.useAdditiveScene || string.IsNullOrEmpty(additiveSceneName))
                 return AdditiveSceneLoadState.NotNeeded;
 
             if (_additiveSceneLoaded == null ||
@@ -3352,7 +3468,7 @@ namespace Hecton8.World
                 return AdditiveSceneLoadState.Pending;
             }
 
-            AsyncOperation operation = SceneManager.LoadSceneAsync(definition.additiveSceneName, LoadSceneMode.Additive);
+            AsyncOperation operation = SceneManager.LoadSceneAsync(additiveSceneName, LoadSceneMode.Additive);
             if (operation == null)
             {
                 WriteTelemetrySample(chunkId, TelemetryAdditiveSceneFaultFlag);
@@ -3470,7 +3586,11 @@ namespace Hecton8.World
                 return;
 
             ChunkDefinition definition = chunkDefinitions[index];
-            uint assetHash = StableHash(definition.addressableAddress, chunkId);
+            if (!HasUsableAddressableAddress(in definition))
+                return;
+
+            string addressableAddress = ResolveUsableAddressableAddress(in definition);
+            uint assetHash = StableHash(addressableAddress, chunkId);
             assetLifecycle.MarkAddressableLoaded(
                 assetHash,
                 handle,
@@ -3810,8 +3930,7 @@ namespace Hecton8.World
                     return;
                 }
 
-                IObjectPoolService pool = _objectPoolManager;
-                if (pool == null)
+                if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 {
                     if (IsActivationCurrent(index, version, chunkId))
                         ClearStagedFlag(chunkId);
@@ -3847,6 +3966,13 @@ namespace Hecton8.World
                     CopyHydrationApplyRecordToVault(index, chunkId, i, prefab, estimatedPrefabBytes);
                     if (prefab != null && slots != null && TryBuildChunkScenePosition(index, chunkId, out Vector3 spawnPosition))
                     {
+                        if (!TryResolveCachedObjectPool(out pool))
+                        {
+                            if (IsActivationCurrent(index, version, chunkId))
+                                ClearStagedFlag(chunkId);
+                            return;
+                        }
+
                         GameObject instance = pool.Spawn(prefab, spawnPosition, Quaternion.identity);
                         if (instance != null)
                         {
@@ -3935,7 +4061,7 @@ namespace Hecton8.World
 
             ChunkDefinition definition = chunkDefinitions[index];
             return definition.useAdditiveScene &&
-                   !string.IsNullOrEmpty(definition.additiveSceneName) &&
+                   HasUsableAdditiveSceneName(in definition) &&
                    !_additiveSceneLoaded[index];
         }
 
@@ -4053,9 +4179,11 @@ namespace Hecton8.World
             bool completed = false;
             try
             {
-                IObjectPoolService pool = _objectPoolManager;
-                if (pool == null || (uint)index >= (uint)(chunkDefinitions != null ? chunkDefinitions.Length : 0))
+                if (!TryResolveCachedObjectPool(out IObjectPoolService pool) ||
+                    (uint)index >= (uint)(chunkDefinitions != null ? chunkDefinitions.Length : 0))
+                {
                     return;
+                }
 
                 ChunkDefinition definition = chunkDefinitions[index];
                 TrySelectBiomeRecordForChunk(index, out _);
@@ -4071,6 +4199,9 @@ namespace Hecton8.World
                     GameObject prefab = prefabs[i];
                     if (prefab != null && !HasEarlierPrefab(prefabs, i, prefab))
                     {
+                        if (!TryResolveCachedObjectPool(out pool))
+                            return;
+
                         await pool.WarmupPrefabAsync(prefab, warmupCount, 0.2d, cancellationToken);
 
                         if (!IsPredictivePrewarmCurrent(index, version))
@@ -4161,7 +4292,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            double depthMeters = math.max(0d, -ToAbsoluteY(in centerAup));
+            double depthMeters = ResolveChunkDepthMeters(in centerAup);
             ReadOnlySpan<H8BiomeRecord> records = H8StaticDataArena.GetSectionSpan<H8BiomeRecord>(H8DataSectionId.Biomes);
             if (records.Length <= 0)
                 return false;
@@ -4177,6 +4308,12 @@ namespace Hecton8.World
             }
 
             return false;
+        }
+
+        private static double ResolveChunkDepthMeters(in AbsoluteUniversePositionBlit centerAup)
+        {
+            double centerY = ToAbsoluteY(in centerAup);
+            return math.isfinite(centerY) ? math.max(0d, DefaultSeaLevelY - centerY) : 0d;
         }
 
         private static unsafe bool TryResolveBiomeRecord(uint biomeHash, out H8BiomeRecord record)
@@ -4232,8 +4369,7 @@ namespace Hecton8.World
 
         private void WarmPrefab(GameObject prefab, int count)
         {
-            IObjectPoolService pool = _objectPoolManager;
-            if (pool == null || prefab == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool) || prefab == null)
                 return;
 
             pool.Warmup(prefab, count);
@@ -4249,12 +4385,11 @@ namespace Hecton8.World
                 return;
             }
 
-            IObjectPoolService pool = _objectPoolManager;
             GameObject[] slots = _spawnedInstancesByChunk[index];
             int count = _spawnedCountsByChunk[index];
             if (slots != null && count > slots.Length)
                 count = slots.Length;
-            if (pool != null && slots != null)
+            if (TryResolveCachedObjectPool(out IObjectPoolService pool) && slots != null)
             {
                 for (int i = 0; i < count; i++)
                 {
@@ -4357,7 +4492,7 @@ namespace Hecton8.World
                     (uint)index >= (uint)_additiveSceneOperations.Length ||
                     (uint)index >= (uint)_additiveSceneActivationRequested.Length ||
                     (uint)index >= (uint)_additiveSceneUnloadWhenLoaded.Length ||
-                    string.IsNullOrEmpty(chunkDefinitions[index].additiveSceneName))
+                    !HasUsableAdditiveSceneName(in chunkDefinitions[index]))
                 {
                     return;
                 }
@@ -4392,7 +4527,7 @@ namespace Hecton8.World
                 return;
             }
 
-            string sceneName = chunkDefinitions[index].additiveSceneName;
+            string sceneName = ResolveUsableAdditiveSceneName(in chunkDefinitions[index]);
             if (!string.IsNullOrEmpty(sceneName))
                 SceneManager.UnloadSceneAsync(sceneName);
 
@@ -4416,7 +4551,7 @@ namespace Hecton8.World
                 return;
             }
 
-            string address = chunkDefinitions[index].addressableAddress;
+            string address = ResolveUsableAddressableAddress(in chunkDefinitions[index]);
             if (string.IsNullOrEmpty(address))
                 return;
 
@@ -4726,29 +4861,59 @@ namespace Hecton8.World
         private bool TryCapturePlayerMotionSnapshot(out AbsoluteUniversePosition playerAup, out float3 velocity)
         {
             velocity = default;
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (IsPlayerRuntimeContextBound(runtimeContext))
             {
-                velocity = runtimeContext.MovementState.Velocity;
-                if (!IsFinite(velocity))
-                    velocity = default;
-
-                playerAup = runtimeContext.MovementState.PredictedAup;
-                if (playerAup.IsFinite())
-                    return true;
-
-                if (runtimeContext.PlayerMovement != null)
-                {
-                    playerAup = runtimeContext.PlayerMovement.CurrentAup;
-                    if (playerAup.IsFinite())
-                        return true;
-                }
-
+                return TryCapturePlayerMotionSnapshot(runtimeContext, out playerAup, out velocity);
             }
 
             playerAup = default;
             return false;
+        }
+
+        private static bool TryCapturePlayerMotionSnapshot(
+            IPlayerRuntimeContext runtimeContext,
+            out AbsoluteUniversePosition playerAup,
+            out float3 velocity)
+        {
+            playerAup = default;
+            velocity = default;
+            if (!IsPlayerRuntimeContextBound(runtimeContext))
+                return false;
+
+            bool hasPoseAup = false;
+            AbsoluteUniversePosition poseAup = default;
+            if (runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot poseSnapshot) &&
+                (poseSnapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                poseAup = poseSnapshot.Aup;
+                hasPoseAup = poseAup.IsFinite();
+            }
+
+            bool hasMovementAup = false;
+            AbsoluteUniversePosition movementAup = default;
+            if (runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                velocity = movementState.Velocity;
+                if (!IsFinite(velocity))
+                    velocity = default;
+
+                movementAup = movementState.PredictedAup;
+                hasMovementAup = movementAup.IsFinite();
+            }
+
+            if (hasPoseAup)
+            {
+                playerAup = poseAup;
+                return true;
+            }
+
+            if (!hasMovementAup)
+                return false;
+
+            playerAup = movementAup;
+            return true;
         }
 
         private bool PredictiveStreamingPausedNow =>
@@ -4819,8 +4984,7 @@ namespace Hecton8.World
                 return;
 
             _adrenalinePoolTrimPending = false;
-            IObjectPoolService pool = _objectPoolManager;
-            if (pool != null)
+            if (TryResolveCachedObjectPool(out IObjectPoolService pool))
                 pool.TrimInactivePoolsForMemoryPressure(0.5f);
         }
 
@@ -4912,7 +5076,7 @@ namespace Hecton8.World
         private bool TryEnqueueDehydrationMetadata(long chunkId, ChunkState state)
         {
             IAsyncPersistenceService persistence = _asyncPersistenceService;
-            if (persistence == null ||
+            if (!IsAsyncPersistenceUsable(persistence) ||
                 !TryResolveWorldStreamingVaultBuffer(
                     in _dehydrationMetadataPayloadHandle,
                     DehydrationMetadataVaultBufferId,
@@ -4970,14 +5134,15 @@ namespace Hecton8.World
             if (_chunkIdsByDefinitionIndex != null && (uint)index < (uint)_chunkIdsByDefinitionIndex.Length)
                 chunkId = _chunkIdsByDefinitionIndex[index];
 
-            return StableHash(chunkDefinitions[index].addressableAddress, chunkId);
+            return StableHash(ResolveUsableAddressableAddress(in chunkDefinitions[index]), chunkId);
         }
 
         private static uint StableHash(string value, long fallback)
         {
             uint hash = 2166136261u;
-            if (!string.IsNullOrEmpty(value))
+            if (!string.IsNullOrWhiteSpace(value))
             {
+                value = value.Trim();
                 for (int i = 0; i < value.Length; i++)
                 {
                     hash ^= value[i];
@@ -5046,7 +5211,7 @@ namespace Hecton8.World
             estimate += EstimatePrefabSetBytes(definition.prefabDependencies, math.max(1, definition.warmupCountPerPrefab));
             estimate += EstimatePrefabSetBytes(definition.predictivePrewarmPrefabs, 1);
             estimate += EstimatePrefabSetBytes(definition.activationPrefabs, 1);
-            if (!string.IsNullOrEmpty(definition.additiveSceneName))
+            if (definition.useAdditiveScene && HasUsableAdditiveSceneName(in definition))
                 estimate += 512L * 1024L;
 
             return math.max(0L, estimate);
@@ -5311,24 +5476,27 @@ namespace Hecton8.World
 
         private bool TryCapturePlayerAupSnapshot(out AbsoluteUniversePosition playerAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (IsPlayerRuntimeContextBound(runtimeContext))
             {
-                playerAup = runtimeContext.MovementState.PredictedAup;
-                if (playerAup.IsFinite())
-                    return true;
-
-                if (runtimeContext.PlayerMovement != null)
-                {
-                    playerAup = runtimeContext.PlayerMovement.CurrentAup;
-                    return playerAup.IsFinite();
-                }
-
+                return TryCapturePlayerAupSnapshot(runtimeContext, out playerAup);
             }
 
             playerAup = default;
             return false;
+        }
+
+        private static bool TryCapturePlayerAupSnapshot(
+            IPlayerRuntimeContext runtimeContext,
+            out AbsoluteUniversePosition playerAup)
+        {
+            if (!TryCapturePlayerMotionSnapshot(runtimeContext, out playerAup, out _))
+            {
+                playerAup = default;
+                return false;
+            }
+
+            return true;
         }
 
         private void ClearLoadingFlag(long chunkId)
@@ -5792,6 +5960,26 @@ namespace Hecton8.World
                    source.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
+        private static bool HasUsableAdditiveSceneName(in ChunkDefinition definition)
+        {
+            return !string.IsNullOrEmpty(ResolveUsableAdditiveSceneName(in definition));
+        }
+
+        private static bool HasUsableAddressableAddress(in ChunkDefinition definition)
+        {
+            return !string.IsNullOrEmpty(ResolveUsableAddressableAddress(in definition));
+        }
+
+        private static string ResolveUsableAdditiveSceneName(in ChunkDefinition definition)
+        {
+            return string.IsNullOrWhiteSpace(definition.additiveSceneName) ? string.Empty : definition.additiveSceneName.Trim();
+        }
+
+        private static string ResolveUsableAddressableAddress(in ChunkDefinition definition)
+        {
+            return string.IsNullOrWhiteSpace(definition.addressableAddress) ? string.Empty : definition.addressableAddress.Trim();
+        }
+
         private float ResolveActiveImpostorDefaultRadius()
         {
             return math.max(1f, ResolveEffectiveUnloadRadiusMeters() * 0.5f);
@@ -6033,177 +6221,33 @@ namespace Hecton8.World
         private void ReleaseStreamingLedgerBuffers(IDataVault releaseVault)
         {
             IDataVault vault = releaseVault ?? _streamingLedgerVault ?? _dataVault;
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _chunkIdsHandle,
-                    ChunkIdsVaultBufferId,
-                    ResolveStreamingLedgerCapacity(),
-                    out NativeArray<long> chunkIds))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(chunkIds);
-            }
-
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _chunkCentersHandle,
-                    ChunkCentersVaultBufferId,
-                    ResolveStreamingLedgerCapacity(),
-                    out NativeArray<AbsoluteUniversePositionBlit> chunkCenters))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(chunkCenters);
-            }
-
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _chunkStateSlotsHandle,
-                    ChunkStateSlotsVaultBufferId,
-                    ResolveStreamingLedgerCapacity(),
-                    out NativeArray<ChunkStateSlotDTO> chunkStateSlots))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(chunkStateSlots);
-            }
-
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _loadRequestsHandle,
-                    LoadRequestsVaultBufferId,
-                    ResolveLoadRequestQueueCapacity(),
-                    out NativeArray<ChunkLoadRequest> loadRequests))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(loadRequests);
-            }
-
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _residencyDecisionsHandle,
-                    ResidencyDecisionsVaultBufferId,
-                    ResolveStreamingLedgerCapacity(),
-                    out NativeArray<ResidencyDecisionDTO> residencyDecisions))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(residencyDecisions);
-            }
-
-            ReleaseWorldStreamingVaultHandle(vault, ref _chunkIdsHandle, ChunkIdsVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _chunkCentersHandle, ChunkCentersVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _chunkStateSlotsHandle, ChunkStateSlotsVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _loadRequestsHandle, LoadRequestsVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _residencyDecisionsHandle, ResidencyDecisionsVaultBufferId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _chunkIdsHandle, ChunkIdsVaultBufferId, ref _chunkIdsSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _chunkCentersHandle, ChunkCentersVaultBufferId, ref _chunkCentersSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _chunkStateSlotsHandle, ChunkStateSlotsVaultBufferId, ref _chunkStateSlotsSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _loadRequestsHandle, LoadRequestsVaultBufferId, ref _loadRequestsSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _residencyDecisionsHandle, ResidencyDecisionsVaultBufferId, ref _residencyDecisionsSentinelId);
             ReleaseWorldStreamingVaultHandle(vault, ref _chunkResidencyDtoHandle, ChunkResidencyVaultBufferId);
             ReleaseWorldStreamingVaultHandle(vault, ref _addressablesRequestDtoHandle, AddressablesRequestVaultBufferId);
             ReleaseWorldStreamingVaultHandle(vault, ref _hlodImpostorDtoHandle, HlodImpostorVaultBufferId);
             ReleaseWorldStreamingVaultHandle(vault, ref _streamingTuningHandle, StreamingTuningVaultBufferId);
             ReleaseWorldStreamingVaultHandle(vault, ref _mockAupShiftHandle, MockAupShiftVaultBufferId);
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _residencyTelemetryHandle,
-                    ResidencyTelemetryVaultBufferId,
-                    TelemetryCapacity,
-                    out NativeArray<ChunkResidencyTelemetryEntry> residencyTelemetry))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(residencyTelemetry);
-            }
-
-            ReleaseWorldStreamingVaultHandle(vault, ref _residencyTelemetryHandle, ResidencyTelemetryVaultBufferId);
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _loadStartTimesHandle,
-                    LoadStartTimesVaultBufferId,
-                    math.max(1, maxChunkCount),
-                    out NativeArray<double> loadStartTimes))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(loadStartTimes);
-            }
-
-            ReleaseWorldStreamingVaultHandle(vault, ref _loadStartTimesHandle, LoadStartTimesVaultBufferId);
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _loadImmediateRadiusFlagsHandle,
-                    LoadImmediateRadiusFlagsVaultBufferId,
-                    math.max(1, maxChunkCount),
-                    out NativeArray<byte> loadImmediateRadiusFlags))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(loadImmediateRadiusFlags);
-            }
-
-            ReleaseWorldStreamingVaultHandle(vault, ref _loadImmediateRadiusFlagsHandle, LoadImmediateRadiusFlagsVaultBufferId);
-            if (TryResolveActiveImpostorBuffers(
-                    out NativeArray<float4x4> activeImpostors,
-                    out NativeArray<int> impostorTypes,
-                    out NativeArray<long> activeImpostorChunkIds,
-                    out NativeArray<float> activeImpostorSpawnTimes,
-                    out NativeArray<float3> activeImpostorCenters,
-                    out NativeArray<float3> activeImpostorSizes,
-                    out NativeArray<uint> activeImpostorFlags,
-                    out NativeArray<StreamingHlodImpostorPoint> activeImpostorCartographyPoints,
-                    out NativeArray<int> activeImpostorCount,
-                    out NativeArray<int> activeImpostorFadeOutCount))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(activeImpostors);
-                NativeMemorySentinel.UnregisterNativeArray(impostorTypes);
-                NativeMemorySentinel.UnregisterNativeArray(activeImpostorChunkIds);
-                NativeMemorySentinel.UnregisterNativeArray(activeImpostorSpawnTimes);
-                NativeMemorySentinel.UnregisterNativeArray(activeImpostorCenters);
-                NativeMemorySentinel.UnregisterNativeArray(activeImpostorSizes);
-                NativeMemorySentinel.UnregisterNativeArray(activeImpostorFlags);
-                NativeMemorySentinel.UnregisterNativeArray(activeImpostorCartographyPoints);
-                NativeMemorySentinel.UnregisterNativeArray(activeImpostorCount);
-                NativeMemorySentinel.UnregisterNativeArray(activeImpostorFadeOutCount);
-            }
-
-            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorsHandle, ActiveImpostorsVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _impostorTypesHandle, ImpostorTypesVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorChunkIdsHandle, ActiveImpostorChunkIdsVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorSpawnTimesHandle, ActiveImpostorSpawnTimesVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorCentersHandle, ActiveImpostorCentersVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorSizesHandle, ActiveImpostorSizesVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorFlagsHandle, ActiveImpostorFlagsVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorCartographyPointsHandle, ActiveImpostorCartographyVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorCountHandle, ActiveImpostorCountVaultBufferId);
-            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorFadeOutCountHandle, ActiveImpostorFadeOutCountVaultBufferId);
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _pagerReadTicketsHandle,
-                    PagerReadTicketsVaultBufferId,
-                    PagerReadTicketCapacity,
-                    out NativeArray<H8WorldPageReadTicket> pagerReadTickets))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(pagerReadTickets);
-            }
-
-            ReleaseWorldStreamingVaultHandle(vault, ref _pagerReadTicketsHandle, PagerReadTicketsVaultBufferId);
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _macroDatabaseEvictionScratchHandle,
-                    MacroDatabaseEvictionScratchVaultBufferId,
-                    MacroDatabaseEvictionScratchCapacity,
-                    out NativeArray<ulong> macroDatabaseEvictionScratch))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(macroDatabaseEvictionScratch);
-            }
-
-            ReleaseWorldStreamingVaultHandle(vault, ref _macroDatabaseEvictionScratchHandle, MacroDatabaseEvictionScratchVaultBufferId);
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _hydrationApplyRecordsHandle,
-                    HydrationApplyRecordVaultBufferId,
-                    math.max(1, maxChunkCount),
-                    out NativeArray<ChunkHydrationApplyRecord> hydrationApplyRecords))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(hydrationApplyRecords);
-            }
-
-            ReleaseWorldStreamingVaultHandle(vault, ref _hydrationApplyRecordsHandle, HydrationApplyRecordVaultBufferId);
-            if (TryResolveWorldStreamingVaultBuffer(
-                    vault,
-                    in _dehydrationMetadataPayloadHandle,
-                    DehydrationMetadataVaultBufferId,
-                    DehydrationMetadataPayloadBytes,
-                    out NativeArray<byte> dehydrationMetadataPayload))
-            {
-                NativeMemorySentinel.UnregisterNativeArray(dehydrationMetadataPayload);
-            }
-
-            ReleaseWorldStreamingVaultHandle(vault, ref _dehydrationMetadataPayloadHandle, DehydrationMetadataVaultBufferId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _residencyTelemetryHandle, ResidencyTelemetryVaultBufferId, ref _residencyTelemetrySentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _loadStartTimesHandle, LoadStartTimesVaultBufferId, ref _loadStartTimesSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _loadImmediateRadiusFlagsHandle, LoadImmediateRadiusFlagsVaultBufferId, ref _loadImmediateRadiusFlagsSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorsHandle, ActiveImpostorsVaultBufferId, ref _activeImpostorsSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _impostorTypesHandle, ImpostorTypesVaultBufferId, ref _impostorTypesSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorChunkIdsHandle, ActiveImpostorChunkIdsVaultBufferId, ref _activeImpostorChunkIdsSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorSpawnTimesHandle, ActiveImpostorSpawnTimesVaultBufferId, ref _activeImpostorSpawnTimesSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorCentersHandle, ActiveImpostorCentersVaultBufferId, ref _activeImpostorCentersSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorSizesHandle, ActiveImpostorSizesVaultBufferId, ref _activeImpostorSizesSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorFlagsHandle, ActiveImpostorFlagsVaultBufferId, ref _activeImpostorFlagsSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorCartographyPointsHandle, ActiveImpostorCartographyVaultBufferId, ref _activeImpostorCartographyPointsSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorCountHandle, ActiveImpostorCountVaultBufferId, ref _activeImpostorCountSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _activeImpostorFadeOutCountHandle, ActiveImpostorFadeOutCountVaultBufferId, ref _activeImpostorFadeOutCountSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _pagerReadTicketsHandle, PagerReadTicketsVaultBufferId, ref _pagerReadTicketsSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _macroDatabaseEvictionScratchHandle, MacroDatabaseEvictionScratchVaultBufferId, ref _macroDatabaseEvictionScratchSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _hydrationApplyRecordsHandle, HydrationApplyRecordVaultBufferId, ref _hydrationApplyRecordsSentinelId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _dehydrationMetadataPayloadHandle, DehydrationMetadataVaultBufferId, ref _dehydrationMetadataPayloadSentinelId);
             _streamingLedgerVault = null;
             _streamingVaultBacked = false;
             _streamingLedgerCapacity = 0;
@@ -6228,6 +6272,34 @@ namespace Hecton8.World
             {
                 if (ReferenceEquals(_streamingLedgerVault, vault))
                     ReleaseWorldStreamingVaultHandle(vault, ref handle, bufferId);
+                else
+                    handle = default;
+            }
+
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            return TryResolveWorldStreamingVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool EnsureWorldStreamingVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer,
+            ref int sentinelId) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (TryResolveWorldStreamingVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (handle.Generation != 0u)
+            {
+                if (ReferenceEquals(_streamingLedgerVault, vault))
+                    ReleaseWorldStreamingVaultHandle(vault, ref handle, bufferId, ref sentinelId);
                 else
                     handle = default;
             }
@@ -6276,6 +6348,30 @@ namespace Hecton8.World
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static void ReleaseWorldStreamingVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            ref int sentinelId) where T : struct
+        {
+            bool hasOwnedHandle = IsWorldStreamingVaultHandle(in handle, bufferId);
+            bool released = !hasOwnedHandle;
+
+            if (hasOwnedHandle && vault != null)
+                released = vault.ReleaseBuffer(in handle);
+
+            if (!released)
+                return;
+
+            handle = default;
+
+            if (sentinelId <= 0)
+                return;
+
+            NativeMemorySentinel.Unregister(sentinelId);
+            sentinelId = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

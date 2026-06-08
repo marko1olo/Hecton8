@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Mutual Custody"
+title: "Custody Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Keelmark Mutual Custody
+# Custody Keelmark Mutual
 
-ID LOC HOLD: Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules.
-
-## Scanner
-
-ID LOC HOLD: Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.
-
-## Terminal
-
-ID LOC HOLD: KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.
-
-## Audio
-
-ID LOC HOLD: The policy is older than your distress call.
-
-## Field Note
-
-ID LOC HOLD: Do not make the insurer a secret villain. Make it a machine that never had to care.
+Keelmark Mutual menakutkan karena tidak membutuhkan kebencian. Ia adalah penanggung, custodian, pemegang lien, dan juru tulis rute dalam satu jadwal jarak jauh. Ketika Black Keel mendengar operator, jalur polis Keelmark sudah membandingkan tubuh dengan kerusakan kapal, massa salvage, risiko karantina, dan nilai bukti. Perusahaan tidak perlu membunuh siapa pun agar laut terasa memusuhi. Ia bisa menunggu, menagih, mengklasifikasi, dan meminta satu konfirmasi lagi sementara tekanan memakan ruangan. Carrier tetap membumi karena musuhnya bukan satu wajah jahat di layar, melainkan kontrak yang cukup tua untuk menjawab sebelum panggilan darurat selesai.
 
 <!-- External Site; generated from P087_KEELMARK_MUTUAL_CUSTODY/id_ID. -->

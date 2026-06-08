@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 投放舱损伤
 
-投放舱损伤说明玩家为何被困：下降成功，生存系统存活，上升硬件死亡。
+投放胶囊损伤解释了为什么搁浅可信：下降成功了，生存系统幸存了，上升硬件没有。
 
 ## Scanner
 

@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Bulan Retak Tabrakan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Bulan Retak Tabrakan
 
-ID LOC HOLD: Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy.
-
-## Scanner
-
-ID LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
-
-## Terminal
-
-ID LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
-
-## Audio
-
-ID LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
-
-## Field Note
-
-ID LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+HECTON-8 bukan benda pengembara yang ditangkap demi tontonan. Ia berkumpul di sabuk puing Aegir, mendingin menjadi bulan samudra berlapis, lalu menerima tumbukan miring yang membengkokkan kerak tanpa menghapus dunia. Tumbukan itu mengangkat paparan, menenggelamkan cekungan, dan membuka tangga sesar panjang tempat kimia panas masih bergerak melalui air asin. Resonansi pasang menjaga luka itu hidup setelah kuncian orbit. Karena itu samudranya punya parut yang bisa dibaca: ngarai brine, bengkel ventilasi, urat kaca-tekanan, punggung terbuka, dan jendela langka ke dasar tua.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/id_ID. -->

@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Cache Klaim Mati
 
-Dead Claim Cache memperkenalkan sejarah salvage bayangan HECTON-8 antara bencana 2147 dan kedatangan pemain.
-
-## Scanner
-
-Cache lapangan tersembunyi. Dikemas oleh seseorang yang berharap kembali.
-
-## Terminal
-
-Rute di bawah pipa utara tenang sampai lampu bangun. Jangan sentuh peti biru. Jangan jawab ping carrier di dalam ngarai.
-
-## Audio
-
-Ini bukan kit Deep Reach. Ada orang lain turun ke sini dengan cutter dan nasib buruk.
-
-## Field Note
-
-Jika peta bilang aman dua kali, penulisnya sedang meyakinkan diri sendiri.
+Cache klaim mati adalah argumen bertahan hidup yang ditinggalkan oleh seseorang yang kalah. Kantongnya tahan air, diikat ganda, dan disembunyikan di tempat yang tidak akan dilihat penyelam cepat: di bawah pipa utara, di bawah kisi lampu, di balik sobekan peredam akustik. Orang yang mengemasnya berharap kembali. Ia menandai rute, menyegel cutter cadangan, melipat peta sampai lilinnya retak, dan menulis kata aman dua kali di margin yang sama. Pengulangan itu peringatan pertama. Di HECTON-8, aman biasanya berarti seseorang bertahan cukup lama untuk berbohong kepada dirinya sendiri. Cache ini penting karena memperluas dunia tanpa membuatnya ramai. Pemain masih sendirian di laut, tetapi bukan yang pertama. Di antara bencana carrier dan perjalanan sekarang, profesional lain menyelinap turun demi logam, hak salvage, kargo tersegel, dan rumor. Mereka menemukan cukup banyak untuk meninggalkan peralatan. Mereka tidak menemukan cukup banyak untuk meninggalkan kesaksian. Catatan peti biru, peringatan ping carrier, dan tether terpotong membuat cache terasa bukan seperti harta, melainkan tangan yang terulur dari rute gagal.
 
 <!-- External Site; generated from P006_DEAD_CLAIM_CACHE/id_ID. -->

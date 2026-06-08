@@ -7,34 +7,34 @@ poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
 biome_tags: biome.factory_temple;biome.deep_abyss
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Biometaal-grondstoffenstapel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# Biometaal-grondstoffenstapel
 
-NL LOC HOLD: The resource stack prevents HECTON-8 from collapsing into one magic material. Xenon-Omega matters, but the moon also has metals, salts, vent chemistry, pressure ceramics, biofibers, photoproteins, salvage, and Atlas-altered biometal.
+De grondstoffenstapel voorkomt dat HECTON-8 tot één magisch materiaal krimpt. Xenon-Omega telt, maar de maan heeft ook metalen, zouten, ventchemie, drukkeramiek, biovezels, fotoproteïnen, salvage en door Atlas veranderd biometaal.
 
 ## Scanner
 
-NL LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
+Grondstoffenbord. Blue debt staat bovenaan, maar de rest van de maan is nog winstgevend genoeg om voor te doden.
 
 ## Terminal
 
-NL LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
+HECTON-8 GRONDSTOFFENSTAPEL: sulfidemetalen, zouten, edelgaszakken, drukkeramiek, ventkatalysatoren, biovezels, fotoproteïnen, salvage hardware, door Atlas veranderd biometaal en XO continuity substrate.
 
 ## Audio
 
-NL LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
+Eén wondererts zou lui zijn. HECTON-8 heeft een hele economie van drukwonden.
 
 ## Field Note
 
-NL LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+Als elk monster Xenon-Omega zegt, wordt de wereld dom. Tel de andere redenen ook.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/nl_NL. -->

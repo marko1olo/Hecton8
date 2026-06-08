@@ -43,6 +43,7 @@ using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton.Localization;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -180,6 +181,8 @@ namespace Hecton8.Gameplay
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<EndingEventPayload> _pendingEvents;
         private static NativeQueue<EndingEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
@@ -418,14 +421,14 @@ namespace Hecton8.Gameplay
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — deferred ending lane flushed by SystemDispatcher LateUpdate — owner: EndingEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — next-frame ending lane prevents same-frame reentrant dispatch — owner: EndingEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -441,10 +444,12 @@ namespace Hecton8.Gameplay
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(EndingEvents),
@@ -453,25 +458,60 @@ namespace Hecton8.Gameplay
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(EndingEvents), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -756,6 +796,9 @@ namespace Hecton8.Gameplay
             NativeQueue<EndingEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
@@ -767,6 +810,9 @@ namespace Hecton8.Gameplay
     {
         private const int PendingNotificationCapacity = 4;
         private const int PendingNotificationCharCapacity = 512;
+        private static readonly uint _NotificationQueueDropWarningHash = unchecked((uint)LocHash.Compute("EndingSystem.NotificationQueueDrop"));
+        private static readonly uint _NotificationPushMissWarningHash = unchecked((uint)LocHash.Compute("EndingSystem.NotificationPushMiss"));
+        private static readonly uint _NotificationContextHash = unchecked((uint)LocHash.Compute("EndingSystem.Notification"));
 
         // ----------------------------------------------------------
         //  INSPECTOR
@@ -814,12 +860,16 @@ namespace Hecton8.Gameplay
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
+        private bool _atlasSignalEventRegistered;
+        private bool _runtimeOwnerAborted;
         private HectonSurvivalSystem _survivalSystem;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private IAtlasSignalReadModel _atlasSignal;
         private IAtlasSignalDecodeSink _atlasSignalDecodeSink;
         private IAtlas6DirectiveCommandSink _atlas6Directive;
         private IQuestSystem _questRuntime;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private ILocalizationTextReadModel _localization;
         private uint _endingQuestHash;
         private bool _pendingAtlasSignalStrengthDirty;
@@ -829,6 +879,8 @@ namespace Hecton8.Gameplay
         private PendingNotificationRequest _pendingNotification2;
         private PendingNotificationRequest _pendingNotification3;
         private byte _pendingNotificationCount;
+        private int _notificationQueueDropCount;
+        private int _notificationPushMissCount;
 
         private unsafe struct PendingNotificationRequest
         {
@@ -851,6 +903,8 @@ namespace Hecton8.Gameplay
 
         public int SavePriority => 14;
         public int LoadPriority => 14;
+        public int NotificationQueueDropCount => _notificationQueueDropCount;
+        public int NotificationPushMissCount => _notificationPushMissCount;
 
         // ----------------------------------------------------------
         //  PUBLIC PROPERTIES
@@ -875,7 +929,7 @@ namespace Hecton8.Gameplay
             CacheRuntimeDependencies();
             TryRegisterSaveParticipant();
 
-            AtlasSignalEvents.Register(this);
+            TryRegisterAtlasSignalEvents();
 
             ResolveSurvivalSystem();
             TryRegisterHotSwapListener();
@@ -883,23 +937,30 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterHotSwapListener();
             TryUnregisterLateFrameTick();
             TryUnregister();
             TryUnregisterService();
             TryUnregisterSaveParticipant();
-
-            AtlasSignalEvents.Unregister(this);
+            TryUnregisterAtlasSignalEvents();
             ClearRuntimeDependencies();
         }
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterHotSwapListener();
             TryUnregisterLateFrameTick();
             TryUnregister();
             TryUnregisterService();
             TryUnregisterSaveParticipant();
+            TryUnregisterAtlasSignalEvents();
+            ClearRuntimeDependencies();
         }
 
         // ----------------------------------------------------------
@@ -908,9 +969,12 @@ namespace Hecton8.Gameplay
 
         public void SlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_conditionMet || _endingComplete) return;
 
-            float depth = _survivalSystem != null ? _survivalSystem.Depth : 0f;
+            float depth = ResolveCurrentDepthMeters();
             if (depth < requiredDepth) return;
 
             IAtlasSignalReadModel signal = _atlasSignal;
@@ -939,6 +1003,9 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             FlushQueuedAtlasSignalStrength();
             FlushQueuedNotifications();
             if (!_pendingAtlasSignalStrengthDirty && _pendingNotificationCount == 0)
@@ -947,7 +1014,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered)
+            if (_runtimeOwnerAborted || _registered)
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
@@ -966,7 +1033,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterLateFrameTick()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _lateFrameRegistered || !Application.isPlaying)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
@@ -985,6 +1052,9 @@ namespace Hecton8.Gameplay
 
         private void QueueAtlasSignalStrength(float strength01)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _pendingAtlasSignalStrength = Mathf.Clamp01(strength01);
             _pendingAtlasSignalStrengthDirty = true;
             TryRegisterLateFrameTick();
@@ -992,6 +1062,9 @@ namespace Hecton8.Gameplay
 
         private void FlushQueuedAtlasSignalStrength()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_pendingAtlasSignalStrengthDirty)
                 return;
 
@@ -1001,10 +1074,20 @@ namespace Hecton8.Gameplay
 
         private unsafe bool QueueNotification(ReadOnlySpan<char> message, NotificationEventSeverity severity)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (message.IsEmpty || message.Length > PendingNotificationCharCapacity)
+            {
+                ReportNotificationQueueDrop((uint)severity);
                 return false;
+            }
+
             if (_pendingNotificationCount >= PendingNotificationCapacity)
+            {
+                ReportNotificationQueueDrop((uint)severity);
                 return false;
+            }
 
             ref PendingNotificationRequest request = ref GetPendingNotificationSlot(_pendingNotificationCount);
             fixed (char* destination = request.Characters)
@@ -1023,6 +1106,9 @@ namespace Hecton8.Gameplay
 
         private unsafe void FlushQueuedNotifications()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int count = _pendingNotificationCount;
             _pendingNotificationCount = 0;
 
@@ -1047,21 +1133,49 @@ namespace Hecton8.Gameplay
                     if (messageHash == 0u)
                         continue;
 
-                    if (severity == (byte)NotificationEventSeverity.Warning)
-                    {
-                        NotificationEvents.TryPushRegisteredWarning(messageHash);
-                        continue;
-                    }
-
-                    if (severity == (byte)NotificationEventSeverity.Critical)
-                    {
-                        NotificationEvents.TryPushRegisteredCritical(messageHash);
-                        continue;
-                    }
-
-                    NotificationEvents.TryPushRegisteredInfo(messageHash);
+                    TryPushQueuedNotification(messageHash, severity);
                 }
             }
+        }
+
+        private void TryPushQueuedNotification(uint messageHash, byte severity)
+        {
+            bool pushed;
+            if (severity == (byte)NotificationEventSeverity.Warning)
+            {
+                pushed = NotificationEvents.TryPushRegisteredWarning(messageHash);
+            }
+            else if (severity == (byte)NotificationEventSeverity.Critical)
+            {
+                pushed = NotificationEvents.TryPushRegisteredCritical(messageHash);
+            }
+            else
+            {
+                pushed = NotificationEvents.TryPushRegisteredInfo(messageHash);
+            }
+
+            if (pushed)
+                return;
+
+            ReportNotificationPushMiss(messageHash);
+        }
+
+        private void ReportNotificationQueueDrop(uint contextHash)
+        {
+            _notificationQueueDropCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _NotificationQueueDropWarningHash,
+                _NotificationContextHash ^ contextHash,
+                math.max(1, _notificationQueueDropCount));
+        }
+
+        private void ReportNotificationPushMiss(uint messageHash)
+        {
+            _notificationPushMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _NotificationPushMissWarningHash,
+                _NotificationContextHash ^ messageHash,
+                math.max(1, _notificationPushMissCount));
         }
 
         private void ClearQueuedPresentation()
@@ -1073,6 +1187,8 @@ namespace Hecton8.Gameplay
             _pendingNotification1.Clear();
             _pendingNotification2.Clear();
             _pendingNotification3.Clear();
+            _notificationQueueDropCount = 0;
+            _notificationPushMissCount = 0;
         }
 
         private ref PendingNotificationRequest GetPendingNotificationSlot(int index)
@@ -1092,33 +1208,54 @@ namespace Hecton8.Gameplay
 
         private bool TryRegisterService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_serviceRegistered || !Application.isPlaying)
                 return true;
 
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             EndingSystem registeredRuntime = Hecton8.Core.GlobalRegistry.Ending;
-            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
+            if (IsEndingRuntimeUsable(registeredRuntime))
             {
-                Destroy(gameObject);
+                AbortDuplicateRuntimeOwner();
                 return false;
             }
 
+            if (!ReferenceEquals(registeredRuntime, null) && !ReferenceEquals(registeredRuntime, this))
+                Hecton8.Core.GlobalRegistry.UnregisterEndingRuntime(registeredRuntime);
+
             Hecton8.Core.GlobalRegistry.RegisterEndingRuntime(this);
             _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.Ending, this);
+            if (!_serviceRegistered)
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
+
             return _serviceRegistered;
         }
 
         private void CacheRuntimeDependencies()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
             _atlasSignalDecodeSink = Hecton8.Core.GlobalRegistry.AtlasSignalDecodeSink;
             _atlas6Directive = Hecton8.Core.GlobalRegistry.Atlas6DirectiveCommandSink;
             _questRuntime = GlobalRegistry.QuestSystem;
             _saveService = Hecton8.Core.GlobalRegistry.Save;
             _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
+            CachePlayerRuntimeContext(GlobalRegistry.Player, null);
         }
 
         private void ClearRuntimeDependencies()
         {
+            _survivalSystem = null;
+            _playerRuntimeContext = null;
             _atlasSignal = null;
             _atlasSignalDecodeSink = null;
             _atlas6Directive = null;
@@ -1129,7 +1266,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapRegistered || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _hotSwapRegistered || !Application.isPlaying)
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -1149,6 +1286,9 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
@@ -1180,33 +1320,49 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localization = currentService as ILocalizationTextReadModel;
                     break;
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(
+                        currentService as IPlayerRuntimeContext,
+                        previousService as IPlayerRuntimeContext);
+                    break;
             }
         }
 
         private void TryRegisterSaveParticipant()
         {
-            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+            if (_runtimeOwnerAborted || _saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = Hecton8.Core.GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = Hecton8.Core.GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveService = null;
             _saveRegistered = false;
         }
@@ -1220,6 +1376,71 @@ namespace Hecton8.Gameplay
             _serviceRegistered = false;
         }
 
+        private void TryRegisterAtlasSignalEvents()
+        {
+            if (_runtimeOwnerAborted || _atlasSignalEventRegistered)
+                return;
+
+            AtlasSignalEvents.Register(this);
+            _atlasSignalEventRegistered = true;
+        }
+
+        private void TryUnregisterAtlasSignalEvents()
+        {
+            if (!_atlasSignalEventRegistered)
+                return;
+
+            AtlasSignalEvents.Unregister(this);
+            _atlasSignalEventRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            EndingSystem registeredRuntime = Hecton8.Core.GlobalRegistry.Ending;
+            if (ReferenceEquals(registeredRuntime, this))
+                return false;
+
+            if (IsEndingRuntimeUsable(registeredRuntime))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            if (!ReferenceEquals(registeredRuntime, null))
+                Hecton8.Core.GlobalRegistry.UnregisterEndingRuntime(registeredRuntime);
+
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            TryUnregisterHotSwapListener();
+            TryUnregisterLateFrameTick();
+            TryUnregister();
+            TryUnregisterSaveParticipant();
+            TryUnregisterAtlasSignalEvents();
+            ClearRuntimeDependencies();
+            ClearQueuedPresentation();
+            _runtimeOwnerAborted = true;
+            _registered = false;
+            _lateFrameRegistered = false;
+            _serviceRegistered = false;
+            _hotSwapRegistered = false;
+            _saveRegistered = false;
+            _atlasSignalEventRegistered = false;
+            enabled = false;
+            Destroy(gameObject);
+        }
+
+        private static bool IsEndingRuntimeUsable(EndingSystem system)
+        {
+            return !ReferenceEquals(system, null) &&
+                   system != null &&
+                   system._serviceRegistered &&
+                   system.isActiveAndEnabled &&
+                   !system._runtimeOwnerAborted;
+        }
+
         // ----------------------------------------------------------
         //  PUBLIC API — VYBOR KONTsOVKI
         // ----------------------------------------------------------
@@ -1229,6 +1450,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ForceConditionMetFromQuestDAG()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_conditionMet || _endingComplete)
                 return;
 
@@ -1239,6 +1463,9 @@ namespace Hecton8.Gameplay
 
         public void ChooseEnding(EndingChoice choice)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!CanChooseEnding)
             {
                 LogInvalidEndingChoice(_conditionMet, _endingComplete);
@@ -1354,6 +1581,13 @@ namespace Hecton8.Gameplay
 
         private bool ResolveSurvivalSystem()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (_survivalSystem != null)
+                return true;
+
+            CachePlayerRuntimeContext(_playerRuntimeContext != null ? _playerRuntimeContext : GlobalRegistry.Player, null);
             if (_survivalSystem != null)
                 return true;
 
@@ -1364,6 +1598,57 @@ namespace Hecton8.Gameplay
             }
 
             return playerTransform.TryGetComponent(out _survivalSystem);
+        }
+
+        private void CachePlayerRuntimeContext(
+            IPlayerRuntimeContext currentPlayerContext,
+            IPlayerRuntimeContext previousPlayerContext)
+        {
+            if (previousPlayerContext != null &&
+                ReferenceEquals(_survivalSystem, previousPlayerContext.SurvivalSystem))
+            {
+                _survivalSystem = null;
+            }
+
+            _playerRuntimeContext = currentPlayerContext != null && currentPlayerContext.IsInitialized
+                ? currentPlayerContext
+                : null;
+
+            HectonSurvivalSystem contextSurvival = currentPlayerContext != null
+                ? currentPlayerContext.SurvivalSystem
+                : null;
+
+            if (contextSurvival != null)
+                _survivalSystem = contextSurvival;
+        }
+
+        private float ResolveCurrentDepthMeters()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
+                return 0f;
+
+            HectonSurvivalSystem survival = _survivalSystem;
+            if (survival != null && math.isfinite(survival.Depth))
+                return math.max(0f, survival.Depth);
+
+            if (_survivalSystem == null)
+                ResolveSurvivalSystem();
+
+            survival = _survivalSystem;
+            if (survival != null && math.isfinite(survival.Depth))
+                return math.max(0f, survival.Depth);
+
+            return 0f;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -1392,6 +1677,9 @@ namespace Hecton8.Gameplay
 
         public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if ((AtlasSignalEventType)payload.EventType == AtlasSignalEventType.Decoded)
                 HandleSignalDecoded();
         }
@@ -1416,7 +1704,7 @@ namespace Hecton8.Gameplay
 
         public void PopulateSaveData(SaveData data)
         {
-            if (data == null) return;
+            if (_runtimeOwnerAborted || data == null) return;
             EndingChoice safeChoice = SanitizeEndingChoice((int)_chosenEnding);
             bool safeComplete = _endingComplete && safeChoice != EndingChoice.None;
             if (!safeComplete)
@@ -1428,7 +1716,8 @@ namespace Hecton8.Gameplay
 
         public void LoadFromSaveData(SaveData data)
         {
-            if (data == null) return;
+            ClearQueuedPresentation();
+            if (_runtimeOwnerAborted || data == null) return;
             _chosenEnding = SanitizeEndingChoice(data.endingChoice);
             _endingComplete = data.endingComplete && _chosenEnding != EndingChoice.None;
             _conditionMet = data.endingConditionMet || _endingComplete;

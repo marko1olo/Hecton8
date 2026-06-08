@@ -426,6 +426,8 @@ Reject:
 
 Player-visible work is rejected when it keeps repainting the same broken route. Two same-failure captures are enough to stop cosmetic iteration and declare `VISUAL_ROUTE_INVALID`.
 
+The best-known internal baseline matters. April/previously-in-development reference images in the mandatory visual folder are not nostalgia; they are proof that the project has already reached higher water, terrain, sky/Aegir, and photic-route taste than many later attempts. A new capture must beat that baseline for its route class before polish can be credited.
+
 Same-failure means the screenshot still reads as one of these:
 
 - slab/card/rectangle water;

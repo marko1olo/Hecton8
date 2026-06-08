@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: משמורת חבילה"
+title: "משמורת חבילה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: משמורת חבילה
+# משמורת חבילה
 
-HE LOC HOLD: חותם חבילה נמצא. Black Keel יכול לקבל מטען, אבל הוכחה דורשת מקור, חותם, hash עדות, סימן ממסר, נתיב מקבל ומצב נזק. שמור תגי משמורת לפני פירוק חומרה.
+חותם חבילה נמצא. Black Keel יכול לקבל מטען, אבל הוכחה דורשת מקור, חותם, witness hash, סימן ממסר, נתיב מקבל ומצב נזק. שמור תגי משמורת לפני פירוק חומרה.
 
 ## Scanner
 
-HE LOC HOLD: חותם חבילה // רצועת hash עדות פגומה אך קריאה. שמור לפני חיתוך חילוץ. ראיה בלי חותם הופכת לחומר תביעה.
+חותם חבילה // רצועת witness hash פגומה אך קריאה. שמור לפני חיתוך חילוץ. ראיה ללא חותם הופכת לחומר תביעה.
 
 ## Terminal
 
-HE LOC HOLD: נוטריון KEELMARK // שמור לוח חותם, hash עדות, חותמת מסלול ותג מחבר לפני העברה. חומר בלי חותמת עשוי להפוך להפסד תביעה.
+נוטריון חבילות KEELMARK // שמור לוח חותם, witness hash, חותמת מסלול ותג מחבר לפני העברה. חומר ללא חותמת עשוי להיות מעובד כהפסד תביעה.
 
 ## Audio
 
-HE LOC HOLD: ממסר Black Keel: מטען הוא מסה. הוכחה היא משמורת. הבא את שניהם, או שהחלון יחייב על ההפרש.
+ממסר Black Keel: מטען הוא מסה. הוכחה היא משמורת. הבא את שניהם, או שהחלון יחייב על ההפרש.
 
 ## Field Note
 
-HE LOC HOLD: קודם חותם, אחר כך חיתוך. דגימה נקייה עם תג שבור שייכת למי שמחזיק את הספר.
+קודם חותם, אחר כך חיתוך. דגימה נקייה עם תג שבור שייכת למי שמחזיק את הספר.
 
 <!-- In-Game Wiki; generated from P461_PACKET_CUSTODY_BRIDGE/he_IL. -->

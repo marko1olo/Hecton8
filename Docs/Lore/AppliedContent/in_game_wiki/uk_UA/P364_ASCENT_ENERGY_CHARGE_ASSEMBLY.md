@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Ascent Energy Charge Assembly"
+title: "Збірка енергетичного заряду підйому"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Ascent Energy Charge Assembly
+# Збірка енергетичного заряду підйому
 
-UK LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.
+Заряд підйому перетворює глибинні ресурси на механічний і моральний обмін. Матеріали високого тиску можуть підняти капсулу, зберегти докази через custody або стати виплатою, що послаблює маршрут додому.
 
 ## Scanner
 
-UK LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+Energy cradle посічена pressure pulse. Дешевий заряд робить охайну труну.
 
 ## Terminal
 
-UK LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: потрібні vent-forged heat cell, pressure-history insulator і custody stamp. Raw fuel відхиляється. Несертифікований blue debt тріскає під launch impulse і скасовує recovery claim.
 
 ## Audio
 
-UK LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+Можна продати підйом або летіти на ньому. Не обидва одразу.
 
 ## Field Note
 
-UA LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+Кожен грам у cradle - це втеча, доказ або blue-debt payout. Капсула не пробачає жадібність.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/uk_UA. -->

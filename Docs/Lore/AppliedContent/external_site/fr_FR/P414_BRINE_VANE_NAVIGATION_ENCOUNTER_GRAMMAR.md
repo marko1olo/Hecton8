@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "Grammaire de rencontre: navigation par vanes de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Brine Vane Navigation Encounter Grammar
+# Grammaire de rencontre: navigation par vanes de saumure
 
-FR LOC HOLD: The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
+La navigation par vanes de saumure rend les canyons de HECTON-8 lisibles sans flèches. La route s’écrit en densité, dégâts de membrane, distorsion sonar et discipline de flottabilité du joueur.
 
 ## Scanner
 
-FR LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+Champ de vanes de saumure. Les feuilles alignées marquent les virages de densité; les pointes recourbées marquent des fenêtres faibles; le sonar se déforme près des lueurs ouvertes. Garde un bord en vue.
 
 ## Terminal
 
-FR LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+GRAMMAIRE DE RENCONTRE / NAVIGATION PAR VANES DE SAUMURE / rôle: lecture de route mi-profonde, main courante de mur de densité, correction de faux plancher / lecture sûre: bord intact, bouche déchirée, courbure sonar accordée à la dérive de flottabilité / rejet: traverser l’eau noire ouverte, couper la feuille guide, croire un retour de plancher sans bord de vane / note de route: la vane ne guide pas par intention; elle obéit à l’eau assez fort pour être suivie.
 
 ## Audio
 
-FR LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+La vane n’est pas un panneau. C’est l’eau qui fabrique un mur et laisse une couture.
 
 ## Field Note
 
-FR LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+Traite le bord de vane comme une main courante. Si la ligne se plie mal, ta lecture de flottabilité est déjà en retard.
 
 <!-- External Site; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/fr_FR. -->

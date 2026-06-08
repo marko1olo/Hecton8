@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "Rakitan Cincin Klem Segel Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Pressure Seal Clamp Ring Assembly
+# Rakitan Cincin Klem Segel Tekanan
 
-ID LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.
+Segel tekanan menjelaskan mengapa pekerjaan perbaikan harus bergerak lebih dalam. Bahan yang menahan air di luar ruangan juga dapat merekatkan kapsul ke bangkai ketika rantai segel yang salah diterima.
 
 ## Scanner
 
-ID LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Bekas clamp-ring. Selongsong pendakian selamat dari benturan dengan menghabiskan segel yang seharusnya membawanya pulang.
 
 ## Terminal
 
-ID LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch hanya menahan tekanan kompartemen. Ascent seal membutuhkan deep-rated clamp ring, pressure-glass seat, shell-sealant map, dan profil Deep Reach terverifikasi. Atlas-grown sealant dapat menjaga habitat sambil memblokir pemisahan bersih.
 
 ## Audio
 
-ID LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+Segel yang berguna hidup ke arah yang salah.
 
 ## Field Note
 
-ID LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+Tambalan safe-room bisa membeli satu jam udara. Ia tidak bisa menahan impuls peluncuran.
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/id_ID. -->

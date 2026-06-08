@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8 Orbital Hazard Table"
+title: "HECTON-8-Orbitalgefahrentabelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbital Hazard Table
+# HECTON-8-Orbitalgefahrentabelle
 
-DE LOC HOLD: HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure.
+Die HECTON-8-Orbitalgefahrentabelle zeigt Rettung als Kette beweglicher Tore: Strahlungsscherung, Trümmer, Finsternis, legale Baken und Verwahrfenster können jeden sonst reparierten Aufstieg schließen.
 
 ## Scanner
 
-DE LOC HOLD: HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+Extraktion von HECTON-8 wird durch Finsternis, Strahlungsspitzen, Relaisschotten, Eisstreuung und Sturm-Plume-Fenster begrenzt.
 
 ## Terminal
 
-DE LOC HOLD: ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+ORBITALGEFAHRENTABELLE: Finsternis-blackout, Aegir-Ladungspartikelspitze, Mondrelaisschott, Eispartikelstreuung, storm plume und guidance-lag-Fenster müssen vor dem Aufstieg geklärt sein.
 
 ## Audio
 
-DE LOC HOLD: The sky is not empty. It is a machine with bad timing.
+Der Himmel über dem Ozean ist eine Maschine mit Zähnen im Timing.
 
 ## Field Note
 
-DE LOC HOLD: This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+Niemand parkt Rettung für Drama. Der Aufstieg muss den schlechten Fahrplan des Himmels treffen.
 
 <!-- External Site; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/de_DE. -->

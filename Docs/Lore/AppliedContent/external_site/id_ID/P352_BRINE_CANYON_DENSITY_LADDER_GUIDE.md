@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Brine Canyon Density Ladder Guide"
+title: "Panduan Tangga Densitas Ngarai Brine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Brine Canyon Density Ladder Guide
+# Panduan Tangga Densitas Ngarai Brine
 
-ID LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.
+Panduan Tangga Densitas Ngarai Brine memperlakukan parit HECTON-8 sebagai geografi rekayasa: jalan turun dibuat dari densitas, bukan pemandangan.
 
 ## Scanner
 
-ID LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
+Brine ladder terdeteksi: densitas berlapis, lantai palsu, lengkung sonar. Ikuti tepi; air terbuka berbohong di sini.
 
 ## Terminal
 
-ID LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: ngarai brine menyembunyikan pressure shelves, current ledges, resource pockets, dan scanner false positives. Hull rating dan density transition menentukan bibir mana rute dan mana jatuh.
 
 ## Audio
 
-ID LOC HOLD: A canyon is a staircase if your hull can pay for each step.
+Ngarai adalah tangga jika lambungmu bisa membayar setiap anak tangga.
 
 ## Field Note
 
-ID LOC HOLD: Use for scanner tutorials and resource route articles.
+Gunakan bayangan vane seperti anak tangga. Bacaan kosong dalam brine bukan ruang kosong; itu instrumen kalah berdebat.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/id_ID. -->

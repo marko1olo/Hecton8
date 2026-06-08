@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "회수 준법 사무소"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# 회수 준법 사무소
 
-KO LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow.
+회수 준법 사무소는 2190년에도 Deep Reach를 살아 있게 만든다. 모호한 역사적 그림자가 아니라 구체적인 기업 압력 세포다.
 
 ## Scanner
 
-KO LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+현재형 사무실 도장. Deep Reach는 유령이 아니다. 변호사가 붙은 대기열이다.
 
 ## Terminal
 
-KO LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+회수 준법 사무소: Aegir 귀환 조치 개시. 우선순위: XO custody, Atlas 접근, 책임 억제, 가능 시 계약자 침묵.
 
 ## Audio
 
-KO LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+그들은 합법일 만큼 늦었고, 위험할 만큼 현재에 있다.
 
 ## Field Note
 
-KO LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+살아 있는 파벌은 회사를 하나의 고함치는 악당으로 만들지 않고도 압력을 현재형으로 만든다.
 
 <!-- External Site; generated from P097_RECOVERY_COMPLIANCE_OFFICE/ko_KR. -->

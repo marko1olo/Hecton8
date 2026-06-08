@@ -9,32 +9,37 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Old Procedure Recognition Cue"
+title: "Hinweis auf alte Verfahrenskenntnis"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Old Procedure Recognition Cue
+# Hinweis auf alte Verfahrenskenntnis
 
-DE LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.
+Die Wiedererkennung alter Verfahren macht die Vergangenheit des Protagonisten zu einem spielbaren Werkzeug. Der Spieler folgt keinem mystischen Hinweis und keiner persönlichen Prophezeiung. Er liest ein Sicherheitsformular, dem er einst vertrauen musste. Ein Routen-Safe-Stempel sagt, die Linie sei zertifiziert. Die Beweise im Raum sagen, die Arbeiterzahl wurde geändert. Das manuelle Zeugenfeld, das eine zweite menschliche Prüfung erzwingen sollte, wurde von einem Kontinuitätsbüro versiegelt. Dieser Widerspruch ist der Haken. Deep Reach hat nicht nur eine Route versteckt. Es nutzte Arbeiterschutzsprache, um Zurücklassen administrativ abgeschlossen aussehen zu lassen. Der Einsatz des Protagonisten beginnt als berufliche Wiedererkennung: Dieses Formular wurde entwickelt, um genau dieses Versagen zu verhindern.
 
 ## Scanner
 
-DE LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+Routen-Safe-Stempel vorhanden. Arbeiterzahl in zwei Tinten überschrieben. Manuelles Zeugenfeld versiegelt. Das Formular sollte genau solche Lügen auffangen, bevor jemand daraus Richtlinie machte.
 
 ## Terminal
 
-DE LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+EVAKUIERUNGSKONTINUITÄTSFORMULAR / ROUTEN-SAFE-ZERTIFIZIERUNG
+Route: Hilfsausstiegslinie
+gemeldete Insassen: degradierte Zählung akzeptiert
+manueller Zeuge: durch Kontinuitätsbüro versiegelt
+Feldkorrektur: Arbeiterzählung widerspricht Pumpenraum-Tags
+Status: anspruchserhaltend, nicht für Extraktion freigegeben.
 
 ## Audio
 
-DE LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+Du kennst dieses Formular. Es sollte verhindern, dass ein Raum leer gezählt wird, während darin noch Menschen atmen.
 
 ## Field Note
 
-DE LOC HOLD: Use where room evidence contradicts a clean procedural label.
+Das Formular sollte eine weitere Zählung erzwingen. Hier erzwang es Schweigen.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/de_DE. -->

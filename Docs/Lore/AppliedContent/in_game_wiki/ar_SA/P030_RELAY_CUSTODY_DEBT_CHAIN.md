@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # سلسلة دين relay custody
 
-relay custody يحول لوجستيات الفضاء إلى ضغط: المساعدة تحمل أيضا دينا وأولويات وسلطة شركة.
+relay custody يحول لوجستيات الفضاء إلى ضغط. يمكن أن تصل المساعدة، لكن الطريق الذي يحملها يحمل أيضا دينا وخطافات أولوية وسلطة شركة.
 
 ## Scanner
 

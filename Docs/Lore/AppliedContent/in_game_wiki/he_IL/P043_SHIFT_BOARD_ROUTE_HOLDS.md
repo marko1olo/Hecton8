@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # עיכובי מסלול בלוח משמרות
 
-הראיה מראה איך שפת לוגיסטיקה מסתירה גופות ומפזרת אשמה.
+לוחות משמרת הופכים אסון לפרוצדורה קריאה. Deep Reach ו-Atlas הרגו דרך סיווג, עיכוב ועדיפות, לא דרך זדון תיאטרלי.
 
 ## Scanner
 

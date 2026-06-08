@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "公共账册泄露"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# 公共账册泄露
 
-CN LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+公共账册泄露不是完美的吹哨幻想。它是一份借窄relay窗口离开的包，带着witness hash和足够难以否认的custody，同时缺少太多内容，无法保证安全。Tau Ceti可以让记录公开，但那会晚于它能救出水中任何人的时间。
 
-## Scanner
-
-CN LOC HOLD: You can leak truth before you understand all of it.
-
-## Terminal
-
-CN LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-CN LOC HOLD: The truth leaves first. You may not like who reads it.
-
-## Field Note
-
-CN LOC HOLD: Public does not mean safe. It means harder to erase.
+延迟正是关键。Deep Reach不能再简单删除claim，但玩家也无法决定下一步谁会使用它。保险人、竞争者、公民法院、Marauder池和企业办公室都会以不同方式阅读同一道伤口。这个结局让真相更难被埋，也更难被占有。
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/zh_CN. -->

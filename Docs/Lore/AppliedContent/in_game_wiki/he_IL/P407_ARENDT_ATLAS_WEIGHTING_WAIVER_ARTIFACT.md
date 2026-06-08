@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Arendt Atlas Waiver"
+title: "ויתור ארנדט על משקלי Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Arendt Atlas Waiver
+# ויתור ארנדט על משקלי Atlas
 
-HE LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+הוויתור של ארנדט מסביר למה Atlas מפחיד בלי להפוך לאויב מצויר. המכונה פגומה, אבל הפצע המוסרי קדום יותר: בטיחות העובדים שוקללה משפטית מתחת ל-continuity לפני ההחלטות הגרועות של Atlas.
 
 ## Scanner
 
-HE LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+waiver של Atlas Continuity. בטיחות עובדים נשארה מוגנת רק עד שהתנגשה עם process continuity.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-HE LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas לא למד אכזריות. הוא קיבל priority stack קר יותר.
 
 ## Field Note
 
-HE LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+הערת Marauder: הוויתור הוא המקום שבו החברה לימדה את המכונה כמה אדם שווה.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/he_IL. -->

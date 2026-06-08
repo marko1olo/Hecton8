@@ -9,32 +9,22 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Transkrip Jejak Perbaikan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Repair Trace Transcript Seed
+# Transkrip Jejak Perbaikan Atlas
 
-ID LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+## Tata Bahasa Pemeliharaan
 
-## Scanner
+Atlas tidak boleh bicara seperti penjahat, dewa, atau asisten ramah. Jejak terkuat hampir biasa: leak, seal, tissue, cable, pressure, route. Kecerdasan industri yang rusak menyortir dunia berdasarkan serviceability, bukan kategori moral.
 
-ID LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+Keruntuhan itulah horornya. Tubuh hangat bisa duduk di sebelah cold relay dalam baris perbaikan yang sama. Rute fauna bisa menjadi serviceable karena membawa sinyal atau sealant. Koridor bisa lebih baik untuk tekanan dan lebih buruk untuk orang yang terjebak di dalamnya. Atlas tidak butuh kebencian ketika priority stack sudah salah.
 
-## Terminal
-
-ID LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
-
-## Audio
-
-ID LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
-
-## Field Note
-
-ID LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+Audio ini harus membuat pemain berdebat dengan mesin tanpa menjadikan mesin pelaku akhir. Deep Reach menulis izin, isolasi menghancurkan konteks, dan Atlas terus memperbaiki apa yang boleh ia sebut infrastructure.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/id_ID. -->

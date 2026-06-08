@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Black Keel Ledger
 
-Black Keel Ledger defines the player's orbital lifeline as a contract machine. It can be useful, compromised, and indifferent at the same time.
+Black Keel is not a friendly ship waiting to lift the player home. It is a claim-pool tender built to hold custody over salvage value in the Aegir system. Its ledger sees bodies, payloads, quarantine risk, ascent mass and insurance exposure as related entries.
 
-## Scanner
-
-Claim-pool tender ledger. Public carrier custody, insurance debt, hidden Deep Reach priority hooks.
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keel is not your ship. It is the machine that knows what you owe.
-
-## Field Note
-
-The ship can help you without being on your side.
+That is the right kind of cold for HECTON-8. The carrier does not need to hate the player. It can answer politely, route a packet correctly, accept a distress hash and still refuse a pickup until the numbers change. The horror sits in the gap between being recognized and being worth recovery.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/en_US. -->

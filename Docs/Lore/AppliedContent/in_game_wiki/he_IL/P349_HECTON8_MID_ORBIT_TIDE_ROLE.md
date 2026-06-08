@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: HECTON-8 Mid-Orbit Tide Role"
+title: "תפקיד הגאות של HECTON-8 במסלול אמצעי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: HECTON-8 Mid-Orbit Tide Role
+# תפקיד הגאות של HECTON-8 במסלול אמצעי
 
-HE LOC HOLD: HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.
+HECTON-8 הוא הירח שבו המתמטיקה המסלולית של Aegir נעשית אישית. הוא רחוק מספיק מהקרינה הפנימית הגרועה להפעלות ארוכות, קרוב מספיק כדי שהגאות תמשיך להניע את האוקיינוס, ובעל ערך מספיק כדי ש-Deep Reach תבנה תחת לחץ. אותה עמדה מלכלכת את החילוץ: מופע גאות, מסת carrier, רעש סערה ומשמורת משפטית נפגשים מעל ראש השחקן.
 
 ## Scanner
 
-HE LOC HOLD: Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
+רשומת גאות HECTON-8. המסלול האמצעי עושה את האוקיינוס שימושי לכרייה ואלים מספיק כדי לקבור ראיות.
 
 ## Terminal
 
-HE LOC HOLD: ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
+רשומת מסלול H8 HECTON: עומס גאות בתוך סבולת תעשייתית בחלון Black Keel הנוכחי. כיפוף drowned crust עולה ליד קניוני שירות. תנועת תיקון Atlas נשארת מתחת לסף גילוי ציבורי.
 
 ## Audio
 
-HE LOC HOLD: It sits in the part of the ladder where work looks possible until the water starts doing math.
+הוא נמצא בחלק של הסולם שבו עבודה נראית אפשרית עד שהמים מתחילים לחשב.
 
 ## Field Note
 
-HE LOC HOLD: HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 משלם כי לחץ, גאות ואחריות חופפים שם.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/he_IL. -->

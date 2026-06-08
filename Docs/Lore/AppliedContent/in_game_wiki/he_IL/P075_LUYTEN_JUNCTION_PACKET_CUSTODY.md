@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "משמורת חבילות של Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# משמורת חבילות של Luyten Junction
 
-HE LOC HOLD: Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.
+Luyten Junction היא יותר תשתית מחברה: relays, beam custody, depot law ו-packet accounting. היא מסבירה איך Deep Reach יכולה ללחוץ על Aegir בלי פקודת FTL חיה, ואיך ראיות יכולות להתעכב, להיקנות, ללכת לאיבוד או להפוך לנשק.
 
 ## Scanner
 
-HE LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+סליל custody של Luyten. הודעות אינן נוסעות בחינם; גם האמת לא.
 
 ## Terminal
 
-HE LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+מסלול LUYTEN JUNCTION: packet custody הועברה דרך תור תעריף. live command אסורה. עדיפות ראיות ניתנת לרכישה תחת emergency claim escrow.
 
 ## Audio
 
-HE LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+אין ansible. אין רחמים. רק custody, tariff וזמן.
 
 ## Field Note
 
-HE LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+ממסר הוא מכונה שמחליטה לאיזה אבל מגיע bandwidth.
 
 <!-- In-Game Wiki; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/he_IL. -->

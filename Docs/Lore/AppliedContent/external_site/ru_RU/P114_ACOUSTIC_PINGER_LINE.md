@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Acoustic pinger line"
+title: "Акустическая линия пингера"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic pinger line
+# Акустическая линия пингера
 
-Acoustic pinger line превращает exploration HECTON-8 в процедуру. Это и tool, и tone: маленький звук против большого океана.
+Акустическая pinger line не является спасательным маяком. Это дисциплина, которую слышно. Игрок ставит return sound до того, как мутность, brine shimmer или страх сделают маршрут чужим. Инструмент учит: навигация является привычкой, а не map screen.
 
-## Scanner
-
-Pinger spool. Первая карта - звук, который можно найти, когда свет откажет.
-
-## Terminal
-
-RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
-
-## Audio
-
-Когда света нет, иди на звук, который у тебя хватило дисциплины поставить.
-
-## Field Note
-
-Навигация должна рано стать физической.
+Из этого зерна могут вырасти поздние системы: relay timing, carrier handshake, акустическое доказательство, что путь еще существует. Первая версия намеренно мала. Она спасает игрока от самоуверенности.
 
 <!-- External Site; generated from P114_ACOUSTIC_PINGER_LINE/ru_RU. -->

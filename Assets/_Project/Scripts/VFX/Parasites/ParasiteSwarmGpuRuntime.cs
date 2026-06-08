@@ -943,6 +943,8 @@ namespace Hecton8.VFX.Parasites
             {
                 ThermalSourceSignal signal = signals[i];
                 if (!signal.PositionAup.IsFinite() ||
+                    !math.isfinite(signal.RadiusMeters) ||
+                    signal.RadiusMeters <= 0f ||
                     !math.isfinite(signal.IntensityCelsiusPerSecond) ||
                     signal.IntensityCelsiusPerSecond < tuning.ParasiteAttractionThreshold)
                 {

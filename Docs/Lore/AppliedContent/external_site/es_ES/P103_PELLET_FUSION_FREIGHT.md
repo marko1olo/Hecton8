@@ -8,8 +8,8 @@ biome_tags: biome.carrier_link;biome.relay_shadow
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Flete de fusión por pellets"
+spoiler_tier: 1
+title: "Carga de fusión por pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,8 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Flete de fusión por pellets
+# Carga de fusión por pellets
 
-El flete de fusión por pellets es la historia industrial detrás de HECTON-8. Máquinas y carga pesada llegaron a Aegir porque la infraestructura podía empujar, alimentar, proteger y frenar masa durante décadas; la ruta sigue siendo cruel porque la contabilidad sobrevive más que la emergencia.
-
-## Scanner
-
-Placa de motor. El flete con fusión alimentada por pellets cruzó como infraestructura: impulso, escudo, deriva, frenado y pérdidas facturadas.
-
-## Terminal
-
-DOCTRINA DE FLETE: cargas seed clase Atlas y flete colonial usaron impulso de vela de haz, fusión alimentada por pellets, frenado con vela magnética e intervalos largos de deriva. La carga viva llegó después de que las máquinas hicieron facturable la ruta.
-
-## Audio
-
-Una nave pesada no es un milagro. Es una hipoteca con motores.
-
-## Field Note
-
-El tránsito pesado no es heroico. Es un contrato de ruta viejo con cicatrices de calor.
+El flete de fusión alimentado por pellets es la capa industrial entre los sueños de prospección y los cuerpos humanos. Las estaciones de haz empujan, las corrientes de pellets alimentan quemas de fusión, la masa de blindaje muere en lugar de la carga y los sistemas de frenado recompran velocidad con tiempo. Esa arquitectura mueve cosas pesadas a través de la distancia oscura, pero no perdona la improvisación. Cada kilogramo queda reservado contra calendario, presupuesto térmico, reserva de frenado y propietario.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/es_ES. -->

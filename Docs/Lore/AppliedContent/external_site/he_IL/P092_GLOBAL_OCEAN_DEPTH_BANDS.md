@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "רצועות עומק האוקיינוס"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# רצועות עומק האוקיינוס
 
-HE LOC HOLD: HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
-
-## Scanner
-
-HE LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
-
-## Terminal
-
-HE LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
-
-## Audio
-
-HE LOC HOLD: Every band changes what the world allows you to do.
-
-## Field Note
-
-HE LOC HOLD: Depth is not a number. It is a ruleset.
+HECTON-8 אינו אוקיינוס שטוח עם מספרים עמוקים יותר. הוא ארץ אנכית שגבולותיה כתובים בלחץ. מ-0 עד 250 מטר המדף הפוטי עדיין נותן אור, אצות, גרוטאות רכות וסלחנות לטעויות חדשות. מ-250 עד 1200 מטר מתחילים המדף התעשייתי ושונית הכבלים: עוגנים קרועים, שלדי צינורות, עצמות ממסרים ודרכי חברה ישנות. מ-1200 עד 2800 מטר מדרגות המלח מכופפות סונאר ומסתירות חום. מ-2800 עד 4300 מטר התיקון הופך למשא ומתן עם שדות מכונות. מ-4300 עד 5600 מטר אגן Atlas הופך לחץ לרשות שלמה.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/he_IL. -->

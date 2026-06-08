@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Evacuation Queue Delay Proof"
+title: "Запис затримки евакуаційної черги"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Evacuation Queue Delay Proof
+# Запис затримки евакуаційної черги
 
-UK LOC HOLD: Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
+Цей доказ перетворює евакуацію на послідовність. Ворота не просто відрізала вода; вони лишалися у стані review, поки тривоги тиску зайшли в заселені коридори. Порожнє поле свідка важливе, бо система вимагала людського підтвердження після того, як люди вже втратили доступ до панелі.
 
 ## Scanner
 
-UK LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Годинник черги відновлено. Випускні ворота лишалися замкненими після того, як тривоги тиску перейшли з прогнозу в коридор.
 
 ## Terminal
 
-UK LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Ручного підтвердження немає. Карантинний review очікує. Тиск маршруту перевищив клас ущільнення до завершення authorization.
 
 ## Audio
 
-UK LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Вони не провалили порятунок усіх. Вони чекали, доки рятувати хоч когось стало важче.
 
 ## Field Note
 
-UK LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Нотатка мародера: замкнені ворота з полем в очікуванні не є випадком. Це рішення, що чекає підпису.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/uk_UA. -->

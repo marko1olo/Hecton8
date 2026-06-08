@@ -36,13 +36,13 @@ Runtime path:
 - Larger entries stream as rolling windows.
 - After visible window drain, decoded char count resets and byte cursor continues from same cached source span.
 
-- Unlock state is `EncyclopediaStateDTO`: exactly 128 bytes in Vault buffer `(BufferID)70560`, with four raw `ulong` masks for 256 dense unlock bits plus AUP/revision metadata.
+- Unlock state is `EncyclopediaStateDTO`: exactly 224 bytes in Vault buffer `(BufferID)70560`, with sixteen raw `ulong` masks for 1024 dense unlock bits plus AUP/revision metadata.
 
-- Adjacent Vault buffers `(BufferID)70561..70570`: metadata, runtime state, CSV scratch, Burst lookup slot, 64-byte typewriter DTO, H8LR mirror bytes, telemetry ring.
+- Adjacent Vault buffers `(BufferID)70561..70570`: runtime state, metadata, telemetry ring/cursor, mock UTF-8/index buffers, 64-byte typewriter DTO, and H8LR mirror bytes.
 
 - Contract AUP values are copied immediately into owner-local `PdaAup48` primitive fields. The PDA runtime no longer names `Hecton8.World.AbsoluteUniversePosition` directly; distance math uses `HectonPhysicsContract.AupSectorSizeMetersInt` and clamp rails.
 
-- Editor-time validation checks PDA transfer rows: 128-byte state/runtime, 64-byte metadata/telemetry/typewriter, 48-byte local AUP copy, 16-byte H8LR header/record.
+- Editor-time validation checks PDA transfer rows: 224-byte unlock state, 128-byte runtime state, 64-byte metadata/telemetry/typewriter, 48-byte local AUP copy, and 16-byte H8LR header/record.
 
 - Editor x-ray facades and CSV ingest bridges compile only inside `#if UNITY_EDITOR`.
 - Examples: `EditorTrySnapshot()`, `EditorTryWriteRawUtf8Hex()`, `TryIngestLoreMetadataCsvFromProject()`, `TryIngestLoreMetadataCsv()`.

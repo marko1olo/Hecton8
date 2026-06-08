@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Autoridade Sol Core"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Autoridade Sol Core
 
-PT-BR LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core é a raiz jurídica e financeira da expansão humana, não uma terra natal pessoal nem um posto de resgate. Em HECTON-8, seus padrões sobrevivem como selos, formulários de responsabilidade, placas de segurança e linguagem de seguro que durou mais que as pessoas que deveria proteger.
 
 ## Scanner
 
-PT-BR LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+Velho selo jurídico de Sol. Ele pode possuir um cadáver de fronteira sem estar perto o bastante para sentir o vazamento de pressão.
 
 ## Terminal
 
-PT-BR LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+PADRÃO SOL CORE: continuidade de reivindicação reconhecida por custódia de transportador licenciado, seguro de rota e adjudicação adiada. Prioridade de recuperação humana pendente até certificação local de riscos.
 
 ## Audio
 
-PT-BR LOC HOLD: The seal came from Earth space. The rescue clause did not.
+O selo veio do espaço terrestre. A cláusula de resgate não.
 
 ## Field Note
 
-PT-BR LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol não é casa aqui. É a assinatura mais antiga no documento que ainda pode acabar com você.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/pt_BR. -->

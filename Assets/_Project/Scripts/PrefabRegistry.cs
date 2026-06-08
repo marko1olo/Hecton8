@@ -15,8 +15,9 @@
 //   â€¢ Conditional compilation: #if UNITY_6000_4_OR_NEWER
 //
 // USAGE:
-//   int id = PrefabRegistry.ActiveRuntimeInstance.GetOrRegisterPrefab(myPrefab);
-//   GameObject prefab = PrefabRegistry.ActiveRuntimeInstance.GetPrefab(id);
+//   PrefabRegistry registry = null;
+//   if (PrefabRegistry.TryResolveActiveRuntime(ref registry))
+//       int id = registry.GetOrRegisterPrefab(myPrefab);
 //
 // ZERO GC:
 //   â€¢ Dictionary lookups â€” O(1), no allocations.
@@ -70,7 +71,25 @@ namespace Hecton8.Core
         //  STORAGE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        public static PrefabRegistry ActiveRuntimeInstance => s_activeRuntimeInstance;
+        public static PrefabRegistry ActiveRuntimeInstance =>
+            IsPrefabRegistryRuntimeUsable(s_activeRuntimeInstance)
+                ? s_activeRuntimeInstance
+                : ResolveUsableRuntime();
+
+        internal static bool TryResolveActiveRuntime(ref PrefabRegistry target)
+        {
+            PrefabRegistry runtime = ActiveRuntimeInstance;
+            if (runtime == null)
+            {
+                target = null;
+                return false;
+            }
+
+            if (!ReferenceEquals(target, runtime))
+                target = runtime;
+
+            return true;
+        }
 
         /// <summary>Forward mapping: PrefabId â†’ Prefab.</summary>
         // COLD ALLOC: Dictionary[256] â€” prefab registry â€” owner: PrefabRegistry
@@ -82,6 +101,7 @@ namespace Hecton8.Core
 
         /// <summary>Counter for generating new IDs. Starts at 1 (0 = invalid).</summary>
         private int _nextId = 1;
+        private bool _runtimeOwnerAborted;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
@@ -92,19 +112,18 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             EnsureEditorHooks();
 #endif
-            PrefabRegistry runtime = s_activeRuntimeInstance ?? GlobalRegistry.PrefabRegistryRuntime;
-            if (runtime != null && runtime != this)
-            {
-                Destroy(gameObject);
+            if (!EnsureRuntimeOwnership())
                 return;
-            }
-
-            GlobalRegistry.RegisterPrefabRegistryRuntime(this);
-            s_activeRuntimeInstance = this;
         }
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+            {
+                ClearRuntimeMirrorIfOwnedBy(this);
+                return;
+            }
+
             if (GlobalRegistry.PrefabRegistryRuntime == this)
             {
                 _isShuttingDown = true;
@@ -117,6 +136,12 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+            {
+                ClearRuntimeMirrorIfOwnedBy(this);
+                return;
+            }
+
             if (GlobalRegistry.PrefabRegistryRuntime != this)
                 return;
 
@@ -171,7 +196,7 @@ namespace Hecton8.Core
 
         private static PrefabRegistry EnsureRuntimeInstance()
         {
-            PrefabRegistry runtime = s_activeRuntimeInstance ?? GlobalRegistry.PrefabRegistryRuntime;
+            PrefabRegistry runtime = ResolveUsableRuntime();
             if (runtime != null || _isResolvingRuntimeInstance || !Application.isPlaying || _isShuttingDown)
                 return runtime;
 
@@ -192,6 +217,116 @@ namespace Hecton8.Core
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API â€” REGISTRATION
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+        /// <summary>
+        /// Ensures this component owns both prefab registry runtime mirrors.
+        /// </summary>
+        private bool EnsureRuntimeOwnership()
+        {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            PrefabRegistry runtime = s_activeRuntimeInstance;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                runtime._runtimeOwnerAborted = true;
+                ClearRuntimeMirrorIfOwnedBy(runtime);
+            }
+
+            runtime = GlobalRegistry.PrefabRegistryRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                runtime._runtimeOwnerAborted = true;
+                ClearRuntimeMirrorIfOwnedBy(runtime);
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            GlobalRegistry.RegisterPrefabRegistryRuntime(this);
+            if (ReferenceEquals(GlobalRegistry.PrefabRegistryRuntime, this))
+                s_activeRuntimeInstance = this;
+
+            bool ownsRuntime =
+                ReferenceEquals(s_activeRuntimeInstance, this) &&
+                ReferenceEquals(GlobalRegistry.PrefabRegistryRuntime, this);
+            _runtimeOwnerAborted = !ownsRuntime;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return ownsRuntime;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            PrefabRegistry runtime = s_activeRuntimeInstance;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsPrefabRegistryRuntimeUsable(runtime))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                runtime._runtimeOwnerAborted = true;
+                ClearRuntimeMirrorIfOwnedBy(runtime);
+            }
+
+            runtime = GlobalRegistry.PrefabRegistryRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsPrefabRegistryRuntimeUsable(runtime))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                runtime._runtimeOwnerAborted = true;
+                ClearRuntimeMirrorIfOwnedBy(runtime);
+            }
+
+            return false;
+        }
+
+        private static PrefabRegistry ResolveUsableRuntime()
+        {
+            PrefabRegistry runtime = s_activeRuntimeInstance;
+            if (IsPrefabRegistryRuntimeUsable(runtime))
+                return runtime;
+
+            ClearRuntimeMirrorIfOwnedBy(runtime);
+
+            runtime = GlobalRegistry.PrefabRegistryRuntime;
+            if (IsPrefabRegistryRuntimeUsable(runtime))
+            {
+                s_activeRuntimeInstance = runtime;
+                return runtime;
+            }
+
+            ClearRuntimeMirrorIfOwnedBy(runtime);
+            return null;
+        }
+
+        private static bool IsPrefabRegistryRuntimeUsable(PrefabRegistry runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
+        }
+
+        private static void ClearRuntimeMirrorIfOwnedBy(PrefabRegistry runtime)
+        {
+            if (ReferenceEquals(runtime, null))
+                return;
+
+            GlobalRegistry.ClearPrefabRegistryRuntime(runtime);
+            if (ReferenceEquals(s_activeRuntimeInstance, runtime))
+                s_activeRuntimeInstance = null;
+        }
 
         /// <summary>
         /// Gets or creates a stable ID for the prefab.

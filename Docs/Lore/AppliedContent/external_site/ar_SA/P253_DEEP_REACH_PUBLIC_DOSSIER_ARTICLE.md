@@ -9,32 +9,35 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Deep Reach Public Dossier Article"
+title: "ملف Deep Reach العام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Deep Reach Public Dossier Article
+# ملف Deep Reach العام
 
-AR LOC HOLD: Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression.
+Deep Reach Extraterrestrial Development Combine هي القوة المؤسسية خلف تاريخ HECTON-8 الصناعي. بنت طرق ضغط، ومساكن عمال، وأنظمة استخراج، والأوراق التي جعلتها قانونية. علنا هي سلطة تطوير فاشلة. تكشف الأدلة الأعمق الشكل الأقسى: سعة إخلاء ناقصة، لغة تأخير معقمة، continuity weighting الخاص بـ Atlas محمي، وقانون مطالبات محفوظ بينما تحول العمال إلى خسائر.
 
 ## Scanner
 
-AR LOC HOLD: The public company name is cleaner than its route history.
+اسم الشركة العام أنظف من تاريخ طرقها. ابدأ بالبنية التحتية. دع المسؤولية تظهر من الوصلات.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+مستوى مقال عام / DEEP REACH
+المسموح: combine تطوير، مشغل مستعمرة، سلطة بنية تحتية، مشكلة سعة إخلاء، لغة فشل عامة
+المحجوب: سلسلة توقيعات مسماة، داخليات weighting Atlas، عواقب receiver النهائية
+ملاحظة تحرير: مؤسسة معقولة أولا؛ جريمة عبر الإجراء ثانيا.
 
 ## Audio
 
-AR LOC HOLD: Never make the villain simpler than the paperwork.
+لم تكن Deep Reach بحاجة إلى أن تبدو قاسية. احتاجت فقط إلى أن تبدو كل جملة خطرة منتهية.
 
 ## Field Note
 
-AR LOC HOLD: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+لا تجعل Deep Reach تفح. اجعلها تعتمد، تؤجل، تحفظ، وتصدر فاتورة.
 
 <!-- External Site; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/ar_SA. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 제논-오메가: 정제 및 특성
 
 > **출처:** 딥 리치 메가코퍼레이션, 기밀 화학 물질 매니페스트.

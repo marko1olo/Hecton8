@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Invarian Geologi Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Invarian Geologi Seed
 
-ID LOC HOLD: Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure.
-
-## Scanner
-
-ID LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
-
-## Terminal
-
-ID LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
-
-## Audio
-
-ID LOC HOLD: New seed, same moon. Different wound.
-
-## Field Note
-
-ID LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+Setiap run salvage di HECTON-8 bisa membuka rute berbeda melalui luka. Ngarai bisa terbuka lebih awal, karang kabel bisa menyembunyikan kantong aman, bloom bisa mendorong fauna ke jalur yang dulu kosong, dan rantai bukti bisa muncul dalam urutan baru. Fisika bulan tidak diatur ulang untuk hiburan. Aegir tetap bintang utama. HECTON-8 tetap pada tangga orbitnya. Great Tide menjaga intervalnya. Pita kedalaman tetap tersusun dalam urutan brutal yang sama. Blue debt menjaga perilaku tekanannya. Atlas tetap terikat pada basin terdalam.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/id_ID. -->

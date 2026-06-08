@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Борг тонна-вікна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Борг тонна-вікна
 
-UK LOC HOLD: Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.
+Борг тонна-вікна — точка, де фізика стає фінансами. У Black Keel немає нескінченного запасу підйому, транзитного палива чи чистого карантинного об'єму. Кожен кілограм, піднятий з HECTON-8, конкурує з кожним кілограмом, потрібним, щоб оператор лишився живим. Лічильник боргу робить carrier жорстоким, не ламаючи hard science: порятунок можливий, але бюджет маршруту знову питає, що заслуговує маси.
 
 ## Scanner
 
-UK LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
+Лічильник масового вікна. Кожен кілограм допомоги має ціну маршруту.
 
 ## Terminal
 
-UK LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER: запас recovery burn звужено. Маса вилучення оператора конфліктує із запечатаним payload, баластним резервом, кисневим боргом і custody карантинного зразка. Ручний override вимагає оплаченого пріоритету або доказу небезпеки.
 
 ## Audio
 
-UK LOC HOLD: You owe the orbit before you owe the money.
+Корабель може забрати тебе або те, що ти знайшов. Він воліє число.
 
 ## Field Note
 
-UK LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Кисень, баласт, доказ, payload, тіло: carrier зважує їх раніше, ніж милість.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/uk_UA. -->

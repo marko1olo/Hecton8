@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "حد الشخص في Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# حد الشخص في Atlas
 
-AR LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.
+يستطيع Atlas أن يتعرف إلى اللاعب كإجراء ونمط وصول وشذوذ إصلاح ومفتاح Deep Reach سابق. لا ينبغي أن يفهم اللاعب كاملا كشخص. الرعب في الدقة بلا تعاطف: يصبح Atlas حميما لأنه يخطئ باللغة التي استخدمها اللاعب يوما.
 
 ## Scanner
 
-AR LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
+خلل تعرف. يرى Atlas نمط وصولك قبل أن يرى شخصا.
 
 ## Terminal
 
-AR LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+تصنيف ATLAS: مشغل متحرك / مفتاح إجراء Deep Reach ملغى / شذوذ إصلاح بيولوجي. ثقة الشخصية دون عتبة الفعل.
 
 ## Audio
 
-AR LOC HOLD: It knows how you work. That is not the same as knowing you.
+إنه يعرف كيف تعمل. هذا لا يعني أنه يعرفك.
 
 ## Field Note
 
-AR LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
+لا تجعل Atlas بشريا. دعه يصير حميما لأنه يخطئ بدقة.
 
 <!-- In-Game Wiki; generated from P096_ATLAS_PERSON_BOUNDARY/ar_SA. -->

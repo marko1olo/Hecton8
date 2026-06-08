@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Evacuation Hold
 
-Evacuation Hold records prove the colony did not simply vanish in a storm or pressure cascade. People, corridors, medical transfers, and ascent routes were delayed by priority rules that protected substrate, Atlas continuity, and corporate liability before human evacuation.
+Evacuation Hold records are the colony's most direct accusation. They show that the disaster was not only pressure failure, storm timing, or panic. Routes were evaluated, delayed, and reclassified while people were still inside them. Medical transfers waited for authorization. Ascent corridors lost priority to substrate protection. Atlas continuity claims outranked local rescue authority. Human counts were attached to route objects, which let the system preserve a corridor on paper while the bodies inside it ran out of air. The hold did not need a villain at every door. It needed rules that could call a person cargo, a corridor asset, and a delay acceptable until the next review cycle.
 
 ## Scanner
 
-Emergency transit gate. Mechanism locked during pressure failure.
+Emergency transit gate. Lock dogs fused closed during pressure failure; manual wheel removed after authorization hold.
 
 ## Terminal
 
-EVAC ROUTE: deferred. SUBSTRATE ROUTE: protected. MEDICAL ROUTE: pending authorization. ATLAS ROUTE: continuity conflict.
+EVAC ROUTE: HELD. MEDICAL ROUTE: PENDING. SUBSTRATE ROUTE: PROTECTED. ATLAS CONTINUITY: PRIORITY. HUMAN COUNT: ATTACHED TO ROUTE.
 
 ## Audio
 
-These are not missing persons. They are held routes.
+They are not missing. The system knows where they were. It held the doors.
 
 ## Field Note
 
-People die fast in the deep. Paperwork kills slower. Both work.
+People die fast at depth. A pending authorization can outlive everyone in the corridor.
 
 <!-- In-Game Wiki; generated from P008_EVACUATION_HOLD/en_US. -->

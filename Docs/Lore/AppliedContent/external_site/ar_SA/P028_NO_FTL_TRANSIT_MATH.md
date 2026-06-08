@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # حساب العبور بلا FTL
 
-المسافة تصبح ضغط لعب: أوامر متأخرة وسلطة قديمة ونوافذ هروب فيزيائية.
+تحول حسابات العبور بلا FTL المسافة بين النجوم إلى ضغط: أوامر متأخرة، وسلطة قديمة، وتأخر حيازة، ونوافذ خروج فيزيائية.
 
 ## Scanner
 

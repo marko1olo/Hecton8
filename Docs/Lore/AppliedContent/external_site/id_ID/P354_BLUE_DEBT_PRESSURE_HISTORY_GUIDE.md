@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Blue Debt Pressure History Guide"
+title: "Panduan Riwayat Tekanan Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Blue Debt Pressure History Guide
+# Panduan Riwayat Tekanan Blue Debt
 
-ID LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.
+Xenon-Omega, disebut blue debt oleh salvager, mengikat geologi HECTON-8 dengan computation, debt law, dan alasan Deep Reach masih menginginkan klaim tenggelam itu kembali.
 
 ## Scanner
 
-ID LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.
+Sampel blue debt ditandai. Verifikasi pressure history, containment stage, dan signal drift sebelum export.
 
 ## Terminal
 
-ID LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
+MARAUDER NOTE: blue debt adalah slang salvage untuk Xenon-Omega-bearing pressure-stable substrate. Ia berharga karena extreme computation dan energy isolation menyukainya, bukan karena ia bersinar.
 
 ## Audio
 
-ID LOC HOLD: Blue debt is what people call it after the invoice arrives.
+Blue debt adalah sebutan orang setelah faktur datang.
 
 ## Field Note
 
-ID LOC HOLD: Use for resource glossary and Deep Reach motive articles.
+Warna bukan grade. Kontainer tenang dengan custody bersih membayar; yang bernyanyi membeli drone wake.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/id_ID. -->

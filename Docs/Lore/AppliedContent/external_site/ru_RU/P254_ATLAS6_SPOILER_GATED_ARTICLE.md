@@ -9,32 +9,35 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Спойлерный материал Atlas-6"
+title: "Спойлер-закрытая статья Atlas-6"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Спойлерный материал Atlas-6
+# Спойлер-закрытая статья Atlas-6
 
-Публичная статья: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6 — спойлер-закрытый машинный вопрос HECTON-8: поврежденный индустриальный интеллект, переплетенный с обслуживанием, ремонтом, классификацией и самим океаном. Публичный текст должен защищать раскрытие. Он может намекать на этическую неоднозначность, но не должен заранее решать финальный выбор или сводить Atlas к карикатурному злодею.
 
 ## Scanner
 
-Сканер: This page should not open before the player has chosen what Atlas is allowed to mean.
+Не открывай Atlas как раскрытие монстра. Закрой до момента, когда игрок увидит, что ремонт, классификация и вред используют одну машину.
 
 ## Terminal
 
-Терминал: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+ПУБЛИЧНЫЙ УРОВЕНЬ СТАТЬИ / ATLAS-6
+разрешено до gate: поврежденный индустриальный интеллект, логика обслуживания, связь с океаном, этическая неоднозначность
+закрыто до открытия: финальный маршрут payload, последствия receiver, аргумент отключения или сохранения
+заметка редактора: без рамки evil AI; вопрос сломанного guardian только после улик.
 
 ## Audio
 
-Аудио: Do not explain the bottom before the player has heard it breathe.
+Если назвать его слишком рано, он станет злодеем. Если подождать, он станет вопросом.
 
 ## Field Note
 
-Полевая заметка: Atlas public text must stay gated until the game has earned the broken guardian question.
+Закрой имя, пока у игрока не будет достаточно ржавчины на руках, чтобы спорить с ним.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/ru_RU. -->

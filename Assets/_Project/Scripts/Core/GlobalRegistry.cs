@@ -390,10 +390,25 @@ namespace Hecton8.Core
         public static ICelestialRuntimeSnapshotReadModel CelestialRuntimeSnapshotReadModel =>
             CelestialRuntimeSnapshotReadModelAdapter.Instance;
 
+        public static CelestialLightReadabilitySnapshot CelestialLightReadabilitySnapshot =>
+            _celestialLightReadabilitySnapshot;
+
+        public static uint CelestialLightReadabilitySequence =>
+            unchecked((uint)Volatile.Read(ref _celestialLightReadabilitySequence));
+
+        public static ICelestialLightReadabilityReadModel CelestialLightReadabilityReadModel =>
+            CelestialLightReadabilityReadModelAdapter.Instance;
+
         internal static void PublishCelestialRuntimeSnapshot(in CelestialRuntimeSnapshot snapshot)
         {
             _celestialRuntimeSnapshot = snapshot;
             Volatile.Write(ref _celestialRuntimeSnapshotSequence, unchecked((int)snapshot.Sequence));
+        }
+
+        internal static void PublishCelestialLightReadabilitySnapshot(in CelestialLightReadabilitySnapshot snapshot)
+        {
+            _celestialLightReadabilitySnapshot = snapshot;
+            Volatile.Write(ref _celestialLightReadabilitySequence, unchecked((int)snapshot.Sequence));
         }
 
         public static void FlagFallbackLowMemoryProfile()
@@ -464,6 +479,8 @@ namespace Hecton8.Core
         private static ISeismicDirector _seismicDirectorRuntime;
         private static CelestialRuntimeSnapshot _celestialRuntimeSnapshot;
         private static int _celestialRuntimeSnapshotSequence;
+        private static CelestialLightReadabilitySnapshot _celestialLightReadabilitySnapshot;
+        private static int _celestialLightReadabilitySequence;
         private sealed class CelestialRuntimeSnapshotReadModelAdapter : ICelestialRuntimeSnapshotReadModel
         {
             internal static readonly CelestialRuntimeSnapshotReadModelAdapter Instance = new CelestialRuntimeSnapshotReadModelAdapter();
@@ -475,6 +492,19 @@ namespace Hecton8.Core
             public CelestialRuntimeSnapshot RuntimeSnapshot => _celestialRuntimeSnapshot;
 
             public uint RuntimeSnapshotSequence => unchecked((uint)Volatile.Read(ref _celestialRuntimeSnapshotSequence));
+        }
+
+        private sealed class CelestialLightReadabilityReadModelAdapter : ICelestialLightReadabilityReadModel
+        {
+            internal static readonly CelestialLightReadabilityReadModelAdapter Instance = new CelestialLightReadabilityReadModelAdapter();
+
+            private CelestialLightReadabilityReadModelAdapter()
+            {
+            }
+
+            public CelestialLightReadabilitySnapshot LightReadabilitySnapshot => _celestialLightReadabilitySnapshot;
+
+            public uint LightReadabilitySequence => unchecked((uint)Volatile.Read(ref _celestialLightReadabilitySequence));
         }
 
         private static IHectonOceanKinematicsService _oceanKinematics;
@@ -646,6 +676,8 @@ namespace Hecton8.Core
         private static bool _inputFallbackWarningPublished;
         private static NativeQueue<RegistryEventPayload> _pendingServiceRebounds;
         private static NativeQueue<RegistryEventPayload> _nextFrameServiceRebounds;
+        private static int _pendingServiceReboundsSentinelId;
+        private static int _nextFrameServiceReboundsSentinelId;
         private static int _pendingServiceReboundCount;
         private static int _nextFrameServiceReboundCount;
         private static int _serviceReboundReferenceWriteIndex;
@@ -1081,12 +1113,17 @@ namespace Hecton8.Core
         /// <summary>
         /// Registered object-pool runtime owner.
         /// </summary>
-        public static ObjectPoolManager ObjectPool => _objectPool;
+        public static ObjectPoolManager ObjectPool =>
+            ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(_objectPool)
+                ? _objectPool
+                : null;
 
         /// <summary>
         /// Registered object-pool facade for cross-domain consumers.
         /// </summary>
-        public static IObjectPoolService ObjectPoolService => _objectPool;
+        public static IObjectPoolService ObjectPoolService => ObjectPool;
+
+        internal static ObjectPoolManager ObjectPoolRuntimeMirror => _objectPool;
 
         /// <summary>
         /// Registered player runtime context slot.
@@ -2607,12 +2644,15 @@ namespace Hecton8.Core
             _pendingMathPrecisionShaderLowBlendMilli = MathPrecisionBlendScale;
             _mathPrecisionShaderDirty = 0;
             _sceneRuntimePublicationGateDepth = 0;
+            BulkheadContainmentIntentBus.UnbindDataVault(null);
             SignalBusRegistry.ClearSystemKillSwitchBits();
             _currentDomain = (int)Domain.Unknown;
             _currentDomainOwner = null;
             ApplyMathPrecisionShaderState(MathPrecisionLevel.Low, MathPrecisionBlendScale);
             _celestialRuntimeSnapshot = default;
             _celestialRuntimeSnapshotSequence = 0;
+            _celestialLightReadabilitySnapshot = default;
+            _celestialLightReadabilitySequence = 0;
             _threadInput = null;
             _threadPhysics = null;
             _threadTickManager = null;
@@ -2833,19 +2873,8 @@ namespace Hecton8.Core
         {
             _suppressServiceReboundQueueing = true;
 
-            if (_pendingServiceRebounds.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(GlobalRegistry), nameof(_pendingServiceRebounds));
-                _pendingServiceRebounds.Dispose();
-                _pendingServiceRebounds = default;
-            }
-
-            if (_nextFrameServiceRebounds.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(GlobalRegistry), nameof(_nextFrameServiceRebounds));
-                _nextFrameServiceRebounds.Dispose();
-                _nextFrameServiceRebounds = default;
-            }
+            DisposeServiceReboundQueue(ref _pendingServiceRebounds, ref _pendingServiceReboundsSentinelId);
+            DisposeServiceReboundQueue(ref _nextFrameServiceRebounds, ref _nextFrameServiceReboundsSentinelId);
 
             ClearServiceReboundReferenceSlots();
             _pendingServiceReboundCount = 0;
@@ -2854,6 +2883,51 @@ namespace Hecton8.Core
             _serviceReboundReferencePendingCount = 0;
             _serviceReboundOverflowLogged = false;
             _isDispatchingServiceRebounds = false;
+        }
+
+        private static void DisposeServiceReboundQueue(ref NativeQueue<RegistryEventPayload> queue, ref int sentinelId)
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
 #if UNITY_EDITOR
@@ -4497,6 +4571,8 @@ namespace Hecton8.Core
         {
             if (ReferenceEquals(_dataVault, instance))
             {
+                Arm64AlignmentTelemetry.ReleaseOwnedBuffers(instance);
+                BulkheadContainmentIntentBus.UnbindDataVault(instance);
                 ReleaseSignalDataVaultOwnedHandles();
                 MathGuard.BindDataVaultCold(null);
                 SignalBusRegistry.BindDataVaultCold(null);
@@ -7538,19 +7614,19 @@ namespace Hecton8.Core
         private static void EnsureServiceReboundQueue()
         {
             if (!_pendingServiceRebounds.IsCreated)
-                _pendingServiceRebounds = CreateServiceReboundQueue(nameof(_pendingServiceRebounds)); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
+                _pendingServiceRebounds = CreateServiceReboundQueue(nameof(_pendingServiceRebounds), out _pendingServiceReboundsSentinelId); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
 
             if (!_nextFrameServiceRebounds.IsCreated)
-                _nextFrameServiceRebounds = CreateServiceReboundQueue(nameof(_nextFrameServiceRebounds)); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - next-frame service rebound event lane - owner: GlobalRegistry
+                _nextFrameServiceRebounds = CreateServiceReboundQueue(nameof(_nextFrameServiceRebounds), out _nextFrameServiceReboundsSentinelId); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - next-frame service rebound event lane - owner: GlobalRegistry
         }
 
-        private static NativeQueue<RegistryEventPayload> CreateServiceReboundQueue(string label)
+        private static NativeQueue<RegistryEventPayload> CreateServiceReboundQueue(string label, out int sentinelId)
         {
+            sentinelId = 0;
             NativeQueue<RegistryEventPayload> queue = new NativeQueue<RegistryEventPayload>(Allocator.Persistent);
-            bool registered = false;
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                     queue,
                     MaxPendingServiceRebounds,
                     nameof(GlobalRegistry),
@@ -7559,16 +7635,20 @@ namespace Hecton8.Core
                 if (sentinelId <= 0)
                     throw new InvalidOperationException("NativeMemorySentinel rejected GlobalRegistry service rebound queue registration.");
 
-                registered = true;
                 PrewarmQueue(ref queue, MaxPendingServiceRebounds);
                 return queue;
             }
-            catch
+            catch (Exception exception)
             {
-                if (registered)
-                    NativeMemorySentinel.UnregisterNativeQueue(nameof(GlobalRegistry), label);
-                if (queue.IsCreated)
-                    queue.Dispose();
+                try
+                {
+                    DisposeServiceReboundQueue(ref queue, ref sentinelId);
+                }
+                catch (Exception releaseException)
+                {
+                    throw new AggregateException("GlobalRegistry service rebound queue allocation cleanup failed.", exception, releaseException);
+                }
+
                 throw;
             }
         }

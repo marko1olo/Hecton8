@@ -7,34 +7,34 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "خط بينغر صوتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# خط بينغر صوتي
 
-AR LOC HOLD: The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.
+خط البينغر الصوتي هو أول انضباط ملاحي. يسمح للاعب بصنع طريق عودة قبل أن يجعل الضوء أو التيار أو الذعر الطريق غريبا. أعمال الهروب اللاحقة تنمو من الفكرة نفسها: صوت عبر الماء، توقيت مرحلات، مصافحات حامل، ودليل على أن مسارا ما زال موجودا.
 
 ## Scanner
 
-AR LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
+بكرة بينغر صوتي. تم تأكيد نبضة قصيرة المدى؛ ثبتها قبل عبور ماء عكر أو وميض محلول ملحي.
 
 ## Terminal
 
-AR LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
+خط عودة / بينغر: ثبته قبل العكارة، أو وميض المحلول الملحي، أو الأكواع المغمورة، أو قطوع الرف الطويلة. النبضة المحلية تدعم ملاحة العودة فقط. مصافحة الحامل تحتاج عمود ترحيل صوتي.
 
 ## Audio
 
-AR LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
+إذا انطفأت الأضواء، اتبع الصوت الذي وضعته.
 
 ## Field Note
 
-AR LOC HOLD: Navigation should become physical early.
+ضع البينغر وأنت ما زلت تعرف طريق العودة. الكبرياء ليس علامة طريق.
 
 <!-- In-Game Wiki; generated from P114_ACOUSTIC_PINGER_LINE/ar_SA. -->

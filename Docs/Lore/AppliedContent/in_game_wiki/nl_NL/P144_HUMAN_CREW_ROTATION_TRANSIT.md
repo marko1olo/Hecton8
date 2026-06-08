@@ -7,34 +7,34 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Transit van menselijke crewrotatie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# Transit van menselijke crewrotatie
 
-NL LOC HOLD: Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
+Menselijke rotatie maakt HECTON-8s verlatenheid geloofwaardig. Werkers, specialisten en vervangingscrews bewegen trager dan claimtaal. Iemand kan Sol onder één contract verlaten, onder een ander wakker worden en ontdekken dat de nood waarvoor hij trainde al bewijs is geworden.
 
 ## Scanner
 
-NL LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
+Mensen pendelen niet naar Aegir. Ze brengen jaren door als vracht met meningen.
 
 ## Terminal
 
-NL LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+CREWROTATIE: mensentransport gebruikt trage vensters, afgeschermde habitatsecties, lage-metabolisme-cycli en gestage rotaties. Een vermiste werker wordt een vertraagd custody-probleem.
 
 ## Audio
 
-NL LOC HOLD: By the time home asks where you are, the room has already flooded.
+Tegen de tijd dat thuis vraagt waar je bent, is de kamer al overstroomd.
 
 ## Field Note
 
-NL LOC HOLD: A frontier worker sells time before they sell labor.
+Een frontierwerker verkoopt tijd voordat hij arbeid verkoopt.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/nl_NL. -->

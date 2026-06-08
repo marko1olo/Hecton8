@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Geologische Seed-Invarianten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Geologische Seed-Invarianten
 
-DE LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+Geologische Seed-Invarianten halten HECTON-8 ueber lange Wiederholungen stimmig. Canyons koennen anders oeffnen, Beweise koennen wandern, sichere Taschen koennen wechseln, Artendruck kann sich verschieben. Der Stern bleibt Aegir, der Mond bleibt HECTON-8, die Tiefenbaender behalten ihre Ordnung, die Great Tide haelt ihr Timing, und das Atlas-Becken bleibt mit der tiefsten Wahrheit verbunden.
 
 ## Scanner
 
-DE LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+Routengenerierungsnotiz. Die Bergungskarte aendert sich, aber der Mond behaelt dieselben Knochen.
 
 ## Terminal
 
-DE LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+INVARIANTEN: Aegir-Primärstern, HECTON-8-Orbitalleiter, Great-Tide-Intervall, Tiefenbandordnung, Atlas-Becken-Beziehung, Blue-Debt-Druckverhalten. VARIABEL: Canyonzugang, POI-Reihenfolge, sichere Taschen, Bloom-Dichte, Bergungsexposition.
 
 ## Audio
 
-DE LOC HOLD: New seed, same moon. Different wound.
+Anderes Wundmuster. Derselbe Mond darunter.
 
 ## Field Note
 
-DE LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+Ein neuer Lauf darf Beweise anders begraben; er darf Schwerkraft, Tide oder Schuld nicht neu schreiben.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/de_DE. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LA VIE DANS LA COLONIE AVANT LA CATASTROPHE : SECTEUR 44
 
 > **Source :** Journal personnel récupéré dans les quartiers d'habitation du Secteur 44, Unité 8-B.

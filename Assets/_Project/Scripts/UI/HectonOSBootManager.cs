@@ -1,6 +1,7 @@
 using Hecton.Localization;
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -85,9 +86,11 @@ namespace Hecton8.UI
         private SequenceState _state;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private ILocalizationTextReadModel _localization;
         private IDepthZoneReadModel _depthZoneReadModel;
         private bool _hotSwapRegistered;
+        private bool _pdaEventsRegistered;
         private uint _lastSessionLifecycleSequence;
         private readonly char[] _sequencePayloadBuffer = new char[BootPayloadCharCapacity]; // COLD ALLOC: char[1024] — Hecton-OS boot TMP payload buffer — owner: HectonOSBootManager
 
@@ -181,7 +184,7 @@ namespace Hecton8.UI
             EnsureUiBuilt();
             ResolveOwners();
             PDAIntrusionEvents.Register(this);
-            PDAEvents.Register(this);
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
             RegisterToTickManager();
 
             if (ShouldArmLoadBootFromContext())
@@ -194,7 +197,11 @@ namespace Hecton8.UI
         {
             TryUnregisterHotSwapListener();
             PDAIntrusionEvents.Unregister(this);
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
             UnregisterFromTickManager();
             HideOverlay();
         }
@@ -204,7 +211,11 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
             PDAIntrusionEvents.Unregister(this);
             PDAIntrusionEvents.AssertUnregistered(this, nameof(HectonOSBootManager));
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
             PDAEvents.AssertUnregistered(this, nameof(HectonOSBootManager));
             UnregisterFromTickManager();
         }
@@ -344,6 +355,9 @@ namespace Hecton8.UI
 
         private bool ResolveOwners()
         {
+            if (_playerRuntimeContext == null)
+                CachePlayerRuntimeContext(GlobalRegistry.Player);
+
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
 
@@ -413,7 +427,7 @@ namespace Hecton8.UI
             float maxEnergy = stats != null ? stats.MaxEnergy : 0f;
             float maxIntegrity = stats != null ? stats.MaxIntegrity : 0f;
             float safeDepth = stats != null ? stats.SafeDepth : 0f;
-            float liveDepth = _survivalSystem != null ? _survivalSystem.Depth : 0f;
+            float liveDepth = ResolveLiveDepthMeters();
             float livePressure = _survivalSystem != null ? _survivalSystem.Pressure : 0f;
             float liveIntegrity = _survivalSystem != null ? _survivalSystem.Integrity : 0f;
             float integrityNormalized = _survivalSystem != null ? _survivalSystem.IntegrityNormalized : 0f;
@@ -493,6 +507,32 @@ namespace Hecton8.UI
             writer.Append(metersLabel);
             writer.Append(']');
             return writer.Length;
+        }
+
+        private float ResolveLiveDepthMeters()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
+                return 0f;
+
+            HectonPlayerMovement movement = _playerMovement;
+            if (movement != null && math.isfinite(movement.CurrentDepth))
+                return math.max(0f, movement.CurrentDepth);
+
+            HectonSurvivalSystem survival = _survivalSystem;
+            if (survival != null && math.isfinite(survival.Depth))
+                return math.max(0f, survival.Depth);
+
+            return 0f;
         }
 
         private static void AppendSlotValue(ref BootTextWriter writer, string slotName)
@@ -634,6 +674,9 @@ namespace Hecton8.UI
                 case GlobalRegistryServiceSlot.DepthZoneRuntime:
                     _depthZoneReadModel = currentService as IDepthZoneReadModel;
                     break;
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    break;
             }
         }
 
@@ -641,6 +684,22 @@ namespace Hecton8.UI
         {
             _localization = GlobalRegistry.LocalizationText;
             _depthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext;
+            if (playerContext == null)
+                return;
+
+            HectonSurvivalSystem survivalSystem = playerContext.SurvivalSystem;
+            if (survivalSystem != null)
+                _survivalSystem = survivalSystem;
+
+            HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
+            if (playerMovement != null)
+                _playerMovement = playerMovement;
         }
 
         private void TryRegisterHotSwapListener()
@@ -745,7 +804,8 @@ namespace Hecton8.UI
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 

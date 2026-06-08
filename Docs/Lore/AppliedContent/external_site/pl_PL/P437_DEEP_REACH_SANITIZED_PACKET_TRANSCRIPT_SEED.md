@@ -9,32 +9,22 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Oczyszczony transkrypt pakietu Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Oczyszczony transkrypt pakietu Deep Reach
 
-PL LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
+## Czysty Język, Brudne Opóźnienie
 
-## Scanner
+Pakiet Deep Reach jest groźny, bo brzmi jak pomoc. Nazywa bezpieczeństwo. Uznaje incydent. Używa właściwych rzeczowników katastrofy: ciśnienie, kwarantanna, koordynaty, exposure, recovery. Potem usuwa czasowniki, które mają znaczenie. Kto opóźnił ewakuację? Kto wycenił hold? Kto utrzymał Atlas weighting, gdy kolonia zawodziła?
 
-PL LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Oczyszczony język nie musi zaprzeczać oceanowi. Zaprzeczenie byłoby łatwe do obalenia. Pakiet działa, bo przyjmuje fizyczną katastrofę i przestawia odpowiedzialność w pending review. Koordynaty są pierwsze, bo firma chce custody nad przestrzenią claim, zanim zobowiąże się wobec ciał. Koszt kwarantanny idzie potem, bo żywi pracownicy i skażone dowody stają się liabilities przy tym samym biurku.
 
-## Terminal
-
-PL LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
-
-## Audio
-
-PL LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
-
-## Field Note
-
-PL LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Dla gracza ten transkrypt ma wywołać gniew bez niszczenia wiarygodności. Deep Reach nie jest kreskówkowym złoczyńcą krzyczącym z orbity. To firma, która dokładnie wie, które pola usunąć z wiadomości mogącej później stać się dowodem.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/pl_PL. -->

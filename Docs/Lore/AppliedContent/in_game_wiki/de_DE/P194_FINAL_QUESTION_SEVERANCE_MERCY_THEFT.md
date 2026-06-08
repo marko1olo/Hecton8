@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Finale Frage: Trennung, Gnade, Diebstahl"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# Finale Frage: Trennung, Gnade, Diebstahl
 
-DE LOC HOLD: Severance forces the player to define what kind of life Atlas-ocean continuity has become.
+Trennung zwingt den Spieler zu entscheiden, was Atlas-Ozean-Kontinuität geworden ist. Ist sie nur ein defektes Werkzeug, ist Schneiden Reparatur. Ist sie ein Lebenssystem, ist Schneiden Töten. Ist sie Zeugnis, kann Schneiden Beweisvernichtung sein.
 
 ## Scanner
 
-DE LOC HOLD: Severing Atlas is not a simple shutdown button.
+Atlas zu trennen ist kein Abschaltknopf. Es ist Chirurgie ohne saubere Anatomie.
 
 ## Terminal
 
-DE LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
+TRENNUNGSACHSE: Atlas-Kontinuität schneiden, Druckökologie isolieren, Deep-Reach-Payloadrouting verweigern, Beckenkollaps riskieren oder nur teilweise Reparaturerinnerung erhalten. Die Bedeutung hängt von Beweisen im letzten Raum ab.
 
 ## Audio
 
-DE LOC HOLD: A clean switch would be merciful. You do not get one.
+Ein sauberer Schalter wäre gnädig. Du bekommst keinen.
 
 ## Field Note
 
-DE LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+Dieselbe Tat kann gefangene Arbeiter befreien, Ozean-Maschinen-Leben töten, Deep Reach blockieren und einer lebenden Infrastruktur sich selbst stehlen.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/de_DE. -->

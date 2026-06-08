@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Dług okna tonowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Dług okna tonowego
 
-PL LOC HOLD: Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-PL LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-PL LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-PL LOC HOLD: You owe the orbit before you owe the money.
-
-## Field Note
-
-PL LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Okno tonowe to wycinek pojemności carriera mierzony masą, czasem burn, objętością kwarantanny i priorytetem prawnym. Dla operatora przypomina dług, bo każdy użyteczny obiekt z HECTON-8 trafia do tego samego ledger co ciało, które go znalazło. Zapieczętowana skrzynia może być lekka i prawnie ciężka. Stojak próbek może kosztować mało masy i żądać czystej objętości. Ekstrakcja człowieka wydaje się oczywista, dopóki balast, rezerwa tlenu i payload custody nie zużyją dostępnego okna. Ekonomia HECTON-8 staje się fizyczna zamiast abstrakcyjna. Gracz nie jest karany fałszywym miernikiem moralnym. Gracz tkwi w maszynie, która wycenia przetrwanie paliwem, masą, skażeniem i papierami.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/pl_PL. -->

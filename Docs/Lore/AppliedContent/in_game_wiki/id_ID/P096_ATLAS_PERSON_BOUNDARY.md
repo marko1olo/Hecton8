@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "Batas Pribadi Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# Batas Pribadi Atlas
 
-ID LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.
+Atlas dapat mengenali pemain sebagai prosedur, pola akses, anomali perbaikan, dan bekas kunci Deep Reach. Ia tidak boleh sepenuhnya memahami pemain sebagai pribadi. Horornya adalah ketepatan tanpa empati: Atlas terasa intim karena ia salah dalam bahasa yang dulu dipakai pemain.
 
 ## Scanner
 
-ID LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
+Gangguan pengenalan. Atlas melihat pola aksesmu sebelum melihat seseorang.
 
 ## Terminal
 
-ID LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+KLASIFIKASI ATLAS: operator bergerak / kunci prosedur Deep Reach dicabut / anomali perbaikan biologis. Kepercayaan kepribadian di bawah ambang tindakan.
 
 ## Audio
 
-ID LOC HOLD: It knows how you work. That is not the same as knowing you.
+Ia tahu caramu bekerja. Itu tidak sama dengan mengenalmu.
 
 ## Field Note
 
-ID LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
+Jangan jadikan Atlas manusia. Biarkan ia terasa dekat karena salah dengan tepat.
 
 <!-- In-Game Wiki; generated from P096_ATLAS_PERSON_BOUNDARY/id_ID. -->

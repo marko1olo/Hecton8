@@ -379,6 +379,7 @@ namespace Hecton8.World
         private const float QuantizedHeightScale = 1.0f / 65535.0f;
         private const float DefaultNormalEpsilon = 0.35f;
         private const float DefaultMaxLocalMeters = 32768f;
+        public const float DefaultSeaLevel = 14.02f;
         private const float DefaultQualityWeight = 1.0f;
         private const float DefaultBiomeBlendMeters = 3.5f;
         private const float DefaultErosionFlattenStrength = 0.35f;
@@ -511,7 +512,7 @@ namespace Hecton8.World
             data.SdfCellSize = sdfCellSize;
             data.SdfDimensions = sdfDimensions;
             data.SdfRange = math.max(sdfRange, 0.001f);
-            data.SeaLevel = 0f;
+            data.SeaLevel = DefaultSeaLevel;
             data.SeamSmoothMeters = 1.25f;
             data.MicroNoiseAmplitude = 0f;
             data.MicroNoiseFrequency = 0.025f;
@@ -3731,7 +3732,7 @@ namespace Hecton8.World
             data.SdfOverrideMask = sdfOverrideMask;
             data.ActiveSectorPointers = activeSectors;
             data.CounterBlocks = counterBlocks;
-            data.SeaLevel = 0f;
+            data.SeaLevel = GlobalWorldSampler.DefaultSeaLevel;
             data.NormalEpsilon = 0.5f;
             data.SeamSmoothMeters = 1.5f;
             data.MicroNoiseAmplitude = 0.75f;

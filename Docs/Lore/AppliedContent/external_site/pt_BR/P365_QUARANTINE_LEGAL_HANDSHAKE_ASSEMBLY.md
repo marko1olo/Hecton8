@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Quarantine Legal Handshake Assembly"
+title: "Conjunto de Handshake Legal de Quarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Quarantine Legal Handshake Assembly
+# Conjunto de Handshake Legal de Quarentena
 
-PT LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.
+O Conjunto de Handshake Legal de Quarentena torna extraction deliberadamente suja: um motor funcional ainda pode entregar o sobrevivente a corporate custody, verdade pública atrasada ou quarentena sem resolução.
 
 ## Scanner
 
-PT LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.
+Soquete de handshake. A cápsula pode estar mecanicamente pronta e ainda pertencer ao receiver errado.
 
 ## Terminal
 
-PT LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.
+RECOVERY HANDSHAKE: receiver key exigida. Keelmark aceita mass e lien. Recovery Compliance aceita coordinates e quarantine status. Public ledger aceita proof após atraso. Unkeyed launch vira custody dispute por padrão.
 
 ## Audio
 
-PT LOC HOLD: The last part is not metal. It is who gets to call you recovered.
+Quem responde decide o que resgate significa.
 
 ## Field Note
 
-PT LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+O último componente não é metal. É o nome do sistema autorizado a chamar você de recovered.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/pt_BR. -->

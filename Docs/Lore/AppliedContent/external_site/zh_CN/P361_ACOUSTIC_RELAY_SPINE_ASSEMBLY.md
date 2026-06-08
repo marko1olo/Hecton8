@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Acoustic Relay Spine Assembly"
+title: "声学中继脊柱组件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Acoustic Relay Spine Assembly
+# 声学中继脊柱组件
 
-ZH LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.
+声学中继脊柱组件把 HECTON-8 的逃离循环扎进打捞工程：声音必须熬过压力、航路几何和 custody，轨道才会相信它。
 
 ## Scanner
 
-ZH LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+破损的声学脊柱。它能把 pressure-code 敲进水里；轨道上听到的仍像受损的 custody noise。
 
 ## Terminal
 
-ZH LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY: 在 recovery window 前恢复低频声学脊柱。High-gain mast 丢失。Emergency buoy 不可靠。Black Keel 接收器只在 route proof 后接受 pressure-code。
 
 ## Audio
 
-ZH LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
+如果 Keel 听见我们，它听见的是伤口在敲管道。
 
 ## Field Note
 
-ZH LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+胶囊的第一次呼叫不是声音，而是陶瓷肋、缆线外皮、pinger floats，以及足够让海洋正确复述你的时序纪律。
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/zh_CN. -->

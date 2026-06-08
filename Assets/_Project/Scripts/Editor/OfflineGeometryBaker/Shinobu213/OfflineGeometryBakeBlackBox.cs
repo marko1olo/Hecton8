@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 
 namespace Hecton8.Editor.OfflineGeometry
@@ -145,20 +146,15 @@ namespace Hecton8.Editor.OfflineGeometry
             return array;
         }
 
-        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            try
-            {
-                UnregisterNativeMemorySentinel(array);
-            }
-            finally
-            {
-                array.Dispose();
-                array = default;
-            }
+            IntPtr trackedPointer = (IntPtr)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            array.Dispose();
+            array = default;
+            UnregisterNativeMemorySentinel(trackedPointer);
         }
 
         private static void RegisterNativeMemorySentinel<T>(NativeArray<T> array, string label, string lifetimeName) where T : struct
@@ -184,19 +180,21 @@ namespace Hecton8.Editor.OfflineGeometry
                 throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel rejected black-box ring registration.");
         }
 
-        private static void UnregisterNativeMemorySentinel<T>(NativeArray<T> array) where T : struct
+        private static void UnregisterNativeMemorySentinel(IntPtr trackedPointer)
         {
-            if (!array.IsCreated || !_sentinelRegistered)
+            if (trackedPointer == IntPtr.Zero || !_sentinelRegistered)
                 return;
 
             Type sentinelType = FindType("Hecton8.Core.NativeMemorySentinel");
-            MethodInfo method = sentinelType != null ? sentinelType.GetMethod("UnregisterNativeArray", BindingFlags.Public | BindingFlags.Static) : null;
+            MethodInfo method = sentinelType != null
+                ? sentinelType.GetMethod("UnregisterPointer", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(IntPtr) }, null)
+                : null;
             if (method == null)
-                throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel.UnregisterNativeArray unavailable.");
+                throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel.UnregisterPointer unavailable.");
 
             try
             {
-                method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array });
+                method.Invoke(null, new object[] { trackedPointer });
             }
             finally
             {

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Brine Canyon Density Ladder Guide"
+title: "塩水峡谷密度梯子ガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Brine Canyon Density Ladder Guide
+# 塩水峡谷密度梯子ガイド
 
-JA LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.
+brine 峡谷は深度を物理にする。下層航路が開く前に、密度層、船殻限界、圧力故障、resource pockets を教える。
 
 ## Scanner
 
-JA LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
+brine ladder 検出: 層状密度、偽の床、ソナー屈曲。縁を辿れ。ここでは開けた水が嘘をつく。
 
 ## Terminal
 
-JA LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: brine 峡谷は pressure shelves、current ledges、resource pockets、scanner false positives を隠す。Hull rating と density transition が、どの棚が航路でどれが落下かを決める。
 
 ## Audio
 
-JA LOC HOLD: A canyon is a staircase if your hull can pay for each step.
+船殻が各段の代金を払えるなら、峡谷は階段になる。
 
 ## Field Note
 
-JA LOC HOLD: Use for scanner tutorials and resource route articles.
+vane の影を階段のように使え。brine 中の空白読みは空間ではない。計器が議論に負けているだけだ。
 
 <!-- In-Game Wiki; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/ja_JP. -->

@@ -7,34 +7,34 @@ poi_tags: poi.tide_physics_archive;poi.cryosphere_stress_record
 biome_tags: biome.tide_pump;biome.drowned_admin
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Physikprotokoll der Großen Flut"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# Physikprotokoll der Großen Flut
 
-DE LOC HOLD: The Great Tide Physics Record keeps the catastrophe honest. HECTON-8 was vulnerable to tide resonance, ice collapse, storm surge and heat discharge. Deep Reach's guilt is visible in margins, evacuation capacity and decision priority, not in a fake magic cause.
+Das Physikprotokoll der Großen Flut hält die Katastrophe ehrlich. HECTON-8 war anfällig für Gezeitenresonanz, Eisbruch, Sturmflut und industrielle Wärmeabgabe. Deep Reachs Schuld liegt in Margen, Evakuierungskapazität und Entscheidungsprioritäten, nicht in einer erfundenen magischen Ursache.
 
 ## Scanner
 
-DE LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
+Das Flutmodell ist intakt. Das Meer brauchte keinen Bösewicht, nur schlechte Sicherheitsmargen.
 
 ## Terminal
 
-DE LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
+GREAT-TIDE-MODELL: Kryosphären-Scherung, resonanter Ozeanhub, künstliche Wärmeabgabe und Sturmstapelung überschreiten die sichere Evakuierungshülle um Faktor 3,7. Unabhängige Aufstiegsreserve: nicht finanziert.
 
 ## Audio
 
-DE LOC HOLD: The report was right. That is why they buried it.
+Der Bericht hatte recht. Darum haben sie ihn begraben.
 
 ## Field Note
 
-DE LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+Beschönige es nicht: echte Physik tötete Menschen, und Deep Reach sorgte dafür, dass diese Physik Opfer hatte.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/de_DE. -->

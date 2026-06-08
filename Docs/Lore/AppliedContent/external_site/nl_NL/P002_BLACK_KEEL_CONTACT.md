@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel-contact
 
-De Black Keel is de enige lijn terug naar de baan. Hij is niet dood, maar ook niet loyaal. Zijn gebroken berichten maken de hemel tot een overlevingssysteem: elk venster kan redding, leugen, monsterrapport of bewijs dragen.
-
-## Scanner
-
-Oude relaismast. Zout, krom, nog steeds op de juiste hemel gericht.
-
-## Terminal
-
-OPERATORSTATUS: levend. DROPCRAFT: niet herstelbaar. CLAIM: open. MONSTER: onbekend. BERGING: wacht op venster.
-
-## Audio
-
-Het venster sluit. Stuur één pakket. Kies voordat de stormband over de mast rolt.
-
-## Field Note
-
-Als een carrier vraagt wat je vond voordat hij vraagt of je ademt, ben jij niet de klant. Jij bent het gereedschap.
+Black Keel mag nooit lezen als een vriendelijk sterrenschip dat boven de wolken wacht. Het is een claim-poolmachine met een nuttige stem, beperkte baan en contractprioriteiten ouder dan de drop van de speler. Het eerste contact is waardevol omdat het bewijst dat de hemel niet leeg is. Het is beangstigend omdat de carrier de speler meet als operatorstatus, verlies van dropcraft, monsteronzekerheid, open claim en lienmassa voordat hij reddingstaal aanbiedt. Dat is HECTON-8s openingsdruk in het klein. De speler leeft, de carrier is echt, en de route naar huis is al gefilterd door weer, schuld, massa en degene die baat heeft bij de payload.
 
 <!-- External Site; generated from P002_BLACK_KEEL_CONTACT/nl_NL. -->

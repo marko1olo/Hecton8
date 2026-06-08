@@ -9,32 +9,18 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "Cortador de indução de baixa potência"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# Cortador de indução de baixa potência
 
-PT LOC HOLD: Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal.
+O primeiro cortador é perigoso porque parece permissão. Ele abre service hatches, parafusos e trancas de caixa, depois recusa a fantasia de que todo obstáculo é uma porta. Pressure glass, nervuras ativas e Atlas-grown seams fazem trabalhos que o jogador talvez ainda não entenda.
 
-## Scanner
-
-PT LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
-
-## Terminal
-
-PT LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
-
-## Audio
-
-PT LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
-
-## Field Note
-
-PT LOC HOLD: The cutter should feel valuable because it is limited.
+Essa limitação é o valor de design. A ferramenta pede que o jogador leia função antes de violência. HECTON-8 fica mais rico quando cortar é uma decisão, não um verbo universal.
 
 <!-- External Site; generated from P113_LOW_POWER_INDUCTION_CUTTER/pt_BR. -->

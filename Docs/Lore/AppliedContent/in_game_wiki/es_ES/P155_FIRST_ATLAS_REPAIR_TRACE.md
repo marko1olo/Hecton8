@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: First Atlas Repair Trace"
+title: "Primera Traza De Reparación Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: First Atlas Repair Trace
+# Primera Traza De Reparación Atlas
 
-ES LOC HOLD: The first Atlas trace is small and useful before it becomes horror: a cable is repaired around a human object, showing continuity logic without human priority.
+La primera traza Atlas es pequeña y útil antes de volverse horror: un cable reparado alrededor de un objeto humano muestra lógica de continuidad sin prioridad humana.
 
 ## Scanner
 
-ES LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+Biofilm de reparación en herida de cable. Las repeticiones acústicas coinciden con cadencia de mantenimiento Atlas, no con código de baliza colonial.
 
 ## Terminal
 
-ES LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+TRAZA DE MANTENIMIENTO ATLAS: fractura sellada; continuidad de cable restaurada; organic obstruction retenida como pressure-compatible substrate; human ID plate no clasificada como retrieval priority.
 
 ## Audio
 
-ES LOC HOLD: Atlas repair complete. Person not in work order.
+Reparación Atlas completa. Persona fuera de la orden de trabajo.
 
 ## Field Note
 
-ES LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+Selló el cable alrededor de una placa de nombre. Reparación útil. Mala categoría.
 
 <!-- In-Game Wiki; generated from P155_FIRST_ATLAS_REPAIR_TRACE/es_ES. -->

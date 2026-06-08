@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "低功率感应切割器"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# 低功率感应切割器
 
-CN LOC HOLD: Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal.
+第一把切割器危险，因为它感觉像许可。它打开service hatches、螺栓和箱锁，然后拒绝“每个障碍都是门”的幻想。pressure glass、活动肋骨和Atlas-grown seams正在执行玩家可能尚未理解的工作。
 
-## Scanner
-
-CN LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
-
-## Terminal
-
-CN LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
-
-## Audio
-
-CN LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
-
-## Field Note
-
-CN LOC HOLD: The cutter should feel valuable because it is limited.
+这个限制正是设计价值。工具要求玩家在暴力之前阅读功能。当切割是一项决定，而不是万能动词时，HECTON-8会更厚重。
 
 <!-- External Site; generated from P113_LOW_POWER_INDUCTION_CUTTER/zh_CN. -->

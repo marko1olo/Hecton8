@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: مطالبة تحت الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: مطالبة تحت الضغط
 
-AR LOC HOLD: Recovered P-63 route notes tie the opening contract to Black Keel's salvage window. The shelf is bright enough to navigate, but the useful facts are mechanical: bathydrop damage, pressure repair, scanner returns, and official wording that does not match the marks on the hardware. Keep the record spoiler-safe until deeper evidence is recovered.
+تظهر ملاحظات P-63 البداية كعمل إنقاذ بعقد دين. الحقائق المفيدة ميكانيكية: قدرة صعود مستهلكة، إلكترونيات مغمورة، أختام متضررة، قراءات ماسح، ولغة رسمية لا تفسر الانبعاجات.
 
 ## Scanner
 
-AR LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+سجل دخول Marauder. يربط عقد Black Keel بين P-63 وbathydrop متضرر ورهن 4.8 tonne-window وملف حادث لا يطابق آثار المعدن.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+عقدة أرشيف عام // مطالبة H8. نافذة Aegir مفتوحة. العمل: إصلاح أختام الضغط، مسح P-63، استرجاع الحمولة، حفظ الدليل، والعودة قبل إغلاق هندسة الاستقبال.
 
 ## Audio
 
-AR LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+مقتطف من مرحل Black Keel: "النافذة ضيقة. أصلح غلاف الهبوط، اقرأ آثار الضغط، وأعد الدليل مع الحمولة."
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+ملاحظة Marauder: الضوء على P-63 ليس أمانا. عد الهواء، أصلح الأختام قبل الحمولة، ولا تثق بملف لا يفسر الانبعاجات.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/ar_SA. -->

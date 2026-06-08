@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Lantern Drift Codex Card"
+title: "بطاقة كودكس انجراف المصابيح"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Lantern Drift Codex Card
+# بطاقة كودكس انجراف المصابيح
 
-AR LOC HOLD: Lantern Drift Codex Card links visual wonder with storm-window route pressure.
+Bloom انجراف المصابيح هو أجمل نظام إنذار في الرف. في الماء الهادئ ترسم الخلايا التيار، والحبيبات العالقة، وحلقات الكابلات، وشظايا pressure glass، وshell clamps المكسورة، والأخطار الصغيرة المسننة قبل أن تعثر عليها المصباح. لذلك يفيد عندما يكون المسار مزدحما بصريا أو يحتاج اللاعب إلى حدود واضحة وسط فوضى الشعاب. لكنه يجعل اللاعب قابلا للقراءة أيضا. اهتزاز cutter، أو مضخة تسعل، أو استخدام pinger متكرر، أو صدمة بدن، أو thruster مذعور يمكن أن يهيج bloom إلى أثر مضاء يحمل الموقع عبر شبكة الغذاء. شحنة العاصفة تضيف مشكلة أخرى: ممرات كاذبة، وبقايا شديدة السطوع، وتباين مسطح يخفي الضرر الصغير داخل جمال زائد. اتبع التوهج فقط عندما يتفق التيار والبقايا والفونا. اعمل بصوت عال داخل bloom فقط إذا كان العثور عليك جزءا من الخطة.
 
 ## Scanner
 
-AR LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Bloom انجراف المصابيح. عوالق مضيئة حيويا ترسم التيار والحطام في أشرطة. نافعة للحدود؛ خطرة حين يحولها ضجيج الأدوات إلى أثر مضاء.
 
 ## Terminal
 
-AR LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+عينة / BLOOM انجراف المصابيح / الدور: حدث رؤية ضحل، رسم تيار، مسجل اضطراب / قراءة آمنة: ضوء حافة ثابت، هالات حطام، توافق التيار والبقايا / ارفض: ممر كاذب مشحون بالعاصفة، bloom يسحق الأخطار الصغيرة، أثر أدوات يزداد ضوءا خلف العامل / ملاحظة مسار: الضوء بيانات، لا مأوى.
 
 ## Audio
 
-AR LOC HOLD: Pretty is not safe. Pretty is a reading.
+التوهج لا يساعدك. إنه يبلّغ عما سمعه الماء.
 
 ## Field Note
 
-AR LOC HOLD: Card teaches that beauty can be route information and route deception.
+استخدم bloom للحدود. لا تصلح بضجيج داخله. إذا تبعك التوهج، فقد يتبعه شيء آخر أيضا.
 
 <!-- In-Game Wiki; generated from P293_LANTERN_DRIFT_CODEX_CARD/ar_SA. -->

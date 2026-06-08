@@ -7,34 +7,34 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "החזקת פינוי של ג'ונו קייד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# החזקת פינוי של ג'ונו קייד
 
-HE LOC HOLD: Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+ג'ונו קייד מוכיחה שהמושבה לא פשוט קפאה. אנשים עמדו בתור, מרשלים נתנו מסלולים, ומערכת היציאה ענתה ב-authorization holds, בדיקות הסגר וקדימות payload. האסון נעשה חמור יותר כי הדלת הייתה אמיתית.
 
 ## Scanner
 
-HE LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
+ג'ונו קייד פתחה את התור ופגעה בקיר של הסגר, הסמכה ודירוג payload.
 
 ## Terminal
 
-HE LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+סטטוס פינוי KADE: route red; manual override נדחה; שער הסגר מחכה ל-Atlas continuity check; payload lift מקבל קדימות עד פתרון claim seal.
 
 ## Audio
 
-HE LOC HOLD: She kept counting people after the system started counting rooms.
+היציאה הייתה קיימת. לכן ההחזקה חשובה.
 
 ## Field Note
 
-HE LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+מרשלית פינוי יכולה להזיז אנשים. היא לא יכולה להזיז סעיף שהדלת שייכת לו.
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/he_IL. -->

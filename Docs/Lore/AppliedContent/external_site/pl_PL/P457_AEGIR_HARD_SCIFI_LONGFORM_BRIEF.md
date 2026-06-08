@@ -9,32 +9,36 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: niebo odmawiające ratunku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Aegir Transfer Windows
+# Aegir: niebo odmawiające ratunku
 
-PL LOC HOLD: Aegir is reachable by machinery, timing and debt. No faster-than-light drive crosses the route. Probe packets mapped the warm dwarf system first, then beam infrastructure and pellet-fusion freight built enough traffic to move seed mass, claim platforms and slow human decisions into the same ledger. HECTON-8 sits inside that machinery as a pressure moon under Aegir, bright at the surface, dangerous by depth and useful enough that nobody could leave it alone. Black Keel does not ignore a survivor because rescue is impossible. It waits because recovery requires several clocks to agree: relay delay, carrier position, descent mass, storm shutters, custody signatures and a window narrow enough to close while a person is still sealing a capsule. Every visible moon, relay path and transfer band is part of the same route accounting. That is why help reaches HECTON-8 first as a number, then as a signal, and only much later as hardware.
+## Niebo nie jest puste
 
-## Scanner
+Aegir to maszyna nad oceanem: grawitacja, promieniowanie, geometria przekaźników, pogoda gruzu, czas kontraktów i prawo odzysku.
 
-PL LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Nie ma ansible ani FTL. Ran/Aegir to skala lat świetlnych, a lokalne okna zależą od orbit, burz, cieni księżyców i kolejek custody. Prawdziwy pakiet może być spóźniony. Czysty pakiet może być prawnie martwy.
 
-## Terminal
+Drabina księżyców nazywa Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON i Mute. Dokładne stałe należą do przyszłych tabel. Pole używa klas: cień, impuls, rozproszenie, pióropusz, opóźnienie i odbiorca.
 
-PL LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+Black Keel zostaje wysoko, bo zejście kosztuje ciepło, paliwo, ekspozycję, harmonogram i odpowiedzialność. Powrót wymaga przekaźnika, sprzętu wznoszenia, czasu, pogody, kwarantanny, hasha ładunku i okna masy. Spokój nośnika to automatyka z księgą.
 
-## Audio
+## Niebo Jest Maszyna
 
-PL LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Aegir nie moze wygladac jak namalowane tlo. To najwieksza maszyna historii: gwiazda, drabina ksiezycow, relay shadows, pellet lanes, braking wakes, ice scatter, storm plume i guidance lag zlozone w wrogi harmonogram. Gracz nie musi widziec wszystkiego naraz. Musi czuc, ze kazda wiadomosc, zrzut i odbior maja geometrie.
 
-## Field Note
+Dlatego ratunek nie moze po prostu przyleciec. Nie ma korekty FTL, ukrytego ansible ani heroicznego carriera ignorujacego mase. Route window jest najpierw pozwoleniem fizyki, potem prawa. Black Keel opuszcza tender, bo lokalna robota jest waska, nie dlatego, ze ma cud.
 
-PL LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+## Co Znaczy Spojrzec W Gore
+
+Patrzenie w gore na HECTON-8 ma byc praktyczne i gorzkie. Niebo nie jest nadzieja. Jest timingiem. Aegir decyduje, kiedy pakiet wzniesie sie, kiedy receiver odpowie, kiedy claim zostanie potwierdzony i kiedy gracz zostaje sam ze starymi instrukcjami.
+
+Dobry artykul astronomiczny powinien kazac czytac swiatlo ksiezyca jako ryzyko. Kestrel sie przesuwa, relay shadow sie zmienia. Ice scatter rosnie, nawigacja staje sie plotka. Silent Orbit milczy, a stary metal nadal moze decydowac o terazniejszosci.
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/pl_PL. -->

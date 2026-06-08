@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Transkrip Audio Dossier Pekerja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Worker Dossier Audio Transcript Seed
+# Transkrip Audio Dossier Pekerja
 
-ID LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.
+Transkrip dossier pekerja memberi koloni tenggelam populasi kerja sebelum mereka menjadi bukti. Yang penting adalah rutinitas: nama, tugas, alat, matematika air yang buruk, dan kebiasaan menunggu shift berikutnya.
 
 ## Scanner
 
-ID LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Audio pekerja pulih mengikat nama, tugas, loker, hitung air, dan route hold ke satu rantai custody manusia.
 
 ## Terminal
 
-ID LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
+DOSSIER AUDIO WKR-SET: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold.
 
 ## Audio
 
-ID LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
+Catatan shift. Ruang pompa masih bernapas. Segel loker macet. Hitung air kurang. Bilang pada Kade papan itu berbohong.
 
 ## Field Note
 
-ID LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Untuk dossier barks, caption loker, dan wiki pekerja. Buat suara sibuk, bukan puitis.
 
 <!-- In-Game Wiki; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/id_ID. -->

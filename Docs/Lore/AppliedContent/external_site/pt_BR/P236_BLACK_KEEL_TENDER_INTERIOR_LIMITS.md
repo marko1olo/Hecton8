@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Black Keel Tender Interior Limits"
+title: "Limites internos do tender Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Black Keel Tender Interior Limits
+# Limites internos do tender Black Keel
 
-PT LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel é infraestrutura de salvage hard-sci-fi, não uma nave privada heroica. Seu interior é construído em torno de custódia de amostras, packet law, manuseio de drones, mangas de quarentena e pressão de dívida. A nave pode ser uma linha de vida e ainda permanecer estruturalmente indiferente à pessoa segurando essa linha.
 
 ## Scanner
 
-PT LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+O tender tem racks para amostras, drones, pacotes selados e carga sob lien antes de ter um beliche digno de um passageiro vivo.
 
 ## Terminal
 
-PT LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: sem deep rescue crew, sem reserva de shuttle atmosférico, sem ascent burn gratuito fora de lien authority, sem quartermaster humano.
 
 ## Audio
 
-PT LOC HOLD: The ship brought you here as cargo with hands.
+A nave trouxe você aqui como carga com mãos.
 
 ## Field Note
 
-PT LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel é um claim tender de trabalho: alugado, apreendido por dívida, automatizado e otimizado para custódia antes de resgate.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/pt_BR. -->

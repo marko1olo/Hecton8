@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Quarantäne-Hold: abgestandene Luft"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Quarantäne-Hold: abgestandene Luft
 
-DE LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+Quarantäne-Hold rettet den Körper und suspendiert die agency. Der Spieler ist dem Druck entkommen, aber nicht der custody. Jeder Atemzug wird gemessen, während der Beweis hinter Prüfungssprache wartet.
 
 ## Scanner
 
-DE LOC HOLD: You are alive, sealed, and still not free.
+Körper geborgen. Zeuge versiegelt. Luftration aktiv.
 
 ## Terminal
 
-DE LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+QUARANTÄNE-HOLD: Auftragnehmer lebend geborgen; Luftration aktiv; sample custody ungelöst; externe Aussage verzögert bis Kontaminationsprüfung, claimant-Anfechtung und Keelmark-Verlustprüfung.
 
 ## Audio
 
-DE LOC HOLD: The hatch opens only to another closed hatch.
+Die Luke öffnet sich zu einer weiteren geschlossenen Luke.
 
 ## Field Note
 
-DE LOC HOLD: This is the bureaucratic version of drowning.
+Das ist die administrative Form des Ertrinkens.
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/de_DE. -->

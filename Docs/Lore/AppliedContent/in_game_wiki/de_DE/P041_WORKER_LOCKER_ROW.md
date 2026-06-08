@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Reihe der Arbeiter-Spinde
 
-Dieser Fund macht HECTON-8 zu einem Arbeitsplatz mit Gewohnheiten, Schulden und Frontier-Kultur.
+Arbeiterspindreihen erden HECTON-8 in gewöhnlicher Arbeit. Werkzeuge, Farbe, Essensguthaben und Grenzmarken erscheinen, bevor die Katastrophe zur Theorie wird.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Objekte machen die Kolonie menschlich: Namen, Werkzeuge, Essensguthaben und Arbe
 
 ## Terminal
 
-Kolonieaudit: persönliche Fächer und Barnard-Markierungen verbinden den Spieler mit echten Crewmitgliedern.
+KOLONIEAUDIT: persönliche Fächer und Barnard-Markierungen binden die Spindreihe an benannte Crew und Arbeitsrouten.
 
 ## Audio
 

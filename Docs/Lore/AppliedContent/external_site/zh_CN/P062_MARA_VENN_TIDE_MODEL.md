@@ -8,33 +8,19 @@ biome_tags: biome.tide_gauge;biome.glacier_break
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+spoiler_tier: 1
+title: "玛拉·文恩潮汐模型"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# 玛拉·文恩潮汐模型
 
-CN LOC HOLD: Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning.
+玛拉·文恩写的不是预言。她写的是带误差棒、疏散余量和糟糕时间点的模型。在Aegir春季几何下，cryosphere shear可能超过可用升运能力。殖民地行动不需要完美确定性。它需要有人把曲线尾部当成人，而不是成本。
 
-## Scanner
-
-CN LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
-
-## Terminal
-
-CN LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
-
-## Audio
-
-CN LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
-
-## Field Note
-
-CN LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+Deep Reach保留了模型，却削弱了反应。警告变成monitor，疏散余量变成未来预算问题，后来的公开记录称洪水不可读。玩家应当从文件形状里感到谎言：潮汐是自然的，但灾难经过编辑。
 
 <!-- External Site; generated from P062_MARA_VENN_TIDE_MODEL/zh_CN. -->

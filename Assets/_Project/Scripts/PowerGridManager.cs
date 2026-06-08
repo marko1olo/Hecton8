@@ -338,6 +338,14 @@ namespace Hecton8.Power
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregister();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.GasDynamicsRuntime)
             {
                 _wfcOutpostPowerBoot?.BindGasDynamics(currentService as IGasDynamicsSolver);
@@ -781,7 +789,7 @@ namespace Hecton8.Power
         {
             if (_hotSwapRegistered)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _hotSwapRegistered = false;
             }
 

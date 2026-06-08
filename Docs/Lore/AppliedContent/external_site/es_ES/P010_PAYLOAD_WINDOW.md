@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Ventana de carga
 
-Payload Window define la estructura final de HECTON-8. La última pregunta no es solo qué cree el jugador, sino qué puede sacar del océano.
-
-## Scanner
-
-Paquete de ascenso improvisado. Puede salir del océano si masa, clima y geometría del carrier coinciden.
-
-## Terminal
-
-PAYLOAD SLOT: limitado. WINDOW: abierta. ROUTE: disputada. CLAIM VALUE: variable. EVIDENCE STATE: insuficiente para disputa limpia.
-
-## Audio
-
-La ventana está abierta. No seguirá abierta para todo.
-
-## Field Note
-
-Salir es una ruta. Salir limpio es un mito.
+El último problema en HECTON-8 no es un menú moral flotando sobre el océano. Es una ventana de carga. El paquete de ascenso tiene límite de masa, el clima tiene tiempo, Aegir tiene restricciones de radiación y órbita, y Black Keel tiene reglas de receptor antes que piedad. Cada final pregunta qué deja la luna y quién lo recibe. Las coordenadas pueden comprar recuperación y entregar la escena del crimen a Deep Reach. La evidencia puede llegar a un libro público y quitar al jugador el control de la consecuencia. Las muestras pueden pagar deuda mientras fortalecen el sistema que enterró nombres de trabajadores. El silencio puede negar a la corporación y dejar la prueba bajo el agua. La ventana no es justicia. Es la forma por la que la justicia debe apretarse.
 
 <!-- External Site; generated from P010_PAYLOAD_WINDOW/es_ES. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # KSENON-OMEGA: RAFINACJA I WŁAŚCIWOŚCI
 
 > **Źródło:** Megacorporacja Deep Reach, Niejawny Manifest Chemiczny.

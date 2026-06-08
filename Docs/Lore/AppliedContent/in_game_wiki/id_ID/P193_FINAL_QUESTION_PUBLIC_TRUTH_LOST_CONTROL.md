@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Pertanyaan Akhir: Kebenaran Publik, Kendali Hilang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Pertanyaan Akhir: Kebenaran Publik, Kendali Hilang
 
-ID LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+Rute kebenaran publik menghancurkan penutupan bersih. Ia juga menghancurkan kepemilikan atas konsekuensi. Bukti dapat menyelamatkan nama dari penghapusan, menciptakan tekanan penyelamatan nyata, dan mengundang setiap predator dengan meja hukum atau kanal doa.
 
 ## Scanner
 
-ID LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+Mempublikasikan bukti mencegah penghapusan. Itu juga memberikan temuan kepada semua orang yang cukup cepat untuk memakainya dengan buruk.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+SUMBU KEBENARAN PUBLIK: hash saksi, rantai tanggung jawab, status Atlas, koordinat blue debt, dan rute payload bisa keluar dari kontrol Deep Reach. Setelah dirilis, operator tidak lagi mengendalikan tindakan penerima, reaksi pasar, atau siapa yang datang pertama.
 
 ## Audio
 
-ID LOC HOLD: Truth leaves your hand faster than rescue ever could.
+Kebenaran lepas dari tanganmu lebih cepat daripada penyelamatan bisa tiba.
 
 ## Field Note
 
-ID LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+Kebenaran publik bukan keadilan murni. Ia menciptakan sanksi, kultus, lelang, gugatan, tekanan penyelamatan, dan claim tiruan.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/id_ID. -->

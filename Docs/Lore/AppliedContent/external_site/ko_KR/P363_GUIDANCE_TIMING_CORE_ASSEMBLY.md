@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Guidance Timing Core Assembly"
+title: "유도 타이밍 코어 조립체"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Guidance Timing Core Assembly
+# 유도 타이밍 코어 조립체
 
-KO LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.
+유도 타이밍 코어 조립체는 HECTON-8의 우주비행을 단단하게 유지한다. extraction은 시계, 그림자, 손상된 신뢰로 된 항로 문제다.
 
 ## Scanner
 
-KO LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+빈 timing core. Aegir 기하가 상승이 recovery, capture, 침묵 중 무엇이 될지 결정한다.
 
 ## Terminal
 
-KO LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: 캡슐 시계를 Aegir window, Black Keel receiver lane, moon relay shutter, storm-plume drift에 정렬. 늦은 packets는 증거 손실이 되고, 이른 packets는 capture noise가 된다.
 
 ## Audio
 
-KO LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+위쪽은 방향이 아니다. 증인이 있는 창이다.
 
 ## Field Note
 
-KO LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+HECTON-8에서 단순한 위쪽은 없다. 수신기, 그림자, 폭풍 표류, 그리고 네 공포보다 이미 오래된 packet queue가 있다.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/ko_KR. -->

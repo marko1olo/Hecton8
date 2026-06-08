@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ladder"
+title: "סולם הירחים של Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ladder
+# סולם הירחים של Aegir
 
-HE LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit.
+סולם הירחים של Aegir נותן ל-HECTON-8 אסטרונומיה מקומית שימושית: ירחים אחרים מסבירים חלונות נתיב, claims מתים, שמועות salvage ותזמון שחזור שנכשל.
 
 ## Scanner
 
-HE LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.
+מפת סולם ירחים. HECTON-8 הוא סכנת עבודה במערכת נעה, לא שלב מבודד.
 
 ## Terminal
 
-HE LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+ירחי AEGIR הראשיים // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. מודל transfer ו-eclipse מצורף.
 
 ## Audio
 
-HE LOC HOLD: The map has more moons than mercy.
+במפה יש יותר ירחים מרחמים.
 
 ## Field Note
 
-HE LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.
+Skarn שורף. Vela משילה קרח. Anvil מזינה מתכת. Kestrel חותך ממסרים. HECTON טובע.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/he_IL. -->

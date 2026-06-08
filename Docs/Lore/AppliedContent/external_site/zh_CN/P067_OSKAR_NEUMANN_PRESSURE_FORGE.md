@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "奥斯卡·诺伊曼压力锻炉"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# 奥斯卡·诺伊曼压力锻炉
 
-CN LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
+奥斯卡·诺伊曼压力锻炉是HECTON-8逃离逻辑中的制造条目：玩家必须用压力世界的工艺搭出上升路径，而不是找到一个通用火箭钥匙。
 
 ## Scanner
 
-CN LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+奥斯卡·诺伊曼留下了一份锻造配方，用来制作足够坚固的夹环，让上升摇篮不只是棺材。
 
 ## Terminal
 
-CN LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+诺伊曼，O。锻造笔记：压力玻璃粉若冷态混入，会毁掉第一道密封。将环置于喷口抽流下加热，在盐水夹套内淬火，然后以两倍上升载荷测试。
 
 ## Audio
 
-CN LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+发射不过是一扇向上移动的压力门。像造门一样造它。
 
 ## Field Note
 
-CN LOC HOLD: The exit needs craft, not courage.
+出路需要手艺，不是勇气。
 
 <!-- External Site; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/zh_CN. -->

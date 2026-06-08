@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "יציאה חומרית: זיכויים מרים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# יציאה חומרית: זיכויים מרים
 
-HE LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.
+יציאה חומרית היא סוף אמיתי ל-Marauder שמתייחס אל HECTON-8 כאל עבודה בתשלום. השחקן יכול לצאת עם חוב מופחת ועם פנקס carrier מרוצה. המחיר נראה לעין: המושבה נשארת זירת פשע שהומרה לערך תביעה, ו-Deep Reach מקבל נתיב חזרה טוב יותר מזה שהעובדים קיבלו החוצה.
 
 ## Scanner
 
-HE LOC HOLD: You can leave richer and still fail the place.
+חומר לחץ התקבל. חלון יציאה ניתן לרכישה. שמות העובדים עדיין לא הוצלבו.
 
 ## Terminal
 
-HE LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+קבלת יציאה חומרית: חומר לחץ custody-grade התקבל; lien הופחת; payload הראיות חלקי; פנקס העובדים הנעדרים נשאר במחלוקת claimant; עדיפות Recovery Compliance הועלתה.
 
 ## Audio
 
-HE LOC HOLD: The invoice clears before the names do.
+החשבונית נסגרת לפני השמות.
 
 ## Field Note
 
-HE LOC HOLD: This ending should be real credits, not a fake game over.
+Black Keel יתמחר את הדגימה לפני שיתמחר את המתים. זו אינה תקלה בחוזה.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/he_IL. -->

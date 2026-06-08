@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: No-FTL Route Delay"
+title: "Задержка маршрута без FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: No-FTL Route Delay
+# Задержка маршрута без FTL
 
-RU LOC HOLD: HECTON-8 has no instant rescue channel. Aegir was reached through precursor probes, beam infrastructure, pellet-fusion freight and braking systems that treat human urgency as one more payload constraint. A message can cross the route before the hardware that would make the message useful. That delay is why Black Keel can hold a valid claim while the player still has to fix seals by hand.
+У HECTON-8 нет мгновенного канала спасения. Систему Aegir достигли precursor probes, лучевая инфраструктура, pellet-fusion freight и тормозные системы, где срочность считается еще одним ограничением массы. Сообщение может прийти раньше железа, которое сделало бы сообщение полезным. Carrier может признать твое существование, оценить payload и держать valid claim, но не иметь права тратить descent mass при неверной погоде, relay angle или custody window. Публичный текст о перелете обязан держать это видимым: изоляция здесь возникает из инженерии, права и логистики сразу. Black Keel может быть рядом юридически и недостижим физически. Поэтому игрок чинит уплотнения руками даже после ответа relay.
 
 ## Scanner
 
-RU LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+Транзитная запись. Трафик Aegir зависит от precursor probes, beam lanes, pellet-fusion freight, тормозной массы, возраста пакета, relay custody и юридической задержки.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+ПУБЛИЧНЫЙ АРХИВНЫЙ УЗЕЛ // ПРЕДЕЛ ТРАНЗИТА. FTL отсутствует. Ansible отсутствует. Живое спасение требует физического transfer, braking architecture, carrier position, descent mass и действующего local window.
 
 ## Audio
 
-RU LOC HOLD: Help can be legally present and physically years away.
+Помощь может быть юридически рядом и физически в годах пути.
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+Заметка Marauder: когда relay отвечает, спроси, сколько лет ответу и какую массу он способен сдвинуть.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/ru_RU. -->

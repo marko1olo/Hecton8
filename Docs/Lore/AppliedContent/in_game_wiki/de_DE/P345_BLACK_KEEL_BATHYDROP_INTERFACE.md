@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Black Keel Bathydrop Interface"
+title: "Black-Keel-Bathydrop-Schnittstelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Black Keel Bathydrop Interface
+# Black-Keel-Bathydrop-Schnittstelle
 
-DE LOC HOLD: The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+Der erste Fluchtblocker ist Technik. Black Keel existiert noch über dem Wasser, aber die beschädigte Bathydrop-Schnittstelle verbindet Oberfläche, Orbit und Timing nicht durch bloßen Willen. Reparatur braucht tiefentaugliche Bergung, saubere Dichtungen, funktionierende Relaisgeometrie und ein Startfenster, das der Träger akzeptiert.
 
 ## Scanner
 
-DE LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+Bathydrop-Schnittstelle beschädigt: Oberflächenrückkehrkette kann ohne druckfeste Teile, Relaistiming und saubere Aufstiegsklinke nicht schließen.
 
 ## Terminal
 
-DE LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+KAPSELBERICHT: Hitzeschildtrim überlebt. Auftriebstor verbogen. Komm-Mast geflutet. Aufstiegsklinke kontaminiert. Reparatur erfordert Druckkeramik, Dichtmittel, Relaismathematik und verifiziertes Fenster.
 
 ## Audio
 
-DE LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
+Du hast nicht das ganze Schiff verloren. Du hast die eine Kette verloren, die das Schiff wichtig macht.
 
 ## Field Note
 
-DE LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Fluchtdatensatz der ersten Stunde: Der Träger ist da, aber die Kette zwischen Spieler, Meer, Oberfläche und Orbit ist in benannten Teilen gebrochen.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/de_DE. -->

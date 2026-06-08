@@ -1,26 +1,29 @@
 {
-    "schema":  "H8.APPLIED_LORE_RELEASE_SET.V0",
-    "release_set_id":  "RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE",
-    "status":  "canonical_source_candidate_pending_manifest_wiring_native_localization_and_bake",
-    "packets":  [
-                    "P465_DEEP_REACH_MANAGED_VARIANCE_BRIDGE",
-                    "P466_WORKER_TAG_EVIDENCE_BRIDGE",
-                    "P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE",
-                    "P476_AEGIR_CONTINUITY_HOLDINGS_SHELL_CHAIN_BRIDGE",
-                    "P477_RECOVERY_COMPLIANCE_RETURN_ACTION_QUEUE_BRIDGE",
-                    "P478_ATLAS_CONTINUITY_OFFICE_WORKER_SAFETY_WAIVER_BRIDGE",
-                    "P479_KEELMARK_LOSS_DESK_CONVERSION_BRIDGE"
-                ],
-    "authoring_packet_sources":  [
-                                     "Docs/Lore/AppliedContent/production_packets/P465_DEEP_REACH_MANAGED_VARIANCE_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P466_WORKER_TAG_EVIDENCE_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P476_AEGIR_CONTINUITY_HOLDINGS_SHELL_CHAIN_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P477_RECOVERY_COMPLIANCE_RETURN_ACTION_QUEUE_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P478_ATLAS_CONTINUITY_OFFICE_WORKER_SAFETY_WAIVER_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P479_KEELMARK_LOSS_DESK_CONVERSION_BRIDGE.production.md"
-                                 ],
-    "canonical_importer_ready":  false,
-    "runtime_ready":  false,
-    "evidence_class":  "STATIC_SOURCE"
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE",
+  "status": "canonical_source_localized_pages_pending_native_review_and_h8bin_bake",
+  "packets": [
+    "P465_DEEP_REACH_MANAGED_VARIANCE_BRIDGE",
+    "P466_WORKER_TAG_EVIDENCE_BRIDGE",
+    "P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE",
+    "P476_AEGIR_CONTINUITY_HOLDINGS_SHELL_CHAIN_BRIDGE",
+    "P477_RECOVERY_COMPLIANCE_RETURN_ACTION_QUEUE_BRIDGE",
+    "P478_ATLAS_CONTINUITY_OFFICE_WORKER_SAFETY_WAIVER_BRIDGE",
+    "P479_KEELMARK_LOSS_DESK_CONVERSION_BRIDGE"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P465_DEEP_REACH_MANAGED_VARIANCE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P466_WORKER_TAG_EVIDENCE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P476_AEGIR_CONTINUITY_HOLDINGS_SHELL_CHAIN_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P477_RECOVERY_COMPLIANCE_RETURN_ACTION_QUEUE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P478_ATLAS_CONTINUITY_OFFICE_WORKER_SAFETY_WAIVER_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P479_KEELMARK_LOSS_DESK_CONVERSION_BRIDGE.production.md"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE.packets.json"
+  ],
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "evidence_class": "STATIC_SOURCE"
 }

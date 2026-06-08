@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Beam Sail and Pellet Lane"
+title: "Layar Berkas dan Jalur Pellet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Beam Sail and Pellet Lane
+# Layar Berkas dan Jalur Pellet
 
-ID LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+Layar berkas, jalur pellet, tahap tangkap fusi, dan magsail membuat kargo nearlight praktis tanpa FTL. Kapal berangkat membawa tangki, es perisai, radiator, dan otoritas kendali, lalu meminjam sisa mesinnya dari rute: daya berkas di belakang, massa pellet yang disetel ke jalurnya, dan penerima yang bersedia memiliki pengereman. Itu sebabnya Aegir bisa dicapai tetapi tetap terasa ditinggalkan. Koridor bisa memindahkan kargo terjadwal; ia tidak bisa dipanggil seperti tali penyelamat.
 
 ## Scanner
 
-ID LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+Catatan jalur transit: layar itu tidak mendorong dirinya sendiri. Ia menyewa daya dari array di belakang kapal dan massa dari arus pellet di depannya.
 
 ## Terminal
 
-ID LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+STATUS JALUR: array berkas terbayar. Arus pellet 0,8 ppm di luar kontrak. Burn tangkap masih mungkin. Tanpa pemilik rem, kargo cepat menjadi puing cepat.
 
 ## Audio
 
-ID LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+Kapal cepat karena setengah mesinnya berada di luar kapal.
 
 ## Field Note
 
-ID LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Jika catatan hanya memuji berkas, terus baca sampai ia menyebut pemilik tangkap.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/id_ID. -->

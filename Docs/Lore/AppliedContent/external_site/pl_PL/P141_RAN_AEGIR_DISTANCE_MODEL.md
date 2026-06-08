@@ -8,33 +8,17 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "PL LOC HOLD: Ran-Aegir Distance Model"
+spoiler_tier: 1
+title: "Model odległości Ran-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Ran-Aegir Distance Model
+# Model odległości Ran-Aegir
 
-PL LOC HOLD: The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy.
-
-## Scanner
-
-PL LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
-
-## Terminal
-
-PL LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
-
-## Audio
-
-PL LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
-
-## Field Note
-
-PL LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+Odległość Ran-Aegir to liczba, która zmienia izolację w fizykę. Zasięg klasy dziesięciu lat świetlnych wystarcza sondom, frachtowi, staremu prawu i korporacyjnemu apetytowi, lecz jest zbyt długi, by współczucie dotarło w rytmie ludzkiego oddechu. HECTON-8 używa tej luki jako presji: wiadomości poruszają się szybciej niż statki, roszczenia szybciej niż ludzie, a zalany pokój umiera, zanim odpowiedź z wewnętrznych światów stanie się istotna.
 
 <!-- External Site; generated from P141_RAN_AEGIR_DISTANCE_MODEL/pl_PL. -->

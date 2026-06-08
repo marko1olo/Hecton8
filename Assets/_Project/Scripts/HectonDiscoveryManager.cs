@@ -34,6 +34,10 @@ namespace Hecton8.Gameplay
         private const byte FaunaBestiaryVulnerabilityThreshold = 10;
         private const int DiscoveredBiomeCapacity = MaxBiomeId - MinBiomeId + 1;
         private const string MissingBiomeFallbackName = "BIOME UNKNOWN";
+        private static readonly uint _BiomeDiscoveryNotificationMissWarningHash =
+            unchecked((uint)LocHash.Compute("HectonDiscoveryManager.BiomeNotificationMiss"));
+        private static readonly uint _BiomeDiscoveryNotificationContextHash =
+            unchecked((uint)LocHash.Compute("HectonDiscoveryManager.BiomeNotification"));
 
         // ----------------------------------------------------------
         //  INSPECTOR - REFERENCES
@@ -49,7 +53,7 @@ namespace Hecton8.Gameplay
 
         // COLD ALLOC: HashSet<int>[DiscoveredBiomeCapacity] - discovered biome ids keyed by biome registry id - owner: HectonDiscoveryManager
         private readonly HashSet<int> _discoveredBiomeIds = new HashSet<int>(DiscoveredBiomeCapacity);
-        // COLD ALLOC: Dictionary<uint,byte>[64] — runtime fauna bestiary observation counters keyed by scan entry hash — owner: HectonDiscoveryManager
+        // COLD ALLOC: Dictionary<uint,byte>[64] â€” runtime fauna bestiary observation counters keyed by scan entry hash â€” owner: HectonDiscoveryManager
         private readonly Dictionary<uint, byte> _faunaInteractionCounts = new Dictionary<uint, byte>(64);
         private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(160); // COLD ALLOC: char[160] - biome discovery notification staging buffer - owner: HectonDiscoveryManager
         private bool _registeredWithSaveManager;
@@ -57,6 +61,8 @@ namespace Hecton8.Gameplay
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
+        private int _biomeDiscoveryNotificationMissCount;
 
         // ----------------------------------------------------------
         //  PUBLIC PROPERTIES
@@ -71,6 +77,7 @@ namespace Hecton8.Gameplay
         /// Kolichestvo otkrytyh biomov.
         /// </summary>
         public int TotalDiscovered => _discoveredBiomeIds.Count;
+        public int BiomeDiscoveryNotificationMissCount => _biomeDiscoveryNotificationMissCount;
 
         /// <inheritdoc />
         public int SavePriority => 20;
@@ -111,6 +118,7 @@ namespace Hecton8.Gameplay
             UnregisterFromScanEvents();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
+            ClearBiomeDiscoveryNotificationDiagnostics();
 
         }
 
@@ -211,6 +219,7 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void LoadFromSaveData(SaveData data)
         {
+            ClearBiomeDiscoveryNotificationDiagnostics();
             _discoveredBiomeIds.Clear();
             LastDiscoveredId = InvalidBiomeId;
 
@@ -267,7 +276,24 @@ namespace Hecton8.Gameplay
             if (!AppendTemplateSingleArgument(ref _notificationBuffer, template, ResolveBiomeNameSpan(biomeId)))
                 return;
 
-            NotificationEvents.TryPushInfo(_notificationBuffer.AsSpan());
+            if (NotificationEvents.TryPushInfo(_notificationBuffer.AsSpan()))
+                return;
+
+            ReportBiomeDiscoveryNotificationMiss(biomeId);
+        }
+
+        private void ReportBiomeDiscoveryNotificationMiss(int biomeId)
+        {
+            _biomeDiscoveryNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _BiomeDiscoveryNotificationMissWarningHash,
+                _BiomeDiscoveryNotificationContextHash ^ unchecked((uint)biomeId),
+                Mathf.Max(1, _biomeDiscoveryNotificationMissCount));
+        }
+
+        private void ClearBiomeDiscoveryNotificationDiagnostics()
+        {
+            _biomeDiscoveryNotificationMissCount = 0;
         }
 
         private ReadOnlySpan<char> ResolveBiomeNameSpan(int biomeId)
@@ -350,13 +376,18 @@ namespace Hecton8.Gameplay
             if (_registeredWithSaveManager || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _registeredWithSaveManager = true;
         }
 
@@ -389,14 +420,21 @@ namespace Hecton8.Gameplay
 
         private void UnregisterFromSaveManager()
         {
-            if (!_registeredWithSaveManager)
+            if (!_registeredWithSaveManager && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _registeredWithSaveManager = false;
+            _saveService = null;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         public void OnGlobalRegistryServiceReplaced(

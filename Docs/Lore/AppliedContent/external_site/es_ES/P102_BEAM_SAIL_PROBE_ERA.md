@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "Era de sondas de vela por haz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Era de sondas de vela por haz
 
-ES LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-ES LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-ES LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-ES LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-ES LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+La era de sondas de vela por haz es el comienzo silencioso de Aegir. Pequeñas cargas tomaron potencia de matrices lejanas, cruzaron primero y devolvieron paquetes lo bastante viejos para discutirlos y lo bastante limpios para venderlos. Las sondas no hicieron seguro a Aegir. Lo hicieron legible: pozos de gravedad, cinturones de radiación, firmas oceánicas, líneas de relé y una ruta que una compañía podía volver rentable con suficiente indiferencia.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/es_ES. -->

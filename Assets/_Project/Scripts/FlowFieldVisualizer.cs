@@ -218,7 +218,7 @@ namespace Hecton8.Physics
                 if (_pool.Count >= ParticlePreviewCapacity)
                 {
                     if (item != null)
-                        Object.DestroyImmediate(item.gameObject);
+                        UnityEngine.Object.DestroyImmediate(item.gameObject);
                     return;
                 }
 
@@ -232,7 +232,7 @@ namespace Hecton8.Physics
                     ParticleSystem item = _pool.Dequeue();
                     if (item != null)
                     {
-                        Object.DestroyImmediate(item.gameObject);
+                        UnityEngine.Object.DestroyImmediate(item.gameObject);
                     }
                 }
             }

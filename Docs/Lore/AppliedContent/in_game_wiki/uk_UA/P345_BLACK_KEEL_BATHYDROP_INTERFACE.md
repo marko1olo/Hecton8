@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Black Keel Bathydrop Interface"
+title: "Bathydrop-інтерфейс Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Black Keel Bathydrop Interface
+# Bathydrop-інтерфейс Black Keel
 
-UK LOC HOLD: The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+Перший блокер втечі — інженерний. Black Keel досі існує над водою, але пошкоджений bathydrop-інтерфейс не може самою волею з'єднати поверхню, орбіту і таймінг. Ремонт потребує deep-rated salvage, чистих ущільнень, робочої геометрії ретранслятора і вікна запуску, яке прийме носій.
 
 ## Scanner
 
-UK LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+Bathydrop-інтерфейс пошкоджено: ланцюг повернення на поверхню не замкнеться без деталей під тиск, таймінгу ретранслятора і чистої защіпки підйому.
 
 ## Terminal
 
-UK LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+ЗВІТ КАПСУЛИ: підлаштування теплозахисту вціліло. Ворота плавучості погнуті. Щогла зв'язку затоплена. Защіпка підйому забруднена. Ремонт потребує кераміки тиску, герметика, математики ретранслятора і перевіреного вікна.
 
 ## Audio
 
-UK LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
+Ти не втратив увесь корабель. Ти втратив єдиний ланцюг, який робить корабель важливим.
 
 ## Field Note
 
-UK LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Запис втечі першої години: носій присутній, але ланцюг між гравцем, морем, поверхнею і орбітою зламаний у названих деталях.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/uk_UA. -->

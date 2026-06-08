@@ -1,0 +1,3241 @@
+{
+  "schema": "hecton8.batch34.texture_expansion_curation.v1",
+  "date": "2026-06-08",
+  "outputRoot": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion",
+  "unityImportStatus": "PENDING UNITY IMPORT",
+  "visualStatus": "STATIC CONTACT SHEET REVIEW ONLY",
+  "entries": [
+    {
+      "id": "B34-3401",
+      "slug": "photic_limestone_rubble_shelf",
+      "title": "Photic Limestone Rubble Shelf",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "terrain_photic",
+      "use": "bright shallow route terrain, limestone ledges, coral rubble shelves",
+      "sourceGlob": "Limestone_rubble_shelf_material_202606080323.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Limestone_rubble_shelf_material_202606080323.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3401_photic_limestone_rubble_shelf/TX_B34_3401_photic_limestone_rubble_shelf_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3401_photic_limestone_rubble_shelf/TX_B34_3401_photic_limestone_rubble_shelf_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3401_photic_limestone_rubble_shelf/TX_B34_3401_photic_limestone_rubble_shelf_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Limestone_rubble_shelf_material_202606080323.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3401_photic_limestone_rubble_shelf_Original.jpeg",
+      "originalBytes": 1031794,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.4274,
+        "bbox": [
+          737,
+          737,
+          1024,
+          1024
+        ],
+        "areaRatio": 0.534291
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3401_photic_limestone_rubble_shelf_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3401_photic_limestone_rubble_shelf_Cleaned_Source.jpg",
+      "cleanedBytes": 406378,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 16.016,
+        "edgeTB": 14.4782,
+        "bandLR": 33.7174,
+        "bandTB": 23.2391
+      },
+      "seamAfter": {
+        "edgeLR": 16.016,
+        "edgeTB": 14.4782,
+        "bandLR": 33.7174,
+        "bandTB": 23.2391
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3401_photic_limestone_rubble_shelf_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3401_photic_limestone_rubble_shelf_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 371192,
+      "luminance": {
+        "lumMean": 180.1883,
+        "lumMin": 0,
+        "lumMax": 254,
+        "blackPct": 0.0248,
+        "whitePct": 0.0001
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "Terrain detail and triplanar blend for photic limestone shelves.",
+      "integrationNote": "Use as detail/blend layer first; broad flat hero terrain still needs Unity route screenshot.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3401_photic_limestone_rubble_shelf_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3402",
+      "slug": "shallow_seagrass_root_mat_substrate",
+      "title": "Shallow Seagrass Root-Mat Substrate",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "terrain_photic",
+      "use": "shallow flora root transitions, sand/rock blend",
+      "sourceGlob": "Seagrass_alien_root-mat_material_202606080323.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Seagrass_alien_root-mat_material_202606080323.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3402_shallow_seagrass_root_mat_substrate/TX_B34_3402_shallow_seagrass_root_mat_substrate_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3402_shallow_seagrass_root_mat_substrate/TX_B34_3402_shallow_seagrass_root_mat_substrate_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3402_shallow_seagrass_root_mat_substrate/TX_B34_3402_shallow_seagrass_root_mat_substrate_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Seagrass_alien_root-mat_material_202606080323.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3402_shallow_seagrass_root_mat_substrate_Original.jpeg",
+      "originalBytes": 1378100,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.2109,
+        "bbox": [
+          737,
+          737,
+          1024,
+          1024
+        ],
+        "areaRatio": 0.263594
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3402_shallow_seagrass_root_mat_substrate_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3402_shallow_seagrass_root_mat_substrate_Cleaned_Source.jpg",
+      "cleanedBytes": 585983,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 30.2347,
+        "edgeTB": 31.3652,
+        "bandLR": 46.154,
+        "bandTB": 46.2138
+      },
+      "seamAfter": {
+        "edgeLR": 30.2347,
+        "edgeTB": 31.3652,
+        "bandLR": 46.154,
+        "bandTB": 46.2138
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3402_shallow_seagrass_root_mat_substrate_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3402_shallow_seagrass_root_mat_substrate_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 542383,
+      "luminance": {
+        "lumMean": 143.4466,
+        "lumMin": 1,
+        "lumMax": 254,
+        "blackPct": 0.0006,
+        "whitePct": 0.0064
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "Shallow root-mat/sand transition detail layer.",
+      "integrationNote": "Dense fine fibers hide repeat acceptably at gameplay scale; avoid huge single-material planes.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3402_shallow_seagrass_root_mat_substrate_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3403",
+      "slug": "brine_canyon_salt_crust_silt",
+      "title": "Brine Canyon Salt-Crust Silt",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "terrain_brine",
+      "use": "brine canyon floors, density-layer margins, hazard terrain",
+      "sourceGlob": "Salt_crust_silt_material_tile_202606080323.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Salt_crust_silt_material_tile_202606080323.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3403_brine_canyon_salt_crust_silt/TX_B34_3403_brine_canyon_salt_crust_silt_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3403_brine_canyon_salt_crust_silt/TX_B34_3403_brine_canyon_salt_crust_silt_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3403_brine_canyon_salt_crust_silt/TX_B34_3403_brine_canyon_salt_crust_silt_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Salt_crust_silt_material_tile_202606080323.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3403_brine_canyon_salt_crust_silt_Original.jpeg",
+      "originalBytes": 1204543,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0487,
+        "bbox": [
+          737,
+          737,
+          1024,
+          1024
+        ],
+        "areaRatio": 0.060824
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3403_brine_canyon_salt_crust_silt_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3403_brine_canyon_salt_crust_silt_Cleaned_Source.jpg",
+      "cleanedBytes": 487098,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 24.6097,
+        "edgeTB": 28.7321,
+        "bandLR": 39.7417,
+        "bandTB": 37.1964
+      },
+      "seamAfter": {
+        "edgeLR": 24.6097,
+        "edgeTB": 28.7321,
+        "bandLR": 39.7417,
+        "bandTB": 37.1964
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3403_brine_canyon_salt_crust_silt_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3403_brine_canyon_salt_crust_silt_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 446233,
+      "luminance": {
+        "lumMean": 108.9215,
+        "lumMin": 0,
+        "lumMax": 248,
+        "blackPct": 0.3334,
+        "whitePct": 0.0
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "Brine canyon salt-crust/silt terrain detail.",
+      "integrationNote": "Good mineral pattern; verify normals do not over-crack brine route readability.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3403_brine_canyon_salt_crust_silt_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3404",
+      "slug": "abyssal_manganese_nodule_plain",
+      "title": "Abyssal Manganese Nodule Plain",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "terrain_abyssal",
+      "use": "abyssal plain terrain and nodule scatter base",
+      "sourceGlob": "Seafloor_clay_with_manganese_nod*_202606080323.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Seafloor_clay_with_manganese_nod\u2026_202606080323.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3404_abyssal_manganese_nodule_plain/TX_B34_3404_abyssal_manganese_nodule_plain_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3404_abyssal_manganese_nodule_plain/TX_B34_3404_abyssal_manganese_nodule_plain_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3404_abyssal_manganese_nodule_plain/TX_B34_3404_abyssal_manganese_nodule_plain_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Seafloor_clay_with_manganese_nod\u2026_202606080323.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3404_abyssal_manganese_nodule_plain_Original.jpeg",
+      "originalBytes": 1041807,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0017,
+        "bbox": [
+          737,
+          742,
+          1024,
+          1022
+        ],
+        "areaRatio": 0.002076
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3404_abyssal_manganese_nodule_plain_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3404_abyssal_manganese_nodule_plain_Cleaned_Source.jpg",
+      "cleanedBytes": 402534,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 15.4538,
+        "edgeTB": 16.8174,
+        "bandLR": 24.5236,
+        "bandTB": 19.6103
+      },
+      "seamAfter": {
+        "edgeLR": 15.4538,
+        "edgeTB": 16.8174,
+        "bandLR": 24.5236,
+        "bandTB": 19.6103
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3404_abyssal_manganese_nodule_plain_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3404_abyssal_manganese_nodule_plain_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 364462,
+      "luminance": {
+        "lumMean": 67.606,
+        "lumMin": 0,
+        "lumMax": 252,
+        "blackPct": 0.0127,
+        "whitePct": 0.0
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "Abyssal nodule plain ground material and resource-biome base.",
+      "integrationNote": "Nodule scale reads well; use with scatter meshes to avoid flat painted resource feel.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3404_abyssal_manganese_nodule_plain_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3405",
+      "slug": "methane_hydrate_crack_vein",
+      "title": "Methane Hydrate Crack Vein",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "terrain_cold_seep",
+      "use": "cold seep terrain and hydrate hazard substrate",
+      "sourceGlob": "Seabed_mud_with_hydrate_crust_202606080323.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Seabed_mud_with_hydrate_crust_202606080323.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3405_methane_hydrate_crack_vein/TX_B34_3405_methane_hydrate_crack_vein_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3405_methane_hydrate_crack_vein/TX_B34_3405_methane_hydrate_crack_vein_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3405_methane_hydrate_crack_vein/TX_B34_3405_methane_hydrate_crack_vein_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Seabed_mud_with_hydrate_crust_202606080323.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3405_methane_hydrate_crack_vein_Original.jpeg",
+      "originalBytes": 956184,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0298,
+        "bbox": [
+          737,
+          737,
+          1024,
+          1024
+        ],
+        "areaRatio": 0.037198
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3405_methane_hydrate_crack_vein_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3405_methane_hydrate_crack_vein_Cleaned_Source.jpg",
+      "cleanedBytes": 349278,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 9.2627,
+        "edgeTB": 10.8499,
+        "bandLR": 13.4269,
+        "bandTB": 12.8268
+      },
+      "seamAfter": {
+        "edgeLR": 9.2627,
+        "edgeTB": 10.8499,
+        "bandLR": 13.4269,
+        "bandTB": 12.8268
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3405_methane_hydrate_crack_vein_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3405_methane_hydrate_crack_vein_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 314837,
+      "luminance": {
+        "lumMean": 127.574,
+        "lumMin": 1,
+        "lumMax": 254,
+        "blackPct": 0.0001,
+        "whitePct": 0.0001
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "cold seep terrain and hydrate hazard substrate",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3405_methane_hydrate_crack_vein_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3406",
+      "slug": "serpentinite_fault_rock",
+      "title": "Serpentinite Fault Rock",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "terrain_geology",
+      "use": "greenish fault rock distinct from basalt",
+      "sourceGlob": "Serpentinite_fault_rock_material*_202606080323.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Serpentinite_fault_rock_material\u2026_202606080323.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3406_serpentinite_fault_rock/TX_B34_3406_serpentinite_fault_rock_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3406_serpentinite_fault_rock/TX_B34_3406_serpentinite_fault_rock_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3406_serpentinite_fault_rock/TX_B34_3406_serpentinite_fault_rock_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Serpentinite_fault_rock_material\u2026_202606080323.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3406_serpentinite_fault_rock_Original.jpeg",
+      "originalBytes": 1221802,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0306,
+        "bbox": [
+          737,
+          737,
+          1024,
+          1024
+        ],
+        "areaRatio": 0.038255
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3406_serpentinite_fault_rock_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3406_serpentinite_fault_rock_Cleaned_Source.jpg",
+      "cleanedBytes": 502958,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 28.2152,
+        "edgeTB": 33.8965,
+        "bandLR": 49.2965,
+        "bandTB": 44.4941
+      },
+      "seamAfter": {
+        "edgeLR": 28.2152,
+        "edgeTB": 33.8965,
+        "bandLR": 49.2965,
+        "bandTB": 44.4941
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3406_serpentinite_fault_rock_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3406_serpentinite_fault_rock_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 461198,
+      "luminance": {
+        "lumMean": 64.2538,
+        "lumMin": 0,
+        "lumMax": 254,
+        "blackPct": 0.3681,
+        "whitePct": 0.0002
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "Directional serpentinite/fault wall material.",
+      "integrationNote": "Use on walls/slabs or triplanar rock, not as a perfectly isotropic floor tile.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3406_serpentinite_fault_rock_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3407",
+      "slug": "iron_oxide_seep_crust",
+      "title": "Iron-Oxide Seep Crust",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "terrain_cold_seep",
+      "use": "iron bacteria and oxidized seep terrain",
+      "sourceGlob": "Iron-oxide_seep_crust_material_202606080323.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Iron-oxide_seep_crust_material_202606080323.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3407_iron_oxide_seep_crust/TX_B34_3407_iron_oxide_seep_crust_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3407_iron_oxide_seep_crust/TX_B34_3407_iron_oxide_seep_crust_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3407_iron_oxide_seep_crust/TX_B34_3407_iron_oxide_seep_crust_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Iron-oxide_seep_crust_material_202606080323.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3407_iron_oxide_seep_crust_Original.jpeg",
+      "originalBytes": 1293487,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0421,
+        "bbox": [
+          737,
+          737,
+          1015,
+          1024
+        ],
+        "areaRatio": 0.051026
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3407_iron_oxide_seep_crust_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3407_iron_oxide_seep_crust_Cleaned_Source.jpg",
+      "cleanedBytes": 561395,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 23.7008,
+        "edgeTB": 30.9557,
+        "bandLR": 34.3259,
+        "bandTB": 34.7497
+      },
+      "seamAfter": {
+        "edgeLR": 23.7008,
+        "edgeTB": 30.9557,
+        "bandLR": 34.3259,
+        "bandTB": 34.7497
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3407_iron_oxide_seep_crust_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3407_iron_oxide_seep_crust_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 515856,
+      "luminance": {
+        "lumMean": 84.191,
+        "lumMin": 0,
+        "lumMax": 254,
+        "blackPct": 0.2234,
+        "whitePct": 0.0001
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "LOCAL_ONLY_OR_REGEN_SEAMLESS",
+      "targetRole": "Iron seep local patch or reference for a regenerated seamless material.",
+      "integrationNote": "2x2 exposes a repeated circular/rust landmark; do not use as broad terrain tile.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/LocalOnly/TX_B34_3407_iron_oxide_seep_crust_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3408",
+      "slug": "clay_silt_turbidity_slope",
+      "title": "Clay Silt Turbidity Slope",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "terrain_sediment",
+      "use": "silt-heavy traversal slopes and disturbed sediment",
+      "sourceGlob": "Seamless_PBR_material_tile_202606080323.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Seamless_PBR_material_tile_202606080323.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3408_clay_silt_turbidity_slope/TX_B34_3408_clay_silt_turbidity_slope_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3408_clay_silt_turbidity_slope/TX_B34_3408_clay_silt_turbidity_slope_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3408_clay_silt_turbidity_slope/TX_B34_3408_clay_silt_turbidity_slope_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Seamless_PBR_material_tile_202606080323.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3408_clay_silt_turbidity_slope_Original.jpeg",
+      "originalBytes": 920631,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0046,
+        "bbox": [
+          738,
+          752,
+          1024,
+          1023
+        ],
+        "areaRatio": 0.005463
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3408_clay_silt_turbidity_slope_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3408_clay_silt_turbidity_slope_Cleaned_Source.jpg",
+      "cleanedBytes": 319751,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 10.1901,
+        "edgeTB": 9.0007,
+        "bandLR": 12.5095,
+        "bandTB": 11.6721
+      },
+      "seamAfter": {
+        "edgeLR": 10.1901,
+        "edgeTB": 9.0007,
+        "bandLR": 12.5095,
+        "bandTB": 11.6721
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3408_clay_silt_turbidity_slope_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3408_clay_silt_turbidity_slope_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 285343,
+      "luminance": {
+        "lumMean": 130.9467,
+        "lumMin": 2,
+        "lumMax": 255,
+        "blackPct": 0.0,
+        "whitePct": 0.0142
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "silt-heavy traversal slopes and disturbed sediment",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3408_clay_silt_turbidity_slope_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3409",
+      "slug": "limestone_cave_ceiling_mineral_drip",
+      "title": "Limestone Cave Ceiling Mineral Drip",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "terrain_cave",
+      "use": "submerged limestone cave ceiling and mineral drip detail",
+      "sourceGlob": "Limestone_cave_ceiling_material_*_202606080323.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Limestone_cave_ceiling_material_\u2026_202606080323.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3409_limestone_cave_ceiling_mineral_drip/TX_B34_3409_limestone_cave_ceiling_mineral_drip_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3409_limestone_cave_ceiling_mineral_drip/TX_B34_3409_limestone_cave_ceiling_mineral_drip_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3409_limestone_cave_ceiling_mineral_drip/TX_B34_3409_limestone_cave_ceiling_mineral_drip_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Limestone_cave_ceiling_material_\u2026_202606080323.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3409_limestone_cave_ceiling_mineral_drip_Original.jpeg",
+      "originalBytes": 1134465,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.3017,
+        "bbox": [
+          737,
+          737,
+          1024,
+          1024
+        ],
+        "areaRatio": 0.37712
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3409_limestone_cave_ceiling_mineral_drip_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3409_limestone_cave_ceiling_mineral_drip_Cleaned_Source.jpg",
+      "cleanedBytes": 458204,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 18.5817,
+        "edgeTB": 36.266,
+        "bandLR": 33.7921,
+        "bandTB": 43.7359
+      },
+      "seamAfter": {
+        "edgeLR": 18.5817,
+        "edgeTB": 36.266,
+        "bandLR": 33.7921,
+        "bandTB": 43.7359
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3409_limestone_cave_ceiling_mineral_drip_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3409_limestone_cave_ceiling_mineral_drip_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 417916,
+      "luminance": {
+        "lumMean": 142.3584,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.1907,
+        "whitePct": 0.0007
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "REGEN_RECOMMENDED",
+      "targetRole": "Reference only for limestone drip direction.",
+      "integrationNote": "Visible block repeat and vertical landmarking; request regenerated seamless cave mineral tile if needed.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3409_limestone_cave_ceiling_mineral_drip_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3410",
+      "slug": "drowned_concrete_rubble",
+      "title": "Drowned Concrete Rubble",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "hard_surface_ruin",
+      "use": "old colony floor/wall rubble and infrastructure blends",
+      "sourceGlob": "Concrete_rubble_substrate_materi*_202606080322.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Concrete_rubble_substrate_materi\u2026_202606080322.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3410_drowned_concrete_rubble/TX_B34_3410_drowned_concrete_rubble_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3410_drowned_concrete_rubble/TX_B34_3410_drowned_concrete_rubble_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3410_drowned_concrete_rubble/TX_B34_3410_drowned_concrete_rubble_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Concrete_rubble_substrate_materi\u2026_202606080322.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3410_drowned_concrete_rubble_Original.jpeg",
+      "originalBytes": 1218842,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.126,
+        "bbox": [
+          737,
+          737,
+          1024,
+          1024
+        ],
+        "areaRatio": 0.157499
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3410_drowned_concrete_rubble_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3410_drowned_concrete_rubble_Cleaned_Source.jpg",
+      "cleanedBytes": 510288,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 24.8203,
+        "edgeTB": 32.9297,
+        "bandLR": 36.9894,
+        "bandTB": 38.6658
+      },
+      "seamAfter": {
+        "edgeLR": 24.8203,
+        "edgeTB": 32.9297,
+        "bandLR": 36.9894,
+        "bandTB": 38.6658
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3410_drowned_concrete_rubble_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3410_drowned_concrete_rubble_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 468085,
+      "luminance": {
+        "lumMean": 112.0082,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.1258,
+        "whitePct": 0.0106
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "Drowned concrete rubble local terrain blend.",
+      "integrationNote": "Useful for ruin transitions; combine with meshes/decals before hero-route use.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3410_drowned_concrete_rubble_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3411",
+      "slug": "pressure_base_exterior_hull_trim_sheet",
+      "title": "Pressure Base Exterior Hull Trim Sheet",
+      "sourceType": "TRIM_SHEET",
+      "family": "hard_surface_trim",
+      "use": "base exteriors, module edges, hatch frames, pressure ribs",
+      "sourceGlob": "Modular_trim_sheet_texture_202606080322.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_texture_202606080322.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3411_pressure_base_exterior_hull_trim_sheet/TX_B34_3411_pressure_base_exterior_hull_trim_sheet_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3411_pressure_base_exterior_hull_trim_sheet/TX_B34_3411_pressure_base_exterior_hull_trim_sheet_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3411_pressure_base_exterior_hull_trim_sheet/TX_B34_3411_pressure_base_exterior_hull_trim_sheet_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_texture_202606080322.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3411_pressure_base_exterior_hull_trim_sheet_Original.jpeg",
+      "originalBytes": 906696,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.4745,
+        "bbox": [
+          737,
+          737,
+          1024,
+          1014
+        ],
+        "areaRatio": 0.572497
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3411_pressure_base_exterior_hull_trim_sheet_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3411_pressure_base_exterior_hull_trim_sheet_Cleaned_Source.jpg",
+      "cleanedBytes": 331001,
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3411_pressure_base_exterior_hull_trim_sheet_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 301144,
+      "luminance": {
+        "lumMean": 143.127,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0299,
+        "whitePct": 0.0027
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "base exteriors, module edges, hatch frames, pressure ribs",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3411_pressure_base_exterior_hull_trim_sheet_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3412",
+      "slug": "pressure_base_interior_wall_trim_sheet",
+      "title": "Pressure Base Interior Wall Trim Sheet",
+      "sourceType": "TRIM_SHEET",
+      "family": "hard_surface_trim",
+      "use": "corridors, safe rooms, wreck interiors, wall panels",
+      "sourceGlob": "Modular_trim_sheet_interior_walls_202606080322.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_interior_walls_202606080322.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3412_pressure_base_interior_wall_trim_sheet/TX_B34_3412_pressure_base_interior_wall_trim_sheet_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3412_pressure_base_interior_wall_trim_sheet/TX_B34_3412_pressure_base_interior_wall_trim_sheet_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3412_pressure_base_interior_wall_trim_sheet/TX_B34_3412_pressure_base_interior_wall_trim_sheet_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_interior_walls_202606080322.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3412_pressure_base_interior_wall_trim_sheet_Original.jpeg",
+      "originalBytes": 846379,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.2679,
+        "bbox": [
+          737,
+          757,
+          1024,
+          982
+        ],
+        "areaRatio": 0.262514
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3412_pressure_base_interior_wall_trim_sheet_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3412_pressure_base_interior_wall_trim_sheet_Cleaned_Source.jpg",
+      "cleanedBytes": 288424,
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3412_pressure_base_interior_wall_trim_sheet_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 259425,
+      "luminance": {
+        "lumMean": 137.8068,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0498,
+        "whitePct": 0.0019
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "corridors, safe rooms, wreck interiors, wall panels",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3412_pressure_base_interior_wall_trim_sheet_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3413",
+      "slug": "wet_service_deck_anti_slip_floor",
+      "title": "Wet Service Deck Anti-Slip Floor",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "hard_surface_floor",
+      "use": "service decks, corridors, airlocks, exterior platforms",
+      "sourceGlob": "Industrial_metal_floor_material_202606080322.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Industrial_metal_floor_material_202606080322.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3413_wet_service_deck_anti_slip_floor/TX_B34_3413_wet_service_deck_anti_slip_floor_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3413_wet_service_deck_anti_slip_floor/TX_B34_3413_wet_service_deck_anti_slip_floor_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3413_wet_service_deck_anti_slip_floor/TX_B34_3413_wet_service_deck_anti_slip_floor_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Industrial_metal_floor_material_202606080322.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3413_wet_service_deck_anti_slip_floor_Original.jpeg",
+      "originalBytes": 1134106,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0017,
+        "bbox": [
+          744,
+          741,
+          1018,
+          1011
+        ],
+        "areaRatio": 0.001882
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3413_wet_service_deck_anti_slip_floor_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3413_wet_service_deck_anti_slip_floor_Cleaned_Source.jpg",
+      "cleanedBytes": 452633,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 13.3929,
+        "edgeTB": 19.4971,
+        "bandLR": 22.3509,
+        "bandTB": 25.1976
+      },
+      "seamAfter": {
+        "edgeLR": 13.3929,
+        "edgeTB": 19.4971,
+        "bandLR": 22.3509,
+        "bandTB": 25.1976
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3413_wet_service_deck_anti_slip_floor_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3413_wet_service_deck_anti_slip_floor_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 411981,
+      "luminance": {
+        "lumMean": 59.8998,
+        "lumMin": 0,
+        "lumMax": 253,
+        "blackPct": 0.0589,
+        "whitePct": 0.0
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "LOCAL_ONLY_STATIC",
+      "targetRole": "Wet service deck fixed panel source, not a seamless terrain/floor tile.",
+      "integrationNote": "Yellow/smudge landmarks repeat; use as authored panel/trim crop or regenerate pure anti-slip tile.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/LocalOnly/TX_B34_3413_wet_service_deck_anti_slip_floor_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3414",
+      "slug": "rubber_gasket_ring_trim_sheet",
+      "title": "Rubber Gasket Ring Trim Sheet",
+      "sourceType": "TRIM_SHEET",
+      "family": "rubber_trim",
+      "use": "hatches, viewport rims, pressure doors, pipe sockets",
+      "sourceGlob": "Modular_trim_sheet_rubber_gaskets_202606080322.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_rubber_gaskets_202606080322.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3414_rubber_gasket_ring_trim_sheet/TX_B34_3414_rubber_gasket_ring_trim_sheet_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3414_rubber_gasket_ring_trim_sheet/TX_B34_3414_rubber_gasket_ring_trim_sheet_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3414_rubber_gasket_ring_trim_sheet/TX_B34_3414_rubber_gasket_ring_trim_sheet_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_rubber_gaskets_202606080322.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3414_rubber_gasket_ring_trim_sheet_Original.jpeg",
+      "originalBytes": 868550,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0004,
+        "bbox": [
+          772,
+          756,
+          998,
+          999
+        ],
+        "areaRatio": 0.00034
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3414_rubber_gasket_ring_trim_sheet_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3414_rubber_gasket_ring_trim_sheet_Cleaned_Source.jpg",
+      "cleanedBytes": 306000,
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3414_rubber_gasket_ring_trim_sheet_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 276955,
+      "luminance": {
+        "lumMean": 55.7837,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.068,
+        "whitePct": 0.0012
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "hatches, viewport rims, pressure doors, pipe sockets",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3414_rubber_gasket_ring_trim_sheet_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3415",
+      "slug": "cable_jacket_repair_wrap_tile",
+      "title": "Cable Jacket Repair Wrap Tile",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "rubber_cable",
+      "use": "cables, hoses, tether surfaces, repair wrapped props",
+      "sourceGlob": "Seamless_PBR_material_tile_202606080322.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Seamless_PBR_material_tile_202606080322.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3415_cable_jacket_repair_wrap_tile/TX_B34_3415_cable_jacket_repair_wrap_tile_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3415_cable_jacket_repair_wrap_tile/TX_B34_3415_cable_jacket_repair_wrap_tile_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3415_cable_jacket_repair_wrap_tile/TX_B34_3415_cable_jacket_repair_wrap_tile_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Seamless_PBR_material_tile_202606080322.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3415_cable_jacket_repair_wrap_tile_Original.jpeg",
+      "originalBytes": 1060525,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.002,
+        "bbox": [
+          741,
+          737,
+          1017,
+          1024
+        ],
+        "areaRatio": 0.002452
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3415_cable_jacket_repair_wrap_tile_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3415_cable_jacket_repair_wrap_tile_Cleaned_Source.jpg",
+      "cleanedBytes": 406428,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 25.9307,
+        "edgeTB": 51.9222,
+        "bandLR": 28.1433,
+        "bandTB": 52.2729
+      },
+      "seamAfter": {
+        "edgeLR": 25.9307,
+        "edgeTB": 51.9222,
+        "bandLR": 28.1433,
+        "bandTB": 52.2729
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3415_cable_jacket_repair_wrap_tile_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3415_cable_jacket_repair_wrap_tile_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 368980,
+      "luminance": {
+        "lumMean": 59.2385,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.3501,
+        "whitePct": 0.0009
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "LOCAL_ONLY_STATIC",
+      "targetRole": "Cable repair-wrap local variant source.",
+      "integrationNote": "Good prop texture, but broad bands make it unsuitable as generic repeating cable material.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/LocalOnly/TX_B34_3415_cable_jacket_repair_wrap_tile_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3416",
+      "slug": "ribbed_flexible_hose_material",
+      "title": "Ribbed Flexible Hose Material",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "rubber_cable",
+      "use": "oxygen hoses, coolant lines, base pipes, tool cords",
+      "sourceGlob": "Ribbed_flexible_hose_material_tile_202606080322.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Ribbed_flexible_hose_material_tile_202606080322.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3416_ribbed_flexible_hose_material/TX_B34_3416_ribbed_flexible_hose_material_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3416_ribbed_flexible_hose_material/TX_B34_3416_ribbed_flexible_hose_material_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3416_ribbed_flexible_hose_material/TX_B34_3416_ribbed_flexible_hose_material_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Ribbed_flexible_hose_material_tile_202606080322.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3416_ribbed_flexible_hose_material_Original.jpeg",
+      "originalBytes": 911137,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0011,
+        "bbox": [
+          753,
+          738,
+          1015,
+          985
+        ],
+        "areaRatio": 0.001056
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3416_ribbed_flexible_hose_material_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3416_ribbed_flexible_hose_material_Cleaned_Source.jpg",
+      "cleanedBytes": 316363,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 17.7653,
+        "edgeTB": 10.9567,
+        "bandLR": 19.118,
+        "bandTB": 13.4655
+      },
+      "seamAfter": {
+        "edgeLR": 17.7653,
+        "edgeTB": 10.9567,
+        "bandLR": 19.118,
+        "bandTB": 13.4655
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3416_ribbed_flexible_hose_material_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3416_ribbed_flexible_hose_material_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 282186,
+      "luminance": {
+        "lumMean": 35.7538,
+        "lumMin": 0,
+        "lumMax": 252,
+        "blackPct": 0.43,
+        "whitePct": 0.0
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "oxygen hoses, coolant lines, base pipes, tool cords",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3416_ribbed_flexible_hose_material_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3417",
+      "slug": "amber_emergency_lens_material",
+      "title": "Amber Emergency Lens Material",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "glass_lens",
+      "use": "warning lights, service lamps, emissive masks, physical lenses",
+      "sourceGlob": "Amber_emergency_light_lens_material_202606080322.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Amber_emergency_light_lens_material_202606080322.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3417_amber_emergency_lens_material/TX_B34_3417_amber_emergency_lens_material_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3417_amber_emergency_lens_material/TX_B34_3417_amber_emergency_lens_material_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3417_amber_emergency_lens_material/TX_B34_3417_amber_emergency_lens_material_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Amber_emergency_light_lens_material_202606080322.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3417_amber_emergency_lens_material_Original.jpeg",
+      "originalBytes": 918756,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0,
+        "bbox": null
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3417_amber_emergency_lens_material_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3417_amber_emergency_lens_material_Cleaned_Source.jpg",
+      "cleanedBytes": 348115,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 23.14,
+        "edgeTB": 27.1637,
+        "bandLR": 27.2914,
+        "bandTB": 34.6554
+      },
+      "seamAfter": {
+        "edgeLR": 23.14,
+        "edgeTB": 27.1637,
+        "bandLR": 27.2914,
+        "bandTB": 34.6554
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3417_amber_emergency_lens_material_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3417_amber_emergency_lens_material_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 313540,
+      "luminance": {
+        "lumMean": 90.7599,
+        "lumMin": 33,
+        "lumMax": 249,
+        "blackPct": 0.0,
+        "whitePct": 0.0
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "LOCAL_ONLY_OR_CENTER_CROP",
+      "targetRole": "Amber lens source after center crop or fixed lamp panel use.",
+      "integrationNote": "Hard border tiles in 2x2; crop central ribbed lens before using as repeat material.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/LocalOnly/TX_B34_3417_amber_emergency_lens_material_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3418",
+      "slug": "thick_viewport_glass_edge_decal_atlas",
+      "title": "Thick Viewport Glass Edge Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "use": "viewport rims, cockpit glass, pressure windows, glass edge wear",
+      "sourceGlob": "Decal_atlas_for_viewport_glass_202606080322.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Decal_atlas_for_viewport_glass_202606080322.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "atlas_foreground_touches_edge_review"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_for_viewport_glass_202606080322.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3418_thick_viewport_glass_edge_decal_atlas_Original.jpeg",
+      "originalBytes": 819052,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.2524,
+        "bbox": [
+          785,
+          782,
+          971,
+          980
+        ],
+        "areaRatio": 0.001348
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3418_thick_viewport_glass_edge_decal_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3418_thick_viewport_glass_edge_decal_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 297937,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 60.8852,
+        "edgeIslandRisk": true
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3418_thick_viewport_glass_edge_decal_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 271127,
+      "luminance": {
+        "lumMean": 99.2506,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0018,
+        "whitePct": 0.0018
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "REGEN_OR_MANUAL_MATTE",
+      "targetRole": "Viewport glass wear decal reference only until background is matted.",
+      "integrationNote": "Baked checkerboard/removable background risk; do not import as alpha decal directly.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3418_thick_viewport_glass_edge_decal_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3419",
+      "slug": "welded_seam_and_rivet_row_trim_sheet",
+      "title": "Welded Seam And Rivet Row Trim Sheet",
+      "sourceType": "TRIM_SHEET",
+      "family": "hard_surface_trim",
+      "use": "wreckage, base hulls, repaired panels, industrial seams",
+      "sourceGlob": "Modular_trim_sheet_for_seams_202606080320.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_for_seams_202606080320.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3419_welded_seam_and_rivet_row_trim_sheet/TX_B34_3419_welded_seam_and_rivet_row_trim_sheet_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3419_welded_seam_and_rivet_row_trim_sheet/TX_B34_3419_welded_seam_and_rivet_row_trim_sheet_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3419_welded_seam_and_rivet_row_trim_sheet/TX_B34_3419_welded_seam_and_rivet_row_trim_sheet_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Modular_trim_sheet_for_seams_202606080320.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3419_welded_seam_and_rivet_row_trim_sheet_Original.jpeg",
+      "originalBytes": 933602,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0065,
+        "bbox": [
+          737,
+          771,
+          1014,
+          1022
+        ],
+        "areaRatio": 0.006847
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3419_welded_seam_and_rivet_row_trim_sheet_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3419_welded_seam_and_rivet_row_trim_sheet_Cleaned_Source.jpg",
+      "cleanedBytes": 342069,
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3419_welded_seam_and_rivet_row_trim_sheet_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 308440,
+      "luminance": {
+        "lumMean": 79.1895,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.165,
+        "whitePct": 0.0023
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "wreckage, base hulls, repaired panels, industrial seams",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3419_welded_seam_and_rivet_row_trim_sheet_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3420",
+      "slug": "salvage_cut_cross_section_trim_atlas",
+      "title": "Salvage Cut Cross-Section Trim Atlas",
+      "sourceType": "TRIM_SHEET",
+      "family": "hard_surface_trim",
+      "use": "cut panels, opened wrecks, salvage resource surfaces",
+      "sourceGlob": "Trim_atlas_for_HECTON-8_salvage-*_202606080320.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Trim_atlas_for_HECTON-8_salvage-\u2026_202606080320.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3420_salvage_cut_cross_section_trim_atlas/TX_B34_3420_salvage_cut_cross_section_trim_atlas_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3420_salvage_cut_cross_section_trim_atlas/TX_B34_3420_salvage_cut_cross_section_trim_atlas_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3420_salvage_cut_cross_section_trim_atlas/TX_B34_3420_salvage_cut_cross_section_trim_atlas_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Trim_atlas_for_HECTON-8_salvage-\u2026_202606080320.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3420_salvage_cut_cross_section_trim_atlas_Original.jpeg",
+      "originalBytes": 818703,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0232,
+        "bbox": [
+          737,
+          794,
+          1024,
+          981
+        ],
+        "areaRatio": 0.018903
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3420_salvage_cut_cross_section_trim_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3420_salvage_cut_cross_section_trim_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 295639,
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3420_salvage_cut_cross_section_trim_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 267850,
+      "luminance": {
+        "lumMean": 69.348,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0558,
+        "whitePct": 0.0046
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "cut panels, opened wrecks, salvage resource surfaces",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3420_salvage_cut_cross_section_trim_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3421",
+      "slug": "damped_insulation_blanket_material",
+      "title": "Damped Insulation Blanket Material",
+      "sourceType": "SEAMLESS_TILE",
+      "family": "fabric_insulation",
+      "use": "module interiors, damaged insulation, equipment backing",
+      "sourceGlob": "Quilted_fabric_insulation_materi*_202606080320.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Quilted_fabric_insulation_materi\u2026_202606080320.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "seam_band_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3421_damped_insulation_blanket_material/TX_B34_3421_damped_insulation_blanket_material_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3421_damped_insulation_blanket_material/TX_B34_3421_damped_insulation_blanket_material_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3421_damped_insulation_blanket_material/TX_B34_3421_damped_insulation_blanket_material_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Quilted_fabric_insulation_materi\u2026_202606080320.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3421_damped_insulation_blanket_material_Original.jpeg",
+      "originalBytes": 939356,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0088,
+        "bbox": [
+          737,
+          737,
+          901,
+          1024
+        ],
+        "areaRatio": 0.006264
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3421_damped_insulation_blanket_material_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3421_damped_insulation_blanket_material_Cleaned_Source.jpg",
+      "cleanedBytes": 333811,
+      "seamRefined": false,
+      "seamBefore": {
+        "edgeLR": 20.4997,
+        "edgeTB": 26.6995,
+        "bandLR": 27.7645,
+        "bandTB": 44.9878
+      },
+      "seamAfter": {
+        "edgeLR": 20.4997,
+        "edgeTB": 26.6995,
+        "bandLR": 27.7645,
+        "bandTB": 44.9878
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3421_damped_insulation_blanket_material_Tile2x2.png",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3421_damped_insulation_blanket_material_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 295800,
+      "luminance": {
+        "lumMean": 125.6787,
+        "lumMin": 0,
+        "lumMax": 252,
+        "blackPct": 0.0008,
+        "whitePct": 0.0
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "Damped insulation blanket for interiors/equipment backing.",
+      "integrationNote": "Quilt repeat is expected; still needs Unity roughness/normal review.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3421_damped_insulation_blanket_material_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3422",
+      "slug": "pressure_suit_patch_trim_sheet",
+      "title": "Pressure Suit Patch Trim Sheet",
+      "sourceType": "TRIM_SHEET",
+      "family": "suit_fabric",
+      "use": "suit meshes, tool pouches, wearable repair patches",
+      "sourceGlob": "Square_trim_sheet_for_suit_202606080319.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Square_trim_sheet_for_suit_202606080319.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3422_pressure_suit_patch_trim_sheet/TX_B34_3422_pressure_suit_patch_trim_sheet_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3422_pressure_suit_patch_trim_sheet/TX_B34_3422_pressure_suit_patch_trim_sheet_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3422_pressure_suit_patch_trim_sheet/TX_B34_3422_pressure_suit_patch_trim_sheet_MRAO_Provisional.png"
+      },
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Square_trim_sheet_for_suit_202606080319.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3422_pressure_suit_patch_trim_sheet_Original.jpeg",
+      "originalBytes": 855024,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0006,
+        "bbox": [
+          737,
+          779,
+          798,
+          970
+        ],
+        "areaRatio": 0.000109
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3422_pressure_suit_patch_trim_sheet_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3422_pressure_suit_patch_trim_sheet_Cleaned_Source.jpg",
+      "cleanedBytes": 304144,
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3422_pressure_suit_patch_trim_sheet_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 274623,
+      "luminance": {
+        "lumMean": 77.4029,
+        "lumMin": 0,
+        "lumMax": 234,
+        "blackPct": 0.0039,
+        "whitePct": 0.0
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "suit meshes, tool pouches, wearable repair patches",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3422_pressure_suit_patch_trim_sheet_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3423",
+      "slug": "leak_rust_biofilm_decal_atlas",
+      "title": "Leak Rust Biofilm Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "use": "base/wreck damage, damp panels, old machinery",
+      "sourceGlob": "Decal_atlas_for_underwater_leaks_202606080319.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Decal_atlas_for_underwater_leaks_202606080319.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_for_underwater_leaks_202606080319.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3423_leak_rust_biofilm_decal_atlas_Original.jpeg",
+      "originalBytes": 574884,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0229,
+        "bbox": [
+          741,
+          988,
+          746,
+          1002
+        ],
+        "areaRatio": 2.4e-05
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3423_leak_rust_biofilm_decal_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3423_leak_rust_biofilm_decal_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 187458,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.8138,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3423_leak_rust_biofilm_decal_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 168837,
+      "luminance": {
+        "lumMean": 46.0084,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0243,
+        "whitePct": 0.0012
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "base/wreck damage, damp panels, old machinery",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3423_leak_rust_biofilm_decal_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3424",
+      "slug": "paint_chip_scratch_decal_atlas",
+      "title": "Paint Chip Scratch Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "use": "hard-surface edge wear, tools, modules, salvage",
+      "sourceGlob": "Decal_atlas_chipped_paint_scratches_202606080319.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Decal_atlas_chipped_paint_scratches_202606080319.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "atlas_foreground_touches_edge_review"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_chipped_paint_scratches_202606080319.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3424_paint_chip_scratch_decal_atlas_Original.jpeg",
+      "originalBytes": 776709,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0238,
+        "bbox": [
+          737,
+          780,
+          1011,
+          1013
+        ],
+        "areaRatio": 0.023067
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3424_paint_chip_scratch_decal_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3424_paint_chip_scratch_decal_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 290881,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 9.3529,
+        "edgeIslandRisk": true
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3424_paint_chip_scratch_decal_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 265889,
+      "luminance": {
+        "lumMean": 83.1254,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0032,
+        "whitePct": 0.0279
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "targetRole": "Paint chip/scratch decal atlas after padding check.",
+      "integrationNote": "Good source, but some islands are near edges; split/pad before decal texture array import.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3424_paint_chip_scratch_decal_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3425",
+      "slug": "salt_mineral_deposit_decal_atlas",
+      "title": "Salt Mineral Deposit Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "use": "wet edges, cave rocks, hull seams, old base interiors",
+      "sourceGlob": "Square_decal_atlas_salt_mineral_202606080319.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Square_decal_atlas_salt_mineral_202606080319.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Square_decal_atlas_salt_mineral_202606080319.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3425_salt_mineral_deposit_decal_atlas_Original.jpeg",
+      "originalBytes": 641819,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0878,
+        "bbox": [
+          753,
+          737,
+          983,
+          992
+        ],
+        "areaRatio": 0.078124
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3425_salt_mineral_deposit_decal_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3425_salt_mineral_deposit_decal_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 213524,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.0116,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3425_salt_mineral_deposit_decal_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 193284,
+      "luminance": {
+        "lumMean": 75.2297,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0043,
+        "whitePct": 0.0206
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "wet edges, cave rocks, hull seams, old base interiors",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3425_salt_mineral_deposit_decal_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3426",
+      "slug": "instrument_glass_smudge_alpha_decal_atlas",
+      "title": "Instrument Glass Smudge Alpha Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "use": "visor, cockpit, scanner glass, terminals",
+      "sourceGlob": "Decal_atlas_for_instrument_glass_202606080325.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Decal_atlas_for_instrument_glass_202606080325.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "clipping_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_for_instrument_glass_202606080325.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3426_instrument_glass_smudge_alpha_decal_atlas_Original.jpeg",
+      "originalBytes": 484923,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0006,
+        "bbox": [
+          802,
+          744,
+          990,
+          997
+        ],
+        "areaRatio": 0.000413
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3426_instrument_glass_smudge_alpha_decal_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3426_instrument_glass_smudge_alpha_decal_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 118531,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 1.187,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3426_instrument_glass_smudge_alpha_decal_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 106292,
+      "luminance": {
+        "lumMean": 13.4718,
+        "lumMin": 0,
+        "lumMax": 233,
+        "blackPct": 65.882,
+        "whitePct": 0.0
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Instrument glass smudge/scratch alpha source.",
+      "integrationNote": "Black background drives clipping warning by design; extract mask before shader use.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3426_instrument_glass_smudge_alpha_decal_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3427",
+      "slug": "pressure_crack_glass_decal_atlas",
+      "title": "Pressure Crack Glass Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "use": "damaged viewports, scanner lenses, cockpit glass",
+      "sourceGlob": "Square_decal_atlas_pressure_cracks_202606080325.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Square_decal_atlas_pressure_cracks_202606080325.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Square_decal_atlas_pressure_cracks_202606080325.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3427_pressure_crack_glass_decal_atlas_Original.jpeg",
+      "originalBytes": 708652,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.1763,
+        "bbox": [
+          737,
+          737,
+          1000,
+          988
+        ],
+        "areaRatio": 0.176644
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3427_pressure_crack_glass_decal_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3427_pressure_crack_glass_decal_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 240139,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 2.975,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3427_pressure_crack_glass_decal_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 218488,
+      "luminance": {
+        "lumMean": 64.6685,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0039,
+        "whitePct": 0.0278
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "damaged viewports, scanner lenses, cockpit glass",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3427_pressure_crack_glass_decal_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3428",
+      "slug": "warning_paint_stripe_decal_atlas",
+      "title": "Warning Paint Stripe Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "use": "hazard stripes, panel markings without text, trim variation",
+      "sourceGlob": "Decal_atlas_worn_warning_paint_202606080325.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Decal_atlas_worn_warning_paint_202606080325.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_worn_warning_paint_202606080325.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3428_warning_paint_stripe_decal_atlas_Original.jpeg",
+      "originalBytes": 879691,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0309,
+        "bbox": [
+          737,
+          737,
+          1003,
+          1005
+        ],
+        "areaRatio": 0.033447
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3428_warning_paint_stripe_decal_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3428_warning_paint_stripe_decal_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 343849,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 3.976,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3428_warning_paint_stripe_decal_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 314241,
+      "luminance": {
+        "lumMean": 99.2127,
+        "lumMin": 0,
+        "lumMax": 254,
+        "blackPct": 0.0389,
+        "whitePct": 0.0001
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "hazard stripes, panel markings without text, trim variation",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3428_warning_paint_stripe_decal_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3429",
+      "slug": "cutter_burn_scorch_decal_atlas",
+      "title": "Cutter Burn Scorch Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "use": "cutter tool impact, salvage cuts, repair/weld states",
+      "sourceGlob": "Decal_atlas_for_cutter_burn_202606080325.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Decal_atlas_for_cutter_burn_202606080325.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_for_cutter_burn_202606080325.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3429_cutter_burn_scorch_decal_atlas_Original.jpeg",
+      "originalBytes": 656654,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0039,
+        "bbox": [
+          737,
+          737,
+          981,
+          1000
+        ],
+        "areaRatio": 0.003812
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3429_cutter_burn_scorch_decal_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3429_cutter_burn_scorch_decal_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 224939,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.0047,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3429_cutter_burn_scorch_decal_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 202563,
+      "luminance": {
+        "lumMean": 51.9207,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.1892,
+        "whitePct": 0.024
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "cutter tool impact, salvage cuts, repair/weld states",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3429_cutter_burn_scorch_decal_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3430",
+      "slug": "barnacle_colony_decal_variants",
+      "title": "Barnacle Colony Decal Variants",
+      "sourceType": "DECAL_ATLAS",
+      "family": "organic_decal",
+      "use": "rocks, hulls, cave surfaces, colony overgrowth",
+      "sourceGlob": "Decal_atlas_alien_barnacle_colony_202606080325.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Decal_atlas_alien_barnacle_colony_202606080325.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_alien_barnacle_colony_202606080325.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3430_barnacle_colony_decal_variants_Original.jpeg",
+      "originalBytes": 941676,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0233,
+        "bbox": [
+          737,
+          737,
+          999,
+          997
+        ],
+        "areaRatio": 0.02405
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3430_barnacle_colony_decal_variants_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3430_barnacle_colony_decal_variants_Cleaned_Source.jpg",
+      "cleanedBytes": 360334,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.0186,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3430_barnacle_colony_decal_variants_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 330496,
+      "luminance": {
+        "lumMean": 55.5884,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 1.19,
+        "whitePct": 0.0025
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "rocks, hulls, cave surfaces, colony overgrowth",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3430_barnacle_colony_decal_variants_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3431",
+      "slug": "wetness_rivulet_decal_atlas",
+      "title": "Wetness Rivulet Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "use": "interiors, hatches, floors, wet rock, leak presentation",
+      "sourceGlob": "Decal_atlas_for_wetness_rivulets_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Decal_atlas_for_wetness_rivulets_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_for_wetness_rivulets_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3431_wetness_rivulet_decal_atlas_Original.jpeg",
+      "originalBytes": 438184,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0,
+        "bbox": null
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3431_wetness_rivulet_decal_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3431_wetness_rivulet_decal_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 109144,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.8138,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3431_wetness_rivulet_decal_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 95866,
+      "luminance": {
+        "lumMean": 39.1001,
+        "lumMin": 0,
+        "lumMax": 63,
+        "blackPct": 0.0886,
+        "whitePct": 0.0
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "interiors, hatches, floors, wet rock, leak presentation",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3431_wetness_rivulet_decal_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3432",
+      "slug": "contamination_biohazard_stain_atlas",
+      "title": "Contamination Biohazard Stain Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "organic_decal",
+      "use": "contaminated rooms, organism stains, procedural evidence",
+      "sourceGlob": "Decal_atlas_contamination_stains_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Decal_atlas_contamination_stains_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_contamination_stains_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3432_contamination_biohazard_stain_atlas_Original.jpeg",
+      "originalBytes": 488558,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0,
+        "bbox": null
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3432_contamination_biohazard_stain_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3432_contamination_biohazard_stain_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 137262,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.2058,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3432_contamination_biohazard_stain_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 121166,
+      "luminance": {
+        "lumMean": 66.0032,
+        "lumMin": 0,
+        "lumMax": 222,
+        "blackPct": 0.001,
+        "whitePct": 0.0
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "contaminated rooms, organism stains, procedural evidence",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3432_contamination_biohazard_stain_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3433",
+      "slug": "brine_vane_flora_uv_atlas",
+      "title": "Brine Vane Flora UV Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "use": "brine-zone plants and alien flora mesh materials",
+      "sourceGlob": "Alien_flora_texture_reference_ma*_202606080325.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Alien_flora_texture_reference_ma\u2026_202606080325.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "clipping_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Alien_flora_texture_reference_ma\u2026_202606080325.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3433_brine_vane_flora_uv_atlas_Original.jpeg",
+      "originalBytes": 761937,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0116,
+        "bbox": [
+          740,
+          737,
+          1007,
+          1012
+        ],
+        "areaRatio": 0.012954
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3433_brine_vane_flora_uv_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3433_brine_vane_flora_uv_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 281996,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 2.496,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3433_brine_vane_flora_uv_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 258518,
+      "luminance": {
+        "lumMean": 36.342,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 49.1274,
+        "whitePct": 0.0002
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Brine vane flora UV source with dark matte background.",
+      "integrationNote": "Clipping is background/matte, not content failure; split islands before mesh UV use.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3433_brine_vane_flora_uv_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3434",
+      "slug": "shallow_alien_seagrass_blade_atlas",
+      "title": "Shallow Alien Seagrass Blade Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "use": "shallow flora cards/meshes, photic route grass/seagrass",
+      "sourceGlob": "Seagrass_blades_texture_referenc*_202606080325.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Seagrass_blades_texture_referenc\u2026_202606080325.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Seagrass_blades_texture_referenc\u2026_202606080325.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3434_shallow_alien_seagrass_blade_atlas_Original.jpeg",
+      "originalBytes": 695413,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0066,
+        "bbox": [
+          763,
+          737,
+          997,
+          999
+        ],
+        "areaRatio": 0.006131
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3434_shallow_alien_seagrass_blade_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3434_shallow_alien_seagrass_blade_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 270175,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.0314,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3434_shallow_alien_seagrass_blade_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 247620,
+      "luminance": {
+        "lumMean": 68.6092,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.001,
+        "whitePct": 0.0003
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "shallow flora cards/meshes, photic route grass/seagrass",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3434_shallow_alien_seagrass_blade_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3435",
+      "slug": "plate_coral_rim_uv_atlas",
+      "title": "Plate Coral Rim UV Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "use": "shallow plate coral meshes, reef geometry, coral trim",
+      "sourceGlob": "Coral_material_reference_for_UVs_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Coral_material_reference_for_UVs_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Coral_material_reference_for_UVs_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3435_plate_coral_rim_uv_atlas_Original.jpeg",
+      "originalBytes": 853938,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.3193,
+        "bbox": [
+          737,
+          737,
+          1007,
+          1011
+        ],
+        "areaRatio": 0.358509
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3435_plate_coral_rim_uv_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3435_plate_coral_rim_uv_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 334143,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 2.9309,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3435_plate_coral_rim_uv_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 303670,
+      "luminance": {
+        "lumMean": 140.7037,
+        "lumMin": 1,
+        "lumMax": 249,
+        "blackPct": 0.0001,
+        "whitePct": 0.0
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "shallow plate coral meshes, reef geometry, coral trim",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3435_plate_coral_rim_uv_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3436",
+      "slug": "sponge_pore_organic_atlas",
+      "title": "Sponge Pore Organic Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "use": "sponge/coral variants, organic rock overgrowth",
+      "sourceGlob": "UV_atlas_texture_reference_sponge_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\UV_atlas_texture_reference_sponge_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\UV_atlas_texture_reference_sponge_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3436_sponge_pore_organic_atlas_Original.jpeg",
+      "originalBytes": 944029,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0425,
+        "bbox": [
+          737,
+          737,
+          1012,
+          1008
+        ],
+        "areaRatio": 0.048052
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3436_sponge_pore_organic_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3436_sponge_pore_organic_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 360062,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 3.3831,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3436_sponge_pore_organic_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 328286,
+      "luminance": {
+        "lumMean": 77.5822,
+        "lumMin": 0,
+        "lumMax": 254,
+        "blackPct": 0.6054,
+        "whitePct": 0.0004
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "sponge/coral variants, organic rock overgrowth",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3436_sponge_pore_organic_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3437",
+      "slug": "kelp_holdfast_root_atlas",
+      "title": "Kelp Holdfast Root Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "use": "kelp anchors/roots, flora root geometry, terrain contact",
+      "sourceGlob": "Kelp_holdfast_roots_anchor_pads_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Kelp_holdfast_roots_anchor_pads_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Kelp_holdfast_roots_anchor_pads_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3437_kelp_holdfast_root_atlas_Original.jpeg",
+      "originalBytes": 789647,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.002,
+        "bbox": [
+          750,
+          737,
+          926,
+          983
+        ],
+        "areaRatio": 0.001311
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3437_kelp_holdfast_root_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3437_kelp_holdfast_root_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 306177,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 1.1021,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3437_kelp_holdfast_root_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 280388,
+      "luminance": {
+        "lumMean": 110.4125,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.431,
+        "whitePct": 0.0021
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "kelp anchors/roots, flora root geometry, terrain contact",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3437_kelp_holdfast_root_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3438",
+      "slug": "tube_worm_soft_crown_atlas",
+      "title": "Tube Worm Soft Crown Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "use": "tube worm and vent organism meshes",
+      "sourceGlob": "Tube_worm_texture_reference_mate*_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Tube_worm_texture_reference_mate\u2026_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "atlas_foreground_touches_edge_review"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Tube_worm_texture_reference_mate\u2026_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3438_tube_worm_soft_crown_atlas_Original.jpeg",
+      "originalBytes": 721271,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.2495,
+        "bbox": [
+          737,
+          737,
+          1015,
+          1015
+        ],
+        "areaRatio": 0.292671
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3438_tube_worm_soft_crown_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3438_tube_worm_soft_crown_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 278043,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 10.9166,
+        "edgeIslandRisk": true
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3438_tube_worm_soft_crown_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 252314,
+      "luminance": {
+        "lumMean": 94.0161,
+        "lumMin": 0,
+        "lumMax": 242,
+        "blackPct": 0.5018,
+        "whitePct": 0.0
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "targetRole": "Tube worm crown/tube UV source after island padding.",
+      "integrationNote": "Useful material set, but edge risk means atlas must be split or expanded before import.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3438_tube_worm_soft_crown_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3439",
+      "slug": "spore_pod_and_seed_sac_atlas",
+      "title": "Spore Pod And Seed Sac Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "use": "harvestable flora pods, scan targets, small organic props",
+      "sourceGlob": "Alien_spore_pods_seed_sacs_202606080328.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Alien_spore_pods_seed_sacs_202606080328.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Alien_spore_pods_seed_sacs_202606080328.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3439_spore_pod_and_seed_sac_atlas_Original.jpeg",
+      "originalBytes": 714024,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0027,
+        "bbox": [
+          765,
+          737,
+          789,
+          786
+        ],
+        "areaRatio": 4.9e-05
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3439_spore_pod_and_seed_sac_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3439_spore_pod_and_seed_sac_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 255048,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 4.0492,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3439_spore_pod_and_seed_sac_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 230484,
+      "luminance": {
+        "lumMean": 68.9638,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.2962,
+        "whitePct": 0.0368
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "harvestable flora pods, scan targets, small organic props",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3439_spore_pod_and_seed_sac_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3440",
+      "slug": "cave_lichen_biofilm_sheet_atlas",
+      "title": "Cave Lichen Biofilm Sheet Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "organic_decal",
+      "use": "cave wall overlays, decals, lichen meshes, biofilm props",
+      "sourceGlob": "UV_decal_atlas_texture_reference_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\UV_decal_atlas_texture_reference_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "atlas_foreground_touches_edge_review"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\UV_decal_atlas_texture_reference_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3440_cave_lichen_biofilm_sheet_atlas_Original.jpeg",
+      "originalBytes": 1007133,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.007,
+        "bbox": [
+          740,
+          737,
+          1011,
+          971
+        ],
+        "areaRatio": 0.006738
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3440_cave_lichen_biofilm_sheet_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3440_cave_lichen_biofilm_sheet_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 387246,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 17.0526,
+        "edgeIslandRisk": true
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3440_cave_lichen_biofilm_sheet_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 353843,
+      "luminance": {
+        "lumMean": 39.3248,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 1.6371,
+        "whitePct": 0.0056
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "targetRole": "Cave lichen/biofilm overlay source after padding.",
+      "integrationNote": "Good deep-organic palette; edge islands need split/pad for decal use.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3440_cave_lichen_biofilm_sheet_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3441",
+      "slug": "neutral_grazer_skin_uv_atlas",
+      "title": "Neutral Grazer Skin UV Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "use": "first-route neutral fauna body material zones",
+      "sourceGlob": "Creature_UV_atlas_texture_reference_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Creature_UV_atlas_texture_reference_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Creature_UV_atlas_texture_reference_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3441_neutral_grazer_skin_uv_atlas_Original.jpeg",
+      "originalBytes": 812994,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0035,
+        "bbox": [
+          737,
+          737,
+          1010,
+          899
+        ],
+        "areaRatio": 0.002367
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3441_neutral_grazer_skin_uv_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3441_neutral_grazer_skin_uv_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 302014,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 7.959,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3441_neutral_grazer_skin_uv_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 272740,
+      "luminance": {
+        "lumMean": 77.1609,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0006,
+        "whitePct": 0.0034
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "first-route neutral fauna body material zones",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3441_neutral_grazer_skin_uv_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3442",
+      "slug": "filter_feeder_gill_membrane_atlas",
+      "title": "Filter Feeder Gill Membrane Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "use": "filter-feeder creature organs and gill/frond materials",
+      "sourceGlob": "Creature_gill_membranes_UV_atlas_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Creature_gill_membranes_UV_atlas_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "clipping_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Creature_gill_membranes_UV_atlas_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3442_filter_feeder_gill_membrane_atlas_Original.jpeg",
+      "originalBytes": 832185,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0512,
+        "bbox": [
+          737,
+          737,
+          1011,
+          1012
+        ],
+        "areaRatio": 0.058578
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3442_filter_feeder_gill_membrane_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3442_filter_feeder_gill_membrane_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 316917,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 3.1262,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3442_filter_feeder_gill_membrane_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 289932,
+      "luminance": {
+        "lumMean": 70.9777,
+        "lumMin": 0,
+        "lumMax": 254,
+        "blackPct": 35.0182,
+        "whitePct": 0.0001
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Filter feeder gill membrane UV source.",
+      "integrationNote": "Black matte background caused clipping warning; content is usable after island extraction.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3442_filter_feeder_gill_membrane_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3443",
+      "slug": "small_predator_jaw_fin_eye_atlas",
+      "title": "Small Predator Jaw Fin Eye Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "use": "small aggressive fauna jaw, fin, and eye material zones",
+      "sourceGlob": "Creature_jaw_fin_eye_material_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Creature_jaw_fin_eye_material_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "clipping_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Creature_jaw_fin_eye_material_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3443_small_predator_jaw_fin_eye_atlas_Original.jpeg",
+      "originalBytes": 824529,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0,
+        "bbox": null
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3443_small_predator_jaw_fin_eye_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3443_small_predator_jaw_fin_eye_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 301853,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 5.442,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3443_small_predator_jaw_fin_eye_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 274036,
+      "luminance": {
+        "lumMean": 45.8042,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 27.1126,
+        "whitePct": 0.0141
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "MANUAL_SPLIT_BEFORE_IMPORT",
+      "targetRole": "Small predator feature material reference.",
+      "integrationNote": "Contains strong object/head forms, not clean UV islands; split useful zones before production use.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3443_small_predator_jaw_fin_eye_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3444",
+      "slug": "armored_benthic_shell_atlas",
+      "title": "Armored Benthic Shell Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "use": "crablike/scavenger shell plates and armor",
+      "sourceGlob": "Shell_plates_reference_material_202606080326.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Shell_plates_reference_material_202606080326.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "atlas_foreground_touches_edge_review"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Shell_plates_reference_material_202606080326.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3444_armored_benthic_shell_atlas_Original.jpeg",
+      "originalBytes": 886632,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0028,
+        "bbox": [
+          737,
+          739,
+          1003,
+          994
+        ],
+        "areaRatio": 0.002889
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3444_armored_benthic_shell_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3444_armored_benthic_shell_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 347107,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 10.2225,
+        "edgeIslandRisk": true
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3444_armored_benthic_shell_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 316665,
+      "luminance": {
+        "lumMean": 49.7867,
+        "lumMin": 0,
+        "lumMax": 253,
+        "blackPct": 1.1745,
+        "whitePct": 0.0
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "targetRole": "Armored benthic shell UV source after padding.",
+      "integrationNote": "Good shell language; edge proximity must be fixed before mesh atlas import.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3444_armored_benthic_shell_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3445",
+      "slug": "translucent_larva_egg_sac_atlas",
+      "title": "Translucent Larva Egg Sac Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "use": "ecology props, creature nests, scan/evidence objects",
+      "sourceGlob": "Larva_egg_sac_texture_reference_202606080327.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Larva_egg_sac_texture_reference_202606080327.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Larva_egg_sac_texture_reference_202606080327.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3445_translucent_larva_egg_sac_atlas_Original.jpeg",
+      "originalBytes": 730016,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0035,
+        "bbox": [
+          737,
+          737,
+          1009,
+          1000
+        ],
+        "areaRatio": 0.003751
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3445_translucent_larva_egg_sac_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3445_translucent_larva_egg_sac_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 262209,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 5.7315,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3445_translucent_larva_egg_sac_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 237594,
+      "luminance": {
+        "lumMean": 70.9507,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.1076,
+        "whitePct": 0.0022
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "ecology props, creature nests, scan/evidence objects",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3445_translucent_larva_egg_sac_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3446",
+      "slug": "scavenged_carcass_bone_flesh_atlas",
+      "title": "Scavenged Carcass Bone Flesh Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "use": "environmental evidence, carcass props, creature remains",
+      "sourceGlob": "UV_atlas_texture_reference_material_202606080327.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\UV_atlas_texture_reference_material_202606080327.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "clipping_review_required"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\UV_atlas_texture_reference_material_202606080327.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3446_scavenged_carcass_bone_flesh_atlas_Original.jpeg",
+      "originalBytes": 696706,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": true,
+        "confidence": 0.3802,
+        "bbox": [
+          781,
+          791,
+          824,
+          863
+        ],
+        "areaRatio": 0.006119
+      },
+      "watermarkRepaired": true,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3446_scavenged_carcass_bone_flesh_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3446_scavenged_carcass_bone_flesh_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 234764,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.9859,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3446_scavenged_carcass_bone_flesh_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 211842,
+      "luminance": {
+        "lumMean": 48.0018,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 43.4855,
+        "whitePct": 0.0006
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Carcass bone/flesh UV source.",
+      "integrationNote": "Dark matte background causes black clipping warning; isolate islands before use.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3446_scavenged_carcass_bone_flesh_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3447",
+      "slug": "creature_eye_lens_wet_organ_atlas",
+      "title": "Creature Eye Lens Wet Organ Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "use": "fauna eyes, sensory organs, scanner closeups",
+      "sourceGlob": "Creature_eye_texture_reference_m*_202606080327.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Creature_eye_texture_reference_m\u2026_202606080327.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [
+        "atlas_foreground_touches_edge_review"
+      ],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Creature_eye_texture_reference_m\u2026_202606080327.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3447_creature_eye_lens_wet_organ_atlas_Original.jpeg",
+      "originalBytes": 820499,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0029,
+        "bbox": [
+          762,
+          738,
+          1007,
+          1014
+        ],
+        "areaRatio": 0.002987
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3447_creature_eye_lens_wet_organ_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3447_creature_eye_lens_wet_organ_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 317855,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 13.9381,
+        "edgeIslandRisk": true
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3447_creature_eye_lens_wet_organ_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 289811,
+      "luminance": {
+        "lumMean": 70.9472,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.1017,
+        "whitePct": 0.0155
+      },
+      "verdict": "REVIEW_REQUIRED",
+      "curationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "targetRole": "Creature eye/sensory organ UV source after padding.",
+      "integrationNote": "Good close-inspection material; edge islands need split/pad before import.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3447_creature_eye_lens_wet_organ_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3448",
+      "slug": "resource_nodule_pickup_uv_atlas",
+      "title": "Resource Nodule Pickup UV Atlas",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_resource",
+      "use": "3D pickup/resource meshes, not inventory icons",
+      "sourceGlob": "Resource_pickup_UV_atlas_texture_202606080327.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Resource_pickup_UV_atlas_texture_202606080327.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Resource_pickup_UV_atlas_texture_202606080327.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3448_resource_nodule_pickup_uv_atlas_Original.jpeg",
+      "originalBytes": 922796,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0155,
+        "bbox": [
+          737,
+          737,
+          985,
+          990
+        ],
+        "areaRatio": 0.014799
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3448_resource_nodule_pickup_uv_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3448_resource_nodule_pickup_uv_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 340789,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.0965,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3448_resource_nodule_pickup_uv_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 310697,
+      "luminance": {
+        "lumMean": 60.8068,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.7565,
+        "whitePct": 0.0091
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "3D pickup/resource meshes, not inventory icons",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3448_resource_nodule_pickup_uv_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3449",
+      "slug": "industrial_salvage_small_parts_atlas",
+      "title": "Industrial Salvage Small Parts Atlas",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_salvage",
+      "use": "salvage pickups, small mesh parts, crafting visuals",
+      "sourceGlob": "Industrial_salvage_small-parts_U*_202606080327.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Industrial_salvage_small-parts_U\u2026_202606080327.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Industrial_salvage_small-parts_U\u2026_202606080327.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3449_industrial_salvage_small_parts_atlas_Original.jpeg",
+      "originalBytes": 679439,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0087,
+        "bbox": [
+          892,
+          752,
+          894,
+          844
+        ],
+        "areaRatio": 2.4e-05
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3449_industrial_salvage_small_parts_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3449_industrial_salvage_small_parts_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 238381,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.0,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3449_industrial_salvage_small_parts_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 214263,
+      "luminance": {
+        "lumMean": 108.7223,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0212,
+        "whitePct": 0.0032
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "salvage pickups, small mesh parts, crafting visuals",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3449_industrial_salvage_small_parts_atlas_BaseColorCandidate.jpg"
+    },
+    {
+      "id": "B34-3450",
+      "slug": "data_core_wet_circuit_ceramic_atlas",
+      "title": "Data Core Wet Circuit Ceramic Atlas",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_salvage",
+      "use": "black-box/data core props, electronics salvage",
+      "sourceGlob": "Ceramic_UV_atlas_texture_reference_202606080327.jpeg",
+      "matchedDownloadSources": [
+        "C:\\Users\\danat\\Downloads\\Ceramic_UV_atlas_texture_reference_202606080327.jpeg"
+      ],
+      "ignoredDownloadSources": [],
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "visualStatus": "PENDING VISUAL REVIEW",
+      "proofClass": "STATIC_IMAGE_PROCESSING",
+      "issues": [],
+      "warnings": [],
+      "notes": [
+        "lossy_service_source"
+      ],
+      "maps": {},
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Ceramic_UV_atlas_texture_reference_202606080327.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3450_data_core_wet_circuit_ceramic_atlas_Original.jpeg",
+      "originalBytes": 891878,
+      "sourceWidth": 1024,
+      "sourceHeight": 1024,
+      "watermarkDetection": {
+        "detected": false,
+        "confidence": 0.0613,
+        "bbox": [
+          743,
+          737,
+          998,
+          999
+        ],
+        "areaRatio": 0.062123
+      },
+      "watermarkRepaired": false,
+      "lowerRightCropPreview": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/WatermarkReview/B34_3450_data_core_wet_circuit_ceramic_atlas_lower_right.png",
+      "cleanedPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCleaned/TX_B34_3450_data_core_wet_circuit_ceramic_atlas_Cleaned_Source.jpg",
+      "cleanedBytes": 346204,
+      "atlasEdgeRisk": {
+        "foregroundEdgePct": 0.0,
+        "edgeIslandRisk": false
+      },
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3450_data_core_wet_circuit_ceramic_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidateBytes": 315675,
+      "luminance": {
+        "lumMean": 93.6835,
+        "lumMin": 0,
+        "lumMax": 255,
+        "blackPct": 0.0646,
+        "whitePct": 0.0049
+      },
+      "verdict": "INTAKE_READY_STATIC",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "black-box/data core props, electronics salvage",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3450_data_core_wet_circuit_ceramic_atlas_BaseColorCandidate.jpg"
+    }
+  ]
+}

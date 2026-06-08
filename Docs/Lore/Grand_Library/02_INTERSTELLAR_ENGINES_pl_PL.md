@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # PROJEKT SILNIKÓW I LOGISTYKA MIĘDZYGWIEZDNA
 
 > **Źródło:** Sylabus Techniczny, Stocznie Barnarda. Dokument 44-A. Lektura obowiązkowa dla wszystkich wyjeżdżających wykonawców.  

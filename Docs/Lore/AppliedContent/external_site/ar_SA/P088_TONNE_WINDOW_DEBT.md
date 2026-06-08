@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "دين نافذة الطن"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# دين نافذة الطن
 
-AR LOC HOLD: Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-AR LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-AR LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-AR LOC HOLD: You owe the orbit before you owe the money.
-
-## Field Note
-
-AR LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+نافذة الطن شريحة من قدرة carrier تقاس بالكتلة وتوقيت burn وحجم الحجر والأولوية القانونية. بالنسبة إلى المشغل تبدو دينا لأن كل شيء مفيد من HECTON-8 يدخل السجل نفسه مع الجسد الذي وجده. صندوق مختوم قد يكون خفيفا لكنه ثقيل قانونيا. رف عينات قد يكلف كتلة قليلة لكنه يطلب حجما نظيفا. استخراج إنسان قد يبدو بديهيا حتى تكون الثقل واحتياطي الأكسجين وحيازة payload قد أنفقت النافذة المتاحة. هكذا يصبح اقتصاد HECTON-8 جسديا لا مجردا. اللاعب لا يعاقب بعداد أخلاق مزيف. اللاعب محاصر داخل آلة تسعر النجاة بالوقود والكتلة والتلوث والأوراق.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/ar_SA. -->

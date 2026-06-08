@@ -1,0 +1,15 @@
+﻿status=APPLIED
+date=2026-06-08
+scene=Assets/_Project/Scenes/02_HECTON_WORLD.unity
+root=H8_CODEX_WATER_SKY_FIRST_PASS_20260608
+exitAfterApply=True
+deprecatedWaterSkyObjects=0
+proofLightingFallback=bound_empty_custom_probe_grid_for_editmode_terrainmaster
+requiredElements=urp_lit_water_surface,crest_wave_normals,batch21_readable_seabed,limestone_relief_ridges,irregular_ocean_mesh,distant_submerged_ridges,contact_foam,soft_caustics,suspended_particulates,depth_curtains,sky_dome,aegir_disc,moons
+proof0=C:\hades\Hecton8\Docs\Screenshots\CodexWaterSkyFirstPass\water_sky_main_20260608.png
+proof1=C:\hades\Hecton8\Docs\Screenshots\CodexWaterSkyFirstPass\water_surface_low_20260608.png
+proof2=C:\hades\Hecton8\Docs\Screenshots\CodexWaterSkyFirstPass\underwater_caustics_20260608.png
+proof3=C:\hades\Hecton8\Docs\Screenshots\CodexWaterSkyFirstPass\terrain_relief_oblique_20260608.png
+proof4=C:\hades\Hecton8\Docs\Screenshots\CodexWaterSkyFirstPass\aegir_sky_20260608.png
+proof5=C:\hades\Hecton8\Docs\Screenshots\CodexWaterSkyFirstPass\legacy_origin_photic_surface_20260608.png
+proof6=C:\hades\Hecton8\Docs\Screenshots\CodexWaterSkyFirstPass\legacy_origin_photic_underwater_20260608.png

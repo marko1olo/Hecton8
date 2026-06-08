@@ -1,0 +1,34 @@
+---
+packet_id: P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE
+release_set_id: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
+article_id: applied_lore.tau_ceti_public_ledger_pressure_bridge
+unlock_id: unlock.tau_ceti_public_ledger_pressure_bridge
+poi_tags: route.tau_public_ledger_lane;route.luyten_packet_ladder
+biome_tags: 
+locale: de_DE
+surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Tau-Ceti-Druck des öffentlichen Ledgers"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# Tau-Ceti-Druck des öffentlichen Ledgers
+
+## Was der Eintrag beweist
+
+Tau Ceti kann den Operator nicht in Echtzeit herausziehen, aber ein verifiziertes Verwahrungspaket kann später öffentlicher Docket-Druck werden und Deep-Reach-Leugnung schwächen.
+
+Tau Ceti macht aus einem privaten Unterwasserfakt nur dann einen zukünftigen öffentlichen Eintrag, wenn die Verwahrung überlebt. Das Ledger erzeugt Druck auf Leugnung, Versicherung und politische Deckung; es schickt kein Rettungsschiff durch die Verzögerung. Deep Reach kann eine Person noch aussitzen. Einen sauberen öffentlichen Docket auszusitzen ist schwerer.
+
+TAU-CETI-LEDGERAUFNAHME // Öffentliche Docketroute braucht witness hash, Luyten-Verwahrung, Paketroute, Anspruchsmarke, Schadenszustand und Empfängerhistorie. Docket-Druck kann Haftung und Versicherungsprüfung beeinflussen. Er weist keine Live-Rettung zu.
+
+## Wie der Spieler es liest
+
+Mach den Beweis transportierbar, bevor du ihn laut machst. Lies es als Regel für Beweisführung, nicht als Versprechen, dass Hilfe bereits unterwegs ist.
+
+<!-- External Site; generated from P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE/de_DE. -->

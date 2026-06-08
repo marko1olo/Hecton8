@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Claim Continuity Loss Conversion Proof"
+title: "Claim継続損失変換"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Claim Continuity Loss Conversion Proof
+# Claim継続損失変換
 
-JA LOC HOLD: The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.
+証拠の鎖は変換で終わる。作業員が損失になり、証拠がmaterial custodyになり、claimが生き続けるなら、Deep Reachは損害を認めながら所有を保てる。だからプレイヤーが運ぶのは真実だけではない。システムが買い方を知っているものだ。
 
 ## Scanner
 
-JA LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
+損失デスク印を回収。ledgerは、名前を書き換えられた作業員より長く残った。
 
 ## Terminal
 
-JA LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED。biological workforceをunrecoverable lossへ変換。material and proof custodyはreceiver assignment待ちで有効。
 
 ## Audio
 
-JA LOC HOLD: This is where dead workers became a clean column.
+ここで人間はきれいな列になった。
 
 ## Field Note
 
-JP LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+Marauderメモ: ledgerは死者を覚えながら、それでも支払える。
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/ja_JP. -->

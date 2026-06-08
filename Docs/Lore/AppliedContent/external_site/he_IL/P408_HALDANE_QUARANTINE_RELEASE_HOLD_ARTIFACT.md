@@ -9,32 +9,22 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Haldane Quarantine Hold"
+title: "עיכוב הלדיין לשחרור מהסגר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Haldane Quarantine Hold
+# עיכוב הלדיין לשחרור מהסגר
 
-HE LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## הליך נכון בדקה הלא נכונה
 
-## Scanner
+אין לקרוא את ה-hold של הלדיין כהונאה פשוטה. ב-HECTON-8 היו סכנת זיהום, seals שנפגעו, בעיות sample custody ואי-ודאות ביולוגית. פרוטוקול הסגר היה הגיוני לפני שהאסון נעשה קינטי. לכן המסמך נושך: ההליך היה אמיתי מספיק כדי להגן עליו ואיטי מספיק כדי להרוג.
 
-HE LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+release certification הופכת לנשק דרך תזמון. בזמן שהלחץ עולה והמסלולים נופלים, ה-hold מבקש XO sample custody, seal-read variance ו-downstream exposure review. כל ביטוי נשמע אחראי. יחד הם מחזיקים מפונים, מכונאים ועדים בתוך מושבה כושלת עד ש-rescue כבר אינה הפועל השולט.
 
-## Terminal
-
-HE LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-HE LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-HE LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+כאן Deep Reach מרגישה מוסד. הלדיין לא צריך לצחוק על עובדים לכודים. ה-desk צריך רק לשמור chain of custody, להקטין liability עתידית ולמנוע מראיה מזוהמת לצאת אל claim space שאינו שולט בו. האימה היא שכל המניעים הללו יכולים להישמע נכונים בדקה שבה אנשים היו צריכים שהדלת תיפתח.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/he_IL. -->

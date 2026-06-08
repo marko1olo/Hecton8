@@ -9,32 +9,36 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Aegir Transfer Windows"
+title: "Aegir : le ciel qui refuse le secours"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Aegir Transfer Windows
+# Aegir : le ciel qui refuse le secours
 
-FR LOC HOLD: Aegir is reachable by machinery, timing and debt. No faster-than-light drive crosses the route. Probe packets mapped the warm dwarf system first, then beam infrastructure and pellet-fusion freight built enough traffic to move seed mass, claim platforms and slow human decisions into the same ledger. HECTON-8 sits inside that machinery as a pressure moon under Aegir, bright at the surface, dangerous by depth and useful enough that nobody could leave it alone. Black Keel does not ignore a survivor because rescue is impossible. It waits because recovery requires several clocks to agree: relay delay, carrier position, descent mass, storm shutters, custody signatures and a window narrow enough to close while a person is still sealing a capsule. Every visible moon, relay path and transfer band is part of the same route accounting. That is why help reaches HECTON-8 first as a number, then as a signal, and only much later as hardware.
+## Un ciel qui travaille
 
-## Scanner
+Aegir n'est pas un décor. C'est la machine au-dessus de l'océan : gravité, radiation, relais, débris, temps de contrat et droit de récupération.
 
-FR LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Il n'existe ni ansible ni FTL. La route Ran/Aegir appartient aux années-lumière; les fenêtres locales dépendent d'orbites, tempêtes, ombres de lunes et files de garde. Un paquet vrai peut être trop tard. Un paquet propre peut rester inutile.
 
-## Terminal
+La chaîne nomme Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON et Mute. Les constantes finales appartiennent aux tables célestes. Le terrain emploie des bandes : ombre, charge, dispersion, panache, retard, réception.
 
-FR LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+Black Keel reste haut parce que descendre coûte chaleur, carburant, exposition, calendrier et clarté juridique. Le retour exige relais acoustique, matériel d'ascension, timing, météo, quarantaine, hash de charge et allocation de masse. Si un lien manque, le porteur reste calme. Ce calme est un registre automatisé.
 
-## Audio
+## Le Ciel Est Une Machine
 
-FR LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Aegir ne doit jamais ressembler a un fond peint. C'est la plus grande machine du recit : etoile primaire, echelle de lunes, relay shadows, pellet lanes, braking wakes, ice scatter, storm plume et guidance lag empiles en calendrier hostile. Le joueur n'a pas besoin de tout voir. Il doit sentir que chaque message, chaque largage et chaque retour a une geometrie.
 
-## Field Note
+C'est pourquoi le secours ne peut pas simplement arriver. Pas de correction FTL, pas d'ansible cache, pas de carrier heroique qui ignore la masse. Une route window est une permission de la physique avant d'etre une permission juridique. Black Keel peut descendre un tender parce que le travail local est etroit, pas parce qu'il possede un miracle.
 
-FR LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+## Ce Que Signifie Regarder En Haut
+
+Regarder le ciel sur HECTON-8 doit etre pratique et amer. Le ciel n'est pas l'espoir. C'est le timing. Aegir decide quand un paquet monte, quand un receiver repond, quand un claim est notarie et quand le joueur reste seul avec des instructions perimees.
+
+Un bon article d'astronomie doit faire lire la lumiere lunaire comme un risque. Si Kestrel bouge, un relay shadow change. Si ice scatter monte, la navigation devient rumeur. Si Silent Orbit se tait, le vieux metal peut encore decider le present.
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/fr_FR. -->

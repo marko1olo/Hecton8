@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "הרכבת שרשרת הבריחה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# הרכבת שרשרת הבריחה
 
-HE LOC HOLD: Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems.
+הרכבת שרשרת הבריחה היא עמוד השדרה ההנדסי של הקמפיין. HECTON-8 אינה מציעה חילוץ נקי לפני השטח אחרי התיקון הראשון; היציאה הופכת לאוסף רכיבים פיזיים, משפטיים והוכחתיים הפזורים בתשתית הטבועה. כך הירידה הארוכה מקבלת סיבה מעשית ומוסרית: השחקן לא רק עוזב את האוקיינוס, אלא מרכיב דרך שמוכיחה מדוע למושבה מעולם לא הייתה יציאה הוגנת.
 
 ## Scanner
 
-HE LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+יציאה דורשת שישה אישורים קשים: ממסר, אטימה, הנחיה, מטען עלייה, לחיצת יד משפטית ומטען שהמוביל לא יכול להתעלם ממנו.
 
 ## Terminal
 
-HE LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+חבילת עלייה: עמוד ממסר אקוסטי חסר. דירוג טבעת מהדק לא מספיק. ליבת הנחיה חסרה. עריסת מטען ריקה. לחיצת יד הסגר לא נפתרה. מטען הוכחות אופציונלי אך משנה סמכות החזרה.
 
 ## Audio
 
-HE LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+אינך מתקן את הקפסולה. אתה בונה את היציאה הכנה הראשונה שהמושבה מעולם לא קיבלה.
 
 ## Field Note
 
-HE LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+הדרך למעלה נבנית מחלקים שמעולם לא נועדו לאפשר לעובדים לעזוב בעצמם.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/he_IL. -->

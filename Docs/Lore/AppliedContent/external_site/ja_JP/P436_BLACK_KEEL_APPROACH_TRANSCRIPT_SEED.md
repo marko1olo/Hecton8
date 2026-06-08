@@ -9,32 +9,22 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Black Keel接近記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Black Keel Approach Transcript Seed
+# Black Keel接近記録
 
-JP LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+## 声と声のあいだの四秒
 
-## Scanner
+軌道から最初に届く声は、救済の声であってはならない。負荷のかかったインフラの声であるべきだ。圧縮され、遅れ、有用で、すでに請求している。Black Keel記録は、助けと屈辱を同じ息に入れるから効く。キャリアは落下を聞いた。証拠を受け取れる。生きた請求者を戻せるかもしれない。それでも救助ではない。
 
-JA LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+ラグは重要だ。4秒は会話に十分短く、海のほうが先に答えると知らせるには十分長い。パケット損失も重要だ。以後、軌道と議論するたび身体的な費用が生じる。健康、質量、証拠は飾りではない。帰還窓の形そのものだ。Marauderは生きていても回収不能であり得る。ペイロードは真実でも重すぎることがある。キャリアは正直でも拒否できる。
 
-## Terminal
-
-JA LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
-
-## Audio
-
-JA LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
-
-## Field Note
-
-JA LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+最初の一時間、この記録は幻想を固定する。あなたは選ばれた生存者ではなく、claim枠を持つ債務労働者として来た。Black Keelは頭上の線であり、隣の手ではない。軌道に酸素を使って抗議することは、すでに間違いだ。
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/ja_JP. -->

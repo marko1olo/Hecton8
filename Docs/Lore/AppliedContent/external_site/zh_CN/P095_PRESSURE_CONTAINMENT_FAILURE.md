@@ -9,32 +9,16 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "压力封存失效"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# 压力封存失效
 
-CN LOC HOLD: Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating.
-
-## Scanner
-
-CN LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
-
-## Terminal
-
-CN LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
-
-## Audio
-
-CN LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
-
-## Field Note
-
-CN LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Blue debt不是被诅咒的宝物，而是压力下的物质记忆。Xenon-Omega残留物只有在晶格相信自己仍处于深处、寒冷、受压时才有用。取出太快、存放太差，或让信号剪切渗入匣体，样本就会按可读阶段失效。首先是漂移：仪表撒谎，共振颤动，封存警报互相争吵。然后晶格断裂。盐卤进入。生物跟随化学。到阶段4，价值已经死亡，污染仍然活着。
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/zh_CN. -->

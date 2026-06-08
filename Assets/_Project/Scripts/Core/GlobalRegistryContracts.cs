@@ -768,6 +768,66 @@ namespace Hecton8.Core
         [FieldOffset(140)] public uint Sequence;
     }
 
+    public enum CelestialLightDepthStratum : uint
+    {
+        SurfaceTo50Meters = 0u,
+        Shallow50To100Meters = 1u,
+        Mesophotic100To500Meters = 2u,
+        Deep500To2000Meters = 3u,
+        Abyss2000PlusMeters = 4u,
+    }
+
+    [System.Flags]
+    public enum CelestialLightReadabilityFlags : uint
+    {
+        None = 0u,
+        Valid = 1u << 0,
+        Fallback = 1u << 1,
+        Underwater = 1u << 2,
+        EclipseOrNight = 1u << 3,
+        CausticsAllowed = 1u << 4,
+        BiolumFavored = 1u << 5,
+        ArtificialLightCritical = 1u << 6,
+        BlackCrushGuard = 1u << 7,
+        QualityReduced = 1u << 8,
+    }
+
+    /// <summary>
+    /// Gameplay-facing light readability payload owned by the celestial runtime and consumed by water,
+    /// UI/audio/VFX hooks, biolum, caustics, and deep-light systems without re-deriving time/depth strata.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
+    public struct CelestialLightReadabilitySnapshot
+    {
+        [FieldOffset(0)] public double AbsoluteUniverseTime;
+        [FieldOffset(8)] public float3 SunDirection;
+        [FieldOffset(20)] public float DepthMeters;
+        [FieldOffset(24)] public float TimeOfDay01;
+        [FieldOffset(28)] public float SunElevation01;
+        [FieldOffset(32)] public float DirectSun01;
+        [FieldOffset(36)] public float AmbientReadability01;
+        [FieldOffset(40)] public float UnderwaterVisibilityMeters;
+        [FieldOffset(44)] public float MesophoticFalloff01;
+        [FieldOffset(48)] public float DeepDarkness01;
+        [FieldOffset(52)] public float ArtificialLightWeight01;
+        [FieldOffset(56)] public float BiolumWeight01;
+        [FieldOffset(60)] public float CausticWeight01;
+        [FieldOffset(64)] public float FogDensityMultiplier;
+        [FieldOffset(68)] public float ScatteringMultiplier;
+        [FieldOffset(72)] public float AbsorptionMultiplier;
+        [FieldOffset(76)] public float ExposureCompensation;
+        [FieldOffset(80)] public float EmissiveWeight01;
+        [FieldOffset(84)] public float SurfaceLight01;
+        [FieldOffset(88)] public float Quality01;
+        [FieldOffset(92)] public float BlackCrushFloor01;
+        [FieldOffset(96)] public float4 SunColorIntensity;
+        [FieldOffset(112)] public float4 DepthStrataParams;
+        [FieldOffset(128)] public uint Flags;
+        [FieldOffset(132)] public uint DepthStratum;
+        [FieldOffset(136)] public uint CelestialSequence;
+        [FieldOffset(140)] public uint Sequence;
+    }
+
     /// <summary>
     /// Blittable GI relay state published for watchdogs, diagnostics, and low-cost consumers.
     /// </summary>
@@ -1504,6 +1564,17 @@ namespace Hecton8.Core
         bool IsInitialized { get; }
 
         /// <summary>
+        /// True while the registered audio owner can accept live runtime reads and mutations.
+        /// Implementations with a stricter ownership model should override this beyond bootstrap initialization.
+        /// </summary>
+        bool IsAudioRuntimeReady => IsInitialized;
+
+        /// <summary>
+        /// Number of gameplay audio events rejected by the bounded event queue since the last audio queue reset.
+        /// </summary>
+        int DroppedAudioEventCount => 0;
+
+        /// <summary>
         /// Mixer group used for helmet/UI playback.
         /// </summary>
         AudioMixerGroup InterfaceGroup { get; }
@@ -1778,7 +1849,8 @@ namespace Hecton8.Core
         HullBreach = 2,
         OxygenLow = 3,
         Radiation = 4,
-        PowerLow = 5
+        PowerLow = 5,
+        Toxicity = 6
     }
 
     /// <summary>
@@ -1792,6 +1864,10 @@ namespace Hecton8.Core
         public const uint OxygenLow = 0x4F584C4Fu; // OXLO
         public const uint Radiation = 0x52414449u; // RADI
         public const uint PowerLow = 0x5057524Cu; // PWRL
+        public const uint Toxicity = 0x544F5849u; // TOXI
+        public const byte LowestCanonicalWarningId = (byte)VocalWarningId.CrushDepth;
+        public const byte HighestCanonicalWarningId = (byte)VocalWarningId.Toxicity;
+        public const int CanonicalWarningCount = HighestCanonicalWarningId - LowestCanonicalWarningId + 1;
 
         public static byte ToWarningId(uint warningHash)
         {
@@ -1803,6 +1879,7 @@ namespace Hecton8.Core
                 case OxygenLow: return (byte)VocalWarningId.OxygenLow;
                 case Radiation: return (byte)VocalWarningId.Radiation;
                 case PowerLow: return (byte)VocalWarningId.PowerLow;
+                case Toxicity: return (byte)VocalWarningId.Toxicity;
                 default: return (byte)VocalWarningId.None;
             }
         }
@@ -1816,6 +1893,7 @@ namespace Hecton8.Core
                 case VocalWarningId.OxygenLow: return OxygenLow;
                 case VocalWarningId.Radiation: return Radiation;
                 case VocalWarningId.PowerLow: return PowerLow;
+                case VocalWarningId.Toxicity: return Toxicity;
                 default: return 0u;
             }
         }
@@ -1837,6 +1915,9 @@ namespace Hecton8.Core
     {
         /// <summary>True when native warning queue, cooldown, and telemetry storage are allocated.</summary>
         bool IsInitialized { get; }
+
+        /// <summary>True when this instance is the registered, active vocal-warning runtime owner.</summary>
+        bool IsVocalWarningRuntimeReady { get; }
 
         /// <summary>Number of queued and staged warning IDs waiting for playback.</summary>
         int PendingCount { get; }
@@ -2957,6 +3038,7 @@ namespace Hecton8.Core
 
     public interface IAudioLogRuntime
     {
+        bool IsAudioLogRuntimeReady { get; }
         int DiscoveredAudioLogCount { get; }
         bool IsPlaying { get; }
         bool IsNarrativeQueueBlocked { get; }
@@ -3803,6 +3885,10 @@ namespace Hecton8.Core
 
     public interface IPersistentDroppedItemRegistry : ISystem
     {
+        bool CanRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition);
+
+        bool CanRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity, Vector3 runtimePosition);
+
         bool TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition);
 
         bool TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition, Vector3 initialImpulse);
@@ -5108,6 +5194,16 @@ namespace Hecton8.Core
         CelestialRuntimeSnapshot RuntimeSnapshot { get; }
 
         uint RuntimeSnapshotSequence { get; }
+    }
+
+    /// <summary>
+    /// Read-only route for gameplay-facing sun/depth readability authored by the celestial runtime.
+    /// </summary>
+    public interface ICelestialLightReadabilityReadModel : ISystem
+    {
+        CelestialLightReadabilitySnapshot LightReadabilitySnapshot { get; }
+
+        uint LightReadabilitySequence { get; }
     }
 
     /// <summary>

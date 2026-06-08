@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "HE LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "מודל המרחק Ran-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Ran-Aegir Distance Model
+# מודל המרחק Ran-Aegir
 
-HE LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+מודל Ran-Aegir נותן ל-HECTON-8 קנה מידה שהשחקן יכול להרגיש. Aegir קרוב מספיק לגשושים, מטען, חומרת seed והתיישבות מבוססת חוב עד 2190. הוא עדיין רחוק מספיק כדי שחדר מוצף לא יוכל לחכות לרחמי העולמות הפנימיים. מרחק מופיע כעיכוב, custody, דלק, בלימה ובעלות.
 
 ## Scanner
 
-HE LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+לוח נתיב: Aegir נגיש בתשתית ואינו נגיש באהדה.
 
 ## Terminal
 
-HE LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+מודל נתיב: Ran/Aegir מוחזק כמטרה מסוג עשר שנות אור מ-Sol. טקסט משחק משתמש ב-Aegir; קטלוגים יבשים משתמשים ב-RAN-B:H8. אפמריס מדויק נשאר עבודת טבלאות נתיב.
 
 ## Audio
 
-HE LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+עשר שנות אור קטנות במפת כוכבים. הן גדולות מספיק כדי לפשוט רגל הצלה.
 
 ## Field Note
 
-HE LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+מרחק משוער הוא לחץ, לא קישוט. עשר שנות אור עדיין יכולות להרוג חדר.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/he_IL. -->

@@ -41,6 +41,8 @@ def approve_binding(binding: dict, reviewer: str, reason: str, reviewed_at: str)
 
 
 def reject_binding(binding: dict, reviewer: str, reason: str, reviewed_at: str) -> None:
+    binding["rejectedPersistentId"] = str(binding.get("persistentId", "")).strip()
+    binding["rejectedItemAsset"] = str(binding.get("itemAsset", "")).strip()
     binding["enabled"] = False
     binding["approved"] = False
     binding["reviewStatus"] = "REJECTED"

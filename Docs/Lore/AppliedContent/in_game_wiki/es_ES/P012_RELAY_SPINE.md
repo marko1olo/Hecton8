@@ -2,8 +2,8 @@
 packet_id: P012_RELAY_SPINE
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: transit.relay_spine
-unlock_id: unlock.first_relay_buffer
-poi_tags: poi.relay_buffer;poi.packet_spool
+unlock_id: unlock.first_stale_relay_buffer
+poi_tags: poi.relay_buffer;poi.packet_age_tag
 biome_tags: biome.drowned_colony;biome.service_canyons
 locale: es_ES
 surface: in_game_wiki
@@ -14,20 +14,22 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Espina de relés
 
-Relay Spine es el sistema nervioso lento del espacio humano: horarios de haz, búferes, custodia, seguro de ruta y legitimidad retrasada.
+La espina de relés es el esqueleto lento de comunicaciones: turnos de haz, búferes, sellos de custodia y reintentos. Mueve pruebas, reclamos y órdenes entre estrellas, pero no oxígeno a una sala inundada.
+
+En HECTON-8 un mensaje puede ser válido, visto y demasiado tarde. Verdad y rescate son problemas logísticos distintos.
 
 ## Scanner
 
-Búfer de relé obsoleto. La edad del paquete saliente supera su valor de rescate local.
+Búfer de relé viejo. La edad del paquete saliente supera la relevancia de rescate local. Hash de custodia intacto; ventana de respuesta muerta.
 
 ## Terminal
 
-Packet queued. Light-delay route accepted. Priority dispute unresolved. Human-response estimate: non-operational.
+ESPINA DE RELÉS // Paquete en cola por Aegir local, Luyten Junction y ruta de archivo Sol. Ruta de demora lumínica aceptada. Disputa de prioridad sin resolver. Respuesta humana no operativa para la ventana de supervivencia actual.
 
 ## Audio
 
@@ -35,6 +37,6 @@ El relé no está roto. Ese es el problema. Hace exactamente lo que permite la d
 
 ## Field Note
 
-Un mensaje puede ser verdad y llegar cuando ya eres huesos.
+Un mensaje puede ser cierto y llegar después de tus huesos.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/es_ES. -->

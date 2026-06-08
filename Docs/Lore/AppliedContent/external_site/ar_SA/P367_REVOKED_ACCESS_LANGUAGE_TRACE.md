@@ -9,32 +9,36 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Revoked Access Language Trace"
+title: "أثر لغة الوصول الملغى"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Revoked Access Language Trace
+# أثر لغة الوصول الملغى
 
-AR LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+يقرأ البطل أقفال Deep Reach كأدلة. الاعتمادات الملغاة تمنع الوصول، لكن الصياغة ما زالت تكشف المسار المدفون: تعدادات متدهورة، شهود بدلاء، إعادة تصنيف صيانة، ولغة حفظ المطالبات.
 
 ## Scanner
 
-AR LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+القفل لا يقول ممنوع. إنه يقول إعادة تصنيف صيانة، تعليق استمرارية، ومواد مسار. صياغة Deep Reach القديمة: رفض ما زال يشير إلى الباب المدفون.
 
 ## Terminal
 
-AR LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+استجابة الوصول / أرشيف المسار الآمن
+الاعتماد: ملغى
+السبب: مواد استمرارية الإخلاء مقصورة على موظفي Deep Reach المعتمدين
+المصطلحات الظاهرة: تعداد متدهور، شاهد بديل، مسار حفظ مطالبة، إعادة تصنيف صيانة
+ملاحظة: يمكن للموظفين الميدانيين السابقين رؤية لغة الرفض لغرض مطابقة الحادث فقط.
 
 ## Audio
 
-AR LOC HOLD: That is not security. That is a memo pretending to be a door.
+لم يمحوا الممر. لقد لفوه بمفردات لا يزال يفهمها إلا الموظفون الذين يعرفون ذنبهم.
 
 ## Field Note
 
-AR LOC HOLD: Lockout language hints at hidden liability without granting free access.
+الشارة ماتت. القفل ما زال يتكلم لهجة المكتب التي دفنت المسار.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ar_SA. -->

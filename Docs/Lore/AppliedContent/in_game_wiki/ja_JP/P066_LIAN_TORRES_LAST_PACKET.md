@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "リアン・トーレスの最後のパケット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# リアン・トーレスの最後のパケット
 
-JP LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.
+リアン・トーレスは通信の真実を固定する人物だ。彼の最後の正常パケットは、Deep Reachが信号劣化と隔離文言で埋める前に、証拠の一部がHECTON-8を出ていたことを示している。
 
 ## Scanner
 
-JP LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+最後の正常なパケットは失われていない。受信を認めるには代償が高すぎた。
 
 ## Terminal
 
-JP LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+TORRES, L. 正常なキャリア・ハンドシェイク達成。作業員数を添付。退避証拠を添付。中継経過時間は生存救助には不適。企業アーカイブは後にパケット破損と記録。
 
 ## Audio
 
-JP LOC HOLD: He sent the names. The archive called them noise.
+彼は名前を送った。アーカイブはそれを雑音と呼んだ。
 
 ## Field Note
 
-JP LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+搬送系が違う待ち行列に返事をすると、時刻印は遺体になる。
 
 <!-- In-Game Wiki; generated from P066_LIAN_TORRES_LAST_PACKET/ja_JP. -->

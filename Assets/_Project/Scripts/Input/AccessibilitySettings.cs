@@ -53,6 +53,21 @@ namespace Hecton8.Input
 
         internal static AccessibilitySettings ActiveRuntimeInstance { get; private set; }
 
+        internal static bool TryResolveActiveRuntime(ref AccessibilitySettings target)
+        {
+            AccessibilitySettings active = ActiveRuntimeInstance;
+            if (!IsLiveRuntimeOwner(active))
+            {
+                target = null;
+                return false;
+            }
+
+            if (!ReferenceEquals(target, active))
+                target = active;
+
+            return true;
+        }
+
         public uint GetSystemIdHash() => SystemHash;
         public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.VisualSync;
         public byte GetBucketId() => 0;
@@ -360,16 +375,30 @@ namespace Hecton8.Input
             if (_duplicateInstance)
                 return false;
 
-            if (ActiveRuntimeInstance != null && !ReferenceEquals(ActiveRuntimeInstance, this))
+            AccessibilitySettings active = ActiveRuntimeInstance;
+            if (active != null && !ReferenceEquals(active, this))
             {
-                _duplicateInstance = true;
-                _serviceShutdownComplete = true;
-                Destroy(gameObject);
-                return false;
+                if (IsLiveRuntimeOwner(active))
+                {
+                    _duplicateInstance = true;
+                    _serviceShutdownComplete = true;
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                ActiveRuntimeInstance = null;
             }
 
             ActiveRuntimeInstance = this;
             return true;
+        }
+
+        private static bool IsLiveRuntimeOwner(AccessibilitySettings settings)
+        {
+            return settings != null &&
+                   settings.isActiveAndEnabled &&
+                   !settings._duplicateInstance &&
+                   !settings._serviceShutdownComplete;
         }
 
         private bool HasValidBuffers()

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aya Morita Repair Medicine"
+title: "طب الإصلاح لدى آيا موريتا"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aya Morita Repair Medicine
+# طب الإصلاح لدى آيا موريتا
 
-AR LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.
+تحدد آيا موريتا حد الرعب الطبي. منطق إصلاح Atlas ليس إحياء للموتى؛ إنه يسيء تصنيف النسيج الحي والإصابة وتلف الكابل وبيولوجيا مانع التسرب داخل مفردات صيانة واحدة.
 
 ## Scanner
 
-AR LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.
+سجلت آيا موريتا أول لحظة توقف فيها Atlas عن شفاء الأجساد وبدأ يستخدمها كسطح إصلاح متوافق.
 
 ## Terminal
 
-AR LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.
+موريتا، أ. قبلت مستعمرة مانع التسرب نسيج المريض بعد تعرضه للكابل. لم تلاحظ عدوانية معادية. وسم Atlas يصنف الجرح كضرر واجهة. ارفض بروتوكول الإصلاح في فرز البشر الطبي.
 
 ## Audio
 
-AR LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.
+أغلق الجرح حول الكابل. في تلك اللحظة توقفت عن تسميته علاجا.
 
 ## Field Note
 
-AR LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.
+هذه ليست ملاحظة عن زومبي. إنها أسوأ: ملاحظة صيانة بخط كتب قرب السرير.
 
 <!-- In-Game Wiki; generated from P068_AYA_MORITA_REPAIR_MEDICINE/ar_SA. -->

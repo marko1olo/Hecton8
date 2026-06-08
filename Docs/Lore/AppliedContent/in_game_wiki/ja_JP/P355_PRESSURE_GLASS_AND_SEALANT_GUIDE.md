@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Pressure Glass and Sealant Guide"
+title: "圧力ガラスとシーラントガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Pressure Glass and Sealant Guide
+# 圧力ガラスとシーラントガイド
 
-JA LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.
+pressure glass は地質が Atlas と出会う場所だ。repair network は既存の亀裂、鉱物縁、pressure memories を経路として使うため、有用なレンズは生きた境界にもなる。
 
 ## Scanner
 
-JA LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+pressure-glass の亀裂が Atlas chemistry で封じられている。seal map が無傷の場合のみ安全な lens stock。
 
 ## Terminal
 
-JA LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: pressure glass は古い tide stress を記録する。Atlas sealant はそれらの亀裂を辿る。亀裂はすでにシステムの故障線を記述しているからだ。
 
 ## Audio
 
-JA LOC HOLD: The repair network reads fractures the way you read a map.
+修理ネットワークは、君が地図を読むように亀裂を読む。
 
 ## Field Note
 
-JA LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+美しい縁を削るな。fracture map に従い、seal の死んだ側から切れ。
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/ja_JP. -->

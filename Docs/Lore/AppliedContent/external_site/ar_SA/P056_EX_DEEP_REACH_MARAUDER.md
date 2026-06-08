@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "مارودر سابق من Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# مارودر سابق من Deep Reach
 
-AR LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+مارودر سابق من Deep Reach يثبت قانون اللاعب. اللاعب متخصص سابق في أنظمة ميدانية وبنية إخلاء تابعة للشركة، دفعته القائمة السوداء أو الدين إلى إنقاذ واستخراج مستقل، ثم أعادته وصاية Black Keel إلى HECTON-8. الدراما تأتي من التعرف المهني: القمر يجيب بإجراءات كان اللاعب يفهمها، وكل قفل مألوف يجعل كذبة الشركة أصعب أن تُعامل كحادث يخص شخصاً آخر.
 
 ## Scanner
 
-AR LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+قفل Deep Reach القديم لا يفحص اسمك. إنه يتعرف على إيقاع تسلسل الإصلاح في يديك.
 
 ## Terminal
 
-AR LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+أثر اعتماد: عقد سابق لأنظمة ميدانية. أُلغي الوصول إلى بنية الإخلاء. قُبلت صفة الإنقاذ والاستخراج تحت وصاية دين في حوض المطالبات.
 
 ## Audio
 
-AR LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+لم تعد إلى البيت. عدت إلى إجراء لم يتوقف عن العمل قط.
 
 ## Field Note
 
-AR LOC HOLD: Not family business. Procedure remembers who taught your hands.
+ليست قضية عائلة. الإجراء يتذكر الأيدي التي استخدمته.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/ar_SA. -->

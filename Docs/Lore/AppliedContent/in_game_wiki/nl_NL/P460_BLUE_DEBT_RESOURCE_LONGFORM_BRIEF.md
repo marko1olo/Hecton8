@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "NL LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: drukgeschiedenis in custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Blue Debt Custody
+# Blue Debt: drukgeschiedenis in custody
 
-NL LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt is nuttig, duur en moreel vuil. Geen magisch erts, maar pressure-grown substrate waarvan waarde hangt aan handling, contamination, custody, Atlas compatibility en wie bewijs bezit.
 
 ## Scanner
 
-NL LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Resourcearchief. Blue debt is Xenon-Omega pressure substrate in custody: pressure history, brine exposure, noble-gas capture, contamination stage, sample grade en mass-through-window payout.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+PUBLIEKE RESOURCEKNOOP // BLUE DEBT. Waarde vereist pressure-rated containment, extraction scar record, contamination status, custody receipt en recoverable tonne-window allocation.
 
 ## Audio
 
-NL LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+Black Keel-payout audio: "Polijst het monster niet. Seal het, grade het en houd de receipt droog."
 
 ## Field Note
 
-NL LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Marauder-notitie: grade de sample eerst, vraag daarna wat haar raakte. Prijs zonder custody is lokaas.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/nl_NL. -->

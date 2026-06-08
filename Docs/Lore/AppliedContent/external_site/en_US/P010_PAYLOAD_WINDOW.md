@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Payload Window
 
-Payload Window defines HECTON-8's ending structure. The final question is not only what the player believes, but what the player can carry out of the ocean.
-
-## Scanner
-
-Improvised ascent package. It can leave the ocean if mass, weather, and carrier geometry agree.
-
-## Terminal
-
-PAYLOAD SLOT: limited. WINDOW: open. ROUTE: contested. CLAIM VALUE: variable. EVIDENCE STATE: insufficient for clean dispute.
-
-## Audio
-
-Window is open. It will not stay open for everything.
-
-## Field Note
-
-Getting out is a route. Getting out clean is a myth.
+The final problem on HECTON-8 is not a moral menu floating above the ocean. It is a payload window. The ascent package has mass limits, the weather has timing, Aegir has radiation and orbital constraints, and Black Keel has receiver rules before it has mercy. Every ending therefore asks what leaves the moon and who receives it. Coordinates can buy recovery and hand Deep Reach the crime scene. Evidence can reach a public ledger and remove the player’s control over consequence. Samples can pay debt while strengthening the system that buried worker names. Silence can deny the corporation and leave proof under water. The window carries no justice by itself. It is the shape justice has to squeeze through.
 
 <!-- External Site; generated from P010_PAYLOAD_WINDOW/en_US. -->

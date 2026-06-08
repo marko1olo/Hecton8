@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Domain Distance Scale"
+title: "סולם מרחקי דומיין"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Domain Distance Scale
+# סולם מרחקי דומיין
 
-HE LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.
+סולם הדומיינים הוא מפת לחץ, לא מפת תיירים. Sol Core עדיין יכול לאשר בעלות מרחוק. Centauri יכול לגרום לצ'רטר ישן להישמע נקי. Barnard יכול לשלוח cutter ו-Marauder בחוב לעבודה מלוכלכת. Tau Ceti יכול לפרסם ראיה לאחר העיכוב. Luyten יכול להוכיח custody של חבילה. Ran/Aegir הוא המקום שבו כל הכוחות הרחוקים האלה נהפכים למים מעל הקסדה.
+
+לכן HECTON-8 מרגיש בודד בלי שהיקום יהיה ריק. הודעה יכולה לחצות את הנתיב ועדיין להגיע אחרי שחמצן, גאות, טמפרטורת מעטפת ו-recovery window של Black Keel כבר החליטו. מרחק לא מוחק חוק. הוא הופך את החוק לקר יותר מחילוץ.
 
 ## Scanner
 
-HE LOC HOLD: The domain map uses distance bands, not romantic shortcuts.
+DOMAIN DISTANCE PLATE // Sol, Centauri, Barnard, Tau Ceti, Luyten ו-Ran/Aegir אינם תפאורה. הם עיכוב, custody, מסה, ראיה ועלות חילוץ.
 
 ## Terminal
 
-HE LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.
+DOMAIN SCALE // Ran/Aegir נשאר יעד ברמת כ-10.5 שנות אור מ-Sol עד שטבלאות האפמריס הסופיות יחליפו את התחום. אין וקטור חילוץ FTL. אין תשובה מיידית. סמכות נתיב מגיעה לפני עזרה אנושית.
 
 ## Audio
 
-HE LOC HOLD: Ten light-years is a number. The bill is the story.
+עשר שנות אור הן לא החלק הקשה. החלק הקשה הוא לדעת מי שילם על מסת החזרה.
 
 ## Field Note
 
-HE LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.
+אם הטבלה מתחילה להישמע נשגבת, חתוך. השחקן צריך את מחיר המרחק, לא כרזת כוכבים.
 
 <!-- In-Game Wiki; generated from P161_DOMAIN_DISTANCE_SCALE/he_IL. -->

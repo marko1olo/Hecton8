@@ -7,34 +7,34 @@ poi_tags: poi.tide_model_terminal;poi.glacier_warning
 biome_tags: biome.tide_gauge;biome.glacier_break
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Modèle de marée de Mara Venn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# Modèle de marée de Mara Venn
 
-FR LOC HOLD: Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.
+Mara Venn donne au Great Tide un témoin scientifique. Son modèle relie géométrie lunaire d'Aegir, cryosphere shear et capacité d'évacuation en une seule marge sale. Deep Reach n'a pas effacé le modèle ; il a changé l'étiquette d'action jusqu'à rendre l'avertissement assez bon marché pour l'ignorer.
 
 ## Scanner
 
-FR LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
+Mara Venn n'a pas prédit un meurtre. Elle a prédit la marge de marée que Deep Reach a rebaptisée improbable.
 
 ## Terminal
 
-FR LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
+RÉVISION DU MODÈLE VENN : cryosphere shear au-delà de la marge d'évacuation sous géométrie de printemps Aegir ; action review abaissée à monitor en attente du budget asset-continuity.
 
 ## Audio
 
-FR LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
+L'eau n'était pas soudaine pour ceux qui lisaient les chiffres.
 
 ## Field Note
 
-FR LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+Un avertissement cesse de coûter cher quand quelqu'un le rétrograde sur papier.
 
 <!-- In-Game Wiki; generated from P062_MARA_VENN_TIDE_MODEL/fr_FR. -->

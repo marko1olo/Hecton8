@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Heavy Freight Staging Time"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Heavy Freight Staging Time
 
-Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships.
-
-## Scanner
-
-Atlas-class freight is not fast. It is prepaid patience with armor.
-
-## Terminal
-
-FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
-
-## Audio
-
-A ship that heavy does not travel. It becomes an invoice with a wake.
-
-## Field Note
-
-A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+Heavy freight hides time inside infrastructure. Atlas hardware, seed cargo, shield stock, and braking parts can arrive early because they are launched years before public settlement language catches up. That does not make emergency rescue easy. A prepared route can move mass because depots, beam windows, pellet streams, and catch stages were waiting. A disaster route has none of that patience left. HECTON-8 is full of machinery that arrived on old plans and people who needed help on new clocks.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/en_US. -->

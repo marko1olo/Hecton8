@@ -1,7 +1,7 @@
 {
     "schema":  "H8.APPLIED_LORE_RELEASE_SET.V0",
     "release_set_id":  "RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION",
-    "status":  "canonical_source_candidate_pending_manifest_wiring_native_localization_and_bake",
+    "status":  "canonical_source_localized_pages_pending_native_review_and_h8bin_bake",
     "packets":  [
                     "P467_ATLAS6_PUBLIC_REPAIR_NETWORK_BRIDGE",
                     "P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE",
@@ -22,7 +22,10 @@
                                      "Docs/Lore/AppliedContent/production_packets/P473_BARNARD_YARDS_SALVAGE_ORIGIN_BRIDGE.production.md",
                                      "Docs/Lore/AppliedContent/production_packets/P474_SOL_CORE_REMOTE_CLAIM_AUTHORITY_BRIDGE.production.md"
                                  ],
-    "canonical_importer_ready":  false,
+    "packet_sources":  [
+                           "Docs/Lore/AppliedContent/packets/RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION.packets.json"
+                       ],
+    "canonical_importer_ready":  true,
     "runtime_ready":  false,
     "evidence_class":  "STATIC_SOURCE"
 }

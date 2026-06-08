@@ -9,32 +9,26 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: أول إصلاح PressureSeal"
+title: "أول إصلاح PressureSeal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: أول إصلاح PressureSeal
+# أول إصلاح PressureSeal
 
-AR LOC HOLD: يبدأ أول إصلاح مفيد في Shallow Annex P-63 تحت الضوء. يتحول FiberKelp من الرف المضيء إلى FiberMesh يحمل PressureSeal مؤقتا لطوق أو مقبس خدمة. إنه يشتري وقتا وأمان مسار، لا هروبا.
+## إصلاح في الضوء
 
-## Scanner
+يبدأ أول إصلاح مفيد في Shallow Annex P-63 حيث يبقى الماء مضيئا بما يكفي ليكذب. في الخارج يتحرك FiberKelp مع تيار الرف. في الداخل يتعرق طوق ضغط عبر درز كتبته Deep Reach صالحا للخدمة.
 
-AR LOC HOLD: هدف PRESSURESEAL // تسرب في طوق P-63. حامل FiberMesh متوافق. تثبيت محلي فقط؛ اعتماد الصعود مرفوض.
+FiberKelp ليف حيوي ضحل، لا كنز نادر. ينمو حيث يلتقي الضوء والتيار والحرارة الصناعية القديمة. الخيوط المغسولة والممشطة تصبح FiberMesh. يستطيع مصنع P-63 الميداني ضغط هذه الشبكة في طبقة حاملة لـ PressureSeal مؤقت.
 
-## Terminal
+أهمية القطعة في حدها. يستطيع PressureSeal إبطاء تسرب محلي، وتثبيت جيب عودة، وجعل حلقة إصلاح قصيرة قابلة للنجاة. لا يعتمد bathydrop للصعود، ولا يستبدل حلقة مشبك، ولا يحول رد Black Keel إلى استرداد.
 
-AR LOC HOLD: ملاحظة تحمل DEEP REACH P-63 // تأجيل استبدال الطوق. طبق حامل ختم لين معتمد حيث يبقى التسرب ضمن حد الخدمة المحلي.
+التناقض ظاهر قبل الأرشيف. يقول الطرفية إن فرق الضغط داخل تحمل الخدمة. يظهر الطوق مسامير ملتوية، وزهرة ملح تحت شريط الفحص، وأليافا عالقة في شق كان يجب أن يكون معدنا نظيفا.
 
-## Audio
-
-AR LOC HOLD: ترحيل Black Keel: رقعة P-63 آمنة محليا لا للصعود. خذ الختم واحتفظ بالرقم التسلسلي.
-
-## Field Note
-
-AR LOC HOLD: ماء مضيء في الخارج. طوق مبتل في الداخل. سمته Deep Reach اسميا لأن الكلمة أرخص من حلقة مشبك.
+درس Marauder عملي: اقطع FiberKelp نظيفا، أبق الرمل خارج الشبكة، احفظ رقم الختم، ولا تثق بإصلاح يقول محلي آمن عندما يحتاج المسار إلى آمن للصعود.
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/ar_SA. -->

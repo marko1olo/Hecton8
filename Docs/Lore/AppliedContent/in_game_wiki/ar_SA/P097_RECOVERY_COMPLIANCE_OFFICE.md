@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "مكتب امتثال الاسترداد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# مكتب امتثال الاسترداد
 
-AR LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+مكتب امتثال الاسترداد هو فصيل Deep Reach الحاضر الذي يدفع عائدا إلى HECTON-8. يعمل عبر النوافذ والسلطة بالوكالة والحزم القانونية وأوامر التنظيف. لا يحتاج إلى أمر فوري؛ يحتاج إلى أن يرسل اللاعب payload الخطأ أولا.
 
 ## Scanner
 
-AR LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+ختم مكتب بزمن الحاضر. Deep Reach ليس شبحا؛ إنه طابور معه محامون.
 
 ## Terminal
 
-AR LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+مكتب امتثال الاسترداد: فتح إجراء عودة Aegir. الأولويات: عهدة XO، وصول Atlas، احتواء المسؤولية، وصمت المتعاقد إن توفر.
 
 ## Audio
 
-AR LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+لقد تأخروا بما يكفي ليكونوا قانونيين، وحضروا بما يكفي ليكونوا خطرين.
 
 ## Field Note
 
-AR LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+فصيل حي يجعل الضغط حاضرا من دون تحويل الشركة كلها إلى شرير واحد يصرخ.
 
 <!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/ar_SA. -->

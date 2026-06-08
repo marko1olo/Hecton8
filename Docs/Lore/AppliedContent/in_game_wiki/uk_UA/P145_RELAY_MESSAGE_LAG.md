@@ -7,34 +7,34 @@ poi_tags: poi.relay_packet_delay_meter;poi.legal_reply_timestamp
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Relay Message Lag"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Затримка релейних повідомлень"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# Затримка релейних повідомлень
 
-UA LOC HOLD: Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.
+Релейна затримка дає Deep Reach змогу погрожувати гравцю без живого голосу в кімнаті. Контрактні машини, нотаріуси, вікна претензій і умови носія можуть прийти раніше за співчуття, бо їх написали раніше, поставили в чергу раніше й оцінили так, щоб пережити відстань.
 
 ## Scanner
 
-UA LOC HOLD: A message can be legally binding and still arrive too late to save air.
+Повідомлення може бути юридично обов'язковим і все одно прийти надто пізно, щоб урятувати повітря.
 
 ## Terminal
 
-UA LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
+РЕЛЕЙНА ЗАТРИМКА: локальні повідомлення Aegir можуть іти години або дні. Міждоменні юридичні пакети можуть іти роки. Тиск Deep Reach тому застарілий, автоматизований, контрактний і все ще небезпечний.
 
 ## Audio
 
-UA LOC HOLD: The reply is late. The lien is current.
+Відповідь запізнилася. Застава чинна.
 
 ## Field Note
 
-UA LOC HOLD: No ansible means truth moves as freight.
+Немає ансибля — правда рухається як фрахт.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/uk_UA. -->

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Suara Pertama Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Suara Pertama Black Keel
 
-ID LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+Suara pertama Black Keel mencapai pemain sebagai audio rusak dan teks bersih. Ia bukan teman dan bukan pidato penjahat. Ia adalah monitor carrier yang melakukan tugasnya: mengonfirmasi sinyal, menjaga opsi rute, mengurutkan kewajiban, dan menghindari janji. Suara itu berguna karena memberi informasi keras. Suara itu menakutkan karena setiap kalimat benar tetap membuat penyelamatan bersyarat.
 
 ## Scanner
 
-ID LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
+Cache suara carrier. Audio terpotong, teks bersih, simpati absen.
 
 ## Terminal
 
-ID LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: kanal audio menurun. Kanal teks valid. Kelangsungan hidup operator diakui. Prioritas recovery belum selesai menunggu status payload, karantina, lien, dan integritas sinyal.
 
 ## Audio
 
-ID LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
+Sinyal operator diperoleh. Jangan samakan pengakuan dengan penyelamatan.
 
 ## Field Note
 
-ID LOC HOLD: The first voice should feel useful before it feels bought.
+Kalimat berguna pertama datang dengan kelas penagihan di belakangnya.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/id_ID. -->

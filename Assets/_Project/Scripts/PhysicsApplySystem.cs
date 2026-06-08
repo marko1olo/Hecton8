@@ -2125,8 +2125,7 @@ namespace Hecton8.Physics
 
         private bool TryEnqueueBackPacket(in ForcePacket packet, string saturationMessage)
         {
-            if (_backCount >= MaxQueuedPackets ||
-                !TryAcquireForcePacketBufferWriteLock(
+            if (!TryAcquireForcePacketBufferWriteLock(
                     in _backPacketBufferHandle,
                     BufferID.PhysicsForceCommandBack,
                     out NativeArray<ForcePacket> backPackets,
@@ -2138,6 +2137,9 @@ namespace Hecton8.Physics
 
             try
             {
+                if (TryReplaceQueuedPosePacket(backPackets, _backCount, in packet))
+                    return true;
+
                 if (_backCount >= MaxQueuedPackets)
                 {
                     ReportForcePacketSaturationWarningIfNeeded(saturationMessage);
@@ -2151,6 +2153,38 @@ namespace Hecton8.Physics
             {
                 ReleaseForcePacketBufferWriteLock(backPacketsVault, in _backPacketBufferHandle);
             }
+        }
+
+        private static bool TryReplaceQueuedPosePacket(NativeArray<ForcePacket> backPackets, int count, in ForcePacket packet)
+        {
+            ForcePacketFlags packetFlags = (ForcePacketFlags)packet.Flags;
+            if ((packetFlags & ForcePacketFlags.SetPose) == 0 ||
+                packet.RigidbodyIndex < 0 ||
+                !backPackets.IsCreated)
+            {
+                return false;
+            }
+
+            int safeCount = math.min(count, backPackets.Length);
+            for (int i = safeCount - 1; i >= 0; i--)
+            {
+                ForcePacket existing = backPackets[i];
+                ForcePacketFlags existingFlags = (ForcePacketFlags)existing.Flags;
+                if (existing.RigidbodyIndex != packet.RigidbodyIndex ||
+                    (existingFlags & ForcePacketFlags.SetPose) == 0)
+                {
+                    continue;
+                }
+
+                ForcePacket replacement = packet;
+                replacement.Flags = (byte)(packetFlags | (existingFlags & ForcePacketFlags.WakeBody));
+                if ((byte)existing.Priority > (byte)replacement.Priority)
+                    replacement.Priority = existing.Priority;
+                backPackets[i] = replacement;
+                return true;
+            }
+
+            return false;
         }
 
         private void ReportForcePacketSaturationWarningIfNeeded(string saturationMessage)
@@ -2983,9 +3017,9 @@ namespace Hecton8.Physics
 
         private static float ResolveActiveBiomeGravityMultiplier()
         {
-            HectonBiomeMatrixProfile profile = BiomeMatrixDirector.ActiveRuntimeInstance != null
-                ? BiomeMatrixDirector.ActiveRuntimeInstance.CurrentProfile
-                : null;
+            BiomeMatrixDirector biomeMatrixDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
+            HectonBiomeMatrixProfile profile = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null;
 
             return profile != null ? profile.GravityMultiplier : 1f;
         }
@@ -4052,7 +4086,8 @@ namespace Hecton8.Physics
             out Vector3 playerPosition)
         {
             if (playerContext != null &&
-                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
                 if (math.all(math.isfinite(movementState.WorldPosition)))
                 {
@@ -4071,11 +4106,14 @@ namespace Hecton8.Physics
                     return true;
                 }
 
-                float3 aupRuntimePosition = movementState.PredictedAup.ToRuntimeFloat3();
-                if (math.all(math.isfinite(aupRuntimePosition)))
+                if (movementState.PredictedAup.IsFinite())
                 {
-                    playerPosition = new Vector3(aupRuntimePosition.x, aupRuntimePosition.y, aupRuntimePosition.z);
-                    return true;
+                    float3 aupRuntimePosition = movementState.PredictedAup.ToRuntimeFloat3();
+                    if (math.all(math.isfinite(aupRuntimePosition)))
+                    {
+                        playerPosition = new Vector3(aupRuntimePosition.x, aupRuntimePosition.y, aupRuntimePosition.z);
+                        return true;
+                    }
                 }
             }
 

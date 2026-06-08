@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "Cortador de inducción de baja potencia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# Cortador de inducción de baja potencia
 
-ES LOC HOLD: The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+El cortador de inducción de baja potencia es la primera herramienta de acceso, no una llave universal. Abre compuertas de servicio atascadas, pernos de panel y cajas de salvage mientras obliga a leer qué está haciendo cada pieza. Pressure glass, marcos activos y costuras crecidas por Atlas pertenecen a herramientas posteriores o a mejores pruebas.
 
 ## Scanner
 
-ES LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+Cortador de inducción de baja potencia. Solo metal de servicio; bastidores de carga y pressure glass quedan fuera de clase.
 
 ## Terminal
 
-ES LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+AVISO DE HERRAMIENTA / CORTADOR DE INDUCCIÓN: objetivos autorizados: compuertas de servicio, pernos de panel, soportes ligeros y cierres de caja. No cortar marcos activos, retícula de pressure glass ni costuras crecidas por Atlas sin certificación de clase posterior.
 
 ## Audio
 
-ES LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
+Corta el perno. Deja la costilla.
 
 ## Field Note
 
-ES LOC HOLD: The cutter should feel valuable because it is limited.
+Buen cortador, mala fe. Abre paneles. No perdona cortar la costilla que mantiene la sala en escuadra.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/es_ES. -->

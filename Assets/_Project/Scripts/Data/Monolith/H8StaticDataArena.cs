@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Hecton8.SaveSystem;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -369,8 +370,12 @@ namespace Hecton8.Data
                 if (!File.Exists(tempPath))
                     return null;
 
-                TryDeleteFile(cachePath);
-                File.Move(tempPath, cachePath);
+                if (!TryPromoteDataMonolithTempFile(tempPath, cachePath))
+                {
+                    TryDeleteFile(tempPath);
+                    return null;
+                }
+
                 return cachePath;
             }
             catch (OperationCanceledException)
@@ -422,6 +427,7 @@ namespace Hecton8.Data
             if (string.IsNullOrEmpty(path))
                 return;
 
+            AsyncWriteManager.InvalidateCachedReadWindows(path);
             try
             {
                 if (File.Exists(path))
@@ -442,6 +448,47 @@ namespace Hecton8.Data
             catch (System.Security.SecurityException)
             {
             }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
+            }
+        }
+
+        private static bool TryPromoteDataMonolithTempFile(string tempPath, string finalPath)
+        {
+            if (string.IsNullOrEmpty(tempPath) || string.IsNullOrEmpty(finalPath) || !File.Exists(tempPath))
+                return false;
+
+            if (!AsyncWriteManager.TryGetFileLength(tempPath, out long tempBytes, out _) ||
+                tempBytes <= 0L ||
+                !AsyncWriteManager.FlushCriticalSavePath(tempPath, tempBytes, out _))
+            {
+                return false;
+            }
+
+            AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+            AsyncWriteManager.InvalidateCachedReadWindows(finalPath);
+            try
+            {
+                if (File.Exists(finalPath))
+                    File.Replace(tempPath, finalPath, null, true);
+                else
+                    File.Move(tempPath, finalPath);
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(finalPath);
+            }
+
+            if (!AsyncWriteManager.TryGetFileLength(finalPath, out long promotedBytes, out _) ||
+                promotedBytes != tempBytes ||
+                !AsyncWriteManager.FlushCriticalSavePath(finalPath, promotedBytes, out _))
+            {
+                return false;
+            }
+
+            return true;
         }
 #endif
 
@@ -2135,7 +2182,7 @@ namespace Hecton8.Data
                            FileAccess.Write,
                            FileShare.Read,
                            EditorHotReloadSnapshotChunkBytes,
-                           FileOptions.SequentialScan))
+                           FileOptions.WriteThrough | FileOptions.SequentialScan))
                 {
                     int copiedBytes = 0;
                     while (copiedBytes < blobBytes)
@@ -2146,48 +2193,46 @@ namespace Hecton8.Data
                         copiedBytes += chunkBytes;
                     }
 
-                    stream.Flush();
+                    stream.Flush(true);
                 }
 
-                TryDeleteFile(finalPath);
-                File.Move(tempPath, finalPath);
+                if (!TryPromoteDataMonolithTempFile(tempPath, finalPath))
+                {
+                    TryDeleteFile(tempPath);
+                    return false;
+                }
+
                 snapshotPath = finalPath;
                 return true;
             }
             catch (IOException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
             catch (UnauthorizedAccessException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
             catch (ArgumentException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
             catch (NotSupportedException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
             catch (System.Security.SecurityException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
             catch (InvalidOperationException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
         }
@@ -3818,8 +3863,8 @@ namespace Hecton8.Data
             NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring,
             int cursor)
         {
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: false);
+            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough);
+            using BinaryWriter writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: true);
             writer.Write(0x4858444Du);
             writer.Write((uint)status);
             writer.Write(cursor);
@@ -3847,6 +3892,9 @@ namespace Hecton8.Data
                 writer.Write(entry.Reserved2);
                 writer.Write(entry.Reserved3);
             }
+
+            writer.Flush();
+            stream.Flush(true);
         }
 #endif
 

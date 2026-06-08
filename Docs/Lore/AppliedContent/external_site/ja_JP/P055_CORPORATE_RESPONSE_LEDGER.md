@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "企業応答台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# 企業応答台帳
 
-JP LOC HOLD: Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority.
-
-## Scanner
-
-JP LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
-
-## Terminal
-
-JP LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
-
-## Audio
-
-JP LOC HOLD: The reply was automatic. The rescue was conditional.
-
-## Field Note
-
-JP LOC HOLD: Immediate response is not immediate rescue.
+企業応答台帳は悪役の演説ではない。それより冷たい。Black Keelが応答するという機械可読の約束だが、契約が認める順序の内側でしか動かない。資産保管が最初。責任封印が次。船体監査、サンプル経路、支払い経路、そして待ち行列が許せば操作者回収。プレイヤーは台帳を手掛かり、鍵、圧力として使える。システムが予測可能だからだ。その予測可能性こそ告発だ。HECTON-8は一つの悪い判断で見捨てられたのではなく、人間が低優先貨物になる間も働き続けた応答スタックに見捨てられた。
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/ja_JP. -->

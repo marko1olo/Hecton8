@@ -7,34 +7,34 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Salvage Tool Custody"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Custódia de ferramenta de salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Salvage Tool Custody
+# Custódia de ferramenta de salvage
 
-Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.
+Ferramentas de salvage não são equipamento neutro. Cutters, patchers e docks de fabricador podem registrar quem abriu um painel, reparou uma linha ou moveu uma amostra. Esse log pode proteger evidência, anexar direitos de payout ou fortalecer o claim contra o jogador. Custódia de ferramenta é onde a sobrevivência minuto a minuto toca a economia maior de salvage.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+O dock da ferramenta guarda um log de custódia selado. Último corte, reparo e bolsa de amostra estão ligados a um token de claim Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: uso do cutter aceito sob salvage claim. Ação de reparo testemunhada. Direitos de amostra anexados ao token Keelmark Mutual. Exportação de evidência conflita com rota de payout material.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Todo corte útil deixa uma testemunha.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Um cutter pode salvar seu ar e vender suas mãos no mesmo golpe. Veja o que ele registra antes de chamá-lo de seu.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/pt_BR. -->

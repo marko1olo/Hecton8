@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "דליפה לרשם ציבורי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# דליפה לרשם ציבורי
 
-HE LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+דליפה לרשם ציבורי אינה פנטזיית חושף שחיתות מושלמת. זו חבילה שיוצאת בחלון relay צר עם witness hash, custody שקשה להכחיש, ויותר מדי חלקים חסרים מכדי להיות בטוחה. Tau Ceti יכול להפוך את הרשומה לציבורית הרבה אחרי שהוא יכול להציל מישהו במים.
 
-## Scanner
-
-HE LOC HOLD: You can leak truth before you understand all of it.
-
-## Terminal
-
-HE LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-HE LOC HOLD: The truth leaves first. You may not like who reads it.
-
-## Field Note
-
-HE LOC HOLD: Public does not mean safe. It means harder to erase.
+העיכוב הזה הוא העניין. Deep Reach כבר לא יכול פשוט למחוק את ה-claim, אבל גם השחקן לא יכול להחליט מי ישתמש בו אחר כך. מבטחים, יריבים, בתי דין אזרחיים, בריכות Marauder ומשרדי חברה יקראו את אותו פצע אחרת. הסוף הזה מקשה לקבור את האמת ומקשה להחזיק בה.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/he_IL. -->

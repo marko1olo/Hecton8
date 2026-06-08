@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: No-FTL Route Delay"
+title: "Задержка маршрута без FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: No-FTL Route Delay
+# Задержка маршрута без FTL
 
-RU LOC HOLD: Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
+Дистанция на маршруте Aegir является правилом выживания. Закон, долг и старые packets достигают игрока задолго до carrier, tender, запчасти или живого спасателя. Ответ relay не отменяет работу с давлением перед тобой; он лишь доказывает, что кто-то поставил твой claim в очередь.
 
 ## Scanner
 
-RU LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+Транзитная запись. Трафик Aegir зависит от precursor probes, beam lanes, pellet-fusion freight, тормозной массы, возраста пакета, relay custody и юридической задержки.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+ПУБЛИЧНЫЙ АРХИВНЫЙ УЗЕЛ // ПРЕДЕЛ ТРАНЗИТА. FTL отсутствует. Ansible отсутствует. Живое спасение требует физического transfer, braking architecture, carrier position, descent mass и действующего local window.
 
 ## Audio
 
-RU LOC HOLD: Help can be legally present and physically years away.
+Помощь может быть юридически рядом и физически в годах пути.
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+Заметка Marauder: когда relay отвечает, спроси, сколько лет ответу и какую массу он способен сдвинуть.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/ru_RU. -->

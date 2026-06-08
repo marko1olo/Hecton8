@@ -211,12 +211,14 @@ namespace Hecton8.World
             _queuedParticleCount = 0;
             _appliedQualityParticleCap = 0;
             _appliedQualityWeight = -1f;
+            _sargassumDrag = null;
         }
 
         private void OnDestroy()
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
+            _sargassumDrag = null;
         }
 
         private void OnValidate()
@@ -549,7 +551,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _sargassumDrag = GlobalRegistry.SargassumDrag;
+            WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDrag);
         }
 
         private void TryRegisterHotSwapListener()
@@ -578,6 +580,7 @@ namespace Hecton8.World
             {
                 case GlobalRegistryServiceSlot.SargassumDragRuntime:
                     _sargassumDrag = currentService as SargassumGlobalDragManager;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDrag);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregister();

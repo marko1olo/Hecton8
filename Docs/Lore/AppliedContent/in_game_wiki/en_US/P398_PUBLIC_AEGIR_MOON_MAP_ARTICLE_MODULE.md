@@ -19,19 +19,19 @@ localization_flags: 0
 
 # Aegir Moon Route Map
 
-Aegir moon data is route data. HECTON-8 is one ocean moon inside a larger ladder of relay, radiation, scatter and tide constraints; the visible sky is part of navigation, not decoration.
+Aegir moon data is route data. HECTON-8 is the playable ocean moon, but it sits inside a larger ladder of relay, radiation, scatter and tide constraints. The visible sky is part of why a rescue signal can be heard, delayed, priced, denied or physically impossible.
 
 ## Scanner
 
-System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure, occultation bands, dead beacons and recovery geometry.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure, custody timing or claim reliability.
 
 ## Audio
 
-The map is why no one arrives the moment you ask.
+The map explains why no one arrives the moment you ask.
 
 ## Field Note
 

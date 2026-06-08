@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Fila de taquillas obreras
 
-Este hallazgo convierte HECTON-8 en un lugar de trabajo con hábitos, deudas y cultura de frontera.
+Las filas de casilleros obreros arraigan HECTON-8 en labor ordinaria. Herramientas, pintura, créditos de comida y marcas de frontera aparecen antes de que el desastre se vuelva teoría.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Los objetos vuelven humana la colonia: nombres, herramientas, crédito de comida
 
 ## Terminal
 
-Auditoría colonial: almacenamiento personal y marcas Barnard conectan al jugador con tripulantes reales.
+AUDITORÍA COLONIAL: almacenamiento personal y marcas Barnard atan la fila de casilleros a tripulación con nombre y rutas de trabajo.
 
 ## Audio
 

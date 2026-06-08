@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 지질, 압력, 그리고 2147년의 대조
 
 > **출처:** 킬마크 손실 심사국, 청구 기각 요약서. 첨부 부록: 수심 위험 가이드.  

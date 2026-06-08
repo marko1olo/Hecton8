@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "שרשרת האחריות של הגאות הגדולה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# שרשרת האחריות של הגאות הגדולה
 
-HE LOC HOLD: The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.
+הגאות הגדולה לא הייתה כפתור שמישהו לחץ עליו בחדר דירקטוריון. HECTON-8 הוצפה דרך הגברת גאות, כשל קריוספירה, כימיית לחץ ושולי הנדסת מושבה שנמכרו כמקובלים. ההבחנה הזאת חשובה כי היא הופכת את הפשע למלוכלך יותר, לא לנקי יותר. Deep Reach לא הייתה צריכה להמציא אסון. היא הייתה צריכה לבנות פינוי עצמאי קטן מדי, להשאיר את שקלול הרציפות של Atlas פעיל, לשמור נכסי תביעה לפני חילוץ אנשים ולהסתיר עיכוב בשפת אישור. המים היו פיזיקה. שרשרת האחריות היא אוסף ההחלטות שהפך פיזיקה לנטישה.
 
 ## Scanner
 
-HE LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+ההצפה הייתה פיזיקה אמיתית: צימוד גאות, קריסת קרח, כימיית לחץ ושוליים שתומחרו דק מדי. הפשע היה ערימת העדיפויות שנבנתה סביב זה.
 
 ## Terminal
 
-HE LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+סיכום אירוע: שרשרת גאוטכנית אושרה. קיבולת הפינוי מתחת לביקוש סיכון קצה. שקלול הרציפות של Atlas נשאר פעיל. חילוץ אנשים ממתין לאישור.
 
 ## Audio
 
-HE LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+הים עשה את ההצפה. החברה החליטה אילו דלתות יישארו נייר.
 
 ## Field Note
 
-HE LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach לא הייתה צריכה להטביע את הירח. היה מספיק להפוך את הפינוי לאפשרות.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/he_IL. -->

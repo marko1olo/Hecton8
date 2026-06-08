@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "P-63 Pompkamer In De Ondiepe Annex"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Shallow Annex P-63 Pump Room
+# P-63 Pompkamer In De Ondiepe Annex
 
-NL LOC HOLD: P-63 teaches survival through work: pumping, sealing, pressure reading and a return pinger. The room is safe only while its machine keeps winning.
+P-63 leert overleven via werk: pompen, afdichten, druk lezen en wachten op een return pinger. De kamer is alleen veilig zolang zijn machine blijft winnen.
 
 ## Scanner
 
-NL LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+P-63 pompkamer. Handmatige sumpdruk houdt stand met minder dan een servicemarge.
 
 ## Terminal
 
-NL LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+WERKORDER P-63 / SHALLOW ANNEX: sump met handpomp tot 0.3 m; cold seal op naad C zetten; vastgesmolten lockersluiting pas snijden nadat meter stabiel is; groen lampje niet vertrouwen tot return pinger antwoordt.
 
 ## Audio
 
-NL LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+Eerst pompen. Dan afdichten. Cutter pas nadat de meter niet meer drijft.
 
 ## Field Note
 
-NL LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+De pomphendel is gepolijst waar bange handen hem bleven gebruiken. Droge vloer begint bij de krijtlijn.
 
 <!-- In-Game Wiki; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/nl_NL. -->

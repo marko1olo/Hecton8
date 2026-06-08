@@ -9,32 +9,20 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Deep Reach Suboffice Registry"
+title: "Registri Subkantor Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Suboffice Registry
+# Registri Subkantor Deep Reach
 
-ID LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## Kantor Kecil, Akibat Besar
 
-## Scanner
+Deep Reach lebih menakutkan saat berhenti terdengar seperti konspirasi dan mulai terdengar seperti administrasi. Registri ini berguna karena tiap nama kantor cukup membosankan untuk terasa nyata. Contract Continuity Desk menjaga obligations tetap hidup setelah pekerja ingin obligations itu mati. Packet Notary Interface memutuskan apakah pesan menjadi bukti atau noise. Quarantine Hold Desk membuat penundaan tampak sebagai tanggung jawab medis. Asset Silence Board mengubah saksi menjadi exposure. Return Action Queue menilai tubuh terhadap payload, orbit, dan public risk.
 
-ID LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-ID LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-ID LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-ID LOC HOLD: Use dull names. Dull names are where liability hides.
+Tidak ada desk yang perlu membenci pemain. Masing-masing hanya perlu melakukan tugas dalam priority stack yang ditulis sebelum air naik. Karena itu bukti HECTON-8 harus terkumpul sebagai stempel, routing fragments, dan kontradiksi kecil. Kejahatan tidak tersembunyi di balik kejahatan teatrikal. Ia tersebar dalam formulir yang tampak defensible sampai pemain menyusunnya.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/id_ID. -->

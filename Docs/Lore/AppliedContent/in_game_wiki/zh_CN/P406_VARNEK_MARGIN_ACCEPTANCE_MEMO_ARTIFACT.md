@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Varnek Margin Memo"
+title: "瓦尔内克余量接受备忘录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Varnek Margin Memo
+# 瓦尔内克余量接受备忘录
 
-ZH LOC HOLD: The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
+瓦尔内克备忘录是一件安静的罪证。它没有捏造洪水，也没有下令杀人。它证明一个已知压力余量被定价、接受，并在殖民地仍有人处于压力边界内时，被排到 continuity cost 之下。
 
 ## Scanner
 
-ZH LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Aegir Operations Risk 备忘录。Great Tide 的余量在停工权限启动前已经可见。
 
 ## Terminal
 
-ZH LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: tail exposure accepted under continuity cost. Evacuation reserve remains non-triggered. Independent shutdown not recommended.
 
 ## Audio
 
-ZH LOC HOLD: No murder order. A margin acceptance.
+在看见谁被放进余量之前，它像一道算术题。
 
 ## Field Note
 
-ZH LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Marauder笔记：脏的不是风险数字。脏的是 accepted 这个词。
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/zh_CN. -->

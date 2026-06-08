@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "物资撤离：苦涩账款"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# 物资撤离：苦涩账款
 
-CN LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.
+物资撤离是给把HECTON-8当成有偿工作的Marauder的真实结局。玩家可以减少债务，让carrier账册满意后离开。代价清楚可见：殖民地仍是被转换成索赔价值的犯罪现场，而Deep Reach获得了一条比工人曾经拥有的逃生路更好的返回路线。
 
 ## Scanner
 
-CN LOC HOLD: You can leave richer and still fail the place.
+压力材料已接收。可购买离开窗口。工人名单仍未核对。
 
 ## Terminal
 
-CN LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+物资撤离收据：custody-grade压力材料已接收；lien降低；证据payload不完整；失踪工人账册仍处于索赔方争议；Recovery Compliance优先级提高。
 
 ## Audio
 
-CN LOC HOLD: The invoice clears before the names do.
+发票先于名字结清。
 
 ## Field Note
 
-CN LOC HOLD: This ending should be real credits, not a fake game over.
+Black Keel会先给样本定价，再给死者定价。这不是合同漏洞。
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/zh_CN. -->

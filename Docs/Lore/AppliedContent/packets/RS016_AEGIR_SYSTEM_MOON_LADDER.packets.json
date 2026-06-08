@@ -1,11 +1,20 @@
 {
   "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
   "release_set_id": "RS016_AEGIR_SYSTEM_MOON_LADDER",
-  "status": "production_facing_draft_pending_native_localization",
+  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
   "runtime_contract": {
+    "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
+    "runtime_uses_baked_static_data": true,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
   },
   "packets": [
     {
@@ -26,139 +35,154 @@
       },
       "localized": {
         "en_US": {
+          "localization_status": "source_authority",
           "title": "Ran / Aegir Anchor",
-          "scanner": "K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
+          "scanner": "K-class star plate. Ran burns normally. Aegir is dimmer than Sol, but the darkness here comes from depth, weather and debt.",
           "field_note": "A real star is enough. The ocean does the rest.",
-          "terminal": "RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "terminal": "RAN NAV ANCHOR // Orange-dwarf illumination supports surface work. Storm scatter, eclipse geometry and ocean turbidity push descent visibility below safety margin.",
+          "audio": "The star is present. It simply cannot follow you down.",
+          "in_game_wiki": "Ran anchors the Aegir system as a normal K-class star, not a dead lamp or supernatural darkness source. HECTON-8 can have bright shallows because light exists.\n\nThe horror begins when atmosphere, storm, mineral water, depth and industrial silt erase that light faster than a rescue contract can react. Above the water the system is astronomical. Below it, every lumen becomes rented time.",
+          "external_site": "Ran / Aegir Anchor fixes HECTON-8's visual taste: hard-sci-fi dimmer sunlight above, hostile pressure and debt below."
         },
         "ru_RU": {
+          "localization_status": "source_draft_pending_native_review",
           "title": "Якорь Ran / Aegir",
-          "scanner": "Спектральная табличка K-dwarf. Aegir тусклее Sol, но не мертвый. Темнота здесь - глубина, погода и долг.",
+          "scanner": "Звездная таблица K-класса. Ran горит нормально. Aegir тусклее Sol, но темнота здесь приходит от глубины, погоды и долга.",
           "field_note": "Настоящей звезды достаточно. Остальное делает океан.",
-          "terminal": "RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "Звезда не отсутствует. Она просто не может спуститься за тобой.",
-          "in_game_wiki": "Aegir привязан к нормальной K-class star модели, не к brown dwarf и не к fantasy-dark системе. У HECTON-8 могут быть яркие мелководья, потому что свет существует; ужас начинается, когда давление, погода, глубина и индустрия стирают этот свет.",
-          "external_site": "Якорь Ran / Aegir фиксирует визуальный и астрофизический вкус HECTON-8: hard-sci-fi тусклый солнечный свет, а не сверхъестественная тьма. Сеттинг читаем наверху, враждебен внизу."
+          "terminal": "RAN NAV ANCHOR // Свет оранжевого карлика годится для поверхностных работ. Штормовое рассеяние, затмения и мутность океана опускают видимость спуска ниже безопасного края.",
+          "audio": "Звезда на месте. Она просто не может спуститься за тобой.",
+          "in_game_wiki": "Ran закрепляет систему Aegir как нормальную звезду K-класса, а не мертвый фонарь и не источник сверхъестественной тьмы. У HECTON-8 могут быть яркие мелководья, потому что свет существует.\n\nУжас начинается там, где атмосфера, шторм, минеральная вода, глубина и промышленный ил стирают этот свет быстрее, чем спасательный контракт успевает среагировать. Над водой система астрономическая. Под водой каждый люмен становится арендованным временем.",
+          "external_site": "Якорь Ran / Aegir фиксирует визуальный вкус HECTON-8: жесткий научно-фантастический тусклый свет сверху, давление и долг снизу."
         },
         "ja_JP": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "JP LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "JP LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "JP LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "JP LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "JP LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "JP LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Ran / Aegirアンカー",
+          "scanner": "K級星プレート。Ranは正常に燃える。AegirはSolより暗いが、ここの闇は深度、天候、負債から来る。",
+          "field_note": "本物の星で十分だ。残りは海が行う。",
+          "terminal": "RAN NAV ANCHOR // 橙色矮星の照明は表面作業を支える。嵐の散乱、食の幾何、海の濁りが降下視認性を安全余白の下へ押し込む。",
+          "audio": "星はある。ただ、あなたを追って下りては来られない。",
+          "in_game_wiki": "RanはAegir系を通常のK級星として固定する。死んだ灯でも超自然の暗闇の源でもない。光が存在するから、HECTON-8には明るい浅瀬があり得る。\n\n恐怖は、大気、嵐、鉱物水、深度、産業シルトが救助契約の反応より速くその光を消す場所で始まる。水上では天文学である。水下では、すべてのルーメンが借り物の時間になる。",
+          "external_site": "Ran / AegirアンカーはHECTON-8の見え方を固定する。上は硬派SFの薄い日光、下は圧力と負債の敵地。"
         },
         "zh_CN": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "CN LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "CN LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "CN LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "CN LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "CN LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "CN LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Ran / Aegir锚点",
+          "scanner": "K级恒星板。Ran正常燃烧。Aegir比Sol昏暗，但这里的黑暗来自深度、天气和债务。",
+          "field_note": "一颗真实恒星已经足够。剩下的由海洋完成。",
+          "terminal": "RAN NAV ANCHOR // 橙矮星照明支持表面作业。风暴散射、食几何和海水浑浊会把降下可读性压到安全边界以下。",
+          "audio": "恒星存在。它只是无法跟着你下去。",
+          "in_game_wiki": "Ran把Aegir系统锚定为正常的K级恒星，而不是死灯，也不是超自然黑暗来源。HECTON-8可以有明亮浅水，因为光确实存在。\n\n恐惧开始于大气、风暴、矿物水、深度和工业淤泥比救援合同更快擦掉光的时候。水面之上是天文学。水面之下，每一流明都是租来的时间。",
+          "external_site": "Ran / Aegir锚点固定HECTON-8的视觉味道：上方是硬科幻的昏暗日光，下方是压力和债务。"
         },
         "fr_FR": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "FR LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "FR LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "FR LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "FR LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "FR LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "FR LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Ancre Ran / Aegir",
+          "scanner": "Plaque stellaire de classe K. Ran brûle normalement. Aegir est plus sombre que Sol, mais l'obscurité vient ici de la profondeur, de la météo et de la dette.",
+          "field_note": "Une vraie étoile suffit. L'océan fait le reste.",
+          "terminal": "RAN NAV ANCHOR // La lumière d'une naine orange permet le travail de surface. Dispersion de tempête, géométrie d'éclipse et turbidité océanique poussent la visibilité de descente sous la marge sûre.",
+          "audio": "L'étoile est présente. Elle ne peut simplement pas te suivre en bas.",
+          "in_game_wiki": "Ran ancre le système Aegir comme une étoile normale de classe K, ni lampe morte ni source de ténèbres surnaturelles. HECTON-8 peut avoir des hauts-fonds lumineux parce que la lumière existe.\n\nL'horreur commence quand atmosphère, tempête, eau minérale, profondeur et limon industriel effacent cette lumière plus vite qu'un contrat de secours ne peut réagir. Au-dessus de l'eau, le système est astronomique. Sous l'eau, chaque lumen devient du temps loué.",
+          "external_site": "Ancre Ran / Aegir fixe le goût visuel de HECTON-8 : soleil dur de SF au-dessus, pression hostile et dette au-dessous."
         },
         "es_ES": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "ES LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "ES LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "ES LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "ES LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "ES LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "ES LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Ancla Ran / Aegir",
+          "scanner": "Placa estelar clase K. Ran arde con normalidad. Aegir es más tenue que Sol, pero la oscuridad aquí viene de profundidad, clima y deuda.",
+          "field_note": "Una estrella real basta. El océano hace el resto.",
+          "terminal": "RAN NAV ANCHOR // La luz de una enana naranja sirve para trabajo de superficie. Dispersión de tormenta, eclipses y turbidez oceánica bajan la lectura de descenso bajo el margen seguro.",
+          "audio": "La estrella está presente. Simplemente no puede seguirte abajo.",
+          "in_game_wiki": "Ran ancla el sistema Aegir como una estrella normal de clase K, no como lámpara muerta ni fuente de oscuridad sobrenatural. HECTON-8 puede tener aguas someras brillantes porque la luz existe.\n\nEl horror empieza cuando atmósfera, tormenta, agua mineral, profundidad y limo industrial borran esa luz más rápido que un contrato de rescate puede reaccionar. Sobre el agua, el sistema es astronómico. Bajo el agua, cada lumen es tiempo alquilado.",
+          "external_site": "Ancla Ran / Aegir fija el sabor visual de HECTON-8: luz solar tenue de ciencia ficción dura arriba, presión hostil y deuda abajo."
         },
         "de_DE": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "DE LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "DE LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "DE LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "DE LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "DE LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "DE LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Ran / Aegir-Anker",
+          "scanner": "K-Klasse-Sternplatte. Ran brennt normal. Aegir ist dunkler als Sol, doch die Dunkelheit hier kommt von Tiefe, Wetter und Schuld.",
+          "field_note": "Ein echter Stern genügt. Den Rest erledigt der Ozean.",
+          "terminal": "RAN NAV ANCHOR // Orange-Zwerg-Licht stützt Oberflächenarbeit. Sturmstreuung, Finsternisgeometrie und Ozeantrübung drücken Abstiegslesbarkeit unter die Sicherheitsmarge.",
+          "audio": "Der Stern ist da. Er kann dir nur nicht nach unten folgen.",
+          "in_game_wiki": "Ran verankert das Aegir-System als normalen Stern der K-Klasse, weder tote Lampe noch Quelle übernatürlicher Dunkelheit. HECTON-8 kann helle Untiefen haben, weil Licht existiert.\n\nDer Schrecken beginnt, wenn Atmosphäre, Sturm, Mineralwasser, Tiefe und Industrieschlick dieses Licht schneller löschen, als ein Rettungsvertrag reagieren kann. Über Wasser ist das System astronomisch. Unter Wasser wird jedes Lumen gemietete Zeit.",
+          "external_site": "Ran / Aegir-Anker legt HECTON-8s visuelle Richtung fest: harte SF mit schwächerem Sonnenlicht oben, feindlichem Druck und Schuld unten."
         },
         "pl_PL": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "PL LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "PL LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "PL LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "PL LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "PL LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "PL LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Kotwica Ran / Aegir",
+          "scanner": "Tablica gwiazdy klasy K. Ran pali się normalnie. Aegir jest ciemniejszy niż Sol, ale mrok tutaj pochodzi z głębokości, pogody i długu.",
+          "field_note": "Prawdziwa gwiazda wystarczy. Resztę robi ocean.",
+          "terminal": "RAN NAV ANCHOR // Światło pomarańczowego karła wspiera prace powierzchniowe. Rozpraszanie burzy, geometria zaćmień i mętność oceanu spychają czytelność zejścia poniżej marginesu bezpieczeństwa.",
+          "audio": "Gwiazda jest obecna. Po prostu nie może zejść za tobą.",
+          "in_game_wiki": "Ran kotwiczy system Aegir jako normalną gwiazdę klasy K, nie martwą lampę ani źródło nadnaturalnej ciemności. HECTON-8 może mieć jasne płycizny, ponieważ światło istnieje.\n\nGroza zaczyna się tam, gdzie atmosfera, burza, woda mineralna, głębokość i przemysłowy muł gaszą to światło szybciej, niż reaguje kontrakt ratunkowy. Nad wodą system jest astronomią. Pod wodą każdy lumen staje się wynajętym czasem.",
+          "external_site": "Kotwica Ran / Aegir ustala smak wizualny HECTON-8: twarde SF ze słabszym światłem u góry, wrogim ciśnieniem i długiem na dole."
         },
         "uk_UA": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "UK LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "UK LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "UK LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "UK LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "UK LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "UK LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Якір Ran / Aegir",
+          "scanner": "Зоряна таблиця K-класу. Ran горить нормально. Aegir тьмяніший за Sol, але темрява тут приходить від глибини, погоди і боргу.",
+          "field_note": "Справжньої зорі достатньо. Решту робить океан.",
+          "terminal": "RAN NAV ANCHOR // Світло помаранчевого карлика підтримує поверхневі роботи. Штормове розсіювання, геометрія затемнень і каламутність океану опускають видимість спуску нижче безпечної межі.",
+          "audio": "Зоря на місці. Вона просто не може спуститися за тобою.",
+          "in_game_wiki": "Ran закріплює систему Aegir як нормальну зорю K-класу, а не мертвий ліхтар і не джерело надприродної темряви. HECTON-8 може мати яскраве мілководдя, бо світло існує.\n\nЖах починається там, де атмосфера, шторм, мінеральна вода, глибина і промисловий мул стирають це світло швидше, ніж рятувальний контракт встигає реагувати. Над водою система астрономічна. Під водою кожен люмен стає орендованим часом.",
+          "external_site": "Якір Ran / Aegir фіксує візуальний смак HECTON-8: жорстке науково-фантастичне тьмяне світло згори, тиск і борг знизу."
         },
         "ar_SA": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "AR LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "AR LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "AR LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "AR LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "AR LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "AR LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "مرساة Ran / Aegir",
+          "scanner": "لوحة نجم من الفئة K. Ran يحترق بشكل طبيعي. Aegir أخفت من Sol، لكن الظلمة هنا تأتي من العمق والطقس والدين.",
+          "field_note": "نجم حقيقي يكفي. المحيط يتولى الباقي.",
+          "terminal": "RAN NAV ANCHOR // ضوء قزم برتقالي يدعم عمل السطح. تشتت العواصف وهندسة الكسوف وعكارة المحيط تخفض قراءة الهبوط دون هامش الأمان.",
+          "audio": "النجم موجود. لكنه لا يستطيع أن يتبعك إلى الأسفل.",
+          "in_game_wiki": "يثبت Ran نظام Aegir كنجم طبيعي من الفئة K، لا كمصباح ميت ولا كمصدر ظلام خارق. يمكن أن تكون ضحالات HECTON-8 مضيئة لأن الضوء موجود.\n\nيبدأ الرعب عندما تمحو الغلاف الجوي والعاصفة والماء المعدني والعمق والطمي الصناعي ذلك الضوء أسرع مما يستطيع عقد الإنقاذ أن يستجيب. فوق الماء النظام فلكي. تحت الماء يصبح كل لومن وقتاً مستأجراً.",
+          "external_site": "مرساة Ran / Aegir تثبت الطعم البصري لـ HECTON-8: ضوء خافت واقعي في الأعلى، وضغط ودين معاديان في الأسفل."
         },
         "id_ID": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "ID LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "ID LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "ID LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "ID LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "ID LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "ID LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Jangkar Ran / Aegir",
+          "scanner": "Pelat bintang kelas K. Ran menyala normal. Aegir lebih redup dari Sol, tetapi gelap di sini datang dari kedalaman, cuaca, dan utang.",
+          "field_note": "Satu bintang nyata sudah cukup. Laut melakukan sisanya.",
+          "terminal": "RAN NAV ANCHOR // Cahaya katai oranye mendukung kerja permukaan. Sebaran badai, geometri gerhana, dan kekeruhan laut menurunkan keterbacaan turun di bawah margin aman.",
+          "audio": "Bintangnya ada. Ia hanya tidak bisa mengikutimu ke bawah.",
+          "in_game_wiki": "Ran menjangkar sistem Aegir sebagai bintang kelas K normal, bukan lampu mati atau sumber gelap supranatural. HECTON-8 dapat memiliki perairan dangkal terang karena cahaya memang ada.\n\nHoror dimulai ketika atmosfer, badai, air mineral, kedalaman, dan lumpur industri menghapus cahaya itu lebih cepat daripada kontrak penyelamatan dapat bereaksi. Di atas air sistem ini astronomi. Di bawah air setiap lumen menjadi waktu sewaan.",
+          "external_site": "Jangkar Ran / Aegir menetapkan rasa visual HECTON-8: sinar keras fiksi ilmiah yang redup di atas, tekanan dan utang di bawah."
         },
         "ko_KR": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "KO LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "KO LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "KO LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "KO LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "KO LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "KO LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Ran / Aegir 앵커",
+          "scanner": "K급 항성 판. Ran은 정상적으로 탄다. Aegir는 Sol보다 어둡지만, 이곳의 어둠은 깊이, 날씨, 부채에서 온다.",
+          "field_note": "진짜 별 하나면 충분하다. 나머지는 바다가 한다.",
+          "terminal": "RAN NAV ANCHOR // 주황 왜성 조명은 표면 작업을 지원한다. 폭풍 산란, 식의 기하, 해수 탁도가 하강 가독성을 안전 여백 아래로 밀어낸다.",
+          "audio": "별은 있다. 다만 너를 따라 내려올 수 없다.",
+          "in_game_wiki": "Ran은 Aegir계를 정상적인 K급 항성으로 고정한다. 죽은 램프도, 초자연적 어둠의 원천도 아니다. 빛이 존재하기 때문에 HECTON-8에는 밝은 얕은 바다가 있을 수 있다.\n\n공포는 대기, 폭풍, 광물수, 깊이, 산업 침전물이 구조 계약보다 빠르게 그 빛을 지울 때 시작된다. 물 위에서 이 시스템은 천문학이다. 물 아래에서는 모든 루멘이 빌린 시간이 된다.",
+          "external_site": "Ran / Aegir 앵커는 HECTON-8의 시각적 맛을 고정한다. 위에는 하드 SF의 흐린 햇빛, 아래에는 적대적 압력과 부채가 있다."
         },
         "he_IL": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "HE LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "HE LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "HE LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "HE LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "HE LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "HE LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "עוגן Ran / Aegir",
+          "scanner": "לוח כוכב מסוג K. Ran בוער כרגיל. Aegir עמום מ-Sol, אבל החושך כאן מגיע מעומק, מזג אוויר וחוב.",
+          "field_note": "כוכב אמיתי אחד מספיק. האוקיינוס עושה את השאר.",
+          "terminal": "RAN NAV ANCHOR // תאורת ננס כתום תומכת בעבודת שטח. פיזור סערה, גאומטריית ליקוי ועכירות האוקיינוס מורידים קריאות ירידה מתחת לשולי הבטיחות.",
+          "audio": "הכוכב קיים. הוא פשוט לא יכול לעקוב אחריך למטה.",
+          "in_game_wiki": "Ran מעגן את מערכת Aegir ככוכב רגיל מסוג K, לא כמנורה מתה ולא כמקור חושך על-טבעי. ל-HECTON-8 יכולים להיות רדודים בהירים כי אור קיים.\n\nהאימה מתחילה כשאטמוספרה, סערה, מים מינרליים, עומק ובוצה תעשייתית מוחקים את האור מהר יותר מחוזה חילוץ. מעל המים המערכת אסטרונומית. מתחת למים כל לומן הופך לזמן שכור.",
+          "external_site": "עוגן Ran / Aegir קובע את הטעם החזותי של HECTON-8: אור מדע בדיוני קשה ועמום למעלה, לחץ וחוב עוינים למטה."
         },
         "pt_BR": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "PT-BR LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "PT-BR LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "PT-BR LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "PT-BR LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "PT-BR LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "PT-BR LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Âncora Ran / Aegir",
+          "scanner": "Placa de estrela classe K. Ran queima normalmente. Aegir é mais fraco que Sol, mas a escuridão aqui vem de profundidade, clima e dívida.",
+          "field_note": "Uma estrela real basta. O oceano faz o resto.",
+          "terminal": "RAN NAV ANCHOR // Luz de anã laranja sustenta trabalho de superfície. Dispersão de tempestade, geometria de eclipse e turbidez oceânica empurram leitura de descida abaixo da margem segura.",
+          "audio": "A estrela está presente. Ela só não consegue te seguir para baixo.",
+          "in_game_wiki": "Ran ancora o sistema Aegir como uma estrela normal de classe K, não como lâmpada morta nem fonte de escuridão sobrenatural. HECTON-8 pode ter águas rasas brilhantes porque a luz existe.\n\nO horror começa quando atmosfera, tempestade, água mineral, profundidade e lodo industrial apagam essa luz mais rápido do que um contrato de resgate consegue reagir. Acima da água, o sistema é astronômico. Abaixo, cada lúmen vira tempo alugado.",
+          "external_site": "Âncora Ran / Aegir fixa o gosto visual de HECTON-8: luz solar tênue de ficção científica dura acima, pressão hostil e dívida abaixo."
         },
         "nl_NL": {
-          "title": "Ran / Aegir Anchor",
-          "scanner": "NL LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.",
-          "field_note": "NL LOC HOLD: A real star is enough. The ocean does the rest.",
-          "terminal": "NL LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.",
-          "audio": "NL LOC HOLD: The star is not absent. It just cannot follow you down.",
-          "in_game_wiki": "NL LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.",
-          "external_site": "NL LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Ran / Aegir Anker",
+          "scanner": "K-klasse sterplaat. Ran brandt normaal. Aegir is zwakker dan Sol, maar de duisternis hier komt van diepte, weer en schuld.",
+          "field_note": "Een echte ster is genoeg. De oceaan doet de rest.",
+          "terminal": "RAN NAV ANCHOR // Oranje-dwerglicht ondersteunt oppervlaktewerk. Stormverstrooiing, eclipsgeometrie en oceaantroebelheid drukken afdalingsleesbaarheid onder de veiligheidsmarge.",
+          "audio": "De ster is aanwezig. Hij kan je alleen niet naar beneden volgen.",
+          "in_game_wiki": "Ran verankert het Aegir-systeem als een normale K-klasse ster, geen dode lamp en geen bovennatuurlijke bron van duisternis. HECTON-8 kan heldere ondiepten hebben omdat licht bestaat.\n\nDe horror begint wanneer atmosfeer, storm, mineraalwater, diepte en industrieel slib dat licht sneller wissen dan een reddingscontract kan reageren. Boven water is het systeem astronomisch. Onder water wordt elke lumen gehuurde tijd.",
+          "external_site": "Ran / Aegir Anker legt HECTON-8s visuele smaak vast: harde sciencefiction met zwakker zonlicht boven, vijandige druk en schuld beneden."
         }
       }
     },
@@ -180,139 +204,154 @@
       },
       "localized": {
         "en_US": {
+          "localization_status": "source_authority",
           "title": "Aegir Moon Ladder",
           "scanner": "Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "field_note": "Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.",
+          "terminal": "MAJOR AEGIR MOONS // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
           "audio": "The map has more moons than mercy.",
-          "in_game_wiki": "The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "in_game_wiki": "The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice, route buoys and old depots; outer moons carry cold claims and dead beacons.\n\nHECTON-8 is neither the innermost moon nor the farthest. It is the moon that still pays. That is why the rest of the ladder keeps touching its rescue windows, salvage law and signal routes.",
+          "external_site": "Aegir Moon Ladder gives HECTON-8 a usable local astronomy layer: other moons explain route windows, dead claims, salvage rumors and failed recovery timing."
         },
         "ru_RU": {
+          "localization_status": "source_draft_pending_native_review",
           "title": "Лунная лестница Aegir",
-          "scanner": "Карта moon ladder. HECTON-8 - один рабочий риск в движущейся системе, не изолированный уровень.",
-          "field_note": "Skarn жжет, Vela сбрасывает лед, Anvil кормит металлом, Kestrel режет relays, HECTON-8 тонет.",
-          "terminal": "MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
+          "scanner": "Карта лунной лестницы. HECTON-8 является рабочей опасностью в движущейся системе, а не изолированным уровнем.",
+          "field_note": "Skarn жжет. Vela сбрасывает лед. Anvil кормит металлом. Kestrel режет ретрансляторы. HECTON тонет.",
+          "terminal": "ОСНОВНЫЕ ЛУНЫ AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Модель transfer и eclipse приложена.",
           "audio": "На карте больше лун, чем милости.",
-          "in_game_wiki": "Лунная лестница Aegir удерживает HECTON-8 внутри физической системы. Внутренние луны создают radiation и relay hazards; средние держат металл, лед и старые depots; внешние несут cold claims и dead beacons. HECTON-8 не внутренняя и не самая дальняя.",
-          "external_site": "Лунная лестница Aegir дает игре рабочий слой локальной астрономии. Другие луны объясняют route windows, dead claims, salvage rumors и почему Black Keel не может всегда ответить с удобной орбиты."
+          "in_game_wiki": "Лунная лестница Aegir удерживает HECTON-8 внутри физической системы. Внутренние луны создают радиационные и ретрансляционные опасности; средние держат металл, лед, маршрутные буи и старые склады; внешние несут холодные claims и мертвые маяки.\n\nHECTON-8 не самая внутренняя луна и не самая дальняя. Это луна, которая все еще платит. Поэтому остальная лестница постоянно цепляет ее окна спасения, salvage law и маршруты сигнала.",
+          "external_site": "Лунная лестница Aegir дает HECTON-8 рабочую локальную астрономию: другие луны объясняют маршрутные окна, мертвые claims, слухи salvage и проваленное время возврата."
         },
         "ja_JP": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "JP LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "JP LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "JP LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "JP LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "JP LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "JP LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Aegir月梯子",
+          "scanner": "月梯子図。HECTON-8は動く系の中の作業危険であり、孤立した階層ではない。",
+          "field_note": "Skarnは焼く。Velaは氷を落とす。Anvilは金属を供給する。Kestrelはリレーを切る。HECTONは沈む。",
+          "terminal": "AEGIR主要月 // H1 Skarn、H2 Vela、H3 Claw、H4 Lumen、H5 Thorne、H6 Anvil、H7 Kestrel、H8 HECTON、H9 Mute。transferおよびeclipseモデル添付。",
+          "audio": "その地図には慈悲より多くの月がある。",
+          "in_game_wiki": "Aegirの月梯子はHECTON-8を物理系の中に置く。内側の月は放射線とリレー危険を作り、中間の月は金属、氷、航路ブイ、古い倉庫を持ち、外側の月は冷たいclaimsと死んだビーコンを運ぶ。\n\nHECTON-8は最内月でも最遠月でもない。まだ支払いを生む月である。だから梯子の他の部分が、その救助窓、salvage law、信号経路に触れ続ける。",
+          "external_site": "Aegir月梯子はHECTON-8に使える局所天文学を与える。他の月が航路窓、死んだclaims、salvageの噂、失敗した回収タイミングを説明する。"
         },
         "zh_CN": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "CN LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "CN LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "CN LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "CN LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "CN LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "CN LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Aegir月梯",
+          "scanner": "月梯图。HECTON-8是运动系统中的工作危险，不是孤立关卡。",
+          "field_note": "Skarn燃烧。Vela脱落冰。Anvil供应金属。Kestrel切断relay。HECTON下沉。",
+          "terminal": "AEGIR主要卫星 // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute。附transfer和eclipse模型。",
+          "audio": "地图上的月亮比怜悯更多。",
+          "in_game_wiki": "Aegir月梯把HECTON-8放回物理系统。内侧卫星制造辐射和relay危险；中层卫星保有金属、冰、航线浮标和旧仓；外侧卫星携带冷claims和死信标。\n\nHECTON-8既不是最内侧，也不是最远。它是仍然付钱的那颗月。因此月梯其他部分持续碰触它的救援窗口、salvage law和信号路线。",
+          "external_site": "Aegir月梯给HECTON-8可用的本地天文学：其他卫星解释航线窗口、死亡claims、salvage传闻和失败回收时机。"
         },
         "fr_FR": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "FR LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "FR LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "FR LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "FR LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "FR LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "FR LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Échelle lunaire d'Aegir",
+          "scanner": "Carte d'échelle lunaire. HECTON-8 est un danger actif dans un système mobile, pas un niveau isolé.",
+          "field_note": "Skarn brûle. Vela perd sa glace. Anvil nourrit le métal. Kestrel coupe les relais. HECTON se noie.",
+          "terminal": "LUNES MAJEURES D'AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Modèle de transfer et eclipse joint.",
+          "audio": "La carte contient plus de lunes que de pitié.",
+          "in_game_wiki": "L'échelle lunaire d'Aegir garde HECTON-8 dans un système physique. Les lunes internes créent radiation et dangers de relais ; les lunes médianes gardent métal, glace, bouées de route et vieux dépôts ; les lunes externes portent claims froids et balises mortes.\n\nHECTON-8 n'est ni la lune la plus interne ni la plus lointaine. C'est celle qui paie encore. Voilà pourquoi le reste de l'échelle touche ses fenêtres de secours, sa salvage law et ses routes de signal.",
+          "external_site": "L'échelle lunaire d'Aegir donne à HECTON-8 une astronomie locale utile : les autres lunes expliquent fenêtres de route, claims morts, rumeurs de salvage et timing de récupération raté."
         },
         "es_ES": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "ES LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "ES LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "ES LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "ES LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "ES LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "ES LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Escalera lunar de Aegir",
+          "scanner": "Carta de escalera lunar. HECTON-8 es un peligro activo en un sistema móvil, no un nivel aislado.",
+          "field_note": "Skarn quema. Vela suelta hielo. Anvil alimenta metal. Kestrel corta relés. HECTON se ahoga.",
+          "terminal": "LUNAS PRINCIPALES DE AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Modelo de transfer y eclipse adjunto.",
+          "audio": "El mapa tiene más lunas que misericordia.",
+          "in_game_wiki": "La escalera lunar de Aegir mantiene a HECTON-8 dentro de un sistema físico. Las lunas internas crean radiación y peligros de relé; las medias guardan metal, hielo, boyas de ruta y viejos depósitos; las externas llevan claims fríos y balizas muertas.\n\nHECTON-8 no es la luna más interna ni la más lejana. Es la luna que todavía paga. Por eso el resto de la escalera toca sus ventanas de rescate, salvage law y rutas de señal.",
+          "external_site": "La escalera lunar de Aegir da a HECTON-8 una astronomía local útil: otras lunas explican ventanas de ruta, claims muertos, rumores de salvage y fallos de tiempo de recuperación."
         },
         "de_DE": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "DE LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "DE LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "DE LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "DE LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "DE LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "DE LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Aegir-Mondleiter",
+          "scanner": "Mondleiterkarte. HECTON-8 ist eine arbeitende Gefahr in einem bewegten System, kein isoliertes Level.",
+          "field_note": "Skarn brennt. Vela wirft Eis ab. Anvil liefert Metall. Kestrel schneidet Relais. HECTON ertrinkt.",
+          "terminal": "HAUPTMOONDE AEGIRS // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer- und Eclipse-Modell angehängt.",
+          "audio": "Die Karte hat mehr Monde als Gnade.",
+          "in_game_wiki": "Aegirs Mondleiter hält HECTON-8 in einem physischen System. Innere Monde erzeugen Strahlungs- und Relaisgefahren; mittlere Monde halten Metall, Eis, Routenbojen und alte Depots; äußere Monde tragen kalte Claims und tote Baken.\n\nHECTON-8 ist weder der innerste noch der fernste Mond. Es ist der Mond, der noch zahlt. Deshalb berührt der Rest der Leiter ständig seine Rettungsfenster, salvage law und Signalrouten.",
+          "external_site": "Aegirs Mondleiter gibt HECTON-8 eine nutzbare lokale Astronomie: andere Monde erklären Routenfenster, tote Claims, Salvage-Gerüchte und gescheitertes Bergungstiming."
         },
         "pl_PL": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "PL LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "PL LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "PL LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "PL LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "PL LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "PL LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Drabina księżyców Aegir",
+          "scanner": "Mapa drabiny księżyców. HECTON-8 to działające zagrożenie w ruchomym systemie, nie odizolowany poziom.",
+          "field_note": "Skarn pali. Vela zrzuca lód. Anvil karmi metalem. Kestrel tnie przekaźniki. HECTON tonie.",
+          "terminal": "GŁÓWNE KSIĘŻYCE AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Model transfer i eclipse dołączony.",
+          "audio": "Mapa ma więcej księżyców niż litości.",
+          "in_game_wiki": "Drabina księżyców Aegir trzyma HECTON-8 w systemie fizycznym. Księżyce wewnętrzne tworzą promieniowanie i zagrożenia przekaźników; środkowe trzymają metal, lód, boje tras i stare magazyny; zewnętrzne niosą zimne claims i martwe sygnały.\n\nHECTON-8 nie jest księżycem najbliższym ani najdalszym. Jest tym, który nadal płaci. Dlatego reszta drabiny dotyka jego okien ratunku, salvage law i tras sygnału.",
+          "external_site": "Drabina księżyców Aegir daje HECTON-8 użyteczną lokalną astronomię: inne księżyce tłumaczą okna tras, martwe claims, plotki salvage i spóźniony odzysk."
         },
         "uk_UA": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "UK LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "UK LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "UK LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "UK LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "UK LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "UK LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Місячна драбина Aegir",
+          "scanner": "Мапа місячної драбини. HECTON-8 є робочою небезпекою в рухомій системі, а не ізольованим рівнем.",
+          "field_note": "Skarn пече. Vela скидає лід. Anvil годує металом. Kestrel ріже ретранслятори. HECTON тоне.",
+          "terminal": "ГОЛОВНІ МІСЯЦІ AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Модель transfer та eclipse додана.",
+          "audio": "На мапі більше місяців, ніж милості.",
+          "in_game_wiki": "Місячна драбина Aegir утримує HECTON-8 у фізичній системі. Внутрішні місяці створюють радіаційні й ретрансляційні небезпеки; середні тримають метал, лід, маршрутні буї і старі склади; зовнішні несуть холодні claims і мертві маяки.\n\nHECTON-8 не найближчий місяць і не найдальший. Це місяць, який досі платить. Тому решта драбини постійно торкається його вікон порятунку, salvage law і маршрутів сигналу.",
+          "external_site": "Місячна драбина Aegir дає HECTON-8 робочу локальну астрономію: інші місяці пояснюють маршрутні вікна, мертві claims, чутки salvage і провалений час повернення."
         },
         "ar_SA": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "AR LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "AR LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "AR LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "AR LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "AR LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "AR LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "سلم أقمار Aegir",
+          "scanner": "خريطة سلم الأقمار. HECTON-8 خطر عامل في نظام متحرك، وليس مستوى معزولاً.",
+          "field_note": "Skarn يحرق. Vela تسقط الجليد. Anvil يطعم المعدن. Kestrel يقطع المرحلات. HECTON يغرق.",
+          "terminal": "أقمار AEGIR الكبرى // H1 Skarn، H2 Vela، H3 Claw، H4 Lumen، H5 Thorne، H6 Anvil، H7 Kestrel، H8 HECTON، H9 Mute. نموذج transfer وeclipse مرفق.",
+          "audio": "في الخريطة أقمار أكثر من الرحمة.",
+          "in_game_wiki": "يبقي سلم أقمار Aegir قمر HECTON-8 داخل نظام فيزيائي. الأقمار الداخلية تصنع أخطار إشعاع ومرحلات؛ الأقمار الوسطى تحمل المعدن والجليد وعوامات المسار والمخازن القديمة؛ الأقمار الخارجية تحمل claims باردة ومنارات ميتة.\n\nHECTON-8 ليس الأقرب ولا الأبعد. إنه القمر الذي ما زال يدفع. لذلك يلمس بقية السلم نوافذ إنقاذه وsalvage law وطرق إشارته باستمرار.",
+          "external_site": "يمنح سلم أقمار Aegir قمر HECTON-8 طبقة فلك محلية نافعة: أقمار أخرى تفسر نوافذ المسار وclaims الميتة وشائعات salvage وتوقيت الاسترداد الفاشل."
         },
         "id_ID": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "ID LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "ID LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "ID LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "ID LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "ID LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "ID LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Tangga Bulan Aegir",
+          "scanner": "Bagan tangga bulan. HECTON-8 adalah bahaya kerja dalam sistem bergerak, bukan level terisolasi.",
+          "field_note": "Skarn membakar. Vela melepas es. Anvil memberi logam. Kestrel memotong relai. HECTON tenggelam.",
+          "terminal": "BULAN UTAMA AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Model transfer dan eclipse terlampir.",
+          "audio": "Peta memiliki lebih banyak bulan daripada belas kasihan.",
+          "in_game_wiki": "Tangga bulan Aegir menjaga HECTON-8 di dalam sistem fisik. Bulan dalam menciptakan radiasi dan bahaya relai; bulan tengah menyimpan logam, es, buoy rute, dan depot tua; bulan luar membawa claims dingin dan beacon mati.\n\nHECTON-8 bukan bulan terdalam atau terjauh. Ia bulan yang masih membayar. Karena itu seluruh tangga terus menyentuh jendela penyelamatan, salvage law, dan rute sinyalnya.",
+          "external_site": "Tangga Bulan Aegir memberi HECTON-8 astronomi lokal yang bisa dipakai: bulan lain menjelaskan jendela rute, claims mati, rumor salvage, dan waktu pemulihan yang gagal."
         },
         "ko_KR": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "KO LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "KO LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "KO LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "KO LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "KO LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "KO LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Aegir 달 사다리",
+          "scanner": "달 사다리 차트. HECTON-8은 움직이는 계의 작업 위험이지 고립된 레벨이 아니다.",
+          "field_note": "Skarn은 태운다. Vela는 얼음을 흘린다. Anvil은 금속을 먹인다. Kestrel은 중계를 끊는다. HECTON은 익사한다.",
+          "terminal": "AEGIR 주요 달 // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. transfer 및 eclipse 모델 첨부.",
+          "audio": "그 지도에는 자비보다 달이 더 많다.",
+          "in_game_wiki": "Aegir의 달 사다리는 HECTON-8을 물리계 안에 붙들어 둔다. 안쪽 달들은 방사선과 중계 위험을 만들고, 중간 달들은 금속, 얼음, 항로 부표, 오래된 저장고를 지니며, 바깥 달들은 차가운 claims와 죽은 비컨을 운반한다.\n\nHECTON-8은 가장 안쪽도 가장 바깥도 아니다. 아직 돈을 내는 달이다. 그래서 사다리의 나머지는 그 구조 창, salvage law, 신호 경로를 계속 건드린다.",
+          "external_site": "Aegir 달 사다리는 HECTON-8에 쓸 수 있는 지역 천문학을 준다. 다른 달들은 항로 창, 죽은 claims, salvage 소문, 실패한 회수 타이밍을 설명한다."
         },
         "he_IL": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "HE LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "HE LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "HE LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "HE LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "HE LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "HE LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "סולם הירחים של Aegir",
+          "scanner": "מפת סולם ירחים. HECTON-8 הוא סכנת עבודה במערכת נעה, לא שלב מבודד.",
+          "field_note": "Skarn שורף. Vela משילה קרח. Anvil מזינה מתכת. Kestrel חותך ממסרים. HECTON טובע.",
+          "terminal": "ירחי AEGIR הראשיים // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. מודל transfer ו-eclipse מצורף.",
+          "audio": "במפה יש יותר ירחים מרחמים.",
+          "in_game_wiki": "סולם הירחים של Aegir מחזיק את HECTON-8 בתוך מערכת פיזית. ירחים פנימיים יוצרים סכנות קרינה וממסרים; ירחים אמצעיים מחזיקים מתכת, קרח, מצופי דרך ומחסנים ישנים; ירחים חיצוניים נושאים claims קרים ומשואות מתות.\n\nHECTON-8 אינו הירח הפנימי ביותר ואינו הרחוק ביותר. זה הירח שעדיין משלם. לכן שאר הסולם ממשיך לגעת בחלונות החילוץ, salvage law ונתיבי האות שלו.",
+          "external_site": "סולם הירחים של Aegir נותן ל-HECTON-8 אסטרונומיה מקומית שימושית: ירחים אחרים מסבירים חלונות נתיב, claims מתים, שמועות salvage ותזמון שחזור שנכשל."
         },
         "pt_BR": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "PT-BR LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "PT-BR LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "PT-BR LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "PT-BR LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "PT-BR LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "PT-BR LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Escada Lunar de Aegir",
+          "scanner": "Mapa da escada lunar. HECTON-8 é um perigo de trabalho em um sistema móvel, não um nível isolado.",
+          "field_note": "Skarn queima. Vela solta gelo. Anvil alimenta metal. Kestrel corta relés. HECTON afoga.",
+          "terminal": "LUAS PRINCIPAIS DE AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Modelo de transfer e eclipse anexado.",
+          "audio": "O mapa tem mais luas do que misericórdia.",
+          "in_game_wiki": "A escada lunar de Aegir mantém HECTON-8 dentro de um sistema físico. Luas internas criam radiação e riscos de relé; luas médias guardam metal, gelo, boias de rota e depósitos antigos; luas externas carregam claims frios e faróis mortos.\n\nHECTON-8 não é a lua mais interna nem a mais distante. É a lua que ainda paga. Por isso o resto da escada continua tocando suas janelas de resgate, salvage law e rotas de sinal.",
+          "external_site": "A Escada Lunar de Aegir dá a HECTON-8 uma astronomia local útil: outras luas explicam janelas de rota, claims mortos, rumores de salvage e timing de recuperação falho."
         },
         "nl_NL": {
-          "title": "Aegir Moon Ladder",
-          "scanner": "NL LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.",
-          "field_note": "NL LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.",
-          "terminal": "NL LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.",
-          "audio": "NL LOC HOLD: The map has more moons than mercy.",
-          "in_game_wiki": "NL LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.",
-          "external_site": "NL LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Aegir Maanladder",
+          "scanner": "Maanladderkaart. HECTON-8 is een werkend gevaar in een bewegend systeem, geen geïsoleerd level.",
+          "field_note": "Skarn brandt. Vela werpt ijs af. Anvil voedt metaal. Kestrel snijdt relais. HECTON verdrinkt.",
+          "terminal": "BELANGRIJKE AEGIR-MANEN // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer- en eclipsmodel bijgevoegd.",
+          "audio": "De kaart heeft meer manen dan genade.",
+          "in_game_wiki": "De Aegir-maanladder houdt HECTON-8 in een fysiek systeem. Binnenmanen maken stralings- en relaisgevaren; middenmanen houden metaal, ijs, routeboeien en oude depots; buitenmanen dragen koude claims en dode bakens.\n\nHECTON-8 is niet de binnenste maan en niet de verste. Het is de maan die nog betaalt. Daarom blijft de rest van de ladder zijn reddingsvensters, salvage law en signaalroutes raken.",
+          "external_site": "Aegir Maanladder geeft HECTON-8 bruikbare lokale astronomie: andere manen verklaren routevensters, dode claims, salvage-geruchten en mislukte recoverytiming."
         }
       }
     },
@@ -323,150 +362,165 @@
       "unlock": {
         "primary": "unlock.first_inner_moon_relay_hazards",
         "poi_tags": [
-          "poi.radiation_shutter",
-          "poi.inner_relay_dead_zone",
-          "poi.shepherd_moon_warning"
+          "poi.relay_noise_log",
+          "poi.skarn_surge_alarm",
+          "poi.vela_shutter_notice"
         ],
         "biome_tags": [
           "biome.orbital_window",
-          "biome.drowned_comms"
+          "biome.surface_relay"
         ]
       },
       "localized": {
         "en_US": {
+          "localization_status": "source_authority",
           "title": "Inner Moon Relay Hazards",
-          "scanner": "Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "scanner": "INNER LADDER // Skarn saturates antennas. Vela scatters optics. Old Claw and Lumen routes can keep stale handshakes alive.",
+          "field_note": "A clean icon can still be lying through old sky.",
+          "terminal": "RELAY HAZARD NOTE // Contact loss can be geometry, charged-particle weather, dust shutter or inherited buoy law. Treat clean UI as suspect during surge windows.",
+          "audio": "The relay did not go silent. It repeated the wrong century.",
+          "in_game_wiki": "Inner moon relay hazards make failed contact physical. Skarn-aligned surge can corrupt antennas without killing them. Vela dust and ice can shutter optics while the route still claims to exist.\n\nClaw and Lumen are worse because they carry old route logic. A handshake can be formally valid and operationally useless. That is why Black Keel can log a packet, preserve custody and still leave a body in the water.",
+          "external_site": "Inner Moon Relay Hazards explain why HECTON-8 loses contact through radiation, dust, occlusion and inherited route law instead of magic interference."
         },
         "ru_RU": {
-          "title": "Relay-опасности внутренних лун",
-          "scanner": "Лог inner-moon relay shutter. Aegir не глушит тебя намеренно; у неба плохой тайминг.",
-          "field_note": "Radiation и eclipse могут выглядеть как заговор, пока контракт ими не воспользуется.",
-          "terminal": "INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "Орбитальная модель невиновна. Пункт контракта вокруг нее - нет.",
-          "in_game_wiki": "Опасности внутренних лун объясняют, почему contact, rescue и ascent windows срываются без магического вмешательства. Radiation belts, ice scatter, eclipses и magnetic weather - реальные физические ограничения, которые Deep Reach и контракты Black Keel используют.",
-          "external_site": "Relay-опасности внутренних лун сохраняют hard-sci-fi tension: потеря контакта может быть настоящей орбитальной погодой и все равно стать корпоративным рычагом."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Ретрансляционные опасности внутренних лун",
+          "scanner": "ВНУТРЕННЯЯ ЛЕСТНИЦА // Skarn насыщает антенны. Vela рассеивает оптику. Старые маршруты Claw и Lumen могут держать просроченные handshakes живыми.",
+          "field_note": "Чистая иконка все еще может врать через старое небо.",
+          "terminal": "ЗАМЕТКА О РЕТРАНСЛЯТОРАХ // Потеря связи может быть геометрией, погодой заряженных частиц, пылевой шторкой или унаследованным buoy law. В окна всплеска считай чистый UI подозрительным.",
+          "audio": "Ретранслятор не замолчал. Он повторил не тот век.",
+          "in_game_wiki": "Опасности внутренних лун делают провал связи физическим. Всплеск, выровненный со Skarn, может портить антенны, не убивая их. Пыль и лед Vela закрывают оптику, пока маршрут все еще утверждает, что существует.\n\nClaw и Lumen хуже, потому что несут старую маршрутную логику. Handshake может быть формально валидным и операционно бесполезным. Поэтому Black Keel может записать пакет, сохранить custody и все равно оставить тело в воде.",
+          "external_site": "Ретрансляционные опасности внутренних лун объясняют, как HECTON-8 теряет контакт через радиацию, пыль, перекрытия и унаследованное route law, а не через магию."
         },
         "ja_JP": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "JP LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "JP LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "JP LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "JP LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "JP LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "JP LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "内側月リレー危険",
+          "scanner": "内側梯子 // Skarnはアンテナを飽和させる。Velaは光学を散らす。古いClawとLumen航路は期限切れhandshakeを生かす。",
+          "field_note": "きれいなアイコンも古い空を通して嘘をつく。",
+          "terminal": "リレー危険メモ // 通信喪失は幾何、荷電粒子天候、塵シャッター、継承buoy lawで起きる。サージ窓ではきれいなUIを疑え。",
+          "audio": "リレーは沈黙しなかった。違う世紀を繰り返した。",
+          "in_game_wiki": "内側月のリレー危険は通信失敗を物理にする。Skarn整列サージはアンテナを殺さずに壊す。Velaの塵と氷は、航路が存在を主張したまま光学を閉じる。\n\nClawとLumenは古い航路論理を運ぶためさらに悪い。handshakeは形式上有効で、作業上は無価値になり得る。だからBlack Keelはパケットを記録し、custodyを保ち、体を水中に残せる。",
+          "external_site": "内側月リレー危険は、HECTON-8が魔法ではなく放射線、塵、遮蔽、継承route lawで連絡を失う理由を示す。"
         },
         "zh_CN": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "CN LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "CN LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "CN LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "CN LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "CN LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "CN LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "内侧卫星relay危险",
+          "scanner": "内侧月梯 // Skarn使天线饱和。Vela散射光学。旧Claw和Lumen航线会让过期handshake继续活着。",
+          "field_note": "干净图标仍可能通过旧天空撒谎。",
+          "terminal": "RELAY危险说明 // 失联可能来自几何、带电粒子天气、尘埃遮帘或继承的buoy law。涌动窗口内，把干净UI视为可疑。",
+          "audio": "relay没有沉默。它重复了错误世纪。",
+          "in_game_wiki": "内侧卫星relay危险让失联变得物理化。Skarn对齐的涌动会破坏天线而不杀死它。Vela尘埃和冰会遮住光学，同时航线仍声称自己存在。\n\nClaw和Lumen更糟，因为它们携带旧航线逻辑。handshake可以形式有效、操作无用。因此Black Keel能记录数据包、保存custody，却仍把人体留在水里。",
+          "external_site": "内侧卫星relay危险解释HECTON-8如何因辐射、尘埃、遮挡和继承route law失联，而不是因魔法干扰。"
         },
         "fr_FR": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "FR LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "FR LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "FR LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "FR LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "FR LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "FR LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Dangers de relais des lunes internes",
+          "scanner": "ÉCHELLE INTERNE // Skarn sature les antennes. Vela disperse l'optique. Les anciennes routes Claw et Lumen gardent des handshakes périmés vivants.",
+          "field_note": "Une icône propre peut encore mentir à travers un vieux ciel.",
+          "terminal": "NOTE DE DANGER RELAIS // Perte de contact : géométrie, météo de particules, volet de poussière ou buoy law héritée. UI propre suspecte en fenêtre de sursaut.",
+          "audio": "Le relais ne s'est pas tu. Il a répété le mauvais siècle.",
+          "in_game_wiki": "Les dangers de relais des lunes internes rendent l'échec de contact physique. Un sursaut aligné sur Skarn peut corrompre les antennes sans les tuer. Poussière et glace de Vela ferment l'optique tandis que la route prétend encore exister.\n\nClaw et Lumen sont pires car ils transportent une vieille logique de route. Un handshake peut être valide sur papier et inutile au travail. Black Keel peut donc journaliser un paquet, préserver la custody et laisser un corps dans l'eau.",
+          "external_site": "Ces dangers expliquent les pertes de contact de HECTON-8 par radiation, poussière, occultation et route law héritée, pas par interférence magique."
         },
         "es_ES": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "ES LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "ES LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "ES LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "ES LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "ES LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "ES LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Peligros de relé de lunas internas",
+          "scanner": "ESCALERA INTERNA // Skarn satura antenas. Vela dispersa óptica. Rutas viejas de Claw y Lumen mantienen handshakes caducados vivos.",
+          "field_note": "Un icono limpio aún puede mentir a través de cielo viejo.",
+          "terminal": "NOTA DE PELIGRO DE RELÉ // La pérdida de contacto puede ser geometría, clima de partículas, persiana de polvo o buoy law heredada. Sospecha de UI limpia en ventanas de oleada.",
+          "audio": "El relé no calló. Repitió el siglo equivocado.",
+          "in_game_wiki": "Los peligros de relé de lunas internas vuelven física la pérdida de contacto. Una oleada alineada con Skarn corrompe antenas sin matarlas. Polvo y hielo de Vela cierran óptica mientras la ruta sigue afirmando existir.\n\nClaw y Lumen son peores porque llevan lógica de ruta vieja. Un handshake puede ser válido en forma e inútil en operación. Black Keel puede registrar un paquete, conservar custody y dejar un cuerpo en el agua.",
+          "external_site": "Estos peligros explican cómo HECTON-8 pierde contacto por radiación, polvo, oclusión y route law heredada, no por interferencia mágica."
         },
         "de_DE": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "DE LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "DE LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "DE LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "DE LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "DE LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "DE LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Relaisgefahren der inneren Monde",
+          "scanner": "INNERE LEITER // Skarn sättigt Antennen. Vela streut Optik. Alte Claw- und Lumen-Routen halten veraltete Handshakes lebendig.",
+          "field_note": "Ein sauberes Icon kann durch alten Himmel lügen.",
+          "terminal": "RELAISGEFAHR-NOTIZ // Kontaktverlust kann Geometrie, Teilchenwetter, Staub-Shutter oder geerbtes buoy law sein. Saubere UI in Surge-Fenstern verdächtigen.",
+          "audio": "Das Relais schwieg nicht. Es wiederholte das falsche Jahrhundert.",
+          "in_game_wiki": "Relaisgefahren der inneren Monde machen Kontaktverlust physisch. Skarn-ausgerichteter Surge kann Antennen korrumpieren, ohne sie zu töten. Velas Staub und Eis schließen Optik, während die Route weiter Existenz behauptet.\n\nClaw und Lumen sind schlimmer, weil sie alte Routenlogik tragen. Ein Handshake kann formal gültig und operativ nutzlos sein. Darum kann Black Keel ein Paket loggen, custody halten und trotzdem einen Körper im Wasser lassen.",
+          "external_site": "Diese Gefahren erklären HECTON-8s Kontaktverlust durch Strahlung, Staub, Verdeckung und geerbtes route law statt magischer Störung."
         },
         "pl_PL": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "PL LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "PL LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "PL LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "PL LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "PL LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "PL LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Zagrożenia przekaźników księżyców wewnętrznych",
+          "scanner": "DRABINA WEWNĘTRZNA // Skarn nasyca anteny. Vela rozprasza optykę. Stare trasy Claw i Lumen utrzymują przeterminowane handshakes.",
+          "field_note": "Czysta ikona wciąż może kłamać przez stare niebo.",
+          "terminal": "NOTA ZAGROŻENIA PRZEKAŹNIKA // Utrata kontaktu to geometria, pogoda cząstek, migawka pyłu albo odziedziczone buoy law. Czysty UI podejrzany w oknach skoku.",
+          "audio": "Przekaźnik nie zamilkł. Powtarzał zły wiek.",
+          "in_game_wiki": "Zagrożenia przekaźników księżyców wewnętrznych czynią utratę kontaktu fizyczną. Skok wyrównany ze Skarn potrafi psuć anteny bez ich zabicia. Pył i lód Vela zamykają optykę, gdy trasa nadal twierdzi, że istnieje.\n\nClaw i Lumen są gorsze, bo niosą starą logikę tras. Handshake może być formalnie ważny i operacyjnie bezużyteczny. Black Keel może zapisać pakiet, zachować custody i zostawić ciało w wodzie.",
+          "external_site": "Te zagrożenia tłumaczą utratę kontaktu przez promieniowanie, pył, przesłony i odziedziczone route law, bez magicznej ingerencji."
         },
         "uk_UA": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "UK LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "UK LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "UK LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "UK LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "UK LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "UK LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Ретрансляційні небезпеки внутрішніх місяців",
+          "scanner": "ВНУТРІШНЯ ДРАБИНА // Skarn насичує антени. Vela розсіює оптику. Старі маршрути Claw і Lumen тримають прострочені handshakes живими.",
+          "field_note": "Чиста іконка все ще може брехати через старе небо.",
+          "terminal": "НОТАТКА РЕТРАНСЛЯТОРА // Втрата контакту може бути геометрією, погодою заряджених частинок, пиловою шторкою або успадкованим buoy law. У вікна сплеску чистий UI підозрілий.",
+          "audio": "Ретранслятор не замовк. Він повторив не те століття.",
+          "in_game_wiki": "Ретрансляційні небезпеки внутрішніх місяців роблять втрату зв'язку фізичною. Сплеск, вирівняний зі Skarn, може псувати антени, не вбиваючи їх. Пил і лід Vela закривають оптику, поки маршрут досі заявляє, що існує.\n\nClaw і Lumen гірші, бо несуть стару маршрутну логіку. Handshake може бути формально чинним і операційно марним. Тому Black Keel може записати пакет, зберегти custody і залишити тіло у воді.",
+          "external_site": "Ці небезпеки пояснюють втрату контакту через радіацію, пил, перекриття й успадковане route law, а не магічне втручання."
         },
         "ar_SA": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "AR LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "AR LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "AR LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "AR LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "AR LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "AR LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "أخطار مرحلات الأقمار الداخلية",
+          "scanner": "السلم الداخلي // Skarn يشبع الهوائيات. Vela تبعثر البصريات. مسارات Claw وLumen القديمة تبقي handshakes منتهية حية.",
+          "field_note": "أيقونة نظيفة قد تكذب عبر سماء قديمة.",
+          "terminal": "ملاحظة خطر المرحل // فقدان الاتصال قد يكون هندسة أو طقس جسيمات مشحونة أو ستارة غبار أو buoy law موروثاً. اشكك في UI النظيف أثناء نوافذ الطفرة.",
+          "audio": "المرحل لم يصمت. كرر القرن الخطأ.",
+          "in_game_wiki": "أخطار مرحلات الأقمار الداخلية تجعل فشل الاتصال مادياً. طفرة Skarn قد تفسد الهوائيات دون أن تقتلها. غبار Vela وجليدها يغلقان البصريات بينما يستمر المسار في ادعاء الوجود.\n\nClaw وLumen أسوأ لأنهما يحملان منطق مسارات قديم. يمكن أن يكون handshake صالحاً شكلياً وعديم الفائدة عملياً. لذلك يستطيع Black Keel تسجيل حزمة وحفظ custody وترك جسد في الماء.",
+          "external_site": "تشرح هذه الأخطار فقدان اتصال HECTON-8 بالإشعاع والغبار والحجب وroute law الموروث، لا بتدخل سحري."
         },
         "id_ID": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "ID LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "ID LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "ID LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "ID LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "ID LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "ID LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Bahaya Relai Bulan Dalam",
+          "scanner": "TANGGA DALAM // Skarn menjenuhkan antena. Vela menyebar optik. Rute tua Claw dan Lumen menjaga handshakes basi tetap hidup.",
+          "field_note": "Ikon bersih masih bisa berbohong lewat langit lama.",
+          "terminal": "CATATAN BAHAYA RELAI // Hilang kontak bisa berupa geometri, cuaca partikel, tirai debu, atau buoy law warisan. Curigai UI bersih saat jendela lonjakan.",
+          "audio": "Relai tidak diam. Ia mengulang abad yang salah.",
+          "in_game_wiki": "Bahaya relai bulan dalam membuat kegagalan kontak menjadi fisik. Lonjakan sejajar Skarn dapat merusak antena tanpa mematikannya. Debu dan es Vela menutup optik sementara rute masih mengaku ada.\n\nClaw dan Lumen lebih buruk karena membawa logika rute tua. Handshake dapat sah secara formal dan tidak berguna secara operasi. Black Keel dapat mencatat paket, menjaga custody, dan tetap meninggalkan tubuh di air.",
+          "external_site": "Bahaya ini menjelaskan hilangnya kontak HECTON-8 lewat radiasi, debu, oklusi, dan route law warisan, bukan gangguan sihir."
         },
         "ko_KR": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "KO LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "KO LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "KO LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "KO LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "KO LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "KO LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "내부 달 중계 위험",
+          "scanner": "내부 사다리 // Skarn은 안테나를 포화시킨다. Vela는 광학을 흩뜨린다. 오래된 Claw와 Lumen 항로는 낡은 handshakes를 살려 둔다.",
+          "field_note": "깨끗한 아이콘도 오래된 하늘을 통해 거짓말할 수 있다.",
+          "terminal": "중계 위험 메모 // 접촉 상실은 기하, 대전 입자 날씨, 먼지 셔터, 상속된 buoy law일 수 있다. 서지 창에서는 깨끗한 UI를 의심하라.",
+          "audio": "중계기는 침묵하지 않았다. 잘못된 세기를 반복했다.",
+          "in_game_wiki": "내부 달 중계 위험은 접촉 실패를 물리적으로 만든다. Skarn 정렬 서지는 안테나를 죽이지 않고 망가뜨릴 수 있다. Vela의 먼지와 얼음은 항로가 존재한다고 주장하는 동안 광학을 닫는다.\n\nClaw와 Lumen은 오래된 항로 논리를 나르기 때문에 더 나쁘다. handshake는 형식상 유효하고 작업상 쓸모없을 수 있다. 그래서 Black Keel은 패킷을 기록하고 custody를 보존하면서도 몸을 물에 남길 수 있다.",
+          "external_site": "이 위험은 HECTON-8의 접촉 상실이 마법이 아니라 방사선, 먼지, 가림, 상속된 route law 때문임을 설명한다."
         },
         "he_IL": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "HE LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "HE LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "HE LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "HE LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "HE LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "HE LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "סכנות ממסר של ירחים פנימיים",
+          "scanner": "סולם פנימי // Skarn מרווה אנטנות. Vela מפזרת אופטיקה. נתיבי Claw ו-Lumen ישנים מחזיקים handshakes שפג תוקפם.",
+          "field_note": "אייקון נקי עדיין יכול לשקר דרך שמים ישנים.",
+          "terminal": "הערת סכנת ממסר // אובדן קשר יכול להיות גאומטריה, מזג אוויר חלקיקים, תריס אבק או buoy law בירושה. חשוד ב-UI נקי בזמן חלונות נחשול.",
+          "audio": "הממסר לא השתתק. הוא חזר על המאה הלא נכונה.",
+          "in_game_wiki": "סכנות ממסר של ירחים פנימיים הופכות כשל קשר לפיזי. נחשול מיושר ל-Skarn יכול להשחית אנטנות בלי להרוג אותן. אבק וקרח של Vela סוגרים אופטיקה בזמן שהנתיב עוד טוען שהוא קיים.\n\nClaw ו-Lumen גרועים יותר כי הם נושאים לוגיקת נתיב ישנה. handshake יכול להיות תקף פורמלית וחסר ערך תפעולית. לכן Black Keel יכול לרשום חבילה, לשמור custody ועדיין להשאיר גוף במים.",
+          "external_site": "הסכנות מסבירות אובדן קשר ב-HECTON-8 דרך קרינה, אבק, הסתרה ו-route law בירושה, לא דרך קסם."
         },
         "pt_BR": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "PT-BR LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "PT-BR LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "PT-BR LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "PT-BR LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "PT-BR LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "PT-BR LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Riscos de Relé das Luas Internas",
+          "scanner": "ESCADA INTERNA // Skarn satura antenas. Vela espalha óptica. Rotas antigas de Claw e Lumen mantêm handshakes vencidos vivos.",
+          "field_note": "Um ícone limpo ainda pode mentir através de céu antigo.",
+          "terminal": "NOTA DE RISCO DE RELÉ // Perda de contato pode ser geometria, clima de partículas, cortina de poeira ou buoy law herdada. Desconfie de UI limpo em janelas de surto.",
+          "audio": "O relé não ficou mudo. Repetiu o século errado.",
+          "in_game_wiki": "Riscos de relé das luas internas tornam física a falha de contato. Surto alinhado a Skarn pode corromper antenas sem matá-las. Poeira e gelo de Vela fecham a óptica enquanto a rota ainda afirma existir.\n\nClaw e Lumen são piores porque carregam lógica de rota velha. Um handshake pode ser formalmente válido e inútil em operação. Black Keel pode registrar pacote, preservar custody e ainda deixar um corpo na água.",
+          "external_site": "Esses riscos explicam perda de contato em HECTON-8 por radiação, poeira, oclusão e route law herdada, não por interferência mágica."
         },
         "nl_NL": {
-          "title": "Inner Moon Relay Hazards",
-          "scanner": "NL LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.",
-          "field_note": "NL LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.",
-          "terminal": "NL LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.",
-          "audio": "NL LOC HOLD: The orbital model is innocent. The clause written around it is not.",
-          "in_game_wiki": "NL LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.",
-          "external_site": "NL LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Relaisgevaren van Binnenmanen",
+          "scanner": "BINNENLADDER // Skarn verzadigt antennes. Vela verstrooit optiek. Oude Claw- en Lumen-routes houden verlopen handshakes levend.",
+          "field_note": "Een schoon icoon kan nog steeds liegen door oude hemel.",
+          "terminal": "RELAISGEVAAR NOTITIE // Contactverlies kan geometrie, deeltjesweer, stofshutter of geërfde buoy law zijn. Wantrouw schone UI tijdens surgevensters.",
+          "audio": "Het relais werd niet stil. Het herhaalde de verkeerde eeuw.",
+          "in_game_wiki": "Relaisgevaren van binnenmanen maken contactfalen fysiek. Skarn-uitgelijnde surge kan antennes corrumperen zonder ze te doden. Stof en ijs van Vela sluiten optiek terwijl de route nog beweert te bestaan.\n\nClaw en Lumen zijn erger omdat ze oude routelogica dragen. Een handshake kan formeel geldig en operationeel nutteloos zijn. Black Keel kan een pakket loggen, custody bewaren en toch een lichaam in het water laten.",
+          "external_site": "Deze gevaren verklaren HECTON-8 contactverlies door straling, stof, occlusie en geërfde route law in plaats van magische storing."
         }
       }
     },
@@ -477,151 +531,166 @@
       "unlock": {
         "primary": "unlock.first_hecton8_orbit_tide_geometry",
         "poi_tags": [
-          "poi.tide_geometry_panel",
-          "poi.orbital_timing_core",
-          "poi.great_tide_model"
+          "poi.tide_geometry_model",
+          "poi.atlas_evacuation_forecast",
+          "poi.great_tide_archive"
         ],
         "biome_tags": [
-          "biome.surface_relay",
-          "biome.tide_pump",
-          "biome.brine_canyon"
+          "biome.storm_shelf",
+          "biome.brine_canyon",
+          "biome.orbital_window"
         ]
       },
       "localized": {
         "en_US": {
+          "localization_status": "source_authority",
           "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
+          "scanner": "TIDE GEOMETRY MODEL // Resonance, ice stress, storm surge and heat discharge exceeded evacuation forecast. Atlas continuity flags overrode retreat priority.",
           "field_note": "A moon can drown a colony without hating it.",
-          "terminal": "HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "terminal": "GREAT TIDE CHAIN // Orbital forcing amplified ocean load. Artificial heat discharge and sealed drainage converted a tide event into colony failure.",
           "audio": "Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "in_game_wiki": "HECTON-8's orbit makes the Great Tide believable before it becomes political. Resonance pulled on the ocean. Ice stress and storm surge loaded the shelves. Industrial heat and blocked drainage made the colony's own systems push back at the wrong hour.\n\nThe crime is not that Deep Reach invented physics. The crime is that it built evacuation math around Atlas continuity, insured payloads and labor classes, then called the dead an acceptable forecast error.",
+          "external_site": "HECTON-8 Orbit / Tide Geometry is the hard-sci-fi disaster layer: tides, heat and pressure break the colony first; corporate priority turns failure into crime."
         },
         "ru_RU": {
-          "title": "Орбита и приливная геометрия HECTON-8",
-          "scanner": "Модель tide geometry. Great Tide не была метафорой. Математика всегда была на стене.",
-          "field_note": "Луна может утопить колонию, не ненавидя ее.",
-          "terminal": "HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Орбита HECTON-8 / геометрия прилива",
+          "scanner": "МОДЕЛЬ ПРИЛИВНОЙ ГЕОМЕТРИИ // Резонанс, ледовый стресс, штормовой нагон и тепловой сброс превысили прогноз эвакуации. Флаги Atlas continuity перекрыли приоритет отхода.",
+          "field_note": "Луна может утопить колонию без ненависти.",
+          "terminal": "ЦЕПЬ GREAT TIDE // Орбитальное принуждение усилило нагрузку океана. Искусственный тепловой сброс и запертый дренаж превратили приливное событие в отказ колонии.",
           "audio": "Физика открыла дверь. Deep Reach решила, кто выйдет через нее.",
-          "in_game_wiki": "Орбита HECTON-8 делает Great Tide правдоподобным: resonance, ice stress, storm surge, thermal discharge и ocean pressure собрали реальную цепочку катастрофы. Преступление не в том, что Deep Reach изобрела физику; преступление в том, что они построили колонию и evacuation model, которые ее не пережили.",
-          "external_site": "Орбита и приливная геометрия HECTON-8 - ключевая hard-sci-fi статья катастрофы. Луна гибнет от tides, heat и pressure; корпоративный приоритет превращает бедствие в преступление."
+          "in_game_wiki": "Орбита HECTON-8 делает Great Tide убедимым до того, как он становится политикой. Резонанс тянул океан. Ледовый стресс и штормовой нагон грузили шельфы. Промышленное тепло и заблокированный дренаж заставили системы колонии ударить в неверный час.\n\nПреступление не в том, что Deep Reach изобрела физику. Преступление в том, что она строила эвакуационную математику вокруг Atlas continuity, застрахованных грузов и классов труда, а потом назвала мертвых допустимой ошибкой прогноза.",
+          "external_site": "Орбита HECTON-8 / геометрия прилива является жестким научно-фантастическим слоем катастрофы: приливы, тепло и давление сначала ломают колонию; корпоративный приоритет превращает отказ в преступление."
         },
         "ja_JP": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "JP LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "JP LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "JP LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "JP LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "JP LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "JP LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "HECTON-8軌道 / 潮汐幾何",
+          "scanner": "潮汐幾何モデル // 共鳴、氷応力、高潮、熱排出が避難予測を超過。Atlas continuityフラグが退避優先を上書き。",
+          "field_note": "月は憎まずに植民地を溺れさせる。",
+          "terminal": "GREAT TIDE連鎖 // 軌道強制が海洋荷重を増幅。人工熱排出と封鎖排水が潮汐事象を植民地失敗へ変えた。",
+          "audio": "物理が扉を開けた。Deep Reachが誰を通すかを決めた。",
+          "in_game_wiki": "HECTON-8の軌道は、Great Tideを政治になる前に信じられるものにする。共鳴が海を引き、氷応力と高潮が棚を載荷し、産業熱と塞がれた排水が植民地の仕組みを悪い時刻に押し返させた。\n\n罪はDeep Reachが物理を発明したことではない。Atlas continuity、保険貨物、労働階級を中心に避難計算を組み、死者を許容予測誤差と呼んだことだ。",
+          "external_site": "HECTON-8軌道 / 潮汐幾何は硬派SF災害層である。潮汐、熱、圧力がまず植民地を壊し、企業優先が失敗を犯罪に変える。"
         },
         "zh_CN": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "CN LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "CN LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "CN LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "CN LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "CN LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "CN LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "HECTON-8轨道 / 潮汐几何",
+          "scanner": "潮汐几何模型 // 共振、冰应力、风暴增水和热排放超过撤离预测。Atlas continuity标志覆盖撤退优先级。",
+          "field_note": "一颗月亮可以不带仇恨地淹死殖民地。",
+          "terminal": "GREAT TIDE链 // 轨道强迫放大海洋载荷。人工热排放和封闭排水把潮汐事件转成殖民地失效。",
+          "audio": "物理打开了门。Deep Reach决定谁能离开。",
+          "in_game_wiki": "HECTON-8的轨道让Great Tide在成为政治事件前就可信。共振拉动海洋。冰应力和风暴增水压住陆架。工业热与堵塞排水让殖民地系统在错误时刻反推。\n\n罪行不是Deep Reach发明了物理。罪行是它把撤离数学围绕Atlas continuity、承保载荷和劳动等级建立，然后把死者称作可接受预测误差。",
+          "external_site": "HECTON-8轨道 / 潮汐几何是硬科幻灾难层：潮汐、热和压力先摧毁殖民地；公司优先级把失败变成罪行。"
         },
         "fr_FR": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "FR LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "FR LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "FR LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "FR LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "FR LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "FR LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Orbite de HECTON-8 / géométrie de marée",
+          "scanner": "MODÈLE DE MARÉE // Résonance, stress glaciaire, onde de tempête et rejet thermique ont dépassé la prévision d'évacuation. Atlas continuity a écrasé la priorité de repli.",
+          "field_note": "Une lune peut noyer une colonie sans la haïr.",
+          "terminal": "CHAÎNE GREAT TIDE // Le forçage orbital a amplifié la charge océanique. Rejet thermique artificiel et drainage scellé ont changé une marée en échec colonial.",
+          "audio": "La physique a ouvert la porte. Deep Reach a choisi qui passerait.",
+          "in_game_wiki": "L'orbite de HECTON-8 rend le Great Tide crédible avant de le rendre politique. La résonance tirait l'océan. Stress glaciaire et onde de tempête chargeaient les plateaux. Chaleur industrielle et drainage bloqué ont fait repousser les systèmes de la colonie à la mauvaise heure.\n\nLe crime n'est pas d'avoir inventé la physique. Deep Reach a bâti les maths d'évacuation autour d'Atlas continuity, des charges assurées et des classes de travail, puis a appelé les morts une erreur de prévision acceptable.",
+          "external_site": "Orbite / géométrie de marée de HECTON-8 porte la catastrophe hard-SF : marées, chaleur et pression cassent la colonie, puis la priorité corporate transforme l'échec en crime."
         },
         "es_ES": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "ES LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "ES LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "ES LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "ES LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "ES LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "ES LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Órbita de HECTON-8 / geometría de marea",
+          "scanner": "MODELO DE MAREA // Resonancia, estrés de hielo, marejada y descarga térmica superaron la previsión de evacuación. Atlas continuity anuló la prioridad de retirada.",
+          "field_note": "Una luna puede ahogar una colonia sin odiarla.",
+          "terminal": "CADENA GREAT TIDE // El forzamiento orbital amplificó la carga oceánica. Descarga térmica artificial y drenaje sellado convirtieron una marea en fallo colonial.",
+          "audio": "La física abrió la puerta. Deep Reach decidió quién salía por ella.",
+          "in_game_wiki": "La órbita de HECTON-8 vuelve creíble el Great Tide antes de volverlo político. La resonancia tiró del océano. Estrés de hielo y marejada cargaron las plataformas. Calor industrial y drenaje bloqueado hicieron que los sistemas de la colonia empujaran en la hora equivocada.\n\nEl crimen no es que Deep Reach inventara la física. El crimen es que construyó la matemática de evacuación alrededor de Atlas continuity, cargas aseguradas y clases laborales, y luego llamó a los muertos error aceptable de previsión.",
+          "external_site": "Órbita / geometría de marea de HECTON-8 es la capa de desastre hard-SF: mareas, calor y presión rompen primero la colonia; la prioridad corporativa vuelve criminal el fallo."
         },
         "de_DE": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "DE LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "DE LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "DE LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "DE LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "DE LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "DE LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "HECTON-8-Orbit / Gezeitengeometrie",
+          "scanner": "GEZEITENMODELL // Resonanz, Eisstress, Sturmflut und Wärmeabgabe überschritten Evakuierungsprognose. Atlas-continuity-Flags überschrieben Rückzugspriorität.",
+          "field_note": "Ein Mond kann eine Kolonie ertränken, ohne sie zu hassen.",
+          "terminal": "GREAT-TIDE-KETTE // Orbitale Erzwingung verstärkte Ozeanlast. Künstliche Wärmeabgabe und versiegelte Drainage verwandelten ein Gezeitenereignis in Kolonieversagen.",
+          "audio": "Die Physik öffnete die Tür. Deep Reach entschied, wer hindurch durfte.",
+          "in_game_wiki": "HECTON-8s Orbit macht den Great Tide glaubwürdig, bevor er politisch wird. Resonanz zog am Ozean. Eisstress und Sturmflut belasteten die Schelfe. Industriewärme und blockierte Drainage ließen die Koloniesysteme zur falschen Stunde zurückdrücken.\n\nDas Verbrechen ist nicht, dass Deep Reach Physik erfand. Es baute Evakuierungsrechnung um Atlas continuity, versicherte Nutzlasten und Arbeitsklassen und nannte die Toten dann akzeptablen Prognosefehler.",
+          "external_site": "HECTON-8-Orbit / Gezeitengeometrie ist die harte SF-Katastrophenschicht: Gezeiten, Wärme und Druck brechen zuerst die Kolonie; Konzernpriorität macht Versagen zum Verbrechen."
         },
         "pl_PL": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "PL LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "PL LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "PL LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "PL LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "PL LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "PL LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Orbita HECTON-8 / geometria pływów",
+          "scanner": "MODEL PŁYWÓW // Rezonans, stres lodu, sztormowy napór i zrzut ciepła przekroczyły prognozę ewakuacji. Flagi Atlas continuity nadpisały odwrót.",
+          "field_note": "Księżyc może utopić kolonię bez nienawiści.",
+          "terminal": "ŁAŃCUCH GREAT TIDE // Wymuszenie orbitalne wzmocniło obciążenie oceanu. Sztuczny zrzut ciepła i zamknięty drenaż zmieniły pływ w awarię kolonii.",
+          "audio": "Fizyka otworzyła drzwi. Deep Reach zdecydowało, kto przez nie wyjdzie.",
+          "in_game_wiki": "Orbita HECTON-8 czyni Great Tide wiarygodnym, zanim stanie się polityczny. Rezonans ciągnął ocean. Stres lodu i sztormowy napór obciążały szelfy. Ciepło przemysłowe i zamknięty drenaż sprawiły, że systemy kolonii odepchnęły wodę w złej godzinie.\n\nZbrodnią nie jest to, że Deep Reach wymyśliło fizykę. Zbrodnią jest ewakuacyjna matematyka zbudowana wokół Atlas continuity, ubezpieczonych ładunków i klas pracy, a potem nazwanie martwych dopuszczalnym błędem prognozy.",
+          "external_site": "Orbita / geometria pływów HECTON-8 to twarda warstwa katastrofy SF: pływy, ciepło i ciśnienie najpierw łamią kolonię; priorytet korporacji robi z awarii zbrodnię."
         },
         "uk_UA": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "UK LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "UK LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "UK LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "UK LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "UK LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "UK LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Орбіта HECTON-8 / геометрія припливу",
+          "scanner": "МОДЕЛЬ ПРИПЛИВНОЇ ГЕОМЕТРІЇ // Резонанс, льодовий стрес, штормовий нагін і тепловий скид перевищили прогноз евакуації. Прапори Atlas continuity перекрили пріоритет відступу.",
+          "field_note": "Місяць може втопити колонію без ненависті.",
+          "terminal": "ЛАНЦЮГ GREAT TIDE // Орбітальне примушення посилило океанське навантаження. Штучний тепловий скид і замкнений дренаж перетворили приплив на відмову колонії.",
+          "audio": "Фізика відкрила двері. Deep Reach вирішила, хто вийде через них.",
+          "in_game_wiki": "Орбіта HECTON-8 робить Great Tide переконливим до того, як він стає політикою. Резонанс тягнув океан. Льодовий стрес і штормовий нагін навантажували шельфи. Промислове тепло й заблокований дренаж змусили системи колонії відштовхнути у неправильну годину.\n\nЗлочин не в тому, що Deep Reach вигадала фізику. Злочин у тому, що вона будувала евакуаційну математику навколо Atlas continuity, застрахованих вантажів і класів праці, а потім назвала мертвих допустимою помилкою прогнозу.",
+          "external_site": "Орбіта HECTON-8 / геометрія припливу є жорстким науково-фантастичним шаром катастрофи: припливи, тепло і тиск спершу ламають колонію; корпоративний пріоритет робить відмову злочином."
         },
         "ar_SA": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "AR LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "AR LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "AR LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "AR LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "AR LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "AR LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "مدار HECTON-8 / هندسة المد",
+          "scanner": "نموذج هندسة المد // الرنين وإجهاد الجليد وموجة العاصفة وتصريف الحرارة تجاوزت توقع الإخلاء. أعلام Atlas continuity غلبت أولوية الانسحاب.",
+          "field_note": "يمكن لقمر أن يغرق مستعمرة دون أن يكرهها.",
+          "terminal": "سلسلة GREAT TIDE // عزز الإكراه المداري حمل المحيط. تصريف الحرارة الصناعي والتصريف المختوم حولا حدث المد إلى فشل مستعمرة.",
+          "audio": "فتحت الفيزياء الباب. Deep Reach قررت من يخرج عبره.",
+          "in_game_wiki": "يجعل مدار HECTON-8 حدث Great Tide قابلاً للتصديق قبل أن يصبح سياسياً. شد الرنين المحيط. حمّل إجهاد الجليد وموجة العاصفة الرفوف. جعلت الحرارة الصناعية والتصريف المسدود أنظمة المستعمرة تدفع في الساعة الخطأ.\n\nليست الجريمة أن Deep Reach اخترعت الفيزياء. الجريمة أنها بنت حساب الإخلاء حول Atlas continuity والحمولات المؤمنة وطبقات العمل، ثم سمت الموتى خطأ توقع مقبولاً.",
+          "external_site": "مدار HECTON-8 / هندسة المد هو طبقة الكارثة العلمية الصلبة: المد والحرارة والضغط تكسر المستعمرة أولاً، ثم تحول أولوية الشركة الفشل إلى جريمة."
         },
         "id_ID": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "ID LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "ID LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "ID LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "ID LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "ID LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "ID LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Orbit HECTON-8 / Geometri Pasang",
+          "scanner": "MODEL GEOMETRI PASANG // Resonansi, tekanan es, gelombang badai, dan pembuangan panas melampaui prakiraan evakuasi. Flag Atlas continuity menimpa prioritas mundur.",
+          "field_note": "Sebuah bulan dapat menenggelamkan koloni tanpa membencinya.",
+          "terminal": "RANTAI GREAT TIDE // Paksaan orbit memperbesar beban samudra. Pembuangan panas buatan dan drainase tersegel mengubah pasang menjadi kegagalan koloni.",
+          "audio": "Fisika membuka pintu. Deep Reach memutuskan siapa yang boleh keluar.",
+          "in_game_wiki": "Orbit HECTON-8 membuat Great Tide masuk akal sebelum menjadi politik. Resonansi menarik samudra. Tekanan es dan gelombang badai membebani paparan. Panas industri dan drainase tersumbat membuat sistem koloni mendorong balik pada jam yang salah.\n\nKejahatannya bukan Deep Reach menciptakan fisika. Kejahatannya adalah matematika evakuasi yang dibangun di sekitar Atlas continuity, muatan diasuransikan, dan kelas kerja, lalu menyebut korban mati sebagai galat prakiraan yang dapat diterima.",
+          "external_site": "Orbit HECTON-8 / Geometri Pasang adalah lapisan bencana hard-sci-fi: pasang, panas, dan tekanan mematahkan koloni lebih dulu; prioritas korporat mengubah kegagalan menjadi kejahatan."
         },
         "ko_KR": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "KO LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "KO LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "KO LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "KO LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "KO LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "KO LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "HECTON-8 궤도 / 조석 기하",
+          "scanner": "조석 기하 모델 // 공명, 얼음 응력, 폭풍 해일, 열 방출이 대피 예측을 초과했다. Atlas continuity 플래그가 철수 우선권을 덮어썼다.",
+          "field_note": "달은 미워하지 않고도 식민지를 익사시킬 수 있다.",
+          "terminal": "GREAT TIDE 사슬 // 궤도 강제가 해양 하중을 증폭했다. 인공 열 방출과 봉인된 배수가 조석 사건을 식민지 실패로 바꾸었다.",
+          "audio": "물리가 문을 열었다. Deep Reach가 누가 나갈지 결정했다.",
+          "in_game_wiki": "HECTON-8의 궤도는 Great Tide가 정치가 되기 전에 믿을 만하게 만든다. 공명이 바다를 당겼다. 얼음 응력과 폭풍 해일이 대륙붕을 눌렀다. 산업 열과 막힌 배수가 식민지 시스템을 잘못된 시간에 밀어붙이게 했다.\n\n죄는 Deep Reach가 물리를 발명한 것이 아니다. 죄는 Atlas continuity, 보험 화물, 노동 계급을 중심으로 대피 수학을 짠 뒤, 죽은 사람들을 허용 가능한 예측 오차라고 부른 것이다.",
+          "external_site": "HECTON-8 궤도 / 조석 기하는 하드 SF 재난층이다. 조석, 열, 압력이 먼저 식민지를 부수고 기업 우선순위가 실패를 범죄로 바꾼다."
         },
         "he_IL": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "HE LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "HE LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "HE LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "HE LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "HE LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "HE LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "מסלול HECTON-8 / גאומטריית גאות",
+          "scanner": "מודל גאומטריית גאות // תהודה, לחץ קרח, נחשול סערה ופליטת חום עברו את תחזית הפינוי. דגלי Atlas continuity דרסו עדיפות נסיגה.",
+          "field_note": "ירח יכול להטביע מושבה בלי לשנוא אותה.",
+          "terminal": "שרשרת GREAT TIDE // כפייה מסלולית הגבירה עומס אוקייני. פליטת חום מלאכותית וניקוז חתום הפכו אירוע גאות לכשל מושבה.",
+          "audio": "הפיזיקה פתחה את הדלת. Deep Reach החליטה מי יעבור בה.",
+          "in_game_wiki": "מסלול HECTON-8 הופך את Great Tide לאמין לפני שהוא נעשה פוליטי. תהודה משכה את האוקיינוס. לחץ קרח ונחשול סערה העמיסו את המדפים. חום תעשייתי וניקוז חסום גרמו למערכות המושבה לדחוף חזרה בשעה הלא נכונה.\n\nהפשע אינו ש-Deep Reach המציאה פיזיקה. הפשע הוא מתמטיקת פינוי שנבנתה סביב Atlas continuity, מטענים מבוטחים ומעמדות עבודה, ואז קראה למתים שגיאת תחזית קבילה.",
+          "external_site": "מסלול HECTON-8 / גאומטריית גאות הוא שכבת אסון מדע בדיוני קשה: גאות, חום ולחץ שוברים קודם את המושבה; עדיפות תאגידית הופכת כשל לפשע."
         },
         "pt_BR": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "PT-BR LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "PT-BR LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "PT-BR LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "PT-BR LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "PT-BR LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "PT-BR LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Órbita de HECTON-8 / Geometria de Maré",
+          "scanner": "MODELO DE MARÉ // Ressonância, estresse de gelo, ressaca e descarga térmica excederam a previsão de evacuação. Flags Atlas continuity anularam prioridade de recuo.",
+          "field_note": "Uma lua pode afogar uma colônia sem odiá-la.",
+          "terminal": "CADEIA GREAT TIDE // Forçamento orbital amplificou carga oceânica. Descarga térmica artificial e drenagem selada converteram uma maré em falha colonial.",
+          "audio": "A física abriu a porta. Deep Reach decidiu quem sairia por ela.",
+          "in_game_wiki": "A órbita de HECTON-8 torna o Great Tide crível antes de virar política. Ressonância puxou o oceano. Estresse de gelo e ressaca carregaram as plataformas. Calor industrial e drenagem bloqueada fizeram os sistemas da colônia empurrar na hora errada.\n\nO crime não é a Deep Reach inventar física. O crime é construir a matemática de evacuação em torno de Atlas continuity, cargas seguradas e classes de trabalho, depois chamar os mortos de erro aceitável de previsão.",
+          "external_site": "Órbita de HECTON-8 / Geometria de Maré é a camada de desastre hard-sci-fi: marés, calor e pressão quebram a colônia primeiro; prioridade corporativa transforma falha em crime."
         },
         "nl_NL": {
-          "title": "HECTON-8 Orbit / Tide Geometry",
-          "scanner": "NL LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.",
-          "field_note": "NL LOC HOLD: A moon can drown a colony without hating it.",
-          "terminal": "NL LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.",
-          "audio": "NL LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.",
-          "in_game_wiki": "NL LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.",
-          "external_site": "NL LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "HECTON-8 Orbit / Getijdengeometrie",
+          "scanner": "GETIJDENMODEL // Resonantie, ijsstress, stormvloed en warmteafvoer overschreden evacuatieprognose. Atlas-continuity vlaggen overschreven terugtrekprioriteit.",
+          "field_note": "Een maan kan een kolonie verdrinken zonder haar te haten.",
+          "terminal": "GREAT TIDE KETEN // Orbitale forcing versterkte oceaanlast. Kunstmatige warmteafvoer en verzegelde drainage veranderden een getij in koloniemislukking.",
+          "audio": "Fysica opende de deur. Deep Reach besloot wie erdoor mocht.",
+          "in_game_wiki": "HECTON-8s orbit maakt de Great Tide geloofwaardig voordat hij politiek wordt. Resonantie trok aan de oceaan. Ijsstress en stormvloed belastten de platen. Industriewarmte en geblokkeerde drainage lieten koloniesystemen op het verkeerde uur terugduwen.\n\nDe misdaad is niet dat Deep Reach fysica uitvond. De misdaad is evacuatierekenen rond Atlas continuity, verzekerde ladingen en arbeidsklassen, waarna de doden een acceptabele voorspellingsfout werden genoemd.",
+          "external_site": "HECTON-8 Orbit / Getijdengeometrie is de harde SF-ramp laag: getijden, warmte en druk breken eerst de kolonie; bedrijfsprioriteit maakt falen tot misdaad."
         }
       }
     },
@@ -643,139 +712,154 @@
       },
       "localized": {
         "en_US": {
+          "localization_status": "source_authority",
           "title": "Outer Moon Cold Claims",
           "scanner": "Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
           "field_note": "Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "terminal": "OUTER LADDER ARCHIVE // Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
           "audio": "Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "in_game_wiki": "Outer moon cold claims prove Aegir is a system, not one haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the traffic net.\n\nThe important part is not distance. It is pattern. A route can be dead and still billable. A beacon can repeat custody with no living crew. HECTON-8 is the worst visible case, but it is not the first place Aegir learned to file loss as infrastructure.",
+          "external_site": "Outer Moon Cold Claims expands Aegir beyond HECTON-8: dead routes, cold caches and abandoned beacons feed salvage law and teach companies how to hide repeated loss."
         },
         "ru_RU": {
-          "title": "Холодные claims внешних лун",
-          "scanner": "Outer claim beacon. Не все мертвое в Aegir находится на HECTON-8.",
-          "field_note": "Cold claims делают Marauders возможными. Они же учат компании хоронить закономерности.",
-          "terminal": "OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Холодные претензии внешних лун",
+          "scanner": "Маяк внешней претензии. Не все мертвое в Aegir лежит на HECTON-8.",
+          "field_note": "Холодные претензии делают мародеров возможными. Они же учат компании хоронить закономерности.",
+          "terminal": "АРХИВ ВНЕШНЕЙ ЛЕСТНИЦЫ // Соляной проспект Thorne провален. Экспортный маршрут Anvil законсервирован. Маяк Mute повторяет ping опеки без заявления активного экипажа.",
           "audio": "Aegir научилась терять людей до того, как HECTON-8 закончила урок.",
-          "in_game_wiki": "Cold claims внешних лун показывают, что Aegir - система, а не одна haunted moon. Failed brine prospects, mothballed metal routes и dead beacons создают salvage economy, которая приводит Marauders в систему.",
-          "external_site": "Cold claims внешних лун расширяют Aegir за пределы playable moon и остаются полезными: другие тела питают route rumors, salvage law, abandoned caches и ощущение, что HECTON-8 - худший видимый случай более широкой claim economy."
+          "in_game_wiki": "Холодные претензии внешних лун доказывают, что Aegir - система, а не одна проклятая луна. Проваленные соляные проспекты, законсервированные металлические маршруты и мертвые маяки создают salvage-экономику, которая затягивает мародеров в транспортную сеть.\n\nВажно не расстояние, а повторяемость. Маршрут может быть мертвым и все равно оплачиваемым. Маяк может повторять опеку без живого экипажа. HECTON-8 - худший видимый случай, но не первое место, где Aegir научилась оформлять потерю как инфраструктуру.",
+          "external_site": "Холодные претензии внешних лун расширяют Aegir за пределы HECTON-8: мертвые маршруты, холодные тайники и брошенные маяки питают salvage-право и скрывают повторяющиеся потери."
         },
         "ja_JP": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "JP LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "JP LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "JP LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "JP LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "JP LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "JP LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "外縁月の凍結クレーム",
+          "scanner": "外縁クレームビーコン。Aegirで死んでいるものすべてがHECTON-8にあるわけではない。",
+          "field_note": "凍結クレームはMarauderを可能にする。同時に、企業に反復する損失の埋め方を教える。",
+          "terminal": "外縁梯子アーカイブ // Thorne塩水試掘は失敗。Anvil輸出航路は休眠。Muteビーコンは現役乗員申告なしに保管pingを繰り返す。",
+          "audio": "Aegirは、HECTON-8が授業を終える前から人の失い方を学んでいた。",
+          "in_game_wiki": "外縁月の凍結クレームは、Aegirが一つの呪われた月ではなく一つの系であることを示す。失敗した塩水試掘、休眠した金属航路、死んだビーコンが、Marauderを交通網へ呼び込むsalvage経済を作る。\n\n重要なのは距離ではなく反復だ。航路は死んでいても請求可能であり得る。ビーコンは生存乗員なしで保管を反復できる。HECTON-8は最悪の可視例だが、Aegirが損失をインフラとして記録することを学んだ最初の場所ではない。",
+          "external_site": "外縁月の凍結クレームはAegirをHECTON-8の外へ広げる。死んだ航路、冷たいキャッシュ、放棄ビーコンがsalvage法と反復損失の隠蔽を支える。"
         },
         "zh_CN": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "CN LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "CN LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "CN LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "CN LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "CN LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "CN LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "外层卫星冷索赔",
+          "scanner": "外层索赔信标。Aegir里并非所有死物都在HECTON-8上。",
+          "field_note": "冷索赔让Marauder成为可能。它们也教会公司如何埋掉模式。",
+          "terminal": "外层阶梯档案 // Thorne盐水勘探失败。Anvil出口航线封存。Mute信标在无现役船员声明下重复保管ping。",
+          "audio": "在HECTON-8上完这一课之前，Aegir就已经学会了如何失去人。",
+          "in_game_wiki": "外层卫星冷索赔证明Aegir是一个系统，而不是一颗闹鬼的月球。失败的盐水勘探、封存的金属航线和死亡信标，构成了把Marauder带入交通网的salvage经济。\n\n重点不是距离，而是模式。航线可以死亡却仍可计费。信标可以在没有活船员的情况下重复保管。HECTON-8是最糟糕的可见案例，但不是Aegir第一次学会把损失归档成基础设施的地方。",
+          "external_site": "外层卫星冷索赔把Aegir扩展到HECTON-8之外：死亡航线、冷缓存和弃置信标滋养salvage法律，也教公司隐藏重复损失。"
         },
         "fr_FR": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "FR LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "FR LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "FR LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "FR LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "FR LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "FR LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Revendications froides des lunes externes",
+          "scanner": "Balise de revendication externe. Tout ce qui est mort dans Aegir n'est pas sur HECTON-8.",
+          "field_note": "Les revendications froides rendent les Marauders possibles. Elles apprennent aussi aux compagnies à enterrer les motifs.",
+          "terminal": "ARCHIVE DE L'ÉCHELLE EXTERNE // Prospection de saumure Thorne échouée. Route d'export Anvil mise en sommeil. Balise Mute répète le ping de garde sans déclaration d'équipage actif.",
+          "audio": "Aegir a appris à perdre des gens avant que HECTON-8 termine la leçon.",
+          "in_game_wiki": "Les revendications froides des lunes externes prouvent qu'Aegir est un système, pas une seule lune hantée. Prospections de saumure ratées, routes métalliques mises en sommeil et balises mortes créent l'économie de salvage qui attire les Marauders dans le réseau de trafic.\n\nL'important n'est pas la distance. C'est le motif. Une route peut être morte et rester facturable. Une balise peut répéter la garde sans équipage vivant. HECTON-8 est le pire cas visible, mais pas le premier endroit où Aegir a appris à classer la perte comme infrastructure.",
+          "external_site": "Les revendications froides des lunes externes élargissent Aegir au-delà de HECTON-8 : routes mortes, caches froides et balises abandonnées nourrissent le droit du salvage et masquent les pertes répétées."
         },
         "es_ES": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "ES LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "ES LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "ES LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "ES LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "ES LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "ES LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Reclamaciones frías de lunas exteriores",
+          "scanner": "Baliza de reclamación exterior. No todo lo muerto en Aegir está en HECTON-8.",
+          "field_note": "Las reclamaciones frías hacen posibles a los Marauders. También enseñan a las compañías a enterrar patrones.",
+          "terminal": "ARCHIVO DE ESCALERA EXTERIOR // Prospección de salmuera Thorne fallida. Ruta de exportación Anvil archivada. Baliza Mute repite ping de custodia sin declaración de tripulación activa.",
+          "audio": "Aegir aprendió a perder gente antes de que HECTON-8 terminara la lección.",
+          "in_game_wiki": "Las reclamaciones frías de lunas exteriores prueban que Aegir es un sistema, no una sola luna embrujada. Prospecciones de salmuera fallidas, rutas metálicas archivadas y balizas muertas crean la economía salvage que trae Marauders a la red de tráfico.\n\nLo importante no es la distancia. Es el patrón. Una ruta puede estar muerta y seguir siendo facturable. Una baliza puede repetir custodia sin tripulación viva. HECTON-8 es el peor caso visible, pero no el primer lugar donde Aegir aprendió a archivar pérdida como infraestructura.",
+          "external_site": "Las reclamaciones frías de lunas exteriores expanden Aegir más allá de HECTON-8: rutas muertas, cachés frías y balizas abandonadas alimentan la ley salvage y ocultan pérdidas repetidas."
         },
         "de_DE": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "DE LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "DE LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "DE LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "DE LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "DE LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "DE LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Kalte Claims der Außenmonde",
+          "scanner": "Äußerer Claim-Beacon. Nicht alles Tote in Aegir liegt auf HECTON-8.",
+          "field_note": "Kalte Claims machen Marauders möglich. Sie lehren Firmen auch, Muster zu begraben.",
+          "terminal": "ARCHIV DER ÄUSSEREN LEITER // Thorne-Soleprospekt gescheitert. Anvil-Exportroute eingemottet. Mute-Beacon wiederholt Verwahrungsping ohne aktive Crew-Erklärung.",
+          "audio": "Aegir lernte Menschen zu verlieren, bevor HECTON-8 die Lektion beendete.",
+          "in_game_wiki": "Kalte Claims der Außenmonde beweisen, dass Aegir ein System ist, nicht ein einzelner Spukmond. Gescheiterte Soleprospekte, eingemottete Metallrouten und tote Beacons schaffen die salvage-Ökonomie, die Marauders ins Verkehrsnetz zieht.\n\nWichtig ist nicht Entfernung, sondern Muster. Eine Route kann tot und trotzdem abrechenbar sein. Ein Beacon kann Verwahrung ohne lebende Crew wiederholen. HECTON-8 ist der schlimmste sichtbare Fall, aber nicht der erste Ort, an dem Aegir lernte, Verlust als Infrastruktur abzulegen.",
+          "external_site": "Kalte Claims der Außenmonde erweitern Aegir über HECTON-8 hinaus: tote Routen, kalte Caches und verlassene Beacons nähren salvage-Recht und verdecken wiederholte Verluste."
         },
         "pl_PL": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "PL LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "PL LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "PL LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "PL LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "PL LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "PL LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Zimne roszczenia zewnętrznych księżyców",
+          "scanner": "Zewnętrzny beacon roszczeniowy. Nie wszystko martwe w Aegir leży na HECTON-8.",
+          "field_note": "Zimne roszczenia czynią Marauderów możliwymi. Uczą też firmy, jak grzebać wzorce.",
+          "terminal": "ARCHIWUM ZEWNĘTRZNEJ DRABINY // Prospekt solanki Thorne zawiódł. Trasa eksportowa Anvil uśpiona. Beacon Mute powtarza ping kustodii bez deklaracji aktywnej załogi.",
+          "audio": "Aegir nauczył się tracić ludzi, zanim HECTON-8 skończył lekcję.",
+          "in_game_wiki": "Zimne roszczenia zewnętrznych księżyców dowodzą, że Aegir jest systemem, nie jednym nawiedzonym księżycem. Nieudane prospekty solanki, uśpione metalowe trasy i martwe beacony tworzą ekonomię salvage, która wciąga Marauderów do sieci ruchu.\n\nLiczy się nie dystans, lecz wzorzec. Trasa może być martwa i nadal rozliczalna. Beacon może powtarzać kustodię bez żywej załogi. HECTON-8 jest najgorszym widocznym przypadkiem, ale nie pierwszym miejscem, gdzie Aegir nauczył się księgować stratę jako infrastrukturę.",
+          "external_site": "Zimne roszczenia zewnętrznych księżyców rozszerzają Aegir poza HECTON-8: martwe trasy, zimne skrytki i porzucone beacony karmią prawo salvage i ukrywają powtarzalne straty."
         },
         "uk_UA": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "UK LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "UK LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "UK LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "UK LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "UK LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "UK LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Холодні претензії зовнішніх місяців",
+          "scanner": "Маяк зовнішньої претензії. Не все мертве в Aegir лежить на HECTON-8.",
+          "field_note": "Холодні претензії роблять Marauder можливими. Вони ж навчають компанії ховати закономірності.",
+          "terminal": "АРХІВ ЗОВНІШНЬОЇ ДРАБИНИ // Соляний проспект Thorne провалено. Експортний маршрут Anvil законсервовано. Маяк Mute повторює ping опіки без заяви активного екіпажу.",
+          "audio": "Aegir навчилася втрачати людей до того, як HECTON-8 закінчила урок.",
+          "in_game_wiki": "Холодні претензії зовнішніх місяців доводять, що Aegir - система, а не один проклятий місяць. Провалені соляні проспекти, законсервовані металеві маршрути й мертві маяки створюють salvage-економіку, що заводить Marauder у транспортну мережу.\n\nВажлива не відстань, а повторюваність. Маршрут може бути мертвим і все одно оплачуваним. Маяк може повторювати опіку без живого екіпажу. HECTON-8 - найгірший видимий випадок, але не перше місце, де Aegir навчилася оформлювати втрату як інфраструктуру.",
+          "external_site": "Холодні претензії зовнішніх місяців розширюють Aegir за межі HECTON-8: мертві маршрути, холодні схованки й покинуті маяки живлять salvage-право та приховують повторні втрати."
         },
         "ar_SA": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "AR LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "AR LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "AR LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "AR LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "AR LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "AR LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "مطالبات الأقمار الخارجية الباردة",
+          "scanner": "منارة مطالبة خارجية. ليس كل شيء ميت في Aegir موجودا على HECTON-8.",
+          "field_note": "المطالبات الباردة تجعل Marauders ممكنين. كما تعلم الشركات كيف تدفن الأنماط.",
+          "terminal": "أرشيف السلم الخارجي // فشل مشروع محلول Thorne. تم تجميد طريق تصدير Anvil. منارة Mute تكرر ping الحيازة بلا إعلان طاقم نشط.",
+          "audio": "تعلم Aegir كيف يفقد الناس قبل أن تنهي HECTON-8 الدرس.",
+          "in_game_wiki": "مطالبات الأقمار الخارجية الباردة تثبت أن Aegir نظام كامل، لا قمر واحد مسكون. مشاريع المحلول الفاشلة، وطرق المعدن المجمدة، والمنارات الميتة تصنع اقتصاد salvage الذي يجلب Marauders إلى شبكة المرور.\n\nالمهم ليس المسافة بل النمط. قد يكون الطريق ميتا ويبقى قابلا للفوترة. قد تكرر منارة الحيازة بلا طاقم حي. HECTON-8 أسوأ حالة مرئية، لكنها ليست أول مكان تعلم فيه Aegir تحويل الفقد إلى بنية تحتية.",
+          "external_site": "مطالبات الأقمار الخارجية الباردة توسع Aegir وراء HECTON-8: الطرق الميتة والمخابئ الباردة والمنارات المهجورة تغذي قانون salvage وتخفي الخسائر المتكررة."
         },
         "id_ID": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "ID LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "ID LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "ID LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "ID LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "ID LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "ID LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Klaim Dingin Bulan Luar",
+          "scanner": "Beacon klaim luar. Tidak semua yang mati di Aegir berada di HECTON-8.",
+          "field_note": "Klaim dingin membuat Marauder mungkin. Mereka juga mengajari perusahaan cara mengubur pola.",
+          "terminal": "ARSIP TANGGA LUAR // Prospek air garam Thorne gagal. Rute ekspor Anvil dimothball. Beacon Mute mengulang ping kustodi tanpa deklarasi kru aktif.",
+          "audio": "Aegir belajar kehilangan orang sebelum HECTON-8 menyelesaikan pelajarannya.",
+          "in_game_wiki": "Klaim dingin bulan luar membuktikan Aegir adalah sistem, bukan satu bulan berhantu. Prospek air garam yang gagal, rute logam yang dimothball, dan beacon mati menciptakan ekonomi salvage yang membawa Marauder ke jaringan lalu lintas.\n\nYang penting bukan jarak, tetapi pola. Rute bisa mati dan tetap dapat ditagih. Beacon bisa mengulang kustodi tanpa kru hidup. HECTON-8 adalah kasus terlihat paling buruk, tetapi bukan tempat pertama Aegir belajar mengarsipkan kehilangan sebagai infrastruktur.",
+          "external_site": "Klaim dingin bulan luar memperluas Aegir melampaui HECTON-8: rute mati, cache dingin, dan beacon terlantar memberi makan hukum salvage serta menyembunyikan kehilangan berulang."
         },
         "ko_KR": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "KO LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "KO LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "KO LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "KO LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "KO LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "KO LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "외곽 달 냉각 클레임",
+          "scanner": "외곽 클레임 비컨. Aegir에서 죽은 모든 것이 HECTON-8에 있는 것은 아니다.",
+          "field_note": "냉각 클레임은 Marauder를 가능하게 한다. 또한 회사가 패턴을 묻는 법을 가르친다.",
+          "terminal": "외곽 사다리 기록 // Thorne 염수 탐사는 실패했다. Anvil 수출 항로는 휴면 처리됐다. Mute 비컨은 활성 승무원 선언 없이 보관 ping을 반복한다.",
+          "audio": "Aegir는 HECTON-8이 수업을 끝내기 전부터 사람을 잃는 법을 배웠다.",
+          "in_game_wiki": "외곽 달 냉각 클레임은 Aegir가 하나의 유령 달이 아니라 시스템임을 증명한다. 실패한 염수 탐사, 휴면 금속 항로, 죽은 비컨이 Marauder를 교통망으로 끌어들이는 salvage 경제를 만든다.\n\n중요한 것은 거리가 아니라 패턴이다. 항로는 죽었어도 청구 가능할 수 있다. 비컨은 살아 있는 승무원 없이 보관을 반복할 수 있다. HECTON-8은 가장 나쁜 가시 사례지만, Aegir가 손실을 기반시설로 기록하는 법을 배운 첫 장소는 아니다.",
+          "external_site": "외곽 달 냉각 클레임은 Aegir를 HECTON-8 너머로 넓힌다. 죽은 항로, 차가운 캐시, 버려진 비컨은 salvage 법과 반복 손실 은폐를 먹여 살린다."
         },
         "he_IL": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "HE LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "HE LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "HE LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "HE LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "HE LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "HE LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "תביעות קרות של הירחים החיצוניים",
+          "scanner": "משואת תביעה חיצונית. לא כל דבר מת ב-Aegir נמצא על HECTON-8.",
+          "field_note": "תביעות קרות מאפשרות Marauders. הן גם מלמדות חברות איך לקבור דפוסים.",
+          "terminal": "ארכיון הסולם החיצוני // סקר מי מלח Thorne נכשל. נתיב היצוא Anvil הוקפא. משואת Mute חוזרת על ping משמורת בלי הצהרת צוות פעיל.",
+          "audio": "Aegir למד לאבד אנשים לפני ש-HECTON-8 סיים את השיעור.",
+          "in_game_wiki": "תביעות קרות של הירחים החיצוניים מוכיחות ש-Aegir הוא מערכת, לא ירח רדוף אחד. סקרי מי מלח כושלים, נתיבי מתכת מוקפאים ומשואות מתות יוצרים את כלכלת ה-salvage שמביאה Marauders אל רשת התנועה.\n\nהעיקר אינו המרחק אלא הדפוס. נתיב יכול להיות מת ועדיין בר חיוב. משואה יכולה לחזור על משמורת בלי צוות חי. HECTON-8 הוא המקרה הגלוי הגרוע ביותר, אבל לא המקום הראשון שבו Aegir למד לתייק אובדן כתשתית.",
+          "external_site": "תביעות קרות של הירחים החיצוניים מרחיבות את Aegir מעבר ל-HECTON-8: נתיבים מתים, מטמונים קרים ומשואות נטושות מזינים חוק salvage ומסתירים אובדן חוזר."
         },
         "pt_BR": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "PT-BR LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "PT-BR LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "PT-BR LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "PT-BR LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "PT-BR LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "PT-BR LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Reivindicações Frias das Luas Externas",
+          "scanner": "Beacon de reivindicação externa. Nem tudo que está morto em Aegir está em HECTON-8.",
+          "field_note": "Reivindicações frias tornam Marauders possíveis. Elas também ensinam empresas a enterrar padrões.",
+          "terminal": "ARQUIVO DA ESCADA EXTERNA // Prospecção de salmoura Thorne falhou. Rota de exportação Anvil foi desativada. Beacon Mute repete ping de custódia sem declaração de tripulação ativa.",
+          "audio": "Aegir aprendeu a perder pessoas antes de HECTON-8 terminar a lição.",
+          "in_game_wiki": "Reivindicações frias das luas externas provam que Aegir é um sistema, não uma única lua assombrada. Prospecções de salmoura fracassadas, rotas metálicas desativadas e beacons mortos criam a economia salvage que traz Marauders para a rede de tráfego.\n\nO importante não é distância. É padrão. Uma rota pode estar morta e ainda ser faturável. Um beacon pode repetir custódia sem tripulação viva. HECTON-8 é o pior caso visível, mas não o primeiro lugar onde Aegir aprendeu a arquivar perda como infraestrutura.",
+          "external_site": "Reivindicações frias das luas externas expandem Aegir além de HECTON-8: rotas mortas, caches frios e beacons abandonados alimentam lei salvage e escondem perdas repetidas."
         },
         "nl_NL": {
-          "title": "Outer Moon Cold Claims",
-          "scanner": "NL LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.",
-          "field_note": "NL LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.",
-          "terminal": "NL LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.",
-          "audio": "NL LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.",
-          "in_game_wiki": "NL LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.",
-          "external_site": "NL LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy."
+          "localization_status": "source_draft_pending_native_review",
+          "title": "Koude Claims van Buitenmanen",
+          "scanner": "Buitenste claimbeacon. Niet alles wat dood is in Aegir ligt op HECTON-8.",
+          "field_note": "Koude claims maken Marauders mogelijk. Ze leren bedrijven ook patronen te begraven.",
+          "terminal": "BUITENLADDER ARCHIEF // Thorne pekelprospect faalde. Anvil exportroute ingemot. Mute-beacon herhaalt bewaringsping zonder actieve crewverklaring.",
+          "audio": "Aegir leerde mensen verliezen voordat HECTON-8 de les afmaakte.",
+          "in_game_wiki": "Koude claims van buitenmanen bewijzen dat Aegir een systeem is, geen enkele spookmaan. Mislukte pekelprospects, ingemotte metaalroutes en dode beacons maken de salvage-economie die Marauders het verkeersnet in trekt.\n\nBelangrijk is niet afstand, maar patroon. Een route kan dood zijn en toch factureerbaar. Een beacon kan bewaring herhalen zonder levende crew. HECTON-8 is het ergste zichtbare geval, maar niet de eerste plek waar Aegir verlies als infrastructuur leerde archiveren.",
+          "external_site": "Koude claims van buitenmanen verbreden Aegir voorbij HECTON-8: dode routes, koude caches en verlaten beacons voeden salvage-recht en verbergen herhaald verlies."
         }
       }
     }

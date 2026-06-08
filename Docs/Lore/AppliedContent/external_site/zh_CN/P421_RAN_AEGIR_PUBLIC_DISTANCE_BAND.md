@@ -8,33 +8,33 @@ biome_tags: biome.human_space;biome.publication
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "ZH LOC HOLD: Ran/Aegir Distance Band"
+spoiler_tier: 1
+title: "Ran/Aegir距离带"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Ran/Aegir Distance Band
+# Ran/Aegir距离带
 
-ZH LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.
+Aegir系统处在可达但严厉的no-FTL范围：近到能发展工业，远到被抛弃仍有重量。
 
 ## Scanner
 
-ZH LOC HOLD: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+公共带：Ran/Aegir是从Sol出发的十光年级无FTL航线。
 
 ## Terminal
 
-ZH LOC HOLD: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+星历带：在天体常数被表格冻结前，公共文本使用十光年级。此航线不存在FTL救援。
 
 ## Audio
 
-ZH LOC HOLD: Ten light-years is close on a map and brutal for a contract.
+十光年在地图上很近，在合同里很残酷。
 
 ## Field Note
 
-ZH LOC HOLD: Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
+公共天文记录：距离带和航线图是解释范围，不是最终星历常数。
 
 <!-- External Site; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/zh_CN. -->

@@ -9,32 +9,37 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Old Procedure Recognition Cue"
+title: "Pista de Reconhecimento de Procedimento Antigo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Old Procedure Recognition Cue
+# Pista de Reconhecimento de Procedimento Antigo
 
-PT LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+HECTON-8 fundamenta a motivação do personagem em procedimento. O protagonista reconhece um antigo formulário de segurança de evacuação e vê como ele foi invertido: contagens degradadas, campos de testemunha selados e linguagem de rota segura usada para preservar reivindicações em vez de vidas.
 
 ## Scanner
 
-PT LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+Selo de rota segura presente. Contagem de trabalhadores sobrescrita em duas tintas. Campo de testemunha manual selado. O formulário foi criado para pegar esse tipo de mentira antes que alguém a transformasse em política.
 
 ## Terminal
 
-PT LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+FORMULÁRIO DE CONTINUIDADE DE EVACUAÇÃO / CERTIFICAÇÃO DE ROTA SEGURA
+rota: linha auxiliar de saída
+ocupantes declarados: contagem degradada aceita
+testemunha manual: selada pelo Escritório de Continuidade
+correção de campo: contagem de trabalhadores inconsistente com etiquetas da sala de bombas
+status: preservação de reivindicação, sem liberação para extração.
 
 ## Audio
 
-PT LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+Você conhece este formulário. Ele deveria impedir que uma sala fosse contada como vazia enquanto ainda havia pessoas respirando nela.
 
 ## Field Note
 
-PT LOC HOLD: Use where room evidence contradicts a clean procedural label.
+O formulário deveria forçar outra contagem. Aqui, forçou silêncio.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/pt_BR. -->

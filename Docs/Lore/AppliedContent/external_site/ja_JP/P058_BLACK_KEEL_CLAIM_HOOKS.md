@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Black Keel の請求フック"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Black Keel の請求フック
 
-JP LOC HOLD: Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses.
+Black Keel の請求フックは冒頭の圧力を定義する。Black Keel は芝居がかった悪役船ではない。請求プール経済、隔離法、休眠中の Deep Reach てこに縛られたキャリアである。プレイヤーの問題は実務的であると同時に道徳的でもある。海の上の声は遭難信号を聞けるが、帰還経路は価値があり、認証可能で、無視すると法的に面倒なものにしなければならない。
 
 ## Scanner
 
-JP LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+マニフェスト上の Black Keel は請求プールの機材であり、条項上では Deep Reach のてこである。
 
 ## Terminal
 
-JP LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+キャリア管理：ペイロード選別、隔離ゲート、経路証明、責任解除後にオペレーター回収を許可。Deep Reach 優先印は休眠条項内に保持。
 
 ## Audio
 
-JP LOC HOLD: It can hear you. It just has to price the answer first.
+聞こえてはいる。ただ、答える前に価格を付けなければならない。
 
 ## Field Note
 
-JP LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+船は邪悪ではない。生きている声を出さずに邪悪になれる契約へ貸し出されているだけだ。
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/ja_JP. -->

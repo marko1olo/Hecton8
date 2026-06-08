@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Sol Core 管辖权"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Sol Core 管辖权
 
-CN LOC HOLD: Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help.
+Sol Core 管辖权解释了为什么 HECTON-8 即使遥远，仍能被法律占有。在 HECTON-8，旧文明先以文书、标准和债务到来，然后才可能轮到援助。
 
 ## Scanner
 
-CN LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+旧 Sol 法印。它离得远到闻不到压力泄漏，却仍能拥有一具边境尸体。
 
 ## Terminal
 
-CN LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+SOL CORE STANDARD: 经由持证承运保管、航路保险与延后裁决，索赔连续性获承认。人员回收优先级需等待本地危险认证后裁定。
 
 ## Audio
 
-CN LOC HOLD: The seal came from Earth space. The rescue clause did not.
+印章来自地球空间。救援条款没有一同抵达。
 
 ## Field Note
 
-CN LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol 在这里不是家。它是文件上最古老的签名，至今还能毁掉你。
 
 <!-- External Site; generated from P071_SOL_CORE_AUTHORITY/zh_CN. -->

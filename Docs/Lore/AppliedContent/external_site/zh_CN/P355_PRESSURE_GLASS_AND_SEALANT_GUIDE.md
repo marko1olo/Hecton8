@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Pressure Glass and Sealant Guide"
+title: "压力玻璃与密封剂指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Pressure Glass and Sealant Guide
+# 压力玻璃与密封剂指南
 
-ZH LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.
+压力玻璃与密封剂指南把 HECTON-8 的生物机械恐怖扎进修复逻辑：Atlas 跟随裂纹、缆线、biofilms 和 pressure scars，因为破损系统本来就提供道路。
 
 ## Scanner
 
-ZH LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+pressure-glass 裂纹被 Atlas chemistry 封住。只有 seal map 保持完整时，lens stock 才安全。
 
 ## Terminal
 
-ZH LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: pressure glass 记录旧 tide stress。Atlas sealant 沿这些裂纹前进，因为裂纹已经描述了系统失效线。
 
 ## Audio
 
-ZH LOC HOLD: The repair network reads fractures the way you read a map.
+修复网络阅读裂纹，就像你阅读地图。
 
 ## Field Note
 
-ZH LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+不要打磨漂亮边缘。跟随 fracture map，从 seal 的死亡侧切入。
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/zh_CN. -->

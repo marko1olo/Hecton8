@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "אקדח טלאי איטום קר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# אקדח טלאי איטום קר
 
-HE LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+אקדח האיטום הקר מלמד את הגבול הישר הראשון. הוא יכול לעצור pinhole, להחזיק שפת אטם או לקנות דקות על תפר שקט. הוא לא מברך מבנה שזז. ה-rating label חשוב יותר מתקוות השחקן.
 
-## Scanner
-
-HE LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-HE LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-HE LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-HE LOC HOLD: Sealant repairs should buy time, not erase pressure.
+לכן הכלי שייך להתחלה. הוא נותן לשחקן לפעול בלי להעמיד פנים שכל דליפה פתירה. patch טוב יוצר זמן; patch רע יוצר ביטחון במקום שבו האוקיינוס יגבה תשלום אחר כך.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/he_IL. -->

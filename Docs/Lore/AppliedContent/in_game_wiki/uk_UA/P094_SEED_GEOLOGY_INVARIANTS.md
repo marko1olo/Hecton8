@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Інваріанти геології сиду"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Інваріанти геології сиду
 
-UK LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+Інваріанти геології сиду тримають HECTON-8 цілісним у довгих повторах. Каньйони можуть відкриватися в іншому порядку, докази рухатися, безпечні кишені зміщуватися, тиск видів змінюватися. Зоря лишається Еґіром, місяць лишається HECTON-8, глибинні пояси тримають порядок, Great Tide тримає ритм, а басейн Atlas зберігає зв'язок із найглибшою правдою.
 
 ## Scanner
 
-UK LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+Нотатка генерації маршруту. Мапа здобичі змінюється, але місяць тримає ті самі кістки.
 
 ## Terminal
 
-UK LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+ІНВАРІАНТИ: зоря Еґір, орбітальна драбина HECTON-8, інтервал Great Tide, порядок глибинних поясів, зв'язок басейну Atlas, поведінка blue debt під тиском. ЗМІННЕ: підхід до каньйону, порядок POI, безпечні кишені, щільність bloom, оголення здобичі.
 
 ## Audio
 
-UK LOC HOLD: New seed, same moon. Different wound.
+Інший візерунок рани. Той самий місяць під ним.
 
 ## Field Note
 
-UK LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+Новий захід може інакше поховати доказ; він не може переписати гравітацію, приплив чи провину.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/uk_UA. -->

@@ -30,13 +30,7 @@ namespace Hecton8.Editor.ProductFace
         private const int SlotGlassEmission = 3;
 
         private static readonly string[] RequiredMaterialSources =
-        {
-            "Assets/_Project/Art/Materials/RuntimeVisualProof/MAT_RuntimeVisualProof_PlayerSuitGraphiteNoir.mat",
-            "Assets/_Project/Art/Materials/RuntimeVisualProof/MAT_RuntimeVisualProof_WetPressureMetal.mat",
-            "Assets/_Project/Art/Materials/RuntimeVisualProof/MAT_RuntimeVisualProof_PlayerSuitCyanEdge.mat",
-            "Assets/_Project/Art/Materials/RuntimeVisualProof/MAT_RuntimeVisualProof_PlayerSuitAmberLatch.mat",
-            "Assets/_Project/Art/Materials/RuntimeVisualProof/MAT_RuntimeVisualProof_DirtyPressureGlass.mat",
-        };
+            ProductFacePlayerSuitGeminiMaterialApplier.GetRequiredMaterialPathsForStaticAudit();
 
         private static readonly SuitPartSpec[] SuitPartSpecs =
         {

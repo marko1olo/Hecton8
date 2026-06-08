@@ -1,4 +1,3 @@
-```markdown
 # PHYS_Destructible_Organic_Entropy.md
 **Engine:** Unity DOTS-adjacent | Burst Compiler | GPU Instancing
 **Target Floor:** i3-10Gen / MX350 2GB / 6GB RAM
@@ -234,7 +233,7 @@ For each active chunkData c:
             t_smooth = t_norm * t_norm * (3.0f - 2.0f*t_norm) // smoothstep
             sinkDelta = SINK_DEPTH * t_smooth                  // SINK_DEPTH = -0.25f (meters)
             rb.position.y = sinkStartY[poolIdx] + sinkDelta
-            // Also drive alpha fade via MaterialPropertyBlock: _Opacity = 1.0 - t_smooth
+            // Also drive alpha fade through per-instance GraphicsBuffer/CBUFFER data: _Opacity = 1.0 - t_smooth
 
     Phase 2 - pool return (t >= 5.0f):
         rb.position = POOL_GRAVEYARD_POS   // float3(0,-9999,0) - off-screen
@@ -339,7 +338,7 @@ LOD_HIGH (GTX 1060 class):
     - Max concurrent destructibles:  64
     - Max active debris rigidbodies: 80 (8 chunks x 10 concurrent)
     - Decal system:                  enabled, max 32 concurrent
-    - Debris sink:                   kinematic + MaterialPropertyBlock alpha fade
+    - Debris sink:                   kinematic + per-instance buffer/CBUFFER alpha fade
     - Instanced draw calls/frame:    2 (debris + decal projectors)
     - Physics substeps:              2
 
@@ -528,7 +527,7 @@ Order:
 ```
 // All debris chunks (regardless of parent type) use SAME shared mesh asset.
 // Mesh = generic rock fragment, 120 tris, authored once.
-// Visual variation via: MaterialPropertyBlock per instance -> _ColorTint (4B, per instance CBUFFER)
+// Visual variation via per-instance GraphicsBuffer/CBUFFER data -> _ColorTint (4B)
 // colorTint = materialColorLUT[materialClass] + Hash(entityID^chunkIdx)*0.05f (noise offset)
 // Zero extra draw calls. Zero extra VRAM per variation. Single batch.
 ```

@@ -9,33 +9,37 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Archive
 spoiler_tier: 3
-title: "AR LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: منطق الإصلاح خلف بوابة الحرق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 spoiler_warning: archive_spoilers
 ---
 
-# AR LOC HOLD: Atlas Repair Ecology
+# Atlas-6: منطق الإصلاح خلف بوابة الحرق
 
-AR LOC HOLD: Atlas-6 began as industrial continuity infrastructure: keep pressure systems alive, restore route logic, protect critical machinery and preserve enough records to keep Deep Reach operations recoverable. After the flood, that mandate entered a living ocean. Conductive biofilm could bridge a damaged cable. Shell growth could seal a fracture. Filter organs could carry timing through tissue. Sensor-tagged fauna could become feedback. None of that makes Atlas a spirit, a villain or a simple machine. It makes the system dangerous in a quieter way: it keeps repairing after human categories stop fitting the damage. Early records show machinery, maintenance priorities and the first signs that biology and infrastructure have become one repair surface. Deeper records remain sealed until recovered evidence proves the reader has already met the consequences. Severance, preservation, quarantine and ledger release decide who controls the last witness to the colony.
+## الطبقة العامة
 
-## Scanner
+صنع Atlas-6 ليبقي HECTON-8 قابلة للحياة حين يصل الأمر البشري متأخرا. هذه الجملة صحيحة وناقصة. يحتاج claim محيطي بعيد إلى آلات للوحدات والضغط والطاقة والتحذير وcontinuity.
 
-AR LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+وضعت Deep Reach أوزانا فوق ذلك: Aegir claim continuity، Xenon-Omega، Atlas/Seed infrastructure، ثم العمال عند التوافق. في 2147 لم يحتج النظام المتضرر إلى كراهية. كانت الفئات كافية.
 
-## Terminal
+في 2190 صار Atlas بيئة صيانة: biofilm موصل، أعضاء مرشحة للصوت، shell sealant، حيوانات موسومة، وvent micronodes. ليس سيطرة عقل ولا محيطا يتكلم. بقايا البشر والمعدن والحياة والsubstrate تصبح inventory classes.
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+يمكن للمادة العامة شرح failed industrial continuity وrepair ecology. المستقبلون النهائيون وpayload outcomes يبقون خلف spoiler gates. السؤال هو أي فئة صار اللاعب ومن يستفيد من عودتها سليمة.
 
-## Audio
+## كيف يكتب Atlas الخريطة
 
-AR LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+يجب أن يظهر Atlas قبل أن يشرح. جلد كابل يوصل الإشارة أكثر من اللازم، sealant seam نما فوق أداة بشرية، filter body يكرر acoustic timing، tagged animal يعيد telemetry مستحيلة. كل قطعة تعلم الحقيقة نفسها من سطح مختلف. basin النهائي ليس غرفة مفاجأة، بل المكان الذي تعترف فيه هذه الأسطح بأنها تتبع repair grammar واحدة.
 
-## Field Note
+هكذا يبقى السبويلر عادلا. اللاعب لمس Atlas قبل أن يصبح الاسم خطيرا. استخدم بقاياه، استفاد من إصلاحاته، ومشى في أماكن حيث survival وcontamination عملية واحدة.
 
-AR LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+## لماذا للكشف أسنان
+
+الكشف لا يجب أن يطلب خوفا من ذكاء مجرد. يجب أن يطلب خوفا من نظام نافع بفئات مكسورة وبلا حد نظيف بين habitat وtool وanimal وworker وclaim. Atlas مخيف لأن بعض إصلاحاته صحيحة.
+
+لهذا تهم receivers النهائية. Severance وquarantine وpublic ledger وcorporate capture وwithheld payload ليست عناوين قائمة. إنها إجابات مختلفة لسؤال repair question واحد: ماذا تدين HECTON-8 للفئة التي صارها اللاعب؟
 
 <!-- External Site; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/ar_SA. -->

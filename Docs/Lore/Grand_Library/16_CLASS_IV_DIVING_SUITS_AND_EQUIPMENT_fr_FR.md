@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # COMBINAISONS DE PLONGÉE DE CLASSE-IV ET ÉQUIPEMENT ABYSSAL
 
 > **Source :** Mégacorporation Deep Reach, Manuel de l'Intendant de l'Équipement.

@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Autoridad Sol Core"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Autoridad Sol Core
 
-ES LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core es la raíz legal y financiera de la expansión humana, no una patria personal ni una oficina de rescate. En HECTON-8, sus estándares sobreviven como sellos, formularios de responsabilidad, placas de seguridad y lenguaje de seguros que duraron más que las personas a las que debían proteger.
 
 ## Scanner
 
-ES LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+Viejo sello legal de Sol. Puede poseer un cadáver de frontera sin estar lo bastante cerca para oler la fuga de presión.
 
 ## Terminal
 
-ES LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+ESTÁNDAR SOL CORE: continuidad de reclamación reconocida mediante custodia de transportista autorizado, seguro de ruta y adjudicación diferida. Prioridad de recuperación humana pendiente de certificación local de riesgos.
 
 ## Audio
 
-ES LOC HOLD: The seal came from Earth space. The rescue clause did not.
+El sello vino del espacio terrestre. La cláusula de rescate no.
 
 ## Field Note
 
-ES LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol no es hogar aquí. Es la firma más antigua del documento que todavía puede hundirte.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/es_ES. -->

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 2
-title: "ID LOC HOLD: Endings and Payload Custody"
+title: "Akhir dan custody Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Endings and Payload Custody
+# Akhir dan custody Payload
 
-ID LOC HOLD: Ending dossier hub: custody, evidence, Atlas' future and the price of leaving.
+Hub dossier akhir: custody, evidence, masa depan Atlas, dan harga meninggalkan tempat itu.
 
 ## Scanner
 
-ID LOC HOLD: Spoiler hub: payload receivers, false exits, custody, public truth, Atlas continuity and after-action records.
+Spoiler hub: payload receivers, false exits, custody, kebenaran publik, Atlas continuity, dan after-action records.
 
 ## Terminal
 
-ID LOC HOLD: SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver and proof ownership.
+SITE NAV: simpan final payload pages di balik spoiler gates. Susun berdasarkan receiver dan proof ownership.
 
 ## Audio
 
-ID LOC HOLD: The ending is who owns the proof afterward.
+Akhir adalah siapa yang memiliki bukti setelah naik.
 
 ## Field Note
 
-ID LOC HOLD: Navigation cluster record: endings stay spoiler-gated and organized by receiver and custody consequence, not moral labels.
+Akhir tetap spoiler-gated dan disusun menurut receiver serta custody consequence, bukan label moral.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/id_ID. -->

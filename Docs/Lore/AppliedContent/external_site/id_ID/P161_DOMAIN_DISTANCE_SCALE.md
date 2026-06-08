@@ -9,32 +9,24 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Domain Distance Scale"
+title: "Skala Jarak Domain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Domain Distance Scale
+# Skala Jarak Domain
 
-ID LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language.
+## Jarak Sebagai Tekanan
 
-## Scanner
+Peta domain Marauder tidak digambar untuk kekaguman. Peta itu digambar untuk tagihan. Sol, Centauri, Barnard, Tau Ceti, Luyten, dan Ran/Aegir muncul sebagai band rute karena begitulah mereka menyentuh pekerja di dalam bulan yang banjir: sertifikasi, bahasa piagam, tenaga salvage, bukti publik, custody paket, dan eksekusi frontier yang kotor.
 
-ID LOC HOLD: The domain map uses distance bands, not romantic shortcuts.
+Sol Core jauh secara fisik dan tetap berbahaya. Ia bisa memiliki aset yang tak bisa dicapai, mengasuransikan kerugian yang tak akan pernah diciumnya, dan menerima claim saat orang yang terikat pada claim itu kehabisan scrubber time. Centauri penting karena legitimasi extrasolar awal memberi bahasa tua pada penyalahgunaan baru. Barnard penting karena pemain berasal dari budaya tempat claims mati adalah pekerjaan, bukan mitos.
 
-## Terminal
+Tau Ceti dan Luyten adalah bagian tengah peta yang dingin. Tau Ceti bisa membuat bukti cukup keras untuk melukai korporasi, tetapi hanya setelah cahaya dan custody mengizinkan bukti itu tiba. Luyten bisa menjaga paket tetap jujur tanpa peduli pengirimnya hidup atau tidak. Ran/Aegir adalah ujung sistem itu: corporate claim tempat hukum, kargo, dan bukti bisa hadir sementara penyelamatan tetap terlalu mahal.
 
-ID LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.
-
-## Audio
-
-ID LOC HOLD: Ten light-years is a number. The bill is the story.
-
-## Field Note
-
-ID LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.
+Dengan begitu HECTON-8 tetap keras tanpa sihir. Pemain tidak ditinggalkan karena manusia kecil. Pemain ditinggalkan karena ruang manusia besar dengan cara yang salah. Kepemilikan menyeberangi gelap lebih cepat daripada belas kasihan. Hak berstempel bisa mencapai Aegir sebelum crew bernapas, lalu mulai menagih bunga begitu tiba.
 
 <!-- External Site; generated from P161_DOMAIN_DISTANCE_SCALE/id_ID. -->

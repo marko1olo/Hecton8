@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Maraudeur issu de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Maraudeur issu de Deep Reach
 
-FR LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+Maraudeur issu de Deep Reach fixe le canon du joueur. Le joueur est un ancien spécialiste d’entreprise des systèmes de terrain et de l’infrastructure d’évacuation, poussé vers la récupération indépendante par liste noire ou dette, puis ramené sur HECTON-8 sous garde Black Keel. Le drame vient de la reconnaissance professionnelle : la lune répond avec des procédures que le joueur comprenait autrefois, et chaque serrure familière rend le mensonge d’entreprise plus difficile à classer comme l’accident de quelqu’un d’autre.
 
 ## Scanner
 
-FR LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+L’ancienne serrure Deep Reach ne vérifie pas ton nom. Elle reconnaît le rythme de ta séquence de réparation.
 
 ## Terminal
 
-FR LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+TRACE D’ACCÈS : ancien contrat de systèmes de terrain. Accès à l’infrastructure d’évacuation révoqué. Statut de récupération accepté sous garde de dette du pool de réclamations.
 
 ## Audio
 
-FR LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Tu n’es pas rentré chez toi. Tu es revenu devant une procédure qui n’a jamais cessé de tourner.
 
 ## Field Note
 
-FR LOC HOLD: Not family business. Procedure remembers who taught your hands.
+Ce n’est pas une affaire de famille. La procédure se souvient des mains qui l’ont utilisée.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/fr_FR. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Місяць, розламаний зіткненням"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Місяць, розламаний зіткненням
 
-UK LOC HOLD: HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.
+HECTON-8 сформувався всередині системи Егіра, а пізніше його розсікло дотичне зіткнення. Рана не розірвала місяць. Вона підняла полиці кори, відкрила ропні розломи, підживила термальні коридори й лишила старе дно доступним крізь рідкісні вікна тиску. Мапи здобичників ідуть за цим ушкодженням, бо найбезпечніші маршрути тут - старі травми, заповнені водою.
 
 ## Scanner
 
-UK LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
+Зразок старої кори. Місяць зібрався в поясі уламків Егіра, а потім удар розкрив його так широко, що океан це запам'ятав.
 
 ## Terminal
 
-UK LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+МОДЕЛЬ ПОХОДЖЕННЯ: акреція навколо Егіра, пізній косий удар, припливний резонанс після замикання. Наслідок: східчаста кора, гарячі драбини розломів, ропні басейни, жили скла тиску, нерівний доступ до глибокого дна.
 
 ## Audio
 
-UK LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
+Він народився тут. Потім щось ударило так сильно, що море отримало мапу.
 
 ## Field Note
 
-UK LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+Міф про захоплений місяць надто чистий. HECTON-8 несе місцеву рану: піднята кора, пересолена ропа, жерла, що досі беруть відсотки.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/uk_UA. -->

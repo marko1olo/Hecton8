@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Light-Delay Authority
 
-Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.
+HECTON-8 has no ansible and no live command voice from orbit. Messages move at light speed, then lose more time to buffer queues, storm windows, relay geometry, and carrier custody rules. The player treats every answer as old evidence, not orders.
 
 ## Scanner
 
-No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
+Relay mast cache: the call left clean, then waited behind light, queue law, storm scatter, and Aegir line-of-sight.
 
 ## Terminal
 
-COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active.
 
 ## Audio
 
-Nobody ignored the call fast enough. Distance did it first.
+The reply is coming. That does not make it rescue.
 
 ## Field Note
 
-Physics is the first censor. Priority only decides which late answer leaves first.
+Nobody censored the first scream. Physics carried it slowly enough for policy to catch up.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/en_US. -->

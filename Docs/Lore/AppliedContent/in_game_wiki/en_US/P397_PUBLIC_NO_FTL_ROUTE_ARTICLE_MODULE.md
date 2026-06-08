@@ -19,15 +19,15 @@ localization_flags: 0
 
 # No-FTL Route Delay
 
-Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
+Distance is a survival rule on the Aegir route. Law, debt and old packets can reach the player long before a carrier, tender, spare part or human rescuer can. A relay answer never cancels the pressure work in front of you; it only proves that someone has placed your claim in a queue.
 
 ## Scanner
 
-Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+Transit record. Aegir traffic depends on precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody and legal delay.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Live rescue requires physical transfer, braking architecture, carrier position, descent mass and a valid local window.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Help can be legally present and physically years away.
 
 ## Field Note
 
-Marauder note: when the relay answers, ask how old the answer is.
+Marauder note: when the relay answers, ask how old the answer is and what mass it can move.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/en_US. -->

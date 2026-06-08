@@ -37,6 +37,11 @@ namespace Hecton8.Construction
         private const uint DockingWakeSourceVehicleFlag = 2u;
         private const int DockTelemetryCapacity = 300;
         private const uint DockTelemetryHashSeed = 0x4453504Cu;
+        private const uint DockTelemetrySignalRejectedFlag = 1u << 31;
+        private const uint DockTelemetryWakeSignalRejectedFlag = 1u << 30;
+        private const uint DockTelemetryImpulseSignalRejectedFlag = 1u << 29;
+        private const uint DockTelemetryCompleteSignalRejectedFlag = 1u << 28;
+        private const uint DockTelemetryFailedSignalRejectedFlag = 1u << 27;
         private const int DockTelemetryCaptureCooldownFrames = 30;
         private const int DockedCargoCrateCapacity = 16;
         private const int DockCandidateCapacity = 4;
@@ -198,6 +203,8 @@ namespace Hecton8.Construction
         private float _dockingWakeElapsedSeconds;
         private float _lastSplineDeviationError;
         private bool _dockingCompletionSignalPublished;
+        private uint _dockSignalRuntimeFlags;
+        private int _droppedDockingSignalCount;
         private ulong _lastRejectedDockColliderId;
         private bool _hasDockedRelativeAup;
         private IDataVault _dataVault;
@@ -232,6 +239,7 @@ namespace Hecton8.Construction
         public AbsoluteUniversePosition DockedRelativeAup => _dockedRelativeAup;
         public float TotalDockedMassKg => ResolveDockedBodyMassKg() + _attachedDroneMassKg;
         public ulong LastRejectedDockColliderId => _lastRejectedDockColliderId;
+        public int DroppedDockingSignalCount => _droppedDockingSignalCount;
 
         public bool TryGetLastDockTelemetrySummary(out uint stateHash, out uint runtimeFlags, out int entryCount)
         {
@@ -337,6 +345,7 @@ namespace Hecton8.Construction
             _dockingElapsedSeconds = 0f;
             _attachedDroneMassKg = 0f;
             _hasDockedRelativeAup = false;
+            _droppedDockingSignalCount = 0;
             ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
             CacheDockTelemetryVaultCold();
@@ -363,6 +372,7 @@ namespace Hecton8.Construction
             _dockingElapsedSeconds = 0f;
             _attachedDroneMassKg = 0f;
             _hasDockedRelativeAup = false;
+            _droppedDockingSignalCount = 0;
             ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
             _debugDockOccupied = false;
@@ -387,6 +397,8 @@ namespace Hecton8.Construction
                 return;
             }
 
+            RetryDockingCompleteSignalIfNeeded();
+
             bool nextChargingState = false;
             if (_hasPower && chargeRatePerSecond > 0f && _dockedTransport.CanReceiveTransportCharge)
             {
@@ -399,6 +411,18 @@ namespace Hecton8.Construction
                 _activelyCharging = nextChargingState;
 
             TryUnregisterUpdateWhenDormant();
+        }
+
+        private void RetryDockingCompleteSignalIfNeeded()
+        {
+            if (_dockingCompletionSignalPublished || !_isDocked)
+                return;
+
+            Transform anchor = ResolveDockAnchor();
+            if (anchor == null || !IsFiniteVector(anchor.position))
+                return;
+
+            TryPublishDockingCompleteSignal(1f, anchor.position, anchor.forward);
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -611,7 +635,7 @@ namespace Hecton8.Construction
             if (!_hotSwapRegistered)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
         }
 
@@ -1234,6 +1258,11 @@ namespace Hecton8.Construction
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)
+                return;
+
             if (_dockedTransport == null || _dockedBehaviour == null)
                 return;
 
@@ -1544,7 +1573,7 @@ namespace Hecton8.Construction
                     GridZ = aup.GridZ,
                     OwnerHash = _dockingSplineOwnerHash,
                     RequestId = _dockingSplineRequestId,
-                    RuntimeFlags = _activeDockingSpline.Flags,
+                    RuntimeFlags = _activeDockingSpline.Flags | _dockSignalRuntimeFlags,
                     ReservedTail = 0u
                 };
                 cursor++;
@@ -1975,7 +2004,8 @@ namespace Hecton8.Construction
                 Velocity = velocity,
                 SourceFlags = DockingWakeSourceVehicleFlag
             };
-            SignalBus<WakeGeneratedSignal>.TryPushTracked(in wakeSignal, ref s_x001VehicleDockingModuleSignalPushDropCount);
+            if (!SignalBus<WakeGeneratedSignal>.TryPushTracked(in wakeSignal, ref s_x001VehicleDockingModuleSignalPushDropCount))
+                RecordDockSignalRejected(DockTelemetryWakeSignalRejectedFlag);
 
             float speed = FastMagnitudeFromSq(speedSq);
             FluidImpulseSignal impulseSignal = new FluidImpulseSignal
@@ -1988,7 +2018,8 @@ namespace Hecton8.Construction
                 SourceHash = DockingWakeSourceHash,
                 Flags = DockingWakeSourceVehicleFlag
             };
-            SignalBus<FluidImpulseSignal>.TryPushTracked(in impulseSignal, ref s_x001VehicleDockingModuleSignalPushDropCount);
+            if (!SignalBus<FluidImpulseSignal>.TryPushTracked(in impulseSignal, ref s_x001VehicleDockingModuleSignalPushDropCount))
+                RecordDockSignalRejected(DockTelemetryImpulseSignalRejectedFlag);
         }
 
         private void TryPublishDockingCompleteSignal(float progress01, Vector3 dockPosition, Vector3 dockForward)
@@ -2012,12 +2043,17 @@ namespace Hecton8.Construction
                 DockForward = DockingAutopilotMath.NormalizeOrFallback(ToFloat3(dockForward), new float3(0f, 0f, 1f)),
                 RequestId = _dockingSplineRequestId,
                 Flags = _activeDockingSpline.Flags,
-                Reserved0 = 0,
+                SourceKind = DockingSignalSourceKinds.VehicleDockingModule,
                 Reserved1 = 0,
                 Reserved2 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingCompleteSignal>.TryPushTracked(in signal, ref s_x001VehicleDockingModuleSignalPushDropCount);
+            if (!SignalBus<DockingCompleteSignal>.TryPushTracked(in signal, ref s_x001VehicleDockingModuleSignalPushDropCount))
+            {
+                RecordDockSignalRejected(DockTelemetryCompleteSignalRejectedFlag);
+                return;
+            }
+
             _dockingCompletionSignalPublished = true;
         }
 
@@ -2046,11 +2082,15 @@ namespace Hecton8.Construction
                 RequestId = _dockingSplineRequestId,
                 Reason = (byte)reason,
                 Flags = _activeDockingSpline.Flags,
-                Reserved0 = 0,
+                SourceKind = DockingSignalSourceKinds.VehicleDockingModule,
                 Reserved1 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingFailedSignal>.TryPushTracked(in signal, ref s_x001VehicleDockingModuleSignalPushDropCount);
+            if (!SignalBus<DockingFailedSignal>.TryPushTracked(in signal, ref s_x001VehicleDockingModuleSignalPushDropCount))
+            {
+                RecordDockSignalRejected(DockTelemetryFailedSignalRejectedFlag);
+                RecordDockTelemetry();
+            }
         }
 
         private void ReleaseActiveDockingSpline(DockingSplineRuntimeState finalState)
@@ -2089,6 +2129,13 @@ namespace Hecton8.Construction
             _lastDockingCommandVelocity = Vector3.zero;
             _lastDockingSplineTargetPosition = Vector3.zero;
             _lastDockingSplineRotation = Quaternion.identity;
+            _dockSignalRuntimeFlags = 0u;
+        }
+
+        private void RecordDockSignalRejected(uint runtimeFlag)
+        {
+            _droppedDockingSignalCount++;
+            _dockSignalRuntimeFlags |= DockTelemetrySignalRejectedFlag | runtimeFlag;
         }
 
         private Vector3 ResolveDockingCommandAngularVelocity(Quaternion evaluatedRotation, float fixedDeltaTime)

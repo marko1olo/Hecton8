@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "Запись эфемеридных полос RAN-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: RAN Aegir Ephemeris Bands
+# Запись эфемеридных полос RAN-Aegir
 
-RU LOC HOLD: RAN Aegir ephemeris bands separate stable route lore from exact celestial data.
+Запись эфемеридных полос RAN-Aegir отделяет стабильные маршрутные записи от точных небесных значений, чтобы публичные статьи оставались надежными и не превращали угаданные числа в навигационный закон.
 
 ## Scanner
 
-RU LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+Эта запись дает полосы окон и причины угроз, а не точные периоды, принадлежащие таблицам.
 
 ## Terminal
 
-RU LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+ЗАПИСЬ ЭФЕМЕРИДНЫХ ПОЛОС: публичные записи atlas могут указывать полосу окна, класс угрозы и связь с Aegir. Точные периоды, наклонения и резонансные значения остаются под властью celestial-table.
 
 ## Audio
 
-Диапазон честен, пока у чисел нет владельца.
+Полоса может спасти. Угаданное число может убить.
 
 ## Field Note
 
-RU LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+Честная публичная карта говорит достаточно, чтобы пройти риск, и недостаточно, чтобы подделать небесную таблицу.
 
 <!-- External Site; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/ru_RU. -->

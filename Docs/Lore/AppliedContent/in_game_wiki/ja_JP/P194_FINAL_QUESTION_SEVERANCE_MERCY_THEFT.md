@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "最終問い: 切断、慈悲、盗み"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# 最終問い: 切断、慈悲、盗み
 
-JP LOC HOLD: Severance forces the player to define what kind of life Atlas-ocean continuity has become.
+切断はAtlas-海洋連続性が何になったのかをプレイヤーに決めさせる。壊れた道具だけなら、切断は修理だ。生命維持系なら、切断は殺害だ。証言なら、切断は証拠破壊かもしれない。
 
 ## Scanner
 
-JP LOC HOLD: Severing Atlas is not a simple shutdown button.
+Atlasを切ることは停止ボタンではない。清潔な解剖図のない手術だ。
 
 ## Terminal
 
-JP LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
+SEVERANCE AXIS: Atlas連続性を切断し、圧力生態を隔離し、Deep Reachのpayload routingを拒み、盆地崩壊を危険にさらすか、部分的な修復記憶だけを残す。意味は最終室へ持ち込んだ証拠で変わる。
 
 ## Audio
 
-JP LOC HOLD: A clean switch would be merciful. You do not get one.
+清潔なスイッチなら慈悲だった。そんなものはない。
 
 ## Field Note
 
-JP LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+同じ行為が、閉じ込められた作業員を解放し、海洋機械生命を殺し、Deep Reachを拒み、生きたインフラを自身から盗むことになりうる。
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/ja_JP. -->

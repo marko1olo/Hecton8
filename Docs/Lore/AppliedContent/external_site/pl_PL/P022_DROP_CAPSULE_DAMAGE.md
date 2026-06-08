@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Uszkodzenie kapsuły
 
-Uszkodzenie tłumaczy uwięzienie: zejście działało, przetrwanie zostało, wznoszenie umarło.
+Uszkodzenie kapsuły zrzutowej wyjaśnia, czemu uwięzienie jest wiarygodne: zejście zadziałało, systemy przetrwania ocalały, sprzęt wznoszenia nie.
 
 ## Scanner
 

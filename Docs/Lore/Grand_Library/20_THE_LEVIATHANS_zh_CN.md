@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # HECTON-8 的利维坦
 
 > **来源：** Deep Reach 超级企业，异星生物学威胁评估。

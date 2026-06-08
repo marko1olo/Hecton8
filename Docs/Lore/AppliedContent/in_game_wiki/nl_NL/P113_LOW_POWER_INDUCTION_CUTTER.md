@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "Lage-vermogens inductiesnijder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# Lage-vermogens inductiesnijder
 
-NL LOC HOLD: The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+De lage-vermogens inductiesnijder is het eerste toegangsgereedschap, geen universele sleutel. Hij opent vastgelopen serviceluiken, paneelbouten en salvage-kratten, terwijl hij de speler dwingt te lezen wat een onderdeel doet. Pressure glass, actieve frames en Atlas-gegroeide naden horen bij latere gereedschappen of beter bewijs.
 
 ## Scanner
 
-NL LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+Lage-vermogens inductiesnijder. Alleen servicemetaal; dragend frame en pressure glass vallen buiten de keuring.
 
 ## Terminal
 
-NL LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+GEREEDSCHAPSWAARSCHUWING / INDUCTIESNIJDER: toegestane doelen zijn serviceluiken, paneelbouten, lichte beugels en kratloten. Geen actieve frames, pressure-glass-roosters of Atlas-gegroeide naden snijden zonder latere klassecertificering.
 
 ## Audio
 
-NL LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
+Snijd de bout. Laat de rib.
 
 ## Field Note
 
-NL LOC HOLD: The cutter should feel valuable because it is limited.
+Goede cutter, slecht geloof. Hij opent panelen. Hij vergeeft niet dat je de rib snijdt die de kamer recht houdt.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/nl_NL. -->

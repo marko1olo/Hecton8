@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "قمر تصدعه الاصطدام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# قمر تصدعه الاصطدام
 
-AR LOC HOLD: HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.
+تشكل HECTON-8 داخل نظام أيغير ثم شقه اصطدام جانبي. الجرح لم يمزق القمر، بل رفع رفوفا قشرية، وفتح صدوعا ملحية، وغذى ممرات حرارية، وترك أرضا قديمة يمكن لمسها عبر نوافذ ضغط نادرة. خرائط النهب تتبع هذا الضرر، لأن أأمن الطرق هي إصابات قديمة مملوءة بالماء.
 
 ## Scanner
 
-AR LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
+عينة قشرة قديمة. صُنع القمر في حزام حطام أيغير، ثم فتحه اصطدام عريض بما يكفي كي يتذكره المحيط.
 
 ## Terminal
 
-AR LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+نموذج الأصل: تراكم حول أيغير، اصطدام مائل لاحق، ثم رنين مدي بعد القفل المداري. النتائج: قشرة متدرجة، سلالم صدوع حارة، أحواض ملحية، عروق زجاج ضغط، ووصول غير متساو إلى القاع العميق.
 
 ## Audio
 
-AR LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
+وُلد هنا. ثم ضربه شيء بقوة جعلت للبحر خريطة.
 
 ## Field Note
 
-AR LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+أسطورة القمر الأسير نظيفة أكثر من اللازم. HECTON-8 يحمل جرحا محليا: قشرة مرفوعة، محلول ملحي أثقل، وفوهات ما زالت تدفع الفائدة.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/ar_SA. -->

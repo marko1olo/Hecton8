@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "Kustodi Paket Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# Kustodi Paket Luyten Junction
 
-ID LOC HOLD: Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing.
+Kustodi Paket Luyten Junction mengubah komunikasi antarbintang menjadi tekanan rute. HECTON-8 tidak punya kanal penyelamatan instan, jadi setiap pesan harus selamat dari custody, biaya, dan waktu orbit.
 
 ## Scanner
 
-ID LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+Spul kustodi Luyten. Pesan tidak berjalan gratis; kebenaran juga tidak.
 
 ## Terminal
 
-ID LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+RUTE LUYTEN JUNCTION: packet custody dipindahkan melalui antrean tarif. Live command dilarang. Prioritas bukti dapat dibeli di bawah emergency claim escrow.
 
 ## Audio
 
-ID LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+Tidak ada ansible. Tidak ada belas kasihan. Hanya custody, tariff, dan waktu.
 
 ## Field Note
 
-ID LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+Relai adalah mesin yang memutuskan duka mana yang mendapat bandwidth.
 
 <!-- External Site; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/id_ID. -->

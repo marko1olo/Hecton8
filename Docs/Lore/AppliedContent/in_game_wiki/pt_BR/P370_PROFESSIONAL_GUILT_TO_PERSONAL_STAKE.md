@@ -9,32 +9,35 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Professional Guilt To Personal Stake"
+title: "Da Culpa Profissional ao Interesse Pessoal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Professional Guilt To Personal Stake
+# Da Culpa Profissional ao Interesse Pessoal
 
-PT LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.
+A culpa profissional vira interesse pessoal sem transformar o protagonista na causa da catástrofe. O jogador não precisa de um irmão perdido, de uma linhagem de vingança ou de um papel secreto de testemunha escolhida. A pressão é mais fria e mais adulta. Ele reconhece o procedimento. Sabe por que um campo de testemunha importa, por que um selo de rota segura pode mentir, por que uma transportadora pode ouvi-lo e ainda assim não içá-lo para fora. HECTON-8 se torna pessoal porque a velha linguagem da Deep Reach não é abstrata para ele. É trabalho em que já precisou confiar, trabalho perto do qual já atuou, e agora esse trabalho está preso a nomes recuperados de salas afogadas. O arco não é confissão. É recusa: quando o jogador consegue ler a máquina do abandono, deixá-la enterrada vira outra forma de participação.
 
 ## Scanner
 
-PT LOC HOLD: Signature match. The form language is old. The names are new.
+O padrão de assinatura combina com o cache antigo de procedimento. Os nomes mudaram. A sala falhou do mesmo jeito. Especialização já não é distância.
 
 ## Terminal
 
-PT LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+RESOLUÇÃO DE DOSSIÊ / INTERESSE PROFISSIONAL
+evidência gatilho: reconhecimento de procedimento, etiquetas de trabalhadores recuperadas, conflito do recebedor da reivindicação
+motivo excluído: relação familiar, linhagem de vingança, status de testemunha escolhida
+motivo ativo: ex-trabalhador de sistemas reconhece abandono evitável e ainda consegue ler a máquina que o arquivou.
 
 ## Audio
 
-PT LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+Você veio por uma reivindicação. Ficou porque a papelada conhecia suas mãos.
 
 ## Field Note
 
-PT LOC HOLD: Use near late dossier and final payload route.
+Não é sua assinatura. Ainda é seu ofício. Por isso a sala não vai ficar quieta.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/pt_BR. -->

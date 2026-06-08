@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Fallo de contencion de presion"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Fallo de contencion de presion
 
-ES LOC HOLD: Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.
+El fallo de contencion da a blue debt una conducta material legible. Vale porque la presion profunda lo hizo coherente, y es peligroso porque el manejo somero rompe esa coherencia. La etapa 0 esta sellada. La etapa 1 deriva y a veces se recupera con re-presion de ventila. La etapa 2 fractura la red. La etapa 3 invita salmuera y biologia. La etapa 4 deja una muestra muerta que contamina equipo, agua y rutas.
 
 ## Scanner
 
-ES LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+Carta de etapas del cofre. Blue debt falla por memoria de presion, cizalla de senal y bloom; la supersticion malgasta oxigeno.
 
 ## Terminal
 
-ES LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+ETAPAS DE CONTENCION: 0 red sellada; 1 deriva de senal; 2 fractura de red; 3 bloom de salmuera/biologia; 4 muestra muerta con contaminacion viva. Re-presion de ventila solo puede recuperar etapa 1.
 
 ## Audio
 
-ES LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
+La muestra no te odia. Intenta volver a donde se formo.
 
 ## Field Note
 
-ES LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Una muestra puede valer una fortuna a una profundidad y volverse deuda diez metros despues.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/es_ES. -->

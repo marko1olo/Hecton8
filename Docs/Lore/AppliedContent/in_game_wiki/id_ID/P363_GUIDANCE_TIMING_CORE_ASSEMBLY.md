@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Guidance Timing Core Assembly"
+title: "Rakitan Inti Timing Panduan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Guidance Timing Core Assembly
+# Rakitan Inti Timing Panduan
 
-ID LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.
+Pendakian yang bekerja membutuhkan inti timing panduan yang memahami geometri bulan Aegir, interval blackout, bayangan relai, dan carrier recovery lanes. Timing buruk dapat menghilangkan kapsul tanpa merusak satu bagian pun.
 
 ## Scanner
 
-ID LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+Timing core kosong. Geometri Aegir menentukan apakah pendakian menjadi recovery, capture, atau sunyi.
 
 ## Terminal
 
-ID LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: selaraskan jam kapsul dengan Aegir window, Black Keel receiver lane, moon relay shutter, dan drift storm-plume. Packets terlambat menjadi kehilangan bukti; packets terlalu awal menjadi capture noise.
 
 ## Audio
 
-ID LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+Atas bukan arah. Ia jendela dengan saksi.
 
 ## Field Note
 
-ID LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+Tidak ada atas yang sederhana dari HECTON-8. Ada penerima, bayangan, drift badai, dan packet queue yang sudah lebih tua dari panikmu.
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/id_ID. -->

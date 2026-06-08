@@ -9,32 +9,22 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Ending Record Transcript Seed"
+title: "Transkrip Catatan Akhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ending Record Transcript Seed
+# Transkrip Catatan Akhir
 
-ID LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.
+## Penutupan Ditulis Sebagai Custody
 
-## Scanner
+Ending HECTON-8 tidak boleh memberi pemain absolusi bersih. Catatan menyebut receiver, payload hash, status utang, dan status hidup karena institusi mengingat bidang itu lebih baik daripada manusia. Dingin itu berguna. Ia membuat tiap outcome bisa dibandingkan tanpa mengubah kebenaran menjadi trofi.
 
-ID LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Bidang yang belum selesai paling penting. Suppression flag unknown. Truth custody unresolved. Atlas continuity unclear. Public ledger status pending. Celah itu menjaga ending tetap jujur: sesuatu keluar dari samudra, tetapi kepemilikan bukan keadilan, dan bertahan hidup bukan perbaikan.
 
-## Terminal
-
-ID LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
-
-## Audio
-
-ID LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
-
-## Field Note
-
-ID LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Format transkrip juga melindungi replay. Pemain bisa kembali dengan pengetahuan, tetapi run berikutnya tidak boleh mewarisi kekuatan. Ia mewarisi curiga, rasa, dan takut. Catatan adalah tanda terima, bukan pengampunan.
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/id_ID. -->

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Tariff Table"
+title: "Black Keel费率表"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Tariff Table
+# Black Keel费率表
 
-CN LOC HOLD: Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.
+Black Keel的支持有用，但从不中立。求救、样本、氧气、责任封印、操作员回收和船体损伤进入不同队列。玩家可以利用这些规则，但同一套规则也说明为什么帮助总是带着价签。
 
 ## Scanner
 
-CN LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
+标牌把求救、样本托管、氧气储备、耐压设备和遗体回收列成分开的收费项目。
 
 ## Terminal
 
-CN LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
+费率等级：打捞紧急。福利附录待定。已验证样本托管将出站优先级提高两个计费层级。
 
 ## Audio
 
-CN LOC HOLD: The table has a price for rescue and a discount for evidence.
+证据有折扣，呼吸有附加费。
 
 ## Field Note
 
-CN LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
+最快的等级不是救援，而是向上移动的已验证财产。
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/zh_CN. -->

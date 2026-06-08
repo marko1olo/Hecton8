@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 침묵의 궤도와 블랙 킬
 
 > **출처:** Deep Reach 거대 기업, 궤도 자산 등록부.

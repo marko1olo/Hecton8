@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Brine Vane Navigation Encounter Grammar
 
-Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.
+Brine vane navigation encounters teach that mid-depth water is built, not empty. The player should read a vane field like a damaged staircase: intact sheets are walls, torn mouths are possible openings, curled tips are weakening shear, and black gaps without visible vane edge are where sonar can invent a floor. The encounter should ask for slow movement, conservative buoyancy trim and angle changes, not a straight swim toward the prettiest glow. Atlas may exploit the same density boundary for repair routing, but the current remains physical. This distinction matters. The ocean is not speaking. It is making a process visible. A good brine-vane route lets the player follow one edge, ping from a second angle, test the drift, and feel clever for refusing the open shortcut.
 
 ## Scanner
 
-Brine vane field. Aligned fans mark density turns; sonar warps near open glow.
+Brine vane field. Aligned sheets mark density turns; curled tips mark weak windows; sonar warps near open glow. Keep one edge in sight.
 
 ## Terminal
 
-FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+ENCOUNTER GRAMMAR / BRINE VANE NAVIGATION / role: mid-depth route literacy, density-wall handrail, false-floor correction / safe read: intact vane edge, torn mouth, sonar bend matching buoyancy drift / reject: crossing black open water, cutting the guide sheet, trusting a floor return without a vane boundary / route note: the vane does not guide you by intent; it obeys water loudly enough to follow.
 
 ## Audio
 
-The vane does not guide you. It obeys the water loudly enough to follow.
+The vane is not a signpost. It is water making a wall and leaving a seam.
 
 ## Field Note
 
-Follow the vane edge like a handrail. If the line bends wrong, your buoyancy reading is late.
+Treat the vane edge as a handrail. If the line bends wrong, your buoyancy reading is already late.
 
 <!-- In-Game Wiki; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/en_US. -->

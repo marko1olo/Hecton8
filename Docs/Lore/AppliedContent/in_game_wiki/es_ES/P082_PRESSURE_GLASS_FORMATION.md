@@ -7,34 +7,34 @@ poi_tags: poi.pressure_glass_vein;poi.blue_debt_casket
 biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Formación de vidrio de presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Formación de vidrio de presión
 
-ES LOC HOLD: Pressure glass is the technical field name behind Marauder blue debt and Deep Reach Xenon-Omega language. It forms where pressure, noble-gas pockets, brine, minerals, heat and altered biology meet. Good samples are valuable because they stay stable under conditions normal industry cannot tolerate.
+El vidrio de presión es el nombre técnico detrás de la blue debt de los Marauders y el lenguaje Xenon-Omega de Deep Reach. Se forma donde presión, bolsas de gas noble, salmuera, minerales, calor y biología alterada se encuentran.
 
 ## Scanner
 
-ES LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
+Red de deuda azul. Gas noble, salmuera, defectos minerales e historia de presión encerrados en un error caro.
 
 ## Terminal
 
-ES LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
+Sustrato de continuidad XO: red de clatrato/defectos rica en xenón estabilizada por química de salmuera, ciclos térmicos y residuo catalítico biológico. Riesgo de despresurización: deriva de señal, fractura y floración contaminante.
 
 ## Audio
 
-ES LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
+Por esto volvieron. No por oro. Por una cicatriz legible por máquina.
 
 ## Field Note
 
-ES LOC HOLD: It is not ore. It is a process that remembers where it was made.
+No es mena. Es un proceso que recuerda dónde se hizo.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/es_ES. -->

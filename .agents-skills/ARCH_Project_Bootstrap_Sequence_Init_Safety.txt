@@ -84,25 +84,30 @@ EXECUTION LOOP (pseudo):
 
 ---
 
-## [Section3] LAZY SINGLETON GUARD - LOGIC KERNEL
+## [Section3] BOOTSTRAP OWNER REGISTRATION - NO LAZY SINGLETON
 
-PATTERN: Double-Checked Locking + Frame-Safe EnsureInitialized
+PATTERN: explicit bootstrap registration, then fail-fast access.
 
 ACCESS RULE:
   T Instance:
     IF _instance == null:
-      EnsureInitialized()           -> scene-safe search + create
+      THROW InvalidOperationException("BOOT_DEPENDENCY_MISSING: {T.Name}")
     RETURN _instance
 
-EnsureInitialized() LOGIC:
-  LOCK(_lock_object):
-    IF _instance != null: RETURN     -> second check inside lock
-    _instance = FindObjectOfType<T>()
-    IF _instance == null:
-      IF !BootstrapOrchestrator.HasCompleted(StepID):
-        THROW InvalidOperationException("PREMATURE_ACCESS: {T.Name}")
-      _instance = new GameObject($"[{T.Name}]").AddComponent<T>()
-      DontDestroyOnLoad(_instance.gameObject)
+REGISTRATION LOGIC:
+  BootstrapOrchestrator owns all critical service references from serialized
+  00_BOOTSTRAP scene bindings, approved installer records, or source-proven
+  owner-local factory routes.
+  Missing critical dependency before its priority step completes is
+  PREMATURE_ACCESS and halts the boot lane.
+  Missing critical dependency after its priority step completes is
+  BOOT_DEPENDENCY_MISSING and halts the boot lane.
+
+FORBID:
+  [FORBID] FindObjectOfType<T>() as singleton recovery
+  [FORBID] new GameObject(...).AddComponent<T>() as service self-heal
+  [FORBID] DontDestroyOnLoad(...) as service lifetime fix
+  [FORBID] Lazy singleton creation after first gameplay frame
 
 FORBID:
   Awake() -> NO dependency calls to other managers
@@ -295,7 +300,8 @@ HALT SEQUENCE:
   1. FREEZE: Time.timeScale = 0; Physics.autoSimulation = false
   2. INPUT_KILL: InputManager.HardKillAll() (bypass lock queue)
   3. BIOS_UI:
-       Activate HardwareErrorCanvas (always loaded, never unloaded, DontDestroyOnLoad)
+       Activate HardwareErrorCanvas from the 00_BOOTSTRAP persistent UI owner
+       (already loaded by scene ownership; no runtime DontDestroyOnLoad call)
        Display:
          ERROR_CODE: 0x{code:X8}
          SUBSYSTEM:  {step_id}
@@ -313,9 +319,12 @@ HALT SEQUENCE:
 
 RECOVERY_OPTION (non-critical subsystems only):
   IF !step.IsCritical AND halt_not_triggered:
-    FallbackRegistry.Activate(step.StepID)   -> inject stub/null-object
-    LOG_WARN("FALLBACK_ACTIVE: {step.StepID}")
+    FallbackRegistry.Activate(step.StepID)   -> bind pre-authored degraded implementation
+    LOG_WARN("DEGRADED_FALLBACK_ACTIVE: {step.StepID}")
     CONTINUE boot sequence
+
+  [FORBID] stub/null-object fallback as production recovery.
+  [REQ] Every fallback must satisfy the same interface contract, publish degraded telemetry, and name the player-visible/system capability it disables.
 
 ---
 
@@ -416,7 +425,7 @@ RAM ALLOCATION BUDGET (6144MB system):
   EMERGENCY_POOL:             576MB  -> DO NOT TOUCH unless GC.Collect fails
 
 GC POLICY:
-  Mode: Incremental GC (Unity 2021+)
+  Mode: Incremental GC (Unity 6000.4 project default)
   GC.MaxTimeSliceNanoseconds = 3_000_000   -> 3ms max per frame slice
   AVOID: GC.Collect() in hot path
   ALLOW: GC.Collect(0, Optimized) after scene unload ONLY
@@ -432,7 +441,7 @@ AUTOMATED BOOT ASSERTIONS (run in Editor via [InitializeOnLoad]):
   [ ] ShaderVariantCollection asset exists at Addressables path "SVC_Core"
   [ ] BuildManifest.SVCHash != null && != ""
   [ ] HardwareErrorCanvas present in 00_BOOTSTRAP scene hierarchy
-  [ ] HardwareErrorCanvas has DontDestroyOnLoad marker
+  [ ] HardwareErrorCanvas owned by persistent bootstrap UI root; no runtime DontDestroyOnLoad marker
   [ ] SaveManager migration chain covers versions [1..CURRENT_SAVE_VERSION]
   [ ] OceanBridge has fallback plane mesh assigned (null = ship-blocker)
   [ ] TickManager FixedTick registered consumers >= 1

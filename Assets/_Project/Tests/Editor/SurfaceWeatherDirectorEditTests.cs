@@ -92,6 +92,57 @@ public sealed class SurfaceWeatherDirectorEditTests
         StringAssert.DoesNotContain("_weatherJobPrimed = false;\n            _weatherJobScheduled = false;\n            _weatherShaderDirty = false;", source);
     }
 
+    [Test]
+    public void SurfaceWeatherDirectorSurfaceYRejectsDivergentFluidProviderBeforeShaderWaterline()
+    {
+        string path = Path.Combine(Application.dataPath, "_Project", "Scripts", "Atmosphere", "HectonSurfaceWeatherDirector.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+        string surfaceBody = ExtractMethodBody(source, "private float ResolveSurfaceY()");
+
+        StringAssert.Contains("private const float DefaultSurfaceWaterLevelY = 14.02f;", source);
+        StringAssert.Contains("float referenceSurfaceY = DefaultSurfaceWaterLevelY;", surfaceBody);
+        StringAssert.Contains("playerMovement != null && TryResolveSurfaceY(playerMovement.CurrentWaterSurfaceY, out float playerSurfaceY)", surfaceBody);
+        StringAssert.Contains("oceanKinematics != null && TryResolveSurfaceY(oceanKinematics.SeaLevel, out float oceanSurfaceY)", surfaceBody);
+        StringAssert.Contains("fluidSurface != null && TryResolveSurfaceY(fluidSurface.CurrentWaterLevelY, out float fluidSurfaceY)", surfaceBody);
+        StringAssert.Contains("private static bool TryResolveSurfaceY(float candidateSurfaceY, out float surfaceY)", source);
+        StringAssert.Contains("math.abs(candidateSurfaceY) > 0.0001f", source);
+        StringAssert.Contains("math.abs(candidateSurfaceY) <= 1000f", source);
+        StringAssert.Contains("surfaceY = DefaultSurfaceWaterLevelY;", source);
+        StringAssert.Contains("math.abs(fluidSurfaceY - referenceSurfaceY) <= 128f", surfaceBody);
+        StringAssert.Contains("return fluidSurfaceY;", surfaceBody);
+        StringAssert.Contains("return referenceSurfaceY;", surfaceBody);
+        StringAssert.DoesNotContain("math.isfinite(playerMovement.CurrentWaterSurfaceY)", surfaceBody);
+        StringAssert.DoesNotContain("math.isfinite(oceanKinematics.SeaLevel)", surfaceBody);
+        StringAssert.DoesNotContain("math.isfinite(fluidSurface.CurrentWaterLevelY)", surfaceBody);
+        StringAssert.DoesNotContain("!hasReferenceSurface ||", surfaceBody);
+        StringAssert.DoesNotContain("bool hasReferenceSurface", surfaceBody);
+        StringAssert.DoesNotContain("ResolveSurfaceY(followPosition)", source);
+        AssertTextBefore(surfaceBody, "math.abs(fluidSurfaceY - referenceSurfaceY) <= 128f", "return fluidSurfaceY;");
+    }
+
+    [Test]
+    public void SurfaceWeatherDirectorDepthUsesPlayerRuntimeSnapshotBeforeDirectMovementFallback()
+    {
+        string path = Path.Combine(Application.dataPath, "_Project", "Scripts", "Atmosphere", "HectonSurfaceWeatherDirector.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+        string depthBody = ExtractMethodBody(source, "private float ResolveCurrentDepth()");
+
+        StringAssert.Contains("private IPlayerRuntimeContext _playerRuntimeContext;", source);
+        StringAssert.Contains("IPlayerRuntimeContext playerContext = _playerRuntimeContext;", depthBody);
+        StringAssert.Contains("playerContext.IsInitialized", depthBody);
+        StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", depthBody);
+        StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", depthBody);
+        StringAssert.Contains("math.isfinite(movementState.DepthMeters)", depthBody);
+        StringAssert.Contains("return math.max(0f, movementState.DepthMeters);", depthBody);
+        StringAssert.Contains("if (playerContext != null)", depthBody);
+        StringAssert.Contains("return 0f;", depthBody);
+        StringAssert.Contains("playerMovement != null && math.isfinite(playerMovement.CurrentDepth)", depthBody);
+        StringAssert.Contains("? math.max(0f, playerMovement.CurrentDepth)", depthBody);
+        AssertTextBefore(depthBody, "playerContext.TryGetMovementRuntimeState", "playerMovement != null && math.isfinite(playerMovement.CurrentDepth)");
+        AssertTextBefore(depthBody, "if (playerContext != null)", "playerMovement != null && math.isfinite(playerMovement.CurrentDepth)");
+        StringAssert.DoesNotContain("return math.max(0f, playerMovement.CurrentDepth);", depthBody);
+    }
+
     private static T ReadPrivate<T>(object target, string fieldName)
     {
         FieldInfo field = target.GetType().GetField(fieldName, InstancePrivateFlags);
@@ -118,5 +169,38 @@ public sealed class SurfaceWeatherDirectorEditTests
         FieldInfo runtimeField = typeof(GlobalRegistry).GetField("_oceanKinematicsRuntime", StaticPrivateFlags);
         Assert.IsNotNull(runtimeField, "Expected GlobalRegistry._oceanKinematicsRuntime to exist.");
         runtimeField.SetValue(null, null);
+    }
+
+    private static string ExtractMethodBody(string source, string signature)
+    {
+        int start = source.IndexOf(signature, System.StringComparison.Ordinal);
+        Assert.GreaterOrEqual(start, 0, $"Missing method signature: {signature}");
+        int openBrace = source.IndexOf('{', start);
+        Assert.GreaterOrEqual(openBrace, 0, $"Missing opening brace for: {signature}");
+        int depth = 0;
+        for (int i = openBrace; i < source.Length; i++)
+        {
+            char c = source[i];
+            if (c == '{')
+                depth++;
+            else if (c == '}')
+            {
+                depth--;
+                if (depth == 0)
+                    return source.Substring(openBrace, i - openBrace + 1);
+            }
+        }
+
+        Assert.Fail($"Missing closing brace for: {signature}");
+        return string.Empty;
+    }
+
+    private static void AssertTextBefore(string text, string first, string second)
+    {
+        int firstIndex = text.IndexOf(first, System.StringComparison.Ordinal);
+        int secondIndex = text.IndexOf(second, System.StringComparison.Ordinal);
+        Assert.GreaterOrEqual(firstIndex, 0, $"Missing first marker: {first}");
+        Assert.GreaterOrEqual(secondIndex, 0, $"Missing second marker: {second}");
+        Assert.Less(firstIndex, secondIndex, $"Expected '{first}' before '{second}'.");
     }
 }

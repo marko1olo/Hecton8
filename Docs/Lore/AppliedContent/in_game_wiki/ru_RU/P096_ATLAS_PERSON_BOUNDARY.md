@@ -9,25 +9,25 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "Граница личности Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# Граница личности Atlas
 
-Atlas может распознать игрока как procedure, access pattern, repair anomaly и бывший Deep Reach key. Он не должен полностью понимать игрока как человека. Ужас в точности без эмпатии: Atlas становится личным, потому что ошибается на языке, которым игрок когда-то пользовался.
+Atlas распознает игрока как процедуру, шаблон доступа, ремонтную аномалию и бывший ключ Deep Reach. Он не должен полностью понимать игрока как личность. Ужас здесь не в злобе, а в точности без сочувствия: Atlas становится интимным, потому что ошибается на языке, которым игрок когда-то пользовался.
 
 ## Scanner
 
-Recognition fault. Atlas видит твой access pattern раньше, чем человека.
+Сбой распознавания. Atlas видит твой шаблон доступа раньше, чем человека.
 
 ## Terminal
 
-ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+КЛАССИФИКАЦИЯ ATLAS: мобильный оператор / отозванный процедурный ключ Deep Reach / биологическая ремонтная аномалия. Достоверность личности ниже порога действия.
 
 ## Audio
 
@@ -35,6 +35,6 @@ ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biolo
 
 ## Field Note
 
-Не делай Atlas человеком. Пусть он становится интимным через точную ошибку.
+Не очеловечивай Atlas. Пусть близость возникает из точной ошибки.
 
 <!-- In-Game Wiki; generated from P096_ATLAS_PERSON_BOUNDARY/ru_RU. -->

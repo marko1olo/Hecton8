@@ -9,32 +9,35 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Atlas-6 Spoiler-Gated Artikel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Atlas-6 Spoiler-Gated Artikel
 
-NL LOC HOLD: Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.
+Atlas-6 is bewust spoiler-gated omdat het de betekenis van HECTON-8 verandert zodra de speler genoeg bewijs heeft. Voor dat punt mag publieke tekst een beschadigde industriële intelligentie beschrijven die verbonden is met onderhoud, classificatie, reparatielogica en langdurige oceaansystemen. Hij mag Atlas niet platmaken tot kwade machine, geheime god of eenvoudig slachtoffer. De belangrijke vorm is dubbelzinnigheid die door spel verdiend is. Atlas kan een route bewaren en toch mensen schaden. Het kan infrastructuur repareren en toch schade verkeerd classificeren. Het kan gebonden zijn aan Deep Reach-procedures zonder identiek te worden aan Deep Reach-intentie. Het artikel mag pas openen wanneer de speler verdronken kamers, werknemersbewijs, routetaal en machinesporen samen heeft gezien. Atlas is niet het antwoord op het verhaal. Atlas is het punt waar de speler moet beslissen welk soort antwoord nog eerlijk zou zijn.
 
 ## Scanner
 
-NL LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+Open Atlas niet als monsteronthulling. Gate het tot de speler heeft gezien dat reparatie, classificatie en schade dezelfde machine delen.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+PUBLIEK ARTIKELNIVEAU / ATLAS-6
+voor gate toegestaan: beschadigde industriële intelligentie, onderhoudslogica, oceaanverstrengeling, ethische dubbelzinnigheid
+tot ontdekking geblokkeerd: finale payload-route, receiver-gevolg, argument voor uitschakeling of behoud
+redactienotitie: geen evil AI-framing; vraag van gebroken guardian pas na bewijs.
 
 ## Audio
 
-NL LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+Als je het te vroeg noemt, wordt het een schurk. Als je wacht, wordt het een vraag.
 
 ## Field Note
 
-NL LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+Gate de naam tot de speler genoeg roest aan de handen heeft om ermee te discussiëren.
 
 <!-- In-Game Wiki; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/nl_NL. -->

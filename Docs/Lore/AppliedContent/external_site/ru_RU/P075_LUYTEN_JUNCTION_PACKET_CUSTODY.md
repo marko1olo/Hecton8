@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Packet custody Luyten Junction
 
-Packet custody Luyten Junction превращает межзвездную связь в игровое давление. В HECTON-8 нет магического радио, поэтому каждое сообщение должно пережить custody, cost и orbital timing.
+Packet custody Luyten Junction превращает межзвездную связь в давление маршрута. У HECTON-8 нет мгновенного канала спасения, поэтому каждое сообщение должно пережить custody, стоимость и орбитальный тайминг.
 
 ## Scanner
 
-Custody spool Luyten. Сообщения не летят бесплатно; правда тоже.
+Кассета custody Luyten. Сообщения не ходят бесплатно; правда тоже.
 
 ## Terminal
 
-LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+МАРШРУТ LUYTEN JUNCTION: packet custody передана через тарифную очередь. Live command запрещена. Приоритет доказательств покупается через emergency claim escrow.
 
 ## Audio
 
-Нет ansible. Нет милости. Только custody, tariff и время.
+Никакого ansible. Никакого милосердия. Только custody, tariff и время.
 
 ## Field Note
 
-Relay - это машина, которая решает, какому горю дать bandwidth.
+Relay - это машина, решающая, чьему горю достанется bandwidth.
 
 <!-- External Site; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/ru_RU. -->

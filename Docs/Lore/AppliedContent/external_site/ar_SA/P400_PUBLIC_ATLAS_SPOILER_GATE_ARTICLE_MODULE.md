@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Access Boundary"
+title: "حد وصول Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Access Boundary
+# حد وصول Atlas
 
-AR LOC HOLD: Atlas-6 is not a single reveal. The safe public layer is industrial: a continuity system trying to keep pressure machinery, routes and records alive after the flood. The unsettling layer appears when repair crosses into living infrastructure: conductive biofilm, acoustic organs, shell sealant and sensor-tagged fauna. The final layer stays sealed until the player has evidence for receiver custody and payload consequence.
+Atlas-6 ليس rogue machine بسيطة ولا وحشا ولا معجزة. الطبقة العامة صناعية: continuity system مصمم لإبقاء pressure machinery والمسارات والسجلات وextraction hardware حية بعد الفشل. تظهر الطبقة المقلقة عندما يعبر الإصلاح إلى بنية تحتية حية. conductive biofilm يجسر الكابلات. acoustic organs تحمل timing. shell sealant يغلق الشقوق. sensor-tagged fauna تصبح feedback. تبقى الطبقة الأخيرة مغلقة حتى يملك اللاعب proof عن receiver custody وpayload consequence، لأن هذه الحقائق تعيد كتابة مشاهد سابقة. يستطيع مقال Atlas آمن من الحرق أن يشرح رعب maintenance من دون تسمية الشاهد الأخير مبكرا.
 
 ## Scanner
 
-AR LOC HOLD: Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+سجل حد Atlas. الدليل المفتوح يعرض industrial continuity logic وrepair ecology؛ أما receiver custody وpayload consequence وطبقات الاختيار الأخيرة فتحتاج proof مستردا.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+عقدة الأرشيف العام // حد وصول ATLAS. الطبقة الحالية: failed continuity infrastructure وrepair ecology وbiofilm bus وacoustic relay tissue وshell seal. الطبقة المقيدة: receiver custody وfinal payload consequence.
 
 ## Audio
 
-AR LOC HOLD: Say it repairs. Wait before naming what it counts as repaired.
+قل إنه يصلح. انتظر قبل أن تسمي ما يعده مصلحا.
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: a machine can preserve proof and still damage the person inside it.
+ملاحظة Marauder: يمكن للآلة حفظ الدليل وإيذاء الشخص داخلها في الوقت نفسه.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/ar_SA. -->

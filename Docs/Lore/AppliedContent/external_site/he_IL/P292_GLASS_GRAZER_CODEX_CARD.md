@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Glass Grazer Codex Card"
+title: "כרטיס קודקס: מגרד זכוכית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Glass Grazer Codex Card
+# כרטיס קודקס: מגרד זכוכית
 
-HE LOC HOLD: HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+מגרדי זכוכית הופכים את האקולוגיה של HECTON-8 לשפת הישרדות. האכילה שלהם פותחת צלקות מסלול בהירות בתוך שכבות וצמיחת מחצלות, אבל הדממה שלהם חשובה לעיתים יותר מהתנועה. חיה לא מזיקה יכולה להזהיר את השחקן לפני שמד עושה זאת.
 
 ## Scanner
 
-HE LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+להקת מגרדי זכוכית. אוכלי שריון לא עוינים מגרדים שכבת מינרלים. תקתוק יציב אומר מים עובדים; שקט פתאומי אומר שמשהו גדול יותר שינה את הקרחה.
 
 ## Terminal
 
-HE LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+דגימה / להקת מגרדי זכוכית / תפקיד: מגרד שכבה רדודה, עד זרם, רמז לדחיקת טורף / קריאה בטוחה: שפת אכילה, נתיב גירוד חיוור טרי, תקתוקי שריון יציבים / דחה: שדה מזון נטוש, להקה קפואה וצפופה, אין תקתוק חוזר אחרי pinger / הערת מסלול: היעדרות אחרי אכילה היא נתון סכנה.
 
 ## Audio
 
-HE LOC HOLD: When they stop eating, you stop moving.
+כשהפיות הקטנים מפסיקים לתקתק והאוכל עוד שם, אל תהיה הדבר הבא שמחכה.
 
 ## Field Note
 
-HE LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+להקה אוכלת: קרא את הנתיב. להקה קפואה: קרא את המים. נתיב ריק עם אוכל שנשאר: עזוב.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/he_IL. -->

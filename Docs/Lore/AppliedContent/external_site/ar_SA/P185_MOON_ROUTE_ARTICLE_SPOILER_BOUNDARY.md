@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "خط حجب حوض Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# خط حجب حوض Atlas
 
-AR LOC HOLD: Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons.
+يحدد خط حجب حوض Atlas ما يمكن للتغطية العامة عن Aegir قوله عن الأقمار والمسارات وضغط الإنقاذ، مع إبقاء الحوض المختوم خارج الخرائط المفتوحة.
 
 ## Scanner
 
-AR LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+يمكن للأطلس القمري العام تسمية أخطار السماء؛ ولا يمكنه طباعة ما يفعله payload حوض Atlas.
 
 ## Terminal
 
-AR LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+حجب ATLAS: يمكن للصفحات القمرية العامة ذكر الأسماء، ونوافذ المسار، والأخطار، وsalvage economy، وحقائق كارثة HECTON-8. تبقى آثار payload، وسلوك basin receiver، ونتائج القرار الأخير خلف البوابات.
 
 ## Audio
 
-AR LOC HOLD: Publish the sky. Redact the bottom.
+انشر السماء. اختم القاع.
 
 ## Field Note
 
-AR LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+فوق الغيوم، المسار عام. تحت الحوض، لا يزال لكل جواب قفل.
 
 <!-- External Site; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/ar_SA. -->

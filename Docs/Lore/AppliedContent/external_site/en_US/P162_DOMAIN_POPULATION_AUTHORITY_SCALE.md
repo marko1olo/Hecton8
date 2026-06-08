@@ -19,22 +19,14 @@ localization_flags: 0
 
 # Population And Authority Scale
 
-Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
+## Headcount Is Not Power
 
-## Scanner
+The domain table keeps population soft on purpose. Exact census figures can be tuned later, but the pressure relationship is locked: Sol owns old finance and certification, Centauri owns legitimacy language, Barnard owns a working salvage culture, Tau Ceti owns public evidence pressure, Luyten owns packet custody, and Aegir owns the dirty place where all of that becomes machinery.
 
-Population scale is background. Authority pressure is what the player feels.
+A player on HECTON-8 should never read a domain name as trivia. Sol Core is a seal on property and insurance continuity. It can make a dead ocean legally active. The Centauri Compact is a memory of functional expansion, which is why Deep Reach can borrow its charter tone and look less rotten than it is. Barnard Yards explains why the protagonist knows clamps, cutters, pressure tools and bad work without needing hero mythology.
 
-## Terminal
+Tau Ceti is valuable because it can make evidence matter in public. That does not mean it can save a diver before the tide changes. Luyten Junction is colder: it can preserve custody, hash chains and packet notary records even when no moral authority is present. Aegir is the dirty claim node where local shells, Black Keel windows and Deep Reach priority hooks turn those remote authorities into immediate danger.
 
-AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
-
-## Audio
-
-The largest domain is not the nearest hand.
-
-## Field Note
-
-Do not turn the setting into census space opera.
+This is why a small desk can matter more than a planet. HECTON-8 is not ruled by the biggest population. It is ruled by whoever can make a claim survive distance and then charge the survivor for touching it.
 
 <!-- External Site; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/en_US. -->

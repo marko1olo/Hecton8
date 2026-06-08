@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # HECTON-8のリヴァイアサン
 
 > **出典:** Deep Reach メガコーポレーション、異星生物学脅威評価。

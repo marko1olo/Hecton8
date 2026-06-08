@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute как внешний мертвый beacon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Outer Dead Beacon Moon Role
+# Mute как внешний мертвый beacon
 
-RU LOC HOLD: The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.
+Mute - внешняя луна мертвого beacon в лестнице Aegir. Ее relay ненадежны, холодны и частично отсутствуют в текущих публичных картах. Они все равно остаются в старых solver, страховых пунктах и recovery-таблицах.
 
 ## Scanner
 
-RU LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
+Пинг мертвого beacon. Mute больше не отвечает чисто, но старые route solver до сих пор тратят его призрак.
 
 ## Terminal
 
-RU LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
+ЗАПИСЬ BEACON H9 MUTE: архивная эфемерида расходится с текущим relay-эхом. Спасательный solver отмечает пригодную неоднозначность. Contract desk разрешает задержанное хранение сообщения до подтверждения окна.
 
 ## Audio
 
-RU LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
+Мертвый beacon остается beacon, если счет знает, где его найти.
 
 ## Field Note
 
-RU LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Мертвая инфраструктура не покидает Aegir. Она становится ошибочным членом, за который кто-то выставит счет.
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/ru_RU. -->

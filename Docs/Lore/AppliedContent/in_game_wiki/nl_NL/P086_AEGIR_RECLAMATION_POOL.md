@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Aegir-terugwinningspool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Aegir-terugwinningspool
 
-NL LOC HOLD: The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.
+De Aegir-terugwinningspool is de publieke salvage-huls achter Black Keel. Kleine marauder-licenties kunnen zo verlaten Aegir-claims bereiken zonder een eigen interplanetaire carrier. Die afspraak helpt en vergiftigt tegelijk: dezelfde pool die een tender kan sturen, beslist of een ademende operator, verzegelde payload, quarantaineslot of bewijsbundel de volgende burn waard is.
 
 ## Scanner
 
-NL LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
+Claim-poolstempel. Black Keel werd toegewezen door routeschuld, niet geschonken aan de operator.
 
 ## Terminal
 
-NL LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+AEGIR RECLAMATION POOL: autonome tender Black Keel toegewezen aan derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: variabele prioriteit. Menselijke extractie blijft voorwaardelijk tot poolarbitrage sluit.
 
 ## Audio
 
-NL LOC HOLD: The pool owns the route. You only rent the answer.
+De pool bezit de route. Jij huurt het antwoord door lang genoeg te overleven om te vragen.
 
 ## Field Note
 
-NL LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+Een gedeelde pool maakt redding goedkoper, trager en voor elke ondertekenaar makkelijker te ontkennen.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/nl_NL. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # وصاية Black Keel
 
-وصاية Black Keel تجعل الدعم المداري بنية مفيدة ومخترقة: إنقاذ، آلة دين، وضغط Deep Reach.
+تعرف Black Keel Custody الدعم المداري كبنية مفيدة ومخترقة: طريق إنقاذ، وآلة دين، وسطح ضغط من Deep Reach في جسم واحد.
 
 ## Scanner
 

@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Геотермальный двигатель vent forge"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Геотермальный двигатель жерловой кузни"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Геотермальный двигатель vent forge
+# Геотермальный двигатель жерловой кузни
 
-Vent forges связывают geology с crafting, survival и horror. Они дают heat и pressure cycles для ceramics, seals и pressure glass, но те же cycles создают boil pockets, false oxygen readings, corrosive bloom и fauna migration.
+Жерловые кузни связывают геологию с крафтом, выживанием и ужасом. Они дают тепло и циклы давления для керамики, уплотнений и давленого стекла, но те же циклы создают кипящие карманы, ложный кислород, коррозионные облака и миграцию фауны.
 
 ## Scanner
 
-Vent forge manifold. Heat, poison и power используют одну трубу.
+Коллектор жерловой кузни. Тепло, яд и энергия идут по одной трубе.
 
 ## Terminal
 
-GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+ГЕОТЕРМАЛЬНЫЙ ДВИГАТЕЛЬ: импульс жерла пригоден для обжига керамики, отжига давленого стекла и подогрева аварийного подъема. Риски: кипящий сдвиг, ложный кислородный сигнал и коррозионный выброс.
 
 ## Audio
 
-Vent не волнует, называешь ты его power или weather.
+Жерлу все равно, зовешь ты его энергией или погодой.
 
 ## Field Note
 
-Каждый полезный vent - это еще и машина наказания за плохой тайминг.
+Каждое полезное жерло одновременно наказывает за плохой тайминг.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/ru_RU. -->

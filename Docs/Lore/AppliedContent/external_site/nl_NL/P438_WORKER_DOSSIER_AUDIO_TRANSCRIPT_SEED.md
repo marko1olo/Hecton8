@@ -9,32 +9,22 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Worker Dossier Audiotranscript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Worker Dossier Audio Transcript Seed
+# Worker Dossier Audiotranscript
 
-NL LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+## Een Kolonie Voor Het Bewijs
 
-## Scanner
+Worker-dossieraudio moet doden niet als altaarobjecten voorstellen. Het moet ze laten werken. Een pompchef controleert een klep. Een relay-notaris klaagt over een bord. Een medic ruziët met een water ledger. Een fabricator-operator logt een toolcertificaat omdat het gereedschap belangrijker is dan een toespraak over moed.
 
-NL LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Die routine geeft de ruïnes gewicht. De speler moet namen horen voor memorials, banen voor tragedie, kleine irritaties voordat de grote leugen sluit. HECTON-8 was geen podium voor de Marauder. Het was een werkplek met gewoontes, wrok, grappen, schuldmeldingen en drukwiskunde.
 
-## Terminal
-
-NL LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
-
-## Audio
-
-NL LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
-
-## Field Note
-
-NL LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Deze laag beschermt de canon tegen melodrama. Er is geen familiehaak die de speler bijzonder maakt. De schuld is professioneel. Je herkent procedures, badges en slechte beslissingen omdat je bij zo'n systeem hoorde, en nu spreekt dat systeem via verdronken werkorders.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/nl_NL. -->

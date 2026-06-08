@@ -27,7 +27,7 @@ These lockers are not set dressing. Names, meal tabs and Barnard tool marks turn
 
 ## Terminal
 
-Locker audit: personal seals failed after pressure breach. Several tags show Barnard yard marks and unpaid shift advances.
+COLONY AUDIT: personal storage and Barnard marks tie the locker row to named crew and work routes.
 
 ## Audio
 

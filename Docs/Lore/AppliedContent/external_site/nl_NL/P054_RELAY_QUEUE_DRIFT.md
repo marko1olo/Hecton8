@@ -3,38 +3,22 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Relay Queue Drift"
+title: "Drift in relaiswachtrij"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Queue Drift
+# Drift in relaiswachtrij
 
-NL LOC HOLD: Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable.
-
-## Scanner
-
-NL LOC HOLD: The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
-
-## Terminal
-
-NL LOC HOLD: QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
-
-## Audio
-
-NL LOC HOLD: The message is correct. That is the problem.
-
-## Field Note
-
-NL LOC HOLD: A late truth can still kill.
+Drift in de relaiswachtrij is het verschil tussen waarheid en bruikbaarheid. HECTON-8 heeft geen nepstatic of magische storing nodig om communicatie eng te maken. Een bericht kan intact, geauthenticeerd en perfect correct aankomen voor de kamer zoals die dertig minuten geleden was. Dan verplaatst water een luik, druk buigt een frame, Atlasgroei sluit de verkeerde scheur en dezelfde instructie wordt een val. De speler onderzoekt niet of het systeem liegt, maar of het te oud is om te vertrouwen.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/nl_NL. -->

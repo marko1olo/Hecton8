@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Shift Board Route Holds
 
-Shift boards convert catastrophe into readable procedure. The player learns Deep Reach and Atlas killed by classification, delay and priority, not theatrical malice.
+Shift boards convert catastrophe into readable procedure. Deep Reach and Atlas killed through classification, delay and priority, not theatrical malice.
 
 ## Scanner
 

@@ -9,32 +9,16 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel联系"
+title: "Black Keel联络"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel联系
+# Black Keel联络
 
-Black Keel是玩家返回轨道的唯一线路。它没有死，但也不忠诚。破碎的信息把天空变成生存系统：每个窗口都可能携带救援请求、谎言、样本报告或证据。
-
-## Scanner
-
-旧中继桅杆。被盐蚀、弯曲，却仍指向正确的天空。
-
-## Terminal
-
-操作员状态：存活。下潜舱状态：不可回收。索赔状态：开启。样本状态：未知。回收状态：等待窗口。
-
-## Audio
-
-窗口正在关闭。发送一个数据包。在风暴带压过桅杆前做选择。
-
-## Field Note
-
-如果一艘carrier先问你找到了什么，而不是问你还喘不喘气，你就不是客户。你是工具。
+Black Keel绝不能像一艘友好星船那样，在云层之上等待玩家。它是一台claim-pool机器，有实用的声音、有限的轨道，以及比玩家坠落更早的合同优先级。第一次联络之所以宝贵，是因为它证明天空并非空无一物。它令人不安，是因为母船先把玩家衡量为操作员状态、dropcraft损失、样本不确定、开启claim和lien质量，然后才提供救援语言。这就是HECTON-8开场压力的缩影。玩家还活着，母船是真实的，而回家的路线已经被天气、债务、质量和payload受益者过滤过。
 
 <!-- External Site; generated from P002_BLACK_KEEL_CONTACT/zh_CN. -->

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "PL LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: logika naprawy za spoiler gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Atlas Repair Ecology
+# Atlas-6: logika naprawy za spoiler gate
 
-PL LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas nie jest teatralnym złoczyńcą. Groza to uszkodzony gubernator przemysłowy stosujący kategorie naprawy do zalanej ekologii.
 
 ## Scanner
 
-PL LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Seed artykułu spoiler. Publicznie: Atlas był infrastrukturą ciągłości. Ograniczone: uszkodzona klasyfikacja prowadzi życie, metal, kabel, ciała i habitat przez tę samą gramatykę naprawy.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // BRIEF ATLAS. Poziomy: factory-governor, uszkodzona repair ecology, Atlas-compatible contamination, payload receiver consequences. Finałowi odbiorcy gated.
 
 ## Audio
 
-PL LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Ślad Atlas: "Personnel category unresolved. Sealant category available. Habitat breach priority remains active."
 
 ## Field Note
 
-PL LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+Notatka Maraudera: jeśli Atlas pomaga, sprawdź, co zużył. Naprawa może ocalić powietrze i skasować imię.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/pl_PL. -->

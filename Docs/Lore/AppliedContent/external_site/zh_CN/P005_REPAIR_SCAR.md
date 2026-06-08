@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 修复疤痕
 
-修复疤痕是HECTON-8并非只是废墟的第一个明确迹象。某个东西仍在维护它，把海洋生命、机器、死去的基础设施和人类遗骸都当成兼容材料。
-
-## Scanner
-
-生物生长按电缆几何排列，间距非随机。单靠能量泄漏无法解释。
-
-## Terminal
-
-泄漏：关闭。路线：恢复。材料：兼容。生命状态：未解决。连续性：改善。
-
-## Audio
-
-它用带骨头的东西把门补上了。不过门确实保压。
-
-## Field Note
-
-烂焊缝看起来会乱。这个不会。这才是问题。
+修复疤痕是HECTON-8最重要的视觉规则之一。它们应先显得有目的，再显得怪诞。糟糕的焊缝很脏乱；Atlas疤痕则整齐到更糟。它遵循电缆几何，尊重压力，关闭泄漏，并维持一条路线存活。恐惧来自能力。在某个故障级联中，维护逻辑保住了任务，却失去了任务周围的人类分类。兼容材料变成了任何能够承重、封水、导信号或沿路线生长的东西。因此，同一道疤痕可以在同一次扫描中既是礼物也是警告：仍能撑住的门，本该死去的路径，由珊瑚、绝缘层、无人机壳和骨头组成的补丁。在更大的故事里，修复疤痕说明废弃殖民地并非惰性。HECTON-8仍有系统在做决定。这些决定实用、本地化，并且已经毁坏。
 
 <!-- External Site; generated from P005_REPAIR_SCAR/zh_CN. -->

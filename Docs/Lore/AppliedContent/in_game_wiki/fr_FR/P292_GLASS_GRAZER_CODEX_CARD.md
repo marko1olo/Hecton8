@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Glass Grazer Codex Card"
+title: "Fiche codex du brouteur de verre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Glass Grazer Codex Card
+# Fiche codex du brouteur de verre
 
-FR LOC HOLD: Glass Grazer Codex Card turns a benign animal into a readable safety instrument.
+Les brouteurs de verre ne sont ni des mascottes, ni du butin, ni du décor. Ce sont de petits mangeurs à coquille transparente qui rendent le plateau photique lisible en raclant le film minéral du pressure glass, des bords lâches de tapis photiques, des vieilles gaines de câble et des lèvres calcaires. Un banc qui se nourrit laisse des voies pâles dans la croissance. Elles peuvent révéler un courant récent, une prise propre, une couture qui n’est pas trop chaude, ou une zone où aucun prédateur n’est passé depuis quelques minutes. L’indice utile n’est pas seulement le mouvement. C’est l’interruption. Si la nourriture reste et que les tics des coquilles cessent, le banc a entendu un changement de pression, une ombre, la vibration d’un cutter ou un animal plus grand hors du cône du scanner. La voie raclée est une preuve, pas une permission. Suis le bord. Pars quand le bord se replie vers l’intérieur.
 
 ## Scanner
 
-FR LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+Banc de brouteurs de verre. Racleurs à coquille non hostiles, ils mangent le film minéral. Tics réguliers: eau exploitable. Silence soudain: quelque chose de plus grand a changé la clairière.
 
 ## Terminal
 
-FR LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+SPÉCIMEN / BANC DE BROUTEURS DE VERRE / rôle: racleur de film peu profond, témoin de courant, indice de déplacement prédateur / lecture sûre: bord nourri, trace pâle fraîche, tics de coquille stables / rejet: champ de nourriture abandonné, banc figé serré, aucun tic de retour après pinger / note de route: absence après nourrissage = donnée de danger.
 
 ## Audio
 
-FR LOC HOLD: When they stop eating, you stop moving.
+Quand les petites bouches cessent de tiquer alors que la nourriture reste là, ne sois pas la prochaine chose qui attend.
 
 ## Field Note
 
-FR LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Banc qui mange: lis la voie. Banc figé: lis l’eau. Voie vide avec nourriture restante: pars.
 
 <!-- In-Game Wiki; generated from P292_GLASS_GRAZER_CODEX_CARD/fr_FR. -->

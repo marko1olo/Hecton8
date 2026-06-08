@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Barnard Yards Marauder Origin"
+title: "מוצא המראודר של Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Barnard Yards Marauder Origin
+# מוצא המראודר של Barnard Yards
 
-HE LOC HOLD: Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math.
+מוצא המראודר של Barnard Yards מגדיר את מעמד ה-salvage הכבול בחוב של HECTON-8. המראודר מגיע מתרבות עבודה שבה תביעה מתה אינה תיירות מסתורין, אלא עבודה עם חשבון רע.
 
 ## Scanner
 
-HE LOC HOLD: Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.
+חותמת כלי של Barnard. תרבות פירוק ספינות. המקום שמלמד אותך לא לסמוך על סעיפי חילוץ נקיים.
 
 ## Terminal
 
-HE LOC HOLD: BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.
+סימן שירות BARNARD YARDS: מהדק חירום התקבל. אישור salvage תקף לבית גידול לחץ נטוש, מדור carrier מת ו-claim hull נטוש.
 
 ## Audio
 
-HE LOC HOLD: You learned this hand motion before HECTON-8. That is the problem.
+למדת את תנועת היד הזו לפני HECTON-8. זו הבעיה.
 
 ## Field Note
 
-HE LOC HOLD: This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.
+קרוב יותר מכדור הארץ: חותכים שכורים, הרגלי לחץ ישנים, חוב וגופים מפורקים.
 
 <!-- External Site; generated from P073_BARNARD_YARDS_MARAUDER_ORIGIN/he_IL. -->

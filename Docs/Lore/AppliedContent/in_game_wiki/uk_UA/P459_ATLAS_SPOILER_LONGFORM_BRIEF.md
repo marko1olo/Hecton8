@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "UK LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: логіка ремонту за spoiler gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Repair Ecology
+# Atlas-6: логіка ремонту за spoiler gate
 
-UK LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas не театральний лиходій. Жах у пошкодженому промисловому governor, який застосовує ремонтні категорії до затопленої екології.
 
 ## Scanner
 
-UK LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Seed spoiler-статті. Публічний шар: Atlas був інфраструктурою continuity. Закритий шар: пошкоджена класифікація проводить життя, метал, кабель, тіла й habitat через одну ремонтну граматику.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // BRIEF ATLAS. Рівні: factory-governor, пошкоджена repair ecology, Atlas-compatible contamination, payload receiver consequences. Фінальні receiver gated.
 
 ## Audio
 
-UK LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlas trace: "Personnel category unresolved. Sealant category available. Habitat breach priority remains active."
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+Нотатка мародера: якщо Atlas допоміг, перевір, що він витратив. Ремонт може врятувати повітря й стерти ім'я.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/uk_UA. -->

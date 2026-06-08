@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "Grammar Encounter Navigasi Brine Vane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Brine Vane Navigation Encounter Grammar
+# Grammar Encounter Navigasi Brine Vane
 
-ID LOC HOLD: The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
+Navigasi brine vane membuat canyon HECTON-8 terbaca tanpa panah. Rute ditulis dalam densitas, kerusakan membran, distorsi sonar, dan disiplin buoyancy pemain.
 
 ## Scanner
 
-ID LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+Ladang brine vane. Lembar sejajar menandai belokan densitas; ujung melengkung menandai jendela lemah; sonar warps dekat glow terbuka. Simpan satu tepi dalam pandangan.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+GRAMMAR ENCOUNTER / NAVIGASI BRINE VANE / peran: literasi rute mid-depth, handrail dinding densitas, koreksi false floor / baca aman: tepi vane utuh, mulut sobek, bengkok sonar cocok dengan buoyancy drift / tolak: menyeberangi air hitam terbuka, memotong lembar pemandu, percaya floor return tanpa batas vane / catatan rute: vane tidak membimbing dengan niat; ia mematuhi air cukup keras untuk diikuti.
 
 ## Audio
 
-ID LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+Vane bukan penunjuk jalan. Itu air yang membuat dinding dan meninggalkan sambungan.
 
 ## Field Note
 
-ID LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+Perlakukan tepi vane seperti pegangan. Jika garis membengkok salah, bacaan buoyancy-mu sudah terlambat.
 
 <!-- External Site; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/id_ID. -->

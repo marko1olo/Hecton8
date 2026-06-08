@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Professionelles Motiv
 
-Der Spieler ist kein leerer Tourist. Er startet mit Können, Vertrag und Grund für einen toten Claim; Beweise machen es persönlich.
+Der Marauder ist kein leerer Tourist. Der Lauf beginnt mit professionellem Interesse, Salvage-Fertigkeit und einem Grund, einen toten Claim anzunehmen. Persönliches Motiv wächst durch Beweise, vertraute Markierungen und die Erkenntnis, dass HECTON-8 zu derselben harten Welt gehört, die diese Arbeit normal gemacht hat.
 
 ## Scanner
 

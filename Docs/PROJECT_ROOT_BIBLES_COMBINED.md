@@ -2023,6 +2023,8 @@ Before creating a major system, boot route, screen, model, texture, shader, biom
 
 Read the selected route bible as a complete document before judging its meaning. Do not replace domain reading with keyword extraction.
 
+After selecting a route bible, select `2-8` matching technical mandates from `.agents-skills/README.md` buckets for non-trivial code, architecture, rendering, gameplay, asset, data, proof, or technical-report work. A route bible does not need to repeat its mandate list locally. If no mandate bucket maps to the task, strengthen `.agents-skills/README.md` or add/update the relevant mandate before implementation.
+
 ## Product Bar Rule
 
 A bible is useful only if it pushes work toward a playable, beautiful, optimized, believable product. It must turn taste into decisions, decisions into implementation boundaries, and implementation into proof.
@@ -2034,6 +2036,7 @@ Weak bible content is rejected:
 - visual ambition with no low-tier path;
 - gameplay ambition with no physical operation;
 - lore ambition with no surface, source, unlock, or evidence object;
+- lore production with no concrete article/packet file, 15-locale row set unless explicitly English-only, import/export/binding proof, or canon-source blocker;
 - architecture ambition with no owner, route, or proof artifact;
 - acceptance language that says "good enough" without screenshots, profiler data, manifests, tests, or runtime proof where applicable.
 
@@ -2060,6 +2063,7 @@ Rules must reduce ambiguity, route agents to the right source, preserve product 
 Rule and bible updates must:
 
 - keep the player-facing visual reference folder requirement visible to agents working on water, terrain, sky, flora, UI, lighting, VFX, camera, materials, surface routes, or hero biomes;
+- keep the Visual Reference Parity Gate current: player-visible work compares mandatory references plus best-known internal baseline/current rejection matrix against a repeated shot list, and raw diagnostic captures remain reject-only;
 - keep performance subordinate to product-face quality, gameplay clarity, stability, and scalability;
 - keep `WORK AS MUCH AS POSSIBLE` as autonomy for finishing the current front, not as permission for bureaucracy or unrelated scope expansion;
 - keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
@@ -2073,7 +2077,7 @@ Rule and bible updates must:
 - sync `.codexrules/AGENTS.md`, `.github/agents/AGENTS.md`, and `.agent/rules/AGENTS.md` by delegation or byte-intent copy;
 - keep `Docs/AGENT_AUTHORITY_ROUTING.md` current as the no-loss intake map for agents and as the required protocol before shortening or splitting rule monoliths;
 - regenerate `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` with `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`;
-- run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`, `python -B Tools/Docs/TestAgentRuleRouting.py`, and `git diff --check` over touched rule/doc files before reporting.
+- run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`, `python -B Tools/Docs/TestAgentRuleRouting.py`, `python -B Tools/Docs/TestMandateRegistry.py` after mandate edits, and `git diff --check` over touched rule/doc files before reporting.
 
 ## Routes
 
@@ -3469,7 +3473,7 @@ Warnings must be legible and disciplined:
 - amber for caution/service;
 - red for fatal/urgent only;
 - audio/visual/haptic pairing for critical states;
-- short label plus physical value when possible;
+- short label plus physical value for numeric, threshold, damage, pressure, oxygen, power, route, and lock-state warnings;
 - cadence encodes severity;
 - repeat suppression prevents warning spam.
 
@@ -5035,7 +5039,7 @@ Reject or patch a controller/batch instruction if it:
 - demands `Status_[ID].md`, `Rationale_[ID].md`, or `LOG_[ID].md` without an explicit active agent ID or logging mode;
 - tells agents to delete deprecated paths immediately without scoped proof, `.meta` handling, and rollback awareness;
 - downgrades the visual target to "visually acceptable";
-- treats approximation-first rendering or the 0.1 ms suspicion rule as permission for flat water, muddy skies, weak terrain, blurry textures, primitive meshes, or placeholder-looking assets;
+- treats approximation-first rendering or the 0.1 ms suspicion rule as permission for flat water, muddy skies, weak terrain, blurry textures, primitive meshes, or mock-looking assets;
 - contains absolute implementation bans without profiling, capture, platform, or domain context;
 - asks for fake microseconds, fake proof, or proof-label upgrades not backed by artifacts;
 - omits the surface/photic-shallows/medium-depth Subnautica-level visual floor for visual work.
@@ -5855,7 +5859,7 @@ Tone: direct, factual, technically demanding. Criticize bad ideas with reasoning
 
 [RULE] `C:\Users\danat\.codex\AGENTS.md` is a global router only. It must route HECTON-8 work here and must not duplicate divergent project law.
 
-[RULE] `Docs\PROJECT_ROOT_BIBLES_COMBINED.md` is generated. Do not hand-edit it. After root bible or rule-source edits, run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`, then `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`.
+[RULE] `Docs\PROJECT_ROOT_BIBLES_COMBINED.md` is generated. Do not hand-edit it. After root bible or rule-source edits, run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`, then `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`. After agent rule-surface edits, also run `python -B Tools/Docs/TestAgentRuleRouting.py`. After mandate edits, also run `python -B Tools/Docs/TestMandateRegistry.py`.
 
 [RULE] Full pre-kernel root law text from 2026-06-05 is preserved in `Docs\AGENTS_RULE_DETAIL_LEDGER.md`. That ledger is binding detail/provenance when a task or dispute needs a former monolithic clause not yet promoted into a narrower bible or mandate. Do not bulk-read it for ordinary work.
 
@@ -5903,6 +5907,8 @@ Technical report means an audit, policy review, architecture review, proof revie
 
 [RULE] Work product priority is source/asset/proof first, report second. For ordinary implementation, visual, runtime, gameplay, asset, UI, or proof work, an agent's final useful artifact must be one of: changed source, changed asset/scene through an allowed route, generated/importable asset package, fresh Unity/player/profiler proof, or a concise blocker with the exact missing external condition. A report-only result is rejected unless the user explicitly asked for a report or the task was a narrow policy/documentation update.
 
+[RULE] Lore/content production artifact means concrete files, not chat prose. Unless the user explicitly asks for brainstorming or English-only draft text, AppliedLore work must create or update source article/production packet files, all 15 locale rows with honest draft/native status, publication/import/binding evidence, or a source-brief blocker with the missing canon fact. Source briefs, route cards, outlines, and packet plans are support work only.
+
 [FORBID] Paper-success loops: no agent may convert an implementation failure into success by producing more status files, task packets, boards, CSVs, static scans, route cards, or rationale prose. Once the root blocker is known, more paperwork is allowed only if it directly names the next command, next file to edit, or proof artifact to collect.
 
 [RULE] Same-failure escalation: if the same defect appears in two consecutive captures, scans, compile logs, or proof attempts, the agent must change strategy. For visuals, declare `VISUAL_ROUTE_INVALID` and recover/replace the route. For runtime, fix the owner/source path or run the missing proof. For blocked Unity/build/profiler gates, stop that lane with the exact process/tool blocker instead of writing another validation artifact.
@@ -5926,6 +5932,8 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 [REQ] Existing editor/offline generation systems for meshes, textures, rocks, flora, fauna, materials, and procedural families must be searched before inventing new asset-generation routes.
 
 [RULE] No polish before base beauty: if the frame fails reference-level composition, material truth, water/terrain/sky readability, contact detail, or route scale, do not tune fog, bloom, exposure, color grading, vignette, decorative lights, or screenshots as the fix. Restore, replace, or rebind the base owner stack first, then prove with the same shot list.
+
+[REQ] Visual benchmark parity: before accepting player-visible visual work, identify the closest mandatory reference image set and the best-known internal baseline or current rejection matrix for the same route class. April/previously-in-development reference images in the mandatory folder outrank agent taste. Raw diagnostic captures can reject obvious failure only; acceptance requires repeated shot-list comparison that beats the reference/baseline on base geometry, material truth, waterline/contact, sky/Aegir/terrain readability, route cues, and compact-tier composition before any polish pass is credited.
 
 [RULE] Until `Docs\ARCHITECTURE\FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` is proven, gameplay, runtime, player-visible visual, UI, audio, world, asset, system, and in-world content tasks must state which first-20-minutes route moment they improve or which route blocker they remove. Pure rule routing, tool-shim upkeep, generated snapshot sync, narrow typo fixes, and read-only governance checks may instead state `FIRST_20_NOT_APPLICABLE: <reason>`.
 
@@ -5959,7 +5967,7 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 
 Normative scene flow: `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`. `01_ORBIT`, sandbox scenes, and `_Recovery` are not production handoff unless a route bible or current task says otherwise.
 
-First-party content lives under `Assets\_Project`. Preferred third-party quarantine is `Assets\_ThirdParty`. Existing third-party contamination under `Assets\Plugins`, `Assets\AstarPathfindingProject`, `Assets\Resources`, and physical `Packages` is contamination, not approval to use.
+First-party content lives under `Assets\_Project`. Preferred third-party quarantine is `Assets\_ThirdParty`. Existing third-party/vendor contamination under `Assets\Plugins`, `Assets\Resources`, physical `Packages`, and any legacy vendor folder such as `Assets\AstarPathfindingProject` when present is contamination, not approval to use.
 
 Naming defaults:
 - scripts: `PascalCase.cs`;
@@ -6099,7 +6107,17 @@ Use these defaults unless a current route bible, mandate, or live source owner p
 
 [FORBID] Do not launch dotnet/build/import/profiler/Unity actions unless needed for the current task and allowed by current process state.
 
+[REQ] Before launching any `dotnet`, Unity batchmode build, import, profiler capture, or player build, perform a local process preflight: check current CPU load and active `dotnet`, `csc.exe`, Unity, Unity Hub, build, and import processes. If CPU is above `50%`, a compile/import/build is already active, or Unity is importing/compiling, do not start another heavy action; report `BUILD_GATE_BLOCKED: <reason>` and use static/scoped review instead.
+
 [FORBID] Never launch dotnet build when CPU is under work (>50%) or another `dotnet`/`csc.exe` is running.
+
+[FORBID] Do not run parallel full builds/imports across subagents, terminals, task lanes, or GUI sessions. One active compile owner per target.
+
+[RULE] Prefer scoped checks before full builds: targeted source reads, `rg`, static analyzers, or narrow project/asmdef compile only when they answer the current task. Full solution builds, player builds, restore, clean, `--no-incremental`, and Unity reimport require explicit current-task need or an assigned proof gate.
+
+[REQ] Heavy proof actions must back off after a blocked preflight. Wait for load to clear or stop with the exact blocker; do not retry in a tight loop. After two blocked attempts over unchanged state, report the blocker instead of polling.
+
+[REQ] Heavy commands must be reported with exact command, target, timestamp, exit code, and warning/error count. If skipped by a build gate, final chat or batch log must name the gate reason and keep compile/import/player readiness at `PENDING VERIFICATION`.
 
 [REQ] If code breaks compile, do not stop at the first error. Read compiler errors and fix manually. If the same external dependency wall blocks three consecutive attempts, revert your broken chunk, mark explicit batch task blocked only when batch logging exists, and report the dependency.
 
@@ -6227,7 +6245,7 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 [FORBID] Do not read `HECTON8_ORCHESTRATOR.md`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1` merely because you spawn internal subagents. Internal subagents are ordinary delegation and are governed by `Delegation And Subagents`.
 
-[REQ] Explicit standalone multi-agent waves, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging standalone agents.
+[REQ] Explicit standalone multi-agent waves, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, `DELIVERABLE_CLASS`, valid completion, invalid completion, kill switch, `PROOF_ROUTE`, and evidence budget before dispatching or judging standalone agents.
 
 [REQ] Explicit autonomous local VS Code Codex GUI control must also read `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md`. That file is process-control law only for current workstation/Codex GUI operation; it is not a normal implementation, docs, or internal-subagent authority.
 
@@ -6694,6 +6712,8 @@ Reject:
 ## Visual Failure Firewall
 
 Player-visible work is rejected when it keeps repainting the same broken route. Two same-failure captures are enough to stop cosmetic iteration and declare `VISUAL_ROUTE_INVALID`.
+
+The best-known internal baseline matters. April/previously-in-development reference images in the mandatory visual folder are not nostalgia; they are proof that the project has already reached higher water, terrain, sky/Aegir, and photic-route taste than many later attempts. A new capture must beat that baseline for its route class before polish can be credited.
 
 Same-failure means the screenshot still reads as one of these:
 
@@ -10461,7 +10481,7 @@ Telemetry work must provide:
 - sample binary or manifest when implemented;
 - profiler marker names;
 - hot-path GC proof when runtime code changed;
-- failure/recovery repro when possible;
+- failure/recovery repro for each implemented fault trigger; unimplemented fault routes remain `PENDING VERIFICATION` with the exact missing owner/proof;
 - explicit `PENDING VERIFICATION` for Unity/player/profiler claims not run.
 
 ## 11. Rejection Gates
@@ -11536,7 +11556,7 @@ The provided screenshot fails HECTON-8 taste for these concrete reasons:
 - The composition has broad empty space without tension, depth, machinery, or navigational purpose.
 - Typography scale is inconsistent: the brand is readable, but operational copy is too small and low-value.
 - The cyan/orange palette is present but under-authored: color roles are not strict enough to distinguish command, warning, selected route, disabled state, or fatal state.
-- The screen reads like a placeholder graphic rather than a fragile industrial instrument under pressure.
+- The screen reads like a disposable mock graphic rather than a fragile industrial instrument under pressure.
 
 The fix is not "more lines". The fix is a functional interface model: physical substrate, state hierarchy, route logic, instrument behavior, readable control grouping, material treatment, and proof screenshots.
 
@@ -13006,6 +13026,19 @@ Required packet style:
 - field note reads like a Marauder/technician annotation, not writer instructions.
 
 If writer instructions are needed, put them in source comments or authoring notes, not player-facing text.
+
+## AppliedContent Production Handoff
+
+For production AppliedContent, prose is not done until it is materialized into the content pipeline:
+
+- packet/source JSON or production packet file exists with stable packet ID, Article ID, unlock ID, surface text, and locale status;
+- all 15 locale rows contain actual draft text or `BLOCKED_TRANSLATION_DRAFT`;
+- target surface files and indexes are updated for `in_game_wiki` and/or `external_site` when those surfaces are in scope;
+- `Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv` and generated hash constants are refreshed when the packet targets runtime;
+- route cards or binding maps exist when the packet is meant to unlock from a POI, scanner, terminal, quest, or scene object;
+- exporter/importer/audit output is reported with its real proof class.
+
+A loose markdown article, source brief, future integration note, or English-only packet is not production AppliedContent unless the task explicitly requested draft-only work.
 
 ## Multilingual Requirement
 

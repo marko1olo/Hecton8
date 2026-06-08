@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Brine Vane Codex Card"
+title: "بطاقة كودكس ريشة المحلول الملحي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Brine Vane Codex Card
+# بطاقة كودكس ريشة المحلول الملحي
 
-AR LOC HOLD: Brine Vane Codex Card turns mid-depth flora into route-reading evidence.
+ريش المحلول الملحي ليست نباتات بالمعنى المريح. إنها أغشية مسطحة من الملح والمعادن تعيش حيث يجعل المحلول الملحي والضغط والحرارة حدا حادا بما يكفي ليتصرف كجدار. في الوادي تحول بنية الماء غير المرئية إلى شيء يستطيع Marauder قراءته بالعين وsonar وضبط الطفو. الصفيحة السليمة تعني غالبا أن الجانب الآخر أكثف، وقد تثني ping أو تسحب البدلة خارج المتوقع. الفم الممزق قد يعلّم عبور حيوان حديثا، أو ضرر تيار، أو النافذة الضعيفة الوحيدة عبر الطبقة. الرأس الملتف يعني أن القص يضعف. الأضلاع الشاحبة المتساقطة من شرائط ميتة قد تكون مادة نافعة، لكن قطع صفيحة حية قد يمحو علامة المسار التي تبقي الوادي مقروءا. لا تعبر توهجا مفتوحا لأنه يبدو عموديا. أبق حافة ريشة واحدة في النظر، واضبط الطفو بحذر، واعتبر أي عودة أرضية بلا حد ريشة ظاهر كذبة حتى تؤكدها قراءة أخرى.
 
 ## Scanner
 
-AR LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+صفيحة ريشة محلول ملحي. غشاء ملحي-معدني مثبت على قص كثافة. الحافة السليمة تعني جدارا؛ الفم الممزق يعني ممرا؛ ماء أسود بلا حافة ريشة يعني خطر أرضية كاذبة.
 
 ## Terminal
 
-AR LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+عينة / ريشة محلول ملحي / الدور: علامة جدار كثافة، تحذير انحناء sonar، مصدر أضلاع متساقطة / قراءة آمنة: صفيحة سليمة، فم ممزق مع اتجاه التيار، رأس نافذة قص ملتف / ارفض: قطع صفيحة مسار حية، عبور توهج مفتوح، الثقة بعودة أرضية كاذبة / ملاحظة مسار: اجمع الأضلاع المتساقطة، لا الغشاء الذي يبقي خريطتك مفتوحة.
 
 ## Audio
 
-AR LOC HOLD: The plant is not pointing up. It is pointing through.
+الريشة لا تشير إلى الأعلى. إنها تريك أين ينعطف المحيط جانبيا.
 
 ## Field Note
 
-AR LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+صفيحة سليمة: جدار. فم ممزق: مسار محتمل. ضلع متساقط: عينة. صفيحة حية تمسك الممر: اتركها.
 
 <!-- In-Game Wiki; generated from P294_BRINE_VANE_CODEX_CARD/ar_SA. -->

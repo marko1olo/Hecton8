@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Haldane Quarantine Hold"
+title: "Hold Haldane untuk Pelepasan Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Haldane Quarantine Hold
+# Hold Haldane untuk Pelepasan Karantina
 
-ID LOC HOLD: The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
+Hold Haldane bukan bukti bahwa karantina palsu. Lebih buruk: protokol punya dasar nyata, lalu Deep Reach memakai bahasa certification untuk menahan tubuh, sampel, dan liability di tempat saat koloni membutuhkan gerak lebih dari dokumen.
 
 ## Scanner
 
-ID LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Hold pelepasan karantina. Protokol kontaminasi nyata menjadi penundaan custody setelah bahaya tekanan sudah fisik.
 
 ## Terminal
 
-ID LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
+QUARANTINE HOLD DESK / HALDANE / RELEASE CERTIFICATION: evacuee movement remains suspended pending XO sample custody, seal-read variance and downstream exposure review.
 
 ## Audio
 
-ID LOC HOLD: The folder was orderly. That was the problem.
+Hold itu tidak menciptakan bahaya. Ia menahan orang di dalamnya.
 
 ## Field Note
 
-ID LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Catatan Marauder: karantina bisa benar dan tetap dipakai seperti kunci.
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/id_ID. -->

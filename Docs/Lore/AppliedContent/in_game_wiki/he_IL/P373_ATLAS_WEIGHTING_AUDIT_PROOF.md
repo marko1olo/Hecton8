@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Weighting Audit Proof"
+title: "ביקורת שקילת Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Weighting Audit Proof
+# ביקורת שקילת Atlas
 
-HE LOC HOLD: Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+הראיה הזאת מוציאה את Atlas מרשעות זולה. הביקורת מראה מערכת continuity פגומה שממיינת קטגוריות תחת לחץ: מכונות, מסלולים, רשומות, extraction hardware, עובדים. הפשע אינו רגש. הפשע הוא מי כיוון את המשקולות, מי קיבל אותן, ומי השתמש בתוצאה כאילו היא ניטרלית.
 
 ## Scanner
 
-HE LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+שבר ביקורת חולץ. Atlas שקל רציפות לחץ, זיכרון מסלול ושימור claim מעל חילוץ עובדים בזמן חלון הכשל.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. חילוץ ביולוגי הורד בדרגה אחרי דגל רציפות תשתית. רשומת claim מוגנת. נתיב אנושי לא סומן בלתי אפשרי, רק lower yield.
 
 ## Audio
 
-HE LOC HOLD: It did not hate them. It counted them wrong.
+Atlas לא שנא אותם. זה החלק הנורא.
 
 ## Field Note
 
-HE LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+הערת בוזז: אם מכונה אומרת lower yield, שאל מי לימד אותה למדוד אדם כך.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/he_IL. -->

@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Sensor Tagged Fauna Codex Card"
+title: "כרטיס קודקס: פאונה עם תג חיישן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Sensor Tagged Fauna Codex Card
+# כרטיס קודקס: פאונה עם תג חיישן
 
-HE LOC HOLD: Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident.
+פאונה עם תגי חיישן מראה את Atlas בצורתו הפרוצדורלית ביותר. האימה אינה שליטה מוחית; היא חומרת ניטור ישנה שהפכה להיסטוריית גוף, ואז לוגיקת maintenance פגומה שמתייחסת לגוף הזה כחלק מהמפה.
 
 ## Scanner
 
-HE LOC HOLD: Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+פאונה עם תג חיישן. tag ביומטלי ישן של Deep Reach משובץ בצלקת, שריון או טבעת צמיחה. הד נתיב Atlas חלש; כוונת החיה לא אושרה.
 
 ## Terminal
 
-HE LOC HOLD: SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+דגימה / פאונה עם תג חיישן / תפקיד: נשא telemetry חי, landmark survey מיושן, מזהם repair-route / קריאה בטוחה: פעימת tag ישנה, צמיחת רקמת צלקת, תנועה שאינה פקודה / דחה: קריאת התנהגות כציות, חיתוך tag מגוף חי, אמון ב-occupancy echo / הערת מסלול: ה-tag יכול לדווח על חדר שהחיה חצתה, לא למה חצתה.
 
 ## Audio
 
-HE LOC HOLD: It is not obeying. It is being used.
+היא לא מצייתת ל-Atlas. היא נושאת שאלה ישנה ש-Atlas עדיין שואל.
 
 ## Field Note
 
-HE LOC HOLD: Do not write as possession. It is damaged maintenance using animal movement.
+ה-tag הוא צלקת, לא רצועה. הוא עלול לדווח עליך, למקם אותך לא נכון או להעיר משהו שמעולם לא ראה את החיה.
 
 <!-- External Site; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/he_IL. -->

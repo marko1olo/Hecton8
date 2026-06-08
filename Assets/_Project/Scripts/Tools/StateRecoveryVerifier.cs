@@ -35,13 +35,37 @@ namespace Hecton8.Tools
         private float _stabilizationTime = 0.2f;
 
         [SerializeField, Tooltip("Save slot probe order for load-state verification")]
-        private string[] _saveSlotProbeOrder = { "slot_1", "slot_2", "slot_3" };
+        private string[] _saveSlotProbeOrder =
+        {
+            SaveEvents.ResolveManualSlotName(0),
+            SaveEvents.ResolveManualSlotName(1),
+            SaveEvents.ResolveManualSlotName(2)
+        };
 
         private int _testsRun;
         private int _testsPassed;
         private int _testsFailed;
         private PauseMenuController _pauseMenu;
         private MainMenuController _mainMenuController;
+
+        private void Awake()
+        {
+            NormalizeSaveSlotProbeOrder();
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            NormalizeSaveSlotProbeOrder();
+        }
+#endif
 
         /// <summary>
         /// Verifies pause open/close recovery back to gameplay.
@@ -466,14 +490,16 @@ namespace Hecton8.Tools
 
         private string ResolveExistingSaveSlot()
         {
+            NormalizeSaveSlotProbeOrder();
+
             SaveManager saveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
-            if (saveManager == null || _saveSlotProbeOrder == null)
+            if (!IsSaveManagerUsable(saveManager) || _saveSlotProbeOrder == null)
                 return string.Empty;
 
             for (int i = 0; i < _saveSlotProbeOrder.Length; i++)
             {
                 string slotName = _saveSlotProbeOrder[i];
-                if (string.IsNullOrEmpty(slotName))
+                if (!SaveManager.TryResolveSafeSlotName(slotName, out slotName))
                     continue;
 
                 if (saveManager.SaveExists(slotName))
@@ -481,6 +507,38 @@ namespace Hecton8.Tools
             }
 
             return string.Empty;
+        }
+
+        private void NormalizeSaveSlotProbeOrder()
+        {
+            int slotCount = SaveEvents.ManualSlotCount;
+            if (slotCount <= 0)
+            {
+                if (_saveSlotProbeOrder == null || _saveSlotProbeOrder.Length != 0)
+                    _saveSlotProbeOrder = Array.Empty<string>();
+
+                return;
+            }
+
+            string[] current = _saveSlotProbeOrder;
+            bool needsReplacement = current == null || current.Length != slotCount;
+            string[] normalized = needsReplacement ? new string[slotCount] : current;
+
+            for (int i = 0; i < slotCount; i++)
+            {
+                string configured = current != null && i < current.Length ? current[i] : string.Empty;
+                if (!SaveManager.TryResolveSafeSlotName(configured, out string safeSlotName))
+                    safeSlotName = SaveEvents.ResolveManualSlotName(i);
+
+                normalized[i] = safeSlotName;
+            }
+
+            _saveSlotProbeOrder = normalized;
+        }
+
+        private static bool IsSaveManagerUsable(SaveManager saveManager)
+        {
+            return saveManager != null && saveManager.IsInitialized;
         }
 
         private void ResolvePauseMenu()

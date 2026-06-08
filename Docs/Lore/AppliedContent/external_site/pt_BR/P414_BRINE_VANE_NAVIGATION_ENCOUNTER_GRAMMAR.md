@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "Gramática de encontro: navegação por lâminas de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Brine Vane Navigation Encounter Grammar
+# Gramática de encontro: navegação por lâminas de salmoura
 
-PT LOC HOLD: The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
+Navegação por lâminas de salmoura torna os cânions de HECTON-8 legíveis sem setas. A rota está escrita em densidade, dano de membrana, distorção de sonar e disciplina de flutuabilidade do jogador.
 
 ## Scanner
 
-PT LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+Campo de lâminas de salmoura. Folhas alinhadas marcam curvas de densidade; pontas curvadas marcam janelas fracas; sonar distorce perto de brilho aberto. Mantenha uma borda à vista.
 
 ## Terminal
 
-PT LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+GRAMÁTICA DE ENCONTRO / NAVEGAÇÃO POR LÂMINAS DE SALMOURA / função: leitura de rota de média profundidade, corrimão de parede de densidade, correção de falso piso / leitura segura: borda intacta, boca rasgada, dobra de sonar combinando com drift de flutuabilidade / rejeitar: cruzar água negra aberta, cortar folha guia, confiar em retorno de piso sem limite de lâmina / nota de rota: a lâmina não guia por intenção; ela obedece à água alto o bastante para ser seguida.
 
 ## Audio
 
-PT LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+A lâmina não é placa. É água fazendo uma parede e deixando uma costura.
 
 ## Field Note
 
-PT LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+Trate a borda da lâmina como corrimão. Se a linha dobra errado, sua leitura de flutuabilidade já está atrasada.
 
 <!-- External Site; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/pt_BR. -->

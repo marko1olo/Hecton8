@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Guidance Timing Core Assembly"
+title: "制导时序核心组件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Guidance Timing Core Assembly
+# 制导时序核心组件
 
-ZH LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.
+可用的升空需要一个理解 Aegir 月群几何、blackout 间隔、中继阴影和 carrier recovery lanes 的制导时序核心。糟糕时机能在不损坏任何零件的情况下丢掉胶囊。
 
 ## Scanner
 
-ZH LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+空白 timing core。Aegir 几何决定升空会变成 recovery、capture，还是沉默。
 
 ## Terminal
 
-ZH LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: 将胶囊时钟对齐 Aegir window、Black Keel receiver lane、月面 relay shutter 和 storm-plume drift。迟到 packets 变成证据丢失；过早 packets 变成 capture noise。
 
 ## Audio
 
-ZH LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+向上不是方向，而是有见证人的窗口。
 
 ## Field Note
 
-ZH LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+从 HECTON-8 出发没有简单的“向上”。只有接收器、阴影、风暴漂移，以及早已比你的恐慌更老的 packet queue。
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/zh_CN. -->

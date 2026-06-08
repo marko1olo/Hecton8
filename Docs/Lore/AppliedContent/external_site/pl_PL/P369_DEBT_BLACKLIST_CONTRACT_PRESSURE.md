@@ -9,32 +9,36 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Presja długu, czarnej listy i kontraktu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Debt Blacklist Contract Pressure
+# Presja długu, czarnej listy i kontraktu
 
-PL LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+HECTON-8 opisuje protagonistę przez ekonomię pogranicza, nie przeznaczenie. Dług, czarne listy, piecza puli roszczeń, kredyt tlenowy, dostęp do koi i stare poświadczenia Deep Reach sprawiają, że kontrakt salvage jest przymusowy, ale nie czyni gracza bezradnym.
 
 ## Scanner
 
-PL LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Zawiadomienie o zastawie powiązane z pieczą Black Keel. Odmowa pozostaje legalna, ale uziemia: bez koi, bez czystego kredytu tlenowego, bez okna trasy z Aegir.
 
 ## Terminal
 
-PL LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+AKCEPTACJA ROSZCZENIA / OKNO ZDJĘCIA Z CZARNEJ LISTY
+status wykonawcy: Marauder związany długiem
+przewoźnik: piecza puli roszczeń Black Keel
+warunki ulgi: masa odzyskiwalna, dowód pieczy, zgodność odbiorcy
+stan porażki: czarna lista aktywna; dostęp do koi odmówiony; wsparcie tlenowe zmienione w usługę rozliczaną.
 
 ## Audio
 
-PL LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+To nie było porwanie. To był wybór, który pogranicze sprzedaje jako wolność: podpisz, nurkuj, albo pozostań czysty na papierze i uwięziony w praktyce.
 
 ## Field Note
 
-PL LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+Zastaw nie wycelował broni. Wskazał rachunek za powietrze, listę koi i następne okno trasy.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/pl_PL. -->

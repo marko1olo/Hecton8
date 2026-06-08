@@ -18,19 +18,19 @@ namespace Hecton8.Optimization
         private const string PooledRenderTextureName = "Pooled_RT";
 
         // ── REGISTRY CACHE ─────────────────────────────────────────────────────────
-        
-        
+
+
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
-        
+
         // COLD ALLOC: Dictionary<ulong, Queue<RenderTexture>>[16] — R8 pool — owner: RenderTexturePool
         private readonly Dictionary<ulong, Queue<RenderTexture>> _poolR8 = new Dictionary<ulong, Queue<RenderTexture>>(16);
-        
+
         // COLD ALLOC: Dictionary<ulong, Queue<RenderTexture>>[16] — RG16 pool — owner: RenderTexturePool
         private readonly Dictionary<ulong, Queue<RenderTexture>> _poolRG16 = new Dictionary<ulong, Queue<RenderTexture>>(16);
-        
+
         // COLD ALLOC: Dictionary<ulong, Queue<RenderTexture>>[16] — ARGB64 pool — owner: RenderTexturePool
         private readonly Dictionary<ulong, Queue<RenderTexture>> _poolRGBA16 = new Dictionary<ulong, Queue<RenderTexture>>(16);
-        
+
         // COLD ALLOC: Dictionary<ulong, Queue<RenderTexture>>[16] — RGBA32 pool — owner: RenderTexturePool
         private readonly Dictionary<ulong, Queue<RenderTexture>> _poolRGBA32 = new Dictionary<ulong, Queue<RenderTexture>>(16);
 
@@ -46,7 +46,7 @@ namespace Hecton8.Optimization
         private readonly Queue<RenderTexture> _screenARGB32Queue = new Queue<RenderTexture>(16);
         // COLD ALLOC: Queue<RenderTexture>[16] - prewarmed screen-size Default RT bucket - owner: RenderTexturePool
         private readonly Queue<RenderTexture> _screenDefaultQueue = new Queue<RenderTexture>(16);
-        
+
         private int _totalRentCalls;
         private int _totalReuseCount;
         private int _lastScreenWidth;
@@ -58,18 +58,18 @@ namespace Hecton8.Optimization
         private IVramBudgetReadModel _vramMonitor;
         private IVramPressureReadModel _vramPressure;
         private bool _vramPressureTrimActive;
-        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextStatsLogTime;
 #endif
-        
+
         // ── PUBLIC PROPERTIES ──────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// Returns pool hit rate (reuse count / total Rent calls).
         /// </summary>
         public float PoolHitRate => _totalRentCalls > 0 ? _totalReuseCount / (float)_totalRentCalls : 0f;
-        
+
         /// <summary>
         /// Returns total number of pooled RenderTextures across all formats.
         /// </summary>
@@ -83,23 +83,23 @@ namespace Hecton8.Optimization
                        CountPool(_poolRGBA32);
             }
         }
-        
+
         // ── LIFECYCLE ──────────────────────────────────────────────────────────────
-        
+
         private void OnEnable()
         {
+            if (!TryRegisterService())
+                return;
+
             CaptureScreenSetup();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             PrewarmCurrentScreenQueues();
-            if (TryRegisterService())
-            {
-                TryRegisterSlowTickable();
-                SceneManager.sceneUnloaded -= HandleSceneUnloaded;
-                SceneManager.sceneUnloaded += HandleSceneUnloaded;
-            }
+            TryRegisterSlowTickable();
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            SceneManager.sceneUnloaded += HandleSceneUnloaded;
         }
-        
+
         private void OnDisable()
         {
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
@@ -107,7 +107,7 @@ namespace Hecton8.Optimization
             TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
-        
+
         private void OnDestroy()
         {
             TryUnregisterSlowTickable();
@@ -121,9 +121,9 @@ namespace Hecton8.Optimization
             DefragForCurrentScreenIfNeeded();
             TrimForVramPressureIfNeeded();
         }
-        
+
         // ── PUBLIC API ─────────────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// Rents a RenderTexture from the pool or allocates a new one.
         /// </summary>
@@ -147,9 +147,9 @@ namespace Hecton8.Optimization
             int safeDepthBits = Mathf.Clamp(depthBits, 0, 255);
             ulong key = CalculateRTKey(safeWidth, safeHeight, format, safeDepthBits);
             Dictionary<ulong, Queue<RenderTexture>> pool = GetPoolForFormat(format);
-            
+
             _totalRentCalls++;
-            
+
             if (pool.TryGetValue(key, out Queue<RenderTexture> queue))
             {
                 while (queue.Count > 0)
@@ -176,24 +176,24 @@ namespace Hecton8.Optimization
                     Destroy(rt);
                 }
             }
-            
+
             // Pool miss - allocate new RT
             RenderTexture newRT = new RenderTexture(safeWidth, safeHeight, safeDepthBits, format);
             newRT.name = PooledRenderTextureName;
-            
+
             IRenderTextureLifecycleService lifecycle = _lifecycleTracker;
             if (lifecycle != null)
             {
                 lifecycle.RegisterAllocation(newRT, owner);
             }
-            
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             LogPoolStats();
 #endif
-            
+
             return newRT;
         }
-        
+
         /// <summary>
         /// Returns a RenderTexture to the pool for reuse.
         /// </summary>
@@ -210,7 +210,7 @@ namespace Hecton8.Optimization
 
             ulong key = CalculateRTKey(rt.width, rt.height, rt.format, rt.depth);
             Dictionary<ulong, Queue<RenderTexture>> pool = GetPoolForFormat(rt.format);
-            
+
             if (!pool.TryGetValue(key, out Queue<RenderTexture> queue))
             {
                 IRenderTextureLifecycleService lifecycle = _lifecycleTracker;
@@ -221,7 +221,7 @@ namespace Hecton8.Optimization
                 Destroy(rt);
                 return;
             }
-            
+
             if (queue.Count >= 16)
             {
                 // Pool full - release immediately
@@ -233,11 +233,11 @@ namespace Hecton8.Optimization
                 Destroy(rt);
                 return;
             }
-            
+
             // Add to pool
             queue.Enqueue(rt);
         }
-        
+
         /// <summary>
         /// Clears all pools and releases RenderTextures.
         /// Called automatically on SceneManager.sceneUnloaded.
@@ -265,9 +265,9 @@ namespace Hecton8.Optimization
         {
             ClearAllPools();
         }
-        
+
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
-        
+
         private static ulong CalculateRTKey(int width, int height, RenderTextureFormat format)
         {
             return CalculateRTKey(width, height, format, 0);
@@ -281,7 +281,7 @@ namespace Hecton8.Optimization
             uint safeDepth = (uint)Mathf.Clamp(depthBits, 0, 0xFF);
             return ((ulong)safeWidth << 44) | ((ulong)safeHeight << 24) | ((ulong)safeFormat << 8) | safeDepth;
         }
-        
+
         private Dictionary<ulong, Queue<RenderTexture>> GetPoolForFormat(RenderTextureFormat format)
         {
             return format switch
@@ -343,16 +343,38 @@ namespace Hecton8.Optimization
             if (!Application.isPlaying)
                 return false;
 
-            RenderTexturePool registered = GlobalRegistry.RenderTexturePool;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterRenderTexturePoolRuntime(this);
             _registeredService = ReferenceEquals(GlobalRegistry.RenderTexturePool, this);
             return _registeredService;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            RenderTexturePool registered = GlobalRegistry.RenderTexturePool;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsRenderTexturePoolRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterRenderTexturePoolRuntime(registered);
+            return false;
+        }
+
+        private static bool IsRenderTexturePoolRuntimeUsable(RenderTexturePool pool)
+        {
+            return pool != null &&
+                   pool._registeredService &&
+                   pool.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()
@@ -435,7 +457,7 @@ namespace Hecton8.Optimization
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registeredSlowTick = false;
         }
-        
+
         private void ClearPool(Dictionary<ulong, Queue<RenderTexture>> pool)
         {
             Dictionary<ulong, Queue<RenderTexture>>.Enumerator enumerator = pool.GetEnumerator();
@@ -505,7 +527,7 @@ namespace Hecton8.Optimization
         {
             ClearAllPools();
         }
-        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void LogPoolStats()
         {

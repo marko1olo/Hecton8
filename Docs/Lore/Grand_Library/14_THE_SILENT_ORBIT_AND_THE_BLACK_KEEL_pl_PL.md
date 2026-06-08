@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # CICHA ORBITA I BLACK KEEL
 
 > **Źródło:** Megakorporacja Deep Reach, Rejestr Aktywów Orbitalnych.

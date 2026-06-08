@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # XÉNON-OMÉGA : RAFFINAGE ET PROPRIÉTÉS
 
 > **Source :** Mégacorporation Deep Reach, Manifeste Chimique Classifié.

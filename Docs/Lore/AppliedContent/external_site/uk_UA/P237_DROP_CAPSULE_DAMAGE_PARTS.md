@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Drop Capsule Damage Parts"
+title: "Пошкоджені вузли посадкової капсули"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Drop Capsule Damage Parts
+# Пошкоджені вузли посадкової капсули
 
-UA LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+Пошкоджені вузли посадкової капсули прибирають з HECTON-8 зручну логіку порятунку. Marauder застряг, бо відмовили конкретні системи: ascent sleeve, guidance gimbal, relay mast, compressor і heat tiles. Кожна відмова веде до маршруту, матеріалу, апгрейду інструмента або доказового об'єкта.
 
 ## Scanner
 
-UA LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve повело, guidance gimbal подряпано, relay mast зрізано, compressor забито, heat tile тріснула.
 
 ## Terminal
 
-UA LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-UA LOC HOLD: It landed well enough to strand you properly.
+Вона сіла достатньо добре, щоб правильно тебе замкнути.
 
 ## Field Note
 
-UA LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+Капсула може втримати Marauder живим першу годину. Вона не підніметься без глибинних замін.
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/uk_UA. -->

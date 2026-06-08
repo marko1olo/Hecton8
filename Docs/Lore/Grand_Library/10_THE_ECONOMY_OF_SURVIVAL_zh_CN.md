@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 生存经济学与基尔马克债务
 
 > **来源：** Keelmark 独立承包商协议，附件 14-B（财务义务）。

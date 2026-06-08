@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "NL LOC HOLD: Kolonie en arbeiders"
+title: "Kolonie en Werkers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Kolonie en arbeiders
+# Kolonie en Werkers
 
-NL LOC HOLD: Deep Reach archiveerde storm, instorting, mislukte autonome evacuatie, Atlas-reddingspoging en verloren data; HECTON-8s werkrecords houden namen vast aan pompen, relay, brine-routes, triage en vent-forge.
-
-## Scanner
-
-NL LOC HOLD: WORKER INDEX // Vijf routegebonden naamrecords. pump, relay, brine, triage, forge. Tag chain bewaren voor hardware wordt gestript.
-
-## Terminal
-
-NL LOC HOLD: KEELMARK LOSS DESK: name tags bewaren wanneer gekoppeld aan route, claim, custody of pressure work.
-
-## Audio
-
-NL LOC HOLD: Mara Venn, pump chief: als de pump zuiver zingt, log het. Als hij stopt, ren omhoog.
-
-## Field Note
-
-NL LOC HOLD: Geen familie. Werk. Een naam op een pump card verklaart waarom een deur open bleef.
+Het cluster kolonie en werkers voorkomt dat HECTON-8 een kaart van lege kamers wordt. De officiële Deep Reach-versie drukt mensen in verliescategorieën, maar overlevende records bewaren hen via werk: pump chief in pressure board, relay operator in witness trays, brine crew in zoutroutes en ration ledgers, triage technician in repair tags, forge shift in rejects die niemand kon verbergen. Dit zijn geen familiehaken voor de protagonist. Het zijn arbeidsbewijzen. De Marauder leest waarom een deur open bleef, waarom een pomp te laat herstartte en waarom een kleine name tag zwaarder kan wegen dan een nette loss summary.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/nl_NL. -->

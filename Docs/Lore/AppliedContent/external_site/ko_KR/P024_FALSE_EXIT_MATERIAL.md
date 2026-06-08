@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 물질 탈출
 
-전리품, 계약, 생존을 택하는 플레이어에게 수익성 있지만 타협된 엔딩을 제공한다.
+Material Exit는 이익이 있지만 타협된 철수를 지탱한다. 전리품, 계약, 생존은 상승을 얻을 수 있지만 완전한 하강의 진실은 아래에 남는다.
 
 ## Scanner
 

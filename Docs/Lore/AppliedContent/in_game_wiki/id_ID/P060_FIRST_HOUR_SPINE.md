@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "Tulang Punggung Jam Pertama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# Tulang Punggung Jam Pertama
 
-ID LOC HOLD: First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.
+Jam pertama tidak boleh dimulai dalam gelap. Ia dimulai dengan suara kontrak, penurunan rusak, pengelolaan napas, air dangkal yang terang, dan kebutuhan praktis untuk menyalakan ulang pompa. Keindahan adalah bagian dari perangkap: HECTON-8 harus terlihat layak diinginkan sebelum dokumennya menjadi mematikan. Lalu tulang punggung pembukaan mengubah bertahan hidup menjadi bukti. Ruang aman pertama berguna tetapi tercemar; paket insiden yang dibersihkan terdengar terlalu rapi; bekas perbaikan Atlas pertama menunjukkan kabel, logam alat, dan residu hidup ditekan menjadi satu keputusan pemeliharaan. Pemain mempelajari loop dasar lewat tindakan, bukan paparan: bernapas, memperbaiki, membaca, meragukan, turun lebih dalam.
 
 ## Scanner
 
-ID LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Kontrak, penurunan rusak, udara, perairan dangkal terang, tempat aman pompa, kebohongan yang dibersihkan, lalu bekas perbaikan pertama yang memakai hidup sebagai gasket.
 
 ## Terminal
 
-ID LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+ANEKS DANGKAL: restart pompa manual valid. Paket insiden Deep Reach tersimpan. Pertumbuhan perbaikan Atlas terdeteksi di sekitar kabel, fragmen alat, dan residu biologis.
 
 ## Audio
 
-ID LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+Ruang aman pertama tidak bersih. Ia hanya menahan napas lebih baik daripada kau.
 
 ## Field Note
 
-ID LOC HOLD: The opening must be beautiful before it becomes accusing.
+Pembukaan harus indah sebelum berubah menjadi tuduhan.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/id_ID. -->

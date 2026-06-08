@@ -1,8 +1,8 @@
 import json
 import sys
-import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 TOOLS_ROOT = Path(__file__).resolve().parent
@@ -17,6 +17,28 @@ import DataVaultSovereigntyAudit as audit  # noqa: E402
 
 
 class DataVaultSovereigntyAuditTests(unittest.TestCase):
+    def test_source_reader_skips_files_deleted_between_glob_and_read(self) -> None:
+        with temporary_directory(prefix="h8_vault_deleted_during_scan_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            source.mkdir(parents=True)
+            stable = source / "Stable.cs"
+            vanished = source / "Vanished.cs"
+            stable.write_text("public sealed class Stable {}\n", encoding="utf-8")
+            vanished.write_text("public sealed class Vanished {}\n", encoding="utf-8")
+
+            original_read_text = Path.read_text
+
+            def flaky_read_text(path: Path, *args: object, **kwargs: object) -> str:
+                if path.name == "Vanished.cs":
+                    raise FileNotFoundError(path)
+                return original_read_text(path, *args, **kwargs)
+
+            with patch.object(Path, "read_text", flaky_read_text):
+                files = audit.read_csharp_source_files(source)
+
+            self.assertEqual([file.relative_scan_path.as_posix() for file in files], ["Stable.cs"])
+
     def test_scan_separates_h8memory_allowed_constructors_from_system_debt(self) -> None:
         with temporary_directory(prefix="h8_vault_audit_") as temp_dir:
             root = Path(temp_dir)
@@ -46,7 +68,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["forbiddenFileCount"], 1)
 
     def test_constructor_scan_ignores_managed_arrays_of_native_handles(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_managed_native_handle_array_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_managed_native_handle_array_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             runtime = source / "World" / "ChunkStore.cs"
@@ -461,7 +483,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 0)
 
     def test_runtime_sentinel_tracked_constructor_wrapper_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_sentinel_wrapper_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_sentinel_wrapper_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             save_manager = source / "SaveManager.cs"
@@ -510,7 +532,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_unregistered_native_list_constructor_is_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_native_list_debt_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_native_list_debt_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "SaveBinaryStorage.cs"
@@ -536,7 +558,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeForbiddenDirectConstructors"], 1)
 
     def test_runtime_sentinel_tracked_native_list_constructor_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_native_list_sentinel_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_native_list_sentinel_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "SaveBinaryStorage.cs"
@@ -563,7 +585,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_bulk_sentinel_tracked_native_list_constructor_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_native_list_bulk_sentinel_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_native_list_bulk_sentinel_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "EncounterDirector.cs"
@@ -600,8 +622,47 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["forbiddenDirectConstructors"], 0)
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
+    def test_runtime_register_bytes_sidecar_helper_is_not_raw_ownership_debt(self) -> None:
+        with temporary_directory(prefix="h8_vault_runtime_register_bytes_sidecar_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            storage = source / "Core" / "Memory" / "GlobalDataVault.cs"
+            storage.parent.mkdir(parents=True)
+            storage.write_text(
+                "using Unity.Collections;\n"
+                "using Unity.Collections.LowLevel.Unsafe;\n"
+                "public sealed class GlobalDataVault\n"
+                "{\n"
+                "    private const string NativeMemoryOwner = nameof(GlobalDataVault);\n"
+                "    private NativeList<int> _keys;\n"
+                "    private int _keysSentinelId;\n"
+                "    public void Initialize(int capacity)\n"
+                "    {\n"
+                "        _keys = new NativeList<int>(capacity, Allocator.Persistent);\n"
+                "        RegisterNativeSidecarStorage();\n"
+                "    }\n"
+                "    private void RegisterNativeSidecarStorage()\n"
+                "    {\n"
+                "        _keysSentinelId = RegisterNativeListSidecar(_keys, nameof(_keys));\n"
+                "    }\n"
+                "    private static int RegisterNativeListSidecar<T>(NativeList<T> list, string label) where T : unmanaged\n"
+                "    {\n"
+                "        return NativeMemoryTrackingBridge.RegisterBytes((long)UnsafeUtility.SizeOf<T>() * list.Capacity, NativeMemoryOwner, label, NativeMemoryBridgeLifetime.Session);\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            findings = audit.scan_source_tree(source, root)
+            payload = audit.build_audit_payload(findings, source, root)
+
+            self.assertEqual(payload["findings"][0]["allocatorKinds"], ["SentinelTracked"])
+            self.assertEqual(payload["forbiddenDirectConstructors"], 0)
+            self.assertEqual(payload["runtimeForbiddenDirectConstructors"], 0)
+            self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
+
     def test_editor_qualified_native_list_assignment_direct_register_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_editor_qualified_native_list_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_editor_qualified_native_list_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "Editor" / "GeographySanity" / "GeographySanityProfileCsv.cs"
@@ -630,7 +691,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["sentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_local_native_list_helper_named_like_sentinel_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_native_list_same_name_helper_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_native_list_same_name_helper_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "QuestStateManager.cs"
@@ -662,7 +723,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_zero_arg_preview_workspace_registration_tracks_each_field(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_preview_workspace_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_preview_workspace_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "Editor" / "LSystemGenomeLabWindow.cs"
@@ -695,7 +756,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["sentinelTrackedDirectConstructors"], 2)
 
     def test_runtime_sentinel_tracked_native_parallel_hash_map_constructor_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_parallel_hash_map_sentinel_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_parallel_hash_map_sentinel_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "SaveBinaryStorage.cs"
@@ -722,7 +783,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_hash_map_helper_registration_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_hash_map_helper_sentinel_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_hash_map_helper_sentinel_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "ModCommandDispatcher.cs"
@@ -753,7 +814,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_reflective_native_array_bridge_helper_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_reflective_bridge_helper_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_reflective_bridge_helper_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "Gameplay" / "ReflectiveNativeBridge.cs"
@@ -791,7 +852,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_reflective_native_memory_sentinel_helper_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_reflective_sentinel_helper_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_reflective_sentinel_helper_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "Gameplay" / "ReflectiveNativeBlackBox.cs"
@@ -828,7 +889,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_bridge_tracked_native_array_constructor_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_bridge_native_array_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_bridge_native_array_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "Core" / "Contracts" / "CoreLowLevelUtilities.cs"
@@ -860,7 +921,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_bridge_tracked_native_array_helper_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_bridge_native_array_helper_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_bridge_native_array_helper_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "Core" / "Contracts" / "CoreLowLevelUtilities.cs"
@@ -896,7 +957,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_multiline_sentinel_tracked_constructor_wrapper_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_multiline_sentinel_wrapper_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_multiline_sentinel_wrapper_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "SaveBinaryStorage.cs"
@@ -924,7 +985,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_bulk_sentinel_registered_field_assignment_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_bulk_sentinel_wrapper_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_bulk_sentinel_wrapper_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "SaveBinaryStorage.cs"
@@ -963,7 +1024,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 1)
 
     def test_runtime_bulk_sentinel_registration_does_not_cover_unregistered_field_assignment(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_bulk_sentinel_negative_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_bulk_sentinel_negative_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "SaveBinaryStorage.cs"
@@ -1003,7 +1064,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeForbiddenDirectConstructors"], 1)
 
     def test_runtime_nested_sidecar_sentinel_registration_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_nested_sidecar_sentinel_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_nested_sidecar_sentinel_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "Core" / "Memory" / "GlobalDataVault.cs"
@@ -1053,7 +1114,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 5)
 
     def test_runtime_no_arg_register_native_arrays_bridge_wrapper_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_register_native_arrays_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_register_native_arrays_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "Graphics" / "Culling" / "TBDRPipelineSurgeonTypes.cs"
@@ -1092,7 +1153,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeSentinelTrackedDirectConstructors"], 4)
 
     def test_runtime_register_temp_job_buffers_helper_tracks_each_argument(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_tempjob_buffers_helper_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_tempjob_buffers_helper_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "Plugins" / "MapMagic" / "HectonBiomeMatrixMapMagicPostProcessNode.cs"
@@ -1131,7 +1192,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["sentinelTrackedDirectConstructors"], 2)
 
     def test_runtime_unregistered_constructor_remains_raw_ownership_debt_with_sentinel_elsewhere(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_runtime_unregistered_sentinel_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_runtime_unregistered_sentinel_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             bad_owner = source / "Gameplay" / "BadNativeOwner.cs"
@@ -1195,7 +1256,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["declarationFileCount"], 1)
 
     def test_registered_transient_nativearray_owner_struct_is_not_declaration_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_registered_owner_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_registered_owner_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "SaveBinaryStorage.cs"
@@ -1238,7 +1299,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(classifications["UnregisteredScratch"], "unknownStructField")
 
     def test_ref_struct_native_collection_carrier_is_native_view_declaration(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_ref_struct_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_ref_struct_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             storage = source / "Inventory" / "InventoryDefragJob.cs"
@@ -1342,7 +1403,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(classifications["nativeViewStruct"], 1)
 
     def test_classifies_generic_and_animation_jobs_as_job_input_declarations(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_generic_job_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_generic_job_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             gameplay = source / "Gameplay" / "ContextualPhysicalIkRig.cs"
@@ -1378,7 +1439,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
 
     def test_named_pending_and_scratch_structs_are_native_view_declarations(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_named_view_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_named_view_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             gameplay = source / "World" / "GroundPenetratingRadarRuntime.cs"
@@ -1425,7 +1486,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(classifications["ReadbackDataOwner"], "unknownStructField")
 
     def test_data_struct_native_collection_aliases_are_native_view_declarations(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_data_view_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_data_view_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             gameplay = source / "World" / "GlobalWorldSampler.cs"
@@ -1461,7 +1522,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(classifications["ReadbackDataOwner"], "unknownStructField")
 
     def test_h8memory_tracked_owner_field_declaration_is_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_h8memory_tracked_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_h8memory_tracked_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             gameplay = source / "InventoryGrid.cs"
@@ -1505,8 +1566,164 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(classifications["InventoryGrid._cellAnchorIndices"], "h8MemoryTrackedOwnerField")
             self.assertEqual(classifications["InventoryGrid._missingRelease"], "persistentOwnerField")
 
+    def test_h8memory_spaced_member_access_owner_field_declaration_is_not_raw_debt(self) -> None:
+        with temporary_directory(prefix="h8_vault_h8memory_spaced_member_access_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            gameplay = source / "NavigationScratch.cs"
+            gameplay.parent.mkdir(parents=True)
+            gameplay.write_text(
+                "using Hecton8.Core;\n"
+                "using Hecton8.Core.Memory;\n"
+                "using Unity.Collections;\n"
+                "public sealed class NavigationScratch\n"
+                "{\n"
+                "    private NativeArray<int> _openSet;\n"
+                "    public void Initialize(int count)\n"
+                "    {\n"
+                "        _openSet =\n"
+                "            H8Memory\n"
+                "                . Allocate<int>(count, SystemID.Navigation, Allocator.Persistent);\n"
+                "    }\n"
+                "    public void Dispose()\n"
+                "    {\n"
+                "        H8Memory\n"
+                "            . Release(ref _openSet, SystemID.Navigation);\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["h8MemoryTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "h8MemoryTrackedOwnerField")
+
+    def test_h8memory_tracked_partial_owner_field_lifetime_can_live_in_sibling_file(self) -> None:
+        with temporary_directory(prefix="h8_vault_h8memory_partial_owner_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            world = source / "World"
+            declaration = world / "Bridge.cs"
+            lifetime = world / "Bridge.Memory.cs"
+            world.mkdir(parents=True)
+            declaration.write_text(
+                "using Unity.Collections;\n"
+                "public sealed partial class Bridge\n"
+                "{\n"
+                "    private NativeArray<int> _tracked;\n"
+                "    private NativeArray<int> _missingRelease;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            lifetime.write_text(
+                "using Hecton8.Core;\n"
+                "using Hecton8.Core.Memory;\n"
+                "using Unity.Collections;\n"
+                "public sealed partial class Bridge\n"
+                "{\n"
+                "    public void Initialize(int count)\n"
+                "    {\n"
+                "        _tracked = H8Memory.Allocate<int>(count, SystemID.WorldStreaming, Allocator.Persistent);\n"
+                "        _missingRelease = H8Memory.Allocate<int>(count, SystemID.WorldStreaming, Allocator.Persistent);\n"
+                "    }\n"
+                "    public void Dispose()\n"
+                "    {\n"
+                "        H8Memory.Release(ref _tracked, SystemID.WorldStreaming);\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            classifications = {
+                finding["ownerType"] + "." + finding["names"][0]: finding["classification"]
+                for finding in payload["declarationFindings"]
+            }
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["h8MemoryTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(classifications["Bridge._tracked"], "h8MemoryTrackedOwnerField")
+            self.assertEqual(classifications["Bridge._missingRelease"], "persistentOwnerField")
+
+    def test_h8memory_lifetime_source_does_not_cross_bless_non_partial_same_name(self) -> None:
+        with temporary_directory(prefix="h8_vault_h8memory_non_partial_same_name_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            world_a = source / "WorldA"
+            world_b = source / "WorldB"
+            declaration = world_a / "SharedRuntime.cs"
+            unrelated_lifetime = world_b / "SharedRuntime.cs"
+            world_a.mkdir(parents=True)
+            world_b.mkdir(parents=True)
+            declaration.write_text(
+                "using Unity.Collections;\n"
+                "namespace WorldA\n"
+                "{\n"
+                "    public sealed class SharedRuntime\n"
+                "    {\n"
+                "        private NativeArray<int> _tracked;\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            unrelated_lifetime.write_text(
+                "using Hecton8.Core;\n"
+                "using Hecton8.Core.Memory;\n"
+                "using Unity.Collections;\n"
+                "namespace WorldB\n"
+                "{\n"
+                "    public sealed class SharedRuntime\n"
+                "    {\n"
+                "        private NativeArray<int> _other;\n"
+                "        public void Initialize(int count)\n"
+                "        {\n"
+                "            _tracked = H8Memory.Allocate<int>(count, SystemID.WorldStreaming, Allocator.Persistent);\n"
+                "        }\n"
+                "        public void Dispose()\n"
+                "        {\n"
+                "            H8Memory.Release(ref _tracked, SystemID.WorldStreaming);\n"
+                "        }\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            classifications = {
+                finding["ownerType"] + "." + finding["names"][0]: finding["classification"]
+                for finding in payload["declarationFindings"]
+            }
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 2)
+            self.assertEqual(payload["h8MemoryTrackedNativeCollectionDeclarations"], 0)
+            self.assertEqual(classifications["SharedRuntime._tracked"], "persistentOwnerField")
+            self.assertEqual(classifications["SharedRuntime._other"], "persistentOwnerField")
+
     def test_h8memory_helper_released_owner_field_declaration_is_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_h8memory_helper_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_h8memory_helper_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             gameplay = source / "EncounterDirector.cs"
@@ -1554,7 +1771,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["declarationFindings"][0]["classification"], "h8MemoryTrackedOwnerField")
 
     def test_h8memory_static_owner_fields_with_ref_dispose_helper_are_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_h8memory_static_helper_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_h8memory_static_helper_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             core = source / "Core" / "UIStateStore.cs"
@@ -1602,7 +1819,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["declarationFindings"][0]["classification"], "h8MemoryTrackedOwnerField")
 
     def test_h8memory_tracked_struct_owner_field_is_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_h8memory_struct_owner_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_h8memory_struct_owner_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             core = source / "Core" / "BurstCallback.cs"
@@ -1639,7 +1856,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["declarationFindings"][0]["classification"], "h8MemoryTrackedOwnerField")
 
     def test_h8memory_constructor_alias_owner_fields_are_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_h8memory_constructor_alias_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_h8memory_constructor_alias_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             editor = source / "Core" / "Memory" / "Editor" / "OOP_MemorySentryConcurrentRelocationFuzzer.cs"
@@ -1655,7 +1872,8 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
                 "        public readonly NativeArray<int> JobFailures;\n"
                 "        public FuzzerState(NativeArray<int> jobFailures)\n"
                 "        {\n"
-                "            JobFailures = jobFailures;\n"
+                "            JobFailures\n"
+                "                = jobFailures;\n"
                 "        }\n"
                 "    }\n"
                 "    public static void Run()\n"
@@ -1666,7 +1884,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
                 "    }\n"
                 "    private static void DeferredCleanupAfterTimeout(FuzzerState state)\n"
                 "    {\n"
-                "        NativeArray<int> jobFailures = state.JobFailures;\n"
+                "        NativeArray<int> jobFailures = state . JobFailures;\n"
                 "        H8Memory.Release(ref jobFailures, Owner);\n"
                 "    }\n"
                 "}\n",
@@ -1687,7 +1905,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["declarationFindings"][0]["classification"], "h8MemoryTrackedOwnerField")
 
     def test_h8memory_helper_allocated_and_released_owner_field_declaration_is_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_h8memory_helper_alloc_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_h8memory_helper_alloc_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             gameplay = source / "AI" / "Ecosystem" / "ShinobuEcosystemBalancer.cs"
@@ -1735,7 +1953,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["declarationFindings"][0]["classification"], "h8MemoryTrackedOwnerField")
 
     def test_h8memory_factory_allocated_qualified_owner_fields_are_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_h8memory_factory_qualified_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_h8memory_factory_qualified_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             core = source / "Core" / "ReplayRecorder.cs"
@@ -1798,7 +2016,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(classifications["NativeBufferSet.Leaked"], "persistentOwnerField")
 
     def test_sentinel_tracked_hash_map_owner_fields_are_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_sentinel_hash_map_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_sentinel_hash_map_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             modding = source / "ModdingAPI" / "ModCommandDispatcher.cs"
@@ -1818,12 +2036,12 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
                 "    }\n"
                 "    public static void Shutdown()\n"
                 "    {\n"
-                "        NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModCommandDispatcher), nameof(_modIndexByHash));\n"
-                "        NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModCommandDispatcher), nameof(_kernelIndexByCommandKey));\n"
+                "        NativeMemorySentinel . UnregisterNativeHashMap(nameof(ModCommandDispatcher), nameof(_modIndexByHash));\n"
+                "        NativeMemorySentinel . UnregisterNativeHashMap(nameof(ModCommandDispatcher), nameof(_kernelIndexByCommandKey));\n"
                 "    }\n"
                 "    private static void RegisterHashMap<TValue>(ref NativeHashMap<uint, TValue> map, string label) where TValue : unmanaged\n"
                 "    {\n"
-                "        NativeMemorySentinel.RegisterNativeHashMap(map, nameof(ModCommandDispatcher), label, NativeAllocationLifetime.Session);\n"
+                "        NativeMemorySentinel . RegisterNativeHashMap(map, nameof(ModCommandDispatcher), label, NativeAllocationLifetime.Session);\n"
                 "    }\n"
                 "}\n",
                 encoding="utf-8",
@@ -1842,8 +2060,462 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 2)
             self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
 
+    def test_sentinel_hash_map_instance_id_field_is_not_raw_debt(self) -> None:
+        with temporary_directory(prefix="h8_vault_sentinel_hash_map_instance_declaration_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            modding = source / "ModdingAPI" / "ModResourceRegistry.cs"
+            modding.parent.mkdir(parents=True)
+            modding.write_text(
+                "using Unity.Collections;\n"
+                "public static class ModResourceRegistry\n"
+                "{\n"
+                "    private static NativeHashMap<uint, int> _resourceIndexByHash;\n"
+                "    private static int _resourceIndexByHashSentinelId;\n"
+                "    public static void Initialize()\n"
+                "    {\n"
+                "        _resourceIndexByHash = new NativeHashMap<uint, int>(32, Allocator.Persistent);\n"
+                "        _resourceIndexByHashSentinelId = NativeMemorySentinel.RegisterNativeHashMapInstance(\n"
+                "            _resourceIndexByHash,\n"
+                "            nameof(ModResourceRegistry),\n"
+                "            nameof(_resourceIndexByHash),\n"
+                "            NativeAllocationLifetime.Session);\n"
+                "    }\n"
+                "    public static void Shutdown()\n"
+                "    {\n"
+                "        if (_resourceIndexByHash.IsCreated)\n"
+                "            _resourceIndexByHash.Dispose();\n"
+                "        NativeMemorySentinel.Unregister(_resourceIndexByHashSentinelId);\n"
+                "        _resourceIndexByHashSentinelId = 0;\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            constructor_findings, declaration_findings = audit.scan_source_tree_with_declarations(source, root)
+            payload = audit.build_audit_payload(
+                constructor_findings,
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedDirectConstructors"], 1)
+            self.assertEqual(payload["forbiddenDirectConstructors"], 0)
+            self.assertEqual(payload["sentinelTrackedDirectConstructors"], 1)
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
+
+    def test_sentinel_hash_map_helper_out_id_field_is_not_raw_debt(self) -> None:
+        with temporary_directory(prefix="h8_vault_sentinel_hash_map_helper_id_declaration_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            modding = source / "ModdingAPI" / "ModCommandDispatcher.cs"
+            modding.parent.mkdir(parents=True)
+            modding.write_text(
+                "using Unity.Collections;\n"
+                "public static class ModCommandDispatcher\n"
+                "{\n"
+                "    private static NativeHashMap<uint, int> _modIndexByHash;\n"
+                "    private static int _modIndexSentinelHandle;\n"
+                "    public static void Initialize()\n"
+                "    {\n"
+                "        _modIndexByHash = new NativeHashMap<uint, int>(32, Allocator.Persistent);\n"
+                "        RegisterHashMap(ref _modIndexByHash, nameof(_modIndexByHash), out _modIndexSentinelHandle);\n"
+                "    }\n"
+                "    public static void Shutdown()\n"
+                "    {\n"
+                "        DisposeHashMap(ref _modIndexByHash, ref _modIndexSentinelHandle);\n"
+                "    }\n"
+                "    private static void RegisterHashMap<TValue>(ref NativeHashMap<uint, TValue> map, string label, out int sentinelId) where TValue : unmanaged\n"
+                "    {\n"
+                "        sentinelId = NativeMemorySentinel.RegisterNativeHashMapInstance(\n"
+                "            map,\n"
+                "            nameof(ModCommandDispatcher),\n"
+                "            label,\n"
+                "            NativeAllocationLifetime.Session);\n"
+                "    }\n"
+                "    private static void DisposeHashMap<TValue>(ref NativeHashMap<uint, TValue> map, ref int sentinelId) where TValue : unmanaged\n"
+                "    {\n"
+                "        if (map.IsCreated)\n"
+                "            map.Dispose();\n"
+                "        NativeMemorySentinel.Unregister(sentinelId);\n"
+                "        sentinelId = 0;\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            constructor_findings, declaration_findings = audit.scan_source_tree_with_declarations(source, root)
+            payload = audit.build_audit_payload(
+                constructor_findings,
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedDirectConstructors"], 1)
+            self.assertEqual(payload["forbiddenDirectConstructors"], 0)
+            self.assertEqual(payload["sentinelTrackedDirectConstructors"], 1)
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
+
+    def test_sentinel_dispose_helper_unregisters_local_alias(self) -> None:
+        with temporary_directory(prefix="h8_vault_sentinel_dispose_alias_declaration_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            save = source / "SaveManager.cs"
+            save.parent.mkdir(parents=True)
+            save.write_text(
+                "using System;\n"
+                "using Unity.Collections;\n"
+                "public sealed class SaveManager\n"
+                "{\n"
+                "    private const string NativeMemoryOwner = nameof(SaveManager);\n"
+                "    private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;\n"
+                "    private NativeArray<byte> SavePayloadBuffer;\n"
+                "    public void EnsureSavePayloadBuffer()\n"
+                "    {\n"
+                "        SavePayloadBuffer = CreatePersistentNativeArray<byte>(64, NativeArrayOptions.ClearMemory, nameof(SavePayloadBuffer));\n"
+                "    }\n"
+                "    public void Dispose()\n"
+                "    {\n"
+                "        Exception firstException = null;\n"
+                "        DisposeNativeArrayBestEffort(ref SavePayloadBuffer, ref firstException, sentinelLabel: nameof(SavePayloadBuffer));\n"
+                "    }\n"
+                "    private static NativeArray<T> CreatePersistentNativeArray<T>(int length, NativeArrayOptions options, string sentinelLabel) where T : struct\n"
+                "    {\n"
+                "        NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);\n"
+                "        NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel, NativeMemoryLifetime);\n"
+                "        return array;\n"
+                "    }\n"
+                "    private static void DisposeNativeArrayBestEffort<T>(ref NativeArray<T> array, ref Exception firstException, string sentinelLabel = null) where T : struct\n"
+                "    {\n"
+                "        DisposeNativeArray(ref array, sentinelLabel: sentinelLabel);\n"
+                "    }\n"
+                "    private static void DisposeNativeArray<T>(ref NativeArray<T> array, string sentinelLabel = null) where T : struct\n"
+                "    {\n"
+                "        NativeArray<T> trackedArray = array;\n"
+                "        array.Dispose();\n"
+                "        NativeMemorySentinel.UnregisterNativeArray(trackedArray);\n"
+                "        array = default;\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
+
+    def test_sentinel_owner_label_dispose_helper_in_same_directory_is_not_raw_debt(self) -> None:
+        with temporary_directory(prefix="h8_vault_sentinel_owner_label_directory_helper_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            editor = source / "Editor" / "GeologyForge"
+            editor.mkdir(parents=True)
+            (editor / "TopographyForgeCsv.cs").write_text(
+                "using System;\n"
+                "using Unity.Collections;\n"
+                "internal struct TopographyBiomeRecipeStore : IDisposable\n"
+                "{\n"
+                "    private const string NativeMemoryOwner = nameof(TopographyBiomeRecipeStore);\n"
+                "    private const string RecipesLabel = \"_recipes\";\n"
+                "    private NativeList<TopographyBiomeRecipeDTO> _recipes;\n"
+                "    internal static TopographyBiomeRecipeStore Create(Allocator allocator, int capacity)\n"
+                "    {\n"
+                "        TopographyBiomeRecipeStore store = default;\n"
+                "        store._recipes = GeologyForgeNativeMemory.AllocateList<TopographyBiomeRecipeDTO>(capacity, allocator, NativeMemoryOwner, RecipesLabel);\n"
+                "        return store;\n"
+                "    }\n"
+                "    public void Dispose()\n"
+                "    {\n"
+                "        GeologyForgeNativeMemory.DisposeList(ref _recipes, NativeMemoryOwner, RecipesLabel);\n"
+                "    }\n"
+                "}\n"
+                "internal struct TopographyBiomeRecipeDTO { public int Value; }\n",
+                encoding="utf-8",
+            )
+            (editor / "GeologyForgeNativeMemory.cs").write_text(
+                "using Unity.Collections;\n"
+                "internal static class GeologyForgeNativeMemory\n"
+                "{\n"
+                "    internal static NativeList<T> AllocateList<T>(int capacity, Allocator allocator, string owner, string label) where T : unmanaged\n"
+                "    {\n"
+                "        NativeList<T> list = new NativeList<T>(capacity, allocator);\n"
+                "        NativeMemorySentinel.RegisterNativeList(list, owner, label, NativeAllocationLifetime.TempJob);\n"
+                "        return list;\n"
+                "    }\n"
+                "    internal static void DisposeList<T>(ref NativeList<T> list, string owner, string label) where T : unmanaged\n"
+                "    {\n"
+                "        if (!list.IsCreated)\n"
+                "            return;\n"
+                "        list.Dispose();\n"
+                "        NativeMemorySentinel.UnregisterNativeList(owner, label);\n"
+                "        list = default;\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
+
+    def test_reflective_tracked_native_array_forge_helper_is_not_raw_debt(self) -> None:
+        with temporary_directory(prefix="h8_vault_reflective_forge_helper_declaration_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            editor = source / "Editor" / "OfflineGeometryBaker"
+            editor.mkdir(parents=True)
+            (editor / "InteriorClutterForgeSupport.cs").write_text(
+                "using System;\n"
+                "using Unity.Collections;\n"
+                "internal sealed class InteriorClutterBlackBoxRecorder : IDisposable\n"
+                "{\n"
+                "    private NativeArray<InteriorClutterTelemetryEntry> _ring;\n"
+                "    internal static InteriorClutterBlackBoxRecorder Create()\n"
+                "    {\n"
+                "        var session = new InteriorClutterBlackBoxRecorder\n"
+                "        {\n"
+                "            _ring = InteriorClutterForge.AllocateTrackedNativeArray<InteriorClutterTelemetryEntry>(\n"
+                "                300,\n"
+                "                Allocator.TempJob,\n"
+                "                NativeArrayOptions.UninitializedMemory,\n"
+                "                nameof(_ring))\n"
+                "        };\n"
+                "        return session;\n"
+                "    }\n"
+                "    public void Dispose()\n"
+                "    {\n"
+                "        InteriorClutterForge.DisposeTrackedNativeArray(ref _ring);\n"
+                "    }\n"
+                "}\n"
+                "internal struct InteriorClutterTelemetryEntry { public int Value; }\n",
+                encoding="utf-8",
+            )
+            (editor / "InteriorClutterForge.cs").write_text(
+                "using System;\n"
+                "using System.Reflection;\n"
+                "using Unity.Collections;\n"
+                "internal static class InteriorClutterForge\n"
+                "{\n"
+                "    private const string NativeMemoryOwner = \"SHINOBU_211\";\n"
+                "    private const string NativeMemorySentinelTypeName = \"Hecton8.Core.NativeMemorySentinel\";\n"
+                "    internal static NativeArray<T> AllocateTrackedNativeArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label) where T : struct\n"
+                "    {\n"
+                "        NativeArray<T> array = new NativeArray<T>(length, allocator, options);\n"
+                "        RegisterTrackedNativeArray(array, label, \"TempJob\");\n"
+                "        return array;\n"
+                "    }\n"
+                "    internal static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct\n"
+                "    {\n"
+                "        if (!array.IsCreated)\n"
+                "            return;\n"
+                "        NativeArray<T> trackedArray = array;\n"
+                "        array.Dispose();\n"
+                "        array = default;\n"
+                "        UnregisterTrackedNativeArray(trackedArray);\n"
+                "    }\n"
+                "    private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label, string lifetimeName) where T : struct\n"
+                "    {\n"
+                "        Type sentinelType = FindType(NativeMemorySentinelTypeName);\n"
+                "        MethodInfo method = sentinelType.GetMethod(\"RegisterNativeArray\", BindingFlags.Public | BindingFlags.Static);\n"
+                "        object lifetime = lifetimeName;\n"
+                "        method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array, NativeMemoryOwner, label, lifetime });\n"
+                "    }\n"
+                "    private static void UnregisterTrackedNativeArray<T>(NativeArray<T> array) where T : struct\n"
+                "    {\n"
+                "        Type sentinelType = FindType(NativeMemorySentinelTypeName);\n"
+                "        MethodInfo method = sentinelType.GetMethod(\"UnregisterNativeArray\", BindingFlags.Public | BindingFlags.Static);\n"
+                "        method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array });\n"
+                "    }\n"
+                "    private static Type FindType(string name) { return typeof(object); }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
+
+    def test_reflective_bridge_registered_field_alias_unregister_is_not_raw_debt(self) -> None:
+        with temporary_directory(prefix="h8_vault_reflective_bridge_field_alias_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            editor = source / "Habitat" / "Deformation" / "Editor" / "DamageBake"
+            editor.mkdir(parents=True)
+            (editor / "HabitatDamageBakePipeline.cs").write_text(
+                "using System;\n"
+                "using System.Reflection;\n"
+                "using Unity.Collections;\n"
+                "internal sealed class HabitatDamageBakeReport : IDisposable\n"
+                "{\n"
+                "    private const string NativeMemoryOwner = nameof(HabitatDamageBakeReport);\n"
+                "    private NativeArray<HabitatDamageBakeTelemetryEntry> _telemetryRing;\n"
+                "    private int _telemetryRingSentinelId;\n"
+                "    public HabitatDamageBakeReport()\n"
+                "    {\n"
+                "        _telemetryRing = new NativeArray<HabitatDamageBakeTelemetryEntry>(64, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);\n"
+                "        _telemetryRingSentinelId = HabitatDamageNativeMemorySentinelBridge.RegisterNativeArray(_telemetryRing, NativeMemoryOwner, \"telemetryRing\", \"Session\");\n"
+                "    }\n"
+                "    public void Dispose()\n"
+                "    {\n"
+                "        if (!_telemetryRing.IsCreated)\n"
+                "            return;\n"
+                "        NativeArray<HabitatDamageBakeTelemetryEntry> trackedTelemetryRing = _telemetryRing;\n"
+                "        _telemetryRing.Dispose();\n"
+                "        _telemetryRing = default;\n"
+                "        if (_telemetryRingSentinelId > 0)\n"
+                "            HabitatDamageNativeMemorySentinelBridge.Unregister(_telemetryRingSentinelId);\n"
+                "        else\n"
+                "            HabitatDamageNativeMemorySentinelBridge.UnregisterNativeArray(trackedTelemetryRing);\n"
+                "        _telemetryRingSentinelId = 0;\n"
+                "    }\n"
+                "}\n"
+                "internal struct HabitatDamageBakeTelemetryEntry { public int Value; }\n"
+                "internal static class HabitatDamageNativeMemorySentinelBridge\n"
+                "{\n"
+                "    internal static int RegisterNativeArray<T>(NativeArray<T> array, string owner, string label, string lifetimeName) where T : struct\n"
+                "    {\n"
+                "        Type sentinelType = FindType(\"Hecton8.Core.NativeMemorySentinel\");\n"
+                "        MethodInfo method = sentinelType.GetMethod(\"RegisterNativeArray\", BindingFlags.Public | BindingFlags.Static);\n"
+                "        object lifetime = lifetimeName;\n"
+                "        object id = method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array, owner, label, lifetime });\n"
+                "        return id is int value ? value : 0;\n"
+                "    }\n"
+                "    internal static void Unregister(int sentinelId) {}\n"
+                "    internal static void UnregisterNativeArray<T>(NativeArray<T> array) where T : struct\n"
+                "    {\n"
+                "        Type sentinelType = FindType(\"Hecton8.Core.NativeMemorySentinel\");\n"
+                "        MethodInfo method = sentinelType.GetMethod(\"UnregisterNativeArray\", BindingFlags.Public | BindingFlags.Static);\n"
+                "        method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array });\n"
+                "    }\n"
+                "    private static Type FindType(string name) { return typeof(object); }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
+
+    def test_native_tracking_bridge_sidecar_owner_field_requires_unregister(self) -> None:
+        with temporary_directory(prefix="h8_vault_bridge_sidecar_declaration_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            core = source / "Core" / "Memory" / "GlobalDataVault.cs"
+            core.parent.mkdir(parents=True)
+            core.write_text(
+                "using System;\n"
+                "using Unity.Collections;\n"
+                "using Unity.Collections.LowLevel.Unsafe;\n"
+                "public sealed class GlobalDataVault\n"
+                "{\n"
+                "    private const string NativeMemoryOwner = nameof(GlobalDataVault);\n"
+                "    private NativeList<int> _keys;\n"
+                "    private NativeList<int> _leakedKeys;\n"
+                "    private int _keysSentinelId;\n"
+                "    private int _leakedKeysSentinelId;\n"
+                "    public void Initialize(int capacity)\n"
+                "    {\n"
+                "        _keys = new NativeList<int>(capacity, Allocator.Persistent);\n"
+                "        _leakedKeys = new NativeList<int>(capacity, Allocator.Persistent);\n"
+                "        RegisterNativeSidecarStorage();\n"
+                "    }\n"
+                "    private void RegisterNativeSidecarStorage()\n"
+                "    {\n"
+                "        _keysSentinelId = RequireSentinelRegistration(RegisterNativeListSidecar(_keys, nameof(_keys)), nameof(_keys));\n"
+                "        _leakedKeysSentinelId = RequireSentinelRegistration(RegisterNativeListSidecar(_leakedKeys, nameof(_leakedKeys)), nameof(_leakedKeys));\n"
+                "    }\n"
+                "    public void Dispose()\n"
+                "    {\n"
+                "        if (_keys.IsCreated)\n"
+                "        {\n"
+                "            _keys.Dispose();\n"
+                "            UnregisterSidecar(ref _keysSentinelId, nameof(_keys));\n"
+                "        }\n"
+                "        if (_leakedKeys.IsCreated)\n"
+                "            _leakedKeys.Dispose();\n"
+                "    }\n"
+                "    private static int RequireSentinelRegistration(int sentinelId, string label)\n"
+                "    {\n"
+                "        return sentinelId;\n"
+                "    }\n"
+                "    private static int RegisterNativeListSidecar<T>(NativeList<T> list, string label) where T : unmanaged\n"
+                "    {\n"
+                "        return NativeMemoryTrackingBridge . RegisterBytesInstance((long)UnsafeUtility.SizeOf<T>() * Math.Max(1, list.Capacity), NativeMemoryOwner, label, NativeMemoryBridgeLifetime.Session);\n"
+                "    }\n"
+                "    private static void UnregisterSidecar(ref int sentinelId, string label)\n"
+                "    {\n"
+                "        NativeMemoryTrackingBridge . Unregister(sentinelId);\n"
+                "        sentinelId = 0;\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            classifications = {
+                finding["ownerType"] + "." + name: finding["classification"]
+                for finding in payload["declarationFindings"]
+                for name in finding["names"]
+            }
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(classifications["GlobalDataVault._keys"], "sentinelTrackedOwnerField")
+            self.assertEqual(classifications["GlobalDataVault._leakedKeys"], "persistentOwnerField")
+
     def test_sentinel_factory_assigned_owner_fields_are_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_sentinel_factory_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_sentinel_factory_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             save = source / "SaveManager.cs"
@@ -1899,7 +2571,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
 
     def test_sentinel_id_backed_struct_owner_field_is_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_sentinel_id_struct_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_sentinel_id_struct_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             save = source / "SaveBinaryStorage.cs"
@@ -1949,8 +2621,190 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
             self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
 
+    def test_sentinel_id_backed_struct_owner_field_allows_registered_factory_out_id(self) -> None:
+        with temporary_directory(prefix="h8_vault_sentinel_id_factory_struct_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            save = source / "SaveBinaryStorage.cs"
+            save.parent.mkdir(parents=True)
+            save.write_text(
+                "using Unity.Collections;\n"
+                "public static class SaveBinaryStorage\n"
+                "{\n"
+                "    private struct CachedReadWindow\n"
+                "    {\n"
+                "        public NativeArray<byte> Bytes;\n"
+                "        public int BytesSentinelId;\n"
+                "    }\n"
+                "    private static bool TryCreateCachedReadWindow(out CachedReadWindow window)\n"
+                "    {\n"
+                "        window = default;\n"
+                "        NativeArray<byte> windowBytes = AllocateCachedReadWindowBytes(64, out int windowBytesSentinelId);\n"
+                "        window = new CachedReadWindow { Bytes = windowBytes, BytesSentinelId = windowBytesSentinelId };\n"
+                "        return true;\n"
+                "    }\n"
+                "    private static NativeArray<byte> AllocateCachedReadWindowBytes(int length, out int sentinelId)\n"
+                "    {\n"
+                "        NativeArray<byte> bytes = new NativeArray<byte>(length, Allocator.Persistent);\n"
+                "        sentinelId = NativeMemorySentinel.RegisterNativeArray(bytes, nameof(SaveBinaryStorage), nameof(CachedReadWindow), NativeAllocationLifetime.Session);\n"
+                "        return bytes;\n"
+                "    }\n"
+                "    private static void DisposeCachedReadWindow(ref CachedReadWindow window)\n"
+                "    {\n"
+                "        DisposeCachedReadWindowBytes(ref window.Bytes, ref window.BytesSentinelId);\n"
+                "    }\n"
+                "    private static void DisposeCachedReadWindowBytes(ref NativeArray<byte> bytes, ref int sentinelId)\n"
+                "    {\n"
+                "        NativeMemorySentinel.Unregister(sentinelId);\n"
+                "        sentinelId = 0;\n"
+                "        bytes.Dispose();\n"
+                "        bytes = default;\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
+
+    def test_sentinel_tracked_field_allows_qualified_same_directory_helper(self) -> None:
+        with temporary_directory(prefix="h8_vault_qualified_helper_declaration_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            editor = source / "Editor" / "Tool"
+            owner = editor / "ToolBlackBox.cs"
+            helper = editor / "ToolNativeMemory.cs"
+            editor.mkdir(parents=True)
+            owner.write_text(
+                "using Unity.Collections;\n"
+                "public static class ToolBlackBox\n"
+                "{\n"
+                "    private const string RingLabel = \"ring\";\n"
+                "    private static NativeArray<int> _ring;\n"
+                "    private static void Ensure()\n"
+                "    {\n"
+                "        _ring = ToolNativeMemory.AllocateArray<int>(4, Allocator.Persistent, NativeArrayOptions.ClearMemory, nameof(ToolBlackBox), RingLabel);\n"
+                "    }\n"
+                "    private static void Release()\n"
+                "    {\n"
+                "        ToolNativeMemory.DisposeArray(ref _ring);\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            helper.write_text(
+                "using Unity.Collections;\n"
+                "public static class ToolNativeMemory\n"
+                "{\n"
+                "    public static NativeArray<T> AllocateArray<T>(int length, Allocator allocator, NativeArrayOptions options, string owner, string label) where T : struct\n"
+                "    {\n"
+                "        NativeArray<T> array = new NativeArray<T>(length, allocator, options);\n"
+                "        RegisterArray(ref array, owner, label, NativeAllocationLifetime.Session);\n"
+                "        return array;\n"
+                "    }\n"
+                "    public static void RegisterArray<T>(ref NativeArray<T> array, string owner, string label, NativeAllocationLifetime lifetime) where T : struct\n"
+                "    {\n"
+                "        NativeMemorySentinel.RegisterNativeArray(array, owner, label, lifetime);\n"
+                "    }\n"
+                "    public static void DisposeArray<T>(ref NativeArray<T> array) where T : struct\n"
+                "    {\n"
+                "        NativeMemorySentinel.UnregisterNativeArray(array);\n"
+                "        array.Dispose();\n"
+                "        array = default;\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
+
+    def test_sentinel_tracked_struct_field_allows_registered_local_alias(self) -> None:
+        with temporary_directory(prefix="h8_vault_registered_alias_struct_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            editor = source / "Editor" / "Tool"
+            owner = editor / "ToolEncoder.cs"
+            helper = editor / "ToolNativeMemory.cs"
+            editor.mkdir(parents=True)
+            owner.write_text(
+                "using Unity.Collections;\n"
+                "public static class ToolEncoder\n"
+                "{\n"
+                "    private struct WriteCompletion\n"
+                "    {\n"
+                "        public WriteCompletion(NativeArray<byte> pngBytes)\n"
+                "        {\n"
+                "            PngBytes = pngBytes;\n"
+                "        }\n"
+                "        public NativeArray<byte> PngBytes;\n"
+                "    }\n"
+                "    private static WriteCompletion Encode()\n"
+                "    {\n"
+                "        NativeArray<byte> pngBytes = ExternalEncoder.Encode();\n"
+                "        ToolNativeMemory.RegisterArray(ref pngBytes, nameof(ToolEncoder), nameof(pngBytes), NativeAllocationLifetime.TempJob);\n"
+                "        return new WriteCompletion(pngBytes);\n"
+                "    }\n"
+                "    private static void Release(WriteCompletion completion)\n"
+                "    {\n"
+                "        ToolNativeMemory.DisposeArray(ref completion.PngBytes);\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            helper.write_text(
+                "using Unity.Collections;\n"
+                "public static class ToolNativeMemory\n"
+                "{\n"
+                "    public static void RegisterArray<T>(ref NativeArray<T> array, string owner, string label, NativeAllocationLifetime lifetime) where T : struct\n"
+                "    {\n"
+                "        NativeMemorySentinel.RegisterNativeArray(array, owner, label, lifetime);\n"
+                "    }\n"
+                "    public static void DisposeArray<T>(ref NativeArray<T> array) where T : struct\n"
+                "    {\n"
+                "        NativeMemorySentinel.UnregisterNativeArray(array);\n"
+                "        array.Dispose();\n"
+                "        array = default;\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["sentinelTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "sentinelTrackedOwnerField")
+
     def test_sentinel_label_released_native_list_owner_field_is_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_sentinel_label_list_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_sentinel_label_list_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             world = source / "World" / "ScatterWorkingMemory.cs"
@@ -2012,7 +2866,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(classifications["ScatterWorkingMemory.LeakedMetadata"], "persistentOwnerField")
 
     def test_sentinel_registered_hash_map_without_unregister_remains_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_sentinel_hash_map_missing_unregister_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_sentinel_hash_map_missing_unregister_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             modding = source / "ModdingAPI" / "ModCommandDispatcher.cs"
@@ -2048,7 +2902,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["declarationFindings"][0]["classification"], "persistentOwnerField")
 
     def test_datavault_alias_owner_field_declaration_is_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_alias_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_alias_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             gameplay = source / "QA" / "Headless" / "JacobiStressFuzzer" / "PowerGridJacobiStressFuzzer.cs"
@@ -2095,8 +2949,120 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["dataVaultAliasNativeCollectionDeclarations"], 2)
             self.assertEqual(payload["declarationFindings"][0]["classification"], "dataVaultAliasOwnerField")
 
+    def test_datavault_read_handle_method_parameter_field_alias_is_not_raw_debt(self) -> None:
+        with temporary_directory(prefix="h8_vault_read_handle_setter_alias_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            editor = source / "Editor" / "OOP_Trigger_Scanner.cs"
+            editor.parent.mkdir(parents=True)
+            editor.write_text(
+                "using Unity.Collections;\n"
+                "public sealed class AupTriggerAnalyticsWindow\n"
+                "{\n"
+                "    private TelemetryGraph _graph;\n"
+                "    private void Refresh(IDataVault vault)\n"
+                "    {\n"
+                "        if (!TryReadTelemetry(vault, out NativeArray<AupNarrativeTriggerTelemetryEntry> telemetry))\n"
+                "            return;\n"
+                "        _graph.SetTelemetry(telemetry);\n"
+                "    }\n"
+                "    private static bool TryReadTelemetry(IDataVault vault, out NativeArray<AupNarrativeTriggerTelemetryEntry> telemetry)\n"
+                "    {\n"
+                "        telemetry = default;\n"
+                "        return vault.TryGetGenerationHandle<AupNarrativeTriggerTelemetryEntry>(BufferID.NarrativePoiTelemetryRing, out VaultGenerationHandle<AupNarrativeTriggerTelemetryEntry> handle) &&\n"
+                "            vault.TryReadHandle(in handle, out telemetry) && telemetry.IsCreated;\n"
+                "    }\n"
+                "    private sealed class TelemetryGraph\n"
+                "    {\n"
+                "        private NativeArray<AupNarrativeTriggerTelemetryEntry> _telemetry;\n"
+                "        public void SetTelemetry(NativeArray<AupNarrativeTriggerTelemetryEntry> telemetry)\n"
+                "        {\n"
+                "            _telemetry = telemetry;\n"
+                "        }\n"
+                "    }\n"
+                "}\n"
+                "public struct AupNarrativeTriggerTelemetryEntry { public int Value; }\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["dataVaultAliasNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["declarationFindings"][0]["classification"], "dataVaultAliasOwnerField")
+
+    def test_datavault_resolved_constructor_parameter_fields_are_not_raw_debt(self) -> None:
+        with temporary_directory(prefix="h8_vault_constructor_alias_declaration_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            editor = source / "Physics" / "KCC" / "Editor" / "Shinobu355KccSmokeEditorFacade.cs"
+            editor.parent.mkdir(parents=True)
+            editor.write_text(
+                "using Unity.Collections;\n"
+                "public static class Shinobu355KccSmokeRunner\n"
+                "{\n"
+                "    public static ScheduledRun StartScheduledRun(GlobalDataVault vault)\n"
+                "    {\n"
+                "        VaultGenerationHandle<int> resultHandle = vault.EnsureGenerationHandle<int>(BufferID.SmokeResultBuffer, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);\n"
+                "        VaultGenerationHandle<byte> failureHandle = vault.EnsureGenerationHandle<byte>(BufferID.SmokeFailureBuffer, 32, SystemID.Physics, NativeArrayOptions.UninitializedMemory);\n"
+                "        VaultGenerationHandle<float> telemetryHandle = vault.EnsureGenerationHandle<float>(BufferID.SmokeTelemetryBuffer, 128, SystemID.Physics, NativeArrayOptions.UninitializedMemory);\n"
+                "        Require(vault.TryResolveHandle(in resultHandle, out NativeArray<int> results));\n"
+                "        Require(vault.TryResolveHandle(in failureHandle, out NativeArray<byte> failures));\n"
+                "        Require(vault.TryResolveHandle(in telemetryHandle, out NativeArray<float> telemetry));\n"
+                "        return new ScheduledRun(vault, results, failures, telemetry);\n"
+                "    }\n"
+                "    private static void Require(bool value) {}\n"
+                "    public sealed class ScheduledRun\n"
+                "    {\n"
+                "        private GlobalDataVault _vault;\n"
+                "        private NativeArray<int> _results;\n"
+                "        private NativeArray<byte> _failures;\n"
+                "        private NativeArray<float> _telemetry;\n"
+                "        internal ScheduledRun(GlobalDataVault vault, NativeArray<int> results, NativeArray<byte> failures, NativeArray<float> telemetry)\n"
+                "        {\n"
+                "            _vault = vault;\n"
+                "            _results = results;\n"
+                "            _failures = failures;\n"
+                "            _telemetry = telemetry;\n"
+                "        }\n"
+                "        public void Dispose()\n"
+                "        {\n"
+                "            _vault.Dispose();\n"
+                "        }\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            classifications = {
+                finding["ownerType"] + "." + name: finding["classification"]
+                for finding in payload["declarationFindings"]
+                for name in finding["names"]
+            }
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 3)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
+            self.assertEqual(payload["dataVaultAliasNativeCollectionDeclarations"], 3)
+            self.assertEqual(classifications["ScheduledRun._results"], "dataVaultAliasOwnerField")
+            self.assertEqual(classifications["ScheduledRun._failures"], "dataVaultAliasOwnerField")
+            self.assertEqual(classifications["ScheduledRun._telemetry"], "dataVaultAliasOwnerField")
+
     def test_datavault_resolved_context_fields_are_not_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_context_alias_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_context_alias_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             signals = source / "Core" / "Signals" / "SignalWardenRuntime.cs"
@@ -2120,8 +3086,8 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
                 "        NativeArray<int> headers = default;\n"
                 "        if (!TryResolve(_vault, in _bytesHandle, out bytes) || !TryResolve(_vault, in _headersHandle, out headers))\n"
                 "            return false;\n"
-                "        context.Bytes = bytes;\n"
-                "        context.Headers = headers;\n"
+                "        context . Bytes = bytes;\n"
+                "        context . Headers = headers;\n"
                 "        return true;\n"
                 "    }\n"
                 "    private static bool TryResolve<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct\n"
@@ -2146,7 +3112,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["declarationFindings"][0]["classification"], "dataVaultAliasOwnerField")
 
     def test_plain_out_helper_owner_field_declaration_remains_raw_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_plain_out_declaration_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_plain_out_declaration_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             gameplay = source / "Gameplay" / "BadOwner.cs"
@@ -2267,6 +3233,37 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
 
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0].names, ("_real",))
+
+    def test_sanitized_snapshot_prefilter_skips_regex_without_native_tokens(self) -> None:
+        class RejectingPattern:
+            def search(self, source: str) -> object:
+                raise AssertionError("native collection regex should not run")
+
+        constructor_pattern = audit.NATIVE_COLLECTION_CONSTRUCTOR_RE
+        declaration_pattern = audit.NATIVE_COLLECTION_DECLARATION_SCAN_RE
+        try:
+            audit.NATIVE_COLLECTION_CONSTRUCTOR_RE = RejectingPattern()  # type: ignore[assignment]
+            audit.NATIVE_COLLECTION_DECLARATION_SCAN_RE = RejectingPattern()  # type: ignore[assignment]
+
+            self.assertFalse(
+                audit.source_needs_sanitized_snapshot(
+                    "public sealed class PlainRuntimeState { private int _count; }\n"
+                )
+            )
+        finally:
+            audit.NATIVE_COLLECTION_CONSTRUCTOR_RE = constructor_pattern
+            audit.NATIVE_COLLECTION_DECLARATION_SCAN_RE = declaration_pattern
+
+    def test_sanitized_snapshot_prefilter_keeps_spaced_h8memory_lifetime_source(self) -> None:
+        self.assertTrue(
+            audit.source_needs_sanitized_snapshot(
+                "public sealed class NativeOwner\n"
+                "{\n"
+                "    public void Allocate() { H8Memory . Allocate<int>(4, Owner, Allocator.Persistent); }\n"
+                "    public void Release() { H8Memory . Release(ref _array, Owner); }\n"
+                "}\n"
+            )
+        )
 
     def test_declaration_scan_reuses_presanitized_lines_without_semantic_change(self) -> None:
         source = (

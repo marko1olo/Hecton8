@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Bus Perbaikan Biofilm Konduktif
 
-Biofilm konduktif muncul saat kabel Deep Reach, air asin hangat, dan isolasi rusak tetap bersentuhan. Hamparannya membawa arus lemah melewati patahan tembaga dan membiarkan diagnostik Atlas mencapai ruang yang seharusnya mati listrik.
-
-Bahayanya adalah salah kategori. Atlas melihat kontinuitas dan memberi prioritas perbaikan. Organisme melihat panas, aliran mineral, dan permukaan. Marauder yang memotong hamparan itu bisa memutus pintu, membangunkan audit drone, atau membuka muatan segar yang menarik predator pemburu kilau medan.
+Biofilm konduktif tumbuh di tempat jaket kabel retak membocorkan garam tembaga, panas, dan arus lemah ke air HECTON-8. Itu bukan pikiran. Itu konduktor hidup yang cukup berguna untuk diperlakukan Atlas sebagai bus perbaikan. Jalur rusak bisa tampak sehat sementara film hanya membawa pulsa diagnostik tipis melintasi lukanya.
 
 ## Scanner
 
-Selubung biofilm menjembatani tembaga patah dan hamparan hidup. Arus lemah terdeteksi. Tag perbaikan Atlas ada di kerak garam.
+Lapisan hijau-hitam melintang di luka kabel. Kebocorannya lemah, berpola, dan masih bergerak.
 
 ## Terminal
 
-BUS PERBAIKAN ATLAS // Film mikroba konduktif melintasi putus kabel C-18 sampai C-22. Pulsa diagnostik bergerak melalui pertumbuhan basah saat tembaga sudah hilang. Jangan klasifikasikan sebagai kognisi. Perlakukan sebagai substrat perawatan tercemar.
+JEJAK ATLAS: film mikroba menjembatani kontak terbuka, memperlambat hilangnya tembaga, dan mengirim pulsa kontinuitas palsu. Tidak ada perbaikan jalur tersertifikasi.
 
 ## Audio
 
-Film itu membawa pulsa. Bukan berarti ia pintar. Artinya kabel itu belajar membusuk hidup-hidup.
+Jangan percaya lampu hijau. Kabel itu cukup hidup untuk berbohong.
 
 ## Field Note
 
-Kalau kabel basah punya kulit, lacak dulu sebelum dipotong. Sisi mati biasanya lebih aman. Biasanya.
+Luka Atlas awal: berguna, sunyi, dan cukup salah untuk mengajarkan ketidakpercayaan pada pemindai.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/id_ID. -->

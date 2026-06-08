@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Dano da cápsula de queda
 
-O dano justifica o isolamento: descida funcionou, sobrevivência ficou, hardware de subida morreu.
+O dano da cápsula de queda explica por que o encalhe é crível: a descida funcionou, os sistemas de sobrevivência sobreviveram, o hardware de subida não.
 
 ## Scanner
 

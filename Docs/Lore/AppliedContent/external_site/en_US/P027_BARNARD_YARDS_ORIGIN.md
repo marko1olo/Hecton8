@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Barnard Yards Origin
 
-Barnard Yards grounds the protagonist in the salvage economy and lets HECTON-8 become personal through trade culture rather than fixed melodrama.
+Barnard Yards ties the Marauder class to salvage economy and trade culture. HECTON-8 becomes personal through work habits, tool marks and debt, not fixed melodrama.
 
 ## Scanner
 

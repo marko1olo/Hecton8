@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Pressure Seal Clamp Ring Assembly
 
-The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.
+Pressure Seal Clamp Ring Assembly makes capsule repair a pressure bargain: deep-rated metal, glass seating and Atlas bio-sealant can save or trap the ascent path.
 
 ## Scanner
 
-Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Clamp-ring scar. The ascent sleeve survived impact by spending the seal that should have taken it home.
 
 ## Terminal
 
-SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch holds compartment pressure only. Ascent seal requires deep-rated clamp ring, pressure-glass seat, shell-sealant map and verified Deep Reach profile. Atlas-grown sealant may preserve habitat while blocking clean separation.
 
 ## Audio
 
-The useful seal is the one Atlas grew wrong. That is the problem.
+The useful seal is alive in the wrong direction.
 
 ## Field Note
 
-Use where repair ecology and mechanical seal evidence overlap.
+A safe-room patch can buy an hour of air. It cannot hold a launch impulse.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/en_US. -->

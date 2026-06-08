@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "عمود الساعة الأولى"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# عمود الساعة الأولى
 
-AR LOC HOLD: First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.
+لا يجب أن تبدأ الساعة الأولى في الظلام. تبدأ بصوت عقد، وهبوط متضرر، وإدارة النفس، وماء ضحل مضيء، وحاجة عملية إلى إعادة تشغيل مضخة. الجمال جزء من الفخ: يجب أن يبدو HECTON-8 مكاناً مرغوباً قبل أن تصبح أوراقه قاتلة. بعد ذلك يحول عمود الافتتاح النجاة إلى دليل. الملجأ الأول نافع لكنه ملوث؛ حزمة الحادث المنظفة تبدو أنظف مما ينبغي؛ أول ندبة إصلاح من Atlas تعرض كابلاً ومعدن أداة وبقايا حية مضغوطة في قرار صيانة واحد. يتعلم اللاعب الحلقة الأساسية بالفعل لا بالمحاضرة: تنفس، أصلح، اقرأ، اشكك، انزل أعمق.
 
 ## Scanner
 
-AR LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+عقد، هبوط متضرر، هواء، مياه ضحلة مضيئة، ملجأ مضخة، كذبة منظفة، ثم أول ندبة إصلاح تستخدم الحياة كحشية.
 
 ## Terminal
 
-AR LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+ملحق ضحل: إعادة تشغيل المضخة اليدوية صالحة. حزمة حادث Deep Reach مخزنة. نمو إصلاح Atlas مكتشف حول كابل، وشظية أداة، وبقايا بيولوجية.
 
 ## Audio
 
-AR LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+الغرفة الآمنة الأولى ليست نظيفة. إنها فقط تحبس أنفاسها أفضل منك.
 
 ## Field Note
 
-AR LOC HOLD: The opening must be beautiful before it becomes accusing.
+يجب أن تكون البداية جميلة قبل أن تصبح اتهاماً.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/ar_SA. -->

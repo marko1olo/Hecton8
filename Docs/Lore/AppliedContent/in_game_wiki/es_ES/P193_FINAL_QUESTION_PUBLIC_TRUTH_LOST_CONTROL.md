@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Pregunta final: verdad pública, control perdido"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Pregunta final: verdad pública, control perdido
 
-ES LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+La ruta de verdad pública rompe el encubrimiento limpio. También rompe la propiedad de las consecuencias. La evidencia puede salvar nombres del borrado, crear presión real de rescate e invitar a cada depredador con mesa legal o canal de oración.
 
 ## Scanner
 
-ES LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+Publicar la prueba impide el borrado. También entrega el hallazgo a todos los que pueden usarlo mal lo bastante rápido.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+EJE DE VERDAD PÚBLICA: hash de testigo, cadena de responsabilidad, estado de Atlas, coordenadas de deuda azul y ruta de payload pueden salir del control de Deep Reach. Tras la publicación, el operador ya no controla a los receptores, el mercado ni quién llega primero.
 
 ## Audio
 
-ES LOC HOLD: Truth leaves your hand faster than rescue ever could.
+La verdad sale de tu mano más rápido de lo que jamás podría llegar el rescate.
 
 ## Field Note
 
-ES LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+La verdad pública no es justicia pura. Crea sanciones, cultos, subastas, demandas, presión de rescate y claims imitadores.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/es_ES. -->

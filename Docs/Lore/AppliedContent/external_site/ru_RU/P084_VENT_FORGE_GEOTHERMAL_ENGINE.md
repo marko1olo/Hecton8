@@ -8,33 +8,19 @@ biome_tags: biome.thermal_fields;biome.factory_temple
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Геотермальный двигатель vent forge"
+spoiler_tier: 1
+title: "Геотермальный двигатель жерловой кузни"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Геотермальный двигатель vent forge
+# Геотермальный двигатель жерловой кузни
 
-Геотермальный двигатель vent forge показывает, почему HECTON-8 ценна и смертельна. Луна является industrial engine еще до того, как люди строят на ней свой.
+Жерловые кузни связывают геологию с крафтом, выживанием и ужасом. Они дают тепло и циклы давления для керамики, уплотнений и давленого стекла, но те же циклы создают кипящие карманы, ложный кислород, коррозионные облака и миграцию фауны.
 
-## Scanner
-
-Vent forge manifold. Heat, poison и power используют одну трубу.
-
-## Terminal
-
-GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
-
-## Audio
-
-Vent не волнует, называешь ты его power или weather.
-
-## Field Note
-
-Каждый полезный vent - это еще и машина наказания за плохой тайминг.
+Геотермальный двигатель жерловой кузни показывает, почему HECTON-8 ценен и смертелен: луна является промышленным двигателем до того, как люди построили на ней свой. Каждое полезное жерло одновременно наказывает за плохой тайминг.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/ru_RU. -->

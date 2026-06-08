@@ -45,10 +45,10 @@ namespace Hecton8.World
     {
         /// <summary>LOD Bias = 1.5 (aggressive culling, better performance)</summary>
         Low,
-        
+
         /// <summary>LOD Bias = 1.0 (balanced)</summary>
         Medium,
-        
+
         /// <summary>LOD Bias = 0.7 (quality focus, longer LOD residency)</summary>
         High
     }
@@ -63,7 +63,7 @@ namespace Hecton8.World
     ///   • Fixed hot-path distance scratch
     ///   • No LINQ, no string operations in hot paths
     ///   • Struct-based data where possible
-    /// 
+    ///
     /// PERFORMANCE TARGET:
     ///   • LOD processing: < 0.2ms per frame
     ///   • Distance solve: 64 groups per frame
@@ -154,6 +154,7 @@ namespace Hecton8.World
         private Camera _mainCamera;
         private Transform _cameraTransform;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private ITickDispatcher _dispatcher;
         private DynamicResolutionScaler _dynamicResolutionScaler;
@@ -404,28 +405,41 @@ namespace Hecton8.World
             return manager != null && manager._serviceRegistered && manager.isActiveAndEnabled;
         }
 
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         private void TryRegisterSaveParticipant()
         {
             if (_saveRegistered)
                 return;
 
             ISaveService saveService = _saveService;
-            if (saveService == null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveService = null;
             _saveRegistered = false;
         }
@@ -444,7 +458,7 @@ namespace Hecton8.World
             if (_impostorSystem == null)
                 _impostorSystem = ImpostorSystem.Instance;
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(_saveService))
                 _saveService = GlobalRegistry.Save;
         }
 
@@ -643,7 +657,7 @@ namespace Hecton8.World
         public void RegisterLODGroup(LODGroup lodGroup)
         {
             if (lodGroup == null) return;
-            
+
             // O(1) duplicate check via HashSet
             if (_registeredLODGroupsSet.Contains(lodGroup)) return;
 
@@ -971,10 +985,12 @@ namespace Hecton8.World
                 return _viewerAupCache;
             }
 
-            var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement != null)
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
             {
-                _viewerAupCache = playerMovement.CurrentAup;
+                _viewerAupCache = movementState.PredictedAup;
                 return _viewerAupCache;
             }
 

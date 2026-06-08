@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "ID LOC HOLD: Koloni dan Pekerja"
+title: "Koloni dan Pekerja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Koloni dan Pekerja
+# Koloni dan Pekerja
 
-ID LOC HOLD: Indeks pekerja yang dipulihkan: ledger air, baki saksi relay, cap rute brine, tag perbaikan triage dan reject vent-forge menyimpan nama lewat kerja.
+Worker index pulih: water ledgers, relay witness trays, brine route stamps, triage repair tags, dan vent-forge rejects menjaga nama melalui kerja.
 
 ## Scanner
 
-ID LOC HOLD: WORKER INDEX // Lima catatan nama terkait rute. pump, relay, brine, triage, forge. Simpan tag chain sebelum melepas hardware.
+WORKER INDEX // Lima catatan nama terkait rute. Pump, relay, brine, triage, forge. Pertahankan tag chain sebelum melepas hardware.
 
 ## Terminal
 
-ID LOC HOLD: KEELMARK LOSS DESK: simpan name tags jika terkait route, claim, custody atau pressure work.
+KEELMARK LOSS DESK: pertahankan name tags jika terkait route, claim, custody, atau pressure work.
 
 ## Audio
 
-ID LOC HOLD: Mara Venn, pump chief: kalau pump bernyanyi bersih, catat. Kalau berhenti bernyanyi, lari naik.
+Mara Venn, pump chief: jika pompa bernyanyi bersih, catat. Jika berhenti bernyanyi, lari naik.
 
 ## Field Note
 
-ID LOC HOLD: Bukan keluarga. Kerja. Nama di pump card menjelaskan kenapa pintu tetap terbuka.
+Bukan keluarga. Kerja. Nama di pump card menjelaskan mengapa pintu tetap terbuka.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/id_ID. -->

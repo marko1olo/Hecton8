@@ -1,6 +1,7 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using System;
 using System.Runtime.InteropServices;
@@ -1342,13 +1343,11 @@ namespace Hecton8.Gameplay
         internal const float SwimDownDistanceMeters = 0.55f;
         internal const float SwimSideOffsetMeters = 0.16f;
         internal const float PelvisCameraYawMaxRadians = 0.18f;
-        private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRuntime);
-        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for persistent ContextualPhysicalIkRuntime buffer.";
-        private const string NativeMemoryTransientRegistrationFailureMessage = "NativeMemorySentinel registration failed for transient ContextualPhysicalIkRuntime buffer.";
-        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after ContextualPhysicalIkRuntime native disposal fault.";
+        private const SystemID NativeArrayOwnerSystem = SystemID.AnimationLocomotion;
+        private const string NativeMemoryAllocationFailureMessage = "H8Memory allocation failed for persistent ContextualPhysicalIkRuntime buffer.";
+        private const string NativeMemoryTransientAllocationFailureMessage = "H8Memory allocation failed for transient ContextualPhysicalIkRuntime buffer.";
+        private const string NativeMemoryReleaseFailureMessage = "H8Memory release failed for ContextualPhysicalIkRuntime native buffer.";
         private const string NativeMemoryDisposalCompletionFailureMessage = "ContextualPhysicalIkRuntime native disposal completion failed after partial scheduling.";
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-        private const NativeAllocationLifetime NativeTransientMemoryLifetime = NativeAllocationLifetime.TransientArena;
         private const ulong TelemetryDumpMagic = 0x314753454C4B4948UL;
         private const uint TelemetryReasonOriginShift = 0x00000001u;
         private const uint TelemetryReasonStructuralMutation = 0x00000002u;
@@ -1883,73 +1882,35 @@ namespace Hecton8.Gameplay
 
             private static NativeArray<T> CreatePersistentNativeArray<T>(
                 int length,
-                string sentinelLabel,
+                string allocationLabel,
                 NativeArrayOptions options) where T : struct
             {
-                NativeArray<T> array = default;
-                try
-                {
-                    array = new NativeArray<T>(length, Allocator.Persistent, options);
-                    int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel, NativeMemoryLifetime);
-                    if (registrationId <= 0)
-                        throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+                NativeArray<T> array = H8Memory.Allocate<T>(
+                    length,
+                    NativeArrayOwnerSystem,
+                    Allocator.Persistent,
+                    options);
 
-                    return array;
-                }
-                catch
-                {
-                    if (array.IsCreated)
-                        array.Dispose();
+                if (!array.IsCreated || array.Length != length)
+                    throw new InvalidOperationException($"{NativeMemoryAllocationFailureMessage} Label={allocationLabel}.");
 
-                    throw;
-                }
+                return array;
             }
 
             private static void DisposeNativeArray<T>(
                 ref NativeArray<T> array,
                 JobHandle dependency,
                 ref JobHandle disposeHandle,
-                string sentinelLabel = null,
-                NativeAllocationLifetime sentinelLifetime = NativeMemoryLifetime) where T : struct
+                string allocationLabel = null) where T : struct
             {
                 if (!array.IsCreated)
                     return;
 
-                bool sentinelUnregistered = false;
-                try
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(array);
-                    sentinelUnregistered = true;
-                    disposeHandle = JobHandle.CombineDependencies(disposeHandle, array.Dispose(dependency));
-                    array = default;
-                }
-                catch (Exception exception)
-                {
-                    RestoreNativeSentinelRecordOrThrow(array, sentinelUnregistered, sentinelLabel, sentinelLifetime, exception);
-                    throw;
-                }
-            }
+                JobHandle releaseHandle = H8Memory.Release(ref array, dependency, NativeArrayOwnerSystem);
+                disposeHandle = JobHandle.CombineDependencies(disposeHandle, releaseHandle);
 
-            private static void RestoreNativeSentinelRecordOrThrow<T>(
-                NativeArray<T> array,
-                bool sentinelUnregistered,
-                string sentinelLabel,
-                NativeAllocationLifetime sentinelLifetime,
-                Exception disposalException) where T : struct
-            {
-                if (!sentinelUnregistered || !array.IsCreated)
-                    return;
-
-                try
-                {
-                    int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeNativeArray), sentinelLifetime);
-                    if (registrationId <= 0)
-                        throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
-                }
-                catch (Exception restoreException)
-                {
-                    throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
-                }
+                if (array.IsCreated)
+                    throw new InvalidOperationException($"{NativeMemoryReleaseFailureMessage} Label={allocationLabel ?? nameof(DisposeNativeArray)}.");
             }
 
             private static void DisposeNativeArrayBestEffort<T>(
@@ -1957,11 +1918,11 @@ namespace Hecton8.Gameplay
                 JobHandle dependency,
                 ref JobHandle disposeHandle,
                 ref Exception firstException,
-                string sentinelLabel) where T : struct
+                string allocationLabel) where T : struct
             {
                 try
                 {
-                    DisposeNativeArray(ref array, dependency, ref disposeHandle, sentinelLabel);
+                    DisposeNativeArray(ref array, dependency, ref disposeHandle, allocationLabel);
                 }
                 catch (Exception exception)
                 {
@@ -2777,77 +2738,33 @@ namespace Hecton8.Gameplay
             return hash * 16777619u;
         }
 
-        private static void RegisterTransientNativeArray<T>(NativeArray<T> array, string sentinelLabel) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel, NativeTransientMemoryLifetime);
-            if (registrationId <= 0)
-                throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
-        }
-
         private static NativeArray<T> CreateTransientNativeArray<T>(
             int length,
             Allocator allocator,
             NativeArrayOptions options,
-            string sentinelLabel) where T : struct
+            string allocationLabel) where T : struct
         {
-            NativeArray<T> array = default;
-            try
-            {
-                array = new NativeArray<T>(length, allocator, options);
-                RegisterTransientNativeArray(array, sentinelLabel);
-                return array;
-            }
-            catch
-            {
-                if (array.IsCreated)
-                    array.Dispose();
+            NativeArray<T> array = H8Memory.Allocate<T>(
+                length,
+                NativeArrayOwnerSystem,
+                allocator,
+                options);
 
-                throw;
-            }
+            if (!array.IsCreated || array.Length != length)
+                throw new InvalidOperationException($"{NativeMemoryTransientAllocationFailureMessage} Label={allocationLabel}.");
+
+            return array;
         }
 
-        private static void DisposeTransientNativeArray<T>(ref NativeArray<T> array, string sentinelLabel = null) where T : struct
+        private static void DisposeTransientNativeArray<T>(ref NativeArray<T> array, string allocationLabel = null) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            bool sentinelUnregistered = false;
-            try
-            {
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                sentinelUnregistered = true;
-                array.Dispose();
-                array = default;
-            }
-            catch (Exception exception)
-            {
-                RestoreTransientNativeSentinelRecordOrThrow(array, sentinelUnregistered, sentinelLabel, exception);
-                throw;
-            }
-        }
+            H8Memory.Release(ref array, NativeArrayOwnerSystem);
 
-        private static void RestoreTransientNativeSentinelRecordOrThrow<T>(
-            NativeArray<T> array,
-            bool sentinelUnregistered,
-            string sentinelLabel,
-            Exception disposalException) where T : struct
-        {
-            if (!sentinelUnregistered || !array.IsCreated)
-                return;
-
-            try
-            {
-                int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeTransientNativeArray), NativeTransientMemoryLifetime);
-                if (registrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
-            }
-            catch (Exception restoreException)
-            {
-                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
-            }
+            if (array.IsCreated)
+                throw new InvalidOperationException($"{NativeMemoryReleaseFailureMessage} Label={allocationLabel ?? nameof(DisposeTransientNativeArray)}.");
         }
 
         private unsafe void DumpTelemetry(uint reasonFlags)

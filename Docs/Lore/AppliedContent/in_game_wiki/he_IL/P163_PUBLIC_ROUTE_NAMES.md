@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Public Route Names"
+title: "שמות נתיבים ציבוריים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Public Route Names
+# שמות נתיבים ציבוריים
 
-HE LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.
+שמות הנתיבים הציבוריים אינם שירה בחושך. הם תוויות עבודה ששורדות חוזים, לוחות גוף, תורי ממסר ומוצגים משפטיים. Sol-Centauri Charter Spine נושא לגיטימיות, Barnard Breaker Run מריח מפירוק ספינות וחוב. Luyten Packet Ladder הוא שרשרת custody שהופכת ראיה לקבילה או חסרת ערך, Tau Public Ledger Lane הוא לחץ ציבורי איטי, ו-Ran Long Claim אומר שהעבודה כבר יקרה לפני שהאוקיינוס גובה.
 
 ## Scanner
 
-HE LOC HOLD: Route names make travel feel owned before it feels adventurous.
+ROUTE NAME SLATE // Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, Ran Long Claim.
 
 ## Terminal
 
-HE LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.
+PUBLIC ROUTES // Route names are tariff language: certification, salvage labor, packet custody, public proof and the bill for Ran/Aegir delay.
 
 ## Audio
 
-HE LOC HOLD: A route is a road only after somebody sells the delay twice.
+A route name is not for wonder. It is for invoices and blame.
 
 ## Field Note
 
-HE LOC HOLD: Every route name should sound like a tariff, not a wonder.
+Keep route names stamped, used and billable.
 
 <!-- In-Game Wiki; generated from P163_PUBLIC_ROUTE_NAMES/he_IL. -->

@@ -7,34 +7,34 @@ poi_tags: poi.black_keel_transfer_band;poi.carrier_custody_orbit
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "PL LOC HOLD: Black Keel Transfer Band"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Pas transferowy Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Black Keel Transfer Band
+# Pas transferowy Black Keel
 
-PL LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.
+Pas transferowy Black Keel wyjaśnia, czemu kontakt, payload pickup i human extraction to różne problemy. Carrier może usłyszeć, wycenić i przyjąć cargo, zanim bezpiecznie wyda masę na człowieka.
 
 ## Scanner
 
-PL LOC HOLD: Carrier band: Black Keel loiters high, not above HECTON-8.
+Pas carrier: Black Keel krąży wysoko, nie nad HECTON-8.
 
 ## Terminal
 
-PL LOC HOLD: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+CARRIER ORBIT: wysoka custody lane; descent mass ograniczona i weather-gated.
 
 ## Audio
 
-PL LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.
+Nie parkuje nad tobą. Czeka tam, gdzie pozwala ubezpieczenie.
 
 ## Field Note
 
-PL LOC HOLD: Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
+Zapis orbity carrier: Black Keel może przyjąć payloads przed ludźmi; ta luka napędza partial-exit logic.
 
 <!-- In-Game Wiki; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/pl_PL. -->

@@ -3,38 +3,22 @@ packet_id: P344_SYSTEM_CARRIER_TUG_STACK
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.system_carrier_tug_stack
 unlock_id: unlock.system_carrier_tug_stack
-poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
+poi_tags: poi.black_keel_carrier_spec;poi.tug_manifest
 biome_tags: biome.orbit;biome.contract
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: System Carrier Tug Stack"
+title: "Системный carrier-tug stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: System Carrier Tug Stack
+# Системный carrier-tug stack
 
-RU LOC HOLD: HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.
-
-## Scanner
-
-RU LOC HOLD: Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
-
-## Terminal
-
-RU LOC HOLD: BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
-
-## Audio
-
-RU LOC HOLD: The carrier is not your home. It is a machine that knows who owns your debt.
-
-## Field Note
-
-RU LOC HOLD: Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
+Black Keel должен ощущаться достаточно близким, чтобы его можно было винить, и достаточно далеким, чтобы оставаться недосягаемым. Это не корабль из героической фантазии о спасении. Это арендованный промышленный stack из корпуса носителя, буксирных причалов, грузовых стоек, ПО опеки, рельсов сброса капсул и реестра, который не спит. Поэтому он полезен: может принимать образцы, отвечать пакетам, держать орбиту и бросать железо в окно. Поэтому он жесток: каждая полезная функция связана с владением, таймингом и долгом. Игрок застрял под реальной, присутствующей машиной, которая структурно не хочет становиться убежищем.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/ru_RU. -->

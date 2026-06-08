@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 地质、压力与 2147 年的大潮
 
 > **来源：** Keelmark 理赔部，拒赔申明摘要。附录：水深危险指南。  

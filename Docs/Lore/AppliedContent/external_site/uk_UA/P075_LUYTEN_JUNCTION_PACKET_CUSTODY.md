@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "Packet custody Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# Packet custody Luyten Junction
 
-UK LOC HOLD: Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing.
+Packet custody Luyten Junction перетворює міжзоряний зв'язок на тиск маршруту. У HECTON-8 немає миттєвого каналу порятунку, тому кожне повідомлення має пережити custody, вартість і орбітальний таймінг.
 
 ## Scanner
 
-UK LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+Котушка custody Luyten. Повідомлення не ходять безкоштовно; правда теж.
 
 ## Terminal
 
-UK LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+МАРШРУТ LUYTEN JUNCTION: packet custody передано через тарифну чергу. Live command заборонено. Пріоритет доказів можна купити через emergency claim escrow.
 
 ## Audio
 
-UK LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+Жодного ansible. Жодного милосердя. Тільки custody, tariff і час.
 
 ## Field Note
 
-UK LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+Relay - це машина, яка вирішує, чиє горе отримає bandwidth.
 
 <!-- External Site; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/uk_UA. -->

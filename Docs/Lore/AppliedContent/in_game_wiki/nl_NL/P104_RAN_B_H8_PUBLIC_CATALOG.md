@@ -7,34 +7,34 @@ poi_tags: poi.catalog_plate;poi.ran_b_h8_stamp
 biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "NL LOC HOLD: RAN-B:H8 Public Catalog"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Openbare catalogus RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: RAN-B:H8 Public Catalog
+# Openbare catalogus RAN-B:H8
 
-NL LOC HOLD: HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.
+HECTON-8 heeft een droge catalogusnaam en een menselijke claimnaam. RAN-B:H8 hoort bij routetabellen: Ran-systeem, Aegir-klasse reus, achtste geïndexeerde grote maan. HECTON-8 hoort bij Deep Reach-contracten, werkersrecords, Marauder-spraak, dodenboeken en salvage-recht.
 
 ## Scanner
 
-NL LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
+Catalogusplaat: publiek routelabel RAN-B:H8; Deep Reach-claimnaam HECTON-8.
 
 ## Terminal
 
-NL LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
+CATALOGUSKRUISING: Ran-systeem, Aegir-reus, achtste geïndexeerde grote maan. HECTON-8 behouden als claimnaam voor contracten, doden en verzekeringscontinuïteit.
 
 ## Audio
 
-NL LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
+De kaart noemt hem H8. De mensen die hier verdronken noemden hem HECTON.
 
 ## Field Note
 
-NL LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+Gebruik HECTON-8 wanneer het object mensen onthoudt. Gebruik RAN-B:H8 wanneer het document afstand wil.
 
 <!-- In-Game Wiki; generated from P104_RAN_B_H8_PUBLIC_CATALOG/nl_NL. -->

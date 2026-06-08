@@ -9,32 +9,18 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "P-63 현장 패브리케이터"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# P-63 현장 패브리케이터
 
-KO LOC HOLD: P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure.
+P-63은 제작을 마법이 아니라 산업으로 만든다. 더러운 고철을 받고, certification table을 확인하며, pressure limits가 붙은 작은 부품을 돌려준다. 가스켓, 접점, pinger floats, sealant clamps. 거절할 수 있기 때문에 유용하다.
 
-## Scanner
-
-KO LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
-
-## Terminal
-
-KO LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
-
-## Audio
-
-KO LOC HOLD: The machine can make parts. It cannot make permission.
-
-## Field Note
-
-KO LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+그 거절이 중요하다. fabricator는 알 수 없는 pressure material을 기적 장비로 바꾸지 않고, 탈출을 승인할 수도 없다. HECTON-8의 crafting은 repair certification으로 시작한다. 실용적이고, 제한적이며, 식민지를 가둔 같은 관료제에 묶여 있다.
 
 <!-- External Site; generated from P115_P63_FIELD_FABRICATOR/ko_KR. -->

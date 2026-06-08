@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "نطاقات عمق المحيط العالمي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# نطاقات عمق المحيط العالمي
 
-AR LOC HOLD: HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.
+يُقرأ محيط HECTON-8 كنطاقات، لا كرقم قاع واحد. الرف الضوئي يسمح بالضوء والحطام والطحالب والطيارين المهملين. الرف الصناعي يحمل شعاب الكابلات وأقفاص الأنابيب ومنصات التحميل القديمة. تحته تثني السلالم الملحية الصوت والموازنة. حقول الآلات السحيقة تعاقب الإصلاح. حوض Atlas يجعل الضغط يبدو كسلطة لا كطقس.
 
 ## Scanner
 
-AR LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+مخطط عمق. الرف الأول يغفر سوء الموازنة؛ الماء الأعمق يرسل فاتورة كل خطأ بالضغط والحرارة والصمت.
 
 ## Terminal
 
-AR LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+النطاقات: 0-250 م رف ضوئي للنهب؛ 250-1200 م رف صناعي وشعاب كابلات؛ 1200-2800 م درج/وادي ملحي؛ 2800-4300 م حقل آلات سحيق؛ 4300-5600 م حوض Atlas.
 
 ## Audio
 
-AR LOC HOLD: Every band changes what the world allows you to do.
+كل مئة متر تنتزع منك عادة.
 
 ## Field Note
 
-AR LOC HOLD: Depth is not a number. It is a ruleset.
+العمق على HECTON-8 قانون وطقس وحد وجوع يحمل الرقم نفسه.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ar_SA. -->

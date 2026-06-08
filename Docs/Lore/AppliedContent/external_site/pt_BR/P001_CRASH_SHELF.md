@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Plataforma do impacto
 
-HECTON-8 começa na linha d'água: uma cápsula de descida danificada, uma plataforma alienígena brilhante e uma carrier distante demais para responder com clareza. O primeiro mistério não é o que vive abaixo, mas por que a cadeia de resgate já parece hostil.
-
-## Scanner
-
-Destroços da cápsula bathy-drop. Estrutura de pressão intacta, pacote de subida destruído. Ela mantém você vivo, mas não leva você para casa.
-
-## Terminal
-
-PACOTE DE SUBIDA: ausente. NÚCLEO DE UPLINK: fratura detectada. CONTATO COM CARRIER: atrasado.
-
-## Audio
-
-Handshake da Black Keel recebido. Integridade do pacote abaixo do limite de recuperação. Repetindo: limite não atingido.
-
-## Field Note
-
-Se a carcaça ainda segura pressão, não desmonte tudo. Um abrigo ruim vale mais que um inventário limpo.
+A Plataforma do impacto é o primeiro cômodo do jogador e a primeira cena de crime. Uma cápsula de descida fica meio enterrada em erva salgada e cerâmica quente, danificada demais para partir e útil demais para abandonar. Sua estrutura sobrevivente dá abrigo, sucata, alvos de scanner e uma linha até a Black Keel que soa procedural antes de soar humana. Esse tom importa. O carrier não responde como amigo. Ele inventaria a falha: pacote de subida perdido, uplink fraturado, operador vivo, autoridade de recuperação sem resolução. O local inicial ensina HECTON-8 sem palestra. A beleza é real: bioluminescência rasa, cor de recife, luz de tempestade sob Aegir. A violência industrial também é real: peças marcadas, cicatrizes de impacto, linguagem de reivindicação, uma cadeia de resgate que já conta custos. A primeira pergunta é prática: continue vivo. A segunda chega dentro do mesmo destroço: quem ganha se você conseguir?
 
 <!-- External Site; generated from P001_CRASH_SHELF/pt_BR. -->

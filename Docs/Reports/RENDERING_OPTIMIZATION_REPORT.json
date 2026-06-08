@@ -1,4 +1,4 @@
-﻿{
+{
   "shinobu_350_sonar_cartography_fog_of_war": {
     "agent": "SHINOBU_350",
     "domain": "SONAR_CARTOGRAPHY_FOG_OF_WAR",
@@ -1663,5 +1663,185 @@
     "blackBoxDumpRoute": "Editor writes Docs/AgentLogs/Dump_SHINOBU_348.bin; player builds write Application.persistentDataPath/Hecton8/AgentLogs/Dump_SHINOBU_348.bin. Header v2 is 64 bytes and records valid count/start index before writing telemetry rows oldest-to-newest.",
     "gizmoRoute": "SceneView gizmo converts camera-relative DTO translation by adding the resolved render camera position only for editor drawing.",
     "rollbackBoundary": "Presentation-only; Vault IDs 348730..348736 excluded from rollback/save/gameplay truth"
+  },
+  "shinobu_325_screen_space_trauma_decal_resolver": {
+    "agentId": "SHINOBU_325",
+    "scanner": "Trauma_Projector_Inquisition",
+    "timestampUtc": "2026-06-08T12:47:08Z",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "scannedAssetCount": 6874,
+    "candidateAssetCount": 341,
+    "skippedLargeAssetCount": 38,
+    "decalProjectorTokenHits": 32,
+    "activeGameObjectTraumaDecalViolations": 0,
+    "activeDecalRendererFeatureViolations": 0,
+    "inactiveUrpDecalRendererFeatures": 2,
+    "oopTraumaDecalsPurged": true,
+    "status": "PASS",
+    "tokenHits": [
+      {
+        "path": "Assets/_Project/Editor/ShorelineFoamGraftEditorTools.cs",
+        "line": 102,
+        "text": "internal static class ShorelineFoamDecalProjectorInquisition"
+      },
+      {
+        "path": "Assets/_Project/Editor/ShorelineFoamGraftEditorTools.cs",
+        "line": 138,
+        "text": "decalProjectorHits += Contains(text, \"DecalProjector\");"
+      },
+      {
+        "path": "Assets/_Project/Editor/Assembly/HazardPrefabFactory.cs",
+        "line": 43,
+        "text": "private static readonly List<DecalProjector> s_DecalScratch = new List<DecalProjector>(4);"
+      },
+      {
+        "path": "Assets/_Project/Editor/Assembly/HazardPrefabFactory.cs",
+        "line": 413,
+        "text": "DecalProjector decalProjector = AddDecalProjector(root.transform, combinedBounds, decalMaterial, profile);"
+      },
+      {
+        "path": "Assets/_Project/Editor/Assembly/HazardPrefabFactory.cs",
+        "line": 426,
+        "text": "decalProjector != null ? new[] { decalProjector } : Array.Empty<DecalProjector>(),"
+      },
+      {
+        "path": "Assets/_Project/Editor/Assembly/HazardPrefabFactory.cs",
+        "line": 657,
+        "text": "private static DecalProjector AddDecalProjector(Transform root, Bounds combinedBounds, Material decalMaterial, HazardProfile profile)"
+      },
+      {
+        "path": "Assets/_Project/Editor/Assembly/HazardPrefabFactory.cs",
+        "line": 665,
+        "text": "DecalProjector projector = decalObject.AddComponent<DecalProjector>();"
+      },
+      {
+        "path": "Assets/_Project/Editor/Assembly/HazardPrefabFactory.cs",
+        "line": 1136,
+        "text": "failure = \"DecalProjector missing.\";"
+      },
+      {
+        "path": "Assets/_Project/Editor/Assembly/HazardPrefabFactory.cs",
+        "line": 1141,
+        "text": "DecalProjector projector = s_DecalScratch[i];"
+      },
+      {
+        "path": "Assets/_Project/Editor/Assembly/HazardPrefabFactory.cs",
+        "line": 1147,
+        "text": "failure = \"DecalProjector \" + projector.name + \" has invalid material. \" + failure;"
+      },
+      {
+        "path": "Assets/_Project/Editor/Assembly/HazardPrefabFactory.cs",
+        "line": 1166,
+        "text": "cullingProxy.TargetDecalProjector == null ||"
+      },
+      {
+        "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+        "line": 637,
+        "text": "RequireNotContains(delta, \"DecalProjector\", \"Voxel laser burn path must not depend on DecalProjector.\") &&"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/ThermalVentRuntime.cs",
+        "line": 17,
+        "text": "[SerializeField] private DecalProjector primaryDecal;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/ThermalVentRuntime.cs",
+        "line": 33,
+        "text": "public DecalProjector PrimaryDecal => primaryDecal;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/ThermalVentRuntime.cs",
+        "line": 40,
+        "text": "DecalProjector newPrimaryDecal,"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/ThermalVentRuntime.cs",
+        "line": 89,
+        "text": "DecalProjector decal = primaryDecal;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/ThermalVentRuntime.cs",
+        "line": 246,
+        "text": "private bool HasDirtyPresentationWriteCache(Light light, DecalProjector decal)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+        "line": 15,
+        "text": "[SerializeField] private DecalProjector targetDecalProjector;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+        "line": 35,
+        "text": "public DecalProjector TargetDecalProjector => targetDecalProjector;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+        "line": 36,
+        "text": "public bool HasValidFactoryConfiguration => targetLight != null && targetDecalProjector != null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+        "line": 41,
+        "text": "DecalProjector decalProjector,"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+        "line": 48,
+        "text": "targetDecalProjector = decalProjector;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+        "line": 62,
+        "text": "if (targetDecalProjector == null)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+        "line": 63,
+        "text": "TryGetComponent(out targetDecalProjector);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+        "line": 141,
+        "text": "DecalProjector decal = targetDecalProjector;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+        "line": 211,
+        "text": "if (targetDecalProjector != null)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+        "line": 212,
+        "text": "_baseDecalFade = Mathf.Clamp01(targetDecalProjector.fadeFactor);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/HazardMetadata.cs",
+        "line": 49,
+        "text": "[SerializeField] private DecalProjector[] decalProjectors;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/HazardMetadata.cs",
+        "line": 82,
+        "text": "DecalProjector[] newDecalProjectors,"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/HazardMetadata.cs",
+        "line": 93,
+        "text": "decalProjectors = newDecalProjectors;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/HazardMetadata.cs",
+        "line": 173,
+        "text": "public bool TryGetDecalProjector(int index, out DecalProjector decalProjector)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/Hazards/HazardMetadata.cs",
+        "line": 175,
+        "text": "DecalProjector[] projectors = decalProjectors;"
+      }
+    ],
+    "activeViolations": [],
+    "activeRendererFeatures": [],
+    "notes": "Inactive URP DecalRendererFeature assets are reported but not counted as active routes. Runtime trauma uses TraumaDecalDTO through _GlobalVisorTrauma in a RenderGraph fullscreen pass."
   }
 }

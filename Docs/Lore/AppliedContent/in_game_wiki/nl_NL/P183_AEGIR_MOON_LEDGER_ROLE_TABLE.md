@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Moon Ledger Role Table"
+title: "Aegir-maanrouteledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ledger Role Table
+# Aegir-maanrouteledger
 
-NL LOC HOLD: The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.
+Het Aegir-maanledger geeft nabije manen harde routefuncties terwijl HECTON-8 de oceaanmaan blijft waar om de diepe claim wordt gevochten. De hemel voelt bewoond zonder elke maan tot beloofde bestemming te maken.
 
 ## Scanner
 
-NL LOC HOLD: Aegir moons are not decoration; each public moon label carries a route or salvage role.
+Aegirs manen verdienen hun namen door wat ze breken, verbergen, verstrooien, doorgeven of verkopen.
 
 ## Terminal
 
-NL LOC HOLD: LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+LEDGER: Skarn-stralingsschering, Vela-relaismaskering, Claw-ijsverstrooiing, Lumen-publieke routekaarten, Thorne-quarantaineruchtverkeer, Anvil-industriële salvage, Kestrel-hoog-vensterverkeer, HECTON-diepe claim, Mute-dode-bakeneconomie.
 
 ## Audio
 
-NL LOC HOLD: The system has more bodies than stories. Good. Use them as pressure.
+Meer lichamen. Meer excuses. Meer manieren waarop hulp mist.
 
 ## Field Note
 
-NL LOC HOLD: Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+De oceaanmaan is alleen onder water, niet alleen in het systeem.
 
 <!-- In-Game Wiki; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/nl_NL. -->

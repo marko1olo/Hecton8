@@ -9,32 +9,22 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Transcripción de audio de expediente laboral"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Worker Dossier Audio Transcript Seed
+# Transcripción de audio de expediente laboral
 
-ES LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+## Una Colonia Antes De Ser Prueba
 
-## Scanner
+El audio de expediente laboral no debe presentar a los muertos como objetos de altar. Debe dejarlos trabajar. Una jefa de bombas revisa una válvula. Un notario de relay se queja de un tablero. Una médica discute con un water ledger. Un operador de fabricator registra un certificado de herramienta porque la herramienta importa más que cualquier discurso sobre valor.
 
-ES LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Esa rutina da peso a las ruinas. El jugador debe oír nombres antes que memoriales, oficios antes que tragedia y pequeñas irritaciones antes de que la gran mentira se cierre alrededor. HECTON-8 no era un escenario para el Marauder. Era un lugar de trabajo con hábitos, rencores, bromas, avisos de deuda y matemáticas de presión.
 
-## Terminal
-
-ES LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
-
-## Audio
-
-ES LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
-
-## Field Note
-
-ES LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Esta capa protege el canon del melodrama. No hay gancho familiar que vuelva especial al jugador. La culpa es profesional. Reconoces procedimientos, tarjetas y malas decisiones porque perteneciste a ese tipo de sistema, y ahora el sistema habla mediante órdenes de trabajo ahogadas.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/es_ES. -->

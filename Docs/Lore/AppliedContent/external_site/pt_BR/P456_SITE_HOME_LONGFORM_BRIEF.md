@@ -9,32 +9,38 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: reivindicação sob pressão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: reivindicação sob pressão
 
-PT LOC HOLD: HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## O primeiro serviço
 
-## Scanner
+HECTON-8 começa com contrato. A Black Keel abre uma janela Aegir, registra 4.8 tonne-window de gravame e lança um bathydrop danificado para P-63. Há luz para navegar e falha suficiente para morrer.
 
-PT LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+O primeiro serviço é concreto: bombear água, vedar dentro da classe, ler falhas da cápsula, escanear o metal. O scanner não faz palestra. Ele mostra por que o relatório limpo não conhece as marcas reais.
 
-## Terminal
+P-63 é bonita sob luz. Beleza não é segurança. Calcário, módulos, cicatrizes de cabo e ferragem de evacuação quebrada contradizem a papelada.
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+O contrato pede carga. A sala entrega prova. Anel de recuperação rasgado, aviônica inundada e quadro torto provam que o bathydrop gastou a volta para sobreviver à queda. Reparar leva para baixo: ferramentas, relés, salmoura, pressure glass e handshake legal.
 
-## Audio
+A Deep Reach não inventou um oceano maligno. A culpa está no risco aceito, na evacuação subdimensionada e na linguagem que transforma trabalhadores em perdas.
 
-PT LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+## Como Ler A Descida
 
-## Field Note
+A regra util de HECTON-8 e direta: cada parte do lore precisa deixar uma marca que o jogador possa verificar. Um numero de contrato nao e enfeite se muda a mass window. Um risco no bathydrop nao e decoracao se prova que o sistema de subida disparou antes do impacto. Uma sala alagada nao e fundo se bomba, vedacao, route log e retorno de scanner contradizem o pacote oficial.
 
-PT LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+Por isso a abertura volta sempre ao trabalho. P-63 ensina que beleza nao e seguranca, que agua rasa ainda pode ser armadilha de claim, e que sobreviver depende de palavras duras: seal rating, intake pressure, relay drift, battery reserve, custody grade.
+
+## A Promessa
+
+A historia grande nao e um discurso para salvar a galaxia. E um problema longo de pressao em torno de um trabalhador com lien ruim e memoria util. O oceano aperta. O contrato aperta. A route window aperta. Contra isso, o jogador monta uma cadeia de prova: um scan, uma amostra, um sistema reparado.
+
+HECTON-8 deve ser legivel porque e fisico. O que importa tem superficie, custo, modo de falha e testemunha.
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/pt_BR. -->

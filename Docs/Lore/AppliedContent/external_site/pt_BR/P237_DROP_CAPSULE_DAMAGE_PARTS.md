@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Drop Capsule Damage Parts"
+title: "Peças danificadas da cápsula de queda"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Drop Capsule Damage Parts
+# Peças danificadas da cápsula de queda
 
-PT LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+Peças danificadas da cápsula removem a lógica conveniente de resgate de HECTON-8. O Marauder está preso porque sistemas específicos falharam: ascent sleeve, guidance gimbal, relay mast, compressor e heat tiles. Cada falha aponta para uma rota, material, melhoria de ferramenta ou objeto de evidência.
 
 ## Scanner
 
-PT LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve empenada, guidance gimbal marcado, relay mast cortado, compressor sujo, heat tile rachada.
 
 ## Terminal
 
-PT LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-PT LOC HOLD: It landed well enough to strand you properly.
+Ela pousou bem o bastante para prender você direito.
 
 ## Field Note
 
-PT LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+A cápsula pode manter um Marauder vivo pela primeira hora. Ela não sai sem peças de reposição de grau profundo.
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/pt_BR. -->

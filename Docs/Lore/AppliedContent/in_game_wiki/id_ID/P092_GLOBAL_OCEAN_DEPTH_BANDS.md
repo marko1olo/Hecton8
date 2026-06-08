@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "Pita Kedalaman Samudra Global"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# Pita Kedalaman Samudra Global
 
-ID LOC HOLD: HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.
+Samudra HECTON-8 dibaca sebagai pita, bukan satu garis dasar. Paparan fotik masih memberi cahaya, rongsokan, alga, dan ruang untuk pilot ceroboh. Paparan industri membawa karang kabel, kandang pipa, dan dek muat tua. Di bawahnya, tangga brine membelokkan sonar dan ballast. Ladang mesin abisal menghukum perbaikan. Basin Atlas membuat tekanan terasa seperti yurisdiksi.
 
 ## Scanner
 
-ID LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+Peta kedalaman. Paparan pertama memaafkan ballast buruk; air lebih bawah menagih tiap kesalahan dengan tekanan, panas, dan sunyi.
 
 ## Terminal
 
-ID LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+PITA: 0-250 m paparan fotik salvage; 250-1200 m paparan industri dan karang kabel; 1200-2800 m tangga/ngarai brine; 2800-4300 m ladang mesin abisal; 4300-5600 m basin Atlas.
 
 ## Audio
 
-ID LOC HOLD: Every band changes what the world allows you to do.
+Setiap seratus meter mengambil satu kebiasaan darimu.
 
 ## Field Note
 
-ID LOC HOLD: Depth is not a number. It is a ruleset.
+Kedalaman di HECTON-8 adalah hukum, cuaca, batas, dan lapar dengan angka yang sama.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/id_ID. -->

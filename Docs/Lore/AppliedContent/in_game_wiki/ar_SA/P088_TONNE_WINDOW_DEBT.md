@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "دين نافذة الطن"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# دين نافذة الطن
 
-AR LOC HOLD: Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.
+دين نافذة الطن هو الموضع الذي تصير فيه الفيزياء تمويلا. لا يملك Black Keel هامش رفع أو وقود عبور أو حجم حجر نظيف بلا حد. كل كيلوغرام يصعد من HECTON-8 ينافس كل كيلوغرام يلزم لإبقاء المشغل حيا. يجعل عداد الدين carrier قاسيا من دون كسر العلم الصلب: الإنقاذ ممكن، لكن ميزانية الطريق تسأل دائما ما الذي يستحق الكتلة.
 
 ## Scanner
 
-AR LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
+عداد نافذة كتلة. كل كيلوغرام من المساعدة له سعر مسار.
 
 ## Terminal
 
-AR LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER: هامش recovery burn ضاق. كتلة استخراج المشغل تتعارض مع payload مختوم واحتياطي ثقل ودين أكسجين وحيازة عينات حجر. التجاوز اليدوي يتطلب أولوية مدفوعة أو دليل خطر.
 
 ## Audio
 
-AR LOC HOLD: You owe the orbit before you owe the money.
+يمكن للسفينة أن تحملك أو تحمل ما وجدته. إنها تفضل رقما.
 
 ## Field Note
 
-AR LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+الأكسجين، الثقل، الدليل، payload، الجسد: carrier يزنها قبل أن يزن الرحمة.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/ar_SA. -->

@@ -195,11 +195,13 @@
     }
   ],
   "evidenceClass": "STATIC_SOURCE_DRAFT_NO_UNITY_IMPORT",
+  "reviewCount": 0,
   "rows": 2,
   "scaledAtlases": [
     "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Atlas/TX_B30_InventoryGenerated_CandidateAtlas_512xCells_256xCells.png"
   ],
   "schema": "hecton8.inventory_atlas_bake.v1",
   "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512",
+  "sourceBakeManifest": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/InventoryIsolatedObjectBakeManifest.json",
   "tool": "Tools/InventoryAtlasBaker.py"
 }

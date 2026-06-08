@@ -7,34 +7,34 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pump Room Handshake"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Uzgodnienie zaworu pompowni"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pump Room Handshake
+# Uzgodnienie zaworu pompowni
 
-Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.
+Uzgodnienie pompy to chwila, gdy zalane pomieszczenie przyjmuje kontrolę lokalną. Daje dostęp, ale przenosi wodę, hałas i ciśnienie do innej części trasy. Przed uznaniem suchej podłogi za bezpieczeństwo czytaj kosz wlotowy, impuls wylotu i stukanie korytarza powrotnego. Wczesne pompownie P-63 uczą podstawowego nawyku naprawy: maszyna może poprawić jeden przedział i pogorszyć drogę do domu.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+Lokalna pompa zęzowa przyjęła wejście z koła ręcznego. Kosz wlotowy zabrudzony pianą kapsuły; impuls wylotowy obciąża korytarz powrotny B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 KONTROLA STUDZIENKI / UZGODNIENIE LOKALNE: koło ręczne przyjęte. Zdalne nadpisanie odrzucone. Przepływ wlotowy przywrócony na niskim poziomie. Ciśnienie wylotu rośnie w RETURN CORRIDOR B; restart tylko po kontroli włazu za odpływem.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+Zawór chwycił. Wylot stuka. Nie nazywaj tego jeszcze bezpiecznym.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Sucha pompownia może utopić drogę powrotną. Posłuchaj uderzeń na wylocie, zanim zdejmiesz zawór.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/pl_PL. -->

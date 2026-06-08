@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Таблица ролей лун Aegir"
+title: "Маршрутный реестр лун Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Таблица ролей лун Aegir
+# Маршрутный реестр лун Aegir
 
-Таблица ролей лун Aegir кратко описывает лунную лестницу вокруг HECTON-8.
+Маршрутный реестр лун Aegir показывает лунную лестницу вокруг HECTON-8: соседние тела не дают легких выходов, а усложняют тайминг спасения, права движения и доверие к маякам.
 
 ## Scanner
 
-Луны Aegir не декор; каждый публичный ярлык несет роль маршрута или salvage.
+Луны Aegir заслуживают имена тем, что ломают, скрывают, рассеивают, ретранслируют или продают.
 
 ## Terminal
 
-LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+РЕЕСТР: радиационный сдвиг Skarn, релейная маскировка Vela, ледяное рассеяние Claw, публичные маршрутные карты Lumen, карантинный трафик слухов Thorne, промышленный salvage Anvil, трафик высоких окон Kestrel, глубокая претензия HECTON, экономика мертвых маяков Mute.
 
 ## Audio
 
-В системе больше тел, чем историй. Хорошо. Используй их как давление.
+Больше тел. Больше оправданий. Больше способов, чтобы помощь промахнулась.
 
 ## Field Note
 
-Другие луны нужны, чтобы HECTON-8 ощущался частью рабочей системы, а не изолированной fantasy-географией.
+Океанская луна одна под водой, но не одна в системе.
 
 <!-- External Site; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/ru_RU. -->

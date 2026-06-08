@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # מניע מקצועי
 
-המניע המקצועי נותן סוכנות בלי לנעול ביוגרפיה.
+Professional Motive נותן למראודר פעולה בלי לנעול ביוגרפיה יתר על המידה: כשירות באה קודם, מעורבות אישית מגיעה דרך ראיות.
 
 ## Scanner
 

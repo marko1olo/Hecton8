@@ -8,33 +8,33 @@ biome_tags: biome.authoring;biome.aegir_system
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "FR LOC HOLD: Ephemeris Data Boundary Rule"
+spoiler_tier: 1
+title: "Règle de frontière des éphémérides"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Ephemeris Data Boundary Rule
+# Règle de frontière des éphémérides
 
-FR LOC HOLD: Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.
+Les pages publiques peuvent expliquer Aegir, HECTON-8, transfer windows et route hazards sans figer les orbital constants exactes.
 
 ## Scanner
 
-FR LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
+Frontière de données : la prose possède les bandes ; les nombres orbitaux finaux restent table-owned.
 
 ## Terminal
 
-FR LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY : la prose peut dire rôles, dangers et bandes. Les orbital values exactes restent hors narrative copy.
 
 ## Audio
 
-FR LOC HOLD: Numbers are allowed when the table owns them.
+Les nombres sont permis quand la table les possède.
 
 ## Field Note
 
-FR LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
+Les éphémérides expliquent la logique de route ; les constantes exactes restent table-owned data.
 
 <!-- External Site; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/fr_FR. -->

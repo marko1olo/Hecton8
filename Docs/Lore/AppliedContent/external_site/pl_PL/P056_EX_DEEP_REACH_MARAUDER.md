@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Były specjalista Deep Reach, dziś marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Były specjalista Deep Reach, dziś marauder
 
-PL LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+Były specjalista Deep Reach, dziś marauder ustala kanon gracza. Gracz jest dawnym korporacyjnym specjalistą od systemów terenowych i infrastruktury ewakuacyjnej, wypchniętym do niezależnego odzysku przez dług albo czarną listę, a potem sprowadzonym na HECTON-8 pod nadzorem Black Keel. Dramat bierze się z zawodowego rozpoznania: księżyc odpowiada procedurami, które gracz kiedyś rozumiał, a każdy znajomy zamek utrudnia traktowanie korporacyjnego kłamstwa jako cudzego wraku.
 
 ## Scanner
 
-PL LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+Stary zamek Deep Reach nie sprawdza twojego nazwiska. Rozpoznaje rytm twojej sekwencji naprawczej.
 
 ## Terminal
 
-PL LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+ŚLAD UPRAWNIEŃ: dawny kontrakt systemów terenowych. Dostęp do infrastruktury ewakuacyjnej cofnięty. Status odzysku przyjęty pod opieką długu puli roszczeń.
 
 ## Audio
 
-PL LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Nie wróciłeś do domu. Wróciłeś do procedury, która nigdy nie przestała działać.
 
 ## Field Note
 
-PL LOC HOLD: Not family business. Procedure remembers who taught your hands.
+To nie sprawa rodzinna. Procedura pamięta dłonie, które jej używały.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/pl_PL. -->

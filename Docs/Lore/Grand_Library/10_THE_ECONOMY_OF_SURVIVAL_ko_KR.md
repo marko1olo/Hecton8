@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 생존의 경제학과 킬마크 부채
 
 > **출처:** Keelmark 독립 하청업체 계약, 부록 14-B (재정적 의무).

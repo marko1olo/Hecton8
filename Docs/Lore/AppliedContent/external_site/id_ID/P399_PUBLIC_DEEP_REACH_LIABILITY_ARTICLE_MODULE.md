@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Deep Reach Liability Evidence"
+title: "Bukti Tanggung Jawab Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Liability Evidence
+# Bukti Tanggung Jawab Deep Reach
 
-ID LOC HOLD: Deep Reach is culpable because the HECTON-8 disaster can be both natural and managed badly. The ocean supplied real force. The company supplied thin margins, late authorization, quarantine delays, Atlas priority rules and paperwork clean enough to outlive the workers it described. The strongest evidence is physical: doors, clocks, sensor tolerances, route holds and loss ledgers.
+Deep Reach bersalah karena bencana HECTON-8 dapat alami sekaligus dikelola buruk. Samudra menyediakan gaya nyata: tide resonance, cryosphere shear, storm stacking, dan pressure failure. Perusahaan menyediakan margins tipis, authorization terlambat, quarantine delay, Atlas priority rules, dan berkas yang cukup rapi untuk hidup lebih lama daripada orang yang digambarkannya. Bukti terkuat bersifat fisik dan prosedural: pintu ditahan executive authority, sensor tolerance diubah sebelum jendela tertutup, antrean ditunda demi legal clearance, loss ledger mengubah pekerja menjadi claim categories saat air masih bergerak. Pemain belajar tidak mempercayai bahasa resmi dengan mencocokkannya pada penyok, jam, dan rute.
 
 ## Scanner
 
-ID LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Catatan liability. Fisika pasang nyata, margin risk yang diterima, tunda evakuasi, quarantine holds, Atlas weighting, dan bahasa kerugian yang dirapikan bertemu dalam rantai bukti yang sama.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+SIMPUL ARSIP PUBLIK // BUKTI LIABILITY. Great Tide diterima. Tinjauan tetap terbuka untuk sensor margins, tunda evacuation queue, quarantine holds, Atlas weighting, worker classification, dan loss conversion.
 
 ## Audio
 
-ID LOC HOLD: A disaster can be natural and still have signatures on it.
+Bencana bisa alami dan tetap memiliki tanda tangan.
 
 ## Field Note
 
-ID LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Catatan Marauder: jangan berdebat dengan pasang. Berdebatlah dengan tanda tangan di sampingnya.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/id_ID. -->

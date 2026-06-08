@@ -9,32 +9,26 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Black Keel請求ウィンドウ"
+title: "Black Keel請求ウィンドウ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Black Keel請求ウィンドウ
+# Black Keel請求ウィンドウ
 
-JA LOC HOLD: Black Keelは体を引き上げる前に信号を聞ける。Aegirでのキャリア応答は、中継幾何、天候、検疫審査、ペイロード受理、質量回収を通る有料レーンだ。接触は経路の事実。救助は完了した鎖だ。
+## 受信は引き上げではない
 
-## Scanner
+Black Keelは体を引き上げる前に信号を聞ける。その差が請求ウィンドウだ。
 
-JA LOC HOLD: 請求ウィンドウ // Aegir中継は受信窓のみ予測。回収には上昇パッケージ、検疫ハンドシェイク、tonne-window割当が必要。
+Aegirでのcarrier応答は救助の約束ではない。中継幾何、天候、検疫審査、ペイロード受理、質量回収を通る時間指定レーンだ。同じ窓が貨物、証拠、酸素債務、作業者の安否を値付けする。HECTON-8を離れるすべてのキログラムが同じ軌道機会を消費するからだ。
 
-## Terminal
+Keelmark Mutualはその窓を保管時間として記録する。Black Keelは受信確認、引き上げ保留と記録する。Deep Reachの条項は、優先文言が有効なら、サンプル、座標パケット、検疫保留を作業者の前に置ける。
 
-JA LOC HOLD: KEELMARK保管通知 // 作業者信号受信。回収優先度未解決。信号や証拠パケットの受領は作業者回収を保証しない。
+P-63は早い段階でその規則を見せる。リレーボードはきれいな確認を出せるが、bathydropには上昇パッケージも検疫ハンドシェイクも割り当て済みtonne-windowもない。carrierは作業者が生きていると知っている。請求もできる。パケットに値も付けられる。それでもHECTON-8の圧力、Aegirの時間、契約順序は無視できない。
 
-## Audio
-
-JA LOC HOLD: Black Keel中継: 作業者信号を価格登録。回収窓は保留。受信を引き上げと混同するな。
-
-## Field Note
-
-JA LOC HOLD: Black Keelが返答したら、救助ではなく請求を数えろ。受信済みパケットは、質量、封印、検疫、天候が揃うまで待ち行列の席でしかない。
+接触は経路の事実。救助は完了した鎖だ。
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/ja_JP. -->

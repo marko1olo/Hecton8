@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute sebagai Beacon Mati Luar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Outer Dead Beacon Moon Role
+# Mute sebagai Beacon Mati Luar
 
-ID LOC HOLD: The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.
+Mute adalah bulan beacon mati bagian luar dalam tangga Aegir. Relay-nya tidak dapat dipercaya, dingin, dan sebagian hilang dari peta publik saat ini. Mereka tetap muncul di solver lama, klausul asuransi, dan tabel pemulihan. Itu membuat komunikasi dengan HECTON-8 jarang dan buruk, bukan ajaib. Pesan dapat terlambat karena fisika, data buruk, atau aturan kustodi yang pura-pura keduanya sama.
 
 ## Scanner
 
-ID LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
+Ping beacon mati. Mute tidak lagi menjawab bersih, tetapi solver lama masih memakai hantunya.
 
 ## Terminal
 
-ID LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
+CATATAN BEACON H9 MUTE: efemeris arsip tidak cocok dengan echo relay saat ini. Solver penyelamatan menandai ambiguitas yang bisa dipakai. Meja kontrak mengizinkan kustodi pesan tertunda sampai jendela terkonfirmasi.
 
 ## Audio
 
-ID LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
+Beacon mati tetap beacon jika tagihan tahu tempat menemukannya.
 
 ## Field Note
 
-ID LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Infrastruktur mati tidak meninggalkan Aegir. Ia menjadi suku galat yang bisa ditagihkan.
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/id_ID. -->

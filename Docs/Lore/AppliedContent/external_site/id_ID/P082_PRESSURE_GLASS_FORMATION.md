@@ -8,33 +8,19 @@ biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+spoiler_tier: 1
+title: "Pembentukan Kaca Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Pembentukan Kaca Tekanan
 
-ID LOC HOLD: Pressure Glass Formation turns Xenon-Omega into hard-sci-fi material ecology instead of magic ore. It is a pressure-made substrate tied to Atlas, containment and computation.
+Kaca tekanan adalah nama teknis di balik blue debt para Marauder dan bahasa Xenon-Omega Deep Reach. Ia terbentuk saat tekanan, kantong gas mulia, brine, mineral, panas dan biologi yang berubah bertemu.
 
-## Scanner
-
-ID LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
-
-## Terminal
-
-ID LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
-
-## Audio
-
-ID LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
-
-## Field Note
-
-ID LOC HOLD: It is not ore. It is a process that remembers where it was made.
+Pembentukan Kaca Tekanan menjadikan Xenon-Omega ekologi material hard-sci-fi, bukan bijih ajaib. Ini bukan bijih. Ini proses yang mengingat tempat pembuatannya.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/id_ID. -->

@@ -2450,7 +2450,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         _pendingRendererDisables.Clear();
     }
 
-    void SafeDestroy(Object obj)
+    void SafeDestroy(UnityEngine.Object obj)
     {
         if (obj == null) return;
 #if UNITY_EDITOR

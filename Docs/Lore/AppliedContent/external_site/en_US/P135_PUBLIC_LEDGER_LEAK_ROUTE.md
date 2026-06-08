@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "Public Ledger Leak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Public Ledger Leak Route
+# Public Ledger Leak
 
-The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+The Public Ledger Leak is not a perfect whistleblower fantasy. It is a packet leaving on a narrow relay window with a witness hash, enough custody to be hard to deny, and too many missing pieces to be safe. Tau Ceti can make the record public long after it can save anyone in the water.
 
-## Scanner
-
-You can leak truth before you understand all of it.
-
-## Terminal
-
-PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-The truth leaves first. You may not like who reads it.
-
-## Field Note
-
-Public does not mean safe. It means harder to erase.
+That delay is the point. Deep Reach cannot simply delete the claim, but the player also cannot decide who uses it next. Insurers, rivals, civic courts, Marauder pools and corporate offices will all read the same wound differently. This ending makes truth harder to bury and harder to own.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/en_US. -->

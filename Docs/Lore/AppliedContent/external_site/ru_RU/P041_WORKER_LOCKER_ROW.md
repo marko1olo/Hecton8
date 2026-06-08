@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Ряд рабочих шкафов
@@ -27,7 +27,7 @@ localization_flags: 0
 
 ## Terminal
 
-Аудит шкафов: личные замки сорваны давлением. Часть бирок несет метки Barnard и долги по сменным авансам.
+АУДИТ КОЛОНИИ: личное хранение и метки Barnard связывают ряд шкафов с именованной сменой и рабочими маршрутами.
 
 ## Audio
 

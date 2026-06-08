@@ -81,11 +81,15 @@ namespace Hecton8.UI
         private bool _registered;
         private bool _hotSwapListenerRegistered;
         private int _cachedActionTextVersion = -1;
+        private int _lastCompletedDropGeneration;
+        private int _lastCancelledDropGeneration;
 
         private static readonly char[] s_EatingTextChars = { 'E', 'a', 't', 'i', 'n', 'g', '.', '.', '.' };
         private static readonly char[] s_HealingTextChars = { 'A', 'p', 'p', 'l', 'y', 'i', 'n', 'g', '.', '.', '.' };
         private static readonly char[] s_OxygenTextChars = { 'I', 'n', 'h', 'a', 'l', 'i', 'n', 'g', '.', '.', '.' };
         private static readonly char[] s_DefaultTextChars = { 'U', 's', 'i', 'n', 'g', '.', '.', '.' };
+        private const string FallbackProgressImageName = "ActionProgressHUD_Fill";
+        private const string FallbackActionTextName = "ActionProgressHUD_Label";
 
         // ----------------------------------------------------------
         //  LIFECYCLE
@@ -94,6 +98,11 @@ namespace Hecton8.UI
         private void Awake()
         {
             TryGetComponent(out _canvasGroup);
+            if (_canvasGroup == null)
+                _canvasGroup = gameObject.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] - fallback for prefab/runtime action progress HUD binding - owner: ActionProgressHUD
+
+            EnsureFallbackWidgetsCold();
+            ResetDropGenerationCursors();
             _currentAlpha = 0f;
             _canvasGroup.alpha = 0f;
             _canvasGroup.blocksRaycasts = false;
@@ -108,6 +117,79 @@ namespace Hecton8.UI
 
             if (actionText != null)
                 actionText.raycastTarget = false;
+        }
+
+        private void EnsureFallbackWidgetsCold()
+        {
+            RectTransform root = transform as RectTransform;
+            if (root != null && root.sizeDelta.sqrMagnitude <= 0.0001f)
+            {
+                root.sizeDelta = new Vector2(118f, 78f);
+                root.pivot = new Vector2(0.5f, 0.5f);
+            }
+
+            if (progressImage == null)
+                progressImage = CreateFallbackProgressImageCold(root);
+
+            if (actionText == null)
+                actionText = CreateFallbackActionTextCold(root);
+        }
+
+        private Image CreateFallbackProgressImageCold(RectTransform root)
+        {
+            GameObject imageObject = new GameObject(FallbackProgressImageName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)); // COLD ALLOC: GameObject[1] + UI components - missing serialized action progress fill fallback - owner: ActionProgressHUD
+            imageObject.layer = gameObject.layer;
+            imageObject.transform.SetParent(transform, false);
+
+            RectTransform rect = imageObject.transform as RectTransform;
+            if (rect != null)
+            {
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = root != null && root.sizeDelta.sqrMagnitude > 0.0001f
+                    ? new Vector2(math.min(root.sizeDelta.x, 64f), math.min(root.sizeDelta.x, 64f))
+                    : new Vector2(64f, 64f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+            }
+
+            Image image = imageObject.GetComponent<Image>();
+            image.color = defaultColor;
+            image.raycastTarget = false;
+            image.type = Image.Type.Filled;
+            image.fillMethod = Image.FillMethod.Radial360;
+            image.fillOrigin = (int)Image.Origin360.Top;
+            image.fillClockwise = true;
+            image.fillAmount = 0f;
+            return image;
+        }
+
+        private TMPro.TMP_Text CreateFallbackActionTextCold(RectTransform root)
+        {
+            GameObject textObject = new GameObject(FallbackActionTextName, typeof(RectTransform), typeof(CanvasRenderer), typeof(TMPro.TextMeshProUGUI)); // COLD ALLOC: GameObject[1] + TMP components - missing serialized action progress label fallback - owner: ActionProgressHUD
+            textObject.layer = gameObject.layer;
+            textObject.transform.SetParent(transform, false);
+
+            RectTransform rect = textObject.transform as RectTransform;
+            if (rect != null)
+            {
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = new Vector2(0f, -42f);
+                rect.sizeDelta = root != null && root.sizeDelta.sqrMagnitude > 0.0001f
+                    ? new Vector2(math.max(root.sizeDelta.x, 96f), 22f)
+                    : new Vector2(118f, 22f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+            }
+
+            TMPro.TextMeshProUGUI label = textObject.GetComponent<TMPro.TextMeshProUGUI>();
+            label.raycastTarget = false;
+            label.enableWordWrapping = false;
+            label.alignment = TMPro.TextAlignmentOptions.Center;
+            label.fontSize = 14f;
+            label.color = new Color(0.74f, 1f, 0.96f, 0.92f);
+            label.SetCharArray(s_DefaultTextChars, 0, s_DefaultTextChars.Length);
+            return label;
         }
 
         private void OnEnable()
@@ -152,6 +234,13 @@ namespace Hecton8.UI
             ReadOnlySpan<PlayerActionCancelledSignal> cancelledSignals = SignalBus<PlayerActionCancelledSignal>.GetFrameSnapshot();
             for (int i = 0; i < cancelledSignals.Length; i++)
                 HandleActionCancelled(in cancelledSignals[i]);
+
+            if (completedSignals.Length == 0 &&
+                cancelledSignals.Length == 0 &&
+                HasUnhandledTerminalActionSignalDrop())
+            {
+                HandleTerminalActionSignalDrop();
+            }
         }
 
         // ----------------------------------------------------------
@@ -235,9 +324,44 @@ namespace Hecton8.UI
             StartFadeOut();
         }
 
+        private void HandleTerminalActionSignalDrop()
+        {
+            if (_fadeState == FadeState.Hidden)
+                return;
+
+            StartFadeOut();
+        }
+
         // ----------------------------------------------------------
         //  PRIVATE METHODS
         // ----------------------------------------------------------
+
+        private bool HasUnhandledTerminalActionSignalDrop()
+        {
+            int completedGeneration = SignalBus<PlayerActionCompletedSignal>.SnapshotGeneration;
+            int cancelledGeneration = SignalBus<PlayerActionCancelledSignal>.SnapshotGeneration;
+
+            bool completedDropped = SignalBus<PlayerActionCompletedSignal>.DroppedLastFlush > 0 &&
+                                    completedGeneration != _lastCompletedDropGeneration;
+            bool cancelledDropped = SignalBus<PlayerActionCancelledSignal>.DroppedLastFlush > 0 &&
+                                    cancelledGeneration != _lastCancelledDropGeneration;
+
+            if (!completedDropped && !cancelledDropped)
+                return false;
+
+            if (completedDropped)
+                _lastCompletedDropGeneration = completedGeneration;
+            if (cancelledDropped)
+                _lastCancelledDropGeneration = cancelledGeneration;
+
+            return true;
+        }
+
+        private void ResetDropGenerationCursors()
+        {
+            _lastCompletedDropGeneration = SignalBus<PlayerActionCompletedSignal>.SnapshotGeneration;
+            _lastCancelledDropGeneration = SignalBus<PlayerActionCancelledSignal>.SnapshotGeneration;
+        }
 
         private void StartFadeOut()
         {
@@ -253,6 +377,7 @@ namespace Hecton8.UI
             _fadeTimer = 0f;
             _currentAlpha = 0f;
             _cachedActionTextVersion = -1;
+            ResetDropGenerationCursors();
 
             if (_canvasGroup != null)
             {

@@ -9,32 +9,36 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Revoked Access Language Trace"
+title: "עקבת שפת גישה שבוטלה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Revoked Access Language Trace
+# עקבת שפת גישה שבוטלה
 
-HE LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+הפרוטגוניסט קורא נעילות של Deep Reach כראיות. אישורים שבוטלו חוסמים גישה, אבל הניסוח עדיין חושף את המסלול הקבור: ספירות מדורדרות, עדים חלופיים, סיווג תחזוקה מחדש ושפת שימור תביעות.
 
 ## Scanner
 
-HE LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+הנעילה לא אומרת אסור. היא אומרת סיווג מחדש לתחזוקה, החזקת רציפות, וחומרי מסלול. ניסוח ישן של Deep Reach: סירוב שעדיין מצביע אל הדלת הקבורה.
 
 ## Terminal
 
-HE LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+תגובת גישה / ארכיון מסלול בטוח
+אישור: בוטל
+סיבה: חומרי רציפות פינוי מוגבלים לאנשי Deep Reach מוסמכים
+מונחים גלויים: ספירה מדורדרת, עד חלופי, מסלול שימור תביעה, סיווג מחדש לתחזוקה
+הערה: אנשי שטח לשעבר רשאים לראות את שפת הסירוב רק לצורך התאמת אירוע.
 
 ## Audio
 
-HE LOC HOLD: That is not security. That is a memo pretending to be a door.
+הם לא מחקו את המסדרון. הם עטפו אותו באוצר מילים שרק עובדים אשמים עדיין מבינים.
 
 ## Field Note
 
-HE LOC HOLD: Lockout language hints at hidden liability without granting free access.
+התג מת. הנעילה עדיין מדברת בניב המשרדי שקבר את המסלול.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/he_IL. -->

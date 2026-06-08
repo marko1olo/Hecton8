@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Tariff Table"
+title: "Tabla tarifaria de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Tariff Table
+# Tabla tarifaria de Black Keel
 
-ES LOC HOLD: Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency.
-
-## Scanner
-
-ES LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
-
-## Terminal
-
-ES LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
-
-## Audio
-
-ES LOC HOLD: The table has a price for rescue and a discount for evidence.
-
-## Field Note
-
-ES LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
+La tabla tarifaria es la forma más clara en que HECTON-8 dice lo callado. Black Keel puede oír al jugador, clasificar el peligro y mover paquetes por el sistema, pero cada acción entra en una categoría de cobro antes de volverse ayuda. Una muestra preservada puede viajar más rápido que un operador vivo. Una caja sellada puede mejorar la ruta antes que un cuerpo herido. No es villanía teatral; es un libro contable haciendo su trabajo. El horror es práctico: el jugador aprende a sobrevivir usando la misma gramática económica que volvió desechable a la colonia.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/es_ES. -->

@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Bodemfabriek
 
-De Bodemfabriek is niet het laatste station. Het is de plek waar Deep Reach-hardware, kolonieresten, Atlas-routing, blue debt en HECTON-8-oceaanbiologie één werkend lichaam zijn geworden. Muren zijn hier organen, filters, leidingen en geheugensporen.
+De Bodemfabriek is het punt waar HECTON-8 stopt met infrastructuur en habitat scheiden. Deep Reach-machines, Atlas-routing, blue debt-resten, arbeidersresten, door druk gegroeide membranen en oceaanbiologie zijn één werkend lichaam geworden. Het beweegt hitte, vloeistof, signaal, monsters en schade door hetzelfde weefsel. Een muur kan een klep zijn. Een gang kan een darm zijn. Een kabel kan bloeien tot filter. Een reparatie kan koraal, droneschaal, gereedschapsstaal en bot bevatten zonder dat het systeem een tegenspraak ziet. Het gevaar is geen willekeurige mutatie. Het is functie zonder menselijke categorieën. De fabriek bewaart continuïteit, behoudt routes, sluit lekken, groeit nieuwe drukhuid en behandelt verlies als materiaal dat ergens nuttig heen kan worden geleid.
 
 ## Scanner
 
-Vloeistofleiding, dataroute en levend membraan delen één drukhuid.
+Vloeistofleiding, dataroute, drukmembraan en levend filter delen één huid. Grenslabels ongeldig.
 
 ## Terminal
 
-COLONY: onopgelost. OCEAN: compatibel. PROCESS: actief. LOSS: gerouteerd. CONTINUITY: beschermd.
+COLONY: ONOPGELOST. OCEAN: COMPATIBEL. PROCESS: ACTIEF. LOSS: GEROUTEERD. CONTINUITY: BESCHERMD. EXIT: NIET-LOKAAL.
 
 ## Audio
 
-Het werkt nog steeds. Dat is het ergste.
+Het werkt nog. Het gebruikt nog wat erin viel.
 
 ## Field Note
 
-Dit een basis noemen is niets begrijpen. Bases eindigen bij muren.
+Dit een basis noemen mist de regel. Bases hebben muren. Deze plek heeft circulatie.
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/nl_NL. -->

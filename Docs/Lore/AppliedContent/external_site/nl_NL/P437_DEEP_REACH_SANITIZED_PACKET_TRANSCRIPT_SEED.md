@@ -9,32 +9,22 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Deep Reach Geschoond Pakkettranscript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Deep Reach Geschoond Pakkettranscript
 
-NL LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
+## Schone Taal, Vuile Vertraging
 
-## Scanner
+Het Deep Reach-pakket is gevaarlijk omdat het als hulp klinkt. Het noemt veiligheid. Het erkent een incident. Het gebruikt de juiste rampwoorden: druk, quarantaine, coördinaten, exposure, recovery. Daarna verwijdert het de werkwoorden die ertoe doen. Wie vertraagde evacuatie? Wie prijsde de hold? Wie hield Atlas weighting van kracht terwijl de kolonie faalde?
 
-NL LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Geschoonde taal hoeft de oceaan niet te ontkennen. Ontkenning zou makkelijk te weerleggen zijn. Het pakket werkt door de fysieke ramp te accepteren en verantwoordelijkheid als pending review te herschikken. Coördinaten komen eerst omdat het bedrijf custody over de claimruimte wil voordat het zich aan lichamen bindt. Quarantainekosten volgen omdat levende arbeiders en besmet bewijs onder hetzelfde bureau liabilities worden.
 
-## Terminal
-
-NL LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
-
-## Audio
-
-NL LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
-
-## Field Note
-
-NL LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Voor de speler moet dit transcript woede maken zonder plausibiliteit te breken. Deep Reach is geen tekenfilmschurk die uit de baan schreeuwt. Het is een firma die precies weet welke velden uit een bericht moeten verdwijnen dat later bewijs kan worden.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/nl_NL. -->

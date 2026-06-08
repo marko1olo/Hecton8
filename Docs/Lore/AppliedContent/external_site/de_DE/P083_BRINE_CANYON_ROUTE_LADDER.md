@@ -8,33 +8,19 @@ biome_tags: biome.brine_canyon;biome.drop_zone
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+spoiler_tier: 1
+title: "Routenleiter des Sole-Canyons"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# Routenleiter des Sole-Canyons
 
-DE LOC HOLD: Brine Canyon Route Ladder is one of HECTON-8's core exploration structures: not a hallway, but a chemical geography where density, current and sound shape progression.
+Sole-Canyons machen Tiefenfortschritt physisch. Dichte Schichten, Mineralwände, Wärmelecks und akustische Verzerrung zeigen, warum tiefere Reise bessere Instrumente und Druckdisziplin braucht.
 
-## Scanner
-
-DE LOC HOLD: Brine density marker. The descent route is chemistry with walls.
-
-## Terminal
-
-DE LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
-
-## Audio
-
-DE LOC HOLD: The canyon is a staircase made of wrong water.
-
-## Field Note
-
-DE LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+Die Routenleiter des Sole-Canyons ist eine Kernstruktur der Erkundung von HECTON-8: kein Flur, sondern chemische Geografie aus Dichte, Strömung und Klang. Man schwimmt nicht durch den Canyon. Man verhandelt mit Schichten, die schwerer sind als der Anzug.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/de_DE. -->

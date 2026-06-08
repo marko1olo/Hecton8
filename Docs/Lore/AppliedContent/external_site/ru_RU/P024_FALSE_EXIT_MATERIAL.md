@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Материальный выход
 
-Материальный выход усиливает реиграбельность: прибыльная, но скомпрометированная концовка для игроков, выбирающих лут, контракт и выживание вместо полной правды глубины.
+Material Exit поддерживает прибыльный, но скомпрометированный отход: добыча, контракты и выживание могут выиграть подъем, пока полная правда спуска остается внизу.
 
 ## Scanner
 

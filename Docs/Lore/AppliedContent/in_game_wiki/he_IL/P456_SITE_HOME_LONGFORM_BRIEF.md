@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: תביעת לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: תביעת לחץ
 
-HE LOC HOLD: Recovered P-63 route notes tie the opening contract to Black Keel's salvage window. The shelf is bright enough to navigate, but the useful facts are mechanical: bathydrop damage, pressure repair, scanner returns, and official wording that does not match the marks on the hardware. Keep the record spoiler-safe until deeper evidence is recovered.
+הערות P-63 מגדירות את הפתיחה כעבודת חילוץ תחת חוב. העובדות הן מכניות: יכולת עלייה שנשרפה, אוויוניקה מוצפת, אטמים פגומים, החזרי סורק ושפה רשמית שלא מסבירה שקעים.
 
 ## Scanner
 
-HE LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+רשומת קבלת Marauder. חוזה Black Keel מחבר את P-63, bathydrop פגום, שעבוד 4.8 tonne-window ותיק תאונה שלא מתאים למתכת.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+צומת ארכיון ציבורי // תביעת H8. חלון Aegir פתוח. עבודה: לשקם אטמי לחץ, לסרוק את P-63, להחזיר מטען, לשמור ראיה ולחזור לפני סגירת גאומטריית הקבלה.
 
 ## Audio
 
-HE LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+מקטע ממסר Black Keel: "החלון צר. תקן את מעטפת הירידה, קרא את סימני הלחץ והבא הוכחה עם המטען."
 
 ## Field Note
 
-HE LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+הערת Marauder: אור על P-63 אינו בטיחות. ספור אוויר, תקן אטמים לפני מטען ואל תאמין לתיק שלא מסביר שקעים.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/he_IL. -->

@@ -577,6 +577,7 @@ namespace Hecton8.Core.Memory
         private bool _phiVodDumpWritten;
         private bool _shinobu202DumpWritten;
         private bool _initialized;
+        private bool _disposed;
         private static GlobalDataVault _latestCreated;
 
         /// <inheritdoc />
@@ -707,7 +708,7 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public void Initialize(int capacity = DefaultBufferCapacity, long arenaCapacityLimitBytes = MinimumQualityArenaLimitBytes)
         {
-            if (_initialized)
+            if (_initialized || _disposed)
                 return;
 
             if (!ValidateAbiLayout())
@@ -1189,6 +1190,9 @@ namespace Hecton8.Core.Memory
                 return false;
 
             EnsureInitialized();
+            if (!_initialized)
+                return false;
+
             if (_arenaBase == null)
             {
                 DumpPhiVodBlackBox();
@@ -2907,7 +2911,7 @@ namespace Hecton8.Core.Memory
         /// <inheritdoc />
         public bool TryAcquireMutationGuard(ulong writeMask)
         {
-            if (writeMask == 0UL)
+            if (!_initialized || writeMask == 0UL)
                 return false;
             if (Volatile.Read(ref _compactionFence) != 0)
             {
@@ -3909,9 +3913,13 @@ namespace Hecton8.Core.Memory
         public void Dispose()
         {
             if (!_initialized)
+            {
+                _disposed = true;
                 return;
+            }
 
-            UnregisterNativeSidecarStorage();
+            Arm64AlignmentTelemetry.ReleaseOwnedBuffers(this);
+
             DisposeMacroDatabasePayloadCache();
 
             if (_blocks.IsCreated)
@@ -3935,19 +3943,35 @@ namespace Hecton8.Core.Memory
                 _arenaBase = null;
             }
             if (_keys.IsCreated)
+            {
                 _keys.Dispose();
+                UnregisterSidecar(ref _keysSentinelId, nameof(_keys));
+            }
             if (_buffers.IsCreated)
+            {
                 _buffers.Dispose();
+                UnregisterSidecar(ref _buffersSentinelId, nameof(_buffers));
+            }
             if (_metadata.IsCreated)
+            {
                 _metadata.Dispose();
+                UnregisterSidecar(ref _metadataSentinelId, nameof(_metadata));
+            }
             if (_metadataGenerationByBufferId.IsCreated)
+            {
                 _metadataGenerationByBufferId.Dispose();
+                UnregisterSidecar(ref _metadataGenerationByBufferIdSentinelId, nameof(_metadataGenerationByBufferId));
+            }
             if (_metadataByBufferId.IsCreated)
             {
                 H8Memory.Release(ref _metadataByBufferId, SystemID.CoreDataVault);
             }
             if (_blocks.IsCreated)
+            {
                 _blocks.Dispose();
+                UnregisterSidecar(ref _blocksSentinelId, nameof(_blocks));
+            }
+            UnregisterNativeSidecarStorage();
             if (_defragBlackBox.IsCreated || _defragBlackBoxDetails.IsCreated)
             {
                 bool canReleaseBlackBox = IsMemorySentryDumpIdleOnDispose();
@@ -4018,6 +4042,7 @@ namespace Hecton8.Core.Memory
             _shinobu202DumpWritten = false;
             ResetDefragTelemetry();
             _initialized = false;
+            _disposed = true;
             if (ReferenceEquals(_latestCreated, this))
                 _latestCreated = null;
         }
@@ -4074,11 +4099,20 @@ namespace Hecton8.Core.Memory
             }
 
             if (_macroDatabasePayloadKeys.IsCreated)
+            {
                 _macroDatabasePayloadKeys.Dispose();
+                UnregisterSidecar(ref _macroDatabasePayloadKeysSentinelId, nameof(_macroDatabasePayloadKeys));
+            }
             if (_macroDatabasePayloadAccessTicks.IsCreated)
+            {
                 _macroDatabasePayloadAccessTicks.Dispose();
+                UnregisterSidecar(ref _macroDatabasePayloadAccessTicksSentinelId, nameof(_macroDatabasePayloadAccessTicks));
+            }
             if (_macroDatabasePayloadCache.IsCreated)
+            {
                 _macroDatabasePayloadCache.Dispose();
+                UnregisterSidecar(ref _macroDatabasePayloadCacheSentinelId, nameof(_macroDatabasePayloadCache));
+            }
 
             _macroDatabasePayloadBytes = 0L;
             _macroDatabasePayloadEvictions = 0;
@@ -4104,55 +4138,45 @@ namespace Hecton8.Core.Memory
             if (_buffersSentinelId <= 0)
             {
                 _buffersSentinelId = RequireSentinelRegistration(
-                    NativeMemorySentinel.RegisterUnsafeHashMapInstance(
+                    RegisterUnsafeHashMapSidecar(
                         _buffers,
-                        NativeMemoryOwner,
-                        nameof(_buffers),
-                        NativeAllocationLifetime.Session),
+                        nameof(_buffers)),
                     nameof(_buffers));
             }
 
             if (_metadataSentinelId <= 0)
             {
                 _metadataSentinelId = RequireSentinelRegistration(
-                    NativeMemorySentinel.RegisterUnsafeHashMapInstance(
+                    RegisterUnsafeHashMapSidecar(
                         _metadata,
-                        NativeMemoryOwner,
-                        nameof(_metadata),
-                        NativeAllocationLifetime.Session),
+                        nameof(_metadata)),
                     nameof(_metadata));
             }
 
             if (_metadataGenerationByBufferIdSentinelId <= 0)
             {
                 _metadataGenerationByBufferIdSentinelId = RequireSentinelRegistration(
-                    NativeMemorySentinel.RegisterUnsafeHashMapInstance(
+                    RegisterUnsafeHashMapSidecar(
                         _metadataGenerationByBufferId,
-                        NativeMemoryOwner,
-                        nameof(_metadataGenerationByBufferId),
-                        NativeAllocationLifetime.Session),
+                        nameof(_metadataGenerationByBufferId)),
                     nameof(_metadataGenerationByBufferId));
             }
 
             if (_keysSentinelId <= 0)
             {
                 _keysSentinelId = RequireSentinelRegistration(
-                    NativeMemorySentinel.RegisterNativeListInstance(
+                    RegisterNativeListSidecar(
                         _keys,
-                        NativeMemoryOwner,
-                        nameof(_keys),
-                        NativeAllocationLifetime.Session),
+                        nameof(_keys)),
                     nameof(_keys));
             }
 
             if (_blocksSentinelId <= 0)
             {
                 _blocksSentinelId = RequireSentinelRegistration(
-                    NativeMemorySentinel.RegisterNativeListInstance(
+                    RegisterNativeListSidecar(
                         _blocks,
-                        NativeMemoryOwner,
-                        nameof(_blocks),
-                        NativeAllocationLifetime.Session),
+                        nameof(_blocks)),
                     nameof(_blocks));
             }
         }
@@ -4162,33 +4186,27 @@ namespace Hecton8.Core.Memory
             if (_macroDatabasePayloadCacheSentinelId <= 0)
             {
                 _macroDatabasePayloadCacheSentinelId = RequireSentinelRegistration(
-                    NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
+                    RegisterNativeParallelHashMapSidecar(
                         _macroDatabasePayloadCache,
-                        NativeMemoryOwner,
-                        nameof(_macroDatabasePayloadCache),
-                        NativeAllocationLifetime.Session),
+                        nameof(_macroDatabasePayloadCache)),
                     nameof(_macroDatabasePayloadCache));
             }
 
             if (_macroDatabasePayloadAccessTicksSentinelId <= 0)
             {
                 _macroDatabasePayloadAccessTicksSentinelId = RequireSentinelRegistration(
-                    NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
+                    RegisterNativeParallelHashMapSidecar(
                         _macroDatabasePayloadAccessTicks,
-                        NativeMemoryOwner,
-                        nameof(_macroDatabasePayloadAccessTicks),
-                        NativeAllocationLifetime.Session),
+                        nameof(_macroDatabasePayloadAccessTicks)),
                     nameof(_macroDatabasePayloadAccessTicks));
             }
 
             if (_macroDatabasePayloadKeysSentinelId <= 0)
             {
                 _macroDatabasePayloadKeysSentinelId = RequireSentinelRegistration(
-                    NativeMemorySentinel.RegisterNativeListInstance(
+                    RegisterNativeListSidecar(
                         _macroDatabasePayloadKeys,
-                        NativeMemoryOwner,
-                        nameof(_macroDatabasePayloadKeys),
-                        NativeAllocationLifetime.Session),
+                        nameof(_macroDatabasePayloadKeys)),
                     nameof(_macroDatabasePayloadKeys));
             }
         }
@@ -4201,32 +4219,130 @@ namespace Hecton8.Core.Memory
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
+        private static int RegisterUnsafeHashMapSidecar<TKey, TValue>(
+            UnsafeHashMap<TKey, TValue> map,
+            string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return 0;
+
+            return NativeMemoryTrackingBridge.RegisterBytesInstance(
+                EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity),
+                NativeMemoryOwner,
+                label,
+                NativeMemoryBridgeLifetime.Session);
+        }
+
+        private static int RegisterNativeParallelHashMapSidecar<TKey, TValue>(
+            NativeParallelHashMap<TKey, TValue> map,
+            string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return 0;
+
+            return NativeMemoryTrackingBridge.RegisterBytesInstance(
+                EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity),
+                NativeMemoryOwner,
+                label,
+                NativeMemoryBridgeLifetime.Session);
+        }
+
+        private static int RegisterNativeListSidecar<T>(NativeList<T> list, string label)
+            where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return 0;
+
+            return NativeMemoryTrackingBridge.RegisterBytesInstance(
+                (long)UnsafeUtility.SizeOf<T>() * Math.Max(1, list.Capacity),
+                NativeMemoryOwner,
+                label,
+                NativeMemoryBridgeLifetime.Session);
+        }
+
+        private static void RefreshNativeParallelHashMapSidecar<TKey, TValue>(
+            NativeParallelHashMap<TKey, TValue> map,
+            ref int sentinelId,
+            string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            UnregisterSidecar(ref sentinelId, label);
+            sentinelId = RequireSentinelRegistration(
+                RegisterNativeParallelHashMapSidecar(map, label),
+                label);
+        }
+
+        private static void RefreshNativeListSidecar<T>(
+            NativeList<T> list,
+            ref int sentinelId,
+            string label)
+            where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            UnregisterSidecar(ref sentinelId, label);
+            sentinelId = RequireSentinelRegistration(
+                RegisterNativeListSidecar(list, label),
+                label);
+        }
+
+        private static void UnregisterSidecar(ref int sentinelId, string label)
+        {
+            if (sentinelId <= 0)
+                return;
+
+            NativeMemoryTrackingBridge.Unregister(sentinelId);
+            sentinelId = 0;
+        }
+
+        private static long EstimateNativeHashMapBytes<TKey, TValue>(int capacity)
+            where TKey : unmanaged
+            where TValue : unmanaged
+        {
+            long safeCapacity = Math.Max(1, capacity);
+            long bytesPerEntry =
+                UnsafeUtility.SizeOf<TKey>() +
+                UnsafeUtility.SizeOf<TValue>() +
+                sizeof(int) +
+                1L;
+            return safeCapacity * bytesPerEntry;
+        }
+
         private void RefreshMacroDatabasePayloadCacheSentinels()
         {
-            NativeMemorySentinel.RefreshNativeParallelHashMap(
+            RefreshNativeParallelHashMapSidecar(
                 _macroDatabasePayloadCache,
-                NativeMemoryOwner,
+                ref _macroDatabasePayloadCacheSentinelId,
                 nameof(_macroDatabasePayloadCache));
-            NativeMemorySentinel.RefreshNativeParallelHashMap(
+            RefreshNativeParallelHashMapSidecar(
                 _macroDatabasePayloadAccessTicks,
-                NativeMemoryOwner,
+                ref _macroDatabasePayloadAccessTicksSentinelId,
                 nameof(_macroDatabasePayloadAccessTicks));
-            NativeMemorySentinel.RefreshNativeList(
+            RefreshNativeListSidecar(
                 _macroDatabasePayloadKeys,
-                NativeMemoryOwner,
+                ref _macroDatabasePayloadKeysSentinelId,
                 nameof(_macroDatabasePayloadKeys));
         }
 
         private void UnregisterNativeSidecarStorage()
         {
-            NativeMemorySentinel.Unregister(_macroDatabasePayloadKeysSentinelId);
-            NativeMemorySentinel.Unregister(_macroDatabasePayloadAccessTicksSentinelId);
-            NativeMemorySentinel.Unregister(_macroDatabasePayloadCacheSentinelId);
-            NativeMemorySentinel.Unregister(_blocksSentinelId);
-            NativeMemorySentinel.Unregister(_keysSentinelId);
-            NativeMemorySentinel.Unregister(_metadataGenerationByBufferIdSentinelId);
-            NativeMemorySentinel.Unregister(_metadataSentinelId);
-            NativeMemorySentinel.Unregister(_buffersSentinelId);
+            UnregisterSidecar(ref _macroDatabasePayloadKeysSentinelId, nameof(_macroDatabasePayloadKeys));
+            UnregisterSidecar(ref _macroDatabasePayloadAccessTicksSentinelId, nameof(_macroDatabasePayloadAccessTicks));
+            UnregisterSidecar(ref _macroDatabasePayloadCacheSentinelId, nameof(_macroDatabasePayloadCache));
+            UnregisterSidecar(ref _blocksSentinelId, nameof(_blocks));
+            UnregisterSidecar(ref _keysSentinelId, nameof(_keys));
+            UnregisterSidecar(ref _metadataGenerationByBufferIdSentinelId, nameof(_metadataGenerationByBufferId));
+            UnregisterSidecar(ref _metadataSentinelId, nameof(_metadata));
+            UnregisterSidecar(ref _buffersSentinelId, nameof(_buffers));
             _macroDatabasePayloadKeysSentinelId = 0;
             _macroDatabasePayloadAccessTicksSentinelId = 0;
             _macroDatabasePayloadCacheSentinelId = 0;
@@ -4628,7 +4744,7 @@ namespace Hecton8.Core.Memory
 
         private void EnsureInitialized()
         {
-            if (!_initialized)
+            if (!_initialized && !_disposed)
                 Initialize();
         }
 

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Ibarra Loss Ledger"
+title: "Ledger Ibarra untuk Konversi Kerugian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ibarra Loss Ledger
+# Ledger Ibarra untuk Konversi Kerugian
 
-ID LOC HOLD: The Ibarra ledger is the accounting form of the cover. It keeps asset rights active while missing workers become unresolved load.
+Ledger Ibarra adalah bentuk akuntansi dari penutup. Ia membuat Deep Reach bisa mengakui kerugian tanpa menyerahkan kepemilikan: manusia menjadi unresolved personnel load, bukti menjadi material custody, dan claim hidup lebih lama dari koloni.
 
 ## Scanner
 
-ID LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Keelmark loss ledger. Pekerja hilang, modul rusak, dan claims yang bertahan berbagi tabel konversi yang sama.
 
 ## Terminal
 
-ID LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel unresolved. Habitat modules, tool banks and claim rights retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-ID LOC HOLD: The ledger did not forget names. It made them payable later.
+Ledger itu tidak melupakan nama. Ia belajar membelanjakannya.
 
 ## Field Note
 
-ID LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Catatan Marauder: ledger bisa mengingat orang mati dan tetap membuat mereka bekerja.
 
 <!-- In-Game Wiki; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/id_ID. -->

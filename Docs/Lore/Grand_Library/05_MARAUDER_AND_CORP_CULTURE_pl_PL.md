@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ZGODNOŚĆ KORPORACYJNA I SUBKULTURA SZABROWNIKÓW
 
 > **Źródło:** Biuro ds. Zgodności Odzysku, Przewodnik Wdrażania Podwykonawców (Formularz 88-C).  

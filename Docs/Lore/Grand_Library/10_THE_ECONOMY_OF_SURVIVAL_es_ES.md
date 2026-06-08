@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LA ECONOMÍA DE LA SUPERVIVENCIA Y LA DEUDA DE KEELMARK
 
 > **Fuente:** Acuerdo de Contratista Independiente de Keelmark, Anexo 14-B (Obligaciones Financieras).

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 재난 전의 식민지 생활: 44번 구역
 
 > **출처:** 44번 구역 거주 구역 8-B 유닛에서 회수된 개인 로그.

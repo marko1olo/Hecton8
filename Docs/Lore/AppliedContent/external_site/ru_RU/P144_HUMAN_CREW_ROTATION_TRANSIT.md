@@ -8,33 +8,17 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Транзит смены экипажей"
+spoiler_tier: 1
+title: "Транзит ротации экипажей"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Транзит смены экипажей
+# Транзит ротации экипажей
 
-Транзит смены экипажей - человеческая сторона no-FTL: труд становится route debt.
-
-## Scanner
-
-Люди не коммьютят на Aegir. Они годами являются грузом с мнением.
-
-## Terminal
-
-CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. Missing worker - не быстрый звонок домой, а delayed custody problem.
-
-## Audio
-
-Пока дом спросит, где ты, помещение уже затоплено.
-
-## Field Note
-
-Фронтирный работник продает время раньше, чем труд.
+Человеческий транзит - место, где маршрут перестает быть абстракцией. Работников не телепортируют к Aegir; их планируют, охлаждают, страхуют, индексируют и передают между властями годами. Контракт может стареть в одном направлении, а человек внутри - в другом. К моменту пробуждения экипажа работодатель, владелец liability и авария, к которой его учили, могут измениться. Поэтому заброшенность ощущается процедурной, а не мелодраматичной.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/ru_RU. -->

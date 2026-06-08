@@ -17,6 +17,81 @@ ROOT = Path(__file__).resolve().parents[2]
 GLOBAL_CODEX = Path.home() / ".codex" / "AGENTS.md"
 GLOBAL_GEMINI = Path.home() / ".gemini" / "GEMINI.md"
 GEMINI_UNITY_MCP = Path.home() / ".gemini" / "antigravity-ide" / "mcp" / "unityMCP" / "instructions.md"
+ACTIVE_PATH_PREFIXES = (
+    "C:\\hades\\Hecton8\\",
+    "Docs/",
+    "Docs\\",
+    "Assets/",
+    "Assets\\",
+    "Tools/",
+    "Tools\\",
+    ".agents-skills/",
+    ".agents-skills\\",
+    ".agent/",
+    ".agent\\",
+    ".codexrules/",
+    ".codexrules\\",
+    ".github/",
+    ".github\\",
+    ".cursor/",
+    ".cursor\\",
+    ".vscode/",
+    ".vscode\\",
+    "Packages",
+)
+PATH_REFERENCE_SKIP_TERMS = (
+    "preferred",
+    "when present",
+    "legacy vendor folder",
+    "example",
+    "placeholder",
+    "template",
+    "pattern",
+    "glob",
+    "such as",
+    "<",
+    "*",
+)
+AMBIGUOUS_AUTHORITY_TERMS = re.compile(
+    r"\b(best effort|best-effort|when possible|if possible|nice to have|probably|hope|assume|stub|placeholder)\b",
+    re.IGNORECASE,
+)
+AMBIGUOUS_AUTHORITY_ALLOWED_CONTEXT = re.compile(
+    r"\b(forbid|forbidden|banned|no|not|never|do not|must not|avoid|reject|rejected|unless quoted|legacy|historical|diagnostic|template|quoted as|applies even)\b",
+    re.IGNORECASE,
+)
+FALSE_READY_AUTHORITY_TERMS = re.compile(
+    r"\b(PRODUCTION READY|SHIP READY|FINAL VERIFIED|STATUS:\s*(?:VERIFIED|COMPLETE)|good enough)\b",
+    re.IGNORECASE,
+)
+FALSE_READY_AUTHORITY_ALLOWED_CONTEXT = re.compile(
+    r"\b(do not|no|not|without|stale|false|claiming|claims?|must name|rejected|forbidden|pending|blocks?|status labels|not proof)\b",
+    re.IGNORECASE,
+)
+DANGEROUS_AUTHORITY_TOKENS = (
+    "Camera.main",
+    "FindObjectOfType",
+    "GameObject.Find",
+    "DontDestroyOnLoad",
+    "Resources.Load",
+    "StartCoroutine",
+    "BinaryFormatter",
+    "JsonUtility.FromJson",
+    "File.ReadAllText",
+    "File.ReadAllBytes",
+)
+DANGEROUS_AUTHORITY_ALLOWED_CONTEXT = re.compile(
+    r"\b(forbid|forbidden|banned|no|not|do not|must not|avoid|reject|rejected|legacy|historical|injected|cached|migration exception)\b",
+    re.IGNORECASE,
+)
+ROUTE_BIBLE_AMBIGUOUS_TERMS = re.compile(
+    r"\b(best effort|best-effort|when possible|if possible|nice to have|probably|hope|assume|stub|placeholder)\b",
+    re.IGNORECASE,
+)
+ROUTE_BIBLE_AMBIGUOUS_ALLOWED_CONTEXT = re.compile(
+    r"\b(forbid|forbidden|banned|no|not|never|do not|must|must not|avoid|reject|rejected|invalid|wrong|without|diagnostic|template|pending verification|hostile|cut it|not permission)\b",
+    re.IGNORECASE,
+)
 
 
 def read_text(path: Path) -> str:
@@ -53,6 +128,57 @@ def assert_order(errors: list[str], path: Path, first: str, second: str) -> None
         fail(errors, f"{path}: wrong read order: {first} must appear before {second}")
 
 
+def is_active_path_reference(value: str) -> bool:
+    return value.startswith(ACTIVE_PATH_PREFIXES)
+
+
+def resolve_reference(value: str) -> Path:
+    if value.startswith("C:\\hades\\Hecton8\\"):
+        return Path(value)
+    return ROOT / value.replace("\\", "/")
+
+
+def path_part(value: str) -> str:
+    if "[" in value or "]" in value:
+        return ""
+    if re.search(r"\.(py|ps1|exe|bat|cmd)\s+", value, re.IGNORECASE):
+        return value.split(maxsplit=1)[0]
+    return value
+
+
+def assert_referenced_paths_exist(errors: list[str], path: Path) -> None:
+    for line_number, line in enumerate(read_text(path).splitlines(), start=1):
+        lowered = line.lower()
+        if any(term in lowered for term in PATH_REFERENCE_SKIP_TERMS):
+            continue
+        for match in re.finditer(r"`([^`]+)`", line):
+            value = path_part(match.group(1))
+            if not value:
+                continue
+            if not is_active_path_reference(value):
+                continue
+            target = resolve_reference(value)
+            if not target.exists():
+                fail(errors, f"{path}:{line_number}: active local path reference is missing: {value}")
+
+
+def assert_no_unguarded_authority_language(errors: list[str], path: Path) -> None:
+    for line_number, line in enumerate(read_text(path).splitlines(), start=1):
+        if AMBIGUOUS_AUTHORITY_TERMS.search(line) and not AMBIGUOUS_AUTHORITY_ALLOWED_CONTEXT.search(line):
+            fail(errors, f"{path}:{line_number}: unguarded ambiguous authority language: {line.strip()}")
+        if FALSE_READY_AUTHORITY_TERMS.search(line) and not FALSE_READY_AUTHORITY_ALLOWED_CONTEXT.search(line):
+            fail(errors, f"{path}:{line_number}: unguarded false-ready authority language: {line.strip()}")
+        for token in DANGEROUS_AUTHORITY_TOKENS:
+            if token in line and not DANGEROUS_AUTHORITY_ALLOWED_CONTEXT.search(line):
+                fail(errors, f"{path}:{line_number}: dangerous runtime token appears as active authority route: {line.strip()}")
+
+
+def assert_no_unguarded_route_bible_language(errors: list[str], path: Path) -> None:
+    for line_number, line in enumerate(read_text(path).splitlines(), start=1):
+        if ROUTE_BIBLE_AMBIGUOUS_TERMS.search(line) and not ROUTE_BIBLE_AMBIGUOUS_ALLOWED_CONTEXT.search(line):
+            fail(errors, f"{path}:{line_number}: unguarded ambiguous route-bible language: {line.strip()}")
+
+
 def main() -> int:
     errors: list[str] = []
 
@@ -72,6 +198,8 @@ def main() -> int:
     project_bibles = ROOT / "PROJECT_BIBLES.md"
     combined_bibles_builder = ROOT / "Tools" / "Docs" / "BuildProjectRootBiblesCombined.py"
     lane_contract_gate = ROOT / "Tools" / "Docs" / "TestTaskLocalLaneContracts.py"
+    mandate_registry_gate = ROOT / "Tools" / "Docs" / "TestMandateRegistry.py"
+    applied_lore_source_guard = ROOT / "Tools" / "AppliedLoreProductionSourceGuard.py"
     orchestrator = ROOT / "HECTON8_ORCHESTRATOR.md"
     autonomous_orchestrator = ROOT / "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md"
     skills_readme = ROOT / ".agents-skills" / "README.md"
@@ -102,6 +230,10 @@ def main() -> int:
 
     for path in (root_agents, routing, project_bibles):
         assert_contains(errors, path, "complete document")
+    for path in (root_agents, routing, project_bibles, governance, quality_gates, docs_readme, skills_readme):
+        assert_referenced_paths_exist(errors, path)
+    for path in (root_agents, routing, project_bibles, ROOT / "VISION_LOCKS.md", ROOT / "TASTE.md", governance, quality_gates, docs_readme, skills_readme):
+        assert_no_unguarded_authority_language(errors, path)
 
     for needle in (
         "Ordinary runtime/gameplay implementation",
@@ -123,12 +255,15 @@ def main() -> int:
         "Audio import defaults",
         "Revert over hack for proven regressions",
         "Prefab/scene consistency guard",
+        "Lore/content production artifact means concrete files",
+        "Visual benchmark parity",
         "COLD ALLOC",
         "TryReserve",
         "MCP/Unity proof",
         "Do not read `HECTON8_ORCHESTRATOR.md`",
         "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md",
         "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict",
+        "TestAgentRuleRouting.py",
     ):
         assert_contains(errors, root_agents, needle)
 
@@ -160,6 +295,10 @@ def main() -> int:
     assert_contains(errors, routing, "Subagent use by an ordinary implementation")
     assert_contains(errors, routing, "Internal subagent spawning")
     assert_contains(errors, routing, "does not require `HECTON8_ORCHESTRATOR.md`")
+    assert_contains(errors, routing, "AppliedLore Content Gate")
+    assert_contains(errors, routing, "DataMonolith import")
+    assert_contains(errors, routing, "Visual Reference Parity Gate")
+    assert_contains(errors, routing, "Raw diagnostic screenshots can prove rejection only")
     assert_contains(errors, routing, "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md")
     assert_contains(errors, project_bibles, "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md")
     assert_contains(errors, root_docs_reference, "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md")
@@ -168,14 +307,98 @@ def main() -> int:
     assert_contains(errors, project_bibles, "subagent rules")
     assert_contains(errors, project_bibles, "ordinary subagent rules")
     assert_contains(errors, project_bibles, "without pulling GUI/process orchestration")
+    assert_contains(errors, project_bibles, "Visual Reference Parity Gate")
+    assert_contains(errors, project_bibles, "raw diagnostic captures remain reject-only")
     assert_contains(errors, project_bibles, "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict")
+    assert_contains(errors, project_bibles, "TestMandateRegistry.py")
     assert_contains(errors, governance, "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict")
+    assert_contains(errors, governance, "TestMandateRegistry.py")
     assert_contains(errors, quality_gates, "Tasklocal Lane Contract Gate")
     assert_contains(errors, quality_gates, "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict")
+    assert_contains(errors, quality_gates, "Mandate Registry Gate")
+    assert_contains(errors, quality_gates, "TestMandateRegistry.py")
+    assert_contains(errors, quality_gates, "TestMandateRegistry.py --self-test")
+    assert_contains(errors, quality_gates, "ambiguous escape clauses")
+    assert_contains(errors, quality_gates, "visual parity inheritance for player-visible mandates")
+    assert_contains(errors, quality_gates, "dangerous active runtime API examples")
+    assert_contains(errors, quality_gates, "AppliedLore Content Gate")
+    assert_contains(errors, quality_gates, "ValidateGrandLibraryLoreQuality.py")
+    assert_contains(errors, quality_gates, "ValidateGrandLibraryLoreQuality.py --article-glob <glob> --require-status-comment")
+    assert_contains(errors, quality_gates, "AppliedLoreProductionSourceGuard.py")
+    assert_contains(errors, quality_gates, "AppliedLoreProductionSourceGuard.py --self-test")
+    assert_contains(errors, quality_gates, "AppliedLoreImporter.py --check")
+    assert_contains(errors, quality_gates, "AppliedLoreRouteCardExporter.py --check")
+    assert_contains(errors, quality_gates, "AppliedLorePageExporter.py --packet-glob <P*> --check")
+    assert_contains(errors, quality_gates, "AppliedLorePacketCoverageAudit.py --packet-id <P*>")
+    assert_contains(errors, quality_gates, "AppliedLorePacketCoverageAudit.py --inventory")
+    assert_contains(errors, quality_gates, "AppliedLorePacketCoverageAudit.py --all --sample-limit 3")
+    assert_contains(errors, quality_gates, "Runtime route-card export may only contain baked packet IDs")
+    assert_contains(errors, quality_gates, "Visual Reference Parity Gate")
+    assert_contains(errors, quality_gates, "ValidateVisualReferenceOwnerMatrix.py")
+    assert_contains(errors, quality_gates, "ValidateVisualReferenceCurrentRejectionMatrix.py")
+    assert_contains(errors, quality_gates, "test_validate_visual_reference_owner_matrix.py")
+    assert_contains(errors, quality_gates, "VISUAL_ROUTE_INVALID")
+    assert_contains(errors, quality_gates, "Agent Rule Routing Gate")
+    assert_contains(errors, quality_gates, "TestAgentRuleRouting.py")
+    assert_contains(errors, quality_gates, "current live-path references")
+    assert_contains(errors, quality_gates, "unguarded upper-authority/route-bible ambiguity")
+    assert_contains(errors, skills_readme, "TestMandateRegistry.py")
+    assert_contains(errors, skills_readme, "TestMandateRegistry.py --self-test")
+    assert_contains(errors, skills_readme, "Legacy or illustrative mandate snippets")
+    assert_contains(errors, skills_readme, "Camera.main")
+    assert_contains(errors, skills_readme, "FindObjectOfType")
+    assert_contains(errors, root_agents, "TestMandateRegistry.py")
+    assert_contains(errors, docs_readme, "TestAgentRuleRouting.py")
+    assert_contains(errors, docs_readme, "TestMandateRegistry.py")
     assert_contains(errors, lane_contract_gate, "same-wave/sibling dependency guard")
     assert_contains(errors, lane_contract_gate, "DEPENDENCY_GUARD_TERMS")
     assert_contains(errors, lane_contract_gate, "DEPENDENCY_OUTPUT_TERMS")
+    assert_contains(errors, lane_contract_gate, "VALID_DELIVERABLE_CLASSES")
+    assert_contains(errors, lane_contract_gate, "LANE_DELIVERABLE_CLASSES")
+    assert_contains(errors, lane_contract_gate, "LANE_PROOF_TERMS")
+    assert_contains(errors, lane_contract_gate, "LORE_APPLIED_CONTENT_TERMS")
+    assert_contains(errors, lane_contract_gate, "PROOF_ACTION_TERMS")
+    assert_contains(errors, lane_contract_gate, "DELIVERABLE_CLASS")
+    assert_contains(errors, lane_contract_gate, "PROOF_ROUTE")
+    assert_contains(errors, lane_contract_gate, "invalid deliverable class passed")
+    assert_contains(errors, lane_contract_gate, "incompatible deliverable class passed")
+    assert_contains(errors, lane_contract_gate, "report-only proof route passed")
     assert_contains(errors, lane_contract_gate, "weak dependency wording passed")
+    assert_contains(errors, lane_contract_gate, "generic lore proof route passed")
+    assert_contains(errors, mandate_registry_gate, "BANNED_WEAK_LANGUAGE")
+    assert_contains(errors, mandate_registry_gate, "AMBIGUOUS_PRODUCTION_LANGUAGE")
+    assert_contains(errors, mandate_registry_gate, "FALSE_READY_LABELS")
+    assert_contains(errors, mandate_registry_gate, "OLD_UNITY_VERSION")
+    assert_contains(errors, mandate_registry_gate, "LEGACY_HECTON_ASSEMBLY")
+    assert_contains(errors, mandate_registry_gate, "RAW_DMI_TOKEN")
+    assert_contains(errors, mandate_registry_gate, "MPB_TOKEN")
+    assert_contains(errors, mandate_registry_gate, "DANGEROUS_RUNTIME_TOKENS")
+    assert_contains(errors, mandate_registry_gate, "LOCAL_PATH_REFERENCE")
+    assert_contains(errors, mandate_registry_gate, "STALE_SOURCE_CLAIM")
+    assert_contains(errors, mandate_registry_gate, "VISUAL_PARITY_MANDATES")
+    assert_contains(errors, mandate_registry_gate, "VISUAL_PARITY_TERMS")
+    assert_contains(errors, mandate_registry_gate, "CORE_Weather_Abyssal_FlowField_Currents.txt")
+    assert_contains(errors, mandate_registry_gate, "PHYS_Fluid_Incursion_Interior.txt")
+    assert_contains(errors, mandate_registry_gate, "REND_Abyssal_Lighting_Voxel_Occlusion_Shadows.txt")
+    assert_contains(errors, mandate_registry_gate, "STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt")
+    assert_contains(errors, mandate_registry_gate, "UI_Diegetic_Physical_Interfaces.txt")
+    assert_contains(errors, mandate_registry_gate, "VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt")
+    assert_contains(errors, mandate_registry_gate, "visual parity mandate fixture passed")
+    assert_contains(errors, mandate_registry_gate, "MIN_MANDATE_BYTES")
+    assert_contains(errors, mandate_registry_gate, "old Unity version fixture passed")
+    assert_contains(errors, mandate_registry_gate, "raw DrawMeshInstancedIndirect active-route fixture passed")
+    assert_contains(errors, mandate_registry_gate, "active MaterialPropertyBlock world-geometry fixture passed")
+    assert_contains(errors, mandate_registry_gate, "dead local path fixture passed")
+    assert_contains(errors, mandate_registry_gate, "stale hard source claim fixture passed")
+    assert_contains(errors, mandate_registry_gate, "active dangerous runtime token fixture passed")
+    assert_contains(errors, mandate_registry_gate, "ambiguous production language fixture passed")
+    assert_contains(errors, mandate_registry_gate, "MANDATE_REGISTRY_SELFTEST=PASS")
+    assert_contains(errors, applied_lore_source_guard, "APPLIED_LORE_PRODUCTION_SOURCE_GUARD_SELFTEST=PASS")
+    assert_contains(errors, applied_lore_source_guard, "packet-JSON release without .production.md source failed")
+    assert_contains(errors, applied_lore_source_guard, "production source ready-claim fixture passed")
+    assert_contains(errors, applied_lore_source_guard, "valid production source fixture failed")
+    assert_contains(errors, ROOT / "TASTE.md", "best-known internal baseline")
+    assert_contains(errors, ROOT / "TASTE.md", "April/previously-in-development")
 
     if not visual_reference_folder.exists():
         fail(errors, f"{visual_reference_folder}: missing mandatory visual reference folder")
@@ -421,6 +644,7 @@ def main() -> int:
         for label, pattern in route_completeness_patterns.items():
             if not re.search(pattern, route_text, re.IGNORECASE | re.MULTILINE):
                 fail(errors, f"{route_path}: missing route completeness marker for {label}")
+        assert_no_unguarded_route_bible_language(errors, route_path)
         if f'"{route_file}"' not in combined_builder_text:
             fail(errors, f"{combined_bibles_builder}: SOURCE_FILES missing route bible {route_file}")
 

@@ -595,18 +595,20 @@ namespace Hecton8.Lighting.Shafts
             if (playerContext != null)
             {
                 if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
                     snapshot.Aup.IsFinite())
                 {
                     return snapshot.Aup.ToAbsoluteDouble3();
                 }
 
-                var playerMovement = playerContext.PlayerMovement;
-                if (playerMovement != null)
+                if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite())
                 {
-                    AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                    if (currentAup.IsFinite())
-                        return currentAup.ToAbsoluteDouble3();
+                    return movementState.PredictedAup.ToAbsoluteDouble3();
                 }
+
+                return double3.zero;
             }
 
             return HectonFloatingOrigin.CurrentTotalOffsetDouble;

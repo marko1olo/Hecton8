@@ -9,32 +9,26 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: תיקון PressureSeal ראשון"
+title: "תיקון PressureSeal ראשון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: תיקון PressureSeal ראשון
+# תיקון PressureSeal ראשון
 
-HE LOC HOLD: התיקון השימושי הראשון ב-Shallow Annex P-63 מתחיל באור יום. FiberKelp מהמדף הבהיר הופך ל-FiberMesh שנושא PressureSeal זמני לטבעת או שקע שירות דולפים. הוא קונה זמן ובטיחות מסלול, לא בריחה.
+## תיקון באור
 
-## Scanner
+התיקון השימושי הראשון ב-Shallow Annex P-63 מתחיל במקום שבו המים עדיין בהירים מספיק כדי לשקר. בחוץ FiberKelp נע בזרם המדף. בפנים טבעת לחץ מזיעה דרך תפר ש-Deep Reach סימנה כשיר לשירות.
 
-HE LOC HOLD: יעד PRESSURESEAL // דליפה בטבעת P-63. נשא FiberMesh תואם. ייצוב מקומי בלבד; אישור עלייה נדחה.
+FiberKelp הוא סיב ביולוגי רדוד, לא אוצר נדיר. הוא גדל במקום שבו אור, זרם וחום תעשייתי ישן נפגשים. סיבים שטופים ומסורקים נעשים FiberMesh. מייצר שדה P-63 יכול ללחוץ את הרשת הזאת אל שכבת נשיאה של PressureSeal זמני.
 
-## Terminal
+החלק חשוב מפני שהוא מוגבל. PressureSeal יכול להאט דליפה מקומית, לייצב כיס חזרה ולהפוך לולאת תיקון קצרה לברת שרידה. הוא אינו מאשר bathydrop לעלייה, אינו מחליף טבעת הידוק ואינו הופך אישור Black Keel לחילוץ.
 
-HE LOC HOLD: הערת סבילות DEEP REACH P-63 // לדחות החלפת טבעת. להחיל נשא איטום רך מאושר כשהדליפה נשארת בסף שירות מקומי.
+הסתירה נראית לפני הארכיון. הטרמינל אומר שונות לחץ בתוך סבולת שירות. הטבעת מראה ברגים מעוותים, פריחת מלח מתחת לפס הבדיקה וסיבים לכודים בסדק שהיה אמור להיות מתכת נקייה.
 
-## Audio
-
-HE LOC HOLD: ממסר Black Keel: טלאי P-63 נקרא בטוח מקומי, לא בטוח לעלייה. קח את האטם ושמור את המספר.
-
-## Field Note
-
-HE LOC HOLD: מים בהירים בחוץ. טבעת רטובה בפנים. Deep Reach קראה לזה תקין כי המילה זולה יותר מטבעת הידוק.
+עבור ה-Marauder הלקח מעשי: חתוך FiberKelp נקי, שמור חול מחוץ לרשת, שמור את המספר שעל החותם ואל תאמין לתיקון שאומר בטוח מקומית כשהמסלול צריך בטוח לעלייה.
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/he_IL. -->

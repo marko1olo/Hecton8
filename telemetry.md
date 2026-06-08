@@ -163,7 +163,7 @@ Telemetry work must provide:
 - sample binary or manifest when implemented;
 - profiler marker names;
 - hot-path GC proof when runtime code changed;
-- failure/recovery repro when possible;
+- failure/recovery repro for each implemented fault trigger; unimplemented fault routes remain `PENDING VERIFICATION` with the exact missing owner/proof;
 - explicit `PENDING VERIFICATION` for Unity/player/profiler claims not run.
 
 ## 11. Rejection Gates

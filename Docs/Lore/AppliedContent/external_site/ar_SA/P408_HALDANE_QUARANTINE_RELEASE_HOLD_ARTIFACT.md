@@ -9,32 +9,22 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Haldane Quarantine Hold"
+title: "تعليق هالدين لإطلاق الحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Haldane Quarantine Hold
+# تعليق هالدين لإطلاق الحجر
 
-AR LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## إجراء صحيح في الدقيقة الخاطئة
 
-## Scanner
+يجب ألا يقرأ تعليق هالدين كاحتيال بسيط. كان في HECTON-8 خطر تلوث وseals مخترقة ومشكلات sample custody ولا يقين بيولوجي. كان بروتوكول الحجر منطقيا قبل أن تصبح الكارثة حركية. لهذا يوجع المستند: الإجراء حقيقي بما يكفي للدفاع عنه وبطيء بما يكفي للقتل.
 
-AR LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+تتحول release certification إلى سلاح عبر التوقيت. بينما يرتفع الضغط وتنهار المسارات، يطلب hold: XO sample custody وseal-read variance وdownstream exposure review. كل عبارة تبدو مسؤولة. معا تبقي النازحين والميكانيكيين والشهود داخل مستعمرة تفشل حتى لا تعود rescue الفعل المسيطر.
 
-## Terminal
-
-AR LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-AR LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-AR LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+هنا تبدو Deep Reach مؤسسة لا مؤامرة. لا يحتاج هالدين إلى الضحك على العمال العالقين. يحتاج desk فقط إلى حفظ chain of custody وتقليل liability المستقبلية ومنع دليل ملوث من الخروج إلى claim space لا يسيطر عليه. الرعب أن كل هذه الدوافع يمكن أن تبدو صحيحة في الدقيقة التي احتاج فيها الناس إلى فتح الباب.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/ar_SA. -->

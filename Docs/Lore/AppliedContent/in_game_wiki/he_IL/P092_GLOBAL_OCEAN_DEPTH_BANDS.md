@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "רצועות עומק האוקיינוס"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# רצועות עומק האוקיינוס
 
-HE LOC HOLD: HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.
+את האוקיינוס של HECTON-8 קוראים ברצועות, לא במספר קרקעית יחיד. המדף הפוטי עדיין מאפשר אור, גרוטאות, אצות וטייסים רשלנים. המדף התעשייתי נושא שונית כבלים, כלובי צינורות וסיפוני טעינה ישנים. מתחתיו מדרגות מלח מכופפות סונאר ונטל. שדות מכונות תהומיים מענישים תיקונים. באגן Atlas הלחץ מרגיש כמו סמכות.
 
 ## Scanner
 
-HE LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+תרשים עומק. המדף הראשון סולח לנטל גרוע; מים נמוכים מחייבים כל טעות בלחץ, חום ושקט.
 
 ## Terminal
 
-HE LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+רצועות: 0-250 מ' מדף פוטי לחילוץ; 250-1200 מ' מדף תעשייתי ושונית כבלים; 1200-2800 מ' מדרגות/קניון תמיסת מלח; 2800-4300 מ' שדה מכונות תהומי; 4300-5600 מ' אגן Atlas.
 
 ## Audio
 
-HE LOC HOLD: Every band changes what the world allows you to do.
+כל מאה מטר לוקחים ממך הרגל אחד.
 
 ## Field Note
 
-HE LOC HOLD: Depth is not a number. It is a ruleset.
+עומק ב-HECTON-8 הוא חוק, מזג אוויר, גבול ורעב באותו מספר.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/he_IL. -->

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Atlas修復痕跡記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Repair Trace Transcript Seed
+# Atlas修復痕跡記録
 
-JA LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.
+Atlas音声が怖いのは、生命、金属、水を一つの損傷したmaintenance surfaceとして扱うからだ。
 
 ## Scanner
 
-JA LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+音声/字幕seed。Atlas痕跡は、語る神ではなく、分類が崩れた修復テレメトリのように聞こえるべきだ。
 
 ## Terminal
 
-JA LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
+TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.
 
 ## Audio
 
-JA LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+修復痕跡: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
 
 ## Field Note
 
-JA LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+scanner captions、深層音声、Atlas spoiler gate用。短く、分類的で、壊れていること。
 
 <!-- In-Game Wiki; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/ja_JP. -->

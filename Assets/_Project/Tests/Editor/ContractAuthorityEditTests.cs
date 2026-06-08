@@ -1,7 +1,10 @@
 using System;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using NUnit.Framework;
 using Unity.Mathematics;
 
@@ -74,6 +77,101 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(laneCount, Is.GreaterThan(0));
             Assert.That(HectonSignalLaneContract.SignalLaneRegistryHash, Is.Not.EqualTo(0u));
+        }
+
+        [Test]
+        public void ItemAcquiredSourceKinds_MatchWireContract()
+        {
+            Assert.That(ItemAcquiredSignalSourceKinds.Unknown, Is.EqualTo(0));
+            Assert.That(ItemAcquiredSignalSourceKinds.ResourceNode, Is.EqualTo(1));
+            Assert.That(ItemAcquiredSignalSourceKinds.ProceduralOreSpawner, Is.EqualTo(2));
+            Assert.That(ItemAcquiredSignalSourceKinds.Fabricator, Is.EqualTo(4));
+            Assert.That(ItemAcquiredSignalSourceKinds.DeconstructionRefund, Is.EqualTo(ItemAcquiredSignalSourceKinds.Fabricator));
+            Assert.That(ItemAcquiredSignalSourceKinds.DeployableSdfDrill, Is.EqualTo(7));
+            Assert.That(ItemAcquiredSignalSourceKinds.LootMagnet, Is.EqualTo(8));
+            Assert.That(ItemAcquiredSignalSourceKinds.ManualPickup, Is.EqualTo(9));
+            Assert.That(ItemAcquiredSignalSourceKinds.VoxelCarve, Is.EqualTo(12));
+            Assert.That(ItemAcquiredSignalSourceKinds.ScavengingLootOracle, Is.EqualTo(13));
+            Assert.That(ItemAcquiredSignalSourceKinds.HarvestableOutcrop, Is.EqualTo(14));
+            Assert.That(ItemAcquiredSignalSourceKinds.DroneMining, Is.EqualTo(15));
+
+            string root = Directory.GetCurrentDirectory();
+            string lootMagnetContracts = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/Gameplay/Loot/Contracts/LootMagnetContracts.cs"));
+            string inventoryPickupContracts = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/Interaction/InventoryPickupContracts.cs"));
+            string constructionManager = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/ConstructionManager.cs"));
+            string fabricator = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/Fabricator.cs"));
+            string deployableDrill = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs"));
+            string voxelDeltaProcessor = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/VoxelDeltaProcessor.cs"));
+            string proceduralOreSpawner = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs"));
+            string harvestableOutcrop = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs"));
+            string scavengingLootOracle = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/Scavenging/ScavengingLootOracleRuntime.cs"));
+            string droneFleetTransactions = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/Construction/DroneFleetManager_Transactions.cs"));
+
+            Assert.That(lootMagnetContracts, Does.Contain("ItemSourceLootMagnet = ItemAcquiredSignalSourceKinds.LootMagnet"));
+            Assert.That(inventoryPickupContracts, Does.Contain("ItemSourceManualPickup = ItemAcquiredSignalSourceKinds.ManualPickup"));
+            Assert.That(constructionManager, Does.Contain("SourceKind = ItemAcquiredSignalSourceKinds.DeconstructionRefund"));
+            Assert.That(fabricator, Does.Contain("SourceKind = ItemAcquiredSignalSourceKinds.Fabricator"));
+            Assert.That(deployableDrill, Does.Contain("SourceKind = ItemAcquiredSignalSourceKinds.DeployableSdfDrill"));
+            Assert.That(voxelDeltaProcessor, Does.Contain("SourceKind = ItemAcquiredSignalSourceKinds.VoxelCarve"));
+            Assert.That(proceduralOreSpawner, Does.Contain("acquiredSignal.SourceKind = ItemAcquiredSignalSourceKinds.ProceduralOreSpawner"));
+            Assert.That(harvestableOutcrop, Does.Contain("SourceKind = ItemAcquiredSignalSourceKinds.HarvestableOutcrop"));
+            Assert.That(scavengingLootOracle, Does.Contain("public const byte ItemSourceKind = ItemAcquiredSignalSourceKinds.ScavengingLootOracle"));
+            Assert.That(droneFleetTransactions, Does.Contain("signal.SourceKind = ItemAcquiredSignalSourceKinds.DroneMining"));
+        }
+
+        [Test]
+        public void FirstPartySignalRoutes_TrackSignalPushDrops()
+        {
+            Assert.That(ItemLifecycleSignalRoute.DroppedSignalCount, Is.GreaterThanOrEqualTo(0));
+            Assert.That(SessionLifecycleSignalRoute.DroppedSignalCount, Is.GreaterThanOrEqualTo(0));
+            Assert.That(ProgressionMetaSignalRoute.DroppedSignalCount, Is.GreaterThanOrEqualTo(0));
+
+            string root = Directory.GetCurrentDirectory();
+            string itemLifecycleRoute = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/Core/Signals/ItemLifecycleSignalRoute.cs"));
+            string sessionLifecycleRoute = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/Core/Signals/SessionLifecycleSignalRoute.cs"));
+            string progressionMetaRoute = File.ReadAllText(Path.Combine(
+                root,
+                "Assets/_Project/Scripts/Core/Signals/ProgressionMetaSignalRoute.cs"));
+
+            Assert.That(itemLifecycleRoute, Does.Contain("public static int DroppedSignalCount => Volatile.Read(ref s_signalPushDropCount)"));
+            Assert.That(itemLifecycleRoute, Does.Contain("if (itemHash == 0u)"));
+            Assert.That(itemLifecycleRoute, Does.Contain("bool validRuntimePosition = hasRuntimePosition && math.all(math.isfinite(signalPosition));"));
+            Assert.That(itemLifecycleRoute, Does.Contain("byte flags = BuildFlags(item, validRuntimePosition, itemHash);"));
+            Assert.That(itemLifecycleRoute, Does.Contain("RuntimePosition = validRuntimePosition ? signalPosition : float3.zero"));
+            Assert.That(itemLifecycleRoute, Does.Contain("SignalBus<ItemLifecycleSignal>.TryPushTracked(in signal, ref s_signalPushDropCount)"));
+            Assert.That(itemLifecycleRoute, Does.Not.Contain("SignalBus<ItemLifecycleSignal>.TryPush(in signal)"));
+
+            Assert.That(sessionLifecycleRoute, Does.Contain("public static int DroppedSignalCount => Volatile.Read(ref s_signalPushDropCount)"));
+            Assert.That(sessionLifecycleRoute, Does.Contain("SignalBus<SessionLifecycleSignal>.TryPushTracked(in signal, ref s_signalPushDropCount)"));
+            Assert.That(sessionLifecycleRoute, Does.Not.Contain("SignalBus<SessionLifecycleSignal>.TryPush(in signal)"));
+
+            Assert.That(progressionMetaRoute, Does.Contain("public static int DroppedSignalCount => Volatile.Read(ref s_signalPushDropCount)"));
+            Assert.That(progressionMetaRoute, Does.Contain("SignalBus<ProgressionMetaSignal>.TryPushTracked(in signal, ref s_signalPushDropCount)"));
+            Assert.That(progressionMetaRoute, Does.Not.Contain("SignalBus<ProgressionMetaSignal>.TryPush(in signal)"));
         }
 
         [Test]

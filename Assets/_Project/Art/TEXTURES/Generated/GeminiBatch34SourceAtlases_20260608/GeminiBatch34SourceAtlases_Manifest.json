@@ -1,0 +1,533 @@
+{
+  "schema": "hecton8.batch34.source_atlas_unity_pack.v1",
+  "sourceProvider": "GeminiBatch34TextureExpansion",
+  "sourceCurationManifest": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_CurationManifest.json",
+  "unityImportStatus": "PENDING UNITY IMPORT",
+  "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+  "policy": "These are source atlases only. Do not auto-create Lit materials from them.",
+  "preview": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PREVIEW_Batch34_SourceAtlases.png",
+  "entries": [
+    {
+      "id": "B34-3423",
+      "title": "Leak Rust Biofilm Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "base/wreck damage, damp panels, old machinery",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3423_leak_rust_biofilm_decal_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3425",
+      "title": "Salt Mineral Deposit Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "wet edges, cave rocks, hull seams, old base interiors",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3425_salt_mineral_deposit_decal_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3426",
+      "title": "Instrument Glass Smudge Alpha Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Instrument glass smudge/scratch alpha source.",
+      "integrationNote": "Black background drives clipping warning by design; extract mask before shader use.",
+      "downstreamRoute": "extract alpha/matte mask before material or decal binding",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3426_instrument_glass_smudge_alpha_decal_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3427",
+      "title": "Pressure Crack Glass Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "damaged viewports, scanner lenses, cockpit glass",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3427_pressure_crack_glass_decal_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3428",
+      "title": "Warning Paint Stripe Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "hazard stripes, panel markings without text, trim variation",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3428_warning_paint_stripe_decal_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3429",
+      "title": "Cutter Burn Scorch Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "cutter tool impact, salvage cuts, repair/weld states",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3429_cutter_burn_scorch_decal_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3430",
+      "title": "Barnacle Colony Decal Variants",
+      "sourceType": "DECAL_ATLAS",
+      "family": "organic_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "rocks, hulls, cave surfaces, colony overgrowth",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3430_barnacle_colony_decal_variants_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3431",
+      "title": "Wetness Rivulet Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "damage_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "interiors, hatches, floors, wet rock, leak presentation",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3431_wetness_rivulet_decal_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3432",
+      "title": "Contamination Biohazard Stain Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "organic_decal",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "contaminated rooms, organism stains, procedural evidence",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split/pad decal islands, then bind through decal/material owner",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/DecalAtlases/TX_B34_3432_contamination_biohazard_stain_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3433",
+      "title": "Brine Vane Flora UV Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Brine vane flora UV source with dark matte background.",
+      "integrationNote": "Clipping is background/matte, not content failure; split islands before mesh UV use.",
+      "downstreamRoute": "extract alpha/matte mask before material or decal binding",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3433_brine_vane_flora_uv_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3434",
+      "title": "Shallow Alien Seagrass Blade Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "shallow flora cards/meshes, photic route grass/seagrass",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3434_shallow_alien_seagrass_blade_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3435",
+      "title": "Plate Coral Rim UV Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "shallow plate coral meshes, reef geometry, coral trim",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3435_plate_coral_rim_uv_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3436",
+      "title": "Sponge Pore Organic Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "sponge/coral variants, organic rock overgrowth",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3436_sponge_pore_organic_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3437",
+      "title": "Kelp Holdfast Root Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "kelp anchors/roots, flora root geometry, terrain contact",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3437_kelp_holdfast_root_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3439",
+      "title": "Spore Pod And Seed Sac Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "flora_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "harvestable flora pods, scan targets, small organic props",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3439_spore_pod_and_seed_sac_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3441",
+      "title": "Neutral Grazer Skin UV Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "first-route neutral fauna body material zones",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3441_neutral_grazer_skin_uv_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3442",
+      "title": "Filter Feeder Gill Membrane Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Filter feeder gill membrane UV source.",
+      "integrationNote": "Black matte background caused clipping warning; content is usable after island extraction.",
+      "downstreamRoute": "extract alpha/matte mask before material or decal binding",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3442_filter_feeder_gill_membrane_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3445",
+      "title": "Translucent Larva Egg Sac Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "ecology props, creature nests, scan/evidence objects",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "split islands or assign to mesh UV source; no Lit material auto-create",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/UvAtlases/TX_B34_3445_translucent_larva_egg_sac_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3446",
+      "title": "Scavenged Carcass Bone Flesh Atlas",
+      "sourceType": "UV_ATLAS",
+      "family": "fauna_uv",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Carcass bone/flesh UV source.",
+      "integrationNote": "Dark matte background causes black clipping warning; isolate islands before use.",
+      "downstreamRoute": "extract alpha/matte mask before material or decal binding",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/TX_B34_3446_scavenged_carcass_bone_flesh_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3448",
+      "title": "Resource Nodule Pickup UV Atlas",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_resource",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "3D pickup/resource meshes, not inventory icons",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "bind to small 3D pickup mesh UVs; not inventory icons",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PickupAtlases/TX_B34_3448_resource_nodule_pickup_uv_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3449",
+      "title": "Industrial Salvage Small Parts Atlas",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_salvage",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "salvage pickups, small mesh parts, crafting visuals",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "bind to small 3D pickup mesh UVs; not inventory icons",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PickupAtlases/TX_B34_3449_industrial_salvage_small_parts_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    },
+    {
+      "id": "B34-3450",
+      "title": "Data Core Wet Circuit Ceramic Atlas",
+      "sourceType": "PICKUP_ATLAS",
+      "family": "pickup_salvage",
+      "curationStatus": "CURATED_READY_STATIC",
+      "targetRole": "black-box/data core props, electronics salvage",
+      "integrationNote": "Static source accepted; still requires Unity import/material preview before production claim.",
+      "downstreamRoute": "bind to small 3D pickup mesh UVs; not inventory icons",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/PickupAtlases/TX_B34_3450_data_core_wet_circuit_ceramic_atlas_BaseColorCandidate.jpg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION"
+    }
+  ],
+  "skipped": [
+    {
+      "id": "B34-3401",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3402",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3403",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3404",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3405",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3406",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3407",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "LOCAL_ONLY_OR_REGEN_SEAMLESS",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3408",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3409",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "REGEN_RECOMMENDED",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3410",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3411",
+      "sourceType": "TRIM_SHEET",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3412",
+      "sourceType": "TRIM_SHEET",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3413",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "LOCAL_ONLY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3414",
+      "sourceType": "TRIM_SHEET",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3415",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "LOCAL_ONLY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3416",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3417",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "LOCAL_ONLY_OR_CENTER_CROP",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3418",
+      "sourceType": "DECAL_ATLAS",
+      "curationStatus": "REGEN_OR_MANUAL_MATTE",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3419",
+      "sourceType": "TRIM_SHEET",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3420",
+      "sourceType": "TRIM_SHEET",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3421",
+      "sourceType": "SEAMLESS_TILE",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3422",
+      "sourceType": "TRIM_SHEET",
+      "curationStatus": "CURATED_READY_STATIC",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3424",
+      "sourceType": "DECAL_ATLAS",
+      "curationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3438",
+      "sourceType": "UV_ATLAS",
+      "curationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3440",
+      "sourceType": "UV_ATLAS",
+      "curationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3443",
+      "sourceType": "UV_ATLAS",
+      "curationStatus": "MANUAL_SPLIT_BEFORE_IMPORT",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3444",
+      "sourceType": "UV_ATLAS",
+      "curationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "reason": "not curated-ready source atlas"
+    },
+    {
+      "id": "B34-3447",
+      "sourceType": "UV_ATLAS",
+      "curationStatus": "PAD_OR_SPLIT_BEFORE_IMPORT",
+      "reason": "not curated-ready source atlas"
+    }
+  ]
+}

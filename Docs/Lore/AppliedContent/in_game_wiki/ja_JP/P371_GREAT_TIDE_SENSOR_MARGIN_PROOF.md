@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Great Tide Sensor Margin Proof"
+title: "大潮マージン記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Great Tide Sensor Margin Proof
+# 大潮マージン記録
 
-JA LOC HOLD: Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.
+この記録は二つを同時に示す。大潮は実在し、致命的なマージンは報告書が認める前から見えていた。Deep Reachが水を上げたわけではない。コロニーの圧力余裕が消えた後も経路窓を承認し、sign-offを抜いたcascadeだけを公開した。
 
 ## Scanner
 
-JA LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+回収された潮汐センサー。最大せん断はコロニー設計値を超えていたが、警告マージンの破れは公開cascade時刻より前に記録されていた。
 
 ## Terminal
 
-JA LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE。経路権限者がtail-risk閾値を承認。運用者メモは公開事故チェーンから削除。生の記録はbrine-bufferメモリに残存。
 
 ## Audio
 
-JA LOC HOLD: Physics did the damage. A person signed the margin.
+海は嘘をついていない。報告書が嘘をついた。
 
 ## Field Note
 
-JA LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Marauderメモ: 悪役の演説を探すな。誰かが消した一行を探せ。
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/ja_JP. -->

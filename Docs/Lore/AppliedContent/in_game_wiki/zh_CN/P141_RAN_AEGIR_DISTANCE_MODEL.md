@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "ZH LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Ran-Aegir距离模型"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Ran-Aegir Distance Model
+# Ran-Aegir距离模型
 
-ZH LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+Ran-Aegir模型给HECTON-8一个玩家能感到的尺度。到2190年，Aegir近到探测器、货运、seed硬件和债务支持的定居可以抵达。它仍远到让一个进水舱室无法等待内圈世界的怜悯。距离以延迟、custody、燃料、制动和所有权出现。
 
 ## Scanner
 
-ZH LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+航线板：Aegir能被基础设施抵达，却不能被同情抵达。
 
 ## Terminal
 
-ZH LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+航线模型：Ran/Aegir按距离Sol约十光年级目标处理。游玩文本使用Aegir；干燥目录使用RAN-B:H8。精确星历仍属于航线表工作。
 
 ## Audio
 
-ZH LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+十光年在星图上很小，却足以让救援破产。
 
 ## Field Note
 
-ZH LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+近似距离是压力，不是装饰。十光年仍能杀死一个房间。
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/zh_CN. -->

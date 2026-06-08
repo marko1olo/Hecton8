@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Marauder Starting Claim"
+title: "Marauder開始請求"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Marauder Starting Claim
+# Marauder開始請求
 
-JA LOC HOLD: The first HECTON-8 claim is personal only in the professional sense. The Marauder knows pressure systems, Deep Reach procedure and the kind of paperwork that turns risk into someone else's debt. Black Keel offers a salvage window because the route is valuable, not because the carrier has become generous. That starting frame keeps the descent grounded: repair the capsule, read the site, recover cargo or proof, and decide how much of the old company language can survive contact with the rooms below.
+HECTON-8に関する最初のBlack Keelファイルは、文面そのものが告発を始めるまでsalvage業務に見える。債務下のMarauderは、lienが現実で回収窓が短いからこのルートを受ける。Deep Reach field-systemsの過去はすぐ効いてくる。圧力手順、保守略語、liability文、避難タグは、証拠になる前から見慣れている。Black Keelが与えるのは慈悲ではなくアクセスだ。降下はP-63周辺の具体作業から始まる。bathydropを継ぎ、シールを点検し、棚を走査し、機械を再起動し、貨物か証拠を回収し、orbital timingとlegal custodyがclaimを閉じる前に離脱する。核になるのは職能上の認識だ。磨かれた文書と物理的損傷が別の話をしている場所を、プレイヤーは見抜ける。
 
 ## Scanner
 
-JA LOC HOLD: Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+公開claim記録。開始ルートは、Deep Reachのfield-systems経験を持つ債務下のMarauder、損傷したbathydrop、P-63上空のBlack Keel回収窓を示す。
 
 ## Terminal
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+公開アーカイブノード // 開始請求。契約者記録: 元Deep Reach field-systems専門員。現状: lien下のMarauder。ルート: Black Keel recovery claim、P-63棚への降下、custody window閉鎖前の証拠と貨物の返送。
 
 ## Audio
 
-JA LOC HOLD: You are returning to paperwork you know too well.
+HECTON-8を見物に来たのではない。よく知っている書類へ戻ってきたのだ。
 
 ## Field Note
 
-JA LOC HOLD: Marauder note: the contract knows your past. That does not make it honest.
+Marauderメモ: 契約はお前の過去を知っている。それで正直になるわけではない。
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/ja_JP. -->

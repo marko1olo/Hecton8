@@ -9,32 +9,22 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Haldane Quarantine Hold"
+title: "Hold Haldane'a na zwolnienie z kwarantanny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Haldane Quarantine Hold
+# Hold Haldane'a na zwolnienie z kwarantanny
 
-PL LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## Poprawna Procedura W Złej Minucie
 
-## Scanner
+Hold Haldane'a nie powinien brzmieć jak proste oszustwo. HECTON-8 miało ryzyko skażenia, naruszone seals, problemy z sample custody i biologiczną niepewność. Protokół kwarantanny miał sens, zanim katastrofa stała się kinetyczna. Dlatego dokument boli: procedura była dość realna, by ją bronić, i dość powolna, by zabijać.
 
-PL LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Release certification staje się bronią przez timing. Gdy ciśnienie rośnie i trasy zawodzą, hold wymaga XO sample custody, seal-read variance oraz downstream exposure review. Każda fraza brzmi odpowiedzialnie. Razem trzymają ewakuowanych, mechaników i świadków w psującej się kolonii aż rescue przestaje być głównym czasownikiem.
 
-## Terminal
-
-PL LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-PL LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-PL LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+To dobre miejsce, by Deep Reach brzmiało jak instytucja. Haldane nie musi śmiać się z uwięzionych pracowników. Desk ma tylko zachować chain of custody, zmniejszyć przyszłą liability i nie wypuścić skażonego dowodu w claim space, którego nie kontroluje. Groza polega na tym, że te motywy mogą brzmieć poprawnie dokładnie wtedy, gdy trzeba było otworzyć drzwi.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/pl_PL. -->

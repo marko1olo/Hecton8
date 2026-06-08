@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # פנקס החובות
 
 > **מקור:** תאגיד הענק Deep Reach, מחלקת משאבי אנוש ואקטואריה.

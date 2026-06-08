@@ -9,32 +9,36 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Canteen Water Ledger"
+title: "سجل ماء المقصف"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Canteen Water Ledger
+# سجل ماء المقصف
 
-AR LOC HOLD: The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.
+سجل المقصف صغير بما يكفي لتفويته، وإنساني أكثر من أن يعامل كخردة. إنه لوح مغلف للضغط من غرفة طعام غارقة: رموز ماء في جهة، ووصول إلى المضخات في جهة أخرى، و??????? طبي محشور في هامش لم يترك فيه البرنامج خانة بشرية. لم يكتب أحد عليه وداعا. لم يفسر أحد ???? ??????. آخر نزاع مرئي يدور حول ستة أكواب مفقودة، ومرشح شمالي سيئ، وهل يجب أن تحصل فرقة المضخات على الماء قبل نزول ليلي.
+
+لهذا يهم. يصبح HECTON-8 حقيقيا عندما تكف المستعمرة عن كونها موقع كارثة فقط، وتصبح مكانا كان العمال المتعبون يحسبون فيه ماء الشرب مثل custody الأدوات. لم يكن رمز الوجبة مجرد حصة. كان دليلا على أن شخصا خرج من الوردية، أو أعاد مفتاح المضخة، أو فحص أعراض الضغط، أو كان يفترض أن يكون في سرير لا تحت الأرضية. يحول السجل الفقدان المجهول إلى روتين: أسماء مختصرة، وتصحيحات موقعة، وديون مؤجلة لأن النظام لم يملك وقتا ليصبح رحيما.
+
+بالنسبة إلى ??????، هذا الشيء نافع قبل أن يكون حزينا. تصحيح غرفة المضخات يربط المقصف بطريق صيانة. تشير ??????? الطبية إلى مرض الضغط قبل أن تعترف الحزمة الرسمية بوجود cluster إصابات. قد تعني الرموز المفقودة سرقة أو فرزا طارئا أو تلوثا أو شخصا يطعم بهدوء فرقة محاها الجدول مسبقا. احفظ اللوح قبل تفكيك الغرفة. سطر عن الأكواب قد يثبت أكثر من نصب تذكاري.
 
 ## Scanner
 
-AR LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
+سجل ماء المقصف // لوح مغلف، زواياه منتفخة. ست رموز ماء وجبة مفقودة، واثنان من ??????? الطبي، وتصحيح واحد لغرفة المضخات بقلم شحمي. كانت المستعمرة ما زالت تتجادل حول الأكواب حين بدأ المحيط يأخذ الغرف.
 
 ## Terminal
 
-AR LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
+سجل المقصف: تخصيص الماء الصالح للشرب مختوم من رئيس الوردية. الرموز المفقودة: 6. ??????? طبي: 2. تصحيح غرفة المضخات: Mara Venn. نزاع الحصة معلق بعد النغمة 2 لأن المرشح الشمالي صار حامضا ولم يرد أحد كتابة ???? بعد.
 
 ## Audio
 
-AR LOC HOLD: The last argument was about water tokens.
+لم يكن الجدال الأخير بطوليا. كان عن من شرب، ومن عمل مبتلا، ومن وقع على إعادة الكوب.
 
 ## Field Note
 
-AR LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+??? ???? ??????? ?????????? ?????? ?????? ???? ??????. ?? ???? ??????. ???? ??????? ?? ??????.
 
 <!-- In-Game Wiki; generated from P357_CANTEEN_WATER_LEDGER/ar_SA. -->

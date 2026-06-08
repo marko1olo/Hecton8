@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Public Dossier Article"
+title: "Deep Reach Public Dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Deep Reach Public Dossier Article
+# Deep Reach Public Dossier
 
-Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression.
+Deep Reach Extraterrestrial Development Combine is the corporate power behind HECTON-8’s industrial history. It built pressure routes, worker habitats, extraction systems and the paperwork that made them legal. Publicly it is a failed development authority. Deeper evidence shows the harsher shape: evacuation capacity underbuilt, delay language sanitized, Atlas continuity weighting protected, and claim law preserved while workers became losses.
 
 ## Scanner
 
-The public company name is cleaner than its route history.
+The public company name is cleaner than its route history. Start with infrastructure. Let the liability show through the joints.
 
 ## Terminal
 
-PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+PUBLIC ARTICLE TIER / DEEP REACH
+allowed: development combine, colony operator, infrastructure authority, evacuation capacity problem, public failure language
+gated: named signoff chain, Atlas weighting internals, final receiver consequences
+editor note: plausible institution first; crime through procedure second.
 
 ## Audio
 
-Never make the villain simpler than the paperwork.
+Deep Reach did not need to sound cruel. It only needed every dangerous sentence to sound finished.
 
 ## Field Note
 
-Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+Do not make Deep Reach hiss. Make it certify, defer, preserve, and invoice.
 
 <!-- External Site; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/en_US. -->

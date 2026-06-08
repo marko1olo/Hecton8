@@ -365,8 +365,8 @@ namespace Hecton8.Gameplay
             UnregisterFromTick();
 
             // Try pool despawn
-            IObjectPoolService pool = _objectPool;
-            if (pool != null && pool.CanDespawnWithoutDestroy(gameObject))
+            if (TryResolveCachedObjectPool(out IObjectPoolService pool) &&
+                pool.CanDespawnWithoutDestroy(gameObject))
             {
                 pool.Despawn(gameObject);
                 return;
@@ -462,8 +462,43 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             CacheAudioService(GlobalRegistry.Audio);
-            _objectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             _playerRuntime = GlobalRegistry.Player;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                return;
+            }
+
+            _objectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
         }
 
         private void CacheAudioService(IAudioService audioService)
@@ -483,7 +518,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -520,7 +555,7 @@ namespace Hecton8.Gameplay
                     CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntime = currentService as IPlayerRuntimeContext;

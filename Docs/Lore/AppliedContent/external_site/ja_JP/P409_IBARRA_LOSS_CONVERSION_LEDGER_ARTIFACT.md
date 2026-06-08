@@ -9,32 +9,22 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Ibarra Loss Ledger"
+title: "イバラ損失変換台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Ibarra Loss Ledger
+# イバラ損失変換台帳
 
-JA LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## コロニーより長く生きた会計
 
-## Scanner
+イバラ台帳は行方不明者リストより冷たく感じるべきだ。リストは、嘘をついてもまだ悼む。台帳は変換する。損傷した居住モジュール、tool banks、sample custody、missing personnel、salvage rights を受け取り、HECTON-8 が沈黙した後も契約を進められる分類へ移す。
 
-JA LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+これは古い Deep Reach liability とプレイヤーの現在の debt をつなぐ橋だ。人が unresolved personnel load になれば、会社は殺人を名指しせずに消失を認められる。証拠が material custody になれば、買われ、埋められ、転送され、保険に入れられる。claim が continuous のままなら、所有権はその場所を動かしていた作業員より長く生きる。
 
-## Terminal
-
-JA LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-JA LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-JA LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+台帳はプレイヤーに重い力を与える。持ち上げることは真実を明かすだけではない。市場がすでに値付けできる物を運ぶことだ。売る、公開する、向け先を変える、埋めるという選択が汚くなるのは、この文書がどの選択も誰かの balance sheet で読めるように作られているからだ。
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/ja_JP. -->

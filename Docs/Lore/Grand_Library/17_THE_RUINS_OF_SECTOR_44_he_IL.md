@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ההריסות של מגזר 44
 
 > **מקור:** יומן קרטוגרפיה של רחפן סקר 99-Delta (שוחזר).

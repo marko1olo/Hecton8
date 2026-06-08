@@ -19,22 +19,25 @@ localization_flags: 0
 
 # Blue Debt Public Resource Article
 
-Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.
+Blue debt is Marauder slang, not a clean material class. Publicly, it describes Xenon-Omega-bearing pressure substrate: unstable mixtures of clathrate, brine, mineral lattice, industrial biofilm, and containment-scarred hardware that can store extreme conditions without behaving like ordinary ore. It matters because HECTON-8 made pressure useful. The same environment that crushes a diver can preserve strange chemistry, shielded computation, sensor memory, and containment surfaces valuable enough to keep claims alive. Blue debt should never read as magic loot. It is dangerous because it remembers where it formed. Warm it wrong, cut it wrong, or move it without custody proof and it stops being a resource and becomes evidence, poison, pressure, or debt. Public text can explain why Marauders chase it. It should also explain why they do not trust anyone who calls it clean.
 
 ## Scanner
 
-The public name sounds like slang because the official name is built to hide liability.
+The slang is honest. The official name is what hides liability: Xenon-Omega-bearing pressure substrate.
 
 ## Terminal
 
-PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+PUBLIC ARTICLE TIER / BLUE DEBT
+allowed: sample behavior, pressure chemistry, clathrate and brine carriers, containment value, computation use, custody risk
+gated: exact recipe tables, payout tuning, late-game Atlas substrate routes
+editor note: no magic ore, no glowing loot fantasy, no clean ownership.
 
 ## Audio
 
-Ore is what people call it when they want to forget the paperwork.
+They called it blue debt because every useful gram arrived already owing someone pressure, paperwork, or blood.
 
 ## Field Note
 
-Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+If it glows like treasure, rewrite it. Blue debt should feel useful, wet, regulated, unstable, and already disputed.
 
 <!-- In-Game Wiki; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/en_US. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Стек имен черных ящиков
 
-Стек имен превращает позднюю правду в физический груз. Доказательства, трансляция и финальные досье зависят от того, что игрок поднимет наверх.
+Стек имен black box делает финальную правду переносимой. Доказательства, broadcast-пакеты и публичные досье зависят от того, какие имена, хэши и квитанции выйдут из воды.
 
 ## Scanner
 

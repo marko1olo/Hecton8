@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # MEDIZINISCHES TRAUMA UND SYNTHETISCHER ERSATZ
 
 > **Quelle:** Automatisierte Operationsverfahren der Krankenstation der *Black Keel*.

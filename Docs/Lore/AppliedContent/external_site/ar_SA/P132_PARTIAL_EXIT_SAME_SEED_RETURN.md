@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "خروج جزئي: عودة إلى seed نفسه"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# خروج جزئي: عودة إلى seed نفسه
 
-AR LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed.
+يحمي الخروج الجزئي الحملة الطويلة من إغلاق مزيف. يمكن لـ Black Keel رفع المشغل لمدة محدودة، وترقيع البدلة، وتسجيل الحزم المستعادة، وبيع التوقف كرفاه. العالم في الأسفل لا يتحول إلى نسخة أنظف.
 
-## Scanner
-
-AR LOC HOLD: Extraction possible. Closure not included.
-
-## Terminal
-
-AR LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
-
-## Audio
-
-AR LOC HOLD: You left the pressure. You did not leave the contract.
-
-## Field Note
-
-AR LOC HOLD: Let the player breathe, then make the same ocean still be there.
+عندما يعود اللاعب، يكون seed نفسه ما زال هناك. درج المحلول له الفخ نفسه، والمرحل نفسه له الزاوية السيئة نفسها، والدليل نفسه يبقى خطرا. هذه النهاية تمنح راحة بلا تبرئة: هواء في الرئتين، ودين أكثر في العقد، ولا محو لما تم العثور عليه.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/ar_SA. -->

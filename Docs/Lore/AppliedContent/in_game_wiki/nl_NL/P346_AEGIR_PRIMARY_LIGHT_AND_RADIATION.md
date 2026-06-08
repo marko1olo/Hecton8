@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Aegir Primary Light and Radiation"
+title: "Aegir primair licht en straling"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Aegir Primary Light and Radiation
+# Aegir primair licht en straling
 
-NL LOC HOLD: The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+Aegirs primaire ster is een stabiele K-klasse ster, warm genoeg voor amberkleurig werklicht en rustig genoeg voor lange infrastructuurschema's. Het gevaar komt van de magnetosfeer van de gasreus. Banden, geladen banen, maanschaduw en stormruis maken reizen tot een kalender van stralingsvensters. Deep Reach kon routine verkopen omdat de getallen terugkeren. Werknemers betaalden nog steeds voor elke minuut buiten het juiste venster.
 
 ## Scanner
 
-NL LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+Sternkaart. Een warme K-dwerg geeft Aegir een leesbare hemel; de banden van de reus maken van elke schildrating een rooster.
 
 ## Terminal
 
-NL LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+RAN STERNKAART A-346: primaire output blijft binnen koloniale werktoleranties. Aegirs magnetosfeer verhardt de binnenbanen tweemaal per rotatie; goedkope rompen wachten, betaalde carriers branden door.
 
 ## Audio
 
-NL LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+Er is genoeg licht om te lezen. Dat maakte de hemel nooit vriendelijk.
 
 ## Field Note
 
-NL LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir heeft daglicht. Daarom hebben elke goedkope afdichting en elke late burn nog steeds een prijs.
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/nl_NL. -->

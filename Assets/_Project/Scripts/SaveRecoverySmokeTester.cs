@@ -11,6 +11,7 @@ using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -221,7 +222,12 @@ namespace Hecton8.Dev
                 return false;
             }
 
-            File.Copy(primaryAbsolutePath, backupAbsolutePath, true);
+            if (!TryPrepareRecoveryBackup(primaryAbsolutePath, backupAbsolutePath, out string backupPrepareError))
+            {
+                FailRecovery(backupPrepareError);
+                return false;
+            }
+
             if (!TryComputeFileHash64(backupAbsolutePath, out ulong backupHashBefore, out string backupHashError))
             {
                 FailRecovery(backupHashError);
@@ -318,6 +324,84 @@ namespace Hecton8.Dev
             return $"{slotName}_header";
         }
 
+        private static bool TryPrepareRecoveryBackup(
+            string primaryAbsolutePath,
+            string backupAbsolutePath,
+            out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(primaryAbsolutePath) || string.IsNullOrEmpty(backupAbsolutePath))
+            {
+                error = "Recovery backup paths are invalid.";
+                return false;
+            }
+
+            if (!AsyncWriteManager.TryGetFileLength(primaryAbsolutePath, out long primaryBytes, out string primaryLengthError))
+            {
+                error = $"Recovery primary length probe failed before backup copy: {primaryLengthError}";
+                return false;
+            }
+
+            try
+            {
+                HectonPersistentPathPolicy.EnsureParentDirectory(backupAbsolutePath);
+                AsyncWriteManager.InvalidateCachedReadWindows(backupAbsolutePath);
+                try
+                {
+                    File.Copy(primaryAbsolutePath, backupAbsolutePath, true);
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(backupAbsolutePath);
+                }
+
+                if (!AsyncWriteManager.TryGetFileLength(backupAbsolutePath, out long backupBytes, out string backupLengthError))
+                {
+                    error = $"Recovery backup length probe failed after copy: {backupLengthError}";
+                    return false;
+                }
+
+                if (backupBytes != primaryBytes)
+                {
+                    error = $"Recovery backup copy length mismatch. primary={primaryBytes} backup={backupBytes}";
+                    return false;
+                }
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(backupAbsolutePath, backupBytes, out string flushError))
+                {
+                    error = $"Recovery backup flush failed after copy: {flushError}";
+                    return false;
+                }
+
+                return true;
+            }
+            catch (IOException ex)
+            {
+                error = $"Recovery backup copy IO failed: {ex.Message}";
+                return false;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                error = $"Recovery backup copy access failed: {ex.Message}";
+                return false;
+            }
+            catch (System.Security.SecurityException ex)
+            {
+                error = $"Recovery backup copy security failed: {ex.Message}";
+                return false;
+            }
+            catch (ArgumentException ex)
+            {
+                error = $"Recovery backup copy path failed: {ex.Message}";
+                return false;
+            }
+            catch (NotSupportedException ex)
+            {
+                error = $"Recovery backup copy unsupported path failed: {ex.Message}";
+                return false;
+            }
+        }
+
         private static bool TryCorruptPrimarySave(
             string absolutePath,
             RecoveryCorruptionMode corruptionMode,
@@ -349,28 +433,45 @@ namespace Hecton8.Dev
                 return false;
             }
 
+            long finalBytes = 0L;
             try
             {
-                using (FileStream fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                try
                 {
-                    if (fileStream.Length < sizeof(uint))
+                    using (FileStream fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                     {
-                        error = "Header corruption target is smaller than the magic prefix.";
-                        return false;
-                    }
+                        if (fileStream.Length < sizeof(uint))
+                        {
+                            error = "Header corruption target is smaller than the magic prefix.";
+                            return false;
+                        }
 
-                    Span<byte> firstByteBytes = stackalloc byte[1];
-                    if (fileStream.Read(firstByteBytes) != firstByteBytes.Length)
-                    {
-                        error = "Header corruption target could not read the magic prefix.";
-                        return false;
-                    }
+                        Span<byte> firstByteBytes = stackalloc byte[1];
+                        if (fileStream.Read(firstByteBytes) != firstByteBytes.Length)
+                        {
+                            error = "Header corruption target could not read the magic prefix.";
+                            return false;
+                        }
 
-                    fileStream.Position = 0L;
-                    fileStream.WriteByte((byte)(firstByteBytes[0] ^ 0x5A));
-                    fileStream.Flush(true);
-                    return true;
+                        fileStream.Position = 0L;
+                        fileStream.WriteByte((byte)(firstByteBytes[0] ^ 0x5A));
+                        fileStream.Flush(true);
+                        finalBytes = fileStream.Length;
+                    }
                 }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                }
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(absolutePath, finalBytes, out string flushError))
+                {
+                    error = $"Header magic corruption flush failed for '{absolutePath}': {flushError}";
+                    return false;
+                }
+
+                return true;
             }
             catch (Exception ex)
             {
@@ -440,33 +541,81 @@ namespace Hecton8.Dev
                 if (sentinelId > 0)
                     return array;
             }
-            catch
+            catch (Exception exception)
             {
-                if (array.IsCreated)
-                    array.Dispose();
+                Exception cleanupException = null;
+                try
+                {
+                    DisposeTrackedTempArray(ref array);
+                }
+                catch (Exception cleanupFault)
+                {
+                    cleanupException = cleanupFault;
+                }
+
+                if (cleanupException != null)
+                    throw new AggregateException(
+                        "Save recovery Temp NativeArray allocation failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
 
                 throw;
             }
 
-            array.Dispose();
-            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            InvalidOperationException registrationException = new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            Exception registrationCleanupException = null;
+            try
+            {
+                DisposeTrackedTempArray(ref array);
+            }
+            catch (Exception cleanupFault)
+            {
+                registrationCleanupException = cleanupFault;
+            }
+
+            if (registrationCleanupException != null)
+                throw new AggregateException(
+                    "Save recovery Temp NativeArray registration failed and cleanup also failed.",
+                    registrationException,
+                    registrationCleanupException);
+
+            throw registrationException;
         }
 
-        private static void DisposeTrackedTempArray<T>(ref NativeArray<T> array)
+        private static unsafe void DisposeTrackedTempArray<T>(ref NativeArray<T> array)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
             }
             finally
             {
-                array.Dispose();
                 array = default;
             }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
         private static PersistentWorldDeltaRecord BuildSyntheticDeletedResourceNode()

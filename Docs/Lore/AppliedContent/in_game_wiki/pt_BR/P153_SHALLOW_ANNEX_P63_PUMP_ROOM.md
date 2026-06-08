@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "Sala De Bombas P-63 Do Anexo Raso"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Shallow Annex P-63 Pump Room
+# Sala De Bombas P-63 Do Anexo Raso
 
-PT-BR LOC HOLD: P-63 teaches survival through work: pumping, sealing, pressure reading and a return pinger. The room is safe only while its machine keeps winning.
+P-63 ensina sobrevivência pelo trabalho: bombear, selar, ler pressão e esperar um return pinger. A sala só é segura enquanto sua máquina continua vencendo.
 
 ## Scanner
 
-PT-BR LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+Sala de bombas P-63. A pressão manual do sumidouro se mantém por menos que uma margem de serviço.
 
 ## Terminal
 
-PT-BR LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+ORDEM DE SERVIÇO P-63 / SHALLOW ANNEX: bombear sumidouro manualmente até 0.3 m; assentar cold seal na emenda C; cortar trava de armário fundida só depois que o medidor estabilizar; não confiar na luz verde até o return pinger responder.
 
 ## Audio
 
-PT-BR LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+Bomba primeiro. Selo depois. Cortador só quando o medidor parar de derivar.
 
 ## Field Note
 
-PT-BR LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+A alavanca da bomba está polida onde mãos assustadas continuaram usando. O chão seco começa na linha de giz.
 
 <!-- In-Game Wiki; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/pt_BR. -->

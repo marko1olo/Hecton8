@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: First Sanitized Accident Packet"
+title: "Eerste Opgeschoonde Ongevallenpakket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: First Sanitized Accident Packet
+# Eerste Opgeschoonde Ongevallenpakket
 
-NL LOC HOLD: The first Deep Reach notice is frightening because it is defensible. It names cascade, quarantine and corrupted logs while the room preserves the omissions.
+De eerste Deep Reach-melding is beangstigend omdat ze verdedigbaar is. Ze noemt cascade, quarantaine en corrupte logs terwijl de kamer de weglatingen bewaart.
 
 ## Scanner
 
-NL LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+Geborgen Deep Reach-incidentpakket. Schone formulering botst met deurklokken en vloedsporen.
 
 ## Terminal
 
-NL LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+DEEP REACH INCIDENTMELDING / GELOKALISEERDE GEOTECHNISCHE CASCADE: evacuation authorization failure blijft in review; biological-pressure quarantine actief; Atlas-logs beschadigd; externe vrijgave uitgesteld tot witness reconciliation.
 
 ## Audio
 
-NL LOC HOLD: The packet says cascade. Door clocks say delay.
+Het pakket zegt cascade. De deurklokken zeggen vertraging.
 
 ## Field Note
 
-NL LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+Ze schreven cascade. De vuilrand op de locker zit hoger dan de evacuatiestempel.
 
 <!-- External Site; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/nl_NL. -->

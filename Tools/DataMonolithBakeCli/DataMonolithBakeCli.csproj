@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <SelfContained>false</SelfContained>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <DefineConstants>$(DefineConstants);UNITY_EDITOR;UNITY_EDITOR_WIN;HECTON_DOTNET_CLI_BUILD</DefineConstants>
+    <NoWarn>$(NoWarn);CS0067;CS0169;CS0649</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="..\..\Assets\_Project\Scripts\Data\Monolith\H8AppliedLoreWorldImpactRecord.cs" Link="ProjectData\H8AppliedLoreWorldImpactRecord.cs" />
+    <Compile Include="..\..\Assets\_Project\Scripts\Data\Monolith\H8DataHash.cs" Link="ProjectData\H8DataHash.cs" />
+    <Compile Include="..\..\Assets\_Project\Scripts\Data\Monolith\H8DataMonolithTypes.cs" Link="ProjectData\H8DataMonolithTypes.cs" />
+    <Compile Include="..\..\Assets\_Project\Scripts\Editor\DataMonolith\H8DataMonolithCompiler.cs" Link="EditorDataMonolith\H8DataMonolithCompiler.cs" />
+    <Compile Include="..\..\Assets\_Project\Scripts\Editor\DataMonolith\H8DataMonolithCorruptionFuzzer.cs" Link="EditorDataMonolith\H8DataMonolithCorruptionFuzzer.cs" />
+    <Compile Include="..\..\Library\PackageCache\com.unity.collections@5b6ebd78ccc0\Unity.Collections\xxHash3.cs" Link="UnityCollections\xxHash3.cs" />
+  </ItemGroup>
+</Project>

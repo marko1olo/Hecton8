@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Доказательство conversion loss в claim continuity"
+title: "Конверсия потерь в непрерывность claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Доказательство conversion loss в claim continuity
+# Конверсия потерь в непрерывность claim
 
-Ложь Deep Reach не один memo. Это цепь от физической катастрофы к evacuation delay и insurance conversion.
+Последнее звено лжи Deep Reach не драматичный файл сокрытия. Это бухгалтерская конверсия, которая точно знает, как выжить. Ledger принимает, что люди исчезли, модули повреждены, маршруты скомпрометированы, а затем перекладывает каждый факт в категорию, которую claim system способна обработать. Отсутствие рабочих становится unrecoverable loss. Доказательство становится material под custody. Уцелевший груз становится recoverable value. Сам claim остается continuous, значит право владения может пережить колонию. В этот момент HECTON-8 превращается из записи об аварии в моральную машину. Игрок, который выносит ledger наверх, может раскрыть мертвых, продать доказательство, похоронить его или перенаправить. Документ ценен, потому что корпорация уже обучила рынок ценить его.
 
 ## Scanner
 
-Loss conversion stamp. Ledger пережил людей лучше.
+Восстановлен штамп стола потерь. Ledger пережил рабочих лучше, чем имена, которые он им дал.
 
 ## Terminal
 
-KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
 
 ## Audio
 
-Вот здесь мертвые работники стали чистой колонкой.
+Здесь люди стали чистой колонкой.
 
 ## Field Note
 
-RU LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+Заметка мародера: ledger может помнить мертвых и все равно тратить их.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/ru_RU. -->

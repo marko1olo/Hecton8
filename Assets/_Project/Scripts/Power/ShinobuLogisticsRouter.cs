@@ -124,6 +124,7 @@ namespace Hecton8.Power
         public const int AuthoringImportFault = 1 << 6;
         public const int SignalOverflow = 1 << 7;
         public const int SolverDivergent = 1 << 8;
+        public const int DockingFailed = 1 << 9;
     }
 
     public sealed unsafe class ShinobuLogisticsRouter : IDisposable
@@ -175,6 +176,8 @@ namespace Hecton8.Power
         private const float DefaultBasePipeResistance = 0.35f;
         private const int FixedDeltaPassCount = 2;
         private const float DefaultDeltaSmoothing = 0.82f;
+        private const double DockingSignalNodeMatchMaxDistanceMeters = 128.0;
+        private const double DockingSignalNodeMatchMaxDistanceSq = DockingSignalNodeMatchMaxDistanceMeters * DockingSignalNodeMatchMaxDistanceMeters;
         private const uint SourceHash = 0x5348494Eu; // SHIN
         private static readonly ulong RouterMutationGuardMask =
             RouterBufferGuardBit(BufferID.ShinobuLogisticsNodes) |
@@ -1262,10 +1265,18 @@ namespace Hecton8.Power
         private void TryConsumeDockingSignals()
         {
             ReadOnlySpan<DockingCompleteSignal> dockingSignals = SignalBus<DockingCompleteSignal>.GetFrameSnapshot();
-            if (dockingSignals.Length == 0 || _nodeCount <= 0)
+            ReadOnlySpan<DockingFailedSignal> failedSignals = SignalBus<DockingFailedSignal>.GetFrameSnapshot();
+            bool hasSubmarineDockingCompleteSignal = TryGetSubmarineDockingCompleteSignal(dockingSignals, out DockingCompleteSignal dockingCompleteSignal);
+            bool hasSubmarineDockingFailedSignal = HasSubmarineDockingFailedSignal(failedSignals);
+            if ((!hasSubmarineDockingCompleteSignal && !hasSubmarineDockingFailedSignal) || _nodeCount <= 0)
                 return;
 
-            int dockingNode = FindDockingNode();
+            if (hasSubmarineDockingFailedSignal)
+                OrNative(_counters, CounterFaultFlags, LogisticsGraphFaultFlags.DockingFailed);
+            if (!hasSubmarineDockingCompleteSignal)
+                return;
+
+            int dockingNode = FindDockingNode(in dockingCompleteSignal);
             if (dockingNode < 0)
                 return;
 
@@ -1274,6 +1285,32 @@ namespace Hecton8.Power
             LogisticsNodeDTO node = _nodes[dockingNode];
             node.Flags = (uint)flags;
             WriteNative(_nodes, dockingNode, node);
+        }
+
+        private static bool TryGetSubmarineDockingCompleteSignal(ReadOnlySpan<DockingCompleteSignal> signals, out DockingCompleteSignal signal)
+        {
+            for (int i = 0; i < signals.Length; i++)
+            {
+                if (signals[i].SourceKind == DockingSignalSourceKinds.VehicleDockingModule)
+                {
+                    signal = signals[i];
+                    return true;
+                }
+            }
+
+            signal = default;
+            return false;
+        }
+
+        private static bool HasSubmarineDockingFailedSignal(ReadOnlySpan<DockingFailedSignal> signals)
+        {
+            for (int i = 0; i < signals.Length; i++)
+            {
+                if (signals[i].SourceKind == DockingSignalSourceKinds.VehicleDockingModule)
+                    return true;
+            }
+
+            return false;
         }
 
         private void RefreshHardwareCadence()
@@ -1625,15 +1662,43 @@ namespace Hecton8.Power
                 AddUndirectedEdge(nodeIndex, neighborNode);
         }
 
-        private int FindDockingNode()
+        private int FindDockingNode(in DockingCompleteSignal signal)
         {
+            if (TryResolveDockingSignalAup(in signal.DockAup, out double3 dockAup))
+                return FindNearestDockingPortNode(dockAup);
+
+            return -1;
+        }
+
+        private int FindNearestDockingPortNode(double3 dockAup)
+        {
+            int bestNode = -1;
+            double bestDistanceSq = double.MaxValue;
             for (int i = 0; i < _nodeCount; i++)
             {
-                if ((_stateFlags[i] & LogisticsStateFlags.DockingPort) != 0)
-                    return i;
+                if ((_stateFlags[i] & LogisticsStateFlags.DockingPort) == 0)
+                    continue;
+                if ((uint)i >= (uint)_nodeAup.Length)
+                    continue;
+
+                double3 delta = _nodeAup[i] - dockAup;
+                double distanceSq = math.lengthsq(delta);
+                if (!math.isfinite(distanceSq) ||
+                    distanceSq > DockingSignalNodeMatchMaxDistanceSq ||
+                    distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                bestNode = i;
             }
 
-            return _nodeCount > 0 ? _nodeCount - 1 : -1;
+            return bestNode;
+        }
+
+        private static bool TryResolveDockingSignalAup(in AbsoluteUniversePositionBlit position, out double3 dockAup)
+        {
+            dockAup = position.ToAup().ToAbsoluteDouble3();
+            return math.all(math.isfinite(dockAup));
         }
 
         private bool HasGenerator()

@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "리안 토레스의 마지막 패킷"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# 리안 토레스의 마지막 패킷
 
-KO LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.
+리안 토레스는 통신의 진실을 고정한다. 그의 마지막 정상 패킷은 Deep Reach가 신호 손상과 격리 문구로 묻기 전에 일부 증거가 HECTON-8을 벗어났음을 증명한다.
 
 ## Scanner
 
-KO LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+마지막 정상 패킷은 사라진 것이 아니었다. 수신을 인정하기에는 비용이 너무 컸다.
 
 ## Terminal
 
-KO LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+TORRES, L. 정상 캐리어 핸드셰이크 완료. 작업자 수 첨부. 대피 증거 첨부. 중계 경과 시간은 생존 구조에 부적합. 기업 기록실은 이후 패킷을 손상으로 표시함.
 
 ## Audio
 
-KO LOC HOLD: He sent the names. The archive called them noise.
+그는 이름들을 보냈다. 기록실은 그것을 잡음이라고 불렀다.
 
 ## Field Note
 
-KO LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+운송자가 잘못된 대기열에 응답하면 타임스탬프도 시신이 된다.
 
 <!-- In-Game Wiki; generated from P066_LIAN_TORRES_LAST_PACKET/ko_KR. -->

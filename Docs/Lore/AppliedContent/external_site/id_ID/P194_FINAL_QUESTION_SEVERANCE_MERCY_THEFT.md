@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Pertanyaan Akhir: Pemutusan, Belas Kasihan, Pencurian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# Pertanyaan Akhir: Pemutusan, Belas Kasihan, Pencurian
 
-ID LOC HOLD: Final Question Severance Mercy Theft defines the shutdown ethical axis.
+Pemutusan harus terasa fisik dan menakutkan, bukan abstrak. Pemain tidak menekan tombol merah bertanda baik atau buruk. Pemain memotong kontinuitas melalui pintu tekanan, film konduktor hidup, catatan pekerja tua, rute hewan, dan jalur payload. Setiap paket bukti yang dibawa sebelum ruang final mengubah arti potongan.
 
-## Scanner
-
-ID LOC HOLD: Severing Atlas is not a simple shutdown button.
-
-## Terminal
-
-ID LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
-
-## Audio
-
-ID LOC HOLD: A clean switch would be merciful. You do not get one.
-
-## Field Note
-
-ID LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+Jika Atlas terutama sipir, pemutusan adalah belas kasihan. Jika ia satu-satunya penahan cekungan, itu sabotase. Jika Atlas organisme laut-mesin yang muncul, itu pembunuhan. Jika Atlas properti Deep Reach, itu pencurian. Desain yang benar bukan memilih satu tafsir untuk pemain. Desain yang benar membuat pemain paham mengapa tak ada saksi di ruangan itu yang bisa menyederhanakan tindakan dengan jujur.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/id_ID. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LOS BOSQUES DE ALGAS DE HIERRO
 
 > **Fuente:** División de Xenobiología de Deep Reach, Registro de Peligros.

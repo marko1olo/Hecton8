@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "FR LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Modèle de distance Ran-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Ran-Aegir Distance Model
+# Modèle de distance Ran-Aegir
 
-FR LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+Le modèle Ran-Aegir donne à HECTON-8 une échelle sensible. Aegir est assez proche pour sondes, fret, matériel seed et colonisation adossée à la dette en 2190. Il reste assez loin pour qu'une chambre noyée ne puisse pas attendre la pitié des mondes intérieurs. La distance apparaît comme délai, custody, carburant, freinage et propriété.
 
 ## Scanner
 
-FR LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+Plaque de route : Aegir est atteignable par infrastructure et inatteignable par sympathie.
 
 ## Terminal
 
-FR LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+MODÈLE DE ROUTE : Ran/Aegir est traité comme cible de classe dix années-lumière depuis Sol. Le texte de jeu utilise Aegir ; les catalogues secs utilisent RAN-B:H8. L'éphéméride exacte reste du travail de table de route.
 
 ## Audio
 
-FR LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+Dix années-lumière, c'est petit sur une carte stellaire. C'est assez grand pour ruiner un secours.
 
 ## Field Note
 
-FR LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+La distance approximative est une pression, pas une décoration. Dix années-lumière peuvent encore tuer une pièce.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/fr_FR. -->

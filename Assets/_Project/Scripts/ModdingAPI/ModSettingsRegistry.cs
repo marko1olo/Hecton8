@@ -87,12 +87,15 @@ namespace Hecton8.Modding
     {
         private const uint FnvOffsetBasis = 2166136261u;
         private const uint FnvPrime = 16777619u;
+        private const uint ModSettingCallbackExceptionWarningHash = 0x4D534346u; // MSCF
+        private const string ModSettingCallbackExceptionDisableReason = "Mod setting callback threw.";
 
         // COLD ALLOC: List<SettingEntry>[32] — registered mod setting entries — owner: ModSettingsRegistry
         private static readonly List<SettingEntry> _entries = new List<SettingEntry>(32);
         // COLD ALLOC: Dictionary<string,int>[32] — compound key to setting index lookup — owner: ModSettingsRegistry
         private static readonly Dictionary<uint, int> _entryIndexByHash = new Dictionary<uint, int>(32);
         private static UserOptionsPersistence s_userOptions;
+        private static bool s_pendingFullStage;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -100,6 +103,7 @@ namespace Hecton8.Modding
             _entries.Clear();
             _entryIndexByHash.Clear();
             s_userOptions = null;
+            s_pendingFullStage = false;
         }
 
         internal static void BindRegistryServicesCold()
@@ -202,6 +206,26 @@ namespace Hecton8.Modding
             }
         }
 
+        internal static void UnregisterModSettings(string modId)
+        {
+            if (string.IsNullOrWhiteSpace(modId) || _entries.Count == 0)
+                return;
+
+            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
+            bool removed = false;
+            for (int i = _entries.Count - 1; i >= 0; i--)
+            {
+                if (!string.Equals(_entries[i].ModId, modId, StringComparison.Ordinal))
+                    continue;
+
+                RemoveEntryAt(i);
+                removed = true;
+            }
+
+            if (removed)
+                ModRegistryEvents.NotifySettingsRegistryChanged(modHash, 0u);
+        }
+
         internal static bool TryApplyToggle(string modId, string settingName, bool value)
         {
             if (!TryGetEntry(modId, settingName, out int index))
@@ -221,7 +245,11 @@ namespace Hecton8.Modding
             if (options != null)
             {
                 options.SetBool(entry.StorageKey, value);
-                options.Save();
+                TrySaveUserOptions(options, entry.StorageKey);
+            }
+            else
+            {
+                s_pendingFullStage = true;
             }
 
             InvokeToggleCallback(entry.ModId, entry.ModHash, entry.BoolChanged, value);
@@ -250,7 +278,11 @@ namespace Hecton8.Modding
             {
                 options.SetFloat(entry.StorageKey, clamped);
                 if (persist)
-                    options.Save();
+                    TrySaveUserOptions(options, entry.StorageKey);
+            }
+            else if (persist)
+            {
+                s_pendingFullStage = true;
             }
 
             InvokeSliderCallback(entry.ModId, entry.ModHash, entry.FloatChanged, clamped);
@@ -266,12 +298,16 @@ namespace Hecton8.Modding
 
             UserOptionsPersistence options = ResolveUserOptions();
             if (options == null)
+            {
+                s_pendingFullStage = true;
                 return false;
-
-            if (!options.TrySave())
-                return false;
+            }
 
             SettingEntry entry = _entries[index];
+            StageEntry(options, entry);
+            if (!TrySaveUserOptions(options, entry.StorageKey))
+                return false;
+
             ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
             return true;
         }
@@ -289,6 +325,117 @@ namespace Hecton8.Modding
         private static void CacheUserOptions(UserOptionsPersistence options)
         {
             s_userOptions = IsUserOptionsRuntimeUsable(options) ? options : null;
+            if (s_userOptions == null)
+                return;
+
+            if (s_pendingFullStage)
+            {
+                TrySaveUserOptions(s_userOptions, "pending");
+                return;
+            }
+
+            HydrateEntriesFromUserOptions(s_userOptions);
+        }
+
+        private static void HydrateEntriesFromUserOptions(UserOptionsPersistence options)
+        {
+            if (options == null || _entries.Count == 0)
+                return;
+
+            int index = 0;
+            while (index < _entries.Count)
+            {
+                SettingEntry entry = _entries[index];
+                if (!TryHydrateEntryFromUserOptions(options, ref entry))
+                {
+                    index++;
+                    continue;
+                }
+
+                _entries[index] = entry;
+                if (entry.Kind == ModSettingKind.Toggle)
+                    InvokeToggleCallback(entry.ModId, entry.ModHash, entry.BoolChanged, entry.BoolValue);
+                else if (entry.Kind == ModSettingKind.Slider)
+                    InvokeSliderCallback(entry.ModId, entry.ModHash, entry.FloatChanged, entry.FloatValue);
+
+                ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
+                if (index < _entries.Count && _entries[index].KeyHash == entry.KeyHash)
+                    index++;
+            }
+        }
+
+        private static bool TryHydrateEntryFromUserOptions(UserOptionsPersistence options, ref SettingEntry entry)
+        {
+            if (options == null)
+                return false;
+
+            if (entry.Kind == ModSettingKind.Toggle)
+            {
+                bool storedValue = options.GetBool(entry.StorageKey, entry.DefaultBoolValue);
+                if (entry.BoolValue == storedValue)
+                    return false;
+
+                entry.BoolValue = storedValue;
+                return true;
+            }
+
+            if (entry.Kind == ModSettingKind.Slider)
+            {
+                float storedValue = Mathf.Clamp(
+                    options.GetFloat(entry.StorageKey, entry.DefaultFloatValue),
+                    entry.MinValue,
+                    entry.MaxValue);
+                if (Mathf.Approximately(entry.FloatValue, storedValue))
+                    return false;
+
+                entry.FloatValue = storedValue;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TrySaveUserOptions(UserOptionsPersistence options, string storageKey)
+        {
+            if (options == null)
+                return false;
+
+            if (s_pendingFullStage)
+                StageAllEntries(options);
+
+            if (options.TrySave())
+            {
+                s_pendingFullStage = false;
+                return true;
+            }
+
+            s_pendingFullStage = true;
+            Hecton8.Core.H8Debug.LogWarning("[ModSettingsRegistry] Failed to persist option '" + storageKey + "'.");
+            return false;
+        }
+
+        private static void StageAllEntries(UserOptionsPersistence options)
+        {
+            if (options == null)
+                return;
+
+            for (int i = 0; i < _entries.Count; i++)
+                StageEntry(options, _entries[i]);
+        }
+
+        private static void StageEntry(UserOptionsPersistence options, SettingEntry entry)
+        {
+            if (options == null)
+                return;
+
+            if (entry.Kind == ModSettingKind.Toggle)
+            {
+                options.SetBool(entry.StorageKey, entry.BoolValue);
+                return;
+            }
+
+            if (entry.Kind == ModSettingKind.Slider)
+                options.SetFloat(entry.StorageKey, entry.FloatValue);
         }
 
         private static bool IsUserOptionsRuntimeUsable(UserOptionsPersistence options)
@@ -310,6 +457,25 @@ namespace Hecton8.Modding
             _entryIndexByHash.Add(compoundHash, _entries.Count);
             _entries.Add(entry);
             ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
+        }
+
+        private static void RemoveEntryAt(int index)
+        {
+            if ((uint)index >= (uint)_entries.Count)
+                return;
+
+            SettingEntry removed = _entries[index];
+            _entryIndexByHash.Remove(removed.KeyHash);
+
+            int lastIndex = _entries.Count - 1;
+            if (index != lastIndex)
+            {
+                SettingEntry moved = _entries[lastIndex];
+                _entries[index] = moved;
+                _entryIndexByHash[moved.KeyHash] = index;
+            }
+
+            _entries.RemoveAt(lastIndex);
         }
 
         private static bool TryGetEntry(string modId, string settingName, out int index)
@@ -379,7 +545,7 @@ namespace Hecton8.Modding
             }
             catch (Exception exception)
             {
-                Hecton8.Core.H8Debug.LogWarning($"[ModSettingsRegistry] Toggle callback failed for mod '{modId}': {exception}");
+                ReportSettingCallbackException(modId, modHash, exception);
             }
         }
 
@@ -397,7 +563,28 @@ namespace Hecton8.Modding
             }
             catch (Exception exception)
             {
-                Hecton8.Core.H8Debug.LogWarning($"[ModSettingsRegistry] Slider callback failed for mod '{modId}': {exception}");
+                ReportSettingCallbackException(modId, modHash, exception);
+            }
+        }
+
+        private static void ReportSettingCallbackException(string modId, uint modHash, Exception exception)
+        {
+            PublishPerformanceWarningBestEffort(ModSettingCallbackExceptionWarningHash, modHash, 1f);
+            Hecton8.Core.H8Debug.LogWarning($"[ModSettingsRegistry] Callback failed for mod '{modId}': {exception}");
+            ModLoader.DisableManagedMod(modId, ModSettingCallbackExceptionDisableReason);
+        }
+
+        private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
+            }
+            catch (Exception telemetryException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[ModSettingsRegistry] telemetry failed: " + telemetryException.Message);
+#endif
             }
         }
 

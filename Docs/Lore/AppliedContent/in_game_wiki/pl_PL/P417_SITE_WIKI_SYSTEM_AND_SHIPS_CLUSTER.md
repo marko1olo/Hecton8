@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "PL LOC HOLD: Aegir Route and Ships"
+title: "Trasa Aegir i statki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Aegir Route and Ships
+# Trasa Aegir i statki
 
-PL LOC HOLD: Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
+Hub tras i statków: ludzkie domeny bez FTL, system księżyców Aegir, granice pieczy Black Keel, okna transferowe i uszkodzony bathydrop, który potwierdza przybycie, ale nie certyfikuje ucieczki.
 
 ## Scanner
 
-PL LOC HOLD: Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
+Hub publikacji: brak FTL, harmonogram trasy Aegir, granice Black Keel i twardy powód, dla którego ratunek nie przybywa na żądanie.
 
 ## Terminal
 
-PL LOC HOLD: SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
+NAWIGACJA: sondy igłowe, tory wiązki i pelletów, hamowanie seed-ship, piecza Black Keel, orbita transferowa, awaria bathydrop.
 
 ## Audio
 
-PL LOC HOLD: Distance is not lore trivia. It is the pressure on every decision.
+Odległość nie jest ciekawostką lore. Naciska na każdą decyzję.
 
 ## Field Note
 
-PL LOC HOLD: Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
+Czytaj strony statków jak mechanikę przetrwania: opóźnienie, piecza, masa, pogoda, orbita i zepsuty interfejs zejścia decydują o wyniku.
 
 <!-- In-Game Wiki; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/pl_PL. -->

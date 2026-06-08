@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DAS AEGIR-SYSTEM: NEUN MONDE UND EIN GRAB
 
 > **Quelle:** Öffentliches Archiv, Büro für Grenzregistrierungen, Barnard-Werften. Verfasser: J. Elkin-Torres, Leitender Archivar. Letzte Überarbeitung: 2188. Freigabestufe: öffentlich / ungeschwärzt.  

@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Частичный выход с возвратом в тот же seed"
+title: "Частичный выход: возврат в тот же seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Частичный выход с возвратом в тот же seed
+# Частичный выход: возврат в тот же seed
 
-Частичный выход с возвратом в тот же seed дает кампании передышку, не ломая долгий exploration seed.
+Частичный выход защищает долгую кампанию от ложного закрытия. Black Keel может поднять оператора на ограниченное окно, залатать костюм, записать возвращенные пакеты и продать паузу как заботу. Мир внизу не превращается в более чистую версию.
 
-## Scanner
-
-Extraction possible. Closure not included.
-
-## Terminal
-
-PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
-
-## Audio
-
-Ты ушел от давления. Ты не ушел от контракта.
-
-## Field Note
-
-Дай игроку вдохнуть, а потом оставь тот же океан на месте.
+Когда игрок возвращается, тот же seed все еще там. У рассольной лестницы та же ловушка, у реле тот же плохой угол, а те же доказательства остаются опасными. Этот финал дает облегчение без оправдания: воздух в легких, больше долга в контракте и никакого стирания найденного.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/ru_RU. -->

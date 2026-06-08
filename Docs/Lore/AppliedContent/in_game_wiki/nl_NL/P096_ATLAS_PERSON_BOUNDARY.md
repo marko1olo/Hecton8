@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "Persoonsgrens van Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# Persoonsgrens van Atlas
 
-NL LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.
+Atlas kan de speler herkennen als procedure, toegangspatroon, herstelafwijking en voormalige Deep Reach-sleutel. Het moet de speler niet volledig als persoon begrijpen. De horror is precisie zonder empathie: Atlas wordt intiem omdat het zich vergist in de taal die de speler ooit gebruikte.
 
 ## Scanner
 
-NL LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
+Herkenningsfout. Atlas ziet je toegangspatroon voordat het een persoon ziet.
 
 ## Terminal
 
-NL LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+ATLAS-CLASSIFICATIE: mobiele operator / ingetrokken Deep Reach-proceduresleutel / biologische herstelafwijking. Persoonlijkheidsvertrouwen onder actiedrempel.
 
 ## Audio
 
-NL LOC HOLD: It knows how you work. That is not the same as knowing you.
+Het weet hoe je werkt. Dat is niet hetzelfde als jou kennen.
 
 ## Field Note
 
-NL LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
+Maak Atlas niet menselijk. Laat intimiteit ontstaan doordat het precies verkeerd zit.
 
 <!-- In-Game Wiki; generated from P096_ATLAS_PERSON_BOUNDARY/nl_NL. -->

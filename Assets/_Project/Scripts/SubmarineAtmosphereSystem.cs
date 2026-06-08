@@ -187,19 +187,38 @@ namespace Hecton8.Atmosphere
         private const SystemID EventOwnerSystemId = SystemID.HabitatAtmosphere;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("HighPressureEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("HighPressureEvents"));
+        private static readonly uint _duplicateListenerWarningHash = unchecked((uint)LocHash.Compute("HighPressureEvents.DuplicateListener"));
+        private static readonly uint _listenerRejectedWarningHash = unchecked((uint)LocHash.Compute("HighPressureEvents.ListenerRejected"));
+        private static readonly uint _listenerExceptionWarningHash = unchecked((uint)LocHash.Compute("HighPressureEvents.ListenerException"));
+        private static readonly uint _listenerHash = unchecked((uint)LocHash.Compute("HighPressureEvents.Listener"));
 
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - high-pressure listeners drained by SystemDispatcher LateUpdate - owner: HighPressureEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - high-pressure listener additions deferred during dispatch - owner: HighPressureEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - high-pressure listener removals deferred during dispatch - owner: HighPressureEvents
         private static IDataVault _dataVault;
         private static VaultGenerationHandle<HighPressureEventPayload> _pendingEventsHandle;
         private static VaultGenerationHandle<HighPressureEventPayload> _nextFrameEventsHandle;
         private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _duplicateListenerRegistrationCount;
+        private static int _listenerRejectCount;
+        private static int _listenerExceptionCount;
         private static bool _isDispatching;
         private static int _lastOverflowWarningFrame = -1;
+        private static int _lastDuplicateListenerWarningFrame = -1;
+        private static int _lastListenerRejectedWarningFrame = -1;
+        private static int _lastListenerExceptionWarningFrame = -1;
 
         /// <summary>Number of high-pressure payloads waiting for late-frame dispatch.</summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+        public static int DuplicateListenerRegistrationCount => _duplicateListenerRegistrationCount;
+        public static int ListenerRejectCount => _listenerRejectCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -209,11 +228,22 @@ namespace Hecton8.Atmosphere
 
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
+            System.Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            System.Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _duplicateListenerRegistrationCount = 0;
+            _listenerRejectCount = 0;
+            _listenerExceptionCount = 0;
             _isDispatching = false;
             _lastOverflowWarningFrame = -1;
+            _lastDuplicateListenerWarningFrame = -1;
+            _lastListenerRejectedWarningFrame = -1;
+            _lastListenerExceptionWarningFrame = -1;
             _dataVault = null;
         }
 
@@ -224,6 +254,12 @@ namespace Hecton8.Atmosphere
                 return;
 
             PrepareCold();
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
             RegisterImmediate(listener);
         }
 
@@ -232,6 +268,12 @@ namespace Hecton8.Atmosphere
         {
             if (listener == null)
                 return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
 
             TryUnregisterImmediate(listener);
         }
@@ -273,6 +315,7 @@ namespace Hecton8.Atmosphere
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -334,14 +377,20 @@ namespace Hecton8.Atmosphere
             }
 
             if (!IsInitialized())
+            {
+                RecordDroppedEvent();
                 return false;
+            }
 
             VaultGenerationHandle<HighPressureEventPayload> handle = _isDispatching
                 ? _nextFrameEventsHandle
                 : _pendingEventsHandle;
             int writeIndex = _isDispatching ? _nextFrameEventCount : _pendingEventCount;
             if (!TryWriteEvent(in handle, writeIndex, in payload))
+            {
+                RecordDroppedEvent();
                 return false;
+            }
 
             if (_isDispatching)
             {
@@ -371,14 +420,23 @@ namespace Hecton8.Atmosphere
             {
                 IHighPressureEventListener listener = _listeners[i].Listener;
                 if (listener != null)
-                    listener.OnHighPressure(in pressureEvent);
+                    DispatchToListener(listener, in pressureEvent);
             }
         }
 
         private static void RegisterImmediate(IHighPressureEventListener listener)
         {
-            if (ContainsImmediate(listener) || _listenerCount >= ListenerCapacity)
+            if (ContainsImmediate(listener))
+            {
+                ReportDuplicateListenerRegistration();
                 return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
 
             _listeners[_listenerCount].Listener = listener;
             _listenerCount++;
@@ -412,6 +470,141 @@ namespace Hecton8.Atmosphere
             return false;
         }
 
+        private static void DispatchToListener(IHighPressureEventListener listener, in HighPressureEvent pressureEvent)
+        {
+            try
+            {
+                listener.OnHighPressure(in pressureEvent);
+            }
+            catch (System.Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(System.Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            H8Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IHighPressureEventListener listener)
+        {
+            if (ContainsImmediate(listener))
+            {
+                CancelDeferredUnregister(listener);
+                ReportDuplicateListenerRegistration();
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
+        }
+
+        private static void QueueDeferredUnregister(IHighPressureEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!ContainsImmediate(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
+        }
+
+        private static bool CancelDeferredRegister(IHighPressureEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IHighPressureEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IHighPressureEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IHighPressureEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IHighPressureEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
+                if (listener != null)
+                    TryUnregisterImmediate(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IHighPressureEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
         private struct ListenerSlot
         {
             public IHighPressureEventListener Listener;
@@ -424,12 +617,77 @@ namespace Hecton8.Atmosphere
 
         private static void ReportOverflowOncePerFrame()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (_lastOverflowWarningFrame == frame)
+            RecordDroppedEvent();
+            PublishWarningOncePerFrame(_overflowWarningHash, _queueHash, PendingEventCapacity, ref _lastOverflowWarningFrame);
+        }
+
+        private static void RecordDroppedEvent()
+        {
+            _droppedEventCount = SaturatingIncrement(_droppedEventCount);
+        }
+
+        private static void ReportDuplicateListenerRegistration()
+        {
+            _duplicateListenerRegistrationCount = SaturatingIncrement(_duplicateListenerRegistrationCount);
+            PublishWarningOncePerFrame(
+                _duplicateListenerWarningHash,
+                _listenerHash,
+                _duplicateListenerRegistrationCount,
+                ref _lastDuplicateListenerWarningFrame);
+        }
+
+        private static void ReportListenerRejected()
+        {
+            _listenerRejectCount = SaturatingIncrement(_listenerRejectCount);
+            PublishWarningOncePerFrame(
+                _listenerRejectedWarningHash,
+                _listenerHash,
+                _listenerRejectCount,
+                ref _lastListenerRejectedWarningFrame);
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount = SaturatingIncrement(_listenerExceptionCount);
+            PublishWarningOncePerFrame(
+                _listenerExceptionWarningHash,
+                _listenerHash,
+                _listenerExceptionCount,
+                ref _lastListenerExceptionWarningFrame);
+        }
+
+        private static void PublishWarningOncePerFrame(uint warningHash, uint contextHash, float value, ref int lastWarningFrame)
+        {
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (frame >= 0 && lastWarningFrame == frame)
                 return;
 
-            _lastOverflowWarningFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
+            lastWarningFrame = frame >= 0 ? frame : int.MinValue;
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
+            }
+            catch (System.Exception exception)
+            {
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        private static int ResolveCurrentFrameIndexSafe()
+        {
+            try
+            {
+                return Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static int SaturatingIncrement(int value)
+        {
+            return value < int.MaxValue ? value + 1 : int.MaxValue;
         }
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
@@ -661,19 +919,38 @@ namespace Hecton8.Atmosphere
         private const SystemID EventOwnerSystemId = SystemID.HabitatAtmosphere;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents"));
+        private static readonly uint _duplicateListenerWarningHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents.DuplicateListener"));
+        private static readonly uint _listenerRejectedWarningHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents.ListenerRejected"));
+        private static readonly uint _listenerExceptionWarningHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents.ListenerException"));
+        private static readonly uint _listenerHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents.Listener"));
 
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - fatal implosion listeners drained by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - fatal implosion listener additions deferred during dispatch - owner: FatalPressureImplosionEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - fatal implosion listener removals deferred during dispatch - owner: FatalPressureImplosionEvents
         private static IDataVault _dataVault;
         private static VaultGenerationHandle<FatalPressureImplosionEventPayload> _pendingEventsHandle;
         private static VaultGenerationHandle<FatalPressureImplosionEventPayload> _nextFrameEventsHandle;
         private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _duplicateListenerRegistrationCount;
+        private static int _listenerRejectCount;
+        private static int _listenerExceptionCount;
         private static bool _isDispatching;
         private static int _lastOverflowWarningFrame = -1;
+        private static int _lastDuplicateListenerWarningFrame = -1;
+        private static int _lastListenerRejectedWarningFrame = -1;
+        private static int _lastListenerExceptionWarningFrame = -1;
 
         /// <summary>Number of fatal implosion payloads waiting for late-frame dispatch.</summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+        public static int DuplicateListenerRegistrationCount => _duplicateListenerRegistrationCount;
+        public static int ListenerRejectCount => _listenerRejectCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -683,11 +960,22 @@ namespace Hecton8.Atmosphere
 
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
+            System.Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            System.Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _duplicateListenerRegistrationCount = 0;
+            _listenerRejectCount = 0;
+            _listenerExceptionCount = 0;
             _isDispatching = false;
             _lastOverflowWarningFrame = -1;
+            _lastDuplicateListenerWarningFrame = -1;
+            _lastListenerRejectedWarningFrame = -1;
+            _lastListenerExceptionWarningFrame = -1;
             _dataVault = null;
         }
 
@@ -698,6 +986,12 @@ namespace Hecton8.Atmosphere
                 return;
 
             PrepareCold();
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
             RegisterImmediate(listener);
         }
 
@@ -706,6 +1000,12 @@ namespace Hecton8.Atmosphere
         {
             if (listener == null)
                 return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
 
             TryUnregisterImmediate(listener);
         }
@@ -747,6 +1047,7 @@ namespace Hecton8.Atmosphere
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -805,14 +1106,20 @@ namespace Hecton8.Atmosphere
             }
 
             if (!IsInitialized())
+            {
+                RecordDroppedEvent();
                 return false;
+            }
 
             VaultGenerationHandle<FatalPressureImplosionEventPayload> handle = _isDispatching
                 ? _nextFrameEventsHandle
                 : _pendingEventsHandle;
             int writeIndex = _isDispatching ? _nextFrameEventCount : _pendingEventCount;
             if (!TryWriteEvent(in handle, writeIndex, in payload))
+            {
+                RecordDroppedEvent();
                 return false;
+            }
 
             if (_isDispatching)
             {
@@ -840,14 +1147,23 @@ namespace Hecton8.Atmosphere
             {
                 IFatalPressureImplosionEventListener listener = _listeners[i].Listener;
                 if (listener != null)
-                    listener.OnFatalPressureImplosion(in implosionEvent);
+                    DispatchToListener(listener, in implosionEvent);
             }
         }
 
         private static void RegisterImmediate(IFatalPressureImplosionEventListener listener)
         {
-            if (ContainsImmediate(listener) || _listenerCount >= ListenerCapacity)
+            if (ContainsImmediate(listener))
+            {
+                ReportDuplicateListenerRegistration();
                 return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
 
             _listeners[_listenerCount].Listener = listener;
             _listenerCount++;
@@ -881,6 +1197,141 @@ namespace Hecton8.Atmosphere
             return false;
         }
 
+        private static void DispatchToListener(IFatalPressureImplosionEventListener listener, in FatalPressureImplosionEvent implosionEvent)
+        {
+            try
+            {
+                listener.OnFatalPressureImplosion(in implosionEvent);
+            }
+            catch (System.Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(System.Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            H8Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IFatalPressureImplosionEventListener listener)
+        {
+            if (ContainsImmediate(listener))
+            {
+                CancelDeferredUnregister(listener);
+                ReportDuplicateListenerRegistration();
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
+        }
+
+        private static void QueueDeferredUnregister(IFatalPressureImplosionEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!ContainsImmediate(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
+        }
+
+        private static bool CancelDeferredRegister(IFatalPressureImplosionEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IFatalPressureImplosionEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IFatalPressureImplosionEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IFatalPressureImplosionEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IFatalPressureImplosionEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
+                if (listener != null)
+                    TryUnregisterImmediate(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IFatalPressureImplosionEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
         private struct ListenerSlot
         {
             public IFatalPressureImplosionEventListener Listener;
@@ -893,12 +1344,77 @@ namespace Hecton8.Atmosphere
 
         private static void ReportOverflowOncePerFrame()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (_lastOverflowWarningFrame == frame)
+            RecordDroppedEvent();
+            PublishWarningOncePerFrame(_overflowWarningHash, _queueHash, PendingEventCapacity, ref _lastOverflowWarningFrame);
+        }
+
+        private static void RecordDroppedEvent()
+        {
+            _droppedEventCount = SaturatingIncrement(_droppedEventCount);
+        }
+
+        private static void ReportDuplicateListenerRegistration()
+        {
+            _duplicateListenerRegistrationCount = SaturatingIncrement(_duplicateListenerRegistrationCount);
+            PublishWarningOncePerFrame(
+                _duplicateListenerWarningHash,
+                _listenerHash,
+                _duplicateListenerRegistrationCount,
+                ref _lastDuplicateListenerWarningFrame);
+        }
+
+        private static void ReportListenerRejected()
+        {
+            _listenerRejectCount = SaturatingIncrement(_listenerRejectCount);
+            PublishWarningOncePerFrame(
+                _listenerRejectedWarningHash,
+                _listenerHash,
+                _listenerRejectCount,
+                ref _lastListenerRejectedWarningFrame);
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount = SaturatingIncrement(_listenerExceptionCount);
+            PublishWarningOncePerFrame(
+                _listenerExceptionWarningHash,
+                _listenerHash,
+                _listenerExceptionCount,
+                ref _lastListenerExceptionWarningFrame);
+        }
+
+        private static void PublishWarningOncePerFrame(uint warningHash, uint contextHash, float value, ref int lastWarningFrame)
+        {
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (frame >= 0 && lastWarningFrame == frame)
                 return;
 
-            _lastOverflowWarningFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
+            lastWarningFrame = frame >= 0 ? frame : int.MinValue;
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
+            }
+            catch (System.Exception exception)
+            {
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        private static int ResolveCurrentFrameIndexSafe()
+        {
+            try
+            {
+                return Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static int SaturatingIncrement(int value)
+        {
+            return value < int.MaxValue ? value + 1 : int.MaxValue;
         }
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
@@ -3556,7 +4072,7 @@ namespace Hecton8.Atmosphere
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -3582,7 +4098,7 @@ namespace Hecton8.Atmosphere
 
         private static bool IsAudioLogSystemUsable(AudioLogSystem audioLogs)
         {
-            return audioLogs != null && audioLogs.isActiveAndEnabled;
+            return audioLogs != null && audioLogs.IsAudioLogRuntimeReady;
         }
 
         private void CacheComponentReferencesCold()
@@ -5155,12 +5671,19 @@ namespace Hecton8.Atmosphere
         {
             playerAup = default;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext == null || playerContext.PlayerMovement == null)
+            if (playerContext == null)
                 return false;
 
             _playerTransform = playerContext.PlayerTransform;
             _playerCamera = playerContext.PlayerCamera;
-            playerAup = playerContext.PlayerMovement.CurrentAup;
+            if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
+                return false;
+            }
+
+            playerAup = movementState.PredictedAup;
             return true;
         }
 

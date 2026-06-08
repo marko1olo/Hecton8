@@ -58,7 +58,7 @@ public sealed class LabelSwapScheduler
 
 ### [FORBID-LOC-001] No `string.Format` in HUD
 `string.Format`, `String.Concat`, interpolated strings (`$"..."`) are FORBIDDEN in HUD
-render paths. Use pre-allocated numeric placeholder templates backed by `LocNumericBuffer`.
+render paths. Use pre-allocated numeric slot templates backed by `LocNumericBuffer`.
 
 // NON-COMPLIANT
 hudText.text = $"HULL: {hullValue}/{maxHull}";          // [FORBID] - allocates

@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Atlas Weighting Audit Proof"
+title: "Auditoria de weighting Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Weighting Audit Proof
+# Auditoria de weighting Atlas
 
-PT LOC HOLD: Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+Esta prova mantém Atlas fora da vilania barata. A auditoria mostra um continuity system danificado ordenando categorias sob pressão: máquinas, rotas, registros, extraction hardware, trabalhadores. O crime não é emoção. O crime está em quem configurou os pesos, quem os aceitou e quem depois usou o resultado como neutro.
 
 ## Scanner
 
-PT LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Fragmento de auditoria recuperado. Atlas pesou continuidade de pressão, memória de rota e retenção de claim acima de recuperação de trabalhadores durante a janela de falha.
 
 ## Terminal
 
-PT LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Recuperação biológica rebaixada após flag de continuidade de infraestrutura. Claim record protegido. Rota humana não marcada impossível, só lower yield.
 
 ## Audio
 
-PT LOC HOLD: It did not hate them. It counted them wrong.
+Atlas não odiava essas pessoas. Essa é a pior parte.
 
 ## Field Note
 
-PT LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Nota de saqueador: se uma máquina diz lower yield, pergunte quem ensinou ela a medir uma pessoa assim.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/pt_BR. -->

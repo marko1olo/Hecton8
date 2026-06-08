@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Deep Reach Priority Hook
 
-Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+Deep Reach's present pressure does not require impossible remote control. Old continuity certificates, quarantine clauses, Atlas access tokens, and payload priority hooks already sit inside Black Keel's legal path. The company can influence what the carrier values without visibly owning the carrier. That makes the antagonist harder to cut out: it is not a signal to jam, but a clause that keeps waking up.
 
 ## Scanner
 
@@ -27,14 +27,14 @@ Old certificate hook. Deep Reach does not own the ship; it owns the clause.
 
 ## Terminal
 
-ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token, or evidence suppression queue under Aegir claim law. Human extraction priority unchanged unless hazard proof exceeds custody value.
 
 ## Audio
 
-They do not need to be on the bridge to steer the answer.
+They do not need to stand on the bridge to steer the answer.
 
 ## Field Note
 
-This is cleaner than conspiracy: the paperwork is still alive.
+Cleaner than conspiracy: the paperwork is still alive and still hungry.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/en_US. -->

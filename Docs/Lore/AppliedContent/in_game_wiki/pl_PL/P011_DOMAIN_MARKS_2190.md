@@ -14,27 +14,29 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Znaki domen 2190
 
-Znaki domen pokazują większy świat ludzi przez obiekty: standardy Sol, naprawy Barnard, routing Luyten, prawo Tau Ceti, sprzęt Centauri i custody Aegir.
+Znaki domen pokazują świat ludzi przez przedmioty: tablice bezpieczeństwa, ślady momentu, kody opieki i stare zgody. Każdy znak wiąże drzwi, narzędzie lub ładunek z daleką władzą.
+
+Kolonia jest odległa, nie prymitywna. Prawo, przemysł i dług dotarły do wody. Ratunek nadal potrzebuje masy, statku i okna.
 
 ## Scanner
 
-Mieszane oznaczenia domen. Tablica Sol, stempel Barnard, custody trasy Luyten.
+Mieszane ludzkie znaki domen: płyta bezpieczeństwa Sol, stempel narzędzia Barnard, trasa opieki Luyten i kod roszczenia Aegir na tym samym skorodowanym wsporniku.
 
 ## Terminal
 
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+UZGODNIENIE DOMEN // Format bezpieczeństwa Sol Core zaakceptowany. Stempel Barnard Yards ważny. Opieka pakietu Luyten Junction dołączona. Lokalne prawo roszczeń Aegir nadpisuje priorytet odzysku po utracie zejścia.
 
 ## Audio
 
-To miejsce nie jest poza cywilizacją. Tak wygląda cywilizacja, gdy wygrywa odległość.
+To miejsce nie jest poza cywilizacją. To cywilizacja po tym, jak odległość wyjęła z niej ciepłe części.
 
 ## Field Note
 
-Ludzkość urosła. Ratunek nadal musi dolecieć.
+Ludzkość urosła. Ratunek nadal musi podróżować.
 
 <!-- In-Game Wiki; generated from P011_DOMAIN_MARKS_2190/pl_PL. -->

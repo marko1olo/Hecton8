@@ -9,32 +9,16 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "전역 해양 심도대"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# 전역 해양 심도대
 
-KO LOC HOLD: HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
-
-## Scanner
-
-KO LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
-
-## Terminal
-
-KO LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
-
-## Audio
-
-KO LOC HOLD: Every band changes what the world allows you to do.
-
-## Field Note
-
-KO LOC HOLD: Depth is not a number. It is a ruleset.
+HECTON-8은 더 깊은 숫자만 있는 평평한 바다가 아니다. 압력으로 국경을 쓴 수직 국가다. 0에서 250미터까지 유광 인양 선반은 빛, 조류, 부드러운 잔해, 초보 실수에 대한 관용을 남긴다. 250에서 1200미터에는 산업 선반과 케이블 암초가 시작된다. 끊어진 계류, 배관 뼈대, 릴레이 잔해, 오래된 기업 경로가 있다. 1200에서 2800미터에는 염수 계단이 소나를 굽히고 열을 숨긴다. 2800에서 4300미터에는 수리가 기계장과의 협상이 된다. 4300에서 5600미터에는 Atlas가 압력을 권한으로 바꾼다.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ko_KR. -->

@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "Conjunto de anillo de abrazadera de sello de presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Pressure Seal Clamp Ring Assembly
+# Conjunto de anillo de abrazadera de sello de presión
 
-ES LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.
+El Conjunto de anillo de abrazadera de sello de presión convierte la reparación de la cápsula en un trato con la presión: metal deep-rated, asiento de vidrio y Atlas bio-sealant pueden salvar o atrapar la ruta de ascenso.
 
 ## Scanner
 
-ES LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Cicatriz de clamp-ring. La manga de ascenso sobrevivió al impacto gastando el sello que debía llevarla a casa.
 
 ## Terminal
 
-ES LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch solo mantiene presión de compartimento. Ascent seal requiere deep-rated clamp ring, pressure-glass seat, shell-sealant map y perfil Deep Reach verificado. Atlas-grown sealant puede conservar el habitat mientras bloquea una separación limpia.
 
 ## Audio
 
-ES LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+El sello útil está vivo en la dirección equivocada.
 
 ## Field Note
 
-ES LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+Un parche de safe-room puede comprar una hora de aire. No puede sostener un impulso de lanzamiento.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/es_ES. -->

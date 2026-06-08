@@ -19,22 +19,24 @@ localization_flags: 0
 
 # Population And Authority Scale
 
-Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
+Population numbers stay approximate because the player does not need census opera. The useful question is simpler: who can act on you from far away? A crowded inner domain may only touch HECTON-8 as a certification line. A small depot may matter more because it controls packet custody. A dead frontier shell may matter most because it owns the hardware in the room.
+
+This is the scale the player feels. Sol can decide that an object belongs to someone. Centauri can make Deep Reach's old language look respectable. Barnard can normalize the work that traps Marauders. Tau Ceti can turn evidence into public pressure, too late for oxygen but not too late for consequence. Luyten can prove the message chain. Aegir is where the signatures become pressure, water, locked hatches and payable mass.
 
 ## Scanner
 
-Population scale is background. Authority pressure is what the player feels.
+AUTHORITY CENSUS STUB // Population is background. What matters is which domain can certify, publish, move, insure, notarize or bury a claim.
 
 ## Terminal
 
-AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AUTHORITY SCALE // Sol certifies ownership. Centauri legitimizes charters. Barnard supplies dead-claim labor. Tau Ceti publishes evidence after delay. Luyten proves custody. Aegir executes the dirty physical claim.
 
 ## Audio
 
-The largest domain is not the nearest hand.
+The largest domain is not the nearest hand. It is the stamp that survives the delay.
 
 ## Field Note
 
-Do not turn the setting into census space opera.
+Do not add census trivia unless it changes pressure on a body, route, claim or proof chain.
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/en_US. -->

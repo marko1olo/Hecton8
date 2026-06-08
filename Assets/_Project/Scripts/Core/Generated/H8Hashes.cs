@@ -4,7 +4,7 @@ namespace Hecton8.Core.Generated
 {
     public static class H8Hashes
     {
-        public const int TotalCount = 1248;
+        public const int TotalCount = 1249;
 
         public static class Items
         {
@@ -1490,7 +1490,7 @@ namespace Hecton8.Core.Generated
 
         public static class Signals
         {
-            public const int Count = 513;
+            public const int Count = 514;
 
             public const string ATLASSIGNALREVEALSTAGE2Id = "ATLAS_SIGNAL_REVEAL_STAGE_2";
             public const uint ATLASSIGNALREVEALSTAGE2Hash = 2388679583u;
@@ -1702,6 +1702,8 @@ namespace Hecton8.Core.Generated
             public const uint SignalLanesHash = 1987880630u;
             public const string WARNINGBACKUPUSEDMESSAGEId = "WARNING_BACKUP_USED_MESSAGE";
             public const uint WARNINGBACKUPUSEDMESSAGEHash = 2740367506u;
+            public const string WARNINGSAVEREPAIREDMESSAGEId = "WARNING_SAVE_REPAIRED_MESSAGE";
+            public const uint WARNINGSAVEREPAIREDMESSAGEHash = 2818600358u;
             public const string ZoneDeepAbyssId = "zone_deep_abyss";
             public const uint ZoneDeepAbyssHash = 2182264597u;
             public const string ZoneDrownedFactoriesId = "zone_drowned_factories";

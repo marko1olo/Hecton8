@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # BIOTE LOCALE : FLORE, FAUNE ET EFFONDREMENT ÉCOLOGIQUE
 
 > **Source :** PDA récupéré, capsule de descente de classe Styx désignée 'Lazarus'.  

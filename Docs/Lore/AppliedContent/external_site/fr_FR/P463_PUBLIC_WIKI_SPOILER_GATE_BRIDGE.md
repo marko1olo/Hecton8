@@ -9,32 +9,26 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Porte anti-divulgation"
+title: "Porte anti-divulgation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Porte anti-divulgation
+# Porte anti-divulgation
 
-FR LOC HOLD: Les pages publiques HECTON-8 peuvent nommer le travail sans livrer la preuve. La couche ouverte donne le contexte sûr; sceaux, tampons, scans, terminaux, tags ouvriers et boîtes noires ouvrent ensuite les affirmations fortes.
+## Contexte Public
 
-## Scanner
+Les pages publiques HECTON-8 peuvent nommer le travail sans livrer la preuve. La couche ouverte peut dire que HECTON-8 est une lune océanique sous Aegir, que la colonie a échoué, que Black Keel porte une pression de salvage plutôt qu'un sauvetage propre, et que Deep Reach a laissé un rapport public fait de tempête, d'effondrement, d'échec autonome, de langage de secours Atlas-6 et de données manquantes.
 
-FR LOC HOLD: PORTE D'ARCHIVE PUBLIQUE // Niveau spoiler 0/1. Contexte public seulement. Les preuves profondes exigent une garde récupérée avant l'extension du codex.
+Cela suffit pour comprendre la prémisse. Cela ne suffit pas pour prouver le crime.
 
-## Terminal
+Les pages profondes ont besoin d'objets récupérés : sceau de paquet, tampon de route, enregistrement de scan, tag d'ouvrier, fragment de terminal, ligne de boîte noire ou échantillon avec garde intacte. Avant leur découverte en jeu, le wiki public reste au contexte sûr. Après la découverte, le codex peut employer une formulation plus dure, parce que le joueur a vu d'où venait le fait.
 
-FR LOC HOLD: FILTRE PUBLIC/WIKI // Autorisé avant preuve : décor, pression de route, langage d'accident public, institutions connues et prémisse de salvage. Retenir les preuves profondes.
+La porte protège cinq choses : la première descente du joueur, les preuves des travailleurs, la chaîne de responsabilité Deep Reach, la vérité du réseau de réparation Atlas-6 et les issues finales des charges utiles. Les pages publiques peuvent pointer vers ces sujets. Elles ne portent pas le récepteur, la route ni la conséquence finale.
 
-## Audio
-
-FR LOC HOLD: Relais Black Keel : le texte public nomme la lune. La preuve a besoin d'un sceau. Rapporte le sceau.
-
-## Field Note
-
-FR LOC HOLD: La page publique te dit où plonger. Elle ne dit pas qui a payé pour garder la porte fermée.
+Les articles publics sont des cartes. Les preuves récupérées sont la preuve.
 
 <!-- External Site; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/fr_FR. -->

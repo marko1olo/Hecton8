@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "AR LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: تاريخ ضغط في custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Blue Debt Custody
+# Blue Debt: تاريخ ضغط في custody
 
-AR LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt نافع وغال وقذر أخلاقيا. ليس خاما سحريا، بل pressure-grown substrate تعتمد قيمته على handling وcontamination وcustody وAtlas compatibility ومالك الدليل.
 
 ## Scanner
 
-AR LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+أرشيف مورد. Blue debt هو Xenon-Omega pressure substrate في custody: pressure history وbrine exposure وnoble-gas capture وcontamination stage وsample grade وmass-through-window payout.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+عقدة مورد عامة // BLUE DEBT. القيمة تحتاج pressure-rated containment وسجل extraction scar وcontamination status وcustody receipt وrecoverable tonne-window allocation.
 
 ## Audio
 
-AR LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+صوت دفع Black Keel: "لا تلمع العينة. اختمها، أعطها grade، وأبق receipt جافا."
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+ملاحظة Marauder: أعط العينة grade أولا، ثم اسأل ما الذي لمسها. السعر بلا custody طعم.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/ar_SA. -->

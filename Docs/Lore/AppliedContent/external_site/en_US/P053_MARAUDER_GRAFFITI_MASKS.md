@@ -3,8 +3,8 @@ packet_id: P053_MARAUDER_GRAFFITI_MASKS
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
 unlock_id: unlock.first_marauder_graffiti_masks
-poi_tags: poi.graffiti_mask;poi.pressure_arrow
-biome_tags: biome.scrap_canyon;biome.marauder_route
+poi_tags: poi.graffiti_mask;poi.scavenger_route
+biome_tags: biome.service_corridor;biome.salvage_route
 locale: en_US
 surface: external_site
 source_voice: Website Public
@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Marauder Graffiti Masks
 
-Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism.
-
-## Scanner
-
-The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
-
-## Terminal
-
-MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
-
-## Audio
-
-They made a language that looks like vandalism to the company.
-
-## Field Note
-
-Bad paint. Good map.
+The marauders of HECTON-8 are not a faceless raider faction. They are workers, debt runners, abandoned contractors, and salvage crews who learned to write on walls because every clean channel could be watched or billed. Their graffiti is ugly on purpose: quick enough to paint under stress, blunt enough to read through condensation, and ambiguous enough to pass as panic or vandalism. A black ring is not decoration. It means the carrier may hear you. A broken arrow is not bad draftsmanship. It means the corridor changed since the last safe pass. The best marks feel like someone alive was trying to keep another stranger alive without leaving a confession.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/en_US. -->

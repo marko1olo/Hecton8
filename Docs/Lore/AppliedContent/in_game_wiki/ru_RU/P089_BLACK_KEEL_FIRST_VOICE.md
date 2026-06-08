@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Первый голос Black Keel
 
-Первый голос Black Keel должен прийти как рваное аудио и чистый terminal text. Это не дружелюбный companion и не villain monologue. Это carrier monitor: полезный, сухой, условный и страшный тем, что за каждым правильным предложением стоит billing class.
+Первый голос Black Keel приходит к игроку поврежденным аудио и чистым текстом. Это не спутник и не речь злодея. Это монитор carrier, который делает ровно то, для чего создан: подтверждает сигнал, сохраняет варианты маршрута, ранжирует обязательства и избегает обещаний. Голос полезен, потому что дает жесткую информацию. Он страшен, потому что каждое верное предложение оставляет спасение условным.
 
 ## Scanner
 
-Carrier voice cache. Аудио рваное, текст чистый, сочувствие отсутствует.
+Кэш голоса carrier. Звук рваный, текст чистый, сочувствие отсутствует.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: аудиоканал деградирован. Текстовый канал действителен. Выживание оператора подтверждено. Приоритет recovery не решен, ожидает состояния payload, карантина, lien и целостности сигнала.
 
 ## Audio
 
-Operator signal acquired. Не путай подтверждение со спасением.
+Сигнал оператора получен. Не путай подтверждение со спасением.
 
 ## Field Note
 
-Первый голос должен быть полезным раньше, чем купленным.
+Первая полезная фраза приходит вместе с классом тарификации за спиной.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/ru_RU. -->

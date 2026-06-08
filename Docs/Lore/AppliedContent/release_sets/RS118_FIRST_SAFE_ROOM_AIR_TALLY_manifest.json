@@ -1,0 +1,21 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS118_FIRST_SAFE_ROOM_AIR_TALLY",
+  "title": "First Safe Room Air Tally",
+  "status": "source_candidate",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P992_FIRST_SAFE_ROOM_AIR_TALLY"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P992_FIRST_SAFE_ROOM_AIR_TALLY.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

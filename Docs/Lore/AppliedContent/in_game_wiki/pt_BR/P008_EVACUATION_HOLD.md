@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Evacuação retida
 
-Registros Evacuation Hold provam que a colônia não sumiu simplesmente por tempestade ou cascata de pressão. Pessoas, corredores, transferências médicas e rotas de subida foram atrasados por regras que protegiam substrato, continuidade Atlas e responsabilidade corporativa antes da evacuação humana.
+Registros de Evacuação retida são a acusação mais direta da colônia. Mostram que o desastre não foi apenas falha de pressão, timing de tempestade ou pânico. Rotas foram avaliadas, atrasadas e reclassificadas enquanto pessoas ainda estavam dentro delas. Transferências médicas aguardaram autorização. Corredores de subida perderam prioridade para proteção de substrato. Reivindicações de continuidade Atlas ficaram acima da autoridade local de resgate. Contagens humanas foram anexadas a objetos de rota, permitindo que o sistema preservasse um corredor no papel enquanto os corpos dentro ficavam sem ar. A retenção não precisou de um vilão em cada porta. Precisou de regras capazes de chamar uma pessoa de carga, um corredor de ativo e um atraso de aceitável até o próximo ciclo de revisão.
 
 ## Scanner
 
-Portão de trânsito de emergência. Mecanismo travado durante falha de pressão.
+Portão de trânsito de emergência. Garras de trava fundidas fechadas durante falha de pressão; volante manual removido após retenção de autorização.
 
 ## Terminal
 
-EVAC ROUTE: adiada. SUBSTRATE ROUTE: protegida. MEDICAL ROUTE: aguardando autorização. ATLAS ROUTE: conflito de continuidade.
+ROTA EVAC: RETIDA. ROTA MÉDICA: PENDENTE. ROTA DE SUBSTRATO: PROTEGIDA. CONTINUIDADE ATLAS: PRIORIDADE. CONTAGEM HUMANA: ANEXADA À ROTA.
 
 ## Audio
 
-Essas não são pessoas desaparecidas. São rotas retidas.
+Eles não estão desaparecidos. O sistema sabe onde eles estavam. Ele segurou as portas.
 
 ## Field Note
 
-Gente morre rápido no profundo. Papelada mata mais devagar. Os dois funcionam.
+Pessoas morrem rápido em profundidade. Uma autorização pendente pode sobreviver a todos no corredor.
 
 <!-- In-Game Wiki; generated from P008_EVACUATION_HOLD/pt_BR. -->

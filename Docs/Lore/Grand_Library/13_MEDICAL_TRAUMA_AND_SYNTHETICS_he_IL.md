@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # טראומה רפואית ותחליפים סינתטיים
 
 > **מקור:** נוהל הפעלה אוטומטי של המרפאה ב-*Black Keel*.

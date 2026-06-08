@@ -302,6 +302,7 @@ namespace Hecton8.Ecosystem
             if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
             {
                 _mapMagicVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _mapMagicVegetationBridge);
                 return;
             }
 

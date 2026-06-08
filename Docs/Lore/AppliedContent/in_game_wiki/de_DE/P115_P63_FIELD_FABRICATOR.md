@@ -7,34 +7,34 @@ poi_tags: poi.shallow_annex_p63_fabricator;poi.first_recipe_console
 biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "P-63 Feldfabrikator"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# P-63 Feldfabrikator
 
-DE LOC HOLD: Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.
+Shallow Annex P-63 enthält den ersten Feldfabrikator, und er verhält sich wie Reparaturinfrastruktur statt wie ein magischer Drucker. Frühe Rezepte sind Ventildichtungen, Schneiderkontakte, Pinger-Schwimmer und Dichtungsklemmen: kleine Teile, die beschädigte Werkzeuge wieder vertrauenswürdig machen. Der Fabrikator verweigert gefährliches Druckmaterial, bis der Spieler Zertifizierung und Containment-Wissen besitzt.
 
 ## Scanner
 
-DE LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
+P-63 Feldfabrikator. Zertifizierungstabelle intakt; akzeptiert Schrottrohstoff, lehnt nicht zertifiziertes Druckmaterial ab.
 
 ## Terminal
 
-DE LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
+FAB P-63 / FREIGEGEBENE ERSTREZEPTE: Ventildichtung, Schneiderkontakt, Pinger-Schwimmer, Dichtungsklemme. Unbekannte blue-debt-Fragmente werden abgelehnt, bis Druckzertifizierung und Containment-Klasse vorliegen.
 
 ## Audio
 
-DE LOC HOLD: The machine can make parts. It cannot make permission.
+Teile sind leicht. Autorität ist der teure Teil.
 
 ## Field Note
 
-DE LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+Er druckt Teile, keine Erlaubnis. Wenn das Rezept einen Stempel will, wird der Ozean ihn auch verlangen.
 
 <!-- In-Game Wiki; generated from P115_P63_FIELD_FABRICATOR/de_DE. -->

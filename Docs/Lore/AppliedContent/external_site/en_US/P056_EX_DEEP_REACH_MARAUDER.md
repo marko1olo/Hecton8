@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Ex-Deep-Reach Marauder
 
-Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+Ex-Deep-Reach Marauder defines the player canon. The player is a former corporate field-systems and evacuation-infrastructure specialist, blacklisted or debt-bound into independent salvage, returning to HECTON-8 under Black Keel custody. The drama comes from professional recognition: the moon answers with procedures the player once understood, and every familiar lock makes the corporate lie harder to treat as someone else’s wreck.
 
 ## Scanner
 
-The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+The old Deep Reach lock does not check your name. It recognizes the rhythm of your repair sequence.
 
 ## Terminal
 
@@ -35,6 +35,6 @@ You did not come home. You came back to a procedure that never stopped running.
 
 ## Field Note
 
-Not family business. Procedure remembers who taught your hands.
+This is not family business. Procedure remembers the hands that used it.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/en_US. -->

@@ -8,8 +8,8 @@ biome_tags: biome.carrier_link;biome.relay_shadow
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Fracht fuzyjny na pelletach"
+spoiler_tier: 1
+title: "Fracht fuzji pelletowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,8 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fracht fuzyjny na pelletach
+# Fracht fuzji pelletowej
 
-Fracht fuzyjny na pelletach to przemysłowa historia za HECTON-8. Maszyny i ciężki ładunek dotarły do Aegir, bo infrastruktura mogła przez dekady pchać, karmić, chronić i hamować masę; trasa pozostaje okrutna, bo księgowość żyje dłużej niż awaria.
-
-## Scanner
-
-Płyta napędu. Fracht z fuzją karmioną pelletami szedł jako infrastruktura: rozpęd, osłona, dryf, hamowanie i rozliczenie strat.
-
-## Terminal
-
-DOKTRYNA FRACHTU: ładunki seed klasy Atlas i fracht kolonialny używały rozpędu żaglem wiązkowym, fuzji karmionej pelletami, hamowania żaglem magnetycznym i długich interwałów dryfu. Żywy ładunek przybył po tym, jak maszyny uczyniły trasę rozliczalną.
-
-## Audio
-
-Ciężki statek nie jest cudem. To hipoteka z silnikami.
-
-## Field Note
-
-Ciężki tranzyt nie jest heroiczny. To stary kontrakt trasy z bliznami po cieple.
+Fracht fuzji karmionej pelletami to warstwa przemysłowa między marzeniami sond a ludzkimi ciałami. Stacje wiązki pchają, strumienie pelletów karmią zapłony fuzyjne, masa osłon ginie zamiast ładunku, a systemy hamowania odkupują prędkość czasem. Ta architektura przenosi ciężkie rzeczy przez ciemny dystans, lecz nie wybacza improwizacji. Każdy kilogram jest zapisany przeciw harmonogramowi, budżetowi ciepła, rezerwie hamowania i właścicielowi.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/pl_PL. -->

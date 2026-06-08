@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+spoiler_tier: 1
+title: "زمن تجهيز الشحن الثقيل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# زمن تجهيز الشحن الثقيل
 
-AR LOC HOLD: Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships.
-
-## Scanner
-
-AR LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
-
-## Terminal
-
-AR LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
-
-## Audio
-
-AR LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
-
-## Field Note
-
-AR LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+الشحن الثقيل يخفي الزمن داخل البنية التحتية. يمكن لـ Atlas hardware وseed cargo وshield stock وbraking parts أن تصل مبكرا لأنها تطلق قبل سنوات من لغة الاستيطان العامة. هذا لا يجعل إنقاذ الطوارئ سهلا. الطريق المجهز يحرك الكتلة لأن depots وbeam windows وpellet streams وcatch stages كانت تنتظر. طريق الكارثة لا يملك ذلك الصبر. HECTON-8 مليء بآلات وصلت بخطط قديمة وبأشخاص احتاجوا المساعدة بساعات جديدة.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/ar_SA. -->

@@ -9,32 +9,16 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Mutual Custody"
+title: "Custody Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Keelmark Mutual Custody
+# Custody Keelmark Mutual
 
-PT-BR LOC HOLD: Keelmark Mutual Custody gives the carrier a believable legal owner: an insurance shell with remote underwriting, lien control, quarantine reserves and payload custody rules.
-
-## Scanner
-
-PT-BR LOC HOLD: Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.
-
-## Terminal
-
-PT-BR LOC HOLD: KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.
-
-## Audio
-
-PT-BR LOC HOLD: The policy is older than your distress call.
-
-## Field Note
-
-PT-BR LOC HOLD: Do not make the insurer a secret villain. Make it a machine that never had to care.
+Keelmark Mutual assusta porque não precisa de ódio. É seguradora, custodian, detentora de lien e escrivã de rota dobradas numa só agenda remota. Quando Black Keel ouve o operador, o caminho da apólice de Keelmark já comparou o corpo a dano de nave, massa salvage, risco de quarentena e valor de prova. A empresa não precisa assassinar ninguém para fazer o oceano parecer hostil. Ela pode esperar, cobrar, classificar e pedir mais uma confirmação enquanto a pressão devora a sala. Assim o carrier permanece crível: o inimigo não é um rosto maligno na tela, mas um contrato velho o bastante para responder antes do fim do pedido de socorro.
 
 <!-- External Site; generated from P087_KEELMARK_MUTUAL_CUSTODY/pt_BR. -->

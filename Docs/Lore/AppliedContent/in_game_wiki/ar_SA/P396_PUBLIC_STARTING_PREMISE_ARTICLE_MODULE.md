@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Marauder Starting Claim"
+title: "مطالبة Marauder الافتتاحية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Marauder Starting Claim
+# مطالبة Marauder الافتتاحية
 
-AR LOC HOLD: The opening record frames the player as a professional under pressure, not a tourist and not a family avenger. Old Deep Reach history matters because the procedures on HECTON-8 are familiar before they become evidence.
+السجل الافتتاحي يضع اللاعب في موقع مشغل مدرب تحت ضغط الدين. ليس سائحا ولا وريثا مختارا ولا صاحب ثأر عائلي؛ إنه يفهم المضخات والأختام ونماذج المسار واختصارات Deep Reach قبل أن تبدأ الحطام بمخالفة تلك النماذج. الساعة الأولى تبقى عملية: إغلاق bathydrop، إعادة الضغط، قراءة الآلات المتضررة، استرداد الحمولة وتحديد أي سطور رسمية تكذب بالفعل.
 
 ## Scanner
 
-AR LOC HOLD: Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+سجل claim عام. يحدد المسار الأول Marauder مثقلا بالدين، له تاريخ في Deep Reach field-systems، مع bathydrop متضرر ونافذة استرداد Black Keel فوق P-63.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+عقدة الأرشيف العام // المطالبة الافتتاحية. سجل المتعاقد: اختصاصي سابق في Deep Reach field-systems. الحالة الحالية: Marauder تحت lien. المسار: recovery claim من Black Keel، هبوط إلى shelf P-63، إعادة الدليل والحمولة قبل إغلاق custody window.
 
 ## Audio
 
-AR LOC HOLD: You are returning to paperwork you know too well.
+أنت لا تزور HECTON-8. أنت تعود إلى أوراق تعرفها أكثر مما ينبغي.
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: the contract knows your past. That does not make it honest.
+ملاحظة Marauder: العقد يعرف ماضيك. هذا لا يجعله صادقا.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/ar_SA. -->

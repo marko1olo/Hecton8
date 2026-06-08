@@ -9,32 +9,26 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Janela de reivindicação do Black Keel"
+title: "Janela de reivindicação do Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Janela de reivindicação do Black Keel
+# Janela de reivindicação do Black Keel
 
-PT LOC HOLD: Black Keel pode ouvir um sinal antes de içar um corpo. Em Aegir, resposta de carrier é uma faixa tarifada por geometria de relé, clima, quarentena, aceitação de carga e recuperação de massa. Contato é fato de rota. Resgate é cadeia completa.
+## Receber Não É Içar
 
-## Scanner
+Black Keel pode ouvir um sinal antes de içar um corpo. Essa diferença é a janela de reivindicação.
 
-PT LOC HOLD: JANELA DE REIVINDICAÇÃO // O relé de Aegir prevê só recebimento. Recuperação exige pacote de subida, acordo de quarentena e alocação tonne-window.
+Em Aegir, uma resposta de carrier não é promessa de resgate. É uma faixa temporizada por geometria de relé, clima, revisão de quarentena, aceitação de carga e recuperação de massa. A mesma janela precifica carga, prova, dívida de oxigênio e bem-estar do operador porque cada quilograma que deixa HECTON-8 gasta a mesma oportunidade orbital.
 
-## Terminal
+Keelmark Mutual registra a janela como tempo de custódia. Black Keel registra recebimento confirmado, içamento pendente. Cláusulas da Deep Reach ainda podem colocar uma amostra, pacote de coordenadas ou retenção de quarentena à frente do operador se a linguagem de prioridade for válida.
 
-PT LOC HOLD: AVISO DE CUSTÓDIA KEELMARK // Sinal do operador recebido. Prioridade de recuperação não resolvida. Receber sinal ou pacote de prova não garante recuperação do operador.
+P-63 mostra a regra cedo. Um painel de relé pode mostrar confirmação limpa enquanto o bathydrop não tem pacote de subida, acordo de quarentena nem tonne-window alocada. O carrier sabe que o operador está vivo. Pode cobrar o operador. Pode precificar um pacote. Ainda não pode ignorar a pressão de HECTON-8, o tempo de Aegir ou a ordem do contrato.
 
-## Audio
-
-PT LOC HOLD: Relé Black Keel: sinal do operador precificado. Janela de recuperação pendente. Não confunda recebimento com içamento.
-
-## Field Note
-
-PT LOC HOLD: Se Black Keel responder, conte a cobrança, não o resgate. Um pacote recebido é só lugar na fila até massa, selo, quarentena e clima concordarem.
+Contato é fato de rota. Resgate é cadeia completa.
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/pt_BR. -->

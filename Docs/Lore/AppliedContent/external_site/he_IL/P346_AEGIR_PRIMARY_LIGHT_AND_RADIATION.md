@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Aegir Primary Light and Radiation"
+title: "אור הכוכב הראשי והקרינה של Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Aegir Primary Light and Radiation
+# אור הכוכב הראשי והקרינה של Aegir
 
-HE LOC HOLD: Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
-
-## Scanner
-
-HE LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
-
-## Terminal
-
-HE LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
-
-## Audio
-
-HE LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
-
-## Field Note
-
-HE LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir אינו נקרא כריק שחור. כוכב K מניח אור ענברי על הסיפונים, צללים ארוכים ושטף שמספיק כדי להסיט מכשירים חשופים אם איש לא בודק את מונה החגורות. ענק הגז הוא השעון השני: נתיבי המגנטוספירה מתקשים, מתרככים ומתקשים שוב כשהירחים חוצים מטען וצל. Deep Reach מכרה את המספרים האלה כחלונות עבודה רגילים. הצוותים למדו את הגרסה המעשית: שמיים חמים עדיין יכולים לבשל אטם זול, להשתיק קישור ולתמחר חילוץ לפי דקה.
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/he_IL. -->

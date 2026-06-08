@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Beam Sail and Pellet Lane"
+title: "Лучевой парус и pellet-lane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Beam Sail and Pellet Lane
+# Лучевой парус и pellet-lane
 
-RU LOC HOLD: Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.
+Быстрые корабли HECTON-8 — не маленькие кометы с чудо-двигателем. Это счета с корпусами вокруг. Лучевой парус берет энергию у массивов, которые построили, обслужили, застраховали и навели задолго до входа корабля в линию. Потоки пеллет бросают реакционную массу на траекторию с жестокой дисциплиной тайминга: слишком тонко — машина голодает, слишком плотно — получается дробовой рисунок. Корабль все еще несет термоядерные ступени, защитный лед, радиаторы, насосы и право решать, когда их тратить, но дорогая половина двигателя находится вне корпуса.
 
-## Scanner
-
-RU LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
-
-## Terminal
-
-RU LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
-
-## Audio
-
-RU LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
-
-## Field Note
-
-RU LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Такая конструкция расширила человеческое пространство, но не сделала его маленьким. Aegir достижим потому, что старые домены оплатили коридоры ускорения, нотариальные станции, приемники и тормозные резервы. Тело, застрявшее на HECTON-8, не может превратить сигнал бедствия в этот коридор. Кто-то должен владеть окном захвата, выделить тепловой запас, принять карантинную опеку и рискнуть превратить быстрый спасательный рейс в быстрый мусор. Black Keel выживает в этой экономике, потому что покупает окна и продает доказательства; игрок выживает, когда понимает, что расстояние не пустое. Оно расписано, заложено и уже занято.
 
 <!-- External Site; generated from P342_BEAM_SAIL_AND_PELLET_LANE/ru_RU. -->

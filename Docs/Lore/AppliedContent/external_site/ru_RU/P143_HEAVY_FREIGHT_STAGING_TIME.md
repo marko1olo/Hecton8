@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Сроки тяжелого freight staging"
+spoiler_tier: 1
+title: "Время подготовки тяжелого фрахта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Сроки тяжелого freight staging
+# Время подготовки тяжелого фрахта
 
-Сроки тяжелого freight staging удерживают no-FTL timeline правдоподобным без удобных rescue ships.
-
-## Scanner
-
-Atlas-class freight не быстрый. Это предоплаченное терпение с броней.
-
-## Terminal
-
-FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
-
-## Audio
-
-Такой тяжелый корабль не летит. Он становится счетом с кильватером.
-
-## Field Note
-
-Тяжелый маршрут собирается из depot, beam windows, braking mass и политической наглости.
+Тяжелые грузы прячут время внутри инфраструктуры. Atlas hardware, seed cargo, shield stock и braking parts могут прийти рано, потому что их запускают за годы до публичного языка поселения. Это не делает аварийное спасение легким. Подготовленный маршрут двигает массу, потому что депо, beam windows, pellet streams и catch stages уже ждут. У маршрута катастрофы такого терпения нет. HECTON-8 полон машин, прибывших по старым планам, и людей, которым помощь нужна по новым часам.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/ru_RU. -->

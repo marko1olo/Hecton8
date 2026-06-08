@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "Pita Kedalaman Samudra Global"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# Pita Kedalaman Samudra Global
 
-ID LOC HOLD: HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
-
-## Scanner
-
-ID LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
-
-## Terminal
-
-ID LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
-
-## Audio
-
-ID LOC HOLD: Every band changes what the world allows you to do.
-
-## Field Note
-
-ID LOC HOLD: Depth is not a number. It is a ruleset.
+HECTON-8 bukan samudra datar dengan angka lebih dalam. Ia negeri vertikal dengan batas yang ditulis oleh tekanan. Dari 0 sampai 250 meter, paparan fotik masih punya cahaya, alga, rongsokan lunak, dan cukup ampun untuk kesalahan awal. Dari 250 sampai 1200 meter, paparan industri dan karang kabel mulai muncul: tambatan putus, rangka pipa, tulang relai, dan jalur korporat lama. Dari 1200 sampai 2800 meter, tangga brine membelokkan sonar dan menyembunyikan panas. Dari 2800 sampai 4300 meter, perbaikan menjadi negosiasi dengan ladang mesin. Dari 4300 sampai 5600 meter, Atlas membuat tekanan menjadi kuasa.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/id_ID. -->

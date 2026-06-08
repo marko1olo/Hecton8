@@ -157,6 +157,7 @@ namespace Hecton8.Tools
         private bool _registeredUpdatable;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
+        private bool _runtimeOwnerAborted;
         private bool _equipmentSignalLanesReady;
         private bool _equipmentIntegrationScheduled;
         private bool _equipmentFaultDumped;
@@ -241,10 +242,20 @@ namespace Hecton8.Tools
         public static ModularEquipmentEngine EnsureRuntimeInstance()
         {
             IModularEquipmentService registered = GlobalRegistry.ModularEquipment;
-            if (registered is ModularEquipmentEngine runtime)
-                return runtime;
-            if (registered != null)
+            if (IsModularEquipmentRuntimeUsable(registered))
+                return registered as ModularEquipmentEngine;
+
+            ModularEquipmentEngine staleRuntime = registered as ModularEquipmentEngine;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterModularEquipmentService(registered);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+            }
+            else if (!ReferenceEquals(registered, null))
+            {
                 return null;
+            }
 
             GameObject runtimeRoot = new GameObject("[ModularEquipmentEngine]"); // COLD ALLOC: GameObject[1] — bootstrap-owned equipment runtime root — owner: ModularEquipmentEngine
             ModularEquipmentEngine engine = runtimeRoot.AddComponent<ModularEquipmentEngine>();
@@ -254,19 +265,18 @@ namespace Hecton8.Tools
 
         public void InitializeService()
         {
+            if (!TryRegisterService())
+                return;
+
             CacheRegistryDependenciesCold();
             TryRegisterHotSwap();
 
             if (_isInitialized)
             {
-                TryRegisterService();
                 TryRegisterUpdatable();
                 TryRegisterLateFrame();
                 return;
             }
-
-            if (!CanOwnServiceSlot())
-                return;
 
             InitializeActiveEquipmentNativeState();
             if (!TryAcquireEquipmentViewsWriteLock(out EquipmentVaultViews views))
@@ -291,7 +301,6 @@ namespace Hecton8.Tools
                 transform.SetParent(null, true);
 
             _isInitialized = true;
-            TryRegisterService();
             TryRegisterUpdatable();
             TryRegisterLateFrame();
         }
@@ -1093,6 +1102,9 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted || !TryRegisterService())
+                return;
+
             CacheRegistryDependenciesCold();
             TryRegisterHotSwap();
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
@@ -1100,7 +1112,6 @@ namespace Hecton8.Tools
 
             if (_isInitialized)
             {
-                TryRegisterService();
                 TryRegisterUpdatable();
                 TryRegisterLateFrame();
             }
@@ -1108,6 +1119,9 @@ namespace Hecton8.Tools
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             if (!DrainEquipmentIntegrationLocksForLifecycle())
                 TryRecordEquipmentWriteLockContention(EquipmentFaultWriteLockReleaseFailure);
@@ -1119,6 +1133,9 @@ namespace Hecton8.Tools
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
@@ -1129,6 +1146,9 @@ namespace Hecton8.Tools
 
         private void ShutdownServiceState()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             TryUnregisterHotSwap();
             TryUnregisterService();
@@ -1139,14 +1159,7 @@ namespace Hecton8.Tools
 
         private bool CanOwnServiceSlot()
         {
-            IModularEquipmentService registered = GlobalRegistry.ModularEquipment;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
-                return false;
-            }
-
-            return true;
+            return TryRegisterService();
         }
 
         private void InitializeActiveEquipmentNativeState()
@@ -3392,16 +3405,79 @@ namespace Hecton8.Tools
             _registeredHotSwap = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
-            if (_registeredService)
-                return;
+            if (_runtimeOwnerAborted)
+                return false;
 
-            if (!CanOwnServiceSlot())
-                return;
+            if (_registeredService)
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            IModularEquipmentService registered = GlobalRegistry.ModularEquipment;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                ModularEquipmentEngine staleRuntime = registered as ModularEquipmentEngine;
+                if (ReferenceEquals(staleRuntime, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterModularEquipmentService(registered);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterModularEquipmentService(this);
             _registeredService = ReferenceEquals(GlobalRegistry.ModularEquipment, this);
+            _runtimeOwnerAborted = !_registeredService;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return _registeredService;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            IModularEquipmentService registered = GlobalRegistry.ModularEquipment;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsModularEquipmentRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            ModularEquipmentEngine staleRuntime = registered as ModularEquipmentEngine;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterModularEquipmentService(registered);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+            }
+
+            return false;
+        }
+
+        private static bool IsModularEquipmentRuntimeUsable(IModularEquipmentService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            ModularEquipmentEngine engine = service as ModularEquipmentEngine;
+            return ReferenceEquals(engine, null) ||
+                   (engine != null &&
+                    engine._registeredService &&
+                    engine.isActiveAndEnabled &&
+                    !engine._runtimeOwnerAborted);
         }
 
         public bool TryGetWirelessBrownoutFeedback(uint toolId, out float flickerScalar)

@@ -7,34 +7,34 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pump Room Handshake"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Handshake da válvula da sala de bombas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pump Room Handshake
+# Handshake da válvula da sala de bombas
 
-Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.
+O handshake de uma bomba é o momento em que uma sala afogada aceita controle local. Ele dá acesso, mas também move água, ruído e pressão para outra parte da rota. Leia a cesta de admissão, o pulso de saída e o golpe no corredor de retorno antes de tratar piso seco como segurança. As primeiras salas P-63 ensinam o hábito central de reparo: uma máquina pode melhorar um compartimento enquanto piora o caminho de volta.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+A bomba de sump local aceitou entrada pelo volante. A cesta de admissão está suja com espuma da cápsula; o pulso de saída carrega o Corredor de Retorno B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 CONTROLE DE SUMP / HANDSHAKE LOCAL: autoridade do volante aceita. Override remoto negado. Fluxo de admissão restaurado em baixa taxa. Pressão de saída subindo no RETURN CORRIDOR B; reiniciar apenas após checar a escotilha a jusante.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+A válvula pegou. A saída está batendo. Ainda não chame isso de seguro.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Uma sala de bombas seca pode afogar o caminho de volta. Escute o golpe na saída antes de remover a válvula.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/pt_BR. -->

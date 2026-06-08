@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "Buku Besar Publik Tau Ceti"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# Buku Besar Publik Tau Ceti
 
-ID LOC HOLD: The Tau Ceti League gives the setting a credible public-law counterweight. It matters for evidence endings and outside pressure against Deep Reach, but it cannot rescue someone trapped under HECTON-8 in real time.
+Tau Ceti League memberi hukum publik era Aegir penyeimbang yang kredibel. Ia penting untuk kustodi bukti dan tekanan luar terhadap Deep Reach, tetapi jarak membuatnya tidak bisa menarik penyelam yang terjebak di bawah HECTON-8 secara real time.
 
 ## Scanner
 
-ID LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+Fragmen ledger sipil Tau Ceti. Cukup publik untuk menakuti Deep Reach, terlalu terlambat untuk menyelamatkan koloni.
 
 ## Terminal
 
-ID LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+CERMIN LEDGER TAU CETI: bukti tersegel dapat diterima setelah autentikasi relai. Jendela peninjauan publik diperkirakan melampaui interval bertahan lokal sebesar 31,4 tahun.
 
 ## Audio
 
-ID LOC HOLD: A court can be honest and useless when light itself is late.
+Pengadilan bisa jujur dan sia-sia ketika cahaya sendiri datang terlambat.
 
 ## Field Note
 
-ID LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+Pengawasan bisa tiba bersih dan terlambat. Terlambat tetap mati.
 
 <!-- In-Game Wiki; generated from P074_TAU_CETI_PUBLIC_LEDGER/id_ID. -->

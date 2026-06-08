@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Deep Reach Liability Evidence"
+title: "Deep Reach責任証拠"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Deep Reach Liability Evidence
+# Deep Reach責任証拠
 
-JA LOC HOLD: Deep Reach is culpable because the HECTON-8 disaster can be both natural and managed badly. The ocean supplied real force. The company supplied thin margins, late authorization, quarantine delays, Atlas priority rules and paperwork clean enough to outlive the workers it described. The strongest evidence is physical: doors, clocks, sensor tolerances, route holds and loss ledgers.
+Deep Reachが有責なのは、HECTON-8の災害が自然であり、同時にひどく管理されたものでもあり得るからだ。海は本物の力を出した。tide resonance、cryosphere shear、storm stacking、pressure failure。会社が出したのは薄いmargins、遅いauthorization、quarantine delay、Atlas priority rules、そして記述された人々より長く残るほど整った書類だった。最も強い証拠は物理的かつ手続き的だ。executive authorityで保持されたドア、窓が閉じる前に変えられたsensor tolerance、legal clearanceのために遅らされた列、水がまだ動いている間に労働者をclaim categoriesへ変換するloss ledger。プレイヤーは、へこみ、時計、ルートと照合して公式語を疑うようになる。
 
 ## Scanner
 
-JA LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+liability記録。実在の潮汐物理、承認されたmargin risk、避難遅延、quarantine holds、Atlas weighting、整えられた損失文が同じ証拠連鎖に集まる。
 
 ## Terminal
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+公開アーカイブノード // LIABILITY証拠。Great Tideは受理済み。sensor margins、evacuation queue遅延、quarantine holds、Atlas weighting、worker classification、loss conversionは審査継続。
 
 ## Audio
 
-JA LOC HOLD: A disaster can be natural and still have signatures on it.
+災害は自然でありながら、署名を持つことがある。
 
 ## Field Note
 
-JA LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Marauderメモ: 潮とは争うな。その横の署名と争え。
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/ja_JP. -->

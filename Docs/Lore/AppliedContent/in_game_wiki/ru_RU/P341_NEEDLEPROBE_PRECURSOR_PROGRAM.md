@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Needleprobe Precursor Program"
+title: "Программа предтеч Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Needleprobe Precursor Program
+# Программа предтеч Needleprobe
 
-RU LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Needleprobes принесли первую человеческую претензию в Aegir. Узкие экранированные разведывательные грузы отправляли впереди экипажей, чтобы читать гравитацию, радиацию, океанские спектры, орбиты лун и линии ретрансляторов. Их задержанные пакеты сделали HECTON-8 читаемым для инвесторов раньше, чем он стал пригоден для рабочих.
 
 ## Scanner
 
-RU LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+Архив needleprobe: Aegir был целью в реестре задолго до того, как стал рабочим местом. Машинные глаза добрались до лун первыми.
 
 ## Terminal
 
-RU LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+АРХИВ RAN: цепочка зондов вернула параллакс, радиацию, океанские сигнатуры, геометрию ретрансляторов и уверенность pellet-lane. Рейтинг для экипажа удержан до стабилизации третьей модели риска.
 
 ## Audio
 
-RU LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+Первой человеческой вещью в Aegir был не человек. Это была машина, спрашивавшая, будут ли люди здесь прибыльными.
 
 ## Field Note
 
-RU LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Архивы зондов — это доказательства маршрута. Старая телеметрия может быть старше колонии и все равно решать, кому принадлежит вода.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/ru_RU. -->

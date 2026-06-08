@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Barnard Mark
 
-The Barnard Mark turns salvage into motive. It connects the player to HECTON-8 through labor, tools, and names instead of exposition.
-
-## Scanner
-
-Barnard Yards stamp. Not Deep Reach issue. Somebody brought home equipment to the bottom of this moon.
-
-## Terminal
-
-PERSONNEL ROUTE: HOLD. RESOURCE ROUTE: ACTIVE. SUBSTRATE ROUTE: PROTECTED.
-
-## Audio
-
-That mark is Barnard. Same cut pattern. Same cheap alloy. Whoever carried this down here knew the same shops you did.
-
-## Field Note
-
-You can ignore a dead corporation. Harder to ignore a wrench from your own yard.
+Barnard Yards is not a noble birthplace. It is a working scar: shipbreaking, rented cutters, pressure clamps, third-owner tools, and people who know exactly how much a bad contract can cost. The first Barnard stamp on HECTON-8 should feel almost too small for lore. It is not a speech. It is a mark on a wrench, the wrong alloy on a locker hinge, a repair habit nobody at Deep Reach would specify. For the player, that detail changes the contract. HECTON-8 is no longer only a dead corporate claim under alien water. Someone from the same yard culture reached this place before them, worked here, got routed into the same ledgers, and left proof small enough to be erased unless a Marauder notices.
 
 <!-- External Site; generated from P003_BARNARD_MARK/en_US. -->

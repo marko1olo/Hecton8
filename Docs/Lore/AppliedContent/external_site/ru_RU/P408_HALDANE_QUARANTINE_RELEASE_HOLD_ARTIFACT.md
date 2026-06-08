@@ -9,32 +9,22 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Haldane Quarantine Hold"
+title: "Карантинный hold Халдейна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Haldane Quarantine Hold
+# Карантинный hold Халдейна
 
-RU LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## Правильная Процедура В Неправильную Минуту
 
-## Scanner
+Hold Халдейна не должен читаться как простая подделка. На HECTON-8 были риск загрязнения, повреждённые seals, проблемы custody с образцами и биологическая неопределённость. Карантинный протокол имел смысл до того, как катастрофа стала кинетической. Поэтому документ и режет: процедура достаточно реальна, чтобы её защищать, и достаточно медленна, чтобы убивать.
 
-RU LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Release certification становится оружием через тайминг. Пока давление растёт и маршруты срываются, hold требует XO sample custody, seal-read variance и downstream exposure review. Каждая фраза звучит ответственно. Вместе они удерживают эвакуируемых, механиков и свидетелей внутри умирающей колонии до момента, когда rescue перестаёт быть главным глаголом.
 
-## Terminal
-
-RU LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-RU LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-RU LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Здесь Deep Reach лучше всего ощущается институцией. Халдейну не нужно смеяться над запертыми рабочими. Desk должен всего лишь сохранить chain of custody, снизить будущую liability и не выпустить загрязнённое доказательство в claim space, которым он не управляет. Ужас в том, что все эти мотивы могут звучать правильно именно в минуту, когда людям нужно было открыть дверь.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/ru_RU. -->

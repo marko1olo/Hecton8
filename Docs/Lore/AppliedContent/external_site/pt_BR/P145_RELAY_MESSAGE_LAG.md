@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Relay Message Lag"
+spoiler_tier: 1
+title: "Atraso de mensagem de relé"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# Atraso de mensagem de relé
 
-PT LOC HOLD: Relay Message Lag makes communication a route system, not a magic voice channel.
-
-## Scanner
-
-PT LOC HOLD: A message can be legally binding and still arrive too late to save air.
-
-## Terminal
-
-PT LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
-
-## Audio
-
-PT LOC HOLD: The reply is late. The lien is current.
-
-## Field Note
-
-PT LOC HOLD: No ansible means truth moves as freight.
+Lag de relé permite que HECTON-8 receba autoridade sem receber cuidado. Um pacote pode carregar lei, dívida, propriedade ou aviso por horas, dias ou anos, mas não consegue trazer mãos para uma sala inundada. Essa divisão é a pressão central da comunicação: sistemas remotos continuam poderosos porque foram escritos cedo, enfileirados cedo e precificados para sobreviver à distância. Compaixão chega como pessoa; contrato chega como dados.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/pt_BR. -->

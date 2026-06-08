@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Great Tide Sensor Margin Proof"
+title: "أثر هامش المد العظيم"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Great Tide Sensor Margin Proof
+# أثر هامش المد العظيم
 
-AR LOC HOLD: The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.
+أول دليل مفيد ضد Deep Reach ليس اعترافا. إنه هامش مستشعر واصل التسجيل بعد غرق الممر. الأرقام لا تجعل الكارثة مصطنعة: الحمل الهيدروستاتيكي وقص المد وفشل البنية فعلا سحقوا HECTON-8. لذلك يصبح الدليل أخطر. تبدأ الكذبة بين الأثر الخام والتقرير العام. الأثر الخام يضع خرق هامش التحذير قبل إغلاق نافذة المسار المعتمدة. التقرير المنشور يحتفظ بالcascade الجيوتقني ويحذف ملاحظة accepted-tail-risk. من يجد الأثر يرى شكل الذنب الصحيح: ضربت الفيزياء المستعمرة، ثم قرر أصحاب السلطة أن التحذير أرخص من الإيقاف.
 
 ## Scanner
 
-AR LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+مستشعر مد مستعاد. تجاوز القص الذروي تصميم المستعمرة، لكن خرق هامش التحذير سجل قبل طابع cascade العام.
 
 ## Terminal
 
-AR LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. قبلت سلطة المسار عتبة الخطر الطرفي. حذفت ملاحظة المشغل من سلسلة الحادث العامة. بقي الأثر الخام في ذاكرة brine-buffer.
 
 ## Audio
 
-AR LOC HOLD: Physics did the damage. A person signed the margin.
+المحيط لم يكذب. التقرير كذب.
 
 ## Field Note
 
-AR LOC HOLD: Use to anchor the public lie against real sensor evidence.
+ملاحظة مغير: لا تبحث عن خطاب شرير. ابحث عن السطر الذي حذفه شخص ما.
 
 <!-- External Site; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/ar_SA. -->

@@ -1,26 +1,59 @@
 {
-  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "schema": "H8.APPLIED_LORE_RELEASE_MANIFEST.V0",
   "release_set_id": "RS099_PUBLIC_EVIDENCE_GOVERNANCE_BRIDGE",
-  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "title": "Public Evidence Governance Bridge",
+  "date": "2026-06-08",
+  "status": "source_ready",
+  "canonical_importer_ready": true,
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS099_PUBLIC_EVIDENCE_GOVERNANCE_BRIDGE.packets.json"
+  ],
   "packets": [
     "P496_PUBLIC_EVIDENCE_MISUSE_WARNING_BRIDGE",
     "P497_EVIDENCE_RELATION_GRAPH_DOSSIER_BRIDGE",
     "P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE",
     "P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE"
   ],
-  "authoring_packet_sources": [
-    "Docs/Lore/AppliedContent/production_packets/P496_PUBLIC_EVIDENCE_MISUSE_WARNING_BRIDGE.production.md",
-    "Docs/Lore/AppliedContent/production_packets/P497_EVIDENCE_RELATION_GRAPH_DOSSIER_BRIDGE.production.md",
-    "Docs/Lore/AppliedContent/production_packets/P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE.production.md",
-    "Docs/Lore/AppliedContent/production_packets/P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE.production.md"
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
   ],
-  "canonical_importer_ready": false,
-  "runtime_ready": false,
-  "native_localization_ready": false,
-  "data_monolith_ready": false,
-  "h8bin_ready": false,
-  "unity_placement_ready": false,
-  "generated_page_ready": false,
-  "publication_ready": false,
-  "evidence_class": "STATIC_SOURCE"
+  "runtime_binding_map": "Docs/Lore/AppliedContent/binding_maps/RS099_PUBLIC_EVIDENCE_GOVERNANCE_BRIDGE_runtime_binding_map.csv",
+  "evidence_graph": "Docs/Lore/AppliedContent/graphs/RS099_PUBLIC_EVIDENCE_GOVERNANCE_BRIDGE_evidence_graph.csv",
+  "route_cards": "Docs/Lore/AppliedContent/route_cards/RS099_PUBLIC_EVIDENCE_GOVERNANCE_BRIDGE_route_cards.csv",
+  "native_review_required": [
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "importer_contract": {
+    "requires_canonical_surfaces": true,
+    "requires_external_site_article": true,
+    "requires_localization_status": true
+  }
 }

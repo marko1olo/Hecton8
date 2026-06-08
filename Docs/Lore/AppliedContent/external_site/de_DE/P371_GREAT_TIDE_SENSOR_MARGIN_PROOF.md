@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Great Tide Sensor Margin Proof"
+title: "Randspur der Großen Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Great Tide Sensor Margin Proof
+# Randspur der Großen Tide
 
-DE LOC HOLD: The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.
+Der erste brauchbare Deep-Reach-Beweis ist kein Geständnis. Es ist eine Sensormarge, die weiter aufzeichnete, nachdem der Korridor ertrank. Die Zahlen machen die Katastrophe nicht künstlich: hydrostatische Last, Gezeitenscherung und versagende Infrastruktur überwältigten HECTON-8 wirklich. Genau deshalb ist der Beweis wichtig. Die Lüge beginnt im Abstand zwischen Rohspur und öffentlichem Bericht. Die Rohspur markiert den Warnmargenbruch vor Schließung des genehmigten Routenfensters. Der Bericht behält die geotechnische Cascade und streicht die accepted-tail-risk-Notiz. Wer die Spur findet, erkennt die genaue Schuldform: Physik traf die Kolonie, dann entschieden Verantwortliche, dass Warnung billiger war als Shutdown.
 
 ## Scanner
 
-DE LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Geborgener Gezeitensensor. Die Spitzenscherung überschritt das Koloniedesign, doch der Warnmargenbruch wurde vor dem öffentlichen Cascade-Zeitstempel geloggt.
 
 ## Terminal
 
-DE LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Tail-Risk-Schwelle durch Routenautorität akzeptiert. Operatornotiz aus öffentlicher Unfallkette entfernt. Rohspur in Brine-Buffer-Speicher erhalten.
 
 ## Audio
 
-DE LOC HOLD: Physics did the damage. A person signed the margin.
+Der Ozean hat nicht gelogen. Der Bericht schon.
 
 ## Field Note
 
-DE LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Marauder-Notiz: Suche keine Bösewichtrede. Suche die Zeile, die jemand gelöscht hat.
 
 <!-- External Site; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/de_DE. -->

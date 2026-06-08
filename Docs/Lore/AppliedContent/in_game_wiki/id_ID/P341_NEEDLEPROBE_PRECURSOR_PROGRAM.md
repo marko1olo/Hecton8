@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Needleprobe Precursor Program"
+title: "Program Pendahulu Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Needleprobe Precursor Program
+# Program Pendahulu Needleprobe
 
-ID LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Needleprobe membawa klaim manusia pertama ke Aegir. Muatan survei sempit dan terlindung ini dikirim sebelum kru untuk membaca gravitasi, radiasi, spektrum samudra, orbit bulan, dan garis relai. Paket tertundanya membuat HECTON-8 terbaca bagi investor sebelum layak dihuni pekerja.
 
 ## Scanner
 
-ID LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+Arsip needleprobe: Aegir menjadi target ledger jauh sebelum menjadi tempat kerja. Mata mesin mencapai bulan-bulannya lebih dulu.
 
 ## Terminal
 
-ID LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+ARSIP RAN: rantai probe mengembalikan paralaks, radiasi, tanda samudra, geometri relai, dan keyakinan pellet-lane. Rating kru ditahan sampai model risiko ketiga stabil.
 
 ## Audio
 
-ID LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+Benda manusia pertama di Aegir bukan orang. Itu mesin yang bertanya apakah manusia akan menguntungkan di sini.
 
 ## Field Note
 
-ID LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Arsip probe adalah bukti rute. Telemetri lama bisa lebih tua dari koloni dan tetap menentukan siapa memiliki air.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/id_ID. -->

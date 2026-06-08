@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "RAN-Aegir-efemeridenbandrecord"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: RAN Aegir Ephemeris Bands
+# RAN-Aegir-efemeridenbandrecord
 
-NL LOC HOLD: RAN Aegir ephemeris bands separate stable route lore from exact celestial data.
+Het RAN-Aegir-efemeridenbandrecord scheidt stabiele routerecords van exacte hemelwaarden, zodat publieke artikelen betrouwbaar blijven zonder gegokte getallen tot navigatiewet te bevriezen.
 
 ## Scanner
 
-NL LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+Dit record geeft vensterbanden en gevarencausen, geen tabel-eigen exacte perioden.
 
 ## Terminal
 
-NL LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+EFEMERIDENBANDRECORD: publieke atlasvermeldingen mogen vensterband, gevarenklasse en relatie tot Aegir noemen. Exacte perioden, inclinaties en resonantiewaarden blijven onder gezag van de hemeltabel.
 
 ## Audio
 
-NL LOC HOLD: A band is honest until the numbers have an owner.
+Een band kan je redden. Een gegokt getal kan je doden.
 
 ## Field Note
 
-NL LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+De eerlijke publieke kaart zegt genoeg om risico te navigeren en niet genoeg om de hemeltabel te vervalsen.
 
 <!-- External Site; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/nl_NL. -->

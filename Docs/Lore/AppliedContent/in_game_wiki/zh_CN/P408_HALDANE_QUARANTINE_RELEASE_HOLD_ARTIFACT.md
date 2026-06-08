@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Haldane Quarantine Hold"
+title: "霍尔丹隔离释放搁置"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Haldane Quarantine Hold
+# 霍尔丹隔离释放搁置
 
-ZH LOC HOLD: The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
+霍尔丹 hold 不是隔离造假的证据。它更糟：协议有真实依据，随后 Deep Reach 用 certification 语言把身体、样本和 liability 留在原处，而殖民地那时更需要移动，不是文书。
 
 ## Scanner
 
-ZH LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+隔离释放 hold。真实污染协议在压力危险已经物理化后，变成 custody 延迟。
 
 ## Terminal
 
-ZH LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
+QUARANTINE HOLD DESK / HALDANE / RELEASE CERTIFICATION: evacuee movement remains suspended pending XO sample custody, seal-read variance and downstream exposure review.
 
 ## Audio
 
-ZH LOC HOLD: The folder was orderly. That was the problem.
+hold 没有发明危险。它把人留在危险里。
 
 ## Field Note
 
-ZH LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Marauder笔记：隔离可以是真的，也仍能像锁一样使用。
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/zh_CN. -->

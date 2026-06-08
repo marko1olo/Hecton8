@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Professionelles Motiv
 
-Das professionelle Motiv gibt Handlungsfähigkeit ohne feste Biografie.
+Professional Motive gibt dem Marauder Handlungsfähigkeit, ohne die Biografie zu stark zu verriegeln: Kompetenz kommt zuerst, persönliche Bindung kommt durch Beweise.
 
 ## Scanner
 

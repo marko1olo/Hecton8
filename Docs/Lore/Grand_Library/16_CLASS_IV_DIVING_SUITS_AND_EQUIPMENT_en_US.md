@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # CLASS-IV DIVING SUITS AND ABYSSAL EQUIPMENT
 
 > **Source:** Deep Reach Megacorporation, Equipment Quartermaster Manual.

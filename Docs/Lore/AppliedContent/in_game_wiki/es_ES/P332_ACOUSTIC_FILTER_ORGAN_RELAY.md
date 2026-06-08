@@ -3,13 +3,13 @@ packet_id: P332_ACOUSTIC_FILTER_ORGAN_RELAY
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.acoustic_filter_organ_relay
 unlock_id: unlock.acoustic_filter_organ_relay
-poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_resonator
-biome_tags: biome.atlas;biome.comms
+poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_chamber
+biome_tags: biome.atlas;biome.sonar
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relé de órgano acústico filtrante"
+title: "Relé de órgano filtro acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relé de órgano acústico filtrante
+# Relé de órgano filtro acústico
 
-Algunos animales de arrecife desarrollan órganos filtrantes bastante densos para moldear sonido. Los nodos de reparación Atlas aprendieron a usar ese tejido como deflector acústico cuando se rajaron las carcasas.
-
-La ayuda viene con dientes. El mismo órgano que lleva un ping de ruta puede anunciar vibración a carroñeros, despertar fauna etiquetada o devolver el movimiento de un saqueador por el arrecife. Una respuesta limpia no significa corredor seguro. Significa que el corredor escucha.
+Los órganos filtro acústicos crecen en viejas gargantas de relé donde el agua, la presión y el sonido hacen el trabajo que la radio no puede hacer. El tejido no habla. Cambia la impedancia, amortigua el rugido de las bombas y deja que los tonos estrechos del pinger viajen más de lo debido. Atlas puede usar ese eco repetido como relé barato, y un jugador cuidadoso como pista de ruta.
 
 ## Scanner
 
-La resonancia del órgano filtrante coincide con la cadencia del relé dañado. El retorno llega más limpio tras pasar por tejido. Mordidas en la carcasa.
+Tejido blando de bafle dentro del tubo de relé deja pasar tonos del pinger y mata el ruido de bomba.
 
 ## Terminal
 
-RELÉ ACÚSTICO // El tejido local del órgano filtrante amortigua ruido de tormenta y repite pings de servicio dentro del arrecife de cables. Ganancia inestable bajo golpes de presión. El relé biológico ayuda la ruta y atrae depredadores.
+NOTA DE RELÉ: pliegues vivos rechazan ruido mecánico amplio, dejan pasar pulsos estrechos del pinger y desplazan la fase de los ecos de retorno. Confianza de mapa aguas abajo reducida.
 
 ## Audio
 
-Responde como equipo porque el equipo está usando su garganta.
+Si responde como equipo, recuerda que el equipo no sangra.
 
 ## Field Note
 
-Si el eco tiene un pulso detrás, calla la herramienta y revisa el agua antes de moverte.
+Usar donde el sonar parezca útil antes de volverse sospechoso.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/es_ES. -->

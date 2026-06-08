@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DYREKTYWA KSENON-OMEGA I PROTOKOŁY ATLAS-6
 
 > **Źródło:** Otwarte Śledztwo Komitetu Luytena, Sprawa nr CF-2148-0071. Dowód Rzeczowy 44-B: Dziennik Audytu Rdzenia Atlas-6.  

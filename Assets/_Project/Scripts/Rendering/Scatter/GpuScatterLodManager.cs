@@ -673,11 +673,14 @@ namespace Hecton8.Rendering.Scatter
                 DumpBlackBox(BlackBoxDumpReasonNonFiniteAup);
             }
 
-            if (_hasExplicitDrawBounds && IsFiniteVector(shiftData.ShiftOffset))
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            bool hasFiniteShift = IsFiniteVector(shiftOffset) && math.isfinite(shiftSqrMagnitude);
+            if (_hasExplicitDrawBounds && hasFiniteShift && shiftSqrMagnitude > 0.000001f)
             {
-                _drawBounds.center -= shiftData.ShiftOffset;
+                _drawBounds.center -= shiftOffset;
             }
-            else if (_hasExplicitDrawBounds)
+            else if (_hasExplicitDrawBounds && !hasFiniteShift)
             {
                 _hasExplicitDrawBounds = false;
                 RecordBlackBox(BlackBoxFlagNonFiniteAupShift, ResolveSafeActiveCount());

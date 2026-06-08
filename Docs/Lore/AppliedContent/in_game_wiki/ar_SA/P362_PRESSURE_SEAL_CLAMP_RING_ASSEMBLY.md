@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "تجميعة حلقة مشبك ختم الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Pressure Seal Clamp Ring Assembly
+# تجميعة حلقة مشبك ختم الضغط
 
-AR LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.
+تشرح أختام الضغط لماذا يجب أن ينزل الإصلاح أعمق. المواد التي تبقي الماء خارج الغرفة تستطيع أيضا لصق الكبسولة بالحطام عندما تعتمد سلسلة ختم خاطئة.
 
 ## Scanner
 
-AR LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+ندبة clamp-ring. نجت كم sleeve الصعود من الارتطام بإنفاق الختم الذي كان يفترض أن يعيدها إلى البيت.
 
 ## Terminal
 
-AR LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch يحفظ ضغط الحجرة فقط. يتطلب Ascent seal حلقة deep-rated clamp ring، وpressure-glass seat، وshell-sealant map، وملف Deep Reach محقق. قد يحفظ Atlas-grown sealant الـ habitat بينما يمنع انفصالا نظيفا.
 
 ## Audio
 
-AR LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+الختم المفيد حي في الاتجاه الخطأ.
 
 ## Field Note
 
-AR LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+رقعة safe-room قد تشتري ساعة من الهواء. لكنها لا تمسك اندفاع الإطلاق.
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/ar_SA. -->

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "قواعد لقاء فسحة كاشطات الزجاج"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# قواعد لقاء فسحة كاشطات الزجاج
 
-AR LOC HOLD: Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.
+فسحات كاشطات الزجاج هي درس HECTON-8 في الأمان المشروط. البيئة الساطعة النافعة تساعد اللاعب على قراءة مسار، لكن المسار نفسه يصبح مشبوها لحظة تتوقف الحيوانات عن استخدامه.
 
 ## Scanner
 
-AR LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+فسحة كاشطات زجاجية. آثار كشط جديدة، وغشاء أكسجين، ونقر أصداف ثابت تشير إلى ضغط قريب منخفض. حقل طعام فارغ يعني حالة تحذير.
 
 ## Terminal
 
-AR LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+قواعد لقاء / فسحة كاشطات الزجاج / الدور: تباين ضحل، مسار مقروء شبه آمن، اختبار غياب مفترس / قراءة آمنة: تغذية نشطة، نقرات عودة مزدوجة، حافة معدنية مكشوطة، خط خروج ظاهر / ارفض: اعتبار الكاشطات ضمان أمان، فسحة صامتة، طعام متروك، return-line محجوبة / ملاحظة مسار: الممر نافع لأن الحيوانات تستخدمه الآن، لا لأن المحيط وعد بشيء.
 
 ## Audio
 
-AR LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+تصنع الكاشطات ممرات ساطعة. لكنها لا تقرر كم من الوقت يبقى الممر لها.
 
 ## Field Note
 
-AR LOC HOLD: Use for safe-zone literacy and shallow contrast.
+تغذية نشطة: استخدم المسار. نقرات مزدوجة: اثبت. طعام متروك: توقف عن الثقة بالفسحة.
 
 <!-- External Site; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/ar_SA. -->

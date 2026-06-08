@@ -9,32 +9,34 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "Koude Claims van Buitenmanen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# Koude Claims van Buitenmanen
 
-NL LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.
+Koude claims van buitenmanen bewijzen dat Aegir een systeem is, geen enkele spookmaan. Mislukte pekelprospects, ingemotte metaalroutes en dode beacons maken de salvage-economie die Marauders het verkeersnet in trekt.
+
+Belangrijk is niet afstand, maar patroon. Een route kan dood zijn en toch factureerbaar. Een beacon kan bewaring herhalen zonder levende crew. HECTON-8 is het ergste zichtbare geval, maar niet de eerste plek waar Aegir verlies als infrastructuur leerde archiveren.
 
 ## Scanner
 
-NL LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+Buitenste claimbeacon. Niet alles wat dood is in Aegir ligt op HECTON-8.
 
 ## Terminal
 
-NL LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+BUITENLADDER ARCHIEF // Thorne pekelprospect faalde. Anvil exportroute ingemot. Mute-beacon herhaalt bewaringsping zonder actieve crewverklaring.
 
 ## Audio
 
-NL LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegir leerde mensen verliezen voordat HECTON-8 de les afmaakte.
 
 ## Field Note
 
-NL LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+Koude claims maken Marauders mogelijk. Ze leren bedrijven ook patronen te begraven.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/nl_NL. -->

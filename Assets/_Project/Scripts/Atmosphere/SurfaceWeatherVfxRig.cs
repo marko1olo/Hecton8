@@ -90,8 +90,14 @@ namespace Hecton8.Atmosphere
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (!isActiveAndEnabled || shiftOffset.sqrMagnitude <= 0.000001f)
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             RebaseBoltPositions(shiftOffset);
         }
@@ -258,8 +264,16 @@ namespace Hecton8.Atmosphere
 
         private void RebaseBoltPositions(Vector3 shiftOffset)
         {
-            if (_boltRenderer == null || !_boltRenderer.enabled || _boltRenderer.positionCount <= 0)
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                _boltRenderer == null ||
+                !_boltRenderer.enabled ||
+                _boltRenderer.positionCount <= 0)
+            {
                 return;
+            }
 
             int positionCount = Mathf.Min(_boltRenderer.positionCount, _boltPoints.Length);
             if (positionCount <= 0)

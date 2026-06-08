@@ -1,8 +1,9 @@
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
 using System;
 using System.Runtime.InteropServices;
-using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Hecton8.Core.Memory
 {
@@ -37,6 +38,7 @@ namespace Hecton8.Core.Memory
         private const int MinimumExpectedCapacity = 1;
         private const string NativeMemoryOwner = "MockSignalBus";
         private const string QueueLabel = "_queue";
+        private const string NativeMemoryRegistrationFailureMessage = "Native memory tracking bridge registration failed for MockSignalBus queue.";
 
         private NativeQueue<T> _queue;
         private int _sentinelRegistrationId;
@@ -45,21 +47,37 @@ namespace Hecton8.Core.Memory
         public MockSignalBus(Allocator allocator, int expectedCapacity = MinimumExpectedCapacity)
         {
             int capacity = Math.Max(MinimumExpectedCapacity, expectedCapacity);
-            _queue = new NativeQueue<T>(allocator);
-            _sentinelRegistrationId = NativeMemorySentinel.RegisterNativeQueue(
-                _queue,
-                capacity,
-                NativeMemoryOwner,
-                QueueLabel,
-                ToNativeAllocationLifetime(allocator));
-            if (_sentinelRegistrationId <= 0)
-            {
-                _queue.Dispose();
-                _queue = default;
-                throw new InvalidOperationException($"Native memory sentinel registration failed for {QueueLabel}.");
-            }
+            _queue = default;
+            _sentinelRegistrationId = 0;
 
-            PrewarmQueue(ref _queue, capacity);
+            try
+            {
+                _queue = new NativeQueue<T>(allocator);
+                _sentinelRegistrationId = NativeMemoryTrackingBridge.RegisterBytesInstance(
+                    (long)UnsafeUtility.SizeOf<T>() * capacity,
+                    NativeMemoryOwner,
+                    TypedQueueLabel,
+                    ToNativeMemoryBridgeLifetime(allocator));
+                if (_sentinelRegistrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+
+                PrewarmQueue(ref _queue, capacity);
+            }
+            catch
+            {
+                if (_queue.IsCreated)
+                {
+                    _queue.Dispose();
+                    _queue = default;
+                }
+
+                if (!_queue.IsCreated && _sentinelRegistrationId > 0)
+                    NativeMemoryTrackingBridge.Unregister(_sentinelRegistrationId);
+
+                _sentinelRegistrationId = 0;
+                _queue = default;
+                throw;
+            }
         }
 
         /// <summary>True when the queue is allocated.</summary>
@@ -86,24 +104,39 @@ namespace Hecton8.Core.Memory
         {
             if (_queue.IsCreated)
             {
-                NativeMemorySentinel.Unregister(_sentinelRegistrationId);
-                _sentinelRegistrationId = 0;
                 _queue.Dispose();
+                _queue = default;
             }
+
+            if (!_queue.IsCreated && _sentinelRegistrationId > 0)
+                NativeMemoryTrackingBridge.Unregister(_sentinelRegistrationId);
+
+            _sentinelRegistrationId = 0;
         }
 
-        private static NativeAllocationLifetime ToNativeAllocationLifetime(Allocator allocator)
+        private static NativeMemoryBridgeLifetime ToNativeMemoryBridgeLifetime(Allocator allocator)
         {
             switch (allocator)
             {
                 case Allocator.Persistent:
-                    return NativeAllocationLifetime.Session;
+                    return NativeMemoryBridgeLifetime.Session;
                 case Allocator.TempJob:
-                    return NativeAllocationLifetime.TempJob;
+                    return NativeMemoryBridgeLifetime.TempJob;
                 case Allocator.Temp:
-                    return NativeAllocationLifetime.Temp;
+                    return NativeMemoryBridgeLifetime.Temp;
                 default:
-                    return NativeAllocationLifetime.Temp;
+                    return NativeMemoryBridgeLifetime.Temp;
+            }
+        }
+
+        private static string TypedQueueLabel
+        {
+            get
+            {
+                string typeName = typeof(T).FullName;
+                return string.IsNullOrWhiteSpace(typeName)
+                    ? QueueLabel
+                    : typeName + "." + QueueLabel;
             }
         }
 

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Затримки маршрутів на дошці змін
 
-Доказ показує, як логістична мова ховає тіла й розсіює провину.
+Дошки змін перетворюють катастрофу на читану процедуру. Deep Reach і Atlas убивали через класифікацію, затримку й пріоритет, а не через театральну злобу.
 
 ## Scanner
 

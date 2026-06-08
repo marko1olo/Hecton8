@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.service_corridor
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Hatch Seal Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Hatch Seal Ledger
 
-Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop.
+Hatches are one of HECTON-8's quietest records. They do not explain who was left behind; they store closure direction, gasket stress and override authority. Reading a seal ledger turns a locked door into a pressure decision with a timestamp.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+Seal memory recovered. Gasket took three pressure cuts and one evacuation override; return-side access was locked from the wet side.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Operator count on return side unresolved. Reopen only after pressure equalization and hinge inspection.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+It sealed. That is all the hatch promised.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+A sealed hatch is a receipt. Before opening it, ask which side paid.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/en_US. -->

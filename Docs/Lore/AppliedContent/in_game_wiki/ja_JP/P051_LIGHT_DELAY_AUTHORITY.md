@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "光遅延権限"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# 光遅延権限
 
-JP LOC HOLD: Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.
+HECTON-8にはansibleも軌道からの生の指揮声もない。メッセージは光速で進み、その後さらにバッファ、嵐の窓、リレー幾何、キャリアの保管規則で時間を失う。すべての返答は命令ではなく、古い証拠として扱う。
 
 ## Scanner
 
-JP LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
+リレーマストのキャッシュ: 呼び出しはきれいに出たが、その後は光、待ち行列の規則、嵐の散乱、Aegirの視線条件の後ろで待った。
 
 ## Terminal
 
-JP LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
+通信権限: 片道遅延を確認。嵐散乱高。リレー待ち行列は保管優先。現地生存権限は有効。
 
 ## Audio
 
-JP LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
+返答は来る。それは救助とは限らない。
 
 ## Field Note
 
-JP LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+最初の叫びを検閲した者はいない。物理がそれをゆっくり運び、方針が追いついた。
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/ja_JP. -->

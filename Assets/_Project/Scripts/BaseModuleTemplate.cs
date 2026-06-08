@@ -149,6 +149,7 @@ namespace Hecton8.Building
 
         public string PersistentId => stableId;
         public int TemplateHashId => templateHashId;
+        public int PersistentHashId => ResolvePersistentHashId();
         public float3[] SnapPoints => snapPoints;
         public SocketDefinition[] SocketDefinitions => socketDefinitions;
         public Vector3 ProxyBoundsCenter => proxyBoundsCenter;
@@ -171,6 +172,19 @@ namespace Hecton8.Building
         internal float MaximumUnmooredAccelerationMetersPerSecondSquared => maximumUnmooredAccelerationMetersPerSecondSquared;
         internal float MaximumCenterOfMassShiftMeters => maximumCenterOfMassShiftMeters;
         internal float CenterOfMassShiftTauSeconds => centerOfMassShiftTauSeconds;
+
+        public int ResolvePersistentHashId()
+        {
+            if (templateHashId != 0)
+                return templateHashId;
+
+            string id = !string.IsNullOrWhiteSpace(stableId)
+                ? stableId
+                : name;
+            return string.IsNullOrWhiteSpace(id)
+                ? 0
+                : Hecton.Localization.LocHash.Compute(id);
+        }
 
         private void OnValidate()
         {

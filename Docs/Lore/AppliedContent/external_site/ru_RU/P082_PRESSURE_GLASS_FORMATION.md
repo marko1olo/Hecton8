@@ -8,33 +8,19 @@ biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Формирование pressure glass"
+spoiler_tier: 1
+title: "Формирование давленого стекла"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Формирование pressure glass
+# Формирование давленого стекла
 
-Формирование pressure glass превращает Xenon-Omega в hard-sci-fi material ecology вместо magic ore. Это pressure-made substrate, связанный с Atlas, containment и computation.
+Давленое стекло является техническим именем того, что мародеры называют blue debt, а Deep Reach прячет за языком Xenon-Omega. Оно возникает там, где давление, карманы благородных газов, рассол, минералы, тепло и измененная биология сходятся в одну стабильную подложку.
 
-## Scanner
-
-Решетка blue debt. Noble gas, brine, mineral defects и pressure history заперты в одной дорогой ошибке.
-
-## Terminal
-
-XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
-
-## Audio
-
-Вот почему они вернулись. Не золото. Машиночитаемый шрам.
-
-## Field Note
-
-Это не руда. Это процесс, который помнит, где был создан.
+Формирование давленого стекла превращает Xenon-Omega в материальную экологию жесткой фантастики, а не в магическую руду. Это не руда. Это процесс, который помнит, где был создан.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/ru_RU. -->

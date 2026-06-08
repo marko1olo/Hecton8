@@ -149,6 +149,10 @@ namespace Hecton8.Core
         private const int PendingEventCapacity = 4;
         private const int PoolNameSlotCapacity = 32;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        private static readonly uint DataBusSaturationNotificationMissWarningHash =
+            unchecked((uint)LocHash.Compute("ObjectPoolDiagnostics.DataBusSaturationNotificationMiss"));
+        private static readonly uint DataBusSaturationNotificationContextHash =
+            unchecked((uint)LocHash.Compute("ObjectPoolDiagnostics.DataBusSaturationNotification"));
 
         private struct PoolNameSlot
         {
@@ -168,13 +172,17 @@ namespace Hecton8.Core
         private static readonly PoolNameSlot[] _poolNamesByHash = new PoolNameSlot[PoolNameSlotCapacity];
         private static NativeQueue<PoolDiagnosticsEventPayload> _pendingEvents;
         private static NativeQueue<PoolDiagnosticsEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _listenerCount;
         private static int _poolNameSlotCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _dataBusSaturationNotificationMissCount;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DataBusSaturationNotificationMissCount => _dataBusSaturationNotificationMissCount;
 
         // ════════════════════════════════════════════════════════════
         //  INTERNAL STATE
@@ -195,7 +203,7 @@ namespace Hecton8.Core
             public bool wasAccelerating;
         }
 
-        private static readonly Dictionary<string, PoolMetrics> _poolMetrics = 
+        private static readonly Dictionary<string, PoolMetrics> _poolMetrics =
             new Dictionary<string, PoolMetrics>(32);
 
         private static int _lastDiagnosticsFrame = -1;
@@ -217,6 +225,7 @@ namespace Hecton8.Core
             _isDispatching = false;
             _lastDiagnosticsFrame = -1;
             _lastDataBusSaturationWarningFrame = -1;
+            _dataBusSaturationNotificationMissCount = 0;
         }
 
         // ════════════════════════════════════════════════════════════
@@ -557,14 +566,14 @@ namespace Hecton8.Core
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<PoolDiagnosticsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - deferred pool diagnostics lane flushed by SystemDispatcher LateUpdate - owner: ObjectPoolDiagnostics
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<PoolDiagnosticsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - next-frame pool diagnostics lane prevents same-frame reentrant dispatch - owner: ObjectPoolDiagnostics
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -581,10 +590,12 @@ namespace Hecton8.Core
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(ObjectPoolDiagnostics),
@@ -593,25 +604,60 @@ namespace Hecton8.Core
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(ObjectPoolDiagnostics), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -703,7 +749,24 @@ namespace Hecton8.Core
                 return;
 
             _lastDataBusSaturationWarningFrame = frame;
-            Hecton8.UI.NotificationEvents.TryPushWarning("DATA_BUS_SATURATED".AsSpan());
+            TryPushDataBusSaturationNotification();
+        }
+
+        private static void TryPushDataBusSaturationNotification()
+        {
+            if (Hecton8.UI.NotificationEvents.TryPushWarning("DATA_BUS_SATURATED".AsSpan()))
+                return;
+
+            ReportDataBusSaturationNotificationMiss();
+        }
+
+        private static void ReportDataBusSaturationNotificationMiss()
+        {
+            _dataBusSaturationNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                DataBusSaturationNotificationMissWarningHash,
+                DataBusSaturationNotificationContextHash,
+                Mathf.Max(1, _dataBusSaturationNotificationMissCount));
         }
 
         private static void DrainWithoutDispatch()
@@ -762,6 +825,9 @@ namespace Hecton8.Core
             NativeQueue<PoolDiagnosticsEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Aegir Primary Light and Radiation"
+title: "Світло основної зорі Aegir і радіація"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Aegir Primary Light and Radiation
+# Світло основної зорі Aegir і радіація
 
-UK LOC HOLD: The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+Основна зоря Aegir - стабільний K-клас: достатньо тепла для бурштинового світла на робочих палубах і достатньо спокійна для довгих інфраструктурних розкладів. Небезпеку дає магнітосфера газового гіганта. Пояси, заряджені траси, місячні тіні й штормовий шум перетворюють переліт на календар радіаційних вікон, а не на просту задачу відстані.
 
 ## Scanner
 
-UK LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+Зоряна карта. Теплий K-карлик дає Aegir читабельне небо; пояси гіганта перетворюють кожен клас захисту на розклад.
 
 ## Terminal
 
-UK LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+ЗОРЯНА КАРТА RAN A-346: випромінення основної зорі лишається в робочих допусках колонії. Магнітосфера Aegir двічі за оберт ускладнює внутрішні траси; дешеві корпуси чекають, оплачені carrier пропалюють вікно.
 
 ## Audio
 
-UK LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+Світла досить, щоб читати. Небо від цього не стало добрим.
 
 ## Field Note
 
-UK LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+На Aegir є денне світло. Тому кожне дешеве ущільнення й кожен пізній burn усе одно мають ціну.
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/uk_UA. -->

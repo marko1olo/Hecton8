@@ -1,6 +1,9 @@
 # VOXEL_SDF_GEOMETRY.md
 ## DISTILLED TECHNICAL MANDATE - HECTON-8 ENGINE | REV 4.1
 
+[REQ] Player-visible cave, voxel wall, tunnel, fracture, terrain cut, and SDF/marching-cubes mesh acceptance inherits the Visual Reference Parity Gate. Captures must beat mandatory references plus best-known internal baseline/current rejection matrix before voxel geometry polish is credited.
+[FORBID] Marching-cubes output, SDF smoothness, shader tint, fog, or cave darkness as acceptance when silhouette, strata, material truth, contact, route cue, and compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and recover voxel/material/terrain owners first.
+
 ---
 
 ## Section0 - PIPELINE CONTRACT
@@ -410,7 +413,8 @@ If triggered:
   -> abort current vertex/index emission (partial mesh discarded)
   -> log [WARN] ChunkID + VertexHead + BufferCapacity
   -> schedule RetryJob with capacity *= 2
-  -> max 2 retries -> fallback to empty collision mesh, visual placeholder
+  -> max 2 retries -> keep previous valid mesh/collider; if none exists, disable chunk render/collider and emit CHUNK_BUILD_FAILED
+  [FORBID] runtime visual placeholder as fallback or acceptance artifact
 
 ### 11.3 Stale Chunk Detection
 
@@ -437,7 +441,7 @@ Post-vertex:      isnan(any component) -> vertex flagged, excluded from index bu
 [CHECK-06] PhysicsBake scheduled ONLY after Mesh.ApplyAndDisposeWritableMeshData completes
 [CHECK-07] Scratch slot released ONLY after physics bake job dependency chain resolves
 [CHECK-08] SeamNoise offset applied to densityField write pass, not vertex post-process
-[CHECK-09] Current source Black Box remains wired: 300 `VoxelMeshPipelineTelemetryEntry` samples and dump path `Docs/AgentLogs/Dump_VOXEL_MESH_PIPELINE.bin`.
+[CHECK-09] Current source Black Box remains wired: 300 `VoxelMeshPipelineTelemetryEntry` samples and dump route follows root Black Box law, with explicit batch/logging ID using `Docs/AgentLogs/Dump_[ID].bin` and ordinary runtime using a deterministic voxel/system-name/timestamp project artifact.
 [CHECK-10] Any future Transvoxel/fp16 migration must ship behind a feature gate and preserve current Marching Cubes fallback until Unity Console, PlayMode, profiler, and scene seam captures pass.
 
 ---

@@ -105,7 +105,7 @@ Required probes:
 ## 4. Failure Response
 
 [RULE] Non-finite or over-budget AUP drift writes a telemetry error hash and safe fallback.
-[RULE] Fatal AUP drift dumps `Docs/AgentLogs/Dump_[AgentID].bin`.
+[RULE] Fatal AUP drift dumps follow root Black Box law: explicit batch/logging ID may use `Docs/AgentLogs/Dump_[ID].bin`; ordinary runtime uses a deterministic AUP/system-name/timestamp project artifact.
 [RULE] The owning system disables the unsafe path and preserves gameplay safety before presentation polish.
 
 Fallback priority:

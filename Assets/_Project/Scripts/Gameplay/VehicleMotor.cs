@@ -421,7 +421,15 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            ApplyOriginShift(shiftData.ShiftOffset, shiftData.IsSafeTeleport != 0);
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude))
+            {
+                return;
+            }
+
+            ApplyOriginShift(shiftOffset, shiftData.IsSafeTeleport != 0);
             if (shiftData.IsSafeTeleport != 0)
                 _visualTeleportPending = true;
         }
@@ -461,8 +469,13 @@ namespace Hecton8.Gameplay
 
         private void ApplyOriginShift(Vector3 shiftOffset, bool _)
         {
-            if (shiftOffset.sqrMagnitude <= MinVectorMagnitudeSq)
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= MinVectorMagnitudeSq)
+            {
                 return;
+            }
 
             if (_isEntangled)
                 _entanglementAnchorPosition -= shiftOffset;
@@ -772,7 +785,8 @@ namespace Hecton8.Gameplay
             if (speedSq < minKelpPushbackSpeedSq)
                 return velocity;
 
-            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            FloraInteractionManager floraInteractionManager = null;
+            WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref floraInteractionManager);
             if (floraInteractionManager == null)
                 return velocity;
 

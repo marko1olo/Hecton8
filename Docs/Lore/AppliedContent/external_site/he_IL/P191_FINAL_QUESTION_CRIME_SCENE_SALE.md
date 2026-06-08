@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "השאלה הסופית: מכירת זירת הפשע"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# השאלה הסופית: מכירת זירת הפשע
 
-HE LOC HOLD: Final Question Crime Scene Sale defines the material ending axis.
+סוף המכירה חזק ביותר כשהמשחק אינו מעניש את השחקן מכנית. Marauder נואש יכול לבצע כל מה שהחוזה דרש: להגיע לאגן, להחזיר קואורדינטות, להוכיח ערך דגימה, לשמור את רשומת XO שלמה ולמסור payload שBlack Keel יכולה לתמחר. התוצאה צריכה להרגיש חוקית וקרה. החוב נמחק כי המערכת מזהה ערך, לא צדק.
 
-## Scanner
-
-HE LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
-
-## Terminal
-
-HE LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
-
-## Audio
-
-HE LOC HOLD: You can pay the debt with a grave map.
-
-## Field Note
-
-HE LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+זהו הפחד. HECTON-8 לא אבדה מפני שאיש לא ידע לקרוא ראיות. היא אבדה מפני שראיות יכולות להפוך לבעלות. אם השחקן מוכר את הזירה בלי שרשרת עדים ציבורית, Deep Reach מקבלת ניירת נקייה יותר, גיאומטריית גישה טובה יותר וסיבה לחזור עם עורכי דין לפני צוותי חילוץ. הסוף משלם לשחקן ומראה איזו ציוויליזציה יכולה לממן salvage בין כוכבי.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/he_IL. -->

@@ -9,32 +9,36 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Druck durch Schulden-Blacklist-Vertrag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Debt Blacklist Contract Pressure
+# Druck durch Schulden-Blacklist-Vertrag
 
-DE LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+HECTON-8 rahmt seinen Protagonisten durch Grenzökonomie statt Schicksal. Schulden, Blacklists, Claim-Pool-Verwahrung, Sauerstoffkredit, Liegeplatzzugang und alte Deep-Reach-Nachweise machen den Bergungsvertrag zwanghaft, ohne den Spieler hilflos zu machen.
 
 ## Scanner
 
-DE LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Pfandhinweis an Black-Keel-Verwahrung gebunden. Ablehnung bleibt legal, aber macht bewegungslos: kein Liegeplatz, kein sauberer Sauerstoffkredit, kein Routenfenster aus Aegir.
 
 ## Terminal
 
-DE LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+ANSPRUCHSANNAHME / BLACKLIST-ENTLASTUNGSFENSTER
+Auftragnehmerstatus: schuldengebundener Marauder
+Träger: Black-Keel-Claim-Pool-Verwahrung
+Entlastungsbedingungen: verwertbare Masse, Verwahrungsnachweis, Empfänger-Compliance
+Fehlerzustand: Blacklist bleibt aktiv; Liegeplatzzugang verweigert; Sauerstofffürsorge wird abrechenbare Unterstützung.
 
 ## Audio
 
-DE LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+Das war keine Entführung. Es war die Art von Wahl, die die Grenze als Freiheit verkauft: unterschreiben, tauchen, oder auf Papier sauber bleiben und praktisch gefangen sein.
 
 ## Field Note
 
-DE LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+Das Pfand zeigte nicht mit einer Waffe. Es zeigte auf die Luftrechnung, die Liegeplatzliste und das nächste Routenfenster.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/de_DE. -->

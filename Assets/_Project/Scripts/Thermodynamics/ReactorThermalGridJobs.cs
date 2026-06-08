@@ -35,6 +35,7 @@ namespace Hecton8.Thermodynamics
         public const uint TelemetryFlagAtomicAbort = 1u << 8;
         public const uint SourceHashShinobu342 = 0x53333432u; // S342
         public const uint ProfileHashNuclearDefault = 0x4E524854u; // NRHT
+        private const double DefaultSeaLevelAupY = 14.02d;
         private const float LengthEpsilonSq = 0.000000000001f;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -50,6 +51,14 @@ namespace Hecton8.Thermodynamics
                 return float.NaN;
 
             return lengthSq * math.rsqrt(math.max(lengthSq, LengthEpsilonSq));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveSeaLevelDepthMeters(double3 aup)
+        {
+            return math.isfinite(aup.y)
+                ? (float)math.max(0d, DefaultSeaLevelAupY - aup.y)
+                : 0f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -818,7 +827,7 @@ namespace Hecton8.Thermodynamics
             signal.ModuleCenter = center;
             signal.Stress01 = stress01;
             signal.PeakStress01 = stress01;
-            signal.DepthMeters = math.max(0f, -center.y);
+            signal.DepthMeters = ReactorThermalMath.ResolveSeaLevelDepthMeters(aup);
             signal.NodeId = reactorHash;
             signal.ModuleHash = reactorHash;
             signal.Frame = Frame;

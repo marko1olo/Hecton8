@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Sensor Tagged Fauna Codex Card"
+title: "Cartão de códice da fauna com sensor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Sensor Tagged Fauna Codex Card
+# Cartão de códice da fauna com sensor
 
-PT LOC HOLD: Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.
+Fauna com sensor é uma das formas mais limpas de ver a ecologia mecânica de HECTON-8 sem transformar o oceano em uma mente. A Deep Reach marcou animais, shell colonies e espécies de rota para estudos de migração, tolerância à pressão e contaminação. Anos depois, alguns tags estão enterrados em tecido cicatricial, encaixes de concha, capas minerais ou anéis de crescimento. Atlas ainda pode ouvir um retorno fraco e tratar o corpo em movimento como marco diagnóstico: pressure packet, pista de contaminação, occupancy de rota, âncora de drone sweep, testemunha velha de maintenance. Isso não torna o animal obediente. Ele pode pastar, fugir, caçar ou entrar em pânico por motivos comuns enquanto o tag faz seu caminho importar para infraestrutura quebrada. Não leia movimento de tag como intenção. Não corte um tag vivo salvo se o custo da rota valer a crueldade e os dados sujos. A pergunta útil não é “o que ele quer?” É “qual sistema ainda acredita que esta cicatriz é um sensor?”
 
 ## Scanner
 
-PT LOC HOLD: Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+Fauna com sensor. Antigo tag biometálico da Deep Reach incrustado em cicatriz, concha ou anel de crescimento. Eco fraco de rota Atlas; intenção animal não confirmada.
 
 ## Terminal
 
-PT LOC HOLD: SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+ESPÉCIME / FAUNA COM SENSOR / função: portador vivo de telemetria, marco de survey obsoleto, contaminante de repair-route / leitura segura: pulso antigo de tag, crescimento de tecido cicatricial, movimento não comandado / rejeitar: tratar comportamento como obediência, cortar tag de corpo vivo, confiar em occupancy echo / nota de rota: o tag pode relatar a sala que o animal cruzou, não por que cruzou.
 
 ## Audio
 
-PT LOC HOLD: It is not obeying. It is being used.
+Ele não obedece Atlas. Ele carrega uma pergunta antiga que Atlas ainda faz.
 
 ## Field Note
 
-PT LOC HOLD: Do not write as possession. It is damaged maintenance using animal movement.
+O tag é uma cicatriz, não uma coleira. Pode reportar você, colocar você no lugar errado ou acordar algo que nunca viu o animal.
 
 <!-- In-Game Wiki; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/pt_BR. -->

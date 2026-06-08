@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Финальный вопрос severance: mercy, theft, murder"
+title: "Финальный вопрос: отсечение, милость, кража"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Финальный вопрос severance: mercy, theft, murder
+# Финальный вопрос: отсечение, милость, кража
 
-Severance заставляет игрока определить, какой жизнью стала Atlas-ocean continuity.
+Отсечение заставляет решить, чем стала непрерывность Atlas-океан. Если это только сломанный инструмент, разрез похож на ремонт. Если это жизненная система, разрез убивает. Если это свидетельство, разрез может уничтожить показания.
 
 ## Scanner
 
-Severing Atlas - не простая кнопка shutdown.
+Отключить Atlas - не нажать кнопку shutdown. Это хирургия без чистой анатомии.
 
 ## Terminal
 
-SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse или preserve partial repair memory. Meaning зависит от proof, принесенного в final room.
+ОСЬ ОТСЕЧЕНИЯ: разорвать непрерывность Atlas, изолировать экологию давления, запретить routing payload для Deep Reach, рискнуть обвалом бассейна или сохранить только часть ремонтной памяти. Смысл зависит от доказательств, принесенных в финальную комнату.
 
 ## Audio
 
-Чистый выключатель был бы милосерден. Его не будет.
+Чистый выключатель был бы милосерден. Тебе его не дали.
 
 ## Field Note
 
-Действие может быть mercy для workers, murder для ocean-machine life, liberation от Deep Reach или theft живой infrastructure.
+Один и тот же акт может освободить застрявших рабочих, убить океан-машинную жизнь, отказать Deep Reach и украсть живую инфраструктуру у самой себя.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/ru_RU. -->

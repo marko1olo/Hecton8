@@ -9,32 +9,44 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "RU LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: ответственность под настоящей водой"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: ответственность под настоящей водой
 
-RU LOC HOLD: Deep Reach did not need to invent the ocean. HECTON-8 failed under real pressure, real tide force and real infrastructure limits. That is what makes the liability harder to bury. The official record names a localized geotechnical cascade, corrupted Atlas logs and incomplete evacuation. Each phrase has enough truth to survive a hearing. The physical site adds what the public sentence omits: margin approvals signed before the tide window, evacuation routes held behind authorization, quarantine doors certified late, Atlas continuity weights that protected system function before worker recovery, and loss ledgers that turned names into categories after the water had already won. The accusation is not that Deep Reach caused the ocean to rise by command. It is that the company priced known risk, delayed human exit, kept records clean and let recovery offices convert disaster into manageable custody. On HECTON-8, the rooms testify more precisely than the statement.
+## Полезная полуправда
 
-## Scanner
+Публичный отчет Deep Reach держится потому, что в нем достаточно настоящей воды. На HECTON-8 действительно случился Great Tide. Криосферный стресс, резонансные приливы, наложение штормов, тепловой сброс и давление океана порвали колонию. Луне не нужен был карикатурный злодей, чтобы затопить комнаты и смять модули.
 
-RU LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+Именно поэтому важна цепь ответственности. Ложь не в том, что прилив был. Ложь в снятом приоритетном слое вокруг прилива: принятые sensor margin, эвакуационная емкость ниже потребности, Atlas continuity выше извлечения людей, карантин как купленное время и пропавшие, переведенные в категории claim.
 
-## Terminal
+## Подписи
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+Iliya Varnek превращает warning в расписанный риск. Selene Arendt держит worker safety внутри process-continuity. Noor Haldane заставляет extraction ждать certification, пока комнаты теряют давление. Marek Ibarra переводит тела в load и loss. Пакет Vera Sato-Ren от 2190 года доказывает, что компания все еще просит coordinates, XO proof и silence до языка rescue.
 
-## Audio
+Эти документы не должны признаваться. Чистый документ опаснее, когда затопленная комната показывает его цену. В HECTON-8 каждая подпись может быть защищена в сухом офисе и стать смертельной ниже ватерлинии.
 
-RU LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+## Что несет игрок
 
-## Field Note
+Один memo - подозрение. Цепь - доказательство. Игрок собирает вмятины, hold, timestamps, имена работников, следы Atlas, packet seals и recovery clauses по разным местам, а затем решает, что стоит пронести через custody Black Keel.
 
-RU LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+Deep Reach хочет вернуть HECTON-8 как материал, доступ, контроль доказательств и Atlas continuity. Груз вернуть проще. Тяжелее вернуть контекст.
+
+## Форма вины
+
+Deep Reach нельзя сжимать до одного злодея с чистой кнопкой. Ее вина сильнее, потому что распределена. Varnek принимает tide margin. Arendt поднимает Atlas weights выше рабочих. Haldane держит язык quarantine чистым. Ibarra превращает имена в loss categories. Sato-Ren пытается двинуть return action, когда повреждение уже внутри системы.
+
+Каждый документ достаточно мал, чтобы казаться обычным. Вместе они показывают институт, который выжил, делая каждое смертельное решение локальным, временным и процедурно правильным. Рабочие умерли внутри этой грамматики.
+
+## Почему доказательство имеет массу
+
+Игрок не решит это верой. Пакеты можно задержать, оспорить, заредактировать или оценить. Физическое доказательство нужно тащить: sensor margins, разбитую эвакуацию, Atlas trace, custody ledger, sample chain. Доказательство тяжелое, потому что HECTON-8 заставляет правду делить место с кислородом, инструментами и грузом.
+
+В этом центр давления. Игрок не просто узнает, что произошло. Он решает, сколько выживания можно потратить, чтобы произошедшее стало труднее стереть.
 
 <!-- External Site; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/ru_RU. -->

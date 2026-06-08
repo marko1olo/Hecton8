@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "Montage der Fluchtkette"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# Montage der Fluchtkette
 
-DE LOC HOLD: Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.
+Flucht ist eine Montagekette, kein einzelnes repariertes Fahrzeug. Das beschädigte Abwurfpaket kann den Spieler am Leben halten, aber allein keinen vertrauenswürdigen Aufstieg schaffen. Der Heimweg braucht einen akustischen Relaisspinen, der durch Wasser und Sturmrauschen gehört wird, eine Druckdichtung, die Aufstieg nicht in Bruch verwandelt, einen Führungskern, der HECTON-8s lokale Gefahren übersteht, eine Aufstiegsenergieladung, einen Quarantäne- und Rechts-Handschlag und, wenn der Spieler Macht über den Bergungsdatensatz will, eine Beweisnutzlast, die Black Keel nicht wegpreisen kann. Jedes Teil liegt tiefer als Komfort, weil das ursprüngliche System für bewegte Vermögenswerte gebaut wurde, nicht dafür, zurückgelassene Arbeiter zu eigenen Bedingungen gehen zu lassen.
 
 ## Scanner
 
-DE LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+Abflug braucht sechs harte Nachweise: Relais, Dichtung, Führung, Aufstiegsladung, rechtlichen Handschlag und eine Nutzlast, die der Träger nicht ignorieren kann.
 
 ## Terminal
 
-DE LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+AUFSTIEGSPAKET: akustischer Relaisspinen fehlt. Klemmringwertung unzureichend. Führungskern fehlt. Ladewiege leer. Quarantäne-Handschlag ungelöst. Beweisnutzlast optional, verändert aber Bergungsautorität.
 
 ## Audio
 
-DE LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+Du reparierst die Kapsel nicht. Du baust den ersten ehrlichen Ausgang, den die Kolonie nie hatte.
 
 ## Field Note
 
-DE LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+Der Weg nach oben wird aus Teilen gebaut, die nie dafür gedacht waren, Arbeiter allein gehen zu lassen.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/de_DE. -->

@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.relay_shadow
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Pellet-Fusion Freight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Pellet-Fusion Freight
 
-Pellet-fusion freight is the industrial history behind HECTON-8. Machines and heavy cargo reached Aegir because infrastructure could push, feed, shield and brake mass over decades; the route remains cruel because the accounting survives longer than the emergency.
-
-## Scanner
-
-Drive plate. Pellet-fed fusion freight crossed as infrastructure: boost, shield, coast, brake, and bill the loss.
-
-## Terminal
-
-FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used beam-sail boost, pellet-fed fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
-
-## Audio
-
-A heavy ship is not a miracle. It is a mortgage with engines.
-
-## Field Note
-
-Heavy transit is not heroic. It is an old route contract with heat scars.
+Pellet-fusion freight is the industrial middle layer between survey dreams and human bodies. Beam stations can push, pellet streams can feed, fusion stages can spend heat, and shield mass can die instead of cargo. That architecture moves heavy things across dark distance, but it does not forgive improvisation. Every kilogram is booked against schedule, thermal budget, braking reserve, and owner. HECTON-8 can receive Atlas hardware through that machine and still leave a living worker beyond help when the failure starts locally.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/en_US. -->

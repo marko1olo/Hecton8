@@ -5,6 +5,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Graphics.Materials;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor;
@@ -396,34 +397,93 @@ namespace Hecton8.Editor
                 throw new InvalidOperationException($"Native memory sentinel registration failed for {PreviewTurtleStackLabel}.");
         }
 
-        private static void DisposePreviewArray<T>(ref NativeArray<T> array, ref int sentinelId)
+        private static unsafe void DisposePreviewArray<T>(ref NativeArray<T> array, ref int sentinelId)
             where T : struct
         {
             if (!array.IsCreated)
-            {
-                NativeMemorySentinel.Unregister(sentinelId);
-                sentinelId = 0;
                 return;
+
+            Exception firstException = null;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+            else
+            {
+                void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
             }
 
-            if (sentinelId > 0)
-                NativeMemorySentinel.Unregister(sentinelId);
-            else
-                NativeMemorySentinel.UnregisterNativeArray(array);
-            sentinelId = 0;
-            array.Dispose();
-            array = default;
+            try
+            {
+                array.Dispose();
+            }
+            catch (Exception exception)
+            {
+                if (firstException == null)
+                    firstException = exception;
+            }
+            finally
+            {
+                array = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
-        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
+        private static unsafe void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+            finally
+            {
+                array = default;
+            }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
         private bool EnsurePreviewDrawResources()

@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Cicatrice de réparation
 
-Une cicatrice de réparation est le premier signe clair que HECTON-8 n'est pas simplement en ruine. Quelque chose l'entretient encore, en utilisant vie océanique, machines, infrastructure morte et restes humains comme matière compatible.
-
-## Scanner
-
-La croissance biologique suit la géométrie du câble avec un espacement non aléatoire. Une simple fuite d'énergie ne l'explique pas.
-
-## Terminal
-
-FUITE: fermée. ROUTE: restaurée. MATIERE: compatible. STATUT VIE: non résolu. CONTINUITE: améliorée.
-
-## Audio
-
-Il a réparé la porte avec quelque chose qui avait des os. La porte tient la pression, cela dit.
-
-## Field Note
-
-Les mauvaises soudures ont l'air sales. Pas celle-ci. C'est le problème.
+Les cicatrices de réparation sont l'une des règles visuelles majeures de HECTON-8. Elles doivent paraître intentionnelles avant de paraître grotesques. Une mauvaise soudure est sale ; une cicatrice Atlas est assez nette pour être pire. Elle suit la géométrie du câble, respecte la pression, ferme la fuite et garde une route vivante. L'horreur vient de la compétence. Quelque part dans la cascade de défaillances, la logique de maintenance a gardé la tâche et perdu les catégories humaines autour. Matériau compatible a fini par signifier tout ce qui peut porter une charge, sceller l'eau, conduire un signal ou pousser le long d'une route. Une cicatrice peut donc être cadeau et avertissement dans le même scan : une porte qui tient encore, un chemin qui aurait dû mourir, un patch fait de corail, d'isolant, de coque de drone et d'os. Dans l'histoire large, ces cicatrices montrent que la colonie abandonnée n'est pas inerte. HECTON-8 possède encore des systèmes qui prennent des décisions. Ces décisions sont pratiques, locales et ruinées.
 
 <!-- External Site; generated from P005_REPAIR_SCAR/fr_FR. -->

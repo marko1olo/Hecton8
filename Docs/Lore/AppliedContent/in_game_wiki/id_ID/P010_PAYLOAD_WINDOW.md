@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Jendela Payload
 
-Jendela Payload membuat ending menjadi fisik. Pemain hanya bisa membawa massa terbatas melalui tekanan, cuaca, timing radiasi, dan geometri Black Keel. Uang, bukti, nama, koordinat, sampel hidup, sinyal Atlas, atau diam tidak bisa semuanya keluar bersama.
+Jendela Payload adalah tempat pilihan akhir menjadi fisik. Pemain hanya dapat memindahkan massa terbatas melalui tekanan, perlindungan badai, waktu radiasi Aegir, dan geometri pemulihan Black Keel. Uang, bukti, nama pekerja, koordinat, sampel hidup, sinyal Atlas, atau diam tidak bisa semuanya keluar bersama.
 
 ## Scanner
 
-Paket naik improvisasi. Bisa meninggalkan samudra jika massa, cuaca, dan geometri carrier cocok.
+Paket naik improvisasi. Ia bisa meninggalkan laut jika massa, cuaca, waktu dosis, dan geometri Black Keel cocok.
 
 ## Terminal
 
-PAYLOAD SLOT: terbatas. WINDOW: terbuka. ROUTE: diperebutkan. CLAIM VALUE: berubah. EVIDENCE STATE: tidak cukup untuk sengketa bersih.
+SLOT PAYLOAD: TERBATAS. JENDELA: TERBUKA. RUTE: DIPEREBUTKAN. PENERIMA: BELUM PASTI. NILAI CLAIM: BERUBAH. STATUS BUKTI: TIDAK CUKUP UNTUK SENGKETA BERSIH.
 
 ## Audio
 
-Jendela terbuka. Itu tidak akan tetap terbuka untuk semuanya.
+Jendela terbuka. Ia tidak akan tetap terbuka untuk semuanya.
 
 ## Field Note
 
-Keluar adalah rute. Keluar bersih adalah mitos.
+Keluar adalah rute. Keluar bersih adalah cerita yang dijual orang setelah orang lain membayar massanya.
 
 <!-- In-Game Wiki; generated from P010_PAYLOAD_WINDOW/id_ID. -->

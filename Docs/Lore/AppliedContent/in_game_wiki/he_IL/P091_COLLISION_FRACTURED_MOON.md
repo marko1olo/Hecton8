@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "ירח שסוע מפגיעה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# ירח שסוע מפגיעה
 
-HE LOC HOLD: HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.
+HECTON-8 נוצר בתוך מערכת Aegir ונבקע מאוחר יותר בפגיעה משיקה. הפצע לא פירק את הירח. הוא הרים מדפי קרום, פתח שברי תמיסת מלח, הזין מסדרונות חמים והשאיר קרקעית עתיקה נגישה דרך חלונות לחץ נדירים. מפות חילוץ עוקבות אחר הנזק הזה, כי הדרכים הבטוחות הן פציעות ישנות שמלאות מים.
 
 ## Scanner
 
-HE LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
+דגימת קרום עתיק. הירח נוצר בחגורת הפסולת של Aegir, ואז פגיעה פתחה אותו מספיק כדי שהאוקיינוס יזכור.
 
 ## Terminal
 
-HE LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+מודל מקור: הצטברות סביב Aegir, פגיעה אלכסונית מאוחרת, תהודת גאות לאחר נעילה. תוצאה: קרום מדורג, סולמות שבר חמים, אגני תמיסת מלח, עורקי זכוכית לחץ, וגישה לא אחידה לקרקעית עמוקה.
 
 ## Audio
 
-HE LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
+הוא נולד כאן. אחר כך משהו הכה חזק מספיק כדי לתת לים מפה.
 
 ## Field Note
 
-HE LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+מיתוס של ירח שנלכד נקי מדי. HECTON-8 נושא פצע מקומי: קרום מורם, תמיסת מלח כבדה, ונביעות שעדיין גובות ריבית.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/he_IL. -->

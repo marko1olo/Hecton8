@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Probe Packet Travel Times"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Probe Packet Travel Times
 
-Probe Packet Travel Times explain how Aegir became a claim before it became a place.
-
-## Scanner
-
-The first Aegir witnesses were packets, not colonists.
-
-## Terminal
-
-SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
-
-## Audio
-
-The probe saw the ocean before anyone had a grave there.
-
-## Field Note
-
-Unmanned craft can spend a career crossing a route before a person bets a body on it.
+Probe packet time made Aegir valuable before it became familiar. A narrow machine could cross, measure, and report while the human institutions behind it were still arguing over budgets and liability. By the time Deep Reach sold confidence, the packets were already old and the risk models already polished. That is the danger of machine-first exploration: the ocean can be priced from stale truth long before anyone understands what it costs to work there.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/en_US. -->

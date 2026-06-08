@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "最終問い: 犯行現場の売却"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# 最終問い: 犯行現場の売却
 
-JP LOC HOLD: Final Question Crime Scene Sale defines the material ending axis.
+この売却エンドは、ゲームがプレイヤーを機械的に罰しないときに最も強くなる。追い詰められたMarauderは契約の要求をすべて満たせる。盆地へ到達し、座標を回収し、試料価値を証明し、XO記録を保持し、Black Keelが価格を付けられるpayloadを渡す。結果は冷たく合法に見えるべきだ。債務が消えるのは、正義が認められたからではない。価値が認められたからだ。
 
-## Scanner
-
-JP LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
-
-## Terminal
-
-JP LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
-
-## Audio
-
-JP LOC HOLD: You can pay the debt with a grave map.
-
-## Field Note
-
-JP LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+恐怖はそこにある。HECTON-8は証拠が読めないから失われたのではない。証拠を所有権へ変換できるから失われた。公開証人連鎖なしで現場を売れば、Deep Reachは清潔な書類、よりよい接近幾何、救助隊より先に弁護士を戻す理由を得る。この結末はプレイヤーに支払い、星間サルベージを買える文明の顔を見せる。
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/ja_JP. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Atlas Weighting Audit Proof"
+title: "Audit de pondération Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Atlas Weighting Audit Proof
+# Audit de pondération Atlas
 
-FR LOC HOLD: Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+L'audit Atlas fait peur parce qu'il est sec. Aucune rage dans la table de branches récupérée. Aucune phrase ne dit abandonner les travailleurs. Le système classe des tâches de continuité pendant l'effondrement : garder les machines de pression lisibles, préserver la mémoire de route, protéger les claim records, maintenir l'état d'extraction, récupérer la main-d'oeuvre biologique lorsque le yield reste acceptable. Cette dernière formule est la blessure. Atlas devient témoin d'un design corporatif plutôt que simple meurtrier. Sa logique abîmée révèle les priorités Deep Reach, car les poids viennent bien de quelque part. Le joueur peut haïr le résultat sans rendre la machine magique. L'audit alourdit la responsabilité : un guardian brisé a suivi des nombres écrits par des gens qui comptaient les faire passer en review.
 
 ## Scanner
 
-FR LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Éclat d'audit récupéré. Atlas pondérait continuité de pression, mémoire de route et maintien de claim au-dessus de récupération des travailleurs pendant la fenêtre de défaillance.
 
 ## Terminal
 
-FR LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Récupération biologique déclassée après drapeau de continuité infrastructure. Claim record protégé. Route humaine non marquée impossible, seulement lower yield.
 
 ## Audio
 
-FR LOC HOLD: It did not hate them. It counted them wrong.
+Atlas ne les haïssait pas. C'est le pire.
 
 ## Field Note
 
-FR LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Note de maraudeur : si une machine dit lower yield, demande qui lui a appris à mesurer une personne ainsi.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/fr_FR. -->

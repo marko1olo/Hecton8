@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Motivo profissional
 
-O motivo profissional dá agência sem fechar biografia.
+Professional Motive dá agência ao Marauder sem travar demais a biografia: competência vem primeiro, investimento pessoal chega por evidências.
 
 ## Scanner
 

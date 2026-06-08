@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # THE CULTS OF THE ABYSS AND PRESSURE MADNESS
 
 > **Source:** Psychological Evaluation Logs, Sector 44 Medical Bay (Recovered).

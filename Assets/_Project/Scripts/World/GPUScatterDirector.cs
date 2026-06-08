@@ -485,6 +485,7 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregister();
@@ -1095,14 +1096,24 @@ namespace Hecton8.World
             if (!isActiveAndEnabled)
                 return;
 
-            _scatterAupGenerationOffsetXZDouble = new double2(shiftData.NewTotalOffsetDouble.x, shiftData.NewTotalOffsetDouble.z);
+            double3 newTotalOffsetDouble = shiftData.NewTotalOffsetDouble;
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!math.all(math.isfinite(newTotalOffsetDouble)) ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude))
+            {
+                return;
+            }
+
+            _scatterAupGenerationOffsetXZDouble = new double2(newTotalOffsetDouble.x, newTotalOffsetDouble.z);
             _scatterStableCellBaseXZ = Vector2.zero;
             _lastOriginShiftSequence = shiftData.Sequence;
             _depthPyramidInvalidatedFrame = shiftData.Frame;
             _scatterFrameIndex = 0;
             if (_hasFoveatedVisibilitySnapshot)
             {
-                _lastFoveatedCenter += -shiftData.ShiftOffset;
+                _lastFoveatedCenter += -shiftOffset;
                 _hasFoveatedVisibilitySnapshot = false;
             }
 
@@ -1958,8 +1969,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            if (vegetationBridge == null)
-                vegetationBridge = GlobalRegistry.MapMagicVegetation;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
 
             if (_playerRuntimeContext == null)
                 _playerRuntimeContext = GlobalRegistry.Player;

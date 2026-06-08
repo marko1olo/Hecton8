@@ -9,32 +9,35 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Artikel Atlas-6 Terkunci Spoiler"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Artikel Atlas-6 Terkunci Spoiler
 
-ID LOC HOLD: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6 adalah pertanyaan mesin HECTON-8 yang terkunci spoiler: kecerdasan industri rusak yang terikat dengan pemeliharaan, perbaikan, klasifikasi, dan samudra itu sendiri. Copy publik harus melindungi pengungkapan. Ia boleh memberi sinyal ambiguitas etis, tetapi tidak boleh menyelesaikan pilihan final terlebih dahulu atau mereduksi Atlas menjadi penjahat kartun.
 
 ## Scanner
 
-ID LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+Jangan membuka Atlas sebagai pengungkapan monster. Kunci sampai pemain melihat perbaikan, klasifikasi, dan bahaya berbagi mesin yang sama.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+TINGKAT ARTIKEL PUBLIK / ATLAS-6
+diizinkan sebelum gate: kecerdasan industri rusak, logika pemeliharaan, keterikatan samudra, ambiguitas etis
+dikunci hingga ditemukan: rute payload final, konsekuensi receiver, argumen pematian atau pelestarian
+catatan editor: tanpa framing evil AI; pertanyaan guardian rusak hanya setelah bukti.
 
 ## Audio
 
-ID LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+Jika kau menamainya terlalu awal, ia menjadi penjahat. Jika kau menunggu, ia menjadi pertanyaan.
 
 ## Field Note
 
-ID LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+Kunci namanya sampai ada cukup karat di tangan pemain untuk berdebat dengannya.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/id_ID. -->

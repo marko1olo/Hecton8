@@ -7,10 +7,13 @@
 [CONTRACT] Unity 6.0 (6000.4) pure GPU-driven Swarm Rendering architecture.
 [RULE] SkinnedMeshRenderer PERMANENTLY FORBIDDEN for background fauna (Boids/Swarms). CPU skinning for 5000+ entities = instant architectural failure on i3-10gen.
 [RULE] Swarm animation MUST execute exclusively via Vertex Animation Textures (VAT).
-[RULE] Rendering pipeline MUST route through `Graphics.RenderMeshIndirect` driven by Compute Shaders. Zero CPU draw calls per fish.
-[RULE] Unity 6 `GPU Resident Drawer` compatibility enforced globally. `BatchRendererGroup Variants` = `Keep All`.
+[RULE] Rendering pipeline MUST prefer BatchRendererGroup / GPU Resident Drawer where the swarm family is representable as regular MeshRenderer-compatible instances.
+[RULE] VAT swarm families that are not representable through GPU Resident Drawer may use `Graphics.RenderMeshIndirect` driven by Compute Shaders only with an owner route, profiler proof, and GPU sovereignty exception. Zero CPU skinning per fish.
+[RULE] Unity 6 `GPU Resident Drawer` compatibility remains the global default. `BatchRendererGroup Variants` = `Keep All`.
+[REQ] Player-visible GPU-driven animation, VAT, flora sway, creature motion, and distant motion acceptance inherits the Visual Reference Parity Gate. Captures must beat mandatory references plus best-known internal baseline/current rejection matrix before animation/VAT polish is credited.
 [FORBID] Updating Animator parameters per entity. Animator component banned on boid prefabs.
 [FORBID] `new ComputeBuffer()` per frame. Allocate once at scene init. Use Unity 6 `GraphicsBuffer` (Target = `Structured`).
+[FORBID] VAT playback, motion density, shimmer, sway, or cheaper animation as acceptance when silhouette, material truth, route cue, creature/flora readability, and compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and recover animation/asset/material owners first.
 
 ---
 
@@ -40,7 +43,7 @@ struct BoidInstance {
 [FLOW] CPU dispatches Compute Shader (`CS_Main`) once per frame.
 [FLOW] CS reads `GraphicsBuffer _AllBoids`.
 [FLOW] CS evaluates Frustum + Distance. Outputs to `AppendStructuredBuffer _VisibleLOD0, _VisibleLOD1, _VisibleLOD2`.
-[FLOW] CS `InterlockedAdd` updates `_IndirectArgs` buffer for `DrawMeshInstancedIndirect`.
+[FLOW] CS `InterlockedAdd` updates `_IndirectArgs` buffer for `Graphics.RenderMeshIndirect` or an approved BRG indirect route.
 
 ### 2.1 Distance Culling Tiers
 LOD0 (< 20m) : Full VAT animation. High-poly mesh. Octahedron normal reconstruction.
@@ -161,7 +164,8 @@ VAT Import script MUST scrub texture via AssetPostprocessor, replacing `NaN` wit
 
 [BOOT] Assert `GraphicsBuffer.Target.Structured` support.
 [BOOT] Validate BoidInstance size `sizeof(BoidInstance) == 32`.
-[BOOT] Assert URP Asset `GPU Occlusion` is active.[RUNTIME] Frame Debugger Verification: Swarm rendering MUST appear as `DrawMeshInstancedIndirect`. Total CPU Draw Calls for 10,000 boids = 3. (LOD0, LOD1, LOD2).
+[BOOT] Assert URP Asset `GPU Occlusion` is active.
+[RUNTIME] Frame Debugger verification: swarm rendering appears as BatchRendererGroup / GPU Resident Drawer, or as an explicitly approved `Graphics.RenderMeshIndirect` pass for non-GRD VAT swarms. Raw `DrawMeshInstancedIndirect` is rejected unless a dedicated route exception names the owner, measured win, and fallback.
 [RUNTIME] Profiler verification: CPU skinning cost MUST = 0.0ms.
 ---
 

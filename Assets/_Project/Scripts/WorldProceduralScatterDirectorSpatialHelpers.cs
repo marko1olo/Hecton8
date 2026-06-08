@@ -84,12 +84,20 @@ namespace Hecton8.World
         {
             absolutePosition = default;
             IPlayerRuntimeContext player = _cachedPlayerContext;
-            var movement = player != null ? player.PlayerMovement : null;
-            if (movement != null)
+            if (player != null)
             {
-                var aup = movement.CurrentAup.ToAbsoluteDouble3();
-                absolutePosition = new Vector3((float)aup.x, (float)aup.y, (float)aup.z);
-                return true;
+                if (player.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite())
+                {
+                    double3 aup = movementState.PredictedAup.ToAbsoluteDouble3();
+                    absolutePosition = new Vector3((float)aup.x, (float)aup.y, (float)aup.z);
+                    return math.isfinite(absolutePosition.x) &&
+                           math.isfinite(absolutePosition.y) &&
+                           math.isfinite(absolutePosition.z);
+                }
+
+                return false;
             }
 
             if (playerTransform == null)

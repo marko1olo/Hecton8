@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Aegir Primary Light and Radiation"
+title: "Свет основной звезды Aegir и радиация"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Aegir Primary Light and Radiation
+# Свет основной звезды Aegir и радиация
 
-RU LOC HOLD: The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+Основная звезда Aegir - устойчивый K-класс: достаточно теплая для янтарного света на рабочих палубах и достаточно спокойная для длинных инфраструктурных расписаний. Опасность дает магнитосфера газового гиганта. Пояса, заряженные трассы, лунные тени и штормовой шум превращают перелет в календарь радиационных окон.
 
 ## Scanner
 
-RU LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+Звездная карта. Теплый K-карлик дает Aegir читаемое небо; пояса гиганта превращают любой класс защиты в расписание.
 
 ## Terminal
 
-RU LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+ЗВЕЗДНАЯ КАРТА RAN A-346: излучение основной звезды остается в рабочих допусках колонии. Магнитосфера Aegir дважды за оборот утяжеляет внутренние трассы; дешевые корпуса ждут, оплаченные carrier прожигают окно.
 
 ## Audio
 
-RU LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+Света достаточно, чтобы читать. Небо от этого не стало добрым.
 
 ## Field Note
 
-RU LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+На Aegir есть дневной свет. Поэтому у каждого дешевого уплотнения и позднего burn все равно есть цена.
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/ru_RU. -->

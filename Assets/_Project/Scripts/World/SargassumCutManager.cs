@@ -22,7 +22,7 @@ namespace Hecton8.World
     {
         private const int StampCommandCapacity = 16;
         private const int StampThreadGroupSize = 8;
-        private const float DefaultWaterLevel = 4900f;
+        private const float DefaultWaterLevel = 14.02f;
         private const int RecentStampCapacity = 16;
         private const int DamageVolumeStampCapacity = 16;
         private const int DamageVolumeThreadGroupSize = 4;
@@ -33,6 +33,8 @@ namespace Hecton8.World
         private const float DamageVolumeEnergyEpsilon = 0.0001f;
         private const float PlasmaCutThermalEventLifetimeSeconds = 1.5f;
         private const float PlasmaCutThermalDeltaCelsius = 220f;
+        private const uint DebrisBurstOverflowWarningHash = 0x5343444Fu;
+        private const uint DebrisBurstContextHash = 0x53434442u;
         private const SystemID VaultOwnerSystemId = SystemID.WorldSargassum;
         private const BufferID StampCommandsBufferId = BufferID.SargassumCutStampCommands;
         private const BufferID DamageVolumeStampCommandsBufferId = BufferID.SargassumCutDamageVolumeStampCommands;
@@ -252,6 +254,7 @@ namespace Hecton8.World
         private GraphicsBuffer _damageVolumeStampCommandBufferB;
         private GraphicsBuffer _activeDamageVolumeStampCommandBuffer;
         private bool _serviceRegistered;
+        private bool _runtimeRoutesRetiredAfterOwnershipLoss;
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
@@ -283,6 +286,8 @@ namespace Hecton8.World
         private IDataVault _dataVault;
         private int _queuedDamageVolumeStampCount;
         private int _damageVolumeStampOverflowCoalesceCount;
+        private int _debrisBurstOverflowCount;
+        private int _lastDebrisBurstOverflowTelemetryFrame = -1;
         private Vector3 _damageVolumeWorldMin;
         private Vector3 _damageVolumeWorldSize;
         private int _lastDamageVolumeDispatchFrame = -1;
@@ -351,12 +356,22 @@ namespace Hecton8.World
         public bool SampleRecentCut01(Vector3 positionWS, float radiusWS, out float cut01)
         {
             cut01 = 0f;
+            if (!IsFiniteVector3(positionWS) || !math.isfinite(radiusWS))
+                return false;
+
             float effectiveRadius = Mathf.Max(0f, radiusWS);
+            float lifetime = math.isfinite(recentCutLifetime) ? Mathf.Max(0.01f, recentCutLifetime) : 0.01f;
             bool hasCut = false;
 
             for (int i = 0; i < RecentStampCapacity; i++)
             {
                 RecentCutStamp stamp = _recentCutStamps[i];
+                if (!IsFiniteRecentCutStamp(in stamp))
+                {
+                    _recentCutStamps[i] = default;
+                    continue;
+                }
+
                 if (stamp.RemainingLifetime <= 0f || stamp.Strength <= 0f || stamp.RadiusWS <= 0f)
                     continue;
 
@@ -369,7 +384,7 @@ namespace Hecton8.World
                     continue;
 
                 float radialFalloff = 1f - distanceSq / Mathf.Max(combinedRadiusSq, 0.000001f);
-                float temporalFalloff = Mathf.Clamp01(stamp.RemainingLifetime / Mathf.Max(0.01f, recentCutLifetime));
+                float temporalFalloff = Mathf.Clamp01(stamp.RemainingLifetime / lifetime);
                 float influence = stamp.Strength * radialFalloff * temporalFalloff;
                 if (influence <= cut01)
                     continue;
@@ -393,12 +408,22 @@ namespace Hecton8.World
         {
             accumulatedAreaWS = 0f;
             strongestCut01 = 0f;
+            if (!IsFiniteVector3(positionWS) || !math.isfinite(radiusWS))
+                return false;
+
             float effectiveRadius = Mathf.Max(0f, radiusWS);
+            float lifetime = math.isfinite(recentCutLifetime) ? Mathf.Max(0.01f, recentCutLifetime) : 0.01f;
             bool hasCut = false;
 
             for (int i = 0; i < RecentStampCapacity; i++)
             {
                 RecentCutStamp stamp = _recentCutStamps[i];
+                if (!IsFiniteRecentCutStamp(in stamp))
+                {
+                    _recentCutStamps[i] = default;
+                    continue;
+                }
+
                 if (stamp.RemainingLifetime <= 0f || stamp.Strength <= 0f || stamp.RadiusWS <= 0f)
                     continue;
 
@@ -411,7 +436,7 @@ namespace Hecton8.World
                     continue;
 
                 float radialFalloff = 1f - distanceSq / Mathf.Max(combinedRadiusSq, 0.000001f);
-                float temporalFalloff = Mathf.Clamp01(stamp.RemainingLifetime / Mathf.Max(0.01f, recentCutLifetime));
+                float temporalFalloff = Mathf.Clamp01(stamp.RemainingLifetime / lifetime);
                 float influence = stamp.Strength * radialFalloff * temporalFalloff;
                 if (influence <= 0f)
                     continue;
@@ -437,10 +462,18 @@ namespace Hecton8.World
         /// <returns>True when the world-space cut was written into the active scrolling mask.</returns>
         public bool RegisterExternalCut(Vector3 positionWS, float radiusWS, float strength, Vector3 directionWS, float bubbleWeight = 1f)
         {
+            if (!IsFiniteVector3(positionWS) ||
+                !math.isfinite(radiusWS) ||
+                !math.isfinite(strength))
+            {
+                return false;
+            }
+
             float clampedRadius = Mathf.Max(0.05f, radiusWS);
             float clampedStrength = Mathf.Clamp01(strength);
             if (clampedStrength <= 0f)
                 return false;
+            float safeBubbleWeight = math.isfinite(bubbleWeight) ? Mathf.Max(0f, bubbleWeight) : 1f;
 
             ResolveDependencies();
             RefreshMaskWorldRect();
@@ -461,7 +494,7 @@ namespace Hecton8.World
             RegisterRecentCutHeatStamp(positionWS, clampedRadius, clampedStrength);
 
             Vector3 burstDirection = NormalizeVector3Fast(directionWS, Vector3.up);
-            QueueDebrisBurst(positionWS, burstDirection, clampedStrength, bubbleWeight);
+            QueueDebrisBurst(positionWS, burstDirection, clampedStrength, safeBubbleWeight);
             _debugLastStampPosition = positionWS;
             _debugLastStampCount++;
             return wroteMask;
@@ -474,15 +507,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            SargassumCutManager registered = GlobalRegistry.SargassumCut;
-            if (registered != null && registered != this)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[SargassumCutManager] Duplicate instance detected. Destroying the newer component.", this);
-#endif
-                Destroy(this);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             TryRegisterService();
             maskResolution = Mathf.Clamp(maskResolution, 512, 2048);
@@ -500,13 +526,20 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
+            TryRegisterService();
+            if (!_serviceRegistered)
+                return;
+
             TryRegisterHotSwapListener();
             CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             CreateResources();
             PublishGlobals();
-            TryRegisterService();
             TryRegister();
+            _runtimeRoutesRetiredAfterOwnershipLoss = false;
         }
 
         private void OnDisable()
@@ -514,6 +547,7 @@ namespace Hecton8.World
             TryUnregisterService();
             TryUnregister();
             TryUnregisterHotSwapListener();
+            ResetTransientRuntimeQueues();
             Shader.SetGlobalFloat(_CutMaskActiveId, 0f);
             Shader.SetGlobalFloat(_DamageVolumeActiveId, 0f);
             PublishRecentCutHeatCount(0);
@@ -533,6 +567,7 @@ namespace Hecton8.World
         /// <param name="deltaTime">Gameplay frame delta time.</param>
         public void Tick(float deltaTime)
         {
+            deltaTime = math.isfinite(deltaTime) ? Mathf.Max(0f, deltaTime) : 0f;
             DecayRecentCutStamps(deltaTime);
 
             RefreshMaskWorldRect();
@@ -568,7 +603,7 @@ namespace Hecton8.World
                 QueueDebrisBurst(knifeStampPosition, knifeStampDirection, knifeCutStrength, 0.45f);
                 wrotePass = true;
                 _debugLastStampCount++;
-                _knifeStampCooldownRemaining = knifeStampCooldown;
+                _knifeStampCooldownRemaining = math.isfinite(knifeStampCooldown) ? Mathf.Max(0f, knifeStampCooldown) : 0f;
                 strongestStampThisFrame = Mathf.Max(strongestStampThisFrame, knifeCutStrength);
             }
 
@@ -579,7 +614,8 @@ namespace Hecton8.World
             if (!wrotePass && !needsRecoveryPass && !HasPendingMaskUpdate() && !hasDamageVolumeWork)
                 return;
 
-            float recoveredEnergy = Mathf.Max(0f, _maskEnergy - recoveryPerSecond * deltaTime);
+            float recoveryRate = math.isfinite(recoveryPerSecond) ? Mathf.Max(0f, recoveryPerSecond) : 0f;
+            float recoveredEnergy = Mathf.Max(0f, _maskEnergy - recoveryRate * deltaTime);
             _maskEnergy = wrotePass ? Mathf.Max(recoveredEnergy, strongestStampThisFrame) : recoveredEnergy;
             _debugMaskEnergy = _maskEnergy;
             if (hasDamageVolumeWork)
@@ -622,7 +658,10 @@ namespace Hecton8.World
 
             FlushPendingTextureClears();
             ProcessQueuedMaskUpdate();
-            ProcessQueuedDamageVolumeUpdate(_pendingDamageVolumeDeltaTime);
+            float damageVolumeDeltaTime = math.isfinite(_pendingDamageVolumeDeltaTime)
+                ? Mathf.Max(0f, _pendingDamageVolumeDeltaTime)
+                : 0f;
+            ProcessQueuedDamageVolumeUpdate(damageVolumeDeltaTime);
             _pendingDamageVolumeDeltaTime = 0f;
             FlushDebrisBursts();
 
@@ -636,8 +675,8 @@ namespace Hecton8.World
 
         private void ResolveDependencies()
         {
-            if (mapMagicVegetationBridge == null)
-                mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (mapMagicVegetationBridge == null || !mapMagicVegetationBridge.isActiveAndEnabled)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref mapMagicVegetationBridge);
 
             Transform runtimePlayerTransform = _playerContext != null
                 ? _playerContext.PlayerTransform
@@ -663,8 +702,8 @@ namespace Hecton8.World
 
         private void ResolveDependenciesCold(bool allowComponentLookup)
         {
-            if (mapMagicVegetationBridge == null)
-                mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (mapMagicVegetationBridge == null || !mapMagicVegetationBridge.isActiveAndEnabled)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref mapMagicVegetationBridge);
 
             _playerDependencyRefreshRequested = false;
             Transform runtimePlayerTransform = _playerContext != null
@@ -718,6 +757,12 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.SargassumCutRuntime)
+            {
+                ReconcileRuntimeOwnerFromRegistryReplacement(previousService, currentService);
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 if (playerToolManagerOverride == null)
@@ -1080,7 +1125,7 @@ namespace Hecton8.World
 
         private void ReleaseResources()
         {
-            ResetQueuedMaskUpdateState();
+            ResetTransientRuntimeQueues();
             ReleaseMaskTexture(ref _maskRead);
             ReleaseMaskTexture(ref _maskWrite);
 
@@ -1271,10 +1316,17 @@ namespace Hecton8.World
         private void RefreshMaskWorldRect(bool forceClear = false)
         {
             float desiredWorldSize = Mathf.Max(minimumMaskWorldSize, 128f);
+            if (!math.isfinite(desiredWorldSize))
+                desiredWorldSize = 128f;
+
             float snapWorldStride = ResolveSnapWorldStride(desiredWorldSize);
             Vector2 desiredCenterXZ = _playerTransform != null
                 ? QuantizeCenter(new Vector2(_playerTransform.position.x, _playerTransform.position.z), snapWorldStride)
                 : (_maskWorldSize > 0f ? _maskCenterXZ : Vector2.zero);
+            if (!math.all(math.isfinite(new float2(desiredCenterXZ.x, desiredCenterXZ.y))))
+                desiredCenterXZ = _maskWorldSize > 0f && math.all(math.isfinite(new float2(_maskCenterXZ.x, _maskCenterXZ.y)))
+                    ? _maskCenterXZ
+                    : Vector2.zero;
 
             bool mustClear = forceClear || _maskWorldSize <= 0f || Mathf.Abs(desiredWorldSize - _maskWorldSize) > 0.001f;
             Vector2 centerDelta = desiredCenterXZ - _maskCenterXZ;
@@ -1342,15 +1394,51 @@ namespace Hecton8.World
 
         private float ResolveMaskWaterLevel(float fallbackY)
         {
-            if (mapMagicVegetationBridge != null && mapMagicVegetationBridge.ActiveSurfaceInstanceCount > 0)
-                return mapMagicVegetationBridge.ActiveSurfaceDrawBounds.center.y;
+            if (mapMagicVegetationBridge != null &&
+                mapMagicVegetationBridge.ActiveSurfaceInstanceCount > 0 &&
+                TryResolveWaterLevel(mapMagicVegetationBridge.ActiveSurfaceDrawBounds.center.y, out float vegetationWaterLevel))
+            {
+                return vegetationWaterLevel;
+            }
 
-            return Mathf.Max(DefaultWaterLevel, fallbackY);
+            MapMagicBridge terrainBridge = null;
+            if (WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref terrainBridge) &&
+                TryResolveWaterLevel(terrainBridge.WaterSurfaceLevel, out float terrainWaterLevel))
+            {
+                return terrainWaterLevel;
+            }
+
+            return TryResolveWaterLevel(fallbackY, out float fallbackWaterLevel)
+                ? math.max(DefaultWaterLevel, fallbackWaterLevel)
+                : DefaultWaterLevel;
+        }
+
+        private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)
+        {
+            if (math.isfinite(candidateWaterLevel) &&
+                math.abs(candidateWaterLevel) > 0.0001f &&
+                math.abs(candidateWaterLevel) <= 1000f)
+            {
+                waterLevel = candidateWaterLevel;
+                return true;
+            }
+
+            waterLevel = DefaultWaterLevel;
+            return false;
         }
 
         private void ExecuteStampPass(Vector3 positionWS, float radiusWS, float strength, float deltaTime)
         {
-            float recovery = Mathf.Max(0f, recoveryPerSecond * Mathf.Max(0f, deltaTime));
+            if (!IsFiniteVector3(positionWS) ||
+                !math.isfinite(radiusWS) ||
+                !math.isfinite(strength) ||
+                !math.isfinite(deltaTime))
+            {
+                return;
+            }
+
+            float recoveryRate = math.isfinite(recoveryPerSecond) ? Mathf.Max(0f, recoveryPerSecond) : 0f;
+            float recovery = Mathf.Max(0f, recoveryRate * Mathf.Max(0f, deltaTime));
             if (recovery > _pendingRecovery)
                 _pendingRecovery = recovery;
 
@@ -1395,6 +1483,10 @@ namespace Hecton8.World
         private bool TryCoalesceOverflowStamp(Vector2 uvCenter, float uvRadius, float strength, Vector3 positionWS)
         {
             if (_queuedStampCount <= 0 ||
+                !math.all(math.isfinite(new float2(uvCenter.x, uvCenter.y))) ||
+                !math.isfinite(uvRadius) ||
+                !math.isfinite(strength) ||
+                !IsFiniteVector3(positionWS) ||
                 !TryAcquireVaultBuffer(
                     in _queuedStampCommandsHandle,
                     StampCommandCapacity,
@@ -1409,6 +1501,9 @@ namespace Hecton8.World
                 int index = math.min(_queuedStampCount - 1, StampCommandCapacity - 1);
                 StampCommand existing = queuedStampCommands[index];
                 Vector4 payload = existing.UvRadiusStrength;
+                if (!IsFiniteVector4(payload))
+                    payload = new Vector4(uvCenter.x, uvCenter.y, Mathf.Max(0.0001f, uvRadius), Mathf.Clamp01(strength));
+
                 float2 existingCenter = new float2(payload.x, payload.y);
                 float coverageRadius = math.distance(existingCenter, new float2(uvCenter.x, uvCenter.y)) + uvRadius;
                 payload.z = math.max(payload.z, coverageRadius);
@@ -1429,11 +1524,17 @@ namespace Hecton8.World
 
         private void DecayRecentCutStamps(float deltaTime)
         {
-            if (deltaTime <= 0f)
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
                 return;
 
             for (int i = 0; i < RecentStampCapacity; i++)
             {
+                if (!IsFiniteRecentCutStamp(in _recentCutStamps[i]))
+                {
+                    _recentCutStamps[i] = default;
+                    continue;
+                }
+
                 if (_recentCutStamps[i].RemainingLifetime <= 0f)
                     continue;
 
@@ -1443,12 +1544,28 @@ namespace Hecton8.World
 
         private void RegisterRecentCutStamp(Vector3 positionWS, float radiusWS, float strength)
         {
+            if (!IsFiniteVector3(positionWS) ||
+                !math.isfinite(radiusWS) ||
+                !math.isfinite(strength))
+            {
+                return;
+            }
+
+            float clampedRadius = Mathf.Max(0.05f, radiusWS);
+            float clampedStrength = Mathf.Clamp01(strength);
+            float lifetime = math.isfinite(recentCutLifetime) ? Mathf.Max(0.01f, recentCutLifetime) : 0.01f;
             int targetIndex = -1;
             float weakestScore = float.MaxValue;
 
             for (int i = 0; i < RecentStampCapacity; i++)
             {
                 RecentCutStamp stamp = _recentCutStamps[i];
+                if (!IsFiniteRecentCutStamp(in stamp))
+                {
+                    targetIndex = i;
+                    break;
+                }
+
                 if (stamp.RemainingLifetime <= 0f)
                 {
                     targetIndex = i;
@@ -1469,22 +1586,40 @@ namespace Hecton8.World
             _recentCutStamps[targetIndex] = new RecentCutStamp
             {
                 PositionWS = positionWS,
-                RadiusWS = Mathf.Max(0.05f, radiusWS),
-                Strength = Mathf.Clamp01(strength),
-                RemainingLifetime = recentCutLifetime
+                RadiusWS = clampedRadius,
+                Strength = clampedStrength,
+                RemainingLifetime = lifetime
             };
         }
 
         private void RegisterRecentCutHeatStamp(Vector3 positionWS, float radiusWS, float strength)
         {
+            if (!IsFiniteVector3(positionWS) ||
+                !math.isfinite(radiusWS) ||
+                !math.isfinite(strength))
+            {
+                return;
+            }
+
             float currentTime = ResolveThermalShaderClockSeconds();
-            float lifetime = Mathf.Max(0.01f, shaderScarLifetime);
+            if (!math.isfinite(currentTime))
+                return;
+
+            float clampedRadius = Mathf.Max(0.05f, radiusWS);
+            float clampedStrength = Mathf.Clamp01(strength);
+            float lifetime = math.isfinite(shaderScarLifetime) ? Mathf.Max(0.01f, shaderScarLifetime) : 0.01f;
             int targetIndex = -1;
             float weakestScore = float.MaxValue;
 
             for (int i = 0; i < RecentStampCapacity; i++)
             {
                 RecentCutHeatStamp stamp = _recentCutHeatStamps[i];
+                if (!IsFiniteRecentCutHeatStamp(in stamp))
+                {
+                    targetIndex = i;
+                    break;
+                }
+
                 float remainingLifetime = (stamp.StartTime + stamp.Lifetime) - currentTime;
                 if (remainingLifetime <= 0f)
                 {
@@ -1506,21 +1641,21 @@ namespace Hecton8.World
             _recentCutHeatStamps[targetIndex] = new RecentCutHeatStamp
             {
                 PositionWS = positionWS,
-                RadiusWS = Mathf.Max(0.05f, radiusWS),
-                Strength = Mathf.Clamp01(strength),
+                RadiusWS = clampedRadius,
+                Strength = clampedStrength,
                 StartTime = currentTime,
                 Lifetime = lifetime
             };
             WorldSpatialHashGrid.RegisterTransientEvent(
                 positionWS,
-                Mathf.Max(0.05f, radiusWS),
-                Mathf.Clamp01(strength),
+                clampedRadius,
+                clampedStrength,
                 PlasmaCutThermalEventLifetimeSeconds,
                 SpatialTransientEventType.ThermalGradient,
                 SpatialInteractionFlags.ThermalReceiver,
                 FieldTargetRole.Generic,
                 0,
-                PlasmaCutThermalDeltaCelsius * Mathf.Clamp01(strength));
+                PlasmaCutThermalDeltaCelsius * clampedStrength);
             _recentCutHeatDirty = true;
         }
 
@@ -1531,8 +1666,20 @@ namespace Hecton8.World
 
         private void QueueDebrisBurst(Vector3 positionWS, Vector3 directionWS, float cutStrength, float bubbleWeight)
         {
-            if (_pendingDebrisBurstCount >= _pendingDebrisBursts.Length)
+            if (!IsFiniteVector3(positionWS) ||
+                !IsFiniteVector3(directionWS) ||
+                !math.isfinite(cutStrength) ||
+                !math.isfinite(bubbleWeight))
+            {
                 return;
+            }
+
+            if (_pendingDebrisBurstCount >= _pendingDebrisBursts.Length)
+            {
+                TryCoalesceOverflowDebrisBurst(positionWS, directionWS, cutStrength, bubbleWeight);
+                ReportDebrisBurstOverflow();
+                return;
+            }
 
             _pendingDebrisBursts[_pendingDebrisBurstCount++] = new PendingDebrisBurst
             {
@@ -1541,6 +1688,50 @@ namespace Hecton8.World
                 CutStrength = cutStrength,
                 BubbleWeight = bubbleWeight
             };
+        }
+
+        private bool TryCoalesceOverflowDebrisBurst(Vector3 positionWS, Vector3 directionWS, float cutStrength, float bubbleWeight)
+        {
+            if (_pendingDebrisBursts == null || _pendingDebrisBursts.Length == 0)
+                return false;
+
+            int targetIndex = -1;
+            float weakestScore = float.MaxValue;
+            bool replacingInvalidSlot = false;
+            int activeCount = math.min(_pendingDebrisBurstCount, _pendingDebrisBursts.Length);
+            for (int i = 0; i < activeCount; i++)
+            {
+                PendingDebrisBurst burst = _pendingDebrisBursts[i];
+                if (!IsFinitePendingDebrisBurst(in burst))
+                {
+                    targetIndex = i;
+                    replacingInvalidSlot = true;
+                    break;
+                }
+
+                float score = burst.CutStrength * Mathf.Max(0.1f, burst.BubbleWeight);
+                if (score < weakestScore)
+                {
+                    weakestScore = score;
+                    targetIndex = i;
+                }
+            }
+
+            if (targetIndex < 0)
+                return false;
+
+            float incomingScore = cutStrength * Mathf.Max(0.1f, bubbleWeight);
+            if (!replacingInvalidSlot && incomingScore < weakestScore)
+                return false;
+
+            _pendingDebrisBursts[targetIndex] = new PendingDebrisBurst
+            {
+                PositionWS = positionWS,
+                DirectionWS = directionWS,
+                CutStrength = cutStrength,
+                BubbleWeight = bubbleWeight
+            };
+            return true;
         }
 
         private void FlushDebrisBursts()
@@ -1554,10 +1745,62 @@ namespace Hecton8.World
             for (int i = 0; i < _pendingDebrisBurstCount; i++)
             {
                 PendingDebrisBurst burst = _pendingDebrisBursts[i];
+                if (!IsFinitePendingDebrisBurst(in burst))
+                    continue;
+
                 debrisParticleSystem.EmitBurst(burst.PositionWS, burst.DirectionWS, burst.CutStrength, burst.BubbleWeight);
             }
 
             _pendingDebrisBurstCount = 0;
+        }
+
+        private static bool IsFinitePendingDebrisBurst(in PendingDebrisBurst burst)
+        {
+            return IsFiniteVector3(burst.PositionWS) &&
+                   IsFiniteVector3(burst.DirectionWS) &&
+                   math.isfinite(burst.CutStrength) &&
+                   math.isfinite(burst.BubbleWeight) &&
+                   burst.CutStrength >= 0f &&
+                   burst.BubbleWeight >= 0f;
+        }
+
+        private static bool IsFiniteRecentCutStamp(in RecentCutStamp stamp)
+        {
+            return stamp.RemainingLifetime <= 0f ||
+                   (IsFiniteVector3(stamp.PositionWS) &&
+                    math.isfinite(stamp.RadiusWS) &&
+                    math.isfinite(stamp.Strength) &&
+                    math.isfinite(stamp.RemainingLifetime) &&
+                    stamp.RadiusWS > 0f &&
+                    stamp.Strength >= 0f &&
+                    stamp.RemainingLifetime >= 0f);
+        }
+
+        private static bool IsFiniteRecentCutHeatStamp(in RecentCutHeatStamp stamp)
+        {
+            return stamp.Lifetime <= 0f ||
+                   (IsFiniteVector3(stamp.PositionWS) &&
+                    math.isfinite(stamp.RadiusWS) &&
+                    math.isfinite(stamp.Strength) &&
+                    math.isfinite(stamp.StartTime) &&
+                    math.isfinite(stamp.Lifetime) &&
+                    stamp.RadiusWS > 0f &&
+                    stamp.Strength >= 0f &&
+                    stamp.Lifetime >= 0f);
+        }
+
+        private void ReportDebrisBurstOverflow()
+        {
+            _debrisBurstOverflowCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastDebrisBurstOverflowTelemetryFrame == frame)
+                return;
+
+            _lastDebrisBurstOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                DebrisBurstOverflowWarningHash,
+                DebrisBurstContextHash,
+                Mathf.Max(1, _debrisBurstOverflowCount));
         }
 
         private void QueueDamageVolumeVisualSync(float deltaTime)
@@ -1565,14 +1808,24 @@ namespace Hecton8.World
             if (_queuedDamageVolumeStampCount <= 0 && _damageVolumeEnergy <= DamageVolumeEnergyEpsilon)
                 return;
 
+            if (!math.isfinite(deltaTime))
+                deltaTime = 0f;
+
             if (deltaTime > _pendingDamageVolumeDeltaTime)
                 _pendingDamageVolumeDeltaTime = Mathf.Max(0f, deltaTime);
         }
 
         private bool IsInsideMaskWorldRect(Vector3 positionWS)
         {
-            if (_maskWorldSize <= 0f)
+            if (!IsFiniteVector3(positionWS) ||
+                !math.isfinite(_maskWorldSize) ||
+                !IsFiniteVector4(_maskWorldRect) ||
+                _maskWorldSize <= 0f ||
+                _maskWorldRect.z <= 0f ||
+                _maskWorldRect.w <= 0f)
+            {
                 return false;
+            }
 
             float maxX = _maskWorldRect.x + _maskWorldSize;
             float maxZ = _maskWorldRect.y + _maskWorldSize;
@@ -1632,6 +1885,24 @@ namespace Hecton8.World
         {
             float magnitudeSq = vector.sqrMagnitude;
             return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
+        private static bool IsFiniteVector4(Vector4 value)
+        {
+            return math.all(math.isfinite(new float4(value.x, value.y, value.z, value.w)));
+        }
+
+        private static bool IsFiniteDamageVolumeStampCommand(in DamageVolumeStampCommand command)
+        {
+            return IsFiniteVector4(command.PositionRadius) &&
+                   IsFiniteVector4(command.StrengthPadding) &&
+                   command.PositionRadius.w > 0f &&
+                   command.StrengthPadding.x >= 0f;
         }
 
         private void RequestMaskClear(bool resetQueuedState)
@@ -1736,6 +2007,21 @@ namespace Hecton8.World
             _stampOverflowCoalesceCount = 0;
         }
 
+        private void ResetTransientRuntimeQueues()
+        {
+            ResetQueuedMaskUpdateState();
+            _queuedDamageVolumeStampCount = 0;
+            _damageVolumeStampOverflowCoalesceCount = 0;
+            _pendingDamageVolumeDeltaTime = 0f;
+            _damageVolumeEnergy = 0f;
+            _pendingDebrisBurstCount = 0;
+            _debrisBurstOverflowCount = 0;
+            _maskClearRequested = false;
+            _damageVolumeClearRequested = false;
+            _globalsDirty = false;
+            _pendingHeatRefresh = false;
+        }
+
         private bool HasPendingMaskUpdate()
         {
             return _queuedStampCount > 0 ||
@@ -1830,6 +2116,8 @@ namespace Hecton8.World
             float minY = ResolveMaskWaterLevel(_playerTransform != null ? _playerTransform.position.y : DefaultWaterLevel) - damageVolumeHeight;
             Vector3 desiredWorldMin = new Vector3(minX, minY, minZ);
             Vector3 desiredWorldSize = new Vector3(worldSize, damageVolumeHeight, worldSize);
+            if (!IsFiniteVector3(desiredWorldMin) || !IsFiniteVector3(desiredWorldSize))
+                return;
 
             bool boundsChanged =
                 (_damageVolumeWorldSize - desiredWorldSize).sqrMagnitude > 0.0001f ||
@@ -1844,12 +2132,24 @@ namespace Hecton8.World
 
         private void QueueDamageVolumeStamp(Vector3 positionWS, float radiusWS, float strength)
         {
-            RefreshDamageVolumeBounds();
-            if (_damageVolumeRead == null ||
-                _damageVolumeWrite == null)
+            if (!IsFiniteVector3(positionWS) ||
+                !math.isfinite(radiusWS) ||
+                !math.isfinite(strength))
             {
                 return;
             }
+
+            RefreshDamageVolumeBounds();
+            if (_damageVolumeRead == null ||
+                _damageVolumeWrite == null ||
+                !IsFiniteVector3(_damageVolumeWorldMin) ||
+                !IsFiniteVector3(_damageVolumeWorldSize))
+            {
+                return;
+            }
+
+            float clampedRadius = Mathf.Max(0.05f, radiusWS);
+            float clampedStrength = Mathf.Clamp01(strength);
 
             Vector3 maxBounds = _damageVolumeWorldMin + _damageVolumeWorldSize;
             if (positionWS.x < _damageVolumeWorldMin.x || positionWS.x > maxBounds.x ||
@@ -1878,10 +2178,10 @@ namespace Hecton8.World
             {
                 queuedDamageVolumeStampCommands[_queuedDamageVolumeStampCount] = new DamageVolumeStampCommand
                 {
-                    PositionRadius = new Vector4(positionWS.x, positionWS.y, positionWS.z, Mathf.Max(0.05f, radiusWS)),
-                    StrengthPadding = new Vector4(Mathf.Clamp01(strength), 0f, 0f, 0f)
+                    PositionRadius = new Vector4(positionWS.x, positionWS.y, positionWS.z, clampedRadius),
+                    StrengthPadding = new Vector4(clampedStrength, 0f, 0f, 0f)
                 };
-                _damageVolumeEnergy = Mathf.Max(_damageVolumeEnergy, Mathf.Clamp01(strength));
+                _damageVolumeEnergy = Mathf.Max(_damageVolumeEnergy, clampedStrength);
                 _queuedDamageVolumeStampCount++;
             }
             finally
@@ -1893,6 +2193,9 @@ namespace Hecton8.World
         private bool TryCoalesceOverflowDamageVolumeStamp(Vector3 positionWS, float radiusWS, float strength)
         {
             if (_queuedDamageVolumeStampCount <= 0 ||
+                !IsFiniteVector3(positionWS) ||
+                !math.isfinite(radiusWS) ||
+                !math.isfinite(strength) ||
                 !TryAcquireVaultBuffer(
                     in _queuedDamageVolumeStampCommandsHandle,
                     DamageVolumeStampCapacity,
@@ -1906,13 +2209,26 @@ namespace Hecton8.World
             {
                 int index = math.min(_queuedDamageVolumeStampCount - 1, DamageVolumeStampCapacity - 1);
                 DamageVolumeStampCommand existing = queuedDamageVolumeStampCommands[index];
+                float clampedRadius = math.max(0.05f, radiusWS);
+                float clampedStrength = Mathf.Clamp01(strength);
+                if (!IsFiniteDamageVolumeStampCommand(in existing))
+                {
+                    queuedDamageVolumeStampCommands[index] = new DamageVolumeStampCommand
+                    {
+                        PositionRadius = new Vector4(positionWS.x, positionWS.y, positionWS.z, clampedRadius),
+                        StrengthPadding = new Vector4(clampedStrength, 0f, 0f, 0f)
+                    };
+                    _damageVolumeEnergy = Mathf.Max(_damageVolumeEnergy, clampedStrength);
+                    _damageVolumeStampOverflowCoalesceCount++;
+                    return true;
+                }
+
                 Vector4 positionRadius = existing.PositionRadius;
                 Vector4 strengthPadding = existing.StrengthPadding;
                 float3 existingCenter = new float3(positionRadius.x, positionRadius.y, positionRadius.z);
-                float clampedRadius = math.max(0.05f, radiusWS);
                 float coverageRadius = math.distance(existingCenter, new float3(positionWS.x, positionWS.y, positionWS.z)) + clampedRadius;
                 positionRadius.w = math.max(positionRadius.w, coverageRadius);
-                strengthPadding.x = math.max(strengthPadding.x, Mathf.Clamp01(strength));
+                strengthPadding.x = math.max(strengthPadding.x, clampedStrength);
                 queuedDamageVolumeStampCommands[index] = new DamageVolumeStampCommand
                 {
                     PositionRadius = positionRadius,
@@ -1930,6 +2246,7 @@ namespace Hecton8.World
 
         private void ProcessQueuedDamageVolumeUpdate(float deltaTime)
         {
+            deltaTime = math.isfinite(deltaTime) ? Mathf.Max(0f, deltaTime) : 0f;
             if (_damageVolumeRead == null ||
                 _damageVolumeWrite == null ||
                 _damageVolumeCompute == null ||
@@ -1994,7 +2311,8 @@ namespace Hecton8.World
             _damageVolumeCompute.SetTexture(_damageVolumeKernel, _DamageVolumeResultId, _damageVolumeWrite);
             _damageVolumeCompute.SetBuffer(_damageVolumeKernel, _DamageVolumeStampCommandsId, _activeDamageVolumeStampCommandBuffer);
             _damageVolumeCompute.SetInt(_DamageVolumeStampCountId, uploadedDamageVolumeStampCount);
-            _damageVolumeCompute.SetFloat(_DamageVolumeRecoveryId, Mathf.Max(0f, damageVolumeRecoveryPerSecond * Mathf.Max(0f, deltaTime)));
+            float damageVolumeRecoveryRate = math.isfinite(damageVolumeRecoveryPerSecond) ? Mathf.Max(0f, damageVolumeRecoveryPerSecond) : 0f;
+            _damageVolumeCompute.SetFloat(_DamageVolumeRecoveryId, Mathf.Max(0f, damageVolumeRecoveryRate * Mathf.Max(0f, deltaTime)));
             _damageVolumeCompute.SetVector(
                 _DamageVolumeWorldMinParamId,
                 new Vector4(_damageVolumeWorldMin.x, _damageVolumeWorldMin.y, _damageVolumeWorldMin.z, 0f));
@@ -2014,7 +2332,7 @@ namespace Hecton8.World
 
             _damageVolumeEnergy = Mathf.Max(
                 0f,
-                _damageVolumeEnergy - Mathf.Max(0f, damageVolumeRecoveryPerSecond * Mathf.Max(0f, deltaTime)));
+                _damageVolumeEnergy - Mathf.Max(0f, damageVolumeRecoveryRate * Mathf.Max(0f, deltaTime)));
             RenderTexture temp = _damageVolumeRead;
             _damageVolumeRead = _damageVolumeWrite;
             _damageVolumeWrite = temp;
@@ -2137,7 +2455,7 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || !_serviceRegistered || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredTick)
@@ -2161,8 +2479,7 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            SargassumCutManager registered = GlobalRegistry.SargassumCut;
-            if (registered != null && registered != this)
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             GlobalRegistry.RegisterSargassumCutRuntime(this);
@@ -2176,10 +2493,101 @@ namespace Hecton8.World
             if (!_serviceRegistered)
                 return;
 
-            GlobalRegistry.UnregisterSargassumCutRuntime(this);
-            _serviceRegistered = false;
             if (ReferenceEquals(s_activeRuntimeInstance, this))
                 s_activeRuntimeInstance = null;
+            _serviceRegistered = false;
+
+            if (ReferenceEquals(GlobalRegistry.SargassumCut, this))
+                GlobalRegistry.UnregisterSargassumCutRuntime(this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            SargassumCutManager registered = GlobalRegistry.SargassumCut;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsSargassumCutRuntimeUsable(registered))
+                {
+                    s_activeRuntimeInstance = registered;
+                    Destroy(this);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+                GlobalRegistry.UnregisterSargassumCutRuntime(registered);
+            }
+
+            SargassumCutManager active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsSargassumCutRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterSargassumCutRuntime(active);
+                s_activeRuntimeInstance = active;
+                Destroy(this);
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeRuntimeInstance, active))
+                s_activeRuntimeInstance = null;
+            GlobalRegistry.UnregisterSargassumCutRuntime(active);
+
+            return false;
+        }
+
+        private static bool IsSargassumCutRuntimeUsable(SargassumCutManager manager)
+        {
+            return manager != null && manager._serviceRegistered && manager.isActiveAndEnabled;
+        }
+
+        private void ReconcileRuntimeOwnerFromRegistryReplacement(object previousService, object currentService)
+        {
+            if (currentService is SargassumCutManager currentRuntime)
+            {
+                s_activeRuntimeInstance = currentRuntime;
+                bool ownsRuntime = ReferenceEquals(currentRuntime, this);
+                _serviceRegistered = ownsRuntime;
+                if (ownsRuntime)
+                {
+                    if (_runtimeRoutesRetiredAfterOwnershipLoss)
+                        RestoreRuntimeRoutesAfterOwnershipGain();
+                    return;
+                }
+
+                if (ReferenceEquals(previousService, this))
+                    RetireRuntimeRoutesAfterOwnershipLoss();
+                return;
+            }
+
+            if (ReferenceEquals(previousService, this))
+            {
+                _serviceRegistered = false;
+                if (ReferenceEquals(s_activeRuntimeInstance, this))
+                    s_activeRuntimeInstance = null;
+                RetireRuntimeRoutesAfterOwnershipLoss();
+            }
+        }
+
+        private void RetireRuntimeRoutesAfterOwnershipLoss()
+        {
+            if (_runtimeRoutesRetiredAfterOwnershipLoss)
+                return;
+
+            ResetTransientRuntimeQueues();
+            TryUnregister();
+            _runtimeRoutesRetiredAfterOwnershipLoss = true;
+        }
+
+        private void RestoreRuntimeRoutesAfterOwnershipGain()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            CacheRegistryServicesCold();
+            TryRegister();
+            _runtimeRoutesRetiredAfterOwnershipLoss = false;
         }
 
         private void TryUnregister()

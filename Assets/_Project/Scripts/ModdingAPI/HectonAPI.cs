@@ -26,6 +26,7 @@ namespace Hecton8.Modding
         internal static void ResetRegistryCacheCold()
         {
             s_inputService = null;
+            UI.ResetNotificationDiagnostics();
         }
 
         internal static void BindRegistryServicesCold()
@@ -597,6 +598,12 @@ namespace Hecton8.Modding
         /// </summary>
         public static class UI
         {
+            private static readonly uint NotificationMissWarningHash = unchecked((uint)LocHash.Compute("HectonAPI.UI.NotificationMiss"));
+            private static readonly uint NotificationContextHash = unchecked((uint)LocHash.Compute("HectonAPI.UI.Notification"));
+            private static int s_notificationMissCount;
+
+            public static int NotificationMissCount => s_notificationMissCount;
+
             /// <summary>
             /// Shows an informational HUD message through the live notification owner.
             /// If the HUD instance is not active yet, the message is routed through the notification event bus.
@@ -612,7 +619,7 @@ namespace Hecton8.Modding
                     return;
                 }
 
-                NotificationEvents.TryPushInfo(messageSpan);
+                TryPushNotification(messageSpan, severity: 0);
             }
 
             /// <summary>
@@ -629,7 +636,7 @@ namespace Hecton8.Modding
                     return;
                 }
 
-                NotificationEvents.TryPushWarning(messageSpan);
+                TryPushNotification(messageSpan, severity: 1);
             }
 
             /// <summary>
@@ -646,7 +653,36 @@ namespace Hecton8.Modding
                     return;
                 }
 
-                NotificationEvents.TryPushCritical(messageSpan);
+                TryPushNotification(messageSpan, severity: 2);
+            }
+
+            private static void TryPushNotification(ReadOnlySpan<char> message, byte severity)
+            {
+                bool pushed = severity switch
+                {
+                    2 => NotificationEvents.TryPushCritical(message),
+                    1 => NotificationEvents.TryPushWarning(message),
+                    _ => NotificationEvents.TryPushInfo(message)
+                };
+
+                if (pushed)
+                    return;
+
+                ReportNotificationMiss(severity);
+            }
+
+            private static void ReportNotificationMiss(byte severity)
+            {
+                s_notificationMissCount++;
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    NotificationMissWarningHash,
+                    NotificationContextHash ^ ModExecutionScope.CurrentModHash ^ unchecked((uint)severity),
+                    Mathf.Max(1, s_notificationMissCount));
+            }
+
+            internal static void ResetNotificationDiagnostics()
+            {
+                s_notificationMissCount = 0;
             }
 
             /// <summary>

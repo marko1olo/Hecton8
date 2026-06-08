@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "عمود الساعة الأولى"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# عمود الساعة الأولى
 
-AR LOC HOLD: First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+عمود الساعة الأولى يحدد إيقاع افتتاح HECTON-8. يبدأ اللاعب بمهام هندسية ملموسة ودهشة بصرية، ثم يرى هذه المهام تتصل بكذبة شركة وببيئة صيانة دخلت علم الأحياء. هكذا يبقى المسار الأول قابلاً للعب ومشحوناً بالجو، وفي الوقت نفسه يزرع التحقيق الأكبر: المحيط لا يخفي القصة، بل يحفظ الأدلة في الضغط والملح والإجراء.
 
 ## Scanner
 
-AR LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+عقد، هبوط متضرر، هواء، مياه ضحلة مضيئة، ملجأ مضخة، كذبة منظفة، ثم أول ندبة إصلاح تستخدم الحياة كحشية.
 
 ## Terminal
 
-AR LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+ملحق ضحل: إعادة تشغيل المضخة اليدوية صالحة. حزمة حادث Deep Reach مخزنة. نمو إصلاح Atlas مكتشف حول كابل، وشظية أداة، وبقايا بيولوجية.
 
 ## Audio
 
-AR LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+الغرفة الآمنة الأولى ليست نظيفة. إنها فقط تحبس أنفاسها أفضل منك.
 
 ## Field Note
 
-AR LOC HOLD: The opening must be beautiful before it becomes accusing.
+يجب أن تكون البداية جميلة قبل أن تصبح اتهاماً.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/ar_SA. -->

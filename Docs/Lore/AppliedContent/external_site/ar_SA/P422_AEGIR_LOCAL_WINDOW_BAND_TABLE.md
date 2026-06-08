@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "AR LOC HOLD: Aegir Window Bands"
+spoiler_tier: 1
+title: "نطاقات نوافذ Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Aegir Window Bands
+# نطاقات نوافذ Aegir
 
-AR LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
+تخضع حركة Aegir إلى transfer bands ضيقة حول الإشعاع والكسوف والعواصف وrelay geometry.
 
 ## Scanner
 
-AR LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+النطاق المحلي: الصعود ينتظر نوافذ من ساعات إلى أيام، لا إنقاذا فوريا.
 
 ## Terminal
 
-AR LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+نطاق النافذة: shutter وeclipse وrelay وstorm ومرحلة carrier وlegal handshake يجب أن تصطف قبل transfer آمن.
 
 ## Audio
 
-AR LOC HOLD: The carrier can hear you and still be in the wrong sky.
+قد يسمعك carrier ويبقى في السماء الخطأ.
 
 ## Field Note
 
-AR LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+سجل نطاق النافذة: Black Keel timing وتسميات المدار المحلي وصفحات spoiler-light تشترك في transfer constraints نفسها.
 
 <!-- External Site; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/ar_SA. -->

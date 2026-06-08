@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 블랙박스 이름 스택
 
-이름 스택은 진실을 운반 가능하게 만든다. 플레이어가 올리는 것이 방송, dossier, 엔딩에 영향을 준다.
+블랙박스 이름 스택은 최종 진실을 운반 가능한 것으로 만든다. 증거, broadcast 패킷, 공개 dossier는 어떤 이름, 해시, 영수증이 물 밖으로 나가는지에 달려 있다.
 
 ## Scanner
 

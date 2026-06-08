@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Black Keel Claim Acceptance"
+title: "Penerimaan Klaim Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Black Keel Claim Acceptance
+# Penerimaan Klaim Black Keel
 
-ID LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+Terminal klaim Black Keel membingkai pembukaan dengan utang, addenda oksigen, dan custody sebelum laut menyentuh layar.
 
 ## Scanner
 
-ID LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+Konsol kontrak. Aegir Reclamation Pool menampilkan lien 4.8 tonne-window sebelum menampilkan oksigen.
 
 ## Terminal
 
-ID LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / TERMINAL PENERIMAAN KLAIM: route RAN-B:H8 salvage descent; keringanan lien 4.8 tonne-window bersyarat; oxygen welfare addenda ditagih setelah pemulihan; payload custody utama Black Keel, saksi Keelmark Mutual; penolakan membuat Barnard blacklist review tetap aktif.
 
 ## Audio
 
-ID LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel ke kontraktor: jendela klaim terbuka. Oksigen ditagih setelah pemulihan. Akui jika kamu masih bisa bekerja.
 
 ## Field Note
 
-ID LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+Stylus diikat ke layar dengan kabel tekanan. Seseorang memperkirakan tangan akan gemetar.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/id_ID. -->

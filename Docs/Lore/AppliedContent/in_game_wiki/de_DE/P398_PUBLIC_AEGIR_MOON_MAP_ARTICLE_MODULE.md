@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Aegir Moon Route Map"
+title: "Aegir-Mondroutenkarte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Aegir Moon Route Map
+# Aegir-Mondroutenkarte
 
-DE LOC HOLD: Aegir moon data is route data. HECTON-8 is one ocean moon inside a larger ladder of relay, radiation, scatter and tide constraints; the visible sky is part of navigation, not decoration.
+Aegir-Monddaten sind Routendaten. HECTON-8 ist der spielbare Ozeanmond, steht aber in einer größeren Leiter aus relay-, Strahlungs-, Streuungs- und Gezeitenzwängen. Der sichtbare Himmel entscheidet mit, ob ein Rettungssignal gehört, verzögert, bepreist, abgelehnt oder physisch unmöglich wird.
 
 ## Scanner
 
-DE LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Systemkartendatensatz. Aegir-Monde bestimmen relay timing, Strahlenschutz, ice scatter, Gezeitendruck, occultation bands, tote beacons und recovery geometry.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+ÖFFENTLICHER ARCHIVKNOTEN // AEGIR-MONDLEITER. Mondnamen sind Routenetiketten. Jeder Körper verändert signal age, transfer risk, storm exposure, custody timing oder claim reliability.
 
 ## Audio
 
-DE LOC HOLD: The map is why no one arrives the moment you ask.
+Die Karte erklärt, warum niemand in dem Moment ankommt, in dem du fragst.
 
 ## Field Note
 
-DE LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Marauder-Notiz: Markiere den Mond, dann markiere, was er mit der Route macht.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/de_DE. -->

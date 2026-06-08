@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Tariff Table"
+title: "Black Keel 요율표"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Tariff Table
+# Black Keel 요율표
 
-KO LOC HOLD: Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.
+Black Keel 지원은 유용하지만 결코 중립적이지 않다. 조난, 샘플, 산소, 책임 봉인, 운영자 회수, 선체 손상은 서로 다른 대기열에 들어간다. 플레이어는 그 규칙을 이용할 수 있지만, 같은 규칙이 왜 도움이 늘 가격표를 달고 오는지도 보여 준다.
 
 ## Scanner
 
-KO LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
+판은 조난, 샘플 보관, 산소 예비량, 압력 장비, 시신 회수를 서로 다른 항목으로 가격 매긴다.
 
 ## Terminal
 
-KO LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
+요율 등급: 인양 긴급. 복지 부록 보류. 검증된 샘플 보관은 출항 우선순위를 과금 등급 두 단계 올림.
 
 ## Audio
 
-KO LOC HOLD: The table has a price for rescue and a discount for evidence.
+증거에는 할인이 있고, 호흡에는 추가 요금이 있다.
 
 ## Field Note
 
-KO LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
+가장 빠른 등급은 구조가 아니다. 위로 이동하는 검증된 재산이다.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/ko_KR. -->

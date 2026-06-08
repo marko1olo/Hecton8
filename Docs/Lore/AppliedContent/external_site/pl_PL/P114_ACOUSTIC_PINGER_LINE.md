@@ -9,32 +9,18 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "Akustyczna linia pingera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# Akustyczna linia pingera
 
-PL LOC HOLD: Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean.
+Akustyczna linia pingera nie jest beaconem ratunkowym. Jest dyscypliną, którą słychać. Gracz kotwiczy return sound, zanim mętność, brine shimmer albo strach uczynią trasę obcą. Narzędzie uczy, że nawigacja jest nawykiem, nie map screen.
 
-## Scanner
-
-PL LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
-
-## Terminal
-
-PL LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
-
-## Audio
-
-PL LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
-
-## Field Note
-
-PL LOC HOLD: Navigation should become physical early.
+Późniejsze systemy mogą wyrosnąć z tego ziarna: relay timing, carrier handshake, akustyczny dowód, że droga nadal istnieje. Pierwsza wersja jest celowo mała. Ratuje gracza przed pewnością siebie.
 
 <!-- External Site; generated from P114_ACOUSTIC_PINGER_LINE/pl_PL. -->

@@ -37,8 +37,15 @@ namespace Hecton8.Core
         public static GCMonitor EnsureRuntimeInstance()
         {
             GCMonitor runtime = GlobalRegistry.GCMonitorRuntime;
-            if (runtime != null)
+            if (IsGCMonitorRuntimeUsable(runtime))
                 return runtime;
+
+            if (!ReferenceEquals(runtime, null))
+            {
+                GlobalRegistry.ClearGCMonitorRuntime(runtime);
+                runtime._registeredPostFixed = false;
+                runtime._runtimeOwnerRejected = true;
+            }
 
             GameObject runtimeRoot = new GameObject("[GCMonitor]"); // COLD ALLOC: GameObject[1] - bootstrap-owned GC sentinel root - owner: GCMonitor
             return runtimeRoot.AddComponent<GCMonitor>();
@@ -46,7 +53,7 @@ namespace Hecton8.Core
 
         public void InitializeService()
         {
-            if (_runtimeOwnerRejected)
+            if (_runtimeOwnerRejected || !EnsureRuntimeOwnership())
                 return;
 
             RefreshPhysicalMemorySnapshotCold();
@@ -56,23 +63,36 @@ namespace Hecton8.Core
 
         private void Awake()
         {
+            if (TryRejectForUsableExistingRuntime())
+                return;
+
             GCMonitor runtime = GlobalRegistry.GCMonitorRuntime;
-            if (runtime != null && runtime != this)
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                GlobalRegistry.ClearGCMonitorRuntime(runtime);
+                runtime._registeredPostFixed = false;
+                runtime._runtimeOwnerRejected = true;
+            }
+
+            if (TryRejectForUsableExistingRuntime())
+                return;
+
+            _runtimeOwnerRejected = false;
+            GlobalRegistry.RegisterGCMonitorRuntime(this);
+            if (!ReferenceEquals(GlobalRegistry.GCMonitorRuntime, this))
             {
                 _runtimeOwnerRejected = true;
                 Destroy(gameObject);
                 return;
             }
 
-            _runtimeOwnerRejected = false;
-            GlobalRegistry.RegisterGCMonitorRuntime(this);
             RefreshPhysicalMemorySnapshotCold();
             PrimeSamplingFrames();
         }
 
         private void OnEnable()
         {
-            if (_runtimeOwnerRejected)
+            if (_runtimeOwnerRejected || !EnsureRuntimeOwnership())
                 return;
 
             if (_physicalMemoryBytesCold <= 0L)
@@ -84,7 +104,7 @@ namespace Hecton8.Core
 
         private void Start()
         {
-            if (_runtimeOwnerRejected)
+            if (_runtimeOwnerRejected || !EnsureRuntimeOwnership())
                 return;
 
             TryRegisterPostFixed();
@@ -92,18 +112,30 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
+            if (_runtimeOwnerRejected)
+                return;
+
             TryUnregisterPostFixed();
             TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerRejected)
+            {
+                GlobalRegistry.ClearGCMonitorRuntime(this);
+                return;
+            }
+
             OnDisable();
             GlobalRegistry.ClearGCMonitorRuntime(this);
         }
 
         public void OnServiceShutdown()
         {
+            if (_runtimeOwnerRejected)
+                return;
+
             OnDisable();
             GlobalRegistry.ClearGCMonitorRuntime(this);
             _physicalMemoryBytesCold = 0L;
@@ -115,6 +147,9 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerRejected)
+                return;
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
@@ -127,9 +162,65 @@ namespace Hecton8.Core
 
         public void PostFixedTick(float fixedDeltaTime)
         {
+            if (_runtimeOwnerRejected)
+                return;
+
             int frame = SystemDispatcher.CurrentFrameIndex;
             TryDispatchCriticalMemoryPressure(frame);
             TryAuditLongLivedNativeAllocations(frame);
+        }
+
+        private bool EnsureRuntimeOwnership()
+        {
+            if (_runtimeOwnerRejected)
+                return false;
+
+            if (TryRejectForUsableExistingRuntime())
+                return false;
+
+            GCMonitor runtime = GlobalRegistry.GCMonitorRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                GlobalRegistry.ClearGCMonitorRuntime(runtime);
+                runtime._registeredPostFixed = false;
+                runtime._runtimeOwnerRejected = true;
+            }
+
+            if (TryRejectForUsableExistingRuntime())
+                return false;
+
+            GlobalRegistry.RegisterGCMonitorRuntime(this);
+            bool ownsRuntime = ReferenceEquals(GlobalRegistry.GCMonitorRuntime, this);
+            _runtimeOwnerRejected = !ownsRuntime;
+            if (_runtimeOwnerRejected)
+                Destroy(gameObject);
+            return ownsRuntime;
+        }
+
+        private bool TryRejectForUsableExistingRuntime()
+        {
+            GCMonitor runtime = GlobalRegistry.GCMonitorRuntime;
+            if (ReferenceEquals(runtime, null) || ReferenceEquals(runtime, this))
+                return false;
+
+            if (IsGCMonitorRuntimeUsable(runtime))
+            {
+                _runtimeOwnerRejected = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.ClearGCMonitorRuntime(runtime);
+            runtime._registeredPostFixed = false;
+            runtime._runtimeOwnerRejected = true;
+            return false;
+        }
+
+        private static bool IsGCMonitorRuntimeUsable(GCMonitor runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerRejected;
         }
 
         private void TryDispatchCriticalMemoryPressure(int frame)

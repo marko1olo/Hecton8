@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Great Tide Sensor Margin Proof"
+title: "Great Tide Margin Trace"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Great Tide Sensor Margin Proof
+# Great Tide Margin Trace
 
-Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.
+The trace proves two things at once: the Great Tide was real, and the lethal margin was visible before the report admitted it. Deep Reach did not command water to rise. It accepted a route window where the colony pressure envelope had already lost slack, then published the cascade without the sign-off.
 
 ## Scanner
 
-Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Recovered tide sensor. Peak shear exceeded colony design, but the warning-margin breach was logged before the public cascade timestamp.
 
 ## Terminal
 
-MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Tail-risk threshold accepted by route authority. Operator note removed from public incident chain. Raw trace preserved in brine-buffer memory.
 
 ## Audio
 
-Physics did the damage. A person signed the margin.
+The ocean did not lie. The report did.
 
 ## Field Note
 
-Use to anchor the public lie against real sensor evidence.
+Marauder note: do not look for a villain speech. Look for the line somebody deleted.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/en_US. -->

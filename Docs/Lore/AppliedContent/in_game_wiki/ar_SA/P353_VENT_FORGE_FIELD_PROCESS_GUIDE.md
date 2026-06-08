@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Vent Forge Field Process Guide"
+title: "دليل عملية حقل forge-vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Vent Forge Field Process Guide
+# دليل عملية حقل forge-vent
 
-AR LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.
+Vent forges مفاعلات طبيعية-صناعية. تحول الحرارة وbrine وpressure history إلى ceramics وsealants وcharge materials نافعة مع إبقاء كل عينة مرتبطة بمسارها الحراري.
 
 ## Scanner
 
-AR LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+كيمياء vent-forge نشطة. تتبع الجودة pressure history وheat pulse والتبريد البطيء، لا لمعان العينة.
 
 ## Terminal
 
-AR LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: تطهو vent forges الـ sulfides وnoble-gas pockets وceramics وsealant precursors. مسار العينة عبر heat وbrine وpressure أهم من اسمها.
 
 ## Audio
 
-AR LOC HOLD: The vent did not make ore. It made a process you interrupted.
+لم يصنع vent خاما. صنع عملية قطعتها أنت.
 
 ## Field Note
 
-AR LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+لا ترفع دفعة جديدة مباشرة إلى ماء بارد. دع vent ينهي anneal وإلا ستتشقق shell.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/ar_SA. -->

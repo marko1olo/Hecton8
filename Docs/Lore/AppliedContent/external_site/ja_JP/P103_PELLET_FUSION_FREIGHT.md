@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.relay_shadow
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "ペレット核融合貨物"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,6 @@ localization_flags: 1
 
 # ペレット核融合貨物
 
-ペレット核融合貨物はHECTON-8の背後にある産業史だ。機械と重貨物がAegirに届いたのは、インフラが何十年もかけて質量を押し、食わせ、守り、止められたからだ。航路が残酷なのは、会計が緊急事態より長く生きるからである。
-
-## Scanner
-
-ドライブプレート。ペレット供給式核融合貨物はインフラとして渡った。加速、遮蔽、巡航、制動、損失請求。
-
-## Terminal
-
-貨物ドクトリン: Atlas級seed payloadと植民地貨物はビームセイル加速、ペレット供給式核融合、磁気帆制動、長い巡航間隔を使った。生きた貨物は、機械が航路を請求可能にしてから到着した。
-
-## Audio
-
-重い船は奇跡ではない。エンジン付きの抵当だ。
-
-## Field Note
-
-重輸送は英雄譚ではない。熱傷だらけの古い航路契約だ。
+ペレット核融合貨物は、測量の夢と人間の身体の間にある産業層である。ビームステーションは押せる。pellet streamsは燃焼を養える。fusion stagesは熱を支払い、遮蔽質量は貨物の代わりに死ねる。その構造は重い物を暗い距離の向こうへ動かすが、即興を許さない。すべてのキログラムは予定、熱予算、制動予備、所有者に結びつく。HECTON-8はこの機械でAtlas hardwareを受け取れても、故障が局所で始まれば生きた労働者を救援外に置く。
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/ja_JP. -->

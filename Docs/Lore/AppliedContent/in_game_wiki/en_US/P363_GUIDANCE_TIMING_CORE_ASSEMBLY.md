@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Guidance Timing Core Assembly
 
-A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.
+A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals, relay shadows and carrier recovery lanes. Bad timing can lose the capsule without breaking a single part.
 
 ## Scanner
 
-Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+Blank timing core. Aegir geometry decides whether ascent becomes recovery, capture or silence.
 
 ## Terminal
 
-GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver lane, moon relay shutter and storm-plume drift. Late packets become evidence loss; early packets become capture noise.
 
 ## Audio
 
-There is no up. There is a window, a receiver, and a lie in the queue.
+Up is not a direction. It is a window with a witness.
 
 ## Field Note
 
-Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+There is no simple up from HECTON-8. There is a receiver, a shadow, a storm drift and a packet queue already older than your panic.
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/en_US. -->

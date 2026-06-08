@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Evacuation Queue Delay Proof"
+title: "רשומת עיכוב תור הפינוי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Evacuation Queue Delay Proof
+# רשומת עיכוב תור הפינוי
 
-HE LOC HOLD: Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.
+חדר מוצף עדיין יכול לשמור תזמון. שעון התור מראה סדר אכזרי: אזעקה, סקירה, עיכוב, חריגה מדרגת אטימה, מים. השפה הציבורית של Deep Reach מכווצת זאת לפינוי לא מלא בזמן כשל מבני פתאומי. החדר חולק. רשומת התור משאירה שדה עד ריק וסקירת הסגר ממתינה מעבר לנקודה שבה נתיב חילוץ עוד הועיל פיזית. זו אינה טענה שכולם יכלו להינצל. זה מדויק וגרוע יותר: ההרשאה חיכתה עד שמספר בני האדם שניתן להציל קטן. כששחקן מוצא זאת, חילוץ נשמע פחות כהבטחה ויותר כמערכת הרשאות.
 
 ## Scanner
 
-HE LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+שעון תור חולץ. שער השחרור נשאר נעול אחרי שאזעקות הלחץ עברו מתחזית למסדרון.
 
 ## Terminal
 
-HE LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. אישור ידני חסר. סקירת הסגר ממתינה. לחץ המסלול עבר את דרגת האטימה לפני סיום ההרשאה.
 
 ## Audio
 
-HE LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+הם לא נכשלו בהצלת כולם. הם חיכו עד שהצלת מישהו נעשתה קשה יותר.
 
 ## Field Note
 
-HE LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+הערת בוזז: שער סגור עם שדה ממתין אינו תאונה. זו החלטה שמחכה לחתימה.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/he_IL. -->

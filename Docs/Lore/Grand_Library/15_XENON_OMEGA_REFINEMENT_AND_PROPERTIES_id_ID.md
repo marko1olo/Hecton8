@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # XENON-OMEGA: PEMURNIAN DAN KARAKTERISTIK
 
 > **Sumber:** Megakorporasi Deep Reach, Manifes Kimia Terklasifikasi.

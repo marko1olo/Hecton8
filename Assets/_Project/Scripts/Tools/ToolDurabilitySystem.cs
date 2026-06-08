@@ -109,6 +109,7 @@ namespace Hecton8.Tools
         private bool _registeredHotSwap;
         private IDataVault _dataVault;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IBrineFluidDensityReadModel _brineDensityReadModel;
         private static bool s_nativeLayoutValidated;
@@ -344,7 +345,7 @@ namespace Hecton8.Tools
 
         public float GetDurability(string toolID, float maxDurability)
         {
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrWhiteSpace(toolID))
                 return ClampFiniteNonNegative(maxDurability);
 
             return _durabilityMap.TryGetValue(toolID, out float current)
@@ -384,7 +385,7 @@ namespace Hecton8.Tools
 
         public bool IsBroken(string toolID)
         {
-            return !string.IsNullOrEmpty(toolID) &&
+            return !string.IsNullOrWhiteSpace(toolID) &&
                    _brokenMap.TryGetValue(toolID, out bool broken) &&
                    broken;
         }
@@ -407,7 +408,7 @@ namespace Hecton8.Tools
 
         public bool IsDegraded(string toolID)
         {
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrWhiteSpace(toolID))
                 return false;
 
             int slotIndex = ResolveSlot(toolID);
@@ -431,7 +432,7 @@ namespace Hecton8.Tools
 
         public void DrainDurability(string toolID, float amount, float maxDurability)
         {
-            if (!enableDurabilityDrain || string.IsNullOrEmpty(toolID) || !TryResolvePositiveDurabilityAmount(amount, out float safeAmount))
+            if (!enableDurabilityDrain || string.IsNullOrWhiteSpace(toolID) || !TryResolvePositiveDurabilityAmount(amount, out float safeAmount))
                 return;
 
             float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
@@ -461,7 +462,7 @@ namespace Hecton8.Tools
 
         public void DrainDurabilityByTime(string toolID, uint itemHashId, float scaledDeltaTime, float maxDurability)
         {
-            if (!enableDurabilityDrain || string.IsNullOrEmpty(toolID) || !TryResolvePositiveDurabilityAmount(scaledDeltaTime, out float safeScaledDeltaTime))
+            if (!enableDurabilityDrain || string.IsNullOrWhiteSpace(toolID) || !TryResolvePositiveDurabilityAmount(scaledDeltaTime, out float safeScaledDeltaTime))
                 return;
 
             float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
@@ -484,7 +485,7 @@ namespace Hecton8.Tools
             }
 
             int slotIndex = ResolveSlot(itemHashId);
-            if (slotIndex < 0 || string.IsNullOrEmpty(_toolIdBySlot[slotIndex]))
+            if (slotIndex < 0 || string.IsNullOrWhiteSpace(_toolIdBySlot[slotIndex]))
                 return false;
 
             float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
@@ -499,7 +500,7 @@ namespace Hecton8.Tools
 
         public void RegisterCentralizedEquipmentMirror(string toolID, uint itemHashId, float maxDurability)
         {
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrWhiteSpace(toolID))
                 return;
 
             EnsureToolRegistered(toolID, itemHashId, ResolveSafeMaxDurability(maxDurability));
@@ -522,7 +523,7 @@ namespace Hecton8.Tools
 
         public void SetDurabilityNormalizedFromEquipment(string toolID, uint itemHashId, float normalizedDurability, float maxDurability)
         {
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrWhiteSpace(toolID))
                 return;
 
             if (!TryCompleteDecayJobIfScheduled(forceComplete: false))
@@ -608,7 +609,7 @@ namespace Hecton8.Tools
 
         public void RepairTool(string toolID, float amount, float maxDurability)
         {
-            if (string.IsNullOrEmpty(toolID) || !TryResolvePositiveDurabilityAmount(amount, out float safeAmount))
+            if (string.IsNullOrWhiteSpace(toolID) || !TryResolvePositiveDurabilityAmount(amount, out float safeAmount))
                 return;
 
             float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
@@ -693,7 +694,7 @@ namespace Hecton8.Tools
 
         public void BreakTool(string toolID)
         {
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrWhiteSpace(toolID))
                 return;
 
             if (!TryCompleteDecayJobIfScheduled(forceComplete: false))
@@ -748,7 +749,7 @@ namespace Hecton8.Tools
 
         public void ResetDurability(string toolID, float maxDurability)
         {
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrWhiteSpace(toolID))
                 return;
 
             float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
@@ -1103,7 +1104,7 @@ namespace Hecton8.Tools
 
         private int EnsureToolRegistered(string toolID, uint itemHashId, float maxDurability)
         {
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrWhiteSpace(toolID))
                 return -1;
 
             if (!EnsureItemStates(out NativeArray<ItemState> itemStates))
@@ -1199,7 +1200,7 @@ namespace Hecton8.Tools
 
         private int ResolveSlot(string toolID)
         {
-            return !string.IsNullOrEmpty(toolID) && _slotByToolId.TryGetValue(toolID, out int slotIndex)
+            return !string.IsNullOrWhiteSpace(toolID) && _slotByToolId.TryGetValue(toolID, out int slotIndex)
                 ? slotIndex
                 : -1;
         }
@@ -1235,7 +1236,7 @@ namespace Hecton8.Tools
             _durabilityBySlot[slotIndex] = safeDurability;
             _brokenBySlot[slotIndex] = broken ? (byte)1 : (byte)0;
 
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrWhiteSpace(toolID))
                 return;
 
             _durabilityMap[toolID] = safeDurability;
@@ -1520,7 +1521,7 @@ namespace Hecton8.Tools
                 return false;
 
             string toolID = _toolIdBySlot[slotIndex];
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrWhiteSpace(toolID))
                 return false;
 
             uint resolvedItemHash = itemHashId != 0u ? itemHashId : _itemHashBySlot[slotIndex];
@@ -1583,7 +1584,7 @@ namespace Hecton8.Tools
 
         private bool TryMergeQueuedDurabilityCommand(DurabilityCommandKind kind, string toolID, float amount, float maxDurability, uint itemHashId)
         {
-            if (_queuedDurabilityCommandCount <= 0 || string.IsNullOrEmpty(toolID))
+            if (_queuedDurabilityCommandCount <= 0 || string.IsNullOrWhiteSpace(toolID))
                 return false;
 
             for (int index = _queuedDurabilityCommandCount - 1; index >= 0; index--)
@@ -1701,7 +1702,7 @@ namespace Hecton8.Tools
 
         private void ApplyDurabilityCommand(in PendingDurabilityCommand command, string toolID)
         {
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrWhiteSpace(toolID))
                 return;
 
             switch (command.Kind)
@@ -1787,20 +1788,30 @@ namespace Hecton8.Tools
         private void TryRegisterSaveService()
         {
             ISaveService saveService = _saveService;
-            if (_saveRegistered || saveService == null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (_saveRegistered || !IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveService()
         {
-            ISaveService saveService = _saveService;
-            if (!_saveRegistered || saveService == null)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            saveService.Unregister(this);
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
             _saveRegistered = false;
         }
 
@@ -1951,6 +1962,11 @@ namespace Hecton8.Tools
         private static bool IsToolDurabilityRuntimeUsable(ToolDurabilitySystem system)
         {
             return system != null && system._serviceRegistered && system.isActiveAndEnabled;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterService()

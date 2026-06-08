@@ -9,32 +9,16 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aufprall-Schelf"
+title: "Absturzschelf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aufprall-Schelf
+# Absturzschelf
 
-HECTON-8 beginnt an der Wasserlinie: eine beschädigte Abstiegskapsel, ein helles außerirdisches Schelf und ein Carrier, der zu weit entfernt ist, um klar zu antworten. Das erste Rätsel ist nicht, was darunter lebt, sondern warum die Rettungskette bereits feindselig wirkt.
-
-## Scanner
-
-Wrack einer Bathy-Abwurfkapsel. Druckrahmen intakt, Aufstiegspaket zerstört. Sie hält dich am Leben, bringt dich aber nicht heim.
-
-## Terminal
-
-AUFSTIEGSPAKET: fehlt. UPLINK-KERN: Bruch erkannt. CARRIER-KONTAKT: verzögert.
-
-## Audio
-
-Black-Keel-Handshake empfangen. Paketintegrität unter Bergungsschwelle. Wiederhole: Schwelle nicht erreicht.
-
-## Field Note
-
-Wenn die Kapselhülle noch Druck hält, schlachte sie nicht aus. Ein schlechter Unterschlupf ist mehr wert als ein sauberes Inventar.
+Das Absturzschelf ist der erste Raum des Spielers und der erste Tatort. Eine Abstiegskapsel liegt halb begraben in Salzkraut und warmer Keramik, zu beschädigt zum Verlassen und zu nützlich zum Aufgeben. Ihr überlebender Rahmen gibt dem Spieler Unterkunft, Bergungsgut, Scannerziele und eine Leitung zu Black Keel, die erst nach Prozedur klingt und erst später nach Mensch. Dieser Ton zählt. Der Carrier antwortet nicht wie ein Freund. Er inventarisiert den Fehler: Aufstiegspaket weg, Uplink gebrochen, Operator am Leben, Bergungsbefugnis ungeklärt. Der Startort lehrt HECTON-8 ohne Vortrag. Schönheit ist vorhanden: flache Biolumineszenz, Rifffarbe, Sturmlicht unter Aegir. Die industrielle Gewalt ist ebenso vorhanden: gestempelte Teile, Einschlagsnarben, Anspruchssprache, eine Rettungskette, die schon Kosten zählt. Die erste Frage ist praktisch: am Leben bleiben. Die zweite kommt im selben Wrack an: Wem nützt es, wenn du es schaffst?
 
 <!-- External Site; generated from P001_CRASH_SHELF/de_DE. -->

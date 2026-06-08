@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DIE ÖKONOMIE DES ÜBERLEBENS UND DIE KEELMARK-SCHULDEN
 
 > **Quelle:** Keelmark Independent Contractor Agreement, Anhang 14-B (Finanzielle Verpflichtungen).

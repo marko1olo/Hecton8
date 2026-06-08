@@ -135,12 +135,18 @@ namespace Hecton8.Economy
         private readonly float[] _directiveMarkerHeightOffsets = new float[MaxDirectiveResources];
         // COLD ALLOC: QuestPhaseGateType[8] - cached directive phase gates - owner: ResourceScarcityDirector
         private readonly QuestPhaseGateType[] _directivePhaseGates = new QuestPhaseGateType[MaxDirectiveResources];
+        // COLD ALLOC: int[96] - deterministic save-order scratch for tracked scarcity item hashes - owner: ResourceScarcityDirector
+        private readonly int[] _saveItemHashScratch = new int[ResourceScarcityDTO.MaxTrackedResources];
+        // COLD ALLOC: int[96] - deterministic save-order scratch for tracked scarcity collected counts - owner: ResourceScarcityDirector
+        private readonly int[] _saveCollectedCountScratch = new int[ResourceScarcityDTO.MaxTrackedResources];
 
         private bool _registeredSlowTickable;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private bool _saveServiceRegistered;
+        private bool _interactionRegistered;
         private ISaveService _cachedSaveService;
+        private ISaveService _registeredSaveService;
         private IQuestSystem _cachedQuestManager;
         private IPlayerInventoryService _cachedInventoryService;
         private IPlayerRuntimeContext _cachedPlayerContext;
@@ -174,7 +180,7 @@ namespace Hecton8.Economy
             TryRegisterService();
             TryRegisterWithSaveManager();
             TryRegisterSlowTickable();
-            InteractionEvents.Register(this);
+            TryRegisterInteractionListener();
             CacheDirectiveDefinitions();
         }
 
@@ -183,7 +189,7 @@ namespace Hecton8.Economy
             TryUnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
             TryUnregisterSlowTickable();
-            InteractionEvents.Unregister(this);
+            TryUnregisterInteractionListener();
             TryUnregisterService();
         }
 
@@ -192,7 +198,7 @@ namespace Hecton8.Economy
             TryUnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
             TryUnregisterSlowTickable();
-            InteractionEvents.Unregister(this);
+            TryUnregisterInteractionListener();
             TryUnregisterService();
         }
 
@@ -387,7 +393,7 @@ namespace Hecton8.Economy
             float multiplier = Mathf.Max(
                 1f + GetSectorCraftInflationScalar(itemHashId, in worldPosition),
                 ResolveHoardingIngredientMultiplier(itemHashId, accessibleUnits));
-            return Mathf.Max(baseAmount, (int)math.ceil(baseAmount * multiplier));
+            return SaturatingInflatedAmountAtLeastBase(baseAmount, multiplier);
         }
 
         private static int ResolveInflatedIngredientAmountWithoutSector(int itemHashId, int baseAmount, int accessibleUnits)
@@ -396,7 +402,7 @@ namespace Hecton8.Economy
                 return Mathf.Max(0, baseAmount);
 
             float multiplier = ResolveHoardingIngredientMultiplier(itemHashId, accessibleUnits);
-            return Mathf.Max(baseAmount, (int)math.ceil(baseAmount * multiplier));
+            return SaturatingInflatedAmountAtLeastBase(baseAmount, multiplier);
         }
 
         private static float ResolveHoardingIngredientMultiplier(int itemHashId, int accessibleUnits)
@@ -407,6 +413,40 @@ namespace Hecton8.Economy
             return itemHashId == _TitaniumDirectiveHashId
                 ? TitaniumHoardingIngredientMultiplier
                 : 1f;
+        }
+
+        public static int SaturatingAddCollectedUnits(int currentUnits, int addedUnits)
+        {
+            long total = SaturatingAddPositiveUnits(currentUnits, addedUnits);
+            return total > int.MaxValue ? int.MaxValue : (int)total;
+        }
+
+        public static long SaturatingAddPositiveUnits(long currentUnits, int addedUnits)
+        {
+            long normalizedCurrent = currentUnits > 0L ? currentUnits : 0L;
+            if (addedUnits <= 0)
+                return normalizedCurrent;
+
+            return long.MaxValue - normalizedCurrent < addedUnits
+                ? long.MaxValue
+                : normalizedCurrent + addedUnits;
+        }
+
+        public static int SaturatingInflatedAmountAtLeastBase(int baseAmount, float multiplier)
+        {
+            int normalizedBaseAmount = Mathf.Max(0, baseAmount);
+            if (normalizedBaseAmount == 0)
+                return 0;
+            if (float.IsNaN(multiplier) || multiplier < 1f)
+                return normalizedBaseAmount;
+            if (float.IsPositiveInfinity(multiplier))
+                return int.MaxValue;
+
+            double inflatedAmount = Math.Ceiling(normalizedBaseAmount * (double)multiplier);
+            if (inflatedAmount >= int.MaxValue)
+                return int.MaxValue;
+
+            return Math.Max(normalizedBaseAmount, (int)inflatedAmount);
         }
 
         public void OnInteractionEvent(in InteractionEventPayload payload)
@@ -422,18 +462,27 @@ namespace Hecton8.Economy
             if (itemHashId == 0)
                 return;
 
-            if (InteractionEvents.TryResolveItem(in payload, out ItemData item) &&
-                item != null &&
-                !item.isRawResource &&
-                item.category != ItemCategory.Material)
+            if (!InteractionEvents.TryResolveItem(in payload, out ItemData item) || item == null)
             {
                 return;
             }
 
+            if (!item.isRawResource && item.category != ItemCategory.Material)
+                return;
+
+            if (ItemData.ResolvePersistentHashId(item) != itemHashId)
+                return;
+
+            string stableItemId = SaveData.SanitizePersistenceString(item.PersistentId);
+            if (stableItemId.Length != 0)
+            {
+                _itemIdsByHash[itemHashId] = stableItemId;
+            }
+
             if (_collectedByItemHash.TryGetValue(itemHashId, out int currentCount))
-                _collectedByItemHash[itemHashId] = currentCount + payload.Quantity;
+                _collectedByItemHash[itemHashId] = SaturatingAddCollectedUnits(currentCount, payload.Quantity);
             else
-                _collectedByItemHash[itemHashId] = payload.Quantity;
+                _collectedByItemHash[itemHashId] = SaturatingAddCollectedUnits(0, payload.Quantity);
 
             if (TryResolvePlayerAup(out AbsoluteUniversePosition extractionAup))
             {
@@ -458,19 +507,117 @@ namespace Hecton8.Economy
             dto.EnsureCapacity();
             dto.entryCount = 0;
 
+            int scratchCount = CopyCollectedStateToSaveScratch();
+            for (int i = 0; i < scratchCount; i++)
+            {
+                int itemHashId = _saveItemHashScratch[i];
+                _itemIdsByHash.TryGetValue(itemHashId, out string stableItemId);
+                dto.itemHashIds[dto.entryCount] = itemHashId;
+                dto.itemIds[dto.entryCount] = SaveData.SanitizePersistenceString(stableItemId);
+                dto.collectedCounts[dto.entryCount] = _saveCollectedCountScratch[i];
+                dto.entryCount++;
+            }
+
+            ClearResourceScarcityDtoTail(ref dto, dto.entryCount);
+        }
+
+        private static void ClearResourceScarcityDtoTail(ref ResourceScarcityDTO dto, int startIndex)
+        {
+            int start = Mathf.Clamp(startIndex, 0, ResourceScarcityDTO.MaxTrackedResources);
+            for (int i = start; i < ResourceScarcityDTO.MaxTrackedResources; i++)
+            {
+                dto.itemHashIds[i] = 0;
+                dto.itemIds[i] = string.Empty;
+                dto.collectedCounts[i] = 0;
+            }
+        }
+
+        private int CopyCollectedStateToSaveScratch()
+        {
+            int scratchCount = 0;
             Dictionary<int, int>.Enumerator enumerator = _collectedByItemHash.GetEnumerator();
             while (enumerator.MoveNext())
             {
-                if (dto.entryCount >= ResourceScarcityDTO.MaxTrackedResources)
-                    break;
+                int collectedCount = Mathf.Max(0, enumerator.Current.Value);
+                if (collectedCount <= 0)
+                    continue;
 
                 int itemHashId = enumerator.Current.Key;
-                _itemIdsByHash.TryGetValue(itemHashId, out string stableItemId);
-                dto.itemHashIds[dto.entryCount] = itemHashId;
-                dto.itemIds[dto.entryCount] = stableItemId;
-                dto.collectedCounts[dto.entryCount] = Mathf.Max(0, enumerator.Current.Value);
-                dto.entryCount++;
+                if (itemHashId == 0)
+                    continue;
+
+                if (scratchCount < ResourceScarcityDTO.MaxTrackedResources)
+                {
+                    _saveItemHashScratch[scratchCount] = itemHashId;
+                    _saveCollectedCountScratch[scratchCount] = collectedCount;
+                    scratchCount++;
+                    continue;
+                }
+
+                int lowestPriorityIndex = 0;
+                for (int i = 1; i < scratchCount; i++)
+                {
+                    if (CompareSaveRetentionPriority(
+                            _saveItemHashScratch[i],
+                            _saveCollectedCountScratch[i],
+                            _saveItemHashScratch[lowestPriorityIndex],
+                            _saveCollectedCountScratch[lowestPriorityIndex]) >= 0)
+                    {
+                        continue;
+                    }
+
+                    lowestPriorityIndex = i;
+                }
+
+                if (CompareSaveRetentionPriority(
+                        itemHashId,
+                        collectedCount,
+                        _saveItemHashScratch[lowestPriorityIndex],
+                        _saveCollectedCountScratch[lowestPriorityIndex]) <= 0)
+                {
+                    continue;
+                }
+
+                _saveItemHashScratch[lowestPriorityIndex] = itemHashId;
+                _saveCollectedCountScratch[lowestPriorityIndex] = collectedCount;
             }
+
+            SortSaveScratchByHash(scratchCount);
+            return scratchCount;
+        }
+
+        private void SortSaveScratchByHash(int count)
+        {
+            for (int i = 1; i < count; i++)
+            {
+                int hash = _saveItemHashScratch[i];
+                int collectedCount = _saveCollectedCountScratch[i];
+                int write = i - 1;
+                while (write >= 0 && CompareSaveOrderHash(_saveItemHashScratch[write], hash) > 0)
+                {
+                    _saveItemHashScratch[write + 1] = _saveItemHashScratch[write];
+                    _saveCollectedCountScratch[write + 1] = _saveCollectedCountScratch[write];
+                    write--;
+                }
+
+                _saveItemHashScratch[write + 1] = hash;
+                _saveCollectedCountScratch[write + 1] = collectedCount;
+            }
+        }
+
+        private static int CompareSaveOrderHash(int left, int right)
+        {
+            uint leftKey = unchecked((uint)left);
+            uint rightKey = unchecked((uint)right);
+            if (leftKey < rightKey)
+                return -1;
+            return leftKey > rightKey ? 1 : 0;
+        }
+
+        private static int CompareSaveRetentionPriority(int leftHash, int leftCount, int rightHash, int rightCount)
+        {
+            int countCompare = leftCount.CompareTo(rightCount);
+            return countCompare != 0 ? countCompare : CompareSaveOrderHash(rightHash, leftHash);
         }
 
         /// <inheritdoc />
@@ -481,34 +628,43 @@ namespace Hecton8.Economy
             Array.Clear(_knownClusters, 0, _knownClusters.Length);
             Array.Clear(_sectorExtractionRecords, 0, _sectorExtractionRecords.Length);
 
-            if (data == null)
-                return;
-
-            ResourceScarcityDTO dto = data.resourceScarcity;
-            if (dto.collectedCounts == null || dto.entryCount <= 0)
-                return;
-
-            int hashCapacity = dto.itemHashIds != null ? dto.itemHashIds.Length : 0;
-            int itemIdCapacity = dto.itemIds != null ? dto.itemIds.Length : 0;
-            int count = Mathf.Min(
-                dto.entryCount,
-                Mathf.Min(Mathf.Max(hashCapacity, itemIdCapacity), dto.collectedCounts.Length));
-            for (int i = 0; i < count; i++)
+            if (data != null)
             {
-                string stableItemId = i < itemIdCapacity ? dto.itemIds[i] : null;
-                int itemHashId = i < hashCapacity ? dto.itemHashIds[i] : 0;
-                if (itemHashId == 0 && !string.IsNullOrWhiteSpace(stableItemId))
-                    itemHashId = LocHash.Compute(stableItemId);
-                if (itemHashId == 0)
-                    continue;
+                ResourceScarcityDTO dto = data.resourceScarcity;
+                if (dto.collectedCounts != null && dto.entryCount > 0)
+                {
+                    int hashCapacity = dto.itemHashIds != null ? dto.itemHashIds.Length : 0;
+                    int itemIdCapacity = dto.itemIds != null ? dto.itemIds.Length : 0;
+                    int count = Mathf.Min(
+                        dto.entryCount,
+                        Mathf.Min(Mathf.Max(hashCapacity, itemIdCapacity), dto.collectedCounts.Length));
+                    for (int i = 0; i < count; i++)
+                    {
+                        string stableItemId = i < itemIdCapacity
+                            ? SaveData.SanitizePersistenceString(dto.itemIds[i])
+                            : string.Empty;
+                        int itemHashId = i < hashCapacity ? dto.itemHashIds[i] : 0;
+                        if (itemHashId != 0 && stableItemId.Length != 0 && LocHash.Compute(stableItemId) != itemHashId)
+                            stableItemId = string.Empty;
 
-                int collectedCount = Mathf.Max(0, dto.collectedCounts[i]);
-                if (collectedCount <= 0)
-                    continue;
+                        if (itemHashId == 0 && stableItemId.Length != 0)
+                            itemHashId = LocHash.Compute(stableItemId);
+                        if (itemHashId == 0)
+                            continue;
 
-                _collectedByItemHash[itemHashId] = collectedCount;
-                if (!string.IsNullOrWhiteSpace(stableItemId))
-                    _itemIdsByHash[itemHashId] = stableItemId;
+                        int collectedCount = Mathf.Max(0, dto.collectedCounts[i]);
+                        if (collectedCount <= 0)
+                            continue;
+
+                        if (_collectedByItemHash.TryGetValue(itemHashId, out int existingCount))
+                            _collectedByItemHash[itemHashId] = SaturatingAddCollectedUnits(existingCount, collectedCount);
+                        else
+                            _collectedByItemHash[itemHashId] = collectedCount;
+
+                        if (stableItemId.Length != 0)
+                            _itemIdsByHash[itemHashId] = stableItemId;
+                    }
+                }
             }
 
             unchecked
@@ -683,10 +839,18 @@ namespace Hecton8.Economy
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext != null && playerContext.PlayerMovement != null)
+            if (playerContext != null)
             {
-                playerAup = playerContext.PlayerMovement.CurrentAup;
-                return IsFiniteAup(in playerAup);
+                if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                    !IsFiniteAup(in movementState.PredictedAup))
+                {
+                    playerAup = default;
+                    return false;
+                }
+
+                playerAup = movementState.PredictedAup;
+                return true;
             }
 
             playerAup = default;
@@ -748,7 +912,7 @@ namespace Hecton8.Economy
                 if (record.ItemHashId != itemHashId || record.SectorKey != sectorKey)
                     continue;
 
-                record.ExtractedUnits += quantity;
+                record.ExtractedUnits = SaturatingAddCollectedUnits(record.ExtractedUnits, quantity);
                 _sectorExtractionRecords[i] = record;
                 return;
             }
@@ -760,7 +924,7 @@ namespace Hecton8.Economy
             {
                 ItemHashId = itemHashId,
                 SectorKey = sectorKey,
-                ExtractedUnits = quantity
+                ExtractedUnits = SaturatingAddCollectedUnits(0, quantity)
             };
         }
 
@@ -959,25 +1123,38 @@ namespace Hecton8.Economy
 
         private void TryRegisterWithSaveManager()
         {
-            if (_saveServiceRegistered)
+            if (_saveServiceRegistered || !Application.isPlaying)
                 return;
 
             ISaveService saveService = _cachedSaveService;
-            if (saveService == null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _cachedSaveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveServiceRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterFromSaveManager()
         {
-            if (!_saveServiceRegistered)
+            if (!_saveServiceRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _cachedSaveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _cachedSaveService;
             if (saveService != null)
                 saveService.Unregister(this);
+            _registeredSaveService = null;
             _saveServiceRegistered = false;
         }
 
@@ -996,6 +1173,24 @@ namespace Hecton8.Economy
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterInteractionListener()
+        {
+            if (_interactionRegistered || !Application.isPlaying)
+                return;
+
+            InteractionEvents.Register(this);
+            _interactionRegistered = true;
+        }
+
+        private void TryUnregisterInteractionListener()
+        {
+            if (!_interactionRegistered)
+                return;
+
+            InteractionEvents.Unregister(this);
+            _interactionRegistered = false;
         }
     }
 }

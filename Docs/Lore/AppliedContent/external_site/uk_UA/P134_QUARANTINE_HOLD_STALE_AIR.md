@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Карантинне утримання: сперте повітря"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Карантинне утримання: сперте повітря
 
-UA LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+Карантинне утримання - найтихіший хибний вихід. Йому не потрібен лиходій у кімнаті. Форма каже: вилучено живим. Лічильник повітря каже: раціон активний. Наступні двері відкриються лише після перевірки зараження, спору claimant і страхового review.
 
-## Scanner
-
-UA LOC HOLD: You are alive, sealed, and still not free.
-
-## Terminal
-
-UA LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-UA LOC HOLD: The hatch opens only to another closed hatch.
-
-## Field Note
-
-UA LOC HOLD: This is the bureaucratic version of drowning.
+Наслідок жорстокий тому, що його можна захистити. Ніхто не вбив свідка. Ніхто не знищив зразок. Система просто змушує кожну заяву чекати довше, ніж тіла колись могли чекати. Гравець переживає океан і входить у герметичний коридор, збудований із процедури.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/uk_UA. -->

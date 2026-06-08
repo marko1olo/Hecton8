@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Escalier de saumure
 
-Brine Stair transforme la géologie de HECTON-8 en traversée. La profondeur se lit, elle ne se force pas seulement.
-
-## Scanner
-
-Couche de saumure très dense. Les retours sonar plient à la limite. Modèle de flottabilité peu fiable.
-
-## Terminal
-
-Alignement du captage thermique terminé. Croissance du substrat au-dessus des prévisions. Requête Atlas reportée.
-
-## Audio
-
-Il y a tout un escalier ici, si tu arrêtes de traiter l'eau comme une seule chose.
-
-## Field Note
-
-La cote de coque dit quand le métal cède. La saumure dit quand tu étais arrogant.
+L'Escalier de saumure est le moment où HECTON-8 cesse d'être une simple descente et devient une machine faite d'eau. La saumure dense ne se mélange pas proprement avec les couches au-dessus. Elle repose en plateaux, rideaux et rivières lentes au fond, courbant le sonar et changeant la flottabilité au pire moment. Ce danger donne au joueur une nouvelle lecture. Une coque plus forte aide, mais lire l'eau compte davantage : où la chaleur soulève, où le sel descend, où une limite peut être suivie comme une route, et où un changement de ballast négligent plaquera l'engin sous un plafond invisible. La valeur de lore est aussi importante. Les escaliers de saumure préservent ce que la colonie a tenté de perdre. Ils gardent anciens marqueurs de route, coffres de pression, drones morts, traces chimiques et parfois corps dans des couches qui ne se sont pas mélangées depuis des décennies. Chaque marche vers le bas peut devenir navigation, archéologie et accusation en même temps.
 
 <!-- External Site; generated from P007_BRINE_STAIR/fr_FR. -->

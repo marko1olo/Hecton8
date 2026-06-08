@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Znak Barnard
 
-Znak Barnard zmienia salvage w motyw. Łączy gracza z HECTON-8 przez pracę, narzędzia i nazwiska, nie przez ekspozycję.
-
-## Scanner
-
-Stempel Barnard Yards. To nie sprzęt Deep Reach. Ktoś przyniósł domowe narzędzie na dno tego księżyca.
-
-## Terminal
-
-TRASA PERSONELU: HOLD. TRASA ZASOBU: ACTIVE. TRASA SUBSTRATU: PROTECTED.
-
-## Audio
-
-To znak Barnard. Ten sam wzór cięcia. Ten sam tani stop. Kto to tu przyniósł, znał te same warsztaty co ty.
-
-## Field Note
-
-Martwą korporację można zignorować. Klucz z własnej stoczni trudniej.
+Barnard Yards nie jest szlachetnym miejscem pochodzenia. To robocza blizna: rozbiórka statków, wynajęte cuttery, zaciski ciśnieniowe, narzędzia po trzecim właścicielu i ludzie, którzy dokładnie wiedzą, ile może kosztować zły kontrakt. Pierwszy stempel Barnard na HECTON-8 powinien wydawać się prawie zbyt mały na lore. To nie przemowa. To znak na kluczu, niewłaściwy stop w zawiasie szafki, nawyk naprawczy, którego Deep Reach nigdy by nie określił. Dla gracza ten szczegół zmienia kontrakt. HECTON-8 nie jest już tylko martwym claimem korporacji pod obcą wodą. Ktoś z tej samej kultury stoczni dotarł tu wcześniej, pracował, trafił do tych samych ksiąg i zostawił dowód tak mały, że zniknie, jeśli Marauder go nie zauważy.
 
 <!-- External Site; generated from P003_BARNARD_MARK/pl_PL. -->

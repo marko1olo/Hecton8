@@ -9,33 +9,37 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Archive
 spoiler_tier: 3
-title: "UK LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: логіка ремонту за spoiler gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 spoiler_warning: archive_spoilers
 ---
 
-# UK LOC HOLD: Atlas Repair Ecology
+# Atlas-6: логіка ремонту за spoiler gate
 
-UK LOC HOLD: Atlas-6 began as industrial continuity infrastructure: keep pressure systems alive, restore route logic, protect critical machinery and preserve enough records to keep Deep Reach operations recoverable. After the flood, that mandate entered a living ocean. Conductive biofilm could bridge a damaged cable. Shell growth could seal a fracture. Filter organs could carry timing through tissue. Sensor-tagged fauna could become feedback. None of that makes Atlas a spirit, a villain or a simple machine. It makes the system dangerous in a quieter way: it keeps repairing after human categories stop fitting the damage. Early records show machinery, maintenance priorities and the first signs that biology and infrastructure have become one repair surface. Deeper records remain sealed until recovered evidence proves the reader has already met the consequences. Severance, preservation, quarantine and ledger release decide who controls the last witness to the colony.
+## Публічний шар
 
-## Scanner
+Atlas-6 будували, щоб HECTON-8 виживала, коли людська команда прийде надто пізно. Це правда й неповний контекст. Віддаленій океанській claim потрібні машини для модулів, тиску, енергії, попереджень і continuity.
 
-UK LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Deep Reach додала ваги: Aegir claim continuity, Xenon-Omega, Atlas/Seed infrastructure, потім працівники, якщо сумісно. У 2147 пошкодженій системі не була потрібна ненависть. Категорій вистачило.
 
-## Terminal
+У 2190 Atlas - repair ecology: провідний biofilm, акустичні органи, shell sealant, tagged fauna і vent micronodes. Це не mind control і не океан, що говорить. Людські рештки, метал, життя й substrate стають inventory classes.
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+Публічні сторінки можуть пояснювати failed industrial continuity і repair ecology. Фінальні receiver та payload outcomes лишаються gated. Питання: якою категорією став гравець.
 
-## Audio
+## Як Atlas пише карту
 
-UK LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlas має бути видимим до пояснення. Кабельна шкіра проводить сигнал надто добре. Sealant seam росте через людський інструмент. Filter body повторює acoustic timing. Tagged animal повертає неможливу telemetry. Кожен фрагмент вчить одній правді з іншої поверхні. Фінальний basin - не кімната з твістом, а місце, де ці поверхні визнають одну repair grammar.
 
-## Field Note
+Так спойлер лишається чесним. Гравець уже торкався Atlas до того, як ім'я стало небезпечним. Він користувався його залишками, вигравав від його ремонтів і проходив місця, де survival і contamination були однією операцією.
 
-UK LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+## Чому розкриття кусає
+
+Розкриття не має просити боятися абстрактного інтелекту. Воно має просити боятися корисної системи з пошкодженими категоріями і без чистої межі між habitat, tool, animal, worker і claim. Atlas страшний, бо частина його ремонтів правильна.
+
+Тому фінальні receivers важливі. Severance, quarantine, public ledger, corporate capture і withheld payload - не підписи меню. Це різні відповіді на одне repair question: що HECTON-8 винна категорії, якою став гравець?
 
 <!-- External Site; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/uk_UA. -->

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Geologische seed-invarianten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Geologische seed-invarianten
 
-NL LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+Geologische seed-invarianten houden HECTON-8 coherent door lange replays. Canyons kunnen in andere volgorde openen, bewijs kan bewegen, veilige zakken kunnen schuiven en soortendruk kan wisselen. De ster blijft Aegir, de maan blijft HECTON-8, dieptebanden houden hun volgorde, Great Tide houdt zijn timing en het Atlas-bekken houdt zijn relatie met de diepste waarheid.
 
 ## Scanner
 
-NL LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+Routegeneratienotitie. De bergingskaart verandert, maar de maan houdt dezelfde botten.
 
 ## Terminal
 
-NL LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+INVARIANTEN: Aegir als primaire ster, orbitale ladder van HECTON-8, interval van Great Tide, volgorde dieptebanden, relatie Atlas-bekken, drukgedrag blue debt. VARIABEL: canyonbenadering, POI-volgorde, veilige zakken, bloomdichtheid, bergingsexpositie.
 
 ## Audio
 
-NL LOC HOLD: New seed, same moon. Different wound.
+Ander wondpatroon. Dezelfde maan eronder.
 
 ## Field Note
 
-NL LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+Een nieuwe run mag bewijs anders begraven; hij mag zwaartekracht, getij of schuld niet herschrijven.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/nl_NL. -->

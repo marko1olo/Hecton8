@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Ending Record Transcript Seed"
+title: "엔딩 기록 트랜스크립트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Ending Record Transcript Seed
+# 엔딩 기록 트랜스크립트
 
-KO LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
+엔딩 기록 트랜스크립트는 지식을 상속되는 힘으로 바꾸지 않고 outcome을 기록 가능하고 replay 비교 가능하게 만든다.
 
 ## Scanner
 
-KO LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+엔딩 기록 조각이 receiver, payload hash, 부채 상태, 해결되지 않은 비용을 항목화한다.
 
 ## Terminal
 
-KO LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.
 
 ## Audio
 
-KO LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
+사후 기록. receiver가 payload hash 수락. claim 회계상 종료. suppression flag 판독 불가. truth custody 미해결.
 
 ## Field Note
 
-KO LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+엔딩 dossier 기록. receiver, custody, 미해결 비용을 말할 것. 깨끗한 도덕적 종결 금지.
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/ko_KR. -->

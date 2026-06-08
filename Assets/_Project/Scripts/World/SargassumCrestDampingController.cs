@@ -200,6 +200,8 @@ namespace Hecton8.World
             RestoreLegacyInputs();
             ReleaseFacadeResources();
             FlushFacadeGlobals(active: false, forceClear: true);
+            dragManager = null;
+            cutManager = null;
         }
 
         private void OnDestroy()
@@ -210,6 +212,8 @@ namespace Hecton8.World
             RestoreLegacyInputs();
             ReleaseFacadeResources();
             FlushFacadeGlobals(active: false, forceClear: true);
+            dragManager = null;
+            cutManager = null;
         }
 
         /// <summary>
@@ -293,10 +297,17 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
-            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
+            ApplyRuntimeOffsetToCachedState(-shiftOffset);
         }
 
         private void ResolveDependencies()
@@ -306,11 +317,9 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            if (dragManager == null)
-                dragManager = SargassumGlobalDragManager.Instance;
+            WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref dragManager);
 
-            if (cutManager == null)
-                cutManager = SargassumCutManager.Instance;
+            WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref cutManager);
 
             ResolveLegacyInputs();
             FlushFacadeBakeKernelRepairSlow();
@@ -330,17 +339,25 @@ namespace Hecton8.World
         {
             if (serviceSlot == GlobalRegistryServiceSlot.SargassumDragRuntime)
             {
-                if (dragManager == null || ReferenceEquals(dragManager, previousService))
+                if (dragManager == null ||
+                    !dragManager.isActiveAndEnabled ||
+                    ReferenceEquals(dragManager, previousService))
+                {
                     dragManager = currentService as SargassumGlobalDragManager;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref dragManager);
+                }
                 FlushFacadeBakeKernelRepairSlow();
                 RefreshFacadeTextures(force: true, allowAllocate: true);
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.SargassumCutRuntime &&
-                (cutManager == null || ReferenceEquals(cutManager, previousService)))
+                (cutManager == null ||
+                 !cutManager.isActiveAndEnabled ||
+                 ReferenceEquals(cutManager, previousService)))
             {
                 cutManager = currentService as SargassumCutManager;
+                WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref cutManager);
                 FlushFacadeBakeKernelRepairSlow();
                 RefreshFacadeTextures(force: true, allowAllocate: true);
             }

@@ -9,32 +9,36 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Revoked Access Language Trace"
+title: "Rastro de lenguaje de acceso revocado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Revoked Access Language Trace
+# Rastro de lenguaje de acceso revocado
 
-ES LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+El protagonista lee los bloqueos de Deep Reach como evidencia. Las credenciales revocadas cierran el acceso, pero la redacción todavía expone la ruta enterrada: recuentos degradados, testigos sustitutos, reclasificación de mantenimiento y lenguaje de preservación de reclamación.
 
 ## Scanner
 
-ES LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+El bloqueo no dice prohibido. Dice reclasificación de mantenimiento, retención de continuidad y materiales de ruta. Vieja fraseología de Deep Reach: una negativa que aún apunta a la puerta enterrada.
 
 ## Terminal
 
-ES LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+RESPUESTA DE ACCESO / ARCHIVO DE RUTA SEGURA
+credencial: revocada
+motivo: materiales de continuidad de evacuación restringidos a personal certificado de Deep Reach
+términos visibles: recuento degradado, testigo sustituto, ruta de preservación de reclamación, reclasificación de mantenimiento
+nota: el antiguo personal de campo puede ver el lenguaje de denegación solo para conciliación de incidente.
 
 ## Audio
 
-ES LOC HOLD: That is not security. That is a memo pretending to be a door.
+No borraron el pasillo. Lo envolvieron en un vocabulario que solo el personal culpable sigue entendiendo.
 
 ## Field Note
 
-ES LOC HOLD: Lockout language hints at hidden liability without granting free access.
+La placa está muerta. El bloqueo todavía habla el dialecto de oficina que enterró la ruta.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/es_ES. -->

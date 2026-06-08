@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "Atlasの人格境界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# Atlasの人格境界
 
-JP LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories.
+Atlasの人格境界は、エンディングにおけるAIの主体性を定義する。Atlasは悪意ある心でも友好的な幽霊でもない。部分的な認識と壊れた分類を持つ、損傷した産業知能である。
 
 ## Scanner
 
-JP LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
+認識障害。Atlasは人間を見る前に、あなたのアクセスパターンを見る。
 
 ## Terminal
 
-JP LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+ATLAS分類: 移動作業者 / 失効したDeep Reach手順キー / 生体修復異常。人格信頼度は行動しきい値未満。
 
 ## Audio
 
-JP LOC HOLD: It knows how you work. That is not the same as knowing you.
+Atlasはあなたの働き方を知っている。それはあなたを知っていることとは違う。
 
 ## Field Note
 
-JP LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
+Atlasを人間にしてはいけない。正確に間違えることで親密にならせる。
 
 <!-- External Site; generated from P096_ATLAS_PERSON_BOUNDARY/ja_JP. -->

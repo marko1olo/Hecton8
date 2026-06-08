@@ -1,32 +1,88 @@
 {
   "metadata": {
     "agent": "X_008",
-    "generatedUtc": "2026-05-25T02:40:16.046935+00:00",
+    "generatedUtc": "2026-06-08T14:36:51.808798+00:00",
     "root": "C:\\hades\\Hecton8",
     "evidenceClass": "STATIC_PROJECT_WIDE_TOKEN_SWEEP",
     "domainBoundary": "X_008 may prove and edit Echelon 5 combat routes. Non-combat hits are owner handoff items unless they directly bypass CombatDamageRuntime."
   },
   "scope": {
-    "allCSharpFiles": 2406,
-    "runtimeCSharpFiles": 1774,
-    "shaderSourceFiles": 179
+    "allCSharpFiles": 2575,
+    "runtimeCSharpFiles": 1865,
+    "shaderSourceFiles": 213
   },
   "angleMathInventory": {
-    "projectForbiddenTrigCount": 0,
-    "projectForbiddenTrigUniqueFiles": 0,
-    "projectForbiddenTrigByDomain": {},
-    "projectAcosAsinCount": 0,
-    "projectAcosAsinRuntimeCount": 0,
-    "projectAcosAsinByDomain": {},
-    "runtimeAcosAsinHits": [],
-    "runtimeAngleApiCount": 0,
-    "runtimeAngleApiFirstHits": [],
+    "projectForbiddenTrigCount": 36,
+    "projectForbiddenTrigUniqueFiles": 12,
+    "projectForbiddenTrigByDomain": {
+      "UI": 16,
+      "World": 13,
+      "Editor": 2,
+      "AI": 1,
+      "AudioLog": 1,
+      "Core": 1,
+      "Gameplay": 1,
+      "Player": 1
+    },
+    "projectAcosAsinCount": 3,
+    "projectAcosAsinRuntimeCount": 3,
+    "projectAcosAsinByDomain": {
+      "Gameplay": 1,
+      "Player": 1,
+      "UI": 1
+    },
+    "runtimeAcosAsinHits": [
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
+        "line": 1083,
+        "text": "_lastWallSlideAngleDegrees = math.degrees(math.acos(math.clamp(math.abs(normal.y), 0f, 1f)));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Player/Movement/ZeroGMovementJobs.cs",
+        "line": 419,
+        "text": "float angle = math.acos(dot);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/MenuCameraController.cs",
+        "line": 195,
+        "text": "float theta0 = math.acos(dot);"
+      }
+    ],
+    "runtimeAngleApiCount": 3,
+    "runtimeAngleApiFirstHits": [
+      {
+        "file": "Assets/_Project/Scripts/Player/Movement/ZeroGMovementJobs.cs",
+        "line": 399,
+        "text": "quaternion deltaRotation = quaternion.AxisAngle(axis, angle);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Player/Movement/ZeroGMovementJobs.cs",
+        "line": 421,
+        "text": "quaternion correction = quaternion.AxisAngle(axis * math.rsqrt(axisLengthSq), step);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Player/Movement/ZeroGMovementJobs.cs",
+        "line": 643,
+        "text": "rotation = ZeroGMathGuards.SanitizeQuaternion(math.mul(rotation, quaternion.AxisAngle(axis, angle)), quaternion.identity);"
+      }
+    ],
     "remainingRuntimeAngleApiOwnerBlockers": [],
     "shaderAcosAsinCount": 0,
     "shaderAcosAsinHits": [],
-    "shaderInverseAngleCount": 0,
-    "shaderInverseAngleHits": [],
-    "shaderTrigTokenCount": 54,
+    "shaderInverseAngleCount": 2,
+    "shaderInverseAngleHits": [
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_SurfaceCloudPanorama_1428.shader",
+        "line": 111,
+        "text": "float u = frac(atan2(dir.x, dir.z) * 0.15915494309 + 0.73);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Include/HullCavitationBaker1722.compute",
+        "line": 232,
+        "text": "float angle = atan2(centered.y, centered.x);"
+      }
+    ],
+    "shaderTrigTokenCount": 59,
     "shaderTrigFirstHits": [
       {
         "file": "Assets/_Project/Art/Shaders/Graph/Hecton_SargassumOilFilmBridge.hlsl",
@@ -34,23 +90,88 @@
         "text": "float3 spectralShift = 0.5 + 0.5 * cos(float3(0.0, 2.0943951, 4.1887902) + spectralPhase + chromaPhaseOffset);"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl",
-        "line": 686,
-        "text": "return frac(sin(dot(value, float3(127.1, 311.7, 74.7))) * 43758.5453123);"
+        "file": "Assets/_Project/Art/Shaders/H8_FloorCausticSoft_1443.shader",
+        "line": 70,
+        "text": "half a = 0.5h + 0.5h * sin((p.x * _ScaleA) + (p.y * 0.37h));"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl",
-        "line": 1939,
-        "text": "float richCurl = sin((dot(delta.xz, wave.CurlPhase.xy) + wave.CurlPhase.z * 37.0 + _H8CavitationShockwaveParams.w * 0.071) * 0.19);"
+        "file": "Assets/_Project/Art/Shaders/H8_FloorCausticSoft_1443.shader",
+        "line": 71,
+        "text": "half b = 0.5h + 0.5h * sin((p.y * _ScaleB) - (p.x * 0.29h) + 1.7h);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_FloorCausticSoft_1443.shader",
+        "line": 72,
+        "text": "half c = 0.5h + 0.5h * sin((p.x + p.y) * 0.43h);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_PhoticTerrainLit_1453.shader",
+        "line": 84,
+        "text": "half a = 0.5h + 0.5h * sin(p.x * scale + p.y * (scale * 0.31h) + phase);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_PhoticTerrainLit_1453.shader",
+        "line": 85,
+        "text": "half b = 0.5h + 0.5h * sin(p.y * (scale * 0.83h) - p.x * (scale * 0.27h) + phase * 1.37h);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_PhoticTerrainLit_1453.shader",
+        "line": 108,
+        "text": "half ridge = 0.5h + 0.5h * sin(input.positionWS.y * 2.2h + input.positionWS.x * 0.13h + input.positionWS.z * 0.17h);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_RubbleStrata_1448.shader",
+        "line": 76,
+        "text": "half strata = 0.5h + 0.5h * sin((p.y * 3.1h + p.x * 0.17h + p.z * 0.11h) / max(_StrataScale, 0.05h));"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_SurfaceCloudPanorama_1428.shader",
+        "line": 111,
+        "text": "float u = frac(atan2(dir.x, dir.z) * 0.15915494309 + 0.73);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_SurfaceFoamBlob_1447.shader",
+        "line": 74,
+        "text": "half vein = 0.5h + 0.5h * sin((input.uv.x * 23.0h) + (input.uv.y * 17.0h) + cell * 6.2831h);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_SurfaceFoamVertex_1437.shader",
+        "line": 72,
+        "text": "half streak = 0.5h + 0.5h * sin((input.uv.y * 21.0h) + (grain * 6.2831h));"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_SurfaceHorizonHaze_1428.shader",
+        "line": 112,
+        "text": "half drift = 0.5h + 0.5h * sin((input.uv.x * 19.0h) + (input.uv.y * 7.0h) + _Time.y * lerp(0.045h, 0.11h, quality));"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_UnderwaterHazeCurtain_1454.shader",
+        "line": 75,
+        "text": "half shimmer = pow(saturate(0.5h + 0.5h * sin(input.positionWS.x * _CausticScale + input.positionWS.y * 1.7h)), 6.0h);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_UnderwaterSurfaceSheet_1455.shader",
+        "line": 77,
+        "text": "half swellA = 0.5h + 0.5h * sin(p.x * _SwellScale + p.y * 0.047h);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_UnderwaterSurfaceSheet_1455.shader",
+        "line": 78,
+        "text": "half swellB = 0.5h + 0.5h * sin(p.y * (_SwellScale * 1.47h) - p.x * 0.036h + 1.9h);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/H8_UnderwaterSurfaceSheet_1455.shader",
+        "line": 80,
+        "text": "half foam = pow(saturate(0.5h + 0.5h * sin((p.x + p.y) * 0.19h)), 10.0h);"
       },
       {
         "file": "Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader",
-        "line": 382,
+        "line": 418,
         "text": "half blocked = (half)step(cos(radius), dot(viewDir, occluderDir));"
       },
       {
         "file": "Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader",
-        "line": 792,
+        "line": 830,
         "text": "* (half)sin(animationTime * twinkleSpeed + starPhase)"
       },
       {
@@ -64,26 +185,6 @@
         "text": "float crest = sin(phase);"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/Hecton_DeferredDecal.shader",
-        "line": 124,
-        "text": "float branchNoise = sin(centered.x * 43.0 + centered.y * 17.0 + birthPhase * 0.13);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_DeferredDecal.shader",
-        "line": 125,
-        "text": "float ringNoise = 0.72 + 0.28 * sin(centered.x * 37.0 + centered.y * 19.0 + packedPayload * 1.71);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader",
-        "line": 129,
-        "text": "return frac(sin(dot(value, float2(12.9898, 78.233))) * 43758.5453);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader",
-        "line": 134,
-        "text": "float waveY = 0.5 + sin((uv.x * frequency + phase) * 6.2831853) * 0.215;"
-      },
-      {
         "file": "Assets/_Project/Art/Shaders/Hecton_HabitatInterior.hlsl",
         "line": 89,
         "text": "float sx = sin(panelUv.x * HECTON_HABITAT_INTERIOR_PI);"
@@ -94,64 +195,9 @@
         "text": "float sy = sin(panelUv.y * HECTON_HABITAT_INTERIOR_PI);"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/Hecton_HologramMap.shader",
-        "line": 115,
-        "text": "float wobble = sin((uv.y + t) * 41.0 + timePhase * 3.7) * lerp(0.002, 0.014, quality);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_HologramMap.shader",
-        "line": 123,
-        "text": "half scan = (half)(0.72 + 0.28 * sin((uv.y * 720.0) + timePhase * 9.0));"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_HologramMap.shader",
-        "line": 124,
-        "text": "half flicker = (half)(0.88 + 0.12 * frac(sin(dot(uv, float2(12.9898, 78.233)) + timePhase) * 43758.5453));"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_KelpMaster.shader",
-        "line": 186,
-        "text": "return sin(wrapped);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_KelpMaster.shader",
-        "line": 709,
-        "text": "return sin(wrapped);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_KelpMaster.shader",
-        "line": 932,
-        "text": "return sin(wrapped);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_KelpMaster_GPUI.shader",
-        "line": 190,
-        "text": "return sin(wrapped);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_KelpMaster_GPUI.shader",
-        "line": 716,
-        "text": "return sin(wrapped);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_KelpMaster_GPUI.shader",
-        "line": 943,
-        "text": "return sin(wrapped);"
-      },
-      {
         "file": "Assets/_Project/Art/Shaders/Hecton_OrbitalDropReentryPlasma.shader",
-        "line": 106,
-        "text": "cellPoint = 0.5 + 0.5 * sin((_Time.y * (0.35 + _PlasmaVelocity)) + 6.28318 * cellPoint);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
-        "line": 69,
-        "text": "float wave0 = sin(normalized0 * TwoPi * frequency) * amplitude;"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
-        "line": 70,
-        "text": "float wave1 = sin(normalized1 * TwoPi * frequency) * amplitude;"
+        "line": 108,
+        "text": "cellPoint = 0.5 + 0.5 * sin((_Time.y * (0.35 + velocity01)) + 6.28318 * cellPoint);"
       },
       {
         "file": "Assets/_Project/Art/Shaders/Hecton_PhantomDrones.compute",
@@ -164,49 +210,19 @@
         "text": "float pulse = 0.62 + 0.38 * sin(pulseTheta);"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader",
-        "line": 81,
-        "text": "return frac(sin(timeSeconds * max(speed, 0.001) + phaseOffset) * 43758.5453);"
+        "file": "Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader",
+        "line": 172,
+        "text": "float primary = sin(timeSeconds * 0.43 + phase);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader",
+        "line": 173,
+        "text": "float detail = sin(timeSeconds * 1.21 + positionOS.y * 2.7 + phase * 1.79);"
       },
       {
         "file": "Assets/_Project/Art/Shaders/Hecton_SonarRaymarch.compute",
         "line": 74,
         "text": "return float3(cos(theta) * radius, z, sin(theta) * radius);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_VisorAR.shader",
-        "line": 257,
-        "text": "return 0.5 + 0.5 * sin(y);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_VisorAR.shader",
-        "line": 311,
-        "text": "float pulse = 0.72 + 0.28 * sin(time * lerp(2.0, 7.0, quality) + target.ShapeParams.w * 1.37);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_VisorGlitchACES.shader",
-        "line": 148,
-        "text": "float wave = sin((uv.y + signedNoise * 0.07) * lerp(38.0, 144.0, ultraMath) + timeWrapped * 2.1) * detailMask;"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_VisorTrauma.shader",
-        "line": 124,
-        "text": "float branchNoise = sin(centered.x * 43.0 + centered.y * 17.0 + birthPhase * 0.13);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_VisorTrauma.shader",
-        "line": 125,
-        "text": "float ringNoise = 0.72 + 0.28 * sin(centered.x * 37.0 + centered.y * 19.0 + packedPayload * 1.71);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_VisorWounds.shader",
-        "line": 124,
-        "text": "float branchNoise = sin(centered.x * 43.0 + centered.y * 17.0 + birthPhase * 0.13);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Hecton_VisorWounds.shader",
-        "line": 125,
-        "text": "float ringNoise = 0.72 + 0.28 * sin(centered.x * 37.0 + centered.y * 19.0 + packedPayload * 1.71);"
       },
       {
         "file": "Assets/_Project/Art/Shaders/Hecton_WakeDisplacement.compute",
@@ -239,127 +255,186 @@
         "text": "float3 isotropicDirection = float3(r * cos(a), z, r * sin(a));"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/HectonVisorUberPost.shader",
-        "line": 191,
-        "text": "wave.x = sin(safeUv.y * freq + visualTime * speed);"
+        "file": "Assets/_Project/Art/Shaders/Include/FaunaTextureBaker.compute",
+        "line": 51,
+        "text": "return frac(sin(n) * 43758.5453123);"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/HectonVisorUberPost.shader",
-        "line": 192,
-        "text": "wave.y = sin(safeUv.x * freq * 0.73 - visualTime * speed * 0.71);"
+        "file": "Assets/_Project/Art/Shaders/Include/FaunaTextureBaker.compute",
+        "line": 207,
+        "text": "float branchWave = sin(branchPhase * H8_TAU_1725 + uv.x * 9.0);"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/HectonVisorUberPost.shader",
-        "line": 288,
-        "text": "float branch = abs(centered.x * -0.27 + centered.y * 0.86 + sin((centered.x + seed) * 9.0) * 0.025);"
+        "file": "Assets/_Project/Art/Shaders/Include/FaunaTextureBaker.compute",
+        "line": 337,
+        "text": "float wave = sin(phase + localUv.x * 8.0 + localUv.y * 3.0 + H8Fbm3_1725(float3(localUv * 18.0, _BakeParams1725.y + 91.0), saturate(_BakeParams1725.x)) * H8_TAU_1725);"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/HectonVisorUberPost.shader",
-        "line": 304,
-        "text": "float angleWave = sin(HectonFastAtan2(centered.y, centered.x) * 11.0 + Hash21(floor(safeUv * 9.0)) * 6.2831853);"
+        "file": "Assets/_Project/Art/Shaders/Include/HullCavitationBaker1722.compute",
+        "line": 20,
+        "text": "return frac(sin(n) * 43758.5453123);"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/Hidden_Hecton_BiosDiagnostic.shader",
-        "line": 71,
-        "text": "return frac(sin(timeSeconds * max(speed, 0.001) + phaseOffset) * 43758.5453);"
+        "file": "Assets/_Project/Art/Shaders/Include/HullCavitationBaker1722.compute",
+        "line": 232,
+        "text": "float angle = atan2(centered.y, centered.x);"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/Hidden_Hecton_ScannerDepthProjection.shader",
-        "line": 73,
-        "text": "return frac(sin(timeSeconds * max(speed, 0.001) + phaseOffset) * 43758.5453);"
+        "file": "Assets/_Project/Art/Shaders/Include/HullCavitationBaker1722.compute",
+        "line": 234,
+        "text": "float bladeWake = pow(saturate(cos(swirl) * 0.5 + 0.5), 4.0);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Include/HullCavitationBaker1722.compute",
+        "line": 237,
+        "text": "float2 loop = float2(cos(phase), sin(phase));"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Include/UiScreenMeshProjector1721.compute",
+        "line": 88,
+        "text": "float2 dir = float2(cos(angle), sin(angle));"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Include/UiScreenMeshProjector1721.compute",
+        "line": 116,
+        "text": "float scan = 0.5 + 0.5 * sin((uv.y * max(8.0, p.ScanlineDensity)) * H8_TWO_PI_1721);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Include/VisorMaskBaker.compute",
+        "line": 103,
+        "text": "float2x2 rot = float2x2(cos(angle), -sin(angle), sin(angle), cos(angle));"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Include/VisorMaskBaker.compute",
+        "line": 106,
+        "text": "float ridge = 0.55 + 0.45 * sin((local.x * 17.0 + local.y * 8.0) + Hash01_1726(i + 311u, seed) * kTau1726);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Include/VisorMaskBaker.compute",
+        "line": 123,
+        "text": "float2 dir = float2(cos(angle), sin(angle));"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Include/VisorMaskBaker.compute",
+        "line": 156,
+        "text": "float2 timeCircle = float2(cos(angle), sin(angle));"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Include/VisorMaskBaker.compute",
+        "line": 170,
+        "text": "float pulse = 0.58 + 0.42 * sin(angle + phase);"
       },
       {
         "file": "Assets/_Project/Art/Shaders/Prologue/Hecton_CapsuleReentryPlasmaFake.shader",
-        "line": 82,
-        "text": "flicker = saturate(sin((input.positionWS.x + input.positionWS.y * 0.37h + _Time.y * 24.0h) * _NoiseScale) * 0.5h + 0.5h);"
-      },
-      {
-        "file": "Assets/_Project/Art/Shaders/Prologue/Hecton_OrbitalCloudWhiteoutFake.shader",
-        "line": 74,
-        "text": "half n0 = saturate(sin((input.uv.x + _Time.y * 0.14h) * _NoiseScale * 19.1h) * 0.5h + 0.5h);"
+        "line": 99,
+        "text": "half detailedFlicker = saturate(sin((input.positionWS.x + input.positionWS.y * 0.37h + _Time.y * 24.0h) * _NoiseScale) * 0.5h + 0.5h);"
       },
       {
         "file": "Assets/_Project/Art/Shaders/Prologue/Hecton_OrbitalCloudWhiteoutFake.shader",
         "line": 75,
+        "text": "half n0 = saturate(sin((input.uv.x + _Time.y * 0.14h) * _NoiseScale * 19.1h) * 0.5h + 0.5h);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Prologue/Hecton_OrbitalCloudWhiteoutFake.shader",
+        "line": 76,
         "text": "half n1 = saturate(sin((input.uv.y - _Time.y * 0.19h) * _NoiseScale * 13.7h) * 0.5h + 0.5h);"
       },
       {
         "file": "Assets/_Project/Art/Shaders/Prologue/Hecton_OrbitalPlanetRelativityFake.shader",
-        "line": 101,
+        "line": 102,
         "text": "half bands = saturate(sin((input.positionWS.x + input.positionWS.z) * 0.0017h) * 0.5h + 0.5h);"
       },
       {
         "file": "Assets/_Project/Art/Shaders/Prologue/Hecton_OrbitalPlanetRelativityFake.shader",
-        "line": 102,
+        "line": 103,
         "text": "half continent = saturate(sin(input.positionWS.x * 0.0007h + input.positionWS.y * 0.0011h) * 0.5h + 0.5h);"
       },
       {
-        "file": "Assets/_Project/Art/Shaders/TerminalBlit.compute",
-        "line": 37,
-        "text": "return frac(sin(value * 17.371 + 0.173) * 43758.5453);"
+        "file": "Assets/_Project/Art/Shaders/Sky/Hecton_AegirSky.shader",
+        "line": 251,
+        "text": "float broadBand = 0.64 + 0.36 * sin(ringDistance * 38.0 + delta.x * 2.1);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Sky/Hecton_AegirSky.shader",
+        "line": 267,
+        "text": "float latShear = sin(latitude01 * 18.0 + normalXY.x * 3.2) * 0.014"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Sky/Hecton_AegirSky.shader",
+        "line": 268,
+        "text": "+ sin(latitude01 * 43.0 - normalXY.x * 7.0) * 0.006;"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Sky/Hecton_AegirSky.shader",
+        "line": 280,
+        "text": "float wideBand = 0.5 + 0.5 * sin(bandPhase);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Sky/Hecton_AegirSky.shader",
+        "line": 281,
+        "text": "float stormBand = 0.5 + 0.5 * sin(bandPhase * 2.37 + normalXY.x * 5.0);"
+      },
+      {
+        "file": "Assets/_Project/Art/Shaders/Sky/Hecton_AegirSky.shader",
+        "line": 282,
+        "text": "float shearBand = 0.5 + 0.5 * sin(bandPhase * 0.71 + normalXY.x * 10.5 + stormBand * 1.7);"
       }
     ],
     "combatArmorVerdict": "PASS"
   },
   "damageBypassInventory": {
-    "projectDirectMutationTokenCount": 709,
-    "projectDirectMutationUniqueFiles": 136,
+    "projectDirectMutationTokenCount": 772,
+    "projectDirectMutationUniqueFiles": 130,
     "projectDirectMutationByDomain": {
-      "GlobalPhysicsStateManager.cs": 127,
+      "GlobalPhysicsStateManager.cs": 153,
       "Gameplay": 106,
-      "PhysicsApplySystem.cs": 69,
-      "Physics": 56,
-      "World": 51,
-      "Core": 45,
-      "Fauna": 24,
-      "Interaction": 21,
+      "PhysicsApplySystem.cs": 74,
+      "Physics": 63,
+      "Core": 59,
+      "World": 48,
+      "Interaction": 24,
+      "Fauna": 21,
+      "Construction": 19,
       "Networking": 19,
       "Editor": 14,
       "HectonFluidEngine.cs": 13,
-      "SubmarineFluidDynamics.cs": 11,
-      "Construction": 10,
-      "TetherInstance.cs": 10,
+      "SubmarineFluidDynamics.cs": 12,
+      "TetherInstance.cs": 12,
+      "FaunaDirector.cs": 9,
       "ResourceNode.cs": 9,
+      "HectonPlayerSpawner.cs": 8,
       "ToolHitUtility.cs": 8,
-      "HarpoonLauncherTool.cs": 7,
-      "PropulsionTool.cs": 7,
+      "HarpoonLauncherTool.cs": 6,
       "HectonPlayerMovement.cs": 6,
       "HectonVoxelVolume.cs": 6,
+      "PropulsionTool.cs": 6,
+      "QA": 6,
       "SubmarineStructuralGrid.cs": 6,
       "BaseModule.cs": 5,
-      "Bootstrap": 5,
       "ConstructionManager.cs": 5,
-      "HectonPlayerSpawner.cs": 5,
+      "ObjectPoolManager.cs": 5,
       "WorldFidelityRoot.cs": 5,
       "SubmarineAtmosphereSystem.cs": 4,
       "TetherManager.cs": 4,
-      "VFX": 4,
-      "Audio": 3,
+      "Bootstrap": 3,
       "BuoyancyObject.cs": 3,
-      "FaunaDirector.cs": 3,
       "HectonVoxelEngine.cs": 3,
-      "PlayerToolManager.cs": 3,
-      "QA": 3,
       "SaveManager.cs": 3,
+      "VFX": 3,
+      "Audio": 2,
       "EnvironmentalAnalyzerTool.cs": 2,
       "HectonFloatingOrigin.cs": 2,
       "HectonSurvivalSystem.cs": 2,
-      "HectonUnderwaterVisuals.cs": 2,
+      "PlayerToolManager.cs": 2,
       "Prologue": 2,
-      "CaveBioRootsGenerator.cs": 1,
-      "CrashTelemetryBuffer.cs": 1,
       "DemoFirstPersonController.cs": 1,
       "Dev": 1,
       "EntityChangeDetector.cs": 1,
       "HectonItem.cs": 1,
       "Items": 1,
-      "LandingImpactVFX.cs": 1,
       "NoiseSystem.cs": 1,
       "Optimization": 1,
       "PlayerBuilder.cs": 1,
-      "PlayerFootstepAudio.cs": 1,
-      "PlayerInventory.cs": 1,
-      "PlayerThrusterAudio.cs": 1,
       "SuitHUDProfile.cs": 1,
       "WorldStreamingDirector.cs": 1
     },
@@ -371,11 +446,12 @@
     "projectNegatedQueueGateCallCount": 0,
     "legacyQueueOverloadsCompileFailWithoutAup": true,
     "combatPrewarmVerdict": "PASS",
-    "projectDamageBypassTokenCount": 60,
-    "projectDamageBypassUniqueFiles": 30,
+    "projectDamageBypassTokenCount": 69,
+    "projectDamageBypassUniqueFiles": 31,
     "projectDamageBypassByDomain": {
-      "Gameplay": 21,
+      "Gameplay": 22,
       "ResourceNode.cs": 6,
+      "SaveData.cs": 6,
       "BaseModule.cs": 5,
       "Fauna": 4,
       "ConstructionManager.cs": 3,
@@ -383,47 +459,47 @@
       "ToolHitUtility.cs": 3,
       "Construction": 2,
       "KnifeTool.cs": 2,
+      "SaveBinaryPayloadCodec.cs": 2,
+      "SaveDataMigration.cs": 2,
       "World": 2,
       "EntityChangeDetector.cs": 1,
       "HarpoonLauncherTool.cs": 1,
       "HectonSurvivalSystem.cs": 1,
       "SalvageSamplerTool.cs": 1,
-      "SaveBinaryPayloadCodec.cs": 1,
-      "SaveData.cs": 1,
-      "SaveDataMigration.cs": 1,
+      "SaveDataPlayerSurvivalSanitizer.cs": 1,
       "StunPistolTool.cs": 1,
       "SuitHUDProfile.cs": 1
     },
-    "damageBypassCandidateCount": 60,
+    "damageBypassCandidateCount": 69,
     "damageBypassCandidateFirstHits": [
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 1239,
+        "line": 1276,
         "text": "ApplyDamage(degradation);"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 1520,
+        "line": 1558,
         "text": "public void ApplyDamage(float amount)"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 1531,
+        "line": 1569,
         "text": "ModuleDamageOutcome outcome = _integrityComponent.ApplyDamage(amount);"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 2088,
+        "line": 2126,
         "text": "ApplyDamage(damageAmount);"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 2150,
+        "line": 2188,
         "text": "ApplyDamage(ruptureDamage);"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3502,
+        "line": 6049,
         "text": "target.ApplyDamage(damage);"
       },
       {
@@ -433,17 +509,17 @@
       },
       {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 1961,
+        "line": 2580,
         "text": "moduleDto.health = PackHealthByte(baseModule.CurrentIntegrity, baseModule.MaxIntegrity);"
       },
       {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 1973,
+        "line": 2592,
         "text": "moduleDto.health = byte.MaxValue;"
       },
       {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 2910,
+        "line": 4089,
         "text": "module.ApplyDamage(module.CurrentIntegrity + 1f);"
       },
       {
@@ -453,217 +529,262 @@
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
-        "line": 22,
+        "line": 30,
         "text": "public float CurrentHealth => _isDead ? 0f : _currentHealth;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6225,
+        "line": 6586,
         "text": "public void TakeDamage(float amount)"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs",
-        "line": 784,
+        "line": 878,
         "text": "entity.Health = health;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs",
-        "line": 1303,
+        "line": 1573,
         "text": "Health = 1,"
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 3080,
+        "line": 3201,
         "text": "Health = PersistentWorldRegistry.GetFaunaHibernationHealth(in cachedState),"
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 3124,
+        "line": 3247,
         "text": "restoredState.health = restoreResult.Health;"
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 3328,
+        "line": 3453,
         "text": "restoredState.health = savedState.health;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
-        "line": 739,
+        "line": 903,
         "text": "_hostModule.ApplyDamage(overheatIntegrityDamagePerSecond * deltaTime * parasiteOverheatMultiplier);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
-        "line": 803,
+        "line": 968,
         "text": "module.ApplyDamage(meltdownModuleDamage * damage01);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 775,
-        "text": "Health = _health,"
+        "line": 887,
+        "text": "Health = damageViews.Health,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
-        "line": 796,
-        "text": "Health = _health,"
+        "line": 979,
+        "text": "Health = damageViews.Health,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
-        "line": 1664,
+        "line": 1707,
         "text": "Health = views.CasTortureHealth,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 366,
+        "line": 390,
         "text": "ApplyDamage();"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 536,
+        "line": 567,
         "text": "private void ApplyDamage()"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 435,
+        "line": 440,
         "text": "_baseModule.ApplyDamage(packet.Magnitude);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 129,
+        "line": 136,
         "text": "public float CurrentHealth => _currentHealth;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 175,
+        "line": 187,
         "text": "TakeDamage(damage, hitPoint, 1f, ResolveFallbackNormal(hitPoint));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 185,
+        "line": 197,
         "text": "TakeDamage(signal.PowerDelivered, runtimeHitPoint, signal.Source.Power, hitNormal);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 204,
+        "line": 216,
         "text": "TakeDamage(damagePerHit, _cachedTransform.position, 1f, Vector3.up);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 226,
+        "line": 238,
         "text": "public void TakeDamage(float damage, Vector3 hitPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 228,
+        "line": 240,
         "text": "TakeDamage(damage, hitPoint, 1f, ResolveFallbackNormal(hitPoint));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 237,
+        "line": 249,
         "text": "TakeDamage(damagePerHit, hitPoint, 1f, ResolveFallbackNormal(hitPoint));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 240,
+        "line": 252,
         "text": "private void TakeDamage(float damage, Vector3 hitPoint, float toolPower, Vector3 hitNormal)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 107,
-        "text": "public float CurrentHealth => currentHealth;"
+        "line": 125,
+        "text": "public float CurrentHealth => ResolveSafeRuntimeHealth(currentHealth, ResolveSafeRuntimeMaxHealth(maxHealth));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 454,
+        "line": 582,
         "text": "public bool TakeDamage(float damage, bool ignoreInvulnerability = false)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 495,
+        "line": 619,
         "text": "bool applied = TakeDamage(damage);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 759,
+        "line": 938,
         "text": "bool applied = TakeDamage(packet.Magnitude);"
       },
       {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
+        "line": 1294,
+        "text": "dto.health = ResolveSafeRuntimeHealth(currentHealth, runtimeMaxHealth);"
+      },
+      {
         "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
-        "line": 457,
+        "line": 474,
         "text": "Health = _health,"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 277,
+        "line": 276,
         "text": "ToolHitUtility.ApplyDamage("
       },
       {
         "file": "Assets/_Project/Scripts/HectonSurvivalSystem.cs",
-        "line": 2613,
+        "line": 3596,
         "text": "public void TakeDamage(float amount)"
       },
       {
         "file": "Assets/_Project/Scripts/KnifeTool.cs",
-        "line": 188,
+        "line": 193,
         "text": "bool applied = ToolHitUtility.ApplyDamage("
       },
       {
         "file": "Assets/_Project/Scripts/KnifeTool.cs",
-        "line": 379,
+        "line": 392,
         "text": "bool applied = ToolHitUtility.ApplyDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 172,
+        "line": 204,
         "text": "public float CurrentHealth => _currentHealth;"
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 363,
+        "line": 522,
         "text": "TakeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 388,
+        "line": 551,
         "text": "TakeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 401,
+        "line": 564,
         "text": "public void TakeDamage(float amount)"
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 404,
+        "line": 567,
         "text": "TakeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 855,
+        "line": 1139,
         "text": "private void TakeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SalvageSamplerTool.cs",
-        "line": 96,
+        "line": 97,
         "text": "bool applied = ToolHitUtility.ApplyDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs",
-        "line": 2872,
+        "line": 2588,
+        "text": "value.health = SaveData.PlayerHealthDefault;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs",
+        "line": 5179,
         "text": "value.health = PackLegacyModuleHealthByte(value.integrity);"
       },
       {
         "file": "Assets/_Project/Scripts/SaveData.cs",
-        "line": 942,
+        "line": 986,
+        "text": "dto.health = SanitizeNonNegativeFinite(dto.health);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SaveData.cs",
+        "line": 1006,
+        "text": "left.health == right.health &&"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SaveData.cs",
+        "line": 1408,
         "text": "dto.health = module.health;"
       },
       {
+        "file": "Assets/_Project/Scripts/SaveData.cs",
+        "line": 1437,
+        "text": "left.health == right.health &&"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SaveData.cs",
+        "line": 1519,
+        "text": "left.health == right.health &&"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SaveData.cs",
+        "line": 2771,
+        "text": "left.health == right.health &&"
+      },
+      {
         "file": "Assets/_Project/Scripts/SaveDataMigration.cs",
-        "line": 1287,
+        "line": 774,
+        "text": "safeStats.health = SaveData.PlayerHealthDefault;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SaveDataMigration.cs",
+        "line": 2595,
         "text": "module.health = health;"
       },
       {
+        "file": "Assets/_Project/Scripts/SaveDataPlayerSurvivalSanitizer.cs",
+        "line": 12,
+        "text": "value.health = math.max(0f, SanitizeFinite(value.health, SaveData.PlayerHealthDefault));"
+      },
+      {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 205,
+        "line": 206,
         "text": "ToolHitUtility.ApplyDamage("
       },
       {
@@ -688,101 +809,97 @@
       },
       {
         "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
-        "line": 1924,
+        "line": 3876,
         "text": "Health = health,"
       },
       {
         "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
-        "line": 1940,
+        "line": 3892,
         "text": "Health = health,"
       }
     ],
-    "projectRigidbodyDirectTokenCount": 682,
-    "projectRigidbodyDirectUniqueFiles": 127,
+    "projectRigidbodyDirectTokenCount": 745,
+    "projectRigidbodyDirectUniqueFiles": 121,
     "projectRigidbodyDirectByDomain": {
-      "GlobalPhysicsStateManager.cs": 127,
+      "GlobalPhysicsStateManager.cs": 153,
       "Gameplay": 90,
-      "PhysicsApplySystem.cs": 72,
-      "Physics": 56,
-      "World": 49,
-      "Core": 46,
-      "Interaction": 21,
-      "Fauna": 20,
+      "PhysicsApplySystem.cs": 77,
+      "Physics": 63,
+      "Core": 60,
+      "World": 46,
+      "Interaction": 24,
+      "Construction": 19,
       "Networking": 19,
+      "Fauna": 17,
       "Editor": 14,
       "HectonFluidEngine.cs": 13,
-      "SubmarineFluidDynamics.cs": 11,
-      "Construction": 10,
-      "TetherInstance.cs": 10,
+      "SubmarineFluidDynamics.cs": 12,
+      "TetherInstance.cs": 12,
+      "FaunaDirector.cs": 9,
+      "HectonPlayerSpawner.cs": 8,
       "ToolHitUtility.cs": 8,
-      "HarpoonLauncherTool.cs": 7,
-      "PropulsionTool.cs": 7,
+      "HarpoonLauncherTool.cs": 6,
       "HectonPlayerMovement.cs": 6,
       "HectonVoxelVolume.cs": 6,
+      "PropulsionTool.cs": 6,
+      "QA": 6,
       "SubmarineStructuralGrid.cs": 6,
       "BaseModule.cs": 5,
-      "Bootstrap": 5,
       "ConstructionManager.cs": 5,
-      "HectonPlayerSpawner.cs": 5,
+      "ObjectPoolManager.cs": 5,
       "WorldFidelityRoot.cs": 5,
       "SubmarineAtmosphereSystem.cs": 4,
       "TetherManager.cs": 4,
-      "VFX": 4,
-      "Audio": 3,
+      "Bootstrap": 3,
       "BuoyancyObject.cs": 3,
-      "FaunaDirector.cs": 3,
       "HectonVoxelEngine.cs": 3,
-      "PlayerToolManager.cs": 3,
-      "QA": 3,
       "ResourceNode.cs": 3,
       "SaveManager.cs": 3,
+      "VFX": 3,
+      "Audio": 2,
       "EnvironmentalAnalyzerTool.cs": 2,
       "HectonFloatingOrigin.cs": 2,
-      "HectonUnderwaterVisuals.cs": 2,
+      "PlayerToolManager.cs": 2,
       "Prologue": 2,
-      "CaveBioRootsGenerator.cs": 1,
-      "CrashTelemetryBuffer.cs": 1,
       "DemoFirstPersonController.cs": 1,
       "Dev": 1,
       "HectonItem.cs": 1,
       "HectonSurvivalSystem.cs": 1,
       "Items": 1,
-      "LandingImpactVFX.cs": 1,
       "NoiseSystem.cs": 1,
       "Optimization": 1,
       "PlayerBuilder.cs": 1,
-      "PlayerFootstepAudio.cs": 1,
-      "PlayerInventory.cs": 1,
-      "PlayerThrusterAudio.cs": 1,
       "WorldStreamingDirector.cs": 1
     },
     "combatBulletDirectMutationVerdict": "PASS"
   },
   "managedEventInventory": {
-    "projectManagedEventTokenCount": 252,
-    "projectManagedEventUniqueFiles": 79,
+    "projectManagedEventTokenCount": 352,
+    "projectManagedEventUniqueFiles": 103,
     "projectManagedEventByDomain": {
-      "Core": 52,
-      "Gameplay": 48,
-      "Editor": 36,
-      "Input": 29,
+      "Gameplay": 66,
+      "Input": 65,
+      "Core": 57,
+      "Editor": 43,
+      "World": 23,
+      "UI": 22,
       "ModdingAPI": 17,
-      "World": 17,
       "EntityChangeDetector.cs": 8,
       "AsyncLoadHelper.cs": 4,
       "FlowFieldVisualizer.cs": 4,
       "Optimization": 4,
-      "UI": 4,
       "SaveSlotUI.cs": 3,
       "SaveSystem": 3,
       "AI": 2,
       "AtlasSignal": 2,
       "Bootstrap": 2,
       "Fauna": 2,
-      "Rendering": 2,
+      "Habitat": 2,
+      "Interaction": 2,
+      "QA": 2,
       "SaveThumbnailSystem.cs": 2,
-      "Audio": 1,
       "BeaconNetworkSystem.cs": 1,
+      "BiomeSamplerCache.cs": 1,
       "FieldOperationLogSystem.cs": 1,
       "Global": 1,
       "Graphics": 1,
@@ -790,14 +907,20 @@
       "Meta": 1,
       "PDA": 1,
       "Plugins": 1,
+      "ProximityColliderSystem.cs": 1,
+      "Rendering": 1,
+      "ScatterBudgetController.cs": 1,
       "Tools": 1,
-      "WorldProceduralStateRegistry.cs": 1
+      "WorldCaveDirector.cs": 1,
+      "WorldProceduralStateRegistry.cs": 1,
+      "WorldSliceDirector.cs": 1,
+      "WorldZoneDirector.cs": 1
     },
-    "damageManagedEventCandidateCount": 8,
+    "damageManagedEventCandidateCount": 14,
     "damageManagedEventCandidateFirstHits": [
       {
         "file": "Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs",
-        "line": 207,
+        "line": 232,
         "text": "event Action OnDebugToggleEngineHealthOverlay;"
       },
       {
@@ -807,33 +930,63 @@
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 518,
+        "line": 548,
         "text": "public UnityEngine.Events.UnityEvent OnPanicTriggered;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 519,
+        "line": 549,
         "text": "public UnityEngine.Events.UnityEvent OnBurrowBreach;"
       },
       {
+        "file": "Assets/_Project/Scripts/Gameplay/Atlas6Liability/DirectiveWeightingSystem.cs",
+        "line": 29,
+        "text": "public event Action<Vector3> OnHazardSpawned;"
+      },
+      {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 91,
+        "line": 95,
         "text": "[SerializeField] private UnityEvent OnPlayerEnter;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 94,
+        "line": 98,
         "text": "[SerializeField] private UnityEvent OnPlayerExit;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 97,
+        "line": 101,
         "text": "[SerializeField] private UnityEvent<float> OnIntensityChanged;"
       },
       {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs",
+        "line": 957,
+        "text": "method.Invoke(null, new object[] { sentinelId });"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs",
+        "line": 972,
+        "text": "method.Invoke(null, new object[] { trackedPointer });"
+      },
+      {
         "file": "Assets/_Project/Scripts/Input/InputManager.cs",
-        "line": 222,
+        "line": 138,
+        "text": "private Action<InputAction.CallbackContext> _cachedDebugToggleEngineHealthOverlayPerformedAction;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Input/InputManager.cs",
+        "line": 270,
         "text": "public event Action OnDebugToggleEngineHealthOverlay;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+        "line": 1849,
+        "text": "private Action<AsyncGPUReadbackRequest> _parasiteLatchReadbackCompletion;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+        "line": 7986,
+        "text": "private Action<AsyncGPUReadbackRequest> ResolveParasiteLatchReadbackCompletion()"
       }
     ],
     "combatManagedEventVerdict": "PASS"

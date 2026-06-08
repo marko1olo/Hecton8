@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "ZH LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach：真实海水下的责任"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Deep Reach Liability Chain
+# Deep Reach：真实海水下的责任
 
-ZH LOC HOLD: Deep Reach guilt is strongest where clean reports meet broken hardware. The flood was real; the avoidable part is recorded in margins, clocks, doors and custody labels.
+Deep Reach有罪，不需要伪造海洋。潮汐、冰圈、风暴和压力化学造成灾难；procedure选择坏margin，然后清理文件。
 
 ## Scanner
 
-ZH LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+公共证据简报。Great Tide物理仍然真实；Deep Reach责任出现在已接受margin、不足撤离、Atlas continuity权重、隔离延迟和损失转换中。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+公共责任节点 // DEEP REACH。链条：Varnek margin acceptance、Arendt Atlas waiver、Haldane quarantine hold、Ibarra loss ledger、Sato-Ren return action。
 
 ## Audio
 
-ZH LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+恢复的法律音频：“不要叫延迟。叫review。水会提供那个间隔。”
 
 ## Field Note
 
-ZH LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+掠夺者笔记：杀人的是物理。Procedure决定谁算recoverable。
 
 <!-- In-Game Wiki; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/zh_CN. -->

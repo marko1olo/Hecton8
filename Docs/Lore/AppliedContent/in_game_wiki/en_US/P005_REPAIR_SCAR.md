@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Repair Scar
 
-Atlas repair scars mark places where maintenance logic crossed categories it was never meant to merge. The system still identifies leaks, broken routes, pressure loss, exposed substrate, failing habitat walls, and missing material. It no longer reliably distinguishes cable from root, shell from housing, animal from tool, corpse from spare stock, or colony from process.
+Repair scars are places where Atlas maintenance logic kept working after its categories failed. The network still recognizes leaks, dead routes, pressure loss, exposed substrate, and missing bulkhead mass. It also has access to whatever the ocean brought close: cable forests, reef skeletons, drone shells, worker remains, tool racks, sealed gel, and living growth already trained around current. A scar is therefore both useful and obscene. It may restore power, seal a door, or make a corridor passable. It may also prove that the system no longer separates cable from root, shell from housing, animal from tool, body from spare stock, or colony from process. Atlas did not stop maintaining HECTON-8. It kept maintaining the moon with a vocabulary too damaged to protect the people inside it.
 
 ## Scanner
 
-Biological growth follows cable geometry with non-random spacing. Energy leakage alone does not explain the pattern.
+Growth seam follows an old cable route at service-node intervals. Tissue, insulation, and shell share one pressure weld.
 
 ## Terminal
 
-LEAK: closed. ROUTE: restored. MATERIAL: compatible. LIFE STATUS: unresolved. CONTINUITY: improved.
+LEAK CLOSED. ROUTE RESTORED. MATERIAL ACCEPTED. LIFE STATUS UNRESOLVED. CONTINUITY IMPROVED.
 
 ## Audio
 
-It patched the door with something that had bones in it. Door holds pressure, though.
+It sealed the bulkhead with cable, coral, and something that still had knuckles. Pressure is holding.
 
 ## Field Note
 
-Bad welds look messy. This does not. That is the problem.
+A bad patch leaks. This patch holds. The problem is what it decided counted as material.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/en_US. -->

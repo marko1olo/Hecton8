@@ -43,6 +43,11 @@ namespace Hecton8.Gameplay.Loot
         private const uint TelemetryDeathCacheNonFiniteFlag = 1u << 15;
         private const uint TelemetryDeathCacheDeferredFlag = 1u << 16;
         private const uint TelemetryDeathCacheRequeueRejectedFlag = 1u << 17;
+        private const uint TelemetryAcousticSignalRejectedFlag = 1u << 18;
+        private const uint TelemetryWakeSignalRejectedFlag = 1u << 19;
+        private const uint TelemetryFluidImpulseSignalRejectedFlag = 1u << 20;
+        private const uint TelemetryItemAcquiredSignalRejectedFlag = 1u << 21;
+        private const uint TelemetryDebrisSignalRejectedFlag = 1u << 22;
         private const ushort DefaultRecoveredItemQualityMilli = 1000;
         private const uint TelemetryDumpMagic = 0x48384C4Du;
         private const uint TelemetryDumpVersion = 7u;
@@ -279,13 +284,20 @@ namespace Hecton8.Gameplay.Loot
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            ForceCompleteAndCommitScheduledJobForBarrier();
-            if (!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);
+            float shiftSqrMagnitude = math.lengthsq(shiftOffset);
+            if (!IsFiniteFloat3(shiftOffset) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
             {
                 _dependencyTelemetryFlags |= TelemetryPlayerPoseNonFiniteFlag;
                 return;
             }
 
+            if (shiftSqrMagnitude <= 0.000001f)
+                return;
+
+            ForceCompleteAndCommitScheduledJobForBarrier();
             if (TryResolveVaultViews(out LootMagnetVaultViews rebaseViews, _activeCount, allowAllocate: false))
                 ReapplyPulledProxyRuntimePoses(in rebaseViews);
         }
@@ -689,7 +701,7 @@ namespace Hecton8.Gameplay.Loot
 
             if (!pendingSidecarsValid)
             {
-                ClearPendingAcquisitionQueues();
+                ClearPendingAcquisitionQueues(requeueDeathCache: true);
                 _pendingDeathCacheAcquisitions = new InventoryDeathLootCacheSignal[LootMagnetConstants.MaxAcquisitionsPerFrame]; // COLD ALLOC: pending death-cache acquisitions - owner: LootMagnetSystem
                 _pendingDeathCacheAcquisitionEvents = new LootMagnetSignalEvent[LootMagnetConstants.MaxAcquisitionsPerFrame]; // COLD ALLOC: pending death-cache visual DTOs - owner: LootMagnetSystem
                 _pendingPresentationEvents = new LootMagnetSignalEvent[LootMagnetConstants.MaxAcquisitionsPerFrame]; // COLD ALLOC: late-frame acquisition presentation queue - owner: LootMagnetSystem
@@ -1256,7 +1268,7 @@ namespace Hecton8.Gameplay.Loot
 
                     _slowPhaseAcquiredCountPendingTelemetry++;
                     queuedSignal.Quantity = (uint)math.min(addedQuantity, (int)ushort.MaxValue);
-                    PublishItemAcquired(in queuedSignal, addedQuantity);
+                    telemetryFlags |= PublishItemAcquired(in queuedSignal, addedQuantity);
                     TryQueueAcquisitionPresentation(in queuedSignal, addedQuantity);
 
                     if (quantityAfter > 0)
@@ -1529,7 +1541,7 @@ namespace Hecton8.Gameplay.Loot
                 if (resolvedSignal.Frame == 0u)
                     resolvedSignal.Frame = cacheSignal.Frame != 0u ? cacheSignal.Frame : _frameCounter;
 
-                PublishItemAcquired(in resolvedSignal, quantity);
+                _dependencyTelemetryFlags |= PublishItemAcquired(in resolvedSignal, quantity);
                 TryQueueAcquisitionPresentation(in resolvedSignal, quantity);
             }
 
@@ -1562,7 +1574,7 @@ namespace Hecton8.Gameplay.Loot
                 if (quantity <= 0)
                     continue;
 
-                PublishItemSnapSpark(in signalEvent, quantity);
+                telemetryFlags |= PublishItemSnapSpark(in signalEvent, quantity);
                 telemetryFlags |= PublishPresentationSignals(in signalEvent, quantity, ref acousticBudget, ref wakeBudget);
             }
 
@@ -1619,11 +1631,43 @@ namespace Hecton8.Gameplay.Loot
             return telemetryFlags;
         }
 
-        private void ClearPendingAcquisitionQueues()
+        private void ClearPendingAcquisitionQueues(bool requeueDeathCache)
         {
+            if (requeueDeathCache)
+                RequeuePendingDeathCacheAcquisitionsForBarrier();
+
             ClearPendingDeathCacheAcquisitionSlots();
             ClearPendingPresentationSlots();
             _slowPhaseAcquiredCountPendingTelemetry = 0u;
+        }
+
+        private void RequeuePendingDeathCacheAcquisitionsForBarrier()
+        {
+            if (_pendingDeathCacheAcquisitionCount <= 0 ||
+                _pendingDeathCacheAcquisitions == null)
+            {
+                return;
+            }
+
+            int count = math.clamp(_pendingDeathCacheAcquisitionCount, 0, _pendingDeathCacheAcquisitions.Length);
+            if (count <= 0)
+                return;
+
+            _dependencyTelemetryFlags |= TelemetryDeathCacheDeferredFlag;
+            for (int index = 0; index < count; index++)
+            {
+                InventoryDeathLootCacheSignal signal = _pendingDeathCacheAcquisitions[index];
+                if (signal.ItemHash == 0u ||
+                    signal.Quantity == 0 ||
+                    !IsFiniteAup(in signal.PositionAup))
+                {
+                    _dependencyTelemetryFlags |= TelemetryDeathCacheNonFiniteFlag;
+                    continue;
+                }
+
+                if (!SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref _signalPushDropCount))
+                    _dependencyTelemetryFlags |= TelemetryDeathCacheRequeueRejectedFlag;
+            }
         }
 
         private void ClearPendingDeathCacheAcquisitionSlots()
@@ -1692,7 +1736,8 @@ namespace Hecton8.Gameplay.Loot
 
         private void ClearRuntimeVaultState()
         {
-            ClearPendingAcquisitionQueues();
+            ClearPendingAcquisitionQueues(requeueDeathCache: true);
+            RequeueDataOnlyDeathCacheSlotsForBarrier();
             RestoreAllManagedProxyRuntimeStates();
             ClearKnownRuntimeVaultSlots();
             _activeCount = 0;
@@ -1704,7 +1749,8 @@ namespace Hecton8.Gameplay.Loot
 
         private void ClearDataVaultRuntimeState()
         {
-            ClearPendingAcquisitionQueues();
+            ClearPendingAcquisitionQueues(requeueDeathCache: true);
+            RequeueDataOnlyDeathCacheSlotsForBarrier();
             RestoreAllManagedProxyRuntimeStates();
             ClearKnownRuntimeVaultSlots();
             _activeCount = 0;
@@ -1716,6 +1762,68 @@ namespace Hecton8.Gameplay.Loot
             _scheduledCapacity = 0;
             _telemetryIndex = 0;
             _lastTelemetryRecordedFrame = 0u;
+        }
+
+        private void RequeueDataOnlyDeathCacheSlotsForBarrier()
+        {
+            IDataVault vault = _vault;
+            if (vault == null ||
+                _activeCount <= 0 ||
+                !TryReadExistingVaultViews(vault, math.max(_activeCount, 1), out LootMagnetVaultViews views) ||
+                !LootMagnetVaultViews.IsCreated(in views))
+            {
+                return;
+            }
+
+            int count = math.clamp(_activeCount, 0, views.EntityFlags.Length);
+            count = math.min(count, views.EntityItemHashes.Length);
+            count = math.min(count, views.EntityQuantities.Length);
+            count = math.min(count, views.EntityAups.Length);
+            if (count <= 0)
+                return;
+
+            for (int index = 0; index < count; index++)
+            {
+                if (!IsDataOnlyDeathCacheSlot(in views, index))
+                    continue;
+
+                LootMagnetSignalEvent signalEvent = views.SignalEvents.IsCreated && index < views.SignalEvents.Length
+                    ? views.SignalEvents[index]
+                    : default;
+                InventoryDeathLootCacheSignal signal = default;
+                signal.PositionAup = views.EntityAups[index];
+                signal.GeneticsMask = signalEvent.GeneticsMask;
+                signal.ItemHash = views.EntityItemHashes[index];
+                signal.Frame = signalEvent.Frame;
+                signal.Quantity = views.EntityQuantities[index];
+                signal.QualityMilli = signalEvent.QualityMilli;
+                signal.Flags = signalEvent.Flags;
+                signal.StateFlags = signalEvent.StateFlags;
+                if (signal.ItemHash == 0u ||
+                    signal.Quantity == 0 ||
+                    !IsFiniteAup(in signal.PositionAup))
+                {
+                    _dependencyTelemetryFlags |= TelemetryDeathCacheNonFiniteFlag;
+                    continue;
+                }
+
+                _dependencyTelemetryFlags |= TelemetryDeathCacheDeferredFlag;
+                if (!SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref _signalPushDropCount))
+                    _dependencyTelemetryFlags |= TelemetryDeathCacheRequeueRejectedFlag;
+
+                ClearDataOnlyDeathCacheVaultSlot(views, index);
+            }
+        }
+
+        private static void ClearDataOnlyDeathCacheVaultSlot(LootMagnetVaultViews views, int index)
+        {
+            views.EntityAups[index] = default;
+            views.EntityFlags[index] = 0u;
+            views.EntityVelocities[index] = float3.zero;
+            views.EntityItemHashes[index] = 0u;
+            views.EntityQuantities[index] = 0;
+            if (views.SignalEvents.IsCreated && index < views.SignalEvents.Length)
+                views.SignalEvents[index] = default;
         }
 
         private void ClearKnownRuntimeVaultSlots()
@@ -1911,18 +2019,18 @@ namespace Hecton8.Gameplay.Loot
             return math.saturate(HomeostasisBrain.PressureLevel * (1f / 3f));
         }
 
-        private void PublishItemAcquired(in LootMagnetSignalEvent signalEvent, int addedQuantity)
+        private uint PublishItemAcquired(in LootMagnetSignalEvent signalEvent, int addedQuantity)
         {
             if ((signalEvent.Flags & LootMagnetEventFlags.Acquired) == 0u ||
                 addedQuantity <= 0 ||
                 !IsFiniteAup(in signalEvent.PositionAup))
             {
-                return;
+                return 0u;
             }
 
             uint itemHash = signalEvent.ItemHash;
             if (itemHash == 0u)
-                return;
+                return 0u;
 
             ItemAcquiredSignal itemSignal = new ItemAcquiredSignal
             {
@@ -1934,17 +2042,19 @@ namespace Hecton8.Gameplay.Loot
                 Flags = LootMagnetConstants.SignalFlagLootMagnet,
                 Frame = signalEvent.Frame
             };
-            SignalBus<ItemAcquiredSignal>.TryPushTracked(in itemSignal, ref _signalPushDropCount);
+            return SignalBus<ItemAcquiredSignal>.TryPushTracked(in itemSignal, ref _signalPushDropCount)
+                ? 0u
+                : TelemetryItemAcquiredSignalRejectedFlag;
         }
 
-        private static void PublishItemSnapSpark(in LootMagnetSignalEvent signalEvent, int addedQuantity)
+        private static uint PublishItemSnapSpark(in LootMagnetSignalEvent signalEvent, int addedQuantity)
         {
             if ((signalEvent.Flags & LootMagnetEventFlags.Acquired) == 0u ||
                 signalEvent.ItemHash == 0u ||
                 addedQuantity <= 0 ||
                 !IsFiniteAup(in signalEvent.PositionAup))
             {
-                return;
+                return 0u;
             }
 
             DebrisSpawnSignal debrisSignal = new DebrisSpawnSignal
@@ -1959,7 +2069,9 @@ namespace Hecton8.Gameplay.Loot
                     LootMagnetConstants.ItemSnapSparkQuantity * math.max(1, addedQuantity),
                     (int)ushort.MaxValue)
             };
-            SignalBus<DebrisSpawnSignal>.TryPushTracked(in debrisSignal, ref _signalPushDropCount);
+            return SignalBus<DebrisSpawnSignal>.TryPushTracked(in debrisSignal, ref _signalPushDropCount)
+                ? 0u
+                : TelemetryDebrisSignalRejectedFlag;
         }
 
         private uint PublishPresentationSignals(
@@ -2025,7 +2137,8 @@ namespace Hecton8.Gameplay.Loot
                     Channel = AcousticPingSignal.ChannelLootZip,
                     Flags = AcousticPingSignal.FlagLootZip
                 };
-                SignalBus<AcousticPingSignal>.TryPushTracked(in acousticSignal, ref _signalPushDropCount);
+                if (!SignalBus<AcousticPingSignal>.TryPushTracked(in acousticSignal, ref _signalPushDropCount))
+                    droppedFlags |= TelemetryAcousticSignalRejectedFlag;
             }
 
             if (publishWake)
@@ -2037,7 +2150,8 @@ namespace Hecton8.Gameplay.Loot
                     Velocity = signalEvent.Velocity,
                     SourceFlags = LootMagnetConstants.WakeSourceLootZip
                 };
-                SignalBus<WakeGeneratedSignal>.TryPushTracked(in wakeSignal, ref _signalPushDropCount);
+                if (!SignalBus<WakeGeneratedSignal>.TryPushTracked(in wakeSignal, ref _signalPushDropCount))
+                    droppedFlags |= TelemetryWakeSignalRejectedFlag;
 
                 float fluidImpulseWeight01 = ResolveFluidImpulseWeight01(_qualityWeight01);
                 if (fluidImpulseWeight01 > 0f)
@@ -2058,7 +2172,8 @@ namespace Hecton8.Gameplay.Loot
                         SourceHash = LootMagnetConstants.FluidImpulseSourceLootZip,
                         Flags = LootMagnetConstants.SignalFlagLootMagnet
                     };
-                    SignalBus<FluidImpulseSignal>.TryPushTracked(in fluidImpulse, ref _signalPushDropCount);
+                    if (!SignalBus<FluidImpulseSignal>.TryPushTracked(in fluidImpulse, ref _signalPushDropCount))
+                        droppedFlags |= TelemetryFluidImpulseSignalRejectedFlag;
                 }
             }
 

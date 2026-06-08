@@ -7,34 +7,34 @@ poi_tags: poi.freight_stage_mass_board;poi.seed_ship_burn_schedule
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Сроки тяжелого freight staging"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Время подготовки тяжелого фрахта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Сроки тяжелого freight staging
+# Время подготовки тяжелого фрахта
 
-Сроки тяжелого freight защищают timeline: Atlas мог прибыть до массового поселения, потому что Deep Reach использовала precursor work, forward staging и unmanned risk tolerance.
+Тайминг тяжелого фрахта защищает no-FTL хронологию. Железо Atlas может прибыть до массового поселения, потому что корпорации рано запускают предварительный груз, стадируют его вперед, принимают беспилотный риск и прячут окна отказа в языке программ. Спасение не может занять этот прием после начала аварии.
 
 ## Scanner
 
-Atlas-class freight не быстрый. Это предоплаченное терпение с броней.
+Фрахт класса Atlas — это предоплаченное терпение, завернутое в броню.
 
 ## Terminal
 
-FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
+ФРАХТОВАЯ ЗАМЕТКА: Atlas и seed-груз используют стадирование, пеллетно-термоядерную поддержку, долгие дрейфы и тормозную инфраструктуру. Публичные даты могут скрывать ранние запуски и отправления из forward-domain.
 
 ## Audio
 
-Такой тяжелый корабль не летит. Он становится счетом с кильватером.
+Корабль такой массы не просто летит. Он становится счетом с кильватером.
 
 ## Field Note
 
-Тяжелый маршрут собирается из depot, beam windows, braking mass и политической наглости.
+Тяжелый маршрут собирается из депо, лучевых окон, тормозной массы и политической смелости.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/ru_RU. -->

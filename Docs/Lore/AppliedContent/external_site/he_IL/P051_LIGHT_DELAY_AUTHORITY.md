@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "סמכות השהיית האור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# סמכות השהיית האור
 
-HE LOC HOLD: Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather.
-
-## Scanner
-
-HE LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
-
-## Terminal
-
-HE LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
-
-## Audio
-
-HE LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
-
-## Field Note
-
-HE LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+קריאת מצוקה ב-HECTON-8 היא מטען פיזי של משמעות. היא עוזבת תורן מוצף, חוצה את מרחב Aegir במהירות האור, ממתינה במאגרי ממסר ומגיעה אל Black Keel דרך תור שכבר יודע לתמחר סיכון. העיכוב הראשון הוא מרחק נקי. העיכובים הבאים אנושיים: דרגת משמורת, חלונות סערה, שפת אחריות וההרגל של הנושא לענות לנכס לפני האדם. לכן תשובה יכולה להיות טרייה מבחינה טכנית ועדיין חסרת תועלת בחדר לחץ שקורס.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/he_IL. -->

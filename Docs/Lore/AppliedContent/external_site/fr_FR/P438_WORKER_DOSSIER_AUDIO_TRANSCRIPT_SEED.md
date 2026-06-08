@@ -9,32 +9,22 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Transcription audio de dossier ouvrier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Worker Dossier Audio Transcript Seed
+# Transcription audio de dossier ouvrier
 
-FR LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+## Une Colonie Avant La Preuve
 
-## Scanner
+L'audio des dossiers ouvriers ne doit pas présenter les morts comme des objets d'autel. Il doit les laisser travailler. Une cheffe des pompes vérifie une vanne. Un notaire de relay râle contre un panneau. Une médic discute avec un water ledger. Un opérateur fabricator logue un certificat d'outil parce que l'outil compte plus qu'un discours sur le courage.
 
-FR LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Cette routine donne du poids aux ruines. Le joueur doit entendre des noms avant les mémoriaux, des métiers avant la tragédie, des agacements minuscules avant que le grand mensonge se referme. HECTON-8 n'était pas une scène pour le Marauder. C'était un lieu de travail avec habitudes, rancunes, blagues, avis de dette et calculs de pression.
 
-## Terminal
-
-FR LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
-
-## Audio
-
-FR LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
-
-## Field Note
-
-FR LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Cette couche protège le canon du mélodrame. Aucun crochet familial ne rend le joueur spécial. La culpabilité est professionnelle. Tu reconnais procédures, badges et mauvaises décisions parce que tu appartenais à ce type de système, et maintenant le système parle par des ordres noyés.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/fr_FR. -->

@@ -7,34 +7,34 @@ poi_tags: poi.shallow_annex_p63_fabricator;poi.first_recipe_console
 biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "Fabricador de campo P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# Fabricador de campo P-63
 
-ES LOC HOLD: Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.
+Shallow Annex P-63 contiene el primer fabricador de campo, y se comporta como infraestructura de reparación en vez de impresora mágica. Las recetas iniciales son juntas de válvula, contactos de cortador, flotadores de baliza y abrazaderas de sellante: piezas pequeñas que vuelven fiables las herramientas dañadas. El fabricador rechaza materiales de presión peligrosos hasta que el jugador tenga certificación y conocimiento de contención.
 
 ## Scanner
 
-ES LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
+Fabricador de campo P-63. Tabla de certificación intacta; acepta chatarra como material, rechaza material de presión sin certificar.
 
 ## Terminal
 
-ES LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
+FAB P-63 / PRIMERAS RECETAS APROBADAS: junta de válvula, contacto de cortador, flotador de baliza, abrazadera de sellante. Fragmentos blue debt desconocidos rechazados hasta contar con certificación de presión y clase de contención.
 
 ## Audio
 
-ES LOC HOLD: The machine can make parts. It cannot make permission.
+Las piezas son fáciles. La autoridad es la parte cara.
 
 ## Field Note
 
-ES LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+Imprime piezas, no permisos. Si la receta pide un sello, el océano también lo pedirá.
 
 <!-- In-Game Wiki; generated from P115_P63_FIELD_FABRICATOR/es_ES. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Salida material
 
-La salida material es un final parcial válido. Permite cobrar recurso o muestra y deja la verdad principal sin cerrar.
+La salida material es un resultado parcial real, no una ruta muerta. Recursos o una muestra pueden comprar retirada mientras la verdad mayor queda sin resolver y un regreso posterior corta más hondo.
 
 ## Scanner
 

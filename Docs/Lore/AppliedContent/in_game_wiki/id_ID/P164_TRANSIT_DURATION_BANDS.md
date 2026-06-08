@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Transit Duration Bands"
+title: "Band Durasi Transit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Transit Duration Bands
+# Band Durasi Transit
 
-ID LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+Band transit menjelaskan mengapa HECTON-8 bisa dicapai dan tetap kejam. Paket bergerak dulu karena kecil, murah, dan berguna secara hukum. Freight bergerak saat staging, braking rights, dan loss margins sejajar. Tubuh bernapas bergerak lambat karena perlu massa, liability, life support, dan pihak yang mau membayar pulang. Jendela lokal Aegir lebih pendek tetapi tidak lebih ramah: orbit, suara badai, radiasi, dan geometri Black Keel menentukan apakah data, kargo, atau manusia bisa bergerak.
 
 ## Scanner
 
-ID LOC HOLD: The same route means different time for packets, freight and people.
+DURATION BAND CHART // Paket probe, heavy freight, human crews, dan jendela lokal Aegir tidak berbagi satu jam.
 
 ## Terminal
 
-ID LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // Jendela lokal: jam-hari. Gerak industri dalam sistem: bulan-tahun. Crew rotation: tahun custody dan utang. Heavy interdomain freight dan akibat: tahun-dekade.
 
 ## Audio
 
-ID LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
+Kargo bisa tiba sebelum belas kasihan. Itu bukan gagal. Itu doktrin.
 
 ## Field Note
 
-ID LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+Jika semua jam cocok, setting menjadi fantasi penyelamatan. Biarkan jam bermusuhan.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/id_ID. -->

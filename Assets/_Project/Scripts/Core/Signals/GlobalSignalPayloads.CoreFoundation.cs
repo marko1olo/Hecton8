@@ -817,6 +817,13 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(120)] public ulong ReservedTail6;
     }
 
+    public static class DockingSignalSourceKinds
+    {
+        public const byte Unknown = 0;
+        public const byte VehicleDockingModule = 1;
+        public const byte DroneFleet = 2;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct DockingCompleteSignal : ISignal
     {
@@ -826,7 +833,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(56)] public float3 DockForward;
         [FieldOffset(68)] public uint RequestId;
         [FieldOffset(72)] public byte Flags;
-        [FieldOffset(73)] public byte Reserved0;
+        [FieldOffset(73)] public byte SourceKind;
         [FieldOffset(74)] public byte Reserved1;
         [FieldOffset(75)] public byte Reserved2;
         [FieldOffset(76)] public uint ReservedTail;
@@ -848,7 +855,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(68)] public uint RequestId;
         [FieldOffset(72)] public byte Reason;
         [FieldOffset(73)] public byte Flags;
-        [FieldOffset(74)] public byte Reserved0;
+        [FieldOffset(74)] public byte SourceKind;
         [FieldOffset(75)] public byte Reserved1;
         [FieldOffset(76)] public uint ReservedTail;
         [FieldOffset(80)] public ulong ReservedTail1;

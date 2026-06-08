@@ -9,32 +9,18 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Materieller Ausstieg: bittere Gutschriften"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Materieller Ausstieg: bittere Gutschriften
 
-DE LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
+Der materielle Ausstieg muss kalt legitim wirken. Der Spieler birgt Druckmaterial, hält die custody intakt, erfüllt Black Keels Masse-durch-Fenster-Buchhaltung und erhält eine echte Senkung des lien. Keine Warnung erklärt Scheitern; das System funktioniert genau wie vorgesehen.
 
-## Scanner
-
-DE LOC HOLD: You can leave richer and still fail the place.
-
-## Terminal
-
-DE LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
-
-## Audio
-
-DE LOC HOLD: The invoice clears before the names do.
-
-## Field Note
-
-DE LOC HOLD: This ending should be real credits, not a fake game over.
+Der Schaden liegt in dem, was der Beleg auslässt. Vermisstennamen bleiben unabgeglichen, die Beweiskette ist unvollständig, und Deep Reach bekommt einen saubereren kommerziellen Grund zur Rückkehr. HECTON-8 bestraft den Spieler nicht für Professionalität. Es zeigt, was beruflicher Erfolg kostet, wenn die Arbeitsstelle zugleich ein Grab ist.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/de_DE. -->

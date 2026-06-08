@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Marque Barnard
 
-La première marque Barnard sur HECTON-8 est assez petite pour être manquée: estampille d'outil, habitude de maintenance, étiquette de ravitaillement. C'est pour cela qu'elle compte. HECTON-8 cesse d'être un contrat lointain quand les mêmes marques apparaissent près des noms, des routes d'évacuation et des autorisations ratées.
+La première marque Barnard sur HECTON-8 est assez petite pour passer inaperçue : estampille d’outil, plaque de casier, habitude d’approvisionnement, cicatrice d’acier de chantier bon marché. C’est pour cela qu’elle compte. La lune cesse d’être un contrat lointain quand ces marques de travail familières apparaissent près des blocages d’évacuation, des noms d’ouvriers et des permissions de route ratées.
 
 ## Scanner
 
-Marque Barnard Yards. Pas une dotation Deep Reach. Quelqu'un a amené du matériel de chez lui au fond de cette lune.
+Estampille Barnard Yards. Pas une dotation Deep Reach. Quelqu’un a porté du matériel de chantier jusqu’au fond de cette lune.
 
 ## Terminal
 
-ROUTE PERSONNEL: HOLD. ROUTE RESSOURCE: ACTIVE. ROUTE SUBSTRAT: PROTECTED.
+ROUTE PERSONNEL : HOLD. ROUTE RESSOURCE : ACTIVE. ROUTE SUBSTRAT : PROTECTED. ORIGINE OUTIL : BARNARD YARDS / STOCK DE RÉPARATION TROISIÈME PROPRIÉTAIRE.
 
 ## Audio
 
-C'est une marque Barnard. Même coupe. Même alliage bon marché. Celui qui a porté ça ici connaissait les mêmes ateliers que toi.
+Cette coupe, c’est Barnard. Alliage bon marché, frappe main gauche, mauvais traitement thermique. Celui qui a descendu ça connaissait les mêmes ateliers que toi.
 
 ## Field Note
 
-On peut ignorer une corporation morte. Plus dur d'ignorer une clé venue de ton propre chantier.
+On peut hausser les épaules devant une corporation morte. Une clé de son propre chantier se laisse moins facilement dans la boue.
 
 <!-- In-Game Wiki; generated from P003_BARNARD_MARK/fr_FR. -->

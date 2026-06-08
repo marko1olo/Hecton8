@@ -3,7 +3,7 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+poi_tags: poi.shell_sealant_growth;poi.pressure_fracture_patch
 biome_tags: biome.atlas;biome.pressure
 locale: en_US
 surface: in_game_wiki
@@ -19,24 +19,22 @@ localization_flags: 0
 
 # Shell Sealant Pressure Growth
 
-Shell sealant starts as emergency chemistry: patch foam, mineral slurry and pressure forcing material into a breach. In HECTON-8 water, local growth can colonize the patch and harden it into layered shell. The leak stops. The passage narrows. A hatch that opened yesterday may scrape suit tanks today.
-
-Atlas rates the event as success if pressure loss falls. Marauders care about return width, tool clearance and what the shell trapped on the other side. A good seal can strand a route, hide a pocket of bad water or preserve a dead room long enough for its machinery to answer.
+Shell sealant pressure growth is the cleanest Atlas mistake: the repair works. Calcium-silicate layers and biopolymer resin close a fracture, hold static pressure, and save a room that should have drowned. The same growth can bury labels, handles, chalk arrows, scrape marks, and the last human route through the station.
 
 ## Scanner
 
-Shell laminate over pressure crack. Calcium-silicate growth fused with Atlas patch foam. Flexing under load.
+Layered sealant closes the fracture and buries worker route marks under white shell.
 
 ## Terminal
 
-SEALANT EVENT // Emergency patch foam seeded mineral shell across breach P-4. Growth rate exceeds static repair table. Seal holds at current pressure; route clearance reduced by 31 percent.
+REPAIR CONFLICT: leak rate reduced, pressure boundary improved, egress markings occluded. Cutting shell may reopen flood path.
 
 ## Audio
 
-The wall is healed. That's the problem. It healed inward.
+The room survived. The way out did not.
 
 ## Field Note
 
-Mark shell patches on the way in. On the way out, assume they got narrower.
+Best used on doors, crawl routes, and pressure choices where repair and harm are the same object.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/en_US. -->

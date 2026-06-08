@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "Ending Terbaik: Tidak Ada Tangan Bersih"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# Ending Terbaik: Tidak Ada Tangan Bersih
 
-ID LOC HOLD: No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.
+Tidak Ada Tangan Bersih adalah aturan nada final. HECTON-8 memberi hadiah untuk pemahaman, persiapan, dan kerja saksi, bukan kemurnian. Ending terbaik harus membuat pemain merasa kompeten sekaligus terlibat.
 
 ## Scanner
 
-ID LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
+Ending terbaik harus menyelamatkan sesuatu yang nyata tanpa berpura-pura bahwa kepolosan selamat dari penurunan.
 
 ## Terminal
 
-ID LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
+ATURAN TIDAK ADA TANGAN BERSIH: kriteria ending terbaik yang diketahui memerlukan agency, bukti, konsekuensi, dan residu. Jika semua pihak yang terluka puas, ending itu lupa HECTON-8.
 
 ## Audio
 
-ID LOC HOLD: If it feels clean, it forgot where you are.
+Jika terasa bersih, ia lupa di mana kau berada.
 
 ## Field Note
 
-ID LOC HOLD: A strong ending lets the player save something real and lose something real.
+Rute kuat bisa mengungkap kebenaran, menolak Deep Reach, menjaga sebagian ekologi, dan membebaskan pemain, tetapi biaya harus tetap terlihat.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/id_ID. -->

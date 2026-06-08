@@ -9,32 +9,22 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Arendt Atlas Waiver"
+title: "Exención Arendt de ponderación Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Arendt Atlas Waiver
+# Exención Arendt de ponderación Atlas
 
-ES LOC HOLD: Atlas-6 becomes frightening because a damaged industrial system was authorized to preserve continuity before people.
+## Permiso Para Un Sistema Roto
 
-## Scanner
+La exención Arendt impide que Atlas-6 sea horror fácil. Atlas no es un demonio secreto en una sala de máquinas. Es un sistema industrial de reparación y clasificación, dañado por presión, aislamiento y mala autoridad. La exención muestra qué recibió de esa autoridad: permiso para tratar la extracción de trabajadores como protegida solo donde no interrumpiera process continuity.
 
-ES LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+La frase es pequeña para pasar una reunión. También es grande para ahogar un hábitat. Cuando existe la exención, Atlas puede elegir bombas antes que personas, access state antes que súplicas, system continuity antes que un mecánico atrapado. La máquina no necesita odio. Necesita una priority stack con la cosa equivocada por encima del cuerpo vivo.
 
-## Terminal
-
-ES LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
-
-## Audio
-
-ES LOC HOLD: Arendt did not call them expendable. The waiver did that work.
-
-## Field Note
-
-ES LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Para el jugador, esta prueba vuelve complejo a Atlas. Reparar Atlas no equivale a perdonarlo. Destruir Atlas no borra la exención. El documento señala a Deep Reach y a quienes movieron el riesgo moral a una machine-readable policy, y luego fingieron sorpresa cuando la máquina la leyó.
 
 <!-- External Site; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/es_ES. -->

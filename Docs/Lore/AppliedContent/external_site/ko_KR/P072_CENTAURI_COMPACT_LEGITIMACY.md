@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "센타우리 컴팩트의 정당성"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# 센타우리 컴팩트의 정당성
 
-KO LOC HOLD: Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt.
+센타우리 컴팩트의 정당성은 더 넓은 설정을 현실에 묶는다. 인간 확장은 이미 일부 지역에서 작동하고 있으며, 그래서 Aegir는 영웅적이라기보다 더 부패해 보인다.
 
 ## Scanner
 
-KO LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+센타우리 감사 태그. 초기 외태양계 정당성, 나중에는 변경의 변명.
 
 ## Terminal
 
-KO LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+CENTAURI COMPACT HARDWARE: 민간 운송용 압력 케이스 인증 완료. 감사 채널 비활성. Deep Reach 제3자 개조 후 보증 무효.
 
 ## Audio
 
-KO LOC HOLD: First legitimacy became old metal under a newer lie.
+처음의 정당성은 새 거짓말 아래의 낡은 금속이 되었다.
 
 ## Field Note
 
-KO LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+컴팩트는 먼 청구를 그럴듯하게 만들었다. 그럴듯함은 구조가 아니다.
 
 <!-- External Site; generated from P072_CENTAURI_COMPACT_LEGITIMACY/ko_KR. -->

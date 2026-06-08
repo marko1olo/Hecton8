@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 投放舱损伤
 
-玩家通过投放舱抵达HECTON-8。坠毁保留了庇护、电力和记录，却毁掉上升能力。早期逃离是一条工程链，不是按钮。
+投放胶囊把掠夺者送到 HECTON-8。坠毁留下足够系统维持庇护、电力和日志，却摧毁了上升硬件。早期逃离变成工程链，而不是按钮。
 
 ## Scanner
 

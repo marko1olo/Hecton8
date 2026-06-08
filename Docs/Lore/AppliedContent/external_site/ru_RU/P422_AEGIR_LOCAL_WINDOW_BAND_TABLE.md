@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "RU LOC HOLD: Aegir Window Bands"
+spoiler_tier: 1
+title: "Оконные диапазоны Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Aegir Window Bands
+# Оконные диапазоны Aegir
 
-RU LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
+Трафик Aegir управляется узкими transfer bands вокруг радиации, затмений, штормов и геометрии реле.
 
 ## Scanner
 
-RU LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+Локальный диапазон: подъем ждет окна в часы или дни, а не мгновенное спасение.
 
 ## Terminal
 
-RU LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+ОКОННЫЙ ДИАПАЗОН: заслонка, затмение, реле, шторм, фаза carrier и юридический handshake должны совпасть для безопасного transfer.
 
 ## Audio
 
-RU LOC HOLD: The carrier can hear you and still be in the wrong sky.
+Carrier может слышать тебя и все равно быть в неправильном небе.
 
 ## Field Note
 
-RU LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+Запись оконного диапазона: timing Black Keel, локальные метки орбит и spoiler-light страницы системы используют одни transfer constraints.
 
 <!-- External Site; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/ru_RU. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Сменная доска удержаний маршрута
 
-Сменные доски превращают катастрофу в процедуру. Игрок понимает, что Deep Reach и Atlas убивали классификацией, задержкой и приоритетом.
+Доски смен превращают катастрофу в читаемую процедуру. Deep Reach и Atlas убивали через классификацию, задержку и приоритет, а не через театральную злобу.
 
 ## Scanner
 

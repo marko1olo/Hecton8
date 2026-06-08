@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "Ланцюг відповідальності Великого припливу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# Ланцюг відповідальності Великого припливу
 
-UK LOC HOLD: Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure.
+Ланцюг відповідальності Великого припливу — центральна модель злочину Deep Reach. Затоплення HECTON-8 є планетарною відмовою, а не дешевим саботажем; корпоративна вина постає із запасів, евакуаційної місткості, автономного зважування пріоритетів, страхового формулювання й юридичного утримання після того, як потоп став неминучим. Так сетинг лишається твердою науковою фантастикою, а робота гравця з доказами має сенс: питання не в тому, хто смикнув важіль, а в тому, хто підписав систему, де люди могли стати папером раніше, ніж тілами.
 
 ## Scanner
 
-UK LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+Потоп був реальною фізикою: припливним зв’язком, обвалом льоду, хімією тиску й надто тонко оціненими запасами. Злочином був стек пріоритетів навколо цього.
 
 ## Terminal
 
-UK LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+ЗВЕДЕННЯ ІНЦИДЕНТУ: геотехнічний каскад підтверджено. Евакуаційна місткість нижча за попит хвостового ризику. Вага безперервності Atlas залишалася активною. Витяг людей очікує сертифікації.
 
 ## Audio
 
-UK LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+Море зробило потоп. Компанія вирішила, які двері залишаться папером.
 
 ## Field Note
 
-UK LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach не мусила топити місяць. Досить було зробити евакуацію необов’язковою.
 
 <!-- External Site; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/uk_UA. -->

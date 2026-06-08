@@ -9,32 +9,22 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Black Keel Approach Transcript Seed"
+title: "תמליל גישת Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Black Keel Approach Transcript Seed
+# תמליל גישת Black Keel
 
-HE LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+## ארבע שניות בין קולות
 
-## Scanner
+הקול הראשון מן המסלול לא צריך להישמע כמו ישועה. הוא צריך להישמע כמו תשתית תחת עומס: דחוס, מאוחר, שימושי וכבר מחייב. התמליל של Black Keel עובד כי הוא נותן לשחקן עזרה והשפלה באותה נשימה. carrier שמע את הנפילה. carrier יכול לקבל הוכחה. carrier אולי יחזיר תובע חי. שום דבר מזה אינו חילוץ.
 
-HE LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+ההשהיה חשובה. ארבע שניות הן מעט מספיק לשיחה ודי הרבה כדי להזכיר שהאוקיינוס עונה ראשון. אובדן חבילות חשוב כי כל ויכוח מאוחר יותר עם המסלול עולה בגוף. בריאות, מסה והוכחה אינם מונחי צבע; הם הצורה של חלון החזרה. Marauder יכול להיות חי ועדיין בלתי ניתן להשבה. המטען יכול להיות אמיתי ועדיין כבד מדי. ה-carrier יכול להיות ישר ועדיין לסרב.
 
-## Terminal
-
-HE LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
-
-## Audio
-
-HE LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
-
-## Field Note
-
-HE LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+בשעה הראשונה התמליל הזה מצמיד את הפנטזיה למתכת. הגעת כפועל בחוב עם חריץ claim, לא כניצול נבחר. Black Keel הוא הקו מעליך, לא היד לידך. לבזבז חמצן על ויכוח עם המסלול זו כבר טעות.
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/he_IL. -->

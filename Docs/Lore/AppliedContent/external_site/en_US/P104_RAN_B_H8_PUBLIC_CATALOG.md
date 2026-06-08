@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "RAN-B:H8 Public Catalog"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,6 @@ localization_flags: 0
 
 # RAN-B:H8 Public Catalog
 
-RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name.
-
-## Scanner
-
-Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
-
-## Terminal
-
-CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
-
-## Audio
-
-The star chart calls it H8. The people who died here called it HECTON.
-
-## Field Note
-
-Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+RAN-B:H8 is the name used when the moon is a coordinate. HECTON-8 is the name used when the moon is a wound. The split matters because the same place must work in astronomy tables, insurance forms, worker speech, death ledgers, and Black Keel custody. A public catalog can make the destination clean and sortable; a claim name keeps the human residue attached. Good lore should let the player feel both names at once: the indexed body and the drowned workplace.
 
 <!-- External Site; generated from P104_RAN_B_H8_PUBLIC_CATALOG/en_US. -->

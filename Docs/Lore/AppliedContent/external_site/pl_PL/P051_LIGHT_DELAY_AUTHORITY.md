@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "Władza opóźnienia świetlnego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# Władza opóźnienia świetlnego
 
-PL LOC HOLD: Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather.
-
-## Scanner
-
-PL LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
-
-## Terminal
-
-PL LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
-
-## Audio
-
-PL LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
-
-## Field Note
-
-PL LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+Sygnał alarmowy na HECTON-8 jest fizycznym ładunkiem znaczenia. Opuszcza zalany maszt, przecina przestrzeń Aegir z prędkością światła, czeka w buforach przekaźnika i dociera do Black Keel przez kolejkę, która już umie wycenić ryzyko. Pierwsze opóźnienie to uczciwy dystans. Późniejsze opóźnienia są ludzkie: klasa pieczy, okna burzy, język odpowiedzialności i nawyk przewoźnika, by odpowiadać najpierw zasobowi. Dlatego odpowiedź może być technicznie świeża i nadal bezużyteczna w zapadającej się komorze ciśnienia.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/pl_PL. -->

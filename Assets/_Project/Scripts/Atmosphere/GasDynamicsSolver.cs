@@ -62,7 +62,7 @@ namespace Hecton8.Atmosphere
         private const byte StepCompletionDeferralWarningThreshold = 4;
         private const ushort ToxicityFlagCO2 = 1 << 0;
         private const ushort ToxicityFlagNarcosis = 1 << 1;
-        private const uint PlayerTargetHash = 0x504C5952u; // PLYR
+        private const uint PlayerTargetHash = ToxicityExposureSignal.PlayerEntityFallbackHash;
         private const uint GasCarbonDioxideChemicalHash = 0x434F3247u; // CO2G
         private const float ToxicitySignalEpsilon = 0.0001f;
         private const float ToxicityExposureDeltaScalePerSecond = 0.08f;
@@ -2937,25 +2937,31 @@ namespace Hecton8.Atmosphere
         private void PublishActiveRoomToxicitySignal(float deltaTime)
         {
             int roomId = _activePlayerRoom;
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             if (roomId < 0 ||
                 !TryGetRoomSnapshot(roomId, out GasRoomSnapshot snapshot))
             {
+                PublishToxicityClearSignalIfNeeded(roomId, 0f, 0f, frame);
                 return;
             }
 
             float toxicity01 = math.saturate(FiniteNonNegativeOrZero(snapshot.Toxicity01));
             float narcosis01 = math.saturate(FiniteNonNegativeOrZero(snapshot.Narcosis01));
+            float carbonDioxideKPa = FiniteNonNegativeOrZero(snapshot.CarbonDioxideKPa);
+            float pressureAtm = FiniteNonNegativeOrZero(snapshot.PressureKPa) * math.rcp(KPaPerAtmosphere);
             if (toxicity01 <= ToxicitySignalEpsilon && narcosis01 <= ToxicitySignalEpsilon)
+            {
+                PublishToxicityClearSignalIfNeeded(roomId, carbonDioxideKPa, pressureAtm, frame);
                 return;
+            }
 
-            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             ushort flags = (ushort)(
                 math.select(0, ToxicityFlagCO2, toxicity01 > ToxicitySignalEpsilon) |
                 math.select(0, ToxicityFlagNarcosis, narcosis01 > ToxicitySignalEpsilon));
             _latestToxicitySignal = new ToxicitySignal(
                 roomId,
-                snapshot.CarbonDioxideKPa,
-                snapshot.PressureKPa * math.rcp(KPaPerAtmosphere),
+                carbonDioxideKPa,
+                pressureAtm,
                 toxicity01,
                 narcosis01,
                 frame,
@@ -2963,21 +2969,70 @@ namespace Hecton8.Atmosphere
             AdvanceToxicitySignalSequence();
 
             if (toxicity01 <= ToxicitySignalEpsilon ||
-                !SignalBus<ToxicityExposureSignal>.HasNativeStorage ||
-                !TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                !SignalBus<ToxicityExposureSignal>.HasNativeStorage)
             {
                 return;
             }
 
+            bool hasSourceAup = TryResolvePlayerAup(out AbsoluteUniversePosition playerAup);
+
             ToxicityExposureSignal exposure = default;
-            exposure.AUP = playerAup.ToAbsoluteDouble3();
             exposure.Exposure01 = toxicity01;
-            exposure.ToxemiaDelta = math.saturate(toxicity01 * math.max(0f, deltaTime) * ToxicityExposureDeltaScalePerSecond);
-            exposure.EntityId = PlayerTargetHash;
+            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
+            exposure.ToxemiaDelta = math.saturate(toxicity01 * safeDeltaTime * ToxicityExposureDeltaScalePerSecond);
+            exposure.EntityId = ResolvePlayerToxicitySignalEntityId();
             exposure.ChemicalHash = GasCarbonDioxideChemicalHash;
             exposure.Frame = frame;
-            exposure.Flags = 1;
+            if (hasSourceAup)
+            {
+                exposure.AUP = playerAup.ToAbsoluteDouble3();
+                exposure.Flags = ToxicityExposureSignal.FlagHasSourceAup;
+            }
+
             SignalBus<ToxicityExposureSignal>.TryPushTracked(in exposure, ref _toxicityExposureSignalDropCount);
+        }
+
+        private static uint ResolvePlayerToxicitySignalEntityId()
+        {
+            GameObject playerObject = null;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                playerObject = playerContext.PlayerObject;
+            if (playerObject == null)
+                playerObject = BootstrapState.CurrentPlayerObject;
+
+            uint entityHash = playerObject != null ? unchecked((uint)EntityId.ToULong(playerObject.GetEntityId())) : 0u;
+            return entityHash != 0u ? entityHash : PlayerTargetHash;
+        }
+
+        private void PublishToxicityClearSignalIfNeeded(
+            int roomId,
+            float carbonDioxideKPa,
+            float pressureAtm,
+            uint frame)
+        {
+            ToxicitySignal previous = _latestToxicitySignal;
+            if (_latestToxicitySignalSequence != 0 &&
+                previous.RoomId == roomId &&
+                previous.Toxicity01 <= ToxicitySignalEpsilon &&
+                previous.Narcosis01 <= ToxicitySignalEpsilon &&
+                previous.Flags == 0)
+            {
+                return;
+            }
+
+            if (_latestToxicitySignalSequence == 0)
+                return;
+
+            _latestToxicitySignal = new ToxicitySignal(
+                roomId,
+                carbonDioxideKPa,
+                pressureAtm,
+                0f,
+                0f,
+                frame,
+                0);
+            AdvanceToxicitySignalSequence();
         }
 
         private void AdvanceToxicitySignalSequence()

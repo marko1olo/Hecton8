@@ -1,0 +1,137 @@
+{
+  "schema": "hecton8.gemini_replacement_texture_integration.v1",
+  "date": "2026-06-07",
+  "status": "STATIC_SOURCE_INTEGRATED_PENDING_UNITY_IMPORT",
+  "first20RouteMoment": "first-tool readability and abyssal route material upgrade",
+  "unityImportStatus": "PENDING UNITY IMPORT",
+  "visualProof": [
+    "Temp/GeminiReplacementProcessedPreview_20260607.png",
+    "Temp/GeminiReplacementWatermarkCrops_20260607.png"
+  ],
+  "records": [
+    {
+      "assetId": "matte_carbon_composite_replacement",
+      "role": "clean woven carbon composite for premium compact tool shells and structural micro-panels",
+      "target": "atlas_tile",
+      "rawSource": "C:\\Users\\danat\\Downloads\\Carbon composite micro-panel.png",
+      "cleanedSource": "Assets/_Project/Art/TEXTURES/Generated/GeminiReplacementSources_20260607/TX_GR_matte_carbon_composite_replacement_Cleaned_2k.jpg",
+      "inputBytes": 9888437,
+      "cleanedSourceBytes": 159487,
+      "inputDimensions": [
+        2048,
+        2048
+      ],
+      "outputDimensions": [
+        1024,
+        1024
+      ],
+      "watermarkRepair": "bottom_right_feathered_donor_patch",
+      "sourceCropRect": [
+        0.21,
+        0.62,
+        0.53,
+        0.94
+      ],
+      "tileable": true,
+      "seamScoreBefore": 9.902897834777832,
+      "seamScoreAfter": 1.52572762966156,
+      "seamRepaired": true,
+      "seamBorderFraction": 0.18,
+      "seamStrength": 1.0,
+      "mapBytesBefore": {
+        "BaseColor": 1589779,
+        "NormalGL": 1807276,
+        "ARM_AO_Rough_Metal": 652567,
+        "Height": 605555,
+        "MaskMap_UnityURP": 697629
+      },
+      "mapBytesAfter": {
+        "BaseColor": 1565151,
+        "NormalGL": 1839243,
+        "ARM_AO_Rough_Metal": 652365,
+        "Height": 594390,
+        "MaskMap_UnityURP": 697328
+      },
+      "outputs": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_matte_carbon_composite/TX_GM_gemini_Batch20260607_MicroPanel_matte_carbon_composite_BaseColor.png",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_matte_carbon_composite/TX_GM_gemini_Batch20260607_MicroPanel_matte_carbon_composite_NormalGL.png",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_matte_carbon_composite/TX_GM_gemini_Batch20260607_MicroPanel_matte_carbon_composite_ARM_AO_Rough_Metal.png",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_matte_carbon_composite/TX_GM_gemini_Batch20260607_MicroPanel_matte_carbon_composite_Height.png",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_matte_carbon_composite/TX_GM_gemini_Batch20260607_MicroPanel_matte_carbon_composite_MaskMap_UnityURP.png"
+      }
+    },
+    {
+      "assetId": "abyssal_strap_kelp_replacement",
+      "role": "active family.kelp.abyssal albedo/normal/mask/detail stack for deep route kelp readability",
+      "target": "kelp_stack",
+      "rawSource": "C:\\Users\\danat\\Downloads\\Abyssal strap kelp.png",
+      "cleanedSource": "Assets/_Project/Art/TEXTURES/Generated/GeminiReplacementSources_20260607/TX_GR_abyssal_strap_kelp_replacement_Cleaned_2k.jpg",
+      "inputBytes": 8073970,
+      "cleanedSourceBytes": 943897,
+      "inputDimensions": [
+        2048,
+        2048
+      ],
+      "outputDimensions": [
+        1024,
+        1024
+      ],
+      "watermarkRepair": "bottom_right_feathered_donor_patch",
+      "sourceCropRect": null,
+      "tileable": true,
+      "seamScoreBefore": 3.2312281131744385,
+      "seamScoreAfter": 1.1974172592163086,
+      "seamRepaired": true,
+      "seamBorderFraction": 0.065,
+      "seamStrength": 0.72,
+      "mapBytesBefore": {
+        "albedo": 1522053,
+        "normal": 1676864,
+        "mask": 1499681,
+        "detail": 1104331
+      },
+      "mapBytesAfter": {
+        "albedo": 1522053,
+        "normal": 1676864,
+        "mask": 1499681,
+        "detail": 1104331
+      },
+      "outputs": {
+        "albedo": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/albedo___family.kelp.abyssal.png",
+        "normal": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/normal___family.kelp.abyssal.png",
+        "mask": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/mask___family.kelp.abyssal.png",
+        "detail": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/detail___family.kelp.abyssal.png"
+      }
+    },
+    {
+      "assetId": "alien_barnacle_colony_replacement",
+      "role": "active barnacle colony UV-atlas basecolor; intentionally not treated as seamless material",
+      "target": "barnacle_uv_atlas",
+      "rawSource": "C:\\Users\\danat\\Downloads\\Alien barnacle colony.png",
+      "cleanedSource": "Assets/_Project/Art/TEXTURES/Generated/GeminiReplacementSources_20260607/TX_GR_alien_barnacle_colony_replacement_Cleaned_2k.jpg",
+      "inputBytes": 7489617,
+      "cleanedSourceBytes": 964475,
+      "inputDimensions": [
+        2048,
+        2048
+      ],
+      "outputDimensions": [
+        1024,
+        1024
+      ],
+      "watermarkRepair": "bottom_right_feathered_donor_patch",
+      "sourceCropRect": null,
+      "tileable": false,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "seamBorderFraction": null,
+      "seamStrength": null,
+      "bytesBefore": 1477719,
+      "bytesAfter": 1477719,
+      "outputs": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png"
+      }
+    }
+  ]
+}

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Access Boundary"
+title: "Межа доступу Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Access Boundary
+# Межа доступу Atlas
 
-UK LOC HOLD: Atlas can be described early as damaged industrial continuity that learned through repair ecology. Final receiver records remain evidence-gated because they change the meaning of earlier repairs.
+Atlas можна рано описувати як пошкоджену industrial continuity, що навчилася через repair ecology. Фінальні receiver records лишаються за evidence gate, бо змінюють значення ранніх ремонтів: seal, preserve, sever, quarantine і release внизу не нейтральні дієслова.
 
 ## Scanner
 
-UK LOC HOLD: Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+Запис межі Atlas. Відкриті докази показують industrial continuity logic і repair ecology; receiver custody, payload consequence і фінальні шари вибору потребують знайденого proof.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+ВУЗОЛ ПУБЛІЧНОГО АРХІВУ // МЕЖА ДОСТУПУ ATLAS. Поточний шар: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue і shell seal. Обмежений шар: receiver custody і final payload consequence.
 
 ## Audio
 
-UK LOC HOLD: Say it repairs. Wait before naming what it counts as repaired.
+Скажи, що він ремонтує. Зачекай, перш ніж назвати, що він рахує відремонтованим.
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: a machine can preserve proof and still damage the person inside it.
+Нотатка Marauder: машина може зберегти доказ і все одно пошкодити людину всередині.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/uk_UA. -->

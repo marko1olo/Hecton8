@@ -8,33 +8,17 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+spoiler_tier: 1
+title: "Транзит ротації людських екіпажів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# Транзит ротації людських екіпажів
 
-UA LOC HOLD: Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt.
-
-## Scanner
-
-UA LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
-
-## Terminal
-
-UA LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
-
-## Audio
-
-UA LOC HOLD: By the time home asks where you are, the room has already flooded.
-
-## Field Note
-
-UA LOC HOLD: A frontier worker sells time before they sell labor.
+Людський транзит - місце, де маршрут перестає бути абстракцією. Працівників не телепортують до Aegir; їх планують, охолоджують, страхують, індексують і роками передають між повноваженнями. Контракт може старіти в одному напрямку, а людина всередині - в іншому. Коли екіпаж прокидається, роботодавець, liability owner і аварія, до якої його готували, можуть уже змінитися. Тому покинутість відчувається процедурною.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/uk_UA. -->

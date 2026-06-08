@@ -31,7 +31,7 @@ namespace Hecton8.World
                 return;
 
             _evaluator.Initialize();
-            _initialized = true;
+            _initialized = _evaluator.IsInitialized;
         }
 
         public bool TrySchedule(
@@ -39,7 +39,7 @@ namespace Hecton8.World
             NativeArray<float>.ReadOnly heightSamples,
             NativeArray<ScatterSimulationCellState>.ReadOnly cellStates)
         {
-            return false;
+            return IsInitialized && _evaluator.TryScheduleEvaluation(config, heightSamples, cellStates);
         }
 
         public bool TrySchedule(

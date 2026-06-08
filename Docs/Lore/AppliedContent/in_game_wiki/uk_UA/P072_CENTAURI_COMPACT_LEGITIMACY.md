@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "Легітимність Centauri Compact"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# Легітимність Centauri Compact
 
-UK LOC HOLD: The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.
+Centauri Compact - рання позасонячна опора людської легітимності: справжні колонії, справжні стандарти, справжній громадянський престиж. На HECTON-8 він з'являється як імпортовані гермокейси та аудитні мітки, на які Deep Reach могла посилатися, ігноруючи їхній дух.
 
 ## Scanner
 
-UK LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+Аудитна мітка Centauri. Рання позасонячна легітимність, пізніше - фронтирні виправдання.
 
 ## Terminal
 
-UK LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+ОБЛАДНАННЯ CENTAURI COMPACT: гермокейс сертифіковано для цивільного транзиту. Канал аудиту неактивний. Гарантію скасовано після сторонньої модернізації Deep Reach.
 
 ## Audio
 
-UK LOC HOLD: First legitimacy became old metal under a newer lie.
+Перша легітимність стала старим металом під новішою брехнею.
 
 ## Field Note
 
-UK LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+Compact зробив далекі претензії поважними. Поважність не рятує.
 
 <!-- In-Game Wiki; generated from P072_CENTAURI_COMPACT_LEGITIMACY/uk_UA. -->

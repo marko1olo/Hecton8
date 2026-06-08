@@ -9,32 +9,35 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Blue Debt Public Resource Article"
+title: "Artikel Publik Sumber Daya Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Blue Debt Public Resource Article
+# Artikel Publik Sumber Daya Blue Debt
 
-ID LOC HOLD: Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure.
+Blue debt adalah nama perbatasan untuk Xenon-Omega-bearing pressure substrate di HECTON-8. Ia dapat muncul sebagai mineral kaya brine, kantong clathrate, kontaminasi pressure glass, kisi terikat biofilm, atau containment material industri yang rusak. Nilainya berasal dari komputasi, containment, dan penyimpanan lingkungan ekstrem. Bahayanya berasal dari kustodi: setiap sampel bertanya siapa pemiliknya, siapa yang mensertifikasinya, dan siapa yang disalahkan jika ia berubah keadaan.
 
 ## Scanner
 
-ID LOC HOLD: The public name sounds like slang because the official name is built to hide liability.
+Bahasa slang itu jujur. Nama resmi justru menyembunyikan liabilitas: Xenon-Omega-bearing pressure substrate.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+TINGKAT ARTIKEL PUBLIK / BLUE DEBT
+diizinkan: perilaku sampel, kimia tekanan, pembawa clathrate dan brine, nilai containment, penggunaan komputasi, risiko kustodi
+dikunci: tabel resep persis, tuning payout, rute substrate Atlas akhir game
+catatan editor: tanpa bijih ajaib, tanpa fantasi loot bercahaya, tanpa kepemilikan bersih.
 
 ## Audio
 
-ID LOC HOLD: Ore is what people call it when they want to forget the paperwork.
+Mereka menyebutnya blue debt karena setiap gram berguna tiba sudah berutang tekanan, dokumen, atau darah kepada seseorang.
 
 ## Field Note
 
-ID LOC HOLD: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+Jika ia bersinar seperti harta, tulis ulang. Blue debt harus terasa berguna, basah, diatur, tidak stabil, dan sudah diperebutkan.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/id_ID. -->

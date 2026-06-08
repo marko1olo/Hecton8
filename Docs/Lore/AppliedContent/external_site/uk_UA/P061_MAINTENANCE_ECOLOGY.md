@@ -8,33 +8,19 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Maintenance Ecology"
+spoiler_tier: 1
+title: "Екологія обслуговування"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Екологія обслуговування
 
-UK LOC HOLD: Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlas не знайшов дружній океан. Він знайшов життя, здатне нести навантаження. Провідна біоплівка могла на кілька годин замкнути слабкий контур. Мушлевий ріст міг утримати тріщину до наступного стрибка тиску. Фільтрувальна колонія могла повторити акустичний імпульс далі, ніж затонулий ретранслятор. Мічена фауна могла повернути sensor packets після відмови металевих drones.
 
-## Scanner
-
-UK LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
-
-## Terminal
-
-UK LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
-
-## Audio
-
-UK LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-UK LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Тому ремонтна мережа спокуслива й брудна. Гравець може зрізати живий матеріал заради salvage або залишити його, бо він тримає тиск. Стіна може бути інфраструктурою, середовищем існування і доказом злочину одночасно. Екологія обслуговування першою доводить: HECTON-8 не магічний. Він гірший за магію, бо за кожним дивом стоїть робоче замовлення.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/uk_UA. -->

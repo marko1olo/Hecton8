@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "Bandas globales de profundidad oceanica"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# Bandas globales de profundidad oceanica
 
-ES LOC HOLD: HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.
+El oceano de HECTON-8 se lee por bandas, no por una sola linea de fondo. La plataforma fotica aun permite luz, restos, floraciones y pilotos descuidados. La plataforma industrial sostiene arrecifes de cables, jaulas de tuberia y viejas cubiertas de carga. Mas abajo, las escaleras de salmuera doblan sonar y lastre. Los campos abisales castigan las reparaciones. La cuenca Atlas hace que la presion parezca jurisdiccion.
 
 ## Scanner
 
-ES LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+Carta de profundidad. La primera plataforma perdona mal lastre; el agua baja cobra cada error en presion, calor y silencio.
 
 ## Terminal
 
-ES LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+BANDAS: 0-250 m plataforma fotica de saqueo; 250-1200 m plataforma industrial y arrecife de cables; 1200-2800 m escalera/canon de salmuera; 2800-4300 m campo abisal de maquinas; 4300-5600 m cuenca Atlas.
 
 ## Audio
 
-ES LOC HOLD: Every band changes what the world allows you to do.
+Cada cien metros te quitan una costumbre.
 
 ## Field Note
 
-ES LOC HOLD: Depth is not a number. It is a ruleset.
+La profundidad en HECTON-8 es ley, clima, frontera y hambre con el mismo numero.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/es_ES. -->

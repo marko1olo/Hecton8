@@ -2,9 +2,9 @@
 packet_id: P013_NEARLIGHT_SHIP_CLASSES
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: ships.nearlight_classes
-unlock_id: unlock.first_transit_manifest
-poi_tags: poi.transit_manifest;poi.sleeper_tag
-biome_tags: biome.drowned_colony;biome.crash_shelf
+unlock_id: unlock.first_nearlight_manifest
+poi_tags: poi.transit_manifest;poi.old_ship_class_table
+biome_tags: biome.drowned_colony;biome.black_keel_link
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -14,24 +14,26 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Nearlight-scheepsklassen
 
-Nearlight-schepen bouwden mensenruimte zonder fysica te breken: probes, seed ships, mass carriers, sleeper transports, lokale carriers, tugs en tenders.
+Nearlight-schepen bouwden de mensensfeer zonder natuurkunde te breken. Goedkope probes kwamen eerst, daarna zaadschepen en Atlas-carriers met fabrieken, slapers, contracten en afscherming.
+
+De tabel scheidt eigendom van redding. Aegir kan juridisch geclaimd zijn en toch moeilijk bereikbaar blijven met lichamen.
 
 ## Scanner
 
-Transitmanifest: needleprobe, seed ship, mass carrier, sleeper transport, system carrier.
+Transitmanifest noemt naaldprobe, zaadschip, Atlas-vrachtcarrier, slaaptransport, systeemtender en claim-pool-carrier.
 
 ## Terminal
 
-No FTL lane registered. Transit class requires launch infrastructure, braking plan, shielding mass, and route custody.
+TRANSITKLASSTABEL // Geen FTL-baan geregistreerd. Alle klassen vereisen lanceerinfrastructuur, schildmassa, remplan, routebewaring en schuldautoriteit. Interstellair eigendom impliceert geen lokale redding.
 
 ## Audio
 
-Een schip kan sterren kruisen en nutteloos zijn voor een overstroomde kamer.
+Een schip kan sterren oversteken en toch nutteloos zijn voor een ondergelopen kamer.
 
 ## Field Note
 

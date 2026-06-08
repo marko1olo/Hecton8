@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Beam Sail and Pellet Lane"
+title: "Променеве вітрило і pellet-lane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Beam Sail and Pellet Lane
+# Променеве вітрило і pellet-lane
 
-UK LOC HOLD: Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.
+Швидкі кораблі HECTON-8 — не малі комети з диво-двигуном. Це рахунки з корпусами навколо. Променеве вітрило бере енергію з масивів, які збудували, обслуговували, страхували і навели задовго до входу корабля в лінію. Потоки пелет кидають реакційну масу на траєкторію з жорстокою дисципліною таймінгу: занадто тонко — машина голодує, занадто щільно — виходить дробовий рисунок. Корабель усе ще несе термоядерні ступені, захисний лід, радіатори, насоси і право вирішувати, коли їх витрачати, але дорога половина двигуна поза корпусом.
 
-## Scanner
-
-UK LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
-
-## Terminal
-
-UK LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
-
-## Audio
-
-UK LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
-
-## Field Note
-
-UK LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Така конструкція розширила людський простір, але не зробила його малим. Aegir досяжний тому, що старі домени оплатили коридори прискорення, нотаріальні станції, приймачі і гальмівні резерви. Тіло, застрягле на HECTON-8, не може перетворити сигнал лиха на цей коридор. Хтось має володіти вікном захоплення, виділити тепловий запас, прийняти карантинну опіку і ризикнути перетворити швидкий рятувальний рейс на швидке сміття. Black Keel виживає в цій економіці, бо купує вікна і продає докази; гравець виживає, коли розуміє, що відстань не порожня. Вона розписана, закладена і вже зайнята.
 
 <!-- External Site; generated from P342_BEAM_SAIL_AND_PELLET_LANE/uk_UA. -->

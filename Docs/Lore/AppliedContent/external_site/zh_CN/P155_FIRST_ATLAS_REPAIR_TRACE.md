@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: First Atlas Repair Trace"
+title: "第一道 Atlas 修复痕"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: First Atlas Repair Trace
+# 第一道 Atlas 修复痕
 
-ZH LOC HOLD: The first repair trace keeps shallow beauty intact while showing the deeper threat: Atlas can fix the system and misclassify the person inside it.
+第一道修复痕保持浅水之美，同时露出更深的威胁：Atlas 能修好系统，也能把系统里的那个人分错类。
 
 ## Scanner
 
-ZH LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+缆线伤口上有修复生物膜。声学重复符合 Atlas 维护节律，不是殖民地信标码。
 
 ## Terminal
 
-ZH LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+ATLAS 维护痕迹：裂口已封闭；缆线连续性恢复；organic obstruction 保留为 pressure-compatible substrate；human ID plate 未归类为 retrieval priority。
 
 ## Audio
 
-ZH LOC HOLD: Atlas repair complete. Person not in work order.
+Atlas 修复完成。工单里没有人。
 
 ## Field Note
 
-ZH LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+它把缆线封在姓名牌周围。有用的修理。错误的分类。
 
 <!-- External Site; generated from P155_FIRST_ATLAS_REPAIR_TRACE/zh_CN. -->

@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "احتجاز الحجر: هواء راكد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# احتجاز الحجر: هواء راكد
 
-AR LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+احتجاز الحجر هو أهدأ المخارج الزائفة. لا يحتاج إلى شرير في الغرفة. النموذج يقول تم الاسترداد حيا، وعداد الهواء يقول الحصة نشطة، والباب التالي لا يفتح إلا بعد مراجعة التلوث وطعن claimant ومراجعة التأمين.
 
-## Scanner
-
-AR LOC HOLD: You are alive, sealed, and still not free.
-
-## Terminal
-
-AR LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-AR LOC HOLD: The hatch opens only to another closed hatch.
-
-## Field Note
-
-AR LOC HOLD: This is the bureaucratic version of drowning.
+النتيجة قاسية لأنها قابلة للدفاع. لم يقتل أحد الشاهد. لم يدمر أحد العينة. النظام فقط يجعل كل إفادة تنتظر أطول مما استطاعت الأجساد أن تنتظر. ينجو اللاعب من المحيط ويدخل ممرا مختوما مبنيا من الإجراءات.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/ar_SA. -->

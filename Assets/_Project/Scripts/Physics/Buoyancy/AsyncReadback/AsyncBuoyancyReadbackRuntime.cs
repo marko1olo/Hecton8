@@ -382,6 +382,16 @@ namespace Hecton8.Physics
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);
+            float shiftSqrMagnitude = math.lengthsq(shiftOffset);
+            if (!math.all(math.isfinite(shiftOffset)) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            {
+                return;
+            }
+
             ApplyOriginSnapshot(in shiftData);
         }
 
@@ -1551,6 +1561,9 @@ namespace Hecton8.Physics
                     return true;
 
                 H8Memory.Release(ref _readbackData.Data0, SystemID.Physics);
+                if (_readbackData.Data0.IsCreated)
+                    return false;
+
                 _readbackData.Data0 = H8Memory.Allocate<ReadbackRequestDTO>(
                     AsyncBuoyancyReadbackConstants.RequestCapacity,
                     SystemID.Physics,
@@ -1565,6 +1578,9 @@ namespace Hecton8.Physics
                     return true;
 
                 H8Memory.Release(ref _readbackData.Data1, SystemID.Physics);
+                if (_readbackData.Data1.IsCreated)
+                    return false;
+
                 _readbackData.Data1 = H8Memory.Allocate<ReadbackRequestDTO>(
                     AsyncBuoyancyReadbackConstants.RequestCapacity,
                     SystemID.Physics,
@@ -1577,6 +1593,9 @@ namespace Hecton8.Physics
                 return true;
 
             H8Memory.Release(ref _readbackData.Data2, SystemID.Physics);
+            if (_readbackData.Data2.IsCreated)
+                return false;
+
             _readbackData.Data2 = H8Memory.Allocate<ReadbackRequestDTO>(
                 AsyncBuoyancyReadbackConstants.RequestCapacity,
                 SystemID.Physics,

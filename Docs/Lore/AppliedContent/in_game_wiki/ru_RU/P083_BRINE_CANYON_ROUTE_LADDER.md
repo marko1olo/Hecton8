@@ -7,34 +7,34 @@ poi_tags: poi.brine_density_marker;poi.canyon_current_gate
 biome_tags: biome.brine_canyon;biome.drop_zone
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Маршрутная лестница brine canyon"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Маршрутная лестница рассольного каньона"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Маршрутная лестница brine canyon
+# Маршрутная лестница рассольного каньона
 
-Brine canyons делают progression глубины физической. Dense brine layers, mineral walls, thermal leaks и acoustic distortion создают routes, которые учат игрока, почему глубокий travel требует лучших instruments и pressure discipline.
+Рассольные каньоны делают продвижение в глубину физическим. Плотные слои, минеральные стены, тепловые утечки и акустические искажения учат, почему более глубокий путь требует лучших приборов и дисциплины давления.
 
 ## Scanner
 
-Brine density marker. Маршрут спуска - это химия со стенами.
+Маркер плотности рассола. Маршрут вниз является химией со стенами.
 
 ## Terminal
 
-BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
+УПРАВЛЕНИЕ РАССОЛЬНЫМ КАНЬОНОМ: граница плотности достаточно стабильна для ступенчатого спуска. Предупреждение: искажение акустических реле, ошибка плавучести машины и ложное дно ниже 1800 м.
 
 ## Audio
 
-Каньон - лестница из неправильной воды.
+Каньон - это лестница из неправильной воды.
 
 ## Field Note
 
-Ты не плывешь через canyon. Ты договариваешься со слоями тяжелее твоего suit.
+Через каньон не плывут. С ним торгуются слоями, которые тяжелее твоего костюма.
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/ru_RU. -->

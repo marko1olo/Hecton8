@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute como beacon morto externo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Outer Dead Beacon Moon Role
+# Mute como beacon morto externo
 
-PT LOC HOLD: The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.
+Mute é a lua externa de beacon morto na escada de Aegir. Seus relays são pouco confiáveis, frios e parcialmente ausentes dos mapas públicos atuais. Ainda aparecem em solvers antigos, cláusulas de seguro e tabelas de recovery. Isso torna a comunicação com HECTON-8 rara e feia, não mágica. Uma mensagem pode atrasar por física, dados ruins ou regra de custódia que finge que os dois são iguais.
 
 ## Scanner
 
-PT LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
+Ping de beacon morto. Mute já não responde limpo, mas solvers antigos ainda gastam seu fantasma.
 
 ## Terminal
 
-PT LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
+NOTA DE BEACON H9 MUTE: efeméride arquivada discorda do eco de relay atual. Solver de resgate marca ambiguidade utilizável. Mesa de contratos autoriza custódia de mensagem atrasada até confirmação da janela.
 
 ## Audio
 
-PT LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
+Um beacon morto ainda é beacon se a fatura sabe onde achá-lo.
 
 ## Field Note
 
-PT LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Infraestrutura morta não deixa Aegir. Ela vira termo de erro que alguém pode cobrar.
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/pt_BR. -->

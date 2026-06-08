@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Predator Shadow Encounter Grammar"
+title: "قواعد لقاء ظل المفترس"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Predator Shadow Encounter Grammar
+# قواعد لقاء ظل المفترس
 
-AR LOC HOLD: Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.
+يجب أن تجعل لقاءات ظل المفترس المحيط مشغولا قبل أن يصبح الحيوان مرئيا. سلسلة التحذير النافعة بيئية: تتوقف كاشطات الزجاج والطعام ما زال مكشوفا، يخف lantern bloom من جهة واحدة، تنطوي pressureweed بلا موجة، يظهر sonar فجوة أعرض من أن تكون حطاما، ويمر ضوء اللاعب فوق شكل عريض لا يتحول أبدا إلى silhouette نظيف. الحيوان ليس boss ينتظر في arena. إنه ضغط مسار. يغير صرف الأكسجين، وانضباط return-line، وتوقيت الإصلاح، والثقة في scan. لقاء ظل جيد يترك من يقرأ الغياب ينجو: لا تضف ضجيجا، ضيق المصباح، لا تطارد الممر النظيف، واخرج بزاوية بدلا من الركض مباشرة عبر الماء المعلّم.
 
 ## Scanner
 
-AR LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+أثر ظل مفترس. فجوة sonar، مسار فريسة مقطوع، صمت مفاجئ للكاشطات، حجب ضوء عريض. الجسد غير مؤكد؛ حافظ على انضباط الضوء وزاوية الخروج.
 
 ## Terminal
 
-AR LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+قواعد لقاء / ظل مفترس / الدور: ضغط مسار قبل كشف الجسد، قفزة في صرف الأكسجين، كسر ثقة scan / قراءة آمنة: مسار الفريسة يتوقف، ضجيج bloom ينهار، عوائد sonar تنقسم حول ماء فارغ / ارفض: كشف جسد scripted كأول تحذير، jump scare بلا كلفة، boss arena نظيفة / ملاحظة مسار: إذا توقفت كل الحيوانات الصغيرة قبل أن يسمي scanner هدفا، فقد تغير المسار بالفعل.
 
 ## Audio
 
-AR LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+العلامة الآمنة ليست أن تراه. العلامة الآمنة أن تلاحظ أن كل شيء آخر اختار الصمت أولا.
 
 ## Field Note
 
-AR LOC HOLD: Use for AI/spawn design notes and scanner cards.
+سم الحيوان متأخرا. دع الفريسة والضوء وsonar تفشل أولا. إذا صمت المسار، فالظل يملكه بالفعل.
 
 <!-- In-Game Wiki; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/ar_SA. -->

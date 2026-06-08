@@ -1,3 +1,4 @@
+using System;
 using Hecton.Localization;
 using Hecton8.Core;
 using Unity.Collections;
@@ -97,6 +98,8 @@ namespace Hecton8.Modding
     internal static class ModResourceRegistry
     {
         private const int ResourceCapacity = 256;
+        private const uint ResourceRegistrationOverflowWarningHash = 0x4D525246u; // MRRF
+        private const uint ResourceRegistrationOverflowContextHash = 0x4D525251u; // MRRQ
 
         private struct ResourceRecord
         {
@@ -108,7 +111,12 @@ namespace Hecton8.Modding
         // COLD ALLOC: ResourceRecord[256] - managed sidecar for engine-only resource resolution - owner: ModResourceRegistry
         private static readonly ResourceRecord[] _records = new ResourceRecord[ResourceCapacity];
         private static NativeHashMap<uint, int> _resourceIndexByHash;
+        private static int _resourceIndexByHashSentinelId;
         private static int _recordCount;
+        private static int _droppedResourceRegistrationCount;
+        private static int _lastResourceRegistrationOverflowTelemetryFrame = -1;
+
+        internal static int DroppedResourceRegistrationCount => _droppedResourceRegistrationCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -126,21 +134,28 @@ namespace Hecton8.Modding
                 _resourceIndexByHash = new NativeHashMap<uint, int>(ResourceCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[256] - O(1) resource hash to sidecar index - owner: ModResourceRegistry
                 try
                 {
-                    int sentinelId = NativeMemorySentinel.RegisterNativeHashMap(
+                    _resourceIndexByHashSentinelId = NativeMemorySentinel.RegisterNativeHashMapInstance(
                         _resourceIndexByHash,
                         nameof(ModResourceRegistry),
                         nameof(_resourceIndexByHash),
                         NativeAllocationLifetime.Session);
-                    if (sentinelId <= 0)
+                    if (_resourceIndexByHashSentinelId <= 0)
                         throw new System.InvalidOperationException("NativeMemorySentinel rejected ModResourceRegistry hash map registration.");
                 }
-                catch
+                catch (System.Exception exception)
                 {
-                    if (_resourceIndexByHash.IsCreated)
+                    try
                     {
-                        _resourceIndexByHash.Dispose();
-                        _resourceIndexByHash = default;
+                        DisposeResourceIndexByHash();
                     }
+                    catch (System.Exception cleanupException)
+                    {
+                        throw new System.AggregateException(
+                            "ModResourceRegistry native hash map initialization failed and cleanup also failed.",
+                            exception,
+                            cleanupException);
+                    }
+
                     throw;
                 }
             }
@@ -148,18 +163,61 @@ namespace Hecton8.Modding
 
         internal static void Shutdown()
         {
-            if (_resourceIndexByHash.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModResourceRegistry), nameof(_resourceIndexByHash));
-                _resourceIndexByHash.Dispose();
-                _resourceIndexByHash = default;
-            }
+            DisposeResourceIndexByHash();
 
             for (int i = 0; i < _recordCount; i++)
                 _records[i] = default;
 
             _recordCount = 0;
+            _droppedResourceRegistrationCount = 0;
+            _lastResourceRegistrationOverflowTelemetryFrame = -1;
         }
+
+        private static void DisposeResourceIndexByHash()
+        {
+            Exception firstException = null;
+
+            if (_resourceIndexByHashSentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(_resourceIndexByHashSentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    _resourceIndexByHashSentinelId = 0;
+                }
+            }
+
+            if (_resourceIndexByHash.IsCreated)
+            {
+                try
+                {
+                    _resourceIndexByHash.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    _resourceIndexByHash = default;
+                }
+            }
+            else
+            {
+                _resourceIndexByHash = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
+        }
+
 
         internal static bool TryRegister(
             string modId,
@@ -190,7 +248,10 @@ namespace Hecton8.Modding
                 return true;
 
             if (_recordCount >= ResourceCapacity)
+            {
+                ReportResourceRegistrationOverflow(kind);
                 return false;
+            }
 
             _records[_recordCount] = new ResourceRecord
             {
@@ -201,6 +262,20 @@ namespace Hecton8.Modding
             _resourceIndexByHash.Add(hashId, _recordCount);
             _recordCount++;
             return true;
+        }
+
+        internal static void UnregisterModResources(string modId)
+        {
+            if (string.IsNullOrWhiteSpace(modId) || _recordCount <= 0)
+                return;
+
+            for (int i = _recordCount - 1; i >= 0; i--)
+            {
+                if (!string.Equals(_records[i].ModId, modId, StringComparison.Ordinal))
+                    continue;
+
+                RemoveRecordAt(i);
+            }
         }
 
         internal static bool TryResolvePrefab(uint hashId, out GameObject prefab)
@@ -252,6 +327,60 @@ namespace Hecton8.Modding
             return record.Kind == expectedKind;
         }
 
+        private static void RemoveRecordAt(int index)
+        {
+            if ((uint)index >= (uint)_recordCount)
+                return;
+
+            ResourceRecord removed = _records[index];
+            RemoveResourceIndex(removed);
+
+            int lastIndex = _recordCount - 1;
+            if (index != lastIndex)
+            {
+                ResourceRecord moved = _records[lastIndex];
+                _records[index] = moved;
+                RemoveResourceIndex(moved);
+                AddResourceIndex(moved, index);
+            }
+
+            _records[lastIndex] = default;
+            _recordCount--;
+        }
+
+        private static void RemoveResourceIndex(in ResourceRecord record)
+        {
+            if (!_resourceIndexByHash.IsCreated ||
+                string.IsNullOrWhiteSpace(record.ModId) ||
+                string.IsNullOrWhiteSpace(record.AssetName) ||
+                record.Kind == 0)
+            {
+                return;
+            }
+
+            uint hash = ComputeResourceHash(record.ModId, record.AssetName, record.Kind);
+            if (hash != 0u)
+                _resourceIndexByHash.Remove(hash);
+        }
+
+        private static void AddResourceIndex(in ResourceRecord record, int index)
+        {
+            if (!_resourceIndexByHash.IsCreated ||
+                string.IsNullOrWhiteSpace(record.ModId) ||
+                string.IsNullOrWhiteSpace(record.AssetName) ||
+                record.Kind == 0)
+            {
+                return;
+            }
+
+            uint hash = ComputeResourceHash(record.ModId, record.AssetName, record.Kind);
+            if (hash == 0u)
+                return;
+
+            _resourceIndexByHash.Remove(hash);
+            _resourceIndexByHash.Add(hash, index);
+        }
+
         private static uint ComputeResourceHash(string modId, string assetName, ModResourceKind kind)
         {
             unchecked
@@ -269,6 +398,46 @@ namespace Hecton8.Modding
             hash ^= value;
             hash *= 16777619u;
             return hash;
+        }
+
+        private static void ReportResourceRegistrationOverflow(ModResourceKind kind)
+        {
+            _droppedResourceRegistrationCount++;
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (_lastResourceRegistrationOverflowTelemetryFrame == frame)
+                return;
+
+            _lastResourceRegistrationOverflowTelemetryFrame = frame;
+            PublishPerformanceWarningBestEffort(
+                ResourceRegistrationOverflowWarningHash,
+                ResourceRegistrationOverflowContextHash ^ ((uint)kind << 24),
+                _droppedResourceRegistrationCount);
+        }
+
+        private static int ResolveCurrentFrameIndexSafe()
+        {
+            try
+            {
+                return SystemDispatcher.CurrentFrameIndex;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                H8Debug.LogWarning("[ModResourceRegistry] telemetry failed: " + exception.Message);
+#endif
+            }
         }
     }
 }

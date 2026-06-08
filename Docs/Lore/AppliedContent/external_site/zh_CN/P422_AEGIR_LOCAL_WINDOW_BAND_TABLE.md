@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "ZH LOC HOLD: Aegir Window Bands"
+spoiler_tier: 1
+title: "Aegir本地窗口带"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Aegir Window Bands
+# Aegir本地窗口带
 
-ZH LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
+Aegir交通受围绕辐射、食、风暴和relay geometry的狭窄transfer bands支配。
 
 ## Scanner
 
-ZH LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+本地带：上升等待的是数小时到数天的窗口，不是即时救援。
 
 ## Terminal
 
-ZH LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+窗口带：shutter、eclipse、relay、storm、carrier phase和legal handshake必须对齐，才能安全transfer。
 
 ## Audio
 
-ZH LOC HOLD: The carrier can hear you and still be in the wrong sky.
+Carrier可以听见你，却仍在错误的天空。
 
 ## Field Note
 
-ZH LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+窗口带记录：Black Keel timing、本地轨道标签和spoiler-light系统页面共享同一套transfer constraints。
 
 <!-- External Site; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/zh_CN. -->

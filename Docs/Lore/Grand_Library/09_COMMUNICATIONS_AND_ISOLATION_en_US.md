@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # THE COMMUNICATION BLACKOUT AND ORBITAL SILENCE
 
 > **Source:** *Black Keel* Orbital Tender Operations Manual, Section 4.  

@@ -1,0 +1,59 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS256_STORM_BENT_RELAY_MAST_ARTICLE",
+  "title": "Storm-Bent Relay Mast Article",
+  "date": "2026-06-08",
+  "status": "source_ready",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P1426_STORM_BENT_RELAY_MAST_LEDGER"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS256_STORM_BENT_RELAY_MAST_ARTICLE.packets.json"
+  ],
+  "canonical_importer_ready": true,
+  "runtime_binding_map": "Docs/Lore/AppliedContent/binding_maps/RS256_runtime_binding_map.csv",
+  "evidence_graph": "Docs/Lore/AppliedContent/graphs/RS256_STORM_BENT_RELAY_MAST_ARTICLE_evidence_graph.csv",
+  "route_cards": "Docs/Lore/AppliedContent/route_cards/RS256_STORM_BENT_RELAY_MAST_ARTICLE_route_cards.csv",
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "native_review_required": [
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

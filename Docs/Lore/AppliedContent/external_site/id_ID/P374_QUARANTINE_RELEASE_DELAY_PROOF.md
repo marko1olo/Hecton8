@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Quarantine Release Delay Proof"
+title: "Tahan Rilis Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Quarantine Release Delay Proof
+# Tahan Rilis Karantina
 
-ID LOC HOLD: HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.
+Karantina masuk akal di HECTON-8 karena kontaminasi bukan palsu. Paparan tekanan, kimia brine, dan pertumbuhan kompatibel Atlas bisa membuat penyelamatan ceroboh mematikan. Kebenaran itu memberi Deep Reach perlindungan. Release hold menunjukkan bahasa perlindungan bergerak melalui sistem setelah jalan keluar praktis sudah menyempit. Gerbang tidak berkata eksekusi siapa pun. Ia berkata hold until review, simpan ketidakpastian biologis, terima massa aset, jaga insurance ping aktif. Setiap frasa bisa dibela sendiri. Bersama-sama, di koloni yang tenggelam, semuanya menjadi custody. Packet ini harus membuat pemain tidak nyaman karena alatnya nyata: karantina bisa perlu, dan tetap bisa dipakai untuk menunda orang sampai hanya claim yang tersisa.
 
 ## Scanner
 
-ID LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+Pelat tahan karantina. Bahasa perlindungan muncul setelah rute keluar sudah terkunci.
 
 ## Terminal
 
-ID LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Tahan sampai review. Antrean recovery menerima massa aset sebelum rilis pekerja. Insurance ping aktif.
 
 ## Audio
 
-ID LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+Karantina bisa menyelamatkan tubuh. Ia juga bisa membuat tubuh menunggu sampai menjadi berkas.
 
 ## Field Note
 
-ID LOC HOLD: Use where player may confuse rescue with custody.
+Catatan Marauder: perlindungan tidak terbukti oleh kata perlindungan. Periksa jamnya.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/id_ID. -->

@@ -3,38 +3,38 @@ packet_id: P079_HECTON8_ORBIT_TIDE_GEOMETRY
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.hecton8_orbit_tide_geometry
 unlock_id: unlock.first_hecton8_orbit_tide_geometry
-poi_tags: poi.tide_geometry_panel;poi.orbital_timing_core
-biome_tags: biome.surface_relay;biome.tide_pump
+poi_tags: poi.tide_geometry_model;poi.atlas_evacuation_forecast
+biome_tags: biome.storm_shelf;biome.brine_canyon
 locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8 Orbit / Tide Geometry"
+title: "HECTON-8-Orbit / Gezeitengeometrie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbit / Tide Geometry
+# HECTON-8-Orbit / Gezeitengeometrie
 
-DE LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime.
+HECTON-8-Orbit / Gezeitengeometrie ist die harte SF-Katastrophenschicht: Gezeiten, Wärme und Druck brechen zuerst die Kolonie; Konzernpriorität macht Versagen zum Verbrechen.
 
 ## Scanner
 
-DE LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.
+GEZEITENMODELL // Resonanz, Eisstress, Sturmflut und Wärmeabgabe überschritten Evakuierungsprognose. Atlas-continuity-Flags überschrieben Rückzugspriorität.
 
 ## Terminal
 
-DE LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.
+GREAT-TIDE-KETTE // Orbitale Erzwingung verstärkte Ozeanlast. Künstliche Wärmeabgabe und versiegelte Drainage verwandelten ein Gezeitenereignis in Kolonieversagen.
 
 ## Audio
 
-DE LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.
+Die Physik öffnete die Tür. Deep Reach entschied, wer hindurch durfte.
 
 ## Field Note
 
-DE LOC HOLD: A moon can drown a colony without hating it.
+Ein Mond kann eine Kolonie ertränken, ohne sie zu hassen.
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/de_DE. -->

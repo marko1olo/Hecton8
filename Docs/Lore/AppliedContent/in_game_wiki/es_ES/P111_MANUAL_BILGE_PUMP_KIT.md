@@ -7,34 +7,34 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "Kit de bomba de achique manual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# Kit de bomba de achique manual
 
-ES LOC HOLD: The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.
+La bomba de achique manual es la primera herramienta útil tras el descenso, porque funciona cuando la cápsula no es eléctricamente segura. Solo despeja pequeños bolsillos inundados y obliga a vigilar admisión, salida y resistencia de válvula en lugar de fiarse de una luz verde. El kit enseña la primera regla de HECTON-8: reparar empieza con agua, presión y manos.
 
 ## Scanner
 
-ES LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
+Kit de achique manual detectado. La rejilla de admisión está obstruida por espuma de la cápsula; límpiala antes de energizar el panel.
 
 ## Terminal
 
-ES LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
+EMISIÓN P-63 / KIT DE ACHIQUE: bomba manual, abrazadera de manguera, rejilla de admisión, válvula antirretorno. Retirar agua estancada antes de probar cualquier panel con corriente. No descargar la salida en bandejas de cable selladas.
 
 ## Audio
 
-ES LOC HOLD: Hand work first. Electricity second. Breathing always.
+Primero el agua. Luego la energía. Si la palanca responde, la sala está contestando.
 
 ## Field Note
 
-ES LOC HOLD: First tool must teach survival before upgrade fantasy.
+Las bombas mienten menos que los indicadores. Si la palanca devuelve el golpe, detente y mira adónde va el agua.
 
 <!-- In-Game Wiki; generated from P111_MANUAL_BILGE_PUMP_KIT/es_ES. -->

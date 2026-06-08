@@ -8,6 +8,8 @@ import csv
 import io
 import json
 import re
+import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -92,6 +94,23 @@ LOCALIZED_DRAFT_PREFIXES = (
 )
 
 
+def safe_console_line(text: str, encoding: str | None = None) -> str:
+    encoding = encoding or sys.stdout.encoding or "utf-8"
+    try:
+        text.encode(encoding)
+        return text
+    except UnicodeEncodeError:
+        return text.encode(encoding, errors="backslashreplace").decode(encoding, errors="replace")
+
+
+@dataclass(frozen=True)
+class ImportCheckStats:
+    checked_files: int
+    stale_files: int
+    missing_files: int
+    sample_issues: tuple[str, ...]
+
+
 def fnv1a32(value: str) -> int:
     if not value:
         return 0
@@ -137,13 +156,13 @@ def resolve_source(root: Path, source: str) -> Path:
 
 def collect_packets(root: Path) -> list[dict[str, Any]]:
     packets_by_id: dict[str, dict[str, Any]] = {}
-    manifest_packet_ids: set[str] = set()
 
     for manifest_path in iter_manifest_paths(root):
         manifest = load_json(manifest_path)
         if manifest.get("canonical_importer_ready") is False:
             continue
         release_set_id = str(manifest.get("release_set_id", ""))
+        manifest_status = str(manifest.get("status", ""))
         packet_sources = manifest.get("packet_sources", [])
         if not packet_sources:
             if manifest.get("canonical_importer_ready") is True:
@@ -153,32 +172,51 @@ def collect_packets(root: Path) -> list[dict[str, Any]]:
                 # They are not canonical CSV/export packets until packet_sources exist.
                 continue
 
-        for packet_id in manifest.get("packets", []):
-            manifest_packet_ids.add(str(packet_id))
+        raw_manifest_packet_ids = manifest.get("packets", [])
+        if not isinstance(raw_manifest_packet_ids, list) or not raw_manifest_packet_ids:
+            raise ValueError(f"Manifest packets must list source packet ids: {manifest_path}")
+
+        manifest_packet_id_list = [str(packet_id).strip() for packet_id in raw_manifest_packet_ids if str(packet_id).strip()]
+        manifest_packet_ids = set(manifest_packet_id_list)
+        duplicated_manifest_ids = sorted(
+            {packet_id for packet_id in manifest_packet_id_list if manifest_packet_id_list.count(packet_id) > 1}
+        )
+        if duplicated_manifest_ids:
+            raise ValueError(f"{manifest_path}: Duplicate manifest packet ids: " + ", ".join(duplicated_manifest_ids))
+        source_packet_ids: set[str] = set()
 
         for source in packet_sources:
             source_path = resolve_source(root, str(source))
             packet_source = load_json(source_path)
+            bundle_status = str(packet_source.get("status", ""))
             if "packets" in packet_source:
                 for packet in packet_source["packets"]:
                     if not isinstance(packet, dict):
                         raise ValueError(f"Packet bundle contains non-object packet: {source_path}")
                     packet = dict(packet)
                     packet.setdefault("release_set_id", release_set_id)
-                    add_packet(packets_by_id, packet, source_path)
+                    packet.setdefault("_bundle_status", bundle_status)
+                    packet.setdefault("_manifest_status", manifest_status)
+                    source_packet_ids.add(add_packet(packets_by_id, packet, source_path))
             else:
                 packet = dict(packet_source)
                 packet.setdefault("release_set_id", release_set_id)
-                add_packet(packets_by_id, packet, source_path)
+                packet.setdefault("_bundle_status", bundle_status)
+                packet.setdefault("_manifest_status", manifest_status)
+                source_packet_ids.add(add_packet(packets_by_id, packet, source_path))
 
-    missing = sorted(manifest_packet_ids.difference(packets_by_id.keys()))
-    if missing:
-        raise ValueError("Manifest packet ids missing from sources: " + ", ".join(missing))
+        missing = sorted(manifest_packet_ids.difference(source_packet_ids))
+        if missing:
+            raise ValueError(f"{manifest_path}: Manifest packet ids missing from sources: " + ", ".join(missing))
+
+        extra = sorted(source_packet_ids.difference(manifest_packet_ids))
+        if extra:
+            raise ValueError(f"{manifest_path}: Source packet ids not listed in manifest packets: " + ", ".join(extra))
 
     return [packets_by_id[key] for key in sorted(packets_by_id)]
 
 
-def add_packet(packets_by_id: dict[str, dict[str, Any]], packet: dict[str, Any], source_path: Path) -> None:
+def add_packet(packets_by_id: dict[str, dict[str, Any]], packet: dict[str, Any], source_path: Path) -> str:
     packet_id = str(packet.get("packet_id", ""))
     if not packet_id:
         raise ValueError(f"Packet without packet_id: {source_path}")
@@ -189,6 +227,7 @@ def add_packet(packets_by_id: dict[str, dict[str, Any]], packet: dict[str, Any],
 
     packet["_source_path"] = str(source_path)
     packets_by_id[packet_id] = packet
+    return packet_id
 
 
 def require_text(localized: dict[str, Any], field: str, packet_id: str, locale: str) -> str:
@@ -235,7 +274,16 @@ def sanitize_localized_text(value: str) -> str:
     return text
 
 
-def localized_row_flags(localized: dict[str, Any]) -> int:
+def status_marks_draft(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    text = value.strip().lower()
+    if not text:
+        return False
+    return "draft" in text or "pending_native" in text or "native_review" in text
+
+
+def localized_row_flags(localized: dict[str, Any], locale: str = "", packet: dict[str, Any] | None = None) -> int:
     flags = 0
     for field in LOCALIZED_TEXT_FIELDS:
         value = localized.get(field, "")
@@ -244,6 +292,19 @@ def localized_row_flags(localized: dict[str, Any]) -> int:
             if draft:
                 flags |= ROW_FLAG_DRAFT_LOCALIZATION
                 break
+    if flags == 0 and (
+        status_marks_draft(localized.get("localization_status")) or
+        status_marks_draft(localized.get("status"))
+    ):
+        flags |= ROW_FLAG_DRAFT_LOCALIZATION
+    if flags == 0 and packet is not None and locale != "en_US":
+        if (
+            status_marks_draft(packet.get("localization_status")) or
+            status_marks_draft(packet.get("status")) or
+            status_marks_draft(packet.get("_bundle_status")) or
+            status_marks_draft(packet.get("_manifest_status"))
+        ):
+            flags |= ROW_FLAG_DRAFT_LOCALIZATION
     return flags
 
 
@@ -304,7 +365,7 @@ def packet_rows(packets: list[dict[str, Any]]) -> list[dict[str, str]]:
             if not isinstance(localized, dict):
                 raise ValueError(f"Missing locale: packet={packet_id} locale={locale}")
 
-            flags = localized_row_flags(localized)
+            flags = localized_row_flags(localized, locale, packet)
             rows.append(
                 {
                     "packet_id": packet_id,
@@ -336,16 +397,19 @@ def write_text_if_changed(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8", newline="")
 
 
-def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
+def render_csv(rows: list[dict[str, str]]) -> str:
     buffer = io.StringIO(newline="")
     writer = csv.DictWriter(buffer, fieldnames=CSV_HEADERS, lineterminator="\n")
     writer.writeheader()
     writer.writerows(rows)
-    write_text_if_changed(path, buffer.getvalue())
+    return buffer.getvalue()
 
 
-def write_hash_constants(path: Path, packets: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
+    write_text_if_changed(path, render_csv(rows))
+
+
+def render_hash_constants(packets: list[dict[str, Any]]) -> str:
     lines: list[str] = [
         "// <auto-generated>",
         "// Source: Tools/AppliedLoreImporter.py",
@@ -382,14 +446,113 @@ def write_hash_constants(path: Path, packets: list[dict[str, Any]]) -> None:
             "",
         ]
     )
-    write_text_if_changed(path, "\n".join(lines))
+    return "\n".join(lines)
+
+
+def write_hash_constants(path: Path, packets: list[dict[str, Any]]) -> None:
+    write_text_if_changed(path, render_hash_constants(packets))
+
+
+def compact_issue_value(value: str, limit: int = 160) -> str:
+    compacted = value.replace("\r", "\\r").replace("\n", "\\n")
+    if len(compacted) <= limit:
+        return compacted
+    return compacted[:limit] + "..."
+
+
+def describe_applied_lore_csv_diff(relative: str, expected_text: str, current_text: str) -> list[str]:
+    expected_rows = list(csv.DictReader(io.StringIO(expected_text)))
+    current_rows = list(csv.DictReader(io.StringIO(current_text)))
+
+    for row_number, (expected_row, current_row) in enumerate(zip(expected_rows, current_rows), start=2):
+        if expected_row == current_row:
+            continue
+
+        details = [
+            (
+                f"first_diff: {relative}: row={row_number} "
+                f"expected_packet={expected_row.get('packet_id', '')} "
+                f"expected_locale={expected_row.get('locale', '')} "
+                f"current_packet={current_row.get('packet_id', '')} "
+                f"current_locale={current_row.get('locale', '')}"
+            )
+        ]
+        for header in CSV_HEADERS:
+            expected_value = expected_row.get(header, "")
+            current_value = current_row.get(header, "")
+            if expected_value != current_value:
+                details.append(
+                    (
+                        f"first_diff_field: {relative}: field={header} "
+                        f"expected={compact_issue_value(expected_value)} "
+                        f"current={compact_issue_value(current_value)}"
+                    )
+                )
+                break
+        return details
+
+    if len(expected_rows) != len(current_rows):
+        return [
+            (
+                f"first_diff: {relative}: row_count "
+                f"expected={len(expected_rows)} current={len(current_rows)}"
+            )
+        ]
+
+    return [f"first_diff: {relative}: text differs outside parsed CSV rows"]
+
+
+def data_monolith_csv_path(root: Path) -> Path:
+    return root / "Assets" / "_SourceData" / "DataMonolith" / "Narrative" / "applied_lore_packets.csv"
+
+
+def hash_constants_path(root: Path) -> Path:
+    return root / "Assets" / "_Project" / "Scripts" / "Core" / "Generated" / "H8AppliedLoreHashes.cs"
+
+
+def compare_expected_file(
+    root: Path,
+    path: Path,
+    rendered: str,
+    issues: list[str],
+    counts: dict[str, int],
+) -> None:
+    counts["checked"] += 1
+    relative = path.relative_to(root).as_posix()
+    if not path.exists():
+        counts["missing"] += 1
+        issues.append(f"missing: {relative}")
+        return
+
+    current_text = path.read_text(encoding="utf-8")
+    if current_text != rendered:
+        counts["stale"] += 1
+        issues.append(f"stale: {relative}")
+        if path.name == "applied_lore_packets.csv":
+            issues.extend(describe_applied_lore_csv_diff(relative, rendered, current_text))
+
+
+def check_import_outputs(root: Path) -> ImportCheckStats:
+    packets = collect_packets(root)
+    rows = packet_rows(packets)
+    counts = {"checked": 0, "stale": 0, "missing": 0}
+    issues: list[str] = []
+
+    compare_expected_file(root, data_monolith_csv_path(root), render_csv(rows), issues, counts)
+    compare_expected_file(root, hash_constants_path(root), render_hash_constants(packets), issues, counts)
+    return ImportCheckStats(
+        checked_files=counts["checked"],
+        stale_files=counts["stale"],
+        missing_files=counts["missing"],
+        sample_issues=tuple(issues[:20]),
+    )
 
 
 def import_applied_lore(root: Path) -> tuple[int, int, int]:
     packets = collect_packets(root)
     rows = packet_rows(packets)
-    write_csv(root / "Assets" / "_SourceData" / "DataMonolith" / "Narrative" / "applied_lore_packets.csv", rows)
-    write_hash_constants(root / "Assets" / "_Project" / "Scripts" / "Core" / "Generated" / "H8AppliedLoreHashes.cs", packets)
+    write_csv(data_monolith_csv_path(root), rows)
+    write_hash_constants(hash_constants_path(root), packets)
     draft_rows = 0
     for row in rows:
         if int(row["flags"]) & ROW_FLAG_DRAFT_LOCALIZATION:
@@ -400,8 +563,23 @@ def import_applied_lore(root: Path) -> tuple[int, int, int]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="Repository root.")
+    parser.add_argument("--check", action="store_true", help="Fail if generated import outputs are stale or missing.")
     args = parser.parse_args()
     root = Path(args.root).resolve()
+    if args.check:
+        stats = check_import_outputs(root)
+        print(
+            f"applied_lore_import_check checked_files={stats.checked_files} "
+            f"stale_files={stats.stale_files} missing_files={stats.missing_files}"
+        )
+        if stats.sample_issues:
+            print("sample_issues:")
+            for issue in stats.sample_issues:
+                print(safe_console_line(f"  {issue}"))
+        if stats.stale_files or stats.missing_files:
+            return 1
+        return 0
+
     packet_count, row_count, draft_rows = import_applied_lore(root)
     print(f"applied_lore_packets={packet_count} localized_rows={row_count} draft_localization_rows={draft_rows}")
     return 0

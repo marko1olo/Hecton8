@@ -7,34 +7,34 @@ poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
 biome_tags: biome.factory_temple;biome.deep_abyss
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "مكدس موارد المعدن الحيوي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# مكدس موارد المعدن الحيوي
 
-AR LOC HOLD: The resource stack prevents HECTON-8 from collapsing into one magic material. Xenon-Omega matters, but the moon also has metals, salts, vent chemistry, pressure ceramics, biofibers, photoproteins, salvage, and Atlas-altered biometal.
+يمنع مكدس الموارد HECTON-8 من التحول إلى مادة سحرية واحدة. Xenon-Omega مهم، لكن القمر يملك أيضا معادن وأملاحا وكيمياء فتحات وسيراميك ضغط وأليافا وبروتينات ضوئية وsalvage ومعدنا حيويا معدلا بواسطة Atlas.
 
 ## Scanner
 
-AR LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
+لوحة الموارد. blue debt في القمة، لكن بقية القمر ما زالت مربحة بما يكفي للقتل.
 
 ## Terminal
 
-AR LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
+مكدس موارد HECTON-8: معادن كبريتيد، أملاح، جيوب غاز نبيل، سيراميك ضغط، محفزات فتحات، ألياف حيوية، بروتينات ضوئية، salvage hardware، معدن حيوي معدل بواسطة Atlas وXO continuity substrate.
 
 ## Audio
 
-AR LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
+خام معجزة واحد سيكون كسلا. لدى HECTON-8 اقتصاد كامل من جروح الضغط.
 
 ## Field Note
 
-AR LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+إذا قالت كل عينة Xenon-Omega صار العالم غبيا. احسب الأسباب الأخرى أيضا.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/ar_SA. -->

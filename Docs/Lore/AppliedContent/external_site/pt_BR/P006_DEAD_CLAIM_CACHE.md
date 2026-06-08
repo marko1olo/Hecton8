@@ -9,32 +9,16 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cache de claim morto"
+title: "Cache de reivindicação morta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cache de claim morto
+# Cache de reivindicação morta
 
-Dead Claim Cache revela a história de salvage oculta de HECTON-8 entre o desastre de 2147 e a chegada do jogador.
-
-## Scanner
-
-Cache de campo escondido. Embalado por alguém que esperava voltar.
-
-## Terminal
-
-A rota sob o tubo norte fica quieta até as lâmpadas acordarem. Não toque no cofre azul. Não responda pings do carrier dentro do cânion.
-
-## Audio
-
-Isso não é kit Deep Reach. Outra pessoa desceu aqui com um cutter e azar.
-
-## Field Note
-
-Se um mapa diz seguro duas vezes, foi escrito por alguém tentando se convencer.
+Um cache de reivindicação morta é um argumento de sobrevivência deixado por alguém que perdeu. A bolsa é impermeável, presa com dois nós e escondida onde um mergulhador apressado nunca olharia: sob o tubo norte, abaixo da grade de lâmpadas, atrás de uma faixa rasgada de isolamento acústico. Quem a preparou esperava voltar. Marcou uma rota, selou cutters reserva, dobrou um mapa até a cera rachar e escreveu a palavra seguro duas vezes na mesma margem. Essa repetição é o primeiro aviso. Em HECTON-8, seguro geralmente significa que alguém sobreviveu tempo suficiente para mentir para si mesmo. O cache importa porque amplia o mundo sem enchê-lo de gente. O jogador ainda está sozinho no oceano, mas não foi o primeiro. Entre o desastre do carrier e a incursão atual, outros profissionais desceram atrás de metal, direitos de salvage, carga selada e rumores. Encontraram o bastante para deixar equipamento. Não encontraram o bastante para deixar testemunho. A nota da caixa azul, o aviso sobre pings do carrier e o tether cortado fazem o cache parecer menos tesouro e mais uma mão estendida de uma rota fracassada.
 
 <!-- External Site; generated from P006_DEAD_CLAIM_CACHE/pt_BR. -->

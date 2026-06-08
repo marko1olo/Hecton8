@@ -9,6 +9,19 @@ namespace Hecton8.Tools.DataMonolithBakeCli
     {
         public static int Main(string[] args)
         {
+            try
+            {
+                return Run(args);
+            }
+            catch (Exception exception)
+            {
+                Console.Error.WriteLine("Data Monolith CLI crashed: " + exception);
+                return 8;
+            }
+        }
+
+        private static int Run(string[] args)
+        {
             string projectRoot = args.Length > 0 ? Path.GetFullPath(args[0]) : FindProjectRoot();
             if (string.IsNullOrEmpty(projectRoot) || !Directory.Exists(projectRoot))
             {

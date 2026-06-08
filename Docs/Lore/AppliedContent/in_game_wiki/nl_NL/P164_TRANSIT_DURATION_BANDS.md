@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Transit Duration Bands"
+title: "Transitduurbands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Transit Duration Bands
+# Transitduurbands
 
-NL LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+Transitbands verklaren waarom HECTON-8 bereikbaar en toch wreed kan zijn. Pakketten bewegen eerst omdat ze klein, goedkoop en juridisch nuttig zijn. Vracht beweegt wanneer staging, braking rights en loss margins kloppen. Een ademend lichaam beweegt traag omdat het massa, liability, life support en iemand die de terugkeer betaalt vereist. Lokale Aegir-vensters zijn korter maar niet vriendelijker: baan, stormruis, straling en Black Keel-geometrie beslissen of data, vracht of mens kan bewegen.
 
 ## Scanner
 
-NL LOC HOLD: The same route means different time for packets, freight and people.
+DURATION BAND CHART // Sondepakketten, zware vracht, menselijke crews en lokale Aegir-vensters delen geen klok.
 
 ## Terminal
 
-NL LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // Lokale vensters: uren-dagen. Industriële beweging in systeem: maanden-jaren. Crew rotation: jaren custody en schuld. Heavy interdomain freight en gevolgen: jaren-decennia.
 
 ## Audio
 
-NL LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
+Vracht kan vóór genade aankomen. Dat is geen storing. Dat is doctrine.
 
 ## Field Note
 
-NL LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+Als alle klokken gelijk lopen, wordt de setting reddingsfantasie. Houd de klokken vijandig.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/nl_NL. -->

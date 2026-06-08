@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Priority Hook Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Priority Hook Deep Reach
 
-ID LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+Tekanan Deep Reach saat ini tidak membutuhkan kendali jarak jauh yang mustahil. Sertifikat kontinuitas lama, klausul karantina, token akses Atlas, dan priority hook payload sudah berada dalam jalur legal Black Keel. Perusahaan dapat memengaruhi apa yang dinilai carrier tanpa terlihat memiliki carrier. Itu membuat antagonis lebih sulit dipotong: bukan sinyal untuk dijam, melainkan klausul yang terus bangun.
 
 ## Scanner
 
-ID LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+Hook sertifikat lama. Deep Reach tidak memiliki kapal; ia memiliki klausul.
 
 ## Terminal
 
-ID LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: sertifikat kontinuitas legacy Deep Reach dapat memajukan recovery payload, kunci karantina, token akses Atlas, atau antrean penekanan bukti di bawah hukum klaim Aegir. Prioritas ekstraksi manusia tidak berubah kecuali bukti bahaya melampaui nilai custody.
 
 ## Audio
 
-ID LOC HOLD: They do not need to be on the bridge to steer the answer.
+Mereka tidak perlu berdiri di bridge untuk mengarahkan jawaban.
 
 ## Field Note
 
-ID LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+Lebih bersih daripada konspirasi: dokumennya masih hidup dan masih lapar.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/id_ID. -->

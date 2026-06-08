@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 沈黙の軌道とブラック・キール
 
 > **出典:** Deep Reach メガコーポレーション、軌道資産登録簿。

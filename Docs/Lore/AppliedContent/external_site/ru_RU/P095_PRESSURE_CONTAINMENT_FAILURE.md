@@ -9,32 +9,16 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Отказ удержания давления"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Отказ удержания давления
 
-Pressure Containment Failure задает стадии обращения с Xenon-Omega для gameplay и wiki: sealed, drifting, fractured, blooming, dead-but-contaminating.
-
-## Scanner
-
-Casket stage chart. Blue debt ломается давлением, сигналом и bloom, не проклятием.
-
-## Terminal
-
-CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
-
-## Audio
-
-Образец тебя не ненавидит. Он просто помнит неправильное давление.
-
-## Field Note
-
-Containment дает gameplay thresholds без превращения ресурса в magic.
+Blue debt - не проклятый клад. Это материальная память под давлением. Остаток Xenon-Omega полезен, пока его решетка верит, что она все еще глубоко, холодно и сжата. Вытащи слишком быстро, храни плохо или дай сдвигу сигнала проползти в капсулу, и образец начнет ломаться по читаемым стадиям. Сначала приходит дрейф: метры лгут, резонанс дрожит, тревоги удержания спорят друг с другом. Потом ломается решетка. Входит рапа. Биология идет за химией. На стадии 4 ценность мертва, но заражение живо.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/ru_RU. -->

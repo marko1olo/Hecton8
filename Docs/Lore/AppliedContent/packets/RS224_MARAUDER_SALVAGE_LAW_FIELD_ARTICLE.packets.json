@@ -1,0 +1,256 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS224_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE",
+  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+  },
+  "packets": [
+    {
+      "packet_id": "P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE",
+      "release_set_id": "RS224_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE",
+      "article_id": "applied_lore.marauder_salvage_law_field_article",
+      "title_key": "LORE_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE_TITLE",
+      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+        "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md",
+        "Docs/Lore/Grand_Library/14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_en_US.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.marauder_salvage_law_field_article",
+        "secondary": [
+          "unlock.first_marauder_correction_mark",
+          "unlock.first_salvage_lien_terminal",
+          "unlock.first_worker_name_claim_conflict"
+        ],
+        "poi_tags": [
+          "poi.marauder_correction_note",
+          "poi.salvage_lien_console",
+          "poi.claim_license_beacon",
+          "poi.black_keel_manifest_slot"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.cable_reef",
+          "biome.route_archive",
+          "biome.drowned_colony"
+        ],
+        "first_20_boundary": "Explains why the player is called a Marauder without turning them into a pirate hero: the license is a dirty legal tool that can move property, evidence and names through a claim system that otherwise leaves people under water."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "PDA Salvage Mark Scanner",
+          "terminal": "Keelmark Claim-License Advisory",
+          "audio": "Black Keel Contract Callout",
+          "in_game_wiki": "PDA Salvage Law And Field Culture Primer",
+          "external_site": "Public Site Marauder Culture Article",
+          "field_note": "Marauder Field Note"
+        },
+        "spoiler_tier": "1",
+        "runtime_layer": "Narrative",
+        "route_moment": "first_salvage_lien_or_marauder_correction_mark",
+        "truth_payload": "Marauders are not outside the law. They are the disposable edge of it: licensed to enter ruined claims, convert objects into payable mass, and sometimes smuggle truth through the same route that prices salvage.",
+        "player_question": "Why does the game call the player a Marauder instead of a rescuer, pirate or generic survivor?"
+      },
+      "localized": {
+        "en_US": {
+          "localization_status": "source_authority",
+          "title": "Marauder Salvage Law Field Article",
+          "scanner": "MARAUDER MARK // Not pirate paint. Contract shorthand: disputed claim, recoverable mass, hostile owner, witness risk. Whoever left it expected another professional to read the wall fast.",
+          "terminal": "KEELMARK FIELD ADVISORY // Marauder license does not confer rescue authority. It grants limited salvage entry, lien recognition, evidence custody options and recoverable-mass accounting under disputed-claim conditions.",
+          "audio": "Black Keel contract line: You are not here because the law failed. You are here because the law found someone cheaper than rescue.",
+          "in_game_wiki": "Marauder is the ugly word for a person the claim system can use without admitting a rescue obligation. A pirate steals outside the book. A rescuer arrives with duty, crew and public authority. A Marauder enters the space between those categories: licensed enough to touch abandoned property, disposable enough to die there, useful enough to make a disputed claim move.\n\nThat is why Marauder marks do not read like slogans when you learn the grammar. The scratches, black rings, pressure arrows and crossed corporate labels are not decoration. They are fast field law: owner hostile, air count suspect, door clock false, worker name unresolved, sample worth more than body, packet needs witness. Past crews left them for people who would not have time to open a legal manual while the ocean pushed through the wall.\n\nThe license is dirty because it lets corporations avoid clean verbs. Deep Reach does not have to say we abandoned workers if a zone can be called contaminated asset field. Keelmark does not have to say we sold risk if a body becomes recoverable mass. Black Keel does not have to say we are choosing cargo over mercy if the tender is only enforcing a tonne-window. A Marauder survives by reading those translations faster than the offices can file them.\n\nThe strange mercy of the profession is that theft can preserve truth. A stolen nameplate can become a person record. A cut-open cabinet can prove a sealed door was never supposed to open. A sample can pay debt and still carry liability. A packet dragged through the wrong route can become evidence if the Marauder keeps the wet copy, the hash and the place together. The job is not noble. It is useful. On HECTON-8, useful is sometimes the only shape justice can wear before it drowns.",
+          "external_site": "Marauders in HECTON-8 are not pirate heroes. They are licensed pressure scavengers working inside the dirty gap between salvage value, claim law and evidence custody.",
+          "external_site_article": "The word Marauder should sound uncomfortable. It is not a romantic class name and not a clean job title. In HECTON-8, a Marauder is what the frontier produces when law travels faster as paperwork than as help. The claim system needs someone who can enter a dead or disputed asset, recover value, touch contaminated property, accept personal risk and leave enough records for other offices to pretend the process was controlled.\n\nThat makes the player morally exposed from the opening minute. You are not a knight arriving to save a colony. You are a professional scavenger with old Deep Reach procedure in your hands, a debt window above your head and an ocean full of people the ledgers already tried to flatten into categories. The horror is not that you loot. The horror is that looting may be the only action the system still recognizes.\n\nMarauder field language grew from that pressure. A black ring is not vandalism if it tells the next diver the official owner is lying. A slash through a stamped cause of death is not sentiment if it points toward a missing pump certificate. A worker name scratched beside a route mark can carry more legal force than a polished memorial because it attaches personhood to place, time and custody. The marks are rude because polite language already failed.\n\nThis is the cultural spine of HECTON-8's lore. The player learns the world by stealing from it, but the best theft is disciplined: take the object, keep the context, preserve the witness path, decide what must leave and what should remain as proof. Marauder work is not clean redemption. It is a pressure trade where survival, debt, evidence and shame all ride the same hook.",
+          "field_note": "Do not trust a clean label in a wet room. If it mattered, somebody scratched the ugly version nearby."
+        },
+        "ar_SA": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "مقال ميداني عن قانون إنقاذ المارودر",
+          "scanner": "علامة مارودر // ليست طلاء قراصنة. اختصار عقدي: مطالبة متنازع عليها، كتلة قابلة للاسترداد، مالك عدائي، خطر شاهد. من تركها توقع أن يقرأها محترف آخر بسرعة.",
+          "terminal": "إرشاد KEELMARK ميداني // رخصة المارودر لا تمنح سلطة إنقاذ. تمنح دخول إنقاذ محدود، اعترافا بالرهن، خيارات عهدة الدليل وحساب الكتلة القابلة للاسترداد داخل مطالبة متنازع عليها.",
+          "audio": "سطر عقد Black Keel: أنت هنا ليس لأن القانون فشل. أنت هنا لأن القانون وجد شخصا أرخص من الإنقاذ.",
+          "in_game_wiki": "مارودر هي الكلمة القبيحة لشخص يستطيع نظام المطالبة استخدامه من دون الاعتراف بواجب إنقاذ. القرصان يسرق خارج الدفتر. المنقذ يأتي بسلطة عامة وطاقم وواجب. المارودر يدخل بين الاثنين: مرخص بما يكفي ليلمس ملكية مهجورة، قابل للتضحية بما يكفي ليموت هناك، ومفيد بما يكفي لتحريك مطالبة متنازع عليها.\n\nلهذا لا تبدو علامات المارودر شعارات عندما تتعلم القواعد. الخدوش والحلقات السوداء وأسهم الضغط والملصقات المؤسسية المشطوبة قانون ميداني سريع: مالك عدائي، عداد هواء مشكوك فيه، ساعة باب كاذبة، اسم عامل غير محسوم، عينة أغلى من الجسد، حزمة تحتاج شاهدا. تركتها طواقم لم يكن لديها وقت لفتح دليل قانوني والمحيط يضغط الجدار.\n\nقذارة الرخصة أنها تسمح للشركات بتجنب الأفعال النظيفة. لا تحتاج Deep Reach أن تقول تركنا عمالا إذا أمكن تسمية المنطقة حقل أصول ملوث. لا يحتاج Keelmark أن يقول بعنا الخطر إذا صار الجسد كتلة قابلة للاسترداد. ينجو المارودر بقراءة هذه الترجمات أسرع مما تستطيع المكاتب حفظها.",
+          "external_site": "المارودر في HECTON-8 ليس بطلا قرصانا. إنه جامع ضغط مرخص يعمل في الفجوة القذرة بين قيمة الخردة وقانون المطالبة وعهدة الدليل.",
+          "external_site_article": "يجب أن تبدو كلمة مارودر غير مريحة. إنها ليست اسما رومانسيا ولا وظيفة نظيفة. في HECTON-8، المارودر هو ما تنتجه الجبهة عندما يسافر القانون كأوراق أسرع مما يسافر كمساعدة. يحتاج نظام المطالبة إلى شخص يدخل أصلا ميتا أو متنازعا عليه، يسترد قيمة، يلمس ملكية ملوثة، يقبل الخطر الشخصي ويترك سجلات تكفي كي تتظاهر المكاتب بأن العملية كانت مضبوطة.\n\nهذا يجعل اللاعب مكشوفا أخلاقيا منذ الدقيقة الأولى. أنت لست فارسا جاء لإنقاذ مستعمرة. أنت جامع محترف يحمل إجراءات Deep Reach قديمة، وفوق رأسه نافذة دين، وتحته محيط مليء بأناس حاولت الدفاتر تحويلهم إلى فئات. الرعب ليس أنك تنهب. الرعب أن النهب قد يكون الفعل الوحيد الذي ما زال النظام يعترف به.\n\nنمت لغة المارودر الميدانية من هذا الضغط. الحلقة السوداء ليست تخريبا إذا أخبرت الغطاس التالي أن المالك الرسمي يكذب. خط فوق سبب وفاة مختوم ليس عاطفة إذا أشار إلى شهادة مضخة مفقودة. الاسم المخدوش بجانب علامة طريق قد يملك قوة قانونية أكبر من نصب مصقول لأنه يربط الشخص بالمكان والوقت والعهدة.",
+          "field_note": "لا تثق بملصق نظيف في غرفة مبللة. إذا كان الأمر مهما، فسيكون أحدهم قد خدش النسخة القبيحة قربه."
+        },
+        "de_DE": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Marauder-Feldartikel zum Bergungsrecht",
+          "scanner": "MARAUDER-MARKE // Keine Piratenfarbe. Vertragskurzschrift: strittiger Claim, rückgewinnbare Masse, feindlicher Eigentümer, Zeugenrisiko. Wer sie ließ, erwartete einen Profi, der die Wand schnell liest.",
+          "terminal": "KEELMARK-FELDHINWEIS // Eine Marauder-Lizenz verleiht keine Rettungsbefugnis. Sie gewährt begrenzten Salvage-Zutritt, Pfandanerkennung, Beweisverwahrung und Massenabrechnung unter strittigen Claim-Bedingungen.",
+          "audio": "Black-Keel-Vertragszeile: Du bist nicht hier, weil das Gesetz versagt hat. Du bist hier, weil das Gesetz jemanden fand, der billiger ist als Rettung.",
+          "in_game_wiki": "Marauder ist das hässliche Wort für eine Person, die das Claim-System benutzen kann, ohne eine Rettungspflicht einzugestehen. Ein Pirat stiehlt außerhalb des Buchs. Ein Retter kommt mit Pflicht, Crew und öffentlicher Autorität. Ein Marauder steht dazwischen: lizenziert genug, um verlassenes Eigentum zu berühren, entbehrlich genug, um dort zu sterben, nützlich genug, um einen strittigen Claim zu bewegen.\n\nDarum sind Marauder-Markierungen keine Sprüche, sobald man ihre Grammatik kennt. Kratzer, schwarze Ringe, Druckpfeile und durchgestrichene Firmenlabels sind schnelles Feldrecht: Eigentümer feindlich, Luftzählung verdächtig, Tür-Uhr falsch, Arbeitername ungeklärt, Probe mehr wert als Körper, Paket braucht Zeugen. Frühere Crews hinterließen sie für Leute ohne Zeit, ein Rechtsbuch zu öffnen, während der Ozean durch die Wand drückte.\n\nDie Lizenz ist schmutzig, weil sie Firmen saubere Verben erspart. Deep Reach muss nicht sagen, dass Arbeiter verlassen wurden, wenn ein Bereich kontaminiertes Asset-Feld heißt. Keelmark muss nicht sagen, dass Risiko verkauft wurde, wenn ein Körper rückgewinnbare Masse wird. Ein Marauder überlebt, indem er diese Übersetzungen schneller liest, als Büros sie ablegen.",
+          "external_site": "Marauder in HECTON-8 sind keine Piratenhelden. Sie sind lizenzierte Druckplünderer im schmutzigen Spalt zwischen Bergungswert, Claim-Recht und Beweisverwahrung.",
+          "external_site_article": "Das Wort Marauder soll unangenehm klingen. Es ist keine romantische Klasse und kein sauberer Beruf. In HECTON-8 entsteht ein Marauder dort, wo Recht schneller als Papier reist als als Hilfe. Das Claim-System braucht jemanden, der ein totes oder strittiges Asset betreten, Wert bergen, kontaminiertes Eigentum anfassen, persönliches Risiko tragen und genug Spuren lassen kann, damit Büros Kontrolle behaupten.\n\nDer Spieler ist damit von Anfang an moralisch offen. Du bist kein Ritter, der eine Kolonie rettet. Du bist ein professioneller Schrottjäger mit alter Deep-Reach-Prozedur in den Händen, einem Schuldfenster über dir und einem Ozean voller Menschen, die Bücher schon in Kategorien gedrückt haben. Das Grauen ist nicht, dass du plünderst. Das Grauen ist, dass Plündern die einzige Handlung sein kann, die das System noch anerkennt.\n\nMarauder-Feldsprache wuchs aus diesem Druck. Ein schwarzer Ring ist kein Vandalismus, wenn er dem nächsten Taucher sagt, dass der offizielle Eigentümer lügt. Ein Schnitt durch eine gestempelte Todesursache ist kein Gefühl, wenn er auf ein fehlendes Pumpenzertifikat zeigt. Ein Arbeitername neben einer Routenmarke kann mehr Rechtskraft haben als ein poliertes Denkmal.",
+          "field_note": "Trau keinem sauberen Etikett in einem nassen Raum. Wenn es wichtig war, hat jemand die hässliche Version daneben gekratzt."
+        },
+        "es_ES": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Artículo de Campo sobre Ley de Salvamento Marauder",
+          "scanner": "MARCA MARAUDER // No es pintura pirata. Taquigrafía contractual: reclamación disputada, masa recuperable, dueño hostil, riesgo de testigo. Quien la dejó esperaba que otro profesional leyera rápido la pared.",
+          "terminal": "AVISO DE CAMPO KEELMARK // La licencia Marauder no concede autoridad de rescate. Concede entrada limitada de salvamento, reconocimiento de gravamen, opciones de custodia de prueba y contabilidad de masa recuperable bajo reclamación disputada.",
+          "audio": "Línea de contrato Black Keel: No estás aquí porque la ley haya fallado. Estás aquí porque la ley encontró a alguien más barato que el rescate.",
+          "in_game_wiki": "Marauder es la palabra fea para una persona que el sistema de reclamaciones puede usar sin admitir deber de rescate. Un pirata roba fuera del libro. Un rescatista llega con deber, tripulación y autoridad pública. Un Marauder entra entre esas categorías: con licencia suficiente para tocar propiedad abandonada, prescindible suficiente para morir allí, útil suficiente para mover una reclamación disputada.\n\nPor eso las marcas Marauder no son lemas cuando aprendes la gramática. Arañazos, anillos negros, flechas de presión y etiquetas corporativas tachadas son ley de campo rápida: dueño hostil, cuenta de aire sospechosa, reloj de puerta falso, nombre de trabajador sin resolver, muestra más valiosa que cuerpo, paquete necesita testigo. Las dejaron equipos que no tenían tiempo de abrir un manual legal mientras el océano empujaba la pared.\n\nLa licencia es sucia porque permite a las corporaciones evitar verbos limpios. Deep Reach no tiene que decir abandonamos trabajadores si una zona puede llamarse campo de activos contaminados. Keelmark no tiene que decir vendimos riesgo si un cuerpo se vuelve masa recuperable. Un Marauder sobrevive leyendo esas traducciones más rápido que las oficinas.",
+          "external_site": "Los Marauders de HECTON-8 no son héroes piratas. Son chatarreros de presión con licencia dentro de la grieta entre valor de salvamento, ley de reclamación y custodia de pruebas.",
+          "external_site_article": "La palabra Marauder debe sonar incómoda. No es una clase romántica ni un empleo limpio. En HECTON-8, un Marauder aparece cuando la ley viaja más rápido como papeleo que como ayuda. El sistema de reclamaciones necesita a alguien que entre en un activo muerto o disputado, recupere valor, toque propiedad contaminada, acepte riesgo personal y deje suficientes registros para que otras oficinas finjan control.\n\nEso expone moralmente al jugador desde el primer minuto. No eres un caballero que viene a salvar una colonia. Eres un carroñero profesional con viejo procedimiento de Deep Reach en las manos, una ventana de deuda sobre la cabeza y un océano lleno de gente que los libros ya intentaron aplastar en categorías. El horror no es saquear. El horror es que saquear quizá sea la única acción que el sistema todavía reconoce.\n\nEl lenguaje de campo Marauder nació de esa presión. Un anillo negro no es vandalismo si avisa al siguiente buzo de que el dueño oficial miente. Un tajo sobre una causa de muerte sellada no es sentimental si apunta a un certificado de bomba perdido. Un nombre de trabajador junto a una marca de ruta puede tener más fuerza legal que un memorial pulido.",
+          "field_note": "No confíes en una etiqueta limpia dentro de una sala mojada. Si importaba, alguien arañó cerca la versión fea."
+        },
+        "fr_FR": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Article de Terrain sur le Droit de Salvage Marauder",
+          "scanner": "MARQUE MARAUDER // Pas une peinture de pirate. Sténographie contractuelle : claim disputé, masse récupérable, propriétaire hostile, risque témoin. Celui qui l'a laissée attendait qu'un autre pro lise vite le mur.",
+          "terminal": "AVIS DE TERRAIN KEELMARK // La licence Marauder ne donne aucune autorité de secours. Elle donne entrée de salvage limitée, reconnaissance de gage, options de garde de preuve et comptabilité de masse récupérable sous claim disputé.",
+          "audio": "Ligne de contrat Black Keel : tu n'es pas ici parce que la loi a échoué. Tu es ici parce que la loi a trouvé quelqu'un de moins cher que le secours.",
+          "in_game_wiki": "Marauder est le mot laid pour une personne que le système de claims peut utiliser sans admettre de devoir de secours. Un pirate vole hors registre. Un sauveteur arrive avec devoir, équipage et autorité publique. Un Marauder entre entre les deux: assez licencié pour toucher une propriété abandonnée, assez jetable pour y mourir, assez utile pour faire bouger un claim disputé.\n\nLes marques Marauder ne sont donc pas des slogans quand on apprend la grammaire. Griffures, anneaux noirs, flèches de pression et étiquettes corporatives barrées sont du droit de terrain rapide: propriétaire hostile, compteur d'air douteux, horloge de porte fausse, nom d'ouvrier non résolu, échantillon plus précieux qu'un corps, paquet en manque de témoin. D'anciennes équipes les ont laissées à ceux qui n'auraient pas le temps d'ouvrir un manuel juridique pendant que l'océan poussait le mur.\n\nLa licence est sale parce qu'elle permet aux corporations d'éviter les verbes propres. Deep Reach n'a pas besoin de dire nous avons abandonné des ouvriers si une zone devient champ d'actifs contaminés. Keelmark n'a pas besoin de dire nous avons vendu du risque si un corps devient masse récupérable. Un Marauder survit en lisant ces traductions plus vite que les bureaux ne les classent.",
+          "external_site": "Les Marauders de HECTON-8 ne sont pas des héros pirates. Ce sont des récupérateurs de pression licenciés dans la fissure entre valeur de salvage, droit de claim et garde de preuve.",
+          "external_site_article": "Le mot Marauder doit déranger. Ce n'est pas une classe romantique ni un métier propre. Dans HECTON-8, un Marauder apparaît quand la loi voyage plus vite en papier qu'en aide. Le système de claims a besoin de quelqu'un capable d'entrer dans un actif mort ou disputé, de récupérer de la valeur, de toucher une propriété contaminée, d'accepter le risque et de laisser assez de traces pour que les bureaux prétendent au contrôle.\n\nCela expose le joueur moralement dès la première minute. Vous n'êtes pas un chevalier venu sauver une colonie. Vous êtes un chiffonnier professionnel avec une vieille procédure Deep Reach dans les mains, une fenêtre de dette au-dessus de vous et un océan plein de gens que les registres ont déjà tenté d'écraser en catégories. L'horreur n'est pas que vous pillez. L'horreur est que piller soit peut-être la seule action que le système reconnaît encore.\n\nLa langue de terrain Marauder vient de cette pression. Un anneau noir n'est pas du vandalisme s'il dit au prochain plongeur que le propriétaire officiel ment. Une barre sur une cause de mort tamponnée n'est pas sentimentale si elle pointe vers un certificat de pompe manquant. Un nom d'ouvrier près d'une marque de route peut avoir plus de force légale qu'un mémorial poli.",
+          "field_note": "Ne faites pas confiance à une étiquette propre dans une pièce mouillée. Si ça comptait, quelqu'un a gravé la version laide à côté."
+        },
+        "he_IL": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "מאמר שדה על חוק חילוץ Marauder",
+          "scanner": "סימן MARAUDER // לא צבע פיראטים. קיצור חוזי: תביעה במחלוקת, מסה ניתנת להשבה, בעלים עוין, סיכון עדות. מי שהשאיר זאת ציפה שמקצוען אחר יקרא את הקיר מהר.",
+          "terminal": "ייעוץ שדה KEELMARK // רישיון Marauder אינו מעניק סמכות הצלה. הוא מעניק כניסת salvage מוגבלת, הכרת שעבוד, אפשרויות משמורת ראיה וחשבונאות מסה ניתנת להשבה בתנאי תביעה במחלוקת.",
+          "audio": "שורת חוזה Black Keel: אתה לא כאן כי החוק נכשל. אתה כאן כי החוק מצא מישהו זול יותר מהצלה.",
+          "in_game_wiki": "Marauder היא המילה המכוערת לאדם שמערכת התביעות יכולה להשתמש בו בלי להודות בחובת הצלה. פיראט גונב מחוץ לספר. מציל מגיע עם חובה, צוות וסמכות ציבורית. Marauder נכנס בין הקטגוריות: מורשה מספיק לגעת ברכוש נטוש, ניתן להקרבה מספיק למות שם, שימושי מספיק להזיז תביעה במחלוקת.\n\nלכן סימני Marauder אינם סיסמאות כשמבינים את הדקדוק. שריטות, טבעות שחורות, חצי לחץ ותוויות חברה מחוקות הם חוק שדה מהיר: בעלים עוין, ספירת אוויר חשודה, שעון דלת שקרי, שם עובד לא פתור, דגימה שווה יותר מגוף, חבילה צריכה עד. צוותים קודמים השאירו אותם לאנשים שלא יהיה להם זמן לפתוח מדריך משפטי כשהאוקיינוס דוחף את הקיר.\n\nהרישיון מלוכלך כי הוא נותן לתאגידים להימנע מפעלים נקיים. Deep Reach לא חייבת לומר נטשנו עובדים אם אזור נקרא שדה נכסים מזוהם. Keelmark לא חייבת לומר מכרנו סיכון אם גוף נעשה מסה ניתנת להשבה. Marauder שורד בקריאת התרגומים האלה מהר יותר מהמשרדים.",
+          "external_site": "Marauders ב-HECTON-8 אינם גיבורי פיראטים. הם אוספי לחץ מורשים בתוך הפער המלוכלך בין ערך חילוץ, חוק תביעה ומשמורת ראיות.",
+          "external_site_article": "המילה Marauder צריכה להרגיש לא נוחה. היא אינה שם רומנטי ואינה תפקיד נקי. ב-HECTON-8, Marauder הוא מה שנוצר כשהחוק נוסע מהר יותר כניירת מאשר כעזרה. מערכת התביעות צריכה מישהו שיוכל להיכנס לנכס מת או שנוי במחלוקת, להשיב ערך, לגעת ברכוש מזוהם, לקבל סיכון אישי ולהשאיר מספיק רישום כדי שמשרדים אחרים יטענו לשליטה.\n\nזה חושף את השחקן מוסרית מהדקה הראשונה. אינך אביר שבא להציל מושבה. אתה אוסף מקצועי עם נוהל Deep Reach ישן בידיים, חלון חוב מעל הראש ואוקיינוס מלא אנשים שהספרים כבר ניסו למעוך לקטגוריות. האימה אינה שאתה בוזז. האימה היא שביזה אולי הפעולה היחידה שהמערכת עדיין מזהה.\n\nשפת השדה של Marauder צמחה מהלחץ הזה. טבעת שחורה אינה ונדליזם אם היא אומרת לצולל הבא שהבעלים הרשמי משקר. קו דרך סיבת מוות חתומה אינו רגש אם הוא מצביע לתעודת משאבה חסרה. שם עובד ליד סימן נתיב יכול לשאת יותר כוח משפטי מאנדרטה מלוטשת.",
+          "field_note": "אל תסמוך על תווית נקייה בחדר רטוב. אם זה היה חשוב, מישהו חרט ליד את הגרסה המכוערת."
+        },
+        "id_ID": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Artikel Lapangan Hukum Salvage Marauder",
+          "scanner": "TANDA MARAUDER // Bukan cat bajak laut. Singkatan kontrak: klaim disengketakan, massa bisa dipulihkan, pemilik bermusuhan, risiko saksi. Yang meninggalkannya berharap profesional lain membaca dinding cepat.",
+          "terminal": "ADVIS KEELMARK LAPANGAN // Lisensi Marauder tidak memberi otoritas penyelamatan. Ia memberi izin masuk salvage terbatas, pengakuan lien, opsi kustodi bukti, dan akuntansi massa pulih dalam klaim sengketa.",
+          "audio": "Baris kontrak Black Keel: Kau di sini bukan karena hukum gagal. Kau di sini karena hukum menemukan orang yang lebih murah daripada penyelamatan.",
+          "in_game_wiki": "Marauder adalah kata buruk untuk orang yang bisa dipakai sistem klaim tanpa mengakui kewajiban penyelamatan. Bajak laut mencuri di luar buku. Penyelamat datang dengan tugas, kru, dan otoritas publik. Marauder masuk di antara keduanya: cukup berlisensi untuk menyentuh properti terlantar, cukup bisa dibuang untuk mati di sana, cukup berguna untuk menggerakkan klaim sengketa.\n\nKarena itu tanda Marauder bukan slogan ketika tata bahasanya dipahami. Goresan, cincin hitam, panah tekanan, dan label korporat yang dicoret adalah hukum lapangan cepat: pemilik bermusuhan, hitungan udara mencurigakan, jam pintu palsu, nama pekerja belum jelas, sampel lebih mahal dari tubuh, paket butuh saksi. Kru lama meninggalkannya untuk orang yang tidak punya waktu membuka manual hukum saat laut menekan dinding.\n\nLisensi itu kotor karena membuat korporasi menghindari kata kerja bersih. Deep Reach tidak harus berkata kami meninggalkan pekerja jika zona bisa disebut medan aset terkontaminasi. Keelmark tidak harus berkata kami menjual risiko jika tubuh menjadi massa pulih. Marauder bertahan dengan membaca terjemahan itu lebih cepat daripada kantor menyimpannya.",
+          "external_site": "Marauder di HECTON-8 bukan pahlawan bajak laut. Mereka scavenger tekanan berlisensi di celah kotor antara nilai salvage, hukum klaim, dan kustodi bukti.",
+          "external_site_article": "Kata Marauder harus terasa tidak nyaman. Itu bukan kelas romantis dan bukan jabatan bersih. Di HECTON-8, Marauder lahir ketika hukum bergerak lebih cepat sebagai dokumen daripada sebagai bantuan. Sistem klaim membutuhkan seseorang yang bisa masuk ke aset mati atau disengketakan, mengambil nilai, menyentuh properti terkontaminasi, menerima risiko pribadi, dan meninggalkan cukup catatan agar kantor lain bisa berpura-pura semuanya terkendali.\n\nItu membuat pemain terbuka secara moral sejak menit pertama. Kau bukan ksatria yang datang menyelamatkan koloni. Kau pemulung profesional dengan prosedur lama Deep Reach di tangan, jendela utang di atas kepala, dan samudra penuh orang yang sudah coba dipipihkan buku besar menjadi kategori. Horornya bukan kau menjarah. Horornya adalah menjarah mungkin satu-satunya tindakan yang masih diakui sistem.\n\nBahasa lapangan Marauder tumbuh dari tekanan itu. Cincin hitam bukan vandalisme jika memberitahu penyelam berikutnya bahwa pemilik resmi berbohong. Garis pada sebab kematian berstempel bukan sentimental jika menunjuk sertifikat pompa yang hilang. Nama pekerja di samping tanda rute bisa punya bobot hukum lebih besar daripada memorial yang dipoles.",
+          "field_note": "Jangan percaya label bersih di ruang basah. Kalau penting, seseorang mencakar versi buruknya di dekat situ."
+        },
+        "ja_JP": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Marauderサルベージ法フィールド記事",
+          "scanner": "MARAUDERマーク // 海賊の塗料ではない。契約の速記: 係争請求、回収可能質量、敵対的所有者、証人リスク。残した者は、次の専門家が壁を素早く読むと見込んでいた。",
+          "terminal": "KEELMARK現場勧告 // Marauderライセンスは救助権限ではない。係争請求下での限定サルベージ進入、先取特権認識、証拠保管選択肢、回収可能質量会計を与える。",
+          "audio": "Black Keel契約文: お前がここにいるのは法が失敗したからではない。法が救助より安い人間を見つけたからだ。",
+          "in_game_wiki": "Marauderとは、請求システムが救助義務を認めずに使える人間につける汚い言葉だ。海賊は帳簿の外で盗む。救助者は義務、乗員、公的権限を持って来る。Marauderはその間に入る。放棄財産に触れられるだけの免許があり、そこで死んでもよいだけ使い捨てで、係争請求を動かせるだけ有用だ。\n\nだからMarauderの印は、文法を知ると標語ではなくなる。引っかき傷、黒い輪、圧力矢印、消された企業ラベルは高速の現場法だ。所有者敵対、空気計数不審、扉時計虚偽、作業員名未解決、標本は身体より高い、パケットには証人が必要。過去の班は、海が壁を押す中で法律書を開く時間のない者へ残した。\n\n免許が汚いのは、企業にきれいな動詞を避けさせるからだ。Deep Reachは、区域を汚染資産フィールドと呼べれば作業員を捨てたと言わなくてよい。Keelmarkは、身体が回収可能質量になればリスクを売ったと言わなくてよい。Marauderは、事務所が保管するより速くその翻訳を読むことで生き残る。",
+          "external_site": "HECTON-8のMarauderは海賊ヒーローではない。サルベージ価値、請求法、証拠保管の汚れた隙間で働く、免許持ちの圧力スカベンジャーだ。",
+          "external_site_article": "Marauderという語は不快であるべきだ。ロマンチックなクラス名でも清潔な職名でもない。HECTON-8では、法が助けとしてより書類として速く移動する時にMarauderが生まれる。請求システムは、死んだ資産や係争資産に入り、価値を回収し、汚染財産に触れ、個人リスクを受け、ほかの事務所が管理されていたと装えるだけの記録を残す人間を必要とする。\n\nそのためプレイヤーは最初から道徳的に露出している。あなたは植民地を救う騎士ではない。古いDeep Reach手順を手にした専門スカベンジャーで、頭上には債務窓があり、下には帳簿がすでに分類へ押しつぶそうとした人々の海がある。恐怖は略奪することではない。略奪こそがシステムにまだ認識される唯一の行動かもしれないことだ。\n\nMarauderの現場言語はその圧力から育った。黒い輪は、次の潜水者に公式所有者が嘘をついていると伝えるなら落書きではない。押印された死因への線は、失われたポンプ証明を示すなら感傷ではない。ルート印の横の作業員名は、磨かれた記念碑より法的な力を持つことがある。",
+          "field_note": "濡れた部屋のきれいなラベルを信じるな。重要なら、誰かが近くに汚い版を刻んでいる。"
+        },
+        "ko_KR": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Marauder 인양법 현장 기사",
+          "scanner": "MARAUDER 표식 // 해적 페인트가 아니다. 계약 속기: 분쟁 청구, 회수 가능 질량, 적대 소유자, 증인 위험. 남긴 자는 다른 전문가가 벽을 빨리 읽을 것을 예상했다.",
+          "terminal": "KEELMARK 현장 고지 // Marauder 면허는 구조 권한을 주지 않는다. 분쟁 청구 조건에서 제한 인양 진입, 유치권 인정, 증거 보관 선택지, 회수 가능 질량 회계를 준다.",
+          "audio": "Black Keel 계약 문구: 네가 여기 있는 건 법이 실패해서가 아니다. 법이 구조보다 싼 사람을 찾았기 때문이다.",
+          "in_game_wiki": "Marauder는 청구 시스템이 구조 의무를 인정하지 않고도 사용할 수 있는 사람을 부르는 추한 말이다. 해적은 장부 밖에서 훔친다. 구조자는 의무, 승무원, 공공 권한을 갖고 온다. Marauder는 그 사이에 들어간다. 버려진 재산을 만질 만큼 허가받았고, 거기서 죽어도 될 만큼 소모품이며, 분쟁 청구를 움직일 만큼 유용하다.\n\n그래서 Marauder 표식은 문법을 배우면 구호가 아니다. 긁힘, 검은 고리, 압력 화살표, 지워진 회사 라벨은 빠른 현장법이다. 소유자 적대, 공기 수상함, 문 시계 거짓, 작업자 이름 미해결, 표본이 몸보다 비쌈, 패킷에 증인 필요. 옛 팀들은 바다가 벽을 밀어 넣는 동안 법률 매뉴얼을 펼 시간이 없는 이들을 위해 남겼다.\n\n면허가 더러운 이유는 회사들이 깨끗한 동사를 피하게 해주기 때문이다. Deep Reach는 구역을 오염 자산 필드라 부를 수 있으면 작업자를 버렸다고 말하지 않아도 된다. Keelmark는 몸이 회수 가능 질량이 되면 위험을 팔았다고 말하지 않아도 된다. Marauder는 사무실보다 빨리 그 번역을 읽어 살아남는다.",
+          "external_site": "HECTON-8의 Marauder는 해적 영웅이 아니다. 인양 가치, 청구법, 증거 보관 사이의 더러운 틈에서 일하는 허가받은 압력 scavenger다.",
+          "external_site_article": "Marauder라는 말은 불편해야 한다. 낭만적인 직업명도 깨끗한 직함도 아니다. HECTON-8에서 Marauder는 법이 도움보다 서류로 더 빨리 이동할 때 생긴다. 청구 시스템은 죽었거나 분쟁 중인 자산에 들어가 가치를 회수하고, 오염된 재산을 만지고, 개인 위험을 받아들이며, 다른 사무실이 절차가 통제되었다고 가장할 기록을 남길 사람을 필요로 한다.\n\n그래서 플레이어는 첫 순간부터 도덕적으로 노출된다. 당신은 식민지를 구하러 온 기사도 아니다. 낡은 Deep Reach 절차를 손에 쥔 전문 scavenger이고, 머리 위에는 부채 창이 있으며, 아래에는 장부가 이미 범주로 눌러 버리려 한 사람들의 바다가 있다. 공포는 약탈이 아니다. 약탈이 시스템이 아직 인정하는 유일한 행동일 수 있다는 점이다.\n\nMarauder 현장 언어는 그 압력에서 자랐다. 검은 고리는 다음 잠수부에게 공식 소유자가 거짓말한다고 알려주면 낙서가 아니다. 날인된 사망 원인을 가로지르는 선은 누락된 펌프 증명서를 가리키면 감상이 아니다. 항로 표식 옆 작업자 이름은 반짝이는 추모비보다 법적 힘이 클 수 있다.",
+          "field_note": "젖은 방의 깨끗한 라벨을 믿지 마라. 중요했다면 누군가 근처에 추한 버전을 긁어 놨다."
+        },
+        "nl_NL": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Marauder Veldartikel over Bergingsrecht",
+          "scanner": "MARAUDER-MARKERING // Geen piratenverf. Contractsteno: betwiste claim, terugwinbare massa, vijandige eigenaar, getuigerisico. Wie dit achterliet verwachtte dat een andere professional de muur snel las.",
+          "terminal": "KEELMARK-VELDADVIES // Een Marauder-licentie geeft geen reddingsbevoegdheid. Ze geeft beperkte salvage-toegang, lien-erkenning, bewijsbewaring en boekhouding van terugwinbare massa onder betwiste claim.",
+          "audio": "Black Keel-contractregel: Je bent hier niet omdat de wet faalde. Je bent hier omdat de wet iemand vond die goedkoper is dan redding.",
+          "in_game_wiki": "Marauder is het lelijke woord voor iemand die het claimsysteem kan gebruiken zonder reddingsplicht toe te geven. Een piraat steelt buiten het boek. Een redder komt met plicht, crew en publieke autoriteit. Een Marauder zit ertussen: genoeg gelicentieerd om verlaten bezit aan te raken, vervangbaar genoeg om daar te sterven, nuttig genoeg om een betwiste claim te bewegen.\n\nDaarom zijn Marauder-markeringen geen slogans zodra je de grammatica kent. Krassen, zwarte ringen, drukpijlen en doorgestreepte bedrijfslabels zijn snelle veldwet: eigenaar vijandig, luchttelling verdacht, deurklok vals, werkersnaam onopgelost, monster meer waard dan lichaam, pakket heeft getuige nodig. Eerdere crews lieten ze achter voor mensen zonder tijd voor een juridisch handboek terwijl de oceaan door de muur drukte.\n\nDe licentie is vuil omdat ze bedrijven schone werkwoorden laat vermijden. Deep Reach hoeft niet te zeggen dat arbeiders zijn achtergelaten als een zone besmet activaveld kan heten. Keelmark hoeft niet te zeggen dat risico verkocht werd als een lichaam terugwinbare massa wordt. Een Marauder overleeft door die vertalingen sneller te lezen dan kantoren ze archiveren.",
+          "external_site": "Marauders in HECTON-8 zijn geen piratenhelden. Ze zijn gelicentieerde drukscavengers in de vuile spleet tussen salvagewaarde, claimrecht en bewijsbewaring.",
+          "external_site_article": "Het woord Marauder moet ongemakkelijk klinken. Het is geen romantische klasse en geen schone baan. In HECTON-8 ontstaat een Marauder wanneer recht sneller reist als papierwerk dan als hulp. Het claimsysteem heeft iemand nodig die een dood of betwist activum kan betreden, waarde kan terughalen, besmet bezit kan aanraken, persoonlijk risico accepteert en genoeg sporen achterlaat zodat kantoren controle kunnen veinzen.\n\nDaarmee staat de speler vanaf de eerste minuut moreel bloot. Je bent geen ridder die een kolonie komt redden. Je bent een professionele scharrelaar met oude Deep Reach-procedure in je handen, een schuldvenster boven je hoofd en een oceaan vol mensen die de boeken al tot categorieën probeerden te pletten. De horror is niet dat je plundert. De horror is dat plunderen misschien de enige handeling is die het systeem nog erkent.\n\nMarauder-veldtaal groeide uit die druk. Een zwarte ring is geen vandalisme als hij de volgende duiker vertelt dat de officiële eigenaar liegt. Een streep door een gestempelde doodsoorzaak is geen sentiment als hij naar een ontbrekend pompcertificaat wijst. Een werkersnaam naast een routemarkering kan meer rechtskracht hebben dan een gepolijst monument.",
+          "field_note": "Vertrouw geen schoon label in een natte kamer. Als het ertoe deed, kraste iemand de lelijke versie ernaast."
+        },
+        "pl_PL": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Artykuł Polowy o Prawie Salvage Marauderów",
+          "scanner": "ZNAK MARAUDERA // To nie farba piratów. Skrót kontraktowy: sporny claim, masa odzyskiwalna, wrogi właściciel, ryzyko świadka. Kto to zostawił, liczył, że inny zawodowiec szybko odczyta ścianę.",
+          "terminal": "NOTA TERENOWA KEELMARK // Licencja Maraudera nie daje uprawnień ratunkowych. Daje ograniczony wstęp salvage, uznanie zastawu, opcje pieczy dowodu i rachunek masy odzyskiwalnej przy spornym claimie.",
+          "audio": "Linia kontraktu Black Keel: Nie jesteś tu dlatego, że prawo zawiodło. Jesteś tu, bo prawo znalazło kogoś tańszego niż ratunek.",
+          "in_game_wiki": "Marauder to brzydkie słowo na osobę, której system claimów może użyć bez uznania obowiązku ratunku. Pirat kradnie poza księgą. Ratownik przybywa z obowiązkiem, załogą i władzą publiczną. Marauder wchodzi pomiędzy: dość licencjonowany, by dotykać porzuconego mienia, dość zbywalny, by tam umrzeć, dość użyteczny, by poruszyć sporny claim.\n\nZnaki Marauderów nie są hasłami, gdy poznasz gramatykę. Rysy, czarne pierścienie, strzałki ciśnienia i przekreślone etykiety firmowe są szybkim prawem polowym: właściciel wrogi, licznik powietrza podejrzany, zegar drzwi fałszywy, nazwisko pracownika nierozwiązane, próbka droższa niż ciało, pakiet potrzebuje świadka. Dawne ekipy zostawiły je ludziom bez czasu na podręcznik prawny, gdy ocean wciskał ścianę.\n\nLicencja jest brudna, bo pozwala korporacjom unikać czystych czasowników. Deep Reach nie musi mówić porzuciliśmy pracowników, jeśli strefa może nazywać się skażonym polem aktywów. Keelmark nie musi mówić sprzedaliśmy ryzyko, jeśli ciało staje się masą odzyskiwalną. Marauder przeżywa, czytając te tłumaczenia szybciej niż biura je archiwizują.",
+          "external_site": "Marauderzy w HECTON-8 nie są pirackimi bohaterami. To licencjonowani scavengerzy ciśnienia w brudnej szczelinie między wartością salvage, prawem claimów i pieczą dowodu.",
+          "external_site_article": "Słowo Marauder powinno brzmieć niewygodnie. Nie jest romantyczną klasą ani czystym tytułem. W HECTON-8 Marauder powstaje tam, gdzie prawo podróżuje szybciej jako papier niż jako pomoc. System claimów potrzebuje kogoś, kto wejdzie do martwego lub spornego aktywa, odzyska wartość, dotknie skażonego mienia, przyjmie ryzyko i zostawi dość śladów, by biura udawały kontrolę.\n\nTo odsłania gracza moralnie od pierwszej minuty. Nie jesteś rycerzem ratującym kolonię. Jesteś zawodowym zbieraczem ze starą procedurą Deep Reach w rękach, oknem długu nad głową i oceanem ludzi, których księgi już próbowały spłaszczyć do kategorii. Horror nie polega na tym, że szabrujesz. Horror polega na tym, że szaber może być jedynym działaniem, które system nadal uznaje.\n\nJęzyk polowy Marauderów wyrósł z tego nacisku. Czarny pierścień nie jest wandalizmem, jeśli mówi następnemu nurkowi, że oficjalny właściciel kłamie. Kreska przez ostemplowaną przyczynę śmierci nie jest sentymentem, jeśli wskazuje brakujący certyfikat pompy. Nazwisko pracownika obok znaku trasy może mieć większą siłę prawną niż wypolerowany pomnik.",
+          "field_note": "Nie ufaj czystej etykiecie w mokrym pokoju. Jeśli było ważne, ktoś wydrapał obok brzydką wersję."
+        },
+        "pt_BR": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Artigo de Campo sobre Lei de Salvage Marauder",
+          "scanner": "MARCA MARAUDER // Não é tinta de pirata. Taquigrafia contratual: reivindicação disputada, massa recuperável, dono hostil, risco de testemunha. Quem deixou esperava que outro profissional lesse a parede rápido.",
+          "terminal": "AVISO DE CAMPO KEELMARK // Licença Marauder não confere autoridade de resgate. Concede entrada limitada de salvage, reconhecimento de lien, opções de custódia de prova e contabilidade de massa recuperável sob reivindicação disputada.",
+          "audio": "Linha de contrato Black Keel: Você não está aqui porque a lei falhou. Você está aqui porque a lei achou alguém mais barato que resgate.",
+          "in_game_wiki": "Marauder é a palavra feia para uma pessoa que o sistema de reivindicações pode usar sem admitir obrigação de resgate. Pirata rouba fora do livro. Resgatista chega com dever, tripulação e autoridade pública. Marauder entra no meio: licenciado o bastante para tocar propriedade abandonada, descartável o bastante para morrer ali, útil o bastante para mover uma reivindicação disputada.\n\nPor isso marcas Marauder não são slogans quando você aprende a gramática. Riscos, anéis pretos, setas de pressão e etiquetas corporativas riscadas são lei de campo rápida: dono hostil, contagem de ar suspeita, relógio de porta falso, nome de trabalhador não resolvido, amostra vale mais que corpo, pacote precisa de testemunha. Equipes antigas deixaram isso para quem não teria tempo de abrir manual legal enquanto o oceano empurrava a parede.\n\nA licença é suja porque permite que corporações evitem verbos limpos. Deep Reach não precisa dizer abandonamos trabalhadores se uma zona pode ser chamada de campo de ativos contaminados. Keelmark não precisa dizer vendemos risco se um corpo vira massa recuperável. Um Marauder sobrevive lendo essas traduções mais rápido que os escritórios arquivam.",
+          "external_site": "Marauders em HECTON-8 não são heróis piratas. São scavengers de pressão licenciados na brecha suja entre valor de salvage, lei de reivindicação e custódia de prova.",
+          "external_site_article": "A palavra Marauder deve soar desconfortável. Não é uma classe romântica nem um cargo limpo. Em HECTON-8, um Marauder surge quando a lei viaja mais rápido como papelada do que como ajuda. O sistema de reivindicações precisa de alguém que entre em um ativo morto ou disputado, recupere valor, toque propriedade contaminada, aceite risco pessoal e deixe registros suficientes para outros escritórios fingirem controle.\n\nIsso deixa o jogador moralmente exposto desde o primeiro minuto. Você não é um cavaleiro vindo salvar uma colônia. Você é um catador profissional com procedimento antigo da Deep Reach nas mãos, uma janela de dívida acima da cabeça e um oceano cheio de pessoas que os livros já tentaram esmagar em categorias. O horror não é você saquear. O horror é que saquear talvez seja a única ação que o sistema ainda reconhece.\n\nA linguagem de campo Marauder nasceu dessa pressão. Um anel preto não é vandalismo se avisa o próximo mergulhador de que o dono oficial mente. Um corte sobre uma causa de morte carimbada não é sentimento se aponta para certificado de bomba ausente. Um nome de trabalhador ao lado de marca de rota pode ter mais força legal que um memorial polido.",
+          "field_note": "Não confie em etiqueta limpa numa sala molhada. Se importava, alguém riscou a versão feia por perto."
+        },
+        "ru_RU": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Полевая статья о мародерском праве salvage",
+          "scanner": "МАРОДЕРСКАЯ МЕТКА // Не пиратская краска. Договорная стенография: спорная претензия, возвращаемая масса, враждебный владелец, риск свидетеля. Тот, кто оставил это, ждал, что другой профессионал быстро прочтет стену.",
+          "terminal": "ПОЛЕВОЕ ПРЕДУПРЕЖДЕНИЕ KEELMARK // Лицензия мародера не дает полномочий спасателя. Она дает ограниченный вход на salvage, признание залога, варианты опеки доказательств и учет возвращаемой массы в спорной претензии.",
+          "audio": "Строка контракта Black Keel: ты здесь не потому, что закон провалился. Ты здесь потому, что закон нашел кого-то дешевле спасения.",
+          "in_game_wiki": "Мародер - грязное слово для человека, которого система претензий может использовать, не признавая обязанности спасать. Пират ворует вне книги. Спасатель приходит с долгом, экипажем и публичной властью. Мародер входит между ними: достаточно лицензирован, чтобы трогать брошенную собственность, достаточно расходен, чтобы умереть там, достаточно полезен, чтобы сдвинуть спорную претензию.\n\nПоэтому мародерские метки не читаются как лозунги, когда знаешь грамматику. Царапины, черные кольца, стрелки давления и зачеркнутые корпоративные ярлыки - быстрое полевое право: владелец враждебен, счет воздуха сомнителен, часы двери лгут, имя работника не закрыто, образец дороже тела, пакету нужен свидетель. Старые группы оставляли это тем, у кого не будет времени открыть юридический мануал, пока океан давит стену.\n\nЛицензия грязная, потому что позволяет корпорациям избегать чистых глаголов. Deep Reach не нужно говорить мы бросили работников, если зону можно назвать полем загрязненных активов. Keelmark не нужно говорить мы продали риск, если тело стало возвращаемой массой. Мародер выживает, читая эти переводы быстрее, чем офисы успевают их подшить.",
+          "external_site": "Мародеры в HECTON-8 не пиратские герои. Это лицензированные сборщики под давлением, работающие в грязном зазоре между ценой salvage, правом претензии и опекой доказательств.",
+          "external_site_article": "Слово мародер должно звучать неудобно. Это не романтический класс и не чистая профессия. В HECTON-8 мародер появляется там, где право путешествует быстрее как бумага, чем как помощь. Системе претензий нужен кто-то, кто войдет в мертвый или спорный актив, вернет ценность, тронет загрязненную собственность, примет личный риск и оставит достаточно следов, чтобы офисы могли делать вид, что процесс был контролируемым.\n\nЭто морально раскрывает игрока с первой минуты. Ты не рыцарь, пришедший спасать колонию. Ты профессиональный сборщик с процедурой Deep Reach в руках, долговым окном над головой и океаном людей, которых книги уже пытались сплющить в категории. Ужас не в том, что ты грабишь. Ужас в том, что грабеж может быть единственным действием, которое система еще признает.\n\nПолевой язык мародеров вырос из этого давления. Черное кольцо не вандализм, если говорит следующему ныряльщику, что официальный владелец лжет. Черта через проштампованную причину смерти не сентиментальна, если указывает на пропавший сертификат насоса. Имя работника рядом с маршрутной меткой может иметь больше юридической силы, чем полированный мемориал.",
+          "field_note": "Не верь чистой табличке в мокрой комнате. Если это было важно, кто-то выцарапал рядом грязную версию."
+        },
+        "uk_UA": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Польова стаття про мародерське право salvage",
+          "scanner": "МАРОДЕРСЬКА МІТКА // Не піратська фарба. Договірна стенографія: спірна претензія, повертана маса, ворожий власник, ризик свідка. Той, хто залишив це, чекав, що інший професіонал швидко прочитає стіну.",
+          "terminal": "ПОЛЬОВЕ ПОПЕРЕДЖЕННЯ KEELMARK // Ліцензія Marauder не дає повноважень рятувальника. Вона дає обмежений вхід на salvage, визнання застави, варіанти опіки доказу і облік повертальної маси у спірній претензії.",
+          "audio": "Рядок контракту Black Keel: ти тут не тому, що закон провалився. Ти тут тому, що закон знайшов когось дешевшого за порятунок.",
+          "in_game_wiki": "Marauder - брудне слово для людини, яку система претензій може використати, не визнаючи обов'язку рятувати. Пірат краде поза книгою. Рятувальник приходить з обов'язком, екіпажем і публічною владою. Marauder входить між ними: достатньо ліцензований, щоб торкатися покинутої власності, достатньо витратний, щоб померти там, достатньо корисний, щоб зрушити спірну претензію.\n\nТому мародерські мітки не є гаслами, коли знаєш граматику. Подряпини, чорні кільця, стрілки тиску і перекреслені корпоративні ярлики - швидке польове право: власник ворожий, рахунок повітря підозрілий, годинник дверей бреше, ім'я працівника не закрите, зразок дорожчий за тіло, пакету потрібен свідок. Старі групи лишали це тим, хто не матиме часу відкрити юридичний посібник, поки океан тисне стіну.\n\nЛіцензія брудна, бо дозволяє корпораціям уникати чистих дієслів. Deep Reach не мусить казати ми кинули працівників, якщо зону можна назвати полем забруднених активів. Keelmark не мусить казати ми продали ризик, якщо тіло стало повертальною масою. Marauder виживає, читаючи ці переклади швидше, ніж офіси їх підшивають.",
+          "external_site": "Marauders у HECTON-8 не піратські герої. Це ліцензовані збирачі під тиском у брудному проміжку між ціною salvage, правом претензії та опікою доказів.",
+          "external_site_article": "Слово Marauder має звучати незручно. Це не романтичний клас і не чиста професія. У HECTON-8 Marauder з'являється там, де право подорожує швидше як папери, ніж як допомога. Системі претензій потрібен хтось, хто зайде в мертвий або спірний актив, поверне цінність, торкнеться забрудненої власності, прийме особистий ризик і лишить достатньо слідів, щоб офіси могли вдавати контроль.\n\nЦе морально оголює гравця з першої хвилини. Ти не лицар, що прийшов рятувати колонію. Ти професійний збирач зі старою процедурою Deep Reach у руках, борговим вікном над головою і океаном людей, яких книги вже намагалися сплющити в категорії. Жах не в тому, що ти грабуєш. Жах у тому, що грабунок може бути єдиною дією, яку система ще визнає.\n\nПольова мова Marauder виросла з цього тиску. Чорне кільце не вандалізм, якщо каже наступному пірнальнику, що офіційний власник бреше. Риска через проштамповану причину смерті не сентимент, якщо вказує на відсутній сертифікат насоса. Ім'я працівника біля маршрутної мітки може мати більшу юридичну силу, ніж відполірований меморіал.",
+          "field_note": "Не вір чистій табличці в мокрій кімнаті. Якщо це було важливо, хтось видряпав поряд брудну версію."
+        },
+        "zh_CN": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Marauder打捞法现场文章",
+          "scanner": "MARAUDER标记 // 不是海盗涂鸦。合同速记：争议索赔、可回收质量、敌对所有者、见证风险。留下它的人希望另一个专业者能快速读懂墙。",
+          "terminal": "KEELMARK现场通告 // Marauder执照不授予救援权。它只授予争议索赔条件下的有限打捞进入、留置权承认、证据托管选项和可回收质量会计。",
+          "audio": "Black Keel合同句：你在这里不是因为法律失败了。你在这里，是因为法律找到了比救援更便宜的人。",
+          "in_game_wiki": "Marauder是索赔系统给某种人使用的丑词：系统可以利用他们，却不承认救援义务。海盗在账册之外偷。救援者带着职责、船员和公共权力抵达。Marauder进入两者之间：有足够执照触碰被弃财产，足够可消耗以死在那里，也足够有用来推动争议索赔。\n\n所以当你学会语法后，Marauder标记就不是口号。划痕、黑环、压力箭头、被划掉的公司标签，都是快速现场法：所有者敌对、空气计数可疑、门钟虚假、工人姓名未解决、样本比身体更值钱、数据包需要见证。旧队伍把它们留给那些没时间在海水压墙时翻法律手册的人。\n\n执照之所以肮脏，是因为它让公司避开干净动词。Deep Reach不必说我们遗弃了工人，只要区域能被称为污染资产场。Keelmark不必说我们出售了风险，只要身体变成可回收质量。Marauder靠比办公室归档更快地读懂这些翻译活下来。",
+          "external_site": "HECTON-8的Marauder不是海盗英雄。他们是在打捞价值、索赔法和证据托管之间肮脏缝隙里工作的持照压力拾荒者。",
+          "external_site_article": "Marauder这个词应该让人不舒服。它不是浪漫职业，也不是干净头衔。在HECTON-8，当法律作为文书比作为帮助移动得更快时，Marauder就会出现。索赔系统需要有人进入死亡或争议资产，回收价值，接触污染财产，接受个人风险，并留下足够记录，让其他办公室能假装过程受控。\n\n这让玩家从第一分钟起就暴露在道德压力下。你不是来拯救殖民地的骑士。你是手里握着旧Deep Reach程序的专业拾荒者，头顶是债务窗口，脚下是满是人的海洋，而账册已经试图把他们压平成类别。恐怖不在于你掠夺。恐怖在于掠夺也许是系统仍然承认的唯一行动。\n\nMarauder现场语言从这种压力中长出来。黑环若是在告诉下一个潜水者官方所有者在说谎，它就不是破坏。盖章死因上的一道划线，若指向缺失的泵证书，就不是感伤。路线标旁的工人姓名，可能比抛光纪念碑更有法律力量。",
+          "field_note": "别信湿房间里的干净标签。如果它重要，附近会有人刻下难看的版本。"
+        }
+      }
+    }
+  ]
+}

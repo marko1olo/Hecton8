@@ -308,7 +308,7 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
-    public void SkySystemFollowCameraUsesFallbackSeaLevelWhenOceanIsUnavailable()
+    public void SkySystemFollowCameraRejectsStalePositiveFallbackSeaLevelWhenOceanIsUnavailable()
     {
         GameObject followObject = new GameObject("SkyFollowTest");
 
@@ -320,12 +320,54 @@ public class HectonCelestialEngineEditTests
             SetPrivateField(followCamera, "positionOffset", new Vector3(0f, 12f, 0f));
 
             float lockedY = (float)InvokePrivateMethod(followCamera, "ResolveLockedY");
-            Assert.That(lockedY, Is.EqualTo(4912f).Within(0.001f));
+            Assert.That(lockedY, Is.EqualTo(OceanSurfaceAtmosphereConstants.DefaultSeaLevel + 12f).Within(0.001f));
         }
         finally
         {
             Object.DestroyImmediate(followObject);
         }
+    }
+
+    [Test]
+    public void SkySystemFollowCameraSanitizesStaleZeroFallbackSeaLevel()
+    {
+        GameObject followObject = new GameObject("SkyFollowFallbackSanitizeTest");
+
+        try
+        {
+            SkySystemFollowCamera followCamera = followObject.AddComponent<SkySystemFollowCamera>();
+            SetPrivateField(followCamera, "lockToSeaLevel", true);
+            SetPrivateField(followCamera, "playerMovement", null);
+            SetPrivateField(followCamera, "atmosphereManager", null);
+            SetPrivateField(followCamera, "_cachedAtmosphereReadModel", null);
+            SetPrivateField(followCamera, "fallbackSeaLevelY", 0f);
+            SetPrivateField(followCamera, "positionOffset", new Vector3(0f, 12f, 0f));
+
+            float lockedY = (float)InvokePrivateMethod(followCamera, "ResolveLockedY");
+            Assert.That(lockedY, Is.EqualTo(OceanSurfaceAtmosphereConstants.DefaultSeaLevel + 12f).Within(0.001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(followObject);
+        }
+    }
+
+    [Test]
+    public void SkySystemFollowCameraRejectsStaleZeroLiveSeaLevelOwners()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "SkySystemFollowCamera.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("TryResolveSeaLevelY(movementSurfaceY, out float movementSeaLevelY)", source);
+        StringAssert.Contains("TryResolveSeaLevelY(atmosphereSeaLevelY, out float resolvedSeaLevelY)", source);
+        StringAssert.Contains("TryResolveSeaLevelY(fallbackSeaLevelY, out float seaLevelY)", source);
+        StringAssert.Contains("private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)", source);
+        StringAssert.Contains("math.abs(candidateSeaLevelY) > 0.0001f", source);
+        StringAssert.Contains("math.abs(candidateSeaLevelY) <= 1000f", source);
+        StringAssert.Contains("seaLevelY = DefaultSeaLevelY;", source);
+        StringAssert.DoesNotContain("if (math.isfinite(movementSurfaceY))", source);
+        StringAssert.DoesNotContain("if (math.isfinite(atmosphereSeaLevelY))", source);
+        StringAssert.DoesNotContain("return math.isfinite(fallbackSeaLevelY)", source);
     }
 
     [Test]
@@ -726,6 +768,24 @@ public class HectonCelestialEngineEditTests
             SetPrivateStaticField(typeof(GlobalRegistry), "_celestialRuntimeSnapshot", originalSnapshot);
             SetPrivateStaticField(typeof(GlobalRegistry), "_celestialRuntimeSnapshotSequence", unchecked((int)originalSequence));
         }
+    }
+
+    [Test]
+    public void CelestialEngineOnDisableUnregistersHotSwapBeforeClearingRuntimeCaches()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+        int start = source.IndexOf("private void OnDisable()", System.StringComparison.Ordinal);
+        Assert.That(start, Is.GreaterThanOrEqualTo(0));
+        int end = source.IndexOf("private void OnDestroy()", start, System.StringComparison.Ordinal);
+        Assert.That(end, Is.GreaterThan(start));
+        string onDisable = source.Substring(start, end - start);
+
+        StringAssert.Contains("TryUnregisterHotSwapListener();", onDisable);
+        StringAssert.Contains("ClearCelestialTruthReadCache();", onDisable);
+        Assert.That(
+            onDisable.IndexOf("TryUnregisterHotSwapListener();", System.StringComparison.Ordinal),
+            Is.LessThan(onDisable.IndexOf("ClearCelestialTruthReadCache();", System.StringComparison.Ordinal)));
     }
 
     [Test]

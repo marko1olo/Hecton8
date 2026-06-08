@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 中继托管债务链
 
-中继托管把空间物流变成压力。玩家能得到帮助，但承载帮助的路线也承载债务、优先钩子和公司权力。
+中继托管把空间物流变成压力。帮助可以抵达，但承载帮助的路线也承载债务、优先钩子和公司权力。
 
 ## Scanner
 

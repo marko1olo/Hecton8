@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Haldane Quarantine Hold"
+title: "Haldane Quarantine Release Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Haldane Quarantine Hold
+# Haldane Quarantine Release Hold
 
-The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
+The Haldane hold is not proof that quarantine was fake. It is worse: the protocol had a real basis, then Deep Reach used certification language to keep bodies, samples and liability in place after the colony needed movement more than paperwork.
 
 ## Scanner
 
-Quarantine release hold. Evacuation files stayed correct and late.
+Quarantine release hold. A real contamination protocol became a custody delay after the pressure danger was already physical.
 
 ## Terminal
 
-QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
+QUARANTINE HOLD DESK / HALDANE / RELEASE CERTIFICATION: evacuee movement remains suspended pending XO sample custody, seal-read variance and downstream exposure review.
 
 ## Audio
 
-The folder was orderly. That was the problem.
+The hold did not invent the danger. It kept people inside it.
 
 ## Field Note
 
-Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Marauder note: quarantine can be true and still be used like a lock.
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/en_US. -->

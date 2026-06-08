@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "أفضل نهاية: لا أيد نظيفة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# أفضل نهاية: لا أيد نظيفة
 
-AR LOC HOLD: Best Ending No Clean Hands defines the moral standard for final outcomes.
+أفضل نهاية في HECTON-8 لا يجب أن تكون النهاية التي يصلح فيها كل شيء. ذلك يجعل المحيط والعمال الموتى وآلة العقد أصغر من قائمة مهام اللاعب. النسخة الأقوى تسمح بإنقاذ شيء ملموس: سجل عام، حوض حي، payload شركة مرفوض، مشغل محرر، اسم لا يمكن حذفه بعد الآن.
 
-## Scanner
-
-AR LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
-
-## Terminal
-
-AR LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
-
-## Audio
-
-AR LOC HOLD: If it feels clean, it forgot where you are.
-
-## Field Note
-
-AR LOC HOLD: A strong ending lets the player save something real and lose something real.
+يجب أن تبقى بقايا. ربما ينجو Atlas تحت حجر. ربما ينقذ القطع أناسا ويقتل شكلا من الحياة. ربما تصبح الحقيقة علنية لكنها غير قابلة للسيطرة. ربما يغادر اللاعب بلا دين ومعه دليل سيواصل إيذاء الناس. لا أيد نظيفة ليست سخرية. إنها احترام للمقياس. يستطيع اللاعب أن يفعل شيئا ذا معنى من دون أن يصبح بريئا.
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/ar_SA. -->

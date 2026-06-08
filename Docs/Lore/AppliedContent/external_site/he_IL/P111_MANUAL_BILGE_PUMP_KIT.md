@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "ערכת משאבת שיפוליים ידנית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# ערכת משאבת שיפוליים ידנית
 
-HE LOC HOLD: Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile.
+משאבת השיפוליים הידנית היא פועל ההישרדות הראשון כי היא מסרבת לדרמה. אין powered panel, אין ממשק הירואי, ואין הבטחה שהחדר בטוח. השחקן מנקה פתח סתום, מרגיש את הידית נאבקת, ולומד שמים צריכים דרך יציאה אמיתית.
 
-## Scanner
-
-HE LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
-
-## Terminal
-
-HE LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
-
-## Audio
-
-HE LOC HOLD: Hand work first. Electricity second. Breathing always.
-
-## Field Note
-
-HE LOC HOLD: First tool must teach survival before upgrade fantasy.
+הכלי הקטן הזה קובע את הטון של HECTON-8. תיקון מתחיל בידיים, לחץ ותוצאה. אם המשאבה בועטת חזרה, החדר עונה. אם היציאה שגויה, ההישרדות רק מעבירה את הסכנה למקום אחר.
 
 <!-- External Site; generated from P111_MANUAL_BILGE_PUMP_KIT/he_IL. -->

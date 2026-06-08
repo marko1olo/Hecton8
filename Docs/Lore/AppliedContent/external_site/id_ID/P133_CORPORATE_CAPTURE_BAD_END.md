@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "Penangkapan Korporat: Penyelamatan Bersih"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# Penangkapan Korporat: Penyelamatan Bersih
 
-ID LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call.
+Penangkapan korporat bekerja karena dimulai seperti bantuan. Sinyalnya bersih, penjemputannya profesional, dan ruangan punya udara. Lalu urutan operasi menjadi jelas: koordinat dulu, XO custody kedua, akses Atlas ketiga, kesejahteraan kontraktor setelah review.
 
-## Scanner
-
-ID LOC HOLD: Rescue offer. Payload first. Witness second.
-
-## Terminal
-
-ID LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
-
-## Audio
-
-ID LOC HOLD: The clean room is not for you.
-
-## Field Note
-
-ID LOC HOLD: A rescue that demands silence is a capture with better lighting.
+Laut berhenti menghancurkan pemain, tetapi Deep Reach mulai mengawetkan cerita. Kesaksian disegel dengan bahasa kontaminasi, custody payload bergerak sebelum debrief medis, dan setiap nama yang dibawa pemain menjadi layar tanggung jawab. Ini bukan kematian. Ini bertahan hidup di dalam mesin yang membutuhkan keheningan.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/id_ID. -->

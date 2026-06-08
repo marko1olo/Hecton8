@@ -224,6 +224,9 @@ namespace Hecton8.UI
         private Material _resolvedHologramMaterial;
         private uint _latestSimulationLogHash;
         private float _latestSimulationLogTimestamp;
+        private uint _observedPdaLogVersion;
+        private uint _observedPdaLogCount;
+        private uint _observedPdaLatestLogHash;
 
         private const float TICK_DT = 1f / 60f;
         private const float HiddenRecordDelaySeconds = 5f;
@@ -375,6 +378,8 @@ namespace Hecton8.UI
             LocalizationEvents.RegisterLanguageListener(this);
 
             RebuildLoreBindingCache();
+            ResetObservedPdaLogState();
+            RefreshEventSourcedLogStateFromUIStore();
             _dirty = true;
         }
 
@@ -406,8 +411,7 @@ namespace Hecton8.UI
             if (_pdaEventsRegistered)
                 return;
 
-            PDAEvents.Register(this);
-            _pdaEventsRegistered = true;
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
         }
 
         private void UnregisterPDAEvents()
@@ -468,6 +472,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             AdvanceVisualPlaybackState(SystemDispatcher.CurrentFrameDeltaTime);
+            RefreshEventSourcedLogStateFromUIStore();
 
             if (!_visualLateFrameDirty && !_dirty)
                 return;
@@ -490,6 +495,8 @@ namespace Hecton8.UI
             else if (_dirty)
             {
                 RefreshList();
+                RefreshDetail();
+                RefreshPlayButton();
                 _dirty = false;
             }
 
@@ -592,6 +599,52 @@ namespace Hecton8.UI
             }
 
             _dirty = true;
+        }
+
+        private void RefreshEventSourcedLogStateFromUIStore()
+        {
+            if (!UIStateStore.IsInitialized)
+                return;
+
+            UIStateData pdaState = UIStateStore.GetPDAState();
+            if (_observedPdaLogVersion == pdaState.Version &&
+                _observedPdaLogCount == pdaState.LogEntryCount &&
+                _observedPdaLatestLogHash == pdaState.LatestLogEventHash)
+            {
+                return;
+            }
+
+            _observedPdaLogVersion = pdaState.Version;
+            _observedPdaLogCount = pdaState.LogEntryCount;
+            _observedPdaLatestLogHash = pdaState.LatestLogEventHash;
+
+            if (pdaState.LogEntryCount == 0u || pdaState.LatestLogEventHash == 0u)
+            {
+                _latestSimulationLogHash = 0u;
+                _latestSimulationLogTimestamp = 0f;
+            }
+            else if (UIStateStore.TryGetPDALogEvent(0, out uint latestHash, out float timestampSeconds))
+            {
+                _latestSimulationLogHash = latestHash;
+                _latestSimulationLogTimestamp = timestampSeconds;
+            }
+            else
+            {
+                _latestSimulationLogHash = pdaState.LatestLogEventHash;
+                _latestSimulationLogTimestamp = 0f;
+            }
+
+            _dirty = true;
+            _visualLateFrameDirty = true;
+        }
+
+        private void ResetObservedPdaLogState()
+        {
+            _observedPdaLogVersion = 0u;
+            _observedPdaLogCount = 0u;
+            _observedPdaLatestLogHash = 0u;
+            _latestSimulationLogHash = 0u;
+            _latestSimulationLogTimestamp = 0f;
         }
 
         private void HandleLogDiscovered(uint logHash)
@@ -790,7 +843,7 @@ namespace Hecton8.UI
 
         private static bool IsAudioLogSystemUsable(AudioLogSystem audioLogSystem)
         {
-            return audioLogSystem != null && audioLogSystem.isActiveAndEnabled;
+            return audioLogSystem != null && audioLogSystem.IsAudioLogRuntimeReady;
         }
 
         // --------------------------------------------------------------------------
@@ -2059,8 +2112,9 @@ namespace Hecton8.UI
 
         private static bool ShouldArmSummaryDecryption()
         {
-            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (bridge == null || !bridge.TryGetActiveArtificialInteriorState(out ArtificialInteriorState state))
+            HectonMapMagicVegetationBridge bridge = null;
+            if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref bridge) ||
+                !bridge.TryGetActiveArtificialInteriorState(out ArtificialInteriorState state))
                 return false;
 
             return state.Type == StructureType.MegaWreck;

@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Pekeltrap
 
-Brine Stair verandert HECTON-8-geologie in doorgang. Diepte moet gelezen worden, niet alleen verdragen.
-
-## Scanner
-
-Dichte pekellaag. Sonarretouren buigen aan de grens. Drijfmodel onbetrouwbaar.
-
-## Terminal
-
-Thermische tap uitgelijnd. Substraatgroei boven verwachting. Atlas-onderhoud uitgesteld.
-
-## Audio
-
-Hier beneden is een hele trap, als je water niet langer als één ding behandelt.
-
-## Field Note
-
-De rompklasse zegt wanneer metaal opgeeft. Pekel zegt wanneer jij arrogant was.
+De Pekeltrap is waar HECTON-8 ophoudt een simpele afdaling te zijn en een machine van water wordt. Dichte pekel mengt niet netjes met de lagen erboven. Ze ligt in plateaus, gordijnen en trage rivieren langs de zeebodem, buigt sonar en verandert drijfvermogen op het slechtst mogelijke moment. Dat gevaar geeft de speler een nieuwe geletterdheid. Een sterkere romp helpt, maar het water lezen telt meer: waar hitte tilt, waar zout daalt, waar een grens als weg kan worden bereden, en waar een slordige ballastwijziging een vaartuig onder een onzichtbaar plafond vastzet. De lorewaarde is even belangrijk. Pekeltrappen bewaren wat de kolonie probeerde kwijt te raken. Ze houden oude routemarkers, drukcaskets, dode drones, chemische sporen en soms lichamen vast in lagen die decennia niet gemengd hebben. Elke trede omlaag kan tegelijk navigatie, archeologie en aanklacht worden.
 
 <!-- External Site; generated from P007_BRINE_STAIR/nl_NL. -->

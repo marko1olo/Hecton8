@@ -6,13 +6,16 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from AppliedLoreImporter import TARGET_LOCALES, fnv1a32
+from AppliedLoreImporter import TARGET_LOCALES, collect_packets as collect_importer_packets, fnv1a32
 from AppliedLorePageExporter import PUBLICATION_INDEX_HEADERS, publication_surface_rows, safe_text
 from AppliedLoreRouteCardExporter import INPUT_HEADERS as ROUTE_CARD_HEADERS
 from AppliedLoreRouteCardExporter import OUTPUT_HEADERS as ROUTE_CARD_SOURCE_HEADERS
+from AppliedLoreRouteCardExporter import ROUTE_CARD_ENDING_PRESSURES
+from AppliedLoreRouteCardExporter import ROUTE_CARD_PRIMARY_SURFACES
 from AppliedLoreRouteCardExporter import SURFACE_MASKS
 from AppliedLoreTargetedExporter import (
     AppliedLoreTargetedError,
@@ -49,12 +52,21 @@ EVIDENCE_GRAPH_HEADERS = (
     "spoiler_tier",
     "primary_surface",
 )
-PRIMARY_SURFACES = {"scanner", "terminal", "in_game_wiki", "external_site", "audio", "field_note"}
-ENDING_PRESSURES = {"none", "material", "truth", "partial_exit", "material_or_partial"}
+PRIMARY_SURFACES = set(ROUTE_CARD_PRIMARY_SURFACES)
+ENDING_PRESSURES = set(ROUTE_CARD_ENDING_PRESSURES)
 
 
 class AppliedLoreCoverageError(Exception):
     """Raised when selected packets are incomplete across coverage layers."""
+
+
+def configure_stdout() -> None:
+    """Keep localized audit failures printable on non-UTF-8 Windows consoles."""
+
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except AttributeError:
+        pass
 
 
 @dataclass(frozen=True)
@@ -157,19 +169,15 @@ def baked_packet_ids(root: Path) -> set[str]:
     return {safe_text(row.get("packet_id")) for row in rows if safe_text(row.get("packet_id"))}
 
 
-def canonical_ready_manifest_packet_ids(base: Path) -> set[str]:
-    release_dir = base / "release_sets"
-    if not release_dir.exists():
-        return set()
+def canonical_ready_manifest_packet_ids(root: Path) -> set[str]:
+    try:
+        packets = collect_importer_packets(root)
+    except ValueError as exc:
+        raise AppliedLoreCoverageError(f"Canonical ready manifest/source mismatch: {exc}") from exc
 
     packet_ids: set[str] = set()
-    for path in sorted(release_dir.glob("*_manifest.json"), key=lambda item: item.name.lower()):
-        with path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
-        if not isinstance(data, dict) or data.get("canonical_importer_ready") is not True:
-            continue
-        for packet_id in data.get("packets", []):
-            packet_ids.add(safe_text(packet_id))
+    for packet in packets:
+        packet_ids.add(safe_text(packet.get("packet_id")))
     packet_ids.discard("")
     return packet_ids
 
@@ -187,7 +195,7 @@ def inventory_sources(
     baked_ids = baked_packet_ids(root)
     unbaked = sorted(source_ids.difference(baked_ids))
     baked_missing_source = sorted(baked_ids.difference(source_ids))
-    ready_unbaked = sorted(canonical_ready_manifest_packet_ids(base).intersection(unbaked))
+    ready_unbaked = sorted(canonical_ready_manifest_packet_ids(root).intersection(unbaked))
     not_ready_unbaked = sorted(set(unbaked).difference(ready_unbaked))
     return InventoryStats(
         source_packets=len(source_ids),
@@ -322,6 +330,10 @@ def validate_route_cards(
         rows = read_csv_rows(path, ROUTE_CARD_HEADERS)
         for index, row in enumerate(rows, start=2):
             packet_ids = packet_refs(row.get("packet_ids", ""))
+            owns_selected_packet = any(packet_id in selected_ids for packet_id in packet_ids)
+            if not owns_selected_packet:
+                continue
+
             for packet_id in packet_ids:
                 if packet_id not in selected_ids:
                     continue
@@ -332,10 +344,6 @@ def validate_route_cards(
                         f"{previous_row.get('route_card_id')} at {previous_path}:{previous_index}"
                     )
                 owner_by_packet[packet_id] = (path, index, row)
-            for ref in packet_refs(row.get("required_packet_ids", "")):
-                if ref not in known_packet_ids:
-                    errors.append(f"{path}:{index}: unknown required_packet_ids ref {ref}")
-
     for packet_id in sorted(selected_ids):
         if packet_id not in owner_by_packet:
             errors.append(f"{packet_id}: missing route-card ownership")
@@ -360,7 +368,7 @@ def validate_route_cards(
         if route_card_id not in route_source_ids_seen:
             route_source_count += 1
             route_source_ids_seen.add(route_card_id)
-        validate_route_source_row(route_row, source, route_card_id, errors)
+        validate_route_source_row(route_row, source, route_card_id, known_packet_ids, errors)
         if packet_id not in packet_refs(source.get("packet_ids", "")):
             errors.append(f"{route_card_id}: route source export no longer owns {packet_id}")
 
@@ -371,14 +379,17 @@ def validate_route_source_row(
     route_row: dict[str, str],
     source: dict[str, str],
     route_card_id: str,
+    known_packet_ids: set[str],
     errors: list[str],
 ) -> None:
     row_label = f"route_source:{route_card_id}"
     phase_id = safe_text(route_row.get("phase_id"))
     primary_surface = safe_text(route_row.get("primary_surface"))
     ending_pressure = safe_text(route_row.get("ending_pressure"))
-    packets = packet_refs(route_row.get("packet_ids", ""))
-    required = packet_refs(route_row.get("required_packet_ids", ""))
+    packets = tuple(packet_id for packet_id in packet_refs(route_row.get("packet_ids", "")) if packet_id in known_packet_ids)
+    required = tuple(
+        packet_id for packet_id in packet_refs(route_row.get("required_packet_ids", "")) if packet_id in known_packet_ids
+    )
 
     if primary_surface not in PRIMARY_SURFACES:
         errors.append(f"{route_card_id}: unsupported primary_surface={primary_surface!r}")
@@ -427,18 +438,29 @@ def audit_selected_packets(
 ) -> CoverageStats:
     base = applied_content_base(root)
     all_packets = load_packet_sources(base, explicit_packet_sources)
-    selected_packets = select_packets(all_packets, selectors, include_all)
+    if include_all and not explicit_packet_sources:
+        selected_packets = collect_importer_packets(root)
+    else:
+        selected_packets = select_packets(all_packets, selectors, include_all)
     selected_ids = {safe_text(packet.get("packet_id")) for packet in selected_packets}
     selected_ids.discard("")
     known_packet_ids = {safe_text(packet.get("packet_id")) for packet in all_packets}
     known_packet_ids.discard("")
+    runtime_packet_ids = baked_packet_ids(root)
 
     errors: list[str] = []
+    if include_all and not explicit_packet_sources:
+        extra_baked_packets = sorted(runtime_packet_ids.difference(selected_ids))
+        if extra_baked_packets:
+            errors.append(
+                "Baked CSV has packets outside canonical importer selection: "
+                + ", ".join(extra_baked_packets[:20])
+            )
     baked_rows = validate_baked_rows(root, selected_ids, errors)
     publication_rows = validate_publication_rows(base, selected_packets, errors)
     binding_rows = validate_binding_maps(base, selected_ids, errors)
     graph_rows = validate_evidence_graphs(base, selected_ids, known_packet_ids, errors)
-    route_cards, route_source_rows = validate_route_cards(root, base, selected_ids, known_packet_ids, errors)
+    route_cards, route_source_rows = validate_route_cards(root, base, selected_ids, runtime_packet_ids, errors)
 
     if errors:
         sample = "\n".join(errors[:80])
@@ -485,6 +507,7 @@ def format_inventory(stats: InventoryStats) -> str:
 
 
 def main() -> int:
+    configure_stdout()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument("--packet-id", action="append", default=[], help="Packet id or comma-separated ids/globs.")

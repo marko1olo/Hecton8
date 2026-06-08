@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Сборка акустического релейного хребта
 
-Побег с HECTON-8 строится как инженерная задача. Игрок сначала чинит путь для звука, и только потом просит орбиту поверить сигналу.
+Сборка акустического релейного хребта заземляет escape loop HECTON-8 в salvage engineering: звук должен пережить давление, геометрию маршрута и custody, прежде чем орбита ему поверит.
 
 ## Scanner
 
-Неполный релейный хребет. Капсула может стучать через воду, но не говорить с орбитой чистым каналом.
+Разбитый акустический хребет. Он может простучать pressure-code сквозь воду; орбита все равно слышит это как поврежденный custody-noise.
 
 ## Terminal
 
-ASCENT RELAY: сначала восстановить низкочастотный акустический хребет. High-gain mast lost. Emergency buoy unreliable. Rescue без route proof запрещен.
+ASCENT RELAY: восстановить низкополосный акустический хребет до окна recovery. High-gain mast потеряна. Emergency buoy ненадежен. Приемник Black Keel принимает pressure-code только после route proof.
 
 ## Audio
 
-Если Black Keel это услышит, он услышит код давления, а не голос.
+Если Keel нас услышит, он услышит рану, стучащую по трубе.
 
 ## Field Note
 
-Ставить на сломанную мачту, pinger-line или капсульный/P-63 маршрут.
+Первый вызов капсулы - не голос. Это керамические ребра, кабельная кожа, pinger-floats и достаточно дисциплины тайминга, чтобы океан повторил тебя правильно.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/ru_RU. -->

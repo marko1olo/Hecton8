@@ -9,32 +9,16 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "2190 도메인 표식"
+title: "도메인 표식 2190"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# 2190 도메인 표식
+# 도메인 표식 2190
 
-Domain Marks 2190은 HECTON-8을 성숙하지만 드문드문한 인간권의 일부로 둔다. 성간 문명이어도 거리는 여전히 도움을 결정한다.
-
-## Scanner
-
-혼합 도메인 표식. Sol 안전판, Barnard 공구 각인, Luyten 경로 보관.
-
-## Terminal
-
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
-
-## Audio
-
-이곳은 문명 밖이 아니다. 거리가 이겼을 때의 문명이다.
-
-## Field Note
-
-인류는 커졌다. 구조는 그래도 이동해야 한다.
+2190년에는 망가진 물건 하나가 여러 주인을 품을 수 있다. Sol 표준, Barnard 수리, Luyten 보관, Aegir 청구. HECTON-8의 고립은 역사의 부재가 아니라 물 차는 방 위에 찍힌 역사의 무게다.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/ko_KR. -->

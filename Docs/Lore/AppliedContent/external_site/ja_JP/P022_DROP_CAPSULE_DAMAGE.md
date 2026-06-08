@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 投下カプセル損傷
 
-投下カプセル損傷は、降下は成功し生存系は残り、上昇系だけが死んだことを示す。
+降下カプセル損傷は、孤立が信じられる理由を説明する。降下は成功し、生存システムは残り、上昇機材は残らなかった。
 
 ## Scanner
 

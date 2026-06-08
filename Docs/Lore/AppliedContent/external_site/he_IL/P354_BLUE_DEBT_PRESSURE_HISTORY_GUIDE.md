@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Blue Debt Pressure History Guide"
+title: "מדריך היסטוריית לחץ של חוב כחול"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Blue Debt Pressure History Guide
+# מדריך היסטוריית לחץ של חוב כחול
 
-HE LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.
+Xenon-Omega, שנקרא blue debt בפי salvagers, קושר את הגיאולוגיה של HECTON-8 ל-computation, debt law ולסיבה ש-Deep Reach עדיין רוצה להחזיר תביעה שטבעה.
 
 ## Scanner
 
-HE LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.
+דגימת blue debt סומנה. אמת pressure history, containment stage ו-signal drift לפני export.
 
 ## Terminal
 
-HE LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
+MARAUDER NOTE: blue debt הוא סלנג salvage ל-Xenon-Omega-bearing pressure-stable substrate. הוא יקר כי extreme computation ו-energy isolation אוהבים אותו, לא כי הוא זוהר.
 
 ## Audio
 
-HE LOC HOLD: Blue debt is what people call it after the invoice arrives.
+חוב כחול הוא השם שאנשים נותנים לו אחרי שהחשבונית מגיעה.
 
 ## Field Note
 
-HE LOC HOLD: Use for resource glossary and Deep Reach motive articles.
+צבע אינו grade. מיכל שקט עם custody נקייה משלם; מיכל שר מזמין לך drone wake.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/he_IL. -->

@@ -1812,6 +1812,7 @@ namespace Hecton8.Visor
         private Vector4 _lastPublishedActiveSonarGeoState;
         private bool _activeSonarGeoGlobalsDirty = true;
         private bool _hotSwapRegistered;
+        private int _modeNotificationMissCount;
 
         // Cached shader IDs
         private static readonly int _ShaderSpectrumMode =
@@ -1876,6 +1877,13 @@ namespace Hecton8.Visor
             unchecked((uint)LocHash.Compute("ActiveSonarGeo.DumpFailure"));
         private static readonly uint _ActiveSonarGeoNaNHash =
             unchecked((uint)LocHash.Compute("ActiveSonarGeo.NonFinite"));
+        private static readonly uint _ModeNotificationMissWarningHash =
+            unchecked((uint)LocHash.Compute("SpectrumSystem.ModeNotificationMiss"));
+        private static readonly uint _SpectrumSystemContextHash =
+            unchecked((uint)LocHash.Compute("SpectrumSystem"));
+        private static readonly uint _ModeNotificationContextHash =
+            unchecked((uint)LocHash.Compute("SpectrumSystem.ModeNotification"));
+        public int ModeNotificationMissCount => _modeNotificationMissCount;
         // COLD ALLOC: float[32] — passive hydrophone radar energy grid — owner: SpectrumSystem
         private readonly float[] _passiveRadarGrid = new float[PassiveRadarSectorCount];
         // COLD ALLOC: float[30] — passive hydrophone auto-gain history — owner: SpectrumSystem
@@ -1921,8 +1929,9 @@ namespace Hecton8.Visor
 
         private void Awake()
         {
-            SpectrumSystem activeRuntime = s_activeRuntimeInstance ?? GlobalRegistry.Spectrum;
-            if (activeRuntime != null && activeRuntime != this) { Destroy(gameObject); return; }
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             SonarGridOverlay.ApplyGlobals(
                 sonarGridIntensity,
                 sonarGridLineScale,
@@ -1935,6 +1944,9 @@ namespace Hecton8.Visor
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             TryRegisterService();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
@@ -1975,6 +1987,7 @@ namespace Hecton8.Visor
             ClearActiveSonarGeoGlobals();
             ClearQueuedActiveSonarAcousticSignal();
             FlushQueuedSpectrumShaderGlobals();
+            ClearModeNotificationDiagnostics();
             ClearCachedRegistryServices();
         }
 
@@ -1991,6 +2004,7 @@ namespace Hecton8.Visor
             ClearActiveSonarGeoGlobals();
             ClearQueuedActiveSonarAcousticSignal();
             FlushQueuedSpectrumShaderGlobals();
+            ClearModeNotificationDiagnostics();
             DisposeAupDiscoveryGrid();
             DisposeActiveSonarGeoTelemetryRing();
             ClearCachedRegistryServices();
@@ -2001,13 +2015,8 @@ namespace Hecton8.Visor
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            SpectrumSystem activeRuntime = s_activeRuntimeInstance ?? GlobalRegistry.Spectrum;
-            if (activeRuntime != null && activeRuntime != this)
-            {
-                enabled = false;
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterSpectrumRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Spectrum, this);
@@ -2024,6 +2033,49 @@ namespace Hecton8.Visor
             if (ReferenceEquals(s_activeRuntimeInstance, this))
                 s_activeRuntimeInstance = null;
             _serviceRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            SpectrumSystem registered = GlobalRegistry.Spectrum;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsSpectrumRuntimeUsable(registered))
+                {
+                    s_activeRuntimeInstance = registered;
+                    enabled = false;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                GlobalRegistry.UnregisterSpectrumRuntime(registered);
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+            }
+
+            SpectrumSystem active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsSpectrumRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterSpectrumRuntime(active);
+                s_activeRuntimeInstance = active;
+                enabled = false;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterSpectrumRuntime(active);
+            if (ReferenceEquals(s_activeRuntimeInstance, active))
+                s_activeRuntimeInstance = null;
+
+            return false;
+        }
+
+        private static bool IsSpectrumRuntimeUsable(SpectrumSystem system)
+        {
+            return system != null && system._serviceRegistered && system.isActiveAndEnabled;
         }
 
         private void TryRegisterLateFrameTick()
@@ -2124,6 +2176,21 @@ namespace Hecton8.Visor
             return null;
         }
 
+        private ISpatialAudioWorldEmitterReadModel ResolveSpatialAudioEmitterReadModel()
+        {
+            IAudioService audioService = ResolveAudioService();
+            if (audioService == null)
+                return null;
+
+            ISpatialAudioWorldEmitterReadModel readModel = _spatialAudioEmitterReadModel;
+            if (ReferenceEquals(readModel, audioService))
+                return readModel;
+
+            readModel = audioService as ISpatialAudioWorldEmitterReadModel;
+            _spatialAudioEmitterReadModel = readModel;
+            return readModel;
+        }
+
         private void ClearCachedAudioService()
         {
             _audioService = null;
@@ -2132,7 +2199,7 @@ namespace Hecton8.Visor
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -2242,7 +2309,29 @@ namespace Hecton8.Visor
             // Glitch pulse na vizore
             VisorHUDController.PulseActiveControllers(0.2f, 4);
 
-            NotificationEvents.TryPushInfo(ResolveLocalizedModeNotification(mode));
+            TryPushModeNotification(mode);
+        }
+
+        private void TryPushModeNotification(SpectrumMode mode)
+        {
+            if (NotificationEvents.TryPushInfo(ResolveLocalizedModeNotification(mode)))
+                return;
+
+            ReportModeNotificationMiss(mode);
+        }
+
+        private void ReportModeNotificationMiss(SpectrumMode mode)
+        {
+            _modeNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _ModeNotificationMissWarningHash,
+                _SpectrumSystemContextHash ^ _ModeNotificationContextHash ^ unchecked((uint)mode),
+                math.max(1, _modeNotificationMissCount));
+        }
+
+        private void ClearModeNotificationDiagnostics()
+        {
+            _modeNotificationMissCount = 0;
         }
 
         /// <summary>Tsiklicheskoe pereklyuchenie rezhimov.</summary>
@@ -2295,7 +2384,7 @@ namespace Hecton8.Visor
 
             float pulseTime = ResolveUnityShaderTimeSeconds();
             float pulseIntensity = math.saturate(pulseRadius * 0.005f);
-            float depth = ResolvePlayerMovement() != null ? math.max(0f, _playerMovement.CurrentDepth) : 0f;
+            float depth = ResolvePlayerDepthMeters();
             float abyssalDistortion = ResolveAbyssalDistortion(depth);
             float effectiveWaveSpeed = math.max(
                 0.01f,
@@ -2572,17 +2661,46 @@ namespace Hecton8.Visor
 
         private float ResolvePlayerSpeedMagnitudeSqr()
         {
+            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+            if (playerRuntimeContext != null)
+            {
+                if (playerRuntimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    math.all(math.isfinite(movementState.Velocity)))
+                {
+                    return math.lengthsq(movementState.Velocity);
+                }
+
+                return 0f;
+            }
+
             if (_playerMovement != null)
                 return _playerMovement.InterpolatedLinearVelocity.sqrMagnitude;
 
+            HectonPlayerMovement movement = ResolvePlayerMovement();
+            return movement != null ? movement.InterpolatedLinearVelocity.sqrMagnitude : 0f;
+        }
+
+        private float ResolvePlayerDepthMeters()
+        {
             IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
-            if (playerRuntimeContext != null && playerRuntimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+            if (playerRuntimeContext != null)
             {
-                return math.lengthsq(movementState.Velocity);
+                if (playerRuntimeContext.IsInitialized &&
+                    playerRuntimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    math.isfinite(movementState.DepthMeters))
+                {
+                    return math.max(0f, movementState.DepthMeters);
+                }
+
+                return 0f;
             }
 
             HectonPlayerMovement movement = ResolvePlayerMovement();
-            return movement != null ? movement.InterpolatedLinearVelocity.sqrMagnitude : 0f;
+            return movement != null && math.isfinite(movement.CurrentDepth)
+                ? math.max(0f, movement.CurrentDepth)
+                : 0f;
         }
 
         private void ClearAcousticMappingGlobals()
@@ -3251,24 +3369,40 @@ namespace Hecton8.Visor
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (_playerMovement != null)
+            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+            if (playerRuntimeContext != null)
             {
-                playerAup = _playerMovement.CurrentAup;
-                return true;
+                if (playerRuntimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite())
+                {
+                    playerAup = movementState.PredictedAup;
+                    return true;
+                }
+
+                playerAup = default;
+                return false;
             }
 
-            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
-            if (playerRuntimeContext != null && playerRuntimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+            if (_playerMovement != null)
             {
-                playerAup = movementState.PredictedAup;
-                return true;
+                AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup;
+                if (currentAup.IsFinite())
+                {
+                    playerAup = currentAup;
+                    return true;
+                }
             }
 
             HectonPlayerMovement movement = ResolvePlayerMovement();
             if (movement != null)
             {
-                playerAup = movement.CurrentAup;
-                return true;
+                AbsoluteUniversePosition currentAup = movement.CurrentAup;
+                if (currentAup.IsFinite())
+                {
+                    playerAup = currentAup;
+                    return true;
+                }
             }
 
             playerAup = default;
@@ -4035,7 +4169,7 @@ namespace Hecton8.Visor
                 _passiveRadarGrid[i] = decayedEnergy > PassiveRadarEnergyEpsilon ? decayedEnergy : 0f;
             }
 
-            ISpatialAudioWorldEmitterReadModel audioManager = _spatialAudioEmitterReadModel;
+            ISpatialAudioWorldEmitterReadModel audioManager = ResolveSpatialAudioEmitterReadModel();
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition listenerAup) ||
                 audioManager == null)
             {

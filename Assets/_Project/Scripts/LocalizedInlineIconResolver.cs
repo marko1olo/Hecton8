@@ -178,11 +178,8 @@ namespace Hecton.Localization
                 if (TryResolveItemToken(item, out string token) && TryResolveItemChip(token, out markup))
                     return true;
 
-                if (item.icon != null)
-                {
-                    markup = GenericItemChip;
-                    return true;
-                }
+                markup = GenericItemChip;
+                return true;
             }
 
             markup = string.Empty;
@@ -196,11 +193,8 @@ namespace Hecton.Localization
                 if (TryResolveItemToken(item, out string token) && TryResolveItemChipSpan(token.AsSpan(), out markup))
                     return true;
 
-                if (item.icon != null)
-                {
-                    markup = GenericItemChip.AsSpan();
-                    return true;
-                }
+                markup = GenericItemChip.AsSpan();
+                return true;
             }
 
             markup = ReadOnlySpan<char>.Empty;

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Pytanie finałowe: publiczna prawda, utracona kontrola"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Pytanie finałowe: publiczna prawda, utracona kontrola
 
-PL LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+Droga publicznej prawdy łamie czyste zatuszowanie. Łamie też własność konsekwencji. Dowody mogą ocalić imiona przed skasowaniem, stworzyć realną presję ratunku i zaprosić każdego drapieżnika z biurkiem prawnym albo kanałem modlitwy.
 
 ## Scanner
 
-PL LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+Publikacja dowodu uniemożliwia wymazanie. Oddaje też odkrycie wszystkim, którzy zdążą użyć go źle.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+OŚ PUBLICZNEJ PRAWDY: hash świadka, łańcuch odpowiedzialności, stan Atlasa, współrzędne niebieskiego długu i trasa payload mogą opuścić kontrolę Deep Reach. Po publikacji operator nie kontroluje odbiorców, reakcji rynku ani tego, kto przybędzie pierwszy.
 
 ## Audio
 
-PL LOC HOLD: Truth leaves your hand faster than rescue ever could.
+Prawda opuszcza twoją rękę szybciej, niż ratunek kiedykolwiek doleci.
 
 ## Field Note
 
-PL LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+Publiczna prawda nie jest czystą sprawiedliwością. Tworzy sankcje, kulty, aukcje, pozwy, presję ratunku i naśladowcze claims.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/pl_PL. -->

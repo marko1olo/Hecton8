@@ -42,7 +42,6 @@ namespace Hecton8.SaveSystem
         private const int NativeWritePagePaceMilliseconds = 1;
         private const string NativeMemoryOwner = nameof(AsyncWriteManager);
         private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for AsyncWriteManager buffer.";
-        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after AsyncWriteManager native disposal fault.";
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
         private const uint NativeGenericRead = 0x80000000u;
@@ -53,6 +52,7 @@ namespace Hecton8.SaveSystem
         private const uint NativeOpenExisting = 3u;
         private const uint NativeFileBegin = 0u;
         private const uint NativeFileAttributeNormal = 0x00000080u;
+        private const uint NativeFileFlagBackupSemantics = 0x02000000u;
         private static readonly IntPtr NativeInvalidHandleValue = new IntPtr(-1);
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
         private const int NativeUnixPathCapacity = 4096;
@@ -85,6 +85,7 @@ namespace Hecton8.SaveSystem
         private static readonly object s_readWindowLock = new object();
         private static readonly CachedReadWindow[] s_readWindows = new CachedReadWindow[ReadWindowCount];
         private static int s_readWindowClock;
+        private static int s_readCacheInvalidationGeneration;
         private static readonly object s_readPrefetchLock = new object();
         private static readonly AutoResetEvent s_readPrefetchSignal = new AutoResetEvent(false);
         private static readonly ReadPrefetchRequest[] s_readPrefetchQueue = new ReadPrefetchRequest[ReadPrefetchQueueCapacity];
@@ -108,6 +109,7 @@ namespace Hecton8.SaveSystem
             public string AbsolutePath;
             public long WindowOffset;
             public long FileLength;
+            public int InvalidationGeneration;
         }
 
         private readonly struct NativeWriteResult
@@ -126,6 +128,7 @@ namespace Hecton8.SaveSystem
         {
             public string AbsolutePath;
             public NativeArray<byte> Bytes;
+            public int BytesSentinelId;
             public long WindowOffset;
             public long WindowLength;
             public long FileLength;
@@ -143,25 +146,112 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            EnsureFlushThread();
+            if (!IsNativeFlushSupported())
+            {
+                error = "Native flush is unsupported on this platform.";
+                return false;
+            }
+
+            if (!EnsureFlushThread())
+            {
+                ThrottleFlush(byteCount);
+                if (!TryFlushPath(absolutePath))
+                {
+                    error = "Flush worker is unavailable and immediate flush failed.";
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool flushImmediately = false;
             lock (s_flushLock)
             {
                 if (s_flushCount == DiskFlushQueueCapacity)
                 {
-                    s_flushReadIndex = (s_flushReadIndex + 1) % DiskFlushQueueCapacity;
-                    s_flushCount--;
+                    flushImmediately = true;
+                }
+                else
+                {
+                    s_flushQueue[s_flushWriteIndex] = new DiskFlushRequest
+                    {
+                        AbsolutePath = absolutePath,
+                        ByteCount = byteCount > 0L ? byteCount : 0L
+                    };
+                    s_flushWriteIndex = (s_flushWriteIndex + 1) % DiskFlushQueueCapacity;
+                    s_flushCount++;
+                }
+            }
+
+            if (flushImmediately)
+            {
+                s_flushSignal.Set();
+                ThrottleFlush(byteCount);
+                if (!TryFlushPath(absolutePath))
+                {
+                    error = "Flush queue is full and immediate flush failed.";
+                    return false;
                 }
 
-                s_flushQueue[s_flushWriteIndex] = new DiskFlushRequest
-                {
-                    AbsolutePath = absolutePath,
-                    ByteCount = byteCount > 0L ? byteCount : 0L
-                };
-                s_flushWriteIndex = (s_flushWriteIndex + 1) % DiskFlushQueueCapacity;
-                s_flushCount++;
+                return true;
             }
 
             s_flushSignal.Set();
+            return true;
+        }
+
+        internal static bool FlushCriticalSavePath(string absolutePath, long byteCount, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath))
+            {
+                error = "Critical save flush path is empty.";
+                return false;
+            }
+
+            if (byteCount < 0L)
+            {
+                error = "Critical save flush byte count is invalid.";
+                return false;
+            }
+
+            if (!IsNativeFlushSupported())
+            {
+                error = "Critical save flush is unsupported on this platform.";
+                return false;
+            }
+
+            if (!TryGetFileLength(absolutePath, out long currentBytes, out string lengthError))
+            {
+                error = string.IsNullOrEmpty(lengthError)
+                    ? "Critical save flush file length could not be resolved."
+                    : lengthError;
+                return false;
+            }
+
+            if (currentBytes != byteCount)
+            {
+                error = "Critical save flush byte count does not match file length.";
+                return false;
+            }
+
+            if (!TryFlushPathAndParentDirectory(absolutePath, out error))
+                return false;
+
+            if (!TryGetFileLength(absolutePath, out long flushedBytes, out lengthError))
+            {
+                error = string.IsNullOrEmpty(lengthError)
+                    ? "Critical save flushed file length could not be resolved."
+                    : lengthError;
+                return false;
+            }
+
+            if (flushedBytes != byteCount)
+            {
+                error = "Critical save file length changed during flush.";
+                return false;
+            }
+
             return true;
         }
 
@@ -172,6 +262,11 @@ namespace Hecton8.SaveSystem
 
             lock (s_readWindowLock)
             {
+                unchecked
+                {
+                    s_readCacheInvalidationGeneration++;
+                }
+
                 for (int i = 0; i < s_readWindows.Length; i++)
                 {
                     if (s_readWindows[i].IsCreated &&
@@ -371,10 +466,10 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static void EnsureFlushThread()
+        private static bool EnsureFlushThread()
         {
             if (Interlocked.CompareExchange(ref s_flushThreadStarted, 1, 0) != 0)
-                return;
+                return true;
 
             try
             {
@@ -384,10 +479,12 @@ namespace Hecton8.SaveSystem
                     Name = "H8.SaveFlushQueue"
                 };
                 thread.Start();
+                return true;
             }
             catch
             {
                 Volatile.Write(ref s_flushThreadStarted, 0);
+                return false;
             }
         }
 
@@ -422,7 +519,7 @@ namespace Hecton8.SaveSystem
                 }
 
                 ThrottleFlush(request.ByteCount);
-                FlushPath(request.AbsolutePath);
+                _ = TryFlushPath(request.AbsolutePath);
             }
         }
 
@@ -456,18 +553,62 @@ namespace Hecton8.SaveSystem
             Thread.Sleep(delayMs > int.MaxValue ? int.MaxValue : (int)delayMs);
         }
 
-        private static void FlushPath(string absolutePath)
+        private static bool TryFlushPath(string absolutePath)
         {
             try
             {
                 if (string.IsNullOrEmpty(absolutePath))
-                    return;
+                    return false;
 
-                TryFlushPathNative(absolutePath);
+                return TryFlushPathNative(absolutePath);
             }
             catch
             {
+                return false;
             }
+        }
+
+        private static bool TryFlushPathAndParentDirectory(string absolutePath, out string error)
+        {
+            error = string.Empty;
+            if (!TryFlushPath(absolutePath))
+            {
+                error = "Critical save file flush failed.";
+                return false;
+            }
+
+            if (!TryFlushParentDirectory(absolutePath))
+            {
+                error = "Critical save directory flush failed.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryFlushParentDirectory(string absolutePath)
+        {
+            try
+            {
+                string directory = Path.GetDirectoryName(absolutePath);
+                if (string.IsNullOrEmpty(directory))
+                    return false;
+
+                return TryFlushParentDirectoryNative(directory);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool IsNativeFlushSupported()
+        {
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN || UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+            return true;
+#else
+            return false;
+#endif
         }
 
         private static void ReadPrefetchWorkerLoop()
@@ -490,7 +631,10 @@ namespace Hecton8.SaveSystem
 
                 lock (s_readWindowLock)
                 {
-                    if (FindCachedReadWindowLocked(request.AbsolutePath, request.WindowOffset, 1) >= 0)
+                    if (request.InvalidationGeneration != s_readCacheInvalidationGeneration)
+                        continue;
+
+                    if (FindCachedReadWindowLocked(request.AbsolutePath, request.WindowOffset, 1, request.FileLength) >= 0)
                         continue;
                 }
 
@@ -499,7 +643,13 @@ namespace Hecton8.SaveSystem
 
                 lock (s_readWindowLock)
                 {
-                    if (FindCachedReadWindowLocked(request.AbsolutePath, request.WindowOffset, 1) >= 0)
+                    if (request.InvalidationGeneration != s_readCacheInvalidationGeneration)
+                    {
+                        DisposeCachedReadWindow(ref prefetchedWindow);
+                        continue;
+                    }
+
+                    if (FindCachedReadWindowLocked(request.AbsolutePath, request.WindowOffset, 1, request.FileLength) >= 0)
                     {
                         DisposeCachedReadWindow(ref prefetchedWindow);
                         continue;
@@ -543,7 +693,7 @@ namespace Hecton8.SaveSystem
                 return -1;
             }
 
-            int existingSlotIndex = FindCachedReadWindowLocked(absolutePath, byteOffset, byteCount);
+            int existingSlotIndex = FindCachedReadWindowLocked(absolutePath, byteOffset, byteCount, fileLength);
             if (existingSlotIndex >= 0)
             {
                 CachedReadWindow existingWindow = s_readWindows[existingSlotIndex];
@@ -558,7 +708,7 @@ namespace Hecton8.SaveSystem
             return mappedSlotIndex;
         }
 
-        private static int FindCachedReadWindowLocked(string absolutePath, long byteOffset, int byteCount)
+        private static int FindCachedReadWindowLocked(string absolutePath, long byteOffset, int byteCount, long fileLength)
         {
             for (int i = 0; i < s_readWindows.Length; i++)
             {
@@ -566,6 +716,12 @@ namespace Hecton8.SaveSystem
                 if (!candidate.IsCreated ||
                     !string.Equals(candidate.AbsolutePath, absolutePath, StringComparison.OrdinalIgnoreCase))
                 {
+                    continue;
+                }
+
+                if (candidate.FileLength != fileLength)
+                {
+                    DisposeCachedReadWindow(ref s_readWindows[i]);
                     continue;
                 }
 
@@ -636,11 +792,12 @@ namespace Hecton8.SaveSystem
             }
 
             NativeArray<byte> windowBytes = default;
+            int windowBytesSentinelId = 0;
             bool transferredWindowBytes = false;
             try
             {
                 // COLD ALLOC: NativeArray<byte>[windowLength] - cached save read window - owner: AsyncWriteManager
-                windowBytes = AllocateCachedReadWindowBytes((int)windowLength);
+                windowBytes = AllocateCachedReadWindowBytes((int)windowLength, out windowBytesSentinelId);
                 byte* windowPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(windowBytes);
                 if (!TryReadAbsoluteFileRangeToNativeBuffer(absolutePath, windowOffset, windowPtr, (int)windowLength, out error))
                     return false;
@@ -649,6 +806,7 @@ namespace Hecton8.SaveSystem
                 {
                     AbsolutePath = absolutePath,
                     Bytes = windowBytes,
+                    BytesSentinelId = windowBytesSentinelId,
                     WindowOffset = windowOffset,
                     WindowLength = windowLength,
                     FileLength = fileLength,
@@ -665,8 +823,8 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (!transferredWindowBytes && windowBytes.IsCreated)
-                    DisposeCachedReadWindowBytes(ref windowBytes);
+                if (!transferredWindowBytes && (windowBytes.IsCreated || windowBytesSentinelId > 0))
+                    DisposeCachedReadWindowBytes(ref windowBytes, ref windowBytesSentinelId);
             }
         }
 
@@ -704,7 +862,7 @@ namespace Hecton8.SaveSystem
                 nextWindowOffset = window.WindowOffset + ReadWindowSizeBytes;
 
             if (nextWindowOffset >= window.FileLength ||
-                FindCachedReadWindowLocked(window.AbsolutePath, nextWindowOffset, 1) >= 0)
+                FindCachedReadWindowLocked(window.AbsolutePath, nextWindowOffset, 1, window.FileLength) >= 0)
             {
                 return;
             }
@@ -733,7 +891,8 @@ namespace Hecton8.SaveSystem
                 {
                     AbsolutePath = window.AbsolutePath,
                     WindowOffset = nextWindowOffset,
-                    FileLength = window.FileLength
+                    FileLength = window.FileLength,
+                    InvalidationGeneration = s_readCacheInvalidationGeneration
                 };
                 s_readPrefetchWriteIndex = (s_readPrefetchWriteIndex + 1) % ReadPrefetchQueueCapacity;
                 s_readPrefetchCount++;
@@ -763,32 +922,120 @@ namespace Hecton8.SaveSystem
 
         private static void DisposeCachedReadWindow(ref CachedReadWindow window)
         {
-            if (window.Bytes.IsCreated)
-                DisposeCachedReadWindowBytes(ref window.Bytes);
+            if (window.Bytes.IsCreated || window.BytesSentinelId > 0)
+                DisposeCachedReadWindowBytes(ref window.Bytes, ref window.BytesSentinelId);
 
             window = default;
         }
 
-        private static NativeArray<byte> AllocateCachedReadWindowBytes(int length)
+        private static NativeArray<byte> AllocateCachedReadWindowBytes(int length, out int sentinelId)
         {
-            NativeArray<byte> bytes = H8Memory.Allocate<byte>(
-                length,
-                SystemID.SavePersistence,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            if (bytes.IsCreated && bytes.Length >= length)
-                return bytes;
+            sentinelId = 0;
+            NativeArray<byte> bytes = new NativeArray<byte>(length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                sentinelId = NativeMemorySentinel.RegisterNativeArray(bytes, NativeMemoryOwner, nameof(CachedReadWindow), NativeMemoryLifetime);
+                if (sentinelId > 0)
+                    return bytes;
+            }
+            catch (Exception exception)
+            {
+                Exception cleanupException = null;
+                try
+                {
+                    DisposeCachedReadWindowBytes(ref bytes, ref sentinelId);
+                }
+                catch (Exception cleanupFault)
+                {
+                    cleanupException = cleanupFault;
+                }
 
-            H8Memory.Release(ref bytes, SystemID.SavePersistence);
-            throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+                if (cleanupException != null)
+                    throw new AggregateException(
+                        "Cached read window byte allocation failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
+
+                throw;
+            }
+
+            InvalidOperationException registrationException = new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+            Exception registrationCleanupException = null;
+            try
+            {
+                DisposeCachedReadWindowBytes(ref bytes, ref sentinelId);
+            }
+            catch (Exception cleanupFault)
+            {
+                registrationCleanupException = cleanupFault;
+            }
+
+            if (registrationCleanupException != null)
+                throw new AggregateException(
+                    "Cached read window byte registration failed and cleanup also failed.",
+                    registrationException,
+                    registrationCleanupException);
+
+            throw registrationException;
         }
 
-        private static void DisposeCachedReadWindowBytes(ref NativeArray<byte> bytes)
+        private static void DisposeCachedReadWindowBytes(ref NativeArray<byte> bytes, ref int sentinelId)
         {
-            if (!bytes.IsCreated)
-                return;
+            Exception firstException = null;
+            void* trackedPointer = bytes.IsCreated
+                ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes)
+                : null;
 
-            H8Memory.Release(ref bytes, SystemID.SavePersistence);
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+            else if (trackedPointer != null)
+            {
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+            }
+
+            if (bytes.IsCreated)
+            {
+                try
+                {
+                    bytes.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    bytes = default;
+                }
+            }
+            else
+            {
+                bytes = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         public static bool WriteAll(string absolutePath, void* buffer, int byteCount, out string error)
@@ -880,6 +1127,8 @@ namespace Hecton8.SaveSystem
                 if (!TryWriteAllNative(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways: true, paceWrites, out string writeError))
                     return new NativeWriteResult(false, writeError);
 
+                InvalidateCachedReadWindows(absolutePath);
+
                 if (!QueueThrottledFlush(absolutePath, totalBytes, out string flushError))
                     return new NativeWriteResult(false, flushError);
 
@@ -892,6 +1141,16 @@ namespace Hecton8.SaveSystem
         }
 
         public static bool OverwriteAll(string absolutePath, void* buffer, int byteCount, out string error)
+        {
+            return OverwriteAllInternal(absolutePath, buffer, byteCount, criticalFlush: false, out error);
+        }
+
+        public static bool OverwriteAllCritical(string absolutePath, void* buffer, int byteCount, out string error)
+        {
+            return OverwriteAllInternal(absolutePath, buffer, byteCount, criticalFlush: true, out error);
+        }
+
+        private static bool OverwriteAllInternal(string absolutePath, void* buffer, int byteCount, bool criticalFlush, out string error)
         {
             error = string.Empty;
             if (string.IsNullOrEmpty(absolutePath) || buffer == null || byteCount <= 0)
@@ -909,14 +1168,26 @@ namespace Hecton8.SaveSystem
                 if (!TryWriteAllNative(absolutePath, buffer, byteCount, null, 0, byteCount, createAlways: false, paceWrites: false, out error))
                     return false;
 
-                if (!QueueThrottledFlush(absolutePath, byteCount, out error))
-                    return false;
+                InvalidateCachedReadWindows(absolutePath);
+
+                if (criticalFlush)
+                {
+                    if (!FlushCriticalSavePath(absolutePath, byteCount, out error))
+                        return false;
+                }
+                else
+                {
+                    if (!QueueThrottledFlush(absolutePath, byteCount, out error))
+                        return false;
+                }
 
                 return true;
             }
             catch (Exception)
             {
-                error = "Sequential native overwrite failed.";
+                error = criticalFlush
+                    ? "Critical native overwrite failed."
+                    : "Sequential native overwrite failed.";
                 return false;
             }
         }
@@ -1106,6 +1377,38 @@ namespace Hecton8.SaveSystem
                 }
             }
         }
+
+        private static bool TryFlushParentDirectoryNative(string absoluteDirectory)
+        {
+            if (!Directory.Exists(absoluteDirectory))
+                return false;
+
+            fixed (char* path = absoluteDirectory)
+            {
+                IntPtr handle = CreateFileWNative(
+                    path,
+                    NativeGenericRead | NativeGenericWrite,
+                    NativeFileShareReadWriteDelete,
+                    IntPtr.Zero,
+                    NativeOpenExisting,
+                    NativeFileAttributeNormal | NativeFileFlagBackupSemantics,
+                    IntPtr.Zero);
+
+                if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
+                    return true;
+
+                try
+                {
+                    // Windows directory handles do not provide a POSIX fsync contract; file flush is the hard gate.
+                    _ = FlushFileBuffersNative(handle);
+                    return true;
+                }
+                finally
+                {
+                    CloseHandleNative(handle);
+                }
+            }
+        }
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
         private static bool TryWriteAllNativeUnix(
             string absolutePath,
@@ -1246,8 +1549,40 @@ namespace Hecton8.SaveSystem
                 CloseUnix(fd);
             }
         }
+
+        private static bool TryFlushParentDirectoryNative(string absoluteDirectory)
+        {
+            int fd = -1;
+            lock (s_nativeUnixPathLock)
+            {
+                fixed (byte* path = s_nativeUnixPathUtf8.Bytes)
+                {
+                    if (!TryEncodePathUtf8(absoluteDirectory, path, NativeUnixPathCapacity, out _))
+                        return false;
+
+                    fd = OpenUnix(path, NativeUnixOpenReadOnly);
+                }
+            }
+
+            if (fd < 0)
+                return false;
+
+            try
+            {
+                return FSyncUnix(fd) == 0;
+            }
+            finally
+            {
+                CloseUnix(fd);
+            }
+        }
 #else
         private static bool TryFlushPathNative(string absolutePath)
+        {
+            return false;
+        }
+
+        private static bool TryFlushParentDirectoryNative(string absoluteDirectory)
         {
             return false;
         }
@@ -1612,16 +1947,45 @@ namespace Hecton8.SaveSystem
                 if (registrationId > 0)
                     return bytes;
             }
-            catch
+            catch (Exception exception)
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                Exception cleanupException = null;
+                try
+                {
+                    DisposeTrackedNativeArrayByPointer(ref bytes);
+                }
+                catch (Exception cleanupFault)
+                {
+                    cleanupException = cleanupFault;
+                }
+
+                if (cleanupException != null)
+                    throw new AggregateException(
+                        "Read-only mapping byte allocation failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
+
                 throw;
             }
 
-            if (bytes.IsCreated)
-                bytes.Dispose();
-            throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+            InvalidOperationException registrationException = new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+            Exception registrationCleanupException = null;
+            try
+            {
+                DisposeTrackedNativeArrayByPointer(ref bytes);
+            }
+            catch (Exception cleanupFault)
+            {
+                registrationCleanupException = cleanupFault;
+            }
+
+            if (registrationCleanupException != null)
+                throw new AggregateException(
+                    "Read-only mapping byte registration failed and cleanup also failed.",
+                    registrationException,
+                    registrationCleanupException);
+
+            throw registrationException;
         }
 
         private static bool TryReadAbsoluteFileToNativeBuffer(
@@ -1778,36 +2142,52 @@ namespace Hecton8.SaveSystem
             if (!bytes.IsCreated)
                 return;
 
-            bool sentinelUnregistered = false;
-            try
-            {
-                NativeMemorySentinel.UnregisterNativeArray(bytes);
-                sentinelUnregistered = true;
-                bytes.Dispose();
-                bytes = default;
-            }
-            catch (Exception disposalException)
-            {
-                RestoreReadOnlyMappingSentinelOrThrow(bytes, sentinelUnregistered, disposalException);
-                throw;
-            }
+            DisposeTrackedNativeArrayByPointer(ref bytes);
         }
 
-        private static void RestoreReadOnlyMappingSentinelOrThrow(NativeArray<byte> bytes, bool sentinelUnregistered, Exception disposalException)
+        private static void DisposeTrackedNativeArrayByPointer<T>(ref NativeArray<T> array)
+            where T : struct
         {
-            if (!sentinelUnregistered || !bytes.IsCreated)
-                return;
+            Exception firstException = null;
+            void* trackedPointer = array.IsCreated
+                ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array)
+                : null;
 
-            try
+            if (trackedPointer != null)
             {
-                int registrationId = NativeMemorySentinel.RegisterNativeArray(bytes, NativeMemoryOwner, nameof(ReadOnlyMapping), NativeMemoryLifetime);
-                if (registrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
             }
-            catch (Exception restoreException)
+
+            if (array.IsCreated)
             {
-                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
+                try
+                {
+                    array.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    array = default;
+                }
             }
+            else
+            {
+                array = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
@@ -1968,9 +2348,53 @@ namespace Hecton8.SaveSystem
         private const string Lz4DllName = "liblz4";
         private const string NativeMemoryOwner = nameof(SaveBinaryStorage);
         private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for SaveBinaryStorage buffer.";
-        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after SaveBinaryStorage native disposal fault.";
         private const string NativeMemoryTransientRegistrationFailureMessage = "NativeMemorySentinel registration failed for transient SaveBinaryStorage buffer.";
-        private const string NativeMemoryTransientRestoreFailureMessage = "NativeMemorySentinel restore failed after SaveBinaryStorage native disposal fault.";
+
+        private static void DisposeTrackedNativeArrayByPointer<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            Exception firstException = null;
+            void* trackedPointer = array.IsCreated
+                ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array)
+                : null;
+
+            if (trackedPointer != null)
+            {
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+            }
+
+            if (array.IsCreated)
+            {
+                try
+                {
+                    array.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    array = default;
+                }
+            }
+            else
+            {
+                array = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
+        }
+
         private const string EntityStateWriteSourceStatesLabel = "indexedSectorEntityStateSourceStates";
         private const string EntityStateWriteSortEntriesLabel = "indexedSectorEntityStateSortEntries";
         private const string EntityStateWriteRadixScratchLabel = "indexedSectorEntityStateRadixScratch";
@@ -2132,91 +2556,77 @@ namespace Hecton8.SaveSystem
                     if (registrationId > 0)
                         return array;
                 }
-                catch
+                catch (Exception exception)
                 {
-                    if (array.IsCreated)
-                        array.Dispose();
+                    Exception cleanupException = null;
+                    try
+                    {
+                        DisposeTrackedNativeArrayByPointer(ref array);
+                    }
+                    catch (Exception cleanupFault)
+                    {
+                        cleanupException = cleanupFault;
+                    }
+
+                    if (cleanupException != null)
+                        throw new AggregateException(
+                            "Indexed-sector entity-state scratch allocation failed and cleanup also failed.",
+                            exception,
+                            cleanupException);
+
                     throw;
                 }
 
-                if (array.IsCreated)
-                    array.Dispose();
-                throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
+                InvalidOperationException registrationException = new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
+                Exception registrationCleanupException = null;
+                try
+                {
+                    DisposeTrackedNativeArrayByPointer(ref array);
+                }
+                catch (Exception cleanupFault)
+                {
+                    registrationCleanupException = cleanupFault;
+                }
+
+                if (registrationCleanupException != null)
+                    throw new AggregateException(
+                        "Indexed-sector entity-state scratch registration failed and cleanup also failed.",
+                        registrationException,
+                        registrationCleanupException);
+
+                throw registrationException;
             }
 
-            private void UnregisterNativeMemorySentinel()
-            {
-                UnregisterArray(SourceStates);
-                UnregisterArray(SortEntries);
-                UnregisterArray(RadixScratch);
-                UnregisterArray(SortedEntityStates);
-                UnregisterArray(CompactStates);
-                UnregisterArray(FileBytes);
-                UnregisterArray(ResultLength);
-                UnregisterArray(RadixCounts);
-                UnregisterArray(RadixOffsets);
-            }
-
-            private static void UnregisterArray<T>(NativeArray<T> array) where T : struct
+            private static void DisposeRegisteredArray<T>(ref NativeArray<T> array) where T : struct
             {
                 if (!array.IsCreated)
                     return;
 
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                DisposeTrackedNativeArrayByPointer(ref array);
             }
 
             internal void Dispose()
             {
-                UnregisterNativeMemorySentinel();
-
-                if (SourceStates.IsCreated)
-                    SourceStates.Dispose();
-                if (SortEntries.IsCreated)
-                    SortEntries.Dispose();
-                if (RadixScratch.IsCreated)
-                    RadixScratch.Dispose();
-                if (SortedEntityStates.IsCreated)
-                    SortedEntityStates.Dispose();
-                if (CompactStates.IsCreated)
-                    CompactStates.Dispose();
-                if (FileBytes.IsCreated)
-                    FileBytes.Dispose();
-                if (ResultLength.IsCreated)
-                    ResultLength.Dispose();
-                if (RadixCounts.IsCreated)
-                    RadixCounts.Dispose();
-                if (RadixOffsets.IsCreated)
-                    RadixOffsets.Dispose();
+                DisposeRegisteredArray(ref SourceStates);
+                DisposeRegisteredArray(ref SortEntries);
+                DisposeRegisteredArray(ref RadixScratch);
+                DisposeRegisteredArray(ref SortedEntityStates);
+                DisposeRegisteredArray(ref CompactStates);
+                DisposeRegisteredArray(ref FileBytes);
+                DisposeRegisteredArray(ref ResultLength);
+                DisposeRegisteredArray(ref RadixCounts);
+                DisposeRegisteredArray(ref RadixOffsets);
 
                 this = default;
             }
 
             internal JobHandle DisposeDeferred(JobHandle dependency)
             {
-                UnregisterNativeMemorySentinel();
-
                 JobHandle disposeHandle = JobHandle.CombineDependencies(Handle, dependency);
-                if (SourceStates.IsCreated)
-                    disposeHandle = SourceStates.Dispose(disposeHandle);
-                if (SortEntries.IsCreated)
-                    disposeHandle = SortEntries.Dispose(disposeHandle);
-                if (RadixScratch.IsCreated)
-                    disposeHandle = RadixScratch.Dispose(disposeHandle);
-                if (SortedEntityStates.IsCreated)
-                    disposeHandle = SortedEntityStates.Dispose(disposeHandle);
-                if (CompactStates.IsCreated)
-                    disposeHandle = CompactStates.Dispose(disposeHandle);
-                if (FileBytes.IsCreated)
-                    disposeHandle = FileBytes.Dispose(disposeHandle);
-                if (ResultLength.IsCreated)
-                    disposeHandle = ResultLength.Dispose(disposeHandle);
-                if (RadixCounts.IsCreated)
-                    disposeHandle = RadixCounts.Dispose(disposeHandle);
-                if (RadixOffsets.IsCreated)
-                    disposeHandle = RadixOffsets.Dispose(disposeHandle);
-
-                this = default;
-                return disposeHandle;
+                // Keep TempJob ownership visible to NativeMemorySentinel until no scheduled job can still read the arrays.
+                disposeHandle.Complete();
+                Dispose();
+                return default;
             }
         }
 
@@ -2232,10 +2642,24 @@ namespace Hecton8.SaveSystem
                 RegisterPersistentScratchNativeArray(array, label);
                 return array;
             }
-            catch
+            catch (Exception exception)
             {
-                if (array.IsCreated)
-                    array.Dispose();
+                Exception cleanupException = null;
+                try
+                {
+                    DisposeTrackedNativeArrayByPointer(ref array);
+                }
+                catch (Exception cleanupFault)
+                {
+                    cleanupException = cleanupFault;
+                }
+
+                if (cleanupException != null)
+                    throw new AggregateException(
+                        "Indexed-sector persistent scratch allocation failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
+
                 throw;
             }
         }
@@ -2246,7 +2670,7 @@ namespace Hecton8.SaveSystem
             if (!array.IsCreated)
                 return;
 
-            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Session);
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TransientArena);
             if (registrationId <= 0)
                 throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
         }
@@ -2257,39 +2681,7 @@ namespace Hecton8.SaveSystem
             if (!array.IsCreated)
                 return;
 
-            bool sentinelUnregistered = false;
-            try
-            {
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                sentinelUnregistered = true;
-                array.Dispose();
-                array = default;
-            }
-            catch (Exception disposalException)
-            {
-                RestorePersistentScratchNativeArraySentinelOrThrow(array, label, sentinelUnregistered, disposalException);
-                throw;
-            }
-        }
-
-        private static void RestorePersistentScratchNativeArraySentinelOrThrow<T>(
-            NativeArray<T> array,
-            string label,
-            bool sentinelUnregistered,
-            Exception disposalException)
-            where T : struct
-        {
-            if (!sentinelUnregistered || !array.IsCreated)
-                return;
-
-            try
-            {
-                RegisterPersistentScratchNativeArray(array, label);
-            }
-            catch (Exception restoreException)
-            {
-                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
-            }
+            DisposeTrackedNativeArrayByPointer(ref array);
         }
 
         private struct RegisteredTransientNativeArray<T> : IDisposable
@@ -2309,28 +2701,32 @@ namespace Hecton8.SaveSystem
                 _label = label;
                 _lifetime = lifetime;
                 Array = default;
+                int registrationId = 0;
                 try
                 {
                     // COLD ALLOC: NativeArray<T>[length] - tracked transient save scratch - owner: SaveBinaryStorage
                     Array = new NativeArray<T>(length, Allocator.Temp, options);
-                    int registrationId = NativeMemorySentinel.RegisterNativeArray(Array, NativeMemoryOwner, label, lifetime);
+                    registrationId = NativeMemorySentinel.RegisterNativeArray(Array, NativeMemoryOwner, label, lifetime);
                     if (registrationId <= 0)
                         throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
                 }
-                catch
+                catch (Exception exception)
                 {
-                    if (Array.IsCreated)
+                    Exception cleanupException = null;
+                    try
                     {
-                        try
-                        {
-                            NativeMemorySentinel.UnregisterNativeArray(Array);
-                        }
-                        catch
-                        {
-                        }
-
-                        Array.Dispose();
+                        DisposeRegisteredTransientNativeArray(ref Array, _label, _lifetime);
                     }
+                    catch (Exception cleanupFault)
+                    {
+                        cleanupException = cleanupFault;
+                    }
+
+                    if (cleanupException != null)
+                        throw new AggregateException(
+                            "Transient NativeArray creation failed and cleanup also failed.",
+                            exception,
+                            cleanupException);
 
                     throw;
                 }
@@ -2363,42 +2759,7 @@ namespace Hecton8.SaveSystem
             if (!array.IsCreated)
                 return;
 
-            bool sentinelUnregistered = false;
-            try
-            {
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                sentinelUnregistered = true;
-                array.Dispose();
-                array = default;
-            }
-            catch (Exception disposalException)
-            {
-                RestoreTransientNativeArraySentinelOrThrow(array, label, lifetime, sentinelUnregistered, disposalException);
-                throw;
-            }
-        }
-
-        private static void RestoreTransientNativeArraySentinelOrThrow<T>(
-            NativeArray<T> array,
-            string label,
-            NativeAllocationLifetime lifetime,
-            bool sentinelUnregistered,
-            Exception disposalException)
-            where T : struct
-        {
-            if (!sentinelUnregistered || !array.IsCreated)
-                return;
-
-            try
-            {
-                int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
-                if (registrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryTransientRestoreFailureMessage, disposalException);
-            }
-            catch (Exception restoreException)
-            {
-                throw new AggregateException(NativeMemoryTransientRestoreFailureMessage, disposalException, restoreException);
-            }
+            DisposeTrackedNativeArrayByPointer(ref array);
         }
 
         private static NativeList<T> CreateRegisteredTransientNativeList<T>(
@@ -2420,14 +2781,20 @@ namespace Hecton8.SaveSystem
 
                 return list;
             }
-            catch
+            catch (Exception exception)
             {
-                if (registrationId > 0)
-                    NativeMemorySentinel.Unregister(registrationId);
-                if (list.IsCreated)
-                    list.Dispose();
+                try
+                {
+                    DisposeRegisteredTransientNativeList(ref list, ref registrationId, label, lifetime);
+                }
+                catch (Exception cleanupException)
+                {
+                    throw new AggregateException(
+                        "Transient NativeList creation failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
+                }
 
-                registrationId = 0;
                 throw;
             }
         }
@@ -2439,56 +2806,47 @@ namespace Hecton8.SaveSystem
             NativeAllocationLifetime lifetime = NativeAllocationLifetime.TransientArena)
             where T : unmanaged
         {
-            if (!list.IsCreated)
-            {
-                registrationId = 0;
-                return;
-            }
+            Exception firstException = null;
 
-            bool sentinelUnregistered = false;
-            try
+            if (registrationId > 0)
             {
-                if (registrationId > 0)
+                try
                 {
                     NativeMemorySentinel.Unregister(registrationId);
-                    sentinelUnregistered = true;
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
                     registrationId = 0;
                 }
+            }
 
-                list.Dispose();
+            if (list.IsCreated)
+            {
+                try
+                {
+                    list.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    list = default;
+                }
+            }
+            else
+            {
                 list = default;
             }
-            catch (Exception disposalException)
-            {
-                RestoreTransientNativeListSentinelOrThrow(list, label, lifetime, sentinelUnregistered, ref registrationId, disposalException);
-                throw;
-            }
-        }
 
-        private static void RestoreTransientNativeListSentinelOrThrow<T>(
-            NativeList<T> list,
-            string label,
-            NativeAllocationLifetime lifetime,
-            bool sentinelUnregistered,
-            ref int registrationId,
-            Exception disposalException)
-            where T : unmanaged
-        {
-            if (!sentinelUnregistered || !list.IsCreated)
-                return;
-
-            try
-            {
-                int restoredRegistrationId = NativeMemorySentinel.RegisterNativeListInstance(list, NativeMemoryOwner, label, lifetime);
-                if (restoredRegistrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryTransientRestoreFailureMessage, disposalException);
-
-                registrationId = restoredRegistrationId;
-            }
-            catch (Exception restoreException)
-            {
-                throw new AggregateException(NativeMemoryTransientRestoreFailureMessage, disposalException, restoreException);
-            }
+            if (firstException != null)
+                throw firstException;
         }
 
         private static NativeParallelHashMap<TKey, TValue> CreateRegisteredTransientNativeParallelHashMap<TKey, TValue>(
@@ -2511,14 +2869,20 @@ namespace Hecton8.SaveSystem
 
                 return map;
             }
-            catch
+            catch (Exception exception)
             {
-                if (registrationId > 0)
-                    NativeMemorySentinel.Unregister(registrationId);
-                if (map.IsCreated)
-                    map.Dispose();
+                try
+                {
+                    DisposeRegisteredTransientNativeParallelHashMap(ref map, ref registrationId, label, lifetime);
+                }
+                catch (Exception cleanupException)
+                {
+                    throw new AggregateException(
+                        "Transient NativeParallelHashMap creation failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
+                }
 
-                registrationId = 0;
                 throw;
             }
         }
@@ -2531,57 +2895,47 @@ namespace Hecton8.SaveSystem
             where TKey : unmanaged, IEquatable<TKey>
             where TValue : unmanaged
         {
-            if (!map.IsCreated)
-            {
-                registrationId = 0;
-                return;
-            }
+            Exception firstException = null;
 
-            bool sentinelUnregistered = false;
-            try
+            if (registrationId > 0)
             {
-                if (registrationId > 0)
+                try
                 {
                     NativeMemorySentinel.Unregister(registrationId);
-                    sentinelUnregistered = true;
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
                     registrationId = 0;
                 }
+            }
 
-                map.Dispose();
+            if (map.IsCreated)
+            {
+                try
+                {
+                    map.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    map = default;
+                }
+            }
+            else
+            {
                 map = default;
             }
-            catch (Exception disposalException)
-            {
-                RestoreTransientNativeParallelHashMapSentinelOrThrow(map, label, lifetime, sentinelUnregistered, ref registrationId, disposalException);
-                throw;
-            }
-        }
 
-        private static void RestoreTransientNativeParallelHashMapSentinelOrThrow<TKey, TValue>(
-            NativeParallelHashMap<TKey, TValue> map,
-            string label,
-            NativeAllocationLifetime lifetime,
-            bool sentinelUnregistered,
-            ref int registrationId,
-            Exception disposalException)
-            where TKey : unmanaged, IEquatable<TKey>
-            where TValue : unmanaged
-        {
-            if (!sentinelUnregistered || !map.IsCreated)
-                return;
-
-            try
-            {
-                int restoredRegistrationId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(map, NativeMemoryOwner, label, lifetime);
-                if (restoredRegistrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryTransientRestoreFailureMessage, disposalException);
-
-                registrationId = restoredRegistrationId;
-            }
-            catch (Exception restoreException)
-            {
-                throw new AggregateException(NativeMemoryTransientRestoreFailureMessage, disposalException, restoreException);
-            }
+            if (firstException != null)
+                throw firstException;
         }
 
         internal struct SectorEntityStateSortEntry
@@ -3908,7 +4262,7 @@ namespace Hecton8.SaveSystem
                 GameVersion = gameVersion,
                 Timestamp = ToUtcTicks(header.TimestampUnixMs),
                 PlayTimeSeconds = prefix.PlayTimeSeconds,
-                SceneName = sceneName,
+                SceneName = SaveMetadata.NormalizeSceneName(sceneName),
                 PlayerPosition = playerPosition,
                 Checksum = FormatPayloadChecksum(in header)
             };
@@ -3965,7 +4319,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            string sceneName = string.IsNullOrEmpty(metadata.SceneName) ? "Unknown" : metadata.SceneName;
+            string sceneName = SaveMetadata.NormalizeSceneName(metadata.SceneName);
             string gameVersion = string.IsNullOrEmpty(metadata.GameVersion) ? "Unknown" : metadata.GameVersion;
             long sceneBytesLengthLong = (long)sceneName.Length * sizeof(char);
             long versionBytesLengthLong = (long)gameVersion.Length * sizeof(char);
@@ -5069,7 +5423,7 @@ namespace Hecton8.SaveSystem
                 GameVersion = gameVersion,
                 Timestamp = ToUtcTicks(header.TimestampUnixMs),
                 PlayTimeSeconds = prefix.PlayTimeSeconds,
-                SceneName = sceneName,
+                SceneName = SaveMetadata.NormalizeSceneName(sceneName),
                 PlayerPosition = playerPosition,
                 Checksum = FormatPayloadChecksum(in header)
             };
@@ -5383,7 +5737,7 @@ namespace Hecton8.SaveSystem
                 GameVersion = gameVersion,
                 Timestamp = ToUtcTicks(header.TimestampUnixMs),
                 PlayTimeSeconds = prefix.PlayTimeSeconds,
-                SceneName = sceneName,
+                SceneName = SaveMetadata.NormalizeSceneName(sceneName),
                 PlayerPosition = playerPosition,
                 Checksum = FormatPayloadChecksum(in header)
             };
@@ -5573,7 +5927,7 @@ namespace Hecton8.SaveSystem
 
                 int payloadIndex = (int)payloadOffset;
                 filePtr[payloadIndex] = (byte)(filePtr[payloadIndex] ^ 0x5Au);
-                if (!AsyncWriteManager.OverwriteAll(absolutePath, filePtr, (int)fileLength, out error))
+                if (!AsyncWriteManager.OverwriteAllCritical(absolutePath, filePtr, (int)fileLength, out error))
                     return false;
 
                 sectorHash = selectedEntry.SectorHash;
@@ -6009,7 +6363,10 @@ namespace Hecton8.SaveSystem
                 };
 
                 UnsafeUtility.CopyStructureToPtr(ref overrideHeader, filePtr);
-                return AsyncWriteManager.WriteAll(absolutePath, filePtr, fileCursor, out error);
+                if (!AsyncWriteManager.WriteAll(absolutePath, filePtr, fileCursor, out error))
+                    return false;
+
+                return AsyncWriteManager.FlushCriticalSavePath(absolutePath, fileCursor, out error);
             }
             finally
             {
@@ -6333,6 +6690,8 @@ namespace Hecton8.SaveSystem
 
             byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writeHandle.FileBytes);
             bool written = AsyncWriteManager.WriteAll(writeHandle.AbsolutePath, filePtr, fileLength, out error);
+            if (written)
+                written = AsyncWriteManager.FlushCriticalSavePath(writeHandle.AbsolutePath, fileLength, out error);
             writeHandle.Dispose();
             return written;
         }
@@ -6695,6 +7054,12 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (!TryDeleteFileIfExists(tempOverridePath, out string staleTempDeleteError))
+            {
+                error = staleTempDeleteError;
+                return false;
+            }
+
             if (modHash == 0u)
             {
                 error = "Mod payload owner hash is zero.";
@@ -6789,9 +7154,22 @@ namespace Hecton8.SaveSystem
                 Directory.CreateDirectory(tempDirectory);
 
             if (!AsyncWriteManager.WriteAll(tempOverridePath, filePtr, fileCursor, out error))
+            {
+                _ = TryDeleteFileIfExists(tempOverridePath, out _);
                 return false;
+            }
 
-            return TryCommitIndexedPersistentWorldSectorOverride(absoluteSavePath, tempOverridePath, out error);
+            if (!AsyncWriteManager.FlushCriticalSavePath(tempOverridePath, fileCursor, out error))
+            {
+                _ = TryDeleteFileIfExists(tempOverridePath, out _);
+                return false;
+            }
+
+            if (TryCommitIndexedPersistentWorldSectorOverride(absoluteSavePath, tempOverridePath, out error))
+                return true;
+
+            _ = TryDeleteFileIfExists(tempOverridePath, out _);
+            return false;
         }
 
         internal static bool TryReadIndexedModPayloadDirectory(
@@ -7377,7 +7755,7 @@ namespace Hecton8.SaveSystem
             try
             {
                 byte* compactPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compactBytes);
-                return AsyncWriteManager.OverwriteAll(absolutePath, compactPtr, compactLength, out error);
+                return AsyncWriteManager.OverwriteAllCritical(absolutePath, compactPtr, compactLength, out error);
             }
             finally
             {
@@ -7547,12 +7925,12 @@ namespace Hecton8.SaveSystem
                 AsyncWriteManager.CloseReadOnlyMapping(ref saveMapping);
             }
 
-            if (refreshBackupBeforeCommit && !TryPrepareIndexedSectorCommitBackup(absoluteSavePath, out error))
-                return false;
-
             NativeArray<byte> commitBytes = default;
             try
             {
+                if (refreshBackupBeforeCommit && !TryPrepareIndexedSectorCommitBackup(absoluteSavePath, out error))
+                    return false;
+
                 long newLength = commitTarget.NewFileLength;
                 if (newLength <= 0L || newLength > int.MaxValue)
                 {
@@ -7626,7 +8004,7 @@ namespace Hecton8.SaveSystem
                 updatedHeader.HashHeader64 = 0UL;
                 updatedHeader.HashHeader64 = ComputeHeaderHash(ref updatedHeader);
                 WriteVersionedSaveFileHeader(mappedFilePtr, ref updatedHeader);
-                if (!AsyncWriteManager.OverwriteAll(absoluteSavePath, mappedFilePtr, (int)newLength, out error))
+                if (!AsyncWriteManager.OverwriteAllCritical(absoluteSavePath, mappedFilePtr, (int)newLength, out error))
                     return false;
             }
             catch (Exception ex)
@@ -7976,7 +8354,7 @@ namespace Hecton8.SaveSystem
                 GameVersion = gameVersion,
                 Timestamp = ToUtcTicks(header.TimestampUnixMs),
                 PlayTimeSeconds = prefix.PlayTimeSeconds,
-                SceneName = sceneName,
+                SceneName = SaveMetadata.NormalizeSceneName(sceneName),
                 PlayerPosition = playerPosition,
                 Checksum = FormatPayloadChecksum(in header)
             };
@@ -8369,6 +8747,7 @@ namespace Hecton8.SaveSystem
 
             try
             {
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
                 if (File.Exists(absolutePath))
                     File.Delete(absolutePath);
 
@@ -8394,6 +8773,10 @@ namespace Hecton8.SaveSystem
                 error = $"File delete path unsupported for '{absolutePath}': {ex.Message}";
                 return false;
             }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+            }
         }
 
         private static bool TryPrepareIndexedSectorCommitBackup(string absolutePath, out string error)
@@ -8412,6 +8795,14 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (!AsyncWriteManager.TryGetFileLength(absolutePath, out long sourceBytes, out string sourceLengthError))
+            {
+                error = string.IsNullOrEmpty(sourceLengthError)
+                    ? "Indexed sector commit backup source length could not be resolved."
+                    : sourceLengthError;
+                return false;
+            }
+
             string backupTempPath = backupPath + ".tmp";
             try
             {
@@ -8419,10 +8810,38 @@ namespace Hecton8.SaveSystem
                 if (!string.IsNullOrEmpty(backupDirectory))
                     Directory.CreateDirectory(backupDirectory);
 
+                AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
                 if (!TryDeleteFileIfExists(backupTempPath, out error))
                     return false;
 
                 File.Copy(absolutePath, backupTempPath, true);
+                AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
+                if (!AsyncWriteManager.TryGetFileLength(backupTempPath, out long backupTempBytes, out string tempLengthError))
+                {
+                    error = string.IsNullOrEmpty(tempLengthError)
+                        ? "Indexed sector commit backup temp file length could not be resolved."
+                        : tempLengthError;
+                    _ = TryDeleteFileIfExists(backupTempPath, out _);
+                    return false;
+                }
+
+                if (backupTempBytes != sourceBytes)
+                {
+                    error = "Indexed sector commit backup temp file length did not match source.";
+                    _ = TryDeleteFileIfExists(backupTempPath, out _);
+                    return false;
+                }
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(backupTempPath, backupTempBytes, out string tempFlushError))
+                {
+                    error = string.IsNullOrEmpty(tempFlushError)
+                        ? "Indexed sector commit backup temp critical flush failed."
+                        : tempFlushError;
+                    _ = TryDeleteFileIfExists(backupTempPath, out _);
+                    return false;
+                }
+
+                AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
                 if (File.Exists(backupPath))
                 {
                     File.Replace(backupTempPath, backupPath, null);
@@ -8430,6 +8849,30 @@ namespace Hecton8.SaveSystem
                 else
                 {
                     File.Move(backupTempPath, backupPath);
+                }
+                AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
+
+                if (!AsyncWriteManager.TryGetFileLength(backupPath, out long backupBytes, out string lengthError))
+                {
+                    error = string.IsNullOrEmpty(lengthError)
+                        ? "Indexed sector commit backup file length could not be resolved."
+                        : lengthError;
+                    return false;
+                }
+
+                if (backupBytes != sourceBytes)
+                {
+                    error = "Indexed sector commit backup file length did not match source.";
+                    return false;
+                }
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(backupPath, backupBytes, out string flushError))
+                {
+                    error = string.IsNullOrEmpty(flushError)
+                        ? "Indexed sector commit backup critical flush failed."
+                        : flushError;
+                    return false;
                 }
 
                 return true;
@@ -8443,6 +8886,12 @@ namespace Hecton8.SaveSystem
             catch (UnauthorizedAccessException ex)
             {
                 error = $"Indexed sector commit backup unauthorized for '{absolutePath}': {ex.Message}";
+                _ = TryDeleteFileIfExists(backupTempPath, out _);
+                return false;
+            }
+            catch (System.Security.SecurityException ex)
+            {
+                error = $"Indexed sector commit backup security failed for '{absolutePath}': {ex.Message}";
                 _ = TryDeleteFileIfExists(backupTempPath, out _);
                 return false;
             }

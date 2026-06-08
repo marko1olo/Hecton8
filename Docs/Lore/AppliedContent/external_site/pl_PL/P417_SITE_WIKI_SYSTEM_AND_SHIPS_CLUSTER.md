@@ -9,24 +9,24 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "PL LOC HOLD: Aegir Route and Ships"
+title: "Trasa Aegir i statki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Aegir Route and Ships
+# Trasa Aegir i statki
 
-PL LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegir leży dość blisko, by go eksploatować, i dość daleko, by go porzucić. Żaden napęd nadświetlny nie przecina tej przerwy, a żaden ansible nie niesie rozkazów przed fizyką. Każda wiadomość, umowa i prośba o ratunek przechodzi przez opóźnienie: pakiety sond, pieczę przekaźników, harmonogramy wiązek, fracht pellet-fusion, okna transferowe i pogodę obojętną na ludzką pilność.
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+Pierwszy ruch do Aegir nie był ludzki. Sondy igłowe zmapowały ciepły system karła i zwróciły dość danych mineralnych, radiacyjnych i orbitalnych, by uzasadnić cięższą inwestycję. Potem przyszły pakiety żagli wiązkowych, wolniejszy fracht i masa seed-ship, która musiała hamować w sieci infrastruktury zaplanowanej lata przed tym, nim robotnik zobaczył ocean. Gdy Deep Reach dotarło do HECTON-8, trasa należała już do instytucji: przewoźników, ubezpieczycieli, biur domen, pul odzysku i firm wprawionych w ukrywanie właściciela za nazwami.
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+Black Keel mieści się w tej niejednoznaczności. Nie jest okrętem wojennym ani służbą ratunkową. To platforma roszczeń z masą dokową, tenderami, księgami długu i władzą salvage. Łańcuch umów pozwala Deep Reach wywierać presję, nie wyglądając jak ręka bezpośrednio na włazie. Statek może wydobyć osobę, próbkę albo zapieczętowany ładunek tylko wtedy, gdy masa, pogoda, orbita, margines cieplny i piecza się zgrają.
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+Uszkodzony bathydrop staje się więc prawdziwą granicą. Uderzenie przy zejściu może zostawić skorupę wystarczająco całą do przetrwania, a jednocześnie zniszczyć tolerancje wznoszenia: kompresję uszczelek, akustyczny powrót, tabele prowadzenia, bufor energii i uścisk kwarantanny. Kapsuła jest schronem i dowodem jednocześnie: potwierdza przybycie, ale nie ucieczkę.
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+W systemie Aegir odległość nie jest tłem. To powód, dla którego pomoc przychodzi najpierw jako dokumenty, a dopiero potem jako sprzęt.
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/pl_PL. -->

@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Haldane Quarantine Hold"
+title: "Hold Haldane de liberação de quarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Haldane Quarantine Hold
+# Hold Haldane de liberação de quarentena
 
-PT LOC HOLD: The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
+O hold Haldane não prova que a quarentena era falsa. É pior: o protocolo tinha base real, e então a Deep Reach usou linguagem de certification para manter corpos, amostras e liability no lugar quando a colônia precisava de movimento mais que papel.
 
 ## Scanner
 
-PT LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Hold de liberação de quarentena. Um protocolo real de contaminação virou atraso de custody depois que o perigo de pressão já era físico.
 
 ## Terminal
 
-PT LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
+QUARANTINE HOLD DESK / HALDANE / RELEASE CERTIFICATION: evacuee movement remains suspended pending XO sample custody, seal-read variance and downstream exposure review.
 
 ## Audio
 
-PT LOC HOLD: The folder was orderly. That was the problem.
+O hold não inventou o perigo. Manteve pessoas dentro dele.
 
 ## Field Note
 
-PT LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Nota Marauder: quarentena pode ser verdadeira e ainda ser usada como fechadura.
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/pt_BR. -->

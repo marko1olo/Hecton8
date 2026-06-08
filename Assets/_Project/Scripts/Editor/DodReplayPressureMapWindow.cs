@@ -55,13 +55,47 @@ namespace Hecton8.EditorTools
         private void OnDisable()
         {
             EditorApplication.update -= Repaint;
+            System.Exception cleanupException = null;
+
+            if (_cellsSentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(_cellsSentinelId);
+                }
+                catch (System.Exception exception)
+                {
+                    cleanupException = exception;
+                }
+                finally
+                {
+                    _cellsSentinelId = 0;
+                }
+            }
+
             if (_cells.IsCreated)
             {
-                NativeMemorySentinel.Unregister(_cellsSentinelId);
-                _cellsSentinelId = 0;
-                _cells.Dispose();
+                try
+                {
+                    _cells.Dispose();
+                }
+                catch (System.Exception exception)
+                {
+                    if (cleanupException == null)
+                        cleanupException = exception;
+                }
+                finally
+                {
+                    _cells = default;
+                }
+            }
+            else
+            {
                 _cells = default;
             }
+
+            if (cleanupException != null)
+                throw cleanupException;
         }
 
         private void OnGUI()

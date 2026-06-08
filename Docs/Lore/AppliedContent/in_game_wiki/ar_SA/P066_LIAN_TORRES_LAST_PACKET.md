@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "حزمة ليان توريس الأخيرة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# حزمة ليان توريس الأخيرة
 
-AR LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.
+يثبت ليان توريس حقيقة الاتصالات. فحزمته النظيفة الأخيرة تثبت أن بعض الأدلة غادرت HECTON-8 قبل أن تدفنها Deep Reach تحت فساد الإشارة ولغة الحجر.
 
 ## Scanner
 
-AR LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+الحزمة النظيفة الأخيرة لم تضِع. كان الاعتراف باستلامها مكلفا أكثر مما يحتملون.
 
 ## Terminal
 
-AR LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+توريس، ل. تم تأكيد مصافحة الناقل النظيفة. أرفق عدد العمال. أرفق دليل الإخلاء. عمر الترحيل غير صالح لإنقاذ أحياء. وضع الأرشيف المؤسسي لاحقا علامة تلف على الحزمة.
 
 ## Audio
 
-AR LOC HOLD: He sent the names. The archive called them noise.
+أرسل الأسماء. سمّاها الأرشيف ضجيجا.
 
 ## Field Note
 
-AR LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+قد يتحول الطابع الزمني إلى جثة عندما يجيب الناقل على الطابور الخطأ.
 
 <!-- In-Game Wiki; generated from P066_LIAN_TORRES_LAST_PACKET/ar_SA. -->

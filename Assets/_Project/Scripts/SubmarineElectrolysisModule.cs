@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
@@ -82,6 +83,8 @@ namespace Hecton8.Gameplay
 
         private static NativeQueue<ElectrolysisAcousticPayload> _pendingEvents;
         private static NativeQueue<ElectrolysisAcousticPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
@@ -244,14 +247,14 @@ namespace Hecton8.Gameplay
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<ElectrolysisAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - deferred electrolysis acoustic lane flushed by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<ElectrolysisAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - next-frame electrolysis acoustic lane prevents same-frame reentrant dispatch - owner: ElectrolysisAcousticEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -267,10 +270,12 @@ namespace Hecton8.Gameplay
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(ElectrolysisAcousticEvents),
@@ -279,26 +284,60 @@ namespace Hecton8.Gameplay
             if (sentinelId > 0)
                 return;
 
-            queue.Dispose();
-            queue = default;
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            if (_pendingEvents.IsCreated)
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
+            where T : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ElectrolysisAcousticEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
 
-            if (_nextFrameEvents.IsCreated)
+            if (queue.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ElectrolysisAcousticEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
             }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -359,6 +398,9 @@ namespace Hecton8.Gameplay
             NativeQueue<ElectrolysisAcousticPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
@@ -599,7 +641,8 @@ namespace Hecton8.Gameplay
             float safeThreatStrength = FiniteNonNegativeOrZero(threatStrength);
             float safeThreatHoldSeconds = FiniteAtLeast(threatHoldSeconds, 0.1f);
             float safeThermalUpdraft = FiniteNonNegativeOrZero(thermalUpdraftMetersPerSecond);
-            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge bridge = null;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref bridge);
             if (bridge != null)
             {
                 bridge.ApplyExternalThreatPulse(position, safeThreatRadius, safeThreatStrength, safeThreatHoldSeconds);

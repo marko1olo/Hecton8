@@ -1,4 +1,5 @@
-﻿# HET SEED-PROGRAMMA EN DE ATLAS-RICHTLIJN
+<!-- localization_status: source_draft_pending_native_review -->
+# HET SEED-PROGRAMMA EN DE ATLAS-RICHTLIJN
 
 > **Source:** Systeembouwafdeling van Deep Reach, Richtlijnen-Logboek.
 > **Speaker:** Directeur van Otonome Operaties.

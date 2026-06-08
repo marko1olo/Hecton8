@@ -9,32 +9,36 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Codex card: photic mat"
+title: "Кодекс: фотический мат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Codex card: photic mat
+# Кодекс: фотический мат
 
-Photic shelf яркий потому, что жизнь работает под давлением, а не потому что HECTON-8 безопасен.
+Фотические маты — один из первых уроков читаемой экологии HECTON-8. Они подсвечивают мелководье, кормят мелких grazers и стабилизируют минеральную пленку, но также отмечают химию давления и хрупкие швы. Океан кажется приглашающим потому, что живые поверхности выполняют работу.
 
 ## Scanner
 
-Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Фотический мат. Кислород-положительная биопленочная пластина поверх минеральной кожи. Яркая, полезная, хрупкая к давлению. Не сдирать с запечатанных трещин.
 
 ## Terminal
 
-SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+ОБРАЗЕЦ / ФОТИЧЕСКИЙ МАТ
+роль: мелководная кислородная поверхность, корм для grazers, стабилизатор минеральной пленки
+безопасный образец: свободный край меньше ширины ладони
+отказ: пластины, закрывающие швы; газовые пузыри; свежие поля укусов grazers
+маршрутная заметка: порванные маты могут выпустить запертый газ и превратить чистый шельф в hazard.
 
 ## Audio
 
-Свет здесь работа, не комфорт.
+Он выглядит мягким потому, что работает. Если он держит шов, оставь его там.
 
 ## Field Note
 
-Codex card должен быть bright, useful, slightly unstable; не horror-only.
+Свободный край: образец. Покрытие шва: оставить. Если мат закрывает рану, рана все еще там.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/ru_RU. -->

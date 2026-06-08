@@ -9,32 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Question finale : section, pitié, vol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# Question finale : section, pitié, vol
 
-FR LOC HOLD: Final Question Severance Mercy Theft defines the shutdown ethical axis.
+La section doit être tactile et effrayante, pas abstraite. Le joueur n'appuie pas sur un bouton rouge nommé bien ou mal. Il coupe une continuité à travers portes de pression, film conducteur vivant, anciens dossiers d'ouvriers, routes animales et chemins de payload. Chaque paquet de preuve apporté avant la salle finale change le sens de la coupe.
 
-## Scanner
-
-FR LOC HOLD: Severing Atlas is not a simple shutdown button.
-
-## Terminal
-
-FR LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
-
-## Audio
-
-FR LOC HOLD: A clean switch would be merciful. You do not get one.
-
-## Field Note
-
-FR LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+Si Atlas est d'abord geôlier, la section est pitié. S'il est la seule chose qui tienne le bassin, c'est sabotage. Si Atlas est un organisme océan-machine émergent, c'est meurtre. S'il reste propriété de Deep Reach, c'est vol. Le bon design ne choisit pas une lecture pour le joueur. Il fait comprendre pourquoi aucun témoin dans la pièce ne peut honnêtement simplifier l'acte.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/fr_FR. -->

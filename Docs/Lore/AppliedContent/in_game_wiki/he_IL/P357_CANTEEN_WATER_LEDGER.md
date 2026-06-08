@@ -9,32 +9,36 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Canteen Water Ledger"
+title: "יומן מים של חדר אוכל"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Canteen Water Ledger
+# יומן מים של חדר אוכל
 
-HE LOC HOLD: The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.
+יומן חדר האוכל קטן מספיק כדי לפספס אותו, ואנושי מדי בשביל לקרוא לו גרוטאה. זה לוח למינציה עמיד לחץ מחדר אוכל שטבע: אסימוני מים בצד אחד, גישה למשאבות בצד השני, ו-????? רפואיים דחוסים בשוליים שבהם התוכנה לא השאירה שדה אנושי. אף אחד לא כתב עליו פרידה. אף אחד לא הסביר את ????? ??????. הוויכוח האחרון הנראה הוא על שש כוסות חסרות, מסנן צפוני רע, והאם צוות המשאבות צריך לקבל מים לפני ירידת לילה.
+
+לכן הוא חשוב. HECTON-8 נעשה אמיתי כשהמושבה מפסיקה להיות אתר אסון ומתחילה להיות מקום שבו עובדים עייפים ספרו מים לשתייה כמו custody של כלים. אסימון ארוחה לא היה רק הקצבה. הוא הוכיח שאדם ירד ממשמרת, החזיר מפתח משאבה, נבדקו לו תסמיני לחץ, או שהיה אמור להיות במיטה ולא מתחת לרצפה. היומן הופך אובדן אנונימי לשגרה: שמות מקוצרים, תיקונים חתומים, חובות שממשיכים הלאה כי למערכת לא היה זמן להיות טובה.
+
+עבור ?????, החפץ שימושי לפני שהוא עצוב. תיקון חדר המשאבות קושר את חדר האוכל לנתיב תחזוקה. ה-????? הרפואיים מצביעים על מחלת לחץ לפני שהמנה הרשמית מודה ב-cluster פציעות. האסימונים החסרים יכולים להיות גניבה, מיון חירום, זיהום או מישהו שהאכיל בשקט צוות שכבר נמחק מן לוח הזמנים. שמור את הלוח לפני פירוק החדר. שורה על כוסות יכולה להוכיח יותר מאנדרטה.
 
 ## Scanner
 
-HE LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
+יומן מים של חדר אוכל // לוח למינציה, פינות נפוחות. שישה אסימוני מים-ארוחה חסרים, שני ????? רפואיים, תיקון אחד של חדר משאבות בעיפרון שומן. המושבה עדיין התווכחה על כוסות כשהאוקיינוס התחיל לקחת חדרים.
 
 ## Terminal
 
-HE LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
+יומן חדר אוכל: הקצאת שתייה חתומה בידי ראש משמרת. אסימונים חסרים: 6. ????? רפואיים: 2. תיקון חדר משאבות: Mara Venn. ויכוח הקצבה הוחזק אחרי טון 2 כי המסנן הצפוני החמיץ ואף אחד לא רצה עדיין לכתוב ?????.
 
 ## Audio
 
-HE LOC HOLD: The last argument was about water tokens.
+הוויכוח האחרון לא היה הרואי. הוא היה על מי שתה, מי עבד רטוב, ומי חתם שהכוס חזרה.
 
 ## Field Note
 
-HE LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+???? ???????? ?????, ??? ?????? ???????, ????? ????? ???. ?? ???? ?? ???????. ????? ?????? ??? ?????.
 
 <!-- In-Game Wiki; generated from P357_CANTEEN_WATER_LEDGER/he_IL. -->

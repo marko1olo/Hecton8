@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "Paket Terakhir Lian Torres"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# Paket Terakhir Lian Torres
 
-ID LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue.
+Paket Terakhir Lian Torres membuat tragedi tanpa ansible menjadi manusiawi: paket itu ada, nama-nama itu ada, tetapi jarak, prioritas antrean, dan respons korporat membuat kebenaran tiba sebagai liabilitas, bukan penyelamatan.
 
 ## Scanner
 
-ID LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+Paket bersih terakhir itu tidak hilang. Mengakui penerimaannya terlalu mahal.
 
 ## Terminal
 
-ID LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+TORRES, L. Jabat tangan pembawa bersih tercapai. Jumlah pekerja terlampir. Bukti evakuasi terlampir. Usia relai tidak layak untuk penyelamatan hidup. Arsip korporat kemudian menandai paket sebagai rusak.
 
 ## Audio
 
-ID LOC HOLD: He sent the names. The archive called them noise.
+Ia mengirim nama-nama itu. Arsip menyebutnya derau.
 
 ## Field Note
 
-ID LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+Cap waktu bisa menjadi jenazah ketika pengangkut menjawab antrean yang salah.
 
 <!-- External Site; generated from P066_LIAN_TORRES_LAST_PACKET/id_ID. -->

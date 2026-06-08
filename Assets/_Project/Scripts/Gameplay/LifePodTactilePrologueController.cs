@@ -841,8 +841,12 @@
 
             if (_cachedObserverMovement != null)
             {
-                observerAup = _cachedObserverMovement.PredictedAup;
-                return true;
+                AbsoluteUniversePosition predictedAup = _cachedObserverMovement.PredictedAup;
+                if (predictedAup.IsFinite())
+                {
+                    observerAup = predictedAup;
+                    return true;
+                }
             }
 
             observerAup = default;

@@ -14,24 +14,26 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Domänenmarken 2190
 
-Domänenmarken zeigen die größere Menschenwelt über Objekte: Sol-Standards, Barnard-Reparaturen, Luyten-Routing, Tau-Ceti-Recht, Centauri-Hardware und Aegir-Claimgewahrsam.
+Domänenmarken zeigen die größere Menschenwelt über Dinge: Sicherheitsplatten, Drehmomentzeichen, Gewahrsamscodes und alte Berechtigungen. Jede Marke verbindet Tür, Werkzeug oder Fracht mit einer fernen menschlichen Autorität.
+
+Die Kolonie wirkt dadurch fern, nicht primitiv. Recht, Industrie und Schulden erreichten das Wasser. Rettung braucht trotzdem Masse, Schiff und Fenster.
 
 ## Scanner
 
-Gemischte Domänenmarken. Sol-Sicherheitsplatte, Barnard-Werkzeugstempel, Luyten-Routengewahrsam.
+Gemischte menschliche Domänenmarken: Sol-Sicherheitsplatte, Barnard-Werkzeugstempel, Luyten-Gewahrsamsroute und Aegir-Claimcode auf derselben korrodierten Halterung.
 
 ## Terminal
 
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+DOMÄNENABGLEICH // Sol-Core-Sicherheitsformat akzeptiert. Barnard-Yards-Reparaturstempel gültig. Luyten-Junction-Paketgewahrsam angehängt. Aegir-Ortsclaimrecht überschreibt Bergungspriorität nach Descent-Verlust.
 
 ## Audio
 
-Dieser Ort liegt nicht außerhalb der Zivilisation. Er zeigt Zivilisation, wenn Entfernung gewinnt.
+Dieser Ort liegt nicht jenseits der Zivilisation. Er ist Zivilisation, nachdem Entfernung die warmen Teile herausgenommen hat.
 
 ## Field Note
 

@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Pula odzysku Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Pula odzysku Aegir
 
-PL LOC HOLD: Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
-
-## Scanner
-
-PL LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
-
-## Terminal
-
-PL LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
-
-## Audio
-
-PL LOC HOLD: The pool owns the route. You only rent the answer.
-
-## Field Note
-
-PL LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+Pula odzysku Aegir zostawia gracza samego, a zarazem uwiarygodnia przybycie. Żaden mały marauder nie posiada Black Keel bezpośrednio. Tender carriera należy do wspólnego systemu roszczeń dla martwej infrastruktury, spornych ładunków i światów zbyt drogich dla zwykłych załóg. Stempel puli może kupić dostęp do trasy, ale oddaje tę trasę arbitrażowi. Gdy operator znajduje się pod linią wody, każda prośba konkuruje z custody payloadu, rezerwami kwarantanny, wartością dowodu i oknami paliwa. Lęk puli jest proceduralny. Może wysłać pomoc i odmówić ratunku, bo według prawa roszczeń Aegir pomoc jest tylko jedną z wielu usług do zafakturowania.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/pl_PL. -->

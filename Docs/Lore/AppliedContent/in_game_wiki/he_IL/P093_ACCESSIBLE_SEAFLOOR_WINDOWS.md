@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "חלונות קרקעית נגישים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# חלונות קרקעית נגישים
 
-HE LOC HOLD: Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.
+חלונות קרקעית נגישים הם מקומות שבהם הקרום השבור של HECTON-8 מוריד לזמן קצר את מחיר הירידה. הם נוצרים במדפים שקרסו, רכסים חשופים, צלקות נביעה שחוממו מחדש ועמודי מלח שנושאים לחץ אחרת. חלון עדיין קטלני אם ממהרים. הוא מעניק מגע עם קרקעית עתיקה, עורקי מינרלים נדירים, ציוד מושבה קבור וראיות שהאוקיינוס הפתוח היה מוחץ מחוץ להישג.
 
 ## Scanner
 
-HE LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
+סמן רכס חשוף. כאן המעטפת נקרעה דקה מספיק כדי שזחלן ייגע בקרקעית עתיקה בלי להפוך לעיסה.
 
 ## Terminal
 
-HE LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
+תנאי חלון: שפת קרום שבורה, עמוד מלח שחומם מחדש בנביעה, רמפת מדף שקרסה, החזר סונאר יציב, כיס לחץ מתחת לקו האדום של החליפה. לסמן לחילוץ איטי בלבד.
 
 ## Audio
 
-HE LOC HOLD: You land where the moon lets stone show through.
+הים נותן לך לגעת בתחתית דרך חלונות, לא בכל מקום שבו אתה מרגיש אמיץ.
 
 ## Field Note
 
-HE LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+רוב הירח שומר את הקרקעית שלו כסוד לחץ. החלונות הם חריגות עם שיניים.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/he_IL. -->

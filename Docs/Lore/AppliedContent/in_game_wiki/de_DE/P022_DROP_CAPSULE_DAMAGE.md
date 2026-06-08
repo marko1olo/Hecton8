@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Schaden der Landekapsel
 
-Die Kapsel bringt den Spieler nach HECTON-8. Der Aufprall lässt Schutz, Energie und Logs, zerstört aber den Aufstieg. Flucht ist Ingenieurarbeit.
+Die Abwurfkapsel bringt den Marauder nach HECTON-8. Der Crash lässt genug Systeme für Schutz, Energie und Logs am Leben, zerstört aber die Aufstiegshardware. Frühe Flucht wird zur Ingenieurskette, nicht zum Knopf.
 
 ## Scanner
 

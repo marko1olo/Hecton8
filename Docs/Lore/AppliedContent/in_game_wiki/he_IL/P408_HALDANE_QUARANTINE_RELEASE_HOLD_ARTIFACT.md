@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Haldane Quarantine Hold"
+title: "עיכוב הלדיין לשחרור מהסגר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Haldane Quarantine Hold
+# עיכוב הלדיין לשחרור מהסגר
 
-HE LOC HOLD: The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
+ה-hold של הלדיין אינו הוכחה שההסגר היה מזויף. זה גרוע יותר: לפרוטוקול היה בסיס אמיתי, ואז Deep Reach השתמשה בשפת certification כדי להשאיר גופים, דגימות ו-liability במקום, כשהמושבה הייתה צריכה תנועה יותר מנייר.
 
 ## Scanner
 
-HE LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+hold לשחרור מהסגר. פרוטוקול זיהום אמיתי הפך לעיכוב custody אחרי שסכנת הלחץ כבר הייתה פיזית.
 
 ## Terminal
 
-HE LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
+QUARANTINE HOLD DESK / HALDANE / RELEASE CERTIFICATION: evacuee movement remains suspended pending XO sample custody, seal-read variance and downstream exposure review.
 
 ## Audio
 
-HE LOC HOLD: The folder was orderly. That was the problem.
+ה-hold לא המציא את הסכנה. הוא השאיר אנשים בתוכה.
 
 ## Field Note
 
-HE LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+הערת Marauder: הסגר יכול להיות אמת ועדיין לשמש כמנעול.
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/he_IL. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LAS RUINAS DEL SECTOR 44
 
 > **Fuente:** Registro de Cartografía del Dron Topógrafo 99-Delta (Recuperado).

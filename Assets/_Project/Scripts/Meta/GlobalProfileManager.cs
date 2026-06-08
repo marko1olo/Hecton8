@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -122,6 +123,7 @@ namespace Hecton8.Meta
         private bool _registeredToUpdate;
         private bool _registeredProfileService;
         private bool _registeredHotSwapListener;
+        private bool _runtimeOwnerAborted;
         private bool _dirty;
         private float _flushTimer;
         private float _nextLongestLifeRecordThreshold = LongestLifeRecordStepSeconds;
@@ -234,20 +236,17 @@ namespace Hecton8.Meta
 
         private void Awake()
         {
-            IProfileService registered = GlobalRegistry.Profile;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (!TryRegisterProfileService())
                 return;
-            }
 
-            TryRegisterProfileService();
             LoadProfile();
         }
 
         private void OnEnable()
         {
-            TryRegisterProfileService();
+            if (!TryRegisterProfileService())
+                return;
+
             TryRegisterHotSwapListener();
             CacheRegistryOwnersCold();
             ResolveOwnersCold();
@@ -259,6 +258,9 @@ namespace Hecton8.Meta
 
         private void Start()
         {
+            if (!TryRegisterProfileService())
+                return;
+
             TryRegisterHotSwapListener();
             CacheRegistryOwnersCold();
             ResolveOwnersCold();
@@ -269,6 +271,9 @@ namespace Hecton8.Meta
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             FlushCurrentRunRecords();
             FlushIfDirtyCold();
             UnbindOwnerSubscriptions();
@@ -280,6 +285,9 @@ namespace Hecton8.Meta
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             FlushCurrentRunRecords();
             FlushIfDirtyCold();
             UnbindOwnerSubscriptions();
@@ -291,12 +299,18 @@ namespace Hecton8.Meta
 
         private void OnApplicationQuit()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             FlushCurrentRunRecords();
             FlushIfDirtyCold();
         }
 
         private void OnApplicationPause(bool pauseStatus)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!pauseStatus)
                 return;
 
@@ -515,7 +529,7 @@ namespace Hecton8.Meta
             if (_discoveryManager == null)
                 _discoveryManager = GlobalRegistry.Discovery;
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(_saveService))
                 _saveService = GlobalRegistry.Save;
 
             RefreshSurvivalSignalBinding();
@@ -528,7 +542,7 @@ namespace Hecton8.Meta
             if (_discoveryManager == null)
                 _discoveryManager = GlobalRegistry.Discovery;
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(_saveService))
                 _saveService = GlobalRegistry.Save;
         }
 
@@ -945,10 +959,21 @@ namespace Hecton8.Meta
         private float ResolveCurrentRunElapsedSeconds()
         {
             ISaveService saveService = _saveService;
-            if (saveService != null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (IsSaveServiceUsable(saveService))
                 return Mathf.Max(0f, saveService.CurrentPlayTimeSeconds);
 
             return Mathf.Max(0f, (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1068,12 +1093,42 @@ namespace Hecton8.Meta
                 profile.EnsureCapacity();
                 profile.version = GlobalProfileData.CurrentVersion;
                 string json = JsonUtility.ToJson(profile, true);
-                File.WriteAllText(tempPath, json);
+                byte[] jsonBytes = Encoding.UTF8.GetBytes(json); // COLD ALLOC: profile.json UTF-8 write buffer - infrequent meta-profile flush - owner: GlobalProfileManager
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+                {
+                    stream.Write(jsonBytes, 0, jsonBytes.Length);
+                    stream.Flush(true);
+                }
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
 
+                if (!AsyncWriteManager.TryGetFileLength(tempPath, out long tempProfileBytes, out string tempLengthError))
+                    throw new IOException(string.IsNullOrEmpty(tempLengthError) ? "Global profile temp file length could not be resolved before promotion." : tempLengthError);
+
+                if (tempProfileBytes != jsonBytes.LongLength)
+                    throw new IOException("Global profile temp file length changed before promotion.");
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(tempPath, tempProfileBytes, out string tempFlushError))
+                    throw new IOException(string.IsNullOrEmpty(tempFlushError) ? "Global profile temp critical flush failed before promotion." : tempFlushError);
+
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
                 if (File.Exists(path))
-                    File.Delete(path);
+                    File.Replace(tempPath, path, null, true);
+                else
+                    File.Move(tempPath, path);
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
 
-                File.Move(tempPath, path);
+                if (!AsyncWriteManager.TryGetFileLength(path, out long promotedProfileBytes, out string lengthError))
+                    throw new IOException(string.IsNullOrEmpty(lengthError) ? "Global profile file length could not be resolved after promotion." : lengthError);
+
+                if (promotedProfileBytes != jsonBytes.LongLength)
+                    throw new IOException("Global profile file length changed during promotion.");
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(path, promotedProfileBytes, out string flushError))
+                    throw new IOException(string.IsNullOrEmpty(flushError) ? "Global profile critical flush failed after promotion." : flushError);
+
                 return true;
             }
             catch (Exception ex)
@@ -1083,8 +1138,7 @@ namespace Hecton8.Meta
 #endif
                 try
                 {
-                    if (File.Exists(tempPath))
-                        File.Delete(tempPath);
+                    DeleteProfileTempBestEffort(tempPath);
                 }
                 catch
                 {
@@ -1092,6 +1146,23 @@ namespace Hecton8.Meta
                 }
 
                 return false;
+            }
+        }
+
+        private static void DeleteProfileTempBestEffort(string tempPath)
+        {
+            if (string.IsNullOrEmpty(tempPath))
+                return;
+
+            AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
             }
         }
 
@@ -1169,13 +1240,77 @@ namespace Hecton8.Meta
             _registeredToUpdate = false;
         }
 
-        private void TryRegisterProfileService()
+        private bool TryRegisterProfileService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_registeredProfileService || !Application.isPlaying)
-                return;
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            IProfileService registered = GlobalRegistry.Profile;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                GlobalProfileManager staleManager = registered as GlobalProfileManager;
+                if (ReferenceEquals(staleManager, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterProfileService(registered);
+                staleManager._registeredProfileService = false;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterProfileService(this);
             _registeredProfileService = ReferenceEquals(GlobalRegistry.Profile, this);
+            _runtimeOwnerAborted = !_registeredProfileService;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return _registeredProfileService;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            IProfileService registered = GlobalRegistry.Profile;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsProfileRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalProfileManager staleManager = registered as GlobalProfileManager;
+            if (!ReferenceEquals(staleManager, null))
+            {
+                GlobalRegistry.UnregisterProfileService(registered);
+                staleManager._registeredProfileService = false;
+            }
+
+            return false;
+        }
+
+        private static bool IsProfileRuntimeUsable(IProfileService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            GlobalProfileManager manager = service as GlobalProfileManager;
+            return ReferenceEquals(manager, null) ||
+                   (manager != null &&
+                    manager._registeredProfileService &&
+                    manager.isActiveAndEnabled &&
+                    !manager._runtimeOwnerAborted);
         }
 
         private void TryUnregisterProfileService()

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Wyjście materialne
 
-Wspiera regrywalność jako opłacalne, skażone zakończenie dla graczy wybierających łup i przetrwanie.
+Material Exit wspiera zyskowny, ale skażony odwrót: łup, kontrakty i przetrwanie mogą wygrać wznoszenie, podczas gdy pełna prawda zejścia zostaje na dole.
 
 ## Scanner
 

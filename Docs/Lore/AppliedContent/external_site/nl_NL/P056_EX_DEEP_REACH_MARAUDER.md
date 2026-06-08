@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Voormalige Deep-Reach-Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Voormalige Deep-Reach-Marauder
 
-NL LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+Voormalige Deep-Reach-Marauder legt de spelerscanon vast. De speler is een voormalige bedrijfsspecialist voor veldsystemen en evacuatie-infrastructuur, door zwarte lijst of schuld naar onafhankelijke berging geduwd en onder Black-Keel-bewaring teruggebracht naar HECTON-8. Het drama komt uit professionele herkenning: de maan antwoordt met procedures die de speler ooit begreep, en elk vertrouwd slot maakt de bedrijfsleugen moeilijker af te doen als het ongeluk van iemand anders.
 
 ## Scanner
 
-NL LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+Het oude Deep-Reach-slot controleert je naam niet. Het herkent het ritme van je reparatiereeks.
 
 ## Terminal
 
-NL LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+BEVOEGDHEIDSSPOOR: voormalig veldsystemencontract. Toegang tot evacuatie-infrastructuur ingetrokken. Bergingsstatus geaccepteerd onder schuldbeheer van de claimpool.
 
 ## Audio
 
-NL LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Je kwam niet thuis. Je kwam terug bij een procedure die nooit is gestopt.
 
 ## Field Note
 
-NL LOC HOLD: Not family business. Procedure remembers who taught your hands.
+Dit is geen familiezaak. De procedure herinnert zich de handen die haar gebruikten.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/nl_NL. -->

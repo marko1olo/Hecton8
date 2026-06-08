@@ -310,13 +310,37 @@ namespace Hecton8.UI
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (TryCachePlayerMovement())
+            playerAup = default;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                snapshot.Aup.IsFinite())
             {
-                playerAup = _playerMovement.CurrentAup;
+                playerAup = snapshot.Aup;
                 return true;
             }
 
-            playerAup = default;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
+            {
+                playerAup = movementState.PredictedAup;
+                return true;
+            }
+
+            if (playerContext != null)
+                return false;
+
+            if (TryCachePlayerMovement())
+            {
+                playerAup = _playerMovement.CurrentAup;
+                return playerAup.IsFinite();
+            }
+
             return false;
         }
 

@@ -371,6 +371,7 @@ namespace Hecton8.Editor.GeologyForge
             NativeArray<int> offsets = default;
             NativeArray<GeologyRawVertex> rawVertices = default;
             NativeParallelMultiHashMap<ulong, int> normalBuckets = default;
+            int normalBucketsSentinelId = 0;
             JobHandle pendingDisposeFence = default;
             var metric = new GeologyBakeMetrics
             {
@@ -464,7 +465,7 @@ namespace Hecton8.Editor.GeologyForge
                 float normalWeldTolerance = math.max(voxelStep * 0.03f, 1e-5f);
                 float normalBucketSize = math.max(normalWeldTolerance * 2f, 1e-5f);
                 // COLD ALLOC: NativeParallelMultiHashMap<ulong,int>[rawCount] — editor normal weld buckets — owner: GeologyForgeGenerator
-                normalBuckets = AllocateGeologyMultiHashMap<ulong, int>(rawCount, Allocator.TempJob, NormalBucketsLabel);
+                normalBuckets = AllocateGeologyMultiHashMap<ulong, int>(rawCount, Allocator.TempJob, NormalBucketsLabel, out normalBucketsSentinelId);
                 JobHandle bucketHandle = new BuildNormalBucketJob
                 {
                     Vertices = rawVertices,
@@ -548,7 +549,7 @@ namespace Hecton8.Editor.GeologyForge
             finally
             {
                 pendingDisposeFence.Complete();
-                ReleaseGeologyMultiHashMap(ref normalBuckets, NormalBucketsLabel);
+                ReleaseGeologyMultiHashMap(ref normalBuckets, ref normalBucketsSentinelId);
                 ReleaseGeologyArray(ref rawVertices);
                 ReleaseGeologyArray(ref offsets);
                 ReleaseGeologyArray(ref counts);
@@ -585,20 +586,46 @@ namespace Hecton8.Editor.GeologyForge
             return array;
         }
 
-        private static void ReleaseGeologyArray<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void ReleaseGeologyArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+            finally
+            {
+                array = default;
+            }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
-        private static NativeParallelMultiHashMap<TKey, TValue> AllocateGeologyMultiHashMap<TKey, TValue>(int capacity, Allocator allocator, string label)
+        private static NativeParallelMultiHashMap<TKey, TValue> AllocateGeologyMultiHashMap<TKey, TValue>(int capacity, Allocator allocator, string label, out int sentinelId)
             where TKey : unmanaged, IEquatable<TKey>
             where TValue : unmanaged
         {
+            sentinelId = 0;
             if (capacity <= 0)
                 return default;
 
@@ -608,7 +635,7 @@ namespace Hecton8.Editor.GeologyForge
 
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
+                sentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMapInstance(
                     map,
                     NativeMemoryOwner,
                     label,
@@ -618,23 +645,88 @@ namespace Hecton8.Editor.GeologyForge
             }
             catch
             {
-                map.Dispose();
+                System.Exception nativeSentinelCleanupException1 = null;
+
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (System.Exception nativeSentinelException1)
+                    {
+                        nativeSentinelCleanupException1 = nativeSentinelException1;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                try
+                {
+                    map.Dispose();
+                }
+                catch (System.Exception nativeSentinelException1)
+                {
+                    if (nativeSentinelCleanupException1 == null)
+                        nativeSentinelCleanupException1 = nativeSentinelException1;
+                }
+
+                if (nativeSentinelCleanupException1 != null)
+                    throw nativeSentinelCleanupException1;
+
                 throw;
             }
 
             return map;
         }
 
-        private static void ReleaseGeologyMultiHashMap<TKey, TValue>(ref NativeParallelMultiHashMap<TKey, TValue> map, string label)
+        private static void ReleaseGeologyMultiHashMap<TKey, TValue>(ref NativeParallelMultiHashMap<TKey, TValue> map, ref int sentinelId)
             where TKey : unmanaged, IEquatable<TKey>
             where TValue : unmanaged
         {
-            if (!map.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, label);
-            map.Dispose();
-            map = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (map.IsCreated)
+            {
+                try
+                {
+                    map.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    map = default;
+                }
+            }
+            else
+            {
+                map = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)

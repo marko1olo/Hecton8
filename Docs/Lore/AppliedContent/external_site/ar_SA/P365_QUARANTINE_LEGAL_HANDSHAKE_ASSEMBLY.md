@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Quarantine Legal Handshake Assembly"
+title: "تجميعة المصافحة القانونية للحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Quarantine Legal Handshake Assembly
+# تجميعة المصافحة القانونية للحجر
 
-AR LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.
+تجعل تجميعة المصافحة القانونية للحجر extraction قذرا عمدا: يمكن لمحرك عامل أن يسلم الناجي إلى corporate custody، أو حقيقة عامة متأخرة، أو حجر غير محسوم.
 
 ## Scanner
 
-AR LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.
+مقبس handshake. قد تكون الكبسولة جاهزة ميكانيكيا وما زالت تابعة للـ receiver الخطأ.
 
 ## Terminal
 
-AR LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.
+RECOVERY HANDSHAKE: مطلوب receiver key. تقبل Keelmark الـ mass وlien. تقبل Recovery Compliance الـ coordinates وquarantine status. يقبل Public ledger الـ proof بعد تأخير. يتحول Unkeyed launch افتراضيا إلى custody dispute.
 
 ## Audio
 
-AR LOC HOLD: The last part is not metal. It is who gets to call you recovered.
+من يجيب يقرر معنى الإنقاذ.
 
 ## Field Note
 
-AR LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+العنصر الأخير ليس معدنا. إنه اسم النظام المسموح له أن يسميك recovered.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/ar_SA. -->

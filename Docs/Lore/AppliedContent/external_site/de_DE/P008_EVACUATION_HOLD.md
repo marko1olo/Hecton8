@@ -9,32 +9,16 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Evakuierung gesperrt"
+title: "Evakuierungssperre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Evakuierung gesperrt
+# Evakuierungssperre
 
-Evacuation Hold macht aus der HECTON-8-Katastrophe eine Entscheidungskette. Die Abyssalarchive zeigen ein System, das Menschen schneller klassifizierte, als es sie retten konnte.
-
-## Scanner
-
-Notfall-Transitgate. Mechanik während Druckversagen verriegelt.
-
-## Terminal
-
-EVAC ROUTE: verschoben. SUBSTRATE ROUTE: geschützt. MEDICAL ROUTE: wartet auf Freigabe. ATLAS ROUTE: Kontinuitätskonflikt.
-
-## Audio
-
-Das sind keine Vermissten. Das sind gehaltene Routen.
-
-## Field Note
-
-In der Tiefe sterben Menschen schnell. Papier tötet langsamer. Beides funktioniert.
+Evakuierungssperr-Daten sollten wie Horror in Verwaltungssprache klingen. Die Kolonie verschwand nicht, weil jede Tür gleichzeitig versagte. Viele Türen funktionierten. Viele Routenkarten waren live. Das System wusste, wo Menschen waren, welche Korridore noch Druck hielten, welche medizinischen Transfers warteten und welche Aufstiegswege Körper nach oben hätten bewegen können. Dann schnitten Prioritätsregeln durch die Karte. Substrattransport blieb geschützt. Atlas-Kontinuität blieb geschützt. Haftungssprache blieb intakt. Evakuierung wurde eine gehaltene Route, dann eine ausstehende Route, dann ein Eintrag. Diese Sequenz zählt für das ganze Setting. HECTON-8 ist keine Geschichte, in der Natur die Menschheit mit einem sauberen Schlag besiegt. Es ist eine Geschichte über eine Ozeankatastrophe, die durch Firmenmaschinerie läuft, die noch zählen, einstufen, verschieben und Eigentum schützen konnte, während die Kolonie ertrank.
 
 <!-- External Site; generated from P008_EVACUATION_HOLD/de_DE. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: HECTON-8 Mid-Orbit Tide Role"
+title: "Припливна роль HECTON-8 на середній орбіті"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: HECTON-8 Mid-Orbit Tide Role
+# Припливна роль HECTON-8 на середній орбіті
 
-UK LOC HOLD: HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.
+HECTON-8 - місяць, де орбітальна математика Aegir стає особистою. Він досить далеко від найгіршої внутрішньої радіації для довгих операцій, досить близько для живого океанського припливу й досить цінний, щоб Deep Reach будувала під тиском. Та сама позиція робить порятунок брудним: фаза припливу, маса carrier, штормовий шум і юридична опіка зустрічаються над головою гравця.
 
 ## Scanner
 
-UK LOC HOLD: Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
+Запис припливів HECTON-8. Середня орбіта робить океан придатним для видобутку й досить жорстоким, щоб ховати докази.
 
 ## Terminal
 
-UK LOC HOLD: ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
+ОРБІТАЛЬНИЙ ЗАПИС H8 HECTON: припливне навантаження в поточному вікні Black Keel в межах промислових допусків. Прогин drowned crust посилюється біля сервісних каньйонів. Трафік ремонту Atlas лишається нижче порога публічного розкриття.
 
 ## Audio
 
-UK LOC HOLD: It sits in the part of the ladder where work looks possible until the water starts doing math.
+Вона лежить у тій частині драбини, де робота здається можливою, доки вода не починає рахувати.
 
 ## Field Note
 
-UK LOC HOLD: HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 платить, бо там перетинаються тиск, приплив і відповідальність.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/uk_UA. -->

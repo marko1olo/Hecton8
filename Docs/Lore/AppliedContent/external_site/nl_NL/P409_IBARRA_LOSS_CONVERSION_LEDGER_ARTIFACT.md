@@ -9,32 +9,22 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Ibarra Loss Ledger"
+title: "Ibarra-ledger voor verliesconversie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Ibarra Loss Ledger
+# Ibarra-ledger voor verliesconversie
 
-NL LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## Boekhouding Die De Kolonie Overleefde
 
-## Scanner
+Het Ibarra-ledger moet kouder voelen dan een vermistenlijst. Een lijst rouwt nog, zelfs wanneer hij liegt. Een ledger converteert. Het ontvangt beschadigde habitatmodules, tool banks, sample custody, missing personnel en salvage rights, en plaatst elk feit in een categorie die door contracten kan blijven bewegen nadat HECTON-8 stilvalt.
 
-NL LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Dit is de brug tussen oude Deep Reach-liability en de huidige debt van de speler. Als mensen unresolved personnel load worden, kan het bedrijf erkennen dat ze weg zijn zonder moord te noemen. Als bewijs material custody wordt, kan het worden gekocht, begraven, gerouteerd of verzekerd. Als de claim continuous blijft, leeft eigendom langer dan de werkers die de plek lieten functioneren.
 
-## Terminal
-
-NL LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-NL LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-NL LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Het ledger geeft de speler harde macht. Het omhoog dragen onthult niet alleen wat er gebeurde. Het draagt iets dat de markt al kan prijzen. Bewijs verkopen, publiceren, omleiden of begraven wordt vuil omdat het document is ontworpen om elke keuze leesbaar te maken op iemands balance sheet.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/nl_NL. -->

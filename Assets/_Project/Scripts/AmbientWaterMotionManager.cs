@@ -397,15 +397,10 @@ namespace Hecton8.Physics
                 return true;
             }
 
-            var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement != null)
+            if (playerContext != null)
             {
-                AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                if (currentAup.IsFinite())
-                {
-                    observerAup = currentAup;
-                    return true;
-                }
+                observerAup = default;
+                return false;
             }
 
             Transform observer = lodObserver;

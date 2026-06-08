@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute як зовнішній мертвий beacon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Outer Dead Beacon Moon Role
+# Mute як зовнішній мертвий beacon
 
-UK LOC HOLD: The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.
+Mute - зовнішній місяць мертвого beacon у драбині Aegir. Його relay ненадійні, холодні й частково відсутні в поточних публічних мапах. Вони все одно лишаються в старих solver, страхових пунктах і recovery-таблицях. Це робить зв'язок із HECTON-8 рідкісним і брудним, не магічним. Повідомлення може затримати фізика, погані дані або правило опіки, яке вдає, що це одне й те саме.
 
 ## Scanner
 
-UK LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
+Ping мертвого beacon. Mute більше не відповідає чисто, але старі route solver досі витрачають його привид.
 
 ## Terminal
 
-UK LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
+ЗАПИС BEACON H9 MUTE: архівна ефемерида розходиться з поточним relay-ехом. Рятувальний solver позначає придатну неоднозначність. Contract desk дозволяє затримане зберігання повідомлення до підтвердження вікна.
 
 ## Audio
 
-UK LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
+Мертвий beacon лишається beacon, якщо рахунок знає, де його знайти.
 
 ## Field Note
 
-UK LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Мертва інфраструктура не залишає Aegir. Вона стає членом помилки, за який хтось виставить рахунок.
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/uk_UA. -->

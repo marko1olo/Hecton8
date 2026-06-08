@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "Registro Público de Tau Ceti"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# Registro Público de Tau Ceti
 
-PT-BR LOC HOLD: Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly.
+O Registro Público de Tau Ceti é responsabilização hard-SF: instituições públicas reais existem, mas a distância transforma justiça em pós-imagem se evidências não forem preservadas com disciplina de cadeia de custódia.
 
 ## Scanner
 
-PT-BR LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+Fragmento de ledger cívico de Tau Ceti. Público o bastante para assustar a Deep Reach, atrasado demais para salvar a colônia.
 
 ## Terminal
 
-PT-BR LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+ESPELHO DO LEDGER TAU CETI: evidência selada admissível após autenticação de relé. Janela esperada de revisão pública excede o intervalo local de sobrevivência em 31,4 anos.
 
 ## Audio
 
-PT-BR LOC HOLD: A court can be honest and useless when light itself is late.
+Um tribunal pode ser honesto e inútil quando a própria luz chega tarde.
 
 ## Field Note
 
-PT-BR LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+A supervisão pode chegar limpa e tarde. Tarde ainda é morto.
 
 <!-- External Site; generated from P074_TAU_CETI_PUBLIC_LEDGER/pt_BR. -->

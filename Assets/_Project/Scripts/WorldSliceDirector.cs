@@ -59,6 +59,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            PublishActiveRuntimeInstance();
             CachePlayerContextCold();
             RefreshColdPlayerReference();
             TryRegisterHotSwapListener();
@@ -76,6 +77,9 @@ namespace Hecton8.World
         {
             TryUnregisterHotSwapListener();
             TryUnregister();
+
+            if (ActiveRuntimeInstance == this)
+                ClearActiveRuntimeInstance();
         }
 
         private void OnDestroy()
@@ -258,12 +262,15 @@ namespace Hecton8.World
                 return playerAup.IsFinite();
             }
 
-            var playerMovement = playerContext.PlayerMovement;
-            if (playerMovement == null)
+            if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
                 return false;
+            }
 
-            playerAup = playerMovement.CurrentAup;
-            return playerAup.IsFinite();
+            playerAup = movementState.PredictedAup;
+            return true;
         }
 
         public void OnGlobalRegistryServiceReplaced(

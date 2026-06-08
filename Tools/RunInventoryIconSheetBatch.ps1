@@ -79,6 +79,10 @@ if ($AllowNonAssetRoot) {
     $pipelineArgs += "--allow-non-asset-root"
 }
 
+if ($AllowOverwrite) {
+    $pipelineArgs += "--allow-overwrite"
+}
+
 if ($PreviousBindingMap) {
     $previousPath = Resolve-ProjectOrAbsolutePath -Path $PreviousBindingMap
     $pipelineArgs += @("--previous-binding-map", $previousPath.Path)

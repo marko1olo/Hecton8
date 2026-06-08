@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Pressure Glass and Sealant Guide"
+title: "Довідник pressure glass і sealant"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Pressure Glass and Sealant Guide
+# Довідник pressure glass і sealant
 
-UK LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.
+Довідник pressure glass і sealant заземлює biomechanical horror HECTON-8 у логіці ремонту: Atlas слідує тріщинам, кабелям, biofilms і pressure scars, бо зламані системи вже дають шляхи.
 
 ## Scanner
 
-UK LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+Тріщина pressure-glass запечатана хімією Atlas. Безпечний lens stock можливий лише якщо seal map лишається цілою.
 
 ## Terminal
 
-UK LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: pressure glass записує старий tide stress. Atlas sealant іде цими тріщинами, бо тріщини вже описують лінії відмови системи.
 
 ## Audio
 
-UK LOC HOLD: The repair network reads fractures the way you read a map.
+Ремонтна мережа читає тріщини так само, як ти читаєш карту.
 
 ## Field Note
 
-UK LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+Не шліфуй гарний край. Іди за fracture map і ріж з мертвого боку seal.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/uk_UA. -->

@@ -8,33 +8,19 @@ biome_tags: biome.thermal_fields;biome.factory_temple
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+spoiler_tier: 1
+title: "Motor Geotérmico da Forja de Vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# Motor Geotérmico da Forja de Vent
 
-PT-BR LOC HOLD: Vent Forge Geothermal Engine shows why HECTON-8 is valuable and lethal. The moon is an industrial engine before humans build one on it.
+Forjas de vent conectam geologia a crafting, sobrevivência e horror. Elas fornecem calor e ciclos de pressão para cerâmica, selos e vidro de pressão, mas os mesmos ciclos criam bolsões ferventes, leituras falsas de oxigênio, nuvens corrosivas e migração de fauna.
 
-## Scanner
-
-PT-BR LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
-
-## Terminal
-
-PT-BR LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
-
-## Audio
-
-PT-BR LOC HOLD: The vent does not care whether you call it power or weather.
-
-## Field Note
-
-PT-BR LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+O Motor Geotérmico da Forja de Vent mostra por que HECTON-8 é valioso e letal: a lua já era um motor industrial antes dos humanos construírem um. Todo vent útil também é uma máquina que pune timing ruim.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/pt_BR. -->

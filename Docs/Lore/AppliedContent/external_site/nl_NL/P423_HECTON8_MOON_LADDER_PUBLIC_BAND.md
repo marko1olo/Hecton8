@@ -8,33 +8,33 @@ biome_tags: biome.aegir_system;biome.publication
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "NL LOC HOLD: HECTON-8 Moon Ladder"
+spoiler_tier: 1
+title: "HECTON-8-maanladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: HECTON-8 Moon Ladder
+# HECTON-8-maanladder
 
-NL LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.
+HECTON-8 zit in een werkend multi-moon claim system waar relay, ice-scatter, quarantine en salvage traffic tellen.
 
 ## Scanner
 
-NL LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+Maanladder: HECTON-8 is één claim, niet het hele Aegir-systeem.
 
 ## Terminal
 
-NL LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER: alleen publieke role labels; exacte orbital elements blijven table-owned data.
 
 ## Audio
 
-NL LOC HOLD: Other moons are not side quests. They are why the route has teeth.
+Andere manen zijn geen side quests. Zij geven de route tanden.
 
 ## Field Note
 
-NL LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
+Maanladderrecord: publieke kaarten kunnen Aegir-schaal tonen zonder playable moons te beloven.
 
 <!-- External Site; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/nl_NL. -->

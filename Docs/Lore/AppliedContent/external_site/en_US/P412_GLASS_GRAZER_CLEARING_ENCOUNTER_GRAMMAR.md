@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Glass Grazer Clearing Encounter Grammar
 
-Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.
+Glass grazer clearings are HECTON-8’s lesson in conditional safety. Bright, useful ecology can help the player read a route, but the same route becomes suspect the moment the animals stop using it.
 
 ## Scanner
 
-Glass grazer clearing. Recent scrape marks suggest low predator pressure; risk rises if herd movement stops.
+Glass grazer clearing. Fresh scrape lanes, oxygen film and steady shell ticks suggest low immediate pressure. Empty food field means warning state.
 
 ## Terminal
 
-FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+ENCOUNTER GRAMMAR / GLASS GRAZER CLEARING / role: shallow contrast, readable safe-ish lane, predator absence test / safe read: active feeding, paired return ticks, scraped mineral edge, visible exit line / reject: using grazers as guaranteed safety, silent clearing, abandoned food, blocked return lane / route note: the corridor is useful because animals are using it now, not because the ocean promised anything.
 
 ## Audio
 
-The grazers make bright corridors. Something else decides when they empty.
+The grazers make bright corridors. They do not decide how long the corridor belongs to them.
 
 ## Field Note
 
-A grazed corridor is useful until it goes quiet. Do not build the return plan on a herd you cannot see.
+Active feeding: use the lane. Paired ticks: hold. Food left behind: stop trusting the clearing.
 
 <!-- External Site; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/en_US. -->

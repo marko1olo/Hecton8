@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8 Public Primer Article"
+title: "HECTON-8 Public Primer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# HECTON-8 Public Primer Article
+# HECTON-8 Public Primer
 
-HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic.
+HECTON-8 is a drowned industrial ocean moon in the Aegir system. It is beautiful before it is incriminating: bright shelves, living shallows, hard blue light, pressure-rated colony bones, and deeper ruins where Deep Reach paperwork still argues with the machinery. You arrive as a Marauder under contract pressure, not as a tourist and not as a chosen savior. The public-facing premise is simple: survive the ocean, read the wreckage, recover what can still speak, and learn why rescue can hear you long before it can reach you.
 
 ## Scanner
 
-A public primer is allowed to be beautiful. It is not allowed to lie.
+Public primer clearance: show the moon as beautiful first. Do not sell the ocean by hiding the crime.
 
 ## Terminal
 
-PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+PUBLIC PRIMER / SPOILER-SAFE
+allowed: Aegir ocean moon, bright shelves, drowned industrial colony, Marauder salvage return, Deep Reach ruins
+gated: final payload route, Atlas resolution, ending receiver consequences
+editor note: beauty first, evidence second, no false rescue promise.
 
 ## Audio
 
-First sell the ocean. Then earn the crime.
+The shallow water is not a mask. It is what they almost managed to build before the depth kept the receipts.
 
 ## Field Note
 
-The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+Sell the ocean first. Then let the rust, tags, and route stamps prove why the ocean is not innocent.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/en_US. -->

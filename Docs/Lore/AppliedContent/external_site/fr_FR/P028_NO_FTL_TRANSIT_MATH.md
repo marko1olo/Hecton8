@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Calcul de transit sans FTL
 
-Ce calcul transforme la distance en pression de jeu: ordres retardés, autorité périmée et fenêtres de fuite.
+Le calcul de transit sans FTL transforme la distance interstellaire en pression : ordres retardés, autorité périmée, latence de garde et fenêtres d'échappée physiques.
 
 ## Scanner
 

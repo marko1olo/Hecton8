@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Saída material
 
-Apoia replay com um final lucrativo e comprometido para quem escolhe loot, contrato e sobrevivência.
+Material Exit sustenta uma retirada lucrativa, mas comprometida: saque, contratos e sobrevivência podem vencer a subida enquanto a verdade completa da descida fica abaixo.
 
 ## Scanner
 

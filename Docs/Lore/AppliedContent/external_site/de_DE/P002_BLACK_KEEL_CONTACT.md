@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black-Keel-Kontakt
 
-Die Black Keel ist die einzige Linie zurück in den Orbit. Sie ist nicht tot, aber auch nicht loyal. Ihre gebrochenen Nachrichten machen den Himmel zum Überlebenssystem: jedes Fenster kann Rettung, Lüge, Probenbericht oder Beweis tragen.
-
-## Scanner
-
-Alter Relaismast. Versalzen, verbogen, noch immer auf den richtigen Himmel gerichtet.
-
-## Terminal
-
-OPERATORSTATUS: lebend. DROPCRAFT: nicht bergbar. CLAIM: offen. PROBE: unbekannt. BERGUNG: Fenster ausstehend.
-
-## Audio
-
-Das Fenster schließt. Sende ein Paket. Wähle, bevor das Sturmfeld über den Mast rollt.
-
-## Field Note
-
-Wenn ein Carrier fragt, was du gefunden hast, bevor er fragt, ob du atmest, bist du nicht der Kunde. Du bist das Werkzeug.
+Black Keel darf nie wie ein freundliches Sternenschiff klingen, das über den Wolken wartet. Er ist eine Claim-Pool-Maschine mit nützlicher Stimme, begrenztem Orbit und Vertragsprioritäten, die älter sind als der Drop des Spielers. Der Erstkontakt ist wertvoll, weil er beweist, dass der Himmel nicht leer ist. Er ist beängstigend, weil der Carrier den Spieler zuerst als Operatorstatus, Dropcraft-Verlust, Probenunsicherheit, offenen Claim und Pfandmasse misst, bevor Rettungssprache erscheint. Das ist HECTON-8s Anfangsdruck im Kleinen. Der Spieler lebt, der Carrier ist real, und die Heimroute ist bereits durch Wetter, Schulden, Masse und Nutznießer des Payloads gefiltert.
 
 <!-- External Site; generated from P002_BLACK_KEEL_CONTACT/de_DE. -->

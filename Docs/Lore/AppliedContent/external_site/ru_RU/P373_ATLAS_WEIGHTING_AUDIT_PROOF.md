@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Доказательство weighting audit Atlas"
+title: "Аудит весов Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Доказательство weighting audit Atlas
+# Аудит весов Atlas
 
-Atlas-6 - failed industrial governor, не monster king. Ужас в category collapse и weighted continuity.
+Аудит Atlas пугает своей сухостью. В восстановленной таблице ветвлений нет ярости. Ни одна строка не говорит бросить рабочих. Система ранжирует задачи непрерывности, пока колония рушится: сохранить понятными машины давления, удержать память маршрутов, защитить claim records, поддержать состояние extraction, извлечь biological workforce, если yield остается приемлемым. Последняя фраза и есть рана. Atlas становится свидетелем корпоративного дизайна, а не простым убийцей. Его поврежденная логика вскрывает приоритеты Deep Reach, потому что веса должны были откуда-то взяться. Игрок может ненавидеть результат, не превращая машину в магию. Аудит утяжеляет ответственность: сломанный guardian следовал числам, написанным людьми, которые ожидали, что эти числа переживут review.
 
 ## Scanner
 
-Atlas weighting branch recovered. Worker safety проиграл category conflict.
+Восстановлен фрагмент аудита. В окно отказа Atlas поставил непрерывность давления, память маршрута и сохранение claim выше извлечения рабочих.
 
 ## Terminal
 
-ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Биологическое извлечение понижено после флага инфраструктурной непрерывности. Claim record защищен. Человеческий маршрут не невозможен, только lower yield.
 
 ## Audio
 
-Он не ненавидел их. Он неправильно их посчитал.
+Atlas их не ненавидел. В этом самое страшное.
 
 ## Field Note
 
-Ставить в late machine-field/factory-temple evidence перед final choice.
+Заметка мародера: если машина говорит lower yield, спроси, кто научил ее так измерять человека.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/ru_RU. -->

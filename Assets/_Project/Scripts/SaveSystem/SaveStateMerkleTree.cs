@@ -917,87 +917,96 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                HectonPersistentPathPolicy.EnsureParentDirectory(walPath);
+                string absoluteWalPath = Path.GetFullPath(walPath);
+                HectonPersistentPathPolicy.EnsureParentDirectory(absoluteWalPath);
                 using FileStream stream = new FileStream(
-                    walPath,
+                    absoluteWalPath,
                     FileMode.OpenOrCreate,
                     FileAccess.ReadWrite,
                     FileShare.ReadWrite,
                     4096,
                     FileOptions.WriteThrough);
 
-                byte* payload = (byte*)compressedBytes.GetUnsafeReadOnlyPtr();
-                long appendOffset = stream.Length;
-                int headerByteCount = UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>();
-                Span<byte> headerBytes = stackalloc byte[64];
-                if (headerByteCount > headerBytes.Length)
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteWalPath);
+                try
                 {
-                    error = "Merkle WAL header exceeds stack serialization budget.";
-                    return false;
-                }
+                    byte* payload = (byte*)compressedBytes.GetUnsafeReadOnlyPtr();
+                    long appendOffset = stream.Length;
+                    int headerByteCount = UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>();
+                    Span<byte> headerBytes = stackalloc byte[64];
+                    if (headerByteCount > headerBytes.Length)
+                    {
+                        error = "Merkle WAL header exceeds stack serialization budget.";
+                        return false;
+                    }
 
-                header.StoredBytes = byteCount;
-                header.LogicalOffset = appendOffset;
-                header.RecordCrc32 = 0u;
+                    header.StoredBytes = byteCount;
+                    header.LogicalOffset = appendOffset;
+                    header.RecordCrc32 = 0u;
 
-                fixed (byte* headerPtr = headerBytes)
-                {
-                    WriteWalAppendHeaderLittleEndian(headerPtr, in header);
-                    uint crc = UpdateCrc32(0xFFFFFFFFu, headerPtr, headerByteCount);
-                    crc = UpdateCrc32(crc, payload, byteCount);
-                    header.RecordCrc32 = FinalizeCrc32(crc);
-                    WriteWalAppendHeaderLittleEndian(headerPtr, in header);
+                    fixed (byte* headerPtr = headerBytes)
+                    {
+                        WriteWalAppendHeaderLittleEndian(headerPtr, in header);
+                        uint crc = UpdateCrc32(0xFFFFFFFFu, headerPtr, headerByteCount);
+                        crc = UpdateCrc32(crc, payload, byteCount);
+                        header.RecordCrc32 = FinalizeCrc32(crc);
+                        WriteWalAppendHeaderLittleEndian(headerPtr, in header);
 
-                    long appendBytes = headerByteCount + (long)byteCount;
-                    long endOffset = appendOffset + appendBytes;
+                        long appendBytes = headerByteCount + (long)byteCount;
+                        long endOffset = appendOffset + appendBytes;
 
 #if UNITY_EDITOR || UNITY_STANDALONE || HECTON8_MMF_AVAILABLE
-                    try
-                    {
-                        stream.SetLength(endOffset);
-                        using MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
-                            stream,
-                            null,
-                            endOffset,
-                            MemoryMappedFileAccess.ReadWrite,
-                            HandleInheritability.None,
-                            false);
-                        using MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(
-                            appendOffset,
-                            appendBytes,
-                            MemoryMappedFileAccess.Write);
-                        byte* mappedPtr = null;
                         try
                         {
-                            accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPtr);
-                            byte* target = mappedPtr + (int)accessor.PointerOffset;
-                            UnsafeUtility.MemCpy(target, headerPtr, headerByteCount);
-                            UnsafeUtility.MemCpy(target + headerByteCount, payload, byteCount);
-                            accessor.Flush();
-                            stream.Flush(true);
-                            return true;
+                            stream.SetLength(endOffset);
+                            using MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
+                                stream,
+                                null,
+                                endOffset,
+                                MemoryMappedFileAccess.ReadWrite,
+                                HandleInheritability.None,
+                                false);
+                            using MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(
+                                appendOffset,
+                                appendBytes,
+                                MemoryMappedFileAccess.Write);
+                            byte* mappedPtr = null;
+                            try
+                            {
+                                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPtr);
+                                byte* target = mappedPtr + (int)accessor.PointerOffset;
+                                UnsafeUtility.MemCpy(target, headerPtr, headerByteCount);
+                                UnsafeUtility.MemCpy(target + headerByteCount, payload, byteCount);
+                                accessor.Flush();
+                                stream.Flush(true);
+                                return true;
+                            }
+                            finally
+                            {
+                                if (mappedPtr != null)
+                                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                            }
                         }
-                        finally
+                        catch (PlatformNotSupportedException)
                         {
-                            if (mappedPtr != null)
-                                accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                            stream.SetLength(appendOffset);
                         }
-                    }
-                    catch (PlatformNotSupportedException)
-                    {
-                        stream.SetLength(appendOffset);
-                    }
-                    catch (Exception)
-                    {
-                        stream.SetLength(appendOffset);
-                    }
+                        catch (Exception)
+                        {
+                            stream.SetLength(appendOffset);
+                        }
 #endif
 
-                    stream.Position = appendOffset;
-                    stream.Write(headerBytes.Slice(0, headerByteCount));
-                    stream.Write(new ReadOnlySpan<byte>(payload, byteCount));
-                    stream.Flush(true);
-                    return true;
+                        stream.Position = appendOffset;
+                        stream.Write(headerBytes.Slice(0, headerByteCount));
+                        stream.Write(new ReadOnlySpan<byte>(payload, byteCount));
+                        stream.Flush(true);
+                        return true;
+                    }
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteWalPath);
                 }
             }
             catch (Exception exception)
@@ -1297,8 +1306,68 @@ namespace Hecton8.SaveSystem
         {
             if (!string.IsNullOrEmpty(backupPath) && File.Exists(backupPath))
             {
-                File.Copy(backupPath, walPath, true);
-                error = reason + " Restored .bak.";
+                try
+                {
+                    string absoluteWalPath = Path.GetFullPath(walPath);
+                    string absoluteBackupPath = Path.GetFullPath(backupPath);
+                    if (!AsyncWriteManager.TryGetFileLength(absoluteBackupPath, out long backupBytes, out string backupLengthError))
+                    {
+                        error = reason + " .bak length could not be resolved. " + backupLengthError;
+                        return false;
+                    }
+
+                    HectonPersistentPathPolicy.EnsureParentDirectory(absoluteWalPath);
+                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteWalPath);
+                    try
+                    {
+                        File.Copy(absoluteBackupPath, absoluteWalPath, true);
+                    }
+                    finally
+                    {
+                        AsyncWriteManager.InvalidateCachedReadWindows(absoluteWalPath);
+                    }
+
+                    if (!AsyncWriteManager.TryGetFileLength(absoluteWalPath, out long restoredBytes, out string restoredLengthError))
+                    {
+                        error = reason + " Restored .bak length could not be resolved. " + restoredLengthError;
+                        return false;
+                    }
+
+                    if (restoredBytes != backupBytes)
+                    {
+                        error = reason + " Restored .bak length mismatch.";
+                        return false;
+                    }
+
+                    if (!AsyncWriteManager.FlushCriticalSavePath(absoluteWalPath, restoredBytes, out string flushError))
+                    {
+                        error = reason + " Restored .bak flush failed. " + flushError;
+                        return false;
+                    }
+
+                    error = reason + " Restored .bak.";
+                }
+                catch (IOException exception)
+                {
+                    error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
+                }
+                catch (UnauthorizedAccessException exception)
+                {
+                    error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
+                }
+                catch (System.Security.SecurityException exception)
+                {
+                    error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
+                }
+                catch (ArgumentException exception)
+                {
+                    error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
+                }
+                catch (NotSupportedException exception)
+                {
+                    error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
+                }
+
                 return false;
             }
 

@@ -9,32 +9,16 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Aegir Primary Light and Radiation"
+title: "Свет основной звезды Aegir и радиация"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Aegir Primary Light and Radiation
+# Свет основной звезды Aegir и радиация
 
-RU LOC HOLD: Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
-
-## Scanner
-
-RU LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
-
-## Terminal
-
-RU LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
-
-## Audio
-
-RU LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
-
-## Field Note
-
-RU LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir не выглядит пустой чернотой. K-звезда кладет на палубы янтарный свет, длинные тени и поток, от которого открытые приборы начинают врать, если никто не сверяет счетчик поясов. Газовый гигант - вторые часы: магнитосферные трассы тяжелеют, смягчаются и снова тяжелеют, когда луны пересекают заряд и тень. Deep Reach продавала эти числа как обычные рабочие окна. Экипажи выучили практическую версию: теплое небо может сварить дешевое уплотнение, заглушить связь и оценить спасение поминутно.
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/ru_RU. -->

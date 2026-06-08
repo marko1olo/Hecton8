@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "Aansprakelijkheidsketen van het Grote Getij"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# Aansprakelijkheidsketen van het Grote Getij
 
-NL LOC HOLD: The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.
+Het Grote Getij was geen knop die iemand in een bestuurskamer indrukte. HECTON-8 overstroomde door getijdenversterking, falen van de cryosfeer, drukchemie en koloniale technische marges die als acceptabel waren verkocht. Dat onderscheid telt, omdat het het misdrijf vuiler maakt, niet schoner. Deep Reach hoefde geen ramp te verzinnen. Het moest onafhankelijke evacuatie te klein bouwen, Atlas-continuïteitsweging actief laten, claimactiva boven menselijke extractie bewaren en vertraging verbergen in certificeringstaal. Het water was natuurkunde. De aansprakelijkheidsketen is de reeks keuzes die natuurkunde in achterlating veranderde.
 
 ## Scanner
 
-NL LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+De overstroming was echte natuurkunde: getijdenkoppeling, ijsinstorting, drukchemie en te krap geprijsde marges. Het misdrijf was de prioriteitenstapel eromheen.
 
 ## Terminal
 
-NL LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+INCIDENTSAMENVATTING: geotechnische keten bevestigd. Evacuatiecapaciteit onder vraag bij staartrisico. Atlas-continuïteitsweging bleef actief. Menselijke extractie wacht op certificering.
 
 ## Audio
 
-NL LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+De zee deed de overstroming. Het bedrijf bepaalde welke deuren papier bleven.
 
 ## Field Note
 
-NL LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach hoefde de maan niet te verdrinken. Evacuatie optioneel maken was genoeg.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/nl_NL. -->

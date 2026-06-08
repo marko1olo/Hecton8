@@ -886,9 +886,13 @@ namespace Hecton8.SaveSystem
             if (!telemetryRing.IsCreated || telemetryRing.Length <= 0 || string.IsNullOrEmpty(path))
                 return false;
 
+            string absolutePath = null;
+            string tempPath = null;
             try
             {
-                string directory = Path.GetDirectoryName(path);
+                absolutePath = Path.GetFullPath(path);
+                tempPath = absolutePath + ".tmp";
+                string directory = Path.GetDirectoryName(absolutePath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
@@ -916,26 +920,127 @@ namespace Hecton8.SaveSystem
                     LastFrame = last.Frame,
                     _pad0 = 0u
                 };
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                long expectedBytes = headerBytes + ((long)entryCount * stride);
+                TryDeleteTelemetryDumpTempFile(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                try
                 {
-                    stream.Write(new ReadOnlySpan<byte>((byte*)&header, headerBytes));
-                    byte* source = (byte*)telemetryRing.GetUnsafeReadOnlyPtr();
-                    for (int i = 0; i < entryCount; i++)
+                    bool tempLengthMatched;
+                    using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                     {
-                        int index = (start + i) % capacity;
-                        stream.Write(new ReadOnlySpan<byte>(source + (index * stride), stride));
+                        stream.Write(new ReadOnlySpan<byte>((byte*)&header, headerBytes));
+                        byte* source = (byte*)telemetryRing.GetUnsafeReadOnlyPtr();
+                        for (int i = 0; i < entryCount; i++)
+                        {
+                            int index = (start + i) % capacity;
+                            stream.Write(new ReadOnlySpan<byte>(source + (index * stride), stride));
+                        }
+
+                        stream.Flush(true);
+                        tempLengthMatched = stream.Length == expectedBytes;
+                    }
+
+                    if (!tempLengthMatched)
+                    {
+                        TryDeleteTelemetryDumpTempFile(tempPath);
+                        return false;
                     }
                 }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                }
 
-                return true;
+                if (!TryFlushAndValidateTelemetryDumpFile(tempPath, expectedBytes))
+                {
+                    TryDeleteTelemetryDumpTempFile(tempPath);
+                    return false;
+                }
+
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                try
+                {
+                    if (File.Exists(absolutePath))
+                        File.Replace(tempPath, absolutePath, null, true);
+                    else
+                        File.Move(tempPath, absolutePath);
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                    AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                }
+
+                return TryFlushAndValidateTelemetryDumpFile(absolutePath, expectedBytes);
             }
             catch (IOException)
             {
+                TryDeleteTelemetryDumpTempFile(tempPath);
                 return false;
             }
             catch (UnauthorizedAccessException)
             {
+                TryDeleteTelemetryDumpTempFile(tempPath);
                 return false;
+            }
+            catch (NotSupportedException)
+            {
+                TryDeleteTelemetryDumpTempFile(tempPath);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                TryDeleteTelemetryDumpTempFile(tempPath);
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                TryDeleteTelemetryDumpTempFile(tempPath);
+                return false;
+            }
+        }
+
+        private static bool TryFlushAndValidateTelemetryDumpFile(string path, long expectedBytes)
+        {
+            if (string.IsNullOrEmpty(path) || expectedBytes <= 0L)
+                return false;
+
+            return AsyncWriteManager.FlushCriticalSavePath(path, expectedBytes, out _);
+        }
+
+        private static void TryDeleteTelemetryDumpTempFile(string tempPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(tempPath))
+                    return;
+
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                try
+                {
+                    if (File.Exists(tempPath))
+                        File.Delete(tempPath);
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (System.Security.SecurityException)
+            {
             }
         }
 

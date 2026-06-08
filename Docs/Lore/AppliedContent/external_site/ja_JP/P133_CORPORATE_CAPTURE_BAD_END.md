@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "企業回収：清潔な救助"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# 企業回収：清潔な救助
 
-JP LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call.
+企業回収は助けのように始まるから効く。信号は明瞭で、回収は専門的で、部屋には空気がある。だが作業順序が見えてくる。座標が先、XO custodyが次、Atlasアクセスが三番目、請負者の福祉は審査後である。
 
-## Scanner
-
-JP LOC HOLD: Rescue offer. Payload first. Witness second.
-
-## Terminal
-
-JP LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
-
-## Audio
-
-JP LOC HOLD: The clean room is not for you.
-
-## Field Note
-
-JP LOC HOLD: A rescue that demands silence is a capture with better lighting.
+海はプレイヤーを押し潰すのをやめるが、Deep Reachは物語の保存を始める。証言は汚染用語で封印され、payload custodyは医療聴取より先に動き、プレイヤーが運んだすべての名前は責任画面になる。これは死ではない。沈黙を必要とした機械の中で生き残ることだ。
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/ja_JP. -->

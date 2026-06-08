@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Black Keel Claim Acceptance"
+title: "Black Keel 청구 승인"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Black Keel Claim Acceptance
+# Black Keel 청구 승인
 
-KO LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+Black Keel 청구 단말은 바다가 화면에 닿기 전부터 시작을 부채, 산소 부가 조항, custody로 묶어 둔다.
 
 ## Scanner
 
-KO LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+계약 콘솔. Aegir Reclamation Pool은 산소보다 먼저 4.8 tonne-window 유치권을 표시한다.
 
 ## Terminal
 
-KO LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / 청구 승인 단말: route RAN-B:H8 salvage descent; 4.8 tonne-window lien relief 조건부; 산소 welfare addenda는 회수 후 청구; payload custody는 Black Keel 우선, Keelmark Mutual 증인; 거부하면 Barnard blacklist review가 계속 활성.
 
 ## Audio
 
-KO LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel에서 계약자에게: 청구 창이 열렸다. 산소는 회수 후 청구된다. 일할 수 있으면 승인하라.
 
 ## Field Note
 
-KO LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+스타일러스는 압력 코드로 화면에 묶여 있다. 떨리는 손을 예상한 장치다.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/ko_KR. -->

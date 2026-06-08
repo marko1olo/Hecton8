@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Ksiezyc pekniety po kolizji"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Ksiezyc pekniety po kolizji
 
-PL LOC HOLD: HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.
+HECTON-8 uformowal sie w systemie Aegira, a pozniej zostal rozciety przez kolizje pod katem. Rana nie rozerwala ksiezyca. Uniosla polki skorupy, otworzyla uskoki solankowe, nakarmila korytarze termalne i zostawila stare dno dostepne przez rzadkie okna cisnienia. Mapy zlomiarzy ida za tym uszkodzeniem, bo najbezpieczniejsze trasy to stare rany wypelnione woda.
 
 ## Scanner
 
-PL LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
+Probka starej skorupy. Ksiezyc powstal w pasie szczatkow Aegira, a potem uderzenie otworzylo go tak szeroko, ze ocean to zapamietal.
 
 ## Terminal
 
-PL LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+MODEL POCHODZENIA: akrecja wokol Aegira, pozniejsze ukosne uderzenie, rezonans plywowy po blokadzie. Skutek: schodkowa skorupa, gorace drabiny uskokow, baseny solankowe, zyly szkla cisnieniowego, nierowny dostep do glebokiego dna.
 
 ## Audio
 
-PL LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
+Urodzil sie tutaj. Potem cos uderzylo tak mocno, ze morze dostalo mape.
 
 ## Field Note
 
-PL LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+Mit przechwyconego ksiezyca jest zbyt czysty. HECTON-8 nosi lokalna rane: uniesiona skorupe, ciezsza solanke i kominy, ktore wciaz naliczaja odsetki.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/pl_PL. -->

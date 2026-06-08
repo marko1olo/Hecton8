@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: First Atlas Repair Trace"
+title: "最初の Atlas 修復痕"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: First Atlas Repair Trace
+# 最初の Atlas 修復痕
 
-JA LOC HOLD: The first Atlas trace is small and useful before it becomes horror: a cable is repaired around a human object, showing continuity logic without human priority.
+最初の Atlas 痕跡は、恐怖になる前は小さく有用だ。ケーブルが人間の物体の周囲で修復され、人間優先のない continuity logic を示している。
 
 ## Scanner
 
-JA LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+ケーブルの傷に修復バイオフィルム。音響反復はコロニービーコンではなく Atlas 保守カデンスに一致する。
 
 ## Terminal
 
-JA LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+ATLAS 保守痕跡: 破断封止; ケーブル連続性復旧; organic obstruction は pressure-compatible substrate として保持; human ID plate は retrieval priority に分類されず。
 
 ## Audio
 
-JA LOC HOLD: Atlas repair complete. Person not in work order.
+Atlas 修復完了。作業指示に人間はない。
 
 ## Field Note
 
-JA LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+それは名札の周囲でケーブルを封じた。有用な修理。悪い分類。
 
 <!-- In-Game Wiki; generated from P155_FIRST_ATLAS_REPAIR_TRACE/ja_JP. -->

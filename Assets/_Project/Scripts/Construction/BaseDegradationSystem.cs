@@ -490,7 +490,8 @@ namespace Hecton8.Construction
             TryDispatchParasiteCollapseBox(collapseCenter, halfExtents);
 
             baseModule.SetIntegrityState(BaseModuleIntegrityState.Ruptured);
-            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            FloraInteractionManager floraInteractionManager = null;
+            WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref floraInteractionManager);
             if (floraInteractionManager != null)
                 floraInteractionManager.KillAttachedParasites(baseModule);
 
@@ -511,7 +512,8 @@ namespace Hecton8.Construction
 
         private static bool TryDispatchParasiteCollapseBox(Vector3 runtimeCenter, Vector3 halfExtents)
         {
-            HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
+            HectonVoxelEngine engine = null;
+            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref engine);
             if (engine == null)
                 return false;
 

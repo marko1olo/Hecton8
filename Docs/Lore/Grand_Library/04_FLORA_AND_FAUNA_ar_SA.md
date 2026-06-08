@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # الكائنات الحية المحلية: النباتات والحيوانات والانهيار البيئي
 
 > **المصدر:** مساعد رقمي شخصي (PDA) مسترد، من كبسولة هبوط من فئة Styx تحمل اسم 'Lazarus'.  

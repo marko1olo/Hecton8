@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "Capture corporative : secours propre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# Capture corporative : secours propre
 
-FR LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.
+La Capture corporative est une mauvaise fin bâtie depuis un secours plausible. Le joueur quitte l'océan vivant, mais l'autorité qui répond traite le témoin comme matériau de confinement et le payload comme le vrai patient.
 
 ## Scanner
 
-FR LOC HOLD: Rescue offer. Payload first. Witness second.
+Source de récupération vérifiée : proxy Deep Reach. Payload demandé avant contrôle de bien-être.
 
 ## Terminal
 
-FR LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
+RAMASSAGE DEEP REACH : l'équipe de récupération accepte coordonnées, custody XO et clé d'accès Atlas avant contrôle de bien-être du contractant. Témoignage du contractant scellé sous protocole de contamination.
 
 ## Audio
 
-FR LOC HOLD: The clean room is not for you.
+La salle propre n'est pas pour toi.
 
 ## Field Note
 
-FR LOC HOLD: A rescue that demands silence is a capture with better lighting.
+Un secours propre qui demande les coordonnées d'abord est une capture avec un meilleur air.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/fr_FR. -->

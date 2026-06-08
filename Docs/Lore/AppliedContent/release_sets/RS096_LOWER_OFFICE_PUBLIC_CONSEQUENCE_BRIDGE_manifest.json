@@ -1,28 +1,55 @@
 {
-    "schema":  "H8.APPLIED_LORE_RELEASE_SET.V0",
-    "release_set_id":  "RS096_LOWER_OFFICE_PUBLIC_CONSEQUENCE_BRIDGE",
-    "status":  "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
-    "packets":  [
-                    "P480_CONTRACT_CONTINUITY_DESK_RECOVERY_LANGUAGE_BRIDGE",
-                    "P481_PACKET_NOTARY_INTERFACE_WITNESS_HASH_BRIDGE",
-                    "P482_QUARANTINE_REVIEW_GATE_DELAY_BRIDGE",
-                    "P483_ASSET_SILENCE_BOARD_SUPPRESSION_BRIDGE",
-                    "P484_PUBLIC_LEDGER_RELEASE_GATE_BRIDGE",
-                    "P485_CORPORATE_QUARANTINE_HOLD_BRIDGE",
-                    "P486_MATERIAL_PAYOUT_CLAIM_CONVERSION_BRIDGE",
-                    "P487_PARTIAL_RETURN_CONTRACT_DEBRIEF_BRIDGE"
-                ],
-    "authoring_packet_sources":  [
-                                     "Docs/Lore/AppliedContent/production_packets/P480_CONTRACT_CONTINUITY_DESK_RECOVERY_LANGUAGE_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P481_PACKET_NOTARY_INTERFACE_WITNESS_HASH_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P482_QUARANTINE_REVIEW_GATE_DELAY_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P483_ASSET_SILENCE_BOARD_SUPPRESSION_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P484_PUBLIC_LEDGER_RELEASE_GATE_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P485_CORPORATE_QUARANTINE_HOLD_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P486_MATERIAL_PAYOUT_CLAIM_CONVERSION_BRIDGE.production.md",
-                                     "Docs/Lore/AppliedContent/production_packets/P487_PARTIAL_RETURN_CONTRACT_DEBRIEF_BRIDGE.production.md"
-                                 ],
-    "canonical_importer_ready":  false,
-    "runtime_ready":  false,
-    "evidence_class":  "STATIC_SOURCE"
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS096_LOWER_OFFICE_PUBLIC_CONSEQUENCE_BRIDGE",
+  "title": "Lower Office Public Consequence Bridge",
+  "status": "production_article_source_candidate_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P480_CONTRACT_CONTINUITY_DESK_RECOVERY_LANGUAGE_BRIDGE",
+    "P481_PACKET_NOTARY_INTERFACE_WITNESS_HASH_BRIDGE",
+    "P482_QUARANTINE_REVIEW_GATE_DELAY_BRIDGE",
+    "P483_ASSET_SILENCE_BOARD_SUPPRESSION_BRIDGE",
+    "P484_PUBLIC_LEDGER_RELEASE_GATE_BRIDGE",
+    "P485_CORPORATE_QUARANTINE_HOLD_BRIDGE",
+    "P486_MATERIAL_PAYOUT_CLAIM_CONVERSION_BRIDGE",
+    "P487_PARTIAL_RETURN_CONTRACT_DEBRIEF_BRIDGE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS096_LOWER_OFFICE_PUBLIC_CONSEQUENCE_BRIDGE.packets.json"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P480_CONTRACT_CONTINUITY_DESK_RECOVERY_LANGUAGE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P481_PACKET_NOTARY_INTERFACE_WITNESS_HASH_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P482_QUARANTINE_REVIEW_GATE_DELAY_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P483_ASSET_SILENCE_BOARD_SUPPRESSION_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P484_PUBLIC_LEDGER_RELEASE_GATE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P485_CORPORATE_QUARANTINE_HOLD_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P486_MATERIAL_PAYOUT_CLAIM_CONVERSION_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P487_PARTIAL_RETURN_CONTRACT_DEBRIEF_BRIDGE.production.md"
+  ],
+  "article_sources": [
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_en_US.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_ru_RU.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_ja_JP.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_zh_CN.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_fr_FR.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_es_ES.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_de_DE.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_pl_PL.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_uk_UA.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_ar_SA.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_id_ID.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_ko_KR.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_he_IL.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_pt_BR.md",
+    "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_nl_NL.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
 }

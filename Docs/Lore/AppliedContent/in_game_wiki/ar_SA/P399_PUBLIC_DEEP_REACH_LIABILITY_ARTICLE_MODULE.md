@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Deep Reach Liability Evidence"
+title: "أدلة مسؤولية Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Deep Reach Liability Evidence
+# أدلة مسؤولية Deep Reach
 
-AR LOC HOLD: Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
+تعمل liability الخاصة بDeep Reach لأن الفيضان لا يحتاج إلى فيزياء مزيفة. كان Great Tide حقيقيا. الضرر الممكن منعه يظهر في margins والساعات وaccess holds والسجلات التي نظفت العمال إلى فئات قبل أن يمكن استرداد أي شخص.
 
 ## Scanner
 
-AR LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+سجل liability. فيزياء مد حقيقية، margin risk مقبول، تأخر إخلاء، quarantine holds، Atlas weighting ولغة خسارة مصقولة تلتقي في سلسلة دليل واحدة.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+عقدة الأرشيف العام // أدلة LIABILITY. Great Tide مقبول. تبقى المراجعة مفتوحة بشأن sensor margins وتأخر evacuation queue وquarantine holds وAtlas weighting وworker classification وloss conversion.
 
 ## Audio
 
-AR LOC HOLD: A disaster can be natural and still have signatures on it.
+قد تكون الكارثة طبيعية وتحمل توقيعات مع ذلك.
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+ملاحظة Marauder: لا تجادل المد. جادل التوقيعات بجانبه.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/ar_SA. -->

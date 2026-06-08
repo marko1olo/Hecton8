@@ -8,7 +8,7 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Beam-Sail Probe Era"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Beam-Sail Probe Era
 
-Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+The Beam-Sail Probe Era is the quiet beginning of the Aegir story. Small payloads rode power from distant arrays, crossed first, and returned packets old enough to be argued over but good enough to sell. The probes did not make Aegir safe. They made it legible: gravity wells, radiation belts, ocean signatures, relay sightlines, and a route that could be made profitable with enough indifference. That difference between legible and safe is where Deep Reach enters the story.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/en_US. -->

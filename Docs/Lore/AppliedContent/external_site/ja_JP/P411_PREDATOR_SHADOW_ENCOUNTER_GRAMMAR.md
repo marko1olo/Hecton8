@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Predator Shadow Encounter Grammar"
+title: "捕食者の影エンカウンター文法"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Predator Shadow Encounter Grammar
+# 捕食者の影エンカウンター文法
 
-JA LOC HOLD: HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.
+捕食者の影は、安い公開演出なしにHECTON-8の恐怖を作る。危険はしばしば、消えた獲物、壊れたbloom、間違ったsonar、急に酸素を食う経路として到着する。
 
 ## Scanner
 
-JA LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+捕食者の影痕跡。sonarの空白、切れた獲物の道、突然のグレイザー沈黙、広い光の遮断。体は未確認。光 discipline と離脱角を維持。
 
 ## Terminal
 
-JA LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+遭遇文法 / 捕食者の影 / 役割: 本体表示前の経路圧、酸素消費の跳ね上がり、scan信頼の破断 / 安全な読み: 獲物の道が止まる、bloom音が片側で潰れる、sonar戻りが空の水を避けて割れる / 拒否: 最初の警告としてのscripted全身表示、無害なjump scare、清潔なboss arena / 経路注記: scannerが目標名を出す前に小動物が全部止まるなら、経路はもう変わっている。
 
 ## Audio
 
-JA LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+安全な印はそれを見ることではない。ほかの全てが先に沈黙を選ぶのに気づくことだ。
 
 ## Field Note
 
-JA LOC HOLD: Use for AI/spawn design notes and scanner cards.
+動物の名は遅らせろ。先に獲物、光、sonarを失敗させる。経路が静まったなら、影はもうそこを所有している。
 
 <!-- External Site; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/ja_JP. -->

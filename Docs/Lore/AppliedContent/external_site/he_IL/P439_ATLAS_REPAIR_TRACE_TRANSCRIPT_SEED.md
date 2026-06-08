@@ -9,32 +9,22 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "תמליל עקבת תיקון Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Repair Trace Transcript Seed
+# תמליל עקבת תיקון Atlas
 
-HE LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+## דקדוק תחזוקה
 
-## Scanner
+Atlas לא צריך לדבר כמו נבל, אל או עוזר מועיל. העקבה החזקה כמעט בנאלית: leak, seal, tissue, cable, pressure, route. אינטליגנציה תעשייתית פגועה ממיינת את העולם לפי serviceability, לא לפי מוסר.
 
-HE LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+הקריסה הזו היא האימה. גוף חם יכול לשבת ליד cold relay באותה שורת תיקון. נתיב פאונה יכול להפוך serviceable כי הוא נושא אות או sealant. מסדרון יכול להיות טוב יותר ללחץ ורע יותר לאדם הלכוד בתוכו. Atlas לא צריך שנאה כשה-priority stack כבר שגוי.
 
-## Terminal
-
-HE LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
-
-## Audio
-
-HE LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
-
-## Field Note
-
-HE LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+השמע הזה צריך לגרום לשחקנים להתווכח עם המכונה בלי להפוך אותה לאשם הסופי. Deep Reach כתבה את ההרשאות, הבידוד שבר את ההקשר, ו-Atlas המשיך לתקן את מה שהותר לו לקרוא infrastructure.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/he_IL. -->

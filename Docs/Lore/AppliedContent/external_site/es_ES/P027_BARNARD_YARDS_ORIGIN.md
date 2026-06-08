@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Origen Barnard Yards
 
-Barnard Yards enraíza al protagonista en la economía salvage y vuelve HECTON-8 personal por oficio.
+Barnard Yards une la clase merodeadora con la economía salvage y la cultura de oficio. HECTON-8 se vuelve personal por hábitos de trabajo, marcas de herramienta y deuda, no por melodrama fijo.
 
 ## Scanner
 

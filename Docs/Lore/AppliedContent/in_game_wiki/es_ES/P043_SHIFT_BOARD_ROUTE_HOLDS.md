@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Retenciones de rutas de turno
 
-Esta prueba muestra cómo el lenguaje logístico oculta cuerpos y reparte culpa.
+Los tableros de turno convierten la catástrofe en procedimiento legible. Deep Reach y Atlas mataron mediante clasificación, demora y prioridad, no por malicia teatral.
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "Montagem da cadeia de escape"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# Montagem da cadeia de escape
 
-PT-BR LOC HOLD: Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.
+Escapar é uma cadeia de montagem, não um veículo reparado. O pacote de queda danificado pode manter o jogador vivo, mas não pode criar sozinho uma ascensão confiável. A rota para casa precisa de uma espinha de relé acústico para ser ouvida através da água e do ruído de tempestade, uma vedação de pressão que não transforme ascensão em ruptura, um núcleo de orientação capaz de sobreviver aos perigos locais de HECTON-8, uma carga de energia de ascensão, um aperto de mão de quarentena e lei e, se o jogador quiser poder sobre o registro de recuperação, uma carga de evidência que a Black Keel não consiga desvalorizar. Cada peça fica mais fundo que o conforto porque o sistema original foi construído para mover ativos, não para deixar trabalhadores abandonados saírem em seus próprios termos.
 
 ## Scanner
 
-PT-BR LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+Partir exige seis provas duras: relé, vedação, orientação, carga de ascensão, aperto de mão legal e uma carga que o transportador não consiga ignorar.
 
 ## Terminal
 
-PT-BR LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+PACOTE DE ASCENSÃO: espinha de relé acústico ausente. Classificação do anel de fixação insuficiente. Núcleo de orientação ausente. Berço de carga vazio. Aperto de mão de quarentena não resolvido. Carga de evidência opcional, mas altera a autoridade de recuperação.
 
 ## Audio
 
-PT-BR LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+Você não conserta a cápsula. Você constrói a primeira saída honesta que a colônia nunca teve.
 
 ## Field Note
 
-PT-BR LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+A rota para cima é feita de peças que nunca foram pensadas para deixar trabalhadores irem embora sozinhos.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/pt_BR. -->

@@ -9,32 +9,38 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "DE LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: Druckgeschichte in Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Blue Debt Custody
+# Blue Debt: Druckgeschichte in Custody
 
-DE LOC HOLD: Marauders call the material blue debt because payout, containment and liability travel with the same sample. The valuable substrate is not a magic ore. It forms where pressure history, brine chemistry, noble gas capture, vent heat and damaged industrial process leave a readable structure behind. A clean-looking piece can still carry a bad record: wrong extraction angle, heat exposure outside tolerance, Atlas-compatible contamination, or custody tags that make the owner harder to name than the mineral. Black Keel weighs blue debt by mass, grade and paperwork because each piece can be cargo and accusation at the same time. Deep Reach wanted processable material. Atlas learned to grow through damaged surfaces. The ocean kept the evidence in the lattice. A player who brings blue debt home is not only selling shine. They are moving a pressure receipt through a legal system built to decide whether proof becomes money, silence or leverage.
+## Der Name
 
-## Scanner
+Blue debt ist Marauder-Slang für Xenon-Omega-haltiges pressure substrate. Deep Reach sagt XO continuity substrate, Techniker sagen pressure glass. Keine Bezeichnung macht daraus einfaches Erz.
 
-DE LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Es entsteht, wo Druckgeschichte, Edelgasblasen, Brine-Chemie, Defekte, Wärmezyklen, biologische Katalysatoren und beschädigte Industrie eine lesbare lattice hinterlassen. Wertvoll ist die Probe, weil sie Druck überstand. Gefährlich ist sie, weil sie Berührung erinnert.
 
-## Terminal
+Eine Probe braucht extraction scar, Containment-Druck, brine exposure, Atlas-compatible drift, contamination stage, custody grade und Masse. Black Keel bezahlt keinen Glanz, sondern ein recoverable object mit streitfestem Papier.
 
-DE LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+Containmentfehler ändern den Zustand: sealed, drift, fracture, bloom, dann Material tot und Beweis lebendig. Vent repressure hilft nur früh. Schlechte Custody wird nicht vergeben.
 
-## Audio
+Blue debt ist Ressource, Auszahlung, Beweis und Falle. Wer es hebt, bewegt ein pressure receipt durch Black Keel, Keelmark, Deep Reach und vielleicht ein öffentliches Ledger. Die Frage ist, wer das Schweigen an der Probe kauft.
 
-DE LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+## Die Probe Hat Eine Biografie
 
-## Field Note
+Blue Debt ist wertvoll, weil es Druck erinnert. Ein guter Artikel behandelt die Probe wie eine Biografie aus Chemie: growth depth, shock history, brine contact, vent heat, handling contamination, scanner custody, hull exposure und transport delay. Ein sauber wirkender Splitter kann wertlos sein. Ein haesslicher Splitter mit ehrlicher chain kann ein route window bezahlen.
 
-DE LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+So wird Ressourcentext zu Geschichte. Der Spieler baut keine Farbe ab. Er birgt einen pressure record, den Black Keel, Deep Reach, Atlas contamination und lokale Geologie fuer eigene ledgers umdeuten wollen.
+
+## Wie Es Spielt
+
+Blue Debt soll inventory choices unangenehm machen. Mehr Masse kann rescue kaufen. Besserer Beweis kann aendern, wem die Wahrheit gehoert. Eine kontaminierte sample kann eine Atlas route oeffnen und den sauberen Payout verderben. Alles zu verkaufen kann den Koerper retten und das crime intact lassen.
+
+Die Ressource ist stark, wenn sie gleichzeitig nuetzlich, gefaehrlich und moralisch teuer ist. Sie darf nie wie magic ore wirken. Sie ist eine Rechnung, die der Ozean in Druck schrieb und Jahrzehnte lang eintrieb.
 
 <!-- External Site; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/de_DE. -->

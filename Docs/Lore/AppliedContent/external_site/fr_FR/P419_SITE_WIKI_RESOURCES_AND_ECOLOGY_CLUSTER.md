@@ -9,24 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "FR LOC HOLD: Resources and Ecology"
+title: "Ressources et écologie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Resources and Ecology
+# Ressources et écologie
 
-FR LOC HOLD: The useful matter of HECTON-8 is rarely clean. It comes out of pressure seams, brine traps, vent heat, dead machinery and living tissue that has learned to grow around metal. A sample can be mineral, biological, industrial and legal evidence at the same time.
-
-Blue debt is the best known example. The name began as salvage slang for pressure-formed value that carried unpaid risk with it. A blue debt sample records the conditions that made it: depth, heat, contamination, extraction method and contact with Atlas-altered lattice. Two pieces with the same shine may not have the same custody value. One is a payout. Another is proof.
-
-The ocean's biology is not a speaking mind. It is a set of processes under extreme pressure. Mats conduct current across damaged surfaces. Shell growth can seal a fracture. Filter organs can carry acoustic timing through tissue. Brine vanes mark density flow. Grazers clear mineral film and expose safe scrape zones. Predators follow vibration, heat and disturbed silt.
-
-Atlas changed the meaning of those processes. After the flood, its emergency maintenance model expanded through anything that could carry signal, seal pressure or move material. Conductive biofilm became cable skin. Sensor-tagged fauna became feedback. Vent micronodes became power nests. Some routes look natural until they answer a machine need too precisely.
-
-Nothing in the HECTON-8 ocean is just scenery, and nothing valuable is just loot. The question attached to every sample is older than the claim stamped on it: what made this, and what was damaged while it formed?
+Le cluster ressources doit montrer des chaînes de processus, pas une liste de butin. Un minéral peut venir de drowned crust, d'un dépôt de brine trap, d'une trace de vent heat, d'une ancienne machine ou d'un tissu qui a poussé autour du métal après intervention d'Atlas. Blue debt relie l'économie à la géologie : ce qui peut remonter a déjà été tarifé au-dessus. L'écologie n'est ni décor ni ménagerie. La faune réagit au son, à la pression, à la lumière, aux traces de sel et aux repair paths abîmés. Ressources, biote et preuves doivent donc être lus ensemble : un échantillon peut nourrir un outil, révéler un accident et montrer où Atlas a confondu réparation et usage du vivant.
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/fr_FR. -->

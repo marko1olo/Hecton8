@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Blue Debt"
+title: "Utang Biru"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue Debt
+# Utang Biru
 
-Blue debt adalah slang Marauder untuk material Xenon-Omega yang dijaga tekanan dan residu proses terkait. Itu bukan satu mineral, melainkan keluarga kisi tumbuh tekanan, struktur klatrat, substrat tercemar, dan sisa industri yang dipakai Deep Reach untuk penahanan energi tinggi, komputasi ekstrem, dan infrastruktur kompatibel Atlas.
+Utang biru adalah slang marauder untuk residu Xenon-Omega yang ditahan tekanan dan substrat tercemar yang tumbuh di sekitarnya. Itu bukan satu mineral. Itu keluarga kisi dingin, kandang klatrat, abu komputasi, gel penahanan gagal, dan scrap proses dalam yang ditinggalkan peralatan Deep Reach. Di bawah kolom air HECTON-8, ia cukup tenang untuk dipindahkan. Di udara kabin, ia dapat melepas gas reaktif, debu kaca, dan masalah hukum. Material ini penting karena mengikat tiga sistem sekaligus: penahanan energi tinggi, memori kompatibel Atlas, dan ekonomi salvage. Sampel tersegel bisa membeli sel daya, lisensi alat, atau jalan keluar dari utang. Sampel yang sama bisa menandai carrier, memicu lien, meracuni perlindungan, atau membuktikan Deep Reach kembali untuk sesuatu yang katanya telah ditinggalkan.
 
 ## Scanner
 
-Residu Xenon-Omega yang dijaga tekanan. Stabil hanya dalam kondisi keras. Jangan ventilasi dekat udara kabin hangat.
+Residu Xenon-Omega yang ditahan tekanan. Stabil di air dingin, gelap, dan menghancurkan; berbahaya di udara hangat dan tekanan rendah.
 
 ## Terminal
 
-SUBSTRAT KONTINUITAS XO. Jangan dekompresi. Jangan paparkan ke atmosfer habitat tanpa filter.
+XO CONTINUITY SUBSTRATE. KUNCI TEKANAN WAJIB. JANGAN VENTILASI. TANDA KUSTODI: KLAIM / KONTAMINASI / LIEN.
 
 ## Audio
 
-Kontainer itu bernyanyi di sonar. Rendah, teratur. Itu bukan makhluk. Itu lebih buruk.
+Kontainer bernyanyi di sonar. Rendah dan teratur. Itu residu proses, bukan kehidupan. Perlakukan lebih buruk daripada kehidupan.
 
 ## Field Note
 
-Blue debt dibayar mahal karena menggigit dua kali. Saat kau membawanya. Lalu saat orang tahu kau memilikinya.
+Mereka menyebutnya utang biru karena setiap gram meminjam dari masa depan. Ia membayar di muka, lalu mengirim penagih.
 
 <!-- In-Game Wiki; generated from P004_BLUE_DEBT/id_ID. -->

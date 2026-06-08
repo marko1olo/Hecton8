@@ -1,0 +1,42 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS010_PRESSURE_MACHINERY_RETURN_ROUTE",
+  "title": "Pressure Machinery / Return Route",
+  "status": "production_article_source_candidate_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P046_PUMP_ROOM_HANDSHAKE",
+    "P047_HATCH_SEAL_LEDGER",
+    "P048_CABLE_SPLICE_SCAR",
+    "P049_SONAR_RETURN_ROUTE",
+    "P050_SALVAGE_TOOL_CUSTODY"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS010_PRESSURE_MACHINERY_RETURN_ROUTE.packets.json"
+  ],
+  "article_sources": [
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_en_US.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_ru_RU.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_ja_JP.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_zh_CN.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_fr_FR.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_es_ES.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_de_DE.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_pl_PL.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_uk_UA.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_ar_SA.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_id_ID.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_ko_KR.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_he_IL.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_pt_BR.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_nl_NL.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

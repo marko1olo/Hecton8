@@ -1,0 +1,23 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS113_RAN_CLAIM_LADDER",
+  "title": "Ran Claim Ladder",
+  "status": "source_candidate",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P990_RAN_CLAIM_LADDER",
+    "P991_HECTON8_PRESSURE_LADDER_FIELDGUIDE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P990_RAN_CLAIM_LADDER.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P991_HECTON8_PRESSURE_LADDER_FIELDGUIDE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

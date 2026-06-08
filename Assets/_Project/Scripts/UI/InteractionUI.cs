@@ -125,6 +125,7 @@ namespace Hecton8.UI
         private int _cachedFuelProbeInventoryVersion = int.MinValue;
         private bool _cachedFuelProbeResult;
         private INativeInputManagerRuntime _subscribedInputManager;
+        private IInputBindingService _subscribedInputBindingService;
         private bool _hotSwapListenerRegistered;
         private bool _isVisible;
         private float _cameraRetryTimer;
@@ -151,6 +152,11 @@ namespace Hecton8.UI
         private string _localizedVerbTake;
         private uint _lastInputSchemeHash;
         private bool _promptPresentationDirty;
+        private const string PlayerActionMapName = "Player";
+        private const string InteractActionName = "Interact";
+        private Action<string, string, int, string> _rebindCompletedAction;
+        private Action<string, string, int> _rebindCanceledAction;
+        private Action _bindingOverridesChangedAction;
 
         // COLD ALLOC: char[256] - interaction prompt TMP staging buffer - owner: InteractionUI
         private readonly char[] _promptCharBuffer = new char[256];
@@ -183,7 +189,9 @@ namespace Hecton8.UI
             ResolvePlayerReferences();
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegisterHotSwapListener();
+            EnsureCachedBindingDelegates();
             SubscribeInputManagerIfAvailable();
+            SubscribeInputBindingServiceIfAvailable(GlobalRegistry.InputBinding);
             ConfigurePromptText();
             RefreshLocalizedPromptCache();
             if (Application.isPlaying)
@@ -195,7 +203,9 @@ namespace Hecton8.UI
         {
             RefreshCachedRegistryServices();
             TryRegisterHotSwapListener();
+            EnsureCachedBindingDelegates();
             SubscribeInputManagerIfAvailable();
+            SubscribeInputBindingServiceIfAvailable(GlobalRegistry.InputBinding);
             RefreshLocalizedPromptCache();
             ClearPromptBuildCache();
         }
@@ -204,6 +214,7 @@ namespace Hecton8.UI
         {
             LocalizationEvents.UnregisterLanguageListener(this);
             UnsubscribeInputManager();
+            UnsubscribeInputBindingService();
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
             ClearPromptBuildCache();
@@ -213,6 +224,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             UnsubscribeInputManager();
+            UnsubscribeInputBindingService();
             TryUnregisterHotSwapListener();
         }
 
@@ -754,6 +766,34 @@ namespace Hecton8.UI
             QueuePromptPresentationRefresh(resetPrompt: true);
         }
 
+        private void HandleBindingChanged(string actionName, string actionMap, int bindingIndex, string display)
+        {
+            if (!string.Equals(actionMap, PlayerActionMapName, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(actionName, InteractActionName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            HandleBindingOverridesChanged();
+        }
+
+        private void HandleBindingCanceled(string actionName, string actionMap, int bindingIndex)
+        {
+            if (!string.Equals(actionMap, PlayerActionMapName, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(actionName, InteractActionName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            HandleBindingOverridesChanged();
+        }
+
+        private void HandleBindingOverridesChanged()
+        {
+            RefreshLocalizedPromptCache();
+            QueuePromptPresentationRefresh(resetPrompt: true);
+        }
+
         private void QueuePromptPresentationRefresh(bool resetPrompt)
         {
             _promptPresentationDirty = true;
@@ -797,6 +837,40 @@ namespace Hecton8.UI
             _subscribedInputManager = null;
         }
 
+        private void EnsureCachedBindingDelegates()
+        {
+            _rebindCompletedAction ??= HandleBindingChanged; // COLD ALLOC: Action<string,string,int,string>[1] - cached prompt binding listener - owner: InteractionUI
+            _rebindCanceledAction ??= HandleBindingCanceled; // COLD ALLOC: Action<string,string,int>[1] - cached prompt binding listener - owner: InteractionUI
+            _bindingOverridesChangedAction ??= HandleBindingOverridesChanged; // COLD ALLOC: Action[1] - cached prompt binding listener - owner: InteractionUI
+        }
+
+        private void SubscribeInputBindingServiceIfAvailable(IInputBindingService bindingService)
+        {
+            if (_subscribedInputBindingService != null || bindingService == null)
+                return;
+
+            EnsureCachedBindingDelegates();
+            _subscribedInputBindingService = bindingService;
+            _subscribedInputBindingService.OnRebindCompleted += _rebindCompletedAction;
+            _subscribedInputBindingService.OnRebindCanceled += _rebindCanceledAction;
+            _subscribedInputBindingService.OnOverridesLoaded += _bindingOverridesChangedAction;
+            _subscribedInputBindingService.OnOverridesSaved += _bindingOverridesChangedAction;
+            _subscribedInputBindingService.OnOverridesCleared += _bindingOverridesChangedAction;
+        }
+
+        private void UnsubscribeInputBindingService()
+        {
+            if (_subscribedInputBindingService == null)
+                return;
+
+            _subscribedInputBindingService.OnRebindCompleted -= _rebindCompletedAction;
+            _subscribedInputBindingService.OnRebindCanceled -= _rebindCanceledAction;
+            _subscribedInputBindingService.OnOverridesLoaded -= _bindingOverridesChangedAction;
+            _subscribedInputBindingService.OnOverridesSaved -= _bindingOverridesChangedAction;
+            _subscribedInputBindingService.OnOverridesCleared -= _bindingOverridesChangedAction;
+            _subscribedInputBindingService = null;
+        }
+
         private void RefreshCachedRegistryServices()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
@@ -812,6 +886,8 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Input &&
+                serviceSlot != GlobalRegistryServiceSlot.NativeInputManagerRuntime &&
+                serviceSlot != GlobalRegistryServiceSlot.InputBinding &&
                 serviceSlot != GlobalRegistryServiceSlot.Player &&
                 serviceSlot != GlobalRegistryServiceSlot.PlayerActionRuntime &&
                 serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime &&
@@ -829,12 +905,31 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+            if (serviceSlot == GlobalRegistryServiceSlot.InputBinding)
+            {
+                UnsubscribeInputBindingService();
+                if (!isActiveAndEnabled)
+                    return;
+
+                SubscribeInputBindingServiceIfAvailable(currentService as IInputBindingService);
+                RefreshLocalizedPromptCache();
+                QueuePromptPresentationRefresh(resetPrompt: true);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Input ||
+                serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+            {
                 UnsubscribeInputManager();
+            }
 
             RefreshCachedRegistryServices();
-            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime || serviceSlot == GlobalRegistryServiceSlot.Input)
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime ||
+                serviceSlot == GlobalRegistryServiceSlot.Input ||
+                serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+            {
                 RefreshLocalizedPromptCache();
+            }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
@@ -845,8 +940,11 @@ namespace Hecton8.UI
             if (!isActiveAndEnabled)
                 return;
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+            if (serviceSlot == GlobalRegistryServiceSlot.Input ||
+                serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+            {
                 SubscribeInputManagerIfAvailable();
+            }
             QueuePromptPresentationRefresh(resetPrompt: true);
         }
 

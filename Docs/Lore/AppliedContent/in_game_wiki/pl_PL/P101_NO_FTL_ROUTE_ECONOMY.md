@@ -7,34 +7,34 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Ekonomia tras bez FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# Ekonomia tras bez FTL
 
-PL LOC HOLD: Human space in 2190 runs on slow routes, relay custody, mass budgets, braking windows and old law. HECTON-8 is far enough that help is procedural before it is physical. That makes Black Keel, Deep Reach proxy packets and local evidence more important than any clean rescue fantasy.
+W 2190 roku ludzka przestrzeń działa na wolnych statkach, pieczy przekaźników, oknach hamowania i długu. HECTON-8 leży poza natychmiastowym ratunkiem. Prawo może przyjść pakietami; statki przychodzą tylko z masą, osłoną, paliwem, architekturą hamowania i kimś gotowym zapłacić za lot.
 
 ## Scanner
 
-PL LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
+Stempel tranzytowy: opóźnienie, masa, osłona i dług hamowania ukształtowały ten obiekt, zanim kolonia dotknęła wody.
 
 ## Terminal
 
-PL LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
+KOMUNIKAT TRASY: brak ansibla. Lokalna piecza pozostaje wiążąca do następnego pakietu przekaźnika. Władza ratownicza nie może czekać na odpowiedź z Sol.
 
 ## Audio
 
-PL LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
+Nikt z wewnętrznych światów nie dotrze do tej wody na czas. Twój zastaw już to wycenił.
 
 ## Field Note
 
-PL LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+Jeśli ratunek wydaje się spóźniony, pokaż rachunek. Dystans rozliczono przed sygnałem alarmowym.
 
 <!-- In-Game Wiki; generated from P101_NO_FTL_ROUTE_ECONOMY/pl_PL. -->

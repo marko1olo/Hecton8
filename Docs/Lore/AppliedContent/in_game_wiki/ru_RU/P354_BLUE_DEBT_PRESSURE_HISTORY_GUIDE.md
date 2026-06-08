@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Blue debt pressure history guide"
+title: "Справочник pressure history синего долга"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue debt pressure history guide
+# Справочник pressure history синего долга
 
-Blue debt - полевой сленг для Xenon-Omega pressure substrate. Термин связывает material с контрактами, риском и мотивом Deep Reach.
+Blue debt - контрактный язык, обернутый вокруг опасного substrate. Pressure history, custody marks и signal drift решают, станет ли он чистой выплатой, рычагом Atlas или мотивом Deep Reach вернуться.
 
 ## Scanner
 
-Blue debt sample tagged. Pressure history важнее surface color.
+Образец blue debt помечен. Перед export проверь pressure history, containment stage и signal drift.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt - salvage slang для Xenon-Omega-bearing pressure-stable substrate. Ценность в extreme computation и energy isolation, не в свечении.
+MARAUDER NOTE: blue debt - salvage-сленг для Xenon-Omega-bearing pressure-stable substrate. Он ценен потому, что extreme computation и energy isolation любят его, а не потому, что он светится.
 
 ## Audio
 
-Blue debt - так это называют после счёта.
+Синий долг - так это называют после прихода счета.
 
 ## Field Note
 
-Для resource glossary и Deep Reach motive articles.
+Цвет - не grade. Тихий контейнер с чистой custody платит; поющий покупает тебе drone wake.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/ru_RU. -->

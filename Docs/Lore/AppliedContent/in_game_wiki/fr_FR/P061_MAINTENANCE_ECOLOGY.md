@@ -7,34 +7,34 @@ poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
 biome_tags: biome.cable_reef;biome.repair_fauna
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Maintenance Ecology"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Écologie de maintenance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Écologie de maintenance
 
-FR LOC HOLD: Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.
+L'Écologie de maintenance rend HECTON-8 utile et fautif à la fois. Atlas a appris que le biofilm porte un signal faible, que les colonies filtrantes répètent les pings, que les croissances coquillières ferment les fissures, et que la faune balisée renvoie des sensor packets corrompus. L'océan n'est pas une personne. Le réseau de réparation reste assez vivant pour faire de chaque cable reef un outil, un danger et une piste de preuve.
 
 ## Scanner
 
-FR LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+Biofilm conducteur, croissance coquillière, faune balisée et chaleur de cheminée portent le trafic de réparation.
 
 ## Terminal
 
-FR LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+ÉCOLOGIE DE MAINTENANCE ATLAS : pont de biofilm stable ; colonie filtrante répétant l'impulsion acoustique ; joint coquillier fermant la fracture ; faune balisée renvoyant des sensor packets endommagés.
 
 ## Audio
 
-FR LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
+Le câble est vivant parce que la machine avait besoin qu'il vive.
 
 ## Field Note
 
-FR LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+N'arrache pas chaque joint vivant. Certains tiennent la pression mieux que le métal.
 
 <!-- In-Game Wiki; generated from P061_MAINTENANCE_ECOLOGY/fr_FR. -->

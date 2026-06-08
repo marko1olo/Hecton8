@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Kustodi Black Keel
 
-Black Keel bukan kapal pribadi mewah. Ia carrier salvage nyaris otomatis di bawah kustodi claim-pool, utang asuransi dan jendela orbit.
+Black Keel bukan kapal pribadi mewah. Ia carrier salvage nyaris otomatis yang bekerja melalui kustodi kolam klaim, utang asuransi, dan jendela orbit tertunda. Ia menawarkan rute nyata kembali ke orbit tanpa membuat penyelamatan sederhana atau setia.
 
 ## Scanner
 

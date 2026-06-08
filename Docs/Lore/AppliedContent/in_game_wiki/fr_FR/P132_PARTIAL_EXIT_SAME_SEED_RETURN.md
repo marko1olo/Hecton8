@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "Sortie partielle : retour même seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# Sortie partielle : retour même seed
 
-FR LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.
+La Sortie partielle est une fenêtre de récupération, pas un reset. Le joueur reçoit de l'air, du temps de réparation et de la distance avec l'eau, puis revient au même HECTON-8 avec les mêmes routes, cicatrices et preuves non résolues. Le savoir persiste comme pression, pas comme pouvoir hérité.
 
 ## Scanner
 
-FR LOC HOLD: Extraction possible. Closure not included.
+Vecteur de ramassage temporaire confirmé. Le même océan reste sous le même contrat.
 
 ## Terminal
 
-FR LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
+AVIS DE SORTIE PARTIELLE : ramassage temporaire Black Keel accepté ; retour même seed autorisé sous extension de lien ; avertissements de route, dossiers de custody et paquets de preuve ouverts persistent ; géologie et vérité du monde inchangées.
 
 ## Audio
 
-FR LOC HOLD: You left the pressure. You did not leave the contract.
+Tu as quitté la pression. Le contrat a gardé ta chaise au chaud.
 
 ## Field Note
 
-FR LOC HOLD: Let the player breathe, then make the same ocean still be there.
+Une respiration en orbite n'est pas la liberté quand le créneau de retour est déjà facturé.
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/fr_FR. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Black Keel Claim Acceptance"
+title: "Acceptation De Réclamation Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Black Keel Claim Acceptance
+# Acceptation De Réclamation Black Keel
 
-FR LOC HOLD: Recovered contract text shows the job begins as lien pressure, not rescue. Black Keel offers descent, debt relief and a narrow route window while keeping payload custody.
+Le texte de contrat récupéré montre que le travail commence sous pression de dette, pas comme un sauvetage. Black Keel offre descente, allègement de dette et fenêtre de route étroite tout en gardant la payload custody.
 
 ## Scanner
 
-FR LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+Console de contrat. Aegir Reclamation Pool affiche un gage de 4.8 tonne-window avant de mentionner l'oxygène.
 
 ## Terminal
 
-FR LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / TERMINAL D'ACCEPTATION DE RÉCLAMATION : route RAN-B:H8 salvage descent; décharge de gage 4.8 tonne-window conditionnelle; addenda oxygène facturés après récupération; payload custody prioritaire Black Keel, témoin Keelmark Mutual; refus maintient l'examen Barnard blacklist actif.
 
 ## Audio
 
-FR LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel au contractant : la fenêtre de réclamation est ouverte. L'oxygène sera facturé après récupération. Confirmez si vous pouvez travailler.
 
 ## Field Note
 
-FR LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+Le stylet est attaché à l'écran par un cordon pression. Quelqu'un avait prévu des mains qui tremblent.
 
 <!-- In-Game Wiki; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/fr_FR. -->

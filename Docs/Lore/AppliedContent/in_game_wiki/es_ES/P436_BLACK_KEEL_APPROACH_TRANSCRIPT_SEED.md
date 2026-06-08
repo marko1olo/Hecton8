@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Transcripción de aproximación Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Black Keel Approach Transcript Seed
+# Transcripción de aproximación Black Keel
 
-ES LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+La transcripción de aproximación vuelve útil a Black Keel sin volverlo compasivo. El portador da al Marauder una línea hacia la órbita, luego enumera deuda, ventana receptora, límite de salud, límite de masa y prueba exigida antes de que la esperanza reescriba la física.
 
 ## Scanner
 
-ES LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Audio de portador recuperado: descenso facturado, retorno condicional, cuatro segundos de retardo y paquete de prueba obligatorio.
 
 ## Terminal
 
-ES LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
-ES LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+Ténder Black Keel a reclamante. Retardo cuatro segundos. Descenso facturado. Retorno no garantizado. Envía salud, masa, prueba.
 
 ## Field Note
 
-ES LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+Búfer de ténder de reclamación, cortado por portador de tormenta. Mantener la voz procedural: datos de ruta primero, consuelo nunca.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/es_ES. -->

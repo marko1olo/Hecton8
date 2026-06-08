@@ -8,33 +8,19 @@ biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+spoiler_tier: 1
+title: "Формування тискового скла"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Формування тискового скла
 
-UK LOC HOLD: Pressure Glass Formation turns Xenon-Omega into hard-sci-fi material ecology instead of magic ore. It is a pressure-made substrate tied to Atlas, containment and computation.
+Тискове скло є технічною назвою того, що мародери називають blue debt, а Deep Reach ховає за мовою Xenon-Omega. Воно виникає там, де сходяться тиск, кишені благородних газів, розсіл, мінерали, тепло й змінена біологія.
 
-## Scanner
-
-UK LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
-
-## Terminal
-
-UK LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
-
-## Audio
-
-UK LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
-
-## Field Note
-
-UK LOC HOLD: It is not ore. It is a process that remembers where it was made.
+Формування тискового скла перетворює Xenon-Omega на матеріальну екологію hard sci-fi, а не на магічну руду. Це не руда. Це процес, який пам'ятає, де його створили.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/uk_UA. -->

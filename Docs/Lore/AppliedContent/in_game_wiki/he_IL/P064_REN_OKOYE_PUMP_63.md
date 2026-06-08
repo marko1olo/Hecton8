@@ -7,34 +7,34 @@ poi_tags: poi.pump_room_log;poi.manual_valve
 biome_tags: biome.pump_annex;biome.shallow_wreck
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Ren Okoye Pump 63"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "משאבה 63 של רן אוקויה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ren Okoye Pump 63
+# משאבה 63 של רן אוקויה
 
-HE LOC HOLD: Ren Okoye turns dead-colony evidence into practical gameplay. His pump notes teach manual procedure, pressure timing and the habit of trusting worker marks over Deep Reach dashboard certainty.
+רן אוקויה הופך ראיות מהמושבה לידע שליטה מעשי. ההערה שלו מלמדת את השחקן למה תזמון לחץ, שסתומים ידניים וסימוני עובדים חשובים כשמסכי Deep Reach עדיין טוענים green.
 
 ## Scanner
 
-HE LOC HOLD: Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.
+רן אוקויה החזיק את Sector 63 יבש מספיק זמן כדי להשאיר הערות תיקון שעדיין מנצחות את לוח המחוונים.
 
 ## Terminal
 
-HE LOC HOLD: OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.
+הערת OKOYE PUMP 63: להתעלם מלוח ירוק; manual bypass בגלגל תחתון; לשחרר שתי שניות לפני restart או line hammer יאטום את annex.
 
 ## Audio
 
-HE LOC HOLD: He saved a room for people who never reached it. You can still use the room.
+אם הפאנל אומר safe, שאל מי כתב את הפאנל.
 
 ## Field Note
 
-HE LOC HOLD: The colony gives the player tools through people, not exposition.
+המתים מלמדים טוב יותר מנורת מצב ירוקה.
 
 <!-- In-Game Wiki; generated from P064_REN_OKOYE_PUMP_63/he_IL. -->

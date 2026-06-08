@@ -8,8 +8,8 @@ biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Jabat Tangan Ruang Pompa"
+spoiler_tier: 1
+title: "Handshake Katup Ruang Pompa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Jabat Tangan Ruang Pompa
+# Handshake Katup Ruang Pompa
 
-Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive.
+Ruang pompa di HECTON-8 bukan drainase sederhana. Katup lokal, roda tangan, dan check valve yang lelah membuat pemain bertanya ke mana air pergi setelah lantai bersih. Pompa yang bekerja bisa membuka pintu, membangunkan koridor, memasukkan noise ke sonar, dan mengubah rute pulang menjadi masalah berikutnya.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+Pompa sump lokal menerima input roda tangan. Keranjang masuk kotor oleh busa kapsul; pulsa keluar membebani Koridor Pulang B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 KONTROL SUMP / HANDSHAKE LOKAL: otoritas roda tangan diterima. Override jarak jauh ditolak. Aliran masuk pulih pada laju rendah. Tekanan keluar naik di RETURN CORRIDOR B; restart hanya setelah hatch hilir diperiksa.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+Katup masuk. Jalur keluar mengetuk. Jangan sebut ini aman dulu.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Ruang pompa yang kering bisa menenggelamkan jalan pulang. Dengarkan hantaman di jalur keluar sebelum melepas katup.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/id_ID. -->

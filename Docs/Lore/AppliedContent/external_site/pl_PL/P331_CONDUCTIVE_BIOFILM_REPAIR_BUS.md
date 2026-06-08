@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Przewodząca magistrala naprawcza biofilmu"
+title: "Przewodząca magistrala naprawcza z biofilmu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodząca magistrala naprawcza biofilmu
+# Przewodząca magistrala naprawcza z biofilmu
 
-W rafach kablowych zniszczona infrastruktura rzadko pozostaje czysta. Ciepła solanka karmi maty mikrobów na pękniętej izolacji; żelazo i miedź tworzą rusztowanie; stare impulsy diagnostyczne nadają wzrostowi rytm.
+Przewodząca magistrala naprawcza z biofilmu zaczyna się od praktycznego wypadku. Stare osłony kabli Deep Reach pękają pod ciśnieniem, sole miedzi sączą się do wody, a miejscowe maty mikrobiologiczne, już przywykłe do ciepła minerałów, osiadają w ranie. Atlas czyta słaby prąd jako ścieżkę serwisową. Ocean nie musi mówić; wystarczy mokry film zdolny przenieść impuls.
 
-Dla Marauderów to cenna wskazówka. Żywa skóra kabla może wskazać pnie serwisowe, drzwi niskiej mocy, gniazda dronów lub trasę danych. Każde cięcie jest ryzykiem, bo Atlas może czytać żywy most jako ważny zapas naprawczy.
+Dla marudera to dar i pułapka. Most z biofilmu może obudzić grodzie, przenieść uścisk dłoni skanera albo sprawić, że milcząca od lat pompa odpowie na chwilę. Ten sam most potrafi kłamać. Linia może świecić na zielono, choć utraciła nośność, a czyste cięcie może zmienić przechodni korytarz w zalaną rurę. Pytanie nie brzmi, czy wzrost jest naturalny, czy sztuczny. Pytanie brzmi, co Atlas już zaliczył jako naprawione.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/pl_PL. -->

@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel 접촉
 
-Black Keel은 궤도로 돌아가는 유일한 선이다. 죽어 있지는 않지만 충성스럽지도 않다. 끊긴 메시지는 하늘을 생존 시스템으로 만든다. 각 창은 구조 요청, 거짓말, 샘플 보고, 증거 중 하나를 운반한다.
-
-## Scanner
-
-낡은 중계 마스트. 소금에 절고 휘었지만 아직 올바른 하늘을 향한다.
-
-## Terminal
-
-운영자 상태: 생존. 드롭크래프트 상태: 회수 불가. 클레임 상태: 개방. 샘플 상태: 미확인. 회수 상태: 창 대기.
-
-## Audio
-
-창이 닫힌다. 패킷 하나를 보내라. 폭풍대가 마스트를 덮기 전에 선택하라.
-
-## Field Note
-
-캐리어가 네가 숨 쉬는지보다 무엇을 찾았는지 먼저 묻는다면, 너는 고객이 아니다. 너는 도구다.
+Black Keel은 구름 위에서 기다리는 친절한 우주선처럼 읽히면 안 된다. 유용한 목소리, 제한된 궤도, 플레이어의 drop보다 오래된 계약 우선순위를 가진 claim-pool 기계다. 첫 접촉이 가치 있는 이유는 하늘이 비어 있지 않음을 증명하기 때문이다. 무서운 이유는 운반선이 구조 언어를 내놓기 전에 플레이어를 운영자 상태, dropcraft 손실, 샘플 불확실성, 열린 claim, lien 질량으로 측정하기 때문이다. 이것이 HECTON-8의 시작 압력이다. 플레이어는 살아 있고, 운반선은 실재하며, 집으로 가는 길은 이미 날씨와 부채와 질량과 payload의 수익자에 의해 걸러져 있다.
 
 <!-- External Site; generated from P002_BLACK_KEEL_CONTACT/ko_KR. -->

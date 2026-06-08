@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8 Orbital Hazard Table"
+title: "جدول الأخطار المدارية لـ HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbital Hazard Table
+# جدول الأخطار المدارية لـ HECTON-8
 
-AR LOC HOLD: HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure.
+يعرض جدول الأخطار المدارية لـ HECTON-8 الإنقاذ كسلسلة بوابات متحركة: قص إشعاعي، وحطام، وكسوف، ومنارات قانونية، ونوافذ حيازة، وكل واحدة قادرة على إغلاق صعود مصلح.
 
 ## Scanner
 
-AR LOC HOLD: HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+الخروج من HECTON-8 محكوم بنوافذ الكسوف، واندفاع الإشعاع، ومغلاق المرحل، وتشتت الجليد، وأعمدة العاصفة.
 
 ## Terminal
 
-AR LOC HOLD: ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+جدول الأخطار المدارية: blackout الكسوف، اندفاع جسيمات Aegir المشحونة، مغلاق مرحل القمر، تشتت حبيبات الجليد، storm plume، ونوافذ guidance-lag يجب أن تزول قبل الصعود.
 
 ## Audio
 
-AR LOC HOLD: The sky is not empty. It is a machine with bad timing.
+السماء فوق المحيط آلة تملك أسنانها في التوقيت.
 
 ## Field Note
 
-AR LOC HOLD: This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+لا أحد يوقف الإنقاذ لأجل الدراما. الصعود يجب أن يطابق جدول السماء السيئ.
 
 <!-- External Site; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/ar_SA. -->

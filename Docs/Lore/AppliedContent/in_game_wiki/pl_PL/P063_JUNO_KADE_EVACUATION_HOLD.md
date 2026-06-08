@@ -7,34 +7,34 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Blokada ewakuacji Juno Kade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# Blokada ewakuacji Juno Kade
 
-PL LOC HOLD: Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+Juno Kade dowodzi, że kolonia nie zamarła bez ruchu. Ludzie ustawili się w kolejce, marshale wydali trasy, a system wyjścia odpowiedział authorization holds, kontrolami kwarantanny i pierwszeństwem payload. Katastrofa boli mocniej, bo drzwi były prawdziwe.
 
 ## Scanner
 
-PL LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
+Juno Kade otworzyła kolejkę i uderzyła w mur z kwarantanny, certyfikacji i rangi payload.
 
 ## Terminal
 
-PL LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+STATUS EVAC KADE: trasa czerwona; manual override odrzucony; brama kwarantanny czeka na Atlas continuity check; payload lift ma pierwszeństwo do rozwiązania claim seal.
 
 ## Audio
 
-PL LOC HOLD: She kept counting people after the system started counting rooms.
+Wyjście istniało. Dlatego blokada ma znaczenie.
 
 ## Field Note
 
-PL LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+Marshal ewakuacji może ruszyć ludzi. Nie ruszy klauzuli, do której należy drzwi.
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/pl_PL. -->

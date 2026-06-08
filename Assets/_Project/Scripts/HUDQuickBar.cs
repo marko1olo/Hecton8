@@ -728,7 +728,7 @@ namespace Hecton8.UI
             uint metadataHash = 0u;
             if (tool != null &&
                 tool.Metadata != null &&
-                !string.IsNullOrEmpty(tool.Metadata.toolID))
+                !string.IsNullOrWhiteSpace(tool.Metadata.toolID))
             {
                 metadataHash = unchecked((uint)Animator.StringToHash(tool.Metadata.toolID));
             }

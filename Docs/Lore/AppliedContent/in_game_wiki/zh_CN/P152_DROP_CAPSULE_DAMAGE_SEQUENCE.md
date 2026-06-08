@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Drop Capsule Damage Sequence"
+title: "投放舱损伤序列"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Drop Capsule Damage Sequence
+# 投放舱损伤序列
 
-ZH LOC HOLD: The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.
+受损的 bathy-drop 把逃生变成一串工程问题。避难与诊断幸存下来，但上升硬件不是丢失就是进水。
 
 ## Scanner
 
-ZH LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+舱体诊断。下降保住了身体，代价是消耗上升硬件。
 
 ## Terminal
 
-ZH LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+BATHY-DROP 损伤摘要：crush-frame 变形；high-gain mast 丢失；ascent avionics 进水；recovery/flotation ring 撕裂；应急浮标重复 no-lock。避难电力可用。独立上升不可用。
 
 ## Audio
 
-ZH LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus 进水。Recovery ring no-lock。这只舱能让你呼吸，不能带你回家。
 
 ## Field Note
 
-ZH LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+下环被压成相差两指的椭圆。High-gain mast 已丢失。浮标仍在请求一次它无法完成的发射。
 
 <!-- In-Game Wiki; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/zh_CN. -->

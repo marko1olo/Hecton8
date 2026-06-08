@@ -7,34 +7,34 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Tránsito de rotación de tripulación humana"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# Tránsito de rotación de tripulación humana
 
-ES LOC HOLD: Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
+La rotación humana hace creíble el abandono de HECTON-8. Trabajadores, especialistas y reemplazos se mueven más lento que el lenguaje de reclamación. Una persona puede salir de Sol bajo un contrato, despertar bajo otro y descubrir que la emergencia para la que entrenó ya se volvió evidencia.
 
 ## Scanner
 
-ES LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
+Los humanos no viajan a Aegir como quien va al trabajo. Pasan años como carga con opiniones.
 
 ## Terminal
 
-ES LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+ROTACIÓN DE TRIPULACIÓN: transporte humano usa ventanas lentas, secciones habitables blindadas, ciclos de bajo metabolismo y rotaciones por etapas. Un trabajador perdido se vuelve problema de custody demorado.
 
 ## Audio
 
-ES LOC HOLD: By the time home asks where you are, the room has already flooded.
+Para cuando casa pregunta dónde estás, la sala ya se ha inundado.
 
 ## Field Note
 
-ES LOC HOLD: A frontier worker sells time before they sell labor.
+Un trabajador de frontera vende tiempo antes de vender trabajo.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/es_ES. -->

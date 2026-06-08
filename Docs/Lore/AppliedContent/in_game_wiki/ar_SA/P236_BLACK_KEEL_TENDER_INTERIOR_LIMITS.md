@@ -9,32 +9,36 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Black Keel Tender Interior Limits"
+title: "حدود داخلية tender Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Black Keel Tender Interior Limits
+# حدود داخلية tender Black Keel
 
-AR LOC HOLD: Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.
+داخل Black Keel يقول الحقيقة قبل صوته. أكثر أماكن الtender حماية ليست أسرة ولا عيادات؛ إنها رفوف عينات، حواضن طائرات، خزائن حزم، أكمام حجر صحي وسكك حمولة مختومة بالدين. لا يدخل Marauder حي في النظام إلا بعد أن يعرف البيان أي كتلة يمكن فوترتها، وأي عينة يمكن حفظها، وأي legal packet يمكن إخراجه من يد المدعي.
+
+لذلك لا يأتي الإنقاذ المداري النظيف كجواب أول. الtender قريب بما يكفي لتسعير نافذة استرداد، وحفظ custody، ورفض التلوث، وطلب ascent mass، والكلام عبر مرحل. لكنه ليس سفينة ركاب، ولا يحمل deep rescue crew ينتظر اختراع الرحمة. يستطيع Black Keel أن يبقي العقد حيا ويترك المتعاقد تحت الماء.
+
+الدرس المفيد قبيح: العتاد المحلي التالف ليس مشكلة جانبية. إنه الطريق. الصاري المقطوع، الضاغط المسدود أو ascent sleeve السيئ مهمة لأن Black Keel لا يصرف burn على الأمل. يصرفه على payload مقبول، وحزم موثقة، وشروط حجر صحي وlien authority.
 
 ## Scanner
 
-AR LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+في الtender رفوف للعينات، والطائرات، والحزم المختومة، وحمولة lien قبل أن يكون فيه مهد لراكب حي.
 
 ## Terminal
 
-AR LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: لا deep rescue crew، لا atmospheric shuttle reserve، لا free ascent burn خارج lien authority، لا أمين مخازن بشري.
 
 ## Audio
 
-AR LOC HOLD: The ship brought you here as cargo with hands.
+السفينة جلبتك إلى هنا كحمولة لها يدان.
 
 ## Field Note
 
-AR LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel هو claim tender عامل: مستأجر، محجوز بالدين، آلي ومهيأ للعهدة قبل الإنقاذ.
 
 <!-- In-Game Wiki; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/ar_SA. -->

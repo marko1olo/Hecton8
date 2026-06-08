@@ -9,32 +9,22 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Ibarra Loss Ledger"
+title: "Ledger Ібарри про конверсію втрат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Ibarra Loss Ledger
+# Ledger Ібарри про конверсію втрат
 
-UK LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## Бухгалтерія, Що Пережила Колонію
 
-## Scanner
+Ledger Ібарри має відчуватися холоднішим за список зниклих. Список ще сумує, навіть коли бреше. Ledger конвертує. Він приймає пошкоджені житлові модулі, tool banks, sample custody, missing personnel і salvage rights, а потім кладе кожен факт у категорію, здатну рухатись контрактами після мовчання HECTON-8.
 
-UK LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Це міст між старою liability Deep Reach і теперішнім боргом гравця. Якщо люди стають unresolved personnel load, корпорація може визнати їх зникнення, не називаючи вбивство. Якщо доказ стає material custody, його можна купити, поховати, спрямувати або застрахувати. Якщо claim залишається continuous, власність живе довше за працівників, які підтримували місце.
 
-## Terminal
-
-UK LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-UK LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-UK LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Ledger дає гравцеві важку владу. Винести його нагору - не лише розкрити, що сталося. Це нести предмет, який ринок уже вміє оцінювати. Продати, опублікувати, переспрямувати чи поховати доказ стає брудним, бо документ створено так, щоб кожен вибір читався в чиємусь balance sheet.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/uk_UA. -->

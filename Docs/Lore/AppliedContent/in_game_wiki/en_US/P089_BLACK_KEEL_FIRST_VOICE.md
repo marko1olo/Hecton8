@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Keel First Voice
 
-Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+Black Keel's first voice reaches the player as damaged audio and clean text. It is not a companion and not a villain speech. It is a carrier monitor doing exactly what it was built to do: confirm signal, preserve route options, rank obligations, and avoid promises. The voice is useful because it gives hard information. It is frightening because every correct sentence leaves rescue conditional.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Carrier voice cache. Audio clipped, text clean, sympathy absent.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload, quarantine, lien, and signal integrity state.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Operator signal acquired. Do not confuse acknowledgement with rescue.
 
 ## Field Note
 
-The first voice should feel useful before it feels bought.
+The first useful sentence arrives with a billing class behind it.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/en_US. -->

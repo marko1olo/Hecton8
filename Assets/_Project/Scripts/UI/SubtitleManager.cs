@@ -239,6 +239,7 @@ namespace Hecton8.UI
         private bool _registeredToTickManager;
         private bool _registeredLateFrameSwap;
         private bool _serviceRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _hotSwapListenerRegistered;
         private ILocalizationStressPresentationReadModel _cachedLocalization;
         private IPlayerRuntimeContext _cachedPlayerContext;
@@ -317,7 +318,8 @@ namespace Hecton8.UI
             if (s_activeInstance != null)
                 return;
 
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             Canvas targetCanvas = overlay != null
                 ? overlay.TargetCanvas
                 : null;
@@ -355,12 +357,18 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (s_activeInstance == null)
                 s_activeInstance = this;
             if (s_activeInstance != this)
                 return;
 
             TryRegisterToGlobalRegistry();
+            if (_runtimeOwnerAborted)
+                return;
+
             TryRegisterHotSwapListener();
             CacheRegistryServicesCold();
             BabelSubtitleSyncRuntime.EnsureInitialized();
@@ -391,6 +399,8 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            NotificationEvents.Unregister(this);
+            AudioLogEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
             UnregisterLateFrameSwap();
@@ -404,6 +414,9 @@ namespace Hecton8.UI
 
         private void TryRegisterToGlobalRegistry()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_serviceRegistered || !Application.isPlaying || s_activeInstance != this)
                 return;
 
@@ -418,12 +431,18 @@ namespace Hecton8.UI
 
         private bool TryAbortForUsableExistingRuntime()
         {
+            if (_runtimeOwnerAborted)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
             SubtitleManager active = s_activeInstance;
             if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
             {
                 if (IsSubtitleRuntimeInstanceUsable(active))
                 {
-                    Destroy(gameObject);
+                    AbortDuplicateRuntimeOwner();
                     return true;
                 }
 
@@ -440,7 +459,7 @@ namespace Hecton8.UI
             if (IsSubtitleRegisteredRuntimeUsable(registered))
             {
                 s_activeInstance = registered;
-                Destroy(gameObject);
+                AbortDuplicateRuntimeOwner();
                 return true;
             }
 
@@ -452,14 +471,41 @@ namespace Hecton8.UI
 
         private static bool IsSubtitleRuntimeInstanceUsable(SubtitleManager manager)
         {
-            return manager != null && manager.isActiveAndEnabled;
+            return manager != null &&
+                   !manager._runtimeOwnerAborted &&
+                   manager.isActiveAndEnabled;
         }
 
         private static bool IsSubtitleRegisteredRuntimeUsable(SubtitleManager manager)
         {
             return manager != null &&
                    manager._serviceRegistered &&
+                   !manager._runtimeOwnerAborted &&
                    manager.isActiveAndEnabled;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            _runtimeOwnerAborted = true;
+            NotificationEvents.Unregister(this);
+            AudioLogEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
+            UnregisterFromTickManager();
+            UnregisterLateFrameSwap();
+            TryUnregisterFromGlobalRegistry();
+            ClearPendingAudioLogSubtitleEvents();
+            ClearTimedAudioLogState();
+            ClearQueuedSubtitleState();
+            _cachedLocalization = null;
+            _cachedPlayerContext = null;
+            _cachedLoreDatabase = null;
+            if (ReferenceEquals(s_activeInstance, this))
+                s_activeInstance = null;
+            enabled = false;
+            Destroy(gameObject);
         }
 
         private void TryUnregisterFromGlobalRegistry()
@@ -476,6 +522,9 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
             {
                 _cachedLocalization = currentService as ILocalizationStressPresentationReadModel;
@@ -517,7 +566,7 @@ namespace Hecton8.UI
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapListenerRegistered || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
             _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -550,6 +599,9 @@ namespace Hecton8.UI
         /// <returns>True when a non-empty subtitle was accepted.</returns>
         public bool DisplaySubtitle(ReadOnlySpan<char> text, float duration)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             return EnqueueBuffered(text, duration, SubtitleSource.Generic, false);
         }
 
@@ -597,11 +649,20 @@ namespace Hecton8.UI
             BabelFormatArgs formatArgs,
             bool allowFallback)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (textHash == 0u)
                 return allowFallback && EnqueueBuffered(fallback, duration, SubtitleSource.Generic, false);
 
             if (!CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease lease))
-                return allowFallback && EnqueueBuffered(fallback, duration, SubtitleSource.Generic, false);
+            {
+                if (allowFallback && fallback.Length > 0)
+                    return EnqueueBuffered(fallback, duration, SubtitleSource.Generic, false);
+
+                return TryResolveVocalWarningFallbackSubtitle(textHash, out ReadOnlySpan<char> vocalWarningFallback) &&
+                       EnqueueBuffered(vocalWarningFallback, duration, SubtitleSource.Generic, false);
+            }
 
             int length = 0;
             bool found = false;
@@ -619,6 +680,8 @@ namespace Hecton8.UI
 
                 if (!found && allowFallback && fallback.Length > 0)
                     length = CopyFallbackSpanToBabelLease(textHash, fallback, lease.Span);
+                else if (!found && TryResolveVocalWarningFallbackSubtitle(textHash, out ReadOnlySpan<char> vocalWarningFallback))
+                    length = CopyFallbackSpanToBabelLease(textHash, vocalWarningFallback, lease.Span);
 
                 BabelSubtitleSyncRuntime.RecordDecode(textHash, length, !found, decodeMs);
                 length = lease.CopyToTmpBuffer(length);
@@ -663,6 +726,9 @@ namespace Hecton8.UI
         /// </summary>
         public bool DisplaySubtitle(in SubtitleCommandDTO command, bool interrupt = false)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (command.TextHash == 0u)
                 return false;
 
@@ -753,6 +819,9 @@ namespace Hecton8.UI
 
         private void AdvanceSubtitlePresentation(float deltaTime)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_root == null)
                 return;
 
@@ -813,6 +882,9 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ConsumeUiRescaleRequestsVisualSync();
             DrainPendingAudioLogEventsVisualSync();
             AdvanceSubtitlePresentation(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
@@ -902,6 +974,17 @@ namespace Hecton8.UI
             out int textLength,
             out float speakerIntensity)
         {
+            if (_runtimeOwnerAborted)
+            {
+                version = lastSeenVersion;
+                duration = 0f;
+                textBuffer = EmptyCueBuffer;
+                textStart = 0;
+                textLength = 0;
+                speakerIntensity = 0f;
+                return false;
+            }
+
             version = _audioLogCueChangeVersion;
             if (version == lastSeenVersion)
             {
@@ -925,6 +1008,9 @@ namespace Hecton8.UI
 
         public void OnNotificationEvent(in NotificationEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!NotificationEvents.TryResolveMessageSpan(payload.MessageHash, out ReadOnlySpan<char> message))
                 return;
 
@@ -938,6 +1024,9 @@ namespace Hecton8.UI
 
         public void OnAudioLogEvent(in AudioLogEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             switch (payload.Type)
             {
                 case AudioLogEventType.PlaybackStarted:
@@ -953,6 +1042,9 @@ namespace Hecton8.UI
 
         private void QueueAudioLogSubtitleEvent(in AudioLogEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int capacity = _pendingAudioLogEvents.Length;
             if (capacity <= 0)
                 return;
@@ -973,6 +1065,9 @@ namespace Hecton8.UI
 
         private void DrainPendingAudioLogEventsVisualSync()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int guard = _pendingAudioLogEventCount;
             while (guard-- > 0 && TryDequeuePendingAudioLogEvent(out PendingAudioLogSubtitleEvent pending))
             {
@@ -1018,6 +1113,51 @@ namespace Hecton8.UI
 
             _pendingAudioLogEventHead = 0;
             _pendingAudioLogEventCount = 0;
+        }
+
+        private void ClearQueuedSubtitleState()
+        {
+            for (int i = 0; i < _subtitleCommandQueue.Length; i++)
+                _subtitleCommandQueue[i] = default;
+
+            for (int i = 0; i < _bufferedQueue.Length; i++)
+                _bufferedQueue[i] = default;
+
+            _subtitleCommandQueueHead = 0;
+            _subtitleCommandQueueCount = 0;
+            _bufferedQueueHead = 0;
+            _bufferedQueueCount = 0;
+            _timer = 0f;
+            _currentAlpha = 0f;
+            _isShowing = false;
+            _currentSource = SubtitleSource.Generic;
+            _lastEnqueuedSource = SubtitleSource.Generic;
+            _lastEnqueueTime = -999f;
+            _currentSubtitleState = default;
+            _lastEnqueuedCommandTextHash = 0u;
+            _lastEnqueuedCommandSpeakerHash = 0u;
+            _currentBufferedSubtitleLength = 0;
+            _lastEnqueuedBufferedSubtitleLength = -1;
+            _currentUsesBufferedSubtitle = false;
+            _lastRenderedSubtitleLength = -1;
+            _tmpTypewriterActive = false;
+            _tmpTypewriterElapsed = 0f;
+            _tmpTypewriterTargetCharacters = 0;
+            _subtitleSwapPending = false;
+            _pendingSubtitleSwapLength = -1;
+            _currentSubtitleStartAudioFrame = 0u;
+            _currentSubtitleDurationFrames = 0u;
+            _tmpTypewriterStartAudioFrame = 0u;
+            _powerTextGlitchIntensity01 = 0f;
+            _powerTextGlitchHeldTarget01 = 0f;
+            _powerTextGlitchHoldSeconds = 0f;
+            _powerTextGlitchBucket = 0;
+            _powerTextGlitchPhase = 0u;
+
+            if (_canvasGroup != null)
+                _canvasGroup.alpha = 0f;
+            if (_audioCueGroup != null)
+                _audioCueGroup.alpha = 0f;
         }
 
         private static float SanitizeAudioLogEventDuration(float durationSeconds)
@@ -1147,6 +1287,9 @@ namespace Hecton8.UI
 
         private bool ShowSubtitleCommand(in SubtitleCommandDTO command)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (!CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease lease))
                 return false;
 
@@ -1165,6 +1308,9 @@ namespace Hecton8.UI
                     out int textLength,
                     stripRichText);
                 float decodeMs = ResolveStopwatchElapsedMilliseconds(decodeStart);
+                if (!found && TryResolveVocalWarningFallbackSubtitle(command.TextHash, out ReadOnlySpan<char> fallback))
+                    textLength = CopyFallbackSpanToBabelLease(command.TextHash, fallback, textDestination);
+
                 BabelSubtitleSyncRuntime.RecordDecode(command.TextHash, textLength, !found, decodeMs);
                 if (textLength <= 0)
                     return false;
@@ -1191,6 +1337,35 @@ namespace Hecton8.UI
             finally
             {
                 CharBufferPool.Release(in lease);
+            }
+        }
+
+        private static bool TryResolveVocalWarningFallbackSubtitle(uint textHash, out ReadOnlySpan<char> fallback)
+        {
+            switch (textHash)
+            {
+                case VocalWarningHashes.CrushDepth:
+                    fallback = "CRUSH DEPTH".AsSpan();
+                    return true;
+                case VocalWarningHashes.HullBreach:
+                case VocalWarningHashes.HullTempCritical:
+                    fallback = "HULL BREACH".AsSpan();
+                    return true;
+                case VocalWarningHashes.OxygenLow:
+                    fallback = "OXYGEN LOW".AsSpan();
+                    return true;
+                case VocalWarningHashes.Radiation:
+                    fallback = "RADIATION".AsSpan();
+                    return true;
+                case VocalWarningHashes.PowerLow:
+                    fallback = "POWER LOW".AsSpan();
+                    return true;
+                case VocalWarningHashes.Toxicity:
+                    fallback = "TOXIC EXPOSURE".AsSpan();
+                    return true;
+                default:
+                    fallback = default;
+                    return false;
             }
         }
 
@@ -1286,6 +1461,9 @@ namespace Hecton8.UI
 
         private bool EnqueueBuffered(ReadOnlySpan<char> message, float duration, SubtitleSource source, bool interrupt)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (!_built || _subtitleText == null || _canvasGroup == null)
                 return false;
 
@@ -1352,6 +1530,9 @@ namespace Hecton8.UI
 
         private void ShowImmediate(BufferedSubtitleCue request)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int bufferIndex = Mathf.Clamp(request.BufferIndex, 0, _bufferedQueueBuffers.Length - 1);
             int safeLength = Mathf.Clamp(request.Length, 0, MaxBufferedSubtitleCharacters);
             ShowImmediate(_bufferedQueueBuffers[bufferIndex].AsSpan(0, safeLength), request.Duration, request.Source);
@@ -1359,6 +1540,9 @@ namespace Hecton8.UI
 
         private void ShowImmediate(ReadOnlySpan<char> message, float duration, SubtitleSource source)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int safeLength = CopySpanToBuffer(message, _currentBufferedSubtitleBuffer);
             _currentBufferedSubtitleLength = safeLength;
             _currentUsesBufferedSubtitle = safeLength > 0;
@@ -2312,7 +2496,7 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _registeredToTickManager || !_serviceRegistered || !Application.isPlaying)
                 return;
 
             _registeredToTickManager = RegisterLateFrameSwap();
@@ -2329,6 +2513,9 @@ namespace Hecton8.UI
 
         private bool RegisterLateFrameSwap()
         {
+            if (_runtimeOwnerAborted || !_serviceRegistered)
+                return false;
+
             if (_registeredLateFrameSwap)
                 return true;
 

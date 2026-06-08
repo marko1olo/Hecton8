@@ -206,6 +206,7 @@ namespace Hecton8.PDA
         private bool _hasCartographyTuningSnapshot;
         private bool _hasLatestCartographyTelemetrySnapshot;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private PDAMarkerRegistry _cachedMarkerRegistry;
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
@@ -244,12 +245,8 @@ namespace Hecton8.PDA
 
         private void Awake()
         {
-            PlayerExplorationTracker registered = s_activeRuntimeInstance ?? GlobalRegistry.PlayerExploration;
-            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(this);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             movementSampleDistance = math.max(0.25f, movementSampleDistance);
             CacheRegistryServicesCold();
@@ -258,7 +255,9 @@ namespace Hecton8.PDA
 
         private void OnEnable()
         {
-            TryRegisterService();
+            if (!TryRegisterService())
+                return;
+
             CacheRegistryServicesCold();
             InitializeExplorationMask();
             TryRegisterHotSwapListener();
@@ -273,6 +272,9 @@ namespace Hecton8.PDA
 
         private void Start()
         {
+            if (!_serviceRegistered && !TryRegisterService())
+                return;
+
             CacheRegistryServicesCold();
             InitializeExplorationMask();
             TryRegisterHotSwapListener();
@@ -2012,20 +2014,26 @@ namespace Hecton8.PDA
 
         private bool RefreshPlayerTransformCache(bool force)
         {
-            if (!force && _playerMovement != null)
+            if (!force &&
+                _playerMovement != null &&
+                _cachedPlayerContext == null)
+            {
                 return true;
+            }
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null)
             {
                 playerTransform = playerContext.PlayerTransform;
                 _playerMovement = playerContext.PlayerMovement;
-                if (_playerMovement != null)
+                if (TryResolveCachedPlayerRuntimeAup(out AbsoluteUniversePosition snapshotAup))
                 {
-                    _lastSampledAup = _playerMovement.CurrentAup;
+                    _lastSampledAup = snapshotAup;
                     _hasLastSampledAup = true;
                     return true;
                 }
+
+                return false;
             }
 
             if (playerTransform != null && _playerMovement == null)
@@ -2033,9 +2041,13 @@ namespace Hecton8.PDA
 
             if (_playerMovement != null)
             {
-                _lastSampledAup = _playerMovement.CurrentAup;
-                _hasLastSampledAup = true;
-                return true;
+                AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup;
+                if (currentAup.IsFinite())
+                {
+                    _lastSampledAup = currentAup;
+                    _hasLastSampledAup = true;
+                    return true;
+                }
             }
 
             return false;
@@ -2044,10 +2056,42 @@ namespace Hecton8.PDA
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
+            if (TryResolveCachedPlayerRuntimeAup(out playerAup))
+                return true;
+
+            if (_cachedPlayerContext != null)
+                return false;
+
             if (_playerMovement == null)
                 return false;
 
             playerAup = _playerMovement.CurrentAup;
+            return playerAup.IsFinite();
+        }
+
+        private bool TryResolveCachedPlayerRuntimeAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                snapshot.Aup.IsFinite())
+            {
+                playerAup = snapshot.Aup;
+                return true;
+            }
+
+            if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
+                return false;
+            }
+
+            playerAup = movementState.PredictedAup;
             return true;
         }
 
@@ -3359,25 +3403,36 @@ namespace Hecton8.PDA
             if (_registeredToSave || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _registeredToSave = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void UnregisterFromSaveManager()
         {
-            if (!_registeredToSave)
+            if (!_registeredToSave && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _registeredToSave = false;
         }
 
@@ -3436,13 +3491,16 @@ namespace Hecton8.PDA
         {
             _cachedPlayerContext = playerContext;
             if (playerContext == null)
+            {
+                _playerMovement = null;
                 return;
+            }
 
             playerTransform = playerContext.PlayerTransform;
             _playerMovement = playerContext.PlayerMovement;
-            if (_playerMovement != null)
+            if (TryResolveCachedPlayerRuntimeAup(out AbsoluteUniversePosition snapshotAup))
             {
-                _lastSampledAup = _playerMovement.CurrentAup;
+                _lastSampledAup = snapshotAup;
                 _hasLastSampledAup = true;
             }
         }
@@ -3481,22 +3539,19 @@ namespace Hecton8.PDA
             _registeredHotSwapListener = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
-                return;
+                return true;
 
-            PlayerExplorationTracker registered = s_activeRuntimeInstance ?? GlobalRegistry.PlayerExploration;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(this);
-                return;
-            }
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterPlayerExplorationRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PlayerExploration, this);
             if (_serviceRegistered)
                 s_activeRuntimeInstance = this;
+            return _serviceRegistered;
         }
 
         private void TryUnregisterService()
@@ -3508,6 +3563,52 @@ namespace Hecton8.PDA
             if (ReferenceEquals(s_activeRuntimeInstance, this))
                 s_activeRuntimeInstance = null;
             _serviceRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            PlayerExplorationTracker registered = GlobalRegistry.PlayerExploration;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsPlayerExplorationRuntimeUsable(registered))
+                {
+                    s_activeRuntimeInstance = registered;
+                    Destroy(this);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+
+                GlobalRegistry.UnregisterPlayerExplorationRuntime(registered);
+            }
+
+            PlayerExplorationTracker active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsPlayerExplorationRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterPlayerExplorationRuntime(active);
+                Destroy(this);
+                return true;
+            }
+
+            s_activeRuntimeInstance = null;
+            if (ReferenceEquals(GlobalRegistry.PlayerExploration, active))
+                GlobalRegistry.UnregisterPlayerExplorationRuntime(active);
+            return false;
+        }
+
+        private static bool IsPlayerExplorationRuntimeUsable(PlayerExplorationTracker tracker)
+        {
+            return !ReferenceEquals(tracker, null) &&
+                   tracker != null &&
+                   tracker._serviceRegistered &&
+                   tracker.isActiveAndEnabled;
         }
 
         private sealed class CartographyDispatcherPhaseSystem : IDispatcherSystem

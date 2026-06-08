@@ -7,34 +7,34 @@ poi_tags: poi.probe_packet_spool;poi.beam_sail_archive
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "探査パケット航行時間"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# 探査パケット航行時間
 
-JP LOC HOLD: Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.
+探査パケットの時間が、Deep Reachが人を守れる前にHECTON-8の価値を知れた理由だ。最初の記録は狭く、到着時には古く、すでに金融化されていた。パケットは、人間の計画がまだ推測でも、請求を成熟して見せることができる。
 
 ## Scanner
 
-JP LOC HOLD: The first Aegir witnesses were packets, not colonists.
+Aegir最初の目撃者は入植者ではなくパケットだった。
 
 ## Terminal
 
-JP LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
+調査連鎖: ビーム支援探査機とパケット機が最初に渡り、古くなった真実を返し、制動計算を作り、人道的になる前に企業が航路を売れるようにする。
 
 ## Audio
 
-JP LOC HOLD: The probe saw the ocean before anyone had a grave there.
+誰かの墓ができる前に、探査機が海を見た。
 
 ## Field Note
 
-JP LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+探査機は、誰かが身体を賭ける前に、人の職業人生ほどの時間を航路横断に使える。
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/ja_JP. -->

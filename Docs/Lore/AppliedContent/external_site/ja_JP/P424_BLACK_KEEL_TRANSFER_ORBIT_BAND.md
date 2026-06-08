@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "JA LOC HOLD: Black Keel Transfer Band"
+spoiler_tier: 1
+title: "Black Keel転送帯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Black Keel Transfer Band
+# Black Keel転送帯
 
-JA LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.
+Black Keelはcustody route上の契約carrierであり、人間を安全に回収する前にpayloadsを受け取れる。
 
 ## Scanner
 
-JA LOC HOLD: Carrier band: Black Keel loiters high, not above HECTON-8.
+Carrier帯域: Black Keelは高く待機し、HECTON-8の真上にはいない。
 
 ## Terminal
 
-JA LOC HOLD: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+CARRIER ORBIT: 高いcustody lane。descent massは制限され、天候でgatedされる。
 
 ## Audio
 
-JA LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.
+それは君の上に駐車していない。保険が許す場所で待っている。
 
 ## Field Note
 
-JA LOC HOLD: Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
+Carrier軌道記録: Black Keelは人間より先にpayloadsを受け取れる。その差がpartial-exit logicを駆動する。
 
 <!-- External Site; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/ja_JP. -->

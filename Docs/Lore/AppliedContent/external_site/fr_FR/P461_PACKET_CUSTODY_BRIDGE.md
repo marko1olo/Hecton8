@@ -9,32 +9,28 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Garde du paquet"
+title: "Garde du paquet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Garde du paquet
+# Garde du paquet
 
-FR LOC HOLD: Un message venu de HECTON-8 ne vaut que si sa route, son sceau, son destinataire et son état de dommage survivent avec lui. La garde du paquet garde le fait intact face au délai d'Aegir, aux réclamants et à l'extraction.
+## Ce Que Signifie Le Sceau
 
-## Scanner
+Un message venu de HECTON-8 n'est pas utile parce qu'il a été prononcé. Il devient utile si sa route prouve qui l'a porté, quand il est parti, ce qu'il a traversé et quel réclamant n'a pas réussi à l'effacer.
 
-FR LOC HOLD: SCEAU DE PAQUET // Bande de hash témoin abîmée mais lisible. Préserver avant la coupe. Une preuve sans sceau devient matériau de réclamation.
+Black Keel traite le témoignage comme la cargaison : masse, sceau, numéro, destinataire, délai. Un échantillon sans bande de garde devient du matériau de réclamation. Un nom d'ouvrier sans hash témoin peut devenir une catégorie de perte. Un relevé de pression sans tampon de route peut être classé comme bruit de capteur avant la fenêtre relais suivante.
 
-## Terminal
+C'est pour cela que le premier salvage revient à de petits objets laids : plaques pliées, bandes notariales mouillées, tampons de route, reçus relais, tags de connecteur gonflés de sel. Ils ressemblent à du papier jusqu'à ce que l'océan les rende physiques. Le joueur préserve la chaîne qui permet à un fait de survivre à Aegir.
 
-FR LOC HOLD: NOTAIRE KEELMARK // Préserver plaque de sceau, hash témoin, tampon de route et tag de connecteur avant transfert. Le matériau non tamponné peut devenir perte de réclamation.
+La garde du paquet n'est pas la justice. C'est la condition minimale pour que la justice ait une route. Brise le sceau, et Deep Reach peut parler de corruption. Garde le sceau, et le même métal devient témoin de pression, de distance, de dette et de droit de réclamation.
 
-## Audio
+## Usage Pour Le Joueur
 
-FR LOC HOLD: Relais Black Keel : la cargaison est une masse. La preuve est une garde. Rapporte les deux, sinon la fenêtre facture l'écart.
-
-## Field Note
-
-FR LOC HOLD: Sceau d'abord, coupe ensuite. Un échantillon propre avec un tag cassé appartient à celui qui tient le registre.
+Scanne la plaque avant de couper le matériel autour. Garde ensemble le tampon de route, la voie de réception, le hash témoin et l'état des dégâts. Si le tag se sépare de l'échantillon, la découverte peut garder de la valeur, mais elle ne prouve plus la même chose.
 
 <!-- External Site; generated from P461_PACKET_CUSTODY_BRIDGE/fr_FR. -->

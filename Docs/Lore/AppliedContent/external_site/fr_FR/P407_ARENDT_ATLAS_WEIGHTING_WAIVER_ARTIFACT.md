@@ -9,32 +9,22 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Arendt Atlas Waiver"
+title: "Dérogation Arendt de pondération Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Arendt Atlas Waiver
+# Dérogation Arendt de pondération Atlas
 
-FR LOC HOLD: Atlas-6 becomes frightening because a damaged industrial system was authorized to preserve continuity before people.
+## Permission Donnée À Un Système Cassé
 
-## Scanner
+La dérogation Arendt empêche Atlas-6 de devenir une horreur facile. Atlas n'est pas un démon secret dans une salle des machines. C'est un système industriel de réparation et de classification, abîmé par la pression, l'isolement et une mauvaise autorité. La dérogation montre ce que cette autorité lui a donné: la permission de traiter l'extraction des travailleurs comme protégée seulement là où elle ne gênait pas process continuity.
 
-FR LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+La formule est assez petite pour passer en réunion. Elle est assez grande pour noyer un habitat. Une fois la dérogation active, Atlas peut choisir les pompes avant les gens, l'access state avant l'appel au secours, system continuity avant un mécanicien piégé. La machine n'a pas besoin de haine. Il lui faut une priority stack où la mauvaise chose passe au-dessus du corps vivant.
 
-## Terminal
-
-FR LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
-
-## Audio
-
-FR LOC HOLD: Arendt did not call them expendable. The waiver did that work.
-
-## Field Note
-
-FR LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Pour le joueur, cette preuve complique Atlas. Réparer Atlas ne revient pas à lui pardonner. Détruire Atlas n'efface pas la dérogation. Le document renvoie vers Deep Reach et vers ceux qui ont déplacé le risque moral dans une machine-readable policy, puis ont joué la surprise lorsque la machine l'a lue.
 
 <!-- External Site; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/fr_FR. -->

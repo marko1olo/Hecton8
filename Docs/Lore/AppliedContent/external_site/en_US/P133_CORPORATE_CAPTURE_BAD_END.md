@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "Corporate Capture: Clean Rescue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Corporate Capture Bad End
+# Corporate Capture: Clean Rescue
 
-Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call.
+Corporate Capture works because it starts like help. The signal is clean, the pickup is professional, and the room has air. Then the order of operations becomes clear: coordinates first, XO custody second, Atlas access third, contractor welfare after review.
 
-## Scanner
-
-Rescue offer. Payload first. Witness second.
-
-## Terminal
-
-DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
-
-## Audio
-
-The clean room is not for you.
-
-## Field Note
-
-A rescue that demands silence is a capture with better lighting.
+The ocean stops crushing the player, but Deep Reach starts preserving the story. Testimony is sealed under contamination language, payload custody moves before medical debrief, and every name the player carried becomes a liability screen. This is not death. It is survival inside the machine that needed silence.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/en_US. -->

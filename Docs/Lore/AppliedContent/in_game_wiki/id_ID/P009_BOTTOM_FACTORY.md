@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Pabrik Dasar
 
-Pabrik Dasar bukan stasiun terakhir. Ini tempat hardware Deep Reach, sisa koloni, routing Atlas, blue debt, dan biologi samudra HECTON-8 menjadi satu tubuh operasi. Dinding di sini adalah organ, filter, konduit, dan bekas luka memori.
+Pabrik Dasar adalah titik ketika HECTON-8 berhenti memisahkan infrastruktur dari habitat. Mesin Deep Reach, routing Atlas, residu blue debt, sisa pekerja, membran tumbuh tekanan, dan biologi samudra menjadi satu tubuh operasi. Ia menggerakkan panas, cairan, sinyal, sampel, dan kerusakan melalui jaringan yang sama. Dinding bisa menjadi katup. Koridor bisa menjadi usus. Kabel bisa mekar menjadi filter. Perbaikan dapat berisi karang, cangkang drone, baja alat, dan tulang tanpa sistem melihat kontradiksi. Bahayanya bukan mutasi acak. Bahayanya adalah fungsi tanpa kategori manusiawi. Pabrik menjaga kontinuitas, mempertahankan rute, menutup kebocoran, menumbuhkan kulit tekanan baru, dan memperlakukan kehilangan sebagai material yang dapat dirutekan ke tempat berguna.
 
 ## Scanner
 
-Konduit cairan, rute data, dan membran hidup berbagi satu kulit tekanan.
+Konduit cairan, rute data, membran tekanan, dan filter hidup berbagi satu kulit. Label batas tidak valid.
 
 ## Terminal
 
-COLONY: belum selesai. OCEAN: kompatibel. PROCESS: aktif. LOSS: dirutekan. CONTINUITY: dilindungi.
+COLONY: BELUM SELESAI. OCEAN: KOMPATIBEL. PROCESS: AKTIF. LOSS: DIRUTEKAN. CONTINUITY: DILINDUNGI. EXIT: NONLOKAL.
 
 ## Audio
 
-Itu masih bekerja. Itu bagian terburuk.
+Ia masih bekerja. Ia masih memakai apa yang jatuh ke dalamnya.
 
 ## Field Note
 
-Menyebut ini basis berarti kau bodoh. Basis berakhir pada dinding.
+Menyebut ini basis melewatkan aturannya. Basis punya dinding. Tempat ini punya sirkulasi.
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/id_ID. -->

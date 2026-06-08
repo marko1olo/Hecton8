@@ -8,33 +8,19 @@ biome_tags: biome.brine_canyon;biome.drop_zone
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+spoiler_tier: 1
+title: "סולם נתיב קניון תמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# סולם נתיב קניון תמלחת
 
-HE LOC HOLD: Brine Canyon Route Ladder is one of HECTON-8's core exploration structures: not a hallway, but a chemical geography where density, current and sound shape progression.
+קניוני תמלחת הופכים התקדמות עומק לפיזית. שכבות צפופות, קירות מינרלים, דליפות חום ועיוותים אקוסטיים מלמדים למה מסע עמוק יותר דורש כלים טובים יותר ומשמעת לחץ.
 
-## Scanner
-
-HE LOC HOLD: Brine density marker. The descent route is chemistry with walls.
-
-## Terminal
-
-HE LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
-
-## Audio
-
-HE LOC HOLD: The canyon is a staircase made of wrong water.
-
-## Field Note
-
-HE LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+סולם נתיב קניון תמלחת הוא מבנה חקירה מרכזי ב-HECTON-8: לא מסדרון, אלא גאוגרפיה כימית שבה צפיפות, זרם וקול מעצבים התקדמות. לא שוחים דרך הקניון. מנהלים משא ומתן עם שכבות כבדות מהחליפה.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/he_IL. -->

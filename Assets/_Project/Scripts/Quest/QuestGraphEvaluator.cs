@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using Hecton8.AtlasSignal;
 using Hecton8.Celestial;
@@ -36,6 +36,7 @@ namespace Hecton8.Quest
         private readonly string _pendingSignalsSentinelLabel;
 
         private NativeQueue<QuestSignalPayload> _pendingSignals;
+        private int _pendingSignalsSentinelId;
         private int _pendingSignalCount;
         private int _droppedSignalCount;
         private int _lastPendingSignalOverflowTelemetryFrame = -1;
@@ -58,21 +59,37 @@ namespace Hecton8.Quest
             _stateManager = stateManager;
             _onResultsAvailable = onResultsAvailable;
             _pendingSignalsSentinelLabel = nameof(_pendingSignals) + RuntimeHelpers.GetHashCode(this);
+            _pendingSignalsSentinelId = 0;
             _pendingSignals = new NativeQueue<QuestSignalPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestSignalPayload>[16] — quest signal ingress lane drained on event receipt — owner: QuestGraphEvaluator
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
-                _pendingSignals,
-                PendingSignalCapacity,
-                nameof(QuestGraphEvaluator),
-                _pendingSignalsSentinelLabel,
-                NativeAllocationLifetime.Session);
-            if (sentinelId <= 0)
+            try
             {
-                _pendingSignals.Dispose();
-                _pendingSignals = default;
-                throw new InvalidOperationException($"Native memory sentinel registration failed for {_pendingSignalsSentinelLabel}.");
-            }
+                _pendingSignalsSentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
+                    _pendingSignals,
+                    PendingSignalCapacity,
+                    nameof(QuestGraphEvaluator),
+                    _pendingSignalsSentinelLabel,
+                    NativeAllocationLifetime.Session);
+                if (_pendingSignalsSentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {_pendingSignalsSentinelLabel}.");
 
-            PrewarmQueue(ref _pendingSignals, PendingSignalCapacity);
+                PrewarmQueue(ref _pendingSignals, PendingSignalCapacity);
+            }
+            catch (Exception exception)
+            {
+                try
+                {
+                    DisposePendingSignals();
+                }
+                catch (Exception cleanupException)
+                {
+                    throw new AggregateException(
+                        "QuestGraphEvaluator native signal queue initialization failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
+                }
+
+                throw;
+            }
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -92,17 +109,57 @@ namespace Hecton8.Quest
         public void Dispose()
         {
             Unbind();
-
-            if (_pendingSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(QuestGraphEvaluator), _pendingSignalsSentinelLabel);
-                _pendingSignals.Dispose();
-            }
-
+            DisposePendingSignals();
             _pendingSignalCount = 0;
             _droppedSignalCount = 0;
             _lastPendingSignalOverflowTelemetryFrame = -1;
         }
+
+        private void DisposePendingSignals()
+        {
+            Exception firstException = null;
+
+            if (_pendingSignalsSentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(_pendingSignalsSentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    _pendingSignalsSentinelId = 0;
+                }
+            }
+
+            if (_pendingSignals.IsCreated)
+            {
+                try
+                {
+                    _pendingSignals.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    _pendingSignals = default;
+                }
+            }
+            else
+            {
+                _pendingSignals = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
+        }
+
 
         public void Bind()
         {

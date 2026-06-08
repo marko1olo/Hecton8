@@ -2,39 +2,25 @@
 packet_id: P013_NEARLIGHT_SHIP_CLASSES
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: ships.nearlight_classes
-unlock_id: unlock.first_transit_manifest
-poi_tags: poi.transit_manifest;poi.sleeper_tag
-biome_tags: biome.drowned_colony;biome.crash_shelf
+unlock_id: unlock.first_nearlight_manifest
+poi_tags: poi.transit_manifest;poi.old_ship_class_table
+biome_tags: biome.drowned_colony;biome.black_keel_link
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Класи околосвітлових кораблів"
+title: "Класи навколосвітлових кораблів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Класи околосвітлових кораблів
+# Класи навколосвітлових кораблів
 
-Nearlight Ship Classes тримає HECTON-8 у hard-sci-fi. Міжзоряні польоти існують, але вони повільні, фінансовані й прив'язані до інфраструктури.
+HECTON-8 не потрібен FTL, щоб здаватися величезним. Зонди можна втрачати, кораблі-засівачі несуть інструкції, Atlas рухає дорогу масу.
 
-## Scanner
-
-Транзитний manifest: needleprobe, seed ship, mass carrier, sleeper transport, system carrier.
-
-## Terminal
-
-No FTL lane registered. Transit class requires launch infrastructure, braking plan, shielding mass, and route custody.
-
-## Audio
-
-Корабель може перетнути зорі й бути марним для затопленої кімнати.
-
-## Field Note
-
-Кораблі - не свобода. Кораблі - це розклади з двигунами.
+Прибуття таке ж важливе, як старт. Швидкість треба скинути магнітними вітрилами й геометрією газових гігантів. Тому претензія може бути людською, а гравець лишається сам у воді.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/uk_UA. -->

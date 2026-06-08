@@ -13,8 +13,6 @@ namespace Hecton8.EditorTools
         private const string MaterialFolder = "Assets/_Project/Art/Materials/WorldSupport";
         private const string FinalPrefabFolder = "Assets/_Project/Prefabs/WorldSupport/Final";
         private const string VentSheenMaterialPath = "Assets/_Project/Art/Materials/Construction/Mat_RuinSeepSheen.mat";
-        private const string IndustrialStripeDecalPrefabPath = "Assets/ScifiFacility/Prefabs/decals/stripes_03.prefab";
-        private const string IndustrialScuffDecalPrefabPath = "Assets/ScifiFacility/Prefabs/decals/decal_04.prefab";
         private const string RuinApexStripeFrameChildName = "RuinApexStripe_Frame";
         private const string RuinApexStripeCrossSpanChildName = "RuinApexStripe_CrossSpan";
         private const string RuinApexScuffBaseChildName = "RuinApexScuff_Base";
@@ -40,6 +38,11 @@ namespace Hecton8.EditorTools
             Material abyssMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_AbyssApex.mat", new Color(0.42f, 0.48f, 0.62f, 1f));
             Material reefMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_ReefApex.mat", new Color(0.92f, 0.82f, 0.46f, 1f));
             Material ruinMat = CreateOrUpdateMaterial($"{MaterialFolder}/Mat_Support_RuinApex.mat", new Color(0.34f, 0.66f, 0.82f, 1f));
+
+            if (WorldSupportGeminiMaterialApplier.AreSourceMaterialsAvailable())
+                WorldSupportGeminiMaterialApplier.Apply(false);
+            if (WorldSupportGeneratedDecalMaterialBuilder.AreSourceTexturesAvailable())
+                WorldSupportGeneratedDecalMaterialBuilder.Build();
 
             int createdCount = 0;
             if (CreateCompositeFinalPrefab($"{FinalPrefabFolder}/PFB_Support_Pocket_Resource.prefab", new Vector3(3.2f, 1.8f, 3.0f), BuildResourcePocketLods(resourceMat, passiveMat)) != null)
@@ -833,9 +836,9 @@ namespace Hecton8.EditorTools
             if (string.IsNullOrEmpty(prefabPath))
                 return;
 
-            GameObject stripePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(IndustrialStripeDecalPrefabPath);
-            GameObject scuffPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(IndustrialScuffDecalPrefabPath);
-            if (stripePrefab == null || scuffPrefab == null)
+            Material stripeMaterial = AssetDatabase.LoadAssetAtPath<Material>(WorldSupportGeneratedDecalMaterialBuilder.WarningStripeMaterialPath);
+            Material scuffMaterial = AssetDatabase.LoadAssetAtPath<Material>(WorldSupportGeneratedDecalMaterialBuilder.CutterScorchMaterialPath);
+            if (stripeMaterial == null || scuffMaterial == null)
                 return;
 
             GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
@@ -847,21 +850,21 @@ namespace Hecton8.EditorTools
 
                 AttachSupportDecal(
                     lod0,
-                    stripePrefab,
+                    stripeMaterial,
                     RuinApexStripeFrameChildName,
                     new Vector3(-3.18f, 5.78f, 3.54f),
                     new Vector3(6f, -102f, 4f),
                     new Vector3(0.92f, 1.46f, 1f));
                 AttachSupportDecal(
                     lod0,
-                    stripePrefab,
+                    stripeMaterial,
                     RuinApexStripeCrossSpanChildName,
                     new Vector3(0.42f, 7.92f, 1.16f),
                     new Vector3(0f, 18f, 0f),
                     new Vector3(1.42f, 1.78f, 1f));
                 AttachSupportDecal(
                     lod0,
-                    scuffPrefab,
+                    scuffMaterial,
                     RuinApexScuffBaseChildName,
                     new Vector3(0.58f, 0.42f, 1.64f),
                     new Vector3(84f, 24f, 0f),
@@ -878,25 +881,18 @@ namespace Hecton8.EditorTools
 
         private static void AttachSupportDecal(
             Transform parent,
-            GameObject decalPrefab,
+            Material decalMaterial,
             string childName,
             Vector3 localPosition,
             Vector3 localEulerAngles,
             Vector3 localScale)
         {
-            if (parent == null || decalPrefab == null || string.IsNullOrEmpty(childName))
+            if (parent == null || decalMaterial == null || string.IsNullOrEmpty(childName))
                 return;
 
-            Transform child = FindChildByName(parent, childName);
+            Transform child = EnsureQuadDecalChild(parent, childName);
             if (child == null)
-            {
-                Object instance = PrefabUtility.InstantiatePrefab(decalPrefab, parent);
-                if (instance is not GameObject childObject)
-                    return;
-
-                childObject.name = childName;
-                child = childObject.transform;
-            }
+                return;
 
             child.localPosition = localPosition;
             child.localRotation = Quaternion.Euler(localEulerAngles);
@@ -904,6 +900,7 @@ namespace Hecton8.EditorTools
 
             if (child.TryGetComponent(out Renderer renderer))
             {
+                renderer.sharedMaterial = decalMaterial;
                 renderer.shadowCastingMode = ShadowCastingMode.Off;
                 renderer.receiveShadows = false;
                 renderer.lightProbeUsage = LightProbeUsage.Off;
@@ -914,6 +911,23 @@ namespace Hecton8.EditorTools
             }
 
             EditorUtility.SetDirty(child.gameObject);
+        }
+
+        private static Transform EnsureQuadDecalChild(Transform parent, string childName)
+        {
+            Transform child = FindChildByName(parent, childName);
+            if (child != null && child.TryGetComponent(out MeshRenderer _) && child.TryGetComponent(out MeshFilter _))
+                return child;
+
+            if (child != null)
+                Object.DestroyImmediate(child.gameObject);
+
+            GameObject decalObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            decalObject.name = childName;
+            decalObject.transform.SetParent(parent, false);
+            if (decalObject.TryGetComponent(out Collider collider))
+                Object.DestroyImmediate(collider);
+            return decalObject.transform;
         }
 
         private static void SyncRuinApexIndustrialDecalRenderers(GameObject prefabRoot, Transform lod0)

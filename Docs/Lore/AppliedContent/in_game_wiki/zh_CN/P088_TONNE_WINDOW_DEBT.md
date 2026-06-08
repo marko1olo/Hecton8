@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "吨窗债务"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# 吨窗债务
 
-CN LOC HOLD: Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.
+吨窗债务是物理变成金融的地方。Black Keel没有无限升力余量、无限中转燃料或无限清洁隔离体积。从HECTON-8带上的每一公斤,都与维持操作员生命所需的每一公斤竞争。债务计让carrier显得残酷,却不破坏硬科幻:救援可能存在,但航线预算不停追问什么值得获得质量。
 
 ## Scanner
 
-CN LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
+质量窗口计。每一公斤帮助都有航线价格。
 
 ## Terminal
 
-CN LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER:recovery burn余量收窄。操作员撤出质量与封存payload、压载储备、氧债和隔离样本custody冲突。手动override需要付费优先或危险证明。
 
 ## Audio
 
-CN LOC HOLD: You owe the orbit before you owe the money.
+船可以带走你,也可以带走你找到的东西。它更喜欢一个数字。
 
 ## Field Note
 
-CN LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+氧气、压载、证据、payload、身体:carrier在衡量仁慈之前先衡量它们。
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/zh_CN. -->

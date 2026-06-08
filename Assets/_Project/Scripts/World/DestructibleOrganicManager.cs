@@ -10,6 +10,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
+using Hecton8.Items;
 using Hecton8.Scavenging;
 using Hecton8.SaveSystem;
 using Unity.Burst;
@@ -1589,6 +1590,7 @@ namespace Hecton8.World
         private int _pendingSporeAcousticEventCount;
         private bool _hotSwapRegistered;
         private bool _organicToolHitServiceRegistered;
+        private bool _runtimeOwnerAborted;
         // COLD ALLOC: CorpseResourceNodeRecord[96] - bounded ecological corpse-resource nodes used by scavenger AI and blood-scent routing - owner: DestructibleOrganicManager
         private CorpseResourceNodeRecord[] _corpseResourceNodes = Array.Empty<CorpseResourceNodeRecord>();
         private int _corpseResourceNodeCount;
@@ -1890,6 +1892,9 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            if (Application.isPlaying && TryAbortForUsableExistingRuntime())
+                return;
+
             _activeRuntimeInstance = this;
             _surfaceMatrices = new BridgeMatrixLane(this, underwater: false);
             _surfaceMetadata = new BridgeMetadataLane(this, underwater: false);
@@ -1927,6 +1932,13 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
+            _activeRuntimeInstance = this;
+            if (!TryRegisterOrganicToolHitService())
+                return;
+
             CacheRegistryServicesCold();
             TryBootstrapDearLieVault(clearExisting: true);
             EnsureOrganicVaultBuffers(clearExisting: true);
@@ -1934,7 +1946,6 @@ namespace Hecton8.World
             BuildYieldMaterialLut();
             TryRegisterHotSwapListener();
             RegisterOriginShiftListener();
-            TryRegisterOrganicToolHitService();
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
@@ -1953,6 +1964,16 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+            {
+                if (ReferenceEquals(_activeRuntimeInstance, this))
+                    _activeRuntimeInstance = null;
+                return;
+            }
+
+            if (ReferenceEquals(_activeRuntimeInstance, this))
+                _activeRuntimeInstance = null;
+
             TryUnregisterTickLanes();
             TryUnregisterDispatcherPhases();
 
@@ -1967,6 +1988,13 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+            {
+                if (ReferenceEquals(_activeRuntimeInstance, this))
+                    _activeRuntimeInstance = null;
+                return;
+            }
+
             if (_activeRuntimeInstance == this)
                 _activeRuntimeInstance = null;
 
@@ -1987,6 +2015,16 @@ namespace Hecton8.World
         /// <param name="shiftData">Committed floating-origin shift data.</param>
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteVector(shiftOffset) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            {
+                return;
+            }
+
             if (_corpseResourceNodes == null || _corpseResourceNodeCount <= 0)
                 return;
 
@@ -1999,7 +2037,11 @@ namespace Hecton8.World
                     continue;
 
                 float3 runtimePosition = AUPMath.ToRuntimeFloat3(in record.PositionAup, committedOriginOffset);
-                record.Position = ToRuntimeVector3(runtimePosition);
+                Vector3 resolvedRuntimePosition = ToRuntimeVector3(runtimePosition);
+                if (!IsFiniteVector(resolvedRuntimePosition))
+                    continue;
+
+                record.Position = resolvedRuntimePosition;
                 _corpseResourceNodes[i] = record;
             }
         }
@@ -2146,17 +2188,109 @@ namespace Hecton8.World
             _hotSwapRegistered = false;
         }
 
-        private void TryRegisterOrganicToolHitService()
+        private bool TryRegisterOrganicToolHitService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_organicToolHitServiceRegistered || !Application.isPlaying)
-                return;
+                return _organicToolHitServiceRegistered || !Application.isPlaying;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             IOrganicToolHitService registered = GlobalRegistry.OrganicToolHits;
-            if (registered != null && !ReferenceEquals(registered, this))
-                return;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                DestructibleOrganicManager staleManager = registered as DestructibleOrganicManager;
+                if (ReferenceEquals(staleManager, null))
+                {
+                    AbortDuplicateRuntimeOwner();
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterOrganicToolHitService(registered);
+                staleManager._organicToolHitServiceRegistered = false;
+                if (ReferenceEquals(_activeRuntimeInstance, staleManager))
+                    _activeRuntimeInstance = null;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterOrganicToolHitService(this);
             _organicToolHitServiceRegistered = ReferenceEquals(GlobalRegistry.OrganicToolHits, this);
+            if (!_organicToolHitServiceRegistered)
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
+
+            _runtimeOwnerAborted = false;
+            return true;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            DestructibleOrganicManager active = _activeRuntimeInstance;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsDestructibleOrganicRuntimeUsable(active))
+                {
+                    AbortDuplicateRuntimeOwner();
+                    return true;
+                }
+
+                _activeRuntimeInstance = null;
+            }
+
+            IOrganicToolHitService registeredService = GlobalRegistry.OrganicToolHits;
+            if (ReferenceEquals(registeredService, null) || ReferenceEquals(registeredService, this))
+                return false;
+
+            if (IsOrganicToolHitServiceUsable(registeredService))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            DestructibleOrganicManager staleManager = registeredService as DestructibleOrganicManager;
+            if (!ReferenceEquals(staleManager, null))
+            {
+                GlobalRegistry.UnregisterOrganicToolHitService(registeredService);
+                staleManager._organicToolHitServiceRegistered = false;
+                if (ReferenceEquals(_activeRuntimeInstance, staleManager))
+                    _activeRuntimeInstance = null;
+            }
+
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            _runtimeOwnerAborted = true;
+            if (ReferenceEquals(_activeRuntimeInstance, this))
+                _activeRuntimeInstance = null;
+            enabled = false;
+        }
+
+        private static bool IsOrganicToolHitServiceUsable(IOrganicToolHitService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            DestructibleOrganicManager manager = service as DestructibleOrganicManager;
+            return ReferenceEquals(manager, null) ||
+                   (manager._organicToolHitServiceRegistered &&
+                    IsDestructibleOrganicRuntimeUsable(manager));
+        }
+
+        private static bool IsDestructibleOrganicRuntimeUsable(DestructibleOrganicManager manager)
+        {
+            return manager != null &&
+                   ReferenceEquals(_activeRuntimeInstance, manager) &&
+                   manager.isActiveAndEnabled &&
+                   !manager._runtimeOwnerAborted;
         }
 
         private void TryUnregisterOrganicToolHitService()
@@ -3240,7 +3374,17 @@ namespace Hecton8.World
 
         private ISpatialAudioHarvestPlaybackSink ResolveHarvestAudioSink()
         {
-            return ResolveAudioService() != null ? _harvestAudioSink : null;
+            IAudioService audioService = ResolveAudioService();
+            if (audioService == null)
+                return null;
+
+            ISpatialAudioHarvestPlaybackSink harvestAudioSink = _harvestAudioSink;
+            if (ReferenceEquals(harvestAudioSink, audioService))
+                return harvestAudioSink;
+
+            harvestAudioSink = audioService as ISpatialAudioHarvestPlaybackSink;
+            _harvestAudioSink = harvestAudioSink;
+            return harvestAudioSink;
         }
 
         private void ClearCachedAudioService()
@@ -3251,7 +3395,7 @@ namespace Hecton8.World
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -5058,9 +5202,10 @@ namespace Hecton8.World
             int lootWriteIndex = 0;
             NativeList<HarvestableTemplate.LootRuntimeEntry> lootScratch =
                 new NativeList<HarvestableTemplate.LootRuntimeEntry>(byte.MaxValue, Allocator.Temp);
+            int lootScratchSentinelId = 0;
             try
             {
-                int lootScratchSentinelId = NativeMemorySentinel.RegisterNativeList(
+                lootScratchSentinelId = NativeMemorySentinel.RegisterNativeListInstance(
                     lootScratch,
                     NativeMemoryOwner,
                     TemplateLootBuildScratchLabel,
@@ -5151,10 +5296,47 @@ namespace Hecton8.World
             }
             finally
             {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, TemplateLootBuildScratchLabel);
+                Exception cleanupException = null;
+
+                if (lootScratchSentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(lootScratchSentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        cleanupException = exception;
+                    }
+                    finally
+                    {
+                        lootScratchSentinelId = 0;
+                    }
+                }
 
                 if (lootScratch.IsCreated)
-                    lootScratch.Dispose();
+                {
+                    try
+                    {
+                        lootScratch.Dispose();
+                    }
+                    catch (Exception exception)
+                    {
+                        if (cleanupException == null)
+                            cleanupException = exception;
+                    }
+                    finally
+                    {
+                        lootScratch = default;
+                    }
+                }
+                else
+                {
+                    lootScratch = default;
+                }
+
+                if (cleanupException != null)
+                    throw cleanupException;
             }
 
             bool cacheBuilt = descriptorWriteIndex > 0;
@@ -6287,6 +6469,12 @@ namespace Hecton8.World
                         PlayerInventory.ScavengeAttemptResult result =
                             playerInventory.ScavengeAttempt(drop.ItemHashId, drop.Quantity, playerInventory.transform);
                         rejectedQuantity = result.RejectedQuantity;
+                        PublishOrganicDropLifecycleCollected(
+                            itemCatalog,
+                            drop.ItemHashId,
+                            drop.Quantity - rejectedQuantity,
+                            playerInventory.transform,
+                            ToRuntimeVector3(drop.Position));
                     }
 
                     if (rejectedQuantity > 0 && registry != null && itemCatalog != null)
@@ -6313,6 +6501,35 @@ namespace Hecton8.World
             }
 
             return !routeFailure && remainingCount <= 0;
+        }
+
+        private static void PublishOrganicDropLifecycleCollected(
+            Hecton8.SaveSystem.ItemCatalog itemCatalog,
+            int itemHashId,
+            int acceptedQuantity,
+            Transform interactor,
+            Vector3 runtimePosition)
+        {
+            if (itemCatalog == null || itemHashId == 0 || acceptedQuantity <= 0)
+                return;
+
+            ItemData item = itemCatalog.FindByHash(itemHashId);
+            if (item == null)
+                return;
+
+            bool hasInteractorPosition = interactor != null && IsFiniteVector(interactor.position);
+            ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(interactor.GetEntityId()) : 0ul;
+            Vector3 signalPosition = IsFiniteVector(runtimePosition)
+                ? runtimePosition
+                : (hasInteractorPosition ? interactor.position : Vector3.zero);
+            bool hasRuntimePosition = IsFiniteVector(signalPosition);
+
+            ItemLifecycleSignalRoute.TryPublishCollected(
+                item,
+                acceptedQuantity,
+                interactorEntityId,
+                signalPosition,
+                hasRuntimePosition);
         }
 
         private bool TrySnapshotDropOutputStateWithLock(out int producedCount, out int droppedCount)
@@ -9271,7 +9488,8 @@ namespace Hecton8.World
 
         private static bool TryApplyTitanRootMoundRequest(Vector3 runtimePosition)
         {
-            HectonVoxelEngine voxelEngine = HectonVoxelEngine.ActiveRuntimeInstance;
+            HectonVoxelEngine voxelEngine = null;
+            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
             if (voxelEngine == null)
                 return false;
 

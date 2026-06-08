@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Black Keel Claim Acceptance"
+title: "Przyjęcie roszczenia Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Black Keel Claim Acceptance
+# Przyjęcie roszczenia Black Keel
 
-PL LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+Terminal roszczenia Black Keel ustawia początek gry wokół długu, dodatków tlenowych i custody, zanim ocean dotknie ekranu.
 
 ## Scanner
 
-PL LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+Konsola kontraktu. Aegir Reclamation Pool pokazuje zastaw 4.8 tonne-window, zanim pokaże tlen.
 
 ## Terminal
 
-PL LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / TERMINAL PRZYJĘCIA ROSZCZENIA: trasa RAN-B:H8 salvage descent; ulga zastawu 4.8 tonne-window warunkowa; dodatki tlenowe naliczane po odzyskaniu; payload custody pierwotnie Black Keel, świadek Keelmark Mutual; odmowa utrzymuje aktywny Barnard blacklist review.
 
 ## Audio
 
-PL LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel do kontraktora: okno roszczenia otwarte. Tlen naliczany po odzyskaniu. Potwierdź, jeśli możesz pracować.
 
 ## Field Note
 
-PL LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+Rysik jest przywiązany do ekranu przewodem ciśnieniowym. Ktoś spodziewał się drżących rąk.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/pl_PL. -->

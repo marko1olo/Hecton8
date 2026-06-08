@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "衝突で裂けた月"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# 衝突で裂けた月
 
-JP LOC HOLD: HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.
+HECTON-8はAegir系内で形成され、後にかすめる衝突で割れた。傷は月を砕かなかった。地殻棚を持ち上げ、塩水断層を開き、熱水回廊を養い、まれな圧力窓から古い海底へ触れられる場所を残した。サルベージ地図はその損傷をたどる。安全な道は水で満ちた古い傷だからだ。
 
 ## Scanner
 
-JP LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
+古い地殻サンプル。月はAegirの残骸帯で生まれ、海が記憶するほど大きな衝突で開かれた。
 
 ## Terminal
 
-JP LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+起源モデル: Aegir周辺での集積、後の斜め衝突、潮汐ロック後の共鳴。結果: 段状地殻、熱い断層の梯子、塩水盆地、圧力ガラス脈、深部床への不均一な到達。
 
 ## Audio
 
-JP LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
+ここで生まれた。その後、海に地図を与えるほど強く何かが当たった。
 
 ## Field Note
 
-JP LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+捕獲された月という神話はきれいすぎる。HECTON-8には地元の傷がある。持ち上がった地殻、濃くなった塩水、まだ利子を払う噴出口。
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/ja_JP. -->

@@ -50,6 +50,7 @@ namespace Hecton8.EditorTools
         private const string HudRootName = "HUD_V4_CanvasRoot";
         private const string RelayMarkerLayerName = "HUD_RouteMarkerLayer";
         private const string RelayRouteMarkerName = "RelayRouteMarker";
+        private const float DefaultSurfaceWaterLevelY = 14.02f;
 
         [MenuItem("Hecton/Authoring/Rebuild World Runtime Stack", priority = 177)]
         public static void RebuildWorldRuntimeStack()
@@ -1107,7 +1108,7 @@ namespace Hecton8.EditorTools
             GameObject reefField = EnsureChild(worldRoot.transform, StarterReefFieldName);
             Vector3 anchorPosition = playerTransform != null
                 ? playerTransform.position + new Vector3(24f, 0f, 36f)
-                : new Vector3(-1567f, 4900f, 2600f);
+                : new Vector3(-1567f, DefaultSurfaceWaterLevelY, 2600f);
             reefField.transform.position = anchorPosition;
             reefField.transform.rotation = Quaternion.identity;
             reefField.transform.localScale = Vector3.one;
@@ -1121,7 +1122,7 @@ namespace Hecton8.EditorTools
 
             Vector3 anchorOrigin = playerTransform != null
                 ? playerTransform.position
-                : new Vector3(-1567f, 4900f, 2600f);
+                : new Vector3(-1567f, DefaultSurfaceWaterLevelY, 2600f);
 
             worldRoot.transform.position = anchorOrigin;
             worldRoot.transform.rotation = Quaternion.identity;

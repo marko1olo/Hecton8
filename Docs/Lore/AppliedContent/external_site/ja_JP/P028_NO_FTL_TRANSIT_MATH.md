@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # FTLなしの航行計算
 
-FTLなしの航行計算は、距離を遅延命令、古い権限、脱出窓としてゲーム圧力に変える。
+FTLなしの航行計算は、星間距離を圧力に変える。遅延命令、古い権限、保管遅れ、物理的な脱出窓。
 
 ## Scanner
 

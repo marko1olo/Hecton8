@@ -576,7 +576,7 @@ namespace Hecton8.Audio
             if (ReferenceEquals(_activeInstance, this))
                 _activeInstance = null;
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
             if (Interlocked.Exchange(ref _registeredColdTick, 0) != 0)
                 GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
             if (Interlocked.Exchange(ref _registeredLateFrame, 0) != 0)
@@ -1117,7 +1117,14 @@ namespace Hecton8.Audio
             ReadOnlySpan<SurvivalVitalsChangedSignal> vitalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < vitalSignals.Length; i++)
             {
-                float oxygenDanger01 = 1f - math.saturate(vitalSignals[i].Oxygen01);
+                ref readonly SurvivalVitalsChangedSignal signal = ref vitalSignals[i];
+                if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) == 0u ||
+                    !math.isfinite(signal.Oxygen01))
+                {
+                    continue;
+                }
+
+                float oxygenDanger01 = 1f - math.saturate(signal.Oxygen01);
                 _lastOxygenDanger01 = math.max(_lastOxygenDanger01, oxygenDanger01);
             }
 

@@ -9,32 +9,36 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Revoked Access Language Trace"
+title: "أثر لغة الوصول الملغى"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Revoked Access Language Trace
+# أثر لغة الوصول الملغى
 
-AR LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+أصبحت لغة الوصول الملغى أحد أقفال Deep Reach الهادئة. يستطيع باب أن يرفض عاملا سابقا، وأن يسجل الطلب كصيانة روتينية، ومع ذلك يسرّب المصطلحات الدقيقة التي سمّت مسار الإخلاء المخفي. على HECTON-8 يهم هذا لأن اللاعب لا يحتاج إلى اعتراف نظيف كي يتبع الأثر. تكفي الصياغة القديمة: بروتوكول التعداد المتدهور، الشاهد البديل، أرشيف المسار الآمن، وتوجيه حفظ المطالبة. صُنعت هذه الكلمات لمراجعة المسؤولية، لا للإنقاذ. يثبت الرفض أمرين في وقت واحد. الاعتماد مات. أما الإجراء خلفه فلم يمت.
 
 ## Scanner
 
-AR LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+القفل لا يقول ممنوع. إنه يقول إعادة تصنيف صيانة، تعليق استمرارية، ومواد مسار. صياغة Deep Reach القديمة: رفض ما زال يشير إلى الباب المدفون.
 
 ## Terminal
 
-AR LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+استجابة الوصول / أرشيف المسار الآمن
+الاعتماد: ملغى
+السبب: مواد استمرارية الإخلاء مقصورة على موظفي Deep Reach المعتمدين
+المصطلحات الظاهرة: تعداد متدهور، شاهد بديل، مسار حفظ مطالبة، إعادة تصنيف صيانة
+ملاحظة: يمكن للموظفين الميدانيين السابقين رؤية لغة الرفض لغرض مطابقة الحادث فقط.
 
 ## Audio
 
-AR LOC HOLD: That is not security. That is a memo pretending to be a door.
+لم يمحوا الممر. لقد لفوه بمفردات لا يزال يفهمها إلا الموظفون الذين يعرفون ذنبهم.
 
 ## Field Note
 
-AR LOC HOLD: Lockout language hints at hidden liability without granting free access.
+الشارة ماتت. القفل ما زال يتكلم لهجة المكتب التي دفنت المسار.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ar_SA. -->

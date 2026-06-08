@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "مجمع استرداد Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# مجمع استرداد Aegir
 
-AR LOC HOLD: Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
-
-## Scanner
-
-AR LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
-
-## Terminal
-
-AR LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
-
-## Audio
-
-AR LOC HOLD: The pool owns the route. You only rent the answer.
-
-## Field Note
-
-AR LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+مجمع استرداد Aegir هو الطريقة التي يبقي بها HECTON-8 اللاعب وحيدا مع جعل الوصول قابلا للتصديق. لا يملك أي marauder صغير Black Keel مباشرة. العطاء carrier تابع لنظام مطالبات مشترك بني للبنية الميتة والحمولات المتنازع عليها والعوالم التي تفوق كلفتها قدرة الأطقم العادية. ختم المجمع يشتري وصولا إلى الطريق، لكنه يسلم الطريق أيضا للتحكيم. عندما يصبح المشغل تحت خط الماء، يتنافس كل طلب مع حيازة الحمولة واحتياطي الحجر وقيمة الدليل ونوافذ الوقود. رعب المجمع إجرائي. يستطيع أن يرسل المساعدة وأن يرفض الإنقاذ، لأن المساعدة في قانون مطالبات Aegir خدمة قابلة للفوترة بين خدمات كثيرة.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/ar_SA. -->

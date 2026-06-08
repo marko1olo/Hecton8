@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Drop Capsule Damage Parts"
+title: "Beschadigde onderdelen van de dropcapsule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Drop Capsule Damage Parts
+# Beschadigde onderdelen van de dropcapsule
 
-NL LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+Beschadigde onderdelen van de dropcapsule halen gemakkelijke reddingslogica uit HECTON-8. De Marauder zit vast omdat specifieke systemen faalden: ascent sleeve, guidance gimbal, relay mast, compressor en heat tiles. Elke storing leidt naar een route, materiaal, gereedschapsupgrade of bewijsobject.
 
 ## Scanner
 
-NL LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve krom, guidance gimbal beschadigd, relay mast afgeschoren, compressor vervuild, heat tile gebarsten.
 
 ## Terminal
 
-NL LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-NL LOC HOLD: It landed well enough to strand you properly.
+Hij landde goed genoeg om je netjes vast te zetten.
 
 ## Field Note
 
-NL LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+De capsule kan een Marauder het eerste uur in leven houden. Zonder diepterang-vervangingen kan hij niet weg.
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/nl_NL. -->

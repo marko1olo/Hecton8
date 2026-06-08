@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # КСЕНОН-ОМЕГА: ОЧИСТКА И СВОЙСТВА
 
 > **Источник:** Мегакорпорация Deep Reach, Секретный химический манифест.

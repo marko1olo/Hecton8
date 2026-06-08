@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Lantern Drift Codex Card"
+title: "Ficha de códice de deriva farol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Lantern Drift Codex Card
+# Ficha de códice de deriva farol
 
-ES LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+La deriva farol evita que la belleza de HECTON-8 sea papel tapiz. Puede guiar con estructura luminosa clara y luego traicionar registrando ruido, pánico y carga de tormenta. El agua brillante es navegación y exposición al mismo tiempo.
 
 ## Scanner
 
-ES LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Bloom de deriva farol. Plancton bioluminiscente marca corriente y restos en bandas. Útil para contornos; peligroso cuando el ruido de herramientas lo vuelve una estela iluminada.
 
 ## Terminal
 
-ES LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+ESPÉCIMEN / BLOOM DE DERIVA FAROL / función: evento de visibilidad somera, dibujo de corriente, registrador de perturbación / lectura segura: luz de borde estable, halos de restos, corriente y residuo coincidentes / rechazo: falso corredor cargado por tormenta, bloom que aplana pequeños peligros, estela de herramienta iluminándose tras el operador / nota de ruta: la luz es dato, no refugio.
 
 ## Audio
 
-ES LOC HOLD: Pretty is not safe. Pretty is a reading.
+El brillo no te está ayudando. Está informando de lo que oyó el agua.
 
 ## Field Note
 
-ES LOC HOLD: Card teaches that beauty can be route information and route deception.
+Usa bloom para siluetas. No repares con ruido dentro. Si el brillo te sigue, otra cosa puede seguirlo también.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/es_ES. -->

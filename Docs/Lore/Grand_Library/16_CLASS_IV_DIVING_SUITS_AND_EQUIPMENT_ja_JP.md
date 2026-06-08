@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # クラスIV潜水服と深海装備
 
 > **出典:** Deep Reach メガコーポレーション、装備品補給将校マニュアル。

@@ -8,33 +8,33 @@ biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Sonar Return Route"
+spoiler_tier: 1
+title: "ソナー帰還ルート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sonar Return Route
+# ソナー帰還ルート
 
-JP LOC HOLD: Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work.
+HECTON-8のナビゲーションでは、帰路は慰めではなく作業だ。古いビーコンは正しい通路を示しながら、新しい障害物、移動したシルト床、エコーを変えた圧力扉を隠すことがある。
 
 ## Scanner
 
-JP LOC HOLD: The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+帰還ビーコンは古い。過去の安全ピンが通路の現在エコーと一致しない。貨物質量で退避窓が遅くなる。
 
 ## Terminal
 
-JP LOC HOLD: Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: 最終クリーンエコー無効。Black Keelピンを低信頼で受信。障害物ドリフトとシルト密度が地図許容値超過。貨物回収前に二次ラインを標識せよ。
 
 ## Audio
 
-JP LOC HOLD: The way back is not gone. It is different enough to kill you.
+ルートはまだある。エコーが同じではない。
 
 ## Field Note
 
-JP LOC HOLD: Return route is a living cost, not a minimap line.
+積む前にピンを打て。手が空の時に帰路が変わったなら、満載の背中は許されない。
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/ja_JP. -->

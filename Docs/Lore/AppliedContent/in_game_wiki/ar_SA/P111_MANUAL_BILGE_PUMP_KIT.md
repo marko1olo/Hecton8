@@ -7,34 +7,34 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "عدة مضخة القاع اليدوية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# عدة مضخة القاع اليدوية
 
-AR LOC HOLD: The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.
+مضخة القاع اليدوية هي أول أداة نافعة بعد الهبوط، لأنها تعمل بينما تكون كهرباء الكبسولة غير آمنة. لا تفرغ إلا جيوبا صغيرة مغمورة، لكنها تجبرك على مراقبة السحب والمخرج ومقاومة الصمام بدل الثقة بضوء أخضر. تعلمك العدة قاعدة افتتاح HECTON-8: يبدأ الإصلاح بالماء والضغط واليدين.
 
 ## Scanner
 
-AR LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
+تم رصد عدة ضخ يدوي للقاع. شبكة السحب مسدودة برغوة الكبسولة؛ نظفها قبل تغذية اللوحة بالطاقة.
 
 ## Terminal
 
-AR LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
+إصدار P-63 / عدة القاع: مضخة يدوية، مشبك خرطوم، شبكة سحب، صمام عدم رجوع. أزل الماء الراكد قبل اختبار أي لوحة مزودة بالطاقة. لا تصرف المخرج إلى مجاري كابلات مختومة.
 
 ## Audio
 
-AR LOC HOLD: Hand work first. Electricity second. Breathing always.
+الماء أولا. الطاقة بعد ذلك. إذا ارتد المقبض، فالغرفة ترد عليك.
 
 ## Field Note
 
-AR LOC HOLD: First tool must teach survival before upgrade fantasy.
+المضخات تكذب أقل من العدادات. إذا ارتد المقبض، توقف وافحص أين يذهب الماء.
 
 <!-- In-Game Wiki; generated from P111_MANUAL_BILGE_PUMP_KIT/ar_SA. -->

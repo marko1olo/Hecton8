@@ -9,32 +9,22 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Ibarra Loss Ledger"
+title: "دفتر إيبارا لتحويل الخسائر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Ibarra Loss Ledger
+# دفتر إيبارا لتحويل الخسائر
 
-AR LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## محاسبة عاشت بعد المستعمرة
 
-## Scanner
+يجب أن يبدو دفتر إيبارا أبرد من قائمة مفقودين. القائمة تحزن حتى حين تكذب. أما ledger فيحول. يستلم وحدات سكنية متضررة وtool banks وsample custody وmissing personnel وsalvage rights، ثم يضع كل حقيقة في فئة يمكن أن تستمر عبر العقود بعد صمت HECTON-8.
 
-AR LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+هذا هو الجسر بين liability القديمة لـ Deep Reach ودين اللاعب الحالي. إذا صار الناس unresolved personnel load تستطيع الشركة الاعتراف بغيابهم من دون تسمية قتل. إذا صار الدليل material custody يمكن شراؤه أو دفنه أو تحويله أو تأمينه. إذا بقي claim مستمرا، تعيش الملكية أطول من العمال الذين جعلوا المكان يعمل.
 
-## Terminal
-
-AR LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-AR LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-AR LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+يمنح ledger اللاعب قوة ثقيلة. رفعه إلى الأعلى لا يكشف ما حدث فقط. إنه يحمل شيئا يعرف السوق تسعيره مسبقا. خيار البيع أو النشر أو التحويل أو الدفن يصبح قذرا لأن الوثيقة صممت كي يصبح كل اختيار مقروءا في balance sheet لشخص ما.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/ar_SA. -->

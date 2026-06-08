@@ -261,8 +261,8 @@ namespace Hecton8.Items
         /// <summary>
         /// Stable content identifier used by persistence-facing systems.
         /// </summary>
-        public string PersistentId => string.IsNullOrWhiteSpace(stableId) ? name : stableId;
-        public int PersistentHashId => _persistentHashId;
+        public string PersistentId => ResolveCanonicalPersistentId(stableId, name);
+        public int PersistentHashId => ResolvePersistentHashId();
         public int LegacyNameHashId => _legacyNameHashId;
         public uint VulnerabilityMask => autoResolvePhysicalMetadata
             ? ItemPhysicalMetadataUtility.ResolveDefaultVulnerabilityMask(category, resourceFamily, PersistentId)
@@ -359,16 +359,57 @@ namespace Hecton8.Items
         /// </summary>
         public bool MatchesPersistentId(string id)
         {
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrWhiteSpace(id))
                 return false;
 
+            id = id.Trim();
             return MatchesPersistentHash(LocHash.Compute(id));
         }
 
         public bool MatchesPersistentHash(int hashId)
         {
-            return hashId != 0 &&
-                   (hashId == _persistentHashId || hashId == _legacyNameHashId);
+            if (hashId == 0)
+                return false;
+
+            int persistentHashId = ResolvePersistentHashId();
+            if (hashId == persistentHashId)
+                return true;
+
+            int legacyNameHashId = ResolveLegacyNameHashId();
+            return hashId == legacyNameHashId;
+        }
+
+        public int ResolvePersistentHashId()
+        {
+            if (_persistentHashId != 0)
+                return _persistentHashId;
+
+            return ComputeCanonicalPersistentHashId(PersistentId);
+        }
+
+        private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)
+        {
+            string id = !string.IsNullOrWhiteSpace(authoredId) ? authoredId : fallbackName;
+            return string.IsNullOrWhiteSpace(id) ? string.Empty : id.Trim();
+        }
+
+        private static int ComputeCanonicalPersistentHashId(string value)
+        {
+            string persistentId = ResolveCanonicalPersistentId(value, null);
+            return persistentId.Length == 0 ? 0 : LocHash.Compute(persistentId);
+        }
+
+        public static int ResolvePersistentHashId(ItemData item)
+        {
+            return item != null ? item.ResolvePersistentHashId() : 0;
+        }
+
+        private int ResolveLegacyNameHashId()
+        {
+            if (_legacyNameHashId != 0)
+                return _legacyNameHashId;
+
+            return ComputeCanonicalPersistentHashId(name);
         }
 
         private void OnEnable()
@@ -427,8 +468,8 @@ namespace Hecton8.Items
 
         private void RefreshPersistentHash()
         {
-            _persistentHashId = LocHash.Compute(PersistentId);
-            _legacyNameHashId = LocHash.Compute(name);
+            _persistentHashId = ComputeCanonicalPersistentHashId(PersistentId);
+            _legacyNameHashId = ComputeCanonicalPersistentHashId(name);
             string descriptionTableKey = localizedDescription.TableKey;
             _descriptionTableHashId = string.IsNullOrWhiteSpace(descriptionTableKey)
                 ? 0

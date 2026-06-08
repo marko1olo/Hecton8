@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Drop Capsule Damage Sequence"
+title: "투하 캡슐 손상 순서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Drop Capsule Damage Sequence
+# 투하 캡슐 손상 순서
 
-KO LOC HOLD: The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.
+손상된 bathy-drop은 탈출을 공학적 사슬로 만든다. 대피처와 진단은 살아남았지만 상승 장비는 물리적으로 사라졌거나 침수되었다.
 
 ## Scanner
 
-KO LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+캡슐 진단. 하강은 상승 장비를 써 버리는 대가로 몸을 살렸다.
 
 ## Terminal
 
-KO LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+BATHY-DROP 손상 요약: crush-frame 변형; high-gain mast 상실; ascent avionics 침수; recovery/flotation ring 파열; 비상 부이는 no-lock 반복. 대피처 전력 사용 가능. 독립 상승 불가.
 
 ## Audio
 
-KO LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus 침수. Recovery ring no-lock. 이 캡슐은 숨을 붙잡아 줄 수는 있지만 집으로 보내지는 못한다.
 
 ## Field Note
 
-KO LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+하부 링은 손가락 두 개만큼 타원형이다. High-gain mast는 사라졌다. 부이는 할 수 없는 발사를 아직 요구한다.
 
 <!-- In-Game Wiki; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/ko_KR. -->

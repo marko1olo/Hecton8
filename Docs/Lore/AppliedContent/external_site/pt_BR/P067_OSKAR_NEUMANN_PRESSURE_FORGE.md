@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "Forja de Pressão de Oskar Neumann"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# Forja de Pressão de Oskar Neumann
 
-PT-BR LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
+A Forja de Pressão de Oskar Neumann é o artigo de fabricação da lógica de fuga de HECTON-8: o jogador deve construir um caminho de ascensão com o ofício do mundo de pressão, não encontrar uma chave de foguete genérica.
 
 ## Scanner
 
-PT-BR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+Oskar Neumann deixou uma receita de forja para anéis de fixação fortes o bastante para fazer do berço de ascensão mais do que um caixão.
 
 ## Terminal
 
-PT-BR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+NEUMANN, O. Nota de forja: pó de vidro de pressão arruína a primeira vedação se misturado frio. Aquecer o anel sob a sucção do respiro, temperar dentro da camisa de salmoura e testar com o dobro da carga de ascensão.
 
 ## Audio
 
-PT-BR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+Um lançamento é só uma porta de pressão que se move para cima. Construa como uma porta.
 
 ## Field Note
 
-PT-BR LOC HOLD: The exit needs craft, not courage.
+A saída precisa de ofício, não de coragem.
 
 <!-- External Site; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/pt_BR. -->

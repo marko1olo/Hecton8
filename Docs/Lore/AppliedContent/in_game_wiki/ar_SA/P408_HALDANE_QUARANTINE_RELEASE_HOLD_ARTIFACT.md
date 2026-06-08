@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Haldane Quarantine Hold"
+title: "تعليق هالدين لإطلاق الحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Haldane Quarantine Hold
+# تعليق هالدين لإطلاق الحجر
 
-AR LOC HOLD: The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
+تعليق هالدين لا يثبت أن الحجر كان مزيفا. الأمر أسوأ: كان للبروتوكول أساس حقيقي، ثم استخدمت Deep Reach لغة certification لإبقاء الأجساد والعينات وliability في مكانها عندما احتاجت المستعمرة إلى حركة لا إلى ورق.
 
 ## Scanner
 
-AR LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+تعليق إطلاق الحجر. تحول بروتوكول تلوث حقيقي إلى تأخير custody بعدما صار خطر الضغط ماديا.
 
 ## Terminal
 
-AR LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
+QUARANTINE HOLD DESK / HALDANE / RELEASE CERTIFICATION: evacuee movement remains suspended pending XO sample custody, seal-read variance and downstream exposure review.
 
 ## Audio
 
-AR LOC HOLD: The folder was orderly. That was the problem.
+لم يخترع hold الخطر. لقد أبقى الناس داخله.
 
 ## Field Note
 
-AR LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+ملاحظة Marauder: يمكن أن يكون الحجر حقيقيا وأن يستخدم كقفل.
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/ar_SA. -->

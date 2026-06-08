@@ -198,7 +198,7 @@ namespace Hecton8.Scavenging
 
                 destination.AddNoResize(new LootRuntimeEntry
                 {
-                    ItemHashId = LocHash.Compute(source.item.PersistentId),
+                    ItemHashId = ItemData.ResolvePersistentHashId(source.item),
                     MinimumAmount = source.minimumAmount,
                     MaximumAmount = source.maximumAmount,
                     Weight = source.weight
@@ -285,11 +285,11 @@ namespace Hecton8.Scavenging
             if (!IsValidLootEntry(in current))
                 return false;
 
-            int currentHash = LocHash.Compute(current.item.PersistentId);
+            int currentHash = ItemData.ResolvePersistentHashId(current.item);
             for (int i = 0; i < index; i++)
             {
                 LootAuthoringEntry previous = lootTable[i];
-                if (IsValidLootEntry(in previous) && LocHash.Compute(previous.item.PersistentId) == currentHash)
+                if (IsValidLootEntry(in previous) && ItemData.ResolvePersistentHashId(previous.item) == currentHash)
                     return true;
             }
 

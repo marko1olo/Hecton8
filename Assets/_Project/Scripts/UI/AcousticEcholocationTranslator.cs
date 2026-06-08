@@ -646,14 +646,13 @@ namespace Hecton8.UI
                 (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
                 originAup = movementState.PredictedAup;
-                return true;
+                return originAup.IsFinite();
             }
 
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (movement != null)
+            if (playerContext != null)
             {
-                originAup = movement.CurrentAup;
-                return true;
+                originAup = default;
+                return false;
             }
 
             originAup = default;
@@ -875,8 +874,8 @@ namespace Hecton8.UI
 
         private void ResolveAcousticOwners()
         {
-            if (_vegetationBridge == null)
-                _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (_vegetationBridge == null || !_vegetationBridge.isActiveAndEnabled)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
 
             if (_targetCanvas == null)
                 _targetCanvas = ResolveTargetCanvas();
@@ -1023,7 +1022,8 @@ namespace Hecton8.UI
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
@@ -1484,7 +1484,8 @@ namespace Hecton8.UI
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
@@ -1862,7 +1863,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             if (overlay != null && overlay.TargetCanvas != null && overlay.TargetCanvas.worldCamera != null)
             {
                 _viewCamera = overlay.TargetCanvas.worldCamera;
@@ -2011,17 +2013,20 @@ namespace Hecton8.UI
                 playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
                 (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
-                hasOriginAup = true;
-                return OffsetAupLocal(
+                AbsoluteUniversePosition originAup = OffsetAupLocal(
                     in movementState.PredictedAup,
                     (Vector3)((float3)viewPosition - movementState.PredictedWorldPosition));
+                if (originAup.IsFinite())
+                {
+                    hasOriginAup = true;
+                    return originAup;
+                }
             }
 
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (movement != null)
+            if (playerContext != null)
             {
-                hasOriginAup = true;
-                return movement.CurrentAup;
+                hasOriginAup = false;
+                return default;
             }
 
             hasOriginAup = false;
@@ -2181,7 +2186,8 @@ namespace Hecton8.UI
 
         private static Canvas ResolveTargetCanvas(bool allowComponentFallback)
         {
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 

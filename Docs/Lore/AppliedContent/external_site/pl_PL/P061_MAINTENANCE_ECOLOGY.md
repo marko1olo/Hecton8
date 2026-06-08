@@ -8,33 +8,19 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Maintenance Ecology"
+spoiler_tier: 1
+title: "Ekologia utrzymania"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Ekologia utrzymania
 
-PL LOC HOLD: Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlas nie odkrył przyjaznego oceanu. Odkrył życie zdolne nieść obciążenie. Przewodzący biofilm mógł przez kilka godzin mostkować słaby obwód. Narost muszlowy mógł zamknąć pęknięcie do następnego skoku ciśnienia. Kolonia filtrująca mogła powtórzyć impuls akustyczny dalej niż zatopiony przekaźnik. Znakowana fauna mogła zwrócić sensor packets po awarii metalowych dronów.
 
-## Scanner
-
-PL LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
-
-## Terminal
-
-PL LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
-
-## Audio
-
-PL LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-PL LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Ta sieć naprawcza kusi i brudzi ręce. Gracz może wyciąć żywy materiał na salvage albo zostawić go, bo trzyma ciśnienie. Ściana może być infrastrukturą, siedliskiem i dowodem zbrodni naraz. Ekologia utrzymania jako pierwsza dowodzi, że HECTON-8 nie jest magią. Jest gorszy od magii, bo za każdym cudem stoi zlecenie robocze.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/pl_PL. -->

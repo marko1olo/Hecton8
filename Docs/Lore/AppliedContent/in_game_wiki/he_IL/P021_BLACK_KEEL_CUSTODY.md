@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # משמורת Black Keel
 
-Black Keel אינו ספינת יוקרה פרטית. זה carrier חילוץ כמעט אוטומטי תחת משמורת claim-pool, חוב ביטוח וחלונות מסלול.
+Black Keel אינה ספינה אישית יוקרתית. היא carrier salvage כמעט אוטומטית שפועלת דרך משמורת מאגר תביעות, חוב ביטוח וחלונות מסלול מאוחרים. היא נותנת נתיב אמיתי חזרה למסלול בלי להפוך חילוץ לפשוט או נאמן.
 
 ## Scanner
 

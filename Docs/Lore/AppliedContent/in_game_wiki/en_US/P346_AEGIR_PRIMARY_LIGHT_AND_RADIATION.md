@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Aegir Primary Light and Radiation
 
-The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+Aegir's primary is a steady K-class star, warm enough to give the work decks amber daylight and quiet enough for long infrastructure schedules. The danger comes from the gas giant's magnetosphere. Belts, charged lanes, moon shadow, and storm noise make travel a calendar of radiation windows instead of a simple distance problem. Deep Reach could promise routine operations because the numbers repeat. Workers still paid for every minute outside the right window.
 
 ## Scanner
 
-Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+Stellar card. A warm K-dwarf gives Aegir a readable sky; the giant's belts make every shield rating a timetable.
 
 ## Terminal
 
-RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+RAN STELLAR CARD A-346: primary output remains inside colony work tolerances. Aegir's magnetosphere hardens the inner lanes twice per rotation; cheap hulls wait, paid carriers burn through.
 
 ## Audio
 
-It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+There is light enough to read by. That never meant the sky was kind.
 
 ## Field Note
 
-System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir has daylight. That is why every cheap seal and late burn still has a price.
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/en_US. -->

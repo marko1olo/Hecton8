@@ -9,32 +9,18 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "Korporacyjne przejęcie: czysty ratunek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# Korporacyjne przejęcie: czysty ratunek
 
-PL LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call.
+Korporacyjne przejęcie działa, bo zaczyna się jak pomoc. Sygnał jest czysty, podjęcie profesjonalne, w pokoju jest powietrze. Potem widać kolejność działań: najpierw współrzędne, potem custody XO, potem dostęp Atlas, dobrostan kontraktora po przeglądzie.
 
-## Scanner
-
-PL LOC HOLD: Rescue offer. Payload first. Witness second.
-
-## Terminal
-
-PL LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
-
-## Audio
-
-PL LOC HOLD: The clean room is not for you.
-
-## Field Note
-
-PL LOC HOLD: A rescue that demands silence is a capture with better lighting.
+Ocean przestaje miażdżyć gracza, ale Deep Reach zaczyna konserwować historię. Zeznanie zostaje zapieczętowane językiem skażenia, custody payloadu przesuwa się przed odprawą medyczną, a każde imię niesione przez gracza staje się ekranem odpowiedzialności. To nie śmierć. To przeżycie wewnątrz maszyny, która potrzebowała ciszy.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/pl_PL. -->

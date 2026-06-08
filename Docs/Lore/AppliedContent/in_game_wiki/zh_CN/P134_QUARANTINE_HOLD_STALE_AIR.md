@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "隔离扣留：陈旧空气"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# 隔离扣留：陈旧空气
 
-CN LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+隔离扣留保存身体，暂停agency。玩家逃离了压力，却没有逃离custody。每一次呼吸都被计量，而证据在审查语言后等待。
 
 ## Scanner
 
-CN LOC HOLD: You are alive, sealed, and still not free.
+身体已回收。证人已封存。空气配给启用。
 
 ## Terminal
 
-CN LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+隔离扣留：承包者活体回收；空气配给启用；sample custody未解决；外部证词延迟至污染审查、claimant挑战和Keelmark损失审查之后。
 
 ## Audio
 
-CN LOC HOLD: The hatch opens only to another closed hatch.
+舱门只通向另一扇关闭的舱门。
 
 ## Field Note
 
-CN LOC HOLD: This is the bureaucratic version of drowning.
+这是行政版本的溺水。
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/zh_CN. -->

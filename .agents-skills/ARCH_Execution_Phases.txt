@@ -134,3 +134,11 @@ Middle: run full gameplay truth at normal cadence with conservative visual sync.
 High: increase snapshot density and near-field detail only after simulation stays under budget.
 
 Ultra: spend saved CPU/GPU time on visual overkill in `VISUAL_SYNC`, not on unbounded simulation.
+
+---
+
+## Evidence Gate
+
+[REQUIRE] Phase claims need source proof naming the dispatcher phase, owner, DataVault buffers, SignalBus lanes, job completion barrier, and load-shed fallback.
+[REQUIRE] Runtime readiness still needs Unity/player/profiler evidence for phase timing, GC, and hidden completion stalls.
+[FORBID] Calling a system phase-correct because a report names the phase while live source still uses private `Update()`, coroutine, registry polling, or same-frame `Schedule().Complete()` work.

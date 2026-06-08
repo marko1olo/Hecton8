@@ -3,38 +3,22 @@ packet_id: P053_MARAUDER_GRAFFITI_MASKS
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
 unlock_id: unlock.first_marauder_graffiti_masks
-poi_tags: poi.graffiti_mask;poi.pressure_arrow
-biome_tags: biome.scrap_canyon;biome.marauder_route
+poi_tags: poi.graffiti_mask;poi.scavenger_route
+biome_tags: biome.service_corridor;biome.salvage_route
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Graffiti Masks"
+title: "Graffitimaskers van marauders"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Marauder Graffiti Masks
+# Graffitimaskers van marauders
 
-NL LOC HOLD: Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism.
-
-## Scanner
-
-NL LOC HOLD: The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
-
-## Terminal
-
-NL LOC HOLD: MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
-
-## Audio
-
-NL LOC HOLD: They made a language that looks like vandalism to the company.
-
-## Field Note
-
-NL LOC HOLD: Bad paint. Good map.
+De marauders van HECTON-8 zijn geen gezichtsloze plunderaars. Het zijn arbeiders, schuldlopers, achtergelaten aannemers en bergingsploegen die op muren leerden schrijven omdat elk schoon kanaal bekeken of gefactureerd kon worden. Hun graffiti is expres lelijk: snel genoeg onder stress, duidelijk door condens, dubbelzinnig genoeg om op paniek of vandalisme te lijken. Een zwarte ring is geen decoratie. Hij betekent dat de carrier je misschien hoort. Een gebroken pijl is geen slecht tekenwerk. Hij betekent dat de gang veranderde sinds de laatste veilige passage.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/nl_NL. -->

@@ -9,32 +9,36 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Drop Capsule Damage Parts"
+title: "Piezas dañadas de la cápsula de caída"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Drop Capsule Damage Parts
+# Piezas dañadas de la cápsula de caída
 
-ES LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.
+La cápsula no falló como un único pecio dramático. Falló como una cadena de piezas con nombre que casi hicieron su trabajo. La ascent sleeve está deformada, así que la cápsula no puede resellar contra la presión de ascenso. El guidance gimbal está marcado, así que cualquier ascenso limpio giraría antes de que Black Keel pudiera aceptarlo. El relay mast está cizallado, el compressor está lleno de arenilla salina y las heat tiles agrietadas convierten cualquier burn imaginado en un campo de escombros.
+
+HECTON-8 no entrega un botón limpio de rescate. Una cápsula que conserva aire durante una hora no es una cápsula que pueda abandonar el océano. Cada pieza rota señala una ruta real: encontrar pressure-rated sleeve stock, recuperar rodamientos de gimbal, reconstruir la columna de relé, limpiar el camino del compressor o probar suficiente daño para que Black Keel ponga precio a otra ventana.
+
+El pecio no es fondo. Es el primer mapa de ingeniería. Si la cápsula dice FAIL, el océano ya convirtió el aterrizaje en una lista de piezas.
 
 ## Scanner
 
-ES LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve deformada, guidance gimbal marcado, relay mast cizallado, compressor sucio, heat tile agrietada.
 
 ## Terminal
 
-ES LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-ES LOC HOLD: It landed well enough to strand you properly.
+Aterrizó lo bastante bien como para dejarte varado correctamente.
 
 ## Field Note
 
-ES LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+La cápsula puede mantener vivo a un Marauder durante la primera hora. No puede salir sin repuestos de grado profundo.
 
 <!-- In-Game Wiki; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/es_ES. -->

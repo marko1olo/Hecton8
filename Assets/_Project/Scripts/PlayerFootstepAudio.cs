@@ -47,6 +47,7 @@ using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -229,9 +230,13 @@ namespace Hecton8.Audio
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.MapMagicRuntime)
+            if (serviceSlot == GlobalRegistryServiceSlot.MapMagicRuntime ||
+                serviceSlot == GlobalRegistryServiceSlot.TerrainProviderRuntime)
             {
+                if (ReferenceEquals(_mapMagic, previousService))
+                    _mapMagic = null;
                 _mapMagic = currentService as MapMagicBridge;
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagic);
                 return;
             }
 
@@ -490,13 +495,14 @@ namespace Hecton8.Audio
             {
                 MapMagicBridge bridge = _mapMagic;
 
-                if (bridge != null
+                if (WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge)
                     && bridge.TryGetBiomeIndex(
                         _surfaceHit.point.x,
                         _surfaceHit.point.z,
                         out int biomeIndex))
                 {
                     // ── Scan for biome index match ──
+                    _mapMagic = bridge;
                     for (int i = 0; i < surfaceSounds.Length; i++)
                     {
                         ref SurfaceSoundSet set = ref surfaceSounds[i];
@@ -590,7 +596,8 @@ namespace Hecton8.Audio
         private void RefreshColdRegistryReferences()
         {
             CacheAudioService(GlobalRegistry.Audio);
-            _mapMagic = GlobalRegistry.MapMagic;
+            _mapMagic = null;
+            WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagic);
         }
 
         private void CacheAudioService(IAudioService audioService)
@@ -610,7 +617,7 @@ namespace Hecton8.Audio
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)

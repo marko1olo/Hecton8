@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ЛЕСА ЖЕЛЕЗНОЙ ЛАМИНАРИИ
 
 > **Источник:** Отдел ксенобиологии Deep Reach, Журнал опасностей.

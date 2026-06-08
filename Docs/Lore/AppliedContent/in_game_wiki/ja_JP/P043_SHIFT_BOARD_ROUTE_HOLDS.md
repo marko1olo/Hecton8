@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # シフト板ルート保留
 
-シフト板は災害を手続きとして読ませる。Deep ReachとAtlasは悪意より分類、遅延、優先で殺した。
+シフトボードは災害を読める手順に変える。Deep Reach と Atlas は、芝居がかった悪意ではなく、分類、遅延、優先度によって人を殺した。
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "Begegnungsgrammatik: Salzlakenfächer-Navigation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Brine Vane Navigation Encounter Grammar
+# Begegnungsgrammatik: Salzlakenfächer-Navigation
 
-DE LOC HOLD: Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.
+Salzlakenfächer-Navigation lehrt, dass Wasser in mittlerer Tiefe gebaut und nicht leer ist. Der Spieler soll ein Fächerfeld wie eine beschädigte Treppe lesen: intakte Blätter sind Wände, zerrissene Öffnungen mögliche Durchgänge, gekräuselte Spitzen schwächer werdende Scherung, und schwarze Lücken ohne sichtbare Fächerkante Orte, an denen Sonar einen Boden erfinden kann. Die Begegnung verlangt langsame Bewegung, konservativen Auftriebstrimm und Winkelwechsel, keinen geraden Schwimmstoß zum schönsten Leuchten. Atlas kann dieselbe Dichtegrenze für repair routing ausnutzen, aber die Strömung bleibt Physik. Diese Unterscheidung zählt. Der Ozean spricht nicht. Er macht einen Prozess sichtbar. Eine gute Fächerroute lässt den Spieler eine Kante verfolgen, aus zweitem Winkel pingen, die Drift testen und sich klug fühlen, weil er die offene Abkürzung ablehnt.
 
 ## Scanner
 
-DE LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+Salzlakenfächer-Feld. Ausgerichtete Blätter markieren Dichtekurven; gekräuselte Spitzen schwache Fenster; Sonar verzieht sich nahe offener Glut. Eine Kante im Blick behalten.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+BEGEGNUNGSGRAMMATIK / SALZLAKENFÄCHER-NAVIGATION / Rolle: Mittentiefen-Routenlese, Handlauf der Dichtewand, Korrektur falscher Böden / sichere Lesung: intakte Fächerkante, zerrissene Öffnung, Sonarbiegung passt zu Auftriebsdrift / verwerfen: schwarzes offenes Wasser queren, Leitblatt schneiden, Bodenrücklauf ohne Fächergrenze vertrauen / Routennotiz: Der Fächer führt nicht mit Absicht; er gehorcht dem Wasser laut genug, um ihm zu folgen.
 
 ## Audio
 
-DE LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+Der Fächer ist kein Schild. Er ist Wasser, das eine Wand macht und eine Naht lässt.
 
 ## Field Note
 
-DE LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+Behandle die Fächerkante als Handlauf. Wenn die Linie falsch biegt, ist deine Auftriebslesung schon spät.
 
 <!-- In-Game Wiki; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/de_DE. -->

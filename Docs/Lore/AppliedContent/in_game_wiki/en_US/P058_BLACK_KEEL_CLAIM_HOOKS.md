@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Keel Claim Hooks
 
-Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.
+Black Keel is the player’s delivery route, recovery promise and first legal cage. The carrier can answer, but every answer travels through claim hooks: payload value, quarantine status, route certificate, debt custody and old Deep Reach priority clauses that should have expired. This is why the surface is not a rescue button. The ship is close enough to speak and far enough to deny, and its delays are not mood. They are contract logic performing exactly as written.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the
 
 ## Terminal
 
-CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in dormant clauses.
 
 ## Audio
 

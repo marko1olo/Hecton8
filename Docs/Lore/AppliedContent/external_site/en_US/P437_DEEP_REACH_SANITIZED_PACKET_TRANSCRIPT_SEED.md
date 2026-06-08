@@ -19,22 +19,12 @@ localization_flags: 0
 
 # Deep Reach Sanitized Packet Transcript
 
-Deep Reach's public lie is omission: real physics, delayed authorization, and coordinate demands arranged into defensible language.
+## Clean Language, Dirty Delay
 
-## Scanner
+The Deep Reach packet is dangerous because it sounds like help. It names safety. It acknowledges an incident. It uses the right disaster nouns: pressure, quarantine, coordinates, exposure, recovery. Then it removes the verbs that matter. Who delayed evacuation? Who priced the hold? Who kept Atlas weighting in force while the colony failed?
 
-Recovered Deep Reach packet repeats the accident summary, then gates rescue behind coordinates and quarantine pricing.
+Sanitized language does not need to deny the ocean. Denial would be easy to disprove. The packet works by accepting the physical disaster and rearranging responsibility into pending review. Coordinates come first because the company wants custody of the claim space before it commits to bodies. Quarantine cost comes next because living workers and contaminated evidence both become liabilities under the same desk.
 
-## Terminal
-
-PACKET DR-RCO-2190: safety priority asserted; coordinates required; quarantine cost pending; worker-cause fields omitted.
-
-## Audio
-
-Recovery Compliance packet. Safety priority acknowledged. Coordinates first. Quarantine cost pending. Rescue cannot be priced blind.
-
-## Field Note
-
-Present-tense corporate packet. Legal phrasing must sound useful while withholding rescue until custody is priced.
+For the player, this transcript should create anger without breaking plausibility. Deep Reach is not a cartoon villain shouting from orbit. It is a firm that knows exactly which fields to omit from a message that may later become evidence.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/en_US. -->

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Vent Forge Field Process Guide"
+title: "热泉锻炉野外流程指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Vent Forge Field Process Guide
+# 热泉锻炉野外流程指南
 
-ZH LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.
+vent forges 是自然-工业反应器。它们把热、brine 和 pressure history 变成有用的 ceramics、sealants 和 charge materials，同时让每个样本都保留自己的热路径。
 
 ## Scanner
 
-ZH LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+vent-forge chemistry 活跃。质量取决于 pressure history、heat pulse 和缓慢冷却，而不是样本光泽。
 
 ## Terminal
 
-ZH LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: vent forges 会烹煮 sulfides、noble-gas pockets、ceramics 和 sealant precursors。样本穿过 heat、brine 和 pressure 的路径比名称更重要。
 
 ## Audio
 
-ZH LOC HOLD: The vent did not make ore. It made a process you interrupted.
+vent 没有制造矿石。它制造了一个被你打断的流程。
 
 ## Field Note
 
-ZH LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+不要把新鲜批次直接提进冷水。让 vent 完成 anneal，否则 shell 会龟裂。
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/zh_CN. -->

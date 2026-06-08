@@ -83,7 +83,7 @@ namespace Hecton8.UI.Editor
                 return;
             }
 
-            PDAEncyclopediaStreamer.ValidateEncyclopediaStateLayout(out int sizeBytes, out int mask0Offset, out int mask3Offset);
+            PDAEncyclopediaStreamer.ValidateEncyclopediaStateLayout(out int sizeBytes, out int mask0Offset, out int mask7Offset);
             bool layoutsValid = PDAEncyclopediaStreamer.ValidatePdaStreamerLayouts(
                 out int encyclopediaBytes,
                 out int runtimeBytes,
@@ -100,11 +100,11 @@ namespace Hecton8.UI.Editor
                 out int h8lrRecordReserved0Offset);
             _stateLabel.text =
                 $"Entry: 0x{state.LastEntryHash:X8}\n" +
-                $"Unlocked: {state.UnlockedCount}/256  Revision: {state.Revision}\n" +
+                $"Unlocked: {state.UnlockedCount}/{PDAEncyclopediaStreamer.UnlockBitCount}  Revision: {state.Revision}\n" +
                 $"Decoded/Visible: {state.DecodedChars}/{state.VisibleChars}  Bytes: {state.SourceBytes}\n" +
                 $"State: {(PdaEncyclopediaStreamState)state.StreamState}  Fault: 0x{state.FaultHash:X8}\n" +
-                $"Mask[0..3]: {mask.Mask0:X16} {mask.Mask1:X16} {mask.Mask2:X16} {mask.Mask3:X16}\n" +
-                $"Layout: {sizeBytes} bytes  Mask0@{mask0Offset} Mask3@{mask3Offset}\n" +
+                $"Mask[0..15]: {mask.Mask0:X16} {mask.Mask1:X16} {mask.Mask2:X16} {mask.Mask3:X16} {mask.Mask4:X16} {mask.Mask5:X16} {mask.Mask6:X16} {mask.Mask7:X16} {mask.Mask8:X16} {mask.Mask9:X16} {mask.Mask10:X16} {mask.Mask11:X16} {mask.Mask12:X16} {mask.Mask13:X16} {mask.Mask14:X16} {mask.Mask15:X16}\n" +
+                $"Layout: {sizeBytes} bytes  Mask0@{mask0Offset} Mask7@{mask7Offset}\n" +
                 $"DTOs: {(layoutsValid ? "OK" : "FAIL")}  E/R/M/T/TW/AUP/H8H/H8R={encyclopediaBytes}/{runtimeBytes}/{entryMetaBytes}/{telemetryBytes}/{typewriterBytes}/{aupBytes}/{h8lrHeaderBytes}/{h8lrRecordBytes}\n" +
                 $"Offsets: SourceBytes@{runtimeSourceBytesOffset} TelemetryFlags@{telemetryFlagsOffset} TypewriterPad@{typewriterReserved3Offset} AUPPad@{aupReserved1Offset} H8LRPad@{h8lrRecordReserved0Offset}";
         }

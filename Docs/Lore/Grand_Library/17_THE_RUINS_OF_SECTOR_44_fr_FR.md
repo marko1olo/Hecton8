@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LES RUINES DU SECTEUR 44
 
 > **Source :** Journal de Cartographie du Drone Arpenteur 99-Delta (Récupéré).

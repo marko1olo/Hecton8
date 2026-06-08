@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Evacuation Queue Delay Proof"
+title: "避難キュー遅延記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Evacuation Queue Delay Proof
+# 避難キュー遅延記録
 
-JA LOC HOLD: Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
+この証拠は避難を順序として見せる。ゲートは水で断たれただけではない。圧力警報が居住通路に入ってもレビュー状態のままだった。空の証人欄が重要なのは、人間がパネルへ届かなくなった後に、システムが人間の確認を要求したからだ。
 
 ## Scanner
 
-JA LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+キュー時計を回収。圧力警報が予測から通路へ移った後も、解放ゲートは施錠されたままだった。
 
 ## Terminal
 
-JA LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY。手動確認なし。検疫レビュー保留。承認完了前に経路圧がシール等級を超過。
 
 ## Audio
 
-JA LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+彼らは全員を救えなかったのではない。誰かを救うことが難しくなるまで待った。
 
 ## Field Note
 
-JA LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Marauderメモ: 保留欄を持つ閉じたゲートは事故ではない。署名待ちの決定だ。
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/ja_JP. -->

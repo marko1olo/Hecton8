@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using Hecton8.Core;
 using UnityEditor;
 
 namespace Hecton8.Audio.Editor
@@ -6,6 +7,7 @@ namespace Hecton8.Audio.Editor
     public static class VocalWarningStormTorture_X_011
     {
         private const int AlarmBitCount = 64;
+        private const int CanonicalWarningCount = VocalWarningHashes.CanonicalWarningCount;
         private const int StormWarningCount = 50;
 
         [MenuItem("Hecton8/Audio/Run VWS Storm Torture X_011")]
@@ -25,7 +27,7 @@ namespace Hecton8.Audio.Editor
 
             for (int i = 0; i < StormWarningCount; i++)
             {
-                byte warningId = (byte)((i % 5) + 1);
+                byte warningId = (byte)((i % CanonicalWarningCount) + 1);
                 int bitIndex = ResolvePriorityBitIndex(warningId);
                 if ((uint)bitIndex >= AlarmBitCount)
                 {
@@ -71,11 +73,11 @@ namespace Hecton8.Audio.Editor
 
             return new StormResult
             {
-                Pass = CountBits64(activeAlarmsMask) == 5 &&
+                Pass = CountBits64(activeAlarmsMask) == CanonicalWarningCount &&
                        firstBit == 0 &&
                        sorted &&
                        slots[0].WarningId == 1 &&
-                       slots[4].WarningId == 5,
+                       slots[CanonicalWarningCount - 1].WarningId == CanonicalWarningCount,
                 ActiveAlarmsMask = activeAlarmsMask,
                 ActiveCount = CountBits64(activeAlarmsMask),
                 HighestBit = firstBit,
@@ -94,7 +96,7 @@ namespace Hecton8.Audio.Editor
 
         private static int ResolvePriorityBitIndex(byte warningId)
         {
-            return warningId >= 1 && warningId <= 5 ? warningId - 1 : -1;
+            return warningId >= 1 && warningId <= CanonicalWarningCount ? warningId - 1 : -1;
         }
 
         private static int ResolveHighestPriorityBitIndex(ulong activeAlarmsMask)

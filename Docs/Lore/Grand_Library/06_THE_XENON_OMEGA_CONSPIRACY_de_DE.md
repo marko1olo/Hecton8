@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DIE XENON-OMEGA-DIREKTIVE UND ATLAS-6-PROTOKOLLE
 
 > **Quelle:** Offene Untersuchung des Luyten-Ausschusses, Fall Nr. CF-2148-0071. Beweisstück 44-B: Audit-Protokoll des Atlas-6-Kerns.  

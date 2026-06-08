@@ -1,23 +1,60 @@
-﻿# PASMA BATYMETRYCZNE I AKUSTYKA GŁĘBINOWA
+<!-- localization_status: source_draft_pending_native_review -->
+# PASMA BATYMETRYCZNE I DZWIEK ABISALNY: JAK HECTON-8 UKRYWA POMIESZCZENIE
 
-> **Source:** Dział Geofizyki Deep Reach, Badanie Akustyczne.
-> **Speaker:** Główny Analityk Hydroakustyki.
-> **Reviewer Note:** Analiza techniczna struktury batymetrycznej HECTON-8 i fizyki propagacji dźwięku pod ekstremalnym ciśnieniem wody.
+> **Zrodlo:** hydroakustyczny przeglad Deep Reach H8-44, pozniej opisany przez ekipy odzyskowe Black Keel.
+> **Glos:** glowna analityczka hydroakustyki Sera Mbeki.
+> **Uzycie:** encyklopedia strony, wiki w grze, samouczek sonaru i notatka terenowa PDA.
 
 ---
 
-## 1. Pasma bez światła
+## Ocean Jest Pionowym Stosem
 
-Ocean HECTON-8 nie jest jednolitym zbiornikiem wodnym; to warstwowy pionowy stos odrębnych stref fizycznych, z których każda jest zdefiniowana przez ciśnienie, chemię i transmisję światła. Szelf Fotyczny (0–250 m) to jedyna strefa dotykana przez gwiazdę Ran, gdzie rozwijają się prądy sztormowe i rodzime maty sargassowe. Poniżej leży Rafa Kablowa (250–1200 m), na której zakotwiczone są masywne przemysłowe sieci kablowe Deep Reach, obecnie opanowane przez glony bioluminescencyjne. Kaniony Solankowe (1200–2800 m) charakteryzują się rzekami soli o zróżnicowanej gęstości, w których grawitacja zachowuje się nieprzewidywalnie. Pola Maszynowe (2800–4300 m) mieszczą pozostałości automatycznych studni przetwórczych, cichych i miażdżących. Na samym dnie leży Basen Atlasa (4300–5600 m), środowisko absolutnej ciemności i ciśnienia 50 MPa, gdzie dno morskie zostało zastąpione stopionym dywanem mechanicznych szczątków i biomechanicznego biofilmu.
+Z orbity HECTON-8 wyglada jak jeden utopiony swiat pod swiatlem Ran i plywami Aegir. Pod burzami nie ma jednego oceanu. Jest pionowa maszyna z cisnienia, soli, ciepla, metalu, biologii i starej pracy korporacji.
 
-## 2. Akustyka pod ciśnieniem
+Deep Reach podzielil Sektor 44 na pasma operacyjne, bo mapa z sama polnoca i wschodem zabijala zalogi. Glebokosc zmienia narzedzia: wypornosc, zuzycie baterii, prace tlenu, zasieg sonaru, zachowanie drapieznikow i to, czy pomieszczenie bliskie na planie da sie osiagnac, zanim kombinezon zacznie wydawac zycie operatora.
 
-W oceanie HECTON-8 radio jest martwe. Elektromagnetyzm jest pochłaniany przez gęstą, bogatą w minerały wodę w odległości kilku metrów. Dźwięk to jedyna linia wzroku. Ponieważ gęstość wody dramatycznie wzrasta wraz z głębokością i stężeniem rozpuszczonej soli, prędkość dźwięku zachowuje się nieregularnie. Profil prędkości dźwięku tworzy kanały akustyczne – kanały, w których fale dźwiękowe są uwięzione i podróżują przez kilometry bez utraty siły, oraz strefy cienia, do których sonar nie może przeniknąć. Sieć komunikacyjna Deep Reach opiera się całkowicie na telemetrii akustycznej. Systemy te tłumaczą dane z terminali i rejestry głosowe na impulsy akustyczne o niskiej częstotliwości. Jeśli akustyczny pinger nurka znajduje się w strefie cienia, sygnał zostaje całkowicie utracony, nawet jeśli znajduje się on zaledwie pięćdziesiąt metrów od kapsuły ratunkowej.
+Szelf fotyczny siega do okolo 250 metrow. To jedyne pasmo ze stabilnym swiatlem Ran. Dociera tu sztormowy nacisk, ale nurek widzi sylwetki, rodzime maty, boje, zerwane korony habitatu i pierwsze blizny kolonii. Instrukcje nazywaja je bezpiecznym. Ono jest tylko czytelne.
 
-## 3. Hydrotermalne kominy
+Rafa kablowa lezy od 250 do 1200 metrow. Deep Reach zakotwiczyl tu magistrale mocy, pepowiny danych, grzbiety pomp, uprzeze szyn i platformy robocze. Po katastrofie izolacja pekla, przewodzacy biofilm wszedl w oslony, a zelazny kelp zakorzenil sie wokol kazdego przecieku pradu. Tu gracz uczy sie, ze infrastruktura moze stac sie ekologia bez stania sie sojusznikiem.
 
-Geologia HECTON-8 jest napędzana tarciem przypływowym i pękaniem tektonicznym, tworząc masywne kominy hydrotermalne znane jako Hydrotermalne Kominy. Kominy te wyrzucają bogatą w minerały, przegrzaną wodę o temperaturze przekraczającej 420°C. Ze względu na ogromne ciśnienie głębin woda nie wrze; zamiast tego zachowuje się jak płyn nadkrytyczny, przenosząc gęste stężenia soli siarczkowych, gazów szlachetnych i radioaktywnych cząstek Xenon-Omega. Interakcja między lodowatą wodą głębinową a pióropuszami kominów wywołuje intensywne naprężenia termiczne i prądy wrzenia, zdolne rozerwać skafander nurkowy. Kominy te są głównym źródłem surowców, które krystalizują się w szkło ciśnieniowe i karmią metaliczne włókna lasów żelaznej laminarii.
+Kaniony solanki ida od 1200 do 2800 metrow. Gesty strumien solanki lezy w wodzie jak drugi plynny grunt. Narzedzia moga unosic sie na jego powierzchni. Ciala moga przestac tonac. Impuls sonaru moze odbic sie od rzeki bez sciany. Wiele widmowych komor na mapach Deep Reach to tylko solankowe lustra.
 
-## 4. Anomalie sonarowe i drapieżniki
+Pola maszyn rozciagaja sie od 2800 do 4300 metrow. To stara glebokosc przemyslowa: szyby procesowe, galerie kompresorow, zapadniete wieze wymiennikow, jamy szyn i automatyczne place serwisowe. Swiatlo znika. Dzwiek zwraca za duzo danych. Pompy, luzne kratownice, uszkodzone drony i uskoki termalne sprawiaja, ze woda mowi metalem. Cichy kontakt sonarowy jest tu bardziej podejrzany niz glosny.
 
-Akustyka głębokiego oceanu jest silnie zniekształcona przez geologię, hałas przemysłowy i ruchy masywnej fauny. Gęsta solanka w kanionach działa jak lustro dla impulsów sonaru, odbijając sygnały z powrotem i tworząc widmowe echa. Te zakłócenia sonaru zapewniają doskonałą osłonę dla drapieżników. Prześladowca z Rowów, ze swoją ciężko opancerzoną chitynową skorupą, porusza się cicho po lasach żelaznej laminarii, a jego sygnatura jest maskowana przez ciągły zgrzyt metalicznych liści. Co bardziej niebezpieczne, szczytowi drapieżnicy – Lewiatany – generują pasywną sygnaturę akustyczną o częstotliwości poniżej 40 Hz. Te niskoczęstotliwościowe wibracje są wyczuwalne przez kadłub łodzi podwodnej lub płytę piersiową skafandra nurkowego na długo przed tym, jak pojawią się na standardowym wyświetlaczu sonaru. Zanim czujnik akustyczny rozpozna sygnał, organizm jest już w zasięgu ataku.
+Basin Atlas schodzi do okolo 5600 metrow. Stale dno jest rzadkie. Sa grzbiety, blizny wentow, wyciete misy serwisowe, plyty szkla cisnieniowego i warstwy mechanicznego gruzu zwiazane biofilmem oraz mineralami. Atlas przetrwal tu jako ekologia konserwacji: przewodzace filmy, organy filtrujace, skorupowe uszczelnienia, oznaczone zwierzeta i wezly karmione cieplem.
+
+## Dzwiek Jest Horyzontem
+
+Radio szybko umiera w wodzie HECTON-8. Ocean jest zimny, mineralny, elektrycznie brudny i pelny metalowego pylu ze starego przemyslu. Sygnal wysokiej czestotliwosci, ktory w powietrzu przebylby pokoj, pod szelfem znika po kilku metrach. Potem zawodzi swiatlo. Zostaje dzwiek.
+
+Dlatego kazde powazne narzedzie ma warstwe akustyczna. Pinger kombinezonu nie jest wygoda. Jest adresem nurka. Black Keel nie widzi czlowieka przez wode; slyszy kodowane stukniecie, porownuje czas, sprawdza lancuch pieczy i decyduje, czy sygnal zasluguje na mase odzysku. Drzwi habitatu uzywaja akustycznego wyzwania i odpowiedzi, gdy kable milcza. Fabrykatory terenowe sluchaja certyfikowanych tagow. Stare szafy cargo budza sie na niskich czestotliwosciach, bo cisnienie mniej niszczylo hydrofony niz kamery.
+
+Dzwiek klamie. Predkosc zalezy od temperatury, cisnienia i zasolenia. HECTON-8 uklada te zmienne w ostre warstwy. Ping moze wpasc w kanal akustyczny i wrocic z czystego falszywego namiaru. Inny moze uderzyc w solanke i odpowiedziec jak od sciany. Trzeci moze wejsc w strefe cienia i zniknac, choc cel jest blisko wzburzonego mulu.
+
+Deep Reach nazywal to bledem interpretacji operatora. Zalogi nazywaja to martwymi pokojami: objetosciami, gdzie nurek i sygnal sa w tym samym miejscu fizycznym, a mimo to nurek pozostaje zgubiony.
+
+## Kanaly, Lustra I Ciche Okna
+
+Kanal akustyczny zamyka dzwiek miedzy warstwami. Sygnal idzie daleko, czasem kilometrami, z mala strata. Pomaga bojem dalekiego zasiegu i niszczy skrytosc. Pinger w zlej warstwie moze oglosic zaloge wszystkim hydrofonom i drapieznikom pasma.
+
+Lustro solanki odbija dzwiek od granicy gestosci. Tworzy podwojne pokoje, falszywe kadluby, zle glebokosci podlogi i ruchome echa tam, gdzie nic sie nie rusza. W kanionach skaner moze pokazac korytarz pod graczem, choc to odbicie korytarza nad nim. Trzeba zmienic kat, wyslac ping ponownie i porownac opoznienie.
+
+Ciche okno to krotki czas, gdy maszyny i woda daja dosc ciszy do pracy. Pompy schodza z cyklu. Uskok termalny przesuwa sie. Kelp przestaje skrobac kabel. Drapieznik odwraca sie albo nieruchomieje. Dobre zalogi tna, spawaja, sluchaja i ida w tych oknach. Zle pracuja dalej, bo pasek postepu prawie doszedl.
+
+## Maszyny I Zycie W Halasie
+
+Kolonialny sonar pierwszej generacji zakladal czysta wode inzynieryjna: znane struktury, znane zasolenie, posluszny sprzet. Sektor 44 po upadku daje ruchoma solanke, rozdarty metal, biologiczne repeatery, niestabilne kolumny ciepla i zwierzeta tak duze, ze woda zachowuje sie jak pogoda.
+
+Nowoczesny sonar odzyskowy dziala trybami. Aktywny ping daje ksztalt, ale sciaga uwage i tworzy falszywe powroty. Sluch pasywny jest bezpieczniejszy, lecz wolniejszy i wymaga rozpoznawania pomp, wentow, brumu kabli, tarcia pancerza, oddechu kombinezonu i ruchu zwierzat. Skan boczny czyta sciane, a moze zgubic to, co jest za nia. Niskie nosne ida daleko, ale niosa malo danych. Wysoka czestotliwosc daje detal tylko wtedy, gdy woda wspolpracuje.
+
+Fauna HECTON-8 nie wyrosla wokol ludzkiego sonaru. Wyrosla w oceanie, gdzie cisnienie, chemia wentow i napiecie plywow uczynily dzwiek zmyslem przetrwania. Organizmy filtrujace otwieraja sie na wibracje. Zelazny kelp zgrzyta w pradach i maskuje maly ruch. Pastwiskowce solanki ida po szwach cisnienia. Lowcy rowow uzywaja halasu przemyslowego jako oslony, bo pola maszyn i tak brzmia jak polowanie.
+
+Kontakty klasy Lewiatan sa gorsze. Pewne zapisy zaczynaja sie od drzenia cisnienia ponizej 40 Hz, alarmow naprezenia kadluba bez uderzenia, ciemnosci u ofiary i biernej nosnej czutej w klatce piersiowej przed obrazem na ekranie. Kiedy zwykly sonar rysuje czysta ikone, zwierze jest juz w odleglosci decyzji.
+
+Atlas utrudnil wszystko. Jego ekologia naprawcza uzywa zywej materii jako drogi sygnalu. Biofilm przewodzi impuls po martwym kablu. Organ filtrujacy powtarza stuk cisnienia. Skorupowy narost uszczelnia pekniecie i zmienia ksztalt akustyczny pokoju. Jesli gracz slyszy czysta odpowiedz w opuszczonej strukturze, powinien zapytac, co odpowiedzialo.
+
+## Regula Terenowa
+
+Nie pytaj, czy HECTON-8 milczy. Nigdy nie milczy.
+
+Pytaj, co robi dzwiek, jaka warstwa go zgina, kto jeszcze moze go slyszec i co ocean ukrywa zbyt czysta odpowiedzia.

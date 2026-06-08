@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
@@ -221,11 +222,13 @@ namespace Hecton8.VFX.Bioluminescence
         private const float DefaultDarknessActivationThreshold = 0.42f;
         private const float DefaultDepthDarknessStartMeters = 18f;
         private const float DefaultDepthDarknessFullMeters = 95f;
+        private const double DefaultSeaLevelAupY = 14.02d;
         private const float DefaultPredatorPanicSpeed = 2.35f;
         private const int JobOverrunDumpFrameThreshold = BlackBoxFrameCount;
         private const byte TelemetryFlagNonFinite = 1;
         private const byte TelemetryFlagJobOverrun = 2;
         private const byte TelemetryFlagAupInvalid = 4;
+        private const byte TelemetryFlagToxicPulse = 8;
         private const ushort BlackBoxEntrySizeBytes = 64;
         private const uint BlackBoxMagic = 0x42505359u; // BPSY
         private const int BlackBoxDumpHeaderSizeBytes = 16;
@@ -395,6 +398,7 @@ namespace Hecton8.VFX.Bioluminescence
         private uint _profileSourceHash = ProfileFallbackHash;
         private uint _lastBiomeHash;
         private uint _lastPredatorSignalFrame;
+        private int _lastToxicBiolumSnapshotGeneration;
         private int _publishedGlobalStateCount = SyncGroupCount;
         private int _activeSyncPulseCount;
         private int _activeGlowingInstanceCount;
@@ -413,7 +417,7 @@ namespace Hecton8.VFX.Bioluminescence
 #endif
         private int _lastGlobalDamageSignalSequence;
         private int _lastGlobalLightLevelSignalSequence;
-        private int _lastGlobalSurvivalVitalsSequence;
+        private int _lastGlobalSurvivalVitalsSnapshotGeneration;
         private byte _pendingTelemetryFlags;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
@@ -592,6 +596,7 @@ namespace Hecton8.VFX.Bioluminescence
                 ConsumeGlobalSignalMirrors();
                 ConsumeFrameTimeSignals(dt);
                 ConsumeAcousticPingSignals();
+                ConsumeToxicBioluminescenceSignalsToPulse();
                 AdvanceStrobe(dt);
                 RefreshGlobalQualityWeight();
                 UpdateBiomeBlendState(dt);
@@ -1490,6 +1495,10 @@ namespace Hecton8.VFX.Bioluminescence
             ReleaseBiolumVaultHandle(vault, ref _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal);
             ReleaseBiolumVaultHandle(vault, ref _speciesTuningHandle, BufferID.BiolumSpeciesTuning);
             ReleaseBiolumVaultHandle(vault, ref _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId);
+            _lastToxicBiolumSnapshotGeneration = SignalBus<ToxicBioluminescenceSignal>.SnapshotGeneration;
+            _lastPulseOriginAUP = double3.zero;
+            _activeSyncPulseCount = 0;
+            _pendingTelemetryFlags = 0;
             _mockGlowsInitialized = false;
             _activeGlowingInstanceCount = 0;
             if (invalidateProfiles)
@@ -2383,12 +2392,24 @@ namespace Hecton8.VFX.Bioluminescence
                 weatherDirty = true;
             }
 
-            if (SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal vitals, out int vitalsSequence) &&
-                vitalsSequence != _lastGlobalSurvivalVitalsSequence)
+            int survivalVitalsSnapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;
+            if (survivalVitalsSnapshotGeneration != 0 &&
+                survivalVitalsSnapshotGeneration != _lastGlobalSurvivalVitalsSnapshotGeneration)
             {
-                _lastGlobalSurvivalVitalsSequence = vitalsSequence;
-                oxygen01 = math.saturate(vitals.Oxygen01);
-                weatherDirty = true;
+                _lastGlobalSurvivalVitalsSnapshotGeneration = survivalVitalsSnapshotGeneration;
+                ReadOnlySpan<SurvivalVitalsChangedSignal> vitalsSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+                for (int i = 0; i < vitalsSignals.Length; i++)
+                {
+                    ref readonly SurvivalVitalsChangedSignal vitals = ref vitalsSignals[i];
+                    if ((vitals.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) == 0u ||
+                        !math.isfinite(vitals.Oxygen01))
+                    {
+                        continue;
+                    }
+
+                    oxygen01 = math.saturate(vitals.Oxygen01);
+                    weatherDirty = true;
+                }
             }
 
             if (weatherDirty)
@@ -2511,6 +2532,136 @@ namespace Hecton8.VFX.Bioluminescence
             _strobePeak01 = math.max(_strobePeak01, strongestPing01);
             _activeBiolumProfileId = (int)(strongestSource & (MaxGlobalBiolumStates - 1));
             _forceSchedule = true;
+        }
+
+        private void ConsumeToxicBioluminescenceSignalsToPulse()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !HasVaultBuffers())
+                return;
+
+            int snapshotGeneration = SignalBus<ToxicBioluminescenceSignal>.SnapshotGeneration;
+            if (snapshotGeneration == 0 || snapshotGeneration == _lastToxicBiolumSnapshotGeneration)
+                return;
+
+            ReadOnlySpan<ToxicBioluminescenceSignal> signals = SignalBus<ToxicBioluminescenceSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+            {
+                _lastToxicBiolumSnapshotGeneration = snapshotGeneration;
+                return;
+            }
+
+            ToxicBioluminescenceSignal strongest = default;
+            float strongestScore = 0f;
+            bool found = false;
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ToxicBioluminescenceSignal signal = signals[i];
+                if (!TryResolveToxicBioluminescencePulseScore(in signal, out float score))
+                    continue;
+
+                if (!found || score > strongestScore || (score == strongestScore && signal.ToxicDensity > strongest.ToxicDensity))
+                {
+                    strongest = signal;
+                    strongestScore = score;
+                    found = true;
+                }
+            }
+
+            if (!found)
+            {
+                _lastToxicBiolumSnapshotGeneration = snapshotGeneration;
+                return;
+            }
+
+            if (!TryAcquireBiolumGuard(vault, SyncPulseGuardMask))
+                return;
+
+            try
+            {
+                if (!TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> ages))
+                {
+                    return;
+                }
+
+                int count = math.min(SyncPulseCapacity, math.min(pulses.Length, ages.Length));
+                if (count <= 0)
+                    return;
+
+                int slot = 0;
+                float oldestAge = -1f;
+                for (int i = 0; i < count; i++)
+                {
+                    float age = ages[i];
+                    if (age > oldestAge)
+                    {
+                        oldestAge = age;
+                        slot = i;
+                    }
+                }
+
+                pulses[slot] = new SyncPulseDTO
+                {
+                    OriginAUP = strongest.AUP,
+                    WaveSpeed = ResolveToxicBioluminescenceWaveSpeed(strongestScore, strongest.ToxicDensity),
+                    ColorOverride = ResolveToxicBioluminescenceColor(strongestScore, strongest.ToxicDensity)
+                };
+                ages[slot] = 0f;
+                _lastToxicBiolumSnapshotGeneration = snapshotGeneration;
+                _lastPulseOriginAUP = strongest.AUP;
+                _activeSyncPulseCount = math.min(_activeSyncPulseCount + 1, count);
+                _pendingTelemetryFlags |= TelemetryFlagToxicPulse;
+                _forceSchedule = true;
+            }
+            finally
+            {
+                ReleaseBiolumGuard(vault, SyncPulseGuardMask);
+            }
+        }
+
+        private static bool TryResolveToxicBioluminescencePulseScore(in ToxicBioluminescenceSignal signal, out float score)
+        {
+            score = 0f;
+            if ((signal.Flags & ToxicBioluminescenceSignal.FlagActive) == 0)
+                return false;
+
+            if (!IsUsableToxicBioluminescenceAup(signal.AUP))
+                return false;
+
+            float intensity = math.isfinite(signal.Intensity01) ? math.saturate(signal.Intensity01) : 0f;
+            float density = math.isfinite(signal.ToxicDensity) ? math.max(0f, signal.ToxicDensity) : 0f;
+            if (intensity <= 0.0001f || density <= 0.0001f)
+                return false;
+
+            float density01 = math.saturate(density);
+            score = math.saturate(intensity * 0.72f + density01 * 0.28f);
+            return score > 0.0001f;
+        }
+
+        private static bool IsUsableToxicBioluminescenceAup(double3 aup)
+        {
+            return math.all(math.isfinite(aup)) &&
+                   math.lengthsq(aup) > 0.000001d &&
+                   math.abs(aup.x) <= ToxicityExposureSignal.MaxSourceAupExtentMeters &&
+                   math.abs(aup.y) <= ToxicityExposureSignal.MaxSourceAupExtentMeters &&
+                   math.abs(aup.z) <= ToxicityExposureSignal.MaxSourceAupExtentMeters;
+        }
+
+        private static float ResolveToxicBioluminescenceWaveSpeed(float score01, float toxicDensity)
+        {
+            float density01 = math.saturate(math.isfinite(toxicDensity) ? toxicDensity : 0f);
+            float wave01 = math.saturate(score01 * 0.75f + density01 * 0.25f);
+            return math.clamp(math.lerp(18f, 112f, wave01), 4f, 160f);
+        }
+
+        private static uint ResolveToxicBioluminescenceColor(float score01, float toxicDensity)
+        {
+            float density01 = math.saturate(math.isfinite(toxicDensity) ? toxicDensity : 0f);
+            float pulse01 = math.saturate(score01 * 0.65f + density01 * 0.35f);
+            float3 baseColor = new float3(0.10f, 1f, 0.62f);
+            float3 causticColor = new float3(0.48f, 1f, 0.12f);
+            return BiolumPackedColorUtility.PackRgb10A2(math.lerp(baseColor, causticColor, pulse01), 1f);
         }
 
         private void AdvanceStrobe(float dt)
@@ -4365,9 +4516,15 @@ namespace Hecton8.VFX.Bioluminescence
 
         private static float ResolveAupDepthDarknessScalar(double3 aupReference)
         {
-            float yMeters = math.isfinite((float)aupReference.y) ? (float)aupReference.y : 0f;
-            float depthMeters = math.max(0f, -yMeters);
+            float depthMeters = ResolveAupDepthMeters(aupReference);
             return SmoothStepRange01(DefaultDepthDarknessStartMeters, DefaultDepthDarknessFullMeters, depthMeters);
+        }
+
+        private static float ResolveAupDepthMeters(double3 aupReference)
+        {
+            return math.isfinite(aupReference.y)
+                ? (float)math.max(0d, DefaultSeaLevelAupY - aupReference.y)
+                : 0f;
         }
 
         private static float ResolveDarknessScalar(MockWeatherSignal weather, float activationThreshold, double3 aupReference)

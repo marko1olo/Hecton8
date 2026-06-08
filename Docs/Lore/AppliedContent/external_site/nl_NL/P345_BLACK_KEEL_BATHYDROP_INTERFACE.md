@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Black Keel Bathydrop Interface"
+title: "Black Keel-bathydropinterface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Black Keel Bathydrop Interface
+# Black Keel-bathydropinterface
 
-NL LOC HOLD: HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.
-
-## Scanner
-
-NL LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
-
-## Terminal
-
-NL LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
-
-## Audio
-
-NL LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
-
-## Field Note
-
-NL LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+De bathydropinterface is waar de ruimtesetting het oceaanspel raakt. Het is niet genoeg dat Black Keel in orbit bestaat. De speler heeft een keten nodig: capsule-integriteit, drijfcontrole, commmast, opstijggrendel, drukseals, relaiswiskunde, oppervlaktetiming en carrieracceptatie. Eén gebroken schakel maakt redding theorie. Zo blijft de opening eerlijk. De speler zit niet vast omdat het verhaal het schip vergat. De speler zit vast omdat de enige machine die abyss, oppervlak en orbit verbindt heeft gefaald op manieren die water elk uur erger maakt.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/nl_NL. -->

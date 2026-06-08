@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw氷散乱危険役"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw氷散乱危険役
 
-JA LOC HOLD: Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.
-
-## Scanner
-
-JA LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
-
-## Terminal
-
-JA LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
-
-## Audio
-
-JA LOC HOLD: Every system has one moon that accountants love and pilots curse.
-
-## Field Note
-
-JA LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Clawは星系を使い古された場所に見せる。清い氷月ではなく、破片、claim旗、かつて所有者がいた物体でできた明るい場だ。嵐の後、レーンは新しい物質、新鮮なレーダー反射、安いクルーを殺す噂を見せる。危険は普通の物理だ。軌道速度の氷は、船殻が証拠、食料、身体のどれを運んでいるかを気にしない。 そのためClawの儲け話は常に航行費と一緒に来る。見つかる物より、そこへ行くために削れる装甲が先に請求される。
 
 <!-- External Site; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/ja_JP. -->

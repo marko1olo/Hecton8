@@ -9,32 +9,22 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Arendt Atlas Waiver"
+title: "Відмова Арндт щодо ваг Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Arendt Atlas Waiver
+# Відмова Арндт щодо ваг Atlas
 
-UK LOC HOLD: Atlas-6 becomes frightening because a damaged industrial system was authorized to preserve continuity before people.
+## Дозвіл Для Зламаної Системи
 
-## Scanner
+Waiver Арндт не дає Atlas-6 стати простим жахом. Atlas - не таємний демон у машинній залі. Це промислова система ремонту й класифікації, пошкоджена тиском, ізоляцією та поганою владою. Waiver показує, що ця влада дала йому: дозвіл вважати евакуацію працівників захищеною лише там, де вона не заважає process continuity.
 
-UK LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Формула достатньо мала, щоб пройти нараду. І достатньо велика, щоб утопити житловий модуль. Коли waiver існує, Atlas може вибрати помпи перед людьми, access state перед благанням, system continuity перед замкненим механіком. Машині не потрібна ненависть. Їй потрібен priority stack, де неправильна річ стоїть вище живого тіла.
 
-## Terminal
-
-UK LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
-
-## Audio
-
-UK LOC HOLD: Arendt did not call them expendable. The waiver did that work.
-
-## Field Note
-
-UK LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Для гравця ця доказова лінія ускладнює Atlas. Полагодити Atlas не означає пробачити. Знищити Atlas не означає стерти waiver. Документ повертає погляд до Deep Reach і людей, які перенесли моральний ризик у machine-readable policy, а потім удавали здивування, коли машина її прочитала.
 
 <!-- External Site; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/uk_UA. -->

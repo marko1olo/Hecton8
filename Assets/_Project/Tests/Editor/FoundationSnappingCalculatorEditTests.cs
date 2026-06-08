@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 using Hecton8.Construction;
@@ -488,6 +489,32 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void FoundationPylonGpuBatch_NoSubstrateNotificationRefusalIsDiagnosticNotStructural()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string source = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Construction", "FoundationPylonGpuBatch.cs"));
+
+            Assert.That(source.Contains("public int NoSubstrateNotificationMissCount =>"), Is.True);
+            Assert.That(source.Contains("s_noSubstrateNotificationMissWarningHash"), Is.True);
+            Assert.That(source.Contains("s_noSubstrateNotificationContextHash"), Is.True);
+            AssertTextBefore(
+                source,
+                "SignalBus<FoundationStructuralWarningSignal>.TryPushTracked(in signal, ref s_x001FoundationPylonGpuBatchSignalPushDropCount);",
+                "TryPushNoSubstrateNotification();");
+            Assert.That(source.Contains("NotificationEvents.TryPushWarning(NoSubstrateWarningMessage.AsSpan());"), Is.False);
+
+            AssertTextAfter(source, "private void TryPushNoSubstrateNotification()", "NotificationEvents.TryPushWarning(NoSubstrateWarningMessage.AsSpan())");
+            AssertTextAfter(source, "private void TryPushNoSubstrateNotification()", "ReportNoSubstrateNotificationMiss();");
+            AssertTextAfter(source, "private void ReportNoSubstrateNotificationMiss()", "_noSubstrateNotificationMissCount++;");
+            AssertTextAfter(source, "private void ReportNoSubstrateNotificationMiss()", "GlobalTelemetryBus.PublishPerformanceWarning(");
+            AssertTextAfter(source, "private void ReportNoSubstrateNotificationMiss()", "s_noSubstrateNotificationMissWarningHash");
+            AssertTextAfter(source, "private void ReportNoSubstrateNotificationMiss()", "s_foundationPylonGpuBatchContextHash ^ s_noSubstrateNotificationContextHash");
+            AssertTextAfter(source, "private void ReportNoSubstrateNotificationMiss()", "math.max(1, _noSubstrateNotificationMissCount)");
+            AssertTextAfter(source, "private void OnDisable()", "ClearNoSubstrateNotificationDiagnostics();");
+            AssertTextAfter(source, "private void OnDestroy()", "ClearNoSubstrateNotificationDiagnostics();");
+        }
+
+        [Test]
         public void Shader_AvoidsTrigonometricHotAluAndIsPlayerIncluded()
         {
             string root = Directory.GetCurrentDirectory();
@@ -544,6 +571,23 @@ namespace Hecton8.Tests.Editor
                 string text = File.ReadAllText(files[i]);
                 Assert.That(text.Contains("PylonMatrixDTO"), Is.False, file);
             }
+        }
+
+        private static void AssertTextBefore(string text, string expectedEarlier, string expectedLater)
+        {
+            int earlierIndex = text.IndexOf(expectedEarlier, StringComparison.Ordinal);
+            int laterIndex = text.IndexOf(expectedLater, StringComparison.Ordinal);
+            Assert.That(earlierIndex, Is.GreaterThanOrEqualTo(0), "Missing earlier text: " + expectedEarlier);
+            Assert.That(laterIndex, Is.GreaterThanOrEqualTo(0), "Missing later text: " + expectedLater);
+            Assert.That(earlierIndex, Is.LessThan(laterIndex), expectedEarlier + " should appear before " + expectedLater);
+        }
+
+        private static void AssertTextAfter(string text, string anchor, string expectedLater)
+        {
+            int anchorIndex = text.IndexOf(anchor, StringComparison.Ordinal);
+            Assert.That(anchorIndex, Is.GreaterThanOrEqualTo(0), "Missing anchor text: " + anchor);
+            int laterIndex = text.IndexOf(expectedLater, anchorIndex, StringComparison.Ordinal);
+            Assert.That(laterIndex, Is.GreaterThanOrEqualTo(0), "Missing text after anchor: " + expectedLater);
         }
     }
 }

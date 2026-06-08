@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Daño de cápsula
 
-La cápsula deja al jugador en HECTON-8. El impacto conserva refugio, energía y registros, pero mata el ascenso. Escapar pronto requiere ingeniería.
+La cápsula de descenso lleva al merodeador a HECTON-8. El choque deja sistemas suficientes para refugio, energía y registros, pero destruye el hardware de ascenso. La salida temprana se vuelve una cadena de ingeniería, no un botón.
 
 ## Scanner
 

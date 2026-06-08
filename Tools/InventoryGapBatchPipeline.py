@@ -60,6 +60,27 @@ def reset_generated_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
+def has_non_meta_content(path: Path) -> bool:
+    if not path.exists():
+        return False
+
+    for child in path.rglob("*"):
+        if child.name.endswith(".meta"):
+            continue
+        return True
+    return False
+
+
+def require_overwrite_allowed(path: Path, label: str, allow_overwrite: bool) -> None:
+    if allow_overwrite or not has_non_meta_content(path):
+        return
+
+    raise RuntimeError(
+        f"Refusing to overwrite existing {label}: {display_path(path)}. "
+        "Use a new batch name or pass --allow-overwrite after visual/review state is preserved."
+    )
+
+
 def is_under_assets(path: Path) -> bool:
     try:
         resolved = path.resolve()
@@ -114,6 +135,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--grabcut-iterations", type=int, default=4)
     parser.add_argument("--segmentation-max-side", type=int, default=512)
     parser.add_argument("--edge-margin-px", type=int, default=32)
+    parser.add_argument("--allow-overwrite", action="store_true")
     parser.add_argument(
         "--source-edge-margin-px",
         type=int,
@@ -181,6 +203,15 @@ def main() -> int:
         raise RuntimeError(
             f"Refusing non-Assets asset output root: {display_path(asset_batch_root)}. "
             "Pass --allow-non-asset-root only for temp smoke/test runs."
+        )
+
+    require_overwrite_allowed(working_root, "working inventory-icon output", args.allow_overwrite)
+    require_overwrite_allowed(asset_alpha_root, "asset Alpha512 output", args.allow_overwrite)
+    require_overwrite_allowed(asset_atlas_root, "asset atlas output", args.allow_overwrite)
+    if binding_map.exists() and not args.allow_overwrite:
+        raise RuntimeError(
+            f"Refusing to overwrite existing binding map: {display_path(binding_map)}. "
+            "Use a new batch name or pass --allow-overwrite after review state is no longer needed."
         )
 
     reset_generated_dir(working_root)

@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: השמיים שמסרבים להציל"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Aegir Transfer Windows
+# Aegir: השמיים שמסרבים להציל
 
-HE LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir הוא שמיים תפעוליים. סולם הירחים יכול לעכב או להשחית חבילה בלי להחשיך את פני השטח תמיד. הצלה נכשלת בגלל מרחק, גאומטריה, חוק ועלות.
 
 ## Scanner
 
-HE LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+פריימר מסלול שמימי. אין FTL ואין ansible. חלונות Aegir עוברים דרך ירחים, פסולת, custody ממסר, סערות וחשבונאות מסה של Black Keel.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+פריימר ניווט AEGIR // תחום ציבורי. להשתמש במחלקות סכנה: route-shadow, charged surge, ice scatter, storm plume, guidance lag, receiver custody.
 
 ## Audio
 
-HE LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+תזמון Black Keel: "אות אמיתי אינו אות שימושי. החלון עומד על מסה, מזג אוויר, custody ונעילת מקלט."
 
 ## Field Note
 
-HE LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+כלל שמיים של Marauder: אל תשאל אם האות נשלח. שאל איזה ירח חסם אותו, איזה ledger תפס אותו, והאם המקלט שמע אדם או מחלקת מסה.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/he_IL. -->

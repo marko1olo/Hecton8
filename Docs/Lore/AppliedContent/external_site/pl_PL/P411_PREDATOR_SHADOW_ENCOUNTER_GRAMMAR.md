@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Predator Shadow Encounter Grammar"
+title: "Gramatyka spotkania: cień drapieżnika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Predator Shadow Encounter Grammar
+# Gramatyka spotkania: cień drapieżnika
 
-PL LOC HOLD: HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.
+Cienie drapieżników definiują strach HECTON-8 bez taniej logiki ujawnienia. Zagrożenie często przychodzi jako brak ofiary, złamany bloom, błędny sonar i trasa nagle kosztująca za dużo tlenu.
 
 ## Scanner
 
-PL LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Ślad cienia drapieżnika. Luka sonaru, ucięta ścieżka ofiar, nagła cisza skrobaczy, szerokie zasłonięcie światła. Ciało niepotwierdzone; dyscyplina światła i kąt wyjścia.
 
 ## Terminal
 
-PL LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+GRAMATYKA SPOTKANIA / CIEŃ DRAPIEŻNIKA / rola: presja trasy przed ujawnieniem ciała, skok zużycia tlenu, pęknięcie zaufania do scan / bezpieczny odczyt: ścieżka ofiar staje, szum bloom się zapada, powroty sonaru rozdzielają się wokół pustej wody / odrzuć: scripted pełne ujawnienie jako pierwsze ostrzeżenie, nieszkodliwy jump scare, czysta boss arena / notatka trasy: jeśli małe zwierzęta stają, zanim scanner nazwie cel, trasa już się zmieniła.
 
 ## Audio
 
-PL LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+Bezpieczny znak to nie zobaczyć go. Bezpieczny znak to zauważyć, że wszystko inne wybrało ciszę pierwsze.
 
 ## Field Note
 
-PL LOC HOLD: Use for AI/spawn design notes and scanner cards.
+Nazwij zwierzę późno. Niech ofiara, światło i sonar zawiodą pierwsze. Jeśli trasa milknie, cień już ją posiada.
 
 <!-- External Site; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/pl_PL. -->

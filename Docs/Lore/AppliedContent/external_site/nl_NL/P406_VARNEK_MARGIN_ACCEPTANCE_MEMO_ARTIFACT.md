@@ -9,32 +9,22 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Varnek Margin Memo"
+title: "Varnek-memo over geaccepteerde marge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Varnek Margin Memo
+# Varnek-memo over geaccepteerde marge
 
-NL LOC HOLD: Deep Reach liability begins where real physics became an acceptable loss line.
+## De Stempel Voor De Vloed
 
-## Scanner
+Varneks memo telt omdat het kalm is. De Great Tide was echt. De drukcascade was echt. De oceaan had geen bedrijfsbevel nodig om HECTON-8 te verpletteren. De misdaad staat in de regel waar een bekende waarschuwingsmarge accepted tail exposure wordt terwijl de evacuatievoorraad blijft slapen.
 
-NL LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Het document spreekt de taal van verantwoordelijk beheer: average model, continuity cost, reserve non-triggered, independent shutdown not recommended. Dat is het gevaar. Varnek klinkt niet als een schurk. Hij klinkt als iemand die de kolom vond waarin gevaar payable wordt. Wanneer een Marauder het memo vindt, is de oude beslissing al landschap: gebogen gangribben, verdronken gereedschap, drukdeuren dicht voor werkers die nog wachtten op nieuwe bevoegdheid.
 
-## Terminal
-
-NL LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
-
-## Audio
-
-NL LOC HOLD: No murder order. A margin acceptance.
-
-## Field Note
-
-NL LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Dit bewijs moet zwaarder wegen dan een bekentenis. Een bekentenis kan als paniek of kwaadwilligheid worden afgedaan. Een ondertekende margin review toont Deep Reach in normaal bedrijf, met dodelijke data op tafel. Het bedrijf accepteerde de oceaan als cost center en publiceerde daarna een rampenrapport dat schoon genoeg was voor verzekeringscontrole.
 
 <!-- External Site; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/nl_NL. -->

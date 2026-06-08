@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+spoiler_tier: 1
+title: "Temps de staging du fret lourd"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# Temps de staging du fret lourd
 
-FR LOC HOLD: Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships.
-
-## Scanner
-
-FR LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
-
-## Terminal
-
-FR LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
-
-## Audio
-
-FR LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
-
-## Field Note
-
-FR LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+Le fret lourd cache du temps dans l'infrastructure. Matériel Atlas, cargaison d'ensemencement, stocks de blindage et pièces de freinage peuvent arriver tôt parce qu'ils sont lancés des années avant que le langage public de colonisation les rattrape. Cela ne rend pas le secours d'urgence facile. Une route préparée déplace la masse parce que dépôts, fenêtres de faisceau, flux de pellets et étages de capture attendaient déjà. Une route de catastrophe n'a plus cette patience.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/fr_FR. -->

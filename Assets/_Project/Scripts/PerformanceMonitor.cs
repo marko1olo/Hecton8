@@ -111,6 +111,8 @@ namespace Hecton8.Core
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<PerformanceEventPayload> _pendingEvents;
         private static NativeQueue<PerformanceEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
@@ -226,14 +228,14 @@ namespace Hecton8.Core
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<PerformanceEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PerformanceEventPayload>[16] - deferred performance threshold lane flushed by SystemDispatcher LateUpdate - owner: PerformanceEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<PerformanceEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PerformanceEventPayload>[16] - next-frame performance events raised by listeners - owner: PerformanceEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -249,10 +251,12 @@ namespace Hecton8.Core
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(PerformanceEvents),
@@ -261,25 +265,60 @@ namespace Hecton8.Core
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(PerformanceEvents), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -984,7 +1023,7 @@ namespace Hecton8.Core
                 physicsCallCount: totalPhysics,
                 physicsTimeMs: cachedHits, // Repurposing field: Hits are more important than avg time here
                 pendingJobCount: pendingJobs,
-                activeCoroutineCount: 0, 
+                activeCoroutineCount: 0,
                 gcAllocatedThisFrame: gcAlloc,
                 gcTotalMemory: gcTotal,
                 gcPeakMemory: System.Math.Max(_lastSnapshot.gcPeakMemory, gcTotal),

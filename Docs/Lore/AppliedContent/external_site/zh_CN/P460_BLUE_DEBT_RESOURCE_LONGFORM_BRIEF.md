@@ -9,32 +9,38 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ZH LOC HOLD: Blue Debt Custody"
+title: "Blue Debt：custody中的压力历史"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Blue Debt Custody
+# Blue Debt：custody中的压力历史
 
-ZH LOC HOLD: Marauders call the material blue debt because payout, containment and liability travel with the same sample. The valuable substrate is not a magic ore. It forms where pressure history, brine chemistry, noble gas capture, vent heat and damaged industrial process leave a readable structure behind. A clean-looking piece can still carry a bad record: wrong extraction angle, heat exposure outside tolerance, Atlas-compatible contamination, or custody tags that make the owner harder to name than the mineral. Black Keel weighs blue debt by mass, grade and paperwork because each piece can be cargo and accusation at the same time. Deep Reach wanted processable material. Atlas learned to grow through damaged surfaces. The ocean kept the evidence in the lattice. A player who brings blue debt home is not only selling shine. They are moving a pressure receipt through a legal system built to decide whether proof becomes money, silence or leverage.
+## 名称
 
-## Scanner
+Blue debt是掠夺者对含Xenon-Omega的pressure substrate的俗称。Deep Reach称它为XO continuity substrate，技术员叫它pressure glass。没有哪个名字能把它变成普通矿石。
 
-ZH LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+它形成在压力历史、惰性气体囊、brine、矿物缺陷、热循环、生物催化剂和受损工业留下可读lattice的地方。样本有价值，因为它活过压力。样本危险，因为它记得自己接触过什么。
 
-## Terminal
+即便看起来干净，它也需要extraction scar、containment压力、brine exposure、Atlas-compatible drift、contamination stage、custody grade和质量。Black Keel不为闪光付款，而为带有可争议文件的recoverable object付款。
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+containment失败会改变状态：sealed、drift、fracture、bloom，然后材料死亡、证据活着。Vent repressure只能救早期drift。
 
-## Audio
+Blue debt是resource、payout、证据和陷阱。玩家把pressure receipt带过Black Keel、Keelmark、Deep Reach，也许还有public ledger。问题不是价格，而是谁购买样本附带的沉默。
 
-ZH LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+## 样本有传记
 
-## Field Note
+Blue Debt有价值，因为它记得压力。好的文章要把sample当成化学写成的传记：growth depth、shock history、brine contact、vent heat、handling contamination、scanner custody、hull exposure、transport delay。干净碎片可能一文不值，丑陋但chain诚实的碎片却能支付route window。
 
-ZH LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+这样资源文本就变成故事文本。玩家不是在挖颜色，而是在回收pressure record。Black Keel、Deep Reach、Atlas contamination和本地地质都会试图把它改写进自己的ledgers。
+
+## 它如何进入玩法
+
+Blue Debt应该让inventory choices变得难受。更多质量也许能买到rescue，更好的证据也许能改变真相归属。受污染sample可能打开Atlas route，同时毁掉干净payout。卖掉一切可以让身体活着，也让crime intact。
+
+资源强在同时有用、危险、道德上昂贵。它不该像magic ore，而是海洋用压力写下、等了几十年才收取的账单。
 
 <!-- External Site; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/zh_CN. -->

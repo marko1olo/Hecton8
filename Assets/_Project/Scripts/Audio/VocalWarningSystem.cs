@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -24,6 +25,15 @@ namespace Hecton8.Audio
         private static int s_x001DirectSignalPushDropCount_VocalWarningSystem;
         private const string TelemetryDumpPayloadLabel = "vocalWarningTelemetryDumpPayload";
         private const uint VesselTelemetryHandleRetryMask = 63u;
+
+        internal static int SignalPushDropCount =>
+            Volatile.Read(ref s_x001DirectSignalPushDropCount_VocalWarningSystem);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticSignalDiagnostics()
+        {
+            Volatile.Write(ref s_x001DirectSignalPushDropCount_VocalWarningSystem, 0);
+        }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         internal struct VocalWarningDTO
@@ -270,12 +280,14 @@ namespace Hecton8.Audio
         }
 
         private const int QueueCapacity = 64;
-        private const int WarningStateLength = 6;
+        private const int WarningStateLength = VocalWarningHashes.CanonicalWarningCount + 1;
         private const int DispatchLength = 1;
         private const int ProfileCapacity = 8;
         private const int TelemetryCapacity = 300;
         private const float DefaultCooldownSeconds = 4f;
         private const float DefaultGain = 0.85f;
+        private const float ToxicityWarningMinSeverity01 = 0.08f;
+        private const uint PlayerToxicityFallbackEntityHash = ToxicityExposureSignal.PlayerEntityFallbackHash;
         private const uint VocalWarningSystemHash = 0x56333532u; // V352
         private const uint VaultOwnerSignalHash = 0x41565753u; // AVWS
         private const BufferID AlarmStateBufferId = (BufferID)72430;
@@ -291,9 +303,9 @@ namespace Hecton8.Audio
         private const uint QueueFlagPreempted = 1u << 5;
         private const int AlarmBitCount = 64;
         private const int NoPriorityBitIndex = -1;
-        private const int LowestCanonicalWarningId = (int)VocalWarningId.CrushDepth;
-        private const int HighestCanonicalWarningId = (int)VocalWarningId.PowerLow;
-        private const int CanonicalWarningCount = HighestCanonicalWarningId - LowestCanonicalWarningId + 1;
+        private const int LowestCanonicalWarningId = VocalWarningHashes.LowestCanonicalWarningId;
+        private const int HighestCanonicalWarningId = VocalWarningHashes.HighestCanonicalWarningId;
+        private const int CanonicalWarningCount = VocalWarningHashes.CanonicalWarningCount;
         private const int CuePriorityBandSize = 255 / CanonicalWarningCount;
         private const byte SubtitleCueFlagInterrupt = 1 << 0;
         private const byte SubtitleCueFlagDirectionLeft = 1 << 1;
@@ -358,6 +370,7 @@ namespace Hecton8.Audio
         private int _registeredHotSwap;
         private int _registeredRuntime;
         private int _registeredPostSimulation;
+        private int _runtimeOwnerAborted;
         private int _nativeAllocated;
         private int _vocalWarningJobsPending;
         private int _telemetryDumpRequested;
@@ -376,6 +389,9 @@ namespace Hecton8.Audio
         private float _currentPriorityScore;
         private float _lastBurstExecutionMicros;
         private float _pendingVocalWarningScheduleMicros;
+        private GameObject _playerToxicityTargetObject;
+        private uint _playerToxicityTargetHash = PlayerToxicityFallbackEntityHash;
+        private int _lastToxicityExposureSnapshotGeneration;
         private uint _currentAudioBankHashID;
         private uint _lastDispatchedAudioBankHashID;
         private uint _lastInterruptCount;
@@ -389,13 +405,19 @@ namespace Hecton8.Audio
         private byte _currentWarningId;
         private byte _lastDispatchedWarningId;
 
-        public bool IsInitialized => Volatile.Read(ref _nativeAllocated) != 0;
+        public bool IsInitialized => Volatile.Read(ref _nativeAllocated) != 0 &&
+                                     Volatile.Read(ref _runtimeOwnerAborted) == 0;
 
-        public int PendingCount => math.max(0, _queueCount);
+        public bool IsVocalWarningRuntimeReady => Volatile.Read(ref _nativeAllocated) != 0 &&
+                                                  Volatile.Read(ref _runtimeOwnerAborted) == 0 &&
+                                                  Volatile.Read(ref _registeredRuntime) != 0 &&
+                                                  isActiveAndEnabled;
 
-        public byte CurrentWarningId => _currentWarningId;
+        public int PendingCount => Volatile.Read(ref _runtimeOwnerAborted) != 0 ? 0 : math.max(0, _queueCount);
 
-        public bool IsWarningActive => _warningPlaybackRemainingSeconds > 0f;
+        public byte CurrentWarningId => Volatile.Read(ref _runtimeOwnerAborted) != 0 ? (byte)0 : _currentWarningId;
+
+        public bool IsWarningActive => Volatile.Read(ref _runtimeOwnerAborted) == 0 && _warningPlaybackRemainingSeconds > 0f;
 
 #if UNITY_EDITOR
         public int EditorQueueCapacity => QueueCapacity;
@@ -416,35 +438,52 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
+            if (!TryRegisterRuntimeService())
+                return;
+
             EnsureNativeStorage();
             RefreshCachedServicesCold();
         }
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
+            if (!TryRegisterRuntimeService())
+                return;
+
             EnsureNativeStorage();
-            TryRegisterHotSwapListener();
             RefreshCachedServicesCold();
-            if (TryRegisterRuntimeService())
-            {
-                Volatile.Write(ref _registeredRuntime, 1);
-                TryRegisterPostSimulation();
-            }
+            TryRegisterHotSwapListener();
+            TryRegisterPostSimulation();
         }
 
         private void OnDisable()
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
             UnregisterRuntime();
         }
 
         private void OnDestroy()
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
             UnregisterRuntime();
             DisposeNativeStorage();
         }
 
         public void Tick(float deltaTime)
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
             if (Volatile.Read(ref _registeredPostSimulation) != 0)
                 return;
 
@@ -453,6 +492,9 @@ namespace Hecton8.Audio
 
         public void SlowTick()
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
             if (Volatile.Read(ref _registeredPostSimulation) != 0 ||
                 Volatile.Read(ref _registeredUpdate) != 0)
                 return;
@@ -462,6 +504,9 @@ namespace Hecton8.Audio
 
         public void LateFrameTick()
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
             if (Volatile.Read(ref _registeredPostSimulation) != 0)
                 return;
 
@@ -550,6 +595,16 @@ namespace Hecton8.Audio
 
         public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                RefreshPlayerToxicityTargetHash(currentService as IPlayerRuntimeContext);
+                _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 IDataVault nextVault = currentService is IDataVault vault ? vault : null;
@@ -562,6 +617,16 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                RefreshPlayerToxicityTargetHash(currentService as IPlayerRuntimeContext);
+                _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault &&
                 !ReferenceEquals(previousService, currentService))
             {
@@ -696,6 +761,9 @@ namespace Hecton8.Audio
 
         private void TryRegisterPostSimulation()
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
             if (Volatile.Read(ref _registeredPostSimulation) != 0)
                 return;
 
@@ -725,6 +793,9 @@ namespace Hecton8.Audio
 
         private void UnregisterRuntime()
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
             CompletePendingVocalWarningJobsForTeardown();
             CancelRendererPlaybackAndClearQueues();
             if (Interlocked.Exchange(ref _registeredPostSimulation, 0) != 0)
@@ -735,7 +806,7 @@ namespace Hecton8.Audio
                     GlobalRegistry.UnregisterDispatcherSystem(_visualSyncSystem);
             }
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
             if (Interlocked.Exchange(ref _registeredSlowTick, 0) != 0)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             if (Interlocked.Exchange(ref _registeredLateFrameTick, 0) != 0)
@@ -748,6 +819,9 @@ namespace Hecton8.Audio
 
         private void EnsureNativeStorage()
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
             if (Volatile.Read(ref _nativeAllocated) != 0)
                 return;
 
@@ -957,15 +1031,11 @@ namespace Hecton8.Audio
             ReleaseVaultBackedStorage();
             _dataVault = vault;
             Volatile.Write(ref _nativeAllocated, 0);
-            _queueCount = 0;
-            _currentWarningId = 0;
-            _currentAudioBankHashID = 0u;
-            Interlocked.Exchange(ref _visualSyncPresentationPending, 0);
-            Interlocked.Exchange(ref _pendingExternalFaultFlags, 0);
-            Interlocked.Exchange(ref _pendingCancelRequest, 0);
-            _pendingPresentationFrame = 0u;
+            ClearPresentationState(true);
+            ClearLastDispatchRoute();
             if (vault != null)
                 EnsureNativeStorage();
+            _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
         }
 
         private void ReleaseVaultBackedStorage()
@@ -1110,16 +1180,41 @@ namespace Hecton8.Audio
         private void RefreshCachedServicesCold()
         {
             _globalQualityWeight01 = ResolveGlobalQualityWeight01();
+            RefreshPlayerToxicityTargetHash(GlobalRegistry.Player);
+            _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
+        }
+
+        private void RefreshPlayerToxicityTargetHash(IPlayerRuntimeContext playerContext)
+        {
+            GameObject playerObject = playerContext != null ? playerContext.PlayerObject : null;
+            if (playerObject == null)
+                playerObject = BootstrapState.CurrentPlayerObject;
+
+            if (ReferenceEquals(playerObject, _playerToxicityTargetObject) && _playerToxicityTargetHash != 0u)
+                return;
+
+            _playerToxicityTargetObject = playerObject;
+            uint targetHash = playerObject != null ? unchecked((uint)EntityId.ToULong(playerObject.GetEntityId())) : 0u;
+            _playerToxicityTargetHash = targetHash != 0u ? targetHash : PlayerToxicityFallbackEntityHash;
         }
 
         private bool TryRegisterRuntimeService()
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return false;
+
+            if (Volatile.Read(ref _registeredRuntime) != 0 || !Application.isPlaying)
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             IVocalWarningSystem registeredVocalWarnings = GlobalRegistry.VocalWarnings;
             if (!ReferenceEquals(registeredVocalWarnings, null) && !ReferenceEquals(registeredVocalWarnings, this))
             {
                 if (IsVocalWarningSystemUsable(registeredVocalWarnings))
                 {
-                    Destroy(this);
+                    AbortDuplicateRuntimeOwner();
                     return false;
                 }
 
@@ -1127,7 +1222,11 @@ namespace Hecton8.Audio
             }
 
             GlobalRegistry.RegisterVocalWarningRuntime(this);
-            return ReferenceEquals(GlobalRegistry.VocalWarnings, this);
+            bool registered = ReferenceEquals(GlobalRegistry.VocalWarnings, this);
+            Volatile.Write(ref _registeredRuntime, registered ? 1 : 0);
+            if (!registered)
+                AbortDuplicateRuntimeOwner();
+            return registered;
         }
 
         private static bool IsVocalWarningSystemUsable(IVocalWarningSystem vocalWarningSystem)
@@ -1135,14 +1234,56 @@ namespace Hecton8.Audio
             if (ReferenceEquals(vocalWarningSystem, null))
                 return false;
 
+            if (vocalWarningSystem is VocalWarningSystem runtime)
+                return runtime.IsVocalWarningRuntimeReady;
+
             if (vocalWarningSystem is Behaviour behaviour && (behaviour == null || !behaviour.isActiveAndEnabled))
                 return false;
 
-            return vocalWarningSystem.IsInitialized;
+            return vocalWarningSystem.IsVocalWarningRuntimeReady;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
+            IVocalWarningSystem registeredVocalWarnings = GlobalRegistry.VocalWarnings;
+            if (ReferenceEquals(registeredVocalWarnings, null) || ReferenceEquals(registeredVocalWarnings, this))
+                return false;
+
+            if (IsVocalWarningSystemUsable(registeredVocalWarnings))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            GlobalRegistry.UnregisterVocalWarningRuntime(registeredVocalWarnings);
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            Volatile.Write(ref _runtimeOwnerAborted, 1);
+            Volatile.Write(ref _registeredRuntime, 0);
+            Volatile.Write(ref _registeredPostSimulation, 0);
+            Volatile.Write(ref _registeredHotSwap, 0);
+            Volatile.Write(ref _registeredUpdate, 0);
+            Volatile.Write(ref _registeredSlowTick, 0);
+            Volatile.Write(ref _registeredLateFrameTick, 0);
+            DisposeNativeStorage();
+            enabled = false;
+            Destroy(this);
         }
 
         private void TryRegisterHotSwapListener()
         {
+            if (Volatile.Read(ref _runtimeOwnerAborted) != 0)
+                return;
+
             if (Volatile.Read(ref _registeredHotSwap) != 0)
                 return;
 
@@ -1158,19 +1299,8 @@ namespace Hecton8.Audio
             CompletePendingVocalWarningJobsForTeardown();
             ReleaseVaultBackedStorage();
             _dataVault = null;
-            _queueCount = 0;
-            _currentWarningId = 0;
-            _currentAudioBankHashID = 0u;
-            Interlocked.Exchange(ref _visualSyncPresentationPending, 0);
-            Interlocked.Exchange(ref _pendingExternalFaultFlags, 0);
-            Interlocked.Exchange(ref _pendingCancelRequest, 0);
-            _pendingPresentationFrame = 0u;
-            _lastSourceAupGridX = 0L;
-            _lastSourceAupGridY = 0L;
-            _lastSourceAupGridZ = 0L;
-            _lastSourceAupLocalX = 0f;
-            _lastSourceAupLocalY = 0f;
-            _lastSourceAupLocalZ = 0f;
+            ClearPresentationState(true);
+            ClearLastDispatchRoute();
         }
 
         private void RunVocalWarningFrame(float deltaTime, uint frame)
@@ -1221,11 +1351,19 @@ namespace Hecton8.Audio
                 float dt = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
                 _vwsClockSeconds += dt;
                 _globalQualityWeight01 = ResolveGlobalQualityWeight01();
+                RefreshPlayerToxicityTargetHash(GlobalRegistry.Player);
                 RefreshVesselTelemetryHandleIfMissing(frame);
                 _vesselCareTone01 = ReadVesselCareTone01();
                 float vesselCareTone01 = _vesselCareTone01;
                 int maxEvaluations = ResolveMaxEvaluations(_globalQualityWeight01, views.Queue.Length);
                 AbsoluteUniversePosition listenerAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+                NativeArray<ToxicityExposureSignal>.ReadOnly toxicitySignals = default;
+                int toxicitySnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
+                if (toxicitySnapshotGeneration != _lastToxicityExposureSnapshotGeneration)
+                {
+                    _lastToxicityExposureSnapshotGeneration = toxicitySnapshotGeneration;
+                    toxicitySignals = SignalBus<ToxicityExposureSignal>.GetFrameSnapshotArray();
+                }
 
                 EvaluateWarningPrioritiesJob evaluateJob = new EvaluateWarningPrioritiesJob
                 {
@@ -1243,6 +1381,7 @@ namespace Hecton8.Audio
                     Brownouts = SignalBus<BrownoutSignal>.GetFrameSnapshotArray(),
                     HealthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshotArray(),
                     RadiationSignals = SignalBus<RadiationDoseSignal>.GetFrameSnapshotArray(),
+                    ToxicitySignals = toxicitySignals,
                     OxygenSignals = SignalBus<OxygenCriticalSignal>.GetFrameSnapshotArray(),
                     FloodSignals = SignalBus<SubmarineFloodStateSignal>.GetFrameSnapshotArray(),
                     FluidSignals = SignalBus<FluidIncursionSignal>.GetFrameSnapshotArray(),
@@ -1250,6 +1389,7 @@ namespace Hecton8.Audio
                     BatterySignals = SignalBus<BatteryLevelSignal>.GetFrameSnapshotArray(),
                     SurvivalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshotArray(),
                     ListenerAup = listenerAup,
+                    PlayerToxicityTargetHash = _playerToxicityTargetHash != 0u ? _playerToxicityTargetHash : PlayerToxicityFallbackEntityHash,
                     TimeSeconds = _vwsClockSeconds,
                     DeltaSeconds = dt,
                     FallbackCooldownSeconds = ResolveCooldownSeconds(fallbackCooldownSeconds),
@@ -1597,6 +1737,19 @@ namespace Hecton8.Audio
             _lastSourceAupLocalZ = 0f;
         }
 
+        private void ClearLastDispatchRoute()
+        {
+            _lastDispatchedAudioBankHashID = 0u;
+            _lastDispatchedWarningId = 0;
+            _lastDirectionHash = 0;
+            _lastSourceAupGridX = 0L;
+            _lastSourceAupGridY = 0L;
+            _lastSourceAupGridZ = 0L;
+            _lastSourceAupLocalX = 0f;
+            _lastSourceAupLocalY = 0f;
+            _lastSourceAupLocalZ = 0f;
+        }
+
         private static void ClearQueuedWarnings(ref VwsVaultViews views)
         {
             if (!views.Queue.IsCreated)
@@ -1877,7 +2030,7 @@ namespace Hecton8.Audio
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static byte NormalizeWarningId(byte warningId)
         {
-            return warningId >= (byte)VocalWarningId.CrushDepth && warningId <= (byte)VocalWarningId.PowerLow
+            return warningId >= (byte)VocalWarningId.CrushDepth && warningId <= (byte)VocalWarningId.Toxicity
                 ? warningId
                 : (byte)0;
         }
@@ -1964,6 +2117,12 @@ namespace Hecton8.Audio
                     120f,
                     6f,
                     1.15f);
+                NativeElementRef(views.Profiles, 5) = CreateDefaultProfile(
+                    (byte)VocalWarningId.Toxicity,
+                    VocalWarningHashes.Toxicity,
+                    360f,
+                    4.5f,
+                    1.25f);
             }
         }
 
@@ -2043,6 +2202,9 @@ namespace Hecton8.Audio
                 case VocalWarningHashes.PowerLow:
                     basePriority = resolved.BasePriorityPower;
                     break;
+                case VocalWarningHashes.Toxicity:
+                    basePriority = math.max(resolved.DefaultBasePriority, resolved.BasePriorityRadiation * 0.65f);
+                    break;
                 default:
                     basePriority = resolved.DefaultBasePriority;
                     break;
@@ -2113,6 +2275,8 @@ namespace Hecton8.Audio
                 case VocalWarningHashes.CrushDepth:
                 case VocalWarningHashes.OxygenLow:
                     return math.lerp(2.5f, 5f, severity);
+                case VocalWarningHashes.Toxicity:
+                    return math.lerp(4f, 7.5f, severity);
                 case VocalWarningHashes.PowerLow:
                     return math.lerp(6f, 12f, severity);
                 default:
@@ -2201,6 +2365,35 @@ namespace Hecton8.Audio
             int sector = (int)math.floor((angle + math.PI) * (8.0f / (2.0f * math.PI)));
             sector = math.clamp(sector, 0, 7);
             return (ushort)(0x4430u + (uint)sector);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveRadiationWarningSeverity01(in RadiationDoseSignal signal)
+        {
+            float intensity = ResolveSeverity01(signal.Intensity01);
+            float dose = RadiationDoseSignal.DoseToUnit01(signal.Dose);
+            return math.max(intensity, dose);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveToxicityWarningSeverity01(in ToxicityExposureSignal signal)
+        {
+            float exposure = math.saturate(math.select(0f, signal.Exposure01, math.isfinite(signal.Exposure01)));
+            float toxemia = math.saturate(math.select(0f, signal.ToxemiaDelta, math.isfinite(signal.ToxemiaDelta)));
+            return math.max(exposure, toxemia);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryResolveToxicitySignalSourceAup(in ToxicityExposureSignal signal, out AbsoluteUniversePosition sourceAup)
+        {
+            sourceAup = default;
+            if ((signal.Flags & ToxicityExposureSignal.FlagHasSourceAup) == 0)
+                return false;
+            if (!math.all(math.isfinite(signal.AUP)) || math.lengthsq(signal.AUP) <= 0.000001d)
+                return false;
+
+            sourceAup = AbsoluteUniversePosition.FromAbsolutePosition(signal.AUP);
+            return AbsoluteUniversePosition.IsFinite(in sourceAup);
         }
 
 #if UNITY_EDITOR
@@ -2382,7 +2575,7 @@ namespace Hecton8.Audio
                 for (int i = 0; i < count; i++)
                 {
                     state = state * 1664525u + 1013904223u;
-                    byte warningId = (byte)(1 + (state % 5u));
+                    byte warningId = (byte)(1 + (state % (uint)CanonicalWarningCount));
                     uint hash = VocalWarningHashes.FromWarningId(warningId);
                     float severity = ((state >> 8) & 1023u) * (1f / 1023f);
                     uint flags = PackFlags(warningId, 0, 0, true);
@@ -2429,6 +2622,7 @@ namespace Hecton8.Audio
             [ReadOnly, NoAlias] public NativeArray<BrownoutSignal>.ReadOnly Brownouts;
             [ReadOnly, NoAlias] public NativeArray<SystemHealthIndexSignal>.ReadOnly HealthSignals;
             [ReadOnly, NoAlias] public NativeArray<RadiationDoseSignal>.ReadOnly RadiationSignals;
+            [ReadOnly, NoAlias] public NativeArray<ToxicityExposureSignal>.ReadOnly ToxicitySignals;
             [ReadOnly, NoAlias] public NativeArray<OxygenCriticalSignal>.ReadOnly OxygenSignals;
             [ReadOnly, NoAlias] public NativeArray<SubmarineFloodStateSignal>.ReadOnly FloodSignals;
             [ReadOnly, NoAlias] public NativeArray<FluidIncursionSignal>.ReadOnly FluidSignals;
@@ -2436,6 +2630,7 @@ namespace Hecton8.Audio
             [ReadOnly, NoAlias] public NativeArray<BatteryLevelSignal>.ReadOnly BatterySignals;
             [ReadOnly, NoAlias] public NativeArray<SurvivalVitalsChangedSignal>.ReadOnly SurvivalSignals;
             public AbsoluteUniversePosition ListenerAup;
+            public uint PlayerToxicityTargetHash;
             public float TimeSeconds;
             public float DeltaSeconds;
             public float FallbackCooldownSeconds;
@@ -2542,8 +2737,33 @@ namespace Hecton8.Audio
                 for (int i = 0; i < RadiationSignals.Length && evaluations < MaxEvaluations; i++)
                 {
                     RadiationDoseSignal signal = RadiationSignals[i];
+                    float severity = ResolveRadiationWarningSeverity01(in signal);
+                    if (severity <= 0f)
+                        continue;
+
                     ushort direction = ResolveCompassDirectionHash(in ListenerAup, in signal.PositionAup);
-                    if (TryQueue(VocalWarningHashes.Radiation, (byte)VocalWarningId.Radiation, signal.Intensity01, FallbackCooldownSeconds, 0, signal.SourceId, in signal.PositionAup, direction, false, in tuning))
+                    if (TryQueue(VocalWarningHashes.Radiation, (byte)VocalWarningId.Radiation, severity, FallbackCooldownSeconds, 0, signal.SourceId, in signal.PositionAup, direction, false, in tuning))
+                        evaluations++;
+                }
+
+                uint playerToxicityTargetHash = PlayerToxicityTargetHash != 0u ? PlayerToxicityTargetHash : PlayerToxicityFallbackEntityHash;
+                for (int i = 0; i < ToxicitySignals.Length && evaluations < MaxEvaluations; i++)
+                {
+                    ToxicityExposureSignal signal = ToxicitySignals[i];
+                    if (signal.EntityId == 0u)
+                        continue;
+                    if (signal.EntityId != playerToxicityTargetHash && signal.EntityId != PlayerToxicityFallbackEntityHash)
+                        continue;
+
+                    float severity = ResolveToxicityWarningSeverity01(in signal);
+                    if (severity <= ToxicityWarningMinSeverity01)
+                        continue;
+
+                    AbsoluteUniversePosition sourceAup = default;
+                    ushort direction = TryResolveToxicitySignalSourceAup(in signal, out sourceAup)
+                        ? ResolveCompassDirectionHash(in ListenerAup, in sourceAup)
+                        : (ushort)0;
+                    if (TryQueue(VocalWarningHashes.Toxicity, (byte)VocalWarningId.Toxicity, severity, FallbackCooldownSeconds, 0, signal.EntityId, in sourceAup, direction, false, in tuning))
                         evaluations++;
                 }
 
@@ -2561,9 +2781,14 @@ namespace Hecton8.Audio
                 for (int i = 0; i < SurvivalSignals.Length && evaluations < MaxEvaluations; i++)
                 {
                     SurvivalVitalsChangedSignal signal = SurvivalSignals[i];
-                    if ((signal.Flags & SurvivalVitalsChangedSignalFlags.OxygenCritical) != 0u || signal.Oxygen01 < 0.22f)
+                    uint survivalFlags = signal.Flags;
+                    float oxygen01 = math.saturate(math.select(0f, signal.Oxygen01, math.isfinite(signal.Oxygen01)));
+                    bool oxygenLow =
+                        (survivalFlags & SurvivalVitalsChangedSignalFlags.OxygenCritical) != 0u ||
+                        ((survivalFlags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u && oxygen01 < 0.22f);
+                    if (oxygenLow)
                     {
-                        float severity = 1f - math.saturate(signal.Oxygen01);
+                        float severity = 1f - oxygen01;
                         if (TryQueue(VocalWarningHashes.OxygenLow, (byte)VocalWarningId.OxygenLow, severity, FallbackCooldownSeconds, 0, signal.SourceId, in defaultSourceAup, 0, false, in tuning))
                             evaluations++;
                     }
@@ -2571,9 +2796,10 @@ namespace Hecton8.Audio
                     if (evaluations >= MaxEvaluations)
                         break;
 
-                    if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u && signal.Energy01 < 0.18f)
+                    float energy01 = math.saturate(math.select(0f, signal.Energy01, math.isfinite(signal.Energy01)));
+                    if ((survivalFlags & SurvivalVitalsChangedSignalFlags.Energy) != 0u && energy01 < 0.18f)
                     {
-                        float severity = 1f - math.saturate(signal.Energy01);
+                        float severity = 1f - energy01;
                         if (TryQueue(VocalWarningHashes.PowerLow, (byte)VocalWarningId.PowerLow, severity, FallbackCooldownSeconds, 0, signal.SourceId, in defaultSourceAup, 0, false, in tuning))
                             evaluations++;
                     }

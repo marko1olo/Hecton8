@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -122,6 +123,13 @@ namespace Hecton8.UI
 
         private const uint SystemHash = 0xBA150150u;
         private const uint SubtitleCueLaneHash = SubtitleCueSignal.LaneHash; // SUC1
+        private const uint SubtitleCueDropWarningHash = 0x53544452u; // STDR.
+        private const uint SubtitleCueDropContextHash = 0x53544344u; // STCD.
+        private const uint SubtitleCueAcquireContextHash = 0x53544151u; // STAQ.
+        private const uint SubtitleCueRegisterContextHash = 0x53545247u; // STRG.
+        private const uint SubtitleCueOverwriteContextHash = 0x53544F57u; // STOW.
+        private const uint SubtitleCueSignalOverflowContextHash = 0x53544F56u; // STOV.
+        private const uint SubtitleCuePublishSignalDropContextHash = 0x53545044u; // STPD.
         private const int DefaultSampleRate = 48000;
         private const float SlowDecodeDumpThresholdMs = 0.5f;
         private const BufferID SubtitleCueStateBufferId = (BufferID)15070550;
@@ -147,6 +155,7 @@ namespace Hecton8.UI
         private static int s_activeCueCount;
         private static int s_cueSignalCountThisFrame;
         private static int s_droppedCueCount;
+        private static int s_lastCueDropTelemetryFrame = -1;
         private static int s_decodedCharactersThisFrame;
         private static int s_missingTokenHashesThisFrame;
         private static uint s_lastTokenHash;
@@ -166,6 +175,8 @@ namespace Hecton8.UI
         public static uint CurrentPresentationFrame => s_lastPreparedFrame;
         public static int CurrentSampleRate => math.max(1, s_sampleRate);
         public static int ActiveCueCount => s_activeCueCount;
+        public static int DroppedCueCount => Volatile.Read(ref s_droppedCueCount);
+        public static int SignalPushDropCount => Volatile.Read(ref s_x001DirectSignalPushDropCount_BabelSubtitleSyncRuntime);
         public static int EditorAudioFrameOffset => s_editorAudioFrameOffset;
         public static bool RollbackStateExcluded => true;
         public static bool LayoutValid => EnsureSubtitleLayoutValid();
@@ -184,18 +195,9 @@ namespace Hecton8.UI
             s_uiOptimizationTelemetryHandle = default;
             s_telemetryCursor = 0;
             s_uiOptimizationTelemetryCursor = 0;
-            s_nextCueSlot = 0;
-            s_activeCueCount = 0;
-            s_cueSignalCountThisFrame = 0;
-            s_droppedCueCount = 0;
-            s_decodedCharactersThisFrame = 0;
-            s_missingTokenHashesThisFrame = 0;
-            s_lastTokenHash = 0u;
+            ResetCueRuntimeStateForVaultRebind();
             s_audioFrameClock = 0u;
             s_sampleRate = DefaultSampleRate;
-            s_lastPreparedFrame = 0u;
-            s_fallbackPresentationFrame = 0u;
-            s_uiOptimizationWriteSequence = 0u;
             s_editorAudioFrameOffset = 0;
             s_initialized = false;
             s_signalBusInitialized = false;
@@ -215,7 +217,24 @@ namespace Hecton8.UI
             s_activeMutationBufferId = default;
             s_activeMutationGuardMask = 0ul;
             s_vault = vault;
+            ResetCueRuntimeStateForVaultRebind();
             s_initialized = false;
+        }
+
+        private static void ResetCueRuntimeStateForVaultRebind()
+        {
+            s_nextCueSlot = 0;
+            s_activeCueCount = 0;
+            s_cueSignalCountThisFrame = 0;
+            Volatile.Write(ref s_x001DirectSignalPushDropCount_BabelSubtitleSyncRuntime, 0);
+            Volatile.Write(ref s_droppedCueCount, 0);
+            Volatile.Write(ref s_lastCueDropTelemetryFrame, -1);
+            s_decodedCharactersThisFrame = 0;
+            s_missingTokenHashesThisFrame = 0;
+            s_lastTokenHash = 0u;
+            s_lastPreparedFrame = 0u;
+            s_fallbackPresentationFrame = 0u;
+            s_uiOptimizationWriteSequence = 0u;
         }
 
         public static bool EnsureInitialized()
@@ -377,6 +396,8 @@ namespace Hecton8.UI
             if (tokenHash == 0u)
                 return false;
 
+            EnsureSignalBusInitializedCold();
+
             SubtitleCueSignal signal = default;
             signal.TokenHash = tokenHash;
             signal.StartAudioFrame = startAudioFrame;
@@ -384,7 +405,11 @@ namespace Hecton8.UI
             signal.Priority = priority;
             signal.Flags = PackSignalFlags(flags);
             signal.SourceHash = SystemHash;
-            return SignalBus<SubtitleCueSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_BabelSubtitleSyncRuntime);
+            if (SignalBus<SubtitleCueSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_BabelSubtitleSyncRuntime))
+                return true;
+
+            RecordCueDrop(tokenHash, SystemHash, SubtitleCuePublishSignalDropContextHash);
+            return false;
         }
 
         public static void RecordDecode(uint tokenHash, int decodedCharacters, bool missingTokenHash, float utf8DecodeMilliseconds)
@@ -480,7 +505,7 @@ namespace Hecton8.UI
                 entry.WriteSequence = ++s_uiOptimizationWriteSequence;
                 entry.LastTokenHash = s_lastTokenHash;
                 entry.MissingTokenHashCount = (uint)math.max(0, s_missingTokenHashesThisFrame);
-                entry.DroppedCueCount = (uint)math.max(0, s_droppedCueCount);
+                entry.DroppedCueCount = (uint)math.max(0, Volatile.Read(ref s_droppedCueCount));
                 telemetry[slot] = entry;
             }
             finally
@@ -969,14 +994,17 @@ namespace Hecton8.UI
         private static bool RegisterCue(uint tokenHash, uint startAudioFrame, float durationSeconds, uint flags, uint sourceHash = 0u)
         {
             if (!TryCompletePendingCueEvaluation() || !TryAcquireCueMutationBuffer(out NativeArray<SubtitleCueDTO> cues))
+            {
+                RecordCueDrop(tokenHash, sourceHash, SubtitleCueAcquireContextHash);
                 return false;
+            }
 
             try
             {
-                int slot = FindCueSlot(cues);
+                int slot = FindCueSlot(cues, tokenHash, sourceHash);
                 if ((uint)slot >= (uint)cues.Length)
                 {
-                    s_droppedCueCount++;
+                    RecordCueDrop(tokenHash, sourceHash, SubtitleCueRegisterContextHash);
                     return false;
                 }
 
@@ -996,7 +1024,7 @@ namespace Hecton8.UI
             }
         }
 
-        private static int FindCueSlot(NativeArray<SubtitleCueDTO> cues)
+        private static int FindCueSlot(NativeArray<SubtitleCueDTO> cues, uint tokenHash, uint sourceHash)
         {
             int count = math.min(MaxSubtitleCueCount, cues.Length);
             for (int i = 0; i < count; i++)
@@ -1019,7 +1047,7 @@ namespace Hecton8.UI
             s_nextCueSlot++;
             if (s_nextCueSlot >= count)
                 s_nextCueSlot = 0;
-            s_droppedCueCount++;
+            RecordCueDrop(tokenHash, sourceHash, SubtitleCueOverwriteContextHash);
             return overwriteSlot;
         }
 
@@ -1027,6 +1055,9 @@ namespace Hecton8.UI
         {
             ReadOnlySpan<SubtitleCueSignal> signals = SignalBus<SubtitleCueSignal>.GetFrameSnapshot();
             int count = math.min(signals.Length, MaxSubtitleCueCount);
+            if (signals.Length > count)
+                RecordCueDrop(0u, 0u, SubtitleCueSignalOverflowContextHash, signals.Length - count);
+
             for (int i = 0; i < count; i++)
             {
                 SubtitleCueSignal signal = signals[i];
@@ -1043,6 +1074,41 @@ namespace Hecton8.UI
                 uint startAudioFrame = signal.StartAudioFrame != 0u ? signal.StartAudioFrame : s_audioFrameClock;
                 RegisterCue(signal.TokenHash, startAudioFrame, duration, flags, signal.SourceHash);
                 s_cueSignalCountThisFrame++;
+            }
+        }
+
+        private static void RecordCueDrop(uint tokenHash, uint sourceHash, uint contextHash)
+        {
+            RecordCueDrop(tokenHash, sourceHash, contextHash, 1);
+        }
+
+        private static void RecordCueDrop(uint tokenHash, uint sourceHash, uint contextHash, int droppedCount)
+        {
+            if (droppedCount <= 0)
+                return;
+
+            int droppedTotal = AddDroppedCueCountSaturated(droppedCount);
+
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (Interlocked.Exchange(ref s_lastCueDropTelemetryFrame, frame) == frame)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                SubtitleCueDropWarningHash,
+                SubtitleCueDropContextHash ^ contextHash ^ tokenHash ^ sourceHash,
+                math.max(1, droppedTotal));
+        }
+
+        private static int AddDroppedCueCountSaturated(int droppedCount)
+        {
+            while (true)
+            {
+                int current = Volatile.Read(ref s_droppedCueCount);
+                int updated = current > int.MaxValue - droppedCount
+                    ? int.MaxValue
+                    : current + droppedCount;
+                if (Interlocked.CompareExchange(ref s_droppedCueCount, updated, current) == current)
+                    return updated;
             }
         }
 
@@ -1202,7 +1268,7 @@ namespace Hecton8.UI
                 entry.CueSignalCount = (uint)math.max(0, s_cueSignalCountThisFrame);
                 entry.GlobalQualityWeight = ResolveGlobalQualityWeight();
                 entry.Flags = s_layoutValid ? 0u : FlagFault;
-                entry.DroppedCueCount = (uint)math.max(0, s_droppedCueCount);
+                entry.DroppedCueCount = (uint)math.max(0, Volatile.Read(ref s_droppedCueCount));
                 entry.LayoutAuditHash = 0x15015032u;
                 entry.BufferIdCueState = (uint)SubtitleCueStateBufferId;
                 entry.BufferIdTelemetry = (uint)SubtitleCueTelemetryBufferId;

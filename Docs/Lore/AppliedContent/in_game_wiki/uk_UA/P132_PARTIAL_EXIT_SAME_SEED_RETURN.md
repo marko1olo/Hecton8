@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "Частковий вихід: повернення в той самий seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# Частковий вихід: повернення в той самий seed
 
-UA LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.
+Частковий вихід - це вікно відновлення, а не скидання. Гравець отримує повітря, час на ремонт і відстань від води, а потім повертається на той самий HECTON-8 з тими самими маршрутами, шрамами й нерозв'язаними доказами. Знання зберігається як тиск, а не як успадкована сила.
 
 ## Scanner
 
-UA LOC HOLD: Extraction possible. Closure not included.
+Тимчасовий вектор підбору підтверджено. Той самий океан лишається під тим самим контрактом.
 
 ## Terminal
 
-UA LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
+ПОВІДОМЛЕННЯ ЧАСТКОВОГО ВИХОДУ: тимчасовий підбір Black Keel прийнято; повернення в той самий seed дозволено під продовженням lien; маршрутні попередження, custody-записи й відкриті пакети доказів зберігаються; геологія і правда світу незмінні.
 
 ## Audio
 
-UA LOC HOLD: You left the pressure. You did not leave the contract.
+Ти пішов від тиску. Контракт зберіг твоє місце.
 
 ## Field Note
 
-UA LOC HOLD: Let the player breathe, then make the same ocean still be there.
+Подих на орбіті не є свободою, якщо слот повернення вже виставлено в рахунок.
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/uk_UA. -->

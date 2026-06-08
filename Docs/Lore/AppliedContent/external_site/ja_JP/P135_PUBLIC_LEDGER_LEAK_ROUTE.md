@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "公開台帳リーク"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# 公開台帳リーク
 
-JP LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+公開台帳リークは完璧な内部告発幻想ではない。狭いrelay窓を抜けるパケットであり、witness hashと否定しにくいだけのcustodyを持つが、安全にするには欠けた部分が多すぎる。Tau Cetiは記録を公開できるが、水中の誰かを救うには遅すぎる。
 
-## Scanner
-
-JP LOC HOLD: You can leak truth before you understand all of it.
-
-## Terminal
-
-JP LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-JP LOC HOLD: The truth leaves first. You may not like who reads it.
-
-## Field Note
-
-JP LOC HOLD: Public does not mean safe. It means harder to erase.
+その遅延こそが要点である。Deep Reachはclaimを単純に削除できないが、プレイヤーも次に誰がそれを使うかを決められない。保険会社、競合、公的裁判所、Marauder pool、企業部門は同じ傷を別々に読む。この結末は真実を埋めにくくし、同時に所有しにくくする。
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/ja_JP. -->

@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Repisa del impacto"
+title: "Plataforma del impacto"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Repisa del impacto
+# Plataforma del impacto
 
-HECTON-8 empieza en la línea de agua: una cápsula de descenso dañada, una repisa alienígena luminosa y un carrier demasiado lejano para responder con claridad. El primer misterio no es qué vive abajo, sino por qué la cadena de rescate ya parece hostil.
-
-## Scanner
-
-Restos de la cápsula batial. Bastidor de presión intacto, paquete de ascenso destruido. Puede mantenerte con vida, no llevarte a casa.
-
-## Terminal
-
-PAQUETE DE ASCENSO: ausente. NÚCLEO DE ENLACE: fractura detectada. CONTACTO CON CARRIER: retrasado.
-
-## Audio
-
-Handshake de Black Keel recibido. Integridad del paquete por debajo del umbral de recuperación. Repito: umbral no alcanzado.
-
-## Field Note
-
-Si la carcasa aún mantiene presión, no la desmontes entera. Un mal refugio vale más que un inventario limpio.
+La Plataforma del impacto es la primera habitación del jugador y su primera escena del crimen. Una cápsula de descenso yace medio enterrada en hierba salina y cerámica tibia, demasiado dañada para marcharse y demasiado útil para abandonarla. Su bastidor superviviente da refugio, chatarra, objetivos de escáner y una línea hacia Black Keel que suena a procedimiento antes de sonar humana. Ese tono importa. El carrier no responde como un amigo. Hace inventario del fallo: paquete de ascenso perdido, uplink fracturado, operador vivo, autoridad de recuperación sin resolver. El lugar inicial enseña HECTON-8 sin sermón. La belleza existe: bioluminiscencia somera, color de arrecife, luz de tormenta bajo Aegir. También existe la violencia industrial: piezas marcadas, cicatrices de impacto, lenguaje de reclamación, una cadena de rescate que ya cuenta costes. La primera pregunta es práctica: seguir con vida. La segunda llega dentro del mismo pecio: ¿a quién beneficia que sobrevivas?
 
 <!-- External Site; generated from P001_CRASH_SHELF/es_ES. -->

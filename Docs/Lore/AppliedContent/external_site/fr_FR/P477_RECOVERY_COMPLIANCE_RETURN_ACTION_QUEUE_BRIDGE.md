@@ -1,0 +1,44 @@
+---
+packet_id: P477_RECOVERY_COMPLIANCE_RETURN_ACTION_QUEUE_BRIDGE
+release_set_id: RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE
+article_id: applied_lore.recovery_compliance_return_action_queue_bridge
+unlock_id: unlock.recovery_compliance_return_action_queue_bridge
+poi_tags: poi.return_action_queue_strip;poi.black_keel_relay_receipt
+biome_tags: 
+locale: fr_FR
+surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "File d'action de retour"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# File d'action de retour
+
+## Ce que prouve l'enregistrement
+
+Une réponse tardive de Deep Reach n'est pas une promesse de secours. La file exige coordonnées, substrat, accès Atlas, hachages témoins, silence, quarantaine et conformité avant de déplacer un corps.
+
+EXTRAIT DE TERMINAL RÉCUPÉRÉ // File d'action de retour
+
+Une réponse tardive de Deep Reach n'est pas une promesse de secours. La file exige coordonnées, substrat, accès Atlas, hachages témoins, silence, quarantaine et conformité avant de déplacer un corps.
+
+Traitement de la preuve: Bande de file active: position, substrat, accès, hachage témoin, porte de quarantaine, pression de conformité.
+
+Ne pas clore la conclusion tant que route, garde, état des dégâts, hachage témoin et chemin du destinataire n'ont pas résisté à l'examen.
+
+## Comment le lire
+
+Bande de file active: position, substrat, accès, hachage témoin, porte de quarantaine, pression de conformité.
+
+Si la file demande ta preuve avant ton air, lis-la comme pression de garde.
+
+Traitement de la preuve: Bande de file active: position, substrat, accès, hachage témoin, porte de quarantaine, pression de conformité.
+
+Si la file demande ta preuve avant ton air, lis-la comme pression de garde.
+
+<!-- External Site; generated from P477_RECOVERY_COMPLIANCE_RETURN_ACTION_QUEUE_BRIDGE/fr_FR. -->

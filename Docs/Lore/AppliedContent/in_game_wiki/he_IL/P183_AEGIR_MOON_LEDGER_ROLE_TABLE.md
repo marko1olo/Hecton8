@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Moon Ledger Role Table"
+title: "יומן נתיבי הירחים של Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ledger Role Table
+# יומן נתיבי הירחים של Aegir
 
-HE LOC HOLD: The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.
+יומן הירחים של Aegir נותן לירחים קרובים תפקידי נתיב קשיחים ומשאיר את HECTON-8 כירח האוקיינוס שבו נלחמים על התביעה העמוקה. השמים נראים מיושבים בלי להפוך כל ירח ליעד מובטח.
 
 ## Scanner
 
-HE LOC HOLD: Aegir moons are not decoration; each public moon label carries a route or salvage role.
+ירחי Aegir מרוויחים את שמם לפי מה שהם שוברים, מסתירים, מפזרים, ממסרים או מוכרים.
 
 ## Terminal
 
-HE LOC HOLD: LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+יומן: גזירת קרינה Skarn, מיסוך ממסר Vela, פיזור קרח Claw, מפות נתיב ציבוריות Lumen, תנועת שמועות הסגר Thorne, salvage תעשייתי Anvil, תנועת חלון גבוה Kestrel, תביעה עמוקה HECTON, כלכלת משואות מתות Mute.
 
 ## Audio
 
-HE LOC HOLD: The system has more bodies than stories. Good. Use them as pressure.
+יותר גופים. יותר תירוצים. יותר דרכים שבהן עזרה מחמיצה.
 
 ## Field Note
 
-HE LOC HOLD: Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+ירח האוקיינוס לבד מתחת למים, לא לבד במערכת.
 
 <!-- In-Game Wiki; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/he_IL. -->

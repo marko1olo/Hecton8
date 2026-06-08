@@ -7,34 +7,34 @@ poi_tags: poi.brine_density_marker;poi.canyon_current_gate
 biome_tags: biome.brine_canyon;biome.drop_zone
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Escada de Rota do Cânion de Salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# Escada de Rota do Cânion de Salmoura
 
-PT-BR LOC HOLD: Brine canyons make depth progression physical. Dense brine layers, mineral walls, thermal leaks and acoustic distortion create routes that teach the player why deeper travel requires better instruments and better pressure discipline.
+Cânions de salmoura tornam física a progressão de profundidade. Camadas densas, paredes minerais, vazamentos térmicos e distorção acústica ensinam por que viagens mais profundas exigem instrumentos melhores e disciplina de pressão.
 
 ## Scanner
 
-PT-BR LOC HOLD: Brine density marker. The descent route is chemistry with walls.
+Marcador de densidade de salmoura. A descida é química com paredes.
 
 ## Terminal
 
-PT-BR LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
+CONTROLE DO CÂNION DE SALMOURA: interface de densidade estável para descida em estágios. Aviso: distorção de relay acústico, erro de flutuabilidade do veículo e eventos de piso falso abaixo de 1800 m.
 
 ## Audio
 
-PT-BR LOC HOLD: The canyon is a staircase made of wrong water.
+O cânion é uma escada feita de água errada.
 
 ## Field Note
 
-PT-BR LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+Você não nada pelo cânion. Você negocia com camadas mais pesadas que o traje.
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/pt_BR. -->

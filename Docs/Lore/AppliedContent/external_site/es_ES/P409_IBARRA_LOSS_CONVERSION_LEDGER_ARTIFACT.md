@@ -9,32 +9,22 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Ibarra Loss Ledger"
+title: "Libro Ibarra de conversión de pérdidas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Ibarra Loss Ledger
+# Libro Ibarra de conversión de pérdidas
 
-ES LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## Contabilidad Que Sobrevivió A La Colonia
 
-## Scanner
+El ledger Ibarra debe sentirse más frío que una lista de desaparecidos. Una lista todavía guarda duelo, incluso cuando miente. Un ledger convierte. Recibe módulos de hábitat dañados, tool banks, sample custody, missing personnel y salvage rights, y coloca cada hecho en una categoría que puede seguir moviéndose por contratos después de que HECTON-8 queda en silencio.
 
-ES LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Este es el puente entre la vieja liability de Deep Reach y la deuda presente del jugador. Si las personas se vuelven unresolved personnel load, la corporación puede admitir que se fueron sin nombrar asesinato. Si la evidencia se vuelve material custody, puede comprarse, enterrarse, desviarse o asegurarse. Si el claim sigue continuous, la propiedad vive más que los trabajadores que mantenían el lugar funcionando.
 
-## Terminal
-
-ES LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-ES LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-ES LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+El ledger da al jugador un poder duro. Subirlo no solo revela lo ocurrido. Lleva algo que el mercado ya sabe valorar. Vender, publicar, redirigir o enterrar evidencia se vuelve sucio porque el documento fue diseñado para que cada elección resulte legible en el balance sheet de alguien.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/es_ES. -->

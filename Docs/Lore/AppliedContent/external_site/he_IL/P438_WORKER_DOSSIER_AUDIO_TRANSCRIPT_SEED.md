@@ -9,32 +9,22 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "תמליל שמע תיק עובד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Worker Dossier Audio Transcript Seed
+# תמליל שמע תיק עובד
 
-HE LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+## מושבה לפני שהיא נעשית ראיה
 
-## Scanner
+שמע תיקי העובדים לא צריך להציג מתים כחפצי מזבח. הוא צריך לתת להם לעבוד. ראש משאבות בודקת שסתום. נוטריון relay מתלונן על לוח. חובשת מתווכחת עם water ledger. מפעיל fabricator רושם אישור כלי כי הכלי חשוב מכל נאום על אומץ.
 
-HE LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+השגרה הזו נותנת משקל להריסות. השחקן צריך לשמוע שמות לפני אנדרטאות, עבודות לפני טרגדיה, וגירויים קטנים לפני שהשקר הגדול נסגר סביבם. HECTON-8 לא הייתה במה ל-Marauder. היא הייתה מקום עבודה עם הרגלים, טינות, בדיחות, הודעות חוב ומתמטיקת לחץ.
 
-## Terminal
-
-HE LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
-
-## Audio
-
-HE LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
-
-## Field Note
-
-HE LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+השכבה הזו מגינה על הקאנון ממלודרמה. אין וו משפחתי שהופך את השחקן למיוחד. האשמה מקצועית. אתה מזהה נהלים, תגים והחלטות רעות כי השתייכת למערכת כזו, ועכשיו המערכת מדברת דרך פקודות עבודה שטבעו.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/he_IL. -->

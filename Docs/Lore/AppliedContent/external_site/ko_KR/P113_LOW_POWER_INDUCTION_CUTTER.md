@@ -9,32 +9,18 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "저출력 유도 절단기"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# 저출력 유도 절단기
 
-KO LOC HOLD: Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal.
+첫 커터는 허가처럼 느껴지기 때문에 위험하다. service hatches, 볼트, 상자 잠금을 열고, 모든 장애물이 문이라는 환상을 거부한다. pressure glass, 활성 리브, Atlas-grown seams는 플레이어가 아직 이해하지 못한 일을 하고 있다.
 
-## Scanner
-
-KO LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
-
-## Terminal
-
-KO LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
-
-## Audio
-
-KO LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
-
-## Field Note
-
-KO LOC HOLD: The cutter should feel valuable because it is limited.
+그 제한이 설계 가치다. 이 도구는 폭력보다 먼저 기능을 읽으라고 요구한다. 절단이 만능 동사가 아니라 결정이 될 때 HECTON-8은 더 깊어진다.
 
 <!-- External Site; generated from P113_LOW_POWER_INDUCTION_CUTTER/ko_KR. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TRAJES DE MERGULHO CLASSE-IV E EQUIPAMENTO ABISSAL
 
 > **Fonte:** Megacorporação Deep Reach, Manual do Intendente de Equipamentos.

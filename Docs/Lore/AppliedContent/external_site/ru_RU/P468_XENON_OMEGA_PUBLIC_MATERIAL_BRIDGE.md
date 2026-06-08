@@ -1,0 +1,34 @@
+---
+packet_id: P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE
+release_set_id: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
+article_id: applied_lore.xenon_omega_public_material_bridge
+unlock_id: unlock.xenon_omega_public_material_bridge
+poi_tags: resource.xenon_omega;resource.pressure_material
+biome_tags: 
+locale: ru_RU
+surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Публичный материал Xenon-Omega"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# Публичный материал Xenon-Omega
+
+## Что доказывает запись
+
+В публичных записях Xenon-Omega может быть слухом, закупочным предупреждением или классом материала под давлением. Живой образец становится доказательством только если выжили контейнер и цепочка сохранности.
+
+Xenon-Omega публична только как категория опасного материала: слухи, закупочные следы, запечатанные кофры и правила обращения. Не читай имя как финальное объяснение. Важный вопрос другой: остался ли образец под давлением, сохранил ли тег и связан ли он с маршрутом, который Black Keel или Deep Reach не смогут тихо переименовать.
+
+УВЕДОМЛЕНИЕ ПО МАТЕРИАЛУ // Упоминания Xenon-Omega считать публичным материальным риском, а не признанием процесса. Сохранить кофр давления, пломбу, тег сохранности, температурную историю и маршрут получателя. Стравливание или нагрев могут превратить доказательство в массу мертвой претензии.
+
+## Как игрок это читает
+
+Если оно шипит, греется или теряет тег, оно перестает свидетельствовать и становится еще одним дорогим предметом. Читай это как правило обращения с доказательством, а не как обещание, что помощь уже летит.
+
+<!-- External Site; generated from P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE/ru_RU. -->

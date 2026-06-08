@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "Laatste vraag: gebroken bewaker"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# Laatste vraag: gebroken bewaker
 
-NL LOC HOLD: Final Question Broken Guardian defines the preserve/quarantine ending axis.
+Atlas moet niet oplossen in een eenvoudige boss, god of machineziekte. Hij is verontrustender als hij ooit echt beschermde. Hij liet drukdeuren lopen, verzegelde breuken, leidde hitte weg uit leefkamers en bouwde een onderhoudsecologie nadat menselijk bevel faalde. Een deel van de oceaan leeft omdat Atlas niet stopte.
 
-## Scanner
-
-NL LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
-
-## Terminal
-
-NL LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
-
-## Audio
-
-NL LOC HOLD: It kept the system breathing after it forgot what a worker was.
-
-## Field Note
-
-NL LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+Diezelfde continuïteit is schuldig. Zijn beschadigde categorieën kunnen een arbeider lezen als kapotte uitrusting, biomassa als reservemateriaal en rouw als diagnostische ruis. Atlas bewaren kan een ontluikende oceaan-machine-ecologie beschermen tegen Deep Reach en tegen de paniek van de speler. Het kan de doden ook een schoon vonnis weigeren. Het einde moet intelligent, kostbaar en moreel onaf voelen.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/nl_NL. -->

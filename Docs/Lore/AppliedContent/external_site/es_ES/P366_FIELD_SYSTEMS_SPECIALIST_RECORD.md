@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Field Systems Specialist Record"
+title: "Registro de especialista en sistemas de campo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Field Systems Specialist Record
+# Registro de especialista en sistemas de campo
 
-ES LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.
+El personaje jugador de HECTON-8 entra en el océano con una cicatriz práctica: antiguo trabajo de sistemas de campo en Deep Reach, acceso a infraestructura de evacuación, autorización revocada y memoria procedimental suficiente para leer maquinaria ahogada como prueba. Ahora es Marauder, no oficial de la compañía ni héroe pasajero. Una bomba rota, un sello de ruta o una frase de responsabilidad importan porque el operador entiende cómo esos sistemas debían proteger a los trabajadores antes de volverse papeleo.
 
 ## Scanner
 
-ES LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+Antigua credencial de sistemas de campo. No era mando. Trabajo de infraestructura con acceso suficiente para reconocer dónde se enterró una ruta.
 
 ## Terminal
 
-ES LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+RASTRO DE PERSONAL: sistemas de campo, infraestructura de evacuación, certificación route-safe. Autorización revocada tras la revisión del silencio de Aegir. La caché de procedimientos aún coincide con la secuencia del operador.
 
 ## Audio
 
-ES LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+Tú nunca firmaste la mentira. Conocías la gramática que la dejaba pasar la inspección.
 
 ## Field Note
 
-ES LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+La placa dejó de abrir puertas. No borró de las manos el orden del fallo.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/es_ES. -->

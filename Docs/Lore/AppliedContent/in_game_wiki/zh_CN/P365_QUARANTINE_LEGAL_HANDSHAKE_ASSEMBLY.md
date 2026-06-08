@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Quarantine Legal Handshake Assembly"
+title: "隔离法律握手组件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Quarantine Legal Handshake Assembly
+# 隔离法律握手组件
 
-ZH LOC HOLD: The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.
+最终逃离组件同时是法律、医疗与证据问题。Quarantine status、receiver identity、payload custody 和 evidence state 决定 ascent 是救援、claim capture，还是 public proof。
 
 ## Scanner
 
-ZH LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.
+握手插座。胶囊可以机械上准备完毕，却仍属于错误的 receiver。
 
 ## Terminal
 
-ZH LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.
+RECOVERY HANDSHAKE: 需要 receiver key。Keelmark 接受 mass 和 lien。Recovery Compliance 接受 coordinates 和 quarantine status。Public ledger 延后接受 proof。Unkeyed launch 默认进入 custody dispute。
 
 ## Audio
 
-ZH LOC HOLD: The last part is not metal. It is who gets to call you recovered.
+谁回应，谁就决定救援是什么意思。
 
 ## Field Note
 
-CN LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+最后一个组件不是金属，而是有权称你为 recovered 的系统名称。
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/zh_CN. -->

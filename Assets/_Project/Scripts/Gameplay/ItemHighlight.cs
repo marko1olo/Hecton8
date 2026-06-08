@@ -366,17 +366,20 @@ namespace Hecton8.Gameplay
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
+            playerAup = AbsoluteUniversePosition.Invalid();
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext != null &&
-                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                snapshot.Aup.IsFinite())
+            if (playerContext != null)
             {
-                playerAup = snapshot.Aup;
-                return true;
-            }
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    snapshot.Aup.IsFinite())
+                {
+                    playerAup = snapshot.Aup;
+                    return true;
+                }
 
-            if (_cachedPlayerMovement == null && playerContext != null)
-                _cachedPlayerMovement = playerContext.PlayerMovement;
+                return false;
+            }
 
             HectonPlayerMovement playerMovement = _cachedPlayerMovement;
             if (playerMovement != null)
@@ -389,7 +392,6 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            playerAup = default;
             return false;
         }
 

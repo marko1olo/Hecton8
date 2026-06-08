@@ -9,32 +9,16 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "광지연 권한"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# 광지연 권한
 
-KO LOC HOLD: Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather.
-
-## Scanner
-
-KO LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
-
-## Terminal
-
-KO LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
-
-## Audio
-
-KO LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
-
-## Field Note
-
-KO LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+HECTON-8의 조난 호출은 의미를 담은 물리적 화물이다. 침수된 마스트를 떠나 Aegir 공간을 광속으로 건너고, 릴레이 버퍼에서 기다린 뒤, 이미 위험의 가격을 아는 대기열을 통해 Black Keel에 도착한다. 첫 지연은 정직한 거리다. 그 뒤의 지연은 인간의 것이다. 보관 등급, 폭풍 창, 책임 문구, 사람보다 자산에 먼저 답하는 운반선의 습관. 그래서 답장은 기술적으로 새것이어도 무너지는 압력실 안에서는 쓸모없을 수 있다.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/ko_KR. -->

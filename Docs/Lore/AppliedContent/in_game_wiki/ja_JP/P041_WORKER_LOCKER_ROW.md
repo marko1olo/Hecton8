@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 作業員ロッカー列
 
-ロッカー列はHECTON-8を普通の労働の場に固定する。道具、塗料、食料信用、フロンティア印が理論より先に出る。
+作業員ロッカー列は HECTON-8 を普通の労働に接地する。工具、塗料、食料クレジット、辺境の印は、災害が理論になる前に現れる。
 
 ## Scanner
 
@@ -27,7 +27,7 @@ localization_flags: 0
 
 ## Terminal
 
-ロッカー監査: 個人封印は圧壊後に破損。複数タグにBarnard印と未払い前借り。
+COLONY AUDIT: 個人保管と Barnard 印は、ロッカー列を名前のある乗員と作業経路に結び付ける。
 
 ## Audio
 

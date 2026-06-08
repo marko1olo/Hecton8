@@ -68,14 +68,45 @@ namespace Hecton8.Tests.Editor
         private const string HabitatDamageBakePipelinePath = "Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs";
 
         [Test]
+        public void NativeAllocationContractsAndSentinelStayInDirectlyReferencedAssemblies()
+        {
+            string contracts = ReadProjectFile("Assets/_Project/Scripts/Core/Contracts/NativeAllocationContracts.cs");
+            string contractsAsmdef = ReadProjectFile("Assets/_Project/Scripts/Core/Contracts/Hecton8.Core.Contracts.asmdef");
+            string coreAsmdef = ReadProjectFile("Assets/_Project/Scripts/Hecton8.Core.asmdef");
+            string coreMemoryAsmdef = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/Hecton8.Core.Memory.asmdef");
+
+            StringAssert.Contains("\"name\": \"Hecton8.Core.Contracts\"", contractsAsmdef);
+            StringAssert.Contains("\"Hecton8.Core.Contracts\"", coreAsmdef);
+            StringAssert.Contains("\"Hecton8.Core.Memory\"", coreAsmdef);
+            StringAssert.Contains("\"Hecton8.Core.Contracts\"", coreMemoryAsmdef);
+            StringAssert.Contains("namespace Hecton8.Core", contracts);
+            StringAssert.Contains("public enum NativeAllocationLifetime : byte", contracts);
+            StringAssert.Contains("public struct NativeAllocationSnapshotSource", contracts);
+
+            AssertAsmdefReferencesCoreContracts("Assets/_Project/Scripts/Dev/SpaceEngine098/Hecton8.Dev.SpaceEngine098.asmdef");
+            AssertAsmdefReferencesCoreContracts("Assets/_Project/Scripts/Editor/GeographySanity/Hecton8.World.GeographySanity.Editor.asmdef");
+            AssertAsmdefReferencesCoreContracts("Assets/_Project/Scripts/Editor/GeologyForge/Hecton8.World.OfflineGeology.Editor.asmdef");
+            AssertAsmdefReferencesCoreContracts("Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/Hecton8.World.HydraulicErosionForge.Editor.asmdef");
+            AssertAsmdefReferencesCoreContracts("Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Hecton8.HabitatInteriorClutterForge.Editor.asmdef");
+            AssertAsmdefReferencesCoreContractsAndMemory("Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/Hecton8.World.OfflineGeometry.Editor.asmdef");
+            AssertAsmdefReferencesCoreContracts("Assets/_Project/Scripts/Editor/ProceduralGen/Hecton8.Editor.ProceduralGen.asmdef");
+            AssertAsmdefReferencesCoreContracts(TexturePackerAsmdefPath);
+            AssertAsmdefReferencesCoreContracts("Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/Hecton8.Habitat.Deformation.DamageBake.Editor.asmdef");
+            AssertAsmdefReferencesCoreContracts("Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef");
+            AssertAsmdefReferencesCoreContracts("Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/Hecton8.World.BiotaDensityMapBaker.Editor.asmdef");
+            AssertAsmdefReferencesCoreContractsAndMemory("Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/Hecton8.World.OfflineHadalTrenchBaker.Editor.asmdef");
+            AssertAsmdefReferencesCoreContractsAndMemory("Assets/_Project/Tests/Editor/SaveSystem/Hecton8.SaveSystem.EditModeTests.asmdef");
+        }
+
+        [Test]
         public void LSystemGenomeLabTracksPreviewAndTempJobNativeArrays()
         {
             string source = ReadProjectFile(LSystemGenomeLabPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("DisposePreviewArray(ref _previewExpandedSymbols, ref _previewExpandedSymbolsSentinelId)", source);
             StringAssert.Contains("NativeMemorySentinel.Unregister(sentinelId)", source);
             StringAssert.Contains("MockGenomesLabel", source);
@@ -103,7 +134,7 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<AnomalyBasinRecord>", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<byte>", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<float>(PillarTerrainCount", source);
@@ -129,16 +160,16 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
             StringAssert.Contains("private static NativeQueue<T> AllocateTrackedTempJobQueue<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.RegisterNativeQueue(queue, capacity, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
+            StringAssert.Contains("sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(queue, capacity, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<AnomalyBasinRecord>", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<AnomalyBrinePoolBounds>", source);
             StringAssert.Contains("AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>", source);
-            StringAssert.Contains("DisposeTrackedQueue(ref pendingFloodStates", source);
+            StringAssert.Contains("DisposeTrackedQueue(ref pendingFloodStates, ref pendingFloodStatesSentinelId)", source);
             StringAssert.Contains("DisposeTracked(ref fissureInfluence)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "Anomaly harness NativeArray construction must stay centralized in AllocateTrackedTempJobArray.");
             Assert.AreEqual(1, CountOccurrences(source, "new NativeQueue<T>("), "Anomaly harness NativeQueue construction must stay centralized in AllocateTrackedTempJobQueue.");
             Assert.AreEqual(1, CountOccurrences(source, "RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)"), "Anomaly harness array registrations must stay centralized in AllocateTrackedTempJobArray.");
-            Assert.AreEqual(1, CountOccurrences(source, "RegisterNativeQueue(queue, capacity, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)"), "Anomaly harness queue registrations must stay centralized in AllocateTrackedTempJobQueue.");
+            Assert.AreEqual(1, CountOccurrences(source, "RegisterNativeQueueInstance(queue, capacity, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)"), "Anomaly harness queue registrations must stay centralized in AllocateTrackedTempJobQueue.");
 
             StringAssert.DoesNotContain("RegisterTempJobBuffers", source);
             StringAssert.DoesNotContain("RegisterTempJobArray", source);
@@ -153,6 +184,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("new NativeQueue<AnomalyBasinFloodFillState>", source);
             StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeArray(heightmap", source);
             StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeQueue(pendingFloodStates", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.UnregisterNativeQueue", source);
         }
 
         [Test]
@@ -196,9 +228,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(ThermalMeltSmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedTempJobArray<T>", source);
+            StringAssert.Contains("DisposeTrackedTempJobArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<float3>(2, nameof(positions)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<VoxelModifiedCellEntry>", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<VoxelSdfRaycastHit>", source);
@@ -224,9 +256,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(VoxelDeformationSmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedTempJobArray<T>", source);
+            StringAssert.Contains("DisposeTrackedTempJobArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<byte>(8, nameof(passability)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<ushort>(8, nameof(distance)", source);
             StringAssert.Contains("VoxelDynamicNavGridRuntime.ResolvePureVoidBlockCount(passability.Length)", source);
@@ -253,9 +285,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(BiomeTransitionSmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedTempJobArray<T>", source);
+            StringAssert.Contains("DisposeTrackedTempJobArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<BiomeTransitionSample>", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<BiomeTransitionFogSource>", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<AbsoluteUniversePositionBlit128>", source);
@@ -279,9 +311,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(BiomeBoundarySdfSmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTracked<T>", source);
+            StringAssert.Contains("DisposeTracked<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<byte>(CellCount, nameof(map)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<uint>(CellCount, nameof(hashes)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<BiomeBoundarySdfResult>(1, nameof(result)", source);
@@ -303,9 +335,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(OmegaAutonomySmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedNativeArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedNativeArray<int>(5, nameof(edgeOffsets)", source);
             StringAssert.Contains("AllocateTrackedNativeArray<byte>(4, nameof(storageCapacityByNode)", source);
             StringAssert.Contains("AllocateTrackedNativeArray<int>(8, nameof(intValues)", source);
@@ -328,9 +360,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(SpaceEngine098TerrainSmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTracked<T>", source);
+            StringAssert.Contains("DisposeTracked<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<float>(sampleCount, nameof(input)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<float3>(4, nameof(craterCenters)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<SpaceEngine098PipelineMetricSample>", source);
@@ -352,9 +384,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(FaunaRuntimeSmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedNativeArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedNativeArray<AbsoluteUniversePositionBlit128>", source);
             StringAssert.Contains("AllocateTrackedNativeArray<double>", source);
             StringAssert.Contains("AllocateTrackedNativeArray<FaunaParasiteAttachInput>", source);
@@ -380,9 +412,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(HectonSandboxAbyssalShelfSmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedTempJobArray<T>", source);
+            StringAssert.Contains("DisposeTrackedTempJobArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<AbsoluteUniversePosition>", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<HectonSandboxAbyssalShelfAuditSample>", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<HectonSandboxAbyssalShelfSampleReduction>", source);
@@ -405,9 +437,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(WorldPlanetaryCanvasSmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTracked<T>", source);
+            StringAssert.Contains("DisposeTracked<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<float>(CellCount, \"heights\"", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<float4>(CellCount, \"weights\"", source);
             StringAssert.Contains("DisposeTracked(ref slopeWeights)", source);
@@ -427,9 +459,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(SavePersistenceOmegaSmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedTempJobArray<T>", source);
+            StringAssert.Contains("DisposeTrackedTempJobArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<IndexedSectorBoundsProbe>(8, BoundsProbeLabel", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<byte>(probes.Length, BoundsProbeResultsLabel", source);
             StringAssert.Contains("DisposeTrackedTempJobArray(ref probes)", source);
@@ -452,15 +484,15 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
             StringAssert.Contains("private static NativeList<T> AllocateTrackedTempJobList<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedTempJobArray<T>", source);
+            StringAssert.Contains("DisposeTrackedTempJobArray<T>", source);
             StringAssert.Contains("private static void DisposeTrackedTempJobList<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(", source);
-            StringAssert.Contains("NativeMemorySentinel.RegisterNativeList(", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label)", source);
+            StringAssert.Contains("NativeMemorySentinel.RegisterNativeListInstance(", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
+            StringAssert.Contains("NativeMemorySentinel.Unregister(sentinelId)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<long>(1, RequestedSectorScratchLabel", source);
             StringAssert.Contains("AllocateTrackedTempJobList<PersistentWorldDeltaRecord>(16, RestoredRecordsScratchLabel)", source);
-            StringAssert.Contains("DisposeTrackedTempJobList(ref restoredRecords, RestoredRecordsScratchLabel)", source);
+            StringAssert.Contains("DisposeTrackedTempJobList(ref restoredRecords, ref restoredRecordsSentinelId)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "Save system runtime smoke array allocation must stay centralized in AllocateTrackedTempJobArray.");
             Assert.AreEqual(1, CountOccurrences(source, "new NativeList<T>("), "Save system runtime smoke list allocation must stay centralized in AllocateTrackedTempJobList.");
 
@@ -468,6 +500,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("new NativeList<PersistentWorldDeltaRecord>", source);
             StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeArray(requestedSectors", source);
             StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeList(restoredRecords", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.UnregisterNativeList", source);
             StringAssert.DoesNotContain("requestedSectors.Dispose()", source);
             StringAssert.DoesNotContain("restoredRecords.Dispose()", source);
         }
@@ -478,9 +511,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(SaveRecoverySmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedTempArray<T>", source);
+            StringAssert.Contains("DisposeTrackedTempArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Temp)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempArray<PersistentWorldDeltaRecord>(1, PersistentWorldDeltasLabel", source);
             StringAssert.Contains("AllocateTrackedTempArray<byte>(SmokeRawPayloadCapacityBytes, RawBufferLabel", source);
             StringAssert.Contains("AllocateTrackedTempArray<byte>(SmokeCompressedPayloadCapacityBytes, CompressedBufferLabel", source);
@@ -503,7 +536,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("private static NativeArray<byte> AllocateTempNativeArrayBuffer", source);
             StringAssert.Contains("NativeArray<byte> buffer = new NativeArray<byte>(length, Allocator.Temp, options);", source);
             StringAssert.Contains("RegisterTempNativeArrayBuffer(buffer, label)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(buffer)", source);
+            StringAssert.Contains("H8Memory.Release(ref buffer, NativeArrayOwnerSystem)", source);
             StringAssert.Contains("RestoreTempNativeArrayBufferSentinelOrThrow", source);
             StringAssert.Contains("AllocateTempNativeArrayBuffer(byteCount, MetadataWriteBufferLabel", source);
             StringAssert.Contains("AllocateTempNativeArrayBuffer((int)fileLength, MetadataReadBufferLabel", source);
@@ -547,7 +580,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("private static NativeArray<byte> AllocateTempNativeArrayBuffer", source);
             StringAssert.Contains("NativeArray<byte> buffer = new NativeArray<byte>(length, Allocator.Temp, options);", source);
             StringAssert.Contains("RegisterTempNativeArrayBuffer(buffer, label)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(buffer)", source);
+            StringAssert.Contains("H8Memory.Release(ref buffer, NativeArrayOwnerSystem)", source);
             StringAssert.Contains("RestoreTempNativeArrayBufferSentinelOrThrow", source);
             StringAssert.Contains("NativeArray<byte> payload = AllocateTempNativeArrayBuffer(", source);
             StringAssert.Contains("TelemetryDumpPayloadLabel", source);
@@ -572,8 +605,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("writeHandle.CompactStates = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<SectorCompactEntityStateRecord16>", source);
             StringAssert.Contains("writeHandle.FileBytes = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<byte>", source);
             StringAssert.Contains("writeHandle.RadixOffsets = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<int>", source);
-            StringAssert.Contains("UnregisterArray(SourceStates)", source);
-            StringAssert.Contains("UnregisterArray(RadixOffsets)", source);
+            StringAssert.Contains("DisposeRegisteredArray(ref SourceStates)", source);
+            StringAssert.Contains("DisposeRegisteredArray(ref RadixOffsets)", source);
+            StringAssert.Contains("DisposeTrackedNativeArrayByPointer(ref array)", source);
             StringAssert.Contains("JobHandle scheduledHandle = default;", source);
             StringAssert.Contains("scheduledHandle = buildHandle;", source);
             StringAssert.Contains("scheduledHandle = sortHandle;", source);
@@ -583,6 +617,21 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("writeHandle.Handle = scheduledHandle;", source);
             StringAssert.Contains("DisposeIndexedSectorEntityStateOverrideWriteDeferred(ref writeHandle, default);", source);
             Assert.AreEqual(1, CountOccurrences(source, "NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);"), "Indexed-sector entity-state write scratch allocation must stay centralized in AllocateRegisteredArray.");
+
+            int disposeMethodIndex = source.IndexOf("internal JobHandle DisposeDeferred(JobHandle dependency)", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(disposeMethodIndex, 0, source);
+            int disposeNextMethodIndex = source.IndexOf(
+                "private static NativeArray<T> AllocateRegisteredPersistentScratchNativeArray",
+                disposeMethodIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(disposeNextMethodIndex, disposeMethodIndex, source);
+
+            string disposeMethodBody = source.Substring(disposeMethodIndex, disposeNextMethodIndex - disposeMethodIndex);
+            StringAssert.Contains("disposeHandle.Complete();", disposeMethodBody);
+            StringAssert.Contains("Dispose();", disposeMethodBody);
+            StringAssert.DoesNotContain("UnregisterNativeMemorySentinel();", disposeMethodBody);
+            StringAssert.DoesNotContain("SourceStates.Dispose(disposeHandle);", disposeMethodBody);
+            StringAssert.DoesNotContain("RadixOffsets.Dispose(disposeHandle);", disposeMethodBody);
 
             StringAssert.DoesNotContain("internal void RegisterNativeMemorySentinel", source);
             StringAssert.DoesNotContain("writeHandle.RegisterNativeMemorySentinel()", source);
@@ -607,11 +656,11 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("windowBytes = AllocateCachedReadWindowBytes((int)windowLength, out windowBytesSentinelId);", source);
             StringAssert.Contains("BytesSentinelId = windowBytesSentinelId", source);
             StringAssert.Contains("DisposeCachedReadWindowBytes(ref window.Bytes, ref window.BytesSentinelId)", source);
-            StringAssert.Contains("RestoreCachedReadWindowSentinelOrThrow", source);
             StringAssert.Contains("private static NativeArray<byte> AllocateReadOnlyMappingBytes(int length)", source);
             StringAssert.Contains("fileBytes = AllocateReadOnlyMappingBytes((int)fileLength);", source);
             StringAssert.Contains("DisposeReadOnlyMappingBytes(ref fileBytes)", source);
-            StringAssert.Contains("RestoreReadOnlyMappingSentinelOrThrow", source);
+            StringAssert.DoesNotContain("RestoreCachedReadWindowSentinelOrThrow", source);
+            StringAssert.DoesNotContain("RestoreReadOnlyMappingSentinelOrThrow", source);
             Assert.AreEqual(2, CountOccurrences(source, "NativeArray<byte> bytes = new NativeArray<byte>(length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"), "Cached read window and read-only mapping byte allocations must stay centralized in their helper methods.");
 
             StringAssert.DoesNotContain("windowBytes = new NativeArray<byte>", source);
@@ -648,10 +697,10 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempArray<T>", source);
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedTempArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedTempJobArray<T>", source);
+            StringAssert.Contains("DisposeTrackedTempArray<T>", source);
+            StringAssert.Contains("DisposeTrackedTempJobArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempArray<WalFuzzerProfileDTO>(4, ProfilesScratchLabel", source);
             StringAssert.Contains("AllocateTrackedTempArray<byte>((int)info.Length, ProfileCsvBytesScratchLabel", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<WalFuzzerTelemetryEntry>(TelemetryCapacity, TelemetryScratchLabel", source);
@@ -709,7 +758,7 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<float>(pixelCount", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<HydraulicErosionMetricBlock>", source);
             StringAssert.Contains("DisposeTracked(ref metricBlocks)", source);
@@ -732,9 +781,10 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
             StringAssert.Contains("private static NativeQueue<HydraulicErosionHeightDelta> AllocateTrackedHeightDeltaQueue", source);
             StringAssert.Contains("registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.RegisterNativeQueue(queue, heightDeltaQueueCapacity, NativeMemoryOwner, HeightDeltaQueueLabel, NativeAllocationLifetime.TempJob)", source);
+            StringAssert.Contains("registrationId = NativeMemorySentinel.RegisterNativeQueueInstance(queue, heightDeltaQueueCapacity, NativeMemoryOwner, HeightDeltaQueueLabel, NativeAllocationLifetime.TempJob)", source);
             StringAssert.Contains("NativeMemorySentinel.Unregister(registrationId)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, HeightDeltaQueueLabel)", source);
+            StringAssert.Contains("DisposeTrackedQueue(ref heightDeltas, ref heightDeltasRegistrationId)", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.UnregisterNativeQueue", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<Color32>", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<ErosionSmokeMetrics>", source);
             StringAssert.Contains("AllocateTrackedHeightDeltaQueue(ResolveHeightDeltaQueueCapacity", source);
@@ -757,9 +807,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(PlanetaryCanvasSmokeTesterPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTracked<T>", source);
+            StringAssert.Contains("DisposeTracked<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<WorldProceduralFieldSampler.BiomeInfluenceCell>", source);
             StringAssert.Contains("DisposeTracked(ref influenceCells)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "Planetary canvas influence-cell construction must stay centralized in AllocateTrackedTempJobArray.");
@@ -778,9 +828,9 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("using Hecton8.Core;", source);
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTracked<T>", source);
+            StringAssert.Contains("DisposeTracked<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<MockAlignedLayout>", source);
             StringAssert.Contains("AllocateTrackedTempJobArray<double>", source);
             StringAssert.Contains("DisposeTracked(ref input)", source);
@@ -799,9 +849,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(BaseModuleCatalogEditorToolsPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedArray<T>", source);
+            StringAssert.Contains("DisposeTrackedArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("costs = AllocateTrackedArray<ModuleCostDTO>", source);
             StringAssert.Contains("DisposeTrackedArray(ref csvCosts)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "Base module catalog CSV scratch allocation must stay centralized in AllocateTrackedArray.");
@@ -816,9 +866,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(EconomyRecipeTunerWindowPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedArray<T>", source);
+            StringAssert.Contains("DisposeTrackedArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("binary = AllocateTrackedArray<byte>", source);
             StringAssert.Contains("constants = AllocateTrackedArray<ItemPhysicalConstantsDTO>", source);
             StringAssert.Contains("DisposeTrackedArray(ref binary)", source);
@@ -837,9 +887,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(Shinobu132CablePhysicsTunerWindowPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedArray<T>", source);
+            StringAssert.Contains("DisposeTrackedArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("csvBytes = AllocateTrackedArray<byte>", source);
             StringAssert.Contains("DisposeTrackedArray(ref csvBytes)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "Cable physics tuner CSV scratch allocation must stay centralized in AllocateTrackedArray.");
@@ -856,9 +906,10 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("using Hecton8.Core;", source);
             StringAssert.Contains("private static NativeList<int> AllocateTrackedResults", source);
-            StringAssert.Contains("private static void DisposeTrackedResults", source);
-            StringAssert.Contains("NativeMemorySentinel.RegisterNativeList(results, NativeMemoryOwner, label, NativeAllocationLifetime.Temp)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label)", source);
+            StringAssert.Contains("DisposeTrackedResults", source);
+            StringAssert.Contains("NativeMemorySentinel.RegisterNativeListInstance(results, NativeMemoryOwner, label, NativeAllocationLifetime.Temp)", source);
+            StringAssert.Contains("NativeMemorySentinel.Unregister(sentinelId)", source);
+            StringAssert.DoesNotContain("bool disposed = !", source);
             StringAssert.Contains("AllocateTrackedResults(8, RecycledHandleResultsLabel)", source);
             StringAssert.Contains("AllocateTrackedResults(4, MoveResultsLabel)", source);
             StringAssert.Contains("AllocateTrackedResults(4, LargeAupResultsLabel)", source);
@@ -866,7 +917,8 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.DoesNotContain("new NativeList<int>(8", source);
             StringAssert.DoesNotContain("new NativeList<int>(4", source);
-            StringAssert.DoesNotContain("if (results.IsCreated)", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeList(", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.UnregisterNativeList", source);
         }
 
         [Test]
@@ -876,9 +928,9 @@ namespace Hecton8.Tests.Editor
             string profiles = ReadProjectFile(GeographySanityProfileCsvPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateNativeArray<T>", pipeline);
-            StringAssert.Contains("private static void ReleaseNativeArray<T>", pipeline);
+            StringAssert.Contains("ReleaseNativeArray<T>", pipeline);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(", pipeline);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", pipeline);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", pipeline);
             Assert.AreEqual(1, CountOccurrences(pipeline, "new NativeArray<T>("), "Pipeline allocations must stay centralized in AllocateNativeArray.");
             StringAssert.DoesNotContain("new NativeArray<GeographySanityTelemetryEntry>", pipeline);
             StringAssert.DoesNotContain("new NativeArray<float>", pipeline);
@@ -887,8 +939,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("new NativeArray<NavigationRequestDTO>", pipeline);
             StringAssert.DoesNotContain("new NativeArray<CrushDepthMaterialDTO>", pipeline);
 
-            StringAssert.Contains("NativeMemorySentinel.RegisterNativeList(", profiles);
+            StringAssert.Contains("NativeMemorySentinel.RegisterNativeListInstance(", profiles);
             StringAssert.Contains("NativeMemorySentinel.Unregister(_profilesSentinelId)", profiles);
+            StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeList(", profiles);
             Assert.AreEqual(1, CountOccurrences(profiles, "new NativeList<SanityProfileDTO>"), "Profile store owns exactly one tracked NativeList.");
         }
 
@@ -898,13 +951,15 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(GeologyForgeGeneratorPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateGeologyArray<T>", source);
-            StringAssert.Contains("private static void ReleaseGeologyArray<T>", source);
+            StringAssert.Contains("ReleaseGeologyArray<T>", source);
             StringAssert.Contains("private static NativeParallelMultiHashMap<TKey, TValue> AllocateGeologyMultiHashMap<TKey, TValue>", source);
-            StringAssert.Contains("private static void ReleaseGeologyMultiHashMap<TKey, TValue>", source);
+            StringAssert.Contains("ReleaseGeologyMultiHashMap<TKey, TValue>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
-            StringAssert.Contains("NativeMemorySentinel.RegisterNativeParallelMultiHashMap(", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, label)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
+            StringAssert.Contains("NativeMemorySentinel.RegisterNativeParallelMultiHashMapInstance(", source);
+            StringAssert.Contains("NativeMemorySentinel.Unregister(sentinelId)", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeParallelMultiHashMap(", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.UnregisterNativeParallelMultiHashMap", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "Geology Forge NativeArray allocations must stay centralized in AllocateGeologyArray.");
             Assert.AreEqual(1, CountOccurrences(source, "new NativeParallelMultiHashMap<TKey, TValue>("), "Geology Forge multi-hash-map allocations must stay centralized in AllocateGeologyMultiHashMap.");
 
@@ -934,12 +989,13 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("using System.Reflection;", source);
             StringAssert.Contains("private const string NativeMemorySentinelTypeName = \"Hecton8.Core.NativeMemorySentinel\";", source);
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedNativeArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("private static void RegisterTrackedNativeArray<T>", source);
-            StringAssert.Contains("private static void UnregisterTrackedNativeArray<T>", source);
+            StringAssert.Contains("private static void UnregisterTrackedNativeArray(IntPtr trackedPointer)", source);
             StringAssert.Contains("sentinelType.GetMethod(\"RegisterNativeArray\", BindingFlags.Public | BindingFlags.Static)", source);
-            StringAssert.Contains("sentinelType.GetMethod(\"UnregisterNativeArray\", BindingFlags.Public | BindingFlags.Static)", source);
+            StringAssert.Contains("sentinelType.GetMethod(\"UnregisterPointer\", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(IntPtr) }, null)", source);
             StringAssert.Contains("method.MakeGenericMethod(typeof(T)).Invoke", source);
+            StringAssert.Contains("method.Invoke(null, new object[] { trackedPointer })", source);
             StringAssert.Contains("new object[] { array, NativeMemoryOwner, label, lifetime }", source);
             StringAssert.Contains("DisposeTrackedNativeArray(ref lod0Raw)", source);
             StringAssert.Contains("DisposeTrackedNativeArray(ref records)", source);
@@ -978,7 +1034,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("bytes = AllocateTrackedArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, CsvBytesLabel, NativeAllocationLifetime.Temp)", source);
             StringAssert.Contains("DisposeTrackedArray(ref bytes)", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "Offline optimization profile CSV byte staging must stay centralized in AllocateTrackedArray.");
 
             StringAssert.DoesNotContain("new NativeArray<byte>", source);
@@ -992,7 +1048,7 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("using System.Reflection;", source);
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedNativeArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("RegisterNativeMemorySentinel(array, label, ResolveNativeAllocationLifetimeName(allocator))", source);
             StringAssert.Contains("UnregisterNativeMemorySentinel(array)", source);
             StringAssert.Contains("method.MakeGenericMethod(typeof(T)).Invoke", source);
@@ -1009,9 +1065,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(TopographyForgeGeneratorPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTopographyArray<T>", source);
-            StringAssert.Contains("private static void ReleaseTopographyArray<T>", source);
+            StringAssert.Contains("ReleaseTopographyArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "Topography allocations must stay centralized in AllocateTopographyArray.");
             StringAssert.DoesNotContain("heights = new NativeArray<float>", source);
             StringAssert.DoesNotContain("blackBox = new NativeArray<TopographyBakeTelemetryEntry>", source);
@@ -1031,17 +1087,19 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("internal static class GeologyForgeNativeMemory", helper);
             StringAssert.Contains("internal static NativeArray<T> AllocateArray<T>", helper);
             StringAssert.Contains("internal static NativeList<T> AllocateList<T>", helper);
-            StringAssert.Contains("internal static void DisposeArray<T>", helper);
-            StringAssert.Contains("internal static void DisposeList<T>", helper);
+            StringAssert.Contains("DisposeArray<T>", helper);
+            StringAssert.Contains("DisposeList<T>", helper);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, owner, label, ResolveLifetime(allocator))", helper);
-            StringAssert.Contains("NativeMemorySentinel.RegisterNativeList(list, owner, label, ResolveLifetime(allocator))", helper);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", helper);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeList(owner, label)", helper);
+            StringAssert.Contains("NativeMemorySentinel.RegisterNativeListInstance(list, owner, label, ResolveLifetime(allocator))", helper);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", helper);
+            StringAssert.Contains("NativeMemorySentinel.Unregister(sentinelId)", helper);
+            StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeList(", helper);
+            StringAssert.DoesNotContain("NativeMemorySentinel.UnregisterNativeList", helper);
             StringAssert.Contains("GeologyForgeNativeMemory.AllocateArray<float>", window);
             StringAssert.Contains("GeologyForgeNativeMemory.AllocateArray<byte>", profiles);
             StringAssert.Contains("GeologyForgeNativeMemory.AllocateArray<byte>", topography);
             StringAssert.Contains("GeologyForgeNativeMemory.AllocateList<TopographyBiomeRecipeDTO>", topography);
-            StringAssert.Contains("GeologyForgeNativeMemory.DisposeList(ref _recipes", topography);
+            StringAssert.Contains("GeologyForgeNativeMemory.DisposeList(ref _recipes, ref _recipesSentinelId)", topography);
             StringAssert.Contains("private const string NativeMemoryOwner = nameof(TopographyForgePreview);", topographyWindow);
             StringAssert.Contains("GeologyForgeNativeMemory.AllocateArray<TopographyBiomeKernelDTO>", topographyWindow);
             StringAssert.Contains("GeologyForgeNativeMemory.AllocateArray<TectonicRiftSegmentDTO>", topographyWindow);
@@ -1082,11 +1140,12 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("using System.Reflection;", forge);
             StringAssert.Contains("private const string NativeMemorySentinelTypeName = \"Hecton8.Core.NativeMemorySentinel\";", forge);
             StringAssert.Contains("internal static NativeArray<T> AllocateTrackedNativeArray<T>", forge);
-            StringAssert.Contains("internal static void DisposeTrackedNativeArray<T>", forge);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", forge);
             StringAssert.Contains("private static void RegisterTrackedNativeArray<T>", forge);
-            StringAssert.Contains("private static void UnregisterTrackedNativeArray<T>", forge);
+            StringAssert.Contains("private static void UnregisterTrackedNativeArray(IntPtr trackedPointer)", forge);
             StringAssert.Contains("sentinelType.GetMethod(\"RegisterNativeArray\", BindingFlags.Public | BindingFlags.Static)", forge);
-            StringAssert.Contains("sentinelType.GetMethod(\"UnregisterNativeArray\", BindingFlags.Public | BindingFlags.Static)", forge);
+            StringAssert.Contains("sentinelType.GetMethod(\"UnregisterPointer\", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(IntPtr) }, null)", forge);
+            StringAssert.Contains("method.Invoke(null, new object[] { trackedPointer })", forge);
             StringAssert.Contains("InteriorClutterForge.AllocateTrackedNativeArray<InteriorClutterTelemetryEntry>", support);
             StringAssert.Contains("InteriorClutterForge.AllocateTrackedNativeArray<InteriorClutterAtlasRect>", support);
             StringAssert.Contains("InteriorClutterForge.DisposeTrackedNativeArray(ref pixels)", support);
@@ -1130,14 +1189,16 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("using Hecton8.Core;", source);
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedNativeArray<T>", source);
             StringAssert.Contains("private static NativeList<T> AllocateTrackedNativeList<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("private static void DisposeTrackedNativeList<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator))", source);
-            StringAssert.Contains("NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator))", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label)", source);
-            StringAssert.Contains("DisposeTrackedNativeList(ref branches, nameof(branches))", source);
-            StringAssert.Contains("DisposeTrackedNativeList(ref stateStack, nameof(stateStack))", source);
+            StringAssert.Contains("NativeMemorySentinel.RegisterNativeListInstance(list, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator))", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
+            StringAssert.Contains("NativeMemorySentinel.Unregister(sentinelId)", source);
+            StringAssert.Contains("DisposeTrackedNativeList(ref branches, ref branchesSentinelId)", source);
+            StringAssert.Contains("DisposeTrackedNativeList(ref stateStack, ref stateStackSentinelId)", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeList(", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.UnregisterNativeList", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "BioForge NativeArray allocations must stay centralized in AllocateTrackedNativeArray.");
             Assert.AreEqual(1, CountOccurrences(source, "new NativeList<T>("), "BioForge NativeList allocations must stay centralized in AllocateTrackedNativeList.");
 
@@ -1169,9 +1230,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("private const string NativeMemoryOwner = nameof(HectonOctahedralImpostorBaker);", source);
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedNativeArray<T>", source);
             StringAssert.Contains("private static void RegisterTrackedNativeArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("RegisterTrackedNativeArray(ref png, NativeAllocationLifetime.TempJob, nameof(png))", source);
             StringAssert.Contains("DisposeTrackedNativeArray(ref records)", source);
             StringAssert.Contains("DisposeTrackedNativeArray(ref png)", source);
@@ -1193,9 +1254,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("using Hecton8.Core;", source);
             StringAssert.Contains("private const string NativeMemoryOwner = nameof(HlodImpostorForgeWindow);", source);
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedNativeArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator))", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("DisposeTrackedNativeArray(ref bytes)", source);
             StringAssert.Contains("DisposeTrackedNativeArray(ref records)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "HLOD forge window native buffers must stay centralized in AllocateTrackedNativeArray.");
@@ -1213,15 +1274,15 @@ namespace Hecton8.Tests.Editor
             string weathering = ReadProjectFile(HydraulicErosionWeatheringCsvPath);
 
             StringAssert.Contains("private static NativeArray<T> NewTrackedArray<T>", baker);
-            StringAssert.Contains("private static void DisposeTrackedArray<T>", baker);
+            StringAssert.Contains("DisposeTrackedArray<T>", baker);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime)", baker);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", baker);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", baker);
             StringAssert.Contains("using Hecton8.Core;", weathering);
             StringAssert.Contains("private const string NativeMemoryOwner = nameof(HydraulicErosionWeatheringCsv);", weathering);
             StringAssert.Contains("bytes = AllocateTrackedArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, CsvBytesLabel, NativeAllocationLifetime.Temp)", weathering);
             StringAssert.Contains("DisposeTrackedArray(ref bytes)", weathering);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime)", weathering);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", weathering);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", weathering);
             Assert.AreEqual(1, CountOccurrences(baker, "new NativeArray<T>("), "Hydraulic erosion bake allocations must stay centralized in NewTrackedArray.");
             Assert.AreEqual(1, CountOccurrences(weathering, "new NativeArray<T>("), "Hydraulic erosion weathering CSV byte storage must stay centralized in AllocateTrackedArray.");
 
@@ -1242,9 +1303,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("internal static class AITextureNativeMemory", helper);
             StringAssert.Contains("internal static NativeArray<T> AllocateArray<T>", helper);
             StringAssert.Contains("internal static void RegisterArray<T>", helper);
-            StringAssert.Contains("internal static void DisposeArray<T>", helper);
+            StringAssert.Contains("DisposeArray<T>", helper);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, safeOwner, safeLabel, lifetime)", helper);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", helper);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", helper);
             StringAssert.Contains("context.ReadbackData = AITextureNativeMemory.AllocateArray<byte>", baker);
             StringAssert.Contains("AITextureNativeMemory.RegisterArray(ref pngBytes", baker);
             StringAssert.Contains("AITextureNativeMemory.DisposeArray(ref completion.PngBytes)", baker);
@@ -1275,9 +1336,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("using Hecton8.Core;", source);
             StringAssert.Contains("private const string NativeMemoryOwner = nameof(WorldProceduralProxySceneBuilder);", source);
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedNativeArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator))", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("DisposeTrackedNativeArray(ref commands)", source);
             StringAssert.Contains("DisposeTrackedNativeArray(ref hits)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "Procedural proxy raycast buffers must stay centralized in AllocateTrackedNativeArray.");
@@ -1294,9 +1355,9 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(TexturePackerPath);
 
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedTempJobArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("_ringSentinelId = NativeMemorySentinel.RegisterNativeArray", source);
             StringAssert.Contains("RingLabel", source);
             StringAssert.Contains("NativeMemorySentinel.Unregister(_ringSentinelId)", source);
@@ -1329,9 +1390,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("using Hecton8.Core;", source);
             StringAssert.Contains("internal static class TexturePackerEditorNativeMemory", source);
             StringAssert.Contains("internal static NativeArray<T> AllocateArray<T>", source);
-            StringAssert.Contains("internal static void DisposeArray<T>", source);
+            StringAssert.Contains("DisposeArray<T>", source);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, owner, label, ResolveNativeAllocationLifetime(allocator))", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("TexturePackerEditorNativeMemory.AllocateArray<Color32>", source);
             StringAssert.Contains("TexturePackerEditorNativeMemory.AllocateArray<byte>", source);
             StringAssert.Contains("TexturePackerEditorNativeMemory.DisposeArray(ref ao)", source);
@@ -1352,11 +1413,11 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile(HabitatDamageBakePipelinePath);
 
             StringAssert.Contains("internal static class HabitatDamageNativeMemorySentinelBridge", source);
-            StringAssert.Contains("internal static void UnregisterNativeArray<T>", source);
+            StringAssert.Contains("internal static void UnregisterPointer(IntPtr trackedPointer)", source);
             StringAssert.Contains("private static NativeArray<T> AllocateTrackedNativeArray<T>", source);
-            StringAssert.Contains("private static void DisposeTrackedNativeArray<T>", source);
+            StringAssert.Contains("DisposeTrackedNativeArray<T>", source);
             StringAssert.Contains("HabitatDamageNativeMemorySentinelBridge.RegisterNativeArray(", source);
-            StringAssert.Contains("HabitatDamageNativeMemorySentinelBridge.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("HabitatDamageNativeMemorySentinelBridge.UnregisterPointer(trackedPointer)", source);
             StringAssert.Contains("HabitatDamageNativeMemorySentinelBridge.Unregister(_telemetryRingSentinelId)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<T>("), "Habitat bake scratch allocations must stay centralized in AllocateTrackedNativeArray.");
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<HabitatDamageBakeTelemetryEntry>"), "The only direct concrete allocation is the persistent bake telemetry ring.");
@@ -1383,6 +1444,21 @@ namespace Hecton8.Tests.Editor
         {
             string fullPath = Path.Combine(Directory.GetCurrentDirectory(), projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
             return File.ReadAllText(fullPath);
+        }
+
+        private static void AssertAsmdefReferencesCoreContracts(string projectRelativePath)
+        {
+            string asmdef = ReadProjectFile(projectRelativePath);
+            StringAssert.Contains("\"Hecton8.Core\"", asmdef);
+            StringAssert.Contains("\"Hecton8.Core.Contracts\"", asmdef);
+        }
+
+        private static void AssertAsmdefReferencesCoreContractsAndMemory(string projectRelativePath)
+        {
+            string asmdef = ReadProjectFile(projectRelativePath);
+            StringAssert.Contains("\"Hecton8.Core\"", asmdef);
+            StringAssert.Contains("\"Hecton8.Core.Contracts\"", asmdef);
+            StringAssert.Contains("\"Hecton8.Core.Memory\"", asmdef);
         }
 
         private static int CountOccurrences(string haystack, string needle)

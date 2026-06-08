@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "JA LOC HOLD: コロニーと作業員"
+title: "植民地と労働者"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: コロニーと作業員
+# 植民地と労働者
 
-JA LOC HOLD: 復元された作業員インデックス。水台帳、リレー証印、brine経路スタンプ、triage修理タグ、vent-forge廃棄片が、仕事を通して名前を残している。
+回収されたworker index: water ledgers、relay witness trays、brine route stamps、triage repair tags、vent-forge rejectsが仕事を通して名前を残す。
 
 ## Scanner
 
-JA LOC HOLD: WORKER INDEX // 経路に結びついた5件の名前記録。pump, relay, brine, triage, forge。部品回収前にtag chainを保存。
+WORKER INDEX // ルート連動の5名記録。Pump、relay、brine、triage、forge。金属を剥がす前にtag chainを保持。
 
 ## Terminal
 
-JA LOC HOLD: KEELMARK LOSS DESK: route, claim, custody, pressure workに結びつくname tagは保存。
+KEELMARK LOSS DESK: route、claim、custody、pressure workに結びつくname tagsは保持。
 
 ## Audio
 
-JA LOC HOLD: Mara Venn, pump chief: pumpが澄んで鳴るなら記録しろ。鳴り止んだら上へ走れ。
+Mara Venn、pump chief: ポンプがきれいに歌うなら記録しろ。歌わなくなったら上へ走れ。
 
 ## Field Note
 
-JA LOC HOLD: 家族ではない。仕事だ。pump cardの名前が、なぜ扉が開いたままだったかを示す。
+家族ではない。仕事だ。pump cardの名前が、扉が開いた理由を語る。
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/ja_JP. -->

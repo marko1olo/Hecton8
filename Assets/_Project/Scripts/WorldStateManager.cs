@@ -36,6 +36,7 @@ namespace Hecton8.World
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
 
         // COLD ALLOC: Dictionary<long,long>[128] — pickup key-to-chunk lookup for save/load persistence — owner: WorldStateManager
         private readonly Dictionary<long, long> _depletedPickupChunkKeysByPickupKey = new Dictionary<long, long>(128);
@@ -124,11 +125,8 @@ namespace Hecton8.World
 
             TryUnregisterSaveParticipant();
             _saveService = currentService as ISaveService;
-            if (_saveService == null)
-                return;
-
-            _saveService.Register(this);
-            _saveRegistered = true;
+            if (isActiveAndEnabled)
+                TryRegisterSaveParticipant();
         }
 
         /// <summary>
@@ -155,6 +153,38 @@ namespace Hecton8.World
                 return false;
 
             return _depletedPickupKeys.Contains(persistenceKey);
+        }
+
+        /// <summary>
+        /// Resolves collected pickup state and promotes a legacy hierarchy-based key to the stable authored key when needed.
+        /// </summary>
+        public bool TryResolveOrPromoteCollectedPickup(long persistenceKey, long chunkKey, long legacyPersistenceKey)
+        {
+            if (persistenceKey == 0L || _depletedPickupKeys == null)
+                return false;
+
+            if (_depletedPickupKeys.Contains(persistenceKey))
+            {
+                _depletedPickupChunkKeysByPickupKey[persistenceKey] = chunkKey != 0L ? chunkKey : persistenceKey;
+                if (legacyPersistenceKey != 0L && legacyPersistenceKey != persistenceKey)
+                {
+                    _depletedPickupKeys.Remove(legacyPersistenceKey);
+                    _depletedPickupChunkKeysByPickupKey.Remove(legacyPersistenceKey);
+                    UpdateDiagnostics();
+                }
+
+                return true;
+            }
+
+            if (legacyPersistenceKey == 0L || legacyPersistenceKey == persistenceKey || !_depletedPickupKeys.Contains(legacyPersistenceKey))
+                return false;
+
+            _depletedPickupKeys.Remove(legacyPersistenceKey);
+            _depletedPickupChunkKeysByPickupKey.Remove(legacyPersistenceKey);
+            _depletedPickupKeys.Add(persistenceKey);
+            _depletedPickupChunkKeysByPickupKey[persistenceKey] = chunkKey != 0L ? chunkKey : persistenceKey;
+            UpdateDiagnostics();
+            return true;
         }
 
         /// <summary>
@@ -269,7 +299,11 @@ namespace Hecton8.World
         public void LoadFromSaveData(SaveData data)
         {
             if (data == null)
+            {
+                ClearAll();
+                ApplyToScene();
                 return;
+            }
 
             WorldStateDTO dto = data.worldState;
 
@@ -303,13 +337,12 @@ namespace Hecton8.World
         /// </summary>
         public void ApplyToScene()
         {
-            if (_depletedNodeIds.Count == 0 && (_depletedPickupKeys == null || _depletedPickupKeys.Count == 0))
+            if (_depletedNodeIds == null)
                 return;
 
             int deactivatedNodes = 0;
 
-            int nodeCount = ResourceNode.WorldStateRegistryCount;
-            for (int i = 0; i < nodeCount; i++)
+            for (int i = ResourceNode.WorldStateRegistryCount - 1; i >= 0; i--)
             {
                 ResourceNode node = ResourceNode.GetWorldStateRegistryAt(i);
                 if (node == null)
@@ -326,13 +359,13 @@ namespace Hecton8.World
                 {
                     if (node.gameObject.activeSelf)
                     {
-                        node.gameObject.SetActive(false);
+                        node.ApplyWorldStateSuppression();
                         deactivatedNodes++;
                     }
                 }
                 else if (!node.gameObject.activeSelf)
                 {
-                    node.gameObject.SetActive(true);
+                    node.TryRestoreWorldStateSuppression();
                 }
             }
 
@@ -422,25 +455,38 @@ namespace Hecton8.World
             if (_saveRegistered)
                 return;
 
-            _saveService = GlobalRegistry.Save;
-            if (_saveService == null)
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveService = null;
             _saveRegistered = false;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void PopulatePackedPickupState(ref WorldStateDTO dto)
@@ -588,13 +634,13 @@ namespace Hecton8.World
 
         private void ApplyPickupStateToScene()
         {
-            if (_depletedPickupKeys == null || _depletedPickupKeys.Count == 0)
+            if (_depletedPickupKeys == null)
                 return;
 
             int deactivatedPickups = 0;
+            int reactivatedPickups = 0;
 
-            int pickupCount = PickupItem.WorldStateRegistryCount;
-            for (int i = 0; i < pickupCount; i++)
+            for (int i = PickupItem.WorldStateRegistryCount - 1; i >= 0; i--)
             {
                 PickupItem pickup = PickupItem.GetWorldStateRegistryAt(i);
                 if (pickup == null)
@@ -605,19 +651,24 @@ namespace Hecton8.World
 
                 long persistenceKey;
                 long chunkKey;
-                if (!pickup.TryGetWorldStatePersistenceIdentity(out persistenceKey, out chunkKey))
+                long legacyPersistenceKey;
+                if (!pickup.TryGetWorldStatePersistenceIdentity(out persistenceKey, out chunkKey, out legacyPersistenceKey))
                     continue;
 
-                if (!_depletedPickupKeys.Contains(persistenceKey))
+                if (TryResolveOrPromoteCollectedPickup(persistenceKey, chunkKey, legacyPersistenceKey))
+                {
+                    if (!pickup.gameObject.activeSelf)
+                        continue;
+
+                    pickup.ApplyWorldStateSuppression();
+                    deactivatedPickups++;
                     continue;
+                }
 
-                _depletedPickupChunkKeysByPickupKey[persistenceKey] = chunkKey != 0L ? chunkKey : persistenceKey;
-
-                if (!pickup.gameObject.activeSelf)
-                    continue;
-
-                pickup.gameObject.SetActive(false);
-                deactivatedPickups++;
+                if (!pickup.gameObject.activeSelf && pickup.TryRestoreWorldStateSuppression())
+                {
+                    reactivatedPickups++;
+                }
             }
 
             if (deactivatedPickups > 0)
@@ -625,6 +676,14 @@ namespace Hecton8.World
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.Log(
                     $"[WorldStateManager] Deactivated {deactivatedPickups} depleted pickups in scene.");
+#endif
+            }
+
+            if (reactivatedPickups > 0)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.Log(
+                    $"[WorldStateManager] Reactivated {reactivatedPickups} restored pickups in scene.");
 #endif
             }
         }

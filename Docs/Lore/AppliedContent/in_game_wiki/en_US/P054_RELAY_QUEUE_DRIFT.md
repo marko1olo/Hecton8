@@ -3,8 +3,8 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Relay Queue Drift
 
-Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.
+Delayed communication is dangerous because it can remain accurate in the wrong time. A carrier warning may describe a real valve, a real leak, and a real route that has already changed under pressure. The player must compare packet age against local evidence before trusting remote authority.
 
 ## Scanner
 
-The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
+The relay stamp is older than the leak it names; the instruction was true for a room that no longer exists.
 
 ## Terminal
 

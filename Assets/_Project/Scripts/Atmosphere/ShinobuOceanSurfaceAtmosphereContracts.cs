@@ -24,8 +24,12 @@ namespace Hecton8.Atmosphere
         public const uint SourceHash = 0x53485236u; // SHR6
         public const uint WaterlineBreachLaneHash = 0x57425236u; // WBR6
         public const uint QualityStepTuningHash = 0x51535450u; // QSTP
+        public const uint TelemetryFlagReadbackOrComputeBudget = 1u << 0;
+        public const uint TelemetryFlagEmergencyWeatherFallback = 1u << 1;
+        public const uint TelemetryFlagDataVaultRehydrated = 1u << 2;
+        public const uint TelemetryFlagMissingRuntimeData = 1u << 3;
         public const float AuthoritativeQualityWeight = 1f;
-        public const float DefaultSeaLevel = 0f;
+        public const float DefaultSeaLevel = 14.02f;
         public const float GravityMetersPerSecondSq = 9.81f;
         public const float MinimumWavelength = 0.25f;
         public const float TwoPi = 6.2831853071795864769f;

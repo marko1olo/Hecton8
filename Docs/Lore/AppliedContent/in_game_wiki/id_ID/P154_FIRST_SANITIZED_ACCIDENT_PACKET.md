@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: First Sanitized Accident Packet"
+title: "Paket Kecelakaan Tersanitasi Pertama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: First Sanitized Accident Packet
+# Paket Kecelakaan Tersanitasi Pertama
 
-ID LOC HOLD: The first sanitized accident packet gives a useful lie: real Great Tide physics stripped of accepted margins, delayed authorization and missing workers.
+Paket kecelakaan tersanitasi pertama memberi kebohongan yang berguna: fisika Great Tide yang nyata tanpa margin yang diterima, otorisasi tertunda, dan pekerja hilang.
 
 ## Scanner
 
-ID LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+Paket insiden Deep Reach ditemukan. Bahasa bersihnya bertentangan dengan jam pintu dan bekas banjir.
 
 ## Terminal
 
-ID LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+PEMBERITAHUAN INSIDEN DEEP REACH / KASKADE GEOTEKNIK LOKAL: evacuation authorization failure masih ditinjau; biological-pressure quarantine aktif; log Atlas rusak; rilis eksternal ditunda sampai witness reconciliation.
 
 ## Audio
 
-ID LOC HOLD: The packet says cascade. Door clocks say delay.
+Paket berkata cascade. Jam pintu berkata delay.
 
 ## Field Note
 
-ID LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+Mereka menulis cascade. Garis kotoran di locker lebih tinggi daripada stempel evakuasi.
 
 <!-- In-Game Wiki; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/id_ID. -->

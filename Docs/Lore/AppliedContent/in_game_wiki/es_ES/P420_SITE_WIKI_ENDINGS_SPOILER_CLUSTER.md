@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 2
-title: "ES LOC HOLD: Endings and Payload Custody"
+title: "Finales y custody del payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Endings and Payload Custody
+# Finales y custody del payload
 
-ES LOC HOLD: Ending dossier hub: custody, evidence, Atlas' future and the price of leaving.
+Hub de dossier de finales: custody, evidence, futuro de Atlas y precio de salir.
 
 ## Scanner
 
-ES LOC HOLD: Spoiler hub: payload receivers, false exits, custody, public truth, Atlas continuity and after-action records.
+Spoiler hub: payload receivers, false exits, custody, verdad pública, Atlas continuity y after-action records.
 
 ## Terminal
 
-ES LOC HOLD: SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver and proof ownership.
+SITE NAV: ocultar final payload pages tras spoiler gates. Organizar por receiver y proof ownership.
 
 ## Audio
 
-ES LOC HOLD: The ending is who owns the proof afterward.
+El final es quién posee la prueba después del ascenso.
 
 ## Field Note
 
-ES LOC HOLD: Navigation cluster record: endings stay spoiler-gated and organized by receiver and custody consequence, not moral labels.
+Los finales quedan spoiler-gated y se organizan por receiver y custody consequence, no por etiquetas morales.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/es_ES. -->

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "JA LOC HOLD: Start Here: HECTON-8"
+title: "ここから始める: HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Start Here: HECTON-8
+# ここから始める: HECTON-8
 
-JA LOC HOLD: Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.
+開始クラスター: 契約、プレイヤー役、HECTON-8の生存圧、Deep Reachの物語にある最初の矛盾。
 
 ## Scanner
 
-JA LOC HOLD: Publication hub: premise, player role, first constraints and the first Deep Reach lie.
+公開ハブ: 前提、プレイヤーの役割、最初の制約、Deep Reach最初の嘘。
 
 ## Terminal
 
-JA LOC HOLD: SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.
+SITE NAV: 契約接近、元Deep Reach専門員、債務Marauder、損傷カプセル、家族フックなし、Atlas修理痕跡の初出。
 
 ## Audio
 
-JA LOC HOLD: You came for salvage. The ocean will make that motive too small.
+salvageのために来た。その動機は海で小さすぎるものになる。
 
 ## Field Note
 
-JA LOC HOLD: Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
+Spoiler-lightな導線はここから始まる。前提、証拠、そして獲得後の結末。
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/ja_JP. -->

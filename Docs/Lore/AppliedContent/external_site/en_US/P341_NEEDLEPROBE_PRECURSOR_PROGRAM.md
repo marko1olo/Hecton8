@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Needleprobe Precursor Program
 
-HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
-
-## Scanner
-
-Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
-
-## Terminal
-
-RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
-
-## Audio
-
-Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
-
-## Field Note
-
-Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+The first human presence in Aegir was not heroic. It was a sequence of small, expensive machines crossing a route that no living crew had rated. Needleprobes measured parallax, radiation, ocean chemistry, moon ephemerides, and relay sightlines, then waited years for their own answers to become useful. Deep Reach did not discover HECTON-8 with a flag in hand; it bought enough machine confidence to call the moon an asset. That origin matters because the colony inherited a lie of tone, not a lie of data. The data was real. The confidence built from it was too clean for the people later sent into the water.
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/en_US. -->

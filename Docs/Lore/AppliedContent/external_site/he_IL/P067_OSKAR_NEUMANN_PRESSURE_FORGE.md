@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "מחשלת הלחץ של אוסקר נוימן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# מחשלת הלחץ של אוסקר נוימן
 
-HE LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
+מחשלת הלחץ של אוסקר נוימן היא מאמר הייצור של לוגיקת הבריחה מ-HECTON-8: השחקן צריך לבנות נתיב עלייה ממלאכת עולם הלחץ, לא למצוא מפתח רקטה גנרי.
 
 ## Scanner
 
-HE LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+אוסקר נוימן השאיר מתכון חישול לטבעות הידוק חזקות מספיק כדי שמיטת העלייה תהיה יותר מארון קבורה.
 
 ## Terminal
 
-HE LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+נוימן, א. הערת חישול: אבק זכוכית לחץ הורס את האטם הראשון אם מערבבים אותו קר. לחמם את הטבעת תחת משיכת פתח האוורור, לצנן בתוך מעטפת מי מלח, ואז לבדוק בעומס עלייה כפול.
 
 ## Audio
 
-HE LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+שיגור הוא רק דלת לחץ שנעה למעלה. בנו אותו כמו דלת.
 
 ## Field Note
 
-HE LOC HOLD: The exit needs craft, not courage.
+היציאה צריכה מלאכה, לא אומץ.
 
 <!-- External Site; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/he_IL. -->

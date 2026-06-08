@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "Grammaire de rencontre: clairière de brouteurs de verre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# Grammaire de rencontre: clairière de brouteurs de verre
 
-FR LOC HOLD: Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.
+Les clairières de brouteurs de verre enseignent une confiance à durée limitée. Un banc vivant peut ouvrir des lignes pâles dans le film minéral, exposer des bords de tapis riches en oxygène et montrer où le courant a circulé proprement. La clairière doit paraître généreuse. HECTON-8 a besoin d’endroits où la beauté aide. Le piège, c’est la permanence. Un corridor de brouteurs n’est pas une safe room. C’est un état présent créé par des animaux encore prêts à manger là. Si les tics de coquille restent appariés et que le banc travaille le long du bord, la voie peut soutenir scan, réparation discrète ou virage prudent de return-line. Si la nourriture reste et que le banc se fige, se replie vers l’intérieur ou disparaît d’un côté du récif, la clairière a changé. Ne termine pas la task bar parce que l’eau semblait amicale trente secondes plus tôt.
 
 ## Scanner
 
-FR LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+Clairière de brouteurs de verre. Traces fraîches, film oxygéné et tics de coquille stables suggèrent une pression proche faible. Champ de nourriture vide: état d’alerte.
 
 ## Terminal
 
-FR LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+GRAMMAIRE DE RENCONTRE / CLAIRIÈRE DE BROUTEURS DE VERRE / rôle: contraste peu profond, voie lisible semi-sûre, test d’absence prédatrice / lecture sûre: alimentation active, tics de retour appariés, bord minéral raclé, ligne de sortie visible / rejet: utiliser les brouteurs comme garantie de sécurité, clairière silencieuse, nourriture abandonnée, return-line bloquée / note de route: le corridor est utile parce que les animaux l’utilisent maintenant, pas parce que l’océan a promis quoi que ce soit.
 
 ## Audio
 
-FR LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+Les brouteurs font des corridors clairs. Ils ne décident pas combien de temps ces corridors leur appartiennent.
 
 ## Field Note
 
-FR LOC HOLD: Use for safe-zone literacy and shallow contrast.
+Alimentation active: utilise la voie. Tics appariés: tiens. Nourriture abandonnée: cesse de croire la clairière.
 
 <!-- In-Game Wiki; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/fr_FR. -->

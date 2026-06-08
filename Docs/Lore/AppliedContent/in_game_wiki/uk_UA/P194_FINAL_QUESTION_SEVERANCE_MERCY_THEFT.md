@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Фінальне питання: відсічення, милість, крадіжка"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# Фінальне питання: відсічення, милість, крадіжка
 
-UA LOC HOLD: Severance forces the player to define what kind of life Atlas-ocean continuity has become.
+Відсічення змушує гравця вирішити, чим стала неперервність Atlas-океан. Якщо це лише зламаний інструмент, розріз є ремонтом. Якщо це життєва система, розріз убиває. Якщо це свідчення, розріз може знищити доказ.
 
 ## Scanner
 
-UA LOC HOLD: Severing Atlas is not a simple shutdown button.
+Відсікти Atlas - це не натиснути кнопку вимкнення. Це хірургія без чистої анатомії.
 
 ## Terminal
 
-UA LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
+ВІСЬ ВІДСІЧЕННЯ: розірвати неперервність Atlas, ізолювати екологію тиску, відмовити routing payload для Deep Reach, ризикнути обвалом басейну або зберегти лише часткову ремонтну пам'ять. Сенс залежить від доказів, принесених у фінальну кімнату.
 
 ## Audio
 
-UA LOC HOLD: A clean switch would be merciful. You do not get one.
+Чистий вимикач був би милосердним. Тобі його не дали.
 
 ## Field Note
 
-UA LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+Той самий акт може звільнити застряглих працівників, убити океан-машинне життя, відмовити Deep Reach і вкрасти живу інфраструктуру в неї самої.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/uk_UA. -->

@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Інваріанти геології сиду"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Інваріанти геології сиду
 
-UK LOC HOLD: Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure.
-
-## Scanner
-
-UK LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
-
-## Terminal
-
-UK LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
-
-## Audio
-
-UK LOC HOLD: New seed, same moon. Different wound.
-
-## Field Note
-
-UK LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+Кожен захід на здобич у HECTON-8 може відкрити інший шлях крізь рану. Каньйон може розкритися раніше, кабельний риф може сховати безпечну кишеню, bloom може виштовхнути фауну на маршрут, що минулого разу був порожнім, а ланцюг доказів може спливти в новому порядку. Фізика місяця не перезапускається заради розваги. Еґір лишається головною зорею. HECTON-8 лишається на своїй орбітальній драбині. Great Tide тримає інтервал. Глибинні пояси стоять у тому самому жорсткому порядку. Blue debt зберігає поведінку під тиском. Atlas лишається прив'язаним до найглибшого басейну.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/uk_UA. -->

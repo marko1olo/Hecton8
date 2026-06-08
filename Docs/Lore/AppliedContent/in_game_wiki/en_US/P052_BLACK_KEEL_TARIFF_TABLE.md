@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Black Keel Tariff Table
 
-Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.
+Black Keel support is useful, but it is never neutral. Distress, samples, oxygen, liability seals, operator recovery, and hull damage enter different queues. The player can exploit those rules, but the same rules explain why help keeps arriving with a price tag.
 
 ## Scanner
 
-The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
+The plate prices distress, sample custody, oxygen reserve, pressure gear, and body recovery as separate line items.
 
 ## Terminal
 
@@ -31,10 +31,10 @@ TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custo
 
 ## Audio
 
-The table has a price for rescue and a discount for evidence.
+There is a discount for evidence and a surcharge for breathing.
 
 ## Field Note
 
-A rescue request and a sample manifest do not enter the same queue.
+The fastest class is not rescue. It is verified property moving upward.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/en_US. -->

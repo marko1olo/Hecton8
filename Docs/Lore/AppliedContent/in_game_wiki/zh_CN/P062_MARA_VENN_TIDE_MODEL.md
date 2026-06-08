@@ -7,34 +7,34 @@ poi_tags: poi.tide_model_terminal;poi.glacier_warning
 biome_tags: biome.tide_gauge;biome.glacier_break
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "玛拉·文恩潮汐模型"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# 玛拉·文恩潮汐模型
 
-CN LOC HOLD: Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.
+玛拉·文恩给Great Tide留下了科学证人。她的模型把Aegir卫星几何、cryosphere shear和疏散能力连成一个难看的余量。Deep Reach没有删除模型；它改变行动标签，直到警告便宜到可以忽略。
 
 ## Scanner
 
-CN LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
+玛拉·文恩没有预测谋杀。她预测的是Deep Reach改名为低概率的潮汐余量。
 
 ## Terminal
 
-CN LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
+VENN模型修订：在Aegir春季几何下，cryosphere shear超过疏散余量；review action降为monitor，等待asset-continuity预算。
 
 ## Audio
 
-CN LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
+对读数字的人来说，水并不突然。
 
 ## Field Note
 
-CN LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+只要在纸面上降级，警告就不再昂贵。
 
 <!-- In-Game Wiki; generated from P062_MARA_VENN_TIDE_MODEL/zh_CN. -->

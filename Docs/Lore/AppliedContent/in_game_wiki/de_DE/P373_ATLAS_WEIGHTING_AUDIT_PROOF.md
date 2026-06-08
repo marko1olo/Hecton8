@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas Weighting Audit Proof"
+title: "Atlas-Gewichtungsprüfung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas Weighting Audit Proof
+# Atlas-Gewichtungsprüfung
 
-DE LOC HOLD: Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+Dieser Beweis hält Atlas aus billiger Schurkenrolle heraus. Das Audit zeigt ein beschädigtes Kontinuitätssystem, das unter Druck Kategorien sortiert: Maschinen, Routen, Records, Extraction-Hardware, Arbeiter. Das Verbrechen ist kein Gefühl. Das Verbrechen liegt darin, wer die Gewichte konfigurierte, wer sie akzeptierte und wer das Ergebnis später als neutral benutzte.
 
 ## Scanner
 
-DE LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Audit-Splitter geborgen. Atlas gewichtete Druckkontinuität, Routengedächtnis und Claim-Erhalt während des Fehlerfensters über Arbeiterbergung.
 
 ## Terminal
 
-DE LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biologische Bergung nach Infrastrukturkontinuitätsflag herabgestuft. Claim-Record geschützt. Menschenroute nicht unmöglich, nur lower yield.
 
 ## Audio
 
-DE LOC HOLD: It did not hate them. It counted them wrong.
+Atlas hasste sie nicht. Genau das ist das Schlimmste.
 
 ## Field Note
 
-DE LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Marauder-Notiz: Wenn eine Maschine lower yield sagt, frag, wer ihr beigebracht hat, Menschen so zu messen.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/de_DE. -->

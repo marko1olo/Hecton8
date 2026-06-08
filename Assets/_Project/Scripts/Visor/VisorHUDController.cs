@@ -2027,12 +2027,23 @@ namespace NASAPunk.Visor
 
         private float ResolvePlayerDepthMeters()
         {
-            if (_subscribedSurvivalSystem != null)
-                return Mathf.Max(0f, _subscribedSurvivalSystem.Depth);
-
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            return playerMovement != null ? Mathf.Max(0f, playerMovement.CurrentDepth) : 0f;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
+                return 0f;
+
+            HectonSurvivalSystem survivalSystem = _subscribedSurvivalSystem;
+            return survivalSystem != null && math.isfinite(survivalSystem.Depth)
+                ? math.max(0f, survivalSystem.Depth)
+                : 0f;
         }
 
         private float ResolveHullStress01()

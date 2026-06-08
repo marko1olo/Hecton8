@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # MEDICAL TRAUMA AND SYNTHETIC REPLACEMENTS
 
 > **Source:** *Black Keel* Automated Medical Bay Operating Procedure.

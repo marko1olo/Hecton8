@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "Deep Reach Liability Chain"
+title: "Deep Reach: Liability Under Real Water"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Deep Reach Liability Chain
+# Deep Reach: Liability Under Real Water
 
-While the Great Tide was a natural, verifiable phenomenon, the extent of Deep Reach's culpability lies in the delta between their official incident reports and the physical state of the compromised hardware. The catastrophic flooding of HECTON-8 was unavoidable, but the ensuing loss of life was profoundly exacerbated by corporate policy. Discrepancies are permanently recorded in altered safety margins, frozen time-stamps on quarantine doors, and delayed authorization logs for primary evacuation routes.
+Deep Reach is guilty without making the ocean fake. HECTON-8's tide, cryosphere stress, storm stacking and pressure chemistry caused the disaster; corporate procedure chose bad margins and then cleaned the paperwork.
 
 ## Scanner
 
-Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+Public evidence brief. Great Tide physics remain real; Deep Reach liability appears in accepted margins, evacuation underbuild, Atlas continuity weighting, quarantine delay, and loss conversion.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+PUBLIC LIABILITY NODE // DEEP REACH. Chain references: Varnek margin acceptance, Arendt Atlas waiver, Haldane quarantine hold, Ibarra loss ledger, Sato-Ren return action.
 
 ## Audio
 
-A natural disaster can still carry signatures. Read the room before you read the report.
+Recovered counsel audio: "Do not call it delay. Call it review. The water will supply the interval."
 
 ## Field Note
 
-Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+Marauder note: physics did the killing. Procedure decided who got counted as recoverable.
 
 <!-- In-Game Wiki; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/en_US. -->

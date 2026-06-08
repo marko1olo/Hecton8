@@ -7,9 +7,9 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Bewaring van bergingsgereedschap"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Bewaring van salvage-gereedschap"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bewaring van bergingsgereedschap
+# Bewaring van salvage-gereedschap
 
-Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.
+Salvage-gereedschappen zijn geen neutrale uitrusting. Cutters, patchers en fabricatordocks kunnen registreren wie een paneel opende, een lijn repareerde of een monster verplaatste. Dat log kan bewijs beschermen, uitbetalingsrechten koppelen of de claim tegen de speler versterken. Gereedschapsbewaring is waar overleven per minuut de bredere salvage-economie raakt.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Gereedschapsdock bevat een verzegeld bewaringslog. Laatste snede, reparatie en monsterzak zijn gekoppeld aan een Keelmark-claimtoken.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: cuttergebruik geaccepteerd onder salvage-claim. Reparatiehandeling getuigd. Monsterrechten gekoppeld aan Keelmark Mutual-token. Bewijsexport botst met materiaaluitbetalingsroute.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Elke nuttige snede laat een getuige achter.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Een cutter kan je lucht redden en je handen in dezelfde slag verkopen. Controleer wat hij registreert voordat je hem de jouwe noemt.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/nl_NL. -->

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: No-FTL Route Delay"
+title: "تأخر مسار بلا FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: No-FTL Route Delay
+# تأخر مسار بلا FTL
 
-AR LOC HOLD: Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
+المسافة قاعدة بقاء على طريق Aegir. القانون والدين وpackets القديمة قد تصل إلى اللاعب قبل carrier أو tender أو قطعة غيار أو منقذ بشري بوقت طويل. رد relay لا يلغي عمل الضغط أمامك؛ إنه يثبت فقط أن أحدا وضع claim في طابور.
 
 ## Scanner
 
-AR LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+سجل عبور. حركة Aegir تعتمد على precursor probes وbeam lanes وpellet-fusion freight وbraking mass وpacket age وrelay custody والتأخير القانوني.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+عقدة الأرشيف العام // حد العبور. لا يوجد FTL. لا يوجد Ansible. الإنقاذ الحي يحتاج نقلا ماديا وbraking architecture وcarrier position وdescent mass وlocal window صالحة.
 
 ## Audio
 
-AR LOC HOLD: Help can be legally present and physically years away.
+قد تكون المساعدة حاضرة قانونيا وبعيدة ماديا لسنوات.
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+ملاحظة Marauder: عندما يجيب relay، اسأل عن عمر الجواب وعن الكتلة التي يستطيع تحريكها.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/ar_SA. -->

@@ -15,6 +15,7 @@ namespace Hecton8.Core
         private bool _registeredUpdatable;
         private bool _registeredContext;
         private bool _hotSwapRegistered;
+        private bool _runtimeOwnerAborted;
         private ConstructionManager _constructionManager;
         private ILogisticsService _logisticsService;
         private ModuleCatalog _moduleCatalog;
@@ -53,12 +54,16 @@ namespace Hecton8.Core
         /// <returns>Live environment context instance.</returns>
         public static EnvironmentRuntimeContextService EnsureRuntimeInstance()
         {
-            EnvironmentRuntimeContextService runtime = GlobalRegistry.EnvironmentRuntimeContextRuntime;
-            if (runtime == null)
-                runtime = GlobalRegistry.Environment as EnvironmentRuntimeContextService;
-
+            EnvironmentRuntimeContextService runtime = ResolveUsableRuntime();
             if (runtime != null)
                 return runtime;
+
+            IEnvironmentRuntimeContext registeredContext = GlobalRegistry.Environment;
+            if (IsEnvironmentContextUsable(registeredContext) &&
+                ReferenceEquals(registeredContext as EnvironmentRuntimeContextService, null))
+            {
+                return null;
+            }
 
             if (!Application.isPlaying)
                 return null;
@@ -76,28 +81,27 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
+            if (_runtimeOwnerAborted || !EnsureSingletonOwnership())
+                return;
+
             if (_isInitialized)
             {
-                EnsureSingletonOwnership();
-                if (GlobalRegistry.EnvironmentRuntimeContextRuntime != this)
+                if (!TryRegisterContext())
                     return;
 
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
-                TryRegisterContext();
                 SyncEnvironmentContextCold();
                 EnsureHazardZoneManager();
                 return;
             }
 
-            EnsureSingletonOwnership();
-            if (GlobalRegistry.EnvironmentRuntimeContextRuntime != this)
+            if (!TryRegisterContext())
                 return;
 
             _isInitialized = true;
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
-            TryRegisterContext();
             SyncEnvironmentContextCold();
             EnsureHazardZoneManager();
         }
@@ -115,21 +119,28 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_isInitialized)
             {
-                EnsureSingletonOwnership();
-                if (GlobalRegistry.EnvironmentRuntimeContextRuntime != this)
+                if (!EnsureSingletonOwnership())
+                    return;
+
+                if (!TryRegisterContext())
                     return;
 
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
-                TryRegisterContext();
                 SyncEnvironmentContextCold();
             }
         }
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterUpdatable();
             TryUnregisterHotSwapListener();
             TryUnregisterContext();
@@ -137,6 +148,9 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
@@ -147,6 +161,9 @@ namespace Hecton8.Core
 
         private void ShutdownServiceState()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterUpdatable();
             TryUnregisterHotSwapListener();
             TryUnregisterContext();
@@ -163,6 +180,9 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
@@ -206,19 +226,113 @@ namespace Hecton8.Core
             return _hazardZoneManager;
         }
 
-        private void EnsureSingletonOwnership()
+        private bool EnsureSingletonOwnership()
         {
-            EnvironmentRuntimeContextService runtime = GlobalRegistry.EnvironmentRuntimeContextRuntime;
-            if (runtime == null)
-                runtime = GlobalRegistry.Environment as EnvironmentRuntimeContextService;
+            if (_runtimeOwnerAborted)
+                return false;
 
-            if (runtime != null && runtime != this)
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            EnvironmentRuntimeContextService runtime = GlobalRegistry.EnvironmentRuntimeContextRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
             {
-                Destroy(gameObject);
-                return;
+                GlobalRegistry.ClearEnvironmentRuntimeContextRuntime(runtime);
+                runtime._registeredContext = false;
+                runtime._isInitialized = false;
             }
 
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             GlobalRegistry.RegisterEnvironmentRuntimeContextRuntime(this);
+            return ReferenceEquals(GlobalRegistry.EnvironmentRuntimeContextRuntime, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            EnvironmentRuntimeContextService runtime = GlobalRegistry.EnvironmentRuntimeContextRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsEnvironmentRuntimeUsable(runtime))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                GlobalRegistry.ClearEnvironmentRuntimeContextRuntime(runtime);
+                runtime._registeredContext = false;
+                runtime._isInitialized = false;
+            }
+
+            IEnvironmentRuntimeContext registeredContext = GlobalRegistry.Environment;
+            if (ReferenceEquals(registeredContext, null) || ReferenceEquals(registeredContext, this))
+                return false;
+
+            if (IsEnvironmentContextUsable(registeredContext))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            EnvironmentRuntimeContextService staleContext = registeredContext as EnvironmentRuntimeContextService;
+            if (!ReferenceEquals(staleContext, null))
+            {
+                GlobalRegistry.UnregisterEnvironmentRuntimeContext(registeredContext);
+                GlobalRegistry.ClearEnvironmentRuntimeContextRuntime(staleContext);
+                staleContext._registeredContext = false;
+                staleContext._isInitialized = false;
+            }
+
+            return false;
+        }
+
+        private static EnvironmentRuntimeContextService ResolveUsableRuntime()
+        {
+            EnvironmentRuntimeContextService runtime = GlobalRegistry.EnvironmentRuntimeContextRuntime;
+            if (IsEnvironmentRuntimeUsable(runtime))
+                return runtime;
+
+            if (!ReferenceEquals(runtime, null))
+            {
+                GlobalRegistry.ClearEnvironmentRuntimeContextRuntime(runtime);
+                runtime._registeredContext = false;
+                runtime._isInitialized = false;
+            }
+
+            IEnvironmentRuntimeContext registeredContext = GlobalRegistry.Environment;
+            if (IsEnvironmentContextUsable(registeredContext))
+                return registeredContext as EnvironmentRuntimeContextService;
+
+            EnvironmentRuntimeContextService staleContext = registeredContext as EnvironmentRuntimeContextService;
+            if (!ReferenceEquals(staleContext, null))
+            {
+                GlobalRegistry.UnregisterEnvironmentRuntimeContext(registeredContext);
+                GlobalRegistry.ClearEnvironmentRuntimeContextRuntime(staleContext);
+                staleContext._registeredContext = false;
+                staleContext._isInitialized = false;
+            }
+
+            return null;
+        }
+
+        private static bool IsEnvironmentContextUsable(IEnvironmentRuntimeContext context)
+        {
+            if (ReferenceEquals(context, null))
+                return false;
+
+            EnvironmentRuntimeContextService runtime = context as EnvironmentRuntimeContextService;
+            return ReferenceEquals(runtime, null) ||
+                   (runtime._registeredContext && IsEnvironmentRuntimeUsable(runtime));
+        }
+
+        private static bool IsEnvironmentRuntimeUsable(EnvironmentRuntimeContextService runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
         }
 
         private void SyncEnvironmentContext()
@@ -288,17 +402,43 @@ namespace Hecton8.Core
             _hotSwapRegistered = false;
         }
 
-        private void TryRegisterContext()
+        private bool TryRegisterContext()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_registeredContext)
-                return;
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             IEnvironmentRuntimeContext registeredContext = GlobalRegistry.Environment;
-            if (registeredContext != null && !ReferenceEquals(registeredContext, this))
-                return;
+            if (!ReferenceEquals(registeredContext, null) && !ReferenceEquals(registeredContext, this))
+            {
+                EnvironmentRuntimeContextService staleContext = registeredContext as EnvironmentRuntimeContextService;
+                if (ReferenceEquals(staleContext, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterEnvironmentRuntimeContext(registeredContext);
+                GlobalRegistry.ClearEnvironmentRuntimeContextRuntime(staleContext);
+                staleContext._registeredContext = false;
+                staleContext._isInitialized = false;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterEnvironmentRuntimeContext(this);
             _registeredContext = ReferenceEquals(GlobalRegistry.Environment, this);
+            _runtimeOwnerAborted = !_registeredContext;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return _registeredContext;
         }
 
         private void TryUnregisterContext()

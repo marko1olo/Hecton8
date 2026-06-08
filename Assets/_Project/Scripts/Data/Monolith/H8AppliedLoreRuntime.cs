@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -10,36 +9,6 @@ using Unity.Mathematics;
 
 namespace Hecton8.Data
 {
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
-    public struct H8AppliedLoreWorldImpactRecord
-    {
-        public const int SizeBytes = 24;
-
-        [FieldOffset(0)]
-        public uint PacketHash;
-
-        [FieldOffset(4)]
-        public uint BiomeHash;
-
-        [FieldOffset(8)]
-        public float AcousticIntensity01;
-
-        [FieldOffset(12)]
-        public float AcousticPitchScale;
-
-        [FieldOffset(16)]
-        public byte Flags;
-
-        [FieldOffset(17)]
-        private byte _pad0;
-
-        [FieldOffset(18)]
-        private ushort _pad1;
-
-        [FieldOffset(20)]
-        private uint _pad2;
-    }
-
     /// <summary>
     /// Zero-allocation runtime facade for applied lore packets baked into static_data.h8bin.
     /// </summary>
@@ -51,6 +20,7 @@ namespace Hecton8.Data
         public const byte WorldImpactFlagAcoustic = 1 << 1;
         private const uint AcousticGhostSourceHash = 0x414C4748u; // ALGH
         private const float MaxLoreDepthMeters = 5000f;
+        private const double DefaultSeaLevelY = 14.02d;
         private static int s_appliedLoreSignalPushDropCount;
 
         public static uint ResolveLocaleHash(GameLanguage language)
@@ -519,7 +489,7 @@ namespace Hecton8.Data
             if (!math.isfinite(absoluteY))
                 return 0f;
 
-            float depthMeters = (float)math.max(0.0, -absoluteY);
+            float depthMeters = (float)math.max(0.0, DefaultSeaLevelY - absoluteY);
             if (!math.isfinite(depthMeters))
                 return 0f;
 

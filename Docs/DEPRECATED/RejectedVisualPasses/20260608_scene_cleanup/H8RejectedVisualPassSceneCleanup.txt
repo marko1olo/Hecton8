@@ -1,0 +1,5 @@
+status=OK
+scene=Assets/_Project/Scenes/02_HECTON_WORLD.unity
+policy=delete proven rejected fresh visual root plus inactive deprecated water/sky roots only
+deleted_count=0
+kept_review_count=0

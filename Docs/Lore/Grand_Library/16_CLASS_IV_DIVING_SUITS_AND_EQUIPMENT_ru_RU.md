@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ВОДОЛАЗНЫЕ КОСТЮМЫ IV КЛАССА И АБИССАЛЬНОЕ СНАРЯЖЕНИЕ
 
 > **Источник:** Мегакорпорация Deep Reach, Руководство Интенданта по снаряжению.

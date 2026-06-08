@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "Польовий фабрикатор P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# Польовий фабрикатор P-63
 
-UA LOC HOLD: P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure.
+P-63 робить crafting індустріальним, а не магічним. Він приймає брудний брухт, звіряється з certification table і повертає малі деталі з pressure limits: прокладки, контакти, pinger floats, sealant clamps. Він корисний, бо вміє казати ні.
 
-## Scanner
-
-UA LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
-
-## Terminal
-
-UA LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
-
-## Audio
-
-UA LOC HOLD: The machine can make parts. It cannot make permission.
-
-## Field Note
-
-UA LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+Ця відмова важлива. Fabricator не перетворить невідомий pressure material на диво-спорядження й не зможе дозволити втечу. Crafting у HECTON-8 починається як repair certification: практичний, обмежений і пов'язаний з тією самою бюрократією, що замкнула колонію.
 
 <!-- External Site; generated from P115_P63_FIELD_FABRICATOR/uk_UA. -->

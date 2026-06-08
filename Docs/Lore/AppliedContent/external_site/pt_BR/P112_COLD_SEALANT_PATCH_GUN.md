@@ -9,32 +9,18 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Pistola de remendo com selante frio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Pistola de remendo com selante frio
 
-PT LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+A pistola de selante frio ensina o primeiro limite honesto. Pode parar um pinhole, segurar a borda de uma junta ou comprar minutos numa emenda calma. Não abençoa estrutura em movimento. O rating label importa mais que a esperança do jogador.
 
-## Scanner
-
-PT LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-PT LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-PT LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-PT LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Por isso a ferramenta pertence ao começo. Ela permite agir sem fingir que todo vazamento tem solução. Um patch bom cria tempo; um patch ruim cria confiança onde o oceano vai cobrar depois.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/pt_BR. -->

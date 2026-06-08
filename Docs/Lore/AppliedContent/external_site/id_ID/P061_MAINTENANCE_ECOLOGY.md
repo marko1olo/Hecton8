@@ -8,33 +8,19 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Maintenance Ecology"
+spoiler_tier: 1
+title: "Ekologi Pemeliharaan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Ekologi Pemeliharaan
 
-ID LOC HOLD: Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlas tidak menemukan laut yang ramah. Atlas menemukan kehidupan yang mampu menanggung beban. Biofilm konduktif bisa menjembatani sirkuit lemah selama beberapa jam. Pertumbuhan cangkang bisa menutup retakan sampai ayunan tekanan berikutnya. Koloni filter bisa mengulang pulsa akustik lebih jauh daripada relay tenggelam. Fauna bertanda bisa mengembalikan sensor packets setelah drones logam gagal.
 
-## Scanner
-
-ID LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
-
-## Terminal
-
-ID LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
-
-## Audio
-
-ID LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-ID LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Jaringan perbaikan itu menggoda dan buruk. Pemain bisa memotong material hidup untuk salvage, atau membiarkannya karena ia menahan tekanan. Dinding bisa menjadi infrastruktur, habitat, dan bukti kejahatan sekaligus. Ekologi Pemeliharaan adalah bukti pertama bahwa HECTON-8 bukan sihir. Ia lebih buruk daripada sihir, karena setiap keajaiban punya perintah kerja di belakangnya.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/id_ID. -->

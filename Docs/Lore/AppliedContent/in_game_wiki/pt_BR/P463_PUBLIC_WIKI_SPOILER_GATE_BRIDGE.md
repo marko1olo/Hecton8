@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Portão de spoilers"
+title: "Portão de spoilers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Portão de spoilers
+# Portão de spoilers
 
-PT LOC HOLD: Portão de arquivo público. Páginas externas e wiki podem citar HECTON-8, Aegir, Black Keel, Deep Reach, história pública da Atlas-6 e rumores Xenon-Omega. Entradas mais fortes abrem só após custódia recuperada.
+Portão de arquivo público. Site e wiki podem citar HECTON-8, Aegir, Black Keel, Deep Reach, história pública do Atlas-6 e rumores de Xenon-Omega. Entradas mais fortes só abrem após custódia recuperada.
 
 ## Scanner
 
-PT LOC HOLD: PORTÃO DE ARQUIVO PÚBLICO // Nível de spoiler 0/1. Apenas contexto público. Evidência profunda exige custódia recuperada antes da expansão do códice.
+PORTÃO DE ARQUIVO PÚBLICO // Nível de spoiler 0/1. Apenas contexto público. Evidência profunda exige custódia recuperada antes da expansão do códice.
 
 ## Terminal
 
-PT LOC HOLD: FILTRO PUBLIC/WIKI // Antes da prova: cenário, pressão de rota, linguagem pública do acidente, instituições conhecidas e premissa inicial de salvamento. Segurar evidência profunda.
+FILTRO PUBLIC/WIKI // Permitido antes de prova: cenário, pressão de rota, linguagem pública de acidente, instituições conhecidas e premissa inicial de salvamento. Segurar evidência profunda.
 
 ## Audio
 
-PT LOC HOLD: Relé Black Keel: o texto público nomeia a lua. A prova precisa de um selo. Traga o selo.
+Relé Black Keel: o texto público nomeia a lua. A prova precisa de selo. Traga o selo.
 
 ## Field Note
 
-PT LOC HOLD: A página pública diz onde mergulhar. Ela não diz quem pagou para manter a porta fechada.
+A página pública diz onde mergulhar. Ela não diz quem pagou para manter a porta fechada.
 
 <!-- In-Game Wiki; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/pt_BR. -->

@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "ES LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: historia de presión en custodia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Blue Debt Custody
+# Blue Debt: historia de presión en custodia
 
-ES LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt es útil, caro y moralmente sucio. No es mineral mágico; es sustrato crecido por presión cuyo valor depende de manejo, contaminación, custodia, compatibilidad Atlas y dueño de la prueba.
 
 ## Scanner
 
-ES LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Archivo de recurso. Blue debt es Xenon-Omega pressure substrate en custodia: pressure history, brine exposure, noble-gas capture, contamination stage, sample grade y pago por mass-through-window.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+NODO PÚBLICO DE RECURSO // BLUE DEBT. El valor exige containment clasificado por presión, extraction scar, estado de contaminación, custody receipt y asignación recoverable tonne-window.
 
 ## Audio
 
-ES LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+Audio de pago Black Keel: "No pulas la muestra. Séllala, dale grade y mantén seco el receipt."
 
 ## Field Note
 
-ES LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Nota de saqueador: dale grade a la muestra y luego pregunta qué la tocó. Precio sin custodia es cebo.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/es_ES. -->

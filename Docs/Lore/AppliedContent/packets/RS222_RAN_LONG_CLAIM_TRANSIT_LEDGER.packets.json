@@ -1,0 +1,256 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS222_RAN_LONG_CLAIM_TRANSIT_LEDGER",
+  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+  },
+  "packets": [
+    {
+      "packet_id": "P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER",
+      "release_set_id": "RS222_RAN_LONG_CLAIM_TRANSIT_LEDGER",
+      "article_id": "applied_lore.ran_long_claim_transit_ledger",
+      "title_key": "LORE_RAN_LONG_CLAIM_TRANSIT_LEDGER_TITLE",
+      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+        "Docs/Lore/Grand_Library/01_ASTRONOMY_AND_HISTORY_en_US.md",
+        "Docs/Lore/Grand_Library/14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_en_US.md",
+        "Docs/Lore/Grand_Library/25_ASTRONOMY_AND_THE_BLACK_KEEL_en_US.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.ran_long_claim_transit_ledger",
+        "secondary": [
+          "unlock.first_black_keel_carrier_window",
+          "unlock.first_luyten_witness_hash",
+          "unlock.first_escape_payload_priority_prompt"
+        ],
+        "poi_tags": [
+          "poi.black_keel_packet_queue_console",
+          "poi.luyten_witness_cache",
+          "poi.shallow_annex_route_receipt_terminal",
+          "poi.first_carrier_window_panel"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.cable_reef",
+          "biome.route_archive"
+        ],
+        "first_20_boundary": "Clarifies in the opening route that Black Keel contact is not instant rescue: without FTL, only proof, position, payload priority and custody can move quickly while bodies and hardware wait for hard transit geometry."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "PDA Route Evidence Scanner",
+          "terminal": "Black Keel / Luyten Transit Receipt Terminal",
+          "audio": "Black Keel Carrier Window Callout",
+          "in_game_wiki": "PDA Route Physics And Claim Primer",
+          "external_site": "Public Site Hard-Sci-Fi Frontier Article",
+          "field_note": "Marauder Field Note"
+        },
+        "spoiler_tier": "1",
+        "runtime_layer": "Narrative",
+        "route_moment": "first_black_keel_carrier_window_or_luyten_receipt",
+        "truth_payload": "A Ran claim contact can move evidence at light speed, but rescue mass still waits on carrier lanes, braking windows, custody priority, payload tariffs and orbital weather.",
+        "player_question": "If Black Keel can hear the player, why is nobody immediately arriving to save them?"
+      },
+      "localized": {
+        "en_US": {
+          "localization_status": "source_authority",
+          "title": "Ran Long Claim Transit Ledger",
+          "scanner": "ROUTE LEDGER // Luyten witness hash intact. Strong carrier window can carry one clean burst: position, damage, custody, proof or plea. It is not rescue.",
+          "terminal": "ROUTE RECEIPT: RAN LONG CLAIM / LPL-WITNESS SLOT 7C // Alive-state alone is insufficient for recovery scheduling. Submit coordinate confidence, ascent-package status, custody grade and payload mass before tender priority review.",
+          "audio": "Black Keel relay: Window holds for one clean burst. Send position, payload or proof. Choose before the storm eats carrier lock.",
+          "in_game_wiki": "The first lie a stranded Marauder wants to believe is that contact means rescue. Around Ran, contact means a packet has found a carrier window. It can move a position, a witness hash, a legal demand, a price quote or a threat. It cannot move a pressure hull, a medic, a cargo tender or a braking stack. No FTL ship is waiting behind the next message. Every body that comes toward HECTON-8 still has to cross scheduled pellet lanes, coast through silent mass windows, brake without burning the cargo, then survive Aegir's weather and moon geometry.\n\nThat is why the Ran long claim ledgers read less like a distress beacon and more like accounting. A living claimant is one field. So are coordinate confidence, payload class, custody grade, ascent mass, quarantine risk, route insurance and who gets paid if the person dies before pickup. Black Keel will move a packet because packets are cheap and because delay is where contract authority lives. A rescue tender is different. It needs fuel, clearance, a cargo reason and a receiving office willing to carry liability across a moon that Deep Reach still names as property.\n\nThe useful question is not whether anyone heard you. Someone probably did. The useful question is what they heard first. A clean alive-state buys a line in a queue. A verified route receipt buys leverage. Proof of Deep Reach liability can change who is allowed to price the queue. A payload that matters outside HECTON-8 can make a ship accept risk it would leave on the ocean floor for a body alone.\n\nA good Marauder spends the first carrier window like oxygen. Send enough position to be found, enough damage to be believed, enough custody to keep the packet admissible and enough value to make the slow ship move. Anything else is prayer with a timestamp.",
+          "external_site": "Ran claim traffic moves messages before bodies. HECTON-8's first contact is a carrier-window problem, not a miracle-rescue promise.",
+          "external_site_article": "HECTON-8 uses a hard rule that shapes every rescue fantasy: communication is cheap compared with mass. A Black Keel relay can answer a stranded Marauder because a packet rides light, relay mirrors and carrier queues. A tender cannot. Ships on the Ran route still obey acceleration, braking heat, pellet-lane scheduling, orbital storm geometry and the old economics of who pays for a risk window.\n\nThe long claim ledger is the administrative form of that physics. It does not ask whether a survivor is frightened. It asks whether the coordinate fix is trustworthy, whether the ascent package can survive transfer, whether the packet has a Luyten witness hash, whether Deep Reach can claim quarantine control, whether the payload is body, evidence, cargo or all three, and whether a route insurer can recover value if the pickup fails.\n\nThis makes Black Keel feel cruel, but it is more precise to call it non-sentimental infrastructure. The Keel can preserve a distress packet and still refuse to spend tender mass on it. It can price a rescue higher if the payload is only a person and lower if the person carries proof that changes a claim. It can answer while leaving you alone for days, weeks or longer because the answer is not the ship.\n\nFor game pacing, this is the hinge between survival and lore. The ocean is not isolated because civilization vanished. It is isolated because civilization is slow, owned and procedural. The player is not waiting for rescue; the player is building the packet, payload and leverage that can make rescue worth more than silence.",
+          "field_note": "Ships do not save you. Routes might, if the right office was paid before you got wet. Spend the window like air."
+        },
+        "ar_SA": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "سجل عبور مطالبة ران الطويلة",
+          "scanner": "سجل المسار // هاش شاهد Luyten سليم. نافذة ناقل قوية تحمل دفعة نظيفة واحدة: موقع، ضرر، عهدة، دليل أو استغاثة. هذا ليس إنقاذا.",
+          "terminal": "إيصال المسار: مطالبة ران الطويلة / خانة شاهد LPL 7C // حالة الحياة وحدها لا تكفي لجدولة الاسترداد. أرسل ثقة الإحداثيات، حالة حزمة الصعود، درجة العهدة وكتلة الحمولة قبل مراجعة أولوية العربة.",
+          "audio": "مرحل Black Keel: النافذة تمسك دفعة نظيفة واحدة. أرسل الموقع أو الحمولة أو الدليل. اختر قبل أن تبتلع العاصفة قفل الناقل.",
+          "in_game_wiki": "أول كذبة يريد المارودر العالق تصديقها هي أن الاتصال يعني الإنقاذ. حول Ran، الاتصال يعني فقط أن حزمة وجدت نافذة ناقل. يمكنها حمل موقع أو هاش شاهد أو طلب قانوني أو عرض سعر أو تهديد. لا يمكنها حمل بدن ضغط أو طبيب أو عربة شحن أو حزمة كبح.\n\nلهذا تبدو سجلات مطالبة Ran الطويلة مثل محاسبة لا مثل منارة استغاثة. الناجي الحي خانة واحدة فقط. هناك أيضا ثقة الإحداثيات، فئة الحمولة، درجة العهدة، كتلة الصعود، خطر الحجر، تأمين المسار ومن يأخذ المال إذا مات الشخص قبل الالتقاط. Black Keel ينقل الحزمة لأن الحزم رخيصة ولأن السلطة التعاقدية تعيش داخل التأخير.\n\nالسؤال المفيد ليس هل سمعك أحد. غالبا سمعك أحد. السؤال هو ماذا سمع أولا. حالة حياة نظيفة تمنحك سطرا في طابور. إيصال مسار موثق يمنحك نفوذا. دليل مسؤولية Deep Reach يمكن أن يغير من يحق له تسعير الطابور. حمولة تهم خارج HECTON-8 قد تجعل سفينة تقبل خطرا كانت ستتركه مع جسد وحده في قاع المحيط.",
+          "external_site": "حركة مطالبات Ran تنقل الرسائل قبل الأجساد. أول اتصال في HECTON-8 مشكلة نافذة ناقل، لا وعد إنقاذ معجزة.",
+          "external_site_article": "يعتمد HECTON-8 قاعدة قاسية: الاتصال أرخص من الكتلة. يمكن لمرحل Black Keel أن يجيب مارودر عالقا لأن الحزمة تركب الضوء والمرايا وطوابير الناقلين. العربة لا تستطيع ذلك. السفن على طريق Ran ما زالت تخضع للتسارع وحرارة الكبح وجدولة ممرات الحبيبات وهندسة عواصف Aegir واقتصاد من يدفع ثمن نافذة الخطر.\n\nسجل المطالبة الطويلة هو الشكل الإداري لهذه الفيزياء. لا يسأل هل الناجي خائف. يسأل هل تثبيت الإحداثيات موثوق، هل حزمة الصعود تتحمل النقل، هل للحزمة هاش شاهد Luyten، هل تستطيع Deep Reach فرض الحجر، وهل الحمولة جسد أم دليل أم شحنة أم الثلاثة معا.\n\nلذلك لا ينتظر اللاعب إنقاذا بقدر ما يبني سببا بطيئا لكي يتحرك الإنقاذ. المحيط ليس معزولا لأن الحضارة اختفت؛ إنه معزول لأن الحضارة بطيئة ومملوكة وإجرائية.",
+          "field_note": "السفن لا تنقذك. المسارات قد تفعل، إذا دُفع للمكتب الصحيح قبل أن تبتل. أنفق النافذة مثل الهواء."
+        },
+        "de_DE": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Ran-Langanspruch-Transitbuch",
+          "scanner": "ROUTENBUCH // Luyten-Zeugenhash intakt. Ein starkes Trägerfenster trägt einen sauberen Burst: Position, Schaden, Verwahrung, Beweis oder Bitte. Es ist keine Rettung.",
+          "terminal": "ROUTENQUITTUNG: RAN-LANGANSPRUCH / LPL-ZEUGENFACH 7C // Lebendstatus allein reicht nicht für eine Bergungsplanung. Reiche Koordinatenvertrauen, Aufstiegspaketstatus, Verwahrungsgrad und Nutzlastmasse vor der Tender-Prioritätsprüfung ein.",
+          "audio": "Black-Keel-Relais: Das Fenster hält für einen sauberen Burst. Sende Position, Nutzlast oder Beweis. Wähle, bevor der Sturm die Trägerbindung frisst.",
+          "in_game_wiki": "Die erste Lüge, die ein gestrandeter Marauder glauben will: Kontakt bedeutet Rettung. Im Ran-System bedeutet Kontakt zuerst, dass ein Paket ein Trägerfenster gefunden hat. Es kann eine Position, einen Zeugenhash, eine Forderung, einen Preis oder eine Drohung bewegen. Es bewegt keinen Druckrumpf, keinen Sanitäter, keinen Tender und keinen Bremsstapel.\n\nDarum lesen sich die Ran-Langanspruchsbücher wie Buchhaltung statt wie Notrufe. Lebendstatus ist nur ein Feld. Daneben stehen Koordinatensicherheit, Nutzlastklasse, Verwahrungsgrad, Aufstiegsmasse, Quarantänerisiko, Routenversicherung und die Frage, wer bezahlt wird, wenn der Mensch vor der Abholung stirbt. Black Keel bewegt Pakete, weil Pakete billig sind und weil Vertragsmacht in Verzögerung lebt.\n\nDie nützliche Frage ist nicht, ob dich jemand gehört hat. Wahrscheinlich ja. Die Frage ist, was zuerst gehört wurde. Ein sauberer Lebendstatus kauft einen Platz in der Schlange. Eine geprüfte Routenquittung kauft Hebel. Beweis gegen Deep Reach kann ändern, wer die Schlange bepreist. Eine Nutzlast mit Wert außerhalb von HECTON-8 kann ein Schiff zu einem Risiko bringen, das es für einen Körper allein am Boden lassen würde.",
+          "external_site": "Ran-Anspruchsverkehr bewegt Nachrichten vor Körpern. Der erste Kontakt von HECTON-8 ist ein Trägerfensterproblem, kein Wunderrettungsversprechen.",
+          "external_site_article": "HECTON-8 folgt einer harten Regel: Kommunikation ist billig im Vergleich zu Masse. Ein Black-Keel-Relais kann antworten, weil ein Paket über Licht, Spiegel und Trägerwarteschlangen läuft. Ein Tender kann das nicht. Schiffe auf der Ran-Route gehorchen weiter Beschleunigung, Bremswärme, Pellet-Lane-Planung, Aegirs Wetter und der Ökonomie der Risikofenster.\n\nDas Langanspruchsbuch ist die Verwaltungsform dieser Physik. Es fragt nicht, ob ein Überlebender Angst hat. Es fragt, ob die Koordinaten glaubwürdig sind, ob das Aufstiegspaket transferfähig ist, ob ein Luyten-Zeugenhash existiert, ob Deep Reach Quarantänehoheit behaupten kann und ob die Nutzlast Körper, Beweis, Fracht oder alles zugleich ist.\n\nSo wird aus Lore Gameplay-Druck: Die Welt ist nicht still, weil niemand existiert, sondern weil Zivilisation langsam, besessen und prozedural ist. Der Spieler wartet nicht einfach; er baut Paket, Nutzlast und Hebel, damit Rettung mehr wert wird als Schweigen.",
+          "field_note": "Schiffe retten dich nicht. Routen vielleicht, wenn das richtige Büro bezahlt war, bevor du nass wurdest. Gib das Fenster aus wie Luft."
+        },
+        "es_ES": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Libro de Tránsito de Reclamación Larga de Ran",
+          "scanner": "LIBRO DE RUTA // Hash de testigo Luyten intacto. Una ventana de portador fuerte puede llevar una ráfaga limpia: posición, daños, custodia, prueba o súplica. No es rescate.",
+          "terminal": "RECIBO DE RUTA: RECLAMACIÓN LARGA DE RAN / RANURA LPL-TESTIGO 7C // El estado con vida no basta para programar recuperación. Envía confianza de coordenadas, estado del paquete de ascenso, grado de custodia y masa de carga antes de la revisión de prioridad del tender.",
+          "audio": "Relé Black Keel: La ventana aguanta una ráfaga limpia. Envía posición, carga o prueba. Elige antes de que la tormenta se coma el bloqueo del portador.",
+          "in_game_wiki": "La primera mentira que quiere creer un Marauder varado es que contacto significa rescate. En Ran, contacto significa que un paquete encontró una ventana de portador. Puede mover una posición, un hash de testigo, una demanda legal, una tarifa o una amenaza. No puede mover un casco presurizado, un médico, un tender de carga ni una pila de frenado.\n\nPor eso los libros de reclamación larga de Ran parecen contabilidad. Estar vivo es solo una casilla. También cuentan la confianza de coordenadas, clase de carga, grado de custodia, masa de ascenso, riesgo de cuarentena, seguro de ruta y quién cobra si la persona muere antes de la recogida. Black Keel mueve paquetes porque son baratos y porque la autoridad contractual vive en el retraso.\n\nLa pregunta útil no es si alguien te oyó. Probablemente sí. La pregunta es qué oyó primero. Un estado con vida compra cola. Un recibo de ruta verificado compra influencia. Una prueba de responsabilidad de Deep Reach cambia quién puede poner precio a esa cola. Una carga que importe fuera de HECTON-8 puede hacer que una nave acepte un riesgo que dejaría en el fondo si solo fuera por un cuerpo.",
+          "external_site": "El tráfico de reclamaciones de Ran mueve mensajes antes que cuerpos. El primer contacto de HECTON-8 es un problema de ventana de portador, no una promesa de rescate milagroso.",
+          "external_site_article": "HECTON-8 se apoya en una regla dura: comunicarse es barato comparado con mover masa. Un relé de Black Keel puede contestar porque un paquete viaja por luz, espejos y colas de portadores. Un tender no. Las naves de la ruta Ran siguen obedeciendo aceleración, calor de frenado, programación de carriles de pellets, clima de Aegir y economía de riesgo.\n\nEl libro de reclamación larga es la forma administrativa de esa física. No pregunta si el superviviente tiene miedo. Pregunta si las coordenadas son fiables, si el paquete de ascenso sobrevivirá al traslado, si hay hash de testigo Luyten, si Deep Reach puede invocar cuarentena y si la carga es cuerpo, prueba, mercancía o las tres cosas.\n\nAsí la distancia se vuelve presión jugable. El océano no está aislado porque la civilización desapareciera, sino porque la civilización es lenta, propietaria y procedimental. El jugador no espera rescate: construye el paquete, la carga y la palanca que pueden hacer que el rescate valga más que el silencio.",
+          "field_note": "Las naves no te salvan. Las rutas quizá, si la oficina correcta cobró antes de que te mojaras. Gasta la ventana como aire."
+        },
+        "fr_FR": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Registre de Transit de Réclamation Longue de Ran",
+          "scanner": "REGISTRE DE ROUTE // Hash témoin Luyten intact. Une forte fenêtre porteuse peut emporter une salve propre : position, dégâts, garde, preuve ou supplique. Ce n'est pas un sauvetage.",
+          "terminal": "REÇU DE ROUTE : RÉCLAMATION LONGUE DE RAN / CRÉNEAU TÉMOIN LPL 7C // L'état vivant seul ne suffit pas à programmer une récupération. Transmettez confiance de coordonnées, état du paquet d'ascension, grade de garde et masse de charge avant examen de priorité du tender.",
+          "audio": "Relais Black Keel : la fenêtre tient pour une salve propre. Envoyez position, charge ou preuve. Choisissez avant que la tempête mange le verrou porteur.",
+          "in_game_wiki": "Le premier mensonge qu'un Marauder échoué veut croire est simple : contact veut dire sauvetage. Autour de Ran, contact veut seulement dire qu'un paquet a trouvé une fenêtre porteuse. Il peut déplacer une position, un hash témoin, une demande légale, un tarif ou une menace. Il ne déplace pas une coque pressurisée, un médecin, un tender ni une pile de freinage.\n\nC'est pourquoi les registres de réclamation longue de Ran ressemblent à de la comptabilité. Un survivant vivant n'est qu'un champ. Il faut aussi la confiance des coordonnées, la classe de charge, le grade de garde, la masse d'ascension, le risque de quarantaine, l'assurance de route et la question de qui touche quoi si la personne meurt avant la récupération. Black Keel déplace les paquets parce qu'ils coûtent peu et parce que l'autorité contractuelle vit dans le délai.\n\nLa bonne question n'est pas de savoir si quelqu'un vous a entendu. Probablement oui. La question est ce qu'il a entendu en premier. Un état vivant propre achète une ligne dans une file. Un reçu de route vérifié donne du levier. Une preuve de responsabilité Deep Reach peut changer qui a le droit de tarifer la file. Une charge utile qui compte hors de HECTON-8 peut faire bouger un vaisseau qui abandonnerait un corps seul au fond.",
+          "external_site": "Le trafic de réclamation de Ran déplace les messages avant les corps. Le premier contact de HECTON-8 est un problème de fenêtre porteuse, pas une promesse de miracle.",
+          "external_site_article": "HECTON-8 respecte une règle dure : communiquer coûte peu à côté du déplacement de masse. Un relais Black Keel peut répondre parce qu'un paquet voyage par lumière, miroirs et files porteuses. Un tender ne le peut pas. Les vaisseaux de la route Ran restent soumis à l'accélération, à la chaleur de freinage, aux couloirs de pellets, à la météo d'Aegir et à l'économie du risque.\n\nLe registre de réclamation longue est la forme administrative de cette physique. Il ne demande pas si le survivant a peur. Il demande si les coordonnées tiennent, si le paquet d'ascension survivra au transfert, si un hash témoin Luyten existe, si Deep Reach peut revendiquer la quarantaine, et si la charge est corps, preuve, cargo ou tout cela à la fois.\n\nPour le jeu, c'est le pivot entre survie et fiction dure. L'océan n'est pas isolé parce que la civilisation a disparu. Il l'est parce que la civilisation est lente, possédée et procédurale. Le joueur ne fait pas qu'attendre : il construit le paquet, la charge et le levier qui rendent un sauvetage plus rentable que le silence.",
+          "field_note": "Les vaisseaux ne vous sauvent pas. Les routes, peut-être, si le bon bureau a été payé avant que vous soyez mouillé. Dépensez la fenêtre comme de l'air."
+        },
+        "he_IL": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "יומן מעבר תביעת רן הארוכה",
+          "scanner": "יומן נתיב // האש עדות Luyten תקין. חלון נשא חזק יכול לשאת פרץ נקי אחד: מיקום, נזק, משמורת, הוכחה או תחינה. זו אינה הצלה.",
+          "terminal": "קבלת נתיב: תביעת רן הארוכה / חריץ עד LPL 7C // מצב חיים לבדו אינו מספיק לתזמון חילוץ. שלח אמינות קואורדינטות, מצב חבילת עלייה, דרגת משמורת ומסת מטען לפני סקירת עדיפות כלי.",
+          "audio": "ממסר Black Keel: החלון מחזיק פרץ נקי אחד. שלח מיקום, מטען או הוכחה. בחר לפני שהסערה אוכלת את נעילת הנשא.",
+          "in_game_wiki": "השקר הראשון שמארודר תקוע רוצה להאמין בו הוא שמגע פירושו חילוץ. סביב Ran, מגע פירושו שחבילה מצאה חלון נשא. היא יכולה להזיז מיקום, האש עדות, דרישה משפטית, הצעת מחיר או איום. היא לא יכולה להזיז גוף לחץ, רופא, כלי מטען או מערך בלימה.\n\nלכן יומני תביעת Ran הארוכה נקראים כמו חשבונאות. ניצול חי הוא רק שדה אחד. יש גם אמינות קואורדינטות, סוג מטען, דרגת משמורת, מסת עלייה, סיכון בידוד, ביטוח נתיב ומי מקבל תשלום אם האדם מת לפני האיסוף. Black Keel מעביר חבילות כי חבילות זולות וכי סמכות חוזית חיה בתוך עיכוב.\n\nהשאלה המועילה אינה אם מישהו שמע אותך. כנראה שכן. השאלה היא מה הוא שמע קודם. מצב חיים נקי קונה שורה בתור. קבלת נתיב מאומתת קונה מנוף. הוכחת אחריות של Deep Reach יכולה לשנות מי רשאי לתמחר את התור. מטען שחשוב מחוץ ל-HECTON-8 יכול לגרום לספינה לקבל סיכון שהיתה משאירה על קרקעית האוקיינוס אם היה מדובר בגוף בלבד.",
+          "external_site": "תנועת תביעות Ran מזיזה הודעות לפני גופים. המגע הראשון של HECTON-8 הוא בעיית חלון נשא, לא הבטחת הצלה ניסית.",
+          "external_site_article": "HECTON-8 נשען על כלל קשה: תקשורת זולה לעומת מסה. ממסר Black Keel יכול לענות כי חבילה רוכבת על אור, מראות ותורי נשאים. כלי חילוץ לא. ספינות בנתיב Ran עדיין כפופות לתאוצה, חום בלימה, תזמון מסלולי גלולות, מזג האוויר של Aegir וכלכלה של חלון סיכון.\n\nיומן התביעה הארוכה הוא הצורה המנהלית של הפיזיקה הזאת. הוא לא שואל אם הניצול מפחד. הוא שואל אם תיקון הקואורדינטות אמין, אם חבילת העלייה תשרוד העברה, אם יש האש עדות Luyten, אם Deep Reach יכולה לטעון לשליטת בידוד ואם המטען הוא גוף, הוכחה, סחורה או כולם יחד.\n\nכך האוקיינוס הופך לבודד בלי למחוק את הציוויליזציה. הציוויליזציה קיימת, אבל היא איטית, בבעלות ומלאת נהלים. השחקן אינו מחכה להצלה; הוא בונה חבילה, מטען ומנוף שיכולים להפוך הצלה לשווה יותר משתיקה.",
+          "field_note": "ספינות לא מצילות אותך. נתיבים אולי, אם המשרד הנכון שולם לפני שנרטבת. בזבז את החלון כמו אוויר."
+        },
+        "id_ID": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Buku Transit Klaim Panjang Ran",
+          "scanner": "BUKU RUTE // Hash saksi Luyten utuh. Satu jendela carrier kuat bisa membawa satu burst bersih: posisi, kerusakan, kustodi, bukti, atau permohonan. Itu bukan penyelamatan.",
+          "terminal": "RESI RUTE: KLAIM PANJANG RAN / SLOT SAKSI LPL 7C // Status hidup saja tidak cukup untuk jadwal recovery. Kirim keyakinan koordinat, status paket naik, tingkat kustodi, dan massa payload sebelum review prioritas tender.",
+          "audio": "Relay Black Keel: Jendela tahan untuk satu burst bersih. Kirim posisi, payload, atau bukti. Pilih sebelum badai memakan carrier lock.",
+          "in_game_wiki": "Kebohongan pertama yang ingin dipercaya Marauder yang terdampar adalah bahwa kontak berarti penyelamatan. Di sekitar Ran, kontak berarti paket menemukan jendela carrier. Paket bisa membawa posisi, hash saksi, tuntutan hukum, kutipan harga, atau ancaman. Paket tidak bisa membawa lambung tekanan, medis, tender kargo, atau stack pengereman.\n\nItu sebabnya buku klaim panjang Ran terasa seperti akuntansi. Survivor yang masih hidup hanya satu kolom. Ada juga keyakinan koordinat, kelas payload, tingkat kustodi, massa naik, risiko karantina, asuransi rute, dan siapa dibayar jika orang itu mati sebelum dijemput. Black Keel memindahkan paket karena paket murah dan karena kuasa kontrak hidup di dalam keterlambatan.\n\nPertanyaan yang berguna bukan apakah ada yang mendengar. Kemungkinan ada. Pertanyaannya adalah apa yang mereka dengar dulu. Status hidup yang bersih membeli antrean. Resi rute terverifikasi membeli daya tawar. Bukti tanggung jawab Deep Reach bisa mengubah siapa yang boleh memberi harga antrean. Payload yang penting di luar HECTON-8 bisa membuat kapal menerima risiko yang akan mereka tinggalkan jika isinya hanya tubuh.",
+          "external_site": "Lalu lintas klaim Ran memindahkan pesan sebelum tubuh. Kontak pertama HECTON-8 adalah masalah jendela carrier, bukan janji penyelamatan ajaib.",
+          "external_site_article": "HECTON-8 memakai aturan keras: komunikasi murah dibanding massa. Relay Black Keel bisa menjawab karena paket menumpang cahaya, cermin, dan antrean carrier. Tender tidak bisa begitu. Kapal pada rute Ran tetap patuh pada akselerasi, panas pengereman, jadwal pellet lane, cuaca Aegir, dan ekonomi siapa membayar jendela risiko.\n\nBuku klaim panjang adalah bentuk administratif fisika itu. Ia tidak bertanya apakah survivor takut. Ia bertanya apakah koordinat dapat dipercaya, apakah paket naik bisa bertahan saat transfer, apakah ada hash saksi Luyten, apakah Deep Reach bisa mengklaim kendali karantina, dan apakah payload berupa tubuh, bukti, kargo, atau ketiganya.\n\nInilah jembatan antara survival dan lore. Samudra tidak terisolasi karena peradaban hilang. Samudra terisolasi karena peradaban lambat, dimiliki, dan prosedural. Pemain tidak menunggu rescue; pemain membangun paket, payload, dan daya tawar yang membuat rescue lebih bernilai daripada diam.",
+          "field_note": "Kapal tidak menyelamatkanmu. Rute mungkin, kalau kantor yang tepat sudah dibayar sebelum kau basah. Pakai jendela itu seperti udara."
+        },
+        "ja_JP": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Ran長期請求輸送台帳",
+          "scanner": "ルート台帳 // Luyten証人ハッシュは intact。強いキャリア窓なら一度だけ清潔なバーストを運べる。位置、損傷、保管、証拠、または懇願。救助ではない。",
+          "terminal": "ルート受領: RAN長期請求 / LPL証人スロット7C // 生存状態だけでは回収予定に不足。テンダー優先審査前に座標信頼度、上昇パッケージ状態、保管等級、ペイロード質量を提出せよ。",
+          "audio": "Black Keel中継: 窓は清潔な一発分だけ持つ。位置、ペイロード、証拠のどれかを送れ。嵐がキャリアロックを食う前に選べ。",
+          "in_game_wiki": "取り残されたMarauderが最初に信じたがる嘘は、通信が救助を意味するというものだ。Ran周辺での通信は、パケットがキャリア窓を見つけたという意味でしかない。運べるのは位置、証人ハッシュ、法的要求、見積もり、脅しだ。圧力船体、医療員、貨物テンダー、制動スタックは運べない。\n\nだからRan長期請求台帳は救難信号ではなく会計書類のように読める。生存者は一つの欄でしかない。座標信頼度、ペイロード種別、保管等級、上昇質量、隔離リスク、ルート保険、回収前に死んだ場合の支払先も欄になる。Black Keelがパケットを動かすのは安いからであり、契約権限が遅延の中に宿るからだ。\n\n大事なのは誰かが聞いたかではない。おそらく聞いている。問題は最初に何を聞いたかだ。清潔な生存状態は列を買う。検証済みのルート受領は交渉力を買う。Deep Reachの責任を示す証拠は、列の価格を決める権限を変える。HECTON-8の外で価値を持つペイロードなら、ただの身体なら海底に置かれるリスクを船に引き受けさせることがある。",
+          "external_site": "Ranの請求交通は身体より先にメッセージを動かす。HECTON-8の最初の接触はキャリア窓の問題であり、奇跡の救助ではない。",
+          "external_site_article": "HECTON-8には硬いルールがある。通信は質量を動かすより安い。Black Keelの中継は、パケットが光、鏡、キャリア待ち列に乗るから返答できる。テンダーはそうはいかない。Ranルートの船は加速、制動熱、ペレットレーンの予定、Aegirの天候、リスク窓の支払いに従う。\n\n長期請求台帳はその物理の行政形態だ。生存者が怖いかは聞かない。座標が信用できるか、上昇パッケージが転送に耐えるか、Luyten証人ハッシュがあるか、Deep Reachが隔離権を主張できるか、ペイロードが身体か証拠か貨物か、その全部かを聞く。\n\nつまり海は文明が消えたから孤立しているのではない。文明が遅く、所有され、手続きでできているから孤立している。プレイヤーは救助を待つだけではない。沈黙より救助を高くするパケット、ペイロード、交渉材料を作っている。",
+          "field_note": "船はお前を救わない。ルートなら救うかもしれない。濡れる前に正しい事務所へ金が払われていれば。窓は空気みたいに使え。"
+        },
+        "ko_KR": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Ran 장기 청구 운송 장부",
+          "scanner": "항로 장부 // Luyten 증인 해시 intact. 강한 운반창은 깨끗한 버스트 하나를 실을 수 있다. 위치, 손상, 보관, 증거 또는 탄원. 구조가 아니다.",
+          "terminal": "항로 영수증: RAN 장기 청구 / LPL 증인 슬롯 7C // 생존 상태만으로는 회수 일정에 부족하다. 텐더 우선 심사 전 좌표 신뢰도, 상승 패키지 상태, 보관 등급, 적재 질량을 제출하라.",
+          "audio": "Black Keel 중계: 창은 깨끗한 버스트 하나만 버틴다. 위치, 적재물, 증거 중 하나를 보내라. 폭풍이 운반 잠금을 먹기 전에 골라라.",
+          "in_game_wiki": "고립된 Marauder가 처음 믿고 싶어 하는 거짓말은 연락이 구조를 뜻한다는 것이다. Ran 주변에서 연락은 패킷이 운반창을 찾았다는 뜻이다. 그것은 위치, 증인 해시, 법적 요구, 견적, 협박을 보낼 수 있다. 압력 선체, 의무병, 화물 텐더, 감속 스택은 보낼 수 없다.\n\n그래서 Ran 장기 청구 장부는 조난 신호보다 회계 서류처럼 읽힌다. 살아 있다는 사실은 한 칸일 뿐이다. 좌표 신뢰도, 적재 등급, 보관 등급, 상승 질량, 검역 위험, 항로 보험, 픽업 전에 사람이 죽으면 누가 돈을 받는지도 칸이 된다. Black Keel은 패킷이 싸고 계약 권한이 지연 안에서 작동하기 때문에 패킷을 옮긴다.\n\n중요한 질문은 누가 들었느냐가 아니다. 아마 누군가는 들었다. 문제는 무엇을 먼저 들었느냐다. 깨끗한 생존 상태는 대기줄을 산다. 검증된 항로 영수증은 지렛대를 산다. Deep Reach 책임 증거는 누가 그 줄의 가격을 정할 수 있는지 바꾼다. HECTON-8 바깥에서 가치 있는 적재물은 몸 하나라면 해저에 남겼을 위험을 배가 받아들이게 만들 수 있다.",
+          "external_site": "Ran 청구 교통은 몸보다 메시지를 먼저 움직인다. HECTON-8의 첫 연락은 운반창 문제이지 기적적인 구조 약속이 아니다.",
+          "external_site_article": "HECTON-8의 규칙은 단단하다. 통신은 질량 이동보다 싸다. Black Keel 중계는 패킷이 빛, 거울, 운반 대기열을 타기 때문에 대답할 수 있다. 텐더는 그렇지 못하다. Ran 항로의 선박은 여전히 가속, 감속열, 펠릿 레인 일정, Aegir의 날씨, 위험창 비용에 묶인다.\n\n장기 청구 장부는 그 물리의 행정 양식이다. 생존자가 무서워하는지는 묻지 않는다. 좌표가 믿을 만한지, 상승 패키지가 전송을 버틸지, Luyten 증인 해시가 있는지, Deep Reach가 검역 통제를 주장할 수 있는지, 적재물이 몸인지 증거인지 화물인지 또는 전부인지 묻는다.\n\n이 때문에 바다는 문명이 사라져서 고립된 것이 아니다. 문명이 느리고, 소유되어 있고, 절차적이기 때문에 고립되어 있다. 플레이어는 구조를 기다리는 사람이 아니라 침묵보다 구조가 더 값지게 보이도록 패킷과 적재물과 지렛대를 만드는 사람이다.",
+          "field_note": "배는 널 구하지 않는다. 항로는 그럴 수 있다. 네가 젖기 전에 맞는 사무실에 돈이 들어갔다면. 그 창을 공기처럼 써라."
+        },
+        "nl_NL": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Ran Lange-Claim Transitregister",
+          "scanner": "ROUTEREGISTER // Luyten-getuigehash intact. Een sterk carriervenster kan één schone burst dragen: positie, schade, bewaring, bewijs of smeekbede. Het is geen redding.",
+          "terminal": "ROUTE-ONTVANGST: RAN LANGE CLAIM / LPL-GETUIGENSLOT 7C // Alleen levensstatus is onvoldoende voor recovery-planning. Dien coördinatenvertrouwen, status van opstijgpakket, bewaringsgraad en payloadmassa in vóór tenderprioriteit.",
+          "audio": "Black Keel-relais: Het venster houdt één schone burst. Stuur positie, payload of bewijs. Kies voordat de storm carrier lock opeet.",
+          "in_game_wiki": "De eerste leugen die een gestrande Marauder wil geloven is dat contact redding betekent. Rond Ran betekent contact dat een pakket een carriervenster heeft gevonden. Het kan een positie, getuigehash, juridische eis, prijs of dreiging verplaatsen. Het verplaatst geen drukromp, arts, vrachttender of remstack.\n\nDaarom lezen de lange-claimregisters van Ran als boekhouding. Een levende overlevende is één veld. Daarnaast staan coördinatenvertrouwen, payloadklasse, bewaringsgraad, opstijgmassa, quarantainerisico, routeverzekering en wie wordt betaald als de persoon sterft voor pickup. Black Keel verplaatst pakketten omdat pakketten goedkoop zijn en omdat contractmacht leeft in vertraging.\n\nDe nuttige vraag is niet of iemand je hoorde. Waarschijnlijk wel. De vraag is wat ze eerst hoorden. Een schone levensstatus koopt een plek in de rij. Een geverifieerde route-ontvangst koopt hefboomwerking. Bewijs van Deep Reach-aansprakelijkheid kan veranderen wie de rij mag prijzen. Een payload die buiten HECTON-8 telt, kan een schip risico laten accepteren dat het voor een lichaam alleen op de oceaanbodem zou laten liggen.",
+          "external_site": "Ran-claimverkeer verplaatst berichten vóór lichamen. Het eerste contact van HECTON-8 is een carriervensterprobleem, geen belofte van wonderredding.",
+          "external_site_article": "HECTON-8 volgt een harde regel: communicatie is goedkoop vergeleken met massa. Een Black Keel-relais kan antwoorden omdat een pakket licht, spiegels en carrierrijen gebruikt. Een tender kan dat niet. Schepen op de Ran-route blijven gebonden aan versnelling, remwarmte, pellet-lane planning, Aegirs weer en de economie van risicovensters.\n\nHet lange-claimregister is de administratieve vorm van die natuurkunde. Het vraagt niet of de overlevende bang is. Het vraagt of de coördinaten betrouwbaar zijn, of het opstijgpakket overdracht overleeft, of er een Luyten-getuigehash is, of Deep Reach quarantainecontrole kan claimen, en of de payload lichaam, bewijs, vracht of alle drie is.\n\nZo wordt afstand speelbare druk. De oceaan is niet geïsoleerd omdat beschaving verdwenen is. Hij is geïsoleerd omdat beschaving traag, bezeten en procedureel is. De speler wacht niet op redding; de speler bouwt pakket, payload en hefboom om redding meer waard te maken dan stilte.",
+          "field_note": "Schepen redden je niet. Routes misschien, als het juiste kantoor betaald was voor je nat werd. Besteed het venster als lucht."
+        },
+        "pl_PL": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Rejestr Tranzytu Długiego Roszczenia Ran",
+          "scanner": "REJESTR TRASY // Hash świadka Luyten nienaruszony. Silne okno nośnika przeniesie jeden czysty burst: pozycję, uszkodzenia, pieczę, dowód albo prośbę. To nie jest ratunek.",
+          "terminal": "POTWIERDZENIE TRASY: DŁUGIE ROSZCZENIE RAN / SLOT ŚWIADKA LPL 7C // Sam status żywy nie wystarcza do harmonogramu odzysku. Prześlij ufność współrzędnych, stan pakietu wznoszenia, klasę pieczy i masę ładunku przed oceną priorytetu tendera.",
+          "audio": "Przekaźnik Black Keel: okno trzyma jeden czysty burst. Wyślij pozycję, ładunek albo dowód. Wybierz, zanim sztorm zje blokadę nośnika.",
+          "in_game_wiki": "Pierwsze kłamstwo, w które chce wierzyć uwięziony Marauder, brzmi: kontakt oznacza ratunek. Wokół Ran kontakt znaczy, że pakiet znalazł okno nośnika. Może przenieść pozycję, hash świadka, żądanie prawne, wycenę albo groźbę. Nie przeniesie kadłuba ciśnieniowego, lekarza, tendera ani stosu hamowania.\n\nDlatego rejestry długiego roszczenia Ran brzmią jak księgowość. Żywy ocalały jest jednym polem. Obok są ufność współrzędnych, klasa ładunku, stopień pieczy, masa wznoszenia, ryzyko kwarantanny, ubezpieczenie trasy i kto dostanie zapłatę, jeśli człowiek umrze przed odbiorem. Black Keel przenosi pakiety, bo pakiety są tanie, a władza kontraktu mieszka w opóźnieniu.\n\nUżyteczne pytanie nie brzmi, czy ktoś cię usłyszał. Prawdopodobnie tak. Pytanie brzmi, co usłyszał najpierw. Czysty status życia kupuje miejsce w kolejce. Zweryfikowane potwierdzenie trasy kupuje nacisk. Dowód odpowiedzialności Deep Reach może zmienić, kto wycenia kolejkę. Ładunek ważny poza HECTON-8 może skłonić statek do ryzyka, które dla samego ciała zostawiłby na dnie.",
+          "external_site": "Ruch roszczeń Ran przenosi wiadomości przed ciałami. Pierwszy kontakt HECTON-8 to problem okna nośnika, nie obietnica cudownego ratunku.",
+          "external_site_article": "HECTON-8 działa według twardej reguły: komunikacja jest tania w porównaniu z masą. Przekaźnik Black Keel może odpowiedzieć, bo pakiet jedzie światłem, lustrami i kolejkami nośników. Tender nie. Statki na trasie Ran nadal podlegają przyspieszeniu, ciepłu hamowania, harmonogramom pellet lane, pogodzie Aegira i ekonomii okna ryzyka.\n\nRejestr długiego roszczenia jest administracyjną formą tej fizyki. Nie pyta, czy ocalały się boi. Pyta, czy współrzędne są wiarygodne, czy pakiet wznoszenia przetrwa transfer, czy istnieje hash świadka Luyten, czy Deep Reach może żądać kontroli kwarantanny i czy ładunek jest ciałem, dowodem, frachtem albo wszystkim naraz.\n\nOcean nie jest odcięty dlatego, że cywilizacja zniknęła. Jest odcięty, bo cywilizacja jest wolna, posiadana i proceduralna. Gracz nie czeka tylko na ratunek; buduje pakiet, ładunek i nacisk, które mogą uczynić ratunek cenniejszym niż cisza.",
+          "field_note": "Statki cię nie ratują. Trasy może tak, jeśli właściwe biuro dostało zapłatę, zanim zmokłeś. Wydawaj okno jak powietrze."
+        },
+        "pt_BR": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Livro de Trânsito da Reivindicação Longa de Ran",
+          "scanner": "LIVRO DE ROTA // Hash de testemunha Luyten intacto. Uma janela de transportador forte leva um disparo limpo: posição, dano, custódia, prova ou súplica. Não é resgate.",
+          "terminal": "RECIBO DE ROTA: REIVINDICAÇÃO LONGA DE RAN / SLOT LPL-TESTEMUNHA 7C // Estado vivo sozinho não basta para agendar recuperação. Envie confiança de coordenada, estado do pacote de subida, grau de custódia e massa da carga antes da revisão de prioridade do tender.",
+          "audio": "Retransmissor Black Keel: a janela segura um disparo limpo. Envie posição, carga ou prova. Escolha antes que a tempestade coma a trava do transportador.",
+          "in_game_wiki": "A primeira mentira que um Marauder encalhado quer acreditar é que contato significa resgate. Ao redor de Ran, contato significa que um pacote achou uma janela de transportador. Ele pode mover uma posição, um hash de testemunha, uma demanda legal, uma cotação ou uma ameaça. Não move casco pressurizado, médico, tender de carga nem pilha de frenagem.\n\nPor isso os livros de reivindicação longa de Ran parecem contabilidade. Um sobrevivente vivo é só um campo. Também entram confiança de coordenada, classe da carga, grau de custódia, massa de subida, risco de quarentena, seguro de rota e quem recebe se a pessoa morrer antes da coleta. A Black Keel move pacotes porque pacotes são baratos e porque autoridade contratual vive no atraso.\n\nA pergunta útil não é se alguém ouviu você. Provavelmente ouviu. A pergunta é o que ouviu primeiro. Um estado vivo limpo compra fila. Um recibo de rota verificado compra alavanca. Prova de responsabilidade da Deep Reach pode mudar quem pode precificar a fila. Uma carga que importe fora de HECTON-8 pode fazer uma nave aceitar risco que deixaria no fundo se fosse só um corpo.",
+          "external_site": "O tráfego de reivindicação de Ran move mensagens antes de corpos. O primeiro contato de HECTON-8 é um problema de janela de transportador, não promessa de resgate milagroso.",
+          "external_site_article": "HECTON-8 segue uma regra dura: comunicação é barata perto de massa. Um retransmissor Black Keel pode responder porque um pacote viaja por luz, espelhos e filas de transportadores. Um tender não pode. Naves na rota Ran ainda obedecem aceleração, calor de frenagem, agenda de pellet lanes, clima de Aegir e a economia de quem paga pela janela de risco.\n\nO livro de reivindicação longa é a forma administrativa dessa física. Ele não pergunta se o sobrevivente está com medo. Pergunta se a coordenada é confiável, se o pacote de subida aguenta transferência, se existe hash de testemunha Luyten, se a Deep Reach pode alegar quarentena e se a carga é corpo, prova, frete ou tudo junto.\n\nAssim o oceano não fica isolado porque a civilização sumiu. Ele fica isolado porque a civilização é lenta, proprietária e procedural. O jogador não espera resgate; constrói o pacote, a carga e a alavanca que tornam resgate mais valioso que silêncio.",
+          "field_note": "Naves não salvam você. Rotas talvez, se o escritório certo foi pago antes de você molhar. Gaste a janela como ar."
+        },
+        "ru_RU": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Транзитный реестр длинной претензии Ran",
+          "scanner": "РЕЕСТР МАРШРУТА // Свидетельский хэш Luyten цел. Сильное окно носителя выдержит один чистый импульс: позицию, повреждения, опеку, доказательство или просьбу. Это не спасение.",
+          "terminal": "КВИТАНЦИЯ МАРШРУТА: ДЛИННАЯ ПРЕТЕНЗИЯ RAN / LPL-СЛОТ СВИДЕТЕЛЯ 7C // Одного статуса жив недостаточно для планирования возврата. Отправьте доверие координат, статус пакета подъема, класс опеки и массу полезной нагрузки до проверки приоритета тендера.",
+          "audio": "Ретранслятор Black Keel: окно держит один чистый импульс. Отправь позицию, груз или доказательство. Выбирай, пока шторм не съел захват носителя.",
+          "in_game_wiki": "Первая ложь, в которую хочет поверить застрявший мародер: связь означает спасение. В системе Ran связь означает только то, что пакет нашел окно носителя. Он может перенести координаты, свидетельский хэш, юридическое требование, расчет цены или угрозу. Он не перенесет гермокорпус, медика, грузовой тендер или тормозной пакет.\n\nПоэтому реестры длинной претензии Ran читаются как бухгалтерия, а не как сигнал бедствия. Живой человек - всего одно поле. Рядом стоят доверие координат, класс груза, уровень опеки, масса подъема, карантинный риск, страховка маршрута и кто получит выплату, если человек умрет до подбора. Black Keel двигает пакеты, потому что пакеты дешевы, а договорная власть живет в задержке.\n\nПолезный вопрос не в том, услышал ли тебя кто-то. Скорее всего, услышал. Вопрос в том, что он услышал первым. Чистый статус жив покупает строку в очереди. Проверенная маршрутная квитанция покупает рычаг. Доказательство вины Deep Reach может изменить того, кто имеет право оценивать очередь. Груз, важный за пределами HECTON-8, может заставить корабль принять риск, который ради одного тела оставили бы на дне.",
+          "external_site": "Поток претензий Ran переносит сообщения раньше тел. Первый контакт HECTON-8 - это проблема окна носителя, а не обещание чудесного спасения.",
+          "external_site_article": "HECTON-8 держится на жестком правиле: связь дешевле массы. Ретранслятор Black Keel может ответить мародеру, потому что пакет идет через свет, зеркала и очереди носителей. Тендер так не может. Корабли на маршруте Ran все еще подчиняются разгону, теплу торможения, расписанию pellet lane, погоде Aegir и экономике риск-окна.\n\nДлинный реестр претензии - административная форма этой физики. Он не спрашивает, страшно ли выжившему. Он спрашивает, надежны ли координаты, выдержит ли пакет подъема передачу, есть ли свидетельский хэш Luyten, может ли Deep Reach заявить карантинный контроль, и что такое полезная нагрузка: тело, доказательство, груз или все сразу.\n\nТак океан оказывается одиноким не потому, что цивилизация исчезла. Она есть, но она медленная, собственническая и процедурная. Игрок не просто ждет спасения; он собирает пакет, груз и рычаг, которые делают спасение дороже молчания.",
+          "field_note": "Корабли тебя не спасают. Маршруты - возможно, если нужному офису заплатили до того, как ты промок. Трать окно как воздух."
+        },
+        "uk_UA": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Транзитний реєстр довгої претензії Ran",
+          "scanner": "РЕЄСТР МАРШРУТУ // Свідчий хеш Luyten цілий. Сильне вікно носія витримає один чистий імпульс: позицію, пошкодження, опіку, доказ або прохання. Це не порятунок.",
+          "terminal": "КВИТАНЦІЯ МАРШРУТУ: ДОВГА ПРЕТЕНЗІЯ RAN / LPL-СЛОТ СВІДКА 7C // Самого статусу живий недостатньо для планування повернення. Надішліть довіру координат, стан пакета підйому, клас опіки і масу корисного вантажу до перевірки пріоритету тендера.",
+          "audio": "Ретранслятор Black Keel: вікно тримає один чистий імпульс. Надішли позицію, вантаж або доказ. Обирай, доки шторм не з'їв захват носія.",
+          "in_game_wiki": "Перша брехня, у яку хоче повірити застряглий Marauder: зв'язок означає порятунок. Біля Ran зв'язок означає лише, що пакет знайшов вікно носія. Він може перенести координати, свідчий хеш, юридичну вимогу, ціну або погрозу. Він не перенесе гермокорпус, медика, вантажний тендер чи гальмівний стек.\n\nТому реєстри довгої претензії Ran читаються як бухгалтерія. Живий уцілілий - лише одне поле. Поруч є довіра координат, клас вантажу, ступінь опіки, маса підйому, карантинний ризик, страхування маршруту і хто отримає виплату, якщо людина помре до підбору. Black Keel рухає пакети, бо пакети дешеві, а контрактна влада живе в затримці.\n\nКорисне питання не в тому, чи хтось тебе почув. Імовірно, почув. Питання в тому, що він почув першим. Чистий статус живий купує місце в черзі. Перевірена маршрутна квитанція купує важіль. Доказ відповідальності Deep Reach може змінити того, хто має право оцінювати чергу. Вантаж, важливий поза HECTON-8, може змусити корабель прийняти ризик, який заради самого тіла лишили б на дні.",
+          "external_site": "Трафік претензій Ran переносить повідомлення раніше за тіла. Перший контакт HECTON-8 - це проблема вікна носія, а не обіцянка диво-порятунку.",
+          "external_site_article": "HECTON-8 тримається на жорсткому правилі: зв'язок дешевший за масу. Ретранслятор Black Keel може відповісти, бо пакет їде світлом, дзеркалами й чергами носіїв. Тендер так не може. Кораблі на маршруті Ran усе ще підкоряються прискоренню, теплу гальмування, розкладу pellet lane, погоді Aegir та економіці ризикового вікна.\n\nДовгий реєстр претензії - адміністративна форма цієї фізики. Він не питає, чи наляканий уцілілий. Він питає, чи надійні координати, чи витримає пакет підйому передачу, чи є свідчий хеш Luyten, чи може Deep Reach заявити карантинний контроль, і що таке корисний вантаж: тіло, доказ, фрахт або все разом.\n\nОкеан ізольований не тому, що цивілізація зникла. Вона є, але вона повільна, власницька й процедурна. Гравець не просто чекає порятунку; він збирає пакет, вантаж і важіль, які роблять порятунок дорожчим за мовчання.",
+          "field_note": "Кораблі тебе не рятують. Маршрути - можливо, якщо потрібному офісу заплатили до того, як ти намок. Витрачай вікно як повітря."
+        },
+        "zh_CN": {
+          "localization_status": "draft_machine_or_llm",
+          "title": "Ran长程索赔运输账册",
+          "scanner": "路线账册 // Luyten见证哈希完整。强载波窗口只能携带一次干净突发：位置、损伤、托管、证据或求救。它不是救援。",
+          "terminal": "路线回执：RAN长程索赔 / LPL见证槽7C // 仅有存活状态不足以安排回收。请在救援艇优先级审查前提交坐标置信度、上升包状态、托管等级和载荷质量。",
+          "audio": "Black Keel中继：窗口还能撑一次干净突发。发送位置、载荷或证据。在风暴吃掉载波锁定前选好。",
+          "in_game_wiki": "被困Marauder最想相信的第一个谎言，是联系就等于救援。在Ran周围，联系只说明一个数据包找到了载波窗口。它能移动位置、见证哈希、法律要求、报价或威胁。它不能移动压力船体、医护、货运艇或制动堆。\n\n所以Ran长程索赔账册读起来不像求救信标，而像会计。幸存者活着只是一个字段。旁边还有坐标置信度、载荷类别、托管等级、上升质量、隔离风险、路线保险，以及如果人在接走前死亡由谁收款。Black Keel移动数据包，因为数据包便宜，也因为合同权力活在延迟里。\n\n有用的问题不是有没有人听见你。很可能有人听见了。问题是他们先听见了什么。干净的存活状态买到队列位置。已验证的路线回执买到杠杆。Deep Reach责任证据可以改变谁有权给队列定价。一个在HECTON-8之外也有价值的载荷，可能让船接受本会为单独一具身体留在海底的风险。",
+          "external_site": "Ran索赔交通先移动消息，再移动身体。HECTON-8的第一次联系是载波窗口问题，不是奇迹救援承诺。",
+          "external_site_article": "HECTON-8遵守一条硬规则：通信比移动质量便宜。Black Keel中继能回答，是因为数据包能骑上光、镜面和载波队列。救援艇不能。Ran路线上的船仍然受加速度、制动热、弹丸航道排程、Aegir天气和风险窗口经济约束。\n\n长程索赔账册就是这种物理的行政形态。它不问幸存者是否害怕。它问坐标是否可信，上升包能否经受转移，是否存在Luyten见证哈希，Deep Reach能否主张隔离控制，以及载荷究竟是身体、证据、货物，还是三者都有。\n\n海洋并非因为文明消失而孤立。文明仍在，只是缓慢、被占有、被程序化。玩家不是单纯等待救援；玩家在建立数据包、载荷和杠杆，让救援比沉默更有价值。",
+          "field_note": "船不会救你。路线也许会，如果你湿透之前正确的办公室已经收过钱。把窗口当空气花掉。"
+        }
+      }
+    }
+  ]
+}

@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Ряд робочих шаф
@@ -27,7 +27,7 @@ localization_flags: 0
 
 ## Terminal
 
-Аудит колонії: особисті сховки й мітки Barnard зв'язують гравця з реальним екіпажем.
+АУДИТ КОЛОНІЇ: особисте зберігання й мітки Barnard пов'язують ряд шаф із названою зміною та робочими маршрутами.
 
 ## Audio
 

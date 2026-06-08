@@ -122,7 +122,7 @@ namespace Hecton8.Dev
             CheckContains(causticsDeferredShaderSource, "sdfSampleBudget", "caustics-continuous-sdf-sample-budget");
             CheckNotContains(underwaterVisualsSource, "RaycastNonAlloc", "bottom-silt-raycast-purged");
             CheckContains(underwaterVisualsSource, "ResolveFakeBottomSiltDistance", "bottom-silt-alu-distance-fake");
-            CheckContains(underwaterVisualsSource, "GlobalRegistry.MapMagic", "bottom-silt-mapmagic-registry-slot");
+            CheckContains(underwaterVisualsSource, "WorldRuntimeReferenceUtility.TryResolveMapMagicBridge", "bottom-silt-live-mapmagic-resolver");
             CheckContains(shadowGuardSource, "EnforceSceneShadowDictatorshipCold", "shadow-dictatorship-scene-enforced");
             CheckContains(shadowGuardSource, "IsAllowedForwardSpotlightCold", "shadow-dictatorship-forward-spot-only");
             CheckNotContains(shadowGuardSource, "nearestIndexB", "shadow-dictatorship-single-forward-spot");

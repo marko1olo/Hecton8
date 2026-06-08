@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -302,7 +303,7 @@ def collect_shader_sources() -> list[Path]:
 
 def contains_after(text: str, first: str, second: str) -> bool:
     first_index = text.find(first)
-    second_index = text.find(second)
+    second_index = text.find(second, first_index + len(first)) if first_index >= 0 else -1
     return first_index >= 0 and second_index > first_index
 
 
@@ -441,7 +442,39 @@ def risk_hits(hits: list[dict[str, object]], keywords: tuple[str, ...]) -> list[
     return result
 
 
+def check_visual_only_coalescing_contract() -> int:
+    signal_bus_runtime = SCRIPTS / "Core" / "Signals" / "SignalBusRuntime.cs"
+    signal_bus_runtime_text = read_source(signal_bus_runtime)
+    combat_damage_coalescing_block = extract_csharp_block_after(
+        signal_bus_runtime_text,
+        "private static bool TryCoalesceCombatDamage",
+    )
+    has_owner = bool(combat_damage_coalescing_block)
+    rejects_incoming_visual_only = (
+        "if ((incoming.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in combat_damage_coalescing_block and
+        contains_after(
+            combat_damage_coalescing_block,
+            "if ((incoming.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)",
+            "return false;",
+        )
+    )
+    keeps_normal_and_visual_separate = (
+        "((existing.Flags ^ incoming.Flags) & CombatDamageSignal.VisualOnlyFlag) != 0" in combat_damage_coalescing_block
+    )
+    verdict = has_owner and rejects_incoming_visual_only and keeps_normal_and_visual_separate
+    print("OOP_HITBOX_VISUAL_ONLY_COALESCING_CHECK")
+    print(f"source={rel(signal_bus_runtime)}")
+    print(f"hasOwner={str(has_owner).lower()}")
+    print(f"rejectsIncomingVisualOnly={str(rejects_incoming_visual_only).lower()}")
+    print(f"keepsNormalAndVisualSeparate={str(keeps_normal_and_visual_separate).lower()}")
+    print(f"verdict={'PASS' if verdict else 'FAIL'}")
+    return 0 if verdict else 2
+
+
 def main() -> int:
+    if "--check-visual-only-coalescing" in sys.argv[1:]:
+        return check_visual_only_coalescing_contract()
+
     all_cs = sorted(SCRIPTS.rglob("*.cs"))
     combat_cs = sorted(COMBAT.rglob("*.cs"))
     shader_sources = collect_shader_sources()
@@ -2049,6 +2082,12 @@ def main() -> int:
                 "SignalBus<HullDeformedSignal>.TryPush" in hull_dent_shader_text
             ),
             "signalBusCoalescingKeepsVisualOnlySeparate": (
+                "if ((incoming.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in combat_damage_coalescing_block and
+                contains_after(
+                    combat_damage_coalescing_block,
+                    "if ((incoming.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)",
+                    "return false;",
+                ) and
                 "((existing.Flags ^ incoming.Flags) & CombatDamageSignal.VisualOnlyFlag) != 0" in combat_damage_coalescing_block
             ),
             "verdict": (
@@ -2075,6 +2114,12 @@ def main() -> int:
                 and "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in predator_cognition_damage_block
                 and "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in predator_acoustic_damage_block
                 and "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in foveated_combat_damage_block
+                and "if ((incoming.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in combat_damage_coalescing_block
+                and contains_after(
+                    combat_damage_coalescing_block,
+                    "if ((incoming.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)",
+                    "return false;",
+                )
                 and "((existing.Flags ^ incoming.Flags) & CombatDamageSignal.VisualOnlyFlag) != 0" in combat_damage_coalescing_block
                 else "FAIL"
             ),
@@ -2082,7 +2127,9 @@ def main() -> int:
                 "Visual-only and owner-already-applied notifications may share the historical CombatDamageSignal lane "
                 "for VFX, haptic, AI, and diagnostic consumers, but central CombatDamageRuntime must reject them before "
                 "LUT/CAS health mutation. State-mutating secondary consumers must also skip visual-only payloads before "
-                "deriving vehicle damage, habitat stress, or flora destruction."
+                "deriving vehicle damage, habitat stress, or flora destruction. SignalBus coalescing must reject incoming "
+                "visual-only CombatDamageSignal payloads before target/type/channel aggregation so separate visor/projector "
+                "decal events do not collapse into one payload."
             ),
         },
         "combatTelemetryBoundsProof": {
@@ -2963,7 +3010,7 @@ def main() -> int:
             "deathReconciliationPreserved": (
                 "PublishDeath();" in player_authoritative_packet_block and
                 "TryApplyRespawnReconciliation(HealthRespawnDamageHash)" in player_authoritative_packet_block and
-                "ApplyRespawnReconciliationHealth(1f)" in player_authoritative_packet_block
+                "ApplyRespawnReconciliationHealth(1f)" not in player_authoritative_packet_block
             ),
             "verdict": (
                 "PASS"
@@ -2986,7 +3033,8 @@ def main() -> int:
             "contract": (
                 "Registered central CAS packets carry PreviousValue/NextValue and must reconcile the player owner "
                 "to the CAS snapshot without re-entering legacy invulnerability or per-packet TakeDamage. "
-                "Registration-gap packets keep PreviousValue/NextValue at zero and still use the legacy owner rules."
+                "Registration-gap packets keep PreviousValue/NextValue at zero and still use the legacy owner rules. "
+                "Fatal health packets must request respawn reconciliation and defer healing until the committed respawn signal."
             ),
             "sourceEvidence": line_evidence(
                 hecton_player_health,

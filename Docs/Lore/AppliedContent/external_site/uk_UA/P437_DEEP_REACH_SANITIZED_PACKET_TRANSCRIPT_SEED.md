@@ -9,32 +9,22 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Транскрипт очищеного пакета Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Транскрипт очищеного пакета Deep Reach
 
-UK LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
+## Чиста Мова, Брудна Затримка
 
-## Scanner
+Пакет Deep Reach небезпечний, бо звучить як допомога. Він називає безпеку. Визнає інцидент. Використовує правильні іменники катастрофи: тиск, карантин, координати, exposure, recovery. Потім прибирає важливі дієслова. Хто затримав евакуацію? Хто призначив ціну hold? Хто лишив Atlas weighting чинним, поки колонія ламалася?
 
-UK LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Очищеній мові не треба заперечувати океан. Заперечення легко спростувати. Пакет працює інакше: приймає фізичну катастрофу й переставляє відповідальність у pending review. Координати йдуть першими, бо компанія хоче custody над claim-простором до зобов'язань перед тілами. Вартість карантину йде далі, бо живі працівники й забруднений доказ стають liabilities на одному столі.
 
-## Terminal
-
-UK LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
-
-## Audio
-
-UK LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
-
-## Field Note
-
-UK LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Для гравця цей транскрипт має створювати злість, не ламаючи правдоподібність. Deep Reach - не карикатурний лиходій, що кричить з орбіти. Це фірма, яка точно знає, які поля прибрати з повідомлення, здатного пізніше стати доказом.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/uk_UA. -->

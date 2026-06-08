@@ -19,7 +19,7 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class SaveStation : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class SaveStation : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener, IInteractionStartedEventOwner
     {
         [Header("── Settings ──────────────────────────────")]
         [Tooltip("Otobrazhaemoe imya terminala v podskazke vzaimodeystviya.")]
@@ -39,6 +39,7 @@ namespace Hecton8.Interaction
         private const string SaveGameFallbackLabel = "Save Game";
         private const string SaveStationFallbackName = "Save Station";
         private const int InteractTextCapacity = 128;
+        private const uint SaveStationSourceHash = 0x53535645u; // SSVE
 
         private string _cachedInteractText = SaveGameFallbackLabel;
         private readonly char[] _interactTextBuffer = new char[InteractTextCapacity];
@@ -90,11 +91,11 @@ namespace Hecton8.Interaction
         public void Interact(Transform interactor)
         {
             ISaveService saveService = _saveService;
-            if (saveService == null)
+            if (saveService == null || !saveService.IsInitialized)
             {
                 ShowHudWarning(LocalizationKeys.SAVE_STATION_OFFLINE, "SAVE SYSTEM OFFLINE");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[SaveStation] Save service instance not found.", this);
+                Hecton8.Core.H8Debug.LogError("[SaveStation] Save service is unavailable.", this);
 #endif
                 return;
             }
@@ -126,10 +127,11 @@ namespace Hecton8.Interaction
                 return;
             }
 
+            if (TryRequestManualSlotSave(saveService, interactor))
+                return;
+
             PlayInteractionSound();
-
             ShowHudInfo(LocalizationKeys.SAVE_STATION_REQUESTED, "SAVE REQUESTED");
-
             _ = saveService.SaveGameAsync(_saveSlot);
             InteractionEvents.TryRaiseInteractionStarted(this, interactor);
         }
@@ -162,6 +164,28 @@ namespace Hecton8.Interaction
                 return;
 
             audioManager.PlayAtPoint(_interactionSound, transform.position);
+        }
+
+        private bool TryRequestManualSlotSave(ISaveService saveService, Transform interactor)
+        {
+            IAsyncPersistenceService asyncPersistence = saveService as IAsyncPersistenceService;
+            if (asyncPersistence == null)
+                return false;
+
+            int slotIndex = SaveEvents.ResolveKnownSlotIndex(_saveSlot);
+            if (slotIndex < 0 || slotIndex >= SaveEvents.ManualSlotCount)
+                return false;
+
+            bool accepted = asyncPersistence.TryRequestSave((byte)slotIndex, SaveStationSourceHash);
+            if (!accepted)
+            {
+                return true;
+            }
+
+            PlayInteractionSound();
+            ShowHudInfo(LocalizationKeys.SAVE_STATION_REQUESTED, "SAVE REQUESTED");
+            InteractionEvents.TryRaiseInteractionStarted(this, interactor);
+            return true;
         }
 
         private void ResolveHudNotification()
@@ -232,7 +256,7 @@ namespace Hecton8.Interaction
 
         private static bool IsAudioServiceUsable(Hecton8.Core.IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -274,6 +298,9 @@ namespace Hecton8.Interaction
 
         private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
+            if (string.IsNullOrEmpty(key))
+                return fallback.AsSpan();
+
             ILocalizationTextReadModel manager = _localization;
             return manager != null
                 ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())

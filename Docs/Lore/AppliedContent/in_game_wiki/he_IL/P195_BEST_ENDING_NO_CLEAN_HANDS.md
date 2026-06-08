@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "הסוף הטוב ביותר: אין ידיים נקיות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# הסוף הטוב ביותר: אין ידיים נקיות
 
-HE LOC HOLD: No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.
+אין ידיים נקיות הוא כלל הטון הסופי. HECTON-8 מתגמל הבנה, הכנה ועבודת עד, לא טוהר. הסוף הטוב ביותר צריך לגרום לשחקן להרגיש כשיר ומעורב בו זמנית.
 
 ## Scanner
 
-HE LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
+הסוף הטוב ביותר צריך להציל משהו אמיתי בלי להעמיד פנים שהתמימות שרדה את הירידה.
 
 ## Terminal
 
-HE LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
+כלל אין ידיים נקיות: קריטריוני הסוף הטוב הידוע דורשים agency, ראיות, תוצאה ושארית. אם כל צד שנפגע מרוצה, הסוף שכח את HECTON-8.
 
 ## Audio
 
-HE LOC HOLD: If it feels clean, it forgot where you are.
+אם זה מרגיש נקי, זה שכח איפה אתה.
 
 ## Field Note
 
-HE LOC HOLD: A strong ending lets the player save something real and lose something real.
+נתיב חזק יכול לחשוף אמת, לסרב לDeep Reach, לשמר חלק מהאקולוגיה ולשחרר את השחקן, אבל המחיר חייב להישאר נראה.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/he_IL. -->

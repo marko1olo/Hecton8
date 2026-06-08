@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using Hecton8.Core.Memory;
-using Hecton.Localization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -11,58 +10,6 @@ using UnityEngine.SceneManagement;
 
 namespace Hecton8.Core
 {
-    /// <summary>
-    /// Expected lifetime for persistent native allocations registered with <see cref="NativeMemorySentinel"/>.
-    /// </summary>
-    public enum NativeAllocationLifetime : byte
-    {
-        Scene = 0,
-        Session = 1,
-        Permanent = 2,
-        TransientArena = 3,
-        Temp = 4,
-        TempJob = 5
-    }
-
-    /// <summary>
-    /// Blittable source descriptor for deterministic replay snapshot capture.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    internal struct NativeAllocationSnapshotSource
-    {
-        /// <summary>Internal native address value copied only into the replay recorder.</summary>
-        [FieldOffset(0)]
-        internal ulong SourcePointerValue;
-
-        /// <summary>Allocation byte count.</summary>
-        [FieldOffset(8)]
-        public long Bytes;
-
-        /// <summary>Stable owner hash.</summary>
-        [FieldOffset(16)]
-        public uint OwnerHash;
-
-        /// <summary>Stable label hash.</summary>
-        [FieldOffset(20)]
-        public uint LabelHash;
-
-        /// <summary>Frame where the allocation was registered.</summary>
-        [FieldOffset(24)]
-        public int AllocationFrame;
-
-        /// <summary>Stored <see cref="NativeAllocationLifetime"/> value.</summary>
-        [FieldOffset(28)]
-        public byte Lifetime;
-
-        /// <summary>Stored <see cref="Allocator"/> value.</summary>
-        [FieldOffset(29)]
-        public byte Allocator;
-
-        /// <summary>Reserved padding for fixed 32-byte layout.</summary>
-        [FieldOffset(30)]
-        public ushort Reserved;
-    }
-
     /// <summary>
     /// Fatal native memory leak detected during teardown or subsystem reload.
     /// </summary>
@@ -85,8 +32,8 @@ namespace Hecton8.Core
         private const int MaxPersistentReallocationRecords = 128;
         private const int PersistentReallocationThreshold = 3;
         private const float PersistentReallocationWindowSeconds = 60f;
-        private const uint StableHashFnvOffset = LocHash.FnvOffsetBasis;
-        private const uint StableHashFnvPrime = LocHash.FnvPrime;
+        private const uint StableHashFnvOffset = 2166136261u;
+        private const uint StableHashFnvPrime = 16777619u;
         private const string CriticalMemoryViolationPrefix = "CRITICAL_MEMORY_VIOLATION";
         private const string MemoryLeakDetectedPrefix = "MEMORY_LEAK_DETECTED";
         private const string StaleBufferCrimePrefix = "STALE_BUFFER_CRIME";
@@ -100,11 +47,11 @@ namespace Hecton8.Core
         private const string PersistentFragmentationRiskMessage = "PERSISTENT_FRAGMENTATION_RISK: persistent native allocation changed size more than 3 times in 60 seconds.";
         private const string NativeLeakReapedMessage = "NATIVE_LEAK_REAPED: RuntimeWatchdog force-freed a scene native allocation.";
 
-        private static readonly uint _nativeMemoryContextHash = unchecked((uint)LocHash.Compute(nameof(NativeMemorySentinel)));
-        private static readonly uint _criticalMemoryViolationHash = unchecked((uint)LocHash.Compute(CriticalMemoryViolationPrefix));
-        private static readonly uint _memoryLeakDetectedHash = unchecked((uint)LocHash.Compute(MemoryLeakDetectedPrefix));
-        private static readonly uint _staleBufferCrimeHash = unchecked((uint)LocHash.Compute(StaleBufferCrimePrefix));
-        private static readonly uint _persistentFragmentationRiskHash = unchecked((uint)LocHash.Compute(PersistentFragmentationRiskPrefix));
+        private static readonly uint _nativeMemoryContextHash = ComputeStableHash(nameof(NativeMemorySentinel));
+        private static readonly uint _criticalMemoryViolationHash = ComputeStableHash(CriticalMemoryViolationPrefix);
+        private static readonly uint _memoryLeakDetectedHash = ComputeStableHash(MemoryLeakDetectedPrefix);
+        private static readonly uint _staleBufferCrimeHash = ComputeStableHash(StaleBufferCrimePrefix);
+        private static readonly uint _persistentFragmentationRiskHash = ComputeStableHash(PersistentFragmentationRiskPrefix);
 
         [StructLayout(LayoutKind.Explicit, Size = 312)]
         private struct NativeAllocationRecord
@@ -350,6 +297,24 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers a native hash map as a distinct pointerless instance. Caller must keep the returned id.
+        /// </summary>
+        public static int RegisterNativeHashMapInstance<TKey, TValue>(
+            NativeHashMap<TKey, TValue> map,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return 0;
+
+            long bytes = EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity);
+            return RegisterPointer(null, bytes, owner, label, lifetime, false);
+        }
+
+        /// <summary>
         /// Registers an unsafe hash map as a distinct pointerless instance. Caller must keep the returned id.
         /// </summary>
         public static int RegisterUnsafeHashMapInstance<TKey, TValue>(
@@ -421,6 +386,23 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers a native parallel hash set as a distinct pointerless instance. Caller must keep the returned id.
+        /// </summary>
+        public static int RegisterNativeParallelHashSetInstance<TKey>(
+            NativeParallelHashSet<TKey> set,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime)
+            where TKey : unmanaged, IEquatable<TKey>
+        {
+            if (!set.IsCreated)
+                return 0;
+
+            long bytes = EstimateNativeHashSetBytes<TKey>(set.Capacity);
+            return RegisterPointer(null, bytes, owner, label, lifetime, false);
+        }
+
+        /// <summary>
         /// Registers a native parallel multi-hash map allocation by capacity. Unity does not expose stable multi-hash map block pointers.
         /// </summary>
         public static int RegisterNativeParallelMultiHashMap<TKey, TValue>(
@@ -436,6 +418,24 @@ namespace Hecton8.Core
 
             long bytes = EstimateNativeMultiHashMapBytes<TKey, TValue>(map.Capacity);
             return RegisterPointer(null, bytes, owner, label, lifetime);
+        }
+
+        /// <summary>
+        /// Registers a native parallel multi-hash map as a distinct pointerless instance. Caller must keep the returned id.
+        /// </summary>
+        public static int RegisterNativeParallelMultiHashMapInstance<TKey, TValue>(
+            NativeParallelMultiHashMap<TKey, TValue> map,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return 0;
+
+            long bytes = EstimateNativeMultiHashMapBytes<TKey, TValue>(map.Capacity);
+            return RegisterPointer(null, bytes, owner, label, lifetime, false);
         }
 
         /// <summary>
@@ -456,6 +456,23 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers a native queue as a distinct pointerless instance. Caller must keep the returned id.
+        /// </summary>
+        public static int RegisterNativeQueueInstance<T>(
+            NativeQueue<T> queue,
+            int expectedCapacity,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime) where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return 0;
+
+            long bytes = (long)UnsafeUtility.SizeOf<T>() * Math.Max(1, expectedCapacity);
+            return RegisterPointer(null, bytes, owner, label, lifetime, false);
+        }
+
+        /// <summary>
         /// Refreshes a tracked native list allocation after an explicit capacity change.
         /// </summary>
         public static void RefreshNativeList<T>(
@@ -468,6 +485,20 @@ namespace Hecton8.Core
 
             long bytes = (long)UnsafeUtility.SizeOf<T>() * list.Capacity;
             RefreshPointerlessBytes(owner, label, bytes);
+        }
+
+        /// <summary>
+        /// Refreshes a tracked native list instance after an explicit capacity change.
+        /// </summary>
+        public static void RefreshNativeListInstance<T>(
+            NativeList<T> list,
+            int id) where T : unmanaged
+        {
+            if (!list.IsCreated || id <= 0)
+                return;
+
+            long bytes = (long)UnsafeUtility.SizeOf<T>() * list.Capacity;
+            RefreshPointerlessBytes(id, bytes);
         }
 
         /// <summary>
@@ -550,6 +581,21 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Refreshes a tracked native parallel multi-hash map instance after an explicit capacity change.
+        /// </summary>
+        public static void RefreshNativeParallelMultiHashMapInstance<TKey, TValue>(
+            NativeParallelMultiHashMap<TKey, TValue> map,
+            int id)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated || id <= 0)
+                return;
+
+            RefreshPointerlessBytes(id, EstimateNativeMultiHashMapBytes<TKey, TValue>(map.Capacity));
+        }
+
+        /// <summary>
         /// Registers a raw persistent native pointer.
         /// </summary>
         public static int RegisterPointer(
@@ -560,6 +606,15 @@ namespace Hecton8.Core
             NativeAllocationLifetime lifetime)
         {
             return RegisterPointer(pointer, bytes, owner, label, lifetime, true);
+        }
+
+        internal static int RegisterPointerlessBridgeRecord(
+            long bytes,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime)
+        {
+            return RegisterPointer(null, bytes, owner, label, lifetime, false);
         }
 
         /// <summary>
@@ -870,7 +925,7 @@ namespace Hecton8.Core
                         _nativeMemoryContextHash,
                         MaxTrackedAllocations);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationRegistryCapacityMessage);
+                    Debug.LogError(CriticalMemoryViolationRegistryCapacityMessage);
 #endif
                     return 0;
                 }
@@ -976,9 +1031,17 @@ namespace Hecton8.Core
         /// <summary>
         /// Unregisters a raw persistent native pointer from the Core sentinel owner path.
         /// </summary>
-        internal static void UnregisterPointer(void* pointer)
+        public static void UnregisterPointer(void* pointer)
         {
-            IntPtr target = (IntPtr)pointer;
+            UnregisterPointer((IntPtr)pointer);
+        }
+
+        /// <summary>
+        /// Unregisters a raw persistent native pointer from reflection and editor bridge paths.
+        /// </summary>
+        public static void UnregisterPointer(IntPtr pointer)
+        {
+            IntPtr target = pointer;
             if (target == IntPtr.Zero)
                 return;
 
@@ -1205,7 +1268,7 @@ namespace Hecton8.Core
                         _nativeMemoryContextHash,
                         unsafeLeakCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
+                    Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
 #endif
                 }
 #endif
@@ -1230,7 +1293,7 @@ namespace Hecton8.Core
             CrashTelemetryBuffer.ReportNativeTransientLeak(allocationHash, 0, record.Bytes);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Volatile.Read(ref _diagnosticSceneLeakLogSuppressions) <= 0)
-                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+                Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
 #endif
         }
 
@@ -1445,7 +1508,7 @@ namespace Hecton8.Core
                         _records[i] = record;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                         if (Volatile.Read(ref _diagnosticSceneLeakLogSuppressions) <= 0)
-                            Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+                            Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
 #endif
                         continue;
                     }
@@ -1468,7 +1531,7 @@ namespace Hecton8.Core
                         record.LabelHash,
                         record.Bytes);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogError(
+                    Debug.LogError(
                         NativeLeakReapedMessage +
                         " context=" + context +
                         " ownerHash=" + record.OwnerHash +
@@ -1488,7 +1551,7 @@ namespace Hecton8.Core
                         _nativeMemoryContextHash,
                         unsafeLeakCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
+                    Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
 #endif
                 }
 #endif
@@ -1514,7 +1577,7 @@ namespace Hecton8.Core
                 _nativeMemoryContextHash,
                 activeCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationServiceShutdownLeakMessage);
+            Debug.LogError(CriticalMemoryViolationServiceShutdownLeakMessage);
 #endif
             throw new FatalMemoryLeakException(BuildFatalLeakMessage(context, activeCount));
         }
@@ -1575,7 +1638,7 @@ namespace Hecton8.Core
                         CrashTelemetryBuffer.ReportNativeTransientLeak(allocationHash, retentionFrames, record.Bytes);
                     }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogError(
+                    Debug.LogError(
                         record.Lifetime == NativeAllocationLifetime.TempJob
                             ? StaleBufferCrimeRetentionMessage
                             : MemoryLeakDetectedRetentionMessage);
@@ -1808,6 +1871,63 @@ namespace Hecton8.Core
             }
         }
 
+        private static void RefreshPointerlessBytes(int id, long bytes)
+        {
+            if (id <= 0 || bytes <= 0L)
+                return;
+
+            int currentSceneIdentityHash = 0;
+            int currentSceneBuildIndex = -1;
+            bool currentSceneIdentityResolved = false;
+
+            EnterMutationGate();
+            try
+            {
+                for (int i = _count - 1; i >= 0; i--)
+                {
+                    NativeAllocationRecord record = _records[i];
+                    if (record.Id != id || record.Pointer != IntPtr.Zero)
+                        continue;
+
+                    if (record.Lifetime == NativeAllocationLifetime.Scene)
+                    {
+                        ResolveCurrentSceneIdentity(out currentSceneIdentityHash, out currentSceneBuildIndex);
+                        currentSceneIdentityResolved = true;
+                    }
+
+                    long delta = bytes - record.Bytes;
+                    if (delta != 0L)
+                    {
+                        FixedString128Bytes owner = record.Owner;
+                        FixedString128Bytes label = record.Label;
+                        TrackPersistentReallocationFixed(
+                            in owner,
+                            in label,
+                            record.OwnerHash,
+                            record.LabelHash,
+                            bytes,
+                            record.Lifetime);
+                        record.Bytes = bytes;
+                        _trackedBytes += delta;
+                    }
+
+                    if (currentSceneIdentityResolved &&
+                        record.SceneIdentityHash == currentSceneIdentityHash &&
+                        record.SceneBuildIndex != currentSceneBuildIndex)
+                    {
+                        record.SceneBuildIndex = currentSceneBuildIndex;
+                    }
+
+                    _records[i] = record;
+                    return;
+                }
+            }
+            finally
+            {
+                ExitMutationGate();
+            }
+        }
+
         private static int ResolveCurrentFrame(int fallbackFrame)
         {
             if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
@@ -1984,7 +2104,7 @@ namespace Hecton8.Core
                     record.ReallocationCount);
                 CrashTelemetryBuffer.ReportNativeFragmentationRisk(allocationHash, record.ReallocationCount, bytes);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError(PersistentFragmentationRiskMessage);
+                Debug.LogError(PersistentFragmentationRiskMessage);
 #endif
             }
 
@@ -2030,7 +2150,22 @@ namespace Hecton8.Core
         {
             return string.IsNullOrEmpty(value)
                 ? 0u
-                : unchecked((uint)LocHash.Compute(value));
+                : ComputeStableHash(value.AsSpan());
+        }
+
+        private static uint ComputeStableHash(ReadOnlySpan<char> value)
+        {
+            if (value.Length == 0)
+                return 0u;
+
+            unchecked
+            {
+                uint hash = StableHashFnvOffset;
+                for (int i = 0; i < value.Length; i++)
+                    HashUtf16CodeUnit(ref hash, value[i]);
+
+                return hash;
+            }
         }
 
         private static uint ComputeStableHash(in FixedString128Bytes value)
@@ -2222,7 +2357,7 @@ namespace Hecton8.Core
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogException(exception);
+                Debug.LogException(exception);
 #endif
             }
             finally

@@ -340,7 +340,8 @@ namespace Hecton8.Environment
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
         [Header("Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â WATER LEVEL Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â")]
-        [SerializeField] private float waterLevelFallback = 14.02f;
+        private const float DefaultWaterLevelFallback = 14.02f;
+        [SerializeField] private float waterLevelFallback = DefaultWaterLevelFallback;
 
         [Header("Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â DEEP CELESTIAL CULL Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â")]
         [Tooltip("Suppresses SpaceCamera celestial rendering below this depth to cut deep-water render overhead without touching shallow water.")]
@@ -1703,6 +1704,7 @@ namespace Hecton8.Environment
             _transitionVisorSearchTransform = null;
             _shallowSunBeamLightSearchTransform = null;
             _sunVisualSearchLight = null;
+            _sargassumDragRuntime = null;
             _underwaterSuspendedMotesSearchCompleted = false;
             _underwaterExhaleBubblesSearchCompleted = false;
             _transitionCameraVfxSearchCompleted = false;
@@ -1770,6 +1772,7 @@ namespace Hecton8.Environment
 
             ReleaseHudFogLuminanceResources();
             ReleasePhotophobiaFieldResources();
+            _sargassumDragRuntime = null;
         }
 
 #if UNITY_EDITOR
@@ -2378,9 +2381,10 @@ namespace Hecton8.Environment
             _weatherRuntime = GlobalRegistry.Weather;
             _surfaceWeatherRuntime = GlobalRegistry.SurfaceWeatherReadModel;
             _giRelayRuntime = GlobalRegistry.GIRelay;
-            _sargassumDragRuntime = GlobalRegistry.SargassumDrag;
+            WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDragRuntime);
             _soundscapeRuntime = GlobalRegistry.Soundscape;
-            _mapMagicRuntime = GlobalRegistry.MapMagic;
+            _mapMagicRuntime = null;
+            WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagicRuntime);
             _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
 
             if (depthZoneDirector == null)
@@ -2461,6 +2465,7 @@ namespace Hecton8.Environment
 
                 case GlobalRegistryServiceSlot.SargassumDragRuntime:
                     _sargassumDragRuntime = currentService as SargassumGlobalDragManager;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDragRuntime);
                     break;
 
                 case GlobalRegistryServiceSlot.SoundscapeRuntime:
@@ -2474,7 +2479,11 @@ namespace Hecton8.Environment
                     break;
 
                 case GlobalRegistryServiceSlot.MapMagicRuntime:
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    if (ReferenceEquals(_mapMagicRuntime, previousService))
+                        _mapMagicRuntime = null;
                     _mapMagicRuntime = currentService as MapMagicBridge;
+                    WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagicRuntime);
                     _nextBottomSiltProbeTime = float.NegativeInfinity;
                     break;
 
@@ -2527,7 +2536,7 @@ namespace Hecton8.Environment
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -4622,7 +4631,7 @@ namespace Hecton8.Environment
 
         public void SetTargetBiome(int biomeIndex) => HandleBiomeChanged(biomeIndex);
         public void SetPlayerCamera(Transform camera) => playerCamera = camera;
-        public void SetWaterLevelFallback(float y) => waterLevelFallback = y;
+        public void SetWaterLevelFallback(float y) => waterLevelFallback = SanitizeVisualWaterLevel(y, DefaultWaterLevelFallback);
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  PRIVATE Ã¢â‚¬â€ INIT
@@ -6641,9 +6650,10 @@ namespace Hecton8.Environment
 
         private void ResetNoirResolveGlobals()
         {
+            float waterLevel = ResolveWaterLevel();
             Shader.SetGlobalVector(_HectonNoirResolveSettingsId, new Vector4(1.18f, 0.75f, 0f, 0f));
             Shader.SetGlobalColor(_HectonNoirAbyssFloorId, new Color(0.028f, 0.042f, 0.060f, 1f));
-            Shader.SetGlobalVector(_HectonNoirFogStratificationId, new Vector4(4900f, 1f / 180f, 0.42f, 0.0001f));
+            Shader.SetGlobalVector(_HectonNoirFogStratificationId, new Vector4(waterLevel, 1f / 180f, 0.42f, 0.0001f));
             HectonShaderGlobalDataVaultBridge.PublishWaterExtinctionRuntime(new Vector4(0f, 1f, 1f, 0f));
             Shader.SetGlobalVector(_HectonNoirDitherParamsId, new Vector4(0f, 0f, 64f, 0f));
             Shader.SetGlobalVector(_HectonNoirCausticsLayerAId, Vector4.zero);
@@ -7210,9 +7220,10 @@ namespace Hecton8.Environment
 
         private void ResolveBiomeMatrixDirector()
         {
-            if (biomeMatrixDirector != null)
+            if (biomeMatrixDirector != null && biomeMatrixDirector.isActiveAndEnabled)
                 return;
 
+            biomeMatrixDirector = null;
             if (Application.isPlaying)
             {
                 WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
@@ -7220,7 +7231,8 @@ namespace Hecton8.Environment
             }
 
 #if UNITY_EDITOR
-            biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            biomeMatrixDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
 #endif
         }
 
@@ -7387,34 +7399,72 @@ namespace Hecton8.Environment
             if (atmosphereManager != null)
             {
                 float atmosphereSeaLevel = atmosphereManager.SeaLevelY;
-                if (math.isfinite(atmosphereSeaLevel))
-                    return atmosphereSeaLevel;
+                if (TryResolveVisualWaterLevel(atmosphereSeaLevel, out float resolvedAtmosphereSeaLevel))
+                    return resolvedAtmosphereSeaLevel;
+            }
+
+            float terrainWaterLevel = SanitizeVisualWaterLevel(waterLevelFallback, DefaultWaterLevelFallback);
+            bool hasTerrainWaterLevel = false;
+            MapMagicBridge terrainRuntime = _mapMagicRuntime;
+            if (WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref terrainRuntime) &&
+                TryResolveVisualWaterLevel(terrainRuntime.WaterSurfaceLevel, out float mapMagicWaterLevel))
+            {
+                _mapMagicRuntime = terrainRuntime;
+                terrainWaterLevel = mapMagicWaterLevel;
+                hasTerrainWaterLevel = true;
             }
 
             if (!_physicsEngineLookupAttempted)
                 RequestRuntimeServiceCacheCold();
             if (_physicsEngine != null)
-                return SanitizeVisualWaterLevel(_physicsEngine.WaterLevel);
+            {
+                float fluidWaterLevel = _physicsEngine.WaterLevel;
+                if (TryResolveVisualWaterLevel(fluidWaterLevel, out float resolvedFluidWaterLevel) &&
+                    (!hasTerrainWaterLevel || math.abs(resolvedFluidWaterLevel - terrainWaterLevel) <= 128f))
+                {
+                    return SanitizeVisualWaterLevel(resolvedFluidWaterLevel, terrainWaterLevel);
+                }
+            }
 
-            return SanitizeVisualWaterLevel(waterLevelFallback);
+            if (hasTerrainWaterLevel)
+                return SanitizeVisualWaterLevel(terrainWaterLevel, terrainWaterLevel);
+
+            return SanitizeVisualWaterLevel(waterLevelFallback, waterLevelFallback);
         }
 
-        private float SanitizeVisualWaterLevel(float waterLevel)
+        private float SanitizeVisualWaterLevel(float waterLevel, float fallbackWaterLevel)
         {
-            if (!math.isfinite(waterLevel))
-                return 0f;
+            float safeFallback = TryResolveVisualWaterLevel(fallbackWaterLevel, out float resolvedFallbackWaterLevel)
+                ? resolvedFallbackWaterLevel
+                : DefaultWaterLevelFallback;
+            if (!TryResolveVisualWaterLevel(waterLevel, out float resolvedWaterLevel))
+                return safeFallback;
 
             Camera camera = mainCamera;
             if (camera == null && playerCamera != null)
                 camera = playerCamera.GetComponent<Camera>();
 
             if (camera != null && math.isfinite(camera.transform.position.y) &&
-                math.abs(waterLevel - camera.transform.position.y) > 1000f)
+                math.abs(resolvedWaterLevel - camera.transform.position.y) > 1000f)
             {
-                return 0f;
+                return safeFallback;
             }
 
-            return waterLevel;
+            return resolvedWaterLevel;
+        }
+
+        private static bool TryResolveVisualWaterLevel(float candidateWaterLevel, out float waterLevel)
+        {
+            if (math.isfinite(candidateWaterLevel) &&
+                math.abs(candidateWaterLevel) > 0.0001f &&
+                math.abs(candidateWaterLevel) <= 1000f)
+            {
+                waterLevel = candidateWaterLevel;
+                return true;
+            }
+
+            waterLevel = DefaultWaterLevelFallback;
+            return false;
         }
 
         private float ResolveCurrentDepth()
@@ -7426,9 +7476,21 @@ namespace Hecton8.Environment
 
             float cameraDepth = ResolveActiveVisualCameraDepth();
 
-            if (_playerMovement != null)
+            if (TryResolvePlayerMovementRuntimeState(out PlayerMovementRuntimeState movementState))
             {
-                float movementDepth = _playerMovement.CurrentDepth;
+                float movementDepth = math.max(0f, movementState.DepthMeters);
+                if (cameraDepth > movementDepth + VisualCameraDepthOverrideThreshold)
+                    return cameraDepth;
+
+                return movementDepth;
+            }
+
+            if (HasPlayerRuntimeContext())
+                return 0f;
+
+            if (_playerMovement != null && math.isfinite(_playerMovement.CurrentDepth))
+            {
+                float movementDepth = math.max(0f, _playerMovement.CurrentDepth);
                 if (cameraDepth > movementDepth + VisualCameraDepthOverrideThreshold)
                     return cameraDepth;
 
@@ -7465,6 +7527,20 @@ namespace Hecton8.Environment
             }
 #endif
 
+            if (TryResolvePlayerMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+            {
+                if (visualDepth >= VisualForcedUnderwaterDepth)
+                    return true;
+
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.Underwater) != 0u)
+                    return true;
+
+                return depthDrivenUnderwater;
+            }
+
+            if (HasPlayerRuntimeContext())
+                return false;
+
             if (_playerMovement != null)
             {
                 if (visualDepth >= VisualForcedUnderwaterDepth)
@@ -7476,7 +7552,7 @@ namespace Hecton8.Environment
                         return true;
 
                     case PlayerLocomotionMode.ExosuitLocomotion:
-                        return _playerMovement.CurrentDepth > 0.01f || _playerMovement.IsPlayerSubmerged || depthDrivenUnderwater;
+                        return depth > 0.01f || _playerMovement.IsPlayerSubmerged || depthDrivenUnderwater;
 
                     case PlayerLocomotionMode.SurfaceSwim:
                         return _playerMovement.IsPlayerSubmerged || depthDrivenUnderwater;
@@ -7487,6 +7563,45 @@ namespace Hecton8.Environment
             }
 
             return depthDrivenUnderwater;
+        }
+
+        private bool TryResolvePlayerMovementRuntimeState(out PlayerMovementRuntimeState movementState)
+        {
+            movementState = default;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out movementState) &&
+                IsUsablePlayerMovementRuntimeState(in movementState))
+            {
+                return true;
+            }
+
+            playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetMovementRuntimeState(out movementState) ||
+                !IsUsablePlayerMovementRuntimeState(in movementState))
+            {
+                movementState = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsUsablePlayerMovementRuntimeState(in PlayerMovementRuntimeState movementState)
+        {
+            return (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                   math.isfinite(movementState.DepthMeters) &&
+                   math.all(math.isfinite(movementState.WorldPosition));
+        }
+
+        private bool HasPlayerRuntimeContext()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            return playerContext != null ||
+                   PlayerRuntimeContextService.ActiveRuntimeContext != null;
         }
 
         private float ResolveActiveVisualCameraDepth()
@@ -7540,21 +7655,22 @@ namespace Hecton8.Environment
             HectonPlayerMovement nextPlayerMovement = null;
             PlayerTransportCoordinator nextPlayerTransportCoordinator = null;
 
-            if (playerTransform != null &&
-                PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                ReferenceEquals(runtimeContext.PlayerTransform, playerTransform))
+            if (playerTransform != null)
             {
-                nextPlayerMovement = runtimeContext.PlayerMovement;
-                nextPlayerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
-            }
-            else if (playerTransform != null)
-            {
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-                if (playerContext != null && ReferenceEquals(playerContext.PlayerTransform, playerTransform))
+                IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+                if (runtimeContext != null && ReferenceEquals(runtimeContext.PlayerTransform, playerTransform))
                 {
-                    nextPlayerMovement = playerContext.PlayerMovement;
-                    nextPlayerTransportCoordinator = playerContext.PlayerTransportCoordinator;
+                    nextPlayerMovement = runtimeContext.PlayerMovement;
+                    nextPlayerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
+                }
+                else
+                {
+                    IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                    if (playerContext != null && ReferenceEquals(playerContext.PlayerTransform, playerTransform))
+                    {
+                        nextPlayerMovement = playerContext.PlayerMovement;
+                        nextPlayerTransportCoordinator = playerContext.PlayerTransportCoordinator;
+                    }
                 }
             }
 
@@ -7642,8 +7758,8 @@ namespace Hecton8.Environment
 
             Transform playerRoot = null;
             HectonPlayerMovement movement = null;
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext != null)
             {
                 playerRoot = runtimeContext.PlayerTransform;
                 movement = runtimeContext.PlayerMovement;
@@ -8043,7 +8159,7 @@ namespace Hecton8.Environment
             }
             if (cam == null) return;
 
-            float waterLevel = waterLevelFallback;
+            float waterLevel = SanitizeVisualWaterLevel(waterLevelFallback, DefaultWaterLevelFallback);
             Vector3 camPos = cam.position;
             float depth = Mathf.Max(0f, waterLevel - camPos.y);
 

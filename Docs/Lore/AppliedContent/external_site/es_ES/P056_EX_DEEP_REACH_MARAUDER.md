@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Merodeador ex Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Merodeador ex Deep Reach
 
-ES LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+Merodeador ex Deep Reach define el canon del jugador. El jugador es un antiguo especialista corporativo en sistemas de campo e infraestructura de evacuación, empujado al salvamento independiente por deuda o lista negra, y devuelto a HECTON-8 bajo custodia de Black Keel. El drama nace del reconocimiento profesional: la luna responde con procedimientos que el jugador entendía, y cada cerradura familiar vuelve más difícil tratar la mentira corporativa como el accidente de otros.
 
 ## Scanner
 
-ES LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+La vieja cerradura de Deep Reach no comprueba tu nombre. Reconoce el ritmo de tu secuencia de reparación.
 
 ## Terminal
 
-ES LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+RASTRO DE CREDENCIAL: antiguo contrato de sistemas de campo. Acceso a infraestructura de evacuación revocado. Estado de salvamento aceptado bajo custodia de deuda del fondo de reclamaciones.
 
 ## Audio
 
-ES LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+No volviste a casa. Volviste a un procedimiento que nunca dejó de ejecutarse.
 
 ## Field Note
 
-ES LOC HOLD: Not family business. Procedure remembers who taught your hands.
+No es un asunto familiar. El procedimiento recuerda las manos que lo usaron.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/es_ES. -->

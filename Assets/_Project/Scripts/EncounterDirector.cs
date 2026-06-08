@@ -312,6 +312,7 @@ namespace Hecton8.Systems.AI
         private NativeArray<EncounterDebugEvent> _debugEventRing;
         private NativeArray<int> _debugEventHead;
         private NativeList<HeadlessEntity> _headlessEntities;
+        private int _headlessEntitiesSentinelId;
         private NativeArray<float4> _predatorAupUpload;
         private NativeArray<EncounterDirectorBlackBoxEntry> _blackBox;
         private NativeArray<int> _blackBoxHead;
@@ -395,7 +396,16 @@ namespace Hecton8.Systems.AI
                 throw;
             }
 
-            RegisterNativeMemorySentinel();
+            try
+            {
+                RegisterNativeMemorySentinel();
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
+
             _trackedTransforms = new Transform[MaxActiveEnemies];
             _trackedEntityIds = new int[MaxActiveEnemies];
             _trackedThreatClasses = new EncounterThreatClass[MaxActiveEnemies];
@@ -658,6 +668,7 @@ namespace Hecton8.Systems.AI
         {
             JobHandle disposeHandle = default;
             bool hasDependency = _jobScheduled;
+            bool unregisterHeadlessEntities = _headlessEntitiesSentinelId > 0;
             if (_jobScheduled)
             {
                 disposeHandle = _activeJobHandle;
@@ -674,21 +685,56 @@ namespace Hecton8.Systems.AI
             DisposeNativeArray(ref _despawnRequests, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _debugEventRing, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _debugEventHead, ref disposeHandle, ref hasDependency);
-            DisposeNativeList(ref _headlessEntities, nameof(_headlessEntities), ref disposeHandle, ref hasDependency);
+            DisposeNativeList(ref _headlessEntities, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _predatorAupUpload, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _blackBox, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _blackBoxHead, ref disposeHandle, ref hasDependency);
-            if (hasDependency)
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            if (hasDependency &&
+                !DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true))
+            {
+                throw new InvalidOperationException("EncounterDirector native disposal did not complete before sentinel unregister.");
+            }
 
-            ReleasePredatorAupBuffer();
+            Exception firstException = null;
+            try
+            {
+                if (unregisterHeadlessEntities)
+                {
+                    NativeMemorySentinel.Unregister(_headlessEntitiesSentinelId);
+                    _headlessEntitiesSentinelId = 0;
+                }
+            }
+            catch (Exception exception)
+            {
+                firstException = exception;
+            }
+
+            try
+            {
+                ReleasePredatorAupBuffer();
+            }
+            catch (Exception exception)
+            {
+                if (firstException == null)
+                    firstException = exception;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private void RegisterNativeMemorySentinel()
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeList(_headlessEntities, nameof(EncounterDirector), nameof(_headlessEntities), NativeAllocationLifetime.Scene);
-            if (sentinelId <= 0)
+            _headlessEntitiesSentinelId = NativeMemorySentinel.RegisterNativeListInstance(
+                _headlessEntities,
+                nameof(EncounterDirector),
+                nameof(_headlessEntities),
+                NativeAllocationLifetime.Scene);
+            if (_headlessEntitiesSentinelId <= 0)
+            {
+                _headlessEntitiesSentinelId = 0;
                 throw new InvalidOperationException("Native memory sentinel registration failed for encounter headless entities.");
+            }
         }
 
         private bool AllNativeArraysCreated()
@@ -2146,12 +2192,11 @@ namespace Hecton8.Systems.AI
             }
         }
 
-        private static void DisposeNativeList<T>(ref NativeList<T> list, string label, ref JobHandle handle, ref bool hasDependency) where T : unmanaged
+        private static void DisposeNativeList<T>(ref NativeList<T> list, ref JobHandle handle, ref bool hasDependency) where T : unmanaged
         {
             if (!list.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeList(nameof(EncounterDirector), label);
             if (hasDependency)
             {
                 handle = list.Dispose(handle);

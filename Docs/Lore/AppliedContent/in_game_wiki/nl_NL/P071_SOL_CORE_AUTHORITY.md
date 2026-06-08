@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Sol Core-autoriteit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Sol Core-autoriteit
 
-NL LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core is de juridische en financiële wortel van menselijke expansie, geen persoonlijke herkomst en geen reddingskantoor. Op HECTON-8 overleven zijn normen als zegels, aansprakelijkheidsformulieren, veiligheidsplaten en verzekeringstaal die de mensen overleefde die ze moest beschermen.
 
 ## Scanner
 
-NL LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+Oud juridisch zegel van Sol. Het kan een grenslijk bezitten zonder dichtbij genoeg te zijn om het druklek te ruiken.
 
 ## Terminal
 
-NL LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+SOL CORE STANDARD: continuïteit van de claim erkend via erkende vervoerdersbewaring, routeverzekering en uitgestelde uitspraak. Prioriteit voor menselijke berging onbeslist tot lokale gevarencertificering.
 
 ## Audio
 
-NL LOC HOLD: The seal came from Earth space. The rescue clause did not.
+Het zegel kwam uit de aardruimte. De reddingsclausule niet.
 
 ## Field Note
 
-NL LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol is hier geen thuis. Het is de oudste handtekening op het document die je nog steeds kapot kan maken.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/nl_NL. -->

@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "Wiedergewinnungs-Compliance-Büro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# Wiedergewinnungs-Compliance-Büro
 
-DE LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+Das Wiedergewinnungs-Compliance-Büro ist die gegenwärtige Deep-Reach-Fraktion, die nach HECTON-8 zurückdrückt. Sie arbeitet über Fenster, Proxy-Autorität, Rechtspakete und Säuberungsbefehle. Sie braucht keinen Sofortbefehl; sie braucht, dass der Spieler zuerst den falschen payload sendet.
 
 ## Scanner
 
-DE LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+Bürostempel im Präsens. Deep Reach ist kein Geist; es ist eine Warteschlange mit Anwälten.
 
 ## Terminal
 
-DE LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+WIEDERGEWINNUNGS-COMPLIANCE-BÜRO: Aegir-Rückführungsaktion eröffnet. Prioritäten: XO-Custody, Atlas-Zugang, Haftungseindämmung, Schweigen des Auftragnehmers falls verfügbar.
 
 ## Audio
 
-DE LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+Sie sind spät genug, um legal zu sein, und gegenwärtig genug, um gefährlich zu sein.
 
 ## Field Note
 
-DE LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+Eine lebende Fraktion macht Druck gegenwärtig, ohne den ganzen Konzern in einen einzigen schreienden Bösewicht zu verwandeln.
 
 <!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/de_DE. -->

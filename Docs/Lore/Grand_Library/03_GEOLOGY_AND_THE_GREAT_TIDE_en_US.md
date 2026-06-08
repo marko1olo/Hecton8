@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # GEOLOGY, PRESSURE, AND THE GREAT TIDE OF 2147
 
 > **Source:** Keelmark Loss Desk, Claim Denial Summary. Attached Addendum: Bathymetric Hazard Guide.  

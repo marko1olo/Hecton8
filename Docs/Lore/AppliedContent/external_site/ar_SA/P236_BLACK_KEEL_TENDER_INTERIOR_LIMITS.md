@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Black Keel Tender Interior Limits"
+title: "حدود داخلية tender Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Black Keel Tender Interior Limits
+# حدود داخلية tender Black Keel
 
-AR LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel بنية salvage hard-sci-fi، لا سفينة خاصة بطولية. داخله مبني حول custody العينات، وpacket law، ومناولة الطائرات، وأكمام الحجر الصحي، وضغط الدين. قد يكون السفينة خط حياة وتبقى معماريا غير مبالية بالشخص الذي يمسك ذلك الخط.
 
 ## Scanner
 
-AR LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+في الtender رفوف للعينات، والطائرات، والحزم المختومة، وحمولة lien قبل أن يكون فيه مهد لراكب حي.
 
 ## Terminal
 
-AR LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: لا deep rescue crew، لا atmospheric shuttle reserve، لا free ascent burn خارج lien authority، لا أمين مخازن بشري.
 
 ## Audio
 
-AR LOC HOLD: The ship brought you here as cargo with hands.
+السفينة جلبتك إلى هنا كحمولة لها يدان.
 
 ## Field Note
 
-AR LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel هو claim tender عامل: مستأجر، محجوز بالدين، آلي ومهيأ للعهدة قبل الإنقاذ.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/ar_SA. -->

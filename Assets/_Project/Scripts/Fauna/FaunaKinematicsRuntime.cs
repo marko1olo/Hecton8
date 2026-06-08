@@ -37,6 +37,7 @@ namespace Hecton8.AI
         private const int MaxSegments = LeviathanTerrainIkConstants.MaxSegments;
         private const int MinimumQualitySegments = LeviathanTerrainIkConstants.MinimumQualitySegments;
         private const float MinVectorMagnitudeSq = 0.0001f;
+        private const float OriginShiftUsableMagnitudeSq = 0.000001f;
         private const float BiteFeedbackCooldownSeconds = 0.18f;
         private const float BiteAudioCooldownSeconds = 0.24f;
         private const ushort BiteMinimumQualityDebrisQuantity = 4;
@@ -586,12 +587,16 @@ namespace Hecton8.AI
             if (_disposed)
                 return;
 
-            float3 offset = (float3)shiftData.ShiftOffset;
-            if (!math.all(math.isfinite(offset)))
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            if (!IsFiniteOriginShiftOffset(offset))
             {
                 DumpTelemetryBlackBoxOnce();
                 return;
             }
+
+            if (!IsUsableOriginShiftOffset(offset))
+                return;
 
             if (_solverScheduled)
             {
@@ -2355,7 +2360,24 @@ namespace Hecton8.AI
 
         private void QueueOriginShiftRebase(float3 offset)
         {
+            if (!IsFiniteOriginShiftOffset(offset))
+            {
+                DumpTelemetryBlackBoxOnce();
+                return;
+            }
+
+            if (!IsUsableOriginShiftOffset(offset))
+                return;
+
             _pendingOriginShiftOffset += offset;
+            if (!IsFiniteOriginShiftOffset(_pendingOriginShiftOffset))
+            {
+                _pendingOriginShiftOffset = float3.zero;
+                _pendingOriginShiftRebase = false;
+                DumpTelemetryBlackBoxOnce();
+                return;
+            }
+
             _pendingOriginShiftRebase = true;
         }
 
@@ -2367,12 +2389,31 @@ namespace Hecton8.AI
             float3 offset = _pendingOriginShiftOffset;
             _pendingOriginShiftOffset = float3.zero;
             _pendingOriginShiftRebase = false;
+
+            if (!IsFiniteOriginShiftOffset(offset))
+            {
+                DumpTelemetryBlackBoxOnce();
+                return false;
+            }
+
+            if (!IsUsableOriginShiftOffset(offset))
+                return false;
+
             ApplyOriginShiftRebase(offset);
             return true;
         }
 
         private void ApplyOriginShiftRebase(float3 offset)
         {
+            if (!IsFiniteOriginShiftOffset(offset))
+            {
+                DumpTelemetryBlackBoxOnce();
+                return;
+            }
+
+            if (!IsUsableOriginShiftOffset(offset))
+                return;
+
             if (!TryResolveSpineVaultBuffers(
                     out NativeArray<float3> segmentPositions,
                     out NativeArray<float3> previousSegmentPositions,
@@ -2380,12 +2421,6 @@ namespace Hecton8.AI
                     out _,
                     out _))
             {
-                return;
-            }
-
-            if (!math.all(math.isfinite(offset)))
-            {
-                DumpTelemetryBlackBoxOnce();
                 return;
             }
 
@@ -2902,6 +2937,17 @@ namespace Hecton8.AI
         private static float3 SanitizeFiniteInputFloat3(float3 value, float3 fallback)
         {
             return math.all(math.isfinite(value)) ? value : fallback;
+        }
+
+        private static bool IsFiniteOriginShiftOffset(float3 offset)
+        {
+            float offsetLengthSq = math.lengthsq(offset);
+            return math.all(math.isfinite(offset)) && math.isfinite(offsetLengthSq);
+        }
+
+        private static bool IsUsableOriginShiftOffset(float3 offset)
+        {
+            return IsFiniteOriginShiftOffset(offset) && math.lengthsq(offset) > OriginShiftUsableMagnitudeSq;
         }
 
         private static bool IsFiniteAup(in AbsoluteUniversePosition position)

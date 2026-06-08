@@ -1,4 +1,5 @@
-﻿# PROGRAM ZASIATU I DYREKTYWA ATLASA
+<!-- localization_status: source_draft_pending_native_review -->
+# PROGRAM ZASIATU I DYREKTYWA ATLASA
 
 > **Source:** Dział Inżynierii Systemowej Deep Reach, Rejestr Logiki Dyrektyw.
 > **Speaker:** Dyrektor ds. Operacji Autonomicznych.

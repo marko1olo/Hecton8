@@ -2899,7 +2899,7 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Copies H8-owned native allocations into the deterministic replay source list.
         /// </summary>
-        internal static int CopySnapshotSources(
+        public static int CopySnapshotSources(
             NativeArray<Hecton8.Core.NativeAllocationSnapshotSource> destination,
             int startIndex,
             uint excludedOwnerHash = 0u)
@@ -3242,10 +3242,14 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static void FreeRaw(void* pointer, Allocator allocator, SystemID requester)
         {
-            TryFreeRaw(pointer, allocator, requester);
+            if (TryFreeRaw(pointer, allocator, requester))
+                return;
+
+            throw new InvalidOperationException(
+                $"H8Memory failed to free raw pointer for requester {requester}; pointer ownership remains unchanged.");
         }
 
-        internal static bool TryFreeRaw(void* pointer, Allocator allocator, SystemID requester)
+        public static bool TryFreeRaw(void* pointer, Allocator allocator, SystemID requester)
         {
             if (pointer == null)
                 return true;

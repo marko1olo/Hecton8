@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "Beste einde: geen schone handen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# Beste einde: geen schone handen
 
-NL LOC HOLD: Best Ending No Clean Hands defines the moral standard for final outcomes.
+Het beste einde van HECTON-8 mag niet het einde zijn waarin alles is gerepareerd. Dat zou de oceaan, de dode arbeiders en de contractmachine kleiner maken dan de checklist van de speler. De sterkste versie laat iets concreets redden: een openbaar record, een levend bekken, een geweigerd corporate payload, een bevrijde operator, een naam die niet meer kan worden gewist.
 
-## Scanner
-
-NL LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
-
-## Terminal
-
-NL LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
-
-## Audio
-
-NL LOC HOLD: If it feels clean, it forgot where you are.
-
-## Field Note
-
-NL LOC HOLD: A strong ending lets the player save something real and lose something real.
+Er moet ook residu blijven. Misschien overleeft Atlas onder quarantaine. Misschien redt scheiding mensen en doodt ze een levensvorm. Misschien is de waarheid publiek maar onbeheersbaar. Misschien vertrekt de speler schuldenvrij met bewijs dat mensen blijft verwonden. Geen Schone Handen is geen cynisme. Het is respect voor schaal. De speler kan betekenisvol handelen zonder onschuldig te worden.
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/nl_NL. -->

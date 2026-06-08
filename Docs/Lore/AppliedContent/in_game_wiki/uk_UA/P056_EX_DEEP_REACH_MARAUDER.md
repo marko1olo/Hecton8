@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Колишній Deep Reach, тепер мародер"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Колишній Deep Reach, тепер мародер
 
-UK LOC HOLD: This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.
+Протагоніст не народився на HECTON-8 і не женеться за сімейним привидом. Стара колонія впізнає щось холодніше: польовий ритм ремонту, звички аварійної маршрутизації та дрібні скорочення, яких навчила робота на Deep Reach. Така біографія робить перші замкнені двері особистими, але не перетворює історію на мелодраму крові. Мародер може розкрити схованку претензії заради грошей; колишній спеціаліст Deep Reach ще й розуміє, якого журналу ущільнення не мало бути, яка евакуаційна інструкція прикривала затримку і чому ремонтна послідовність жила далі після списання робітників.
 
 ## Scanner
 
-UK LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+Старий замок Deep Reach перевіряє не твоє ім’я. Він упізнає ритм твоєї ремонтної послідовності.
 
 ## Terminal
 
-UK LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+СЛІД ДОПУСКУ: колишній контракт польових систем. Доступ до евакуаційної інфраструктури відкликано. Статус рятувально-утилізаційних робіт прийнято під боргову опіку пулу претензій.
 
 ## Audio
 
-UK LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Ти не повернувся додому. Ти повернувся до процедури, яка так і не зупинилася.
 
 ## Field Note
 
-UK LOC HOLD: Not family business. Procedure remembers who taught your hands.
+Це не сімейна справа. Процедура пам’ятає руки, які нею користувалися.
 
 <!-- In-Game Wiki; generated from P056_EX_DEEP_REACH_MARAUDER/uk_UA. -->

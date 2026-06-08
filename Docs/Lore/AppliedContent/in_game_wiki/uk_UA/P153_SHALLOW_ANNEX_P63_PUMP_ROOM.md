@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "Насосна P-63 у мілководній прибудові"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Shallow Annex P-63 Pump Room
+# Насосна P-63 у мілководній прибудові
 
-UK LOC HOLD: P-63 teaches survival through work: pumping, sealing, pressure reading and a return pinger. The room is safe only while its machine keeps winning.
+P-63 вчить виживанню через роботу: качати, ущільнювати, читати тиск і чекати return pinger. Кімната безпечна тільки поки її машина продовжує вигравати.
 
 ## Scanner
 
-UK LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+Насосна P-63. Тиск ручного відстійника тримається нижче сервісного запасу.
 
 ## Terminal
 
-UK LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+НАРЯД P-63 / SHALLOW ANNEX: ручним насосом відкачати відстійник до 0.3 m; посадити cold seal на шов C; різати сплавлену клямку шафки тільки після стабілізації манометра; не вірити зеленій лампі, поки return pinger не відповість.
 
 ## Audio
 
-UK LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+Спершу насос. Потім ущільнення. Різак лише після того, як манометр перестане плисти.
 
 ## Field Note
 
-UK LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+Ручка насоса відполірована там, де за неї знову хапалися налякані руки. Суха підлога починається від крейдяної лінії.
 
 <!-- In-Game Wiki; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/uk_UA. -->

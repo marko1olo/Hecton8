@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel-bewaring
 
-Black Keel-bewaring maakt orbitale steun nuttige maar besmette infrastructuur: redding, schuldmachine en Deep Reach-druk.
+Black Keel Custody definieert orbitale steun als nuttige, gecompromitteerde infrastructuur: reddingsroute, schuldenmachine en Deep Reach-drukvlak in één object.
 
 ## Scanner
 

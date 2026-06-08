@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "Oficina de Cumplimiento de Recuperación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# Oficina de Cumplimiento de Recuperación
 
-ES LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow.
+La Oficina de Cumplimiento de Recuperación mantiene a Deep Reach viva en 2190 como una célula concreta de presión corporativa, no como una sombra histórica vaga.
 
 ## Scanner
 
-ES LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+Sello de oficina en tiempo presente. Deep Reach no es un fantasma; es una cola con abogados.
 
 ## Terminal
 
-ES LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+OFICINA DE CUMPLIMIENTO DE RECUPERACIÓN: acción de retorno Aegir abierta. Prioridades: custodia XO, acceso Atlas, contención de responsabilidad, silencio del contratista si está disponible.
 
 ## Audio
 
-ES LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+Llegan lo bastante tarde para ser legales y lo bastante presentes para ser peligrosos.
 
 ## Field Note
 
-ES LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+Una facción viva vuelve actual la presión sin convertir a toda la corporación en un solo villano que grita.
 
 <!-- External Site; generated from P097_RECOVERY_COMPLIANCE_OFFICE/es_ES. -->

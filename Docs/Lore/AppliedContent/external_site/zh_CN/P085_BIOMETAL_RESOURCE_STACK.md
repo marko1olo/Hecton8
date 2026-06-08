@@ -8,33 +8,19 @@ biome_tags: biome.factory_temple;biome.deep_abyss
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+spoiler_tier: 1
+title: "生物金属资源栈"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# 生物金属资源栈
 
-CN LOC HOLD: Biometal Resource Stack frames HECTON-8 as a full pressure economy. The game can reward exploration with many resources while keeping blue debt as the strategic apex.
+资源栈防止HECTON-8坍缩成一种魔法材料。Xenon-Omega很重要，但月球还有金属、盐、热泉化学、压力陶瓷、生物纤维、光蛋白、salvage和Atlas改造生物金属。
 
-## Scanner
-
-CN LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
-
-## Terminal
-
-CN LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
-
-## Audio
-
-CN LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
-
-## Field Note
-
-CN LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+生物金属资源栈把HECTON-8塑造成完整压力经济。探索可以奖励多种资源，同时让blue debt保持战略顶点。 如果每个样本都只说Xenon-Omega，世界就会变蠢。也要计算其他理由。
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/zh_CN. -->

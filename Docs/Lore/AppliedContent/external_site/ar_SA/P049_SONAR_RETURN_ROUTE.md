@@ -8,33 +8,33 @@ biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Sonar Return Route"
+spoiler_tier: 1
+title: "طريق عودة بالسونار"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sonar Return Route
+# طريق عودة بالسونار
 
-Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work.
+الملاحة في HECTON-8 تعامل طريق العودة كعمل، لا كراحة. منارة قديمة قد تشير إلى الممر الصحيح بينما تخفي عائقا جديدا أو طبقة طمي مزاحة أو باب ضغط غير الصدى.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+منارة العودة قديمة. ping الآمن القديم لم يعد يطابق صدى الممر؛ كتلة الحمولة ستبطئ نافذة الانسحاب.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: آخر صدى نظيف غير صالح. تم استقبال ping من Black Keel بثقة منخفضة. انجراف العوائق وكثافة الطمي يتجاوزان سماحية الخريطة. ضع علامة خط ثان قبل استخراج الحمولة.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+الطريق ما زال هناك. الصدى ليس نفسه.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+أرسل ping قبل التحميل. إذا تغير طريق البيت ويداك فارغتان، فلن يسامح حقيبة كاملة.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/ar_SA. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Beam Sail and Pellet Lane"
+title: "Променеве вітрило і pellet-lane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Beam Sail and Pellet Lane
+# Променеве вітрило і pellet-lane
 
-UK LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+Променеві вітрила, pellet lanes, термоядерні стадії захоплення і магнітні вітрила зробили навколосвітлові вантажі практичними без FTL. Корабель виходив із порту з баками, захисним льодом, радіаторами і правом керування, а решту двигуна позичав у маршруту: променеву енергію позаду, масу пелет у розрахованій доріжці попереду і приймач, який погоджувався володіти гальмуванням. Тому Aegir досяжний і все одно здається покинутим. Коридор рухає запланований вантаж; його не можна викликати як рятувальний трос.
 
 ## Scanner
 
-UK LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+Запис транзитної лінії: вітрило не штовхало себе саме. Воно орендувало енергію з масивів позаду корабля і масу з потоків пелет попереду.
 
 ## Terminal
 
-UK LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+СТАТУС ЛІНІЇ: променевий масив оплачено. Потік пелет на 0,8 ppm поза контрактом. Захопний пропал ще можливий. Без власника гальмування швидкий вантаж стає швидким сміттям.
 
 ## Audio
 
-UK LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+Корабель швидкий, бо половина двигуна поза кораблем.
 
 ## Field Note
 
-UK LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Якщо запис хвалить лише промінь, читай далі, доки він не назве власника захоплення.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/uk_UA. -->

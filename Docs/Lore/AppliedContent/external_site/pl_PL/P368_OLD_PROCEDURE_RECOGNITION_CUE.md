@@ -9,32 +9,37 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Old Procedure Recognition Cue"
+title: "Sygnał rozpoznania starej procedury"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Old Procedure Recognition Cue
+# Sygnał rozpoznania starej procedury
 
-PL LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+HECTON-8 osadza motywację postaci w procedurze. Protagonista rozpoznaje stary formularz bezpieczeństwa ewakuacji i widzi, jak go odwrócono: zdegradowane liczby pracowników, zapieczętowane pola świadków i język trasy bezpiecznej użyty do ochrony roszczeń zamiast życia.
 
 ## Scanner
 
-PL LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+Stempel trasy bezpiecznej obecny. Liczba pracowników nadpisana dwoma atramentami. Pole świadka ręcznego zapieczętowane. Formularz zbudowano, by łapać takie kłamstwo, zanim ktoś zrobił z niego politykę.
 
 ## Terminal
 
-PL LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+FORMULARZ CIĄGŁOŚCI EWAKUACJI / CERTYFIKACJA TRASY BEZPIECZNEJ
+trasa: pomocnicza linia wyjścia
+zadeklarowani obecni: zdegradowany stan zaakceptowany
+świadek ręczny: zapieczętowany przez biuro ciągłości
+poprawka terenowa: wykaz pracowników niezgodny z tagami pompowni
+status: zachowanie roszczeń, brak zgody na wydobycie.
 
 ## Audio
 
-PL LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+Znasz ten formularz. Miał nie dopuścić, by pomieszczenie uznano za puste, gdy ludzie nadal w nim oddychali.
 
 ## Field Note
 
-PL LOC HOLD: Use where room evidence contradicts a clean procedural label.
+Formularz miał wymusić kolejne liczenie. Tutaj wymusił ciszę.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/pl_PL. -->

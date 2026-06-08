@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Matemática de trânsito sem FTL
 
-A distância vira pressão de jogo: ordens atrasadas, autoridade velha e janelas físicas de fuga.
+A matemática de trânsito sem FTL transforma distância interestelar em pressão: ordens atrasadas, autoridade vencida, atraso de custódia e janelas físicas de fuga.
 
 ## Scanner
 

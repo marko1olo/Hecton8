@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Gancho de prioridade Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Gancho de prioridade Deep Reach
 
-PT-BR LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+A pressão atual da Deep Reach não exige controle remoto impossível. Certificados antigos de continuidade, cláusulas de quarentena, tokens de acesso Atlas e priority hooks de payload já estão no caminho legal de Black Keel. A empresa pode influenciar o que o carrier valoriza sem possuir o carrier de forma visível. Isso torna o antagonista mais difícil de cortar: não é um sinal para bloquear, mas uma cláusula que continua acordando.
 
 ## Scanner
 
-PT-BR LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+Gancho de certificado antigo. Deep Reach não possui a nave; possui a cláusula.
 
 ## Terminal
 
-PT-BR LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: certificado de continuidade legacy da Deep Reach pode adiantar recovery de payload, trava de quarentena, token de acesso Atlas ou fila de supressão de evidência sob lei de claim Aegir. Prioridade de extração humana inalterada salvo se prova de perigo exceder valor de custody.
 
 ## Audio
 
-PT-BR LOC HOLD: They do not need to be on the bridge to steer the answer.
+Eles não precisam ficar na ponte para guiar a resposta.
 
 ## Field Note
 
-PT-BR LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+Mais limpo que conspiração: a papelada ainda está viva e ainda está faminta.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/pt_BR. -->

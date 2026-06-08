@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "מאגר ההשבה של Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# מאגר ההשבה של Aegir
 
-HE LOC HOLD: Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
-
-## Scanner
-
-HE LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
-
-## Terminal
-
-HE LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
-
-## Audio
-
-HE LOC HOLD: The pool owns the route. You only rent the answer.
-
-## Field Note
-
-HE LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+מאגר ההשבה של Aegir הוא הדרך שבה HECTON-8 משאיר את השחקן לבד ועדיין הופך את ההגעה לאמינה. אף marauder קטן אינו מחזיק ב-Black Keel ישירות. טנדר ה-carrier שייך למערכת claims משותפת שנבנתה לתשתית מתה, מטענים במחלוקת ועולמות יקרים מדי לצוותים רגילים. חותמת מאגר יכולה לקנות גישה לנתיב, אבל היא גם מוסרת את הנתיב לבוררות. ברגע שהמפעיל מתחת לקו המים, כל בקשה מתחרה ב-custody של payload, עתודות הסגר, ערך ראייתי וחלונות דלק. הפחד של המאגר הוא פרוצדורלי. הוא יכול לשלוח עזרה ועדיין לסרב לחילוץ, כי תחת חוק claim של Aegir עזרה היא רק שירות מחויב אחד בין רבים.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/he_IL. -->

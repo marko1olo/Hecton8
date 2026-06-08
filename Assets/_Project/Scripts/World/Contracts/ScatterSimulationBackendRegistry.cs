@@ -9,11 +9,18 @@ namespace Hecton8.World
     public static class ScatterSimulationBackendRegistry
     {
         private static IScatterSimulationBackendProvider _provider;
+        private static uint _version;
+
+        public static uint Version => _version;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset()
         {
             _provider = null;
+            unchecked
+            {
+                _version++;
+            }
         }
 
         public static void RegisterProvider(IScatterSimulationBackendProvider provider)
@@ -22,12 +29,25 @@ namespace Hecton8.World
                 return;
 
             _provider = provider;
+            unchecked
+            {
+                _version++;
+            }
         }
 
         public static bool TryCreateBackend(ScatterSimulationBackendKind backendKind, out IScatterSimulationBackend backend)
         {
             backend = null;
-            return _provider != null && _provider.TryCreateBackend(backendKind, out backend);
+            if (_provider == null)
+                return false;
+
+            if (!_provider.TryCreateBackend(backendKind, out backend) || backend == null)
+            {
+                backend = null;
+                return false;
+            }
+
+            return true;
         }
     }
 

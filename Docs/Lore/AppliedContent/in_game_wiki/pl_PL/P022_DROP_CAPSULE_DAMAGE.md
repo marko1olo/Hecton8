@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Uszkodzenie kapsuły
 
-Kapsuła dostarcza gracza na HECTON-8. Katastrofa zostawia schron, zasilanie i logi, ale niszczy powrót. Ucieczka to łańcuch inżynieryjny.
+Kapsuła zrzutowa dostarcza Maraudera na HECTON-8. Katastrofa zostawia dość systemów na schron, zasilanie i logi, ale niszczy sprzęt wznoszenia. Wczesna ucieczka staje się łańcuchem inżynieryjnym, nie przyciskiem.
 
 ## Scanner
 

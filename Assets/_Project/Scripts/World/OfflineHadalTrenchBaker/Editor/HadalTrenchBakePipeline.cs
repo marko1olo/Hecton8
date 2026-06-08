@@ -464,7 +464,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
                 _rleRuns = new NativeList<HadalTrenchRleRunDTO>(_voxelCount, Allocator.Persistent);
                 try
                 {
-                    _rleRunsSentinelId = NativeMemorySentinel.RegisterNativeList(
+                    _rleRunsSentinelId = NativeMemorySentinel.RegisterNativeListInstance(
                         _rleRuns,
                         NativeMemoryOwner,
                         RleRunsLabel,
@@ -484,19 +484,47 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
 
             private void ReleaseRleRuns()
             {
-                if (!_rleRuns.IsCreated)
-                {
-                    _rleRunsSentinelId = 0;
-                    return;
-                }
+                System.Exception cleanupException = null;
 
                 if (_rleRunsSentinelId > 0)
                 {
-                    NativeMemorySentinel.Unregister(_rleRunsSentinelId);
-                    _rleRunsSentinelId = 0;
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(_rleRunsSentinelId);
+                    }
+                    catch (System.Exception exception)
+                    {
+                        cleanupException = exception;
+                    }
+                    finally
+                    {
+                        _rleRunsSentinelId = 0;
+                    }
                 }
-                _rleRuns.Dispose();
-                _rleRuns = default;
+
+                if (_rleRuns.IsCreated)
+                {
+                    try
+                    {
+                        _rleRuns.Dispose();
+                    }
+                    catch (System.Exception exception)
+                    {
+                        if (cleanupException == null)
+                            cleanupException = exception;
+                    }
+                    finally
+                    {
+                        _rleRuns = default;
+                    }
+                }
+                else
+                {
+                    _rleRuns = default;
+                }
+
+                if (cleanupException != null)
+                    throw cleanupException;
             }
 
             private void BeginSerialization()

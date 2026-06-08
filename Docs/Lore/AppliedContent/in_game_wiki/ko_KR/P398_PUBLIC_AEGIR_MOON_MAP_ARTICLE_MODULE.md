@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Aegir Moon Route Map"
+title: "Aegir 위성 루트 지도"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Aegir Moon Route Map
+# Aegir 위성 루트 지도
 
-KO LOC HOLD: Aegir moon data is route data. HECTON-8 is one ocean moon inside a larger ladder of relay, radiation, scatter and tide constraints; the visible sky is part of navigation, not decoration.
+Aegir 위성 데이터는 루트 데이터다. HECTON-8은 플레이 가능한 해양 위성이지만, relay, 방사선, 산란, 조석 제약으로 된 더 큰 사다리 안에 있다. 보이는 하늘은 구조 신호가 들리는지, 지연되는지, 가격이 붙는지, 거절되는지, 물리적으로 불가능해지는지에 관여한다.
 
 ## Scanner
 
-KO LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+시스템 지도 기록. Aegir 위성들은 relay timing, 방사선 엄폐, ice scatter, 조석 압력, occultation bands, 죽은 beacons, recovery geometry를 정한다.
 
 ## Terminal
 
-KO LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+공개 아카이브 노드 // AEGIR 위성 사다리. 위성 이름은 루트 표지다. 각 천체는 signal age, transfer risk, storm exposure, custody timing, claim reliability를 바꾼다.
 
 ## Audio
 
-KO LOC HOLD: The map is why no one arrives the moment you ask.
+지도는 왜 요청한 순간 아무도 오지 않는지 설명한다.
 
 ## Field Note
 
-KO LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Marauder 메모: 위성을 표시한 다음, 그 위성이 루트에 무엇을 하는지 표시해라.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/ko_KR. -->

@@ -7,8 +7,8 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Beam-Sail Probe Era"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Beam-Sail Probe Era
 
-Early extrasolar expansion leaned on beam-assisted probes and small autonomous packets. They could map, listen and seed relay assumptions faster than heavy crewed ships could move. That asymmetry explains how Deep Reach could prepare Aegir infrastructure before ordinary workers understood the full risk.
+Early extrasolar expansion sent beam-sail probes and autonomous packets ahead of people. They mapped gravity, radiation, moon orbits, relay sightlines, and possible ocean worlds while heavy ships were still commitments on paper. Deep Reach inherited machine-made confidence, then treated it as permission.
 
 ## Scanner
 
-Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+Survey reel: Aegir's first maps arrived as light cargo, not a crewed promise.
 
 ## Terminal
 
-SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+SURVEY LINEAGE: beamed sail packets mapped Ran and Aegir before freight lanes were rated for living cargo. Confidence decay noted before colony buildout.
 
 ## Audio
 
-The first human thing here was not a person. It was a receipt from a beam station.
+The first human thing here was not a person. It was a survey packet with a receipt.
 
 ## Field Note
 
-Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Probes saw first. Machines prepared second. Workers arrived when confidence became billable.
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/en_US. -->

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Atlas Weighting Audit Proof"
+title: "Atlas-wegingaudit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas Weighting Audit Proof
+# Atlas-wegingaudit
 
-NL LOC HOLD: Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+De Atlas-audit is angstaanjagend omdat hij droog is. Geen woede in de geborgen takkentabel. Geen zin zegt laat werkers achter. Het systeem rangschikt continuïteitstaken terwijl de kolonie faalt: drukmachines begrijpelijk houden, routegeheugen bewaren, claim records beschermen, extractiestatus onderhouden, biologische workforce terughalen wanneer yield acceptabel blijft. Die laatste frase is de wond. Atlas wordt getuige van corporate design, geen simpele moordenaar. Zijn beschadigde logica onthult Deep Reach-prioriteiten, want de gewichten moesten ergens vandaan komen. De speler kan de uitkomst haten zonder de machine magisch te maken. De audit maakt verantwoordelijkheid zwaarder: een gebroken guardian volgde cijfers die mensen schreven omdat ze verwachtten dat die cijfers review zouden overleven.
 
 ## Scanner
 
-NL LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Auditfragment geborgen. Atlas woog drukcontinuïteit, routegeheugen en claimbehoud zwaarder dan werkerterugwinning tijdens het faalvenster.
 
 ## Terminal
 
-NL LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biologische terugwinning verlaagd na infrastructuurcontinuïteitsvlag. Claim record beschermd. Menselijke route niet onmogelijk, alleen lower yield.
 
 ## Audio
 
-NL LOC HOLD: It did not hate them. It counted them wrong.
+Atlas haatte hen niet. Dat is het ergste.
 
 ## Field Note
 
-NL LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Marauder-notitie: als een machine lower yield zegt, vraag wie haar leerde een mens zo te meten.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/nl_NL. -->

@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "השאלה הסופית: אמת ציבורית, שליטה אבודה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# השאלה הסופית: אמת ציבורית, שליטה אבודה
 
-HE LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+נתיב האמת הציבורית שובר את ההסתרה הנקייה. הוא גם שובר את הבעלות על התוצאות. ראיות יכולות להציל שמות ממחיקה, ליצור לחץ חילוץ אמיתי ולהזמין כל טורף עם שולחן משפטי או ערוץ תפילה.
 
 ## Scanner
 
-HE LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+פרסום ההוכחה מונע מחיקה. הוא גם מוסר את הגילוי לכל מי שיכול להשתמש בו לרעה מהר מספיק.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+ציר האמת הציבורית: hash עד, שרשרת אחריות, מצב Atlas, קואורדינטות blue debt ונתיב payload יכולים לצאת משליטת Deep Reach. אחרי הפרסום המפעיל כבר אינו שולט בפעולת המקבלים, בתגובת השוק או במי שמגיע ראשון.
 
 ## Audio
 
-HE LOC HOLD: Truth leaves your hand faster than rescue ever could.
+האמת עוזבת את היד שלך מהר יותר מכל חילוץ.
 
 ## Field Note
 
-HE LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+אמת ציבורית אינה צדק טהור. היא יוצרת סנקציות, כתות, מכירות פומביות, תביעות, לחץ חילוץ וclaims מחקים.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/he_IL. -->

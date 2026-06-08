@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "KO LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: 스포일러 게이트 아래의 수리 논리"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Atlas Repair Ecology
+# Atlas-6: 스포일러 게이트 아래의 수리 논리
 
-KO LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas는 연극적 악당이 아니다. 공포는 손상된 산업 governor가 침수 생태에 수리 카테고리를 적용하는 데 있다.
 
 ## Scanner
 
-KO LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+스포일러 기사 seed. 공개층: Atlas는 continuity 인프라였다. 제한층: 손상된 분류가 생명, 금속, 케이블, 시신, habitat를 같은 수리 문법으로 처리한다.
 
 ## Terminal
 
-KO LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // ATLAS 공개 브리프. 단계: factory-governor, 손상된 repair ecology, Atlas-compatible contamination, payload receiver consequences. 최종 receiver는 gated.
 
 ## Audio
 
-KO LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlas trace: "Personnel category unresolved. Sealant category available. Habitat breach priority remains active."
 
 ## Field Note
 
-KO LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+Marauder 메모: Atlas가 돕는다면 무엇을 썼는지 확인하라. 공기를 살리는 수리가 이름을 지울 수 있다.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/ko_KR. -->

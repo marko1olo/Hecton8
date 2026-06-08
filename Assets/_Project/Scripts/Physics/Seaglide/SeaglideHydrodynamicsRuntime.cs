@@ -1470,8 +1470,7 @@ namespace Hecton8.Physics
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
             if (!_registeredHotSwap)
             {
-                GlobalRegistry.RegisterHotSwapListener(this);
-                _registeredHotSwap = true;
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
             }
         }
 
@@ -1497,7 +1496,7 @@ namespace Hecton8.Physics
 
             if (_registeredHotSwap)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
         }

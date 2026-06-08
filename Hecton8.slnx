@@ -61,4 +61,5 @@
   <Project Path="Hecton8.Input.Generated.csproj" />
   <Project Path="Tayx.Graphy.Editor.csproj" />
   <Project Path="MapMagic.MicroSplat.csproj" />
+  <Project Path="Tools\DataMonolithBakeCli\DataMonolithBakeCli.csproj" />
 </Solution>

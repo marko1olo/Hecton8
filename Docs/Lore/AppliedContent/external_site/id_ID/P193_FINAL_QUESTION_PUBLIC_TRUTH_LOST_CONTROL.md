@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Pertanyaan Akhir: Kebenaran Publik, Kendali Hilang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Pertanyaan Akhir: Kebenaran Publik, Kendali Hilang
 
-ID LOC HOLD: Final Question Public Truth Lost Control defines the public ledger ending pressure.
+Kebocoran publik tidak boleh ditulis sebagai tombol keadilan ajaib. Di HECTON-8, informasi bergerak lebih jauh daripada kapal dan tiba sebelum bantuan. Begitu bukti meninggalkan cekungan, ia bisa menuduh Deep Reach, memaksa Black Keel menjawab, membangunkan regulator Sol Core, dan memberi keluarga sesuatu yang lebih keras daripada rumor. Itu kemenangan nyata.
 
-## Scanner
-
-ID LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
-
-## Terminal
-
-ID LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
-
-## Audio
-
-ID LOC HOLD: Truth leaves your hand faster than rescue ever could.
-
-## Field Note
-
-ID LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+Kebocoran juga menciptakan peristiwa makan. Pasar memberi harga pada blue debt. Pengadilan domain membekukan rute. Kultus pribadi mengubah Atlas menjadi kitab. Pesaing berlari menuju koordinat. Penyelamatan menjadi perlu secara politik dan kacau secara operasional. Pemain memilih kebenaran daripada kendali, dan game harus menghormati kedua sisinya.
 
 <!-- External Site; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/id_ID. -->

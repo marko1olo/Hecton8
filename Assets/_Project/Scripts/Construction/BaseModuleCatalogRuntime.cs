@@ -916,7 +916,7 @@ namespace Hecton8.Construction
             BaseModuleTemplate.SocketDefinition[] sockets = template.SocketDefinitions;
             module = new ModuleDefinitionDTO
             {
-                PrefabHashID = unchecked((uint)template.TemplateHashId),
+                PrefabHashID = unchecked((uint)template.ResolvePersistentHashId()),
                 ModuleClassHash = ClassHabitatHash,
                 BoundingBoxExtents = new float3(
                     math.max(0.5f, bounds.x * 0.5f),

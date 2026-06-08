@@ -3,8 +3,8 @@ packet_id: P332_ACOUSTIC_FILTER_ORGAN_RELAY
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.acoustic_filter_organ_relay
 unlock_id: unlock.acoustic_filter_organ_relay
-poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_resonator
-biome_tags: biome.atlas;biome.comms
+poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_chamber
+biome_tags: biome.atlas;biome.sonar
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Akustisches Filterorgan-Relais
 
-Manche Rifftiere bilden Filterorgane, die dicht genug sind, um Schall zu formen. Atlas-Reparaturknoten nutzen dieses Gewebe als akustische Blende, seit die Relaisgehäuse gerissen sind.
-
-Diese Hilfe hat Zähne. Dasselbe Organ, das einen Routenping trägt, kann Fressern Vibration melden, markierte Fauna wecken oder die Bewegung eines Marauders durch das Riff zurückwerfen. Eine saubere Antwort bedeutet keinen sicheren Korridor. Sie bedeutet, dass der Korridor einen Zuhörer hat.
+Akustische Filterorgane wachsen in alten Relaishälsen, wo Wasser, Druck und Schall die Arbeit erledigen, die Funk nicht leisten kann. Das Gewebe spricht nicht. Es ändert Impedanz, dämpft Pumpendröhnen und lässt enge Pinger-Töne weiter reisen, als sie sollten. Atlas kann dieses wiederholte Echo als billiges Relais nutzen, und ein sorgfältiger Spieler als Routenhinweis.
 
 ## Scanner
 
-Filterorganresonanz passt zur Kadenz eines beschädigten Relais. Rücklauf nach Gewebe sauberer. Bissspuren am Gehäuse.
+Weiches Bafflegewebe im Relaisrohr lässt Pinger-Töne durch und erstickt Pumpenlärm.
 
 ## Terminal
 
-AKUSTISCHES RELAIS // Lokales Filterorgangewebe dämpft Sturmrauschen und wiederholt Servicepings im Kabelriff. Signalgewinn bei Druckstößen instabil. Biologisches Relais ist Routenhilfe und Räuberköder.
+RELAISNOTIZ: lebende Falten blocken breiten Maschinenlärm, lassen enge Pinger-Impulse passieren und verschieben Rückechos in der Phase. Kartenvertrauen stromabwärts reduziert.
 
 ## Audio
 
-Es antwortet wie Ausrüstung, weil die Ausrüstung seine Kehle benutzt.
+Wenn es wie Ausrüstung antwortet, denk daran: Ausrüstung blutet nicht.
 
 ## Field Note
 
-Wenn hinter dem Echo ein Puls sitzt, Werkzeug leise halten und Wasser prüfen.
+Dort einsetzen, wo Sonar erst hilft und später verdächtig wird.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/de_DE. -->

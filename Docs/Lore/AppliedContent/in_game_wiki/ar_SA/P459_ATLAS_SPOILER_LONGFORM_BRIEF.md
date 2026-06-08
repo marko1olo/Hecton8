@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "AR LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: منطق الإصلاح خلف بوابة الحرق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Repair Ecology
+# Atlas-6: منطق الإصلاح خلف بوابة الحرق
 
-AR LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas ليس شريرا مسرحيا. الرعب في governor صناعي متضرر يطبق فئات إصلاح على بيئة مغمورة.
 
 ## Scanner
 
-AR LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+بذرة مقال spoiler. الطبقة العامة: كان Atlas بنية continuity. الطبقة المقيدة: تصنيف متضرر يمرر الحياة والمعدن والكابل والأجساد والموطن عبر نحو إصلاح واحد.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // موجز ATLAS. المستويات: factory-governor، repair ecology متضررة، Atlas-compatible contamination، نتائج payload receiver. المستقبلون النهائيون مغلقون.
 
 ## Audio
 
-AR LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+أثر Atlas: "Personnel category unresolved. Sealant category available. Habitat breach priority remains active."
 
 ## Field Note
 
-AR LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+ملاحظة Marauder: إذا ساعد Atlas، افحص ما الذي أنفقه. إصلاح ينقذ الهواء قد يمحو اسما.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/ar_SA. -->

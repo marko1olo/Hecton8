@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # המסלול השקט וה-BLACK KEEL
 
 > **מקור:** תאגיד הענק Deep Reach, רישום נכסים מסלוליים.

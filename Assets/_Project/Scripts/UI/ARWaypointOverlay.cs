@@ -443,6 +443,18 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteRuntimeVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude))
+            {
+                HideRenderedSlots();
+                return;
+            }
+
+            if (shiftSqrMagnitude <= 0.000001f)
+                return;
+
+            RebaseExternalRuntimeWaypointPresentation(-shiftOffset);
             _targetCanvas = null;
             _targetCanvasRect = null;
             _viewCamera = null;
@@ -603,12 +615,15 @@ namespace Hecton8.UI
                 return cameraAup.IsFinite();
             }
 
-            var playerMovement = playerContext.PlayerMovement;
-            if (playerMovement == null)
-                return false;
+            if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
+            {
+                cameraAup = movementState.PredictedAup;
+                return true;
+            }
 
-            cameraAup = playerMovement.CurrentAup;
-            return cameraAup.IsFinite();
+            return false;
         }
 
         private bool TryResolvePresentationWaypointAup(Transform target, out AbsoluteUniversePosition waypointAup)
@@ -1220,6 +1235,44 @@ namespace Hecton8.UI
             return true;
         }
 
+        private void RebaseExternalRuntimeWaypointPresentation(Vector3 runtimeOffset)
+        {
+            for (int i = 0; i < _externalWaypoints.Length; i++)
+            {
+                ExternalWaypoint externalWaypoint = _externalWaypoints[i];
+                if (!externalWaypoint.Active || externalWaypoint.UseTransform)
+                    continue;
+
+                if (externalWaypoint.HasPositionAup &&
+                    externalWaypoint.PositionAup.TryToRuntimeFloat3(out float3 resolvedRuntimePosition) &&
+                    math.all(math.isfinite(resolvedRuntimePosition)))
+                {
+                    externalWaypoint.PresentationPosition = new Vector3(
+                        resolvedRuntimePosition.x,
+                        resolvedRuntimePosition.y,
+                        resolvedRuntimePosition.z);
+                    _externalWaypoints[i] = externalWaypoint;
+                    continue;
+                }
+
+                Vector3 rebasedPosition = externalWaypoint.PresentationPosition + runtimeOffset;
+                if (!IsFiniteRuntimeVector(rebasedPosition))
+                {
+                    externalWaypoint.HasPositionAup = false;
+                    _externalWaypoints[i] = externalWaypoint;
+                    continue;
+                }
+
+                externalWaypoint.PresentationPosition = rebasedPosition;
+                _externalWaypoints[i] = externalWaypoint;
+            }
+        }
+
+        private static bool IsFiniteRuntimeVector(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
         private void ClearExternalWaypointInternal(int id)
         {
             for (int i = 0; i < _externalWaypoints.Length; i++)
@@ -1354,8 +1407,9 @@ namespace Hecton8.UI
             if (overlay != null)
                 return overlay.TargetCanvas;
 
-            return SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null
-                ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.TargetCanvas
+            SuitHUDV4CanvasOverlay activeOverlay = null;
+            return SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref activeOverlay)
+                ? activeOverlay.TargetCanvas
                 : null;
         }
 

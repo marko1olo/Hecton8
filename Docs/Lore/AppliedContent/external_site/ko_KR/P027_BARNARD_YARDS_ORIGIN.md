@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Barnard Yards 출신
 
-Barnard Yards는 주인공을 salvage 경제에 묶고 HECTON-8을 직업 문화로 개인화한다.
+Barnard Yards는 마로더 계급을 salvage 경제와 직능 문화에 묶는다. HECTON-8은 고정 멜로드라마가 아니라 작업 습관, 공구 흔적, 빚을 통해 개인적인 장소가 된다.
 
 ## Scanner
 

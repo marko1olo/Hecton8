@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Chaîne de dette relais
 
-La garde relais transforme la logistique spatiale en pression: l'aide porte aussi dette, priorités et autorité corporative.
+La garde relais transforme la logistique spatiale en pression. L'aide peut arriver, mais la route qui la porte transporte aussi dette, crochets de priorité et autorité corporative.
 
 ## Scanner
 

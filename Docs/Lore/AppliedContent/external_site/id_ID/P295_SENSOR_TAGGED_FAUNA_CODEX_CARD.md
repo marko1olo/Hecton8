@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Sensor Tagged Fauna Codex Card"
+title: "Kartu Kodex Fauna Bertag Sensor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Sensor Tagged Fauna Codex Card
+# Kartu Kodex Fauna Bertag Sensor
 
-ID LOC HOLD: Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident.
+Fauna bertag sensor menunjukkan Atlas dalam bentuk paling prosedural. Horornya bukan mind control; horornya adalah hardware monitoring tua yang menjadi riwayat tubuh, lalu logika maintenance rusak memperlakukan tubuh itu sebagai bagian peta.
 
 ## Scanner
 
-ID LOC HOLD: Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+Fauna bertag sensor. Tag biometal Deep Reach lama tertanam di luka, cangkang, atau cincin tumbuh. Echo rute Atlas lemah; niat hewan tidak terkonfirmasi.
 
 ## Terminal
 
-ID LOC HOLD: SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+SPESIMEN / FAUNA BERTAG SENSOR / peran: pembawa telemetry hidup, landmark survey basi, kontaminan repair-route / baca aman: pulsa tag lama, pertumbuhan jaringan luka, gerak tanpa perintah / tolak: membaca perilaku sebagai kepatuhan, memotong tag dari tubuh hidup, percaya occupancy echo / catatan rute: tag bisa melaporkan ruangan yang dilewati hewan, bukan alasan ia lewat.
 
 ## Audio
 
-ID LOC HOLD: It is not obeying. It is being used.
+Ia tidak mematuhi Atlas. Ia membawa pertanyaan lama yang masih ditanyakan Atlas.
 
 ## Field Note
 
-ID LOC HOLD: Do not write as possession. It is damaged maintenance using animal movement.
+Tag adalah luka, bukan tali. Ia bisa melaporkanmu, salah menempatkanmu, atau membangunkan sesuatu yang tidak pernah melihat hewan itu.
 
 <!-- External Site; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/id_ID. -->

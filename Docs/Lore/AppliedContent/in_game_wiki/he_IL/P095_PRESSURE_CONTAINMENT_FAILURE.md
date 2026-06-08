@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "כשל כליאת לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# כשל כליאת לחץ
 
-HE LOC HOLD: Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.
+כשל כליאת לחץ נותן ל-blue debt התנהגות חומרית שאפשר לקרוא. הוא יקר כי לחץ עמוק הפך אותו לקוהרנטי, ומסוכן כי טיפול רדוד מפרק את הקוהרנטיות הזאת. שלב 0 אטום. שלב 1 סוטה ולעתים ניתן להצילו בדחיסת נביעה. שלב 2 שובר את הסריג. שלב 3 מזמין מלח וביולוגיה. שלב 4 משאיר דגימה מתה שמזהמת ציוד, מים ונתיבים.
 
 ## Scanner
 
-HE LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+תרשים שלבי ארון. blue debt נכשל דרך זיכרון לחץ, גזירת אות ו-bloom; אמונה תפלה מבזבזת חמצן.
 
 ## Terminal
 
-HE LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+שלבי כליאה: 0 סריג אטום; 1 סטיית אות; 2 שבר סריג; 3 bloom מלח/ביולוגיה; 4 דגימה מתה עם זיהום חי. דחיסה מחדש בנביעה יכולה להציל רק שלב 1.
 
 ## Audio
 
-HE LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
+הדגימה לא שונאת אותך. היא מנסה לחזור למקום שבו נוצרה.
 
 ## Field Note
 
-HE LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+דגימה יכולה להיות שווה הון בעומק אחד ולהפוך לחבות עשרה מטרים אחר כך.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/he_IL. -->

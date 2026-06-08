@@ -3,38 +3,38 @@ packet_id: P343_SEED_SHIP_BRAKING_ARCHITECTURE
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.seed_ship_braking_architecture
 unlock_id: unlock.seed_ship_braking_architecture
-poi_tags: poi.seed_ship_archive;poi.braking_debris_marker
-biome_tags: biome.archive;biome.colony
+poi_tags: poi.braking_mass_manifest;poi.seed_ship_burn_record
+biome_tags: biome.orbit;biome.archive
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Seed Ship Braking Architecture"
+title: "Arquitectura de frenado de seed ships"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Seed Ship Braking Architecture
+# Arquitectura de frenado de seed ships
 
-ES LOC HOLD: Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.
+Las seed ships no llegaron como cruceros de exploración. Eran cargas industriales planificadas alrededor de masa de desaceleración, pérdida de blindaje, construcción automática y años de preparación fría. Aegir tuvo hardware antes que comunidad humana estable porque las máquinas soportaban mejor el presupuesto de frenado.
 
 ## Scanner
 
-ES LOC HOLD: Seed ship archive. Arrival depended on braking mass, not faith in the destination.
+Archivo de frenado: la llegada dependía de masa sacrificial, captura de vela magnética, quemas de captura de fusión y hielo de escudo consumido según agenda.
 
 ## Terminal
 
-ES LOC HOLD: COLONY LOG: early Aegir hardware arrived as seed cargo, reactor shells, printers, water chemistry rigs and braking debris. The first human phase inherited what survived deceleration.
+REGISTRO FRENO SEED: magsail primaria desplegada. Captura de pellets parcial. Margen de hielo de escudo gastado. Carga aceptada solo para inserción automática de infraestructura.
 
 ## Audio
 
-ES LOC HOLD: The colony started as cargo that managed to stop.
+Llegar no era lo difícil. Frenar con suficiente máquina para construir era lo difícil.
 
 ## Field Note
 
-ES LOC HOLD: Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community.
+Los registros de frenado son prehistoria colonial. Cada hábitat temprano empezó como decisión sobre qué masa podía gastarse.
 
 <!-- In-Game Wiki; generated from P343_SEED_SHIP_BRAKING_ARCHITECTURE/es_ES. -->

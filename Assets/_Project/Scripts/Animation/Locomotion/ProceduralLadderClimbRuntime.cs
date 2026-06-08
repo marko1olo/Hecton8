@@ -72,6 +72,8 @@ namespace Hecton8.Animation.Locomotion
         private bool _registeredFastTick;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
+        private bool _serviceRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _active;
         private bool _pendingFinish;
         private bool _pendingSlip;
@@ -113,8 +115,11 @@ namespace Hecton8.Animation.Locomotion
         internal static ProceduralLadderClimbRuntime EnsureRuntimeInstance()
         {
             ProceduralLadderClimbRuntime registered = GlobalRegistry.ProceduralLadderClimbRuntime;
-            if (registered != null)
+            if (IsLadderClimbRuntimeUsable(registered))
                 return registered;
+
+            if (!ReferenceEquals(registered, null))
+                GlobalRegistry.ClearProceduralLadderClimbRuntime(registered);
 
             if (!Application.isPlaying)
                 return null;
@@ -211,15 +216,8 @@ namespace Hecton8.Animation.Locomotion
 
         private void OnEnable()
         {
-            ProceduralLadderClimbRuntime registered = GlobalRegistry.ProceduralLadderClimbRuntime;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (!TryRegisterService())
                 return;
-            }
-
-            if (registered == null)
-                GlobalRegistry.RegisterProceduralLadderClimbRuntime(this);
 
             CacheColdDependencies();
             TryRegisterHotSwapListener();
@@ -228,6 +226,9 @@ namespace Hecton8.Animation.Locomotion
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             StopClimb(false, false);
             CompleteOutstandingJobForBarrier();
             UnregisterTickables();
@@ -235,11 +236,14 @@ namespace Hecton8.Animation.Locomotion
             ReleaseVaultHandles();
             ClearVaultHandles();
             ClearCachedServices();
-            GlobalRegistry.ClearProceduralLadderClimbRuntime(this);
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             StopClimb(false, false);
             CompleteOutstandingJobForBarrier();
             UnregisterTickables();
@@ -247,7 +251,7 @@ namespace Hecton8.Animation.Locomotion
             ReleaseVaultHandles();
             ClearVaultHandles();
             ClearCachedServices();
-            GlobalRegistry.ClearProceduralLadderClimbRuntime(this);
+            TryUnregisterService();
         }
 
         public void FastTick(float deltaTime)
@@ -642,15 +646,16 @@ namespace Hecton8.Animation.Locomotion
                     out entryAup);
             }
 
-            var playerMovement = playerContext.PlayerMovement;
-            if (playerMovement == null)
+            if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite() ||
+                !IsFinite(movementState.WorldPosition))
+            {
                 return false;
+            }
 
-            AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
-            if (!playerAup.IsFinite())
-                return false;
-
-            float3 playerRuntime = playerAup.ToRuntimeFloat3();
+            AbsoluteUniversePosition playerAup = movementState.PredictedAup;
+            float3 playerRuntime = movementState.WorldPosition;
             return TryOffsetAupByRuntimeDelta(
                 in playerAup,
                 playerRuntime,
@@ -866,6 +871,58 @@ namespace Hecton8.Animation.Locomotion
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
+        }
+
+        private bool TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            GlobalRegistry.RegisterProceduralLadderClimbRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.ProceduralLadderClimbRuntime, this);
+            if (_serviceRegistered)
+                _runtimeOwnerAborted = false;
+            return _serviceRegistered;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.ClearProceduralLadderClimbRuntime(this);
+            _serviceRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            ProceduralLadderClimbRuntime registered = GlobalRegistry.ProceduralLadderClimbRuntime;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsLadderClimbRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.ClearProceduralLadderClimbRuntime(registered);
+            return false;
+        }
+
+        private static bool IsLadderClimbRuntimeUsable(ProceduralLadderClimbRuntime runtime)
+        {
+            return !ReferenceEquals(runtime, null) &&
+                   runtime != null &&
+                   runtime._serviceRegistered &&
+                   runtime.isActiveAndEnabled;
         }
 
         private void ScheduleSolve()

@@ -9,32 +9,38 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "AR LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: تاريخ ضغط في custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Blue Debt Custody
+# Blue Debt: تاريخ ضغط في custody
 
-AR LOC HOLD: Marauders call the material blue debt because payout, containment and liability travel with the same sample. The valuable substrate is not a magic ore. It forms where pressure history, brine chemistry, noble gas capture, vent heat and damaged industrial process leave a readable structure behind. A clean-looking piece can still carry a bad record: wrong extraction angle, heat exposure outside tolerance, Atlas-compatible contamination, or custody tags that make the owner harder to name than the mineral. Black Keel weighs blue debt by mass, grade and paperwork because each piece can be cargo and accusation at the same time. Deep Reach wanted processable material. Atlas learned to grow through damaged surfaces. The ocean kept the evidence in the lattice. A player who brings blue debt home is not only selling shine. They are moving a pressure receipt through a legal system built to decide whether proof becomes money, silence or leverage.
+## الاسم
 
-## Scanner
+Blue debt اسم Marauder لركيزة تحمل Xenon-Omega. تسميها Deep Reach XO continuity substrate، ويسمي الفنيون القطع الصلبة pressure glass. لا يجعلها أي اسم خاما بسيطا.
 
-AR LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+تتكون حيث يترك تاريخ الضغط والغازات النبيلة وbrine وعيوب المعادن والدورات الحرارية والمحفزات الحيوية والصناعة المتضررة lattice قابلا للقراءة. العينة ثمينة لأنها نجت من الضغط. وهي خطرة لأنها تتذكر ما لمسها.
 
-## Terminal
+حتى العينة النظيفة تحتاج extraction scar وضغط containment وbrine exposure وAtlas-compatible drift وcontamination stage وcustody grade وكتلة. لا يدفع Black Keel للمعان بل لجسم قابل للاسترجاع معه ورق يصمد في النزاع.
 
-AR LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+فشل containment يغير الحالة: sealed، drift، fracture، bloom، ثم مادة ميتة ودليل حي. Vent repressure يساعد فقط drift المبكر.
 
-## Audio
+Blue debt مورد ودفع ودليل وفخ. اللاعب ينقل pressure receipt عبر Black Keel وKeelmark وDeep Reach وربما public ledger. السؤال من يشتري الصمت المرتبط بالعينة.
 
-AR LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+## للعينة سيرة
 
-## Field Note
+Blue Debt ثمين لأنه يتذكر الضغط. المقال الجيد يعامل sample كسيرة مكتوبة بالكيمياء: growth depth، shock history، brine contact، vent heat، handling contamination، scanner custody، hull exposure وtransport delay. شظية نظيفة قد لا تساوي شيئا. شظية قبيحة بسلسلة chain صادقة قد تدفع route window.
 
-AR LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+هكذا يصبح نص المورد قصة. اللاعب لا يستخرج لونا. إنه يسترجع pressure record سيحاول Black Keel وDeep Reach وAtlas contamination والجيولوجيا المحلية إعادة تفسيره في ledgers الخاصة بهم.
+
+## كيف يلعب
+
+Blue Debt يجب أن يجعل inventory choices غير مريحة. كتلة أكثر قد تشتري rescue. دليل أفضل قد يغير مالك الحقيقة. sample ملوث قد يفتح Atlas route ويفسد payout نظيفا. بيع كل شيء قد يبقي الجسد حيا ويترك crime intact.
+
+المورد قوي عندما يكون نافعا وخطرا ومكلفا أخلاقيا في الوقت نفسه. يجب ألا يشعر كأنه magic ore. إنه فاتورة كتبها المحيط بالضغط وانتظر عقودا لتحصيلها.
 
 <!-- External Site; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/ar_SA. -->

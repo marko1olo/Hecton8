@@ -84,7 +84,7 @@ namespace Hecton8.Scavenging
                         s_modularEquipmentService = currentService as IModularEquipmentService;
                         break;
                     case GlobalRegistryServiceSlot.ObjectPool:
-                        s_objectPool = currentService as IObjectPoolService;
+                        CacheObjectPoolService(currentService as ObjectPoolManager);
                         break;
                     case GlobalRegistryServiceSlot.Physics:
                         s_physicsService = currentService as IPhysicsService;
@@ -184,6 +184,7 @@ namespace Hecton8.Scavenging
         private uint _cachedLootOracleItemHash;
         private uint _cachedLootOracleUnitQuantity;
         private bool _registeredToWorldStateRegistry;
+        private bool _worldStateSuppressedByPersistence;
         private int _spatialHandle;
         private ulong _persistentTombstoneId;
         private AbsoluteUniversePosition _persistentAup;
@@ -251,13 +252,42 @@ namespace Hecton8.Scavenging
             return _worldStateRegistry.GetAt(index);
         }
 
+        internal static int ApplyPersistentWorldRegistryStateToRegisteredNodes()
+        {
+            return ApplyPersistentWorldRegistryStateToRegisteredNodes(null);
+        }
+
+        internal static int ApplyPersistentWorldRegistryStateToRegisteredNodes(PersistentWorldRegistry registry)
+        {
+            int suppressedCount = 0;
+            EnsureRegistryCache();
+            if (registry != null)
+                s_persistentWorldRegistry = registry;
+
+            for (int i = _worldStateRegistry.Count - 1; i >= 0; i--)
+            {
+                ResourceNode node = _worldStateRegistry.GetAt(i);
+                if (node == null ||
+                    node.IsPooledInstance() ||
+                    !node.gameObject.activeSelf ||
+                    !node.ShouldSuppressSpawn())
+                {
+                    continue;
+                }
+
+                node.ApplyWorldStateSuppression();
+                suppressedCount++;
+            }
+
+            return suppressedCount;
+        }
+
         private static void EnsureRegistryCache()
         {
             if (!s_registryCacheRegistered && Application.isPlaying)
             {
-                s_registryCacheRegistered =
-                    GlobalRegistry.IsHotSwapListenerRegistered(_registryCacheListener) ||
-                    GlobalRegistry.TryRegisterHotSwapListener(_registryCacheListener);
+                GlobalRegistry.TryUnregisterHotSwapListener(_registryCacheListener);
+                s_registryCacheRegistered = GlobalRegistry.TryRegisterHotSwapListener(_registryCacheListener);
             }
 
             if (s_registryCacheBootstrapped && !ShouldRefreshRegistryCacheCold())
@@ -269,8 +299,43 @@ namespace Hecton8.Scavenging
             s_worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
             s_playerInventoryService = GlobalRegistry.PlayerInventory;
             s_modularEquipmentService = GlobalRegistry.ModularEquipment;
-            s_objectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             s_physicsService = GlobalRegistry.Physics;
+        }
+
+        private static void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                s_objectPool = pool;
+                return;
+            }
+
+            s_objectPool = null;
+        }
+
+        private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = s_objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                s_objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            s_objectPool = null;
+            pool = null;
+            return false;
         }
 
         private static bool ShouldRefreshRegistryCacheCold()
@@ -311,11 +376,11 @@ namespace Hecton8.Scavenging
         private void OnEnable()
         {
             EnsureRegistryCache();
-            RegisterWorldStateRegistry();
 
             if (IsPooledInstance())
                 return;
 
+            RegisterWorldStateRegistry();
             ActivateRuntimeState();
             InteractableRegistry.RegisterTree(this);
         }
@@ -324,12 +389,14 @@ namespace Hecton8.Scavenging
         {
             InteractableRegistry.InvalidateTree(this);
             UnregisterSpatialHandle();
-            UnregisterWorldStateRegistry();
+            if (IsPooledInstance())
+                UnregisterWorldStateRegistry();
         }
 
         private void OnDestroy()
         {
             InteractableRegistry.InvalidateTree(this);
+            UnregisterWorldStateRegistry();
         }
 
         public void OnSpawn()
@@ -338,7 +405,6 @@ namespace Hecton8.Scavenging
             EnsureRegistryCache();
             ResetState();
             _pendingFreshRuntimeTemplateHealthReset = true;
-            RegisterWorldStateRegistry();
             ActivateRuntimeState();
             InteractableRegistry.RegisterTree(this);
         }
@@ -551,6 +617,7 @@ namespace Hecton8.Scavenging
             if (ShouldSuppressSpawn())
             {
                 _isDepleted = true;
+                _worldStateSuppressedByPersistence = true;
                 DespawnSelf();
                 return;
             }
@@ -1029,8 +1096,7 @@ namespace Hecton8.Scavenging
 
             _despawnRequested = true;
 
-            IObjectPoolService pool = s_objectPool;
-            if (pool != null && IsPooledInstance())
+            if (IsPooledInstance() && TryResolveCachedObjectPool(out IObjectPoolService pool))
             {
                 pool.Despawn(gameObject);
                 return;
@@ -1044,6 +1110,7 @@ namespace Hecton8.Scavenging
             _currentHealth = Mathf.Max(1f, maxHealth);
             _isDepleted = false;
             _despawnRequested = false;
+            _worldStateSuppressedByPersistence = false;
             _lootSpawnBlockedLogged = false;
             _lastLootOracleToolMask = ScavengingLootOracleConstants.ToolMaskAny;
             _pressureMetamorphismProgressSeconds = 0f;
@@ -1119,6 +1186,7 @@ namespace Hecton8.Scavenging
 
                 _currentHealth = 0f;
                 _isDepleted = true;
+                _worldStateSuppressedByPersistence = true;
                 RegisterPersistentDepletion();
                 DespawnSelf();
             }
@@ -1318,8 +1386,36 @@ namespace Hecton8.Scavenging
             if (_registeredToWorldStateRegistry)
                 return;
 
+            if (IsPooledInstance())
+                return;
+
             _worldStateRegistry.Register(this);
             _registeredToWorldStateRegistry = true;
+        }
+
+        internal void ApplyWorldStateSuppression()
+        {
+            RefreshPersistentIdentity();
+            _isDepleted = true;
+            _worldStateSuppressedByPersistence = true;
+            DespawnSelf();
+        }
+
+        internal bool TryRestoreWorldStateSuppression()
+        {
+            if (!_worldStateSuppressedByPersistence)
+                return false;
+
+            EnsureRegistryCache();
+            RefreshPersistentIdentity();
+            if (ShouldSuppressSpawn())
+                return false;
+
+            ResetState();
+            if (!gameObject.activeSelf)
+                gameObject.SetActive(true);
+
+            return true;
         }
 
         private void UnregisterWorldStateRegistry()
@@ -1480,8 +1576,8 @@ namespace Hecton8.Scavenging
             if (_isKnownPooledInstance)
                 return true;
 
-            IObjectPoolService pool = s_objectPool;
-            if (pool != null && pool.CanDespawnWithoutDestroy(_cachedGameObject != null ? _cachedGameObject : gameObject))
+            if (TryResolveCachedObjectPool(out IObjectPoolService pool) &&
+                pool.CanDespawnWithoutDestroy(_cachedGameObject != null ? _cachedGameObject : gameObject))
             {
                 _isKnownPooledInstance = true;
                 return true;

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Kustodi Paket"
+title: "Kustodi Paket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Kustodi Paket
+# Kustodi Paket
 
-ID LOC HOLD: Segel paket ditemukan. Black Keel dapat menerima kargo, tetapi bukti perlu sumber, segel, hash saksi, tanda relay, jalur penerima, dan status kerusakan. Simpan tag kustodi sebelum membongkar perangkat.
+Segel paket ditemukan. Black Keel dapat menerima kargo, tetapi bukti perlu sumber, segel, witness hash, tanda relay, jalur penerima, dan status kerusakan. Simpan tag kustodi sebelum membongkar perangkat.
 
 ## Scanner
 
-ID LOC HOLD: SEGEL PAKET // Strip hash saksi rusak tetapi masih terbaca. Simpan sebelum potong salvase. Bukti tanpa segel berubah jadi material klaim.
+SEGEL PAKET // Strip witness hash rusak tetapi masih terbaca. Simpan sebelum potong salvase. Bukti tanpa segel berubah menjadi material klaim.
 
 ## Terminal
 
-ID LOC HOLD: NOTARIS PAKET KEELMARK // Simpan pelat segel, hash saksi, cap rute, dan tag konektor sebelum transfer. Material tanpa cap bisa diproses sebagai rugi klaim.
+NOTARIS PAKET KEELMARK // Simpan pelat segel, witness hash, cap rute, dan tag konektor sebelum transfer. Material tanpa cap dapat diproses sebagai rugi klaim.
 
 ## Audio
 
-ID LOC HOLD: Relay Black Keel: kargo adalah massa. Bukti adalah kustodi. Bawa keduanya, atau jendela menagih selisihnya.
+Relay Black Keel: kargo adalah massa. Bukti adalah kustodi. Bawa keduanya, atau jendela menagih selisihnya.
 
 ## Field Note
 
-ID LOC HOLD: Segel dulu, potong kemudian. Sampel bersih dengan tag patah menjadi milik siapa pun yang memegang ledger.
+Segel dulu, potong kemudian. Sampel bersih dengan tag patah menjadi milik siapa pun yang memegang ledger.
 
 <!-- In-Game Wiki; generated from P461_PACKET_CUSTODY_BRIDGE/id_ID. -->

@@ -16,44 +16,44 @@ namespace Hecton8.Optimization
     public sealed class CameraRTManager : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         // ── REGISTRY SLOT ──────────────────────────────────────────────────────────
-        
-        
+
+
         // ── CONSTANTS ──────────────────────────────────────────────────────────────
-        
+
         private const long CameraBudgetBytes = 256L * 1024L * 1024L; // 256 MB
         private const float LogThrottleInterval = 5f; // Log once per 5s
-        
+
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
-        
+
         private bool _registeredSlowTick;
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
         private IRenderTextureLifecycleService _cachedRenderTextureLifecycle;
-        
+
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: CameraRTManager
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
-        
+
         // COLD ALLOC: List<RenderTextureAllocationRecord>[32] — RT query — owner: CameraRTManager
         private readonly List<RenderTextureAllocationRecord> _cameraRTs = new List<RenderTextureAllocationRecord>(32);
-        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextLogTime;
 #endif
-        
+
         // ── PUBLIC PROPERTIES ──────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// Current Camera RT memory consumption in bytes.
         /// </summary>
         public long CameraRTMemoryBytes { get; private set; }
-        
+
         /// <summary>
         /// Returns whether Camera RT memory exceeds 256 MB budget.
         /// </summary>
         public bool IsOverBudget => CameraRTMemoryBytes > CameraBudgetBytes;
-        
+
         // ── LIFECYCLE ──────────────────────────────────────────────────────────────
-        
+
         private void OnEnable()
         {
             if (TryRegisterService())
@@ -63,14 +63,14 @@ namespace Hecton8.Optimization
                 TryRegister();
             }
         }
-        
+
         private void OnDisable()
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
-        
+
         private void OnDestroy()
         {
             TryUnregister();
@@ -83,12 +83,20 @@ namespace Hecton8.Optimization
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregister();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
                 _cachedRenderTextureLifecycle = currentService as IRenderTextureLifecycleService;
         }
-        
+
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// ISlowTickable implementation. Monitors Camera RT memory every ~0.5s.
         /// Zero GC: pre-allocated buffers, no LINQ, no string concat.
@@ -98,9 +106,9 @@ namespace Hecton8.Optimization
             MeasureCameraRTMemory();
             CheckBudget();
         }
-        
+
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
-        
+
         private void MeasureCameraRTMemory()
         {
             IRenderTextureLifecycleService lifecycle = _cachedRenderTextureLifecycle;
@@ -109,11 +117,11 @@ namespace Hecton8.Optimization
                 CameraRTMemoryBytes = 0L;
                 return;
             }
-            
+
             // Query all Camera-owned RTs (zero-GC)
             _cameraRTs.Clear();
             lifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.Camera, _cameraRTs);
-            
+
             // Calculate total Camera RT memory (zero-GC loop)
             long totalBytes = 0L;
             for (int i = 0; i < _cameraRTs.Count; i++)
@@ -121,15 +129,15 @@ namespace Hecton8.Optimization
                 if (!_cameraRTs[i].IsDisposed)
                     totalBytes += _cameraRTs[i].MemoryBytes;
             }
-            
+
             CameraRTMemoryBytes = totalBytes;
         }
-        
+
         private void CheckBudget()
         {
             if (!IsOverBudget)
                 return;
-            
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             float now = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now >= _nextLogTime)
@@ -168,16 +176,38 @@ namespace Hecton8.Optimization
             if (!Application.isPlaying)
                 return false;
 
-            CameraRTManager registered = GlobalRegistry.CameraRT;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterCameraRTRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.CameraRT, this);
             return _serviceRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            CameraRTManager registered = GlobalRegistry.CameraRT;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsCameraRTRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterCameraRTRuntime(registered);
+            return false;
+        }
+
+        private static bool IsCameraRTRuntimeUsable(CameraRTManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()
@@ -210,7 +240,7 @@ namespace Hecton8.Optimization
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
         }
-        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void LogBudgetViolation()
         {
@@ -218,7 +248,7 @@ namespace Hecton8.Optimization
             _reportBuilder.Append("[CameraRTManager] BUDGET EXCEEDED: ");
             _reportBuilder.Append((CameraRTMemoryBytes / (1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture)).Append(" MB / ");
             _reportBuilder.Append((CameraBudgetBytes / (1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture)).Append(" MB");
-            
+
             Hecton8.Core.H8Debug.LogWarning(_reportBuilder.ToString(), this);
         }
 #endif

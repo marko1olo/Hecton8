@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Pistolet de colmatage à froid"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Pistolet de colmatage à froid
 
-FR LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+Le pistolet de colmatage à froid donne la première réparation honnête après le pompage. Il peut arrêter une microfuite ou tenir une lèvre de joint assez longtemps pour remettre une petite pièce en service, mais il ne rend pas une structure endommagée sûre. La leçon utile tient à l'étiquette de classe : HECTON-8 punit toute réparation utilisée hors de sa classe de pression.
 
 ## Scanner
 
-FR LOC HOLD: Patch gun. Rated for pinholes, not miracles.
+Pistolet de joint à froid. Cartouche homologuée seulement pour microfuites et joints calmes; un cisaillement actif l'arrachera.
 
 ## Terminal
 
-FR LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+LIMITE DE COLMATAGE / JOINT À FROID : adhère sur coque humide de faible profondeur après essuyage. Approuvé pour microfuites, lèvres de joint et suintement stable. Refuser fissures en cisaillement actif, floraison chaude de blue debt et raccords de câbles mobiles.
 
 ## Audio
 
-FR LOC HOLD: A patch is not safety. It is a countdown that looks solid.
+N'appelez pas ça étanche. Appelez ça du temps.
 
 ## Field Note
 
-FR LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Une rustine achète des minutes. Si la fissure bouge encore, dépensez ces minutes à partir.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/fr_FR. -->

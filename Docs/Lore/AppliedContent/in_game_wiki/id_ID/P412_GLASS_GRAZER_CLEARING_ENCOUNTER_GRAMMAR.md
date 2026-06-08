@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "Grammar Encounter Clearing Glass Grazer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# Grammar Encounter Clearing Glass Grazer
 
-ID LOC HOLD: Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.
+Clearing glass grazer mengajarkan kepercayaan dengan batas waktu. Kawanan hidup dapat membuka jalur pucat di film mineral, mengekspos tepi mat kaya oksigen, dan menunjukkan ke perenang tempat arus baru saja bergerak bersih. Clearing itu harus terasa murah hati. HECTON-8 butuh tempat di mana keindahan membantu. Perangkapnya adalah permanensi. Koridor grazer bukan safe room. Itu keadaan saat ini yang dibuat hewan yang masih mau makan di sana. Jika ketukan cangkang tetap berpasangan dan kawanan terus bekerja di tepi, jalur bisa mendukung scan, perbaikan low-noise, atau belokan return-line hati-hati. Jika makanan tersisa dan kawanan membeku, melipat ke dalam, atau menghilang ke satu sisi reef, clearing sudah berubah. Jangan selesaikan task bar hanya karena air tampak ramah tiga puluh detik lalu.
 
 ## Scanner
 
-ID LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+Clearing glass grazer. Jalur kikis baru, film oksigen, dan ketukan cangkang stabil menandakan tekanan dekat rendah. Ladang makanan kosong berarti warning state.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+GRAMMAR ENCOUNTER / CLEARING GLASS GRAZER / peran: kontras dangkal, jalur cukup aman yang terbaca, tes absensi predator / baca aman: makan aktif, ketukan balik berpasangan, tepi mineral terkikis, garis keluar terlihat / tolak: memakai grazer sebagai jaminan aman, clearing sunyi, makanan ditinggal, return-line terblokir / catatan rute: koridor berguna karena hewan menggunakannya sekarang, bukan karena laut berjanji.
 
 ## Audio
 
-ID LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+Grazer membuat koridor terang. Mereka tidak menentukan berapa lama koridor itu milik mereka.
 
 ## Field Note
 
-ID LOC HOLD: Use for safe-zone literacy and shallow contrast.
+Makan aktif: pakai jalur. Ketukan berpasangan: tahan. Makanan ditinggal: berhenti percaya clearing.
 
 <!-- In-Game Wiki; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/id_ID. -->

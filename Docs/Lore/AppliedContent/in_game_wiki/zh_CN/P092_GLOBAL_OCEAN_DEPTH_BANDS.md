@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "全球海洋深度带"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# 全球海洋深度带
 
-CN LOC HOLD: HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.
+HECTON-8的海洋按深度带阅读，而不是一条海底线。透光陆架仍允许光、残骸、藻类爆发和粗心驾驶。工业陆架承载电缆礁、管笼和旧装载甲板。再往下，盐卤阶梯会弯折声呐和压载。深渊机器场惩罚维修。Atlas盆地让压力像管辖权一样运作。
 
 ## Scanner
 
-CN LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+深度图。第一层陆架还能原谅糟糕压载；更低的水会用压力、热量和寂静结算每个错误。
 
 ## Terminal
 
-CN LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+深度带：0-250米透光打捞陆架；250-1200米工业陆架与电缆礁；1200-2800米盐卤阶梯/峡谷；2800-4300米深渊机器场；4300-5600米Atlas盆地。
 
 ## Audio
 
-CN LOC HOLD: Every band changes what the world allows you to do.
+每下降一百米，你就会失去一种习惯。
 
 ## Field Note
 
-CN LOC HOLD: Depth is not a number. It is a ruleset.
+HECTON-8的深度，是法律、天气、边界和饥饿穿着同一个数字。
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/zh_CN. -->

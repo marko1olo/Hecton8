@@ -42,6 +42,7 @@ namespace Hecton8.Atmosphere
         private const float ThunderAcousticShockEnergyScale = 120000f;
         private const float ThunderCameraShakeScale = 0.35f;
         private const float ScreenSpaceRainFrameTimeShedMs = 14f;
+        private const float DefaultSurfaceWaterLevelY = 14.02f;
         private const int SurfaceWeatherPerformanceWarningCooldownFrames = 30;
         private const uint ThunderCameraJuiceSourceHash = 0x54484E44u; // THND
         private const uint SurfaceWeatherSolveBudgetWarningHash = 0x53574657u;
@@ -528,10 +529,17 @@ namespace Hecton8.Atmosphere
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
-            _pendingThunderPosition += -shiftData.ShiftOffset;
+            _pendingThunderPosition += -shiftOffset;
         }
 
         private void TryRegisterTickManagers()
@@ -783,7 +791,7 @@ namespace Hecton8.Atmosphere
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1076,7 +1084,7 @@ namespace Hecton8.Atmosphere
                 stormInterferencePulseIntervalMax = stormInterferencePulseIntervalMax,
                 followPosition = ToFloat3(followPosition),
                 absoluteUniverseOffset = new double3(absoluteOffset.x, absoluteOffset.y, absoluteOffset.z),
-                surfaceY = ResolveSurfaceY(followPosition),
+                surfaceY = ResolveSurfaceY(),
                 randomState = _rngState,
                 defaultFoamStrength = _oceanSurfaceDefaults.FoamStrength,
                 defaultFoamCoverage = _oceanSurfaceDefaults.FoamCoverage,
@@ -1283,10 +1291,22 @@ namespace Hecton8.Atmosphere
 
         private float ResolveCurrentDepth()
         {
-            if (playerMovement == null)
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
                 return 0f;
 
-            return math.max(0f, playerMovement.CurrentDepth);
+            return playerMovement != null && math.isfinite(playerMovement.CurrentDepth)
+                ? math.max(0f, playerMovement.CurrentDepth)
+                : 0f;
         }
 
         private void ConsumePlayerWaterSplashSignals()
@@ -1306,7 +1326,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             Vector3 followPosition = ResolveFollowPosition();
-            float surfaceY = ResolveSurfaceY(followPosition);
+            float surfaceY = ResolveSurfaceY();
             _pendingSurfaceSplashPosition = followPosition;
             _pendingSurfaceSplashSurfaceY = surfaceY;
             _pendingSurfaceSplashWindDirection = _currentState.windDirection;
@@ -1341,13 +1361,44 @@ namespace Hecton8.Atmosphere
             return _playerTransform != null ? _playerTransform.position : (_selfTransform != null ? _selfTransform.position : default);
         }
 
-        private float ResolveSurfaceY(Vector3 followPosition)
+        private float ResolveSurfaceY()
         {
-            IFluidSurfaceCurrentReadModel fluidSurface = _fluidSurfaceCurrent;
-            if (fluidSurface != null)
-                return fluidSurface.CurrentWaterLevelY;
+            float referenceSurfaceY = DefaultSurfaceWaterLevelY;
+            if (playerMovement != null && TryResolveSurfaceY(playerMovement.CurrentWaterSurfaceY, out float playerSurfaceY))
+            {
+                referenceSurfaceY = playerSurfaceY;
+            }
+            else
+            {
+                IHectonOceanKinematics oceanKinematics = ReadCachedOceanKinematics();
+                if (oceanKinematics != null && TryResolveSurfaceY(oceanKinematics.SeaLevel, out float oceanSurfaceY))
+                {
+                    referenceSurfaceY = oceanSurfaceY;
+                }
+            }
 
-            return playerMovement != null ? playerMovement.CurrentWaterSurfaceY : followPosition.y;
+            IFluidSurfaceCurrentReadModel fluidSurface = _fluidSurfaceCurrent;
+            if (fluidSurface != null && TryResolveSurfaceY(fluidSurface.CurrentWaterLevelY, out float fluidSurfaceY))
+            {
+                if (math.abs(fluidSurfaceY - referenceSurfaceY) <= 128f)
+                    return fluidSurfaceY;
+            }
+
+            return referenceSurfaceY;
+        }
+
+        private static bool TryResolveSurfaceY(float candidateSurfaceY, out float surfaceY)
+        {
+            if (math.isfinite(candidateSurfaceY) &&
+                math.abs(candidateSurfaceY) > 0.0001f &&
+                math.abs(candidateSurfaceY) <= 1000f)
+            {
+                surfaceY = candidateSurfaceY;
+                return true;
+            }
+
+            surfaceY = DefaultSurfaceWaterLevelY;
+            return false;
         }
 
         private void UpdateWeatherSelection(float deltaTime)
@@ -1411,7 +1462,7 @@ namespace Hecton8.Atmosphere
             float strikeRandomA = NextRandom01();
             float strikeRandomB = NextRandom01();
             Vector3 followPosition = ResolveFollowPosition();
-            float surfaceY = ResolveSurfaceY(followPosition);
+            float surfaceY = ResolveSurfaceY();
             LightningStrikePlan strikePlan = ResolveLightningStrikePlan(
                 followPosition,
                 surfaceY,
@@ -1823,7 +1874,7 @@ namespace Hecton8.Atmosphere
             bool surfaceVfxActive = _executionMode == SurfaceExecutionMode.SurfaceActive;
             SurfaceWeatherBindingSnapshot bindings = _computedBindings;
             Vector3 followPosition = ResolveFollowPosition();
-            float surfaceY = ResolveSurfaceY(followPosition);
+            float surfaceY = ResolveSurfaceY();
 
             if (underwaterVisuals != null)
             {

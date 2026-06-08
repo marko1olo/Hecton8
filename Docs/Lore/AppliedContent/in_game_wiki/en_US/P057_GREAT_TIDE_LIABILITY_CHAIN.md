@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Great Tide Liability Chain
 
-The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.
+The Great Tide was not a button someone pressed in a boardroom. HECTON-8 flooded through tide amplification, cryosphere failure, pressure chemistry and colony engineering margins that had been sold as acceptable. That distinction matters because it makes the crime uglier, not cleaner. Deep Reach did not need to invent a disaster. It needed to underbuild independent evacuation, leave Atlas continuity weighting in charge, preserve claim assets ahead of human extraction and hide delay behind certification language. The water was physics. The liability chain is the set of choices that made physics into abandonment.
 
 ## Scanner
 
-The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+The flood was real physics: tide coupling, ice collapse, pressure chemistry and margins that were priced too thin. The crime was the priority stack built around it.
 
 ## Terminal
 

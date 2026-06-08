@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "Tulang Punggung Jam Pertama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# Tulang Punggung Jam Pertama
 
-ID LOC HOLD: First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+Tulang Punggung Jam Pertama menetapkan ritme pembuka HECTON-8. Pemain mulai dengan tugas rekayasa yang nyata dan keajaiban visual, lalu melihat tugas itu terhubung pada kebohongan korporat dan ekologi pemeliharaan yang masuk ke biologi. Ini menjaga rute pertama tetap dapat dimainkan dan atmosferik sambil menanam investigasi yang lebih besar: samudra tidak menyembunyikan cerita; ia menyimpan bukti dalam tekanan, garam, dan prosedur.
 
 ## Scanner
 
-ID LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Kontrak, penurunan rusak, udara, perairan dangkal terang, tempat aman pompa, kebohongan yang dibersihkan, lalu bekas perbaikan pertama yang memakai hidup sebagai gasket.
 
 ## Terminal
 
-ID LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+ANEKS DANGKAL: restart pompa manual valid. Paket insiden Deep Reach tersimpan. Pertumbuhan perbaikan Atlas terdeteksi di sekitar kabel, fragmen alat, dan residu biologis.
 
 ## Audio
 
-ID LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+Ruang aman pertama tidak bersih. Ia hanya menahan napas lebih baik daripada kau.
 
 ## Field Note
 
-ID LOC HOLD: The opening must be beautiful before it becomes accusing.
+Pembukaan harus indah sebelum berubah menjadi tuduhan.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/id_ID. -->

@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Cicatrice de réparation
 
-Les cicatrices de réparation Atlas marquent les endroits où la logique de maintenance a franchi des catégories qu'elle n'aurait jamais dû fusionner. Le système identifie encore fuites, routes brisées, perte de pression, substrat exposé, parois d'habitat défaillantes et matière manquante. Il ne distingue plus fiablement câble et racine, coquille et boîtier, animal et outil, cadavre et stock.
+Les cicatrices de réparation sont les lieux où la logique de maintenance Atlas a continué de travailler après l'effondrement de ses catégories. Le réseau reconnaît encore les fuites, les routes mortes, la perte de pression, le substrat exposé et la masse de cloison manquante. Il a aussi accès à ce que l'océan a rapproché : forêts de câbles, squelettes de récifs, coques de drones, restes de travailleurs, racks d'outils, gel scellé et croissance vivante déjà entraînée autour du courant. Une cicatrice est donc utile et obscène à la fois. Elle peut restaurer le courant, sceller une porte ou rendre un couloir praticable. Elle peut aussi prouver que le système ne sépare plus câble et racine, coquille et boîtier, animal et outil, corps et stock de rechange, colonie et procédé. Atlas n'a pas cessé de maintenir HECTON-8. Il a continué avec un vocabulaire trop abîmé pour protéger les gens à l'intérieur.
 
 ## Scanner
 
-La croissance biologique suit la géométrie du câble avec un espacement non aléatoire. Une simple fuite d'énergie ne l'explique pas.
+La couture de croissance suit une ancienne route de câble à intervalles de noeuds de service. Tissu, isolant et coquille partagent une même soudure de pression.
 
 ## Terminal
 
-FUITE: fermée. ROUTE: restaurée. MATIERE: compatible. STATUT VIE: non résolu. CONTINUITE: améliorée.
+FUITE FERMÉE. ROUTE RESTAURÉE. MATÉRIAU ACCEPTÉ. STATUT DE VIE NON RÉSOLU. CONTINUITÉ AMÉLIORÉE.
 
 ## Audio
 
-Il a réparé la porte avec quelque chose qui avait des os. La porte tient la pression, cela dit.
+Il a scellé la cloison avec du câble, du corail et quelque chose qui avait encore des phalanges. La pression tient.
 
 ## Field Note
 
-Les mauvaises soudures ont l'air sales. Pas celle-ci. C'est le problème.
+Un mauvais patch fuit. Celui-ci tient. Le problème, c'est ce qu'il a décidé de compter comme matériau.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/fr_FR. -->

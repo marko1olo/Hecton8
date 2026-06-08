@@ -125,6 +125,8 @@ namespace Hecton8.Atmosphere
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<EnvironmentState> _pendingStates;
         private static NativeQueue<EnvironmentState> _nextFrameStates;
+        private static int _pendingStatesSentinelId;
+        private static int _nextFrameStatesSentinelId;
         private static int _listenerCount;
         private static int _pendingStateCount;
         private static int _nextFrameStateCount;
@@ -291,14 +293,14 @@ namespace Hecton8.Atmosphere
                 if (!_pendingStates.IsCreated)
                 {
                     _pendingStates = new NativeQueue<EnvironmentState>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - deferred atmosphere state lane flushed by SystemDispatcher - owner: AtmosphereEvents
-                    RegisterNativeQueue(ref _pendingStates, ExpectedPendingStateEventCapacity, nameof(_pendingStates));
+                    RegisterNativeQueue(ref _pendingStates, ExpectedPendingStateEventCapacity, nameof(_pendingStates), out _pendingStatesSentinelId);
                     PrewarmQueue(ref _pendingStates, ExpectedPendingStateEventCapacity);
                 }
 
                 if (!_nextFrameStates.IsCreated)
                 {
                     _nextFrameStates = new NativeQueue<EnvironmentState>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - next-frame atmosphere state lane prevents same-frame reentrant dispatch - owner: AtmosphereEvents
-                    RegisterNativeQueue(ref _nextFrameStates, ExpectedPendingStateEventCapacity, nameof(_nextFrameStates));
+                    RegisterNativeQueue(ref _nextFrameStates, ExpectedPendingStateEventCapacity, nameof(_nextFrameStates), out _nextFrameStatesSentinelId);
                     PrewarmQueue(ref _nextFrameStates, ExpectedPendingStateEventCapacity);
                 }
             }
@@ -314,10 +316,12 @@ namespace Hecton8.Atmosphere
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(AtmosphereEvents),
@@ -326,25 +330,60 @@ namespace Hecton8.Atmosphere
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingStates, nameof(_pendingStates));
-            ReleaseNativeQueue(ref _nextFrameStates, nameof(_nextFrameStates));
+            ReleaseNativeQueue(ref _pendingStates, ref _pendingStatesSentinelId);
+            ReleaseNativeQueue(ref _nextFrameStates, ref _nextFrameStatesSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(AtmosphereEvents), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -374,6 +413,9 @@ namespace Hecton8.Atmosphere
             NativeQueue<EnvironmentState> swap = _pendingStates;
             _pendingStates = _nextFrameStates;
             _nextFrameStates = swap;
+            int sentinelIdSwap = _pendingStatesSentinelId;
+            _pendingStatesSentinelId = _nextFrameStatesSentinelId;
+            _nextFrameStatesSentinelId = sentinelIdSwap;
             _pendingStateCount = _nextFrameStateCount;
             _nextFrameStateCount = 0;
         }
@@ -590,6 +632,7 @@ namespace Hecton8.Atmosphere
     {
         private const float VisualEnterUnderwaterDepth = 0.01f;
         private const float VisualExitUnderwaterDepth = 0.005f;
+        private const float DefaultWaterSurfaceY = 14.02f;
         private const int AbyssAtmospherePresentationDtoStrideBytes = 48;
 
         Material IAtmosphereRenderSettingsBridge.Skybox => AtmosphereDirector.Skybox;
@@ -734,7 +777,7 @@ namespace Hecton8.Atmosphere
 
         [Header("═══ Underwater Detection ═══")]
         [SerializeField] private Transform _playerTransform;
-        [SerializeField] private float _waterSurfaceY = 0f;
+        [SerializeField] private float _waterSurfaceY = DefaultWaterSurfaceY;
         [SerializeField] private bool _useAutoUnderwaterDetection = true;
 
         [Header("Giant Abyss Light")]
@@ -1796,13 +1839,32 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool ResolveMovementUnderwaterState()
         {
+            if (TryResolveMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+            {
+                float depth = ResolvePlayerDepth();
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.Underwater) != 0u)
+                    return true;
+
+                return SurfaceStateUtility.ResolveUnderwaterFromDepth(
+                    depth,
+                    _autoUnderwaterState,
+                    VisualEnterUnderwaterDepth,
+                    VisualExitUnderwaterDepth);
+            }
+
+            if (HasPlayerRuntimeContext())
+                return false;
+
+            if (_playerMovement == null)
+                return false;
+
             switch (_playerMovement.CurrentLocomotionMode)
             {
                 case PlayerLocomotionMode.UnderwaterSwim:
                     return true;
 
                 case PlayerLocomotionMode.ExosuitLocomotion:
-                    return _playerMovement.CurrentDepth > 0.01f || _playerMovement.IsPlayerSubmerged;
+                    return ResolvePlayerDepth() > 0.01f || _playerMovement.IsPlayerSubmerged;
 
                 case PlayerLocomotionMode.SurfaceSwim:
                     return _playerMovement.IsPlayerSubmerged;
@@ -2407,7 +2469,7 @@ namespace Hecton8.Atmosphere
 
         public void SetWaterSurfaceLevel(float worldY)
         {
-            _waterSurfaceY = worldY;
+            _waterSurfaceY = SanitizeWaterSurfaceY(worldY);
         }
 
         public void SetPlayerTransform(Transform player)
@@ -2436,26 +2498,53 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SyncWaterSurfaceFromPlayerMovement()
         {
+            if (TryResolveMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+            {
+                _waterSurfaceY = SanitizeWaterSurfaceY(movementState.WorldPosition.y + math.max(0f, movementState.DepthMeters));
+                return;
+            }
+
+            if (HasPlayerRuntimeContext())
+                return;
+
             if (_playerMovement == null)
                 return;
 
-            _waterSurfaceY = _playerMovement.CurrentWaterSurfaceY;
+            _waterSurfaceY = SanitizeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ResolveSeaLevelY()
         {
-            if (_playerMovement != null)
-                return _playerMovement.CurrentWaterSurfaceY;
+            if (TryResolveMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                return SanitizeWaterSurfaceY(movementState.WorldPosition.y + math.max(0f, movementState.DepthMeters));
 
-            return _waterSurfaceY;
+            if (!HasPlayerRuntimeContext() && _playerMovement != null)
+                return SanitizeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY);
+
+            return SanitizeWaterSurfaceY(_waterSurfaceY);
+        }
+
+        private static float SanitizeWaterSurfaceY(float worldY)
+        {
+            return math.isfinite(worldY) &&
+                   math.abs(worldY) > 0.0001f &&
+                   math.abs(worldY) <= 1000f
+                ? worldY
+                : DefaultWaterSurfaceY;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ResolvePlayerDepth()
         {
-            if (_playerMovement != null)
-                return _playerMovement.CurrentDepth;
+            if (TryResolveMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                return math.max(0f, movementState.DepthMeters);
+
+            if (HasPlayerRuntimeContext())
+                return 0f;
+
+            if (_playerMovement != null && math.isfinite(_playerMovement.CurrentDepth))
+                return math.max(0f, _playerMovement.CurrentDepth);
 
             if (_playerCameraTransform != null)
                 return math.max(0f, _waterSurfaceY - _playerCameraTransform.position.y);
@@ -2464,6 +2553,32 @@ namespace Hecton8.Atmosphere
                 return math.max(0f, _waterSurfaceY - _playerTransform.position.y);
 
             return 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryResolveMovementRuntimeState(out PlayerMovementRuntimeState movementState)
+        {
+            movementState = default;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.IsInitialized ||
+                !playerContext.TryGetMovementRuntimeState(out movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !math.isfinite(movementState.DepthMeters) ||
+                !math.all(math.isfinite(movementState.WorldPosition)))
+            {
+                movementState = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasPlayerRuntimeContext()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            return playerContext != null;
         }
 
         private void CachePlayerMovement()

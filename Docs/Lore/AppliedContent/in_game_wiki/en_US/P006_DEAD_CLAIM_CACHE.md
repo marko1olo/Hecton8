@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Dead Claim Cache
 
-Dead claim caches prove that the player is not the first professional to follow money into HECTON-8. They contain tools, bad maps, cut tethers, private marks, and warnings from people who learned enough to hide gear but not enough to leave clean.
+Dead claim caches prove the player is not the first scavenger to follow money into HECTON-8. The caches sit below normal survey routes: dry bags wedged under service pipework, private claim marks scratched into ballast, oxygen tabs wrapped in oil paper, and maps corrected by hands that shook. Their value is not the gear. Their value is chronology. After the 2147 loss and before the player's descent, independent crews came down, found partial routes through the drowned infrastructure, and vanished into the same dark that kept the colony quiet.
 
 ## Scanner
 
-Hidden field cache. Packed by someone who expected to return.
+Hidden field cache. Packed dry, tied low, marked by a cut tether and a map that says safe too many times.
 
 ## Terminal
 
-Route under north pipe is quiet until the lamps wake up. Do not touch the blue casket. Do not answer carrier pings from inside the canyon.
+CACHE NOTE: north-pipe route quiet until lamp grid wakes. Blue casket remains sealed. Do not answer carrier pings inside canyon shadow. If tether is cut, count the cache as inherited trouble.
 
 ## Audio
 
-This is not Deep Reach kit. Somebody else came down here with a cutter and bad luck.
+This is not Deep Reach kit. Another professional came down with a cutter, a bad map, and hope they did not deserve.
 
 ## Field Note
 
-If a map says safe twice, it was written by someone trying to convince himself.
+Someone reached this canyon before you and learned enough to hide gear, not enough to leave clean.
 
 <!-- In-Game Wiki; generated from P006_DEAD_CLAIM_CACHE/en_US. -->

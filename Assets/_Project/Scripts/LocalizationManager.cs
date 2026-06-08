@@ -137,6 +137,7 @@ namespace Hecton.Localization
         private GameLanguage _savedLanguage = GameLanguage.English;
         private bool _transientLanguageOverrideActive;
         private bool _intrusionGlyphModeActive;
+        private bool _languagePersistenceDirty;
         private uint _madnessOverrideEndFrame;
         private int _madnessActiveWindowId = -1;
         private int _madnessLastRollBucket = int.MinValue;
@@ -817,6 +818,7 @@ namespace Hecton.Localization
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     _cachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);
                     break;
                 case GlobalRegistryServiceSlot.AcousticZoneRuntime:
                     _cachedAcousticMadnessCueSink = currentService as IAcousticZoneMadnessCueSink;
@@ -1907,8 +1909,13 @@ namespace Hecton.Localization
         private bool IsInDeadZoneContext()
         {
             HectonMapMagicVegetationBridge bridge = _cachedVegetationBridge;
-            if (bridge == null)
+            if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref bridge))
+            {
+                _cachedVegetationBridge = null;
                 return false;
+            }
+
+            _cachedVegetationBridge = bridge;
 
             Transform playerTransform = null;
             HectonPlayerMovement playerMovement = ResolvePlayerMovement();
@@ -2176,10 +2183,10 @@ namespace Hecton.Localization
         {
             CachePlayerRuntimeContext(GlobalRegistry.Player);
             _cachedDepthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
-            _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);
             _cachedAcousticMadnessCueSink = GlobalRegistry.AcousticZoneMadnessCueSink;
             _cachedNativeInputRuntime = GlobalRegistry.NativeInputRuntime;
-            CacheUserOptions(GlobalRegistry.UserOptions);
+            CacheUserOptions(GlobalRegistry.UserOptions, applyOwnerChange: false);
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
@@ -2989,10 +2996,20 @@ namespace Hecton.Localization
         {
             UserOptionsPersistence options = ResolveUserOptionsPersistence();
             if (options == null)
+            {
+                _languagePersistenceDirty = true;
                 return;
+            }
 
             options.SetInt(PrefsLanguageKey, (int)language);
-            options.Save();
+            if (options.TrySave())
+            {
+                _languagePersistenceDirty = false;
+                return;
+            }
+
+            _languagePersistenceDirty = true;
+            Hecton8.Core.H8Debug.LogWarning("[Localization] Failed to persist language preference.");
         }
 
         private UserOptionsPersistence ResolveUserOptionsPersistence()
@@ -3001,13 +3018,51 @@ namespace Hecton.Localization
             if (IsUserOptionsRuntimeUsable(options))
                 return options;
 
-            CacheUserOptions(GlobalRegistry.UserOptions);
+            CacheUserOptions(GlobalRegistry.UserOptions, applyOwnerChange: false);
             return _cachedUserOptions;
         }
 
         private void CacheUserOptions(UserOptionsPersistence options)
         {
+            CacheUserOptions(options, applyOwnerChange: true);
+        }
+
+        private void CacheUserOptions(UserOptionsPersistence options, bool applyOwnerChange)
+        {
             _cachedUserOptions = IsUserOptionsRuntimeUsable(options) ? options : null;
+            if (applyOwnerChange && _cachedUserOptions != null)
+                RefreshLanguageAfterUserOptionsOwnerChanged();
+        }
+
+        private void RefreshLanguageAfterUserOptionsOwnerChanged()
+        {
+            if (_languagePersistenceDirty)
+            {
+                SavePersistentLanguagePreference(_savedLanguage);
+                return;
+            }
+
+            UserOptionsPersistence options = _cachedUserOptions;
+            if (!IsUserOptionsRuntimeUsable(options) || !options.HasKey(PrefsLanguageKey))
+                return;
+
+            int saved = options.GetInt(PrefsLanguageKey, (int)defaultLanguage);
+            if (!Enum.IsDefined(typeof(GameLanguage), saved))
+                return;
+
+            GameLanguage loadedLanguage = (GameLanguage)saved;
+            if (_savedLanguage == loadedLanguage &&
+                (_transientLanguageOverrideActive || _currentLanguage == loadedLanguage))
+            {
+                return;
+            }
+
+            _savedLanguage = loadedLanguage;
+            if (_transientLanguageOverrideActive || _currentLanguage == loadedLanguage)
+                return;
+
+            _currentLanguage = loadedLanguage;
+            PublishVisualLanguageState();
         }
 
         private static bool IsUserOptionsRuntimeUsable(UserOptionsPersistence options)

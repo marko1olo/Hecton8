@@ -1382,6 +1382,113 @@ namespace Hecton8.Player.Movement.Editor
         }
 
         [Test]
+        public void InputStateSignal_PacksSixDofAxesWithoutMappingToolFireToRoll()
+        {
+            ushort flags = 0;
+            InputStateSignal signal = default;
+            signal.State.Frame = 80u;
+            signal.State.Sequence = 6u;
+            signal.State.MoveX = InputState.QuantizeUnit(0.5f, ref flags);
+            signal.State.MoveY = InputState.QuantizeUnit(-0.25f, ref flags);
+            signal.State.LookX = InputState.QuantizeLook(0.25f, ref flags);
+            signal.State.LookY = InputState.QuantizeLook(-0.5f, ref flags);
+            signal.State.Vertical = InputState.QuantizeUnit(-0.75f, ref flags);
+            signal.State.Flags = flags;
+            signal.State.ButtonsBitmask =
+                (uint)PlayerInputAction.PrimaryFire |
+                (uint)PlayerInputAction.SecondaryFire |
+                (uint)PlayerInputAction.Jump |
+                (uint)PlayerInputAction.Interact |
+                (uint)PlayerInputAction.Sprint;
+
+            Assert.IsTrue(ZeroGMovementRuntime.TryPackInputStateSignal(
+                in signal,
+                81u,
+                quaternion.identity,
+                0.08f,
+                out ZeroGInputStateDTO input));
+
+            Assert.AreEqual(0.5f, input.LocalThrustAxis.x, 0.0001f);
+            Assert.AreEqual(-0.75f, input.LocalThrustAxis.y, 0.0001f);
+            Assert.AreEqual(-0.25f, input.LocalThrustAxis.z, 0.0001f);
+            Assert.AreEqual(0.04f, input.LocalAngularAxis.x, 0.0001f);
+            Assert.AreEqual(0.02f, input.LocalAngularAxis.y, 0.0001f);
+            Assert.AreEqual(0.0f, input.LocalAngularAxis.z, 0.00001f);
+            Assert.AreNotEqual(0u, input.ActionMask & ZeroGInputActions.Thruster);
+            Assert.AreNotEqual(0u, input.ActionMask & ZeroGInputActions.PushAndGlide);
+            Assert.AreNotEqual(0u, input.ActionMask & ZeroGInputActions.HorizonLock);
+            Assert.AreNotEqual(0u, input.ActionMask & ZeroGInputActions.BrakeAssist);
+            Assert.AreEqual(81u, input.Frame);
+            Assert.AreEqual(81L, input.SimulationTick);
+            Assert.AreNotEqual(0u, input.Flags & ZeroGMovementStateFlags.ExternalInput);
+        }
+
+        [Test]
+        public void InputStateSignalFreshness_RejectsZeroFutureAndStaleFrames()
+        {
+            InputStateSignal signal = default;
+            signal.State.Frame = 100u;
+            signal.State.Sequence = 2u;
+
+            Assert.IsTrue(ZeroGMovementRuntime.TryPackInputStateSignal(
+                in signal,
+                102u,
+                quaternion.identity,
+                0.08f,
+                out ZeroGInputStateDTO input));
+            Assert.AreEqual(102u, input.Frame);
+
+            Assert.IsFalse(ZeroGMovementRuntime.TryPackInputStateSignal(
+                in signal,
+                103u,
+                quaternion.identity,
+                0.08f,
+                out _));
+
+            signal.State.Frame = 0u;
+            Assert.IsFalse(ZeroGMovementRuntime.TryPackInputStateSignal(
+                in signal,
+                100u,
+                quaternion.identity,
+                0.08f,
+                out _));
+
+            signal.State.Frame = 101u;
+            Assert.IsFalse(ZeroGMovementRuntime.TryPackInputStateSignal(
+                in signal,
+                100u,
+                quaternion.identity,
+                0.08f,
+                out _));
+
+            signal.State.Frame = 100u;
+            signal.State.Sequence = 0u;
+            Assert.IsFalse(ZeroGMovementRuntime.TryPackInputStateSignal(
+                in signal,
+                100u,
+                quaternion.identity,
+                0.08f,
+                out _));
+        }
+
+        [Test]
+        public void InputStateSignalRoute_PrecedesLegacyInputSignalFallback()
+        {
+            string source = ReadRuntimeSource();
+            string inputRoute = ExtractMethodBody(source, "TryBuildDeterministicSignalInput");
+            string packRoute = ExtractMethodBody(source, "TryPackInputStateSignal");
+
+            AssertTokenBefore(inputRoute, "TryBuildInputStateSignalInput", "CoreDeterminismSignals.TryGetLatestInput", "TryBuildDeterministicSignalInput");
+            AssertHasToken(packRoute, "float3 localAngular = new float3(", "TryPackInputStateSignal");
+            AssertHasToken(packRoute, "-look.y * angularScale", "TryPackInputStateSignal");
+            AssertHasToken(packRoute, "look.x * angularScale", "TryPackInputStateSignal");
+            AssertHasToken(packRoute, "0.0f);", "TryPackInputStateSignal");
+            AssertTokenBefore(packRoute, "look.x * angularScale", "0.0f);", "TryPackInputStateSignal");
+            AssertNoToken(packRoute, "PlayerInputAction.PrimaryFire", "TryPackInputStateSignal");
+            AssertNoToken(packRoute, "PlayerInputAction.SecondaryFire", "TryPackInputStateSignal");
+        }
+
+        [Test]
         public void RuntimeHotPaths_DoNotUseColdLookupOrSceneQueries()
         {
             string source = ReadRuntimeSource();
@@ -1391,6 +1498,8 @@ namespace Hecton8.Player.Movement.Editor
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "WriteFrameInput"), "WriteFrameInput");
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "BuildMockInput"), "BuildMockInput");
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "TryBuildDeterministicSignalInput"), "TryBuildDeterministicSignalInput");
+            AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "TryBuildInputStateSignalInput"), "TryBuildInputStateSignalInput");
+            AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "TryPackInputStateSignal"), "TryPackInputStateSignal");
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "TryPackDeterministicInputSignal"), "TryPackDeterministicInputSignal");
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "SanitizeExternalAuthorityInput"), "SanitizeExternalAuthorityInput");
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "InputDtoContainsNonFinite"), "InputDtoContainsNonFinite");
@@ -1401,6 +1510,7 @@ namespace Hecton8.Player.Movement.Editor
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "TuningSnapshotContainsNonFinite"), "TuningSnapshotContainsNonFinite");
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "IsFreshInputSignal"), "IsFreshInputSignal");
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "IsFreshInputSignalForFrame"), "IsFreshInputSignalForFrame");
+            AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "IsFreshInputStateSignalForFrame"), "IsFreshInputStateSignalForFrame");
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "TryEnsureRuntimeOwnership"), "TryEnsureRuntimeOwnership");
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "ScheduleSolver"), "ScheduleSolver");
             AssertNoForbiddenHotPathToken(ExtractMethodBody(source, "CompletePendingJob"), "CompletePendingJob");

@@ -3,8 +3,8 @@ packet_id: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.sensor_tagged_fauna_feedback_loop
 unlock_id: unlock.sensor_tagged_fauna_feedback_loop
-poi_tags: poi.tagged_fauna_loop;poi.old_colony_sensor
-biome_tags: biome.ecology;biome.comms
+poi_tags: poi.sensor_tagged_fauna;poi.old_colony_tag
+biome_tags: biome.atlas;biome.fauna
 locale: en_US
 surface: external_site
 source_voice: Website Public
@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Sensor-Tagged Fauna Feedback Loop
 
-HECTON-8's first surveys were not done by clean satellites alone. The colony tagged animals, seeded current meters and let living routes build maps through the water column. Some tags became buried under scar tissue or shell growth. Others kept transmitting through cable reef repeaters after the people who named them were gone.
+Sensor-tagged fauna are not controlled soldiers. That distinction matters. Deep Reach tagging programs began as ordinary field science and logistics: track migration, pressure tolerance, contamination exposure, and route density. Years later, the tags are no longer clean equipment. Shell grows around them. Scar tissue drags them out of alignment. Mineral caps change their signal.
 
-Atlas does what damaged infrastructure often does: it trusts old channels too much. A migration can look like a salinity event. A wounded predator can look like a blocked corridor. A feeding loop can raise repair urgency around a place the player needs to cross. The fauna remain wild, but the system listens to them badly.
+Atlas still reads the return. A wounded grazer crossing a flooded gantry can look like a pressure survey. A predator carrying an old tag can make a corridor appear occupied by infrastructure risk. The animal remains itself, but the system around it treats movement as data. This gives wildlife encounters a second edge: survival behavior may also be maintenance feedback.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/en_US. -->

@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Toter-Claim-Cache
 
-Tote-Claim-Caches beweisen, dass der Spieler nicht der erste Profi ist, der dem Geld nach HECTON-8 folgte. Sie enthalten Werkzeuge, schlechte Karten, geschnittene Leinen, private Marken und Warnungen.
+Tote-Claim-Caches beweisen, dass der Spieler nicht der erste Plünderer ist, der dem Geld nach HECTON-8 folgt. Die Caches liegen unter den normalen Vermessungsrouten: Trockensäcke unter Serviceleitungen, private Claim-Zeichen in Ballast geritzt, Sauerstofftabletten in Ölpapier und Karten, korrigiert von Händen, die zitterten. Ihr Wert ist nicht die Ausrüstung. Ihr Wert ist die Chronologie. Nach dem Verlust von 2147 und vor dem Abstieg des Spielers kamen unabhängige Crews hinab, fanden Teilrouten durch die ertrunkene Infrastruktur und verschwanden in derselben Dunkelheit, die die Kolonie still hielt.
 
 ## Scanner
 
-Versteckter Feldcache. Gepackt von jemandem, der zurückkehren wollte.
+Versteckter Feldcache. Trocken gepackt, tief festgebunden, markiert durch eine geschnittene Leine und eine Karte, die zu oft sicher sagt.
 
 ## Terminal
 
-Die Route unter dem Nordrohr ist ruhig, bis die Lampen erwachen. Fass die blaue Kassette nicht an. Beantworte keine Carrier-Pings im Canyon.
+CACHE-NOTIZ: Nordrohrroute ruhig, bis das Lampengitter erwacht. Blaue Kassette bleibt versiegelt. Keine Carrier-Pings im Canyonschatten beantworten. Wenn die Leine geschnitten ist, gilt der Cache als geerbter Ärger.
 
 ## Audio
 
-Das ist kein Deep-Reach-Kit. Jemand anderes kam mit Cutter und Pech hier runter.
+Das ist kein Deep-Reach-Kit. Ein anderer Profi kam mit einem Cutter, einer schlechten Karte und Hoffnung herunter, die er nicht verdient hatte.
 
 ## Field Note
 
-Wenn eine Karte zweimal sicher sagt, wollte der Schreiber sich selbst überzeugen.
+Jemand erreichte diesen Canyon vor dir und lernte genug, um Ausrüstung zu verstecken, aber nicht genug, um sauber wieder herauszukommen.
 
 <!-- In-Game Wiki; generated from P006_DEAD_CLAIM_CACHE/de_DE. -->

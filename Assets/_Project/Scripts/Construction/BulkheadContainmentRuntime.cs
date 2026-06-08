@@ -119,6 +119,14 @@ namespace Hecton8.Construction
         private uint _lastTelemetryCollisionEdgeHash;
         private float _lastTelemetryAverageClosure;
         private float _lastTelemetryCollisionDepthMeters;
+        private uint _lastTelemetryIntentAppliedCount;
+        private uint _lastTelemetryIntentRejectedCount;
+        private uint _lastTelemetryIntentOverflowDroppedCount;
+        private uint _lastTelemetryIntentOverflowDroppedTotal;
+        private uint _lastIntentAppliedCount;
+        private uint _lastIntentRejectedCount;
+        private uint _lastIntentOverflowDroppedCount;
+        private uint _observedIntentControlDropped;
         private JobHandle _preSimulationHandle;
         private JobHandle _simulationHandle;
         private bool _preSimulationScheduled;
@@ -150,6 +158,10 @@ namespace Hecton8.Construction
             out float averageClosure,
             out uint collisionEdgeHash,
             out float collisionDepthMeters,
+            out uint intentAppliedCount,
+            out uint intentRejectedCount,
+            out uint intentOverflowDroppedCount,
+            out uint intentOverflowDroppedTotal,
             out int shaderUploadCount)
         {
             activeCount = 0;
@@ -160,6 +172,10 @@ namespace Hecton8.Construction
             averageClosure = 0f;
             collisionEdgeHash = 0u;
             collisionDepthMeters = 0f;
+            intentAppliedCount = 0u;
+            intentRejectedCount = 0u;
+            intentOverflowDroppedCount = 0u;
+            intentOverflowDroppedTotal = 0u;
             shaderUploadCount = 0;
             BulkheadContainmentRuntime runtime = s_active;
             if (runtime == null)
@@ -173,6 +189,10 @@ namespace Hecton8.Construction
             averageClosure = runtime._lastTelemetryAverageClosure;
             collisionEdgeHash = runtime._lastTelemetryCollisionEdgeHash;
             collisionDepthMeters = runtime._lastTelemetryCollisionDepthMeters;
+            intentAppliedCount = runtime._lastTelemetryIntentAppliedCount;
+            intentRejectedCount = runtime._lastTelemetryIntentRejectedCount;
+            intentOverflowDroppedCount = runtime._lastTelemetryIntentOverflowDroppedCount;
+            intentOverflowDroppedTotal = runtime._lastTelemetryIntentOverflowDroppedTotal;
             shaderUploadCount = runtime._lastShaderUploadCount;
             return true;
         }
@@ -475,6 +495,14 @@ namespace Hecton8.Construction
             _lastTelemetryCollisionEdgeHash = 0u;
             _lastTelemetryAverageClosure = 0f;
             _lastTelemetryCollisionDepthMeters = 0f;
+            _lastTelemetryIntentAppliedCount = 0u;
+            _lastTelemetryIntentRejectedCount = 0u;
+            _lastTelemetryIntentOverflowDroppedCount = 0u;
+            _lastTelemetryIntentOverflowDroppedTotal = 0u;
+            _lastIntentAppliedCount = 0u;
+            _lastIntentRejectedCount = 0u;
+            _lastIntentOverflowDroppedCount = 0u;
+            _observedIntentControlDropped = 0u;
             _lastDumpedTelemetryCursor = 0u;
             _lastDumpAttemptTelemetryCursor = 0u;
             _layoutFaultTelemetryWritten = false;
@@ -574,9 +602,12 @@ namespace Hecton8.Construction
                     StateHash = 0x4C41594Fu,
                     CollisionEdgeHash = 0u,
                     CollisionDepthMeters = 0f,
-                    Flags = BulkheadTelemetryFlags.NonFinite |
-                            BulkheadTelemetryFlags.DumpRequested |
-                            BulkheadTelemetryFlags.ScheduleTimeOnly
+                    Flags = ResolveIntentTelemetryFlags(
+                        BulkheadTelemetryFlags.NonFinite |
+                        BulkheadTelemetryFlags.DumpRequested |
+                        BulkheadTelemetryFlags.ScheduleTimeOnly),
+                    Reserved0 = PackIntentTelemetryCounters(_lastIntentAppliedCount, _lastIntentRejectedCount),
+                    Reserved1 = PackIntentTelemetryCounters(_lastIntentOverflowDroppedCount, _observedIntentControlDropped)
                 };
                 cursor[0] = unchecked(writeCursor + 1u);
                 _layoutFaultTelemetryWritten = true;
@@ -1089,6 +1120,13 @@ namespace Hecton8.Construction
             return true;
         }
 
+        private void ResetIntentFrameCounters()
+        {
+            _lastIntentAppliedCount = 0u;
+            _lastIntentRejectedCount = 0u;
+            _lastIntentOverflowDroppedCount = 0u;
+        }
+
         private void ConsumePublishedIntents(
             NativeArray<BulkheadStateDTO> states,
             NativeArray<double3> aups,
@@ -1097,6 +1135,8 @@ namespace Hecton8.Construction
             NativeArray<float> moduleIntegrity,
             uint currentFrame)
         {
+            ResetIntentFrameCounters();
+
             int writableCount = ResolveBulkheadWritableCount(states, aups, planes, csrEdges, moduleIntegrity);
             if (writableCount <= 0)
                 return;
@@ -1122,6 +1162,9 @@ namespace Hecton8.Construction
                 BulkheadContainmentIntentControlDTO control = controlRows[0];
                 uint write = control.WriteCursor;
                 uint read = control.ReadCursor;
+                uint overflowDelta = unchecked(control.Dropped - _observedIntentControlDropped);
+                _observedIntentControlDropped = control.Dropped;
+                _lastIntentOverflowDroppedCount = overflowDelta;
                 if (write == read)
                     return;
 
@@ -1132,6 +1175,8 @@ namespace Hecton8.Construction
                     return;
 
                 uint pending = math.min(write - read, capacity);
+                uint applied = 0u;
+                uint rejected = 0u;
                 for (uint offset = 0u; offset < pending; offset++)
                 {
                     BulkheadContainmentIntentDTO intent = intents[(int)((read + offset) % capacity)];
@@ -1139,26 +1184,36 @@ namespace Hecton8.Construction
                         (intent.Flags & BulkheadContainmentIntentFlags.NonFinite) != 0u ||
                         !IsIntentFrameAccepted(intent.Frame, currentFrame))
                     {
+                        rejected++;
                         continue;
                     }
 
-                    ApplyAirlockBulkheadStateIntent(
-                        states,
-                        aups,
-                        planes,
-                        csrEdges,
-                        moduleIntegrity,
-                        writableCount,
-                        intent.EdgeHashID,
-                        (intent.Flags & BulkheadContainmentIntentFlags.Locked) != 0u,
-                        intent.CenterAup,
-                        intent.Normal,
-                        intent.WidthMeters,
-                        intent.HeightMeters,
-                        intent.ParentIntegrity01,
-                        intent.SiblingNodeHash);
+                    if (ApplyAirlockBulkheadStateIntent(
+                            states,
+                            aups,
+                            planes,
+                            csrEdges,
+                            moduleIntegrity,
+                            writableCount,
+                            intent.EdgeHashID,
+                            (intent.Flags & BulkheadContainmentIntentFlags.Locked) != 0u,
+                            intent.CenterAup,
+                            intent.Normal,
+                            intent.WidthMeters,
+                            intent.HeightMeters,
+                            intent.ParentIntegrity01,
+                            intent.SiblingNodeHash))
+                    {
+                        applied++;
+                    }
+                    else
+                    {
+                        rejected++;
+                    }
                 }
 
+                _lastIntentAppliedCount = applied;
+                _lastIntentRejectedCount = rejected;
                 control.ReadCursor = write;
                 controlRows[0] = control;
             }
@@ -1220,6 +1275,8 @@ namespace Hecton8.Construction
         {
             if (!TryFinalizeBulkheadJobsNoWait())
                 return;
+
+            ResetIntentFrameCounters();
 
             if (_vaultRebindPending)
             {
@@ -1556,6 +1613,30 @@ namespace Hecton8.Construction
             H8Memory.RegisterActiveJob(SystemID.Construction, handle);
         }
 
+        private uint ResolveIntentTelemetryFlags(uint flags)
+        {
+            if (_lastIntentRejectedCount != 0u)
+                flags |= BulkheadTelemetryFlags.IntentRejected;
+            if (_lastIntentOverflowDroppedCount != 0u)
+                flags |= BulkheadTelemetryFlags.IntentOverflowCompensated;
+            return flags;
+        }
+
+        private static ulong PackIntentTelemetryCounters(uint low, uint high)
+        {
+            return ((ulong)high << 32) | low;
+        }
+
+        private static uint UnpackIntentTelemetryLow(ulong packed)
+        {
+            return (uint)packed;
+        }
+
+        private static uint UnpackIntentTelemetryHigh(ulong packed)
+        {
+            return (uint)(packed >> 32);
+        }
+
         private JobHandle ScheduleTelemetryJob(
             JobHandle dependency,
             NativeArray<BulkheadStateDTO> states,
@@ -1593,7 +1674,9 @@ namespace Hecton8.Construction
                 GlobalQualityWeight = q,
                 AuthorityCadenceHz = cadenceHz,
                 LastScheduleMicroseconds = BulkheadContainmentMath.SanitizePositive(_lastScheduleMicroseconds, 0f),
-                Flags = flags
+                Flags = ResolveIntentTelemetryFlags(flags),
+                IntentCounters0 = PackIntentTelemetryCounters(_lastIntentAppliedCount, _lastIntentRejectedCount),
+                IntentCounters1 = PackIntentTelemetryCounters(_lastIntentOverflowDroppedCount, _observedIntentControlDropped)
             };
             JobHandle handle = telemetryJob.Schedule(dependency);
             _lastScheduleMicroseconds = ElapsedMicroseconds(scheduleStart);
@@ -1623,6 +1706,7 @@ namespace Hecton8.Construction
             }
 
             float collisionDepth = BulkheadContainmentMath.SanitizePositive(collision.DepthMeters, 0f);
+            flags = ResolveIntentTelemetryFlags(flags);
             telemetry[telemetryIndex] = new BulkheadTelemetryEntry
             {
                 Frame = frame,
@@ -1636,7 +1720,9 @@ namespace Hecton8.Construction
                 StateHash = 2166136261u,
                 CollisionEdgeHash = collision.EdgeHashID,
                 CollisionDepthMeters = collisionDepth,
-                Flags = flags
+                Flags = flags,
+                Reserved0 = PackIntentTelemetryCounters(_lastIntentAppliedCount, _lastIntentRejectedCount),
+                Reserved1 = PackIntentTelemetryCounters(_lastIntentOverflowDroppedCount, _observedIntentControlDropped)
             };
             cursor[0] = unchecked(cursor[0] + 1u);
         }
@@ -1709,6 +1795,10 @@ namespace Hecton8.Construction
             _lastTelemetryAverageClosure = entry.AverageClosure;
             _lastTelemetryCollisionEdgeHash = entry.CollisionEdgeHash;
             _lastTelemetryCollisionDepthMeters = entry.CollisionDepthMeters;
+            _lastTelemetryIntentAppliedCount = UnpackIntentTelemetryLow(entry.Reserved0);
+            _lastTelemetryIntentRejectedCount = UnpackIntentTelemetryHigh(entry.Reserved0);
+            _lastTelemetryIntentOverflowDroppedCount = UnpackIntentTelemetryLow(entry.Reserved1);
+            _lastTelemetryIntentOverflowDroppedTotal = UnpackIntentTelemetryHigh(entry.Reserved1);
             int uploadCount = math.clamp(_activeCount <= 0 ? 1 : _activeCount, 1, math.min(states.Length, BulkheadContainmentConstants.ShaderUploadCapacity));
             uint stateHash = entry.StateHash;
             bool shouldUpload = !_shaderHasValidReadBuffer ||

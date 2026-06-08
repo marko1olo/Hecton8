@@ -9,6 +9,7 @@ namespace Hecton8.SaveSystem
             value.oxygen = SanitizeNonNegativeFinite(value.oxygen);
             value.energy = SanitizeNonNegativeFinite(value.energy);
             value.integrity = SanitizeNonNegativeFinite(value.integrity);
+            value.health = math.max(0f, SanitizeFinite(value.health, SaveData.PlayerHealthDefault));
             value.weight = SanitizeNonNegativeFinite(value.weight);
             value.hunger = SanitizeNonNegativeFinite(value.hunger);
             value.thirst = SanitizeNonNegativeFinite(value.thirst);
@@ -27,7 +28,7 @@ namespace Hecton8.SaveSystem
             value.bleedingSeverity01 = hasBleeding ? Sanitize01(value.bleedingSeverity01, 0f) : 0f;
             value.fractureSecondsRemaining = hasFracture ? SanitizeNonNegativeFinite(value.fractureSecondsRemaining) : 0f;
             value.fracturePenalty01 = hasFracture ? Sanitize01(value.fracturePenalty01, 0f) : 0f;
-            value.environmentTemperature = SanitizeFinite(value.environmentTemperature, 0f);
+            value.environmentTemperature = SanitizeFinite(value.environmentTemperature, SaveData.PlayerEnvironmentTemperatureDefault);
             value.coldStressSeverity01 = Sanitize01(value.coldStressSeverity01, 0f);
             value.heatStressSeverity01 = Sanitize01(value.heatStressSeverity01, 0f);
             value.nitrogenBuildUp = math.clamp(
@@ -77,6 +78,7 @@ namespace Hecton8.SaveSystem
             return Approximately(a.oxygen, b.oxygen) &&
                    Approximately(a.energy, b.energy) &&
                    Approximately(a.integrity, b.integrity) &&
+                   Approximately(a.health, b.health) &&
                    Approximately(a.weight, b.weight) &&
                    Approximately(a.hunger, b.hunger) &&
                    Approximately(a.thirst, b.thirst) &&

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ledger Role Table"
+title: "سجل مسارات أقمار Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ledger Role Table
+# سجل مسارات أقمار Aegir
 
-AR LOC HOLD: Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8.
+يرسم سجل مسارات أقمار Aegir سلم الأقمار حول HECTON-8: الأجسام القريبة لا تقدم مخارج سهلة، بل تزيد صعوبة توقيت الإنقاذ وحقوق المرور والثقة بالمنارات.
 
 ## Scanner
 
-AR LOC HOLD: Aegir moons are not decoration; each public moon label carries a route or salvage role.
+تكسب أقمار Aegir أسماءها بما تكسره أو تخفيه أو تشتته أو ترحله أو تبيعه.
 
 ## Terminal
 
-AR LOC HOLD: LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+السجل: قص إشعاع Skarn، حجب مرحلات Vela، تشتت جليد Claw، خرائط مسار عامة من Lumen، مرور شائعات حجر Thorne، salvage صناعي من Anvil، مرور نوافذ عالية Kestrel، مطالبة HECTON العميقة، واقتصاد منارات Mute الميتة.
 
 ## Audio
 
-AR LOC HOLD: The system has more bodies than stories. Good. Use them as pressure.
+أجسام أكثر. أعذار أكثر. طرق أكثر لكي تخطئ المساعدة.
 
 ## Field Note
 
-AR LOC HOLD: Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+القمر المحيطي وحيد تحت الماء، لكنه ليس وحيدا في النظام.
 
 <!-- External Site; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/ar_SA. -->

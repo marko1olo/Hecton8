@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Final Question: Severance, Mercy, Theft"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Final Question Severance Mercy Theft
+# Final Question: Severance, Mercy, Theft
 
-Severance forces the player to define what kind of life Atlas-ocean continuity has become.
+Severance forces the player to decide what Atlas-ocean continuity has become. If it is only a broken tool, cutting it is repair. If it is a life system, cutting it is killing. If it is evidence, cutting it may be destruction of testimony.
 
 ## Scanner
 
-Severing Atlas is not a simple shutdown button.
+Cutting Atlas is not a shutdown button. It is surgery with no clean anatomy.
 
 ## Terminal
 
-SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
+SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload routing, risk basin collapse or preserve only partial repair memory. Meaning depends on proof carried into the final room.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A clean switch would be merciful. You do not get one.
 
 ## Field Note
 
-The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+The same act can free trapped workers, kill ocean-machine life, deny Deep Reach and steal a living infrastructure from itself.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/en_US. -->

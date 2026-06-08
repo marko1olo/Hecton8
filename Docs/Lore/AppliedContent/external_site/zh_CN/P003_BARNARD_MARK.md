@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Barnard标记
 
-Barnard标记把打捞变成动机。它通过劳动、工具和姓名，而不是说明台词，把玩家与HECTON-8连接起来。
-
-## Scanner
-
-Barnard Yards印记。不是Deep Reach配发。有人把家里的装备带到了这颗月球底部。
-
-## Terminal
-
-人员路线：保持。资源路线：启用。基质路线：保护。
-
-## Audio
-
-那是Barnard的标记。同样的切痕。同样的廉价合金。把它带到这里的人，知道你也知道的那些工坊。
-
-## Field Note
-
-你可以无视一家死公司。可来自自己船坞的扳手就没那么容易无视。
+Barnard Yards不是高贵出身。它是一道工作伤痕：拆船、租来的切割器、压力夹具、第三手工具，以及那些清楚坏合同到底多贵的人。HECTON-8上的第一枚Barnard印记应该小到几乎不像 lore。它不是演说。它是扳手上的印，储物柜铰链上的错误合金，是Deep Reach永远不会规定的维修习惯。对玩家来说，这个细节改变了合同。HECTON-8不再只是异星海水下的一项死亡企业claim。某个来自同一船坞文化的人先到了这里，在这里工作，被塞进同一批账簿，并留下了一点小到可以被抹掉的证据，除非一个Marauder注意到它。
 
 <!-- External Site; generated from P003_BARNARD_MARK/zh_CN. -->

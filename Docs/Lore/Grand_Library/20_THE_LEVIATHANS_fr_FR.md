@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LES LÉVIATHANS DE HECTON-8
 
 > **Source :** Mégacorporation Deep Reach, Évaluation des Menaces Xénobiologiques.

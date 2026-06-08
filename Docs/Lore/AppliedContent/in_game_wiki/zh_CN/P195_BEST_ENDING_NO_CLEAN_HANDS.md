@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "最佳结局：没有干净的手"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# 最佳结局：没有干净的手
 
-CN LOC HOLD: No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.
+没有干净的手是最终语气规则。HECTON-8奖励理解、准备和见证工作，而不是纯洁。最佳结局应让玩家同时感到有能力并且被牵连其中。
 
 ## Scanner
 
-CN LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
+最佳结局应当救下真实之物，而不是假装无辜也从下降中幸存。
 
 ## Terminal
 
-CN LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
+NO CLEAN HANDS RULE：最佳已知结局需要行动权、证据、后果和残留。如果每个受害方都满意，这个结局就忘记了HECTON-8。
 
 ## Audio
 
-CN LOC HOLD: If it feels clean, it forgot where you are.
+如果它感觉干净，它就忘了你在哪里。
 
 ## Field Note
 
-CN LOC HOLD: A strong ending lets the player save something real and lose something real.
+强路线可以揭露真相、拒绝Deep Reach、保留部分生态并让玩家自由，但代价必须可见。
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/zh_CN. -->

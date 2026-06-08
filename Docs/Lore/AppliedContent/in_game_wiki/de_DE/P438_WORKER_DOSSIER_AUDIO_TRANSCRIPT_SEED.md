@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Worker-Dossier-Audiotranskript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Worker Dossier Audio Transcript Seed
+# Worker-Dossier-Audiotranskript
 
-DE LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.
+Worker-Dossier-Transkripte geben der ertrunkenen Kolonie eine arbeitende Bevölkerung, bevor sie Beweis wird. Entscheidend ist Routine: Namen, Aufgaben, Werkzeuge, schlechte Wasserrechnung und die Gewohnheit, noch eine Schicht zu erwarten.
 
 ## Scanner
 
-DE LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Geborgenes Arbeiter-Audio verbindet Namen, Jobs, Spinde, Wassermarken und Route Holds zu einer menschlichen Custody-Kette.
 
 ## Terminal
 
-DE LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
+DOSSIER AUDIO WKR-SET: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold.
 
 ## Audio
 
-DE LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
+Schichtnotiz. Pumpenraum atmet noch. Spindsiegel klemmt. Wasserzählung zu kurz. Sag Kade, das Board hat gelogen.
 
 ## Field Note
 
-DE LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Für Dossier-Barks, Spindcaptions und Worker-Wiki. Stimmen beschäftigt halten, nicht poetisch.
 
 <!-- In-Game Wiki; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/de_DE. -->

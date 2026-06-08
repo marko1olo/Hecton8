@@ -9,32 +9,35 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: HECTON-8 Public Primer Article"
+title: "Introdução Pública de HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: HECTON-8 Public Primer Article
+# Introdução Pública de HECTON-8
 
-PT LOC HOLD: The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
+HECTON-8 é apresentado como um lugar pelo qual vale a pena sobreviver, não apenas como cena de crime. A lua pertence ao sistema Aegir: fria, marcada por marés, valiosa e inconvenientemente distante de qualquer resgate rápido. Suas plataformas fóticas podem ser claras e vivas, com hardware de colônia visível através da água brilhante. Abaixo dessa beleza, as antigas rotas da Deep Reach descem para salas de bombas, corredores pressurizados, cortes de salmoura, pátios de relé quebrados e máquinas que continuaram trabalhando depois que as pessoas pararam de responder. A introdução pública permanece sem spoiler. Ela pode dizer que o jogador retorna como Marauder preso por dívida. Pode dizer que a colônia falhou, que o contrato de salvage é coercitivo e que o oceano guarda evidências. Não revela a escolha final do payload nem toda a pergunta de Atlas. O objetivo é convidar o jogador para o mundo sem lixar seus dentes.
 
 ## Scanner
 
-PT-BR LOC HOLD: A public primer is allowed to be beautiful. It is not allowed to lie.
+Liberação de introdução pública: mostrar a lua como bela primeiro. Não vender o oceano escondendo o crime.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+INTRODUÇÃO PÚBLICA / SEM SPOILER
+permitido: lua oceânica de Aegir, plataformas claras, colônia industrial afogada, retorno salvage do Marauder, ruínas da Deep Reach
+bloqueado: rota final do payload, resolução de Atlas, consequências do receiver no final
+nota editorial: beleza primeiro, evidência depois, sem falsa promessa de resgate.
 
 ## Audio
 
-PT-BR LOC HOLD: First sell the ocean. Then earn the crime.
+A água rasa não é uma máscara. É o que eles quase conseguiram construir antes que a profundidade guardasse os recibos.
 
 ## Field Note
 
-PT LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+Venda o oceano primeiro. Depois deixe a ferrugem, as etiquetas e os carimbos de rota provarem que o oceano não é inocente.
 
 <!-- In-Game Wiki; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/pt_BR. -->

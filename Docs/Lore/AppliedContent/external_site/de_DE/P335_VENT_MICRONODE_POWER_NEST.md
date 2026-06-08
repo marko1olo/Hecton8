@@ -4,7 +4,7 @@ release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.vent_micronode_power_nest
 unlock_id: unlock.vent_micronode_power_nest
 poi_tags: poi.vent_micronode_nest;poi.thermal_logic_patch
-biome_tags: biome.atlas;biome.vent
+biome_tags: biome.atlas;biome.abyss
 locale: de_DE
 surface: external_site
 source_voice: Website Public
@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Vent-Mikroknoten-Energienest
 
-Der untere Ozean ist voll kleiner Energie, nicht großzügiger Energie. Vents bluten Hitze durch metallreiche Kruste; chemische Gradienten sammeln sich über Mineralschichten; alte Hardware ließ Kontakte, Spulen und Keramik zurück.
+Vent-Mikroknoten-Energienester sind der langsame Herzschlag des tiefen Reparaturnetzes. Nahe den Vents bietet der Ozean Wärmegradienten, Mineralfluss, Druckvibration und chemisches Ungleichgewicht. Deep Reach nutzte diese Gradienten für Instrumente und Notladung. Atlas behielt die Gewohnheit, nachdem das saubere Netz ausfiel.
 
-Ein Knoten kann ein Relais ticken lassen, eine Drohne für einen Kriechgang laden oder Speicherreste bewahren. Er macht Vents interessant, ohne sie sicher zu machen. Hitze, Druck, Gift und Atlas-Logik teilen dasselbe Nest.
+Ein Mikroknoten macht Atlas nicht allsehend. Diese Grenze ist wichtig. Er kann einen nahen Film pulsen, eine Dichtschicht härten, Ladung in ein Drohnennest tröpfeln oder eine lokale Entscheidungsaufzeichnung in beschädigtem Substrat erhalten. Tausende solcher Knoten lassen den Abgrund organisiert wirken, ohne ihn sicher zu machen. Der Spieler kämpft am Boden nicht gegen einen Gott. Er bewegt sich durch eine Stadt kleiner Reparaturen, die vergessen haben, wozu Menschen da waren.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/de_DE. -->

@@ -40,6 +40,8 @@ namespace Hecton8.Gameplay.AirlockPressurization
         public const float CatastrophicStressScaleAtm = 48f;
         public const float AuthoritativeQualityWeight = 1f;
         public const uint AgentHash = 0x53333338u;
+        public const uint SimulationHash = 0x53333853u;
+        public const uint PostSimulationHash = 0x5333384Fu;
         public const uint HeavyPumpHash = 0x48504D50u;
         public const uint ViolentBubblesHash = 0x56425542u;
         public const uint CondensationFogHash = 0x43464F47u;
@@ -79,6 +81,9 @@ namespace Hecton8.Gameplay.AirlockPressurization
         public const uint CondensationFog = 1u << 10;
         public const uint AtomicAbort = 1u << 11;
         public const uint MockGenerated = 1u << 12;
+        public const uint BulkheadIntentRetry = 1u << 13;
+        public const uint BulkheadIntentInvalid = 1u << 14;
+        public const uint OutputSignalDropped = 1u << 15;
         public const uint NonFinite = 1u << 31;
     }
 
@@ -148,6 +153,38 @@ namespace Hecton8.Gameplay.AirlockPressurization
         [FieldOffset(4)] public int AtmosphereCellIndex;
         [FieldOffset(8)] public int OwnerIndex;
         [FieldOffset(12)] public uint Flags;
+    }
+
+    public struct AirlockPressurizationAuthoringSnapshot
+    {
+        public AbsoluteUniversePosition DoorAup;
+        public float3 DoorNormal;
+        public float CurrentWaterVolumeLiters;
+        public float CurrentPressureAtm;
+        public float CycleTimer;
+        public float MaxWaterVolumeLiters;
+        public float ChamberVolumeLiters;
+        public float PumpEvacuationSpeedLps;
+        public float EqualizationCurveExponent;
+        public float PowerDrawWatts;
+        public float AvailablePower01;
+        public float ExternalDepthMeters;
+        public float BreachAreaM2;
+        public float DischargeCoefficient;
+        public float GlobalQualityWeight;
+        public float PressureEqualizedAtm;
+        public float WaterEqualizedLiters;
+        public float ExternalPressureAtm;
+        public float RoomPressureAtm;
+        public float WidthMeters;
+        public float HeightMeters;
+        public float HeadMeters;
+        public uint InnerRoomHashID;
+        public uint OuterRoomHashID;
+        public uint DoorHashID;
+        public uint EdgeHashID;
+        public uint CycleStateFlags;
+        public uint Frame;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -453,11 +490,16 @@ namespace Hecton8.Gameplay.AirlockPressurization
 
     public static class AirlockPressurizationIntentFlush
     {
-        public static void PushBulkheadIntents(NativeArray<BulkheadContainmentIntentDTO> intents, int intentCount)
+        private const uint FlushCounterMask = 0xFFu;
+
+        public static uint PushBulkheadIntents(NativeArray<BulkheadContainmentIntentDTO> intents, int intentCount)
         {
             if (!intents.IsCreated)
-                return;
+                return 0u;
 
+            uint publishedCount = 0u;
+            uint retryCount = 0u;
+            uint invalidCount = 0u;
             int safeCount = math.min(math.max(0, intentCount), intents.Length);
             for (int i = 0; i < safeCount; i++)
             {
@@ -466,6 +508,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
                     (intent.Flags & BulkheadContainmentIntentFlags.NonFinite) != 0u ||
                     intent.EdgeHashID == 0u)
                 {
+                    invalidCount++;
                     intents[i] = default;
                     continue;
                 }
@@ -482,20 +525,85 @@ namespace Hecton8.Gameplay.AirlockPressurization
                     intent.SiblingNodeHash,
                     intent.Frame);
                 if (published)
+                {
+                    publishedCount++;
                     intents[i] = default;
+                }
+                else
+                {
+                    retryCount++;
+                }
             }
+
+            return PackFlushCounters(publishedCount, retryCount, invalidCount);
+        }
+
+        public static void MergeFlushCountersIntoTelemetry(
+            NativeArray<AirlockTelemetryEntry> telemetry,
+            NativeArray<int> telemetryCursor,
+            uint packedCounters)
+        {
+            if (!telemetry.IsCreated ||
+                !telemetryCursor.IsCreated ||
+                telemetry.Length <= 0 ||
+                telemetryCursor.Length <= 0 ||
+                telemetryCursor[0] <= 0)
+            {
+                return;
+            }
+
+            int capacity = math.min(AirlockPressurizationConstants.TelemetryFrameCount, telemetry.Length);
+            if (capacity <= 0)
+                return;
+
+            int index = (telemetryCursor[0] - 1) % capacity;
+            AirlockTelemetryEntry entry = telemetry[index];
+            entry.Reserved0 = packedCounters;
+            if (UnpackFlushRetryCount(packedCounters) != 0u)
+                entry.Flags |= AirlockCycleFlags.BulkheadIntentRetry;
+            if (UnpackFlushInvalidCount(packedCounters) != 0u)
+                entry.Flags |= AirlockCycleFlags.BulkheadIntentInvalid;
+            telemetry[index] = entry;
+        }
+
+        private static uint PackFlushCounters(uint published, uint retry, uint invalid)
+        {
+            return math.min(published, FlushCounterMask) |
+                   (math.min(retry, FlushCounterMask) << 8) |
+                   (math.min(invalid, FlushCounterMask) << 16);
+        }
+
+        public static uint UnpackFlushPublishedCount(uint packedCounters)
+        {
+            return packedCounters & FlushCounterMask;
+        }
+
+        public static uint UnpackFlushRetryCount(uint packedCounters)
+        {
+            return (packedCounters >> 8) & FlushCounterMask;
+        }
+
+        public static uint UnpackFlushInvalidCount(uint packedCounters)
+        {
+            return (packedCounters >> 16) & FlushCounterMask;
         }
     }
 
     public static class AirlockPressurizationSignalFlush
     {
+        private const uint SignalCounterMask = 0xFFu;
+        private const uint SignalExpectedMask = 0xFFFFu;
         private static int s_x001AirlockPressurizationContractsSignalPushDropCount;
-        public static void PushFrameSignals(
+        public static uint PushFrameSignals(
             NativeArray<BubbleSpawnSignal> vfxSignals,
             NativeArray<MovementAcousticSignal> acousticSignals,
             int signalCount)
         {
             int count = math.max(0, signalCount);
+            uint vfxPublished = 0u;
+            uint vfxDropped = 0u;
+            uint acousticPublished = 0u;
+            uint acousticDropped = 0u;
             if (vfxSignals.IsCreated)
             {
                 int safe = math.min(count, vfxSignals.Length);
@@ -504,12 +612,17 @@ namespace Hecton8.Gameplay.AirlockPressurization
                     BubbleSpawnSignal signal = vfxSignals[i];
                     vfxSignals[i] = default;
                     if (signal.Frame != 0u)
-                        SignalBus<BubbleSpawnSignal>.TryPushTracked(in signal, ref s_x001AirlockPressurizationContractsSignalPushDropCount);
+                    {
+                        if (SignalBus<BubbleSpawnSignal>.TryPushTracked(in signal, ref s_x001AirlockPressurizationContractsSignalPushDropCount))
+                            vfxPublished++;
+                        else
+                            vfxDropped++;
+                    }
                 }
             }
 
             if (!acousticSignals.IsCreated)
-                return;
+                return PackSignalFlushCounters(vfxPublished, vfxDropped, acousticPublished, acousticDropped);
 
             int acousticCount = math.min(count, acousticSignals.Length);
             for (int i = 0; i < acousticCount; i++)
@@ -517,8 +630,89 @@ namespace Hecton8.Gameplay.AirlockPressurization
                 MovementAcousticSignal signal = acousticSignals[i];
                 acousticSignals[i] = default;
                 if (signal.SourceId != 0u)
-                    SignalBus<MovementAcousticSignal>.TryPushTracked(in signal, ref s_x001AirlockPressurizationContractsSignalPushDropCount);
+                {
+                    if (SignalBus<MovementAcousticSignal>.TryPushTracked(in signal, ref s_x001AirlockPressurizationContractsSignalPushDropCount))
+                        acousticPublished++;
+                    else
+                        acousticDropped++;
+                }
             }
+
+            return PackSignalFlushCounters(vfxPublished, vfxDropped, acousticPublished, acousticDropped);
+        }
+
+        public static void MergeSignalFlushCountersIntoTelemetry(
+            NativeArray<AirlockTelemetryEntry> telemetry,
+            NativeArray<int> telemetryCursor,
+            uint packedCounters)
+        {
+            if (!telemetry.IsCreated || telemetry.Length <= 0 || !telemetryCursor.IsCreated || telemetryCursor.Length <= 0 || telemetryCursor[0] <= 0)
+                return;
+
+            int capacity = math.min(AirlockPressurizationConstants.TelemetryFrameCount, telemetry.Length);
+            if (capacity <= 0)
+                return;
+
+            int index = (telemetryCursor[0] - 1) % capacity;
+            if ((uint)index >= (uint)telemetry.Length)
+                return;
+
+            AirlockTelemetryEntry entry = telemetry[index];
+            entry.VfxSignals = PackTelemetrySignalLane(entry.VfxSignals, UnpackVfxPublishedCount(packedCounters), UnpackVfxDroppedCount(packedCounters));
+            entry.AcousticSignals = PackTelemetrySignalLane(entry.AcousticSignals, UnpackAcousticPublishedCount(packedCounters), UnpackAcousticDroppedCount(packedCounters));
+            if (UnpackVfxDroppedCount(packedCounters) != 0u || UnpackAcousticDroppedCount(packedCounters) != 0u)
+                entry.Flags |= AirlockCycleFlags.OutputSignalDropped;
+            telemetry[index] = entry;
+        }
+
+        private static uint PackSignalFlushCounters(uint vfxPublished, uint vfxDropped, uint acousticPublished, uint acousticDropped)
+        {
+            return math.min(vfxPublished, SignalCounterMask) |
+                   (math.min(vfxDropped, SignalCounterMask) << 8) |
+                   (math.min(acousticPublished, SignalCounterMask) << 16) |
+                   (math.min(acousticDropped, SignalCounterMask) << 24);
+        }
+
+        private static uint PackTelemetrySignalLane(uint expectedCount, uint publishedCount, uint droppedCount)
+        {
+            return (expectedCount & SignalExpectedMask) |
+                   (math.min(publishedCount, SignalCounterMask) << 16) |
+                   (math.min(droppedCount, SignalCounterMask) << 24);
+        }
+
+        public static uint UnpackTelemetrySignalExpectedCount(uint packedLane)
+        {
+            return packedLane & SignalExpectedMask;
+        }
+
+        public static uint UnpackTelemetrySignalPublishedCount(uint packedLane)
+        {
+            return (packedLane >> 16) & SignalCounterMask;
+        }
+
+        public static uint UnpackTelemetrySignalDroppedCount(uint packedLane)
+        {
+            return (packedLane >> 24) & SignalCounterMask;
+        }
+
+        public static uint UnpackVfxPublishedCount(uint packedCounters)
+        {
+            return packedCounters & SignalCounterMask;
+        }
+
+        public static uint UnpackVfxDroppedCount(uint packedCounters)
+        {
+            return (packedCounters >> 8) & SignalCounterMask;
+        }
+
+        public static uint UnpackAcousticPublishedCount(uint packedCounters)
+        {
+            return (packedCounters >> 16) & SignalCounterMask;
+        }
+
+        public static uint UnpackAcousticDroppedCount(uint packedCounters)
+        {
+            return (packedCounters >> 24) & SignalCounterMask;
         }
     }
 }

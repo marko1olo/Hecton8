@@ -7,34 +7,34 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pump Room Handshake"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Рукопожатие клапана насосной"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pump Room Handshake
+# Рукопожатие клапана насосной
 
-Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.
+Рукопожатие насоса начинается, когда затопленная комната принимает локальное управление. Оно открывает доступ, но переносит воду, шум и давление в другую часть маршрута. Смотри на впускную корзину, импульс выхода и стук обратного коридора, прежде чем считать сухой пол безопасным. Ранние насосные P-63 учат главной привычке ремонта: машина может улучшить один отсек и испортить дорогу домой.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+Локальный трюмный насос принял ввод с маховика. Впускная корзина забита пеной капсулы; выходной импульс нагружает обратный коридор B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 / КОНТРОЛЬ ЗУМПФА / ЛОКАЛЬНОЕ СОГЛАСОВАНИЕ: маховик принят. Дистанционная команда отклонена. Впуск восстановлен на низком расходе. Давление выхода растет в RETURN CORRIDOR B; перезапуск только после проверки нижнего люка.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+Клапан взял. Выход стучит. Не называй это безопасным.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Сухая насосная может утопить дорогу назад. Послушай удар в выходной линии, прежде чем снимать клапан.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/ru_RU. -->

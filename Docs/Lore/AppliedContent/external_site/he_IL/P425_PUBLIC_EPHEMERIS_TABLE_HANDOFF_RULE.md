@@ -8,33 +8,33 @@ biome_tags: biome.authoring;biome.aegir_system
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "HE LOC HOLD: Ephemeris Data Boundary Rule"
+spoiler_tier: 1
+title: "כלל גבול נתוני אפמריס"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Ephemeris Data Boundary Rule
+# כלל גבול נתוני אפמריס
 
-HE LOC HOLD: Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.
+עמודים ציבוריים יכולים להסביר את Aegir, HECTON-8, transfer windows ו-route hazards בלי להקפיא orbital constants מדויקים.
 
 ## Scanner
 
-HE LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
+גבול נתונים: הפרוזה מחזיקה רצועות; המספרים המסלוליים הסופיים נשארים table-owned.
 
 ## Terminal
 
-HE LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY: פרוזה יכולה לציין תפקידים, סכנות ורצועות. orbital values מדויקים נשארים מחוץ ל-narrative copy.
 
 ## Audio
 
-HE LOC HOLD: Numbers are allowed when the table owns them.
+מספרים מותרים כשהטבלה מחזיקה אותם.
 
 ## Field Note
 
-HE LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
+רשומות אפמריס מסבירות לוגיקת נתיב; הקבועים המדויקים נשארים table-owned data.
 
 <!-- External Site; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/he_IL. -->

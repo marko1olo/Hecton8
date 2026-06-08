@@ -8,33 +8,17 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+spoiler_tier: 1
+title: "מעבר סבבי צוות אנושי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# מעבר סבבי צוות אנושי
 
-HE LOC HOLD: Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt.
-
-## Scanner
-
-HE LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
-
-## Terminal
-
-HE LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
-
-## Audio
-
-HE LOC HOLD: By the time home asks where you are, the room has already flooded.
-
-## Field Note
-
-HE LOC HOLD: A frontier worker sells time before they sell labor.
+מעבר צוות אנושי הוא המקום שבו הנתיב מפסיק להיות מופשט. עובדים לא משוגרים ל-Aegir; הם מתוזמנים, מקוררים, מבוטחים, ממוספרים ונמסרים בין רשויות במשך שנים. חוזה יכול להזדקן בכיוון אחד והאדם בתוכו בכיוון אחר. כשהצוות מתעורר, המעסיק, liability owner והחירום שאליו הוכשרו עשויים להשתנות. לכן הנטישה מרגישה פרוצדורלית ולא מלודרמטית.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/he_IL. -->

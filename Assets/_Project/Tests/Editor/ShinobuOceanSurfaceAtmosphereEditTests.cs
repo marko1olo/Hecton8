@@ -122,6 +122,29 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RuntimeDefaultSeaLevelMatchesWorldWaterlineFallback()
+        {
+            string runtimePath = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereRuntime.cs");
+            string contractsPath = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereContracts.cs");
+            string runtime = File.ReadAllText(runtimePath).Replace("\r\n", "\n");
+            string contracts = File.ReadAllText(contractsPath).Replace("\r\n", "\n");
+
+            Assert.AreEqual(14.02f, OceanSurfaceAtmosphereConstants.DefaultSeaLevel, 0.0001f);
+            StringAssert.Contains("public const float DefaultSeaLevel = 14.02f;", contracts);
+            StringAssert.Contains("[SerializeField] private float seaLevel = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;", runtime);
+            StringAssert.Contains("_cachedSeaLevel = ResolveSeaLevelY(seaLevel);", runtime);
+            StringAssert.Contains("TryResolveSeaLevelY(weather.SurfaceScalars.x, out float weatherSeaLevel)", runtime);
+            StringAssert.Contains(": ResolveSeaLevelY(seaLevel);", runtime);
+            StringAssert.Contains("private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)", runtime);
+            StringAssert.Contains("math.abs(candidateSeaLevelY) > 0.0001f", runtime);
+            StringAssert.Contains("math.abs(candidateSeaLevelY) <= 1000f", runtime);
+            StringAssert.Contains("seaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;", runtime);
+            StringAssert.DoesNotContain("_cachedSeaLevel = math.isfinite(weather.SurfaceScalars.x) ? weather.SurfaceScalars.x : seaLevel;", runtime);
+            StringAssert.DoesNotContain("math.isfinite(seaLevel) ? seaLevel : OceanSurfaceAtmosphereConstants.DefaultSeaLevel", runtime);
+            StringAssert.DoesNotContain("public const float DefaultSeaLevel = 0f;", contracts);
+        }
+
+        [Test]
         public void RuntimeOceanReadAccessors_DoNotQueueWaveReadbacks()
         {
             string path = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereRuntime.cs");
@@ -141,6 +164,86 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("TryEvaluateWaveKinematicsSnapshot", readAccessorRegion);
             StringAssert.Contains("if (_waveParameterJobScheduled || !ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves))", source);
             StringAssert.Contains("HectonOceanSurfaceMath.EvaluateWavesDetailed", source);
+        }
+
+        [Test]
+        public void RuntimeLifecycle_DisableKeepsOnlyReadbackDisposalLateTick()
+        {
+            string path = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereRuntime.cs");
+            string source = File.ReadAllText(path).Replace("\r\n", "\n");
+            string onDisable = SliceBetween(
+                source,
+                "private void OnDisable()",
+                "private void TryRegisterDispatcherTicks()");
+            string disposalHelper = SliceBetween(
+                source,
+                "private void TryCompleteReadbackDisposalOrKeepLateTickCold()",
+                "public void Tick(float deltaTime)");
+
+            StringAssert.Contains("TryCompleteReadbackDisposalOrKeepLateTickCold();", onDisable);
+            StringAssert.Contains("GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);", disposalHelper);
+            StringAssert.Contains("GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment)", disposalHelper);
+            StringAssert.Contains("if (!_registeredLate && GlobalRegistry.Dispatcher != null)", disposalHelper);
+        }
+
+        [Test]
+        public void RuntimeDataVaultReplacement_RehydratesSurfaceWeatherAndInvalidatesShaderGlobals()
+        {
+            string path = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereRuntime.cs");
+            string source = File.ReadAllText(path).Replace("\r\n", "\n");
+            string cacheMethod = SliceBetween(
+                source,
+                "private void CacheDataVaultCold(IDataVault vault)",
+                "private void TryRegisterHotSwapListener()");
+            string replacementCase = SliceBetween(
+                source,
+                "case GlobalRegistryServiceSlot.DataVault:",
+                "case GlobalRegistryServiceSlot.Dispatcher:");
+
+            StringAssert.Contains("_initializedWeather = false;", cacheMethod);
+            StringAssert.Contains("_lastPublishedShaderStateHash = 0u;", cacheMethod);
+            StringAssert.Contains("_waveParameterPayloadDirty = true;", cacheMethod);
+            StringAssert.Contains("if (EnsureVaultBuffersCold())", replacementCase);
+            StringAssert.Contains("LoadLegacyWeatherOrGenerateEmergency();", replacementCase);
+            StringAssert.Contains("TelemetryFlagDataVaultRehydrated", replacementCase);
+            StringAssert.Contains("_shaderGlobalsDirty = true;", replacementCase);
+        }
+
+        [Test]
+        public void RuntimeTelemetryFlags_ExposeFallbackRehydrateAndMissingData()
+        {
+            string runtimePath = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereRuntime.cs");
+            string contractsPath = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereContracts.cs");
+            string tunerPath = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuAtmosphereWaveTunerWindow.cs");
+            string runtime = File.ReadAllText(runtimePath).Replace("\r\n", "\n");
+            string contracts = File.ReadAllText(contractsPath).Replace("\r\n", "\n");
+            string tuner = File.ReadAllText(tunerPath).Replace("\r\n", "\n");
+
+            StringAssert.Contains("public const uint TelemetryFlagReadbackOrComputeBudget = 1u << 0;", contracts);
+            StringAssert.Contains("public const uint TelemetryFlagEmergencyWeatherFallback = 1u << 1;", contracts);
+            StringAssert.Contains("public const uint TelemetryFlagDataVaultRehydrated = 1u << 2;", contracts);
+            StringAssert.Contains("public const uint TelemetryFlagMissingRuntimeData = 1u << 3;", contracts);
+            StringAssert.Contains("_surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagEmergencyWeatherFallback;", runtime);
+            StringAssert.Contains("_surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData;", runtime);
+            StringAssert.Contains("telemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagReadbackOrComputeBudget;", runtime);
+            StringAssert.Contains("entry.Flags = telemetryFlags;", runtime);
+            StringAssert.Contains("public static bool TryGetTelemetrySnapshot(out NativeArray<OceanSurfaceTelemetryEntry>.ReadOnly telemetry)", runtime);
+            StringAssert.Contains("TryReadExistingVaultView(vault, BufferID.ShinobuOceanTelemetryRing, out telemetry)", runtime);
+            string tunerStatus = SliceBetween(
+                tuner,
+                "private static string ResolveReadbackStatusText()",
+                "private static string ResolveTelemetryFlagStatusText(uint flags)");
+            StringAssert.Contains("TryGetTelemetrySnapshot(out NativeArray<OceanSurfaceTelemetryEntry>.ReadOnly telemetry)", tunerStatus);
+            StringAssert.DoesNotContain("TryGetReadbackDebugSnapshot", tunerStatus);
+            StringAssert.Contains("ResolveTelemetryFlagStatusText(latest.Flags)", tuner);
+            StringAssert.Contains("\"readback-budget\"", tuner);
+            StringAssert.Contains("\"emergency-weather\"", tuner);
+            StringAssert.Contains("\"data-vault-rehydrated\"", tuner);
+            StringAssert.Contains("\"missing-runtime-data\"", tuner);
+            Assert.AreEqual(1u, OceanSurfaceAtmosphereConstants.TelemetryFlagReadbackOrComputeBudget);
+            Assert.AreEqual(2u, OceanSurfaceAtmosphereConstants.TelemetryFlagEmergencyWeatherFallback);
+            Assert.AreEqual(4u, OceanSurfaceAtmosphereConstants.TelemetryFlagDataVaultRehydrated);
+            Assert.AreEqual(8u, OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData);
         }
 
         [Test]

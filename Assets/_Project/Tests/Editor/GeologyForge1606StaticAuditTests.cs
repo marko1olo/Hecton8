@@ -402,7 +402,7 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile(TopographyForgeGeneratorPath);
             StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(", source);
-            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterPointer(trackedPointer)", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<"));
             StringAssert.Contains("NativeArray<T> array = new NativeArray<T>(length, allocator, options);", source);
             StringAssert.DoesNotContain("heights = new NativeArray<float>", source);

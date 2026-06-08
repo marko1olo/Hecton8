@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Origem Barnard Yards
 
-Barnard Yards é cultura de desmonte de naves e hardware de pressão. Dá ao jogador uma origem profissional plausível.
+Barnard Yards é uma cultura de desmanche naval e hardware de pressão: cortadores alugados, braçadeiras remendadas, reivindicações mortas e ferramentas de sobrevivência tratadas como trabalho normal. Dá a HECTON-8 uma origem profissional perto de dívida e labor, não romance terrestre.
 
 ## Scanner
 

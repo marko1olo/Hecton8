@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # מוצא Barnard Yards
 
-Barnard Yards מעגן את הגיבור בכלכלת salvage והופך את HECTON-8 לאישי דרך המקצוע.
+Barnard Yards קושר את מעמד המראודרים לכלכלת salvage ולתרבות מקצוע. HECTON-8 נעשה אישי דרך הרגלי עבודה, סימני כלים וחוב, לא דרך מלודרמה קבועה.
 
 ## Scanner
 

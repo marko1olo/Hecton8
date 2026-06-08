@@ -698,7 +698,7 @@ namespace Hecton8.Vehicles.Automation
             if (!_hotSwapRegistered)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
         }
     }

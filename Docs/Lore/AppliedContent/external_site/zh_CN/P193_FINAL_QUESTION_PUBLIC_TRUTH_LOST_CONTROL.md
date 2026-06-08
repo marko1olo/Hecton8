@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "最终问题：公开真相，失去控制"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# 最终问题：公开真相，失去控制
 
-CN LOC HOLD: Final Question Public Truth Lost Control defines the public ledger ending pressure.
+公共泄露不能写成神奇的正义按钮。在HECTON-8，信息比船走得更远，也比帮助更早抵达。一旦证据离开盆地，它可以指控Deep Reach，迫使Black Keel回应，唤醒Sol Core监管者，并给家属比谣言更坚硬的东西。这些都是真实胜利。
 
-## Scanner
-
-CN LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
-
-## Terminal
-
-CN LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
-
-## Audio
-
-CN LOC HOLD: Truth leaves your hand faster than rescue ever could.
-
-## Field Note
-
-CN LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+泄露也会制造进食事件。市场给蓝债定价。领域法院冻结路线。私人崇拜把Atlas写成经文。竞争者冲向坐标。救援在政治上变成必要，在行动上变成混乱。玩家选择了真相而非控制，游戏应当承认这两个部分。
 
 <!-- External Site; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/zh_CN. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TRIEBWERKSDESIGN UND INTERSTELLARE LOGISTIK
 
 > **Quelle:** Technischer Lehrplan, Barnard-Werften. Dokument 44-A. Pflichtlektüre für alle ausreisenden Vertragsnehmer.  

@@ -9,32 +9,36 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Presja długu, czarnej listy i kontraktu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Debt Blacklist Contract Pressure
+# Presja długu, czarnej listy i kontraktu
 
-PL LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.
+Presja długu utrzymuje początek w uczciwym tonie. Protagonisty nie ciągnie na HECTON-8 melodramat, ale nie jest też wolny w żadnym użytecznym sensie. Black Keel może zaoferować kontrakt, bo pule roszczeń, okna długu, kredyty tlenowe, dostęp do koi i dowód pieczy należą do tej samej ekonomii pogranicza. Odmowa roszczenia byłaby legalna. Zostawiłaby też gracza na czarnej liście, uziemionego i wypchniętego poza cenę trasy. Przyjęcie nie czyni Black Keel złoczyńcą z twarzą. Czyni przewoźnika maszyną do zamiany ryzyka w dokumenty. Gracz nurkuje, bo kontrakt jest brzydki, możliwy do przeżycia i wiarygodnie jedyną trasą powrotu do ruchu.
 
 ## Scanner
 
-PL LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Zawiadomienie o zastawie powiązane z pieczą Black Keel. Odmowa pozostaje legalna, ale uziemia: bez koi, bez czystego kredytu tlenowego, bez okna trasy z Aegir.
 
 ## Terminal
 
-PL LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+AKCEPTACJA ROSZCZENIA / OKNO ZDJĘCIA Z CZARNEJ LISTY
+status wykonawcy: Marauder związany długiem
+przewoźnik: piecza puli roszczeń Black Keel
+warunki ulgi: masa odzyskiwalna, dowód pieczy, zgodność odbiorcy
+stan porażki: czarna lista aktywna; dostęp do koi odmówiony; wsparcie tlenowe zmienione w usługę rozliczaną.
 
 ## Audio
 
-PL LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+To nie było porwanie. To był wybór, który pogranicze sprzedaje jako wolność: podpisz, nurkuj, albo pozostań czysty na papierze i uwięziony w praktyce.
 
 ## Field Note
 
-PL LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+Zastaw nie wycelował broni. Wskazał rachunek za powietrze, listę koi i następne okno trasy.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/pl_PL. -->

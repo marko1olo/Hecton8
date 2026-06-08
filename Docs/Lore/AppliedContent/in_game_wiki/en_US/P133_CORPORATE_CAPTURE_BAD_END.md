@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "Corporate Capture: Clean Rescue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,13 +17,13 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Corporate Capture Bad End
+# Corporate Capture: Clean Rescue
 
-Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.
+Corporate Capture is a bad ending built from a plausible rescue. The player leaves the ocean alive, but the answering authority treats the witness as containment material and the payload as the actual patient.
 
 ## Scanner
 
-Rescue offer. Payload first. Witness second.
+Recovery source verified: Deep Reach proxy. Payload requested before welfare check.
 
 ## Terminal
 
@@ -35,6 +35,6 @@ The clean room is not for you.
 
 ## Field Note
 
-A rescue that demands silence is a capture with better lighting.
+A clean rescue that wants coordinates first is capture with better air.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/en_US. -->

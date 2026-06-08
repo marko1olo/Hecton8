@@ -9,32 +9,37 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Old Procedure Recognition Cue"
+title: "오래된 절차 인식 단서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Old Procedure Recognition Cue
+# 오래된 절차 인식 단서
 
-KO LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+HECTON-8은 캐릭터 동기를 절차에 고정한다. 주인공은 오래된 대피 안전 양식을 알아보고 그것이 어떻게 뒤집혔는지 본다. 작업자 수는 저하 처리되고, 증인 칸은 봉인되었으며, 경로-안전 언어는 생명 대신 청구를 보존하는 데 쓰였다.
 
 ## Scanner
 
-KO LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+경로-안전 도장이 남아 있다. 작업자 수는 두 가지 잉크로 덮어쓴 상태다. 수동 증인 칸은 봉인됐다. 이 양식은 이런 거짓말을 잡기 위해 만들어졌지만, 누군가 그것을 정책으로 만들었다.
 
 ## Terminal
 
-KO LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+대피 연속성 양식 / 경로-안전 인증
+경로: 보조 탈출선
+신고 인원: 저하 산정 승인
+수동 증인: 연속성 사무소가 봉인
+현장 수정: 작업자 집계가 펌프실 태그와 불일치
+상태: 청구 보존, 추출 허가 아님.
 
 ## Audio
 
-KO LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+너는 이 양식을 안다. 아직 사람들이 숨 쉬는 방을 빈방으로 세지 못하게 하려던 양식이었다.
 
 ## Field Note
 
-KO LOC HOLD: Use where room evidence contradicts a clean procedural label.
+그 양식은 한 번 더 세게 하려던 것이었다. 여기서는 침묵을 강제했다.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/ko_KR. -->

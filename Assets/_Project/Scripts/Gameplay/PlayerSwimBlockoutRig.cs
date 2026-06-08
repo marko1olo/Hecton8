@@ -892,6 +892,10 @@ namespace Hecton8.Gameplay
                 _rightGloveVisible = visible;
                 _rightGloveVisibleDirty = true;
             }
+            else
+            {
+                TryQueueBodyRendererVisibility(renderer, visible);
+            }
         }
 
         private void FlushQueuedRendererVisibility()
@@ -904,6 +908,7 @@ namespace Hecton8.Gameplay
             FlushRendererVisibility(rightUpperArmRenderer, ref _rightUpperArmVisibleDirty, _rightUpperArmVisible);
             FlushRendererVisibility(leftGloveRenderer, ref _leftGloveVisibleDirty, _leftGloveVisible);
             FlushRendererVisibility(rightGloveRenderer, ref _rightGloveVisibleDirty, _rightGloveVisible);
+            FlushQueuedBodyRendererVisibility();
         }
 
         private static void FlushRendererVisibility(Renderer renderer, ref bool dirty, bool visible)

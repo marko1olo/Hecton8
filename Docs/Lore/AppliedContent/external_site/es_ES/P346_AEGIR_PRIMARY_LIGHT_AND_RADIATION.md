@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Aegir Primary Light and Radiation"
+title: "Luz primaria y radiación de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Aegir Primary Light and Radiation
+# Luz primaria y radiación de Aegir
 
-ES LOC HOLD: Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
-
-## Scanner
-
-ES LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
-
-## Terminal
-
-ES LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
-
-## Audio
-
-ES LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
-
-## Field Note
-
-ES LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir nunca se lee como negro vacío. Su primaria K pone luz ámbar en las cubiertas, sombras largas y flujo suficiente para hacer derivar instrumentos expuestos si nadie revisa el conteo de cinturón. El gigante gaseoso es el segundo reloj: las rutas de magnetosfera se endurecen, aflojan y vuelven a endurecerse al cruzar carga y sombra. Deep Reach vendió esos números como ventanas de operación. Las tripulaciones aprendieron la versión práctica: un cielo cálido puede cocer un sello barato, callar un enlace y cobrar el rescate por minuto.
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/es_ES. -->

@@ -9,32 +9,22 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Black Keel Approach Transcript Seed"
+title: "تفريغ اقتراب Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Black Keel Approach Transcript Seed
+# تفريغ اقتراب Black Keel
 
-AR LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+## أربع ثوان بين صوتين
 
-## Scanner
+أول صوت من المدار لا يجب أن يبدو خلاصا. يجب أن يبدو كبنية تحتية تحت حمل: مضغوطا، متأخرا، مفيدا، ويحسب الفاتورة مسبقا. ينجح تفريغ Black Keel لأنه يمنح اللاعب مساعدة وإهانة في الجملة نفسها. الحامل سمع الهبوط. الحامل يستطيع استقبال الدليل. وقد يعيد مطالبا حيا. لا شيء من ذلك يجعله إنقاذا.
 
-AR LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+التأخير مهم. أربع ثوان قليلة بما يكفي للحوار وكثيرة بما يكفي لتذكير اللاعب بأن المحيط يجيب أولا. فقدان الحزم مهم لأن كل جدال لاحق مع المدار له كلفة جسدية. الصحة والكتلة والدليل ليست ألفاظا للزينة؛ إنها شكل نافذة العودة. يمكن أن يبقى Marauder حيا ومع ذلك لا يكون قابلا للاستعادة. يمكن أن تكون الحمولة حقيقية ومع ذلك ثقيلة جدا. يمكن أن يكون الحامل صادقا ومع ذلك يرفض.
 
-## Terminal
-
-AR LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
-
-## Audio
-
-AR LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
-
-## Field Note
-
-AR LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+في الساعة الأولى يثبت هذا التفريغ الخيال في مكانه. جئت كعامل مثقل بالدين ومعك خانة مطالبة، لا كناج مختار. Black Keel هو الخط فوقك، لا اليد بجانبك. إنفاق الأكسجين في مجادلة المدار خطأ منذ البداية.
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/ar_SA. -->

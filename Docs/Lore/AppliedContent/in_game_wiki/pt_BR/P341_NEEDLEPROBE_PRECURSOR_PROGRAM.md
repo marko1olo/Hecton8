@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Needleprobe Precursor Program"
+title: "Programa precursor Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Needleprobe Precursor Program
+# Programa precursor Needleprobe
 
-PT LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Needleprobes levaram a primeira reivindicação humana a Aegir. Eram cargas de levantamento estreitas e blindadas enviadas antes das tripulações para ler gravidade, radiação, espectros oceânicos, órbitas lunares e linhas de relé. Seus pacotes atrasados tornaram HECTON-8 legível para investidores antes de ser habitável para trabalhadores.
 
 ## Scanner
 
-PT LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+Arquivo needleprobe: Aegir foi alvo de livro-caixa muito antes de virar local de trabalho. Olhos de máquina chegaram primeiro às luas.
 
 ## Terminal
 
-PT LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+ARQUIVO RAN: cadeia de sondas retornou paralaxe, radiação, assinaturas oceânicas, geometria de relé e confiança pellet-lane. Classificação de tripulação retida até estabilização do terceiro modelo de risco.
 
 ## Audio
 
-PT LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+A primeira coisa humana em Aegir não foi uma pessoa. Foi uma máquina perguntando se pessoas seriam lucrativas aqui.
 
 ## Field Note
 
-PT LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Arquivos de sondas são prova de rota. Telemetria velha pode ser anterior à colônia e ainda decidir quem possui a água.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/pt_BR. -->

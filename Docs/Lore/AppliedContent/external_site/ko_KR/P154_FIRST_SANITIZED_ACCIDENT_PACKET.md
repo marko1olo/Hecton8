@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: First Sanitized Accident Packet"
+title: "첫 정제 사고 패킷"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: First Sanitized Accident Packet
+# 첫 정제 사고 패킷
 
-KO LOC HOLD: The first Deep Reach notice is frightening because it is defensible. It names cascade, quarantine and corrupted logs while the room preserves the omissions.
+첫 Deep Reach 통지가 무서운 이유는 방어 가능하기 때문이다. cascade, quarantine, 손상 로그를 말하지만 방은 빠진 것들을 보존한다.
 
 ## Scanner
 
-KO LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+회수된 Deep Reach 사고 패킷. 깔끔한 문구가 문 시계와 침수 흔적과 충돌한다.
 
 ## Terminal
 
-KO LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+DEEP REACH 사고 통지 / 국지 지질공학 캐스케이드: evacuation authorization failure 검토 중; biological-pressure quarantine 활성; Atlas 로그 손상; 외부 공개는 witness reconciliation까지 지연.
 
 ## Audio
 
-KO LOC HOLD: The packet says cascade. Door clocks say delay.
+패킷은 cascade라고 말한다. 문 시계는 delay라고 말한다.
 
 ## Field Note
 
-KO LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+그들은 cascade라고 썼다. 락커의 찌꺼기 선은 대피 스탬프보다 높다.
 
 <!-- External Site; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/ko_KR. -->

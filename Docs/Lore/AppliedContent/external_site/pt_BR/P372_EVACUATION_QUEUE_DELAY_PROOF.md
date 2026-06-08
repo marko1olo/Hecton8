@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Evacuation Queue Delay Proof"
+title: "Registro de atraso da fila de evacuação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Evacuation Queue Delay Proof
+# Registro de atraso da fila de evacuação
 
-PT LOC HOLD: Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.
+Uma sala afogada ainda pode preservar tempo. O relógio recuperado mostra uma ordem cruel: alarme, revisão, atraso, classe de selo excedida, água. A linguagem pública da Deep Reach reduz isso a evacuação incompleta durante falha estrutural súbita. A sala discorda. O registro mantém um campo de testemunha vazio e uma revisão de quarentena pendente além do ponto em que um caminho de resgate ainda era fisicamente útil. Não é alegar que todos podiam ser salvos. É pior e mais preciso: a autorização esperou até diminuir o número de pessoas salváveis. Quando o jogador encontra isso, resgate deixa de soar como promessa e passa a soar como sistema de permissão.
 
 ## Scanner
 
-PT LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Relógio de fila recuperado. O portão de liberação ficou travado depois que alarmes de pressão passaram da previsão ao corredor.
 
 ## Terminal
 
-PT LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Confirmação manual ausente. Revisão de quarentena pendente. Pressão de rota excedeu classe de selo antes da autorização resolver.
 
 ## Audio
 
-PT LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Eles não falharam em salvar todos. Esperaram até salvar qualquer um ficar mais difícil.
 
 ## Field Note
 
-PT LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Nota de saqueador: portão fechado com campo pendente não é acidente. É decisão esperando assinatura.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/pt_BR. -->

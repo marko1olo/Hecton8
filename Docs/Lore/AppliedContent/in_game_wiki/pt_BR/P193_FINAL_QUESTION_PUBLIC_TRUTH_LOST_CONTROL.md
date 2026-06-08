@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Pergunta final: verdade pública, controle perdido"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Pergunta final: verdade pública, controle perdido
 
-PT LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+A rota da verdade pública quebra o encobrimento limpo. Também quebra a posse das consequências. Provas podem salvar nomes do apagamento, criar pressão real de resgate e convidar todo predador com mesa jurídica ou canal de oração.
 
 ## Scanner
 
-PT LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+Publicar a prova impede apagamento. Também entrega a descoberta a todos que conseguem usá-la mal rápido o bastante.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+EIXO DA VERDADE PÚBLICA: hash de testemunha, cadeia de responsabilidade, estado de Atlas, coordenadas da dívida azul e rota de payload podem sair do controle Deep Reach. Depois da publicação, o operador não controla ação dos receptores, reação de mercado nem quem chega primeiro.
 
 ## Audio
 
-PT LOC HOLD: Truth leaves your hand faster than rescue ever could.
+A verdade sai da sua mão mais rápido do que qualquer resgate chegaria.
 
 ## Field Note
 
-PT LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+Verdade pública não é justiça pura. Cria sanções, cultos, leilões, processos, pressão de resgate e claims imitadores.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/pt_BR. -->

@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Запись полевого системного специалиста
 
-Прошлое героя в Deep Reach практическое: field systems, evacuation hardware и procedure language. Вина начинается с узнавания, не с родни.
+Эта запись объясняет первую компетентность оператора без мифа об избранном свидетеле. Deep Reach обучала его насосам, рейтингам уплотнений, релейным комнатам, обходным картам, эвакуационным очередям и языку route-safe. Старые системы отвергают имя, но все еще выдают знакомую процедуру. Вина начинается как узнавание: порядок осушения, рейтинг хомута, стерильная фраза удержания, комната, отказавшая ровно в той последовательности, которую его учили предотвращать.
 
 ## Scanner
 
-Старый field-systems credential. Не command staff. Инфраструктурная работа с доступом, достаточным чтобы понять, где похоронили route.
+Старый допуск к полевым системам. Не командный состав. Инфраструктурная работа с доступом, достаточным, чтобы узнать, где был похоронен маршрут.
 
 ## Terminal
 
-PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+СЛЕД ПЕРСОНАЛА: полевые системы, эвакуационная инфраструктура, сертификация route-safe. Допуск отозван после пересмотра тишины Aegir. Кэш процедур все еще совпадает с последовательностью оператора.
 
 ## Audio
 
-Ты не был тем, кто подписал ложь. Ты знал язык, на котором она работала.
+Ты не подписывал ложь. Ты знал грамматику, которая помогала ей проходить проверку.
 
 ## Field Note
 
-RU LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+Значок перестал открывать двери. Он не стер порядок отказов из рук.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/ru_RU. -->

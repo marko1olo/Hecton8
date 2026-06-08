@@ -862,6 +862,15 @@ namespace Hecton8.UI
         private static readonly int BaseIntegrityDangerKeyHash = LocHash.Compute(LocalizationKeys.BASE_INTEGRITY_DANGER);
         private static readonly int BaseIntegrityCriticalKeyHash = LocHash.Compute(LocalizationKeys.BASE_INTEGRITY_CRITICAL);
         private static readonly int BaseIntegrityWarningKeyHash = LocHash.Compute(LocalizationKeys.BASE_INTEGRITY_WARNING);
+        private static readonly uint BaseIntegrityHudNotificationMissWarningHash = unchecked((uint)LocHash.Compute("BaseIntegrityHUD.NotificationMiss"));
+        private static readonly uint BaseIntegrityHudNotificationOverflowWarningHash = unchecked((uint)LocHash.Compute("BaseIntegrityHUD.NotificationOverflow"));
+        private static readonly uint BaseIntegrityHudNotificationContextHash = unchecked((uint)LocHash.Compute("BaseIntegrityHUD.Notification"));
+        private static readonly uint BaseIntegrityHudEventLaneDropWarningHash = unchecked((uint)LocHash.Compute("BaseIntegrityHUD.EventLaneDrop"));
+        private static readonly uint BaseIntegrityHudEventLaneContextHash = unchecked((uint)LocHash.Compute("BaseIntegrityHUD.EventLane"));
+        private static readonly uint BaseIntegrityHudIntegrityWarningEventContextHash = unchecked((uint)LocHash.Compute("BaseIntegrityHUD.IntegrityWarning"));
+        private static readonly uint BaseIntegrityHudBreachedEventContextHash = unchecked((uint)LocHash.Compute("BaseIntegrityHUD.Breached"));
+        private static readonly uint BaseIntegrityHudEmergencyEventContextHash = unchecked((uint)LocHash.Compute("BaseIntegrityHUD.Emergency"));
+        private static readonly uint BaseIntegrityHudAirQualityEventContextHash = unchecked((uint)LocHash.Compute("BaseIntegrityHUD.AirQualityWarning"));
 
         // COLD ALLOC: uint[101] - cached danger notification hashes by rounded percent - owner: BaseIntegrityHUD
         private readonly uint[] _dangerNotificationHashes = new uint[PercentMessageCacheSize];
@@ -877,6 +886,13 @@ namespace Hecton8.UI
         private uint _criticalFormatHash;
         private uint _warningFormatHash;
         private uint _airCriticalFormatHash;
+        private int _notificationPushMissCount;
+        private int _notificationOverflowCount;
+        private int _eventLaneDropCount;
+
+        public int NotificationPushMissCount => _notificationPushMissCount;
+        public int NotificationOverflowCount => _notificationOverflowCount;
+        public int EventLaneDropCount => _eventLaneDropCount;
 
         private readonly struct PercentMessageState
         {
@@ -906,12 +922,16 @@ namespace Hecton8.UI
         {
             TryUnregisterHotSwapListener();
             TryUnregister();
+            ClearNotificationRuntimeState();
+            ClearEventLaneDiagnostics();
         }
 
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
             TryUnregister();
+            ClearNotificationRuntimeState();
+            ClearEventLaneDiagnostics();
         }
 
         public void SlowTick()
@@ -956,9 +976,9 @@ namespace Hecton8.UI
                     continue;
 
                 if (type == 1)
-                    NotificationEvents.TryPushRegisteredWarning(messageHash);
+                    TryPushPendingNotification(messageHash, warning: true);
                 else
-                    NotificationEvents.TryPushRegisteredInfo(messageHash);
+                    TryPushPendingNotification(messageHash, warning: false);
             }
         }
 
@@ -1040,7 +1060,7 @@ namespace Hecton8.UI
                     ResolveLocalizedSpan(BaseIntegrityDangerKeyHash, "BASE CRITICAL: {0}% - BREACH IMMINENT!"),
                     integrityPercent);
                 QueueNotification(messageHash, warning: true);
-                BaseIntegrityEvents.TryRaiseIntegrityWarning(integrity);
+                TryRaiseIntegrityWarningEvent(integrity);
                 return;
             }
 
@@ -1053,7 +1073,7 @@ namespace Hecton8.UI
                     ResolveLocalizedSpan(BaseIntegrityCriticalKeyHash, "HECTON-OS: MODULE INTEGRITY {0}% - REPAIRS REQUIRED."),
                     integrityPercent);
                 QueueNotification(messageHash, warning: true);
-                BaseIntegrityEvents.TryRaiseIntegrityWarning(integrity);
+                TryRaiseIntegrityWarningEvent(integrity);
                 return;
             }
 
@@ -1077,7 +1097,7 @@ namespace Hecton8.UI
             if (module.IsBreached && !ReferenceEquals(_lastBreachedModule, module))
             {
                 _lastBreachedModule = module;
-                BaseIntegrityEvents.TryRaiseBreached();
+                TryRaiseBreachedEvent();
             }
 
             BaseModuleFailureMode failureMode = module.CurrentFailureMode;
@@ -1097,7 +1117,7 @@ namespace Hecton8.UI
             _lastEmergencyModule = module;
             _lastEmergencyMode = failureMode;
             _nextEmergencyTime = now + EmergencyCooldown;
-            BaseIntegrityEvents.TryRaiseEmergency(failureMode, integrity);
+            TryRaiseEmergencyEvent(failureMode, integrity);
         }
 
         private void PublishAirQualityState(BaseModule module)
@@ -1121,7 +1141,7 @@ namespace Hecton8.UI
 
             _lastAirQuality = airQuality;
             _nextAirWarningTime = now + AirWarningCooldown;
-            BaseIntegrityEvents.TryRaiseAirQualityWarning(airQuality);
+            TryRaiseAirQualityWarningEvent(airQuality);
 
             if (airQuality <= airCriticalThreshold)
             {
@@ -1137,14 +1157,108 @@ namespace Hecton8.UI
         private void QueueNotification(uint messageHash, bool warning)
         {
             if (messageHash == 0u)
+            {
+                ReportNotificationPushMiss(0u);
                 return;
+            }
 
             if (_pendingNotificationCount >= _pendingNotificationHashes.Length)
+            {
+                ReportPendingNotificationOverflow(messageHash);
                 _pendingNotificationCount = _pendingNotificationHashes.Length - 1;
+            }
 
             _pendingNotificationHashes[_pendingNotificationCount] = messageHash;
             _pendingNotificationTypes[_pendingNotificationCount] = warning ? (byte)1 : (byte)2;
             _pendingNotificationCount++;
+        }
+
+        private void TryPushPendingNotification(uint messageHash, bool warning)
+        {
+            bool pushed = warning
+                ? NotificationEvents.TryPushRegisteredWarning(messageHash)
+                : NotificationEvents.TryPushRegisteredInfo(messageHash);
+            if (pushed)
+                return;
+
+            ReportNotificationPushMiss(messageHash);
+        }
+
+        private void ReportNotificationPushMiss(uint messageHash)
+        {
+            _notificationPushMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                BaseIntegrityHudNotificationMissWarningHash,
+                BaseIntegrityHudNotificationContextHash ^ messageHash,
+                math.max(1, _notificationPushMissCount));
+        }
+
+        private void ReportPendingNotificationOverflow(uint messageHash)
+        {
+            _notificationOverflowCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                BaseIntegrityHudNotificationOverflowWarningHash,
+                BaseIntegrityHudNotificationContextHash ^ messageHash,
+                math.max(1, _notificationOverflowCount));
+        }
+
+        private void TryRaiseIntegrityWarningEvent(float integrity)
+        {
+            if (BaseIntegrityEvents.TryRaiseIntegrityWarning(integrity))
+                return;
+
+            ReportBaseIntegrityEventLaneDropIfBackpressured(BaseIntegrityHudIntegrityWarningEventContextHash);
+        }
+
+        private void TryRaiseBreachedEvent()
+        {
+            if (BaseIntegrityEvents.TryRaiseBreached())
+                return;
+
+            ReportBaseIntegrityEventLaneDropIfBackpressured(BaseIntegrityHudBreachedEventContextHash);
+        }
+
+        private void TryRaiseEmergencyEvent(BaseModuleFailureMode failureMode, float integrity)
+        {
+            if (BaseIntegrityEvents.TryRaiseEmergency(failureMode, integrity))
+                return;
+
+            ReportBaseIntegrityEventLaneDropIfBackpressured(
+                BaseIntegrityHudEmergencyEventContextHash ^ unchecked((uint)failureMode));
+        }
+
+        private void TryRaiseAirQualityWarningEvent(float airQualityNormalized)
+        {
+            if (BaseIntegrityEvents.TryRaiseAirQualityWarning(airQualityNormalized))
+                return;
+
+            ReportBaseIntegrityEventLaneDropIfBackpressured(BaseIntegrityHudAirQualityEventContextHash);
+        }
+
+        private void ReportBaseIntegrityEventLaneDropIfBackpressured(uint contextHash)
+        {
+            if (BaseIntegrityEvents.PendingCount <= 0)
+                return;
+
+            _eventLaneDropCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                BaseIntegrityHudEventLaneDropWarningHash,
+                BaseIntegrityHudEventLaneContextHash ^ contextHash,
+                math.max(1, _eventLaneDropCount));
+        }
+
+        private void ClearEventLaneDiagnostics()
+        {
+            _eventLaneDropCount = 0;
+        }
+
+        private void ClearNotificationRuntimeState()
+        {
+            _pendingNotificationCount = 0;
+            Array.Clear(_pendingNotificationHashes, 0, _pendingNotificationHashes.Length);
+            Array.Clear(_pendingNotificationTypes, 0, _pendingNotificationTypes.Length);
+            _notificationPushMissCount = 0;
+            _notificationOverflowCount = 0;
         }
 
         private bool ResolvePlayerTransform()
@@ -1174,6 +1288,30 @@ namespace Hecton8.UI
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                snapshot.Aup.IsFinite())
+            {
+                playerAup = snapshot.Aup;
+                return true;
+            }
+
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
+            {
+                playerAup = movementState.PredictedAup;
+                return true;
+            }
+
+            if (playerContext != null)
+                return false;
+
             HectonPlayerMovement playerMovement = _playerMovement;
             if (playerMovement == null)
                 return false;

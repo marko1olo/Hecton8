@@ -13,11 +13,16 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project", "Scripts", "BeaconNetworkSystem.cs"));
             string awake = ExtractMethodBody(source, "private void Awake()");
             string onEnable = ExtractMethodBody(source, "private void OnEnable()");
+            string onDisable = ExtractMethodBody(source, "private void OnDisable()");
+            string replaced = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
             string register = ExtractMethodBody(source, "private void TryRegisterService()");
+            string saveRegister = ExtractMethodBody(source, "private void TryRegisterSaveParticipant()");
+            string saveUnregister = ExtractMethodBody(source, "private void TryUnregisterSaveParticipant()");
             string gate = ExtractMethodBody(source, "private bool TryAbortForUsableExistingRuntime()");
             string resolve = ExtractMethodBody(source, "private static BeaconNetworkSystem ResolveActiveRuntime()");
             string activeUsable = ExtractMethodBody(source, "private static bool IsBeaconNetworkActiveRuntimeUsable(");
             string registeredUsable = ExtractMethodBody(source, "private static bool IsBeaconNetworkRegisteredRuntimeUsable(");
+            string saveUsable = ExtractMethodBody(source, "private static bool IsSaveServiceUsable(");
             string getOrCreate = ExtractMethodBody(source, "public static BeaconNetworkSystem GetOrCreate()");
             string retractVector = ExtractMethodBody(source, "public static bool TryRetractNearest(Vector3 origin, out BeaconRuntime beacon, out float distance)");
             string retractAup = ExtractMethodBody(source, "public static bool TryRetractNearest(in AbsoluteUniversePosition originAup, out BeaconRuntime beacon, out float distance)");
@@ -39,7 +44,10 @@ namespace Hecton8.Tests.Editor
                 onEnable.IndexOf("CacheRegistryServicesCold();", StringComparison.Ordinal));
             Assert.Less(
                 onEnable.IndexOf("if (TryAbortForUsableExistingRuntime())", StringComparison.Ordinal),
-                onEnable.IndexOf("_cachedSaveService?.Register(this);", StringComparison.Ordinal));
+                onEnable.IndexOf("TryRegisterSaveParticipant();", StringComparison.Ordinal));
+            StringAssert.Contains("TryUnregisterSaveParticipant();", onDisable);
+            AssertTextBefore(replaced, "TryUnregisterSaveParticipant();", "_cachedSaveService = currentService as ISaveService;");
+            AssertTextBefore(replaced, "_cachedSaveService = currentService as ISaveService;", "TryRegisterSaveParticipant();");
             StringAssert.Contains("BeaconNetworkSystem active = s_activeRuntime", gate);
             StringAssert.Contains("BeaconNetworkSystem registered = GlobalRegistry.BeaconNetwork", gate);
             StringAssert.Contains("if (IsBeaconNetworkActiveRuntimeUsable(active))", gate);
@@ -53,6 +61,28 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("return system != null && system.isActiveAndEnabled", activeUsable);
             StringAssert.Contains("system._serviceRegistered", registeredUsable);
             StringAssert.Contains("system.isActiveAndEnabled", registeredUsable);
+            Assert.IsTrue(ContainsTokensInOrder(
+                saveRegister,
+                "if (_saveRegistered || !_serviceRegistered || !Application.isPlaying || !isActiveAndEnabled)",
+                "ISaveService saveService = _cachedSaveService;",
+                "if (!IsSaveServiceUsable(saveService))",
+                "saveService = GlobalRegistry.Save;",
+                "_cachedSaveService = saveService;",
+                "if (!IsSaveServiceUsable(saveService))",
+                "return;",
+                "saveService.Register(this);",
+                "_registeredSaveService = saveService;",
+                "_saveRegistered = true;"));
+            StringAssert.Contains("private ISaveService _registeredSaveService;", source);
+            Assert.IsTrue(ContainsTokensInOrder(
+                saveUnregister,
+                "if (_saveRegistered || _registeredSaveService != null)",
+                "ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _cachedSaveService;",
+                "saveService.Unregister(this);",
+                "_registeredSaveService = null;",
+                "_saveRegistered = false;",
+                "_cachedSaveService = null;"));
+            StringAssert.Contains("return saveService != null && saveService.IsInitialized;", saveUsable);
             StringAssert.Contains("BeaconNetworkSystem registered = ResolveActiveRuntime();", getOrCreate);
             AssertStaticMethodUsesResolver(retractVector);
             AssertStaticMethodUsesResolver(retractAup);
@@ -61,6 +91,33 @@ namespace Hecton8.Tests.Editor
             AssertStaticMethodUsesResolver(notifyDestroyed);
             StringAssert.DoesNotContain("registered != null && registered != this", awake);
             StringAssert.DoesNotContain("registered != null && registered != this", register);
+            StringAssert.DoesNotContain("_cachedSaveService?.Register(this)", source);
+            StringAssert.DoesNotContain("_cachedSaveService.Register(this)", source);
+            StringAssert.DoesNotContain("ISaveService saveService = _cachedSaveService;", saveUnregister);
+        }
+
+        private static void AssertTextBefore(string body, string expectedEarlier, string expectedLater)
+        {
+            int earlierIndex = body.IndexOf(expectedEarlier, StringComparison.Ordinal);
+            int laterIndex = body.IndexOf(expectedLater, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(earlierIndex, 0, "Missing earlier text: " + expectedEarlier);
+            Assert.GreaterOrEqual(laterIndex, 0, "Missing later text: " + expectedLater);
+            Assert.Less(earlierIndex, laterIndex, expectedEarlier + " should appear before " + expectedLater);
+        }
+
+        private static bool ContainsTokensInOrder(string text, params string[] tokens)
+        {
+            int index = 0;
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                int found = text.IndexOf(tokens[i], index, StringComparison.Ordinal);
+                if (found < 0)
+                    return false;
+
+                index = found + tokens[i].Length;
+            }
+
+            return true;
         }
 
         private static void AssertStaticMethodUsesResolver(string body)

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Black Keelの最初の声"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Black Keelの最初の声
 
-JP LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+Black Keelの最初の声は、壊れた音声と清潔なテキストとしてプレイヤーに届く。仲間ではなく、悪役の演説でもない。carrier監視装置が作られた通りに働いているだけだ。信号を確認し、経路選択肢を残し、義務を並べ、約束を避ける。声が有用なのは硬い情報を与えるからだ。怖いのは、正しい文のすべてが救助を条件付きにしたまま残すからだ。
 
 ## Scanner
 
-JP LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
+carrier音声キャッシュ。音声は途切れ、文字は清潔、同情はない。
 
 ## Terminal
 
-JP LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: 音声チャネル劣化。文字チャネル有効。操作者生存を承認。回収優先度はpayload、隔離、lien、信号完全性状態待ちで未解決。
 
 ## Audio
 
-JP LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
+操作者信号を取得。承認を救助と混同するな。
 
 ## Field Note
 
-JP LOC HOLD: The first voice should feel useful before it feels bought.
+最初の有用な一文は、その背後に請求区分を連れて来る。
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/ja_JP. -->

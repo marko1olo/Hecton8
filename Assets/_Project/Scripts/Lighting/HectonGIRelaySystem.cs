@@ -34,6 +34,7 @@ namespace Hecton8.Lighting
         private const double SecondsPerDayRcp = 1d / SecondsPerDay;
         private const float DepthPaletteFullDepthMeters = 500f;
         private const float DepthPaletteFullDepthMetersRcp = 1f / DepthPaletteFullDepthMeters;
+        private const double DefaultSeaLevelAupY = 14.02d;
         private const float CascadeOneEnterDepthMeters = 200f;
         private const float CascadeOneExitDepthMeters = 170f;
         private const float CascadeZeroEnterDepthMeters = 500f;
@@ -662,19 +663,27 @@ namespace Hecton8.Lighting
         private float ResolveDepthMetersAbsolute()
         {
             BiomeMatrixDirector biomeMatrix = _cachedBiomeMatrix;
-            if (biomeMatrix != null && math.isfinite(biomeMatrix.CurrentDepthMeters))
+            if (biomeMatrix != null &&
+                biomeMatrix.isActiveAndEnabled &&
+                math.isfinite(biomeMatrix.CurrentDepthMeters))
                 return math.max(0f, biomeMatrix.CurrentDepthMeters);
 
             IPlayerRuntimeContext player = _cachedPlayerContext;
-            var movement = player != null ? player.PlayerMovement : null;
-            if (movement != null && math.isfinite(movement.CurrentDepth))
-                return math.max(0f, movement.CurrentDepth);
-
-            if (movement != null)
+            if (player != null &&
+                player.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
-                double3 absolute = movement.CurrentAup.ToAbsoluteDouble3();
-                if (math.all(math.isfinite(absolute)))
-                    return math.max(0f, (float)-absolute.y);
+                if (math.isfinite(movementState.DepthMeters))
+                    return math.max(0f, movementState.DepthMeters);
+
+                if (movementState.PredictedAup.IsFinite())
+                {
+                    double3 absolute = movementState.PredictedAup.ToAbsoluteDouble3();
+                    if (math.all(math.isfinite(absolute)))
+                        return math.max(0f, (float)(DefaultSeaLevelAupY - absolute.y));
+                }
+
+                return 0f;
             }
 
             return 0f;

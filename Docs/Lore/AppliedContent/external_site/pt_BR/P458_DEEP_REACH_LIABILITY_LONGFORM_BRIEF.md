@@ -9,32 +9,36 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "PT LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: responsabilidade sob água real"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: responsabilidade sob água real
 
-PT LOC HOLD: Deep Reach did not need to invent the ocean. HECTON-8 failed under real pressure, real tide force and real infrastructure limits. That is what makes the liability harder to bury. The official record names a localized geotechnical cascade, corrupted Atlas logs and incomplete evacuation. Each phrase has enough truth to survive a hearing. The physical site adds what the public sentence omits: margin approvals signed before the tide window, evacuation routes held behind authorization, quarantine doors certified late, Atlas continuity weights that protected system function before worker recovery, and loss ledgers that turned names into categories after the water had already won. The accusation is not that Deep Reach caused the ocean to rise by command. It is that the company priced known risk, delayed human exit, kept records clean and let recovery offices convert disaster into manageable custody. On HECTON-8, the rooms testify more precisely than the statement.
+## A meia verdade útil
 
-## Scanner
+O relatório da Deep Reach contém água real. HECTON-8 sofreu a Great Tide: estresse da criosfera, marés, tempestades, calor e pressão abriram a colônia.
 
-PT LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+A culpa fica no que foi removido: margens aceitas, evacuação abaixo da necessidade, Atlas continuity acima da extração humana, quarentena como compra de tempo, desaparecidos virando categorias de claim.
 
-## Terminal
+Varnek transforma aviso em risco de agenda. Arendt prende segurança ao processo. Haldane faz extração esperar certificação. Ibarra traduz corpos em carga e perda. Sato-Ren ainda pede coordenadas, prova XO e silêncio antes de falar em resgate.
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+Documento limpo não confessa. Sala inundada mostra o custo. Um memo é suspeita. A cadeia é prova; o jogador escolhe qual contexto vale carregar pela custódia Black Keel.
 
-## Audio
+## A Forma Da Culpa
 
-PT LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Deep Reach nao deve virar um unico vilao com botao limpo. A culpa e mais forte porque e distribuida. Varnek aceita a tide margin. Arendt coloca Atlas weights acima dos trabalhadores. Haldane mantem a linguagem de quarantine limpa. Ibarra converte nomes em loss categories. Sato-Ren tenta mover uma return action quando o dano ja esta dentro do sistema.
 
-## Field Note
+Cada documento parece pequeno e comum. Juntos, mostram uma instituicao que sobreviveu fazendo cada escolha letal parecer local, temporaria e correta por procedimento. Os trabalhadores morreram dentro dessa gramatica.
 
-PT LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+## Por Que A Prova Tem Massa
+
+O jogador nao resolve isso com fe. Pacotes podem atrasar, ser contestados, redigidos ou precificados. A prova fisica precisa ser carregada: sensor margins, evacuacao quebrada, Atlas trace, custody ledger, sample chain. Evidencia pesa porque HECTON-8 faz a verdade dividir espaco com oxigenio, ferramentas e carga.
+
+Esse e o centro de pressao. O jogador nao apenas aprende o que aconteceu. Decide quanta sobrevivencia pode ser gasta para tornar o ocorrido mais dificil de apagar.
 
 <!-- External Site; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/pt_BR. -->

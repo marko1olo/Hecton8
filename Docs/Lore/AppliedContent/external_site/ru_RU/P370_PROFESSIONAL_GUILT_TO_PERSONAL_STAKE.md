@@ -9,32 +9,35 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Профессиональная вина как личная ставка"
+title: "От профессиональной вины к личной ставке"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Профессиональная вина как личная ставка
+# От профессиональной вины к личной ставке
 
-Мотив игрока в HECTON-8 растет из экспертизы. Бывший Deep Reach worker понимает преступление, потому что понимает machinery of responsibility.
+Мотив протагониста растет из экспертизы в ответственность. HECTON-8 избегает навязанной семейной мелодрамы: бывший работник Deep Reach заботится потому, что понимает процедурную машину, которая сделала оставление людей похожим на закрытое дело.
 
 ## Scanner
 
-Signature match. Язык формы старый. Имена новые.
+Узор подписи совпадает со старым кэшем процедур. Имена изменились. Комната отказала тем же способом. Компетенция больше не держит дистанцию.
 
 ## Terminal
 
-DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+ИТОГ ДОСЬЕ / ПРОФЕССИОНАЛЬНАЯ СТАВКА
+улики-триггеры: узнавание процедуры, найденные метки работников, конфликт приемника претензии
+исключенный мотив: семейная связь, линия мести, статус избранного свидетеля
+активный мотив: бывший системный работник узнает предотвратимое оставление и все еще умеет читать машину, которая его оформила.
 
 ## Audio
 
-Ты пришел за контрактом. Ты остался, потому что понял paperwork.
+Ты пришел за претензией. Остался потому, что документы знали твои руки.
 
 ## Field Note
 
-Использовать рядом с late dossier и final payload route.
+Не твоя подпись. Но твое ремесло. Поэтому комната не замолчит.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/ru_RU. -->

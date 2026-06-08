@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "Best Ending: No Clean Hands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Best Ending No Clean Hands
+# Best Ending: No Clean Hands
 
-No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.
+No Clean Hands is the final tone rule. HECTON-8 rewards understanding, preparation and witness work, not purity. The best ending should make the player feel competent and implicated at the same time.
 
 ## Scanner
 
-The best ending should not erase cost, uncertainty or complicity.
+The best ending should save something real without pretending innocence survived the descent.
 
 ## Terminal
 
-NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
+NO CLEAN HANDS RULE: best-known ending criteria require agency, evidence, consequence and residue. If every harmed party is satisfied, the ending has forgotten HECTON-8.
 
 ## Audio
 
@@ -35,6 +35,6 @@ If it feels clean, it forgot where you are.
 
 ## Field Note
 
-A strong ending lets the player save something real and lose something real.
+A strong route can expose truth, deny Deep Reach, preserve part of the ecology and free the player, but it must leave cost visible.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/en_US. -->

@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Evacuation Queue Delay Proof"
+title: "רשומת עיכוב תור הפינוי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Evacuation Queue Delay Proof
+# רשומת עיכוב תור הפינוי
 
-HE LOC HOLD: Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
+הראיה הזאת הופכת פינוי לרצף. השער לא רק נותק במים; הוא נשאר במצב בדיקה בזמן שאזעקות לחץ עברו למסדרונות מאוישים. שדה העד הריק חשוב כי המערכת דרשה אישור אנושי אחרי שבני אדם כבר איבדו גישה ללוח.
 
 ## Scanner
 
-HE LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+שעון תור חולץ. שער השחרור נשאר נעול אחרי שאזעקות הלחץ עברו מתחזית למסדרון.
 
 ## Terminal
 
-HE LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. אישור ידני חסר. סקירת הסגר ממתינה. לחץ המסלול עבר את דרגת האטימה לפני סיום ההרשאה.
 
 ## Audio
 
-HE LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+הם לא נכשלו בהצלת כולם. הם חיכו עד שהצלת מישהו נעשתה קשה יותר.
 
 ## Field Note
 
-HE LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+הערת בוזז: שער סגור עם שדה ממתין אינו תאונה. זו החלטה שמחכה לחתימה.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/he_IL. -->

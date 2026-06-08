@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # מניע מקצועי
 
-השחקן אינו תייר ריק. הוא מתחיל במקצועיות וסיבה לקבל claim מת; הראיות הופכות זאת לאישי.
+המראודר אינו תייר ריק. הריצה מתחילה מעניין מקצועי, מיומנות salvage וסיבה לקבל תביעה מתה. מניע אישי גדל דרך ראיות, סימנים מוכרים והבנה ש-HECTON-8 שייך לאותו עולם קשה שהפך עבודה כזו לרגילה.
 
 ## Scanner
 

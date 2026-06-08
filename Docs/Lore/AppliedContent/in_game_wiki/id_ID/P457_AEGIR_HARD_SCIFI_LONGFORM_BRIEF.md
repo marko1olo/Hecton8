@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: Langit yang Menolak Penyelamatan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Aegir Transfer Windows
+# Aegir: Langit yang Menolak Penyelamatan
 
-ID LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir adalah langit operasional. Moon ladder bisa menunda atau merusak paket bersih tanpa membuat permukaan gelap permanen. Penyelamatan gagal karena jarak, geometri, hukum, dan biaya.
 
 ## Scanner
 
-ID LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Primer rute langit. Tidak ada FTL atau ansible. Jendela Aegir melewati bulan, serpihan, custody relai, keadaan badai, dan pembukuan massa Black Keel.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+PRIMER NAVIGASI AEGIR // BAND PUBLIK. Pakai kelas bahaya: route-shadow, charged surge, ice scatter, storm plume, guidance lag, receiver custody.
 
 ## Audio
 
-ID LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Jadwal Black Keel: "Sinyal benar belum tentu sinyal berguna. Jendela bertahan pada massa, cuaca, custody, dan kunci penerima."
 
 ## Field Note
 
-ID LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+Aturan langit Marauder: jangan tanya apakah sinyal dikirim. Tanya bulan mana yang menghalangi, ledger mana yang menangkap, dan apakah penerima mendengar orang atau kelas massa.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/id_ID. -->

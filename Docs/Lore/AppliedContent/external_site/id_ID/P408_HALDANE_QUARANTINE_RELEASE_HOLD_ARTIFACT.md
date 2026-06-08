@@ -9,32 +9,22 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Haldane Quarantine Hold"
+title: "Hold Haldane untuk Pelepasan Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Haldane Quarantine Hold
+# Hold Haldane untuk Pelepasan Karantina
 
-ID LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## Prosedur Benar Pada Menit Salah
 
-## Scanner
+Hold Haldane tidak boleh dibaca sebagai penipuan sederhana. HECTON-8 punya risiko kontaminasi, seals rusak, masalah sample custody, dan ketidakpastian biologis. Protokol karantina masuk akal sebelum bencana menjadi kinetik. Karena itu dokumen ini menggigit: prosedurnya cukup nyata untuk dibela dan cukup lambat untuk membunuh.
 
-ID LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Release certification menjadi senjata melalui waktu. Saat tekanan naik dan rute gagal, hold meminta XO sample custody, seal-read variance, dan downstream exposure review. Setiap frasa terdengar bertanggung jawab. Bersama-sama, frasa itu menahan evakuan, mekanik, dan saksi di dalam koloni yang gagal sampai rescue bukan lagi kata kerja yang mengendalikan keadaan.
 
-## Terminal
-
-ID LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-ID LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-ID LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Di sini Deep Reach terasa institusional. Haldane tidak perlu menertawakan pekerja terjebak. Desk hanya perlu menjaga chain of custody, mengurangi liability masa depan, dan mencegah bukti terkontaminasi keluar ke claim space yang tidak bisa ia kendalikan. Horornya adalah semua motif itu bisa terdengar benar pada menit ketika orang membutuhkan pintu terbuka.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/id_ID. -->

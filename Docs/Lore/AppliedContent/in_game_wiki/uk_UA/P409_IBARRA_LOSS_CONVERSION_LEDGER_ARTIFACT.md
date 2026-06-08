@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Ibarra Loss Ledger"
+title: "Ledger Ібарри про конверсію втрат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Ibarra Loss Ledger
+# Ledger Ібарри про конверсію втрат
 
-UK LOC HOLD: The Ibarra ledger is the accounting form of the cover. It keeps asset rights active while missing workers become unresolved load.
+Ledger Ібарри - бухгалтерська форма прикриття. Він дозволяє Deep Reach визнати втрату, не віддаючи власність: люди стають unresolved personnel load, докази - material custody, а claim переживає колонію.
 
 ## Scanner
 
-UK LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Keelmark loss ledger. Зниклі працівники, пошкоджені модулі й живі claims стоять в одній таблиці конверсії.
 
 ## Terminal
 
-UK LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel unresolved. Habitat modules, tool banks and claim rights retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-UK LOC HOLD: The ledger did not forget names. It made them payable later.
+Ledger не забув імена. Він навчився їх витрачати.
 
 ## Field Note
 
-UK LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Нотатка Marauder: ledger може пам'ятати мертвих і все одно змушувати їх працювати.
 
 <!-- In-Game Wiki; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/uk_UA. -->

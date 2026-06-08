@@ -1249,5 +1249,7 @@ namespace Hecton.Localization
         public static readonly int UI_RETURN_TO_MENU = LocHash.Compute("UI_RETURN_TO_MENU");
         public static readonly int WARNING_BACKUP_USED_MESSAGE = LocHash.Compute("WARNING_BACKUP_USED_MESSAGE");
         public static readonly int WARNING_BACKUP_USED_TITLE = LocHash.Compute("WARNING_BACKUP_USED_TITLE");
+        public static readonly int WARNING_SAVE_REPAIRED_MESSAGE = LocHash.Compute("WARNING_SAVE_REPAIRED_MESSAGE");
+        public static readonly int WARNING_SAVE_REPAIRED_TITLE = LocHash.Compute("WARNING_SAVE_REPAIRED_TITLE");
     }
 }

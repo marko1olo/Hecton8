@@ -7,34 +7,34 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "ערכת משאבת שיפוליים ידנית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# ערכת משאבת שיפוליים ידנית
 
-HE LOC HOLD: The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.
+משאבת השיפוליים הידנית היא הכלי השימושי הראשון אחרי ההטלה, מפני שהיא עובדת בזמן שמערכת החשמל של הקפסולה אינה בטוחה. היא מפנה רק כיסי הצפה קטנים, אך מאלצת לעקוב אחרי יניקה, יציאה והתנגדות שסתום במקום לסמוך על נורה ירוקה. הערכה מלמדת את כלל הפתיחה של HECTON-8: תיקון מתחיל במים, בלחץ ובידיים.
 
 ## Scanner
 
-HE LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
+זוהתה ערכת שיפוליים ידנית. רשת היניקה סתומה בקצף הקפסולה; נקה לפני הזנת מתח ללוח.
 
 ## Terminal
 
-HE LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
+ניפוק P-63 / ערכת שיפוליים: משאבה ידנית, מהדק צינור, רשת יניקה, שסתום אל-חזור. לפנות מים עומדים לפני כל בדיקת לוח מוזן. אין לרוקן יציאה לתעלות כבלים אטומות.
 
 ## Audio
 
-HE LOC HOLD: Hand work first. Electricity second. Breathing always.
+מים קודם. חשמל אחר כך. אם הידית בועטת חזרה, החדר עונה.
 
 ## Field Note
 
-HE LOC HOLD: First tool must teach survival before upgrade fantasy.
+משאבות משקרות פחות ממדידים. אם הידית בועטת חזרה, עצור ובדוק לאן המים הולכים.
 
 <!-- In-Game Wiki; generated from P111_MANUAL_BILGE_PUMP_KIT/he_IL. -->

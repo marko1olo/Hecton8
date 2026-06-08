@@ -9,32 +9,35 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Aegir System Public Primer Article"
+title: "Publiczny wstęp do systemu Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Aegir System Public Primer Article
+# Publiczny wstęp do systemu Aegir
 
-PL LOC HOLD: Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.
+Aegir nadaje HECTON-8 praktyczny kształt. System nie jest namalowanym niebem wokół historii; jest powodem, dla którego trasy się otwierają, zamykają, opóźniają i kosztują zbyt dużo. HECTON-8 porusza się w drabinie księżyców, pływów, okien promieniowania, orbit transferowych przewoźników i kątów przekaźnikowych. Wiadomość może wyjść, zanim pojazd ratunkowy wejdzie. Roszczenie może dostać cenę, zanim zestaw ludzkiej ekstrakcji zostanie przygotowany. Black Keel może odpowiedzieć, bo sygnał jest tani wobec przemieszczania osłoniętej masy. To nie czyni Aegir pustym ani nieosiągalnym. Czyni go przemysłowym: harmonogramy, marginesy paliwa, język kwarantanny, cienie księżyców, oceaniczne pływy i orbitalna piecza naciskają na jednego nurka. Publiczny tekst o Aegir powinien trzymać naukę twardą, a dramat praktyczny. System działa. Dlatego porzucenie może być proceduralne zamiast milczące.
 
 ## Scanner
 
-PL LOC HOLD: Aegir is not backdrop. It is a timetable with gravity.
+Aegir nie jest tłem. To rozkład z grawitacją, promieniowaniem, pływami, opóźnieniem przekaźników i drogimi oknami masy.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
+PUBLICZNY POZIOM ARTYKUŁU / SYSTEM AEGIR
+dozwolone: system gospodarza, rola księżyca HECTON-8, okna pływów, geometria przekaźników, opóźnienie przewoźnika, język tras bez FTL
+zablokowane: końcowe trasowanie payload, ukryty priorytet receiver, dokładne późne blokady efemeryd
+uwaga redakcyjna: wyjaśnić opóźnienie, nie czyniąc świata nieosiągalnym.
 
 ## Audio
 
-PL LOC HOLD: The sky is a system, not a ceiling.
+System jest dość blisko, by odpowiedzieć. To jest okrutna część. Nie jest dość blisko, by na rozkaz podnieść ciało.
 
 ## Field Note
 
-PL LOC HOLD: Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
+Nie nazywaj Aegir odległym i nie kończ. Nazwij, co robi dystans: wycenia podnoszenie, opóźnia ciała i pozwala dowodom wyprzedzić ratunek.
 
 <!-- In-Game Wiki; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/pl_PL. -->

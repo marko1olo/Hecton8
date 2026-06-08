@@ -248,7 +248,7 @@ Reject or patch a controller/batch instruction if it:
 - demands `Status_[ID].md`, `Rationale_[ID].md`, or `LOG_[ID].md` without an explicit active agent ID or logging mode;
 - tells agents to delete deprecated paths immediately without scoped proof, `.meta` handling, and rollback awareness;
 - downgrades the visual target to "visually acceptable";
-- treats approximation-first rendering or the 0.1 ms suspicion rule as permission for flat water, muddy skies, weak terrain, blurry textures, primitive meshes, or placeholder-looking assets;
+- treats approximation-first rendering or the 0.1 ms suspicion rule as permission for flat water, muddy skies, weak terrain, blurry textures, primitive meshes, or mock-looking assets;
 - contains absolute implementation bans without profiling, capture, platform, or domain context;
 - asks for fake microseconds, fake proof, or proof-label upgrades not backed by artifacts;
 - omits the surface/photic-shallows/medium-depth Subnautica-level visual floor for visual work.

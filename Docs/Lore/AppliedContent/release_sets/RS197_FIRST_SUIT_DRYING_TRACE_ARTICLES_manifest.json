@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS197_FIRST_SUIT_DRYING_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1250_SUIT_HOOK_SALT_OVAL",
+    "P1251_BOOT_DRYER_DUST_FAN",
+    "P1252_WRIST_SEAL_TALC_CRESCENT",
+    "P1253_GLOVE_PEG_DRIP_STAR",
+    "P1254_VISOR_CLOTH_WIPE_FAN"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1250_SUIT_HOOK_SALT_OVAL.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1251_BOOT_DRYER_DUST_FAN.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1252_WRIST_SEAL_TALC_CRESCENT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1253_GLOVE_PEG_DRIP_STAR.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1254_VISOR_CLOTH_WIPE_FAN.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "ID LOC HOLD: RAN-B:H8 Public Catalog"
+spoiler_tier: 1
+title: "Katalog Publik RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: RAN-B:H8 Public Catalog
+# Katalog Publik RAN-B:H8
 
-ID LOC HOLD: RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name.
-
-## Scanner
-
-ID LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
-
-## Terminal
-
-ID LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
-
-## Audio
-
-ID LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
-
-## Field Note
-
-ID LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+RAN-B:H8 adalah nama saat bulan menjadi koordinat. HECTON-8 adalah nama saat bulan menjadi luka. Pemisahan ini penting karena tempat yang sama harus bekerja dalam tabel astronomi, formulir asuransi, ucapan pekerja, ledger kematian, dan kustodi Black Keel. Katalog publik membuat tujuan bersih dan dapat disortir; nama klaim menjaga residu manusia tetap menempel.
 
 <!-- External Site; generated from P104_RAN_B_H8_PUBLIC_CATALOG/id_ID. -->

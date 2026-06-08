@@ -7,34 +7,34 @@ poi_tags: poi.local_window_band_table;poi.carrier_phase_clock
 biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "HE LOC HOLD: Aegir Window Bands"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "רצועות חלון Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Aegir Window Bands
+# רצועות חלון Aegir
 
-HE LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.
+החלונות המקומיים של Aegir הופכים מכניקה מסלולית ללחץ שהשחקן מרגיש. גם capsule מתוקנת צריכה מזג אוויר, relay angle, carrier position וקבלה משפטית.
 
 ## Scanner
 
-HE LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+רצועה מקומית: ascent מחכה לחלונות של שעות עד ימים, לא לחילוץ מיידי.
 
 ## Terminal
 
-HE LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+WINDOW BAND: shutter, eclipse, relay, storm, carrier phase ו-legal handshake חייבים להסתדר לפני transfer בטוח.
 
 ## Audio
 
-HE LOC HOLD: The carrier can hear you and still be in the wrong sky.
+ה-carrier יכול לשמוע אותך ועדיין להיות בשמים הלא נכונים.
 
 ## Field Note
 
-HE LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+רשומת רצועת חלון: Black Keel timing, תוויות מסלול מקומיות ועמודי spoiler-light חולקים אותם transfer constraints.
 
 <!-- In-Game Wiki; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/he_IL. -->

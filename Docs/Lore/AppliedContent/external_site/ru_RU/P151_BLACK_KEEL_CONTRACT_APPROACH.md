@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Black Keel Claim Acceptance"
+title: "Прием претензии Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Black Keel Claim Acceptance
+# Прием претензии Black Keel
 
-RU LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+Терминал претензии Black Keel начинает игру с долга, кислородных добавок и custody груза еще до того, как океан касается экрана.
 
 ## Scanner
 
-RU LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+Контрактный терминал. Aegir Reclamation Pool показывает залог в 4.8 tonne-window раньше кислорода.
 
 ## Terminal
 
-RU LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / ТЕРМИНАЛ ПРИЕМА ПРЕТЕНЗИИ: маршрут RAN-B:H8 salvage descent; списание залога 4.8 tonne-window условное; кислородные welfare-addenda выставляются после возврата; custody груза первично за Black Keel, свидетель Keelmark Mutual; отказ оставляет активной проверку Barnard blacklist.
 
 ## Audio
 
-RU LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel подрядчику: окно претензии открыто. Кислород оплачивается после возврата. Подтверди, если можешь работать.
 
 ## Field Note
 
-RU LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+Стилус привязан к экрану напорным шнуром. Здесь ждали дрожащих рук.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/ru_RU. -->

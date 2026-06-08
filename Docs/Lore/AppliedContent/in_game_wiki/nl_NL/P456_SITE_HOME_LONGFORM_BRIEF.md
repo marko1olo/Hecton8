@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: drukclaim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: drukclaim
 
-NL LOC HOLD: Recovered P-63 route notes tie the opening contract to Black Keel's salvage window. The shelf is bright enough to navigate, but the useful facts are mechanical: bathydrop damage, pressure repair, scanner returns, and official wording that does not match the marks on the hardware. Keep the record spoiler-safe until deeper evidence is recovered.
+P-63-notities maken het begin bergingswerk onder schuld. Bruikbare feiten zijn mechanisch: verbruikte stijgcapaciteit, overstroomde avionica, beschadigde afdichtingen, scannerretours en officiële taal zonder antwoord op de deuken.
 
 ## Scanner
 
-NL LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+Marauder-inname. Black Keel-contract verbindt P-63, een beschadigde bathydrop, 4.8 tonne-window-lien en een ongevalsrapport dat niet bij het metaal past.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+PUBLIEK ARCHIEFKNOOPPUNT // H8-CLAIM. Aegir-relais open. Werk: drukafdichtingen herstellen, P-63 scannen, vracht bergen, bewijs bewaren, terug voor de ontvangstkromme sluit.
 
 ## Audio
 
-NL LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+Black Keel-relais: "Venster smal. Repareer de valschaal, lees de druksporen en breng bewijs mee met de vracht."
 
 ## Field Note
 
-NL LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+Marauder-notitie: licht op P-63 is geen veiligheid. Tel lucht, dicht voor vracht en wantrouw elk dossier zonder antwoord op deuken.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/nl_NL. -->

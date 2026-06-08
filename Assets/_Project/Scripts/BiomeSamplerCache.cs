@@ -188,10 +188,17 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
-            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
+            ApplyRuntimeOffsetToCachedState(-shiftOffset);
         }
 
         public bool TryGetCachedSample(Vector3 position, out CachedSample sample)
@@ -318,6 +325,14 @@ namespace Hecton8.World
 
         private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
         {
+            float runtimeOffsetSqrMagnitude = runtimeOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(runtimeOffset) ||
+                !MathGuard.IsFinite(runtimeOffsetSqrMagnitude) ||
+                runtimeOffsetSqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
             if (!_hasLastCenterPosition && (_samples == null || _sampleCount <= 0))
                 return;
 

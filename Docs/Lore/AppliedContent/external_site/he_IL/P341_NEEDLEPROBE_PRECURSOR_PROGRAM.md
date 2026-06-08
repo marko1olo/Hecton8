@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Needleprobe Precursor Program"
+title: "תוכנית הקדם Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Needleprobe Precursor Program
+# תוכנית הקדם Needleprobe
 
-HE LOC HOLD: HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
-
-## Scanner
-
-HE LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
-
-## Terminal
-
-HE LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
-
-## Audio
-
-HE LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
-
-## Field Note
-
-HE LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+הנוכחות האנושית הראשונה ב-Aegir לא הייתה הירואית. זו הייתה סדרה של מכונות קטנות ויקרות שחצו נתיב שאף צוות חי לא דירג. Needleprobes מדדו פרלקסה, קרינה, כימיית אוקיינוס, אפמרידות ירחים וקווי ראייה של ממסרים, ואז חיכו שנים עד שתשובותיהן נעשו שימושיות. Deep Reach לא גילתה את HECTON-8 עם דגל ביד; היא קנתה מספיק אמון מכונה כדי לקרוא לירח נכס. המקור הזה חשוב, כי המושבה ירשה שקר בטון ולא בנתונים. הנתונים היו אמיתיים. האמון שנבנה מהם היה נקי מדי לבני האדם שנשלחו אחר כך אל המים.
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/he_IL. -->

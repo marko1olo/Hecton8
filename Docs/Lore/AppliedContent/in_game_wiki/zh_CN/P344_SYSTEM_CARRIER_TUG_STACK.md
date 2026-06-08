@@ -3,38 +3,38 @@ packet_id: P344_SYSTEM_CARRIER_TUG_STACK
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.system_carrier_tug_stack
 unlock_id: unlock.system_carrier_tug_stack
-poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
+poi_tags: poi.black_keel_carrier_spec;poi.tug_manifest
 biome_tags: biome.orbit;biome.contract
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: System Carrier Tug Stack"
+title: "系统载体拖船栈"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: System Carrier Tug Stack
+# 系统载体拖船栈
 
-ZH LOC HOLD: The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.
+Black Keel是系统载体和salvage平台，不是私人星船。它能保持轨道、处理货物、运行托管锁、发射胶囊并协调拖船。它不能抹掉光延迟、路线窗口、损坏的bathydrop硬件，或决定帮助何时移动的成本规则。
 
 ## Scanner
 
-ZH LOC HOLD: Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
+载体栈记录：Black Keel用拖船、托管锁、胶囊架和计时器移动salvage。它不是家船。
 
 ## Terminal
 
-ZH LOC HOLD: BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
+BLACK KEEL规格：claim-pool载体。功能：保持轨道、接收货物、部署bathydrops、停靠拖船、回收债务。限制：不能替代断裂的月球插入链。
 
 ## Audio
 
-ZH LOC HOLD: The carrier is not your home. It is a machine that knows who owns your debt.
+载体比知道你的名字更知道你的债务。
 
 ## Field Note
 
-ZH LOC HOLD: Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
+载体所有权记录：有用的轨道机器仍可能敌对，如果它的第一忠诚是托管。
 
 <!-- In-Game Wiki; generated from P344_SYSTEM_CARRIER_TUG_STACK/zh_CN. -->

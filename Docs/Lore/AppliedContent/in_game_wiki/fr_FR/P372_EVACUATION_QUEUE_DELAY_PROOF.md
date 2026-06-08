@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Evacuation Queue Delay Proof"
+title: "Registre de retard de file d'évacuation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Evacuation Queue Delay Proof
+# Registre de retard de file d'évacuation
 
-FR LOC HOLD: Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
+Cette preuve transforme l'évacuation en séquence. La porte n'a pas seulement été coupée par l'eau ; elle est restée en état de review pendant que les alarmes de pression atteignaient les couloirs occupés. Le champ témoin vide compte parce que le système exigeait une confirmation humaine après que les humains avaient perdu l'accès au panneau.
 
 ## Scanner
 
-FR LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Horloge de file récupérée. La porte de libération est restée verrouillée après le passage des alarmes de pression de la prévision au couloir.
 
 ## Terminal
 
-FR LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Confirmation manuelle absente. Révision quarantaine en attente. Pression de route au-delà de la classe de joint avant résolution d'autorisation.
 
 ## Audio
 
-FR LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Ils n'ont pas échoué à sauver tout le monde. Ils ont attendu jusqu'à rendre plus difficile de sauver qui que ce soit.
 
 ## Field Note
 
-FR LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Note de maraudeur : une porte fermée avec un champ en attente n'est pas un accident. C'est une décision qui attend une signature.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/fr_FR. -->

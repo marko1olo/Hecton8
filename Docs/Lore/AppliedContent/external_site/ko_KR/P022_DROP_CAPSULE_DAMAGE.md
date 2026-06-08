@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 강하 캡슐 손상
 
-강하 캡슐 손상은 고립을 설명한다: 하강 성공, 생존계 생존, 상승 하드웨어 사망.
+강하 캡슐 손상은 고립이 왜 그럴듯한지 설명한다. 하강은 작동했고 생존 시스템은 살아남았지만 상승 장비는 그렇지 못했다.
 
 ## Scanner
 

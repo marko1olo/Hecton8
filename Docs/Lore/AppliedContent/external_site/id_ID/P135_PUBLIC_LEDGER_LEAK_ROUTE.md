@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "Kebocoran Ledger Publik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# Kebocoran Ledger Publik
 
-ID LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+Kebocoran ledger publik bukan fantasi whistleblower sempurna. Itu paket yang pergi lewat jendela relay sempit dengan witness hash, custody yang cukup untuk sulit disangkal, dan terlalu banyak bagian hilang untuk aman. Tau Ceti bisa membuat catatan itu publik jauh setelah ia bisa menyelamatkan siapa pun di air.
 
-## Scanner
-
-ID LOC HOLD: You can leak truth before you understand all of it.
-
-## Terminal
-
-ID LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-ID LOC HOLD: The truth leaves first. You may not like who reads it.
-
-## Field Note
-
-ID LOC HOLD: Public does not mean safe. It means harder to erase.
+Penundaan itu intinya. Deep Reach tidak bisa sekadar menghapus claim, tetapi pemain juga tidak bisa menentukan siapa yang memakainya berikutnya. Asuransi, rival, pengadilan sipil, pool Marauder, dan kantor korporat akan membaca luka yang sama dengan cara berbeda. Ending ini membuat kebenaran lebih sulit dikubur dan lebih sulit dimiliki.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/id_ID. -->

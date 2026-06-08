@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS199_FIRST_WEATHER_STATION_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1260_RAIN_GAUGE_SALT_BEAD",
+    "P1261_WIND_VANE_SCRAPE_ARC",
+    "P1262_BAROMETER_CONDENSATION_DOT",
+    "P1263_TIDE_CARD_CLIP_STAIN",
+    "P1264_STORM_SHUTTER_LATCH_POLISH"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1260_RAIN_GAUGE_SALT_BEAD.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1261_WIND_VANE_SCRAPE_ARC.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1262_BAROMETER_CONDENSATION_DOT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1263_TIDE_CARD_CLIP_STAIN.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1264_STORM_SHUTTER_LATCH_POLISH.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

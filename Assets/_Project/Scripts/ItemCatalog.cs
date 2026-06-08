@@ -78,9 +78,14 @@ namespace Hecton8.SaveSystem
 
             public WorldPrefabGuidFallbackEntry(string persistentId, string guid)
             {
-                PersistentId = persistentId;
+                PersistentId = string.IsNullOrWhiteSpace(persistentId) ? string.Empty : persistentId.Trim();
                 Guid = guid;
-                HashId = string.IsNullOrWhiteSpace(persistentId) ? 0 : LocHash.Compute(persistentId);
+                HashId = ComputeHashId(PersistentId);
+            }
+
+            private static int ComputeHashId(string canonicalPersistentId)
+            {
+                return string.IsNullOrWhiteSpace(canonicalPersistentId) ? 0 : LocHash.Compute(canonicalPersistentId);
             }
         }
 
@@ -209,6 +214,7 @@ namespace Hecton8.SaveSystem
         private bool _hasLookupAmbiguity;
         private string _lookupAmbiguitySummary;
         private List<ItemData> _runtimeItems;
+        private Dictionary<string, string> _runtimeItemOwnerByPersistentId;
         private bool _registeredHotSwap;
         private IQuestSystem _cachedQuestSystem;
 #if UNITY_ADDRESSABLES_EXIST
@@ -259,8 +265,9 @@ namespace Hecton8.SaveSystem
         /// </summary>
         public ItemData FindById(string id)
         {
-            if (string.IsNullOrEmpty(id)) return null;
+            if (string.IsNullOrWhiteSpace(id)) return null;
 
+            id = id.Trim();
             if (_lookup == null) RebuildLookup();
 
             _lookup.TryGetValue(id, out ItemData result);
@@ -739,6 +746,11 @@ namespace Hecton8.SaveSystem
         /// <returns>True when the item was accepted into the runtime lookup overlay.</returns>
         public bool TryRegisterRuntimeItem(ItemData item, out string error)
         {
+            return TryRegisterRuntimeItem(item, string.Empty, out error);
+        }
+
+        internal bool TryRegisterRuntimeItem(ItemData item, string ownerId, out string error)
+        {
             error = null;
 
             if (item == null)
@@ -763,13 +775,19 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            persistentId = persistentId.Trim();
             if (ContainsRuntimeItem(item))
+            {
+                RecordRuntimeItemOwnerIfUnownedOrSameOwner(persistentId, ownerId);
                 return true;
+            }
 
             if (HasAliasConflict(persistentId, item, out error))
                 return false;
 
             string legacyAlias = item.name;
+            if (!string.IsNullOrWhiteSpace(legacyAlias))
+                legacyAlias = legacyAlias.Trim();
             if (!string.Equals(legacyAlias, persistentId, StringComparison.Ordinal) &&
                 HasAliasConflict(legacyAlias, item, out error))
             {
@@ -783,10 +801,56 @@ namespace Hecton8.SaveSystem
                 _runtimeItems = new List<ItemData>(16); // COLD ALLOC: List<ItemData>[16] — runtime-only mod item overlay — owner: ItemCatalog
 
             _runtimeItems.Add(item);
+            RecordRuntimeItemOwner(persistentId, ownerId);
             AddLookupAlias(persistentId, item);
             AddLookupAlias(legacyAlias, item);
             AddHashLookupAlias(item);
             return !_hasLookupAmbiguity;
+        }
+
+        internal bool UnregisterRuntimeItemsForOwner(string ownerId)
+        {
+            ownerId = NormalizeRuntimeOwnerId(ownerId);
+            if (string.IsNullOrEmpty(ownerId) ||
+                _runtimeItems == null ||
+                _runtimeItems.Count == 0 ||
+                _runtimeItemOwnerByPersistentId == null ||
+                _runtimeItemOwnerByPersistentId.Count == 0)
+            {
+                return false;
+            }
+
+            bool removed = false;
+            for (int i = _runtimeItems.Count - 1; i >= 0; i--)
+            {
+                ItemData item = _runtimeItems[i];
+                string persistentId = NormalizeRuntimeItemPersistentId(item);
+                if (string.IsNullOrEmpty(persistentId) ||
+                    !_runtimeItemOwnerByPersistentId.TryGetValue(persistentId, out string registeredOwner) ||
+                    !string.Equals(registeredOwner, ownerId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                _runtimeItemOwnerByPersistentId.Remove(persistentId);
+                _runtimeItems.RemoveAt(i);
+                removed = true;
+            }
+
+            if (removed)
+                RebuildLookup();
+
+            return removed;
+        }
+
+        internal bool TryPromoteRuntimeItemOwnerIfPresent(ItemData item, string ownerId)
+        {
+            string persistentId = NormalizeRuntimeItemPersistentId(item);
+            if (string.IsNullOrEmpty(persistentId) || !ContainsRuntimeItem(item))
+                return false;
+
+            RecordRuntimeItemOwnerIfUnownedOrSameOwner(persistentId, ownerId);
+            return true;
         }
 
         internal bool TryCopyAllItemsNonAlloc(List<ItemData> results, out int copiedCount)
@@ -1351,9 +1415,10 @@ namespace Hecton8.SaveSystem
 
         private void AddLookupAlias(string id, ItemData item)
         {
-            if (string.IsNullOrEmpty(id) || item == null)
+            if (string.IsNullOrWhiteSpace(id) || item == null)
                 return;
 
+            id = id.Trim();
             if (_lookup.TryGetValue(id, out ItemData existing))
             {
                 if (!ReferenceEquals(existing, item))
@@ -1382,6 +1447,58 @@ namespace Hecton8.SaveSystem
             return false;
         }
 
+        private void RecordRuntimeItemOwner(string persistentId, string ownerId)
+        {
+            persistentId = NormalizeRuntimeItemPersistentId(persistentId);
+            if (string.IsNullOrEmpty(persistentId))
+                return;
+
+            ownerId = NormalizeRuntimeOwnerId(ownerId);
+            if (string.IsNullOrEmpty(ownerId))
+            {
+                _runtimeItemOwnerByPersistentId?.Remove(persistentId);
+                return;
+            }
+
+            if (_runtimeItemOwnerByPersistentId == null)
+                _runtimeItemOwnerByPersistentId = new Dictionary<string, string>(16); // COLD ALLOC: Dictionary<string,string>[16] — mod owner index for runtime item overlay cleanup — owner: ItemCatalog
+
+            _runtimeItemOwnerByPersistentId[persistentId] = ownerId;
+        }
+
+        private void RecordRuntimeItemOwnerIfUnownedOrSameOwner(string persistentId, string ownerId)
+        {
+            persistentId = NormalizeRuntimeItemPersistentId(persistentId);
+            ownerId = NormalizeRuntimeOwnerId(ownerId);
+            if (string.IsNullOrEmpty(persistentId) || string.IsNullOrEmpty(ownerId))
+                return;
+
+            if (_runtimeItemOwnerByPersistentId != null &&
+                _runtimeItemOwnerByPersistentId.TryGetValue(persistentId, out string registeredOwner) &&
+                !string.IsNullOrEmpty(registeredOwner) &&
+                !string.Equals(registeredOwner, ownerId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            RecordRuntimeItemOwner(persistentId, ownerId);
+        }
+
+        private static string NormalizeRuntimeItemPersistentId(ItemData item)
+        {
+            return item != null ? NormalizeRuntimeItemPersistentId(item.PersistentId) : string.Empty;
+        }
+
+        private static string NormalizeRuntimeItemPersistentId(string persistentId)
+        {
+            return string.IsNullOrWhiteSpace(persistentId) ? string.Empty : persistentId.Trim();
+        }
+
+        private static string NormalizeRuntimeOwnerId(string ownerId)
+        {
+            return string.IsNullOrWhiteSpace(ownerId) ? string.Empty : ownerId.Trim();
+        }
+
         private bool HasAliasConflict(string alias, ItemData item, out string error)
         {
             error = null;
@@ -1389,6 +1506,7 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrWhiteSpace(alias))
                 return false;
 
+            alias = alias.Trim();
             if (_lookup.TryGetValue(alias, out ItemData existing) && !ReferenceEquals(existing, item))
             {
                 error = $"Alias '{alias}' already belongs to '{existing.name}'.";
@@ -1404,7 +1522,7 @@ namespace Hecton8.SaveSystem
             if (item == null)
                 return false;
 
-            int hashId = LocHash.Compute(item.PersistentId);
+            int hashId = ResolvePersistentHashId(item);
             if (hashId == 0)
             {
                 error = "PersistentId hash resolved to zero.";
@@ -1420,6 +1538,11 @@ namespace Hecton8.SaveSystem
             }
 
             return false;
+        }
+
+        private static int ResolvePersistentHashId(ItemData item)
+        {
+            return ItemData.ResolvePersistentHashId(item);
         }
 
         private void RecordAmbiguity(string id, ItemData existing, ItemData duplicate)
@@ -1440,7 +1563,7 @@ namespace Hecton8.SaveSystem
             if (item == null)
                 return;
 
-            int hashId = LocHash.Compute(item.PersistentId);
+            int hashId = ResolvePersistentHashId(item);
             if (hashId == 0)
                 return;
 
@@ -1574,7 +1697,7 @@ namespace Hecton8.SaveSystem
                 if (item == null)
                     continue;
 
-                int hashId = LocHash.Compute(item.PersistentId);
+                int hashId = ResolvePersistentHashId(item);
                 if (!_runtimeDescriptorLookup.TryGetValue(hashId, out ItemRuntimeDescriptor descriptor) || !IsValidDescriptor(in descriptor))
                     continue;
 
@@ -1707,7 +1830,7 @@ namespace Hecton8.SaveSystem
                 if (item == null || item.worldPrefab == null || string.IsNullOrWhiteSpace(item.PersistentId))
                     continue;
 
-                int hashId = LocHash.Compute(item.PersistentId);
+                int hashId = ResolvePersistentHashId(item);
                 if (hashId == 0)
                     continue;
 

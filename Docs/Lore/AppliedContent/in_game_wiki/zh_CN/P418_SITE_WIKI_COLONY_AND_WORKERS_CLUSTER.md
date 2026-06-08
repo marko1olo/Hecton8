@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "ZH LOC HOLD: 殖民地与工人"
+title: "殖民地与工人"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: 殖民地与工人
+# 殖民地与工人
 
-ZH LOC HOLD: 已恢复的工人索引：水账本、relay见证托盘、brine路线戳、triage维修标签和vent-forge废件通过工作保存姓名。
+回收worker index：water ledgers、relay witness trays、brine route stamps、triage repair tags和vent-forge rejects通过工作保存姓名。
 
 ## Scanner
 
-ZH LOC HOLD: WORKER INDEX // 五条与路线相连的姓名记录。pump, relay, brine, triage, forge。拆硬件前保留tag chain。
+WORKER INDEX // 五条route-linked姓名记录。Pump、relay、brine、triage、forge。拆除硬件前保留tag chain。
 
 ## Terminal
 
-ZH LOC HOLD: KEELMARK LOSS DESK: name tag若关联route、claim、custody或pressure work，必须保留。
+KEELMARK LOSS DESK：若name tags关联route、claim、custody或pressure work，必须保留。
 
 ## Audio
 
-ZH LOC HOLD: Mara Venn, pump chief: 如果pump声干净，就记录。它不响了，就往上跑。
+Mara Venn，pump chief：如果泵唱得干净，就记录。如果它不再唱，向上跑。
 
 ## Field Note
 
-ZH LOC HOLD: 不是家人。是工作。pump card上的名字说明那扇门为什么保持开启。
+不是家庭。是工作。pump card上的名字解释了门为什么开着。
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/zh_CN. -->

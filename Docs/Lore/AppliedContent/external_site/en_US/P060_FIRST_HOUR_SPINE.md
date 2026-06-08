@@ -19,15 +19,15 @@ localization_flags: 0
 
 # First Hour Spine
 
-First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+First Hour Spine defines the opening rhythm of HECTON-8. The player starts with tangible engineering tasks and visual wonder, then sees those tasks connect to a corporate lie and a maintenance ecology that has entered biology. This keeps the first route playable and atmospheric while planting the larger investigation: the ocean is not hiding the story; it is preserving the evidence in pressure, salt and procedure.
 
 ## Scanner
 
-First-hour chain logged: damaged drop, air, bright shelf, pump shelter, sanitized accident packet, repair scar.
+Contract, damaged drop, air, bright shallows, pump shelter, sanitized lie, then the first repair scar that uses life as gasket.
 
 ## Terminal
 
-SHALLOW ANNEX: pump restart valid. Incident packet cached. Atlas repair growth found around cable, tool fragment, residue.
+SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The first safe room is not clean. It is only holding its breath better than you 
 
 ## Field Note
 
-The bright shelf is not a trick. It is the reason people wanted this place before the paperwork made it lethal.
+The opening must be beautiful before it becomes accusing.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/en_US. -->

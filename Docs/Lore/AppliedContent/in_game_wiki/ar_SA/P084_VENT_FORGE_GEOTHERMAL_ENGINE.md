@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "محرك حراري أرضي لفرن الفتحة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# محرك حراري أرضي لفرن الفتحة
 
-AR LOC HOLD: Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+تربط أفران الفتحات الجيولوجيا بالصنع والبقاء والرعب. تمنح حرارة ودورات ضغط للسيراميك والحشوات وزجاج الضغط، لكن الدورات نفسها تصنع جيوب غليان وقراءات أكسجين كاذبة وسحبا تآكلية وهجرة حيوانية.
 
 ## Scanner
 
-AR LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
+مجمع فرن الفتحة. الحرارة والسم والطاقة تستخدم الأنبوب نفسه.
 
 ## Terminal
 
-AR LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+محرك حراري أرضي: نبضة الفتحة مناسبة لمعالجة السيراميك، تلدين زجاج الضغط وتسخين شحنة صعود طارئة. المخاطر: قص غليان، إيجابية أكسجين كاذبة وتفتح تآكلي.
 
 ## Audio
 
-AR LOC HOLD: The vent does not care whether you call it power or weather.
+الفتحة لا تهتم إن سميتها طاقة أو طقسا.
 
 ## Field Note
 
-AR LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+كل فتحة مفيدة هي أيضا آلة تعاقب التوقيت السيئ.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/ar_SA. -->

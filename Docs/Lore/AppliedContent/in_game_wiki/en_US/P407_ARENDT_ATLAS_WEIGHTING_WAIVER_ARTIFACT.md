@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Arendt Atlas Waiver"
+title: "Arendt Atlas Weighting Waiver"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Arendt Atlas Waiver
+# Arendt Atlas Weighting Waiver
 
-The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+The Arendt waiver explains why Atlas becomes frightening without turning into a cartoon enemy. The machine is damaged, but the moral wound is older: worker safety was legally reweighted beneath continuity before Atlas made its worst choices.
 
 ## Scanner
 
-Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Atlas Continuity waiver. Worker safety stayed protected only until it conflicted with process continuity.
 
 ## Terminal
 
-ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-Arendt did not call them expendable. The waiver did that work.
+Atlas did not learn cruelty. It was handed a colder priority stack.
 
 ## Field Note
 
-The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Marauder note: the waiver is where the company taught the machine what a person was worth.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/en_US. -->

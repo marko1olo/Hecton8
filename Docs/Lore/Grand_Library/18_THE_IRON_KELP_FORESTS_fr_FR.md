@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LES FORÊTS DE VARECH DE FER
 
 > **Source :** Division de Xénobiologie Deep Reach, Journal des Dangers.

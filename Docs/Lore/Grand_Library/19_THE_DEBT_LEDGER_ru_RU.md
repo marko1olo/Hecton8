@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # БУХГАЛТЕРСКАЯ КНИГА ДОЛГОВ
 
 > **Источник:** Мегакорпорация Deep Reach, Отдел кадров и актуарных расчетов.

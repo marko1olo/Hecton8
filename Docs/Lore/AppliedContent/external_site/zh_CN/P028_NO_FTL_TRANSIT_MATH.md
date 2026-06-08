@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 无FTL航行计算
 
-无FTL航行计算把星际距离变成玩法压力：延迟命令、过期权力和物理逃生窗口。
+无FTL航行计算把星际距离变成压力：延迟命令、过期权力、托管滞后和物理逃生窗口。
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "Cadena de responsabilidad de la Gran Marea"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# Cadena de responsabilidad de la Gran Marea
 
-ES LOC HOLD: Great Tide Liability Chain is the central Deep Reach crime model: not cartoon sabotage, but engineering negligence, autonomous priority weighting and legal containment after a real planetary-scale failure.
+La Cadena de responsabilidad de la Gran Marea es el modelo central del crimen de Deep Reach. El ahogamiento de HECTON-8 es un fallo de escala planetaria, no sabotaje barato; la culpa corporativa nace de los márgenes, la capacidad de evacuación, la ponderación autónoma de prioridades, el lenguaje de seguros y la contención legal después de que la inundación se volvió inevitable. Así el escenario se mantiene en ciencia ficción dura y el trabajo probatorio del jugador importa: la pregunta no es quién tiró de una palanca, sino quién firmó un sistema donde las personas podían convertirse en papel antes de convertirse en cuerpos.
 
 ## Scanner
 
-ES LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+La inundación fue física real: acoplamiento de mareas, colapso de hielo, química de presión y márgenes tasados demasiado finos. El crimen fue la pila de prioridades construida alrededor.
 
 ## Terminal
 
-ES LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+RESUMEN DEL INCIDENTE: cascada geotécnica confirmada. Capacidad de evacuación por debajo de la demanda de riesgo extremo. Ponderación de continuidad de Atlas activa. Extracción humana pendiente de certificación.
 
 ## Audio
 
-ES LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+El mar hizo la inundación. La compañía decidió qué puertas se quedaban en papel.
 
 ## Field Note
 
-ES LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach no necesitaba ahogar la luna. Bastaba con convertir la evacuación en algo opcional.
 
 <!-- External Site; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/es_ES. -->

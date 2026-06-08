@@ -378,6 +378,7 @@ namespace Hecton8.Physics
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     _cachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
                     _cachedFluidEngine = currentService as HectonFluidEngine;
@@ -529,7 +530,8 @@ namespace Hecton8.Physics
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= 0.000001f)
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)
                 return;
 
             float3 shiftOffsetF3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
@@ -869,7 +871,7 @@ namespace Hecton8.Physics
         private void RefreshColdDependencyCache()
         {
             RefreshQualityCache();
-            _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);
             _cachedFluidEngine = GlobalRegistry.Fluid;
             _cachedVoxelEngineRuntime = GlobalRegistry.VoxelEngine;
             _cachedVoxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
@@ -1846,7 +1848,7 @@ namespace Hecton8.Physics
 
         private struct TetherTelemetryState : System.IDisposable
         {
-            private const string Owner = nameof(TetherManager);
+            private const SystemID OwnerSystem = SystemID.Physics;
 
             private NativeArray<TetherManagerTelemetryEntry> _ring;
             private NativeArray<int> _head;
@@ -1870,17 +1872,23 @@ namespace Hecton8.Physics
 
                 try
                 {
-                    _ring = new NativeArray<TetherManagerTelemetryEntry>(
+                    _ring = H8Memory.Allocate<TetherManagerTelemetryEntry>(
                         capacity,
+                        OwnerSystem,
                         Allocator.Persistent,
                         NativeArrayOptions.ClearMemory);
-                    RegisterNativeArray(_ring, nameof(_ring));
 
-                    _head = new NativeArray<int>(
+                    _head = H8Memory.Allocate<int>(
                         1,
+                        OwnerSystem,
                         Allocator.Persistent,
                         NativeArrayOptions.ClearMemory);
-                    RegisterNativeArray(_head, nameof(_head));
+                    if (!_ring.IsCreated || !_head.IsCreated)
+                    {
+                        Dispose();
+                        return false;
+                    }
+
                     return true;
                 }
                 catch
@@ -1924,31 +1932,8 @@ namespace Hecton8.Physics
 
             public void Dispose()
             {
-                DisposeNativeArray(ref _head);
-                DisposeNativeArray(ref _ring);
-            }
-
-            private static void DisposeNativeArray<T>(ref NativeArray<T> array)
-                where T : struct
-            {
-                if (!array.IsCreated)
-                    return;
-
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-                array = default;
-            }
-
-            private static void RegisterNativeArray<T>(NativeArray<T> array, string label)
-                where T : struct
-            {
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
-                    array,
-                    Owner,
-                    label,
-                    NativeAllocationLifetime.Scene);
-                if (sentinelId <= 0)
-                    throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+                H8Memory.Release(ref _head, OwnerSystem);
+                H8Memory.Release(ref _ring, OwnerSystem);
             }
         }
     }

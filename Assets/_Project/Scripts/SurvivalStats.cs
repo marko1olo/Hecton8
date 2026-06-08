@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Immutable-at-runtime data container for Hecton suit survival parameters.
 /// Create via: Assets → Create → Hecton → Survival Stats.
-/// 
+///
 /// Design notes:
 /// ─ All fields are readonly at runtime (no setters exposed).
 /// ─ Validation in OnValidate prevents designer errors in the Inspector.

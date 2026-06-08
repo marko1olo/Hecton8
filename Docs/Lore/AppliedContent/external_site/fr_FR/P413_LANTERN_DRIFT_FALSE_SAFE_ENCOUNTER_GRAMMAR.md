@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "Grammaire de rencontre: fausse sécurité de dérive-lanterne"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# Grammaire de rencontre: fausse sécurité de dérive-lanterne
 
-FR LOC HOLD: HECTON-8's bright shallows are readable, but never innocent.
+La fausse sécurité de dérive-lanterne garde les hauts-fonds brillants de HECTON-8 honnêtes. La lueur est utile, séduisante et dangereuse parce qu’elle enregistre plusieurs vérités à la fois.
 
 ## Scanner
 
-FR LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Voie de dérive-lanterne. L’eau brillante peut signaler bord d’oxygène, bruit de signal, sillage d’outil ou trafic déplacé par prédateur. Vérifie le courant avant de suivre.
 
 ## Terminal
 
-FR LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+GRAMMAIRE DE RENCONTRE / FAUSSE SÉCURITÉ DE DÉRIVE-LANTERNE / rôle: beauté comme donnée ambiguë, tentation de route, pénalité de stealth / lecture sûre: courant aligné sur la lueur, faune normale, résidu du côté attendu / rejet: traiter la lumière bleue comme sécurité, suivre un faux corridor chargé d’orage, réparer fort dans un sillage lumineux / note de route: une lueur peut être chemin, appât, trace de panique ou exposition.
 
 ## Audio
 
-FR LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+La lumière n’est pas une grâce. C’est une donnée que ta combinaison ne sait pas encore séparer.
 
 ## Field Note
 
-FR LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+Demande ce que porte la lumière: courant, oxygène, ton bruit, ou ce qui a poussé tout le reste ailleurs.
 
 <!-- External Site; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/fr_FR. -->

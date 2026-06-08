@@ -19,6 +19,7 @@
 // ============================================================================
 
 using System;
+using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Fluids;
@@ -142,6 +143,9 @@ namespace Hecton8.Gameplay
         private static readonly uint _cinematicFocusTelemetryHash = unchecked((uint)LocHash.Compute("CINEMATIC_FOCUS_ACTIVE_HASH"));
         private static readonly uint _cinematicFocusFaultHash = unchecked((uint)LocHash.Compute("CINEMATIC_FOCUS_FAULT"));
         private static readonly uint _cinematicFocusDumpHash = unchecked((uint)LocHash.Compute("CINEMATIC_FOCUS_DUMP"));
+        private static readonly uint _fatalPressureImplosionSourceHash = unchecked((uint)LocHash.Compute("HectonPlayerMovement.FatalPressureImplosion"));
+        private static readonly uint _fatalPressureNotificationMissWarningHash = unchecked((uint)LocHash.Compute("HectonPlayerMovement.FatalPressureNotificationMiss"));
+        private static readonly uint _fatalPressureNotificationContextHash = unchecked((uint)LocHash.Compute("HectonPlayerMovement.FatalPressureNotification"));
         private static ulong s_heavyInventoryDragMask;
         private static int s_heavyInventoryDragTemplateCount = -1;
         private static uint s_heavyInventoryDragRegistryRevision;
@@ -208,6 +212,7 @@ namespace Hecton8.Gameplay
         private const int CrestSampleFeet = 2;
         private const int CrestSampleLeft = 3;
         private const int CrestSampleRight = 4;
+        private const float DefaultWaterSurfaceY = 14.02f;
         private static readonly string[] _locomotionModeLabels =
         {
             "DryGroundWalk",
@@ -234,7 +239,7 @@ namespace Hecton8.Gameplay
 
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Water Configuration Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [Tooltip("Fallback water surface Y when Crest is unavailable.")]
-        [SerializeField] private float waterSurfaceY = 4900f;
+        [SerializeField] private float waterSurfaceY = DefaultWaterSurfaceY;
 
         [SerializeField] private float playerHeight = 1.8f;
 
@@ -690,6 +695,8 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 120f)] private float abyssalCableEntanglementMaxAcceleration = 26f;
         [Tooltip("How much the cable snare is allowed to pull vertically.")]
         [SerializeField, Range(0f, 1f)] private float abyssalCableEntanglementVerticalInfluence = 0.12f;
+        [Tooltip("Body-mass reference used to scale abyssal bio-cable drag without borrowing sargassum tuning.")]
+        [SerializeField, Range(40f, 500f)] private float abyssalCableEntanglementMassReference = 110f;
         [Tooltip("Maximum extra environmental drag requested by full abyssal cable tension while swimming without transport.")]
         [SerializeField, Range(0f, 5f)] private float abyssalCableEntanglementSwimEnvironmentalDrag = 1.25f;
         [Tooltip("Maximum extra environmental drag requested by full abyssal cable tension while active transport is engaged.")]
@@ -1509,6 +1516,7 @@ namespace Hecton8.Gameplay
         private float _fatalPressureRearmTimer;
         private float _fatalPressureLookYawAnchor;
         private float _fatalPressureLookPitchAnchor;
+        private int _fatalPressureNotificationMissCount;
         private float _activeSonarPingCooldownTimer;
         private float _thermalUpdraftIntensity;
         private Vector3 _thermalUpdraftVelocityChange = Vector3.zero;
@@ -1900,8 +1908,18 @@ namespace Hecton8.Gameplay
         public float CurrentWaterSurfaceY => EffectiveWaterSurfaceY;
         /// <summary>Current depth below the effective water surface in metres.</summary>
         public float CurrentDepth => _currentDepth;
-        /// <summary>True when the player head is below the water surface.</summary>
-        public bool IsPlayerSubmerged => _juiceProcessor != null && _juiceProcessor.IsSubmerged;
+        /// <summary>True when movement-owned head/eye water depth treats the player as submerged.</summary>
+        public bool IsPlayerSubmerged => ResolveMovementOwnedSubmergedState();
+        private bool ResolveMovementOwnedSubmergedState()
+        {
+            if (IsInDryInterior() || _waterImmersionRatio <= 0.01f)
+                return false;
+
+            float enterDepth = math.max(0.001f, surfaceGaspHeadEnterDepth);
+            float exitDepth = math.max(0f, surfaceGaspHeadExitDepth);
+            return _currentDepth >= enterDepth ||
+                   (_surfaceGaspSubmergedLatch && _currentDepth > exitDepth);
+        }
         bool IPlayerKinematicsMovementRuntime.IsKinematicMovementActive => isActiveAndEnabled;
         /// <summary>True when the player is carrying a heavy object that restricts movement.</summary>
         public bool IsDraggingHeavyCargo => IsHeavyCarryActive();
@@ -1923,6 +1941,8 @@ namespace Hecton8.Gameplay
         public float CurrentHullStress01 => _hullStressIntensity;
         /// <summary>Normalized fatal-pressure pre-implosion loop intensity. 0 when inactive, 1 just before implosion.</summary>
         public float CurrentFatalPressureSequence01 => _fatalPressureSequenceIntensity;
+        /// <summary>Number of fatal-pressure critical notifications refused by the UI queue since this owner was enabled.</summary>
+        public int FatalPressureNotificationMissCount => _fatalPressureNotificationMissCount;
         /// <summary>Normalized thermal updraft intensity currently throwing the player upward.</summary>
         public float CurrentThermalUpdraftIntensity01 => _thermalUpdraftIntensity;
         /// <summary>True while the controller is in wipeout recovery and player movement input is suppressed.</summary>
@@ -1988,6 +2008,9 @@ namespace Hecton8.Gameplay
         /// <param name="dragMultiplier">1 = no extra drag. Values above 1 increase resistance.</param>
         public void ApplyEnvironmentalDrag(float dragMultiplier)
         {
+            if (!math.isfinite(dragMultiplier))
+                return;
+
             float clampedDragMultiplier = math.max(1f, dragMultiplier);
             if (clampedDragMultiplier > _externalEnvironmentalDragRequestedMultiplier)
                 _externalEnvironmentalDragRequestedMultiplier = clampedDragMultiplier;
@@ -2000,7 +2023,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _externalEnvironmentalDragHoldTimer = externalEnvironmentalDragHoldTime;
+            _externalEnvironmentalDragHoldTimer = ResolveSargassumNonNegative(externalEnvironmentalDragHoldTime, 0f);
         }
 
         internal void RequestKinematicInertiaRoll(float signedRollDegrees)
@@ -2186,7 +2209,7 @@ namespace Hecton8.Gameplay
         /// <param name="velocityChange">World-space upward velocity change to inject this fixed step.</param>
         public void ApplyExternalThermalUpdraft(Vector3 velocityChange)
         {
-            if (velocityChange.y <= 0.0001f)
+            if (!IsFiniteVector(velocityChange) || velocityChange.y <= 0.0001f)
                 return;
 
             if (!_externalThermalUpdraftRequestedThisStep ||
@@ -3423,7 +3446,9 @@ namespace Hecton8.Gameplay
 
         private static float ResolveLinearBlendT(float sharpness, float deltaTime)
         {
-            return math.saturate(math.max(0f, sharpness) * math.max(deltaTime, 0f));
+            float safeSharpness = math.isfinite(sharpness) ? math.max(0f, sharpness) : 0f;
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(deltaTime, 0f) : 0f;
+            return math.saturate(safeSharpness * safeDeltaTime);
         }
 
         private void InitializeRenderInterpolationState()
@@ -4098,7 +4123,7 @@ namespace Hecton8.Gameplay
             _inputServiceRuntime = GlobalRegistry.Input;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _voxelEngineRuntime = GlobalRegistry.VoxelEngine;
-            _sargassumDragRuntime = GlobalRegistry.SargassumDrag;
+            WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDragRuntime);
             _thermodynamicsRuntime = GlobalRegistry.Thermodynamics;
             _suitUpgradeRuntime = GlobalRegistry.SuitUpgrades;
             _oceanKinematicsRuntime = GlobalRegistry.OceanKinematics;
@@ -4192,6 +4217,7 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.SargassumDragRuntime:
                     _sargassumDragRuntime = currentService as SargassumGlobalDragManager;
+                    WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDragRuntime);
                     break;
                 case GlobalRegistryServiceSlot.ThermodynamicsRuntime:
                     _thermodynamicsRuntime = currentService as AbyssalThermalManager;
@@ -4230,7 +4256,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -4324,8 +4350,13 @@ namespace Hecton8.Gameplay
             _cachedTransform = transform;
 
             TryGetComponent(out _rb);
-            if (_rb != null)
-                CacheAuthoritativeBodyMassKg(_rb.mass);
+            if (_rb == null)
+            {
+                enabled = false;
+                return;
+            }
+
+            CacheAuthoritativeBodyMassKg(_rb.mass);
             TryGetComponent(out _capsuleCollider);
             _playerColliderInstanceId = _capsuleCollider != null ? unchecked((int)EntityId.ToULong(_capsuleCollider.GetEntityId())) : 0;
             _instanceId = ResolveStableEntitySeed32(gameObject);
@@ -4746,6 +4777,7 @@ namespace Hecton8.Gameplay
             _fatalPressureRearmTimer = 0f;
             _fatalPressureLookYawAnchor = _cameraYaw;
             _fatalPressureLookPitchAnchor = _cameraPitch;
+            ClearFatalPressureNotificationDiagnostics();
             _activeSonarPingCooldownTimer = 0f;
             _thermalUpdraftIntensity = 0f;
             _thermalUpdraftVelocityChange = Vector3.zero;
@@ -4829,7 +4861,7 @@ namespace Hecton8.Gameplay
 
             if (_registeredHotSwapListener)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwapListener = false;
             }
 
@@ -5197,7 +5229,7 @@ namespace Hecton8.Gameplay
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= 0.000001f)
+            if (!IsFiniteVector(shiftOffset) || shiftOffset.sqrMagnitude <= 0.000001f)
                 return;
 
             InvalidateMovementProbeCaches();
@@ -6201,7 +6233,8 @@ namespace Hecton8.Gameplay
             if (dragManager != null)
             {
                 Vector3 samplePosition = ResolvePlayerAupRuntimePosition();
-                float sampleRadius = _capsuleCollider != null ? math.max(0.35f, _capsuleCollider.radius) : 0.5f;
+                float rawSampleRadius = _capsuleCollider != null ? _capsuleCollider.radius : 0.5f;
+                float sampleRadius = math.isfinite(rawSampleRadius) ? math.max(0.35f, rawSampleRadius) : 0.5f;
                 Vector3 sampleVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
                 float sampleSpeed = ApproximateVectorMagnitude(sampleVelocity);
                 bool hasFieldInfluence = dragManager.SampleDetailedInfluence(
@@ -6217,7 +6250,7 @@ namespace Hecton8.Gameplay
                     sample.Density01,
                     sample.AnchorWS,
                     sample.Entanglement01);
-                _sargassumFieldDensity01 = hasFieldInfluence ? sample.Density01 : 0f;
+                _sargassumFieldDensity01 = hasFieldInfluence ? ResolveSargassum01(sample.Density01) : 0f;
             }
             else
             {
@@ -6234,6 +6267,7 @@ namespace Hecton8.Gameplay
 
         private void AdvanceAbyssalThermalInfluence(float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
             _abyssalThermalFlowSample = default;
             _abyssalThermalFlowSample.DragMultiplier = 1f;
             _abyssalThermalFlowVelocityWS = Vector3.zero;
@@ -6246,12 +6280,18 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 samplePosition = ResolvePlayerAupRuntimePosition();
-            float sampleRadius = _capsuleCollider != null ? math.max(0.35f, _capsuleCollider.radius) : 0.5f;
+            if (!IsFiniteVector(samplePosition))
+                return;
+
+            float sampleRadius = _capsuleCollider != null
+                ? math.max(0.35f, ResolveAbyssalCablePositive(_capsuleCollider.radius, 0.5f))
+                : 0.5f;
             bool hasPlayerSample = thermalManager.SampleThermalFlow(samplePosition, sampleRadius, out AbyssalThermalManager.ThermalFlowSample sample);
             AdvanceHeavyTowCableSnare(thermalManager);
             if (!hasPlayerSample)
                 return;
 
+            sample = SanitizeAbyssalThermalSample(sample, samplePosition);
             _abyssalThermalFlowSample = sample;
             _abyssalThermalFlowVelocityWS = sample.FlowVelocityWS;
 
@@ -6259,10 +6299,10 @@ namespace Hecton8.Gameplay
                 ApplyEnvironmentalDrag(sample.DragMultiplier);
 
             if (sample.IsCableZone != 0)
-                ApplyAbyssalCableEnvironmentalDrag(fixedDeltaTime, transportPreset, sample);
+                ApplyAbyssalCableEnvironmentalDrag(safeFixedDeltaTime, transportPreset, sample);
 
-            if (sample.HasFlow != 0 && fixedDeltaTime > 0f)
-                ApplyExternalThermalUpdraft(sample.FlowVelocityWS * fixedDeltaTime);
+            if (sample.HasFlow != 0 && safeFixedDeltaTime > 0f)
+                ApplyExternalThermalUpdraft(sample.FlowVelocityWS * safeFixedDeltaTime);
         }
 
         private void AdvanceHeavyTowCableSnare(AbyssalThermalManager thermalManager)
@@ -6276,8 +6316,21 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!thermalManager.SampleThermalFlow(payloadPositionWS, payloadRadiusWS, out AbyssalThermalManager.ThermalFlowSample payloadSample) ||
-                payloadSample.IsCableZone == 0)
+            if (!IsFiniteVector(payloadPositionWS))
+            {
+                _heavyTowWinch.ApplyExternalCableSnare(Vector3.zero, 0f, 1f);
+                return;
+            }
+
+            float safePayloadRadius = ResolveAbyssalCablePositive(payloadRadiusWS, 0.5f);
+            if (!thermalManager.SampleThermalFlow(payloadPositionWS, safePayloadRadius, out AbyssalThermalManager.ThermalFlowSample payloadSample))
+            {
+                _heavyTowWinch.ApplyExternalCableSnare(Vector3.zero, 0f, 1f);
+                return;
+            }
+
+            payloadSample = SanitizeAbyssalThermalSample(payloadSample, payloadPositionWS);
+            if (payloadSample.IsCableZone == 0 || payloadSample.CableTension01 <= 0.0001f)
             {
                 _heavyTowWinch.ApplyExternalCableSnare(Vector3.zero, 0f, 1f);
                 return;
@@ -6292,21 +6345,21 @@ namespace Hecton8.Gameplay
         private float ResolveSargassumSpeedMultiplier()
         {
             return _sargassumMovementInfluence != null
-                ? math.clamp(_sargassumMovementInfluence.SpeedMultiplier, 0.1f, 1f)
+                ? ResolveSargassumSpeedMultiplier(_sargassumMovementInfluence.SpeedMultiplier)
                 : 1f;
         }
 
         private float ResolveSargassumDragMultiplier()
         {
             return _sargassumMovementInfluence != null
-                ? math.max(1f, _sargassumMovementInfluence.DragMultiplier)
+                ? ResolveSargassumDragMultiplier(_sargassumMovementInfluence.DragMultiplier)
                 : 1f;
         }
 
         private float ResolveActiveTransportPropulsionReference(PlayerTransportPreset transportPreset)
         {
             return transportPreset != null
-                ? math.max(0.01f, transportPreset.PropulsionForceReference)
+                ? math.max(0.01f, ResolveSargassumPositive(transportPreset.PropulsionForceReference, 0.01f))
                 : 0f;
         }
 
@@ -6318,7 +6371,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float tension = math.saturate(_sargassumMovementInfluence.Entanglement01);
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
+            float tension = ResolveSargassum01(_sargassumMovementInfluence.Entanglement01);
             if (tension <= 0.0001f)
             {
                 ApplyEnvironmentalDrag(1f);
@@ -6326,7 +6380,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float massReference = math.max(1f, sargassumEntanglementMassReference);
+            float massReference = math.max(1f, ResolveSargassumPositive(sargassumEntanglementMassReference, 80f));
             float massRatio = math.saturate((ResolveAuthoritativeBodyMassKg() - massReference) / (massReference * 3f));
             float bodyMassScale = math.lerp(0.92f, 1.22f, massRatio);
             float propulsionReference = ResolveActiveTransportPropulsionReference(transportPreset);
@@ -6336,34 +6390,38 @@ namespace Hecton8.Gameplay
                 : 0f;
             float transportPresence01 = propulsionReference > 0f ? 1f : 0f;
             float maxExtraDrag = math.lerp(
-                sargassumEntanglementSwimEnvironmentalDrag,
-                sargassumEntanglementTransportEnvironmentalDrag,
+                ResolveSargassumNonNegative(sargassumEntanglementSwimEnvironmentalDrag, 0.45f),
+                ResolveSargassumNonNegative(sargassumEntanglementTransportEnvironmentalDrag, 1.15f),
                 transportPresence01);
             float propulsionRelief = math.lerp(1f, 0.72f, propulsion01);
             float requestedDragMultiplier = 1f + maxExtraDrag * tension * bodyMassScale * propulsionRelief;
+            requestedDragMultiplier = ResolveSargassumDragMultiplier(requestedDragMultiplier);
             ApplyEnvironmentalDrag(requestedDragMultiplier);
-            ApplySargassumEscapeEnergyDrain(fixedDeltaTime, tension, propulsion01);
+            ApplySargassumEscapeEnergyDrain(safeFixedDeltaTime, tension, propulsion01);
             _debugSargassumEntanglementDragRequest = requestedDragMultiplier;
         }
 
         private void ApplySargassumEscapeEnergyDrain(float fixedDeltaTime, float tension, float propulsion01)
         {
-            if (_survivalSystem == null || fixedDeltaTime <= 0f)
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
+            float safeTension = ResolveSargassum01(tension);
+            if (_survivalSystem == null || safeFixedDeltaTime <= 0f)
                 return;
 
-            if (tension <= 0.0001f || sargassumEscapeEnergyDrainPerSecond <= 0f)
+            float safeEnergyDrainPerSecond = ResolveSargassumNonNegative(sargassumEscapeEnergyDrainPerSecond, 0f);
+            if (safeTension <= 0.0001f || safeEnergyDrainPerSecond <= 0f)
                 return;
 
             float normalizedIntent = ResolveSargassumEscapeIntent01(propulsion01);
             if (normalizedIntent <= 0f)
                 return;
             float drainAmount =
-                sargassumEscapeEnergyDrainPerSecond *
-                sargassumEntanglementEscapeEnergyMultiplier *
-                math.lerp(1f, sargassumHighStrainEnergyMultiplier, _sargassumHighStrainIntensity) *
-                tension *
+                safeEnergyDrainPerSecond *
+                math.max(1f, ResolveSargassumPositive(sargassumEntanglementEscapeEnergyMultiplier, 3f)) *
+                math.lerp(1f, math.max(1f, ResolveSargassumPositive(sargassumHighStrainEnergyMultiplier, 3f)), ResolveSargassum01(_sargassumHighStrainIntensity)) *
+                safeTension *
                 normalizedIntent *
-                fixedDeltaTime;
+                safeFixedDeltaTime;
             if (drainAmount <= 0.0001f)
                 return;
 
@@ -6372,11 +6430,13 @@ namespace Hecton8.Gameplay
 
         private void ApplyAbyssalCableEnvironmentalDrag(float fixedDeltaTime, PlayerTransportPreset transportPreset, AbyssalThermalManager.ThermalFlowSample sample)
         {
-            float tension = math.saturate(sample.CableTension01);
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
+            sample = SanitizeAbyssalThermalSample(sample, ResolvePlayerAupRuntimePosition());
+            float tension = ResolveAbyssalCable01(sample.CableTension01);
             if (tension <= 0.0001f)
                 return;
 
-            float massReference = math.max(1f, sargassumEntanglementMassReference);
+            float massReference = math.max(1f, ResolveAbyssalCablePositive(abyssalCableEntanglementMassReference, 110f));
             float massRatio = math.saturate((ResolveAuthoritativeBodyMassKg() - massReference) / (massReference * 3f));
             float bodyMassScale = math.lerp(0.95f, 1.3f, massRatio);
             float propulsionReference = ResolveActiveTransportPropulsionReference(transportPreset);
@@ -6386,16 +6446,17 @@ namespace Hecton8.Gameplay
                 : 0f;
             float transportPresence01 = propulsionReference > 0f ? 1f : 0f;
             float maxExtraDrag = math.lerp(
-                abyssalCableEntanglementSwimEnvironmentalDrag,
-                abyssalCableEntanglementTransportEnvironmentalDrag,
+                ResolveAbyssalCableNonNegative(abyssalCableEntanglementSwimEnvironmentalDrag, 1.25f),
+                ResolveAbyssalCableNonNegative(abyssalCableEntanglementTransportEnvironmentalDrag, 2.85f),
                 transportPresence01);
             float cutReleaseT = ResolveAbyssalCableCutRelease01(sample.CableCutProgress01);
-            float propulsionRelief = math.lerp(1f, 1f - abyssalCablePropulsionReliefAtFullCut, propulsion01 * cutReleaseT);
-            float suppression = math.max(0.25f, sample.CableEscapeSuppression01);
-            float requestedDragMultiplier = 1f + maxExtraDrag * tension * suppression * bodyMassScale * propulsionRelief;
+            float propulsionRelief = math.lerp(1f, 1f - ResolveAbyssalCable01(abyssalCablePropulsionReliefAtFullCut), propulsion01 * cutReleaseT);
+            float suppression = ResolveAbyssalCableSuppression01(sample.CableEscapeSuppression01);
+            float requestedDragMultiplier = ResolveAbyssalCableDragMultiplier(1f + maxExtraDrag * tension * suppression * bodyMassScale * propulsionRelief);
             ApplyEnvironmentalDrag(requestedDragMultiplier);
 
-            if (_survivalSystem == null || fixedDeltaTime <= 0f || abyssalCableEscapeEnergyDrainPerSecond <= 0f)
+            float drainPerSecond = ResolveAbyssalCableNonNegative(abyssalCableEscapeEnergyDrainPerSecond, 6.2f);
+            if (_survivalSystem == null || safeFixedDeltaTime <= 0f || drainPerSecond <= 0f)
                 return;
 
             float normalizedIntent = ResolveSargassumEscapeIntent01(propulsion01);
@@ -6403,12 +6464,12 @@ namespace Hecton8.Gameplay
                 return;
 
             float drainAmount =
-                abyssalCableEscapeEnergyDrainPerSecond *
-                abyssalCableEscapeEnergyMultiplier *
+                drainPerSecond *
+                math.max(1f, ResolveAbyssalCablePositive(abyssalCableEscapeEnergyMultiplier, 4.5f)) *
                 tension *
                 suppression *
                 normalizedIntent *
-                fixedDeltaTime;
+                safeFixedDeltaTime;
             if (drainAmount <= 0.0001f)
                 return;
 
@@ -6417,16 +6478,22 @@ namespace Hecton8.Gameplay
 
         private void UpdateSargassumHighStrainState(float fixedDeltaTime)
         {
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
+            _sargassumHighStrainIntensity = ResolveSargassum01(_sargassumHighStrainIntensity);
             if (_sargassumHighStrainTimer > 0f)
             {
-                _sargassumHighStrainTimer -= fixedDeltaTime;
+                _sargassumHighStrainTimer -= safeFixedDeltaTime;
                 if (_sargassumHighStrainTimer < 0f)
                     _sargassumHighStrainTimer = 0f;
+            }
+            else if (!math.isfinite(_sargassumHighStrainTimer))
+            {
+                _sargassumHighStrainTimer = 0f;
             }
 
             if (_sargassumHighStrainTimer <= 0f)
             {
-                float fadeT = ResolveLinearBlendT(12f, fixedDeltaTime);
+                float fadeT = ResolveLinearBlendT(12f, safeFixedDeltaTime);
                 _sargassumHighStrainIntensity = math.lerp(_sargassumHighStrainIntensity, 0f, fadeT);
                 if (_sargassumHighStrainIntensity < 0.0001f)
                     _sargassumHighStrainIntensity = 0f;
@@ -6435,20 +6502,26 @@ namespace Hecton8.Gameplay
 
         private void UpdateSargassumMatBuoyancyBlend(float fixedDeltaTime)
         {
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
             float targetBlend = 0f;
             if (!IsInDryInterior() && !_isWalking && _waterImmersionRatio > 0.05f)
             {
-                float densityDenominator = math.max(1f - sargassumMatBuoyancyDensityThreshold, 0.0001f);
-                float densityT = math.saturate((_sargassumFieldDensity01 - sargassumMatBuoyancyDensityThreshold) / densityDenominator);
+                float densityThreshold = math.isfinite(sargassumMatBuoyancyDensityThreshold)
+                    ? math.saturate(sargassumMatBuoyancyDensityThreshold)
+                    : 0.8f;
+                float densityDenominator = math.max(1f - densityThreshold, 0.0001f);
+                float densityT = math.saturate((ResolveSargassum01(_sargassumFieldDensity01) - densityThreshold) / densityDenominator);
                 if (densityT > 0f)
                 {
-                    float depthT = 1f - math.saturate(_currentDepth / math.max(sargassumMatBuoyancyMaxDepth, 0.01f));
+                    float maxDepth = math.max(0.01f, ResolveSargassumPositive(sargassumMatBuoyancyMaxDepth, 1.65f));
+                    float depthT = 1f - math.saturate(_currentDepth / maxDepth);
                     targetBlend = densityT * depthT;
                 }
             }
 
-            float blendT = ResolveLinearBlendT(math.max(sargassumMatBuoyancyBlendSharpness, 0.01f), fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(0.01f, ResolveSargassumPositive(sargassumMatBuoyancyBlendSharpness, 9f)), safeFixedDeltaTime);
             _sargassumMatBuoyancyBlend = math.lerp(_sargassumMatBuoyancyBlend, targetBlend, blendT);
+            _sargassumMatBuoyancyBlend = ResolveSargassum01(_sargassumMatBuoyancyBlend);
         }
 
         private void ApplySargassumMatBuoyancySupport()
@@ -6456,11 +6529,17 @@ namespace Hecton8.Gameplay
             if (_sargassumMatBuoyancyBlend <= 0.001f || _isWalking || IsInDryInterior())
                 return;
 
-            float upwardVelocityAllowance = 1f - math.saturate(math.max(0f, ResolveAuthoritativeLinearVelocity(Vector3.zero).y) / math.max(surfaceBreachReleaseVelocity, 0.01f));
+            float surfaceReleaseVelocity = math.max(0.01f, ResolveSargassumPositive(surfaceBreachReleaseVelocity, 1f));
+            float upwardVelocityAllowance = 1f - math.saturate(math.max(0f, ResolveAuthoritativeLinearVelocity(Vector3.zero).y) / surfaceReleaseVelocity);
             if (upwardVelocityAllowance <= 0.001f)
                 return;
 
-            float buoyancyForce = _cachedGravityMagnitude * ResolveAuthoritativeBodyMassKg() * sargassumMatBuoyancyForceScale * _sargassumMatBuoyancyBlend * upwardVelocityAllowance;
+            float buoyancyForce =
+                ResolveSargassumNonNegative(_cachedGravityMagnitude, 0f) *
+                ResolveAuthoritativeBodyMassKg() *
+                ResolveSargassumNonNegative(sargassumMatBuoyancyForceScale, 0f) *
+                ResolveSargassum01(_sargassumMatBuoyancyBlend) *
+                upwardVelocityAllowance;
             if (buoyancyForce <= 0.001f)
                 return;
 
@@ -6495,16 +6574,19 @@ namespace Hecton8.Gameplay
             if (_sargassumMovementInfluence == null)
                 return;
 
-            float tension = _sargassumMovementInfluence.Entanglement01;
+            float tension = ResolveSargassum01(_sargassumMovementInfluence.Entanglement01);
             if (tension <= 0.0001f)
                 return;
 
             Vector3 playerPosition = ResolvePlayerAupRuntimePosition();
             Vector3 anchor = _sargassumMovementInfluence.EntanglementAnchorWS;
+            if (!IsFiniteVector(playerPosition) || !IsFiniteVector(anchor))
+                return;
+
             Vector3 displacement = playerPosition - anchor;
-            displacement.y *= sargassumEntanglementVerticalInfluence;
+            displacement.y *= ResolveSargassum01(sargassumEntanglementVerticalInfluence);
             float displacementSqr = displacement.sqrMagnitude;
-            if (displacementSqr <= 0.00000001f)
+            if (!math.isfinite(displacementSqr) || displacementSqr <= 0.00000001f)
                 return;
 
             float inverseDisplacementMagnitude = math.rsqrt(math.max(displacementSqr, 0.000001f));
@@ -6516,19 +6598,22 @@ namespace Hecton8.Gameplay
             float propulsion01 = propulsionReference > 0f
                 ? math.saturate(propulsionForce / propulsionReference)
                 : 0f;
-            float springRelief = math.lerp(1f, 1f - sargassumEntanglementEscapeRelief, propulsion01);
+            float springRelief = math.lerp(1f, 1f - ResolveSargassum01(sargassumEntanglementEscapeRelief), propulsion01);
             float dampingRelief = math.lerp(1f, 0.82f, propulsion01);
-            float springAccelerationMagnitude = displacementMagnitude * sargassumEntanglementSpring * tension * springRelief;
-            float dampingAccelerationMagnitude = velocityAlongSpring * sargassumEntanglementDamping * tension * dampingRelief;
+            float springAccelerationMagnitude = displacementMagnitude * ResolveSargassumNonNegative(sargassumEntanglementSpring, 0f) * tension * springRelief;
+            float dampingAccelerationMagnitude = velocityAlongSpring * ResolveSargassumNonNegative(sargassumEntanglementDamping, 0f) * tension * dampingRelief;
             float totalAccelerationMagnitude = springAccelerationMagnitude + dampingAccelerationMagnitude;
-            if (totalAccelerationMagnitude <= 0f)
+            if (!math.isfinite(totalAccelerationMagnitude) || totalAccelerationMagnitude <= 0f)
                 return;
 
-            ApplyClampedAccelerationForce(-springDirection * totalAccelerationMagnitude, sargassumEntanglementMaxAcceleration);
+            ApplyClampedAccelerationForce(-springDirection * totalAccelerationMagnitude, ResolveSargassumNonNegative(sargassumEntanglementMaxAcceleration, 18f));
 
             float escapeIntent01 = ResolveSargassumEscapeIntent01(propulsion01);
             float strain01 = math.saturate(tension * escapeIntent01);
-            if (strain01 >= sargassumEntanglementStrainThreshold)
+            float strainThreshold = math.isfinite(sargassumEntanglementStrainThreshold)
+                ? math.saturate(sargassumEntanglementStrainThreshold)
+                : 0.22f;
+            if (strain01 >= strainThreshold)
             {
                 SargassumGlobalDragManager.TryRaiseEntanglementStrain(
                     new SargassumGlobalDragManager.EntanglementStrainSignal
@@ -6538,9 +6623,96 @@ namespace Hecton8.Gameplay
                         AnchorWS = anchor,
                         Tension01 = tension,
                         EscapeIntent01 = escapeIntent01,
-                        Shake01 = math.saturate(strain01 * sargassumEntanglementCameraShakeScale)
+                        Shake01 = ResolveSargassum01(strain01 * ResolveSargassumNonNegative(sargassumEntanglementCameraShakeScale, 0.9f))
                     });
             }
+        }
+
+        private static float ResolveSargassumSpeedMultiplier(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, 0.1f, 1f) : 1f;
+        }
+
+        private static float ResolveSargassumDragMultiplier(float value)
+        {
+            return math.isfinite(value) ? math.max(1f, value) : 1f;
+        }
+
+        private static float ResolveSargassum01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float ResolveSargassumNonNegative(float value, float fallback)
+        {
+            float safeFallback = math.isfinite(fallback) ? math.max(0f, fallback) : 0f;
+            return math.isfinite(value) ? math.max(0f, value) : safeFallback;
+        }
+
+        private static float ResolveSargassumPositive(float value, float fallback)
+        {
+            float safeFallback = math.isfinite(fallback) ? math.max(0.0001f, fallback) : 0.0001f;
+            return math.isfinite(value) ? math.max(0.0001f, value) : safeFallback;
+        }
+
+        private static AbyssalThermalManager.ThermalFlowSample SanitizeAbyssalThermalSample(
+            AbyssalThermalManager.ThermalFlowSample sample,
+            Vector3 fallbackAnchor)
+        {
+            if (!IsFiniteVector(sample.FlowVelocityWS))
+                sample.FlowVelocityWS = Vector3.zero;
+            sample.Heat01 = ResolveAbyssalCable01(sample.Heat01);
+            sample.DragMultiplier = ResolveAbyssalCableDragMultiplier(sample.DragMultiplier);
+            if (sample.HasFlow == 0 || sample.FlowVelocityWS.sqrMagnitude <= 0.00000001f)
+                sample.HasFlow = 0;
+            else
+                sample.HasFlow = 1;
+
+            if (!IsFiniteVector(sample.CableAnchorWS))
+                sample.CableAnchorWS = IsFiniteVector(fallbackAnchor) ? fallbackAnchor : Vector3.zero;
+            sample.CableCutProgress01 = ResolveAbyssalCable01(sample.CableCutProgress01);
+            sample.CableEscapeSuppression01 = ResolveAbyssalCableSuppression01(sample.CableEscapeSuppression01);
+            sample.CableTension01 = ResolveAbyssalCable01(sample.CableTension01);
+            if (sample.IsCableZone == 0 || sample.CableTension01 <= 0.0001f)
+            {
+                sample.IsCableZone = 0;
+                sample.CableTension01 = 0f;
+                sample.CableEscapeSuppression01 = 1f;
+                sample.CableCutProgress01 = math.max(0f, sample.CableCutProgress01);
+            }
+            else
+            {
+                sample.IsCableZone = 1;
+            }
+
+            return sample;
+        }
+
+        private static float ResolveAbyssalCableDragMultiplier(float value)
+        {
+            return math.isfinite(value) ? math.max(1f, value) : 1f;
+        }
+
+        private static float ResolveAbyssalCable01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float ResolveAbyssalCableSuppression01(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, 0.25f, 1f) : 1f;
+        }
+
+        private static float ResolveAbyssalCableNonNegative(float value, float fallback)
+        {
+            float safeFallback = math.isfinite(fallback) ? math.max(0f, fallback) : 0f;
+            return math.isfinite(value) ? math.max(0f, value) : safeFallback;
+        }
+
+        private static float ResolveAbyssalCablePositive(float value, float fallback)
+        {
+            float safeFallback = math.isfinite(fallback) ? math.max(0.0001f, fallback) : 0.0001f;
+            return math.isfinite(value) ? math.max(0.0001f, value) : safeFallback;
         }
 
         private void ApplyAbyssalCableEntanglementForce(PlayerTransportPreset transportPreset)
@@ -6548,60 +6720,83 @@ namespace Hecton8.Gameplay
             if (_abyssalThermalFlowSample.IsCableZone == 0)
                 return;
 
-            float tension = _abyssalThermalFlowSample.CableTension01;
+            _abyssalThermalFlowSample = SanitizeAbyssalThermalSample(_abyssalThermalFlowSample, ResolvePlayerAupRuntimePosition());
+            float tension = ResolveAbyssalCable01(_abyssalThermalFlowSample.CableTension01);
             if (tension <= 0.0001f)
                 return;
 
             Vector3 playerPosition = ResolvePlayerAupRuntimePosition();
             Vector3 anchor = _abyssalThermalFlowSample.CableAnchorWS;
+            if (!IsFiniteVector(playerPosition) || !IsFiniteVector(anchor))
+                return;
+
             Vector3 displacement = playerPosition - anchor;
-            displacement.y *= abyssalCableEntanglementVerticalInfluence;
+            displacement.y *= ResolveAbyssalCable01(abyssalCableEntanglementVerticalInfluence);
             float displacementSqr = displacement.sqrMagnitude;
-            if (displacementSqr <= 0.00000001f)
+            if (!math.isfinite(displacementSqr) || displacementSqr <= 0.00000001f)
                 return;
 
             float inverseDisplacementMagnitude = math.rsqrt(math.max(displacementSqr, 0.000001f));
             float displacementMagnitude = displacementSqr * inverseDisplacementMagnitude;
             Vector3 springDirection = displacement * inverseDisplacementMagnitude;
             float velocityAlongSpring = DotVector(ResolveAuthoritativeLinearVelocity(Vector3.zero), springDirection);
+            if (!math.isfinite(velocityAlongSpring))
+                velocityAlongSpring = 0f;
+
             float propulsionReference = ResolveActiveTransportPropulsionReference(transportPreset);
             float propulsionForce = ResolveActiveTransportPropulsionForce();
             float propulsion01 = propulsionReference > 0f
                 ? math.saturate(propulsionForce / propulsionReference)
                 : 0f;
             float cutReleaseT = ResolveAbyssalCableCutRelease01(_abyssalThermalFlowSample.CableCutProgress01);
-            float springRelief = math.lerp(1f, 1f - abyssalCablePropulsionReliefAtFullCut, propulsion01 * cutReleaseT);
+            float reliefAtFullCut = ResolveAbyssalCable01(abyssalCablePropulsionReliefAtFullCut);
+            float springRelief = math.lerp(1f, 1f - reliefAtFullCut, propulsion01 * cutReleaseT);
             float dampingRelief = math.lerp(1f, 0.82f, propulsion01 * cutReleaseT);
-            float suppression = math.max(0.25f, _abyssalThermalFlowSample.CableEscapeSuppression01);
-            float springAccelerationMagnitude = displacementMagnitude * abyssalCableEntanglementSpring * tension * suppression * springRelief;
-            float dampingAccelerationMagnitude = velocityAlongSpring * abyssalCableEntanglementDamping * tension * suppression * dampingRelief;
+            float suppression = ResolveAbyssalCableSuppression01(_abyssalThermalFlowSample.CableEscapeSuppression01);
+            float springAccelerationMagnitude =
+                displacementMagnitude *
+                ResolveAbyssalCableNonNegative(abyssalCableEntanglementSpring, 28f) *
+                tension *
+                suppression *
+                springRelief;
+            float dampingAccelerationMagnitude =
+                velocityAlongSpring *
+                ResolveAbyssalCableNonNegative(abyssalCableEntanglementDamping, 9.5f) *
+                tension *
+                suppression *
+                dampingRelief;
             float totalAccelerationMagnitude = springAccelerationMagnitude + dampingAccelerationMagnitude;
-            if (totalAccelerationMagnitude <= 0f)
+            if (!math.isfinite(totalAccelerationMagnitude) || totalAccelerationMagnitude <= 0f)
                 return;
 
-            ApplyClampedAccelerationForce(-springDirection * totalAccelerationMagnitude, abyssalCableEntanglementMaxAcceleration);
+            ApplyClampedAccelerationForce(-springDirection * totalAccelerationMagnitude, ResolveAbyssalCableNonNegative(abyssalCableEntanglementMaxAcceleration, 26f));
         }
 
         private float ResolveAbyssalCableCutRelease01(float cableCutProgress01)
         {
-            if (cableCutProgress01 <= abyssalCableCutReleaseThreshold)
+            float cutProgress = ResolveAbyssalCable01(cableCutProgress01);
+            float threshold = ResolveAbyssalCable01(abyssalCableCutReleaseThreshold);
+            if (cutProgress <= threshold)
                 return 0f;
 
             return math.saturate(
-                (cableCutProgress01 - abyssalCableCutReleaseThreshold) /
-                math.max(1f - abyssalCableCutReleaseThreshold, 0.0001f));
+                (cutProgress - threshold) /
+                math.max(1f - threshold, 0.0001f));
         }
 
         private float ResolveSargassumEscapeIntent01(float propulsion01)
         {
-            float planarInputMagnitude = math.saturate(ApproximatePlanarMagnitude(_inputH, _inputV));
-            float verticalInputMagnitude = math.abs(_inputVertical);
-            float inputIntent = math.max(planarInputMagnitude, verticalInputMagnitude * 0.75f);
-            float escapeIntent = math.max(inputIntent, propulsion01);
-            if (escapeIntent <= sargassumEscapeInputThreshold)
+            float planarInputMagnitude = ResolveSargassum01(ApproximatePlanarMagnitude(_inputH, _inputV));
+            float verticalInputMagnitude = math.isfinite(_inputVertical) ? math.abs(_inputVertical) : 0f;
+            float inputIntent = math.max(planarInputMagnitude, ResolveSargassum01(verticalInputMagnitude * 0.75f));
+            float escapeIntent = math.max(inputIntent, ResolveSargassum01(propulsion01));
+            float escapeThreshold = math.isfinite(sargassumEscapeInputThreshold)
+                ? math.saturate(sargassumEscapeInputThreshold)
+                : 0.2f;
+            if (escapeIntent <= escapeThreshold)
                 return 0f;
 
-            return math.saturate((escapeIntent - sargassumEscapeInputThreshold) / math.max(1f - sargassumEscapeInputThreshold, 0.0001f));
+            return math.saturate((escapeIntent - escapeThreshold) / math.max(1f - escapeThreshold, 0.0001f));
         }
 
         void ISargassumGlobalDragEventListener.OnSargassumEntanglementStrain(in SargassumGlobalDragManager.EntanglementStrainSignal signal)
@@ -6618,17 +6813,20 @@ namespace Hecton8.Gameplay
             if (signal.SourceInstanceId != _instanceId)
                 return;
 
-            float shakeIntensity = signal.Shake01;
-            if (shakeIntensity >= sargassumHighStrainThreshold)
+            float shakeIntensity = ResolveSargassum01(signal.Shake01);
+            float highStrainThreshold = math.isfinite(sargassumHighStrainThreshold)
+                ? math.saturate(sargassumHighStrainThreshold)
+                : 0.5f;
+            if (shakeIntensity >= highStrainThreshold)
             {
-                float highStrainDenominator = math.max(1f - sargassumHighStrainThreshold, 0.0001f);
-                float highStrainT = math.saturate((shakeIntensity - sargassumHighStrainThreshold) / highStrainDenominator);
-                _sargassumHighStrainIntensity = math.max(_sargassumHighStrainIntensity, highStrainT);
-                _sargassumHighStrainTimer = sargassumHighStrainHoldTime;
-                shakeIntensity *= math.lerp(1f, sargassumHighStrainShakeBoost, highStrainT);
+                float highStrainDenominator = math.max(1f - highStrainThreshold, 0.0001f);
+                float highStrainT = math.saturate((shakeIntensity - highStrainThreshold) / highStrainDenominator);
+                _sargassumHighStrainIntensity = math.max(ResolveSargassum01(_sargassumHighStrainIntensity), highStrainT);
+                _sargassumHighStrainTimer = ResolveSargassumNonNegative(sargassumHighStrainHoldTime, 0.18f);
+                shakeIntensity *= math.lerp(1f, math.max(1f, ResolveSargassumPositive(sargassumHighStrainShakeBoost, 1.75f)), highStrainT);
             }
 
-            QueueCameraEntanglementStrain(math.saturate(shakeIntensity));
+            QueueCameraEntanglementStrain(ResolveSargassum01(shakeIntensity));
 
             TryPlaySargassumEntanglementAudio(signal);
         }
@@ -6646,7 +6844,9 @@ namespace Hecton8.Gameplay
         private void TryPlaySargassumEntanglementAudio(SargassumGlobalDragManager.EntanglementStrainSignal signal)
         {
             float now = ResolveSargassumInfluenceClockSeconds();
-            if (signal.Shake01 <= 0.0001f || now < _nextSargassumEntanglementAudioTime)
+            float shake01 = ResolveSargassum01(signal.Shake01);
+            float nextAudioTime = math.isfinite(_nextSargassumEntanglementAudioTime) ? _nextSargassumEntanglementAudioTime : 0f;
+            if (shake01 <= 0.0001f || now < nextAudioTime)
                 return;
 
             AudioClip clip = sargassumEntanglementStrainClip != null
@@ -6655,10 +6855,10 @@ namespace Hecton8.Gameplay
             if (clip == null)
                 return;
 
-            float volume = math.lerp(0.12f, 0.42f, signal.Shake01);
-            float pitch = math.lerp(0.72f, 0.94f, signal.EscapeIntent01);
+            float volume = math.lerp(0.12f, 0.42f, shake01);
+            float pitch = math.lerp(0.72f, 0.94f, ResolveSargassum01(signal.EscapeIntent01));
             if (QueuePresentationAudioAtPoint(clip, signal.PositionWS, volume, pitch))
-                _nextSargassumEntanglementAudioTime = now + sargassumEntanglementAudioCooldown;
+                _nextSargassumEntanglementAudioTime = now + math.max(0.05f, ResolveSargassumPositive(sargassumEntanglementAudioCooldown, 0.24f));
         }
 
         private void AdvanceSargassumInfluenceClock(float fixedDeltaTime)
@@ -6674,24 +6874,33 @@ namespace Hecton8.Gameplay
 
         private void AdvanceExternalEnvironmentalDrag(float fixedDeltaTime)
         {
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
             if (_externalEnvironmentalDragRequestedThisStep)
             {
+                _externalEnvironmentalDragRequestedMultiplier = ResolveSargassumDragMultiplier(_externalEnvironmentalDragRequestedMultiplier);
                 if (_externalEnvironmentalDragRequestedMultiplier > 1f)
-                    _externalEnvironmentalDragHoldTimer = externalEnvironmentalDragHoldTime;
+                    _externalEnvironmentalDragHoldTimer = ResolveSargassumNonNegative(externalEnvironmentalDragHoldTime, 0f);
             }
             else if (_externalEnvironmentalDragHoldTimer > 0f)
             {
-                _externalEnvironmentalDragHoldTimer -= fixedDeltaTime;
+                _externalEnvironmentalDragHoldTimer -= safeFixedDeltaTime;
                 if (_externalEnvironmentalDragHoldTimer < 0f)
                     _externalEnvironmentalDragHoldTimer = 0f;
+            }
+            else if (!math.isfinite(_externalEnvironmentalDragHoldTimer))
+            {
+                _externalEnvironmentalDragHoldTimer = 0f;
             }
 
             float targetDragMultiplier =
                 _externalEnvironmentalDragRequestedThisStep || _externalEnvironmentalDragHoldTimer > 0f
-                    ? math.max(1f, _externalEnvironmentalDragRequestedMultiplier)
+                    ? ResolveSargassumDragMultiplier(_externalEnvironmentalDragRequestedMultiplier)
                     : 1f;
-            float blendT = ResolveLinearBlendT(math.max(externalEnvironmentalDragBlendSpeed, 0.01f), fixedDeltaTime);
-            _externalEnvironmentalDragCurrentMultiplier = math.lerp(_externalEnvironmentalDragCurrentMultiplier, targetDragMultiplier, blendT);
+            float blendT = ResolveLinearBlendT(math.max(0.01f, ResolveSargassumPositive(externalEnvironmentalDragBlendSpeed, 9f)), safeFixedDeltaTime);
+            _externalEnvironmentalDragCurrentMultiplier = math.lerp(
+                ResolveSargassumDragMultiplier(_externalEnvironmentalDragCurrentMultiplier),
+                targetDragMultiplier,
+                blendT);
 
             _externalEnvironmentalDragRequestedMultiplier = 1f;
             _externalEnvironmentalDragRequestedThisStep = false;
@@ -6699,12 +6908,12 @@ namespace Hecton8.Gameplay
 
         private float ResolveExternalEnvironmentalDragMultiplier()
         {
-            float multiplier = math.max(1f, _externalEnvironmentalDragCurrentMultiplier);
+            float multiplier = ResolveSargassumDragMultiplier(_externalEnvironmentalDragCurrentMultiplier);
             multiplier = math.max(
                 multiplier,
                 PlayerSwimMotor.ResolveBrineViscosityDragMultiplier(
                     IsSubmergedInGeneratedBrine(),
-                    brineViscosityDragMultiplier));
+                    ResolveSargassumDragMultiplier(brineViscosityDragMultiplier)));
 
             return multiplier;
         }
@@ -7160,20 +7369,19 @@ namespace Hecton8.Gameplay
             const float ProviderMismatchRejectMeters = 128f;
 
             ITerrainProvider terrainProvider = _terrainProviderRuntime;
-            float terrainWaterSurface = waterSurfaceY;
+            float serializedFallbackWaterSurface = ResolveSerializedFallbackWaterSurfaceY();
+            float terrainWaterSurface = serializedFallbackWaterSurface;
             bool hasTerrainWaterSurface = false;
-            if (terrainProvider != null && math.isfinite(terrainProvider.WaterSurfaceLevel))
+            if (terrainProvider != null && TryResolveWaterSurfaceY(terrainProvider.WaterSurfaceLevel, out float terrainProviderWaterSurface))
             {
-                terrainWaterSurface = terrainProvider.WaterSurfaceLevel;
+                terrainWaterSurface = terrainProviderWaterSurface;
                 hasTerrainWaterSurface = true;
             }
 
             IFluidSurfaceCurrentReadModel fluidSurface = _fluidSurfaceRuntime;
-            if (fluidSurface != null && math.isfinite(fluidSurface.WaterLevel))
+            if (fluidSurface != null && TryResolveWaterSurfaceY(fluidSurface.WaterLevel, out float fluidWaterSurface))
             {
-                float fluidWaterSurface = fluidSurface.WaterLevel;
-                if (!hasTerrainWaterSurface ||
-                    math.abs(fluidWaterSurface - terrainWaterSurface) <= ProviderMismatchRejectMeters)
+                if (math.abs(fluidWaterSurface - terrainWaterSurface) <= ProviderMismatchRejectMeters)
                 {
                     return fluidWaterSurface;
                 }
@@ -7181,10 +7389,32 @@ namespace Hecton8.Gameplay
 
             if (hasTerrainWaterSurface)
             {
-                return fluidSurface.WaterLevel;
+                return terrainWaterSurface;
             }
 
-            return waterSurfaceY;
+            return serializedFallbackWaterSurface;
+        }
+
+        private float ResolveSerializedFallbackWaterSurfaceY()
+        {
+            if (TryResolveWaterSurfaceY(waterSurfaceY, out float safeWaterSurfaceY))
+                return safeWaterSurfaceY;
+
+            return DefaultWaterSurfaceY;
+        }
+
+        private static bool TryResolveWaterSurfaceY(float candidateWaterSurfaceY, out float waterSurfaceY)
+        {
+            if (math.isfinite(candidateWaterSurfaceY) &&
+                math.abs(candidateWaterSurfaceY) > 0.0001f &&
+                math.abs(candidateWaterSurfaceY) <= 1000f)
+            {
+                waterSurfaceY = candidateWaterSurfaceY;
+                return true;
+            }
+
+            waterSurfaceY = DefaultWaterSurfaceY;
+            return false;
         }
 
         private float ResolveOceanSeaLevel(PhysicsOceanKinematics oceanKinematics)
@@ -10931,12 +11161,42 @@ namespace Hecton8.Gameplay
                     "PRESSURE LIMIT EXCEEDED".AsSpan())
                 : "PRESSURE LIMIT EXCEEDED".AsSpan();
 
-            NotificationEvents.TryPushCritical(message);
+            TryPushFatalPressureNotification(message);
+        }
+
+        private void TryPushFatalPressureNotification(ReadOnlySpan<char> message)
+        {
+            if (NotificationEvents.TryPushCritical(message))
+                return;
+
+            ReportFatalPressureNotificationMiss();
+        }
+
+        private void ReportFatalPressureNotificationMiss()
+        {
+            _fatalPressureNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _fatalPressureNotificationMissWarningHash,
+                _fatalPressureNotificationContextHash,
+                math.max(1, _fatalPressureNotificationMissCount));
+        }
+
+        private void ClearFatalPressureNotificationDiagnostics()
+        {
+            _fatalPressureNotificationMissCount = 0;
         }
 
         private void TriggerFatalPressureImplosion()
         {
             _fatalPressureRearmTimer = math.max(wipeoutDuration, fatalPressureSequenceDuration);
+            Vector3 runtimePosition = ResolvePlayerAupRuntimePosition();
+            FatalPressureImplosionEvent implosionEvent = new FatalPressureImplosionEvent(
+                _fatalPressureImplosionSourceHash,
+                -1,
+                0f,
+                runtimePosition);
+            FatalPressureImplosionEvents.TryNotify(in implosionEvent);
+
             IPlayerTransportLifecycleOwner transportLifecycleOwner = null;
             ResolvePlayerTransportCoordinator();
             if (_playerTransportCoordinator != null && _playerTransportCoordinator.IsTransportActive())
@@ -10945,7 +11205,7 @@ namespace Hecton8.Gameplay
             StartWipeout(
                 1f,
                 ResolveBailoutSpeed(),
-                ResolvePlayerAupRuntimePosition(),
+                runtimePosition,
                 Vector3.up,
                 transportLifecycleOwner,
                 transportLifecycleOwner != null,
@@ -11274,7 +11534,9 @@ namespace Hecton8.Gameplay
                 SourceId = PlayerSignalSourceId,
                 Frame = SystemDispatcher.CurrentFrameId,
                 Intensity01 = safeIntensity,
-                SurfaceY = math.isfinite(surfaceY) ? surfaceY : 0f,
+                SurfaceY = TryResolveWaterSurfaceY(surfaceY, out float resolvedSurfaceY)
+                    ? resolvedSurfaceY
+                    : DefaultWaterSurfaceY,
                 VerticalSpeed = math.isfinite(verticalSpeed) ? math.max(0f, verticalSpeed) : 0f,
                 IsSubmerged = (byte)(isSubmerged ? 1 : 0),
                 Flags = 0
@@ -11900,11 +12162,15 @@ namespace Hecton8.Gameplay
             float diveIntentScale = HasCommittedSurfaceDive(transportPreset)
                 ? 0.18f
                 : math.lerp(1f, 0.72f, diveCommitT);
-            float sargassumSupportScale = math.lerp(1f, sargassumMatSurfaceLockBoost, _sargassumMatBuoyancyBlend);
+            float sargassumMatBlend = ResolveSargassum01(_sargassumMatBuoyancyBlend);
+            float sargassumSupportScale = math.lerp(
+                1f,
+                math.max(1f, ResolveSargassumPositive(sargassumMatSurfaceLockBoost, 1.4f)),
+                sargassumMatBlend);
             float effectiveLockScale = _shoreBuoyancyBlend * surfaceLockInfluenceScale * _surfaceLockBlend * diveIntentScale * sargassumSupportScale;
             if (effectiveLockScale <= 0.001f) return;
 
-            float targetSurfaceLockY = _surfaceLockTargetY + sargassumMatSurfaceLiftOffset * _sargassumMatBuoyancyBlend;
+            float targetSurfaceLockY = _surfaceLockTargetY + ResolveSargassumNonNegative(sargassumMatSurfaceLiftOffset, 0.16f) * sargassumMatBlend;
             float positionError = ResolveBodyRuntimePosition().y - targetSurfaceLockY;
             float effectiveSurfaceLockRange = math.max(suit.surfaceLockRange, math.abs(surfaceStickOffset) + surfaceBreachDepthWindow);
             positionError = math.clamp(positionError, -effectiveSurfaceLockRange, effectiveSurfaceLockRange);
@@ -13273,43 +13539,58 @@ namespace Hecton8.Gameplay
 
         private void ApplySargassumRestRecovery(float fixedDeltaTime)
         {
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
+            float fieldDensity01 = ResolveSargassum01(_sargassumFieldDensity01);
+            float matBuoyancyBlend = ResolveSargassum01(_sargassumMatBuoyancyBlend);
+            float restDensityThreshold = math.isfinite(sargassumRestDensityThreshold)
+                ? math.saturate(sargassumRestDensityThreshold)
+                : 0.9f;
             float targetBlend = 0f;
             if (_survivalSystem != null &&
-                fixedDeltaTime > 0f &&
+                safeFixedDeltaTime > 0f &&
                 !IsInDryInterior() &&
                 _isSurfaceSwimming &&
                 _wipeoutTimer <= 0f &&
-                _sargassumFieldDensity01 > sargassumRestDensityThreshold &&
-                _sargassumMatBuoyancyBlend > 0.05f)
+                fieldDensity01 > restDensityThreshold &&
+                matBuoyancyBlend > 0.05f)
             {
-                float densityRange = math.max(1f - sargassumRestDensityThreshold, 0.0001f);
-                float densityT = math.saturate((_sargassumFieldDensity01 - sargassumRestDensityThreshold) / densityRange);
-                float maxRestSpeed = math.max(sargassumRestMaxSpeed, 0.01f);
+                float densityRange = math.max(1f - restDensityThreshold, 0.0001f);
+                float densityT = math.saturate((fieldDensity01 - restDensityThreshold) / densityRange);
+                float maxRestSpeed = math.max(0.01f, ResolveSargassumPositive(sargassumRestMaxSpeed, 0.4f));
                 float speedSq = ResolveAuthoritativeLinearVelocity(Vector3.zero).sqrMagnitude;
+                if (!math.isfinite(speedSq))
+                    speedSq = 0f;
+
                 float stillnessT = 1f - math.saturate(speedSq / (maxRestSpeed * maxRestSpeed));
-                float absInputH = math.abs(_inputH);
-                float absInputV = math.abs(_inputV);
+                float absInputH = math.isfinite(_inputH) ? math.abs(_inputH) : 0f;
+                float absInputV = math.isfinite(_inputV) ? math.abs(_inputV) : 0f;
                 float planarInputIntent = math.max(absInputH, absInputV) + (0.375f * math.min(absInputH, absInputV));
-                float inputIntent = math.max(planarInputIntent, math.abs(_inputVertical));
-                float inputCalmT = 1f - math.saturate(inputIntent / math.max(sargassumRestMaxInputIntent, 0.01f));
-                float headDepth = GetHeadDepthBelowSurface(EffectiveWaterSurfaceY);
-                float breathingT = 1f - math.saturate(headDepth / math.max(sargassumRestMaxHeadDepth, 0.0001f));
-                targetBlend = densityT * stillnessT * inputCalmT * breathingT * _sargassumMatBuoyancyBlend;
+                float inputIntent = math.max(planarInputIntent, math.isfinite(_inputVertical) ? math.abs(_inputVertical) : 0f);
+                float inputCalmT = 1f - math.saturate(inputIntent / math.max(0.01f, ResolveSargassumPositive(sargassumRestMaxInputIntent, 0.18f)));
+                float headDepth = ResolveSargassumNonNegative(GetHeadDepthBelowSurface(EffectiveWaterSurfaceY), 0f);
+                float breathingT = 1f - math.saturate(headDepth / math.max(0.0001f, ResolveSargassumPositive(sargassumRestMaxHeadDepth, 0.03f)));
+                targetBlend = densityT * stillnessT * inputCalmT * breathingT * matBuoyancyBlend;
             }
 
-            float blendT = ResolveLinearBlendT(math.max(sargassumRestBlendSharpness, 0.01f), fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(0.01f, ResolveSargassumPositive(sargassumRestBlendSharpness, 6f)), safeFixedDeltaTime);
             _sargassumRestRecoveryBlend = math.lerp(_sargassumRestRecoveryBlend, targetBlend, blendT);
+            _sargassumRestRecoveryBlend = ResolveSargassum01(_sargassumRestRecoveryBlend);
             if (_sargassumRestRecoveryBlend <= 0.001f)
             {
                 _sargassumRestRecoveryBlend = 0f;
                 return;
             }
 
-            if (sargassumRestOxygenRestorePerSecond > 0f)
-                _survivalSystem.RefillOxygen(sargassumRestOxygenRestorePerSecond * _sargassumRestRecoveryBlend * fixedDeltaTime);
+            if (_survivalSystem == null)
+                return;
 
-            if (sargassumRestEnergyRestorePerSecond > 0f)
-                _survivalSystem.RechargeEnergy(sargassumRestEnergyRestorePerSecond * _sargassumRestRecoveryBlend * fixedDeltaTime);
+            float oxygenRestorePerSecond = ResolveSargassumNonNegative(sargassumRestOxygenRestorePerSecond, 8f);
+            if (oxygenRestorePerSecond > 0f)
+                _survivalSystem.RefillOxygen(oxygenRestorePerSecond * _sargassumRestRecoveryBlend * safeFixedDeltaTime);
+
+            float energyRestorePerSecond = ResolveSargassumNonNegative(sargassumRestEnergyRestorePerSecond, 1.35f);
+            if (energyRestorePerSecond > 0f)
+                _survivalSystem.RechargeEnergy(energyRestorePerSecond * _sargassumRestRecoveryBlend * safeFixedDeltaTime);
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -13807,7 +14088,7 @@ namespace Hecton8.Gameplay
             _debugFovOffset = _juiceOutput.fovOffset;
             _debugSplashThisFrame = _juiceProcessor != null && _juiceProcessor.SplashThisFrame;
             _debugExhaleThisFrame = _juiceProcessor != null && _juiceProcessor.ExhaleThisFrame;
-            _debugIsSubmerged = _juiceProcessor != null && _juiceProcessor.IsSubmerged;
+            _debugIsSubmerged = IsPlayerSubmerged;
             _debugHeavyCarryActive = IsHeavyCarryActive();
             _debugHeavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
             _debugHeavyCarrySpeedMultiplier = ResolveHeavyCarrySpeedMultiplier();
@@ -13815,8 +14096,8 @@ namespace Hecton8.Gameplay
             _debugSargassumDragMultiplier = ResolveSargassumDragMultiplier();
             _debugSargassumEntangled = _sargassumMovementInfluence != null && _sargassumMovementInfluence.Entanglement01 > 0.01f;
             _debugSargassumEntanglement01 = _sargassumMovementInfluence != null ? _sargassumMovementInfluence.Entanglement01 : 0f;
-            _debugSargassumFieldDensity01 = _sargassumFieldDensity01;
-            _debugSargassumMatBuoyancy01 = _sargassumMatBuoyancyBlend;
+            _debugSargassumFieldDensity01 = ResolveSargassum01(_sargassumFieldDensity01);
+            _debugSargassumMatBuoyancy01 = ResolveSargassum01(_sargassumMatBuoyancyBlend);
             if (_sargassumMovementInfluence == null)
                 _debugSargassumEntanglementDragRequest = 1f;
             _debugExternalEnvironmentalDragMultiplier = ResolveExternalEnvironmentalDragMultiplier();
@@ -14162,6 +14443,9 @@ namespace Hecton8.Gameplay
             if (abyssalCableEntanglementMaxAcceleration > 120f) abyssalCableEntanglementMaxAcceleration = 120f;
             if (abyssalCableEntanglementVerticalInfluence < 0f) abyssalCableEntanglementVerticalInfluence = 0f;
             if (abyssalCableEntanglementVerticalInfluence > 1f) abyssalCableEntanglementVerticalInfluence = 1f;
+            if (!math.isfinite(abyssalCableEntanglementMassReference)) abyssalCableEntanglementMassReference = 110f;
+            if (abyssalCableEntanglementMassReference < 40f) abyssalCableEntanglementMassReference = 40f;
+            if (abyssalCableEntanglementMassReference > 500f) abyssalCableEntanglementMassReference = 500f;
             if (abyssalCableEntanglementSwimEnvironmentalDrag < 0f) abyssalCableEntanglementSwimEnvironmentalDrag = 0f;
             if (abyssalCableEntanglementSwimEnvironmentalDrag > 5f) abyssalCableEntanglementSwimEnvironmentalDrag = 5f;
             if (abyssalCableEntanglementTransportEnvironmentalDrag < 0f) abyssalCableEntanglementTransportEnvironmentalDrag = 0f;

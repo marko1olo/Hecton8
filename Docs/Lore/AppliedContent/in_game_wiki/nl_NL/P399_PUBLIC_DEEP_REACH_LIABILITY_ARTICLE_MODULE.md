@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Deep Reach Liability Evidence"
+title: "Deep Reach-aansprakelijkheidsbewijs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Deep Reach Liability Evidence
+# Deep Reach-aansprakelijkheidsbewijs
 
-NL LOC HOLD: Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
+De liability van Deep Reach werkt omdat de vloed geen nepnatuurkunde nodig heeft. De Great Tide was echt. Voorkombare schade verschijnt in margins, klokken, access holds en records die arbeiders tot categorieën opschoonden voordat iemand kon worden geborgen.
 
 ## Scanner
 
-NL LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Liability-record. Echte getijdenfysica, geaccepteerd margin risk, evacuatievertraging, quarantine holds, Atlas weighting en opgeschoonde verliestaal komen samen in dezelfde bewijsketen.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+PUBLIEK ARCHIEFKNOOPPUNT // LIABILITY-BEWIJS. Great Tide geaccepteerd. Review open voor sensor margins, evacuation queue delay, quarantine holds, Atlas weighting, worker classification en loss conversion.
 
 ## Audio
 
-NL LOC HOLD: A disaster can be natural and still have signatures on it.
+Een ramp kan natuurlijk zijn en toch handtekeningen dragen.
 
 ## Field Note
 
-NL LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Marauder-notitie: discussieer niet met het getij. Discussieer met de handtekeningen ernaast.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/nl_NL. -->

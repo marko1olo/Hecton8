@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "קו ההשחרה של אגן Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# קו ההשחרה של אגן Atlas
 
-HE LOC HOLD: Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons.
+קו ההשחרה של אגן Atlas מסמן מה כיסוי ציבורי של Aegir רשאי לומר על ירחים, נתיבים ולחץ חילוץ, בזמן שהאגן החתום נשאר מחוץ למפות פתוחות.
 
 ## Scanner
 
-HE LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+אטלס הירחים הציבורי יכול לנקוב בסיכוני השמים; הוא אינו יכול להדפיס מה payload של אגן Atlas עושה.
 
 ## Terminal
 
-HE LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+השחרת ATLAS: דפי ירחים ציבוריים רשאים לרשום שמות, חלונות נתיב, סיכונים, salvage economy ועובדות אסון HECTON-8. השפעות payload, התנהגות basin receiver ותוצאות ההחלטה הסופית נשארות מאחורי שערים.
 
 ## Audio
 
-HE LOC HOLD: Publish the sky. Redact the bottom.
+פרסם את השמים. חתום את הקרקעית.
 
 ## Field Note
 
-HE LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+מעל העננים, הנתיב ציבורי. מתחת לאגן, לכל תשובה עדיין יש מנעול.
 
 <!-- External Site; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/he_IL. -->

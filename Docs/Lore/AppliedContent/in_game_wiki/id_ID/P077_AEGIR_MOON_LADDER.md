@@ -9,32 +9,34 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Moon Ladder"
+title: "Tangga Bulan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ladder
+# Tangga Bulan Aegir
 
-ID LOC HOLD: The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice and old depots; outer moons carry cold claims and dead beacons. HECTON-8 is not the innermost and not the farthest.
+Tangga bulan Aegir menjaga HECTON-8 di dalam sistem fisik. Bulan dalam menciptakan radiasi dan bahaya relai; bulan tengah menyimpan logam, es, buoy rute, dan depot tua; bulan luar membawa claims dingin dan beacon mati.
+
+HECTON-8 bukan bulan terdalam atau terjauh. Ia bulan yang masih membayar. Karena itu seluruh tangga terus menyentuh jendela penyelamatan, salvage law, dan rute sinyalnya.
 
 ## Scanner
 
-ID LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.
+Bagan tangga bulan. HECTON-8 adalah bahaya kerja dalam sistem bergerak, bukan level terisolasi.
 
 ## Terminal
 
-ID LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+BULAN UTAMA AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Model transfer dan eclipse terlampir.
 
 ## Audio
 
-ID LOC HOLD: The map has more moons than mercy.
+Peta memiliki lebih banyak bulan daripada belas kasihan.
 
 ## Field Note
 
-ID LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.
+Skarn membakar. Vela melepas es. Anvil memberi logam. Kestrel memotong relai. HECTON tenggelam.
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/id_ID. -->

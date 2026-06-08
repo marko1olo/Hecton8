@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "מאגר ההשבה של Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# מאגר ההשבה של Aegir
 
-HE LOC HOLD: The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.
+מאגר ההשבה של Aegir הוא מעטפת ה-salvage הציבורית מאחורי Black Keel. הוא מאפשר לרישיונות marauder קטנים להגיע ל-claims נטושים של Aegir בלי להחזיק carrier בין-פלנטרי פרטי. העסקה מועילה ורעילה יחד: אותו מאגר שיכול לשלוח טנדר גם מחליט אם מפעיל נושם, payload חתום, נעילת הסגר או חבילת ראיות שווים את ה-burn הבא.
 
 ## Scanner
 
-HE LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
+חותמת מאגר claim. Black Keel הוקצתה דרך חוב נתיב, לא ניתנה למפעיל.
 
 ## Terminal
 
-HE LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+AEGIR RECLAMATION POOL: הטנדר האוטונומי Black Keel הוקצה ל-claim הנטוש בלחץ HECTON-8. סיווג רווחת צוות: קבלן. סיווג custody של payload: עדיפות משתנה. חילוץ אדם נותר מותנה עד סגירת בוררות המאגר.
 
 ## Audio
 
-HE LOC HOLD: The pool owns the route. You only rent the answer.
+המאגר מחזיק בנתיב. אתה שוכר את התשובה בכך שאתה שורד מספיק זמן כדי לשאול.
 
 ## Field Note
 
-HE LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+מאגר משותף עושה חילוץ זול יותר, איטי יותר וקל יותר להכחשה לכל חותם.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/he_IL. -->

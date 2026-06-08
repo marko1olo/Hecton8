@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Relay Message Lag"
+spoiler_tier: 1
+title: "השהיית הודעות ממסר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# השהיית הודעות ממסר
 
-HE LOC HOLD: Relay Message Lag makes communication a route system, not a magic voice channel.
-
-## Scanner
-
-HE LOC HOLD: A message can be legally binding and still arrive too late to save air.
-
-## Terminal
-
-HE LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
-
-## Audio
-
-HE LOC HOLD: The reply is late. The lien is current.
-
-## Field Note
-
-HE LOC HOLD: No ansible means truth moves as freight.
+relay lag מאפשר ל-HECTON-8 לקבל סמכות בלי טיפול. packet יכול לשאת חוק, חוב, ownership או אזהרה במשך שעות, ימים או שנים, אבל הוא לא מביא ידיים לחדר מוצף. הפיצול הזה הוא לחץ התקשורת המרכזי: מערכות מרוחקות נשארות חזקות כי נכתבו מוקדם, הוכנסו לתור מוקדם ותומחרו לשרוד מרחק. חמלה מגיעה כאדם; חוזה מגיע כנתונים. הנתונים מנצחים לעיתים קרובות מדי.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/he_IL. -->

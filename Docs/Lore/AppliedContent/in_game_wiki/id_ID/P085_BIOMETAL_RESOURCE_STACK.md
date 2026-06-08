@@ -7,34 +7,34 @@ poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
 biome_tags: biome.factory_temple;biome.deep_abyss
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Tumpukan Sumber Daya Biometal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# Tumpukan Sumber Daya Biometal
 
-ID LOC HOLD: The resource stack prevents HECTON-8 from collapsing into one magic material. Xenon-Omega matters, but the moon also has metals, salts, vent chemistry, pressure ceramics, biofibers, photoproteins, salvage, and Atlas-altered biometal.
+Tumpukan sumber daya mencegah HECTON-8 menyusut menjadi satu bahan ajaib. Xenon-Omega penting, tetapi bulan juga punya logam, garam, kimia vent, keramik tekanan, biofiber, fotoprotein, salvage dan biometal yang diubah Atlas.
 
 ## Scanner
 
-ID LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
+Papan sumber daya. Blue debt di puncak, tetapi sisa bulan masih cukup menguntungkan untuk diperebutkan sampai mati.
 
 ## Terminal
 
-ID LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
+TUMPUKAN SUMBER DAYA HECTON-8: logam sulfida, garam, kantong gas mulia, keramik tekanan, katalis vent, biofiber, fotoprotein, salvage hardware, biometal yang diubah Atlas dan XO continuity substrate.
 
 ## Audio
 
-ID LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
+Satu bijih ajaib terlalu malas. HECTON-8 punya ekonomi penuh luka tekanan.
 
 ## Field Note
 
-ID LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+Jika setiap sampel berkata Xenon-Omega, dunia menjadi bodoh. Hitung alasan lain juga.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/id_ID. -->

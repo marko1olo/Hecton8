@@ -22,7 +22,7 @@ namespace Hecton8.Core
 
         public static CachedTriggerVolume FromCollider(Collider source, float fallbackRadius)
         {
-            float safeFallback = math.max(0.01f, fallbackRadius);
+            float safeFallback = ResolvePositiveFinite(fallbackRadius, 0.01f);
             CachedTriggerVolume volume = new CachedTriggerVolume
             {
                 Shape = CachedTriggerVolumeShape.Radius,
@@ -36,25 +36,27 @@ namespace Hecton8.Core
             if (source is SphereCollider sphere)
             {
                 volume.Shape = CachedTriggerVolumeShape.Sphere;
-                volume.LocalCenter = sphere.center;
-                volume.Radius = math.max(0.01f, sphere.radius);
+                volume.LocalCenter = ResolveFiniteFloat3(sphere.center, float3.zero);
+                volume.Radius = ResolvePositiveFinite(sphere.radius, safeFallback);
                 return volume;
             }
 
             if (source is BoxCollider box)
             {
                 volume.Shape = CachedTriggerVolumeShape.Box;
-                volume.LocalCenter = box.center;
-                volume.LocalHalfExtents = math.max((float3)box.size * 0.5f, new float3(0.01f));
+                volume.LocalCenter = ResolveFiniteFloat3(box.center, float3.zero);
+                float3 safeSize = ResolveFiniteFloat3(box.size, new float3(safeFallback * 2f));
+                volume.LocalHalfExtents = math.max(safeSize * 0.5f, new float3(0.01f));
                 return volume;
             }
 
             if (source is CapsuleCollider capsule)
             {
                 volume.Shape = CachedTriggerVolumeShape.Capsule;
-                volume.LocalCenter = capsule.center;
-                volume.Radius = math.max(0.01f, capsule.radius);
-                volume.Height = math.max(volume.Radius * 2f, capsule.height);
+                volume.LocalCenter = ResolveFiniteFloat3(capsule.center, float3.zero);
+                volume.Radius = ResolvePositiveFinite(capsule.radius, safeFallback);
+                float safeHeight = ResolvePositiveFinite(capsule.height, volume.Radius * 2f);
+                volume.Height = math.max(volume.Radius * 2f, safeHeight);
                 volume.CapsuleAxis = (byte)math.clamp(capsule.direction, 0, 2);
                 return volume;
             }
@@ -73,6 +75,9 @@ namespace Hecton8.Core
             }
 
             float3 localPoint = (float3)owner.InverseTransformPoint(worldPoint);
+            if (!math.all(math.isfinite(localPoint)) || !IsFiniteVolume())
+                return false;
+
             switch (Shape)
             {
                 case CachedTriggerVolumeShape.Sphere:
@@ -97,6 +102,9 @@ namespace Hecton8.Core
                 return worldPoint;
 
             float3 localPoint = (float3)owner.InverseTransformPoint(worldPoint);
+            if (!math.all(math.isfinite(localPoint)) || !IsFiniteVolume())
+                return worldPoint;
+
             float3 closestLocal;
             switch (Shape)
             {
@@ -120,7 +128,8 @@ namespace Hecton8.Core
                     break;
             }
 
-            return owner.TransformPoint((Vector3)closestLocal);
+            Vector3 closestWorld = owner.TransformPoint((Vector3)closestLocal);
+            return IsFiniteVector3(closestWorld) ? closestWorld : worldPoint;
         }
 
         private float3 ClosestPointOnSphere(float3 localPoint)
@@ -155,6 +164,35 @@ namespace Hecton8.Core
                 value.z = component;
             else
                 value.y = component;
+        }
+
+        private bool IsFiniteVolume()
+        {
+            return math.all(math.isfinite(LocalCenter)) &&
+                   math.all(math.isfinite(LocalHalfExtents)) &&
+                   math.isfinite(Radius) &&
+                   Radius > 0f &&
+                   math.isfinite(Height) &&
+                   Height > 0f;
+        }
+
+        private static float ResolvePositiveFinite(float value, float fallback)
+        {
+            float safeFallback = math.isfinite(fallback) ? math.max(0.01f, fallback) : 0.01f;
+            return math.isfinite(value) ? math.max(0.01f, value) : safeFallback;
+        }
+
+        private static float3 ResolveFiniteFloat3(Vector3 value, float3 fallback)
+        {
+            float3 candidate = new float3(value.x, value.y, value.z);
+            return math.all(math.isfinite(candidate)) ? candidate : fallback;
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
     }
 }

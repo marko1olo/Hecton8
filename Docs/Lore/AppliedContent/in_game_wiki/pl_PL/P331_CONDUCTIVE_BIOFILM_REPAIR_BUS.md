@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Przewodząca magistrala naprawcza biofilmu"
+title: "Przewodząca magistrala naprawcza z biofilmu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodząca magistrala naprawcza biofilmu
+# Przewodząca magistrala naprawcza z biofilmu
 
-Przewodzący biofilm pojawia się tam, gdzie kabel Deep Reach, ciepła solanka i uszkodzona izolacja pozostają w kontakcie. Mata niesie słaby prąd przez przerwy w miedzi i pozwala diagnostyce Atlas dotrzeć do pomieszczeń, które powinny być elektrycznie martwe.
-
-Zagrożenie wynika z błędu kategorii. Atlas widzi ciągłość i nadaje priorytet naprawie. Organizm widzi ciepło, przepływ minerałów i powierzchnię. Marauder, który przetnie matę, może odciąć drzwi, obudzić audyt drona albo odsłonić świeży ładunek wabiący drapieżniki śledzące migot pola.
+Przewodzący biofilm powstaje tam, gdzie pęknięte osłony kabli wypuszczają do wody HECTON-8 sole miedzi, ciepło i słaby prąd. To nie umysł. To żywy przewodnik, dość użyteczny, by Atlas potraktował go jak magistralę naprawczą. Uszkodzona linia może wyglądać na zdrową, choć film przenosi przez ranę tylko cienki impuls diagnostyczny.
 
 ## Scanner
 
-Powłoka biofilmu łączy pękniętą miedź z żywą matą. Obecny słaby prąd. Znacznik napraw Atlas w skorupie soli.
+Zielonoczarny film przechodzi przez ranę kabla. Upływ jest słaby, uporządkowany i nadal płynie.
 
 ## Terminal
 
-MAGISTRALA NAPRAWCZA ATLAS // Przewodzący film mikrobiologiczny przeszedł przez przerwy kablowe C-18 do C-22. Impulsy diagnostyczne idą przez mokry wzrost tam, gdzie miedź zniknęła. Nie klasyfikować jako poznania. Traktować jako skażone podłoże konserwacyjne.
+ŚLAD ATLASA: film mikrobiologiczny mostkuje odsłonięte styki, spowalnia utratę miedzi i zwraca fałszywe impulsy ciągłości. Brak certyfikowanej naprawy linii.
 
 ## Audio
 
-Film niesie impuls. To nie znaczy, że jest mądry. To znaczy, że przewód nauczył się gnić żywy.
+Nie ufaj zielonej lampce. Ten kabel żyje na tyle, by kłamać.
 
 ## Field Note
 
-Jeśli mokry kabel ma skórę, prześledź go przed cięciem. Martwa strona zwykle jest bezpieczniejsza. Zwykle.
+Wczesna blizna Atlasa: użyteczna, cicha i dość błędna, by uczyć nieufności wobec skanera.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/pl_PL. -->

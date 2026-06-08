@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Brine Vane Codex Card"
+title: "盐水叶片图鉴卡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Brine Vane Codex Card
+# 盐水叶片图鉴卡
 
-ZH LOC HOLD: Brine Vane Codex Card turns mid-depth flora into route-reading evidence.
+盐水叶片并不是舒适意义上的植物。它们是扁平的盐矿物膜，存活在盐水、压力和温度把边界变得足够锋利、像墙一样行动的地方。在峡谷里，它们把不可见的水体结构变成Marauder能用眼睛、sonar和浮力配平读取的东西。完整膜片通常表示另一侧密度更高，会弯折ping或把潜服拉出预期配平。撕裂口可能标记最近动物通过、水流损伤，或穿过层界的唯一弱窗口。卷曲尖端表示剪切正在松动。死条带脱落的浅色肋可以作为材料，但切割活膜可能抹掉让峡谷保持可读的路线标记。不要因为开放亮光看起来垂直就穿过去。保持一个叶片边缘在视野内，谨慎配平；任何没有可见叶片边界的地面回波，在另一项读数确认前都当成谎言。
 
 ## Scanner
 
-ZH LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+盐水叶片膜。固定在密度剪切上的盐矿物膜。完整边缘表示墙；撕裂口表示通道；没有叶片边界的黑水有假地面风险。
 
 ## Terminal
 
-ZH LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+样本 / 盐水叶片 / 作用: 密度墙标记、sonar弯折警告、脱落肋材料来源 / 安全读取: 完整膜片、下游撕裂口、卷曲剪切窗口尖端 / 拒绝: 切割活的路线膜、横穿开放亮光、相信假地面回波 / 路线备注: 采集脱落肋，不要采那片撑开地图的膜。
 
 ## Audio
 
-ZH LOC HOLD: The plant is not pointing up. It is pointing through.
+叶片不是指向上方。它在显示海水转向侧面的地方。
 
 ## Field Note
 
-ZH LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+完整膜：墙。撕裂口：可能路线。脱落肋：样本。活膜正在撑住通道：留下。
 
 <!-- In-Game Wiki; generated from P294_BRINE_VANE_CODEX_CARD/zh_CN. -->

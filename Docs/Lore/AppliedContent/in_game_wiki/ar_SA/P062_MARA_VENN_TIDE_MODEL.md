@@ -7,34 +7,34 @@ poi_tags: poi.tide_model_terminal;poi.glacier_warning
 biome_tags: biome.tide_gauge;biome.glacier_break
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "نموذج مد مارا فين"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# نموذج مد مارا فين
 
-AR LOC HOLD: Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.
+تعطي مارا فين Great Tide شاهدة علمية. ربط نموذجها هندسة أقمار Aegir وcryosphere shear وسعة الإخلاء في هامش قبيح واحد. لم يمح Deep Reach النموذج؛ غيّر تسمية الإجراء حتى صار التحذير رخيصا بما يكفي لتجاهله.
 
 ## Scanner
 
-AR LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
+لم تتنبأ مارا فين بجريمة قتل. تنبأت بهامش مد أعاد Deep Reach تسميته غير محتمل.
 
 ## Terminal
 
-AR LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
+مراجعة نموذج VENN: cryosphere shear يتجاوز هامش الإخلاء تحت هندسة ربيع Aegir؛ تم خفض review action إلى monitor بانتظار ميزانية asset-continuity.
 
 ## Audio
 
-AR LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
+لم يكن الماء مفاجئا لمن كانوا يقرأون الأرقام.
 
 ## Field Note
 
-AR LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+يصير التحذير رخيصا حين يخفضه أحدهم على الورق.
 
 <!-- In-Game Wiki; generated from P062_MARA_VENN_TIDE_MODEL/ar_SA. -->

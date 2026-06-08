@@ -8,33 +8,33 @@ biome_tags: biome.human_space;biome.publication
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "NL LOC HOLD: Ran/Aegir Distance Band"
+spoiler_tier: 1
+title: "Ran/Aegir-afstandsband"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Ran/Aegir Distance Band
+# Ran/Aegir-afstandsband
 
-NL LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.
+Het Aegir-systeem ligt in een bereikbare maar straffende no-FTL-band: dichtbij genoeg voor industrie, ver genoeg om verlatenheid te laten tellen.
 
 ## Scanner
 
-NL LOC HOLD: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+Publieke band: Ran/Aegir is een no-FTL-route van de tien-lichtjaar-klasse vanaf Sol.
 
 ## Terminal
 
-NL LOC HOLD: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+EFEMERIDENBAND: gebruik de tien-lichtjaar-klasse in publieke tekst tot hemelconstanten in tabellen zijn bevroren. Geen FTL-redding op deze route.
 
 ## Audio
 
-NL LOC HOLD: Ten light-years is close on a map and brutal for a contract.
+Tien lichtjaar is dichtbij op een kaart en bruut in een contract.
 
 ## Field Note
 
-NL LOC HOLD: Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
+Publiek astronomisch record: afstandsbanden en routekaarten zijn verklarende bereiken, geen finale efemeridenconstanten.
 
 <!-- External Site; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/nl_NL. -->

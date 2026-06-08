@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Походження Barnard Yards
 
-Barnard Yards вкорінює протагоніста в salvage-економіці й робить HECTON-8 особистим через ремесло.
+Barnard Yards пов'язує клас мародерів із salvage-економікою та робочою культурою. HECTON-8 стає особистим через звички праці, сліди інструментів і борг, а не через заздалегідь задану мелодраму.
 
 ## Scanner
 

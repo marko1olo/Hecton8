@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Vent Forge Field Process Guide"
+title: "벤트 포지 현장 공정 안내서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Vent Forge Field Process Guide
+# 벤트 포지 현장 공정 안내서
 
-KO LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.
+벤트 포지 현장 공정 안내서는 자원 가치를 현장 취급과 묶는다. 중요한 것은 무엇을 찾았는지만이 아니라 pressure와 cooling이 그것을 recovery까지 버티게 하는 방식이다.
 
 ## Scanner
 
-KO LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+vent-forge chemistry 활성. 품질은 표본의 광택이 아니라 pressure history, heat pulse, slow cooling을 따른다.
 
 ## Terminal
 
-KO LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: vent forges는 sulfides, noble-gas pockets, ceramics, sealant precursors를 익힌다. 표본이 heat, brine, pressure를 지난 경로가 이름보다 중요하다.
 
 ## Audio
 
-KO LOC HOLD: The vent did not make ore. It made a process you interrupted.
+vent는 광석을 만든 것이 아니다. 네가 중단한 공정을 만들었다.
 
 ## Field Note
 
-KO LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+새 lot를 곧장 찬물로 올리지 마라. vent가 anneal을 끝내게 둬라. 그러지 않으면 shell이 잔금 간다.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/ko_KR. -->

@@ -3,38 +3,22 @@ packet_id: P053_MARAUDER_GRAFFITI_MASKS
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
 unlock_id: unlock.first_marauder_graffiti_masks
-poi_tags: poi.graffiti_mask;poi.pressure_arrow
-biome_tags: biome.scrap_canyon;biome.marauder_route
+poi_tags: poi.graffiti_mask;poi.scavenger_route
+biome_tags: biome.service_corridor;biome.salvage_route
 locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Graffiti Masks"
+title: "Máscaras de grafiti merodeador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Marauder Graffiti Masks
+# Máscaras de grafiti merodeador
 
-ES LOC HOLD: Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism.
-
-## Scanner
-
-ES LOC HOLD: The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
-
-## Terminal
-
-ES LOC HOLD: MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
-
-## Audio
-
-ES LOC HOLD: They made a language that looks like vandalism to the company.
-
-## Field Note
-
-ES LOC HOLD: Bad paint. Good map.
+Los merodeadores de HECTON-8 no son una facción anónima de asalto. Son trabajadores, corredores de deuda, contratistas abandonados y tripulaciones de salvamento que aprendieron a escribir en paredes porque todo canal limpio podía ser vigilado o cobrado. Su grafiti es feo a propósito: rápido para pintar bajo estrés, claro a través de condensación y lo bastante ambiguo para pasar por pánico o vandalismo. Un anillo negro no es decoración; significa que el portador puede oírte. Una flecha rota no es mal dibujo; significa que el corredor cambió desde el último paso seguro.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/es_ES. -->

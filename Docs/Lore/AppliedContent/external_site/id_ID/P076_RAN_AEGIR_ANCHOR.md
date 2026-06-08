@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ran / Aegir Anchor"
+title: "Jangkar Ran / Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ran / Aegir Anchor
+# Jangkar Ran / Aegir
 
-ID LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below.
+Jangkar Ran / Aegir menetapkan rasa visual HECTON-8: sinar keras fiksi ilmiah yang redup di atas, tekanan dan utang di bawah.
 
 ## Scanner
 
-ID LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
+Pelat bintang kelas K. Ran menyala normal. Aegir lebih redup dari Sol, tetapi gelap di sini datang dari kedalaman, cuaca, dan utang.
 
 ## Terminal
 
-ID LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR // Cahaya katai oranye mendukung kerja permukaan. Sebaran badai, geometri gerhana, dan kekeruhan laut menurunkan keterbacaan turun di bawah margin aman.
 
 ## Audio
 
-ID LOC HOLD: The star is not absent. It just cannot follow you down.
+Bintangnya ada. Ia hanya tidak bisa mengikutimu ke bawah.
 
 ## Field Note
 
-ID LOC HOLD: A real star is enough. The ocean does the rest.
+Satu bintang nyata sudah cukup. Laut melakukan sisanya.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/id_ID. -->

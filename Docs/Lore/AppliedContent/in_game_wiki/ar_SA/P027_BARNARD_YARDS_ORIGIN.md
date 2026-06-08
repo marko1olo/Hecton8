@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # أصل Barnard Yards
 
-Barnard Yards ثقافة تفكيك سفن وعتاد ضغط. تعطي اللاعب أصلا مهنيا مقنعا لا أصلا بطوليا.
+Barnard Yards ثقافة تفكيك سفن وعتاد ضغط: قواطع مستأجرة، ومشابك مرقعة، ومطالبات ميتة، وأدوات بقاء تعامل كعمل عادي. تمنح HECTON-8 أصلا مهنيا قريبا من الدين والعمل، لا رومانسية أرضية.
 
 ## Scanner
 

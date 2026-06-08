@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Cadena de deuda de relé
 
-La custodia de relé vuelve presión a la logística: la ayuda trae deuda, prioridades y autoridad corporativa.
+La custodia de relé convierte la logística espacial en presión. La ayuda puede llegar, pero la ruta que la trae también trae deuda, ganchos de prioridad y autoridad corporativa.
 
 ## Scanner
 

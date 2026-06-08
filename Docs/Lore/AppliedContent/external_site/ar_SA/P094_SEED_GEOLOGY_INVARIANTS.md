@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "ثوابت جيولوجيا البذرة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# ثوابت جيولوجيا البذرة
 
-AR LOC HOLD: Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure.
-
-## Scanner
-
-AR LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
-
-## Terminal
-
-AR LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
-
-## Audio
-
-AR LOC HOLD: New seed, same moon. Different wound.
-
-## Field Note
-
-AR LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+كل رحلة نهب على HECTON-8 قد تكشف طريقا مختلفا عبر الجرح. قد ينفتح واد مبكرا، أو تخفي شعاب كابلات جيبا آمنا، أو يدفع تفتح حيوانا إلى طريق بدا فارغا سابقا، أو يظهر تسلسل دليل بترتيب جديد. فيزياء القمر لا يعاد ضبطها للتسلية. أيغير يبقى النجم الأساسي. HECTON-8 يبقى في سلم مداره. Great Tide يحافظ على فاصلته. نطاقات العمق تبقى متراكبة بالترتيب القاسي نفسه. blue debt يحتفظ بسلوك الضغط. Atlas يبقى مربوطا بأعمق حوض.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/ar_SA. -->

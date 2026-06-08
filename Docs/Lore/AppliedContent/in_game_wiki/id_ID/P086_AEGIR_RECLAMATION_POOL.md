@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Pool Reklamasi Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Pool Reklamasi Aegir
 
-ID LOC HOLD: The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.
+Pool Reklamasi Aegir adalah cangkang salvage publik di balik Black Keel. Sistem ini memungkinkan lisensi marauder kecil mencapai klaim Aegir yang ditinggalkan tanpa memiliki carrier antaraplanet pribadi. Kesepakatan itu berguna sekaligus beracun: pool yang bisa mengirim tender juga memutuskan apakah operator bernapas, payload tersegel, kunci karantina, atau bundel bukti layak mendapat burn berikutnya.
 
 ## Scanner
 
-ID LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
+Stempel claim-pool. Black Keel ditugaskan oleh utang rute, bukan diberikan kepada operator.
 
 ## Terminal
 
-ID LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+AEGIR RECLAMATION POOL: tender otonom Black Keel ditugaskan ke klaim HECTON-8 yang terlantar di bawah tekanan. Kelas kesejahteraan kru: kontraktor. Kelas custody payload: prioritas variabel. Ekstraksi manusia tetap bersyarat sampai arbitrase pool ditutup.
 
 ## Audio
 
-ID LOC HOLD: The pool owns the route. You only rent the answer.
+Pool memiliki rute. Kamu menyewa jawaban dengan bertahan cukup lama untuk bertanya.
 
 ## Field Note
 
-ID LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+Pool bersama membuat penyelamatan lebih murah, lebih lambat, dan lebih mudah disangkal oleh setiap penanda tangan.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/id_ID. -->

@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Пріоритетний гачок Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Пріоритетний гачок Deep Reach
 
-UK LOC HOLD: Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control.
-
-## Scanner
-
-UK LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
-
-## Terminal
-
-UK LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
-
-## Audio
-
-UK LOC HOLD: They do not need to be on the bridge to steer the answer.
-
-## Field Note
-
-UK LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+Пріоритетний гачок — найчистіший спосіб залишити Deep Reach небезпечною після того, як колонія замовкла. Компанії не треба пілотувати Black Keel віддаленим дивом. Їй достатньо старого сертифіката, який carrier досі визнає, continuity rule, прив'язаного до доступу Atlas, і класу payload, що за особливих умов небезпеки випереджає тіло контрактника. Цього вистачає. Маршрут можна зсунути. Запечатаний кейс може піднятися в черзі. Карантинний замок може лишитися закритим, поки лічильник кисню оператора стає ще одним борговим записом. Підсумок холодніший за саботаж: система працює як написано, а Deep Reach навчилася вписувати себе в частини, що переживають катастрофи.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/uk_UA. -->

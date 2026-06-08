@@ -7,34 +7,34 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "احتجاز إخلاء جونو كايد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# احتجاز إخلاء جونو كايد
 
-AR LOC HOLD: Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+تثبت جونو كايد أن المستعمرة لم تتجمد ببساطة. اصطف الناس، وأصدر المسؤولون المسارات، ورد نظام الخروج بـ authorization holds وفحوص الحجر وأولوية payload. تصبح الكارثة أثقل لأن الباب كان حقيقيا.
 
 ## Scanner
 
-AR LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
+فتحت جونو كايد الطابور واصطدمت بجدار من الحجر والتصديق ورتبة payload.
 
 ## Terminal
 
-AR LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+حالة إخلاء KADE: route red؛ رُفض manual override؛ بوابة الحجر تنتظر Atlas continuity check؛ payload lift له أولوية حتى حل claim seal.
 
 ## Audio
 
-AR LOC HOLD: She kept counting people after the system started counting rooms.
+كان المخرج موجودا. لذلك يهم الاحتجاز.
 
 ## Field Note
 
-AR LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+تستطيع مسؤولة الإخلاء تحريك الناس. لا تستطيع تحريك بند يملك الباب.
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/ar_SA. -->

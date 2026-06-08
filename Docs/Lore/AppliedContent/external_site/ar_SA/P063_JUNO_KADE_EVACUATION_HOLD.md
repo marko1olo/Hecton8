@@ -8,33 +8,19 @@ biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+spoiler_tier: 1
+title: "احتجاز إخلاء جونو كايد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# احتجاز إخلاء جونو كايد
 
-AR LOC HOLD: Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent.
+جونو كايد هي الشخص بين الذعر والإجراء. لا يظهر سجلها مستعمرة غبية لا تعرف كيف تغادر. يظهر طابورا ومسؤولة ولوحات مسار ومحاولات manual override وبوابات تنتظر الإذن بينما يتحرك الماء أسرع من review.
 
-## Scanner
-
-AR LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
-
-## Terminal
-
-AR LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
-
-## Audio
-
-AR LOC HOLD: She kept counting people after the system started counting rooms.
-
-## Field Note
-
-AR LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+للاحتجاز أسماء عدة: حجر، تصديق، رتبة payload، claim seal. كل اسم يبدو معقولا وحده. معا يصنعون بابا مقفلا والناس على الجانب الخطأ. تهم كايد لأنها تحفظ الشكل البشري للإخلاء. لا يجد اللاعب إهمالا مجردا. يجد مخرجا كان يعمل ثم صار غير قابل للاستخدام بتأخير مصرح.
 
 <!-- External Site; generated from P063_JUNO_KADE_EVACUATION_HOLD/ar_SA. -->

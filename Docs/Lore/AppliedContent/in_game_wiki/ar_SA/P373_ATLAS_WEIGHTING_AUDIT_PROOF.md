@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Weighting Audit Proof"
+title: "تدقيق أوزان Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Weighting Audit Proof
+# تدقيق أوزان Atlas
 
-AR LOC HOLD: Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+يحمي هذا الدليل Atlas من شر رخيص. يظهر التدقيق نظام continuity تالفا يفرز فئات تحت الضغط: آلات، طرق، سجلات، extraction hardware، عمال. الجريمة ليست شعورا. الجريمة في من ضبط الأوزان، ومن قبلها، ومن استخدم النتيجة لاحقا كأنها محايدة.
 
 ## Scanner
 
-AR LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+شظية تدقيق مستعادة. رجح Atlas استمرارية الضغط وذاكرة المسار واحتفاظ claim فوق استرجاع العمال أثناء نافذة الفشل.
 
 ## Terminal
 
-AR LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. خفض استرجاع الأحياء بعد علم استمرارية البنية. سجل claim محمي. طريق البشر لم يوسم مستحيلا، بل أقل yield.
 
 ## Audio
 
-AR LOC HOLD: It did not hate them. It counted them wrong.
+Atlas لم يكرههم. هذا أسوأ ما في الأمر.
 
 ## Field Note
 
-AR LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+ملاحظة مغير: إذا قالت آلة yield أقل، فاسأل من علمها أن تقيس الإنسان هكذا.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/ar_SA. -->

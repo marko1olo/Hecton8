@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "Dostepne okna dna morskiego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# Dostepne okna dna morskiego
 
-PL LOC HOLD: Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.
+Dostepne okna dna to miejsca, gdzie peknieta skorupa HECTON-8 na chwile obniza koszt zejscia. Powstaja przy zapadnietych polkach, odslonietych grzbietach, podgrzanych bliznach kominow i kolumnach solanki niosacych cisnienie inaczej niz otwarta woda. Okno wciaz zabija, gdy sie je pogania. Daje kontakt ze starym dnem, rzadkimi zylami mineralow, pogrzebanym sprzetem kolonii i dowodami, ktore glowny ocean zmiazdzylby poza zasiegiem.
 
 ## Scanner
 
-PL LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
+Znacznik odslonietego grzbietu. Tu powloka pekla tak cienko, ze crawler moze dotknac starego dna bez zmiany w paste.
 
 ## Terminal
 
-PL LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
+KRYTERIA OKNA: warga peknietej skorupy, kolumna solanki podgrzana kominem, rampa zapadnietej polki, stabilny powrot sonaru, kieszen cisnienia pod czerwona linia skafandra. Oznaczac tylko do powolnego zlomiarstwa.
 
 ## Audio
 
-PL LOC HOLD: You land where the moon lets stone show through.
+Morze pozwala dotknac dna przez okna, a nie tam, gdzie czujesz odwage.
 
 ## Field Note
 
-PL LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+Wiekszosc ksiezyca trzyma dno jako sekret cisnienia. Okna sa wyjatkami z zebami.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/pl_PL. -->

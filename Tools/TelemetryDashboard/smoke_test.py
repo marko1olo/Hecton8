@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import csv
 import json
+import gc
+import os
+import re
 import shutil
+import stat
 import struct
 import sys
+import time
 from pathlib import Path
 
 sys.dont_write_bytecode = True
@@ -12,13 +17,4462 @@ sys.dont_write_bytecode = True
 import server
 
 
-SMOKE_ROOT = server.PROJECT_ROOT / "Temp" / "CodexValidation" / "BLACKBOX_TELEMETRY_VISUALIZER_SMOKE"
+SMOKE_ROOT_BASE = server.PROJECT_ROOT / "Temp" / "CodexValidation" / "BLACKBOX_TELEMETRY_VISUALIZER_SMOKE"
+SMOKE_ROOT = SMOKE_ROOT_BASE / f"run_{os.getpid()}"
+
+
+def remove_tree_with_retry(path: Path) -> None:
+    if not path.exists():
+        return
+
+    def onerror(function, value, _exc_info) -> None:
+        target = Path(value)
+        if target.exists():
+            mode = stat.S_IWRITE | stat.S_IREAD
+            if target.is_dir():
+                mode |= stat.S_IEXEC
+            os.chmod(target, mode)
+        for _ in range(3):
+            try:
+                function(value)
+                return
+            except PermissionError:
+                gc.collect()
+                time.sleep(0.05)
+        function(value)
+
+    last_error: PermissionError | None = None
+    for attempt in range(8):
+        try:
+            shutil.rmtree(path, onerror=onerror)
+            return
+        except PermissionError as exc:
+            last_error = exc
+            gc.collect()
+            time.sleep(0.05 * (attempt + 1))
+            if not path.exists():
+                return
+
+    if last_error is not None:
+        raise last_error
+
+
+def assert_sargassum_dump_layout_contract() -> None:
+    source_path = server.PROJECT_ROOT / "Assets" / "_Project" / "Scripts" / "World" / "SargassumMicroFaunaBoids.cs"
+    source = source_path.read_text(encoding="utf-8")
+
+    def int_const(name: str) -> int:
+        match = re.search(rf"private const int {re.escape(name)} = ([0-9]+);", source)
+        assert match, f"missing int const {name}"
+        return int(match.group(1), 10)
+
+    def uint_const(name: str) -> int:
+        match = re.search(rf"private const uint {re.escape(name)} = (0x[0-9A-Fa-f]+)u;", source)
+        assert match, f"missing uint const {name}"
+        return int(match.group(1), 16)
+
+    def string_const(name: str) -> str:
+        match = re.search(rf'private const string {re.escape(name)} = "([^"]+)";', source)
+        assert match, f"missing string const {name}"
+        return match.group(1)
+
+    def struct_block(name: str) -> str:
+        struct_start = source.index(f"private struct {name}")
+        start = source.rfind("[StructLayout", 0, struct_start)
+        assert start >= 0, f"missing StructLayout for {name}"
+        next_struct = source.find("[StructLayout", struct_start + 1)
+        assert next_struct > start, f"missing next struct after {name}"
+        return source[start:next_struct]
+
+    def assert_field_offsets(block: str, expected: list[tuple[int, str]]) -> None:
+        for offset, field in expected:
+            pattern = rf"\[FieldOffset\({offset}\)\]\s+public\s+[^;]+\s+{re.escape(field)};"
+            assert re.search(pattern, block), f"missing {field} at offset {offset}"
+
+    def method_block(signature: str) -> str:
+        signature_start = source.index(signature)
+        open_brace = source.index("{", signature_start)
+        depth = 0
+        for index in range(open_brace, len(source)):
+            char = source[index]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    return source[signature_start : index + 1]
+        raise AssertionError(f"unterminated method {signature}")
+
+    def assert_contains_all(block: str, expected: list[str], label: str) -> None:
+        for text in expected:
+            assert text in block, f"missing {text!r} in {label}"
+
+    def assert_before(block: str, first: str, second: str, label: str) -> None:
+        first_index = block.find(first)
+        second_index = block.find(second)
+        assert first_index >= 0, f"missing {first!r} in {label}"
+        assert second_index >= 0, f"missing {second!r} in {label}"
+        assert first_index < second_index, f"expected {first!r} before {second!r} in {label}"
+
+    assert int_const("FoodChainTelemetryCapacity") == server.SARGASSUM_FOOD_CHAIN_CAPACITY
+    assert int_const("FoodChainTelemetryEntrySizeBytes") == server.SARGASSUM_FOOD_CHAIN_ENTRY_BYTES
+    assert int_const("PredatorKillSignalDrainLimit") == server.SARGASSUM_FOOD_CHAIN_MAX_PENDING_KILL_SIGNALS
+    assert uint_const("FoodChainTelemetryMagicLow") == server.SARGASSUM_FOOD_CHAIN_MAGIC_LOW
+    assert uint_const("FoodChainTelemetryMagicHigh") == server.SARGASSUM_FOOD_CHAIN_MAGIC_HIGH
+    assert string_const("FoodChainTelemetryDumpPath") == "Docs/AgentLogs/Dump_SARGASSUM_FOOD_CHAIN.bin"
+    assert source.count("private bool _foodChainTelemetryDumpFailureLogged;") == 1
+    assert source.count("private bool _foodChainTelemetryDumpSourceUnavailableLogged;") == 1
+    assert server.SARGASSUM_FOOD_CHAIN_HEADER.size == server.SARGASSUM_FOOD_CHAIN_HEADER_BYTES
+    assert server.SARGASSUM_FOOD_CHAIN_ENTRY.size == server.SARGASSUM_FOOD_CHAIN_ENTRY_BYTES
+
+    assert "public static SargassumMicroFaunaBoids Instance => s_activeRuntimeInstance;" in source
+    assert "internal static SargassumMicroFaunaBoids ActiveRuntimeInstance => Instance;" in source
+    assert source.count("private static bool s_duplicateRuntimeOwnerLogged;") == 1
+    reset_static_block = method_block("private static void ResetStaticState")
+    assert_contains_all(
+        reset_static_block,
+        [
+            "s_x001SargassumMicroFaunaBoidsSignalPushDropCount = 0;",
+            "s_activeRuntimeInstance = null;",
+            "s_duplicateRuntimeOwnerLogged = false;",
+        ],
+        "ResetStaticState",
+    )
+
+    awake_block = method_block("private void Awake")
+    on_enable_block = method_block("private void OnEnable")
+    try_register_block = method_block("private void TryRegister()")
+    try_register_service_block = method_block("private void TryRegisterService")
+    try_unregister_service_block = method_block("private void TryUnregisterService")
+    runtime_owner_gate_block = method_block("private bool TryAbortForUsableExistingRuntime")
+    runtime_usable_block = method_block("private static bool IsSargassumMicroFaunaRuntimeUsable")
+    runtime_reconcile_block = method_block("private void ReconcileRuntimeOwnerFromRegistryReplacement")
+    runtime_retire_block = method_block("private void RetireRuntimeRoutesAfterOwnershipLoss")
+    runtime_restore_block = method_block("private void RestoreRuntimeRoutesAfterOwnershipGain")
+    duplicate_log_block = method_block("private void LogDuplicateRuntimeOwnerDetected")
+    service_replaced_block = method_block("public void OnGlobalRegistryServiceReplaced")
+
+    assert_contains_all(
+        awake_block,
+        ["if (Application.isPlaying && TryAbortForUsableExistingRuntime())", "return;"],
+        "Awake",
+    )
+    assert_before(
+        awake_block,
+        "if (Application.isPlaying && TryAbortForUsableExistingRuntime())",
+        "CacheGraphicsCapabilitiesCold();",
+        "Awake",
+    )
+    assert_contains_all(
+        on_enable_block,
+        [
+            "if (Application.isPlaying && TryAbortForUsableExistingRuntime())",
+            "TryRegisterService();",
+            "if (Application.isPlaying && !_serviceRegistered)",
+            "TryRegister();",
+        ],
+        "OnEnable",
+    )
+    assert_before(
+        on_enable_block,
+        "if (Application.isPlaying && TryAbortForUsableExistingRuntime())",
+        "SargassumGlobalDragManager.Register(this);",
+        "OnEnable",
+    )
+    assert_before(on_enable_block, "TryRegisterService();", "CacheGraphicsCapabilitiesCold();", "OnEnable")
+    assert_before(on_enable_block, "TryRegisterService();", "SargassumGlobalDragManager.Register(this);", "OnEnable")
+    assert_before(on_enable_block, "TryRegisterService();", "TryRegister();", "OnEnable")
+    assert_contains_all(
+        try_register_block,
+        ["if (!Application.isPlaying || !_serviceRegistered)", "GlobalRegistry.TryRegisterFixedTickable"],
+        "TryRegister",
+    )
+    assert_contains_all(
+        try_register_service_block,
+        [
+            "if (_serviceRegistered || !Application.isPlaying)",
+            "if (TryAbortForUsableExistingRuntime())",
+            "GlobalRegistry.RegisterSargassumMicroFaunaRuntime(this);",
+            "_serviceRegistered = ReferenceEquals(GlobalRegistry.SargassumMicroFauna, this);",
+            "s_activeRuntimeInstance = this;",
+        ],
+        "TryRegisterService",
+    )
+    assert_before(
+        try_register_service_block,
+        "if (TryAbortForUsableExistingRuntime())",
+        "GlobalRegistry.RegisterSargassumMicroFaunaRuntime(this);",
+        "TryRegisterService",
+    )
+    assert_contains_all(
+        try_unregister_service_block,
+        [
+            "if (ReferenceEquals(GlobalRegistry.SargassumMicroFauna, this))",
+            "GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(this);",
+            "if (ReferenceEquals(s_activeRuntimeInstance, this))",
+            "s_activeRuntimeInstance = null;",
+            "_serviceRegistered = false;",
+        ],
+        "TryUnregisterService",
+    )
+    assert_before(
+        try_unregister_service_block,
+        "if (ReferenceEquals(s_activeRuntimeInstance, this))",
+        "GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(this);",
+        "TryUnregisterService",
+    )
+    assert_before(
+        try_unregister_service_block,
+        "_serviceRegistered = false;",
+        "GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(this);",
+        "TryUnregisterService",
+    )
+    assert_contains_all(
+        runtime_owner_gate_block,
+        [
+            "SargassumMicroFaunaBoids active = s_activeRuntimeInstance;",
+            "if (IsSargassumMicroFaunaRuntimeUsable(active))",
+            "LogDuplicateRuntimeOwnerDetected(active);",
+            "Destroy(gameObject);",
+            "GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(active);",
+            "SargassumMicroFaunaBoids registered = GlobalRegistry.SargassumMicroFauna;",
+            "if (IsSargassumMicroFaunaRuntimeUsable(registered))",
+            "s_activeRuntimeInstance = registered;",
+            "LogDuplicateRuntimeOwnerDetected(registered);",
+            "GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(registered);",
+        ],
+        "TryAbortForUsableExistingRuntime",
+    )
+    assert_contains_all(
+        runtime_usable_block,
+        ["runtime != null && runtime._serviceRegistered && runtime.isActiveAndEnabled"],
+        "IsSargassumMicroFaunaRuntimeUsable",
+    )
+    assert_contains_all(
+        service_replaced_block,
+        [
+            "case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime:",
+            "ReconcileRuntimeOwnerFromRegistryReplacement(previousService, currentService);",
+        ],
+        "OnGlobalRegistryServiceReplaced",
+    )
+    assert_contains_all(
+        runtime_reconcile_block,
+        [
+            "currentService is SargassumMicroFaunaBoids currentRuntime",
+            "s_activeRuntimeInstance = currentRuntime;",
+            "bool ownsRuntime = ReferenceEquals(currentRuntime, this);",
+            "_serviceRegistered = ownsRuntime;",
+            "if (_runtimeRoutesRetiredAfterOwnershipLoss)",
+            "RestoreRuntimeRoutesAfterOwnershipGain();",
+            "RetireRuntimeRoutesAfterOwnershipLoss();",
+            "if (ReferenceEquals(previousService, this))",
+            "_serviceRegistered = false;",
+            "if (ReferenceEquals(s_activeRuntimeInstance, this))",
+            "s_activeRuntimeInstance = null;",
+        ],
+        "ReconcileRuntimeOwnerFromRegistryReplacement",
+    )
+    assert_contains_all(
+        runtime_retire_block,
+        [
+            "if (_runtimeRoutesRetiredAfterOwnershipLoss)",
+            "SargassumGlobalDragManager.Unregister(this);",
+            "FlashlightEvents.Unregister(this);",
+            "SpectrumEvents.UnregisterSonarPingListener(this);",
+            "HectonFloatingOrigin.UnregisterListener(this);",
+            "GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);",
+            "GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);",
+            "GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);",
+            "_runtimeRoutesRetiredAfterOwnershipLoss = true;",
+        ],
+        "RetireRuntimeRoutesAfterOwnershipLoss",
+    )
+    assert "TryUnregisterHotSwapListener" not in runtime_retire_block
+    assert_contains_all(
+        runtime_restore_block,
+        [
+            "if (!Application.isPlaying || !isActiveAndEnabled)",
+            "RefreshColdRegistryDependencies();",
+            "RefreshDependencies();",
+            "SargassumGlobalDragManager.Register(this);",
+            "FlashlightEvents.Register(this);",
+            "SpectrumEvents.RegisterSonarPingListener(this);",
+            "HectonFloatingOrigin.RegisterListener(this);",
+            "TryRegister();",
+            "_runtimeRoutesRetiredAfterOwnershipLoss = false;",
+        ],
+        "RestoreRuntimeRoutesAfterOwnershipGain",
+    )
+    assert_contains_all(
+        duplicate_log_block,
+        [
+            "if (s_duplicateRuntimeOwnerLogged)",
+            "s_duplicateRuntimeOwnerLogged = true;",
+            "Duplicate runtime owner detected.",
+            "before service/tick registration.",
+            "H8Debug.LogError(",
+        ],
+        "LogDuplicateRuntimeOwnerDetected",
+    )
+
+    food_chain_dump_block = method_block("private unsafe void TryDumpFoodChainTelemetry")
+    assert_contains_all(
+        food_chain_dump_block,
+        [
+            "if (_foodChainTelemetryDumped)",
+            "!TryReadOnlySargassumVaultArray(",
+            "if (!_foodChainTelemetryDumpSourceUnavailableLogged)",
+            "_foodChainTelemetryDumpSourceUnavailableLogged = true;",
+            "Food-chain telemetry dump source unavailable. path=",
+            'anomalyHash.ToString("X8")',
+            "bool wrote = TryWriteFoodChainTelemetryDump(foodChainTelemetryRing, anomalyHash);",
+            "_foodChainTelemetryDumped = wrote;",
+            "if (!wrote && !_foodChainTelemetryDumpFailureLogged)",
+            "_foodChainTelemetryDumpFailureLogged = true;",
+            "Hecton8.Core.H8Debug.LogError(",
+            "Food-chain telemetry dump failed. path=",
+            "FoodChainTelemetryDumpPath",
+            'anomalyHash.ToString("X8")',
+        ],
+        "TryDumpFoodChainTelemetry",
+    )
+
+    food_chain_writer_block = method_block("private unsafe bool TryWriteFoodChainTelemetryDump")
+    assert_contains_all(
+        food_chain_writer_block,
+        [
+            "int capacity = math.min(foodChainTelemetryRing.Length, FoodChainTelemetryCapacity);",
+            "int entrySize = UnsafeUtility.SizeOf<FoodChainTelemetryEntry>();",
+            "const int headerBytes = (sizeof(uint) * 3) + (sizeof(int) * 3);",
+            "NativeFaultDumpWriter.CreateTransientPayload(",
+            "FoodChainTelemetryDumpPayloadLabel",
+            "UnsafeUtility.WriteArrayElement<uint>(destination, 0, FoodChainTelemetryMagicLow);",
+            "UnsafeUtility.WriteArrayElement<uint>(destination + sizeof(uint), 0, FoodChainTelemetryMagicHigh);",
+            "UnsafeUtility.WriteArrayElement<int>(destination + sizeof(uint) * 2, 0, entrySize);",
+            "UnsafeUtility.CopyStructureToPtr(ref entry, rows + i * entrySize);",
+            "NativeFaultDumpWriter.TryWriteAll(FoodChainTelemetryDumpPath, payload, byteCount);",
+            "NativeFaultDumpWriter.DisposeTransientPayload(",
+        ],
+        "TryWriteFoodChainTelemetryDump",
+    )
+
+    food_chain_block = struct_block("FoodChainTelemetryEntry")
+    assert "[StructLayout(LayoutKind.Explicit, Size = 64)]" in food_chain_block
+    assert_field_offsets(
+        food_chain_block,
+        [
+            (0, "FrameIndex"),
+            (4, "StateHash"),
+            (8, "SourceHash"),
+            (12, "Flags"),
+            (16, "ActiveBoidCount"),
+            (20, "ConsumedBoidCount"),
+            (24, "PendingKillJob"),
+            (28, "LodTier"),
+            (32, "FieldCenterWS"),
+            (44, "EventPositionWS"),
+            (56, "AnomalyHash"),
+            (60, "SimulationTime"),
+        ],
+    )
+
+    assert int_const("BoidSensoryBlackBoxCapacity") == server.SARGASSUM_BOID_SENSORY_CAPACITY
+    assert int_const("BoidSensoryBlackBoxEntrySizeBytes") == server.SARGASSUM_BOID_SENSORY_ENTRY_BYTES
+    assert uint_const("BoidSensoryBlackBoxMagicLow") == server.SARGASSUM_BOID_SENSORY_MAGIC_LOW
+    assert uint_const("BoidSensoryBlackBoxMagicHigh") == server.SARGASSUM_BOID_SENSORY_MAGIC_HIGH
+    assert string_const("BoidSensoryBlackBoxDumpPath") == "Docs/AgentLogs/Dump_SARGASSUM_BOID_SENSORY.bin"
+    assert source.count("private bool _boidSensoryBlackBoxDumpFailureLogged;") == 1
+    assert source.count("private bool _boidSensoryBlackBoxDumpSourceUnavailableLogged;") == 1
+    assert server.SARGASSUM_BOID_SENSORY_HEADER.size == server.SARGASSUM_BOID_SENSORY_HEADER_BYTES
+    assert server.SARGASSUM_BOID_SENSORY_ENTRY.size == server.SARGASSUM_BOID_SENSORY_ENTRY_BYTES
+
+    boid_sensory_dump_block = method_block("private unsafe void TryDumpBoidSensoryBlackBox")
+    assert_contains_all(
+        boid_sensory_dump_block,
+        [
+            "if (_boidSensoryBlackBoxDumped)",
+            "if (!boidSensoryBlackBox.IsCreated)",
+            "if (!_boidSensoryBlackBoxDumpSourceUnavailableLogged)",
+            "_boidSensoryBlackBoxDumpSourceUnavailableLogged = true;",
+            "Boid sensory blackbox dump source unavailable. path=",
+            'anomalyHash.ToString("X8")',
+            "bool wrote = TryWriteBoidSensoryBlackBoxDump(boidSensoryBlackBox, anomalyHash);",
+            "_boidSensoryBlackBoxDumped = wrote;",
+            "if (!wrote && !_boidSensoryBlackBoxDumpFailureLogged)",
+            "_boidSensoryBlackBoxDumpFailureLogged = true;",
+            "Hecton8.Core.H8Debug.LogError(",
+            "Boid sensory blackbox dump failed. path=",
+            "BoidSensoryBlackBoxDumpPath",
+            'anomalyHash.ToString("X8")',
+        ],
+        "TryDumpBoidSensoryBlackBox",
+    )
+
+    boid_sensory_writer_block = method_block("private unsafe bool TryWriteBoidSensoryBlackBoxDump")
+    assert_contains_all(
+        boid_sensory_writer_block,
+        [
+            "int capacity = math.min(boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);",
+            "int entrySize = UnsafeUtility.SizeOf<BoidSensoryBlackBoxEntry>();",
+            "const int headerBytes = (sizeof(uint) * 3) + (sizeof(int) * 3);",
+            "NativeFaultDumpWriter.CreateTransientPayload(",
+            "BoidSensoryBlackBoxDumpPayloadLabel",
+            "UnsafeUtility.WriteArrayElement<uint>(destination, 0, BoidSensoryBlackBoxMagicLow);",
+            "UnsafeUtility.WriteArrayElement<uint>(destination + sizeof(uint), 0, BoidSensoryBlackBoxMagicHigh);",
+            "UnsafeUtility.WriteArrayElement<int>(destination + sizeof(uint) * 2, 0, entrySize);",
+            "UnsafeUtility.CopyStructureToPtr(ref entry, rows + i * entrySize);",
+            "NativeFaultDumpWriter.TryWriteAll(BoidSensoryBlackBoxDumpPath, payload, byteCount);",
+            "NativeFaultDumpWriter.DisposeTransientPayload(",
+        ],
+        "TryWriteBoidSensoryBlackBoxDump",
+    )
+
+    on_disable_block = method_block("private void OnDisable")
+    release_buffers_block = method_block("private void ReleaseBuffers")
+    for lifecycle_label, lifecycle_block in (
+        ("OnDisable", on_disable_block),
+        ("ReleaseBuffers", release_buffers_block),
+    ):
+        assert_contains_all(
+            lifecycle_block,
+            [
+                "_foodChainTelemetryDumped = false;",
+                "_foodChainTelemetryDumpSourceUnavailableLogged = false;",
+                "_foodChainTelemetryDumpFailureLogged = false;",
+                "_boidSensoryBlackBoxDumped = false;",
+                "_boidSensoryBlackBoxDumpSourceUnavailableLogged = false;",
+                "_boidSensoryBlackBoxDumpFailureLogged = false;",
+            ],
+            lifecycle_label,
+        )
+
+    boid_sensory_block = struct_block("BoidSensoryBlackBoxEntry")
+    assert "[StructLayout(LayoutKind.Explicit, Size = 64)]" in boid_sensory_block
+    assert_field_offsets(
+        boid_sensory_block,
+        [
+            (0, "FrameIndex"),
+            (4, "StateHash"),
+            (8, "Flags"),
+            (12, "ActiveThreatCount"),
+            (16, "SubmarineThreat"),
+            (32, "FlashlightThreat"),
+            (48, "AcousticPingRadii"),
+        ],
+    )
+
+
+def assert_sargassum_owner_local_runtime_routes() -> None:
+    def read_project_source(*parts: str) -> str:
+        return (server.PROJECT_ROOT / Path(*parts)).read_text(encoding="utf-8")
+
+    def method_block(source: str, signature: str) -> str:
+        start = source.find(signature)
+        assert start >= 0, f"missing method signature {signature!r}"
+        open_brace = source.find("{", start)
+        assert open_brace >= 0, f"missing method body {signature!r}"
+        depth = 0
+        for i in range(open_brace, len(source)):
+            char = source[i]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    return source[open_brace + 1 : i]
+        raise AssertionError(f"unterminated method body {signature!r}")
+
+    def method_block_after(source: str, anchor: str, signature: str) -> str:
+        anchor_start = source.find(anchor)
+        assert anchor_start >= 0, f"missing method anchor {anchor!r}"
+        return method_block(source[anchor_start:], signature)
+
+    def assert_contains_all(block: str, expected: list[str], label: str) -> None:
+        for text in expected:
+            assert text in block, f"missing {text!r} in {label}"
+
+    def assert_before(block: str, first: str, second: str, label: str) -> None:
+        first_index = block.find(first)
+        second_index = block.find(second)
+        assert first_index >= 0, f"missing {first!r} in {label}"
+        assert second_index >= 0, f"missing {second!r} in {label}"
+        assert first_index < second_index, f"expected {first!r} before {second!r} in {label}"
+
+    drag = read_project_source("Assets", "_Project", "Scripts", "World", "SargassumGlobalDragManager.cs")
+    assert "public static SargassumGlobalDragManager Instance => s_activeRuntimeInstance;" in drag
+    assert "WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref _cutManager);" in drag
+    assert "_cutManager = GlobalRegistry.SargassumCut;" not in drag
+    drag_on_enable = method_block(drag, "private void OnEnable")
+    drag_register = method_block(drag, "private void TryRegister()")
+    drag_register_save = method_block(drag, "private void TryRegisterSaveOwner")
+    drag_tick = method_block(drag, "public void Tick(float dt)")
+    drag_late_tick = method_block(drag, "public void LateFrameTick")
+    drag_origin_shift = method_block(drag, "public void OnOriginShift")
+    drag_unregister_service = method_block(drag, "private void TryUnregisterService")
+    drag_replaced = method_block(drag, "public void OnGlobalRegistryServiceReplaced")
+    drag_reconcile = method_block(drag, "private void ReconcileRuntimeOwnerFromRegistryReplacement")
+    drag_retire = method_block(drag, "private void RetireRuntimeRoutesAfterOwnershipLoss")
+    drag_restore = method_block(drag, "private void RestoreRuntimeRoutesAfterOwnershipGain")
+    drag_raise_strain = method_block(drag, "public static bool TryRaiseEntanglementStrain")
+    drag_raise_massive = method_block(drag, "public static bool TryRaiseMassiveDisplacement")
+    drag_register_massive = method_block(drag, "public void RegisterMassiveDisplacement")
+    drag_dispatch_strain = method_block(drag, "private static void DispatchEntanglementStrainToListener")
+    drag_dispatch_massive = method_block(drag, "private static void DispatchMassiveDisplacementToListener")
+    drag_sample_detailed = method_block(
+        drag,
+        "internal bool SampleDetailedInfluence(\n            Vector3 positionWS,\n            float radius,\n            Vector3 movementVelocityWS,",
+    )
+    drag_update_disruption = method_block(drag, "private bool UpdateDisruptionZones")
+    drag_register_disruption = method_block(drag, "private int RegisterOrReinforceDisruptionZone")
+    drag_sample_disruption = method_block(drag, "private DisruptionSample SampleDisruptionNoDrift")
+    drag_resolve_max_sink = method_block(drag, "private float ResolveMaximumSinkDepthWS")
+    drag_update_scavengers = method_block(drag, "private void UpdateScavengerHosts")
+    drag_update_nested = method_block(drag, "private void UpdateNestedAttachmentBatches")
+    drag_register_scavenger = method_block(drag, "internal bool RegisterSettledCollapseChunk")
+    drag_unregister_scavenger = method_block(drag, "internal void UnregisterSettledCollapseChunk")
+    assert_contains_all(
+        drag_on_enable,
+        ["TryRegisterService();", "if (!_serviceRegistered)", "TryRegister();"],
+        "SargassumGlobalDragManager.OnEnable",
+    )
+    for later in [
+        "ResolveActiveNestingPrototypes();",
+        "RefreshColdRegistryDependencies();",
+        "EnsureScavengerRenderResources();",
+        "HectonFloatingOrigin.RegisterListener(this);",
+        "TryRegister();",
+    ]:
+        assert_before(drag_on_enable, "TryRegisterService();", later, "SargassumGlobalDragManager.OnEnable")
+    assert_contains_all(
+        drag_register,
+        ["if (Application.isPlaying && !_serviceRegistered)", "TryRegisterSaveOwner();"],
+        "SargassumGlobalDragManager.TryRegister",
+    )
+    assert_contains_all(
+        drag_tick,
+        [
+            "dt = math.isfinite(dt) ? math.max(0f, dt) : 0f;",
+            "bool texturesChanged = UpdateDisruptionZones(dt);",
+            "_pendingNestedRenderDeltaTime = dt;",
+        ],
+        "SargassumGlobalDragManager.Tick",
+    )
+    assert_contains_all(
+        drag_late_tick,
+        [
+            "float nestedRenderDeltaTime = math.isfinite(_pendingNestedRenderDeltaTime)",
+            "? math.max(0f, _pendingNestedRenderDeltaTime)",
+            ": 0f;",
+            "UpdateScavengerHosts(nestedRenderDeltaTime);",
+            "RenderNestedAttachmentsAndScavengers(nestedRenderDeltaTime);",
+        ],
+        "SargassumGlobalDragManager.LateFrameTick",
+    )
+    assert_contains_all(
+        drag_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!IsFiniteVector3(shiftOffset)",
+            "!math.isfinite(shiftSqrMagnitude)",
+            "shiftSqrMagnitude <= 0.0001f",
+            "ApplyRuntimeOffsetToCachedState(-shiftOffset);",
+        ],
+        "SargassumGlobalDragManager.OnOriginShift",
+    )
+    for origin_shift_path_parts, origin_shift_label in [
+        (("Assets", "_Project", "Scripts", "BiomeSamplerCache.cs"), "BiomeSamplerCache.OnOriginShift"),
+        (("Assets", "_Project", "Scripts", "World", "AbyssalFluidDecalManager.cs"), "AbyssalFluidDecalManager.OnOriginShift"),
+        (("Assets", "_Project", "Scripts", "World", "SargassumCrestDampingController.cs"), "SargassumCrestDampingController.OnOriginShift"),
+    ]:
+        origin_shift_block = method_block(read_project_source(*origin_shift_path_parts), "public void OnOriginShift")
+        assert_contains_all(
+            origin_shift_block,
+            [
+                "Vector3 shiftOffset = shiftData.ShiftOffset;",
+                "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+                "if (!isActiveAndEnabled ||",
+                "!MathGuard.IsFinite(shiftOffset) ||",
+                "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+                "shiftSqrMagnitude <= 0.0001f)",
+                "ApplyRuntimeOffsetToCachedState(-shiftOffset);",
+            ],
+            origin_shift_label,
+        )
+        assert_before(
+            origin_shift_block,
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "ApplyRuntimeOffsetToCachedState(-shiftOffset);",
+            f"{origin_shift_label} rejects nonfinite shift before cached state mutation",
+        )
+    finite_shift_cached_state_contracts = [
+        (
+            ("Assets", "_Project", "Scripts", "Atmosphere", "HectonSurfaceWeatherDirector.cs"),
+            "HectonSurfaceWeatherDirector.OnOriginShift",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "_pendingThunderPosition += -shiftOffset;",
+        ),
+        (
+            ("Assets", "_Project", "Scripts", "Atmosphere", "SurfaceWeatherVfxRig.cs"),
+            "SurfaceWeatherVfxRig.OnOriginShift",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "RebaseBoltPositions(shiftOffset);",
+        ),
+        (
+            ("Assets", "_Project", "Scripts", "WorldGenerativeGeologyIntegrationDirector.cs"),
+            "WorldGenerativeGeologyIntegrationDirector.OnOriginShift",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "_lastPlanRefreshPosition += -shiftOffset;",
+        ),
+        (
+            ("Assets", "_Project", "Scripts", "SubmarineFluidDynamics.cs"),
+            "SubmarineFluidDynamics.OnOriginShift",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "ResetSloshHistoryForOriginShift();",
+        ),
+        (
+            ("Assets", "_Project", "Scripts", "VFX", "HectonMarineSnowRenderer.cs"),
+            "HectonMarineSnowRenderer.OnOriginShift",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "Vector3 runtimeOffset = -shiftOffset;",
+        ),
+        (
+            ("Assets", "_Project", "Scripts", "World", "Biolum", "HectonBiolumDiffusionVolume.cs"),
+            "HectonBiolumDiffusionVolume.OnOriginShift",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "_needsClear = true;",
+        ),
+        (
+            ("Assets", "_Project", "Scripts", "Gameplay", "DataArchaeologyRuntime.cs"),
+            "DataArchaeologyRuntime.OnOriginShift",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "float3 runtimeDelta = -(float3)shiftOffset;",
+        ),
+    ]
+    for origin_shift_path_parts, origin_shift_label, threshold_fragment, mutation_fragment in finite_shift_cached_state_contracts:
+        origin_shift_block = method_block(read_project_source(*origin_shift_path_parts), "public void OnOriginShift")
+        assert_contains_all(
+            origin_shift_block,
+            [
+                "Vector3 shiftOffset = shiftData.ShiftOffset;",
+                "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+                "!MathGuard.IsFinite(shiftOffset) ||",
+                "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+                threshold_fragment,
+                mutation_fragment,
+            ],
+            origin_shift_label,
+        )
+        assert_before(
+            origin_shift_block,
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            mutation_fragment,
+            f"{origin_shift_label} rejects nonfinite shift before runtime state mutation",
+        )
+    interior_gi_origin_shift = method_block(
+        read_project_source("Assets", "_Project", "Scripts", "Lighting", "InteriorGIProbeVolumeRuntime.cs"),
+        "public void OnOriginShift",
+    )
+    assert_contains_all(
+        interior_gi_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble))",
+            "double3 shiftedRootAup = shiftData.NewTotalOffsetDouble + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);",
+            "_rootAup = shiftedRootAup;",
+            "_visualDirty = true;",
+        ],
+        "InteriorGIProbeVolumeRuntime.OnOriginShift finite committed-root bridge",
+    )
+    assert_before(
+        interior_gi_origin_shift,
+        "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble))",
+        "_rootAup = shiftedRootAup;",
+        "InteriorGIProbeVolumeRuntime.OnOriginShift rejects bad committed total before root AUP mutation",
+    )
+    assert_before(
+        interior_gi_origin_shift,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "_visualDirty = true;",
+        "InteriorGIProbeVolumeRuntime.OnOriginShift rejects bad/no-op shifts before GPU upload dirty flag",
+    )
+    surface_weather_rebase = method_block(
+        read_project_source("Assets", "_Project", "Scripts", "Atmosphere", "SurfaceWeatherVfxRig.cs"),
+        "private void RebaseBoltPositions",
+    )
+    assert_contains_all(
+        surface_weather_rebase,
+        [
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "_boltRenderer.GetPositions(_boltPoints);",
+            "_boltPoints[i] -= shiftOffset;",
+        ],
+        "SurfaceWeatherVfxRig.RebaseBoltPositions finite lightning geometry mutation",
+    )
+    assert_before(
+        surface_weather_rebase,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "_boltRenderer.GetPositions(_boltPoints);",
+        "SurfaceWeatherVfxRig.RebaseBoltPositions rejects nonfinite shift before LineRenderer state readback",
+    )
+    fluid_engine_origin_shift = method_block(
+        read_project_source("Assets", "_Project", "Scripts", "HectonFluidEngine.cs"),
+        "public void OnOriginShift",
+    )
+    assert_contains_all(
+        fluid_engine_origin_shift,
+        [
+            "_lastOriginShiftSequence = shiftData.Sequence;",
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_pendingOriginShiftOffset += shiftOffset;",
+            "ApplyOriginShiftRebase(shiftOffset);",
+        ],
+        "HectonFluidEngine.OnOriginShift finite pending job rebase",
+    )
+    assert_before(
+        fluid_engine_origin_shift,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "_pendingOriginShiftOffset += shiftOffset;",
+        "HectonFluidEngine.OnOriginShift rejects nonfinite shift before deferred rebase accumulation",
+    )
+    fluid_engine_apply_rebase = method_block(
+        read_project_source("Assets", "_Project", "Scripts", "HectonFluidEngine.cs"),
+        "private void ApplyOriginShiftRebase",
+    )
+    assert_contains_all(
+        fluid_engine_apply_rebase,
+        [
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "float3 runtimeOffset = new float3(",
+        ],
+        "HectonFluidEngine.ApplyOriginShiftRebase finite runtime buffer rebase",
+    )
+    assert_before(
+        fluid_engine_apply_rebase,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "float3 runtimeOffset = new float3(",
+        "HectonFluidEngine.ApplyOriginShiftRebase rejects nonfinite shift before buffer mutation",
+    )
+    ar_waypoint_overlay = read_project_source("Assets", "_Project", "Scripts", "UI", "ARWaypointOverlay.cs")
+    ar_waypoint_origin_shift = method_block(ar_waypoint_overlay, "public void OnOriginShift")
+    ar_waypoint_rebase = method_block(ar_waypoint_overlay, "private void RebaseExternalRuntimeWaypointPresentation")
+    ar_waypoint_finite = method_block(ar_waypoint_overlay, "private static bool IsFiniteRuntimeVector")
+    assert_contains_all(
+        ar_waypoint_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteRuntimeVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+            "HideRenderedSlots();",
+            "if (shiftSqrMagnitude <= 0.000001f)",
+            "RebaseExternalRuntimeWaypointPresentation(-shiftOffset);",
+            "_targetCanvas = null;",
+        ],
+        "ARWaypointOverlay.OnOriginShift finite AUP-backed waypoint bridge",
+    )
+    assert_before(
+        ar_waypoint_origin_shift,
+        "if (!IsFiniteRuntimeVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+        "RebaseExternalRuntimeWaypointPresentation(-shiftOffset);",
+        "ARWaypointOverlay.OnOriginShift rejects nonfinite shifts before waypoint/cache mutation",
+    )
+    assert_before(
+        ar_waypoint_origin_shift,
+        "if (shiftSqrMagnitude <= 0.000001f)",
+        "RebaseExternalRuntimeWaypointPresentation(-shiftOffset);",
+        "ARWaypointOverlay.OnOriginShift rejects no-op shifts before UI hierarchy rebuild",
+    )
+    assert_contains_all(
+        ar_waypoint_rebase,
+        [
+            "if (!externalWaypoint.Active || externalWaypoint.UseTransform)",
+            "externalWaypoint.PositionAup.TryToRuntimeFloat3(out float3 resolvedRuntimePosition)",
+            "externalWaypoint.PresentationPosition = new Vector3(",
+            "Vector3 rebasedPosition = externalWaypoint.PresentationPosition + runtimeOffset;",
+            "if (!IsFiniteRuntimeVector(rebasedPosition))",
+            "externalWaypoint.HasPositionAup = false;",
+            "externalWaypoint.PresentationPosition = rebasedPosition;",
+        ],
+        "ARWaypointOverlay.RebaseExternalRuntimeWaypointPresentation AUP source-of-truth fallback",
+    )
+    assert_before(
+        ar_waypoint_rebase,
+        "externalWaypoint.PositionAup.TryToRuntimeFloat3(out float3 resolvedRuntimePosition)",
+        "Vector3 rebasedPosition = externalWaypoint.PresentationPosition + runtimeOffset;",
+        "ARWaypointOverlay.RebaseExternalRuntimeWaypointPresentation prefers AUP over stale Vector3 cache",
+    )
+    assert_contains_all(
+        ar_waypoint_finite,
+        ["return math.all(math.isfinite(new float3(value.x, value.y, value.z)));"],
+        "ARWaypointOverlay.IsFiniteRuntimeVector finite guard",
+    )
+    native_trail = read_project_source("Assets", "_Project", "Scripts", "VFX", "NativeTrailRenderer.cs")
+    native_trail_origin_shift = method_block(native_trail, "public void OnOriginShift")
+    native_trail_refresh_last = method_block(native_trail, "private bool TryRefreshLastSampleRuntimePosition")
+    assert_contains_all(
+        native_trail_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+            "ClearTrail();",
+            "if (shiftSqrMagnitude <= 0.000001f)",
+            "if (_hasLastSample && !TryRefreshLastSampleRuntimePosition())",
+            "_meshDirty = true;",
+        ],
+        "NativeTrailRenderer.OnOriginShift finite AUP trail bridge",
+    )
+    assert_before(
+        native_trail_origin_shift,
+        "if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+        "_meshDirty = true;",
+        "NativeTrailRenderer.OnOriginShift rejects nonfinite shifts before mesh rebuild request",
+    )
+    assert_before(
+        native_trail_origin_shift,
+        "if (shiftSqrMagnitude <= 0.000001f)",
+        "_meshDirty = true;",
+        "NativeTrailRenderer.OnOriginShift rejects no-op shifts before mesh rebuild request",
+    )
+    assert_contains_all(
+        native_trail_refresh_last,
+        [
+            "if (!_lastSampleAup.TryToRuntimeFloat3(out float3 runtime) ||",
+            "!math.all(math.isfinite(runtime)))",
+            "_lastSampleRuntimePosition = new Vector3(runtime.x, runtime.y, runtime.z);",
+            "return true;",
+        ],
+        "NativeTrailRenderer.TryRefreshLastSampleRuntimePosition finite AUP conversion",
+    )
+    localized_world_sign = read_project_source("Assets", "_Project", "Scripts", "LocalizedWorldSign.cs")
+    localized_world_sign_origin_shift = method_block(localized_world_sign, "public void OnOriginShift")
+    localized_world_sign_finite = method_block(localized_world_sign, "private static bool IsFiniteRuntimeVector")
+    assert_contains_all(
+        localized_world_sign_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteRuntimeVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+            "_hasAupPosition = false;",
+            "if (shiftSqrMagnitude <= 0.000001f)",
+            "Vector3 runtimePosition = shiftData.ToRuntimePosition(_absoluteUniversePositionDouble);",
+            "if (!IsFiniteRuntimeVector(runtimePosition))",
+            "_cachedTransform.position = runtimePosition;",
+        ],
+        "LocalizedWorldSign.OnOriginShift finite world-sign binding",
+    )
+    assert_before(
+        localized_world_sign_origin_shift,
+        "if (!IsFiniteRuntimeVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+        "_cachedTransform.position = runtimePosition;",
+        "LocalizedWorldSign.OnOriginShift rejects nonfinite shifts before transform mutation",
+    )
+    assert_before(
+        localized_world_sign_origin_shift,
+        "if (!IsFiniteRuntimeVector(runtimePosition))",
+        "_cachedTransform.position = runtimePosition;",
+        "LocalizedWorldSign.OnOriginShift validates converted runtime position before transform mutation",
+    )
+    assert_contains_all(
+        localized_world_sign_finite,
+        [
+            "return math.isfinite(value.x) &&",
+            "math.isfinite(value.y) &&",
+            "math.isfinite(value.z);",
+        ],
+        "LocalizedWorldSign.IsFiniteRuntimeVector finite guard",
+    )
+    flood_waterline = read_project_source("Assets", "_Project", "Scripts", "Visor", "InternalFloodWaterlineRuntime.cs")
+    flood_waterline_origin_shift = method_block(flood_waterline, "public void OnOriginShift")
+    assert_contains_all(
+        flood_waterline_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+            "float shiftY = shiftOffset.y;",
+            "if (shiftSqrMagnitude <= 0.000001f || math.abs(shiftY) <= 0.000001f)",
+            "_currentWaterlineY -= shiftY;",
+            "_targetWaterlineY -= shiftY;",
+            "QueueShaderGlobals(_hasWaterline ? _currentFill01 : 0f);",
+        ],
+        "InternalFloodWaterlineRuntime.OnOriginShift finite Y-axis waterline bridge",
+    )
+    assert_before(
+        flood_waterline_origin_shift,
+        "if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+        "_currentWaterlineY -= shiftY;",
+        "InternalFloodWaterlineRuntime.OnOriginShift rejects nonfinite full shift before waterline mutation",
+    )
+    assert_before(
+        flood_waterline_origin_shift,
+        "if (shiftSqrMagnitude <= 0.000001f || math.abs(shiftY) <= 0.000001f)",
+        "QueueShaderGlobals(_hasWaterline ? _currentFill01 : 0f);",
+        "InternalFloodWaterlineRuntime.OnOriginShift skips no-op/horizontal shifts before shader global flush",
+    )
+    construction_manager = read_project_source("Assets", "_Project", "Scripts", "ConstructionManager.cs")
+    construction_origin_shift = method_block(construction_manager, "public void OnOriginShift")
+    assert_contains_all(
+        construction_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteVector(shiftOffset) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "BaseDegradationSystem.ApplyOriginShift(in shiftData);",
+            "DroneFleetManager.ApplyOriginShift(shiftOffset);",
+            "RecoverHabitatJointsAfterOriginShift(in shiftData);",
+        ],
+        "ConstructionManager.OnOriginShift finite construction subsystem ingress",
+    )
+    for mutation in [
+        "BaseDegradationSystem.ApplyOriginShift(in shiftData);",
+        "DroneFleetManager.ApplyOriginShift(shiftOffset);",
+        "RecoverHabitatJointsAfterOriginShift(in shiftData);",
+    ]:
+        assert_before(
+            construction_origin_shift,
+            "if (!IsFiniteVector(shiftOffset) ||",
+            mutation,
+            f"ConstructionManager.OnOriginShift rejects nonfinite/no-op shifts before {mutation}",
+        )
+    vr_somatic_provider = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "Gameplay",
+        "VRSomaticProvider.cs",
+    )
+    vr_somatic_origin_shift = method_block(vr_somatic_provider, "public void OnOriginShift")
+    assert_contains_all(
+        vr_somatic_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+            "CompleteSomaticComfortForBarrier();",
+            "_lastObservedAupShiftSequence = shiftData.Sequence;",
+            "PublishShaderState();",
+            "float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);",
+            "RebaseHandArray(handTargets, shift);",
+            "RebaseHandArray(handPhysicalPositions, shift);",
+        ],
+        "VRSomaticProvider.OnOriginShift finite VR feedback bridge",
+    )
+    for mutation in [
+        "CompleteSomaticComfortForBarrier();",
+        "_lastObservedAupShiftSequence = shiftData.Sequence;",
+        "PublishShaderState();",
+        "RebaseHandArray(handTargets, shift);",
+    ]:
+        assert_before(
+            vr_somatic_origin_shift,
+            "if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+            mutation,
+            f"VRSomaticProvider.OnOriginShift rejects bad/no-op shifts before {mutation}",
+        )
+    somatic_kinematics = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "Gameplay",
+        "SomaticKinematicsRuntime.cs",
+    )
+    somatic_kinematics_origin_shift = method_block(somatic_kinematics, "public void OnOriginShift")
+    assert_contains_all(
+        somatic_kinematics_origin_shift,
+        [
+            "float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shiftOffset);",
+            "if (!math.all(math.isfinite(shiftOffset)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "CompleteScheduledKinematicsInPostFixedOrShutdown(true);",
+            "state.SectorOriginAup = shiftData.NewTotalOffsetDouble;",
+            "state.ShiftFrameId = shiftData.Sequence;",
+            "PublishOriginShiftFence(in state, in shiftData);",
+        ],
+        "SomaticKinematicsRuntime.OnOriginShift finite player kinematic sector bridge",
+    )
+    for mutation in [
+        "CompleteScheduledKinematicsInPostFixedOrShutdown(true);",
+        "state.SectorOriginAup = shiftData.NewTotalOffsetDouble;",
+        "state.ShiftFrameId = shiftData.Sequence;",
+        "PublishOriginShiftFence(in state, in shiftData);",
+    ]:
+        assert_before(
+            somatic_kinematics_origin_shift,
+            "if (!math.all(math.isfinite(shiftOffset)) ||",
+            mutation,
+            f"SomaticKinematicsRuntime.OnOriginShift rejects bad/no-op shifts before {mutation}",
+        )
+    pda_marker_registry = read_project_source("Assets", "_Project", "Scripts", "PDA", "PDAMarkerRegistry.cs")
+    pda_marker_origin_shift = method_block(pda_marker_registry, "public void OnOriginShift")
+    assert_contains_all(
+        pda_marker_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+            "if (_markerCount == 0)",
+            "TryResolveRuntimePosition(in record.positionAup, out Vector3 runtimePosition)",
+            "CommitMarkerRevision(0u);",
+        ],
+        "PDAMarkerRegistry.OnOriginShift finite marker runtime bridge",
+    )
+    for mutation in [
+        "TryResolveRuntimePosition(in record.positionAup, out Vector3 runtimePosition)",
+        "CommitMarkerRevision(0u);",
+    ]:
+        assert_before(
+            pda_marker_origin_shift,
+            "if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+            mutation,
+            f"PDAMarkerRegistry.OnOriginShift rejects bad/no-op shifts before {mutation}",
+        )
+    ui_scaler = read_project_source("Assets", "_Project", "Scripts", "UI", "HectonUIScaler.cs")
+    ui_scaler_origin_shift = method_block(ui_scaler, "public void OnOriginShift")
+    assert_contains_all(
+        ui_scaler_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_lastScreenWidth = -1;",
+            "ApplyScaleToCachedRoot(contentRoot, force: true);",
+        ],
+        "HectonUIScaler.OnOriginShift finite UI scale refresh bridge",
+    )
+    assert_before(
+        ui_scaler_origin_shift,
+        "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+        "_lastScreenWidth = -1;",
+        "HectonUIScaler.OnOriginShift rejects bad/no-op shifts before scale cache reset",
+    )
+    suit_hud = read_project_source("Assets", "_Project", "Scripts", "UI", "SuitHUDV4CanvasOverlay.cs")
+    suit_hud_origin_shift = method_block(suit_hud, "public void OnOriginShift")
+    suit_hud_scaler_origin_shift = method_block_after(suit_hud, "public void DisabledVisualSync()", "public void OnOriginShift")
+    assert_contains_all(
+        suit_hud_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "if (IsStencilRenderGraphSuppressedRuntime())",
+            "_canvasStateApplied = false;",
+            "QueueRuntimeCanvasRefresh(forceResolve: false, refreshDepthSignal: false);",
+        ],
+        "SuitHUDV4CanvasOverlay.OnOriginShift finite HUD refresh bridge",
+    )
+    for mutation in [
+        "if (IsStencilRenderGraphSuppressedRuntime())",
+        "_canvasStateApplied = false;",
+        "QueueRuntimeCanvasRefresh(forceResolve: false, refreshDepthSignal: false);",
+    ]:
+        assert_before(
+            suit_hud_origin_shift,
+            "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            mutation,
+            f"SuitHUDV4CanvasOverlay.OnOriginShift rejects bad/no-op shifts before {mutation}",
+        )
+    assert_contains_all(
+        suit_hud_scaler_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_lastScreenWidth = -1;",
+            "ApplyScaleToResolvedContentRoot(_contentRoot, force: true);",
+        ],
+        "SuitHUDV4CanvasOverlay scaler OnOriginShift finite UI scale bridge",
+    )
+    assert_before(
+        suit_hud_scaler_origin_shift,
+        "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+        "_lastScreenWidth = -1;",
+        "SuitHUDV4CanvasOverlay scaler OnOriginShift rejects bad/no-op shifts before scale cache reset",
+    )
+    spatial_audio = read_project_source("Assets", "_Project", "Scripts", "SpatialAudioManager.cs")
+    spatial_audio_origin_shift = method_block(spatial_audio, "public void OnOriginShift")
+    assert_contains_all(
+        spatial_audio_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+            "DumpVirtualVoiceBlackBox();",
+            "if (shiftSqrMagnitude <= 0.000001f)",
+            "CompleteVirtualVoiceSort();",
+        ],
+        "SpatialAudioManager.OnOriginShift finite virtual-voice barrier bridge",
+    )
+    assert_before(
+        spatial_audio_origin_shift,
+        "if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+        "CompleteVirtualVoiceSort();",
+        "SpatialAudioManager.OnOriginShift rejects nonfinite shifts before virtual voice barrier",
+    )
+    assert_before(
+        spatial_audio_origin_shift,
+        "if (shiftSqrMagnitude <= 0.000001f)",
+        "CompleteVirtualVoiceSort();",
+        "SpatialAudioManager.OnOriginShift rejects no-op shifts before virtual voice barrier",
+    )
+    camera_rig = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "HectonPlayerCameraRig.cs")
+    camera_rig_origin_shift = method_block(camera_rig, "public void OnOriginShift")
+    assert_contains_all(
+        camera_rig_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "if (cameraTransform != null)",
+            "_originShiftTrackingLockFrame = SystemDispatcher.CurrentFrameIndex;",
+        ],
+        "HectonPlayerCameraRig.OnOriginShift finite camera tracking lock bridge",
+    )
+    assert_before(
+        camera_rig_origin_shift,
+        "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+        "_originShiftTrackingLockFrame = SystemDispatcher.CurrentFrameIndex;",
+        "HectonPlayerCameraRig.OnOriginShift rejects bad/no-op shifts before camera tracking lock",
+    )
+    fabricator = read_project_source("Assets", "_Project", "Scripts", "Fabricator.cs")
+    fabricator_origin_shift = method_block(fabricator, "public void OnOriginShift")
+    assert_contains_all(
+        fabricator_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteRuntimePosition(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+            "_fabricatorAupCached = false;",
+            "CacheFabricatorAup();",
+            "ApplyAssemblyVisualProgress(_assemblyProgress01, IsPausedNoPower);",
+        ],
+        "Fabricator.OnOriginShift finite crafting AUP bridge",
+    )
+    assert_before(
+        fabricator_origin_shift,
+        "if (!IsFiniteRuntimePosition(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+        "_fabricatorAupCached = false;",
+        "Fabricator.OnOriginShift rejects bad/no-op shifts before crafting cache reset",
+    )
+    fabricator_ui = read_project_source("Assets", "_Project", "Scripts", "HectonFabricatorUI.cs")
+    fabricator_ui_origin_shift = method_block(fabricator_ui, "public void OnOriginShift")
+    assert_contains_all(
+        fabricator_ui_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_recipeListRoot.hasChanged = true;",
+            "_selectedHologramMatrixInitialized = false;",
+            "InvalidateHologramMatrixCache();",
+        ],
+        "HectonFabricatorUI.OnOriginShift finite hologram/UI cache bridge",
+    )
+    assert_before(
+        fabricator_ui_origin_shift,
+        "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+        "_selectedHologramMatrixInitialized = false;",
+        "HectonFabricatorUI.OnOriginShift rejects bad/no-op shifts before hologram cache reset",
+    )
+    base_airlock = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "BaseAirlock.cs")
+    base_airlock_origin_shift = method_block(base_airlock, "public void OnOriginShift")
+    assert_contains_all(
+        base_airlock_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+            "_bulkheadPoseSnapshotValid = false;",
+            "_bulkheadPoseShiftSequence = shiftData.Sequence;",
+            "_pressurizationPublishPending = true;",
+        ],
+        "BaseAirlock.OnOriginShift finite bulkhead/pressurization bridge",
+    )
+    assert_before(
+        base_airlock_origin_shift,
+        "if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+        "_bulkheadPoseSnapshotValid = false;",
+        "BaseAirlock.OnOriginShift rejects bad/no-op shifts before pressurization republish",
+    )
+    vehicle_docking = read_project_source("Assets", "_Project", "Scripts", "Construction", "VehicleDockingModule.cs")
+    vehicle_docking_origin_shift = method_block(vehicle_docking, "public void OnOriginShift")
+    assert_contains_all(
+        vehicle_docking_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+            "if (_dockedTransport == null || _dockedBehaviour == null)",
+            "FinalizeDockedTransport();",
+            "SnapDockedBodyToAnchor()",
+            "RefreshDockedRelativeAup(anchor.position);",
+        ],
+        "VehicleDockingModule.OnOriginShift finite docked-body bridge",
+    )
+    assert_before(
+        vehicle_docking_origin_shift,
+        "if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+        "FinalizeDockedTransport();",
+        "VehicleDockingModule.OnOriginShift rejects bad/no-op shifts before docking finalize/snap",
+    )
+    vr_cable_drag = read_project_source("Assets", "_Project", "Scripts", "Interaction", "VRCableDragPlug.cs")
+    vr_cable_drag_origin_shift = method_block(vr_cable_drag, "public void OnOriginShift")
+    assert_contains_all(
+        vr_cable_drag_origin_shift,
+        [
+            "Vector3 offset = shiftData.ShiftOffset;",
+            "float offsetSqrMagnitude = offset.sqrMagnitude;",
+            "if (!IsFiniteVector(offset) || !math.isfinite(offsetSqrMagnitude) || offsetSqrMagnitude <= 0.000001f)",
+            "_manualPlugPosition -= offset;",
+        ],
+        "VRCableDragPlug.OnOriginShift finite manual plug bridge",
+    )
+    assert_before(
+        vr_cable_drag_origin_shift,
+        "if (!IsFiniteVector(offset) || !math.isfinite(offsetSqrMagnitude) || offsetSqrMagnitude <= 0.000001f)",
+        "_manualPlugPosition -= offset;",
+        "VRCableDragPlug.OnOriginShift rejects bad/no-op shifts before manual pose rebase",
+    )
+    loot_magnet = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "Loot", "LootMagnetSystem.cs")
+    loot_magnet_origin_shift = method_block(loot_magnet, "public void OnOriginShift")
+    assert_contains_all(
+        loot_magnet_origin_shift,
+        [
+            "float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shiftOffset);",
+            "if (!IsFiniteFloat3(shiftOffset) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "if (shiftSqrMagnitude <= 0.000001f)",
+            "ForceCompleteAndCommitScheduledJobForBarrier();",
+            "ReapplyPulledProxyRuntimePoses(in rebaseViews);",
+        ],
+        "LootMagnetSystem.OnOriginShift finite job/AUP proxy bridge",
+    )
+    assert_before(
+        loot_magnet_origin_shift,
+        "if (!IsFiniteFloat3(shiftOffset) ||",
+        "ForceCompleteAndCommitScheduledJobForBarrier();",
+        "LootMagnetSystem.OnOriginShift rejects bad shifts before scheduled job barrier",
+    )
+    assert_before(
+        loot_magnet_origin_shift,
+        "if (shiftSqrMagnitude <= 0.000001f)",
+        "ForceCompleteAndCommitScheduledJobForBarrier();",
+        "LootMagnetSystem.OnOriginShift rejects no-op shifts before scheduled job barrier",
+    )
+    foveated_manager = read_project_source("Assets", "_Project", "Scripts", "Core", "FoveatedSimulationManager.cs")
+    foveated_origin_shift = method_block(foveated_manager, "public void OnOriginShift")
+    assert_contains_all(
+        foveated_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= MinimumVelocityDelta)",
+            "ForceCompleteFrameJobsInPostSimulationWindow();",
+            "_visualFromPositions[i] -= shiftOffset;",
+            "_visualTargetCacheDirty = true;",
+        ],
+        "FoveatedSimulationManager.OnOriginShift finite visual target bridge",
+    )
+    assert_before(
+        foveated_origin_shift,
+        "if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= MinimumVelocityDelta)",
+        "ForceCompleteFrameJobsInPostSimulationWindow();",
+        "FoveatedSimulationManager.OnOriginShift rejects bad/no-op shifts before visual target rebase",
+    )
+    radiation_grid = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "RadiationHazardGrid.cs")
+    radiation_origin_shift = method_block(radiation_grid, "public void OnOriginShift")
+    assert_contains_all(
+        radiation_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_lastShiftSequence = shiftData.Sequence;",
+            "RecordTelemetry(_gridOriginAup, _lastGridIntensity01, _accumulatedRadiationDose, RadiationTelemetryFlagOriginShift);",
+        ],
+        "RadiationHazardGrid.OnOriginShift finite telemetry bridge",
+    )
+    assert_before(
+        radiation_origin_shift,
+        "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+        "_lastShiftSequence = shiftData.Sequence;",
+        "RadiationHazardGrid.OnOriginShift rejects bad/no-op shifts before telemetry sequence advance",
+    )
+    foundation_pylon_gpu = read_project_source("Assets", "_Project", "Scripts", "Construction", "FoundationPylonGpuBatch.cs")
+    foundation_pylon_origin_shift = method_block(foundation_pylon_gpu, "public void OnOriginShift")
+    assert_contains_all(
+        foundation_pylon_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "_cachedOriginAup = shiftData.NewTotalOffsetDouble;",
+            "ClearUploadedBatch();",
+        ],
+        "FoundationPylonGpuBatch.OnOriginShift finite GPU origin snapshot bridge",
+    )
+    assert_before(
+        foundation_pylon_origin_shift,
+        "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+        "_cachedOriginAup = shiftData.NewTotalOffsetDouble;",
+        "FoundationPylonGpuBatch.OnOriginShift rejects bad/no-op shifts before GPU cache discard",
+    )
+    sdf_drill = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "Mining", "DeployableSdfDrillRuntime.cs")
+    sdf_drill_origin_shift = method_block(sdf_drill, "public void OnOriginShift")
+    assert_contains_all(
+        sdf_drill_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteVector3(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+            "Vector3 runtime = _anchorAup.ToRuntimeFloat3();",
+            "_anchorRuntimePosition = new float3(runtime.x, runtime.y, runtime.z);",
+            "_cachedTransform.position = runtime;",
+        ],
+        "DeployableSdfDrillRuntime.OnOriginShift finite AUP anchor bridge",
+    )
+    assert_before(
+        sdf_drill_origin_shift,
+        "if (!IsFiniteVector3(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+        "Vector3 runtime = _anchorAup.ToRuntimeFloat3();",
+        "DeployableSdfDrillRuntime.OnOriginShift rejects bad/no-op shifts before anchor projection",
+    )
+    weld_target = read_project_source("Assets", "_Project", "Scripts", "Construction", "VRConstructionWeldTarget.cs")
+    weld_target_origin_shift = method_block(weld_target, "public void OnOriginShift")
+    assert_contains_all(
+        weld_target_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+            "CacheCornerRuntimePositions();",
+            "UpdateWeldGlowProxyRegistration();",
+        ],
+        "VRConstructionWeldTarget.OnOriginShift finite weld proxy bridge",
+    )
+    assert_before(
+        weld_target_origin_shift,
+        "if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+        "CacheCornerRuntimePositions();",
+        "VRConstructionWeldTarget.OnOriginShift rejects bad/no-op shifts before weld proxy refresh",
+    )
+    buoyancy_displacement = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "Physics",
+        "Buoyancy",
+        "BuoyancyDisplacementRuntime.cs",
+    )
+    buoyancy_displacement_origin_shift = method_block(buoyancy_displacement, "public void OnOriginShift")
+    assert_contains_all(
+        buoyancy_displacement_origin_shift,
+        [
+            "float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shiftOffset);",
+            "if (!math.all(math.isfinite(shiftOffset)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "_cachedSectorAup = shiftData.NewTotalOffsetDouble;",
+        ],
+        "BuoyancyDisplacementRuntime.OnOriginShift finite sector snapshot bridge",
+    )
+    assert_before(
+        buoyancy_displacement_origin_shift,
+        "if (!math.all(math.isfinite(shiftOffset)) ||",
+        "_cachedSectorAup = shiftData.NewTotalOffsetDouble;",
+        "BuoyancyDisplacementRuntime.OnOriginShift rejects bad/no-op shifts before sector snapshot mutation",
+    )
+    async_buoyancy = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "Physics",
+        "Buoyancy",
+        "AsyncReadback",
+        "AsyncBuoyancyReadbackRuntime.cs",
+    )
+    async_buoyancy_origin_shift = method_block(async_buoyancy, "public void OnOriginShift")
+    assert_contains_all(
+        async_buoyancy_origin_shift,
+        [
+            "float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shiftOffset);",
+            "if (!math.all(math.isfinite(shiftOffset)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "ApplyOriginSnapshot(in shiftData);",
+        ],
+        "AsyncBuoyancyReadbackRuntime.OnOriginShift finite readback origin bridge",
+    )
+    assert_before(
+        async_buoyancy_origin_shift,
+        "if (!math.all(math.isfinite(shiftOffset)) ||",
+        "ApplyOriginSnapshot(in shiftData);",
+        "AsyncBuoyancyReadbackRuntime.OnOriginShift rejects bad/no-op shifts before origin snapshot mutation",
+    )
+    gerstner_wave = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "Physics",
+        "Buoyancy",
+        "AnalyticalGerstnerWaveRuntime.cs",
+    )
+    gerstner_origin_shift = method_block(gerstner_wave, "public void OnOriginShift")
+    assert_contains_all(
+        gerstner_origin_shift,
+        [
+            "float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shiftOffset);",
+            "if (!math.all(math.isfinite(shiftOffset)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "ApplyOriginSnapshot(in shiftData);",
+        ],
+        "AnalyticalGerstnerWaveRuntime.OnOriginShift finite wave origin bridge",
+    )
+    assert_before(
+        gerstner_origin_shift,
+        "if (!math.all(math.isfinite(shiftOffset)) ||",
+        "ApplyOriginSnapshot(in shiftData);",
+        "AnalyticalGerstnerWaveRuntime.OnOriginShift rejects bad/no-op shifts before wave origin snapshot mutation",
+    )
+    biome_boundary = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "World",
+        "Biomes",
+        "BiomeBoundarySdfRuntime.cs",
+    )
+    biome_boundary_origin_shift = method_block(biome_boundary, "public void OnOriginShift")
+    assert_contains_all(
+        biome_boundary_origin_shift,
+        [
+            "float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shiftOffset);",
+            "if (!math.all(math.isfinite(shiftOffset)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_lastOriginShiftSequence = shiftData.Sequence;",
+        ],
+        "BiomeBoundarySdfRuntime.OnOriginShift finite telemetry sequence bridge",
+    )
+    assert_before(
+        biome_boundary_origin_shift,
+        "if (!math.all(math.isfinite(shiftOffset)) ||",
+        "_lastOriginShiftSequence = shiftData.Sequence;",
+        "BiomeBoundarySdfRuntime.OnOriginShift rejects bad/no-op shifts before sequence stamp",
+    )
+    biome_transition = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "World",
+        "Biomes",
+        "BiomeTransitionManagerRuntime.cs",
+    )
+    biome_transition_origin_shift = method_block(biome_transition, "public void OnOriginShift")
+    assert_contains_all(
+        biome_transition_origin_shift,
+        [
+            "float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shiftOffset);",
+            "if (!math.all(math.isfinite(shiftOffset)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_lastOriginShiftSequence = shiftData.Sequence;",
+        ],
+        "BiomeTransitionManagerRuntime.OnOriginShift finite shader/telemetry sequence bridge",
+    )
+    assert_before(
+        biome_transition_origin_shift,
+        "if (!math.all(math.isfinite(shiftOffset)) ||",
+        "_lastOriginShiftSequence = shiftData.Sequence;",
+        "BiomeTransitionManagerRuntime.OnOriginShift rejects bad/no-op shifts before sequence stamp",
+    )
+    toxic_chemistry = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "Atmosphere",
+        "ToxicOutgassingChemistryRuntime.cs",
+    )
+    toxic_chemistry_origin_shift = method_block(toxic_chemistry, "public void OnOriginShift")
+    assert_contains_all(
+        toxic_chemistry_origin_shift,
+        [
+            "Vector3 shiftVector = shiftData.ShiftOffset;",
+            "float3 shift = new float3(shiftVector.x, shiftVector.y, shiftVector.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shift);",
+            "if (!math.all(math.isfinite(shift)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "_pendingRebaseCells += new int3((int)math.round(cells.x), (int)math.round(cells.y), (int)math.round(cells.z));",
+            "_gridOriginAup = shiftData.NewTotalOffsetDouble;",
+            "_hasPendingRebase = math.any(_pendingRebaseCells != int3.zero);",
+        ],
+        "ToxicOutgassingChemistryRuntime.OnOriginShift finite chemical grid bridge",
+    )
+    assert_before(
+        toxic_chemistry_origin_shift,
+        "if (!math.all(math.isfinite(shift)) ||",
+        "_pendingRebaseCells += new int3((int)math.round(cells.x), (int)math.round(cells.y), (int)math.round(cells.z));",
+        "ToxicOutgassingChemistryRuntime.OnOriginShift rejects bad/no-op shifts before pending rebase accumulation",
+    )
+    assert_before(
+        toxic_chemistry_origin_shift,
+        "_pendingRebaseCells += new int3((int)math.round(cells.x), (int)math.round(cells.y), (int)math.round(cells.z));",
+        "_gridOriginAup = shiftData.NewTotalOffsetDouble;",
+        "ToxicOutgassingChemistryRuntime.OnOriginShift uses committed total AUP after deriving rebase cells",
+    )
+    storm_runtime = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "Atmosphere",
+        "StormPropagation",
+        "ShinobuStormPropagationRuntime.cs",
+    )
+    storm_origin_shift = method_block(storm_runtime, "public void OnOriginShift")
+    assert_contains_all(
+        storm_origin_shift,
+        [
+            "float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shiftOffset);",
+            "if (!math.all(math.isfinite(shiftOffset)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "_cachedOriginFallbackAup = SanitizeAup(shiftData.NewTotalOffsetDouble);",
+        ],
+        "ShinobuStormPropagationRuntime.OnOriginShift finite storm origin fallback bridge",
+    )
+    assert_before(
+        storm_origin_shift,
+        "if (!math.all(math.isfinite(shiftOffset)) ||",
+        "_cachedOriginFallbackAup = SanitizeAup(shiftData.NewTotalOffsetDouble);",
+        "ShinobuStormPropagationRuntime.OnOriginShift rejects bad/no-op shifts before fallback origin mutation",
+    )
+    stress_spawn = read_project_source("Assets", "_Project", "Scripts", "Fauna", "StressDrivenSpawnDirector.cs")
+    stress_spawn_origin_shift = method_block(stress_spawn, "public void OnOriginShift")
+    assert_contains_all(
+        stress_spawn_origin_shift,
+        [
+            "float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shiftOffset);",
+            "if (!math.all(math.isfinite(shiftOffset)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "if (!math.all(math.isfinite(origin)))",
+            "_floatingOriginSnapshotValid = false;",
+            "_dumpFaultPending = 1;",
+            "_cachedFloatingOriginOffset = origin;",
+            "_cachedFloatingOriginSequence = shiftData.Sequence;",
+        ],
+        "StressDrivenSpawnDirector.OnOriginShift finite spawn origin snapshot bridge",
+    )
+    assert_before(
+        stress_spawn_origin_shift,
+        "if (!math.all(math.isfinite(shiftOffset)) ||",
+        "_cachedFloatingOriginOffset = origin;",
+        "StressDrivenSpawnDirector.OnOriginShift rejects bad/no-op shifts before cached origin mutation",
+    )
+    assert_before(
+        stress_spawn_origin_shift,
+        "if (!math.all(math.isfinite(origin)))",
+        "_cachedFloatingOriginOffset = origin;",
+        "StressDrivenSpawnDirector.OnOriginShift rejects nonfinite total AUP before cached origin mutation",
+    )
+    fauna_brain = read_project_source("Assets", "_Project", "Scripts", "Fauna", "FaunaBrain.cs")
+    fauna_brain_origin_shift = method_block(fauna_brain, "public void OnOriginShift")
+    assert_contains_all(
+        fauna_brain_origin_shift,
+        [
+            "float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shiftOffset);",
+            "if (!math.all(math.isfinite(shiftOffset)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "_voxelRouteOriginShiftRefreshActive = true;",
+            "RefreshVoxelRouteRuntimeCacheFromAup(in shiftData);",
+            "RefreshForcedMigrationTargetFromAup(in shiftData);",
+        ],
+        "FaunaBrain.OnOriginShift finite route/hunt target bridge",
+    )
+    assert_before(
+        fauna_brain_origin_shift,
+        "if (!math.all(math.isfinite(shiftOffset)) ||",
+        "_voxelRouteOriginShiftRefreshActive = true;",
+        "FaunaBrain.OnOriginShift rejects bad/no-op shifts before route cache refresh",
+    )
+    organic_manager = read_project_source("Assets", "_Project", "Scripts", "World", "DestructibleOrganicManager.cs")
+    organic_origin_shift = method_block(organic_manager, "public void OnOriginShift")
+    assert_contains_all(
+        organic_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteVector(shiftOffset) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "double3 committedOriginOffset = shiftData.NewTotalOffsetDouble;",
+            "Vector3 resolvedRuntimePosition = ToRuntimeVector3(runtimePosition);",
+            "if (!IsFiniteVector(resolvedRuntimePosition))",
+            "record.Position = resolvedRuntimePosition;",
+        ],
+        "DestructibleOrganicManager.OnOriginShift finite corpse attractor bridge",
+    )
+    assert_before(
+        organic_origin_shift,
+        "if (!IsFiniteVector(shiftOffset) ||",
+        "double3 committedOriginOffset = shiftData.NewTotalOffsetDouble;",
+        "DestructibleOrganicManager.OnOriginShift rejects bad/no-op shifts before corpse cache reproject",
+    )
+    assert_before(
+        organic_origin_shift,
+        "if (!IsFiniteVector(resolvedRuntimePosition))",
+        "record.Position = resolvedRuntimePosition;",
+        "DestructibleOrganicManager.OnOriginShift rejects nonfinite per-record runtime conversion",
+    )
+    flora_interaction = read_project_source("Assets", "_Project", "Scripts", "World", "FloraInteractionManager.cs")
+    flora_interaction_origin_shift = method_block(flora_interaction, "public void OnOriginShift")
+    assert_contains_all(
+        flora_interaction_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!isActiveAndEnabled ||",
+            "!IsFiniteVector3(shiftOffset) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);",
+            "ClearFloraSwayDisplacementField(forceUpload: true);",
+            "ApplyRuntimeOffsetToCachedState(-shiftOffset);",
+        ],
+        "FloraInteractionManager.OnOriginShift finite flora interaction cache bridge",
+    )
+    assert_before(
+        flora_interaction_origin_shift,
+        "if (!isActiveAndEnabled ||",
+        "CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);",
+        "FloraInteractionManager.OnOriginShift rejects bad/no-op shifts before wake/sway cache mutation",
+    )
+    indirect_vegetation = read_project_source("Assets", "_Project", "Scripts", "World", "HectonIndirectVegetationRenderer.cs")
+    indirect_vegetation_origin_shift = method_block(indirect_vegetation, "public void OnOriginShift")
+    assert_contains_all(
+        indirect_vegetation_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_cachedCullCameraPosition -= shiftOffset;",
+            "_explicitBounds.center -= shiftOffset;",
+        ],
+        "HectonIndirectVegetationRenderer.OnOriginShift finite indirect draw cache bridge",
+    )
+    assert_before(
+        indirect_vegetation_origin_shift,
+        "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+        "_cachedCullCameraPosition -= shiftOffset;",
+        "HectonIndirectVegetationRenderer.OnOriginShift rejects bad/no-op shifts before draw bounds mutation",
+    )
+    micro_fauna = read_project_source("Assets", "_Project", "Scripts", "World", "SargassumMicroFaunaBoids.cs")
+    micro_fauna_origin_shift = method_block(micro_fauna, "public void OnOriginShift")
+    assert_contains_all(
+        micro_fauna_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteVector3(shiftOffset) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "InvalidateViewPoseCache();",
+            "ApplyRuntimeOffsetToSwarmData(-shiftOffset);",
+        ],
+        "SargassumMicroFaunaBoids.OnOriginShift finite swarm cache bridge",
+    )
+    assert_before(
+        micro_fauna_origin_shift,
+        "if (!IsFiniteVector3(shiftOffset) ||",
+        "ApplyRuntimeOffsetToSwarmData(-shiftOffset);",
+        "SargassumMicroFaunaBoids.OnOriginShift rejects bad/no-op shifts before swarm cache mutation",
+    )
+    collapse_chunk = read_project_source("Assets", "_Project", "Scripts", "World", "SargassumCollapseChunk.cs")
+    collapse_chunk_origin_shift = method_block(collapse_chunk, "public void OnOriginShift")
+    assert_contains_all(
+        collapse_chunk_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!isActiveAndEnabled ||",
+            "!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_snagConnectedAnchor -= shiftOffset;",
+            "RebaseWorldSpaceParticles(siltTrail, _siltTrailShiftParticles, shiftOffset);",
+        ],
+        "SargassumCollapseChunk.OnOriginShift finite collapse particle bridge",
+    )
+    assert_before(
+        collapse_chunk_origin_shift,
+        "if (!isActiveAndEnabled ||",
+        "_snagConnectedAnchor -= shiftOffset;",
+        "SargassumCollapseChunk.OnOriginShift rejects bad/no-op shifts before snag/particle mutation",
+    )
+    biolum_manager = read_project_source("Assets", "_Project", "Scripts", "World", "Biolum", "HectonBiolumManager.cs")
+    biolum_origin_shift = method_block(biolum_manager, "public void OnOriginShift")
+    assert_contains_all(
+        biolum_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);",
+            "float shiftSqrMagnitude = math.lengthsq(shift);",
+            "if (!math.all(math.isfinite(shift)) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_touchRipples[i].RuntimePosition -= shift;",
+        ],
+        "HectonBiolumManager.OnOriginShift finite touch-ripple bridge",
+    )
+    assert_before(
+        biolum_origin_shift,
+        "if (!math.all(math.isfinite(shift)) ||",
+        "_touchRipples[i].RuntimePosition -= shift;",
+        "HectonBiolumManager.OnOriginShift rejects bad/no-op shifts before touch-ripple mutation",
+    )
+    procedural_scatter = read_project_source("Assets", "_Project", "Scripts", "WorldProceduralScatterDirector.cs")
+    procedural_scatter_origin_shift = method_block(procedural_scatter, "public void OnOriginShift")
+    assert_contains_all(
+        procedural_scatter_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))",
+            "InvalidateObserverAbsolutePositionCache();",
+            "RebuildFloraGpuiMatricesForCommittedOrigin();",
+        ],
+        "WorldProceduralScatterDirector.OnOriginShift finite GPUI scatter bridge",
+    )
+    assert_before(
+        procedural_scatter_origin_shift,
+        "if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||",
+        "InvalidateObserverAbsolutePositionCache();",
+        "WorldProceduralScatterDirector.OnOriginShift rejects bad/no-op shifts before GPUI rebuild",
+    )
+    thermodynamics_hazard_grid = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "Thermodynamics",
+        "ThermodynamicsHazardGridRuntime.cs",
+    )
+    thermodynamics_hazard_origin_shift = method_block(thermodynamics_hazard_grid, "public void OnOriginShift")
+    assert_contains_all(
+        thermodynamics_hazard_origin_shift,
+        [
+            "float safeCellSize = math.max(1f, cellSizeMeters);",
+            "float3 shift = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);",
+            "if (!math.all(math.isfinite(shift)))",
+            "int3 shiftCells = (int3)math.round(shift / safeCellSize);",
+            "if (math.all(shiftCells == int3.zero))",
+            "_pendingRebaseCells += shiftCells;",
+            "_shiftSequence = shiftData.Sequence;",
+        ],
+        "ThermodynamicsHazardGridRuntime.OnOriginShift finite cell rebase bridge",
+    )
+    assert_before(
+        thermodynamics_hazard_origin_shift,
+        "if (!math.all(math.isfinite(shift)))",
+        "_pendingRebaseCells += shiftCells;",
+        "ThermodynamicsHazardGridRuntime.OnOriginShift rejects nonfinite shift before pending cell rebase",
+    )
+    assert_before(
+        thermodynamics_hazard_origin_shift,
+        "if (math.all(shiftCells == int3.zero))",
+        "_shiftSequence = shiftData.Sequence;",
+        "ThermodynamicsHazardGridRuntime.OnOriginShift rejects zero-cell shift before sequence advance",
+    )
+    abyssal_thermodynamics_solver = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "Thermodynamics",
+        "AbyssalThermodynamicsSolver.cs",
+    )
+    abyssal_thermodynamics_origin_shift = method_block(abyssal_thermodynamics_solver, "public void OnOriginShift")
+    assert_contains_all(
+        abyssal_thermodynamics_origin_shift,
+        [
+            "float3 shiftOffset = new float3(",
+            "shiftData.ShiftOffset.x,",
+            "shiftData.ShiftOffset.y,",
+            "shiftData.ShiftOffset.z);",
+            "if (!math.all(math.isfinite(shiftOffset)) || math.lengthsq(shiftOffset) <= 0.000001f)",
+            "_lastShiftSequence = shiftData.Sequence;",
+            "tuning->LastShiftSequence = shiftData.Sequence;",
+        ],
+        "AbyssalThermodynamicsSolver.OnOriginShift finite thermal sequence bridge",
+    )
+    assert_before(
+        abyssal_thermodynamics_origin_shift,
+        "if (!math.all(math.isfinite(shiftOffset)) || math.lengthsq(shiftOffset) <= 0.000001f)",
+        "_lastShiftSequence = shiftData.Sequence;",
+        "AbyssalThermodynamicsSolver.OnOriginShift rejects bad/no-op shifts before solver sequence advance",
+    )
+    assert_before(
+        abyssal_thermodynamics_origin_shift,
+        "if (!math.all(math.isfinite(shiftOffset)) || math.lengthsq(shiftOffset) <= 0.000001f)",
+        "tuning->LastShiftSequence = shiftData.Sequence;",
+        "AbyssalThermodynamicsSolver.OnOriginShift rejects bad/no-op shifts before DataVault tuning write",
+    )
+    mapmagic_vegetation = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "World",
+        "HectonMapMagicVegetationBridge.cs",
+    )
+    mapmagic_origin_shift = method_block(mapmagic_vegetation, "public void OnOriginShift")
+    mapmagic_try_apply_shift = method_block(mapmagic_vegetation, "private bool TryApplyWorldOffsetToAllChunks")
+    mapmagic_queue_shift = method_block(mapmagic_vegetation, "private void QueuePendingWorldOffset")
+    mapmagic_apply_pending_shift = method_block(mapmagic_vegetation, "private void TryApplyPendingWorldOffset")
+    mapmagic_clear_pending_shift = method_block(mapmagic_vegetation, "private void ClearPendingWorldOffset")
+    mapmagic_apply_shift_immediate = method_block(mapmagic_vegetation, "private void ApplyWorldOffsetToAllChunksImmediate")
+    mapmagic_finite_vector = method_block(mapmagic_vegetation, "private static bool IsFiniteVector")
+    assert_contains_all(
+        mapmagic_origin_shift,
+        [
+            "if (!isActiveAndEnabled)",
+            "TryApplyWorldOffsetToAllChunks(shiftData.ShiftOffset, -shiftData.NewTotalOffsetDouble, refreshResidency: true);",
+        ],
+        "HectonMapMagicVegetationBridge.OnOriginShift routes through finite queued offset bridge",
+    )
+    assert_before(
+        mapmagic_origin_shift,
+        "if (!isActiveAndEnabled)",
+        "TryApplyWorldOffsetToAllChunks(shiftData.ShiftOffset, -shiftData.NewTotalOffsetDouble, refreshResidency: true);",
+        "HectonMapMagicVegetationBridge.OnOriginShift rejects inactive runtime before chunk offset bridge",
+    )
+    assert_contains_all(
+        mapmagic_try_apply_shift,
+        [
+            "float offsetSqrMagnitude = offset.sqrMagnitude;",
+            "if (!IsFiniteVector(offset) ||",
+            "!math.isfinite(offsetSqrMagnitude) ||",
+            "!math.all(math.isfinite(newTotalUniverseOffsetDouble)))",
+            "ClearPendingWorldOffset();",
+            "if (offsetSqrMagnitude <= 0.000001f)",
+            "QueuePendingWorldOffset(offset, newTotalUniverseOffsetDouble);",
+            "ApplyWorldOffsetToAllChunksImmediate(offset, newTotalUniverseOffsetDouble, refreshResidency);",
+        ],
+        "HectonMapMagicVegetationBridge.TryApplyWorldOffsetToAllChunks finite queued offset ingress",
+    )
+    assert_before(
+        mapmagic_try_apply_shift,
+        "if (!IsFiniteVector(offset) ||",
+        "QueuePendingWorldOffset(offset, newTotalUniverseOffsetDouble);",
+        "HectonMapMagicVegetationBridge.TryApplyWorldOffsetToAllChunks rejects bad offset before queueing",
+    )
+    assert_contains_all(
+        mapmagic_queue_shift,
+        [
+            "Vector3 accumulatedOffset = _hasPendingWorldOffset ? _pendingWorldOffset + offset : offset;",
+            "if (!IsFiniteVector(accumulatedOffset) ||",
+            "!math.all(math.isfinite(newTotalUniverseOffsetDouble)))",
+            "ClearPendingWorldOffset();",
+            "_pendingWorldOffset = accumulatedOffset;",
+            "_pendingWorldOffsetDouble = newTotalUniverseOffsetDouble;",
+            "_hasPendingWorldOffset = true;",
+        ],
+        "HectonMapMagicVegetationBridge.QueuePendingWorldOffset finite pending accumulation",
+    )
+    assert_before(
+        mapmagic_queue_shift,
+        "if (!IsFiniteVector(accumulatedOffset) ||",
+        "_pendingWorldOffset = accumulatedOffset;",
+        "HectonMapMagicVegetationBridge.QueuePendingWorldOffset rejects nonfinite accumulated pending shift",
+    )
+    assert_contains_all(
+        mapmagic_apply_pending_shift,
+        [
+            "Vector3 pendingOffset = _pendingWorldOffset;",
+            "double3 pendingTotalOffset = _pendingWorldOffsetDouble;",
+            "_pendingWorldOffset = default;",
+            "_pendingWorldOffsetDouble = default;",
+            "_hasPendingWorldOffset = false;",
+            "if (!IsFiniteVector(pendingOffset) ||",
+            "pendingOffset.sqrMagnitude <= 0.000001f ||",
+            "!math.all(math.isfinite(pendingTotalOffset)))",
+            "ApplyWorldOffsetToAllChunksImmediate(pendingOffset, pendingTotalOffset, refreshResidency: false);",
+        ],
+        "HectonMapMagicVegetationBridge.TryApplyPendingWorldOffset finite pending drain",
+    )
+    assert_before(
+        mapmagic_apply_pending_shift,
+        "if (!IsFiniteVector(pendingOffset) ||",
+        "ApplyWorldOffsetToAllChunksImmediate(pendingOffset, pendingTotalOffset, refreshResidency: false);",
+        "HectonMapMagicVegetationBridge.TryApplyPendingWorldOffset rejects bad pending shift before chunk mutation",
+    )
+    assert_contains_all(
+        mapmagic_clear_pending_shift,
+        ["_pendingWorldOffset = default;", "_pendingWorldOffsetDouble = default;", "_hasPendingWorldOffset = false;"],
+        "HectonMapMagicVegetationBridge.ClearPendingWorldOffset lifecycle reset",
+    )
+    assert_contains_all(
+        mapmagic_apply_shift_immediate,
+        [
+            "float offsetSqrMagnitude = offset.sqrMagnitude;",
+            "if (!IsFiniteVector(offset) ||",
+            "!math.isfinite(offsetSqrMagnitude) ||",
+            "!math.all(math.isfinite(newTotalUniverseOffsetDouble)) ||",
+            "offsetSqrMagnitude <= 0.000001f)",
+            "_totalUniverseOffsetDouble = newTotalUniverseOffsetDouble;",
+        ],
+        "HectonMapMagicVegetationBridge.ApplyWorldOffsetToAllChunksImmediate finite chunk rebase",
+    )
+    assert_before(
+        mapmagic_apply_shift_immediate,
+        "if (!IsFiniteVector(offset) ||",
+        "_totalUniverseOffsetDouble = newTotalUniverseOffsetDouble;",
+        "HectonMapMagicVegetationBridge.ApplyWorldOffsetToAllChunksImmediate rejects bad offset before universe offset mutation",
+    )
+    assert_contains_all(
+        mapmagic_finite_vector,
+        [
+            "return math.isfinite(value.x) &&",
+            "math.isfinite(value.y) &&",
+            "math.isfinite(value.z);",
+        ],
+        "HectonMapMagicVegetationBridge.IsFiniteVector finite guard",
+    )
+    gpu_scatter_origin_shift = method_block(
+        read_project_source("Assets", "_Project", "Scripts", "World", "GPUScatterDirector.cs"),
+        "public void OnOriginShift",
+    )
+    assert_contains_all(
+        gpu_scatter_origin_shift,
+        [
+            "double3 newTotalOffsetDouble = shiftData.NewTotalOffsetDouble;",
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!math.all(math.isfinite(newTotalOffsetDouble)) ||",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!MathGuard.IsFinite(shiftSqrMagnitude))",
+            "_scatterAupGenerationOffsetXZDouble = new double2(newTotalOffsetDouble.x, newTotalOffsetDouble.z);",
+            "_lastFoveatedCenter += -shiftOffset;",
+        ],
+        "GPUScatterDirector.OnOriginShift finite scatter/AUP bridge",
+    )
+    assert_before(
+        gpu_scatter_origin_shift,
+        "!math.all(math.isfinite(newTotalOffsetDouble)) ||",
+        "_scatterAupGenerationOffsetXZDouble = new double2(newTotalOffsetDouble.x, newTotalOffsetDouble.z);",
+        "GPUScatterDirector.OnOriginShift rejects nonfinite total AUP offset before scatter generation mutation",
+    )
+    assert_before(
+        gpu_scatter_origin_shift,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "_lastFoveatedCenter += -shiftOffset;",
+        "GPUScatterDirector.OnOriginShift rejects nonfinite shift before foveated cache rebase",
+    )
+    for origin_shift_path_parts, origin_shift_label, threshold_fragment, mutation_fragment in [
+        (
+            ("Assets", "_Project", "Scripts", "World", "FloraRegrowthDirector.cs"),
+            "FloraRegrowthDirector.OnOriginShift",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "ApplyOriginShiftToCachedFloraState(runtimeOffset);",
+        ),
+        (
+            ("Assets", "_Project", "Scripts", "World", "HectonOctahedralImpostorRenderer.cs"),
+            "HectonOctahedralImpostorRenderer.OnOriginShift",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "drawBounds.center -= shiftOffset;",
+        ),
+    ]:
+        origin_shift_block = method_block(read_project_source(*origin_shift_path_parts), "public void OnOriginShift")
+        assert_contains_all(
+            origin_shift_block,
+            [
+                "Vector3 shiftOffset = shiftData.ShiftOffset;",
+                "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+                "!MathGuard.IsFinite(shiftOffset) ||",
+                "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+                threshold_fragment,
+                mutation_fragment,
+            ],
+            origin_shift_label,
+        )
+        assert_before(
+            origin_shift_block,
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            mutation_fragment,
+            f"{origin_shift_label} rejects nonfinite shift before world/render cache mutation",
+        )
+    for render_bounds_path_parts, render_bounds_label, mutation_fragment in [
+        (
+            ("Assets", "_Project", "Scripts", "World", "HectonHLODRenderer.cs"),
+            "HectonHLODRenderer.OnOriginShift",
+            "drawBounds.center -= shiftOffset;",
+        ),
+        (
+            ("Assets", "_Project", "Scripts", "World", "HectonDistantLandmarkRenderer.cs"),
+            "HectonDistantLandmarkRenderer.OnOriginShift",
+            "Vector3 runtimeOffset = -shiftOffset;",
+        ),
+    ]:
+        render_bounds_origin_shift = method_block(
+            read_project_source(*render_bounds_path_parts),
+            "public void OnOriginShift",
+        )
+        assert_contains_all(
+            render_bounds_origin_shift,
+            [
+                "Vector3 shiftOffset = shiftData.ShiftOffset;",
+                "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+                "!IsFinite(shiftOffset) ||",
+                "!float.IsFinite(shiftSqrMagnitude) ||",
+                "shiftSqrMagnitude <= 0.0001f)",
+                mutation_fragment,
+            ],
+            f"{render_bounds_label} finite checked render bounds rebase",
+        )
+        assert_before(
+            render_bounds_origin_shift,
+            "!IsFinite(shiftOffset) ||",
+            mutation_fragment,
+            f"{render_bounds_label} rejects nonfinite shift before render bounds mutation",
+        )
+    gpu_scatter_lod_origin_shift = method_block(
+        read_project_source("Assets", "_Project", "Scripts", "Rendering", "Scatter", "GpuScatterLodManager.cs"),
+        "public void OnOriginShift",
+    )
+    assert_contains_all(
+        gpu_scatter_lod_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "bool hasFiniteShift = IsFiniteVector(shiftOffset) && math.isfinite(shiftSqrMagnitude);",
+            "if (_hasExplicitDrawBounds && hasFiniteShift && shiftSqrMagnitude > 0.000001f)",
+            "_drawBounds.center -= shiftOffset;",
+            "else if (_hasExplicitDrawBounds && !hasFiniteShift)",
+        ],
+        "GpuScatterLodManager.OnOriginShift finite explicit draw bounds rebase",
+    )
+    assert_before(
+        gpu_scatter_lod_origin_shift,
+        "bool hasFiniteShift = IsFiniteVector(shiftOffset) && math.isfinite(shiftSqrMagnitude);",
+        "_drawBounds.center -= shiftOffset;",
+        "GpuScatterLodManager.OnOriginShift validates shift before explicit draw bounds mutation",
+    )
+    world_spatial_hash_origin_shift = method_block(
+        read_project_source("Assets", "_Project", "Scripts", "World", "WorldSpatialHashGrid.cs"),
+        "internal static void HandleOriginShift",
+    )
+    assert_contains_all(
+        world_spatial_hash_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!IsFiniteRuntimePosition(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+            "ClearAcousticDensityMapForOriginShift();",
+            "if (shiftSqrMagnitude <= 0.000001f)",
+            "Vector3 runtimeOffset = -shiftOffset;",
+            "RebaseTransientSignalRuntimePositions(runtimeOffset);",
+        ],
+        "WorldSpatialHashGrid.HandleOriginShift finite/no-op spatial hash rebase",
+    )
+    assert_before(
+        world_spatial_hash_origin_shift,
+        "if (!IsFiniteRuntimePosition(shiftOffset) || !math.isfinite(shiftSqrMagnitude))",
+        "Vector3 runtimeOffset = -shiftOffset;",
+        "WorldSpatialHashGrid.HandleOriginShift rejects nonfinite shift before spatial cache rebase",
+    )
+    wreck_material_registry = read_project_source("Assets", "_Project", "Scripts", "World", "WreckMaterialRegistry.cs")
+    wreck_origin_shift = method_block(wreck_material_registry, "public void OnOriginShift")
+    wreck_has_usable_shift = method_block(wreck_material_registry, "private static bool _HasUsableShift")
+    assert_contains_all(
+        wreck_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "if (!_hasPublishedWreck || !_HasUsableShift(shiftOffset))",
+            "Vector3 runtimeOffset = -shiftOffset;",
+            "_publishedWorldBounds.center += runtimeOffset;",
+        ],
+        "WreckMaterialRegistry.OnOriginShift finite shift helper route",
+    )
+    assert_contains_all(
+        wreck_has_usable_shift,
+        [
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "MathGuard.IsFinite(shiftOffset) &&",
+            "MathGuard.IsFinite(shiftSqrMagnitude) &&",
+            "shiftSqrMagnitude > 0.0001f;",
+        ],
+        "WreckMaterialRegistry._HasUsableShift finite helper",
+    )
+    assert_before(
+        wreck_origin_shift,
+        "if (!_hasPublishedWreck || !_HasUsableShift(shiftOffset))",
+        "Vector3 runtimeOffset = -shiftOffset;",
+        "WreckMaterialRegistry.OnOriginShift validates shift before wreck bounds mutation",
+    )
+    submarine_ballast_origin_shift = method_block(
+        read_project_source("Assets", "_Project", "Scripts", "Gameplay", "SubmarineAutoLevelBallastController.cs"),
+        "public void OnOriginShift",
+    )
+    assert_contains_all(
+        submarine_ballast_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!IsFinite(shiftOffset) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_previousPidError = float3.zero;",
+            "_pendingTelemetryFlags |= PidTelemetryFlagOriginShiftReset;",
+        ],
+        "SubmarineAutoLevelBallastController.OnOriginShift finite PID reset",
+    )
+    assert_before(
+        submarine_ballast_origin_shift,
+        "!IsFinite(shiftOffset) ||",
+        "_previousPidError = float3.zero;",
+        "SubmarineAutoLevelBallastController.OnOriginShift rejects nonfinite shift before PID reset",
+    )
+    vehicle_motor = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "VehicleMotor.cs")
+    vehicle_motor_origin_shift = method_block(vehicle_motor, "public void OnOriginShift")
+    vehicle_motor_apply_shift = method_block(vehicle_motor, "private void ApplyOriginShift")
+    assert_contains_all(
+        vehicle_motor_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!MathGuard.IsFinite(shiftSqrMagnitude))",
+            "ApplyOriginShift(shiftOffset, shiftData.IsSafeTeleport != 0);",
+            "_visualTeleportPending = true;",
+        ],
+        "VehicleMotor.OnOriginShift finite safe-teleport bridge",
+    )
+    assert_before(
+        vehicle_motor_origin_shift,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "ApplyOriginShift(shiftOffset, shiftData.IsSafeTeleport != 0);",
+        "VehicleMotor.OnOriginShift rejects nonfinite shift before vehicle state bridge",
+    )
+    assert_contains_all(
+        vehicle_motor_apply_shift,
+        [
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= MinVectorMagnitudeSq)",
+            "_entanglementAnchorPosition -= shiftOffset;",
+            "_lastBlockingImpactPoint -= shiftOffset;",
+        ],
+        "VehicleMotor.ApplyOriginShift finite cached kinematics",
+    )
+    assert_before(
+        vehicle_motor_apply_shift,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "_entanglementAnchorPosition -= shiftOffset;",
+        "VehicleMotor.ApplyOriginShift rejects nonfinite shift before entanglement anchor mutation",
+    )
+    mountable_transport_origin_shift = method_block(
+        read_project_source("Assets", "_Project", "Scripts", "Gameplay", "MountablePlayerTransport.cs"),
+        "public void OnOriginShift",
+    )
+    assert_contains_all(
+        mountable_transport_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!IsFiniteVector(shiftOffset) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_previousPlatformPosition -= shiftOffset;",
+        ],
+        "MountablePlayerTransport.OnOriginShift finite platform cache",
+    )
+    assert_before(
+        mountable_transport_origin_shift,
+        "!IsFiniteVector(shiftOffset) ||",
+        "_previousPlatformPosition -= shiftOffset;",
+        "MountablePlayerTransport.OnOriginShift rejects nonfinite shift before platform cache mutation",
+    )
+    debris_manager = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "DebrisManager.cs")
+    debris_tick = method_block(debris_manager, "public void Tick(float deltaTime)")
+    debris_origin_shift = method_block(debris_manager, "public void OnOriginShift")
+    debris_apply_shift = method_block(debris_manager, "private void ApplyShiftToBuffer")
+    assert_contains_all(
+        debris_tick,
+        [
+            "float pendingShiftSqrMagnitude = _pendingShiftOffset.sqrMagnitude;",
+            "!MathGuard.IsFinite(_pendingShiftOffset) ||",
+            "!MathGuard.IsFinite(pendingShiftSqrMagnitude))",
+            "_pendingShiftOffset = Vector3.zero;",
+            "else if (pendingShiftSqrMagnitude > 0.000001f && !_simulationScheduled)",
+            "ApplyShiftToBuffer(shiftedFrontStates, _pendingShiftOffset);",
+        ],
+        "DebrisManager.Tick finite pending origin-shift lifecycle",
+    )
+    assert_contains_all(
+        debris_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "_pendingShiftOffset += shiftOffset;",
+            "ApplyShiftToBuffer(frontStates, shiftOffset);",
+        ],
+        "DebrisManager.OnOriginShift finite scheduled-buffer bridge",
+    )
+    assert_before(
+        debris_origin_shift,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "_pendingShiftOffset += shiftOffset;",
+        "DebrisManager.OnOriginShift rejects nonfinite shift before deferred debris rebase",
+    )
+    assert_contains_all(
+        debris_apply_shift,
+        [
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.000001f)",
+            "float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);",
+        ],
+        "DebrisManager.ApplyShiftToBuffer finite debris buffer mutation",
+    )
+    assert_before(
+        debris_apply_shift,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);",
+        "DebrisManager.ApplyShiftToBuffer rejects nonfinite shift before native buffer mutation",
+    )
+    crest_depth_cache = read_project_source(
+        "Assets",
+        "_Project",
+        "Scripts",
+        "Plugins",
+        "Crest",
+        "HectonCrestOceanDepthCacheBootstrap.cs",
+    )
+    crest_origin_shift = method_block(crest_depth_cache, "public void OnOriginShift")
+    crest_reset_shift = method_block(crest_depth_cache, "private void ResetCrestSimulationForOriginShift")
+    assert_contains_all(
+        crest_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!IsFiniteVector3(shiftOffset) ||",
+            "!IsFinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "_hasConfiguredBounds = false;",
+            "_debugCacheReady = false;",
+            "ResetCrestSimulationForOriginShift(shiftOffset);",
+            "QueueDepthCacheVisualSync(forcePopulate: true);",
+        ],
+        "HectonCrestOceanDepthCacheBootstrap.OnOriginShift finite cache reset",
+    )
+    assert_before(
+        crest_origin_shift,
+        "!IsFiniteVector3(shiftOffset) ||",
+        "_hasConfiguredBounds = false;",
+        "HectonCrestOceanDepthCacheBootstrap.OnOriginShift rejects nonfinite shift before depth-cache invalidation",
+    )
+    assert_contains_all(
+        crest_reset_shift,
+        [
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!IsFiniteVector3(shiftOffset) ||",
+            "!IsFinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "oceanRenderer._lodTransform?.SetOrigin(shiftOffset);",
+            "shiftingOrigin.SetOrigin(shiftOffset);",
+            "oceanRenderer.ClearLodData();",
+        ],
+        "HectonCrestOceanDepthCacheBootstrap.ResetCrestSimulationForOriginShift finite Crest rebase",
+    )
+    assert_before(
+        crest_reset_shift,
+        "!IsFiniteVector3(shiftOffset) ||",
+        "oceanRenderer._lodTransform?.SetOrigin(shiftOffset);",
+        "HectonCrestOceanDepthCacheBootstrap.ResetCrestSimulationForOriginShift rejects nonfinite shift before Crest origin mutation",
+    )
+    observer_body_origin_shift = method_block(
+        read_project_source("Assets", "_Project", "Scripts", "ObserverRelativeCelestialBody.cs"),
+        "public void OnOriginShift",
+    )
+    assert_contains_all(
+        observer_body_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!MathGuard.IsFinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= DirectionEpsilon)",
+            "QueuePlacementVisualSync();",
+        ],
+        "ObserverRelativeCelestialBody.OnOriginShift finite sky placement sync",
+    )
+    assert_before(
+        observer_body_origin_shift,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "QueuePlacementVisualSync();",
+        "ObserverRelativeCelestialBody.OnOriginShift rejects nonfinite shift before visual sync",
+    )
+    for fauna_path_parts, fauna_label, buffer_mutation_fragment in [
+        (
+            ("Assets", "_Project", "Scripts", "Fauna", "ProceduralCrabLegIKRuntime.cs"),
+            "ProceduralCrabLegIKRuntime",
+            "entity.RootPosition -= offset;",
+        ),
+        (
+            ("Assets", "_Project", "Scripts", "Fauna", "LeviathanTentacleVerletSolver.cs"),
+            "LeviathanTentacleVerletSolver",
+            "buffers.Positions[i] = SanitizeFiniteInputFloat3(buffers.Positions[i] - offset, float3.zero);",
+        ),
+    ]:
+        fauna_source = read_project_source(*fauna_path_parts)
+        fauna_origin_shift = method_block(fauna_source, "public void OnOriginShift")
+        fauna_queue_rebase = method_block(fauna_source, "private void QueueOriginShiftRebase")
+        fauna_apply_pending = method_block(fauna_source, "private bool ApplyPendingOriginShiftRebase")
+        fauna_apply_rebase = method_block(fauna_source, "private void ApplyOriginShiftRebase")
+        fauna_finite_helper = method_block(fauna_source, "private static bool IsFiniteOriginShiftOffset")
+        fauna_usable_helper = method_block(fauna_source, "private static bool IsUsableOriginShiftOffset")
+        assert_contains_all(
+            fauna_origin_shift,
+            [
+                "Vector3 shiftOffset = shiftData.ShiftOffset;",
+                "float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);",
+                "if (!IsFiniteOriginShiftOffset(offset))",
+                "DumpTelemetryBlackBoxOnce();",
+                "if (!IsUsableOriginShiftOffset(offset) || !HasPersistentBuffers())",
+            ],
+            f"{fauna_label}.OnOriginShift finite animation rebase ingress",
+        )
+        assert_before(
+            fauna_origin_shift,
+            "if (!IsFiniteOriginShiftOffset(offset))",
+            "QueueOriginShiftRebase(offset);",
+            f"{fauna_label}.OnOriginShift rejects nonfinite shift before deferred rebase queue",
+        )
+        assert_before(
+            fauna_origin_shift,
+            "if (!IsFiniteOriginShiftOffset(offset))",
+            "ApplyOriginShiftRebase(offset);",
+            f"{fauna_label}.OnOriginShift rejects nonfinite shift before immediate rebase",
+        )
+        assert_contains_all(
+            fauna_queue_rebase,
+            [
+                "if (!IsFiniteOriginShiftOffset(offset))",
+                "if (!IsUsableOriginShiftOffset(offset))",
+                "_pendingOriginShiftOffset += offset;",
+                "if (!IsFiniteOriginShiftOffset(_pendingOriginShiftOffset))",
+                "_pendingOriginShiftOffset = float3.zero;",
+                "_pendingOriginShiftRebase = false;",
+            ],
+            f"{fauna_label}.QueueOriginShiftRebase finite pending queue",
+        )
+        assert_before(
+            fauna_queue_rebase,
+            "if (!IsFiniteOriginShiftOffset(offset))",
+            "_pendingOriginShiftOffset += offset;",
+            f"{fauna_label}.QueueOriginShiftRebase rejects nonfinite shift before pending accumulation",
+        )
+        assert_contains_all(
+            fauna_apply_pending,
+            [
+                "float3 offset = _pendingOriginShiftOffset;",
+                "_pendingOriginShiftOffset = float3.zero;",
+                "_pendingOriginShiftRebase = false;",
+                "if (!IsFiniteOriginShiftOffset(offset))",
+                "if (!IsUsableOriginShiftOffset(offset))",
+                "ApplyOriginShiftRebase(offset);",
+            ],
+            f"{fauna_label}.ApplyPendingOriginShiftRebase finite pending drain",
+        )
+        assert_contains_all(
+            fauna_apply_rebase,
+            [
+                "if (!IsFiniteOriginShiftOffset(offset))",
+                "if (!IsUsableOriginShiftOffset(offset))",
+                buffer_mutation_fragment,
+            ],
+            f"{fauna_label}.ApplyOriginShiftRebase finite buffer mutation",
+        )
+        assert_before(
+            fauna_apply_rebase,
+            "if (!IsFiniteOriginShiftOffset(offset))",
+            buffer_mutation_fragment,
+            f"{fauna_label}.ApplyOriginShiftRebase rejects nonfinite shift before persistent buffer mutation",
+        )
+        assert_contains_all(
+            fauna_finite_helper,
+            [
+                "float offsetLengthSq = math.lengthsq(offset);",
+                "math.all(math.isfinite(offset)) && math.isfinite(offsetLengthSq);",
+            ],
+            f"{fauna_label}.IsFiniteOriginShiftOffset helper",
+        )
+        assert_contains_all(
+            fauna_usable_helper,
+            [
+                "return IsFiniteOriginShiftOffset(offset) && math.lengthsq(offset) > 0.000001f;",
+            ],
+            f"{fauna_label}.IsUsableOriginShiftOffset helper",
+        )
+    fauna_kinematics_source = read_project_source("Assets", "_Project", "Scripts", "Fauna", "FaunaKinematicsRuntime.cs")
+    fauna_kinematics_origin_shift = method_block(fauna_kinematics_source, "public void OnOriginShift")
+    fauna_kinematics_queue_rebase = method_block(fauna_kinematics_source, "private void QueueOriginShiftRebase")
+    fauna_kinematics_apply_pending = method_block(fauna_kinematics_source, "private bool ApplyPendingOriginShiftRebase")
+    fauna_kinematics_apply_rebase = method_block(fauna_kinematics_source, "private void ApplyOriginShiftRebase")
+    fauna_kinematics_finite_helper = method_block(fauna_kinematics_source, "private static bool IsFiniteOriginShiftOffset")
+    fauna_kinematics_usable_helper = method_block(fauna_kinematics_source, "private static bool IsUsableOriginShiftOffset")
+    assert_contains_all(
+        fauna_kinematics_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);",
+            "if (!IsFiniteOriginShiftOffset(offset))",
+            "DumpTelemetryBlackBoxOnce();",
+            "if (!IsUsableOriginShiftOffset(offset))",
+        ],
+        "FaunaKinematicsRuntime.OnOriginShift finite animation rebase ingress",
+    )
+    assert_before(
+        fauna_kinematics_origin_shift,
+        "if (!IsFiniteOriginShiftOffset(offset))",
+        "QueueOriginShiftRebase(offset);",
+        "FaunaKinematicsRuntime.OnOriginShift rejects nonfinite shift before deferred rebase queue",
+    )
+    assert_before(
+        fauna_kinematics_origin_shift,
+        "if (!IsFiniteOriginShiftOffset(offset))",
+        "ApplyOriginShiftRebase(offset);",
+        "FaunaKinematicsRuntime.OnOriginShift rejects nonfinite shift before immediate rebase",
+    )
+    assert_contains_all(
+        fauna_kinematics_queue_rebase,
+        [
+            "if (!IsFiniteOriginShiftOffset(offset))",
+            "if (!IsUsableOriginShiftOffset(offset))",
+            "_pendingOriginShiftOffset += offset;",
+            "if (!IsFiniteOriginShiftOffset(_pendingOriginShiftOffset))",
+            "_pendingOriginShiftOffset = float3.zero;",
+            "_pendingOriginShiftRebase = false;",
+        ],
+        "FaunaKinematicsRuntime.QueueOriginShiftRebase finite pending queue",
+    )
+    assert_before(
+        fauna_kinematics_queue_rebase,
+        "if (!IsFiniteOriginShiftOffset(offset))",
+        "_pendingOriginShiftOffset += offset;",
+        "FaunaKinematicsRuntime.QueueOriginShiftRebase rejects nonfinite shift before pending accumulation",
+    )
+    assert_contains_all(
+        fauna_kinematics_apply_pending,
+        [
+            "float3 offset = _pendingOriginShiftOffset;",
+            "_pendingOriginShiftOffset = float3.zero;",
+            "_pendingOriginShiftRebase = false;",
+            "if (!IsFiniteOriginShiftOffset(offset))",
+            "if (!IsUsableOriginShiftOffset(offset))",
+            "ApplyOriginShiftRebase(offset);",
+        ],
+        "FaunaKinematicsRuntime.ApplyPendingOriginShiftRebase finite pending drain",
+    )
+    assert_contains_all(
+        fauna_kinematics_apply_rebase,
+        [
+            "if (!IsFiniteOriginShiftOffset(offset))",
+            "if (!IsUsableOriginShiftOffset(offset))",
+            "segmentPositions[i] = SanitizeFiniteInputFloat3(segmentPositions[i] - offset, float3.zero);",
+        ],
+        "FaunaKinematicsRuntime.ApplyOriginShiftRebase finite buffer mutation",
+    )
+    assert_before(
+        fauna_kinematics_apply_rebase,
+        "if (!IsFiniteOriginShiftOffset(offset))",
+        "segmentPositions[i] = SanitizeFiniteInputFloat3(segmentPositions[i] - offset, float3.zero);",
+        "FaunaKinematicsRuntime.ApplyOriginShiftRebase rejects nonfinite shift before persistent buffer mutation",
+    )
+    assert_contains_all(
+        fauna_kinematics_finite_helper,
+        [
+            "float offsetLengthSq = math.lengthsq(offset);",
+            "math.all(math.isfinite(offset)) && math.isfinite(offsetLengthSq);",
+        ],
+        "FaunaKinematicsRuntime.IsFiniteOriginShiftOffset helper",
+    )
+    assert_contains_all(
+        fauna_kinematics_usable_helper,
+        [
+            "return IsFiniteOriginShiftOffset(offset) && math.lengthsq(offset) > OriginShiftUsableMagnitudeSq;",
+        ],
+        "FaunaKinematicsRuntime.IsUsableOriginShiftOffset helper",
+    )
+    assert_before(
+        drag_register,
+        "if (Application.isPlaying && !_serviceRegistered)",
+        "TryRegisterSaveOwner();",
+        "SargassumGlobalDragManager.TryRegister",
+    )
+    assert_contains_all(
+        drag_register_save,
+        [
+            "!_serviceRegistered",
+            "!ReferenceEquals(s_activeRuntimeInstance, this)",
+            "saveService.Register(this);",
+            "_saveRegistered = true;",
+        ],
+        "SargassumGlobalDragManager.TryRegisterSaveOwner",
+    )
+    assert_before(
+        drag_register_save,
+        "!_serviceRegistered",
+        "saveService.Register(this);",
+        "SargassumGlobalDragManager.TryRegisterSaveOwner",
+    )
+    assert_before(
+        drag_register_save,
+        "!ReferenceEquals(s_activeRuntimeInstance, this)",
+        "saveService.Register(this);",
+        "SargassumGlobalDragManager.TryRegisterSaveOwner",
+    )
+    assert_contains_all(
+        drag_unregister_service,
+        [
+            "if (ReferenceEquals(GlobalRegistry.SargassumDrag, this))",
+            "GlobalRegistry.UnregisterSargassumDragRuntime(this);",
+            "_serviceRegistered = false;",
+        ],
+        "SargassumGlobalDragManager.TryUnregisterService",
+    )
+    assert_before(
+        drag_unregister_service,
+        "if (ReferenceEquals(s_activeRuntimeInstance, this))",
+        "GlobalRegistry.UnregisterSargassumDragRuntime(this);",
+        "SargassumGlobalDragManager.TryUnregisterService",
+    )
+    assert_before(
+        drag_unregister_service,
+        "_serviceRegistered = false;",
+        "GlobalRegistry.UnregisterSargassumDragRuntime(this);",
+        "SargassumGlobalDragManager.TryUnregisterService",
+    )
+    assert_contains_all(
+        drag_replaced,
+        [
+            "case GlobalRegistryServiceSlot.SargassumDragRuntime:",
+            "ReconcileRuntimeOwnerFromRegistryReplacement(previousService, currentService);",
+            "Application.isPlaying && isActiveAndEnabled && _serviceRegistered",
+        ],
+        "SargassumGlobalDragManager.OnGlobalRegistryServiceReplaced",
+    )
+    assert_contains_all(
+        drag_reconcile,
+        [
+            "currentService is SargassumGlobalDragManager currentRuntime",
+            "s_activeRuntimeInstance = currentRuntime;",
+            "bool ownsRuntime = ReferenceEquals(currentRuntime, this);",
+            "_serviceRegistered = ownsRuntime;",
+            "if (_runtimeRoutesRetiredAfterOwnershipLoss)",
+            "RestoreRuntimeRoutesAfterOwnershipGain();",
+            "RetireRuntimeRoutesAfterOwnershipLoss();",
+            "if (ReferenceEquals(previousService, this))",
+            "if (ReferenceEquals(s_activeRuntimeInstance, this))",
+            "s_activeRuntimeInstance = null;",
+        ],
+        "SargassumGlobalDragManager.ReconcileRuntimeOwnerFromRegistryReplacement",
+    )
+    assert_contains_all(
+        drag_retire,
+        [
+            "HectonFloatingOrigin.UnregisterListener(this);",
+            "_cutManager = null;",
+            "TryUnregisterSaveOwner();",
+            "_saveService = null;",
+            "GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);",
+            "GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);",
+            "GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);",
+            "_runtimeRoutesRetiredAfterOwnershipLoss = true;",
+        ],
+        "SargassumGlobalDragManager.RetireRuntimeRoutesAfterOwnershipLoss",
+    )
+    assert "TryUnregisterHotSwapListener" not in drag_retire
+    assert_contains_all(
+        drag_restore,
+        [
+            "if (!Application.isPlaying || !isActiveAndEnabled)",
+            "RefreshColdRegistryDependencies();",
+            "HectonFloatingOrigin.RegisterListener(this);",
+            "TryRegister();",
+            "_runtimeRoutesRetiredAfterOwnershipLoss = false;",
+        ],
+        "SargassumGlobalDragManager.RestoreRuntimeRoutesAfterOwnershipGain",
+    )
+    assert_contains_all(
+        drag,
+        [
+            "private static bool IsFiniteVector3(Vector3 value)",
+            "return math.all(math.isfinite(new float3(value.x, value.y, value.z)));",
+            "private static bool IsFiniteMassiveDisplacementSignal(in MassiveDisplacementSignal signal)",
+            "IsFiniteVector3(signal.PositionWS)",
+            "math.isfinite(signal.RadiusWS)",
+            "math.isfinite(signal.Duration)",
+            "math.isfinite(signal.ExtremePanicRadiusWS)",
+            "signal.RadiusWS > 0.001f",
+            "signal.Duration > 0.001f",
+            "private static bool IsFiniteEntanglementStrainSignal(in EntanglementStrainSignal signal)",
+            "IsFiniteVector3(signal.AnchorWS)",
+            "math.isfinite(signal.Tension01)",
+            "math.isfinite(signal.EscapeIntent01)",
+            "math.isfinite(signal.Shake01)",
+            "signal.Tension01 >= 0f",
+            "signal.EscapeIntent01 >= 0f",
+            "signal.Shake01 >= 0f",
+            "private static bool IsFiniteDisruptionZone(in DisruptionZoneState zone)",
+            "zone.Mode == (byte)DisruptionZoneMode.CutCollapse",
+            "zone.Mode == (byte)DisruptionZoneMode.MassiveDisplacement",
+            "IsFiniteVector3(zone.SampleSpaceCenterWS)",
+            "math.isfinite(zone.RadiusWS)",
+            "math.isfinite(zone.Age)",
+            "zone.RampDuration > 0f",
+        ],
+        "SargassumGlobalDragManager finite vector guard",
+    )
+    assert_contains_all(
+        drag_raise_strain,
+        ["if (!IsFiniteEntanglementStrainSignal(in signal))", "return false;"],
+        "SargassumGlobalDragManager.TryRaiseEntanglementStrain",
+    )
+    assert_before(
+        drag_raise_strain,
+        "if (!IsFiniteEntanglementStrainSignal(in signal))",
+        "if (_listenerCount <= 0)",
+        "SargassumGlobalDragManager.TryRaiseEntanglementStrain",
+    )
+    assert_contains_all(
+        drag_raise_massive,
+        ["if (!IsFiniteMassiveDisplacementSignal(in signal))", "return false;"],
+        "SargassumGlobalDragManager.TryRaiseMassiveDisplacement",
+    )
+    assert_before(
+        drag_raise_massive,
+        "if (!IsFiniteMassiveDisplacementSignal(in signal))",
+        "if (_listenerCount <= 0)",
+        "SargassumGlobalDragManager.TryRaiseMassiveDisplacement",
+    )
+    assert_contains_all(
+        drag_dispatch_strain,
+        [
+            "try",
+            "listener.OnSargassumEntanglementStrain(in signal);",
+            "catch (Exception exception)",
+            "ReportListenerDispatchException();",
+            "LogListenerDispatchException(exception);",
+        ],
+        "SargassumGlobalDragManager.DispatchEntanglementStrainToListener",
+    )
+    assert_contains_all(
+        drag_dispatch_massive,
+        [
+            "try",
+            "listener.OnSargassumMassiveDisplacement(in signal);",
+            "catch (Exception exception)",
+            "ReportListenerDispatchException();",
+            "LogListenerDispatchException(exception);",
+        ],
+        "SargassumGlobalDragManager.DispatchMassiveDisplacementToListener",
+    )
+    assert_contains_all(
+        drag_register_massive,
+        [
+            "!IsFiniteVector3(position)",
+            "!math.isfinite(radius)",
+            "!math.isfinite(duration)",
+            "return;",
+            "if (!math.isfinite(clampedRadius)",
+            "!math.isfinite(clampedDuration)",
+            "!math.isfinite(extremePanicRadius)",
+            "RegisterOrReinforceDisruptionZone(",
+            "cutManager.RegisterExternalCut(position, clampedRadius, massiveDisplacementCutStrength, Vector3.up, 1.15f);",
+            "TryRaiseMassiveDisplacement(new MassiveDisplacementSignal",
+        ],
+        "SargassumGlobalDragManager.RegisterMassiveDisplacement",
+    )
+    assert_before(
+        drag_register_massive,
+        "!IsFiniteVector3(position)",
+        "RegisterOrReinforceDisruptionZone(",
+        "SargassumGlobalDragManager.RegisterMassiveDisplacement",
+    )
+    assert_contains_all(
+        drag_sample_detailed,
+        [
+            "!IsFiniteVector3(positionWS)",
+            "!math.isfinite(radius)",
+            "!IsFiniteVector3(movementVelocityWS)",
+            "!math.isfinite(currentSpeed)",
+            "return false;",
+            "sample.AnchorWS = positionWS;",
+        ],
+        "SargassumGlobalDragManager.SampleDetailedInfluence",
+    )
+    assert_before(
+        drag_sample_detailed,
+        "return false;",
+        "sample.AnchorWS = positionWS;",
+        "SargassumGlobalDragManager.SampleDetailedInfluence",
+    )
+    assert_contains_all(
+        drag_update_disruption,
+        [
+            "float deltaTime = math.isfinite(dt) ? math.max(0f, dt) : 0f;",
+            "!IsFiniteDisruptionZone(in zone)",
+            "_disruptionZones[index] = _disruptionZones[lastIndex];",
+            "_disruptionZones[lastIndex] = default;",
+            "_activeDisruptionZoneCount = lastIndex;",
+            "changed = true;",
+        ],
+        "SargassumGlobalDragManager.UpdateDisruptionZones",
+    )
+    assert_contains_all(
+        drag_update_scavengers,
+        ["float safeDeltaTime = math.isfinite(dt) ? math.max(0f, dt) : 0f;"],
+        "SargassumGlobalDragManager.UpdateScavengerHosts",
+    )
+    assert_contains_all(
+        drag_update_nested,
+        ["float safeDeltaTime = math.isfinite(dt) ? math.max(0f, dt) : 0f;"],
+        "SargassumGlobalDragManager.UpdateNestedAttachmentBatches",
+    )
+    assert_before(
+        drag_update_disruption,
+        "!IsFiniteDisruptionZone(in zone)",
+        "float previousStrength01 = EvaluateDisruptionZone01(zone);",
+        "SargassumGlobalDragManager.UpdateDisruptionZones",
+    )
+    assert_contains_all(
+        drag_register_disruption,
+        [
+            "!IsFiniteVector3(sampleSpaceCenterWS)",
+            "!math.isfinite(radiusWS)",
+            "!math.isfinite(strength01)",
+            "!math.isfinite(sinkDepthWS)",
+            "!math.isfinite(rampDuration)",
+            "!math.isfinite(holdDuration)",
+            "!math.isfinite(fadeDuration)",
+            "return -1;",
+            "if (!math.isfinite(clampedRadius)",
+            "!math.isfinite(clampedStrength)",
+            "!math.isfinite(clampedRamp)",
+            "!math.isfinite(clampedHold)",
+            "!math.isfinite(clampedFade)",
+        ],
+        "SargassumGlobalDragManager.RegisterOrReinforceDisruptionZone",
+    )
+    assert_contains_all(
+        drag_sample_disruption,
+        [
+            "!IsFiniteVector3(sampledPositionWS)",
+            "!IsFiniteDisruptionZone(in zone)",
+            "continue;",
+            "float zone01 = EvaluateDisruptionZone01(zone);",
+        ],
+        "SargassumGlobalDragManager.SampleDisruptionNoDrift",
+    )
+    assert_before(
+        drag_sample_disruption,
+        "!IsFiniteDisruptionZone(in zone)",
+        "float zone01 = EvaluateDisruptionZone01(zone);",
+        "SargassumGlobalDragManager.SampleDisruptionNoDrift",
+    )
+    assert_contains_all(
+        drag_resolve_max_sink,
+        [
+            "DisruptionZoneState zone = _disruptionZones[i];",
+            "!IsFiniteDisruptionZone(in zone)",
+            "continue;",
+            "if (zone.SinkDepthWS > maxSinkDepthWS)",
+            "maxSinkDepthWS = zone.SinkDepthWS;",
+        ],
+        "SargassumGlobalDragManager.ResolveMaximumSinkDepthWS",
+    )
+    assert_contains_all(
+        drag_register_scavenger,
+        [
+            "Vector3 anchorWS = chunk.GetScavengerAnchorWS();",
+            "!IsFiniteVector3(anchorWS)",
+            "if (_scavengerHosts[i].Chunk == chunk)",
+            "return true;",
+            "if (_activeScavengerHostCount >= _scavengerHosts.Length)",
+            "return false;",
+            "AnchorWS = anchorWS,",
+            "_activeScavengerHostCount++;",
+        ],
+        "SargassumGlobalDragManager.RegisterSettledCollapseChunk",
+    )
+    assert_contains_all(
+        drag_unregister_scavenger,
+        [
+            "int lastIndex = _activeScavengerHostCount - 1;",
+            "if (i < lastIndex)",
+            "_scavengerHosts[i] = _scavengerHosts[lastIndex];",
+            "_scavengerHosts[lastIndex] = default;",
+            "_activeScavengerHostCount = lastIndex;",
+        ],
+        "SargassumGlobalDragManager.UnregisterSettledCollapseChunk",
+    )
+    drag_register_external_scavenger = method_block(drag, "internal void RegisterExternalScavengerSite")
+    assert_contains_all(
+        drag_register_external_scavenger,
+        [
+            "!IsFiniteVector3(anchorWS)",
+            "!math.isfinite(radiusWS)",
+            "if (!math.isfinite(clampedRadius) || !math.isfinite(clampedDuration))",
+            "_externalScavengerSites[targetIndex] = new ExternalScavengerSiteState",
+        ],
+        "SargassumGlobalDragManager.RegisterExternalScavengerSite",
+    )
+
+    cut = read_project_source("Assets", "_Project", "Scripts", "World", "SargassumCutManager.cs")
+    assert "public static SargassumCutManager Instance => s_activeRuntimeInstance;" in cut
+    assert "public static SargassumCutManager Instance => GlobalRegistry.SargassumCut;" not in cut
+    cut_on_enable = method_block(cut, "private void OnEnable")
+    cut_on_disable = method_block(cut, "private void OnDisable")
+    cut_release_resources = method_block(cut, "private void ReleaseResources")
+    cut_tick = method_block(cut, "public void Tick(float deltaTime)")
+    cut_late_tick = method_block(cut, "public void LateFrameTick")
+    cut_register = method_block(cut, "private void TryRegister()")
+    cut_unregister_service = method_block(cut, "private void TryUnregisterService")
+    cut_replaced = method_block(cut, "public void OnGlobalRegistryServiceReplaced")
+    cut_reconcile = method_block(cut, "private void ReconcileRuntimeOwnerFromRegistryReplacement")
+    cut_retire = method_block(cut, "private void RetireRuntimeRoutesAfterOwnershipLoss")
+    cut_restore = method_block(cut, "private void RestoreRuntimeRoutesAfterOwnershipGain")
+    cut_sample_recent = method_block(cut, "public bool SampleRecentCut01")
+    cut_sample_area = method_block(cut, "public bool SampleRecentCutArea")
+    cut_register_external = method_block(cut, "public bool RegisterExternalCut")
+    cut_decay_recent = method_block(cut, "private void DecayRecentCutStamps")
+    cut_register_recent = method_block(cut, "private void RegisterRecentCutStamp")
+    cut_register_heat = method_block(cut, "private void RegisterRecentCutHeatStamp")
+    cut_execute_stamp = method_block(cut, "private void ExecuteStampPass")
+    cut_coalesce_stamp = method_block(cut, "private bool TryCoalesceOverflowStamp")
+    cut_queue_debris = method_block(cut, "private void QueueDebrisBurst")
+    cut_coalesce_debris = method_block(cut, "private bool TryCoalesceOverflowDebrisBurst")
+    cut_flush_debris = method_block(cut, "private void FlushDebrisBursts")
+    cut_report_debris = method_block(cut, "private void ReportDebrisBurstOverflow")
+    cut_refresh_mask_rect = method_block(cut, "private void RefreshMaskWorldRect")
+    cut_inside_mask_rect = method_block(cut, "private bool IsInsideMaskWorldRect")
+    cut_queue_damage_sync = method_block(cut, "private void QueueDamageVolumeVisualSync")
+    cut_refresh_damage_bounds = method_block(cut, "private void RefreshDamageVolumeBounds")
+    cut_reset_transient = method_block(cut, "private void ResetTransientRuntimeQueues")
+    cut_queue_damage_volume = method_block(cut, "private void QueueDamageVolumeStamp")
+    cut_coalesce_damage_volume = method_block(cut, "private bool TryCoalesceOverflowDamageVolumeStamp")
+    cut_process_damage_volume = method_block(cut, "private void ProcessQueuedDamageVolumeUpdate")
+    assert_contains_all(
+        cut_on_enable,
+        ["TryRegisterService();", "if (!_serviceRegistered)", "TryRegister();"],
+        "SargassumCutManager.OnEnable",
+    )
+    assert_contains_all(
+        cut_on_disable,
+        [
+            "TryUnregisterService();",
+            "TryUnregister();",
+            "TryUnregisterHotSwapListener();",
+            "ResetTransientRuntimeQueues();",
+            "Shader.SetGlobalFloat(_CutMaskActiveId, 0f);",
+            "Shader.SetGlobalFloat(_DamageVolumeActiveId, 0f);",
+            "PublishRecentCutHeatCount(0);",
+        ],
+        "SargassumCutManager.OnDisable",
+    )
+    assert_contains_all(
+        cut_release_resources,
+        [
+            "ResetTransientRuntimeQueues();",
+            "ReleaseMaskTexture(ref _maskRead);",
+            "ReleaseGraphicsBuffer(ref _stampCommandBufferA);",
+            "ReleaseVaultBuffer(ref _queuedStampCommandsHandle);",
+            "ReleaseDamageVolumeTexture(ref _damageVolumeRead);",
+        ],
+        "SargassumCutManager.ReleaseResources",
+    )
+    assert_contains_all(
+        cut_tick,
+        [
+            "deltaTime = math.isfinite(deltaTime) ? Mathf.Max(0f, deltaTime) : 0f;",
+            "_knifeStampCooldownRemaining = math.isfinite(knifeStampCooldown) ? Mathf.Max(0f, knifeStampCooldown) : 0f;",
+            "float recoveryRate = math.isfinite(recoveryPerSecond) ? Mathf.Max(0f, recoveryPerSecond) : 0f;",
+            "float recoveredEnergy = Mathf.Max(0f, _maskEnergy - recoveryRate * deltaTime);",
+        ],
+        "SargassumCutManager.Tick",
+    )
+    assert_contains_all(
+        cut_late_tick,
+        [
+            "float damageVolumeDeltaTime = math.isfinite(_pendingDamageVolumeDeltaTime)",
+            "? Mathf.Max(0f, _pendingDamageVolumeDeltaTime)",
+            ": 0f;",
+            "ProcessQueuedDamageVolumeUpdate(damageVolumeDeltaTime);",
+            "_pendingDamageVolumeDeltaTime = 0f;",
+        ],
+        "SargassumCutManager.LateFrameTick",
+    )
+    for later in [
+        "TryRegisterHotSwapListener();",
+        "CacheGraphicsCapabilitiesCold();",
+        "CacheRegistryServicesCold();",
+        "CreateResources();",
+        "PublishGlobals();",
+        "TryRegister();",
+    ]:
+        assert_before(cut_on_enable, "TryRegisterService();", later, "SargassumCutManager.OnEnable")
+    assert_contains_all(
+        cut_register,
+        ["if (!Application.isPlaying || !_serviceRegistered || GlobalRegistry.Dispatcher == null)"],
+        "SargassumCutManager.TryRegister",
+    )
+    assert_contains_all(
+        cut_unregister_service,
+        [
+            "if (ReferenceEquals(GlobalRegistry.SargassumCut, this))",
+            "GlobalRegistry.UnregisterSargassumCutRuntime(this);",
+            "_serviceRegistered = false;",
+        ],
+        "SargassumCutManager.TryUnregisterService",
+    )
+    assert_before(
+        cut_unregister_service,
+        "if (ReferenceEquals(s_activeRuntimeInstance, this))",
+        "GlobalRegistry.UnregisterSargassumCutRuntime(this);",
+        "SargassumCutManager.TryUnregisterService",
+    )
+    assert_before(
+        cut_unregister_service,
+        "_serviceRegistered = false;",
+        "GlobalRegistry.UnregisterSargassumCutRuntime(this);",
+        "SargassumCutManager.TryUnregisterService",
+    )
+    assert_contains_all(
+        cut_replaced,
+        [
+            "serviceSlot == GlobalRegistryServiceSlot.SargassumCutRuntime",
+            "ReconcileRuntimeOwnerFromRegistryReplacement(previousService, currentService);",
+        ],
+        "SargassumCutManager.OnGlobalRegistryServiceReplaced",
+    )
+    assert_contains_all(
+        cut_reconcile,
+        [
+            "currentService is SargassumCutManager currentRuntime",
+            "s_activeRuntimeInstance = currentRuntime;",
+            "bool ownsRuntime = ReferenceEquals(currentRuntime, this);",
+            "_serviceRegistered = ownsRuntime;",
+            "if (_runtimeRoutesRetiredAfterOwnershipLoss)",
+            "RestoreRuntimeRoutesAfterOwnershipGain();",
+            "RetireRuntimeRoutesAfterOwnershipLoss();",
+            "if (ReferenceEquals(previousService, this))",
+            "if (ReferenceEquals(s_activeRuntimeInstance, this))",
+            "s_activeRuntimeInstance = null;",
+        ],
+        "SargassumCutManager.ReconcileRuntimeOwnerFromRegistryReplacement",
+    )
+    assert_contains_all(
+        cut_retire,
+        [
+            "if (_runtimeRoutesRetiredAfterOwnershipLoss)",
+            "ResetTransientRuntimeQueues();",
+            "TryUnregister();",
+            "_runtimeRoutesRetiredAfterOwnershipLoss = true;",
+        ],
+        "SargassumCutManager.RetireRuntimeRoutesAfterOwnershipLoss",
+    )
+    assert "TryUnregisterHotSwapListener" not in cut_retire
+    assert_contains_all(
+        cut_restore,
+        [
+            "if (!Application.isPlaying || !isActiveAndEnabled)",
+            "CacheRegistryServicesCold();",
+            "TryRegister();",
+            "_runtimeRoutesRetiredAfterOwnershipLoss = false;",
+        ],
+        "SargassumCutManager.RestoreRuntimeRoutesAfterOwnershipGain",
+    )
+    assert_contains_all(
+        cut,
+        [
+            "private static bool IsFiniteVector3(Vector3 value)",
+            "return math.all(math.isfinite(new float3(value.x, value.y, value.z)));",
+            "private const uint DebrisBurstOverflowWarningHash = 0x5343444Fu;",
+            "private const uint DebrisBurstContextHash = 0x53434442u;",
+            "private int _debrisBurstOverflowCount;",
+            "private int _lastDebrisBurstOverflowTelemetryFrame = -1;",
+            "private static bool IsFinitePendingDebrisBurst(in PendingDebrisBurst burst)",
+            "IsFiniteVector3(burst.PositionWS)",
+            "IsFiniteVector3(burst.DirectionWS)",
+            "math.isfinite(burst.CutStrength)",
+            "math.isfinite(burst.BubbleWeight)",
+            "private static bool IsFiniteRecentCutStamp(in RecentCutStamp stamp)",
+            "private static bool IsFiniteRecentCutHeatStamp(in RecentCutHeatStamp stamp)",
+            "math.isfinite(stamp.RemainingLifetime)",
+            "math.isfinite(stamp.StartTime)",
+            "math.isfinite(stamp.Lifetime)",
+            "private static bool IsFiniteVector4(Vector4 value)",
+            "return math.all(math.isfinite(new float4(value.x, value.y, value.z, value.w)));",
+            "private static bool IsFiniteDamageVolumeStampCommand(in DamageVolumeStampCommand command)",
+            "IsFiniteVector4(command.PositionRadius)",
+            "IsFiniteVector4(command.StrengthPadding)",
+            "command.PositionRadius.w > 0f",
+        ],
+        "SargassumCutManager finite guards and debris overflow telemetry",
+    )
+    for block, label in [
+        (cut_sample_recent, "SargassumCutManager.SampleRecentCut01"),
+        (cut_sample_area, "SargassumCutManager.SampleRecentCutArea"),
+    ]:
+        assert_contains_all(
+            block,
+            [
+                "if (!IsFiniteVector3(positionWS) || !math.isfinite(radiusWS))",
+                "float lifetime = math.isfinite(recentCutLifetime) ? Mathf.Max(0.01f, recentCutLifetime) : 0.01f;",
+                "!IsFiniteRecentCutStamp(in stamp)",
+                "_recentCutStamps[i] = default;",
+                "float temporalFalloff = Mathf.Clamp01(stamp.RemainingLifetime / lifetime);",
+                "return false;",
+            ],
+            label,
+        )
+    assert_contains_all(
+        cut_decay_recent,
+        [
+            "if (!math.isfinite(deltaTime) || deltaTime <= 0f)",
+            "!IsFiniteRecentCutStamp(in _recentCutStamps[i])",
+            "_recentCutStamps[i] = default;",
+        ],
+        "SargassumCutManager.DecayRecentCutStamps",
+    )
+    assert_contains_all(
+        cut_register_recent,
+        [
+            "!IsFiniteVector3(positionWS)",
+            "!math.isfinite(radiusWS)",
+            "!math.isfinite(strength)",
+            "float clampedRadius = Mathf.Max(0.05f, radiusWS);",
+            "float clampedStrength = Mathf.Clamp01(strength);",
+            "float lifetime = math.isfinite(recentCutLifetime) ? Mathf.Max(0.01f, recentCutLifetime) : 0.01f;",
+            "!IsFiniteRecentCutStamp(in stamp)",
+            "RadiusWS = clampedRadius,",
+            "Strength = clampedStrength,",
+            "RemainingLifetime = lifetime",
+        ],
+        "SargassumCutManager.RegisterRecentCutStamp",
+    )
+    assert_contains_all(
+        cut_register_heat,
+        [
+            "!IsFiniteVector3(positionWS)",
+            "!math.isfinite(radiusWS)",
+            "!math.isfinite(strength)",
+            "if (!math.isfinite(currentTime))",
+            "float clampedRadius = Mathf.Max(0.05f, radiusWS);",
+            "float clampedStrength = Mathf.Clamp01(strength);",
+            "float lifetime = math.isfinite(shaderScarLifetime) ? Mathf.Max(0.01f, shaderScarLifetime) : 0.01f;",
+            "!IsFiniteRecentCutHeatStamp(in stamp)",
+            "RadiusWS = clampedRadius,",
+            "Strength = clampedStrength,",
+            "clampedRadius,",
+            "clampedStrength,",
+            "PlasmaCutThermalDeltaCelsius * clampedStrength",
+        ],
+        "SargassumCutManager.RegisterRecentCutHeatStamp",
+    )
+    assert_contains_all(
+        cut_execute_stamp,
+        [
+            "!IsFiniteVector3(positionWS)",
+            "!math.isfinite(radiusWS)",
+            "!math.isfinite(strength)",
+            "!math.isfinite(deltaTime)",
+            "float recoveryRate = math.isfinite(recoveryPerSecond) ? Mathf.Max(0f, recoveryPerSecond) : 0f;",
+            "float recovery = Mathf.Max(0f, recoveryRate * Mathf.Max(0f, deltaTime));",
+            "return;",
+        ],
+        "SargassumCutManager.ExecuteStampPass",
+    )
+    assert_contains_all(
+        cut_coalesce_stamp,
+        [
+            "!math.all(math.isfinite(new float2(uvCenter.x, uvCenter.y)))",
+            "!math.isfinite(uvRadius)",
+            "!math.isfinite(strength)",
+            "!IsFiniteVector3(positionWS)",
+            "if (!IsFiniteVector4(payload))",
+            "payload = new Vector4(uvCenter.x, uvCenter.y, Mathf.Max(0.0001f, uvRadius), Mathf.Clamp01(strength));",
+        ],
+        "SargassumCutManager.TryCoalesceOverflowStamp",
+    )
+    assert_contains_all(
+        cut_register_external,
+        [
+            "!IsFiniteVector3(positionWS)",
+            "!math.isfinite(radiusWS)",
+            "!math.isfinite(strength)",
+            "float safeBubbleWeight = math.isfinite(bubbleWeight) ? Mathf.Max(0f, bubbleWeight) : 1f;",
+            "QueueDebrisBurst(positionWS, burstDirection, clampedStrength, safeBubbleWeight);",
+        ],
+        "SargassumCutManager.RegisterExternalCut",
+    )
+    assert_contains_all(
+        cut_queue_debris,
+        [
+            "!IsFiniteVector3(positionWS)",
+            "!IsFiniteVector3(directionWS)",
+            "!math.isfinite(cutStrength)",
+            "!math.isfinite(bubbleWeight)",
+            "_pendingDebrisBurstCount >= _pendingDebrisBursts.Length",
+            "TryCoalesceOverflowDebrisBurst(positionWS, directionWS, cutStrength, bubbleWeight);",
+            "ReportDebrisBurstOverflow();",
+        ],
+        "SargassumCutManager.QueueDebrisBurst",
+    )
+    assert_contains_all(
+        cut_coalesce_debris,
+        [
+            "int activeCount = math.min(_pendingDebrisBurstCount, _pendingDebrisBursts.Length);",
+            "bool replacingInvalidSlot = false;",
+            "!IsFinitePendingDebrisBurst(in burst)",
+            "replacingInvalidSlot = true;",
+            "float score = burst.CutStrength * Mathf.Max(0.1f, burst.BubbleWeight);",
+            "float incomingScore = cutStrength * Mathf.Max(0.1f, bubbleWeight);",
+            "if (!replacingInvalidSlot && incomingScore < weakestScore)",
+            "_pendingDebrisBursts[targetIndex] = new PendingDebrisBurst",
+        ],
+        "SargassumCutManager.TryCoalesceOverflowDebrisBurst",
+    )
+    assert_contains_all(
+        cut_flush_debris,
+        [
+            "!IsFinitePendingDebrisBurst(in burst)",
+            "continue;",
+            "debrisParticleSystem.EmitBurst(burst.PositionWS, burst.DirectionWS, burst.CutStrength, burst.BubbleWeight);",
+        ],
+        "SargassumCutManager.FlushDebrisBursts",
+    )
+    assert_contains_all(
+        cut_report_debris,
+        [
+            "_debrisBurstOverflowCount++;",
+            "int frame = SystemDispatcher.CurrentFrameIndex;",
+            "_lastDebrisBurstOverflowTelemetryFrame == frame",
+            "GlobalTelemetryBus.PublishPerformanceWarning(",
+            "DebrisBurstOverflowWarningHash",
+            "DebrisBurstContextHash",
+            "Mathf.Max(1, _debrisBurstOverflowCount)",
+        ],
+        "SargassumCutManager.ReportDebrisBurstOverflow",
+    )
+    assert_contains_all(
+        cut_refresh_damage_bounds,
+        [
+            "Vector3 desiredWorldMin = new Vector3(minX, minY, minZ);",
+            "Vector3 desiredWorldSize = new Vector3(worldSize, damageVolumeHeight, worldSize);",
+            "if (!IsFiniteVector3(desiredWorldMin) || !IsFiniteVector3(desiredWorldSize))",
+            "return;",
+        ],
+        "SargassumCutManager.RefreshDamageVolumeBounds",
+    )
+    assert_contains_all(
+        cut_queue_damage_sync,
+        [
+            "if (!math.isfinite(deltaTime))",
+            "deltaTime = 0f;",
+            "_pendingDamageVolumeDeltaTime = Mathf.Max(0f, deltaTime);",
+        ],
+        "SargassumCutManager.QueueDamageVolumeVisualSync",
+    )
+    assert_contains_all(
+        cut_reset_transient,
+        [
+            "ResetQueuedMaskUpdateState();",
+            "_queuedDamageVolumeStampCount = 0;",
+            "_damageVolumeStampOverflowCoalesceCount = 0;",
+            "_pendingDamageVolumeDeltaTime = 0f;",
+            "_damageVolumeEnergy = 0f;",
+            "_pendingDebrisBurstCount = 0;",
+            "_debrisBurstOverflowCount = 0;",
+            "_maskClearRequested = false;",
+            "_damageVolumeClearRequested = false;",
+            "_globalsDirty = false;",
+            "_pendingHeatRefresh = false;",
+        ],
+        "SargassumCutManager.ResetTransientRuntimeQueues",
+    )
+    assert_contains_all(
+        cut_refresh_mask_rect,
+        [
+            "if (!math.isfinite(desiredWorldSize))",
+            "desiredWorldSize = 128f;",
+            "!math.all(math.isfinite(new float2(desiredCenterXZ.x, desiredCenterXZ.y)))",
+            "? _maskCenterXZ",
+            ": Vector2.zero;",
+        ],
+        "SargassumCutManager.RefreshMaskWorldRect",
+    )
+    assert_contains_all(
+        cut_inside_mask_rect,
+        [
+            "!IsFiniteVector3(positionWS)",
+            "!math.isfinite(_maskWorldSize)",
+            "!IsFiniteVector4(_maskWorldRect)",
+            "_maskWorldSize <= 0f",
+            "_maskWorldRect.z <= 0f",
+            "_maskWorldRect.w <= 0f",
+            "return false;",
+        ],
+        "SargassumCutManager.IsInsideMaskWorldRect",
+    )
+    assert_contains_all(
+        cut_queue_damage_volume,
+        [
+            "!IsFiniteVector3(positionWS)",
+            "!math.isfinite(radiusWS)",
+            "!math.isfinite(strength)",
+            "!IsFiniteVector3(_damageVolumeWorldMin)",
+            "!IsFiniteVector3(_damageVolumeWorldSize)",
+            "float clampedRadius = Mathf.Max(0.05f, radiusWS);",
+            "float clampedStrength = Mathf.Clamp01(strength);",
+            "PositionRadius = new Vector4(positionWS.x, positionWS.y, positionWS.z, clampedRadius)",
+            "StrengthPadding = new Vector4(clampedStrength, 0f, 0f, 0f)",
+        ],
+        "SargassumCutManager.QueueDamageVolumeStamp",
+    )
+    assert_contains_all(
+        cut_coalesce_damage_volume,
+        [
+            "!IsFiniteVector3(positionWS)",
+            "!math.isfinite(radiusWS)",
+            "!math.isfinite(strength)",
+            "float clampedRadius = math.max(0.05f, radiusWS);",
+            "float clampedStrength = Mathf.Clamp01(strength);",
+            "if (!IsFiniteDamageVolumeStampCommand(in existing))",
+            "PositionRadius = new Vector4(positionWS.x, positionWS.y, positionWS.z, clampedRadius)",
+            "StrengthPadding = new Vector4(clampedStrength, 0f, 0f, 0f)",
+            "strengthPadding.x = math.max(strengthPadding.x, clampedStrength);",
+        ],
+        "SargassumCutManager.TryCoalesceOverflowDamageVolumeStamp",
+    )
+    assert_contains_all(
+        cut_process_damage_volume,
+        [
+            "deltaTime = math.isfinite(deltaTime) ? Mathf.Max(0f, deltaTime) : 0f;",
+            "float damageVolumeRecoveryRate = math.isfinite(damageVolumeRecoveryPerSecond) ? Mathf.Max(0f, damageVolumeRecoveryPerSecond) : 0f;",
+            "_DamageVolumeRecoveryId, Mathf.Max(0f, damageVolumeRecoveryRate * Mathf.Max(0f, deltaTime))",
+            "_damageVolumeEnergy - Mathf.Max(0f, damageVolumeRecoveryRate * Mathf.Max(0f, deltaTime))",
+        ],
+        "SargassumCutManager.ProcessQueuedDamageVolumeUpdate",
+    )
+
+    runtime_reference_utility = read_project_source("Assets", "_Project", "Scripts", "WorldRuntimeReferenceUtility.cs")
+    assert_contains_all(
+        runtime_reference_utility,
+        [
+            "public static bool TryResolveSargassumGlobalDragManager(ref SargassumGlobalDragManager target)",
+            "public static bool TryResolveSargassumCutManager(ref SargassumCutManager target)",
+            "public static bool TryResolveSargassumMicroFaunaBoids(ref SargassumMicroFaunaBoids target)",
+            "public static bool TryResolveSargassumDragReadModel(ref ISargassumDragReadModel target)",
+            "public static bool TryResolveSargassumCutWriteService(ref ISargassumCutWriteService target)",
+            "public static bool TryResolveMicroFaunaPresentationPulseSink(ref IMicroFaunaPresentationPulseSink target)",
+            "if (target is Behaviour targetBehaviour && IsLiveBehaviour(targetBehaviour))",
+            "ReferenceEquals(targetBehaviour, active)",
+            "SargassumGlobalDragManager active = SargassumGlobalDragManager.Instance;",
+            "SargassumCutManager active = SargassumCutManager.Instance;",
+            "SargassumMicroFaunaBoids active = SargassumMicroFaunaBoids.Instance;",
+        ],
+        "WorldRuntimeReferenceUtility Sargassum resolvers",
+    )
+
+    owner_local_consumer_contracts = {
+        ("Assets", "_Project", "Scripts", "World", "SargassumMicroFaunaBoids.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref dragManager);",
+            "WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref cutManager);",
+        ],
+        ("Assets", "_Project", "Scripts", "World", "SargassumCrestDampingController.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref dragManager);",
+            "WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref cutManager);",
+        ],
+        ("Assets", "_Project", "Scripts", "World", "SargassumDebrisParticleSystem.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDrag);",
+        ],
+        ("Assets", "_Project", "Scripts", "World", "SargassumCollapseChunk.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDrag);",
+        ],
+        ("Assets", "_Project", "Scripts", "World", "AbyssalThermalManager.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref cutManager);",
+        ],
+        ("Assets", "_Project", "Scripts", "World", "AbyssalFluidDecalManager.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDrag);",
+        ],
+        ("Assets", "_Project", "Scripts", "HectonPlayerMovement.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDragRuntime);",
+        ],
+        ("Assets", "_Project", "Scripts", "HectonFluidEngine.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumDragReadModel(ref _sargassumDragRuntime);",
+        ],
+        ("Assets", "_Project", "Scripts", "HectonUnderwaterVisuals.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDragRuntime);",
+        ],
+        ("Assets", "_Project", "Scripts", "Gameplay", "RandomEventSystem.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _cachedSargassumDrag);",
+        ],
+        ("Assets", "_Project", "Scripts", "Gameplay", "SargassumCutResponder.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref _cachedCutManager);",
+        ],
+        ("Assets", "_Project", "Scripts", "LaserCutter.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumCutWriteService(ref _cachedSargassumCutWriter);",
+        ],
+    }
+
+    for path_parts, expected_fragments in owner_local_consumer_contracts.items():
+        source = read_project_source(*path_parts)
+        for fragment in expected_fragments:
+            assert fragment in source, f"missing owner-local route {fragment!r} in {Path(*path_parts)}"
+        assert "GlobalRegistry.SargassumDrag" not in source, f"stale drag registry route in {Path(*path_parts)}"
+        assert "GlobalRegistry.SargassumCut" not in source, f"stale cut registry route in {Path(*path_parts)}"
+
+    crest_damping = read_project_source("Assets", "_Project", "Scripts", "World", "SargassumCrestDampingController.cs")
+    for signature in ["private void OnDisable", "private void OnDestroy"]:
+        block = method_block(crest_damping, signature)
+        assert "dragManager = null;" in block, f"SargassumCrestDampingController {signature} must clear drag owner"
+        assert "cutManager = null;" in block, f"SargassumCrestDampingController {signature} must clear cut owner"
+    debris_particles = read_project_source("Assets", "_Project", "Scripts", "World", "SargassumDebrisParticleSystem.cs")
+    for signature in ["private void OnDisable", "private void OnDestroy"]:
+        assert "_sargassumDrag = null;" in method_block(
+            debris_particles,
+            signature,
+        ), f"SargassumDebrisParticleSystem {signature} must clear drag owner"
+    fluid_decals = read_project_source("Assets", "_Project", "Scripts", "World", "AbyssalFluidDecalManager.cs")
+    for signature in ["private void OnDisable", "private void OnDestroy"]:
+        assert "_sargassumDrag = null;" in method_block(
+            fluid_decals,
+            signature,
+        ), f"AbyssalFluidDecalManager {signature} must clear drag owner"
+    thermal_manager = read_project_source("Assets", "_Project", "Scripts", "World", "AbyssalThermalManager.cs")
+    for signature in ["private void OnDisable", "private void OnDestroy"]:
+        block = method_block(thermal_manager, signature)
+        assert "cutManager = null;" in block, f"AbyssalThermalManager {signature} must clear cut owner"
+        assert "TryUnregister();" in block, f"AbyssalThermalManager {signature} must unregister runtime routes"
+    thermal_origin_shift = method_block(thermal_manager, "public void OnOriginShift")
+    assert_contains_all(
+        thermal_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!isActiveAndEnabled ||",
+            "!MathGuard.IsFinite(shiftOffset) ||",
+            "!math.isfinite(shiftSqrMagnitude) ||",
+            "shiftSqrMagnitude <= 0.0001f)",
+            "_lastProcessedAupShiftFrameId = shiftData.Sequence;",
+            "ApplyRuntimeOffsetToCachedState(-shiftOffset);",
+        ],
+        "AbyssalThermalManager.OnOriginShift finite thermal/cable producer",
+    )
+    assert_before(
+        thermal_origin_shift,
+        "!MathGuard.IsFinite(shiftOffset) ||",
+        "ApplyRuntimeOffsetToCachedState(-shiftOffset);",
+        "AbyssalThermalManager.OnOriginShift rejects nonfinite shifts before cached thermal state mutation",
+    )
+    thermal_register_vent = method_block(thermal_manager, "public void RegisterRuntimeVent")
+    assert_contains_all(
+        thermal_register_vent,
+        [
+            "if (runtimeKey == 0L || !MathGuard.IsFinite(positionWS))",
+            "RadiusWS = ResolvePositiveFinite(radiusWS, 2f, 2f)",
+            "UpdraftVelocity = ResolvePositiveFinite(updraftVelocity, 0.5f, 0.5f)",
+            "CableRadiusWS = ResolvePositiveFinite(cableRadiusWS, 2f, 2f)",
+        ],
+        "AbyssalThermalManager.RegisterRuntimeVent finite authoring/runtime bridge",
+    )
+    thermal_sync_persistent = method_block(thermal_manager, "private void SyncPersistentThermalVents")
+    assert_contains_all(
+        thermal_sync_persistent,
+        [
+            "if (record.RuntimeKey == 0L)",
+            "if (!MathGuard.IsFinite(positionWS))",
+            "RadiusWS = ResolvePositiveFinite(record.RadiusWS, 2f, 2f)",
+            "CableRadiusWS = ResolvePositiveFinite(record.CableRadiusWS, 2f, 2f)",
+        ],
+        "AbyssalThermalManager.SyncPersistentThermalVents finite persistent bridge",
+    )
+    assert_before(
+        thermal_sync_persistent,
+        "if (record.RuntimeKey == 0L)",
+        "ResolvePersistentThermalVentRuntimePosition(in record.PositionAup)",
+        "AbyssalThermalManager.SyncPersistentThermalVents rejects duplicate-empty persistent owner before position resolve",
+    )
+    thermal_sample = method_block(thermal_manager, "public bool SampleThermalFlow")
+    assert_contains_all(
+        thermal_sample,
+        [
+            "if (_activeVentCount <= 0 || !MathGuard.IsFinite(positionWS))",
+            "float effectiveRadius = ResolvePositiveFinite(radiusWS, 0.1f, 0.1f);",
+            "if (!IsFiniteVent(in vent))",
+            "float eruptiveHeatScale = ResolveNonNegativeFinite(ResolveVentHeatScale(i), 1f);",
+            "if (!math.isfinite(planarDistance))",
+            "float cableWeight = math.saturate(1f - cableDistance / math.max(cableRadius, 0.001f));",
+            "strongestCableCut = Resolve01Finite(ResolveCableCutProgress(positionWS, strongestCableAnchor, cableRadius));",
+            "SanitizeThermalFlowSample(ref sample, positionWS);",
+        ],
+        "AbyssalThermalManager.SampleThermalFlow finite thermal/cable sample",
+    )
+    thermal_try_cable = method_block(thermal_manager, "private bool TryResolveCableZone")
+    assert_contains_all(
+        thermal_try_cable,
+        [
+            "if (_activeVentCount <= 0 || !MathGuard.IsFinite(positionWS))",
+            "if (!IsFiniteVent(in vent))",
+            "if (!math.isfinite(planarDistance) || planarDistance > cableRadius)",
+            "cableCutProgress01 = Resolve01Finite(ResolveCableCutProgress(positionWS, cableAnchorWS, cableRadius));",
+        ],
+        "AbyssalThermalManager.TryResolveCableZone finite cable zone",
+    )
+    thermal_cable_anchor = method_block(thermal_manager, "private Vector3 ResolveCableAnchor")
+    assert_contains_all(
+        thermal_cable_anchor,
+        [
+            "if (!MathGuard.IsFinite(cableAnchorWS))",
+            "if (!MathGuard.IsFinite(positionWS))",
+            "if (!math.isfinite(planarDeltaSq) || planarDeltaSq <= 0.0001f || ResolveNonNegativeFinite(cableAnchorPull, 0f) <= 0f)",
+            "ResolveNonNegativeFinite(cableAnchorPull, 0f)",
+        ],
+        "AbyssalThermalManager.ResolveCableAnchor finite anchor",
+    )
+    thermal_cable_cut = method_block(thermal_manager, "private float ResolveCableCutProgress")
+    assert_contains_all(
+        thermal_cable_cut,
+        [
+            "if (cutManager == null || !MathGuard.IsFinite(positionWS) || !MathGuard.IsFinite(cableAnchorWS))",
+            "ResolvePositiveFinite(cableRadiusWS, 0.1f, 0.1f)",
+            "float releaseThreshold = math.max(0.0001f, Resolve01Finite(cableCutReleaseThreshold));",
+            "float safeAccumulatedArea = ResolveNonNegativeFinite(accumulatedAreaWS, 0f);",
+            "ResolveNonNegativeFinite(strongestCut01, 0f)",
+        ],
+        "AbyssalThermalManager.ResolveCableCutProgress finite cut bridge",
+    )
+    for helper in [
+        "private static bool IsFiniteVent(in ThermalVentState vent)",
+        "private static void SanitizeThermalFlowSample(ref ThermalFlowSample sample, Vector3 fallbackAnchor)",
+        "private static float Resolve01Finite(float value)",
+        "private static float ResolveNonNegativeFinite(float value, float fallback)",
+        "private static float ResolvePositiveFinite(float value, float fallback, float minimum)",
+    ]:
+        assert helper in thermal_manager, f"AbyssalThermalManager missing finite helper {helper}"
+    collapse_chunk = read_project_source("Assets", "_Project", "Scripts", "World", "SargassumCollapseChunk.cs")
+    collapse_chunk_replaced = method_block(collapse_chunk, "public void OnGlobalRegistryServiceReplaced")
+    assert_contains_all(
+        collapse_chunk_replaced,
+        [
+            "_registeredScavengerHost && previousService is SargassumGlobalDragManager previousDrag",
+            "previousDrag.UnregisterSettledCollapseChunk(this);",
+            "_registeredScavengerHost = false;",
+            "TryRegisterScavengerHost();",
+        ],
+        "SargassumCollapseChunk.OnGlobalRegistryServiceReplaced",
+    )
+    for signature in ["public void OnDespawn", "private void OnDisable", "private void OnDestroy"]:
+        assert "_sargassumDrag = null;" in method_block(
+            collapse_chunk,
+            signature,
+        ), f"SargassumCollapseChunk {signature} must clear drag owner after lifecycle unregister"
+    cut_responder = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "SargassumCutResponder.cs")
+    assert "public sealed class SargassumCutResponder : MonoBehaviour, IGlobalRegistryHotSwapListener" in cut_responder
+    assert "TryRegisterHotSwapListener();" in method_block(
+        cut_responder,
+        "private void OnEnable",
+    ), "SargassumCutResponder must subscribe for cut-runtime replacement on enable"
+    for signature in ["private void OnDisable", "private void OnDestroy"]:
+        block = method_block(cut_responder, signature)
+        assert "TryUnregisterHotSwapListener();" in block, f"SargassumCutResponder {signature} must unsubscribe hot-swap listener"
+        assert "ClearColdDependencies();" in block, f"SargassumCutResponder {signature} must clear cached cut manager"
+    cut_responder_disable = method_block(cut_responder, "private void OnDisable")
+    assert "_cutRadius = ResolveMinCutRadius(minCutRadius);" in cut_responder_disable, (
+        "SargassumCutResponder disable state must sanitize serialized min radius"
+    )
+    cut_responder_apply_state = method_block(cut_responder, "private void ApplyCutState")
+    assert_contains_all(
+        cut_responder_apply_state,
+        [
+            "_debugCutStrength = math.isfinite(_cutStrength) ? math.saturate(_cutStrength) : 0f;",
+            "_debugCutRadius = math.isfinite(_cutRadius) ? math.max(0f, _cutRadius) : 0f;",
+            "_debugCutPosition = IsFiniteVector3(_cutPositionWS) ? _cutPositionWS : Vector3.zero;",
+        ],
+        "SargassumCutResponder.ApplyCutState finite diagnostics",
+    )
+    cut_responder_replaced = method_block(cut_responder, "public void OnGlobalRegistryServiceReplaced")
+    assert_contains_all(
+        cut_responder_replaced,
+        [
+            "serviceSlot != GlobalRegistryServiceSlot.SargassumCutRuntime",
+            "_cachedCutManager = currentService as SargassumCutManager;",
+            "WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref _cachedCutManager);",
+        ],
+        "SargassumCutResponder.OnGlobalRegistryServiceReplaced",
+    )
+    cut_responder_register = method_block(cut_responder, "public void RegisterCut")
+    assert_contains_all(
+        cut_responder_register,
+        [
+            "!IsFiniteVector3(positionWS) || !IsFiniteVector3(velocityWS) || !math.isfinite(speed)",
+            "float safeMinCutRadius = ResolveMinCutRadius(minCutRadius);",
+            "float safeMaxCutRadius = ResolveMaxCutRadius(maxCutRadius, safeMinCutRadius);",
+            "_cutRadius = math.lerp(safeMinCutRadius, safeMaxCutRadius, normalizedSpeed);",
+            "float rawQuality = HomeostasisBrain.GlobalQualityWeight;",
+            "float quality = math.isfinite(rawQuality) ? math.saturate(rawQuality) : 1f;",
+            "int safeBaseDebrisCount = math.max(0, baseDebrisCount);",
+            "math.lerp(safeBaseDebrisCount, safeBaseDebrisCount * 2.2f, normalizedSpeed)",
+        ],
+        "SargassumCutResponder.RegisterCut finite bridge",
+    )
+    assert_before(
+        cut_responder_register,
+        "!IsFiniteVector3(positionWS) || !IsFiniteVector3(velocityWS) || !math.isfinite(speed)",
+        "ResolveNormalizedCutSpeed(speed, cutSpeedThreshold)",
+        "SargassumCutResponder.RegisterCut rejects invalid payload before state mutation",
+    )
+    cut_responder_publish = method_block(cut_responder, "private void PublishCutMask")
+    assert_contains_all(
+        cut_responder_publish,
+        [
+            "!IsFiniteVector3(positionWS)",
+            "!IsFiniteVector3(velocityWS)",
+            "!math.isfinite(_cutRadius)",
+            "!math.isfinite(_cutStrength)",
+            "float safeMinCutRadius = ResolveMinCutRadius(minCutRadius);",
+            "float cutRadiusWS = math.max(safeMinCutRadius, _cutRadius);",
+            "float cutStrength01 = math.saturate(_cutStrength);",
+            "float safeRecoverySpeed = math.isfinite(cutRecoverySpeed) ? math.max(0.5f, cutRecoverySpeed) : 0.5f;",
+            "cutManager.RegisterExternalCut(positionWS, cutRadiusWS, cutStrength01, velocityWS, recoverySeconds);",
+        ],
+        "SargassumCutResponder.PublishCutMask finite writer boundary",
+    )
+    assert_before(
+        cut_responder_publish,
+        "!IsFiniteVector3(positionWS)",
+        "cutManager.RegisterExternalCut(positionWS, cutRadiusWS, cutStrength01, velocityWS, recoverySeconds);",
+        "SargassumCutResponder.PublishCutMask rejects invalid payload before writer call",
+    )
+    cut_responder_cooldown = method_block(cut_responder, "private static uint ResolveCooldownFrames")
+    assert "math.isfinite(cooldownSeconds) ? math.max(0.01f, cooldownSeconds) : 0.01f" in cut_responder_cooldown, (
+        "SargassumCutResponder cooldown resolver must tolerate nonfinite serialized cooldowns"
+    )
+    cut_responder_speed = method_block(cut_responder, "private static float ResolveNormalizedCutSpeed")
+    assert_contains_all(
+        cut_responder_speed,
+        [
+            "if (!math.isfinite(speed))",
+            "float safeThreshold = math.isfinite(threshold) ? math.max(0.001f, threshold) : 0.001f;",
+        ],
+        "SargassumCutResponder.ResolveNormalizedCutSpeed finite threshold",
+    )
+    assert "private static bool IsFiniteVector3(Vector3 value)" in cut_responder, (
+        "SargassumCutResponder must keep a local finite Vector3 boundary helper"
+    )
+    physics_zone = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "SargassumPhysicsZone.cs")
+    physics_configure = method_block(physics_zone, "public void Configure(")
+    assert_contains_all(
+        physics_configure,
+        [
+            "speedMultiplier = ResolveSpeedMultiplier(targetSpeedMultiplier);",
+            "dragMultiplier = ResolveDragMultiplier(targetDragMultiplier);",
+            "cutSpeedThreshold = ResolveCutSpeedThreshold(targetCutSpeedThreshold);",
+            "cutRadius = ResolveCutRadius(targetCutRadius);",
+        ],
+        "SargassumPhysicsZone.Configure finite authoring bridge",
+    )
+    physics_awake = method_block(physics_zone, "private void Awake")
+    assert_contains_all(
+        physics_awake,
+        [
+            "speedMultiplier = ResolveSpeedMultiplier(speedMultiplier);",
+            "dragMultiplier = ResolveDragMultiplier(dragMultiplier);",
+            "cutSpeedThreshold = ResolveCutSpeedThreshold(cutSpeedThreshold);",
+            "cutRadius = ResolveCutRadius(cutRadius);",
+        ],
+        "SargassumPhysicsZone.Awake finite serialized bridge",
+    )
+    physics_tick = method_block(physics_zone, "public void Tick")
+    assert_contains_all(
+        physics_tick,
+        [
+            "float safeSpeedMultiplier = ResolveSpeedMultiplier(speedMultiplier);",
+            "float safeDragMultiplier = ResolveDragMultiplier(dragMultiplier);",
+            "speedMultiplier = safeSpeedMultiplier;",
+            "dragMultiplier = safeDragMultiplier;",
+            "if (playerTransform != null && !IsFiniteVector3(playerTransform.position))",
+            "_playerTransform = null;",
+            "influence.StayZone(safeSpeedMultiplier, safeDragMultiplier);",
+            "EnterPlayerInfluence(influence, safeSpeedMultiplier, safeDragMultiplier);",
+        ],
+        "SargassumPhysicsZone.Tick finite movement feedback bridge",
+    )
+    assert_before(
+        physics_tick,
+        "if (playerTransform != null && !IsFiniteVector3(playerTransform.position))",
+        "_cachedVolume.Contains(_cachedTransform, playerTransform.position)",
+        "SargassumPhysicsZone.Tick rejects nonfinite player position before volume sample",
+    )
+    physics_refresh = method_block(physics_zone, "private void RefreshPlayerReferencesCold")
+    assert_contains_all(
+        physics_refresh,
+        [
+            "if (_playerTransform != null && !IsFiniteVector3(_playerTransform.position))",
+            "_playerTransform = null;",
+        ],
+        "SargassumPhysicsZone.RefreshPlayerReferencesCold finite player binding",
+    )
+    physics_cut = method_block(physics_zone, "private void TryRegisterPlayerCut")
+    assert_contains_all(
+        physics_cut,
+        [
+            "if (!IsFiniteVector3(velocity))",
+            "if (!math.isfinite(speedSq) || speedSq <= 0f)",
+            "float safeCutSpeedThreshold = ResolveCutSpeedThreshold(cutSpeedThreshold);",
+            "float cutSpeedThresholdSq = safeCutSpeedThreshold * safeCutSpeedThreshold;",
+            "if (!math.isfinite(speed) || !IsFiniteVector3(contactPoint))",
+            "cutResponder.RegisterCut(contactPoint, velocity, speed);",
+        ],
+        "SargassumPhysicsZone.TryRegisterPlayerCut finite cut producer",
+    )
+    assert_before(
+        physics_cut,
+        "if (!IsFiniteVector3(velocity))",
+        "float speedSq = velocity.sqrMagnitude;",
+        "SargassumPhysicsZone.TryRegisterPlayerCut rejects invalid velocity before speed math",
+    )
+    assert_before(
+        physics_cut,
+        "if (!math.isfinite(speed) || !IsFiniteVector3(contactPoint))",
+        "cutResponder.RegisterCut(contactPoint, velocity, speed);",
+        "SargassumPhysicsZone.TryRegisterPlayerCut rejects invalid contact before responder call",
+    )
+    for helper in [
+        "private static float ResolveSpeedMultiplier(float value)",
+        "private static float ResolveDragMultiplier(float value)",
+        "private static float ResolveCutSpeedThreshold(float value)",
+        "private static float ResolveCutRadius(float value)",
+        "private static bool IsFiniteVector3(Vector3 value)",
+    ]:
+        assert helper in physics_zone, f"SargassumPhysicsZone missing finite helper {helper}"
+    cached_volume = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "CachedTriggerVolume.cs")
+    cached_volume_from_collider = method_block(cached_volume, "public static CachedTriggerVolume FromCollider")
+    assert_contains_all(
+        cached_volume_from_collider,
+        [
+            "float safeFallback = ResolvePositiveFinite(fallbackRadius, 0.01f);",
+            "volume.LocalCenter = ResolveFiniteFloat3(sphere.center, float3.zero);",
+            "volume.Radius = ResolvePositiveFinite(sphere.radius, safeFallback);",
+            "volume.LocalCenter = ResolveFiniteFloat3(box.center, float3.zero);",
+            "float3 safeSize = ResolveFiniteFloat3(box.size, new float3(safeFallback * 2f));",
+            "volume.LocalCenter = ResolveFiniteFloat3(capsule.center, float3.zero);",
+            "volume.Radius = ResolvePositiveFinite(capsule.radius, safeFallback);",
+            "float safeHeight = ResolvePositiveFinite(capsule.height, volume.Radius * 2f);",
+        ],
+        "CachedTriggerVolume.FromCollider finite collider bridge",
+    )
+    cached_volume_contains = method_block(cached_volume, "public bool Contains")
+    assert_contains_all(
+        cached_volume_contains,
+        [
+            "if (!math.all(math.isfinite(localPoint)) || !IsFiniteVolume())",
+            "return false;",
+        ],
+        "CachedTriggerVolume.Contains finite runtime volume read",
+    )
+    cached_volume_surface = method_block(cached_volume, "public Vector3 ResolveSurfacePoint")
+    assert_contains_all(
+        cached_volume_surface,
+        [
+            "if (!math.all(math.isfinite(localPoint)) || !IsFiniteVolume())",
+            "return worldPoint;",
+            "Vector3 closestWorld = owner.TransformPoint((Vector3)closestLocal);",
+            "return IsFiniteVector3(closestWorld) ? closestWorld : worldPoint;",
+        ],
+        "CachedTriggerVolume.ResolveSurfacePoint finite contact read",
+    )
+    for helper in [
+        "private bool IsFiniteVolume()",
+        "private static float ResolvePositiveFinite(float value, float fallback)",
+        "private static float3 ResolveFiniteFloat3(Vector3 value, float3 fallback)",
+        "private static bool IsFiniteVector3(Vector3 value)",
+    ]:
+        assert helper in cached_volume, f"CachedTriggerVolume missing finite helper {helper}"
+    movement_influence = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "SargassumMovementInfluence.cs")
+    assert "public float SpeedMultiplier => ResolveSpeedMultiplier(_currentSpeedMultiplier);" in movement_influence, (
+        "SargassumMovementInfluence SpeedMultiplier read API must fail finite"
+    )
+    assert "public float DragMultiplier => ResolveDragMultiplier(_currentDragMultiplier);" in movement_influence, (
+        "SargassumMovementInfluence DragMultiplier read API must fail finite"
+    )
+    assert "internal float Entanglement01 => Resolve01(_currentEntanglement01);" in movement_influence, (
+        "SargassumMovementInfluence entanglement read API must fail finite"
+    )
+    movement_apply_field = method_block(movement_influence, "internal void ApplyDetailedFieldInfluence")
+    assert_contains_all(
+        movement_apply_field,
+        [
+            "bool hasFiniteAnchor = IsFiniteVector3(entanglementAnchorWS);",
+            "_fieldSpeedMultiplier = active ? ResolveSpeedMultiplier(speedMultiplier) : 1f;",
+            "_fieldDragMultiplier = active ? ResolveDragMultiplier(dragMultiplier) : 1f;",
+            "_fieldDensity01 = active ? Resolve01(density01) : 0f;",
+            "_fieldEntanglementAnchorWS = active && hasFiniteAnchor ? entanglementAnchorWS : EntanglementAnchorWS;",
+            "_fieldEntanglement01 = active && hasFiniteAnchor ? Resolve01(entanglement01) : 0f;",
+        ],
+        "SargassumMovementInfluence.ApplyDetailedFieldInfluence finite global field bridge",
+    )
+    movement_advance = method_block(movement_influence, "public void Advance")
+    assert_contains_all(
+        movement_advance,
+        [
+            "NormalizeRuntimeState();",
+            "float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;",
+            "_exitGraceTimer = ResolveNonNegative(exitGraceTime, 0.1f);",
+            "float blendT = FastExpDecayBlend01(blendSpeed, safeDeltaTime);",
+            "float entanglementBlendT = FastExpDecayBlend01(entanglementBlendSpeed, safeDeltaTime);",
+            "AdvanceCameraTension(safeDeltaTime);",
+        ],
+        "SargassumMovementInfluence.Advance finite state lifecycle",
+    )
+    movement_register_influence = method_block(movement_influence, "private void RegisterInfluence")
+    assert_contains_all(
+        movement_register_influence,
+        [
+            "NormalizeRuntimeState();",
+            "_targetSpeedMultiplier = math.min(_targetSpeedMultiplier, ResolveSpeedMultiplier(speedMultiplier));",
+            "_targetDragMultiplier = math.max(_targetDragMultiplier, ResolveDragMultiplier(dragMultiplier));",
+            "_exitGraceTimer = ResolveNonNegative(exitGraceTime, 0.1f);",
+        ],
+        "SargassumMovementInfluence.RegisterInfluence finite trigger bridge",
+    )
+    movement_origin_shift = method_block(movement_influence, "internal void ApplyOriginShiftOffset")
+    assert_contains_all(
+        movement_origin_shift,
+        [
+            "if (!IsFiniteVector3(shiftOffset) || shiftOffset.sqrMagnitude <= 0.000001f)",
+            "NormalizeRuntimeState();",
+        ],
+        "SargassumMovementInfluence.ApplyOriginShiftOffset finite lifecycle shift",
+    )
+    movement_sync_debug = method_block(movement_influence, "private void SyncDebugState")
+    assert_contains_all(
+        movement_sync_debug,
+        [
+            "_debugTargetSpeedMultiplier = ResolveSpeedMultiplier(_targetSpeedMultiplier);",
+            "_debugTargetDragMultiplier = ResolveDragMultiplier(_targetDragMultiplier);",
+            "_debugCurrentSpeedMultiplier = SpeedMultiplier;",
+            "_debugCurrentDragMultiplier = DragMultiplier;",
+            "_debugFieldDensity01 = Resolve01(_fieldDensity01);",
+            "_debugEntanglementAnchorWS = EntanglementAnchorWS;",
+        ],
+        "SargassumMovementInfluence.SyncDebugState finite diagnostics",
+    )
+    movement_camera = method_block(movement_influence, "private void AdvanceCameraTension")
+    assert_contains_all(
+        movement_camera,
+        [
+            "float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;",
+            "float tension = Resolve01(_currentEntanglement01);",
+            "float safeFrequency = ResolveNonNegative(cameraShakeFrequency, 7.5f);",
+            "if (!math.isfinite(_entanglementShakeTime))",
+            "_entanglementShakeTime = 0f;",
+            "float amplitude = ResolveNonNegative(cameraShakeAmplitude, 0f) * tension;",
+            "_cameraPitchOffset = sinB * ResolveNonNegative(cameraPitchAmplitude, 0f) * tension;",
+            "_cameraRollOffset = cosA * ResolveNonNegative(cameraRollAmplitude, 0f) * tension;",
+        ],
+        "SargassumMovementInfluence.AdvanceCameraTension finite camera feedback",
+    )
+    movement_blend = method_block(movement_influence, "private static float FastExpDecayBlend01")
+    assert_contains_all(
+        movement_blend,
+        [
+            "float safeBlendSpeed = math.isfinite(blendSpeed) ? math.max(BlendSpeedFloor, blendSpeed) : BlendSpeedFloor;",
+            "float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;",
+            "float rawX = safeBlendSpeed * safeDeltaTime;",
+            "float x = math.isfinite(rawX) ? math.min(rawX, 64f) : 64f;",
+        ],
+        "SargassumMovementInfluence.FastExpDecayBlend01 finite blend",
+    )
+    movement_lerp = method_block(movement_influence, "private static Vector3 LerpVector3")
+    assert_contains_all(
+        movement_lerp,
+        [
+            "Vector3 safeCurrent = IsFiniteVector3(current) ? current : Vector3.zero;",
+            "Vector3 safeTarget = IsFiniteVector3(target) ? target : safeCurrent;",
+            "float safeT = Resolve01(t);",
+        ],
+        "SargassumMovementInfluence.LerpVector3 finite vector blend",
+    )
+    movement_triangle = method_block(movement_influence, "private static float TriangleWaveSigned")
+    assert "if (!math.isfinite(phase))" in movement_triangle, (
+        "SargassumMovementInfluence triangle wave must reject nonfinite phase"
+    )
+    movement_normalize = method_block(movement_influence, "private void NormalizeRuntimeState")
+    assert_contains_all(
+        movement_normalize,
+        [
+            "_targetSpeedMultiplier = ResolveSpeedMultiplier(_targetSpeedMultiplier);",
+            "_currentDragMultiplier = ResolveDragMultiplier(_currentDragMultiplier);",
+            "_fieldEntanglementAnchorWS = IsFiniteVector3(_fieldEntanglementAnchorWS) ? _fieldEntanglementAnchorWS : Vector3.zero;",
+            "_cameraLocalOffset = IsFiniteVector3(_cameraLocalOffset) ? _cameraLocalOffset : Vector3.zero;",
+            "_exitGraceTimer = ResolveNonNegative(_exitGraceTimer, 0f);",
+        ],
+        "SargassumMovementInfluence.NormalizeRuntimeState finite state owner",
+    )
+    for helper in [
+        "private static float ResolveSpeedMultiplier(float value)",
+        "private static float ResolveDragMultiplier(float value)",
+        "private static float Resolve01(float value)",
+        "private static float ResolveNonNegative(float value, float fallback)",
+        "private static bool IsFiniteVector3(Vector3 value)",
+    ]:
+        assert helper in movement_influence, f"SargassumMovementInfluence missing finite helper {helper}"
+    player_movement_sargassum = read_project_source("Assets", "_Project", "Scripts", "HectonPlayerMovement.cs")
+    player_apply_drag = method_block(player_movement_sargassum, "public void ApplyEnvironmentalDrag")
+    assert_contains_all(
+        player_apply_drag,
+        [
+            "if (!math.isfinite(dragMultiplier))",
+            "float clampedDragMultiplier = math.max(1f, dragMultiplier);",
+            "_externalEnvironmentalDragHoldTimer = ResolveSargassumNonNegative(externalEnvironmentalDragHoldTime, 0f);",
+        ],
+        "HectonPlayerMovement.ApplyEnvironmentalDrag finite environmental drag ingress",
+    )
+    player_origin_shift = method_block(player_movement_sargassum, "public void OnOriginShift")
+    assert "if (!IsFiniteVector(shiftOffset) || shiftOffset.sqrMagnitude <= 0.000001f)" in player_origin_shift, (
+        "HectonPlayerMovement origin shift must reject nonfinite lifecycle payloads before mutating cached anchors"
+    )
+    player_linear_blend = method_block(player_movement_sargassum, "private static float ResolveLinearBlendT")
+    assert_contains_all(
+        player_linear_blend,
+        [
+            "float safeSharpness = math.isfinite(sharpness) ? math.max(0f, sharpness) : 0f;",
+            "float safeDeltaTime = math.isfinite(deltaTime) ? math.max(deltaTime, 0f) : 0f;",
+            "return math.saturate(safeSharpness * safeDeltaTime);",
+        ],
+        "HectonPlayerMovement.ResolveLinearBlendT finite shared blend",
+    )
+    player_resolve_sargassum_speed = method_block(player_movement_sargassum, "private float ResolveSargassumSpeedMultiplier()")
+    assert "ResolveSargassumSpeedMultiplier(_sargassumMovementInfluence.SpeedMultiplier)" in player_resolve_sargassum_speed, (
+        "HectonPlayerMovement must sanitize Sargassum speed reads"
+    )
+    player_resolve_sargassum_drag = method_block(player_movement_sargassum, "private float ResolveSargassumDragMultiplier()")
+    assert "ResolveSargassumDragMultiplier(_sargassumMovementInfluence.DragMultiplier)" in player_resolve_sargassum_drag, (
+        "HectonPlayerMovement must sanitize Sargassum drag reads"
+    )
+    player_advance_sargassum = method_block(player_movement_sargassum, "private void AdvanceSargassumInfluence")
+    assert_contains_all(
+        player_advance_sargassum,
+        [
+            "float rawSampleRadius = _capsuleCollider != null ? _capsuleCollider.radius : 0.5f;",
+            "float sampleRadius = math.isfinite(rawSampleRadius) ? math.max(0.35f, rawSampleRadius) : 0.5f;",
+            "_sargassumFieldDensity01 = hasFieldInfluence ? ResolveSargassum01(sample.Density01) : 0f;",
+        ],
+        "HectonPlayerMovement.AdvanceSargassumInfluence finite sample bridge",
+    )
+    player_propulsion_ref = method_block(player_movement_sargassum, "private float ResolveActiveTransportPropulsionReference")
+    assert "math.max(0.01f, ResolveSargassumPositive(transportPreset.PropulsionForceReference, 0.01f))" in player_propulsion_ref, (
+        "HectonPlayerMovement transport propulsion reference must keep finite denominator"
+    )
+    player_sargassum_drag = method_block(player_movement_sargassum, "private void ApplySargassumEnvironmentalDrag")
+    assert_contains_all(
+        player_sargassum_drag,
+        [
+            "float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;",
+            "float tension = ResolveSargassum01(_sargassumMovementInfluence.Entanglement01);",
+            "float massReference = math.max(1f, ResolveSargassumPositive(sargassumEntanglementMassReference, 80f));",
+            "ResolveSargassumNonNegative(sargassumEntanglementSwimEnvironmentalDrag, 0.45f)",
+            "ResolveSargassumNonNegative(sargassumEntanglementTransportEnvironmentalDrag, 1.15f)",
+            "requestedDragMultiplier = ResolveSargassumDragMultiplier(requestedDragMultiplier);",
+            "ApplySargassumEscapeEnergyDrain(safeFixedDeltaTime, tension, propulsion01);",
+        ],
+        "HectonPlayerMovement.ApplySargassumEnvironmentalDrag finite consumer",
+    )
+    player_sargassum_energy = method_block(player_movement_sargassum, "private void ApplySargassumEscapeEnergyDrain")
+    assert_contains_all(
+        player_sargassum_energy,
+        [
+            "float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;",
+            "float safeTension = ResolveSargassum01(tension);",
+            "float safeEnergyDrainPerSecond = ResolveSargassumNonNegative(sargassumEscapeEnergyDrainPerSecond, 0f);",
+            "math.max(1f, ResolveSargassumPositive(sargassumEntanglementEscapeEnergyMultiplier, 3f))",
+            "math.max(1f, ResolveSargassumPositive(sargassumHighStrainEnergyMultiplier, 3f))",
+            "safeFixedDeltaTime",
+        ],
+        "HectonPlayerMovement.ApplySargassumEscapeEnergyDrain finite survival feedback",
+    )
+    player_sargassum_high_strain = method_block(player_movement_sargassum, "private void UpdateSargassumHighStrainState")
+    assert_contains_all(
+        player_sargassum_high_strain,
+        [
+            "float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;",
+            "_sargassumHighStrainIntensity = ResolveSargassum01(_sargassumHighStrainIntensity);",
+            "_sargassumHighStrainTimer = 0f;",
+            "ResolveLinearBlendT(12f, safeFixedDeltaTime);",
+        ],
+        "HectonPlayerMovement.UpdateSargassumHighStrainState finite strain lifecycle",
+    )
+    player_sargassum_buoyancy_blend = method_block(player_movement_sargassum, "private void UpdateSargassumMatBuoyancyBlend")
+    assert_contains_all(
+        player_sargassum_buoyancy_blend,
+        [
+            "float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;",
+            "float densityThreshold = math.isfinite(sargassumMatBuoyancyDensityThreshold)",
+            ": 0.8f;",
+            "ResolveSargassum01(_sargassumFieldDensity01)",
+            "math.max(0.01f, ResolveSargassumPositive(sargassumMatBuoyancyMaxDepth, 1.65f))",
+            "math.max(0.01f, ResolveSargassumPositive(sargassumMatBuoyancyBlendSharpness, 9f))",
+            "_sargassumMatBuoyancyBlend = ResolveSargassum01(_sargassumMatBuoyancyBlend);",
+        ],
+        "HectonPlayerMovement.UpdateSargassumMatBuoyancyBlend finite buoyancy blend",
+    )
+    player_sargassum_buoyancy_support = method_block(player_movement_sargassum, "private void ApplySargassumMatBuoyancySupport")
+    assert_contains_all(
+        player_sargassum_buoyancy_support,
+        [
+            "float surfaceReleaseVelocity = math.max(0.01f, ResolveSargassumPositive(surfaceBreachReleaseVelocity, 1f));",
+            "ResolveSargassumNonNegative(_cachedGravityMagnitude, 0f)",
+            "ResolveSargassumNonNegative(sargassumMatBuoyancyForceScale, 0f)",
+            "ResolveSargassum01(_sargassumMatBuoyancyBlend)",
+        ],
+        "HectonPlayerMovement.ApplySargassumMatBuoyancySupport finite force",
+    )
+    player_surface_lock = method_block(player_movement_sargassum, "private void ApplySurfaceLock")
+    assert_contains_all(
+        player_surface_lock,
+        [
+            "float sargassumMatBlend = ResolveSargassum01(_sargassumMatBuoyancyBlend);",
+            "math.max(1f, ResolveSargassumPositive(sargassumMatSurfaceLockBoost, 1.4f))",
+            "ResolveSargassumNonNegative(sargassumMatSurfaceLiftOffset, 0.16f) * sargassumMatBlend",
+        ],
+        "HectonPlayerMovement.ApplySurfaceLock finite Sargassum mat support",
+    )
+    player_sargassum_force = method_block(player_movement_sargassum, "private void ApplySargassumEntanglementForce")
+    assert_contains_all(
+        player_sargassum_force,
+        [
+            "float tension = ResolveSargassum01(_sargassumMovementInfluence.Entanglement01);",
+            "if (!IsFiniteVector(playerPosition) || !IsFiniteVector(anchor))",
+            "displacement.y *= ResolveSargassum01(sargassumEntanglementVerticalInfluence);",
+            "if (!math.isfinite(displacementSqr) || displacementSqr <= 0.00000001f)",
+            "ResolveSargassum01(sargassumEntanglementEscapeRelief)",
+            "ResolveSargassumNonNegative(sargassumEntanglementSpring, 0f)",
+            "ResolveSargassumNonNegative(sargassumEntanglementDamping, 0f)",
+            "if (!math.isfinite(totalAccelerationMagnitude) || totalAccelerationMagnitude <= 0f)",
+            "ResolveSargassumNonNegative(sargassumEntanglementMaxAcceleration, 18f)",
+            "float strainThreshold = math.isfinite(sargassumEntanglementStrainThreshold)",
+            ": 0.22f;",
+            "ResolveSargassumNonNegative(sargassumEntanglementCameraShakeScale, 0.9f)",
+        ],
+        "HectonPlayerMovement.ApplySargassumEntanglementForce finite motor/event bridge",
+    )
+    player_sargassum_escape_intent = method_block(player_movement_sargassum, "private float ResolveSargassumEscapeIntent01")
+    assert_contains_all(
+        player_sargassum_escape_intent,
+        [
+            "float planarInputMagnitude = ResolveSargassum01(ApproximatePlanarMagnitude(_inputH, _inputV));",
+            "float verticalInputMagnitude = math.isfinite(_inputVertical) ? math.abs(_inputVertical) : 0f;",
+            "float inputIntent = math.max(planarInputMagnitude, ResolveSargassum01(verticalInputMagnitude * 0.75f));",
+            "float escapeIntent = math.max(inputIntent, ResolveSargassum01(propulsion01));",
+            "float escapeThreshold = math.isfinite(sargassumEscapeInputThreshold)",
+            ": 0.2f;",
+            "return math.saturate((escapeIntent - escapeThreshold) / math.max(1f - escapeThreshold, 0.0001f));",
+        ],
+        "HectonPlayerMovement.ResolveSargassumEscapeIntent01 finite intent threshold",
+    )
+    player_sargassum_strain = method_block(player_movement_sargassum, "private void HandleSargassumEntanglementStrain")
+    assert_contains_all(
+        player_sargassum_strain,
+        [
+            "float shakeIntensity = ResolveSargassum01(signal.Shake01);",
+            "float highStrainThreshold = math.isfinite(sargassumHighStrainThreshold)",
+            ": 0.5f;",
+            "_sargassumHighStrainIntensity = math.max(ResolveSargassum01(_sargassumHighStrainIntensity), highStrainT);",
+            "_sargassumHighStrainTimer = ResolveSargassumNonNegative(sargassumHighStrainHoldTime, 0.18f);",
+            "math.max(1f, ResolveSargassumPositive(sargassumHighStrainShakeBoost, 1.75f))",
+            "QueueCameraEntanglementStrain(ResolveSargassum01(shakeIntensity));",
+        ],
+        "HectonPlayerMovement.HandleSargassumEntanglementStrain finite camera feedback",
+    )
+    player_sargassum_audio = method_block(player_movement_sargassum, "private void TryPlaySargassumEntanglementAudio")
+    assert_contains_all(
+        player_sargassum_audio,
+        [
+            "float shake01 = ResolveSargassum01(signal.Shake01);",
+            "float nextAudioTime = math.isfinite(_nextSargassumEntanglementAudioTime) ? _nextSargassumEntanglementAudioTime : 0f;",
+            "if (shake01 <= 0.0001f || now < nextAudioTime)",
+            "float volume = math.lerp(0.12f, 0.42f, shake01);",
+            "float pitch = math.lerp(0.72f, 0.94f, ResolveSargassum01(signal.EscapeIntent01));",
+            "_nextSargassumEntanglementAudioTime = now + math.max(0.05f, ResolveSargassumPositive(sargassumEntanglementAudioCooldown, 0.24f));",
+        ],
+        "HectonPlayerMovement.TryPlaySargassumEntanglementAudio finite audio cooldown",
+    )
+    player_external_drag = method_block(player_movement_sargassum, "private void AdvanceExternalEnvironmentalDrag")
+    assert_contains_all(
+        player_external_drag,
+        [
+            "float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;",
+            "_externalEnvironmentalDragRequestedMultiplier = ResolveSargassumDragMultiplier(_externalEnvironmentalDragRequestedMultiplier);",
+            "_externalEnvironmentalDragHoldTimer = ResolveSargassumNonNegative(externalEnvironmentalDragHoldTime, 0f);",
+            "_externalEnvironmentalDragHoldTimer -= safeFixedDeltaTime;",
+            "else if (!math.isfinite(_externalEnvironmentalDragHoldTimer))",
+            "? ResolveSargassumDragMultiplier(_externalEnvironmentalDragRequestedMultiplier)",
+            "ResolveLinearBlendT(math.max(0.01f, ResolveSargassumPositive(externalEnvironmentalDragBlendSpeed, 9f)), safeFixedDeltaTime);",
+            "ResolveSargassumDragMultiplier(_externalEnvironmentalDragCurrentMultiplier)",
+        ],
+        "HectonPlayerMovement.AdvanceExternalEnvironmentalDrag finite external drag lifecycle",
+    )
+    player_external_drag_read = method_block(player_movement_sargassum, "private float ResolveExternalEnvironmentalDragMultiplier")
+    assert_contains_all(
+        player_external_drag_read,
+        [
+            "float multiplier = ResolveSargassumDragMultiplier(_externalEnvironmentalDragCurrentMultiplier);",
+            "ResolveSargassumDragMultiplier(brineViscosityDragMultiplier)",
+        ],
+        "HectonPlayerMovement.ResolveExternalEnvironmentalDragMultiplier finite read model",
+    )
+    player_sargassum_rest = method_block(player_movement_sargassum, "private void ApplySargassumRestRecovery")
+    assert_contains_all(
+        player_sargassum_rest,
+        [
+            "float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;",
+            "float fieldDensity01 = ResolveSargassum01(_sargassumFieldDensity01);",
+            "float matBuoyancyBlend = ResolveSargassum01(_sargassumMatBuoyancyBlend);",
+            "float restDensityThreshold = math.isfinite(sargassumRestDensityThreshold)",
+            ": 0.9f;",
+            "float maxRestSpeed = math.max(0.01f, ResolveSargassumPositive(sargassumRestMaxSpeed, 0.4f));",
+            "if (!math.isfinite(speedSq))",
+            "float absInputH = math.isfinite(_inputH) ? math.abs(_inputH) : 0f;",
+            "float inputCalmT = 1f - math.saturate(inputIntent / math.max(0.01f, ResolveSargassumPositive(sargassumRestMaxInputIntent, 0.18f)));",
+            "float headDepth = ResolveSargassumNonNegative(GetHeadDepthBelowSurface(EffectiveWaterSurfaceY), 0f);",
+            "ResolveSargassumPositive(sargassumRestMaxHeadDepth, 0.03f)",
+            "ResolveSargassumPositive(sargassumRestBlendSharpness, 6f)",
+            "_sargassumRestRecoveryBlend = ResolveSargassum01(_sargassumRestRecoveryBlend);",
+            "if (_survivalSystem == null)",
+            "float oxygenRestorePerSecond = ResolveSargassumNonNegative(sargassumRestOxygenRestorePerSecond, 8f);",
+            "float energyRestorePerSecond = ResolveSargassumNonNegative(sargassumRestEnergyRestorePerSecond, 1.35f);",
+            "safeFixedDeltaTime",
+        ],
+        "HectonPlayerMovement.ApplySargassumRestRecovery finite survival recovery",
+    )
+    player_update_diagnostics = method_block(player_movement_sargassum, "private void UpdateDiagnostics")
+    assert_contains_all(
+        player_update_diagnostics,
+        [
+            "_debugSargassumFieldDensity01 = ResolveSargassum01(_sargassumFieldDensity01);",
+            "_debugSargassumMatBuoyancy01 = ResolveSargassum01(_sargassumMatBuoyancyBlend);",
+        ],
+        "HectonPlayerMovement.UpdateDiagnostics finite Sargassum diagnostics",
+    )
+    for helper in [
+        "private static float ResolveSargassumSpeedMultiplier(float value)",
+        "private static float ResolveSargassumDragMultiplier(float value)",
+        "private static float ResolveSargassum01(float value)",
+        "private static float ResolveSargassumNonNegative(float value, float fallback)",
+        "private static float ResolveSargassumPositive(float value, float fallback)",
+    ]:
+        assert helper in player_movement_sargassum, f"HectonPlayerMovement missing finite helper {helper}"
+    assert "private float abyssalCableEntanglementMassReference = 110f;" in player_movement_sargassum, (
+        "HectonPlayerMovement abyssal cable drag must not borrow sargassum mass tuning"
+    )
+    player_external_updraft = method_block(player_movement_sargassum, "public void ApplyExternalThermalUpdraft")
+    assert_contains_all(
+        player_external_updraft,
+        [
+            "if (!IsFiniteVector(velocityChange) || velocityChange.y <= 0.0001f)",
+            "_externalThermalUpdraftVelocityChange = velocityChange;",
+            "_externalThermalUpdraftRequestedThisStep = true;",
+        ],
+        "HectonPlayerMovement.ApplyExternalThermalUpdraft finite public bridge",
+    )
+    assert_before(
+        player_external_updraft,
+        "if (!IsFiniteVector(velocityChange) || velocityChange.y <= 0.0001f)",
+        "_externalThermalUpdraftVelocityChange = velocityChange;",
+        "HectonPlayerMovement.ApplyExternalThermalUpdraft rejects bad caller data before state mutation",
+    )
+    player_advance_abyssal = method_block(player_movement_sargassum, "private void AdvanceAbyssalThermalInfluence")
+    assert_contains_all(
+        player_advance_abyssal,
+        [
+            "float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;",
+            "if (!IsFiniteVector(samplePosition))",
+            "ResolveAbyssalCablePositive(_capsuleCollider.radius, 0.5f)",
+            "sample = SanitizeAbyssalThermalSample(sample, samplePosition);",
+            "ApplyAbyssalCableEnvironmentalDrag(safeFixedDeltaTime, transportPreset, sample);",
+            "ApplyExternalThermalUpdraft(sample.FlowVelocityWS * safeFixedDeltaTime);",
+        ],
+        "HectonPlayerMovement.AdvanceAbyssalThermalInfluence finite player sample bridge",
+    )
+    player_tow_snare = method_block(player_movement_sargassum, "private void AdvanceHeavyTowCableSnare")
+    assert_contains_all(
+        player_tow_snare,
+        [
+            "if (!IsFiniteVector(payloadPositionWS))",
+            "float safePayloadRadius = ResolveAbyssalCablePositive(payloadRadiusWS, 0.5f);",
+            "payloadSample = SanitizeAbyssalThermalSample(payloadSample, payloadPositionWS);",
+            "if (payloadSample.IsCableZone == 0 || payloadSample.CableTension01 <= 0.0001f)",
+            "_heavyTowWinch.ApplyExternalCableSnare(Vector3.zero, 0f, 1f);",
+        ],
+        "HectonPlayerMovement.AdvanceHeavyTowCableSnare finite tow sample bridge",
+    )
+    heavy_tow_winch = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "HeavyTowWinch.cs")
+    heavy_tow_external_snare = method_block(heavy_tow_winch, "internal void ApplyExternalCableSnare")
+    assert_contains_all(
+        heavy_tow_external_snare,
+        [
+            "float safeTension01 = math.isfinite(tension01) ? math.saturate(tension01) : 0f;",
+            "float safeCutProgress01 = math.isfinite(cutProgress01) ? math.saturate(cutProgress01) : 1f;",
+            "float effectiveTension01 = safeTension01 * (1f - safeCutProgress01);",
+            "if (!IsFinite(anchorWS) || effectiveTension01 <= 0.0001f)",
+            "_activeTether.QueueExternalCableSnare(Vector3.zero, 0f, 1f);",
+            "_activeTether.QueueExternalCableSnare(anchorWS, safeTension01, safeCutProgress01);",
+        ],
+        "HeavyTowWinch.ApplyExternalCableSnare finite external snare bridge",
+    )
+    assert_before(
+        heavy_tow_external_snare,
+        "if (!IsFinite(anchorWS) || effectiveTension01 <= 0.0001f)",
+        "_activeTether.QueueExternalCableSnare(anchorWS, safeTension01, safeCutProgress01);",
+        "HeavyTowWinch.ApplyExternalCableSnare neutralizes bad snare before queueing payload force",
+    )
+    tether_instance = read_project_source("Assets", "_Project", "Scripts", "TetherInstance.cs")
+    tether_queue_external_snare = method_block(tether_instance, "public void QueueExternalCableSnare")
+    assert_contains_all(
+        tether_queue_external_snare,
+        [
+            "float safeTension01 = math.isfinite(tension01) ? math.saturate(tension01) : 0f;",
+            "float safeCutProgress01 = math.isfinite(cutProgress01) ? math.saturate(cutProgress01) : 1f;",
+            "float effectiveTension01 = safeTension01 * (1f - safeCutProgress01);",
+            "if (!IsFinite(anchorWS) || effectiveTension01 <= 0.0001f)",
+            "_bioCableRequestedAnchorWS = Vector3.zero;",
+            "_bioCableRequestedTension01 = 0f;",
+            "_bioCableRequestedCutProgress01 = 1f;",
+            "_bioCableCurrentAnchorWS = Vector3.zero;",
+            "_bioCableCurrentTension01 = 0f;",
+            "_bioCableCurrentCutProgress01 = 1f;",
+            "_bioCableHoldTimer = 0f;",
+            "_bioCableRequestedAnchorWS = anchorWS;",
+            "_bioCableRequestedTension01 = safeTension01;",
+            "_bioCableRequestedCutProgress01 = safeCutProgress01;",
+            "_bioCableHoldTimer = math.isfinite(_bioCableHoldTime) ? math.max(0f, _bioCableHoldTime) : 0f;",
+        ],
+        "TetherInstance.QueueExternalCableSnare finite queued state owner",
+    )
+    assert_before(
+        tether_queue_external_snare,
+        "if (!IsFinite(anchorWS) || effectiveTension01 <= 0.0001f)",
+        "_bioCableRequestedAnchorWS = anchorWS;",
+        "TetherInstance.QueueExternalCableSnare rejects bad snare before storing force anchor",
+    )
+    assert "_bioCableRequestedAnchorWS = IsFinite(anchorWS) ? anchorWS : _bioCableCurrentAnchorWS;" not in tether_queue_external_snare, (
+        "TetherInstance cable-snare ingress must not revive stale anchors on bad caller data"
+    )
+    tether_advance_external_snare = method_block(tether_instance, "private void AdvanceExternalCableSnare")
+    assert_contains_all(
+        tether_advance_external_snare,
+        [
+            "float safeFixedDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;",
+            "_bioCableHoldTimer = math.isfinite(_bioCableHoldTime) ? math.max(0f, _bioCableHoldTime) : 0f;",
+            "bool keepAlive = _bioCableRequestedThisStep || _bioCableHoldTimer > 0f;",
+            "Vector3 targetAnchor = keepAlive && IsFinite(_bioCableRequestedAnchorWS) ? _bioCableRequestedAnchorWS : Vector3.zero;",
+            "float currentTension = math.isfinite(_bioCableCurrentTension01) ? math.saturate(_bioCableCurrentTension01) : 0f;",
+            "Vector3 currentAnchor = IsFinite(_bioCableCurrentAnchorWS) ? _bioCableCurrentAnchorWS : targetAnchor;",
+            "_bioCableRequestedAnchorWS = Vector3.zero;",
+            "_bioCableRequestedThisStep = false;",
+        ],
+        "TetherInstance.AdvanceExternalCableSnare finite snare lifecycle",
+    )
+    assert "_bioCableHoldTimer = _bioCableHoldTime;" not in tether_advance_external_snare, (
+        "TetherInstance cable-snare hold timer must keep finite lifecycle state"
+    )
+    tether_rebase_managed = method_block(tether_instance, "internal void RebaseManagedRuntimeState")
+    assert_contains_all(
+        tether_rebase_managed,
+        [
+            "if (!_isActive || !IsFinite(shiftOffset) || shiftOffset.sqrMagnitude <= MinVectorMagnitudeSq)",
+            "float requestedEffectiveTension01 = math.saturate(math.isfinite(_bioCableRequestedTension01) ? _bioCableRequestedTension01 : 0f) *",
+            "if (_bioCableRequestedThisStep && requestedEffectiveTension01 > 0.0001f && IsFinite(_bioCableRequestedAnchorWS))",
+            "_bioCableRequestedAnchorWS -= shiftOffset;",
+            "_bioCableRequestedAnchorWS = Vector3.zero;",
+            "float currentEffectiveTension01 = math.saturate(math.isfinite(_bioCableCurrentTension01) ? _bioCableCurrentTension01 : 0f) *",
+            "if (currentEffectiveTension01 > 0.0001f && IsFinite(_bioCableCurrentAnchorWS))",
+            "_bioCableCurrentAnchorWS -= shiftOffset;",
+            "_bioCableCurrentAnchorWS = Vector3.zero;",
+        ],
+        "TetherInstance.RebaseManagedRuntimeState finite cable-snare origin shift",
+    )
+    assert_before(
+        tether_rebase_managed,
+        "float requestedEffectiveTension01 = math.saturate(math.isfinite(_bioCableRequestedTension01) ? _bioCableRequestedTension01 : 0f) *",
+        "_bioCableRequestedAnchorWS -= shiftOffset;",
+        "TetherInstance.RebaseManagedRuntimeState gates requested snare anchor before origin shift",
+    )
+    assert_before(
+        tether_rebase_managed,
+        "float currentEffectiveTension01 = math.saturate(math.isfinite(_bioCableCurrentTension01) ? _bioCableCurrentTension01 : 0f) *",
+        "_bioCableCurrentAnchorWS -= shiftOffset;",
+        "TetherInstance.RebaseManagedRuntimeState gates current snare anchor before origin shift",
+    )
+    tether_manager = read_project_source("Assets", "_Project", "Scripts", "TetherManager.cs")
+    tether_manager_origin_shift = method_block(tether_manager, "public void OnOriginShift")
+    assert_contains_all(
+        tether_manager_origin_shift,
+        [
+            "Vector3 shiftOffset = shiftData.ShiftOffset;",
+            "float shiftSqrMagnitude = shiftOffset.sqrMagnitude;",
+            "if (!math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+            "float3 shiftOffsetF3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);",
+            "instance.RebaseManagedRuntimeState(shiftOffset);",
+            "instance.RebaseVerletRuntime(shiftOffsetF3)",
+            "instance.RebaseVisualStagingRuntime(shiftOffsetF3)",
+        ],
+        "TetherManager.OnOriginShift finite dispatcher",
+    )
+    assert_before(
+        tether_manager_origin_shift,
+        "if (!math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)",
+        "float3 shiftOffsetF3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);",
+        "TetherManager.OnOriginShift rejects nonfinite shifts before rebasing tether runtimes",
+    )
+    player_abyssal_drag = method_block(player_movement_sargassum, "private void ApplyAbyssalCableEnvironmentalDrag")
+    assert_contains_all(
+        player_abyssal_drag,
+        [
+            "sample = SanitizeAbyssalThermalSample(sample, ResolvePlayerAupRuntimePosition());",
+            "float tension = ResolveAbyssalCable01(sample.CableTension01);",
+            "ResolveAbyssalCablePositive(abyssalCableEntanglementMassReference, 110f)",
+            "ResolveAbyssalCableNonNegative(abyssalCableEntanglementSwimEnvironmentalDrag, 1.25f)",
+            "ResolveAbyssalCableNonNegative(abyssalCableEntanglementTransportEnvironmentalDrag, 2.85f)",
+            "ResolveAbyssalCableSuppression01(sample.CableEscapeSuppression01)",
+            "ResolveAbyssalCableDragMultiplier(1f + maxExtraDrag * tension * suppression * bodyMassScale * propulsionRelief)",
+            "float drainPerSecond = ResolveAbyssalCableNonNegative(abyssalCableEscapeEnergyDrainPerSecond, 6.2f);",
+            "math.max(1f, ResolveAbyssalCablePositive(abyssalCableEscapeEnergyMultiplier, 4.5f))",
+            "safeFixedDeltaTime",
+        ],
+        "HectonPlayerMovement.ApplyAbyssalCableEnvironmentalDrag finite drag/drain consumer",
+    )
+    assert "sargassumEntanglementMassReference" not in player_abyssal_drag, (
+        "Abyssal cable drag must use its own mass reference"
+    )
+    player_abyssal_force = method_block(player_movement_sargassum, "private void ApplyAbyssalCableEntanglementForce")
+    assert_contains_all(
+        player_abyssal_force,
+        [
+            "_abyssalThermalFlowSample = SanitizeAbyssalThermalSample(_abyssalThermalFlowSample, ResolvePlayerAupRuntimePosition());",
+            "float tension = ResolveAbyssalCable01(_abyssalThermalFlowSample.CableTension01);",
+            "if (!IsFiniteVector(playerPosition) || !IsFiniteVector(anchor))",
+            "displacement.y *= ResolveAbyssalCable01(abyssalCableEntanglementVerticalInfluence);",
+            "if (!math.isfinite(displacementSqr) || displacementSqr <= 0.00000001f)",
+            "if (!math.isfinite(velocityAlongSpring))",
+            "float reliefAtFullCut = ResolveAbyssalCable01(abyssalCablePropulsionReliefAtFullCut);",
+            "ResolveAbyssalCableSuppression01(_abyssalThermalFlowSample.CableEscapeSuppression01)",
+            "ResolveAbyssalCableNonNegative(abyssalCableEntanglementSpring, 28f)",
+            "ResolveAbyssalCableNonNegative(abyssalCableEntanglementDamping, 9.5f)",
+            "if (!math.isfinite(totalAccelerationMagnitude) || totalAccelerationMagnitude <= 0f)",
+            "ResolveAbyssalCableNonNegative(abyssalCableEntanglementMaxAcceleration, 26f)",
+        ],
+        "HectonPlayerMovement.ApplyAbyssalCableEntanglementForce finite force consumer",
+    )
+    player_abyssal_cut_release = method_block(player_movement_sargassum, "private float ResolveAbyssalCableCutRelease01")
+    assert_contains_all(
+        player_abyssal_cut_release,
+        [
+            "float cutProgress = ResolveAbyssalCable01(cableCutProgress01);",
+            "float threshold = ResolveAbyssalCable01(abyssalCableCutReleaseThreshold);",
+            "math.max(1f - threshold, 0.0001f)",
+        ],
+        "HectonPlayerMovement.ResolveAbyssalCableCutRelease01 finite cut relief",
+    )
+    for helper in [
+        "private static AbyssalThermalManager.ThermalFlowSample SanitizeAbyssalThermalSample",
+        "private static float ResolveAbyssalCableDragMultiplier(float value)",
+        "private static float ResolveAbyssalCable01(float value)",
+        "private static float ResolveAbyssalCableSuppression01(float value)",
+        "private static float ResolveAbyssalCableNonNegative(float value, float fallback)",
+        "private static float ResolveAbyssalCablePositive(float value, float fallback)",
+    ]:
+        assert helper in player_movement_sargassum, f"HectonPlayerMovement missing Abyssal finite helper {helper}"
+    random_events = read_project_source("Assets", "_Project", "Scripts", "Gameplay", "RandomEventSystem.cs")
+    for signature in ["private void OnDisable", "private void OnDestroy"]:
+        assert "_cachedSargassumDrag = null;" in method_block(
+            random_events,
+            signature,
+        ), f"RandomEventSystem {signature} must clear Sargassum drag owner"
+    underwater_visuals = read_project_source("Assets", "_Project", "Scripts", "HectonUnderwaterVisuals.cs")
+    for signature in ["private void OnDisable", "private void OnDestroy"]:
+        assert "_sargassumDragRuntime = null;" in method_block(
+            underwater_visuals,
+            signature,
+        ), f"HectonUnderwaterVisuals {signature} must clear Sargassum drag owner"
+    player_movement = read_project_source("Assets", "_Project", "Scripts", "HectonPlayerMovement.cs")
+    assert "_sargassumDragRuntime = null;" in method_block(
+        player_movement,
+        "private void ClearInjectedDependencies",
+    ), "HectonPlayerMovement must clear Sargassum drag owner with injected dependencies"
+    fluid_engine = read_project_source("Assets", "_Project", "Scripts", "HectonFluidEngine.cs")
+    assert "_sargassumDragRuntime = null;" in method_block(
+        fluid_engine,
+        "private void ClearCachedFluidRuntimeServices",
+    ), "HectonFluidEngine must clear Sargassum drag read model with cached runtime services"
+    laser_cutter = read_project_source("Assets", "_Project", "Scripts", "LaserCutter.cs")
+    assert "_cachedSargassumCutWriter = null;" in method_block(
+        laser_cutter,
+        "private void ClearColdDependencies",
+    ), "LaserCutter must clear Sargassum cut writer with cold dependencies"
+
+    micro_fauna_consumer_contracts = {
+        ("Assets", "_Project", "Scripts", "HectonDirectorAI.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref boidSystem);",
+            "WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref _sargassumMicroFauna);",
+        ],
+        ("Assets", "_Project", "Scripts", "PlayerPDA.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref _microFaunaBoids);",
+        ],
+        ("Assets", "_Project", "Scripts", "World", "EcosystemDirector.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref _cachedSargassumMicroFauna);",
+        ],
+        ("Assets", "_Project", "Scripts", "FaunaDirector.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveMicroFaunaPresentationPulseSink(ref _sargassumMicroFauna);",
+        ],
+        ("Assets", "_Project", "Scripts", "Fauna", "FaunaBrain.cs"): [
+            "WorldRuntimeReferenceUtility.TryResolveMicroFaunaPresentationPulseSink(ref _sargassumMicroFauna);",
+        ],
+    }
+
+    for path_parts, expected_fragments in micro_fauna_consumer_contracts.items():
+        source = read_project_source(*path_parts)
+        for fragment in expected_fragments:
+            assert fragment in source, f"missing micro-fauna owner-local route {fragment!r} in {Path(*path_parts)}"
+        assert "GlobalRegistry.SargassumMicroFauna" not in source, (
+            f"stale micro-fauna registry route in {Path(*path_parts)}"
+        )
+        assert "GlobalRegistry.MicroFaunaPresentationPulses" not in source, (
+            f"stale micro-fauna presentation registry route in {Path(*path_parts)}"
+        )
+
+    fauna_director = read_project_source("Assets", "_Project", "Scripts", "FaunaDirector.cs")
+    assert "_sargassumMicroFauna = null;" in method_block(
+        fauna_director,
+        "private void ShutdownServiceState",
+    ), "FaunaDirector must clear Sargassum presentation sink on lifecycle shutdown"
+    fauna_brain = read_project_source("Assets", "_Project", "Scripts", "Fauna", "FaunaBrain.cs")
+    assert "_sargassumMicroFauna = null;" in method_block(
+        fauna_brain,
+        "private void OnDisable",
+    ), "FaunaBrain must clear Sargassum presentation sink on disable"
+    assert "_sargassumMicroFauna = null;" in method_block(
+        fauna_brain,
+        "private void OnDestroy",
+    ), "FaunaBrain must clear Sargassum presentation sink on destroy"
+    ecosystem_director = read_project_source("Assets", "_Project", "Scripts", "World", "EcosystemDirector.cs")
+    assert "_cachedSargassumMicroFauna = null;" in method_block(
+        ecosystem_director,
+        "private void ShutdownServiceState",
+    ), "EcosystemDirector must clear Sargassum micro-fauna reader on lifecycle shutdown"
+    player_pda = read_project_source("Assets", "_Project", "Scripts", "PlayerPDA.cs")
+    diagnostic_terminal_start = player_pda.find("public sealed class PDADiagnosticTerminal")
+    assert diagnostic_terminal_start >= 0, "missing PDADiagnosticTerminal"
+    diagnostic_terminal = player_pda[diagnostic_terminal_start:]
+    assert "ResolveDiagnosticsSources();" in method_block(
+        diagnostic_terminal,
+        "private void OnEnable",
+    ), "PDADiagnosticTerminal must resolve Sargassum diagnostics sources on enable"
+    assert "_microFaunaBoids = null;" in method_block(
+        diagnostic_terminal,
+        "private void OnDisable",
+    ), "PDADiagnosticTerminal must clear Sargassum diagnostics source on disable"
+    assert "_microFaunaBoids = null;" in method_block(
+        diagnostic_terminal,
+        "private void OnDestroy",
+    ), "PDADiagnosticTerminal must clear Sargassum diagnostics source on destroy"
+    diagnostic_terminal_replaced = method_block(
+        diagnostic_terminal,
+        "public void OnGlobalRegistryServiceReplaced",
+    )
+    assert_contains_all(
+        diagnostic_terminal_replaced,
+        [
+            "serviceSlot == GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime",
+            "WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref _microFaunaBoids);",
+            "QueueTerminalRefresh(force: true);",
+        ],
+        "PDADiagnosticTerminal.OnGlobalRegistryServiceReplaced",
+    )
 
 
 def main() -> int:
+    assert_sargassum_dump_layout_contract()
+    assert_sargassum_owner_local_runtime_routes()
+
     root = SMOKE_ROOT
     if root.exists():
-        shutil.rmtree(root)
+        remove_tree_with_retry(root)
     root.mkdir(parents=True, exist_ok=True)
 
     generic = server.GENERIC_BLACKBOX_HEADER.pack(server.HECTON8_MAGIC, 2, server.GENERIC_BLACKBOX_ENTRY.size)
@@ -343,6 +4797,1921 @@ def main() -> int:
     renamed_data_monolith_path = root / "Renamed_DataMonolithTelemetry.bin"
     renamed_data_monolith_path.write_bytes(data_monolith)
     assert server.parse_dump_file(renamed_data_monolith_path)["type"] == "data_monolith_telemetry_blackbox"
+
+    vault_sovereignty = bytearray(
+        server.VAULT_SOVEREIGNTY_TELEMETRY_HEADER.pack(
+            server.VAULT_SOVEREIGNTY_TELEMETRY_MAGIC,
+            server.VAULT_SOVEREIGNTY_TELEMETRY_VERSION,
+            server.VAULT_SOVEREIGNTY_TELEMETRY_CAPACITY,
+            server.VAULT_SOVEREIGNTY_TELEMETRY_ENTRY_BYTES,
+        )
+        + bytes(server.VAULT_SOVEREIGNTY_TELEMETRY_CAPACITY * server.VAULT_SOVEREIGNTY_TELEMETRY_ENTRY_BYTES)
+    )
+    server.VAULT_SOVEREIGNTY_TELEMETRY_ENTRY.pack_into(
+        vault_sovereignty,
+        server.VAULT_SOVEREIGNTY_TELEMETRY_HEADER_BYTES,
+        8 * 1024 * 1024,
+        4 * 1024 * 1024,
+        24,
+        1,
+        2,
+        70.5,
+        1100,
+        7,
+        559,
+        0x10101010,
+        0.75,
+        0,
+        0,
+    )
+    server.VAULT_SOVEREIGNTY_TELEMETRY_ENTRY.pack_into(
+        vault_sovereignty,
+        server.VAULT_SOVEREIGNTY_TELEMETRY_HEADER_BYTES + server.VAULT_SOVEREIGNTY_TELEMETRY_ENTRY_BYTES,
+        16 * 1024 * 1024,
+        10 * 1024 * 1024,
+        42,
+        3,
+        4,
+        91.25,
+        1101,
+        8,
+        559,
+        0x20202020,
+        0.5,
+        (1 << 0) | (1 << 5),
+        0,
+    )
+    vault_sovereignty_path = root / "Dump_SHINOBU_100.bin"
+    vault_sovereignty_path.write_bytes(vault_sovereignty)
+    parsed_vault_sovereignty = server.parse_dump_file(vault_sovereignty_path)
+    assert parsed_vault_sovereignty["type"] == "vault_sovereignty_telemetry_blackbox"
+    assert parsed_vault_sovereignty["entrySize"] == server.VAULT_SOVEREIGNTY_TELEMETRY_ENTRY_BYTES
+    assert parsed_vault_sovereignty["declaredEntryCount"] == server.VAULT_SOVEREIGNTY_TELEMETRY_CAPACITY
+    assert parsed_vault_sovereignty["nonEmptyEntryCount"] == 2
+    assert parsed_vault_sovereignty["latest"]["frame"] == 1101
+    assert parsed_vault_sovereignty["latest"]["totalVaultBytes"] == 16 * 1024 * 1024
+    assert parsed_vault_sovereignty["latest"]["arenaBytes"] == 10 * 1024 * 1024
+    assert parsed_vault_sovereignty["latest"]["bufferId"] == 559
+    assert parsed_vault_sovereignty["latest"]["flagLabels"] == ["fault", "unknown=0x00000020"]
+    assert parsed_vault_sovereignty["latest"]["stateHashHex"] == "0x20202020"
+    assert parsed_vault_sovereignty["memoryMap"][0]["label"] == "vault-arena"
+    assert parsed_vault_sovereignty["memoryMap"][1]["bytes"] == 6 * 1024 * 1024
+    assert "fault_flag" in parsed_vault_sovereignty["warnings"]
+    assert "unknown_flags" in parsed_vault_sovereignty["warnings"]
+    renamed_vault_sovereignty_path = root / "Renamed_VaultSovereigntyTelemetry.bin"
+    renamed_vault_sovereignty_path.write_bytes(vault_sovereignty)
+    assert server.parse_dump_file(renamed_vault_sovereignty_path)["type"] == "vault_sovereignty_telemetry_blackbox"
+
+    alignment_flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4)
+    alignment = bytearray(
+        server.ARM64_ALIGNMENT_TELEMETRY_HEADER.pack(
+            server.ARM64_ALIGNMENT_TELEMETRY_MAGIC,
+            server.ARM64_ALIGNMENT_TELEMETRY_VERSION,
+            server.ARM64_ALIGNMENT_TELEMETRY_CAPACITY,
+            server.ARM64_ALIGNMENT_TELEMETRY_ENTRY_BYTES,
+        )
+        + bytes(server.ARM64_ALIGNMENT_TELEMETRY_CAPACITY * server.ARM64_ALIGNMENT_TELEMETRY_ENTRY_BYTES)
+    )
+    server.ARM64_ALIGNMENT_TELEMETRY_ENTRY.pack_into(
+        alignment,
+        server.ARM64_ALIGNMENT_TELEMETRY_HEADER_BYTES,
+        0x1111222233334444,
+        0x1000,
+        1.0,
+        2.0,
+        3.0,
+        642,
+        16,
+        1201,
+        1 << 4,
+        0.25,
+        0x10101010,
+    )
+    server.ARM64_ALIGNMENT_TELEMETRY_ENTRY.pack_into(
+        alignment,
+        server.ARM64_ALIGNMENT_TELEMETRY_HEADER_BYTES + server.ARM64_ALIGNMENT_TELEMETRY_ENTRY_BYTES,
+        0x5555666677778888,
+        0x2000,
+        4.0,
+        5.0,
+        6.0,
+        643,
+        24,
+        1202,
+        alignment_flags,
+        1.0,
+        0x20202020,
+    )
+    alignment_path = root / "Dump_SHINOBU_204.bin"
+    alignment_path.write_bytes(alignment)
+    parsed_alignment = server.parse_dump_file(alignment_path)
+    assert parsed_alignment["type"] == "arm64_alignment_telemetry_blackbox"
+    assert parsed_alignment["entrySize"] == server.ARM64_ALIGNMENT_TELEMETRY_ENTRY_BYTES
+    assert parsed_alignment["declaredEntryCount"] == server.ARM64_ALIGNMENT_TELEMETRY_CAPACITY
+    assert parsed_alignment["nonEmptyEntryCount"] == 2
+    assert parsed_alignment["latest"]["frame"] == 1202
+    assert parsed_alignment["latest"]["bufferID"] == 643
+    assert parsed_alignment["latest"]["byteOffset"] == 24
+    assert parsed_alignment["latest"]["flags"] == alignment_flags
+    assert parsed_alignment["latest"]["flagLabels"] == [
+        "pack1-detected",
+        "misaligned-8-byte-field",
+        "invalid-stride",
+        "dynamic-cast-fault",
+        "dump-written",
+    ]
+    assert parsed_alignment["latest"]["severity01"] == 1.0
+    assert parsed_alignment["latest"]["structHashHex"] == "0x5555666677778888"
+    assert parsed_alignment["latest"]["stateHashHex"] == "0x20202020"
+    assert "pack1_detected" in parsed_alignment["warnings"]
+    assert "misaligned_8_byte_field" in parsed_alignment["warnings"]
+    assert "invalid_stride" in parsed_alignment["warnings"]
+    assert "dynamic_cast_fault" in parsed_alignment["warnings"]
+    renamed_alignment_path = root / "Renamed_AlignmentTelemetry.bin"
+    renamed_alignment_path.write_bytes(alignment)
+    assert server.parse_dump_file(renamed_alignment_path)["type"] == "arm64_alignment_telemetry_blackbox"
+
+    haptic = bytearray(
+        server.HAPTIC_SYNTHESIS_TELEMETRY_CAPACITY * server.HAPTIC_SYNTHESIS_TELEMETRY_ENTRY_BYTES
+    )
+    haptic_flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4)
+    server.HAPTIC_SYNTHESIS_TELEMETRY_ENTRY.pack_into(
+        haptic,
+        0,
+        1.0,
+        2.0,
+        3.0,
+        0.25,
+        0.5,
+        1301,
+        3,
+        0,
+        100,
+        1 << 4,
+        0.8,
+        0x10101010,
+        2,
+    )
+    server.HAPTIC_SYNTHESIS_TELEMETRY_ENTRY.pack_into(
+        haptic,
+        server.HAPTIC_SYNTHESIS_TELEMETRY_ENTRY_BYTES,
+        4.0,
+        5.0,
+        6.0,
+        0.85,
+        0.7,
+        1302,
+        8,
+        2,
+        250,
+        haptic_flags,
+        0.5,
+        0x20202020,
+        server.HAPTIC_SYNTHESIS_PULSE_CAPACITY + 1,
+    )
+    haptic_path = root / "Dump_SHINOBU_353.bin"
+    haptic_path.write_bytes(haptic)
+    parsed_haptic = server.parse_dump_file(haptic_path)
+    assert parsed_haptic["type"] == "haptic_synthesis_telemetry_blackbox"
+    assert parsed_haptic["entrySize"] == server.HAPTIC_SYNTHESIS_TELEMETRY_ENTRY_BYTES
+    assert parsed_haptic["declaredEntryCount"] == server.HAPTIC_SYNTHESIS_TELEMETRY_CAPACITY
+    assert parsed_haptic["nonEmptyEntryCount"] == 2
+    assert parsed_haptic["latest"]["frame"] == 1302
+    assert parsed_haptic["latest"]["rawSignalCount"] == 8
+    assert parsed_haptic["latest"]["droppedSignalCount"] == 2
+    assert parsed_haptic["latest"]["burstExecutionMicroseconds"] == 250
+    assert parsed_haptic["latest"]["flags"] == haptic_flags
+    assert parsed_haptic["latest"]["flagLabels"] == [
+        "nan-sanitized",
+        "budget-exceeded",
+        "pulse-overflow",
+        "missing-player-aup",
+        "mock-storm-active",
+    ]
+    assert parsed_haptic["latest"]["stateHashHex"] == "0x20202020"
+    assert "nan_sanitized" in parsed_haptic["warnings"]
+    assert "budget_exceeded" in parsed_haptic["warnings"]
+    assert "pulse_overflow" in parsed_haptic["warnings"]
+    assert "missing_player_aup" in parsed_haptic["warnings"]
+    assert "mock_storm_active" in parsed_haptic["warnings"]
+    assert "dropped_signals" in parsed_haptic["warnings"]
+    assert "burst_over_200us" in parsed_haptic["warnings"]
+    assert "generated_pulse_over_capacity" in parsed_haptic["warnings"]
+    renamed_haptic_path = root / "Renamed_HapticTelemetry.bin"
+    renamed_haptic_path.write_bytes(haptic)
+    assert server.parse_dump_file(renamed_haptic_path)["type"] != "haptic_synthesis_telemetry_blackbox"
+
+    vocal_warning_faults = (1 << 0) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5) | (1 << 6)
+    vocal_warning = server.VOCAL_WARNING_TELEMETRY_HEADER.pack(
+        server.VOCAL_WARNING_TELEMETRY_MAGIC,
+        server.VOCAL_WARNING_TELEMETRY_VERSION,
+        server.VOCAL_WARNING_TELEMETRY_ENTRY_BYTES,
+        server.VOCAL_WARNING_TELEMETRY_CAPACITY,
+        2,
+        2,
+        0,
+        0,
+    )
+    vocal_warning += server.VOCAL_WARNING_TELEMETRY_ENTRY.pack(
+        10,
+        20,
+        30,
+        1 << 0,
+        1401,
+        1,
+        0x43525348,
+        1.25,
+        50.0,
+        0,
+        0,
+        0,
+        1,
+        0,
+    )
+    vocal_warning += server.VOCAL_WARNING_TELEMETRY_ENTRY.pack(
+        11,
+        21,
+        31,
+        (1 << 1) | (1 << 2),
+        1402,
+        2,
+        0x4F584C4F,
+        2.5,
+        125.0,
+        vocal_warning_faults,
+        2,
+        0x4431,
+        3,
+        2,
+    )
+    vocal_warning_path = root / "Dump_SHINOBU_352_VWS.bin"
+    vocal_warning_path.write_bytes(vocal_warning)
+    parsed_vocal_warning = server.parse_dump_file(vocal_warning_path)
+    assert parsed_vocal_warning["type"] == "vocal_warning_telemetry_blackbox"
+    assert parsed_vocal_warning["entrySize"] == server.VOCAL_WARNING_TELEMETRY_ENTRY_BYTES
+    assert parsed_vocal_warning["declaredEntryCount"] == 2
+    assert parsed_vocal_warning["capacity"] == server.VOCAL_WARNING_TELEMETRY_CAPACITY
+    assert parsed_vocal_warning["nonEmptyEntryCount"] == 2
+    assert parsed_vocal_warning["latest"]["frame"] == 1402
+    assert parsed_vocal_warning["latest"]["currentWarningLabel"] == "oxygen-low"
+    assert parsed_vocal_warning["latest"]["lastDispatchedWarningLabel"] == "hull-breach"
+    assert parsed_vocal_warning["latest"]["currentAudioBankHashHex"] == "0x4F584C4F"
+    assert parsed_vocal_warning["latest"]["activeAlarmLabels"] == ["hull-breach", "oxygen-low"]
+    assert parsed_vocal_warning["latest"]["faultFlagLabels"] == [
+        "telemetry-invalid",
+        "priority-input-invalid",
+        "vocal-cue-rejected",
+        "subtitle-rejected",
+        "alarm-mask-overflow",
+        "vocal-warning-signal-rejected",
+    ]
+    assert parsed_vocal_warning["latest"]["directionHashHex"] == "0x4431"
+    assert "fault_flags" in parsed_vocal_warning["warnings"]
+    assert "telemetry_invalid" in parsed_vocal_warning["warnings"]
+    assert "priority_input_invalid" in parsed_vocal_warning["warnings"]
+    assert "vocal_cue_rejected" in parsed_vocal_warning["warnings"]
+    assert "subtitle_rejected" in parsed_vocal_warning["warnings"]
+    assert "alarm_mask_overflow" in parsed_vocal_warning["warnings"]
+    assert "vocal_warning_signal_rejected" in parsed_vocal_warning["warnings"]
+    assert "burst_over_100us" in parsed_vocal_warning["warnings"]
+    renamed_vocal_warning_path = root / "Renamed_VocalWarningTelemetry.bin"
+    renamed_vocal_warning_path.write_bytes(vocal_warning)
+    assert server.parse_dump_file(renamed_vocal_warning_path)["type"] == "vocal_warning_telemetry_blackbox"
+
+    granular = bytearray(
+        server.GRANULAR_AUDIO_TELEMETRY_HEADER.pack(
+            server.GRANULAR_AUDIO_TELEMETRY_CAPACITY,
+            2,
+        )
+    )
+    granular.extend(bytearray(server.GRANULAR_AUDIO_TELEMETRY_CAPACITY * server.GRANULAR_AUDIO_TELEMETRY_ROW_BYTES))
+    server.GRANULAR_AUDIO_TELEMETRY_ROW.pack_into(
+        granular,
+        server.GRANULAR_AUDIO_TELEMETRY_HEADER_BYTES,
+        64,
+        0.25,
+        0.05,
+        0.4,
+        0.2,
+        0.125,
+        420.0,
+        4,
+        16,
+        8,
+        1 << 2,
+    )
+    granular_flags = (1 << 0) | (1 << 1) | (1 << 2)
+    server.GRANULAR_AUDIO_TELEMETRY_ROW.pack_into(
+        granular,
+        server.GRANULAR_AUDIO_TELEMETRY_HEADER_BYTES + server.GRANULAR_AUDIO_TELEMETRY_ROW_BYTES,
+        128,
+        0.95,
+        0.7,
+        0.8,
+        0.65,
+        -0.25,
+        65000.0,
+        64,
+        64,
+        server.GRANULAR_AUDIO_ECHO_TAP_CAPACITY,
+        granular_flags,
+    )
+    granular_path = root / "Dump_SHINOBU_351.bin"
+    granular_path.write_bytes(granular)
+    parsed_granular = server.parse_dump_file(granular_path)
+    assert parsed_granular["type"] == "granular_audio_telemetry_blackbox"
+    assert parsed_granular["entrySize"] == server.GRANULAR_AUDIO_TELEMETRY_ROW_BYTES
+    assert parsed_granular["declaredEntryCount"] == server.GRANULAR_AUDIO_TELEMETRY_CAPACITY
+    assert parsed_granular["nonEmptyEntryCount"] == 2
+    assert parsed_granular["latest"]["sampleIndex"] == 128
+    assert parsed_granular["latest"]["activeVoices"] == 64
+    assert parsed_granular["latest"]["voiceLimit"] == 64
+    assert parsed_granular["latest"]["flagLabels"] == ["invalid", "voice-limit-reached", "impact-drive-active"]
+    assert "invalid" in parsed_granular["warnings"]
+    assert "voice_limit_reached" in parsed_granular["warnings"]
+    renamed_granular_path = root / "Renamed_ProceduralSynth.bin"
+    renamed_granular_path.write_bytes(granular)
+    assert server.parse_dump_file(renamed_granular_path)["type"] != "granular_audio_telemetry_blackbox"
+
+    prologue_audio = bytearray(
+        server.PROLOGUE_AUDIO_TRANSITION_HEADER.pack(
+            server.PROLOGUE_AUDIO_TRANSITION_CAPACITY,
+            2,
+        )
+    )
+    prologue_audio.extend(bytearray(server.PROLOGUE_AUDIO_TRANSITION_CAPACITY * server.PROLOGUE_AUDIO_TRANSITION_ROW_BYTES))
+    server.PROLOGUE_AUDIO_TRANSITION_ROW.pack_into(
+        prologue_audio,
+        server.PROLOGUE_AUDIO_TRANSITION_HEADER_BYTES,
+        1501,
+        3,
+        4200.0,
+        0.35,
+        1200.0,
+        0.25,
+        0.5,
+        0.0,
+        0.0,
+        1600.0,
+        0,
+        2,
+        1 << 2,
+        1,
+        0,
+        1 << 3,
+    )
+    prologue_flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4)
+    prologue_dsp_flags = (1 << 0) | (1 << 2) | (1 << 3) | (1 << 4)
+    server.PROLOGUE_AUDIO_TRANSITION_ROW.pack_into(
+        prologue_audio,
+        server.PROLOGUE_AUDIO_TRANSITION_HEADER_BYTES + server.PROLOGUE_AUDIO_TRANSITION_ROW_BYTES,
+        1502,
+        4,
+        6800.0,
+        0.9,
+        22000.0,
+        0.75,
+        0.85,
+        0.65,
+        0.55,
+        18000.0,
+        4410,
+        4,
+        prologue_flags,
+        2,
+        0,
+        prologue_dsp_flags,
+    )
+    prologue_audio_path = root / "Dump_PROLOGUE_ACOUSTIC_ORCHESTRATOR.bin"
+    prologue_audio_path.write_bytes(prologue_audio)
+    parsed_prologue_audio = server.parse_dump_file(prologue_audio_path)
+    assert parsed_prologue_audio["type"] == "prologue_audio_transition_blackbox"
+    assert parsed_prologue_audio["entrySize"] == server.PROLOGUE_AUDIO_TRANSITION_ROW_BYTES
+    assert parsed_prologue_audio["nonEmptyEntryCount"] == 2
+    assert parsed_prologue_audio["latest"]["frame"] == 1502
+    assert parsed_prologue_audio["latest"]["stageLabel"] == "ocean-handoff"
+    assert parsed_prologue_audio["latest"]["flagLabels"] == [
+        "splashdown",
+        "portal-active",
+        "granular-enabled",
+        "nonfinite-guard",
+    ]
+    assert parsed_prologue_audio["latest"]["dspFlagLabels"] == [
+        "invalid",
+        "portal-active",
+        "granular-enabled",
+        "splashdown",
+    ]
+    assert "invalid" in parsed_prologue_audio["warnings"]
+    assert "nonfinite_guard" in parsed_prologue_audio["warnings"]
+    renamed_prologue_audio_path = root / "Renamed_PrologueAudio.bin"
+    renamed_prologue_audio_path.write_bytes(prologue_audio)
+    assert server.parse_dump_file(renamed_prologue_audio_path)["type"] != "prologue_audio_transition_blackbox"
+
+    audio_synthesis = bytearray(
+        server.AUDIO_SYNTHESIS_TELEMETRY_HEADER.pack(
+            server.AUDIO_SYNTHESIS_TELEMETRY_CAPACITY,
+            2,
+        )
+    )
+    audio_synthesis.extend(bytearray(server.AUDIO_SYNTHESIS_TELEMETRY_CAPACITY * server.AUDIO_SYNTHESIS_TELEMETRY_ROW_BYTES))
+    server.AUDIO_SYNTHESIS_TELEMETRY_ROW.pack_into(
+        audio_synthesis,
+        server.AUDIO_SYNTHESIS_TELEMETRY_HEADER_BYTES,
+        111111,
+        1601,
+        0x00011537,
+        server.AUDIO_SYNTHESIS_AUDIO_PLAYER_CRITICAL_SYSTEM_ID,
+        7,
+        7,
+        0,
+        12,
+        32,
+        88.25,
+        0.9,
+        0,
+        0,
+    )
+    audio_synthesis_flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3)
+    server.AUDIO_SYNTHESIS_TELEMETRY_ROW.pack_into(
+        audio_synthesis,
+        server.AUDIO_SYNTHESIS_TELEMETRY_HEADER_BYTES + server.AUDIO_SYNTHESIS_TELEMETRY_ROW_BYTES,
+        222222,
+        1602,
+        0x00011538,
+        server.AUDIO_SYNTHESIS_AUDIO_PLAYER_CRITICAL_SYSTEM_ID,
+        10,
+        9,
+        audio_synthesis_flags,
+        64,
+        64,
+        250.5,
+        0.55,
+        4,
+        3,
+    )
+    audio_synthesis_path = root / "Dump_1320_Synthesis.bin"
+    audio_synthesis_path.write_bytes(audio_synthesis)
+    parsed_audio_synthesis = server.parse_dump_file(audio_synthesis_path)
+    assert parsed_audio_synthesis["type"] == "audio_synthesis_telemetry_blackbox"
+    assert parsed_audio_synthesis["entrySize"] == server.AUDIO_SYNTHESIS_TELEMETRY_ROW_BYTES
+    assert parsed_audio_synthesis["nonEmptyEntryCount"] == 2
+    assert parsed_audio_synthesis["latest"]["frame"] == 1602
+    assert parsed_audio_synthesis["latest"]["bufferIdHex"] == "0x00011538"
+    assert parsed_audio_synthesis["latest"]["failureLabel"] == "output-ring-full"
+    assert parsed_audio_synthesis["latest"]["flagLabels"] == [
+        "lock-contention",
+        "stale-or-missing-handle",
+        "nonfinite-sample",
+        "output-underrun",
+    ]
+    assert "failure_code" in parsed_audio_synthesis["warnings"]
+    assert "generation_mismatch" in parsed_audio_synthesis["warnings"]
+    assert "output_underrun" in parsed_audio_synthesis["warnings"]
+    assert "underruns" in parsed_audio_synthesis["warnings"]
+    renamed_audio_synthesis_path = root / "Renamed_AudioSynthesis.bin"
+    renamed_audio_synthesis_path.write_bytes(audio_synthesis)
+    assert server.parse_dump_file(renamed_audio_synthesis_path)["type"] != "audio_synthesis_telemetry_blackbox"
+
+    vocal_bank = bytearray(
+        server.VOCAL_BANK_SYNTHESIS_HEADER.pack(
+            server.VOCAL_BANK_SYNTHESIS_MAGIC,
+            server.VOCAL_BANK_SYNTHESIS_VERSION,
+            server.VOCAL_BANK_SYNTHESIS_TELEMETRY_CAPACITY,
+            server.VOCAL_BANK_SYNTHESIS_ENTRY_BYTES,
+            2,
+            1 << 3,
+            0x05203E88,
+            1702,
+        )
+    )
+    vocal_bank.extend(bytearray(server.VOCAL_BANK_SYNTHESIS_TELEMETRY_CAPACITY * server.VOCAL_BANK_SYNTHESIS_ENTRY_BYTES))
+    server.VOCAL_BANK_SYNTHESIS_ENTRY.pack_into(
+        vocal_bank,
+        server.VOCAL_BANK_SYNTHESIS_HEADER_BYTES,
+        1701,
+        0x05203E88,
+        128,
+        32000,
+        450.0,
+        0.5,
+        0.12,
+        0.95,
+        0.1,
+        3,
+        1 << 0,
+        0,
+        2048,
+        44100,
+        1,
+    )
+    vocal_bank_flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4)
+    server.VOCAL_BANK_SYNTHESIS_ENTRY.pack_into(
+        vocal_bank,
+        server.VOCAL_BANK_SYNTHESIS_HEADER_BYTES + server.VOCAL_BANK_SYNTHESIS_ENTRY_BYTES,
+        1702,
+        0xC001260,
+        512,
+        4096,
+        1200.0,
+        0.95,
+        0.4,
+        0.6,
+        0.3,
+        7,
+        vocal_bank_flags,
+        2,
+        4096,
+        48000,
+        2,
+    )
+    vocal_bank_path = root / "Dump_1308_Synthesis.bin"
+    vocal_bank_path.write_bytes(vocal_bank)
+    parsed_vocal_bank = server.parse_dump_file(vocal_bank_path)
+    assert parsed_vocal_bank["type"] == "vocal_bank_synthesis_blackbox"
+    assert parsed_vocal_bank["version"] == server.VOCAL_BANK_SYNTHESIS_VERSION
+    assert parsed_vocal_bank["entrySize"] == server.VOCAL_BANK_SYNTHESIS_ENTRY_BYTES
+    assert parsed_vocal_bank["nonEmptyEntryCount"] == 2
+    assert parsed_vocal_bank["lastFaultFlagLabels"] == ["bank-miss"]
+    assert parsed_vocal_bank["lastPhraseHashHex"] == "0x05203E88"
+    assert parsed_vocal_bank["latest"]["frame"] == 1702
+    assert parsed_vocal_bank["latest"]["phraseHashHex"] == "0x0C001260"
+    assert parsed_vocal_bank["latest"]["codecLabel"] == "vorbis"
+    assert parsed_vocal_bank["latest"]["flagLabels"] == [
+        "playing",
+        "vorbis-unsupported",
+        "nonfinite",
+        "bank-miss",
+        "interrupted",
+    ]
+    assert "last_fault_flags" in parsed_vocal_bank["warnings"]
+    assert "vorbis_unsupported" in parsed_vocal_bank["warnings"]
+    assert "nonfinite" in parsed_vocal_bank["warnings"]
+    assert "bank_miss" in parsed_vocal_bank["warnings"]
+    assert "dsp_over_1000us" in parsed_vocal_bank["warnings"]
+    assert "underruns" in parsed_vocal_bank["warnings"]
+    renamed_vocal_bank_path = root / "Renamed_VocalBankSynthesis.bin"
+    renamed_vocal_bank_path.write_bytes(vocal_bank)
+    assert server.parse_dump_file(renamed_vocal_bank_path)["type"] == "vocal_bank_synthesis_blackbox"
+
+    adaptive_stem = bytearray(server.ADAPTIVE_STEM_MIXER_TELEMETRY_CAPACITY * server.ADAPTIVE_STEM_MIXER_ENTRY_BYTES)
+    server.ADAPTIVE_STEM_MIXER_ENTRY.pack_into(
+        adaptive_stem,
+        0,
+        1801,
+        0xB4510A10,
+        0x5348494E,
+        1 << 0,
+        0.25,
+        0.4,
+        12000.0,
+        350.0,
+        0.5,
+        0.1,
+        0.35,
+        0.0,
+        0.95,
+        0.25,
+        0.1,
+        2.0,
+    )
+    adaptive_stem_flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4)
+    server.ADAPTIVE_STEM_MIXER_ENTRY.pack_into(
+        adaptive_stem,
+        server.ADAPTIVE_STEM_MIXER_ENTRY_BYTES,
+        1802,
+        0xB0550A10,
+        0x5348494E,
+        adaptive_stem_flags,
+        0.85,
+        0.7,
+        800.0,
+        1250.0,
+        0.2,
+        0.6,
+        0.4,
+        0.9,
+        0.55,
+        0.75,
+        0.65,
+        4.0,
+    )
+    adaptive_stem_path = root / "Dump_STEM_MIXER.bin"
+    adaptive_stem_path.write_bytes(adaptive_stem)
+    parsed_adaptive_stem = server.parse_dump_file(adaptive_stem_path)
+    assert parsed_adaptive_stem["type"] == "adaptive_stem_mixer_blackbox"
+    assert parsed_adaptive_stem["entrySize"] == server.ADAPTIVE_STEM_MIXER_ENTRY_BYTES
+    assert parsed_adaptive_stem["declaredEntryCount"] == server.ADAPTIVE_STEM_MIXER_TELEMETRY_CAPACITY
+    assert parsed_adaptive_stem["nonEmptyEntryCount"] == 2
+    assert parsed_adaptive_stem["latest"]["frame"] == 1802
+    assert parsed_adaptive_stem["latest"]["activeStemHashHex"] == "0xB0550A10"
+    assert parsed_adaptive_stem["latest"]["flagLabels"] == [
+        "beat-gate-open",
+        "narrative-override",
+        "io-transition-delay",
+        "clip-not-streaming",
+        "nonfinite",
+    ]
+    assert "clip_not_streaming" in parsed_adaptive_stem["warnings"]
+    assert "io_transition_delay" in parsed_adaptive_stem["warnings"]
+    assert "nonfinite" in parsed_adaptive_stem["warnings"]
+    assert "mixer_over_1000us" in parsed_adaptive_stem["warnings"]
+    renamed_adaptive_stem_path = root / "Renamed_StemMixer.bin"
+    renamed_adaptive_stem_path.write_bytes(adaptive_stem)
+    assert server.parse_dump_file(renamed_adaptive_stem_path)["type"] != "adaptive_stem_mixer_blackbox"
+
+    camera_juice_flags = (
+        (1 << 0)
+        | (1 << 1)
+        | (1 << 2)
+        | (1 << 3)
+        | (1 << 4)
+        | (1 << 5)
+    )
+    camera_juice = server.CAMERA_JUICE_TELEMETRY_HEADER.pack(
+        server.CAMERA_JUICE_TELEMETRY_MAGIC,
+        server.CAMERA_JUICE_TELEMETRY_VERSION,
+        server.CAMERA_JUICE_TELEMETRY_ENTRY_BYTES,
+        server.CAMERA_JUICE_TELEMETRY_CAPACITY,
+        2,
+        2,
+        0,
+        0,
+    )
+    camera_juice += server.CAMERA_JUICE_TELEMETRY_ENTRY.pack(
+        1901,
+        0,
+        0.25,
+        0.04,
+        0.01,
+        0.02,
+        0.03,
+        0.5,
+        0.25,
+        0.1,
+        3,
+        50.0,
+        0.9,
+        0.2,
+        0xCAFE0001,
+        1901,
+    )
+    camera_juice += server.CAMERA_JUICE_TELEMETRY_ENTRY.pack(
+        1902,
+        camera_juice_flags,
+        0.85,
+        0.12,
+        -0.03,
+        0.04,
+        -0.02,
+        2.0,
+        -1.5,
+        4.0,
+        32,
+        125.0,
+        0.5,
+        0.75,
+        0xCAFE0002,
+        1902,
+    )
+    camera_juice_path = root / "Dump_CameraJuiceSystem.bin"
+    camera_juice_path.write_bytes(camera_juice)
+    parsed_camera_juice = server.parse_dump_file(camera_juice_path)
+    assert parsed_camera_juice["type"] == "camera_juice_telemetry_blackbox"
+    assert parsed_camera_juice["version"] == server.CAMERA_JUICE_TELEMETRY_VERSION
+    assert parsed_camera_juice["entrySize"] == server.CAMERA_JUICE_TELEMETRY_ENTRY_BYTES
+    assert parsed_camera_juice["declaredEntryCount"] == 2
+    assert parsed_camera_juice["nonEmptyEntryCount"] == 2
+    assert parsed_camera_juice["latest"]["frame"] == 1902
+    assert parsed_camera_juice["latest"]["stateHashHex"] == "0xCAFE0002"
+    assert parsed_camera_juice["latest"]["flagLabels"] == [
+        "xr-suppressed",
+        "nan-sanitized",
+        "no-player-aup",
+        "vr-somatic-write-rejected",
+        "vault-unavailable",
+        "burst-budget-exceeded",
+    ]
+    assert "nan_sanitized" in parsed_camera_juice["warnings"]
+    assert "no_player_aup" in parsed_camera_juice["warnings"]
+    assert "vr_somatic_write_rejected" in parsed_camera_juice["warnings"]
+    assert "vault_unavailable" in parsed_camera_juice["warnings"]
+    assert "burst_budget_exceeded" in parsed_camera_juice["warnings"]
+    assert "burst_over_100us" in parsed_camera_juice["warnings"]
+    renamed_camera_juice_path = root / "Renamed_CameraJuice.bin"
+    renamed_camera_juice_path.write_bytes(camera_juice)
+    assert server.parse_dump_file(renamed_camera_juice_path)["type"] == "camera_juice_telemetry_blackbox"
+
+    material_decay = bytearray(
+        server.MATERIAL_DECAY_HEADER.pack(
+            server.MATERIAL_DECAY_MAGIC,
+            2,
+            2,
+            server.MATERIAL_DECAY_TELEMETRY_CAPACITY,
+        )
+    )
+    material_decay.extend(bytearray(server.MATERIAL_DECAY_TELEMETRY_CAPACITY * server.MATERIAL_DECAY_ROW_BYTES))
+    server.MATERIAL_DECAY_ROW.pack_into(
+        material_decay,
+        server.MATERIAL_DECAY_HEADER_BYTES,
+        2001,
+        0x4D415430,
+        0.15,
+        0.0,
+        0.05,
+        2,
+        1,
+        255,
+        1 << 2,
+        0xDECAB001,
+    )
+    material_decay_flags = (1 << 0) | (1 << 1) | (1 << 2)
+    server.MATERIAL_DECAY_ROW.pack_into(
+        material_decay,
+        server.MATERIAL_DECAY_HEADER_BYTES + server.MATERIAL_DECAY_ROW_BYTES,
+        2002,
+        0x4D415431,
+        0.85,
+        0.35,
+        0.45,
+        7,
+        2,
+        200,
+        material_decay_flags,
+        0xDECAB002,
+    )
+    material_decay_path = root / "Dump_MATERIAL_DECAY_ARTIST.bin"
+    material_decay_path.write_bytes(material_decay)
+    parsed_material_decay = server.parse_dump_file(material_decay_path)
+    assert parsed_material_decay["type"] == "material_decay_blackbox"
+    assert parsed_material_decay["entrySize"] == server.MATERIAL_DECAY_ROW_BYTES
+    assert parsed_material_decay["declaredEntryCount"] == server.MATERIAL_DECAY_TELEMETRY_CAPACITY
+    assert parsed_material_decay["dumpReasonLabel"] == "invalid-rust"
+    assert parsed_material_decay["nonEmptyEntryCount"] == 2
+    assert parsed_material_decay["latest"]["frame"] == 2002
+    assert parsed_material_decay["latest"]["itemHashHex"] == "0x4D415431"
+    assert parsed_material_decay["latest"]["flagLabels"] == ["rust-active", "wet", "blood"]
+    assert "dump_reason" in parsed_material_decay["warnings"]
+    assert "rust_active" in parsed_material_decay["warnings"]
+    assert "wet" in parsed_material_decay["warnings"]
+    assert "blood" in parsed_material_decay["warnings"]
+    renamed_material_decay_path = root / "Renamed_MaterialDecay.bin"
+    renamed_material_decay_path.write_bytes(material_decay)
+    assert server.parse_dump_file(renamed_material_decay_path)["type"] == "material_decay_blackbox"
+
+    wake_flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3)
+    interactive_wake = bytearray(
+        server.INTERACTIVE_WAKE_HEADER.pack(
+            server.INTERACTIVE_WAKE_MAGIC,
+            server.INTERACTIVE_WAKE_BLACKBOX_CAPACITY,
+            2,
+        )
+    )
+    interactive_wake.extend(bytearray(server.INTERACTIVE_WAKE_BLACKBOX_CAPACITY * server.INTERACTIVE_WAKE_ENTRY_BYTES))
+    server.INTERACTIVE_WAKE_ENTRY.pack_into(
+        interactive_wake,
+        server.INTERACTIVE_WAKE_HEADER_BYTES,
+        2401,
+        2,
+        8,
+        1.0,
+        -2.0,
+        3.0,
+        0.42,
+        0.1,
+        0.0,
+        -0.1,
+        2.5,
+        1 << 2,
+        0x574B0001,
+        7,
+        12,
+        0.25,
+        0.35,
+    )
+    server.INTERACTIVE_WAKE_ENTRY.pack_into(
+        interactive_wake,
+        server.INTERACTIVE_WAKE_HEADER_BYTES + server.INTERACTIVE_WAKE_ENTRY_BYTES,
+        2402,
+        4,
+        12,
+        4.0,
+        -1.0,
+        2.0,
+        0.95,
+        0.3,
+        0.2,
+        -0.2,
+        3.25,
+        wake_flags,
+        0x574B0002,
+        8,
+        13,
+        0.65,
+        0.7,
+    )
+    interactive_wake_path = root / "Dump_INTERACTIVE_WAKE_VFX.bin"
+    interactive_wake_path.write_bytes(interactive_wake)
+    parsed_interactive_wake = server.parse_dump_file(interactive_wake_path)
+    assert parsed_interactive_wake["type"] == "interactive_wake_blackbox"
+    assert parsed_interactive_wake["magicHex"] == "0x57414B45"
+    assert parsed_interactive_wake["entrySize"] == server.INTERACTIVE_WAKE_ENTRY_BYTES
+    assert parsed_interactive_wake["declaredEntryCount"] == server.INTERACTIVE_WAKE_BLACKBOX_CAPACITY
+    assert parsed_interactive_wake["nonEmptyEntryCount"] == 2
+    assert parsed_interactive_wake["latest"]["frame"] == 2402
+    assert parsed_interactive_wake["latest"]["stateHashHex"] == "0x574B0002"
+    assert parsed_interactive_wake["latest"]["flagLabels"] == [
+        "invalid-input",
+        "nan",
+        "budget-pressure",
+        "thermal-pressure",
+    ]
+    assert "invalid_input" in parsed_interactive_wake["warnings"]
+    assert "nan_flag" in parsed_interactive_wake["warnings"]
+    assert "budget_pressure" in parsed_interactive_wake["warnings"]
+    assert "thermal_pressure" in parsed_interactive_wake["warnings"]
+    renamed_interactive_wake_path = root / "Renamed_InteractiveWake.h8dump"
+    renamed_interactive_wake_path.write_bytes(interactive_wake)
+    assert server.parse_dump_file(renamed_interactive_wake_path)["type"] == "interactive_wake_blackbox"
+
+    flora_sway_flags = (1 << 1) | (1 << 2) | (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7)
+    flora_sway = bytearray(
+        server.FLORA_SWAY_FIELD_HEADER.pack(
+            server.FLORA_SWAY_FIELD_MAGIC,
+            server.FLORA_SWAY_FIELD_BLACKBOX_CAPACITY,
+            2,
+        )
+    )
+    flora_sway.extend(bytearray(server.FLORA_SWAY_FIELD_BLACKBOX_CAPACITY * server.FLORA_SWAY_FIELD_ENTRY_BYTES))
+    server.FLORA_SWAY_FIELD_ENTRY.pack_into(
+        flora_sway,
+        server.FLORA_SWAY_FIELD_HEADER_BYTES,
+        2501,
+        32,
+        2,
+        4096,
+        1 << 3,
+        12.0,
+        -4.0,
+        8.0,
+        3.2,
+        0.35,
+        0.55,
+        0.03333,
+        0.2,
+        0x46530001,
+        11,
+        18,
+        750,
+    )
+    server.FLORA_SWAY_FIELD_ENTRY.pack_into(
+        flora_sway,
+        server.FLORA_SWAY_FIELD_HEADER_BYTES + server.FLORA_SWAY_FIELD_ENTRY_BYTES,
+        2502,
+        64,
+        4,
+        65536,
+        flora_sway_flags,
+        14.0,
+        -3.0,
+        9.5,
+        3.8,
+        1.2,
+        0.75,
+        0.05,
+        0.6,
+        0x46530002,
+        12,
+        19,
+        1250,
+    )
+    flora_sway_path = root / "Dump_FLORA_SWAY_DIRECTOR.bin"
+    flora_sway_path.write_bytes(flora_sway)
+    parsed_flora_sway = server.parse_dump_file(flora_sway_path)
+    assert parsed_flora_sway["type"] == "flora_sway_field_blackbox"
+    assert parsed_flora_sway["magicHex"] == "0x46535759"
+    assert parsed_flora_sway["entrySize"] == server.FLORA_SWAY_FIELD_ENTRY_BYTES
+    assert parsed_flora_sway["declaredEntryCount"] == server.FLORA_SWAY_FIELD_BLACKBOX_CAPACITY
+    assert parsed_flora_sway["nonEmptyEntryCount"] == 2
+    assert parsed_flora_sway["latest"]["frame"] == 2502
+    assert parsed_flora_sway["latest"]["stateHashHex"] == "0x46530002"
+    assert parsed_flora_sway["latest"]["flagLabels"] == [
+        "nan",
+        "vault-missing",
+        "upload-stall",
+        "wrapped-shift",
+        "full-reset",
+        "discarded-upload",
+    ]
+    assert "nan_flag" in parsed_flora_sway["warnings"]
+    assert "vault_missing" in parsed_flora_sway["warnings"]
+    assert "upload_stall" in parsed_flora_sway["warnings"]
+    assert "discarded_upload" in parsed_flora_sway["warnings"]
+    renamed_flora_sway_path = root / "Renamed_FloraSwayField.bin"
+    renamed_flora_sway_path.write_bytes(flora_sway)
+    assert server.parse_dump_file(renamed_flora_sway_path)["type"] == "flora_sway_field_blackbox"
+
+    flora_memory_flags_0 = 1 << 0
+    flora_memory_flags_1 = (1 << 5) | (1 << 6) | (1 << 7)
+    flora_memory_state_0 = (
+        server.FLORA_MEMORY_TELEMETRY_EVENT_RESOLVE
+        ^ 71652
+        ^ 11
+        ^ flora_memory_flags_0
+    ) & 0xFFFFFFFF
+    flora_memory_state_1 = (
+        server.FLORA_MEMORY_TELEMETRY_EVENT_WRITE_LOCK
+        ^ server.FLORA_MEMORY_TELEMETRY_BUFFER_ID
+        ^ 12
+        ^ flora_memory_flags_1
+    ) & 0xFFFFFFFF
+    flora_memory = bytearray(
+        server.FLORA_MEMORY_TELEMETRY_HEADER.pack(
+            server.FLORA_MEMORY_TELEMETRY_CAPACITY,
+            2,
+        )
+    )
+    flora_memory.extend(bytearray(server.FLORA_MEMORY_TELEMETRY_CAPACITY * server.FLORA_MEMORY_TELEMETRY_ENTRY_BYTES))
+    server.FLORA_MEMORY_TELEMETRY_ENTRY.pack_into(
+        flora_memory,
+        server.FLORA_MEMORY_TELEMETRY_HEADER_BYTES,
+        2701,
+        server.FLORA_MEMORY_TELEMETRY_EVENT_RESOLVE,
+        71652,
+        4,
+        11,
+        300,
+        0,
+        flora_memory_flags_0,
+        1,
+        21,
+        0.45,
+        0.2,
+        flora_memory_state_0,
+        14,
+        0,
+        0,
+    )
+    server.FLORA_MEMORY_TELEMETRY_ENTRY.pack_into(
+        flora_memory,
+        server.FLORA_MEMORY_TELEMETRY_HEADER_BYTES + server.FLORA_MEMORY_TELEMETRY_ENTRY_BYTES,
+        2702,
+        server.FLORA_MEMORY_TELEMETRY_EVENT_WRITE_LOCK,
+        server.FLORA_MEMORY_TELEMETRY_BUFFER_ID,
+        4,
+        12,
+        server.FLORA_MEMORY_TELEMETRY_CAPACITY,
+        128,
+        flora_memory_flags_1,
+        server.FLORA_MEMORY_TELEMETRY_DUMP_FAILURE_THRESHOLD,
+        22,
+        0.65,
+        0.55,
+        flora_memory_state_1,
+        15,
+        35,
+        0,
+    )
+    flora_memory_path = root / "Dump_1327_FloraInteraction.bin"
+    flora_memory_path.write_bytes(flora_memory)
+    parsed_flora_memory = server.parse_dump_file(flora_memory_path)
+    assert parsed_flora_memory["type"] == "flora_memory_telemetry_blackbox"
+    assert parsed_flora_memory["entrySize"] == server.FLORA_MEMORY_TELEMETRY_ENTRY_BYTES
+    assert parsed_flora_memory["declaredEntryCount"] == server.FLORA_MEMORY_TELEMETRY_CAPACITY
+    assert parsed_flora_memory["nonEmptyEntryCount"] == 2
+    assert parsed_flora_memory["latest"]["frame"] == 2702
+    assert parsed_flora_memory["latest"]["eventLabel"] == "write-lock"
+    assert parsed_flora_memory["latest"]["bufferLabel"] == "flora-memory-telemetry"
+    assert parsed_flora_memory["latest"]["stateHashOk"] is True
+    assert parsed_flora_memory["latest"]["flagLabels"] == [
+        "invalid-buffer",
+        "write-lock-failed",
+        "nan",
+    ]
+    assert "missing_vault" in parsed_flora_memory["warnings"]
+    assert "invalid_buffer" in parsed_flora_memory["warnings"]
+    assert "write_lock_failed" in parsed_flora_memory["warnings"]
+    assert "nan_flag" in parsed_flora_memory["warnings"]
+    assert "consecutive_failure_threshold" in parsed_flora_memory["warnings"]
+    flora_memory_h8dump_path = root / "Dump_1327_FloraInteraction.h8dump"
+    flora_memory_h8dump_path.write_bytes(flora_memory)
+    assert server.parse_dump_file(flora_memory_h8dump_path)["type"] == "flora_memory_telemetry_blackbox"
+
+    ambient_sway_flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4)
+    ambient_sway = bytearray(
+        server.FLORA_AMBIENT_SWAY_HEADER.pack(
+            server.FLORA_AMBIENT_SWAY_MAGIC,
+            server.FLORA_AMBIENT_SWAY_VERSION,
+            server.FLORA_AMBIENT_SWAY_SOURCE_HASH,
+            server.FLORA_AMBIENT_SWAY_ENTRY_BYTES,
+            server.FLORA_AMBIENT_SWAY_TELEMETRY_CAPACITY,
+            2,
+        )
+    )
+    ambient_sway.extend(bytearray(server.FLORA_AMBIENT_SWAY_TELEMETRY_CAPACITY * server.FLORA_AMBIENT_SWAY_ENTRY_BYTES))
+    server.FLORA_AMBIENT_SWAY_ENTRY.pack_into(
+        ambient_sway,
+        server.FLORA_AMBIENT_SWAY_HEADER_BYTES,
+        2801,
+        1 << 3,
+        0.25,
+        0.6,
+        0.5,
+        0.12,
+        0x53465701,
+        server.FLORA_AMBIENT_SWAY_SOURCE_HASH,
+    )
+    server.FLORA_AMBIENT_SWAY_ENTRY.pack_into(
+        ambient_sway,
+        server.FLORA_AMBIENT_SWAY_HEADER_BYTES + server.FLORA_AMBIENT_SWAY_ENTRY_BYTES,
+        2802,
+        ambient_sway_flags,
+        0.5,
+        1.25,
+        0.85,
+        0.3,
+        0x53465702,
+        server.FLORA_AMBIENT_SWAY_SOURCE_HASH,
+    )
+    ambient_sway_path = root / "Dump_SHINOBU_267.bin"
+    ambient_sway_path.write_bytes(ambient_sway)
+    parsed_ambient_sway = server.parse_dump_file(ambient_sway_path)
+    assert parsed_ambient_sway["type"] == "flora_ambient_sway_blackbox"
+    assert parsed_ambient_sway["magicHex"] == "0x37363253"
+    assert parsed_ambient_sway["sourceHashHex"] == "0x53465759"
+    assert parsed_ambient_sway["entrySize"] == server.FLORA_AMBIENT_SWAY_ENTRY_BYTES
+    assert parsed_ambient_sway["declaredEntryCount"] == server.FLORA_AMBIENT_SWAY_TELEMETRY_CAPACITY
+    assert parsed_ambient_sway["nonEmptyEntryCount"] == 2
+    assert parsed_ambient_sway["latest"]["frame"] == 2802
+    assert parsed_ambient_sway["latest"]["sourceHashOk"] is True
+    assert parsed_ambient_sway["latest"]["flagLabels"] == [
+        "vault-missing",
+        "constant-buffer-unsupported",
+        "invalid-number",
+        "upload-skipped",
+        "burst-kernel-unavailable",
+    ]
+    assert "vault_missing" in parsed_ambient_sway["warnings"]
+    assert "constant_buffer_unsupported" in parsed_ambient_sway["warnings"]
+    assert "invalid_number" in parsed_ambient_sway["warnings"]
+    assert "upload_skipped" in parsed_ambient_sway["warnings"]
+    assert "burst_kernel_unavailable" in parsed_ambient_sway["warnings"]
+    renamed_ambient_sway_path = root / "Renamed_AmbientSway.h8dump"
+    renamed_ambient_sway_path.write_bytes(ambient_sway)
+    assert server.parse_dump_file(renamed_ambient_sway_path)["type"] == "flora_ambient_sway_blackbox"
+
+    vegetation_flags_0 = 1 << 0
+    vegetation_flags_1 = (1 << 2) | (1 << 3) | (1 << 5) | (1 << 6)
+    vegetation_state_0 = server.compute_vegetation_memory_state_hash(
+        server.VEGETATION_MEMORY_TELEMETRY_RING_BUFFER_ID,
+        31,
+        2901,
+        server.VEGETATION_MEMORY_TELEMETRY_CAPACITY,
+        server.VEGETATION_MEMORY_TELEMETRY_CAPACITY,
+        0,
+        0.0,
+        0.75,
+        1,
+        1,
+        vegetation_flags_0,
+        0.0,
+        0.0,
+        0.0,
+    )
+    vegetation_state_1 = server.compute_vegetation_memory_state_hash(
+        server.VEGETATION_MEMORY_TELEMETRY_CURSOR_BUFFER_ID,
+        32,
+        2902,
+        256,
+        128,
+        17,
+        420.0,
+        0.55,
+        8,
+        4,
+        vegetation_flags_1,
+        10.0,
+        -2.0,
+        4.0,
+    )
+    vegetation_memory = bytearray(
+        server.VEGETATION_MEMORY_HEADER.pack(
+            server.VEGETATION_MEMORY_MAGIC,
+            server.VEGETATION_MEMORY_VERSION,
+            server.VEGETATION_MEMORY_TELEMETRY_CAPACITY,
+            server.VEGETATION_MEMORY_ENTRY_BYTES,
+            2,
+        )
+    )
+    vegetation_memory.extend(bytearray(server.VEGETATION_MEMORY_TELEMETRY_CAPACITY * server.VEGETATION_MEMORY_ENTRY_BYTES))
+    server.VEGETATION_MEMORY_ENTRY.pack_into(
+        vegetation_memory,
+        server.VEGETATION_MEMORY_HEADER_BYTES,
+        vegetation_state_0,
+        server.VEGETATION_MEMORY_TELEMETRY_RING_BUFFER_ID,
+        31,
+        2901,
+        server.VEGETATION_MEMORY_TELEMETRY_CAPACITY,
+        server.VEGETATION_MEMORY_TELEMETRY_CAPACITY,
+        0,
+        0.0,
+        0.75,
+        1,
+        1,
+        vegetation_flags_0,
+        0.0,
+        0.0,
+        0.0,
+        0,
+    )
+    server.VEGETATION_MEMORY_ENTRY.pack_into(
+        vegetation_memory,
+        server.VEGETATION_MEMORY_HEADER_BYTES + server.VEGETATION_MEMORY_ENTRY_BYTES,
+        vegetation_state_1,
+        server.VEGETATION_MEMORY_TELEMETRY_CURSOR_BUFFER_ID,
+        32,
+        2902,
+        256,
+        128,
+        17,
+        420.0,
+        0.55,
+        8,
+        4,
+        vegetation_flags_1,
+        10.0,
+        -2.0,
+        4.0,
+        0,
+    )
+    vegetation_memory_path = root / "Dump_1316_Vegetation.bin"
+    vegetation_memory_path.write_bytes(vegetation_memory)
+    parsed_vegetation_memory = server.parse_dump_file(vegetation_memory_path)
+    assert parsed_vegetation_memory["type"] == "vegetation_memory_blackbox"
+    assert parsed_vegetation_memory["magicHex"] == "0x313331365F564547"
+    assert parsed_vegetation_memory["entrySize"] == server.VEGETATION_MEMORY_ENTRY_BYTES
+    assert parsed_vegetation_memory["declaredEntryCount"] == server.VEGETATION_MEMORY_TELEMETRY_CAPACITY
+    assert parsed_vegetation_memory["nonEmptyEntryCount"] == 2
+    assert parsed_vegetation_memory["latest"]["frame"] == 2902
+    assert parsed_vegetation_memory["latest"]["stateHashOk"] is True
+    assert parsed_vegetation_memory["latest"]["failureCodeLabel"] == "staging-capacity-exceeded"
+    assert parsed_vegetation_memory["latest"]["phaseLabel"] == "defrag"
+    assert parsed_vegetation_memory["latest"]["bufferLabel"] == "vegetation-memory-telemetry-cursor"
+    assert parsed_vegetation_memory["latest"]["flagLabels"] == [
+        "lock-contention",
+        "stale-handle",
+        "capacity",
+        "compaction-fence",
+    ]
+    assert "cold_boot" in parsed_vegetation_memory["warnings"]
+    assert "lock_contention" in parsed_vegetation_memory["warnings"]
+    assert "stale_handle" in parsed_vegetation_memory["warnings"]
+    assert "capacity_flag" in parsed_vegetation_memory["warnings"]
+    assert "compaction_fence" in parsed_vegetation_memory["warnings"]
+    assert "actual_length_below_expected" in parsed_vegetation_memory["warnings"]
+    renamed_vegetation_memory_path = root / "Renamed_VegetationMemory.h8dump"
+    renamed_vegetation_memory_path.write_bytes(vegetation_memory)
+    assert server.parse_dump_file(renamed_vegetation_memory_path)["type"] == "vegetation_memory_blackbox"
+
+    organics_flags = (1 << 2) | (1 << 5) | (1 << 6) | (1 << 7)
+    organics_hash_0 = server.compute_dear_lie_organics_hash(3001, 12, 3, 0x0DD10001, 180.0)
+    organics_hash_1 = server.compute_dear_lie_organics_hash(3002, 24, 6, 0x0DD10002, 280.0)
+    organics = bytearray(server.DEAR_LIE_ORGANICS_TELEMETRY_CAPACITY * server.DEAR_LIE_ORGANICS_ENTRY_BYTES)
+    server.DEAR_LIE_ORGANICS_ENTRY.pack_into(
+        organics,
+        0,
+        3001,
+        420,
+        96,
+        12,
+        3,
+        2,
+        4,
+        1,
+        0,
+        0,
+        0.7,
+        organics_hash_0,
+        0x0DD10001,
+        180.0,
+        0,
+    )
+    server.DEAR_LIE_ORGANICS_ENTRY.pack_into(
+        organics,
+        server.DEAR_LIE_ORGANICS_ENTRY_BYTES,
+        3002,
+        512,
+        128,
+        24,
+        6,
+        5,
+        8,
+        2,
+        3,
+        1,
+        0.6,
+        organics_hash_1,
+        0x0DD10002,
+        280.0,
+        organics_flags,
+    )
+    organics_path = root / "Dump_1318_Organics.bin"
+    organics_path.write_bytes(organics)
+    parsed_organics = server.parse_dump_file(organics_path)
+    assert parsed_organics["type"] == "dear_lie_organics_blackbox"
+    assert parsed_organics["entrySize"] == server.DEAR_LIE_ORGANICS_ENTRY_BYTES
+    assert parsed_organics["declaredEntryCount"] == server.DEAR_LIE_ORGANICS_TELEMETRY_CAPACITY
+    assert parsed_organics["nonEmptyEntryCount"] == 2
+    assert parsed_organics["latest"]["frame"] == 3002
+    assert parsed_organics["latest"]["hashOk"] is True
+    assert parsed_organics["latest"]["lastInstanceUidHex"] == "0x0DD10002"
+    assert parsed_organics["latest"]["flagLabels"] == [
+        "regeneration-recovered",
+        "guard-failed",
+        "drop-drain-failed",
+        "overflow-or-reject",
+    ]
+    assert "regeneration_recovered" in parsed_organics["warnings"]
+    assert "guard_failed" in parsed_organics["warnings"]
+    assert "drop_drain_failed" in parsed_organics["warnings"]
+    assert "overflow_or_reject" in parsed_organics["warnings"]
+    assert "rejected_signals" in parsed_organics["warnings"]
+    assert "nan_rejects" in parsed_organics["warnings"]
+    organics_h8dump_path = root / "Dump_1318_Organics.h8dump"
+    organics_h8dump_path.write_bytes(organics)
+    assert server.parse_dump_file(organics_h8dump_path)["type"] == "dear_lie_organics_blackbox"
+
+    chemical_flags = 1 << 0
+    chemical_hash_0 = server.compute_chemical_influence_state_hash(3101, 12, 2, 4, 0.45, 0.8, 0)
+    chemical_hash_1 = server.compute_chemical_influence_state_hash(3102, 161, 9, 7, 0.9, 0.6, chemical_flags)
+    chemical = bytearray(
+        server.CHEMICAL_INFLUENCE_HEADER.pack(
+            server.CHEMICAL_INFLUENCE_MAGIC,
+            server.CHEMICAL_INFLUENCE_VERSION,
+            server.CHEMICAL_INFLUENCE_TELEMETRY_CAPACITY,
+            server.CHEMICAL_INFLUENCE_ENTRY_BYTES,
+        )
+    )
+    chemical.extend(bytearray(server.CHEMICAL_INFLUENCE_TELEMETRY_CAPACITY * server.CHEMICAL_INFLUENCE_ENTRY_BYTES))
+    server.CHEMICAL_INFLUENCE_ENTRY.pack_into(
+        chemical,
+        server.CHEMICAL_INFLUENCE_HEADER_BYTES,
+        120.0,
+        -16.0,
+        48.0,
+        0.45,
+        140.0,
+        3101,
+        12,
+        2,
+        4,
+        chemical_hash_0,
+        0,
+        0.8,
+        3,
+    )
+    server.CHEMICAL_INFLUENCE_ENTRY.pack_into(
+        chemical,
+        server.CHEMICAL_INFLUENCE_HEADER_BYTES + server.CHEMICAL_INFLUENCE_ENTRY_BYTES,
+        124.0,
+        -12.0,
+        52.0,
+        0.9,
+        240.0,
+        3102,
+        161,
+        9,
+        7,
+        chemical_hash_1 ^ 0x55,
+        chemical_flags,
+        0.6,
+        6,
+    )
+    chemical_path = root / "Dump_CHEMISTRY_SURGEON.bin"
+    chemical_path.write_bytes(chemical)
+    parsed_chemical = server.parse_dump_file(chemical_path)
+    assert parsed_chemical["type"] == "chemical_influence_blackbox"
+    assert parsed_chemical["magicHex"] == "0x3833315F4D454843"
+    assert parsed_chemical["entrySize"] == server.CHEMICAL_INFLUENCE_ENTRY_BYTES
+    assert parsed_chemical["declaredEntryCount"] == server.CHEMICAL_INFLUENCE_TELEMETRY_CAPACITY
+    assert parsed_chemical["nonEmptyEntryCount"] == 2
+    assert parsed_chemical["latest"]["frame"] == 3102
+    assert parsed_chemical["latest"]["stateHashOk"] is False
+    assert parsed_chemical["latest"]["flagLabels"] == ["nan"]
+    assert parsed_chemical["latest"]["activeEmitters"] == 161
+    assert "nan_flag" in parsed_chemical["warnings"]
+    assert "state_hash_mismatch" in parsed_chemical["warnings"]
+    assert "emitter_count_out_of_range" in parsed_chemical["warnings"]
+    assert "iterations_out_of_range" in parsed_chemical["warnings"]
+    renamed_chemical_path = root / "Renamed_ChemistrySurgeon.h8dump"
+    renamed_chemical_path.write_bytes(chemical)
+    assert server.parse_dump_file(renamed_chemical_path)["type"] == "chemical_influence_blackbox"
+
+    food_chain_flags_0 = (1 << 0) | (1 << 1)
+    food_chain_flags_1 = (1 << 0) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5) | (1 << 31)
+    food_chain = bytearray(
+        server.SARGASSUM_FOOD_CHAIN_HEADER.pack(
+            server.SARGASSUM_FOOD_CHAIN_MAGIC_LOW,
+            server.SARGASSUM_FOOD_CHAIN_MAGIC_HIGH,
+            server.SARGASSUM_FOOD_CHAIN_ENTRY_BYTES,
+            server.SARGASSUM_FOOD_CHAIN_CAPACITY,
+            2,
+            0xEFC00002,
+        )
+    )
+    food_chain.extend(
+        bytearray(server.SARGASSUM_FOOD_CHAIN_CAPACITY * server.SARGASSUM_FOOD_CHAIN_ENTRY_BYTES)
+    )
+    server.SARGASSUM_FOOD_CHAIN_ENTRY.pack_into(
+        food_chain,
+        server.SARGASSUM_FOOD_CHAIN_HEADER_BYTES,
+        3301,
+        0xF00D1001,
+        0xCAFE0001,
+        food_chain_flags_0,
+        120,
+        2,
+        3,
+        1,
+        10.0,
+        -2.0,
+        5.5,
+        11.0,
+        -1.5,
+        6.0,
+        0,
+        10.5,
+    )
+    server.SARGASSUM_FOOD_CHAIN_ENTRY.pack_into(
+        food_chain,
+        server.SARGASSUM_FOOD_CHAIN_HEADER_BYTES + server.SARGASSUM_FOOD_CHAIN_ENTRY_BYTES,
+        3302,
+        0,
+        0xCAFE0002,
+        food_chain_flags_1,
+        80,
+        96,
+        9,
+        3,
+        float("nan"),
+        -2.0,
+        5.5,
+        12.0,
+        -1.0,
+        7.0,
+        0xEFC00002,
+        11.0,
+    )
+    food_chain_path = root / "Dump_SARGASSUM_FOOD_CHAIN.bin"
+    food_chain_path.write_bytes(food_chain)
+    parsed_food_chain = server.parse_dump_file(food_chain_path)
+    assert parsed_food_chain["type"] == "sargassum_food_chain_blackbox"
+    assert parsed_food_chain["magicLowHex"] == "0x48454354"
+    assert parsed_food_chain["magicHighHex"] == "0x4643484E"
+    assert parsed_food_chain["entrySize"] == server.SARGASSUM_FOOD_CHAIN_ENTRY_BYTES
+    assert parsed_food_chain["declaredEntryCount"] == server.SARGASSUM_FOOD_CHAIN_CAPACITY
+    assert parsed_food_chain["nonEmptyEntryCount"] == 2
+    assert parsed_food_chain["entries"][0]["pendingKillJob"] == 3
+    assert parsed_food_chain["entries"][0]["flagLabels"] == ["tick", "kill-job-scheduled"]
+    assert parsed_food_chain["latest"]["frame"] == 3302
+    assert parsed_food_chain["latest"]["flagLabels"] == [
+        "tick",
+        "kill-job-completed",
+        "kill-drained",
+        "whale-fall",
+        "boids-scattered",
+        "nonfinite",
+    ]
+    assert parsed_food_chain["latest"]["sourceHashHex"] == "0xCAFE0002"
+    assert parsed_food_chain["latest"]["entryAnomalyHashHex"] == "0xEFC00002"
+    assert "anomaly_hash" in parsed_food_chain["warnings"]
+    assert "entry_anomaly_hash" in parsed_food_chain["warnings"]
+    assert "nonfinite_values" in parsed_food_chain["warnings"]
+    assert "nonfinite_flag" in parsed_food_chain["warnings"]
+    assert "state_hash_zero" in parsed_food_chain["warnings"]
+    assert "consumed_count_out_of_range" in parsed_food_chain["warnings"]
+    assert "pending_kill_job_out_of_range" in parsed_food_chain["warnings"]
+    assert "lod_tier_out_of_range" in parsed_food_chain["warnings"]
+    assert "kill_job_scheduled" in parsed_food_chain["warnings"]
+    assert "kill_job_completed" in parsed_food_chain["warnings"]
+    assert "kill_drained" in parsed_food_chain["warnings"]
+    assert "whale_fall" in parsed_food_chain["warnings"]
+    assert "boids_scattered" in parsed_food_chain["warnings"]
+    renamed_food_chain_path = root / "Renamed_SargassumFoodChain.h8dump"
+    renamed_food_chain_path.write_bytes(food_chain)
+    assert server.parse_dump_file(renamed_food_chain_path)["type"] == "sargassum_food_chain_blackbox"
+
+    truncated_food_chain_path = root / "Interrupted_SargassumFoodChain.h8dump"
+    truncated_food_chain_path.write_bytes(food_chain[: server.SARGASSUM_FOOD_CHAIN_HEADER_BYTES + 7])
+    parsed_truncated_food_chain = server.parse_dump_file(truncated_food_chain_path)
+    assert parsed_truncated_food_chain["type"] == "sargassum_food_chain_blackbox"
+    assert parsed_truncated_food_chain["nonEmptyEntryCount"] == 0
+    assert "payload_truncated" in parsed_truncated_food_chain["warnings"]
+    assert "trailing_partial_entry" in parsed_truncated_food_chain["warnings"]
+
+    invalid_food_chain_path = root / "Dump_SARGASSUM_FOOD_CHAIN.h8dump"
+    invalid_food_chain = server.SARGASSUM_FOOD_CHAIN_HEADER.pack(
+        server.SARGASSUM_FOOD_CHAIN_MAGIC_LOW,
+        server.SARGASSUM_FOOD_CHAIN_MAGIC_HIGH,
+        server.SARGASSUM_FOOD_CHAIN_ENTRY_BYTES + 4,
+        server.SARGASSUM_FOOD_CHAIN_CAPACITY,
+        server.SARGASSUM_FOOD_CHAIN_CAPACITY + 1,
+        0xFC0000AD,
+    )
+    invalid_food_chain_path.write_bytes(invalid_food_chain)
+    parsed_invalid_food_chain = server.parse_dump_file(invalid_food_chain_path)
+    assert parsed_invalid_food_chain["type"] == "sargassum_food_chain_blackbox"
+    assert parsed_invalid_food_chain["headerBytes"] == server.SARGASSUM_FOOD_CHAIN_HEADER_BYTES
+    assert parsed_invalid_food_chain["entrySize"] == server.SARGASSUM_FOOD_CHAIN_ENTRY_BYTES + 4
+    assert parsed_invalid_food_chain["declaredEntryCount"] == server.SARGASSUM_FOOD_CHAIN_CAPACITY
+    assert parsed_invalid_food_chain["capacity"] == server.SARGASSUM_FOOD_CHAIN_CAPACITY
+    assert parsed_invalid_food_chain["telemetryCursor"] == server.SARGASSUM_FOOD_CHAIN_CAPACITY + 1
+    assert parsed_invalid_food_chain["nonEmptyEntryCount"] == 0
+    assert parsed_invalid_food_chain["returnedEntryCount"] == 0
+    assert parsed_invalid_food_chain["entries"] == []
+    assert parsed_invalid_food_chain["latest"] is None
+    assert parsed_invalid_food_chain["warnings"] == ["invalid_header"]
+    renamed_invalid_food_chain_path = root / "CopiedInvalidSargassumFoodChain.h8dump"
+    renamed_invalid_food_chain_path.write_bytes(invalid_food_chain)
+    parsed_renamed_invalid_food_chain = server.parse_dump_file(renamed_invalid_food_chain_path)
+    assert parsed_renamed_invalid_food_chain["type"] == "sargassum_food_chain_blackbox"
+    assert parsed_renamed_invalid_food_chain["warnings"] == ["invalid_header"]
+    no_data_food_chain_dir = root / "NoDataFoodChain"
+    no_data_food_chain_dir.mkdir()
+    no_data_food_chain_path = no_data_food_chain_dir / "Dump_SARGASSUM_FOOD_CHAIN.h8dump"
+    no_data_food_chain_path.write_bytes(b"")
+    parsed_no_data_food_chain = server.parse_dump_file(no_data_food_chain_path)
+    assert parsed_no_data_food_chain["type"] == "sargassum_food_chain_blackbox"
+    assert parsed_no_data_food_chain["headerBytes"] == server.SARGASSUM_FOOD_CHAIN_HEADER_BYTES
+    assert parsed_no_data_food_chain["entrySize"] == server.SARGASSUM_FOOD_CHAIN_ENTRY_BYTES
+    assert parsed_no_data_food_chain["declaredEntryCount"] == 0
+    assert parsed_no_data_food_chain["capacity"] == 0
+    assert parsed_no_data_food_chain["telemetryCursor"] == 0
+    assert parsed_no_data_food_chain["nonEmptyEntryCount"] == 0
+    assert parsed_no_data_food_chain["returnedEntryCount"] == 0
+    assert parsed_no_data_food_chain["entries"] == []
+    assert parsed_no_data_food_chain["latest"] is None
+    assert parsed_no_data_food_chain["warnings"] == ["truncated_header"]
+
+    sargassum_flags_0 = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3)
+    sargassum_flags_1 = (1 << 0) | (1 << 2) | (1 << 31)
+    sargassum_sensory = bytearray(
+        server.SARGASSUM_BOID_SENSORY_HEADER.pack(
+            server.SARGASSUM_BOID_SENSORY_MAGIC_LOW,
+            server.SARGASSUM_BOID_SENSORY_MAGIC_HIGH,
+            server.SARGASSUM_BOID_SENSORY_ENTRY_BYTES,
+            server.SARGASSUM_BOID_SENSORY_CAPACITY,
+            2,
+            0xB01D0002,
+        )
+    )
+    sargassum_sensory.extend(
+        bytearray(server.SARGASSUM_BOID_SENSORY_CAPACITY * server.SARGASSUM_BOID_SENSORY_ENTRY_BYTES)
+    )
+    server.SARGASSUM_BOID_SENSORY_ENTRY.pack_into(
+        sargassum_sensory,
+        server.SARGASSUM_BOID_SENSORY_HEADER_BYTES,
+        3201,
+        0xB01D1001,
+        sargassum_flags_0,
+        3,
+        0.0,
+        0.0,
+        0.0,
+        32.0,
+        4.0,
+        0.0,
+        0.0,
+        24.0,
+        12.0,
+        0.0,
+        0.0,
+        1.0,
+    )
+    server.SARGASSUM_BOID_SENSORY_ENTRY.pack_into(
+        sargassum_sensory,
+        server.SARGASSUM_BOID_SENSORY_HEADER_BYTES + server.SARGASSUM_BOID_SENSORY_ENTRY_BYTES,
+        3202,
+        0xB01D1002,
+        sargassum_flags_1,
+        17,
+        float("nan"),
+        0.0,
+        0.0,
+        32.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        12.0,
+        0.0,
+        0.0,
+        2.0,
+    )
+    sargassum_sensory_path = root / "Dump_SARGASSUM_BOID_SENSORY.bin"
+    sargassum_sensory_path.write_bytes(sargassum_sensory)
+    parsed_sargassum_sensory = server.parse_dump_file(sargassum_sensory_path)
+    assert parsed_sargassum_sensory["type"] == "sargassum_boid_sensory_blackbox"
+    assert parsed_sargassum_sensory["magicLowHex"] == "0x424F4944"
+    assert parsed_sargassum_sensory["magicHighHex"] == "0x53454E53"
+    assert parsed_sargassum_sensory["entrySize"] == server.SARGASSUM_BOID_SENSORY_ENTRY_BYTES
+    assert parsed_sargassum_sensory["declaredEntryCount"] == server.SARGASSUM_BOID_SENSORY_CAPACITY
+    assert parsed_sargassum_sensory["nonEmptyEntryCount"] == 2
+    assert parsed_sargassum_sensory["latest"]["frame"] == 3202
+    assert parsed_sargassum_sensory["latest"]["flagLabels"] == ["tick", "ping-active", "nonfinite"]
+    assert parsed_sargassum_sensory["latest"]["activeThreatCount"] == 17
+    assert "anomaly_hash" in parsed_sargassum_sensory["warnings"]
+    assert "nonfinite_values" in parsed_sargassum_sensory["warnings"]
+    assert "nonfinite_flag" in parsed_sargassum_sensory["warnings"]
+    assert "active_threat_count_out_of_range" in parsed_sargassum_sensory["warnings"]
+    renamed_sargassum_sensory_path = root / "Renamed_SargassumBoidSensory.h8dump"
+    renamed_sargassum_sensory_path.write_bytes(sargassum_sensory)
+    assert server.parse_dump_file(renamed_sargassum_sensory_path)["type"] == "sargassum_boid_sensory_blackbox"
+
+    truncated_sargassum_sensory_path = root / "Interrupted_SargassumBoidSensory.h8dump"
+    truncated_sargassum_sensory_path.write_bytes(
+        sargassum_sensory[: server.SARGASSUM_BOID_SENSORY_HEADER_BYTES + 11]
+    )
+    parsed_truncated_sargassum_sensory = server.parse_dump_file(truncated_sargassum_sensory_path)
+    assert parsed_truncated_sargassum_sensory["type"] == "sargassum_boid_sensory_blackbox"
+    assert parsed_truncated_sargassum_sensory["nonEmptyEntryCount"] == 0
+    assert "payload_truncated" in parsed_truncated_sargassum_sensory["warnings"]
+    assert "trailing_partial_entry" in parsed_truncated_sargassum_sensory["warnings"]
+
+    invalid_sargassum_sensory_path = root / "Dump_SARGASSUM_BOID_SENSORY.h8dump"
+    invalid_sargassum_sensory = server.SARGASSUM_BOID_SENSORY_HEADER.pack(
+        server.SARGASSUM_BOID_SENSORY_MAGIC_LOW,
+        server.SARGASSUM_BOID_SENSORY_MAGIC_HIGH,
+        server.SARGASSUM_BOID_SENSORY_ENTRY_BYTES + 8,
+        server.SARGASSUM_BOID_SENSORY_CAPACITY + 1,
+        1,
+        0xB01D00AD,
+    )
+    invalid_sargassum_sensory_path.write_bytes(invalid_sargassum_sensory)
+    parsed_invalid_sargassum_sensory = server.parse_dump_file(invalid_sargassum_sensory_path)
+    assert parsed_invalid_sargassum_sensory["type"] == "sargassum_boid_sensory_blackbox"
+    assert parsed_invalid_sargassum_sensory["headerBytes"] == server.SARGASSUM_BOID_SENSORY_HEADER_BYTES
+    assert parsed_invalid_sargassum_sensory["entrySize"] == server.SARGASSUM_BOID_SENSORY_ENTRY_BYTES + 8
+    assert parsed_invalid_sargassum_sensory["declaredEntryCount"] == server.SARGASSUM_BOID_SENSORY_CAPACITY + 1
+    assert parsed_invalid_sargassum_sensory["capacity"] == server.SARGASSUM_BOID_SENSORY_CAPACITY + 1
+    assert parsed_invalid_sargassum_sensory["nonEmptyEntryCount"] == 0
+    assert parsed_invalid_sargassum_sensory["returnedEntryCount"] == 0
+    assert parsed_invalid_sargassum_sensory["entries"] == []
+    assert parsed_invalid_sargassum_sensory["latest"] is None
+    assert parsed_invalid_sargassum_sensory["warnings"] == ["invalid_header"]
+    renamed_invalid_sargassum_sensory_path = root / "CopiedInvalidSargassumBoidSensory.h8dump"
+    renamed_invalid_sargassum_sensory_path.write_bytes(invalid_sargassum_sensory)
+    parsed_renamed_invalid_sargassum_sensory = server.parse_dump_file(renamed_invalid_sargassum_sensory_path)
+    assert parsed_renamed_invalid_sargassum_sensory["type"] == "sargassum_boid_sensory_blackbox"
+    assert parsed_renamed_invalid_sargassum_sensory["warnings"] == ["invalid_header"]
+    no_data_sargassum_sensory_dir = root / "NoDataBoidSensory"
+    no_data_sargassum_sensory_dir.mkdir()
+    no_data_sargassum_sensory_path = no_data_sargassum_sensory_dir / "Dump_SARGASSUM_BOID_SENSORY.h8dump"
+    no_data_sargassum_sensory_path.write_bytes(b"")
+    parsed_no_data_sargassum_sensory = server.parse_dump_file(no_data_sargassum_sensory_path)
+    assert parsed_no_data_sargassum_sensory["type"] == "sargassum_boid_sensory_blackbox"
+    assert parsed_no_data_sargassum_sensory["headerBytes"] == server.SARGASSUM_BOID_SENSORY_HEADER_BYTES
+    assert parsed_no_data_sargassum_sensory["entrySize"] == server.SARGASSUM_BOID_SENSORY_ENTRY_BYTES
+    assert parsed_no_data_sargassum_sensory["declaredEntryCount"] == 0
+    assert parsed_no_data_sargassum_sensory["capacity"] == 0
+    assert parsed_no_data_sargassum_sensory["telemetryCursor"] == 0
+    assert parsed_no_data_sargassum_sensory["nonEmptyEntryCount"] == 0
+    assert parsed_no_data_sargassum_sensory["returnedEntryCount"] == 0
+    assert parsed_no_data_sargassum_sensory["entries"] == []
+    assert parsed_no_data_sargassum_sensory["latest"] is None
+    assert parsed_no_data_sargassum_sensory["warnings"] == ["truncated_header"]
+
+    marine_snow_flags = (1 << 0) | (1 << 1)
+    marine_snow = server.MARINE_SNOW_VFX_HEADER.pack(
+        server.MARINE_SNOW_VFX_CONTEXT_HASH,
+        server.MARINE_SNOW_VFX_TELEMETRY_CAPACITY,
+        server.MARINE_SNOW_VFX_ENTRY_BYTES,
+        2,
+    )
+    marine_snow += server.MARINE_SNOW_VFX_ENTRY.pack(
+        2051,
+        448,
+        1792,
+        2,
+        0.35,
+        0.25,
+        1.2,
+        0.01,
+        10.0,
+        -4.0,
+        25.0,
+        0.4,
+        0,
+        0x4D534E31,
+        700,
+        41,
+    )
+    marine_snow += server.MARINE_SNOW_VFX_ENTRY.pack(
+        2052,
+        1792,
+        1792,
+        4,
+        0.85,
+        0.92,
+        3.75,
+        0.04,
+        11.0,
+        -3.5,
+        26.0,
+        1.2,
+        marine_snow_flags,
+        0x4D534E32,
+        1700,
+        42,
+    )
+    marine_snow_path = root / "Dump_SILT_VFX.h8dump"
+    marine_snow_path.write_bytes(marine_snow)
+    parsed_marine_snow = server.parse_dump_file(marine_snow_path)
+    assert parsed_marine_snow["type"] == "marine_snow_vfx_blackbox"
+    assert parsed_marine_snow["contextHashHex"] == "0x4D534E57"
+    assert parsed_marine_snow["entrySize"] == server.MARINE_SNOW_VFX_ENTRY_BYTES
+    assert parsed_marine_snow["declaredEntryCount"] == 2
+    assert parsed_marine_snow["nonEmptyEntryCount"] == 2
+    assert parsed_marine_snow["latest"]["frame"] == 2052
+    assert parsed_marine_snow["latest"]["stateHashHex"] == "0x4D534E32"
+    assert parsed_marine_snow["latest"]["flagLabels"] == ["nonfinite", "gpu-budget-exceeded"]
+    assert "nonfinite_flag" in parsed_marine_snow["warnings"]
+    assert "gpu_budget_exceeded" in parsed_marine_snow["warnings"]
+    assert "gpu_over_1500us" in parsed_marine_snow["warnings"]
+    renamed_marine_snow_path = root / "Renamed_SiltVfx.bin"
+    renamed_marine_snow_path.write_bytes(marine_snow)
+    assert server.parse_dump_file(renamed_marine_snow_path)["type"] == "marine_snow_vfx_blackbox"
+
+    propwash_flags = (1 << 0) | (1 << 1) | (1 << 2)
+    propwash = server.PROPWASH_GPU_HEADER.pack(
+        server.PROPWASH_GPU_LAYOUT_HASH,
+        server.PROPWASH_GPU_TELEMETRY_CAPACITY,
+        server.PROPWASH_GPU_ENTRY_BYTES,
+        2,
+    )
+    propwash += server.PROPWASH_GPU_ENTRY.pack(
+        2101,
+        24,
+        server.PROPWASH_GPU_MIN_PARTICLE_BUDGET,
+        0,
+        0.25,
+        0.8,
+        350.0,
+        1.5,
+        0.1,
+        -0.2,
+        -3.0,
+        0x50525731,
+        1 << 0,
+        24,
+        0x933B5BDE,
+        0,
+    )
+    propwash += server.PROPWASH_GPU_ENTRY.pack(
+        2102,
+        128,
+        server.PROPWASH_GPU_MAX_PARTICLE_BUDGET,
+        3,
+        0.75,
+        1.4,
+        1250.0,
+        0.4,
+        1.0,
+        2.0,
+        -3.0,
+        0x50525732,
+        propwash_flags,
+        128,
+        0x933B5BDE,
+        0,
+    )
+    propwash_path = root / "Dump_PROPWASH_GPU.h8dump"
+    propwash_path.write_bytes(propwash)
+    parsed_propwash = server.parse_dump_file(propwash_path)
+    assert parsed_propwash["type"] == "propwash_gpu_blackbox"
+    assert parsed_propwash["layoutHashHex"] == "0x53483237"
+    assert parsed_propwash["entrySize"] == server.PROPWASH_GPU_ENTRY_BYTES
+    assert parsed_propwash["declaredEntryCount"] == 2
+    assert parsed_propwash["nonEmptyEntryCount"] == 2
+    assert parsed_propwash["latest"]["frame"] == 2102
+    assert parsed_propwash["latest"]["stateHashHex"] == "0x50525732"
+    assert parsed_propwash["latest"]["flagLabels"] == [
+        "mock-source",
+        "vehicle-wake-source",
+        "wake-source-bridge",
+    ]
+    assert parsed_propwash["latest"]["profileHashHex"] == "0x933B5BDE"
+    assert "overflow_count" in parsed_propwash["warnings"]
+    assert "gpu_over_1000us" in parsed_propwash["warnings"]
+    assert "mock_source" in parsed_propwash["warnings"]
+    renamed_propwash_path = root / "Renamed_PropwashGpu.bin"
+    renamed_propwash_path.write_bytes(propwash)
+    assert server.parse_dump_file(renamed_propwash_path)["type"] == "propwash_gpu_blackbox"
+
+    debris_flags = (1 << 0) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5)
+    carve_debris = bytearray(
+        server.CARVE_DEBRIS_HEADER.pack(
+            server.CARVE_DEBRIS_MAGIC,
+            server.CARVE_DEBRIS_BLACKBOX_CAPACITY,
+            server.CARVE_DEBRIS_ENTRY_BYTES,
+            0,
+            debris_flags,
+        )
+    )
+    carve_debris.extend(bytearray(server.CARVE_DEBRIS_BLACKBOX_CAPACITY * server.CARVE_DEBRIS_ENTRY_BYTES))
+    server.CARVE_DEBRIS_ENTRY.pack_into(
+        carve_debris,
+        server.CARVE_DEBRIS_HEADER_BYTES,
+        2201,
+        10,
+        1,
+        16,
+        1 << 2,
+        0xDEB10001,
+        0.1,
+        0.0,
+        -0.05,
+        128,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+    )
+    server.CARVE_DEBRIS_ENTRY.pack_into(
+        carve_debris,
+        server.CARVE_DEBRIS_HEADER_BYTES + server.CARVE_DEBRIS_ENTRY_BYTES,
+        2202,
+        120,
+        3,
+        64,
+        debris_flags,
+        0xDEB10002,
+        0.25,
+        -0.125,
+        0.5,
+        230,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+    )
+    carve_debris_path = root / "Dump_SHINOBU_05_DEBRIS_PHYSICS_FAKE.h8dump"
+    carve_debris_path.write_bytes(carve_debris)
+    parsed_carve_debris = server.parse_dump_file(carve_debris_path)
+    assert parsed_carve_debris["type"] == "carve_debris_blackbox"
+    assert parsed_carve_debris["entrySize"] == server.CARVE_DEBRIS_ENTRY_BYTES
+    assert parsed_carve_debris["declaredEntryCount"] == server.CARVE_DEBRIS_BLACKBOX_CAPACITY
+    assert parsed_carve_debris["nonEmptyEntryCount"] == 2
+    assert parsed_carve_debris["latest"]["frame"] == 2202
+    assert parsed_carve_debris["latest"]["stateHashHex"] == "0xDEB10002"
+    assert parsed_carve_debris["latest"]["flagLabels"] == [
+        "invalid-state",
+        "sdf-active",
+        "flow-active",
+        "stress-recycle",
+        "wake-active",
+    ]
+    assert parsed_carve_debris["reasonFlagLabels"] == [
+        "invalid-state",
+        "sdf-active",
+        "flow-active",
+        "stress-recycle",
+        "wake-active",
+    ]
+    assert parsed_carve_debris["latest"]["qualityPressureQ8"] == 230
+    assert "reason_flags" in parsed_carve_debris["warnings"]
+    assert "invalid_state" in parsed_carve_debris["warnings"]
+    assert "stress_recycle" in parsed_carve_debris["warnings"]
+    renamed_carve_debris_path = root / "Renamed_CarveDebris.bin"
+    renamed_carve_debris_path.write_bytes(carve_debris)
+    assert server.parse_dump_file(renamed_carve_debris_path)["type"] == "carve_debris_blackbox"
+
+    biolum_flags = (1 << 0) | (1 << 1) | (1 << 2)
+    biolum = server.BIOLUM_PULSE_HEADER.pack(
+        server.BIOLUM_PULSE_MAGIC,
+        biolum_flags,
+        0,
+        server.BIOLUM_PULSE_ENTRY_BYTES,
+        2,
+        2,
+    )
+    biolum += server.BIOLUM_PULSE_ENTRY.pack(
+        2301,
+        1200,
+        0.04,
+        0.35,
+        1.25,
+        1.1,
+        2.5,
+        2,
+        180,
+        1 << 1,
+        bytes(32),
+    )
+    biolum += server.BIOLUM_PULSE_ENTRY.pack(
+        2302,
+        2400,
+        0.15,
+        0.8,
+        2.5,
+        3.2,
+        7.5,
+        4,
+        220,
+        biolum_flags,
+        bytes(32),
+    )
+    biolum_path = root / "Dump_SHINOBU_238.bin"
+    biolum_path.write_bytes(biolum)
+    parsed_biolum = server.parse_dump_file(biolum_path)
+    assert parsed_biolum["type"] == "biolum_pulse_blackbox"
+    assert parsed_biolum["entrySize"] == server.BIOLUM_PULSE_ENTRY_BYTES
+    assert parsed_biolum["declaredEntryCount"] == 2
+    assert parsed_biolum["nonEmptyEntryCount"] == 2
+    assert parsed_biolum["latest"]["frame"] == 2302
+    assert parsed_biolum["latest"]["flagLabels"] == ["nonfinite", "job-overrun", "aup-invalid"]
+    assert parsed_biolum["reasonFlagLabels"] == ["nonfinite", "job-overrun", "aup-invalid"]
+    assert parsed_biolum["latest"]["qualityTier"] == 220
+    assert "reason_flags" in parsed_biolum["warnings"]
+    assert "nonfinite_flag" in parsed_biolum["warnings"]
+    assert "job_overrun" in parsed_biolum["warnings"]
+    assert "aup_invalid" in parsed_biolum["warnings"]
+    assert "oscillator_over_0_1ms" in parsed_biolum["warnings"]
+    renamed_biolum_path = root / "Renamed_BiolumPulse.h8dump"
+    renamed_biolum_path.write_bytes(biolum)
+    assert server.parse_dump_file(renamed_biolum_path)["type"] == "biolum_pulse_blackbox"
+
+    biolum_director_flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4)
+    biolum_director_reason = (1 << 1) | (1 << 3)
+    biolum_director = bytearray(
+        server.BIOLUM_DIRECTOR_HEADER.pack(
+            server.BIOLUM_DIRECTOR_MAGIC,
+            2,
+            biolum_director_reason,
+            server.BIOLUM_DIRECTOR_TELEMETRY_CAPACITY,
+        )
+    )
+    biolum_director.extend(bytearray(server.BIOLUM_DIRECTOR_TELEMETRY_CAPACITY * server.BIOLUM_DIRECTOR_ENTRY_BYTES))
+    server.BIOLUM_DIRECTOR_ENTRY.pack_into(
+        biolum_director,
+        server.BIOLUM_DIRECTOR_HEADER_BYTES,
+        2601,
+        10.0,
+        -40.0,
+        25.0,
+        0.45,
+        0.2,
+        0.9,
+        1,
+        2,
+        1 << 0,
+    )
+    server.BIOLUM_DIRECTOR_ENTRY.pack_into(
+        biolum_director,
+        server.BIOLUM_DIRECTOR_HEADER_BYTES + server.BIOLUM_DIRECTOR_ENTRY_BYTES,
+        2602,
+        11.0,
+        -41.0,
+        26.0,
+        0.85,
+        0.65,
+        0.35,
+        server.BIOLUM_DIRECTOR_MAX_PREDATOR_CONTACTS,
+        server.BIOLUM_DIRECTOR_MAX_TOUCH_RIPPLES,
+        biolum_director_flags,
+    )
+    biolum_director_path = root / "Dump_BIOLUMINESCENCE_DIRECTOR.bin"
+    biolum_director_path.write_bytes(biolum_director)
+    parsed_biolum_director = server.parse_dump_file(biolum_director_path)
+    assert parsed_biolum_director["type"] == "biolum_director_blackbox"
+    assert parsed_biolum_director["magicHex"] == "0x42494F4C"
+    assert parsed_biolum_director["headerBytes"] == server.BIOLUM_DIRECTOR_HEADER_BYTES
+    assert parsed_biolum_director["entrySize"] == server.BIOLUM_DIRECTOR_ENTRY_BYTES
+    assert parsed_biolum_director["declaredEntryCount"] == server.BIOLUM_DIRECTOR_TELEMETRY_CAPACITY
+    assert parsed_biolum_director["nonEmptyEntryCount"] == 2
+    assert parsed_biolum_director["latest"]["frame"] == 2602
+    assert parsed_biolum_director["latest"]["flagLabels"] == [
+        "daylight-masked",
+        "predator-dim",
+        "eclipse-masked",
+        "camera-nonfinite",
+        "zone-registry-overflow",
+    ]
+    assert parsed_biolum_director["reasonFlagLabels"] == [
+        "nonfinite-intensity-phase",
+        "camera-nonfinite",
+    ]
+    assert "reason_flags" in parsed_biolum_director["warnings"]
+    assert "nonfinite_intensity_phase" in parsed_biolum_director["warnings"]
+    assert "camera_nonfinite" in parsed_biolum_director["warnings"]
+    assert "zone_registry_overflow" in parsed_biolum_director["warnings"]
+    renamed_biolum_director_path = root / "Renamed_BiolumDirector.h8dump"
+    renamed_biolum_director_path.write_bytes(biolum_director)
+    assert server.parse_dump_file(renamed_biolum_director_path)["type"] == "biolum_director_blackbox"
 
     foveated = server.FOVEATED_SIMULATION_HEADER.pack(server.FOVEATED_SIMULATION_MAGIC, 3, 2)
     foveated_hash_0 = server.compute_foveated_simulation_state_hash(5, 1, 2, 2, 1)
@@ -3374,6 +9743,61 @@ def main() -> int:
     mutation += server.FAUNA_MUTATION_ENTRY.pack(23, 102, 7, 4, 3, 5, 0.25, 0.5, 0.75, 0, 0)
     (root / "Dump_ECOLOGY_MUTATION_DIRECTOR.bin").write_bytes(mutation)
 
+    genetics = server.BIOMASS_HEADER.pack(server.FAUNA_GENETICS_MAGIC, 2, server.FAUNA_GENETICS_ENTRY.size, 0, 300)
+    genetics += server.FAUNA_GENETICS_ENTRY.pack(
+        24,
+        0x3060001,
+        16,
+        12,
+        48,
+        0,
+        0.2,
+        0.4,
+        0.6,
+        0.25,
+        320.0,
+        0xABCD0001,
+        0x87654321,
+        0x00000010,
+        0,
+        0,
+    )
+    genetics += server.FAUNA_GENETICS_ENTRY.pack(
+        25,
+        0x3060002,
+        18,
+        20,
+        70,
+        2,
+        0.3,
+        0.5,
+        0.7,
+        0.9,
+        650.0,
+        0xABCD0002,
+        0x87654321,
+        0x00000010,
+        1,
+        0,
+    )
+    genetics_path = root / "Dump_SHINOBU_306.bin"
+    genetics_path.write_bytes(genetics)
+    parsed_genetics = server.parse_dump_file(genetics_path)
+    assert parsed_genetics["type"] == "fauna_genetics"
+    assert parsed_genetics["magicHex"] == "0x00474E474F434548"
+    assert parsed_genetics["entrySize"] == server.FAUNA_GENETICS_ENTRY.size
+    assert parsed_genetics["entryCount"] == 2
+    assert parsed_genetics["latest"]["frame"] == 25
+    assert parsed_genetics["latest"]["flagLabels"] == ["invalid-mask"]
+    assert parsed_genetics["latest"]["patternHistogram"][:10] == [1, 2, 3, 4, 5, 6, 7, 8, 0, 1]
+    assert "invalid_mask" in parsed_genetics["warnings"]
+    assert "genome_count_out_of_range" in parsed_genetics["warnings"]
+    assert "extraction_count_mismatch" in parsed_genetics["warnings"]
+    assert "burst_over_500us" in parsed_genetics["warnings"]
+    renamed_genetics_path = root / "Renamed_FaunaGenetics.h8dump"
+    renamed_genetics_path.write_bytes(genetics)
+    assert server.parse_dump_file(renamed_genetics_path)["type"] == "fauna_genetics"
+
     live = server.LIVE_TELEMETRY_ENTRY.pack(
         server.LIVE_TELEMETRY_MAGIC,
         2,
@@ -3451,6 +9875,36 @@ def main() -> int:
     assert missing_data["files"] == []
     assert not missing_logs.exists()
 
+    no_data_logs = root / "NoDataAgentLogs"
+    no_data_logs.mkdir()
+    (no_data_logs / "Dump_SARGASSUM_FOOD_CHAIN.h8dump").write_bytes(b"")
+    (no_data_logs / "Dump_SARGASSUM_BOID_SENSORY.h8dump").write_bytes(b"")
+    server.AGENT_LOGS = no_data_logs
+    try:
+        no_data_dump_data = server.collect_dumps()
+    finally:
+        server.AGENT_LOGS = old_logs
+    assert any(
+        file["name"] == "Dump_SARGASSUM_FOOD_CHAIN.h8dump"
+        and file["type"] == "sargassum_food_chain_blackbox"
+        and file["warnings"] == ["truncated_header"]
+        and file["headerBytes"] == server.SARGASSUM_FOOD_CHAIN_HEADER_BYTES
+        and file["entrySize"] == server.SARGASSUM_FOOD_CHAIN_ENTRY_BYTES
+        and file["declaredEntryCount"] == 0
+        and file["returnedEntryCount"] == 0
+        for file in no_data_dump_data["files"]
+    )
+    assert any(
+        file["name"] == "Dump_SARGASSUM_BOID_SENSORY.h8dump"
+        and file["type"] == "sargassum_boid_sensory_blackbox"
+        and file["warnings"] == ["truncated_header"]
+        and file["headerBytes"] == server.SARGASSUM_BOID_SENSORY_HEADER_BYTES
+        and file["entrySize"] == server.SARGASSUM_BOID_SENSORY_ENTRY_BYTES
+        and file["declaredEntryCount"] == 0
+        and file["returnedEntryCount"] == 0
+        for file in no_data_dump_data["files"]
+    )
+
     server.AGENT_LOGS = root
     original_parse_dump_file = server.parse_dump_file
 
@@ -3480,6 +9934,7 @@ def main() -> int:
     parsed_types = {file["type"] for file in dump_data["files"]}
     assert "macro_swarm" in parsed_types
     assert "fauna_mutation" in parsed_types
+    assert "fauna_genetics" in parsed_types
     assert "live_telemetry" in parsed_types
     assert "crash_telemetry_buffer" in parsed_types
     assert "simulation_bucket_blackbox" in parsed_types
@@ -3487,6 +9942,23 @@ def main() -> int:
     assert "world_chunk_residency_blackbox" in parsed_types
     assert "global_telemetry_bus_blackbox" in parsed_types
     assert "data_monolith_telemetry_blackbox" in parsed_types
+    assert "vault_sovereignty_telemetry_blackbox" in parsed_types
+    assert "arm64_alignment_telemetry_blackbox" in parsed_types
+    assert "haptic_synthesis_telemetry_blackbox" in parsed_types
+    assert "vocal_warning_telemetry_blackbox" in parsed_types
+    assert "granular_audio_telemetry_blackbox" in parsed_types
+    assert "prologue_audio_transition_blackbox" in parsed_types
+    assert "audio_synthesis_telemetry_blackbox" in parsed_types
+    assert "vocal_bank_synthesis_blackbox" in parsed_types
+    assert "adaptive_stem_mixer_blackbox" in parsed_types
+    assert "camera_juice_telemetry_blackbox" in parsed_types
+    assert "material_decay_blackbox" in parsed_types
+    assert "sargassum_food_chain_blackbox" in parsed_types
+    assert "sargassum_boid_sensory_blackbox" in parsed_types
+    assert "marine_snow_vfx_blackbox" in parsed_types
+    assert "propwash_gpu_blackbox" in parsed_types
+    assert "carve_debris_blackbox" in parsed_types
+    assert "biolum_pulse_blackbox" in parsed_types
     assert "foveated_simulation_blackbox" in parsed_types
     assert "input_determinism_blackbox" in parsed_types
     assert "origin_shift_blackbox" in parsed_types
@@ -3526,6 +9998,42 @@ def main() -> int:
     assert "construction_validation_blackbox" in parsed_types
     assert "construction_socket_blackbox" in parsed_types
     assert "construction_holography_blackbox" in parsed_types
+
+    def assert_collected_dump(
+        name: str,
+        expected_type: str,
+        expected_warning: str,
+        path_fragment: str | None = None,
+    ) -> None:
+        assert any(
+            file.get("name") == name
+            and file.get("type") == expected_type
+            and expected_warning in file.get("warnings", [])
+            and (path_fragment is None or path_fragment in file.get("path", ""))
+            for file in dump_data["files"]
+        ), f"missing collected {expected_type} {name} warning={expected_warning}"
+
+    assert_collected_dump(
+        "Dump_SARGASSUM_FOOD_CHAIN.h8dump",
+        "sargassum_food_chain_blackbox",
+        "invalid_header",
+    )
+    assert_collected_dump(
+        "CopiedInvalidSargassumFoodChain.h8dump",
+        "sargassum_food_chain_blackbox",
+        "invalid_header",
+    )
+    assert_collected_dump(
+        "Dump_SARGASSUM_BOID_SENSORY.h8dump",
+        "sargassum_boid_sensory_blackbox",
+        "invalid_header",
+    )
+    assert_collected_dump(
+        "CopiedInvalidSargassumBoidSensory.h8dump",
+        "sargassum_boid_sensory_blackbox",
+        "invalid_header",
+    )
+
     assert len(dump_data["frameSeries"]) >= 3
     assert any(point["jitterMs"] == 10.0 for point in dump_data["frameSeries"])
     assert any(point["source"] == "runtime_telemetry.bin" for point in dump_data["frameSeries"])
@@ -3553,6 +10061,23 @@ def main() -> int:
         "world_chunk_residency_blackbox",
         "global_telemetry_bus_blackbox",
         "data_monolith_telemetry_blackbox",
+        "vault_sovereignty_telemetry_blackbox",
+        "arm64_alignment_telemetry_blackbox",
+        "haptic_synthesis_telemetry_blackbox",
+        "vocal_warning_telemetry_blackbox",
+        "granular_audio_telemetry_blackbox",
+        "prologue_audio_transition_blackbox",
+        "audio_synthesis_telemetry_blackbox",
+        "vocal_bank_synthesis_blackbox",
+        "adaptive_stem_mixer_blackbox",
+        "camera_juice_telemetry_blackbox",
+        "material_decay_blackbox",
+        "sargassum_food_chain_blackbox",
+        "sargassum_boid_sensory_blackbox",
+        "marine_snow_vfx_blackbox",
+        "propwash_gpu_blackbox",
+        "carve_debris_blackbox",
+        "biolum_pulse_blackbox",
         "foveated_simulation_blackbox",
         "input_determinism_blackbox",
         "origin_shift_blackbox",
@@ -3633,6 +10158,7 @@ def main() -> int:
     assert health_payload["status"] == "ok"
     assert health_response.headers["x-content-type-options"] == "nosniff"
 
+    remove_tree_with_retry(root)
     print("telemetry dashboard smoke ok")
     return 0
 

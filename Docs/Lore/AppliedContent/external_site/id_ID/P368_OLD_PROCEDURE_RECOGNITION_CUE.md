@@ -9,32 +9,37 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Old Procedure Recognition Cue"
+title: "Isyarat Pengenalan Prosedur Lama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Old Procedure Recognition Cue
+# Isyarat Pengenalan Prosedur Lama
 
-ID LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+HECTON-8 menambatkan motivasi karakter pada prosedur. Protagonis mengenali formulir keselamatan evakuasi lama dan melihat bagaimana ia dibalik: hitungan pekerja didegradasi, kolom saksi disegel, dan bahasa rute-aman dipakai untuk melestarikan klaim, bukan nyawa.
 
 ## Scanner
 
-ID LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+Stempel rute-aman ada. Hitungan pekerja ditimpa dua tinta. Kolom saksi manual disegel. Formulir ini dibuat untuk menangkap kebohongan seperti ini sebelum seseorang menjadikannya kebijakan.
 
 ## Terminal
 
-ID LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+FORMULIR KONTINUITAS EVAKUASI / SERTIFIKASI RUTE-AMAN
+rute: jalur keluar tambahan
+penghuni dinyatakan: hitungan terdegradasi diterima
+saksi manual: disegel oleh Kantor Kontinuitas
+koreksi lapangan: daftar pekerja tidak cocok dengan tag ruang pompa
+status: pelestarian klaim, bukan izin ekstraksi.
 
 ## Audio
 
-ID LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+Kau mengenal formulir ini. Ia seharusnya mencegah ruangan dihitung kosong sementara orang masih bernapas di dalamnya.
 
 ## Field Note
 
-ID LOC HOLD: Use where room evidence contradicts a clean procedural label.
+Formulir itu seharusnya memaksa hitungan lagi. Di sini ia memaksa diam.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/id_ID. -->

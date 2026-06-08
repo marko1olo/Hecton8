@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Lantern Drift Codex Card"
+title: "כרטיס קודקס: סחף פנסים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Lantern Drift Codex Card
+# כרטיס קודקס: סחף פנסים
 
-HE LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+סחף פנסים מונע מהיופי של HECTON-8 להפוך לטפט. הוא יכול להוביל דרך מבנה זוהר ברור, ואז לבגוד בשחקן כשהוא רושם רעש, פחד ומטען סערה. מים בהירים הם ניווט וחשיפה באותו זמן.
 
 ## Scanner
 
-HE LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Bloom של סחף פנסים. פלנקטון ביולומינסנטי מסמן זרם ופסולת ברצועות. מועיל לקווי מתאר; מסוכן כשרעש כלים הופך אותו לשובל מואר.
 
 ## Terminal
 
-HE LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+דגימה / BLOOM סחף פנסים / תפקיד: אירוע ראות רדוד, סקיצת זרם, רשם הפרעה / קריאה בטוחה: אור שפה יציב, הילות פסולת, התאמת זרם ושארית / דחה: מסדרון שקרי טעון סערה, bloom שמשטח סכנות קטנות, שובל כלי שמבהיר מאחורי המפעיל / הערת מסלול: אור הוא נתון, לא מחסה.
 
 ## Audio
 
-HE LOC HOLD: Pretty is not safe. Pretty is a reading.
+הזוהר לא עוזר לך. הוא מדווח על מה שהמים שמעו.
 
 ## Field Note
 
-HE LOC HOLD: Card teaches that beauty can be route information and route deception.
+השתמש ב-bloom לצלליות. אל תתקן ברעש בתוכו. אם הזוהר עוקב אחריך, משהו אחר יכול לעקוב אחריו.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/he_IL. -->

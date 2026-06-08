@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "HE LOC HOLD: המושבה והעובדים"
+title: "המושבה והעובדים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: המושבה והעובדים
+# המושבה והעובדים
 
-HE LOC HOLD: אינדקס עובדים ששוחזר: יומני מים, מגשי עדות relay, חותמות מסלול brine, תגי תיקון triage ודחיות vent-forge שומרים שמות דרך עבודה.
+worker index ששוחזר: water ledgers, relay witness trays, brine route stamps, triage repair tags ו-vent-forge rejects משמרים שמות דרך עבודה.
 
 ## Scanner
 
-HE LOC HOLD: WORKER INDEX // חמישה רשומות שם הקשורות למסלול. pump, relay, brine, triage, forge. לשמור tag chain לפני פירוק חומרה.
+WORKER INDEX // חמישה רשומי שמות קשורי מסלול. Pump, relay, brine, triage, forge. לשמור tag chain לפני הסרת hardware.
 
 ## Terminal
 
-HE LOC HOLD: KEELMARK LOSS DESK: לשמור name tags אם הם קשורים ל-route, claim, custody או pressure work.
+KEELMARK LOSS DESK: לשמור name tags כשהם קשורים ל-route, claim, custody או pressure work.
 
 ## Audio
 
-HE LOC HOLD: Mara Venn, pump chief: אם ה-pump שר נקי, רשום. אם הוא מפסיק, רוץ למעלה.
+Mara Venn, pump chief: אם המשאבה שרה נקי, רשום. אם היא מפסיקה לשיר, רוץ למעלה.
 
 ## Field Note
 
-HE LOC HOLD: לא משפחה. עבודה. שם על pump card מסביר למה דלת נשארה פתוחה.
+לא משפחה. עבודה. שם על pump card מסביר למה דלת נשארה פתוחה.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/he_IL. -->

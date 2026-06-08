@@ -56,6 +56,33 @@ public sealed class GlobalWeatherDirectorEditTests
         Assert.That(source, Does.Contain("GlobalRegistryServiceSlot.CelestialEngineRuntime"), "Weather director must receive celestial hot-swap updates.");
     }
 
+    [Test]
+    public void BiomeLutDepthRejectsInactiveBiomeMatrixAndFallsBackToPlayerSnapshot()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "Environment", "GlobalWeatherDirector.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+        string resolveDependencies = ExtractMethodBody(source, "private void ResolveDependencies()");
+        string hotSwap = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+        string resolveDepth = ExtractMethodBody(source, "private float ResolveCurrentBiomeDepthMeters()");
+
+        Assert.That(source, Does.Contain("using Hecton8.World;"));
+        Assert.That(source, Does.Contain("private IPlayerRuntimeContext _cachedPlayerContext;"));
+        Assert.That(resolveDependencies, Does.Contain("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _cachedBiomeMatrix);"));
+        Assert.That(resolveDependencies, Does.Contain("_cachedPlayerContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;"));
+        Assert.That(hotSwap, Does.Contain("GlobalRegistryServiceSlot.BiomeMatrixRuntime"));
+        Assert.That(hotSwap, Does.Contain("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _cachedBiomeMatrix);"));
+        Assert.That(hotSwap, Does.Contain("GlobalRegistryServiceSlot.Player"));
+        Assert.That(resolveDepth, Does.Contain("biomeMatrix == null || !biomeMatrix.isActiveAndEnabled"));
+        Assert.That(resolveDepth, Does.Contain("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrix);"));
+        Assert.That(resolveDepth, Does.Contain("biomeMatrix.isActiveAndEnabled"));
+        Assert.That(resolveDepth, Does.Contain("math.isfinite(biomeMatrix.CurrentDepthMeters)"));
+        Assert.That(resolveDepth, Does.Contain("playerContext.IsInitialized"));
+        Assert.That(resolveDepth, Does.Contain("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)"));
+        Assert.That(resolveDepth, Does.Contain("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u"));
+        Assert.That(resolveDepth, Does.Contain("return math.max(0f, movementState.DepthMeters);"));
+        Assert.That(resolveDepth, Does.Not.Contain("return biomeMatrix != null ? math.max(0f, biomeMatrix.CurrentDepthMeters) : 0f;"));
+    }
+
     private static T ReadPrivate<T>(object target, string fieldName)
     {
         FieldInfo field = target.GetType().GetField(fieldName, InstancePrivateFlags);
@@ -77,5 +104,29 @@ public sealed class GlobalWeatherDirectorEditTests
         int end = source.IndexOf(endToken, start, System.StringComparison.Ordinal);
         Assert.Greater(end, start, $"Missing end token: {endToken}");
         return source.Substring(start, end - start);
+    }
+
+    private static string ExtractMethodBody(string source, string signature)
+    {
+        int start = source.IndexOf(signature, System.StringComparison.Ordinal);
+        Assert.GreaterOrEqual(start, 0, $"Missing method: {signature}");
+        int brace = source.IndexOf('{', start);
+        Assert.GreaterOrEqual(brace, 0, $"Missing method body: {signature}");
+
+        int depth = 0;
+        for (int i = brace; i < source.Length; i++)
+        {
+            if (source[i] == '{')
+                depth++;
+            else if (source[i] == '}')
+            {
+                depth--;
+                if (depth == 0)
+                    return source.Substring(brace, i - brace + 1);
+            }
+        }
+
+        Assert.Fail("Could not extract method body for " + signature);
+        return string.Empty;
     }
 }

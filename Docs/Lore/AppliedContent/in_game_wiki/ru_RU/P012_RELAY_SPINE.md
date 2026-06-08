@@ -2,39 +2,41 @@
 packet_id: P012_RELAY_SPINE
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: transit.relay_spine
-unlock_id: unlock.first_relay_buffer
-poi_tags: poi.relay_buffer;poi.packet_spool
+unlock_id: unlock.first_stale_relay_buffer
+poi_tags: poi.relay_buffer;poi.packet_age_tag
 biome_tags: biome.drowned_colony;biome.service_canyons
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relay Spine"
+title: "Релейный хребет"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Spine
+# Релейный хребет
 
-Relay Spine - медленная нервная система человеческого пространства: beam schedules, packet buffers, custody stamps, route insurance и задержанная легитимность. Она держит цивилизацию связанной, но не превращает затопленную комнату в спасение.
+Релейный хребет - медленный скелет связи: лучевые окна, пакетные буферы, штампы хранения и графики повторов. Он переносит улики, претензии и приказы через межзвездную дистанцию, но не переносит кислород в затопленный отсек.
+
+На HECTON-8 сообщение может быть действительным, засвидетельствованным и бесполезно поздним. Правда и спасение - разные логистические задачи.
 
 ## Scanner
 
-Старый relay buffer. Возраст исходящего пакета превышает локальную спасательную ценность.
+Старый буфер ретранслятора. Возраст исходящего пакета уже не имеет значения для местного спасения. Хэш хранения цел; окно ответа мертво.
 
 ## Terminal
 
-Packet queued. Light-delay route accepted. Priority dispute unresolved. Human-response estimate: non-operational.
+РЕЛЕЙНЫЙ ХРЕБЕТ // Пакет поставлен в очередь через местный Aegir, Luyten Junction и архивный путь Sol. Маршрут со световой задержкой принят. Спор приоритета не решен. Оценка человеческого ответа: неоперационна для текущего окна выживания.
 
 ## Audio
 
-Relay не сломан. В этом и проблема. Он делает ровно то, что позволяет расстояние.
+Реле не сломано. В этом и проблема. Оно делает ровно то, что позволяет расстояние.
 
 ## Field Note
 
-Сообщение может быть правдой и все равно прийти, когда ты уже кости.
+Сообщение может быть правдой и все равно прийти после твоих костей.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/ru_RU. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "Глобальні пояси глибини океану"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# Глобальні пояси глибини океану
 
-UK LOC HOLD: HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.
+Океан HECTON-8 читається поясами, а не однією лінією дна. Фотичний шельф ще допускає світло, уламки, водорості й необережних пілотів. Промисловий шельф тримає кабельний риф, клітки труб і старі вантажні палуби. Нижче ропні сходи гнуть сонар і баласт. Абісальні машинні поля карають ремонт. У басейні Atlas тиск поводиться як юрисдикція.
 
 ## Scanner
 
-UK LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+Мапа глибин. Перший шельф пробачає поганий баласт; нижча вода виставляє рахунок за кожну помилку тиском, жаром і тишею.
 
 ## Terminal
 
-UK LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+ПОЯСИ: 0-250 м фотичний шельф здобичі; 250-1200 м промисловий шельф і кабельний риф; 1200-2800 м ропні сходи/каньйон; 2800-4300 м абісальне машинне поле; 4300-5600 м басейн Atlas.
 
 ## Audio
 
-UK LOC HOLD: Every band changes what the world allows you to do.
+Кожні сто метрів забирають у тебе одну звичку.
 
 ## Field Note
 
-UK LOC HOLD: Depth is not a number. It is a ruleset.
+Глибина на HECTON-8 - закон, погода, кордон і голод під одним числом.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/uk_UA. -->

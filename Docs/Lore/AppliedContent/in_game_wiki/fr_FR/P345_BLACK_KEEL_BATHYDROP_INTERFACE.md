@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Black Keel Bathydrop Interface"
+title: "Interface bathydrop Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Black Keel Bathydrop Interface
+# Interface bathydrop Black Keel
 
-FR LOC HOLD: The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+Le premier blocage d'évasion est l'ingénierie. Black Keel existe encore au-dessus de l'eau, mais l'interface bathydrop endommagée ne reconnecte pas surface, orbite et timing par volonté seule. Réparer demande salvage profond, joints propres, géométrie relais active et fenêtre de lancement acceptée.
 
 ## Scanner
 
-FR LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+Interface bathydrop endommagée : la chaîne de retour surface ne ferme pas sans pièces de pression, timing relais et loquet d'ascension propre.
 
 ## Terminal
 
-FR LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+RAPPORT CAPSULE : trim bouclier thermique intact. Porte de flottabilité pliée. Mât com noyé. Loquet d'ascension contaminé. Réparation exige céramique pression, scellant, calcul relais et fenêtre vérifiée.
 
 ## Audio
 
-FR LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
+Tu n'as pas perdu tout le vaisseau. Tu as perdu la chaîne qui rend le vaisseau utile.
 
 ## Field Note
 
-FR LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Dossier d'évasion première heure : le transporteur est présent, mais la chaîne entre joueur, mer, surface et orbite est cassée en pièces nommées.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/fr_FR. -->

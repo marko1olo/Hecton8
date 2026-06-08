@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Escada de salmoura
 
-Camadas de salmoura preservam, escondem, carregam e separam. Uma rota impossível em água aberta pode ser sobrevivível com densidade, calor e lastro.
+Escadas de salmoura se formam onde água salgada densa, calor de respiradouros e fluxo lento de bacia se empilham em fronteiras nítidas. Para um piloto descuidado, são paredes invisíveis: a flutuabilidade responde tarde, o sonar curva, luzes borram, e uma descida pode virar escorregão. Para um piloto cuidadoso, são rotas. Um submersível pode montar uma camada, atravessar outra, esconder-se sob uma cortina ou usar elevação térmica para cruzar uma lacuna que a água aberta tornaria impossível. As camadas também preservam destroços e traços biológicos com paciência cruel. Corpos, caixas de ferramentas, cofres de amostra e drones antigos podem ficar anos no mesmo degrau sem mistura. A Escada de salmoura ensina uma regra central de HECTON-8: profundidade se negocia com a estrutura do oceano, não se conquista apenas com força de casco.
 
 ## Scanner
 
-Camada de salmoura densa. Retornos de sonar dobram na fronteira. Modelo de flutuabilidade não confiável.
+Camada de salmoura de alta densidade. O sonar curva na fronteira; resposta de lastro atrasada. Pluma térmica subindo por cisalhamento em degraus.
 
 ## Terminal
 
-Alinhamento do thermal tap completo. Crescimento de substrato acima do esperado. Pedido Atlas adiado.
+TOMADA TÉRMICA ALINHADA. DEGRAU DE DENSIDADE MAPEADO. CRESCIMENTO DE SUBSTRATO ACIMA DA PREVISÃO. PEDIDO DE ROTA ATLAS ADIADO POR OPERATIONS.
 
 ## Audio
 
-Existe uma escada inteira aqui embaixo, se você parar de tratar água como uma coisa só.
+Existe uma escada aqui embaixo. Ela é feita de sal, calor e paciência.
 
 ## Field Note
 
-A classe do casco diz quando o metal desiste. A salmoura diz quando você foi arrogante.
+A classe do casco diz quando o metal desiste. A salmoura diz quando você tratou o oceano como plano.
 
 <!-- In-Game Wiki; generated from P007_BRINE_STAIR/pt_BR. -->

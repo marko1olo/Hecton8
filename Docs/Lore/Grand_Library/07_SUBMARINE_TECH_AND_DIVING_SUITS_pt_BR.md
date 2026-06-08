@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TECNOLOGIA SUBMARINA E TRAJES DE MERGULHO DOS SAQUEADORES
 
 > **Fonte:** Keelmark Loss Desk, Avaliação de Risco Atuarial para Operações de Salvamento Independentes.

@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "דליפה לרשם ציבורי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# דליפה לרשם ציבורי
 
-HE LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.
+דליפה לרשם ציבורי היא סוף של אמת חלקית. השחקן שולח מספיק ראיות כדי להקשות על מחיקה, אבל לא מספיק כדי לשלוט ב-Atlas, בתגובת Deep Reach או במה שמוסדות ציבור יעשו עם החבילה.
 
 ## Scanner
 
-HE LOC HOLD: You can leak truth before you understand all of it.
+witness hash התקבל. אמת חלקית יוצאת לפני custody מלא.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
+נתיב רשם ציבורי: Tau Ceti packet notary קיבל witness hash; payload חלקי; ערעור claimant סביר; חלון תגובת Deep Reach מתחיל לאחר אישור relay.
 
 ## Audio
 
-HE LOC HOLD: The truth leaves first. You may not like who reads it.
+האמת יוצאת ראשונה. אולי לא תאהב מי יקרא אותה.
 
 ## Field Note
 
-HE LOC HOLD: Public does not mean safe. It means harder to erase.
+ציבורי אינו בטוח. הוא רק קשה יותר למחיקה.
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/he_IL. -->

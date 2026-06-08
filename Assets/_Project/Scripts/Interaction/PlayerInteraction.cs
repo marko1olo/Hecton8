@@ -61,6 +61,8 @@ namespace Hecton8.Interaction
         private static int s_x001PlayerInteractionSignalPushDropCount;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private const string DefaultLookTargetPrompt = "INTERACT";
+        private const string PlayerActionMapName = "Player";
+        private const string InteractActionName = "Interact";
         private static readonly char[] s_promptScratch = new char[PlayerLookTargetPromptCache.MaxCharsPerPrompt];
 
         // ====================================================================
@@ -124,6 +126,7 @@ namespace Hecton8.Interaction
         private Hecton8.Interaction.PhysicalInteractionHandler _physicalInteractionHandler;
         private IAudioService _audioService;
         private IPlayerInventoryService _playerInventoryService;
+        private IInputBindingService _subscribedInputBindingService;
         private Ray           _ray;
         private static readonly int _DefaultInteractableLayerMask = HectonLayerMasks.InteractableLayerMask;
         private static string _activeInteractKey = "E";
@@ -142,6 +145,9 @@ namespace Hecton8.Interaction
         private bool          _registeredToLateFrameTick;
         private bool          _hotSwapListenerRegistered;
         private uint          _lastPlayerInputSignalSequence;
+        private Action<string, string, int, string> _rebindCompletedAction;
+        private Action<string, string, int> _rebindCanceledAction;
+        private Action _bindingOverridesChangedAction;
 
         // ====================================================================
         // PUBLIC ACCESSORS
@@ -233,7 +239,9 @@ namespace Hecton8.Interaction
             }
 
             TryRegisterHotSwapListener();
+            EnsureCachedBindingDelegates();
             RefreshCachedRegistryServices();
+            SubscribeInputBindingServiceIfAvailable(GlobalRegistry.InputBinding);
             if (Application.isPlaying)
             {
                 InteractableRegistry.EnsureSceneRegistryCold();
@@ -253,7 +261,9 @@ namespace Hecton8.Interaction
             }
 
             TryRegisterHotSwapListener();
+            EnsureCachedBindingDelegates();
             RefreshCachedRegistryServices();
+            SubscribeInputBindingServiceIfAvailable(GlobalRegistry.InputBinding);
             if (Application.isPlaying)
             {
                 InteractableRegistry.EnsureSceneRegistryCold();
@@ -271,12 +281,30 @@ namespace Hecton8.Interaction
             }
 
             TryUnregisterLateFrameTickable();
+            UnsubscribeInputBindingService();
             TryUnregisterHotSwapListener();
             ClearQueuedStaticAudio();
             _audioService = null;
             _playerInventoryService = null;
 
             // Clean up hover state if disabled mid-hover.
+            ClearHover();
+        }
+
+        private void OnDestroy()
+        {
+            if (_registeredToTickManager)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registeredToTickManager = false;
+            }
+
+            TryUnregisterLateFrameTickable();
+            UnsubscribeInputBindingService();
+            TryUnregisterHotSwapListener();
+            ClearQueuedStaticAudio();
+            _audioService = null;
+            _playerInventoryService = null;
             ClearHover();
         }
 
@@ -302,6 +330,15 @@ namespace Hecton8.Interaction
                         return;
 
                     BaselineInteractInputSignalSequence();
+                    RefreshActiveInteractKeyCache();
+                    return;
+
+                case GlobalRegistryServiceSlot.InputBinding:
+                    UnsubscribeInputBindingService();
+                    if (!isActiveAndEnabled)
+                        return;
+
+                    SubscribeInputBindingServiceIfAvailable(currentService as IInputBindingService);
                     RefreshActiveInteractKeyCache();
                     return;
 
@@ -376,6 +413,67 @@ namespace Hecton8.Interaction
             return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
         }
 
+        private void EnsureCachedBindingDelegates()
+        {
+            _rebindCompletedAction ??= HandleRebindCompleted; // COLD ALLOC: Action<string,string,int,string>[1] - cached input binding listener - owner: PlayerInteraction
+            _rebindCanceledAction ??= HandleRebindCanceled; // COLD ALLOC: Action<string,string,int>[1] - cached input binding listener - owner: PlayerInteraction
+            _bindingOverridesChangedAction ??= HandleBindingOverridesChanged; // COLD ALLOC: Action[1] - cached input binding listener - owner: PlayerInteraction
+        }
+
+        private void SubscribeInputBindingServiceIfAvailable(IInputBindingService bindingService)
+        {
+            if (_subscribedInputBindingService != null || bindingService == null)
+                return;
+
+            EnsureCachedBindingDelegates();
+            _subscribedInputBindingService = bindingService;
+            _subscribedInputBindingService.OnRebindCompleted += _rebindCompletedAction;
+            _subscribedInputBindingService.OnRebindCanceled += _rebindCanceledAction;
+            _subscribedInputBindingService.OnOverridesLoaded += _bindingOverridesChangedAction;
+            _subscribedInputBindingService.OnOverridesSaved += _bindingOverridesChangedAction;
+            _subscribedInputBindingService.OnOverridesCleared += _bindingOverridesChangedAction;
+        }
+
+        private void UnsubscribeInputBindingService()
+        {
+            if (_subscribedInputBindingService == null)
+                return;
+
+            _subscribedInputBindingService.OnRebindCompleted -= _rebindCompletedAction;
+            _subscribedInputBindingService.OnRebindCanceled -= _rebindCanceledAction;
+            _subscribedInputBindingService.OnOverridesLoaded -= _bindingOverridesChangedAction;
+            _subscribedInputBindingService.OnOverridesSaved -= _bindingOverridesChangedAction;
+            _subscribedInputBindingService.OnOverridesCleared -= _bindingOverridesChangedAction;
+            _subscribedInputBindingService = null;
+        }
+
+        private static void HandleRebindCompleted(string actionName, string actionMap, int bindingIndex, string display)
+        {
+            if (!string.Equals(actionMap, PlayerActionMapName, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(actionName, InteractActionName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            RefreshActiveInteractKeyCache();
+        }
+
+        private static void HandleRebindCanceled(string actionName, string actionMap, int bindingIndex)
+        {
+            if (!string.Equals(actionMap, PlayerActionMapName, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(actionName, InteractActionName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            RefreshActiveInteractKeyCache();
+        }
+
+        private static void HandleBindingOverridesChanged()
+        {
+            RefreshActiveInteractKeyCache();
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_hotSwapListenerRegistered || !Application.isPlaying)
@@ -416,7 +514,7 @@ namespace Hecton8.Interaction
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -511,7 +609,7 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            string display = inputManager.GetBindingDisplayString("Interact");
+            string display = inputManager.GetBindingDisplayString(InteractActionName, PlayerActionMapName);
             _activeInteractKey = string.IsNullOrEmpty(display) ? "E" : display;
         }
 
@@ -780,14 +878,13 @@ namespace Hecton8.Interaction
 
         private void ExecuteInteraction()
         {
-            // Audio: firm metallic confirmation.
-            QueueStaticAudio(interactSound, 0.6f);
-
+            IInteractable target = _currentHovered;
             if (_physicalInteractionHandler != null &&
-                _physicalInteractionHandler.TryHandleInteraction(_currentHovered, transform, in _currentTargetInfo))
+                _physicalInteractionHandler.TryHandleInteraction(target, transform, in _currentTargetInfo))
             {
+                QueueDefaultInteractionFeedback(target);
                 InteractionEvents.TryRaiseInteractionStarted(
-                    _currentHovered, transform);
+                    target, transform);
                 return;
             }
 
@@ -796,14 +893,36 @@ namespace Hecton8.Interaction
                 inventory != null &&
                 _currentPickupSource.TryHandleInventoryPickup(inventory, transform))
             {
+                QueueDefaultInteractionFeedback(target);
                 InteractionEvents.TryRaiseInteractionStarted(
-                    _currentHovered, transform);
+                    target, transform);
                 return;
             }
 
-            _currentHovered.Interact(transform);
-            InteractionEvents.TryRaiseInteractionStarted(
-                _currentHovered, transform);
+            target.Interact(transform);
+            QueueDefaultInteractionFeedback(target);
+            TryRaiseDefaultInteractionStarted(target, transform);
+        }
+
+        private static bool TryRaiseDefaultInteractionStarted(IInteractable target, Transform interactor)
+        {
+            if (IsInteractionStartedEventOwner(target))
+                return false;
+
+            return InteractionEvents.TryRaiseInteractionStarted(target, interactor);
+        }
+
+        private void QueueDefaultInteractionFeedback(IInteractable target)
+        {
+            if (IsInteractionStartedEventOwner(target))
+                return;
+
+            QueueStaticAudio(interactSound, 0.6f);
+        }
+
+        private static bool IsInteractionStartedEventOwner(IInteractable target)
+        {
+            return target is IInteractionStartedEventOwner;
         }
 
         // ====================================================================

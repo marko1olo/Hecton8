@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "Begegnungsgrammatik: Glasgrazer-Lichtung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# Begegnungsgrammatik: Glasgrazer-Lichtung
 
-DE LOC HOLD: Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.
+Glasgrazer-Lichtungen sind HECTON-8s Lektion in bedingter Sicherheit. Helle, nützliche Ökologie hilft beim Lesen einer Route, doch dieselbe Route wird verdächtig, sobald die Tiere sie nicht mehr benutzen.
 
 ## Scanner
 
-DE LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+Glasgrazer-Lichtung. Frische Schabspuren, Sauerstofffilm und stabile Schalenticks deuten auf niedrigen Nahdruck. Leeres Futterfeld bedeutet Warnzustand.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+BEGEGNUNGSGRAMMATIK / GLASGRAZER-LICHTUNG / Rolle: Flachwasserkontrast, lesbare halb sichere Bahn, Test auf Räuberabwesenheit / sichere Lesung: aktives Fressen, gepaarte Rückticks, geschabte Mineralkante, sichtbare Ausstiegslinie / verwerfen: Grazer als Sicherheitsgarantie nutzen, stille Lichtung, verlassenes Futter, blockierte return-line / Routennotiz: Der Korridor ist nützlich, weil Tiere ihn jetzt benutzen, nicht weil der Ozean etwas versprochen hat.
 
 ## Audio
 
-DE LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+Die Grazer machen helle Korridore. Sie entscheiden nicht, wie lange der Korridor ihnen gehört.
 
 ## Field Note
 
-DE LOC HOLD: Use for safe-zone literacy and shallow contrast.
+Aktives Fressen: Bahn nutzen. Gepaarte Ticks: halten. Futter bleibt zurück: der Lichtung nicht mehr trauen.
 
 <!-- External Site; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/de_DE. -->

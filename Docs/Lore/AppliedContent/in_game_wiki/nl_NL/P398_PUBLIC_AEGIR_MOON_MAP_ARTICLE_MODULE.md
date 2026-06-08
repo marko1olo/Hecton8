@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Aegir Moon Route Map"
+title: "Aegir-maanroutekaart"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Aegir Moon Route Map
+# Aegir-maanroutekaart
 
-NL LOC HOLD: Aegir moon data is route data. HECTON-8 is one ocean moon inside a larger ladder of relay, radiation, scatter and tide constraints; the visible sky is part of navigation, not decoration.
+Aegir-maandata zijn routedata. HECTON-8 is de speelbare oceaanmaan, maar staat in een grotere ladder van relay-, stralings-, verstrooiings- en getijdenbeperkingen. De zichtbare hemel bepaalt mee of een reddingssignaal wordt gehoord, vertraagd, geprijsd, geweigerd of fysiek onmogelijk gemaakt.
 
 ## Scanner
 
-NL LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Systeemkaartrecord. Aegir-manen bepalen relay timing, stralingsdekking, ice scatter, getijdendruk, occultation bands, dode beacons en recovery geometry.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+PUBLIEK ARCHIEFKNOOPPUNT // AEGIR-MAANLADDER. Maannamen zijn routelabels. Elk lichaam verandert signal age, transfer risk, storm exposure, custody timing of claim reliability.
 
 ## Audio
 
-NL LOC HOLD: The map is why no one arrives the moment you ask.
+De kaart verklaart waarom niemand aankomt op het moment dat je vraagt.
 
 ## Field Note
 
-NL LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Marauder-notitie: markeer de maan, markeer daarna wat die met de route doet.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/nl_NL. -->

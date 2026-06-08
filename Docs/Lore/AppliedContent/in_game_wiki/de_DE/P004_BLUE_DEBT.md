@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Blue Debt"
+title: "Blaue Schuld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue Debt
+# Blaue Schuld
 
-Blue debt ist Marauder-Slang für druckerhaltenes Xenon-Omega-Material und verwandte Prozessrückstände. Es ist kein einzelnes Mineral, sondern eine Familie aus druckgewachsenen Gittern, Clathratstrukturen, kontaminierten Substraten und industriellen Resten, die Deep Reach für Hochenergie-Einschluss, Extremrechnen und Atlas-kompatible Infrastruktur nutzte.
+Blaue Schuld ist Marauder-Slang für druckgebundene Xenon-Omega-Rückstände und die kontaminierten Substrate, die darum gewachsen sind. Es ist kein einzelnes Mineral. Es ist eine Familie aus kalten Gittern, Clathratkäfigen, Rechenasche, fehlgeschlagenem Eindämmgel und Tiefprozessschrott, den Deep-Reach-Ausrüstung hinterließ. Unter HECTON-8s Wassersäule bleibt es ruhig genug zum Transport. In Kabinenluft kann es reaktives Gas, glasigen Staub und juristischen Ärger abgeben. Das Material zählt, weil es drei Systeme zugleich verbindet: Hochenergie-Eindämmung, Atlas-kompatiblen Speicher und die Bergungswirtschaft. Eine versiegelte Probe kann Energiezellen, Werkzeuglizenzen oder einen Weg aus der Schuld kaufen. Dieselbe Probe kann den Carrier markieren, ein Pfand auslösen, eine Unterkunft vergiften oder belegen, dass Deep Reach für etwas zurückkam, das angeblich aufgegeben war.
 
 ## Scanner
 
-Druckerhaltene Xenon-Omega-Rückstände. Nur unter feindlichen Bedingungen stabil. Nicht nahe warmer Habitatluft entlüften.
+Druckgebundener Xenon-Omega-Rückstand. Stabil in kaltem, dunklem, zerdrückendem Wasser; gefährlich in warmer Luft und Niederdruck.
 
 ## Terminal
 
-XO-KONTINUITÄTSSUBSTRAT. Nicht dekomprimieren. Nicht ungefilterter Habitatatmosphäre aussetzen.
+XO CONTINUITY SUBSTRATE. DRUCKSCHLEUSE ERFORDERLICH. NICHT ENTLÜFTEN. KETTENFLAGS: ANSPRUCH / KONTAMINATION / PFAND.
 
 ## Audio
 
-Der Behälter singt im Sonar. Tief, regelmäßig. Das ist kein Wesen. Das ist schlimmer.
+Der Behälter singt im Sonar. Tief und regelmäßig. Das ist Prozessrückstand, kein Leben. Behandle es schlimmer als Leben.
 
 ## Field Note
 
-Blue debt zahlt, weil sie zweimal beißt. Einmal beim Tragen. Noch einmal, wenn jemand davon erfährt.
+Sie nennen es blaue Schuld, weil jedes Gramm Zukunft leiht. Es zahlt sofort und schickt danach Eintreiber.
 
 <!-- In-Game Wiki; generated from P004_BLUE_DEBT/de_DE. -->

@@ -26,6 +26,8 @@ namespace Hecton8.Core.Data
     public sealed unsafe class BabelDictionaryStore : IDisposable
     {
         private static int s_x001BabelDictionaryStoreSignalPushDropCount;
+        private static int s_linkedAudioSignalDropTelemetryCount;
+        private static int s_lastLinkedAudioSignalDropTelemetryFrame = -1;
         private const uint StateOpenHash = 0x42424F50u;
         private const uint StateMissHash = 0x42424D49u;
         private const uint StateErrorHash = 0x42424552u;
@@ -34,6 +36,8 @@ namespace Hecton8.Core.Data
         private const uint ErrorHeaderHash = 0x48445221u;
         private const uint ErrorBoundsHash = 0x424E4453u;
         private const uint ErrorSortHash = 0x534F5254u;
+        private const uint LinkedAudioSignalDropWarningHash = 0x4C415344u; // LASD.
+        private const uint LinkedAudioSignalDropContextHash = 0x4C415343u; // LASC.
         private const int FileStreamBufferBytes = 64 * 1024;
         private const int ErrorSliceBytes = 16;
         private const int LoreDecryptionMaskBytes = 16;
@@ -84,6 +88,16 @@ namespace Hecton8.Core.Data
         public long MappedByteLength => _mappedBytes;
         public long SourceFileByteLength => _sourceFileBytes;
         public uint PaddingBytes => _paddingBytes;
+        public static int LinkedAudioSignalPushDropCount => System.Threading.Volatile.Read(ref s_x001BabelDictionaryStoreSignalPushDropCount);
+        public static int LinkedAudioSignalDropTelemetryCount => System.Threading.Volatile.Read(ref s_linkedAudioSignalDropTelemetryCount);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticDiagnostics()
+        {
+            System.Threading.Volatile.Write(ref s_x001BabelDictionaryStoreSignalPushDropCount, 0);
+            System.Threading.Volatile.Write(ref s_linkedAudioSignalDropTelemetryCount, 0);
+            System.Threading.Volatile.Write(ref s_lastLinkedAudioSignalDropTelemetryFrame, -1);
+        }
 
         public BabelDictionaryStore(IDataVault dataVault = null)
         {
@@ -888,7 +902,22 @@ namespace Hecton8.Core.Data
                 FrameIndex = SystemDispatcher.CurrentFrameId,
                 Flags = 1u
             };
-            SignalBus<PlayVoiceOverSignal>.TryPushTracked(in signal, ref s_x001BabelDictionaryStoreSignalPushDropCount);
+            if (!SignalBus<PlayVoiceOverSignal>.TryPushTracked(in signal, ref s_x001BabelDictionaryStoreSignalPushDropCount))
+                ReportLinkedAudioSignalDrop(textHash, voiceHash);
+        }
+
+        private static void ReportLinkedAudioSignalDrop(uint textHash, uint voiceHash)
+        {
+            int count = System.Threading.Interlocked.Increment(ref s_linkedAudioSignalDropTelemetryCount);
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (System.Threading.Volatile.Read(ref s_lastLinkedAudioSignalDropTelemetryFrame) == frame)
+                return;
+
+            System.Threading.Volatile.Write(ref s_lastLinkedAudioSignalDropTelemetryFrame, frame);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                LinkedAudioSignalDropWarningHash,
+                LinkedAudioSignalDropContextHash ^ textHash ^ voiceHash,
+                math.max(1, count));
         }
 
         private static void ReverseHeaderInPlace(ref H8BabelDictionaryHeader header)

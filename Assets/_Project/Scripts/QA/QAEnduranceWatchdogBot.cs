@@ -361,7 +361,7 @@ namespace Hecton8.QA
             _resolvedQualityWeight01 = ResolveGlobalQualityWeight01();
             PublishAutomationInput();
 
-            if (!TryResolvePlayerState(out PlayerRuntimeContext runtimeContext, out PlayerMovementRuntimeState movementState))
+            if (!TryResolvePlayerState(out IPlayerRuntimeContext runtimeContext, out PlayerMovementRuntimeState movementState))
                 return;
 
             float safeDeltaTime = math.max(deltaTime, 0.000001f);
@@ -558,24 +558,24 @@ namespace Hecton8.QA
         }
 
         private static bool TryResolvePlayerState(
-            out PlayerRuntimeContext runtimeContext,
+            out IPlayerRuntimeContext runtimeContext,
             out PlayerMovementRuntimeState movementState)
         {
             movementState = default;
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out runtimeContext) ||
-                runtimeContext == null ||
-                !runtimeContext.IsBound)
+            runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null)
             {
                 return false;
             }
 
-            movementState = runtimeContext.MovementState;
-            return true;
+            return runtimeContext.TryGetMovementRuntimeState(out movementState);
         }
 
         private static bool HasInvalidState(in PlayerMovementRuntimeState state)
         {
-            return !math.all(math.isfinite(state.WorldPosition)) ||
+            return (state.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                   !state.PredictedAup.IsFinite() ||
+                   !math.all(math.isfinite(state.WorldPosition)) ||
                    !math.all(math.isfinite(state.PredictedWorldPosition)) ||
                    !math.all(math.isfinite(state.Velocity)) ||
                    !math.all(math.isfinite(state.Forward)) ||
@@ -616,7 +616,7 @@ namespace Hecton8.QA
         }
 
         private void CheckStuck(
-            PlayerRuntimeContext runtimeContext,
+            IPlayerRuntimeContext runtimeContext,
             in PlayerMovementRuntimeState movementState,
             float deltaTime)
         {
@@ -640,7 +640,7 @@ namespace Hecton8.QA
             EnqueueCsvRecord(EventHashPhysicsTrap);
         }
 
-        private void RecoverFromTrap(PlayerRuntimeContext runtimeContext)
+        private void RecoverFromTrap(IPlayerRuntimeContext runtimeContext)
         {
             if (runtimeContext == null)
                 return;

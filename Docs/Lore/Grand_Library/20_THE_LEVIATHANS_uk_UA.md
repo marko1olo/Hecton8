@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ЛЕВІАФАНИ HECTON-8
 
 > **Джерело:** Мегакорпорація Deep Reach, Оцінка ксенобіологічної загрози.

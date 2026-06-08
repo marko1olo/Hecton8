@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "فشل احتواء الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# فشل احتواء الضغط
 
-AR LOC HOLD: Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating.
-
-## Scanner
-
-AR LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
-
-## Terminal
-
-AR LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
-
-## Audio
-
-AR LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
-
-## Field Note
-
-AR LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Blue debt ليس كنزا ملعونا. إنه ذاكرة مادية تحت الضغط. تبقى بقايا Xenon-Omega نافعة ما دامت شبكتها تصدق أنها عميقة وباردة ومضغوطة. أخرجها بسرعة أو خزّنها بسوء أو اسمح لقص الإشارة بالدخول إلى الصندوق فتبدأ العينة بالفشل على مراحل مقروءة. أولا يأتي الانحراف: العدادات تكذب، الرنين يرتجف، إنذارات الاحتواء تتجادل. ثم تنكسر الشبكة. يدخل الملح. تتبع الأحياء الكيمياء. عند المرحلة 4 تموت القيمة وتبقى العدوى.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/ar_SA. -->

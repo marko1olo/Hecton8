@@ -156,6 +156,10 @@ namespace Hecton8.Construction
             if (inventory == null || item == null || quantity <= 0 || !IsValidPlantItem(item))
                 return false;
 
+            int itemHashId = ItemData.ResolvePersistentHashId(item);
+            if (itemHashId == 0)
+                return false;
+
             int inserted = 0;
             int desired = Mathf.Max(1, quantity);
             for (int i = 0; i < desired; i++)
@@ -163,7 +167,7 @@ namespace Hecton8.Construction
                 if (!TryPlantItem(item))
                     break;
 
-                if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
+                if (!inventory.TryRemoveQuantity(itemHashId, 1))
                 {
                     RemoveLastPlantedItem(item);
                     break;

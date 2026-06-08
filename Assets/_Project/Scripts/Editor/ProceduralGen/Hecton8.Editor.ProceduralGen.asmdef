@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Editor.ProceduralGen",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
         "Hecton8.Project.Editor",
         "Unity.Collections",
         "Unity.Mathematics",
@@ -12,7 +13,7 @@
         "Editor"
     ],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": false,

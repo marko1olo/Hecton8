@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Blue Debt Pressure History Guide"
+title: "蓝债压力史指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Blue Debt Pressure History Guide
+# 蓝债压力史指南
 
-ZH LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.
+Xenon-Omega 被打捞者称为 blue debt，它把 HECTON-8 的地质与 computation、debt law，以及 Deep Reach 仍想夺回淹没索赔的原因绑在一起。
 
 ## Scanner
 
-ZH LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.
+blue debt 样本已标记。export 前核验 pressure history、containment stage 和 signal drift。
 
 ## Terminal
 
-ZH LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
+MARAUDER NOTE: blue debt 是打捞者对 Xenon-Omega-bearing pressure-stable substrate 的黑话。它有价值，是因为 extreme computation 和 energy isolation 喜欢它，不是因为它发光。
 
 ## Audio
 
-ZH LOC HOLD: Blue debt is what people call it after the invoice arrives.
+blue debt 是人们在账单到来后给它起的名字。
 
 ## Field Note
 
-ZH LOC HOLD: Use for resource glossary and Deep Reach motive articles.
+颜色不是 grade。clean custody 的安静容器会付款；会唱的容器会给你买来 drone wake。
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/zh_CN. -->

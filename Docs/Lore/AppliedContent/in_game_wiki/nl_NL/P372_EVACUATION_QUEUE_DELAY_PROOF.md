@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Evacuation Queue Delay Proof"
+title: "Vertragingsrecord Evacuatiewachtrij"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Evacuation Queue Delay Proof
+# Vertragingsrecord Evacuatiewachtrij
 
-NL LOC HOLD: Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
+Dit bewijs maakt van evacuatie een volgorde. De poort was niet alleen door water afgesneden; zij bleef in review terwijl drukalarmen bezette gangen bereikten. Het lege getuigenveld telt omdat het systeem menselijke bevestiging vroeg nadat mensen het paneel al niet meer konden bereiken.
 
 ## Scanner
 
-NL LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Wachtrijklok geborgen. De vrijgavepoort bleef vergrendeld nadat drukalarmen van prognose naar corridor gingen.
 
 ## Terminal
 
-NL LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Handmatige bevestiging ontbreekt. Quarantainereview open. Routendruk overschreed sealklasse voordat autorisatie rond was.
 
 ## Audio
 
-NL LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Ze faalden niet om iedereen te redden. Ze wachtten tot iemand redden moeilijker werd.
 
 ## Field Note
 
-NL LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Marauder-notitie: een gesloten poort met een open veld is geen ongeluk. Het is een beslissing die op handtekening wacht.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/nl_NL. -->

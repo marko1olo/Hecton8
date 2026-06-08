@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Brine Vane Codex Card"
+title: "Kodexkarte: Salzlakenfächer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Brine Vane Codex Card
+# Kodexkarte: Salzlakenfächer
 
-DE LOC HOLD: Brine Vane Codex Card turns mid-depth flora into route-reading evidence.
+Salzlakenfächer sind keine Pflanzen im bequemen Sinn. Sie sind flache Salz-Mineral-Membranen, die dort überleben, wo Lake, Druck und Temperatur eine Grenze scharf genug machen, um sich wie eine Wand zu verhalten. Im Canyon machen sie unsichtbare Wasserstruktur zu etwas, das ein Marauder mit Augen, Sonar und Auftriebstrimm lesen kann. Ein intaktes Blatt bedeutet meist, dass die andere Seite dichter ist und einen Ping biegen oder einen Anzug aus der Erwartung ziehen kann. Ein zerrissener Mund kann frischen Tierdurchgang, Strömungsschaden oder das einzige schwache Fenster durch die Schicht markieren. Eine gekräuselte Spitze zeigt, dass die Scherung nachlässt. Blasse Rippen von toten Streifen können nützliches Material sein, doch ein lebendes Blatt zu schneiden kann den Routenmarker löschen, der den Canyon lesbar hält. Quere keine offene Glut, nur weil sie senkrecht aussieht. Behalte eine Fächerkante im Blick, halte den Trimm konservativ und behandle jeden Bodenrücklauf ohne sichtbare Fächergrenze als Lüge, bis eine zweite Lesung ihn bestätigt.
 
 ## Scanner
 
-DE LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Salzlakenfächer-Blatt. Salz-Mineral-Membran an Dichtescherung fixiert. Intakte Kante heißt Wand; zerrissener Mund heißt Passage; schwarzes Wasser ohne Fächerkante heißt Falschbodenrisiko.
 
 ## Terminal
 
-DE LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+PROBE / SALZLAKENFÄCHER / Rolle: Marker für Dichtewand, Warnung vor Sonarbiegung, Quelle abgeworfener Rippen / sichere Lesung: intaktes Blatt, zerrissene stromabwärtige Öffnung, gekräuselte Scherfensterspitze / verwerfen: lebendes Routenblatt schneiden, offene Glut queren, Falschbodenrücklauf vertrauen / Routennotiz: sammle abgeworfene Rippen, nicht die Membran, die deine Karte offen hält.
 
 ## Audio
 
-DE LOC HOLD: The plant is not pointing up. It is pointing through.
+Der Fächer zeigt nicht nach oben. Er zeigt, wo der Ozean seitwärts kippt.
 
 ## Field Note
 
-DE LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Intaktes Blatt: Wand. Zerrissene Öffnung: mögliche Route. Abgeworfene Rippe: Probe. Lebendes Blatt hält die Bahn: liegen lassen.
 
 <!-- In-Game Wiki; generated from P294_BRINE_VANE_CODEX_CARD/de_DE. -->

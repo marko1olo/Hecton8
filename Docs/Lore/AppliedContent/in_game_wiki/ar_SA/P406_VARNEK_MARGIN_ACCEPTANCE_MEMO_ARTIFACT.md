@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Varnek Margin Memo"
+title: "مذكرة فارنيك لقبول الهامش"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Varnek Margin Memo
+# مذكرة فارنيك لقبول الهامش
 
-AR LOC HOLD: The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
+مذكرة فارنيك دليل ذنب هادئ. لا تخترع الفيضان ولا تأمر بالقتل. إنها تعرض هامش ضغط معروفا تم تسعيره وقبوله وتمريره تحت تكلفة continuity بينما بقي بشر داخل غلاف المستعمرة.
 
 ## Scanner
 
-AR LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+مذكرة Aegir Operations Risk. كان هامش Great Tide ظاهرا قبل أن تتحرك سلطة الإيقاف.
 
 ## Terminal
 
-AR LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: tail exposure accepted under continuity cost. Evacuation reserve remains non-triggered. Independent shutdown not recommended.
 
 ## Audio
 
-AR LOC HOLD: No murder order. A margin acceptance.
+تبدو كحساب بارد حتى ترى من كان داخل ذلك الهامش.
 
 ## Field Note
 
-AR LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+ملاحظة Marauder: القذارة ليست في رقم الخطر. إنها في كلمة accepted.
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/ar_SA. -->

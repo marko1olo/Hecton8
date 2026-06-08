@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Стек імен чорних скриньок
 
-Стек імен робить правду переносною. Те, що гравець винесе, впливає на трансляцію, досьє й фінал.
+Стек імен black box робить фінальну правду переносною. Докази, broadcast-пакети й публічні досьє залежать від того, які імена, хеші та квитанції вийдуть із води.
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Brine canyon density ladder guide"
+title: "Полевой справочник плотностной лестницы brine-каньона"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine canyon density ladder guide
+# Полевой справочник плотностной лестницы brine-каньона
 
-Depth на HECTON-8 - инженерная география. Brine canyons - route ladders.
+Полевой справочник плотностной лестницы brine-каньона трактует впадины HECTON-8 как инженерную географию: путь вниз построен из плотности, а не из декора.
 
 ## Scanner
 
-Обнаружен brine canyon ladder. Density layers превращают depth в route planning.
+Обнаружена brine ladder: слоистая плотность, ложное дно, изгиб сонара. Иди по краям; открытая вода здесь лжет.
 
 ## Terminal
 
-FIELD GUIDE: brine canyons - не просто visual depth. Они прячут pressure boundaries, current shelves, resource pockets и scanner false positives.
+FIELD GUIDE: brine-каньоны прячут pressure shelves, current ledges, resource pockets и ложные срабатывания scanner. Hull rating и density transition решают, какая полка является маршрутом, а какая - падением.
 
 ## Audio
 
-Каньон - лестница, если hull может платить за каждую ступень.
+Каньон - это лестница, если твой корпус может платить за каждую ступень.
 
 ## Field Note
 
-Для scanner tutorials и resource route articles.
+Используй тени vane как ступени. Пустое чтение в brine - не пустота, а прибор, проигрывающий спор.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/ru_RU. -->

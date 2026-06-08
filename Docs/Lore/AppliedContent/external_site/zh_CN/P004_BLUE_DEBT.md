@@ -9,32 +9,16 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Blue Debt"
+title: "蓝债"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue Debt
+# 蓝债
 
-Blue debt让HECTON-8不只是失落殖民地。它昂贵、不稳定，并直接解释了为什么Deep Reach既想埋葬这颗月球，又想把它取回。
-
-## Scanner
-
-压力保存的Xenon-Omega残留物。只在恶劣条件中稳定。不要在温暖舱内空气附近泄压。
-
-## Terminal
-
-XO连续性基质。不得减压。不得暴露于未过滤居住舱空气。
-
-## Audio
-
-容器在声呐里唱歌。低沉，规律。那不是生物。那更糟。
-
-## Field Note
-
-Blue debt值钱，因为它咬两次。你携带它时一次。别人知道你有它时再一次。
+蓝债让HECTON-8上的salvage先显得有利可图，然后才显得安全。这种材料不是等在礁石里的宝石晶体。它是工业压力系统的残留：Xenon-Omega基质、失败的约束介质、计算炉渣，以及因为海洋从未停止施压而保持稳定的密封废料。错误地提起它，样本会改变状态。错误地出售它，纸面记录会改变你。这种双重风险正是名字的含义。蓝债会很快付钱给幸存者，但每个容器都带着未来成本：去污、carrier留置权、Black Keel保管规则、Deep Reach索赔语言，以及样本本身也可能是证据的可能。在更大的 lore 中，这种资源是最早说明HECTON-8并非单纯被遗弃的线索之一。它被留下时，仍有贵重系统在压力下运行，只有走投无路的操作员才会愿意触碰它们。
 
 <!-- External Site; generated from P004_BLUE_DEBT/zh_CN. -->

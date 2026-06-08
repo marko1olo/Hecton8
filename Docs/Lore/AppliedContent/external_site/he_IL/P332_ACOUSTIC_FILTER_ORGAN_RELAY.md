@@ -3,8 +3,8 @@ packet_id: P332_ACOUSTIC_FILTER_ORGAN_RELAY
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.acoustic_filter_organ_relay
 unlock_id: unlock.acoustic_filter_organ_relay
-poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_resonator
-biome_tags: biome.atlas;biome.comms
+poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_chamber
+biome_tags: biome.atlas;biome.sonar
 locale: he_IL
 surface: external_site
 source_voice: Website Public
@@ -19,8 +19,8 @@ localization_flags: 1
 
 # ממסר איבר סינון אקוסטי
 
-מתחת לעומק הרדיו, קול הוא הכלי העיקרי. שונית הכבלים מסבכת אותו: מארזים שבורים מצלצלים, מחצלות מתכת מפזרות, סערות מטשטשות מרחק ורקמה חיה יושבת בין מקור לחזרה.
+ממסר איבר סינון אקוסטי נבנה מלחץ, הרגל ושימוש שגוי. Deep Reach העבירה לועות ממסר מתכתיים דרך המושבה מפני שרדיו מת מהר מתחת למי HECTON-8. יצורי סינון מקומיים מצאו את הלועות האלה שימושיים: זרימה קבועה, גרגרי מינרלים, רטט משאבות ומשטחים מוגנים. לאורך שנים צמחה רקמה מקופלת במקום שבו החומרה הישנה כבר עיצבה את הצליל.
 
-לכן סונאר אינו אמת נקייה. הממסר עשוי לחשוף דלת, להאכיל טורפים, לחזור על אזהרות ישנות או לגרום לאותו מעבר להופיע פעמיים.
+Atlas הופך את התאונה הזאת לתשתית. חיץ חי יכול לבלוע רעש משאבה ולהעביר צליל pinger צר. הוא גם יכול להזיז את ההחזרה בדיוק מספיק כדי שמפה תיראה נכונה מהצד הלא נכון של מחיצה. כשמסדרון עונה בקול שעוצב בידי רקמה, השחקן קיבל מידע, לא ביטחון. פעימות סערה, תנועת חיות או קפל גוסס יכולים להזיז את המסלול בלי אזהרה.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/he_IL. -->

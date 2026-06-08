@@ -69,6 +69,7 @@ namespace Hecton8.UI
         private PDAExchangeSystem.TransactionSnapshot[] _transactionBuffer;
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
+        private bool _pdaEventsRegistered;
         private bool _refreshAllPending;
         private bool _refreshImmediatePending;
         private PDAExchangeSystem _boundExchangeSystem;
@@ -154,14 +155,18 @@ namespace Hecton8.UI
         private void Subscribe()
         {
             RefreshExchangeBinding();
-            PDAEvents.Register(this);
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
         }
 
         private void Unsubscribe()
         {
             _boundExchangeSystem = null;
             _exchangeSourceId = 0u;
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
         }
 
         private void RefreshExchangeBinding()

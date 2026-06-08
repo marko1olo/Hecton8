@@ -9,24 +9,24 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ID LOC HOLD: Aegir Route and Ships"
+title: "Rute Aegir dan Kapal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Aegir Route and Ships
+# Rute Aegir dan Kapal
 
-ID LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegir cukup dekat untuk dieksploitasi dan cukup jauh untuk ditinggalkan. Tidak ada mesin lebih cepat dari cahaya yang melintasi celah itu, dan tidak ada ansible yang membawa perintah mendahului fisika. Setiap pesan, kontrak, dan klaim penyelamatan bergerak melalui penundaan: paket probe, kustodi relay, jadwal berkas, kargo pellet-fusion, jendela transfer, dan cuaca yang tidak peduli pada kepanikan manusia.
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+Lalu lintas Aegir pertama bukan manusia. Probe jarum memetakan sistem katai hangat dan mengembalikan cukup data mineral, radiasi, dan orbit untuk membenarkan investasi yang lebih berat. Setelah itu datang paket layar berkas, kargo lebih lambat, lalu massa seed-ship yang harus mengerem di dalam jaringan infrastruktur yang direncanakan bertahun-tahun sebelum pekerja melihat laut. Saat Deep Reach tiba di HECTON-8, rute itu sudah menjadi milik lembaga: carrier, asuransi, kantor domain, pool reklamasi, dan perusahaan yang ahli membuat kepemilikan sulit dinamai.
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+Black Keel berada di dalam ambiguitas itu. Ia bukan kapal perang dan bukan layanan penyelamatan. Ia platform klaim dengan massa dok, kapal tender, buku utang, dan otoritas salvage. Rantai kontraknya memungkinkan Deep Reach memberi tekanan tanpa tampak sebagai tangan langsung di palka. Kapal hanya bisa mengekstraksi orang, sampel, atau muatan tersegel ketika massa, cuaca, orbit, margin panas, dan kustodi selaras.
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+Bathydrop yang rusak karena itu menjadi batas serius. Benturan turun bisa menyisakan cangkang cukup utuh untuk bertahan hidup sambil merusak toleransi naik: kompresi seal, sinkron balik akustik, tabel pandu, penyangga energi, dan jabat tangan karantina. Kapsul menjadi tempat berlindung dan bukti sekaligus: membuktikan kedatangan, tetapi tidak mengesahkan pelarian.
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+Di sistem Aegir, jarak bukan latar. Itulah alasan bantuan datang sebagai dokumen sebelum datang sebagai perangkat keras.
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/id_ID. -->

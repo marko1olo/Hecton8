@@ -3,38 +3,22 @@ packet_id: P343_SEED_SHIP_BRAKING_ARCHITECTURE
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.seed_ship_braking_architecture
 unlock_id: unlock.seed_ship_braking_architecture
-poi_tags: poi.seed_ship_archive;poi.braking_debris_marker
-biome_tags: biome.archive;biome.colony
+poi_tags: poi.braking_mass_manifest;poi.seed_ship_burn_record
+biome_tags: biome.orbit;biome.archive
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Seed Ship Braking Architecture"
+title: "Architecture de freinage des seed ships"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Seed Ship Braking Architecture
+# Architecture de freinage des seed ships
 
-FR LOC HOLD: Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.
-
-## Scanner
-
-FR LOC HOLD: Seed ship archive. Arrival depended on braking mass, not faith in the destination.
-
-## Terminal
-
-FR LOC HOLD: COLONY LOG: early Aegir hardware arrived as seed cargo, reactor shells, printers, water chemistry rigs and braking debris. The first human phase inherited what survived deceleration.
-
-## Audio
-
-FR LOC HOLD: The colony started as cargo that managed to stop.
-
-## Field Note
-
-FR LOC HOLD: Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community.
+L'accélération reçoit le romantisme ; le freinage reçoit la facture. Les seed ships pour Aegir devaient arriver avec assez de masse survivante pour servir, donc chaque couche de bouclier, réserve de glace, voile magnétique, capture de pellets et poussée fusion faisait déjà partie de la colonisation avant qu'un habitat touche l'eau. La première infrastructure n'était pas une ville, mais des machines insérées par un véhicule ayant dépensé des morceaux de lui-même pour s'arrêter. HECTON-8 semble donc hérité plutôt que fondé. Les ouvriers sont entrés dans un lieu fait de compromis de freinage, d'automatisation ancienne et de priorités de cargaison verrouillées des années avant les débats de sécurité.
 
 <!-- External Site; generated from P343_SEED_SHIP_BRAKING_ARCHITECTURE/fr_FR. -->

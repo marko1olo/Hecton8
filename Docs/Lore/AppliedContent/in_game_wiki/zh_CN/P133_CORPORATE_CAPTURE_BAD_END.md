@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "企业捕获：干净救援"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# 企业捕获：干净救援
 
-CN LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.
+企业捕获是由可信救援构成的坏结局。玩家活着离开海洋，但回应的权力把证人当成containment材料，把payload当成真正的病人。
 
 ## Scanner
 
-CN LOC HOLD: Rescue offer. Payload first. Witness second.
+回收来源已验证：Deep Reach代理。payload在健康检查前被请求。
 
 ## Terminal
 
-CN LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
+DEEP REACH接回：recovery team在承包者福利审查前接收坐标、XO custody和Atlas访问钥匙。承包者证词按污染协议封存。
 
 ## Audio
 
-CN LOC HOLD: The clean room is not for you.
+洁净室不是为你准备的。
 
 ## Field Note
 
-CN LOC HOLD: A rescue that demands silence is a capture with better lighting.
+先要坐标的干净救援，就是空气更好的捕获。
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/zh_CN. -->

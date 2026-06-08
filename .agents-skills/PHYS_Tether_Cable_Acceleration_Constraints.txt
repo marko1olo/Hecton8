@@ -399,7 +399,7 @@ var hits = Physics.RaycastAll(origin, dir);
 | PlayerController | Must expose `Rigidbody` via `PlayerController.PhysicsBody` property. TetherManager does not use `GetComponent` at runtime. |
 | EventBus | `GameEvents.TetherSnapped` (Action\<Vector3\>) fires on snap. VFX, SFX, and UI listen. TetherManager does not know about them. |
 | VFX System | Receives snap world position. Spawns cable-recoil particle effect. No physics involvement. |
-| TetherProfileSO | Authored in Unity Editor per tether class. Stored in `Assets/Data/TetherProfiles/`. Reviewed by design lead before ship. |
+| TetherProfileSO | Authored in Unity Editor per tether class. Stored under `Assets/_Project/Data/` in a source-owner tether profile folder when implemented. Reviewed by design lead before ship. |
 
 ---
 

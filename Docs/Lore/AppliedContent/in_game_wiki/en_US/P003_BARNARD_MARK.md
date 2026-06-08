@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Barnard Mark
 
-The first Barnard mark on HECTON-8 is small enough to miss: a tool stamp, a maintenance habit, a supply label. That is why it matters. HECTON-8 stops being a remote contract when the same marks begin appearing beside names, evacuation routes, and failed authorizations.
+The first Barnard mark on HECTON-8 is small enough to miss: a tool stamp, a locker tag, a supply habit, a scar left by cheap yard steel. That is why it matters. The moon stops being a remote contract when familiar work marks begin appearing beside evacuation holds, worker names, and failed route permissions.
 
 ## Scanner
 
-Barnard Yards stamp. Not Deep Reach issue. Somebody brought home equipment to the bottom of this moon.
+Barnard Yards stamp. Not Deep Reach issue. Somebody carried yard hardware to the bottom of this moon.
 
 ## Terminal
 
-PERSONNEL ROUTE: HOLD. RESOURCE ROUTE: ACTIVE. SUBSTRATE ROUTE: PROTECTED.
+PERSONNEL ROUTE: HOLD. RESOURCE ROUTE: ACTIVE. SUBSTRATE ROUTE: PROTECTED. TOOL ORIGIN: BARNARD YARDS / THIRD-OWNER REPAIR STOCK.
 
 ## Audio
 
-That mark is Barnard. Same cut pattern. Same cheap alloy. Whoever carried this down here knew the same shops you did.
+That cut is Barnard. Cheap alloy, left-hand stamp, bad heat treat. Whoever brought it down here knew the same shops you did.
 
 ## Field Note
 
-You can ignore a dead corporation. Harder to ignore a wrench from your own yard.
+You can shrug off a dead corporation. A wrench from your own yard is harder to leave in the mud.
 
 <!-- In-Game Wiki; generated from P003_BARNARD_MARK/en_US. -->

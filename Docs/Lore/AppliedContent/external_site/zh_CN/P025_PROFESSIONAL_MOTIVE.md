@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 职业动机
 
-职业动机提供主角能动性而不过度锁死传记：玩家先是能干的marauder，再被证据拉入私人层面。
+Professional Motive 给掠夺者行动力，却不过度锁死传记：能力先存在，个人投入通过证据到来。
 
 ## Scanner
 

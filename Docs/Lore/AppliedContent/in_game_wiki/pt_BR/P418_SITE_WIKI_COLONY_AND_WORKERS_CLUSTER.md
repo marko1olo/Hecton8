@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "PT LOC HOLD: Colônia e trabalhadores"
+title: "Colônia e Trabalhadores"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Colônia e trabalhadores
+# Colônia e Trabalhadores
 
-PT LOC HOLD: Índice de trabalhadores recuperado: livros de água, bandejas de testemunha relay, carimbos de rota brine, tags de reparo triage e rejeitos vent-forge preservam nomes pelo trabalho.
+Worker index recuperado: water ledgers, relay witness trays, brine route stamps, triage repair tags e vent-forge rejects preservam nomes pelo trabalho.
 
 ## Scanner
 
-PT LOC HOLD: WORKER INDEX // Cinco registros nominais ligados a rota. pump, relay, brine, triage, forge. Preservar tag chain antes de retirar hardware.
+WORKER INDEX // Cinco registros nominais ligados à rota. Pump, relay, brine, triage, forge. Preservar tag chain antes de remover hardware.
 
 ## Terminal
 
-PT LOC HOLD: KEELMARK LOSS DESK: preservar name tags ligadas a route, claim, custody ou pressure work.
+KEELMARK LOSS DESK: preservar name tags quando ligados a route, claim, custody ou pressure work.
 
 ## Audio
 
-PT LOC HOLD: Mara Venn, pump chief: se a pump cantar limpo, registre. Se parar de cantar, corra para cima.
+Mara Venn, pump chief: se a bomba cantar limpo, registre. Se parar de cantar, corra para cima.
 
 ## Field Note
 
-PT LOC HOLD: Não família. Trabalho. Um nome em uma pump card explica por que uma porta ficou aberta.
+Não família. Trabalho. Um nome em uma pump card explica por que a porta ficou aberta.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/pt_BR. -->

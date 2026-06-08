@@ -7,34 +7,34 @@ poi_tags: poi.cable_splice;poi.atlas_repair_scar
 biome_tags: biome.service_corridor;biome.cable_reef
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Cable Splice Scar"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "ندبة وصلة كابل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cable Splice Scar
+# ندبة وصلة كابل
 
-Cable Splice Scar is early proof that Atlas repair is practical before it becomes biological. The player sees utility first, then intent.
+ندبة وصلة الكابل أثر مبكر من Atlas-6 ما زال يبدو كصيانة. الإصلاح يحافظ على الطاقة في خط خدمة متضرر، لكن المادة لا تطابق إجراء المستعمرة والتوقيع غائب. يجب أن تظهر هذه الندبات قبل أن تبدو شبكة الإصلاح حيوية: نافعة ومحددة وخاطئة قليلا.
 
 ## Scanner
 
-The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+وصلة غير قياسية. نما العازل من جديد حول كابل خدمة بعد فشل توجيه البشر؛ وسم Atlas-6 جزئي وسلطة الصيانة مفقودة.
 
 ## Terminal
 
-Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+POWER TRACE C-44: وصلة بشرية فشلت مفتوحة. تم قبول إصلاح استمرارية ذاتي للحفاظ على حمل المرحل. يتكرر النمط في عقد شعاب الكابلات مع فقد عازل أقل ودون توقيع عامل.
 
 ## Audio
 
-Something fixed the cable after everyone stopped asking permission.
+أصلح أحدهم الكابل بعدما توقفت الأوراق. أو أصلحه شيء ما.
 
 ## Field Note
 
-Atlas repair should look useful before it looks alive.
+مفيد أولا. خطأ لاحقا. هكذا تقدم إصلاحات Atlas نفسها.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/ar_SA. -->

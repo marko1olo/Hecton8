@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "Граматика зустрічі: переслідування фауни із сенсорною міткою"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# Граматика зустрічі: переслідування фауни із сенсорною міткою
 
-UK LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+Переслідування фауною із сенсорною міткою показує Atlas як пошкоджену інтерпретацію, а не злий наказ. Безпечна або налякана тварина може стати небезпечною, бо стара інфраструктура досі трактує її шрам як телеметрію.
 
 ## Scanner
 
-UK LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+Переслідування фауною із сенсорною міткою. Стара біометалева мітка повертає відлуння ремонтної мережі. Рух тварини локальний; інтерпретація мережі — ні.
 
 ## Terminal
 
-UK LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+ГРАМАТИКА ЗУСТРІЧІ / ПЕРЕСЛІДУВАННЯ СЕНСОРНОЇ МІТКИ / роль: зіпсований зворотний зв’язок обслуговування, ризик забруднення сховища, тиск без злого ШІ / безпечне читання: імпульс мітки відстає від руху, тварина уникає болю, відлуння маршруту Atlas іде за останнім відомим шляхом / відхилити: рамку контролю розуму, чисту ворожу поведінку ШІ, ведення поміченої тварини до базового сховища / маршрутна нотатка: ламай відлуння кутом, тишею й перекриттям; не вчи мережу, де дім.
 
 ## Audio
 
-UK LOC HOLD: It follows because the network thinks following is a repair.
+Вона йде слідом, бо щось старе вважає переслідування кроком ремонту.
 
 ## Field Note
 
-UK LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+Не веди мітку додому. Ламай лінію, звук і тлумачення. Тварина — не мережа.
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/uk_UA. -->

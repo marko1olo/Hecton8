@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Field Systems Specialist Record"
+title: "현장 시스템 전문 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Field Systems Specialist Record
+# 현장 시스템 전문 기록
 
-KO LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.
+HECTON-8의 플레이어 캐릭터는 실용적인 상처를 안고 바다에 들어간다. Deep Reach 현장 시스템 근무 이력, 대피 인프라 접근권, 취소된 허가, 잠긴 기계를 증거로 읽을 만큼의 절차 기억이다. 지금은 Marauder이지 회사 장교도 승객 영웅도 아니다. 망가진 펌프, 경로 도장, 책임 문구가 중요한 이유는, 그 시스템들이 문서가 되기 전 노동자를 보호해야 했던 방식을 오퍼레이터가 알기 때문이다.
 
 ## Scanner
 
-KO LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+오래된 현장 시스템 자격. 지휘 인력은 아니다. 어느 경로가 묻혔는지 알아볼 만큼의 접근권을 가진 기반시설 노동 기록.
 
 ## Terminal
 
-KO LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+인원 흔적: 현장 시스템, 대피 인프라, route-safe 인증. Aegir 침묵 검토 후 권한 취소. 절차 캐시는 아직 오퍼레이터의 순서와 일치한다.
 
 ## Audio
 
-KO LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+너는 거짓에 서명하지 않았다. 그 거짓이 검사를 통과하는 문법을 알고 있었을 뿐이다.
 
 ## Field Note
 
-KO LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+배지는 문을 열지 못하게 됐다. 실패의 순서까지 지우지는 못했다.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/ko_KR. -->

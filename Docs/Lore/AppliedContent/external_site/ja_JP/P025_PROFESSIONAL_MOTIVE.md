@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 職業的動機
 
-職業的動機は、固定しすぎない伝記で主体性を与える。
+Professional Motive は、伝記を固定しすぎずにマローダーへ主体性を与える。能力が先にあり、個人的な投資は証拠から到着する。
 
 ## Scanner
 

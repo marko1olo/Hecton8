@@ -7,34 +7,34 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Maintien d'évacuation de Juno Kade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# Maintien d'évacuation de Juno Kade
 
-FR LOC HOLD: Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+Juno Kade prouve que la colonie ne s'est pas simplement figée. Les gens ont fait la queue, les marshals ont émis des routes, et le système de sortie a répondu par authorization holds, contrôles de quarantaine et priorité payload. Le désastre empire parce que la porte était réelle.
 
 ## Scanner
 
-FR LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
+Juno Kade a ouvert la file et frappé un mur fait de quarantaine, certification et rang payload.
 
 ## Terminal
 
-FR LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+STATUT EVAC KADE : route rouge ; manual override rejeté ; porte de quarantaine en attente du continuity check Atlas ; payload lift prioritaire jusqu'à résolution du claim seal.
 
 ## Audio
 
-FR LOC HOLD: She kept counting people after the system started counting rooms.
+La sortie existait. C'est pourquoi le maintien compte.
 
 ## Field Note
 
-FR LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+Une marshal d'évacuation peut déplacer des gens. Elle ne peut pas déplacer une clause qui possède la porte.
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/fr_FR. -->

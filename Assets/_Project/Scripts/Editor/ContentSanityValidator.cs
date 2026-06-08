@@ -43,7 +43,10 @@ namespace Hecton8.Editor.Validation
         private const string ForwardFabricatorObjectName = "Forward_Fabricator";
         private const string ForwardFabricatorSocketId = "socket.fabrication.forward";
         private const string ResourceDistributionDirectorScriptPath = "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs";
-        private const string ScavengingLootOracleRuntimeScriptPath = "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs";
+        private const string ScavengingLootOracleRuntimeScriptPath = "Assets/_Project/Scripts/Scavenging/ScavengingLootOracleRuntime.cs";
+        private const string LoreSystemsRootScriptPath = "Assets/_Project/Scripts/Bootstrap/HectonLoreSystemsRoot.cs";
+        private const string QuestManagerScriptPath = "Assets/_Project/Scripts/Quest/QuestManager.cs";
+        private const string FirstHourDirectorScriptPath = "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs";
         private const string PdaLoadoutTabScriptPath = "Assets/_Project/Scripts/UI/PDALoadoutTab.cs";
         private const string PdaLoadoutPresetPathPrefix = "Assets/_Project/Data/Tools/Presets/";
         private const string RuntimeOrePrefabPath = "Assets/_Project/Prefabs/Resources/Nodes/PFB_Ore_Generic.prefab";
@@ -162,6 +165,7 @@ namespace Hecton8.Editor.Validation
             ValidateResourceDistributionRuntimeRoute(result);
             ValidateFirstHourDrillRoute(result);
             ValidateFirstHourQuestSpine(result);
+            ValidateFirstHourRuntimeSceneOwners(result);
             ValidateFirstHourFabricatorSceneRoute(result);
             ValidateBaseModuleTemplates(result);
             ValidatePlayerPdaShell(result);
@@ -209,7 +213,7 @@ namespace Hecton8.Editor.Validation
                 result.ItemCount++;
                 string persistentId = item.PersistentId ?? string.Empty;
                 RegisterItemPersistentId(result, persistentId, assetPath);
-                int hashId = string.IsNullOrWhiteSpace(persistentId) ? 0 : LocHash.Compute(persistentId);
+                int hashId = ItemData.ResolvePersistentHashId(item);
                 RegisterHash(result, unchecked((uint)hashId), $"ItemData:{persistentId}", assetPath);
 
                 ValidateItemAudioMaterial(result, item, assetPath);
@@ -280,7 +284,7 @@ namespace Hecton8.Editor.Validation
                     continue;
                 }
 
-                int hashId = LocHash.Compute(persistentId);
+                int hashId = ItemData.ResolvePersistentHashId(item);
                 if (hashId == 0)
                 {
                     result.Errors.Add($"{ItemCatalogPath}: allItems[{i}] '{item.name}' PersistentId '{persistentId}' resolves to hash 0.");
@@ -637,7 +641,7 @@ namespace Hecton8.Editor.Validation
             }
 
             string persistentId = item.PersistentId ?? string.Empty;
-            int hashId = string.IsNullOrWhiteSpace(persistentId) ? 0 : LocHash.Compute(persistentId);
+            int hashId = ItemData.ResolvePersistentHashId(item);
             if (hashId == 0)
             {
                 result.RecipeRouteErrorCount++;
@@ -959,7 +963,7 @@ namespace Hecton8.Editor.Validation
             }
 
             string persistentId = item.PersistentId ?? string.Empty;
-            int hashId = string.IsNullOrWhiteSpace(persistentId) ? 0 : LocHash.Compute(persistentId);
+            int hashId = ItemData.ResolvePersistentHashId(item);
             if (hashId == 0)
             {
                 result.ToolRouteErrorCount++;
@@ -1641,6 +1645,43 @@ namespace Hecton8.Editor.Validation
             result.Errors.Add("FirstHourQuestSpine: " + string.Join("; ", failures));
         }
 
+        private static void ValidateFirstHourRuntimeSceneOwners(ValidationResult result)
+        {
+            if (!TryReadProjectTextFile(ProductionWorldScenePath, out string sceneText, out string readFailure))
+            {
+                result.FirstHourDrillRouteErrorCount++;
+                result.Errors.Add(
+                    $"{ProductionWorldScenePath}: failed to read first-hour runtime owner scene proof: {readFailure}");
+                return;
+            }
+
+            List<string> missing = new List<string>(3);
+            RequireSceneScriptGuid(sceneText, LoreSystemsRootScriptPath, "HectonLoreSystemsRoot", missing);
+            RequireSceneScriptGuid(sceneText, QuestManagerScriptPath, "QuestManager", missing);
+            RequireSceneScriptGuid(sceneText, FirstHourDirectorScriptPath, "FirstHourDirector", missing);
+            if (missing.Count <= 0)
+                return;
+
+            result.FirstHourDrillRouteErrorCount++;
+            result.Errors.Add(
+                $"{ProductionWorldScenePath}: missing first-hour runtime owner(s): {string.Join(", ", missing)}. " +
+                "QuestData assets alone do not run the drill/copper/first-breath chain; run Tools/Hecton8/Lore Systems/Bootstrap Production World Scene in Unity, " +
+                "or execute Hecton8.Editor.LoreSystemsBootstrapUtility.BootstrapProductionWorldSceneBatch in Unity batchmode, before claiming runtime integration.");
+        }
+
+        private static void RequireSceneScriptGuid(
+            string sceneText,
+            string scriptPath,
+            string label,
+            List<string> missing)
+        {
+            string guid = AssetDatabase.AssetPathToGUID(scriptPath);
+            if (!string.IsNullOrWhiteSpace(guid) && sceneText.IndexOf(guid, StringComparison.OrdinalIgnoreCase) >= 0)
+                return;
+
+            missing.Add(label);
+        }
+
         private static void ValidateQuestIdentity(
             QuestData quest,
             string assetPath,
@@ -2125,7 +2166,7 @@ namespace Hecton8.Editor.Validation
             if (string.IsNullOrWhiteSpace(itemPath))
                 result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item has no valid asset path.");
 
-            int itemHash = !string.IsNullOrWhiteSpace(item.PersistentId) ? LocHash.Compute(item.PersistentId) : 0;
+            int itemHash = ItemData.ResolvePersistentHashId(item);
             if (itemHash == 0)
             {
                 result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item '{item.name}' has empty PersistentId.");
@@ -2432,7 +2473,7 @@ namespace Hecton8.Editor.Validation
                         continue;
                     }
 
-                    int itemHash = LocHash.Compute(item.PersistentId);
+                    int itemHash = ItemData.ResolvePersistentHashId(item);
                     if (itemHash == 0 || itemCatalog == null || !ReferenceEquals(itemCatalog.FindByHash(itemHash), item))
                     {
                         result.PlayerStarterLoadoutErrorCount++;
@@ -2727,8 +2768,16 @@ namespace Hecton8.Editor.Validation
                     continue;
 
                 result.BaseModuleCount++;
+                string persistentId = template.PersistentId;
+                int expectedTemplateHashId = string.IsNullOrWhiteSpace(persistentId) ? 0 : LocHash.Compute(persistentId);
                 if (template.TemplateHashId == 0)
                     result.Errors.Add($"{assetPath}: BaseModuleTemplate.TemplateHashId resolves to 0.");
+                else if (template.TemplateHashId != expectedTemplateHashId)
+                {
+                    result.Errors.Add(
+                        $"{assetPath}: BaseModuleTemplate.TemplateHashId '{template.TemplateHashId}' does not match " +
+                        $"canonical PersistentId '{persistentId}' hash '{expectedTemplateHashId}'.");
+                }
 
                 Vector3 proxyBoundsSize = template.ProxyBoundsSize;
                 if (proxyBoundsSize.x <= 0.01f || proxyBoundsSize.y <= 0.01f || proxyBoundsSize.z <= 0.01f)

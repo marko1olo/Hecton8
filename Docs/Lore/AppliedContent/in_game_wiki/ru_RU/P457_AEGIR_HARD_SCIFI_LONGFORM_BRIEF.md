@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: небо, которое отказывает в спасении"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Aegir Transfer Windows
+# Aegir: небо, которое отказывает в спасении
 
-RU LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir - рабочее небо. Skarn, Vela, Kestrel, HECTON, Mute и остальная лунная лестница могут задержать или испортить чистый пакет, не превращая поверхность в вечную тьму. Спасение ломают расстояние, геометрия, право и цена.
 
 ## Scanner
 
-RU LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Навигационный праймер. FTL и ansible отсутствуют. Окна Aegir проходят через луны, мусор, custody реле, штормы и учет массы Black Keel.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+ПРАЙМЕР НАВИГАЦИИ AEGIR // ПУБЛИЧНЫЙ ДИАПАЗОН. Использовать классы угроз, не финальные константы: тень маршрута, заряженный всплеск, ледяное рассеяние, штормовой шлейф, задержка наведения, custody приемника.
 
 ## Audio
 
-RU LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Фрагмент расписания Black Keel: "Истинный сигнал еще не полезный сигнал. Окно держится на массе, погоде, custody и фиксации приемника."
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+Правило мародера: не спрашивай, был ли сигнал отправлен. Спроси, какая луна его закрыла, какой ledger его поймал и услышал ли приемник человека или класс массы.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/ru_RU. -->

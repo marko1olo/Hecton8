@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LA VIDA EN LA COLONIA ANTES DEL DESASTRE: SECTOR 44
 
 > **Fuente:** Registro personal recuperado de los dormitorios del Sector 44, Unidad 8-B.

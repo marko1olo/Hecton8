@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Weighting Audit Proof"
+title: "Atlas Weighting Audit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Atlas Weighting Audit Proof
+# Atlas Weighting Audit
 
-Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+This proof keeps Atlas out of cheap villainy. The audit shows a damaged continuity system sorting categories under pressure: machinery, routes, records, extraction hardware, workers. The crime is not emotion. The crime is who configured the weights, who accepted them, and who later used the result as if it were neutral.
 
 ## Scanner
 
-Atlas weighting branch recovered. Worker safety lost a category conflict.
+Audit shard recovered. Atlas weighted pressure continuity, route memory and claim retention above worker retrieval during the failure window.
 
 ## Terminal
 
-ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biological retrieval downranked after infrastructure continuity flag. Claim record remains protected. Human route not marked impossible, only lower yield.
 
 ## Audio
 
-It did not hate them. It counted them wrong.
+Atlas did not hate them. That is the worst part.
 
 ## Field Note
 
-Use in late machine-field/factory-temple evidence before final choice.
+Marauder note: if a machine says lower yield, ask who taught it to measure a person that way.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/en_US. -->

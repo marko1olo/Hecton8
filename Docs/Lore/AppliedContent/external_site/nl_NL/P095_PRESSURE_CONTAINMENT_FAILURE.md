@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Drukcontainmentfalen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Drukcontainmentfalen
 
-NL LOC HOLD: Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating.
-
-## Scanner
-
-NL LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
-
-## Terminal
-
-NL LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
-
-## Audio
-
-NL LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
-
-## Field Note
-
-NL LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Blue debt is geen vervloekte schat. Het is materiaalgeheugen onder druk. Xenon-Omega-residu blijft nuttig zolang zijn rooster gelooft dat het diep, koud en samengedrukt is. Haal het te snel weg, bewaar het slecht, of laat signaalschuif door de casket kruipen, en het monster faalt in leesbare fasen. Eerst komt drift: meters liegen, resonantie trilt, containmentalarmen spreken elkaar tegen. Dan breekt het rooster. Pekel komt binnen. Biologie volgt chemie. In fase 4 is het monster dood als waarde, maar levend als besmetting.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/nl_NL. -->

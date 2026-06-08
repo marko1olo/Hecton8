@@ -40,6 +40,7 @@ namespace Hecton8.Gameplay
         ISubmarineState
     {
         private static int s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount;
+        private const float DefaultSeaLevelY = 14.02f;
         [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct PidJobOutput
         {
@@ -709,8 +710,14 @@ namespace Hecton8.Gameplay
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (shiftData.ShiftOffset.sqrMagnitude <= 0.000001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFinite(shiftOffset) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             _previousPidError = float3.zero;
             _lastPidDerivative = float3.zero;
@@ -885,7 +892,7 @@ namespace Hecton8.Gameplay
 
             if (_registeredHotSwap)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
 
@@ -945,7 +952,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1953,7 +1960,7 @@ namespace Hecton8.Gameplay
                 SubmarineFluidDynamics fluidDynamics = _core != null ? _core.FluidDynamics : null;
                 float depthMeters = fluidDynamics != null
                     ? math.max(0f, fluidDynamics.ExternalDepthMeters)
-                    : math.max(0f, -worldCenter.y);
+                    : ResolveFallbackExternalDepthMeters(worldCenter);
                 double3 surfaceAbsolute = hullAbsolute + new double3(0d, depthMeters, 0d);
                 float hullVolume = ResolveBallastHullVolume();
                 float hullHeight = math.max(0.1f, ballastHullHeightMeters);
@@ -1985,6 +1992,11 @@ namespace Hecton8.Gameplay
             {
                 ReleaseVaultWrite(in _ballastFluidSamplesHandle);
             }
+        }
+
+        private static float ResolveFallbackExternalDepthMeters(Vector3 worldCenter)
+        {
+            return math.isfinite(worldCenter.y) ? math.max(0f, DefaultSeaLevelY - worldCenter.y) : 0f;
         }
 
         private void PatchBallastTelemetryComputeMicros(in SubmarineBallastForcePacketDTO packet)

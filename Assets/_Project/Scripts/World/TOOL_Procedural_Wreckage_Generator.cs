@@ -65,6 +65,10 @@ namespace Hecton8.World
             public NativeQueue<int3> PropagationQueue;
             public NativeArray<uint4> RngState;
             public NativeParallelHashMap<int3, byte> CollapseOrder;
+            private int _gridSentinelId;
+            private int _propagationQueueSentinelId;
+            private int _rngStateSentinelId;
+            private int _collapseOrderSentinelId;
 
             public WfcState(int cellCount, int collapseOrderCapacity, Allocator allocator)
             {
@@ -74,6 +78,10 @@ namespace Hecton8.World
                 PropagationQueue = default;
                 RngState = default;
                 CollapseOrder = default;
+                _gridSentinelId = 0;
+                _propagationQueueSentinelId = 0;
+                _rngStateSentinelId = 0;
+                _collapseOrderSentinelId = 0;
 
                 try
                 {
@@ -83,11 +91,11 @@ namespace Hecton8.World
                     CollapseOrder = new NativeParallelHashMap<int3, byte>(safeCollapseCapacity, allocator);
 
                     NativeAllocationLifetime lifetime = ResolveLifetime(allocator);
-                    RegisterNativeArray(Grid, nameof(Grid), lifetime);
-                    RegisterNativeQueue(PropagationQueue, safeCellCount, nameof(PropagationQueue), lifetime);
+                    RegisterNativeArray(Grid, nameof(Grid), lifetime, out _gridSentinelId);
+                    RegisterNativeQueue(PropagationQueue, safeCellCount, nameof(PropagationQueue), lifetime, out _propagationQueueSentinelId);
                     PrewarmQueue(ref PropagationQueue, safeCellCount);
-                    RegisterNativeArray(RngState, nameof(RngState), lifetime);
-                    RegisterNativeParallelHashMap(CollapseOrder, nameof(CollapseOrder), lifetime);
+                    RegisterNativeArray(RngState, nameof(RngState), lifetime, out _rngStateSentinelId);
+                    RegisterNativeParallelHashMap(CollapseOrder, nameof(CollapseOrder), lifetime, out _collapseOrderSentinelId);
                 }
                 catch
                 {
@@ -98,29 +106,10 @@ namespace Hecton8.World
 
             public void Dispose()
             {
-                if (Grid.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(Grid);
-                    Grid.Dispose();
-                }
-
-                if (PropagationQueue.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeQueue(nameof(TOOL_Procedural_Wreckage_Generator), nameof(PropagationQueue));
-                    PropagationQueue.Dispose();
-                }
-
-                if (RngState.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(RngState);
-                    RngState.Dispose();
-                }
-
-                if (CollapseOrder.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(TOOL_Procedural_Wreckage_Generator), nameof(CollapseOrder));
-                    CollapseOrder.Dispose();
-                }
+                DisposeNativeArray(ref Grid, ref _gridSentinelId);
+                DisposeNativeQueue(ref PropagationQueue, ref _propagationQueueSentinelId);
+                DisposeNativeArray(ref RngState, ref _rngStateSentinelId);
+                DisposeNativeParallelHashMap(ref CollapseOrder, ref _collapseOrderSentinelId);
             }
 
             private static NativeAllocationLifetime ResolveLifetime(Allocator allocator)
@@ -144,29 +133,186 @@ namespace Hecton8.World
                 }
             }
 
-            private static void RegisterNativeArray<T>(NativeArray<T> array, string label, NativeAllocationLifetime lifetime)
+            private static void RegisterNativeArray<T>(
+                NativeArray<T> array,
+                string label,
+                NativeAllocationLifetime lifetime,
+                out int sentinelId)
                 where T : struct
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, nameof(TOOL_Procedural_Wreckage_Generator), label, lifetime);
+                sentinelId = 0;
+                sentinelId = NativeMemorySentinel.RegisterNativeArray(array, nameof(TOOL_Procedural_Wreckage_Generator), label, lifetime);
                 if (sentinelId <= 0)
                     throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
             }
 
-            private static void RegisterNativeQueue<T>(NativeQueue<T> queue, int expectedCapacity, string label, NativeAllocationLifetime lifetime)
+            private static void RegisterNativeQueue<T>(
+                NativeQueue<T> queue,
+                int expectedCapacity,
+                string label,
+                NativeAllocationLifetime lifetime,
+                out int sentinelId)
                 where T : unmanaged
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(queue, expectedCapacity, nameof(TOOL_Procedural_Wreckage_Generator), label, lifetime);
+                sentinelId = 0;
+                sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(queue, expectedCapacity, nameof(TOOL_Procedural_Wreckage_Generator), label, lifetime);
                 if (sentinelId <= 0)
                     throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
             }
 
-            private static void RegisterNativeParallelHashMap<TKey, TValue>(NativeParallelHashMap<TKey, TValue> map, string label, NativeAllocationLifetime lifetime)
+            private static void RegisterNativeParallelHashMap<TKey, TValue>(
+                NativeParallelHashMap<TKey, TValue> map,
+                string label,
+                NativeAllocationLifetime lifetime,
+                out int sentinelId)
                 where TKey : unmanaged, IEquatable<TKey>
                 where TValue : unmanaged
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeParallelHashMap(map, nameof(TOOL_Procedural_Wreckage_Generator), label, lifetime);
+                sentinelId = 0;
+                sentinelId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(map, nameof(TOOL_Procedural_Wreckage_Generator), label, lifetime);
                 if (sentinelId <= 0)
                     throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            }
+
+            private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref int sentinelId)
+                where T : struct
+            {
+                Exception firstException = null;
+
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        firstException = exception;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                if (array.IsCreated)
+                {
+                    try
+                    {
+                        array.Dispose();
+                    }
+                    catch (Exception exception)
+                    {
+                        if (firstException == null)
+                            firstException = exception;
+                    }
+                    finally
+                    {
+                        array = default;
+                    }
+                }
+                else
+                {
+                    array = default;
+                }
+
+                if (firstException != null)
+                    throw firstException;
+            }
+
+            private static void DisposeNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
+                where T : unmanaged
+            {
+                Exception firstException = null;
+
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        firstException = exception;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                if (queue.IsCreated)
+                {
+                    try
+                    {
+                        queue.Dispose();
+                    }
+                    catch (Exception exception)
+                    {
+                        if (firstException == null)
+                            firstException = exception;
+                    }
+                    finally
+                    {
+                        queue = default;
+                    }
+                }
+                else
+                {
+                    queue = default;
+                }
+
+                if (firstException != null)
+                    throw firstException;
+            }
+
+            private static void DisposeNativeParallelHashMap<TKey, TValue>(
+                ref NativeParallelHashMap<TKey, TValue> map,
+                ref int sentinelId)
+                where TKey : unmanaged, IEquatable<TKey>
+                where TValue : unmanaged
+            {
+                Exception firstException = null;
+
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        firstException = exception;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                if (map.IsCreated)
+                {
+                    try
+                    {
+                        map.Dispose();
+                    }
+                    catch (Exception exception)
+                    {
+                        if (firstException == null)
+                            firstException = exception;
+                    }
+                    finally
+                    {
+                        map = default;
+                    }
+                }
+                else
+                {
+                    map = default;
+                }
+
+                if (firstException != null)
+                    throw firstException;
             }
         }
 

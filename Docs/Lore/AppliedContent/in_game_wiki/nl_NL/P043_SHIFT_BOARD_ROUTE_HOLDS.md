@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Routeblokkades op dienstenbord
 
-Dit bewijs toont hoe logistieke taal lichamen verbergt en schuld verspreidt over procedure.
+Ploegenborden veranderen catastrofe in leesbare procedure. Deep Reach en Atlas doodden via classificatie, vertraging en prioriteit, niet via theatrale kwaadaardigheid.
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "UK LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: історія тиску в custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Blue Debt Custody
+# Blue Debt: історія тиску в custody
 
-UK LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt корисний, дорогий і морально брудний. Це не magic ore, а pressure-grown substrate, чия цінність залежить від handling, contamination, custody, Atlas compatibility і власника доказу.
 
 ## Scanner
 
-UK LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Ресурсний архів. Blue debt - Xenon-Omega pressure substrate в custody: pressure history, brine exposure, noble-gas capture, contamination stage, sample grade і payout через mass-through-window.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+ПУБЛІЧНИЙ ВУЗОЛ РЕСУРСУ // BLUE DEBT. Цінність потребує pressure-rated containment, extraction scar record, contamination status, custody receipt і recoverable tonne-window allocation.
 
 ## Audio
 
-UK LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+Аудіо виплати Black Keel: "Не поліруй зразок. Запечатай, дай grade і тримай receipt сухим."
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Нотатка мародера: спочатку дай grade зразку, потім питай, що його торкалося. Ціна без custody - приманка.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/uk_UA. -->

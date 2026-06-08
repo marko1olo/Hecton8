@@ -9,32 +9,26 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: スポイラーゲート"
+title: "スポイラーゲート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: スポイラーゲート
+# スポイラーゲート
 
-JA LOC HOLD: 公開HECTON-8ページは、証拠を明かさずに仕事を名指しできる。開いた層は安全な文脈だけを与え、封印、経路印、スキャン、端末断片、作業者タグ、ブラックボックス記録が後の強い主張を開く。
+## 公開文脈
 
-## Scanner
+公開HECTON-8ページは証拠を渡さずに仕事を名指しできる。開放層は、HECTON-8がAegirの下の海洋月であること、コロニーが失敗したこと、Black Keelが清潔な救助ではなくサルベージ圧を運ぶこと、Deep Reachが嵐、崩壊、自律失敗、Atlas-6救助文言、欠落データからなる公開報告を残したことを言える。
 
-JA LOC HOLD: 公開アーカイブゲート // ネタバレ階層0/1。公開文脈のみ。深い証拠はコデックス拡張前に回収済み保管が必要。
+それで読者は前提を理解できる。犯罪を証明するには足りない。
 
-## Terminal
+深いページには回収物が必要だ。パケット封印、経路印、スキャン記録、作業者タグ、端末断片、ブラックボックス行、または保管が保たれたサンプル。これらがゲーム内で見つかる前、公開wikiは安全な文脈で止まる。発見後、コデックスは事実の出所をプレイヤーが見たため、より強い表現を使える。
 
-JA LOC HOLD: PUBLIC/WIKI出力フィルタ // 証拠前に許可: 舞台、経路圧、公開事故文、既知機関、初期サルベージ前提。深い証拠は保留。
+ゲートは五つを守る。プレイヤーの最初の潜行、コロニー作業員の証拠、Deep Reachの責任連鎖、Atlas-6修理網の真実、最終ペイロード結果。公開ページはそれらへ向けて指せる。最終受信者、経路、結果は載せない。
 
-## Audio
-
-JA LOC HOLD: Black Keel中継: 公開文は月の名を出せる。証拠には封印が要る。封印を持ってこい。
-
-## Field Note
-
-JA LOC HOLD: 公開ページは潜る場所を教える。誰が扉を閉じたままにしたかは教えない。
+公開記事は地図だ。回収された証拠が証明だ。
 
 <!-- External Site; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/ja_JP. -->

@@ -2,39 +2,25 @@
 packet_id: P012_RELAY_SPINE
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: transit.relay_spine
-unlock_id: unlock.first_relay_buffer
-poi_tags: poi.relay_buffer;poi.packet_spool
+unlock_id: unlock.first_stale_relay_buffer
+poi_tags: poi.relay_buffer;poi.packet_age_tag
 biome_tags: biome.drowned_colony;biome.service_canyons
 locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tulang Punggung Relay"
+title: "Tulang Punggung Relai"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tulang Punggung Relay
+# Tulang Punggung Relai
 
-Relay Spine mendefinisikan tekanan no-FTL HECTON-8. Pesan, hukum, dan catatan ada, tetapi tidak mengalahkan cahaya atau bencana lokal.
+Ruang manusia tersambung oleh relai, bukan mukjizat. Hash membuktikan penerimaan; rantai hukum menjaga klaim hidup.
 
-## Scanner
-
-Buffer relay basi. Usia paket keluar melebihi relevansi penyelamatan lokal.
-
-## Terminal
-
-Packet queued. Light-delay route accepted. Priority dispute unresolved. Human-response estimate: non-operational.
-
-## Audio
-
-Relay tidak rusak. Itu masalahnya. Ia bekerja persis sebatas yang diizinkan jarak.
-
-## Field Note
-
-Pesan bisa benar dan tetap tiba setelah kau jadi tulang.
+Jaringannya kuat dan dingin. Pemain bisa mengirim kebenaran lalu mati sebelum itu berguna.
 
 <!-- External Site; generated from P012_RELAY_SPINE/id_ID. -->

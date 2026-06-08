@@ -30,6 +30,9 @@
       "heightScale": 0.003,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "seamScoreBefore": 15.0735,
+      "seamScoreAfter": 0.2283,
+      "seamRepaired": true,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_wet_service_panel_biofilm/TX_GM_gemini_20260607_wet_service_panel_biofilm_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_wet_service_panel_biofilm/TX_GM_gemini_20260607_wet_service_panel_biofilm_NormalGL.jpg",
@@ -57,6 +60,9 @@
       "heightScale": 0.001,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "seamScoreBefore": 1.2414,
+      "seamScoreAfter": 1.2414,
+      "seamRepaired": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_transparent_pressure_glass_edge_wear/TX_GM_gemini_20260607_transparent_pressure_glass_edge_wear_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_transparent_pressure_glass_edge_wear/TX_GM_gemini_20260607_transparent_pressure_glass_edge_wear_NormalGL.jpg",
@@ -84,6 +90,9 @@
       "heightScale": 0.006,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "seamScoreBefore": 10.1272,
+      "seamScoreAfter": 1.1238,
+      "seamRepaired": true,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_salvage_worn_repair_metal/TX_GM_gemini_20260607_salvage_worn_repair_metal_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_salvage_worn_repair_metal/TX_GM_gemini_20260607_salvage_worn_repair_metal_NormalGL.jpg",
@@ -111,6 +120,9 @@
       "heightScale": 0.002,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "seamScoreBefore": 3.1278,
+      "seamScoreAfter": 0.3552,
+      "seamRepaired": true,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_white_ceramic_sensor_casing/TX_GM_gemini_20260607_white_ceramic_sensor_casing_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_white_ceramic_sensor_casing/TX_GM_gemini_20260607_white_ceramic_sensor_casing_NormalGL.jpg",
@@ -138,6 +150,9 @@
       "heightScale": 0.002,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "seamScoreBefore": 7.8688,
+      "seamScoreAfter": 0.5778,
+      "seamRepaired": true,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_dark_anodized_tool_metal/TX_GM_gemini_20260607_dark_anodized_tool_metal_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_dark_anodized_tool_metal/TX_GM_gemini_20260607_dark_anodized_tool_metal_NormalGL.jpg",
@@ -165,12 +180,45 @@
       "heightScale": 0.007,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "seamScoreBefore": 2.9822,
+      "seamScoreAfter": 0.394,
+      "seamRepaired": true,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_fine_ribbed_metal_trim/TX_GM_gemini_20260607_fine_ribbed_metal_trim_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_fine_ribbed_metal_trim/TX_GM_gemini_20260607_fine_ribbed_metal_trim_NormalGL.jpg",
         "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_fine_ribbed_metal_trim/TX_GM_gemini_20260607_fine_ribbed_metal_trim_ARM_AO_Rough_Metal.jpg",
         "Height": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_fine_ribbed_metal_trim/TX_GM_gemini_20260607_fine_ribbed_metal_trim_Height.jpg",
         "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_fine_ribbed_metal_trim/TX_GM_gemini_20260607_fine_ribbed_metal_trim_MaskMap_UnityURP.png"
+      }
+    },
+    {
+      "id": "gemini_20260607_orange_safety_composite_panel",
+      "title": "Orange Safety Composite Panel",
+      "source": "C:\\Users\\danat\\Downloads\\Orange Safety Composite Panel.png",
+      "license": "USER_GENERATED_REVIEW_REQUIRED",
+      "role": "orange-red polymer composite for readable safety accents on tools and survival equipment",
+      "catalogVersion": 1,
+      "surfaceClass": "safety_composite_panel",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "tilingScale": 1.15,
+      "metallic": 0.0,
+      "smoothness": 0.3,
+      "normalScale": 0.46,
+      "heightScale": 0.003,
+      "provisionalPbrMaps": true,
+      "watermarkRepaired": true,
+      "seamScoreBefore": 2.5816,
+      "seamScoreAfter": 0.2989,
+      "seamRepaired": true,
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_orange_safety_composite_panel/TX_GM_gemini_20260607_orange_safety_composite_panel_BaseColor.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_orange_safety_composite_panel/TX_GM_gemini_20260607_orange_safety_composite_panel_NormalGL.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_orange_safety_composite_panel/TX_GM_gemini_20260607_orange_safety_composite_panel_ARM_AO_Rough_Metal.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_orange_safety_composite_panel/TX_GM_gemini_20260607_orange_safety_composite_panel_Height.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_orange_safety_composite_panel/TX_GM_gemini_20260607_orange_safety_composite_panel_MaskMap_UnityURP.png"
       }
     },
     {
@@ -192,6 +240,9 @@
       "heightScale": 0.003,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "seamScoreBefore": 4.0347,
+      "seamScoreAfter": 0.4451,
+      "seamRepaired": true,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_black_waterproof_grip_rubber/TX_GM_gemini_20260607_black_waterproof_grip_rubber_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_black_waterproof_grip_rubber/TX_GM_gemini_20260607_black_waterproof_grip_rubber_NormalGL.jpg",
@@ -219,6 +270,9 @@
       "heightScale": 0.004,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "seamScoreBefore": 3.1604,
+      "seamScoreAfter": 0.3583,
+      "seamRepaired": true,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_clean_nasa_punk_tool_housing_metal/TX_GM_gemini_20260607_clean_nasa_punk_tool_housing_metal_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_clean_nasa_punk_tool_housing_metal/TX_GM_gemini_20260607_clean_nasa_punk_tool_housing_metal_NormalGL.jpg",
@@ -228,13 +282,6 @@
       }
     }
   ],
-  "rejected": [
-    {
-      "id": "orange_safety_composite_panel",
-      "reason": "Prompt drift: output is dark ribbed metal, not orange safety composite.",
-      "source": "C:\\Users\\danat\\Downloads\\Orange Safety Composite Panel.png",
-      "cleanedPath": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Rejected/TX_GM_orange_safety_composite_panel_Rejected_Cleaned_2k.jpg"
-    }
-  ],
+  "rejected": [],
   "preview": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/PREVIEW_GeminiSingleMaterials_20260607.png"
 }

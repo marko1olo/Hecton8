@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "قواعد لقاء الملاحة بريش المحلول الملحي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Brine Vane Navigation Encounter Grammar
+# قواعد لقاء الملاحة بريش المحلول الملحي
 
-AR LOC HOLD: Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.
+تعلم لقاءات الملاحة بريش المحلول الملحي أن ماء العمق المتوسط مبني، لا فارغ. يجب أن يقرأ اللاعب حقل الريش كسلم متضرر: الصفائح السليمة جدران، الأفواه الممزقة فتحات محتملة، الرؤوس الملتفة قص يضعف، والفجوات السوداء بلا حافة ريشة ظاهرة أماكن يستطيع sonar أن يخترع فيها أرضية. يجب أن يطلب اللقاء حركة بطيئة، وضبط طفو محافظ، وتغيير زاوية، لا سباحة مباشرة نحو أجمل توهج. قد يستغل Atlas حد الكثافة نفسه من أجل repair routing، لكن التيار يبقى فيزياء. هذا الفرق مهم. المحيط لا يتكلم. إنه يجعل عملية مرئية. مسار ريش جيد يسمح للاعب باتباع حافة واحدة، وإرسال ping من زاوية ثانية، واختبار الانجراف، والشعور بالذكاء لأنه رفض shortcut المفتوح.
 
 ## Scanner
 
-AR LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+حقل ريش محلول ملحي. الصفائح المتراصة تعلم انعطافات الكثافة؛ الرؤوس الملتفة تعلم نوافذ ضعيفة؛ sonar يتشوه قرب التوهج المفتوح. أبق حافة واحدة في النظر.
 
 ## Terminal
 
-AR LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+قواعد لقاء / الملاحة بريش المحلول الملحي / الدور: قراءة مسار في العمق المتوسط، درابزين جدار كثافة، تصحيح أرضية كاذبة / قراءة آمنة: حافة ريشة سليمة، فم ممزق، انحناء sonar يطابق انجراف الطفو / ارفض: عبور ماء أسود مفتوح، قطع الصفيحة المرشدة، الثقة بعودة أرضية بلا حد ريشة / ملاحظة مسار: الريشة لا تقودك بنية؛ إنها تطيع الماء بصوت كاف لتتبعها.
 
 ## Audio
 
-AR LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+الريشة ليست لافتة. إنها ماء يصنع جدارا ويترك درزا.
 
 ## Field Note
 
-AR LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+عامل حافة الريشة كدرابزين. إذا انحنى الخط خطأ، فقراءة الطفو لديك متأخرة أصلا.
 
 <!-- In-Game Wiki; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/ar_SA. -->

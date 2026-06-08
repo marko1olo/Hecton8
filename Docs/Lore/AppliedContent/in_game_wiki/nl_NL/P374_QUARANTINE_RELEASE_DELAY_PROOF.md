@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Quarantine Release Delay Proof"
+title: "Quarantainevrijgave Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Quarantine Release Delay Proof
+# Quarantainevrijgave Hold
 
-NL LOC HOLD: Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
+Het hold-record maakt quarantaine niet slecht. Het maakt timing zichtbaar. Deep Reach kon onzekerheid benoemen, vrijgave vertragen, verzekeringspositie bewaren en de werker in de zone houden tot de route stierf.
 
 ## Scanner
 
-NL LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+Quarantaine-holdplaat. Beschermingstaal verschijnt nadat de uitgang al vergrendeld is.
 
 ## Terminal
 
-NL LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
 
 ## Audio
 
-NL LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+Quarantaine kan een lichaam redden. Het kan een lichaam ook laten wachten tot het papierwerk wordt.
 
 ## Field Note
 
-NL LOC HOLD: Use where player may confuse rescue with custody.
+Marauder-notitie: bescherming wordt niet bewezen door het woord bescherming. Controleer de klok.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/nl_NL. -->

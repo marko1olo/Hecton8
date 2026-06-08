@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # GEOLOGIE, DRUCK UND DIE GROSSE FLUT VON 2147
 
 > **Quelle:** Keelmark Loss Desk, Zusammenfassung der Schadensablehnung. Beigefügter Anhang: Leitfaden für bathymetrische Gefahren.  

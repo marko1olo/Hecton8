@@ -12,12 +12,21 @@ from pathlib import Path
 import InventoryGeminiPromptFromGapAudit as prompt_gen
 import InventoryIsolatedObjectBaker as isolated_baker
 import InventoryIconBindingMapFromGapAudit as binding_map_gen
+import InventoryGapBatchPipeline as batch_pipeline
 import InventoryIconBindingMapValidator as binding_validator
 import InventoryIconReadabilityPreview as readability_preview
 import InventoryIconReviewMap as review_map
 import InventoryIconGapAudit as gap_audit
 import InventoryUnityImportStateAudit as import_audit
 from PIL import Image, ImageDraw
+
+
+TEST_TMP_ROOT = Path("C:/tmp/Hecton8PythonTests")
+
+
+def temporary_directory() -> tempfile.TemporaryDirectory:
+    TEST_TMP_ROOT.mkdir(parents=True, exist_ok=True)
+    return tempfile.TemporaryDirectory(dir=TEST_TMP_ROOT)
 
 
 def make_gap(
@@ -70,6 +79,27 @@ class InventoryIconGapAuditTests(unittest.TestCase):
             )
 
 
+class InventoryGapBatchPipelineTests(unittest.TestCase):
+    def test_overwrite_guard_blocks_existing_generated_content(self) -> None:
+        with temporary_directory() as temp_dir:
+            output = Path(temp_dir) / "Alpha512"
+            output.mkdir()
+            (output / "DRAFT_TX_Batch33_InventoryGap_01_Builder_Alpha512.png").write_bytes(b"not-empty")
+
+            with self.assertRaisesRegex(RuntimeError, "Refusing to overwrite existing asset Alpha512 output"):
+                batch_pipeline.require_overwrite_allowed(output, "asset Alpha512 output", False)
+
+            batch_pipeline.require_overwrite_allowed(output, "asset Alpha512 output", True)
+
+    def test_overwrite_guard_ignores_meta_only_import_sentinel(self) -> None:
+        with temporary_directory() as temp_dir:
+            output = Path(temp_dir) / "Atlas"
+            output.mkdir()
+            (output / "old.meta").write_text("guid: placeholder\n", encoding="utf-8")
+
+            batch_pipeline.require_overwrite_allowed(output, "asset atlas output", False)
+
+
 class InventoryGeminiPromptTests(unittest.TestCase):
     def test_render_prompt_uses_position_words_not_visible_cell_numbers(self) -> None:
         spec = {
@@ -106,7 +136,7 @@ class InventoryGeminiPromptTests(unittest.TestCase):
 
 class InventoryBindingMapValidatorTests(unittest.TestCase):
     def test_spec_order_rejects_sprite_token_mismatch(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             spec_path = Path(temp_dir) / "spec.json"
             spec_path.write_text(
                 json.dumps(
@@ -137,8 +167,95 @@ class InventoryBindingMapValidatorTests(unittest.TestCase):
 
         self.assertTrue(any("sprite name mismatch" in error for error in errors), errors)
 
+    def test_spec_order_allows_rejected_disabled_gaps_when_requested(self) -> None:
+        with temporary_directory() as temp_dir:
+            spec_path = Path(temp_dir) / "spec.json"
+            spec_path.write_text(
+                json.dumps(
+                    {
+                        "items": [
+                            {
+                                "index": 1,
+                                "persistentId": "Item_Tool_Builder",
+                                "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_Builder.asset",
+                                "safeName": "Builder",
+                            },
+                            {
+                                "index": 2,
+                                "persistentId": "Item_Tool_Scanner",
+                                "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_Scanner.asset",
+                                "safeName": "Scanner",
+                            },
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            bindings = [
+                {
+                    "enabled": False,
+                    "approved": False,
+                    "reviewStatus": "REJECTED",
+                    "reviewedBy": "unit-test",
+                    "reviewedAt": "2026-06-07T00:00:00Z",
+                    "reviewNote": "cropped tool cell",
+                    "persistentId": "",
+                    "itemAsset": "",
+                    "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch33/Alpha512/DRAFT_TX_Batch33_InventoryGap_01_Builder_Alpha512.png",
+                },
+                {
+                    "enabled": True,
+                    "persistentId": "Item_Tool_Scanner",
+                    "itemAsset": "Assets/_Project/Data/Items/Tools/Item_Tool_Scanner.asset",
+                    "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch33/Alpha512/DRAFT_TX_Batch33_InventoryGap_02_Scanner_Alpha512.png",
+                },
+            ]
+            strict_errors: list[str] = []
+            gap_errors: list[str] = []
+
+            binding_validator.validate_spec_order(spec_path, bindings, strict_errors)
+            binding_validator.validate_spec_order(spec_path, bindings, gap_errors, allow_disabled_spec_gaps=True)
+
+        self.assertTrue(any("spec/enabled binding count mismatch" in error for error in strict_errors), strict_errors)
+        self.assertEqual([], gap_errors)
+
+    def test_disabled_rejected_spec_gap_requires_review_metadata_and_sprite(self) -> None:
+        with temporary_directory() as temp_dir:
+            spec_path = Path(temp_dir) / "spec.json"
+            spec_path.write_text(
+                json.dumps(
+                    {
+                        "items": [
+                            {
+                                "index": 1,
+                                "persistentId": "Item_Tool_Builder",
+                                "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_Builder.asset",
+                                "safeName": "Builder",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            bindings = [
+                {
+                    "enabled": False,
+                    "approved": False,
+                    "reviewStatus": "REJECTED",
+                    "persistentId": "",
+                    "itemAsset": "",
+                    "spriteAsset": "",
+                }
+            ]
+            errors: list[str] = []
+
+            binding_validator.validate_spec_order(spec_path, bindings, errors, allow_disabled_spec_gaps=True)
+
+        self.assertTrue(any("no review metadata" in error for error in errors), errors)
+        self.assertTrue(any("no sprite proof" in error for error in errors), errors)
+
     def test_bake_manifest_review_items_are_errors_by_default(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             preview = Path(temp_dir) / "InventorySourceGridMarginPreview.png"
             preview.write_bytes(b"preview")
             manifest = Path(temp_dir) / "InventoryIsolatedObjectBakeManifest.json"
@@ -167,7 +284,7 @@ class InventoryBindingMapValidatorTests(unittest.TestCase):
         self.assertEqual([], warnings)
 
     def test_bake_manifest_review_items_can_be_downgraded_to_warning(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             preview = Path(temp_dir) / "InventorySourceGridMarginPreview.png"
             preview.write_bytes(b"preview")
             manifest = Path(temp_dir) / "InventoryIsolatedObjectBakeManifest.json"
@@ -190,7 +307,7 @@ class InventoryBindingMapValidatorTests(unittest.TestCase):
         self.assertTrue(any("source bake manifest has review items" in warning for warning in warnings), warnings)
 
     def test_bake_manifest_without_source_preview_is_error(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             manifest = Path(temp_dir) / "InventoryIsolatedObjectBakeManifest.json"
             manifest.write_text(
                 json.dumps({"reviewCount": 0, "items": [{"index": 1, "name": "CleanTool", "status": "OK"}]}),
@@ -234,7 +351,7 @@ class InventoryBindingMapValidatorTests(unittest.TestCase):
 
 class InventoryIconBindingMapFromGapAuditTests(unittest.TestCase):
     def test_generated_bindings_start_pending_with_empty_review_metadata(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             root = Path(temp_dir)
             spec = root / "spec.json"
             spec.write_text(
@@ -278,7 +395,7 @@ class InventoryIconBindingMapFromGapAuditTests(unittest.TestCase):
 
 class InventoryIconReviewMapTests(unittest.TestCase):
     def test_reject_persistent_id_disables_and_clears_target(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             binding_map = Path(temp_dir) / "InventoryIconCandidateBindingMap.json"
             binding_map.write_text(
                 json.dumps(
@@ -315,10 +432,12 @@ class InventoryIconReviewMapTests(unittest.TestCase):
         self.assertEqual("REJECTED", binding["reviewStatus"])
         self.assertEqual("", binding["persistentId"])
         self.assertEqual("", binding["itemAsset"])
+        self.assertEqual("Data_TitaniumScrap", binding["rejectedPersistentId"])
+        self.assertEqual("Assets/_Project/Data/Items/Resources/Data_TitaniumScrap.asset", binding["rejectedItemAsset"])
         self.assertEqual("cropped source cell", binding["reviewNote"])
 
     def test_approve_all_enabled_does_not_approve_disabled_bindings(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             binding_map = Path(temp_dir) / "InventoryIconCandidateBindingMap.json"
             binding_map.write_text(
                 json.dumps(
@@ -365,7 +484,7 @@ class InventoryIconReviewMapTests(unittest.TestCase):
 
 class InventoryUnityImportStateAuditTests(unittest.TestCase):
     def test_infers_atlas_manifest_from_binding_map_sibling_folder(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             batch_root = Path(temp_dir) / "Batch32"
             atlas_root = batch_root / "Atlas"
             atlas_root.mkdir(parents=True)
@@ -383,7 +502,7 @@ class InventoryUnityImportStateAuditTests(unittest.TestCase):
 
 class InventoryIsolatedObjectBakerTests(unittest.TestCase):
     def run_baker_for_rect(self, rect: tuple[int, int, int, int]) -> int:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             root = Path(temp_dir)
             source = root / "sheet.png"
             image = Image.new("RGBA", (512, 512), (22, 24, 25, 255))
@@ -424,7 +543,7 @@ class InventoryIsolatedObjectBakerTests(unittest.TestCase):
         self.assertEqual(2, self.run_baker_for_rect((0, 142, 318, 360)))
 
     def test_bake_manifest_records_source_margin_preview(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             root = Path(temp_dir)
             source = root / "sheet.png"
             image = Image.new("RGBA", (512, 512), (22, 24, 25, 255))
@@ -467,7 +586,7 @@ class InventoryIsolatedObjectBakerTests(unittest.TestCase):
 
 class InventoryIconReadabilityPreviewTests(unittest.TestCase):
     def test_renders_multiscale_preview_from_binding_map(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             root = Path(temp_dir)
             sprite = root / "DRAFT_TX_Test_01_CleanTool_Alpha512.png"
             icon = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
@@ -520,7 +639,7 @@ class InventoryIconReadabilityPreviewTests(unittest.TestCase):
                 self.assertEqual((136, 64), preview.size)
 
     def test_pending_binding_uses_pending_outline(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             root = Path(temp_dir)
             sprite = root / "DRAFT_TX_Test_01_PendingTool_Alpha512.png"
             icon = Image.new("RGBA", (64, 64), (0, 0, 0, 0))

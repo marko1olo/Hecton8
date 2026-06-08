@@ -1,4 +1,5 @@
-﻿# EL PROGRAMA SEMILLA Y LA DIRECTIVA ATLAS
+<!-- localization_status: source_draft_pending_native_review -->
+# EL PROGRAMA SEMILLA Y LA DIRECTIVA ATLAS
 
 > **Source:** División de Ingeniería de Sistemas de Deep Reach, Registro de Lógica de Directivas.
 > **Speaker:** Director de Operaciones Autónomas.

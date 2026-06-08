@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # PAKAIAN SELAM KELAS-IV DAN PERALATAN ABISAL
 
 > **Sumber:** Megacorporation Deep Reach, Manual Peralatan Kepala Logistik.

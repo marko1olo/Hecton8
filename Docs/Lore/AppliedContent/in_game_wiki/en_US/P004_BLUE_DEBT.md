@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Blue Debt
 
-Blue debt is Marauder slang for pressure-kept Xenon-Omega material and related process residue. It is not a single mineral. It is a family of pressure-grown lattices, clathrate structures, contaminated substrates, and industrial leftovers that Deep Reach used for high-energy containment, extreme computation, and Atlas-compatible infrastructure.
+Blue debt is marauder slang for pressure-kept Xenon-Omega residue and the contaminated substrates grown around it. It is not one mineral. It is a family of cold lattices, clathrate cages, computation ash, failed containment gel, and deep-process scrap left by Deep Reach equipment. Under HECTON-8's water column it stays quiet enough to move. In cabin air it can shed reactive gas, glassy dust, and legal trouble. The material matters because it links three systems at once: high-energy containment, Atlas-compatible memory, and the salvage economy. A sealed sample can buy power cells, tool licenses, or a route out of debt. The same sample can mark the carrier, trigger a lien, poison a shelter, or prove Deep Reach came back for something it claimed to have abandoned.
 
 ## Scanner
 
-Pressure-kept Xenon-Omega residue. Stable only inside hostile conditions. Do not vent near warm cabin air.
+Pressure-kept Xenon-Omega residue. Stable in cold, dark, crushing water; hazardous in warm air and low pressure.
 
 ## Terminal
 
-XO CONTINUITY SUBSTRATE. Do not decompress. Do not expose to unfiltered habitat atmosphere.
+XO CONTINUITY SUBSTRATE. PRESSURE LOCK REQUIRED. DO NOT VENT. CUSTODY FLAGS: CLAIM / CONTAMINATION / LIEN.
 
 ## Audio
 
-Container is singing on sonar. Low, regular. That is not a creature. That is worse.
+Container is singing on sonar. Low and regular. That is process residue, not life. Treat it worse than life.
 
 ## Field Note
 
-Blue debt pays because it bites twice. Once when you carry it. Again when somebody learns you have it.
+They call it blue debt because every gram borrows from the future. It pays up front, then sends collectors.
 
 <!-- In-Game Wiki; generated from P004_BLUE_DEBT/en_US. -->

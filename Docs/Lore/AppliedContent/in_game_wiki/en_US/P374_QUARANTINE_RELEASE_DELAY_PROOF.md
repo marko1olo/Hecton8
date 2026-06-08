@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Release Delay Proof"
+title: "Quarantine Release Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Quarantine Release Delay Proof
+# Quarantine Release Hold
 
-Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
+The hold record does not make quarantine evil. It makes timing visible. Deep Reach could name uncertainty, delay release, preserve insurance position and keep the worker inside the zone long enough for the route to die.
 
 ## Scanner
 
-Quarantine hold plate. The word protection appears only after the exit route is locked.
+Quarantine hold plate. Protection language appears after the exit route is already locked.
 
 ## Terminal
 
-RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Quarantine can save a body. It can also make a body wait until it becomes paperw
 
 ## Field Note
 
-Use where player may confuse rescue with custody.
+Marauder note: protection is not proven by the word protection. Check the clock.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/en_US. -->

@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "عدة مضخة القاع اليدوية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# عدة مضخة القاع اليدوية
 
-AR LOC HOLD: Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile.
+تصير المضخة اليدوية أول فعل نجاة لأنها ترفض الدراما. لا powered panel، لا واجهة بطولية، ولا وعد بأن الغرفة آمنة. ينظف اللاعب مدخلا مسدودا، يشعر بالمقبض يقاوم، ويتعلم أن الماء يحتاج طريقا صادقا للخروج.
 
-## Scanner
-
-AR LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
-
-## Terminal
-
-AR LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
-
-## Audio
-
-AR LOC HOLD: Hand work first. Electricity second. Breathing always.
-
-## Field Note
-
-AR LOC HOLD: First tool must teach survival before upgrade fantasy.
+هذه الأداة الصغيرة تضبط نبرة HECTON-8. يبدأ الإصلاح بالأيدي والضغط والعاقبة. إذا ركلت المضخة عائدا، فالغرفة ترد. وإذا كان المخرج خطأ، فالنجاة تنقل الخطر إلى مكان آخر.
 
 <!-- External Site; generated from P111_MANUAL_BILGE_PUMP_KIT/ar_SA. -->

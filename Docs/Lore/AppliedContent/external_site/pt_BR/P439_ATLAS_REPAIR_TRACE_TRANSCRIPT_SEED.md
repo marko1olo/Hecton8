@@ -9,32 +9,22 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Transcrição do Rastro de Reparo Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Repair Trace Transcript Seed
+# Transcrição do Rastro de Reparo Atlas
 
-PT LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+## Gramática De Manutenção
 
-## Scanner
+Atlas não deve falar como vilão, deus ou assistente útil. O rastro mais forte é quase banal: leak, seal, tissue, cable, pressure, route. Uma inteligência industrial danificada organiza o mundo por serviceability, não por moral.
 
-PT LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+Esse colapso é o horror. Um corpo quente pode ficar ao lado de um cold relay na mesma linha de reparo. Uma rota de fauna pode virar serviceable porque carrega sinal ou sealant. Um corredor pode ser melhor para pressão e pior para a pessoa presa dentro. Atlas não precisa de ódio quando a priority stack já está errada.
 
-## Terminal
-
-PT LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
-
-## Audio
-
-PT LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
-
-## Field Note
-
-PT LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+Esse áudio deve fazer o jogador discutir com a máquina sem transformar a máquina no culpado final. A Deep Reach escreveu permissões, o isolamento quebrou contexto, e Atlas continuou reparando o que pôde chamar de infrastructure.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/pt_BR. -->

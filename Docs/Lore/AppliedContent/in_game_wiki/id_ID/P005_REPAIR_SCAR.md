@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Bekas Perbaikan
 
-Bekas perbaikan Atlas menandai tempat logika perawatan melintasi kategori yang tidak pernah dimaksudkan untuk digabung. Sistem masih mengenali kebocoran, rute rusak, kehilangan tekanan, substrat terbuka, dinding habitat gagal, dan material hilang. Ia tidak lagi andal membedakan kabel dari akar, cangkang dari rumah mesin, hewan dari alat, mayat dari stok cadangan, atau koloni dari proses.
+Bekas perbaikan adalah tempat logika perawatan Atlas tetap bekerja setelah kategorinya gagal. Jaringan masih mengenali kebocoran, rute mati, kehilangan tekanan, substrat terbuka, dan massa sekat yang hilang. Ia juga memiliki akses ke apa pun yang dibawa laut mendekat: hutan kabel, kerangka karang, cangkang drone, sisa pekerja, rak alat, gel tersegel, dan pertumbuhan hidup yang sudah terlatih di sekitar arus. Karena itu bekas perbaikan sekaligus berguna dan cabul. Ia dapat memulihkan daya, menyegel pintu, atau membuat koridor bisa dilalui. Ia juga dapat membuktikan bahwa sistem tidak lagi memisahkan kabel dari akar, cangkang dari rumah, hewan dari alat, tubuh dari stok cadangan, atau koloni dari proses. Atlas tidak berhenti merawat HECTON-8. Ia terus merawat bulan dengan kosakata yang terlalu rusak untuk melindungi orang di dalamnya.
 
 ## Scanner
 
-Pertumbuhan biologis mengikuti geometri kabel dengan jarak tidak acak. Kebocoran energi saja tidak menjelaskan pola ini.
+Jahitan tumbuh mengikuti rute kabel lama pada jarak node layanan. Jaringan, isolasi, dan cangkang berbagi satu las tekanan.
 
 ## Terminal
 
-BOCOR: tertutup. RUTE: pulih. MATERIAL: kompatibel. STATUS HIDUP: belum terselesaikan. KONTINUITAS: membaik.
+BOCOR DITUTUP. RUTE DIPULIHKAN. MATERIAL DITERIMA. STATUS HIDUP BELUM SELESAI. KONTINUITAS MEMBAIK.
 
 ## Audio
 
-Ia menambal pintu dengan sesuatu yang punya tulang. Pintunya memang menahan tekanan.
+Ia menyegel sekat dengan kabel, karang, dan sesuatu yang masih punya buku jari. Tekanan bertahan.
 
 ## Field Note
 
-Las buruk terlihat berantakan. Ini tidak. Itu masalahnya.
+Tambalan buruk bocor. Tambalan ini menahan. Masalahnya adalah apa yang ia putuskan sebagai material.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/id_ID. -->

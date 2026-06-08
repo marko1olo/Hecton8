@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute外側死んだbeacon役"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Outer Dead Beacon Moon Role
+# Mute外側死んだbeacon役
 
-JA LOC HOLD: Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.
-
-## Scanner
-
-JA LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
-
-## Terminal
-
-JA LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
-
-## Audio
-
-JA LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
-
-## Field Note
-
-JA LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Muteでは古いインフラが消えずに黙る。死んだbeacon網はいまもroute solverを曲げる。それに依存したlegacy表をすべて消す余裕が誰にもないからだ。幽霊データが有用なrelay窓を予測することもある。同じデータがcarrierデスクにメッセージ保留の口実を与えることもある。HECTON-8周辺の沈黙は、純粋な不在であることが少ない。 その曖昧さは通信故障で終わらない。保険、契約、救助窓が沈黙をそれぞれ別の言葉で利用する。
 
 <!-- External Site; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/ja_JP. -->

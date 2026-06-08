@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "יציאה חומרית: זיכויים מרים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# יציאה חומרית: זיכויים מרים
 
-HE LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
+יציאה חומרית צריכה להרגיש חוקית וקרה. השחקן משיב חומר לחץ, שומר על custody, מספק את חשבונאות מסה-דרך-חלון של Black Keel ומקבל הפחתה אמיתית של lien. שום אזעקה לא מכריזה כישלון; המערכת פועלת בדיוק כפי שתוכננה.
 
-## Scanner
-
-HE LOC HOLD: You can leave richer and still fail the place.
-
-## Terminal
-
-HE LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
-
-## Audio
-
-HE LOC HOLD: The invoice clears before the names do.
-
-## Field Note
-
-HE LOC HOLD: This ending should be real credits, not a fake game over.
+הנזק נמצא במה שהקבלה משמיטה. שמות העובדים הנעדרים לא הוצלבו, שרשרת הראיות חלקית, ו-Deep Reach מקבל סיבה מסחרית נקייה יותר לחזור. HECTON-8 אינו מעניש את השחקן על מקצועיות. הוא מראה מה עולה הצלחה מקצועית כשאתר העבודה הוא גם קבר.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/he_IL. -->

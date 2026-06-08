@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -51,7 +52,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public const float StressRadiusMultiplier = 0.5f;
         public const double AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble;
         public const double AupCellSizeSq = AupCellSizeMeters * AupCellSizeMeters;
-        public const byte ItemSourceLootMagnet = 8;
+        public const byte ItemSourceLootMagnet = ItemAcquiredSignalSourceKinds.LootMagnet;
         public const byte SignalFlagLootMagnet = 1;
         public const uint WakeSourceLootZip = 0x4C5A4950u;
         public const uint FluidImpulseSourceLootZip = 0x4C464C44u;

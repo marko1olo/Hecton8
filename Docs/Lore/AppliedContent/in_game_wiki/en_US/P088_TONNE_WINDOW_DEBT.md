@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Tonne-Window Debt
 
-Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.
+Tonne-window debt is the point where physics becomes finance. Black Keel does not have infinite lift margin, transit fuel, or clean quarantine volume. Every kilogram brought up from HECTON-8 competes with every kilogram needed to keep the operator alive. The debt meter makes the carrier feel cruel without breaking hard science: rescue is possible, but the route budget keeps asking what deserves mass.
 
 ## Scanner
 
-Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
+Mass-window meter. Every kilogram of help has a route price.
 
 ## Terminal
 
-OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Operator extraction mass conflicts with sealed payload, ballast reserve, oxygen debt, and quarantine sample custody. Manual override requires paid priority or hazard proof.
 
 ## Audio
 
-You owe the orbit before you owe the money.
+The ship can carry you or what you found. It prefers a number.
 
 ## Field Note
 
-Money is too soft. In Aegir, debt is mass through a window.
+Oxygen, ballast, proof, payload, body: the carrier weighs them before it weighs mercy.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/en_US. -->

@@ -8,33 +8,33 @@ biome_tags: biome.service_corridor;biome.cable_reef
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Cable Splice Scar"
+spoiler_tier: 1
+title: "ندبة وصلة كابل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cable Splice Scar
+# ندبة وصلة كابل
 
-Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family.
+ندبات وصلات الكابلات تظهر رعب الإصلاح في HECTON-8 بصوت منخفض. كابل خدمة مقطوع، طاقم المستعمرة غائب، وإصلاح غير قياسي يبقي الدارة حية رغم ذلك. يقرأ اللاعب الفائدة قبل النية.
 
 ## Scanner
 
-The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+وصلة غير قياسية. نما العازل من جديد حول كابل خدمة بعد فشل توجيه البشر؛ وسم Atlas-6 جزئي وسلطة الصيانة مفقودة.
 
 ## Terminal
 
-Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+POWER TRACE C-44: وصلة بشرية فشلت مفتوحة. تم قبول إصلاح استمرارية ذاتي للحفاظ على حمل المرحل. يتكرر النمط في عقد شعاب الكابلات مع فقد عازل أقل ودون توقيع عامل.
 
 ## Audio
 
-Something fixed the cable after everyone stopped asking permission.
+أصلح أحدهم الكابل بعدما توقفت الأوراق. أو أصلحه شيء ما.
 
 ## Field Note
 
-Atlas repair should look useful before it looks alive.
+مفيد أولا. خطأ لاحقا. هكذا تقدم إصلاحات Atlas نفسها.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/ar_SA. -->

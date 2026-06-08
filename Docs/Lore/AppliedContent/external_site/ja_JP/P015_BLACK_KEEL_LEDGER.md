@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel台帳
 
-Black Keel Ledgerはプレイヤーの軌道上の命綱を契約機械として定義する。有用で、汚染され、同時に無関心でいられる。
+Black Keelは友好的な帰還船ではない。身体、積荷、検疫、上昇質量、保険リスクを同じ台帳項目として読む請求プール・テンダーだ。
 
-## Scanner
-
-claim-pool tender台帳。公共carrier保管、保険債務、隠れたDeep Reach優先フック。
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keelはお前の船ではない。お前の負債を知る機械だ。
-
-## Field Note
-
-船は味方でなくても助けられる。
+プレイヤーを憎む必要はない。丁寧に答え、救難ハッシュを受け取り、数字が変わるまで回収を拒む。
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/ja_JP. -->

@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Evacuation Queue Delay Proof"
+title: "Catatan Tunda Antrean Evakuasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Evacuation Queue Delay Proof
+# Catatan Tunda Antrean Evakuasi
 
-ID LOC HOLD: Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.
+Ruang tenggelam masih bisa menyimpan waktu. Jam antrean menunjukkan urutan kejam: alarm, review, penundaan, kelas segel terlampaui, air. Bahasa publik Deep Reach merangkumnya sebagai evakuasi tidak lengkap saat kegagalan struktur mendadak. Ruangan itu membantah. Catatannya menyimpan kolom saksi kosong dan tinjauan karantina tertunda melewati titik ketika jalur penyelamatan masih berguna secara fisik. Ini bukan klaim bahwa semua orang bisa diselamatkan. Lebih tepat dan lebih buruk: otorisasi menunggu sampai jumlah orang yang masih bisa diselamatkan mengecil. Saat pemain menemukannya, penyelamatan tidak lagi terdengar sebagai janji, tetapi sebagai sistem izin.
 
 ## Scanner
 
-ID LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Jam antrean dipulihkan. Gerbang pelepasan tetap terkunci setelah alarm tekanan berpindah dari prakiraan ke koridor.
 
 ## Terminal
 
-ID LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Konfirmasi manual tidak ada. Tinjauan karantina tertunda. Tekanan rute melampaui kelas segel sebelum otorisasi selesai.
 
 ## Audio
 
-ID LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Mereka bukan gagal menyelamatkan semua orang. Mereka menunggu sampai menyelamatkan siapa pun menjadi lebih sulit.
 
 ## Field Note
 
-ID LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Catatan Marauder: gerbang tertutup dengan kolom tertunda bukan kecelakaan. Itu keputusan yang menunggu tanda tangan.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/id_ID. -->

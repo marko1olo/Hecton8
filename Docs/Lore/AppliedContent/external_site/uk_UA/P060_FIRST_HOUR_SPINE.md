@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "Хребет першої години"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# Хребет першої години
 
-UK LOC HOLD: First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+Хребет першої години задає ритм відкриття HECTON-8. Гравець починає з відчутних інженерних задач і візуального дива, а потім бачить, як ці задачі з’єднуються з корпоративною брехнею та ремонтною екологією, що увійшла в біологію. Так перший маршрут лишається ігровим і атмосферним, але одразу садить більше розслідування: океан не ховає історію, він зберігає докази в тиску, солі й процедурі.
 
 ## Scanner
 
-UK LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Контракт, пошкоджений спуск, повітря, яскраві мілководдя, насосне сховище, вичищена брехня, а потім перший ремонтний шрам, де життя використане як прокладка.
 
 ## Terminal
 
-UK LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+МІЛКОВОДНИЙ АНЕКС: ручний перезапуск помпи чинний. Пакет інциденту Deep Reach закешовано. Ремонтний ріст Atlas виявлено навколо кабелю, фрагмента інструмента й біологічного залишку.
 
 ## Audio
 
-UK LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+Перша безпечна кімната не чиста. Вона просто краще за тебе затримує дихання.
 
 ## Field Note
 
-UK LOC HOLD: The opening must be beautiful before it becomes accusing.
+Відкриття має бути красивим до того, як стане обвинувальним.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/uk_UA. -->

@@ -252,8 +252,12 @@ namespace Hecton8.UI
 
         public static void FlushPending()
         {
+            if (_isDispatching)
+                return;
+
             if (_listeners.Count <= 0)
             {
+                // No callbacks will run here; silent stale-event cleanup must not steal shared LateFrame dispatch budget.
                 DrainWithoutDispatch();
                 return;
             }
@@ -356,9 +360,10 @@ namespace Hecton8.UI
 
         public static bool TryResolveMessage(uint messageHash, out string message)
         {
-            if (TryFindSpanMessage(messageHash, out _))
+            if (TryFindSpanMessage(messageHash, out int index))
             {
-                message = string.Empty;
+                SpanMessageSlot slot = _spanMessagesByHash[index];
+                message = new string(_spanMessageCharacters, slot.Offset, slot.Length);
                 return true;
             }
 
@@ -588,31 +593,28 @@ namespace Hecton8.UI
 
         private static void DrainWithoutDispatch()
         {
-            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+            if (!_pendingEvents.IsCreated)
                 return;
+
+            DrainQueueWithoutBudget(ref _pendingEvents, ref _pendingEventCount);
 
             if (_pendingEvents.IsEmpty())
                 PromoteNextFrameEventsIfFrontEmpty();
 
-            if (_pendingEventCount > 0 &&
-                !DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
-            {
-                return;
-            }
+            if (_pendingEventCount > 0)
+                DrainQueueWithoutBudget(ref _pendingEvents, ref _pendingEventCount);
 
-            DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutBudget(ref _nextFrameEvents, ref _nextFrameEventCount);
         }
 
-        private static bool DrainQueueWithoutDispatch(
+        private static void DrainQueueWithoutBudget(
             ref FixedUiEventQueue<NotificationEventPayload> queue,
             ref int pendingCount)
         {
             int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !queue.IsEmpty())
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return false;
-
                 if (!queue.TryDequeue(out _))
                 {
                     pendingCount = 0;
@@ -625,8 +627,6 @@ namespace Hecton8.UI
 
             if (queue.IsEmpty())
                 pendingCount = 0;
-
-            return true;
         }
 
         private static void PromoteNextFrameEventsIfFrontEmpty()

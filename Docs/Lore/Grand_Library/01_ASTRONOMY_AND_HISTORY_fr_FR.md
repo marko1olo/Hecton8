@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LE SYSTÈME AEGIR : NEUF LUNES ET UNE TOMBE
 
 > **Source :** Archives Publiques, Bureau des Enregistrements de Frontière, Chantiers Barnard. Compilateur : J. Elkin-Torres, Archiviste Principal. Dernière révision : 2188. Niveau d'accès : public / non censuré.  

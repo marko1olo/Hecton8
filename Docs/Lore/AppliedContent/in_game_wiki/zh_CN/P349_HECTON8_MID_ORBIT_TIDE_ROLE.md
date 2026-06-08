@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: HECTON-8 Mid-Orbit Tide Role"
+title: "HECTON-8 中轨潮汐角色"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: HECTON-8 Mid-Orbit Tide Role
+# HECTON-8 中轨潮汐角色
 
-ZH LOC HOLD: HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.
+HECTON-8 是 Aegir 轨道数学变成私人问题的卫星。它离最坏内侧辐射足够远，适合长期作业；又足够近，让潮汐持续推动海洋；也足够有价值，让 Deep Reach 在压力下建造。同一位置让救援变脏。潮汐相位、carrier 质量、风暴噪声和法律保管在玩家头顶相遇。
 
 ## Scanner
 
-ZH LOC HOLD: Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
+HECTON-8 潮汐记录。中轨让海洋足以开采，也暴烈到足以埋掉证据。
 
 ## Terminal
 
-ZH LOC HOLD: ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
+轨道记录 H8 HECTON：当前 Black Keel 窗口内潮汐载荷处于工业容差内。服务峡谷附近 drowned crust 弯曲增强。Atlas 修复交通仍低于公开披露阈值。
 
 ## Audio
 
-ZH LOC HOLD: It sits in the part of the ladder where work looks possible until the water starts doing math.
+它位于那段阶梯：工作看似可行，直到海水开始计算。
 
 ## Field Note
 
-ZH LOC HOLD: HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 付钱，因为压力、潮汐和责任在那里重叠。
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/zh_CN. -->

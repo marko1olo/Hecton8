@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Atmosphere;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections.LowLevel.Unsafe;
@@ -24,7 +25,7 @@ namespace Hecton8.Physiology
         public const int DefaultEntityCapacity = 64;
         public const int FrameJobBatchSize = 16;
         public const uint SourceHash = PhysiologyStateSignal.SourceShinobuPhysiology;
-        public const uint PlayerTargetHash = 0x504C5952u; // PLYR fallback when entity hash is not published.
+        public const uint PlayerTargetHash = ToxicityExposureSignal.PlayerEntityFallbackHash;
         public const uint CombatDamageTypeBarotrauma = 1u << 0;
         public const byte GasToxicitySignalCause = PhysiologyStateSignal.CauseGasToxicity;
         public const BufferID BreathingGasFractionsBuffer = (BufferID)70214;

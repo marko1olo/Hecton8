@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Hecton8.Core;
+using Hecton8.SaveSystem;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -109,7 +110,8 @@ namespace Hecton8.Input
 
             _serviceShuttingDown = true;
             UnregisterService();
-            Save();
+            if (!TrySave())
+                Hecton8.Core.H8Debug.LogWarning("[UserOptionsPersistence] Failed to persist options.h8cfg during shutdown.");
             _serviceShutdownComplete = true;
         }
 
@@ -172,7 +174,11 @@ namespace Hecton8.Input
 
         public bool HasKey(string key)
         {
-            return _loaded && !string.IsNullOrWhiteSpace(key) && _records.ContainsKey(key);
+            if (string.IsNullOrWhiteSpace(key))
+                return false;
+
+            EnsureLoaded();
+            return _records.ContainsKey(key);
         }
 
         public int GetInt(string key, int defaultValue = 0)
@@ -402,11 +408,19 @@ namespace Hecton8.Input
             EnsureOptionsStoragePaths();
             string path = _optionsPath;
             string tempPath = _optionsTempPath;
+            bool mayDeleteTemp = false;
 
             try
             {
-                if (!string.IsNullOrEmpty(_optionsDirectory))
-                    Directory.CreateDirectory(_optionsDirectory);
+                if (!TryResolveAtomicOptionsPaths(path, tempPath, out string absolutePath, out string absoluteTempPath))
+                    return false;
+
+                path = absolutePath;
+                tempPath = absoluteTempPath;
+
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
 
                 SyncScalabilityTierRecord();
                 int recordCount = _records.Count;
@@ -415,6 +429,7 @@ namespace Hecton8.Input
 
                 _records.Values.CopyTo(_writeRecords, 0);
 
+                mayDeleteTemp = true;
                 if (!WritePortableOptionsFile(tempPath, _writeRecords, recordCount))
                     return false;
 
@@ -433,6 +448,10 @@ namespace Hecton8.Input
             {
                 return false;
             }
+            catch (System.Security.SecurityException)
+            {
+                return false;
+            }
             catch (EncoderFallbackException)
             {
                 return false;
@@ -441,17 +460,114 @@ namespace Hecton8.Input
             {
                 return false;
             }
+            finally
+            {
+                if (mayDeleteTemp)
+                    DeleteOptionsTempBestEffort(tempPath);
+            }
+        }
+
+        private static bool TryResolveAtomicOptionsPaths(string path, string tempPath, out string absolutePath, out string absoluteTempPath)
+        {
+            absolutePath = null;
+            absoluteTempPath = null;
+
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(tempPath))
+                return false;
+
+            absolutePath = Path.GetFullPath(path);
+            absoluteTempPath = Path.GetFullPath(tempPath);
+
+            if (AreSameFullPath(absolutePath, absoluteTempPath))
+                return false;
+
+            string directory = Path.GetDirectoryName(absolutePath);
+            string tempDirectory = Path.GetDirectoryName(absoluteTempPath);
+            if (!AreSameFullPath(directory ?? string.Empty, tempDirectory ?? string.Empty))
+                return false;
+
+            return true;
+        }
+
+        private static bool AreSameFullPath(string left, string right)
+        {
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+            return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+#else
+            return string.Equals(left, right, StringComparison.Ordinal);
+#endif
         }
 
         private static void ReplaceOptionsFile(string tempPath, string path)
         {
-            if (File.Exists(path))
+            if (!AsyncWriteManager.TryGetFileLength(tempPath, out long tempOptionsBytes, out string tempLengthError))
+                throw new IOException(string.IsNullOrEmpty(tempLengthError) ? "Options temp file length could not be resolved before promotion." : tempLengthError);
+
+            if (tempOptionsBytes != FixedOptionsFileBytes)
+                throw new IOException("Options temp file length changed before promotion.");
+
+            if (!AsyncWriteManager.FlushCriticalSavePath(tempPath, tempOptionsBytes, out string tempFlushError))
+                throw new IOException(string.IsNullOrEmpty(tempFlushError) ? "Options temp critical flush failed before promotion." : tempFlushError);
+
+            AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+            AsyncWriteManager.InvalidateCachedReadWindows(path);
+            try
             {
-                File.Replace(tempPath, path, null, ignoreMetadataErrors: true);
-                return;
+                if (File.Exists(path))
+                {
+                    File.Replace(tempPath, path, null, ignoreMetadataErrors: true);
+                }
+                else
+                {
+                    File.Move(tempPath, path);
+                }
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
             }
 
-            File.Move(tempPath, path);
+            if (!AsyncWriteManager.TryGetFileLength(path, out long promotedOptionsBytes, out string lengthError))
+                throw new IOException(string.IsNullOrEmpty(lengthError) ? "Options file length could not be resolved after promotion." : lengthError);
+
+            if (promotedOptionsBytes != FixedOptionsFileBytes)
+                throw new IOException("Options file length changed during promotion.");
+
+            if (!AsyncWriteManager.FlushCriticalSavePath(path, promotedOptionsBytes, out string flushError))
+                throw new IOException(string.IsNullOrEmpty(flushError) ? "Options critical flush failed after promotion." : flushError);
+        }
+
+        private static void DeleteOptionsTempBestEffort(string tempPath)
+        {
+            if (string.IsNullOrEmpty(tempPath))
+                return;
+
+            AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (IOException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (System.Security.SecurityException)
+            {
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+            }
         }
 
         private void EnsureLoaded()
@@ -481,10 +597,14 @@ namespace Hecton8.Input
             bool hasLoadedScalabilityTier = false;
             try
             {
-                if (!TryReadPortableOptionsFile(path, out loadedScalabilityTier, out hasLoadedScalabilityTier, out bool wasPortableContainer) &&
-                    !wasPortableContainer)
+                bool loadedPortableOptions = TryReadPortableOptionsFile(path, out loadedScalabilityTier, out hasLoadedScalabilityTier, out bool wasPortableContainer);
+                if (!loadedPortableOptions)
                 {
-                    TryApplyLegacyOptionsJson(ReadLegacyTextOptionsFile(path));
+                    if (wasPortableContainer ||
+                        !TryApplyLegacyOptionsJson(ReadLegacyTextOptionsFile(path)))
+                    {
+                        LogRejectedOptionsFile();
+                    }
                 }
 
                 ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
@@ -528,6 +648,13 @@ namespace Hecton8.Input
             _loaded = true;
         }
 
+        private static void LogRejectedOptionsFile()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Hecton8.Core.H8Debug.LogWarning("[UserOptionsPersistence] Rejected invalid options.h8cfg.");
+#endif
+        }
+
         private bool WritePortableOptionsFile(string path, OptionRecord[] records, int recordCount)
         {
             int payloadLength = TryWriteBinaryOptionsPayload(records, recordCount, _payloadBuffer, MaxOptionsPayloadBytes);
@@ -542,14 +669,22 @@ namespace Hecton8.Input
             _headerBuffer[14] = 0;
             _headerBuffer[15] = 0;
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+            AsyncWriteManager.InvalidateCachedReadWindows(path);
+            try
             {
-                stream.Write(_headerBuffer, 0, FileHeaderBytes);
-                if (payloadLength > 0)
-                    stream.Write(_payloadBuffer, 0, payloadLength);
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+                {
+                    stream.Write(_headerBuffer, 0, FileHeaderBytes);
+                    if (payloadLength > 0)
+                        stream.Write(_payloadBuffer, 0, payloadLength);
 
-                stream.SetLength(FixedOptionsFileBytes);
-                stream.Flush(true);
+                    stream.SetLength(FixedOptionsFileBytes);
+                    stream.Flush(true);
+                }
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
             }
 
             return true;
@@ -1626,7 +1761,14 @@ namespace Hecton8.Input
 
         private bool TryGetRecord(string key, out OptionRecord record)
         {
-            if (_loaded && !string.IsNullOrWhiteSpace(key) && _records.TryGetValue(key, out record))
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                record = default;
+                return false;
+            }
+
+            EnsureLoaded();
+            if (_records.TryGetValue(key, out record))
                 return true;
 
             record = default;

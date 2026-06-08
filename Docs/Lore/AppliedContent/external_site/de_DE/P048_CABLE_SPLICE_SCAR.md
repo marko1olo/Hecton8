@@ -8,33 +8,33 @@ biome_tags: biome.service_corridor;biome.cable_reef
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Cable Splice Scar"
+spoiler_tier: 1
+title: "Kabelspleißnarbe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cable Splice Scar
+# Kabelspleißnarbe
 
-Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family.
+Kabelspleißnarben zeigen HECTON-8s Reparaturhorror bei geringer Lautstärke. Ein Servicekabel ist durchtrennt, die Koloniecrew fort, und eine nichtstandardisierte Reparatur hält den Stromkreis trotzdem lebendig. Der Spieler liest Nutzen vor Absicht.
 
 ## Scanner
 
-The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+Nichtstandard-Spleiß. Isolierung wuchs nach Ausfall menschlicher Routenführung um ein Servicekabel nach; Atlas-6-Tag unvollständig, Wartungsautorität fehlt.
 
 ## Terminal
 
-Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+POWER TRACE C-44: menschlicher Spleiß offen ausgefallen. Autonome Kontinuitätsreparatur zur Erhaltung der Relaislast akzeptiert. Muster wiederholt sich an Kabelriffknoten mit geringerem Isolationsverlust und ohne Arbeitersignatur.
 
 ## Audio
 
-Something fixed the cable after everyone stopped asking permission.
+Jemand reparierte das Kabel, nachdem die Formulare endeten. Oder etwas.
 
 ## Field Note
 
-Atlas repair should look useful before it looks alive.
+Erst nützlich. Später falsch. So stellen sich Atlas-Reparaturen vor.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/de_DE. -->

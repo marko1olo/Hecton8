@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Barnard Yards Marauder Origin
 
-Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.
+Barnard Yards is the current working origin culture behind HECTON-8's Marauder: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It explains competence without turning the salvage worker into an Earth tourist or a rescue myth.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ You learned this hand motion before HECTON-8. That is the problem.
 
 ## Field Note
 
-This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.
+Closer than Earth: rented cutters, old pressure habits, debt and stripped hulls.
 
 <!-- In-Game Wiki; generated from P073_BARNARD_YARDS_MARAUDER_ORIGIN/en_US. -->

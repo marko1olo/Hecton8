@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Drop Capsule Damage Parts"
+title: "Bagian Rusak Kapsul Jatuh"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Drop Capsule Damage Parts
+# Bagian Rusak Kapsul Jatuh
 
-ID LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+Bagian rusak kapsul jatuh menghapus logika penyelamatan nyaman dari HECTON-8. Marauder terjebak karena sistem tertentu gagal: ascent sleeve, guidance gimbal, relay mast, compressor, dan heat tile. Setiap kegagalan terhubung ke rute, material, peningkatan alat, atau objek bukti.
 
 ## Scanner
 
-ID LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve melengkung, guidance gimbal tergores, relay mast terpotong, compressor kotor, heat tile retak.
 
 ## Terminal
 
-ID LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-ID LOC HOLD: It landed well enough to strand you properly.
+Kapsul itu mendarat cukup baik untuk menjebakmu dengan benar.
 
 ## Field Note
 
-ID LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+Kapsul bisa menjaga Marauder hidup pada jam pertama. Ia tidak bisa pergi tanpa suku cadang berperingkat dalam.
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/id_ID. -->

@@ -11,6 +11,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
     {
         private const int PreviewSwatchCount = 64;
         private const int TelemetryBarCount = 64;
+        private const float DefaultOceanSurfaceWorldY = 14.02f;
         private readonly VisualElement[] _previewSwatches = new VisualElement[PreviewSwatchCount];
         private readonly VisualElement[] _telemetryBars = new VisualElement[TelemetryBarCount];
         private Slider _absorptionR;
@@ -56,7 +57,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             _anisotropy = Slider("Anisotropy", -0.85f, 0.85f, 0.42f);
             _lightColor = new ColorField("Directional Light") { value = new Color(0.09f, 0.42f, 0.70f, 1f), hdr = true };
             _lightIntensity = Slider("Light Intensity", 0f, 8f, 0.85f);
-            _surfaceY = Slider("Ocean Surface Y", -2500f, 2500f, 0f);
+            _surfaceY = Slider("Ocean Surface Y", -2500f, 2500f, DefaultOceanSurfaceWorldY);
             _maxDistance = Slider("Max Travel Meters", 1f, 12000f, 5000f);
             _qualityBias = Slider("Quality Bias", -1f, 1f, 0f);
             _autoRefreshTelemetry = new Toggle("Telemetry Auto Refresh") { value = true };

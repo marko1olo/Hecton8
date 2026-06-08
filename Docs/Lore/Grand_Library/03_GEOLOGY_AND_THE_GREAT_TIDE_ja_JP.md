@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 地質、圧力、そして 2147 年の大潮
 
 > **情報源：** キールマーク査定局、請求却下要約。添付追記：深海危険ガイド。  

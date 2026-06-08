@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Beam Sail and Pellet Lane"
+title: "Voile à faisceau et voie à pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Beam Sail and Pellet Lane
+# Voile à faisceau et voie à pellets
 
-FR LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+Voiles à faisceau, voies à pellets, étages de capture fusion et magsails ont rendu le fret nearlight praticable sans FTL. Un vaisseau quittait le port avec réservoirs, glace de bouclier, radiateurs et autorité de contrôle, puis empruntait le reste de son moteur à la route : puissance de faisceau derrière lui, masse de pellets calée sur sa trajectoire, et un récepteur acceptant de posséder le freinage. Voilà pourquoi Aegir peut être accessible tout en semblant abandonné. Le corridor déplace du fret planifié ; il ne se convoque pas comme une corde de secours.
 
 ## Scanner
 
-FR LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+Registre de voie : la voile ne se poussait pas elle-même. Elle louait puissance aux réseaux derrière le vaisseau et masse aux flux de pellets devant lui.
 
 ## Terminal
 
-FR LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+ÉTAT VOIE : réseau faisceau payé. Flux de pellets hors contrat de 0,8 ppm. Brûlage de capture encore possible. Sans propriétaire du freinage, le fret rapide devient débris rapide.
 
 ## Audio
 
-FR LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+Le vaisseau est rapide parce que la moitié du moteur est hors du vaisseau.
 
 ## Field Note
 
-FR LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Si un registre ne vante que le faisceau, continuez jusqu'au nom du propriétaire de capture.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/fr_FR. -->

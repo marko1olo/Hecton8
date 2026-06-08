@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ARAHAN XENON-OMEGA DAN PROTOKOL ATLAS-6
 
 > **Sumber:** Investigasi Terbuka Komite Luyten, Kasus No. CF-2148-0071. Barang Bukti 44-B: Log Audit Inti Atlas-6.  

@@ -9,32 +9,20 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Transit Duration Bands"
+title: "이동 시간 Band"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Transit Duration Bands
+# 이동 시간 Band
 
-KO LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
+## 서로 다른 시계
 
-## Scanner
+같은 항로가 같은 시간을 뜻하지 않는다. probe packet은 일찍 떠나 빛을 태우고, crew가 물을 보기 수십 년 전에 claim이 될 수 있다. Heavy freight는 staged launches, braking rights, pellet lanes, radiators, 손실 곡선을 받아들이는 보험이 필요하다. Human crew는 그 모든 것과 life support, liability language, return mass를 지불할 이유가 필요하다.
 
-KO LOC HOLD: The same route means different time for packets, freight and people.
-
-## Terminal
-
-KO LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
-
-## Audio
-
-KO LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
-
-## Field Note
-
-KO LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+HECTON-8은 어긋난 시계들로 플레이어를 가둔다. distress hash는 유효하지만 무용할 수 있다. cargo 기회가 열려도 rescue는 닫혀 있을 수 있다. 공개 결과는 몇 년 뒤여도 보호할 가치가 있다. 공포는 항로가 망가진 데 있지 않다. 공포는 항로가 몸만 제외한 모든 것에 대해 제대로 작동한다는 데 있다.
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/ko_KR. -->

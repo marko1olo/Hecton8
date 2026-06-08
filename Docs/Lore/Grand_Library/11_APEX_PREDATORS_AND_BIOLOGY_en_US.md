@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # APEX PREDATORS AND ABYSSAL BIOLOGY
 
 > **Source:** Fragmented Xenobiology Report, Sector 44 Research Lab (Recovered).

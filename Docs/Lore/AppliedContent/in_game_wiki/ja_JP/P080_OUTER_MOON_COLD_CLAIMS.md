@@ -9,32 +9,34 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "外縁月の凍結クレーム"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# 外縁月の凍結クレーム
 
-JP LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.
+外縁月の凍結クレームは、Aegirが一つの呪われた月ではなく一つの系であることを示す。失敗した塩水試掘、休眠した金属航路、死んだビーコンが、Marauderを交通網へ呼び込むsalvage経済を作る。
+
+重要なのは距離ではなく反復だ。航路は死んでいても請求可能であり得る。ビーコンは生存乗員なしで保管を反復できる。HECTON-8は最悪の可視例だが、Aegirが損失をインフラとして記録することを学んだ最初の場所ではない。
 
 ## Scanner
 
-JP LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+外縁クレームビーコン。Aegirで死んでいるものすべてがHECTON-8にあるわけではない。
 
 ## Terminal
 
-JP LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+外縁梯子アーカイブ // Thorne塩水試掘は失敗。Anvil輸出航路は休眠。Muteビーコンは現役乗員申告なしに保管pingを繰り返す。
 
 ## Audio
 
-JP LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegirは、HECTON-8が授業を終える前から人の失い方を学んでいた。
 
 ## Field Note
 
-JP LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+凍結クレームはMarauderを可能にする。同時に、企業に反復する損失の埋め方を教える。
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/ja_JP. -->

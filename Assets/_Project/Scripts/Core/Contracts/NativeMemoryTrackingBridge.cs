@@ -25,15 +25,25 @@ namespace Hecton8.Core.Contracts
 
         public delegate void UnregisterOwnerLabelDelegate(string owner, string label);
 
+        public delegate void UnregisterIdDelegate(int id);
+
         private static RegisterBytesDelegate s_registerBytes;
+        private static RegisterBytesDelegate s_registerBytesInstance;
         private static UnregisterOwnerLabelDelegate s_unregisterOwnerLabel;
+        private static UnregisterIdDelegate s_unregisterId;
 
-        public static bool IsInstalled => s_registerBytes != null && s_unregisterOwnerLabel != null;
+        public static bool IsInstalled => s_registerBytes != null && s_registerBytesInstance != null && s_unregisterOwnerLabel != null && s_unregisterId != null;
 
-        public static void Install(RegisterBytesDelegate registerBytes, UnregisterOwnerLabelDelegate unregisterOwnerLabel)
+        public static void Install(
+            RegisterBytesDelegate registerBytes,
+            RegisterBytesDelegate registerBytesInstance,
+            UnregisterOwnerLabelDelegate unregisterOwnerLabel,
+            UnregisterIdDelegate unregisterId)
         {
             s_registerBytes = registerBytes;
+            s_registerBytesInstance = registerBytesInstance;
             s_unregisterOwnerLabel = unregisterOwnerLabel;
+            s_unregisterId = unregisterId;
         }
 
         public static int RegisterNativeArray<T>(
@@ -49,12 +59,65 @@ namespace Hecton8.Core.Contracts
             return s_registerBytes(bytes, owner, label, lifetime);
         }
 
+        public static int RegisterNativeArrayInstance<T>(
+            NativeArray<T> array,
+            string owner,
+            string label,
+            NativeMemoryBridgeLifetime lifetime) where T : struct
+        {
+            if (!array.IsCreated || s_registerBytesInstance == null)
+                return 0;
+
+            long bytes = (long)array.Length * UnsafeUtility.SizeOf<T>();
+            return s_registerBytesInstance(bytes, owner, label, lifetime);
+        }
+
+        public static int RegisterBytes(
+            long bytes,
+            string owner,
+            string label,
+            NativeMemoryBridgeLifetime lifetime)
+        {
+            if (bytes <= 0 || s_registerBytes == null)
+                return 0;
+
+            return s_registerBytes(bytes, owner, label, lifetime);
+        }
+
+        public static int RegisterBytesInstance(
+            long bytes,
+            string owner,
+            string label,
+            NativeMemoryBridgeLifetime lifetime)
+        {
+            if (bytes <= 0 || s_registerBytesInstance == null)
+                return 0;
+
+            return s_registerBytesInstance(bytes, owner, label, lifetime);
+        }
+
         public static void UnregisterNativeArray<T>(
             NativeArray<T> array,
             string owner,
             string label) where T : struct
         {
             if (!array.IsCreated || s_unregisterOwnerLabel == null)
+                return;
+
+            s_unregisterOwnerLabel(owner, label);
+        }
+
+        public static void Unregister(int id)
+        {
+            if (id <= 0 || s_unregisterId == null)
+                return;
+
+            s_unregisterId(id);
+        }
+
+        public static void Unregister(string owner, string label)
+        {
+            if (s_unregisterOwnerLabel == null)
                 return;
 
             s_unregisterOwnerLabel(owner, label);

@@ -1,21 +1,21 @@
 # RS027_FALSE_EXIT_RETURN_PRESSURE
 
-Status: production-facing draft, pending native localization pass.
-Runtime contract: authoring source only; runtime must consume baked static data/string-pool rows.
+Status: production-facing localized draft, pending native localization review.
+Runtime contract: authoring source only; runtime consumes baked static data/string-pool rows.
 
-Purpose: turns early exit into real but bitter endings: material payout, same-seed return, corporate capture, quarantine hold and public ledger leak.
+Purpose: turns early exits into real but bitter outcomes: paid material success, temporary same-seed recovery, corporate capture, quarantine confinement and uncontrolled public truth.
 
 ## Packets
 
-- `P131_MATERIAL_EXIT_BITTER_CREDITS` - Material Exit Bitter Credits: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
-- `P132_PARTIAL_EXIT_SAME_SEED_RETURN` - Partial Exit Same-Seed Return: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed.
-- `P133_CORPORATE_CAPTURE_BAD_END` - Corporate Capture Bad End: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call.
-- `P134_QUARANTINE_HOLD_STALE_AIR` - Quarantine Hold Stale Air: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
-- `P135_PUBLIC_LEDGER_LEAK_ROUTE` - Public Ledger Leak Route: Public Ledger Leak Route gives HECTON-8 a truth-forward ending that still respects delay, custody and unintended consequence.
+- `P131_MATERIAL_EXIT_BITTER_CREDITS` - Material Exit: Bitter Credits: paid salvage success with the missing-worker ledger still unresolved.
+- `P132_PARTIAL_EXIT_SAME_SEED_RETURN` - Partial Exit: Same-Seed Return: temporary recovery that preserves the same ocean, same evidence and extended lien.
+- `P133_CORPORATE_CAPTURE_BAD_END` - Corporate Capture: Clean Rescue: a plausible rescue becomes witness containment when Deep Reach answers first.
+- `P134_QUARANTINE_HOLD_STALE_AIR` - Quarantine Hold: Stale Air: survival becomes sealed administrative delay.
+- `P135_PUBLIC_LEDGER_LEAK_ROUTE` - Public Ledger Leak: partial truth reaches an external record before the player can control consequence.
 
 ## Production Use
 
-- Scanner and terminal snippets are short enough for diegetic UI.
-- In-game wiki and external-site fields are generated from the packet bundle.
-- Route cards connect packet IDs to depth windows, replay axes and ending pressure.
-- Binding maps provide future Unity/DataMonolith placement targets without runtime markdown parsing.
+- Scanner and terminal snippets are written as in-world outputs, not design notes.
+- In-game wiki and external-site article fields are separated for generated publication pages.
+- All 15 locale rows contain actual draft text; non-English rows remain pending native review.
+- Route cards and binding maps keep the same packet IDs for future Unity/DataMonolith placement without runtime markdown parsing.

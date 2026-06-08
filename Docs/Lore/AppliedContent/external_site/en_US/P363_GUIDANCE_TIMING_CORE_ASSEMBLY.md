@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Guidance Timing Core Assembly
 
-HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.
+Guidance Timing Core Assembly keeps HECTON-8's spaceflight hard: extraction is a route problem made of clocks, shadows and damaged trust.
 
 ## Scanner
 
-Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+Blank timing core. Aegir geometry decides whether ascent becomes recovery, capture or silence.
 
 ## Terminal
 
-GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver lane, moon relay shutter and storm-plume drift. Late packets become evidence loss; early packets become capture noise.
 
 ## Audio
 
-There is no up. There is a window, a receiver, and a lie in the queue.
+Up is not a direction. It is a window with a witness.
 
 ## Field Note
 
-Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+There is no simple up from HECTON-8. There is a receiver, a shadow, a storm drift and a packet queue already older than your panic.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/en_US. -->

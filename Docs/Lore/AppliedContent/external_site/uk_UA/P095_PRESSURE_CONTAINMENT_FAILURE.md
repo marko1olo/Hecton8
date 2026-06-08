@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Відмова утримання тиску"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Відмова утримання тиску
 
-UK LOC HOLD: Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating.
-
-## Scanner
-
-UK LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
-
-## Terminal
-
-UK LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
-
-## Audio
-
-UK LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
-
-## Field Note
-
-UK LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Blue debt - не проклятий скарб. Це матеріальна пам'ять під тиском. Залишок Xenon-Omega корисний, доки його ґратка вірить, що вона ще глибоко, холодно й стиснута. Витягни надто швидко, зберігай погано або дай зсуву сигналу пролізти в капсулу, і зразок почне ламатися читаними стадіями. Спершу приходить дрейф: метри брешуть, резонанс тремтить, тривоги утримання сперечаються. Потім ламається ґратка. Входить ропа. Біологія йде за хімією. На стадії 4 цінність мертва, але зараження живе.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/uk_UA. -->

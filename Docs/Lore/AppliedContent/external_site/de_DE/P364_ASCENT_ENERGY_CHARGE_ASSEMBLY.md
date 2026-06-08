@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Ascent Energy Charge Assembly"
+title: "Aufstiegsenergie-Ladungsbaugruppe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Ascent Energy Charge Assembly
+# Aufstiegsenergie-Ladungsbaugruppe
 
-DE LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.
+Die Aufstiegsenergie-Ladungsbaugruppe verbindet Ressourcenökonomie mit narrativer Folge: blue debt und vent-forged hardware entscheiden Fluchtzuverlässigkeit, Beweis-custody und Kompromiss.
 
 ## Scanner
 
-DE LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+Energiekradle von pressure pulse geritzt. Eine billige Ladung macht einen sauberen Sarg.
 
 ## Terminal
 
-DE LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: vent-forged heat cell, pressure-history insulator und custody stamp erforderlich. Raw fuel abgelehnt. Unzertifizierte blue debt bricht unter launch impulse und macht recovery claim ungültig.
 
 ## Audio
 
-DE LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+Du kannst den Auftrieb verkaufen oder darauf reiten. Nicht beides.
 
 ## Field Note
 
-DE LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+Jedes Gramm im Kralde ist Flucht, Beweis oder blue-debt payout. Die Kapsel vergibt keine Gier.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/de_DE. -->

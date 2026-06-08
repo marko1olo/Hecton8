@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: No-FTL Route Delay"
+title: "Délai de route sans FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: No-FTL Route Delay
+# Délai de route sans FTL
 
-FR LOC HOLD: Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
+La distance est une règle de survie sur la route Aegir. Loi, dette et anciens packets peuvent atteindre le joueur bien avant un carrier, un tender, une pièce de rechange ou un sauveteur. La réponse du relay n'annule jamais le travail de pression devant toi ; elle prouve seulement que quelqu'un a placé ton claim dans une file.
 
 ## Scanner
 
-FR LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+Archive de transit. Le trafic Aegir dépend des precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody et délais juridiques.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+NOEUD D'ARCHIVE PUBLIQUE // LIMITE DE TRANSIT. FTL absent. Ansible absent. Un secours vivant exige transfert physique, braking architecture, carrier position, descent mass et local window valide.
 
 ## Audio
 
-FR LOC HOLD: Help can be legally present and physically years away.
+L'aide peut être juridiquement présente et physiquement éloignée de plusieurs années.
 
 ## Field Note
 
-FR LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+Note de Maraudeur : quand le relay répond, demande l'âge de la réponse et quelle masse elle peut déplacer.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/fr_FR. -->

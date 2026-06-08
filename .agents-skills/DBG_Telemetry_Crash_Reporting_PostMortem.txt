@@ -78,7 +78,7 @@ Export algorithm:
 
 Never use `JsonUtility` for binary section - raw `BinaryWriter` or `UnsafeUtility.MemCpy`.
 Export runs on a pre-owned export worker, `Awaitable.BackgroundThreadAsync`, or a persistent log thread. Do not allocate a fresh managed task per fault.
-System-specific dumps use `Docs/AgentLogs/Dump_[OWNER_ID].bin`. Examples: `Dump_PLAYER_KINEMATICS.bin`, `Dump_PIPE_LOGISTICS_ARCHITECT.bin`, `Dump_VOXEL_MESH_PIPELINE.bin`.
+System-specific dumps follow root Black Box law: explicit batch/logging ID may use `Docs/AgentLogs/Dump_[ID].bin`; ordinary runtime systems use a deterministic system-name/timestamp project artifact. Examples: `Dump_PLAYER_KINEMATICS.bin`, `Dump_PIPE_LOGISTICS_ARCHITECT.bin`, `Dump_VOXEL_MESH_PIPELINE.bin`.
 Critical-system Black Boxes may add owner-specific fields, but capacity remains exactly 300 frames unless a larger capacity has explicit MX350 memory proof.
 
 ### 1.2B Global Authority Fault Capture
@@ -213,7 +213,7 @@ GizmoGeometryPool {
     Mesh         arrowMesh
     Mesh         frustumMesh
     GraphicsBuffer instanceBuffer   // capacity: 1024 instances per type
-    MaterialPropertyBlock mpb       // reused, never reallocated
+    MaterialPropertyBlock mpb       // debug-gizmo/UI exception only; reused, never reallocated; not for standard SRP-batched world geometry
     Matrix4x4[]  matrixScratch      // pre-alloc 1024 - reused per Draw call
 }
 

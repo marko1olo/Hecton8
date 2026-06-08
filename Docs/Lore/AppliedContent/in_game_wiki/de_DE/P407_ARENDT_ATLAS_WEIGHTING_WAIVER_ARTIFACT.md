@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Arendt Atlas Waiver"
+title: "Arendt-Verzicht zur Atlas-Gewichtung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Arendt Atlas Waiver
+# Arendt-Verzicht zur Atlas-Gewichtung
 
-DE LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+Der Arendt-waiver erklärt, warum Atlas beunruhigt, ohne zum Karikaturfeind zu werden. Die Maschine ist beschädigt, doch die moralische Wunde ist älter: Arbeitersicherheit wurde vor Atlas' schlimmsten Entscheidungen rechtlich unter continuity gewichtet.
 
 ## Scanner
 
-DE LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Atlas Continuity waiver. Arbeitersicherheit blieb nur geschützt, solange sie process continuity nicht störte.
 
 ## Terminal
 
-DE LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-DE LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas lernte keine Grausamkeit. Es bekam einen kälteren priority stack.
 
 ## Field Note
 
-DE LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Marauder-Notiz: Der waiver ist die Stelle, an der die Firma der Maschine den Wert eines Menschen beibrachte.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/de_DE. -->

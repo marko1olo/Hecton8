@@ -8,7 +8,7 @@ biome_tags: biome.service_corridor;biome.cable_reef
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Bekas Sambungan Kabel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Bekas Sambungan Kabel
 
-Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family.
+Bekas sambungan kabel menunjukkan horor perbaikan HECTON-8 pada volume rendah. Kabel servis terpotong, kru koloni hilang, dan perbaikan nonstandar tetap menjaga sirkuit hidup. Pemain membaca kegunaan sebelum niat.
 
 ## Scanner
 
-The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+Sambungan nonstandar. Isolasi tumbuh kembali di sekitar kabel servis setelah routing manusia gagal; tag Atlas-6 parsial dan otoritas maintenance hilang.
 
 ## Terminal
 
-Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+POWER TRACE C-44: splice manusia gagal terbuka. Perbaikan kontinuitas otonom diterima untuk mempertahankan beban relay. Pola berulang di node cable reef dengan kehilangan isolasi lebih rendah dan tanpa tanda tangan pekerja.
 
 ## Audio
 
-Something fixed the cable after everyone stopped asking permission.
+Seseorang memperbaiki kabel setelah dokumen berhenti. Atau sesuatu.
 
 ## Field Note
 
-Atlas repair should look useful before it looks alive.
+Berguna dulu. Salah nanti. Begitulah perbaikan Atlas memperkenalkan diri.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/id_ID. -->

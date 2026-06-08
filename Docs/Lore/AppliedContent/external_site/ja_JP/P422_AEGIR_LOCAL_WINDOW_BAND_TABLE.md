@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "JA LOC HOLD: Aegir Window Bands"
+spoiler_tier: 1
+title: "Aegir窓帯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Aegir Window Bands
+# Aegir窓帯
 
-JA LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
+Aegir交通は放射線、食、嵐、relay geometry周りの狭いtransfer bandsに支配される。
 
 ## Scanner
 
-JA LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+局所帯域: 上昇は即時救助ではなく、数時間から数日の窓を待つ。
 
 ## Terminal
 
-JA LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+WINDOW BAND: shutter、eclipse、relay、storm、carrier phase、legal handshakeが安全transfer前に揃う必要がある。
 
 ## Audio
 
-JA LOC HOLD: The carrier can hear you and still be in the wrong sky.
+Carrierは君を聞けても、空の位置が間違っていることがある。
 
 ## Field Note
 
-JA LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+窓帯記録: Black Keel timing、局所軌道ラベル、spoiler-light system pagesは同じtransfer constraintsを共有する。
 
 <!-- External Site; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/ja_JP. -->

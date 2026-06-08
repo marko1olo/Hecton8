@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Barnard Yards Marauder Origin"
+title: "Asal Marauder Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Barnard Yards Marauder Origin
+# Asal Marauder Barnard Yards
 
-ID LOC HOLD: Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math.
+Asal Marauder Barnard Yards menetapkan kelas salvage terikat utang di HECTON-8. Marauder datang dari budaya kerja tempat klaim mati bukan wisata misteri, melainkan pekerjaan dengan hitungan buruk.
 
 ## Scanner
 
-ID LOC HOLD: Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.
+Stempel alat Barnard. Budaya pemotongan kapal. Tempat yang mengajarimu mencurigai klausul penyelamatan yang terlalu bersih.
 
 ## Terminal
 
-ID LOC HOLD: BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.
+TANDA LAYANAN BARNARD YARDS: klem darurat diterima. Sertifikasi salvage berlaku untuk habitat tekanan terlantar, kompartemen carrier mati, dan claim hull yang ditinggalkan.
 
 ## Audio
 
-ID LOC HOLD: You learned this hand motion before HECTON-8. That is the problem.
+Kau mempelajari gerakan tangan ini sebelum HECTON-8. Itulah masalahnya.
 
 ## Field Note
 
-ID LOC HOLD: This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.
+Lebih dekat daripada Bumi: pemotong sewaan, kebiasaan tekanan lama, utang, dan lambung yang dilucuti.
 
 <!-- External Site; generated from P073_BARNARD_YARDS_MARAUDER_ORIGIN/id_ID. -->

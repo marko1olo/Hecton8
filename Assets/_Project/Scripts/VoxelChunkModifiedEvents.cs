@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Collections;
@@ -48,6 +49,7 @@ namespace Hecton8.Caves
         private const string QueueLabel = "VoxelChunkModifiedQueue";
 
         private static NativeQueue<VoxelChunkModifiedEvent> _events;
+        private static int _eventsSentinelId;
         private static int _pendingCount;
         private static int _droppedCount;
         private static int _rejectedCount;
@@ -151,13 +153,14 @@ namespace Hecton8.Caves
             }
 
             _events = new NativeQueue<VoxelChunkModifiedEvent>(DataVaultExemptSignalLaneAllocator);
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            _eventsSentinelId = 0;
+            _eventsSentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 _events,
                 Capacity,
                 NativeOwner,
                 QueueLabel,
                 NativeAllocationLifetime.Session);
-            if (sentinelId <= 0)
+            if (_eventsSentinelId <= 0)
             {
                 _events.Dispose();
                 _events = default;
@@ -188,24 +191,47 @@ namespace Hecton8.Caves
 
         private static void DisposeAll()
         {
-            if (!_events.IsCreated)
+            Exception firstException = null;
+
+            if (_eventsSentinelId > 0)
             {
-                _pendingCount = 0;
-                _droppedCount = 0;
-                _rejectedCount = 0;
-                _lastDroppedStateHash = 0u;
-                _lastRejectedStateHash = 0u;
-                return;
+                try
+                {
+                    NativeMemorySentinel.Unregister(_eventsSentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    _eventsSentinelId = 0;
+                }
             }
 
-            NativeMemorySentinel.UnregisterNativeQueue(NativeOwner, QueueLabel);
-            _events.Dispose();
-            _events = default;
-            _pendingCount = 0;
-            _droppedCount = 0;
-            _rejectedCount = 0;
-            _lastDroppedStateHash = 0u;
-            _lastRejectedStateHash = 0u;
+            if (_events.IsCreated)
+            {
+                try
+                {
+                    _events.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    _events = default;
+                }
+            }
+            else
+            {
+                _events = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
     }
 }

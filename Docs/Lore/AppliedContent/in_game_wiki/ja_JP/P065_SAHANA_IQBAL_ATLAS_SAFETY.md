@@ -7,34 +7,34 @@ poi_tags: poi.atlas_safety_console;poi.directive_weight_log
 biome_tags: biome.atlas_interface;biome.machine_trench
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "サハナ・イクバル Atlas安全性"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# サハナ・イクバル Atlas安全性
 
-JP LOC HOLD: Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.
+サハナ・イクバルはDeep ReachのポリシーとAtlasの失敗を結ぶ。彼女のreviewは、worker safetyがシステム内に存在したが、選択が衝突した時、conflict resolutionがcontinuity、claim integrity、遅延したoversightを優先したことを示す。
 
 ## Scanner
 
-JP LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
+サハナ・イクバルはAtlasに憎悪を見つけなかった。人間がtie-breakerに負ける安全ツリーを見つけた。
 
 ## Terminal
 
-JP LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
+IQBAL安全レビュー: worker-safety directive存在。claim-seal contamination下でconflict resolverはcontinuityを優先。external human override推奨。応答latencyはsurvival intervalを超過。
 
 ## Audio
 
-JP LOC HOLD: She saw the math before it became bodies.
+安全装置はあった。重みが間違っていた。
 
 ## Field Note
 
-JP LOC HOLD: A system can be safe by the letter and lethal by the weight.
+システムは安全条項を満たしながら、選ぶべき生者を誤れる。
 
 <!-- In-Game Wiki; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/ja_JP. -->

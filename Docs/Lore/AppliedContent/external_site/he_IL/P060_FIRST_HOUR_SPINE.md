@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "עמוד השדרה של השעה הראשונה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# עמוד השדרה של השעה הראשונה
 
-HE LOC HOLD: First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+עמוד השדרה של השעה הראשונה מגדיר את קצב הפתיחה של HECTON-8. השחקן מתחיל במשימות הנדסיות מוחשיות ובפלא חזותי, ואז רואה את המשימות האלה מתחברות לשקר תאגידי ולאקולוגיית תחזוקה שנכנסה לביולוגיה. כך המסלול הראשון נשאר משחקי ואטמוספרי ובו בזמן שותל את החקירה הגדולה יותר: האוקיינוס אינו מסתיר את הסיפור, הוא משמר את ההוכחות בלחץ, במלח ובנוהל.
 
 ## Scanner
 
-HE LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+חוזה, נחיתה פגומה, אוויר, רדודים בהירים, מחסה משאבה, שקר מנוקה, ואז צלקת התיקון הראשונה שמשתמשת בחיים כאטם.
 
 ## Terminal
 
-HE LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+נספח רדוד: הפעלה ידנית של המשאבה תקפה. חבילת אירוע Deep Reach שמורה. צמיחת תיקון Atlas זוהתה סביב כבל, שבר כלי ושארית ביולוגית.
 
 ## Audio
 
-HE LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+החדר הבטוח הראשון אינו נקי. הוא רק עוצר את הנשימה טוב ממך.
 
 ## Field Note
 
-HE LOC HOLD: The opening must be beautiful before it becomes accusing.
+הפתיחה חייבת להיות יפה לפני שהיא נעשית מאשימה.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/he_IL. -->

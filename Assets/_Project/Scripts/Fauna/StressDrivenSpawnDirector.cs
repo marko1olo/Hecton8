@@ -888,11 +888,18 @@ namespace Hecton8.AI
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);
+            float shiftSqrMagnitude = math.lengthsq(shiftOffset);
+            if (!math.all(math.isfinite(shiftOffset)) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
+                return;
+            }
+
             double3 origin = shiftData.NewTotalOffsetDouble;
             if (!math.all(math.isfinite(origin)))
             {
-                _cachedFloatingOriginOffset = double3.zero;
-                _cachedFloatingOriginSequence = shiftData.Sequence;
                 _floatingOriginSnapshotValid = false;
                 _dumpFaultPending = 1;
                 return;
@@ -1958,7 +1965,7 @@ namespace Hecton8.AI
 
             if (_registeredHotSwap)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
 

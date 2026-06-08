@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Rangée de casiers ouvriers
@@ -27,7 +27,7 @@ Ces objets rendent la colonie humaine: noms, outils, crédits repas et traces de
 
 ## Terminal
 
-Audit colonie: stockage personnel et marques Barnard relient le joueur à des membres d'équipage réels.
+AUDIT COLONIE : stockage personnel et marques Barnard relient la rangée de casiers à des équipiers nommés et à des routes de travail.
 
 ## Audio
 

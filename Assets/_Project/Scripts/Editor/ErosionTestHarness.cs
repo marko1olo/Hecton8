@@ -81,6 +81,7 @@ namespace Hecton8.Editor
             int heightBRegistrationId = 0;
             int sedimentRegistrationId = 0;
             int wearRegistrationId = 0;
+            int heightDeltasRegistrationId = 0;
             int heightDeltaBudgetRegistrationId = 0;
             int metricsRegistrationId = 0;
             JobHandle handle = default;
@@ -96,7 +97,7 @@ namespace Hecton8.Editor
                 int dropletsPerSlice = ResolveDropletsPerSlice(
                     MaxErosionOperationsPerSlice,
                     ResolveCurrentErosionOperations(PixelCount, SedimentaryFlatIterations, ThermalSlumpIterations, RunCanyonWallPass));
-                heightDeltas = AllocateTrackedHeightDeltaQueue(ResolveHeightDeltaQueueCapacity(dropletsPerSlice, ErosionMaxLifetime)); // COLD ALLOC: NativeQueue<HydraulicErosionHeightDelta>[tracked cap 8388608 entries, ~128 MiB payload upper-bound] - sliced editor erosion deltas; harness mirrors MapMagic queue budget for proof artifacts - owner: ErosionTestHarness
+                heightDeltas = AllocateTrackedHeightDeltaQueue(ResolveHeightDeltaQueueCapacity(dropletsPerSlice, ErosionMaxLifetime), out heightDeltasRegistrationId); // COLD ALLOC: NativeQueue<HydraulicErosionHeightDelta>[tracked cap 8388608 entries, ~128 MiB payload upper-bound] - sliced editor erosion deltas; harness mirrors MapMagic queue budget for proof artifacts - owner: ErosionTestHarness
                 heightDeltaBudget = AllocateTrackedTempJobArray<int>(2, NativeArrayOptions.ClearMemory, HeightDeltaBudgetLabel, out heightDeltaBudgetRegistrationId);
                 metrics = AllocateTrackedTempJobArray<ErosionSmokeMetrics>(1, NativeArrayOptions.ClearMemory, MetricsLabel, out metricsRegistrationId);
 
@@ -253,7 +254,7 @@ namespace Hecton8.Editor
                 DisposeTracked(ref heightB, ref heightBRegistrationId);
                 DisposeTracked(ref sediment, ref sedimentRegistrationId);
                 DisposeTracked(ref wear, ref wearRegistrationId);
-                DisposeTrackedQueue(ref heightDeltas);
+                DisposeTrackedQueue(ref heightDeltas, ref heightDeltasRegistrationId);
                 DisposeTracked(ref heightDeltaBudget, ref heightDeltaBudgetRegistrationId);
                 DisposeTracked(ref metrics, ref metricsRegistrationId);
             }
@@ -426,21 +427,52 @@ namespace Hecton8.Editor
             return array;
         }
 
-        private static NativeQueue<HydraulicErosionHeightDelta> AllocateTrackedHeightDeltaQueue(int heightDeltaQueueCapacity)
+        private static NativeQueue<HydraulicErosionHeightDelta> AllocateTrackedHeightDeltaQueue(int heightDeltaQueueCapacity, out int registrationId)
         {
+            registrationId = 0;
             NativeQueue<HydraulicErosionHeightDelta> queue = new NativeQueue<HydraulicErosionHeightDelta>(Allocator.TempJob);
             if (!queue.IsCreated)
                 throw new System.InvalidOperationException("[ErosionTestHarness] NativeQueue allocation failed for " + HeightDeltaQueueLabel + ".");
 
             try
             {
-                int registrationId = NativeMemorySentinel.RegisterNativeQueue(queue, heightDeltaQueueCapacity, NativeMemoryOwner, HeightDeltaQueueLabel, NativeAllocationLifetime.TempJob);
+                registrationId = NativeMemorySentinel.RegisterNativeQueueInstance(queue, heightDeltaQueueCapacity, NativeMemoryOwner, HeightDeltaQueueLabel, NativeAllocationLifetime.TempJob);
                 if (registrationId <= 0)
                     throw new System.InvalidOperationException("[ErosionTestHarness] NativeMemorySentinel rejected NativeQueue registration for " + HeightDeltaQueueLabel + ".");
             }
             catch
             {
-                queue.Dispose();
+                System.Exception nativeSentinelCleanupException0 = null;
+
+                if (registrationId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(registrationId);
+                    }
+                    catch (System.Exception nativeSentinelException0)
+                    {
+                        nativeSentinelCleanupException0 = nativeSentinelException0;
+                    }
+                    finally
+                    {
+                        registrationId = 0;
+                    }
+                }
+
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (System.Exception nativeSentinelException0)
+                {
+                    if (nativeSentinelCleanupException0 == null)
+                        nativeSentinelCleanupException0 = nativeSentinelException0;
+                }
+
+                if (nativeSentinelCleanupException0 != null)
+                    throw nativeSentinelCleanupException0;
+
                 throw;
             }
 
@@ -449,36 +481,92 @@ namespace Hecton8.Editor
 
         private static void DisposeTracked<T>(ref NativeArray<T> array, ref int registrationId) where T : struct
         {
-            if (!array.IsCreated)
-                return;
+            System.Exception firstException = null;
 
-            try
+            if (registrationId > 0)
             {
-                if (registrationId > 0)
+                try
+                {
                     NativeMemorySentinel.Unregister(registrationId);
+                }
+                catch (System.Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    registrationId = 0;
+                }
             }
-            finally
+
+            if (array.IsCreated)
             {
-                registrationId = 0;
-                array.Dispose();
+                try
+                {
+                    array.Dispose();
+                }
+                catch (System.Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    array = default;
+                }
+            }
+            else
+            {
                 array = default;
             }
+
+            if (firstException != null)
+                throw firstException;
         }
 
-        private static void DisposeTrackedQueue(ref NativeQueue<HydraulicErosionHeightDelta> queue)
+        private static void DisposeTrackedQueue(ref NativeQueue<HydraulicErosionHeightDelta> queue, ref int registrationId)
         {
-            if (!queue.IsCreated)
-                return;
+            System.Exception firstException = null;
 
-            try
+            if (registrationId > 0)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, HeightDeltaQueueLabel);
+                try
+                {
+                    NativeMemorySentinel.Unregister(registrationId);
+                }
+                catch (System.Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    registrationId = 0;
+                }
             }
-            finally
+
+            if (queue.IsCreated)
             {
-                queue.Dispose();
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (System.Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
                 queue = default;
             }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void WriteHeightPng(NativeArray<float> heights, string path)

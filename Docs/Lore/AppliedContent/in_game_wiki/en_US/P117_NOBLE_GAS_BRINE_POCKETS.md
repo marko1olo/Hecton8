@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Noble Gas Brine Pockets
 
-Noble gas brine pockets are sealed pressure records inside HECTON-8's mineral brines. A useful pocket is not just xenon in water; it is gas ratio, pressure curve, temperature scar and mineral defect lattice held together long enough to prove what happened underground. Venting the pocket destroys both the value and the evidence. These samples become important because Deep Reach and later Atlas processes can push the right pressure-history feedstock toward Xenon-Omega, but the raw pocket is still geology, not treasure by itself.
+Noble gas brine pockets are sealed pressure records inside HECTON-8's mineral brines. A useful pocket is a four-part record: gas ratio, pressure curve, temperature scar and mineral defect lattice held together long enough to prove what happened underground. Venting the pocket destroys both the value and the evidence. These samples become important because Deep Reach and later Atlas processes can push the right pressure-history feedstock toward Xenon-Omega, but the raw pocket is still geology, not treasure by itself.
 
 ## Scanner
 

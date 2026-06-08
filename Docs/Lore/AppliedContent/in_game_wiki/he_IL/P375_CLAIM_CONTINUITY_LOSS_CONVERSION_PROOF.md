@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Claim Continuity Loss Conversion Proof"
+title: "המרת אובדן לרציפות claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Claim Continuity Loss Conversion Proof
+# המרת אובדן לרציפות claim
 
-HE LOC HOLD: The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.
+שרשרת הראיות מסתיימת בהמרה. Deep Reach יכולה להודות בנזק ולשמור בעלות אם עובדים נעשים הפסדים, ראיה נעשית material custody, וה-claim נשאר חי. לכן השחקן לא נושא רק אמת. הוא נושא משהו שהמערכת יודעת לקנות.
 
 ## Scanner
 
-HE LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
+חותמת שולחן הפסדים חולצה. ה-ledger שרד טוב יותר מהעובדים ששינה את שמם.
 
 ## Terminal
 
-HE LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. biological workforce הומרה ל-unrecoverable loss. Material and proof custody remain active pending receiver assignment.
 
 ## Audio
 
-HE LOC HOLD: This is where dead workers became a clean column.
+כאן אנשים נעשו עמודה נקייה.
 
 ## Field Note
 
-HE LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+הערת בוזז: ledger יכול לזכור את המתים ועדיין לבזבז אותם.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/he_IL. -->

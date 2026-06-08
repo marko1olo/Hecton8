@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Beam Sail and Pellet Lane"
+title: "빔 세일과 펠릿 레인"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Beam Sail and Pellet Lane
+# 빔 세일과 펠릿 레인
 
-KO LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+빔 세일, 펠릿 레인, 핵융합 포획 단계, 마그세일은 FTL 없이 근광속 화물을 실용화했다. 배는 탱크, 방호 얼음, 라디에이터, 제어 권한을 싣고 출항한 뒤 나머지 엔진을 항로에서 빌렸다. 뒤쪽의 빔 전력, 진로에 맞춘 펠릿 질량, 그리고 제동을 소유하겠다고 동의한 수신자다. 그래서 Aegir는 도달 가능하면서도 버려진 곳처럼 느껴진다. 회랑은 예정된 화물을 옮길 수 있지만 구조 밧줄처럼 부를 수는 없다.
 
 ## Scanner
 
-KO LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+항로 기록: 세일은 스스로 밀지 않았다. 배 뒤의 배열에서 전력을 빌리고 앞쪽 펠릿 흐름에서 질량을 빌렸다.
 
 ## Terminal
 
-KO LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+레인 상태: 빔 배열 지급 완료. 펠릿 흐름 계약 밖 0.8 ppm. 포획 연소 아직 가능. 제동 소유자가 없으면 빠른 화물은 빠른 잔해가 된다.
 
 ## Audio
 
-KO LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+배가 빠른 것은 엔진의 절반이 배 밖에 있기 때문이다.
 
 ## Field Note
 
-KO LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+기록이 빔만 칭찬한다면 포획 소유자를 말할 때까지 더 읽어라.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/ko_KR. -->

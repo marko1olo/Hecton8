@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "فشل احتواء الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# فشل احتواء الضغط
 
-AR LOC HOLD: Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.
+فشل احتواء الضغط يعطي blue debt سلوكا ماديا يمكن قراءته. قيمته تأتي من الضغط العميق الذي جعله متماسكا، وخطره يأتي من المعالجة الضحلة التي تفك ذلك التماسك. المرحلة 0 مختومة. المرحلة 1 تنحرف وقد تستعاد أحيانا بإعادة ضغط الفوهة. المرحلة 2 تكسر الشبكة. المرحلة 3 تدعو الملح والكائنات. المرحلة 4 تترك عينة ميتة تلوث العتاد والماء والطرق.
 
 ## Scanner
 
-AR LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+مخطط مراحل الصندوق. يفشل blue debt بذاكرة الضغط وقص الإشارة والتفتح؛ الخرافة تهدر الأكسجين.
 
 ## Terminal
 
-AR LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+مراحل الاحتواء: 0 شبكة مختومة؛ 1 انحراف إشارة؛ 2 كسر شبكة؛ 3 تفتح ملحي/بيولوجي؛ 4 عينة ميتة مع تلوث حي. إعادة ضغط الفوهة قد تستعيد المرحلة 1 فقط.
 
 ## Audio
 
-AR LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
+العينة لا تكرهك. إنها تحاول العودة إلى حيث تشكلت.
 
 ## Field Note
 
-AR LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+عينة واحدة قد تساوي ثروة في عمق، وتصبح عبئا بعد عشرة أمتار.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/ar_SA. -->

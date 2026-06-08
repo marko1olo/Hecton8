@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # خروج مادي
 
-الخروج المادي نهاية جزئية حقيقية. يمنح ربحا أو عينة، لكنه يترك الحقيقة الكبرى ناقصة.
+الخروج المادي نتيجة جزئية حقيقية، لا طريق ميت. تستطيع الموارد أو عينة أن تشتري انسحابا بينما تبقى الحقيقة الأكبر بلا حل، ويصير الرجوع اللاحق أكثر حدة.
 
 ## Scanner
 

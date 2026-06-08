@@ -8,33 +8,33 @@ biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pump Room Handshake"
+spoiler_tier: 1
+title: "לחיצת שסתום בחדר המשאבות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pump Room Handshake
+# לחיצת שסתום בחדר המשאבות
 
-Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive.
+חדרי משאבות ב-HECTON-8 אינם ניקוזים פשוטים. שסתומים מקומיים, גלגלי יד ושסתומי אל-חזור עייפים מכריחים לשאול לאן הלכו המים אחרי שהרצפה התייבשה. משאבה עובדת יכולה לפתוח דלת, להעיר מסדרון, להזין רעש לסונאר ולהפוך את דרך החזרה לבעיה הבאה.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+משאבת הסאמפ המקומית קיבלה קלט מגלגל יד. סל היניקה מזוהם בקצף קפסולה; פעימת היציאה מעמיסה את מסדרון החזרה B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 בקרת סאמפ / לחיצה מקומית: סמכות גלגל יד התקבלה. עקיפה מרחוק נדחתה. זרימת יניקה שוחזרה בקצב נמוך. לחץ יציאה עולה ב-RETURN CORRIDOR B; הפעלה מחדש רק אחרי בדיקת האץ' במורד.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+השסתום תפס. היציאה דופקת. אל תקרא לזה בטוח עדיין.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+חדר משאבות יבש יכול להטביע את הדרך חזרה. הקשב למכת מים ביציאה לפני שאתה מפרק את השסתום.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/he_IL. -->

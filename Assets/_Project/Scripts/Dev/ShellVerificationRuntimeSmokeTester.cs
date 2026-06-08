@@ -523,17 +523,15 @@ namespace Hecton8.Dev
         private string ResolveExistingSaveSlot()
         {
             SaveManager saveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
-            if (saveManager == null)
+            if (saveManager == null || !saveManager.IsInitialized)
                 return string.Empty;
 
-            if (saveManager.SaveExists("slot_1"))
-                return "slot_1";
-
-            if (saveManager.SaveExists("slot_2"))
-                return "slot_2";
-
-            if (saveManager.SaveExists("slot_3"))
-                return "slot_3";
+            for (int i = 0; i < SaveEvents.ManualSlotCount; i++)
+            {
+                string slotName = SaveEvents.ResolveManualSlotName(i);
+                if (saveManager.SaveExists(slotName))
+                    return slotName;
+            }
 
             return string.Empty;
         }

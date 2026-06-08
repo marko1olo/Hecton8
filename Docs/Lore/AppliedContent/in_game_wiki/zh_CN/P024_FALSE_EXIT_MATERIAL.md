@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 物资撤离
 
-物资撤离是真实的部分结局，不是假失败。玩家可用资源或样本兑现，但留下主要真相未解。
+物资出口是真实的部分结果，不是死路。资源或样本可以买来撤离，而更大的真相仍未解决，日后返回会切得更深。
 
 ## Scanner
 

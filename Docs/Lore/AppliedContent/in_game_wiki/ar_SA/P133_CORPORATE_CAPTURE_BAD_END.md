@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "أسر شركة: إنقاذ نظيف"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# أسر شركة: إنقاذ نظيف
 
-AR LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.
+أسر الشركة نهاية سيئة مبنية من إنقاذ معقول. يغادر اللاعب المحيط حيا، لكن السلطة التي أجابت تعامل الشاهد كمواد containment وتتعامل مع payload كالمريض الحقيقي.
 
 ## Scanner
 
-AR LOC HOLD: Rescue offer. Payload first. Witness second.
+تم التحقق من مصدر recovery: وكيل Deep Reach. طُلب payload قبل فحص الرفاه.
 
 ## Terminal
 
-AR LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
+التقاط DEEP REACH: يقبل recovery team الإحداثيات وXO custody ومفتاح وصول Atlas قبل مراجعة رفاه المتعاقد. شهادة المتعاقد مختومة تحت بروتوكول تلوث.
 
 ## Audio
 
-AR LOC HOLD: The clean room is not for you.
+الغرفة النظيفة ليست لك.
 
 ## Field Note
 
-AR LOC HOLD: A rescue that demands silence is a capture with better lighting.
+إنقاذ نظيف يطلب الإحداثيات أولا هو أسر بهواء أفضل.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/ar_SA. -->

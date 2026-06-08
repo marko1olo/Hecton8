@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "FR LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach : responsabilité sous vraie eau"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Deep Reach Liability Chain
+# Deep Reach : responsabilité sous vraie eau
 
-FR LOC HOLD: Deep Reach guilt is strongest where clean reports meet broken hardware. The flood was real; the avoidable part is recorded in margins, clocks, doors and custody labels.
+Deep Reach est coupable sans faux océan. Marées, cryosphère, tempêtes et chimie de pression ont causé le désastre; la procédure a choisi de mauvaises marges et nettoyé les papiers.
 
 ## Scanner
 
-FR LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+Mémo public de preuve. La physique de la Great Tide reste réelle; la responsabilité apparaît dans les marges acceptées, l'évacuation trop faible, la priorité Atlas, la quarantaine et la conversion des pertes.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+NOEUD PUBLIC DE RESPONSABILITÉ // DEEP REACH. Chaîne : Varnek margin acceptance, Arendt Atlas waiver, Haldane quarantine hold, Ibarra loss ledger, Sato-Ren return action.
 
 ## Audio
 
-FR LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Audio juridique récupéré : "N'appelez pas cela retard. Appelez cela review. L'eau fournira l'intervalle."
 
 ## Field Note
 
-FR LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+Note de Maraudeur : la physique a tué. La procédure a décidé qui comptait comme récupérable.
 
 <!-- In-Game Wiki; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/fr_FR. -->

@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.carrier_link
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+spoiler_tier: 1
+title: "FTL 없는 항로 경제"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# FTL 없는 항로 경제
 
-KO LOC HOLD: No-FTL Route Economy defines HECTON-8's hard-sci-fi pressure. There is no ansible, no instant rescue and no cheap return trip. Interstellar law can arrive as packets and liens long before ships arrive as help.
-
-## Scanner
-
-KO LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
-
-## Terminal
-
-KO LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
-
-## Audio
-
-KO LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
-
-## Field Note
-
-KO LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+FTL 없는 항로 경제는 HECTON-8을 정직하게 만드는 규칙이다. 2190년의 인간권은 Aegir에 도달할 수 있지만 모든 도착은 launch window, shielding mass, fuel, braking system, custody packets, 그리고 수년의 유료 인내로 만들어진다. 법은 데이터로 움직이기 때문에 배보다 빠르다. 부채는 사고 전에 가격이 매겨졌기 때문에 구조보다 빠르다. 플레이어는 사라진 기적에 버려진 것이 아니다. 애초에 기적을 약속하지 않은 경제에 버려졌다.
 
 <!-- External Site; generated from P101_NO_FTL_ROUTE_ECONOMY/ko_KR. -->

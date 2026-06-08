@@ -176,10 +176,21 @@ namespace Hecton8.VFX
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (_hasLastSample)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFinite(shiftOffset) || !math.isfinite(shiftSqrMagnitude))
             {
-                float3 runtime = _lastSampleAup.ToRuntimeFloat3();
-                _lastSampleRuntimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+                ClearTrail();
+                return;
+            }
+
+            if (shiftSqrMagnitude <= 0.000001f)
+                return;
+
+            if (_hasLastSample && !TryRefreshLastSampleRuntimePosition())
+            {
+                ClearTrail();
+                return;
             }
 
             _meshDirty = true;
@@ -549,6 +560,18 @@ namespace Hecton8.VFX
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return positionAup.IsFinite();
+        }
+
+        private bool TryRefreshLastSampleRuntimePosition()
+        {
+            if (!_lastSampleAup.TryToRuntimeFloat3(out float3 runtime) ||
+                !math.all(math.isfinite(runtime)))
+            {
+                return false;
+            }
+
+            _lastSampleRuntimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            return true;
         }
 
         private static bool IsFinite(Vector3 value)

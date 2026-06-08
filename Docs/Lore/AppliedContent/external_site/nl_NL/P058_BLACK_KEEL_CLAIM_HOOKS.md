@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Black-Keel-claimhaken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Black-Keel-claimhaken
 
-NL LOC HOLD: Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses.
+Black-Keel-claimhaken bepaalt de openingsdruk. Black Keel is geen theatraal schurkenschip; het is een drager, gebonden aan claimpool-economie, quarantainerecht en slapende Deep-Reach-hefbomen. Het probleem van de speler is praktisch en moreel tegelijk: een stem boven de oceaan kan de noodoproep horen, maar de weg naar huis moet waardevol, certificeerbaar en juridisch ongemakkelijk worden om te negeren.
 
 ## Scanner
 
-NL LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+Op het manifest is Black Keel hardware van de claimpool; in de clausules is het hefboomwerking van Deep Reach.
 
 ## Terminal
 
-NL LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+DRAGERVERZORGING: herstel van operator toegestaan na vrachttriage, quarantainepoort, routecertificaat en vrijgave van aansprakelijkheid. Deep-Reach-prioriteitszegel bewaard in slapende clausules.
 
 ## Audio
 
-NL LOC HOLD: It can hear you. It just has to price the answer first.
+Het kan je horen. Het moet alleen eerst de prijs van het antwoord bepalen.
 
 ## Field Note
 
-NL LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+Het schip is niet slecht. Het is verhuurd aan een contract dat wreed kan zijn zonder levend te klinken.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/nl_NL. -->

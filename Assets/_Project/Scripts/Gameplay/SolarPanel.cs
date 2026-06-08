@@ -36,7 +36,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool useMockSolarConditions;
 
         [Header("Sea Level")]
-        [SerializeField] private float seaLevelRuntimeY;
+        [SerializeField] private float seaLevelRuntimeY = SolarPowerGenerationConstants.DefaultSeaLevelY;
 
         private Transform _cachedTransform;
         private int _slot = -1;
@@ -366,7 +366,9 @@ namespace Hecton8.Gameplay
             SolarPowerGenerationRuntime.TryGetTuning(out tuned);
             SolarConditionsDTO conditions = default;
             conditions.RuntimeOriginAUP = runtimeOrigin;
-            conditions.SeaLevelAUP = runtimeOrigin + new double3(0.0, seaLevelRuntimeY + (celestialValid ? celestial.TideHeightMeters : 0f), 0.0);
+            float baseSeaLevelY = SolarPowerGenerationConstants.ResolveSeaLevelDeltaMeters(seaLevelRuntimeY);
+            float tideHeightMeters = celestialValid && math.isfinite(celestial.TideHeightMeters) ? celestial.TideHeightMeters : 0f;
+            conditions.SeaLevelAUP = SolarPowerGenerationConstants.BuildSeaLevelAUP(runtimeOrigin, baseSeaLevelY + tideHeightMeters);
             conditions.SunDirection = celestialValid ? celestial.SunDirection : new float3(0f, 1f, 0f);
             conditions.WaterAttenuationCoefficient = tuned.WaterAttenuationCoefficient > 0f ? tuned.WaterAttenuationCoefficient : waterAttenuationCoefficient;
             conditions.WaterTurbidity = math.max(waterTurbidity, ResolveStormTurbidity());

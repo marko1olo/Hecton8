@@ -74,6 +74,7 @@ namespace Hecton8.UI
         private HectonPlayerMovement _playerMovement;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _hotSwapListenerRegistered;
+        private bool _pdaEventsRegistered;
         // COLD ALLOC: char[512] - spectrum diagnostic line assembly buffer - owner: PDASpectrumTab
         private readonly char[] _lineBuffer = new char[512];
         private int _lineLength;
@@ -131,7 +132,7 @@ namespace Hecton8.UI
 
             SpectrumEvents.RegisterModeListener(this);
             SpectrumEvents.RegisterSonarSnapshotListener(this);
-            PDAEvents.Register(this);
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
             BiomeMatrixEvents.Register(this);
 
             RefreshModeDisplay();
@@ -141,7 +142,11 @@ namespace Hecton8.UI
         {
             SpectrumEvents.UnregisterModeListener(this);
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
             BiomeMatrixEvents.Unregister(this);
             TryUnregisterHotSwapListener();
         }
@@ -150,7 +155,11 @@ namespace Hecton8.UI
         {
             SpectrumEvents.UnregisterModeListener(this);
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
             BiomeMatrixEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             PDAEvents.AssertUnregistered(this, nameof(PDASpectrumTab));
@@ -465,7 +474,16 @@ namespace Hecton8.UI
         {
             if (!TryResolveBiomeData(out BiomeMatrixDirector biomeDirector, out HectonBiomeMatrixProfile matrixProfile, out HectonBiomeProfile _, out AtmosphereProfile _))
             {
-                SetLabelText(_statusLabel, ModeDescriptions[modeIndex]);
+                ClearLine();
+                Append(ModeDescriptions[modeIndex]);
+                if (TryResolvePlayerDepthMeters(out float fallbackDepthMeters))
+                {
+                    Append('\n');
+                    Append("DEPTH // ");
+                    AppendDistance((int)math.round(fallbackDepthMeters));
+                }
+
+                SetLineText(_statusLabel);
                 return;
             }
 
@@ -475,7 +493,10 @@ namespace Hecton8.UI
             Append("BIOME // ");
             AppendBiomeName(matrixProfile);
             Append(" // DEPTH ");
-            AppendDistance((int)math.round(biomeDirector.CurrentDepthMeters));
+            if (TryResolveDisplayDepthMeters(biomeDirector, out float depthMeters))
+                AppendDistance((int)math.round(depthMeters));
+            else
+                Append("N/A");
             SetLineText(_statusLabel);
         }
 
@@ -519,7 +540,19 @@ namespace Hecton8.UI
             if (!TryResolveBiomeData(out BiomeMatrixDirector biomeDirector, out HectonBiomeMatrixProfile matrixProfile, out HectonBiomeProfile visualProfile, out AtmosphereProfile atmosphereProfile))
             {
                 SetLabelText(_sonarStatusLabel, "BIOME // OFFLINE");
-                SetLabelText(_contactSummaryLabel, "MATRIX // UNRESOLVED");
+                if (TryResolvePlayerDepthMeters(out float playerDepthMeters))
+                {
+                    ClearLine();
+                    Append("DEPTH // ");
+                    AppendDistance((int)math.round(playerDepthMeters));
+                    Append(" // MATRIX N/A");
+                    SetLineText(_contactSummaryLabel);
+                }
+                else
+                {
+                    SetLabelText(_contactSummaryLabel, "MATRIX // UNRESOLVED");
+                }
+
                 SetLabelText(_resourceSummaryLabel, "TURBIDITY // N/A");
                 SetLabelText(_bioformSummaryLabel, "ABSORPTION RGB // N/A");
                 RefreshLastLossLabel();
@@ -535,7 +568,10 @@ namespace Hecton8.UI
 
             ClearLine();
             Append("DEPTH // ");
-            AppendDistance((int)math.round(biomeDirector.CurrentDepthMeters));
+            if (TryResolveDisplayDepthMeters(biomeDirector, out float depthMeters))
+                AppendDistance((int)math.round(depthMeters));
+            else
+                Append("N/A");
             Append(" // MATRIX ");
             AppendInt(math.max(0, matrixProfile.matrixIndex));
             SetLineText(_contactSummaryLabel);
@@ -623,13 +659,69 @@ namespace Hecton8.UI
             out HectonBiomeProfile visualProfile,
             out AtmosphereProfile atmosphereProfile)
         {
-            biomeDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            biomeDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeDirector);
             matrixProfile = biomeDirector != null ? biomeDirector.CurrentProfile : null;
             visualProfile = matrixProfile != null ? matrixProfile.runtimeVisualProfile : null;
             atmosphereProfile = matrixProfile != null && matrixProfile.familyProfile != null
                 ? matrixProfile.familyProfile.atmosphereProfile
                 : null;
-            return biomeDirector != null && matrixProfile != null;
+            return biomeDirector != null && biomeDirector.isActiveAndEnabled && matrixProfile != null;
+        }
+
+        private bool TryResolveDisplayDepthMeters(BiomeMatrixDirector biomeDirector, out float depthMeters)
+        {
+            if (TryResolvePlayerDepthMeters(out depthMeters))
+                return true;
+
+            return TryResolveMatrixDepthMeters(biomeDirector, out depthMeters);
+        }
+
+        private static bool TryResolveMatrixDepthMeters(BiomeMatrixDirector biomeDirector, out float depthMeters)
+        {
+            depthMeters = 0f;
+            if (biomeDirector == null ||
+                !biomeDirector.isActiveAndEnabled ||
+                !math.isfinite(biomeDirector.CurrentDepthMeters))
+            {
+                return false;
+            }
+
+            depthMeters = math.max(0f, biomeDirector.CurrentDepthMeters);
+            return true;
+        }
+
+        private bool TryResolvePlayerDepthMeters(out float depthMeters)
+        {
+            depthMeters = 0f;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null || !playerContext.IsInitialized)
+            {
+                CachePlayerRuntimeContext(GlobalRegistry.Player);
+                playerContext = _cachedPlayerContext;
+            }
+
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                depthMeters = math.max(0f, movementState.DepthMeters);
+                return true;
+            }
+
+            if (playerContext != null)
+                return false;
+
+            HectonPlayerMovement movement = _playerMovement;
+            if (movement != null && math.isfinite(movement.CurrentDepth))
+            {
+                depthMeters = math.max(0f, movement.CurrentDepth);
+                return true;
+            }
+
+            return false;
         }
 
         private bool TryResolveSurvivalSystem(out HectonSurvivalSystem survival)
@@ -689,20 +781,37 @@ namespace Hecton8.UI
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (_playerMovement == null)
+            playerAup = default;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                snapshot.Aup.IsFinite())
             {
-                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-                if (playerContext != null)
-                    _playerMovement = playerContext.PlayerMovement;
+                playerAup = snapshot.Aup;
+                return true;
             }
+
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
+            {
+                playerAup = movementState.PredictedAup;
+                return true;
+            }
+
+            if (playerContext != null)
+                return false;
 
             if (_playerMovement != null)
             {
                 playerAup = _playerMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
-            playerAup = default;
             return false;
         }
 

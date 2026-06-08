@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "ID LOC HOLD: Resources and Ecology"
+title: "Sumber Daya dan Ekologi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Resources and Ecology
+# Sumber Daya dan Ekologi
 
-ID LOC HOLD: Resource/ecology hub: drowned crust, brine ladders, vent chemistry, living systems and Atlas' damaged repair logic.
+Hub sumber daya/ekologi: drowned crust, brine ladders, vent chemistry, living systems, dan repair logic Atlas yang rusak.
 
 ## Scanner
 
-ID LOC HOLD: Publication hub: geology, blue debt, fauna grammar and Atlas repair-network misuse.
+Hub publikasi: geology, blue debt, tata bahasa fauna, dan misuse jaringan perbaikan Atlas.
 
 ## Terminal
 
-ID LOC HOLD: SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.
+SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology, dan encounter grammar sebagai satu process map.
 
 ## Audio
 
-ID LOC HOLD: Nothing here is just loot.
+Tidak ada yang hanya loot di sini.
 
 ## Field Note
 
-ID LOC HOLD: Navigation cluster record: resources and ecology belong together when materials, biota, and evidence pressure share the same route.
+Sumber daya dan ekologi menyatu ketika material, biota, dan evidence pressure berbagi rute yang sama.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/id_ID. -->

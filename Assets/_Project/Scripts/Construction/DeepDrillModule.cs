@@ -244,33 +244,66 @@ namespace Hecton8.Construction
 
         internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)
         {
-            ClearBufferedOutputState();
-            _cycleTimer = Mathf.Clamp(dto.drillCycleTimerSeconds, 0f, Mathf.Max(extractionCycleSeconds, SlowTickDeltaTime));
-            _debugCycleTimer = _cycleTimer;
+            float restoredCycleTimer = Mathf.Clamp(
+                dto.drillCycleTimerSeconds,
+                0f,
+                Mathf.Max(extractionCycleSeconds, SlowTickDeltaTime));
+            bool hasSavedBufferedOutput =
+                dto.drillBufferedAmount > 0 &&
+                !string.IsNullOrWhiteSpace(dto.drillBufferedItemId);
 
-            if (itemCatalog == null || string.IsNullOrWhiteSpace(dto.drillBufferedItemId) || dto.drillBufferedAmount <= 0)
+            if (!hasSavedBufferedOutput)
+            {
+                ClearBufferedOutputState();
+                _cycleTimer = restoredCycleTimer;
+                _debugCycleTimer = _cycleTimer;
+                return;
+            }
+
+            if (itemCatalog == null)
                 return;
 
             ItemData item = itemCatalog.FindById(dto.drillBufferedItemId);
             if (item == null)
                 return;
 
+            ClearBufferedOutputState();
+            _cycleTimer = restoredCycleTimer;
+            _debugCycleTimer = _cycleTimer;
             _bufferedItem = item;
             _bufferedUnits = Mathf.Clamp(dto.drillBufferedAmount, 1, maxBufferedUnits);
             _debugBufferedItemId = item.PersistentId;
             _debugBufferedUnits = _bufferedUnits;
         }
 
-        internal void EjectBufferedOutput(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, ref Vector3 dropPosition)
+        internal bool CanEjectBufferedOutput(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, Vector3 dropPosition)
         {
             if (owner == null || _bufferedItem == null || _bufferedUnits <= 0)
-                return;
+                return true;
 
-            int itemHashId = Hecton.Localization.LocHash.Compute(_bufferedItem.PersistentId);
-            if (itemHashId != 0)
-                owner.DropItemQuantityToInventoryOrWorld(itemHashId, _bufferedUnits, inventory, pool, ref dropPosition);
+            int itemHashId = ItemData.ResolvePersistentHashId(_bufferedItem);
+            return owner.CanDropItemQuantityToInventoryOrWorld(itemHashId, _bufferedUnits, inventory, pool, dropPosition);
+        }
+
+        internal bool EjectBufferedOutput(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, ref Vector3 dropPosition)
+        {
+            if (owner == null || _bufferedItem == null || _bufferedUnits <= 0)
+                return true;
+
+            int itemHashId = ItemData.ResolvePersistentHashId(_bufferedItem);
+            if (itemHashId == 0)
+                return false;
+
+            int delivered = owner.DropItemQuantityToInventoryOrWorld(itemHashId, _bufferedUnits, inventory, pool, ref dropPosition);
+            if (delivered < _bufferedUnits)
+            {
+                _bufferedUnits -= Mathf.Max(0, delivered);
+                _debugBufferedUnits = _bufferedUnits;
+                return false;
+            }
 
             ClearBufferedOutputState();
+            return true;
         }
 
         internal bool ValidatePlacementWithService(

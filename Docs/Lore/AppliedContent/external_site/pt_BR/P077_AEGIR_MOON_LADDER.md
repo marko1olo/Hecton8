@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ladder"
+title: "Escada Lunar de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ladder
+# Escada Lunar de Aegir
 
-PT-BR LOC HOLD: Aegir Moon Ladder gives the game a usable local astronomy layer. Other moons explain route windows, dead claims, salvage rumors and why Black Keel cannot always answer from a convenient orbit.
+A Escada Lunar de Aegir dá a HECTON-8 uma astronomia local útil: outras luas explicam janelas de rota, claims mortos, rumores de salvage e timing de recuperação falho.
 
 ## Scanner
 
-PT-BR LOC HOLD: Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.
+Mapa da escada lunar. HECTON-8 é um perigo de trabalho em um sistema móvel, não um nível isolado.
 
 ## Terminal
 
-PT-BR LOC HOLD: MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+LUAS PRINCIPAIS DE AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Modelo de transfer e eclipse anexado.
 
 ## Audio
 
-PT-BR LOC HOLD: The map has more moons than mercy.
+O mapa tem mais luas do que misericórdia.
 
 ## Field Note
 
-PT-BR LOC HOLD: Skarn burns, Vela sheds ice, Anvil feeds metal, Kestrel cuts relays, HECTON-8 drowns.
+Skarn queima. Vela solta gelo. Anvil alimenta metal. Kestrel corta relés. HECTON afoga.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/pt_BR. -->

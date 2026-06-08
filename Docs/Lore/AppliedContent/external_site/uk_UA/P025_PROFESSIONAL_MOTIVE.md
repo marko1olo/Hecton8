@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Професійний мотив
 
-Професійний мотив дає агентність без жорсткої біографії.
+Professional Motive дає мародеру agency без жорсткої біографічної клітки: спершу йде компетентність, особиста залученість приходить через докази.
 
 ## Scanner
 

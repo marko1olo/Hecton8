@@ -7,34 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "עידן גשושי מפרש-קרן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# עידן גשושי מפרש-קרן
 
-HE LOC HOLD: Early extrasolar expansion leaned on beam-assisted probes and small autonomous packets. They could map, listen and seed relay assumptions faster than heavy crewed ships could move. That asymmetry explains how Deep Reach could prepare Aegir infrastructure before ordinary workers understood the full risk.
+ההתפשטות החוץ-שמשית המוקדמת שלחה גשושי מפרש-קרן וחבילות אוטונומיות לפני בני אדם. הם מיפו כבידה, קרינה, מסלולי ירחים, קווי ראייה של ממסרים ועולמות אוקיינוס אפשריים בזמן שספינות כבדות היו עדיין התחייבויות על נייר. Deep Reach ירשה ביטחון שיוצר בידי מכונות והתייחסה אליו כרשות.
 
 ## Scanner
 
-HE LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+סליל סקר: המפות הראשונות של Aegir הגיעו כמטען קל, לא כהבטחה מאוישת.
 
 ## Terminal
 
-HE LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+שושלת סקר: חבילות מפרש-קרן מיפו את Ran ו-Aegir לפני שנתיבי מטען דורגו למטען חי. דעיכת ביטחון נרשמה לפני בניית המושבה.
 
 ## Audio
 
-HE LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
+הדבר האנושי הראשון כאן לא היה אדם. זו הייתה חבילת סקר עם קבלה.
 
 ## Field Note
 
-HE LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+הגשושים ראו ראשונים. המכונות הכינו שניות. העובדים הגיעו כשהביטחון נעשה ניתן לחיוב.
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/he_IL. -->

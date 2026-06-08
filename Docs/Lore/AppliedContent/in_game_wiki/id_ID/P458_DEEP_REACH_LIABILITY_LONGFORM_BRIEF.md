@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "ID LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: Liabilitas di Bawah Air Nyata"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: Liabilitas di Bawah Air Nyata
 
-ID LOC HOLD: Deep Reach guilt is strongest where clean reports meet broken hardware. The flood was real; the avoidable part is recorded in margins, clocks, doors and custody labels.
+Deep Reach bersalah tanpa memalsukan laut. Pasang, kriyosfer, badai, dan kimia tekanan menyebabkan bencana; prosedur memilih margin buruk lalu membersihkan dokumen.
 
 ## Scanner
 
-ID LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+Brief bukti publik. Fisika Great Tide tetap nyata; liabilitas Deep Reach muncul pada margin diterima, evakuasi kurang, prioritas Atlas, penahanan karantina, dan konversi kerugian.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+NODE LIABILITAS PUBLIK // DEEP REACH. Rantai: Varnek margin acceptance, Arendt Atlas waiver, Haldane quarantine hold, Ibarra loss ledger, Sato-Ren return action.
 
 ## Audio
 
-ID LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Audio counsel pulih: "Jangan sebut delay. Sebut review. Air akan memberi interval."
 
 ## Field Note
 
-ID LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+Catatan Marauder: fisika yang membunuh. Procedure memilih siapa yang dihitung recoverable.
 
 <!-- In-Game Wiki; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/id_ID. -->

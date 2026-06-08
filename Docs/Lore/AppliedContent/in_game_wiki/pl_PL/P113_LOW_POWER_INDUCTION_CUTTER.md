@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "Indukcyjny przecinak niskiej mocy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# Indukcyjny przecinak niskiej mocy
 
-PL LOC HOLD: The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+Indukcyjny przecinak niskiej mocy jest pierwszym narzędziem dostępu, a nie uniwersalnym kluczem. Otwiera zakleszczone włazy serwisowe, śruby paneli i skrzynie salvage, zmuszając do czytania, jaką rolę pełni część. Pressure glass, aktywne ramy i szwy wyrosłe z Atlas należą do późniejszych narzędzi albo lepszych dowodów.
 
 ## Scanner
 
-PL LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+Indukcyjny przecinak niskiej mocy. Tylko metal serwisowy; rama nośna i pressure glass są poza klasą.
 
 ## Terminal
 
-PL LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+OSTRZEŻENIE NARZĘDZIA / PRZECINAK INDUKCYJNY: dozwolone cele to włazy serwisowe, śruby paneli, lekkie wsporniki i zamki skrzyń. Nie ciąć aktywnych ram, krat pressure glass ani szwów wyrosłych z Atlas bez późniejszej certyfikacji klasy.
 
 ## Audio
 
-PL LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
+Tnij śrubę. Żebro zostaw.
 
 ## Field Note
 
-PL LOC HOLD: The cutter should feel valuable because it is limited.
+Dobry przecinak, zła wiara. Otwiera panele. Nie wybacza cięcia żebra, które trzyma pokój w osi.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/pl_PL. -->

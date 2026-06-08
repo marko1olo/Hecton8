@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Tau Ceti Public Ledger
 
-Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly.
+Tau Ceti Public Ledger is hard-sci-fi accountability: real public institutions exist, but distance turns justice into an afterimage unless evidence is preserved with chain-of-custody discipline.
 
 ## Scanner
 

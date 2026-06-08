@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Deep Reach Suboffice Registry"
+title: "מרשם תתי-משרדים של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Deep Reach Suboffice Registry
+# מרשם תתי-משרדים של Deep Reach
 
-HE LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+מרשם תתי-המשרדים חשוב כי הוא נותן שמות למכונה בלי להמציא חדר כס. Deep Reach לא הייתה צריכה אדם אחד שמצווה על כל מוות. היא הייתה צריכה offices בעלי שמות צרים, שכל אחד מהם יכול לעכב, לסווג מחדש או להעביר חבילה. Contract Continuity החזיק obligations בחיים. Packet Notary החליט מה נחשב proof. Quarantine Hold גרם ל-rescue להישמע מסוכן. Asset Silence הוריד את ערך העדים. Return Action החליט מי שווה מסה.
 
 ## Scanner
 
-HE LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board ו-Return Action Queue.
 
 ## Terminal
 
-HE LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach שמרה החלטות קטלניות מתחת לרמת נבל יחיד. desks קטנים ניתבו clauses, packets, quarantine, silence ו-return priority עד ששום חותמת לא נראתה כמו רצח.
 
 ## Audio
 
-HE LOC HOLD: A small desk can kill more quietly than a director.
+desk קטן יכול להרוג בשקט רב יותר מדירקטור.
 
 ## Field Note
 
-HE LOC HOLD: Use dull names. Dull names are where liability hides.
+השאר את השמות משעממים. liability מסתתרת בשמות משעממים.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/he_IL. -->

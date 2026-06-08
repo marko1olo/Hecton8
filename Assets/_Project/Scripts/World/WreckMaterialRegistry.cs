@@ -890,18 +890,26 @@ namespace Hecton8.World
             IPlayerRuntimeContext runtimeContext = _playerRuntimeContext;
             if (runtimeContext != null)
             {
-                HectonPlayerMovement playerMovement = runtimeContext.PlayerMovement;
-                if (playerMovement != null)
+                if (runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
-                    playerAup = playerMovement.CurrentAup;
-                    return true;
+                    AbsoluteUniversePosition snapshotAup = snapshot.Aup;
+                    if (snapshotAup.IsFinite())
+                    {
+                        playerAup = snapshotAup;
+                        return true;
+                    }
                 }
 
                 if (runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
                     (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
-                    playerAup = movementState.PredictedAup;
-                    return true;
+                    AbsoluteUniversePosition predictedAup = movementState.PredictedAup;
+                    if (predictedAup.IsFinite())
+                    {
+                        playerAup = predictedAup;
+                        return true;
+                    }
                 }
             }
 
@@ -927,10 +935,11 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!_hasPublishedWreck || !_HasUsableShift(shiftData.ShiftOffset))
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (!_hasPublishedWreck || !_HasUsableShift(shiftOffset))
                 return;
 
-            Vector3 runtimeOffset = -shiftData.ShiftOffset;
+            Vector3 runtimeOffset = -shiftOffset;
             bool hasPendingMatrixUpload = false;
             if (_moduleBatches == null)
             {
@@ -1906,7 +1915,10 @@ namespace Hecton8.World
 
         private static bool _HasUsableShift(Vector3 shiftOffset)
         {
-            return shiftOffset.sqrMagnitude > 0.0001f;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            return MathGuard.IsFinite(shiftOffset) &&
+                   MathGuard.IsFinite(shiftSqrMagnitude) &&
+                   shiftSqrMagnitude > 0.0001f;
         }
 
         private static bool IsFiniteBounds(Bounds bounds)

@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: ko_KR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "분출구 단조 지열 엔진"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# 분출구 단조 지열 엔진
 
-KO LOC HOLD: Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+분출구 단조는 지질을 제작, 생존, 공포와 연결한다. 세라믹, seal, 압력 유리에 열과 압력 사이클을 제공하지만 같은 사이클이 끓는 pocket, 거짓 산소 판독, 부식 구름, fauna migration을 만든다.
 
 ## Scanner
 
-KO LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
+분출구 단조 매니폴드. 열, 독, 전력이 같은 파이프를 쓴다.
 
 ## Terminal
 
-KO LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+GEOTHERMAL ENGINE: vent pulse는 ceramic cure, pressure-glass anneal, emergency ascent charge preheat에 적합. 노출 위험: boiling shear, sensor oxygen false-positive, corrosive bloom.
 
 ## Audio
 
-KO LOC HOLD: The vent does not care whether you call it power or weather.
+vent는 네가 그것을 전력이라 부르든 날씨라 부르든 신경 쓰지 않는다.
 
 ## Field Note
 
-KO LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+유용한 vent는 모두 나쁜 timing을 벌하는 기계이기도 하다.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/ko_KR. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Maintien en quarantaine : air vicié"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Maintien en quarantaine : air vicié
 
-FR LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+Le Maintien en quarantaine sauve le corps et suspend l'agency. Le joueur a échappé à la pression, mais pas à la custody. Chaque respiration est mesurée pendant que la preuve attend derrière le langage d'examen.
 
 ## Scanner
 
-FR LOC HOLD: You are alive, sealed, and still not free.
+Corps récupéré. Témoin scellé. Ration d'air active.
 
 ## Terminal
 
-FR LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+MAINTIEN EN QUARANTAINE : contractant récupéré vivant ; ration d'air active ; custody d'échantillon non résolue ; témoignage externe différé en attente d'examen de contamination, contestation du claimant et revue de perte Keelmark.
 
 ## Audio
 
-FR LOC HOLD: The hatch opens only to another closed hatch.
+Le sas s'ouvre sur un autre sas fermé.
 
 ## Field Note
 
-FR LOC HOLD: This is the bureaucratic version of drowning.
+C'est la forme administrative de la noyade.
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/fr_FR. -->

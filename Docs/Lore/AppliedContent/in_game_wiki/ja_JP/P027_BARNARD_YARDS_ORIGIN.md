@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Barnard Yards出身
 
-Barnard Yardsは船体解体と圧力機器の文化だ。プレイヤーは地球観光客でも血統英雄でもなく、dead claimと借り物の生存工具を仕事にする専門家として始まる。
+Barnard Yards は船体解体と圧力機器の文化だ。借り物のカッター、継ぎ当てクランプ、死んだ請求権、生存工具が普通の仕事として扱われる。HECTON-8 に、地球ロマンではなく負債と労働に近い専門的な出自を与える。
 
 ## Scanner
 

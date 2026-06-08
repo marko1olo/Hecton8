@@ -8,33 +8,19 @@ biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+spoiler_tier: 1
+title: "주노 케이드 대피 보류"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# 주노 케이드 대피 보류
 
-KO LOC HOLD: Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent.
+주노 케이드는 공황과 절차 사이에 있는 사람이다. 그녀의 로그는 떠날 줄 모르는 식민지를 보여 주지 않는다. 대기열, 담당관, 경로판, manual override 시도, 그리고 물이 review보다 빠르게 움직이는 동안 허가를 기다리는 게이트를 보여 준다.
 
-## Scanner
-
-KO LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
-
-## Terminal
-
-KO LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
-
-## Audio
-
-KO LOC HOLD: She kept counting people after the system started counting rooms.
-
-## Field Note
-
-KO LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+보류에는 여러 이름이 있다. 격리, 인증, payload 순위, claim seal. 각각은 따로 들으면 합리적이다. 함께 놓이면 잘못된 쪽에 사람들이 있는 잠긴 문이 된다. 케이드가 중요한 이유는 대피의 인간적 형상을 보존하기 때문이다. 플레이어가 찾는 것은 추상적 태만이 아니다. 공인된 지연 때문에 사용할 수 없게 된 실제 출구다.
 
 <!-- External Site; generated from P063_JUNO_KADE_EVACUATION_HOLD/ko_KR. -->

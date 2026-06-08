@@ -39,6 +39,7 @@ namespace Hecton8.Physics
         public const float DefaultLargestWavelengthMeters = 128f;
         public const float DefaultMacroGridCellSizeMeters = 4f;
         public const float DefaultAmplitudeMultiplier = 0.04f;
+        public const float DefaultSeaLevelY = 14.02f;
         public const float DefaultDumpThresholdMicros = 1500f;
 #if UNITY_EDITOR
         public const string CsvRelativePath = "Data/Physics/ocean_wave_spectra.csv";
@@ -53,6 +54,16 @@ namespace Hecton8.Physics
         public const uint FlagNonFinite = 1u << 31;
 
         public const uint KernelHash = 0x53323633u; // S263
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveSeaLevelY(float seaLevelY)
+        {
+            return math.isfinite(seaLevelY) &&
+                   math.abs(seaLevelY) > 0.0001f &&
+                   math.abs(seaLevelY) <= 1000f
+                ? seaLevelY
+                : DefaultSeaLevelY;
+        }
     }
 
     public static class AnalyticalGerstnerWaveBufferIds
@@ -111,7 +122,7 @@ namespace Hecton8.Physics
         {
             GerstnerWaveTuningDTO value = default;
             value.LocalOriginAUP = double3.zero;
-            value.SeaLevelY = 0f;
+            value.SeaLevelY = AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
             value.GlobalQualityWeight = 1f;
             value.MaxOctaveLimit = AnalyticalGerstnerWaveConstants.MaxOctaves;
             value.ActiveRequestCount = 0;

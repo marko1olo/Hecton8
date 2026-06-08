@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Material Exit: Bitter Credits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Material Exit Bitter Credits
+# Material Exit: Bitter Credits
 
-Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
+A material exit should feel coldly legitimate. The player recovers pressure material, keeps custody intact, satisfies Black Keel's mass-through-window accounting and receives a real reduction on the lien. No alarm declares failure; the system behaves exactly as designed.
 
-## Scanner
-
-You can leave richer and still fail the place.
-
-## Terminal
-
-MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
-
-## Audio
-
-The invoice clears before the names do.
-
-## Field Note
-
-This ending should be real credits, not a fake game over.
+The damage is in what the receipt excludes. Missing-worker names remain unresolved, the evidence chain is incomplete, and Deep Reach gains a cleaner commercial reason to return. HECTON-8 does not punish the player for being a professional. It shows what professional success costs when the job site is also a grave.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/en_US. -->

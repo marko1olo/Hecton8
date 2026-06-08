@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "Пріоритетний гачок Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# Пріоритетний гачок Deep Reach
 
-UK LOC HOLD: Deep Reach's present pressure does not require a magic remote command. Old certificates, quarantine clauses and continuity payload rules sit inside Black Keel's legal path. The company can nudge what the carrier values without visibly owning the carrier.
+Нинішній тиск Deep Reach не потребує неможливого віддаленого керування. Старі continuity certificates, карантинні clauses, токени доступу Atlas і priority hooks для payload уже сидять у юридичному шляху Black Keel. Компанія може впливати на те, що carrier вважає цінним, не володіючи carrier явно. Тому антагоніста важче відрізати: це не сигнал, який можна заглушити, а clause, що знову прокидається.
 
 ## Scanner
 
-UK LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+Старий certificate hook. Deep Reach не володіє кораблем; вона володіє clause.
 
 ## Terminal
 
-UK LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: legacy continuity certificate Deep Reach може просунути payload recovery, карантинний замок, токен доступу Atlas або чергу придушення доказів за claim-правом Aegir. Пріоритет вилучення людини не змінюється, якщо доказ небезпеки не перевищує custody value.
 
 ## Audio
 
-UK LOC HOLD: They do not need to be on the bridge to steer the answer.
+Їм не треба стояти на містку, щоб керувати відповіддю.
 
 ## Field Note
 
-UK LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+Чистіше за змову: папери досі живі й досі голодні.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/uk_UA. -->

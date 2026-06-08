@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: No-FTL Route Delay"
+title: "עיכוב מסלול ללא FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: No-FTL Route Delay
+# עיכוב מסלול ללא FTL
 
-HE LOC HOLD: HECTON-8 has no instant rescue channel. Aegir was reached through precursor probes, beam infrastructure, pellet-fusion freight and braking systems that treat human urgency as one more payload constraint. A message can cross the route before the hardware that would make the message useful. That delay is why Black Keel can hold a valid claim while the player still has to fix seals by hand.
+ל-HECTON-8 אין ערוץ הצלה מיידי. מערכת Aegir הושגה בעזרת precursor probes, beam infrastructure, pellet-fusion freight ומערכות בלימה שמתייחסות לדחיפות כאל עוד מגבלת מסה. הודעה יכולה להגיע לפני החומרה שהיתה הופכת אותה למועילה. carrier יכול להכיר בקיומך, לתמחר את ה-payload ולהחזיק valid claim, ועדיין לא להיות מסוגל להוציא descent mass תחת weather, relay angle או custody window שגויים. טקסט המסע הציבורי צריך להשאיר את המגבלה הזאת גלויה, כי הבידוד כאן נוצר מהנדסה, חוק ולוגיסטיקה יחד. Black Keel יכול להיות קרוב משפטית ובלתי נגיש פיזית. העיכוב הזה מסביר למה השחקן ממשיך לתקן אטמים ביד אחרי שה-relay עונה.
 
 ## Scanner
 
-HE LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+רשומת מעבר. תנועת Aegir תלויה ב-precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody ועיכוב משפטי.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+צומת ארכיון ציבורי // גבול מעבר. אין FTL. אין Ansible. הצלה חיה דורשת transfer פיזי, braking architecture, carrier position, descent mass ו-local window תקף.
 
 ## Audio
 
-HE LOC HOLD: Help can be legally present and physically years away.
+עזרה יכולה להיות נוכחת משפטית ורחוקה פיזית בשנים.
 
 ## Field Note
 
-HE LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+הערת Marauder: כשה-relay עונה, שאל בן כמה המענה ואיזו מסה הוא באמת יכול להזיז.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/he_IL. -->

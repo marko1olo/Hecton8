@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Mutual Custody"
+title: "Custody Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Keelmark Mutual Custody
+# Custody Keelmark Mutual
 
-ID LOC HOLD: Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.
+Keelmark Mutual adalah cangkang insurance-custody yang membuat Black Keel bisa beroperasi di Aegir tanpa otoritas penyelamatan manusia di lokasi. Di atas kertas, itu bukan Deep Reach. Dalam praktiknya, underwriting lama bisa diarahkan oleh siapa pun yang memegang priority hook yang tepat, karena setiap tubuh, alat, sampel, dan kotak tersegel sudah masuk jadwal risiko sebelum operator meminta bantuan.
 
 ## Scanner
 
-ID LOC HOLD: Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.
+Cangkang asuransi utuh. Keelmark memiliki lien sebelum memiliki tubuh.
 
 ## Terminal
 
-ID LOC HOLD: KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.
+KEELMARK MUTUAL: lien claim-tender aktif. Utang operator, risiko kapal, payload custody, dan cadangan karantina dibundel di bawah jadwal underwriting jarak jauh. Status distress tidak menangguhkan lien.
 
 ## Audio
 
-ID LOC HOLD: The policy is older than your distress call.
+Polis itu lebih tua daripada panggilan daruratmu.
 
 ## Field Note
 
-ID LOC HOLD: Do not make the insurer a secret villain. Make it a machine that never had to care.
+Penanggung bukan dalang tersembunyi. Ia lebih buruk: jadwal yang tidak pernah harus peduli.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/id_ID. -->

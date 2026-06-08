@@ -7,34 +7,34 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Economía de rutas sin FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# Economía de rutas sin FTL
 
-ES LOC HOLD: Human space in 2190 runs on slow routes, relay custody, mass budgets, braking windows and old law. HECTON-8 is far enough that help is procedural before it is physical. That makes Black Keel, Deep Reach proxy packets and local evidence more important than any clean rescue fantasy.
+En 2190, el espacio humano funciona con naves lentas, custodia de relés, ventanas de frenado y deuda. HECTON-8 está fuera del rescate inmediato. La ley puede llegar como paquetes; las naves solo llegan con masa, blindaje, combustible, arquitectura de frenado y alguien dispuesto a pagar el viaje.
 
 ## Scanner
 
-ES LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
+Sello de tránsito: demora, masa, blindaje y deuda de frenado moldearon este objeto antes de que la colonia tocara el agua.
 
 ## Terminal
 
-ES LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
+AVISO DE RUTA: no hay ansible. La custodia local sigue vinculante hasta el próximo paquete de relé. La autoridad de salvamento no puede esperar respuesta de Sol.
 
 ## Audio
 
-ES LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
+Nadie de los mundos interiores llega a esta agua a tiempo. Tu gravamen ya puso precio a eso.
 
 ## Field Note
 
-ES LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+Si el rescate parece tarde, muestra el recibo. La distancia se facturó antes de la llamada de socorro.
 
 <!-- In-Game Wiki; generated from P101_NO_FTL_ROUTE_ECONOMY/es_ES. -->

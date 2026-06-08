@@ -8,7 +8,7 @@ biome_tags: biome.tide_gauge;biome.glacier_break
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Mara Venn Tide Model"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Mara Venn Tide Model
 
-Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning.
+Mara Venn did not write prophecy. She wrote a model with error bars, evacuation margins and ugly timing. Under Aegir spring geometry the cryosphere shear could outrun available lift capacity. The colony did not need perfect certainty to act. It needed someone to treat the tail of the curve as people rather than cost.
 
-## Scanner
-
-Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
-
-## Terminal
-
-Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
-
-## Audio
-
-She was wrong only in the way every ignored model is wrong: it happened with names inside it.
-
-## Field Note
-
-A warning is not prophecy after procurement deletes the expensive part.
+Deep Reach preserved the model and weakened the response. The warning became monitor, the evacuation margin became a future budget issue, and the public record later called the flood unreadable. The player should feel the lie in its paperwork shape: the tide was natural, but the disaster was edited.
 
 <!-- External Site; generated from P062_MARA_VENN_TIDE_MODEL/en_US. -->

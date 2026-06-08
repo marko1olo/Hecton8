@@ -4,8 +4,8 @@ using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Inventory;
+using Hecton8.Items;
 using Hecton8.World;
-using Hecton.Localization;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -448,7 +448,7 @@ namespace Hecton8.Construction
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int itemHashId = LocHash.Compute(cost.item.PersistentId);
+                int itemHashId = ItemData.ResolvePersistentHashId(cost.item);
                 if (itemHashId == 0)
                     continue;
 
@@ -830,7 +830,7 @@ namespace Hecton8.Construction
                 return true;
 
             BaseModuleTemplate template = data.ModuleTemplate;
-            uint prefabHash = unchecked((uint)template.TemplateHashId);
+            uint prefabHash = unchecked((uint)template.ResolvePersistentHashId());
             if (BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault(
                     catalogVault,
                     prefabHash,
@@ -879,7 +879,7 @@ namespace Hecton8.Construction
                 return true;
 
             BaseModuleTemplate template = data.ModuleTemplate;
-            uint prefabHash = unchecked((uint)template.TemplateHashId);
+            uint prefabHash = unchecked((uint)template.ResolvePersistentHashId());
             if (BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault(
                     catalogVault,
                     prefabHash,

@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "Rückgrat der ersten Stunde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# Rückgrat der ersten Stunde
 
-DE LOC HOLD: First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+Rückgrat der ersten Stunde definiert den Eröffnungsrhythmus von HECTON-8. Der Spieler beginnt mit greifbaren Ingenieuraufgaben und visueller Verwunderung und sieht dann, wie diese Aufgaben mit einer Konzernlüge und einer in Biologie eingedrungenen Wartungsökologie verbunden sind. So bleibt die erste Route spielbar und atmosphärisch, während sie die größere Untersuchung pflanzt: Der Ozean versteckt die Geschichte nicht, er bewahrt die Beweise in Druck, Salz und Prozedur.
 
 ## Scanner
 
-DE LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Vertrag, beschädigter Abstieg, Luft, helle Flachwasser, Pumpenschutzraum, bereinigte Lüge, dann die erste Reparaturnarbe, die Leben als Dichtung benutzt.
 
 ## Terminal
 
-DE LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+FLACHWASSER-ANBAU: manueller Pumpenneustart gültig. Deep-Reach-Vorfallpaket zwischengespeichert. Atlas-Reparaturwuchs um Kabel, Werkzeugfragment und biologische Rückstände erkannt.
 
 ## Audio
 
-DE LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+Der erste sichere Raum ist nicht sauber. Er hält nur besser die Luft an als du.
 
 ## Field Note
 
-DE LOC HOLD: The opening must be beautiful before it becomes accusing.
+Der Anfang muss schön sein, bevor er anklagend wird.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/de_DE. -->

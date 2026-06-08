@@ -9,32 +9,34 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "Zimne roszczenia zewnętrznych księżyców"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# Zimne roszczenia zewnętrznych księżyców
 
-PL LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.
+Zimne roszczenia zewnętrznych księżyców dowodzą, że Aegir jest systemem, nie jednym nawiedzonym księżycem. Nieudane prospekty solanki, uśpione metalowe trasy i martwe beacony tworzą ekonomię salvage, która wciąga Marauderów do sieci ruchu.
+
+Liczy się nie dystans, lecz wzorzec. Trasa może być martwa i nadal rozliczalna. Beacon może powtarzać kustodię bez żywej załogi. HECTON-8 jest najgorszym widocznym przypadkiem, ale nie pierwszym miejscem, gdzie Aegir nauczył się księgować stratę jako infrastrukturę.
 
 ## Scanner
 
-PL LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+Zewnętrzny beacon roszczeniowy. Nie wszystko martwe w Aegir leży na HECTON-8.
 
 ## Terminal
 
-PL LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+ARCHIWUM ZEWNĘTRZNEJ DRABINY // Prospekt solanki Thorne zawiódł. Trasa eksportowa Anvil uśpiona. Beacon Mute powtarza ping kustodii bez deklaracji aktywnej załogi.
 
 ## Audio
 
-PL LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegir nauczył się tracić ludzi, zanim HECTON-8 skończył lekcję.
 
 ## Field Note
 
-PL LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+Zimne roszczenia czynią Marauderów możliwymi. Uczą też firmy, jak grzebać wzorce.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/pl_PL. -->

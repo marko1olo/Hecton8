@@ -1,5 +1,6 @@
 namespace Hecton8.Interaction
 {
+    using Hecton8.Core.Contracts.Signals;
     using Hecton8.Inventory;
     using Hecton8.Items;
     using UnityEngine;
@@ -31,7 +32,7 @@ namespace Hecton8.Interaction
 
     public static class InventoryPickupSignalConstants
     {
-        public const byte ItemSourceManualPickup = 9;
+        public const byte ItemSourceManualPickup = ItemAcquiredSignalSourceKinds.ManualPickup;
         public const byte SignalFlagManualPickup = 1 << 1;
     }
 }

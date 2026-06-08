@@ -9,32 +9,35 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Публичный вводный материал системы Aegir"
+title: "Публичный вводный материал о системе Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Публичный вводный материал системы Aegir
+# Публичный вводный материал о системе Aegir
 
-Внутриигровая вики: Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.
+Aegir задает HECTON-8 практическую форму. Система не нарисованный небосвод вокруг сюжета; она причина, по которой маршруты открываются, закрываются, задерживаются и стоят слишком дорого. HECTON-8 движется внутри лестницы лун, приливов, радиационных окон, орбит переноса перевозчиков и углов реле. Сообщение может выйти раньше, чем спасательный аппарат войдет. Претензия может получить цену раньше, чем стек извлечения человека будет подготовлен. Black Keel может ответить потому, что сигнал дешев по сравнению с перемещением экранированной массы. Это не делает Aegir пустой или недостижимой. Это делает ее индустриальной: расписания, топливные допуски, карантинный язык, тени лун, океанские приливы и орбитальное хранение давят на одного ныряльщика. Публичный текст об Aegir должен держать науку жесткой, а драму практичной. Система работает. Поэтому оставление людей может быть процедурным, а не молчаливым.
 
 ## Scanner
 
-Сканер: Aegir is not backdrop. It is a timetable with gravity.
+Aegir не фон. Это расписание с гравитацией, радиацией, приливами, задержкой реле и дорогими окнами массы.
 
 ## Terminal
 
-Терминал: PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
+ПУБЛИЧНЫЙ УРОВЕНЬ СТАТЬИ / СИСТЕМА AEGIR
+разрешено: система-хозяин, роль луны HECTON-8, приливные окна, геометрия реле, задержка перевозчика, язык маршрутов без FTL
+закрыто: маршрутизация финального payload, скрытый приоритет receiver, точные поздние locks эфемерид
+заметка редактора: объяснить задержку так, чтобы сеттинг не казался недостижимым.
 
 ## Audio
 
-Аудио: The sky is a system, not a ceiling.
+Система достаточно близко, чтобы ответить. В этом и жестокость. Она недостаточно близко, чтобы поднять тело по команде.
 
 ## Field Note
 
-Полевая заметка: Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
+Не называй Aegir далекой и не останавливайся. Назови, что делает дистанция: дорожает подъем, задерживаются тела, улики обгоняют спасение.
 
 <!-- In-Game Wiki; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/ru_RU. -->

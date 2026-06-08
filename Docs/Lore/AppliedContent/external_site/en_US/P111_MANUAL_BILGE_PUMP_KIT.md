@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Manual Bilge Pump Kit
 
-Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile.
+The manual bilge pump is the first survival verb because it refuses drama. No powered panel, no hero interface, no promise that the room is safe. The player clears a clogged intake, feels the handle fight back, and learns that water must be given somewhere honest to go.
 
-## Scanner
-
-Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
-
-## Terminal
-
-P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
-
-## Audio
-
-Hand work first. Electricity second. Breathing always.
-
-## Field Note
-
-First tool must teach survival before upgrade fantasy.
+That small tool sets the tone for HECTON-8. Repairs begin with hands, pressure and consequence. If the pump kicks, the room is answering. If the outlet is wrong, survival moves the danger somewhere else.
 
 <!-- External Site; generated from P111_MANUAL_BILGE_PUMP_KIT/en_US. -->

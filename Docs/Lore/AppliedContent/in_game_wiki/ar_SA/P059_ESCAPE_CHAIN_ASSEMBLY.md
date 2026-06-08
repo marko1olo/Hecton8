@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "تجميع سلسلة الهروب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# تجميع سلسلة الهروب
 
-AR LOC HOLD: Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.
+الهروب سلسلة تجميع لا مركبة واحدة تم إصلاحها. تستطيع حزمة الهبوط المتضررة إبقاء اللاعب حياً، لكنها لا تستطيع وحدها إنشاء صعود موثوق. طريق العودة يحتاج إلى عمود ترحيل صوتي يُسمع عبر الماء وضجيج العواصف، وختم ضغط لا يحول الصعود إلى تمزق، ونواة توجيه تصمد أمام أخطار HECTON-8 المحلية، وشحنة طاقة للصعود، ومصافحة حجر وقانون، وإذا أراد اللاعب سلطة على سجل الاستعادة فحمولة أدلة لا يستطيع Black Keel أن يخفض قيمتها. كل قطعة تقع أعمق من الراحة لأن النظام الأصلي بُني لتحريك الأصول، لا ليسمح للعمال المتروكين بالمغادرة بشروطهم.
 
 ## Scanner
 
-AR LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+المغادرة تحتاج إلى ستة براهين صلبة: مرحل، ختم، توجيه، شحنة صعود، مصافحة قانونية وحمولة لا يستطيع الناقل تجاهلها.
 
 ## Terminal
 
-AR LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+حزمة الصعود: عمود الترحيل الصوتي مفقود. تصنيف حلقة التثبيت غير كاف. نواة التوجيه غائبة. مهد الشحنة فارغ. مصافحة الحجر غير محلولة. حمولة الأدلة اختيارية لكنها تغير سلطة الاستعادة.
 
 ## Audio
 
-AR LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+أنت لا تصلح الكبسولة. أنت تبني أول مخرج صادق لم تمتلكه المستعمرة قط.
 
 ## Field Note
 
-AR LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+الطريق إلى الأعلى يُبنى من قطع لم تُصمم قط لتسمح للعمال بالمغادرة وحدهم.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/ar_SA. -->

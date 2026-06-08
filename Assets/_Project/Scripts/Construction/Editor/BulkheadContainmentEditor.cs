@@ -28,6 +28,10 @@ namespace Hecton8.Construction.Editor
         private float _lastAverageClosure = float.NaN;
         private uint _lastCollisionEdgeHash = uint.MaxValue;
         private float _lastCollisionDepthMeters = float.NaN;
+        private uint _lastIntentAppliedCount = uint.MaxValue;
+        private uint _lastIntentRejectedCount = uint.MaxValue;
+        private uint _lastIntentOverflowDroppedCount = uint.MaxValue;
+        private uint _lastIntentOverflowDroppedTotal = uint.MaxValue;
         private int _lastShaderUploadCount = int.MinValue;
 
         [MenuItem("HECTON-8/Construction/SHINOBU 220 Bulkhead Tuner")]
@@ -80,6 +84,10 @@ namespace Hecton8.Construction.Editor
                     out float averageClosure,
                     out uint collisionEdgeHash,
                     out float collisionDepthMeters,
+                    out uint intentAppliedCount,
+                    out uint intentRejectedCount,
+                    out uint intentOverflowDroppedCount,
+                    out uint intentOverflowDroppedTotal,
                     out int shaderUploadCount))
             {
                 if (_lastRuntimeActive &&
@@ -91,6 +99,10 @@ namespace Hecton8.Construction.Editor
                     NearlyEqual(_lastAverageClosure, averageClosure, 0.0005f) &&
                     _lastCollisionEdgeHash == collisionEdgeHash &&
                     NearlyEqual(_lastCollisionDepthMeters, collisionDepthMeters, 0.0005f) &&
+                    _lastIntentAppliedCount == intentAppliedCount &&
+                    _lastIntentRejectedCount == intentRejectedCount &&
+                    _lastIntentOverflowDroppedCount == intentOverflowDroppedCount &&
+                    _lastIntentOverflowDroppedTotal == intentOverflowDroppedTotal &&
                     _lastShaderUploadCount == shaderUploadCount)
                 {
                     return;
@@ -103,6 +115,8 @@ namespace Hecton8.Construction.Editor
                     .Append(" | Cadence: ").Append(cadenceHz.ToString("0.0")).Append(" Hz")
                     .Append(" | Schedule: ").Append(lastScheduleUs.ToString("0.00")).Append(" us")
                     .Append(" | Hit: ").Append(collisionEdgeHash).Append('/').Append(collisionDepthMeters.ToString("0.000"))
+                    .Append(" | Intents: ").Append(intentAppliedCount).Append('/').Append(intentRejectedCount)
+                    .Append(" | Overflow: ").Append(intentOverflowDroppedCount).Append('/').Append(intentOverflowDroppedTotal)
                     .Append(" | Upload: ").Append(shaderUploadCount)
                     .Append(" | Frame: ").Append(telemetryFrame);
                 _statusLabel.text = _statusBuilder.ToString();
@@ -115,6 +129,10 @@ namespace Hecton8.Construction.Editor
                 _lastAverageClosure = averageClosure;
                 _lastCollisionEdgeHash = collisionEdgeHash;
                 _lastCollisionDepthMeters = collisionDepthMeters;
+                _lastIntentAppliedCount = intentAppliedCount;
+                _lastIntentRejectedCount = intentRejectedCount;
+                _lastIntentOverflowDroppedCount = intentOverflowDroppedCount;
+                _lastIntentOverflowDroppedTotal = intentOverflowDroppedTotal;
                 _lastShaderUploadCount = shaderUploadCount;
             }
             else

@@ -8,33 +8,19 @@ biome_tags: biome.tide_gauge;biome.glacier_break
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+spoiler_tier: 1
+title: "Mara-Venn-Gezeitenmodell"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# Mara-Venn-Gezeitenmodell
 
-DE LOC HOLD: Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning.
+Mara Venn schrieb keine Prophezeiung. Sie schrieb ein Modell mit Fehlerbalken, Evakuierungsmargen und schlechtem Timing. Unter Aegirs Frühlingsgeometrie konnte cryosphere shear die verfügbare Hubkapazität überholen. Die Kolonie brauchte keine perfekte Gewissheit, um zu handeln. Sie brauchte jemanden, der das Ende der Kurve als Menschen behandelt und nicht als Kosten.
 
-## Scanner
-
-DE LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
-
-## Terminal
-
-DE LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
-
-## Audio
-
-DE LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
-
-## Field Note
-
-DE LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+Deep Reach behielt das Modell und schwächte die Reaktion. Die Warnung wurde monitor, die Evakuierungsmarge wurde ein zukünftiges Budgetproblem, und der öffentliche Bericht nannte die Flut später unlesbar. Der Spieler soll die Lüge an der Form der Akte spüren: Die Gezeit war natürlich, aber die Katastrophe wurde redigiert.
 
 <!-- External Site; generated from P062_MARA_VENN_TIDE_MODEL/de_DE. -->

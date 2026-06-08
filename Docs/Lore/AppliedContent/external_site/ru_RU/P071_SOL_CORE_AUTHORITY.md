@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Власть Sol Core"
+title: "Полномочия Sol Core"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Власть Sol Core
+# Полномочия Sol Core
 
-Власть Sol Core объясняет, почему HECTON-8 может быть далекой и все равно юридически присвоенной. В HECTON-8 старая цивилизация приходит как бумага, стандарты и долг раньше, чем приходит помощь.
+Полномочия Sol Core объясняют, почему HECTON-8 может быть далекой и все равно юридически присвоенной. В HECTON-8 старая цивилизация приходит бумагами, стандартами и долгом раньше, чем приходит помощь.
 
 ## Scanner
 
-Старая печать закона Sol. Она может владеть фронтирным трупом, не будучи достаточно близко, чтобы почувствовать утечку давления.
+Старая правовая печать Sol. Она способна владеть фронтирным трупом, даже находясь слишком далеко, чтобы почувствовать утечку давления.
 
 ## Terminal
 
-SOL CORE STANDARD: claim continuity признана через licensed carrier custody, route insurance и delayed adjudication. Human recovery priority не решен до local hazard certification.
+СТАНДАРТ SOL CORE: непрерывность претензии признана через лицензированное хранение перевозчиком, маршрутное страхование и отложенное разбирательство. Приоритет извлечения людей не установлен до местной сертификации угроз.
 
 ## Audio
 
-Печать пришла из земного пространства. Пункт спасения - нет.
+Печать пришла из земного пространства. Пункт о спасении - нет.
 
 ## Field Note
 
-Sol здесь не дом. Это самая старая подпись на документе, который все еще может тебя уничтожить.
+Здесь Sol не дом. Это самая старая подпись на документе, которая все еще может тебя раздавить.
 
 <!-- External Site; generated from P071_SOL_CORE_AUTHORITY/ru_RU. -->

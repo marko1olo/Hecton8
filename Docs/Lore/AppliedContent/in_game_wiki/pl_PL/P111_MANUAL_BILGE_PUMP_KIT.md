@@ -7,34 +7,34 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "Ręczny zestaw pompy zęzowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# Ręczny zestaw pompy zęzowej
 
-PL LOC HOLD: The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.
+Ręczna pompa zęzowa jest pierwszym przydatnym narzędziem po zrzucie, bo działa wtedy, gdy elektryka kapsuły jest niebezpieczna. Opróżnia tylko małe zalane kieszenie i każe patrzeć na wlot, wylot oraz opór zaworu zamiast ufać zielonej lampce. Zestaw uczy pierwszej zasady HECTON-8: naprawa zaczyna się od wody, ciśnienia i rąk.
 
 ## Scanner
 
-PL LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
+Wykryto ręczny zestaw zęzowy. Sito wlotowe zatkała pianka kapsuły; oczyść je przed zasileniem panelu.
 
 ## Terminal
 
-PL LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
+WYDAWKA P-63 / ZESTAW ZĘZOWY: pompa ręczna, opaska węża, sito wlotowe, zawór zwrotny. Usunąć stojącą wodę przed testem panelu pod napięciem. Nie odprowadzać wylotu do uszczelnionych koryt kablowych.
 
 ## Audio
 
-PL LOC HOLD: Hand work first. Electricity second. Breathing always.
+Najpierw woda. Zasilanie później. Jeśli uchwyt odbija, pokój odpowiada.
 
 ## Field Note
 
-PL LOC HOLD: First tool must teach survival before upgrade fantasy.
+Pompy kłamią rzadziej niż wskaźniki. Jeśli uchwyt odbija, zatrzymaj się i sprawdź, dokąd idzie woda.
 
 <!-- In-Game Wiki; generated from P111_MANUAL_BILGE_PUMP_KIT/pl_PL. -->

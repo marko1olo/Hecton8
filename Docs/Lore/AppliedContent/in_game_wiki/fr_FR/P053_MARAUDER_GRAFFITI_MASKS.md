@@ -3,38 +3,38 @@ packet_id: P053_MARAUDER_GRAFFITI_MASKS
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
 unlock_id: unlock.first_marauder_graffiti_masks
-poi_tags: poi.graffiti_mask;poi.pressure_arrow
-biome_tags: biome.scrap_canyon;biome.marauder_route
+poi_tags: poi.graffiti_mask;poi.scavenger_route
+biome_tags: biome.service_corridor;biome.salvage_route
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Graffiti Masks"
+title: "Masques graffiti des maraudeurs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Marauder Graffiti Masks
+# Masques graffiti des maraudeurs
 
-FR LOC HOLD: Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.
+Les marques maraudeuses sont navigation de terrain, avertissement social et langue anti-surveillance. Elles semblent grossières parce qu'elles devaient survivre à l'eau, à la peur, aux lampes faibles et aux caméras d'entreprise. Le joueur apprend quelles marques signalent bruit, pression, patrouilles, caches et routes hors des cartes officielles.
 
 ## Scanner
 
-FR LOC HOLD: The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
+Code peinture : le nombre de barres marque la discipline sonore, les anneaux noirs le danger de ping du transporteur, les flèches brisées la dérive de pression.
 
 ## Terminal
 
-FR LOC HOLD: MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
+INDEX MASQUE ROUTE : trois barres, sûr pour gestes seulement. Anneau noir signifie balayage du transporteur. Flèche brisée signifie changement de pression depuis la dernière marque.
 
 ## Audio
 
-FR LOC HOLD: They made a language that looks like vandalism to the company.
+Si le mur a l'air furieux, lis-le comme la météo.
 
 ## Field Note
 
-FR LOC HOLD: Bad paint. Good map.
+Les maraudeurs écrivaient pour ceux qui ne pouvaient pas faire confiance aux radios ni payer des cartes.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/fr_FR. -->

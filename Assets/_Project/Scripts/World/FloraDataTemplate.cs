@@ -289,8 +289,9 @@ namespace Hecton8.World
         {
             get
             {
-                if (lootItem != null && !string.IsNullOrWhiteSpace(lootItem.PersistentId))
-                    return LocHash.Compute(lootItem.PersistentId);
+                int authoredHashId = ItemData.ResolvePersistentHashId(lootItem);
+                if (authoredHashId != 0)
+                    return authoredHashId;
 
                 return lootHashId;
             }
@@ -300,9 +301,7 @@ namespace Hecton8.World
         public ItemData CultivationSeedItem => cultivationSeedItem;
 
         /// <summary>Stable inventory hash id for the authored cultivation seed item.</summary>
-        public int CultivationSeedHashId => cultivationSeedItem != null && !string.IsNullOrWhiteSpace(cultivationSeedItem.PersistentId)
-            ? LocHash.Compute(cultivationSeedItem.PersistentId)
-            : 0;
+        public int CultivationSeedHashId => ItemData.ResolvePersistentHashId(cultivationSeedItem);
 
         /// <summary>Default authored genetics mask used by cultivation and hybrid fallback resolution.</summary>
         public ulong GeneticsMask

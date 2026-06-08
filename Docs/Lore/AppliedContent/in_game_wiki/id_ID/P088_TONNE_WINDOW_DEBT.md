@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Utang Tonne-Window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Utang Tonne-Window
 
-ID LOC HOLD: Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.
+Utang tonne-window adalah titik ketika fisika menjadi keuangan. Black Keel tidak punya margin angkat, bahan bakar transit, atau volume karantina bersih yang tak terbatas. Setiap kilogram yang dibawa dari HECTON-8 bersaing dengan setiap kilogram yang dibutuhkan untuk menjaga operator tetap hidup. Meter utang membuat carrier terasa kejam tanpa melanggar hard science: penyelamatan mungkin, tetapi anggaran rute terus bertanya apa yang pantas mendapat massa.
 
 ## Scanner
 
-ID LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
+Meter jendela massa. Setiap kilogram bantuan punya harga rute.
 
 ## Terminal
 
-ID LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER: margin recovery burn menyempit. Massa ekstraksi operator bertabrakan dengan payload tersegel, cadangan ballast, utang oksigen, dan custody sampel karantina. Override manual membutuhkan prioritas berbayar atau bukti bahaya.
 
 ## Audio
 
-ID LOC HOLD: You owe the orbit before you owe the money.
+Kapal bisa membawamu atau apa yang kamu temukan. Ia lebih suka angka.
 
 ## Field Note
 
-ID LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Oksigen, ballast, bukti, payload, tubuh: carrier menimbangnya sebelum menimbang belas kasihan.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/id_ID. -->

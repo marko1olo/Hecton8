@@ -7,34 +7,34 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Salvage Tool Custody"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "打捞工具托管"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Salvage Tool Custody
+# 打捞工具托管
 
-CN LOC HOLD: Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.
+打捞工具不是中立装备。切割器、补片器和制造机坞可以记录谁打开面板、修复线路或移动样本。那份日志可能保护证据、附加 payout 权利，或加强对玩家的 claim。工具托管就是分钟级生存触碰更大打捞经济的地方。
 
 ## Scanner
 
-CN LOC HOLD: The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+工具坞保存一份封存托管日志。最后一次切割、维修和样本袋都绑定到Keelmark claim令牌。
 
 ## Terminal
 
-CN LOC HOLD: Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12：切割器使用在 salvage claim 下接受。维修动作已见证。样本权利附着到 Keelmark Mutual 令牌。证据导出与物料 payout 路线冲突。
 
 ## Audio
 
-CN LOC HOLD: Every useful cut leaves paperwork behind.
+每一次有用的切割都会留下证人。
 
 ## Field Note
 
-CN LOC HOLD: The tool is not neutral. It writes a receipt every time it helps.
+切割器能在同一刀里救你的空气，也卖掉你的双手。叫它属于你之前，先看它记录什么。
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/zh_CN. -->

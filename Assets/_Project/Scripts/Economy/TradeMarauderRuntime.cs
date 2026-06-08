@@ -563,6 +563,7 @@ namespace Hecton8.Economy
             return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
         }
     }
+#endif
 
     internal ref struct MarauderNativeMinHeap
     {
@@ -635,6 +636,7 @@ namespace Hecton8.Economy
         }
     }
 
+#if UNITY_EDITOR
     [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
 #endif
 

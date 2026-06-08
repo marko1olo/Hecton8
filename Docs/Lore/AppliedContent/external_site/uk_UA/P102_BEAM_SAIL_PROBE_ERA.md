@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "Ера зондів на променевих вітрилах"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Ера зондів на променевих вітрилах
 
-UA LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-UA LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-UA LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-UA LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-UA LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Ера зондiв на променевих вітрилах - тихий початок історії Aegir. Малі вантажі йшли на енергії далеких масивів, перетинали порожнечу першими й повертали пакети вже достатньо старі для суперечок, але достатньо переконливі для продажу. Зонди не зробили Aegir безпечним. Вони зробили його читабельним: гравітаційні колодязі, радіаційні пояси, океанічні сигнатури, relay sightlines і маршрут, який можна монетизувати байдужістю. Між читабельним і безпечним входить Deep Reach.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/uk_UA. -->

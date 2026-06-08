@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "Herstel-Compliancekantoor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# Herstel-Compliancekantoor
 
-NL LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow.
+Het Herstel-Compliancekantoor houdt Deep Reach in 2190 levend als specifieke corporate drukcel, niet als vage historische schaduw.
 
 ## Scanner
 
-NL LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+Kantoorstempel in de tegenwoordige tijd. Deep Reach is geen geest; het is een wachtrij met advocaten.
 
 ## Terminal
 
-NL LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+HERSTEL-COMPLIANCEKANTOOR: Aegir-terugkeeractie geopend. Prioriteiten: XO-custody, Atlas-toegang, aansprakelijkheid indammen, stilte van contractant indien beschikbaar.
 
 ## Audio
 
-NL LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+Ze zijn laat genoeg om legaal te zijn en actueel genoeg om gevaarlijk te zijn.
 
 ## Field Note
 
-NL LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+Een levende factie maakt druk actueel zonder de hele onderneming in een enkele schreeuwende schurk te veranderen.
 
 <!-- External Site; generated from P097_RECOVERY_COMPLIANCE_OFFICE/nl_NL. -->

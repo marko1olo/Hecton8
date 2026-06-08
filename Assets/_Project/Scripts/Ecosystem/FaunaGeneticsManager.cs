@@ -24,7 +24,9 @@ namespace Hecton8.Ecosystem
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private bool _duplicateServiceSuppressed;
+        private bool _saveRegistered;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private RunModifierController _runModifiers;
 
         /// <summary>Persisted deterministic world seed used by ecosystem systems.</summary>
@@ -61,12 +63,12 @@ namespace Hecton8.Ecosystem
             CacheRunModifiersCold();
             CacheSaveServiceCold();
             TryRegisterHotSwapListener();
-            _saveService?.Register(this);
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
-            _saveService?.Unregister(this);
+            TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             _saveService = null;
             _runModifiers = null;
@@ -75,7 +77,7 @@ namespace Hecton8.Ecosystem
 
         private void OnDestroy()
         {
-            _saveService?.Unregister(this);
+            TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             _saveService = null;
             _runModifiers = null;
@@ -139,6 +141,44 @@ namespace Hecton8.Ecosystem
             _saveService = GlobalRegistry.Save;
         }
 
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled || _duplicateServiceSuppressed)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
+                return;
+
+            saveService.Register(this);
+            _registeredSaveService = saveService;
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered && _registeredSaveService == null)
+                return;
+
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
+            _saveRegistered = false;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         private void CacheRunModifiersCold()
         {
             _runModifiers = GlobalRegistry.RunModifiers;
@@ -175,13 +215,9 @@ namespace Hecton8.Ecosystem
             if (serviceSlot != GlobalRegistryServiceSlot.Save)
                 return;
 
-            if (Application.isPlaying && previousService is ISaveService previousSave)
-                previousSave.Unregister(this);
-
+            TryUnregisterSaveParticipant();
             _saveService = currentService as ISaveService;
-
-            if (Application.isPlaying && _saveService != null && isActiveAndEnabled && !_duplicateServiceSuppressed)
-                _saveService.Register(this);
+            TryRegisterSaveParticipant();
         }
 
         /// <summary>

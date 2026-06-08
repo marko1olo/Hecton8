@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Pressure Glass and Sealant Guide"
+title: "Guía de vidrio de presión y sellante"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Pressure Glass and Sealant Guide
+# Guía de vidrio de presión y sellante
 
-ES LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.
+Pressure glass es donde la geología se encuentra con Atlas. La repair network usa fracturas existentes, bordes minerales y pressure memories como rutas, así que una lente útil también puede ser una frontera viva.
 
 ## Scanner
 
-ES LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+Fractura de pressure-glass sellada por química Atlas. Stock de lentes seguro solo si el seal map permanece intacto.
 
 ## Terminal
 
-ES LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: pressure glass registra viejo tide stress. Atlas sealant sigue esas grietas porque las grietas ya describen las líneas de fallo del sistema.
 
 ## Audio
 
-ES LOC HOLD: The repair network reads fractures the way you read a map.
+La red de reparación lee fracturas como tú lees un mapa.
 
 ## Field Note
 
-ES LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+No muelas el borde bonito. Sigue el fracture map y corta desde el lado muerto del seal.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/es_ES. -->

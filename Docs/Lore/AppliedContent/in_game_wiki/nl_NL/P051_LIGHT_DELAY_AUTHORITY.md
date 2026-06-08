@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "Lichtvertragingsgezag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# Lichtvertragingsgezag
 
-NL LOC HOLD: Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.
+HECTON-8 heeft geen ansible en geen live commandostem uit de baan. Berichten bewegen met lichtsnelheid en verliezen daarna meer tijd in buffers, stormvensters, relaisgeometrie en bewaarregels van de drager. Elk antwoord is oud bewijs, geen bevel.
 
 ## Scanner
 
-NL LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
+Relaismastcache: de oproep ging zuiver weg en wachtte daarna achter licht, wachtrijwet, stormverstrooiing en Aegirs zichtlijn.
 
 ## Terminal
 
-NL LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
+COMM-GEZAG: eenrichtingsvertraging bevestigd. Stormverstrooiing hoog. Relaiswachtrij onder bewaarsprioriteit. Lokale overlevingsautoriteit actief.
 
 ## Audio
 
-NL LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
+Het antwoord komt eraan. Dat maakt het nog geen redding.
 
 ## Field Note
 
-NL LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+Niemand censureerde de eerste schreeuw. De fysica droeg hem langzaam genoeg voor beleid om in te halen.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/nl_NL. -->

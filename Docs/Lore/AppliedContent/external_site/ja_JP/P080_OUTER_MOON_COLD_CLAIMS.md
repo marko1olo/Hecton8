@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "外縁月の凍結クレーム"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# 外縁月の凍結クレーム
 
-JP LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy.
+外縁月の凍結クレームはAegirをHECTON-8の外へ広げる。死んだ航路、冷たいキャッシュ、放棄ビーコンがsalvage法と反復損失の隠蔽を支える。
 
 ## Scanner
 
-JP LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+外縁クレームビーコン。Aegirで死んでいるものすべてがHECTON-8にあるわけではない。
 
 ## Terminal
 
-JP LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+外縁梯子アーカイブ // Thorne塩水試掘は失敗。Anvil輸出航路は休眠。Muteビーコンは現役乗員申告なしに保管pingを繰り返す。
 
 ## Audio
 
-JP LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegirは、HECTON-8が授業を終える前から人の失い方を学んでいた。
 
 ## Field Note
 
-JP LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+凍結クレームはMarauderを可能にする。同時に、企業に反復する損失の埋め方を教える。
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/ja_JP. -->

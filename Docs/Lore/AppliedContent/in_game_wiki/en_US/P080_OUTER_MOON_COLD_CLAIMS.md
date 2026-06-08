@@ -19,7 +19,9 @@ localization_flags: 0
 
 # Outer Moon Cold Claims
 
-Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.
+Outer moon cold claims prove Aegir is a system, not one haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the traffic net.
+
+The important part is not distance. It is pattern. A route can be dead and still billable. A beacon can repeat custody with no living crew. HECTON-8 is the worst visible case, but it is not the first place Aegir learned to file loss as infrastructure.
 
 ## Scanner
 
@@ -27,7 +29,7 @@ Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
 
 ## Terminal
 
-OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+OUTER LADDER ARCHIVE // Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
 
 ## Audio
 

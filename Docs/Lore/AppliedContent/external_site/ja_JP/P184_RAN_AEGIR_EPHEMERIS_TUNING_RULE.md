@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "RAN-Aegir 暦表帯域記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: RAN Aegir Ephemeris Bands
+# RAN-Aegir 暦表帯域記録
 
-JP LOC HOLD: RAN Aegir ephemeris bands separate stable route lore from exact celestial data.
+RAN-Aegir 暦表帯域記録は、安定した航路記録と正確な天体値を分ける。公開記事は、推測値を航法法に凍結せずに信頼性を保てる。
 
 ## Scanner
 
-JP LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+この記録が示すのは窓の帯域と危険原因であり、表が所有する正確な周期ではない。
 
 ## Terminal
 
-JP LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+EPHEMERIS BAND RECORD: 公開 atlas 記録は窓帯域、危険分類、Aegir との関係を記載できる。正確な周期、傾斜、共鳴値は celestial-table authority に残る。
 
 ## Audio
 
-JP LOC HOLD: A band is honest until the numbers have an owner.
+帯域は命を救う。推測した数字は人を殺す。
 
 ## Field Note
 
-JP LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+誠実な公開チャートは危険を進むには十分で、天体表を偽造するには足りない。
 
 <!-- External Site; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/ja_JP. -->

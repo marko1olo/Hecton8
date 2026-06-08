@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Black Keel Bathydrop Interface"
+title: "Bathydrop-интерфейс Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Black Keel Bathydrop Interface
+# Bathydrop-интерфейс Black Keel
 
-RU LOC HOLD: The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+Первый блокер побега — инженерный. Black Keel все еще существует над водой, но поврежденный bathydrop-интерфейс не может одной волей связать поверхность, орбиту и тайминг. Ремонт требует deep-rated salvage, чистых уплотнений, рабочей геометрии ретранслятора и окна запуска, которое примет носитель.
 
 ## Scanner
 
-RU LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+Bathydrop-интерфейс поврежден: цепь возврата на поверхность не замкнется без деталей под давление, тайминга ретранслятора и чистой защелки подъема.
 
 ## Terminal
 
-RU LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+ОТЧЕТ КАПСУЛЫ: подстройка теплозащиты выжила. Ворота плавучести погнуты. Мачта связи затоплена. Защелка подъема загрязнена. Ремонт требует керамики давления, герметика, математики ретранслятора и проверенного окна.
 
 ## Audio
 
-RU LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
+Ты не потерял весь корабль. Ты потерял единственную цепь, которая делает корабль важным.
 
 ## Field Note
 
-RU LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Запись побега первого часа: носитель присутствует, но цепь между игроком, морем, поверхностью и орбитой сломана в названных деталях.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/ru_RU. -->

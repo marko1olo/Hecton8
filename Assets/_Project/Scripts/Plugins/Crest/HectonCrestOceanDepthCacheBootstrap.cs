@@ -53,6 +53,7 @@ namespace Hecton8.World
         private const float WaterLevelChangeThreshold = 0.05f;
         private const float MinimumCameraHeightAboveSeaLevel = 8f;
         private const float MinimumCoverageMeters = 256f;
+        private const float DefaultWaterLevel = 14.02f;
         private const int DefaultDepthCacheResolution = 512;
         private const int DefaultCaptureLayerMask = 0;
         private const int RuntimeCameraBufferSize = 8;
@@ -227,18 +228,33 @@ namespace Hecton8.World
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !IsFiniteVector3(shiftOffset) ||
+                !IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
             _hasConfiguredBounds = false;
             _debugCacheReady = false;
 
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
-                return;
-
-            ResetCrestSimulationForOriginShift(shiftData.ShiftOffset);
+            ResetCrestSimulationForOriginShift(shiftOffset);
             QueueDepthCacheVisualSync(forcePopulate: true);
         }
 
         private void ResetCrestSimulationForOriginShift(Vector3 shiftOffset)
         {
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteVector3(shiftOffset) ||
+                !IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
             if (!TryResolveReferences(resolveDepthCache: false))
                 return;
 
@@ -690,11 +706,8 @@ namespace Hecton8.World
             if (oceanRenderer != null && oceanRenderer.Root != null)
             {
                 float seaLevel = oceanRenderer.SeaLevel;
-                if (IsFinite(seaLevel))
-                {
-                    baseWaterLevel = seaLevel;
+                if (TryResolveWaterLevel(seaLevel, out baseWaterLevel))
                     return baseWaterLevel + ResolveTidalHeightCacheOffset();
-                }
             }
 
             baseWaterLevel = ResolveFallbackWaterLevel();
@@ -815,11 +828,30 @@ namespace Hecton8.World
             if (mapMagicBridge != null)
             {
                 float bridgedWaterLevel = mapMagicBridge.WaterSurfaceLevel;
-                if (IsFinite(bridgedWaterLevel))
-                    return bridgedWaterLevel;
+                if (TryResolveWaterLevel(bridgedWaterLevel, out float resolvedBridgedWaterLevel))
+                    return resolvedBridgedWaterLevel;
             }
 
-            return oceanRenderer != null ? oceanRenderer.transform.position.y : transform.position.y;
+            if (oceanRenderer != null && TryResolveWaterLevel(oceanRenderer.transform.position.y, out float rendererWaterLevel))
+                return rendererWaterLevel;
+
+            return TryResolveWaterLevel(transform.position.y, out float ownerWaterLevel)
+                ? ownerWaterLevel
+                : DefaultWaterLevel;
+        }
+
+        private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)
+        {
+            if (IsFinite(candidateWaterLevel) &&
+                math.abs(candidateWaterLevel) > 0.0001f &&
+                math.abs(candidateWaterLevel) <= 1000f)
+            {
+                waterLevel = candidateWaterLevel;
+                return true;
+            }
+
+            waterLevel = DefaultWaterLevel;
+            return false;
         }
 
         private static float ResolveCameraMaxTerrainHeight(float terrainTopY, float waterLevel)

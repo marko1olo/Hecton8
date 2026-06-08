@@ -10,6 +10,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.Rendering.OceanSinglePass
 {
@@ -18,6 +19,8 @@ namespace Hecton8.Rendering.OceanSinglePass
     {
         private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
         private const uint DispatcherSystemHash = 0x53323632u;
+        private const string ProductionWorldSceneName = "02_HECTON_WORLD";
+        private const string RuntimeRootName = "H8_OceanSinglePassRuntime";
 
         private static OceanSinglePassRuntime s_runtime;
         private static GraphicsBuffer s_publishedConstantBuffer;
@@ -55,6 +58,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         private GraphicsBuffer _wakeEventBufferA;
         private GraphicsBuffer _wakeEventBufferB;
         private GraphicsBuffer _activeWakeEventBuffer;
+        private ITerrainProvider _terrainProvider;
         private string _projectRootPath;
         private bool _registeredVisualSync;
         private bool _vaultReady;
@@ -72,6 +76,78 @@ namespace Hecton8.Rendering.OceanSinglePass
         private float _lastCpuSubmitMicroseconds;
         private uint _lastRenderGraphFlags;
         private bool _registeredHotSwapListener;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            if (s_mockConstantBuffer != null && s_mockConstantBuffer.IsValid())
+                s_mockConstantBuffer.Release();
+
+            s_runtime = null;
+            s_publishedConstantBuffer = null;
+            s_publishedConstantBufferFrame = 0u;
+            s_publishedWakeEventBuffer = null;
+            s_publishedWakeEventCount = 0;
+            s_publishedWakeScrollOffset = default;
+            s_publishedWakeResolution = OceanSinglePassConstants.WakeMinResolution;
+            s_publishedWakeResolutionScale = OceanSinglePassConstants.WakeMinResolution * (1f / OceanSinglePassConstants.WakeMaxResolution);
+            s_publishedWakeTexture = null;
+            s_publishedWakeTextureParams = default;
+            s_mockConstantBuffer = null;
+            s_mockRenderFrameBudget = 0;
+            PublishFallbackShaderGlobals();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void BootstrapAfterSceneLoad()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            EnsureSceneRuntime(SceneManager.GetActiveScene());
+        }
+
+        private static void HandleSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            EnsureSceneRuntime(scene);
+        }
+
+        private static void EnsureSceneRuntime(Scene scene)
+        {
+            if (s_runtime != null || !ShouldBootstrapForScene(scene))
+                return;
+
+            OceanSinglePassRuntime authoredRuntime = UnityEngine.Object.FindFirstObjectByType<OceanSinglePassRuntime>(FindObjectsInactive.Include);
+            if (authoredRuntime != null)
+            {
+                authoredRuntime.gameObject.SetActive(true);
+                authoredRuntime.enabled = true;
+                return;
+            }
+
+            GameObject host = new GameObject(RuntimeRootName); // COLD ALLOC: GameObject[1] - missing ocean RenderGraph runtime owner fallback - owner: OceanSinglePassRuntime
+            host.hideFlags = HideFlags.DontSave;
+            host.AddComponent<OceanSinglePassRuntime>(); // COLD ALLOC: OceanSinglePassRuntime[1] - enables single-pass ocean depth/foam route - owner: OceanSinglePassRuntime
+        }
+
+        private static bool ShouldBootstrapForScene(Scene scene)
+        {
+            return scene.IsValid() &&
+                   scene.isLoaded &&
+                   string.Equals(scene.name, ProductionWorldSceneName, StringComparison.Ordinal);
+        }
+
+        private static void PublishFallbackShaderGlobals()
+        {
+            Shader.SetGlobalTexture(H8OceanSinglePassShaderIds.DepthFoamMaskId, Texture2D.blackTexture);
+            Shader.SetGlobalTexture(H8OceanSinglePassShaderIds.WakeTextureId, Texture2D.blackTexture);
+        }
 
         public static bool TryGetActiveConstantBuffer(out GraphicsBuffer constantBuffer, out uint frame)
         {
@@ -401,15 +477,21 @@ namespace Hecton8.Rendering.OceanSinglePass
             s_publishedWakeScrollOffset = OceanSinglePassMath.ResolveWakeScrollOffset(cameraAup, OceanSinglePassConstants.WakeTextureWorldSizeMeters);
             s_publishedWakeResolution = OceanSinglePassMath.ResolveWakeResolution(quality);
             s_publishedWakeResolutionScale = OceanSinglePassMath.ResolveWakeResolutionScale(quality);
-            double waterSurfaceAupY = 0.0;
+            double waterSurfaceAupY = ResolveWaterSurfaceAupY();
 
             if (TryResolveVaultBuffer(in _tuningHandle, OceanSinglePassConstants.TuningBuffer, 1, out NativeArray<OceanGuillotineTuningDTO> tuningArray) &&
                 TryResolveVaultBuffer(in _visualOverridesHandle, OceanSinglePassConstants.VisualOverridesBuffer, 1, out NativeArray<OceanVisualOverridesDTO> visualArray))
             {
                 void* visualPtr = NativeArrayUnsafeUtility.GetUnsafePtr(visualArray);
                 ref OceanVisualOverridesDTO visual = ref UnsafeUtility.AsRef<OceanVisualOverridesDTO>(visualPtr);
-                ref readonly OceanGuillotineTuningDTO tuning = ref UnsafeUtility.AsRef<OceanGuillotineTuningDTO>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuningArray));
-                waterSurfaceAupY = tuning.ShorelineParams.y;
+                ref OceanGuillotineTuningDTO tuning = ref UnsafeUtility.AsRef<OceanGuillotineTuningDTO>(NativeArrayUnsafeUtility.GetUnsafePtr(tuningArray));
+                float waterSurfaceY = (float)waterSurfaceAupY;
+                if (math.isfinite(waterSurfaceY) && math.abs(tuning.ShorelineParams.y - waterSurfaceY) > 0.001f)
+                {
+                    tuning.ShorelineParams.y = waterSurfaceY;
+                    tuning.Version = tuning.Version == uint.MaxValue ? 1u : tuning.Version + 1u;
+                }
+
                 visual = OceanSinglePassMath.ResolveVisualOverrides(in tuning, quality);
                 UploadVisualOverridesToGpu(visualPtr);
             }
@@ -430,6 +512,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         private void CacheColdServices()
         {
             RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
+            _terrainProvider = GlobalRegistry.Terrain;
         }
 
         private void RebindDataVaultForLifecycle(IDataVault vault)
@@ -829,6 +912,29 @@ namespace Hecton8.Rendering.OceanSinglePass
             return OceanSinglePassMath.SanitizeQualityWeight(quality);
         }
 
+        private float ResolveWaterSurfaceAupY()
+        {
+            ITerrainProvider terrainProvider = _terrainProvider;
+            if (terrainProvider != null && TryResolveWaterSurfaceAupY(terrainProvider.WaterSurfaceLevel, out float terrainWaterSurfaceY))
+                return terrainWaterSurfaceY;
+
+            return OceanSinglePassConstants.DefaultSeaLevelMeters;
+        }
+
+        private static bool TryResolveWaterSurfaceAupY(float candidateWaterSurfaceY, out float waterSurfaceY)
+        {
+            if (math.isfinite(candidateWaterSurfaceY) &&
+                math.abs(candidateWaterSurfaceY) > 0.0001f &&
+                math.abs(candidateWaterSurfaceY) <= 1000f)
+            {
+                waterSurfaceY = candidateWaterSurfaceY;
+                return true;
+            }
+
+            waterSurfaceY = OceanSinglePassConstants.DefaultSeaLevelMeters;
+            return false;
+        }
+
         private bool TryResolveVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -981,6 +1087,20 @@ namespace Hecton8.Rendering.OceanSinglePass
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterVisualSync();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterVisualSync();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.TerrainProviderRuntime)
+            {
+                _terrainProvider = currentService as ITerrainProvider;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 

@@ -337,6 +337,7 @@ namespace Hecton8.Physics
                 tuning = GerstnerWaveTuningDTO.Default();
 
             float quality = ResolveGlobalQualityWeight();
+            tuning.SeaLevelY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(tuning.SeaLevelY);
             tuning.GlobalQualityWeight = quality;
             tuning.ActiveRequestCount = math.clamp(tuning.ActiveRequestCount <= 0 ? math.min(_sampleCapacity, requestCapacity) : tuning.ActiveRequestCount, 0, requestCapacity);
             tuning.MaxOctaveLimit = math.clamp(tuning.MaxOctaveLimit <= 0 ? AnalyticalGerstnerWaveConstants.MaxOctaves : tuning.MaxOctaveLimit, 1, AnalyticalGerstnerWaveConstants.MaxOctaves);
@@ -669,7 +670,7 @@ namespace Hecton8.Physics
 
             if (_registeredHotSwap)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
         }
@@ -705,6 +706,16 @@ namespace Hecton8.Physics
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);
+            float shiftSqrMagnitude = math.lengthsq(shiftOffset);
+            if (!math.all(math.isfinite(shiftOffset)) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            {
+                return;
+            }
+
             ApplyOriginSnapshot(in shiftData);
         }
 
@@ -940,6 +951,15 @@ namespace Hecton8.Physics
                 {
                     tuningDto = GerstnerWaveTuningDTO.Default();
                     tuning[0] = tuningDto;
+                }
+                else
+                {
+                    float resolvedSeaLevelY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(tuningDto.SeaLevelY);
+                    if (resolvedSeaLevelY != tuningDto.SeaLevelY)
+                    {
+                        tuningDto.SeaLevelY = resolvedSeaLevelY;
+                        tuning[0] = tuningDto;
+                    }
                 }
 
                 return true;

@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Glass Grazer Clearing Encounter Grammar
 
-Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.
+Glass grazer clearings teach trust with a time limit. A living school can open pale scrape lanes through mineral film, expose oxygen-rich mat edges, and show a swimmer where current has been moving cleanly. That makes the clearing feel generous, and it should. HECTON-8 needs places where beauty helps. The trap is permanence. A grazer corridor is not a safe room. It is a current state made by animals still willing to eat there. If the shell ticks stay paired and the school keeps working along the edge, the lane can support scanning, low-noise repair, or a cautious return-line turn. If food remains and the school freezes, folds inward, or vanishes into one side of the reef, the clearing has changed. Do not finish the task bar because the water looked friendly thirty seconds ago.
 
 ## Scanner
 
-Glass grazer clearing. Recent scrape marks suggest low predator pressure; risk rises if herd movement stops.
+Glass grazer clearing. Fresh scrape lanes, oxygen film and steady shell ticks suggest low immediate pressure. Empty food field means warning state.
 
 ## Terminal
 
-FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+ENCOUNTER GRAMMAR / GLASS GRAZER CLEARING / role: shallow contrast, readable safe-ish lane, predator absence test / safe read: active feeding, paired return ticks, scraped mineral edge, visible exit line / reject: using grazers as guaranteed safety, silent clearing, abandoned food, blocked return lane / route note: the corridor is useful because animals are using it now, not because the ocean promised anything.
 
 ## Audio
 
-The grazers make bright corridors. Something else decides when they empty.
+The grazers make bright corridors. They do not decide how long the corridor belongs to them.
 
 ## Field Note
 
-A grazed corridor is useful until it goes quiet. Do not build the return plan on a herd you cannot see.
+Active feeding: use the lane. Paired ticks: hold. Food left behind: stop trusting the clearing.
 
 <!-- In-Game Wiki; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/en_US. -->

@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Collections;
@@ -117,6 +118,8 @@ namespace Hecton8.Gameplay
         private static SuitMeshUpdateListenerRegistry _listeners = new SuitMeshUpdateListenerRegistry(ListenerCapacity);
         private static NativeQueue<SuitMeshUpdateSignal> _pendingSignals;
         private static NativeQueue<SuitMeshUpdateSignal> _nextFrameSignals;
+        private static int _pendingSignalsSentinelId;
+        private static int _nextFrameSignalsSentinelId;
         private static int _pendingSignalCount;
         private static int _nextFrameSignalCount;
         private static int _droppedSignalCount;
@@ -132,8 +135,8 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            DisposeQueue(ref _pendingSignals, nameof(_pendingSignals));
-            DisposeQueue(ref _nextFrameSignals, nameof(_nextFrameSignals));
+            DisposeQueue(ref _pendingSignals, ref _pendingSignalsSentinelId);
+            DisposeQueue(ref _nextFrameSignals, ref _nextFrameSignalsSentinelId);
             _pendingSignalCount = 0;
             _nextFrameSignalCount = 0;
             _droppedSignalCount = 0;
@@ -213,21 +216,21 @@ namespace Hecton8.Gameplay
                 if (!_pendingSignals.IsCreated)
                 {
                     _pendingSignals = new NativeQueue<SuitMeshUpdateSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SuitMeshUpdateSignal>[16] - deferred suit mesh lane - owner: SuitMeshUpdateEvents
-                    RegisterNativeQueue(ref _pendingSignals, PendingCapacity, nameof(_pendingSignals));
+                    RegisterNativeQueue(ref _pendingSignals, PendingCapacity, nameof(_pendingSignals), out _pendingSignalsSentinelId);
                     PrewarmQueue(ref _pendingSignals, PendingCapacity);
                 }
 
                 if (!_nextFrameSignals.IsCreated)
                 {
                     _nextFrameSignals = new NativeQueue<SuitMeshUpdateSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SuitMeshUpdateSignal>[16] - next-frame suit mesh lane - owner: SuitMeshUpdateEvents
-                    RegisterNativeQueue(ref _nextFrameSignals, PendingCapacity, nameof(_nextFrameSignals));
+                    RegisterNativeQueue(ref _nextFrameSignals, PendingCapacity, nameof(_nextFrameSignals), out _nextFrameSignalsSentinelId);
                     PrewarmQueue(ref _nextFrameSignals, PendingCapacity);
                 }
             }
             catch
             {
-                DisposeQueue(ref _pendingSignals, nameof(_pendingSignals));
-                DisposeQueue(ref _nextFrameSignals, nameof(_nextFrameSignals));
+                DisposeQueue(ref _pendingSignals, ref _pendingSignalsSentinelId);
+                DisposeQueue(ref _nextFrameSignals, ref _nextFrameSignalsSentinelId);
                 _pendingSignalCount = 0;
                 _nextFrameSignalCount = 0;
                 throw;
@@ -237,10 +240,12 @@ namespace Hecton8.Gameplay
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(SuitMeshUpdateEvents),
@@ -249,19 +254,54 @@ namespace Hecton8.Gameplay
             if (sentinelId > 0)
                 return;
 
-            DisposeQueue(ref queue, label);
+            DisposeQueue(ref queue, ref sentinelId);
             throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
-        private static void DisposeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void DisposeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(SuitMeshUpdateEvents), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)

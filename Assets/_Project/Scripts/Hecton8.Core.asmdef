@@ -25,6 +25,7 @@
         "Unity.ResourceManager",
         "Unity.Profiling.Core",
         "Unity.TextMeshPro",
+        "ShapesRuntime",
         "UnityEngine.UI",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",

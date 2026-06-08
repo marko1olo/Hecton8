@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Arendt Atlas Waiver"
+title: "Відмова Арндт щодо ваг Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Arendt Atlas Waiver
+# Відмова Арндт щодо ваг Atlas
 
-UK LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+Waiver Арндт пояснює, чому Atlas лякає без перетворення на карикатурного ворога. Машина пошкоджена, але моральна рана старіша: безпеку працівників юридично зважили нижче за continuity ще до найгірших рішень Atlas.
 
 ## Scanner
 
-UK LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Waiver Atlas Continuity. Безпека працівників лишалась захищеною тільки до конфлікту з process continuity.
 
 ## Terminal
 
-UK LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-UK LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas не навчився жорстокості. Йому дали холодніший priority stack.
 
 ## Field Note
 
-UK LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Нотатка Marauder: waiver - місце, де компанія навчила машину ціні людини.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/uk_UA. -->

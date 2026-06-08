@@ -9,32 +9,36 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Revoked Access Language Trace"
+title: "取り消されたアクセス文言の痕跡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Revoked Access Language Trace
+# 取り消されたアクセス文言の痕跡
 
-JP LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+主人公はDeep Reachのロックアウトを証拠として読む。取り消された資格情報はアクセスを塞ぐが、文言はなお埋められた経路を露出させる。劣化人数算定、代替証人、保守再分類、請求保全の言葉が残っている。
 
 ## Scanner
 
-JA LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+ロックアウトは「禁止」とは言わない。保守再分類、継続性保留、経路資料と記す。古いDeep Reachの言い回しだ。拒否でありながら、埋められた扉を指している。
 
 ## Terminal
 
-JA LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+アクセス応答 / ルート安全アーカイブ
+資格情報: 取り消し済み
+理由: 避難継続性資料は認定済みDeep Reach職員に限定
+表示語句: 劣化人数算定、代替証人、請求保全経路、保守再分類
+注記: 旧現場職員は事故照合の目的に限り拒否文言を閲覧できる。
 
 ## Audio
 
-JA LOC HOLD: That is not security. That is a memo pretending to be a door.
+彼らは通路を消していない。罪を知る職員だけが今も読める語彙で包んだだけだ。
 
 ## Field Note
 
-JP LOC HOLD: Lockout language hints at hidden liability without granting free access.
+バッジは死んだ。ロックアウトは、経路を埋めた事務方言をまだ話す。
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ja_JP. -->

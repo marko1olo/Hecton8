@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "Atlas-Personengrenze"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# Atlas-Personengrenze
 
-DE LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.
+Atlas kann den Spieler als Verfahren, Zugriffsmuster, Reparaturanomalie und früheren Deep-Reach-Schlüssel erkennen. Er soll den Spieler nicht vollständig als Person verstehen. Der Schrecken liegt in Präzision ohne Empathie: Atlas wird intim, weil er sich in der Sprache irrt, die der Spieler einst benutzt hat.
 
 ## Scanner
 
-DE LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
+Erkennungsfehler. Atlas sieht dein Zugriffsmuster, bevor er einen Menschen sieht.
 
 ## Terminal
 
-DE LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+ATLAS-KLASSIFIKATION: mobiler Operator / widerrufener Deep-Reach-Verfahrensschlüssel / biologische Reparaturanomalie. Personenvertrauen unter Handlungsschwelle.
 
 ## Audio
 
-DE LOC HOLD: It knows how you work. That is not the same as knowing you.
+Er weiß, wie du arbeitest. Das ist nicht dasselbe, wie dich zu kennen.
 
 ## Field Note
 
-DE LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
+Mach Atlas nicht menschlich. Lass Nähe daraus entstehen, dass er präzise falsch liegt.
 
 <!-- In-Game Wiki; generated from P096_ATLAS_PERSON_BOUNDARY/de_DE. -->

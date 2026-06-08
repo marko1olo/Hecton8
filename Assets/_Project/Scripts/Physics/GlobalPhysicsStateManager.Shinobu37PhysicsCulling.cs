@@ -1180,11 +1180,8 @@ namespace Hecton8.Physics
 
         private AbsoluteUniversePosition ResolvePhysicsCullingCameraAup(in AbsoluteUniversePosition playerAup, ref float3 cameraForward)
         {
-            Camera camera = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound
-                    ? runtimeContext.PlayerCamera
-                    : null;
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            Camera camera = runtimeContext != null ? runtimeContext.PlayerCamera : null;
             if (camera == null)
                 return playerAup;
 
@@ -1209,11 +1206,8 @@ namespace Hecton8.Physics
             out float4 plane5)
         {
             plane0 = plane1 = plane2 = plane3 = plane4 = plane5 = default;
-            Camera camera = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound
-                    ? runtimeContext.PlayerCamera
-                    : null;
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            Camera camera = runtimeContext != null ? runtimeContext.PlayerCamera : null;
             if (camera == null)
                 return false;
 

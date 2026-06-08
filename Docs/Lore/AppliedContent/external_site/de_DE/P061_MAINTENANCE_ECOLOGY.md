@@ -8,33 +8,19 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Maintenance Ecology"
+spoiler_tier: 1
+title: "Wartungsökologie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Wartungsökologie
 
-DE LOC HOLD: Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlas fand keinen freundlichen Ozean. Atlas fand tragfähiges Leben. Leitfähiger Biofilm konnte eine schwache Schaltung für einige Stunden überbrücken. Schalenwachstum konnte einen Bruch bis zur nächsten Druckwelle abdichten. Eine Filterkolonie konnte einen Akustikimpuls weiter tragen als ein ertrunkenes Relais. Markierte Fauna konnte sensor packets zurückbringen, nachdem Metalldrohnen ausgefallen waren.
 
-## Scanner
-
-DE LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
-
-## Terminal
-
-DE LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
-
-## Audio
-
-DE LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-DE LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Dieses Reparaturnetz ist verführerisch und schmutzig. Der Spieler kann lebendes Material für salvage schneiden oder es belassen, weil es Druck hält. Eine Wand kann Infrastruktur, Habitat und Tatbeweis zugleich sein. Wartungsökologie liefert den ersten Beweis, dass HECTON-8 keine Magie ist. Es ist schlimmer als Magie, weil hinter jedem Wunder ein Arbeitsauftrag steht.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/de_DE. -->

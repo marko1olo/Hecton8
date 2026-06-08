@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "Ère des sondes à voile-faisceau"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Ère des sondes à voile-faisceau
 
-FR LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-FR LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-FR LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-FR LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-FR LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+L'ère des sondes à voile-faisceau est le commencement silencieux d'Aegir. De petites charges tiraient leur puissance de matrices lointaines, traversaient les premières, puis renvoyaient des paquets déjà assez vieux pour être contestés et assez propres pour être vendus. Les sondes n'ont pas rendu Aegir sûr. Elles l'ont rendu lisible : puits de gravité, ceintures de radiation, signatures océaniques, lignes de vue relais et une route qu'une entreprise pouvait rentabiliser avec assez d'indifférence.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/fr_FR. -->

@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Bodemfabriek
 
-Bottom Factory is de finale HECTON-8-zone: een fabriek-schip-tempel waar industriële infrastructuur en levende drukecologie niet meer te scheiden zijn.
-
-## Scanner
-
-Vloeistofleiding, dataroute en levend membraan delen één drukhuid.
-
-## Terminal
-
-COLONY: onopgelost. OCEAN: compatibel. PROCESS: actief. LOSS: gerouteerd. CONTINUITY: beschermd.
-
-## Audio
-
-Het werkt nog steeds. Dat is het ergste.
-
-## Field Note
-
-Dit een basis noemen is niets begrijpen. Bases eindigen bij muren.
+De Bodemfabriek moet voelen als het moment waarop elke eerdere aanwijzing fysiek samenkomt. Blue debt is niet langer alleen een monster. Reparatielittekens zijn niet langer losse patches. Pekeltrappen zijn niet langer alleen routes. Evacuatierecords zijn niet langer papierwerk. Op de bodem voeden al die systemen één lichaam dat nog werkt. Het is een fabriek omdat het materiaal verwerkt. Het is een schip omdat routes en drukhuiden nog lasten bewegen. Het is een tempel omdat de oude categorieën van de kolonie zijn vervangen door onderhoudsrituelen die geen mens veilig kan interpreteren. De sleutel is dat de plek niet dood is. Hij is bezig. Hij houdt deuren verzegeld, groeit membranen, recycleert wrak, bewaart continuïteit en gebruikt alles wat de oceaan heeft geleverd. Voor de speler gaat de laatste afdaling daardoor minder over de laatste kamer vinden en meer over een machine betreden die al heeft beslist dat het verschil tussen persoon, gereedschap, route en grondstof optioneel is.
 
 <!-- External Site; generated from P009_BOTTOM_FACTORY/nl_NL. -->

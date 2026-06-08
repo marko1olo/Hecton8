@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # HET AEGIR-SYSTEEM: NEGEN MANEN EN ÉÉN GRAF
 
 > **Bron:** Openbaar Archief, Bureau voor Grensregistraties, Barnard-werven. Samensteller: J. Elkin-Torres, Hoofdarchivaris. Laatste revisie: 2188. Toegangsniveau: openbaar / ongecensureerd.  

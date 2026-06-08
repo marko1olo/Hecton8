@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ran / Aegir Anchor"
+title: "עוגן Ran / Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ran / Aegir Anchor
+# עוגן Ran / Aegir
 
-HE LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.
+Ran מעגן את מערכת Aegir ככוכב רגיל מסוג K, לא כמנורה מתה ולא כמקור חושך על-טבעי. ל-HECTON-8 יכולים להיות רדודים בהירים כי אור קיים.
+
+האימה מתחילה כשאטמוספרה, סערה, מים מינרליים, עומק ובוצה תעשייתית מוחקים את האור מהר יותר מחוזה חילוץ. מעל המים המערכת אסטרונומית. מתחת למים כל לומן הופך לזמן שכור.
 
 ## Scanner
 
-HE LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
+לוח כוכב מסוג K. Ran בוער כרגיל. Aegir עמום מ-Sol, אבל החושך כאן מגיע מעומק, מזג אוויר וחוב.
 
 ## Terminal
 
-HE LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR // תאורת ננס כתום תומכת בעבודת שטח. פיזור סערה, גאומטריית ליקוי ועכירות האוקיינוס מורידים קריאות ירידה מתחת לשולי הבטיחות.
 
 ## Audio
 
-HE LOC HOLD: The star is not absent. It just cannot follow you down.
+הכוכב קיים. הוא פשוט לא יכול לעקוב אחריך למטה.
 
 ## Field Note
 
-HE LOC HOLD: A real star is enough. The ocean does the rest.
+כוכב אמיתי אחד מספיק. האוקיינוס עושה את השאר.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/he_IL. -->

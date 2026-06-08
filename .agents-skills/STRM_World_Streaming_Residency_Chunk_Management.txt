@@ -17,7 +17,7 @@
 
 ### [FORBID] Anti-Patterns
 - Single monolithic chunk array (cache thrash). Use SOA layout.
-- Synchronous `Resources.Load` for chunk data.
+- [FORBID] Synchronous `Resources.Load` for chunk data.
 - Coroutine-based loading (GC pressure, unpredictable timing).
 - Locking main thread waiting on `NativeArray` copy from background job.
 

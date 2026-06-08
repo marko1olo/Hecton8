@@ -1,0 +1,23 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS223_RAN_AEGIR_NAME_AUTHORITY_LEDGER",
+  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS223_RAN_AEGIR_NAME_AUTHORITY_LEDGER.packets.json"
+  ],
+  "canonical_importer_sources": [
+    "Docs/Lore/AppliedContent/packets/RS223_RAN_AEGIR_NAME_AUTHORITY_LEDGER.packets.json"
+  ],
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

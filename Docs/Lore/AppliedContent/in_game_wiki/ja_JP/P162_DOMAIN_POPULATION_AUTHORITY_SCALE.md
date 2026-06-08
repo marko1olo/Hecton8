@@ -9,32 +9,34 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Population And Authority Scale"
+title: "人口と権限の尺度"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Population And Authority Scale
+# 人口と権限の尺度
 
-JA LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
+人口数は概算のままだ。プレイヤーに census opera は要らない。必要な問いはもっと単純だ。遠くから誰が自分に作用できるのか。巨大な内域ドメインは認証行としてしか HECTON-8 に触れないかもしれない。小さな depot はパケット custody を持つため、より重要かもしれない。死んだ frontier shell は部屋の機械を所有するため、さらに重要かもしれない。
+
+プレイヤーが感じる尺度はこれだ。Sol は物が誰のものか決められる。Centauri は Deep Reach の古い言葉を respectable に見せる。Barnard は Marauders を罠にかける仕事を普通にする。Tau Ceti は証拠を公開圧力に変えられる。酸素には遅いが結果には遅すぎない。Luyten はメッセージ鎖を証明できる。Aegir では署名が圧力、水、閉じたハッチ、請求可能な質量になる。
 
 ## Scanner
 
-JA LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+AUTHORITY CENSUS STUB // 人口は背景だ。重要なのは、どのドメインが claim を認証、公開、輸送、保険、 нотариально処理、または埋葬できるかだ。
 
 ## Terminal
 
-JA LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AUTHORITY SCALE // Sol は所有を認証する。Centauri は憲章を正統化する。Barnard は死んだ claim の労働を供給する。Tau Ceti は遅延後に証拠を公開する。Luyten は custody を証明する。Aegir は汚れた物理 claim を実行する。
 
 ## Audio
 
-JA LOC HOLD: The largest domain is not the nearest hand.
+最大のドメインは最も近い手ではない。遅延を生き残る印章だ。
 
 ## Field Note
 
-JA LOC HOLD: Do not turn the setting into census space opera.
+身体、航路、claim、証拠鎖に圧力を加えない人口トリビアは入れない。
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/ja_JP. -->

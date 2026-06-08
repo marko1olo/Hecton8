@@ -8,33 +8,19 @@ biome_tags: biome.thermal_fields;biome.factory_temple
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+spoiler_tier: 1
+title: "מנוע גיאותרמי של כבשן פתח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# מנוע גיאותרמי של כבשן פתח
 
-HE LOC HOLD: Vent Forge Geothermal Engine shows why HECTON-8 is valuable and lethal. The moon is an industrial engine before humans build one on it.
+כבשני פתחים מחברים גאולוגיה לייצור, הישרדות ואימה. הם מספקים חום ומחזורי לחץ לקרמיקה, אטמים וזכוכית לחץ, אבל אותם מחזורים יוצרים כיסי רתיחה, חמצן שקרי, עננים מאכלים ונדידת fauna.
 
-## Scanner
-
-HE LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
-
-## Terminal
-
-HE LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
-
-## Audio
-
-HE LOC HOLD: The vent does not care whether you call it power or weather.
-
-## Field Note
-
-HE LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+המנוע הגיאותרמי של כבשן הפתח מראה למה HECTON-8 יקר וקטלני: הירח היה מנוע תעשייתי לפני שבני אדם בנו עליו אחד. כל פתח מועיל הוא גם מכונה שמענישה timing גרוע.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/he_IL. -->

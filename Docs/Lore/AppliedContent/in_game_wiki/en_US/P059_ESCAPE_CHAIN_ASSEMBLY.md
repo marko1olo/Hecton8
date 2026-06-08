@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Escape Chain Assembly
 
-Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.
+Escape is an assembly chain, not a single repaired vehicle. The damaged drop package can keep the player alive, but it cannot create a trusted ascent by itself. The route home needs an acoustic relay spine to be heard through water and storm noise, a pressure seal that will not turn ascent into rupture, a guidance core that can survive HECTON-8’s local hazards, an ascent-energy charge, a quarantine/legal handshake and, if the player wants power over the recovery record, an evidence payload Black Keel cannot price away. Every part lives deeper than comfort because the original system was built to move assets, not to let abandoned workers leave on their own terms.
 
 ## Scanner
 

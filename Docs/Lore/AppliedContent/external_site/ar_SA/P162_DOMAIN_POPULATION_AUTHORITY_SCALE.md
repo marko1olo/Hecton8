@@ -9,32 +9,24 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Population And Authority Scale"
+title: "مقياس السكان والسلطة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Population And Authority Scale
+# مقياس السكان والسلطة
 
-AR LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
+## العدد ليس سلطة
 
-## Scanner
+تترك طاولة النطاقات السكان غير حاسمين عمدا. يمكن ضبط أرقام census لاحقا، لكن علاقة الضغط مقفلة: Sol يملك التمويل القديم والتوثيق، Centauri يملك لغة الشرعية، Barnard يملك ثقافة salvage، Tau Ceti يملك ضغط الدليل العلني، Luyten يملك custody الحزم، وAegir يملك المكان القذر حيث يصير كل ذلك آلة.
 
-AR LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+على HECTON-8 لا يجب أن يقرأ اللاعب اسم النطاق كحاشية. Sol Core ختم على الملكية واستمرارية التأمين. يمكنه جعل محيط ميت نشطا قانونيا. Centauri Compact ذاكرة لتوسع عمل فعلا، ولهذا يستطيع Deep Reach استعارة نبرة مواثيقه ليبدو أقل عفنا. Barnard Yards يشرح لماذا يعرف البطل المشابك والقواطع وأدوات الضغط والأعمال السيئة بلا أسطورة بطولة.
 
-## Terminal
+Tau Ceti مهم لأنه يستطيع جعل الدليل ذا أثر علني. هذا لا يعني أنه يستطيع إنقاذ غواص قبل تغير المد. Luyten Junction أبرد: يستطيع حفظ custody وhash chains وpacket notary records بلا سلطة أخلاقية. Aegir هو dirty claim node حيث تجعل shells المحلية ونوافذ Black Keel وpriority hooks في Deep Reach تلك السلطات البعيدة خطرا فوريا.
 
-AR LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
-
-## Audio
-
-AR LOC HOLD: The largest domain is not the nearest hand.
-
-## Field Note
-
-AR LOC HOLD: Do not turn the setting into census space opera.
+لهذا يمكن أن يكون desk صغير أهم من كوكب. لا يحكم HECTON-8 أكبر عدد سكان. يحكمه من يستطيع إبقاء claim حيا عبر المسافة ثم محاسبة الناجي لأنه لمسه.
 
 <!-- External Site; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/ar_SA. -->

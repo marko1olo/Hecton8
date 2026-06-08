@@ -9,32 +9,22 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "تفريغ صوت ملف عامل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Worker Dossier Audio Transcript Seed
+# تفريغ صوت ملف عامل
 
-AR LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+## مستعمرة قبل أن تصبح دليلا
 
-## Scanner
+لا يجب أن يقدم صوت ملفات العمال الموتى كأشياء مقدسة. يجب أن يسمح لهم بالعمل. رئيس مضخات يفحص صماما. موثق relay يشتكي من لوحة. مسعف يجادل water ledger. عامل fabricator يسجل شهادة أداة لأن الأداة أهم من خطاب الشجاعة.
 
-AR LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+هذا الروتين هو ما يعطي الخراب وزنه. يجب أن يسمع اللاعب الأسماء قبل النصب، والوظائف قبل المأساة، والانزعاجات الصغيرة قبل أن تغلق الكذبة الكبرى حولهم. HECTON-8 لم تكن مسرحا لـMarauder، بل مكان عمل بعادات وضغائن ونكات وإشعارات دين وحساب ضغط.
 
-## Terminal
-
-AR LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
-
-## Audio
-
-AR LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
-
-## Field Note
-
-AR LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+هذه الطبقة تحمي القانون من الميلودراما. لا يوجد خطاف عائلي يجعل اللاعب مميزا. الذنب مهني. تتعرف إلى الإجراءات والشارات والقرارات السيئة لأنك كنت تنتمي إلى هذا النوع من النظام، والآن يتكلم النظام عبر أوامر عمل غارقة.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/ar_SA. -->

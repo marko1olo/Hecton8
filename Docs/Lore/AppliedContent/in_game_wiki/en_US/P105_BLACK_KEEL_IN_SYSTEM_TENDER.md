@@ -7,8 +7,8 @@ poi_tags: poi.black_keel_limit_notice;poi.tender_maintenance_tag
 biome_tags: biome.carrier_link;biome.shallow_annex
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Black Keel In-System Tender"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Black Keel In-System Tender
 
-Black Keel is an Aegir-system automated claim-tender, not a personal interstellar ship. It can hold custody, speak through windows, recover payload mass and enforce debt. It cannot ignore HECTON-8 weather, orbital timing, quarantine clauses or damaged descent hardware.
+Black Keel is an Aegir-system automated claim tender, not a personal interstellar ship. It can hold custody, speak through windows, recover payload mass, enforce debt, and accept or reject quarantine terms. It cannot ignore HECTON-8 weather, orbital timing, damaged descent hardware, or the cost of moving mass.
 
 ## Scanner
 
-Tender limit. Black Keel can recover mass through a window; it cannot cross light-years for you.
+Tender limit: Black Keel can recover mass through a window. It cannot cross light-years for you.
 
 ## Terminal
 
-CARRIER LIMIT: Aegir-system claim tender. Interstellar custody is inherited from route owners; local recovery requires ascent package, quarantine handshake and payload acceptance.
+CARRIER LIMIT: Aegir-system claim tender. Recovery requires ascent package, quarantine handshake, payload acceptance, and window alignment.
 
 ## Audio
 

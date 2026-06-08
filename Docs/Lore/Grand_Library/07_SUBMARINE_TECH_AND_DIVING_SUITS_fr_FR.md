@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TECHNOLOGIE SOUS-MARINE ET SCAPHANDRES DE MARAUDEURS
 
 > **Source :** Bureau des Pertes Keelmark, Évaluation des Risques Actuariels pour les Opérations de Sauvetage Indépendantes.  

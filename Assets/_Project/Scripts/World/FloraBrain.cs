@@ -143,8 +143,9 @@ namespace Hecton8.World
             }
 
             _playerResolveRetryRemainingSeconds = Mathf.Max(0.1f, playerResolveRetryIntervalSeconds);
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null ||
+                !runtimeContext.IsInitialized ||
                 runtimeContext.PlayerTransform == null ||
                 runtimeContext.SurvivalSystem == null)
             {

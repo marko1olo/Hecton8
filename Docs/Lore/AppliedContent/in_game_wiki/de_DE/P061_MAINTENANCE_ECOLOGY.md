@@ -7,34 +7,34 @@ poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
 biome_tags: biome.cable_reef;biome.repair_fauna
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Maintenance Ecology"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Wartungsökologie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Wartungsökologie
 
-DE LOC HOLD: Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.
+Wartungsökologie macht HECTON-8 zugleich nützlich und falsch. Atlas lernte, dass Biofilm schwaches Signal tragen kann, Filterkolonien Pings wiederholen, Schalenwachstum Risse schließt und markierte Fauna beschädigte sensor packets zurückbringt. Der Ozean ist keine Person. Das Reparaturnetz lebt trotzdem genug, um jedes cable reef zu Werkzeug, Gefahr und Beweislinie zu machen.
 
 ## Scanner
 
-DE LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+Leitfähiger Biofilm, Schalenwachstum, markierte Fauna und Schlotwärme tragen Reparaturverkehr.
 
 ## Terminal
 
-DE LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+ATLAS-WARTUNGSÖKOLOGIE: Biofilmbrücke stabil; Filterkolonie wiederholt Akustikimpuls; Schalendichtung schließt Bruch; markierte Fauna gibt beschädigte sensor packets zurück.
 
 ## Audio
 
-DE LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
+Das Kabel lebt, weil die Maschine es lebend brauchte.
 
 ## Field Note
 
-DE LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Schneide nicht jede lebende Naht heraus. Manche halten Druck besser als Metall.
 
 <!-- In-Game Wiki; generated from P061_MAINTENANCE_ECOLOGY/de_DE. -->

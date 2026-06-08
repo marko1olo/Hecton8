@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Glass Grazer Codex Card"
+title: "Kodexkarte: Glasgrazer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Glass Grazer Codex Card
+# Kodexkarte: Glasgrazer
 
-DE LOC HOLD: Glass Grazer Codex Card turns a benign animal into a readable safety instrument.
+Glasgrazer sind keine Haustiere, keine Beute und keine Dekoration. Es sind kleine transparente Schalenfresser, die den photischen Shelf lesbar machen, indem sie Mineralfilm von pressure glass, losen Rändern photischer Matten, alten Kabelmänteln und Kalksteinlippen schaben. Ein fressender Schwarm hinterlässt blasse Bahnen im Bewuchs. Diese Bahnen können frische Strömung zeigen, einen sauberen Griff, eine Naht ohne zu viel Wärme oder einen Fleck, den Räuber seit einigen Minuten nicht gekreuzt haben. Der nützliche Hinweis ist nicht nur Bewegung. Es ist die Unterbrechung. Bleibt Futter zurück und die Schalenticks verstummen, hat der Schwarm Druckwechsel, Schattenbewegung, cutter-Vibration oder ein größeres Tier außerhalb des scanner-Kegels gehört. Die Schabbahn ist Beweis, keine Erlaubnis. Folge der Kante. Geh, wenn die Kante nach innen klappt.
 
 ## Scanner
 
-DE LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+Glasgrazer-Schwarm. Nicht feindliche Schalenfresser schaben Mineralfilm ab. Gleichmäßiges Ticken heißt Arbeitswasser; plötzliche Stille heißt, etwas Größeres hat die Lichtung verändert.
 
 ## Terminal
 
-DE LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+PROBE / GLASGRAZER-SCHWARM / Rolle: Flachfilm-Schaber, Strömungszeuge, Hinweis auf Räuberverdrängung / sichere Lesung: Fressrand, frische blasse Schabspur, stabile Schalenticks / verwerfen: verlassenes Futterfeld, eng erstarrter Schwarm, keine Rückticks nach pinger / Routennotiz: Abwesenheit nach Fressen ist Gefahrendaten.
 
 ## Audio
 
-DE LOC HOLD: When they stop eating, you stop moving.
+Wenn die kleinen Münder aufhören zu ticken und das Futter bleibt, werde nicht das Nächste, das wartet.
 
 ## Field Note
 
-DE LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Fressender Schwarm: Bahn lesen. Erstarrter Schwarm: Wasser lesen. Leere Bahn mit Futter: gehen.
 
 <!-- In-Game Wiki; generated from P292_GLASS_GRAZER_CODEX_CARD/de_DE. -->

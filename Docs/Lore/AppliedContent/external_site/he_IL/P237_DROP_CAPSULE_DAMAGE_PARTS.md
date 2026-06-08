@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Drop Capsule Damage Parts"
+title: "חלקי נזק בקפסולת נחיתה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Drop Capsule Damage Parts
+# חלקי נזק בקפסולת נחיתה
 
-HE LOC HOLD: Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object.
+חלקי הנזק של קפסולת הנחיתה מסירים מ-HECTON-8 את היגיון החילוץ הנוח. Marauder תקוע כי מערכות מסוימות כשלו: ascent sleeve, guidance gimbal, relay mast, compressor ו-heat tiles. כל כשל מוביל למסלול, חומר, שדרוג כלי או אובייקט ראיה.
 
 ## Scanner
 
-HE LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+Ascent sleeve התעקם, guidance gimbal מצולק, relay mast נגזר, compressor מזוהם, heat tile סדוקה.
 
 ## Terminal
 
-HE LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-HE LOC HOLD: It landed well enough to strand you properly.
+היא נחתה מספיק טוב כדי לתקוע אותך כמו שצריך.
 
 ## Field Note
 
-HE LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+הקפסולה יכולה להשאיר Marauder חי בשעה הראשונה. היא לא יכולה לצאת בלי חלקי עומק חלופיים.
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/he_IL. -->

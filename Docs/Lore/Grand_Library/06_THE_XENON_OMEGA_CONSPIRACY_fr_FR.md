@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LA DIRECTIVE XÉNON-OMÉGA ET LES PROTOCOLES ATLAS-6
 
 > **Source :** Enquête Ouverte du Comité Luyten, Cas N° CF-2148-0071. Pièce à conviction 44-B : Journal d'Audit du Noyau Atlas-6.  

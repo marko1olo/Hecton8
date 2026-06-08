@@ -9,32 +9,36 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Photic Mat Codex Card"
+title: "Картка кодексу фотичного мату"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Photic Mat Codex Card
+# Картка кодексу фотичного мату
 
-UK LOC HOLD: Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.
+Фотичні мати роблять мілководні шельфи живими, але не безпечними. Це шаруваті біоплівкові пластини, що ростуть там, де світло, мінеральна шкіра, слабкий вихід газу і хімія тиску зустрічаються занадто близько. Здоровий мат може додати кисень у кишеню, годувати glass grazers, забарвити вапняк зелено-золотими краями і стабілізувати тонкий осад, який інакше піднявся б у воду. Саме ця корисність означає, що гравець не повинен вважати його декором чи безкоштовною їжею. Малі зразки з вільного краю достатньо безпечні для сканера. Мат, натягнутий над тріщиною, gasket-швом, кабельним шрамом чи блідим газовим пухирем, уже є частиною маршруту. Зірви його там — і шельф може змінитися: вийде замкнений газ, grazers розбіжаться, осад замутить воду, а яскрава пляма стане проблемою видимості. Правило просте. Бери край. Не кради пов’язку.
 
 ## Scanner
 
-UK LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Фотичний мат. Кисень-позитивна біоплівкова пластина поверх мінеральної шкіри. Яскрава, корисна, крихка до тиску. Не здирати із запечатаних тріщин.
 
 ## Terminal
 
-UK LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+ЗРАЗОК / ФОТИЧНИЙ МАТ
+роль: мілководна киснева поверхня, корм для grazers, стабілізатор мінеральної плівки
+безпечний зразок: вільний край менший за ширину долоні
+відхилити: пластини, що закривають шви; мати з газовими пухирями; свіжі поля укусів grazers
+маршрутна примітка: розірвані мати можуть випустити замкнений газ і перетворити чистий шельф на hazard.
 
 ## Audio
 
-UK LOC HOLD: Light here is work, not comfort.
+Він виглядає м’яким тому, що працює. Якщо він тримає шов, залиш його там.
 
 ## Field Note
 
-UK LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+Вільний край: зразок. Покриття шва: залишити. Якщо мат закриває рану, рана все ще там.
 
 <!-- In-Game Wiki; generated from P291_PHOTIC_MAT_CODEX_CARD/uk_UA. -->

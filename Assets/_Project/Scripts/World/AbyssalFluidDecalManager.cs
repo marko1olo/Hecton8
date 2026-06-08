@@ -205,6 +205,7 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             TryUnregister();
+            _sargassumDrag = null;
         }
 
         private void OnDestroy()
@@ -213,6 +214,7 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             TryUnregister();
+            _sargassumDrag = null;
             _runtimeMaterial = null;
             _drawPropertyBlock = null;
             MaterialPropertyBlockRegistry.ReleaseLegacyBlock(this);
@@ -388,10 +390,17 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
-            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
+            ApplyRuntimeOffsetToCachedState(-shiftOffset);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -408,6 +417,7 @@ namespace Hecton8.World
             if (serviceSlot == GlobalRegistryServiceSlot.SargassumDragRuntime)
             {
                 _sargassumDrag = currentService as SargassumGlobalDragManager;
+                WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDrag);
                 return;
             }
 
@@ -1029,7 +1039,7 @@ namespace Hecton8.World
                 _playerContext = GlobalRegistry.Player;
 
             if (_sargassumDrag == null)
-                _sargassumDrag = GlobalRegistry.SargassumDrag;
+                WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDrag);
 
             if (_ambientCurrentReadModel == null)
                 _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;

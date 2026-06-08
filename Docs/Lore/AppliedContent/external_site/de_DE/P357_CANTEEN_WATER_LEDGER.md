@@ -9,32 +9,20 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Canteen Water Ledger"
+title: "Kantinen-Wasserledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Canteen Water Ledger
+# Kantinen-Wasserledger
 
-DE LOC HOLD: HECTON-8 makes catastrophe believable through ordinary systems under pressure: water ledgers, canteen tokens and shift accountability.
+Das Kantinen-Wasserledger ist eines der einfachsten menschlichen Artefakte in HECTON-8: eine Essraumtafel fuer Trinkwasser, Markenrueckgabe, Pumpenzugang und medizinische Ausnahmen. Es erklaert die Katastrophe nicht. Es zeigt die Kolonie unmittelbar bevor die Katastrophe zur Geschichte wurde.
 
-## Scanner
+Sein Wert liegt in Textur und Beweis. Sechs fehlende Marken klingen klein, bis der Spieler versteht, was Wasser in einer Druckkolonie bedeutete. Trinkwasser lief durch Filter, Schichtbuchhaltung, medizinische Ausnahmen und Pumpenraum-custody. Ein fehlender Becher konnte ein mueder Arbeiter sein. Er konnte auch ein kranker Trupp sein, eine kontaminierte Leitung, ein umgangener Rationsbefehl oder ein Supervisor, der einen lokalen Ausfall vor Deep-Reach-Berichten versteckte.
 
-DE LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
-
-## Terminal
-
-DE LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
-
-## Audio
-
-DE LOC HOLD: The last argument was about water tokens.
-
-## Field Note
-
-DE LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+Es geht nicht um Melodrama. Das Ledger macht die Kolonie als Arbeit lesbar: Menschen kamen von Schicht, stritten, korrigierten Eintraege, liehen Werkzeuge, schuetzten ihre Leute und versuchten, den Raum normal zu halten, waehrend der Ozean schon ins System kam. In HECTON-8 kann so eine gewoehnliche Spur Beweis werden.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/de_DE. -->

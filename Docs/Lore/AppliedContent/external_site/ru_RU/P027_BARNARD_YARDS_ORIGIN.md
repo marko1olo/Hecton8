@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Происхождение: Barnard Yards
 
-Barnard Yards заземляет протагониста в salvage-экономике и делает HECTON-8 личным через ремесло, а не через жестко заданную мелодраму.
+Barnard Yards связывает класс мародеров с salvage-экономикой и рабочей культурой. HECTON-8 становится личным через привычки труда, следы инструмента и долг, а не через жестко заданную мелодраму.
 
 ## Scanner
 

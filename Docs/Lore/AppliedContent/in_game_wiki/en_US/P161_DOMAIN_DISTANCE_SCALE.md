@@ -19,22 +19,24 @@ localization_flags: 0
 
 # Domain Distance Scale
 
-Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.
+The domain scale is a pressure chart, not a tourist map. Sol Core can still certify ownership from far away. Centauri can make an old charter sound clean. Barnard can put a cutter and a debt-bound Marauder in a dirty job. Tau Ceti can make evidence public after the delay. Luyten can prove a packet chain. Ran/Aegir is where those distant powers become water over your helmet.
+
+That is why HECTON-8 feels alone without requiring empty space. A message can cross the route and still arrive after oxygen, tide, hull temperature and Black Keel's recovery window have already made their decisions. Distance does not erase law. It makes law colder than rescue.
 
 ## Scanner
 
-The domain map uses distance bands, not romantic shortcuts.
+DOMAIN DISTANCE PLATE // Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are not scenery. They are delay, custody, mass, proof and rescue cost.
 
 ## Terminal
 
-DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.
+DOMAIN SCALE // Ran/Aegir remains a roughly 10.5 light-year class target from Sol until final ephemeris tables replace the band. No FTL relief vector. No instant answer. Route authority arrives before human help.
 
 ## Audio
 
-Ten light-years is a number. The bill is the story.
+Ten light-years is not the hard part. The hard part is finding out who paid for the return mass.
 
 ## Field Note
 
-Use scale as pressure. Exact ephemeris can wait for table tuning.
+If the table starts sounding grand, cut it down. The player needs the cost of distance, not a poster of stars.
 
 <!-- In-Game Wiki; generated from P161_DOMAIN_DISTANCE_SCALE/en_US. -->

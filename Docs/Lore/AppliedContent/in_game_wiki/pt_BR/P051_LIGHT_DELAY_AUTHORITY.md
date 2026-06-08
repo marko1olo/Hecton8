@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "Autoridade de atraso da luz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# Autoridade de atraso da luz
 
-PT-BR LOC HOLD: Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.
+HECTON-8 não tem ansible nem voz de comando ao vivo da órbita. Mensagens seguem à velocidade da luz e depois perdem mais tempo em filas de buffer, janelas de tempestade, geometria de relé e regras de custódia da transportadora. Cada resposta é prova velha, não ordem.
 
 ## Scanner
 
-PT-BR LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
+Cache do mastro de relé: a chamada saiu limpa e depois esperou atrás da luz, da lei de fila, da dispersão de tempestade e da linha de visão de Aegir.
 
 ## Terminal
 
-PT-BR LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
+AUTORIDADE COM: atraso de mão única verificado. Dispersão de tempestade alta. Fila de relé sob prioridade de custódia. Autoridade local de sobrevivência ativa.
 
 ## Audio
 
-PT-BR LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
+A resposta está vindo. Isso não faz dela resgate.
 
 ## Field Note
 
-PT-BR LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+Ninguém censurou o primeiro grito. A física o levou devagar o bastante para a política alcançar.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/pt_BR. -->

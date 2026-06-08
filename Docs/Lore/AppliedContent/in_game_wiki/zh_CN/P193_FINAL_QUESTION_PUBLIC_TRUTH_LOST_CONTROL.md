@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "最终问题：公开真相，失去控制"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# 最终问题：公开真相，失去控制
 
-CN LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+公共真相路线打破干净的掩盖。它也打破了对后果的所有权。证据能让名字免于删除，制造真正的救援压力，也会邀请每一个有法律办公桌或祈祷频道的掠食者。
 
 ## Scanner
 
-CN LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+公开证据能阻止抹除。它也会把发现足够快地交给所有可能滥用它的人。
 
 ## Terminal
 
-CN LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+PUBLIC TRUTH AXIS：见证hash、责任链、Atlas状态、蓝债坐标和payload路线可以脱离Deep Reach控制。公开发布后，操作者不再控制接收者行动、市场反应或谁先到达。
 
 ## Audio
 
-CN LOC HOLD: Truth leaves your hand faster than rescue ever could.
+真相离手的速度，比救援能飞来的速度更快。
 
 ## Field Note
 
-CN LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+公共真相不是纯粹正义。它会制造制裁、崇拜、拍卖、诉讼、救援压力和模仿claim。
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/zh_CN. -->

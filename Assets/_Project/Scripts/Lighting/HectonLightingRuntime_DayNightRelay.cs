@@ -320,12 +320,21 @@ namespace Hecton8.Lighting
         private double3 ResolvePlayerAupDouble()
         {
             IPlayerRuntimeContext player = _cachedPlayerContext;
-            HectonPlayerMovement movement = player?.PlayerMovement;
-            if (movement != null)
+            if (player != null)
             {
-                AbsoluteUniversePosition playerAup = movement.CurrentAup;
-                if (playerAup.IsFinite())
-                    return playerAup.ToAbsoluteDouble3();
+                if (player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    snapshot.Aup.IsFinite())
+                {
+                    return snapshot.Aup.ToAbsoluteDouble3();
+                }
+
+                if (player.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite())
+                {
+                    return movementState.PredictedAup.ToAbsoluteDouble3();
+                }
             }
 
             return double3.zero;

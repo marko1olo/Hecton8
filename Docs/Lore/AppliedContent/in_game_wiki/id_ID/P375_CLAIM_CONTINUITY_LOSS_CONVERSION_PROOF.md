@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Claim Continuity Loss Conversion Proof"
+title: "Konversi Kerugian untuk Kontinuitas Claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Claim Continuity Loss Conversion Proof
+# Konversi Kerugian untuk Kontinuitas Claim
 
-ID LOC HOLD: The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.
+Rantai bukti berakhir pada konversi. Deep Reach bisa mengakui kerusakan dan tetap memegang kepemilikan jika pekerja menjadi loss, bukti menjadi material custody, dan claim tetap hidup. Itulah sebabnya pemain tidak hanya membawa kebenaran. Mereka membawa sesuatu yang sistem tahu cara beli.
 
 ## Scanner
 
-ID LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
+Stempel meja kerugian dipulihkan. Ledger bertahan lebih baik daripada pekerja yang ia beri nama baru.
 
 ## Terminal
 
-ID LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
 
 ## Audio
 
-ID LOC HOLD: This is where dead workers became a clean column.
+Di sinilah manusia menjadi kolom bersih.
 
 ## Field Note
 
-ID LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+Catatan Marauder: ledger bisa mengingat orang mati dan tetap membelanjakan mereka.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/id_ID. -->

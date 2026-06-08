@@ -9,32 +9,36 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Revoked Access Language Trace"
+title: "被撤销访问语句痕迹"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Revoked Access Language Trace
+# 被撤销访问语句痕迹
 
-CN LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+被撤销的访问语言，成了Deep Reach最安静的锁之一。一扇门可以拒绝前雇员，把请求登记成例行维护，却仍泄出命名隐藏疏散路线的准确术语。在HECTON-8，这很重要，因为玩家不需要一份干净的认罪书才能追踪下去。旧措辞已经足够：降级人数协议、替代见证、路线安全档案、索赔保全路径。这些词是为责任审查制造的，不是为救援制造的。拒绝同时证明两件事。凭据死了。凭据背后的程序没有。
 
 ## Scanner
 
-ZH LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+封锁没有写“禁止”。它写的是维护重分类、连续性搁置、路线材料。旧Deep Reach措辞：一次拒绝，却仍指向被埋掉的门。
 
 ## Terminal
 
-ZH LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+访问响应 / 路线安全档案
+凭据: 已撤销
+原因: 疏散连续性材料仅限认证Deep Reach人员
+可见术语: 降级人数、替代见证、索赔保全路线、维护重分类
+备注: 旧现场人员仅可为事故核对查看拒绝措辞。
 
 ## Audio
 
-ZH LOC HOLD: That is not security. That is a memo pretending to be a door.
+他们没有抹掉走廊。他们只是把它包进一套只有心里有罪的职员还看得懂的词汇里。
 
 ## Field Note
 
-CN LOC HOLD: Lockout language hints at hidden liability without granting free access.
+徽章死了。封锁仍在说那套埋葬路线的办公室方言。
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/zh_CN. -->

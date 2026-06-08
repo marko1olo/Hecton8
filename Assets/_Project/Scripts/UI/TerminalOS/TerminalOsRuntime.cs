@@ -41,6 +41,8 @@ namespace Hecton8.UI
         private const uint FaultDecryptionBudget = 1u << 4;
         private const uint FaultDecryptionNonFinite = 1u << 5;
         private const uint FaultDecryptionDumpBackpressure = 1u << 6;
+        private const uint FaultAppliedLorePreviewMiss = 1u << 7;
+        private const uint FaultAppliedLorePreviewDrop = 1u << 8;
         private const ushort DialogueDecisionSaveFacilityMask = SaveBinaryStorage.PlayerDialogueChoiceSaveFacilityMask;
         private const uint DecryptionDumpBackpressureHash = 0x53483237u; // SH27
         private const uint DecryptionDumpContextHash = 0x54444457u; // TDDW
@@ -313,7 +315,7 @@ namespace Hecton8.UI
             TryFinalizeTerminalInteractionJob();
             TryFinalizeDecryptionJob();
             UpdateDialogueChoiceVisualSync();
-            ConsumeAppliedLoreTerminalPreviewSignals();
+            uint terminalPreviewFaultFlags = ConsumeAppliedLoreTerminalPreviewSignals();
             RefreshBakedCrtBindingDirtyState();
 
             bool visualPipelineBlocked = false;
@@ -363,7 +365,7 @@ namespace Hecton8.UI
             if (!visualPipelineBlocked)
                 TryScheduleFormatJob(ownerFrame);
             RenderInstancedPanels();
-            uint faultFlags = _lastFaultFlags;
+            uint faultFlags = _lastFaultFlags | terminalPreviewFaultFlags;
             if (_terminalCount >= TerminalOsConstants.ActiveTargetTerminals && _lastFormatMainThreadMilliseconds > 0.5f)
                 faultFlags |= FaultFormatBudget;
             if (faultFlags != 0u)
@@ -701,23 +703,34 @@ namespace Hecton8.UI
             return true;
         }
 
-        private void ConsumeAppliedLoreTerminalPreviewSignals()
+        private uint ConsumeAppliedLoreTerminalPreviewSignals()
         {
+            uint faultFlags = SignalBus<AppliedLoreTerminalPreviewSignal>.DroppedLastFlush > 0
+                ? FaultAppliedLorePreviewDrop
+                : 0u;
             ReadOnlySpan<AppliedLoreTerminalPreviewSignal> signals =
                 SignalBus<AppliedLoreTerminalPreviewSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
             {
                 AppliedLoreTerminalPreviewSignal signal = signals[i];
                 if (signal.PacketHash == 0u)
+                {
+                    faultFlags |= FaultAppliedLorePreviewMiss;
                     continue;
+                }
 
-                ApplyTerminalAppliedLoreLine(
+                if (!ApplyTerminalAppliedLoreLine(
                     signal.TerminalIndex,
                     signal.TerminalHash,
                     signal.PacketHash,
                     signal.LocaleHash,
-                    ResolveAppliedLorePreviewSurface(signal.Surface));
+                    ResolveAppliedLorePreviewSurface(signal.Surface)))
+                {
+                    faultFlags |= FaultAppliedLorePreviewMiss;
+                }
             }
+
+            return faultFlags;
         }
 
         private bool TryResolveTerminalPreviewIndex(
@@ -1356,10 +1369,15 @@ namespace Hecton8.UI
             return math.saturate(_globalQualityWeight);
         }
 
+        private static bool IsSaveManagerUsable(SaveManager saveManager)
+        {
+            return saveManager != null && saveManager.IsInitialized;
+        }
+
         private void UpdateDialogueChoiceVisualSync()
         {
             SaveManager saveManager = _cachedSaveManager;
-            ushort flags = saveManager != null ? saveManager.PlayerDialogueChoiceFlags : (ushort)0;
+            ushort flags = IsSaveManagerUsable(saveManager) ? saveManager.PlayerDialogueChoiceFlags : (ushort)0;
             bool facilitySaved = (flags & DialogueDecisionSaveFacilityMask) != 0;
             float targetBlend = math.select(0f, 1f, facilitySaved);
             if (_dialogueChoiceVisualBlend < 0f)
@@ -3001,7 +3019,7 @@ namespace Hecton8.UI
         private void RecordSolvedDecryptionDialogueChoice()
         {
             SaveManager saveManager = _cachedSaveManager;
-            if (saveManager == null ||
+            if (!IsSaveManagerUsable(saveManager) ||
                 (saveManager.PlayerDialogueChoiceFlags & DialogueDecisionSaveFacilityMask) != 0)
             {
                 return;

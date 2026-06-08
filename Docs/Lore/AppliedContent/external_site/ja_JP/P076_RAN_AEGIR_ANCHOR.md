@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ran / Aegir Anchor"
+title: "Ran / Aegirアンカー"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ran / Aegir Anchor
+# Ran / Aegirアンカー
 
-JP LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below.
+Ran / AegirアンカーはHECTON-8の見え方を固定する。上は硬派SFの薄い日光、下は圧力と負債の敵地。
 
 ## Scanner
 
-JP LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
+K級星プレート。Ranは正常に燃える。AegirはSolより暗いが、ここの闇は深度、天候、負債から来る。
 
 ## Terminal
 
-JP LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR // 橙色矮星の照明は表面作業を支える。嵐の散乱、食の幾何、海の濁りが降下視認性を安全余白の下へ押し込む。
 
 ## Audio
 
-JP LOC HOLD: The star is not absent. It just cannot follow you down.
+星はある。ただ、あなたを追って下りては来られない。
 
 ## Field Note
 
-JP LOC HOLD: A real star is enough. The ocean does the rest.
+本物の星で十分だ。残りは海が行う。
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/ja_JP. -->

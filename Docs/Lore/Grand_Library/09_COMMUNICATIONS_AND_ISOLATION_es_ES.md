@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # EL APAGÓN DE COMUNICACIONES Y EL SILENCIO ORBITAL
 
 > **Fuente:** Manual de Operaciones del Transporte Orbital *Black Keel*, Sección 4.

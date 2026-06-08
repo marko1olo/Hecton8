@@ -23,6 +23,24 @@ namespace Hecton8.Audio
         /// </summary>
         public static HectonMusicDirectorAnchor ActiveRuntimeInstance => _activeRuntimeInstance;
 
+        public static bool TryResolveActiveRuntime(ref HectonMusicDirectorAnchor target)
+        {
+            HectonMusicDirectorAnchor active = _activeRuntimeInstance;
+            if (!IsLiveAnchor(active))
+                active = FindFirstLiveAnchor();
+
+            if (!IsLiveAnchor(active))
+            {
+                target = null;
+                return false;
+            }
+
+            if (!ReferenceEquals(target, active))
+                target = active;
+
+            return true;
+        }
+
         /// <summary>
         /// Authored config used by the music director in the current scene.
         /// </summary>
@@ -40,7 +58,7 @@ namespace Hecton8.Audio
             for (int i = 0; i < _activeAnchors.Count; i++)
             {
                 HectonMusicDirectorAnchor anchor = _activeAnchors[i];
-                if (anchor == null || anchor.gameObject == null)
+                if (!IsLiveAnchor(anchor))
                     continue;
 
                 if (anchor.gameObject.scene != scene)
@@ -82,15 +100,15 @@ namespace Hecton8.Audio
         private void OnDisable()
         {
             UnregisterAnchor(this);
-            if (_activeRuntimeInstance == this)
-                _activeRuntimeInstance = null;
+            if (ReferenceEquals(_activeRuntimeInstance, this))
+                RefreshActiveRuntimeInstance();
         }
 
         private void OnDestroy()
         {
             UnregisterAnchor(this);
-            if (_activeRuntimeInstance == this)
-                _activeRuntimeInstance = null;
+            if (ReferenceEquals(_activeRuntimeInstance, this))
+                RefreshActiveRuntimeInstance();
         }
 
         private static void RegisterAnchor(HectonMusicDirectorAnchor anchor)
@@ -117,6 +135,28 @@ namespace Hecton8.Audio
                 if (_activeAnchors[i] == anchor)
                     _activeAnchors.RemoveAt(i);
             }
+        }
+
+        private static void RefreshActiveRuntimeInstance()
+        {
+            _activeRuntimeInstance = FindFirstLiveAnchor();
+        }
+
+        private static HectonMusicDirectorAnchor FindFirstLiveAnchor()
+        {
+            for (int i = _activeAnchors.Count - 1; i >= 0; i--)
+            {
+                HectonMusicDirectorAnchor anchor = _activeAnchors[i];
+                if (IsLiveAnchor(anchor))
+                    return anchor;
+            }
+
+            return null;
+        }
+
+        private static bool IsLiveAnchor(HectonMusicDirectorAnchor anchor)
+        {
+            return anchor != null && anchor.gameObject != null && anchor.isActiveAndEnabled;
         }
     }
 }

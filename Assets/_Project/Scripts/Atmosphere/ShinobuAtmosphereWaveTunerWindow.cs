@@ -158,9 +158,7 @@ namespace Hecton8.Atmosphere.Editor
             if (ShinobuOceanSurfaceAtmosphereRuntime.IsWaveParameterMutationLocked)
                 return "GlobalDataVault ocean buffers active. Wave parameter job owns the mutation lease; retry next frame.";
 
-            if (!ShinobuOceanSurfaceAtmosphereRuntime.TryGetReadbackDebugSnapshot(
-                    out _,
-                    out _,
+            if (!ShinobuOceanSurfaceAtmosphereRuntime.TryGetTelemetrySnapshot(
                     out NativeArray<OceanSurfaceTelemetryEntry>.ReadOnly telemetry) ||
                 telemetry.Length <= 0)
             {
@@ -172,7 +170,30 @@ namespace Hecton8.Atmosphere.Editor
                    latest.ReadbackLatencyFrames +
                    " frames, samples " +
                    latest.ReadbackSampleCount +
+                   ", flags " +
+                   ResolveTelemetryFlagStatusText(latest.Flags) +
                    ".";
+        }
+
+        private static string ResolveTelemetryFlagStatusText(uint flags)
+        {
+            if (flags == 0u)
+                return "ok";
+
+            string text = string.Empty;
+            AppendTelemetryFlag(ref text, flags, OceanSurfaceAtmosphereConstants.TelemetryFlagReadbackOrComputeBudget, "readback-budget");
+            AppendTelemetryFlag(ref text, flags, OceanSurfaceAtmosphereConstants.TelemetryFlagEmergencyWeatherFallback, "emergency-weather");
+            AppendTelemetryFlag(ref text, flags, OceanSurfaceAtmosphereConstants.TelemetryFlagDataVaultRehydrated, "data-vault-rehydrated");
+            AppendTelemetryFlag(ref text, flags, OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData, "missing-runtime-data");
+            return text.Length == 0 ? "unknown" : text;
+        }
+
+        private static void AppendTelemetryFlag(ref string text, uint flags, uint flag, string label)
+        {
+            if ((flags & flag) == 0u)
+                return;
+
+            text = text.Length == 0 ? label : text + "," + label;
         }
 
         private void RefreshFromVault()

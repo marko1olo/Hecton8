@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Quarantine Hold: Stale Air"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Quarantine Hold Stale Air
+# Quarantine Hold: Stale Air
 
-Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+Quarantine Hold is the quietest false exit. It does not need a villain in the room. The form says recovered alive, the air counter says ration active, and the next door opens only after contamination review, claimant challenge and insurance loss review.
 
-## Scanner
-
-You are alive, sealed, and still not free.
-
-## Terminal
-
-QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-The hatch opens only to another closed hatch.
-
-## Field Note
-
-This is the bureaucratic version of drowning.
+The outcome is cruel because it is defensible. No one has killed the witness. No one has destroyed the sample. The system simply makes every statement wait longer than the bodies ever had. The player survives the ocean and enters a sealed corridor built from procedure.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/en_US. -->

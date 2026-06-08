@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # BIOTA LOKAL: FLORA, FAUNA, DAN KOLAPS EKOLOGI
 
 > **Sumber:** PDA yang Dipulihkan, pod pendaratan kelas Styx yang diberi nama 'Lazarus'.  

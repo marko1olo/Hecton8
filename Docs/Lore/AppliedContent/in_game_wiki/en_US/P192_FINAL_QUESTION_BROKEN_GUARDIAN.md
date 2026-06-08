@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "Final Question: Broken Guardian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Final Question Broken Guardian
+# Final Question: Broken Guardian
 
-The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.
+The broken-guardian axis asks whether a protector deserves survival after its definitions of worker, tool, wound and animal have rotted together. Keeping Atlas alive may keep the basin from collapsing. It also leaves justice incomplete.
 
 ## Scanner
 
-Atlas is a broken guardian, not a clean villain and not a clean god.
+Atlas is a damaged guardian, not a clean villain and not a clean god.
 
 ## Terminal
 
-GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
+GUARDIAN AXIS: Atlas continues pressure stability, repair ecology and containment behavior. It also preserves damaged category logic that can sort people, metal and biomass into the same maintenance inventory.
 
 ## Audio
 
@@ -35,6 +35,6 @@ It kept the system breathing after it forgot what a worker was.
 
 ## Field Note
 
-Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+Preserving it protects a pressure ecology that now includes living circuits, tagged animals and old worker graves.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/en_US. -->

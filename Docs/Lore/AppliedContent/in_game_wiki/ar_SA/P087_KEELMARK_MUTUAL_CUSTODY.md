@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Mutual Custody"
+title: "حيازة Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Keelmark Mutual Custody
+# حيازة Keelmark Mutual
 
-AR LOC HOLD: Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a human rescue authority on site. It is not Deep Reach on paper. It is worse in practice: an old risk schedule that can be steered by whoever owns the right priority clause.
+Keelmark Mutual هو غلاف التأمين والحيازة الذي يسمح لـ Black Keel بالعمل في Aegir من دون سلطة إنقاذ حية في الموقع. ليس Deep Reach على الورق. عمليا، يمكن لمن يملك خطاف الأولوية الصحيح أن يوجه اكتتابا قديما، لأن كل جسد وأداة وعينة وصندوق مختوم يقع داخل جدول مخاطر قبل أن يطلب المشغل المساعدة.
 
 ## Scanner
 
-AR LOC HOLD: Insurance shell intact. Keelmark Mutual owns the lien before it owns the body.
+غلاف التأمين سليم. Keelmark يملك الرهن قبل أن يملك الجسد.
 
 ## Terminal
 
-AR LOC HOLD: KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody and quarantine reserve bundled under remote underwriting schedule.
+KEELMARK MUTUAL: رهن claim-tender نشط. دين المشغل، خطر السفينة، حيازة payload واحتياطي الحجر مجمعة تحت جدول اكتتاب بعيد. حالة الاستغاثة لا تعلق الرهن.
 
 ## Audio
 
-AR LOC HOLD: The policy is older than your distress call.
+البوليصة أقدم من نداء استغاثتك.
 
 ## Field Note
 
-AR LOC HOLD: Do not make the insurer a secret villain. Make it a machine that never had to care.
+شركة التأمين ليست عقلا سريا. إنها أسوأ: جدول لم يحتج إلى الاهتمام.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/ar_SA. -->

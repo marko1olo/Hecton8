@@ -23,10 +23,17 @@ namespace Hecton8.World
 
             EnsureRelayDirector(runtimeOwner);
 
-            WorldZoneDirector runtimeWorldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
-            BiomeMatrixDirector runtimeBiomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
-            if (runtimeWorldZoneDirector == null || runtimeBiomeMatrixDirector == null)
+            WorldZoneDirector runtimeWorldZoneDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref runtimeWorldZoneDirector);
+            BiomeMatrixDirector runtimeBiomeMatrixDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref runtimeBiomeMatrixDirector);
+            IDepthZoneReadModel runtimeDepthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            if (runtimeWorldZoneDirector == null &&
+                runtimeBiomeMatrixDirector == null &&
+                runtimeDepthZoneReadModel == null)
+            {
                 return;
+            }
 
             EnsureReadabilityDirector(runtimeOwner, runtimeWorldZoneDirector, runtimeBiomeMatrixDirector);
         }
@@ -36,7 +43,8 @@ namespace Hecton8.World
             WorldZoneDirector runtimeWorldZoneDirector,
             BiomeMatrixDirector runtimeBiomeMatrixDirector)
         {
-            WorldReadabilityDirector existingDirector = WorldReadabilityDirector.ActiveRuntimeInstance;
+            WorldReadabilityDirector existingDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveWorldReadabilityDirector(ref existingDirector);
             if (existingDirector != null)
             {
                 existingDirector.ApplyRuntimeDependencies(runtimeWorldZoneDirector, runtimeBiomeMatrixDirector);
@@ -57,7 +65,8 @@ namespace Hecton8.World
 
         private static void EnsureRelayDirector(GameObject runtimeOwner)
         {
-            EmergencyServiceRelayDirector existingDirector = EmergencyServiceRelayDirector.ActiveRuntimeInstance;
+            EmergencyServiceRelayDirector existingDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveEmergencyServiceRelayDirector(ref existingDirector);
             if (existingDirector != null)
                 return;
 

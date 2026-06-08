@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.deep_colony
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Custodia de herramienta de salvamento"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Custodia de herramienta de salvamento
 
-Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder.
+En HECTON-8, una herramienta puede ser equipo de supervivencia y testigo contractual a la vez. Los registros de custodia de salvage atan cortes, reparaciones y muestras a tokens de claim, haciendo que una acción útil forme parte de pruebas, deuda o presión de pago posteriores.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+El muelle de herramienta contiene un registro de custodia sellado. Último corte, reparación y bolsa de muestra ligados a un token de claim Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: uso de cortador aceptado bajo salvage claim. Acción de reparación atestiguada. Derechos de muestra anexos a token Keelmark Mutual. Exportación de pruebas en conflicto con ruta de pago material.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Cada corte útil deja un testigo.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Un cortador puede salvar tu aire y vender tus manos en el mismo trazo. Revisa qué registra antes de llamarlo tuyo.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/es_ES. -->

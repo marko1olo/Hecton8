@@ -458,13 +458,14 @@ namespace Hecton8.Bootstrap
             InputDispatcher = 17,
             PlayerRuntimeContextService = 18,
             PlayerInventoryManager = 19,
-            PlayerSensoryManager = 20,
-            PowerGridManager = 21,
-            ConstructionManager = 22,
-            ConnectionSplineBatchRenderer = 23,
-            BeaconNetworkSystem = 24,
-            ModWorldPersistenceManager = 25,
-            Count = 26,
+            PlayerActionRuntime = 20,
+            PlayerSensoryManager = 21,
+            PowerGridManager = 22,
+            ConstructionManager = 23,
+            ConnectionSplineBatchRenderer = 24,
+            BeaconNetworkSystem = 25,
+            ModWorldPersistenceManager = 26,
+            Count = 27,
         }
 
         private static readonly string[] _bootstrapDependencyNodeNames =
@@ -489,6 +490,7 @@ namespace Hecton8.Bootstrap
             "InputDispatcher",
             "PlayerRuntimeContextService",
             "PlayerInventoryManager",
+            "PlayerActionRuntime",
             "PlayerSensoryManager",
             "PowerGridManager",
             "ConstructionManager",
@@ -585,6 +587,7 @@ namespace Hecton8.Bootstrap
         private bool _slowTickableRegistered;
         private bool _hotSwapRegistered;
         private bool _bootstrapStartWatchdogActive;
+        private bool _runtimeOwnerAborted;
         private double _nextServiceHeartbeatPollTime;
         private WorldProceduralScatterDirector _worldProceduralScatterDirector;
         private int _backgroundDomainHandshakeState;
@@ -631,7 +634,7 @@ namespace Hecton8.Bootstrap
 
         private static GameBootstrapper s_activeRuntimeInstance;
 
-        public static GameBootstrapper ActiveInstance => s_activeRuntimeInstance;
+        public static GameBootstrapper ActiveInstance => ResolveUsableRuntime();
 
         public static GameObject CurrentPlayerObject => BootstrapState.CurrentPlayerObject;
 
@@ -665,7 +668,8 @@ namespace Hecton8.Bootstrap
 
         public static bool TryValidateSceneRootBudget(string sceneName, string context)
         {
-            if (string.IsNullOrEmpty(sceneName))
+            sceneName = NormalizeSceneLoadName(sceneName);
+            if (sceneName.Length == 0)
                 return true;
 
             Scene scene = SceneManager.GetSceneByName(sceneName);
@@ -1444,14 +1448,16 @@ namespace Hecton8.Bootstrap
 
         private void Awake()
         {
-            GameBootstrapper runtimeBootstrapper = s_activeRuntimeInstance ?? GlobalRegistry.BootstrapperRuntime;
-            if (runtimeBootstrapper != null && runtimeBootstrapper != this)
+            GameBootstrapper runtimeBootstrapper = ResolveUsableRuntime();
+            if (!ReferenceEquals(runtimeBootstrapper, null) && !ReferenceEquals(runtimeBootstrapper, this))
             {
-                Destroy(this);
+                AbortDuplicateRuntimeOwner(destroyComponent: true);
                 return;
             }
 
-            ClaimRuntimeBootstrapInstance(this);
+            if (!ClaimRuntimeBootstrapInstance(this))
+                return;
+
             RuntimeShaderReferenceCatalog.Register(runtimeShaderReferenceCatalog);
             CacheBootstrapShaderWarmupDumpPathCold();
 
@@ -1469,6 +1475,9 @@ namespace Hecton8.Bootstrap
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _nextServiceHeartbeatPollTime = 0d;
             TryRegisterHotSwapListener();
             TryRegisterBootstrapSlowTickable();
@@ -1477,6 +1486,9 @@ namespace Hecton8.Bootstrap
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterHotSwapListener();
             _bootstrapStartWatchdogActive = false;
             if (!_slowTickableRegistered)
@@ -1488,11 +1500,17 @@ namespace Hecton8.Bootstrap
 
         private void Start()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             EnsureBootstrapProgressAfterLifecycleResume();
         }
 
         private void EnsureBootstrapProgressAfterLifecycleResume()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!Application.isPlaying)
                 return;
 
@@ -1510,6 +1528,12 @@ namespace Hecton8.Bootstrap
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+            {
+                ClearRuntimeMirrorIfOwnedBy(this);
+                return;
+            }
+
             TryUnregisterHotSwapListener();
 #if UNITY_ADDRESSABLES_EXIST
             ReleaseAddressableUIPrefabs();
@@ -1528,6 +1552,9 @@ namespace Hecton8.Bootstrap
 
         public void SlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_isBootstrapComplete || _bootstrapExecutionOrderCount <= 0)
                 return;
 
@@ -1580,6 +1607,9 @@ namespace Hecton8.Bootstrap
 
         private void TryRegisterBootstrapSlowTickable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!Application.isPlaying || _slowTickableRegistered || GlobalRegistry.Dispatcher == null)
                 return;
 
@@ -1591,6 +1621,9 @@ namespace Hecton8.Bootstrap
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 RebindBootstrapSchedulerVaults(currentService as IDataVault);
@@ -1775,6 +1808,9 @@ namespace Hecton8.Bootstrap
         /// </summary>
         public void BeginBootstrap()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!ClaimRuntimeBootstrapInstance(this))
                 return;
 
@@ -2092,14 +2128,13 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.Phase == GlobalRegistry.RegistryPhase.Uninitialized)
                 GlobalRegistry.BeginRegistration();
 
-            GameBootstrapper registeredBootstrapper = GlobalRegistry.BootstrapperRuntime;
+            GameBootstrapper registeredBootstrapper = ResolveUsableRuntime();
             if (!ReferenceEquals(registeredBootstrapper, null) &&
                 !ReferenceEquals(registeredBootstrapper, instance) &&
-                (registeredBootstrapper == null ||
-                 registeredBootstrapper.gameObject == null ||
-                 ReferenceEquals(registeredBootstrapper.gameObject, instance.gameObject)))
+                ReferenceEquals(registeredBootstrapper.gameObject, instance.gameObject))
             {
-                GlobalRegistry.ClearBootstrapperRuntime(null);
+                registeredBootstrapper.AbortDuplicateRuntimeOwner(destroyComponent: false);
+                ClearRuntimeMirrorIfOwnedBy(registeredBootstrapper);
                 registeredBootstrapper = null;
             }
 
@@ -2107,21 +2142,81 @@ namespace Hecton8.Bootstrap
                 !ReferenceEquals(registeredBootstrapper, instance))
             {
                 s_activeRuntimeInstance = registeredBootstrapper;
-                instance._bootstrapRunInProgress = false;
-                instance._sceneActivationRunInProgress = false;
-                instance._sceneActivationRequested = false;
-                instance._sceneActivationStarted = false;
-                instance._slowTickableRegistered = false;
-                instance._bootstrapStartWatchdogActive = false;
-                instance.enabled = false;
+                instance.AbortDuplicateRuntimeOwner(destroyComponent: false);
                 return false;
             }
 
+            registeredBootstrapper = GlobalRegistry.BootstrapperRuntime;
+            if (!ReferenceEquals(registeredBootstrapper, null) &&
+                !ReferenceEquals(registeredBootstrapper, instance))
+            {
+                registeredBootstrapper.AbortDuplicateRuntimeOwner(destroyComponent: false);
+                ClearRuntimeMirrorIfOwnedBy(registeredBootstrapper);
+            }
+
+            instance._runtimeOwnerAborted = false;
             s_activeRuntimeInstance = instance;
             if (GlobalRegistry.Phase == GlobalRegistry.RegistryPhase.Registering)
                 GlobalRegistry.RegisterBootstrapperRuntime(instance);
 
-            return true;
+            bool ownsRuntime =
+                ReferenceEquals(s_activeRuntimeInstance, instance) &&
+                (ReferenceEquals(GlobalRegistry.BootstrapperRuntime, instance) ||
+                 GlobalRegistry.Phase != GlobalRegistry.RegistryPhase.Registering);
+            instance._runtimeOwnerAborted = !ownsRuntime;
+            if (instance._runtimeOwnerAborted)
+                instance.AbortDuplicateRuntimeOwner(destroyComponent: false);
+            return ownsRuntime;
+        }
+
+        private void AbortDuplicateRuntimeOwner(bool destroyComponent)
+        {
+            _runtimeOwnerAborted = true;
+            _bootstrapRunInProgress = false;
+            _sceneActivationRunInProgress = false;
+            _sceneActivationRequested = false;
+            _sceneActivationStarted = false;
+            _slowTickableRegistered = false;
+            _bootstrapStartWatchdogActive = false;
+            enabled = false;
+            if (destroyComponent)
+                Destroy(this);
+        }
+
+        private static GameBootstrapper ResolveUsableRuntime()
+        {
+            GameBootstrapper runtime = s_activeRuntimeInstance;
+            if (IsBootstrapperRuntimeUsable(runtime))
+                return runtime;
+
+            ClearRuntimeMirrorIfOwnedBy(runtime);
+
+            runtime = GlobalRegistry.BootstrapperRuntime;
+            if (IsBootstrapperRuntimeUsable(runtime))
+            {
+                s_activeRuntimeInstance = runtime;
+                return runtime;
+            }
+
+            ClearRuntimeMirrorIfOwnedBy(runtime);
+            return null;
+        }
+
+        private static bool IsBootstrapperRuntimeUsable(GameBootstrapper runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
+        }
+
+        private static void ClearRuntimeMirrorIfOwnedBy(GameBootstrapper runtime)
+        {
+            if (ReferenceEquals(runtime, null))
+                return;
+
+            GlobalRegistry.ClearBootstrapperRuntime(runtime);
+            if (ReferenceEquals(s_activeRuntimeInstance, runtime))
+                s_activeRuntimeInstance = null;
         }
 
         private void RecoverReloadDisabledStaleBootstrapRun()
@@ -2838,9 +2933,8 @@ namespace Hecton8.Bootstrap
 
         private static async Awaitable<bool> WarmObjectPoolPresetsAsync(CancellationToken ct)
         {
-            ObjectPoolManager objectPoolManager = GlobalRegistry.ObjectPool;
-            if (objectPoolManager == null)
-                objectPoolManager = ObjectPoolManager.ActiveRuntimeInstance;
+            ObjectPoolManager objectPoolManager = null;
+            ObjectPoolManager.TryResolveActiveRuntime(ref objectPoolManager);
 
             if (objectPoolManager == null || objectPoolManager.AreWarmupPresetsCompleted)
                 return true;
@@ -3071,12 +3165,7 @@ namespace Hecton8.Bootstrap
             bool scenePublicationGateOpen = false;
             try
             {
-                if (string.IsNullOrWhiteSpace(sceneName) ||
-                    string.Equals(sceneName, BootstrapSceneName, StringComparison.Ordinal) ||
-                    string.Equals(sceneName, MainMenuSceneName, StringComparison.Ordinal))
-                {
-                    sceneName = DefaultGameplaySceneName;
-                }
+                sceneName = ResolveBootstrapGameplaySceneName(sceneName);
 
                 _sceneActivationStarted = false;
                 _debugSceneActivationCompleted = false;
@@ -3152,15 +3241,7 @@ namespace Hecton8.Bootstrap
             if (!GameStartContextHolder.TryConsumePendingTargetSceneName(out string pendingSceneName))
                 return false;
 
-            if (string.IsNullOrWhiteSpace(pendingSceneName) ||
-                string.Equals(pendingSceneName, BootstrapSceneName, StringComparison.Ordinal) ||
-                string.Equals(pendingSceneName, MainMenuSceneName, StringComparison.Ordinal))
-            {
-                sceneName = DefaultGameplaySceneName;
-                return true;
-            }
-
-            sceneName = pendingSceneName;
+            sceneName = ResolveBootstrapGameplaySceneName(pendingSceneName);
             return true;
         }
 
@@ -3176,6 +3257,7 @@ namespace Hecton8.Bootstrap
 
         private static string ResolveSceneLoadPath(string sceneName)
         {
+            sceneName = NormalizeSceneLoadName(sceneName);
             if (string.Equals(sceneName, BootstrapSceneName, StringComparison.Ordinal))
                 return BootstrapScenePath;
             if (string.Equals(sceneName, MainMenuSceneName, StringComparison.Ordinal))
@@ -3187,8 +3269,35 @@ namespace Hecton8.Bootstrap
             return sceneName;
         }
 
+        private static string ResolveBootstrapGameplaySceneName(string sceneName)
+        {
+            sceneName = NormalizeSceneLoadName(sceneName);
+            if (sceneName.Length == 0 ||
+                string.Equals(sceneName, BootstrapSceneName, StringComparison.Ordinal) ||
+                string.Equals(sceneName, MainMenuSceneName, StringComparison.Ordinal))
+            {
+                return DefaultGameplaySceneName;
+            }
+
+            return sceneName;
+        }
+
+        private static string NormalizeSceneLoadName(string sceneName)
+        {
+            return string.IsNullOrWhiteSpace(sceneName) ? string.Empty : sceneName.Trim();
+        }
+
         private static AsyncOperation LoadProductionSceneAsync(string scenePath, LoadSceneMode mode)
         {
+            if (string.IsNullOrWhiteSpace(scenePath))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[GameBootstrapper] Refusing to load a production scene from an empty scene path.");
+#endif
+                return null;
+            }
+
+            scenePath = scenePath.Trim();
             int buildIndex = SceneUtility.GetBuildIndexByScenePath(scenePath);
             return buildIndex >= 0
                 ? SceneManager.LoadSceneAsync(buildIndex, mode)
@@ -3293,8 +3402,8 @@ namespace Hecton8.Bootstrap
             if (userOptionsPersistence != null && !ReferenceEquals(GlobalRegistry.UserOptions, userOptionsPersistence))
                 GlobalRegistry.RegisterUserOptionsRuntime(userOptionsPersistence);
 
-            RebindingManager rebindingManager = RebindingManager.ActiveRuntimeInstance;
-            if (rebindingManager == null)
+            RebindingManager rebindingManager = null;
+            if (!RebindingManager.TryResolveActiveRuntime(ref rebindingManager))
             {
                 GameObject rebindingRoot = new GameObject("[RebindingManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned input binding service - owner: GameBootstrapper
                 rebindingManager = rebindingRoot.AddComponent<RebindingManager>();
@@ -3303,8 +3412,8 @@ namespace Hecton8.Bootstrap
             rebindingManager.BindNativeInputManager(inputManager);
             PersistRuntimeService(rebindingManager);
 
-            AccessibilitySettings accessibilitySettings = AccessibilitySettings.ActiveRuntimeInstance;
-            if (accessibilitySettings == null)
+            AccessibilitySettings accessibilitySettings = null;
+            if (!AccessibilitySettings.TryResolveActiveRuntime(ref accessibilitySettings))
             {
                 GameObject accessibilityRoot = new GameObject("[AccessibilitySettings]"); // COLD ALLOC: GameObject[1] - bootstrap-owned accessibility cbuffer bridge - owner: GameBootstrapper
                 accessibilitySettings = accessibilityRoot.AddComponent<AccessibilitySettings>();
@@ -4869,13 +4978,27 @@ namespace Hecton8.Bootstrap
             if (!TryEnsureBootstrapShaderWarmupDumpDirectoryCold(path))
                 return;
 
-            fixed (byte* source = scratch)
+            try
             {
-                if (!AsyncWriteManager.WriteAll(tempPath, source, byteCount, out _))
-                    return;
-            }
+                fixed (byte* source = scratch)
+                {
+                    if (!AsyncWriteManager.WriteAll(tempPath, source, byteCount, out _))
+                        return;
+                }
 
-            TryPromoteBootstrapShaderWarmupDump(tempPath, path);
+                if (!AsyncWriteManager.TryGetFileLength(tempPath, out long tempDumpBytes, out _) ||
+                    tempDumpBytes != byteCount ||
+                    !AsyncWriteManager.FlushCriticalSavePath(tempPath, tempDumpBytes, out _))
+                {
+                    return;
+                }
+
+                TryPromoteBootstrapShaderWarmupDump(tempPath, path, tempDumpBytes);
+            }
+            finally
+            {
+                TryDeleteBootstrapShaderWarmupDumpTemp(tempPath);
+            }
         }
 
         private void CacheBootstrapShaderWarmupDumpPathCold()
@@ -4948,17 +5071,34 @@ namespace Hecton8.Bootstrap
             return string.IsNullOrEmpty(finalPath) ? string.Empty : finalPath + ".tmp";
         }
 
-        private static bool TryPromoteBootstrapShaderWarmupDump(string tempPath, string finalPath)
+        private static bool TryPromoteBootstrapShaderWarmupDump(string tempPath, string finalPath, long expectedByteCount)
         {
-            if (string.IsNullOrEmpty(tempPath) || string.IsNullOrEmpty(finalPath) || !File.Exists(tempPath))
+            if (string.IsNullOrEmpty(tempPath) || string.IsNullOrEmpty(finalPath) || expectedByteCount <= 0L || !File.Exists(tempPath))
                 return false;
 
             try
             {
-                if (File.Exists(finalPath))
-                    File.Replace(tempPath, finalPath, null);
-                else
-                    File.Move(tempPath, finalPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(finalPath);
+                try
+                {
+                    if (File.Exists(finalPath))
+                        File.Replace(tempPath, finalPath, null);
+                    else
+                        File.Move(tempPath, finalPath);
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                    AsyncWriteManager.InvalidateCachedReadWindows(finalPath);
+                }
+
+                if (!AsyncWriteManager.TryGetFileLength(finalPath, out long promotedDumpBytes, out _) ||
+                    promotedDumpBytes != expectedByteCount ||
+                    !AsyncWriteManager.FlushCriticalSavePath(finalPath, promotedDumpBytes, out _))
+                {
+                    return false;
+                }
 
                 return true;
             }
@@ -4977,6 +5117,42 @@ namespace Hecton8.Bootstrap
             catch (NotSupportedException)
             {
                 return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                return false;
+            }
+        }
+
+        private static void TryDeleteBootstrapShaderWarmupDumpTemp(string tempPath)
+        {
+            if (string.IsNullOrEmpty(tempPath))
+                return;
+
+            AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            catch (IOException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (System.Security.SecurityException)
+            {
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
             }
         }
 
@@ -5133,7 +5309,8 @@ namespace Hecton8.Bootstrap
                         if (GlobalRegistry.DataVault == null)
                             return;
 
-                        EcosystemDirector director = EcosystemDirector.ActiveRuntimeInstance;
+                        EcosystemDirector director = null;
+                        WorldRuntimeReferenceUtility.TryResolveEcosystemDirector(ref director);
                         if (director == null)
                             director = EnsureEcosystemDirectorRegistered();
 
@@ -5218,6 +5395,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.InputDispatcher: return GlobalRegistry.RegisteredInput;
                 case BootstrapDependencyNode.PlayerRuntimeContextService: return GlobalRegistry.Player;
                 case BootstrapDependencyNode.PlayerInventoryManager: return GlobalRegistry.PlayerInventory;
+                case BootstrapDependencyNode.PlayerActionRuntime: return GlobalRegistry.PlayerActions;
                 case BootstrapDependencyNode.PlayerSensoryManager: return GlobalRegistry.PlayerSensory;
                 case BootstrapDependencyNode.PowerGridManager: return GlobalRegistry.PowerGrid;
                 case BootstrapDependencyNode.ConstructionManager: return GlobalRegistry.ConstructionRuntime;
@@ -5259,6 +5437,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.InputDispatcher:
                 case BootstrapDependencyNode.PlayerRuntimeContextService:
                 case BootstrapDependencyNode.PlayerInventoryManager:
+                case BootstrapDependencyNode.PlayerActionRuntime:
                 case BootstrapDependencyNode.PlayerSensoryManager:
                 case BootstrapDependencyNode.BeaconNetworkSystem:
                     return BootstrapPhase.Player;
@@ -5449,6 +5628,17 @@ namespace Hecton8.Bootstrap
                     return IsBootstrapDependencyNodeReady(node);
                 }
 
+                case BootstrapDependencyNode.PlayerActionRuntime:
+                {
+                    PlayerActionController playerActionController = PlayerActionController.EnsureRuntimeInstance();
+                    if (playerActionController == null)
+                        return false;
+
+                    PersistRuntimeService(playerActionController);
+                    playerActionController.InitializeService();
+                    return IsBootstrapDependencyNodeReady(node);
+                }
+
                 case BootstrapDependencyNode.PlayerSensoryManager:
                 {
                     PlayerSensoryManager playerSensoryManager = PlayerSensoryManager.EnsureRuntimeInstance();
@@ -5627,11 +5817,15 @@ namespace Hecton8.Bootstrap
             return saveManager;
         }
 
+        private static bool IsSaveManagerUsable(SaveManager saveManager)
+        {
+            return saveManager != null && saveManager.IsInitialized;
+        }
+
         private static ObjectPoolManager EnsureObjectPoolServiceRegistered()
         {
-            ObjectPoolManager objectPoolManager = GlobalRegistry.ObjectPool;
-            if (objectPoolManager == null)
-                objectPoolManager = ObjectPoolManager.ActiveRuntimeInstance;
+            ObjectPoolManager objectPoolManager = null;
+            ObjectPoolManager.TryResolveActiveRuntime(ref objectPoolManager);
 
             if (objectPoolManager == null)
             {
@@ -5785,8 +5979,8 @@ namespace Hecton8.Bootstrap
 
         private static PrefabRegistry EnsurePrefabRegistry()
         {
-            PrefabRegistry registry = PrefabRegistry.ActiveRuntimeInstance;
-            if (registry != null)
+            PrefabRegistry registry = null;
+            if (PrefabRegistry.TryResolveActiveRuntime(ref registry))
             {
                 PersistRuntimeService(registry);
                 return registry;
@@ -5883,7 +6077,8 @@ namespace Hecton8.Bootstrap
 
         private static EcosystemDirector EnsureEcosystemDirectorRegistered()
         {
-            EcosystemDirector director = EcosystemDirector.ActiveRuntimeInstance;
+            EcosystemDirector director = null;
+            WorldRuntimeReferenceUtility.TryResolveEcosystemDirector(ref director);
             if (director == null)
             {
                 GameObject runtimeRoot = new GameObject("[EcosystemDirector]"); // COLD ALLOC: GameObject[1] - bootstrap-owned data-only ecosystem simulation owner - owner: GameBootstrapper
@@ -5902,7 +6097,8 @@ namespace Hecton8.Bootstrap
             if (registeredFaunaSimulation != null && registeredFaunaSimulation.IsReady)
                 return true;
 
-            FaunaDirector faunaDirector = FaunaDirector.ActiveRuntimeInstance;
+            FaunaDirector faunaDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveFaunaDirector(ref faunaDirector);
             if (faunaDirector != null)
                 faunaDirector.InitializeService();
 
@@ -5923,8 +6119,8 @@ namespace Hecton8.Bootstrap
                 return registeredDispatcher;
             }
 
-            InputDispatcher dispatcher = InputDispatcher.ActiveRuntimeInstance;
-            if (dispatcher == null)
+            InputDispatcher dispatcher = null;
+            if (!InputDispatcher.TryResolveActiveRuntime(ref dispatcher))
             {
                 GameObject runtimeRoot = new GameObject("[InputDispatcher]"); // COLD ALLOC: GameObject[1] - bootstrap-owned input dispatcher root - owner: GameBootstrapper
                 dispatcher = runtimeRoot.AddComponent<InputDispatcher>();
@@ -6113,7 +6309,7 @@ namespace Hecton8.Bootstrap
 
         private static bool IsBootstrapAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -6731,6 +6927,9 @@ namespace Hecton8.Bootstrap
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     node = BootstrapDependencyNode.PlayerInventoryManager;
                     return true;
+                case GlobalRegistryServiceSlot.PlayerActionRuntime:
+                    node = BootstrapDependencyNode.PlayerActionRuntime;
+                    return true;
                 case GlobalRegistryServiceSlot.PlayerSensory:
                     node = BootstrapDependencyNode.PlayerSensoryManager;
                     return true;
@@ -7043,15 +7242,16 @@ namespace Hecton8.Bootstrap
                 allCritical = false;
             }
 
-            if (PrefabRegistry.ActiveRuntimeInstance == null)
+            PrefabRegistry prefabRegistry = null;
+            if (!PrefabRegistry.TryResolveActiveRuntime(ref prefabRegistry))
             {
                 Debug.LogError("[GameBootstrapper] PrefabRegistry not found.");
                 allCritical = false;
             }
 
-            if ((GlobalRegistry.Save as SaveManager) == null)
+            if (!IsSaveManagerUsable(GlobalRegistry.Save as SaveManager))
             {
-                Debug.LogError("[GameBootstrapper] SaveManager not found.");
+                Debug.LogError("[GameBootstrapper] SaveManager not found or not initialized.");
                 allCritical = false;
             }
 
@@ -7104,7 +7304,7 @@ namespace Hecton8.Bootstrap
         private async Awaitable LoadOrNewGameAsync()
         {
             SaveManager save = GlobalRegistry.Save as SaveManager;
-            if (save == null)
+            if (!IsSaveManagerUsable(save))
             {
                 _isLoadingSave = false;
                 InitNewGame();
@@ -7127,20 +7327,24 @@ namespace Hecton8.Bootstrap
                 return;
             }
 
-            if (!save.SaveExists(context.TargetSaveSlot))
+            if (!SaveManager.TryResolveSafeSlotName(context.TargetSaveSlot, out string targetSaveSlot))
             {
-                _isLoadingSave = false;
-                InitNewGame();
+                StartNewGameFromRejectedLoadContext();
+                return;
+            }
+
+            if (!save.SaveExists(targetSaveSlot))
+            {
+                StartNewGameFromRejectedLoadContext();
                 return;
             }
 
             try
             {
-                await save.LoadGameAsync(context.TargetSaveSlot);
+                await save.LoadGameAsync(targetSaveSlot);
                 if (!save.LastOperationSucceeded)
                 {
-                    _isLoadingSave = false;
-                    InitNewGame();
+                    StartNewGameFromRejectedLoadContext();
                     return;
                 }
 
@@ -7149,9 +7353,15 @@ namespace Hecton8.Bootstrap
             catch (Exception)
             {
                 Debug.LogError("[GameBootstrapper] Save load failed.");
-                _isLoadingSave = false;
-                InitNewGame();
+                StartNewGameFromRejectedLoadContext();
             }
+        }
+
+        private void StartNewGameFromRejectedLoadContext()
+        {
+            GameStartContextHolder.Current = GameStartContext.CreateNewGame();
+            _isLoadingSave = false;
+            InitNewGame();
         }
 
         private void InitNewGame()
@@ -7167,15 +7377,18 @@ namespace Hecton8.Bootstrap
 
         private async Awaitable WaitForWorldReadyAsync(CancellationToken ct)
         {
-            ScavengePopulator populator = GlobalRegistry.ScavengePopulator;
-            if (populator == null)
+            ScavengePopulator populator = null;
+            if (!WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref populator))
                 return;
 
             int lastPendingCount = int.MaxValue;
             int stagnantPollCount = 0;
-            while (populator.PendingSpawnCount > WorldReadyThreshold)
+            while (WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref populator))
             {
                 int pendingCount = populator.PendingSpawnCount;
+                if (pendingCount <= WorldReadyThreshold)
+                    return;
+
                 if (pendingCount < lastPendingCount)
                 {
                     lastPendingCount = pendingCount;
@@ -7642,7 +7855,8 @@ namespace Hecton8.Bootstrap
 
         private static bool TryResolveProductionScatterDirector(out WorldProceduralScatterDirector director)
         {
-            director = WorldProceduralScatterDirector.ActiveRuntimeInstance;
+            director = null;
+            WorldRuntimeReferenceUtility.TryResolveWorldProceduralScatterDirector(ref director);
             if (director != null && !IsTemporaryRuntimeShellObject(director.gameObject))
                 return true;
 
@@ -7650,7 +7864,9 @@ namespace Hecton8.Bootstrap
             for (int i = 0; i < registeredDirectorCount; i++)
             {
                 WorldProceduralScatterDirector candidate = WorldProceduralScatterDirector.GetRegisteredDirectorAt(i);
-                if (candidate == null || IsTemporaryRuntimeShellObject(candidate.gameObject))
+                if (candidate == null ||
+                    !candidate.isActiveAndEnabled ||
+                    IsTemporaryRuntimeShellObject(candidate.gameObject))
                     continue;
 
                 director = candidate;
@@ -7689,7 +7905,7 @@ namespace Hecton8.Bootstrap
                 return false;
 
             string scenePath = scene.path;
-            if (string.IsNullOrEmpty(scenePath))
+            if (string.IsNullOrWhiteSpace(scenePath))
             {
                 Debug.LogError("[GameBootstrapper] Dirty editor scene rejected, but scene has no disk path.");
                 return true;
@@ -7714,7 +7930,7 @@ namespace Hecton8.Bootstrap
 
             string scenePath = _pendingDirtySceneReloadPath;
             _pendingDirtySceneReloadPath = null;
-            if (!string.IsNullOrEmpty(scenePath))
+            if (!string.IsNullOrWhiteSpace(scenePath))
                 UnityEditor.SceneManagement.EditorSceneManager.OpenScene(scenePath, UnityEditor.SceneManagement.OpenSceneMode.Single);
         }
 #endif
@@ -7896,7 +8112,8 @@ namespace Hecton8.Bootstrap
             WriteUInt64(data, 20, unchecked((ulong)DateTime.UtcNow.Ticks));
             data[28] = _bootStateSafeModeRequested ? (byte)1 : (byte)0;
             data[29] = (byte)GlobalRegistry.ActiveBootProfile;
-            AsyncWriteManager.WriteAll(absolutePath, data, BootStateRecordBytes, out _);
+            if (AsyncWriteManager.WriteAll(absolutePath, data, BootStateRecordBytes, out _))
+                _ = AsyncWriteManager.FlushCriticalSavePath(absolutePath, BootStateRecordBytes, out _);
         }
 
         private static uint CalculateRegistryActiveServiceTypeHash()
@@ -7948,6 +8165,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.InputDispatcher: return GlobalRegistryServiceSlot.Input;
                 case BootstrapDependencyNode.PlayerRuntimeContextService: return GlobalRegistryServiceSlot.Player;
                 case BootstrapDependencyNode.PlayerInventoryManager: return GlobalRegistryServiceSlot.PlayerInventory;
+                case BootstrapDependencyNode.PlayerActionRuntime: return GlobalRegistryServiceSlot.PlayerActionRuntime;
                 case BootstrapDependencyNode.PlayerSensoryManager: return GlobalRegistryServiceSlot.PlayerSensory;
                 case BootstrapDependencyNode.PowerGridManager: return GlobalRegistryServiceSlot.PowerGrid;
                 case BootstrapDependencyNode.ConstructionManager: return GlobalRegistryServiceSlot.Logistics;
@@ -8044,7 +8262,8 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.WorldGen != null)
                 return;
 
-            WorldProceduralScatterDirector director = WorldProceduralScatterDirector.ActiveRuntimeInstance;
+            WorldProceduralScatterDirector director = null;
+            WorldRuntimeReferenceUtility.TryResolveWorldProceduralScatterDirector(ref director);
             if (director != null)
                 GlobalRegistry.RegisterWorldGenService(director);
         }
@@ -8054,7 +8273,8 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.EncounterDirector != null)
                 return;
 
-            HectonDirectorAI director = HectonDirectorAI.ActiveRuntimeInstance;
+            HectonDirectorAI director = null;
+            HectonDirectorAI.TryResolveActiveRuntime(ref director);
             if (director != null)
                 GlobalRegistry.RegisterEncounterDirectorService(director);
         }
@@ -8074,7 +8294,8 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.ProceduralSwayDirector != null)
                 return;
 
-            FloraInteractionManager manager = FloraInteractionManager.ActiveRuntimeInstance;
+            FloraInteractionManager manager = null;
+            WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref manager);
             if (manager != null)
                 GlobalRegistry.RegisterProceduralSwayDirector(manager);
         }
@@ -8209,7 +8430,8 @@ namespace Hecton8.Bootstrap
             byte* scratch = stackalloc byte[byteCount];
             WriteFatalBootstrapMarker(scratch);
 
-            AsyncWriteManager.WriteAll(absolutePath, scratch, byteCount, out _);
+            if (AsyncWriteManager.WriteAll(absolutePath, scratch, byteCount, out _))
+                _ = AsyncWriteManager.FlushCriticalSavePath(absolutePath, byteCount, out _);
         }
 
         private static unsafe void WriteFatalBootstrapMarker(byte* scratch)

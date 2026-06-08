@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "衝突で裂けた月"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# 衝突で裂けた月
 
-JP LOC HOLD: Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy.
-
-## Scanner
-
-JP LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
-
-## Terminal
-
-JP LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
-
-## Audio
-
-JP LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
-
-## Field Note
-
-JP LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+HECTON-8は見世物のために捕獲された漂流天体ではなかった。Aegir自身の残骸帯で集積し、層状の海洋月として冷え、その後、世界を消さずに地殻を歪める斜め衝突を受けた。衝突は棚を持ち上げ、盆地を沈め、熱い化学が塩水の中をまだ流れる長い断層梯子を開いた。潮汐共鳴は軌道ロック後も傷を生かした。だから海には読める傷跡がある。塩水峡谷、噴出口の鍛冶場、圧力ガラス脈、露出した尾根、古い底へ届くまれな窓だ。
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/ja_JP. -->

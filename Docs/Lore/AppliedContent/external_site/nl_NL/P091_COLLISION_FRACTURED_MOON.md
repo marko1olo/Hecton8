@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Door botsing gebroken maan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Door botsing gebroken maan
 
-NL LOC HOLD: Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy.
-
-## Scanner
-
-NL LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
-
-## Terminal
-
-NL LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
-
-## Audio
-
-NL LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
-
-## Field Note
-
-NL LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+HECTON-8 was geen zwervend lichaam dat voor drama werd gevangen. Hij groeide in Aegirs eigen puingordel, koelde af tot een gelaagde oceaanmaan en kreeg daarna een schuine inslag die de korst vervormde zonder de wereld te wissen. De klap tilde platen op, liet bekkens zinken en opende lange breukladders waar hete chemie nog door zout water trekt. Getijdenresonantie hield die wonden actief na orbitale vergrendeling. Daarom heeft de oceaan leesbare littekens: pekelcanyons, bronforges, drukglasaders, open ruggen en zeldzame vensters naar oude bodem.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/nl_NL. -->

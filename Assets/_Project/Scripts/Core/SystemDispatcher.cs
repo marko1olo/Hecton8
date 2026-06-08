@@ -4183,12 +4183,7 @@ namespace Hecton8.Core
             if (physics != null)
                 _physics = physics;
 
-            IObjectPoolService objectPool = GlobalRegistry.ObjectPoolService;
-            if (objectPool != null)
-            {
-                _objectPool = objectPool;
-                ThreadSafeCommandQueue.BindObjectPoolServiceCold(objectPool);
-            }
+            CacheObjectPoolService(null);
 
             ICameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
             if (cameraJuice != null)
@@ -4239,8 +4234,7 @@ namespace Hecton8.Core
                     _physics = currentService as IPhysicsService;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
-                    ThreadSafeCommandQueue.BindObjectPoolServiceCold(_objectPool);
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
             }
         }
@@ -4302,7 +4296,46 @@ namespace Hecton8.Core
             if (dispatcher == null)
                 return null;
 
-            return dispatcher._objectPool;
+            return dispatcher.TryResolveCachedObjectPool(out IObjectPoolService pool) ? pool : null;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                ThreadSafeCommandQueue.BindObjectPoolServiceCold(pool);
+                return;
+            }
+
+            _objectPool = null;
+            ThreadSafeCommandQueue.BindObjectPoolServiceCold(null);
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                ThreadSafeCommandQueue.BindObjectPoolServiceCold(resolved);
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            ThreadSafeCommandQueue.BindObjectPoolServiceCold(null);
+            pool = null;
+            return false;
         }
 
         private static IPhysicsService ResolveCachedPhysicsService()

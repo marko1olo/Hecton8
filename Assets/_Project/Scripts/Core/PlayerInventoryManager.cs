@@ -22,6 +22,7 @@ namespace Hecton8.Core
         private bool _registeredService;
         private bool _hotSwapRegistered;
         private bool _syncInProgress;
+        private bool _runtimeOwnerAborted;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private GameObject _playerObject;
         private PlayerToolManager _toolManager;
@@ -81,8 +82,16 @@ namespace Hecton8.Core
         /// </summary>
         public static PlayerInventoryManager EnsureRuntimeInstance()
         {
-            if (ActiveRuntimeInstance != null)
-                return ActiveRuntimeInstance;
+            PlayerInventoryManager runtime = ResolveUsableRuntime();
+            if (runtime != null)
+                return runtime;
+
+            IPlayerInventoryService registeredService = GlobalRegistry.RegisteredPlayerInventory;
+            if (IsInventoryServiceUsable(registeredService) &&
+                ReferenceEquals(registeredService as PlayerInventoryManager, null))
+            {
+                return null;
+            }
 
             GameObject runtimeRoot = new GameObject("[PlayerInventoryManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player inventory/tooling service root - owner: PlayerInventoryManager
             return runtimeRoot.AddComponent<PlayerInventoryManager>();
@@ -93,23 +102,27 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
-            if (!EnsureSingletonOwnership())
+            if (_runtimeOwnerAborted || !EnsureSingletonOwnership())
                 return;
 
             if (_isInitialized)
             {
+                if (!TryRegisterService())
+                    return;
+
                 TryRegisterHotSwapListener();
                 TryRegisterSlowTickable();
-                TryRegisterService();
                 RefreshPlayerRuntimeContextCold();
                 SyncInventoryContextCold();
                 return;
             }
 
+            if (!TryRegisterService())
+                return;
+
             _isInitialized = true;
             TryRegisterHotSwapListener();
             TryRegisterSlowTickable();
-            TryRegisterService();
             RefreshPlayerRuntimeContextCold();
             SyncInventoryContextCold();
         }
@@ -122,14 +135,16 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            if (!EnsureSingletonOwnership())
+            if (_runtimeOwnerAborted || !EnsureSingletonOwnership())
                 return;
 
             if (_isInitialized)
             {
+                if (!TryRegisterService())
+                    return;
+
                 TryRegisterHotSwapListener();
                 TryRegisterSlowTickable();
-                TryRegisterService();
                 RefreshPlayerRuntimeContextCold();
                 SyncInventoryContextCold();
             }
@@ -137,6 +152,14 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+            {
+                if (ReferenceEquals(ActiveRuntimeInstance, this))
+                    ActiveRuntimeInstance = null;
+
+                return;
+            }
+
             TryUnregisterHotSwapListener();
             TryUnregisterSlowTickable();
             TryUnregisterService();
@@ -147,6 +170,9 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
@@ -155,19 +181,22 @@ namespace Hecton8.Core
 
         private bool EnsureSingletonOwnership()
         {
-            PlayerInventoryManager runtime = ActiveRuntimeInstance;
-            if (runtime != null && runtime != this)
-            {
-                Destroy(gameObject);
+            if (_runtimeOwnerAborted)
                 return false;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            PlayerInventoryManager runtime = ActiveRuntimeInstance;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+                ActiveRuntimeInstance = null;
             }
 
-            IPlayerInventoryService registeredService = GlobalRegistry.RegisteredPlayerInventory;
-            if (registeredService != null && !ReferenceEquals(registeredService, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             ActiveRuntimeInstance = this;
             return true;
@@ -180,6 +209,9 @@ namespace Hecton8.Core
 
         private void ShutdownServiceState()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterHotSwapListener();
             TryUnregisterSlowTickable();
             TryUnregisterService();
@@ -203,6 +235,9 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 TryUnregisterSlowTickable();
@@ -334,17 +369,44 @@ namespace Hecton8.Core
             _registeredSlowTickable = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_registeredService)
-                return;
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             IPlayerInventoryService registeredService = GlobalRegistry.RegisteredPlayerInventory;
-            if (registeredService != null && !ReferenceEquals(registeredService, this))
-                return;
+            if (!ReferenceEquals(registeredService, null) && !ReferenceEquals(registeredService, this))
+            {
+                PlayerInventoryManager staleRuntime = registeredService as PlayerInventoryManager;
+                if (ReferenceEquals(staleRuntime, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterPlayerInventoryService(registeredService);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+                if (ReferenceEquals(ActiveRuntimeInstance, staleRuntime))
+                    ActiveRuntimeInstance = null;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterPlayerInventoryService(this);
             _registeredService = ReferenceEquals(GlobalRegistry.PlayerInventory, this);
+            _runtimeOwnerAborted = !_registeredService;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return _registeredService;
         }
 
         private void TryUnregisterService()
@@ -354,6 +416,94 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterPlayerInventoryService(this);
             _registeredService = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            PlayerInventoryManager runtime = ActiveRuntimeInstance;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsInventoryRuntimeUsable(runtime))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+                ActiveRuntimeInstance = null;
+            }
+
+            IPlayerInventoryService registeredService = GlobalRegistry.RegisteredPlayerInventory;
+            if (ReferenceEquals(registeredService, null) || ReferenceEquals(registeredService, this))
+                return false;
+
+            if (IsInventoryServiceUsable(registeredService))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            PlayerInventoryManager staleRuntime = registeredService as PlayerInventoryManager;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterPlayerInventoryService(registeredService);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+                if (ReferenceEquals(ActiveRuntimeInstance, staleRuntime))
+                    ActiveRuntimeInstance = null;
+            }
+
+            return false;
+        }
+
+        private static PlayerInventoryManager ResolveUsableRuntime()
+        {
+            PlayerInventoryManager runtime = ActiveRuntimeInstance;
+            if (IsInventoryRuntimeUsable(runtime))
+                return runtime;
+
+            if (!ReferenceEquals(runtime, null))
+            {
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+                ActiveRuntimeInstance = null;
+            }
+
+            IPlayerInventoryService registeredService = GlobalRegistry.RegisteredPlayerInventory;
+            if (IsInventoryServiceUsable(registeredService))
+                return registeredService as PlayerInventoryManager;
+
+            PlayerInventoryManager staleRuntime = registeredService as PlayerInventoryManager;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterPlayerInventoryService(registeredService);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+                if (ReferenceEquals(ActiveRuntimeInstance, staleRuntime))
+                    ActiveRuntimeInstance = null;
+            }
+
+            return null;
+        }
+
+        private static bool IsInventoryServiceUsable(IPlayerInventoryService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            PlayerInventoryManager runtime = service as PlayerInventoryManager;
+            return ReferenceEquals(runtime, null) ||
+                   (runtime._registeredService && IsInventoryRuntimeUsable(runtime));
+        }
+
+        private static bool IsInventoryRuntimeUsable(PlayerInventoryManager runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
         }
 
         private void TryRegisterHotSwapListener()

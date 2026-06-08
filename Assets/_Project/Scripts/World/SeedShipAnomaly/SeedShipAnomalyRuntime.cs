@@ -1004,18 +1004,26 @@ namespace Hecton8.World.SeedShipAnomaly
 
                 if (publishRadiationThisSlowTick)
                 {
-                    float radiation01 = math.saturate(globals.Radiation01);
-                    float sourceIntensity01 = math.saturate(thermo.Radiation01);
-                    SignalBus<RadiationSourceSignal>.TryPushTracked(new RadiationSourceSignal
+                    float radiation01 = SaturateFinite01(globals.Radiation01);
+                    float sourceIntensity01 = SaturateFinite01(thermo.Radiation01);
+                    float sourceRadiusMeters = PositiveFiniteOrZero(thermo.RadiusMeters);
+                    if (sourceIntensity01 > 0.0001f && sourceRadiusMeters > 0f)
                     {
-                        PositionAup = epicenter,
-                        Intensity = sourceIntensity01,
-                        RadiusMeters = thermo.RadiusMeters,
-                        SourceId = unchecked((int)SeedShipAnomalyConstants.SourceHash),
-                        Operation = RadiationSourceSignal.OperationUpsert,
-                        Flags = 1
-                    }, ref _signalPushDropCount);
-                    _radiationSourceActive = sourceIntensity01 > 0.0001f;
+                        SignalBus<RadiationSourceSignal>.TryPushTracked(new RadiationSourceSignal
+                        {
+                            PositionAup = epicenter,
+                            Intensity = sourceIntensity01,
+                            RadiusMeters = sourceRadiusMeters,
+                            SourceId = unchecked((int)SeedShipAnomalyConstants.SourceHash),
+                            Operation = RadiationSourceSignal.OperationUpsert,
+                            Flags = 1
+                        }, ref _signalPushDropCount);
+                        _radiationSourceActive = true;
+                    }
+                    else if (_radiationSourceActive)
+                    {
+                        PublishRadiationSourceRemove();
+                    }
 
                     if (radiation01 > 0.0001f)
                     {
@@ -1033,14 +1041,29 @@ namespace Hecton8.World.SeedShipAnomaly
             }
             else if (publishRadiationThisSlowTick && _radiationSourceActive)
             {
-                SignalBus<RadiationSourceSignal>.TryPushTracked(new RadiationSourceSignal
-                {
-                    SourceId = unchecked((int)SeedShipAnomalyConstants.SourceHash),
-                    Operation = RadiationSourceSignal.OperationRemove,
-                    Flags = 1
-                }, ref _signalPushDropCount);
-                _radiationSourceActive = false;
+                PublishRadiationSourceRemove();
             }
+        }
+
+        private void PublishRadiationSourceRemove()
+        {
+            SignalBus<RadiationSourceSignal>.TryPushTracked(new RadiationSourceSignal
+            {
+                SourceId = unchecked((int)SeedShipAnomalyConstants.SourceHash),
+                Operation = RadiationSourceSignal.OperationRemove,
+                Flags = 1
+            }, ref _signalPushDropCount);
+            _radiationSourceActive = false;
+        }
+
+        private static float SaturateFinite01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float PositiveFiniteOrZero(float value)
+        {
+            return math.isfinite(value) && value > 0f ? value : 0f;
         }
 
         private void TryDumpTelemetry(IDataVault vault, uint reasonFlags)

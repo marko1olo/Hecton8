@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Kegagalan Kontainmen Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Kegagalan Kontainmen Tekanan
 
-ID LOC HOLD: Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.
+Kegagalan kontainmen tekanan memberi blue debt perilaku material yang bisa dibaca. Ia bernilai karena tekanan dalam membuatnya koheren, dan berbahaya karena penanganan dangkal merusak koherensi itu. Tahap 0 tersegel. Tahap 1 drift dan kadang bisa dipulihkan dengan repressure ventilasi. Tahap 2 mematahkan kisi. Tahap 3 mengundang brine dan biologi. Tahap 4 meninggalkan sampel mati yang masih mencemari gear, air, dan rute.
 
 ## Scanner
 
-ID LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+Bagan tahap casket. Blue debt gagal lewat memori tekanan, geser sinyal, dan bloom; takhayul membuang oksigen.
 
 ## Terminal
 
-ID LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+TAHAP KONTAINMEN: 0 kisi tersegel; 1 drift sinyal; 2 patah kisi; 3 bloom brine/biologi; 4 sampel mati dengan kontaminasi hidup. Repressure ventilasi hanya bisa memulihkan tahap 1.
 
 ## Audio
 
-ID LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
+Sampel itu tidak membencimu. Ia mencoba kembali ke tempat ia terbentuk.
 
 ## Field Note
 
-ID LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Satu sampel bisa bernilai mahal di satu kedalaman dan menjadi beban sepuluh meter kemudian.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/id_ID. -->

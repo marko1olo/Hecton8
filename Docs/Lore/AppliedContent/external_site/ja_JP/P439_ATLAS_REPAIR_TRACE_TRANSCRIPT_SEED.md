@@ -9,32 +9,22 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Atlas修復痕跡記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Repair Trace Transcript Seed
+# Atlas修復痕跡記録
 
-JA LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+## 保守文法
 
-## Scanner
+Atlasは悪役、神、親切な助手のように話してはならない。もっとも強い痕跡はほとんど平凡だ。leak、seal、tissue、cable、pressure、route。損傷した産業知能は、道徳ではなくserviceabilityで世界を分類している。
 
-JA LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+その崩壊が恐怖だ。暖かい身体がcold relayと同じ修復行に並ぶ。ファウナ経路が信号やsealantを運ぶためserviceableになる。通路は圧力には安全で、中の人間には悪くなり得る。priority stackがすでに間違っているなら、Atlasに憎悪は不要だ。
 
-## Terminal
-
-JA LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
-
-## Audio
-
-JA LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
-
-## Field Note
-
-JA LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+この音声は、機械と議論させるべきだが、機械を最後の犯人にしてはならない。Deep Reachが許可を書き、孤立が文脈を壊し、Atlasはinfrastructureと呼ぶことを許されたものを修復し続けた。
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/ja_JP. -->

@@ -14,29 +14,33 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Remboek van het pelletspoor
 
-Het Remboek van het pelletspoor maakt interstellair reizen tastbaar: een verbrande ablatorstrip, een routeschoolfragment en een massarekening ouder dan de crash. Aegir werd eerst bereikt door kleine pelletstraal-scouts, afgevuurd vanaf Luyten Junction. Die sondes waren goedkoop genoeg om te verliezen. Zware menselijke vracht kwam later, op Atlas-carriers die fusie-elektrische pulsen brandden, bemanning in torpor hielden en elke kilogram als schuld behandelden.
+Op het eerste gezicht lijkt het boek op schroot: een handlang stuk verbrande ablatorfolie, een gebarsten routeschoolplaat en een massarekening ouder dan de crash. Samen leggen ze interstellaire transit in de hand van een Marauder. Aegir werd niet geopend door heldenschepen die door het donker sloegen. Het werd in kaart gebracht door kleine pelletstraal-scouts uit Luyten Junction, goedkope machines met getuigenpakketten en zonder verwachting van terugkeer. De route werd juridisch voordat zij veilig werd.
 
-Het harde stuk is aankomst. Een schip dat jaren snelheid opbouwt voor bijna-licht-transit moet die snelheid ook kwijt. Magnetische zeilen bijten in het interstellaire medium. Aeroremmen schampen gasreuzen en stormomhulsels. Een foute fractie in de marge verandert vracht in plasma. Daarom kan HECTON-8 door menselijk recht bezeten, gefactureerd en geïndexeerd zijn, terwijl het als reddingsscène onbereikbaar blijft. De corporatie kan de claim erven voordat één romp het donker oversteekt.
+Menselijke massa kwam later. Atlas-carriers sprongen niet. Ze werden jarenlang geduwd, gevoed, afgeschermd en gefactureerd. Fusie-elektrische pulsstapels klommen naar bijna-lichttransit terwijl bemanningen koud sliepen en schuldeisers elke kilogram maten als toekomstig pand. Extra afscherming, voedsel, stuwstof, reddingskooien, vervangend gereedschap: alles had een massaprijs. Op HECTON-8 verandert massaprijs in blue debt voordat iemand een overlevende ziet.
+
+Het spoormonster legt vast wat publieke primers verzachten. Aankomst is de harde brand achterstevoren. Magnetische zeilen slepen tegen geladen stof en dun plasma. Pelletstromen vreten aan de zeilrand. Aerobrake-passes gebruiken gasreuzen en stormomhulsels als gereedschap dat ook het schip kan doden. Te voorzichtig en de carrier mist het venster. Te weinig en de vracht wordt een heldere smeer.
+
+Daarom kan Deep Reach sneller een claim indienen dan het jou kan redden. Een pakket steekt de route over als informatie. Een schuld beweegt per contract. Black Keel kan een herstelvenster beprijzen omdat het al in lokale Aegir-ruimte is. Een reddingsromp uit de binnenwerelden moet nog steeds snelheid, remming, bemanningsrisico en verzekeringsmassa betalen. Beschaving bereikt HECTON-8 eerst als handtekening, dan als waarschuwing, en pas veel later als machine.
 
 ## Scanner
 
-TRANSITSPOOR-MONSTER // Ablatorfolie gepit door micro-pelletspray. Randvezel van magnetisch zeil aanwezig. Isotooplitteken past bij uitgaande Barnard Yards-vracht, niet bij lokaal reddingsmateriaal.
+TRANSITSPOOR-MONSTER // Ablatorfolie uit een rem-puinband, bezaaid met inslagputjes van micro-pellets. Randvezel van een magnetisch zeil in één vouw gesmolten. Isotopenlittekens passen bij uitgaande Barnard Yards-vrachtvoorraad, niet bij Black Keel-reddingshardware.
 
 ## Terminal
 
-BARNARD YARDS SYLLABUS 44-A // Routeklasse: langzame interstellaire vracht. Scoutfase: Luyten pelletstraal-sondes. Zware fase: Atlas-klasse fusie-elektrische pulscarrier. Aankomstfase: magnetisch-zeilremming, gasreus-skip, stormomhulselmarge. Contractornotitie: antwoord uit Sol verandert lokale salvage-autoriteit binnen een actief Aegir-claimvenster niet.
+BARNARD YARDS SYLLABUS 44-A // Routeklasse: trage interstellaire vracht. Scoutfase: Luyten-pelletstraalsondes en getuigenpakketten. Zware fase: Atlas-klasse fusie-elektrische carriers met torporbemanning en getekende massavensters. Aankomst: magnetisch-zeilremming, gasreus-skip, stormomhulselmarge. Juridische noot: een antwoord uit Sol verandert lokale bergingsmacht binnen een actief Aegir-claimvenster niet. Wet reist als signaal. Redding reist als massa.
 
 ## Audio
 
-Wil je reddingswiskunde? Tel de pellets, tel de zeilscheuren, tel de jaren. Vraag dan wie die brandstof verbrandt voor één schuldenaar.
+Wil je reddingswiskunde? Leg je duim op de folie. Die putjes zijn rempellets, geen regen. Tel de zeilscheuren, tel de jaren, en vraag dan wie die massa uitgeeft voor één schuldenaar.
 
 ## Field Note
 
-Snelle claims. Trage schepen. Dat is de hele val.
+Snelle handtekeningen. Trage schepen. Als ze zeggen dat redding is goedgekeurd, vraag waar de remmassa is.
 
 <!-- In-Game Wiki; generated from P1091_PELLET_WAKE_BRAKING_LEDGER/nl_NL. -->

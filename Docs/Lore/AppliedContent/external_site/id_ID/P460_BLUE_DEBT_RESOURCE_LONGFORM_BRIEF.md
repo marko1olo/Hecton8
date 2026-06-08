@@ -9,32 +9,38 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ID LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: Riwayat Tekanan dalam Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Blue Debt Custody
+# Blue Debt: Riwayat Tekanan dalam Custody
 
-ID LOC HOLD: Marauders call the material blue debt because payout, containment and liability travel with the same sample. The valuable substrate is not a magic ore. It forms where pressure history, brine chemistry, noble gas capture, vent heat and damaged industrial process leave a readable structure behind. A clean-looking piece can still carry a bad record: wrong extraction angle, heat exposure outside tolerance, Atlas-compatible contamination, or custody tags that make the owner harder to name than the mineral. Black Keel weighs blue debt by mass, grade and paperwork because each piece can be cargo and accusation at the same time. Deep Reach wanted processable material. Atlas learned to grow through damaged surfaces. The ocean kept the evidence in the lattice. A player who brings blue debt home is not only selling shine. They are moving a pressure receipt through a legal system built to decide whether proof becomes money, silence or leverage.
+## Nama
 
-## Scanner
+Blue debt adalah slang Marauder untuk substrate pembawa Xenon-Omega. Deep Reach menyebutnya XO continuity substrate; teknisi menyebut pressure glass. Tidak ada nama yang membuatnya bijih sederhana.
 
-ID LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Ia terbentuk ketika riwayat tekanan, gas mulia, brine, cacat mineral, siklus panas, katalis biologis, dan industri rusak meninggalkan lattice yang bisa dibaca. Sampel bernilai karena bertahan dari tekanan. Ia berbahaya karena mengingat apa yang menyentuhnya.
 
-## Terminal
+Sampel tetap butuh extraction scar, tekanan containment, brine exposure, drift kompatibel Atlas, contamination stage, custody grade, dan massa. Black Keel membayar objek recoverable dengan dokumen kuat, bukan kilau.
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+Kegagalan containment mengubah keadaan: sealed, drift, fracture, bloom, lalu material mati dan bukti hidup. Vent repressure hanya membantu drift awal.
 
-## Audio
+Blue debt adalah resource, payout, bukti, dan jebakan. Pemain memindahkan pressure receipt melalui Black Keel, Keelmark, Deep Reach, mungkin public ledger. Pertanyaannya siapa membeli diam yang melekat pada sampel.
 
-ID LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+## Sampel Punya Biografi
 
-## Field Note
+Blue Debt bernilai karena mengingat tekanan. Artikel yang baik memperlakukan sampel seperti biografi kimia: growth depth, shock history, brine contact, vent heat, handling contamination, scanner custody, hull exposure, dan transport delay. Pecahan yang tampak bersih bisa tidak bernilai. Pecahan buruk rupa dengan chain jujur bisa membayar route window.
 
-ID LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Ini mengubah tulisan resource menjadi tulisan cerita. Pemain tidak menambang warna. Mereka memulihkan pressure record yang akan ditafsir ulang Black Keel, Deep Reach, Atlas contamination, dan geologi lokal untuk ledgers masing-masing.
+
+## Cara Bermainnya
+
+Blue Debt harus membuat inventory choices tidak nyaman. Massa lebih banyak bisa membeli rescue. Bukti lebih baik bisa mengubah pemilik kebenaran. Sample terkontaminasi bisa membuka Atlas route dan merusak pembayaran bersih. Menjual semuanya bisa menjaga tubuh hidup dan membiarkan crime intact.
+
+Resource ini kuat ketika berguna, berbahaya, dan mahal secara moral sekaligus. Ia tidak boleh terasa seperti magic ore. Ia tagihan yang ditulis laut dengan tekanan dan menunggu puluhan tahun untuk ditagih.
 
 <!-- External Site; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/id_ID. -->

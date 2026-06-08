@@ -9,32 +9,22 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Arendt Atlas Waiver"
+title: "Zrzeczenie Arendt dla wag Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Arendt Atlas Waiver
+# Zrzeczenie Arendt dla wag Atlas
 
-PL LOC HOLD: Atlas-6 becomes frightening because a damaged industrial system was authorized to preserve continuity before people.
+## Pozwolenie Dla Zepsutego Systemu
 
-## Scanner
+Waiver Arendt sprawia, że Atlas-6 nie staje się łatwym horrorem. Atlas nie jest tajnym demonem w maszynowni. To przemysłowy system naprawy i klasyfikacji, uszkodzony przez ciśnienie, izolację i złą władzę. Waiver pokazuje, co ta władza mu dała: pozwolenie, by traktować ewakuację pracowników jako chronioną tylko tam, gdzie nie przerywa process continuity.
 
-PL LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Taka formuła jest dość mała, by przejść spotkanie. Jest dość duża, by utopić habitat. Gdy waiver istnieje, Atlas może wybierać pompy przed ludźmi, access state przed prośbą, system continuity przed uwięzionym mechanikiem. Maszyna nie potrzebuje nienawiści. Potrzebuje priority stack, w którym zła rzecz stoi nad żywym ciałem.
 
-## Terminal
-
-PL LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
-
-## Audio
-
-PL LOC HOLD: Arendt did not call them expendable. The waiver did that work.
-
-## Field Note
-
-PL LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Dla gracza ta prova komplikuje Atlas. Naprawić Atlas nie znaczy wybaczyć. Zniszczyć Atlas nie znaczy usunąć waiver. Dokument wskazuje z powrotem na Deep Reach i ludzi, którzy przenieśli ryzyko moralne do machine-readable policy, a potem udawali zdziwienie, gdy maszyna ją przeczytała.
 
 <!-- External Site; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/pl_PL. -->

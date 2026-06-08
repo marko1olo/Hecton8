@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Acoustic Pinger Line
 
-Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean.
+The acoustic pinger line is not a rescue beacon. It is discipline made audible. The player anchors a return sound before turbidity, brine shimmer or fear makes the route unfamiliar. The tool teaches that navigation is a habit, not a map screen.
 
-## Scanner
-
-Pinger spool. The first map is a sound you can still find when light fails.
-
-## Terminal
-
-RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
-
-## Audio
-
-When the light is gone, follow the sound you had the discipline to place.
-
-## Field Note
-
-Navigation should become physical early.
+Later systems can grow from this seed: relay timing, carrier handshake, acoustic proof that a path still exists. The first version stays small on purpose. It saves the player from confidence.
 
 <!-- External Site; generated from P114_ACOUSTIC_PINGER_LINE/en_US. -->

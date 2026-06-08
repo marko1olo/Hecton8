@@ -144,6 +144,7 @@ namespace Hecton8.Core
     {
         public static bool TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence)
         {
+            SignalCorridorRuntime.EnsureInitialized();
             return SignalBridgeState.TryGetLatestSurvivalDeath(out signal, out sequence);
         }
 
@@ -156,8 +157,15 @@ namespace Hecton8.Core
         public static bool TryQueueVitals(in SurvivalVitalsChangedSignal signal)
         {
             SignalCorridorRuntime.EnsureInitialized();
-            SignalBridgeState.RecordSurvivalVitals(in signal);
-            return SignalBus<SurvivalVitalsChangedSignal>.TryPush(in signal);
+            SurvivalVitalsChangedSignal sanitizedSignal = signal;
+            int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
+            if (guardCode != 0)
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+            if ((sanitizedSignal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)
+                sanitizedSignal.DeathCause = 0;
+
+            SignalBridgeState.RecordSurvivalVitals(in sanitizedSignal);
+            return SignalBus<SurvivalVitalsChangedSignal>.TryPush(in sanitizedSignal);
         }
     }
 

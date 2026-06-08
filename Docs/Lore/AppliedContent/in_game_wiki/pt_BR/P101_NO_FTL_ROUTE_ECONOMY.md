@@ -7,34 +7,34 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Economia de rotas sem FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# Economia de rotas sem FTL
 
-PT LOC HOLD: Human space in 2190 runs on slow routes, relay custody, mass budgets, braking windows and old law. HECTON-8 is far enough that help is procedural before it is physical. That makes Black Keel, Deep Reach proxy packets and local evidence more important than any clean rescue fantasy.
+Em 2190, o espaço humano funciona com naves lentas, custódia de relés, janelas de frenagem e dívida. HECTON-8 está além do resgate imediato. A lei pode chegar como pacotes; naves só chegam com massa, blindagem, combustível, arquitetura de frenagem e alguém disposto a pagar a viagem.
 
 ## Scanner
 
-PT LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
+Selo de trânsito: atraso, massa, blindagem e dívida de frenagem moldaram este objeto antes de qualquer colônia tocar a água.
 
 ## Terminal
 
-PT LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
+AVISO DE ROTA: ansible ausente. Custódia local segue vinculante até o próximo pacote de retransmissão. Autoridade de salvamento não pode esperar resposta de Sol.
 
 ## Audio
 
-PT LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
+Ninguém dos mundos internos chega a esta água a tempo. Seu gravame já colocou preço nisso.
 
 ## Field Note
 
-PT LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+Se o resgate parece atrasado, mostre o recibo. A distância foi cobrada antes do pedido de socorro.
 
 <!-- In-Game Wiki; generated from P101_NO_FTL_ROUTE_ECONOMY/pt_BR. -->

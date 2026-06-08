@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "RU LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Модель расстояния Ran-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Ran-Aegir Distance Model
+# Модель расстояния Ran-Aegir
 
-RU LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+Модель Ran-Aegir дает HECTON-8 масштаб, который игрок чувствует. Aegir достаточно близок для зондов, фрахта, seed-оборудования и долгового заселения к 2190 году. Он все еще достаточно далек, чтобы затопленная камера не могла ждать милости внутренних миров. Расстояние проявляется как задержка, custody, топливо, торможение и собственность.
 
 ## Scanner
 
-RU LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+Маршрутная пластина: Aegir достижим инфраструктурой и недостижим сочувствием.
 
 ## Terminal
 
-RU LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+МОДЕЛЬ МАРШРУТА: Ran/Aegir считается целью класса десяти световых лет от Sol. В игровом тексте используется Aegir; сухие каталоги используют RAN-B:H8. Точная эфемерида остается работой маршрутных таблиц.
 
 ## Audio
 
-RU LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+Десять световых лет малы на звездной карте. Их достаточно, чтобы обанкротить спасение.
 
 ## Field Note
 
-RU LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+Примерное расстояние — давление, не украшение. Десять световых лет все еще могут убить комнату.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/ru_RU. -->

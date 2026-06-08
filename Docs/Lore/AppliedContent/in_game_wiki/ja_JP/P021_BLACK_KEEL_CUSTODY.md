@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel保管
 
-Black Keelは個人用の豪華船ではない。claim-pool保管、保険債務、遅い軌道窓で動くほぼ自動のサルベージ船だ。脱出路はあるが、忠実な救助ではない。
+Black Keel は豪華な個人船ではない。請求プール保管、保険債務、遅延する軌道窓で動く、ほぼ自動化されたサルベージキャリアだ。軌道へ戻る本物の道を与えるが、救助を単純にも忠実にもしてくれない。
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "RU LOC HOLD: Aegir Route and Ships"
+title: "Маршрут Aegir и корабли"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Aegir Route and Ships
+# Маршрут Aegir и корабли
 
-RU LOC HOLD: Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
+Узел про маршрут и корабли: человеческие домены без FTL, система лун Aegir, пределы опеки Black Keel, переходные окна и поврежденный bathydrop, который доказывает прибытие, но не сертифицирует побег.
 
 ## Scanner
 
-RU LOC HOLD: Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
+Публикационный узел: перелеты без FTL, расписание маршрута Aegir, пределы Black Keel и жесткая причина, почему спасение не приходит по запросу.
 
 ## Terminal
 
-RU LOC HOLD: SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
+НАВИГАЦИЯ: игольчатые зонды, лучевые и пеллетные линии, торможение seed-ship, опека Black Keel, переходная орбита, отказ bathydrop.
 
 ## Audio
 
-RU LOC HOLD: Distance is not lore trivia. It is the pressure on every decision.
+Дистанция не справочная мелочь. Она давит на каждое решение.
 
 ## Field Note
 
-RU LOC HOLD: Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
+Читай страницы о кораблях как механику выживания: задержка, опека, масса, погода, орбита и сломанный интерфейс спуска решают судьбу.
 
 <!-- In-Game Wiki; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/ru_RU. -->

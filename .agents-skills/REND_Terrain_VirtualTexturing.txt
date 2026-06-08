@@ -9,7 +9,9 @@ Owner: Geology Master / Rendering Lead
 ## Primary Law
 
 [RULE] Terrain/albedo/detail material variety must use texture arrays or virtual texturing only after platform validation.
+[REQ] Terrain visual acceptance inherits the Visual Reference Parity Gate. Compare terrain captures against mandatory references plus best-known internal baseline/current rejection matrix at matching route distance before accepting texture-array, SVT, material, or geology changes.
 [FORBID] Increasing terrain material variety by adding more independent sampled Texture2D bindings per terrain shader.
+[FORBID] Claiming terrain improvement from SVT, mip settings, shader variety, fog, or color tuning when silhouette, strata, wetness, contact, material breakup, and compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and recover terrain/material owner stack.
 
 ---
 

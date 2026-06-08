@@ -28,6 +28,8 @@ using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Crafting;
+using Hecton8.Economy;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -447,8 +449,7 @@ namespace Hecton8.Construction
             TryRegisterLogisticsService();
             TryRegisterHabitatGraphService();
             TryRegisterHabitatDeconstructionService();
-            TryRegisterTick();
-            TryRegisterLateFrameTick();
+            TryRegisterDispatcherLanes();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
             TryRegisterOriginShiftListener();
@@ -505,7 +506,7 @@ namespace Hecton8.Construction
 
         private void CacheRegistryServicesCold()
         {
-            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             _cachedPlayerInventoryService = GlobalRegistry.PlayerInventory;
             _cachedDataVault = GlobalRegistry.DataVault;
             _cachedSaveService = GlobalRegistry.Save;
@@ -515,6 +516,44 @@ namespace Hecton8.Construction
             CacheAudioService(GlobalRegistry.Audio);
             _cachedFluidDecalPresentation = GlobalRegistry.FluidDecalPresentation;
             _cachedPhysicsService = GlobalRegistry.Physics;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            if (!ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(candidate))
+            {
+                _cachedObjectPool = null;
+                return;
+            }
+
+            _cachedObjectPool = candidate;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _cachedObjectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _cachedObjectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _cachedObjectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)
+        {
+            return ObjectPoolManager.CanDespawnWithPool(pool, instance);
         }
 
         private void BindConstructionRuntimeServices()
@@ -588,8 +627,7 @@ namespace Hecton8.Construction
             TryRegisterLogisticsService();
             TryRegisterHabitatGraphService();
             TryRegisterHabitatDeconstructionService();
-            TryRegisterTick();
-            TryRegisterLateFrameTick();
+            TryRegisterDispatcherLanes();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
             TryRegisterOriginShiftListener();
@@ -643,8 +681,7 @@ namespace Hecton8.Construction
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
-            TryUnregisterTick();
-            TryUnregisterLateFrameTick();
+            TryUnregisterDispatcherLanes();
             TryUnregisterHabitatDeconstructionService();
             TryUnregisterHabitatGraphService();
             TryUnregisterLogisticsService();
@@ -767,7 +804,8 @@ namespace Hecton8.Construction
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 marker = module.AddComponent<ModuleMarker>();
 #else
-                RetireModuleInstanceWithoutDestroy(module, _cachedObjectPool);
+                TryResolveCachedObjectPool(out IObjectPoolService pool);
+                RetireModuleInstanceWithoutDestroy(module, pool);
                 return;
 #endif
             }
@@ -813,7 +851,7 @@ namespace Hecton8.Construction
 
             UnregisterModule(module);
 
-            IObjectPoolService pool = _cachedObjectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             RetireModuleInstanceWithoutDestroy(module, pool);
         }
 
@@ -884,8 +922,8 @@ namespace Hecton8.Construction
 
         private void ProcessDeconstructionRequestAfterRayValidated(in DeconstructRequestSignal request, BaseModule module)
         {
-            IObjectPoolService pool = _cachedObjectPool;
-            if (pool == null || !pool.CanDespawnWithoutDestroy(module.gameObject))
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool) ||
+                !CanDespawnWithPool(pool, module.gameObject))
             {
                 RejectDeconstruction(in request, DeconstructReasonPoolUnavailable, 0, 0, 0);
                 return;
@@ -934,7 +972,15 @@ namespace Hecton8.Construction
             }
 
             PlayerInventory inventory = ResolvePlayerInventory();
+            PlayerInventory hostedContentInventory = null;
             BuildableData buildData = FindBuildDataForModule(module);
+            if (!module.CanEjectHostedContentsForDeconstruction(hostedContentInventory, pool))
+            {
+                RejectDeconstruction(in request, DeconstructReasonInventoryFull, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
+                PublishDeconstructionHudNotification(request.TargetEntityId, DeconstructReasonInventoryFull);
+                return;
+            }
+
             if (!module.TryBeginAuthoritativeDeconstruction())
             {
                 RejectDeconstruction(in request, DeconstructReasonAlreadyActive, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
@@ -950,6 +996,8 @@ namespace Hecton8.Construction
                     module,
                     buildData,
                     inventory,
+                    hostedContentInventory,
+                    pool,
                     moduleHash,
                     out ushort refundItemCount,
                     out int severedEdgeCount,
@@ -964,9 +1012,7 @@ namespace Hecton8.Construction
             if (targetNodeIndex >= 0)
                 severedEdgeCount = math.max(severedEdgeCount, _habitatGraphManager != null ? _habitatGraphManager.MarkDeconstructionEdgesSevered(targetNodeIndex) : 0);
             _lastShinobu336SeveredEdges = severedEdgeCount;
-
             PublishDeconstructionVfx(in request);
-            module.EjectHostedContentsForDeconstruction(inventory, pool);
             module.PrepareForDeconstructionPoolReturn();
             UnregisterModule(module.gameObject);
             PublishModuleDeconstructSignal(moduleHash, nodeId, in request, skipDfs);
@@ -1245,6 +1291,8 @@ namespace Hecton8.Construction
             BaseModule module,
             BuildableData buildData,
             PlayerInventory inventory,
+            PlayerInventory hostedContentInventory,
+            IObjectPoolService pool,
             uint moduleHash,
             out ushort refundItemCount)
         {
@@ -1253,6 +1301,8 @@ namespace Hecton8.Construction
                 module,
                 buildData,
                 inventory,
+                hostedContentInventory,
+                pool,
                 moduleHash,
                 out refundItemCount,
                 out _,
@@ -1264,6 +1314,8 @@ namespace Hecton8.Construction
             BaseModule module,
             BuildableData buildData,
             PlayerInventory inventory,
+            PlayerInventory hostedContentInventory,
+            IObjectPoolService pool,
             uint moduleHash,
             out ushort refundItemCount,
             out int severedEdgeCount,
@@ -1376,17 +1428,27 @@ namespace Hecton8.Construction
                 float burstMicroseconds = (float)(elapsedTicks * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
 
                 int refundCommandCount = counters[DeconstructionRefundCommandCountIndex];
-                int returnedCount = ApplyRefundCommandsOrOverflow(in request, inventory, refundCommandCount, refundCommands, lootCaches, counters);
-                PublishOverflowLootCaches(lootCaches, counters);
-                refundItemCount = (ushort)Mathf.Clamp(returnedCount, 0, ushort.MaxValue);
+                if (module == null ||
+                    !module.CanEjectHostedContentsForDeconstruction(hostedContentInventory, pool) ||
+                    !module.EjectHostedContentsForDeconstruction(hostedContentInventory, pool))
+                {
+                    return false;
+                }
 
                 int overflowLootCacheCount = counters[DeconstructionLootCacheCountIndex];
+                int returnedCount = ApplyRefundCommandsOrOverflow(in request, inventory, refundCommandCount, refundCommands, lootCaches, counters);
+                overflowLootCacheCount = counters[DeconstructionLootCacheCountIndex];
+                int publishedOverflowLootCacheCount = PublishOverflowLootCaches(lootCaches, counters);
+                int rejectedOverflowLootCacheCount = math.max(0, overflowLootCacheCount - publishedOverflowLootCacheCount);
+                refundItemCount = (ushort)Mathf.Clamp(returnedCount, 0, ushort.MaxValue);
+
                 ReadLastDeconstructionTelemetry(
                     telemetryRing,
                     telemetryCursor,
                     burstMicroseconds,
                     returnedCount,
                     overflowLootCacheCount,
+                    rejectedOverflowLootCacheCount,
                     out severedEdgeCount,
                     out uint faultFlags,
                     out uint stateHash);
@@ -1730,7 +1792,7 @@ namespace Hecton8.Construction
             return new float3(cos * radius, 0.45f, sin * radius);
         }
 
-        private void PublishOverflowLootCaches(
+        private int PublishOverflowLootCaches(
             NativeArray<LootCacheDTO> lootCaches,
             NativeArray<int> counters)
         {
@@ -1738,9 +1800,10 @@ namespace Hecton8.Construction
                 !counters.IsCreated ||
                 counters.Length <= DeconstructionLootCacheCountIndex)
             {
-                return;
+                return 0;
             }
 
+            int published = 0;
             int count = math.min(math.max(0, counters[DeconstructionLootCacheCountIndex]), lootCaches.Length);
             for (int i = 0; i < count; i++)
             {
@@ -1761,8 +1824,11 @@ namespace Hecton8.Construction
                     Flags = cache.Flags,
                     StateFlags = 0
                 };
-                SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
+                if (SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref _signalPushDropCount))
+                    published++;
             }
+
+            return published;
         }
 
         private void ReadLastDeconstructionTelemetry(
@@ -1771,6 +1837,7 @@ namespace Hecton8.Construction
             float burstMicroseconds,
             int returnedQuantity,
             int overflowLootCaches,
+            int rejectedOverflowLootCaches,
             out int severedEdgeCount,
             out uint faultFlags,
             out uint stateHash)
@@ -1795,6 +1862,8 @@ namespace Hecton8.Construction
             entry.BurstMicroseconds = burstMicroseconds;
             entry.ResourcesRefunded = returnedQuantity;
             entry.OverflowLootCaches = overflowLootCaches;
+            if (rejectedOverflowLootCaches > 0)
+                entry.FaultFlags |= HabitatDeconstructionTransactionKernel.FaultRefundOverflow;
             if (burstMicroseconds > 500f)
                 entry.FaultFlags |= HabitatDeconstructionTransactionKernel.FaultBudgetExceeded;
 
@@ -2381,7 +2450,7 @@ namespace Hecton8.Construction
         /// </summary>
         public void ClearAllModules()
         {
-            IObjectPoolService pool = _cachedObjectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
 
             // Iterate backwards while the list can be modified by despawn callbacks.
             for (int i = _spawnedModules.Count - 1; i >= 0; i--)
@@ -2534,11 +2603,20 @@ namespace Hecton8.Construction
                 if (module.TryGetComponent(out DeepDrillModule deepDrill))
                     deepDrill.PopulateSaveData(ref moduleDto);
 
+                if (module.TryGetComponent(out ResourceRecyclerModule resourceRecycler))
+                    resourceRecycler.PopulateSaveData(ref moduleDto);
+
+                if (module.TryGetComponent(out Fabricator fabricator))
+                    fabricator.PopulateSaveData(ref moduleDto);
+
                 if (module.TryGetComponent(out CultivationManager cultivationManager))
                     cultivationManager.PopulateSaveData(ref moduleDto, ResolvePlayerItemCatalog());
 
                 if (module.TryGetComponent(out LogisticsPipeNode logisticsPipe))
                     logisticsPipe.PopulateSaveData(ref moduleDto);
+
+                if (module.TryGetComponent(out StorageCrate storageCrate))
+                    storageCrate.PopulateSaveData(ref moduleDto);
 
                 dto.modules[moduleIndex] = moduleDto;
                 dto.graphNodes[moduleIndex] = graphNodeDto;
@@ -2643,12 +2721,22 @@ namespace Hecton8.Construction
                 return;
             }
 
-            // 2. Respawn modules from save.
-            IObjectPoolService pool = _cachedObjectPool;
-            ClearAllModules();
             int count = hasGraphTopology
                 ? Mathf.Min(dto.graphNodeCount, dto.graphNodes.Length)
                 : Mathf.Min(dto.moduleCount, dto.modules.Length);
+            if (!CanResolveConstructionItemReferencesForLoad(in dto, data.version, count, itemCatalog))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[ConstructionManager] Construction load aborted: item catalog is missing or cannot resolve saved module item state.");
+#endif
+                return;
+            }
+
+            // 2. Respawn modules from save.
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
+            ClearAllModules();
+
             int loadedCount   = 0;
             int skippedCount  = 0;
             AbsoluteUniversePosition graphLoadRuntimeOriginAup = hasGraphTopology
@@ -2780,9 +2868,10 @@ namespace Hecton8.Construction
                 // BaseModule.OnEnable() registers SlowTick, but the first tick
                 // runs on the next timer interval.
                 // State is already restored by then.
-                if (module.TryGetComponent(out BaseModule baseModule))
+                BaseModule restoredBaseModule = null;
+                if (module.TryGetComponent(out restoredBaseModule))
                 {
-                    baseModule.ApplyBuildableTemplate(buildData);
+                    restoredBaseModule.ApplyBuildableTemplate(buildData);
 
                     // Migration v1 -> v2: integrity == 0f means
                     // the field did not exist in the old save.
@@ -2793,7 +2882,7 @@ namespace Hecton8.Construction
 
                     float loadedRepairCap = moduleDto.repairIntegrityCap;
                     if (loadedRepairCap <= 0f)
-                        loadedRepairCap = baseModule.MaxIntegrity;
+                        loadedRepairCap = restoredBaseModule.MaxIntegrity;
 
                     float loadedAirReserveNormalized = data.version >= 28
                         ? Mathf.Clamp01(moduleDto.airReserveNormalized)
@@ -2806,7 +2895,7 @@ namespace Hecton8.Construction
                         : 0f;
                     bool loadedInteriorReefInfestationActive = data.version >= 49 && moduleDto.interiorReefInfestationActive;
 
-                    baseModule.SetState(
+                    restoredBaseModule.SetState(
                         loadedIntegrity,
                         moduleDto.isFlooded,
                         (BaseModuleFailureMode)moduleDto.failureMode,
@@ -2837,14 +2926,33 @@ namespace Hecton8.Construction
                     if (module.TryGetComponent(out DeepDrillModule deepDrill))
                         deepDrill.RestoreFromSaveData(moduleDto, itemCatalog);
 
-                    if (module.TryGetComponent(out CultivationManager cultivationManager))
-                        cultivationManager.RestoreFromSaveData(moduleDto, itemCatalog);
+                    if (module.TryGetComponent(out ResourceRecyclerModule resourceRecycler))
+                        resourceRecycler.RestoreFromSaveData(moduleDto, itemCatalog);
+
+                    if (module.TryGetComponent(out Fabricator fabricator))
+                        fabricator.RestoreFromSaveData(moduleDto, itemCatalog);
 
                     if (module.TryGetComponent(out LogisticsPipeNode logisticsPipe))
                         logisticsPipe.RestoreFromSaveData(moduleDto, itemCatalog);
                 }
 
+                if (hasLegacyModuleState &&
+                    data.version >= 36 &&
+                    module.TryGetComponent(out CultivationManager cultivationManager))
+                {
+                    cultivationManager.RestoreFromSaveData(moduleDto, itemCatalog);
+                }
+
+                if (hasLegacyModuleState && module.TryGetComponent(out StorageCrate storageCrate))
+                {
+                    if (data.version >= SaveData.StorageCrateModulePersistenceVersion)
+                        storageCrate.RestoreFromSaveData(moduleDto, itemCatalog);
+                    else
+                        storageCrate.ClearRuntimeContentsForLegacyLoad();
+                }
+
                 RegisterModule(module, buildData);
+                restoredBaseModule?.RefreshAfterLoad();
                 loadedCount++;
             }
 
@@ -2887,6 +2995,288 @@ namespace Hecton8.Construction
                 failureMode = moduleDto.failureMode,
                 reserved = 0
             };
+        }
+
+        private static bool CanResolveConstructionItemReferencesForLoad(
+            in ConstructionDTO dto,
+            int version,
+            int moduleCount,
+            ItemCatalog itemCatalog)
+        {
+            if (dto.modules == null || moduleCount <= 0)
+                return true;
+
+            int safeCount = Mathf.Min(moduleCount, Mathf.Min(dto.moduleCount, dto.modules.Length));
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (!CanResolveModuleItemReferencesForLoad(in dto.modules[i], version, itemCatalog))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool CanResolveModuleItemReferencesForLoad(
+            in ModuleDTO dto,
+            int version,
+            ItemCatalog itemCatalog)
+        {
+            if (!ModuleRequiresItemCatalogForLoad(in dto, version))
+                return true;
+
+            if (itemCatalog == null)
+                return false;
+
+            if (!CanResolveOptionalItemId(itemCatalog, dto.slottedToolItemId))
+                return false;
+
+            if (version >= 36)
+            {
+                if (!CanResolveOptionalItemId(itemCatalog, dto.drillBufferedItemId, dto.drillBufferedAmount))
+                    return false;
+
+                if (!CanResolveOptionalItemId(itemCatalog, dto.pipeInFlightItemId, dto.pipeInFlightAmount))
+                    return false;
+
+                if (!CanResolveSavedItemArray(
+                        itemCatalog,
+                        dto.sorterBufferedItemIds,
+                        dto.sorterBufferedQuantities,
+                        dto.sorterBufferedSlotCount,
+                        ModuleDTO.MaxSorterBufferedSlots))
+                {
+                    return false;
+                }
+
+                if (!CanResolveSavedItemArray(
+                        itemCatalog,
+                        dto.recyclerBufferedItemIds,
+                        dto.recyclerBufferedQuantities,
+                        dto.recyclerBufferedSlotCount,
+                        ModuleDTO.MaxRecyclerBufferedSlots))
+                {
+                    return false;
+                }
+
+                if (!CanResolveOptionalItemId(itemCatalog, dto.recyclerActiveSourceItemId))
+                    return false;
+
+                if (!CanResolveSavedItemArray(
+                        itemCatalog,
+                        dto.recyclerPendingYieldItemIds,
+                        dto.recyclerPendingYieldQuantities,
+                        dto.recyclerPendingYieldSlotCount,
+                        ModuleDTO.MaxRecyclerPendingYieldSlots))
+                {
+                    return false;
+                }
+
+                if (version >= SaveData.FabricatorPendingOutputPersistenceVersion &&
+                    !CanResolveOptionalItemId(itemCatalog, dto.fabricatorPendingOutputItemId, dto.fabricatorPendingOutputQuantity))
+                {
+                    return false;
+                }
+
+                if (!CanResolveCultivationSeedItems(itemCatalog, in dto, version))
+                    return false;
+            }
+
+            if (version >= SaveData.StorageCrateModulePersistenceVersion &&
+                dto.storageCrateContentsSerialized &&
+                !CanResolveSavedItemArray(
+                    itemCatalog,
+                    dto.storageCrateItemIds,
+                    dto.storageCrateQuantities,
+                    dto.storageCrateSlotCount,
+                    ModuleDTO.MaxStorageCrateSlots))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool ModuleRequiresItemCatalogForLoad(in ModuleDTO dto, int version)
+        {
+            if (!string.IsNullOrWhiteSpace(dto.slottedToolItemId))
+                return true;
+
+            if (version >= 36)
+            {
+                if (HasOptionalItemId(dto.drillBufferedItemId, dto.drillBufferedAmount) ||
+                    HasOptionalItemId(dto.pipeInFlightItemId, dto.pipeInFlightAmount) ||
+                    HasSavedItemArrayEntries(dto.sorterBufferedItemIds, dto.sorterBufferedQuantities, dto.sorterBufferedSlotCount, ModuleDTO.MaxSorterBufferedSlots) ||
+                    HasSavedItemArrayEntries(dto.recyclerBufferedItemIds, dto.recyclerBufferedQuantities, dto.recyclerBufferedSlotCount, ModuleDTO.MaxRecyclerBufferedSlots) ||
+                    !string.IsNullOrWhiteSpace(dto.recyclerActiveSourceItemId) ||
+                    HasSavedItemArrayEntries(dto.recyclerPendingYieldItemIds, dto.recyclerPendingYieldQuantities, dto.recyclerPendingYieldSlotCount, ModuleDTO.MaxRecyclerPendingYieldSlots) ||
+                    (version >= SaveData.FabricatorPendingOutputPersistenceVersion &&
+                     HasOptionalItemId(dto.fabricatorPendingOutputItemId, dto.fabricatorPendingOutputQuantity)) ||
+                    HasCultivationSeedItemsRequiringCatalog(in dto, version))
+                {
+                    return true;
+                }
+            }
+
+            return version >= SaveData.StorageCrateModulePersistenceVersion &&
+                   dto.storageCrateContentsSerialized &&
+                   HasSavedItemArrayEntries(
+                       dto.storageCrateItemIds,
+                       dto.storageCrateQuantities,
+                       dto.storageCrateSlotCount,
+                       ModuleDTO.MaxStorageCrateSlots);
+        }
+
+        private static bool HasOptionalItemId(string itemId, int quantity)
+        {
+            return quantity > 0;
+        }
+
+        private static bool CanResolveOptionalItemId(ItemCatalog itemCatalog, string itemId)
+        {
+            return string.IsNullOrWhiteSpace(itemId) || itemCatalog.FindById(itemId) != null;
+        }
+
+        private static bool CanResolveOptionalItemId(ItemCatalog itemCatalog, string itemId, int quantity)
+        {
+            return quantity <= 0 || (!string.IsNullOrWhiteSpace(itemId) && CanResolveOptionalItemId(itemCatalog, itemId));
+        }
+
+        private static bool HasSavedItemArrayEntries(
+            string[] itemIds,
+            int[] quantities,
+            int requestedCount,
+            int maxCount)
+        {
+            if (requestedCount <= 0)
+                return false;
+
+            if (itemIds == null || quantities == null)
+                return true;
+
+            int boundedCount = Mathf.Clamp(requestedCount, 0, maxCount);
+            if (itemIds.Length < boundedCount || quantities.Length < boundedCount)
+                return true;
+
+            for (int i = 0; i < boundedCount; i++)
+            {
+                if (quantities[i] > 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool CanResolveSavedItemArray(
+            ItemCatalog itemCatalog,
+            string[] itemIds,
+            int[] quantities,
+            int requestedCount,
+            int maxCount)
+        {
+            if (requestedCount <= 0)
+                return true;
+
+            if (itemIds == null || quantities == null)
+                return false;
+
+            int boundedCount = Mathf.Clamp(requestedCount, 0, maxCount);
+            if (itemIds.Length < boundedCount || quantities.Length < boundedCount)
+                return false;
+
+            for (int i = 0; i < boundedCount; i++)
+            {
+                int quantity = quantities[i];
+                if (quantity <= 0)
+                    continue;
+
+                string itemId = itemIds[i];
+                if (string.IsNullOrWhiteSpace(itemId))
+                    return false;
+
+                if (itemCatalog.FindById(itemId) == null)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool HasCultivationSeedItemsRequiringCatalog(in ModuleDTO dto, int version)
+        {
+            if (dto.cultivationSlotCount <= 0)
+                return false;
+
+            int safeCount = ResolveSavedCultivationIdentitySlotCount(in dto);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(GetSavedCultivationSeedItemId(in dto, i)) &&
+                    !HasSavedCultivationSeedHashId(in dto, i, version))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CanResolveCultivationSeedItems(ItemCatalog itemCatalog, in ModuleDTO dto, int version)
+        {
+            if (dto.cultivationSlotCount <= 0)
+                return true;
+
+            int safeCount = ResolveSavedCultivationIdentitySlotCount(in dto);
+            if (safeCount <= 0)
+                return false;
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                string itemId = GetSavedCultivationSeedItemId(in dto, i);
+                if (string.IsNullOrWhiteSpace(itemId))
+                {
+                    if (!HasSavedCultivationSeedHashId(in dto, i, version))
+                        return false;
+
+                    continue;
+                }
+
+                if (itemCatalog != null && itemCatalog.FindById(itemId.Trim()) != null)
+                    continue;
+
+                if (!HasSavedCultivationSeedHashId(in dto, i, version))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static int ResolveSavedCultivationIdentitySlotCount(in ModuleDTO dto)
+        {
+            int identityCapacity = Mathf.Max(
+                dto.cultivationSeedItemIds != null ? dto.cultivationSeedItemIds.Length : 0,
+                dto.cultivationSeedItemHashIds != null ? dto.cultivationSeedItemHashIds.Length : 0);
+            return Mathf.Min(
+                Mathf.Clamp(dto.cultivationSlotCount, 0, ModuleDTO.MaxCultivationSlots),
+                identityCapacity);
+        }
+
+        private static string GetSavedCultivationSeedItemId(in ModuleDTO dto, int slotIndex)
+        {
+            if (dto.cultivationSeedItemIds == null ||
+                slotIndex < 0 ||
+                slotIndex >= dto.cultivationSeedItemIds.Length)
+            {
+                return string.Empty;
+            }
+
+            return dto.cultivationSeedItemIds[slotIndex];
+        }
+
+        private static bool HasSavedCultivationSeedHashId(in ModuleDTO dto, int slotIndex, int version)
+        {
+            return version >= SaveData.CultivationSeedHashPersistenceVersion &&
+                   dto.cultivationSeedItemHashIds != null &&
+                   slotIndex >= 0 &&
+                   slotIndex < dto.cultivationSeedItemHashIds.Length &&
+                   dto.cultivationSeedItemHashIds[slotIndex] != 0;
         }
 
         private static byte PackHealthByte(float currentIntegrity, float maxIntegrity)
@@ -2971,9 +3361,9 @@ namespace Hecton8.Construction
             if (module == null)
                 return;
 
-            if (pool != null && pool.CanDespawnWithoutDestroy(module))
+            if (ObjectPoolManager.TryResolvePoolForInstance(module, pool, out IObjectPoolService ownerPool))
             {
-                pool.Despawn(module);
+                ownerPool.Despawn(module);
                 return;
             }
 
@@ -3228,6 +3618,18 @@ namespace Hecton8.Construction
             _lateFrameTickRegistered = false;
         }
 
+        private void TryRegisterDispatcherLanes()
+        {
+            TryRegisterTick();
+            TryRegisterLateFrameTick();
+        }
+
+        private void TryUnregisterDispatcherLanes()
+        {
+            TryUnregisterLateFrameTick();
+            TryUnregisterTick();
+        }
+
         private void TryUnregisterHabitatGraphService()
         {
             if (!_habitatGraphServiceRegistered)
@@ -3245,6 +3647,11 @@ namespace Hecton8.Construction
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterDispatcherLanes();
+                    if (currentService != null && _isInitialized && isActiveAndEnabled)
+                        TryRegisterDispatcherLanes();
+                    break;
                 case GlobalRegistryServiceSlot.Save:
                     if (_registeredSaveService != null)
                         TryUnregisterSaveParticipant();
@@ -3254,7 +3661,7 @@ namespace Hecton8.Construction
                         TryRegisterSaveParticipant();
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _cachedObjectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     _cachedPlayerInventoryService = currentService as IPlayerInventoryService;
@@ -3300,11 +3707,24 @@ namespace Hecton8.Construction
 
         private void TryRegisterSaveParticipant(ISaveService saveService)
         {
-            if (!_isInitialized || !Application.isPlaying || _registeredSaveService != null || saveService == null)
+            if (!_isInitialized || !Application.isPlaying || _registeredSaveService != null)
+                return;
+
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _cachedSaveService = saveService;
+            }
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
             _registeredSaveService = saveService;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterSaveParticipant()
@@ -3321,8 +3741,7 @@ namespace Hecton8.Construction
             if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.IsHotSwapListenerRegistered(this);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -3330,9 +3749,7 @@ namespace Hecton8.Construction
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
-                GlobalRegistry.UnregisterHotSwapListener(this);
-
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
         }
 
@@ -3392,8 +3809,17 @@ namespace Hecton8.Construction
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteVector(shiftOffset) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
+                return;
+            }
+
             BaseDegradationSystem.ApplyOriginShift(in shiftData);
-            DroneFleetManager.ApplyOriginShift(shiftData.ShiftOffset);
+            DroneFleetManager.ApplyOriginShift(shiftOffset);
             RecoverHabitatJointsAfterOriginShift(in shiftData);
         }
 

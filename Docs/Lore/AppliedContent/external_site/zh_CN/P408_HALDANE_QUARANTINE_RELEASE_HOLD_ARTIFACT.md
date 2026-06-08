@@ -9,32 +9,22 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Haldane Quarantine Hold"
+title: "霍尔丹隔离释放搁置"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Haldane Quarantine Hold
+# 霍尔丹隔离释放搁置
 
-ZH LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## 错误分钟里的正确程序
 
-## Scanner
+霍尔丹 hold 不应被读成简单欺诈。HECTON-8 有污染风险，seal 受损，样本 custody 存在问题，也有生物不确定性。灾难开始运动之前，隔离协议有意义。正因如此，这份文件才咬人：程序真实到可以辩护，缓慢到可以杀人。
 
-ZH LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+release certification 通过时机变成武器。压力升高、路线失效时，hold 要求 XO sample custody、seal-read variance 和 downstream exposure review。每个词都听起来负责。组合起来，它们把撤离者、机械师和证人留在失效殖民地内，直到 rescue 不再是主导动词。
 
-## Terminal
-
-ZH LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-ZH LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-ZH LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+这里最能让 Deep Reach 像制度。霍尔丹不需要嘲笑被困工人。desk 只要保持 chain of custody，降低未来 liability，并避免把污染证据释放到它无法控制的 claim space。恐怖在于这些动机在需要开门的那一分钟都能听起来正确。
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/zh_CN. -->

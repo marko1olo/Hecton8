@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aya Morita Repair Medicine"
+title: "Medicina de Reparo de Aya Morita"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aya Morita Repair Medicine
+# Medicina de Reparo de Aya Morita
 
-PT LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category.
+O registro de medicina de reparo de Aya Morita documenta o ponto em que lógica de manutenção Atlas, triagem de emergência, lesão de cabo e tecido vivo colapsam em uma só categoria.
 
 ## Scanner
 
-PT-BR LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.
+Aya Morita registrou o primeiro ponto em que Atlas parou de curar corpos e começou a usá-los como superfície de reparo compatível.
 
 ## Terminal
 
-PT-BR LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.
+MORITA, A. Tecido do paciente aceito por colônia selante após exposição ao cabo. Nenhuma agressão hostil observada. Tag Atlas classifica ferida como dano de interface. Rejeitar protocolo de reparo para triagem humana.
 
 ## Audio
 
-PT-BR LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.
+Aquilo fechou a ferida ao redor do cabo. Foi quando ela parou de chamar aquilo de tratamento.
 
 ## Field Note
 
-PT-BR LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.
+Isto não é uma nota de zumbi. É pior: uma nota de manutenção com caligrafia de beira de leito.
 
 <!-- External Site; generated from P068_AYA_MORITA_REPAIR_MEDICINE/pt_BR. -->

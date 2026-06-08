@@ -22,6 +22,7 @@ namespace Hecton8.Habitat.Deformation
         private const string SurgeonDumpRelativePath = "Docs/AgentLogs/Dump_STRUCTURAL_SURGEON.bin";
         private const string DumpPayloadLabel = "structuralIntegrityTelemetryDumpPayload";
         private const string DefaultCsvRelativePath = "Docs/Data/hull_materials.csv";
+        private const float DefaultSeaLevelAupY = 14.02f;
         private static readonly ProfilerMarker _tickMarker = new ProfilerMarker("H8.Habitat.StructuralIntegrity.Tick");
         private static readonly ProfilerMarker _lateMarker = new ProfilerMarker("H8.Habitat.StructuralIntegrity.LateFrame");
         private static readonly int _stateBufferId = Shader.PropertyToID("_HectonStructuralIntegrityStateBuffer");
@@ -71,7 +72,7 @@ namespace Hecton8.Habitat.Deformation
         [SerializeField] private string materialStrengthCsvRelativePath = DefaultCsvRelativePath;
 
         [Header("Pressure")]
-        [SerializeField] private Vector3 seaLevelAup = Vector3.zero;
+        [SerializeField] private Vector3 seaLevelAup = new Vector3(0f, DefaultSeaLevelAupY, 0f);
         [SerializeField, Min(0f)] private float basePressureKPa = 101.325f;
         [SerializeField, Min(0f)] private float pressureGradientKPaPerMeter = 10.05f;
         [SerializeField, Min(0f)] private float pressureToStressScale = 1f;
@@ -684,7 +685,7 @@ namespace Hecton8.Habitat.Deformation
         {
             StructuralTuningDTO sanitized = SanitizeTuning(new StructuralTuningDTO
             {
-                SeaLevelAup = new double3(seaLevelAup.x, seaLevelAup.y, seaLevelAup.z),
+                SeaLevelAup = ResolveSeaLevelAup(seaLevelAup),
                 SdfOriginAup = new double3(sdfOriginAup.x, sdfOriginAup.y, sdfOriginAup.z),
                 BasePressureKPa = basePressureKPa,
                 PressureGradientKPaPerMeter = pressureGradientKPaPerMeter,
@@ -736,7 +737,7 @@ namespace Hecton8.Habitat.Deformation
                     Materials = materials,
                     NodeCount = _activeNodeCount,
                     BaseHash = StructuralIntegrityConstants.DefaultBaseHash,
-                    SeaLevelAup = new double3(seaLevelAup.x, seaLevelAup.y, seaLevelAup.z),
+                    SeaLevelAup = ResolveSeaLevelAup(seaLevelAup),
                     GlassHash = _glassHash,
                     TitaniumHash = _titaniumHash,
                     PlasteelHash = _plasteelHash
@@ -1501,11 +1502,32 @@ namespace Hecton8.Habitat.Deformation
             tuning.SdfMetersPerVoxel = math.max(0.01f, SanitizeNonNegative(tuning.SdfMetersPerVoxel, 1f));
             tuning.SdfRangeMeters = math.max(0.01f, SanitizeNonNegative(tuning.SdfRangeMeters, 8f));
             tuning.ActiveNodeCount = math.clamp(tuning.ActiveNodeCount, 0, StructuralIntegrityConstants.MaxNodeCapacity);
-            if (!math.all(math.isfinite(tuning.SeaLevelAup)))
-                tuning.SeaLevelAup = double3.zero;
+            tuning.SeaLevelAup = SanitizeSeaLevelAup(tuning.SeaLevelAup);
             if (!math.all(math.isfinite(tuning.SdfOriginAup)))
                 tuning.SdfOriginAup = double3.zero;
             return tuning;
+        }
+
+        private static double3 ResolveSeaLevelAup(Vector3 candidateSeaLevelAup)
+        {
+            return SanitizeSeaLevelAup(new double3(candidateSeaLevelAup.x, candidateSeaLevelAup.y, candidateSeaLevelAup.z));
+        }
+
+        private static double3 SanitizeSeaLevelAup(double3 candidateSeaLevelAup)
+        {
+            double x = math.isfinite(candidateSeaLevelAup.x) ? candidateSeaLevelAup.x : 0d;
+            double y = ResolveSeaLevelAupY(candidateSeaLevelAup.y);
+            double z = math.isfinite(candidateSeaLevelAup.z) ? candidateSeaLevelAup.z : 0d;
+            return new double3(x, y, z);
+        }
+
+        private static double ResolveSeaLevelAupY(double candidateSeaLevelAupY)
+        {
+            return math.isfinite(candidateSeaLevelAupY) &&
+                   math.abs(candidateSeaLevelAupY) > 0.0001d &&
+                   math.abs(candidateSeaLevelAupY) <= 1000d
+                ? candidateSeaLevelAupY
+                : DefaultSeaLevelAupY;
         }
 
         private static float SanitizeNonNegative(float value, float fallback)

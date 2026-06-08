@@ -9,32 +9,36 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "След языка отозванного доступа"
+title: "След отозванного доступа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# След языка отозванного доступа
+# След отозванного доступа
 
-RU LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+Язык отозванного доступа стал одним из самых тихих замков Deep Reach. Дверь могла отказать бывшему работнику, назвать запрос рядовым обслуживанием и все равно выдать точные термины, которыми был обозначен скрытый эвакуационный маршрут. На HECTON-8 это важно потому, что игроку не нужно чистое признание, чтобы идти по следу. Старой формулировки достаточно: протокол деградированного учета, замещающий свидетель, архив безопасного маршрута, маршрут сохранения претензии. Эти слова создавали для разбора ответственности, не для спасения. Отказ доказывает две вещи сразу. Допуск мертв. Процедура за ним нет.
 
 ## Scanner
 
-Access trace совпадает со старой фразировкой Deep Reach. Denial написан как maintenance.
+Блокировка не говорит «запрещено». Она пишет: переклассификация обслуживания, удержание непрерывности, маршрутные материалы. Старый язык Deep Reach: отказ, который все равно указывает на похороненную дверь.
 
 ## Terminal
 
-LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because former staff know them.
+ОТВЕТ ДОСТУПА / АРХИВ БЕЗОПАСНОГО МАРШРУТА
+учетные данные: отозваны
+причина: материалы эвакуационной непрерывности доступны только сертифицированному персоналу Deep Reach
+видимые термины: деградированный учет, замещающий свидетель, маршрут сохранения претензии, переклассификация обслуживания
+примечание: бывший полевой персонал может видеть язык отказа только для сверки инцидента.
 
 ## Audio
 
-Это не security. Это memo, притворяющийся дверью.
+Они не стерли коридор. Они завернули его в словарь, который до сих пор понимают только виноватые сотрудники.
 
 ## Field Note
 
-RU LOC HOLD: Lockout language hints at hidden liability without granting free access.
+Значок мертв. Блокировка все еще говорит на канцелярском диалекте, которым похоронили маршрут.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ru_RU. -->

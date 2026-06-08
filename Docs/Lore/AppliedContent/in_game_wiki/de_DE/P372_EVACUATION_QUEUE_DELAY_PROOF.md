@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Evacuation Queue Delay Proof"
+title: "Verzögerungsakte der Evakuierungswarteschlange"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Evacuation Queue Delay Proof
+# Verzögerungsakte der Evakuierungswarteschlange
 
-DE LOC HOLD: Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
+Dieser Beweis macht aus Evakuierung eine Sequenz. Das Tor war nicht bloß durch Flutwasser abgeschnitten; es blieb im Review-Zustand, während Druckalarme bewohnte Korridore erreichten. Das leere Zeugenfeld zählt, weil das System menschliche Bestätigung verlangte, nachdem Menschen das Panel schon nicht mehr erreichen konnten.
 
 ## Scanner
 
-DE LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Queue-Uhr geborgen. Das Freigabetor blieb verriegelt, nachdem Druckalarme von Prognose zu Korridor wechselten.
 
 ## Terminal
 
-DE LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Manuelle Bestätigung fehlt. Quarantäneprüfung offen. Routendruck überschritt Siegelklasse vor Abschluss der Autorisierung.
 
 ## Audio
 
-DE LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Sie scheiterten nicht daran, alle zu retten. Sie warteten, bis irgendwen zu retten schwerer wurde.
 
 ## Field Note
 
-DE LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Marauder-Notiz: Ein geschlossenes Tor mit offenem Feld ist kein Unfall. Es ist eine Entscheidung, die auf Unterschrift wartet.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/de_DE. -->

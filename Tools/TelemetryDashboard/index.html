@@ -472,6 +472,434 @@
         : `latest frame ${latest.frame} ${status} blob ${blob} sections ${latest.sectionCount || 0} path ${path} ticks ${ticks} state ${hash} checksum ${checksum}${failure}`;
       return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
     }
+    if (file.type === "vault_sovereignty_telemetry_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const vaultMiB = latest.totalVaultBytes === undefined ? "--" : `${fmtNumber(Number(latest.totalVaultBytes) / 1048576, 3)} MiB`;
+      const arenaMiB = latest.arenaBytes === undefined ? "--" : `${fmtNumber(Number(latest.arenaBytes) / 1048576, 3)} MiB`;
+      const jobUs = latest.maxMemoryJobUs === undefined ? "--" : `${fmtNumber(latest.maxMemoryJobUs, 2)} us`;
+      const quality = latest.globalQualityWeight === undefined ? "--" : fmtNumber(latest.globalQualityWeight, 3);
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} vault ${vaultMiB} arena ${arenaMiB} buffers ${latest.activeBufferCount || 0} misses ${latest.generationMisses || 0} stride ${latest.strideMultiplier || 0} job ${jobUs} quality ${quality} state ${latest.stateHashHex || "--"} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "arm64_alignment_telemetry_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const position = asObject(latest.aupOrRuntimePosition);
+      const positionText = position.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(position.x, 3)}/${fmtNumber(position.y || 0, 3)}/${fmtNumber(position.z || 0, 3)}`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} buffer ${latest.bufferID || 0} offset ${latest.byteOffset || 0} severity ${fmtNumber(latest.severity01 || 0, 3)} pos ${positionText} struct ${latest.structHashHex || "--"} addr ${latest.offendingAddressHex || "--"} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "haptic_synthesis_telemetry_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const low = latest.finalLowFrequency01 === undefined ? "--" : fmtNumber(latest.finalLowFrequency01, 3);
+      const high = latest.finalHighFrequency01 === undefined ? "--" : fmtNumber(latest.finalHighFrequency01, 3);
+      const quality = latest.globalQualityWeight === undefined ? "--" : fmtNumber(latest.globalQualityWeight, 3);
+      const burst = latest.burstExecutionMicroseconds === undefined ? "--" : `${latest.burstExecutionMicroseconds} us`;
+      const signals = latest.rawSignalCount === undefined
+        ? "--/--/--"
+        : `${latest.rawSignalCount || 0}/${latest.droppedSignalCount || 0}/${latest.generatedPulseCount || 0}`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} motors ${low}/${high} signals raw/drop/pulse ${signals} burst ${burst} quality ${quality} state ${latest.stateHashHex || "--"} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "vocal_warning_telemetry_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const alarms = asArray(latest.activeAlarmLabels).join("+") || "none";
+      const faults = asArray(latest.faultFlagLabels).join("+") || "none";
+      const score = latest.currentPriorityScore === undefined ? "--" : fmtNumber(latest.currentPriorityScore, 3);
+      const burst = latest.burstExecutionMicros === undefined ? "--" : `${fmtNumber(latest.burstExecutionMicros, 2)} us`;
+      const source = asObject(latest.sourceAupGrid);
+      const sourceText = source.x === undefined ? "--/--/--" : `${source.x}/${source.y || 0}/${source.z || 0}`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} warning ${latest.currentWarningLabel || "none"} bank ${latest.currentAudioBankHashHex || "--"} active ${alarms} priority ${score} burst ${burst} src ${sourceText} faults ${faults}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "granular_audio_telemetry_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const sample = latest.sampleIndex === undefined ? "no latest" : `sample ${latest.sampleIndex}`;
+      const drive = latest.stress01 === undefined
+        ? "--/--/--"
+        : `${fmtNumber(latest.stress01, 3)}/${fmtNumber(latest.depth01 || 0, 3)}/${fmtNumber(latest.impact01 || 0, 3)}`;
+      const voices = latest.activeVoices === undefined ? "--/--" : `${latest.activeVoices}/${latest.voiceLimit || 0}`;
+      const mixed = latest.mixedSample === undefined ? "--" : fmtNumber(latest.mixedSample, 4);
+      const energy = latest.peakImpactEnergyJoules === undefined ? "--" : `${fmtNumber(latest.peakImpactEnergyJoules, 1)} J`;
+      const frame = latest.sampleIndex === undefined
+        ? sample
+        : `latest ${sample} drive stress/depth/impact ${drive} voices ${voices} taps ${latest.activeEchoTaps || 0} mix ${mixed} impact ${energy} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "prologue_audio_transition_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const dsp = asArray(latest.dspFlagLabels).join("+") || "none";
+      const lowPass = latest.lowPassCutoffHz === undefined
+        ? "--/--"
+        : `${fmtNumber(latest.lowPassCutoffHz, 1)}/${fmtNumber(latest.audioLowPassCutoffHz || 0, 1)} Hz`;
+      const blends = latest.heat01 === undefined
+        ? "--/--/--"
+        : `${fmtNumber(latest.heat01, 3)}/${fmtNumber(latest.granularStress01 || 0, 3)}/${fmtNumber(latest.portalBlend01 || 0, 3)}`;
+      const velocity = latest.universeVelocityMetersPerSecond === undefined
+        ? "--"
+        : `${fmtNumber(latest.universeVelocityMetersPerSecond, 2)} m/s`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} seq ${latest.sequence || 0} stage ${latest.stageLabel || "--"} velocity ${velocity} lowpass ${lowPass} heat/grain/portal ${blends} flags ${labels} dsp ${dsp}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "audio_synthesis_telemetry_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const voices = latest.activePolyphony === undefined ? "--/--" : `${latest.activePolyphony}/${latest.voiceLimit || 0}`;
+      const dsp = latest.dspMicroseconds === undefined ? "--" : `${fmtNumber(latest.dspMicroseconds, 2)} us`;
+      const quality = latest.globalQualityWeight === undefined ? "--" : fmtNumber(latest.globalQualityWeight, 3);
+      const generation = latest.expectedGeneration === undefined ? "--/--" : `${latest.expectedGeneration}/${latest.actualGeneration || 0}`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} buffer ${latest.bufferIdHex || "--"} failure ${latest.failureLabel || "none"} voices ${voices} dsp ${dsp} quality ${quality} gen ${generation} underruns ${latest.underrunCount || 0} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "vocal_bank_synthesis_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const lastFaults = asArray(file.lastFaultFlagLabels).join("+") || "none";
+      const dsp = latest.dspMicroseconds === undefined ? "--" : `${fmtNumber(latest.dspMicroseconds, 2)} us`;
+      const meters = latest.outputPeak === undefined
+        ? "--/--"
+        : `${fmtNumber(latest.outputPeak, 3)}/${fmtNumber(latest.outputRms || 0, 3)}`;
+      const sample = latest.currentSampleIndex === undefined
+        ? "--/--"
+        : `${latest.currentSampleIndex}/${latest.totalSamples || 0}`;
+      const quality = latest.qualityWeight01 === undefined
+        ? "--/--"
+        : `${fmtNumber(latest.qualityWeight01, 3)}/${fmtNumber(latest.radioDistortion01 || 0, 3)}`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} phrase ${latest.phraseHashHex || "--"} codec ${latest.codecLabel || "--"} sample ${sample} dsp ${dsp} peak/rms ${meters} quality/dist ${quality} underruns ${latest.underrunCount || 0} flags ${labels} last ${lastFaults}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "adaptive_stem_mixer_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const stem = latest.activeStemHashHex || "--";
+      const biome = latest.biomeHashHex || "--";
+      const mixer = latest.mixerUpdateMicroseconds === undefined ? "--" : `${fmtNumber(latest.mixerUpdateMicroseconds, 2)} us`;
+      const volumes = latest.baseVolume === undefined
+        ? "--/--/--/--"
+        : `${fmtNumber(latest.baseVolume, 3)}/${fmtNumber(latest.actionVolume || 0, 3)}/${fmtNumber(latest.depthVolume || 0, 3)}/${fmtNumber(latest.bossVolume || 0, 3)}`;
+      const quality = latest.qualityWeight === undefined ? "--" : fmtNumber(latest.qualityWeight, 3);
+      const phase = latest.beatPhase01 === undefined ? "--" : fmtNumber(latest.beatPhase01, 3);
+      const cutoff = latest.cutoffHz === undefined ? "--" : `${fmtNumber(latest.cutoffHz, 1)} Hz`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} stem ${stem} biome ${biome} mixer ${mixer} cutoff ${cutoff} vols B/A/D/Boss ${volumes} quality ${quality} beat ${phase} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "camera_juice_telemetry_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const offset = asObject(latest.offset);
+      const rotation = asObject(latest.rotationDegrees);
+      const offsetText = offset.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(offset.x, 3)}/${fmtNumber(offset.y || 0, 3)}/${fmtNumber(offset.z || 0, 3)}`;
+      const rotationText = rotation.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(rotation.x, 2)}/${fmtNumber(rotation.y || 0, 2)}/${fmtNumber(rotation.z || 0, 2)} deg`;
+      const trauma = latest.traumaScalar === undefined ? "--" : fmtNumber(latest.traumaScalar, 3);
+      const burst = latest.burstExecutionMicroseconds === undefined ? "--" : `${fmtNumber(latest.burstExecutionMicroseconds, 2)} us`;
+      const quality = latest.globalQualityWeight01 === undefined ? "--" : fmtNumber(latest.globalQualityWeight01, 3);
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} trauma ${trauma} offset ${offsetText} rot ${rotationText} signals ${latest.incomingSignalCount || 0} burst ${burst} quality ${quality} state ${latest.stateHashHex || "--"} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "material_decay_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const reason = file.dumpReasonLabel || "none";
+      const item = latest.itemHashHex || "--";
+      const values = latest.rust01 === undefined
+        ? "--/--/--"
+        : `${fmtNumber(latest.rust01, 3)}/${fmtNumber(latest.wetness01 || 0, 3)}/${fmtNumber(latest.blood01 || 0, 3)}`;
+      const quality = latest.qualityWeight01 === undefined ? "--" : fmtNumber(latest.qualityWeight01, 3);
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} item ${item} slot ${latest.slotIndex || 0} decay rust/wet/blood ${values} quality ${quality} reason ${reason} state ${latest.stateHashHex || "--"} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "interactive_wake_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const pos = asObject(latest.strongestWakePositionWS);
+      const vel = asObject(latest.strongestVelocityWS);
+      const posText = pos.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(pos.x, 3)}/${fmtNumber(pos.y, 3)}/${fmtNumber(pos.z, 3)}`;
+      const velText = vel.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(vel.x, 3)}/${fmtNumber(vel.y, 3)}/${fmtNumber(vel.z, 3)}`;
+      const intensity = fmtNumber(latest.strongestIntensity, 3);
+      const radius = fmtNumber(latest.maxRadius, 3);
+      const stress = fmtNumber(latest.systemStress01, 3);
+      const budget = fmtNumber(latest.budgetPressure01, 3);
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} wakes ${latest.activeWakeSourcesCount || 0}/${latest.slotLimit || 0} intensity ${intensity} radius ${radius} pos ${posText} vel ${velText} stress/budget ${stress}/${budget} state ${latest.stateHashHex || "--"} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "flora_sway_field_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const center = asObject(latest.fieldCenterWS);
+      const centerText = center.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(center.x, 2)}/${fmtNumber(center.y, 2)}/${fmtNumber(center.z, 2)}`;
+      const quality = fmtNumber(latest.globalQualityWeight, 3);
+      const stress = fmtNumber(latest.systemStress01, 3);
+      const maxMag = fmtNumber(latest.maxMagnitude, 3);
+      const update = latest.updateIntervalSeconds === undefined ? "--" : `${fmtNumber(latest.updateIntervalSeconds, 4)} s`;
+      const cpu = latest.cpuMicroseconds === undefined ? "--" : `${latest.cpuMicroseconds} us`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} res ${latest.resolution || 0} wakes ${latest.activeWakeSourcesCount || 0} nonzero ${latest.nonZeroCellsCount || 0} cell ${fmtNumber(latest.cellSize, 3)} max ${maxMag} quality/stress ${quality}/${stress} update ${update} cpu ${cpu} center ${centerText} state ${latest.stateHashHex || "--"} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "flora_memory_telemetry_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const quality = fmtNumber(latest.globalQualityWeight, 3);
+      const stress = fmtNumber(latest.systemStress01, 3);
+      const lengths = latest.requiredLength === undefined
+        ? "--/--"
+        : `${latest.actualLength || 0}/${latest.requiredLength || 0}`;
+      const hash = latest.stateHashOk === false ? `${latest.stateHashHex || "--"} expected ${latest.expectedStateHashHex || "--"}` : latest.stateHashHex || "--";
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} event ${latest.eventLabel || "unknown"} buffer ${latest.bufferLabel || "unknown"} len ${lengths} gen ${latest.generation || 0}/${latest.vaultGeneration || 0} failures ${latest.consecutiveFailures || 0} quality/stress ${quality}/${stress} cpu ${latest.cpuMicroseconds || 0} us state ${hash} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "flora_ambient_sway_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const wrapped = latest.wrappedTime === undefined ? "--" : `${fmtNumber(latest.wrappedTime, 4)} s`;
+      const flow = fmtNumber(latest.flowMagnitude, 3);
+      const quality = fmtNumber(latest.globalQualityWeight, 3);
+      const amplitude = latest.amplitudeMeters === undefined ? "--" : `${fmtNumber(latest.amplitudeMeters, 3)} m`;
+      const source = latest.sourceHashOk === false ? `${latest.sourceHashHex || "--"} mismatch` : latest.sourceHashHex || "--";
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} flow ${flow} amp ${amplitude} quality ${quality} wrapped ${wrapped} source ${source} state ${latest.stateHashHex || "--"} cursor ${file.telemetryCursor || 0} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "vegetation_memory_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const lengths = latest.expectedLength === undefined
+        ? "--/--"
+        : `${latest.actualLength || 0}/${latest.expectedLength || 0}`;
+      const job = latest.jobMicroseconds === undefined ? "--" : `${fmtNumber(latest.jobMicroseconds, 2)} us`;
+      const quality = fmtNumber(latest.qualityWeight, 3);
+      const pos = asObject(latest.position);
+      const posText = pos.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(pos.x, 2)}/${fmtNumber(pos.y, 2)}/${fmtNumber(pos.z, 2)}`;
+      const hash = latest.stateHashOk === false ? `${latest.stateHashHex || "--"} expected ${latest.expectedStateHashHex || "--"}` : latest.stateHashHex || "--";
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} code ${latest.failureCodeLabel || "unknown"} phase ${latest.phaseLabel || "unknown"} buffer ${latest.bufferLabel || "unknown"} len ${lengths} culled ${latest.culledInstances || 0} job ${job} quality ${quality} pos ${posText} state ${hash} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "dear_lie_organics_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const quality = fmtNumber(latest.globalQualityWeight, 3);
+      const query = latest.queryMicroseconds === undefined ? "--" : `${fmtNumber(latest.queryMicroseconds, 2)} us`;
+      const hash = latest.hashOk === false ? `${latest.hashHex || "--"} expected ${latest.expectedHashHex || "--"}` : latest.hashHex || "--";
+      const counts = latest.frame === undefined
+        ? "--"
+        : `surface/under ${latest.surfaceCount || 0}/${latest.underwaterCount || 0} damage/destroy/vfx ${latest.damageSignalCount || 0}/${latest.destroyedCount || 0}/${latest.vfxSignalCount || 0} regen/recovered ${latest.regenQueuedCount || 0}/${latest.recoveredCount || 0} reject/nan ${latest.rejectedSignalCount || 0}/${latest.nanRejectCount || 0}`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} ${counts} uid ${latest.lastInstanceUidHex || "--"} query ${query} quality ${quality} hash ${hash} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "chemical_influence_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const origin = asObject(latest.gridOriginAup);
+      const originText = origin.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(origin.x, 2)}/${fmtNumber(origin.y, 2)}/${fmtNumber(origin.z, 2)}`;
+      const quality = fmtNumber(latest.globalQualityWeight, 3);
+      const maxBlood = fmtNumber(latest.maxBlood, 3);
+      const solver = latest.solverMicros === undefined ? "--" : `${fmtNumber(latest.solverMicros, 2)} us`;
+      const hash = latest.stateHashOk === false ? `${latest.stateHashHex || "--"} expected ${latest.expectedStateHashHex || "--"}` : latest.stateHashHex || "--";
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} emitters ${latest.activeEmitters || 0}+${latest.mockEmitters || 0} iter ${latest.iterations || 0} maxBlood ${maxBlood} quality ${quality} solver ${solver} shift ${latest.gridShiftManhattan || 0} origin ${originText} state ${hash} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "fauna_genetics") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.entryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const hue = fmtNumber(latest.averageHueShift01, 3);
+      const size = fmtNumber(latest.averageSize01, 3);
+      const aggression = fmtNumber(latest.averageAggression01, 3);
+      const pattern = fmtNumber(latest.averagePattern01, 3);
+      const burst = latest.burstExecutionMicroseconds === undefined ? "--" : `${fmtNumber(latest.burstExecutionMicroseconds, 2)} us`;
+      const histogram = asArray(latest.patternHistogram).slice(0, 16).join("/");
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} genomes ${latest.activeGenomeCount || 0}/${latest.compiledGenomeCount || 0} extract ${latest.extractionOperationCount || 0} invalid ${latest.invalidMaskCount || 0} avg h/s/a/p ${hue}/${size}/${aggression}/${pattern} burst ${burst} tuning ${latest.tuningStateHashHex || "--"} hist ${histogram || "--"} state ${latest.stateHashHex || "--"} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "sargassum_food_chain_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const field = asObject(latest.fieldCenterWS);
+      const event = asObject(latest.eventPositionWS);
+      const fieldText = field.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(field.x, 2)}/${fmtNumber(field.y, 2)}/${fmtNumber(field.z, 2)}`;
+      const eventText = event.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(event.x, 2)}/${fmtNumber(event.y, 2)}/${fmtNumber(event.z, 2)}`;
+      const simTime = latest.simulationTime === undefined ? "--" : `${fmtNumber(latest.simulationTime, 2)} s`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} active/consumed ${latest.activeBoidCount || 0}/${latest.consumedBoidCount || 0} pending ${latest.pendingKillJob || 0} lod ${latest.lodTier || 0} sim ${simTime} field ${fieldText} event ${eventText} cursor ${file.telemetryCursor || 0} source ${latest.sourceHashHex || "--"} anomaly ${file.anomalyHashHex || "--"}/${latest.entryAnomalyHashHex || "--"} state ${latest.stateHashHex || "--"} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "sargassum_boid_sensory_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const sub = asObject(latest.submarineThreat);
+      const light = asObject(latest.flashlightThreat);
+      const ping = asObject(latest.acousticPingRadii);
+      const subText = sub.radius === undefined ? "--" : `${fmtNumber(sub.radius, 2)} m`;
+      const lightText = light.radius === undefined ? "--" : `${fmtNumber(light.radius, 2)} m`;
+      const pingText = ping.a === undefined
+        ? "--/--/--"
+        : `${fmtNumber(ping.a, 2)}/${fmtNumber(ping.b, 2)}/${fmtNumber(ping.c, 2)}`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} threats ${latest.activeThreatCount || 0} sub ${subText} light ${lightText} pings ${pingText} lod ${fmtNumber(ping.lodTier, 1)} cursor ${file.telemetryCursor || 0} anomaly ${file.anomalyHashHex || "--"} state ${latest.stateHashHex || "--"} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "marine_snow_vfx_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const gpu = latest.mockGpuMicroseconds === undefined ? "--" : `${latest.mockGpuMicroseconds} us`;
+      const throttle = latest.throttle === undefined ? "--" : fmtNumber(latest.throttle, 3);
+      const stress = latest.systemStress01 === undefined ? "--" : fmtNumber(latest.systemStress01, 3);
+      const speed = latest.maxSiltSpeed === undefined ? "--" : fmtNumber(latest.maxSiltSpeed, 3);
+      const camera = asObject(latest.cameraPositionWS);
+      const cameraText = camera.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(camera.x, 2)}/${fmtNumber(camera.y || 0, 2)}/${fmtNumber(camera.z || 0, 2)}`;
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} particles ${latest.dispatchedParticleCount || 0}/${latest.capacity || 0} wakes ${latest.dynamicWakeCount || 0} gpu ${gpu} throttle/stress ${throttle}/${stress} speed ${speed} camera ${cameraText} state ${latest.stateHashHex || "--"} seq ${latest.commandSequence || 0} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "propwash_gpu_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const gpu = latest.estimatedGpuMicroseconds === undefined ? "--" : `${fmtNumber(latest.estimatedGpuMicroseconds, 2)} us`;
+      const quality = latest.globalQualityWeight === undefined ? "--" : fmtNumber(latest.globalQualityWeight, 3);
+      const intensity = latest.maxIntensity === undefined ? "--" : fmtNumber(latest.maxIntensity, 3);
+      const sdf = latest.sdfProximityMeters === undefined ? "--" : `${fmtNumber(latest.sdfProximityMeters, 3)} m`;
+      const pos = asObject(latest.strongestLocalPosition);
+      const posText = pos.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(pos.x, 3)}/${fmtNumber(pos.y || 0, 3)}/${fmtNumber(pos.z || 0, 3)}`;
+      const wrapped = (file.writtenCount || 0) > (file.capacity || 0) ? ` wrapped ${file.writtenCount}` : "";
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} events ${latest.eventCount || 0} budget ${latest.particleBudgetLimit || 0} overflow ${latest.overflowCount || 0} gpu ${gpu} quality ${quality} max ${intensity} sdf ${sdf} pos ${posText} state ${latest.stateHashHex || "--"} flags ${labels}${wrapped}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "carve_debris_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const reason = asArray(file.reasonFlagLabels).join("+") || "none";
+      const shift = asObject(latest.appliedAupShift);
+      const shiftText = shift.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(shift.x, 3)}/${fmtNumber(shift.y || 0, 3)}/${fmtNumber(shift.z || 0, 3)}`;
+      const quality = latest.qualityPressure01 === undefined ? "--" : fmtNumber(latest.qualityPressure01, 3);
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} active ${latest.activeCarveDebrisCount || 0} queued ${latest.queuedCarves || 0} injected ${latest.injectedParticles || 0} quality ${quality} shift ${shiftText} state ${latest.stateHashHex || "--"} flags ${labels} reason ${reason}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "biolum_pulse_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const reason = asArray(file.reasonFlagLabels).join("+") || "none";
+      const compute = latest.oscillatorComputeTimeMs === undefined ? "--" : `${fmtNumber(latest.oscillatorComputeTimeMs, 4)} ms`;
+      const darkness = latest.globalDarknessScalar === undefined ? "--" : fmtNumber(latest.globalDarknessScalar, 3);
+      const frequency = latest.frequencyMultiplier === undefined ? "--" : fmtNumber(latest.frequencyMultiplier, 3);
+      const amplitude = latest.primaryAmplitudeHdr === undefined ? "--" : fmtNumber(latest.primaryAmplitudeHdr, 3);
+      const quality = latest.qualityWeight01 === undefined ? "--" : fmtNumber(latest.qualityWeight01, 3);
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} active ${latest.activeGlowingInstances || 0} waves ${latest.wavePulsesActive || 0} compute ${compute} dark ${darkness} freq ${frequency} amp ${amplitude} quality ${quality} flags ${labels} reason ${reason}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "biolum_director_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const reason = asArray(file.reasonFlagLabels).join("+") || "none";
+      const camera = asObject(latest.cameraPosition);
+      const cameraText = camera.x === undefined
+        ? "--/--/--"
+        : `${fmtNumber(camera.x, 2)}/${fmtNumber(camera.y, 2)}/${fmtNumber(camera.z, 2)}`;
+      const intensity = fmtNumber(latest.intensity, 3);
+      const phase = fmtNumber(latest.phase, 3);
+      const predator = fmtNumber(latest.predatorDim, 3);
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} intensity ${intensity} phase ${phase} predator ${predator} hits ${latest.predatorHits || 0} ripples ${latest.activeRipples || 0} camera ${cameraText} seq ${file.telemetrySequence || 0} flags ${labels} reason ${reason}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
     if (file.type === "toxic_outgassing_blackbox") {
       const latest = asObject(file.latest);
       const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;

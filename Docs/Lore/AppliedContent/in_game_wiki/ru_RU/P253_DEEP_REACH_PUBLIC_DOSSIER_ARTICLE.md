@@ -14,27 +14,30 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Публичное досье Deep Reach
 
-Внутриигровая вики: Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.
+Deep Reach должна читаться как институт, который действительно мог построить HECTON-8, прежде чем провалить ее. Публично это был development combine: давлениевая инфраструктура, сертификация маршрутов, жилье работников, орбитальное хранение, индустриальная экология, страховой язык и локальная власть, сведенные в одну машину. Поэтому последующее преступление острее. Deep Reach не была карикатурной империей, желавшей утопить луну. Она слишком дешево оценила tail risk, недостроила независимую эвакуацию, позволила языку непрерывности стать важнее извлечения и сохранила старые структуры претензий, пока люди еще находились в отказывающих комнатах. Публичное досье может назвать компанию и паттерн провала, не раскрывая каждую подпись. Оно должно научить игрока не доверять чистым корпоративным существительным: release, continuity, welfare, quarantine, route-safe, recoverable. На HECTON-8 эти слова часто отмечают место, где человеческую проблему превратили в проблему актива.
 
 ## Scanner
 
-Сканер: The public company name is cleaner than its route history.
+Публичное имя компании чище, чем история ее маршрутов. Начни с инфраструктуры. Пусть ответственность проступит в стыках.
 
 ## Terminal
 
-Терминал: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+ПУБЛИЧНЫЙ УРОВЕНЬ СТАТЬИ / DEEP REACH
+разрешено: development combine, оператор колонии, инфраструктурная власть, проблема эвакуационной емкости, язык публичного провала
+закрыто: именная цепочка подписей, внутренности weighting Atlas, финальные последствия receiver
+заметка редактора: сначала правдоподобный институт; потом преступление через процедуру.
 
 ## Audio
 
-Аудио: Never make the villain simpler than the paperwork.
+Deep Reach не нужно было звучать жестоко. Ей нужно было только, чтобы каждое опасное предложение звучало завершенным.
 
 ## Field Note
 
-Полевая заметка: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+Не заставляй Deep Reach шипеть. Заставь ее сертифицировать, откладывать, сохранять и выставлять счет.
 
 <!-- In-Game Wiki; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/ru_RU. -->

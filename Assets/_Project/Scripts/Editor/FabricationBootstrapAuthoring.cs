@@ -55,6 +55,7 @@ namespace Hecton8.EditorTools
         private const string WorldRootName = "--- WORLD ---";
         private const string OutpostRootName = "Fabrication_Outpost";
         private const string OutpostFabricatorName = "Forward_Fabricator";
+        private const float DefaultSurfaceWaterLevelY = 14.02f;
 
         [MenuItem("Hecton/Authoring/Rebuild Starter Fabrication Kit", priority = 170)]
         public static void RebuildStarterFabricationKit()
@@ -229,7 +230,7 @@ namespace Hecton8.EditorTools
                 OutpostRootName,
                 WorldRootName,
                 OutpostFabricatorName,
-                new Vector3(84f, 4900.8f, 1662f),
+                new Vector3(84f, DefaultSurfaceWaterLevelY + 0.8f, 1662f),
                 new Vector3(1.6f, 2.0f, 1.35f),
                 starterRecipes,
                 "Forpost-fabrikator");

@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Black Keel Contact
 
-The Black Keel is the player's only line back to orbit. It is not dead, but it is not loyal. Its broken messages turn the sky into a survival system: every window can carry a rescue request, a lie, a sample report, or evidence.
-
-## Scanner
-
-Old relay mast. Salted, bent, still pointed at the right sky.
-
-## Terminal
-
-OPERATOR STATE: alive. DROPCRAFT STATE: unrecoverable. CLAIM STATE: open. SAMPLE STATE: unknown. RECOVERY STATE: pending window.
-
-## Audio
-
-Window is closing. Send one packet. Choose before the storm band rolls over the mast.
-
-## Field Note
-
-When a carrier asks what you found before it asks if you are breathing, you are not the client. You are the tool.
+Black Keel should never read like a friendly starship waiting above the clouds. It is a claim-pool machine with a useful voice, a limited orbit, and contract priorities older than the player’s drop. Its first contact is valuable because it proves the sky is not empty. It is frightening because the carrier measures the player as operator state, dropcraft loss, sample uncertainty, open claim, and lien mass before it offers rescue language. That is HECTON-8’s opening pressure in miniature. The player is alive, the carrier is real, and the route home is already filtered through weather, debt, mass, and whoever benefits from the payload.
 
 <!-- External Site; generated from P002_BLACK_KEEL_CONTACT/en_US. -->

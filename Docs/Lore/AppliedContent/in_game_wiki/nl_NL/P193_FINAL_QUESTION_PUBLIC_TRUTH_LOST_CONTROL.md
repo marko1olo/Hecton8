@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Laatste vraag: publieke waarheid, verloren controle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Laatste vraag: publieke waarheid, verloren controle
 
-NL LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+De publieke-waarheid-route breekt de schone doofpot. Ze breekt ook eigendom van gevolgen. Bewijs kan namen redden van verwijdering, echte reddingsdruk maken en elke roofspeler met juridisch bureau of gebedskanaal uitnodigen.
 
 ## Scanner
 
-NL LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+Bewijs publiceren voorkomt uitwissing. Het geeft de vondst ook snel genoeg aan iedereen die haar slecht kan gebruiken.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+PUBLIEKE-WAARHEID-AS: getuigenhash, aansprakelijkheidsketen, Atlas-status, blauwe-schuld-coördinaten en payloadroute kunnen Deep Reach-controle verlaten. Na publicatie controleert de operator ontvangers, marktreactie en eerste aankomst niet meer.
 
 ## Audio
 
-NL LOC HOLD: Truth leaves your hand faster than rescue ever could.
+Waarheid verlaat je hand sneller dan redding ooit kan reizen.
 
 ## Field Note
 
-NL LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+Publieke waarheid is geen zuivere rechtvaardigheid. Ze maakt sancties, culten, veilingen, rechtszaken, reddingsdruk en nabootsende claims.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/nl_NL. -->

@@ -8,33 +8,19 @@ biome_tags: biome.thermal_fields;biome.factory_temple
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+spoiler_tier: 1
+title: "محرك حراري أرضي لفرن الفتحة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# محرك حراري أرضي لفرن الفتحة
 
-AR LOC HOLD: Vent Forge Geothermal Engine shows why HECTON-8 is valuable and lethal. The moon is an industrial engine before humans build one on it.
+تربط أفران الفتحات الجيولوجيا بالصنع والبقاء والرعب. تمنح حرارة ودورات ضغط للسيراميك والحشوات وزجاج الضغط، لكن الدورات نفسها تصنع جيوب غليان وقراءات أكسجين كاذبة وسحبا تآكلية وهجرة حيوانية.
 
-## Scanner
-
-AR LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
-
-## Terminal
-
-AR LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
-
-## Audio
-
-AR LOC HOLD: The vent does not care whether you call it power or weather.
-
-## Field Note
-
-AR LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+يبين محرك فرن الفتحة لماذا HECTON-8 ثمين وقاتل: القمر محرك صناعي قبل أن يبني البشر واحدا عليه. كل فتحة مفيدة هي أيضا آلة تعاقب التوقيت السيئ.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/ar_SA. -->

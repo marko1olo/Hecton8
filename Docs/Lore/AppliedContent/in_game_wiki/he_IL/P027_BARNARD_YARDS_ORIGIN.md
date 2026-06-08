@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # מוצא Barnard Yards
 
-Barnard Yards היא תרבות פירוק ספינות וחומרת לחץ. היא נותנת לשחקן מוצא מקצועי אמין.
+Barnard Yards היא תרבות של פירוק ספינות וחומרת לחץ: חותכים שכורים, מהדקים מטולאים, תביעות מתות וכלי הישרדות כעבודה רגילה. היא נותנת ל-HECTON-8 מוצא מקצועי הקרוב לחוב ולעמל, לא לרומנטיקה של כדור הארץ.
 
 ## Scanner
 

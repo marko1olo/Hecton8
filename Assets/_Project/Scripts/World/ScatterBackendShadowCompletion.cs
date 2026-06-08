@@ -21,6 +21,7 @@ namespace Hecton8.World
         public const byte ParityStatusStructureCountMismatch = 4;
         public const byte ParityStatusSpawnCountMismatch = 5;
         public const byte ParityStatusCandidateChecksumMismatch = 6;
+        public const byte ParityStatusBackendCandidateCapacitySaturated = 7;
 
         public ScatterBackendShadowCompletion(
             in ScatterSimulationParitySnapshot backendParity,
@@ -43,7 +44,8 @@ namespace Hecton8.World
                 ClusterDelta,
                 StructureDelta,
                 SpawnDelta,
-                CandidateChecksumMatchFlag != 0);
+                CandidateChecksumMatchFlag != 0,
+                ScatterSimulationParitySnapshot.HasCandidateCapacitySaturated(in backendParity));
             HasParityMatchFlag = ParityStatusCode == ParityStatusMatch ? (byte)1 : (byte)0;
             IsJobActiveFlag = isJobActive ? (byte)1 : (byte)0;
         }
@@ -118,6 +120,8 @@ namespace Hecton8.World
                     return "SpawnCountMismatch";
                 case ParityStatusCandidateChecksumMismatch:
                     return "CandidateChecksumMismatch";
+                case ParityStatusBackendCandidateCapacitySaturated:
+                    return "BackendCandidateCapacitySaturated";
                 case ParityStatusMatch:
                 default:
                     return "Match";
@@ -130,8 +134,11 @@ namespace Hecton8.World
             int clusterDelta,
             int structureDelta,
             int spawnDelta,
-            bool candidateChecksumMatch)
+            bool candidateChecksumMatch,
+            bool backendCandidateCapacitySaturated)
         {
+            if (backendCandidateCapacitySaturated)
+                return ParityStatusBackendCandidateCapacitySaturated;
             if (candidateDelta != 0)
                 return ParityStatusCandidateCountMismatch;
             if (groundDelta != 0)

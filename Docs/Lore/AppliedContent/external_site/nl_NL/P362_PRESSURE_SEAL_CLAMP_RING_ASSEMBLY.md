@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "Drukafdichting-klemringassemblage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Pressure Seal Clamp Ring Assembly
+# Drukafdichting-klemringassemblage
 
-NL LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.
+De Drukafdichting-klemringassemblage maakt capsulereparatie een drukonderhandeling: deep-rated metaal, glaszitting en Atlas bio-sealant kunnen het opstijgpad redden of vangen.
 
 ## Scanner
 
-NL LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Klemringlitteken. De opstijghuls overleefde de impact door de afdichting te verbruiken die haar thuis had moeten brengen.
 
 ## Terminal
 
-NL LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch houdt alleen compartimentdruk. Ascent seal vereist deep-rated clamp ring, pressure-glass seat, shell-sealant map en geverifieerd Deep Reach-profiel. Atlas-grown sealant kan habitat bewaren terwijl het schone scheiding blokkeert.
 
 ## Audio
 
-NL LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+De nuttige afdichting leeft de verkeerde kant op.
 
 ## Field Note
 
-NL LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+Een safe-room-lap kan een uur lucht kopen. Hij houdt geen lanceerimpuls.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/nl_NL. -->

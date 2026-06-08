@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "光束帆探测器时代"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# 光束帆探测器时代
 
-CN LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-CN LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-CN LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-CN LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-CN LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+光帆探测器时代是Aegir故事安静的开端。小载荷借远方阵列的能量先行穿越，再带回足够陈旧、足以争论、却也足以出售的数据包。探测器没有让Aegir安全。它们只让Aegir可读：重力井、辐射带、海洋特征、 relay sightlines，以及一条只要足够冷漠就能获利的航路。可读与安全之间的差距，就是Deep Reach进入故事的地方。
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/zh_CN. -->

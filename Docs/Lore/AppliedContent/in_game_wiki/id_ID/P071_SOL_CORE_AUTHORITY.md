@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Otoritas Sol Core"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Otoritas Sol Core
 
-ID LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core adalah akar hukum dan finansial ekspansi manusia, bukan tanah asal pribadi dan bukan kantor penyelamatan. Di HECTON-8, standarnya bertahan sebagai segel, formulir tanggung jawab, pelat keselamatan, dan bahasa asuransi yang hidup lebih lama daripada orang-orang yang seharusnya dilindungi.
 
 ## Scanner
 
-ID LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+Segel hukum Sol lama. Ia bisa memiliki mayat perbatasan tanpa cukup dekat untuk mencium kebocoran tekanan.
 
 ## Terminal
 
-ID LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+STANDAR SOL CORE: kesinambungan klaim diakui melalui kustodi pengangkut berlisensi, asuransi rute, dan putusan tertunda. Prioritas pemulihan manusia belum ditetapkan sampai sertifikasi bahaya lokal.
 
 ## Audio
 
-ID LOC HOLD: The seal came from Earth space. The rescue clause did not.
+Segelnya datang dari ruang Bumi. Klausul penyelamatannya tidak.
 
 ## Field Note
 
-ID LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol bukan rumah di sini. Ia tanda tangan tertua di dokumen yang masih bisa menghancurkanmu.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/id_ID. -->

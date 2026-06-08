@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Поврежденные узлы посадочной капсулы
 
-Поврежденные узлы посадочной капсулы убирают удобную спасательную логику из HECTON-8. Игрок застрял, потому что отказали конкретные системы: ascent sleeve, guidance gimbal, relay mast, compressor и heat tiles. Каждый отказ связан с будущим маршрутом, материалом или уликой.
+Поврежденные узлы посадочной капсулы убирают удобную спасательную логику из HECTON-8. Marauder застрял, потому что отказали конкретные системы: ascent sleeve, guidance gimbal, relay mast, compressor и heat tiles. Каждый отказ связан с маршрутом, материалом, апгрейдом инструмента или уликой, а не с расплывчатой аварией.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor
 
 ## Field Note
 
-Капсула может удержать игрока живым первый час. Улететь она не может без глубинных замен.
+Капсула может удержать Marauder живым первый час. Подняться она не сможет без глубинных замен.
 
 <!-- External Site; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/ru_RU. -->

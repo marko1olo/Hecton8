@@ -9,32 +9,16 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Blue Debt"
+title: "푸른 빚"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue Debt
+# 푸른 빚
 
-Blue debt는 HECTON-8을 잃어버린 식민지 이상으로 만드는 자원층이다. 값비싸고 불안정하며 Deep Reach가 이 달을 묻으면서 동시에 회수하려 한 이유와 직결된다.
-
-## Scanner
-
-압력으로 보존된 Xenon-Omega 잔류물. 적대적 조건 안에서만 안정. 따뜻한 거주 공기 근처에서 배출 금지.
-
-## Terminal
-
-XO 연속성 기질. 감압 금지. 여과되지 않은 거주구 대기에 노출 금지.
-
-## Audio
-
-컨테이너가 소나에서 노래한다. 낮고 규칙적이다. 생물이 아니다. 더 나쁘다.
-
-## Field Note
-
-Blue debt는 두 번 물기 때문에 돈이 된다. 운반할 때 한 번. 누군가 네가 가진 걸 알 때 또 한 번.
+푸른 빚 때문에 HECTON-8의 salvage는 안전해 보이기 전에 수익성 있어 보인다. 이 물질은 암초에 기다리는 보물 결정이 아니다. 산업 압력 시스템의 잔류물이다. Xenon-Omega 기질, 실패한 봉쇄 매질, 계산 슬래그, 그리고 바다가 계속 누르고 있었기 때문에 안정했던 봉인 스크랩. 잘못 올리면 샘플은 상태를 바꾼다. 잘못 팔면 문서 흔적이 너를 바꾼다. 그 이중 위험이 이름의 핵심이다. 푸른 빚은 생존자에게 빠르게 돈을 주지만, 모든 컨테이너는 미래 비용을 운반한다. 제염, carrier 유치권, Black Keel 보관 규칙, Deep Reach 청구 언어, 그리고 샘플이 증거이기도 할 가능성. 더 큰 로어에서 이 자원은 HECTON-8이 단순히 버려진 곳이 아니었다는 첫 단서 중 하나다. 귀중한 시스템은 압력 아래에서 아직 돌아가고 있었고, 그것을 만지려는 사람은 절박한 오퍼레이터뿐이었다.
 
 <!-- External Site; generated from P004_BLUE_DEBT/ko_KR. -->

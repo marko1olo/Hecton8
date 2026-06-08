@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Garde du paquet"
+title: "Garde du paquet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Garde du paquet
+# Garde du paquet
 
-FR LOC HOLD: Sceau de paquet récupéré. Black Keel peut recevoir la cargaison, mais la preuve exige source, sceau, hash témoin, marque de relais, voie de réception et état des dégâts. Préserve les tags avant de dépouiller le matériel.
+Sceau de paquet récupéré. Black Keel peut recevoir la cargaison, mais la preuve exige source, sceau, hash témoin, marque de relais, voie de réception et état des dégâts. Préserve les tags avant de dépouiller le matériel.
 
 ## Scanner
 
-FR LOC HOLD: SCEAU DE PAQUET // Bande de hash témoin abîmée mais lisible. Préserver avant la coupe. Une preuve sans sceau devient matériau de réclamation.
+SCEAU DE PAQUET // Bande de hash témoin abîmée mais lisible. Préserver avant la coupe de salvage. Une preuve sans sceau devient matériau de réclamation.
 
 ## Terminal
 
-FR LOC HOLD: NOTAIRE KEELMARK // Préserver plaque de sceau, hash témoin, tampon de route et tag de connecteur avant transfert. Le matériau non tamponné peut devenir perte de réclamation.
+NOTAIRE DE PAQUET KEELMARK // Préserver plaque de sceau, hash témoin, tampon de route et tag de connecteur avant transfert. Le matériau non tamponné peut être traité comme perte de réclamation.
 
 ## Audio
 
-FR LOC HOLD: Relais Black Keel : la cargaison est une masse. La preuve est une garde. Rapporte les deux, sinon la fenêtre facture l'écart.
+Relais Black Keel : la cargaison est une masse. La preuve est une garde. Rapporte les deux, sinon la fenêtre facture l'écart.
 
 ## Field Note
 
-FR LOC HOLD: Sceau d'abord, coupe ensuite. Un échantillon propre avec un tag cassé appartient à celui qui tient le registre.
+Sceau d'abord, coupe ensuite. Un échantillon propre avec un tag cassé appartient à celui qui tient le registre.
 
 <!-- In-Game Wiki; generated from P461_PACKET_CUSTODY_BRIDGE/fr_FR. -->

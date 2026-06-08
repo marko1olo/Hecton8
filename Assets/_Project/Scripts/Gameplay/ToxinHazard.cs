@@ -82,7 +82,18 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                _playerRuntime = currentService as IPlayerRuntimeContext;
+                IPlayerRuntimeContext nextPlayerRuntime = currentService as IPlayerRuntimeContext;
+                if (!IsPlayerRuntimeContextBound(nextPlayerRuntime))
+                {
+                    _playerRuntime = null;
+                    ClearExposure();
+                    return;
+                }
+
+                if (!ReferenceEquals(_playerRuntime, nextPlayerRuntime))
+                    ClearExposure();
+
+                _playerRuntime = nextPlayerRuntime;
                 return;
             }
 
@@ -132,7 +143,7 @@ namespace Hecton8.Gameplay
         {
             position = Vector3.zero;
             IPlayerRuntimeContext runtime = _playerRuntime;
-            if (runtime == null)
+            if (!IsPlayerRuntimeContextBound(runtime))
                 return false;
 
             if (runtime.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose))
@@ -153,6 +164,13 @@ namespace Hecton8.Gameplay
         {
             return playerTransform != null &&
                    (string.IsNullOrEmpty(playerTag) || playerTransform.CompareTag(playerTag));
+        }
+
+        private static bool IsPlayerRuntimeContextBound(IPlayerRuntimeContext playerContext)
+        {
+            return playerContext != null &&
+                   playerContext.IsInitialized &&
+                   playerContext.PlayerTransform != null;
         }
 
         private void SetExposure(bool inside)

@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "NL LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Ran-Aegir afstandsmodel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Ran-Aegir Distance Model
+# Ran-Aegir afstandsmodel
 
-NL LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+Het Ran-Aegir-model geeft HECTON-8 een schaal die de speler kan voelen. Aegir is dichtbij genoeg voor sondes, vracht, seed-hardware en door schuld gesteunde vestiging tegen 2190. Het is nog ver genoeg dat een overstroomde kamer niet kan wachten op genade van de binnenwerelden. Afstand verschijnt als vertraging, custody, brandstof, remmen en eigendom.
 
 ## Scanner
 
-NL LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+Routeplaat: Aegir is bereikbaar door infrastructuur en onbereikbaar door medelijden.
 
 ## Terminal
 
-NL LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+ROUTEMODEL: Ran/Aegir geldt als doel van tien-lichtjaar-klasse vanaf Sol. Speltekst gebruikt Aegir; droge catalogi gebruiken RAN-B:H8. Exacte efemeride blijft routetabelwerk.
 
 ## Audio
 
-NL LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+Tien lichtjaar is klein op een sterrenkaart. Groot genoeg om een redding failliet te maken.
 
 ## Field Note
 
-NL LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+Geschatte afstand is druk, geen decoratie. Tien lichtjaar kan nog steeds een kamer doden.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/nl_NL. -->

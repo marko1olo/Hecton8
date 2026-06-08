@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Seed Geology Invariants
 
-Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure.
-
-## Scanner
-
-Procedural note. The route changes; the moon does not forget its laws.
-
-## Terminal
-
-SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
-
-## Audio
-
-New seed, same moon. Different wound.
-
-## Field Note
-
-Replayability must move evidence and geography, not rewrite physics every seed.
+Every salvage run on HECTON-8 can expose a different route through the wound. That variation matters: a canyon may open earlier, a cable reef may hide a safer pocket, a bloom may push fauna into a route that felt empty last time, and an evidence chain may surface in a new order. The moon's physics do not reset for entertainment. Aegir remains the primary star. HECTON-8 remains locked in its orbital ladder. The Great Tide keeps its interval. The depth bands stay stacked in the same brutal order. Blue debt keeps its pressure behavior. Atlas remains tied to the deepest basin. Procedural geography changes what the crew finds first; canon geology decides what the crew can never talk the ocean out of.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/en_US. -->

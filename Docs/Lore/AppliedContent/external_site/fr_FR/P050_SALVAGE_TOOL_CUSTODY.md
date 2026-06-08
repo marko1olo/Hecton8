@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.deep_colony
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Salvage Tool Custody"
+spoiler_tier: 1
+title: "Garde de l’outil de salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Salvage Tool Custody
+# Garde de l’outil de salvage
 
-Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder.
+Sur HECTON-8, un outil peut être équipement de survie et témoin contractuel en même temps. Les registres de garde de salvage lient coupes, réparations et échantillons à des tokens de claim, faisant d’une action utile une future preuve, dette ou pression de paiement.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Le dock d’outil contient un registre de garde scellé. Dernière coupe, réparation et pochette d’échantillon sont liées à un token de claim Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12 : usage du cutter accepté sous salvage claim. Action de réparation témoignée. Droits d’échantillon attachés au token Keelmark Mutual. Export de preuve en conflit avec la route de paiement matériel.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Chaque coupe utile laisse un témoin.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Un cutter peut sauver ton air et vendre tes mains dans le même geste. Vérifie ce qu’il enregistre avant de l’appeler tien.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/fr_FR. -->

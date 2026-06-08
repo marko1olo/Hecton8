@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Kustodi Black Keel
 
-Kustodi Black Keel menjadikan dukungan orbit sebagai infrastruktur berguna namun tercemar: penyelamatan, mesin utang dan tekanan Deep Reach.
+Black Keel Custody mendefinisikan dukungan orbital sebagai infrastruktur berguna tetapi tercemar: rute penyelamatan, mesin utang, dan permukaan tekanan Deep Reach dalam satu objek.
 
 ## Scanner
 

@@ -9,32 +9,37 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Old Procedure Recognition Cue"
+title: "Ознака впізнання старої процедури"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Old Procedure Recognition Cue
+# Ознака впізнання старої процедури
 
-UK LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.
+Впізнання старої процедури перетворює минуле протагоніста на ігровий інструмент. Гравець іде не за містичною підказкою і не за особистим пророцтвом. Він читає форму безпеки, якій колись мусив довіряти. Штамп безпечного маршруту каже, що лінію сертифіковано. Докази в кімнаті кажуть, що облік працівників змінили. Поле ручного свідка, частина, яка мала примусити другу людську перевірку, запечатано офісом безперервності. У цьому протиріччі і є гачок. Deep Reach не просто сховала маршрут. Вона використала мову захисту працівників, щоб покинуті люди виглядали як адміністративно завершена справа. Ставка протагоніста починається як професійне впізнання: цю форму створили, щоб запобігти саме такій відмові.
 
 ## Scanner
 
-UK LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+Штамп безпечного маршруту на місці. Облік працівників переписано двома чорнилами. Поле ручного свідка запечатано. Форму створили, щоб ловити таку брехню, доки хтось не зробив її політикою.
 
 ## Terminal
 
-UK LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+ФОРМА ЕВАКУАЦІЙНОЇ БЕЗПЕРЕРВНОСТІ / СЕРТИФІКАЦІЯ БЕЗПЕЧНОГО МАРШРУТУ
+маршрут: допоміжна лінія виходу
+заявлені люди: деградований облік прийнято
+ручний свідок: запечатано офісом безперервності
+польова правка: перелік працівників не збігається з мітками насосної
+статус: збереження претензії, дозвіл на вилучення не надано.
 
 ## Audio
 
-UK LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+Ти знаєш цю форму. Вона мала не дати кімнаті вважатися порожньою, поки в ній ще дихали люди.
 
 ## Field Note
 
-UK LOC HOLD: Use where room evidence contradicts a clean procedural label.
+Форма мала змусити перерахувати ще раз. Тут вона змусила мовчати.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/uk_UA. -->

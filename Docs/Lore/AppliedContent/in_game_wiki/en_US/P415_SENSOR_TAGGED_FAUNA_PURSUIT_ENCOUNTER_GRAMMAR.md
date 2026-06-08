@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Sensor-Tagged Fauna Pursuit Encounter Grammar
 
-Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.
+Sensor-tagged pursuit encounters make Atlas repair logic visible without turning local fauna into soldiers. The animal remains an animal: hungry, frightened, territorial or confused. The tag is the problem. It sits in scar tissue or shell growth and returns weak packets that damaged maintenance logic may read as pressure state, route occupancy, contamination spread or a moving landmark. If the player runs straight to shelter, the tag can carry the shape of that retreat with it. If the player fires noise, pings too often or drags the animal through a repair corridor, the network may learn the wrong lesson faster. The answer is not to kill a puppet. It is to break the feedback: change angle, cut light, use density or structure for occlusion, let the animal choose a different path, and never let a dirty tag become the cleanest map to the player safe room.
 
 ## Scanner
 
-Sensor-tagged fauna. Old biometal tag emits repair-network echo; avoid leading it toward shelter.
+Sensor-tagged pursuit. Old biometal tag returns a repair-network echo. Animal movement is local; network interpretation is not.
 
 ## Terminal
 
-FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+ENCOUNTER GRAMMAR / SENSOR-TAGGED PURSUIT / role: corrupted maintenance feedback, shelter-contamination risk, non-villain pressure / safe read: tag pulse lags movement, animal avoids pain, Atlas route echo follows last known path / reject: mind-control framing, clean hostile AI behavior, leading tagged animal to base shelter / route note: break the echo with angle, silence and occlusion; do not teach the network where home is.
 
 ## Audio
 
-It follows because the network thinks following is a repair.
+It follows because something old thinks following is a repair step.
 
 ## Field Note
 
-The tag is not steering the animal cleanly. It is making your route easier to hear.
+Do not lead the tag home. Break line, break sound, break interpretation. The animal is not the network.
 
 <!-- In-Game Wiki; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/en_US. -->

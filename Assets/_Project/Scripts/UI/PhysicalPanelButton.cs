@@ -553,15 +553,15 @@ namespace Hecton8.UI
             if (!IsFinite(sourcePosition))
                 sourcePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
 
-            if (pressAudioEventId != 0u && audio.IsInitialized)
+            if (pressAudioEventId != 0u && audio.IsAudioRuntimeReady)
             {
                 CoreAudioEvent audioEvent = new CoreAudioEvent(
                     pressAudioEventId,
                     sourcePosition,
                     _resolvedClickVolume,
                     _resolvedClickPitch);
-                audio.QueueAudioEvent(in audioEvent);
-                return;
+                if (audio.QueueAudioEvent(in audioEvent))
+                    return;
             }
 
             if (pressClickSound == null)
@@ -671,7 +671,7 @@ namespace Hecton8.UI
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)

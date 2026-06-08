@@ -7,34 +7,34 @@ poi_tags: poi.tide_physics_archive;poi.cryosphere_stress_record
 biome_tags: biome.tide_pump;biome.drowned_admin
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Registre physique de la Grande Marée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# Registre physique de la Grande Marée
 
-FR LOC HOLD: The Great Tide Physics Record keeps the catastrophe honest. HECTON-8 was vulnerable to tide resonance, ice collapse, storm surge and heat discharge. Deep Reach's guilt is visible in margins, evacuation capacity and decision priority, not in a fake magic cause.
+Le Registre physique de la Grande Marée garde la catastrophe honnête. HECTON-8 était vulnérable à la résonance de marée, à l'effondrement de glace, aux surcotes et aux rejets thermiques. La culpabilité de Deep Reach se lit dans les marges, la capacité d'évacuation et les priorités de décision, pas dans une fausse cause magique.
 
 ## Scanner
 
-FR LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
+Le modèle d'inondation est intact. La mer n'avait pas besoin d'un méchant, seulement de marges mauvaises.
 
 ## Terminal
 
-FR LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
+MODÈLE GRANDE MARÉE: cisaillement cryosphérique, levée océanique résonante, rejet thermique artificiel et empilement d'orages dépassent l'enveloppe d'évacuation sûre d'un facteur 3,7. Réserve d'ascension indépendante: non financée.
 
 ## Audio
 
-FR LOC HOLD: The report was right. That is why they buried it.
+Le rapport avait raison. C'est pour cela qu'ils l'ont enterré.
 
 ## Field Note
 
-FR LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+N'adoucis pas: une vraie physique a tué des gens, et Deep Reach lui a donné des victimes.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/fr_FR. -->

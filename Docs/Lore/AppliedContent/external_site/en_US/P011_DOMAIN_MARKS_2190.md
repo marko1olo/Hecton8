@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Domain Marks 2190
 
-Domain Marks 2190 shows HECTON-8 as part of a mature but sparse human sphere. The setting is interstellar, but distance still decides who can help and when.
+By 2190, human civilization is wide enough to leave several owners on one broken object. Sol standards travel as safety formats. Barnard Yards marks survive on tools and pressure repairs. Luyten Junction appears in packet custody and routing law. Aegir local claim codes sit on salvage tags because the system has its own courts, debts and recovery priorities.
 
-## Scanner
-
-Mixed domain markings. Sol safety plate, Barnard tool stamp, Luyten route custody.
-
-## Terminal
-
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
-
-## Audio
-
-This place is not outside civilization. It is what civilization looks like when distance wins.
-
-## Field Note
-
-Humanity got big. Rescue still has to travel.
+This gives HECTON-8 a particular flavor of isolation. The player is not exploring a forgotten fantasy ruin. The ruin is documented. The bolts have provenance. The airlocks have legal parents. Help can still be slow, conditional or absent because civilization is present as authority before it is present as mass.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/en_US. -->

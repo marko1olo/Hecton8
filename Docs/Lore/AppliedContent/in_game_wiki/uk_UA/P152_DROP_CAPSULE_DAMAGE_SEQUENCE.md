@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Drop Capsule Damage Sequence"
+title: "Послідовність пошкоджень скидної капсули"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Drop Capsule Damage Sequence
+# Послідовність пошкоджень скидної капсули
 
-UK LOC HOLD: The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.
+Пошкоджений bathy-drop перетворює втечу на інженерний ланцюг. Укриття й діагностика вціліли, але підйомне обладнання фізично втрачене або затоплене.
 
 ## Scanner
 
-UK LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+Діагностика капсули. Спуск зберіг тіло, витративши обладнання підйому.
 
 ## Terminal
 
-UK LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+ЗВЕДЕННЯ ПОШКОДЖЕНЬ BATHY-DROP: crush-frame повело; high-gain mast втрачено; ascent avionics затоплено; recovery/flotation ring розірвано; аварійний буй повторює no-lock. Живлення укриття доступне. Самостійний підйом недоступний.
 
 ## Audio
 
-UK LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus затоплено. Recovery ring no-lock. Ця капсула втримає дихання, але не поверне додому.
 
 ## Field Note
 
-UK LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+Нижнє кільце стало овальним на два пальці. High-gain mast зникла. Буй усе ще просить запуск, якого не зможе виконати.
 
 <!-- In-Game Wiki; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/uk_UA. -->

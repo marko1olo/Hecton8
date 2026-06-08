@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "Глобальні пояси глибини океану"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# Глобальні пояси глибини океану
 
-UA LOC HOLD: HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
-
-## Scanner
-
-UK LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
-
-## Terminal
-
-UK LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
-
-## Audio
-
-UK LOC HOLD: Every band changes what the world allows you to do.
-
-## Field Note
-
-UK LOC HOLD: Depth is not a number. It is a ruleset.
+HECTON-8 - не плаский океан із більшими числами. Це вертикальна країна, де кордони написані тиском. Від 0 до 250 метрів фотичний шельф ще дає світло, водорості, м'які уламки й прощення перших помилок. Від 250 до 1200 метрів починаються промисловий шельф і кабельний риф: зірвані якорі, рами труб, кістки ретрансляторів і старі корпоративні стежки. Від 1200 до 2800 метрів ропні сходи гнуть сонар і ховають тепло. Від 2800 до 4300 метрів ремонт стає переговорами з машинним полем. Від 4300 до 5600 метрів Atlas перетворює тиск на владу.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/uk_UA. -->

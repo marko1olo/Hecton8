@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Ascent Energy Charge Assembly"
+title: "Opstijgenergieladingassemblage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Ascent Energy Charge Assembly
+# Opstijgenergieladingassemblage
 
-NL LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.
+De opstijglading verandert diepe bronnen in een mechanische en morele ruil. Hogedrukmaterialen kunnen de capsule tillen, bewijs door custody bewaren of betaling worden die de route naar huis verzwakt.
 
 ## Scanner
 
-NL LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+Energiekradle gekerfd door pressure pulse. Een goedkope lading maakt een nette kist.
 
 ## Terminal
 
-NL LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: vent-forged heat cell, pressure-history insulator en custody stamp vereist. Raw fuel geweigerd. Ongecertificeerde blue debt breekt onder launch impulse en maakt recovery claim ongeldig.
 
 ## Audio
 
-NL LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+Je kunt de lift verkopen of erop rijden. Niet allebei.
 
 ## Field Note
 
-NL LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+Elke gram in de kradle is ontsnapping, bewijs of blue-debt payout. De capsule vergeeft geen hebzucht.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/nl_NL. -->

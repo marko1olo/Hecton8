@@ -9,24 +9,24 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "FR LOC HOLD: Aegir Route and Ships"
+title: "Route Aegir et vaisseaux"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Aegir Route and Ships
+# Route Aegir et vaisseaux
 
-FR LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+Aegir est assez proche pour être exploité et assez loin pour être abandonné. Aucun moteur supraluminique ne traverse l'écart, et aucun ansible ne porte les ordres avant la physique. Chaque message, contrat et demande de secours passe par le délai : paquets de sondes, garde des relais, horaires de faisceaux, fret pellet-fusion, fenêtres de transfert et météo indifférente à l'urgence humaine.
 
-The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
+Le premier trafic d'Aegir n'était pas humain. Des sondes-aiguilles ont cartographié le système de naine chaude et renvoyé assez de données minérales, radiatives et orbitales pour justifier un investissement plus lourd. Ont suivi les paquets à voile faisceau, le fret plus lent, puis la masse de seed-ship qui devait freiner dans un réseau d'infrastructure planifié des années avant qu'un travailleur voie l'océan. Quand Deep Reach est arrivé à HECTON-8, la route appartenait déjà aux institutions : transporteurs, assureurs, bureaux de domaine, pools de récupération et sociétés expertes à rendre la propriété difficile à nommer.
 
-The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
+Black Keel vit dans cette ambiguïté. Ce n'est pas un vaisseau militaire ni un service de secours. C'est une plateforme de réclamation avec masse d'amarrage, navettes tender, livres de dette et autorité de salvage. Sa chaîne contractuelle permet à Deep Reach de faire pression sans apparaître comme la main directe sur l'écoutille. Le vaisseau ne peut extraire une personne, un échantillon ou une charge scellée que lorsque masse, météo, orbite, marge thermique et garde s'alignent.
 
-The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
+Le bathydrop endommagé devient donc une vraie frontière. Un impact de descente peut laisser la coque assez intacte pour survivre tout en ruinant les tolérances de remontée : compression des joints, retour acoustique, tables de guidage, tampon d'énergie et poignée de main de quarantaine. La capsule devient abri et preuve à la fois : elle certifie l'arrivée, mais pas l'évasion.
 
-In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
+Dans le système Aegir, la distance n'est pas un décor. C'est la raison pour laquelle l'aide arrive d'abord comme dossier, puis seulement comme matériel.
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/fr_FR. -->

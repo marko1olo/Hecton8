@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Dívida de janela-tonelada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Dívida de janela-tonelada
 
-PT-BR LOC HOLD: Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.
+Dívida de janela-tonelada é o ponto em que física vira finanças. Black Keel não tem margem de elevação infinita, combustível de trânsito infinito nem volume limpo de quarentena sem limite. Cada quilograma trazido de HECTON-8 compete com cada quilograma necessário para manter o operador vivo. O medidor de dívida torna o carrier cruel sem quebrar hard science: resgate é possível, mas o orçamento da rota continua perguntando o que merece massa.
 
 ## Scanner
 
-PT-BR LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
+Medidor de janela de massa. Cada quilograma de ajuda tem preço de rota.
 
 ## Terminal
 
-PT-BR LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER: margem de recovery burn reduzida. Massa de extração do operador conflita com payload selado, reserva de lastro, dívida de oxigênio e custody de amostra de quarentena. Override manual exige prioridade paga ou prova de risco.
 
 ## Audio
 
-PT-BR LOC HOLD: You owe the orbit before you owe the money.
+A nave pode levar você ou o que você encontrou. Ela prefere um número.
 
 ## Field Note
 
-PT-BR LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Oxigênio, lastro, prova, payload, corpo: o carrier pesa tudo antes de pesar misericórdia.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/pt_BR. -->

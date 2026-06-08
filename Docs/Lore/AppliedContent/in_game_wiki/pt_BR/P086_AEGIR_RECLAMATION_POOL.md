@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Pool de Recuperação Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Pool de Recuperação Aegir
 
-PT-BR LOC HOLD: The Aegir Reclamation Pool is the public shell behind Black Keel. It exists so dead claims can be inspected without each Marauder owning an interplanetary carrier. The useful trick is also the trap: the same pool that sends help decides which payload, proof, or person gets priority.
+O Pool de Recuperação Aegir é a camada pública de salvage por trás de Black Keel. Ele permite que pequenas licenças marauder alcancem claims abandonados de Aegir sem possuir um carrier interplanetário privado. Esse acordo é útil e venenoso ao mesmo tempo: o mesmo pool que pode enviar um tender decide se um operador respirando, um payload selado, uma trava de quarentena ou um pacote de provas vale o próximo burn.
 
 ## Scanner
 
-PT-BR LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
+Selo de claim-pool. Black Keel foi designado por dívida de rota, não dado ao operador.
 
 ## Terminal
 
-PT-BR LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+AEGIR RECLAMATION POOL: tender autônomo Black Keel designado ao claim HECTON-8, abandonado sob pressão. Classe de bem-estar da tripulação: contratada. Classe de custody do payload: prioridade variável. Extração humana permanece condicional até o fechamento da arbitragem do pool.
 
 ## Audio
 
-PT-BR LOC HOLD: The pool owns the route. You only rent the answer.
+O pool possui a rota. Você aluga a resposta sobrevivendo tempo suficiente para perguntar.
 
 ## Field Note
 
-PT-BR LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+Um pool compartilhado torna o resgate mais barato, mais lento e mais fácil de negar por cada signatário.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/pt_BR. -->

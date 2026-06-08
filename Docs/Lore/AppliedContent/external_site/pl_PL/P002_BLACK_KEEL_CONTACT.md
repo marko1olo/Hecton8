@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Kontakt Black Keel
 
-Black Keel jest jedyną linią gracza na orbitę. Nie jest martwy, ale nie jest lojalny. Poszarpane komunikaty zmieniają niebo w system przetrwania: każde okno może nieść ratunek, kłamstwo, raport próbki albo dowód.
-
-## Scanner
-
-Stary maszt przekaźnikowy. Zasolony, wygięty, wciąż skierowany we właściwe niebo.
-
-## Terminal
-
-OPERATOR: żywy. KAPSUŁA: nie do odzysku. CLAIM: otwarty. PRÓBKA: nieznana. ODZYSK: czeka na okno.
-
-## Audio
-
-Okno się zamyka. Wyślij jeden pakiet. Wybierz, zanim pas burzy przykryje maszt.
-
-## Field Note
-
-Gdy carrier pyta, co znalazłeś, zanim zapyta, czy oddychasz, nie jesteś klientem. Jesteś narzędziem.
+Black Keel nigdy nie powinien brzmieć jak przyjazny statek gwiezdny czekający nad chmurami. To maszyna claim-pool z użytecznym głosem, ograniczoną orbitą i priorytetami kontraktu starszymi niż drop gracza. Pierwszy kontakt jest cenny, bo dowodzi, że niebo nie jest puste. Jest straszny, bo carrier mierzy gracza jako status operatora, stratę dropcraftu, niepewność próbki, otwarty claim i masę lien, zanim zaoferuje język ratunku. To otwierająca presja HECTON-8 w miniaturze. Gracz żyje, carrier jest realny, a droga do domu jest już filtrowana przez pogodę, dług, masę i tego, kto korzysta z payloadu.
 
 <!-- External Site; generated from P002_BLACK_KEEL_CONTACT/pl_PL. -->

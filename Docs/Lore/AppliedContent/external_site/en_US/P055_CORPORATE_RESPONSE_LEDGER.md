@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Corporate Response Ledger
 
-Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority.
-
-## Scanner
-
-Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
-
-## Terminal
-
-RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
-
-## Audio
-
-The reply was automatic. The rescue was conditional.
-
-## Field Note
-
-Immediate response is not immediate rescue.
+The Corporate Response Ledger is not a villain speech. It is colder than that. It is a machine-readable promise that Black Keel will respond, but only inside the order its contracts recognize. Asset custody first. Liability seal second. Hull audit, sample route, payment route, then operator recovery if the queue still allows it. The player can use these ledgers as clues, keys, and leverage, because the system is predictable. That predictability is also the indictment. HECTON-8 was not abandoned by a single bad decision; it was abandoned by a response stack that kept functioning while people became lower-priority cargo.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/en_US. -->

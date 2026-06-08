@@ -7,34 +7,34 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Sonar Return Route"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Sonar-Rückkehrroute"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sonar Return Route
+# Sonar-Rückkehrroute
 
-Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.
+Eine Rückkehrbake zeichnet auf, wie eine Route klang, als sie zuletzt sicher war. Sie verspricht nicht, dass sie sicher blieb. Sturmstoß, loses Kabel, wandernder Schlick, fauna und frische Salvage-Schnitte können eine Sonarrückkehr beugen, ohne den Korridor zu löschen. Vor Fracht oder tieferem Tauchgang die Linie anpingen. Wenn der Ton wandert, Fracht zwischenlagern oder zweiten Rückweg markieren.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+Rückkehrbake veraltet. Alter sicherer Ping passt nicht mehr zum Korridorecho; Frachtmasse wird das Rückzugsfenster verlangsamen.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: letztes klares Echo ungültig. Black-Keel-Ping mit geringer Sicherheit empfangen. Hindernisdrift und Schlammichte über Kartentoleranz. Zweitlinie vor Frachtextraktion markieren.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+Die Route ist noch da. Das Echo ist nicht dasselbe.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+Ping vor dem Laden. Wenn sich der Heimweg mit leeren Händen änderte, verzeiht er keinen vollen Pack.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/de_DE. -->

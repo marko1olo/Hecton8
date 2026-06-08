@@ -9,32 +9,22 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Transcrição de Aproximação da Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Black Keel Approach Transcript Seed
+# Transcrição de Aproximação da Black Keel
 
-PT LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+## Quatro Segundos Entre Vozes
 
-## Scanner
+A primeira voz vinda da órbita não deve soar como salvação. Deve soar como infraestrutura sob carga: comprimida, atrasada, útil e já cobrando. A transcrição da Black Keel funciona porque dá ajuda e humilhação no mesmo fôlego. Um carrier ouviu a queda. Um carrier pode receber prova. Um carrier talvez devolva um reclamante vivo. Nada disso é resgate.
 
-PT LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+O atraso importa. Quatro segundos são poucos para conversar e suficientes para lembrar que o oceano responde primeiro. Packet loss importa porque toda discussão posterior com a órbita tem custo físico. Saúde, massa e prova não são termos de clima; são a forma da janela de retorno. O Marauder pode estar vivo e ainda assim não ser recuperável. A carga pode ser verdadeira e ainda assim pesada demais. O carrier pode ser honesto e ainda recusar.
 
-## Terminal
-
-PT LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
-
-## Audio
-
-PT LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
-
-## Field Note
-
-PT LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+Na primeira hora, essa transcrição prende a fantasia ao metal. Você veio como trabalhador endividado com um slot de claim, não como sobrevivente escolhido. A Black Keel é a linha acima de você, não a mão ao seu lado. Gastar oxigênio discutindo com a órbita já é um erro.
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/pt_BR. -->

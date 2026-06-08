@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "Bereikbare zeebodemvensters"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# Bereikbare zeebodemvensters
 
-NL LOC HOLD: Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map.
-
-## Scanner
-
-NL LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
-
-## Terminal
-
-NL LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-NL LOC HOLD: You land where the moon lets stone show through.
-
-## Field Note
-
-NL LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+Het grootste deel van HECTON-8s zeebodem is met gewone moed onbereikbaar. Druk bouwt een muur voordat de bodem verschijnt. Bereikbare vensters zijn de uitzonderingen: gescheurde plaatsen waar een ingestorte richel, open rug, verhit bronlitteken of dichte pekelkolom de daalcurve verandert. Het zijn geen veilige grotten. Het zijn nauwe afspraken met geologie. Een bemanning kan oude korst raken, drukmineralen bergen, verzegelde koloniehardware vinden of een begraven gebeurtenis lezen voordat de oceaan de route sluit.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/nl_NL. -->

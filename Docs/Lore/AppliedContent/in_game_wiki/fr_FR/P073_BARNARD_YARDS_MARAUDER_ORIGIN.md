@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Barnard Yards Marauder Origin"
+title: "Origine maraudeuse des Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Barnard Yards Marauder Origin
+# Origine maraudeuse des Barnard Yards
 
-FR LOC HOLD: Barnard Yards is the current working origin culture for the player: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It makes the protagonist competent without making them a tourist from Earth or a chosen hero.
+Barnard Yards est la culture de travail qui soutient le Maraudeur de HECTON-8 : salvage industriel, démantèlement de vaisseaux, matériel de pression et dossiers de réclamation morts. Elle explique la compétence sans transformer le travailleur du salvage en touriste terrien ni en mythe de secours.
 
 ## Scanner
 
-FR LOC HOLD: Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.
+Marque d'outil Barnard. Culture du démantèlement naval. Le genre d'endroit qui apprend à se méfier des clauses de secours trop propres.
 
 ## Terminal
 
-FR LOC HOLD: BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.
+MARQUE DE SERVICE BARNARD YARDS : pince d'urgence acceptée. Certification de salvage valide pour habitat pressurisé abandonné, compartiment de carrier mort et claim hull déserté.
 
 ## Audio
 
-FR LOC HOLD: You learned this hand motion before HECTON-8. That is the problem.
+Tu as appris ce geste avant HECTON-8. C'est bien le problème.
 
 ## Field Note
 
-FR LOC HOLD: This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.
+Plus proche que la Terre : découpeurs loués, vieux réflexes de pression, dette et coques dépouillées.
 
 <!-- In-Game Wiki; generated from P073_BARNARD_YARDS_MARAUDER_ORIGIN/fr_FR. -->

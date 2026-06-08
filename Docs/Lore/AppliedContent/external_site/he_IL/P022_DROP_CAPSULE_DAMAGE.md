@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # נזק לקפסולת נחיתה
 
-נזק הקפסולה מסביר את המלכודת: הירידה הצליחה, ההישרדות נשארה, חומרת העלייה מתה.
+נזק קפסולת ההטלה מסביר מדוע ההיתקעות אמינה: הירידה עבדה, מערכות ההישרדות שרדו, חומרת העלייה לא.
 
 ## Scanner
 

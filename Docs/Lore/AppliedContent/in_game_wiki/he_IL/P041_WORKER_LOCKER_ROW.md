@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # שורת לוקרים של עובדים
 
-הממצא הופך את HECTON-8 למקום עבודה עם הרגלים, חובות ותרבות גבול.
+שורות לוקרים של עובדים מעגנות את HECTON-8 בעבודה רגילה. כלים, צבע, קרדיטי מזון וסימני ספר מופיעים לפני שהאסון נעשה תאוריה.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ localization_flags: 0
 
 ## Terminal
 
-ביקורת מושבה: אחסון אישי וסימוני Barnard מחברים את השחקן לצוות אמיתי.
+ביקורת מושבה: אחסון אישי וסימני Barnard קושרים את שורת הלוקרים לצוות עם שמות ולנתיבי עבודה.
 
 ## Audio
 

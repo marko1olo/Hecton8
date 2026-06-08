@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # THE SILENT ORBIT AND THE BLACK KEEL
 
 > **Source:** Deep Reach Megacorporation, Orbital Asset Registry.

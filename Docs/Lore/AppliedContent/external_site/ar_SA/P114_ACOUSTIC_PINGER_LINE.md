@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "خط بينغر صوتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# خط بينغر صوتي
 
-AR LOC HOLD: Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean.
+خط pinger الصوتي ليس منارة إنقاذ. إنه انضباط صار مسموعا. يثبت اللاعب return sound قبل أن تجعل العكارة أو brine shimmer أو الخوف الطريق غريبا. تعلم الأداة أن الملاحة عادة لا map screen.
 
-## Scanner
-
-AR LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
-
-## Terminal
-
-AR LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
-
-## Audio
-
-AR LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
-
-## Field Note
-
-AR LOC HOLD: Navigation should become physical early.
+يمكن لأنظمة لاحقة أن تنمو من هذه البذرة: relay timing وcarrier handshake ودليل صوتي على أن الطريق ما زال موجودا. تبقى النسخة الأولى صغيرة عمدا. إنها تنقذ اللاعب من الثقة الزائدة.
 
 <!-- External Site; generated from P114_ACOUSTIC_PINGER_LINE/ar_SA. -->

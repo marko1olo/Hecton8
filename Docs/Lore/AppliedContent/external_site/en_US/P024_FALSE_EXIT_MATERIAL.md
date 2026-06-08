@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Material Exit
 
-Material Exit supports replayability by allowing a profitable but compromised ending: useful for players who choose loot, contracts and survival over full descent truth.
+Material Exit supports a profitable but compromised withdrawal: loot, contracts and survival can win the ascent while full descent truth stays below.
 
 ## Scanner
 

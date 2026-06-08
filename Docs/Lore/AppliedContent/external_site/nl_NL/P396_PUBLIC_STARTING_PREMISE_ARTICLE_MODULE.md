@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Marauder Starting Claim"
+title: "Marauder-startclaim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Marauder Starting Claim
+# Marauder-startclaim
 
-NL LOC HOLD: The first HECTON-8 claim is personal only in the professional sense. The Marauder knows pressure systems, Deep Reach procedure and the kind of paperwork that turns risk into someone else's debt. Black Keel offers a salvage window because the route is valuable, not because the carrier has become generous. That starting frame keeps the descent grounded: repair the capsule, read the site, recover cargo or proof, and decide how much of the old company language can survive contact with the rooms below.
+Het eerste Black Keel-bestand over HECTON-8 leest als salvage-werk totdat de eigen formulering zichzelf begint te beschuldigen. Een Marauder met schuld neemt de route aan omdat het lien echt is en het herstelvenster smal. Het Deep Reach field-systems-verleden telt meteen: drukprocedures, maintenance-afkortingen, liability-zinnen en evacuatielabels zijn vertrouwd voordat ze bewijs worden. Black Keel geeft toegang, geen genade. De afdaling begint met concreet werk rond P-63: bathydrop lappen, afdichtingen controleren, shelf scannen, machines herstarten, vracht of bewijs bergen en vertrekken voordat orbital timing en legal custody de claim sluiten. De haak zit in professionele herkenning: de speler ziet waar gepolijste taal en fysieke schade verschillende verhalen vertellen.
 
 ## Scanner
 
-NL LOC HOLD: Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+Publiek claimrecord. De openingsroute identificeert een Marauder met schulddruk, Deep Reach field-systems-verleden, beschadigde bathydrop en Black Keel-herstelvenster boven P-63.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+PUBLIEK ARCHIEFKNOOPPUNT // STARTCLAIM. Contractantdossier: voormalig Deep Reach field-systems-specialist. Huidige status: Marauder onder lien. Route: Black Keel recovery claim, afdaling naar P-63 shelf, terugkeer met bewijs en vracht voor sluiting van custody window.
 
 ## Audio
 
-NL LOC HOLD: You are returning to paperwork you know too well.
+Je bezoekt HECTON-8 niet. Je keert terug naar papierwerk dat je te goed kent.
 
 ## Field Note
 
-NL LOC HOLD: Marauder note: the contract knows your past. That does not make it honest.
+Marauder-notitie: het contract kent je verleden. Daar wordt het niet eerlijk van.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/nl_NL. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Sortie matérielle : crédits amers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Sortie matérielle : crédits amers
 
-FR LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.
+La Sortie matérielle est une vraie fin pour un Marauder qui traite HECTON-8 comme un travail payé. Le joueur peut partir avec une dette réduite et un registre de carrier satisfait. Le coût reste visible : la colonie demeure une scène de crime convertie en valeur de réclamation, et Deep Reach reçoit un meilleur chemin de retour que celui accordé aux ouvriers vers la sortie.
 
 ## Scanner
 
-FR LOC HOLD: You can leave richer and still fail the place.
+Matériau de pression accepté. Fenêtre de sortie achetable. Noms des ouvriers toujours non rapprochés.
 
 ## Terminal
 
-FR LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+REÇU DE SORTIE MATÉRIELLE : matériau de pression custody-grade accepté ; lien réduit ; payload de preuve incomplet ; registre des ouvriers disparus toujours contesté par le réclamant ; priorité Recovery Compliance relevée.
 
 ## Audio
 
-FR LOC HOLD: The invoice clears before the names do.
+La facture se solde avant les noms.
 
 ## Field Note
 
-FR LOC HOLD: This ending should be real credits, not a fake game over.
+Black Keel valorisera l'échantillon avant les morts. Ce n'est pas une anomalie du contrat.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/fr_FR. -->

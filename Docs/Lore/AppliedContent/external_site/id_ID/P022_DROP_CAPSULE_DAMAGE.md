@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Kerusakan Kapsul Jatuh
 
-Kerusakan kapsul menjelaskan stranded secara keras: turun berhasil, survival hidup, perangkat naik mati.
+Kerusakan kapsul jatuh menjelaskan mengapa keterdamparan masuk akal: turun berhasil, sistem bertahan hidup selamat, perangkat naik tidak.
 
 ## Scanner
 

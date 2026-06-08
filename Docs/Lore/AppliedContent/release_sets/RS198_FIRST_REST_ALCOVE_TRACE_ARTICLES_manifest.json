@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS198_FIRST_REST_ALCOVE_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1255_BUNK_STRAP_COMPRESSION_LINE",
+    "P1256_SLEEP_PAD_SALT_EDGE",
+    "P1257_PRIVACY_CURTAIN_HOOK_SHADOW",
+    "P1258_REST_LIGHT_DUST_CONE",
+    "P1259_WALL_CLOCK_BATTERY_GHOST"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1255_BUNK_STRAP_COMPRESSION_LINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1256_SLEEP_PAD_SALT_EDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1257_PRIVACY_CURTAIN_HOOK_SHADOW.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1258_REST_LIGHT_DUST_CONE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1259_WALL_CLOCK_BATTERY_GHOST.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

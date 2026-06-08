@@ -9,32 +9,26 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: نافذة مطالبة Black Keel"
+title: "نافذة مطالبة Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: نافذة مطالبة Black Keel
+# نافذة مطالبة Black Keel
 
-AR LOC HOLD: يستطيع Black Keel سماع إشارة قبل أن يرفع جسدا. في Aegir، استجابة الحاملة ممر مسعر عبر هندسة الترحيل والطقس ومراجعة الحجر وقبول الحمولة واسترداد الكتلة. الاتصال حقيقة مسار. الإنقاذ سلسلة مكتملة.
+## الاستلام ليس رفعا
 
-## Scanner
+يستطيع Black Keel سماع إشارة قبل أن يرفع جسدا. هذه المسافة هي نافذة المطالبة.
 
-AR LOC HOLD: نافذة مطالبة // ترحيل Aegir يتوقع نافذة استقبال فقط. الاسترداد يحتاج حزمة صعود ومصافحة حجر وتخصيص tonne-window.
+في Aegir، استجابة carrier ليست وعد إنقاذ. إنها ممر زمني عبر هندسة الترحيل والطقس ومراجعة الحجر وقبول الحمولة واسترداد الكتلة. النافذة نفسها تسعر الشحنة والدليل ودين الأكسجين وحالة العامل، لأن كل كيلوغرام يغادر HECTON-8 يستهلك الفرصة المدارية نفسها.
 
-## Terminal
+تسجل Keelmark Mutual النافذة كتوقيت حيازة. يسجل Black Keel الاستلام مؤكدا والرفع معلقا. قد تدفع بنود Deep Reach عينة أو حزمة إحداثيات أو حجز حجر أمام العامل إذا كانت لغة الأولوية صالحة.
 
-AR LOC HOLD: إشعار حيازة KEELMARK // تم استقبال إشارة العامل. أولوية الاسترداد غير محسومة. استقبال إشارة أو حزمة دليل لا يضمن استرداد العامل.
+يجعل P-63 القاعدة مرئية مبكرا. قد تعرض لوحة الترحيل إقرارا نظيفا بينما لا يملك bathydrop حزمة صعود ولا مصافحة حجر ولا tonne-window مخصصة. يعرف carrier أن العامل حي. يستطيع محاسبته. يستطيع تسعير حزمة. لكنه لا يستطيع تجاهل ضغط HECTON-8 ولا توقيت Aegir ولا ترتيب العقد.
 
-## Audio
-
-AR LOC HOLD: ترحيل Black Keel: تم تسعير إشارة العامل. نافذة الاسترداد معلقة. لا تخلط بين الاستلام والرفع.
-
-## Field Note
-
-AR LOC HOLD: إذا أجاب Black Keel فاحسب الفاتورة لا الإنقاذ. الحزمة المستلمة مجرد مكان في الطابور حتى تتفق الكتلة والختم والحجر والطقس.
+الاتصال حقيقة مسار. الإنقاذ سلسلة مكتملة.
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/ar_SA. -->

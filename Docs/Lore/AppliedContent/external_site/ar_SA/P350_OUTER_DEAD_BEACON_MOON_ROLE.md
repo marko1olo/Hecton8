@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Outer Dead Beacon Moon Role"
+title: "دور Mute كمنار خارجي ميت"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Outer Dead Beacon Moon Role
+# دور Mute كمنار خارجي ميت
 
-AR LOC HOLD: Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.
-
-## Scanner
-
-AR LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
-
-## Terminal
-
-AR LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
-
-## Audio
-
-AR LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
-
-## Field Note
-
-AR LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Mute هو المكان الذي تصمت فيه البنية القديمة دون أن تختفي. شبكة مناراته الميتة ما زالت تثني محللات الطريق لأن أحدا لا يستطيع محو كل جدول قديم اعتمد عليها. أحيانا تتنبأ بيانات الشبح بنافذة ترحيل نافعة. وأحيانا تمنح مكتب carrier عذرا لحبس رسالة.
 
 <!-- External Site; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/ar_SA. -->

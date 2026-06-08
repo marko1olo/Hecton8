@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "Montage der Fluchtkette"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# Montage der Fluchtkette
 
-DE LOC HOLD: Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems.
+Montage der Fluchtkette ist das Ingenieurrückgrat der Kampagne. HECTON-8 bietet nach der ersten Reparatur keine saubere Oberflächenextraktion; Abflug wird zu einer Reihe physischer, rechtlicher und beweisführender Komponenten, verteilt in ertrunkener Infrastruktur. So bekommt der lange Abstieg einen praktischen und moralischen Grund: Der Spieler verlässt nicht nur den Ozean, sondern baut eine Route, die beweist, warum die Kolonie nie einen fairen Ausgang hatte.
 
 ## Scanner
 
-DE LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+Abflug braucht sechs harte Nachweise: Relais, Dichtung, Führung, Aufstiegsladung, rechtlichen Handschlag und eine Nutzlast, die der Träger nicht ignorieren kann.
 
 ## Terminal
 
-DE LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+AUFSTIEGSPAKET: akustischer Relaisspinen fehlt. Klemmringwertung unzureichend. Führungskern fehlt. Ladewiege leer. Quarantäne-Handschlag ungelöst. Beweisnutzlast optional, verändert aber Bergungsautorität.
 
 ## Audio
 
-DE LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+Du reparierst die Kapsel nicht. Du baust den ersten ehrlichen Ausgang, den die Kolonie nie hatte.
 
 ## Field Note
 
-DE LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+Der Weg nach oben wird aus Teilen gebaut, die nie dafür gedacht waren, Arbeiter allein gehen zu lassen.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/de_DE. -->

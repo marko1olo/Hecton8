@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "קרסי התביעה של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# קרסי התביעה של Black Keel
 
-HE LOC HOLD: Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses.
+קרסי התביעה של Black Keel מגדירים את לחץ הפתיחה. Black Keel אינה ספינת נבל תיאטרלית; היא מוביל הכבול לכלכלת מאגר תביעות, לדיני הסגר ולמנופים רדומים של Deep Reach. בעיית השחקן מעשית ומוסרית גם יחד: קול מעל האוקיינוס יכול לשמוע את קריאת המצוקה, אבל הדרך הביתה חייבת להפוך לבעלת ערך, ניתנת לאישור, וקשה להתעלמות מבחינה משפטית.
 
 ## Scanner
 
-HE LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+במניפסט, Black Keel הוא חומרה של מאגר תביעות; בסעיפים, הוא מנוף של Deep Reach.
 
 ## Terminal
 
-HE LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+משמורת מוביל: החזרת מפעיל מותרת אחרי מיון מטען, שער הסגר, תעודת מסלול וניקוי אחריות. חותם עדיפות Deep Reach נשמר בסעיפים רדומים.
 
 ## Audio
 
-HE LOC HOLD: It can hear you. It just has to price the answer first.
+היא יכולה לשמוע אותך. היא פשוט חייבת לתמחר את התשובה קודם.
 
 ## Field Note
 
-HE LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+הספינה אינה רעה. היא מושכרת לחוזה שיודע להיות אכזרי בלי להישמע חי.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/he_IL. -->

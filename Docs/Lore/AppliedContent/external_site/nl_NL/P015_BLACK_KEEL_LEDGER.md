@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel-ledger
 
-Black Keel Ledger definieert de orbitale levenslijn van de speler als contractmachine: nuttig, gecompromitteerd en onverschillig tegelijk.
+Black Keel is geen vriendelijk thuisschip. Het is een claim-pool-tender die lichamen, payloads, quarantaine, opstijgmassa en verzekering als ledgerregels leest.
 
-## Scanner
-
-Claim-pool tenderledger. Publieke carrierbewaring, verzekeringsschuld, verborgen Deep Reach-prioriteitshaken.
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keel is niet jouw schip. Het is de machine die weet wat je schuldig bent.
-
-## Field Note
-
-Het schip kan je helpen zonder aan jouw kant te staan.
+Het hoeft de speler niet te haten. Het kan beleefd antwoorden, een noodhash accepteren en pickup weigeren tot de cijfers veranderen.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/nl_NL. -->

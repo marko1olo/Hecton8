@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "最终问题：切断、仁慈、盗窃"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# 最终问题：切断、仁慈、盗窃
 
-CN LOC HOLD: Severance forces the player to define what kind of life Atlas-ocean continuity has become.
+切断迫使玩家判断Atlas-海洋连续性已经变成什么。如果它只是坏工具，切断就是维修。如果它是生命系统，切断就是杀害。如果它是证词，切断也许是在毁掉证据。
 
 ## Scanner
 
-CN LOC HOLD: Severing Atlas is not a simple shutdown button.
+切断Atlas不是按下关机按钮。那是在没有干净解剖图的情况下做手术。
 
 ## Terminal
 
-CN LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
+SEVERANCE AXIS：切断Atlas连续性，隔离压力生态，拒绝Deep Reach payload路由，冒盆地坍塌风险，或只保留部分修复记忆。意义取决于带入最终房间的证据。
 
 ## Audio
 
-CN LOC HOLD: A clean switch would be merciful. You do not get one.
+如果有干净的开关，那会是仁慈。你没有那个东西。
 
 ## Field Note
 
-CN LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+同一个动作可能解放被困工人，杀死海洋机器生命，拒绝Deep Reach，也从活基础设施自身那里偷走它。
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/zh_CN. -->

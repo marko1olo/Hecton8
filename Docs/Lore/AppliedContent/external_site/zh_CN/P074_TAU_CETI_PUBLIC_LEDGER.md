@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "Tau Ceti 公共账簿"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# Tau Ceti 公共账簿
 
-CN LOC HOLD: Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly.
+Tau Ceti 公共账簿是硬科幻式问责：真实公共机构存在，但如果证据没有按监管链纪律保存，距离会把正义变成余辉。
 
 ## Scanner
 
-CN LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+Tau Ceti 公民账簿碎片。公开到足以吓住 Deep Reach，却迟到到救不了殖民地。
 
 ## Terminal
 
-CN LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+TAU CETI LEDGER MIRROR: 密封证据经中继认证后可受理。预计公共复审窗口超过本地生存间隔 31.4 年。
 
 ## Audio
 
-CN LOC HOLD: A court can be honest and useless when light itself is late.
+当光本身都迟到时，法庭可以诚实，也可以毫无用处。
 
 ## Field Note
 
-CN LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+监督可以干净地到来，也可以迟到。迟到仍然是死亡。
 
 <!-- External Site; generated from P074_TAU_CETI_PUBLIC_LEDGER/zh_CN. -->

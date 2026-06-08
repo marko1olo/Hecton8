@@ -558,6 +558,7 @@ namespace Hecton8.Gameplay
         private bool _registeredColdReferenceRepair;
         private bool _hotSwapListenerRegistered;
         private bool _coldReferenceRepairRequested;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private SwimPresentationProfile _activeProfile;
         private PlayerSwimPresentationMode _currentMode;
         private float _presentationBlend;
@@ -953,7 +954,7 @@ namespace Hecton8.Gameplay
 
             Vector3 velocity = TryResolveKccPresentationVelocity(out Vector3 kccVelocity)
                 ? kccVelocity
-                : Vector3.zero;
+                : ResolveMovementPresentationVelocity();
             float speed = ApproximateVectorMagnitude(velocity);
             float planarSpeed = ApproximatePlanarMagnitude(velocity.x, velocity.z);
             float speedDelta = speed - _previousSpeed;
@@ -1111,6 +1112,7 @@ namespace Hecton8.Gameplay
             {
                 if (replaceExisting)
                 {
+                    _playerRuntimeContext = null;
                     playerMovement = null;
                     playerToolManager = null;
                     playerTransportCoordinator = null;
@@ -1118,6 +1120,8 @@ namespace Hecton8.Gameplay
 
                 return;
             }
+
+            _playerRuntimeContext = playerContext;
 
             if (replaceExisting || playerMovement == null)
                 playerMovement = playerContext.PlayerMovement;
@@ -1517,7 +1521,7 @@ namespace Hecton8.Gameplay
                 targetLateral = math.clamp(waveSlope.x / slopeNormalization, -1f, 1f) * shorelineWeight;
                 targetCrestReach = math.max(0f, targetForward);
                 targetDescentTuck = math.max(0f, -targetForward);
-                targetImmersionDepth = math.max(0f, playerMovement.CurrentDepth) * shorelineWeight;
+                targetImmersionDepth = ResolvePlayerDepthMeters() * shorelineWeight;
             }
 
             float traumaProceduralScale = 1f - _physicalTraumaBlendCurrent * activeTraumaPresentationSuppression;
@@ -1537,6 +1541,27 @@ namespace Hecton8.Gameplay
             _immersionDepthCurrent = math.lerp(_immersionDepthCurrent, targetImmersionDepth, blendT);
 
             PublishProceduralWaveSignals();
+        }
+
+        private float ResolvePlayerDepthMeters()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
+                return 0f;
+
+            HectonPlayerMovement movement = playerMovement;
+            return movement != null && math.isfinite(movement.CurrentDepth)
+                ? math.max(0f, movement.CurrentDepth)
+                : 0f;
         }
 
         private void PublishProceduralWaveSignals()
@@ -3242,6 +3267,22 @@ namespace Hecton8.Gameplay
 
             velocity = new Vector3(value.x, value.y, value.z);
             return true;
+        }
+
+        private Vector3 ResolveMovementPresentationVelocity()
+        {
+            if (playerMovement == null)
+                return Vector3.zero;
+
+            Vector3 velocity = playerMovement.CurrentWorldVelocity;
+            return IsFinite(velocity) ? velocity : Vector3.zero;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
 
         private static float ShapeStrokeHalfWave(float value, float sharpness)

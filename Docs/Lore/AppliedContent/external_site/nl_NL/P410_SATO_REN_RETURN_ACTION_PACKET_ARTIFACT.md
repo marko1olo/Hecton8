@@ -9,32 +9,22 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Sato-Ren Return Packet"
+title: "Sato-Ren Return Action Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Sato-Ren Return Packet
+# Sato-Ren Return Action Packet
 
-NL LOC HOLD: Deep Reach returns to HECTON-8 as paperwork moving through rare signal windows: coordinates, custody, access, then maybe rescue.
+## Redding In Claimvolgorde
 
-## Scanner
+Het Sato-Ren-packet is druk in de tegenwoordige tijd. Het arriveert nadat de speler heeft geleerd wat Deep Reach deed in oude memo en ledger, en bewijst dat het bedrijf niet alleen een lijk in het archief is. Deep Reach spreekt nog. Het spreekt alleen in de volgorde die zijn systemen begrijpen: coordinates, access state, sample custody, silence acknowledgement, extraction language.
 
-NL LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+Die volgorde is de dreiging. Een reddingsdienst vraagt waar je gewond bent. Een recovery desk vraagt wat je draagt, wie het kan certify, of Atlas de route nog kan openen en of je silence accepteert als voorwaarde voor verplaatsing. Sato-Ren heeft geen oorlogsschip boven HECTON-8 nodig. Het packet zelf is leverage, omdat berichten zeldzaam zijn, massa duur is en de speler debt-bound is.
 
-## Terminal
-
-NL LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
-
-## Audio
-
-NL LOC HOLD: The packet knows where the asset is. It is less certain where you are.
-
-## Field Note
-
-NL LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+Hier moet de late game moreel krap worden. Hetzelfde document kan op hulp, repossession of chantage lijken afhankelijk van wat de speler al weet. Het verbindt de oude verdronken bureaucratie met de levende keuze voor de Marauder: coördinaten verkopen, proof bewaren, Atlas sever, het ledger publiceren, of doorgaan door een oceaan waar zelfs rescue een claim number draagt.
 
 <!-- External Site; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/nl_NL. -->

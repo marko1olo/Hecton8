@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TRAUMA MÉDICO Y REEMPLAZOS SINTÉTICOS
 
 > **Fuente:** Procedimiento Operativo Automatizado de la Bahía Médica del *Black Keel*.

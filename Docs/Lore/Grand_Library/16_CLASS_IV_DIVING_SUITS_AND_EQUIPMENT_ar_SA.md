@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # بدلات الغوص من الفئة الرابعة والمعدات السحيقة
 
 > **المصدر:** شركة Deep Reach الكبرى، دليل أمين مستودع المعدات.

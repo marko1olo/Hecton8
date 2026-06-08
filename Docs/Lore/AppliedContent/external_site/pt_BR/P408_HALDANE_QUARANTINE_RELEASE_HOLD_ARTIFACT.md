@@ -9,32 +9,22 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Haldane Quarantine Hold"
+title: "Hold Haldane de liberação de quarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Haldane Quarantine Hold
+# Hold Haldane de liberação de quarentena
 
-PT LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## Um Procedimento Correto No Minuto Errado
 
-## Scanner
+O hold Haldane não deve ser lido como fraude simples. HECTON-8 tinha risco de contaminação, seals comprometidos, problemas de sample custody e incerteza biológica. Um protocolo de quarentena fazia sentido antes de o desastre virar cinético. Por isso o documento corta: o procedimento era real o bastante para defesa e lento o bastante para matar.
 
-PT LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Release certification vira arma pelo timing. Enquanto a pressão sobe e rotas falham, o hold pede XO sample custody, seal-read variance e downstream exposure review. Cada frase soa responsável. Juntas, seguram evacuados, técnicos e testemunhas dentro de uma colônia falhando até rescue deixar de ser o verbo controlador.
 
-## Terminal
-
-PT LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-PT LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-PT LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Aqui a Deep Reach deve parecer institucional. Haldane não precisa rir de trabalhadores presos. O desk só precisa preservar chain of custody, reduzir liability futura e evitar que prova contaminada entre em um claim space que não controla. O horror é que todos esses motivos podem soar corretos no minuto em que as pessoas precisavam da porta aberta.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/pt_BR. -->

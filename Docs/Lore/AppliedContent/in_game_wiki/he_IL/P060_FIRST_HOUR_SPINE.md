@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "עמוד השדרה של השעה הראשונה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# עמוד השדרה של השעה הראשונה
 
-HE LOC HOLD: First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.
+השעה הראשונה לא צריכה להתחיל בחושך. היא מתחילה בקול חוזה, ירידה פגומה, ניהול נשימה, מים רדודים ובהירים והצורך המעשי להפעיל משאבה מחדש. היופי הוא חלק מהמלכודת: HECTON-8 חייב להיראות כמקום שרוצים בו לפני שהניירת שלו נעשית קטלנית. אחר כך עמוד השדרה של הפתיחה הופך הישרדות להוכחה. המחסה הראשון שימושי אבל פגום; חבילת האירוע המנוקה נשמעת נקייה מדי; צלקת התיקון הראשונה של Atlas מציגה כבל, מתכת כלי ושארית חיה שנדחסו להחלטת תחזוקה אחת. השחקן לומד את הלולאה הבסיסית דרך פעולה, לא הרצאה: לנשום, לתקן, לקרוא, לפקפק, לרדת עמוק יותר.
 
 ## Scanner
 
-HE LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+חוזה, נחיתה פגומה, אוויר, רדודים בהירים, מחסה משאבה, שקר מנוקה, ואז צלקת התיקון הראשונה שמשתמשת בחיים כאטם.
 
 ## Terminal
 
-HE LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+נספח רדוד: הפעלה ידנית של המשאבה תקפה. חבילת אירוע Deep Reach שמורה. צמיחת תיקון Atlas זוהתה סביב כבל, שבר כלי ושארית ביולוגית.
 
 ## Audio
 
-HE LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+החדר הבטוח הראשון אינו נקי. הוא רק עוצר את הנשימה טוב ממך.
 
 ## Field Note
 
-HE LOC HOLD: The opening must be beautiful before it becomes accusing.
+הפתיחה חייבת להיות יפה לפני שהיא נעשית מאשימה.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/he_IL. -->

@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Skrytka martwego claim"
+title: "Skrytka martwego roszczenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Skrytka martwego claim
+# Skrytka martwego roszczenia
 
-Dead Claim Cache wprowadza ukrytą historię salvage HECTON-8 między katastrofą 2147 a przybyciem gracza.
-
-## Scanner
-
-Ukryta skrytka polowa. Spakowana przez kogoś, kto planował wrócić.
-
-## Terminal
-
-Trasa pod północną rurą jest cicha, dopóki lampy się nie obudzą. Nie dotykaj niebieskiej kasety. Nie odpowiadaj na pingi carriera w kanionie.
-
-## Audio
-
-To nie sprzęt Deep Reach. Ktoś inny zszedł tu z cutterem i pechem.
-
-## Field Note
-
-Jeśli mapa dwa razy mówi bezpiecznie, pisał ją ktoś, kto próbował przekonać siebie.
+Skrytka martwego roszczenia to argument o przetrwaniu zostawiony przez kogoś, kto przegrał. Torba jest wodoodporna, związana podwójnie i ukryta tam, gdzie szybki nurek nigdy by nie spojrzał: pod północną rurą, pod siatką lamp, za pasem rozdartego tłumienia akustycznego. Ten, kto ją pakował, spodziewał się wrócić. Oznaczył trasę, zapieczętował zapasowe cuttery, złożył mapę tak mocno, że pękł wosk, i napisał słowo bezpiecznie dwa razy na tym samym marginesie. To powtórzenie jest pierwszym ostrzeżeniem. Na HECTON-8 bezpiecznie zwykle znaczy, że ktoś przeżył wystarczająco długo, by okłamać samego siebie. Skrytka jest ważna, bo poszerza świat, nie zaludniając go. Gracz nadal jest sam w oceanie, ale nie jest pierwszy. Między katastrofą carriera a obecną wyprawą inni profesjonaliści wymykali się w dół po metal, prawa salvage, zapieczętowany ładunek i plotki. Znaleźli dość, by zostawić sprzęt. Nie znaleźli dość, by zostawić świadectwo. Notatka o niebieskiej kasecie, ostrzeżenie przed pingami carriera i przecięta linka sprawiają, że skrytka przypomina mniej skarb, a bardziej rękę wyciągniętą z nieudanej trasy.
 
 <!-- External Site; generated from P006_DEAD_CLAIM_CACHE/pl_PL. -->

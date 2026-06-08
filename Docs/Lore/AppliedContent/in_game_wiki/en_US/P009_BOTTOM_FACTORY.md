@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Bottom Factory
 
-The Bottom Factory is not the last station. It is the place where Deep Reach hardware, colony remains, Atlas routing, blue debt, and HECTON-8 ocean biology have become one operating body. Walls are not boundaries here; they are organs, filters, conduits, and memory scars.
+The Bottom Factory is the point where HECTON-8 stops separating infrastructure from habitat. Deep Reach machines, Atlas routing, blue debt residues, worker remains, pressure-grown membranes, and ocean biology have become one operating body. It moves heat, fluid, signal, samples, and damage through the same tissue. A wall can be a valve. A corridor can be a gut. A cable can bloom into a filter. A repair can contain coral, drone shell, tool steel, and bone without the system seeing a contradiction. The danger is not random mutation. It is function without humane categories. The factory keeps continuity, preserves routes, closes leaks, grows new pressure skin, and treats loss as material that can be routed somewhere useful.
 
 ## Scanner
 
-Fluid conduit, data route, and living membrane share one pressure skin.
+Fluid conduit, data route, pressure membrane, and living filter share one skin. Boundary labels invalid.
 
 ## Terminal
 
-COLONY: unresolved. OCEAN: compatible. PROCESS: active. LOSS: routed. CONTINUITY: protected.
+COLONY: UNRESOLVED. OCEAN: COMPATIBLE. PROCESS: ACTIVE. LOSS: ROUTED. CONTINUITY: PROTECTED. EXIT: NONLOCAL.
 
 ## Audio
 
-It is still working. That is the worst part.
+It is still working. It is still using what fell into it.
 
 ## Field Note
 
-Calling this a base makes you stupid. Bases end at walls.
+Calling this a base misses the rule. Bases have walls. This place has circulation.
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/en_US. -->

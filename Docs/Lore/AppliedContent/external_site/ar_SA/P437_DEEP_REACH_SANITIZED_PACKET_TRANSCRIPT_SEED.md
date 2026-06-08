@@ -9,32 +9,22 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "تفريغ حزمة Deep Reach المنقحة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# تفريغ حزمة Deep Reach المنقحة
 
-AR LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
+## لغة نظيفة وتأخير قذر
 
-## Scanner
+حزمة Deep Reach خطرة لأنها تبدو كمساعدة. تسمي السلامة. تعترف بوقوع حادث. تستخدم أسماء الكارثة الصحيحة: ضغط، حجر، إحداثيات، exposure، recovery. ثم تحذف الأفعال المهمة. من أخر الإخلاء؟ من سعر التعليق؟ من أبقى وزن Atlas فعالا بينما كانت المستعمرة تنهار؟
 
-AR LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+اللغة المنقحة لا تحتاج إلى إنكار المحيط. الإنكار سهل التفنيد. تعمل الحزمة لأنها تقبل الكارثة الفيزيائية وتعيد ترتيب المسؤولية كـ pending review. تأتي الإحداثيات أولا لأن الشركة تريد custody لمساحة claim قبل أن تلتزم بالأجساد. تأتي كلفة الحجر بعدها لأن العمال الأحياء والأدلة الملوثة يصبحون liabilities تحت المكتب نفسه.
 
-## Terminal
-
-AR LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
-
-## Audio
-
-AR LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
-
-## Field Note
-
-AR LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+بالنسبة للاعب، يجب أن يصنع هذا التفريغ غضبا من غير أن يكسر التصديق. Deep Reach ليست شريرا كرتونيا يصرخ من المدار. إنها شركة تعرف تماما أي الحقول تحذف من رسالة قد تصبح لاحقا دليلا.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/ar_SA. -->

@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Utang Tonne-Window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Utang Tonne-Window
 
-ID LOC HOLD: Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-ID LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-ID LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-ID LOC HOLD: You owe the orbit before you owe the money.
-
-## Field Note
-
-ID LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Tonne-window adalah irisan kapasitas carrier yang diukur dalam massa, waktu burn, volume karantina, dan prioritas legal. Bagi operator, rasanya seperti utang karena setiap benda berguna dari HECTON-8 masuk ledger yang sama dengan tubuh yang menemukannya. Kotak tersegel bisa ringan tetapi berat secara hukum. Rak sampel bisa murah secara massa namun meminta volume bersih. Ekstraksi manusia tampak jelas sampai ballast, cadangan oksigen, dan payload custody sudah menghabiskan jendela yang tersedia. Ekonomi HECTON-8 menjadi fisik, bukan abstrak. Pemain tidak dihukum oleh meter moral palsu. Pemain terperangkap dalam mesin yang menghargai survival melalui bahan bakar, massa, kontaminasi, dan dokumen.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/id_ID. -->

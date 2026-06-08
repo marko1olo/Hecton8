@@ -52,10 +52,10 @@ namespace Hecton8.Optimization
         }
 
         // ── REGISTRY CACHE ─────────────────────────────────────────────────────────
-        
-        
+
+
         // ── INSPECTOR SETTINGS ─────────────────────────────────────────────────────
-        
+
         private const int VramTelemetryCapacity = 300;
         private const BufferID VramTelemetryBufferId = (BufferID)71617;
         private const SystemID VramTelemetryOwner = SystemID.GraphicsScalability;
@@ -70,12 +70,13 @@ namespace Hecton8.Optimization
         [SerializeField, Range(0.5f, 1f)] private float _warningBudgetFraction = 0.85f;
         [Tooltip("Budget utilization at which VRAM pressure becomes critical even before the hard budget break.")]
         [SerializeField, Range(0.7f, 1.5f)] private float _criticalBudgetFraction = 0.95f;
-        
+
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
-        
+
         private bool _registeredSlowTick;
         private bool _registeredService;
         private bool _registeredHotSwapListener;
+        private bool _runtimeOwnerAborted;
         private ProfilerRecorder _textureMemoryRecorder;
         private ProfilerRecorder _renderTextureMemoryRecorder;
         private ProfilerRecorder _gfxUsedMemoryRecorder;
@@ -84,7 +85,7 @@ namespace Hecton8.Optimization
         private VaultGenerationHandle<VramTelemetryEntry> _vramTelemetryHandle;
         private int _vramTelemetryCursor;
         private long _graphicsBudgetBytes;
-        
+
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: VRAMMonitor
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
         // COLD ALLOC: List<ProfilerRecorderHandle>[128] — profiler counter discovery at startup only — owner: VRAMMonitor
@@ -109,23 +110,23 @@ namespace Hecton8.Optimization
             "Gfx Used Memory",
             "Gfx Used Memory Bytes"
         };
-        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextLogTime;
 #endif
-        
+
         // ── PUBLIC PROPERTIES ──────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// Current texture memory consumption in bytes.
         /// </summary>
         public long TextureMemoryBytes { get; private set; }
-        
+
         /// <summary>
         /// Current RenderTexture memory consumption in bytes.
         /// </summary>
         public long RenderTextureMemoryBytes { get; private set; }
-        
+
         /// <summary>
         /// Total VRAM consumption in bytes (textures + RenderTextures + meshes + shaders).
         /// </summary>
@@ -135,27 +136,27 @@ namespace Hecton8.Optimization
         /// Raw graphics used-memory profiler counter in bytes when the platform exposes it.
         /// </summary>
         public long GfxUsedMemoryBytes { get; private set; }
-        
+
         /// <summary>
         /// Returns whether texture memory exceeds 900 MB threshold.
         /// </summary>
         public bool IsTextureMemoryOverBudget => TextureMemoryBytes > _budgetThresholds.TextureMemoryBudgetBytes;
-        
+
         /// <summary>
         /// Returns whether RenderTexture memory exceeds 500 MB threshold.
         /// </summary>
         public bool IsRenderTextureMemoryOverBudget => RenderTextureMemoryBytes > _budgetThresholds.RenderTextureMemoryBudgetBytes;
-        
+
         /// <summary>
         /// Returns whether total VRAM exceeds the active runtime graphics budget.
         /// </summary>
         public bool IsTotalVRAMOverBudget => TotalVRAMBytes > _budgetThresholds.TotalVRAMBudgetBytes;
-        
+
         /// <summary>
         /// Normalized RenderTexture budget utilization.
         /// </summary>
         public float RenderTextureBudgetUtilization { get; private set; }
-        
+
         /// <summary>
         /// Normalized total VRAM budget utilization.
         /// </summary>
@@ -165,25 +166,31 @@ namespace Hecton8.Optimization
         /// Normalized texture budget utilization.
         /// </summary>
         public float TextureBudgetUtilization { get; private set; }
-        
+
         /// <summary>
         /// Current high-level VRAM pressure state.
         /// </summary>
         public VRAMPressureState PressureState { get; private set; }
 
         public byte PressureStateCode => (byte)PressureState;
-        
+
         // ── LIFECYCLE ──────────────────────────────────────────────────────────────
-        
+
         private void Awake()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             _budgetThresholds = VRAMBudgetThresholds.ResolveRuntimeBudget(_budgetThresholds);
             _graphicsBudgetBytes = _budgetThresholds.TotalVRAMBudgetBytes;
             StartRecorders();
         }
-        
+
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (TryRegisterService())
             {
                 CacheRegistryServicesCold();
@@ -191,14 +198,14 @@ namespace Hecton8.Optimization
                 TryRegister();
             }
         }
-        
+
         private void OnDisable()
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
-        
+
         private void OnDestroy()
         {
             TryUnregister();
@@ -216,6 +223,14 @@ namespace Hecton8.Optimization
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregister();
+                if (currentService != null && isActiveAndEnabled && !_runtimeOwnerAborted)
+                    TryRegister();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
             {
                 _cachedRenderTextureLifecycle = currentService as IRenderTextureLifecycleService;
@@ -231,9 +246,9 @@ namespace Hecton8.Optimization
                 EnsureVramTelemetryRing();
             }
         }
-        
+
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// ISlowTickable implementation. Measures VRAM every ~0.5s.
         /// Zero GC: pre-allocated buffers, no LINQ, no string concat.
@@ -243,9 +258,9 @@ namespace Hecton8.Optimization
             MeasureVRAM();
             CheckThresholds();
         }
-        
+
         // ── PUBLIC API ─────────────────────────────────────────────────────────────
-        
+
         /// <summary>
         /// Queries current VRAM consumption breakdown.
         /// </summary>
@@ -263,9 +278,9 @@ namespace Hecton8.Optimization
         {
             SlowTick();
         }
-        
+
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
-        
+
         private void StartRecorders()
         {
             _textureMemoryRecorder = TryStartMemoryRecorder(_textureMemoryCandidates);
@@ -290,16 +305,39 @@ namespace Hecton8.Optimization
             if (!Application.isPlaying)
                 return false;
 
-            VRAMMonitor registered = GlobalRegistry.VRAMMonitor;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterVRAMMonitorRuntime(this);
             _registeredService = ReferenceEquals(GlobalRegistry.VRAMMonitor, this);
             return _registeredService;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            VRAMMonitor registered = GlobalRegistry.VRAMMonitor;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsVRAMMonitorRuntimeUsable(registered))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterVRAMMonitorRuntime(registered);
+            return false;
+        }
+
+        private static bool IsVRAMMonitorRuntimeUsable(VRAMMonitor monitor)
+        {
+            return monitor != null &&
+                   monitor._registeredService &&
+                   monitor.isActiveAndEnabled;
         }
 
         private void TryUnregister()
@@ -343,7 +381,7 @@ namespace Hecton8.Optimization
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
         }
-        
+
         private void MeasureVRAM()
         {
             TextureMemoryBytes = ReadRecorderValue(_textureMemoryRecorder);
@@ -367,7 +405,7 @@ namespace Hecton8.Optimization
             UpdatePressureState();
             WriteTelemetrySample();
         }
-        
+
         private void CheckThresholds()
         {
             if (IsTextureMemoryOverBudget || IsRenderTextureMemoryOverBudget || IsTotalVRAMOverBudget)
@@ -560,7 +598,7 @@ namespace Hecton8.Optimization
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
-        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void LogVRAMWarning()
         {
@@ -569,7 +607,7 @@ namespace Hecton8.Optimization
             _reportBuilder.Append("Texture=").Append((TextureMemoryBytes / (1024f * 1024f)).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB ");
             _reportBuilder.Append("RT=").Append((RenderTextureMemoryBytes / (1024f * 1024f)).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB ");
             _reportBuilder.Append("Total=").Append((TotalVRAMBytes / (1024f * 1024f)).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB");
-            
+
             Hecton8.Core.H8Debug.LogWarning(_reportBuilder.ToString(), this);
         }
 #endif

@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS188_FIRST_STORAGE_RACK_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1215_SHELF_BRACKET_RUST_SHADOW",
+    "P1216_CRATE_FOOT_SALT_PAD",
+    "P1217_RACK_STRAP_TWIST_MARK",
+    "P1218_BIN_DIVIDER_GRIT_LINE",
+    "P1219_STOCK_CARD_WATER_BLEED"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1215_SHELF_BRACKET_RUST_SHADOW.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1216_CRATE_FOOT_SALT_PAD.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1217_RACK_STRAP_TWIST_MARK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1218_BIN_DIVIDER_GRIT_LINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1219_STOCK_CARD_WATER_BLEED.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Реестр Black Keel
 
-Black Keel Ledger задает орбитальную нить игрока как контрактную машину. Она может быть полезной, скомпрометированной и равнодушной одновременно.
+Black Keel не дружеский корабль домой. Это тендер claim-pool, который видит тела, груз, карантин, массу подъема и страховой риск как строки одного реестра.
 
-## Scanner
-
-Реестр claim-pool tender. Публичная carrier custody, страховой долг, скрытые приоритетные hooks Deep Reach.
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keel - не твой корабль. Это машина, которая знает, что ты должен.
-
-## Field Note
-
-Корабль может помочь тебе, не будучи на твоей стороне.
+Ему не нужно ненавидеть игрока. Он может вежливо ответить, принять аварийный хэш и отказать в подборе, пока числа не изменятся.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/ru_RU. -->

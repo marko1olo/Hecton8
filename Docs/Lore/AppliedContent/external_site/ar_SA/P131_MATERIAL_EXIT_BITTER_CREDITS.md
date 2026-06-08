@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "خروج مادي: أرصدة مرة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# خروج مادي: أرصدة مرة
 
-AR LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
+يجب أن يبدو الخروج المادي قانونيا وباردا. يستعيد اللاعب مادة الضغط، ويحفظ custody، ويغطي حساب كتلة Black Keel عبر نافذة الخروج، ويحصل على خفض حقيقي في lien. لا يعلن أي إنذار الفشل؛ النظام يعمل كما صُمم.
 
-## Scanner
-
-AR LOC HOLD: You can leave richer and still fail the place.
-
-## Terminal
-
-AR LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
-
-## Audio
-
-AR LOC HOLD: The invoice clears before the names do.
-
-## Field Note
-
-AR LOC HOLD: This ending should be real credits, not a fake game over.
+الضرر في ما لا يذكره الإيصال. أسماء العمال المفقودين لا تزال غير مسواة، وسلسلة الدليل ناقصة، ويحصل Deep Reach على سبب تجاري أنظف للعودة. لا يعاقب HECTON-8 اللاعب لأنه محترف. إنه يريه تكلفة النجاح المهني عندما يكون موقع العمل قبرا أيضا.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/ar_SA. -->

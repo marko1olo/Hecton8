@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;
@@ -25,6 +26,7 @@ namespace Hecton8.World
         private const string TerrainResolution1025Label = "1025";
         private const string TerrainResolution2049Label = "2049";
         private const uint KccVelocityStreamingMaxAgeFrames = 12u;
+        private const float DefaultWaterSurfaceLevelY = 14.02f;
 
         private enum DepthZone
         {
@@ -126,6 +128,12 @@ namespace Hecton8.World
         private int _lastTerrainBaseMapDistance = -1;
         private float _lastTerrainDetailDistance = -1f;
         private float _lastTerrainDetailDensity = -1f;
+        private bool _lastTerrainDraftsInPlaymode;
+        private int _lastTerrainMainRange = -1;
+        private int _lastTerrainDraftRange = -1;
+        private int _lastTerrainDraftResolution = -1;
+        private bool _terrainStreamingTopologyDirty = true;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
 
         private void Reset()
@@ -270,27 +278,41 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
-                return;
-
-            TryUnregister();
-            if (isActiveAndEnabled)
+            switch (serviceSlot)
             {
-                if (currentService != null)
-                    TryRegister();
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
+                    if (isActiveAndEnabled && currentService != null)
+                        TryRegister();
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    RebindPlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    InvalidateStreamingProfileState();
+                    if (isActiveAndEnabled && currentService != null)
+                        ApplyStreamingProfile(force: true);
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    mapMagicBridge = currentService as MapMagicBridge;
+                    InvalidateStreamingProfileState();
+                    if (isActiveAndEnabled && currentService != null)
+                        ApplyStreamingProfile(force: true);
+                    break;
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    if (currentService is MapMagicBridge currentMapMagic)
+                        mapMagicBridge = currentMapMagic;
+                    else if (ReferenceEquals(previousService, mapMagicBridge))
+                        mapMagicBridge = null;
+
+                    InvalidateStreamingProfileState();
+                    if (isActiveAndEnabled && currentService != null)
+                        ApplyStreamingProfile(force: true);
+                    break;
             }
         }
 
         internal void ServiceEmergencyReset()
         {
-            _smoothedSpeedSq = 0f;
-            _lastDepthZone = (DepthZone)(-1);
-            _lastMotionMode = (MotionMode)(-1);
-            _lastObjectsPerFrame = -1;
-            _lastTerrainPixelError = -1;
-            _lastTerrainBaseMapDistance = -1;
-            _lastTerrainDetailDistance = -1f;
-            _lastTerrainDetailDensity = -1f;
+            InvalidateStreamingProfileState();
             ResolveReferences();
             RefreshRuntimeProfilesFromChunkProfile();
             ClampSettings();
@@ -317,7 +339,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }
@@ -346,14 +368,8 @@ namespace Hecton8.World
 
             StreamingProfile activeProfile = surfaceSurveyProfile;
 
-            if (mapMagicBridge != null && mapMagicBridge.IsAvailable)
-            {
-                mapMagicBridge.ConfigureRuntimeTerrainStreaming(
-                    terrainDraftsInPlaymode,
-                    terrainMainRange,
-                    terrainDraftRange,
-                    terrainDraftResolution);
-            }
+            bool topologyChanged = ConfigureMapMagicTerrainTopology(force);
+            force |= topologyChanged;
 
             if (playerTransform == null || scatterBudgetController == null || !TryResolveCurrentDepth(out float depth))
             {
@@ -482,6 +498,39 @@ namespace Hecton8.World
 #endif
         }
 
+        private bool ConfigureMapMagicTerrainTopology(bool force)
+        {
+            if (mapMagicBridge == null || !mapMagicBridge.IsAvailable)
+            {
+                _terrainStreamingTopologyDirty = true;
+                return false;
+            }
+
+            bool settingsChanged =
+                _terrainStreamingTopologyDirty ||
+                force ||
+                _lastTerrainDraftsInPlaymode != terrainDraftsInPlaymode ||
+                _lastTerrainMainRange != terrainMainRange ||
+                _lastTerrainDraftRange != terrainDraftRange ||
+                _lastTerrainDraftResolution != terrainDraftResolution;
+
+            if (!settingsChanged)
+                return false;
+
+            bool topologyChanged = mapMagicBridge.ConfigureRuntimeTerrainStreaming(
+                terrainDraftsInPlaymode,
+                terrainMainRange,
+                terrainDraftRange,
+                terrainDraftResolution);
+
+            _lastTerrainDraftsInPlaymode = terrainDraftsInPlaymode;
+            _lastTerrainMainRange = terrainMainRange;
+            _lastTerrainDraftRange = terrainDraftRange;
+            _lastTerrainDraftResolution = terrainDraftResolution;
+            _terrainStreamingTopologyDirty = false;
+            return topologyChanged;
+        }
+
         private static string GetTerrainResolutionLabel(int resolution)
         {
             switch (resolution)
@@ -581,51 +630,124 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (IsPlayerRuntimeContextBound(runtimeContext))
             {
-                if (playerTransform == null)
-                    playerTransform = runtimeContext.PlayerTransform;
-
-                if (_playerMovement == null)
-                    _playerMovement = runtimeContext.PlayerMovement;
-
-                if (playerRigidbody == null)
-                    playerRigidbody = runtimeContext.PlayerRigidbody;
+                RebindPlayerRuntimeContext(runtimeContext);
+            }
+            else if (_playerRuntimeContext != null && !IsPlayerRuntimeContextBound(_playerRuntimeContext))
+            {
+                RebindPlayerRuntimeContext(null);
             }
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
-            if (mapMagicBridge == null)
+            if (mapMagicBridge == null || !mapMagicBridge.isActiveAndEnabled)
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
 
-            if (biomeSamplerCache == null)
+            if (biomeSamplerCache == null || !biomeSamplerCache.isActiveAndEnabled)
                 WorldRuntimeReferenceUtility.TryResolveBiomeSamplerCache(ref biomeSamplerCache);
 
-            if (scatterBudgetController == null)
+            if (scatterBudgetController == null || !scatterBudgetController.isActiveAndEnabled)
                 WorldRuntimeReferenceUtility.TryResolveScatterBudgetController(ref scatterBudgetController);
 
-            if (worldSliceDirector == null)
+            if (worldSliceDirector == null || !worldSliceDirector.isActiveAndEnabled)
                 WorldRuntimeReferenceUtility.TryResolveWorldSliceDirector(ref worldSliceDirector);
+        }
+
+        private void RebindPlayerRuntimeContext(IPlayerRuntimeContext runtimeContext)
+        {
+            if (IsPlayerRuntimeContextBound(runtimeContext))
+            {
+                _playerRuntimeContext = runtimeContext;
+                playerTransform = runtimeContext.PlayerTransform;
+                playerRigidbody = runtimeContext.PlayerRigidbody;
+                _playerMovement = runtimeContext.PlayerMovement;
+                return;
+            }
+
+            _playerRuntimeContext = null;
+            playerTransform = null;
+            playerRigidbody = null;
+            _playerMovement = null;
+        }
+
+        private static bool IsPlayerRuntimeContextBound(IPlayerRuntimeContext runtimeContext)
+        {
+            return runtimeContext != null &&
+                   runtimeContext.IsInitialized &&
+                   runtimeContext.PlayerObject != null &&
+                   runtimeContext.PlayerTransform != null;
+        }
+
+        private void InvalidateStreamingProfileState()
+        {
+            _smoothedSpeedSq = 0f;
+            _lastDepthZone = (DepthZone)(-1);
+            _lastMotionMode = (MotionMode)(-1);
+            _lastObjectsPerFrame = -1;
+            _lastTerrainPixelError = -1;
+            _lastTerrainBaseMapDistance = -1;
+            _lastTerrainDetailDistance = -1f;
+            _lastTerrainDetailDensity = -1f;
+            _lastTerrainMainRange = -1;
+            _lastTerrainDraftRange = -1;
+            _lastTerrainDraftResolution = -1;
+            _terrainStreamingTopologyDirty = true;
         }
 
         private bool TryResolveCurrentDepth(out float depth)
         {
             depth = 0f;
 
-            if (_playerMovement != null)
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
             {
-                depth = Mathf.Max(0f, _playerMovement.CurrentDepth);
+                depth = math.max(0f, movementState.DepthMeters);
+                return true;
+            }
+
+            if (playerContext != null)
+                return false;
+
+            if (_playerMovement != null && math.isfinite(_playerMovement.CurrentDepth))
+            {
+                depth = math.max(0f, _playerMovement.CurrentDepth);
                 return true;
             }
 
             if (playerTransform == null || mapMagicBridge == null || !mapMagicBridge.IsAvailable)
                 return false;
 
-            depth = Mathf.Max(0f, mapMagicBridge.WaterSurfaceLevel - playerTransform.position.y);
+            depth = Mathf.Max(0f, ResolveWaterSurfaceLevel() - playerTransform.position.y);
             return true;
+        }
+
+        private float ResolveWaterSurfaceLevel()
+        {
+            if (mapMagicBridge != null && TryResolveWaterSurfaceLevel(mapMagicBridge.WaterSurfaceLevel, out float waterSurfaceLevel))
+                return waterSurfaceLevel;
+
+            return DefaultWaterSurfaceLevelY;
+        }
+
+        private static bool TryResolveWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
+        {
+            if (math.isfinite(candidateWaterSurfaceLevel) &&
+                math.abs(candidateWaterSurfaceLevel) > 0.0001f &&
+                math.abs(candidateWaterSurfaceLevel) <= 1000f)
+            {
+                waterSurfaceLevel = candidateWaterSurfaceLevel;
+                return true;
+            }
+
+            waterSurfaceLevel = DefaultWaterSurfaceLevelY;
+            return false;
         }
 
         private void ClampSettings()

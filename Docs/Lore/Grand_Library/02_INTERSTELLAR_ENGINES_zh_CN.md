@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 引擎设计与星际物流
 
 > **来源：** 技术教学大纲，巴纳德船坞。文件 44-A。所有外派承包商的必读材料。  

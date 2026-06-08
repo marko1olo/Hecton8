@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Pistol Tambal Sealant Dingin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Pistol Tambal Sealant Dingin
 
-ID LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+Pistol tambal sealant dingin memberi perbaikan jujur pertama setelah memompa. Ia bisa menghentikan bocor lubang jarum atau menahan bibir gasket cukup lama untuk memulihkan ruang kecil, tetapi tidak membuat struktur rusak menjadi aman. Pelajarannya ada pada label rating: HECTON-8 menghukum setiap perbaikan yang dipakai di luar kelas tekanannya.
 
 ## Scanner
 
-ID LOC HOLD: Patch gun. Rated for pinholes, not miracles.
+Pistol tambal seal dingin. Kartrid hanya untuk bocor lubang jarum dan sambungan tenang; geser aktif akan mengelupaskannya.
 
 ## Terminal
 
-ID LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+BATAS TAMBAL / SEALANT DINGIN: merekat pada kulit lambung basah kedalaman rendah setelah permukaan diseka. Disetujui untuk lubang jarum, bibir gasket, dan rembesan sambungan tenang. Tolak retak geser aktif, bloom blue debt hangat, dan sambungan kabel bergerak.
 
 ## Audio
 
-ID LOC HOLD: A patch is not safety. It is a countdown that looks solid.
+Jangan sebut tersegel. Sebut itu waktu.
 
 ## Field Note
 
-ID LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Tambalan membeli menit. Kalau retaknya masih bergerak, pakai menit itu untuk pergi.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/id_ID. -->

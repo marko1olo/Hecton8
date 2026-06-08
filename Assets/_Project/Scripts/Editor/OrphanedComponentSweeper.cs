@@ -13,7 +13,7 @@ namespace Hecton8.Editor
         private const string ReportFileName = "BROKEN_PREFABS.md";
         private static readonly Encoding ReportEncoding = new UTF8Encoding(false);
 
-        [MenuItem("Hecton8/Codex/Run Orphaned Prefab Sweeper")]
+        [MenuItem("Hecton8/Tools/Run Orphaned Prefab Sweeper")]
         public static void Run()
         {
             string reportPath = ResolveReportPath();

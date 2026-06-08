@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Black Keel Bathydrop Interface"
+title: "Interfejs bathydrop Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Black Keel Bathydrop Interface
+# Interfejs bathydrop Black Keel
 
-PL LOC HOLD: The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+Pierwsza blokada ucieczki to inżynieria. Black Keel nadal istnieje nad wodą, ale uszkodzony interfejs bathydrop nie połączy powierzchni, orbity i timingu samą intencją. Naprawa wymaga deep-rated salvage, czystych uszczelek, działającej geometrii przekaźnika i okna startu akceptowanego przez przewoźnika.
 
 ## Scanner
 
-PL LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+Interfejs bathydrop uszkodzony: łańcuch powrotu na powierzchnię nie zamknie się bez części ciśnieniowych, timingu przekaźnika i czystego zaczepu wznoszenia.
 
 ## Terminal
 
-PL LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+RAPORT KAPSUŁY: trim osłony cieplnej przetrwał. Brama wyporności wygięta. Maszt com zalany. Zaczep wznoszenia skażony. Naprawa wymaga ceramiki ciśnieniowej, uszczelniacza, matematyki przekaźnika i zweryfikowanego okna.
 
 ## Audio
 
-PL LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
+Nie straciłeś całego statku. Straciłeś jedyny łańcuch, który sprawia, że statek ma znaczenie.
 
 ## Field Note
 
-PL LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Zapis ucieczki pierwszej godziny: przewoźnik jest obecny, ale łańcuch między graczem, morzem, powierzchnią i orbitą jest zerwany w nazwanych częściach.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/pl_PL. -->

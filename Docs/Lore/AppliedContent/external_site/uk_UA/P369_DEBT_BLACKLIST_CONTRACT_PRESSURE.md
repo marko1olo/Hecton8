@@ -9,32 +9,36 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Тиск боргу, чорного списку й контракту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Debt Blacklist Contract Pressure
+# Тиск боргу, чорного списку й контракту
 
-UK LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+HECTON-8 описує протагоніста через економіку фронтиру, а не через долю. Борг, чорні списки, зберігання claim-pool, кисневий кредит, доступ до койки і старі облікові дані Deep Reach роблять salvage-контракт примусовим, але не безпорадним.
 
 ## Scanner
 
-UK LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Повідомлення про заставу прив’язане до зберігання Black Keel. Відмова залишається законною, але приземляє: без койки, без чистого кисневого кредиту, без маршрутного вікна з Aegir.
 
 ## Terminal
 
-UK LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+ПРИЙНЯТТЯ ПРЕТЕНЗІЇ / ВІКНО ЗНЯТТЯ З ЧОРНОГО СПИСКУ
+статус підрядника: борговий Marauder
+перевізник: зберігання claim-pool Black Keel
+умови полегшення: видобувна маса, доказ зберігання, відповідність приймача
+стан відмови: чорний список активний; доступ до койки заборонено; кисневу підтримку переведено в оплачувану послугу.
 
 ## Audio
 
-UK LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+Це не було викраденням. Це був той вибір, який фронтир продає як свободу: підпиши, пірнай або лишайся чистим на папері й замкненим на практиці.
 
 ## Field Note
 
-UA LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+Застава не наставила зброю. Вона вказала на рахунок за повітря, список койок і наступне маршрутне вікно.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/uk_UA. -->

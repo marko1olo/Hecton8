@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw氷散乱危険役"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw氷散乱危険役
 
-JA LOC HOLD: The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Clawは氷散乱月で、破片、claim塵、凍った産業廃棄物の汚れたハローを持つ。嵐の後に有用な物質を見せることがあり、そのせいで噂は死なない。同じレーンはセンサー信頼を引き裂く。salvagerはきれいな氷と失われた貨物を語り、操縦士は死角、ダストレーダー、前方装甲の交換費を語る。
 
 ## Scanner
 
-JA LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+外側氷散乱記録。Clawは明るい破片を航路へ落とし、salvageの噂は操縦士より速く走る。
 
 ## Terminal
 
-JA LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+月梯子H3 CLAW：破片レーンはsurveyドローンのみ開放。船殻交通には前方ダストレーダー、犠牲シールド、未記録破片衝突の支払 waiver が必要。
 
 ## Audio
 
-JA LOC HOLD: Every system has one moon that accountants love and pilots curse.
+どの星系にも、会計が愛し操縦士が呪う月が一つある。
 
 ## Field Note
 
-JA LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Clawが紙の上で儲かるのは、紙が氷を避けなくていいからだ。
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/ja_JP. -->

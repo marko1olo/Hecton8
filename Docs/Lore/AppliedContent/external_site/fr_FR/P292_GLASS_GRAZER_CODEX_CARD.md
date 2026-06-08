@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Glass Grazer Codex Card"
+title: "Fiche codex du brouteur de verre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Glass Grazer Codex Card
+# Fiche codex du brouteur de verre
 
-FR LOC HOLD: HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+Les brouteurs de verre transforment l’écologie de HECTON-8 en langage de survie. Leur repas ouvre des cicatrices de route claires dans les films et les tapis, mais leur immobilité compte souvent plus que leur mouvement. Un animal inoffensif peut prévenir le joueur avant un instrument.
 
 ## Scanner
 
-FR LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+Banc de brouteurs de verre. Racleurs à coquille non hostiles, ils mangent le film minéral. Tics réguliers: eau exploitable. Silence soudain: quelque chose de plus grand a changé la clairière.
 
 ## Terminal
 
-FR LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+SPÉCIMEN / BANC DE BROUTEURS DE VERRE / rôle: racleur de film peu profond, témoin de courant, indice de déplacement prédateur / lecture sûre: bord nourri, trace pâle fraîche, tics de coquille stables / rejet: champ de nourriture abandonné, banc figé serré, aucun tic de retour après pinger / note de route: absence après nourrissage = donnée de danger.
 
 ## Audio
 
-FR LOC HOLD: When they stop eating, you stop moving.
+Quand les petites bouches cessent de tiquer alors que la nourriture reste là, ne sois pas la prochaine chose qui attend.
 
 ## Field Note
 
-FR LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Banc qui mange: lis la voie. Banc figé: lis l’eau. Voie vide avec nourriture restante: pars.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/fr_FR. -->

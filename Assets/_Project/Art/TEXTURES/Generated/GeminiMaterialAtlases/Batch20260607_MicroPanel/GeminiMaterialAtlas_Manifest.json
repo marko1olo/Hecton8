@@ -3,7 +3,7 @@
   "sourceProvider": "GeminiManualAtlas",
   "providerLicensePage": "",
   "license": "USER_GENERATED_REVIEW_REQUIRED",
-  "resolution": "488px_per_tile",
+  "resolution": "512px_per_tile",
   "unityImportStatus": "PENDING UNITY IMPORT",
   "reviewStatus": "PENDING VISUAL REVIEW",
   "mapPacking": {
@@ -30,6 +30,7 @@
       "normalScale": 0.72,
       "heightScale": 0.004,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_blue_painted_metal/TX_GM_gemini_Batch20260607_MicroPanel_blue_painted_metal_BaseColor.png",
@@ -57,6 +58,7 @@
       "normalScale": 0.7,
       "heightScale": 0.003,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_black_grip_rubber/TX_GM_gemini_Batch20260607_MicroPanel_black_grip_rubber_BaseColor.png",
@@ -84,6 +86,7 @@
       "normalScale": 0.5,
       "heightScale": 0.003,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_dark_anodized_metal/TX_GM_gemini_Batch20260607_MicroPanel_dark_anodized_metal_BaseColor.png",
@@ -111,6 +114,7 @@
       "normalScale": 0.46,
       "heightScale": 0.003,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_orange_safety_composite/TX_GM_gemini_Batch20260607_MicroPanel_orange_safety_composite_BaseColor.png",
@@ -138,6 +142,7 @@
       "normalScale": 0.38,
       "heightScale": 0.002,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_white_ceramic_casing/TX_GM_gemini_Batch20260607_MicroPanel_white_ceramic_casing_BaseColor.png",
@@ -165,6 +170,7 @@
       "normalScale": 0.92,
       "heightScale": 0.007,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_fine_ribbed_trim/TX_GM_gemini_Batch20260607_MicroPanel_fine_ribbed_trim_BaseColor.png",
@@ -192,6 +198,7 @@
       "normalScale": 0.72,
       "heightScale": 0.005,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_worn_steel_inset/TX_GM_gemini_Batch20260607_MicroPanel_worn_steel_inset_BaseColor.png",
@@ -219,6 +226,7 @@
       "normalScale": 0.28,
       "heightScale": 0.001,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_smoky_acrylic_glass/TX_GM_gemini_Batch20260607_MicroPanel_smoky_acrylic_glass_BaseColor.png",
@@ -246,6 +254,7 @@
       "normalScale": 0.46,
       "heightScale": 0.003,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_gray_polymer/TX_GM_gemini_Batch20260607_MicroPanel_gray_polymer_BaseColor.png",
@@ -273,6 +282,7 @@
       "normalScale": 0.66,
       "heightScale": 0.005,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_salt_scuffed_metal/TX_GM_gemini_Batch20260607_MicroPanel_salt_scuffed_metal_BaseColor.png",
@@ -300,6 +310,7 @@
       "normalScale": 0.4,
       "heightScale": 0.002,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_clean_graphite_panel/TX_GM_gemini_Batch20260607_MicroPanel_clean_graphite_panel_BaseColor.png",
@@ -327,6 +338,7 @@
       "normalScale": 0.58,
       "heightScale": 0.004,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_aged_green_service_metal/TX_GM_gemini_Batch20260607_MicroPanel_aged_green_service_metal_BaseColor.png",
@@ -354,6 +366,7 @@
       "normalScale": 0.36,
       "heightScale": 0.002,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_brushed_titanium/TX_GM_gemini_Batch20260607_MicroPanel_brushed_titanium_BaseColor.png",
@@ -381,6 +394,7 @@
       "normalScale": 0.58,
       "heightScale": 0.003,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_black_gasket_rubber/TX_GM_gemini_Batch20260607_MicroPanel_black_gasket_rubber_BaseColor.png",
@@ -408,6 +422,7 @@
       "normalScale": 0.74,
       "heightScale": 0.006,
       "provisionalPbrMaps": true,
+      "watermarkRepaired": false,
       "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_repaired_salvage_metal/TX_GM_gemini_Batch20260607_MicroPanel_repaired_salvage_metal_BaseColor.png",
@@ -435,7 +450,8 @@
       "normalScale": 0.5,
       "heightScale": 0.003,
       "provisionalPbrMaps": true,
-      "watermarkRisk": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_matte_carbon_composite/TX_GM_gemini_Batch20260607_MicroPanel_matte_carbon_composite_BaseColor.png",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/Tiles/gemini_Batch20260607_MicroPanel_matte_carbon_composite/TX_GM_gemini_Batch20260607_MicroPanel_matte_carbon_composite_NormalGL.png",

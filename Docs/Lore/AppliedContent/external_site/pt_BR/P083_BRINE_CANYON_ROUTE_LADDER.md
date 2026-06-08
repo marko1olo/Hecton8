@@ -8,33 +8,19 @@ biome_tags: biome.brine_canyon;biome.drop_zone
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+spoiler_tier: 1
+title: "Escada de Rota do Cânion de Salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# Escada de Rota do Cânion de Salmoura
 
-PT-BR LOC HOLD: Brine Canyon Route Ladder is one of HECTON-8's core exploration structures: not a hallway, but a chemical geography where density, current and sound shape progression.
+Cânions de salmoura tornam física a progressão de profundidade. Camadas densas, paredes minerais, vazamentos térmicos e distorção acústica ensinam por que viagens mais profundas exigem instrumentos melhores e disciplina de pressão.
 
-## Scanner
-
-PT-BR LOC HOLD: Brine density marker. The descent route is chemistry with walls.
-
-## Terminal
-
-PT-BR LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
-
-## Audio
-
-PT-BR LOC HOLD: The canyon is a staircase made of wrong water.
-
-## Field Note
-
-PT-BR LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+A Escada de Rota do Cânion de Salmoura é uma estrutura central de exploração de HECTON-8: não corredor, mas geografia química onde densidade, corrente e som moldam o progresso. Você não nada pelo cânion. Você negocia com camadas mais pesadas que o traje.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/pt_BR. -->

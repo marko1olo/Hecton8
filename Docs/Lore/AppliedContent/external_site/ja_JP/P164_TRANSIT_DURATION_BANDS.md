@@ -9,32 +9,20 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Transit Duration Bands"
+title: "トランジット時間帯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Transit Duration Bands
+# トランジット時間帯
 
-JP LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
+## 違う時計
 
-## Scanner
+同じ航路でも同じ時間ではない。probe packet は早く発ち、光を燃やし、crew が水を見る何十年も前に claim になれる。heavy freight には staged launches、braking rights、pellet lanes、radiators、損失曲線を受け入れる保険が要る。human crew にはそれらに加え life support、liability language、return mass を払う理由が要る。
 
-JA LOC HOLD: The same route means different time for packets, freight and people.
-
-## Terminal
-
-JA LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
-
-## Audio
-
-JA LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
-
-## Field Note
-
-JP LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+HECTON-8 はその食い違う時計でプレイヤーを閉じ込める。distress hash は有効でも無力になり得る。貨物機会は開き、救助は閉じたままになり得る。公開される結果は何年も先でも守る価値がある。恐怖は航路が壊れていることではない。身体にだけ関心を払わず、航路が正常に働くことだ。
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/ja_JP. -->

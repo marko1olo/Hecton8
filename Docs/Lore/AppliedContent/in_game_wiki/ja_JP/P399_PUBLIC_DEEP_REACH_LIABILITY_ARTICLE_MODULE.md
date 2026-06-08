@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Deep Reach Liability Evidence"
+title: "Deep Reach責任証拠"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Deep Reach Liability Evidence
+# Deep Reach責任証拠
 
-JA LOC HOLD: Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
+Deep Reachのliabilityは、洪水に偽の物理が不要だから成立する。Great Tideは実在した。防げた損害は、margins、時計、access holds、そして誰も回収される前に労働者を分類へ掃除した記録に現れる。
 
 ## Scanner
 
-JA LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+liability記録。実在の潮汐物理、承認されたmargin risk、避難遅延、quarantine holds、Atlas weighting、整えられた損失文が同じ証拠連鎖に集まる。
 
 ## Terminal
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+公開アーカイブノード // LIABILITY証拠。Great Tideは受理済み。sensor margins、evacuation queue遅延、quarantine holds、Atlas weighting、worker classification、loss conversionは審査継続。
 
 ## Audio
 
-JA LOC HOLD: A disaster can be natural and still have signatures on it.
+災害は自然でありながら、署名を持つことがある。
 
 ## Field Note
 
-JA LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Marauderメモ: 潮とは争うな。その横の署名と争え。
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/ja_JP. -->

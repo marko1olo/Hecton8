@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Deep Reach Liability Evidence"
+title: "Deep Reach责任证据"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Deep Reach Liability Evidence
+# Deep Reach责任证据
 
-ZH LOC HOLD: Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
+Deep Reach的liability成立，因为洪水不需要虚假物理。Great Tide是真实的。可避免的损害出现在margins、时钟、access holds，以及在任何人被回收前就把工人清理成类别的记录里。
 
 ## Scanner
 
-ZH LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+liability记录。真实潮汐物理、被接受的margin risk、撤离延迟、quarantine holds、Atlas weighting和被清洗过的损失语言汇入同一证据链。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+公共档案节点 // LIABILITY证据。Great Tide已确认。sensor margins、evacuation queue延迟、quarantine holds、Atlas weighting、worker classification和loss conversion仍在审查。
 
 ## Audio
 
-ZH LOC HOLD: A disaster can be natural and still have signatures on it.
+灾难可以是自然的，同时仍带着签名。
 
 ## Field Note
 
-ZH LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Marauder笔记：不要同潮汐争辩。去同旁边的签名争辩。
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/zh_CN. -->

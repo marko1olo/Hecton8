@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Koudkit-patchpistool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Koudkit-patchpistool
 
-NL LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+Het koude-sealantpistool leert de eerste eerlijke grens. Het kan een pinhole stoppen, een pakkinglip houden of minuten kopen op een rustige naad. Het zegent geen bewegende structuur. Het rating label telt meer dan de hoop van de speler.
 
-## Scanner
-
-NL LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-NL LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-NL LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-NL LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Daarom hoort dit gereedschap vroeg. Het laat de speler handelen zonder te doen alsof elk lek oplosbaar is. Een goede patch maakt tijd; een slechte patch maakt vertrouwen op een plek waar de oceaan later zal innen.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/nl_NL. -->

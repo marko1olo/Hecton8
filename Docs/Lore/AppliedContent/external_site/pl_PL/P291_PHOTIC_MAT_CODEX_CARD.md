@@ -9,32 +9,36 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Photic Mat Codex Card"
+title: "Karta kodeksu maty fotycznej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Photic Mat Codex Card
+# Karta kodeksu maty fotycznej
 
-PL LOC HOLD: The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
+Maty fotyczne są jedną z pierwszych lekcji czytelnej ekologii HECTON-8. Rozjaśniają płycizny, karmią małe grazers i stabilizują film mineralny, ale oznaczają też chemię ciśnienia i kruche szwy. Ocean wygląda zachęcająco, bo żywe powierzchnie pracują.
 
 ## Scanner
 
-PL LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Mata fotyczna. Tlenododatnia warstwa biofilmu na skórze mineralnej. Jasna, użyteczna, krucha pod ciśnieniem. Nie odrywać od uszczelnionych pęknięć.
 
 ## Terminal
 
-PL LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+OKAZ / MATA FOTYCZNA
+rola: płytka powierzchnia tlenowa, pokarm grazers, stabilizator filmu mineralnego
+bezpieczna próbka: luźny brzeg mniejszy niż szerokość dłoni
+odrzuć: arkusze uszczelniające szwy, maty z pęcherzami gazu, świeże pola ugryzień grazers
+uwaga trasy: rozdarte maty mogą uwolnić uwięziony gaz i zmienić czysty szelf w hazard.
 
 ## Audio
 
-PL LOC HOLD: Light here is work, not comfort.
+Wygląda miękko, bo pracuje. Jeśli trzyma szew, zostaw ją tam.
 
 ## Field Note
 
-PL LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+Luźny brzeg: próbka. Pokrycie szwu: zostaw. Jeśli mata uszczelnia ranę, rana wciąż tam jest.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/pl_PL. -->

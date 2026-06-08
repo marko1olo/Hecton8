@@ -194,14 +194,25 @@ namespace Hecton8.Core
                     NativeAllocationLifetime.TransientArena);
                 if (_sentinelId <= 0)
                 {
-                    H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
-                    _basePtr = null;
-                    _capacityBytes = 0;
-                    _arenaCapacityBytes = 0;
-                    _slabCapacityBytes = 0;
-                    _slabCount = 0;
-                    ResetScalarState();
-                    ClearManagedState();
+                    Exception rollbackException = null;
+                    bool releasedArenaBase = false;
+                    try
+                    {
+                        releasedArenaBase = H8Memory.TryFreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
+                    }
+                    catch (Exception exception)
+                    {
+                        rollbackException = exception;
+                    }
+
+                    ResetFailedInitializationState();
+                    if (!releasedArenaBase)
+                    {
+                        throw new InvalidOperationException(
+                            "NativeMemorySentinel rejected Hecton arena base pointer registration and rollback free failed; allocator was disabled.",
+                            rollbackException);
+                    }
+
                     throw new InvalidOperationException("NativeMemorySentinel rejected Hecton arena base pointer registration.");
                 }
 
@@ -380,6 +391,7 @@ namespace Hecton8.Core
             }
 
             ReleaseSafetyHandles();
+            H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
             if (_sentinelId > 0)
             {
                 NativeMemorySentinel.Unregister(_sentinelId);
@@ -387,7 +399,6 @@ namespace Hecton8.Core
             }
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
-            H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
             _basePtr = null;
             _capacityBytes = 0;
             _arenaCapacityBytes = 0;
@@ -708,6 +719,21 @@ namespace Hecton8.Core
             _nextThreadSlab = 0;
             _threadSlabIndexPlusOne = 0;
             Volatile.Write(ref _initializing, 0);
+        }
+
+        private static void ResetFailedInitializationState()
+        {
+            ReleaseSafetyHandles();
+            _basePtr = null;
+            _sentinelId = 0;
+            _capacityBytes = 0;
+            _arenaCapacityBytes = 0;
+            _slabCapacityBytes = 0;
+            _slabCount = 0;
+            _writeArenaIndex = 0;
+            _readArenaIndex = 1;
+            ResetScalarState();
+            ClearManagedState();
         }
 
         private static void AddOwnerFrameBytes(int index, int byteCount)

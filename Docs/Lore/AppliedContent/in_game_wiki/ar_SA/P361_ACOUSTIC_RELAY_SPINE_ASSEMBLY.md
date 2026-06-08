@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Acoustic Relay Spine Assembly"
+title: "تجميعة عمود المرحل الصوتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Acoustic Relay Spine Assembly
+# تجميعة عمود المرحل الصوتي
 
-AR LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.
+تبدأ الهرب تحت الماء. يتيح عمود المرحل الصوتي للكبسولة المتضررة إثبات الموقع والساعة وحالة النجاة قبل أن تعاملها المستقبلات المدارية كـ recoverable mass.
 
 ## Scanner
 
-AR LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+عمود صوتي مكسور. يستطيع نقر pressure-code عبر الماء؛ وما زال المدار يسمعه كـ custody noise متضرر.
 
 ## Terminal
 
-AR LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY: استعادة العمود الصوتي منخفض النطاق قبل recovery window. High-gain mast مفقود. Emergency buoy غير موثوق. مستقبل Black Keel يقبل pressure-code فقط بعد route proof.
 
 ## Audio
 
-AR LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
+إذا سمعنا Keel، فسيسمع جرحا يطرق أنبوبا.
 
 ## Field Note
 
-AR LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+أول نداء للكبسولة ليس صوتا. إنه أضلاع خزفية، وجلد كابلات، وpinger floats، وانضباط توقيت يكفي لكي يكرر المحيط رسالتك بشكل صحيح.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/ar_SA. -->

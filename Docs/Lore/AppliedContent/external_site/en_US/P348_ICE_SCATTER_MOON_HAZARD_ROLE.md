@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ice Scatter Moon Hazard Role"
+title: "Claw Ice-Scatter Hazard Role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,8 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Ice Scatter Moon Hazard Role
+# Claw Ice-Scatter Hazard Role
 
-Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.
-
-## Scanner
-
-Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
-
-## Terminal
-
-MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
-
-## Audio
-
-Every system has one moon that accountants love and pilots curse.
-
-## Field Note
-
-Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw makes the system feel worked over. It is not a pristine ice moon; it is a broken bright field of shards, claim flags, and objects that once had owners. After a storm, the lanes can show new material, fresh radar returns, and the kind of rumor that gets a cheap crew killed. The danger is ordinary physics. Ice at orbital speed does not care whether a hull is carrying evidence, food, or a body. Claw keeps the Aegir economy honest by making easy salvage expensive.
 
 <!-- External Site; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/en_US. -->

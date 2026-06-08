@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Varnek Margin Memo"
+title: "Mémo Varnek sur la marge acceptée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Varnek Margin Memo
+# Mémo Varnek sur la marge acceptée
 
-FR LOC HOLD: The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
+Le mémo Varnek est une culpabilité silencieuse. Il n'invente pas l'inondation et ne donne pas d'ordre de tuer. Il montre une marge de pression connue, chiffrée, acceptée et routée sous le coût de continuity alors que des gens restaient dans l'enveloppe de la colonie.
 
 ## Scanner
 
-FR LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Mémo Aegir Operations Risk. La marge de la Grande Marée était visible avant que l'autorité d'arrêt ne bouge.
 
 ## Terminal
 
-FR LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: tail exposure accepted under continuity cost. Evacuation reserve remains non-triggered. Independent shutdown not recommended.
 
 ## Audio
 
-FR LOC HOLD: No murder order. A margin acceptance.
+Cela ressemble à de l'arithmétique jusqu'à ce que l'on voie qui était dans la marge.
 
 ## Field Note
 
-FR LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Note Marauder: la ligne sale n'est pas le chiffre du risque. C'est le mot accepted.
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/fr_FR. -->

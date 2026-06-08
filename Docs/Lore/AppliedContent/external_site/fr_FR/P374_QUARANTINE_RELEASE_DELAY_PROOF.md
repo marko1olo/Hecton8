@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Quarantine Release Delay Proof"
+title: "Maintien de libération quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Quarantine Release Delay Proof
+# Maintien de libération quarantaine
 
-FR LOC HOLD: HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.
+La quarantaine est crédible sur HECTON-8 parce que la contamination n'est pas fausse. Exposition à la pression, chimie de saumure et croissance compatible Atlas peuvent rendre un secours négligent mortel. Cette vérité couvre Deep Reach. Le release hold montre comment le langage de protection se déplaçait dans le système après que la sortie pratique s'était déjà resserrée. La porte ne disait pas exécutez quelqu'un. Elle disait hold until review, gardez l'incertitude biologique, acceptez la masse asset, maintenez insurance ping. Chaque phrase se défend seule. Ensemble, dans une colonie qui se noie, elles deviennent custody. Ce packet doit mettre mal à l'aise : la quarantaine peut être nécessaire, et pourtant servir à retarder des gens jusqu'à ce qu'il ne reste que leur claim.
 
 ## Scanner
 
-FR LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+Plaque de maintien quarantaine. Le langage de protection apparaît après verrouillage de la route de sortie.
 
 ## Terminal
 
-FR LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
 
 ## Audio
 
-FR LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+La quarantaine peut sauver un corps. Elle peut aussi le faire attendre jusqu'à le transformer en dossier.
 
 ## Field Note
 
-FR LOC HOLD: Use where player may confuse rescue with custody.
+Note de maraudeur : le mot protection ne prouve pas la protection. Regarde l'horloge.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/fr_FR. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # CONCEPTION DES MOTEURS ET LOGISTIQUE INTERSTELLAIRE
 
 > **Source :** Programme Technique, Chantiers Barnard. Document 44-A. Lecture obligatoire pour tous les sous-traitants en partance.  

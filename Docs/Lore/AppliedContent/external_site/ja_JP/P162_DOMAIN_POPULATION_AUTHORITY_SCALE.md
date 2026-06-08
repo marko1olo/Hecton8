@@ -9,32 +9,24 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Population And Authority Scale"
+title: "人口と権限の尺度"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Population And Authority Scale
+# 人口と権限の尺度
 
-JA LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
+## 人数は権力ではない
 
-## Scanner
+ドメイン表が人口を曖昧に保つのは意図的だ。正確な census 数字は後で調整できるが、圧力関係は固定されている。Sol は古い金融と認証を持ち、Centauri は正統性の言葉を持ち、Barnard は salvage 文化を持ち、Tau Ceti は公開証拠の圧力を持ち、Luyten はパケット custody を持ち、Aegir はそれらが機械になる汚れた場所を持つ。
 
-JA LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+HECTON-8 のプレイヤーは、ドメイン名を雑学として読むべきではない。Sol Core は所有と保険継続の印章だ。死んだ海を法的に活動中にできる。Centauri Compact は機能した拡張の記憶であり、Deep Reach がその憲章調を借りて腐敗を隠せる理由だ。Barnard Yards は、主人公が英雄神話なしにクランプ、カッター、pressure tools、悪い仕事を知っている理由になる。
 
-## Terminal
+Tau Ceti は証拠を公に意味あるものにできるため価値がある。それは潮が変わる前にダイバーを救えるという意味ではない。Luyten Junction はさらに冷たい。道徳的権威がなくても custody、hash chains、packet notary records を保てる。Aegir は、local shells、Black Keel windows、Deep Reach priority hooks が遠い権限を即時の危険に変える dirty claim node だ。
 
-JA LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
-
-## Audio
-
-JA LOC HOLD: The largest domain is not the nearest hand.
-
-## Field Note
-
-JA LOC HOLD: Do not turn the setting into census space opera.
+だから小さな desk は惑星より重要になり得る。HECTON-8 を支配するのは最大人口ではない。距離を越えて claim を生かし、それに触れた生存者へ請求できる者だ。
 
 <!-- External Site; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/ja_JP. -->

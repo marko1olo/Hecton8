@@ -1,4 +1,3 @@
-```markdown
 # UI_Diegetic_Physical_Interfaces.md
 ## Technical Mandate - HECTON-8 Engine | Diegetic UI Subsystem
 
@@ -8,10 +7,12 @@
 
 - FORBID: `RenderMode.ScreenSpaceOverlay`, `RenderMode.ScreenSpaceCamera` on ANY interactive canvas
 - ENFORCE: `RenderMode.WorldSpace` exclusively
+- REQUIRE: Player-visible diegetic UI, panels, holograms, tool screens, cockpit screens, and physical interface acceptance inherits the Visual Reference Parity Gate. Captures must beat mandatory references plus best-known internal baseline/current rejection matrix before UI polish is credited.
 - ALL Canvas components must bind to physical geometry transform OR holographic projection anchor
 - Holographic anchor = player hand-mount transform OR submarine panel socket transform
 - Canvas `sortingLayerName` = "WorldGeometry" - participates in depth sorting pipeline
 - FORBID: `Canvas.pixelPerfect = true` (breaks world-space sub-pixel alignment)
+- FORBID: flat overlay panels, decorative telemetry, glow/noise polish, or generic sci-fi rectangles as acceptance when physical anchoring, material truth, readability, route decision value, and compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and recover UI geometry/material/owner route.
 
 ---
 
@@ -425,7 +426,9 @@ Tick 5: PanelSleepWake (4Hz)
 ### Depth delta NaN protection:
 ```
 IF isnan(linearSceneDepth) || isinf(linearSceneDepth):
-    occlusionFactor = 1.0   // assume visible, fail open
+    occlusionFactor = hasLastValidOcclusion ? lastValidOcclusionFactor : 0.0
+    increment DepthOcclusionFaultCounter
+    mark panel visual proof PENDING VERIFICATION
 ```
 
 ### Ray parallel to panel (dot product near zero):
@@ -486,14 +489,14 @@ IF playerSpeed > 40.0:
 
 ```
 FORBID: GetComponent<>() in any Update/FixedUpdate path
-// [FORBID] static readonly UnityEngine.Object references.
-static Camera _cachedCam;
-void OnEnable() { _cachedCam = Camera.main; } // Update via lifecycle hooks
+FORBID: Camera.main lookup in panel, cursor, distance, render, or input cadence
+REQUIRE: camera/input dependencies injected or cached by the UI owner during bootstrap or panel registration
+FORBID: static readonly UnityEngine.Object references
 FORBID: GraphicRaycaster.Raycast() per-frame
 FORBID: RenderTexture construction outside RTPool alloc path
 FORBID: Canvas.ForceUpdateCanvases() - triggers full layout rebuild
 FORBID: LayoutRebuilder.ForceRebuildLayoutImmediate()
-FORBID: new Material() at runtime (use MaterialPropertyBlock for per-panel params)
+FORBID: new Material() at runtime. Per-panel params use cached UI-only MaterialPropertyBlock or panel-owned CBUFFER/GraphicsBuffer data; MPB must not leak into standard SRP-batched world geometry.
 FORBID: Shader.Find() at runtime (cache ShaderID at init)
 FORBID: string-keyed Shader.SetGlobalFloat (use Shader.PropertyToID cached int)
 FORBID: OnGUI(), GUILayout, any IMGUI on world-space panels

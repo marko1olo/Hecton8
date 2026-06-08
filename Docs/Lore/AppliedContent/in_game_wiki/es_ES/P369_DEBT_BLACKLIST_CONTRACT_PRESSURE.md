@@ -9,32 +9,36 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Presión contractual de deuda y lista negra"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Debt Blacklist Contract Pressure
+# Presión contractual de deuda y lista negra
 
-ES LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.
+La presión de la deuda mantiene honesto el inicio. El protagonista no es arrastrado a HECTON-8 por melodrama, pero tampoco es libre en ningún sentido útil. Black Keel puede ofrecer un contrato porque los fondos de reclamaciones, las ventanas de deuda, los créditos de oxígeno, el acceso a literas y la prueba de custodia pertenecen a la misma economía de frontera. Rechazar la reclamación sería legal. También dejaría al jugador en la lista negra, en tierra y fuera del precio de la ruta. Aceptarla no convierte a Black Keel en un villano con cara. Convierte al transportista en una máquina para transformar riesgo en papeleo. El jugador bucea porque el contrato es feo, sobrevivible y plausiblemente la única ruta de vuelta al movimiento.
 
 ## Scanner
 
-ES LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Aviso de gravamen ligado a custodia de Black Keel. Negarse sigue siendo legal, pero deja en tierra: sin litera, sin crédito de oxígeno limpio, sin ventana de ruta fuera de Aegir.
 
 ## Terminal
 
-ES LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+ACEPTACIÓN DE RECLAMACIÓN / VENTANA DE ALIVIO DE LISTA NEGRA
+estado del contratista: Marauder atado por deuda
+transportista: custodia de fondo de reclamaciones Black Keel
+términos de alivio: masa recuperable, prueba de custodia, cumplimiento del receptor
+estado de fallo: lista negra activa; acceso a litera denegado; apoyo de oxígeno convertido en servicio facturable.
 
 ## Audio
 
-ES LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+No fue un secuestro. Fue la clase de elección que la frontera vende como libertad: firma, bucea, o quédate limpio en el papel y atrapado en la práctica.
 
 ## Field Note
 
-ES LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+El gravamen no apuntó un arma. Apuntó a la factura de aire, la lista de literas y la próxima ventana de ruta.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/es_ES. -->

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Drowned Crust Strata Guide"
+title: "Przewodnik po zatopionych warstwach skorupy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Drowned Crust Strata Guide
+# Przewodnik po zatopionych warstwach skorupy
 
-PL LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.
+Zatopiona skorupa jest czytelną historią HECTON-8: stare cięcia kolonii, półki lodowego zawalenia, szwy pressure-glass i pasma minerałów pokazują, gdzie trasa utrzyma się, zetnie albo zawiedzie pod dotykiem.
 
 ## Scanner
 
-PL LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+Zalane warstwy odsłaniają stare ślady cięcia, szwy pressure-glass i pasma minerałów, które nie pękają dwa razy w tym samym kierunku.
 
 ## Terminal
 
-PL LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: zatopiona skorupa HECTON-8 to złożona skała osadnicza, pamięć zawalonego lodu, pressure glass i extraction scars pod ruchomą brine. Linie pęknięć są ważniejsze niż czyste powierzchnie.
 
 ## Audio
 
-PL LOC HOLD: The map is not terrain. It is a stack of drownings.
+Mapa nie jest terenem. To stos utonięć.
 
 ## Field Note
 
-PL LOC HOLD: Use for geology codex and procedural world labels.
+Jeśli pasmo brzmi pusto, nie ufaj płaskiej ścianie. Oznacz pęknięcie, pobierz próbkę, zostaw ścianę trzymającą.
 
 <!-- In-Game Wiki; generated from P351_DROWNED_CRUST_STRATA_GUIDE/pl_PL. -->

@@ -233,7 +233,7 @@ namespace Hecton8.Core
         public static void SetCurrent(GameStartContext context, string targetSceneName)
         {
             Current = context;
-            PendingTargetSceneName = targetSceneName ?? string.Empty;
+            PendingTargetSceneName = NormalizePendingTargetSceneName(targetSceneName);
             PersistCurrentContext();
         }
 
@@ -257,7 +257,8 @@ namespace Hecton8.Core
         /// <returns>True when a non-empty pending target is available.</returns>
         public static bool TryGetPendingTargetSceneName(out string sceneName)
         {
-            sceneName = PendingTargetSceneName;
+            sceneName = NormalizePendingTargetSceneName(PendingTargetSceneName);
+            PendingTargetSceneName = sceneName;
             if (!string.IsNullOrEmpty(sceneName))
                 return true;
 
@@ -268,7 +269,8 @@ namespace Hecton8.Core
                 return false;
             }
 
-            sceneName = PendingTargetSceneName;
+            sceneName = NormalizePendingTargetSceneName(PendingTargetSceneName);
+            PendingTargetSceneName = sceneName;
             return !string.IsNullOrEmpty(sceneName);
         }
 
@@ -392,8 +394,13 @@ namespace Hecton8.Core
             }
 
             Current = context;
-            PendingTargetSceneName = PlayerPrefs.GetString(PersistKeyTargetSceneName, string.Empty);
+            PendingTargetSceneName = NormalizePendingTargetSceneName(PlayerPrefs.GetString(PersistKeyTargetSceneName, string.Empty));
             return true;
+        }
+
+        private static string NormalizePendingTargetSceneName(string sceneName)
+        {
+            return string.IsNullOrWhiteSpace(sceneName) ? string.Empty : sceneName.Trim();
         }
 
         private static bool TryReadIssuedAtUtcTicks(out long issuedAtUtcTicks)

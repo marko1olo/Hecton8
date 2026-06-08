@@ -9,32 +9,36 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Revoked Access Language Trace"
+title: "取り消されたアクセス文言の痕跡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Revoked Access Language Trace
+# 取り消されたアクセス文言の痕跡
 
-JP LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+取り消されたアクセス文言は、Deep Reachの静かな錠前の一つになった。扉は元作業員を拒み、その要求を通常保守として記録しながら、隠された避難経路を名指す正確な語句だけを漏らすことができた。HECTON-8では、それだけで十分な手掛かりになる。プレイヤーにはきれいな自白はいらない。古い言い回し、劣化人数算定、代替証人、ルート安全アーカイブ、請求保全経路があれば足りる。これらの言葉は救助ではなく責任審査のために作られた。拒否は同時に二つの事実を示す。資格は死んだ。だが、その奥の手順はまだ生きている。
 
 ## Scanner
 
-JA LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+ロックアウトは「禁止」とは言わない。保守再分類、継続性保留、経路資料と記す。古いDeep Reachの言い回しだ。拒否でありながら、埋められた扉を指している。
 
 ## Terminal
 
-JA LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+アクセス応答 / ルート安全アーカイブ
+資格情報: 取り消し済み
+理由: 避難継続性資料は認定済みDeep Reach職員に限定
+表示語句: 劣化人数算定、代替証人、請求保全経路、保守再分類
+注記: 旧現場職員は事故照合の目的に限り拒否文言を閲覧できる。
 
 ## Audio
 
-JA LOC HOLD: That is not security. That is a memo pretending to be a door.
+彼らは通路を消していない。罪を知る職員だけが今も読める語彙で包んだだけだ。
 
 ## Field Note
 
-JP LOC HOLD: Lockout language hints at hidden liability without granting free access.
+バッジは死んだ。ロックアウトは、経路を埋めた事務方言をまだ話す。
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ja_JP. -->

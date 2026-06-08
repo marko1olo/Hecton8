@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Guidance Timing Core Assembly"
+title: "Збірка ядра таймінгу наведення"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Guidance Timing Core Assembly
+# Збірка ядра таймінгу наведення
 
-UK LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.
+Робочий підйом потребує guidance timing core, що розуміє геометрію місяців Aegir, інтервали blackout, релейні тіні й carrier recovery lanes. Поганий таймінг може втратити капсулу, не зламавши жодної деталі.
 
 ## Scanner
 
-UK LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+Порожнє timing core. Геометрія Aegir вирішує, чи стане підйом recovery, capture або тишею.
 
 ## Terminal
 
-UK LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: синхронізувати годинник капсули з Aegir window, Black Keel receiver lane, moon relay shutter і дрейфом storm-plume. Пізні packets стають втратою доказів; ранні packets стають capture noise.
 
 ## Audio
 
-UK LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+Вгору - не напрямок. Це вікно зі свідком.
 
 ## Field Note
 
-UK LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+З HECTON-8 немає простого “вгору”. Є приймач, тінь, штормовий дрейф і packet queue, уже старша за твою паніку.
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/uk_UA. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "Forge de pression d'Oskar Neumann"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# Forge de pression d'Oskar Neumann
 
-FR LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
+Oskar Neumann relie le savoir-faire de la colonie à la chaîne d'évasion. Ses notes de forge de pression justifient la fabrication profonde, les anneaux de serrage, les essais de joints et la nécessité de descendre chercher des composants au lieu d'attendre un secours de surface.
 
 ## Scanner
 
-FR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+Oskar Neumann a laissé une recette de forge pour des anneaux de serrage assez solides pour faire du berceau d'ascension autre chose qu'un cercueil.
 
 ## Terminal
 
-FR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+NEUMANN, O. Note de forge : la poussière de verre de pression ruine le premier joint si elle est mélangée à froid. Chauffer l'anneau sous le tirage d'évent, tremper dans la jaquette de saumure, puis tester à deux fois la charge d'ascension.
 
 ## Audio
 
-FR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+Un lancement n'est qu'une porte de pression qui monte. Construisez-le comme une porte.
 
 ## Field Note
 
-FR LOC HOLD: The exit needs craft, not courage.
+La sortie exige du métier, pas du courage.
 
 <!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/fr_FR. -->

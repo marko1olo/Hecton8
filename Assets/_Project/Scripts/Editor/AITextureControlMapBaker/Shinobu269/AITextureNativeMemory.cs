@@ -2,6 +2,7 @@
 using System;
 using Hecton8.Core;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Hecton8.Editor.AITextureControlMaps
 {
@@ -41,20 +42,39 @@ namespace Hecton8.Editor.AITextureControlMaps
             }
         }
 
-        internal static void DisposeArray<T>(ref NativeArray<T> array) where T : struct
+        internal static unsafe void DisposeArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
             }
             finally
             {
-                array.Dispose();
                 array = default;
             }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
         private static NativeAllocationLifetime ResolveLifetime(Allocator allocator)

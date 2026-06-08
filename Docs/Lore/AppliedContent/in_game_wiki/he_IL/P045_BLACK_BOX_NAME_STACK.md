@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # ערימת שמות קופסה שחורה
 
-ערימת השמות הופכת אמת לניידת. מה שהשחקן מעלה משפיע על שידור, dossier וסיום.
+מערך שמות הקופסה השחורה הופך את האמת הסופית לניידת. ראיות, חבילות broadcast ותיקי ציבור תלויים בשמות, בהאשים ובקבלות שיוצאים מן המים.
 
 ## Scanner
 

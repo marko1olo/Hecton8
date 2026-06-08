@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 Orbital Hazard Table"
+title: "Tabel Bahaya Orbital HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbital Hazard Table
+# Tabel Bahaya Orbital HECTON-8
 
-ID LOC HOLD: Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.
+Bahaya orbital menjelaskan mengapa kapsul yang diperbaiki belum cukup. Sebelum HECTON-8 bisa ditinggalkan, rantai naik masih membutuhkan akses relai, waktu panduan, kerja perisai, dan jendela peluncuran legal.
 
 ## Scanner
 
-ID LOC HOLD: HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+Ekstraksi dari HECTON-8 dikunci oleh jendela gerhana, lonjakan radiasi, penutup relai, sebar es, dan plume badai.
 
 ## Terminal
 
-ID LOC HOLD: ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+TABEL BAHAYA ORBITAL: blackout gerhana, lonjakan partikel bermuatan Aegir, penutup relai bulan, sebar butir es, storm plume, dan jendela guidance-lag harus bersih sebelum pendakian.
 
 ## Audio
 
-ID LOC HOLD: The sky is not empty. It is a machine with bad timing.
+Langit di atas laut adalah mesin dengan gigi pada waktunya.
 
 ## Field Note
 
-ID LOC HOLD: This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+Tidak ada yang menahan penyelamatan demi drama. Pendakian harus bertemu jadwal langit yang buruk.
 
 <!-- In-Game Wiki; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/id_ID. -->

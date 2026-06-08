@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Garde Black Keel
 
-Black Keel n'est pas un vaisseau personnel de luxe. C'est un carrier de récupération presque automatisé, tenu par garde claim-pool, dette d'assurance et fenêtres orbitales lentes.
+Black Keel n'est pas un vaisseau personnel de luxe. C'est un carrier de salvage presque automatisé, régi par la garde d'un pool de réclamations, la dette d'assurance et des fenêtres orbitales retardées. Il offre une vraie route vers l'orbite sans rendre le secours simple ni loyal.
 
 ## Scanner
 

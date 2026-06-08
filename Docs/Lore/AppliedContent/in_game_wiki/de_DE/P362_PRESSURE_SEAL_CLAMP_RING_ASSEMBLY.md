@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "Druckdichtungs-Klemmring-Baugruppe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Pressure Seal Clamp Ring Assembly
+# Druckdichtungs-Klemmring-Baugruppe
 
-DE LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.
+Druckdichtungen erklären, warum Reparaturarbeit tiefer führen muss. Materialien, die Wasser aus einem Raum halten, können die Kapsel auch an das Wrack kleben, wenn die falsche Dichtungskette akzeptiert wird.
 
 ## Scanner
 
-DE LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Klemmringnarbe. Die Aufstiegsmanschette überlebte den Einschlag, indem sie die Dichtung verbrauchte, die sie nach Hause hätte bringen sollen.
 
 ## Terminal
 
-DE LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch hält nur Abteildruck. Ascent seal benötigt deep-rated clamp ring, pressure-glass seat, shell-sealant map und verifiziertes Deep-Reach-Profil. Atlas-grown sealant kann habitat erhalten und zugleich saubere Trennung blockieren.
 
 ## Audio
 
-DE LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+Die nützliche Dichtung lebt in die falsche Richtung.
 
 ## Field Note
 
-DE LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+Ein Safe-Room-Flicken kann eine Stunde Luft kaufen. Er hält keinen Startimpuls.
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/de_DE. -->

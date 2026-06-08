@@ -88,6 +88,8 @@ namespace Hecton8.Gameplay
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<DeferredEclipseGameplayEventPayload> _pendingEvents;
         private static NativeQueue<DeferredEclipseGameplayEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
@@ -313,14 +315,14 @@ namespace Hecton8.Gameplay
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<DeferredEclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<DeferredEclipseGameplayEventPayload>[16] — deferred eclipse gameplay lane flushed by SystemDispatcher — owner: EclipseGameplayEvents
-                    RegisterNativeQueue(ref _pendingEvents, ExpectedPendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, ExpectedPendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, ExpectedPendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<DeferredEclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<DeferredEclipseGameplayEventPayload>[16] — next-frame eclipse gameplay lane prevents same-frame reentrant dispatch — owner: EclipseGameplayEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, ExpectedPendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, ExpectedPendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, ExpectedPendingEventCapacity);
                 }
             }
@@ -336,10 +338,12 @@ namespace Hecton8.Gameplay
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(EclipseGameplayEvents),
@@ -348,25 +352,60 @@ namespace Hecton8.Gameplay
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(EclipseGameplayEvents), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -396,6 +435,9 @@ namespace Hecton8.Gameplay
             NativeQueue<DeferredEclipseGameplayEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
@@ -452,12 +494,31 @@ namespace Hecton8.Gameplay
         private float _currentAcousticPitchShiftCents;
         private float _pendingBiolumMultiplier = 1f;
         private bool _biolumMultiplierShaderDirty;
+        private object _spatialAudioRuntime;
         private ISpatialAudioEnvironmentModulationSink _spatialAudioSink;
+        private int _eclipseEventDropCount;
+        private int _eclipseNotificationMissCount;
 
         private static readonly uint _EclipseGameplayContextHash =
             unchecked((uint)LocHash.Compute("EclipseGameplaySystem"));
+        private static readonly uint _EclipseEventDropWarningHash =
+            unchecked((uint)LocHash.Compute("EclipseGameplay.EventDrop"));
+        private static readonly uint _EclipsePhaseStartedContextHash =
+            unchecked((uint)LocHash.Compute("EclipseGameplay.PhaseStarted"));
+        private static readonly uint _EclipsePhaseEndedContextHash =
+            unchecked((uint)LocHash.Compute("EclipseGameplay.PhaseEnded"));
+        private static readonly uint _EclipsePredatorRiseContextHash =
+            unchecked((uint)LocHash.Compute("EclipseGameplay.PredatorRise"));
+        private static readonly uint _EclipseTemperatureDeltaContextHash =
+            unchecked((uint)LocHash.Compute("EclipseGameplay.TemperatureDelta"));
+        private static readonly uint _EclipseBiolumMultiplierContextHash =
+            unchecked((uint)LocHash.Compute("EclipseGameplay.BiolumMultiplier"));
         private static readonly uint _EclipseNoEcosystemDirectorWarningHash =
             unchecked((uint)LocHash.Compute("EclipseGameplay.NoEcosystemDirector"));
+        private static readonly uint _EclipseNotificationMissWarningHash =
+            unchecked((uint)LocHash.Compute("EclipseGameplay.NotificationMiss"));
+        private static readonly uint _EclipseNotificationContextHash =
+            unchecked((uint)LocHash.Compute("EclipseGameplay.Notification"));
 
         private static readonly int _ShaderBiolumMultiplier =
             Shader.PropertyToID("_EclipseBiolumMultiplier");
@@ -470,6 +531,8 @@ namespace Hecton8.Gameplay
         public bool IsEclipseActive => _eclipseActive;
         public float CurrentTempDrop => _currentTempDrop;
         public float CurrentAcousticPitchShiftCents => _currentAcousticPitchShiftCents;
+        public int EclipseEventDropCount => _eclipseEventDropCount;
+        public int EclipseNotificationMissCount => _eclipseNotificationMissCount;
         public float EclipseProgress => _eclipseActive && maxTemperatureDrop > 0f
             ? _currentTempDrop / maxTemperatureDrop
             : 0f;
@@ -497,6 +560,9 @@ namespace Hecton8.Gameplay
             _currentBiolumMultiplier = 1f;
             Shader.SetGlobalFloat(_ShaderBiolumMultiplier, 1f);
             PublishEclipseAcousticPitchShift(0f);
+            _eclipseEventDropCount = 0;
+            _eclipseNotificationMissCount = 0;
+            _spatialAudioRuntime = null;
             _spatialAudioSink = null;
         }
 
@@ -506,6 +572,8 @@ namespace Hecton8.Gameplay
             TryUnregisterRuntime();
             TryUnregisterHotSwapListener();
             CelestialEvents.Unregister(this);
+            _spatialAudioRuntime = null;
+            _spatialAudioSink = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -529,7 +597,7 @@ namespace Hecton8.Gameplay
                     if (newDrop > _currentTempDrop)
                     {
                         _currentTempDrop = newDrop;
-                        EclipseGameplayEvents.TryRaiseTemperatureDelta(-_currentTempDrop);
+                        TryRaiseEclipseTemperatureDelta(-_currentTempDrop);
                     }
                 }
 
@@ -537,7 +605,7 @@ namespace Hecton8.Gameplay
                 if (!_predatorsRisen && _eclipseTimer >= predatorRiseDelay)
                 {
                     _predatorsRisen = true;
-                    EclipseGameplayEvents.TryRaiseNightPredatorsRising(predatorRiseIntensity);
+                    TryRaiseEclipseNightPredatorsRising(predatorRiseIntensity);
                     ApplyPredatorShallowMigration(predatorRiseIntensity, predatorRiseHoldSeconds);
 
                     LogNightPredatorsRising();
@@ -553,7 +621,7 @@ namespace Hecton8.Gameplay
                 {
                     _currentTempDrop = Mathf.Max(0f,
                         _currentTempDrop - temperatureRecoveryRate * dt);
-                    EclipseGameplayEvents.TryRaiseTemperatureDelta(-_currentTempDrop);
+                    TryRaiseEclipseTemperatureDelta(-_currentTempDrop);
                 }
             }
         }
@@ -601,10 +669,12 @@ namespace Hecton8.Gameplay
             _eclipseTimer  = 0f;
             _predatorsRisen = false;
 
-            EclipseGameplayEvents.TryRaisePhaseChanged(true);
-            NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
-                LocalizationKeys.ECLIPSE_EVENT_STARTED,
-                "GREAT ECLIPSE - TEMPERATURE FALLING. NIGHT PREDATORS ASCENDING."));
+            TryRaiseEclipsePhaseChanged(true);
+            TryPushEclipseNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.ECLIPSE_EVENT_STARTED,
+                    "GREAT ECLIPSE - TEMPERATURE FALLING. NIGHT PREDATORS ASCENDING."),
+                warning: true);
 
             // Biolyuminestsentsiya usilivaetsya
             PublishBiolumMultiplier(ResolveTargetBiolumMultiplier());
@@ -617,11 +687,13 @@ namespace Hecton8.Gameplay
         {
             _eclipseActive = false;
 
-            EclipseGameplayEvents.TryRaisePhaseChanged(false);
+            TryRaiseEclipsePhaseChanged(false);
             ApplyPredatorShallowMigration(0f, 0f);
-            NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
-                LocalizationKeys.ECLIPSE_EVENT_ENDED,
-                "ECLIPSE ENDED - TEMPERATURE RECOVERING."));
+            TryPushEclipseNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.ECLIPSE_EVENT_ENDED,
+                    "ECLIPSE ENDED - TEMPERATURE RECOVERING."),
+                warning: false);
 
             // Biolyuminestsentsiya vozvraschaetsya k norme
             PublishBiolumMultiplier(1f);
@@ -698,7 +770,7 @@ namespace Hecton8.Gameplay
             _currentBiolumMultiplier = clampedMultiplier;
             _pendingBiolumMultiplier = clampedMultiplier;
             _biolumMultiplierShaderDirty = true;
-            EclipseGameplayEvents.TryRaiseBiolumMultiplierChanged(clampedMultiplier);
+            TryRaiseEclipseBiolumMultiplierChanged(clampedMultiplier);
         }
 
         private void FlushQueuedBiolumMultiplier()
@@ -729,6 +801,73 @@ namespace Hecton8.Gameplay
 
             latch = true;
             GlobalTelemetryBus.PublishPerformanceWarning(warningHash, _EclipseGameplayContextHash, scalarValue);
+        }
+
+        private void TryRaiseEclipsePhaseChanged(bool active)
+        {
+            if (EclipseGameplayEvents.TryRaisePhaseChanged(active))
+                return;
+
+            ReportEclipseEventDropIfBackpressured(active ? _EclipsePhaseStartedContextHash : _EclipsePhaseEndedContextHash);
+        }
+
+        private void TryRaiseEclipseNightPredatorsRising(float intensity)
+        {
+            if (EclipseGameplayEvents.TryRaiseNightPredatorsRising(intensity))
+                return;
+
+            ReportEclipseEventDropIfBackpressured(_EclipsePredatorRiseContextHash);
+        }
+
+        private void TryRaiseEclipseTemperatureDelta(float delta)
+        {
+            if (EclipseGameplayEvents.TryRaiseTemperatureDelta(delta))
+                return;
+
+            ReportEclipseEventDropIfBackpressured(_EclipseTemperatureDeltaContextHash);
+        }
+
+        private void TryRaiseEclipseBiolumMultiplierChanged(float multiplier)
+        {
+            if (EclipseGameplayEvents.TryRaiseBiolumMultiplierChanged(multiplier))
+                return;
+
+            ReportEclipseEventDropIfBackpressured(_EclipseBiolumMultiplierContextHash);
+        }
+
+        private void ReportEclipseEventDropIfBackpressured(uint contextHash)
+        {
+            if (EclipseGameplayEvents.PendingCount <= 0)
+                return;
+
+            _eclipseEventDropCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _EclipseEventDropWarningHash,
+                _EclipseGameplayContextHash ^ contextHash,
+                Mathf.Max(1, _eclipseEventDropCount));
+        }
+
+        private void TryPushEclipseNotification(ReadOnlySpan<char> message, bool warning)
+        {
+            bool pushed = warning
+                ? NotificationEvents.TryPushWarning(message)
+                : NotificationEvents.TryPushInfo(message);
+            if (pushed)
+                return;
+
+            ReportEclipseNotificationMiss(warning);
+        }
+
+        private void ReportEclipseNotificationMiss(bool warning)
+        {
+            _eclipseNotificationMissCount++;
+            uint severityHash = warning
+                ? unchecked((uint)(int)NotificationEventSeverity.Warning)
+                : unchecked((uint)(int)NotificationEventSeverity.Info);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _EclipseNotificationMissWarningHash,
+                _EclipseNotificationContextHash ^ severityHash,
+                Mathf.Max(1, _eclipseNotificationMissCount));
         }
 
         void ICelestialEventListener.OnCelestialEclipseStarted()
@@ -816,19 +955,34 @@ namespace Hecton8.Gameplay
 
         private void CacheSpatialAudioSink(object audioRuntime)
         {
-            _spatialAudioSink = IsAudioRuntimeObjectUsable(audioRuntime)
-                ? audioRuntime as ISpatialAudioEnvironmentModulationSink
-                : null;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _spatialAudioRuntime = null;
+                _spatialAudioSink = null;
+                return;
+            }
+
+            _spatialAudioRuntime = audioRuntime;
+            _spatialAudioSink = audioRuntime as ISpatialAudioEnvironmentModulationSink;
         }
 
         private ISpatialAudioEnvironmentModulationSink ResolveSpatialAudioSink()
         {
+            object audioRuntime = _spatialAudioRuntime;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _spatialAudioRuntime = null;
+                _spatialAudioSink = null;
+                return null;
+            }
+
             ISpatialAudioEnvironmentModulationSink spatialAudioSink = _spatialAudioSink;
-            if (IsAudioRuntimeObjectUsable(spatialAudioSink))
+            if (ReferenceEquals(spatialAudioSink, audioRuntime) && IsAudioRuntimeObjectUsable(spatialAudioSink))
                 return spatialAudioSink;
 
-            _spatialAudioSink = null;
-            return null;
+            spatialAudioSink = audioRuntime as ISpatialAudioEnvironmentModulationSink;
+            _spatialAudioSink = spatialAudioSink;
+            return IsAudioRuntimeObjectUsable(spatialAudioSink) ? spatialAudioSink : null;
         }
 
         private static bool IsAudioRuntimeObjectUsable(object runtime)
@@ -836,7 +990,7 @@ namespace Hecton8.Gameplay
             if (runtime == null)
                 return false;
 
-            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+            if (runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (runtime is Behaviour behaviour)

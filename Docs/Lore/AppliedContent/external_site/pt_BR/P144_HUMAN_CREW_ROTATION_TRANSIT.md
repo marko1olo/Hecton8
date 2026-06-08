@@ -8,33 +8,17 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+spoiler_tier: 1
+title: "Trânsito de rotação de tripulação humana"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# Trânsito de rotação de tripulação humana
 
-PT LOC HOLD: Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt.
-
-## Scanner
-
-PT LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
-
-## Terminal
-
-PT LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
-
-## Audio
-
-PT LOC HOLD: By the time home asks where you are, the room has already flooded.
-
-## Field Note
-
-PT LOC HOLD: A frontier worker sells time before they sell labor.
+Trânsito humano é onde a rota deixa de ser abstrata. Trabalhadores não são teleportados para Aegir; são agendados, resfriados, segurados, indexados e entregues entre autoridades por anos. Um contrato pode envelhecer numa direção enquanto a pessoa dentro dele envelhece em outra. Quando uma tripulação acorda, empregador, dono da responsabilidade e emergência para a qual treinou podem ter mudado.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/pt_BR. -->

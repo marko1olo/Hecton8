@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # HET KOLONIALE LEVEN VOR DE RAMP: SECTOR 44
 
 > **Bron:** Persoonlijk logboek geborgen uit de woonkwartieren van Sector 44, Unit 8-B.

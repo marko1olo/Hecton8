@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "نطاقات عمق المحيط العالمي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# نطاقات عمق المحيط العالمي
 
-AR LOC HOLD: HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
-
-## Scanner
-
-AR LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
-
-## Terminal
-
-AR LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
-
-## Audio
-
-AR LOC HOLD: Every band changes what the world allows you to do.
-
-## Field Note
-
-AR LOC HOLD: Depth is not a number. It is a ruleset.
+HECTON-8 ليس محيطا مسطحا بأرقام أعمق. إنه بلد عمودي حدوده مكتوبة بالضغط. من 0 إلى 250 مترا يبقى الرف الضوئي مضاء بما يكفي للطحالب والحطام والأخطاء الأولى. من 250 إلى 1200 متر يبدأ الرف الصناعي وشعاب الكابلات: مراس مكسورة، هياكل أنابيب، عظام مرحلات وطرق شركات قديمة. من 1200 إلى 2800 متر تثني السلالم الملحية السونار وتخفي الحرارة وتجعل الموازنة قرارا مكلفا. من 2800 إلى 4300 متر تحول حقول الآلات الإصلاح إلى تفاوض. من 4300 إلى 5600 متر يصبح حوض Atlas سلطة ضغط كاملة.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ar_SA. -->

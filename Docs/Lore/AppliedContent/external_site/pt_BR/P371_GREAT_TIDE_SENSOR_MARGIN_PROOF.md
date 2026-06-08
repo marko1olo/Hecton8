@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Great Tide Sensor Margin Proof"
+title: "Rastro de margem da Grande Maré"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Great Tide Sensor Margin Proof
+# Rastro de margem da Grande Maré
 
-PT LOC HOLD: The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.
+A primeira prova útil contra a Deep Reach não é uma confissão. É uma margem de sensor que continuou gravando depois que o corredor afogou. Os números não tornam o desastre artificial: carga hidrostática, cisalhamento de maré e infraestrutura falhando realmente venceram HECTON-8. Por isso a prova importa. A mentira começa entre o rastro bruto e o relatório público. O rastro marca a ruptura da margem de alerta antes do fechamento da janela aprovada. O relatório mantém a cascade geotécnica e remove a nota accepted-tail-risk. Quem encontra o rastro entende a culpa: a física atingiu a colônia, depois autoridades decidiram que o alerta custava menos que parar.
 
 ## Scanner
 
-PT LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Sensor de maré recuperado. O cisalhamento de pico excedeu o projeto colonial, mas a ruptura da margem de alerta foi registrada antes do carimbo público da cascade.
 
 ## Terminal
 
-PT LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Limiar de tail-risk aceito pela autoridade de rota. Nota de operador removida da cadeia pública do incidente. Rastro bruto preservado em memória brine-buffer.
 
 ## Audio
 
-PT LOC HOLD: Physics did the damage. A person signed the margin.
+O oceano não mentiu. O relatório mentiu.
 
 ## Field Note
 
-PT LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Nota de saqueador: não procure discurso de vilão. Procure a linha que alguém apagou.
 
 <!-- External Site; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/pt_BR. -->

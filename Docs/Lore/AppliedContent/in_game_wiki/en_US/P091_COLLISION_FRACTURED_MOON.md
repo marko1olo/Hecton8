@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Collision-Fractured Moon
 
-HECTON-8 is locked as a moon formed in the Aegir system, later collision-fractured and resonance-heated. This keeps the astronomy stable while giving designers a reason for brine canyons, vent forges, broken crust routes and uneven ocean depth.
+HECTON-8 formed inside the Aegir system and was later cracked by a glancing collision. The wound did not split the moon apart. It lifted crustal shelves, opened brine faults, fed vent corridors, and left old floor reachable through rare pressure windows. Salvage maps follow that damage because the safest routes are old injuries with water inside them.
 
 ## Scanner
 
-Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
+Old crust sample. The moon was made in Aegir's debris belt, then opened by an impact wide enough for the ocean to remember.
 
 ## Terminal
 
-ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust, hot fault ladders, brine basins, pressure-glass seams, uneven access to deep floor.
 
 ## Audio
 
-It was not stolen by the planet. It was built here and damaged here.
+It was born here. Then something hit hard enough to give the sea a map.
 
 ## Field Note
 
-Captured moon drama is weaker than a local moon with a wound you can read.
+A captured-moon myth is too clean. HECTON-8 carries a local wound: crust lifted, brine salted, vents still paying interest.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/en_US. -->

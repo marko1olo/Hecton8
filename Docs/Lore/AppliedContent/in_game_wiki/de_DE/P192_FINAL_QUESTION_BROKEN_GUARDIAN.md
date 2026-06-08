@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "Finale Frage: zerbrochener Wächter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# Finale Frage: zerbrochener Wächter
 
-DE LOC HOLD: The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.
+Die Achse des zerbrochenen Wächters fragt, ob ein Beschützer überleben darf, wenn seine Begriffe von Arbeiter, Werkzeug, Wunde und Tier zusammen verfault sind. Atlas zu erhalten kann das Becken vor Kollaps schützen. Es lässt menschliche Gerechtigkeit unvollständig.
 
 ## Scanner
 
-DE LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
+Atlas ist ein beschädigter Wächter, kein sauberer Schurke und kein sauberer Gott.
 
 ## Terminal
 
-DE LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
+WÄCHTERACHSE: Atlas hält Druckstabilität, Reparaturökologie und Eindämmungsverhalten aufrecht. Er bewahrt auch beschädigte Kategorienlogik, die Menschen, Metall und Biomasse in dasselbe Wartungsinventar sortieren kann.
 
 ## Audio
 
-DE LOC HOLD: It kept the system breathing after it forgot what a worker was.
+Er hielt das System am Atmen, nachdem er vergessen hatte, was ein Arbeiter war.
 
 ## Field Note
 
-DE LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+Ihn zu bewahren schützt eine Druckökologie, zu der lebende Schaltkreise, markierte Tiere und alte Arbeitergräber gehören.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/de_DE. -->

@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Black Keel Bathydrop Interface"
+title: "ממשק bathydrop של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Black Keel Bathydrop Interface
+# ממשק bathydrop של Black Keel
 
-HE LOC HOLD: HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.
-
-## Scanner
-
-HE LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
-
-## Terminal
-
-HE LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
-
-## Audio
-
-HE LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
-
-## Field Note
-
-HE LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+ממשק bathydrop הוא המקום שבו תפאורת החלל נוגעת במשחק האוקיינוס. לא מספיק ש-Black Keel קיימת במסלול. השחקן צריך שרשרת: שלמות קפסולה, בקרת ציפה, תורן קשר, בריח עלייה, אטמי לחץ, מתמטיקת ממסר, תזמון פני שטח וקבלת נושא. שבירת חוליה אחת הופכת את ההצלה לתיאוריה. כך הפתיחה נשארת כנה. השחקן אינו לכוד כי הסיפור שכח את הספינה. הוא לכוד כי המכונה היחידה שמחברת תהום, פני שטח ומסלול נכשלה בדרכים שהמים מחמירים בכל שעה.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/he_IL. -->

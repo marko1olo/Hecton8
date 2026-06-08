@@ -9,32 +9,26 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: 剧透门控"
+title: "剧透门控"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: 剧透门控
+# 剧透门控
 
-ZH LOC HOLD: 公开 HECTON-8 页面可以命名工作而不泄露证据。开放层提供安全背景；封签、路线戳、扫描、终端碎片、工人标签和黑匣子记录会在之后解锁更强声明。
+## 公开背景
 
-## Scanner
+HECTON-8 公开页面可以说明这份工作，但不能交出证据。开放层可以说 HECTON-8 是 Aegir 下的一颗海洋月，殖民地失败了，Black Keel 带来的是打捞压力而不是干净救援，Deep Reach 留下的公开报告由风暴、坍塌、自主故障、Atlas-6 救援语言和缺失数据拼成。
 
-ZH LOC HOLD: 公共档案门控 // 剧透层级0/1。仅限公开背景。深层证据在图鉴扩展前需要已回收的保管链。
+这些足够让读者理解前提。它们不足以证明罪行。
 
-## Terminal
+更深的页面需要回收物：数据包封签、路线戳、扫描记录、工人标签、终端碎片、黑匣子行，或保管链完整的样本。在这些物件于游戏内被找到前，公共 wiki 停在安全背景。发现之后，图鉴可以使用更强措辞，因为玩家已经看见事实来自哪里。
 
-ZH LOC HOLD: PUBLIC/WIKI导出过滤器 // 证据前允许：设定、路线压力、公开事故语言、已知机构和早期打捞前提。深层证据保留。
+门控保护五件事：玩家第一次下潜、殖民地工人证据、Deep Reach责任链、Atlas-6修理网络真相，以及最终载荷结局。公开页面可以指向这些主题。它们不能承载最终接收者、路线或后果。
 
-## Audio
-
-ZH LOC HOLD: Black Keel中继：公开文案可以说出这颗月的名字。证明需要封签。把封签带回来。
-
-## Field Note
-
-ZH LOC HOLD: 公开页面告诉你往哪儿潜。它不告诉你是谁付钱让门保持关闭。
+公开文章是地图。回收证据才是证明。
 
 <!-- External Site; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/zh_CN. -->

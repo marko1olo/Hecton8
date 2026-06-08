@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Atlas Reparatiespoor Transcript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas Repair Trace Transcript Seed
+# Atlas Reparatiespoor Transcript
 
-NL LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.
+Atlas-audio is angstaanjagend omdat het leven, metaal en water als één beschadigde maintenance surface behandelt.
 
 ## Scanner
 
-NL LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+Audio/caption seed: Atlas-sporen moeten klinken als reparatietelemetrie die categorieën laat instorten, niet als een sprekende god.
 
 ## Terminal
 
-NL LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
+TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.
 
 ## Audio
 
-NL LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+Reparatiespoor: membraanonderbreking geaccepteerd. Kabelgroei geautoriseerd. Faunaroute als serviceable gemarkeerd.
 
 ## Field Note
 
-NL LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+Voor scanner captions, diepe audiolagen en Atlas spoiler gates. Kort, taxonomisch en beschadigd houden.
 
 <!-- In-Game Wiki; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/nl_NL. -->

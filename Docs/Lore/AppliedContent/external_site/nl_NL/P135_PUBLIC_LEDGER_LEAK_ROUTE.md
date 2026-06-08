@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "Lek naar openbaar ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# Lek naar openbaar ledger
 
-NL LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+Het lek naar openbaar ledger is geen perfecte klokkenluidersfantasie. Het is een pakket dat via een smal relay-venster vertrekt met witness hash, genoeg custody om moeilijk te ontkennen te zijn, en te veel ontbrekende stukken om veilig te zijn. Tau Ceti kan het record openbaar maken lang nadat het iemand in het water kan redden.
 
-## Scanner
-
-NL LOC HOLD: You can leak truth before you understand all of it.
-
-## Terminal
-
-NL LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-NL LOC HOLD: The truth leaves first. You may not like who reads it.
-
-## Field Note
-
-NL LOC HOLD: Public does not mean safe. It means harder to erase.
+Die vertraging is het punt. Deep Reach kan de claim niet simpel verwijderen, maar de speler kan ook niet beslissen wie hem daarna gebruikt. Verzekeraars, rivalen, burgerlijke rechtbanken, Marauder-pools en corporate kantoren zullen dezelfde wond anders lezen. Dit einde maakt waarheid moeilijker te begraven en moeilijker te bezitten.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/nl_NL. -->

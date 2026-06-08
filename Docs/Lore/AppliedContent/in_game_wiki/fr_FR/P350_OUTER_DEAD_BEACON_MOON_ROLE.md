@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute, beacon mort extérieur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Outer Dead Beacon Moon Role
+# Mute, beacon mort extérieur
 
-FR LOC HOLD: The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.
+Mute est la lune extérieure au beacon mort dans l'échelle d'Aegir. Ses relais sont peu fiables, froids et absents d'une partie des cartes publiques actuelles. Ils persistent dans les vieux solvers, clauses d'assurance et tables de récupération.
 
 ## Scanner
 
-FR LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
+Ping de beacon mort. Mute ne répond plus proprement, mais les anciens solvers dépensent encore son fantôme.
 
 ## Terminal
 
-FR LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
+NOTE BEACON H9 MUTE : éphéméride archivée en désaccord avec l'écho relais actuel. Solver de secours signale une ambiguïté utilisable. Bureau contrats autorise la garde du message retardé jusqu'à confirmation de fenêtre.
 
 ## Audio
 
-FR LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
+Un beacon mort reste un beacon si la facture sait où le trouver.
 
 ## Field Note
 
-FR LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+L'infrastructure morte ne quitte pas Aegir. Elle devient un terme d'erreur que quelqu'un peut facturer.
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/fr_FR. -->

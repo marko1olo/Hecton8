@@ -8,33 +8,19 @@ biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+spoiler_tier: 1
+title: "تكون زجاج الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# تكون زجاج الضغط
 
-AR LOC HOLD: Pressure Glass Formation turns Xenon-Omega into hard-sci-fi material ecology instead of magic ore. It is a pressure-made substrate tied to Atlas, containment and computation.
+زجاج الضغط هو الاسم التقني وراء blue debt عند المغيرين ولغة Xenon-Omega لدى Deep Reach. يتكون حيث يلتقي الضغط وجيوب الغاز النبيل والمحلول الملحي والمعادن والحرارة والبيولوجيا المعدلة.
 
-## Scanner
-
-AR LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
-
-## Terminal
-
-AR LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
-
-## Audio
-
-AR LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
-
-## Field Note
-
-AR LOC HOLD: It is not ore. It is a process that remembers where it was made.
+تكون زجاج الضغط يجعل Xenon-Omega بيئة مادية للخيال العلمي الصلب، لا خاما سحريا. هذا ليس خاما. إنه عملية تتذكر أين صنعت.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/ar_SA. -->

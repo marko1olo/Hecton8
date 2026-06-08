@@ -9,32 +9,36 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Debt Blacklist Contract Pressure"
+title: "債務ブラックリスト契約圧力"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Debt Blacklist Contract Pressure
+# 債務ブラックリスト契約圧力
 
-JA LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.
+債務圧力は導入を正直にする。主人公はメロドラマでHECTON-8へ引きずられるわけではないが、役に立つ意味で自由でもない。Black Keelが契約を提示できるのは、請求プール、債務窓、酸素クレジット、寝台アクセス、保管証明が同じフロンティア経済に属しているからだ。請求を拒否することは合法だ。だがそれは、プレイヤーをブラックリストに残し、足止めし、経路の価格から締め出すことでもある。受諾はBlack Keelを顔のある悪役にしない。リスクを書類に変える機械として見せる。プレイヤーは潜る。契約は醜く、生き残れる範囲にあり、運動へ戻る唯一の道に見えるからだ。
 
 ## Scanner
 
-JA LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+先取特権通知はBlack Keelの保管責任に紐づいている。拒否は合法だが、足止めになる。寝台なし、清算済み酸素クレジットなし、Aegirを出る経路窓なし。
 
 ## Terminal
 
-JA LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+請求受諾 / ブラックリスト救済窓
+契約者状態: 債務拘束Marauder
+運搬者: Black Keel請求プール保管
+救済条件: 回収可能質量、保管証明、受領者遵守
+失敗状態: ブラックリスト継続、寝台アクセス拒否、酸素福祉支援は請求対象へ変換。
 
 ## Audio
 
-JA LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+これは誘拐ではなかった。フロンティアが自由として売る種類の選択だった。署名して潜るか、書類上は清潔なまま、実際には閉じ込められるか。
 
 ## Field Note
 
-JP LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+先取特権は銃を向けなかった。空気の請求書、寝台名簿、次の経路窓を指した。
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/ja_JP. -->

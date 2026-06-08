@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # PRZERWA W KOMUNIKACJI I ORBITALNA CISZA
 
 > **Źródło:** Instrukcja Operacyjna Orbitalnego Statku-Matki *Black Keel*, Rozdział 4.

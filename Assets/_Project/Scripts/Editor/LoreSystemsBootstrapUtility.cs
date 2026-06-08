@@ -7,7 +7,9 @@
 using Hecton8.Bootstrap;
 using Hecton8.Quest;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.Editor
 {
@@ -15,46 +17,57 @@ namespace Hecton8.Editor
     {
         private const string kMenuPath = "Tools/Hecton8/Lore Systems/Bootstrap All";
         private const string kValidatePath = "Tools/Hecton8/Lore Systems/Validate";
+        private const string kProductionWorldMenuPath = "Tools/Hecton8/Lore Systems/Bootstrap Production World Scene";
+        private const string kProductionWorldScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
+        private const string kSystemsRootName = "--- SYSTEMS ---";
+        private const string kLoreSystemsName = "LoreSystems";
 
         [MenuItem(kMenuPath, false, 100)]
         public static void BootstrapAllLoreSystems()
         {
-            GameObject loreSystemsGo = GameObject.Find("--- SYSTEMS ---/LoreSystems");
-            
-            if (loreSystemsGo == null)
-            {
-                GameObject systemsRoot = GameObject.Find("--- SYSTEMS ---");
-                if (systemsRoot == null)
-                {
-                    Debug.LogError("[LoreBootstrap] --- SYSTEMS --- root not found. Aborting.");
-                    return;
-                }
+            BootstrapLoreSystemsInLoadedScene(true);
+        }
 
-                loreSystemsGo = new GameObject("LoreSystems");
-                loreSystemsGo.transform.SetParent(systemsRoot.transform, false);
-                Undo.RegisterCreatedObjectUndo(loreSystemsGo, "Create LoreSystems");
+        [MenuItem(kProductionWorldMenuPath, false, 99)]
+        public static void BootstrapProductionWorldScene()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                return;
+
+            BootstrapProductionWorldSceneInternal(true);
+        }
+
+        public static void BootstrapProductionWorldSceneBatch()
+        {
+            bool success = BootstrapProductionWorldSceneInternal(false);
+            if (!success && Application.isBatchMode)
+                EditorApplication.Exit(1);
+        }
+
+        private static bool BootstrapProductionWorldSceneInternal(bool registerUndo)
+        {
+            Scene scene = EditorSceneManager.OpenScene(kProductionWorldScenePath, OpenSceneMode.Single);
+            if (!scene.IsValid())
+            {
+                Debug.LogError($"[LoreBootstrap] Failed to open production scene: {kProductionWorldScenePath}");
+                return false;
             }
 
-            if (!loreSystemsGo.TryGetComponent(out HectonLoreSystemsRoot root))
+            HectonLoreSystemsRoot root = BootstrapLoreSystemsInLoadedScene(false, registerUndo);
+            if (root == null)
+                return false;
+
+            PopulateQuestRegistry();
+            PopulateSuitUpgradeRegistry();
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!EditorSceneManager.SaveScene(scene))
             {
-                root = Undo.AddComponent<HectonLoreSystemsRoot>(loreSystemsGo);
+                Debug.LogError($"[LoreBootstrap] Failed to save production scene after lore bootstrap: {kProductionWorldScenePath}");
+                return false;
             }
 
-            Undo.RecordObject(root, "Setup Lore Systems");
-            root.SetupAllSystems();
-            EditorUtility.SetDirty(root);
-
-            int found = root.GetFoundSystemCount();
-            string missing = root.GetMissingSystemsSummary();
-
-            if (found == HectonLoreSystemsRoot.ExpectedSystemCount)
-            {
-                Debug.Log($"[LoreBootstrap] SUCCESS: All {found} lore systems bootstrapped.");
-            }
-            else
-            {
-                Debug.LogWarning($"[LoreBootstrap] PARTIAL: {found}/{HectonLoreSystemsRoot.ExpectedSystemCount} systems. Missing: {missing}");
-            }
+            Debug.Log($"[LoreBootstrap] Production world scene bootstrapped and saved: {kProductionWorldScenePath}");
+            return true;
         }
 
         [MenuItem(kValidatePath, false, 101)]
@@ -171,6 +184,55 @@ namespace Hecton8.Editor
             serializedObject.ApplyModifiedProperties();
             EditorUtility.SetDirty(manager);
             Debug.Log($"[LoreBootstrap] SuitUpgradeManager: {upgrades.Count} upgrades assigned.");
+        }
+
+        private static HectonLoreSystemsRoot BootstrapLoreSystemsInLoadedScene(bool logSummary)
+        {
+            return BootstrapLoreSystemsInLoadedScene(logSummary, true);
+        }
+
+        private static HectonLoreSystemsRoot BootstrapLoreSystemsInLoadedScene(bool logSummary, bool registerUndo)
+        {
+            GameObject systemsRoot = GameObject.Find(kSystemsRootName);
+            if (systemsRoot == null)
+            {
+                systemsRoot = new GameObject(kSystemsRootName);
+                if (registerUndo)
+                    Undo.RegisterCreatedObjectUndo(systemsRoot, "Create Systems Root");
+            }
+
+            GameObject loreSystemsGo = GameObject.Find(kSystemsRootName + "/" + kLoreSystemsName);
+            if (loreSystemsGo == null)
+            {
+                loreSystemsGo = new GameObject(kLoreSystemsName);
+                loreSystemsGo.transform.SetParent(systemsRoot.transform, false);
+                if (registerUndo)
+                    Undo.RegisterCreatedObjectUndo(loreSystemsGo, "Create LoreSystems");
+            }
+
+            if (!loreSystemsGo.TryGetComponent(out HectonLoreSystemsRoot root))
+            {
+                root = registerUndo
+                    ? Undo.AddComponent<HectonLoreSystemsRoot>(loreSystemsGo)
+                    : loreSystemsGo.AddComponent<HectonLoreSystemsRoot>();
+            }
+
+            if (registerUndo)
+                Undo.RecordObject(root, "Setup Lore Systems");
+            root.SetupAllSystems();
+            EditorUtility.SetDirty(root);
+
+            int found = root.GetFoundSystemCount();
+            string missing = root.GetMissingSystemsSummary();
+            if (logSummary)
+            {
+                if (found == HectonLoreSystemsRoot.ExpectedSystemCount)
+                    Debug.Log($"[LoreBootstrap] SUCCESS: All {found} lore systems bootstrapped.");
+                else
+                    Debug.LogWarning($"[LoreBootstrap] PARTIAL: {found}/{HectonLoreSystemsRoot.ExpectedSystemCount} systems. Missing: {missing}");
+            }
+
+            return root;
         }
 
         [MenuItem("Tools/Hecton8/Lore Systems/Create Quest Data Assets", false, 200)]

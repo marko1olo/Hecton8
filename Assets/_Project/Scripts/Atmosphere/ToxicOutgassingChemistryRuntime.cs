@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -44,8 +45,8 @@ namespace Hecton8.Atmosphere
         private const ushort RuntimeSourceId = 65;
         private const byte RuntimeChannel = 65;
         private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
-        private const byte SignalFlagsActive = 1;
-        private const byte SignalFlagsTrilinear = 2;
+        private const byte ToxicityExposureSignalFlagsActive = ToxicityExposureSignal.FlagHasSourceAup;
+        private const byte ToxicBioluminescenceSignalFlagsActive = ToxicBioluminescenceSignal.FlagActive;
         private const byte SignalFlagsCorrosion = 4;
         private const byte TelemetryFlagMockChemistry = 1;
         private const float ToxicCorrosionStatusDurationSeconds = 2.0f;
@@ -60,8 +61,6 @@ namespace Hecton8.Atmosphere
         private const uint ToxicBlackBoxVersion = 1u;
         private const int ToxicBlackBoxHeaderBytes = 32;
         private const int ToxicBlackBoxEntryBytes = 64;
-        private const uint ToxicityExposureLaneHash = 0x54584F58u; // TOX
-        private const uint ToxicityBiolumLaneHash = 0x54424C4Du; // TBLM
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_TOXIC_SURGEON.bin";
         private const string DumpPayloadLabel = "ToxicOutgassingTelemetryDumpPayload";
 #if UNITY_EDITOR
@@ -160,6 +159,13 @@ namespace Hecton8.Atmosphere
         public int DensityVersion => _densityVersion;
         public float CellSizeMeters => _cellSizeMeters;
         public double3 GridOriginAup => _gridOriginAup;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            Instance = null;
+            Volatile.Write(ref s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount, 0);
+        }
 
         public bool TryReadConstants(out ToxicOutgassingConstants constants)
         {
@@ -330,7 +336,11 @@ namespace Hecton8.Atmosphere
         {
             Vector3 shiftVector = shiftData.ShiftOffset;
             float3 shift = new float3(shiftVector.x, shiftVector.y, shiftVector.z);
-            if (!math.all(math.isfinite(shift)))
+            float shiftSqrMagnitude = math.lengthsq(shift);
+            if (!math.all(math.isfinite(shift)) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
             {
                 return;
             }
@@ -338,7 +348,7 @@ namespace Hecton8.Atmosphere
             float invCell = math.rcp(math.max(_cellSizeMeters, NaNEpsilon));
             float3 cells = shift * invCell;
             _pendingRebaseCells += new int3((int)math.round(cells.x), (int)math.round(cells.y), (int)math.round(cells.z));
-            _gridOriginAup += new double3(shift.x, shift.y, shift.z);
+            _gridOriginAup = shiftData.NewTotalOffsetDouble;
             _hasPendingRebase = math.any(_pendingRebaseCells != int3.zero);
         }
 
@@ -1254,10 +1264,13 @@ namespace Hecton8.Atmosphere
             for (int i = 0; i < exposureCount; i++)
             {
                 ToxicityExposureSignal exposure = exposures[i];
-                if (math.isfinite(exposure.Exposure01))
+                if (!TryPrepareToxicityExposureSignalForPublish(ref exposure))
                 {
-                    SignalBus<ToxicityExposureSignal>.TryPushTracked(in exposure, ref s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount);
+                    IncrementToxicOutgassingSignalDropCount();
+                    continue;
                 }
+
+                SignalBus<ToxicityExposureSignal>.TryPushTracked(in exposure, ref s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount);
             }
 
             int statusCount = math.clamp(counters[1], 0, MaxSignalsPerFrame);
@@ -1291,11 +1304,89 @@ namespace Hecton8.Atmosphere
             for (int i = 0; i < biolumCount; i++)
             {
                 ToxicBioluminescenceSignal signal = biolums[i];
-                if (math.isfinite(signal.Intensity01))
+                if (!TryPrepareToxicBioluminescenceSignalForPublish(ref signal))
                 {
-                    SignalBus<ToxicBioluminescenceSignal>.TryPushTracked(in signal, ref s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount);
+                    IncrementToxicOutgassingSignalDropCount();
+                    continue;
                 }
+
+                SignalBus<ToxicBioluminescenceSignal>.TryPushTracked(in signal, ref s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryPrepareToxicityExposureSignalForPublish(ref ToxicityExposureSignal exposure)
+        {
+            if (exposure.EntityId == 0u)
+                return false;
+
+            if (!IsPublishableToxicitySourceAup(exposure.AUP))
+                return false;
+
+            if (!math.isfinite(exposure.Exposure01))
+                return false;
+
+            exposure.Exposure01 = math.saturate(exposure.Exposure01);
+            if (exposure.Exposure01 <= 0.0001f)
+                return false;
+
+            if (!math.isfinite(exposure.ToxemiaDelta))
+                return false;
+
+            exposure.ToxemiaDelta = math.saturate(math.max(0f, exposure.ToxemiaDelta));
+            exposure.Flags = ToxicityExposureSignalFlagsActive;
+
+            exposure._pad0 = 0;
+            exposure._pad1 = 0;
+            exposure._pad2 = 0ul;
+            exposure._pad3 = 0ul;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryPrepareToxicBioluminescenceSignalForPublish(ref ToxicBioluminescenceSignal signal)
+        {
+            if (!IsPublishableToxicitySourceAup(signal.AUP))
+                return false;
+
+            if (!math.isfinite(signal.Intensity01))
+                return false;
+
+            signal.Intensity01 = math.saturate(signal.Intensity01);
+            if (signal.Intensity01 <= 0.0001f)
+                return false;
+
+            if (!math.isfinite(signal.ToxicDensity))
+                return false;
+
+            signal.ToxicDensity = math.max(0f, signal.ToxicDensity);
+            if (signal.ToxicDensity <= 0.0001f)
+                return false;
+
+            signal.LocalNormal = math.all(math.isfinite(signal.LocalNormal))
+                ? signal.LocalNormal
+                : float3.zero;
+            signal.Flags = ToxicBioluminescenceSignalFlagsActive;
+            signal._pad0 = 0;
+            signal._pad1 = 0ul;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsPublishableToxicitySourceAup(double3 aup)
+        {
+            return math.all(math.isfinite(aup)) &&
+                   math.lengthsq(aup) > 0.000001d &&
+                   math.abs(aup.x) <= ToxicityExposureSignal.MaxSourceAupExtentMeters &&
+                   math.abs(aup.y) <= ToxicityExposureSignal.MaxSourceAupExtentMeters &&
+                   math.abs(aup.z) <= ToxicityExposureSignal.MaxSourceAupExtentMeters;
+        }
+
+        private static void IncrementToxicOutgassingSignalDropCount()
+        {
+            int current = Volatile.Read(ref s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount);
+            if (current < int.MaxValue)
+                Interlocked.Increment(ref s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount);
         }
 
         private void SwapDensityBuffers()
@@ -1574,7 +1665,11 @@ namespace Hecton8.Atmosphere
                 ToxicityExposureSignal.LaneHash);
             SignalBus<ToxicityExposureSignal>.EnsureInitialized();
 
-            SignalBus<ToxicBioluminescenceSignal>.Configure(MaxSignalsPerFrame, MaxSignalsPerFrame, MaxSignalsPerFrame, ToxicityBiolumLaneHash);
+            SignalBus<ToxicBioluminescenceSignal>.Configure(
+                ToxicBioluminescenceSignal.ExpectedCapacity,
+                ToxicBioluminescenceSignal.MaxFrameSignals,
+                ToxicBioluminescenceSignal.LowTierFrameSignals,
+                ToxicBioluminescenceSignal.LaneHash);
             SignalBus<ToxicBioluminescenceSignal>.EnsureInitialized();
         }
 
@@ -2239,7 +2334,7 @@ namespace Hecton8.Atmosphere
                                 EntityId = entityId,
                                 ChemicalHash = PoisonGasHash,
                                 Frame = Frame,
-                                Flags = (byte)(SignalFlagsActive | (sampleBlend > 0.5f ? SignalFlagsTrilinear : 0)),
+                                Flags = ToxicityExposureSignalFlagsActive,
                                 _pad0 = 0,
                                 _pad1 = 0,
                                 _pad2 = 0ul,
@@ -2340,7 +2435,7 @@ namespace Hecton8.Atmosphere
                         ChemicalHash = ChemicalHash,
                         Frame = Frame,
                         CellIndex = (ushort)math.min(index, 0xFFFF),
-                        Flags = SignalFlagsActive,
+                        Flags = ToxicBioluminescenceSignalFlagsActive,
                         _pad0 = 0,
                         _pad1 = 0ul
                     };

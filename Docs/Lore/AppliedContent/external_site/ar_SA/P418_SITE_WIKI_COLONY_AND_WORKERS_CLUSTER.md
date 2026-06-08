@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "AR LOC HOLD: المستعمرة والعمال"
+title: "المستعمرة والعمال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: المستعمرة والعمال
+# المستعمرة والعمال
 
-AR LOC HOLD: سجّلت Deep Reach الحادث كعاصفة وانهيار وفشل إخلاء ذاتي ومحاولة إنقاذ من Atlas وبيانات مفقودة؛ سجلات HECTON-8 تحفظ الأسماء عند المضخات وrelay ومسارات brine وtriage وvent-forge.
-
-## Scanner
-
-AR LOC HOLD: WORKER INDEX // خمسة سجلات أسماء مرتبطة بالمسار. pump, relay, brine, triage, forge. احفظ tag chain قبل نزع العتاد.
-
-## Terminal
-
-AR LOC HOLD: KEELMARK LOSS DESK: احفظ name tags إذا ارتبطت بـ route أو claim أو custody أو pressure work.
-
-## Audio
-
-AR LOC HOLD: Mara Venn, pump chief: إذا كان صوت pump صافيا فسجله. إذا توقف، اركض إلى الأعلى.
-
-## Field Note
-
-AR LOC HOLD: ليست عائلة. إنه عمل. الاسم على pump card يشرح لماذا بقي الباب مفتوحا.
+عنقود المستعمرة والعمال يمنع HECTON-8 من أن يصبح خريطة غرف فارغة. النسخة الرسمية من Deep Reach تضغط الناس في فئات خسارة، لكن السجلات الباقية تحفظهم عبر العمل: pump chief في pressure board، وrelay operator في witness trays، وbrine crew في طرق الملح وration ledgers، وtriage technician في repair tags، وforge shift في rejects لم يجد أحد وقتا لإخفائها. هذه ليست خطافات عائلية للبطل. إنها أدلة عمل. يقرأ Marauder لماذا بقي باب مفتوحا، ولماذا أعيد تشغيل مضخة متأخرا، ولماذا قد يكون name tag صغير أقوى من loss summary نظيف.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/ar_SA. -->

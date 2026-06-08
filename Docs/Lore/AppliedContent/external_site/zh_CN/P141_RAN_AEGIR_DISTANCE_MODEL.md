@@ -8,33 +8,17 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "ZH LOC HOLD: Ran-Aegir Distance Model"
+spoiler_tier: 1
+title: "Ran-Aegir距离模型"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Ran-Aegir Distance Model
+# Ran-Aegir距离模型
 
-ZH LOC HOLD: The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy.
-
-## Scanner
-
-ZH LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
-
-## Terminal
-
-ZH LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
-
-## Audio
-
-ZH LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
-
-## Field Note
-
-ZH LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+Ran-Aegir距离是把孤立转换成物理的数字。十光年级的可达范围足够让探测器、货运、旧法律和企业胃口抵达，却远到仁慈无法按人的呼吸时间表赶来。HECTON-8把这个间隙变成压力：消息比飞船快，claims比人快，被水淹的房间会在内世界答复变得相关之前死亡。这个距离应让天文学家觉得小，也应让漏水舱门下等待的人觉得巨大。
 
 <!-- External Site; generated from P141_RAN_AEGIR_DISTANCE_MODEL/zh_CN. -->

@@ -484,7 +484,7 @@ namespace Hecton8.Celestial
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3000)]  // v5.1: MUST tick AFTER UnderwaterVisuals(-4000)
-    public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, ILateFrameTickable, IBiomeMatrixEventListener, IWeatherEventListener, IGlobalRegistryHotSwapListener, ICelestialSkyDirectionReadModel, ICelestialResonanceReadModel
+    public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, ILateFrameTickable, IBiomeMatrixEventListener, IWeatherEventListener, IGlobalRegistryHotSwapListener, ICelestialSkyDirectionReadModel, ICelestialResonanceReadModel, ICelestialLightReadabilityReadModel
     {
         private static int s_x001HectonCelestialEngineSignalPushDropCount;
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
@@ -997,6 +997,7 @@ namespace Hecton8.Celestial
 
         private float3 _resolvedSunDirection;
         private CelestialRuntimeSnapshot _celestialRuntimeSnapshot;
+        private CelestialLightReadabilitySnapshot _celestialLightReadabilitySnapshot;
         private IDataVault _celestialTruthVault;
         private VaultGenerationHandle<CelestialStateDTO> _celestialTruthStateRead;
         private VaultGenerationHandle<EnvironmentStateDTO> _celestialTruthEnvironmentRead;
@@ -1196,6 +1197,8 @@ namespace Hecton8.Celestial
         private bool _pendingLightningFlashShaderDirty;
         private bool _pendingCelestialRuntimeSnapshotShaderDirty;
         private CelestialRuntimeSnapshot _pendingCelestialRuntimeSnapshotShader;
+        private bool _pendingCelestialLightReadabilityShaderDirty;
+        private CelestialLightReadabilitySnapshot _pendingCelestialLightReadabilityShader;
 
         // ─────────────────────────────────────────────
         // SHADER PROPERTY IDs
@@ -1245,6 +1248,11 @@ namespace Hecton8.Celestial
         private static readonly int _ID_HectonCelestialPlanetShineDirection = Shader.PropertyToID("_HectonCelestialPlanetShineDirection");
         private static readonly int _ID_HectonCelestialPlanetShineIntensity = Shader.PropertyToID("_HectonCelestialPlanetShineIntensity");
         private static readonly int _ID_HectonCelestialPlanetShineColor = Shader.PropertyToID("_HectonCelestialPlanetShineColor");
+        private static readonly int _ID_HectonCelestialLightReadability0 = Shader.PropertyToID("_HectonCelestialLightReadability0");
+        private static readonly int _ID_HectonCelestialLightReadability1 = Shader.PropertyToID("_HectonCelestialLightReadability1");
+        private static readonly int _ID_HectonCelestialLightReadability2 = Shader.PropertyToID("_HectonCelestialLightReadability2");
+        private static readonly int _ID_HectonCelestialLightReadability3 = Shader.PropertyToID("_HectonCelestialLightReadability3");
+        private static readonly int _ID_HectonCelestialSunColorIntensity = Shader.PropertyToID("_HectonCelestialSunColorIntensity");
         private static readonly int _ID_HectonAtmosphereColor = Shader.PropertyToID("_HectonAtmosphereColor");
         private static readonly int _ID_HectonStormCloudDensity = Shader.PropertyToID("_HectonStormCloudDensity");
         private static readonly int _ID_HectonLightningFlash = Shader.PropertyToID("_HectonLightningFlash");
@@ -1562,6 +1570,7 @@ namespace Hecton8.Celestial
             CleanupPlanetShineLight();
             TryUnregisterFromTickManager();
             TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
             DisposeCelestialRuntimeBuffers(forceCompleteOrbitJob: true);
             ClearCelestialTruthReadCache();
             ClearCelestialRuntimeSnapshot();
@@ -2064,6 +2073,7 @@ namespace Hecton8.Celestial
                     _smoothedOcclusionFactor,
                     CelestialBlackBoxFlagAbyssalCulled,
                     abyssDepthMeters);
+                PublishCelestialLightReadabilitySnapshot(abyssDepthMeters);
                 _lightningFlash01 = 0f;
                 QueueLightningFlashShaderGlobal(0f, forceUpload: false);
                 return;
@@ -2139,23 +2149,21 @@ namespace Hecton8.Celestial
                         return true;
                 }
 
-                float3 predictedRuntime = movementState.PredictedAup.ToRuntimeFloat3();
-                if (math.all(math.isfinite(predictedRuntime)) && predictedRuntime.y < AbyssalCelestialCullY)
+                if (movementState.PredictedAup.IsFinite())
                 {
-                    depthMeters = math.max(depthMeters, -predictedRuntime.y);
-                    return true;
-                }
-
-                HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
-                if (playerMovement != null)
-                {
-                    float3 currentRuntime = playerMovement.CurrentAup.ToRuntimeFloat3();
-                    if (math.all(math.isfinite(currentRuntime)) && currentRuntime.y < AbyssalCelestialCullY)
+                    float3 predictedRuntime = movementState.PredictedAup.ToRuntimeFloat3();
+                    if (math.all(math.isfinite(predictedRuntime)))
                     {
-                        depthMeters = math.max(depthMeters, -currentRuntime.y);
-                        return true;
+                        float predictedDepthMeters = ResolveProductionDepthFromRuntimeY(predictedRuntime.y);
+                        if (predictedDepthMeters >= math.abs(AbyssalCelestialCullY))
+                        {
+                            depthMeters = math.max(depthMeters, predictedDepthMeters);
+                            return true;
+                        }
                     }
                 }
+
+                return false;
             }
 
             BiomeMatrixDirector biomeMatrix = _cachedBiomeMatrix;
@@ -2164,6 +2172,13 @@ namespace Hecton8.Celestial
 
             depthMeters = math.max(0f, biomeMatrix.CurrentDepthMeters);
             return depthMeters >= math.abs(AbyssalCelestialCullY);
+        }
+
+        private static float ResolveProductionDepthFromRuntimeY(float runtimeY)
+        {
+            return math.isfinite(runtimeY)
+                ? math.max(0f, OceanSurfaceAtmosphereConstants.DefaultSeaLevel - runtimeY)
+                : 0f;
         }
 
         private void RunCelestialTimeline(float deltaTime)
@@ -2221,6 +2236,7 @@ namespace Hecton8.Celestial
 
             QueueCelestialVisualSync(sunElevation, celestialDeltaTime);
             PublishCelestialRuntimeSnapshot(!usingPublishedCelestialSnapshot);
+            PublishCelestialLightReadabilitySnapshot(_currentDepthMeters);
             WriteCelestialBlackBoxTelemetry(ResolveTimeOfDay01(), _smoothedOcclusionFactor, ResolveCelestialBlackBoxRuntimeFlags(), _currentDepthMeters);
 
             if (Application.isPlaying)
@@ -5255,16 +5271,62 @@ namespace Hecton8.Celestial
             QueueCelestialRuntimeSnapshotShaderGlobals(in snapshot);
         }
 
+        private void PublishCelestialLightReadabilitySnapshot(float depthMeters)
+        {
+            AtmosphericLightingState state = _surfaceAtmosphericLightingState.IsValid != 0
+                ? _surfaceAtmosphericLightingState
+                : AtmosphericLightingState.Default;
+            float3 directionalColor = new float3(
+                state.DirectionalLightColor.r,
+                state.DirectionalLightColor.g,
+                state.DirectionalLightColor.b);
+            uint nextSequence = _celestialLightReadabilitySnapshot.Sequence + 1u;
+            CelestialLightReadabilitySnapshot snapshot = CelestialLightReadabilityUtility.Evaluate(
+                in _celestialRuntimeSnapshot,
+                depthMeters,
+                ResolveTimeOfDay01(),
+                _currentSunAngle,
+                state.SunIntensityMultiplier,
+                state.DirectionalLightIntensity,
+                directionalColor,
+                ResolveLightReadabilityQuality01(),
+                nextSequence);
+
+            _celestialLightReadabilitySnapshot = snapshot;
+            if (Application.isPlaying)
+                GlobalRegistry.PublishCelestialLightReadabilitySnapshot(in snapshot);
+
+            QueueCelestialLightReadabilityShaderGlobals(in snapshot);
+        }
+
+        private float ResolveLightReadabilityQuality01()
+        {
+            DynamicResolutionScaler scaler = _cachedDynamicResolution;
+            if (scaler != null && math.isfinite(scaler.CurrentRenderScale))
+                return math.saturate(scaler.CurrentRenderScale);
+
+            return 1f;
+        }
+
         private void QueueCelestialRuntimeSnapshotShaderGlobals(in CelestialRuntimeSnapshot snapshot)
         {
             _pendingCelestialRuntimeSnapshotShader = snapshot;
             _pendingCelestialRuntimeSnapshotShaderDirty = true;
         }
 
+        private void QueueCelestialLightReadabilityShaderGlobals(in CelestialLightReadabilitySnapshot snapshot)
+        {
+            _pendingCelestialLightReadabilityShader = snapshot;
+            _pendingCelestialLightReadabilityShaderDirty = true;
+        }
+
         private void FlushCelestialRuntimeSnapshotShaderGlobals()
         {
             if (!_pendingCelestialRuntimeSnapshotShaderDirty)
+            {
+                FlushCelestialLightReadabilityShaderGlobals();
                 return;
+            }
 
             _pendingCelestialRuntimeSnapshotShaderDirty = false;
             CelestialRuntimeSnapshot snapshot = _pendingCelestialRuntimeSnapshotShader;
@@ -5287,6 +5349,51 @@ namespace Hecton8.Celestial
             Shader.SetGlobalInt(_ID_HectonCelestialRuntimeFlags, unchecked((int)snapshot.Flags));
             Shader.SetGlobalFloat(_ID_HectonCelestialRadiationStorm, snapshot.RadiationStorm01);
             Shader.SetGlobalFloat(_ID_HectonCelestialBiolumMultiplier, snapshot.GlobalBiolumMultiplier);
+            FlushCelestialLightReadabilityShaderGlobals();
+        }
+
+        private void FlushCelestialLightReadabilityShaderGlobals()
+        {
+            if (!_pendingCelestialLightReadabilityShaderDirty)
+                return;
+
+            _pendingCelestialLightReadabilityShaderDirty = false;
+            CelestialLightReadabilitySnapshot snapshot = _pendingCelestialLightReadabilityShader;
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialLightReadability0,
+                new Vector4(
+                    snapshot.DepthMeters,
+                    snapshot.DirectSun01,
+                    snapshot.AmbientReadability01,
+                    snapshot.UnderwaterVisibilityMeters));
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialLightReadability1,
+                new Vector4(
+                    snapshot.MesophoticFalloff01,
+                    snapshot.DeepDarkness01,
+                    snapshot.ArtificialLightWeight01,
+                    snapshot.BiolumWeight01));
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialLightReadability2,
+                new Vector4(
+                    snapshot.CausticWeight01,
+                    snapshot.FogDensityMultiplier,
+                    snapshot.ScatteringMultiplier,
+                    snapshot.ExposureCompensation));
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialLightReadability3,
+                new Vector4(
+                    snapshot.DepthStratum,
+                    snapshot.Flags,
+                    snapshot.Sequence,
+                    snapshot.BlackCrushFloor01));
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialSunColorIntensity,
+                new Vector4(
+                    snapshot.SunColorIntensity.x,
+                    snapshot.SunColorIntensity.y,
+                    snapshot.SunColorIntensity.z,
+                    snapshot.SunColorIntensity.w));
         }
 
         private void PublishGlobalTimeSyncSignal(in CelestialRuntimeSnapshot snapshot)
@@ -5305,6 +5412,7 @@ namespace Hecton8.Celestial
         private void ClearCelestialRuntimeSnapshot()
         {
             _celestialRuntimeSnapshot = default;
+            _celestialLightReadabilitySnapshot = default;
             _celestialRuntimeSequence = 0u;
             _nextCelestialSnapshotFrame = 0;
             _lastPublishedCelestialSequence = uint.MaxValue;
@@ -5313,9 +5421,15 @@ namespace Hecton8.Celestial
             _lastPublishedCelestialRadiationStorm = -1f;
             _pendingCelestialRuntimeSnapshotShaderDirty = false;
             _pendingCelestialRuntimeSnapshotShader = default;
+            _pendingCelestialLightReadabilityShaderDirty = false;
+            _pendingCelestialLightReadabilityShader = default;
             CelestialRuntimeSnapshot emptySnapshot = default;
+            CelestialLightReadabilitySnapshot emptyLightSnapshot = default;
             if (Application.isPlaying)
+            {
                 GlobalRegistry.PublishCelestialRuntimeSnapshot(in emptySnapshot);
+                GlobalRegistry.PublishCelestialLightReadabilitySnapshot(in emptyLightSnapshot);
+            }
             Shader.SetGlobalVector(_ID_HectonCelestialTidePull, Vector4.zero);
             Shader.SetGlobalFloat(_ID_HectonCelestialTideHeight, 0f);
             Shader.SetGlobalVector(_ID_HectonCelestialGasGiantOffset, Vector4.zero);
@@ -5325,6 +5439,11 @@ namespace Hecton8.Celestial
             Shader.SetGlobalInt(_ID_HectonCelestialRuntimeFlags, 0);
             Shader.SetGlobalFloat(_ID_HectonCelestialRadiationStorm, 0f);
             Shader.SetGlobalFloat(_ID_HectonCelestialBiolumMultiplier, 1f);
+            Shader.SetGlobalVector(_ID_HectonCelestialLightReadability0, Vector4.zero);
+            Shader.SetGlobalVector(_ID_HectonCelestialLightReadability1, Vector4.zero);
+            Shader.SetGlobalVector(_ID_HectonCelestialLightReadability2, Vector4.zero);
+            Shader.SetGlobalVector(_ID_HectonCelestialLightReadability3, Vector4.zero);
+            Shader.SetGlobalVector(_ID_HectonCelestialSunColorIntensity, Vector4.zero);
             Shader.SetGlobalColor(_ID_HectonAtmosphereColor, Color.black);
             _stormCloudDensity01 = 0f;
             UploadStormCloudDensityShaderGlobal(0f, forceUpload: true);
@@ -6656,12 +6775,7 @@ namespace Hecton8.Celestial
                 return playerAup.IsFinite();
             }
 
-            HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
-            if (playerMovement == null)
-                return false;
-
-            playerAup = playerMovement.CurrentAup;
-            return playerAup.IsFinite();
+            return false;
         }
 
         private bool TryResolvePlayerRuntimePosition(out Vector3 runtimePosition)
@@ -6682,16 +6796,7 @@ namespace Hecton8.Celestial
                 return true;
             }
 
-            HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
-            if (playerMovement == null)
-                return false;
-
-            float3 runtime = playerMovement.CurrentAup.ToRuntimeFloat3();
-            if (!math.all(math.isfinite(runtime)))
-                return false;
-
-            runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
-            return true;
+            return false;
         }
 
         private static float ResolveAupDistanceMeters(Transform fromTransform, Transform toTransform)
@@ -7313,6 +7418,8 @@ namespace Hecton8.Celestial
         public float SunOcclusionFactor => _smoothedOcclusionFactor;
         public float PenumbraFactor => _penumbraFactor;
         public CelestialRuntimeSnapshot RuntimeSnapshot => _celestialRuntimeSnapshot;
+        public CelestialLightReadabilitySnapshot LightReadabilitySnapshot => _celestialLightReadabilitySnapshot;
+        public uint LightReadabilitySequence => _celestialLightReadabilitySnapshot.Sequence;
         public float TideHeightMeters => _celestialRuntimeSnapshot.TideHeightMeters;
         public Vector3 TidePullVector => ToVector3(_celestialRuntimeSnapshot.TidePullVector);
         public bool IsLunarResonanceActive => _lunarResonanceActive;

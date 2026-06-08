@@ -9,32 +9,35 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Deep Reach Public Dossier Article"
+title: "Dosier público de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Deep Reach Public Dossier Article
+# Dosier público de Deep Reach
 
-ES LOC HOLD: Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression.
+Deep Reach Extraterrestrial Development Combine es el poder corporativo detrás de la historia industrial de HECTON-8. Construyó rutas de presión, hábitats de trabajadores, sistemas de extracción y el papeleo que los hacía legales. Públicamente es una autoridad de desarrollo fallida. La evidencia más profunda muestra la forma dura: capacidad de evacuación insuficiente, lenguaje de retraso saneado, continuity weighting de Atlas protegido y ley de reclamación preservada mientras los trabajadores se convertían en pérdidas.
 
 ## Scanner
 
-ES LOC HOLD: The public company name is cleaner than its route history.
+El nombre público de la compañía es más limpio que su historia de rutas. Empieza con infraestructura. Deja que la responsabilidad asome por las juntas.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+NIVEL DE ARTÍCULO PÚBLICO / DEEP REACH
+permitido: combine de desarrollo, operador de colonia, autoridad de infraestructura, problema de capacidad de evacuación, lenguaje público de fallo
+bloqueado: cadena de firmas nombrada, internos de weighting de Atlas, consecuencias finales del receiver
+nota editorial: institución plausible primero; crimen mediante procedimiento después.
 
 ## Audio
 
-ES LOC HOLD: Never make the villain simpler than the paperwork.
+Deep Reach no necesitaba sonar cruel. Solo necesitaba que cada frase peligrosa sonara terminada.
 
 ## Field Note
 
-ES LOC HOLD: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+No hagas que Deep Reach sise. Haz que certifique, difiera, preserve y facture.
 
 <!-- External Site; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/es_ES. -->

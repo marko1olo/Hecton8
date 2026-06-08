@@ -21,6 +21,9 @@ namespace Hecton8.Core
         private static readonly uint SealantPackHash = unchecked((uint)LocHash.Compute("SealantPack"));
 
         private static int s_sequence;
+        private static int s_signalPushDropCount;
+
+        public static int DroppedSignalCount => Volatile.Read(ref s_signalPushDropCount);
 
         [System.Obsolete("Use TryPublishCollected(...) so overflow/drop semantics stay visible at the producer.", true)]
         public static bool PublishCollected(ItemData item, int quantity, ulong interactorEntityId, Vector3 runtimePosition, bool hasRuntimePosition)
@@ -68,14 +71,19 @@ namespace Hecton8.Core
                 return false;
 
             uint itemHash = unchecked((uint)item.PersistentHashId);
+            if (itemHash == 0u)
+                return false;
+
+            float3 signalPosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            bool validRuntimePosition = hasRuntimePosition && math.all(math.isfinite(signalPosition));
             float unitWeightKg = math.max(0f, item.weight);
             byte category = ClampByte((int)item.category);
             byte resourceFamily = ClampByte((int)item.resourceFamily);
-            byte flags = BuildFlags(item, hasRuntimePosition, itemHash);
+            byte flags = BuildFlags(item, validRuntimePosition, itemHash);
 
             ItemLifecycleSignal signal = new ItemLifecycleSignal
             {
-                RuntimePosition = hasRuntimePosition ? new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z) : float3.zero,
+                RuntimePosition = validRuntimePosition ? signalPosition : float3.zero,
                 UnitWeightKg = unitWeightKg,
                 ItemHash = itemHash,
                 InteractorHash = FoldEntityId(interactorEntityId),
@@ -90,7 +98,7 @@ namespace Hecton8.Core
                 Flags = flags
             };
 
-            return SignalBus<ItemLifecycleSignal>.TryPush(in signal);
+            return SignalBus<ItemLifecycleSignal>.TryPushTracked(in signal, ref s_signalPushDropCount);
         }
 
         private static byte BuildFlags(ItemData item, bool hasRuntimePosition, uint itemHash)

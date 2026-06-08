@@ -8,33 +8,19 @@ biome_tags: biome.tide_pump;biome.drowned_admin
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+spoiler_tier: 1
+title: "سجل فيزياء المد العظيم"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# سجل فيزياء المد العظيم
 
-AR LOC HOLD: Great Tide Physics Record defines the disaster logic for HECTON-8: the ocean is physically dangerous, and the corporate crime is designing around optimistic margins until a moon-sized system collected the debt.
+يحافظ سجل فيزياء المد العظيم على صدق الكارثة. كان HECTON-8 ضعيفا أمام رنين المد، انهيار الجليد، اندفاع العواصف وتصريف الحرارة. ذنب Deep Reach يظهر في الهوامش وسعة الإخلاء وأولوية القرار، لا في سبب سحري مزيف.
 
-## Scanner
-
-AR LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
-
-## Terminal
-
-AR LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
-
-## Audio
-
-AR LOC HOLD: The report was right. That is why they buried it.
-
-## Field Note
-
-AR LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+يحدد سجل فيزياء المد العظيم منطق كارثة HECTON-8: المحيط خطر فيزيائيا، والجريمة المؤسسية كانت التصميم بهوامش متفائلة حتى جاء الحساب. لا تلطف الأمر: الفيزياء الحقيقية قتلت الناس، وDeep Reach جعلت لتلك الفيزياء ضحايا.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/ar_SA. -->

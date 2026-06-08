@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.service_corridor
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Livro do selo da escotilha"
+spoiler_tier: 1
+title: "Livro de selo da escotilha"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Livro do selo da escotilha
+# Livro de selo da escotilha
 
-Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop.
+Escotilhas são alguns dos registros mais silenciosos de HECTON-8. Elas não explicam quem ficou para trás; guardam direção de fechamento, estresse da junta e autoridade de override. Ler um livro de selo transforma uma porta trancada em decisão de pressão com timestamp.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+Memória de selo recuperada. A junta recebeu três cortes de pressão e um override de evacuação; acesso do lado de retorno foi travado pelo lado molhado.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / FRAME H-17: deformação da junta acima da tolerância de serviço. Fechamento manual aceito sob EVAC OVERRIDE. Contagem de operadores no lado de retorno sem resolução. Reabrir apenas após equalização de pressão e inspeção das dobradiças.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+Ela selou. Isso é tudo que a escotilha prometeu.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+Uma escotilha selada é um recibo. Antes de abrir, pergunte qual lado pagou.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/pt_BR. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "Найкращий фінал: чистих рук немає"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# Найкращий фінал: чистих рук немає
 
-UA LOC HOLD: No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.
+Чистих рук немає - правило фінального тону. HECTON-8 винагороджує розуміння, підготовку і роботу свідка, а не чистоту. Найкращий фінал має одночасно давати гравцеві компетентність і причетність.
 
 ## Scanner
 
-UA LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
+Найкращий фінал має врятувати щось справжнє і не вдавати, що невинність пережила спуск.
 
 ## Terminal
 
-UA LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
+ПРАВИЛО ЧИСТИХ РУК НЕМАЄ: критерії найкращого відомого фіналу потребують agency, доказів, наслідків і залишку. Якщо всі скривджені сторони задоволені, фінал забув HECTON-8.
 
 ## Audio
 
-UA LOC HOLD: If it feels clean, it forgot where you are.
+Якщо це здається чистим, воно забуло, де ти.
 
 ## Field Note
 
-UA LOC HOLD: A strong ending lets the player save something real and lose something real.
+Сильний маршрут може розкрити правду, відмовити Deep Reach, зберегти частину екології і звільнити гравця, але ціна має лишитися видимою.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/uk_UA. -->

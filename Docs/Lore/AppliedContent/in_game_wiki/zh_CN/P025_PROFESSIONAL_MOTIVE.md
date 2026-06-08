@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 职业动机
 
-玩家不是空白游客。开局是专业兴趣、打捞技能和接受死claim的理由。个人动机通过证据、熟悉标记和世界联系增长。
+掠夺者不是空白游客。这趟行动始于职业兴趣、打捞技能和接受死亡索赔的理由。个人动机通过证据、熟悉标记，以及意识到 HECTON-8 属于同一个把这种工作变正常的硬世界而增长。
 
 ## Scanner
 

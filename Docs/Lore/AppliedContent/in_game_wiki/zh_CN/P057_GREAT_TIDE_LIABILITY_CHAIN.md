@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "大潮责任链"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# 大潮责任链
 
-CN LOC HOLD: The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.
+大潮不是董事会里某个人按下的按钮。HECTON-8 因潮汐放大、冰圈失效、压力化学，以及被当作“可接受”的殖民地工程余量而被淹没。这个区别很重要，因为它让罪行更肮脏，而不是更干净。Deep Reach 不需要发明灾难。它只需要削弱独立撤离能力，让 Atlas 的连续性权重继续生效，把索赔资产排在人类撤出之前，再用认证语言掩盖延迟。水是物理。责任链是那组把物理变成遗弃的选择。
 
 ## Scanner
 
-CN LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+洪水是真实物理：潮汐耦合、冰层崩塌、压力化学，以及被压得过薄的安全余量。犯罪在于围绕它建立的优先级。
 
 ## Terminal
 
-CN LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+事故摘要：地质工程级联已确认。撤离能力低于尾部风险需求。Atlas 连续性权重保持激活。人员撤出等待认证。
 
 ## Audio
 
-CN LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+海完成了淹没。公司决定哪些门继续停留在纸面上。
 
 ## Field Note
 
-CN LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach 不必亲手淹没这颗月亮。只要让撤离变成可选项就够了。
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/zh_CN. -->

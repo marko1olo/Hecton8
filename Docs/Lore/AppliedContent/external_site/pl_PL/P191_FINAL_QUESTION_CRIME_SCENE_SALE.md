@@ -9,32 +9,18 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "Pytanie finałowe: sprzedaż miejsca zbrodni"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# Pytanie finałowe: sprzedaż miejsca zbrodni
 
-PL LOC HOLD: Final Question Crime Scene Sale defines the material ending axis.
+To zakończenie działa najmocniej, gdy gra nie karze gracza mechanicznie. Zdesperowany Marauder może zrobić wszystko, czego żądał kontrakt: dotrzeć do basenu, odzyskać współrzędne, dowieść wartości próbki, zachować zapis XO i przekazać payload, który Black Keel potrafi wycenić. Wynik ma być legalny i zimny. Dług znika, bo system rozpoznał wartość, nie sprawiedliwość.
 
-## Scanner
-
-PL LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
-
-## Terminal
-
-PL LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
-
-## Audio
-
-PL LOC HOLD: You can pay the debt with a grave map.
-
-## Field Note
-
-PL LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+W tym tkwi groza. HECTON-8 nie zginął dlatego, że nikt nie umiał czytać dowodów. Zginął dlatego, że dowody da się zamienić we własność. Jeśli gracz sprzedaje scenę bez publicznego łańcucha świadków, Deep Reach dostaje czystsze papiery, lepszą geometrię podejścia i powód, by wrócić z prawnikami przed ratownikami. Finał płaci graczowi i pokazuje, jaka cywilizacja może sobie pozwolić na międzygwiezdny salvage.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/pl_PL. -->

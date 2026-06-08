@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ВІДКЛЮЧЕННЯ ЗВ'ЯЗКУ ТА ОРБІТАЛЬНЕ МОВЧАННЯ
 
 > **Джерело:** Керівництво з експлуатації орбітального носія *Black Keel*, Розділ 4.

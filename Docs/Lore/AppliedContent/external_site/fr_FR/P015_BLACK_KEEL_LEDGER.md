@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Registre Black Keel
 
-Black Keel Ledger définit la ligne orbitale du joueur comme une machine contractuelle: utile, compromise et indifférente.
+Black Keel n'est pas un vaisseau ami. C'est un tender claim-pool qui lit corps, charge utile, quarantaine, masse d'ascension et assurance comme entrées du même registre.
 
-## Scanner
-
-Registre de tender claim-pool. Custody carrier publique, dette d'assurance, priorités Deep Reach masquées.
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keel n'est pas ton vaisseau. C'est la machine qui sait ce que tu dois.
-
-## Field Note
-
-Le vaisseau peut t'aider sans être de ton côté.
+Il n'a pas besoin de haïr le joueur. Il peut répondre poliment, accepter un hash de détresse et refuser la récupération jusqu'à changement des chiffres.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/fr_FR. -->

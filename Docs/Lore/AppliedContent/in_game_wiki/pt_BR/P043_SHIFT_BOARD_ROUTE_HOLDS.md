@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Retenções de Rota no Quadro de Turnos
 
-A prova mostra como linguagem logística esconde corpos e espalha culpa.
+Quadros de turno transformam catástrofe em procedimento legível. Deep Reach e Atlas mataram por classificação, atraso e prioridade, não por malícia teatral.
 
 ## Scanner
 

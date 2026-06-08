@@ -198,15 +198,19 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
             if (!isActiveAndEnabled ||
                 !_hasPlanRefreshSample ||
                 _hasPlanRefreshAup ||
-                shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
             {
                 return;
             }
 
-            _lastPlanRefreshPosition += -shiftData.ShiftOffset;
+            _lastPlanRefreshPosition += -shiftOffset;
         }
 
         public void SetPlayerTransform(Transform target)

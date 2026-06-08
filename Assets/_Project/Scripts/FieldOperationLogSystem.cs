@@ -83,6 +83,7 @@ namespace Hecton8.Gameplay
         private bool _saveRegistered;
         private bool _hotSwapRegistered;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private static FieldOperationLogSystem s_activeRuntime;
 
         public int SavePriority => 36;
@@ -276,29 +277,36 @@ namespace Hecton8.Gameplay
                 return;
 
             ISaveService saveService = _saveService;
-            if (saveService == null)
+            if (!IsSaveServiceUsable(saveService))
             {
                 saveService = GlobalRegistry.Save;
                 _saveService = saveService;
             }
-            if (saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveRegistered = false;
             _saveService = null;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         public void OnGlobalRegistryServiceReplaced(

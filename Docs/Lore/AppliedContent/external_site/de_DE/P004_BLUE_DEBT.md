@@ -9,32 +9,16 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Blue Debt"
+title: "Blaue Schuld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue Debt
+# Blaue Schuld
 
-Blue debt ist die Ressourcenschicht, die HECTON-8 zu mehr als einer verlorenen Kolonie macht. Sie ist wertvoll, instabil und direkt mit Deep Reachs Wunsch verbunden, den Mond zu begraben und zugleich zurückzuholen.
-
-## Scanner
-
-Druckerhaltene Xenon-Omega-Rückstände. Nur unter feindlichen Bedingungen stabil. Nicht nahe warmer Habitatluft entlüften.
-
-## Terminal
-
-XO-KONTINUITÄTSSUBSTRAT. Nicht dekomprimieren. Nicht ungefilterter Habitatatmosphäre aussetzen.
-
-## Audio
-
-Der Behälter singt im Sonar. Tief, regelmäßig. Das ist kein Wesen. Das ist schlimmer.
-
-## Field Note
-
-Blue debt zahlt, weil sie zweimal beißt. Einmal beim Tragen. Noch einmal, wenn jemand davon erfährt.
+Blaue Schuld sorgt dafür, dass Bergung auf HECTON-8 zuerst profitabel klingt und erst danach sicher. Das Material ist kein Schatzkristall im Riff. Es ist Rückstand industrieller Drucksysteme: Xenon-Omega-Substrate, gescheiterte Eindämmmedien, Rechenschlacke und versiegelter Schrott, der stabil blieb, weil der Ozean nie aufhörte zu drücken. Hebe es falsch an und die Probe ändert ihren Zustand. Verkaufe es falsch und die Papierkette ändert dich. Dieses doppelte Risiko steckt im Namen. Blaue Schuld bezahlt Überlebende schnell, doch jeder Behälter trägt spätere Kosten: Dekontamination, Carrier-Pfandrechte, Black-Keel-Verwahrung, Deep-Reach-Anspruchssprache und die Möglichkeit, dass die Probe auch Beweis ist. Im größeren Lore ist die Ressource einer der ersten Hinweise, dass HECTON-8 nicht einfach verlassen wurde. Wertvolle Systeme liefen weiter unter Druck, dort unten, wo nur ein verzweifelter Operator sie anfassen würde.
 
 <!-- External Site; generated from P004_BLUE_DEBT/de_DE. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ЕКОНОМІКА ВИЖИВАННЯ ТА БОРГ ПЕРЕД KEELMARK
 
 > **Джерело:** Договір незалежного підрядника Keelmark, Додаток 14-B (Фінансові зобов'язання).

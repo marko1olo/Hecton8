@@ -38,9 +38,9 @@ namespace Hecton8.AI
             _collider.isTrigger = true;
             radius = GetSafeRadius();
             _collider.radius = radius;
-            
+
             // Set layer to POI if available (must be configured by project owner to match sensor's poiMask)
-            // gameObject.layer = LayerMask.NameToLayer("FaunaPOI"); 
+            // gameObject.layer = LayerMask.NameToLayer("FaunaPOI");
         }
 
 #if UNITY_EDITOR

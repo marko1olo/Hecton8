@@ -167,7 +167,8 @@ namespace Hecton8.Interaction
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 offset = shiftData.ShiftOffset;
-            if (!IsFiniteVector(offset))
+            float offsetSqrMagnitude = offset.sqrMagnitude;
+            if (!IsFiniteVector(offset) || !math.isfinite(offsetSqrMagnitude) || offsetSqrMagnitude <= 0.000001f)
                 return;
 
             _manualPlugPosition -= offset;

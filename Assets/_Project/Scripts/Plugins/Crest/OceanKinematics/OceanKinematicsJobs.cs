@@ -128,7 +128,7 @@ namespace Hecton8.Physics
             FluidSampleResultDTO result = default;
             if (!IsFinite(request.RequestedAUP))
             {
-                result.WaterHeight = SanitizeFinite(Tuning.OceanSurfaceY, 0f);
+                result.WaterHeight = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(Tuning.OceanSurfaceY);
                 result.SurfaceVelocity = float3.zero;
                 WriteResult(resultIndex, result);
                 return;
@@ -137,7 +137,7 @@ namespace Hecton8.Physics
             double3 rootAup = math.select(double3.zero, Tuning.OceanRootAUP, math.isfinite(Tuning.OceanRootAUP));
             double3 deltaAup = request.RequestedAUP - rootAup;
             float3 local = ToFiniteFloat3(deltaAup);
-            float surfaceY = SanitizeFinite(Tuning.OceanSurfaceY, 0f);
+            float surfaceY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(Tuning.OceanSurfaceY);
             float depthCull = math.max(0f, SanitizeFinite(Tuning.DepthCullingThresholdMeters, OceanKinematicsConstants.DefaultDepthCullMeters));
             if (surfaceY - local.y > depthCull)
             {
@@ -306,7 +306,7 @@ namespace Hecton8.Physics
                 return;
 
             FluidSampleResultDTO result = default;
-            float surfaceY = SanitizeFinite(Tuning.OceanSurfaceY, 0f);
+            float surfaceY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(Tuning.OceanSurfaceY);
             if (!IsFinite(request.RequestedAUP))
             {
                 result.WaterHeight = surfaceY;
@@ -589,7 +589,7 @@ namespace Hecton8.Physics
             if (!hit)
             {
                 result = default;
-                result.WaterHeight = SanitizeFinite(Tuning.OceanSurfaceY, 0f);
+                result.WaterHeight = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(Tuning.OceanSurfaceY);
                 result.SurfaceVelocity = float3.zero;
             }
 
@@ -721,7 +721,7 @@ namespace Hecton8.Physics
 
             int count = math.min(math.max(0, ResolveRequestCount()), Requests.Length);
             int resultCount = Results.IsCreated ? math.min(count, Results.Length) : 0;
-            float surfaceY = SanitizeFinite(Tuning.OceanSurfaceY, 0f);
+            float surfaceY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(Tuning.OceanSurfaceY);
             float depthCull = math.max(0f, SanitizeFinite(Tuning.DepthCullingThresholdMeters, OceanKinematicsConstants.DefaultDepthCullMeters));
             double3 rootAup = math.select(double3.zero, Tuning.OceanRootAUP, math.isfinite(Tuning.OceanRootAUP));
             int depthCulled = 0;

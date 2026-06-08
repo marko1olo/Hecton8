@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Quarantaine-hold: muffe lucht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Quarantaine-hold: muffe lucht
 
-NL LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+Quarantaine-Hold redt het lichaam en schort agency op. De speler is aan de druk ontsnapt, maar niet aan custody. Elke adem wordt gemeten terwijl het bewijs achter review-taal wacht.
 
 ## Scanner
 
-NL LOC HOLD: You are alive, sealed, and still not free.
+Lichaam geborgen. Getuige verzegeld. Luchtrantsoen actief.
 
 ## Terminal
 
-NL LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+QUARANTAINE-HOLD: contractant levend geborgen; luchtrantsoen actief; sample custody onopgelost; externe getuigenis uitgesteld tot contaminatiereview, claimant-uitdaging en Keelmark-verliesreview.
 
 ## Audio
 
-NL LOC HOLD: The hatch opens only to another closed hatch.
+Het luik opent naar een ander gesloten luik.
 
 ## Field Note
 
-NL LOC HOLD: This is the bureaucratic version of drowning.
+Dit is de administratieve vorm van verdrinken.
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/nl_NL. -->

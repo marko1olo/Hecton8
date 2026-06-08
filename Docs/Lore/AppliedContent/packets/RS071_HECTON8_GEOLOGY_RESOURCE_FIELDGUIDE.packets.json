@@ -28,138 +28,138 @@
       "localized": {
         "en_US": {
           "title": "Drowned Crust Strata Guide",
-          "scanner": "Flooded strata expose old industry, pressure-glass seams and unstable mineral bands. Scan fracture lines before cutting.",
-          "terminal": "FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "scanner": "Flooded strata expose old cut marks, pressure-glass seams and mineral bands that do not fail in the same direction twice.",
+          "field_note": "If a band rings hollow, do not trust the flat face. Mark the fracture, take the sample, leave the wall holding.",
+          "terminal": "FIELD GUIDE: HECTON-8's drowned crust is stacked settlement rock, collapsed ice memory, pressure glass and extraction scars under moving brine. Fracture lines outrank clean surfaces.",
           "audio": "The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "If a band rings hollow, do not trust the flat face. Mark the fracture, take the sample, and leave the wall holding."
+          "in_game_wiki": "The drowned crust is HECTON-8's readable history: old colony cuts, ice-collapse shelves, pressure-glass seams and mineral bands show where a route can hold, shear or fail under touch.",
+          "external_site": "Drowned Crust Strata Guide makes HECTON-8's seabed feel built and broken: terrain, salvage routes and mineral samples all come from the same layered pressure history."
         },
         "ru_RU": {
-          "title": "Fieldguide drowned crust strata",
-          "scanner": "Strata guide. Затопленная кора открывает старую индустрию, pressure glass и unstable mineral bands.",
-          "terminal": "FIELD GUIDE: drowned crust HECTON-8 - не плоское дно. Это folded settlement rock, collapsed ice history, pressure glass и extraction scars под moving brine.",
-          "audio": "Карта - не terrain. Это стопка затоплений.",
-          "in_game_wiki": "Drowned crust fieldguide помогает процедурной геологии чувствоваться authored: strata, shelves, pressure glass, scars and hazards.",
-          "external_site": "Геология HECTON-8 поддерживает реиграбельность: меняются strata и routes, сохраняются hard-sci-fi rules.",
-          "field_note": "Для geology codex и world labels."
+          "title": "Полевой справочник затопленных пластов коры",
+          "scanner": "Затопленные пласты открывают старые следы резки, швы pressure-glass и минеральные полосы, которые дважды не рушатся в одну сторону.",
+          "field_note": "Если слой звенит пусто, не верь ровной плоскости. Отметь трещину, возьми образец, оставь стену держаться.",
+          "terminal": "FIELD GUIDE: затопленная кора HECTON-8 - это сложенный поселковый камень, память обрушенного льда, pressure glass и extraction scars под движущейся brine. Линии трещин важнее чистых поверхностей.",
+          "audio": "Карта - не местность. Это стопка утоплений.",
+          "in_game_wiki": "Затопленная кора - читаемая история HECTON-8: старые колониальные резы, полки ледяного обвала, швы pressure-glass и минеральные полосы показывают, где маршрут удержится, срежется или сорвется от прикосновения.",
+          "external_site": "Полевой справочник затопленных пластов коры делает дно HECTON-8 построенным и сломанным одновременно: terrain, salvage routes и минеральные образцы происходят из одной слоистой истории давления."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "JA LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "JA LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "JA LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "JA LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "JA LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "JA LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "水没地殻層フィールドガイド",
+          "scanner": "水没した地層は古い切断痕、pressure-glass の縫い目、同じ方向へ二度は壊れない鉱物帯を露出する。",
+          "field_note": "帯が空洞の音を返すなら、平らな面を信用するな。亀裂を記録し、試料を取り、壁は支えたまま残せ。",
+          "terminal": "FIELD GUIDE: HECTON-8 の水没地殻は、積まれた居住岩、崩壊氷の記憶、pressure glass、動く brine 下の extraction scars でできている。清潔な面より亀裂線を優先。",
+          "audio": "地図は地形ではない。溺死の積層だ。",
+          "in_game_wiki": "水没地殻は HECTON-8 の読める歴史だ。古い植民地の切断、氷崩壊棚、pressure-glass の縫い目、鉱物帯が、どの経路が持ち、ずれ、触れただけで落ちるかを示す。",
+          "external_site": "水没地殻層フィールドガイドは HECTON-8 の海底を、建てられ壊された場所として感じさせる。terrain、salvage routes、鉱物試料はすべて同じ層状の圧力履歴から来る。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "ZH LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "ZH LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "ZH LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "ZH LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "ZH LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "ZH LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "淹没地壳层野外指南",
+          "scanner": "淹没地层暴露出旧切痕、pressure-glass 接缝，以及不会两次朝同一方向失效的矿物带。",
+          "field_note": "如果某条层带敲起来发空，不要相信平整表面。标出裂纹，取样，让墙继续撑着。",
+          "terminal": "FIELD GUIDE: HECTON-8 的淹没地壳是堆叠的定居岩、崩塌冰史、pressure glass 和移动 brine 下的 extraction scars。裂纹线优先于干净表面。",
+          "audio": "地图不是地形，而是一叠溺亡记录。",
+          "in_game_wiki": "淹没地壳是 HECTON-8 可阅读的历史：旧殖民切口、冰塌架、pressure-glass 接缝和矿物带会显示哪条路能撑住、会剪切，或会在触碰下失败。",
+          "external_site": "淹没地壳层野外指南让 HECTON-8 的海床像被建造又被打碎的地方：terrain、salvage routes 和矿物样本都来自同一段分层压力史。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "FR LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "FR LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "FR LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "FR LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "FR LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "FR LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "Guide des strates de croûte noyée",
+          "scanner": "Les strates noyées exposent anciennes marques de coupe, coutures de pressure-glass et bandes minérales qui ne cèdent jamais deux fois dans le même sens.",
+          "field_note": "Si une bande sonne creux, ne fais pas confiance à la face plane. Marque la fracture, prends l'échantillon, laisse le mur tenir.",
+          "terminal": "FIELD GUIDE : la croûte noyée de HECTON-8 est roche de colonie empilée, mémoire de glace effondrée, pressure glass et extraction scars sous brine mouvante. Les lignes de fracture priment sur les surfaces propres.",
+          "audio": "La carte n'est pas le terrain. C'est une pile de noyades.",
+          "in_game_wiki": "La croûte noyée est l'histoire lisible de HECTON-8 : coupes de colonie, corniches d'effondrement glaciaire, coutures de pressure-glass et bandes minérales indiquent où une route tiendra, cisaillera ou cèdera au toucher.",
+          "external_site": "Le Guide des strates de croûte noyée donne au fond marin de HECTON-8 une impression de construit brisé : terrain, salvage routes et échantillons minéraux viennent tous de la même histoire de pression stratifiée."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "ES LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "ES LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "ES LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "ES LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "ES LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "ES LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "Guía de estratos de corteza ahogada",
+          "scanner": "Los estratos inundados exponen viejas marcas de corte, costuras de pressure-glass y bandas minerales que no fallan dos veces en la misma dirección.",
+          "field_note": "Si una banda suena hueca, no confíes en la cara plana. Marca la fractura, toma la muestra y deja el muro sosteniéndose.",
+          "terminal": "FIELD GUIDE: la corteza ahogada de HECTON-8 es roca de asentamiento apilada, memoria de hielo colapsado, pressure glass y extraction scars bajo brine móvil. Las líneas de fractura pesan más que las superficies limpias.",
+          "audio": "El mapa no es terreno. Es una pila de ahogamientos.",
+          "in_game_wiki": "La corteza ahogada es la historia legible de HECTON-8: cortes viejos de colonia, repisas de colapso de hielo, costuras de pressure-glass y bandas minerales muestran dónde una ruta aguanta, se corta o falla al tocarla.",
+          "external_site": "La Guía de estratos de corteza ahogada hace que el lecho marino de HECTON-8 se sienta construido y roto: terrain, salvage routes y muestras minerales vienen de la misma historia de presión en capas."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "DE LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "DE LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "DE LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "DE LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "DE LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "DE LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "Feldführer für ertrunkene Krustenschichten",
+          "scanner": "Geflutete Schichten legen alte Schnittmarken, pressure-glass-Nähte und Mineralbänder frei, die nie zweimal in dieselbe Richtung versagen.",
+          "field_note": "Wenn ein Band hohl klingt, traue der flachen Fläche nicht. Markiere den Bruch, nimm die Probe, lass die Wand halten.",
+          "terminal": "FIELD GUIDE: HECTON-8s ertrunkene Kruste ist gestapelter Siedlungsfels, Erinnerung kollabierten Eises, pressure glass und extraction scars unter bewegter brine. Bruchlinien zählen mehr als saubere Flächen.",
+          "audio": "Die Karte ist kein Gelände. Sie ist ein Stapel Ertrinkungen.",
+          "in_game_wiki": "Die ertrunkene Kruste ist HECTON-8s lesbare Geschichte: alte Kolonieschnitte, Eiskollaps-Simse, pressure-glass-Nähte und Mineralbänder zeigen, wo eine Route hält, schert oder bei Berührung versagt.",
+          "external_site": "Der Feldführer für ertrunkene Krustenschichten lässt HECTON-8s Meeresboden gebaut und gebrochen wirken: terrain, salvage routes und Mineralproben stammen aus derselben geschichteten Druckgeschichte."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "PL LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "PL LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "PL LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "PL LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "PL LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "PL LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "Przewodnik po zatopionych warstwach skorupy",
+          "scanner": "Zalane warstwy odsłaniają stare ślady cięcia, szwy pressure-glass i pasma minerałów, które nie pękają dwa razy w tym samym kierunku.",
+          "field_note": "Jeśli pasmo brzmi pusto, nie ufaj płaskiej ścianie. Oznacz pęknięcie, pobierz próbkę, zostaw ścianę trzymającą.",
+          "terminal": "FIELD GUIDE: zatopiona skorupa HECTON-8 to złożona skała osadnicza, pamięć zawalonego lodu, pressure glass i extraction scars pod ruchomą brine. Linie pęknięć są ważniejsze niż czyste powierzchnie.",
+          "audio": "Mapa nie jest terenem. To stos utonięć.",
+          "in_game_wiki": "Zatopiona skorupa jest czytelną historią HECTON-8: stare cięcia kolonii, półki lodowego zawalenia, szwy pressure-glass i pasma minerałów pokazują, gdzie trasa utrzyma się, zetnie albo zawiedzie pod dotykiem.",
+          "external_site": "Przewodnik po zatopionych warstwach skorupy sprawia, że dno HECTON-8 czuje się zbudowane i złamane: terrain, salvage routes i próbki minerałów pochodzą z tej samej warstwowej historii ciśnienia."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "UK LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "UK LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "UK LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "UK LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "UK LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "UK LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "Польовий довідник затоплених пластів кори",
+          "scanner": "Затоплені пласти відкривають старі сліди різання, шви pressure-glass і мінеральні смуги, що двічі не ламаються в один бік.",
+          "field_note": "Якщо смуга дзвенить порожньо, не вір рівній площині. Познач тріщину, візьми зразок, залиш стіну триматися.",
+          "terminal": "FIELD GUIDE: затоплена кора HECTON-8 - це складений поселенський камінь, пам'ять обваленого льоду, pressure glass і extraction scars під рухомою brine. Лінії тріщин важливіші за чисті поверхні.",
+          "audio": "Карта - не місцевість. Це стос утоплень.",
+          "in_game_wiki": "Затоплена кора - читабельна історія HECTON-8: старі колоніальні різи, полиці льодового обвалу, шви pressure-glass і мінеральні смуги показують, де маршрут утримається, зріжеться або зірветься від дотику.",
+          "external_site": "Польовий довідник затоплених пластів кори робить дно HECTON-8 збудованим і зламаним водночас: terrain, salvage routes і мінеральні зразки походять з однієї шаруватої історії тиску."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "AR LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "AR LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "AR LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "AR LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "AR LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "AR LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "دليل طبقات القشرة الغارقة",
+          "scanner": "تكشف الطبقات المغمورة علامات قطع قديمة، ودرزات pressure-glass، وأحزمة معدنية لا تفشل مرتين في الاتجاه نفسه.",
+          "field_note": "إذا رن الحزام كأنه أجوف، فلا تثق بالوجه المسطح. علّم الكسر، خذ العينة، واترك الجدار ممسكا نفسه.",
+          "terminal": "FIELD GUIDE: قشرة HECTON-8 الغارقة صخر مستوطنة مكدس، وذاكرة جليد منهار، وpressure glass، وextraction scars تحت brine متحرك. خطوط الكسر أهم من الأسطح النظيفة.",
+          "audio": "الخريطة ليست أرضا. إنها كومة غرق.",
+          "in_game_wiki": "القشرة الغارقة هي تاريخ HECTON-8 المقروء: قطوع المستعمرة القديمة، ورفوف انهيار الجليد، ودرزات pressure-glass، والأحزمة المعدنية تكشف أين يصمد المسار أو ينقص أو يفشل عند اللمس.",
+          "external_site": "يجعل دليل طبقات القشرة الغارقة قاع HECTON-8 مبنيا ومكسورا في الوقت نفسه: terrain وsalvage routes والعينات المعدنية تأتي كلها من تاريخ الضغط الطبقي نفسه."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "ID LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "ID LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "ID LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "ID LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "ID LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "ID LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "Panduan Lapisan Kerak Tenggelam",
+          "scanner": "Lapisan banjir membuka bekas potong lama, sambungan pressure-glass, dan pita mineral yang tidak gagal dua kali ke arah yang sama.",
+          "field_note": "Jika sebuah pita berbunyi kosong, jangan percaya muka datarnya. Tandai retakan, ambil sampel, biarkan dinding tetap menahan.",
+          "terminal": "FIELD GUIDE: kerak tenggelam HECTON-8 adalah batu permukiman bertumpuk, ingatan es runtuh, pressure glass, dan extraction scars di bawah brine bergerak. Garis retakan lebih penting daripada permukaan bersih.",
+          "audio": "Peta bukan medan. Itu tumpukan tenggelam.",
+          "in_game_wiki": "Kerak tenggelam adalah sejarah HECTON-8 yang bisa dibaca: potongan koloni lama, rak runtuhan es, sambungan pressure-glass, dan pita mineral menunjukkan tempat rute bisa bertahan, tergeser, atau gagal saat disentuh.",
+          "external_site": "Panduan Lapisan Kerak Tenggelam membuat dasar laut HECTON-8 terasa dibangun sekaligus rusak: terrain, salvage routes, dan sampel mineral semua berasal dari riwayat tekanan berlapis yang sama."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "KO LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "KO LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "KO LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "KO LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "KO LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "KO LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "잠긴 지각 지층 안내서",
+          "scanner": "침수 지층은 오래된 절단 자국, pressure-glass 이음, 같은 방향으로 두 번 무너지지 않는 광물 띠를 드러낸다.",
+          "field_note": "띠가 빈 소리를 내면 평평한 면을 믿지 마라. 균열을 표시하고, 표본을 채취하고, 벽은 버티게 둬라.",
+          "terminal": "FIELD GUIDE: HECTON-8의 잠긴 지각은 쌓인 정착지 암석, 붕괴한 얼음의 기억, pressure glass, 움직이는 brine 아래의 extraction scars다. 깨끗한 표면보다 균열선이 우선한다.",
+          "audio": "지도는 지형이 아니다. 익사의 층이다.",
+          "in_game_wiki": "잠긴 지각은 HECTON-8의 읽을 수 있는 역사다. 오래된 식민지 절단, 얼음 붕괴 선반, pressure-glass 이음, 광물 띠가 어디서 항로가 버티고, 전단되고, 접촉만으로 실패하는지 보여준다.",
+          "external_site": "잠긴 지각 지층 안내서는 HECTON-8 해저를 만들어졌고 부서진 장소로 느끼게 한다. terrain, salvage routes, 광물 표본은 모두 같은 층상 압력 역사에서 나온다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "HE LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "HE LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "HE LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "HE LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "HE LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "HE LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "מדריך שכבות הקרום הטבוע",
+          "scanner": "שכבות מוצפות חושפות סימני חיתוך ישנים, תפרי pressure-glass ורצועות מינרלים שאינן קורסות פעמיים לאותו כיוון.",
+          "field_note": "אם רצועה מצלצלת חלול, אל תסמוך על הפנים השטוחות. סמן את השבר, קח את הדגימה, השאר את הקיר מחזיק.",
+          "terminal": "FIELD GUIDE: הקרום הטבוע של HECTON-8 הוא סלע התיישבות מוערם, זיכרון קרח שקרס, pressure glass ו-extraction scars תחת brine נע. קווי שבר חשובים ממשטחים נקיים.",
+          "audio": "המפה אינה שטח. היא ערימת טביעות.",
+          "in_game_wiki": "הקרום הטבוע הוא ההיסטוריה הקריאה של HECTON-8: חיתוכי מושבה ישנים, מדפי קריסת קרח, תפרי pressure-glass ורצועות מינרלים מראים היכן נתיב יחזיק, ייגזר או ייכשל ממגע.",
+          "external_site": "מדריך שכבות הקרום הטבוע גורם לקרקעית HECTON-8 להרגיש בנויה ושבורה: terrain, salvage routes ודגימות מינרלים באים מאותה היסטוריית לחץ שכבתית."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "PT LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "PT LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "PT LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "PT LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "PT LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "PT LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "Guia de Estratos da Crosta Afogada",
+          "scanner": "Estratos inundados expõem marcas de corte antigas, costuras de pressure-glass e faixas minerais que não falham duas vezes na mesma direção.",
+          "field_note": "Se uma faixa soa oca, não confie na face plana. Marque a fratura, pegue a amostra, deixe a parede segurando.",
+          "terminal": "FIELD GUIDE: a crosta afogada de HECTON-8 é rocha de assentamento empilhada, memória de gelo colapsado, pressure glass e extraction scars sob brine móvel. Linhas de fratura valem mais que superfícies limpas.",
+          "audio": "O mapa não é terreno. É uma pilha de afogamentos.",
+          "in_game_wiki": "A crosta afogada é a história legível de HECTON-8: cortes antigos da colônia, prateleiras de colapso de gelo, costuras de pressure-glass e faixas minerais mostram onde uma rota segura, cisalha ou falha ao toque.",
+          "external_site": "O Guia de Estratos da Crosta Afogada faz o fundo de HECTON-8 parecer construído e quebrado: terrain, salvage routes e amostras minerais vêm da mesma história de pressão em camadas."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Drowned Crust Strata Guide",
-          "scanner": "NL LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
-          "terminal": "NL LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
-          "audio": "NL LOC HOLD: The map is not terrain. It is a stack of drownings.",
-          "in_game_wiki": "NL LOC HOLD: The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
-          "external_site": "NL LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "NL LOC HOLD: Use for geology codex and procedural world labels."
+          "title": "Gids voor verdronken korstlagen",
+          "scanner": "Overstroomde lagen tonen oude snijsporen, pressure-glass-naden en mineraalbanden die niet twee keer dezelfde kant op falen.",
+          "field_note": "Als een band hol klinkt, vertrouw het vlakke gezicht niet. Markeer de breuk, neem het monster, laat de wand dragen.",
+          "terminal": "FIELD GUIDE: HECTON-8's verdronken korst is gestapelde nederzettingssteen, ingestort ijsgeheugen, pressure glass en extraction scars onder bewegende brine. Breuklijnen gaan boven schone oppervlakken.",
+          "audio": "De kaart is geen terrein. Het is een stapel verdrinkingen.",
+          "in_game_wiki": "De verdronken korst is HECTON-8's leesbare geschiedenis: oude koloniesneden, ijsinstortingsplanken, pressure-glass-naden en mineraalbanden tonen waar een route houdt, schuift of faalt bij aanraking.",
+          "external_site": "De Gids voor verdronken korstlagen laat HECTON-8's zeebodem gebouwd en gebroken voelen: terrain, salvage routes en mineraalmonsters komen allemaal uit dezelfde gelaagde drukgeschiedenis."
         }
       }
     },
@@ -183,138 +183,138 @@
       "localized": {
         "en_US": {
           "title": "Brine Canyon Density Ladder Guide",
-          "scanner": "Brine ladder detected: layered density, false floors, sonar bend. Follow edges; avoid blind drops.",
-          "terminal": "FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "scanner": "Brine ladder detected: layered density, false floor, sonar bend. Follow the edges; open water lies here.",
+          "field_note": "Use vane shadows like steps. A blank reading in brine is not empty space; it is the instrument losing the argument.",
+          "terminal": "FIELD GUIDE: brine canyons hide pressure shelves, current ledges, resource pockets and scanner false positives. Hull rating and density transition decide which ledge is a route and which is a drop.",
           "audio": "A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "Use the vane shadows like steps. Open water here is not empty; it is a bad reading waiting to happen."
+          "in_game_wiki": "Brine canyons make depth physical. They teach density layers, hull limits, pressure failures and resource pockets before the lower routes open.",
+          "external_site": "Brine Canyon Density Ladder Guide treats HECTON-8's trenches as engineering geography: the path down is built from density, not scenery."
         },
         "ru_RU": {
-          "title": "Brine canyon density ladder guide",
-          "scanner": "Обнаружен brine canyon ladder. Density layers превращают depth в route planning.",
-          "terminal": "FIELD GUIDE: brine canyons - не просто visual depth. Они прячут pressure boundaries, current shelves, resource pockets и scanner false positives.",
-          "audio": "Каньон - лестница, если hull может платить за каждую ступень.",
-          "in_game_wiki": "Brine canyons делают progression физической: density layers, hull limits, pressure failures and pockets.",
-          "external_site": "Depth на HECTON-8 - инженерная география. Brine canyons - route ladders.",
-          "field_note": "Для scanner tutorials и resource route articles."
+          "title": "Полевой справочник плотностной лестницы brine-каньона",
+          "scanner": "Обнаружена brine ladder: слоистая плотность, ложное дно, изгиб сонара. Иди по краям; открытая вода здесь лжет.",
+          "field_note": "Используй тени vane как ступени. Пустое чтение в brine - не пустота, а прибор, проигрывающий спор.",
+          "terminal": "FIELD GUIDE: brine-каньоны прячут pressure shelves, current ledges, resource pockets и ложные срабатывания scanner. Hull rating и density transition решают, какая полка является маршрутом, а какая - падением.",
+          "audio": "Каньон - это лестница, если твой корпус может платить за каждую ступень.",
+          "in_game_wiki": "Brine-каньоны делают глубину физической. Они учат слоям плотности, пределам корпуса, отказам давления и resource pockets до открытия нижних маршрутов.",
+          "external_site": "Полевой справочник плотностной лестницы brine-каньона трактует впадины HECTON-8 как инженерную географию: путь вниз построен из плотности, а не из декора."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "JA LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "JA LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "JA LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "JA LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "JA LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "JA LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "塩水峡谷密度梯子ガイド",
+          "scanner": "brine ladder 検出: 層状密度、偽の床、ソナー屈曲。縁を辿れ。ここでは開けた水が嘘をつく。",
+          "field_note": "vane の影を階段のように使え。brine 中の空白読みは空間ではない。計器が議論に負けているだけだ。",
+          "terminal": "FIELD GUIDE: brine 峡谷は pressure shelves、current ledges、resource pockets、scanner false positives を隠す。Hull rating と density transition が、どの棚が航路でどれが落下かを決める。",
+          "audio": "船殻が各段の代金を払えるなら、峡谷は階段になる。",
+          "in_game_wiki": "brine 峡谷は深度を物理にする。下層航路が開く前に、密度層、船殻限界、圧力故障、resource pockets を教える。",
+          "external_site": "塩水峡谷密度梯子ガイドは HECTON-8 の溝を工学地理として扱う。下り道は風景ではなく密度でできている。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "ZH LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "ZH LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "ZH LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "ZH LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "ZH LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "ZH LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "盐水峡谷密度梯指南",
+          "scanner": "检测到 brine ladder：分层密度、假地板、声呐弯折。沿边走；这里的开阔水域会撒谎。",
+          "field_note": "把 vane 阴影当台阶用。brine 中的空白读数不是空处，而是仪器输掉了争论。",
+          "terminal": "FIELD GUIDE: brine 峡谷隐藏 pressure shelves、current ledges、resource pockets 和 scanner false positives。Hull rating 与 density transition 决定哪条岩架是路，哪条是坠落。",
+          "audio": "如果你的船壳能为每一级付费，峡谷就是楼梯。",
+          "in_game_wiki": "brine 峡谷让深度变成物理问题。它们在低层航路开启前教会密度层、船壳极限、压力故障和 resource pockets。",
+          "external_site": "盐水峡谷密度梯指南把 HECTON-8 的海沟当作工程地理：向下的路由密度构成，而不是由风景构成。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "FR LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "FR LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "FR LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "FR LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "FR LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "FR LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "Guide d'échelle de densité des canyons de saumure",
+          "scanner": "Brine ladder détectée : densité stratifiée, faux plancher, courbure sonar. Suis les bords ; l'eau ouverte ment ici.",
+          "field_note": "Utilise les ombres de vane comme des marches. Une lecture blanche dans la brine n'est pas du vide ; c'est l'instrument qui perd la dispute.",
+          "terminal": "FIELD GUIDE : les canyons de brine cachent pressure shelves, current ledges, resource pockets et scanner false positives. Hull rating et density transition décident quelle corniche est une route et laquelle est une chute.",
+          "audio": "Un canyon est un escalier si ta coque peut payer chaque marche.",
+          "in_game_wiki": "Les canyons de brine rendent la profondeur physique. Ils enseignent couches de densité, limites de coque, défaillances de pression et resource pockets avant l'ouverture des routes basses.",
+          "external_site": "Le Guide d'échelle de densité des canyons de saumure traite les tranchées de HECTON-8 comme géographie d'ingénierie : le chemin vers le bas est fait de densité, pas de décor."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "ES LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "ES LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "ES LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "ES LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "ES LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "ES LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "Guía de escalera de densidad de cañones de salmuera",
+          "scanner": "Brine ladder detectada: densidad en capas, falso suelo, curvatura de sonar. Sigue los bordes; el agua abierta miente aquí.",
+          "field_note": "Usa las sombras de vane como escalones. Una lectura vacía en brine no es espacio vacío; es el instrumento perdiendo la discusión.",
+          "terminal": "FIELD GUIDE: los cañones de brine esconden pressure shelves, current ledges, resource pockets y scanner false positives. Hull rating y density transition deciden qué cornisa es ruta y cuál es caída.",
+          "audio": "Un cañón es una escalera si tu casco puede pagar cada peldaño.",
+          "in_game_wiki": "Los cañones de brine vuelven física la profundidad. Enseñan capas de densidad, límites del casco, fallos de presión y resource pockets antes de abrir rutas inferiores.",
+          "external_site": "La Guía de escalera de densidad de cañones de salmuera trata las fosas de HECTON-8 como geografía de ingeniería: el camino hacia abajo está hecho de densidad, no de paisaje."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "DE LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "DE LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "DE LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "DE LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "DE LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "DE LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "Feldführer zur Dichteleiter der Soleschluchten",
+          "scanner": "Brine ladder erkannt: geschichtete Dichte, falscher Boden, Sonarbiegung. Folge den Kanten; offenes Wasser lügt hier.",
+          "field_note": "Nutze vane-Schatten wie Stufen. Ein leerer Messwert in brine ist kein leerer Raum; es ist das Instrument, das den Streit verliert.",
+          "terminal": "FIELD GUIDE: brine-Schluchten verbergen pressure shelves, current ledges, resource pockets und scanner false positives. Hull rating und density transition entscheiden, welche Leiste Route ist und welche Sturz.",
+          "audio": "Eine Schlucht ist eine Treppe, wenn dein Rumpf jede Stufe bezahlen kann.",
+          "in_game_wiki": "Brine-Schluchten machen Tiefe physisch. Sie lehren Dichteschichten, Rumpfgrenzen, Druckversagen und resource pockets, bevor tiefere Routen öffnen.",
+          "external_site": "Der Feldführer zur Dichteleiter der Soleschluchten behandelt HECTON-8s Gräben als Ingenieurgeografie: Der Weg nach unten besteht aus Dichte, nicht aus Kulisse."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "PL LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "PL LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "PL LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "PL LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "PL LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "PL LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "Przewodnik po drabinie gęstości kanionu solanki",
+          "scanner": "Wykryto brine ladder: warstwowa gęstość, fałszywe dno, zgięcie sonaru. Idź krawędziami; otwarta woda tutaj kłamie.",
+          "field_note": "Używaj cieni vane jak stopni. Pusty odczyt w brine nie jest pustą przestrzenią; to instrument przegrywa spór.",
+          "terminal": "FIELD GUIDE: kaniony brine ukrywają pressure shelves, current ledges, resource pockets i scanner false positives. Hull rating i density transition decydują, która półka jest trasą, a która spadkiem.",
+          "audio": "Kanion jest schodami, jeśli twój kadłub może zapłacić za każdy stopień.",
+          "in_game_wiki": "Kaniony brine czynią głębokość fizyczną. Uczą warstw gęstości, limitów kadłuba, awarii ciśnienia i resource pockets, zanim otworzą się niższe trasy.",
+          "external_site": "Przewodnik po drabinie gęstości kanionu solanki traktuje rowy HECTON-8 jak geografię inżynieryjną: droga w dół jest zrobiona z gęstości, nie z dekoracji."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "UK LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "UK LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "UK LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "UK LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "UK LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "UK LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "Польовий довідник щільнісної драбини brine-каньйону",
+          "scanner": "Виявлено brine ladder: шарувата щільність, фальшиве дно, вигин сонара. Іди краями; відкрита вода тут бреше.",
+          "field_note": "Використовуй тіні vane як сходи. Порожнє читання в brine - не порожнеча, а прилад, що програє суперечку.",
+          "terminal": "FIELD GUIDE: brine-каньйони ховають pressure shelves, current ledges, resource pockets і scanner false positives. Hull rating і density transition вирішують, яка полиця є маршрутом, а яка - падінням.",
+          "audio": "Каньйон - це сходи, якщо твій корпус може заплатити за кожну сходинку.",
+          "in_game_wiki": "Brine-каньйони роблять глибину фізичною. Вони навчають шарам щільності, межам корпусу, відмовам тиску й resource pockets до відкриття нижчих маршрутів.",
+          "external_site": "Польовий довідник щільнісної драбини brine-каньйону трактує западини HECTON-8 як інженерну географію: шлях униз побудований із щільності, а не декору."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "AR LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "AR LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "AR LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "AR LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "AR LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "AR LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "دليل سلم كثافة وادي الملح",
+          "scanner": "تم اكتشاف brine ladder: كثافة طبقية، قاع كاذب، وانحناء سونار. اتبع الحواف؛ فالماء المفتوح يكذب هنا.",
+          "field_note": "استخدم ظلال vane كدرجات. القراءة الفارغة في brine ليست فراغا؛ إنها الآلة تخسر الجدل.",
+          "terminal": "FIELD GUIDE: تخفي أودية brine رفوف ضغط، وحواف تيار، وresource pockets، وscanner false positives. يقرر hull rating وdensity transition أي رف طريق وأي رف سقوط.",
+          "audio": "الوادي درج إذا كان هيكلك يستطيع دفع ثمن كل خطوة.",
+          "in_game_wiki": "تجعل أودية brine العمق ماديا. تعلم طبقات الكثافة، وحدود الهيكل، وفشل الضغط، وresource pockets قبل فتح المسارات الأدنى.",
+          "external_site": "يعامل دليل سلم كثافة وادي الملح خنادق HECTON-8 كجغرافيا هندسية: الطريق إلى الأسفل مصنوع من الكثافة لا من المنظر."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "ID LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "ID LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "ID LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "ID LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "ID LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "ID LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "Panduan Tangga Densitas Ngarai Brine",
+          "scanner": "Brine ladder terdeteksi: densitas berlapis, lantai palsu, lengkung sonar. Ikuti tepi; air terbuka berbohong di sini.",
+          "field_note": "Gunakan bayangan vane seperti anak tangga. Bacaan kosong dalam brine bukan ruang kosong; itu instrumen kalah berdebat.",
+          "terminal": "FIELD GUIDE: ngarai brine menyembunyikan pressure shelves, current ledges, resource pockets, dan scanner false positives. Hull rating dan density transition menentukan bibir mana rute dan mana jatuh.",
+          "audio": "Ngarai adalah tangga jika lambungmu bisa membayar setiap anak tangga.",
+          "in_game_wiki": "Ngarai brine membuat kedalaman menjadi fisik. Mereka mengajarkan lapisan densitas, batas lambung, kegagalan tekanan, dan resource pockets sebelum rute bawah terbuka.",
+          "external_site": "Panduan Tangga Densitas Ngarai Brine memperlakukan parit HECTON-8 sebagai geografi rekayasa: jalan turun dibuat dari densitas, bukan pemandangan."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "KO LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "KO LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "KO LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "KO LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "KO LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "KO LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "염수 협곡 밀도 사다리 안내서",
+          "scanner": "brine ladder 감지: 층상 밀도, 가짜 바닥, 소나 굴절. 가장자리를 따라가라. 열린 물은 여기서 거짓말한다.",
+          "field_note": "vane 그림자를 계단처럼 써라. brine 속 빈 판독은 빈 공간이 아니다. 계기가 논쟁에서 지고 있는 것이다.",
+          "terminal": "FIELD GUIDE: brine 협곡은 pressure shelves, current ledges, resource pockets, scanner false positives를 숨긴다. Hull rating과 density transition이 어떤 선반이 길이고 어떤 선반이 추락인지 결정한다.",
+          "audio": "네 선체가 각 단을 지불할 수 있다면 협곡은 계단이다.",
+          "in_game_wiki": "brine 협곡은 깊이를 물리적으로 만든다. 낮은 항로가 열리기 전에 밀도층, 선체 한계, 압력 실패, resource pockets를 가르친다.",
+          "external_site": "염수 협곡 밀도 사다리 안내서는 HECTON-8의 해구를 공학 지리로 다룬다. 아래로 가는 길은 풍경이 아니라 밀도로 만들어진다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "HE LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "HE LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "HE LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "HE LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "HE LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "HE LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "מדריך סולם צפיפות של קניון תמלחת",
+          "scanner": "זוהה brine ladder: צפיפות שכבתית, רצפה כוזבת, כיפוף סונאר. עקוב אחרי הקצוות; מים פתוחים משקרים כאן.",
+          "field_note": "השתמש בצללי vane כמו מדרגות. קריאה ריקה ב-brine אינה חלל ריק; זה המכשיר שמפסיד בוויכוח.",
+          "terminal": "FIELD GUIDE: קניוני brine מסתירים pressure shelves, current ledges, resource pockets ו-scanner false positives. Hull rating ו-density transition מחליטים איזו מדרגה היא נתיב ואיזו נפילה.",
+          "audio": "קניון הוא גרם מדרגות אם הגוף שלך יכול לשלם על כל צעד.",
+          "in_game_wiki": "קניוני brine הופכים עומק לפיזי. הם מלמדים שכבות צפיפות, גבולות גוף, כשלי לחץ ו-resource pockets לפני פתיחת הנתיבים הנמוכים.",
+          "external_site": "מדריך סולם צפיפות של קניון תמלחת מתייחס לתעלות HECTON-8 כגיאוגרפיה הנדסית: הדרך למטה עשויה מצפיפות, לא מנוף."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "PT LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "PT LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "PT LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "PT LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "PT LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "PT LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "Guia de Escada de Densidade do Cânion de Salmoura",
+          "scanner": "Brine ladder detectada: densidade em camadas, falso piso, dobra de sonar. Siga as bordas; água aberta mente aqui.",
+          "field_note": "Use sombras de vane como degraus. Uma leitura vazia em brine não é espaço vazio; é o instrumento perdendo a discussão.",
+          "terminal": "FIELD GUIDE: cânions de brine escondem pressure shelves, current ledges, resource pockets e scanner false positives. Hull rating e density transition decidem qual saliência é rota e qual é queda.",
+          "audio": "Um cânion é uma escada se seu casco puder pagar por cada degrau.",
+          "in_game_wiki": "Cânions de brine tornam profundidade física. Eles ensinam camadas de densidade, limites de casco, falhas de pressão e resource pockets antes de rotas inferiores abrirem.",
+          "external_site": "O Guia de Escada de Densidade do Cânion de Salmoura trata as trincheiras de HECTON-8 como geografia de engenharia: o caminho para baixo é feito de densidade, não de cenário."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Brine Canyon Density Ladder Guide",
-          "scanner": "NL LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.",
-          "terminal": "NL LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
-          "audio": "NL LOC HOLD: A canyon is a staircase if your hull can pay for each step.",
-          "in_game_wiki": "NL LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
-          "external_site": "NL LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "NL LOC HOLD: Use for scanner tutorials and resource route articles."
+          "title": "Gids voor dichtheidsladder van pekelkloof",
+          "scanner": "Brine ladder gedetecteerd: gelaagde dichtheid, valse vloer, sonarbuiging. Volg de randen; open water liegt hier.",
+          "field_note": "Gebruik vane-schaduwen als treden. Een lege meting in brine is geen lege ruimte; het instrument verliest het argument.",
+          "terminal": "FIELD GUIDE: brine-kloven verbergen pressure shelves, current ledges, resource pockets en scanner false positives. Hull rating en density transition bepalen welke richel route is en welke val.",
+          "audio": "Een kloof is een trap als je romp voor elke trede kan betalen.",
+          "in_game_wiki": "Brine-kloven maken diepte fysiek. Ze leren dichtheidslagen, romplimieten, drukfalen en resource pockets voordat lagere routes openen.",
+          "external_site": "De Gids voor dichtheidsladder van pekelkloof behandelt HECTON-8's sleuven als technische geografie: de weg omlaag is gemaakt van dichtheid, niet van decor."
         }
       }
     },
@@ -338,138 +338,138 @@
       "localized": {
         "en_US": {
           "title": "Vent Forge Field Process Guide",
-          "scanner": "Vent-forge chemistry active. Sample quality depends on pressure history, heat pulse and slow cooling.",
-          "terminal": "FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "scanner": "Vent-forge chemistry active. Quality follows pressure history, heat pulse and slow cooling, not the shine of the sample.",
+          "field_note": "Do not lift a fresh lot straight into cold water. Let the vent finish the anneal or the shell will craze.",
+          "terminal": "FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat, brine and pressure matters more than its name.",
           "audio": "The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "Do not lift a fresh lot straight into cold water. Let the vent finish the anneal or the shell will craze."
+          "in_game_wiki": "Vent forges are natural-industrial reactors. They turn heat, brine and pressure history into useful ceramics, sealants and charge materials while keeping each sample tied to its thermal path.",
+          "external_site": "Vent Forge Field Process Guide ties resource value to field handling: what matters is not only what is found, but how pressure and cooling let it survive recovery."
         },
         "ru_RU": {
-          "title": "Vent forge field process guide",
-          "scanner": "Vent-forge chemistry активна. Resource quality зависит от pressure history и cooling path.",
-          "terminal": "FIELD GUIDE: vent forges готовят sulfides, noble-gas pockets, ceramics and sealant precursors. Путь sample через heat and pressure важнее label.",
-          "audio": "Vent сделал не ore. Он сделал процесс, который ты прервал.",
-          "in_game_wiki": "Vent forges делают ресурсы научными: heat, brine, cooling paths и pressure history без magic ore.",
-          "external_site": "Resource collection HECTON-8 основан на vents, brines, ceramics, sealants и pressure history.",
-          "field_note": "Для resource taxonomy и crafting-table handoff."
+          "title": "Полевой справочник vent-forge процесса",
+          "scanner": "Vent-forge chemistry активна. Качество зависит от pressure history, heat pulse и медленного охлаждения, а не от блеска образца.",
+          "field_note": "Не вытаскивай свежую партию прямо в холодную воду. Дай vent закончить anneal, иначе shell пойдет сеткой трещин.",
+          "terminal": "FIELD GUIDE: vent forges варят sulfides, noble-gas pockets, ceramics и sealant precursors. Путь образца через heat, brine и pressure важнее его названия.",
+          "audio": "Vent не сделал руду. Он сделал процесс, который ты прервал.",
+          "in_game_wiki": "Vent forges - природно-индустриальные реакторы. Они превращают тепло, brine и pressure history в полезную ceramics, sealants и charge materials, оставляя каждый образец привязанным к его тепловому пути.",
+          "external_site": "Полевой справочник vent-forge процесса связывает ценность ресурса с обращением в поле: важно не только то, что найдено, но и то, как pressure и cooling позволят ему пережить recovery."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "JA LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "JA LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "JA LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "JA LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "JA LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "JA LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "ベントフォージ野外工程ガイド",
+          "scanner": "vent-forge chemistry 活性。品質は試料の輝きではなく、pressure history、heat pulse、slow cooling に従う。",
+          "field_note": "新しいロットをそのまま冷水へ持ち上げるな。vent に anneal を終えさせろ。そうしなければ shell はひび割れる。",
+          "terminal": "FIELD GUIDE: vent forges は sulfides、noble-gas pockets、ceramics、sealant precursors を煮る。試料の名前より、heat、brine、pressure を通った経路が重要だ。",
+          "audio": "vent は鉱石を作らなかった。君が中断した工程を作った。",
+          "in_game_wiki": "vent forges は自然産業炉だ。熱、brine、pressure history を有用な ceramics、sealants、charge materials へ変え、すべての試料をその熱経路に結びつけたままにする。",
+          "external_site": "ベントフォージ野外工程ガイドは資源価値を現場処理に結びつける。重要なのは何を見つけたかだけではなく、pressure と cooling がそれを recovery まで生かすかだ。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "ZH LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "ZH LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "ZH LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "ZH LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "ZH LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "ZH LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "热泉锻炉野外流程指南",
+          "scanner": "vent-forge chemistry 活跃。质量取决于 pressure history、heat pulse 和缓慢冷却，而不是样本光泽。",
+          "field_note": "不要把新鲜批次直接提进冷水。让 vent 完成 anneal，否则 shell 会龟裂。",
+          "terminal": "FIELD GUIDE: vent forges 会烹煮 sulfides、noble-gas pockets、ceramics 和 sealant precursors。样本穿过 heat、brine 和 pressure 的路径比名称更重要。",
+          "audio": "vent 没有制造矿石。它制造了一个被你打断的流程。",
+          "in_game_wiki": "vent forges 是自然-工业反应器。它们把热、brine 和 pressure history 变成有用的 ceramics、sealants 和 charge materials，同时让每个样本都保留自己的热路径。",
+          "external_site": "热泉锻炉野外流程指南把资源价值绑定到现场处理：重要的不只是发现了什么，还有 pressure 与 cooling 如何让它熬过 recovery。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "FR LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "FR LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "FR LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "FR LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "FR LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "FR LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "Guide de procédé de terrain des forges-vents",
+          "scanner": "Vent-forge chemistry active. La qualité suit pressure history, heat pulse et refroidissement lent, pas l'éclat de l'échantillon.",
+          "field_note": "Ne remonte pas un lot frais directement dans l'eau froide. Laisse le vent terminer l'anneal ou la coque se craquellera.",
+          "terminal": "FIELD GUIDE : les vent forges cuisent sulfides, noble-gas pockets, ceramics et sealant precursors. Le trajet d'un échantillon à travers heat, brine et pressure compte plus que son nom.",
+          "audio": "Le vent n'a pas fait du minerai. Il a fait un procédé que tu as interrompu.",
+          "in_game_wiki": "Les vent forges sont des réacteurs naturels-industriels. Ils transforment chaleur, brine et pressure history en ceramics, sealants et charge materials utiles tout en liant chaque échantillon à son trajet thermique.",
+          "external_site": "Le Guide de procédé de terrain des forges-vents lie la valeur de ressource à la manipulation de terrain : ce qui compte n'est pas seulement ce qu'on trouve, mais comment pressure et cooling lui permettent de survivre à la recovery."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "ES LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "ES LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "ES LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "ES LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "ES LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "ES LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "Guía de proceso de campo de forja de ventilas",
+          "scanner": "Vent-forge chemistry activa. La calidad sigue pressure history, heat pulse y enfriamiento lento, no el brillo de la muestra.",
+          "field_note": "No levantes un lote fresco directo al agua fría. Deja que la ventila termine el anneal o la concha se cuarteará.",
+          "terminal": "FIELD GUIDE: las vent forges cocinan sulfides, noble-gas pockets, ceramics y sealant precursors. La ruta de una muestra por heat, brine y pressure importa más que su nombre.",
+          "audio": "La ventila no hizo mena. Hizo un proceso que interrumpiste.",
+          "in_game_wiki": "Las vent forges son reactores naturales-industriales. Convierten calor, brine y pressure history en ceramics, sealants y charge materials útiles mientras mantienen cada muestra ligada a su ruta térmica.",
+          "external_site": "La Guía de proceso de campo de forja de ventilas ata el valor del recurso al manejo en campo: importa no solo qué se encontró, sino cómo pressure y cooling le permiten sobrevivir a recovery."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "DE LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "DE LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "DE LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "DE LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "DE LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "DE LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "Feldführer zum Vent-Forge-Prozess",
+          "scanner": "Vent-forge chemistry aktiv. Qualität folgt pressure history, heat pulse und langsamer Kühlung, nicht dem Glanz der Probe.",
+          "field_note": "Heb eine frische Charge nicht direkt in kaltes Wasser. Lass den Vent das anneal beenden, sonst reißt die shell.",
+          "terminal": "FIELD GUIDE: vent forges kochen sulfides, noble-gas pockets, ceramics und sealant precursors. Der Weg einer Probe durch heat, brine und pressure zählt mehr als ihr Name.",
+          "audio": "Der Vent machte kein Erz. Er machte einen Prozess, den du unterbrochen hast.",
+          "in_game_wiki": "Vent forges sind natürlich-industrielle Reaktoren. Sie verwandeln Hitze, brine und pressure history in nützliche ceramics, sealants und charge materials und binden jede Probe an ihren thermischen Weg.",
+          "external_site": "Der Feldführer zum Vent-Forge-Prozess bindet Ressourcenwert an Feldbehandlung: Wichtig ist nicht nur, was gefunden wird, sondern wie pressure und cooling es recovery überleben lassen."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "PL LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "PL LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "PL LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "PL LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "PL LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "PL LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "Przewodnik terenowy procesu vent-forge",
+          "scanner": "Vent-forge chemistry aktywna. Jakość zależy od pressure history, heat pulse i powolnego chłodzenia, nie od połysku próbki.",
+          "field_note": "Nie wynoś świeżej partii prosto do zimnej wody. Pozwól vent dokończyć anneal, albo shell spęka.",
+          "terminal": "FIELD GUIDE: vent forges gotują sulfides, noble-gas pockets, ceramics i sealant precursors. Droga próbki przez heat, brine i pressure ważniejsza jest niż jej nazwa.",
+          "audio": "Vent nie zrobił rudy. Zrobił proces, który przerwałeś.",
+          "in_game_wiki": "Vent forges są naturalno-przemysłowymi reaktorami. Zmieniają ciepło, brine i pressure history w użyteczne ceramics, sealants i charge materials, wiążąc każdą próbkę z jej drogą termiczną.",
+          "external_site": "Przewodnik terenowy procesu vent-forge wiąże wartość zasobu z obsługą w terenie: ważne jest nie tylko, co znaleziono, lecz jak pressure i cooling pozwolą temu przetrwać recovery."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "UK LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "UK LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "UK LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "UK LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "UK LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "UK LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "Польовий довідник процесу vent-forge",
+          "scanner": "Vent-forge chemistry активна. Якість залежить від pressure history, heat pulse і повільного охолодження, а не від блиску зразка.",
+          "field_note": "Не піднімай свіжу партію просто в холодну воду. Дай vent завершити anneal, інакше shell піде тріщинами.",
+          "terminal": "FIELD GUIDE: vent forges варять sulfides, noble-gas pockets, ceramics і sealant precursors. Шлях зразка через heat, brine і pressure важливіший за його назву.",
+          "audio": "Vent не зробив руду. Він зробив процес, який ти перервав.",
+          "in_game_wiki": "Vent forges - природно-індустріальні реактори. Вони перетворюють тепло, brine і pressure history на корисні ceramics, sealants і charge materials, залишаючи кожен зразок прив'язаним до його теплового шляху.",
+          "external_site": "Польовий довідник процесу vent-forge пов'язує цінність ресурсу з польовим поводженням: важливо не лише те, що знайдено, а й те, як pressure і cooling дадуть йому пережити recovery."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "AR LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "AR LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "AR LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "AR LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "AR LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "AR LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "دليل عملية حقل forge-vent",
+          "scanner": "كيمياء vent-forge نشطة. تتبع الجودة pressure history وheat pulse والتبريد البطيء، لا لمعان العينة.",
+          "field_note": "لا ترفع دفعة جديدة مباشرة إلى ماء بارد. دع vent ينهي anneal وإلا ستتشقق shell.",
+          "terminal": "FIELD GUIDE: تطهو vent forges الـ sulfides وnoble-gas pockets وceramics وsealant precursors. مسار العينة عبر heat وbrine وpressure أهم من اسمها.",
+          "audio": "لم يصنع vent خاما. صنع عملية قطعتها أنت.",
+          "in_game_wiki": "Vent forges مفاعلات طبيعية-صناعية. تحول الحرارة وbrine وpressure history إلى ceramics وsealants وcharge materials نافعة مع إبقاء كل عينة مرتبطة بمسارها الحراري.",
+          "external_site": "يربط دليل عملية حقل forge-vent قيمة المورد بطريقة التعامل معه في الميدان: المهم ليس فقط ما عثر عليه، بل كيف تسمح له pressure وcooling بالنجاة حتى recovery."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "ID LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "ID LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "ID LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "ID LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "ID LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "ID LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "Panduan Proses Lapangan Vent-Forge",
+          "scanner": "Vent-forge chemistry aktif. Kualitas mengikuti pressure history, heat pulse, dan pendinginan lambat, bukan kilau sampel.",
+          "field_note": "Jangan angkat lot segar langsung ke air dingin. Biarkan vent menyelesaikan anneal atau shell akan retak halus.",
+          "terminal": "FIELD GUIDE: vent forges memasak sulfides, noble-gas pockets, ceramics, dan sealant precursors. Rute sampel melalui heat, brine, dan pressure lebih penting daripada namanya.",
+          "audio": "Vent tidak membuat bijih. Ia membuat proses yang kau sela.",
+          "in_game_wiki": "Vent forges adalah reaktor alami-industri. Mereka mengubah panas, brine, dan pressure history menjadi ceramics, sealants, dan charge materials berguna sambil menjaga setiap sampel terikat pada jalur termalnya.",
+          "external_site": "Panduan Proses Lapangan Vent-Forge mengikat nilai sumber daya pada penanganan lapangan: yang penting bukan hanya apa yang ditemukan, tetapi bagaimana pressure dan cooling membuatnya selamat sampai recovery."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "KO LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "KO LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "KO LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "KO LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "KO LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "KO LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "벤트 포지 현장 공정 안내서",
+          "scanner": "vent-forge chemistry 활성. 품질은 표본의 광택이 아니라 pressure history, heat pulse, slow cooling을 따른다.",
+          "field_note": "새 lot를 곧장 찬물로 올리지 마라. vent가 anneal을 끝내게 둬라. 그러지 않으면 shell이 잔금 간다.",
+          "terminal": "FIELD GUIDE: vent forges는 sulfides, noble-gas pockets, ceramics, sealant precursors를 익힌다. 표본이 heat, brine, pressure를 지난 경로가 이름보다 중요하다.",
+          "audio": "vent는 광석을 만든 것이 아니다. 네가 중단한 공정을 만들었다.",
+          "in_game_wiki": "vent forges는 자연-산업 반응로다. 열, brine, pressure history를 유용한 ceramics, sealants, charge materials로 바꾸며, 각 표본을 자신의 열 경로에 묶어 둔다.",
+          "external_site": "벤트 포지 현장 공정 안내서는 자원 가치를 현장 취급과 묶는다. 중요한 것은 무엇을 찾았는지만이 아니라 pressure와 cooling이 그것을 recovery까지 버티게 하는 방식이다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "HE LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "HE LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "HE LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "HE LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "HE LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "HE LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "מדריך תהליך שטח של vent-forge",
+          "scanner": "כימיית vent-forge פעילה. האיכות הולכת אחרי pressure history, heat pulse וקירור איטי, לא אחרי ברק הדגימה.",
+          "field_note": "אל תרים מנה טרייה ישר למים קרים. תן ל-vent לסיים anneal או שה-shell ייסדק.",
+          "terminal": "FIELD GUIDE: vent forges מבשלים sulfides, noble-gas pockets, ceramics ו-sealant precursors. המסלול של דגימה דרך heat, brine ו-pressure חשוב משמה.",
+          "audio": "ה-vent לא יצר עפרה. הוא יצר תהליך שאתה קטעת.",
+          "in_game_wiki": "Vent forges הם כורים טבעיים-תעשייתיים. הם הופכים חום, brine ו-pressure history ל-ceramics, sealants ו-charge materials שימושיים תוך שמירת כל דגימה קשורה למסלולה התרמי.",
+          "external_site": "מדריך תהליך השטח של vent-forge קושר ערך משאב לטיפול בשדה: חשוב לא רק מה נמצא, אלא איך pressure ו-cooling מאפשרים לו לשרוד recovery."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "PT LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "PT LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "PT LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "PT LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "PT LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "PT LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "Guia de Processo de Campo de Forja de Vent",
+          "scanner": "Vent-forge chemistry ativa. Qualidade segue pressure history, heat pulse e resfriamento lento, não o brilho da amostra.",
+          "field_note": "Não levante um lote fresco direto para água fria. Deixe o vent terminar o anneal ou a shell vai craquelar.",
+          "terminal": "FIELD GUIDE: vent forges cozinham sulfides, noble-gas pockets, ceramics e sealant precursors. A rota de uma amostra por heat, brine e pressure importa mais que seu nome.",
+          "audio": "O vent não fez minério. Fez um processo que você interrompeu.",
+          "in_game_wiki": "Vent forges são reatores naturais-industriais. Transformam calor, brine e pressure history em ceramics, sealants e charge materials úteis enquanto mantêm cada amostra ligada ao seu caminho térmico.",
+          "external_site": "O Guia de Processo de Campo de Forja de Vent liga valor de recurso ao manejo em campo: importa não só o que foi encontrado, mas como pressure e cooling deixam isso sobreviver até recovery."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Vent Forge Field Process Guide",
-          "scanner": "NL LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
-          "terminal": "NL LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
-          "audio": "NL LOC HOLD: The vent did not make ore. It made a process you interrupted.",
-          "in_game_wiki": "NL LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
-          "external_site": "NL LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "NL LOC HOLD: Use for resource taxonomy and crafting-table handoff."
+          "title": "Veldprocesgids voor vent-forge",
+          "scanner": "Vent-forge chemistry actief. Kwaliteit volgt pressure history, heat pulse en langzame koeling, niet de glans van het monster.",
+          "field_note": "Til een verse partij niet direct in koud water. Laat de vent de anneal afmaken of de shell craqueleert.",
+          "terminal": "FIELD GUIDE: vent forges koken sulfides, noble-gas pockets, ceramics en sealant precursors. De route van een monster door heat, brine en pressure telt meer dan zijn naam.",
+          "audio": "De vent maakte geen erts. Hij maakte een proces dat jij onderbrak.",
+          "in_game_wiki": "Vent forges zijn natuurlijk-industriële reactoren. Ze veranderen hitte, brine en pressure history in bruikbare ceramics, sealants en charge materials en houden elk monster verbonden met zijn thermische pad.",
+          "external_site": "De Veldprocesgids voor vent-forge verbindt grondstofwaarde met veldbehandeling: belangrijk is niet alleen wat gevonden wordt, maar hoe pressure en cooling het recovery laat overleven."
         }
       }
     },
@@ -494,137 +494,137 @@
         "en_US": {
           "title": "Blue Debt Pressure History Guide",
           "scanner": "Blue debt sample tagged. Verify pressure history, containment stage and signal drift before export.",
+          "field_note": "Color is not grade. A quiet container with clean custody pays; a singing one buys a drone wake.",
           "terminal": "MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
           "audio": "Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "Color is not grade. A quiet container with clean custody pays; a singing one buys you a drone wake."
+          "in_game_wiki": "Blue debt is contract language wrapped around a dangerous substrate. Pressure history, custody marks and signal drift decide whether it becomes clean payout, Atlas leverage or Deep Reach return motive.",
+          "external_site": "Xenon-Omega, called blue debt by salvagers, ties HECTON-8's geology to computation, debt law and the reason Deep Reach still wants a drowned claim back."
         },
         "ru_RU": {
-          "title": "Blue debt pressure history guide",
-          "scanner": "Blue debt sample tagged. Pressure history важнее surface color.",
-          "terminal": "MARAUDER NOTE: blue debt - salvage slang для Xenon-Omega-bearing pressure-stable substrate. Ценность в extreme computation и energy isolation, не в свечении.",
-          "audio": "Blue debt - так это называют после счёта.",
-          "in_game_wiki": "Blue debt - полевой сленг для Xenon-Omega pressure substrate. Термин связывает material с контрактами, риском и мотивом Deep Reach.",
-          "external_site": "Xenon-Omega, blue debt для salvagers, связывает HECTON-8, Atlas, Deep Reach и цену возвращения.",
-          "field_note": "Для resource glossary и Deep Reach motive articles."
+          "title": "Справочник pressure history синего долга",
+          "scanner": "Образец blue debt помечен. Перед export проверь pressure history, containment stage и signal drift.",
+          "field_note": "Цвет - не grade. Тихий контейнер с чистой custody платит; поющий покупает тебе drone wake.",
+          "terminal": "MARAUDER NOTE: blue debt - salvage-сленг для Xenon-Omega-bearing pressure-stable substrate. Он ценен потому, что extreme computation и energy isolation любят его, а не потому, что он светится.",
+          "audio": "Синий долг - так это называют после прихода счета.",
+          "in_game_wiki": "Blue debt - контрактный язык, обернутый вокруг опасного substrate. Pressure history, custody marks и signal drift решают, станет ли он чистой выплатой, рычагом Atlas или мотивом Deep Reach вернуться.",
+          "external_site": "Xenon-Omega, который salvage-команды зовут blue debt, связывает геологию HECTON-8 с computation, debt law и причиной, по которой Deep Reach все еще хочет вернуть утонувшую претензию."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "JA LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "JA LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "JA LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "JA LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "JA LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "JA LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "ブルーデット圧力履歴ガイド",
+          "scanner": "blue debt 試料タグ済み。export 前に pressure history、containment stage、signal drift を確認。",
+          "field_note": "色は grade ではない。clean custody の静かな容器は支払いになる。歌う容器は drone wake を買う。",
+          "terminal": "MARAUDER NOTE: blue debt は Xenon-Omega-bearing pressure-stable substrate の salvage スラング。輝くからではなく、extreme computation と energy isolation が好むから価値がある。",
+          "audio": "請求書が届いた後、人はそれを blue debt と呼ぶ。",
+          "in_game_wiki": "blue debt は危険な substrate に巻かれた契約言語だ。Pressure history、custody marks、signal drift が、清潔な支払い、Atlas の leverage、Deep Reach の帰還動機のどれになるかを決める。",
+          "external_site": "Xenon-Omega は salvage 作業者に blue debt と呼ばれ、HECTON-8 の地質を computation、debt law、そして Deep Reach が水没した請求をまだ取り戻したがる理由へ結びつける。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "ZH LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "ZH LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "ZH LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "ZH LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "ZH LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "ZH LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "蓝债压力史指南",
+          "scanner": "blue debt 样本已标记。export 前核验 pressure history、containment stage 和 signal drift。",
+          "field_note": "颜色不是 grade。clean custody 的安静容器会付款；会唱的容器会给你买来 drone wake。",
+          "terminal": "MARAUDER NOTE: blue debt 是打捞者对 Xenon-Omega-bearing pressure-stable substrate 的黑话。它有价值，是因为 extreme computation 和 energy isolation 喜欢它，不是因为它发光。",
+          "audio": "blue debt 是人们在账单到来后给它起的名字。",
+          "in_game_wiki": "blue debt 是裹在危险 substrate 外面的合同语言。Pressure history、custody marks 和 signal drift 决定它会成为干净付款、Atlas leverage，还是 Deep Reach 回来的理由。",
+          "external_site": "Xenon-Omega 被打捞者称为 blue debt，它把 HECTON-8 的地质与 computation、debt law，以及 Deep Reach 仍想夺回淹没索赔的原因绑在一起。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "FR LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "FR LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "FR LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "FR LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "FR LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "FR LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "Guide d'historique de pression de la dette bleue",
+          "scanner": "Échantillon de blue debt marqué. Vérifier pressure history, containment stage et signal drift avant export.",
+          "field_note": "La couleur n'est pas le grade. Un conteneur silencieux avec custody propre paie ; un conteneur qui chante achète un drone wake.",
+          "terminal": "MARAUDER NOTE : blue debt est l'argot de salvage pour un Xenon-Omega-bearing pressure-stable substrate. Il vaut cher parce que l'extreme computation et l'energy isolation l'aiment, pas parce qu'il brille.",
+          "audio": "La dette bleue, c'est le nom qu'on lui donne après l'arrivée de la facture.",
+          "in_game_wiki": "La blue debt est du langage contractuel enroulé autour d'un substrate dangereux. Pressure history, custody marks et signal drift décident si elle devient paiement propre, levier Atlas ou motif de retour pour Deep Reach.",
+          "external_site": "Le Xenon-Omega, appelé blue debt par les salvagers, lie la géologie de HECTON-8 au computation, au debt law et à la raison pour laquelle Deep Reach veut encore récupérer une réclamation noyée."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "ES LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "ES LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "ES LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "ES LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "ES LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "ES LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "Guía de historial de presión de deuda azul",
+          "scanner": "Muestra de blue debt etiquetada. Verifica pressure history, containment stage y signal drift antes de export.",
+          "field_note": "El color no es grade. Un contenedor callado con custody limpia paga; uno que canta te compra un drone wake.",
+          "terminal": "MARAUDER NOTE: blue debt es jerga de salvage para Xenon-Omega-bearing pressure-stable substrate. Vale porque extreme computation y energy isolation lo quieren, no porque brille.",
+          "audio": "Deuda azul es como la llama la gente después de que llega la factura.",
+          "in_game_wiki": "Blue debt es lenguaje contractual envuelto alrededor de un substrate peligroso. Pressure history, custody marks y signal drift deciden si se vuelve pago limpio, palanca Atlas o motivo de regreso de Deep Reach.",
+          "external_site": "Xenon-Omega, llamado blue debt por salvagers, une la geología de HECTON-8 con computation, debt law y la razón por la que Deep Reach aún quiere recuperar una reclamación ahogada."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "DE LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "DE LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "DE LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "DE LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "DE LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "DE LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "Blue-Debt-Druckverlaufsführer",
+          "scanner": "Blue-debt-Probe markiert. Pressure history, containment stage und signal drift vor export prüfen.",
+          "field_note": "Farbe ist kein grade. Ein stiller Behälter mit sauberer custody zahlt; ein singender kauft dir einen drone wake.",
+          "terminal": "MARAUDER NOTE: blue debt ist Salvage-Slang für Xenon-Omega-bearing pressure-stable substrate. Es ist wertvoll, weil extreme computation und energy isolation es mögen, nicht weil es leuchtet.",
+          "audio": "Blue debt nennen Leute es, nachdem die Rechnung kommt.",
+          "in_game_wiki": "Blue debt ist Vertragssprache um ein gefährliches substrate. Pressure history, custody marks und signal drift entscheiden, ob es saubere Auszahlung, Atlas-Hebel oder Deep-Reach-Rückkehrmotiv wird.",
+          "external_site": "Xenon-Omega, von Salvagern blue debt genannt, verbindet HECTON-8s Geologie mit computation, debt law und dem Grund, warum Deep Reach einen ertrunkenen Anspruch noch immer zurückhaben will."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "PL LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "PL LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "PL LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "PL LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "PL LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "PL LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "Przewodnik historii ciśnienia blue debt",
+          "scanner": "Próbka blue debt oznaczona. Przed export sprawdź pressure history, containment stage i signal drift.",
+          "field_note": "Kolor nie jest grade. Cichy pojemnik z czystym custody płaci; śpiewający kupuje ci drone wake.",
+          "terminal": "MARAUDER NOTE: blue debt to slang salvage na Xenon-Omega-bearing pressure-stable substrate. Jest cenny, bo extreme computation i energy isolation go lubią, nie dlatego, że świeci.",
+          "audio": "Blue debt to nazwa, której ludzie używają po przyjściu faktury.",
+          "in_game_wiki": "Blue debt to język kontraktu owinięty wokół niebezpiecznego substrate. Pressure history, custody marks i signal drift decydują, czy stanie się czystą wypłatą, dźwignią Atlas czy motywem powrotu Deep Reach.",
+          "external_site": "Xenon-Omega, zwany przez salvagerów blue debt, łączy geologię HECTON-8 z computation, debt law i powodem, dla którego Deep Reach nadal chce odzyskać zatopione roszczenie."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "UK LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "UK LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "UK LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "UK LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "UK LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "UK LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "Довідник pressure history синього боргу",
+          "scanner": "Зразок blue debt позначено. Перед export перевір pressure history, containment stage і signal drift.",
+          "field_note": "Колір - не grade. Тихий контейнер із чистою custody платить; той, що співає, купує тобі drone wake.",
+          "terminal": "MARAUDER NOTE: blue debt - salvage-сленг для Xenon-Omega-bearing pressure-stable substrate. Він цінний тому, що extreme computation і energy isolation його люблять, а не тому, що він світиться.",
+          "audio": "Синій борг - так це називають після приходу рахунку.",
+          "in_game_wiki": "Blue debt - контрактна мова, обгорнута навколо небезпечного substrate. Pressure history, custody marks і signal drift вирішують, чи стане він чистою виплатою, важелем Atlas або мотивом Deep Reach повернутися.",
+          "external_site": "Xenon-Omega, який salvagers називають blue debt, пов'язує геологію HECTON-8 з computation, debt law і причиною, через яку Deep Reach досі хоче повернути затоплену претензію."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "AR LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "AR LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "AR LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "AR LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "AR LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "AR LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "دليل تاريخ ضغط الدين الأزرق",
+          "scanner": "تم وسم عينة blue debt. تحقق من pressure history وcontainment stage وsignal drift قبل export.",
+          "field_note": "اللون ليس grade. الحاوية الصامتة ذات custody نظيفة تدفع؛ والحاوية التي تغني تشتري لك drone wake.",
+          "terminal": "MARAUDER NOTE: blue debt لغة salvage عامية لـ Xenon-Omega-bearing pressure-stable substrate. قيمته لأن extreme computation وenergy isolation تحبانه، لا لأنه يتوهج.",
+          "audio": "الدين الأزرق هو ما يسميه الناس بعد وصول الفاتورة.",
+          "in_game_wiki": "Blue debt لغة عقود ملفوفة حول substrate خطير. يقرر pressure history وcustody marks وsignal drift هل يصبح دفعا نظيفا، أو رافعة Atlas، أو دافع Deep Reach للعودة.",
+          "external_site": "Xenon-Omega، الذي يسميه عمال salvage باسم blue debt، يربط جيولوجيا HECTON-8 بـ computation وdebt law والسبب الذي يجعل Deep Reach تريد مطالبة غارقة مرة أخرى."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "ID LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "ID LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "ID LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "ID LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "ID LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "ID LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "Panduan Riwayat Tekanan Blue Debt",
+          "scanner": "Sampel blue debt ditandai. Verifikasi pressure history, containment stage, dan signal drift sebelum export.",
+          "field_note": "Warna bukan grade. Kontainer tenang dengan custody bersih membayar; yang bernyanyi membeli drone wake.",
+          "terminal": "MARAUDER NOTE: blue debt adalah slang salvage untuk Xenon-Omega-bearing pressure-stable substrate. Ia berharga karena extreme computation dan energy isolation menyukainya, bukan karena ia bersinar.",
+          "audio": "Blue debt adalah sebutan orang setelah faktur datang.",
+          "in_game_wiki": "Blue debt adalah bahasa kontrak yang membungkus substrate berbahaya. Pressure history, custody marks, dan signal drift menentukan apakah ia menjadi pembayaran bersih, daya tawar Atlas, atau alasan Deep Reach kembali.",
+          "external_site": "Xenon-Omega, disebut blue debt oleh salvager, mengikat geologi HECTON-8 dengan computation, debt law, dan alasan Deep Reach masih menginginkan klaim tenggelam itu kembali."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "KO LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "KO LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "KO LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "KO LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "KO LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "KO LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "블루 데트 압력 이력 안내서",
+          "scanner": "blue debt 표본 태그 완료. export 전 pressure history, containment stage, signal drift 확인.",
+          "field_note": "색은 grade가 아니다. clean custody를 가진 조용한 용기는 돈을 내고, 노래하는 용기는 drone wake를 산다.",
+          "terminal": "MARAUDER NOTE: blue debt는 Xenon-Omega-bearing pressure-stable substrate에 대한 salvage 은어다. 빛나서가 아니라 extreme computation과 energy isolation이 선호해서 가치가 있다.",
+          "audio": "blue debt는 청구서가 도착한 뒤 사람들이 붙인 이름이다.",
+          "in_game_wiki": "blue debt는 위험한 substrate를 감싼 계약 언어다. Pressure history, custody marks, signal drift가 그것을 깨끗한 지급금, Atlas 지렛대, Deep Reach 귀환 동기 중 무엇으로 만들지 결정한다.",
+          "external_site": "salvager들이 blue debt라 부르는 Xenon-Omega는 HECTON-8의 지질을 computation, debt law, 그리고 Deep Reach가 잠긴 청구를 아직 되찾으려는 이유와 묶는다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "HE LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "HE LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "HE LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "HE LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "HE LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "HE LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "מדריך היסטוריית לחץ של חוב כחול",
+          "scanner": "דגימת blue debt סומנה. אמת pressure history, containment stage ו-signal drift לפני export.",
+          "field_note": "צבע אינו grade. מיכל שקט עם custody נקייה משלם; מיכל שר מזמין לך drone wake.",
+          "terminal": "MARAUDER NOTE: blue debt הוא סלנג salvage ל-Xenon-Omega-bearing pressure-stable substrate. הוא יקר כי extreme computation ו-energy isolation אוהבים אותו, לא כי הוא זוהר.",
+          "audio": "חוב כחול הוא השם שאנשים נותנים לו אחרי שהחשבונית מגיעה.",
+          "in_game_wiki": "Blue debt היא שפת חוזה כרוכה סביב substrate מסוכן. Pressure history, custody marks ו-signal drift מחליטים אם הוא הופך לתשלום נקי, מנוף Atlas או מניע החזרה של Deep Reach.",
+          "external_site": "Xenon-Omega, שנקרא blue debt בפי salvagers, קושר את הגיאולוגיה של HECTON-8 ל-computation, debt law ולסיבה ש-Deep Reach עדיין רוצה להחזיר תביעה שטבעה."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "PT LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "PT LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "PT LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "PT LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "PT LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "PT LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "Guia de Histórico de Pressão de Blue Debt",
+          "scanner": "Amostra de blue debt marcada. Verifique pressure history, containment stage e signal drift antes de export.",
+          "field_note": "Cor não é grade. Um contêiner quieto com custody limpa paga; um que canta compra um drone wake.",
+          "terminal": "MARAUDER NOTE: blue debt é gíria de salvage para Xenon-Omega-bearing pressure-stable substrate. É valioso porque extreme computation e energy isolation gostam dele, não porque brilha.",
+          "audio": "Blue debt é como as pessoas chamam isso depois que a fatura chega.",
+          "in_game_wiki": "Blue debt é linguagem contratual enrolada em um substrate perigoso. Pressure history, custody marks e signal drift decidem se vira pagamento limpo, alavanca Atlas ou motivo para a Deep Reach voltar.",
+          "external_site": "Xenon-Omega, chamado blue debt por salvagers, liga a geologia de HECTON-8 a computation, debt law e ao motivo pelo qual a Deep Reach ainda quer de volta uma reivindicação afogada."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Blue Debt Pressure History Guide",
-          "scanner": "NL LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.",
-          "terminal": "NL LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
-          "audio": "NL LOC HOLD: Blue debt is what people call it after the invoice arrives.",
-          "in_game_wiki": "NL LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
-          "external_site": "NL LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "NL LOC HOLD: Use for resource glossary and Deep Reach motive articles."
+          "title": "Gids voor drukgeschiedenis van blue debt",
+          "scanner": "Blue debt-monster gelabeld. Controleer pressure history, containment stage en signal drift vóór export.",
+          "field_note": "Kleur is geen grade. Een stille container met schone custody betaalt; een zingende koopt je een drone wake.",
+          "terminal": "MARAUDER NOTE: blue debt is salvage-slang voor Xenon-Omega-bearing pressure-stable substrate. Het is waardevol omdat extreme computation en energy isolation het willen, niet omdat het gloeit.",
+          "audio": "Blue debt is hoe mensen het noemen nadat de factuur arriveert.",
+          "in_game_wiki": "Blue debt is contracttaal rond een gevaarlijk substrate. Pressure history, custody marks en signal drift bepalen of het schone uitbetaling, Atlas-hefboom of Deep Reach-terugkeermotief wordt.",
+          "external_site": "Xenon-Omega, door salvagers blue debt genoemd, verbindt HECTON-8's geologie met computation, debt law en de reden waarom Deep Reach een verdronken claim nog steeds terug wil."
         }
       }
     },
@@ -648,138 +648,138 @@
       "localized": {
         "en_US": {
           "title": "Pressure Glass and Sealant Guide",
-          "scanner": "Pressure glass fracture sealed by Atlas chemistry. Safe lens stock only if the seal map stays intact.",
+          "scanner": "Pressure-glass fracture sealed by Atlas chemistry. Safe lens stock only if the seal map stays intact.",
+          "field_note": "Do not grind the pretty edge. Follow the fracture map and cut from the dead side of the seal.",
           "terminal": "FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
           "audio": "The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "Do not grind the pretty edge. Follow the fracture map and cut from the dead side of the seal."
+          "in_game_wiki": "Pressure glass is where geology meets Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes, so a useful lens can also be a living boundary.",
+          "external_site": "Pressure Glass and Sealant Guide grounds HECTON-8's biomechanical horror in repair logic: Atlas follows cracks, cables, biofilms and pressure scars because broken systems already provide paths."
         },
         "ru_RU": {
-          "title": "Pressure glass and sealant guide",
-          "scanner": "Pressure glass fracture sealed. Atlas repair chemistry использует тот же damage map, что geology.",
-          "terminal": "FIELD GUIDE: pressure glass хранит old tide stress. Atlas sealant идёт по cracks, потому что cracks уже описывают failure lines.",
-          "audio": "Repair network читает трещины так же, как ты читаешь карту.",
-          "in_game_wiki": "Pressure glass связывает geology и Atlas: сеть идёт по fractures, mineral edges and pressure memories.",
-          "external_site": "Biomechanical horror HECTON-8 основан на repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "Для Atlas repair-network explanation и geology crosslink."
+          "title": "Справочник pressure glass и sealant",
+          "scanner": "Трещина pressure-glass запечатана химией Atlas. Безопасный lens stock возможен только если seal map осталась целой.",
+          "field_note": "Не шлифуй красивый край. Следуй fracture map и режь с мертвой стороны seal.",
+          "terminal": "FIELD GUIDE: pressure glass хранит старое tide stress. Atlas sealant идет по этим трещинам, потому что трещины уже описывают линии отказа системы.",
+          "audio": "Ремонтная сеть читает трещины так же, как ты читаешь карту.",
+          "in_game_wiki": "Pressure glass - место, где геология встречает Atlas. Repair network использует существующие трещины, минеральные края и pressure memories как маршруты, поэтому полезная линза может быть живой границей.",
+          "external_site": "Справочник pressure glass и sealant заземляет biomechanical horror HECTON-8 в логике ремонта: Atlas следует трещинам, кабелям, biofilms и pressure scars, потому что сломанные системы уже дают пути."
         },
         "ja_JP": {
-          "title": "JA LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "JA LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "JA LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "JA LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "JA LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "JA LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "JA LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "圧力ガラスとシーラントガイド",
+          "scanner": "pressure-glass の亀裂が Atlas chemistry で封じられている。seal map が無傷の場合のみ安全な lens stock。",
+          "field_note": "美しい縁を削るな。fracture map に従い、seal の死んだ側から切れ。",
+          "terminal": "FIELD GUIDE: pressure glass は古い tide stress を記録する。Atlas sealant はそれらの亀裂を辿る。亀裂はすでにシステムの故障線を記述しているからだ。",
+          "audio": "修理ネットワークは、君が地図を読むように亀裂を読む。",
+          "in_game_wiki": "pressure glass は地質が Atlas と出会う場所だ。repair network は既存の亀裂、鉱物縁、pressure memories を経路として使うため、有用なレンズは生きた境界にもなる。",
+          "external_site": "圧力ガラスとシーラントガイドは、HECTON-8 の生体機械的恐怖を修理論理に根付かせる。Atlas は亀裂、ケーブル、biofilms、pressure scars を辿る。壊れたシステムはすでに道を提供している。"
         },
         "zh_CN": {
-          "title": "ZH LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "ZH LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "ZH LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "ZH LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "ZH LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "ZH LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "ZH LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "压力玻璃与密封剂指南",
+          "scanner": "pressure-glass 裂纹被 Atlas chemistry 封住。只有 seal map 保持完整时，lens stock 才安全。",
+          "field_note": "不要打磨漂亮边缘。跟随 fracture map，从 seal 的死亡侧切入。",
+          "terminal": "FIELD GUIDE: pressure glass 记录旧 tide stress。Atlas sealant 沿这些裂纹前进，因为裂纹已经描述了系统失效线。",
+          "audio": "修复网络阅读裂纹，就像你阅读地图。",
+          "in_game_wiki": "pressure glass 是地质与 Atlas 相遇的地方。repair network 把既有裂纹、矿物边缘和 pressure memories 当作路径，所以有用镜片也可能是一道活边界。",
+          "external_site": "压力玻璃与密封剂指南把 HECTON-8 的生物机械恐怖扎进修复逻辑：Atlas 跟随裂纹、缆线、biofilms 和 pressure scars，因为破损系统本来就提供道路。"
         },
         "fr_FR": {
-          "title": "FR LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "FR LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "FR LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "FR LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "FR LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "FR LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "FR LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "Guide du verre de pression et du mastic",
+          "scanner": "Fracture de pressure-glass scellée par chimie Atlas. Stock de lentilles sûr seulement si la seal map reste intacte.",
+          "field_note": "Ne meule pas le joli bord. Suis la fracture map et coupe depuis le côté mort du seal.",
+          "terminal": "FIELD GUIDE : le pressure glass enregistre ancien tide stress. L'Atlas sealant suit ces fissures parce qu'elles décrivent déjà les lignes de défaillance du système.",
+          "audio": "Le réseau de réparation lit les fractures comme tu lis une carte.",
+          "in_game_wiki": "Le pressure glass est l'endroit où la géologie rencontre Atlas. Le repair network utilise fractures existantes, bords minéraux et pressure memories comme routes, donc une lentille utile peut aussi être une frontière vivante.",
+          "external_site": "Le Guide du verre de pression et du mastic ancre l'horreur biomécanique de HECTON-8 dans une logique de réparation : Atlas suit fissures, câbles, biofilms et pressure scars parce que les systèmes cassés fournissent déjà des chemins."
         },
         "es_ES": {
-          "title": "ES LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "ES LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "ES LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "ES LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "ES LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "ES LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "ES LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "Guía de vidrio de presión y sellante",
+          "scanner": "Fractura de pressure-glass sellada por química Atlas. Stock de lentes seguro solo si el seal map permanece intacto.",
+          "field_note": "No muelas el borde bonito. Sigue el fracture map y corta desde el lado muerto del seal.",
+          "terminal": "FIELD GUIDE: pressure glass registra viejo tide stress. Atlas sealant sigue esas grietas porque las grietas ya describen las líneas de fallo del sistema.",
+          "audio": "La red de reparación lee fracturas como tú lees un mapa.",
+          "in_game_wiki": "Pressure glass es donde la geología se encuentra con Atlas. La repair network usa fracturas existentes, bordes minerales y pressure memories como rutas, así que una lente útil también puede ser una frontera viva.",
+          "external_site": "La Guía de vidrio de presión y sellante ancla el horror biomecánico de HECTON-8 en lógica de reparación: Atlas sigue grietas, cables, biofilms y pressure scars porque los sistemas rotos ya ofrecen caminos."
         },
         "de_DE": {
-          "title": "DE LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "DE LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "DE LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "DE LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "DE LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "DE LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "DE LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "Führer zu Druckglas und Dichtmittel",
+          "scanner": "Pressure-glass-Bruch von Atlas-Chemie versiegelt. Sicherer Linsenbestand nur, wenn die seal map intakt bleibt.",
+          "field_note": "Schleife nicht die schöne Kante. Folge der fracture map und schneide von der toten Seite der seal.",
+          "terminal": "FIELD GUIDE: pressure glass speichert alten tide stress. Atlas sealant folgt diesen Rissen, weil die Risse bereits die Ausfalllinien des Systems beschreiben.",
+          "audio": "Das Reparaturnetz liest Brüche, wie du eine Karte liest.",
+          "in_game_wiki": "Pressure glass ist, wo Geologie auf Atlas trifft. Das repair network nutzt vorhandene Brüche, Mineralkanten und pressure memories als Routen, also kann eine nützliche Linse auch eine lebende Grenze sein.",
+          "external_site": "Der Führer zu Druckglas und Dichtmittel erdet HECTON-8s biomechanischen Horror in Reparaturlogik: Atlas folgt Rissen, Kabeln, biofilms und pressure scars, weil gebrochene Systeme bereits Wege liefern."
         },
         "pl_PL": {
-          "title": "PL LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "PL LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "PL LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "PL LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "PL LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "PL LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "PL LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "Przewodnik po pressure glass i sealant",
+          "scanner": "Fraktura pressure-glass uszczelniona chemią Atlas. Bezpieczny lens stock tylko jeśli seal map pozostaje nienaruszona.",
+          "field_note": "Nie szlifuj ładnej krawędzi. Idź za fracture map i tnij od martwej strony seal.",
+          "terminal": "FIELD GUIDE: pressure glass zapisuje stary tide stress. Atlas sealant podąża tymi pęknięciami, bo pęknięcia już opisują linie awarii systemu.",
+          "audio": "Sieć naprawcza czyta pęknięcia tak, jak ty czytasz mapę.",
+          "in_game_wiki": "Pressure glass to miejsce spotkania geologii z Atlas. Repair network używa istniejących pęknięć, krawędzi minerałów i pressure memories jako tras, więc użyteczna soczewka może być także żywą granicą.",
+          "external_site": "Przewodnik po pressure glass i sealant osadza biomechaniczny horror HECTON-8 w logice naprawy: Atlas podąża za pęknięciami, kablami, biofilms i pressure scars, bo zepsute systemy już dostarczają ścieżek."
         },
         "uk_UA": {
-          "title": "UK LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "UK LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "UK LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "UK LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "UK LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "UK LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "UK LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "Довідник pressure glass і sealant",
+          "scanner": "Тріщина pressure-glass запечатана хімією Atlas. Безпечний lens stock можливий лише якщо seal map лишається цілою.",
+          "field_note": "Не шліфуй гарний край. Іди за fracture map і ріж з мертвого боку seal.",
+          "terminal": "FIELD GUIDE: pressure glass записує старий tide stress. Atlas sealant іде цими тріщинами, бо тріщини вже описують лінії відмови системи.",
+          "audio": "Ремонтна мережа читає тріщини так само, як ти читаєш карту.",
+          "in_game_wiki": "Pressure glass - місце, де геологія зустрічає Atlas. Repair network використовує наявні тріщини, мінеральні краї й pressure memories як маршрути, тому корисна лінза може бути живою межею.",
+          "external_site": "Довідник pressure glass і sealant заземлює biomechanical horror HECTON-8 у логіці ремонту: Atlas слідує тріщинам, кабелям, biofilms і pressure scars, бо зламані системи вже дають шляхи."
         },
         "ar_SA": {
-          "title": "AR LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "AR LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "AR LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "AR LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "AR LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "AR LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "AR LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "دليل زجاج الضغط ومانع التسرب",
+          "scanner": "كسر pressure-glass مختوم بكيمياء Atlas. يكون lens stock آمنا فقط إذا بقيت seal map سليمة.",
+          "field_note": "لا تطحن الحافة الجميلة. اتبع fracture map واقطع من الجانب الميت للـ seal.",
+          "terminal": "FIELD GUIDE: يسجل pressure glass إجهاد tide stress القديم. يتبع Atlas sealant تلك الشقوق لأنها تصف مسبقا خطوط فشل النظام.",
+          "audio": "تقرأ شبكة الإصلاح الكسور كما تقرأ أنت الخريطة.",
+          "in_game_wiki": "Pressure glass هو المكان الذي تلتقي فيه الجيولوجيا مع Atlas. يستخدم repair network الشقوق الموجودة، وحواف المعادن، وpressure memories كمسارات، لذلك يمكن للعدسة النافعة أن تكون حدا حيا.",
+          "external_site": "يرسخ دليل زجاج الضغط ومانع التسرب رعب HECTON-8 الحيوي-الميكانيكي في منطق الإصلاح: يتبع Atlas الشقوق، والكابلات، وbiofilms، وpressure scars لأن الأنظمة المكسورة توفر الطرق مسبقا."
         },
         "id_ID": {
-          "title": "ID LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "ID LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "ID LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "ID LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "ID LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "ID LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "ID LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "Panduan Kaca Tekanan dan Sealant",
+          "scanner": "Retakan pressure-glass disegel oleh kimia Atlas. Lens stock aman hanya jika seal map tetap utuh.",
+          "field_note": "Jangan gerinda tepi yang cantik. Ikuti fracture map dan potong dari sisi mati seal.",
+          "terminal": "FIELD GUIDE: pressure glass merekam tide stress lama. Atlas sealant mengikuti retakan itu karena retakan sudah menggambarkan garis kegagalan sistem.",
+          "audio": "Jaringan perbaikan membaca retakan seperti kau membaca peta.",
+          "in_game_wiki": "Pressure glass adalah tempat geologi bertemu Atlas. Repair network menggunakan retakan yang ada, tepi mineral, dan pressure memories sebagai rute, jadi lensa berguna juga bisa menjadi batas hidup.",
+          "external_site": "Panduan Kaca Tekanan dan Sealant menambatkan horor biomekanis HECTON-8 pada logika perbaikan: Atlas mengikuti retakan, kabel, biofilms, dan pressure scars karena sistem rusak sudah menyediakan jalan."
         },
         "ko_KR": {
-          "title": "KO LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "KO LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "KO LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "KO LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "KO LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "KO LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "KO LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "압력 유리와 밀봉제 안내서",
+          "scanner": "Atlas 화학으로 봉인된 pressure-glass 균열. seal map이 온전할 때만 lens stock 안전.",
+          "field_note": "예쁜 가장자리를 갈지 마라. fracture map을 따라 seal의 죽은 쪽에서 잘라라.",
+          "terminal": "FIELD GUIDE: pressure glass는 오래된 tide stress를 기록한다. Atlas sealant는 그 균열을 따른다. 균열이 이미 시스템의 실패선을 설명하기 때문이다.",
+          "audio": "수리 네트워크는 네가 지도를 읽듯 균열을 읽는다.",
+          "in_game_wiki": "Pressure glass는 지질이 Atlas와 만나는 곳이다. repair network는 기존 균열, 광물 가장자리, pressure memories를 항로로 사용하므로, 유용한 렌즈가 살아 있는 경계일 수도 있다.",
+          "external_site": "압력 유리와 밀봉제 안내서는 HECTON-8의 생체기계 공포를 수리 논리에 고정한다. Atlas는 균열, 케이블, biofilms, pressure scars를 따른다. 부서진 시스템은 이미 길을 제공하기 때문이다."
         },
         "he_IL": {
-          "title": "HE LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "HE LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "HE LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "HE LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "HE LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "HE LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "HE LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "מדריך זכוכית לחץ וחומר איטום",
+          "scanner": "שבר pressure-glass נאטם בכימיית Atlas. lens stock בטוח רק אם seal map נשארת שלמה.",
+          "field_note": "אל תשייף את הקצה היפה. עקוב אחרי fracture map וחתוך מהצד המת של ה-seal.",
+          "terminal": "FIELD GUIDE: pressure glass מתעד tide stress ישן. Atlas sealant עוקב אחרי הסדקים האלה כי הסדקים כבר מתארים את קווי הכשל של המערכת.",
+          "audio": "רשת התיקון קוראת שברים כפי שאתה קורא מפה.",
+          "in_game_wiki": "Pressure glass הוא המקום שבו גיאולוגיה פוגשת את Atlas. Repair network משתמש בסדקים קיימים, קצוות מינרליים ו-pressure memories כנתיבים, ולכן עדשה שימושית יכולה להיות גם גבול חי.",
+          "external_site": "מדריך זכוכית לחץ וחומר איטום מקרקע את האימה הביומכנית של HECTON-8 בלוגיקת תיקון: Atlas עוקב אחרי סדקים, כבלים, biofilms ו-pressure scars כי מערכות שבורות כבר מספקות דרכים."
         },
         "pt_BR": {
-          "title": "PT LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "PT LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "PT LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "PT LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "PT LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "PT LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "PT LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "Guia de Vidro de Pressão e Selante",
+          "scanner": "Fratura de pressure-glass selada por química Atlas. Lens stock seguro só se o seal map permanecer intacto.",
+          "field_note": "Não esmerilhe a borda bonita. Siga o fracture map e corte pelo lado morto do seal.",
+          "terminal": "FIELD GUIDE: pressure glass registra tide stress antigo. Atlas sealant segue essas rachaduras porque elas já descrevem as linhas de falha do sistema.",
+          "audio": "A rede de reparo lê fraturas como você lê um mapa.",
+          "in_game_wiki": "Pressure glass é onde geologia encontra Atlas. A repair network usa fraturas existentes, bordas minerais e pressure memories como rotas, então uma lente útil também pode ser uma fronteira viva.",
+          "external_site": "O Guia de Vidro de Pressão e Selante ancora o horror biomecânico de HECTON-8 na lógica de reparo: Atlas segue rachaduras, cabos, biofilms e pressure scars porque sistemas quebrados já fornecem caminhos."
         },
         "nl_NL": {
-          "title": "NL LOC HOLD: Pressure Glass and Sealant Guide",
-          "scanner": "NL LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
-          "terminal": "NL LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
-          "audio": "NL LOC HOLD: The repair network reads fractures the way you read a map.",
-          "in_game_wiki": "NL LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
-          "external_site": "NL LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "NL LOC HOLD: Use for Atlas repair-network explanation and geology crosslink."
+          "title": "Gids voor drukglas en afdichtmiddel",
+          "scanner": "Pressure-glass-breuk verzegeld door Atlas-chemie. Veilige lens stock alleen als de seal map intact blijft.",
+          "field_note": "Slijp de mooie rand niet. Volg de fracture map en snijd vanaf de dode kant van de seal.",
+          "terminal": "FIELD GUIDE: pressure glass registreert oude tide stress. Atlas sealant volgt die scheuren omdat de scheuren de faallijnen van het systeem al beschrijven.",
+          "audio": "Het reparatienetwerk leest breuken zoals jij een kaart leest.",
+          "in_game_wiki": "Pressure glass is waar geologie Atlas ontmoet. Het repair network gebruikt bestaande breuken, mineraalranden en pressure memories als routes, dus een nuttige lens kan ook een levende grens zijn.",
+          "external_site": "De Gids voor drukglas en afdichtmiddel verankert HECTON-8's biomechanische horror in reparatielogica: Atlas volgt scheuren, kabels, biofilms en pressure scars omdat gebroken systemen al paden leveren."
         }
       }
     }

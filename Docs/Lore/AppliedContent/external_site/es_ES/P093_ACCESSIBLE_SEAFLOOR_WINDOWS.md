@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "Ventanas accesibles del lecho marino"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# Ventanas accesibles del lecho marino
 
-ES LOC HOLD: Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map.
-
-## Scanner
-
-ES LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
-
-## Terminal
-
-ES LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-ES LOC HOLD: You land where the moon lets stone show through.
-
-## Field Note
-
-ES LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+La mayor parte del fondo de HECTON-8 no se alcanza con valentia normal. La presion levanta una pared antes de que aparezca el suelo. Las ventanas accesibles son las excepciones: lugares rasgados donde una plataforma hundida, una cresta expuesta, una cicatriz de ventila caliente o una columna densa de salmuera cambian la curva de descenso. No son cuevas seguras. Son pactos estrechos con la geologia. Una tripulacion puede tocar corteza antigua, recuperar minerales criados a presion, hallar hardware colonial sellado o leer un suceso enterrado antes de que el oceano cierre la ruta.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/es_ES. -->

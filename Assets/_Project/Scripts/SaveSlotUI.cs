@@ -452,8 +452,7 @@ namespace Hecton.UI.MainMenu
 
         private static ReadOnlySpan<char> ResolveSceneLabelSpan(ILocalizationTextReadModel loc, string sceneName)
         {
-            if (string.IsNullOrEmpty(sceneName))
-                return ReadOnlySpan<char>.Empty;
+            sceneName = SaveMetadata.NormalizeSceneName(sceneName);
 
             if (string.Equals(sceneName, "02_HECTON_WORLD", StringComparison.Ordinal))
                 return ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_SCENE_WORLD, "WORLD");

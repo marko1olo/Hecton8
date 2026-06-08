@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # ブラックボックス名簿スタック
 
-名簿スタックは終盤の真実を物理ペイロードにする。証拠、放送、エンディング文書は持ち上げた内容で変わる。
+ブラックボックス名簿は、最後の真実を運べるものにする。証拠、放送パケット、公開ドシエは、どの名前、ハッシュ、受領記録が水から出るかに依存する。
 
 ## Scanner
 

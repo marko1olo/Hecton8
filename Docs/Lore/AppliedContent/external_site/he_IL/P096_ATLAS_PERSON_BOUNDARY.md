@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "גבול האישיות של Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# גבול האישיות של Atlas
 
-HE LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories.
+גבול האישיות של Atlas מגדיר את פועלות ה-AI בסופים. Atlas אינו מוח נבלי ואינו רוח ידידותית; זו אינטליגנציה תעשייתית פגומה, עם זיהוי חלקי וקטגוריות שבורות.
 
 ## Scanner
 
-HE LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
+תקלה בזיהוי. Atlas רואה את דפוס הגישה שלך לפני שהוא רואה אדם.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+סיווג ATLAS: מפעיל נייד / מפתח נוהל Deep Reach שבוטל / חריגת תיקון ביולוגית. ביטחון באישיות נמוך מסף פעולה.
 
 ## Audio
 
-HE LOC HOLD: It knows how you work. That is not the same as knowing you.
+הוא יודע איך אתה עובד. זה לא אותו דבר כמו להכיר אותך.
 
 ## Field Note
 
-HE LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
+אל תהפוך את Atlas לאנושי. תן לו להיעשות אינטימי דרך טעות מדויקת.
 
 <!-- External Site; generated from P096_ATLAS_PERSON_BOUNDARY/he_IL. -->

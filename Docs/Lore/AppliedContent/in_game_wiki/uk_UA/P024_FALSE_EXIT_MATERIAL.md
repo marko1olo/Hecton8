@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Матеріальний вихід
 
-Матеріальний вихід є справжньою частковою кінцівкою. Він дозволяє взяти ресурс, але лишає правду неповною.
+Матеріальний вихід - реальний частковий наслідок, а не мертвий маршрут. Ресурси або зразок можуть купити відхід, поки більша правда лишається нерозв'язаною, а пізніше повернення ріже гостріше.
 
 ## Scanner
 

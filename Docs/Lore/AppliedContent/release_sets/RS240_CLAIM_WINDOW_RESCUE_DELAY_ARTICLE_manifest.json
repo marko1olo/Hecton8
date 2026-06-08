@@ -1,0 +1,20 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS240_CLAIM_WINDOW_RESCUE_DELAY_ARTICLE",
+  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P1410_CLAIM_WINDOW_RESCUE_DELAY_LEDGER"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS240_CLAIM_WINDOW_RESCUE_DELAY_ARTICLE.packets.json"
+  ],
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

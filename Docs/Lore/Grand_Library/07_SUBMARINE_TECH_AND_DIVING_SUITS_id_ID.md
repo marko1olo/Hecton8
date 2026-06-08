@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TEKNOLOGI SUBMARIN DAN BAJU SELAM PENJARAH
 
 > **Sumber:** Keelmark Loss Desk, Penilaian Risiko Aktuarial untuk Operasi Penyelamatan Independen.

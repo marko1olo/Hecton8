@@ -69,8 +69,8 @@ namespace Hecton.UI.MainMenu
 
         [Header("=== CONFIG ===")]
         [SerializeField] private float fadeDuration = 0.2f;
-        [SerializeField] private string targetSceneName = "02_HECTON_WORLD";
-        [SerializeField] private string newGameTargetSceneName = "02_HECTON_WORLD";
+        [SerializeField] private string targetSceneName = DefaultGameplaySceneName;
+        [SerializeField] private string newGameTargetSceneName = DefaultGameplaySceneName;
         [SerializeField] private MenuVisualStyle visualStyle = MenuVisualStyle.PressureVesselNoir;
         [SerializeField] private MenuVisualConcept visualConcept = MenuVisualConcept.ModuleWindowOverlay;
         [SerializeField, Range(-1f, 1f)] private float visualStyleQualityOverride = -1f;
@@ -80,6 +80,7 @@ namespace Hecton.UI.MainMenu
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string BootstrapScenePath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
         private const string OrbitSceneName = "01_ORBIT";
+        private const string DefaultGameplaySceneName = "02_HECTON_WORLD";
         private const float CancelInputDebounceSeconds = 0.35f;
         private const float InputRoutingRetrySeconds = 0.25f;
         private const float MaxMenuPresentationDeltaSeconds = 0.1f;
@@ -108,6 +109,7 @@ namespace Hecton.UI.MainMenu
         private int _lastLoadingPercent = -1;
         private readonly char[] _loadingPercentBuffer = new char[32]; // COLD ALLOC: loading percent TMP staging buffer - owner: MainMenuController
         private readonly char[] _loadingPercentTemplateBuffer = new char[32]; // COLD ALLOC: loading percent localized template staging buffer - owner: MainMenuController
+        private readonly char[] _modalTitleBuffer = new char[64]; // COLD ALLOC: main-menu modal title staging buffer copied into ModalWindow title string - owner: MainMenuController
         private readonly char[] _modalMessageBuffer = new char[256]; // COLD ALLOC: main-menu modal message staging buffer copied directly into TMP - owner: MainMenuController
         private int _loadingPercentTemplateLength;
         private float _lastUnscaledTickTime;
@@ -125,6 +127,8 @@ namespace Hecton.UI.MainMenu
         private INativeInputManagerRuntime _inputManager;
         private bool _cancelRequested;
         private uint _lastPlayerInputSignalSequence;
+        private uint _lastConsumedFailureSnapshotSequence;
+        private ulong _lastFailureNotificationSignature;
         private PanelTransitionState _panelTransitionState;
         private UnityAction _newGameClickAction;
         private UnityAction _loadGameClickAction;
@@ -195,10 +199,10 @@ namespace Hecton.UI.MainMenu
             TryRegisterToTickManager();
 
 #if UNITY_EDITOR
-            if (_saveManager == null)
+            if (!IsSaveManagerUsable(_saveManager))
             {
                 Hecton8.Core.H8Debug.LogWarning(
-                    "[MainMenuController] Hecton8.Core.GlobalRegistry.Save is null. Save/Load features will be unavailable. Ensure SaveManager exists in scene or is DontDestroyOnLoad.");
+                    "[MainMenuController] Hecton8.Core.GlobalRegistry.Save is unavailable or not initialized. Save/Load features will be unavailable until the runtime service is ready.");
             }
 #endif
         }
@@ -222,11 +226,12 @@ namespace Hecton.UI.MainMenu
             BaselineCancelInputSignalSequence();
             RefreshMenuInputRoutingReadyFromCache();
             LocalizationEvents.RegisterLanguageListener(this);
-            
+
             // Subscribe to save/load events for UI feedback
             SaveEvents.Register(this);
-            
+
             RefreshLocalizedTexts();
+            TryShowLatestFailureSnapshot();
             RefreshSelectionIfNeeded();
         }
 
@@ -236,10 +241,10 @@ namespace Hecton.UI.MainMenu
             TryUnregisterHotSwapListener();
 
             LocalizationEvents.UnregisterLanguageListener(this);
-            
+
             // Unsubscribe from save/load events with null checks
             SaveEvents.Unregister(this);
-            
+
             UnregisterFromTickManager();
             CacheLocalizationCold(null);
             CacheSaveManagerCold(null);
@@ -275,6 +280,8 @@ namespace Hecton.UI.MainMenu
             if (serviceSlot == GlobalRegistryServiceSlot.Save)
             {
                 CacheSaveManagerCold(currentService as SaveManager);
+                if (_currentPanel == saveLoadGroup && !_isSaveLoadBusy && !_isSceneLoadInFlight)
+                    RefreshSaveLoadSlotViewsFromCachedManager();
                 RequestSelectionRefresh();
                 return;
             }
@@ -292,6 +299,12 @@ namespace Hecton.UI.MainMenu
                 CacheSettingsManagerCold(currentService as SettingsManager);
                 ApplyPersistedVisualStyleCold();
                 ApplyPersistedVisualConceptCold();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.ModalWindowRuntime)
+            {
+                TryShowLatestFailureSnapshot();
             }
         }
 
@@ -323,7 +336,10 @@ namespace Hecton.UI.MainMenu
                     return;
 
                 case SaveEventType.SaveFailed:
-                    OnSaveFailed(SaveEvents.ResolveSlotName(payload.SlotHash), SaveEvents.ResolveMessage(in payload));
+                    if (IsDuplicateFailureNotification(in payload))
+                        return;
+                    OnSaveFailed(SaveEvents.ResolveSlotName(payload.SlotHash), ResolveSaveFailureMessage(in payload));
+                    RememberFailureNotification(in payload);
                     return;
 
                 case SaveEventType.LoadStarted:
@@ -335,7 +351,41 @@ namespace Hecton.UI.MainMenu
                     return;
 
                 case SaveEventType.LoadFailed:
-                    OnLoadFailed(SaveEvents.ResolveSlotName(payload.SlotHash), SaveEvents.ResolveMessage(in payload));
+                    if (IsDuplicateFailureNotification(in payload))
+                        return;
+                    OnLoadFailed(SaveEvents.ResolveSlotName(payload.SlotHash), ResolveSaveFailureMessage(in payload));
+                    RememberFailureNotification(in payload);
+                    return;
+            }
+        }
+
+        private void TryShowLatestFailureSnapshot()
+        {
+            if (GlobalRegistry.ModalWindow == null)
+                return;
+
+            if (!SaveEvents.TryConsumeLatestFailureSnapshotForUi(
+                    ref _lastConsumedFailureSnapshotSequence,
+                    out SaveEventPayload payload,
+                    out string failureMessage))
+            {
+                return;
+            }
+
+            if (IsDuplicateFailureNotification(in payload))
+                return;
+
+            string slotName = SaveEvents.ResolveSlotName(payload.SlotHash);
+            switch (payload.Type)
+            {
+                case SaveEventType.SaveFailed:
+                    OnSaveFailed(slotName, failureMessage);
+                    RememberFailureNotification(in payload);
+                    return;
+
+                case SaveEventType.LoadFailed:
+                    OnLoadFailed(slotName, failureMessage);
+                    RememberFailureNotification(in payload);
                     return;
             }
         }
@@ -754,6 +804,13 @@ namespace Hecton.UI.MainMenu
 
         private Action CacheStartGameAction(string slotName)
         {
+            if (!string.IsNullOrEmpty(slotName) &&
+                !SaveEvents.IsKnownManualSlotName(slotName))
+            {
+                _pendingStartSlotName = string.Empty;
+                return null;
+            }
+
             if (_startPendingGameModalAction == null)
                 _startPendingGameModalAction = StartPendingGameFromModal;
 
@@ -982,7 +1039,7 @@ namespace Hecton.UI.MainMenu
         /// <summary>
         /// Opens the Save/Load panel, clears the container, generates slots.
         /// Uses Hecton8.SaveSystem.SaveManager for metadata queries.
-        /// Displays "Save system unavailable" if SaveManager is null.
+        /// Displays "Save system unavailable" if SaveManager is not usable.
         /// </summary>
         public void OpenSaveLoadMenu()
         {
@@ -990,19 +1047,17 @@ namespace Hecton.UI.MainMenu
                 return;
 
             EnsureSlotInstances();
+            RefreshSaveLoadSlotViewsFromCachedManager();
 
-            // TASK 31: Comprehensive null check for SaveManager
-            if (_saveManager == null)
+            SwitchPanel(ResolvePanelSwitchSource(), saveLoadGroup);
+        }
+
+        private void RefreshSaveLoadSlotViewsFromCachedManager()
+        {
+            SaveManager saveManager = _saveManager;
+            if (!IsSaveManagerUsable(saveManager))
             {
-                if (_slotButtonAvailability != null)
-                {
-                    for (int i = 0; i < _slotButtonAvailability.Length; i++)
-                        _slotButtonAvailability[i] = false;
-                }
-
-                SetExclusivePanelImmediate(saveLoadGroup);
-                BeginCameraRouteForPanel(saveLoadGroup);
-                RequestSelectionRefresh();
+                ApplyUnavailableSaveSlotViews();
                 return;
             }
 
@@ -1015,7 +1070,7 @@ namespace Hecton.UI.MainMenu
                     if (slotUI == null)
                         continue;
 
-                    if (_saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo))
+                    if (saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo))
                     {
                         slotUI.Init(slotInfo, OnSlotClicked);
                         if (_slotButtonAvailability != null && i < _slotButtonAvailability.Length)
@@ -1037,7 +1092,31 @@ namespace Hecton.UI.MainMenu
 #endif
             }
 
-            SwitchPanel(ResolvePanelSwitchSource(), saveLoadGroup);
+            SetSaveLoadButtonsInteractable(!_isSaveLoadBusy && !_isSceneLoadInFlight);
+        }
+
+        private void ApplyUnavailableSaveSlotViews()
+        {
+            if (_slotButtonAvailability != null)
+            {
+                for (int i = 0; i < _slotButtonAvailability.Length; i++)
+                    _slotButtonAvailability[i] = false;
+            }
+
+            if (_slotUIs != null)
+            {
+                for (int i = 0; i < SlotCount; i++)
+                {
+                    string slotName = SlotNames[i];
+                    SaveSlotUI slotUI = _slotUIs[i];
+                    if (slotUI == null)
+                        continue;
+
+                    slotUI.Init(slotName, false, string.Empty, 0f, OnSlotClicked);
+                }
+            }
+
+            SetSaveLoadButtonsInteractable(!_isSaveLoadBusy && !_isSceneLoadInFlight);
         }
 
         private void EnsureSlotInstances()
@@ -1103,6 +1182,14 @@ namespace Hecton.UI.MainMenu
                 return;
             }
 
+            if (!SaveEvents.IsKnownManualSlotName(slotName))
+            {
+#if UNITY_EDITOR
+                Hecton8.Core.H8Debug.LogWarning("[MainMenuController] Ignored unknown save slot click.");
+#endif
+                return;
+            }
+
             PublishPrimaryMenuActionFeedback(ResolveSlotButtonByName(slotName));
 
             int messageLength = BuildSlotModalMessage(
@@ -1143,7 +1230,7 @@ namespace Hecton.UI.MainMenu
         /// Empty slotName = new game, otherwise = load save.
         /// Writes to GameStartContextHolder for inter-scene communication.
         /// Cold persistence is owned by the holder, not by MainMenuController.
-        /// TASK 31: Comprehensive null checks for SaveManager before loading.
+        /// TASK 31: Comprehensive availability checks for SaveManager before loading.
         /// </summary>
         public void StartGame(string slotName)
         {
@@ -1230,15 +1317,18 @@ namespace Hecton.UI.MainMenu
                 return;
 
             if (string.IsNullOrWhiteSpace(sceneName))
-                sceneName = targetSceneName;
+                sceneName = ResolveConfiguredStartSceneName(targetSceneName);
+
+            string safeSlotName = string.Empty;
 
             // Validate save exists before loading
             if (!string.IsNullOrEmpty(slotName))
             {
-                if (_saveManager == null)
+                SaveManager saveManager = _saveManager;
+                if (!IsSaveManagerUsable(saveManager))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogError("[MainMenuController] Hecton8.Core.GlobalRegistry.Save is null. Cannot validate save file.");
+                    Hecton8.Core.H8Debug.LogError("[MainMenuController] Hecton8.Core.GlobalRegistry.Save is unavailable or not initialized. Cannot validate save file.");
 #endif
                     int messageLength = CopyLocalizedModalMessage(
                         LocalizationKeys.ERROR_SAVE_SYSTEM_UNAVAILABLE_MESSAGE,
@@ -1255,12 +1345,12 @@ namespace Hecton.UI.MainMenu
                     return;
                 }
 
-                if (!_saveManager.SaveExists(slotName))
+                if (!SaveManager.TryResolveSafeSlotName(slotName, out safeSlotName))
                 {
                     int messageLength = BuildSlotModalMessage(
                         LocalizationKeys.MODAL_LOAD_ERROR_MESSAGE,
-                        "Save file does not exist.",
-                        slotName,
+                        "Invalid save slot.",
+                        string.Empty,
                         ReadOnlySpan<char>.Empty);
 
                     ModalWindow.ShowWithCustomLabels(
@@ -1273,6 +1363,27 @@ namespace Hecton.UI.MainMenu
                         null);
                     return;
                 }
+
+                if (!saveManager.SaveExists(safeSlotName))
+                {
+                    int messageLength = BuildSlotModalMessage(
+                        LocalizationKeys.MODAL_LOAD_ERROR_MESSAGE,
+                        "Save file does not exist.",
+                        safeSlotName,
+                        ReadOnlySpan<char>.Empty);
+
+                    ModalWindow.ShowWithCustomLabels(
+                        "Load Error",
+                        _modalMessageBuffer,
+                        messageLength,
+                        _openSaveLoadMenuModalAction,
+                        null,
+                        "OK",
+                        null);
+                    return;
+                }
+
+                slotName = safeSlotName;
             }
 
             _isSceneLoadInFlight = true;
@@ -1376,14 +1487,19 @@ namespace Hecton.UI.MainMenu
             if (string.Equals(activeSceneName, BootstrapSceneName, StringComparison.Ordinal))
                 return false;
 
-            return string.Equals(sceneName, "02_HECTON_WORLD", StringComparison.Ordinal) ||
+            return string.Equals(sceneName, DefaultGameplaySceneName, StringComparison.Ordinal) ||
                    string.Equals(sceneName, "01_ORBIT", StringComparison.Ordinal);
         }
 
         private string ResolveStartSceneName(bool isNewGame)
         {
             string sceneName = isNewGame ? newGameTargetSceneName : targetSceneName;
-            return string.IsNullOrWhiteSpace(sceneName) ? targetSceneName : sceneName;
+            return ResolveConfiguredStartSceneName(sceneName);
+        }
+
+        private static string ResolveConfiguredStartSceneName(string sceneName)
+        {
+            return string.IsNullOrWhiteSpace(sceneName) ? DefaultGameplaySceneName : sceneName.Trim();
         }
 
         private bool TryRouteStartThroughBootstrap(string sceneName)
@@ -1753,7 +1869,12 @@ namespace Hecton.UI.MainMenu
 
         private void CacheSaveManagerCold(SaveManager saveManager)
         {
-            _saveManager = saveManager;
+            _saveManager = IsSaveManagerUsable(saveManager) ? saveManager : null;
+        }
+
+        private static bool IsSaveManagerUsable(SaveManager saveManager)
+        {
+            return saveManager != null && saveManager.IsInitialized;
         }
 
         private void CacheSettingsManagerCold(SettingsManager settingsManager)
@@ -1928,9 +2049,10 @@ namespace Hecton.UI.MainMenu
                 return true;
             }
 
-            ReadOnlySpan<char> sceneName = string.IsNullOrEmpty(metadata.sceneName)
+            string normalizedSceneName = SaveMetadata.NormalizeSceneName(metadata.SceneName);
+            ReadOnlySpan<char> sceneName = string.Equals(normalizedSceneName, SaveMetadata.UnknownSceneName, StringComparison.Ordinal)
                 ? "UNKNOWN SCENE".AsSpan()
-                : metadata.sceneName.AsSpan();
+                : normalizedSceneName.AsSpan();
             int minutes = Mathf.Max(0, Mathf.RoundToInt(metadata.totalPlayTime / 60f));
             AppendReadableSlotText(sceneName, detailDestination, ref detailLength);
             AppendReadableSlotText(" / ".AsSpan(), detailDestination, ref detailLength);
@@ -1964,7 +2086,7 @@ namespace Hecton.UI.MainMenu
                 return false;
 
             SaveManager saveManager = _saveManager;
-            if (saveManager == null)
+            if (!IsSaveManagerUsable(saveManager))
                 return true;
 
             saveSystemReady = true;
@@ -2148,8 +2270,10 @@ namespace Hecton.UI.MainMenu
             _isSaveLoadBusy = false;
             SetSaveLoadButtonsInteractable(true);
 
+            SaveManager saveManager = _saveManager;
+
             // Refresh slot metadata to show updated save info
-            if (_saveManager != null && _slotUIs != null)
+            if (IsSaveManagerUsable(saveManager) && _slotUIs != null)
             {
                 for (int i = 0; i < SlotCount; i++)
                 {
@@ -2158,7 +2282,7 @@ namespace Hecton.UI.MainMenu
                     if (slotUI == null)
                         continue;
 
-                    if (_saveManager.TryGetSaveSlotInfo(slotNameToRefresh, out SaveSlotInfo slotInfo))
+                    if (saveManager.TryGetSaveSlotInfo(slotNameToRefresh, out SaveSlotInfo slotInfo))
                     {
                         slotUI.Init(slotInfo, OnSlotClicked);
                         if (_slotButtonAvailability != null && i < _slotButtonAvailability.Length)
@@ -2226,25 +2350,8 @@ namespace Hecton.UI.MainMenu
         {
             _isSaveLoadBusy = false;
 
-            // Check if backup was used (SaveManager should set this flag)
-            if (_saveManager != null && _saveManager.LastLoadUsedBackup)
-            {
-                string slotName = SaveEvents.ResolveSlotName(payload.SlotHash);
-                int messageLength = BuildSlotModalMessage(
-                    LocalizationKeys.WARNING_BACKUP_USED_MESSAGE,
-                    "Primary save file was corrupt. Loaded from backup.",
-                    slotName,
-                    ReadOnlySpan<char>.Empty);
-
-                ModalWindow.ShowWithCustomLabels(
-                    "Backup Loaded",
-                    _modalMessageBuffer,
-                    messageLength,
-                    null,
-                    null,
-                    "OK",
-                    null);
-            }
+            SaveManager saveManager = _saveManager;
+            ShowLoadRecoveryModal(in payload, saveManager);
 
             SetSaveLoadButtonsInteractable(true);
 
@@ -2253,6 +2360,42 @@ namespace Hecton.UI.MainMenu
 #endif
 
             RequestSelectionRefresh();
+        }
+
+        private void ShowLoadRecoveryModal(in SaveEventPayload payload, SaveManager saveManager)
+        {
+            if (!IsSaveManagerUsable(saveManager))
+                return;
+
+            bool usedBackup = saveManager.LastLoadUsedBackup;
+            bool selfRepaired = saveManager.LastLoadSelfRepaired;
+            if (!usedBackup && !selfRepaired)
+                return;
+
+            string slotName = SaveEvents.ResolveSlotName(payload.SlotHash);
+            int messageLength = usedBackup
+                ? BuildSlotModalMessage(
+                    LocalizationKeys.WARNING_BACKUP_USED_MESSAGE,
+                    "Primary save file was corrupt. Loaded from backup.",
+                    slotName,
+                    ReadOnlySpan<char>.Empty)
+                : BuildSlotModalMessage(
+                    LocalizationKeys.WARNING_SAVE_REPAIRED_MESSAGE,
+                    "Primary save file was repaired before loading.",
+                    slotName,
+                    ReadOnlySpan<char>.Empty);
+            string title = usedBackup
+                ? BuildLocalizedModalTitle(LocalizationKeys.WARNING_BACKUP_USED_TITLE, "BACKUP LOADED")
+                : BuildLocalizedModalTitle(LocalizationKeys.WARNING_SAVE_REPAIRED_TITLE, "SAVE REPAIRED");
+
+            ModalWindow.ShowWithCustomLabels(
+                title,
+                _modalMessageBuffer,
+                messageLength,
+                null,
+                null,
+                "OK",
+                null);
         }
 
         /// <summary>
@@ -2266,6 +2409,7 @@ namespace Hecton.UI.MainMenu
             string errorText = ResolveSaveEventError(error);
             // Check if error indicates corrupt save with no backup
             bool isCorruptNoBackup = IsCorruptNoBackupError(errorText);
+            bool canRetry = SaveEvents.IsKnownManualSlotName(slotName);
 
             int messageLength = isCorruptNoBackup
                 ? BuildSlotModalMessage(
@@ -2283,10 +2427,10 @@ namespace Hecton.UI.MainMenu
                 "Load Failed",
                 _modalMessageBuffer,
                 messageLength,
-                CacheStartGameAction(slotName),
-                _returnSaveLoadToMainMenuAction,
-                "Retry",
-                "Return to Menu");
+                canRetry ? CacheStartGameAction(slotName) : null,
+                canRetry ? _returnSaveLoadToMainMenuAction : null,
+                canRetry ? "Retry" : "OK",
+                canRetry ? "Return to Menu" : null);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Hecton8.Core.H8Debug.LogError("[MainMenuController] Load failed.");
@@ -2298,6 +2442,51 @@ namespace Hecton.UI.MainMenu
         private static string ResolveSaveEventError(string error)
         {
             return string.IsNullOrWhiteSpace(error) ? UnknownSaveEventError : error;
+        }
+
+        private string ResolveSaveFailureMessage(in SaveEventPayload payload)
+        {
+            string message = SaveEvents.ResolveMessage(in payload);
+            if (!string.IsNullOrEmpty(message))
+                return message;
+
+            return SaveEvents.TryConsumeMatchingFailureSnapshotForUi(
+                ref _lastConsumedFailureSnapshotSequence,
+                in payload,
+                out string snapshotMessage)
+                ? snapshotMessage
+                : message;
+        }
+
+        private bool IsDuplicateFailureNotification(in SaveEventPayload payload)
+        {
+            ulong signature = BuildFailureNotificationSignature(in payload);
+            return signature != 0UL && signature == _lastFailureNotificationSignature;
+        }
+
+        private void RememberFailureNotification(in SaveEventPayload payload)
+        {
+            ulong signature = BuildFailureNotificationSignature(in payload);
+            if (signature != 0UL)
+                _lastFailureNotificationSignature = signature;
+        }
+
+        private static ulong BuildFailureNotificationSignature(in SaveEventPayload payload)
+        {
+            if (!IsFailurePayload(in payload))
+            {
+                return 0UL;
+            }
+
+            ulong typePart = (ulong)(byte)payload.Type << 56;
+            ulong slotPart = (ulong)payload.SlotHash << 24;
+            return typePart ^ slotPart ^ payload.MessageHash ^ payload.TimestampTicks;
+        }
+
+        private static bool IsFailurePayload(in SaveEventPayload payload)
+        {
+            return payload.Type == SaveEventType.SaveFailed ||
+                   payload.Type == SaveEventType.LoadFailed;
         }
 
         private void SetSaveLoadButtonsInteractable(bool interactable)
@@ -2368,6 +2557,12 @@ namespace Hecton.UI.MainMenu
         private int CopyLocalizedModalMessage(string key, ReadOnlySpan<char> fallback)
         {
             return BuildModalMessage(key, fallback, ReadOnlySpan<char>.Empty, ReadOnlySpan<char>.Empty);
+        }
+
+        private string BuildLocalizedModalTitle(string key, ReadOnlySpan<char> fallback)
+        {
+            int length = CopySpanToBuffer(ResolveLocalizedSpan(_localization, key, fallback), _modalTitleBuffer, 0);
+            return length > 0 ? new string(_modalTitleBuffer, 0, length) : string.Empty;
         }
 
         private int BuildSlotModalMessage(string key, ReadOnlySpan<char> fallback, string slotName, ReadOnlySpan<char> detail)

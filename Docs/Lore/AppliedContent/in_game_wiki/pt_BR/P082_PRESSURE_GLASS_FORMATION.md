@@ -7,34 +7,34 @@ poi_tags: poi.pressure_glass_vein;poi.blue_debt_casket
 biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Formação de Vidro de Pressão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Formação de Vidro de Pressão
 
-PT-BR LOC HOLD: Pressure glass is the technical field name behind Marauder blue debt and Deep Reach Xenon-Omega language. It forms where pressure, noble-gas pockets, brine, minerals, heat and altered biology meet. Good samples are valuable because they stay stable under conditions normal industry cannot tolerate.
+Vidro de pressão é o nome técnico por trás do blue debt dos Marauders e da linguagem Xenon-Omega da Deep Reach. Ele se forma onde pressão, bolsões de gás nobre, salmoura, minerais, calor e biologia alterada se encontram.
 
 ## Scanner
 
-PT-BR LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
+Rede de dívida azul. Gás nobre, salmoura, defeitos minerais e histórico de pressão presos em um erro caro.
 
 ## Terminal
 
-PT-BR LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
+XO CONTINUITY SUBSTRATE: rede de clatrato/defeitos rica em xenônio estabilizada por química de salmoura, ciclos térmicos e resíduo catalítico biológico. Risco de despressurização: deriva de sinal, fratura e bloom contaminante.
 
 ## Audio
 
-PT-BR LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
+Foi por isso que voltaram. Não ouro. Uma cicatriz legível por máquina.
 
 ## Field Note
 
-PT-BR LOC HOLD: It is not ore. It is a process that remembers where it was made.
+Não é minério. É um processo que lembra onde foi feito.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/pt_BR. -->

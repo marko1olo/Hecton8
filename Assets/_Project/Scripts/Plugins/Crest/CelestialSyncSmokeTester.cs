@@ -48,6 +48,7 @@ namespace Hecton8.Dev
         [SerializeField] private float _debugMeteorFlash;
 #pragma warning restore CS0414
 
+        private object _spatialAudioRuntime;
         private ISpatialAudioEnvironmentModulationSink _spatialAudioModulation;
 
         private void Awake()
@@ -129,7 +130,7 @@ namespace Hecton8.Dev
             if (biolumController == null)
                 biolumController = GlobalRegistry.BiolumController;
 
-            if (!IsAudioRuntimeObjectUsable(_spatialAudioModulation))
+            if (ResolveSpatialAudioModulation() == null)
                 CacheSpatialAudioModulation(GlobalRegistry.Audio);
 
             if (randomEventSystem == null)
@@ -229,19 +230,34 @@ namespace Hecton8.Dev
 
         private void CacheSpatialAudioModulation(object audioRuntime)
         {
-            _spatialAudioModulation = IsAudioRuntimeObjectUsable(audioRuntime)
-                ? audioRuntime as ISpatialAudioEnvironmentModulationSink
-                : null;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _spatialAudioRuntime = null;
+                _spatialAudioModulation = null;
+                return;
+            }
+
+            _spatialAudioRuntime = audioRuntime;
+            _spatialAudioModulation = audioRuntime as ISpatialAudioEnvironmentModulationSink;
         }
 
         private ISpatialAudioEnvironmentModulationSink ResolveSpatialAudioModulation()
         {
+            object audioRuntime = _spatialAudioRuntime;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _spatialAudioRuntime = null;
+                _spatialAudioModulation = null;
+                return null;
+            }
+
             ISpatialAudioEnvironmentModulationSink spatialAudioModulation = _spatialAudioModulation;
-            if (IsAudioRuntimeObjectUsable(spatialAudioModulation))
+            if (ReferenceEquals(spatialAudioModulation, audioRuntime) && IsAudioRuntimeObjectUsable(spatialAudioModulation))
                 return spatialAudioModulation;
 
-            _spatialAudioModulation = null;
-            return null;
+            spatialAudioModulation = audioRuntime as ISpatialAudioEnvironmentModulationSink;
+            _spatialAudioModulation = spatialAudioModulation;
+            return IsAudioRuntimeObjectUsable(spatialAudioModulation) ? spatialAudioModulation : null;
         }
 
         private static bool IsAudioRuntimeObjectUsable(object runtime)
@@ -249,7 +265,7 @@ namespace Hecton8.Dev
             if (runtime == null)
                 return false;
 
-            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+            if (runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (runtime is Behaviour behaviour)

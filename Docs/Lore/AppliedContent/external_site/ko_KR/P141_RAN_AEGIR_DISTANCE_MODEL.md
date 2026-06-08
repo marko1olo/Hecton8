@@ -8,33 +8,17 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "KO LOC HOLD: Ran-Aegir Distance Model"
+spoiler_tier: 1
+title: "Ran-Aegir 거리 모델"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Ran-Aegir Distance Model
+# Ran-Aegir 거리 모델
 
-KO LOC HOLD: The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy.
-
-## Scanner
-
-KO LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
-
-## Terminal
-
-KO LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
-
-## Audio
-
-KO LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
-
-## Field Note
-
-KO LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+Ran-Aegir 거리는 고립을 물리로 바꾸는 숫자다. 10광년급 도달권은 탐사기, 화물, 오래된 법, 기업의 식욕에는 충분히 가깝지만 인간의 호흡 일정에 맞춰 자비가 도착하기에는 너무 멀다. HECTON-8은 그 틈을 압력으로 쓴다. 메시지는 배보다 빠르고, claims는 사람보다 빠르며, 침수된 방은 inner-world 답변이 의미를 갖기 전에 죽는다. 이 거리는 천문학자에게는 작고, 새는 hatch 아래 기다리는 사람에게는 거대해야 한다.
 
 <!-- External Site; generated from P141_RAN_AEGIR_DISTANCE_MODEL/ko_KR. -->

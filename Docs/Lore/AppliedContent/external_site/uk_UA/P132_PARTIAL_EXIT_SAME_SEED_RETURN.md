@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "Частковий вихід: повернення в той самий seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# Частковий вихід: повернення в той самий seed
 
-UA LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed.
+Частковий вихід захищає довгу кампанію від фальшивого закриття. Black Keel може підняти оператора на обмежене вікно, залатати костюм, записати повернені пакети й продати паузу як турботу. Світ унизу не перемикається на чистішу версію.
 
-## Scanner
-
-UA LOC HOLD: Extraction possible. Closure not included.
-
-## Terminal
-
-UA LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
-
-## Audio
-
-UA LOC HOLD: You left the pressure. You did not leave the contract.
-
-## Field Note
-
-UA LOC HOLD: Let the player breathe, then make the same ocean still be there.
+Коли гравець повертається, той самий seed досі там. У розсільних сходів та сама пастка, у того самого реле той самий поганий кут, а той самий доказ залишається небезпечним. Цей фінал дає полегшення без виправдання: повітря в легенях, більше боргу в контракті й жодного стирання знайденого.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/uk_UA. -->

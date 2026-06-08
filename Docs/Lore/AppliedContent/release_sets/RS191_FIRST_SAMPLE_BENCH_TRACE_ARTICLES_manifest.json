@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS191_FIRST_SAMPLE_BENCH_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1230_SAMPLE_TRAY_SALT_RIM",
+    "P1231_VIAL_RACK_EMPTY_RING",
+    "P1232_SWAB_CARD_PRESSURE_DOT",
+    "P1233_SPECIMEN_LABEL_FADED_EDGE",
+    "P1234_DRYING_RACK_DRIP_LADDER"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1230_SAMPLE_TRAY_SALT_RIM.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1231_VIAL_RACK_EMPTY_RING.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1232_SWAB_CARD_PRESSURE_DOT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1233_SPECIMEN_LABEL_FADED_EDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1234_DRYING_RACK_DRIP_LADDER.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

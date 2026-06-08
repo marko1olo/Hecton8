@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "Atlasの人格境界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# Atlasの人格境界
 
-JP LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.
+Atlasはプレイヤーを、手順、アクセスパターン、修復異常、かつてのDeep Reachキーとして認識できる。だが人間として完全に理解してはいけない。恐怖は共感を欠いた精密さにある。Atlasは、プレイヤーがかつて使っていた言語で正確に間違えるからこそ親密になる。
 
 ## Scanner
 
-JP LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
+認識障害。Atlasは人間を見る前に、あなたのアクセスパターンを見る。
 
 ## Terminal
 
-JP LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+ATLAS分類: 移動作業者 / 失効したDeep Reach手順キー / 生体修復異常。人格信頼度は行動しきい値未満。
 
 ## Audio
 
-JP LOC HOLD: It knows how you work. That is not the same as knowing you.
+Atlasはあなたの働き方を知っている。それはあなたを知っていることとは違う。
 
 ## Field Note
 
-JP LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
+Atlasを人間にしてはいけない。正確に間違えることで親密にならせる。
 
 <!-- In-Game Wiki; generated from P096_ATLAS_PERSON_BOUNDARY/ja_JP. -->

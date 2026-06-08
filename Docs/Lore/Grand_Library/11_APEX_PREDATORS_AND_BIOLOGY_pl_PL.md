@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DRAPIEŻNICY APEX I BIOLOGIA ABISALNA
 
 > **Źródło:** Zfragmentowany raport ksenobiologiczny, laboratorium badawcze Sektora 44 (Odzyskany).

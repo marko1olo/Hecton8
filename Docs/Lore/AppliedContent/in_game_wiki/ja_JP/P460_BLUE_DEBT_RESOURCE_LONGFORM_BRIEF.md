@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "JA LOC HOLD: Blue Debt Custody"
+title: "Blue Debt：custody内の圧力履歴"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Blue Debt Custody
+# Blue Debt：custody内の圧力履歴
 
-JA LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debtは有用で高価で、道徳的に汚い。魔法の鉱石ではなく、handling、contamination、custody、Atlas compatibility、証拠の所有者に価値が依存するpressure-grown substrateだ。
 
 ## Scanner
 
-JA LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+資源アーカイブ。Blue debtはcustody下のXenon-Omega pressure substrate。pressure history、brine exposure、noble-gas capture、contamination stage、sample grade、mass-through-window payoutを持つ。
 
 ## Terminal
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+公開資源ノード // BLUE DEBT。価値にはpressure-rated containment、extraction scar record、contamination status、custody receipt、recoverable tonne-window allocationが必要。
 
 ## Audio
 
-JA LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+Black Keel支払い音声:「サンプルを磨くな。封じ、gradeを付け、receiptを乾かしておけ。」
 
 ## Field Note
 
-JA LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Marauderメモ: まずsample gradeを付け、それから何が触れたかを聞け。custodyなしの価格は餌だ。
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/ja_JP. -->

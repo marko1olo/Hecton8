@@ -136,7 +136,7 @@ namespace Hecton8.Editor
                     _templates.Add(template);
             }
 
-            _templates.Sort((a, b) => a.TemplateHashId.CompareTo(b.TemplateHashId));
+            _templates.Sort((a, b) => a.ResolvePersistentHashId().CompareTo(b.ResolvePersistentHashId()));
             RebuildList();
         }
 
@@ -160,7 +160,7 @@ namespace Hecton8.Editor
                 BaseModuleTemplate.SocketDefinition[] sockets = template.SocketDefinitions;
                 block.Add(new Label(
                     template.name +
-                    " | Hash " + template.TemplateHashId +
+                    " | Hash " + template.ResolvePersistentHashId() +
                     " | Bounds " + bounds.x.ToString("0.###", CultureInfo.InvariantCulture) +
                     "," + bounds.y.ToString("0.###", CultureInfo.InvariantCulture) +
                     "," + bounds.z.ToString("0.###", CultureInfo.InvariantCulture) +
@@ -273,25 +273,44 @@ namespace Hecton8.Editor
             return array;
         }
 
-        private static void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
             }
             finally
             {
-                array.Dispose();
                 array = default;
             }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
         private static ModuleCostDTO ResolveCost(BaseModuleTemplate template, NativeArray<ModuleCostDTO> csvCosts, int csvCostCount)
         {
-            uint prefabHash = unchecked((uint)template.TemplateHashId);
+            uint prefabHash = unchecked((uint)template.ResolvePersistentHashId());
             if (csvCosts.IsCreated)
             {
                 for (int i = 0; i < csvCostCount; i++)
@@ -455,7 +474,7 @@ namespace Hecton8.Editor
             if (transform == null || template == null)
                 return false;
 
-            uint prefabHash = unchecked((uint)template.TemplateHashId);
+            uint prefabHash = unchecked((uint)template.ResolvePersistentHashId());
             if (!BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault(
                     GlobalRegistry.DataVault,
                     prefabHash,

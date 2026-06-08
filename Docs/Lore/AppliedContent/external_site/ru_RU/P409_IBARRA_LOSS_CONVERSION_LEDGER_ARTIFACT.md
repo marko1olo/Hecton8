@@ -9,32 +9,22 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Ibarra Loss Ledger"
+title: "Ledger Ибарры о конверсии потерь"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Ibarra Loss Ledger
+# Ledger Ибарры о конверсии потерь
 
-RU LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+## Бухгалтерия, Пережившая Колонию
 
-## Scanner
+Ledger Ибарры должен ощущаться холоднее списка пропавших. Список всё ещё скорбит, даже когда врёт. Ledger конвертирует. Он принимает повреждённые жилые модули, tool banks, sample custody, missing personnel и salvage rights, а затем раскладывает каждый факт в категорию, способную идти по контрактам после того, как HECTON-8 замолчала.
 
-RU LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Это мост между старой liability Deep Reach и текущим долгом игрока. Если люди становятся unresolved personnel load, корпорация может признать их исчезновение, не называя убийство. Если доказательство становится material custody, его можно купить, похоронить, перенаправить или застраховать. Если claim остаётся continuous, собственность живёт дольше рабочих, которые заставляли место работать.
 
-## Terminal
-
-RU LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
-
-## Audio
-
-RU LOC HOLD: The ledger did not forget names. It made them payable later.
-
-## Field Note
-
-RU LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Ledger даёт игроку тяжёлую власть. Вынести его наверх - не просто раскрыть случившееся. Это вынести предмет, который рынок уже умеет оценивать. Выбор продать, опубликовать, перенаправить или похоронить доказательство становится грязным, потому что документ создан так, чтобы любой выбор читался в чьём-то балансе.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/ru_RU. -->

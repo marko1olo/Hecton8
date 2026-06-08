@@ -9,32 +9,34 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Population And Authority Scale"
+title: "مقياس السكان والسلطة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Population And Authority Scale
+# مقياس السكان والسلطة
 
-AR LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
+تبقى أرقام السكان تقريبية لأن اللاعب لا يحتاج إلى census opera. السؤال المفيد أبسط: من يستطيع التأثير عليك من بعيد؟ قد لا يلمس نطاق داخلي مزدحم HECTON-8 إلا كسطر توثيق. قد يكون depot صغير أهم لأنه يتحكم في custody الحزم. وقد تكون frontier-shell ميتة أهم من الجميع لأنها تملك العتاد في الغرفة.
+
+هذا هو المقياس الذي يشعر به اللاعب. Sol يستطيع أن يقرر أن شيئا ما يخص شخصا ما. Centauri يستطيع جعل لغة Deep Reach القديمة محترمة. Barnard يطبع العمل الذي يحاصر Marauders. Tau Ceti يستطيع تحويل الدليل إلى ضغط علني، متأخرا على الأكسجين لا على العواقب. Luyten يستطيع إثبات سلسلة الرسائل. Aegir هو المكان الذي تصير فيه التواقيع ضغطا وماء وأبوابا مقفلة وكتلة قابلة للفوترة.
 
 ## Scanner
 
-AR LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+AUTHORITY CENSUS STUB // السكان خلفية. المهم أي نطاق يستطيع توثيق claim أو نشره أو نقله أو تأمينه أو ختمه أو دفنه.
 
 ## Terminal
 
-AR LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AUTHORITY SCALE // Sol يوثق الملكية. Centauri يشرعن المواثيق. Barnard يمد claims الميتة بالعمالة. Tau Ceti ينشر الأدلة بعد التأخير. Luyten يثبت custody. Aegir ينفذ claim المادي القذر.
 
 ## Audio
 
-AR LOC HOLD: The largest domain is not the nearest hand.
+أكبر نطاق ليس اليد الأقرب. إنه الختم الذي ينجو من التأخير.
 
 ## Field Note
 
-AR LOC HOLD: Do not turn the setting into census space opera.
+لا تضف معلومات تعداد إلا إذا غيّرت الضغط على جسد أو طريق أو claim أو سلسلة دليل.
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/ar_SA. -->

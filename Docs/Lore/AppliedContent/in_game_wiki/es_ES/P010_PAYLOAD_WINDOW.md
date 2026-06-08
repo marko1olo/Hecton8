@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Ventana de carga
 
-La Ventana de carga vuelve físicas las finales. El jugador solo puede mover una masa limitada a través de presión, clima, tiempo de radiación y geometría Black Keel. Dinero, pruebas, nombres, coordenadas, muestras vivas, señal Atlas o silencio no pueden salir todos juntos.
+La Ventana de carga es donde las decisiones finales se vuelven físicas. El jugador solo puede mover masa limitada a través de presión, cobertura de tormenta, tiempo de radiación de Aegir y geometría de recuperación Black Keel. Dinero, pruebas, nombres de trabajadores, coordenadas, muestras vivas, señal Atlas o silencio no pueden salir juntos.
 
 ## Scanner
 
-Paquete de ascenso improvisado. Puede salir del océano si masa, clima y geometría del carrier coinciden.
+Paquete de ascenso improvisado. Puede dejar el océano si masa, clima, tiempo de dosis y geometría Black Keel coinciden.
 
 ## Terminal
 
-PAYLOAD SLOT: limitado. WINDOW: abierta. ROUTE: disputada. CLAIM VALUE: variable. EVIDENCE STATE: insuficiente para disputa limpia.
+RANURA DE CARGA: LIMITADA. VENTANA: ABIERTA. RUTA: DISPUTADA. RECEPTOR: SIN CONFIRMAR. VALOR CLAIM: VARIABLE. ESTADO DE EVIDENCIA: INSUFICIENTE PARA DISPUTA LIMPIA.
 
 ## Audio
 
@@ -35,6 +35,6 @@ La ventana está abierta. No seguirá abierta para todo.
 
 ## Field Note
 
-Salir es una ruta. Salir limpio es un mito.
+Salir es una ruta. Salir limpio es una historia que la gente vende después de que otro paga la masa.
 
 <!-- In-Game Wiki; generated from P010_PAYLOAD_WINDOW/es_ES. -->

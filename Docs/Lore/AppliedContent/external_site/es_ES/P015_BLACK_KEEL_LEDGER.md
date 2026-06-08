@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Libro Black Keel
 
-Black Keel Ledger define la línea orbital del jugador como una máquina contractual: útil, comprometida e indiferente.
+Black Keel no es una nave amiga. Es un tender claim-pool que lee cuerpos, carga, cuarentena, masa de ascenso y seguro como entradas del mismo libro.
 
-## Scanner
-
-Libro de tender claim-pool. Custodia carrier pública, deuda de seguro, prioridades Deep Reach ocultas.
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keel no es tu nave. Es la máquina que sabe lo que debes.
-
-## Field Note
-
-La nave puede ayudarte sin estar de tu lado.
+No necesita odiar al jugador. Puede responder con cortesía, aceptar un hash de auxilio y negar recogida hasta que cambien los números.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/es_ES. -->

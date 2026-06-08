@@ -9,32 +9,22 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Varnek Margin Memo"
+title: "Мемо Варнека о принятом запасе"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Varnek Margin Memo
+# Мемо Варнека о принятом запасе
 
-RU LOC HOLD: Deep Reach liability begins where real physics became an acceptable loss line.
+## Штамп До Потопа
 
-## Scanner
+Мемо Варнека важно именно своей спокойной интонацией. Great Tide был настоящим. Каскад давления был настоящим. Океану не требовался корпоративный приказ, чтобы раздавить HECTON-8. Преступление появляется в строке, где известный предупреждающий запас становится accepted tail exposure, а эвакуационный резерв остаётся спящим.
 
-RU LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Документ говорит языком ответственного управления: average model, continuity cost, reserve non-triggered, independent shutdown not recommended. В этом и сила. Варнек не звучит как злодей. Он звучит как человек, нашедший колонку, где опасность становится payable. Когда Marauder поднимает это мемо, старое решение уже стало рельефом: погнутые рёбра коридоров, утонувшие инструменты, двери давления, закрывшиеся перед рабочими, которые всё ещё ждали смены приказа.
 
-## Terminal
-
-RU LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
-
-## Audio
-
-RU LOC HOLD: No murder order. A margin acceptance.
-
-## Field Note
-
-RU LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Эта улика должна давить сильнее признания. Признание можно списать на панику или злую волю. Подписанный margin review показывает Deep Reach в обычном рабочем режиме, с летальными данными на столе. Компания приняла океан как cost center, а потом выпустила отчёт о катастрофе достаточно чистый, чтобы пройти страховую проверку.
 
 <!-- External Site; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/ru_RU. -->

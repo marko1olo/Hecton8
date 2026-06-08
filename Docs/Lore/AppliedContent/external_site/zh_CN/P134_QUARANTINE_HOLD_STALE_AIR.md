@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "隔离扣留：陈旧空气"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# 隔离扣留：陈旧空气
 
-CN LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+隔离扣留是最安静的假出口。房间里不需要反派。表格写着活体回收，空气计数器写着配给启用，下一扇门只会在污染审查、claimant挑战和保险损失审查之后开启。
 
-## Scanner
-
-CN LOC HOLD: You are alive, sealed, and still not free.
-
-## Terminal
-
-CN LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-CN LOC HOLD: The hatch opens only to another closed hatch.
-
-## Field Note
-
-CN LOC HOLD: This is the bureaucratic version of drowning.
+这个结果残酷，因为它可以被辩护。没有人杀死证人。没有人销毁样本。系统只是让每一份陈述等待得比尸体曾经能等待的时间更久。玩家活过海洋，进入一条由程序建成的密封走廊。
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/zh_CN. -->

@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # ペイロード・ウィンドウ
 
-ペイロード・ウィンドウでは結末が物理になる。プレイヤーが圧力、天候、放射線タイミング、Black Keel幾何を通して運べる質量は限られる。金、証拠、名前、座標、生体サンプル、Atlas信号、沈黙をすべて同時に持ち出すことはできない。
+ペイロード・ウィンドウでは、最後の選択が物理になる。プレイヤーが圧力、嵐の覆い、エーギル放射線時刻、Black Keel回収幾何を通して動かせる質量は限られる。金、証拠、作業員名、座標、生体サンプル、Atlas信号、沈黙をすべて同時に持ち出すことはできない。
 
 ## Scanner
 
-即席上昇パッケージ。質量、天候、carrier幾何が合えば海を出られる。
+即席上昇パッケージ。質量、天候、線量時刻、Black Keel幾何が合えば海を出られる。
 
 ## Terminal
 
-PAYLOAD SLOT: 制限。WINDOW: 開放。ROUTE: 係争中。CLAIM VALUE: 変動。EVIDENCE STATE: 清潔な異議には不足。
+PAYLOAD SLOT: 制限。WINDOW: 開放。ROUTE: 係争中。RECEIVER: 未確認。CLAIM VALUE: 変動。EVIDENCE STATE: 清潔な異議には不足。
 
 ## Audio
 
-ウィンドウは開いている。すべてのために開き続けるわけではない。
+窓は開いている。すべてのために開き続けるわけではない。
 
 ## Field Note
 
-脱出は経路だ。きれいな脱出は神話だ。
+脱出は経路だ。きれいな脱出は、誰か別の人間が質量を払った後に売られる物語だ。
 
 <!-- In-Game Wiki; generated from P010_PAYLOAD_WINDOW/ja_JP. -->

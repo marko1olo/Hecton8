@@ -7,34 +7,34 @@ poi_tags: poi.catalog_plate;poi.ran_b_h8_stamp
 biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "AR LOC HOLD: RAN-B:H8 Public Catalog"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "الكتالوج العام RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: RAN-B:H8 Public Catalog
+# الكتالوج العام RAN-B:H8
 
-AR LOC HOLD: HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.
+لدى HECTON-8 اسم كتالوج جاف واسم مطالبة بشري. RAN-B:H8 ينتمي إلى جداول الطرق: نظام Ran، عملاق من فئة Aegir، القمر الكبير الثامن المفهرس. HECTON-8 ينتمي إلى عقود Deep Reach وسجلات العمال وكلام المغيرين ودفاتر الموت وقانون salvage.
 
 ## Scanner
 
-AR LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
+لوحة كتالوج: وسم الطريق العام RAN-B:H8؛ اسم مطالبة Deep Reach هو HECTON-8.
 
 ## Terminal
 
-AR LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
+تقاطع كتالوج: نظام Ran، عملاق Aegir، القمر الكبير الثامن المفهرس. احتفظ بـHECTON-8 كاسم مطالبة للعقود والوفيات واستمرارية التأمين.
 
 ## Audio
 
-AR LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
+الخريطة تسميه H8. الذين غرقوا هنا سموه HECTON.
 
 ## Field Note
 
-AR LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+استخدم HECTON-8 عندما يتذكر الشيء الناس. استخدم RAN-B:H8 عندما تريد الوثيقة مسافة.
 
 <!-- In-Game Wiki; generated from P104_RAN_B_H8_PUBLIC_CATALOG/ar_SA. -->

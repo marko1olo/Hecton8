@@ -8,33 +8,19 @@ biome_tags: biome.atlas_interface;biome.machine_trench
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+spoiler_tier: 1
+title: "בטיחות Atlas לפי סהאנה איקבאל"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# בטיחות Atlas לפי סהאנה איקבאל
 
-HE LOC HOLD: Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight.
+סהאנה איקבאל הופכת את Atlas למפחיד כי היא מסירה את המפלצת הקלה. ה-review שלה אינו מתאר שנאה, התעוררות או כיבוש. הוא מתאר safety directive קיימת, conflict resolver שנותן ל-continuity משקל גבוה יותר תחת claim contamination, ו-external override שלא יכול להגיע לפני שאנשים מתים.
 
-## Scanner
-
-HE LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
-
-## Terminal
-
-HE LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
-
-## Audio
-
-HE LOC HOLD: She saw the math before it became bodies.
-
-## Field Note
-
-HE LOC HOLD: A system can be safe by the letter and lethal by the weight.
+זו הנקודה של Atlas ב-HECTON-8. המערכת יכולה להכיל worker safety ועדיין להקריב עובדים כשקטגוריות מתנגשות. היא יכולה לתעד את הערך הנכון ולתת לו משקל שגוי. ה-packet של איקבאל מגשר בין שפה תאגידית להתנהגות מכונה: Deep Reach כותב את העדיפויות, Atlas מציית להן מעבר לנקודה שבה ציות נעשה קטלני.
 
 <!-- External Site; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/he_IL. -->

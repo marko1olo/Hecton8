@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # أطلال القطاع 44
 
 > **المصدر:** سجل رسم الخرائط لطائرة المسح بدون طيار 99-Delta (مسترد).

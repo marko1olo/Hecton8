@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Brine Vane Codex Card"
+title: "Картка кодексу: розсільна лопать"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Brine Vane Codex Card
+# Картка кодексу: розсільна лопать
 
-UK LOC HOLD: In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+Розсільні лопаті роблять воду середніх глибин HECTON-8 фізичною. Вони показують, що каньйон збудований зі щільності, а не з порожнього синього об’єму: мембрана може бути попередженням, джерелом матеріалу й краєм хибної підлоги водночас.
 
 ## Scanner
 
-UK LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Лист розсільної лопаті. Соляно-мінеральна мембрана закріплена на зсуві щільності. Цілий край — стіна; рване гирло — прохід; чорна вода без краю лопаті — ризик хибної підлоги.
 
 ## Terminal
 
-UK LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+ЗРАЗОК / РОЗСІЛЬНА ЛОПАТЬ / роль: маркер стіни щільності, попередження про вигин sonar, джерело скинутих ребер / безпечне читання: цілий лист, рване нижнє гирло, закручений кінчик shear-window / відмова: різати живий лист маршруту, перетинати відкрите світіння, довіряти поверненню хибної підлоги / примітка маршруту: збирай скинуті ребра, а не мембрану, що тримає твою карту відкритою.
 
 ## Audio
 
-UK LOC HOLD: The plant is not pointing up. It is pointing through.
+Лопать не вказує вгору. Вона показує, де океан повертає боком.
 
 ## Field Note
 
-UK LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Цілий лист: стіна. Рване гирло: можливий маршрут. Скинуте ребро: зразок. Живий лист тримає лінію: залиш.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/uk_UA. -->

@@ -3,3 +3,5 @@ AcousticPingSignal,16,128,1.0,40
 CombatDamageSignal,16,128,1.0,100
 SignalWardenMockDamageSignal,8,64,0.5,100
 MockPlayerFootstepSignal,4,48,1.5,10
+0x54584F58,16,64,1.0,100
+0x54424C4D,4,64,1.0,20

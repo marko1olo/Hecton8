@@ -7,34 +7,34 @@ poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
 biome_tags: biome.factory_temple;biome.deep_abyss
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "מערך משאבי ביומטל"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# מערך משאבי ביומטל
 
-HE LOC HOLD: The resource stack prevents HECTON-8 from collapsing into one magic material. Xenon-Omega matters, but the moon also has metals, salts, vent chemistry, pressure ceramics, biofibers, photoproteins, salvage, and Atlas-altered biometal.
+מערך המשאבים מונע מ-HECTON-8 להצטמצם לחומר קסום אחד. Xenon-Omega חשוב, אבל לירח יש גם מתכות, מלחים, כימיית פתחים, ceramics לחץ, biofibers, photoproteins, salvage וביומטל ששונה בידי Atlas.
 
 ## Scanner
 
-HE LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
+לוח מערך משאבים. blue debt בפסגה, אבל שאר הירח עדיין רווחי מספיק כדי להרוג בשבילו.
 
 ## Terminal
 
-HE LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
+HECTON-8 RESOURCE STACK: מתכות סולפיד, מלחים, כיסי גז אציל, ceramics לחץ, vent catalysts, biofibers, photoproteins, salvage hardware, ביומטל ששונה בידי Atlas ו-XO continuity substrate.
 
 ## Audio
 
-HE LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
+עפרת נס אחת תהיה עצלנות. ל-HECTON-8 יש כלכלה שלמה של פצעי לחץ.
 
 ## Field Note
 
-HE LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+אם כל דגימה אומרת Xenon-Omega, העולם נעשה טיפש. ספור גם את הסיבות האחרות.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/he_IL. -->

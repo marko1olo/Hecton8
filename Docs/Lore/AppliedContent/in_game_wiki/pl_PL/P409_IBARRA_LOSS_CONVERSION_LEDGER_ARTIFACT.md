@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Ibarra Loss Ledger"
+title: "Ledger Ibarry konwersji strat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Ibarra Loss Ledger
+# Ledger Ibarry konwersji strat
 
-PL LOC HOLD: The Ibarra ledger is the accounting form of the cover. It keeps asset rights active while missing workers become unresolved load.
+Ledger Ibarry to księgowa forma przykrycia. Pozwala Deep Reach uznać stratę bez oddania własności: ludzie stają się unresolved personnel load, dowody material custody, a claim przeżywa kolonię.
 
 ## Scanner
 
-PL LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Keelmark loss ledger. Zaginieni pracownicy, uszkodzone moduły i żywe claims trafiają do tej samej tabeli konwersji.
 
 ## Terminal
 
-PL LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel unresolved. Habitat modules, tool banks and claim rights retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-PL LOC HOLD: The ledger did not forget names. It made them payable later.
+Ledger nie zapomniał nazwisk. Nauczył się je wydawać.
 
 ## Field Note
 
-PL LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Notatka Maraudera: ledger może pamiętać zmarłych i nadal kazać im pracować.
 
 <!-- In-Game Wiki; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/pl_PL. -->

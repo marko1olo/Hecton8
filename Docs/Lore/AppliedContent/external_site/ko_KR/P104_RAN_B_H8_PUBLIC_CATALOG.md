@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "KO LOC HOLD: RAN-B:H8 Public Catalog"
+spoiler_tier: 1
+title: "RAN-B:H8 공개 목록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: RAN-B:H8 Public Catalog
+# RAN-B:H8 공개 목록
 
-KO LOC HOLD: RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name.
-
-## Scanner
-
-KO LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
-
-## Terminal
-
-KO LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
-
-## Audio
-
-KO LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
-
-## Field Note
-
-KO LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+RAN-B:H8은 달이 좌표일 때 쓰는 이름이다. HECTON-8은 달이 상처일 때 쓰는 이름이다. 이 분리는 중요하다. 같은 장소가 천문표, 보험 양식, 노동자 말, death ledger, Black Keel custody 안에서 모두 작동해야 하기 때문이다. 공개 catalog는 목적지를 깨끗하고 정렬 가능하게 만든다. claim name은 인간의 잔여물을 붙잡는다. 좋은 lore는 플레이어가 두 이름을 동시에 느끼게 해야 한다. 색인된 천체와 익사한 작업장.
 
 <!-- External Site; generated from P104_RAN_B_H8_PUBLIC_CATALOG/ko_KR. -->

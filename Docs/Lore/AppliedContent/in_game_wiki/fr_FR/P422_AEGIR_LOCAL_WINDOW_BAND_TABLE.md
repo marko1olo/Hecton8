@@ -7,34 +7,34 @@ poi_tags: poi.local_window_band_table;poi.carrier_phase_clock
 biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "FR LOC HOLD: Aegir Window Bands"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Bandes de fenêtre d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Aegir Window Bands
+# Bandes de fenêtre d'Aegir
 
-FR LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.
+Les fenêtres locales d'Aegir transforment la mécanique orbitale en pression sensible. Une capsule réparée a encore besoin de météo, d'angle relais, de position carrier et d'acceptation légale.
 
 ## Scanner
 
-FR LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+Bande locale : l'ascension attend des fenêtres d'heures ou de jours, pas un secours instantané.
 
 ## Terminal
 
-FR LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+BANDE DE FENÊTRE : shutter, eclipse, relay, storm, phase carrier et legal handshake doivent s'aligner avant un transfert sûr.
 
 ## Audio
 
-FR LOC HOLD: The carrier can hear you and still be in the wrong sky.
+Le carrier peut t'entendre et rester dans le mauvais ciel.
 
 ## Field Note
 
-FR LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+Archive de fenêtre : Black Keel timing, labels d'orbite locale et pages spoiler-light partagent les mêmes contraintes.
 
 <!-- In-Game Wiki; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/fr_FR. -->

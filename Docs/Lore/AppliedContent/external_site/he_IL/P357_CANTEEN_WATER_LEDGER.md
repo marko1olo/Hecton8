@@ -9,32 +9,20 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Canteen Water Ledger"
+title: "יומן מים של חדר אוכל"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Canteen Water Ledger
+# יומן מים של חדר אוכל
 
-HE LOC HOLD: HECTON-8 makes catastrophe believable through ordinary systems under pressure: water ledgers, canteen tokens and shift accountability.
+יומן המים של חדר האוכל הוא אחד הממצאים האנושיים הפשוטים ביותר ב-HECTON-8: לוח חדר אוכל שמתעד מי שתייה, החזרת אסימונים, גישה למשאבות וחריגים רפואיים. הוא אינו מסביר את האסון. הוא מראה את המושבה רגע לפני שהאסון נהפך לסיפור.
 
-## Scanner
+ערכו הוא במרקם ובראיה. שישה אסימונים חסרים נשמעים קטנים עד שהשחקן מבין מה היו מים במושבת לחץ. מי שתייה עברו דרך מסננים, חשבונאות משמרת, ????? רפואי ו-custody של חדר משאבות. כוס חסרה יכולה להיות עובד עייף. היא יכולה להיות גם צוות חולה, קו מזוהם, עקיפת פקודת הקצבה או מפקח שמסתיר כשל מקומי מדיווחי Deep Reach.
 
-HE LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
-
-## Terminal
-
-HE LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
-
-## Audio
-
-HE LOC HOLD: The last argument was about water tokens.
-
-## Field Note
-
-HE LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+המטרה אינה מלודרמה. היומן הופך את המושבה לקריאה כעבודה: אנשים חזרו ממשמרות, התווכחו, תיקנו רשומות, שאלו כלים, הגנו על חבריהם וניסו לשמור את החדר רגיל בזמן שהאוקיינוס כבר נכנס למערכת. ב-HECTON-8, עקבה רגילה כזאת יכולה להפוך לראיה.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/he_IL. -->

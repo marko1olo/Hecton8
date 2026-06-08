@@ -8,8 +8,8 @@ biome_tags: biome.drowned_colony;biome.service_corridor
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Ledger Segel Palka"
+spoiler_tier: 1
+title: "Ledger Segel Hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ledger Segel Palka
+# Ledger Segel Hatch
 
-Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop.
+Hatch adalah salah satu catatan paling sunyi di HECTON-8. Mereka tidak menjelaskan siapa yang tertinggal; mereka menyimpan arah penutupan, stres gasket, dan otoritas override. Membaca ledger segel mengubah pintu terkunci menjadi keputusan tekanan dengan timestamp.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+Memori segel dipulihkan. Gasket menerima tiga potongan tekanan dan satu override evakuasi; akses sisi pulang dikunci dari sisi basah.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / FRAME H-17: deformasi gasket melewati toleransi servis. Penutupan manual diterima di bawah EVAC OVERRIDE. Hitungan operator di sisi pulang belum selesai. Buka ulang hanya setelah penyamaan tekanan dan inspeksi engsel.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+Ia tersegel. Hanya itu janji hatch.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+Hatch tersegel adalah kuitansi. Sebelum membukanya, tanya sisi mana yang membayar.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/id_ID. -->

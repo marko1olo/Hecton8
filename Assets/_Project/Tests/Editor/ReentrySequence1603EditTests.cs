@@ -116,6 +116,28 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PrologueSurvivalAbortRequiresExplicitDeathFlag()
+        {
+            CompilationUnitSyntax root = Parse(DirectorPath);
+            string body = FindMethod(root, "ShouldAbortForSurvivalVitals").ToFullString();
+            string tryBegin = FindMethod(root, "TryBeginSequenceRun").ToFullString();
+            string prime = FindMethod(root, "PrimeSurvivalSignalCursors").ToFullString();
+
+            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal deathSignal, out int deathSequence)", body);
+            StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration", body);
+            StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", body);
+            StringAssert.Contains("(vitals.Flags & SurvivalVitalsChangedSignalFlags.Death) != 0u", body);
+            StringAssert.DoesNotContain("vitals.DeathCause != 0", body);
+            StringAssert.DoesNotContain("TryGetLatest(out SurvivalVitalsChangedSignal vitals", body);
+            StringAssert.Contains("PrimeSurvivalSignalCursors();", tryBegin);
+            AssertTextBefore(tryBegin, "PrimeSurvivalSignalCursors();", "_runCancellationToken = cancellationToken;");
+            StringAssert.DoesNotContain("_lastSurvivalVitalsSnapshotGeneration = 0", tryBegin);
+            StringAssert.DoesNotContain("_lastSurvivalDeathSequence = 0", tryBegin);
+            StringAssert.Contains("_lastSurvivalVitalsSnapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;", prime);
+            StringAssert.Contains("_lastSurvivalDeathSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int deathSequence)", prime);
+        }
+
+        [Test]
         public void HotPhaseMethodsDoNotResolveColdDependenciesOrManagedTiming()
         {
             for (int fileIndex = 0; fileIndex < ReentryCSharpFiles.Length; fileIndex++)
@@ -441,19 +463,25 @@ namespace Hecton8.Tests.Editor
             string source = Read(WorldHandoffLoaderPath);
             string onEnable = FindMethod(root, "OnEnable").ToFullString();
             string lateFrame = FindMethod(root, "LateFrameTick").ToFullString();
+            string configureTargetScene = FindMethod(root, "ConfigureTargetScene").ToFullString();
             string preload = FindMethod(root, "TryBeginWorldPreloadIfReady").ToFullString();
             string release = FindMethod(root, "TryReleaseWorldActivationIfReady").ToFullString();
             string complete = FindMethod(root, "TryCompleteActivatedWorldHandoff").ToFullString();
             string disableRelease = FindMethod(root, "ReleaseHeldWorldLoadBeforeDisable").ToFullString();
+            string resolveTargetWorldSceneName = FindMethod(root, "ResolveTargetWorldSceneName").ToFullString();
 
             Assert.That(ContainsOrdinal(source, "useDirectSingleSceneLoad"), Is.False);
             Assert.That(ContainsOrdinal(source, "LoadWorldOnNextFrameAsync"), Is.False);
             Assert.That(ContainsOrdinal(source, "sceneService.LoadScene(sceneName);"), Is.False);
             Assert.That(ContainsOrdinal(source, "SceneManager.LoadScene("), Is.False);
             StringAssert.Contains("PrologueReentrySignalLanes.Warm();", onEnable);
+            StringAssert.Contains("if (!string.IsNullOrWhiteSpace(sceneName))", configureTargetScene);
+            StringAssert.Contains("targetWorldSceneName = sceneName.Trim();", configureTargetScene);
+            StringAssert.Contains("return string.IsNullOrWhiteSpace(targetWorldSceneName) ? DefaultWorldSceneName : targetWorldSceneName.Trim();", resolveTargetWorldSceneName);
             AssertTextBefore(lateFrame, "ConsumeAtmosphericPreloadSignals(frame);", "TryBeginWorldPreloadIfReady(frame);");
             AssertTextBefore(lateFrame, "ConsumePrologueCompleteSignals(frame);", "TryReleaseWorldActivationIfReady(frame);");
             AssertTextBefore(lateFrame, "TryReleaseWorldActivationIfReady(frame);", "TryCompleteActivatedWorldHandoff();");
+            AssertTextBefore(preload, "string sceneName = ResolveTargetWorldSceneName();", "SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);");
             AssertTextBefore(preload, "RefreshGameStartContextHandoff();", "SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);");
             AssertTextBefore(preload, "SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);", "operation.allowSceneActivation = false;");
             StringAssert.Contains("operation.priority = math.clamp(additiveLoadPriority, -100, 100);", preload);

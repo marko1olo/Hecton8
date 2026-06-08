@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # THE AEGIR SYSTEM: NINE MOONS AND ONE GRAVE
 
 > **Source:** Public Archive, Bureau of Frontier Registrations, Barnard Yards. Compiler: J. Elkin-Torres, Senior Archivist. Last revision: 2188. Clearance level: public / unredacted.  

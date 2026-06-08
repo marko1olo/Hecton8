@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Professional Motive
 
-Professional Motive gives the protagonist agency without over-locking biography: the player starts as a capable marauder and becomes personally invested through evidence.
+Professional Motive gives the Marauder agency without over-locking biography: competence comes first, personal investment arrives through evidence.
 
 ## Scanner
 

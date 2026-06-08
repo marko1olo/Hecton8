@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Transit Duration Bands"
+title: "トランジット時間帯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Transit Duration Bands
+# トランジット時間帯
 
-JA LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+トランジット band は、HECTON-8 が到達可能でありながら残酷である理由を説明する。パケットは小さく安く法的に有用なため先に動く。貨物は staging、braking rights、loss margins が合う時に動く。呼吸する人間は質量、liability、life support、帰還費用の支払い主を必要とするため遅い。Aegir の local windows は短いが優しくない。軌道、嵐のノイズ、放射線、Black Keel geometry がデータ、貨物、人間のどれが動けるかを決める。
 
 ## Scanner
 
-JA LOC HOLD: The same route means different time for packets, freight and people.
+DURATION BAND CHART // probe packets、heavy freight、human crews、Aegir local windows は同じ時計を持たない。
 
 ## Terminal
 
-JA LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // local windows: hours-days. in-system industrial movement: months-years. crew rotation: custody と debt の years. heavy interdomain freight and consequence: years-decades.
 
 ## Audio
 
-JA LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
+貨物は慈悲より先に届く。それは故障ではなく教義だ。
 
 ## Field Note
 
-JP LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+全ての時計が揃うと救助ファンタジーになる。時計は敵対的に保つ。
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/ja_JP. -->

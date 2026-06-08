@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Aegir Primary Light and Radiation"
+title: "Luz primaria y radiación de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Aegir Primary Light and Radiation
+# Luz primaria y radiación de Aegir
 
-ES LOC HOLD: The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+La primaria de Aegir es una estrella de clase K estable, cálida para dar luz ámbar a las cubiertas y tranquila para sostener calendarios largos. El peligro viene de la magnetosfera del gigante gaseoso. Cinturones, rutas cargadas, sombra lunar y ruido de tormenta convierten el viaje en ventanas de radiación.
 
 ## Scanner
 
-ES LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+Carta estelar. Una enana K cálida da a Aegir un cielo legible; los cinturones del gigante convierten cada blindaje en horario.
 
 ## Terminal
 
-ES LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+CARTA ESTELAR RAN A-346: la salida primaria queda dentro de tolerancias de trabajo colonial. La magnetosfera de Aegir endurece las rutas interiores dos veces por rotación; los cascos baratos esperan, los carriers pagados cruzan quemando.
 
 ## Audio
 
-ES LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+Hay luz suficiente para leer. Eso nunca hizo amable al cielo.
 
 ## Field Note
 
-ES LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir tiene luz de día. Por eso cada sello barato y cada burn tardío aún tienen precio.
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/es_ES. -->

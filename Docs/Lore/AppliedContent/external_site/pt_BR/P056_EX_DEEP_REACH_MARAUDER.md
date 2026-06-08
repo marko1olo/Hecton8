@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Ex-Deep Reach, agora marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Ex-Deep Reach, agora marauder
 
-PT-BR LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+Ex-Deep Reach, agora marauder fixa o cânone do jogador. O jogador é um antigo especialista corporativo em sistemas de campo e infraestrutura de evacuação, empurrado para recuperação independente por dívida ou lista negra e devolvido a HECTON-8 sob custódia da Black Keel. O drama vem do reconhecimento profissional: a lua responde com procedimentos que o jogador já entendeu, e cada trava familiar torna a mentira corporativa mais difícil de tratar como acidente dos outros.
 
 ## Scanner
 
-PT-BR LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+A velha trava da Deep Reach não confere seu nome. Ela reconhece o ritmo da sua sequência de reparo.
 
 ## Terminal
 
-PT-BR LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+RASTRO DE CREDENCIAL: antigo contrato de sistemas de campo. Acesso à infraestrutura de evacuação revogado. Status de recuperação aceito sob custódia de dívida do pool de reivindicações.
 
 ## Audio
 
-PT-BR LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Você não voltou para casa. Você voltou para um procedimento que nunca parou de rodar.
 
 ## Field Note
 
-PT-BR LOC HOLD: Not family business. Procedure remembers who taught your hands.
+Não é assunto de família. O procedimento lembra as mãos que o usaram.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/pt_BR. -->

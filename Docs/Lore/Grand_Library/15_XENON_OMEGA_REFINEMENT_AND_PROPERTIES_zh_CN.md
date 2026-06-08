@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # XENON-OMEGA：精炼与特性
 
 > **来源：** Deep Reach Megacorporation，机密化学品清单。

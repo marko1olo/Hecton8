@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Aegir Primary Light and Radiation"
+title: "אור הכוכב הראשי והקרינה של Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Aegir Primary Light and Radiation
+# אור הכוכב הראשי והקרינה של Aegir
 
-HE LOC HOLD: The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+הכוכב הראשי של Aegir הוא כוכב יציב מסוג K, חם מספיק כדי לתת אור ענברי לסיפוני העבודה ושקט מספיק ללוחות תשתית ארוכים. הסכנה מגיעה מהמגנטוספירה של ענק הגז. חגורות, נתיבים טעונים, צל ירח ורעש סערה הופכים נסיעה ללוח של חלונות קרינה, לא לבעיית מרחק פשוטה.
 
 ## Scanner
 
-HE LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+כרטיס כוכבי. ננס K חם נותן ל-Aegir שמיים קריאים; חגורות הענק הופכות כל דירוג מגן ללוח זמנים.
 
 ## Terminal
 
-HE LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+כרטיס כוכבי RAN A-346: תפוקת הכוכב הראשי נשארת בתוך סבולות העבודה של המושבה. המגנטוספירה של Aegir מקשיחה את הנתיבים הפנימיים פעמיים בכל סיבוב; גופים זולים מחכים, carriers ששולמו שורפים דרכם.
 
 ## Audio
 
-HE LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+יש מספיק אור כדי לקרוא. זה מעולם לא הפך את השמיים לטובים.
 
 ## Field Note
 
-HE LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+ב-Aegir יש אור יום. לכן לכל אטם זול ולכל burn מאוחר עדיין יש מחיר.
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/he_IL. -->

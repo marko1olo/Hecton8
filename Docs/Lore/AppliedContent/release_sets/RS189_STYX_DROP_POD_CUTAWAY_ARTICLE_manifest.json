@@ -1,0 +1,40 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS189_STYX_DROP_POD_CUTAWAY_ARTICLE",
+  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P1093_STYX_DROP_POD_CUTAWAY"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS189_STYX_DROP_POD_CUTAWAY_ARTICLE.packets.json"
+  ],
+  "article_sources": [
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_en_US.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_ar_SA.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_de_DE.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_es_ES.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_fr_FR.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_he_IL.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_id_ID.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_ja_JP.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_ko_KR.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_nl_NL.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_pl_PL.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_pt_BR.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_ru_RU.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_uk_UA.md",
+    "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_zh_CN.md"
+  ],
+  "canonical_importer_sources": [
+    "Docs/Lore/AppliedContent/packets/RS189_STYX_DROP_POD_CUTAWAY_ARTICLE.packets.json"
+  ],
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

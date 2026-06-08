@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Predator Shadow Encounter Grammar"
+title: "Граматика зустрічі: тінь хижака"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Predator Shadow Encounter Grammar
+# Граматика зустрічі: тінь хижака
 
-UK LOC HOLD: HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.
+Тіні хижаків задають страх HECTON-8 без дешевої логіки показу монстра. Небезпека часто приходить як зникла здобич, зламаний bloom, неправильний sonar і маршрут, що раптом коштує забагато кисню.
 
 ## Scanner
 
-UK LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Слід тіні хижака. Розрив sonar, обірваний шлях здобичі, раптова тиша шкребаків, широке перекриття світла. Тіло не підтверджене; дисципліна світла й кут виходу.
 
 ## Terminal
 
-UK LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+ГРАМАТИКА ЗУСТРІЧІ / ТІНЬ ХИЖАКА / роль: тиск маршруту до показу тіла, стрибок витрати кисню, розрив довіри до scan / безпечне читання: шлях здобичі зупиняється, шум bloom схлопується, sonar-повернення розходяться навколо порожньої води / відмова: scripted full-body reveal як перше попередження, безпечний jump scare, чиста boss arena / примітка маршруту: якщо дрібні тварини зупинилися до того, як scanner назвав ціль, маршрут уже змінився.
 
 ## Audio
 
-UK LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+Безпечний знак — не побачити його. Безпечний знак — помітити, що все інше першим обрало тишу.
 
 ## Field Note
 
-UK LOC HOLD: Use for AI/spawn design notes and scanner cards.
+Назви тварину пізно. Нехай здобич, світло й sonar відмовлять першими. Якщо маршрут стих, тінь уже володіє ним.
 
 <!-- External Site; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/uk_UA. -->

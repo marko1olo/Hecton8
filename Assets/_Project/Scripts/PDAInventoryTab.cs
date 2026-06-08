@@ -264,6 +264,7 @@ namespace Hecton8.UI
         private bool _registeredToUpdateLoop;
         private bool _registeredToSlowTickLoop;
         private bool _registeredToLateFrameLoop;
+        private bool _pdaEventsRegistered;
         private bool _pendingInventoryParallaxDirty;
         private bool _pendingInventoryParallaxClear;
         private float _screenWidthSnapshot = 1f;
@@ -518,7 +519,7 @@ namespace Hecton8.UI
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -613,13 +614,17 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
-            PDAEvents.Register(this);
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
             LocalizationEvents.RegisterCorruptionVisualStateListener(this);
         }
 
         private void Unsubscribe()
         {
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
             LocalizationEvents.UnregisterCorruptionVisualStateListener(this);
         }
 
@@ -2245,6 +2250,15 @@ namespace Hecton8.UI
             if (_selectedItem == null || playerInventory == null) return;
             if (!_selectedItem.isConsumable) return;
 
+            if (ShouldRouteUseThroughPlayerAction(_selectedItem))
+            {
+                if (!TryStartSelectedPlayerAction(_selectedItem))
+                    return;
+
+                RefreshSelectionAfterUse();
+                return;
+            }
+
             // Zvuk ispolzovaniya (prioritet: predmet → UI default)
             AudioClip clip = _selectedItem.useSound != null
                 ? _selectedItem.useSound
@@ -2254,7 +2268,50 @@ namespace Hecton8.UI
             bool consumed = playerInventory.ConsumeOneItem(_selectedX, _selectedY);
             if (!consumed) return;
 
-            // Proveryaem ostalsya li predmet
+            RefreshSelectionAfterUse();
+        }
+
+        private static bool ShouldRouteUseThroughPlayerAction(ItemData item)
+        {
+            return item != null &&
+                   item.isConsumable &&
+                   (item.UseDuration > 0f ||
+                    item.UseAudioEventId != 0u ||
+                    ConsumableItem.HasAnyEffect(item));
+        }
+
+        private bool TryStartSelectedPlayerAction(ItemData item)
+        {
+            PlayerActionController playerActions = GlobalRegistry.PlayerActions;
+            if (playerActions == null || !playerActions.IsInitialized)
+            {
+                NotifyWarning("USE BLOCKED - PLAYER ACTION RUNTIME OFFLINE".AsSpan());
+                return false;
+            }
+
+            if (playerActions.IsActionInProgress)
+            {
+                NotifyWarning("USE BLOCKED - ACTION IN PROGRESS".AsSpan());
+                return false;
+            }
+
+            if (!playerActions.StartAction(item, _selectedX, _selectedY))
+            {
+                NotifyWarning("USE BLOCKED - ACTION START FAILED".AsSpan());
+                return false;
+            }
+
+            return true;
+        }
+
+        private void RefreshSelectionAfterUse()
+        {
+            if (playerInventory == null)
+            {
+                ClearSelection();
+                return;
+            }
+
             int remainingHashId = playerInventory.GetItemHashAt(_selectedX, _selectedY);
             if (remainingHashId != _selectedItemHashId)
                 ClearSelection();
@@ -3927,7 +3984,7 @@ namespace Hecton8.UI
         {
             _tab?.DropSelectedItem();
         }
- 
+
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (_bg != null) _bg.color = _hoverColor;

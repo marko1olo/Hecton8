@@ -7,34 +7,34 @@ poi_tags: poi.probe_packet_spool;poi.beam_sail_archive
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Reistijden van sondepakketten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# Reistijden van sondepakketten
 
-NL LOC HOLD: Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.
+Sondereistijd is waarom Deep Reach HECTON-8 kon waarderen voordat het mensen daar kon beschermen. De eerste records waren smal, oud bij aankomst en al financieel. Een pakket kan een claim volwassen laten lijken terwijl het menselijke plan erachter nog gokwerk is.
 
 ## Scanner
 
-NL LOC HOLD: The first Aegir witnesses were packets, not colonists.
+De eerste Aegir-getuigen waren pakketten, geen kolonisten.
 
 ## Terminal
 
-NL LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
+SURVEYKETEN: bundelondersteunde sondes en pakketvaartuigen steken eerst over, sturen oude waarheid terug, leggen remwiskunde vast en laten bedrijven een route verkopen voordat die menselijk is.
 
 ## Audio
 
-NL LOC HOLD: The probe saw the ocean before anyone had a grave there.
+De sonde zag de oceaan voordat iemand daar een graf had.
 
 ## Field Note
 
-NL LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+Een sonde kan een mensenloopbaan besteden aan een route voordat iemand een lichaam riskeert.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/nl_NL. -->

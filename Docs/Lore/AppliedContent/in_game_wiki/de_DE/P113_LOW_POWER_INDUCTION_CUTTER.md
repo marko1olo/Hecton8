@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "Niedrigleistungs-Induktionsschneider"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# Niedrigleistungs-Induktionsschneider
 
-DE LOC HOLD: The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+Der Niedrigleistungs-Induktionsschneider ist das erste Zugangswerkzeug, kein Universalschlüssel. Er öffnet verklemmte Serviceklappen, Panelbolzen und Salvage-Kisten und zwingt dazu, die Aufgabe des Teils zu lesen. Pressure glass, aktive Rahmen und Atlas-gewachsene Nähte gehören späteren Werkzeugen oder besserer Evidenz.
 
 ## Scanner
 
-DE LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+Niedrigleistungs-Induktionsschneider. Nur Servicemetall; tragender Rahmen und pressure glass bleiben außerhalb der Zulassung.
 
 ## Terminal
 
-DE LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+WERKZEUGWARNUNG / INDUKTIONSSCHNEIDER: zugelassene Ziele sind Serviceklappen, Panelbolzen, leichte Halter und Kistenschlösser. Aktive Rahmen, pressure-glass-Gitter oder Atlas-gewachsene Nähte ohne spätere Klassenzertifizierung nicht schneiden.
 
 ## Audio
 
-DE LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
+Schneid den Bolzen. Lass die Rippe.
 
 ## Field Note
 
-DE LOC HOLD: The cutter should feel valuable because it is limited.
+Guter Schneider, schlechter Glaube. Er öffnet Paneele. Er vergibt nicht, wenn man die Rippe schneidet, die den Raum gerade hält.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/de_DE. -->

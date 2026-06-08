@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "Кузня тиску Оскара Нойманна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# Кузня тиску Оскара Нойманна
 
-UK LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
+Оскар Нойманн з'єднує ремесло колонії з ланцюгом утечі. Його нотатки про кузню тиску пояснюють глибинне виготовлення, затискні кільця, випробування ущільнень і потребу спускатися по компоненти замість чекати рятунку з поверхні.
 
 ## Scanner
 
-UK LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+Оскар Нойманн залишив ковальський рецепт затискних кілець, достатньо міцних, щоб підйомна колиска стала більшим, ніж труною.
 
 ## Terminal
 
-UK LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+НОЙМАНН, О. Ковальська нотатка: пил бароскла псує перший ущільнювач, якщо змішати його холодним. Нагріти кільце під тягою вентканалу, загартувати в соляному кожусі, потім випробувати подвійним навантаженням підйому.
 
 ## Audio
 
-UK LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+Запуск - це просто гермодвері, що рухаються вгору. Будуйте його як двері.
 
 ## Field Note
 
-UK LOC HOLD: The exit needs craft, not courage.
+Вихід потребує майстерності, а не хоробрості.
 
 <!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/uk_UA. -->

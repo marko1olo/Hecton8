@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Blue Debt Pressure History Guide"
+title: "블루 데트 압력 이력 안내서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Blue Debt Pressure History Guide
+# 블루 데트 압력 이력 안내서
 
-KO LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.
+salvager들이 blue debt라 부르는 Xenon-Omega는 HECTON-8의 지질을 computation, debt law, 그리고 Deep Reach가 잠긴 청구를 아직 되찾으려는 이유와 묶는다.
 
 ## Scanner
 
-KO LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.
+blue debt 표본 태그 완료. export 전 pressure history, containment stage, signal drift 확인.
 
 ## Terminal
 
-KO LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
+MARAUDER NOTE: blue debt는 Xenon-Omega-bearing pressure-stable substrate에 대한 salvage 은어다. 빛나서가 아니라 extreme computation과 energy isolation이 선호해서 가치가 있다.
 
 ## Audio
 
-KO LOC HOLD: Blue debt is what people call it after the invoice arrives.
+blue debt는 청구서가 도착한 뒤 사람들이 붙인 이름이다.
 
 ## Field Note
 
-KO LOC HOLD: Use for resource glossary and Deep Reach motive articles.
+색은 grade가 아니다. clean custody를 가진 조용한 용기는 돈을 내고, 노래하는 용기는 drone wake를 산다.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/ko_KR. -->

@@ -18,6 +18,8 @@ Official references:
 
 [RULE] Async texture/mesh upload settings are part of the Scalability Matrix, not ad hoc project settings.
 
+[REQ] Texture-streaming and upload-budget changes that affect player-visible surfaces inherit the Visual Reference Parity Gate. Streaming proof must include repeated shot-list comparison against mandatory references plus best-known internal baseline/current rejection matrix, not only hitch or memory numbers.
+
 [RULE] Set upload budget during bootstrap after hardware tier resolution:
 - Low / MX350: 64 MB upload buffer, 1 ms upload time slice.
 - Mid: 128 MB upload buffer, 2 ms upload time slice.
@@ -28,6 +30,8 @@ Official references:
 [FORBID] Changing async upload buffer/time-slice every frame.
 
 [FORBID] Treating a larger upload buffer as free performance. On 2 GB VRAM / 8 GB RAM machines, larger upload buffers compete with texture residency and OS pressure.
+
+[FORBID] Accepting lower texture residency, blurry terrain/water/sky/materials, or delayed hero texture load as optimization success when captures fall below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` or `PENDING VERIFICATION` until owner stack and streaming proof recover the visual floor.
 
 ## DOD
 

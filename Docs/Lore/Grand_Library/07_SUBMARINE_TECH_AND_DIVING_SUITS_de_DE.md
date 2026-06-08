@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # U-BOOT-TECHNOLOGIE UND MARAUDER-TAUCHANZÜGE
 
 > **Quelle:** Keelmark Loss Desk, Versicherungsmathematische Risikobewertung für unabhängige Bergungsoperationen.  

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Leitender Biofilm-Reparaturbus"
+title: "Leitfähiger Biofilm-Reparaturbus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Leitender Biofilm-Reparaturbus
+# Leitfähiger Biofilm-Reparaturbus
 
-Leitender Biofilm entsteht dort, wo Deep-Reach-Kabel, warme Sole und beschädigte Isolierung Kontakt halten. Die Matte trägt schwachen Strom über Kupferbrüche und lässt Atlas-Diagnosen Räume erreichen, die elektrisch tot sein müssten.
-
-Die Gefahr liegt im Kategorienfehler. Atlas sieht Durchgang und setzt Reparaturpriorität. Der Organismus sieht Wärme, Mineralfluss und Oberfläche. Wer die Matte schneidet, kann eine Tür unterbrechen, eine Drohnenprüfung wecken oder frische Ladung freilegen, die feldhungrige Räuber ruft.
+Leitfähiger Biofilm entsteht dort, wo gerissene Kabelmäntel Kupfersalze, Wärme und schwachen Strom ins Wasser von HECTON-8 abgeben. Das ist kein Bewusstsein. Es ist ein lebender Leiter, nützlich genug, damit Atlas ihn als Reparaturbus behandelt. Eine beschädigte Leitung kann gesund wirken, während der Film nur einen dünnen Diagnoseimpuls über die Wunde trägt.
 
 ## Scanner
 
-Biofilmhaut überbrückt gebrochenes Kupfer und lebende Matte. Schwacher Strom vorhanden. Atlas-Reparaturmarke in Salzkruste.
+Grünschwarzer Film überbrückt die Kabelwunde. Die Leckspannung ist schwach, gemustert und noch in Bewegung.
 
 ## Terminal
 
-ATLAS-REPARATURBUS // Leitender Mikrobenfilm kreuzt Kabelbrüche C-18 bis C-22. Diagnosepulse laufen durch nasses Wachstum, wenn das Kupfer fehlt. Nicht als Bewusstsein einstufen. Als kontaminiertes Wartungssubstrat behandeln.
+ATLAS-SPUR: mikrobieller Film überbrückt offene Kontakte, bremst Kupferverlust und liefert falsche Kontinuitätsimpulse. Keine zertifizierte Leitungsreparatur vorhanden.
 
 ## Audio
 
-Der Film trägt einen Puls. Das macht ihn nicht klug. Es heißt nur, dass der Draht gelernt hat, lebendig zu verrotten.
+Trau dem grünen Licht nicht. Das Kabel lebt genug, um zu lügen.
 
 ## Field Note
 
-Wenn ein nasses Kabel Haut hat, erst verfolgen, dann schneiden. Die tote Seite ist meistens sicherer. Meistens.
+Frühe Atlas-Narbe: nützlich, leise und falsch genug, um Misstrauen gegen Scanner zu lehren.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/de_DE. -->

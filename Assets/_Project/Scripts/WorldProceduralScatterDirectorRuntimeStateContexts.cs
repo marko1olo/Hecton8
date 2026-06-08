@@ -312,6 +312,14 @@ namespace Hecton8.World
 
             public void Register(ScatterCandidate candidate, WorldPrefabFamilyProfile.ScatterLayer layer)
             {
+                Register(candidate.Placement, layer);
+            }
+
+            public void Register(ScatterPlacement placement, WorldPrefabFamilyProfile.ScatterLayer layer)
+            {
+                if (placement == null)
+                    return;
+
                 CandidateCount++;
                 switch (layer)
                 {
@@ -331,7 +339,7 @@ namespace Hecton8.World
 
                 ulong hash = CandidateChecksum == 0UL ? FnvOffset : CandidateChecksum;
                 hash = Combine(hash, (ulong)(uint)layer);
-                long cellKey = ((long)(uint)(candidate.Placement.CellX & 0xFFFF) << 32) | (uint)(candidate.Placement.CellZ & 0xFFFF);
+                long cellKey = ((long)(uint)(placement.CellX & 0xFFFF) << 32) | (uint)(placement.CellZ & 0xFFFF);
                 hash = Combine(hash, (ulong)cellKey);
                 CandidateChecksum = hash;
             }

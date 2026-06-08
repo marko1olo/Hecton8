@@ -14,6 +14,10 @@ namespace Hecton8.Tests.Editor
         private const string GameBootstrapperPath = "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
         private const string BootstrapControllerPath = "Assets/_Project/Scripts/Bootstrap/BootstrapController.cs";
         private const string BootstrapEventsPath = "Assets/_Project/Scripts/Bootstrap/BootstrapEvents.cs";
+        private const string MainMenuControllerPath = "Assets/_Project/Scripts/MainMenuController.cs";
+        private const string GameStartContextPath = "Assets/_Project/Scripts/Core/GameStartContext.cs";
+        private const string SceneInstantiationGatePath = "Assets/_Project/Scripts/Bootstrap/SceneInstantiationGate.cs";
+        private const string SceneRuntimeServicePath = "Assets/_Project/Scripts/Core/SceneRuntimeService.cs";
         private const string BootstrapScenePath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
         private const string CompilerPath = "Assets/_Project/Scripts/Editor/HectonShaderVariantCollectionCompiler1336.cs";
         private const string GraphicsSettingsPath = "ProjectSettings/GraphicsSettings.asset";
@@ -90,6 +94,191 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void GameBootstrapperSceneLifecycle_RejectsWhitespaceScenePathsBeforeRuntimeLoadOrEditorReload()
+        {
+            string source = File.ReadAllText(GameBootstrapperPath);
+
+            string validateSceneRootBudget = ExtractMethodBlock(source, "public static bool TryValidateSceneRootBudget(string sceneName, string context)");
+            Assert.That(validateSceneRootBudget, Does.Contain("sceneName = NormalizeSceneLoadName(sceneName);"));
+            Assert.That(validateSceneRootBudget, Does.Contain("if (sceneName.Length == 0)"));
+            Assert.That(validateSceneRootBudget, Does.Not.Contain("if (string.IsNullOrEmpty(sceneName))"));
+            Assert.Less(
+                validateSceneRootBudget.IndexOf("NormalizeSceneLoadName(sceneName)", System.StringComparison.Ordinal),
+                validateSceneRootBudget.IndexOf("SceneManager.GetSceneByName(sceneName)", System.StringComparison.Ordinal));
+
+            string loadProductionSceneAsync = ExtractMethodBlock(source, "private static AsyncOperation LoadProductionSceneAsync");
+            Assert.That(loadProductionSceneAsync, Does.Contain("if (string.IsNullOrWhiteSpace(scenePath))"));
+            Assert.That(loadProductionSceneAsync, Does.Contain("return null;"));
+            Assert.That(loadProductionSceneAsync, Does.Contain("scenePath = scenePath.Trim();"));
+            Assert.Less(
+                loadProductionSceneAsync.IndexOf("string.IsNullOrWhiteSpace(scenePath)", System.StringComparison.Ordinal),
+                loadProductionSceneAsync.IndexOf("scenePath = scenePath.Trim();", System.StringComparison.Ordinal));
+            Assert.Less(
+                loadProductionSceneAsync.IndexOf("scenePath = scenePath.Trim();", System.StringComparison.Ordinal),
+                loadProductionSceneAsync.IndexOf("SceneUtility.GetBuildIndexByScenePath(scenePath)", System.StringComparison.Ordinal));
+            Assert.Less(
+                loadProductionSceneAsync.IndexOf("scenePath = scenePath.Trim();", System.StringComparison.Ordinal),
+                loadProductionSceneAsync.IndexOf("SceneManager.LoadSceneAsync(scenePath", System.StringComparison.Ordinal));
+
+            string rejectDirtyEditorScene = ExtractMethodBlock(source, "private static bool RejectDirtyEditorSceneAndReloadFromDisk");
+            Assert.That(rejectDirtyEditorScene, Does.Contain("if (string.IsNullOrWhiteSpace(scenePath))"));
+            Assert.That(rejectDirtyEditorScene, Does.Not.Contain("string.IsNullOrEmpty(scenePath)"));
+
+            string processDirtySceneReload = ExtractMethodBlock(source, "private static void ProcessDirtySceneReloadFromDisk");
+            Assert.That(processDirtySceneReload, Does.Contain("if (!string.IsNullOrWhiteSpace(scenePath))"));
+            Assert.That(processDirtySceneReload, Does.Not.Contain("!string.IsNullOrEmpty(scenePath)"));
+        }
+
+        [Test]
+        public void GameBootstrapperHandoff_NormalizesTargetSceneBeforeProductionLoad()
+        {
+            string source = File.ReadAllText(GameBootstrapperPath);
+
+            string handoff = ExtractMethodBlock(source, "private async Awaitable<bool> LoadGameplaySceneFromBootstrapHandoffAsync");
+            Assert.That(handoff, Does.Contain("sceneName = ResolveBootstrapGameplaySceneName(sceneName);"));
+            Assert.Less(
+                handoff.IndexOf("ResolveBootstrapGameplaySceneName(sceneName)", System.StringComparison.Ordinal),
+                handoff.IndexOf("SetSceneActivationStep($\"Step 0: Loading {sceneName}\");", System.StringComparison.Ordinal));
+            Assert.Less(
+                handoff.IndexOf("ResolveBootstrapGameplaySceneName(sceneName)", System.StringComparison.Ordinal),
+                handoff.IndexOf("string sceneLoadPath = ResolveSceneLoadPath(sceneName);", System.StringComparison.Ordinal));
+            Assert.Less(
+                handoff.IndexOf("ResolveBootstrapGameplaySceneName(sceneName)", System.StringComparison.Ordinal),
+                handoff.IndexOf("LoadProductionSceneAsync(sceneLoadPath, LoadSceneMode.Single)", System.StringComparison.Ordinal));
+
+            string pendingResolver = ExtractMethodBlock(source, "private static bool TryResolveBootstrapGameplayHandoffScene(out string sceneName)");
+            Assert.That(pendingResolver, Does.Contain("sceneName = ResolveBootstrapGameplaySceneName(pendingSceneName);"));
+            Assert.That(pendingResolver, Does.Not.Contain("sceneName = pendingSceneName;"));
+
+            string targetResolver = ExtractMethodBlock(source, "private static string ResolveBootstrapGameplaySceneName(string sceneName)");
+            Assert.That(targetResolver, Does.Contain("sceneName = NormalizeSceneLoadName(sceneName);"));
+            Assert.That(targetResolver, Does.Contain("sceneName.Length == 0"));
+            Assert.That(targetResolver, Does.Contain("string.Equals(sceneName, BootstrapSceneName, StringComparison.Ordinal)"));
+            Assert.That(targetResolver, Does.Contain("string.Equals(sceneName, MainMenuSceneName, StringComparison.Ordinal)"));
+            Assert.That(targetResolver, Does.Contain("return DefaultGameplaySceneName;"));
+            Assert.That(targetResolver, Does.Contain("return sceneName;"));
+
+            string sceneLoadPathResolver = ExtractMethodBlock(source, "private static string ResolveSceneLoadPath(string sceneName)");
+            Assert.That(sceneLoadPathResolver, Does.Contain("sceneName = NormalizeSceneLoadName(sceneName);"));
+
+            string normalizer = ExtractMethodBlock(source, "private static string NormalizeSceneLoadName(string sceneName)");
+            Assert.That(normalizer, Does.Contain("return string.IsNullOrWhiteSpace(sceneName) ? string.Empty : sceneName.Trim();"));
+        }
+
+        [Test]
+        public void SceneRuntimeServiceSceneLifecycle_NormalizesSceneNamesBeforeStateMutation()
+        {
+            string source = File.ReadAllText(SceneRuntimeServicePath);
+
+            Assert.That(source, Does.Contain("private static string NormalizeRequestedSceneName(string sceneName)"));
+            Assert.That(source, Does.Contain("return string.IsNullOrWhiteSpace(sceneName) ? string.Empty : sceneName.Trim();"));
+
+            string loadScene = ExtractMethodBlock(source, "public void LoadScene(string sceneName)");
+            Assert.That(loadScene, Does.Contain("string requestedSceneName = NormalizeRequestedSceneName(sceneName);"));
+            Assert.That(loadScene, Does.Contain("if (requestedSceneName.Length == 0)"));
+            Assert.That(loadScene, Does.Contain("LogSceneLoadRejectedInvalidName(sceneName);"));
+            Assert.That(loadScene, Does.Contain("sceneName = requestedSceneName;"));
+            Assert.Less(
+                loadScene.IndexOf("NormalizeRequestedSceneName(sceneName)", System.StringComparison.Ordinal),
+                loadScene.IndexOf("if (requestedSceneName.Length == 0)", System.StringComparison.Ordinal));
+            Assert.Less(
+                loadScene.IndexOf("if (requestedSceneName.Length == 0)", System.StringComparison.Ordinal),
+                loadScene.IndexOf("sceneName = requestedSceneName;", System.StringComparison.Ordinal));
+            Assert.Less(
+                loadScene.IndexOf("sceneName = requestedSceneName;", System.StringComparison.Ordinal),
+                loadScene.IndexOf("if (_sceneLoadInFlight)", System.StringComparison.Ordinal));
+
+            string loadSceneAsync = ExtractMethodBlock(source, "public async Awaitable LoadSceneAsync(string sceneName)");
+            Assert.That(loadSceneAsync, Does.Contain("string requestedSceneName = NormalizeRequestedSceneName(sceneName);"));
+            Assert.That(loadSceneAsync, Does.Contain("if (requestedSceneName.Length == 0)"));
+            Assert.That(loadSceneAsync, Does.Contain("LogSceneLoadRejectedInvalidName(sceneName);"));
+            Assert.That(loadSceneAsync, Does.Contain("sceneName = requestedSceneName;"));
+            Assert.That(source, Does.Contain("private static void LogSceneLoadRejectedInvalidName(string sceneName)"));
+            Assert.Less(
+                loadSceneAsync.IndexOf("NormalizeRequestedSceneName(sceneName)", System.StringComparison.Ordinal),
+                loadSceneAsync.IndexOf("if (requestedSceneName.Length == 0)", System.StringComparison.Ordinal));
+            Assert.Less(
+                loadSceneAsync.IndexOf("if (requestedSceneName.Length == 0)", System.StringComparison.Ordinal),
+                loadSceneAsync.IndexOf("sceneName = requestedSceneName;", System.StringComparison.Ordinal));
+            Assert.Less(
+                loadSceneAsync.IndexOf("sceneName = requestedSceneName;", System.StringComparison.Ordinal),
+                loadSceneAsync.IndexOf("if (!CanLoadScene)", System.StringComparison.Ordinal));
+            Assert.Less(
+                loadSceneAsync.IndexOf("sceneName = requestedSceneName;", System.StringComparison.Ordinal),
+                loadSceneAsync.IndexOf("_sceneLoadInFlight = true;", System.StringComparison.Ordinal));
+            Assert.Less(
+                loadSceneAsync.IndexOf("sceneName = requestedSceneName;", System.StringComparison.Ordinal),
+                loadSceneAsync.IndexOf("GlobalRegistry.BeginSceneRuntimePublicationGate();", System.StringComparison.Ordinal));
+            Assert.Less(
+                loadSceneAsync.IndexOf("sceneName = requestedSceneName;", System.StringComparison.Ordinal),
+                loadSceneAsync.IndexOf("ClearRuntimeState();", System.StringComparison.Ordinal));
+            Assert.Less(
+                loadSceneAsync.IndexOf("sceneName = requestedSceneName;", System.StringComparison.Ordinal),
+                loadSceneAsync.IndexOf("SceneManager.LoadSceneAsync(sceneName", System.StringComparison.Ordinal));
+        }
+
+        [Test]
+        public void GameStartContextHandoff_NormalizesWhitespacePendingSceneNamesAtSource()
+        {
+            string source = File.ReadAllText(GameStartContextPath);
+
+            string setCurrent = ExtractMethodBlock(source, "public static void SetCurrent(GameStartContext context, string targetSceneName)");
+            Assert.That(setCurrent, Does.Contain("PendingTargetSceneName = NormalizePendingTargetSceneName(targetSceneName);"));
+            Assert.That(setCurrent, Does.Not.Contain("PendingTargetSceneName = targetSceneName ?? string.Empty;"));
+
+            string tryGetPending = ExtractMethodBlock(source, "public static bool TryGetPendingTargetSceneName(out string sceneName)");
+            Assert.That(tryGetPending, Does.Contain("sceneName = NormalizePendingTargetSceneName(PendingTargetSceneName);"));
+            Assert.That(tryGetPending, Does.Contain("PendingTargetSceneName = sceneName;"));
+            Assert.That(tryGetPending, Does.Not.Contain("sceneName = PendingTargetSceneName;"));
+
+            string tryRestore = ExtractMethodBlock(source, "private static bool TryRestorePersistedContext(out GameStartContext context)");
+            Assert.That(tryRestore, Does.Contain("PendingTargetSceneName = NormalizePendingTargetSceneName(PlayerPrefs.GetString(PersistKeyTargetSceneName, string.Empty));"));
+            Assert.That(source, Does.Contain("private static string NormalizePendingTargetSceneName(string sceneName)"));
+            Assert.That(source, Does.Contain("return string.IsNullOrWhiteSpace(sceneName) ? string.Empty : sceneName.Trim();"));
+        }
+
+        [Test]
+        public void MainMenuStartRoute_FallsBackBeforePublishingGameStartContextOrSceneLoad()
+        {
+            string source = File.ReadAllText(MainMenuControllerPath);
+
+            Assert.That(source, Does.Contain("private const string DefaultGameplaySceneName = \"02_HECTON_WORLD\";"));
+            Assert.That(source, Does.Contain("targetSceneName = DefaultGameplaySceneName"));
+            Assert.That(source, Does.Contain("newGameTargetSceneName = DefaultGameplaySceneName"));
+
+            string startGameWithScene = ExtractMethodBlock(source, "private void StartGameWithScene(string slotName, string sceneName)");
+            Assert.That(startGameWithScene, Does.Contain("sceneName = ResolveConfiguredStartSceneName(targetSceneName);"));
+            Assert.Less(
+                startGameWithScene.IndexOf("ResolveConfiguredStartSceneName(targetSceneName)", System.StringComparison.Ordinal),
+                startGameWithScene.IndexOf("GameStartContextHolder.SetCurrent(context, sceneName);", System.StringComparison.Ordinal));
+            Assert.Less(
+                startGameWithScene.IndexOf("ResolveConfiguredStartSceneName(targetSceneName)", System.StringComparison.Ordinal),
+                startGameWithScene.IndexOf("sceneService.LoadScene(sceneName);", System.StringComparison.Ordinal));
+
+            string resolveStartSceneName = ExtractMethodBlock(source, "private string ResolveStartSceneName(bool isNewGame)");
+            Assert.That(resolveStartSceneName, Does.Contain("return ResolveConfiguredStartSceneName(sceneName);"));
+            Assert.That(resolveStartSceneName, Does.Not.Contain("return string.IsNullOrWhiteSpace(sceneName) ? targetSceneName : sceneName;"));
+
+            string resolveConfiguredStartSceneName = ExtractMethodBlock(source, "private static string ResolveConfiguredStartSceneName(string sceneName)");
+            Assert.That(resolveConfiguredStartSceneName, Does.Contain("return string.IsNullOrWhiteSpace(sceneName) ? DefaultGameplaySceneName : sceneName.Trim();"));
+        }
+
+        [Test]
+        public void SceneInstantiationGate_NormalizesSceneNamesBeforeOpeningHandoffGate()
+        {
+            string source = File.ReadAllText(SceneInstantiationGatePath);
+
+            string beginSceneLoad = ExtractMethodBlock(source, "internal void BeginSceneLoad(string sceneName)");
+            Assert.That(beginSceneLoad, Does.Contain("_sceneName = string.IsNullOrWhiteSpace(sceneName) ? string.Empty : sceneName.Trim();"));
+            Assert.That(beginSceneLoad, Does.Not.Contain("_sceneName = string.IsNullOrEmpty(sceneName) ? string.Empty : sceneName;"));
+
+            string tryValidateGate = ExtractMethodBlock(source, "private bool TryValidateGate(out string failureReason)");
+            Assert.That(tryValidateGate, Does.Contain("if (string.IsNullOrWhiteSpace(_sceneName))"));
+            Assert.That(tryValidateGate, Does.Contain("failureReason = \"SCENE_NAME_MISSING\";"));
+            Assert.That(tryValidateGate, Does.Not.Contain("if (string.IsNullOrEmpty(_sceneName))"));
+        }
+
+        [Test]
         public void BootstrapEvents_UsesSignalBusInsteadOfPersistentNativeQueues()
         {
             string source = File.ReadAllText(BootstrapEventsPath);
@@ -161,7 +350,18 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("ResolveBootstrapShaderWarmupTempDumpPath"));
             Assert.That(source, Does.Contain("TryPromoteBootstrapShaderWarmupDump"));
             Assert.That(source, Does.Contain("AsyncWriteManager.WriteAll(tempPath"));
+            Assert.That(source, Does.Contain("AsyncWriteManager.TryGetFileLength(tempPath, out long tempDumpBytes"));
+            Assert.That(source, Does.Contain("AsyncWriteManager.FlushCriticalSavePath(tempPath, tempDumpBytes"));
+            Assert.That(source, Does.Contain("TryPromoteBootstrapShaderWarmupDump(tempPath, path, tempDumpBytes)"));
             Assert.That(source, Does.Contain("File.Replace(tempPath, finalPath"));
+            Assert.That(source, Does.Contain("AsyncWriteManager.InvalidateCachedReadWindows(tempPath);"));
+            Assert.That(source, Does.Contain("AsyncWriteManager.InvalidateCachedReadWindows(finalPath);"));
+            Assert.That(source, Does.Contain("AsyncWriteManager.TryGetFileLength(finalPath, out long promotedDumpBytes"));
+            Assert.That(source, Does.Contain("AsyncWriteManager.FlushCriticalSavePath(finalPath, promotedDumpBytes"));
+            Assert.That(source, Does.Contain("TryDeleteBootstrapShaderWarmupDumpTemp(tempPath);"));
+            Assert.That(source, Does.Contain("private static void TryDeleteBootstrapShaderWarmupDumpTemp(string tempPath)"));
+            Assert.That(source, Does.Contain("AsyncWriteManager.FlushCriticalSavePath(absolutePath, BootStateRecordBytes"));
+            Assert.That(source, Does.Contain("AsyncWriteManager.FlushCriticalSavePath(absolutePath, byteCount"));
             Assert.That(source, Does.Contain("ShaderWarmupErrorCode.MissingTelemetryRing"));
             Assert.That(source, Does.Contain("ShaderWarmupBaseTimeoutMilliseconds"));
             Assert.That(source, Does.Contain("ShaderWarmupMaxTimeoutMilliseconds = 60000"));

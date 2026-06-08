@@ -8,33 +8,19 @@ biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+spoiler_tier: 1
+title: "压力玻璃形成"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# 压力玻璃形成
 
-CN LOC HOLD: Pressure Glass Formation turns Xenon-Omega into hard-sci-fi material ecology instead of magic ore. It is a pressure-made substrate tied to Atlas, containment and computation.
+压力玻璃是Marauder所说blue debt和Deep Reach的Xenon-Omega语言背后的技术名称。它在压力、惰性气体囊、卤水、矿物、热和改造生物相遇处形成。
 
-## Scanner
-
-CN LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
-
-## Terminal
-
-CN LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
-
-## Audio
-
-CN LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
-
-## Field Note
-
-CN LOC HOLD: It is not ore. It is a process that remembers where it was made.
+压力玻璃形成把Xenon-Omega变成硬科幻材料生态，而不是魔法矿石。它连接Atlas、封存和计算。 这不是矿石。它是会记住生成地点的过程。
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/zh_CN. -->

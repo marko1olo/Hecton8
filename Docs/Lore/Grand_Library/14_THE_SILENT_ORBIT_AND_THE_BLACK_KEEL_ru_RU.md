@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ТИХАЯ ОРБИТА И BLACK KEEL
 
 > **Источник:** Мегакорпорация Deep Reach, Реестр орбитальных активов.

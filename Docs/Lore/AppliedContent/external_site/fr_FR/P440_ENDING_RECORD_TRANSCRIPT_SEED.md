@@ -9,32 +9,22 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Ending Record Transcript Seed"
+title: "Transcription de record de fin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Ending Record Transcript Seed
+# Transcription de record de fin
 
-FR LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.
+## Clôture Écrite Comme Custody
 
-## Scanner
+Les fins de HECTON-8 ne doivent pas donner au joueur une absolution propre. Le record nomme receiver, payload hash, état de dette et état de survie parce que les institutions retiennent mieux ces champs que les personnes. Cette froideur est utile. Elle rend chaque issue comparable sans faire de la vérité un trophée.
 
-FR LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Les champs non résolus comptent le plus. Suppression flag unknown. Truth custody unresolved. Atlas continuity unclear. Public ledger status pending. Ces trous gardent la fin honnête: quelque chose a quitté l'océan, mais posséder n'est pas rendre justice, et survivre n'est pas réparer.
 
-## Terminal
-
-FR LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
-
-## Audio
-
-FR LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
-
-## Field Note
-
-FR LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Le format transcript protège aussi le replay. Un joueur peut revenir avec du savoir, mais la partie suivante ne doit pas hériter de pouvoir. Elle hérite de soupçon, de goût et de peur. Le record est un reçu, pas un pardon.
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/fr_FR. -->

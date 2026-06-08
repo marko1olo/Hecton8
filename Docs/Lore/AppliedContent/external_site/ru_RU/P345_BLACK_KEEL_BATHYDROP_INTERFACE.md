@@ -9,32 +9,16 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Black Keel Bathydrop Interface"
+title: "Bathydrop-интерфейс Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Black Keel Bathydrop Interface
+# Bathydrop-интерфейс Black Keel
 
-RU LOC HOLD: HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.
-
-## Scanner
-
-RU LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
-
-## Terminal
-
-RU LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
-
-## Audio
-
-RU LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
-
-## Field Note
-
-RU LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Bathydrop-интерфейс — место, где космический сеттинг касается океанской игры. Недостаточно, что Black Keel существует на орбите. Игроку нужна цепь: целостность капсулы, контроль плавучести, мачта связи, защелка подъема, уплотнения под давление, математика ретранслятора, тайминг поверхности и принятие носителем. Сломай одно звено — и все спасение становится теорией. Так начало остается честным. Игрок застрял не потому, что история забыла корабль. Игрок застрял потому, что единственная машина, способная соединить бездну, поверхность и орбиту, отказала способами, которые вода ухудшает каждый час.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/ru_RU. -->

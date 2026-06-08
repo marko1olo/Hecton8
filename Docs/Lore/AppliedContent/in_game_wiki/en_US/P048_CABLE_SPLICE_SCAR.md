@@ -7,8 +7,8 @@ poi_tags: poi.cable_splice;poi.atlas_repair_scar
 biome_tags: biome.service_corridor;biome.cable_reef
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Cable Splice Scar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Cable Splice Scar
 
-Cable Splice Scar is early proof that Atlas repair is practical before it becomes biological. The player sees utility first, then intent.
+A cable splice scar is an early Atlas-6 trace that still looks like maintenance. The repair keeps power moving through a damaged service line, but the material does not match colony procedure and the signoff is absent. These scars should appear before the repair network feels biological: useful, specific and slightly wrong.
 
 ## Scanner
 
-The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+Nonstandard splice. Insulation regrew around a service cable after human routing failed; Atlas-6 tag is partial and maintenance authority is missing.
 
 ## Terminal
 
-Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Something fixed the cable after everyone stopped asking permission.
+Someone fixed the cable after the paperwork stopped. Or something did.
 
 ## Field Note
 
-Atlas repair should look useful before it looks alive.
+Useful first. Wrong later. That is how Atlas repairs introduce themselves.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/en_US. -->

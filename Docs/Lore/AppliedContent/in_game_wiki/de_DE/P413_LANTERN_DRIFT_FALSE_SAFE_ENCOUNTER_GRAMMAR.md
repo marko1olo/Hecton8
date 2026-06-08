@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "Begegnungsgrammatik: falsche Sicherheit der Laternendrift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# Begegnungsgrammatik: falsche Sicherheit der Laternendrift
 
-DE LOC HOLD: Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.
+Begegnungen mit falscher Sicherheit der Laternendrift sollen den Spieler das Licht wollen lassen, bevor er ihm misstraut. Eine helle Bahn kann Sauerstofffilm, Kabelbögen, Schwebkorn und einen sauberen Weg durch Riffunordnung zeigen. Sie kann auch die eigene Spur des Spielers sein, sturmgeladener Rückstand, Signalrauschen alter Infrastruktur oder eine Räuberverschiebungslinie, an der kleinere Tiere bereits ausgewichen sind. Die Grammatik funktioniert, wenn dieselbe Schönheit mehrere Bedeutungen trägt. Farbe allein darf die Route nicht lösen. Pulsrate, Strömungsrichtung, Grazerverhalten, Rückstandsseite, pinger-Rücklauf und Werkzeuglärm müssen übereinstimmen, bevor die Bahn vertrauenswürdig ist. Wird das Leuchten hinter dem Spieler schärfer, ist die Begegnung Enttarnung. Wird es voraus heller, während Fauna still wird, ist es Köder. Folge Laternendrift als Zeuge, nicht als Versprechen.
 
 ## Scanner
 
-DE LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Laternendrift-Bahn. Helles Wasser kann Sauerstoffkante, Signalrauschen, Werkzeugspur oder durch Räuber verschobenen Verkehr bedeuten. Strömung vor dem Folgen prüfen.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+BEGEGNUNGSGRAMMATIK / LATERNENDRIFT-FALSCHSICHERHEIT / Rolle: Schönheit als mehrdeutige Daten, Routenverlockung, Stealth-Strafe / sichere Lesung: Strömung passt zum Leuchten, Fauna bleibt normal, Rückstand liegt auf erwarteter Seite / verwerfen: blaues Licht als Sicherheit behandeln, sturmgeladenem Scheinkorridor folgen, laut in leuchtender Spur reparieren / Routennotiz: Ein Leuchten kann Pfad, Köder, Panikaufzeichnung oder Enttarnung sein.
 
 ## Audio
 
-DE LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+Licht ist keine Gnade. Es sind Daten, die dein Anzug noch nicht trennen kann.
 
 ## Field Note
 
-DE LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+Frag, was das Licht trägt: Strömung, Sauerstoff, deinen Lärm oder etwas, das alles andere vertrieben hat.
 
 <!-- In-Game Wiki; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/de_DE. -->

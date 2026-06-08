@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "Доступные окна морского дна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# Доступные окна морского дна
 
-Твердое дно на HECTON-8 доступно не везде. Игрок выходит к ridges, vent scars, collapsed shelves и service basins. Это позволяет процедурно менять маршруты и сохранять ощущение, что океан луны больше игровой дорожки.
+Доступные окна морского дна - места, где сломанная кора HECTON-8 ненадолго снижает цену спуска. Они появляются у рухнувших шельфов, обнаженных гребней, повторно прогретых жерловых шрамов и рапных столбов, которые несут давление иначе, чем открытая вода. Окно все равно смертельно, если торопиться. Оно дает контакт со старым дном, редкими минеральными жилами, закопанным колониальным железом и уликами, которые главный океан раздавил бы вне досягаемости.
 
 ## Scanner
 
-Ridge window. Дно - не пол; это редкое exposed место.
+Маркер обнаженного гребня. Здесь оболочка порвалась достаточно тонко, чтобы краулер коснулся старого дна и не стал пастой.
 
 ## Terminal
 
-SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
+КРИТЕРИИ ОКНА: губа треснувшей коры, рапный столб с повторным нагревом от жерла, рампа рухнувшего шельфа, стабильный сонарный возврат, карман давления ниже красной линии костюма. Помечать только для медленной добычи.
 
 ## Audio
 
-Ты садишься там, где луна разрешает камню показаться.
+Море дает трогать дно через окна, а не там, где ты почувствовал храбрость.
 
 ## Field Note
 
-Хороший traversal рождается из редких footholds, а не бесконечного плоского seabed.
+Большая часть луны держит свое дно как тайну давления. Окна - исключения с зубами.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ru_RU. -->

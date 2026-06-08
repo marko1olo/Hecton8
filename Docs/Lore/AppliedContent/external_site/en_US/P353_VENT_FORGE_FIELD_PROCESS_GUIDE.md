@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Vent Forge Field Process Guide
 
-Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.
+Vent Forge Field Process Guide ties resource value to field handling: what matters is not only what is found, but how pressure and cooling let it survive recovery.
 
 ## Scanner
 
-Vent-forge chemistry active. Sample quality depends on pressure history, heat pulse and slow cooling.
+Vent-forge chemistry active. Quality follows pressure history, heat pulse and slow cooling, not the shine of the sample.
 
 ## Terminal
 
-FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat, brine and pressure matters more than its name.
 
 ## Audio
 

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Professional Motive
 
-The player is not a blank tourist. They begin with professional interest, salvage skill and a reason to accept a dead claim. The personal motive grows through evidence, familiar marks and the realization that HECTON-8 belongs to the same hard world that made them.
+The Marauder is not a blank tourist. The run begins with professional interest, salvage skill and a reason to accept a dead claim. Personal motive grows through evidence, familiar marks and the realization that HECTON-8 belongs to the same hard world that made this work normal.
 
 ## Scanner
 

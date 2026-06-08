@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Deep Reach Suboffice Registry"
+title: "Deep-Reach-Unterbüroregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Deep Reach Suboffice Registry
+# Deep-Reach-Unterbüroregister
 
-DE LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+Das Unterbüroregister zählt, weil es die Maschinerie benennt, ohne einen Thronsaal zu erfinden. Deep Reach brauchte niemanden, der jeden Tod persönlich befahl. Es brauchte Büros mit engen Namen, die verzögern, neu klassifizieren oder Pakete weitergeben konnten. Contract Continuity hielt obligations lebendig. Packet Notary entschied, was proof war. Quarantine Hold ließ rescue gefährlich klingen. Asset Silence senkte den Zeugenwert. Return Action entschied, wer Masse wert war.
 
 ## Scanner
 
-DE LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board und Return Action Queue.
 
 ## Terminal
 
-DE LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach hielt tödliche Entscheidungen unterhalb eines einzelnen Bösewichts. Kleine desks routeten clauses, packets, quarantine, silence und return priority, bis kein Stempel wie Mord aussah.
 
 ## Audio
 
-DE LOC HOLD: A small desk can kill more quietly than a director.
+Ein kleiner desk kann leiser töten als ein Direktor.
 
 ## Field Note
 
-DE LOC HOLD: Use dull names. Dull names are where liability hides.
+Namen langweilig halten. Dort versteckt sich liability.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/de_DE. -->

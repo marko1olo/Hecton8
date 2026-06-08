@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "حدادة الضغط لأوسكار نويمن"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# حدادة الضغط لأوسكار نويمن
 
-AR LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
+يربط أوسكار نويمن حرفة المستعمرة بسلسلة الهروب. تبرر ملاحظاته عن حدادة الضغط التصنيع العميق، وحلقات التثبيت، واختبارات الأختام، والحاجة إلى النزول لجلب المكونات بدلا من انتظار إنقاذ من السطح.
 
 ## Scanner
 
-AR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+ترك أوسكار نويمن وصفة حدادة لحلقات تثبيت قوية بما يكفي كي لا يكون مهد الصعود مجرد تابوت.
 
 ## Terminal
 
-AR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+نويمن، أ. مذكرة حدادة: غبار زجاج الضغط يفسد الختم الأول إذا خلط باردا. سخن الحلقة تحت سحب الفتحة، ثم اخمدها داخل غلاف ماء ملحي، ثم اختبرها بضعف حمل الصعود.
 
 ## Audio
 
-AR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+الإطلاق ليس إلا باب ضغط يتحرك إلى أعلى. ابنوه كأنه باب.
 
 ## Field Note
 
-AR LOC HOLD: The exit needs craft, not courage.
+الخروج يحتاج إلى صنعة لا إلى شجاعة.
 
 <!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/ar_SA. -->

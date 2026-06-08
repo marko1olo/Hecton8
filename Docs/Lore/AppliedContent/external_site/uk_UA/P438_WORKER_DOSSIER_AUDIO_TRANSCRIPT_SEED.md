@@ -9,32 +9,22 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Аудіотранскрипт робочого досьє"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Worker Dossier Audio Transcript Seed
+# Аудіотранскрипт робочого досьє
 
-UK LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+## Колонія До Того, Як Стати Доказом
 
-## Scanner
+Аудіо робочих досьє не має представляти загиблих як храмові об'єкти. Воно має дати їм працювати. Начальник насосної перевіряє клапан. Нотар реле свариться на табло. Медик сперечається з water ledger. Оператор fabricator логує сертифікат інструмента, бо інструмент важливіший за промову про хоробрість.
 
-UK LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Саме рутина дає руїнам вагу. Гравець має чути імена до меморіалів, посади до трагедії й дрібні подразнення до того, як велика брехня зімкнеться довкола них. HECTON-8 не була сценою для Marauder. Це було робоче місце зі звичками, образами, жартами, борговими повідомленнями й математикою тиску.
 
-## Terminal
-
-UK LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
-
-## Audio
-
-UK LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
-
-## Field Note
-
-UK LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Цей шар захищає канон від мелодрами. Немає сімейного гачка, який робить гравця особливим. Провина професійна. Ти впізнаєш процедури, бейджі й погані рішення, бо належав до такої системи, а тепер система говорить через затонулі наряди.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/uk_UA. -->

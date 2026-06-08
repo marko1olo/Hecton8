@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Glass Grazer Codex Card"
+title: "Картка кодексу: скляний шкребак"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Glass Grazer Codex Card
+# Картка кодексу: скляний шкребак
 
-UK LOC HOLD: HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+Скляні шкребаки перетворюють екологію HECTON-8 на мову виживання. Під час живлення вони прорізають світлі маршрутні шрами в плівці й матах, але їхня нерухомість часто важливіша за рух. Нешкідлива тварина може попередити гравця раніше за прилад.
 
 ## Scanner
 
-UK LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+Зграя скляних шкребаків. Неворожі панцирні живильники зчищають мінеральну плівку. Рівне цокання — робоча вода; раптова тиша — галявину змінило щось більше.
 
 ## Terminal
 
-UK LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+ЗРАЗОК / ЗГРАЯ СКЛЯНИХ ШКРЕБАКІВ / роль: шкребак мілководної плівки, свідок течії, ознака витіснення хижаком / безпечне читання: край живлення, свіжа бліда смуга, сталі панцирні цокання / відмова: покинуте поле корму, стиснута нерухома зграя, немає зворотних цокань після pinger / примітка маршруту: відсутність після живлення — дані небезпеки.
 
 ## Audio
 
-UK LOC HOLD: When they stop eating, you stop moving.
+Коли маленькі роти перестають цокати, а корм лишається, не ставай наступним, хто чекає.
 
 ## Field Note
 
-UK LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Зграя живиться: читай смугу. Зграя застигла: читай воду. Порожня смуга з кормом: іди.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/uk_UA. -->

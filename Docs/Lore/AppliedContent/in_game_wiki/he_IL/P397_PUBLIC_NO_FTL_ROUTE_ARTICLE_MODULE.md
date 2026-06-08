@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: No-FTL Route Delay"
+title: "עיכוב מסלול ללא FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: No-FTL Route Delay
+# עיכוב מסלול ללא FTL
 
-HE LOC HOLD: Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
+מרחק הוא כלל הישרדות במסלול Aegir. חוק, חוב ו-packets ישנים יכולים להגיע אל השחקן הרבה לפני carrier, tender, חלק חילוף או מציל אנושי. תשובת relay לא מבטלת את עבודת הלחץ מולך; היא רק מוכיחה שמישהו הכניס את ה-claim שלך לתור.
 
 ## Scanner
 
-HE LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+רשומת מעבר. תנועת Aegir תלויה ב-precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody ועיכוב משפטי.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+צומת ארכיון ציבורי // גבול מעבר. אין FTL. אין Ansible. הצלה חיה דורשת transfer פיזי, braking architecture, carrier position, descent mass ו-local window תקף.
 
 ## Audio
 
-HE LOC HOLD: Help can be legally present and physically years away.
+עזרה יכולה להיות נוכחת משפטית ורחוקה פיזית בשנים.
 
 ## Field Note
 
-HE LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+הערת Marauder: כשה-relay עונה, שאל בן כמה המענה ואיזו מסה הוא באמת יכול להזיז.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/he_IL. -->

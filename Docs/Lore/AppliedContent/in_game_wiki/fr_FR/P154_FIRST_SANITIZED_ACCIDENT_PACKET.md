@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: First Sanitized Accident Packet"
+title: "Premier Paquet D'Accident Assaini"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: First Sanitized Accident Packet
+# Premier Paquet D'Accident Assaini
 
-FR LOC HOLD: The first sanitized accident packet gives a useful lie: real Great Tide physics stripped of accepted margins, delayed authorization and missing workers.
+Le premier paquet d'accident assaini donne un mensonge utile : la vraie physique de Great Tide sans les marges acceptées, l'autorisation retardée et les travailleurs manquants.
 
 ## Scanner
 
-FR LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+Paquet d'incident Deep Reach récupéré. La formulation propre contredit les horloges de porte et les marques de crue.
 
 ## Terminal
 
-FR LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+AVIS D'INCIDENT DEEP REACH / CASCADE GÉOTECHNIQUE LOCALISÉE : échec d'autorisation d'évacuation toujours à l'examen; biological-pressure quarantine active; journaux Atlas corrompus; publication externe reportée jusqu'à witness reconciliation.
 
 ## Audio
 
-FR LOC HOLD: The packet says cascade. Door clocks say delay.
+Le paquet dit cascade. Les horloges de porte disent retard.
 
 ## Field Note
 
-FR LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+Ils ont écrit cascade. La ligne de dépôt sur le casier est plus haute que le tampon d'évacuation.
 
 <!-- In-Game Wiki; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/fr_FR. -->

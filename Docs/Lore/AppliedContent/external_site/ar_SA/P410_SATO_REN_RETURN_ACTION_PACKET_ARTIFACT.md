@@ -9,32 +9,22 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Sato-Ren Return Packet"
+title: "حزمة سوتو-رن Return Action"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Sato-Ren Return Packet
+# حزمة سوتو-رن Return Action
 
-AR LOC HOLD: Deep Reach returns to HECTON-8 as paperwork moving through rare signal windows: coordinates, custody, access, then maybe rescue.
+## إنقاذ منطوق بترتيب Claim
 
-## Scanner
+حزمة سوتو-رن ضغط في الزمن الحاضر. تصل بعد أن يتعلم اللاعب ما فعلته Deep Reach في memo وledger القديمة، وتثبت أن الشركة ليست جثة في الأرشيف فقط. Deep Reach ما زالت تتكلم. لكنها تتكلم بالترتيب الذي تفهمه أنظمتها: coordinates وaccess state وsample custody وsilence acknowledgement ثم extraction language.
 
-AR LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+ذلك الترتيب هو التهديد. خدمة الإنقاذ تسأل أين أصبت. recovery desk يسأل ماذا تحمل، ومن يستطيع certify ذلك، وهل يستطيع Atlas فتح route، وهل تقبل silence كشرط للنقل. لا تحتاج سوتو-رن إلى سفينة حربية فوق HECTON-8. الحزمة نفسها leverage لأن الرسائل نادرة والكتلة باهظة واللاعب debt-bound.
 
-## Terminal
-
-AR LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
-
-## Audio
-
-AR LOC HOLD: The packet knows where the asset is. It is less certain where you are.
-
-## Field Note
-
-AR LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+هنا يجب أن تضيق late game أخلاقيا. يمكن للوثيقة نفسها أن تبدو مساعدة أو repossession أو ابتزازا بحسب ما يعرفه اللاعب. إنها تصل البيروقراطية الغارقة القديمة بالاختيار الحي أمام Marauder: بيع الإحداثيات، حفظ proof، sever Atlas، نشر ledger، أو متابعة السير في محيط يحمل فيه حتى rescue رقم claim.
 
 <!-- External Site; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/ar_SA. -->

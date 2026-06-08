@@ -8,33 +8,19 @@ biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+spoiler_tier: 1
+title: "Penahanan Evakuasi Juno Kade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# Penahanan Evakuasi Juno Kade
 
-ID LOC HOLD: Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent.
+Juno Kade adalah orang di antara panik dan prosedur. Lognya tidak menunjukkan koloni yang terlalu bodoh untuk pergi. Log itu menunjukkan antrean, marshal, papan rute, percobaan manual override, dan gerbang yang menunggu izin sementara air bergerak lebih cepat daripada review.
 
-## Scanner
-
-ID LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
-
-## Terminal
-
-ID LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
-
-## Audio
-
-ID LOC HOLD: She kept counting people after the system started counting rooms.
-
-## Field Note
-
-ID LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+Penahanan itu punya beberapa nama: karantina, sertifikasi, peringkat payload, claim seal. Masing-masing terdengar masuk akal sendiri. Bersama-sama mereka membentuk pintu terkunci dengan orang di sisi yang salah. Kade penting karena ia menjaga bentuk manusia dari evakuasi. Pemain tidak menemukan kelalaian abstrak. Pemain menemukan pintu keluar yang bekerja lalu dibuat tidak berguna oleh penundaan resmi.
 
 <!-- External Site; generated from P063_JUNO_KADE_EVACUATION_HOLD/id_ID. -->

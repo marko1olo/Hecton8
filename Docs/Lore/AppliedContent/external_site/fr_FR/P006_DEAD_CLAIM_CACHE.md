@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cache de claim mort"
+title: "Cache de revendication morte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cache de claim mort
+# Cache de revendication morte
 
-Dead Claim Cache révèle l'histoire salvage cachée de HECTON-8 entre la catastrophe de 2147 et l'arrivée du joueur.
-
-## Scanner
-
-Cache de terrain cachée. Préparée par quelqu'un qui comptait revenir.
-
-## Terminal
-
-La route sous le tuyau nord reste calme jusqu'au réveil des lampes. Ne touche pas le coffre bleu. Ne réponds pas aux pings carrier dans le canyon.
-
-## Audio
-
-Ce n'est pas du matériel Deep Reach. Quelqu'un d'autre est descendu ici avec un cutter et de la malchance.
-
-## Field Note
-
-Si une carte dit deux fois sûr, elle a été écrite par quelqu'un qui voulait s'en convaincre.
+Une cache de revendication morte est un argument de survie laissé par quelqu'un qui a perdu. Le sac est étanche, doublement noué, caché là où un plongeur pressé ne regarderait jamais : sous le tuyau nord, sous le réseau de lampes, derrière une bande d'isolant acoustique déchirée. La personne qui l'a préparé pensait revenir. Elle a marqué une route, scellé des cutters de rechange, plié une carte jusqu'à fendre la cire et écrit le mot sûr deux fois dans la même marge. Cette répétition est le premier avertissement. Sur HECTON-8, sûr signifie souvent qu'une personne a survécu assez longtemps pour se mentir. La cache compte parce qu'elle élargit le monde sans le peupler. Le joueur reste seul dans l'océan, mais il n'est pas le premier. Entre la catastrophe du carrier et l'incursion actuelle, d'autres professionnels sont descendus chercher du métal, des droits de récupération, des cargaisons scellées et des rumeurs. Ils ont trouvé assez pour laisser du matériel. Pas assez pour laisser un témoignage. La note du coffre bleu, l'avertissement sur les pings du carrier et la longe coupée donnent à la cache moins l'air d'un trésor que d'une main tendue depuis une route ratée.
 
 <!-- External Site; generated from P006_DEAD_CLAIM_CACHE/fr_FR. -->

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Transkrip Jejak Perbaikan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Repair Trace Transcript Seed
+# Transkrip Jejak Perbaikan Atlas
 
-ID LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.
+Audio Atlas menakutkan karena memperlakukan hidup, logam, dan air sebagai satu maintenance surface yang rusak.
 
 ## Scanner
 
-ID LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+Seed audio/caption: jejak Atlas harus terdengar seperti telemetri perbaikan yang meruntuhkan kategori, bukan dewa bicara.
 
 ## Terminal
 
-ID LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
+TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.
 
 ## Audio
 
-ID LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+Jejak perbaikan: diskontinuitas membran diterima. Pertumbuhan kabel disahkan. Rute fauna ditandai serviceable.
 
 ## Field Note
 
-ID LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+Untuk caption scanner, lapisan audio dalam, dan gerbang spoiler Atlas. Pendek, taksonomis, rusak.
 
 <!-- In-Game Wiki; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/id_ID. -->

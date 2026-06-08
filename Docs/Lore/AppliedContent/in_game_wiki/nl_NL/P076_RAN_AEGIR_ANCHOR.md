@@ -9,32 +9,34 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ran / Aegir Anchor"
+title: "Ran / Aegir Anker"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ran / Aegir Anchor
+# Ran / Aegir Anker
 
-NL LOC HOLD: Aegir is anchored to a normal K-class star model, not a brown dwarf and not a fantasy-dark system. HECTON-8 can have bright shallows because light exists; the horror comes when pressure, weather, depth and industry erase that light.
+Ran verankert het Aegir-systeem als een normale K-klasse ster, geen dode lamp en geen bovennatuurlijke bron van duisternis. HECTON-8 kan heldere ondiepten hebben omdat licht bestaat.
+
+De horror begint wanneer atmosfeer, storm, mineraalwater, diepte en industrieel slib dat licht sneller wissen dan een reddingscontract kan reageren. Boven water is het systeem astronomisch. Onder water wordt elke lumen gehuurde tijd.
 
 ## Scanner
 
-NL LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
+K-klasse sterplaat. Ran brandt normaal. Aegir is zwakker dan Sol, maar de duisternis hier komt van diepte, weer en schuld.
 
 ## Terminal
 
-NL LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR // Oranje-dwerglicht ondersteunt oppervlaktewerk. Stormverstrooiing, eclipsgeometrie en oceaantroebelheid drukken afdalingsleesbaarheid onder de veiligheidsmarge.
 
 ## Audio
 
-NL LOC HOLD: The star is not absent. It just cannot follow you down.
+De ster is aanwezig. Hij kan je alleen niet naar beneden volgen.
 
 ## Field Note
 
-NL LOC HOLD: A real star is enough. The ocean does the rest.
+Een echte ster is genoeg. De oceaan doet de rest.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/nl_NL. -->

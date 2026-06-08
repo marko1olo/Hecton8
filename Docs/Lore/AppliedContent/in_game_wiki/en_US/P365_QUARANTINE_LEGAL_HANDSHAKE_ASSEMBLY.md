@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Quarantine Legal Handshake Assembly
 
-The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.
+The final escape component is legal, medical and evidentiary at once. Quarantine status, receiver identity, payload custody and evidence state decide whether ascent becomes rescue, claim capture or public proof.
 
 ## Scanner
 
-Handshake socket. The capsule can be mechanically ready and still legally captured.
+Handshake socket. The capsule can be mechanically ready and still belong to the wrong receiver.
 
 ## Terminal
 
-RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.
+RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates and quarantine status. Public ledger accepts proof after delay. Unkeyed launch defaults to custody dispute.
 
 ## Audio
 
-The last part is not metal. It is who gets to call you recovered.
+Who answers decides what rescue means.
 
 ## Field Note
 
-Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+The last component is not metal. It is the name of the system allowed to call you recovered.
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/en_US. -->

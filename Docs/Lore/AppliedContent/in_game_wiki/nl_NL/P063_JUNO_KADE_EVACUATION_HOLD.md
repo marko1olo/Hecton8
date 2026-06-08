@@ -7,34 +7,34 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Juno Kade-evacuatiehold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# Juno Kade-evacuatiehold
 
-NL LOC HOLD: Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+Juno Kade bewijst dat de kolonie niet simpelweg bevroor. Mensen stonden in de rij, marshals gaven routes uit, en het exitsysteem antwoordde met authorization holds, quarantainecontroles en payload-voorrang. De ramp wordt erger omdat de deur echt was.
 
 ## Scanner
 
-NL LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
+Juno Kade opende de rij en botste op een muur van quarantaine, certificering en payload-rang.
 
 ## Terminal
 
-NL LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+KADE EVAC STATUS: route rood; manual override geweigerd; quarantainepoort wacht op Atlas continuity check; payload lift krijgt voorrang tot claim seal is opgelost.
 
 ## Audio
 
-NL LOC HOLD: She kept counting people after the system started counting rooms.
+De uitgang bestond. Daarom doet de hold ertoe.
 
 ## Field Note
 
-NL LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+Een evacuatiemarshal kan mensen verplaatsen. Ze kan geen clausule verplaatsen die de deur bezit.
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/nl_NL. -->

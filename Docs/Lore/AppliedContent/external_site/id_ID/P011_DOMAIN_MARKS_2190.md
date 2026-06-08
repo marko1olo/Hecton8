@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Tanda Domain 2190
 
-Domain Marks 2190 menempatkan HECTON-8 dalam ruang manusia yang matang tetapi jarang. Antar-bintang tidak berarti bantuan cepat.
-
-## Scanner
-
-Tanda domain campuran. Pelat Sol, cap alat Barnard, kustodi rute Luyten.
-
-## Terminal
-
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
-
-## Audio
-
-Tempat ini bukan di luar peradaban. Ini peradaban saat jarak menang.
-
-## Field Note
-
-Umat manusia membesar. Penyelamatan tetap harus bepergian.
+Pada 2190, satu benda rusak bisa membawa beberapa pemilik: standar Sol, perbaikan Barnard, kustodi Luyten, klaim Aegir. Kesepian HECTON-8 bukan kurang sejarah, melainkan sejarah yang datang sebagai cap saat ruangan terendam.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/id_ID. -->

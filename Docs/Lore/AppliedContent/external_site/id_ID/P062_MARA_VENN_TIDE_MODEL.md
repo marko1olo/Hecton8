@@ -8,33 +8,19 @@ biome_tags: biome.tide_gauge;biome.glacier_break
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+spoiler_tier: 1
+title: "Model Pasang Mara Venn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# Model Pasang Mara Venn
 
-ID LOC HOLD: Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning.
+Mara Venn tidak menulis ramalan. Ia menulis model dengan rentang galat, margin evakuasi, dan waktu yang buruk. Di bawah geometri musim semi Aegir, cryosphere shear dapat melampaui kapasitas angkat yang tersedia. Koloni tidak membutuhkan kepastian sempurna untuk bertindak. Koloni membutuhkan seseorang yang memperlakukan ekor kurva sebagai manusia, bukan biaya.
 
-## Scanner
-
-ID LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
-
-## Terminal
-
-ID LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
-
-## Audio
-
-ID LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
-
-## Field Note
-
-ID LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+Deep Reach menyimpan model itu dan melemahkan responsnya. Peringatan menjadi monitor, margin evakuasi menjadi masalah anggaran masa depan, dan catatan publik kemudian menyebut banjir itu tidak terbaca. Pemain harus merasakan kebohongan dari bentuk dokumennya: pasang itu alami, tetapi bencananya diedit.
 
 <!-- External Site; generated from P062_MARA_VENN_TIDE_MODEL/id_ID. -->

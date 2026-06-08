@@ -7,31 +7,31 @@ poi_tags: poi.pressure_glass_vein;poi.blue_debt_casket
 biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Формирование pressure glass"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Формирование давленого стекла"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Формирование pressure glass
+# Формирование давленого стекла
 
-Pressure glass - техническое полевое имя того, что Marauders зовут blue debt, а Deep Reach называет Xenon-Omega. Оно формируется там, где встречаются pressure, noble-gas pockets, brine, minerals, heat и altered biology. Хорошие samples ценны, потому что остаются стабильны в условиях, которые обычная индустрия не терпит.
+Давленое стекло является техническим именем того, что мародеры называют blue debt, а Deep Reach прячет за языком Xenon-Omega. Оно возникает там, где давление, карманы благородных газов, рассол, минералы, тепло и измененная биология сходятся в одну стабильную подложку.
 
 ## Scanner
 
-Решетка blue debt. Noble gas, brine, mineral defects и pressure history заперты в одной дорогой ошибке.
+Синяя долговая решетка. Благородный газ, рассол, минеральные дефекты и история давления заперты в одной дорогой ошибке.
 
 ## Terminal
 
-XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
+XO CONTINUITY SUBSTRATE: ксенон-богатая клатратная решетка дефектов стабилизирована химией рассола, термоциклами и остатками биологического катализатора. Риск разгерметизации: дрейф сигнала, трещина и вспышка загрязнения.
 
 ## Audio
 
-Вот почему они вернулись. Не золото. Машиночитаемый шрам.
+Вот почему они вернулись. Не золото, а машиночитаемый шрам.
 
 ## Field Note
 

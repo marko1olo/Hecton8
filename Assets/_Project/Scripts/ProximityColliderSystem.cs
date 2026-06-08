@@ -365,7 +365,7 @@ namespace Hecton8.Core
             // ── Avto-resolve igroka cherez bootstrap, esli ssylka ne zadana ──
             CachePlayerRuntimeContextCold();
             CacheDataVaultCold();
-            CacheObjectPool(GlobalRegistry.ObjectPoolService);
+            CacheObjectPool(null);
             TryRegisterHotSwapListener();
 
             // ── Validatsiya ──
@@ -423,7 +423,7 @@ namespace Hecton8.Core
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    CacheObjectPool(currentService as IObjectPoolService);
+                    CacheObjectPool(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     RebindDataVault(currentService as IDataVault);
@@ -444,9 +444,53 @@ namespace Hecton8.Core
             }
         }
 
-        private void CacheObjectPool(IObjectPoolService objectPool)
+        private void CacheObjectPool(ObjectPoolManager candidate)
         {
-            _objectPool = objectPool;
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                return;
+            }
+
+            _objectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private static void DespawnColliderProxyOrDestroy(IObjectPoolService pool, GameObject colliderObject)
+        {
+            if (colliderObject == null)
+                return;
+
+            if (pool != null && pool.CanDespawnWithoutDestroy(colliderObject))
+            {
+                pool.Despawn(colliderObject);
+                return;
+            }
+
+            Destroy(colliderObject);
         }
 
         private void TryRegisterDispatcherRoutes()
@@ -710,8 +754,7 @@ namespace Hecton8.Core
         /// </summary>
         private void ProcessJobResults()
         {
-            IObjectPoolService pool = _objectPool;
-            if (pool == null) return;
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool)) return;
             if (!TryReadJobResults(out NativeArray<byte>.ReadOnly jobResults) ||
                 !TryReadPositions(out NativeArray<float3>.ReadOnly positions))
             {
@@ -747,7 +790,7 @@ namespace Hecton8.Core
 
                     // Dvoynaya proverka: kollayder mozhet uzhe byt (race condition
                     // pri pereinitsializatsii). Propuskaem bez allokatsii.
-                    if (_activeColliders[i] != null) 
+                    if (_activeColliders[i] != null)
                     {
                         _prevStatus[i] = 1;
                         continue;
@@ -777,7 +820,7 @@ namespace Hecton8.Core
 
                     if (colliderObj != null)
                     {
-                        pool.Despawn(colliderObj);
+                        DespawnColliderProxyOrDestroy(pool, colliderObj);
                         _activeColliders[i] = null;
                         operationsThisTick++;
                     }
@@ -852,17 +895,14 @@ namespace Hecton8.Core
         {
             if (_activeColliders == null) return;
 
-            IObjectPoolService pool = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
 
             for (int i = 0; i < _activeColliders.Length; i++)
             {
                 GameObject obj = _activeColliders[i];
                 if (obj != null)
                 {
-                    if (pool != null)
-                        pool.Despawn(obj);
-                    else
-                        Destroy(obj); // fallback esli pul unichtozhen
+                    DespawnColliderProxyOrDestroy(pool, obj);
 
                     _activeColliders[i] = null;
                 }

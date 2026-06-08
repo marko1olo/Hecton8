@@ -39,6 +39,12 @@ namespace Hecton8.Narrative
         private static readonly GameObject[] s_installedOwners = new GameObject[InstalledDirectorCapacity];
         private static readonly ProceduralLoreDirector[] s_installedInstances = new ProceduralLoreDirector[InstalledDirectorCapacity];
         private static int s_installedCount;
+        private static readonly uint s_frontierLoreNotificationMissWarningHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralLoreDirector.FrontierNotificationMiss"));
+        private static readonly uint s_proceduralLoreDirectorContextHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralLoreDirector"));
+        private static readonly uint s_frontierLoreNotificationContextHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralLoreDirector.FrontierNotification"));
 
         [Header("Spawn Cadence")]
         [Tooltip("Seconds between frontier spawn evaluations. Heavy catalog and chunk scans stay on a cold cadence.")]
@@ -71,6 +77,7 @@ namespace Hecton8.Narrative
         private AudioLogSystem _audioLogSystem;
         private IObjectPoolService _objectPool;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private float _spawnCheckTimer;
         private int _catalogCount;
         private int _nextCatalogIndex;
@@ -80,11 +87,13 @@ namespace Hecton8.Narrative
         private bool _registeredHotSwapListener;
         private bool _poolWarmed;
         private bool _needsRespawn;
+        private int _frontierLoreNotificationMissCount;
         /// <inheritdoc />
         public int SavePriority => 208;
 
         /// <inheritdoc />
         public int LoadPriority => 208;
+        public int FrontierLoreNotificationMissCount => _frontierLoreNotificationMissCount;
 
         private void OnEnable()
         {
@@ -113,6 +122,7 @@ namespace Hecton8.Narrative
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
             DespawnAllInstances();
+            ClearFrontierLoreNotificationDiagnostics();
             ClearCachedRuntimeServices();
         }
 
@@ -123,6 +133,7 @@ namespace Hecton8.Narrative
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
             DespawnAllInstances();
+            ClearFrontierLoreNotificationDiagnostics();
             ClearCachedRuntimeServices();
         }
 
@@ -231,6 +242,7 @@ namespace Hecton8.Narrative
         /// <inheritdoc />
         public void LoadFromSaveData(SaveData data)
         {
+            ClearFrontierLoreNotificationDiagnostics();
             DespawnAllInstances();
             _activePlacements.Clear();
             _occupiedChunkKeys.Clear();
@@ -296,7 +308,29 @@ namespace Hecton8.Narrative
 
             _activePlacements.Add(placement);
             _occupiedChunkKeys.Add(chunkKey);
-            NotificationEvents.TryPushInfo("PDA archive anomaly detected near the frontier. Route updated with a probable data lead.".AsSpan());
+            TryPushFrontierLoreNotification(placement.logHash != 0u ? placement.logHash : unchecked((uint)chunkKey));
+        }
+
+        private void TryPushFrontierLoreNotification(uint contextHash)
+        {
+            if (NotificationEvents.TryPushInfo("PDA archive anomaly detected near the frontier. Route updated with a probable data lead.".AsSpan()))
+                return;
+
+            ReportFrontierLoreNotificationMiss(contextHash);
+        }
+
+        private void ReportFrontierLoreNotificationMiss(uint contextHash)
+        {
+            _frontierLoreNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                s_frontierLoreNotificationMissWarningHash,
+                s_proceduralLoreDirectorContextHash ^ s_frontierLoreNotificationContextHash ^ contextHash,
+                Mathf.Max(1, _frontierLoreNotificationMissCount));
+        }
+
+        private void ClearFrontierLoreNotificationDiagnostics()
+        {
+            _frontierLoreNotificationMissCount = 0;
         }
 
         private void RefreshActivePlacements()
@@ -357,10 +391,13 @@ namespace Hecton8.Narrative
 
         private bool TrySpawnInstance(ref ActiveLorePlacement placement)
         {
-            IObjectPoolService pool = _objectPool;
             AudioLogSystem audioLogSystem = ResolveAudioLogSystem();
-            if (pickupTemplate == null || audioLogSystem == null || pool == null)
+            if (pickupTemplate == null ||
+                audioLogSystem == null ||
+                !TryResolveCachedObjectPool(out IObjectPoolService pool))
+            {
                 return false;
+            }
 
             AudioLogData logData = FindCatalogEntry(placement.logId);
             if (logData == null)
@@ -378,7 +415,7 @@ namespace Hecton8.Narrative
 
             if (!TryResolvePooledAudioLogPickup(pool, spawnedObject, out AudioLogPickup pickup))
             {
-                pool.Despawn(spawnedObject);
+                DespawnPooledLoreOrDeactivate(pool, spawnedObject);
                 return false;
             }
 
@@ -414,11 +451,7 @@ namespace Hecton8.Narrative
             if (placement.instance == null)
                 return;
 
-            IObjectPoolService pool = placement.owningPool;
-            if (pool != null)
-                pool.Despawn(placement.instance);
-            else
-                placement.instance.SetActive(false);
+            ObjectPoolManager.DespawnOrDeactivate(placement.instance, placement.owningPool);
 
             placement.instance = null;
             placement.owningPool = null;
@@ -433,12 +466,8 @@ namespace Hecton8.Narrative
         {
             _explorationTracker = GlobalRegistry.PlayerExplorationReadModel;
             CacheAudioLogSystem(Hecton8.Core.GlobalRegistry.AudioLogs);
-            IObjectPoolService currentPool = GlobalRegistry.ObjectPoolService;
-            if (!ReferenceEquals(_objectPool, currentPool))
-            {
-                _objectPool = currentPool;
+            if (CacheObjectPoolService(null))
                 _poolWarmed = false;
-            }
 
             _saveService = GlobalRegistry.Save;
         }
@@ -469,7 +498,7 @@ namespace Hecton8.Narrative
 
         private static bool IsAudioLogSystemUsable(AudioLogSystem audioLogSystem)
         {
-            return audioLogSystem != null && audioLogSystem.isActiveAndEnabled;
+            return audioLogSystem != null && audioLogSystem.IsAudioLogRuntimeReady;
         }
 
         private bool ResolveCatalog()
@@ -666,10 +695,59 @@ namespace Hecton8.Narrative
                     CacheAudioLogSystem(currentService as AudioLogSystem);
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
-                    _poolWarmed = false;
+                    if (CacheObjectPoolService(currentService as ObjectPoolManager))
+                        _poolWarmed = false;
                     break;
             }
+        }
+
+        private bool CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (!ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) &&
+                !ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                pool = null;
+            }
+
+            if (ReferenceEquals(_objectPool, pool))
+                return false;
+
+            _objectPool = pool;
+            return true;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                if (!ReferenceEquals(_objectPool, resolved))
+                    _poolWarmed = false;
+
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            if (_objectPool != null)
+                _poolWarmed = false;
+
+            _objectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private static void DespawnPooledLoreOrDeactivate(IObjectPoolService pool, GameObject instance)
+        {
+            ObjectPoolManager.DespawnOrDeactivate(instance, pool);
         }
 
         private void TryRegisterHotSwapListener()
@@ -689,30 +767,41 @@ namespace Hecton8.Narrative
             _registeredHotSwapListener = false;
         }
 
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         private void TryRegisterWithSaveManager()
         {
             if (_registeredToSave || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _registeredToSave = true;
         }
 
         private void UnregisterFromSaveManager()
         {
-            if (!_registeredToSave)
+            if (!_registeredToSave && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _registeredToSave = false;
         }
     }

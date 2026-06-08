@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # RUINY SEKTORA 44
 
 > **Źródło:** Dziennik Kartograficzny Drona Geodezyjnego 99-Delta (Odzyskany).

@@ -9,32 +9,22 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Haldane Quarantine Hold"
+title: "Hold Haldane de levée de quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Haldane Quarantine Hold
+# Hold Haldane de levée de quarantaine
 
-FR LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## Une Procédure Correcte À La Mauvaise Minute
 
-## Scanner
+Le hold Haldane ne doit pas se lire comme une fraude simple. HECTON-8 avait un risque de contamination, des seals compromis, des problèmes de custody d'échantillons et une incertitude biologique. Un protocole de quarantaine avait du sens avant que le désastre devienne cinétique. C'est pour cela que le document mord: la procédure était assez réelle pour être défendue et assez lente pour tuer.
 
-FR LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+La release certification devient une arme par le timing. Pendant que la pression monte et que les routes tombent, le hold demande XO sample custody, seal-read variance et downstream exposure review. Chaque phrase sonne responsable. Ensemble, elles gardent évacués, mécaniciens et témoins dans une colonie défaillante jusqu'à ce que rescue cesse d'être le verbe dominant.
 
-## Terminal
-
-FR LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-FR LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-FR LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+C'est l'un des meilleurs endroits pour faire sentir Deep Reach comme institution. Haldane n'a pas besoin de rire des ouvriers piégés. Le desk doit seulement préserver chain of custody, réduire la liability future et éviter de libérer une preuve contaminée dans un claim space qu'il ne contrôle pas. L'horreur vient du fait que ces motifs peuvent tous sonner justes à la minute où il fallait ouvrir la porte.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/fr_FR. -->

@@ -9,32 +9,22 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Sato-Ren Return Packet"
+title: "Packet Sato-Ren Return Action"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Sato-Ren Return Packet
+# Packet Sato-Ren Return Action
 
-ID LOC HOLD: Deep Reach returns to HECTON-8 as paperwork moving through rare signal windows: coordinates, custody, access, then maybe rescue.
+## Penyelamatan Dalam Urutan Claim
 
-## Scanner
+Packet Sato-Ren adalah tekanan masa kini. Ia datang setelah pemain mempelajari apa yang dilakukan Deep Reach dalam memo dan ledger lama, dan membuktikan perusahaan bukan sekadar mayat di arsip. Deep Reach masih bicara. Ia hanya bicara dalam urutan yang dipahami sistemnya: coordinates, access state, sample custody, silence acknowledgement, extraction language.
 
-ID LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+Urutan itu adalah ancaman. Layanan penyelamatan bertanya di mana kau terluka. Recovery desk bertanya apa yang kau bawa, siapa yang bisa certify, apakah Atlas masih bisa membuka route, dan apakah kau menerima silence sebagai syarat pemindahan. Sato-Ren tidak butuh kapal perang di atas HECTON-8. Packet itu sendiri leverage karena pesan langka, massa mahal, dan pemain debt-bound.
 
-## Terminal
-
-ID LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
-
-## Audio
-
-ID LOC HOLD: The packet knows where the asset is. It is less certain where you are.
-
-## Field Note
-
-ID LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+Late game harus terasa sempit secara moral di sini. Dokumen yang sama bisa terlihat seperti bantuan, repossession, atau pemerasan tergantung apa yang sudah diketahui pemain. Ia menghubungkan birokrasi tenggelam lama dengan pilihan hidup di depan Marauder: menjual koordinat, menjaga proof, sever Atlas, menerbitkan ledger, atau terus bergerak di laut tempat bahkan rescue punya claim number.
 
 <!-- External Site; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/id_ID. -->

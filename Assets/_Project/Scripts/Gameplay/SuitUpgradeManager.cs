@@ -101,6 +101,8 @@ namespace Hecton8.Gameplay
         private const int SuitNotificationNameCapacity = 96;
         private const uint TelemetryFlagResolved = 1u << 0;
         private const uint TelemetryFlagNonFinite = 1u << 31;
+        private static readonly uint _SuitNotificationMissWarningHash = unchecked((uint)LocHash.Compute("SuitUpgradeManager.NotificationMiss"));
+        private static readonly uint _SuitNotificationContextHash = unchecked((uint)LocHash.Compute("SuitUpgradeManager.Notification"));
 
         private readonly HashSet<string> _installedUpgrades  = new HashSet<string>(32);
         private readonly HashSet<string> _unlockedBlueprints = new HashSet<string>(32);
@@ -117,8 +119,10 @@ namespace Hecton8.Gameplay
         private bool _inventorySyncRunning;
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
+        private int _suitNotificationMissCount;
         private PlayerInventory _subscribedInventory;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
         private int _lastInventoryVersion = -1;
@@ -137,6 +141,7 @@ namespace Hecton8.Gameplay
         private uint _telemetrySequence;
         private int _telemetryCursor;
         private bool _telemetryDumped;
+        private bool _runtimeOwnerAborted;
         private SuitUpgradeLookupEntry[] _upgradeLookup = Array.Empty<SuitUpgradeLookupEntry>();
 
         private struct SuitUpgradeLookupEntry
@@ -178,6 +183,7 @@ namespace Hecton8.Gameplay
         public int InstalledCount => _installedUpgrades.Count;
         public ulong UpgradeMask => _upgradeMask;
         public ulong EffectiveUpgradeMask => _effectiveUpgradeMask;
+        public int SuitNotificationMissCount => _suitNotificationMissCount;
         public ref readonly SuitStats CurrentStats => ref _resolvedSuitStats;
         public ref readonly SuitStats CurrentSuitStats => ref _resolvedSuitStats;
         public float CurrentMaxO2 => _resolvedSuitStats.MaxO2;
@@ -213,12 +219,8 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            SuitUpgradeManager registered = s_activeRuntimeInstance ?? GlobalRegistry.SuitUpgrades;
-            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             if (baseStats == null)
             {
@@ -246,6 +248,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!TryRegisterService())
                 return;
 
@@ -270,6 +275,7 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
 
             NarrativeEvents.Unregister(this);
+            ClearSuitNotificationDiagnostics();
             ClearSuitDataVaultCache();
             TryUnregisterService();
         }
@@ -280,6 +286,7 @@ namespace Hecton8.Gameplay
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
+            ClearSuitNotificationDiagnostics();
             ClearSuitDataVaultCache();
 
             if (_runtimeStats != null && !ReferenceEquals(_runtimeStats, baseStats))
@@ -294,15 +301,14 @@ namespace Hecton8.Gameplay
             if (_serviceRegistered)
                 return true;
 
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (!Application.isPlaying)
                 return false;
 
-            SuitUpgradeManager registered = Hecton8.Core.GlobalRegistry.SuitUpgrades;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             Hecton8.Core.GlobalRegistry.RegisterSuitUpgradeRuntime(this);
             _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.SuitUpgrades, this);
@@ -322,11 +328,87 @@ namespace Hecton8.Gameplay
             _serviceRegistered = false;
         }
 
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            SuitUpgradeManager registered = Hecton8.Core.GlobalRegistry.SuitUpgrades;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsSuitUpgradeRuntimeUsable(registered))
+                {
+                    s_activeRuntimeInstance = registered;
+                    AbortDuplicateRuntimeOwner();
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+
+                Hecton8.Core.GlobalRegistry.UnregisterSuitUpgradeRuntime(registered);
+            }
+
+            SuitUpgradeManager active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsSuitUpgradeRuntimeUsable(active))
+            {
+                Hecton8.Core.GlobalRegistry.RegisterSuitUpgradeRuntime(active);
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            s_activeRuntimeInstance = null;
+            if (ReferenceEquals(Hecton8.Core.GlobalRegistry.SuitUpgrades, active))
+                Hecton8.Core.GlobalRegistry.UnregisterSuitUpgradeRuntime(active);
+            return false;
+        }
+
+        private static bool IsSuitUpgradeRuntimeUsable(SuitUpgradeManager manager)
+        {
+            return !ReferenceEquals(manager, null) &&
+                   manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            _inventorySyncQueued = false;
+            TryUnregisterLateFrame();
+            UnbindInventory();
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
+            NarrativeEvents.Unregister(this);
+            ClearSuitDataVaultCache();
+            TryUnregisterService();
+
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
+
+            if (_runtimeStats != null && !ReferenceEquals(_runtimeStats, baseStats))
+            {
+                Destroy(_runtimeStats);
+                _runtimeStats = null;
+            }
+
+            _runtimeOwnerAborted = true;
+            enabled = false;
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryRegisterLateFrame();
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
@@ -376,25 +458,36 @@ namespace Hecton8.Gameplay
             if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = Hecton8.Core.GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = Hecton8.Core.GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveRegistered = false;
         }
 
@@ -556,12 +649,37 @@ namespace Hecton8.Gameplay
 
             uint messageHash = NotificationEvents.RegisterMessage(_notificationMessageBuffer.AsSpan(0, messageLength));
             if (messageHash == 0u)
+            {
+                ReportSuitNotificationMiss(0u);
+                return;
+            }
+
+            TryPushSuitNotificationMessage(messageHash, warning);
+        }
+
+        private void TryPushSuitNotificationMessage(uint messageHash, bool warning)
+        {
+            bool pushed = warning
+                ? NotificationEvents.TryPushRegisteredWarning(messageHash)
+                : NotificationEvents.TryPushRegisteredInfo(messageHash);
+            if (pushed)
                 return;
 
-            if (warning)
-                NotificationEvents.TryPushRegisteredWarning(messageHash);
-            else
-                NotificationEvents.TryPushRegisteredInfo(messageHash);
+            ReportSuitNotificationMiss(messageHash);
+        }
+
+        private void ReportSuitNotificationMiss(uint messageHash)
+        {
+            _suitNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _SuitNotificationMissWarningHash,
+                _SuitNotificationContextHash ^ messageHash,
+                math.max(1, _suitNotificationMissCount));
+        }
+
+        private void ClearSuitNotificationDiagnostics()
+        {
+            _suitNotificationMissCount = 0;
         }
 
         private static bool TryWriteSinglePlaceholderTemplate(
@@ -1583,6 +1701,7 @@ namespace Hecton8.Gameplay
 
         public void LoadFromSaveData(SaveData data)
         {
+            ClearSuitNotificationDiagnostics();
             _installedUpgrades.Clear();
             _unlockedBlueprints.Clear();
             _brokenUpgrades.Clear();

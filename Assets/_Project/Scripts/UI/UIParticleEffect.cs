@@ -165,7 +165,7 @@ namespace Hecton8.UI
             if (instance == null)
                 return false;
 
-            if (!pool.CanDespawnWithoutDestroy(instance))
+            if (!CanDespawnWithPool(pool, instance))
             {
                 pool.Despawn(instance);
                 return false;
@@ -212,10 +212,16 @@ namespace Hecton8.UI
             _particleSystem = null;
             _particleRenderer = null;
 
-            if (instance == null || pool == null || !pool.CanDespawnWithoutDestroy(instance))
+            if (instance == null)
                 return;
 
-            pool.Despawn(instance);
+            if (ObjectPoolManager.TryResolvePoolForInstance(instance, pool, out IObjectPoolService ownerPool))
+            {
+                ownerPool.Despawn(instance);
+                return;
+            }
+
+            Destroy(instance);
         }
 
         private void CacheParticleComponents(GameObject instance, IObjectPoolService pool)
@@ -324,7 +330,10 @@ namespace Hecton8.UI
 
         private IObjectPoolService ResolvePool()
         {
-            return _uiEffectPool != null ? _uiEffectPool : _cachedObjectPool;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(_uiEffectPool))
+                return _uiEffectPool;
+
+            return TryResolveCachedObjectPool(out IObjectPoolService pool) ? pool : null;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -338,14 +347,54 @@ namespace Hecton8.UI
             if (ReferenceEquals(previousService, _particlePoolOwner))
                 DespawnEffectInstance();
 
-            _cachedObjectPool = currentService as IObjectPoolService;
+            CacheObjectPoolService(currentService as ObjectPoolManager);
             if (isActiveAndEnabled)
                 SpawnEffectInstance();
         }
 
         private void CacheRegistryServicesCold()
         {
-            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _cachedObjectPool = pool;
+                return;
+            }
+
+            _cachedObjectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _cachedObjectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _cachedObjectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _cachedObjectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)
+        {
+            return ObjectPoolManager.CanDespawnWithPool(pool, instance);
         }
 
         private void TryRegisterHotSwapListener()

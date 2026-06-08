@@ -81,6 +81,7 @@ namespace Hecton8.UI
         private bool _built;
         private bool _registered;
         private bool _hotSwapRegistered;
+        private bool _pdaEventsRegistered;
         private IAtlasSignalReadModel _atlasSignalSystem;
         private AtlasSignalDecoder _atlasSignalDecoder;
         private IFirstHourReadModel _firstHourDirector;
@@ -202,7 +203,7 @@ namespace Hecton8.UI
             TryRegister();
 
             AtlasSignalEvents.Register(this);
-            PDAEvents.Register(this);
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
 
             _dirty = true;
             _beaconTelemetryPollTimer = 0f;
@@ -214,7 +215,11 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
 
             AtlasSignalEvents.Unregister(this);
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
         }
 
         private void OnDestroy()
@@ -222,7 +227,11 @@ namespace Hecton8.UI
             TryUnregister();
             TryUnregisterHotSwapListener();
             AtlasSignalEvents.Unregister(this);
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
             PDAEvents.AssertUnregistered(this, nameof(PDAAtlasSignalTab));
         }
 
@@ -792,12 +801,9 @@ namespace Hecton8.UI
 
         private Vector3 ResolveAtlasDirection(IAtlasSignalReadModel sys)
         {
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (sys == null || playerMovement == null)
+            if (sys == null || !TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return Vector3.down;
 
-            AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
             if (!sys.TryReadAtlasSignalSnapshot(in playerAup, out AtlasSignalReadSnapshot snapshot))
                 return Vector3.down;
 
@@ -813,17 +819,30 @@ namespace Hecton8.UI
             if (sys == null)
                 return false;
 
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement == null)
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return false;
 
-            AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
             if (!sys.TryReadAtlasSignalCoreAup(out AbsoluteUniversePosition coreAup))
                 return false;
 
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
             distanceMeters = EstimateCinematicDistanceMeters(in playerAup, in coreAup, distanceSq);
+            return true;
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
+                return false;
+            }
+
+            playerAup = movementState.PredictedAup;
             return true;
         }
 

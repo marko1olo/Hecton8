@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "לכידה תאגידית: חילוץ נקי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# לכידה תאגידית: חילוץ נקי
 
-HE LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.
+לכידה תאגידית היא סוף רע שנבנה מחילוץ סביר. השחקן עוזב את האוקיינוס חי, אבל הסמכות שעונה מתייחסת לעד כחומר containment ול-payload כחולה האמיתי.
 
 ## Scanner
 
-HE LOC HOLD: Rescue offer. Payload first. Witness second.
+מקור recovery אומת: פרוקסי Deep Reach. payload התבקש לפני בדיקת רווחה.
 
 ## Terminal
 
-HE LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
+איסוף DEEP REACH: recovery team מקבל קואורדינטות, XO custody ומפתח גישה Atlas לפני בדיקת רווחת הקבלן. עדות הקבלן נחתמת תחת פרוטוקול זיהום.
 
 ## Audio
 
-HE LOC HOLD: The clean room is not for you.
+החדר הנקי אינו בשבילך.
 
 ## Field Note
 
-HE LOC HOLD: A rescue that demands silence is a capture with better lighting.
+חילוץ נקי שרוצה קודם קואורדינטות הוא לכידה עם אוויר טוב יותר.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/he_IL. -->

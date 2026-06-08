@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Needleprobe Precursor Program"
+title: "Needleprobe前导计划"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Needleprobe Precursor Program
+# Needleprobe前导计划
 
-ZH LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Needleprobes把第一份人类索赔带进Aegir。它们是狭窄、带屏蔽的勘测载荷，被送在船员之前，用来读取重力、辐射、海洋光谱、卫星轨道和中继线。它们迟到的数据包让HECTON-8先对投资者可读，后才对工人可居住。
 
 ## Scanner
 
-ZH LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+Needleprobe档案：Aegir在成为工作场所很久以前，就已经是账本目标。机器的眼睛先到达那些卫星。
 
 ## Terminal
 
-ZH LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+RAN档案：探针链返回视差、辐射、海洋特征、中继几何和pellet-lane信心。第三套风险模型稳定前，载人评级被扣留。
 
 ## Audio
 
-ZH LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+Aegir里的第一件人类事物不是人，而是一台询问这里的人是否有利润的机器。
 
 ## Field Note
 
-ZH LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+探针档案是路线证据。旧遥测可能比殖民地更古老，却仍能决定谁拥有这片水。
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/zh_CN. -->

@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Editor.GeographySanity",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
         "Unity.Burst",
         "Unity.Collections",
         "Unity.Jobs",

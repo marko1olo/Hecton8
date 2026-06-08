@@ -128,14 +128,16 @@ namespace Hecton8.Gameplay
                 return;
 
             IPhysicsService physicsService = _physicsService;
-            if (!_hullRigidbody.isKinematic && physicsService != null)
+            if (physicsService == null)
+                return;
+
+            if (!_hullRigidbody.isKinematic)
             {
                 physicsService.QueueLinearVelocitySet(_hullRigidbody, impliedLinearVelocity);
                 physicsService.QueueAngularVelocitySet(_hullRigidbody, impliedAngularVelocity);
             }
 
-            _hullRigidbody.MovePosition(nextRuntimePosition);
-            _hullRigidbody.MoveRotation(nextRotation);
+            physicsService.QueuePoseSet(_hullRigidbody, nextRuntimePosition, nextRotation);
         }
 
         /// <summary>

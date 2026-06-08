@@ -9,32 +9,26 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Black Keel-claimvenster"
+title: "Black Keel-claimvenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Black Keel-claimvenster
+# Black Keel-claimvenster
 
-NL LOC HOLD: Black Keel kan een signaal horen voordat het een lichaam optilt. In Aegir is een carrierantwoord een geprijsde baan door relaisgeometrie, weer, quarantainecontrole, ladingacceptatie en massaberging. Contact is een routefeit. Redding is een voltooide keten.
+## Ontvangst Is Geen Lift
 
-## Scanner
+Black Keel kan een signaal horen voordat het een lichaam optilt. Dat verschil is het claimvenster.
 
-NL LOC HOLD: CLAIMVENSTER // Aegir-relais voorspelt alleen ontvangst. Berging vereist stijgpakket, quarantaine-handshake en tonne-window-toewijzing.
+In Aegir is een carrierantwoord geen reddingsbelofte. Het is een getimede baan door relaisgeometrie, weer, quarantainecontrole, ladingacceptatie en massaberging. Hetzelfde venster prijst vracht, bewijs, zuurstofschuld en operatorwelzijn, omdat elke kilogram die HECTON-8 verlaat dezelfde orbitale kans verbruikt.
 
-## Terminal
+Keelmark Mutual registreert het venster als bewaringstijd. Black Keel registreert ontvangst bevestigd, lift wacht. Deep Reach-clausules kunnen nog steeds een monster, coördinatenpakket of quarantainehold voor een operator plaatsen als de prioriteitstaal geldig is.
 
-NL LOC HOLD: KEELMARK BEWARINGSBERICHT // Operatorsignaal ontvangen. Bergingsprioriteit onopgelost. Ontvangst van signaal of bewijspakket garandeert geen operatorberging.
+P-63 maakt de regel vroeg zichtbaar. Een relaisbord kan schone bevestiging tonen terwijl de bathydrop geen stijgpakket, geen quarantaine-handshake en geen toegewezen tonne-window heeft. De carrier weet dat de operator leeft. Hij kan de operator belasten. Hij kan een pakket prijzen. Hij kan HECTON-8-druk, Aegir-timing en contractvolgorde niet negeren.
 
-## Audio
-
-NL LOC HOLD: Black Keel-relais: operatorsignaal geprijsd. Bergingsvenster wacht. Verwar ontvangst niet met optillen.
-
-## Field Note
-
-NL LOC HOLD: Als Black Keel antwoordt, tel de rekening, niet de redding. Een ontvangen pakket is alleen een plek in de rij tot massa, zegel, quarantaine en weer kloppen.
+Contact is een routefeit. Redding is een voltooide keten.
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/nl_NL. -->

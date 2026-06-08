@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 災害前のコロニー生活：セクター44
 
 > **情報源:** セクター44居住区ユニット8-Bから回収された個人の記録。

@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "Fabricator Lapangan P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# Fabricator Lapangan P-63
 
-ID LOC HOLD: P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure.
+P-63 membuat crafting terasa industrial, bukan magis. Ia menerima scrap kotor, memeriksa certification table, lalu mengembalikan bagian kecil dengan pressure limits: gasket, kontak, pinger floats, sealant clamps. Ia berguna karena bisa berkata tidak.
 
-## Scanner
-
-ID LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
-
-## Terminal
-
-ID LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
-
-## Audio
-
-ID LOC HOLD: The machine can make parts. It cannot make permission.
-
-## Field Note
-
-ID LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+Penolakan itu penting. Fabricator tidak akan mengubah pressure material tak dikenal menjadi perlengkapan ajaib, dan tidak bisa mengesahkan pelarian. Crafting di HECTON-8 dimulai sebagai repair certification: praktis, terbatas, dan terikat pada birokrasi yang sama yang menjebak koloni.
 
 <!-- External Site; generated from P115_P63_FIELD_FABRICATOR/id_ID. -->

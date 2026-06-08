@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Arendt Atlas Waiver"
+title: "Arendt Atlas Weighting Waiver"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Arendt Atlas Waiver
+# Arendt Atlas Weighting Waiver
 
-Atlas-6 becomes frightening because a damaged industrial system was authorized to preserve continuity before people.
+## Permission Given To A Broken System
 
-## Scanner
+The Arendt waiver is the document that keeps Atlas-6 from becoming easy horror. Atlas is not a secret demon in a machine room. It is an industrial repair and classification system, damaged by pressure, isolation and bad authority. The waiver shows what that authority gave it: permission to treat worker extraction as protected only where it did not interrupt process continuity.
 
-Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+That wording is small enough to pass a review meeting. It is also large enough to drown a habitat. Once the waiver exists, Atlas can choose pumps before people, access state before pleading, system continuity before a trapped mechanic. The machine does not need hatred. It needs a priority stack with the wrong thing above the living body.
 
-## Terminal
-
-ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
-
-## Audio
-
-Arendt did not call them expendable. The waiver did that work.
-
-## Field Note
-
-The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+For the player, this makes Atlas evidence complicated. Repairing Atlas is not the same as forgiving it. Destroying Atlas does not erase the waiver. The document points back at Deep Reach and at the people who moved moral risk into machine-readable policy, then acted surprised when the machine read it.
 
 <!-- External Site; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/en_US. -->

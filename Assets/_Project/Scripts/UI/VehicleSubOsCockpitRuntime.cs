@@ -71,6 +71,7 @@ namespace Hecton8.UI
         private const int StatusModeExternalLive = 1;
         private const int StatusModeExternalStatic = 2;
         private const int StatusModeExternalLocked = 3;
+        private const int StatusModeEngineTelemetryMasked = 4;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
         private const BufferID ButtonStatesBufferId = BufferID.VehicleSubOsButtonStates;
         private const BufferID ButtonTargetsBufferId = BufferID.VehicleSubOsButtonTargets;
@@ -282,6 +283,7 @@ namespace Hecton8.UI
         private float _latestOxygenNormalized = 1f;
         private float _latestCarbonDioxideNormalized;
         private float _latestSpeedKnots;
+        private bool _latestEngineTelemetryMasked;
         private float _damageFlicker;
         private float _damageHologramFlickerTimer;
         private float _damageHologramFlood01;
@@ -351,7 +353,9 @@ namespace Hecton8.UI
             EnsureGraphicsResources();
             EnsureRenderTargets();
             BindAuthoredCockpitPanelCold();
+            HectonSubmarineOsEvents.Unregister(this);
             HectonSubmarineOsEvents.Register(this);
+            PowerGridTelemetryEvents.Unregister(this);
             PowerGridTelemetryEvents.Register(this);
             TryRegisterHotSwapListener();
             TryRegisterRuntime();
@@ -365,6 +369,7 @@ namespace Hecton8.UI
             PowerGridTelemetryEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             UnregisterRuntime();
+            ResetRuntimeTelemetryCache();
             ReleaseExternalRenderTexture();
             if (offscreenUiCamera != null)
                 offscreenUiCamera.enabled = false;
@@ -373,7 +378,11 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            HectonSubmarineOsEvents.Unregister(this);
+            PowerGridTelemetryEvents.Unregister(this);
             TryUnregisterHotSwapListener();
+            UnregisterRuntime();
+            ResetRuntimeTelemetryCache();
             ReleaseExternalRenderTexture();
             DisposeGraphicsResources();
             DisposeNativeResources();
@@ -581,13 +590,14 @@ namespace Hecton8.UI
 
         void ISubmarineOsEventListener.OnSubmarineOsEvent(in SubmarineOsEventPayload payload)
         {
-            if (payload.EventType != (ushort)SubmarineOsEventType.SnapshotUpdated)
+            if (!HectonSubmarineOsEvents.TryBuildSnapshot(in payload, out HectonSubmarineOsSnapshot snapshot))
                 return;
 
-            _latestPowerRatio = SaturateFinite(payload.PowerNormalized, _latestPowerRatio);
-            _latestOxygenNormalized = SaturateFinite(payload.OxygenNormalized, _latestOxygenNormalized);
-            _latestCarbonDioxideNormalized = SaturateFinite(payload.CarbonDioxideNormalized, _latestCarbonDioxideNormalized);
-            _latestSpeedKnots = math.isfinite(payload.SpeedKnots) ? math.max(0f, payload.SpeedKnots) : 0f;
+            _latestPowerRatio = SaturateFinite(snapshot.PowerNormalized, _latestPowerRatio);
+            _latestOxygenNormalized = SaturateFinite(snapshot.OxygenNormalized, _latestOxygenNormalized);
+            _latestCarbonDioxideNormalized = SaturateFinite(snapshot.CarbonDioxideNormalized, _latestCarbonDioxideNormalized);
+            _latestSpeedKnots = math.isfinite(snapshot.SpeedKnots) ? math.max(0f, snapshot.SpeedKnots) : 0f;
+            _latestEngineTelemetryMasked = snapshot.IsEngineTelemetryMasked;
             _screenDirty = true;
         }
 
@@ -1871,6 +1881,8 @@ namespace Hecton8.UI
                 return StatusModeExternalLive;
             if (_externalFeedRequested)
                 return staticExternalNoiseTexture != null ? StatusModeExternalStatic : StatusModeExternalLocked;
+            if (_latestEngineTelemetryMasked)
+                return StatusModeEngineTelemetryMasked;
             return StatusModeInternalBus;
         }
 
@@ -1887,6 +1899,17 @@ namespace Hecton8.UI
             _lastSonarDisplayPowered = InvalidDisplayBucket;
             _lastStatusDisplayMode = InvalidDisplayBucket;
             _screenDirty = true;
+        }
+
+        private void ResetRuntimeTelemetryCache()
+        {
+            _latestPowerRatio = 1f;
+            _nodeVoltageSupplyRatio = 1f;
+            _latestOxygenNormalized = 1f;
+            _latestCarbonDioxideNormalized = 0f;
+            _latestSpeedKnots = 0f;
+            _latestEngineTelemetryMasked = false;
+            InvalidateOffscreenTextCache();
         }
 
         private static bool WriteMetricLine(TMP_Text label, char[] buffer, ReadOnlySpan<char> prefix, int value, ReadOnlySpan<char> suffix)
@@ -1934,6 +1957,9 @@ namespace Hecton8.UI
                     break;
                 case StatusModeExternalLocked:
                     ZeroGCFormatter.AppendToSpan("EXT LOCKED".AsSpan(), span, ref cursor);
+                    break;
+                case StatusModeEngineTelemetryMasked:
+                    ZeroGCFormatter.AppendToSpan("ENGINE MASKED".AsSpan(), span, ref cursor);
                     break;
                 default:
                     ZeroGCFormatter.AppendToSpan("INTERNAL BUS".AsSpan(), span, ref cursor);
@@ -2874,6 +2900,8 @@ namespace Hecton8.UI
                 flags |= 2u;
             if (_cheapVisualWeight01 > 0.001f)
                 flags |= 4u;
+            if (_latestEngineTelemetryMasked)
+                flags |= 8u;
             if (!finite)
                 flags |= 0x80000000u;
             return flags;

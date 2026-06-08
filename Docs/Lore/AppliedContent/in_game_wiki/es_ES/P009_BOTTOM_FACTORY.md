@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Fábrica del fondo
 
-La Fábrica del fondo no es la última estación. Es el lugar donde hardware Deep Reach, restos coloniales, rutas Atlas, blue debt y biología oceánica de HECTON-8 se volvieron un solo cuerpo operativo. Las paredes aquí son órganos, filtros, conductos y cicatrices de memoria.
+La Fábrica del fondo es el punto donde HECTON-8 deja de separar infraestructura y hábitat. Máquinas de Deep Reach, rutas Atlas, residuos de blue debt, restos de trabajadores, membranas crecidas por presión y biología oceánica se han vuelto un solo cuerpo operativo. Mueve calor, fluido, señal, muestras y daño por el mismo tejido. Una pared puede ser una válvula. Un corredor puede ser un intestino. Un cable puede florecer en filtro. Una reparación puede contener coral, carcasa de dron, acero de herramienta y hueso sin que el sistema vea contradicción. El peligro no es mutación aleatoria. Es función sin categorías humanas. La fábrica mantiene continuidad, conserva rutas, cierra fugas, cultiva nueva piel de presión y trata la pérdida como material que puede enviarse a algún lugar útil.
 
 ## Scanner
 
-Conducto fluido, ruta de datos y membrana viva comparten una misma piel de presión.
+Conducto fluido, ruta de datos, membrana de presión y filtro vivo comparten una piel. Etiquetas de límite inválidas.
 
 ## Terminal
 
-COLONY: no resuelta. OCEAN: compatible. PROCESS: activo. LOSS: enrutada. CONTINUITY: protegida.
+COLONY: SIN RESOLVER. OCEAN: COMPATIBLE. PROCESS: ACTIVO. LOSS: ENRUTADA. CONTINUITY: PROTEGIDA. EXIT: NO LOCAL.
 
 ## Audio
 
-Sigue funcionando. Esa es la peor parte.
+Sigue funcionando. Sigue usando lo que cayó dentro.
 
 ## Field Note
 
-Llamar a esto una base es no entender nada. Las bases terminan en paredes.
+Llamar a esto base pierde la regla. Las bases tienen paredes. Este lugar tiene circulación.
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/es_ES. -->

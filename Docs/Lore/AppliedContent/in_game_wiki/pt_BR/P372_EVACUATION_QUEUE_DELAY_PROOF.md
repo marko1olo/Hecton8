@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Evacuation Queue Delay Proof"
+title: "Registro de atraso da fila de evacuação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Evacuation Queue Delay Proof
+# Registro de atraso da fila de evacuação
 
-PT LOC HOLD: Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
+Esta prova transforma evacuação em sequência. O portão não foi apenas cortado pela água; permaneceu em review enquanto alarmes de pressão entravam em corredores ocupados. O campo de testemunha vazio importa porque o sistema exigia confirmação humana depois que humanos já tinham perdido acesso ao painel.
 
 ## Scanner
 
-PT LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Relógio de fila recuperado. O portão de liberação ficou travado depois que alarmes de pressão passaram da previsão ao corredor.
 
 ## Terminal
 
-PT LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Confirmação manual ausente. Revisão de quarentena pendente. Pressão de rota excedeu classe de selo antes da autorização resolver.
 
 ## Audio
 
-PT LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Eles não falharam em salvar todos. Esperaram até salvar qualquer um ficar mais difícil.
 
 ## Field Note
 
-PT LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Nota de saqueador: portão fechado com campo pendente não é acidente. É decisão esperando assinatura.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/pt_BR. -->

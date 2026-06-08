@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Матеріальний вихід
 
-Цей вихід дає реіграбельність як прибуткова, але скомпрометована кінцівка.
+Material Exit підтримує прибутковий, але скомпрометований відхід: здобич, контракти й виживання можуть виграти підйом, поки повна правда спуску лишається внизу.
 
 ## Scanner
 

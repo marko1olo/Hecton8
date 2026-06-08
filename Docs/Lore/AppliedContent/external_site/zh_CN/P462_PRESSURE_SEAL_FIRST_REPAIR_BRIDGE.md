@@ -9,32 +9,26 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: 第一次PressureSeal修理"
+title: "第一次PressureSeal修理"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: 第一次PressureSeal修理
+# 第一次PressureSeal修理
 
-ZH LOC HOLD: Shallow Annex P-63 的第一次有用修理从日光里开始。明亮浅架的 FiberKelp 能变成 FiberMesh，支撑用于漏环或服务插口的临时 PressureSeal。它买到的是时间和路线安全，不是逃离。
+## 光下修理
 
-## Scanner
+Shallow Annex P-63 的第一次有用修理，开始于水还亮到足以撒谎的地方。外面，FiberKelp 在浅架水流中摆动。里面，一个压力环从接缝渗水，而 Deep Reach 把那条接缝标为可服务。
 
-ZH LOC HOLD: PRESSURESEAL目标 // P-63密封环泄漏。FiberMesh载体兼容。仅限局部稳定；上升认证被拒。
+FiberKelp 是浅水生物纤维，不是稀有宝物。它生长在光、水流和旧工业余热重叠的地方。洗净并梳理后的纤维会变成 FiberMesh。P-63 野外制造器能把这种网压成临时 PressureSeal 的载体层。
 
-## Terminal
+这个部件有用，正因为它有限。PressureSeal 能减缓局部泄漏，稳定返回口袋，让短修理循环可存活。它不能让 bathydrop 获得上升认证，不能替代夹环，也不能把 Black Keel 的确认变成回收。
 
-ZH LOC HOLD: DEEP REACH P-63容差记录 // 推迟更换密封环。泄漏仍在本地服务阈值内时，使用获批软密封载体。
+矛盾在档案之前就能看见。终端说压力偏差在服务容差内。密封环上有弯曲螺栓，检查带下有盐花，本应是干净金属的裂缝里夹着纤维。
 
-## Audio
-
-ZH LOC HOLD: Black Keel中继：P-63补丁只读作本地安全，不是上升安全。拿走密封件，保留序列号。
-
-## Field Note
-
-ZH LOC HOLD: 外面是亮水。里面是湿环。Deep Reach把它叫作正常，因为一个词比夹环便宜。
+对 Marauder 来说，教训很实际：干净切割 FiberKelp，不要让砂进入网层，保留封签序列号，不要相信在需要上升安全的路线中只写着局部安全的修理。
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/zh_CN. -->

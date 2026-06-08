@@ -9,6 +9,7 @@ param(
     [int]$SourceEdgeMarginPx = 32,
     [switch]$ImportWithUnity,
     [switch]$AllowOverwrite,
+    [switch]$AllowSuspiciousSource,
     [switch]$WaitForGate,
     [int]$MaxWaitSeconds = 900
 )
@@ -18,6 +19,7 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $intakeRoot = Join-Path $projectRoot "Docs\GeneratedAssets\Gemini\Outputs\$Batch\InventoryGapObjects_$(Get-Date -Format yyyyMMdd)"
 $runner = Join-Path $projectRoot "Tools\RunInventoryIconSheetBatch.ps1"
+$sourceValidator = Join-Path $projectRoot "Tools\ValidateInventoryIconSheetSource.py"
 
 function Resolve-ProjectOrAbsolutePath {
     param([string]$Path)
@@ -57,6 +59,29 @@ if ($extension -notin @(".png", ".jpg", ".jpeg", ".webp")) {
     throw "Unsupported sheet extension '$extension'. Expected PNG/JPG/WEBP."
 }
 
+$sourceValidationArgs = @(
+    "-B",
+    $sourceValidator,
+    "--source",
+    $sourcePath,
+    "--spec-json",
+    $SpecJson,
+    "--grid-rows",
+    $GridRows,
+    "--grid-columns",
+    $GridColumns,
+    "--min-cell-px",
+    256
+)
+if ($AllowSuspiciousSource) {
+    $sourceValidationArgs += "--allow-suspicious-name"
+}
+
+python @sourceValidationArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "Inventory icon Gemini source failed identity/shape validation. source=$sourcePath batch=$Batch"
+}
+
 $sourceHash = (Get-FileHash -LiteralPath $sourcePath -Algorithm SHA256).Hash
 
 New-Item -ItemType Directory -Force -Path $intakeRoot | Out-Null
@@ -66,43 +91,31 @@ $targetPath = Join-Path $intakeRoot $targetName
 Copy-Item -LiteralPath $sourcePath -Destination $targetPath -Force
 Write-Host "Inventory icon Gemini source copied. source=$sourcePath sha256=$sourceHash target=$targetPath"
 
-$runnerArgs = @(
-    "-NoProfile",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
-    $runner,
-    "-Source",
-    $targetPath,
-    "-Batch",
-    $Batch,
-    "-SpecJson",
-    $SpecJson,
-    "-Limit",
-    $Limit,
-    "-GridRows",
-    $GridRows,
-    "-GridColumns",
-    $GridColumns,
-    "-SourceEdgeMarginPx",
-    $SourceEdgeMarginPx
-)
+$runnerArgs = @{
+    Source = $targetPath
+    Batch = $Batch
+    SpecJson = $SpecJson
+    Limit = $Limit
+    GridRows = $GridRows
+    GridColumns = $GridColumns
+    SourceEdgeMarginPx = $SourceEdgeMarginPx
+    OfflineOnly = $true
+}
 
 if ($ImportWithUnity) {
     Write-Warning "Fresh Gemini sheets cannot be imported in the same pass. They must pass visual review first."
 }
 
-$runnerArgs += "-OfflineOnly"
-
 if ($AllowOverwrite) {
-    $runnerArgs += "-AllowOverwrite"
+    $runnerArgs["AllowOverwrite"] = $true
 }
 
 if ($WaitForGate) {
-    $runnerArgs += @("-WaitForGate", "-MaxWaitSeconds", $MaxWaitSeconds)
+    $runnerArgs["WaitForGate"] = $true
+    $runnerArgs["MaxWaitSeconds"] = $MaxWaitSeconds
 }
 
-& powershell @runnerArgs
+& $runner @runnerArgs
 if ($LASTEXITCODE -ne 0) {
     throw "Inventory icon Gemini sheet intake failed. copiedSource=$targetPath batch=$Batch"
 }

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela як внутрішній релейний місяць"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Inner Relay Moon Traffic Role
+# Vela як внутрішній релейний місяць
 
-UK LOC HOLD: Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
+Vela - внутрішній робочий місяць Aegir. Вона перетинає заряджені траси досить швидко, щоб карати поганий захист, але її старі relay-маски й відбиття досі формують маршрутні таблиці. Підхід Black Keel може використати тінь Vela, щоб сховати шум лінка на кілька хвилин. Та сама тінь може затримати аварійний ping, доки контрактний годинник уже перейде в інші руки.
 
 ## Scanner
 
-UK LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
+Місячний журнал. Vela маскує й відбиває relay-трафік; кораблі рахують її рухомим пропускним збором.
 
 ## Terminal
 
-UK LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
+МІСЯЧНА ДРАБИНА H2 VELA: релейна тінь очиститься за сорок три хвилини. Лічильник радіації зростає з боку Skarn. Transfer burn до HECTON лишається легальним, якщо маса carrier нижча за поданий ліміт.
 
 ## Audio
 
-UK LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
+На Vela не летять за краєвидом. Її рахують, чекають і сподіваються, що старий beacon брехатиме так само.
 
 ## Field Note
 
-UK LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Vela корисна, бо вчасно стає поперек дороги.
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/uk_UA. -->

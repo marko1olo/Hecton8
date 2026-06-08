@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Mathematics;
@@ -114,6 +115,12 @@ namespace Hecton8.Power
     {
         private const int PendingEventCapacity = 8;
         private const int ListenerCapacity = 8;
+        private const uint PowerGridQueueOverflowWarningHash = 0x5047514Fu; // PGQO
+        private const uint PowerGridDuplicateListenerWarningHash = 0x50474455u; // PGDU
+        private const uint PowerGridListenerRejectedWarningHash = 0x5047524Au; // PGRJ
+        private const uint PowerGridListenerExceptionWarningHash = 0x50474558u; // PGEX
+        private const uint PowerGridListenerContextHash = 0x50474C53u; // PGLS
+        private const uint PowerGridQueueContextHash = 0x50475153u; // PGQS
 
         private struct ListenerSlot
         {
@@ -127,17 +134,35 @@ namespace Hecton8.Power
 
         // COLD ALLOC: ListenerSlot[8] - power telemetry listeners drained by SystemDispatcher LateUpdate - owner: PowerGridTelemetryEvents
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener additions deferred while power telemetry is dispatching - owner: PowerGridTelemetryEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener removals deferred while power telemetry is dispatching - owner: PowerGridTelemetryEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static readonly PowerGridTelemetrySnapshot[] _pendingEvents = new PowerGridTelemetrySnapshot[PendingEventCapacity];
         private static readonly PowerGridTelemetrySnapshot[] _nextFrameEvents = new PowerGridTelemetrySnapshot[PendingEventCapacity];
         private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _duplicateListenerRegistrationCount;
+        private static int _listenerRejectCount;
+        private static int _listenerExceptionCount;
+        private static int _lastQueueOverflowTelemetryFrame = -1;
+        private static int _lastDuplicateListenerTelemetryFrame = -1;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         /// <summary>
         /// Pending aggregate telemetry snapshots.
         /// </summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+        public static int DuplicateListenerRegistrationCount => _duplicateListenerRegistrationCount;
+        public static int ListenerRejectCount => _listenerRejectCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         /// <summary>
         /// Registers a power telemetry listener.
@@ -148,16 +173,13 @@ namespace Hecton8.Power
             if (listener == null)
                 return;
 
-            for (int i = 0; i < _listenerCount; i++)
+            if (_isDispatching)
             {
-                if (ReferenceEquals(_listeners[i].Listener, listener))
-                    return;
+                QueueDeferredRegister(listener);
+                return;
             }
 
-            if (_listenerCount >= ListenerCapacity)
-                return;
-
-            _listeners[_listenerCount++].Listener = listener;
+            RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -169,18 +191,13 @@ namespace Hecton8.Power
             if (listener == null)
                 return;
 
-            for (int i = 0; i < _listenerCount; i++)
+            if (_isDispatching)
             {
-                if (!ReferenceEquals(_listeners[i].Listener, listener))
-                    continue;
-
-                int lastIndex = --_listenerCount;
-                if (i != lastIndex)
-                    _listeners[i].Listener = _listeners[lastIndex].Listener;
-
-                _listeners[lastIndex].Clear();
+                QueueDeferredUnregister(listener);
                 return;
             }
+
+            TryUnregisterImmediate(listener);
         }
 
         /// <summary>
@@ -204,21 +221,7 @@ namespace Hecton8.Power
                 PowerGridTelemetrySnapshot snapshot = _pendingEvents[0];
                 ShiftLeft(_pendingEvents, ref _pendingEventCount);
 
-                int count = _listenerCount;
-                _isDispatching = true;
-                try
-                {
-                    for (int i = count - 1; i >= 0; i--)
-                    {
-                        IPowerGridTelemetryListener listener = _listeners[i].Listener;
-                        if (listener != null)
-                            listener.OnPowerGridTelemetryUpdated(in snapshot);
-                    }
-                }
-                finally
-                {
-                    _isDispatching = false;
-                }
+                DispatchRegisteredListeners(in snapshot);
             }
 
             if (_pendingEventCount <= 0)
@@ -233,7 +236,19 @@ namespace Hecton8.Power
 
             ClearEvents(_pendingEvents, ref _pendingEventCount);
             ClearEvents(_nextFrameEvents, ref _nextFrameEventCount);
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _listenerCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _duplicateListenerRegistrationCount = 0;
+            _listenerRejectCount = 0;
+            _listenerExceptionCount = 0;
+            _lastQueueOverflowTelemetryFrame = -1;
+            _lastDuplicateListenerTelemetryFrame = -1;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -246,14 +261,25 @@ namespace Hecton8.Power
                 return false;
 
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportQueueOverflow();
                 return false;
+            }
 
             if (_isDispatching)
             {
-                return TryAppend(_nextFrameEvents, ref _nextFrameEventCount, in snapshot);
+                if (TryAppend(_nextFrameEvents, ref _nextFrameEventCount, in snapshot))
+                    return true;
+
+                ReportQueueOverflow();
+                return false;
             }
 
-            return TryAppend(_pendingEvents, ref _pendingEventCount, in snapshot);
+            if (TryAppend(_pendingEvents, ref _pendingEventCount, in snapshot))
+                return true;
+
+            ReportQueueOverflow();
+            return false;
         }
 
         [System.Obsolete("Use TryRaise so bounded queue refusal is visible at the producer.", true)]
@@ -339,6 +365,314 @@ namespace Hecton8.Power
                 queue[i] = default;
 
             count = 0;
+        }
+
+        private static bool ContainsListener(IPowerGridTelemetryListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void RegisterImmediate(IPowerGridTelemetryListener listener)
+        {
+            if (ContainsListener(listener))
+            {
+                ReportDuplicateListenerRegistration();
+                return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _listeners[_listenerCount++].Listener = listener;
+        }
+
+        private static bool TryUnregisterImmediate(IPowerGridTelemetryListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = --_listenerCount;
+                if (i != lastIndex)
+                    _listeners[i].Listener = _listeners[lastIndex].Listener;
+
+                _listeners[lastIndex].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void DispatchRegisteredListeners(in PowerGridTelemetrySnapshot snapshot)
+        {
+            int count = _listenerCount;
+            if (count <= 0)
+                return;
+
+            _isDispatching = true;
+            try
+            {
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    IPowerGridTelemetryListener listener = _listeners[i].Listener;
+                    if (listener != null)
+                        DispatchToListener(listener, in snapshot);
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
+                ApplyDeferredListenerMutations();
+            }
+        }
+
+        private static void DispatchToListener(IPowerGridTelemetryListener listener, in PowerGridTelemetrySnapshot snapshot)
+        {
+            try
+            {
+                listener.OnPowerGridTelemetryUpdated(in snapshot);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            H8Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IPowerGridTelemetryListener listener)
+        {
+            if (ContainsListener(listener))
+            {
+                CancelDeferredUnregister(listener);
+                ReportDuplicateListenerRegistration();
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
+        }
+
+        private static void QueueDeferredUnregister(IPowerGridTelemetryListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!ContainsListener(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
+        }
+
+        private static bool CancelDeferredRegister(IPowerGridTelemetryListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IPowerGridTelemetryListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IPowerGridTelemetryListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IPowerGridTelemetryListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IPowerGridTelemetryListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
+                if (listener != null)
+                    TryUnregisterImmediate(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IPowerGridTelemetryListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
+        private static void ReportQueueOverflow()
+        {
+            _droppedEventCount = SaturatingIncrement(_droppedEventCount);
+            PublishTelemetryWarning(
+                PowerGridQueueOverflowWarningHash,
+                PowerGridQueueContextHash,
+                _droppedEventCount,
+                ref _lastQueueOverflowTelemetryFrame);
+        }
+
+        private static void ReportDuplicateListenerRegistration()
+        {
+            _duplicateListenerRegistrationCount = SaturatingIncrement(_duplicateListenerRegistrationCount);
+            PublishTelemetryWarning(
+                PowerGridDuplicateListenerWarningHash,
+                PowerGridListenerContextHash,
+                _duplicateListenerRegistrationCount,
+                ref _lastDuplicateListenerTelemetryFrame);
+        }
+
+        private static void ReportListenerRejected()
+        {
+            _listenerRejectCount = SaturatingIncrement(_listenerRejectCount);
+            PublishTelemetryWarning(
+                PowerGridListenerRejectedWarningHash,
+                PowerGridListenerContextHash,
+                _listenerRejectCount,
+                ref _lastListenerRejectedTelemetryFrame);
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount = SaturatingIncrement(_listenerExceptionCount);
+            PublishTelemetryWarning(
+                PowerGridListenerExceptionWarningHash,
+                PowerGridListenerContextHash,
+                _listenerExceptionCount,
+                ref _lastListenerExceptionTelemetryFrame);
+        }
+
+        private static void PublishTelemetryWarning(
+            uint warningHash,
+            uint contextHash,
+            int count,
+            ref int lastTelemetryFrame)
+        {
+            if (!TryReserveTelemetryWarningFrame(ref lastTelemetryFrame, 1))
+                return;
+
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, math.max(1, count));
+            }
+            catch (Exception exception)
+            {
+                LogTelemetryWarningException(exception);
+            }
+        }
+
+        private static bool TryReserveTelemetryWarningFrame(ref int lastTelemetryFrame, int cooldownFrames)
+        {
+            int frame = ResolveCurrentFrameIndexSafe();
+            if (frame < 0)
+            {
+                if (lastTelemetryFrame == int.MinValue)
+                    return false;
+
+                lastTelemetryFrame = int.MinValue;
+                return true;
+            }
+
+            if (lastTelemetryFrame >= 0 && frame - lastTelemetryFrame < cooldownFrames)
+                return false;
+
+            lastTelemetryFrame = frame;
+            return true;
+        }
+
+        private static int ResolveCurrentFrameIndexSafe()
+        {
+            try
+            {
+                return SystemDispatcher.CurrentFrameIndex;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogTelemetryWarningException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            H8Debug.LogException(exception);
+#endif
+        }
+
+        private static int SaturatingIncrement(int value)
+        {
+            return value < int.MaxValue ? value + 1 : int.MaxValue;
         }
     }
 }

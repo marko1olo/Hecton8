@@ -14,24 +14,24 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Якорь Ran / Aegir
 
-Якорь Ran / Aegir фиксирует визуальный и астрофизический вкус HECTON-8: hard-sci-fi тусклый солнечный свет, а не сверхъестественная тьма. Сеттинг читаем наверху, враждебен внизу.
+Якорь Ran / Aegir фиксирует визуальный вкус HECTON-8: жесткий научно-фантастический тусклый свет сверху, давление и долг снизу.
 
 ## Scanner
 
-Спектральная табличка K-dwarf. Aegir тусклее Sol, но не мертвый. Темнота здесь - глубина, погода и долг.
+Звездная таблица K-класса. Ran горит нормально. Aegir тусклее Sol, но темнота здесь приходит от глубины, погоды и долга.
 
 ## Terminal
 
-RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR // Свет оранжевого карлика годится для поверхностных работ. Штормовое рассеяние, затмения и мутность океана опускают видимость спуска ниже безопасного края.
 
 ## Audio
 
-Звезда не отсутствует. Она просто не может спуститься за тобой.
+Звезда на месте. Она просто не может спуститься за тобой.
 
 ## Field Note
 

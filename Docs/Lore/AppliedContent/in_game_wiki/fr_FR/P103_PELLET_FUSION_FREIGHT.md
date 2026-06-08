@@ -7,8 +7,8 @@ poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
 biome_tags: biome.carrier_link;biome.relay_shadow
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Fret à fusion par pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Fret à fusion par pellets
 
-Le voyage interstellaire lourd est possible sans FTL, mais il punit. Accélération par voile à faisceau, fusion nourrie aux pellets, masse de blindage, longues dérives et architecture de freinage ont porté les charges seed puis le fret colonial jusqu'à Aegir. La même logistique ralentit le secours : chaque kilogramme, couchette, créneau de freinage et siège survivant appartient à un calendrier.
+Le fret à fusion par pellets a rendu Aegir atteignable sans FTL. Les stations faisceau poussaient ; les flux de pellets alimentaient les brûlures de fusion ; la masse de blindage encaissait la poussière ; les magsails et systèmes de freinage locaux remboursaient la vitesse avec le temps. La même architecture rend le secours lent. Chaque kilogramme a un calendrier, un budget thermique et un propriétaire.
 
 ## Scanner
 
-Plaque moteur. Le fret à fusion nourrie aux pellets a traversé comme infrastructure : poussée, blindage, dérive, freinage, pertes facturées.
+Plaque moteur : poussée, alimentation par pellets, blindage, dérive, freinage, et facturation des pertes.
 
 ## Terminal
 
-DOCTRINE FRET : les charges seed de classe Atlas et le fret colonial utilisaient accélération par voile à faisceau, fusion nourrie aux pellets, freinage par voile magnétique et longs intervalles de dérive. Le vivant est arrivé après que les machines ont rendu la route facturable.
+DOCTRINE FRET : les charges seed et la masse coloniale utilisaient poussée par faisceau, fusion alimentée par pellets, masse de blindage, freinage magsail et longs intervalles de dérive. La cargaison vivante suivait l'infrastructure.
 
 ## Audio
 
-Un navire lourd n'est pas un miracle. C'est une hypothèque avec des moteurs.
+Les machines ont traversé d'abord parce que les machines pouvaient être amorties.
 
 ## Field Note
 
-Le transit lourd n'est pas héroïque. C'est un vieux contrat de route avec des cicatrices de chaleur.
+Un vaisseau lourd n'est pas un miracle. C'est une hypothèque avec moteurs et cicatrices thermiques.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/fr_FR. -->

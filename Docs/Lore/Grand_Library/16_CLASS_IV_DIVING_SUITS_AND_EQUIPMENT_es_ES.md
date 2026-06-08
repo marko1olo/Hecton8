@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TRAJES DE BUCEO DE CLASE IV Y EQUIPAMIENTO ABISAL
 
 > **Fuente:** Megacorporación Deep Reach, Manual del Intendente de Equipamiento.

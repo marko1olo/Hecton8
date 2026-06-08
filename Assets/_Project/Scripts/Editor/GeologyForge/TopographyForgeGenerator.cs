@@ -510,13 +510,38 @@ namespace Hecton8.Editor.GeologyForge
             return array;
         }
 
-        private static void ReleaseTopographyArray<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void ReleaseTopographyArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (array.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-                array = default;
+                void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+                System.Exception nativeSentinelCleanupException0 = null;
+
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (System.Exception nativeSentinelException0)
+                {
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
+                }
+
+                try
+                {
+                    array.Dispose();
+                }
+                catch (System.Exception nativeSentinelException0)
+                {
+                    if (nativeSentinelCleanupException0 == null)
+                        nativeSentinelCleanupException0 = nativeSentinelException0;
+                }
+                finally
+                {
+                    array = default;
+                }
+
+                if (nativeSentinelCleanupException0 != null)
+                    throw nativeSentinelCleanupException0;
             }
         }
 

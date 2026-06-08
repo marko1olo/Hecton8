@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Сборка ядра наведения и тайминга"
+title: "Сборка ядра тайминга наведения"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Сборка ядра наведения и тайминга
+# Сборка ядра тайминга наведения
 
-HECTON-8 держит космический полет жестким: orbital timing, relay shadows и мертвые beacons превращают extraction в route problem.
+Сборка ядра тайминга наведения сохраняет космополет HECTON-8 жестким: extraction - это маршрутная задача из часов, теней и поврежденного доверия.
 
 ## Scanner
 
-Пустой timing core. Геометрия Aegir решает, будет ли ascent спасением, захватом или тишиной.
+Пустое timing core. Геометрия Aegir решает, станет ли взлет recovery, capture или тишиной.
 
 ## Terminal
 
-GUIDANCE CORE: сверить clock капсулы с Aegir window, Black Keel receiver, moon relay shutter и storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: синхронизировать часы капсулы с окном Aegir, полосой приемника Black Keel, лунным relay shutter и дрейфом storm-plume. Поздние packets становятся потерей доказательств; ранние packets становятся capture noise.
 
 ## Audio
 
-Тут нет просто 'вверх'. Тут окно, приемник и ложь в очереди.
+Вверх - не направление. Это окно со свидетелем.
 
 ## Field Note
 
-Привязать к orbital-window charts, beacon fragments и guidance gimbal wreckage.
+С HECTON-8 нет простого “вверх”. Есть приемник, тень, штормовой дрейф и packet queue, уже старше твоей паники.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/ru_RU. -->

@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Barnard-merk
 
-Het eerste Barnard-merk op HECTON-8 is klein genoeg om te missen: een gereedschapsstempel, onderhoudsgewoonte, voorraadlabel. Daarom telt het. HECTON-8 is geen verre opdracht meer wanneer dezelfde merken verschijnen naast namen, evacuatieroutes en mislukte autorisaties.
+Het eerste Barnard-merk op HECTON-8 is klein genoeg om te missen: gereedschapsstempel, lockerlabel, bevoorradingsgewoonte, litteken van goedkoop werfstaal. Daarom telt het. De maan is geen verre opdracht meer zodra bekende werksporen verschijnen naast evacuatieblokkades, namen van arbeiders en mislukte routevergunningen.
 
 ## Scanner
 
-Stempel van Barnard Yards. Geen Deep Reach-uitrusting. Iemand bracht thuisgereedschap naar de bodem van deze maan.
+Stempel van Barnard Yards. Geen Deep Reach-uitrusting. Iemand droeg werfhardware naar de bodem van deze maan.
 
 ## Terminal
 
-PERSONEELSROUTE: HOLD. GRONDSTOFROUTE: ACTIVE. SUBSTRAATROUTE: PROTECTED.
+PERSONEELSROUTE: HOLD. GRONDSTOFROUTE: ACTIVE. SUBSTRAATROUTE: PROTECTED. GEREEDSCHAPSHERKOMST: BARNARD YARDS / DERDE-EIGENAAR REPARATIEVOORRAAD.
 
 ## Audio
 
-Dat is Barnard. Zelfde snijpatroon. Zelfde goedkope legering. Wie dit hier bracht, kende dezelfde werkplaatsen als jij.
+Die snede is Barnard. Goedkope legering, linkshandige stempel, slechte warmtebehandeling. Wie dit naar beneden bracht, kende dezelfde werkplaatsen als jij.
 
 ## Field Note
 
-Een dood bedrijf kun je negeren. Een sleutel uit je eigen werf minder makkelijk.
+Een dood bedrijf kun je wegwuiven. Een sleutel uit je eigen werf laat je minder makkelijk in de modder liggen.
 
 <!-- In-Game Wiki; generated from P003_BARNARD_MARK/nl_NL. -->

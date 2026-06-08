@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Invariantes geologicas de semilla"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Invariantes geologicas de semilla
 
-ES LOC HOLD: Seed geology invariants define what replayability may change. Canyons, loot, evidence order, species density and safe routes can shift. The star, Aegir, moon ladder, depth bands, Great Tide physics and Atlas-basin truth stay stable.
+Las invariantes geologicas de semilla mantienen coherente HECTON-8 durante repeticiones largas. Los canones pueden abrirse en otro orden, las pruebas moverse, las bolsas seguras cambiar y la presion de especies variar. La estrella sigue siendo Aegir, la luna sigue siendo HECTON-8, las bandas conservan su orden, Great Tide mantiene su ritmo y la cuenca Atlas conserva su relacion con la verdad mas profunda.
 
 ## Scanner
 
-ES LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
+Nota de generacion de ruta. El mapa de saqueo cambia, pero la luna conserva los mismos huesos.
 
 ## Terminal
 
-ES LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+INVARIANTES: primaria Aegir, escalera orbital de HECTON-8, intervalo de Great Tide, orden de bandas de profundidad, relacion con cuenca Atlas, conducta de presion de blue debt. VARIABLE: acceso a canon, orden de POI, bolsas seguras, densidad de bloom, exposicion de botin.
 
 ## Audio
 
-ES LOC HOLD: New seed, same moon. Different wound.
+Patron de herida distinto. Misma luna debajo.
 
 ## Field Note
 
-ES LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
+Una partida nueva puede enterrar pruebas de otro modo; no puede reescribir gravedad, marea ni culpa.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/es_ES. -->

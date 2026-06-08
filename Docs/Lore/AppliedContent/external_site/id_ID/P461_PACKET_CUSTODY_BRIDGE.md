@@ -9,32 +9,28 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Kustodi Paket"
+title: "Kustodi Paket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Kustodi Paket
+# Kustodi Paket
 
-ID LOC HOLD: Pesan dari HECTON-8 baru berarti jika rute, segel, penerima, dan status kerusakannya ikut selamat. Kustodi paket membawa fakta melewati jeda Aegir, tekanan klaim, dan ekstraksi fisik tanpa menjadi kargo buangan.
+## Arti Segel
 
-## Scanner
+Pesan dari HECTON-8 tidak berguna hanya karena pernah diucapkan. Pesan itu berguna ketika rutenya membuktikan siapa yang membawa, kapan ia keluar, apa yang dilewati, dan klaiman mana yang gagal menghapusnya.
 
-ID LOC HOLD: SEGEL PAKET // Strip hash saksi rusak tetapi masih terbaca. Simpan sebelum potong salvase. Bukti tanpa segel berubah jadi material klaim.
+Black Keel memperlakukan kesaksian seperti kargo: massa, segel, nomor, penerima, jeda. Sampel yang tiba di carrier tanpa strip kustodi dicatat sebagai material klaim. Nama pekerja tanpa witness hash dapat menjadi kategori kehilangan. Rekaman tekanan tanpa cap rute dapat disingkirkan sebagai noise sensor sebelum jendela relay berikutnya.
 
-## Terminal
+Karena itu salvase awal terus kembali ke benda kecil yang buruk rupa: pelat paket bengkok, strip notaris basah, cap rute, slip relay, tag konektor yang mengembang karena garam. Semuanya tampak seperti administrasi sampai laut membuatnya fisik. Pemain menjaga rantai yang membuat fakta bertahan di Aegir.
 
-ID LOC HOLD: NOTARIS PAKET KEELMARK // Simpan pelat segel, hash saksi, cap rute, dan tag konektor sebelum transfer. Material tanpa cap bisa diproses sebagai rugi klaim.
+Kustodi paket bukan keadilan. Itu syarat minimum agar keadilan punya rute. Pecahkan segel, dan Deep Reach bisa menyebutnya korup. Jaga segel, dan logam yang sama menjadi saksi tekanan, jarak, utang, dan hukum klaim.
 
-## Audio
+## Guna Bagi Pemain
 
-ID LOC HOLD: Relay Black Keel: kargo adalah massa. Bukti adalah kustodi. Bawa keduanya, atau jendela menagih selisihnya.
-
-## Field Note
-
-ID LOC HOLD: Segel dulu, potong kemudian. Sampel bersih dengan tag patah menjadi milik siapa pun yang memegang ledger.
+Pindai pelat sebelum memotong perangkat di sekitarnya. Simpan cap rute, jalur penerima, witness hash, dan status kerusakan bersama-sama. Jika tag terpisah dari sampel, temuan itu masih bisa berharga, tetapi tidak lagi membuktikan hal yang sama.
 
 <!-- External Site; generated from P461_PACKET_CUSTODY_BRIDGE/id_ID. -->

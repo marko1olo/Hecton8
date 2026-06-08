@@ -61,7 +61,8 @@ namespace Hecton8.Construction
             if (!TryResolveObstacleEnvelope(out Vector3 worldCenter, out float horizontalRadius, out Bounds moduleBounds))
                 return;
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = null;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
             if (vegetationBridge != null)
             {
                 _terrainHoleHandle = vegetationBridge.RegisterTerrainHoleHandle(worldCenter, horizontalRadius);
@@ -76,7 +77,8 @@ namespace Hecton8.Construction
             if (_terrainHoleHandle <= 0 && _artificialStructureHandle <= 0)
                 return;
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = null;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
             if (vegetationBridge != null)
             {
                 if (_terrainHoleHandle > 0)

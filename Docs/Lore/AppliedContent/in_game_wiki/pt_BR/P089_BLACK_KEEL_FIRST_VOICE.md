@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Primeira voz de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Primeira voz de Black Keel
 
-PT-BR LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+A primeira voz de Black Keel chega ao jogador como áudio danificado e texto limpo. Não é companheira nem fala de vilão. É um monitor carrier fazendo exatamente o que foi construído para fazer: confirmar sinal, preservar opções de rota, ordenar obrigações e evitar promessas. A voz é útil porque entrega informação dura. Assusta porque cada frase correta mantém o resgate condicional.
 
 ## Scanner
 
-PT-BR LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
+Cache de voz do carrier. Áudio cortado, texto limpo, simpatia ausente.
 
 ## Terminal
 
-PT-BR LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: canal de áudio degradado. Canal de texto válido. Sobrevivência do operador reconhecida. Prioridade de recovery não resolvida, pendente de estado de payload, quarentena, lien e integridade de sinal.
 
 ## Audio
 
-PT-BR LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
+Sinal do operador adquirido. Não confunda reconhecimento com resgate.
 
 ## Field Note
 
-PT-BR LOC HOLD: The first voice should feel useful before it feels bought.
+A primeira frase útil chega com uma classe de cobrança atrás.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/pt_BR. -->

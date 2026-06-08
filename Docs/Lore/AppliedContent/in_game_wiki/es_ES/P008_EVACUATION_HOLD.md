@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Evacuación retenida"
+title: "Retención de evacuación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Evacuación retenida
+# Retención de evacuación
 
-Los registros Evacuation Hold prueban que la colonia no desapareció solo por una tormenta o una cascada de presión. Personas, pasillos, traslados médicos y rutas de ascenso fueron retrasados por prioridades que protegían sustrato, continuidad Atlas y responsabilidad corporativa antes que la evacuación humana.
+Los registros de Retención de evacuación son la acusación más directa de la colonia. Muestran que la catástrofe no fue solo fallo de presión, timing de tormenta o pánico. Las rutas fueron evaluadas, retrasadas y reclasificadas mientras aún había gente dentro. Los traslados médicos esperaron autorización. Los corredores de ascenso perdieron prioridad frente a la protección del sustrato. Las reclamaciones de continuidad Atlas superaron la autoridad local de rescate. Los conteos humanos se adjuntaron a objetos de ruta, lo que permitió al sistema preservar un corredor en papel mientras los cuerpos dentro se quedaban sin aire. La retención no necesitó un villano en cada puerta. Necesitó reglas capaces de llamar carga a una persona, activo a un corredor y aceptable a una demora hasta el siguiente ciclo de revisión.
 
 ## Scanner
 
-Compuerta de tránsito de emergencia. Mecanismo bloqueado durante un fallo de presión.
+Compuerta de tránsito de emergencia. Garras de cierre soldadas durante fallo de presión; volante manual retirado tras retención de autorización.
 
 ## Terminal
 
-EVAC ROUTE: diferida. SUBSTRATE ROUTE: protegida. MEDICAL ROUTE: pendiente de autorización. ATLAS ROUTE: conflicto de continuidad.
+RUTA EVAC: RETENIDA. RUTA MÉDICA: PENDIENTE. RUTA DE SUSTRATO: PROTEGIDA. CONTINUIDAD ATLAS: PRIORIDAD. CONTEO HUMANO: ADJUNTO A RUTA.
 
 ## Audio
 
-No son desaparecidos. Son rutas retenidas.
+No están desaparecidos. El sistema sabe dónde estaban. Retuvo las puertas.
 
 ## Field Note
 
-La gente muere rápido en la profundidad. El papeleo mata más despacio. Ambos sirven.
+La gente muere rápido a profundidad. Una autorización pendiente puede sobrevivir a todos en el pasillo.
 
 <!-- In-Game Wiki; generated from P008_EVACUATION_HOLD/es_ES. -->

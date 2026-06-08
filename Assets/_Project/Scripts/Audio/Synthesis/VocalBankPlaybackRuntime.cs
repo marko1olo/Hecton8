@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Data;
 using Hecton8.Core.Memory;
 using Hecton8.Physics.Vehicles;
 using Unity.Burst;
@@ -50,6 +51,15 @@ namespace Hecton8.Audio.Synthesis
         private const uint DefaultMockPhraseHash = 0x05203E88u; // FNV1a("VO_SHINOBU_MOCK").
         private const uint VocalCueLaneHash = 0xC001260u;
         private const uint VwsPreemptedFlag = 1u << 5;
+        private const int DefaultPlayVoiceOverPriority = 128;
+        private const uint PlayVoiceOverSignalMissWarningHash = 0x50564F4Du; // PVOM.
+        private const uint PlayVoiceOverSignalContextHash = 0x50564F43u; // PVOC.
+        private const uint VocalBankMissWarningHash = 0x56424D53u; // VBMS.
+        private const uint VocalBankMissContextHash = 0x56424B43u; // VBKC.
+        private const uint PlayVoiceOverSubtitleDropWarningHash = 0x50565344u; // PVSD.
+        private const uint PlayVoiceOverSubtitleContextHash = 0x50565343u; // PVSC.
+        private const uint PlayVoiceOverSubtitleSourceHash = 0x50565352u; // PVSR.
+        private const ushort DefaultPlayVoiceOverSubtitleDurationMilliseconds = 3250;
         private const uint VesselTelemetryHandleRetryMask = 63u;
         private const float DspDumpThresholdMicroseconds = 1000f;
         private const float VesselCareColdPlaybackSpeed = 0.985f;
@@ -160,6 +170,24 @@ namespace Hecton8.Audio.Synthesis
         private float _cachedGlobalQualityWeight = 1f;
         private float _vesselCareTone01;
         private float _lastAppliedVesselCareTone01;
+        private uint _lastPlayVoiceOverTextHash;
+        private uint _lastPlayVoiceOverVoiceHash;
+        private int _playVoiceOverSignalConsumedCount;
+        private int _playVoiceOverSignalMissCount;
+        private int _lastPlayVoiceOverSignalMissTelemetryFrame = -1;
+        private int _vocalBankMissTelemetryCount;
+        private int _lastVocalBankMissTelemetryFrame = -1;
+        private int _playVoiceOverSubtitleCuePublishedCount;
+        private int _playVoiceOverSubtitleCueDropCount;
+        private int _lastPlayVoiceOverSubtitleDropTelemetryFrame = -1;
+
+        public int PlayVoiceOverSignalConsumedCount => _playVoiceOverSignalConsumedCount;
+        public int PlayVoiceOverSignalMissCount => _playVoiceOverSignalMissCount;
+        public uint LastPlayVoiceOverTextHash => _lastPlayVoiceOverTextHash;
+        public uint LastPlayVoiceOverVoiceHash => _lastPlayVoiceOverVoiceHash;
+        public int VocalBankMissTelemetryCount => _vocalBankMissTelemetryCount;
+        public int PlayVoiceOverSubtitleCuePublishedCount => _playVoiceOverSubtitleCuePublishedCount;
+        public int PlayVoiceOverSubtitleCueDropCount => _playVoiceOverSubtitleCueDropCount;
 
         public static bool TryGetActive(out VocalBankPlaybackRuntime runtime)
         {
@@ -294,6 +322,14 @@ namespace Hecton8.Audio.Synthesis
         {
             SignalBus<VocalCueSignal>.ConfigureCacheLineCritical(64, 64, 16, VocalCueLaneHash);
             SignalBus<VocalCueSignal>.EnsureInitialized();
+            SignalBus<PlayVoiceOverSignal>.Configure(expectedCapacity: 32, maxFrameSignals: 32, lowTierFrameSignals: 8);
+            SignalBus<PlayVoiceOverSignal>.EnsureInitialized();
+            SignalBus<SubtitleCueSignal>.Configure(
+                SubtitleCueSignal.ExpectedCapacity,
+                maxFrameSignals: SubtitleCueSignal.MaxFrameSignals,
+                lowTierFrameSignals: SubtitleCueSignal.LowTierFrameSignals,
+                laneHash: SubtitleCueSignal.LaneHash);
+            SignalBus<SubtitleCueSignal>.EnsureInitialized();
         }
 
         private void Awake()
@@ -927,74 +963,38 @@ namespace Hecton8.Audio.Synthesis
                     return;
 
                 byte* bank = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.MockBankBytes);
-                ReadOnlySpan<VocalCueSignal> signals = SignalBus<VocalCueSignal>.GetFrameSnapshot();
                 bool startedCue = false;
                 float safeVesselCareTone01 = ResolveSafeVesselCareTone01(vesselCareTone01);
                 float vesselCarePlaybackScalar = ResolveVesselCarePlaybackScalar(safeVesselCareTone01);
+
+                ReadOnlySpan<PlayVoiceOverSignal> playVoiceOverSignals = SignalBus<PlayVoiceOverSignal>.GetFrameSnapshot();
+                for (int i = 0; i < playVoiceOverSignals.Length; i++)
+                {
+                    PlayVoiceOverSignal signal = playVoiceOverSignals[i];
+                    if (!TryBuildVocalCueFromPlayVoiceOver(in signal, out VocalCueSignal cue))
+                        continue;
+
+                    bool startedPlayVoiceOverCue = TryStartVocalCue(
+                        ref views,
+                        bank,
+                        bankByteLength,
+                        in cue,
+                        vesselCarePlaybackScalar);
+                    if (startedPlayVoiceOverCue)
+                        TryPublishPlayVoiceOverSubtitleCue(in signal, ref views);
+
+                    startedCue |= startedPlayVoiceOverCue;
+                }
+
+                ReadOnlySpan<VocalCueSignal> signals = SignalBus<VocalCueSignal>.GetFrameSnapshot();
                 for (int i = 0; i < signals.Length; i++)
                 {
-                    VocalCueSignal signal = signals[i];
-                    if (signal.PhraseHashID == 0u)
-                        continue;
-
-                    VocalStateDTO current = views.State[0];
-                    VocalCodecStateDTO currentCodec = views.Codec[0];
-                    bool isPlaying = (current.Flags & VocalBankConstants.StateFlagPlaying) != 0u;
-                    bool vwsPreempted = (signal.Flags & VwsPreemptedFlag) != 0u;
-                    if (isPlaying && signal.Priority < currentCodec.Priority && !vwsPreempted)
-                        continue;
-
-                    if (!VocalBankReader.TryFindRecord(bank, bankByteLength, signal.PhraseHashID, out VocalBankIndexRecordDTO record))
-                    {
-                        VocalDecodeCounters64 counters = views.Counters[0];
-                        counters.MissCount++;
-                        counters.LastFaultFlags = VocalBankConstants.StateFlagBankMiss;
-                        counters.LastPhraseHashID = signal.PhraseHashID;
-                        views.Counters[0] = counters;
-                        continue;
-                    }
-
-                    if (record.Codec == VocalBankConstants.CodecVorbis)
-                    {
-                        VocalDecodeCounters64 counters = views.Counters[0];
-                        counters.FaultCount++;
-                        counters.LastFaultFlags = VocalBankConstants.StateFlagVorbisUnsupported;
-                        counters.LastPhraseHashID = signal.PhraseHashID;
-                        views.Counters[0] = counters;
-                        continue;
-                    }
-
-                    VocalDialogueMetadataDTO metadata = default;
-#if UNITY_EDITOR
-                    bool hasMetadata = TryFindMetadata(signal.PhraseHashID, views.CsvMetadata, _csvMetadataCount, out metadata);
-#else
-                    bool hasMetadata = false;
-#endif
-                    VocalStateDTO next = default;
-                    next.PhraseHashID = signal.PhraseHashID;
-                    next.CurrentSampleIndex = 0u;
-                    next.TotalSamples = record.TotalSamples;
-                    next.PlaybackSpeed = math.clamp(FiniteOrFallback(signal.PlaybackSpeed, 1f) * vesselCarePlaybackScalar, 0.25f, 2f);
-                    next.VolumeScalar = math.saturate(FiniteOrFallback(signal.VolumeScalar, 1f));
-                    next.Flags = VocalBankConstants.StateFlagPlaying | (isPlaying ? VocalBankConstants.StateFlagInterrupted : 0u);
-                    next.DuckingEnvelope01 = math.saturate(FiniteOrFallback(current.DuckingEnvelope01, 0f));
-                    next.SpeakerFloodDistortion01 = math.saturate(FiniteOrFallback(signal.RadioDistortion01, 0f));
-                    views.State[0] = next;
-
-                    VocalCodecStateDTO codec = views.Codec[0];
-                    codec.PayloadOffset = record.ByteOffset;
-                    codec.PayloadByteLength = record.ByteLength;
-                    codec.SampleRate = record.SampleRate;
-                    codec.Priority = signal.Priority != 0 ? signal.Priority : (hasMetadata ? metadata.Priority : record.Priority);
-                    float csvRadio = hasMetadata ? metadata.RadioDistortion01 : 0f;
-                    codec.RadioDistortion01 = math.saturate(math.max(math.max(record.RadioDistortionByte / 255f, csvRadio), FiniteOrFallback(signal.RadioDistortion01, 0f)));
-                    codec.QualityWeight01 = ResolveEffectiveQualityWeight();
-                    codec.SpatialGain = ResolveSpatialGain(in signal);
-                    codec.Codec = record.Codec;
-                    codec.ActivePhraseHashID = 0u;
-                    codec.FaultFlags = 0u;
-                    views.Codec[0] = codec;
-                    startedCue = true;
+                    startedCue |= TryStartVocalCue(
+                        ref views,
+                        bank,
+                        bankByteLength,
+                        in signals[i],
+                        vesselCarePlaybackScalar);
                 }
 
                 if (startedCue)
@@ -1013,6 +1013,198 @@ namespace Hecton8.Audio.Synthesis
             }
         }
 
+        private bool TryStartVocalCue(
+            ref VocalVaultViews views,
+            byte* bank,
+            long bankByteLength,
+            in VocalCueSignal signal,
+            float vesselCarePlaybackScalar)
+        {
+            if (signal.PhraseHashID == 0u)
+                return false;
+
+            VocalStateDTO current = views.State[0];
+            VocalCodecStateDTO currentCodec = views.Codec[0];
+            bool isPlaying = (current.Flags & VocalBankConstants.StateFlagPlaying) != 0u;
+            bool vwsPreempted = (signal.Flags & VwsPreemptedFlag) != 0u;
+            if (isPlaying && signal.Priority < currentCodec.Priority && !vwsPreempted)
+                return false;
+
+            uint playbackPhraseHash = signal.PhraseHashID;
+            bool usedCanonicalFallback = false;
+            if (!VocalBankReader.TryFindRecord(bank, bankByteLength, signal.PhraseHashID, out VocalBankIndexRecordDTO record))
+            {
+                RecordVocalBankMiss(ref views, signal.PhraseHashID);
+                if (!TryResolveCanonicalVocalWarningFallbackRecord(
+                        bank,
+                        bankByteLength,
+                        signal.PhraseHashID,
+                        out record,
+                        out playbackPhraseHash))
+                {
+                    return false;
+                }
+
+                usedCanonicalFallback = true;
+            }
+
+            if (record.Codec == VocalBankConstants.CodecVorbis)
+            {
+                VocalDecodeCounters64 counters = views.Counters[0];
+                counters.FaultCount++;
+                counters.LastFaultFlags = VocalBankConstants.StateFlagVorbisUnsupported;
+                counters.LastPhraseHashID = signal.PhraseHashID;
+                views.Counters[0] = counters;
+                return false;
+            }
+
+            VocalDialogueMetadataDTO metadata = default;
+#if UNITY_EDITOR
+            bool hasMetadata = TryFindMetadata(playbackPhraseHash, views.CsvMetadata, _csvMetadataCount, out metadata);
+#else
+            bool hasMetadata = false;
+#endif
+            VocalStateDTO next = default;
+            next.PhraseHashID = signal.PhraseHashID;
+            next.CurrentSampleIndex = 0u;
+            next.TotalSamples = record.TotalSamples;
+            next.PlaybackSpeed = math.clamp(FiniteOrFallback(signal.PlaybackSpeed, 1f) * vesselCarePlaybackScalar, 0.25f, 2f);
+            next.VolumeScalar = math.saturate(FiniteOrFallback(signal.VolumeScalar, 1f));
+            uint nextFlags = VocalBankConstants.StateFlagPlaying | (isPlaying ? VocalBankConstants.StateFlagInterrupted : 0u);
+            if (usedCanonicalFallback)
+                nextFlags |= VocalBankConstants.StateFlagBankMiss;
+            next.Flags = nextFlags;
+            next.DuckingEnvelope01 = math.saturate(FiniteOrFallback(current.DuckingEnvelope01, 0f));
+            next.SpeakerFloodDistortion01 = math.saturate(FiniteOrFallback(signal.RadioDistortion01, 0f));
+            views.State[0] = next;
+
+            VocalCodecStateDTO codec = views.Codec[0];
+            codec.PayloadOffset = record.ByteOffset;
+            codec.PayloadByteLength = record.ByteLength;
+            codec.SampleRate = record.SampleRate;
+            codec.Priority = signal.Priority != 0 ? signal.Priority : (hasMetadata ? metadata.Priority : record.Priority);
+            float csvRadio = hasMetadata ? metadata.RadioDistortion01 : 0f;
+            codec.RadioDistortion01 = math.saturate(math.max(math.max(record.RadioDistortionByte / 255f, csvRadio), FiniteOrFallback(signal.RadioDistortion01, 0f)));
+            codec.QualityWeight01 = ResolveEffectiveQualityWeight();
+            codec.SpatialGain = ResolveSpatialGain(in signal);
+            codec.Codec = record.Codec;
+            codec.ActivePhraseHashID = 0u;
+            codec.FaultFlags = usedCanonicalFallback ? VocalBankConstants.StateFlagBankMiss : 0u;
+            views.Codec[0] = codec;
+            return true;
+        }
+
+        private bool TryBuildVocalCueFromPlayVoiceOver(in PlayVoiceOverSignal signal, out VocalCueSignal cue)
+        {
+            cue = default;
+            if (signal.VoiceHash == 0u)
+            {
+                ReportPlayVoiceOverSignalMiss(in signal);
+                return false;
+            }
+
+            cue.PhraseHashID = signal.VoiceHash;
+            cue.Priority = DefaultPlayVoiceOverPriority;
+            cue.VolumeScalar = 1f;
+            cue.PlaybackSpeed = 1f;
+            cue.RadioDistortion01 = 0f;
+            cue.SpatialBlend01 = 0f;
+            cue.Flags = 0u;
+            _lastPlayVoiceOverTextHash = signal.TextHash;
+            _lastPlayVoiceOverVoiceHash = signal.VoiceHash;
+            _playVoiceOverSignalConsumedCount++;
+            return true;
+        }
+
+        private void ReportPlayVoiceOverSignalMiss(in PlayVoiceOverSignal signal)
+        {
+            _playVoiceOverSignalMissCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastPlayVoiceOverSignalMissTelemetryFrame == frame)
+                return;
+
+            _lastPlayVoiceOverSignalMissTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                PlayVoiceOverSignalMissWarningHash,
+                PlayVoiceOverSignalContextHash ^ signal.TextHash ^ signal.VoiceHash,
+                math.max(1, _playVoiceOverSignalMissCount));
+        }
+
+        private void ClearPlayVoiceOverSignalDiagnostics()
+        {
+            _lastPlayVoiceOverTextHash = 0u;
+            _lastPlayVoiceOverVoiceHash = 0u;
+            _playVoiceOverSignalConsumedCount = 0;
+            _playVoiceOverSignalMissCount = 0;
+            _lastPlayVoiceOverSignalMissTelemetryFrame = -1;
+            _vocalBankMissTelemetryCount = 0;
+            _lastVocalBankMissTelemetryFrame = -1;
+            _playVoiceOverSubtitleCuePublishedCount = 0;
+            _playVoiceOverSubtitleCueDropCount = 0;
+            _lastPlayVoiceOverSubtitleDropTelemetryFrame = -1;
+        }
+
+        private bool TryPublishPlayVoiceOverSubtitleCue(in PlayVoiceOverSignal signal, ref VocalVaultViews views)
+        {
+            if (signal.TextHash == 0u)
+                return false;
+
+            SubtitleCueSignal subtitle = default;
+            subtitle.TokenHash = signal.TextHash;
+            subtitle.SourceHash = PlayVoiceOverSubtitleSourceHash;
+            subtitle.StartAudioFrame = 0u;
+            subtitle.DurationMilliseconds = ResolveActiveVocalSubtitleDurationMilliseconds(ref views);
+            subtitle.Priority = DefaultPlayVoiceOverPriority;
+            subtitle.Flags = 0;
+            if (SignalBus<SubtitleCueSignal>.TryPushTracked(in subtitle, ref _playVoiceOverSubtitleCueDropCount))
+            {
+                _playVoiceOverSubtitleCuePublishedCount++;
+                return true;
+            }
+
+            ReportPlayVoiceOverSubtitleDrop(in signal);
+            return false;
+        }
+
+        private void ReportPlayVoiceOverSubtitleDrop(in PlayVoiceOverSignal signal)
+        {
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastPlayVoiceOverSubtitleDropTelemetryFrame == frame)
+                return;
+
+            _lastPlayVoiceOverSubtitleDropTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                PlayVoiceOverSubtitleDropWarningHash,
+                PlayVoiceOverSubtitleContextHash ^ signal.TextHash ^ signal.VoiceHash,
+                math.max(1, _playVoiceOverSubtitleCueDropCount));
+        }
+
+        private static ushort ResolveActiveVocalSubtitleDurationMilliseconds(ref VocalVaultViews views)
+        {
+            if (!views.State.IsCreated ||
+                !views.Codec.IsCreated ||
+                views.State.Length <= 0 ||
+                views.Codec.Length <= 0)
+            {
+                return DefaultPlayVoiceOverSubtitleDurationMilliseconds;
+            }
+
+            VocalStateDTO state = views.State[0];
+            VocalCodecStateDTO codec = views.Codec[0];
+            if (state.TotalSamples == 0u || codec.SampleRate == 0u)
+                return DefaultPlayVoiceOverSubtitleDurationMilliseconds;
+
+            float durationSeconds = state.TotalSamples * math.rcp((float)math.max(1u, codec.SampleRate));
+            return ResolveSubtitleDurationMilliseconds(durationSeconds);
+        }
+
+        private static ushort ResolveSubtitleDurationMilliseconds(float durationSeconds)
+        {
+            float safeSeconds = math.max(0.5f, math.select(0.5f, durationSeconds, math.isfinite(durationSeconds)));
+            float milliseconds = math.clamp(safeSeconds * 1000f, 1f, ushort.MaxValue);
+            return (ushort)math.round(milliseconds);
+        }
+
         private void BindVesselTelemetryHandleCold()
         {
             IDataVault vault = _dataVault;
@@ -1023,6 +1215,70 @@ namespace Hecton8.Audio.Synthesis
             {
                 _vesselTelemetryHandle = default;
             }
+        }
+
+        private static bool TryResolveCanonicalVocalWarningFallbackRecord(
+            byte* bank,
+            long bankByteLength,
+            uint requestedPhraseHash,
+            out VocalBankIndexRecordDTO record,
+            out uint playbackPhraseHash)
+        {
+            playbackPhraseHash = requestedPhraseHash;
+            if (!IsCanonicalVocalWarningPhraseHash(requestedPhraseHash) ||
+                requestedPhraseHash == DefaultMockPhraseHash ||
+                !VocalBankReader.TryFindRecord(bank, bankByteLength, DefaultMockPhraseHash, out record))
+            {
+                record = default;
+                return false;
+            }
+
+            playbackPhraseHash = DefaultMockPhraseHash;
+            return true;
+        }
+
+        private static bool IsCanonicalVocalWarningPhraseHash(uint phraseHash)
+        {
+            switch (phraseHash)
+            {
+                case VocalWarningHashes.CrushDepth:
+                case VocalWarningHashes.HullBreach:
+                case VocalWarningHashes.HullTempCritical:
+                case VocalWarningHashes.OxygenLow:
+                case VocalWarningHashes.Radiation:
+                case VocalWarningHashes.PowerLow:
+                case VocalWarningHashes.Toxicity:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private void RecordVocalBankMiss(ref VocalVaultViews views, uint requestedPhraseHash)
+        {
+            ReportVocalBankMiss(requestedPhraseHash);
+            if (!views.Counters.IsCreated || views.Counters.Length <= 0)
+                return;
+
+            VocalDecodeCounters64 counters = views.Counters[0];
+            counters.MissCount++;
+            counters.LastFaultFlags = VocalBankConstants.StateFlagBankMiss;
+            counters.LastPhraseHashID = requestedPhraseHash;
+            views.Counters[0] = counters;
+        }
+
+        private void ReportVocalBankMiss(uint requestedPhraseHash)
+        {
+            _vocalBankMissTelemetryCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastVocalBankMissTelemetryFrame == frame)
+                return;
+
+            _lastVocalBankMissTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                VocalBankMissWarningHash,
+                VocalBankMissContextHash ^ requestedPhraseHash,
+                math.max(1, _vocalBankMissTelemetryCount));
         }
 
         private void RefreshVesselTelemetryHandleIfMissing(uint frame)
@@ -1557,13 +1813,17 @@ namespace Hecton8.Audio.Synthesis
 
                     _editorCsvScratchCapacity = EditorCsvScratchBytes;
                 }
-                catch
+                catch (Exception exception)
                 {
-                    _editorCsvScratchSentinelId = 0;
-                    if (_editorCsvScratch != null)
-                        UnsafeUtility.Free(_editorCsvScratch, Allocator.Persistent);
-                    _editorCsvScratch = null;
-                    _editorCsvScratchCapacity = 0;
+                    try
+                    {
+                        ReleaseEditorCsvScratch();
+                    }
+                    catch (Exception releaseException)
+                    {
+                        throw new AggregateException("Vocal bank editor CSV scratch allocation cleanup failed.", exception, releaseException);
+                    }
+
                     throw;
                 }
             }
@@ -1575,15 +1835,44 @@ namespace Hecton8.Audio.Synthesis
 
         private void ReleaseEditorCsvScratch()
         {
+            Exception firstException = null;
+            bool released = _editorCsvScratch == null;
+
             if (_editorCsvScratch != null)
             {
-                NativeMemorySentinel.Unregister(_editorCsvScratchSentinelId);
-                _editorCsvScratchSentinelId = 0;
-                UnsafeUtility.Free(_editorCsvScratch, Allocator.Persistent);
+                try
+                {
+                    UnsafeUtility.Free(_editorCsvScratch, Allocator.Persistent);
+                    _editorCsvScratch = null;
+                    _editorCsvScratchCapacity = 0;
+                    released = true;
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
             }
 
-            _editorCsvScratch = null;
-            _editorCsvScratchCapacity = 0;
+            if (released)
+            {
+                _editorCsvScratchCapacity = 0;
+                if (_editorCsvScratchSentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(_editorCsvScratchSentinelId);
+                        _editorCsvScratchSentinelId = 0;
+                    }
+                    catch (Exception exception)
+                    {
+                        if (firstException == null)
+                            firstException = exception;
+                    }
+                }
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static bool TryReadColdCsvExact(string path, byte* destination, int capacity, out int bytesRead)
@@ -1793,8 +2082,9 @@ namespace Hecton8.Audio.Synthesis
         {
             if (ReferenceEquals(_activeInstance, this))
                 _activeInstance = null;
+            ClearPlayVoiceOverSignalDiagnostics();
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
             if (Interlocked.Exchange(ref _registeredColdTick, 0) != 0)
                 GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Core);
             if (Interlocked.Exchange(ref _registeredUpdate, 0) != 0)

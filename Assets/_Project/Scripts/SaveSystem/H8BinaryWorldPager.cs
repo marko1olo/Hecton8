@@ -133,6 +133,18 @@ namespace Hecton8.Core.Persistence.Paging
 
         public bool HasInitializationFault => Volatile.Read(ref _initializationFault.Value) != 0;
 
+        private void InvalidateWorldReadCache()
+        {
+            if (!string.IsNullOrEmpty(_path))
+                AsyncWriteManager.InvalidateCachedReadWindows(_path);
+        }
+
+        private void InvalidateWalReadCache()
+        {
+            if (!string.IsNullOrEmpty(_walPath))
+                AsyncWriteManager.InvalidateCachedReadWindows(_walPath);
+        }
+
         public void Initialize(string absolutePath)
         {
             if (string.IsNullOrEmpty(absolutePath))
@@ -1628,11 +1640,19 @@ namespace Hecton8.Core.Persistence.Paging
                     {
                         lock (_streamLock)
                         {
-                            EnsureStreamLength(stream, offset + SectorHeaderBytes + storedBytes);
-                            stream.Position = offset;
-                            stream.Write(header);
-                            stream.Write(new ReadOnlySpan<byte>(stored, storedBytes));
-                            stream.Flush(true);
+                            InvalidateWorldReadCache();
+                            try
+                            {
+                                EnsureStreamLength(stream, offset + SectorHeaderBytes + storedBytes);
+                                stream.Position = offset;
+                                stream.Write(header);
+                                stream.Write(new ReadOnlySpan<byte>(stored, storedBytes));
+                                stream.Flush(true);
+                            }
+                            finally
+                            {
+                                InvalidateWorldReadCache();
+                            }
                         }
                     }
 
@@ -2141,10 +2161,18 @@ namespace Hecton8.Core.Persistence.Paging
                     if (!rewriteDirectory)
                         return;
 
-                    EnsureStreamLength(stream, WorldDirectoryBytes);
-                    stream.Position = 0L;
-                    stream.Write(directory);
-                    stream.Flush(true);
+                    InvalidateWorldReadCache();
+                    try
+                    {
+                        EnsureStreamLength(stream, WorldDirectoryBytes);
+                        stream.Position = 0L;
+                        stream.Write(directory);
+                        stream.Flush(true);
+                    }
+                    finally
+                    {
+                        InvalidateWorldReadCache();
+                    }
                 }
             }
             catch (IOException)
@@ -2214,9 +2242,17 @@ namespace Hecton8.Core.Persistence.Paging
                         }
                     }
 
-                    stream.Position = directoryOffset;
-                    stream.Write(entry);
-                    stream.Flush(true);
+                    InvalidateWorldReadCache();
+                    try
+                    {
+                        stream.Position = directoryOffset;
+                        stream.Write(entry);
+                        stream.Flush(true);
+                    }
+                    finally
+                    {
+                        InvalidateWorldReadCache();
+                    }
                 }
 
                 return true;
@@ -2310,18 +2346,26 @@ namespace Hecton8.Core.Persistence.Paging
 
                         lock (_walLock)
                         {
-                            walStream.Position = walStream.Length;
-                            walStream.Write(walHeader);
-                            walStream.Write(new ReadOnlySpan<byte>(storedPayload, storedBytes));
-                            if (hotStateBytes > 0)
-                                walStream.Write(new ReadOnlySpan<byte>(hotStatePtr, hotStateBytes));
-                            walStream.Write(tail);
-                            walStream.Flush(true);
-                            long walBytes = walStream.Length;
-                            if (walBytes >= WalMicroStallThresholdBytes)
+                            InvalidateWalReadCache();
+                            try
                             {
-                                Interlocked.Increment(ref _walMicroStallCount.Value);
-                                Thread.Sleep(1);
+                                walStream.Position = walStream.Length;
+                                walStream.Write(walHeader);
+                                walStream.Write(new ReadOnlySpan<byte>(storedPayload, storedBytes));
+                                if (hotStateBytes > 0)
+                                    walStream.Write(new ReadOnlySpan<byte>(hotStatePtr, hotStateBytes));
+                                walStream.Write(tail);
+                                walStream.Flush(true);
+                                long walBytes = walStream.Length;
+                                if (walBytes >= WalMicroStallThresholdBytes)
+                                {
+                                    Interlocked.Increment(ref _walMicroStallCount.Value);
+                                    Thread.Sleep(1);
+                                }
+                            }
+                            finally
+                            {
+                                InvalidateWalReadCache();
                             }
                         }
                     }
@@ -2365,9 +2409,17 @@ namespace Hecton8.Core.Persistence.Paging
             {
                 lock (_walLock)
                 {
-                    walStream.SetLength(0L);
-                    walStream.Position = 0L;
-                    walStream.Flush(true);
+                    InvalidateWalReadCache();
+                    try
+                    {
+                        walStream.SetLength(0L);
+                        walStream.Position = 0L;
+                        walStream.Flush(true);
+                    }
+                    finally
+                    {
+                        InvalidateWalReadCache();
+                    }
                 }
             }
             catch (IOException)
@@ -2530,11 +2582,19 @@ namespace Hecton8.Core.Persistence.Paging
                             {
                                 lock (_streamLock)
                                 {
-                                    EnsureStreamLength(worldStream, offset + SectorHeaderBytes + storedBytes);
-                                    worldStream.Position = offset;
-                                    worldStream.Write(pageHeader);
-                                    worldStream.Write(new ReadOnlySpan<byte>(storedPtr, storedBytes));
-                                    worldStream.Flush(true);
+                                    InvalidateWorldReadCache();
+                                    try
+                                    {
+                                        EnsureStreamLength(worldStream, offset + SectorHeaderBytes + storedBytes);
+                                        worldStream.Position = offset;
+                                        worldStream.Write(pageHeader);
+                                        worldStream.Write(new ReadOnlySpan<byte>(storedPtr, storedBytes));
+                                        worldStream.Flush(true);
+                                    }
+                                    finally
+                                    {
+                                        InvalidateWorldReadCache();
+                                    }
                                 }
                             }
 
@@ -2552,9 +2612,17 @@ namespace Hecton8.Core.Persistence.Paging
 
                     if (truncateWal)
                     {
-                        walStream.SetLength(0L);
-                        walStream.Position = 0L;
-                        walStream.Flush(true);
+                        InvalidateWalReadCache();
+                        try
+                        {
+                            walStream.SetLength(0L);
+                            walStream.Position = 0L;
+                            walStream.Flush(true);
+                        }
+                        finally
+                        {
+                            InvalidateWalReadCache();
+                        }
                     }
                 }
             }
@@ -2595,36 +2663,44 @@ namespace Hecton8.Core.Persistence.Paging
             {
                 lock (_streamLock)
                 {
-                    EnsureStreamLength(stream, endOffset);
-                    using MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
-                        stream,
-                        null,
-                        endOffset,
-                        MemoryMappedFileAccess.ReadWrite,
-                        HandleInheritability.None,
-                        false);
-                    using MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(
-                        offset,
-                        SectorHeaderBytes + storedBytes,
-                        MemoryMappedFileAccess.Write);
-                    byte* mappedPtr = null;
+                    InvalidateWorldReadCache();
                     try
                     {
-                        accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPtr);
-                        byte* target = mappedPtr + (int)accessor.PointerOffset;
-                        fixed (byte* headerPtr = header)
+                        EnsureStreamLength(stream, endOffset);
+                        using MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
+                            stream,
+                            null,
+                            endOffset,
+                            MemoryMappedFileAccess.ReadWrite,
+                            HandleInheritability.None,
+                            false);
+                        using MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(
+                            offset,
+                            SectorHeaderBytes + storedBytes,
+                            MemoryMappedFileAccess.Write);
+                        byte* mappedPtr = null;
+                        try
                         {
-                            UnsafeUtility.MemCpy(target, headerPtr, SectorHeaderBytes);
-                        }
+                            accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPtr);
+                            byte* target = mappedPtr + (int)accessor.PointerOffset;
+                            fixed (byte* headerPtr = header)
+                            {
+                                UnsafeUtility.MemCpy(target, headerPtr, SectorHeaderBytes);
+                            }
 
-                        UnsafeUtility.MemCpy(target + SectorHeaderBytes, storedPayload, storedBytes);
-                        accessor.Flush();
-                        stream.Flush(true);
+                            UnsafeUtility.MemCpy(target + SectorHeaderBytes, storedPayload, storedBytes);
+                            accessor.Flush();
+                            stream.Flush(true);
+                        }
+                        finally
+                        {
+                            if (mappedPtr != null)
+                                accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                        }
                     }
                     finally
                     {
-                        if (mappedPtr != null)
-                            accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                        InvalidateWorldReadCache();
                     }
                 }
 
@@ -3108,38 +3184,132 @@ namespace Hecton8.Core.Persistence.Paging
             if (string.IsNullOrEmpty(dumpPath) || !telemetryRing.IsCreated)
                 return;
 
+            string absoluteDumpPath = null;
+            string tempPath = null;
             try
             {
-                HectonPersistentPathPolicy.EnsureParentDirectory(dumpPath);
-                using (FileStream stream = new FileStream(
-                           dumpPath,
-                           FileMode.Create,
-                           FileAccess.Write,
-                           FileShare.Read,
-                           4096,
-                           FileOptions.SequentialScan))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                absoluteDumpPath = Path.GetFullPath(dumpPath);
+                tempPath = absoluteDumpPath + ".tmp";
+                HectonPersistentPathPolicy.EnsureParentDirectory(absoluteDumpPath);
+                TryDeleteBlackBoxDumpTempFile(tempPath);
+                int count = math.min(telemetryRing.Length, TelemetryCapacity);
+                long expectedBytes = (long)count * UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>();
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                try
                 {
-                    int count = math.min(telemetryRing.Length, TelemetryCapacity);
-                    for (int i = 0; i < count; i++)
+                    using (FileStream stream = new FileStream(
+                               tempPath,
+                               FileMode.Create,
+                               FileAccess.Write,
+                               FileShare.Read,
+                               4096,
+                               FileOptions.WriteThrough | FileOptions.SequentialScan))
+                    using (BinaryWriter writer = new BinaryWriter(stream))
                     {
-                        H8BinaryWorldPagerTelemetryEntry entry = telemetryRing[i];
-                        writer.Write(entry.SectorHash);
-                        writer.Write(entry.Offset);
-                        writer.Write(entry.TicksUtc);
-                        writer.Write(entry.PayloadType);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.RequestId);
-                        writer.Write(entry.PayloadBytes);
-                        writer.Write(entry.PendingWrites);
-                        writer.Write(entry.PendingReads);
-                        writer.Write(entry.PageFaults);
-                        writer.Write(entry.Metrics);
-                        writer.Write(entry.DirectorySlot);
-                        writer.Write(entry.Flags);
-                        writer.Write((byte)entry.Operation);
-                        writer.Write((byte)entry.Status);
+                        for (int i = 0; i < count; i++)
+                        {
+                            H8BinaryWorldPagerTelemetryEntry entry = telemetryRing[i];
+                            writer.Write(entry.SectorHash);
+                            writer.Write(entry.Offset);
+                            writer.Write(entry.TicksUtc);
+                            writer.Write(entry.PayloadType);
+                            writer.Write(entry.Frame);
+                            writer.Write(entry.RequestId);
+                            writer.Write(entry.PayloadBytes);
+                            writer.Write(entry.PendingWrites);
+                            writer.Write(entry.PendingReads);
+                            writer.Write(entry.PageFaults);
+                            writer.Write(entry.Metrics);
+                            writer.Write(entry.DirectorySlot);
+                            writer.Write(entry.Flags);
+                            writer.Write((byte)entry.Operation);
+                            writer.Write((byte)entry.Status);
+                        }
+
+                        writer.Flush();
+                        stream.Flush(true);
+                        if (stream.Length != expectedBytes)
+                            throw new IOException("H8BinaryWorldPager black-box dump length mismatch.");
                     }
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                }
+
+                if (!TryFlushAndValidateBlackBoxDumpFile(tempPath, expectedBytes))
+                {
+                    TryDeleteBlackBoxDumpTempFile(tempPath);
+                    return;
+                }
+
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteDumpPath);
+                try
+                {
+                    if (File.Exists(absoluteDumpPath))
+                        File.Replace(tempPath, absoluteDumpPath, null, true);
+                    else
+                        File.Move(tempPath, absoluteDumpPath);
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteDumpPath);
+                }
+
+                TryFlushAndValidateBlackBoxDumpFile(absoluteDumpPath, expectedBytes);
+            }
+            catch (IOException)
+            {
+                TryDeleteBlackBoxDumpTempFile(tempPath);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TryDeleteBlackBoxDumpTempFile(tempPath);
+            }
+            catch (NotSupportedException)
+            {
+                TryDeleteBlackBoxDumpTempFile(tempPath);
+            }
+            catch (ArgumentException)
+            {
+                TryDeleteBlackBoxDumpTempFile(tempPath);
+            }
+            catch (ObjectDisposedException)
+            {
+                TryDeleteBlackBoxDumpTempFile(tempPath);
+            }
+            catch (System.Security.SecurityException)
+            {
+                TryDeleteBlackBoxDumpTempFile(tempPath);
+            }
+        }
+
+        private static bool TryFlushAndValidateBlackBoxDumpFile(string path, long expectedBytes)
+        {
+            if (string.IsNullOrEmpty(path) || expectedBytes < 0L)
+                return false;
+
+            return AsyncWriteManager.FlushCriticalSavePath(path, expectedBytes, out _);
+        }
+
+        private static void TryDeleteBlackBoxDumpTempFile(string tempPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(tempPath))
+                    return;
+
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                try
+                {
+                    if (File.Exists(tempPath))
+                        File.Delete(tempPath);
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
                 }
             }
             catch (IOException)
@@ -3154,7 +3324,7 @@ namespace Hecton8.Core.Persistence.Paging
             catch (ArgumentException)
             {
             }
-            catch (ObjectDisposedException)
+            catch (System.Security.SecurityException)
             {
             }
         }

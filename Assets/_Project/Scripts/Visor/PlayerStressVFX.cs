@@ -420,7 +420,7 @@ namespace Hecton8.Visor
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -553,13 +553,33 @@ namespace Hecton8.Visor
 
         private Vector3 ResolveHeartbeatAudioPosition()
         {
-            HectonPlayerMovement movement = _playerMovement;
-            if (movement == null)
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null)
             {
-                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-                movement = playerContext != null ? playerContext.PlayerMovement : null;
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose) &&
+                    (pose.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    pose.Aup.IsFinite() &&
+                    math.all(math.isfinite(pose.RuntimePosition)))
+                {
+                    Vector3 poseRuntimePosition = default;
+                    poseRuntimePosition.x = pose.RuntimePosition.x;
+                    poseRuntimePosition.y = pose.RuntimePosition.y;
+                    poseRuntimePosition.z = pose.RuntimePosition.z;
+                    return poseRuntimePosition;
+                }
+
+                if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite() &&
+                    TryResolveRuntimePosition(in movementState.PredictedAup, out Vector3 runtimePosition))
+                {
+                    return runtimePosition;
+                }
+
+                return Vector3.zero;
             }
 
+            HectonPlayerMovement movement = _playerMovement;
             if (movement != null)
             {
                 AbsoluteUniversePosition currentAup = movement.CurrentAup;

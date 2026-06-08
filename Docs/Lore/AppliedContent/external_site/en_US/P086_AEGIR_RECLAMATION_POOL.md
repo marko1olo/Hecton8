@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Aegir Reclamation Pool
 
-Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
-
-## Scanner
-
-Claim-pool stamp. Black Keel was assigned, not gifted.
-
-## Terminal
-
-AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
-
-## Audio
-
-The pool owns the route. You only rent the answer.
-
-## Field Note
-
-A shared pool makes rescue cheaper, slower, and easier to hide behind.
+The Aegir Reclamation Pool is how HECTON-8 keeps the player alone while still making the arrival believable. No small marauder owns Black Keel outright. The carrier tender belongs to a shared claim system built for dead infrastructure, disputed cargo, and worlds too expensive for ordinary crews to reach on their own. A pool stamp can buy access to a route, but it also hands the route to arbitration. Once the operator is below the waterline, every request competes with payload custody, quarantine reserves, evidence value, and fuel windows. The horror of the pool is procedural. It can send help and still refuse rescue, because help, under Aegir claim law, is only one billable service among many.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/en_US. -->

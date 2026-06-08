@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Aegir Moon Route Map"
+title: "Mapa de Rotas das Luas de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Aegir Moon Route Map
+# Mapa de Rotas das Luas de Aegir
 
-PT LOC HOLD: Aegir moon data is route data. HECTON-8 is one ocean moon inside a larger ladder of relay, radiation, scatter and tide constraints; the visible sky is part of navigation, not decoration.
+Dados lunares de Aegir são dados de rota. HECTON-8 é a lua oceânica jogável, mas fica dentro de uma escada maior de restrições de relay, radiação, dispersão e maré. O céu visível participa de uma pergunta prática: se um sinal de resgate será ouvido, atrasado, precificado, negado ou tornado fisicamente impossível.
 
 ## Scanner
 
-PT LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Registro de mapa do sistema. As luas de Aegir definem relay timing, cobertura de radiação, ice scatter, pressão de maré, occultation bands, beacons mortos e recovery geometry.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+NÓ DE ARQUIVO PÚBLICO // ESCADA LUNAR AEGIR. Nomes de luas são rótulos de rota. Cada corpo altera signal age, transfer risk, storm exposure, custody timing ou claim reliability.
 
 ## Audio
 
-PT LOC HOLD: The map is why no one arrives the moment you ask.
+O mapa explica por que ninguém chega no momento em que você pede.
 
 ## Field Note
 
-PT LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Nota de Marauder: marque a lua, depois marque o que ela faz com a rota.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/pt_BR. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ledger Role Table"
+title: "Маршрутний реєстр місяців Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ledger Role Table
+# Маршрутний реєстр місяців Aegir
 
-UA LOC HOLD: Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8.
+Маршрутний реєстр місяців Aegir показує місячну драбину навколо HECTON-8: сусідні тіла не дають легких виходів, а ускладнюють таймінг порятунку, права руху й довіру до маяків.
 
 ## Scanner
 
-UA LOC HOLD: Aegir moons are not decoration; each public moon label carries a route or salvage role.
+Місяці Aegir заробляють імена тим, що ламають, ховають, розсіюють, ретранслюють або продають.
 
 ## Terminal
 
-UA LOC HOLD: LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+РЕЄСТР: радіаційний зсув Skarn, релейне маскування Vela, крижане розсіювання Claw, публічні маршрутні карти Lumen, карантинний трафік чуток Thorne, промисловий salvage Anvil, трафік високих вікон Kestrel, глибока претензія HECTON, економіка мертвих маяків Mute.
 
 ## Audio
 
-UA LOC HOLD: The system has more bodies than stories. Good. Use them as pressure.
+Більше тіл. Більше виправдань. Більше способів, щоб допомога промахнулася.
 
 ## Field Note
 
-UA LOC HOLD: Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+Океанський місяць сам під водою, але не сам у системі.
 
 <!-- External Site; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/uk_UA. -->

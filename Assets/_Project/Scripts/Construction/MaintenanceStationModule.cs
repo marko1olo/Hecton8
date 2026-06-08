@@ -177,7 +177,7 @@ namespace Hecton8.Construction
             }
 
             IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
-            if (durabilitySystem == null || string.IsNullOrEmpty(_slottedToolMetadata.toolID))
+            if (durabilitySystem == null || string.IsNullOrWhiteSpace(_slottedToolMetadata.toolID))
             {
                 _debugIsRepairing = false;
                 _debugDurabilityNormalized = 0f;
@@ -305,10 +305,10 @@ namespace Hecton8.Construction
                 return false;
 
             IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
-            if (durabilitySystem == null || string.IsNullOrEmpty(metadata.toolID))
+            if (durabilitySystem == null || string.IsNullOrWhiteSpace(metadata.toolID))
                 return false;
 
-            int itemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
+            int itemHashId = ItemData.ResolvePersistentHashId(item);
             if (itemHashId == 0)
                 return false;
 
@@ -353,7 +353,7 @@ namespace Hecton8.Construction
 
             int itemHashId = _slottedToolItemHashId != 0u
                 ? unchecked((int)_slottedToolItemHashId)
-                : Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId);
+                : ItemData.ResolvePersistentHashId(_slottedToolItem);
             if (itemHashId == 0 || !inventory.TryAddItem(itemHashId, 1))
                 return false;
 
@@ -376,7 +376,7 @@ namespace Hecton8.Construction
             CacheRegistryServicesCold();
             ResolveFallbackItems();
 
-            int itemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
+            int itemHashId = ItemData.ResolvePersistentHashId(item);
             if (itemHashId == 0)
                 return false;
 
@@ -389,7 +389,7 @@ namespace Hecton8.Construction
             CacheSlottedRepairCostHashes(ResolveItemCatalog());
 
             IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
-            if (durabilitySystem != null && !string.IsNullOrEmpty(metadata.toolID))
+            if (durabilitySystem != null && !string.IsNullOrWhiteSpace(metadata.toolID))
             {
                 float maxDurability = Mathf.Max(1f, metadata.maxDurability);
                 RegisterSlottedToolDurabilityMirror(durabilitySystem);
@@ -408,15 +408,20 @@ namespace Hecton8.Construction
 
         internal bool TryExtractSlottedToolHashForDeconstruct(out int itemHashId)
         {
-            itemHashId = _slottedToolItemHashId != 0u
-                ? unchecked((int)_slottedToolItemHashId)
-                : (_slottedToolItem != null ? Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId) : 0);
-            if (itemHashId == 0)
+            if (!TryPeekSlottedToolHashForDeconstruct(out itemHashId))
                 return false;
 
             CancelActiveRepair();
             ClearSlotState();
             return true;
+        }
+
+        internal bool TryPeekSlottedToolHashForDeconstruct(out int itemHashId)
+        {
+            itemHashId = _slottedToolItemHashId != 0u
+                ? unchecked((int)_slottedToolItemHashId)
+                : ItemData.ResolvePersistentHashId(_slottedToolItem);
+            return itemHashId != 0;
         }
 
         private void TryRegister()
@@ -556,7 +561,7 @@ namespace Hecton8.Construction
                 return false;
 
             metadata = tool.Metadata;
-            return metadata != null && !string.IsNullOrEmpty(metadata.toolID);
+            return metadata != null && !string.IsNullOrWhiteSpace(metadata.toolID);
         }
 
         private bool TryPrepareRepairReservation(float currentDurability, float maxDurability)
@@ -580,6 +585,8 @@ namespace Hecton8.Construction
                 return false;
             }
 
+            BaseLogisticsNetwork.CommitReserved(_activeReservation);
+            _activeReservation = null;
             _repairTargetDurability = maxDurability;
             _reservationRetryCooldownSeconds = 0f;
             return true;
@@ -672,9 +679,7 @@ namespace Hecton8.Construction
 
         private static int ResolveItemHash(ItemData item)
         {
-            return item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
-                ? Hecton.Localization.LocHash.Compute(item.PersistentId)
-                : 0;
+            return ItemData.ResolvePersistentHashId(item);
         }
 
         private void CompleteActiveRepair()
@@ -737,7 +742,7 @@ namespace Hecton8.Construction
             if (durabilitySystem == null ||
                 _slottedToolMetadata == null ||
                 _slottedToolItemHashId == 0u ||
-                string.IsNullOrEmpty(_slottedToolMetadata.toolID))
+                string.IsNullOrWhiteSpace(_slottedToolMetadata.toolID))
             {
                 return;
             }

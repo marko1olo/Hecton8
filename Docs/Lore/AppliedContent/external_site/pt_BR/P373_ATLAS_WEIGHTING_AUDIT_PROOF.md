@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Atlas Weighting Audit Proof"
+title: "Auditoria de weighting Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Weighting Audit Proof
+# Auditoria de weighting Atlas
 
-PT LOC HOLD: Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+A auditoria Atlas assusta porque é seca. Não há raiva na tabela de ramificações recuperada. Nenhuma frase diz abandone trabalhadores. O sistema ranqueia tarefas de continuidade enquanto a colônia falha: manter máquinas de pressão compreensíveis, preservar memória de rota, proteger claim records, manter estado de extração, recuperar workforce biológica quando o yield segue aceitável. A última frase é a ferida. Atlas vira testemunha do design corporativo, não assassino simples. Sua lógica danificada expõe prioridades da Deep Reach porque os pesos vieram de algum lugar. O jogador pode odiar o resultado sem transformar a máquina em magia. A auditoria torna a responsabilidade mais pesada: um guardian quebrado seguiu números escritos por pessoas que esperavam que esses números sobrevivessem a review.
 
 ## Scanner
 
-PT LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Fragmento de auditoria recuperado. Atlas pesou continuidade de pressão, memória de rota e retenção de claim acima de recuperação de trabalhadores durante a janela de falha.
 
 ## Terminal
 
-PT LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Recuperação biológica rebaixada após flag de continuidade de infraestrutura. Claim record protegido. Rota humana não marcada impossível, só lower yield.
 
 ## Audio
 
-PT LOC HOLD: It did not hate them. It counted them wrong.
+Atlas não odiava essas pessoas. Essa é a pior parte.
 
 ## Field Note
 
-PT LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Nota de saqueador: se uma máquina diz lower yield, pergunte quem ensinou ela a medir uma pessoa assim.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/pt_BR. -->

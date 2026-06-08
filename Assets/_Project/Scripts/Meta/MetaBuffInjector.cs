@@ -161,7 +161,9 @@ namespace Hecton8.Meta
             if (item == null)
                 return;
 
-            _inventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), quantity);
+            int itemHashId = ItemData.ResolvePersistentHashId(item);
+            if (itemHashId != 0)
+                _inventory.TryAddItem(itemHashId, quantity);
         }
     }
 }

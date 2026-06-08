@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS186_FIRST_AIR_HANDLING_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1205_SCRUBBER_CARTRIDGE_FINGER_SWEEP",
+    "P1206_VENT_GRILLE_DUST_BREAK",
+    "P1207_DUCT_PATCH_LIFTED_CORNER",
+    "P1208_FILTER_FRAME_ALGAE_FRECKLE",
+    "P1209_FAN_HOUSING_SALT_ARC"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1205_SCRUBBER_CARTRIDGE_FINGER_SWEEP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1206_VENT_GRILLE_DUST_BREAK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1207_DUCT_PATCH_LIFTED_CORNER.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1208_FILTER_FRAME_ALGAE_FRECKLE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1209_FAN_HOUSING_SALT_ARC.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

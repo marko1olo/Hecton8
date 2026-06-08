@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 물질 탈출
 
-물질 탈출은 유효한 부분 엔딩이다. 자원으로 정산하지만 큰 진실을 남긴다.
+물질 출구는 죽은 경로가 아니라 실제 부분 결과다. 자원이나 샘플은 철수를 살 수 있지만 더 큰 진실은 풀리지 않고, 나중의 귀환은 더 날카롭게 파고든다.
 
 ## Scanner
 

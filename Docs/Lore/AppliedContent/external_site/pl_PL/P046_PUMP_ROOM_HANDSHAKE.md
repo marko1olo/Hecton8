@@ -8,33 +8,33 @@ biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pump Room Handshake"
+spoiler_tier: 1
+title: "Uzgodnienie zaworu pompowni"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pump Room Handshake
+# Uzgodnienie zaworu pompowni
 
-Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive.
+Pompownie HECTON-8 nie są prostymi odpływami. Lokalne zawory, koła ręczne i zmęczone zawory zwrotne każą pytać, dokąd poszła woda po osuszeniu podłogi. Działająca pompa może otworzyć drzwi, obudzić korytarz, wprowadzić hałas do sonaru i zmienić powrót w następny problem.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+Lokalna pompa zęzowa przyjęła wejście z koła ręcznego. Kosz wlotowy zabrudzony pianą kapsuły; impuls wylotowy obciąża korytarz powrotny B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 KONTROLA STUDZIENKI / UZGODNIENIE LOKALNE: koło ręczne przyjęte. Zdalne nadpisanie odrzucone. Przepływ wlotowy przywrócony na niskim poziomie. Ciśnienie wylotu rośnie w RETURN CORRIDOR B; restart tylko po kontroli włazu za odpływem.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+Zawór chwycił. Wylot stuka. Nie nazywaj tego jeszcze bezpiecznym.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Sucha pompownia może utopić drogę powrotną. Posłuchaj uderzeń na wylocie, zanim zdejmiesz zawór.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/pl_PL. -->

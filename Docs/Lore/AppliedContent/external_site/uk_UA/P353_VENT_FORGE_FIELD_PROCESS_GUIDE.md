@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Vent Forge Field Process Guide"
+title: "Польовий довідник процесу vent-forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Vent Forge Field Process Guide
+# Польовий довідник процесу vent-forge
 
-UK LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.
+Польовий довідник процесу vent-forge пов'язує цінність ресурсу з польовим поводженням: важливо не лише те, що знайдено, а й те, як pressure і cooling дадуть йому пережити recovery.
 
 ## Scanner
 
-UK LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+Vent-forge chemistry активна. Якість залежить від pressure history, heat pulse і повільного охолодження, а не від блиску зразка.
 
 ## Terminal
 
-UK LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: vent forges варять sulfides, noble-gas pockets, ceramics і sealant precursors. Шлях зразка через heat, brine і pressure важливіший за його назву.
 
 ## Audio
 
-UK LOC HOLD: The vent did not make ore. It made a process you interrupted.
+Vent не зробив руду. Він зробив процес, який ти перервав.
 
 ## Field Note
 
-UK LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+Не піднімай свіжу партію просто в холодну воду. Дай vent завершити anneal, інакше shell піде тріщинами.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/uk_UA. -->

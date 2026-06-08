@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ice Scatter Moon Hazard Role"
+title: "Claw Ice-Scatter Hazard Role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Ice Scatter Moon Hazard Role
+# Claw Ice-Scatter Hazard Role
 
-The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Claw is an ice-scatter moon with a dirty halo of shards, old claim dust, and frozen industrial trash. Its debris lanes can reveal useful material after storms, which keeps rumor traffic alive. The same lanes tear sensor confidence apart. Salvagers talk about clean ice and lost cargo; pilots talk about blind spots, dust radar, and the cost of replacing forward plating.
 
 ## Scanner
 
-Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+Outer ice-scatter record. Claw sheds bright debris into lanes where salvage rumors travel faster than pilots should.
 
 ## Terminal
 
-MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+MOON LADDER H3 CLAW: debris lane open for survey drones only. Hull traffic requires forward dust radar, sacrificial shielding, and a payout waiver for unlogged shard strikes.
 
 ## Audio
 
-Every system has one moon that accountants love and pilots curse.
+Every system has one moon the accountants love and the pilots curse.
 
 ## Field Note
 
-Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw looks profitable on paper because paper does not have to dodge ice.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/en_US. -->

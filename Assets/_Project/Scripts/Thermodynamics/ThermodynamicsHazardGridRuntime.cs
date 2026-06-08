@@ -281,7 +281,11 @@ namespace Hecton8.Thermodynamics
             if (!math.all(math.isfinite(shift)))
                 return;
 
-            _pendingRebaseCells += (int3)math.round(shift / safeCellSize);
+            int3 shiftCells = (int3)math.round(shift / safeCellSize);
+            if (math.all(shiftCells == int3.zero))
+                return;
+
+            _pendingRebaseCells += shiftCells;
             _shiftSequence = shiftData.Sequence;
         }
 
@@ -888,7 +892,7 @@ namespace Hecton8.Thermodynamics
             if (!_registeredHotSwap)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
         }
 

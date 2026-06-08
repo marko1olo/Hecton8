@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TECNOLOGÍA SUBMARINA Y TRAJES DE BUCEO MERODEADORES
 
 > **Fuente:** Keelmark Loss Desk, Evaluación de Riesgo Actuarial para Operaciones de Salvamento Independientes.  

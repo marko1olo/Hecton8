@@ -1,0 +1,110 @@
+﻿status=STATIC_ASSET_AUDIT
+date=2026-06-08
+evidenceClass=UNITY_EDITOR_ASSETDATABASE_STATIC
+
+[materials]
+material=Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat
+  name=MAT_H8_SurfaceCrestOcean_1428
+  shader=Crest/Ocean URP
+  renderQueue=2000
+  texture=_Normals path=Assets/_Project/Art/TEXTURES/TX_H8_SurfaceWaterNormals_1428.asset type=Texture2D size=256x256
+  texture=_FoamTexture path=Assets/Crest/Crest/Textures/Foam2.png type=Texture2D size=512x512
+  texture=_CausticsTexture path=Assets/Crest/Crest/Textures/Caustics/Caustics_tex_color.png type=Texture2D size=512x512
+material=Assets/_Project/Art/Materials/Sky/MAT_AegirSky_Master.mat
+  name=MAT_AegirSky_Master
+  shader=HECTON/Sky/Hecton_AegirSky
+  renderQueue=2960
+  texture=_AegirBandTex path=Assets/_Project/Art/TEXTURES/Aegir_storms.png type=Texture2D size=2048x1024
+material=Assets/_Project/Art/Materials/World/MAT_H8AegirGasGiantReal_1428.mat
+  name=MAT_H8AegirGasGiantReal_1428
+  shader=Universal Render Pipeline/Unlit
+  renderQueue=2000
+  texture=_MainTex path=Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/clouds0_diff.png type=Texture2D size=2048x1024
+  texture=_BaseMap path=Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/clouds0_diff.png type=Texture2D size=2048x1024
+material=Assets/_Project/Art/Materials/World/MAT_SurfaceGasGiant_1428.mat
+  name=MAT_SurfaceGasGiant_1428
+  shader=Universal Render Pipeline/Unlit
+  renderQueue=2000
+  texture=_MainTex path=Assets/_Project/Art/TEXTURES/TX_H8SurfaceGasGiantStormBands_1428.asset type=Texture2D size=1024x512
+  texture=_BaseMap path=Assets/_Project/Art/TEXTURES/TX_H8SurfaceGasGiantStormBands_1428.asset type=Texture2D size=1024x512
+material=Assets/_Project/Art/Materials/World/MAT_H8SurfaceGasGiantDisc_1428.mat
+  name=MAT_H8SurfaceGasGiantDisc_1428
+  shader=Universal Render Pipeline/Unlit
+  renderQueue=3000
+  texture=_MainTex path=Assets/_Project/Art/TEXTURES/TX_H8AegirGasGiantBakedDisc_1428.png type=Texture2D size=2048x2048
+  texture=_BaseMap path=Assets/_Project/Art/TEXTURES/TX_H8AegirGasGiantBakedDisc_1428.png type=Texture2D size=2048x2048
+material=Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat
+  name=MAT_H8_SurfaceCrestOcean_1428
+  shader=Crest/Ocean URP
+  renderQueue=2000
+  texture=_Normals path=Assets/_Project/Art/TEXTURES/TX_H8_SurfaceWaterNormals_1428.asset type=Texture2D size=256x256
+  texture=_FoamTexture path=Assets/Crest/Crest/Textures/Foam2.png type=Texture2D size=512x512
+  texture=_CausticsTexture path=Assets/Crest/Crest/Textures/Caustics/Caustics_tex_color.png type=Texture2D size=512x512
+material=Assets/_Project/Art/Materials/Mat_HectonSky.mat
+  name=Mat_HectonSky
+  shader=HECTON/Sky/Hecton_AlienSky_Master
+  renderQueue=1000
+  texture=_StarTex path=Assets/_Project/Art/TEXTURES/Sky/bo2.png type=Texture2D size=2048x2048
+material=Assets/_Project/Art/Materials/Mat_GasGiant.mat
+  name=Mat_GasGiant
+  shader=HECTON/Celestial/SG_GasGiant_Master
+  renderQueue=2000
+  texture=_MainTex path=Assets/_Project/Art/TEXTURES/clouds0_diff.png type=Texture2D size=2048x1024
+  texture=_EmissionMap path=Assets/_Project/Art/TEXTURES/Sky/clod2.png type=Texture2D size=2048x2048
+  texture=_DetailTex path=Assets/_Project/Art/TEXTURES/Sky/oblakajip.png type=Texture2D size=2048x2048
+  texture=_EmissionTex path=Assets/_Project/Art/TEXTURES/Aegir_storms.png type=Texture2D size=2048x1024
+  texture=_CelestialOcclusionTex path=Assets/_Project/Art/TEXTURES/Sky/oblaka!.png type=Texture2D size=2048x2048
+material=Assets/_Project/_Archive/Mat_Ocean.mat
+  name=Mat_Ocean
+  shader=Hecton/HectonOcean
+  renderQueue=2000
+  texture=_NormalMap path=Assets/_Project/Art/TEXTURES/Terrain Textures/sand/NORMAL.png type=Texture2D size=512x512
+  texture=_FoamTex path=Assets/_Project/Art/TEXTURES/foam.png type=Texture2D size=2048x2048
+
+[prefabs]
+prefab=Assets/_Project/Prefabs/GasGiant_Aegir.prefab
+  go=GasGiant_Aegir active=true localPos=(61711,15000,24136) localScale=(100,100,100)
+    renderer=MeshRenderer enabled=true mats=Assets/_Project/Art/Materials/Celestial/MAT_AegirGasGiant_Impostor_1428.mat
+    mesh=Assets/_Project/Art/Models/gasgiant.asset name=gasgiant verts=16641 tris=32768
+prefab=Assets/_Project/_PROLOGUE_CONTENT/Prefabs/GasGiant_Aegir.prefab
+  go=GasGiant_Aegir active=true localPos=(60000,15000,25000) localScale=(40000,40000,40000)
+    renderer=MeshRenderer enabled=true mats=Assets/_Project/Art/Materials/Celestial/MAT_AegirGasGiant_Impostor_1428.mat
+    mesh=Library/unity default resources name=Sphere verts=515 tris=768
+prefab=Assets/_Project/_PROLOGUE_CONTENT/Prefabs/Hecton8_Surface.prefab
+  go=Hecton8_Surface active=true localPos=(0.012,0.002,1000) localScale=(500,500,500)
+    renderer=MeshRenderer enabled=true mats=Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat|Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat
+    mesh=Library/unity default resources name=Sphere verts=515 tris=768
+    component=PlanetRotation
+prefab=Assets/_Project/Prefabs/Hecton Ocean.prefab
+  go=Hecton Ocean active=true localPos=(-0.001,0,0.002) localScale=(7,1,7)
+    renderer=MeshRenderer enabled=true mats=Assets/_Project/_Archive/Mat_Ocean.mat
+    mesh=Assets/HectonWaterMesh.asset name=HectonWaterMesh verts=40401 tris=80000
+prefab=Assets/_Project/Prefabs/Ocean_Crest.prefab
+  go=Ocean_Crest active=true localPos=(0,0,0) localScale=(1,1,1)
+    component=Crest.OceanRenderer
+    component=Crest.ShapeFFT
+    component=Hecton8.World.SargassumCrestDampingController
+    component=Hecton8.World.SargassumMicroFaunaBoids
+    component=Hecton8.Physics.Crest4KinematicsAdapter
+    component=Hecton8.World.HectonCrestOceanDepthCacheBootstrap
+    component=Hecton8.World.HectonCaveVoxelAmbientOcclusionController
+    go=SargassumWaveDampingInput active=true localPos=(0,0.05,0) localScale=(1,1,1)
+      renderer=MeshRenderer enabled=true mats=Assets/_Project/Art/Materials/MAT_SargassumWaveDamping.mat
+      mesh=Library/unity default resources name=Plane verts=121 tris=200
+      component=Crest.RegisterAnimWavesInput
+    go=SargassumFoamDampingInput active=true localPos=(0,0.05,0) localScale=(1,1,1)
+      renderer=MeshRenderer enabled=true mats=Assets/_Project/Art/Materials/MAT_SargassumFoamDamping.mat
+      mesh=Library/unity default resources name=Plane verts=121 tris=200
+      component=Crest.RegisterFoamInput
+    go=SargassumOilFilmInput active=true localPos=(0,0.05,0) localScale=(1,1,1)
+      renderer=MeshRenderer enabled=true mats=Assets/_Project/Art/Materials/MAT_SargassumOilFilm.mat
+      mesh=Library/unity default resources name=Plane verts=121 tris=200
+      component=Crest.RegisterAlbedoInput
+    go=OceanDepthCache active=false localPos=(0,0,0) localScale=(256,1,256)
+      component=Crest.OceanDepthCache
+prefab=Assets/_Project/Prefabs/Sky_System.prefab
+  go=Sky_System active=true localPos=(26.099,0,1722.984) localScale=(1,1,1)
+    component=SkySystemFollowCamera
+    go=Sphere active=true localPos=(0,0,0) localScale=(25000,25000,25000)
+      renderer=MeshRenderer enabled=true mats=Assets/_Project/Art/Materials/Mat_HectonSky.mat
+      mesh=Assets/_Project/Art/Meshes/Generated/MESH_SurfaceSkyDomeNoir_1428.asset name=MESH_SurfaceSkyDomeNoir_1428 verts=1235 tris=2304

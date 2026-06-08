@@ -7,34 +7,34 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Powrotna trasa sonaru"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Sonarowa trasa powrotna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Powrotna trasa sonaru
+# Sonarowa trasa powrotna
 
-Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.
+Latarnia powrotna zapisuje, jak brzmiała trasa, gdy ostatnio była bezpieczna. Nie obiecuje, że taka pozostała. Fala sztormowa, luźny kabel, ruchomy muł, fauna i świeże cięcia salvage mogą zgiąć powrót sonaru bez kasowania korytarza. Przed niesieniem ładunku albo zejściem głębiej pinguj linię. Jeśli ton się przesunął, schowaj ładunek albo oznacz drugą drogę.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+Latarnia powrotna nieaktualna. Stary bezpieczny ping nie pasuje już do echa korytarza; masa ładunku spowolni okno odwrotu.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: ostatnie czyste echo nieważne. Ping Black Keel odebrany z niską pewnością. Dryf przeszkód i gęstość mułu przekraczają tolerancję mapy. Oznaczyć drugą linię przed wydobyciem ładunku.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+Trasa nadal tam jest. Echo nie jest takie samo.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+Pinguj przed załadunkiem. Jeśli droga do domu zmieniła się przy pustych rękach, nie wybaczy pełnego plecaka.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/pl_PL. -->

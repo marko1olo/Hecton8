@@ -7,34 +7,34 @@ poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
 biome_tags: biome.factory_temple;biome.deep_abyss
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Pile de ressources biométalliques"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# Pile de ressources biométalliques
 
-FR LOC HOLD: The resource stack prevents HECTON-8 from collapsing into one magic material. Xenon-Omega matters, but the moon also has metals, salts, vent chemistry, pressure ceramics, biofibers, photoproteins, salvage, and Atlas-altered biometal.
+La pile de ressources empêche HECTON-8 de se réduire à un matériau magique unique. Xenon-Omega compte, mais la lune porte aussi métaux, sels, chimie d'évent, céramiques, biofibres, photoprotéines, salvage et biométal altéré par Atlas.
 
 ## Scanner
 
-FR LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
+Tableau de pile ressource. La blue debt est au sommet, mais le reste de la lune vaut encore assez pour tuer.
 
 ## Terminal
 
-FR LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
+PILE RESSOURCE HECTON-8: métaux sulfurés, sels, poches de gaz noble, céramiques de pression, catalyseurs d'évent, biofibres, photoprotéines, salvage hardware, biométal altéré par Atlas et substrat de continuité XO.
 
 ## Audio
 
-FR LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
+Un seul minerai miracle serait paresseux. HECTON-8 a toute une économie de blessures de pression.
 
 ## Field Note
 
-FR LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+Si chaque échantillon dit Xenon-Omega, le monde devient idiot. Compte aussi les autres raisons.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/fr_FR. -->

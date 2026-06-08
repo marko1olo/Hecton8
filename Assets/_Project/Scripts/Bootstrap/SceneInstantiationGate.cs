@@ -19,6 +19,7 @@ namespace Hecton8.Bootstrap
         private bool _memorySnapshotCaptured;
         private bool _gateOpen;
         private bool _hotSwapRegistered;
+        private bool _runtimeOwnerAborted;
         private IVramPressureReadModel _vramPressure;
         private string _sceneName = string.Empty;
 
@@ -30,11 +31,12 @@ namespace Hecton8.Bootstrap
         private static void ResetStaticState()
         {
             s_activeRuntime = null;
+            GlobalRegistry.ClearSceneInstantiationGateRuntime(null);
         }
 
         internal static SceneInstantiationGate EnsureRuntimeInstance()
         {
-            SceneInstantiationGate runtime = s_activeRuntime;
+            SceneInstantiationGate runtime = ResolveUsableRuntime();
             if (runtime != null)
                 return runtime;
 
@@ -44,22 +46,24 @@ namespace Hecton8.Bootstrap
 
         private void Awake()
         {
-            SceneInstantiationGate runtime = GlobalRegistry.SceneInstantiationGateRuntime;
-            if (runtime != null && runtime != this)
-            {
-                Destroy(gameObject);
+            if (!EnsureRuntimeOwnership())
                 return;
-            }
 
-            GlobalRegistry.RegisterSceneInstantiationGateRuntime(this);
-            if (ReferenceEquals(GlobalRegistry.SceneInstantiationGateRuntime, this))
-                s_activeRuntime = this;
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+            {
+                if (ReferenceEquals(s_activeRuntime, this))
+                    s_activeRuntime = null;
+
+                GlobalRegistry.ClearSceneInstantiationGateRuntime(this);
+                return;
+            }
+
             TryUnregisterHotSwapListener();
             if (ReferenceEquals(s_activeRuntime, this))
                 s_activeRuntime = null;
@@ -68,7 +72,7 @@ namespace Hecton8.Bootstrap
 
         internal void BeginSceneLoad(string sceneName)
         {
-            _sceneName = string.IsNullOrEmpty(sceneName) ? string.Empty : sceneName;
+            _sceneName = string.IsNullOrWhiteSpace(sceneName) ? string.Empty : sceneName.Trim();
             _worldPrimed = false;
             _playerInstantiated = false;
             _memorySnapshotCaptured = false;
@@ -123,7 +127,7 @@ namespace Hecton8.Bootstrap
 
         private bool TryValidateGate(out string failureReason)
         {
-            if (string.IsNullOrEmpty(_sceneName))
+            if (string.IsNullOrWhiteSpace(_sceneName))
             {
                 failureReason = "SCENE_NAME_MISSING";
                 return false;
@@ -175,8 +179,123 @@ namespace Hecton8.Bootstrap
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.VRAMPressureRuntime)
                 _vramPressure = currentService as IVramPressureReadModel;
+        }
+
+        private bool EnsureRuntimeOwnership()
+        {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            SceneInstantiationGate runtime = s_activeRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                runtime.AbortRuntimeOwner();
+            }
+
+            runtime = GlobalRegistry.SceneInstantiationGateRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                runtime.AbortRuntimeOwner();
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            GlobalRegistry.RegisterSceneInstantiationGateRuntime(this);
+            if (ReferenceEquals(GlobalRegistry.SceneInstantiationGateRuntime, this))
+                s_activeRuntime = this;
+
+            bool ownsRuntime =
+                ReferenceEquals(s_activeRuntime, this) &&
+                ReferenceEquals(GlobalRegistry.SceneInstantiationGateRuntime, this);
+            if (!ownsRuntime)
+                AbortRuntimeOwner();
+            return ownsRuntime;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            SceneInstantiationGate runtime = s_activeRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsSceneInstantiationGateRuntimeUsable(runtime))
+                {
+                    AbortRuntimeOwner();
+                    return true;
+                }
+
+                runtime.AbortRuntimeOwner();
+            }
+
+            runtime = GlobalRegistry.SceneInstantiationGateRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsSceneInstantiationGateRuntimeUsable(runtime))
+                {
+                    AbortRuntimeOwner();
+                    return true;
+                }
+
+                runtime.AbortRuntimeOwner();
+            }
+
+            return false;
+        }
+
+        private void AbortRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            TryUnregisterHotSwapListener();
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
+
+            GlobalRegistry.ClearSceneInstantiationGateRuntime(this);
+            _vramPressure = null;
+            _runtimeOwnerAborted = true;
+            enabled = false;
+        }
+
+        private static SceneInstantiationGate ResolveUsableRuntime()
+        {
+            SceneInstantiationGate runtime = s_activeRuntime;
+            if (IsSceneInstantiationGateRuntimeUsable(runtime))
+                return runtime;
+
+            if (!ReferenceEquals(runtime, null))
+            {
+                runtime.AbortRuntimeOwner();
+            }
+
+            runtime = GlobalRegistry.SceneInstantiationGateRuntime;
+            if (IsSceneInstantiationGateRuntimeUsable(runtime))
+            {
+                s_activeRuntime = runtime;
+                return runtime;
+            }
+
+            if (!ReferenceEquals(runtime, null))
+            {
+                runtime.AbortRuntimeOwner();
+            }
+
+            return null;
+        }
+
+        private static bool IsSceneInstantiationGateRuntimeUsable(SceneInstantiationGate runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
         }
 
         private void CacheRegistryServicesCold()

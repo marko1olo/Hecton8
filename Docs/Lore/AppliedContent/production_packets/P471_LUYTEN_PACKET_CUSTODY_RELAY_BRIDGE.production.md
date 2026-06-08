@@ -2,7 +2,7 @@
 
 Packet: P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE
 
-Release set candidate: RS093_LORE_SYSTEM_INTEGRATION_BRIDGE
+Release set candidate: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
 
 Article ID: applied_lore.luyten_packet_custody_relay_bridge
 
@@ -162,83 +162,191 @@ Status: source_authority.
 
 Title: Luyten Packet Custody Relay
 
-Site teaser: Luyten Junction can authenticate a packet after no-FTL delay, but it cannot turn Black Keel receipt into immediate rescue.
+Site teaser: Luyten Junction does not make HECTON-8 closer. It makes a packet harder to erase by giving route, tariff, witness hash, and notary spool a survivable path.
 
 Scanner: LUYTEN CUSTODY MARK // Notary spool route intact. Packet can be authenticated after relay delay. No recovery allocation present.
 
-Field note: Luyten keeps the receipt, not the person. That still matters when Tau Ceti later reads the lie.
+Terminal: LUYTEN NOTARY SPOOL // Preserve route mark, tariff seal, witness hash, spool segment, and receiver queue. Authentication may survive delay. This relay does not allocate extraction, carrier mass, oxygen, or rescue priority.
 
-Audio: Packet can reach Luyten. Operator cannot. Preserve the hash if you want the delay to mean anything.
+Codex: No-FTL civilization can authenticate a fact years before anyone can physically answer it. Luyten Junction is not mercy; it is a hardened notary lane. A packet that reaches it with custody intact becomes harder for claimants to erase, even while the person who sent it remains under Aegir pressure.
+
+Field note: Keep the notary route attached. A loose file is rumor; a routed packet is a future witness.
+
+Audio: The packet can outlive the operator. That is the whole bargain.
+
+External site article:
+
+## What The Record Proves
+
+Luyten Junction does not make HECTON-8 closer. It makes a packet harder to erase by giving route, tariff, witness hash, and notary spool a survivable path.
+
+No-FTL civilization can authenticate a fact years before anyone can physically answer it. Luyten Junction is not mercy; it is a hardened notary lane. A packet that reaches it with custody intact becomes harder for claimants to erase, even while the person who sent it remains under Aegir pressure.
+
+LUYTEN NOTARY SPOOL // Preserve route mark, tariff seal, witness hash, spool segment, and receiver queue. Authentication may survive delay. This relay does not allocate extraction, carrier mass, oxygen, or rescue priority.
+
+## How The Player Reads It
+
+Keep the notary route attached. A loose file is rumor; a routed packet is a future witness. Use it as a rule for evidence handling, not as a promise that help is already moving.
 
 ### ar_SA
 
 Status: draft_machine_or_llm.
 
-Title: ترحيل عهدة حزم لوينتن
+Title: ترحيل حفظ الحزمة عبر Luyten
 
-Site teaser: يمكن لعقدة لوينتن توثيق حزمة بعد تأخير بلا انتقال فوري، لكنها لا تحول إيصال Black Keel إلى إنقاذ مباشر.
+Site teaser: لا تجعل Luyten Junction كوكب HECTON-8 أقرب. إنها تجعل الحزمة أصعب على المحو عبر مسار وتعرفة وwitness hash وnotary spool قابل للنجاة.
 
-Scanner: علامة عهدة لوينتن // مسار بكرة التوثيق سليم. يمكن توثيق الحزمة بعد تأخير الترحيل. لا يوجد تخصيص استرداد.
+Scanner: علامة حفظ LUYTEN // مسار notary spool سليم. يمكن توثيق الحزمة بعد تأخير relay. لا يوجد تخصيص استرداد.
 
-Field note: لوينتن يحفظ الإيصال، لا الشخص. هذا ما زال يهم عندما يقرأ Tau Ceti الكذبة لاحقا.
+Terminal: بكرة موثق LUYTEN // احفظ علامة المسار وختم التعرفة وwitness hash وقطعة spool وطابور المستلم. قد ينجو التوثيق من التأخير. هذا relay لا يخصص استخراجا أو كتلة carrier أو أكسجينا أو أولوية إنقاذ.
 
-Audio: يمكن أن تصل الحزمة إلى لوينتن. المشغل لا يستطيع. احفظ hash الشاهد إن أردت أن يعني التأخير شيئا.
+Codex: حضارة بلا FTL تستطيع توثيق حقيقة قبل سنوات من أي جواب مادي. Luyten Junction ليست رحمة؛ إنها ممر notary مقوى. الحزمة التي تصل بحفظ سليم تصبح أصعب على المطالبين محوها، حتى بينما مرسلها ما زال تحت ضغط Aegir.
+
+Field note: أبق مسار notary متصلا. الملف المنفلت شائعة؛ الحزمة ذات الطريق شاهد مستقبلي.
+
+Audio: قد تعيش الحزمة أطول من المشغل. هذا هو العقد كله.
+
+External site article:
+
+## ما الذي يثبته السجل
+
+لا تجعل Luyten Junction كوكب HECTON-8 أقرب. إنها تجعل الحزمة أصعب على المحو عبر مسار وتعرفة وwitness hash وnotary spool قابل للنجاة.
+
+حضارة بلا FTL تستطيع توثيق حقيقة قبل سنوات من أي جواب مادي. Luyten Junction ليست رحمة؛ إنها ممر notary مقوى. الحزمة التي تصل بحفظ سليم تصبح أصعب على المطالبين محوها، حتى بينما مرسلها ما زال تحت ضغط Aegir.
+
+بكرة موثق LUYTEN // احفظ علامة المسار وختم التعرفة وwitness hash وقطعة spool وطابور المستلم. قد ينجو التوثيق من التأخير. هذا relay لا يخصص استخراجا أو كتلة carrier أو أكسجينا أو أولوية إنقاذ.
+
+## كيف يقرأه اللاعب
+
+أبق مسار notary متصلا. الملف المنفلت شائعة؛ الحزمة ذات الطريق شاهد مستقبلي. استخدمه كقاعدة للتعامل مع الدليل، لا كوعد بأن النجدة بدأت تتحرك.
 
 ### de_DE
 
 Status: draft_machine_or_llm.
 
-Title: Luyten-Relais fuer Paketverwahrung
+Title: Luyten-Paketverwahrungsrelais
 
-Site teaser: Luyten Junction kann ein Paket nach No-FTL-Verzoegerung beglaubigen, aber aus einer Black-Keel-Bestaetigung keine sofortige Rettung machen.
+Site teaser: Luyten Junction bringt HECTON-8 nicht näher. Es macht ein Paket schwerer löschbar, indem Route, Tarif, witness hash und Notarspule einen überlebenden Weg bekommen.
 
-Scanner: LUYTEN-VERWAHRUNGSMARKE // Notarspulenroute intakt. Paket kann nach Relaisverzoegerung beglaubigt werden. Keine Bergungszuteilung vorhanden.
+Scanner: LUYTEN-VERWAHRUNGSMARKE // Notarspulenroute intakt. Paket nach Relaisverzug authentifizierbar. Keine Bergungszuteilung vorhanden.
 
-Field note: Luyten verwahrt die Quittung, nicht die Person. Das zaehlt trotzdem, wenn Tau Ceti die Luege spaeter liest.
+Terminal: LUYTEN-NOTARSPULE // Routenmarke, Tarifsiegel, witness hash, Spulensegment und Empfängerqueue sichern. Authentifizierung kann Verzögerung überleben. Dieses Relais weist keine Extraktion, Carriermasse, Sauerstoff oder Rettungspriorität zu.
 
-Audio: Das Paket kann Luyten erreichen. Der Operator nicht. Bewahre den Hash, wenn die Verzoegerung etwas bedeuten soll.
+Codex: Eine Zivilisation ohne FTL kann einen Fakt Jahre authentifizieren, bevor jemand körperlich antworten kann. Luyten Junction ist keine Gnade; es ist eine gehärtete Notarbahn. Ein Paket mit intakter Verwahrung wird für Anspruchsteller schwerer zu löschen, während der Sender unter Aegir-Druck bleibt.
+
+Field note: Halte die Notarroute am Paket. Eine lose Datei ist Gerücht; ein geroutetes Paket ist ein zukünftiger Zeuge.
+
+Audio: Das Paket kann den Operator überleben. Das ist der ganze Handel.
+
+External site article:
+
+## Was der Eintrag beweist
+
+Luyten Junction bringt HECTON-8 nicht näher. Es macht ein Paket schwerer löschbar, indem Route, Tarif, witness hash und Notarspule einen überlebenden Weg bekommen.
+
+Eine Zivilisation ohne FTL kann einen Fakt Jahre authentifizieren, bevor jemand körperlich antworten kann. Luyten Junction ist keine Gnade; es ist eine gehärtete Notarbahn. Ein Paket mit intakter Verwahrung wird für Anspruchsteller schwerer zu löschen, während der Sender unter Aegir-Druck bleibt.
+
+LUYTEN-NOTARSPULE // Routenmarke, Tarifsiegel, witness hash, Spulensegment und Empfängerqueue sichern. Authentifizierung kann Verzögerung überleben. Dieses Relais weist keine Extraktion, Carriermasse, Sauerstoff oder Rettungspriorität zu.
+
+## Wie der Spieler es liest
+
+Halte die Notarroute am Paket. Eine lose Datei ist Gerücht; ein geroutetes Paket ist ein zukünftiger Zeuge. Lies es als Regel für Beweisführung, nicht als Versprechen, dass Hilfe bereits unterwegs ist.
 
 ### es_ES
 
 Status: draft_machine_or_llm.
 
-Title: Rele de custodia de paquetes de Luyten
+Title: Relevo de custodia de paquete Luyten
 
-Site teaser: Luyten Junction puede autenticar un paquete tras el retraso sin FTL, pero no convierte un recibo de Black Keel en rescate inmediato.
+Site teaser: Luyten Junction no acerca HECTON-8. Hace más difícil borrar un paquete al darle ruta, tarifa, witness hash y notary spool con camino sobrevivible.
 
-Scanner: MARCA DE CUSTODIA LUYTEN // Ruta de bobina notarial intacta. El paquete puede autenticarse tras el retraso del rele. Sin asignacion de recuperacion.
+Scanner: MARCA DE CUSTODIA LUYTEN // Ruta de notary spool intacta. Paquete autenticable tras retraso de relevo. Sin asignación de recuperación.
 
-Field note: Luyten guarda el recibo, no a la persona. Aun importa cuando Tau Ceti lea la mentira mas tarde.
+Terminal: BOBINA NOTARIAL LUYTEN // Preservar marca de ruta, sello tarifario, witness hash, segmento de bobina y cola receptora. La autenticación puede sobrevivir al retraso. Este relevo no asigna extracción, masa de carrier, oxígeno ni prioridad de rescate.
 
-Audio: El paquete puede llegar a Luyten. El operador no. Conserva el hash si quieres que el retraso signifique algo.
+Codex: Una civilización sin FTL puede autenticar un hecho años antes de responder físicamente. Luyten Junction no es misericordia; es un carril notarial endurecido. Un paquete que llega con custodia intacta se vuelve más difícil de borrar para los reclamantes, aunque quien lo envió siga bajo presión de Aegir.
+
+Field note: Mantén la ruta notarial unida. Un archivo suelto es rumor; un paquete enroutado es un testigo futuro.
+
+Audio: El paquete puede sobrevivir al operador. Ese es todo el trato.
+
+External site article:
+
+## Lo que prueba el registro
+
+Luyten Junction no acerca HECTON-8. Hace más difícil borrar un paquete al darle ruta, tarifa, witness hash y notary spool con camino sobrevivible.
+
+Una civilización sin FTL puede autenticar un hecho años antes de responder físicamente. Luyten Junction no es misericordia; es un carril notarial endurecido. Un paquete que llega con custodia intacta se vuelve más difícil de borrar para los reclamantes, aunque quien lo envió siga bajo presión de Aegir.
+
+BOBINA NOTARIAL LUYTEN // Preservar marca de ruta, sello tarifario, witness hash, segmento de bobina y cola receptora. La autenticación puede sobrevivir al retraso. Este relevo no asigna extracción, masa de carrier, oxígeno ni prioridad de rescate.
+
+## Cómo lo lee el jugador
+
+Mantén la ruta notarial unida. Un archivo suelto es rumor; un paquete enroutado es un testigo futuro. Úsalo como regla para manejar pruebas, no como promesa de que la ayuda ya está en marcha.
 
 ### fr_FR
 
 Status: draft_machine_or_llm.
 
-Title: Relais de garde des paquets de Luyten
+Title: Relais de garde des paquets Luyten
 
-Site teaser: Luyten Junction peut authentifier un paquet apres le delai sans FTL, mais ne transforme pas un recu Black Keel en sauvetage immediat.
+Site teaser: Luyten Junction ne rapproche pas HECTON-8. Il rend un paquet plus difficile à effacer en donnant à la route, au tarif, au witness hash et au notary spool un chemin survivable.
 
-Scanner: MARQUE DE GARDE LUYTEN // Route de bobine notariale intacte. Le paquet peut etre authentifie apres le delai de relais. Aucune allocation de recuperation.
+Scanner: MARQUE DE GARDE LUYTEN // Route de notary spool intacte. Paquet authentifiable après délai relais. Aucune allocation de récupération.
 
-Field note: Luyten garde le recu, pas la personne. Cela compte encore quand Tau Ceti lira le mensonge plus tard.
+Terminal: SPOOL NOTARIAL LUYTEN // Préserver marque de route, sceau tarifaire, witness hash, segment spool et file de réception. L'authentification peut survivre au délai. Ce relais n'alloue ni extraction, ni masse carrier, ni oxygène, ni priorité de secours.
 
-Audio: Le paquet peut atteindre Luyten. L'operateur, non. Garde le hash si tu veux que le delai serve a quelque chose.
+Codex: Une civilisation sans FTL peut authentifier un fait des années avant qu'une réponse physique existe. Luyten Junction n'est pas une grâce; c'est une voie notariale durcie. Un paquet arrivé avec sa garde intacte devient plus dur à effacer pour les prétendants, même si son expéditeur reste sous pression Aegir.
+
+Field note: Garde la route notariale attachée. Un fichier libre est rumeur; un paquet routé est un témoin futur.
+
+Audio: Le paquet peut survivre à l'opérateur. C'est tout le marché.
+
+External site article:
+
+## Ce que le registre prouve
+
+Luyten Junction ne rapproche pas HECTON-8. Il rend un paquet plus difficile à effacer en donnant à la route, au tarif, au witness hash et au notary spool un chemin survivable.
+
+Une civilisation sans FTL peut authentifier un fait des années avant qu'une réponse physique existe. Luyten Junction n'est pas une grâce; c'est une voie notariale durcie. Un paquet arrivé avec sa garde intacte devient plus dur à effacer pour les prétendants, même si son expéditeur reste sous pression Aegir.
+
+SPOOL NOTARIAL LUYTEN // Préserver marque de route, sceau tarifaire, witness hash, segment spool et file de réception. L'authentification peut survivre au délai. Ce relais n'alloue ni extraction, ni masse carrier, ni oxygène, ni priorité de secours.
+
+## Comment le joueur le lit
+
+Garde la route notariale attachée. Un fichier libre est rumeur; un paquet routé est un témoin futur. Lis-le comme une règle de traitement des preuves, pas comme la promesse qu'un secours arrive déjà.
 
 ### he_IL
 
 Status: draft_machine_or_llm.
 
-Title: ממסר משמורת חבילות לויטן
+Title: ממסר משמורת חבילות Luyten
 
-Site teaser: צומת לויטן יכול לאמת חבילה אחרי עיכוב ללא FTL, אבל לא להפוך אישור של Black Keel לחילוץ מיידי.
+Site teaser: Luyten Junction לא מקרבת את HECTON-8. היא מקשה למחוק חבילה דרך נתיב, תעריף, witness hash ו-notary spool שיש להם דרך לשרוד.
 
-Scanner: סימון משמורת לויטן // נתיב סליל הנוטריון שלם. ניתן לאמת את החבילה אחרי עיכוב ממסר. אין הקצאת חילוץ.
+Scanner: סימן משמורת LUYTEN // נתיב notary spool שלם. ניתן לאמת חבילה אחרי עיכוב relay. אין הקצאת התאוששות.
 
-Field note: לויטן שומר את הקבלה, לא את האדם. זה עדיין חשוב כש-Tau Ceti יקרא את השקר מאוחר יותר.
+Terminal: סליל נוטריון LUYTEN // שמור סימן נתיב, חותם תעריף, witness hash, קטע spool ותור מקבל. אימות עשוי לשרוד עיכוב. ממסר זה לא מקצה חילוץ, מסת carrier, חמצן או עדיפות הצלה.
 
-Audio: החבילה יכולה להגיע ללויטן. המפעיל לא. שמור את ה-hash אם אתה רוצה שלעיכוב תהיה משמעות.
+Codex: ציוויליזציה בלי FTL יכולה לאמת עובדה שנים לפני שמישהו מסוגל לענות פיזית. Luyten Junction אינה רחמים; היא נתיב נוטריוני מוקשח. חבילה שמגיעה עם משמורת שלמה קשה יותר למחיקה בידי תובעים, גם כשהשולח עדיין תחת לחץ Aegir.
+
+Field note: שמור את נתיב הנוטריון מחובר. קובץ חופשי הוא שמועה; חבילה מנותבת היא עד עתידי.
+
+Audio: החבילה יכולה לחיות יותר מהמפעיל. זו כל העסקה.
+
+External site article:
+
+## מה הרשומה מוכיחה
+
+Luyten Junction לא מקרבת את HECTON-8. היא מקשה למחוק חבילה דרך נתיב, תעריף, witness hash ו-notary spool שיש להם דרך לשרוד.
+
+ציוויליזציה בלי FTL יכולה לאמת עובדה שנים לפני שמישהו מסוגל לענות פיזית. Luyten Junction אינה רחמים; היא נתיב נוטריוני מוקשח. חבילה שמגיעה עם משמורת שלמה קשה יותר למחיקה בידי תובעים, גם כשהשולח עדיין תחת לחץ Aegir.
+
+סליל נוטריון LUYTEN // שמור סימן נתיב, חותם תעריף, witness hash, קטע spool ותור מקבל. אימות עשוי לשרוד עיכוב. ממסר זה לא מקצה חילוץ, מסת carrier, חמצן או עדיפות הצלה.
+
+## איך השחקן קורא את זה
+
+שמור את נתיב הנוטריון מחובר. קובץ חופשי הוא שמועה; חבילה מנותבת היא עד עתידי. השתמש בזה ככלל לטיפול בראיות, לא כהבטחה שעזרה כבר בדרך.
 
 ### id_ID
 
@@ -246,125 +354,287 @@ Status: draft_machine_or_llm.
 
 Title: Relay Kustodi Paket Luyten
 
-Site teaser: Luyten Junction dapat mengesahkan paket setelah jeda tanpa FTL, tetapi tidak mengubah tanda terima Black Keel menjadi penyelamatan langsung.
+Site teaser: Luyten Junction tidak membuat HECTON-8 lebih dekat. Ia membuat paket lebih sulit dihapus dengan memberi rute, tarif, witness hash, dan notary spool jalur yang bisa bertahan.
 
-Scanner: TANDA KUSTODI LUYTEN // Rute spool notaris utuh. Paket dapat diautentikasi setelah jeda relay. Tidak ada alokasi pemulihan.
+Scanner: TANDA KUSTODI LUYTEN // Rute notary spool utuh. Paket dapat diautentikasi setelah jeda relay. Tidak ada alokasi pemulihan.
 
-Field note: Luyten menyimpan tanda terima, bukan orangnya. Itu tetap penting saat Tau Ceti nanti membaca kebohongan.
+Terminal: NOTARY SPOOL LUYTEN // Simpan tanda rute, segel tarif, witness hash, segmen spool, dan antrean penerima. Autentikasi dapat bertahan melewati jeda. Relay ini tidak memberi ekstraksi, massa carrier, oksigen, atau prioritas penyelamatan.
 
-Audio: Paket bisa mencapai Luyten. Operator tidak bisa. Simpan hash jika kau ingin jeda itu berarti sesuatu.
+Codex: Peradaban tanpa FTL dapat mengautentikasi fakta bertahun-tahun sebelum siapa pun menjawab secara fisik. Luyten Junction bukan belas kasihan; ia jalur notaris yang dikeraskan. Paket yang tiba dengan kustodi utuh menjadi lebih sulit dihapus oleh pengklaim, bahkan saat pengirimnya tetap di bawah tekanan Aegir.
+
+Field note: Jaga rute notaris tetap menempel. Berkas lepas adalah rumor; paket berute adalah saksi masa depan.
+
+Audio: Paket bisa hidup lebih lama dari operator. Itulah seluruh tawarannya.
+
+External site article:
+
+## Yang Dibuktikan Catatan
+
+Luyten Junction tidak membuat HECTON-8 lebih dekat. Ia membuat paket lebih sulit dihapus dengan memberi rute, tarif, witness hash, dan notary spool jalur yang bisa bertahan.
+
+Peradaban tanpa FTL dapat mengautentikasi fakta bertahun-tahun sebelum siapa pun menjawab secara fisik. Luyten Junction bukan belas kasihan; ia jalur notaris yang dikeraskan. Paket yang tiba dengan kustodi utuh menjadi lebih sulit dihapus oleh pengklaim, bahkan saat pengirimnya tetap di bawah tekanan Aegir.
+
+NOTARY SPOOL LUYTEN // Simpan tanda rute, segel tarif, witness hash, segmen spool, dan antrean penerima. Autentikasi dapat bertahan melewati jeda. Relay ini tidak memberi ekstraksi, massa carrier, oksigen, atau prioritas penyelamatan.
+
+## Cara Pemain Membacanya
+
+Jaga rute notaris tetap menempel. Berkas lepas adalah rumor; paket berute adalah saksi masa depan. Baca ini sebagai aturan menangani bukti, bukan janji bahwa bantuan sudah bergerak.
 
 ### ja_JP
 
 Status: draft_machine_or_llm.
 
-Title: ルイテン・パケット保管リレー
+Title: Luyten パケット保管リレー
 
-Site teaser: Luyten JunctionはFTLなしの遅延後にパケットを認証できるが、Black Keelの受領を即時救助には変えられない。
+Site teaser: Luyten Junction は HECTON-8 を近くしない。経路、料金、witness hash、notary spool に生き残る道を与え、パケットを消しにくくする。
 
-Scanner: LUYTEN保管標識 // 公証スプール経路は無事。リレー遅延後にパケット認証可能。回収割当なし。
+Scanner: LUYTEN 保管マーク // notary spool 経路 intact。リレー遅延後にパケット認証可能。回収割当なし。
 
-Field note: Luytenが保管するのは受領記録で、人間ではない。それでも後にTau Cetiが嘘を読む時には意味がある。
+Terminal: LUYTEN 公証スプール // 経路マーク、料金封印、witness hash、スプール区間、受領待ち列を保存せよ。認証は遅延を越えて生き残ることがある。このリレーは抽出、carrier 質量、酸素、救助優先を割り当てない。
 
-Audio: パケットはLuytenに届く。操作者は届かない。遅延に意味を持たせたいならhashを残せ。
+Codex: FTL のない文明は、誰かが物理的に答える何年も前に事実を認証できる。Luyten Junction は慈悲ではない。強化された公証レーンだ。保管が intact なパケットは、送信者が Aegir の圧力下に残っていても、請求者が消しにくくなる。
+
+Field note: 公証経路を外すな。孤立ファイルは噂だ。経路付きパケットは未来の証人だ。
+
+Audio: パケットは作業者より長く生きられる。それが取引の全てだ。
+
+External site article:
+
+## 記録が証明するもの
+
+Luyten Junction は HECTON-8 を近くしない。経路、料金、witness hash、notary spool に生き残る道を与え、パケットを消しにくくする。
+
+FTL のない文明は、誰かが物理的に答える何年も前に事実を認証できる。Luyten Junction は慈悲ではない。強化された公証レーンだ。保管が intact なパケットは、送信者が Aegir の圧力下に残っていても、請求者が消しにくくなる。
+
+LUYTEN 公証スプール // 経路マーク、料金封印、witness hash、スプール区間、受領待ち列を保存せよ。認証は遅延を越えて生き残ることがある。このリレーは抽出、carrier 質量、酸素、救助優先を割り当てない。
+
+## プレイヤーが読むべきこと
+
+公証経路を外すな。孤立ファイルは噂だ。経路付きパケットは未来の証人だ。 これは証拠を扱うための規則であり、救助がもう動いているという約束ではない。
 
 ### ko_KR
 
 Status: draft_machine_or_llm.
 
-Title: 루이텐 패킷 보관 중계
+Title: Luyten 패킷 보관 릴레이
 
-Site teaser: Luyten Junction은 FTL 없는 지연 뒤 패킷을 인증할 수 있지만, Black Keel 수신을 즉시 구조로 바꾸지는 못한다.
+Site teaser: Luyten Junction은 HECTON-8을 더 가깝게 만들지 않는다. 경로, 요금, witness hash, notary spool에 살아남는 길을 줘서 패킷을 지우기 어렵게 만든다.
 
-Scanner: LUYTEN 보관 표식 // 공증 스풀 경로 온전. 중계 지연 뒤 패킷 인증 가능. 회수 배정 없음.
+Scanner: LUYTEN 보관 표식 // notary spool 경로 온전. 릴레이 지연 후 패킷 인증 가능. 회수 배정 없음.
 
-Field note: Luyten은 영수증을 보관하지 사람을 보관하지 않는다. 그래도 나중에 Tau Ceti가 거짓말을 읽을 때 중요하다.
+Terminal: LUYTEN 공증 스풀 // 경로 표식, 요금 봉인, witness hash, 스풀 구간, 수신 대기열을 보존하라. 인증은 지연을 견딜 수 있다. 이 릴레이는 추출, carrier 질량, 산소, 구조 우선순위를 배정하지 않는다.
 
-Audio: 패킷은 Luyten에 닿을 수 있다. 운용자는 아니다. 지연에 의미를 주려면 hash를 보존해라.
+Codex: FTL이 없는 문명은 누군가 물리적으로 답하기 몇 년 전에 사실을 인증할 수 있다. Luyten Junction은 자비가 아니라 강화된 공증 통로다. 보관이 온전한 패킷은 보낸 사람이 Aegir 압력 아래 있어도 청구자들이 지우기 어렵다.
+
+Field note: 공증 경로를 붙여 둬라. 느슨한 파일은 소문이고, 경로 있는 패킷은 미래의 증인이다.
+
+Audio: 패킷은 조작자보다 오래 살아남을 수 있다. 그게 거래 전부다.
+
+External site article:
+
+## 기록이 증명하는 것
+
+Luyten Junction은 HECTON-8을 더 가깝게 만들지 않는다. 경로, 요금, witness hash, notary spool에 살아남는 길을 줘서 패킷을 지우기 어렵게 만든다.
+
+FTL이 없는 문명은 누군가 물리적으로 답하기 몇 년 전에 사실을 인증할 수 있다. Luyten Junction은 자비가 아니라 강화된 공증 통로다. 보관이 온전한 패킷은 보낸 사람이 Aegir 압력 아래 있어도 청구자들이 지우기 어렵다.
+
+LUYTEN 공증 스풀 // 경로 표식, 요금 봉인, witness hash, 스풀 구간, 수신 대기열을 보존하라. 인증은 지연을 견딜 수 있다. 이 릴레이는 추출, carrier 질량, 산소, 구조 우선순위를 배정하지 않는다.
+
+## 플레이어가 읽어야 할 것
+
+공증 경로를 붙여 둬라. 느슨한 파일은 소문이고, 경로 있는 패킷은 미래의 증인이다. 이것은 증거 처리 규칙이지, 구조가 이미 움직인다는 약속이 아니다.
 
 ### nl_NL
 
 Status: draft_machine_or_llm.
 
-Title: Luyten-relais voor pakketbewaring
+Title: Luyten-pakketbewaringsrelais
 
-Site teaser: Luyten Junction kan een pakket na no-FTL-vertraging authentiseren, maar maakt van een Black Keel-ontvangst geen directe redding.
+Site teaser: Luyten Junction maakt HECTON-8 niet dichterbij. Het maakt een pakket moeilijker te wissen door route, tarief, witness hash en notary spool een overleefbaar pad te geven.
 
-Scanner: LUYTEN-BEWARINGSMERK // Notarisspoelroute intact. Pakket kan na relaisvertraging worden geauthentiseerd. Geen bergingstoewijzing aanwezig.
+Scanner: LUYTEN-BEWARINGSMARKERING // Notary-spoolroute intact. Pakket kan na relaisvertraging worden geauthenticeerd. Geen bergingstoewijzing aanwezig.
 
-Field note: Luyten bewaart het ontvangstbewijs, niet de persoon. Dat telt nog steeds wanneer Tau Ceti later de leugen leest.
+Terminal: LUYTEN-NOTARY-SPOOL // Bewaar routemarkering, tariefzegel, witness hash, spoolsegment en ontvangstrij. Authenticatie kan vertraging overleven. Dit relais wijst geen extractie, carriermassa, zuurstof of reddingsprioriteit toe.
 
-Audio: Het pakket kan Luyten bereiken. De operator niet. Bewaar de hash als de vertraging iets moet betekenen.
+Codex: Een beschaving zonder FTL kan een feit authenticeren jaren voordat iemand fysiek antwoordt. Luyten Junction is geen genade; het is een geharde notariële baan. Een pakket dat met bewaring aankomt wordt moeilijker te wissen voor claimanten, ook terwijl de afzender onder Aegir-druk blijft.
+
+Field note: Houd de notariële route vast. Een los bestand is gerucht; een gerouteerd pakket is een toekomstige getuige.
+
+Audio: Het pakket kan de operator overleven. Dat is de hele ruil.
+
+External site article:
+
+## Wat het record bewijst
+
+Luyten Junction maakt HECTON-8 niet dichterbij. Het maakt een pakket moeilijker te wissen door route, tarief, witness hash en notary spool een overleefbaar pad te geven.
+
+Een beschaving zonder FTL kan een feit authenticeren jaren voordat iemand fysiek antwoordt. Luyten Junction is geen genade; het is een geharde notariële baan. Een pakket dat met bewaring aankomt wordt moeilijker te wissen voor claimanten, ook terwijl de afzender onder Aegir-druk blijft.
+
+LUYTEN-NOTARY-SPOOL // Bewaar routemarkering, tariefzegel, witness hash, spoolsegment en ontvangstrij. Authenticatie kan vertraging overleven. Dit relais wijst geen extractie, carriermassa, zuurstof of reddingsprioriteit toe.
+
+## Hoe de speler het leest
+
+Houd de notariële route vast. Een los bestand is gerucht; een gerouteerd pakket is een toekomstige getuige. Lees het als regel voor bewijsbehandeling, niet als belofte dat hulp al onderweg is.
 
 ### pl_PL
 
 Status: draft_machine_or_llm.
 
-Title: Przekaznik kustodii pakietow Luyten
+Title: Przekaźnik powiernictwa pakietów Luyten
 
-Site teaser: Luyten Junction moze uwierzytelnic pakiet po opoznieniu bez FTL, ale nie zmieni potwierdzenia Black Keel w natychmiastowy ratunek.
+Site teaser: Luyten Junction nie przybliża HECTON-8. Sprawia, że pakiet trudniej wymazać, bo trasa, taryfa, witness hash i notary spool dostają drogę zdolną przetrwać.
 
-Scanner: ZNAK KUSTODII LUYTEN // Trasa szpuli notarialnej nienaruszona. Pakiet mozna uwierzytelnic po opoznieniu przekazu. Brak przydzialu odzysku.
+Scanner: ZNACZNIK POWIERNICTWA LUYTEN // Trasa notary spool nienaruszona. Pakiet można uwierzytelnić po opóźnieniu relay. Brak przydziału odzysku.
 
-Field note: Luyten przechowuje pokwitowanie, nie czlowieka. To nadal ma znaczenie, gdy Tau Ceti pozniej przeczyta klamstwo.
+Terminal: SPOOL NOTARIALNY LUYTEN // Zachować znak trasy, plombę taryfy, witness hash, segment spool i kolejkę odbiorcy. Uwierzytelnienie może przetrwać opóźnienie. Ten relay nie przydziela wydobycia, masy carriera, tlenu ani priorytetu ratunku.
 
-Audio: Pakiet moze dotrzec do Luyten. Operator nie. Zachowaj hash, jesli opoznienie ma cokolwiek znaczyc.
+Codex: Cywilizacja bez FTL może uwierzytelnić fakt lata wcześniej, niż ktokolwiek odpowie fizycznie. Luyten Junction nie jest łaską; to utwardzony pas notarialny. Pakiet, który dociera z powiernictwem, trudniej usunąć z ksiąg roszczeń, nawet gdy jego nadawca zostaje pod ciśnieniem Aegir.
+
+Field note: Trzymaj trasę notarialną przy pakiecie. Luźny plik to plotka; pakiet z trasą to przyszły świadek.
+
+Audio: Pakiet może przeżyć operatora. To cały układ.
+
+External site article:
+
+## Co potwierdza zapis
+
+Luyten Junction nie przybliża HECTON-8. Sprawia, że pakiet trudniej wymazać, bo trasa, taryfa, witness hash i notary spool dostają drogę zdolną przetrwać.
+
+Cywilizacja bez FTL może uwierzytelnić fakt lata wcześniej, niż ktokolwiek odpowie fizycznie. Luyten Junction nie jest łaską; to utwardzony pas notarialny. Pakiet, który dociera z powiernictwem, trudniej usunąć z ksiąg roszczeń, nawet gdy jego nadawca zostaje pod ciśnieniem Aegir.
+
+SPOOL NOTARIALNY LUYTEN // Zachować znak trasy, plombę taryfy, witness hash, segment spool i kolejkę odbiorcy. Uwierzytelnienie może przetrwać opóźnienie. Ten relay nie przydziela wydobycia, masy carriera, tlenu ani priorytetu ratunku.
+
+## Jak gracz ma to czytać
+
+Trzymaj trasę notarialną przy pakiecie. Luźny plik to plotka; pakiet z trasą to przyszły świadek. Czytaj to jako zasadę obchodzenia się z dowodem, nie jako obietnicę, że pomoc już ruszyła.
 
 ### pt_BR
 
 Status: draft_machine_or_llm.
 
-Title: Rele de custodia de pacotes de Luyten
+Title: Relay de custódia de pacote Luyten
 
-Site teaser: Luyten Junction pode autenticar um pacote apos atraso sem FTL, mas nao transforma recibo da Black Keel em resgate imediato.
+Site teaser: Luyten Junction não deixa HECTON-8 mais perto. Ele torna o pacote mais difícil de apagar ao dar rota, tarifa, witness hash e notary spool um caminho que sobrevive.
 
-Scanner: MARCA DE CUSTODIA LUYTEN // Rota do carretel notarial intacta. O pacote pode ser autenticado apos atraso de rele. Nenhuma alocacao de recuperacao.
+Scanner: MARCA DE CUSTÓDIA LUYTEN // Rota de notary spool intacta. Pacote autenticável após atraso de relay. Nenhuma alocação de recuperação.
 
-Field note: Luyten guarda o recibo, nao a pessoa. Isso ainda importa quando Tau Ceti ler a mentira mais tarde.
+Terminal: NOTARY SPOOL LUYTEN // Preserve marca de rota, selo tarifário, witness hash, segmento spool e fila receptora. Autenticação pode sobreviver ao atraso. Este relay não aloca extração, massa carrier, oxigênio ou prioridade de resgate.
 
-Audio: O pacote pode chegar a Luyten. O operador nao. Preserve o hash se quiser que o atraso signifique algo.
+Codex: Uma civilização sem FTL pode autenticar um fato anos antes de alguém responder fisicamente. Luyten Junction não é misericórdia; é uma faixa notarial endurecida. Um pacote que chega com custódia intacta fica mais difícil de apagar por reclamantes, mesmo enquanto quem enviou continua sob pressão de Aegir.
+
+Field note: Mantenha a rota notarial presa. Arquivo solto é rumor; pacote roteado é testemunha futura.
+
+Audio: O pacote pode viver mais que o operador. Esse é o acordo inteiro.
+
+External site article:
+
+## O que o registro prova
+
+Luyten Junction não deixa HECTON-8 mais perto. Ele torna o pacote mais difícil de apagar ao dar rota, tarifa, witness hash e notary spool um caminho que sobrevive.
+
+Uma civilização sem FTL pode autenticar um fato anos antes de alguém responder fisicamente. Luyten Junction não é misericórdia; é uma faixa notarial endurecida. Um pacote que chega com custódia intacta fica mais difícil de apagar por reclamantes, mesmo enquanto quem enviou continua sob pressão de Aegir.
+
+NOTARY SPOOL LUYTEN // Preserve marca de rota, selo tarifário, witness hash, segmento spool e fila receptora. Autenticação pode sobreviver ao atraso. Este relay não aloca extração, massa carrier, oxigênio ou prioridade de resgate.
+
+## Como o jogador lê isso
+
+Mantenha a rota notarial presa. Arquivo solto é rumor; pacote roteado é testemunha futura. Leia como regra para lidar com prova, não como promessa de que o socorro já está vindo.
 
 ### ru_RU
 
 Status: draft_machine_or_llm.
 
-Title: Ретранслятор хранения пакетов Лютена
+Title: Реле сохранности пакетов Luyten
 
-Site teaser: Узел Лютена может подтвердить пакет после задержки без FTL, но не превращает прием Black Keel в немедленное спасение.
+Site teaser: Luyten Junction не делает HECTON-8 ближе. Оно делает пакет труднее стереть: маршрут, тариф, witness hash и notary spool получают путь, способный выжить.
 
-Scanner: МЕТКА ХРАНЕНИЯ ЛЮТЕНА // маршрут нотариальной катушки цел. Пакет можно подтвердить после задержки ретрансляции. Назначения на эвакуацию нет.
+Scanner: МЕТКА СОХРАННОСТИ LUYTEN // Маршрут notary spool цел. Пакет можно аутентифицировать после задержки реле. Назначения на возврат нет.
 
-Field note: Лютен хранит квитанцию, а не человека. Это все равно важно, когда Tau Ceti позже прочитает ложь.
+Terminal: НОТАРИАЛЬНАЯ ШПУЛЯ LUYTEN // Сохранить маршрутную метку, тарифную пломбу, witness hash, сегмент spool и очередь получателя. Аутентификация может пережить задержку. Это реле не выделяет эвакуацию, массу carrier, кислород или приоритет спасения.
 
-Audio: Пакет может дойти до Лютена. Оператор - нет. Сохрани hash, если хочешь, чтобы задержка что-то значила.
+Codex: Цивилизация без FTL может подтвердить факт за годы до физического ответа. Luyten Junction - не милость, а укрепленная нотариальная линия. Пакет, дошедший с целой сохранностью, сложнее стереть претендентам, даже пока отправитель остается под давлением Aegir.
+
+Field note: Держи нотариальный маршрут прикрепленным. Свободный файл - слух; маршрутизированный пакет - будущий свидетель.
+
+Audio: Пакет может пережить оператора. В этом вся сделка.
+
+External site article:
+
+## Что доказывает запись
+
+Luyten Junction не делает HECTON-8 ближе. Оно делает пакет труднее стереть: маршрут, тариф, witness hash и notary spool получают путь, способный выжить.
+
+Цивилизация без FTL может подтвердить факт за годы до физического ответа. Luyten Junction - не милость, а укрепленная нотариальная линия. Пакет, дошедший с целой сохранностью, сложнее стереть претендентам, даже пока отправитель остается под давлением Aegir.
+
+НОТАРИАЛЬНАЯ ШПУЛЯ LUYTEN // Сохранить маршрутную метку, тарифную пломбу, witness hash, сегмент spool и очередь получателя. Аутентификация может пережить задержку. Это реле не выделяет эвакуацию, массу carrier, кислород или приоритет спасения.
+
+## Как игрок это читает
+
+Держи нотариальный маршрут прикрепленным. Свободный файл - слух; маршрутизированный пакет - будущий свидетель. Читай это как правило обращения с доказательством, а не как обещание, что помощь уже летит.
 
 ### uk_UA
 
 Status: draft_machine_or_llm.
 
-Title: Ретранслятор збереження пакетів Лютена
+Title: Реле збереження пакетів Luyten
 
-Site teaser: Вузол Лютена може підтвердити пакет після затримки без FTL, але не перетворює прийом Black Keel на негайний порятунок.
+Site teaser: Luyten Junction не робить HECTON-8 ближчим. Воно робить пакет важче стерти: маршрут, тариф, witness hash і notary spool отримують шлях, здатний вижити.
 
-Scanner: МІТКА ЗБЕРЕЖЕННЯ ЛЮТЕНА // маршрут нотаріальної котушки цілий. Пакет можна підтвердити після затримки ретрансляції. Призначення на евакуацію немає.
+Scanner: МІТКА ЗБЕРЕЖЕННЯ LUYTEN // Маршрут notary spool цілий. Пакет можна автентифікувати після затримки relay. Призначення на повернення немає.
 
-Field note: Лютен зберігає квитанцію, а не людину. Це все одно важливо, коли Tau Ceti пізніше прочитає брехню.
+Terminal: НОТАРІАЛЬНА ШПУЛЯ LUYTEN // Зберегти маршрутну мітку, тарифну пломбу, witness hash, сегмент spool і чергу отримувача. Автентифікація може пережити затримку. Це relay не виділяє евакуацію, масу carrier, кисень чи пріоритет порятунку.
 
-Audio: Пакет може дійти до Лютена. Оператор - ні. Збережи hash, якщо хочеш, щоб затримка щось означала.
+Codex: Цивілізація без FTL може підтвердити факт за роки до фізичної відповіді. Luyten Junction - не милість, а укріплена нотаріальна лінія. Пакет, що дійшов із цілим збереженням, важче стерти претендентам, навіть поки відправник лишається під тиском Aegir.
+
+Field note: Тримай нотаріальний маршрут прикріпленим. Вільний файл - чутка; маршрутизований пакет - майбутній свідок.
+
+Audio: Пакет може пережити оператора. У цьому вся угода.
+
+External site article:
+
+## Що доводить запис
+
+Luyten Junction не робить HECTON-8 ближчим. Воно робить пакет важче стерти: маршрут, тариф, witness hash і notary spool отримують шлях, здатний вижити.
+
+Цивілізація без FTL може підтвердити факт за роки до фізичної відповіді. Luyten Junction - не милість, а укріплена нотаріальна лінія. Пакет, що дійшов із цілим збереженням, важче стерти претендентам, навіть поки відправник лишається під тиском Aegir.
+
+НОТАРІАЛЬНА ШПУЛЯ LUYTEN // Зберегти маршрутну мітку, тарифну пломбу, witness hash, сегмент spool і чергу отримувача. Автентифікація може пережити затримку. Це relay не виділяє евакуацію, масу carrier, кисень чи пріоритет порятунку.
+
+## Як гравець це читає
+
+Тримай нотаріальний маршрут прикріпленим. Вільний файл - чутка; маршрутизований пакет - майбутній свідок. Читай це як правило поводження з доказом, а не як обіцянку, що допомога вже летить.
 
 ### zh_CN
 
 Status: draft_machine_or_llm.
 
-Title: 鲁坦数据包保管中继
+Title: Luyten 数据包保管中继
 
-Site teaser: Luyten Junction可以在无FTL延迟后认证数据包，但不能把Black Keel的接收变成立即救援。
+Site teaser: Luyten Junction 不会让 HECTON-8 更近。它通过路线、费率、witness hash 和 notary spool 给数据包一条能活下来的路径，让它更难被抹掉。
 
-Scanner: LUYTEN保管标记 // 公证卷轴路线完整。中继延迟后可认证数据包。没有回收分配。
+Scanner: LUYTEN 保管标记 // notary spool 路线完整。数据包可在中继延迟后认证。没有回收分配。
 
-Field note: Luyten保存的是收据，不是人。等Tau Ceti后来读到谎言时，这仍然重要。
+Terminal: LUYTEN 公证卷轴 // 保留路线标记、费率封印、witness hash、spool 段和接收队列。认证可能穿过延迟存活。此中继不分配撤离、carrier 质量、氧气或救援优先级。
 
-Audio: 数据包能到Luyten。操作员不能。想让这段延迟有意义，就保住hash。
+Codex: 没有 FTL 的文明可以在任何人能物理回应之前数年认证一个事实。Luyten Junction 不是慈悲，而是一条加固的公证通道。保管链完整的数据包更难被索赔方抹掉，即使发送者仍在 Aegir 压力下。
+
+Field note: 保持公证路线附着。散文件只是传闻；有路线的数据包是未来证人。
+
+Audio: 数据包可能比操作员活得更久。这就是整笔交易。
+
+External site article:
+
+## 记录证明了什么
+
+Luyten Junction 不会让 HECTON-8 更近。它通过路线、费率、witness hash 和 notary spool 给数据包一条能活下来的路径，让它更难被抹掉。
+
+没有 FTL 的文明可以在任何人能物理回应之前数年认证一个事实。Luyten Junction 不是慈悲，而是一条加固的公证通道。保管链完整的数据包更难被索赔方抹掉，即使发送者仍在 Aegir 压力下。
+
+LUYTEN 公证卷轴 // 保留路线标记、费率封印、witness hash、spool 段和接收队列。认证可能穿过延迟存活。此中继不分配撤离、carrier 质量、氧气或救援优先级。
+
+## 玩家该怎样读它
+
+保持公证路线附着。散文件只是传闻；有路线的数据包是未来证人。 把它当成处理证据的规则，不要当成救援已经出发的承诺。
 
 ## Runtime / Monolith Placement Notes
 

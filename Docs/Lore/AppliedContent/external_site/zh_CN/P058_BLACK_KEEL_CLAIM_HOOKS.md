@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Black Keel 索赔钩"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Black Keel 索赔钩
 
-CN LOC HOLD: Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses.
+Black Keel 索赔钩定义了开局压力。Black Keel 不是夸张的反派船；它是受索赔池经济、隔离法律和休眠 Deep Reach 杠杆约束的运载方。玩家的问题同时实际又道德：海面上方的声音能听见求救，但回家的路线必须变得有价值、可认证，并且在法律上不便忽视。
 
 ## Scanner
 
-CN LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+清单上，Black Keel 是索赔池硬件；条款里，它是 Deep Reach 的杠杆。
 
 ## Terminal
 
-CN LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+运载方托管：操作员回收须通过载荷分诊、隔离关口、路线证书与责任清算。Deep Reach 优先印章保留于休眠条款。
 
 ## Audio
 
-CN LOC HOLD: It can hear you. It just has to price the answer first.
+它听得见你。它只是必须先给回答定价。
 
 ## Field Note
 
-CN LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+船并不邪恶。它只是租给了一份合同，而那份合同懂得怎样在不像活物的情况下作恶。
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/zh_CN. -->

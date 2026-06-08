@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Transit Duration Bands"
+title: "أحزمة مدة العبور"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Transit Duration Bands
+# أحزمة مدة العبور
 
-AR LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+تشرح أحزمة العبور لماذا يمكن الوصول إلى HECTON-8 ويبقى قاسيا. تتحرك الحزم أولا لأنها صغيرة ورخيصة ومفيدة قانونيا. يتحرك الشحن عندما تتوافق staging وbraking rights وهوامش الخسارة. يتحرك الجسد المتنفس ببطء لأنه يحتاج إلى كتلة وliability وlife support ومن يدفع ثمن الرجوع. نوافذ Aegir المحلية أقصر لكنها ليست ألطف: المدار وضجيج العواصف والإشعاع وهندسة Black Keel تقرر هل تتحرك البيانات أم الشحن أم إنسان.
 
 ## Scanner
 
-AR LOC HOLD: The same route means different time for packets, freight and people.
+DURATION BAND CHART // حزم المجسات والشحن الثقيل والأطقم البشرية ونوافذ Aegir المحلية لا تشترك في ساعة واحدة.
 
 ## Terminal
 
-AR LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // النوافذ المحلية: ساعات إلى أيام. الحركة الصناعية داخل النظام: أشهر إلى سنوات. crew rotation: سنوات من custody والدين. Heavy interdomain freight والعواقب: سنوات إلى عقود.
 
 ## Audio
 
-AR LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
+قد تصل الحمولة قبل الرحمة. هذا ليس عطلا. هذه عقيدة.
 
 ## Field Note
 
-AR LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+إذا تطابقت كل الساعات صار العالم خيال إنقاذ. أبق الساعات معادية.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/ar_SA. -->

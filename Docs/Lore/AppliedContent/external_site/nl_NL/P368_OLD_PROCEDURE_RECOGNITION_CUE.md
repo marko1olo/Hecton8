@@ -9,32 +9,37 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Old Procedure Recognition Cue"
+title: "Herkenningscue voor Oude Procedure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Old Procedure Recognition Cue
+# Herkenningscue voor Oude Procedure
 
-NL LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+HECTON-8 grondt personagemotivatie in procedure. De protagonist herkent een oud evacuatieveiligheidsformulier en ziet hoe het werd omgekeerd: werknemertellingen gedegradeerd, getuigenvelden verzegeld en route-veilige taal gebruikt om claims te bewaren in plaats van levens.
 
 ## Scanner
 
-NL LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+Route-veilig-stempel aanwezig. Werknemertelling overschreven in twee inkten. Handmatig getuigenveld verzegeld. Het formulier was gebouwd om dit soort leugen te vangen voordat iemand er beleid van maakte.
 
 ## Terminal
 
-NL LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+EVACUATIECONTINUÏTEITSFORMULIER / ROUTE-VEILIG-CERTIFICERING
+route: hulplijn voor uitgang
+aangegeven aanwezigen: gedegradeerde telling geaccepteerd
+handmatige getuige: verzegeld door continuïteitskantoor
+veldcorrectie: werknemertelling komt niet overeen met pompkamertags
+status: claimbehoudend, niet vrijgegeven voor extractie.
 
 ## Audio
 
-NL LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+Je kent dit formulier. Het moest voorkomen dat een kamer leeg werd geteld terwijl er nog mensen in ademden.
 
 ## Field Note
 
-NL LOC HOLD: Use where room evidence contradicts a clean procedural label.
+Het formulier moest nog een telling afdwingen. Hier dwong het stilte af.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/nl_NL. -->

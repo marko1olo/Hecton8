@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Sato-Ren Return Packet"
+title: "Sato-Ren Terugkeeractie-pakket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Sato-Ren Return Packet
+# Sato-Ren Terugkeeractie-pakket
 
-Deep Reach returns to HECTON-8 as paperwork moving through rare signal windows: coordinates, custody, access, then maybe rescue.
+## Rescue Spoken In Claim Order
 
-## Scanner
+The Sato-Ren packet is present-tense pressure. It arrives after the player has learned what Deep Reach did in old memos and ledgers, and it proves the company is not only a corpse in the archive. Deep Reach still speaks. It just speaks in the order its systems understand: coordinates, access state, sample custody, silence acknowledgement, extraction language.
 
-Recovery Compliance packet. Coordinates requested before rescue language.
+That order is the threat. A rescue service asks where you are hurt. A recovery desk asks what you are carrying, who can certify it, whether Atlas can still open the route, and whether you accept silence as a condition of being moved. Sato-Ren does not need a warship over HECTON-8. The packet itself is leverage because messages are rare, mass is expensive and the player is debt-bound.
 
-## Terminal
-
-RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
-
-## Audio
-
-The packet knows where the asset is. It is less certain where you are.
-
-## Field Note
-
-Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+This should make the late game feel morally tight. The same document can look like help, repossession and blackmail depending on what the player already knows. It connects the old drowned bureaucracy to the living choice in front of the Marauder: sell coordinates, preserve proof, sever Atlas, publish the ledger, or keep moving through an ocean where even rescue has a claim number.
 
 <!-- External Site; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/en_US. -->

@@ -36,7 +36,7 @@ Scope: RS113-RS124
 ### RS015_HUMAN_DOMAINS_ROUTE_ECONOMY.md
 - File too short: 76 words.
 ### RS016_AEGIR_SYSTEM_MOON_LADDER.md
-- File too short: 72 words.
+- File too short: 107 words.
 ### RS017_HECTON8_GEOLOGY_RESOURCE_ECOLOGY.md
 - File too short: 77 words.
 ### RS018_CARRIER_DEBT_CLAIM_AUTHORITY.md
@@ -50,7 +50,7 @@ Scope: RS113-RS124
 ### RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE.md
 - File too short: 166 words.
 ### RS024_RESOURCE_RECIPE_TAXONOMY.md
-- File too short: 176 words.
+- File too short: 164 words.
 ### RS028_REPLAY_CONTRACT_DOSSIER_RULES.md
 - Contains banned phrase: 'unlock'
 ### RS029_ROUTE_TIME_DISTANCE_MODEL.md
@@ -85,6 +85,10 @@ Scope: RS113-RS124
 - File too short: 144 words.
 ### RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL.md
 - Contains banned phrase: 'unlock'
+- File too short: 157 words.
+### RS045_PHOTIC_SHELF_NATIVE_ECOLOGY.md
+- File too short: 156 words.
+### RS046_BRINE_CANYON_ABYSS_ECOLOGY.md
 - File too short: 157 words.
 ### RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES.md
 - File too short: 169 words.

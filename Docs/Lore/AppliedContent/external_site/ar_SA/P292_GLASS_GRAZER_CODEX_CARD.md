@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Glass Grazer Codex Card"
+title: "بطاقة كودكس كاشط الزجاج"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Glass Grazer Codex Card
+# بطاقة كودكس كاشط الزجاج
 
-AR LOC HOLD: HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+تحول كاشطات الزجاج بيئة HECTON-8 إلى لغة نجاة. تغذيتها تفتح ندوبا مضيئة للمسار خلال الأغشية ونمو الحصائر، لكن سكونها غالبا أهم من حركتها. قد يحذر حيوان غير مؤذ اللاعب قبل الجهاز.
 
 ## Scanner
 
-AR LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+سرب كاشطات زجاجية. آكلات ذات أصداف غير عدائية تكشط الغشاء المعدني. النقر المنتظم يعني ماء عمل؛ الصمت المفاجئ يعني أن شيئا أكبر غيّر الفسحة.
 
 ## Terminal
 
-AR LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+عينة / سرب كاشطات زجاجية / الدور: كاشط غشاء ضحل، شاهد تيار، إشارة إزاحة مفترس / قراءة آمنة: حافة تغذية، مسار باهت جديد، نقر أصداف ثابت / ارفض: حقل طعام مهجور، سرب متجمد ومضغوط، لا نقر عائد بعد pinger / ملاحظة مسار: الغياب بعد التغذية بيانات خطر.
 
 ## Audio
 
-AR LOC HOLD: When they stop eating, you stop moving.
+حين تتوقف الأفواه الصغيرة عن النقر ويبقى الطعام، لا تكن الشيء التالي الذي ينتظر.
 
 ## Field Note
 
-AR LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+سرب يتغذى: اقرأ المسار. سرب متجمد: اقرأ الماء. مسار فارغ والطعام باق: غادر.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/ar_SA. -->

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "سلطة سول كور"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# سلطة سول كور
 
-AR LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+سول كور هو الجذر القانوني والمالي للتوسع البشري، لا وطن شخصي ولا مكتب إنقاذ. على HECTON-8 بقيت معاييره كأختام ونماذج مسؤولية ولوحات سلامة ولغة تأمين عاشت أطول من الناس الذين كان يفترض أن تحميهم.
 
 ## Scanner
 
-AR LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+ختم قانوني قديم من سول. يستطيع امتلاك جثة على التخوم من دون أن يكون قريبا بما يكفي ليشم تسرب الضغط.
 
 ## Terminal
 
-AR LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+معيار SOL CORE: تم الاعتراف باستمرارية المطالبة عبر عهدة ناقل مرخص، وتأمين مسار، وحكم مؤجل. أولوية استعادة البشر غير محسومة حتى اعتماد الأخطار المحلية.
 
 ## Audio
 
-AR LOC HOLD: The seal came from Earth space. The rescue clause did not.
+جاء الختم من فضاء الأرض. أما بند الإنقاذ فلم يأت.
 
 ## Field Note
 
-AR LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+سول ليست وطنا هنا. إنها أقدم توقيع على الوثيقة، وما زالت قادرة على تدميرك.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/ar_SA. -->

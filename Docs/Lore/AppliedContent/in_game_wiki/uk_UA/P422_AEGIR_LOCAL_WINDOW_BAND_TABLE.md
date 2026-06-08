@@ -7,34 +7,34 @@ poi_tags: poi.local_window_band_table;poi.carrier_phase_clock
 biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "UK LOC HOLD: Aegir Window Bands"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Віконні діапазони Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Aegir Window Bands
+# Віконні діапазони Aegir
 
-UK LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.
+Локальні вікна Aegir перетворюють орбітальну механіку на відчутний тиск. Навіть repaired capsule потребує погоди, кута relay, позиції carrier і legal acceptance.
 
 ## Scanner
 
-UK LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+Локальний діапазон: підйом чекає на вікна в години або дні, а не на миттєвий порятунок.
 
 ## Terminal
 
-UK LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+ВІКОННИЙ ДІАПАЗОН: shutter, eclipse, relay, storm, фаза carrier і legal handshake мають збігтися перед безпечним transfer.
 
 ## Audio
 
-UK LOC HOLD: The carrier can hear you and still be in the wrong sky.
+Carrier може чути тебе й усе одно бути в неправильному небі.
 
 ## Field Note
 
-UK LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+Запис віконного діапазону: Black Keel timing, локальні мітки орбіт і spoiler-light сторінки системи мають ті самі transfer constraints.
 
 <!-- In-Game Wiki; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/uk_UA. -->

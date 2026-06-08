@@ -3,11 +3,11 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.Core
 {
@@ -99,9 +99,12 @@ namespace Hecton8.Core
 
     public static unsafe class NativeFaultDumpWriter
     {
+        private const int MaxTrackedTransientPayloads = 512;
         private const string TransientPayloadRegistrationFailureMessage = "NativeMemoryTrackingBridge registration failed for NativeFaultDumpWriter transient payload.";
         private const string TransientPayloadUnregistrationFailureMessage = "NativeMemoryTrackingBridge unregistration failed for NativeFaultDumpWriter transient payload.";
-        private const string TransientPayloadRestoreFailureMessage = "NativeMemoryTrackingBridge restore failed after NativeFaultDumpWriter native disposal fault.";
+        private static readonly object s_transientPayloadRegistrationGate = new object();
+        private static readonly IntPtr[] s_transientPayloadPointers = new IntPtr[MaxTrackedTransientPayloads];
+        private static readonly int[] s_transientPayloadRegistrationIds = new int[MaxTrackedTransientPayloads];
 
         public static NativeArray<byte> CreateTransientPayload(
             int byteCount,
@@ -115,9 +118,11 @@ namespace Hecton8.Core
 
             NativeArray<byte> payload = default;
             bool registered = false;
+            IntPtr payloadPointer = IntPtr.Zero;
             try
             {
                 payload = new NativeArray<byte>(byteCount, allocator, options);
+                payloadPointer = ResolveTransientPayloadPointer(payload);
                 registered = TryRegisterTransientNativeArrayPayload(payload, owner, label, allocator);
                 if (!registered)
                     throw new InvalidOperationException(TransientPayloadRegistrationFailureMessage);
@@ -126,11 +131,23 @@ namespace Hecton8.Core
             }
             catch
             {
-                if (registered)
-                    TryUnregisterTransientNativeArrayPayload(payload, owner, label);
+                try
+                {
+                    if (payload.IsCreated)
+                        payload.Dispose();
+                }
+                catch (Exception disposalException)
+                {
+                    if (registered && !payload.IsCreated && !TryUnregisterTransientNativeArrayPayload(payloadPointer))
+                    {
+                        throw new AggregateException(TransientPayloadUnregistrationFailureMessage, disposalException);
+                    }
 
-                if (payload.IsCreated)
-                    payload.Dispose();
+                    throw;
+                }
+
+                if (registered && !TryUnregisterTransientNativeArrayPayload(payloadPointer))
+                    throw new InvalidOperationException(TransientPayloadUnregistrationFailureMessage);
 
                 throw;
             }
@@ -145,9 +162,14 @@ namespace Hecton8.Core
             if (!payload.IsCreated)
                 return;
 
-            bool unregistered = TryUnregisterTransientNativeArrayPayload(payload, owner, label);
-            if (!unregistered)
+            IntPtr payloadPointer = ResolveTransientPayloadPointer(payload);
+            int registrationId = TryGetTransientPayloadRegistrationId(payloadPointer);
+            if (registrationId <= 0)
+            {
+                payload.Dispose();
+                payload = default;
                 throw new InvalidOperationException(TransientPayloadUnregistrationFailureMessage);
+            }
 
             try
             {
@@ -156,15 +178,17 @@ namespace Hecton8.Core
             }
             catch (Exception disposalException)
             {
-                if (unregistered && payload.IsCreated)
+                if (!payload.IsCreated && !TryUnregisterTransientNativeArrayPayload(payloadPointer, registrationId))
                 {
-                    bool restored = TryRegisterTransientNativeArrayPayload(payload, owner, label, allocator);
-                    if (!restored)
-                        throw new AggregateException(TransientPayloadRestoreFailureMessage, disposalException);
+                    throw new AggregateException(TransientPayloadUnregistrationFailureMessage, disposalException);
                 }
 
                 throw;
             }
+
+            bool unregistered = TryUnregisterTransientNativeArrayPayload(payloadPointer, registrationId);
+            if (!unregistered)
+                throw new InvalidOperationException(TransientPayloadUnregistrationFailureMessage);
         }
 
         private static bool TryRegisterTransientNativeArrayPayload(
@@ -176,24 +200,116 @@ namespace Hecton8.Core
             if (!payload.IsCreated || !Hecton8.Core.Contracts.NativeMemoryTrackingBridge.IsInstalled)
                 return false;
 
-            int registrationId = Hecton8.Core.Contracts.NativeMemoryTrackingBridge.RegisterNativeArray(
+            int registrationId = Hecton8.Core.Contracts.NativeMemoryTrackingBridge.RegisterNativeArrayInstance(
                 payload,
                 owner,
                 label,
                 ResolveBridgeLifetime(allocator));
-            return registrationId > 0;
-        }
-
-        private static bool TryUnregisterTransientNativeArrayPayload(
-            NativeArray<byte> payload,
-            string owner,
-            string label)
-        {
-            if (!payload.IsCreated || !Hecton8.Core.Contracts.NativeMemoryTrackingBridge.IsInstalled)
+            if (registrationId <= 0)
                 return false;
 
-            Hecton8.Core.Contracts.NativeMemoryTrackingBridge.UnregisterNativeArray(payload, owner, label);
+            if (TryRememberTransientPayloadRegistration(ResolveTransientPayloadPointer(payload), registrationId))
+                return true;
+
+            Hecton8.Core.Contracts.NativeMemoryTrackingBridge.Unregister(registrationId);
+            return false;
+        }
+
+        private static bool TryUnregisterTransientNativeArrayPayload(IntPtr payloadPointer)
+        {
+            int registrationId = TryGetTransientPayloadRegistrationId(payloadPointer);
+            if (registrationId <= 0)
+                return false;
+
+            return TryUnregisterTransientNativeArrayPayload(payloadPointer, registrationId);
+        }
+
+        private static bool TryUnregisterTransientNativeArrayPayload(IntPtr payloadPointer, int registrationId)
+        {
+            if (!Hecton8.Core.Contracts.NativeMemoryTrackingBridge.IsInstalled)
+                return false;
+
+            if (!TryForgetTransientPayloadRegistration(payloadPointer, registrationId))
+                return false;
+
+            Hecton8.Core.Contracts.NativeMemoryTrackingBridge.Unregister(registrationId);
             return true;
+        }
+
+        private static IntPtr ResolveTransientPayloadPointer(NativeArray<byte> payload)
+        {
+            if (!payload.IsCreated)
+                return IntPtr.Zero;
+
+            return (IntPtr)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(payload);
+        }
+
+        private static bool TryRememberTransientPayloadRegistration(IntPtr payloadPointer, int registrationId)
+        {
+            if (payloadPointer == IntPtr.Zero || registrationId <= 0)
+                return false;
+
+            lock (s_transientPayloadRegistrationGate)
+            {
+                int emptyIndex = -1;
+                for (int i = 0; i < MaxTrackedTransientPayloads; i++)
+                {
+                    IntPtr currentPointer = s_transientPayloadPointers[i];
+                    if (currentPointer == payloadPointer)
+                        return false;
+
+                    if (emptyIndex < 0 && currentPointer == IntPtr.Zero)
+                        emptyIndex = i;
+                }
+
+                if (emptyIndex < 0)
+                    return false;
+
+                s_transientPayloadPointers[emptyIndex] = payloadPointer;
+                s_transientPayloadRegistrationIds[emptyIndex] = registrationId;
+                return true;
+            }
+        }
+
+        private static int TryGetTransientPayloadRegistrationId(IntPtr payloadPointer)
+        {
+            if (payloadPointer == IntPtr.Zero)
+                return 0;
+
+            lock (s_transientPayloadRegistrationGate)
+            {
+                for (int i = 0; i < MaxTrackedTransientPayloads; i++)
+                {
+                    if (s_transientPayloadPointers[i] == payloadPointer)
+                        return s_transientPayloadRegistrationIds[i];
+                }
+            }
+
+            return 0;
+        }
+
+        private static bool TryForgetTransientPayloadRegistration(IntPtr payloadPointer, int registrationId)
+        {
+            if (payloadPointer == IntPtr.Zero || registrationId <= 0)
+                return false;
+
+            lock (s_transientPayloadRegistrationGate)
+            {
+                for (int i = 0; i < MaxTrackedTransientPayloads; i++)
+                {
+                    if (s_transientPayloadPointers[i] != payloadPointer ||
+                        s_transientPayloadRegistrationIds[i] != registrationId)
+                    {
+                        continue;
+                    }
+
+                    s_transientPayloadPointers[i] = IntPtr.Zero;
+                    s_transientPayloadRegistrationIds[i] = 0;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static Hecton8.Core.Contracts.NativeMemoryBridgeLifetime ResolveBridgeLifetime(Allocator allocator)
@@ -242,22 +358,79 @@ namespace Hecton8.Core
             if (!TryResolveWritablePath(absolutePath, out string fullPath))
                 return false;
 
+            string tempPath = fullPath + ".tmp";
             try
             {
                 string directory = Path.GetDirectoryName(fullPath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.None))
+                TryDeleteFaultDumpTempFile(tempPath);
+                bool tempLengthMatched;
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
                     stream.Write(payload.Slice(0, byteCount));
+                    stream.Flush(true);
+                    tempLengthMatched = stream.Length == byteCount;
                 }
 
-                return true;
+                if (!tempLengthMatched)
+                {
+                    TryDeleteFaultDumpTempFile(tempPath);
+                    return false;
+                }
+
+                if (!TryFlushAndValidateFaultDumpFile(tempPath, byteCount))
+                {
+                    TryDeleteFaultDumpTempFile(tempPath);
+                    return false;
+                }
+
+                if (File.Exists(fullPath))
+                    File.Replace(tempPath, fullPath, null, true);
+                else
+                    File.Move(tempPath, fullPath);
+
+                return TryFlushAndValidateFaultDumpFile(fullPath, byteCount);
+            }
+            catch
+            {
+                TryDeleteFaultDumpTempFile(tempPath);
+                return false;
+            }
+        }
+
+        private static bool TryFlushAndValidateFaultDumpFile(string path, long expectedBytes)
+        {
+            if (string.IsNullOrWhiteSpace(path) || expectedBytes <= 0L)
+                return false;
+
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.WriteThrough))
+                {
+                    if (stream.Length != expectedBytes)
+                        return false;
+
+                    stream.Flush(true);
+                    return stream.Length == expectedBytes;
+                }
             }
             catch
             {
                 return false;
+            }
+        }
+
+        private static void TryDeleteFaultDumpTempFile(string tempPath)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(tempPath) && File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            catch
+            {
             }
         }
 
@@ -289,7 +462,11 @@ namespace Hecton8.Core
                     return true;
                 }
 #endif
-                fullPath = Path.GetFullPath(Path.Combine(HectonPersistentPathPolicy.RootPath, relativePath));
+                string persistentRoot = Application.persistentDataPath;
+                if (string.IsNullOrEmpty(persistentRoot))
+                    persistentRoot = Environment.CurrentDirectory;
+
+                fullPath = Path.GetFullPath(Path.Combine(persistentRoot, relativePath));
                 return true;
             }
             catch
@@ -424,7 +601,7 @@ namespace Hecton8.Core
             if (Interlocked.Exchange(ref _illegalForcedCompletionWarningLogged, 1) != 0)
                 return;
 
-            Hecton8.Core.H8Debug.LogWarning(IllegalForcedCompletionWarningMessage);
+            Debug.LogWarning(IllegalForcedCompletionWarningMessage);
         }
     }
 
@@ -434,27 +611,54 @@ namespace Hecton8.Core
         private NativeArray<T> _buffer;
         private NativeArray<long> _publishedTickets;
         private NativeArray<MpscSignalRingCursorState> _cursor;
-        private SystemID _ownerSystem;
+        private string _ownerName;
+        private Hecton8.Core.Contracts.NativeMemoryBridgeLifetime _bridgeLifetime;
+        private int _bufferRegistrationId;
+        private int _publishedTicketsRegistrationId;
+        private int _cursorRegistrationId;
         private int _mask;
         private int _capacity;
 
         public MpscSignalRingBuffer(int requestedCapacity, Allocator allocator)
-            : this(requestedCapacity, allocator, SystemID.CoreDataVault)
+            : this(requestedCapacity, allocator, null)
         {
         }
 
         public MpscSignalRingBuffer(int requestedCapacity, Allocator allocator, object owner)
         {
-            _ownerSystem = ResolveOwnerSystem(owner);
-            int capacity = CeilPowerOfTwo(math.max(2, requestedCapacity));
-            _buffer = H8Memory.Allocate<T>(capacity, _ownerSystem, allocator, NativeArrayOptions.UninitializedMemory);
-            _publishedTickets = H8Memory.Allocate<long>(capacity, _ownerSystem, allocator, NativeArrayOptions.ClearMemory);
-            _cursor = H8Memory.Allocate<MpscSignalRingCursorState>(1, _ownerSystem, allocator, NativeArrayOptions.ClearMemory);
-            _mask = capacity - 1;
-            _capacity = capacity;
+            _buffer = default;
+            _publishedTickets = default;
+            _cursor = default;
+            _ownerName = ResolveOwnerName(owner);
+            _bridgeLifetime = ResolveBridgeLifetime(allocator);
+            _bufferRegistrationId = 0;
+            _publishedTicketsRegistrationId = 0;
+            _cursorRegistrationId = 0;
+            _mask = 0;
+            _capacity = 0;
 
-            if (!_buffer.IsCreated || !_publishedTickets.IsCreated || !_cursor.IsCreated)
+            try
+            {
+                int capacity = CeilPowerOfTwo(math.max(2, requestedCapacity));
+                _buffer = new NativeArray<T>(capacity, allocator, NativeArrayOptions.UninitializedMemory);
+                _publishedTickets = new NativeArray<long>(capacity, allocator, NativeArrayOptions.ClearMemory);
+                _cursor = new NativeArray<MpscSignalRingCursorState>(1, allocator, NativeArrayOptions.ClearMemory);
+                _mask = capacity - 1;
+                _capacity = capacity;
+
+                if (!_buffer.IsCreated || !_publishedTickets.IsCreated || !_cursor.IsCreated)
+                {
+                    Dispose();
+                    return;
+                }
+
+                RegisterNativeArrays(allocator);
+            }
+            catch
+            {
                 Dispose();
+                throw;
+            }
         }
 
         public bool IsCreated => _buffer.IsCreated && _publishedTickets.IsCreated && _cursor.IsCreated;
@@ -521,17 +725,18 @@ namespace Hecton8.Core
 
         public void Dispose()
         {
-            if (_buffer.IsCreated)
-                H8Memory.Release(ref _buffer, _ownerSystem);
-            if (_publishedTickets.IsCreated)
-                H8Memory.Release(ref _publishedTickets, _ownerSystem);
-            if (_cursor.IsCreated)
-                H8Memory.Release(ref _cursor, _ownerSystem);
+            DisposeRegisteredNativeArray(ref _buffer, ref _bufferRegistrationId);
+            DisposeRegisteredNativeArray(ref _publishedTickets, ref _publishedTicketsRegistrationId);
+            DisposeRegisteredNativeArray(ref _cursor, ref _cursorRegistrationId);
 
             _buffer = default;
             _publishedTickets = default;
             _cursor = default;
-            _ownerSystem = default;
+            _ownerName = null;
+            _bridgeLifetime = default;
+            _bufferRegistrationId = 0;
+            _publishedTicketsRegistrationId = 0;
+            _cursorRegistrationId = 0;
             _mask = 0;
             _capacity = 0;
         }
@@ -560,11 +765,95 @@ namespace Hecton8.Core
             return value + 1;
         }
 
-        private static SystemID ResolveOwnerSystem(object owner)
+        private static string ResolveOwnerName(object owner)
         {
-            return owner is SystemID system && system != SystemID.Unknown
-                ? system
-                : SystemID.CoreDataVault;
+            if (owner == null)
+                return DefaultOwnerName;
+
+            string ownerName = owner.ToString();
+            return string.IsNullOrWhiteSpace(ownerName)
+                ? owner.GetType().Name
+                : ownerName;
+        }
+
+        private const string DefaultOwnerName = "CoreDataVault";
+        private const string BufferLabel = "MpscSignalRingBuffer.buffer";
+        private const string PublishedTicketsLabel = "MpscSignalRingBuffer.publishedTickets";
+        private const string CursorLabel = "MpscSignalRingBuffer.cursor";
+        private const string BridgeUnavailableMessage = "Native memory tracking bridge is not installed for MpscSignalRingBuffer.";
+
+        private void RegisterNativeArrays(Allocator allocator)
+        {
+            if (!Hecton8.Core.Contracts.NativeMemoryTrackingBridge.IsInstalled)
+                throw new InvalidOperationException(BridgeUnavailableMessage);
+
+            _bridgeLifetime = ResolveBridgeLifetime(allocator);
+            _bufferRegistrationId = RegisterNativeArray(_buffer, BufferLabel, _bridgeLifetime);
+            _publishedTicketsRegistrationId = RegisterNativeArray(_publishedTickets, PublishedTicketsLabel, _bridgeLifetime);
+            _cursorRegistrationId = RegisterNativeArray(_cursor, CursorLabel, _bridgeLifetime);
+        }
+
+        private int RegisterNativeArray<TArray>(
+            NativeArray<TArray> array,
+            string label,
+            Hecton8.Core.Contracts.NativeMemoryBridgeLifetime lifetime)
+            where TArray : struct
+        {
+            if (!array.IsCreated)
+                return 0;
+
+            int registrationId = Hecton8.Core.Contracts.NativeMemoryTrackingBridge.RegisterNativeArrayInstance(
+                array,
+                _ownerName,
+                ResolveTypedLabel(label),
+                lifetime);
+            if (registrationId > 0)
+                return registrationId;
+
+            throw new InvalidOperationException(
+                $"Native memory tracking bridge registration failed for {_ownerName}.{ResolveTypedLabel(label)}.");
+        }
+
+        private static void DisposeRegisteredNativeArray<TArray>(ref NativeArray<TArray> array, ref int registrationId)
+            where TArray : struct
+        {
+            if (array.IsCreated)
+            {
+                array.Dispose();
+                array = default;
+            }
+
+            UnregisterNativeArray(ref registrationId);
+        }
+
+        private static void UnregisterNativeArray(ref int registrationId)
+        {
+            if (registrationId <= 0)
+                return;
+
+            Hecton8.Core.Contracts.NativeMemoryTrackingBridge.Unregister(registrationId);
+            registrationId = 0;
+        }
+
+        private static Hecton8.Core.Contracts.NativeMemoryBridgeLifetime ResolveBridgeLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return Hecton8.Core.Contracts.NativeMemoryBridgeLifetime.Temp;
+                case Allocator.TempJob:
+                    return Hecton8.Core.Contracts.NativeMemoryBridgeLifetime.TempJob;
+                default:
+                    return Hecton8.Core.Contracts.NativeMemoryBridgeLifetime.Session;
+            }
+        }
+
+        private static string ResolveTypedLabel(string label)
+        {
+            string typeName = typeof(T).FullName;
+            return string.IsNullOrWhiteSpace(typeName)
+                ? label
+                : typeName + "." + label;
         }
 
         private static long ResolveCursorDistance(long head, long tail, int capacity)

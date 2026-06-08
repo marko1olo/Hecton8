@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Drowned Crust Strata Guide"
+title: "Gids voor verdronken korstlagen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Drowned Crust Strata Guide
+# Gids voor verdronken korstlagen
 
-NL LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.
+De Gids voor verdronken korstlagen laat HECTON-8's zeebodem gebouwd en gebroken voelen: terrain, salvage routes en mineraalmonsters komen allemaal uit dezelfde gelaagde drukgeschiedenis.
 
 ## Scanner
 
-NL LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+Overstroomde lagen tonen oude snijsporen, pressure-glass-naden en mineraalbanden die niet twee keer dezelfde kant op falen.
 
 ## Terminal
 
-NL LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: HECTON-8's verdronken korst is gestapelde nederzettingssteen, ingestort ijsgeheugen, pressure glass en extraction scars onder bewegende brine. Breuklijnen gaan boven schone oppervlakken.
 
 ## Audio
 
-NL LOC HOLD: The map is not terrain. It is a stack of drownings.
+De kaart is geen terrein. Het is een stapel verdrinkingen.
 
 ## Field Note
 
-NL LOC HOLD: Use for geology codex and procedural world labels.
+Als een band hol klinkt, vertrouw het vlakke gezicht niet. Markeer de breuk, neem het monster, laat de wand dragen.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/nl_NL. -->

@@ -31,6 +31,7 @@ namespace Hecton8.Habitat.Deformation.Editor
         public const string PreviousScannerReportPath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_210.json";
         public const string BlackboxDumpPath = "Docs/AgentLogs/Dump_SHINOBU_210.bin";
         public const string ProfileCsvPath = "Docs/Data/habitat_crush_profiles.csv";
+        public const double DefaultSeaLevelAupY = 14.02d;
         public const int ComplexityCriticalTriangleBudget = 20000;
         public const int MaxHullCount = 8;
         public const int MaxEditorProfileNameBytes = 64;
@@ -708,19 +709,21 @@ namespace Hecton8.Habitat.Deformation.Editor
             }
             catch
             {
-                try
+                IntPtr trackedTelemetryRing;
+                unsafe
                 {
-                    if (_telemetryRingSentinelId > 0)
-                        HabitatDamageNativeMemorySentinelBridge.Unregister(_telemetryRingSentinelId);
-                    else
-                        HabitatDamageNativeMemorySentinelBridge.UnregisterNativeArray(_telemetryRing);
+                    trackedTelemetryRing = (IntPtr)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_telemetryRing);
                 }
-                finally
-                {
-                    _telemetryRing.Dispose();
-                    _telemetryRing = default;
-                    _telemetryRingSentinelId = 0;
-                }
+
+                _telemetryRing.Dispose();
+                _telemetryRing = default;
+
+                if (_telemetryRingSentinelId > 0)
+                    HabitatDamageNativeMemorySentinelBridge.Unregister(_telemetryRingSentinelId);
+                else
+                    HabitatDamageNativeMemorySentinelBridge.UnregisterPointer(trackedTelemetryRing);
+
+                _telemetryRingSentinelId = 0;
                 throw;
             }
         }
@@ -782,19 +785,21 @@ namespace Hecton8.Habitat.Deformation.Editor
         {
             if (_telemetryRing.IsCreated)
             {
-                try
+                IntPtr trackedTelemetryRing;
+                unsafe
                 {
-                    if (_telemetryRingSentinelId > 0)
-                        HabitatDamageNativeMemorySentinelBridge.Unregister(_telemetryRingSentinelId);
-                    else
-                        HabitatDamageNativeMemorySentinelBridge.UnregisterNativeArray(_telemetryRing);
-                    _telemetryRingSentinelId = 0;
+                    trackedTelemetryRing = (IntPtr)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_telemetryRing);
                 }
-                finally
-                {
-                    _telemetryRing.Dispose();
-                    _telemetryRing = default;
-                }
+
+                _telemetryRing.Dispose();
+                _telemetryRing = default;
+
+                if (_telemetryRingSentinelId > 0)
+                    HabitatDamageNativeMemorySentinelBridge.Unregister(_telemetryRingSentinelId);
+                else
+                    HabitatDamageNativeMemorySentinelBridge.UnregisterPointer(trackedTelemetryRing);
+
+                _telemetryRingSentinelId = 0;
             }
         }
 
@@ -952,20 +957,19 @@ namespace Hecton8.Habitat.Deformation.Editor
             method.Invoke(null, new object[] { sentinelId });
         }
 
-        internal static void UnregisterNativeArray<T>(NativeArray<T> array)
-            where T : struct
+        internal static void UnregisterPointer(IntPtr trackedPointer)
         {
-            if (!array.IsCreated)
+            if (trackedPointer == IntPtr.Zero)
                 return;
 
             Type sentinelType = FindType("Hecton8.Core.NativeMemorySentinel");
             MethodInfo method = sentinelType != null
-                ? sentinelType.GetMethod("UnregisterNativeArray", BindingFlags.Public | BindingFlags.Static)
+                ? sentinelType.GetMethod("UnregisterPointer", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(IntPtr) }, null)
                 : null;
             if (method == null)
-                throw new InvalidOperationException("NativeMemorySentinel.UnregisterNativeArray unavailable for habitat damage bake telemetry.");
+                throw new InvalidOperationException("NativeMemorySentinel.UnregisterPointer unavailable for habitat damage bake telemetry.");
 
-            method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array });
+            method.Invoke(null, new object[] { trackedPointer });
         }
 
         private static Type FindType(string fullName)
@@ -1038,7 +1042,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4)
         };
 
-        private static NativeArray<T> AllocateTrackedNativeArray<T>(
+        internal static NativeArray<T> AllocateTrackedNativeArray<T>(
             int length,
             Allocator allocator,
             NativeArrayOptions options,
@@ -1063,21 +1067,16 @@ namespace Hecton8.Habitat.Deformation.Editor
             }
         }
 
-        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
+        internal static unsafe void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            try
-            {
-                HabitatDamageNativeMemorySentinelBridge.UnregisterNativeArray(array);
-            }
-            finally
-            {
-                array.Dispose();
-                array = default;
-            }
+            IntPtr trackedPointer = (IntPtr)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            array.Dispose();
+            array = default;
+            HabitatDamageNativeMemorySentinelBridge.UnregisterPointer(trackedPointer);
         }
 
         private static string NativeLifetimeName(Allocator allocator)
@@ -1122,7 +1121,7 @@ namespace Hecton8.Habitat.Deformation.Editor
                 return false;
             }
 
-            NativeArray<byte> bytes = AllocateTrackedNativeArray<byte>(
+            NativeArray<byte> bytes = HabitatDamageBakePipeline.AllocateTrackedNativeArray<byte>(
                 (int)info.Length,
                 Allocator.Temp,
                 NativeArrayOptions.UninitializedMemory,
@@ -1177,7 +1176,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             }
             finally
             {
-                DisposeTrackedNativeArray(ref bytes);
+                HabitatDamageBakePipeline.DisposeTrackedNativeArray(ref bytes);
             }
 
             if (profiles.Count == 0)
@@ -1465,10 +1464,29 @@ namespace Hecton8.Habitat.Deformation.Editor
 
         public static double ResolveDepthMeters(double3 moduleAup, double3 seaLevelAup)
         {
-            double3 delta = moduleAup - seaLevelAup;
-            if (!math.all(math.isfinite(delta)))
+            if (!math.all(math.isfinite(moduleAup)))
                 return 0d;
-            return math.max(0d, -delta.y);
+
+            double3 resolvedSeaLevelAup = SanitizeSeaLevelAup(seaLevelAup);
+            double depth = resolvedSeaLevelAup.y - moduleAup.y;
+            return math.isfinite(depth) ? math.max(0d, depth) : 0d;
+        }
+
+        private static double3 SanitizeSeaLevelAup(double3 candidateSeaLevelAup)
+        {
+            double x = math.isfinite(candidateSeaLevelAup.x) ? candidateSeaLevelAup.x : 0d;
+            double y = ResolveSeaLevelAupY(candidateSeaLevelAup.y);
+            double z = math.isfinite(candidateSeaLevelAup.z) ? candidateSeaLevelAup.z : 0d;
+            return new double3(x, y, z);
+        }
+
+        private static double ResolveSeaLevelAupY(double candidateSeaLevelAupY)
+        {
+            return math.isfinite(candidateSeaLevelAupY) &&
+                   math.abs(candidateSeaLevelAupY) > 0.0001d &&
+                   math.abs(candidateSeaLevelAupY) <= 1000d
+                ? candidateSeaLevelAupY
+                : HabitatDamageBakeConstants.DefaultSeaLevelAupY;
         }
 
         public static uint ResolveMeshHash(Mesh mesh)
@@ -2255,7 +2273,7 @@ namespace Hecton8.Habitat.Deformation.Editor
                 StressColorIntensity = _stressColor != null ? _stressColor.value : 1f,
                 GlobalQualityWeight = _quality != null ? _quality.value : 1f,
                 ModuleAup = new double3(0d, -1000d, 0d),
-                SeaLevelAup = double3.zero
+                SeaLevelAup = new double3(0d, HabitatDamageBakeConstants.DefaultSeaLevelAupY, 0d)
             };
         }
 
@@ -2425,7 +2443,7 @@ namespace Hecton8.Habitat.Deformation.Editor
                 return;
             }
 
-            NativeArray<byte> bytes = AllocateTrackedNativeArray<byte>(
+            NativeArray<byte> bytes = HabitatDamageBakePipeline.AllocateTrackedNativeArray<byte>(
                 (int)fileLength,
                 Allocator.Temp,
                 NativeArrayOptions.UninitializedMemory,
@@ -2583,7 +2601,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             }
             finally
             {
-                DisposeTrackedNativeArray(ref bytes);
+                HabitatDamageBakePipeline.DisposeTrackedNativeArray(ref bytes);
             }
         }
 

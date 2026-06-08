@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "יציאה חלקית: חזרה לאותו seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# יציאה חלקית: חזרה לאותו seed
 
-HE LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed.
+יציאה חלקית מגינה על הקמפיין הארוך מסגירה מזויפת. Black Keel יכול להרים את המפעיל לחלון מוגבל, לתקן את החליפה, לרשום חבילות שהוחזרו ולמכור את ההפסקה כרווחה. העולם למטה אינו מתגלגל לגרסה נקייה יותר.
 
-## Scanner
-
-HE LOC HOLD: Extraction possible. Closure not included.
-
-## Terminal
-
-HE LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
-
-## Audio
-
-HE LOC HOLD: You left the pressure. You did not leave the contract.
-
-## Field Note
-
-HE LOC HOLD: Let the player breathe, then make the same ocean still be there.
+כשהשחקן חוזר, אותו seed עדיין שם. למדרגת התמלחת יש אותה מלכודת, לאותו ממסר יש אותה זווית גרועה, ואותה ראיה נשארת מסוכנת. הסוף הזה נותן הקלה בלי מחילה: אוויר בריאות, עוד חוב בחוזה, ושום מחיקה של מה שנמצא.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/he_IL. -->

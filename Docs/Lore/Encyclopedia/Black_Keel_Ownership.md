@@ -7,7 +7,7 @@ Primary Category: Ships And Technology
 Source Voices: Public, Marauder Field Note, Deep Reach Internal, Writer Notes
 First Unlock: contract dossier / carrier uplink / false-ending chain
 Website Use: spoiler-safe public layer only
-Related: Salvage_Carrier, Aegir_Route, Corporate_Claims, Salvage_Economy, False_Ending_Families
+Related: Salvage_Carrier, Aegir_Route, Corporate_Claims, Salvage_Economy, Carrier_Quarantine_Debrief, False_Ending_Families
 
 ## Public
 

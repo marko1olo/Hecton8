@@ -9,32 +9,35 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Professional Guilt To Personal Stake"
+title: "Od winy zawodowej do osobistej stawki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Professional Guilt To Personal Stake
+# Od winy zawodowej do osobistej stawki
 
-PL LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.
+Motywacja protagonisty rośnie od ekspertyzy do odpowiedzialności. HECTON-8 unika wymuszonego rodzinnego melodramatu: dawny pracownik Deep Reach przejmuje się, bo rozumie maszynę procedur, która sprawiła, że porzucenie wyglądało na zakończone.
 
 ## Scanner
 
-PL LOC HOLD: Signature match. The form language is old. The names are new.
+Wzór podpisu pasuje do starej pamięci procedur. Nazwiska się zmieniły. Pomieszczenie zawiodło tak samo. Ekspertyza nie jest już dystansem.
 
 ## Terminal
 
-PL LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+ROZSTRZYGNIĘCIE DOSSIER / STAWKA ZAWODOWA
+dowody wyzwalające: rozpoznanie procedury, odzyskane tagi pracowników, konflikt odbiorcy roszczenia
+motyw wykluczony: więź rodzinna, linia zemsty, status wybranego świadka
+motyw aktywny: dawny pracownik systemów rozpoznaje możliwe do uniknięcia porzucenie i nadal potrafi czytać maszynę, która je złożyła do akt.
 
 ## Audio
 
-PL LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+Przyszedłeś po roszczenie. Zostałeś, bo papiery znały twoje ręce.
 
 ## Field Note
 
-PL LOC HOLD: Use near late dossier and final payload route.
+Nie twój podpis. Wciąż twój fach. Dlatego pomieszczenie nie zamilknie.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/pl_PL. -->

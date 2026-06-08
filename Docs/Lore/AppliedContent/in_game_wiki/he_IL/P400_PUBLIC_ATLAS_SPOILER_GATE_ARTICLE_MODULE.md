@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Access Boundary"
+title: "גבול גישה Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Access Boundary
+# גבול גישה Atlas
 
-HE LOC HOLD: Atlas can be described early as damaged industrial continuity that learned through repair ecology. Final receiver records remain evidence-gated because they change the meaning of earlier repairs.
+אפשר לתאר את Atlas מוקדם כ-industrial continuity פגועה שלמדה דרך repair ecology. receiver records סופיים נשארים מאחורי evidence gate מפני שהם משנים את משמעות התיקונים הקודמים: seal, preserve, sever, quarantine ו-release אינם פעלים ניטרליים שם למטה.
 
 ## Scanner
 
-HE LOC HOLD: Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+רשומת גבול Atlas. ראיות פתוחות מראות industrial continuity logic ו-repair ecology; receiver custody, payload consequence ושכבות הבחירה הסופיות דורשות proof שהושב.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+צומת ארכיון ציבורי // גבול גישה ATLAS. שכבה נוכחית: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue ו-shell seal. שכבה מוגבלת: receiver custody ו-final payload consequence.
 
 ## Audio
 
-HE LOC HOLD: Say it repairs. Wait before naming what it counts as repaired.
+אמור שהוא מתקן. חכה לפני שתקרא בשם למה שהוא מחשיב כמתוקן.
 
 ## Field Note
 
-HE LOC HOLD: Marauder note: a machine can preserve proof and still damage the person inside it.
+הערת Marauder: מכונה יכולה לשמר ראיה ועדיין לפגוע באדם שבתוכה.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/he_IL. -->

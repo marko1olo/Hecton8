@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Kontak Black Keel
 
-Black Keel adalah satu-satunya jalur pemain kembali ke orbit. Ia tidak mati, tetapi juga tidak loyal. Pesan pecahnya mengubah langit menjadi sistem bertahan hidup: setiap jendela bisa membawa penyelamatan, kebohongan, laporan sampel, atau bukti.
-
-## Scanner
-
-Tiang relay tua. Asin, bengkok, masih mengarah ke langit yang benar.
-
-## Terminal
-
-STATUS OPERATOR: hidup. STATUS DROPCRAFT: tak bisa dipulihkan. CLAIM: terbuka. SAMPEL: tidak diketahui. PEMULIHAN: menunggu jendela.
-
-## Audio
-
-Jendela menutup. Kirim satu paket. Pilih sebelum pita badai menutupi tiang.
-
-## Field Note
-
-Kalau carrier bertanya apa yang kau temukan sebelum bertanya apakah kau bernapas, kau bukan klien. Kau alat.
+Black Keel tidak boleh terasa seperti kapal bintang ramah yang menunggu di atas awan. Ia mesin pool klaim dengan suara berguna, orbit terbatas, dan prioritas kontrak yang lebih tua dari jatuhnya pemain. Kontak pertamanya berharga karena membuktikan langit tidak kosong. Ia menakutkan karena kapal mengukur pemain sebagai status operator, kehilangan dropcraft, ketidakpastian sampel, klaim terbuka, dan massa lien sebelum menawarkan bahasa penyelamatan. Itulah tekanan pembuka HECTON-8 dalam bentuk kecil. Pemain hidup, kapal nyata, dan rute pulang sudah disaring oleh cuaca, utang, massa, dan siapa pun yang mendapat manfaat dari payload.
 
 <!-- External Site; generated from P002_BLACK_KEEL_CONTACT/id_ID. -->

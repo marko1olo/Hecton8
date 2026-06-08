@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: претензія під тиском"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: претензія під тиском
 
-UK LOC HOLD: Recovered P-63 route notes tie the opening contract to Black Keel's salvage window. The shelf is bright enough to navigate, but the useful facts are mechanical: bathydrop damage, pressure repair, scanner returns, and official wording that does not match the marks on the hardware. Keep the record spoiler-safe until deeper evidence is recovered.
+Записи P-63 показують старт як salvage-роботу під боргом. Корисні факти механічні: витрачений запас підйому, затоплена авіоніка, пошкоджені ущільнення, скани й офіційна мова, що не пояснює вм'ятини.
 
 ## Scanner
 
-UK LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+Вхідний запис мародера. Контракт Black Keel пов'язує P-63, пошкоджений bathydrop, заставу 4.8 tonne-window і акт аварії, що не збігається з металом.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+ПУБЛІЧНИЙ АРХІВ // ПРЕТЕНЗІЯ H8. Вікно: реле Aegir відкрите. Роботи: відновити ущільнення, просканувати P-63, забрати вантаж, зберегти докази, повернутися до закриття геометрії прийому.
 
 ## Audio
 
-UK LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+Фрагмент реле Black Keel: "Вікно вузьке. Полагодь спускову оболонку, прочитай сліди тиску й принеси доказ разом із вантажем."
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+Нотатка мародера: світло на P-63 не є безпекою. Рахуй повітря, лагодь ущільнення до вантажу й не вір акту без відповіді на вм'ятини.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/uk_UA. -->

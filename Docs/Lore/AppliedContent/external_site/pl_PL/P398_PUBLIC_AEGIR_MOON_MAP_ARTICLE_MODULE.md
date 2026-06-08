@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Aegir Moon Route Map"
+title: "Mapa tras księżyców Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Aegir Moon Route Map
+# Mapa tras księżyców Aegir
 
-PL LOC HOLD: Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+Mapa księżyców Aegir jest najpierw operacyjna, dopiero potem piękna. HECTON-8 to ciało oceaniczne w drabinie księżyców, shepherd rocks, ice-scatter paths i dead relay marks. Ciała wewnętrzne zakłócają narrowband contact i osłonę radiacyjną. Lodowe księżyce rozbijają optical relay lines na złe fragmenty. Occultation bands tworzą okna ciszy, gdzie claim może być ważny i wciąż niesłyszany. Zewnętrzne beacons zachowują dawne prawa własności po zniknięciu załóg. Geometria pływów i storm stacking decydują, czy bathydrop chain wzniesie się czysto, czy trafi do loss ledger. Mapy publiczne mogą to pokazać bez obietnicy dodatkowych światów gry; ich zadaniem jest uczynić niebo czytelnym jako ciśnienie, opóźnienie i ryzyko trasy.
 
 ## Scanner
 
-PL LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Zapis mapy systemu. Księżyce Aegir określają relay timing, osłonę radiacyjną, ice scatter, ciśnienie pływowe, occultation bands, martwe beacons i recovery geometry.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+WĘZEŁ ARCHIWUM PUBLICZNEGO // DRABINA KSIĘŻYCÓW AEGIR. Nazwy księżyców są etykietami trasy. Każde ciało zmienia signal age, transfer risk, storm exposure, custody timing lub claim reliability.
 
 ## Audio
 
-PL LOC HOLD: The map is why no one arrives the moment you ask.
+Mapa wyjaśnia, dlaczego nikt nie przybywa w chwili prośby.
 
 ## Field Note
 
-PL LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Notatka Maraudera: zaznacz księżyc, potem zaznacz, co robi trasie.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/pl_PL. -->

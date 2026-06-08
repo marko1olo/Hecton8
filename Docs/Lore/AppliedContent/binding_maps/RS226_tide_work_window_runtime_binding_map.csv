@@ -1,0 +1,2 @@
+packet_id,packet_hash_hex,packet_hash_uint,release_set,primary_component,primary_field,secondary_component,secondary_field,suggested_world_target,unlock_moment,notes
+P1305_TIDE_WORK_WINDOW_FIELD_ARTICLE,0x9065BDDA,2422586842,RS226_TIDE_WORK_WINDOW_FIELD_ARTICLE,NarrativeDiscovery,appliedLorePacketHash,MessageTerminal,appliedLorePacketHash,"poi.tide_window_board; poi.route_slack_marker; poi.acoustic_blackout_terminal; poi.storm_window_contract_card",first_tide_window_or_blackout_notice,Authoring source only; runtime consumes baked DataMonolith rows and packet hash constants.

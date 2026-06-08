@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # PREDATEURS APEX ET BIOLOGIE ABYSSALE
 
 > **Source :** Fragment de rapport de xénobiologie, laboratoire de recherche du Secteur 44 (Récupéré).

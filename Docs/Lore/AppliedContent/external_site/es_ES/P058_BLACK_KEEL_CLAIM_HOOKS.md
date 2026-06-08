@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Ganchos de reclamación de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Ganchos de reclamación de Black Keel
 
-ES LOC HOLD: Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses.
+Ganchos de reclamación de Black Keel define la presión inicial. Black Keel no es una nave villana de gesto teatral; es un transportista atado a la economía de reclamaciones, la ley de cuarentena y palancas dormidas de Deep Reach. El problema del jugador es práctico y moral a la vez: una voz sobre el océano puede oír la llamada de socorro, pero la ruta a casa debe volverse valiosa, certificable y legalmente incómoda de ignorar.
 
 ## Scanner
 
-ES LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+En el manifiesto, Black Keel es hardware del fondo de reclamaciones; en las cláusulas, es palanca de Deep Reach.
 
 ## Terminal
 
-ES LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+CUSTODIA DEL TRANSPORTISTA: recuperación del operador permitida tras triaje de carga, puerta de cuarentena, certificado de ruta y limpieza de responsabilidad. Sello de prioridad de Deep Reach conservado en cláusulas dormidas.
 
 ## Audio
 
-ES LOC HOLD: It can hear you. It just has to price the answer first.
+Puede oírte. Solo tiene que poner precio a la respuesta primero.
 
 ## Field Note
 
-ES LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+La nave no es malvada. Está arrendada a un contrato que sabe ser cruel sin sonar vivo.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/es_ES. -->

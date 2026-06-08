@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Koudkit-patchpistool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Koudkit-patchpistool
 
-NL LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+Het koudkit-patchpistool geeft de eerste eerlijke reparatie na het pompen. Het kan een speldenlek stoppen of een pakkingrand lang genoeg houden om een kleine ruimte te herstellen, maar het maakt beschadigde structuur niet veilig. De nuttige les staat op het keuringslabel: HECTON-8 straft elke reparatie buiten haar drukklasse.
 
 ## Scanner
 
-NL LOC HOLD: Patch gun. Rated for pinholes, not miracles.
+Koudseal-patchpistool. Patroon alleen geschikt voor speldenlekken en rustige naden; actieve afschuiving trekt het los.
 
 ## Terminal
 
-NL LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+PATCHLIMIET / KOUDKIT: hecht op natte laagdiepe romphuid na afvegen. Goedgekeurd voor speldenlekken, pakkingranden en rustig naadsijpelen. Actieve schuurscheuren, warme blue-debt-bloei en bewegende kabelnaden afwijzen.
 
 ## Audio
 
-NL LOC HOLD: A patch is not safety. It is a countdown that looks solid.
+Noem het niet dicht. Noem het tijd.
 
 ## Field Note
 
-NL LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Een patch koopt minuten. Als de scheur nog beweegt, gebruik die minuten om weg te gaan.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/nl_NL. -->

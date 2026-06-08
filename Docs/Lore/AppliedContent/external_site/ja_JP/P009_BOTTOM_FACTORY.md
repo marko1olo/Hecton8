@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 底部工場
 
-Bottom FactoryはHECTON-8の最終領域であり、産業インフラと生きた圧力生態が分離不能になった工場船の神殿である。
-
-## Scanner
-
-流体導管、データ経路、生体膜が一つの圧力皮膜を共有している。
-
-## Terminal
-
-COLONY: 未解決。OCEAN: 互換。PROCESS: 稼働中。LOSS: 経路化済み。CONTINUITY: 保護。
-
-## Audio
-
-まだ動いている。それが一番悪い。
-
-## Field Note
-
-これを基地と呼ぶなら何も見えていない。基地には壁がある。
+底部工場は、これまでの手がかりすべてが物理的に結合する瞬間として感じられるべきだ。Blue debtはもはやサンプルだけではない。修復痕はもはや孤立した継ぎ当てではない。ブライン階段はもはや経路だけではない。退避記録はもはや書類ではない。底では、それらすべてのシステムが、まだ働いている一つの身体を養っている。材料を処理するから工場だ。経路と圧力皮膚がまだ荷を動かすから船だ。植民地の古いカテゴリが、人間には安全に解釈できない保守儀式に置き換えられたから神殿だ。重要なのは、ここが死んでいないことだ。忙しく働いている。扉を封じ、膜を育て、残骸を再利用し、連続性を保ち、海が届けたものを何でも使う。プレイヤーにとって最後の下降は、最後の部屋を探すことではなく、人、工具、経路、原材料の違いは任意だとすでに決めた機械へ入ることになる。
 
 <!-- External Site; generated from P009_BOTTOM_FACTORY/ja_JP. -->

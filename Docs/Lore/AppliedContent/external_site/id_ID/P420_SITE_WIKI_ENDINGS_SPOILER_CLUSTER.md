@@ -9,24 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 2
-title: "ID LOC HOLD: Endings and Payload Custody"
+title: "Akhir dan custody Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Endings and Payload Custody
+# Akhir dan custody Payload
 
-ID LOC HOLD: Every known HECTON-8 outcome begins before the final ascent. The decisive object is not only the body in the capsule, but the payload attached to it: coordinates, samples, Atlas records, worker evidence, quarantine status and the legal chain that decides who can call the recovery legitimate.
-
-Black Keel can lift a survivor and still sell the truth badly. Deep Reach can receive coordinates and bury them under recovery compliance. A public ledger can damage the company without returning the dead. Quarantine can be medically rational and politically useful in the same hour. Material payout can be real money and still leave the ocean holding the important proof.
-
-Atlas makes the custody problem worse. Severance can end a dangerous repair network, but it can also destroy the last system that remembers the colony as more than an insurance case. Preservation can protect records, but it leaves a damaged maintenance intelligence inside a living ocean-machine. Coordinate sale can end a debt and deliver the most valuable witness to the least trustworthy office.
-
-The false exits are not failures of courage. They are exits where one chain closes and another remains unpaid. The body leaves, the claim remains. The sample leaves, the worker record does not. The ledger leaks, but the carrier still owns the mass window. The quarantine hold preserves evidence until someone else decides what evidence means.
-
-No ending removes custody from the story. The final question is who owns the proof when HECTON-8 falls silent again.
+Klaster akhir tidak boleh disusun dengan label sederhana good dan bad. Di HECTON-8 yang penting adalah siapa menerima payload, siapa dapat membaca proof, siapa memperoleh custody atas tubuh, data, dan Atlas records, serta versi kebenaran mana yang bertahan setelah rute. False exit juga bagian dari struktur: pergi dengan bukti tidak lengkap dapat tampak seperti penyelamatan sampai after-action records menunjukkan siapa membeli keheningan. Area ini harus tetap di balik spoiler gates dan disusun menurut receiver consequences: Black Keel, Deep Reach, public archive, quarantine authority, Atlas continuity, dan kemungkinan hilangnya kendali atas interpretasi.
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/id_ID. -->

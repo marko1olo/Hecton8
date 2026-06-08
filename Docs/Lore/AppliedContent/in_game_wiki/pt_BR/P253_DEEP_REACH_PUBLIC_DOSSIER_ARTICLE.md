@@ -9,32 +9,35 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Deep Reach Public Dossier Article"
+title: "Dossiê Público da Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Deep Reach Public Dossier Article
+# Dossiê Público da Deep Reach
 
-PT-BR LOC HOLD: Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.
+A Deep Reach deve parecer uma instituição que realmente poderia construir HECTON-8 antes de falhar com ela. Publicamente, era um development combine: infraestrutura de pressão, certificação de rotas, moradia de trabalhadores, custódia orbital, ecologia industrial, linguagem de seguro e autoridade local reunidas em uma máquina. Isso torna o crime posterior mais afiado. A Deep Reach não era um império caricato querendo afogar uma lua. Ela precificou tail risk barato demais, subdimensionou a evacuação independente, deixou a linguagem de continuidade superar a extração e manteve estruturas antigas de reivindicação vivas enquanto pessoas ainda estavam dentro de salas falhando. O dossiê público pode nomear a empresa e o padrão de falha sem revelar cada assinatura. Deve ensinar o jogador a desconfiar de substantivos corporativos limpos: release, continuity, welfare, quarantine, route-safe, recoverable. Em HECTON-8, essas palavras muitas vezes marcam o lugar onde um problema humano foi convertido em problema de ativo.
 
 ## Scanner
 
-PT-BR LOC HOLD: The public company name is cleaner than its route history.
+O nome público da empresa é mais limpo que sua história de rotas. Comece pela infraestrutura. Deixe a responsabilidade aparecer nas juntas.
 
 ## Terminal
 
-PT-BR LOC HOLD: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+NÍVEL DE ARTIGO PÚBLICO / DEEP REACH
+permitido: development combine, operador de colônia, autoridade de infraestrutura, problema de capacidade de evacuação, linguagem pública de falha
+bloqueado: cadeia de signoff nomeada, internos de weighting de Atlas, consequências finais do receiver
+nota editorial: instituição plausível primeiro; crime por procedimento depois.
 
 ## Audio
 
-PT-BR LOC HOLD: Never make the villain simpler than the paperwork.
+A Deep Reach não precisava soar cruel. Só precisava que cada frase perigosa soasse concluída.
 
 ## Field Note
 
-PT-BR LOC HOLD: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+Não faça a Deep Reach sibilar. Faça-a certificar, adiar, preservar e faturar.
 
 <!-- In-Game Wiki; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/pt_BR. -->

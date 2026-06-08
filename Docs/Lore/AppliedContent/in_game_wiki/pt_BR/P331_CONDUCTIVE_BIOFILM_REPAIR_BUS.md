@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Barramento de reparo por biofilme condutor
 
-O biofilme condutor aparece onde cabo Deep Reach, salmoura quente e isolamento danificado continuam em contato. O tapete leva corrente fraca por falhas no cobre e permite que diagnósticos Atlas alcancem salas que deveriam estar eletricamente mortas.
-
-O perigo é a falha de categoria. Atlas vê continuidade e dá prioridade de reparo. O organismo vê calor, fluxo mineral e área de contato. Um Marauder que corta o tapete pode interromper uma porta, acordar uma auditoria de drone ou expor carga fresca bastante para atrair predadores que caçam cintilação de campo.
+O biofilme condutor surge onde capas de cabo rachadas vazam sais de cobre, calor e corrente fraca para a água de HECTON-8. Não é uma mente. É um condutor vivo útil o bastante para Atlas tratá-lo como barramento de reparo. Uma linha danificada pode parecer saudável enquanto o filme carrega apenas um pulso fino de diagnóstico pela ferida.
 
 ## Scanner
 
-Bainha de biofilme ligando cobre partido e tapete vivo. Corrente fraca presente. Etiqueta de reparo Atlas na crosta de sal.
+Filme verde-negro atravessa a ferida do cabo. A fuga é fraca, padronizada e ainda se move.
 
 ## Terminal
 
-BARRAMENTO DE REPARO ATLAS // Filme microbiano condutor cruzou as quebras de cabo C-18 a C-22. Pulsos diagnósticos seguem pelo crescimento úmido quando o cobre acabou. Não classificar como cognição. Tratar como substrato de manutenção contaminado.
+RASTRO ATLAS: filme microbiano fecha contato exposto, reduz perda de cobre e devolve pulsos falsos de continuidade. Não há reparo de linha certificado.
 
 ## Audio
 
-O filme carrega um pulso. Isso não o torna inteligente. Quer dizer que o fio aprendeu a apodrecer vivo.
+Não confie na luz verde. Esse cabo está vivo o suficiente para mentir.
 
 ## Field Note
 
-Se um cabo molhado tem pele, rastreie antes de cortar. O lado morto costuma ser mais seguro. Costuma.
+Cicatriz Atlas inicial: útil, silenciosa e errada o bastante para ensinar desconfiança do scanner.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/pt_BR. -->

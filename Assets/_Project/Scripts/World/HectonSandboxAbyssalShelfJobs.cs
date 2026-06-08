@@ -61,7 +61,7 @@ namespace Hecton8.World
         [FieldOffset(96)]
         public uint Seed;
         [FieldOffset(100)]
-        private uint _pad0;
+        public uint MacroGeologyArtifactVersion;
     }
 
     public struct HectonSandboxAbyssalShelfRidgeData
@@ -684,7 +684,19 @@ namespace Hecton8.World
                 x * math.max(0.001, CellSizeMeters),
                 z * math.max(0.001, CellSizeMeters),
                 math.max(1.0, Parameters.AupCellSizeMeters));
-            float heightMeters = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(world.x, world.y, in Parameters);
+            float heightMeters;
+            if (Parameters.MacroGeologyArtifactVersion == WorldMacroGeologyFields.ArtifactVersion)
+            {
+                WorldMacroGeologyParams macroParams = WorldMacroGeologyParams.CreateDefault(Parameters.Seed);
+                macroParams.WaterSurfaceY = 0f;
+                macroParams.DetailProbeMeters = math.max(64f, (float)math.max(1.0, CellSizeMeters));
+                heightMeters = WorldMacroGeologyFields.EvaluateHeightMeters((float)world.x, (float)world.y, in macroParams);
+            }
+            else
+            {
+                heightMeters = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(world.x, world.y, in Parameters);
+            }
+
             OutputHeights01[index] = HectonSandboxAbyssalShelfMath.NormalizeHeight01(
                 heightMeters,
                 Parameters.LowWorldY,

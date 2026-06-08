@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "Atlas-Becken-Redaktionslinie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# Atlas-Becken-Redaktionslinie
 
-DE LOC HOLD: Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons.
+Die Atlas-Becken-Redaktionslinie markiert, was öffentliche Aegir-Abdeckung über Monde, Routen und Rettungsdruck sagen darf, während das versiegelte Becken aus offenen Karten herausbleibt.
 
 ## Scanner
 
-DE LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+Der öffentliche Mondatlas darf die Himmelsgefahren nennen; er darf nicht drucken, was das Atlas-Becken-payload tut.
 
 ## Terminal
 
-DE LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+ATLAS-REDAKTION: öffentliche Mondseiten dürfen Namen, Routenfenster, Gefahren, salvage economy und HECTON-8-Katastrophenfakten listen. Payload-Effekte, Verhalten des basin receiver und Endentscheidungsfolgen bleiben gesperrt.
 
 ## Audio
 
-DE LOC HOLD: Publish the sky. Redact the bottom.
+Veröffentliche den Himmel. Versiegle den Boden.
 
 ## Field Note
 
-DE LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+Über den Wolken ist die Route öffentlich. Unter dem Becken hat jede Antwort noch ein Schloss.
 
 <!-- External Site; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/de_DE. -->

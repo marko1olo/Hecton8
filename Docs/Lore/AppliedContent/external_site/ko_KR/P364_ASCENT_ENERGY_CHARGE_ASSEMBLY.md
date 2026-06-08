@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Ascent Energy Charge Assembly"
+title: "상승 에너지 장약 조립체"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Ascent Energy Charge Assembly
+# 상승 에너지 장약 조립체
 
-KO LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.
+상승 에너지 장약 조립체는 자원 경제를 서사적 결과와 묶는다. blue debt와 vent-forged hardware가 탈출 신뢰도, 증거 custody, 타협을 결정한다.
 
 ## Scanner
 
-KO LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+에너지 크래들이 pressure pulse로 긁혀 있다. 싼 장약은 깔끔한 관을 만든다.
 
 ## Terminal
 
-KO LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp 필요. Raw fuel 거부. 미인증 blue debt는 launch impulse 아래 파열되며 recovery claim 무효.
 
 ## Audio
 
-KO LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+양력을 팔거나 타고 가거나. 둘 다는 안 된다.
 
 ## Field Note
 
-KO LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+크래들의 모든 그램은 탈출, 증거, 또는 blue-debt payout이다. 캡슐은 탐욕을 용서하지 않는다.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/ko_KR. -->

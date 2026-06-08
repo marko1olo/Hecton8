@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Aegir Window Bands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Aegir Window Bands
 
-Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
+Aegir traffic is governed by narrow transfer bands around radiation, eclipse, storm and relay geometry.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Local band: ascent waits on hours-to-days windows, not instant rescue.
 
 ## Terminal
 
-WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+WINDOW BAND: shutter, eclipse, relay, storm, carrier phase and legal handshake must align before safe transfer.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The carrier can hear you and still be in the wrong sky.
 
 ## Field Note
 
-Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+Window band record: Black Keel timing, local orbit labels and spoiler-light system pages share the same transfer constraints.
 
 <!-- External Site; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/en_US. -->

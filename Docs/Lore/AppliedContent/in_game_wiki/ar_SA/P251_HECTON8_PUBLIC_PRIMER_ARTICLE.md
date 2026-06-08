@@ -9,32 +9,35 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: HECTON-8 Public Primer Article"
+title: "مدخل عام إلى HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: HECTON-8 Public Primer Article
+# مدخل عام إلى HECTON-8
 
-AR LOC HOLD: The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
+تُقدَّم HECTON-8 كمكان يستحق النجاة، لا كمسرح جريمة فقط. ينتمي القمر إلى نظام Aegir: بارد، مدي، ثمين، وبعيد بشكل مزعج عن أي إنقاذ سريع. يمكن لرفوفه الضوئية أن تكون صافية وحية، مع عتاد مستعمرة ظاهر عبر الماء الساطع. تحت ذلك الجمال تهبط طرق Deep Reach القديمة إلى غرف المضخات، وممرات الضغط، وقطوع الملح، وساحات الترحيل المكسورة، وآلات واصلت العمل بعد أن توقف الناس عن الرد. يبقى المدخل العام آمنا من الحرق. يمكنه أن يقول إن اللاعب يعود كـ Marauder مقيد بالدين. يمكنه أن يقول إن المستعمرة فشلت، وإن عقد الإنقاذ قسري، وإن المحيط يحمل أدلة. لا يكشف خيار payload النهائي ولا سؤال Atlas الكامل. الهدف هو دعوة اللاعب إلى العالم من دون برد أسنانه.
 
 ## Scanner
 
-AR LOC HOLD: A public primer is allowed to be beautiful. It is not allowed to lie.
+تصريح المدخل العام: أظهر القمر جميلا أولا. لا تبع المحيط بإخفاء الجريمة.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+مدخل عام / آمن من الحرق
+المسموح: قمر Aegir المحيطي، رفوف ضوئية، مستعمرة صناعية غارقة، عودة Marauder للإنقاذ، أطلال Deep Reach
+المحجوب: مسار payload النهائي، حسم Atlas، عواقب مستلم النهاية
+ملاحظة تحرير: الجمال أولا، الدليل ثانيا، بلا وعد إنقاذ زائف.
 
 ## Audio
 
-AR LOC HOLD: First sell the ocean. Then earn the crime.
+الماء الضحل ليس قناعا. إنه ما كادوا ينجحون في بنائه قبل أن يحتفظ العمق بالإيصالات.
 
 ## Field Note
 
-AR LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+بع المحيط أولا. ثم دع الصدأ والوسوم وأختام الطرق تثبت أن المحيط ليس بريئا.
 
 <!-- In-Game Wiki; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/ar_SA. -->

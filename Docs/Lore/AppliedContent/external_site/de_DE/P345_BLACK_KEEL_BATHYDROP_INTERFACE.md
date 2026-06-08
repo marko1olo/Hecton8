@@ -9,32 +9,16 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Black Keel Bathydrop Interface"
+title: "Black-Keel-Bathydrop-Schnittstelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Black Keel Bathydrop Interface
+# Black-Keel-Bathydrop-Schnittstelle
 
-DE LOC HOLD: HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.
-
-## Scanner
-
-DE LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
-
-## Terminal
-
-DE LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
-
-## Audio
-
-DE LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
-
-## Field Note
-
-DE LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Die Bathydrop-Schnittstelle ist der Punkt, an dem das Weltraumsetting das Ozeanspiel berührt. Black Keel im Orbit reicht nicht. Der Spieler braucht eine Kette: Kapselintegrität, Auftriebskontrolle, Komm-Mast, Aufstiegsklinke, druckfeste Dichtungen, Relaismathematik, Oberflächentiming und Trägerakzeptanz. Ein gebrochenes Glied macht Rettung zur Theorie. So bleibt der Anfang ehrlich. Der Spieler ist nicht gefangen, weil die Geschichte das Schiff vergessen hat. Er ist gefangen, weil die einzige Maschine, die Abyss, Oberfläche und Orbit verbinden kann, auf Arten versagt hat, die das Wasser stündlich verschlimmert.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/de_DE. -->

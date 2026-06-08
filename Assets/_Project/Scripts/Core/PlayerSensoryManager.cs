@@ -2,6 +2,7 @@ using Hecton8.Audio;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.UI;
+using Hecton8.World;
 using NASAPunk.Visor;
 using System.Collections.Generic;
 using UnityEngine;
@@ -22,6 +23,7 @@ namespace Hecton8.Core
         private bool _registeredService;
         private bool _registeredHotSwap;
         private bool _syncInProgress;
+        private bool _runtimeOwnerAborted;
         private GameObject _playerObject;
         private Transform _playerTransform;
         private HectonPlayerMovement _playerMovement;
@@ -98,14 +100,15 @@ namespace Hecton8.Core
         /// </summary>
         public static PlayerSensoryManager EnsureRuntimeInstance()
         {
-            PlayerSensoryManager runtime = s_activeRuntime != null
-                ? s_activeRuntime
-                : GlobalRegistry.PlayerSensoryRuntime;
-
+            PlayerSensoryManager runtime = ResolveUsableRuntime();
             if (runtime != null)
-            {
-                s_activeRuntime = runtime;
                 return runtime;
+
+            IPlayerSensoryService registeredService = GlobalRegistry.RegisteredPlayerSensory;
+            if (IsSensoryServiceUsable(registeredService) &&
+                ReferenceEquals(registeredService as PlayerSensoryManager, null))
+            {
+                return null;
             }
 
             GameObject runtimeRoot = new GameObject("[PlayerSensoryManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player sensory service root - owner: PlayerSensoryManager
@@ -117,33 +120,35 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
+            if (_runtimeOwnerAborted || !EnsureSingletonOwnership())
+                return;
+
             if (_isInitialized)
             {
-                EnsureSingletonOwnership();
-                if (!ReferenceEquals(s_activeRuntime, this))
+                if (!TryRegisterService())
                     return;
 
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
-                TryRegisterService();
                 SyncSensoryContextCold();
                 return;
             }
 
-            EnsureSingletonOwnership();
-            if (!ReferenceEquals(s_activeRuntime, this))
+            if (!TryRegisterService())
                 return;
 
             _isInitialized = true;
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
-            TryRegisterService();
             SyncSensoryContextCold();
         }
 
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             RefreshSensoryContextHot();
         }
 
@@ -154,21 +159,31 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted || !EnsureSingletonOwnership())
+                return;
+
             if (_isInitialized)
             {
-                EnsureSingletonOwnership();
-                if (!ReferenceEquals(s_activeRuntime, this))
+                if (!TryRegisterService())
                     return;
 
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
-                TryRegisterService();
                 SyncSensoryContextCold();
             }
         }
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+            {
+                GlobalRegistry.ClearPlayerSensoryRuntime(this);
+                if (ReferenceEquals(s_activeRuntime, this))
+                    s_activeRuntime = null;
+
+                return;
+            }
+
             TryUnregisterUpdatable();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
@@ -176,6 +191,15 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+            {
+                GlobalRegistry.ClearPlayerSensoryRuntime(this);
+                if (ReferenceEquals(s_activeRuntime, this))
+                    s_activeRuntime = null;
+
+                return;
+            }
+
             ShutdownServiceState();
         }
 
@@ -189,6 +213,9 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 TryUnregisterUpdatable();
@@ -210,6 +237,9 @@ namespace Hecton8.Core
 
         private void ShutdownServiceState()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterUpdatable();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
@@ -232,21 +262,42 @@ namespace Hecton8.Core
                 s_activeRuntime = null;
         }
 
-        private void EnsureSingletonOwnership()
+        private bool EnsureSingletonOwnership()
         {
-            PlayerSensoryManager runtime = s_activeRuntime != null
-                ? s_activeRuntime
-                : GlobalRegistry.PlayerSensoryRuntime;
+            if (_runtimeOwnerAborted)
+                return false;
 
-            if (runtime != null && runtime != this)
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            PlayerSensoryManager runtime = s_activeRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
             {
-                Destroy(gameObject);
-                return;
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+                s_activeRuntime = null;
+                GlobalRegistry.ClearPlayerSensoryRuntime(runtime);
             }
+
+            runtime = GlobalRegistry.PlayerSensoryRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+                GlobalRegistry.ClearPlayerSensoryRuntime(runtime);
+                if (ReferenceEquals(s_activeRuntime, runtime))
+                    s_activeRuntime = null;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterPlayerSensoryRuntime(this);
             if (ReferenceEquals(GlobalRegistry.PlayerSensoryRuntime, this))
                 s_activeRuntime = this;
+
+            return ReferenceEquals(s_activeRuntime, this) &&
+                   ReferenceEquals(GlobalRegistry.PlayerSensoryRuntime, this);
         }
 
         private void RefreshSensoryContextHot()
@@ -351,7 +402,7 @@ namespace Hecton8.Core
                 }
 
                 if (_underwaterVisuals == null)
-                    _underwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
+                    WorldRuntimeReferenceUtility.TryResolveHectonUnderwaterVisuals(ref _underwaterVisuals);
 
                 if (_hudNotification == null || !_hudNotification.isActiveAndEnabled)
                     HUDNotification.TryGetActive(out _hudNotification);
@@ -420,17 +471,45 @@ namespace Hecton8.Core
             _registeredHotSwap = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_registeredService)
-                return;
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             IPlayerSensoryService registeredService = GlobalRegistry.RegisteredPlayerSensory;
-            if (registeredService != null && !ReferenceEquals(registeredService, this))
-                return;
+            if (!ReferenceEquals(registeredService, null) && !ReferenceEquals(registeredService, this))
+            {
+                PlayerSensoryManager staleRuntime = registeredService as PlayerSensoryManager;
+                if (ReferenceEquals(staleRuntime, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterPlayerSensoryService(registeredService);
+                GlobalRegistry.ClearPlayerSensoryRuntime(staleRuntime);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+                if (ReferenceEquals(s_activeRuntime, staleRuntime))
+                    s_activeRuntime = null;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterPlayerSensoryService(this);
             _registeredService = ReferenceEquals(GlobalRegistry.PlayerSensory, this);
+            _runtimeOwnerAborted = !_registeredService;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return _registeredService;
         }
 
         private void TryUnregisterService()
@@ -440,6 +519,131 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterPlayerSensoryService(this);
             _registeredService = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            PlayerSensoryManager runtime = s_activeRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsSensoryRuntimeUsable(runtime))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+                s_activeRuntime = null;
+                GlobalRegistry.ClearPlayerSensoryRuntime(runtime);
+            }
+
+            runtime = GlobalRegistry.PlayerSensoryRuntime;
+            if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
+            {
+                if (IsSensoryRuntimeUsable(runtime))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+                GlobalRegistry.ClearPlayerSensoryRuntime(runtime);
+                if (ReferenceEquals(s_activeRuntime, runtime))
+                    s_activeRuntime = null;
+            }
+
+            IPlayerSensoryService registeredService = GlobalRegistry.RegisteredPlayerSensory;
+            if (ReferenceEquals(registeredService, null) || ReferenceEquals(registeredService, this))
+                return false;
+
+            if (IsSensoryServiceUsable(registeredService))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            PlayerSensoryManager staleRuntime = registeredService as PlayerSensoryManager;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterPlayerSensoryService(registeredService);
+                GlobalRegistry.ClearPlayerSensoryRuntime(staleRuntime);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+                if (ReferenceEquals(s_activeRuntime, staleRuntime))
+                    s_activeRuntime = null;
+            }
+
+            return false;
+        }
+
+        private static PlayerSensoryManager ResolveUsableRuntime()
+        {
+            PlayerSensoryManager runtime = s_activeRuntime;
+            if (IsSensoryRuntimeUsable(runtime))
+                return runtime;
+
+            if (!ReferenceEquals(runtime, null))
+            {
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+                s_activeRuntime = null;
+                GlobalRegistry.ClearPlayerSensoryRuntime(runtime);
+            }
+
+            runtime = GlobalRegistry.PlayerSensoryRuntime;
+            if (IsSensoryRuntimeUsable(runtime))
+            {
+                s_activeRuntime = runtime;
+                return runtime;
+            }
+
+            if (!ReferenceEquals(runtime, null))
+            {
+                runtime._registeredService = false;
+                runtime._isInitialized = false;
+                GlobalRegistry.ClearPlayerSensoryRuntime(runtime);
+                if (ReferenceEquals(s_activeRuntime, runtime))
+                    s_activeRuntime = null;
+            }
+
+            IPlayerSensoryService registeredService = GlobalRegistry.RegisteredPlayerSensory;
+            if (IsSensoryServiceUsable(registeredService))
+                return registeredService as PlayerSensoryManager;
+
+            PlayerSensoryManager staleRuntime = registeredService as PlayerSensoryManager;
+            if (!ReferenceEquals(staleRuntime, null))
+            {
+                GlobalRegistry.UnregisterPlayerSensoryService(registeredService);
+                GlobalRegistry.ClearPlayerSensoryRuntime(staleRuntime);
+                staleRuntime._registeredService = false;
+                staleRuntime._isInitialized = false;
+                if (ReferenceEquals(s_activeRuntime, staleRuntime))
+                    s_activeRuntime = null;
+            }
+
+            return null;
+        }
+
+        private static bool IsSensoryServiceUsable(IPlayerSensoryService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            PlayerSensoryManager runtime = service as PlayerSensoryManager;
+            return ReferenceEquals(runtime, null) ||
+                   (runtime._registeredService && IsSensoryRuntimeUsable(runtime));
+        }
+
+        private static bool IsSensoryRuntimeUsable(PlayerSensoryManager runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
         }
     }
 }

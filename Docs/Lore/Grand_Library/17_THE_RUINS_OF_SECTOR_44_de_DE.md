@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DIE RUINEN VON SEKTOR 44
 
 > **Quelle:** Kartographieprotokoll der Vermessungsdrohne 99-Delta (Geborgen).

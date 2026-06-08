@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ran / Aegir Anchor"
+title: "Ran / Aegir-Anker"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ran / Aegir Anchor
+# Ran / Aegir-Anker
 
-DE LOC HOLD: Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below.
+Ran / Aegir-Anker legt HECTON-8s visuelle Richtung fest: harte SF mit schwächerem Sonnenlicht oben, feindlichem Druck und Schuld unten.
 
 ## Scanner
 
-DE LOC HOLD: K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
+K-Klasse-Sternplatte. Ran brennt normal. Aegir ist dunkler als Sol, doch die Dunkelheit hier kommt von Tiefe, Wetter und Schuld.
 
 ## Terminal
 
-DE LOC HOLD: RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR // Orange-Zwerg-Licht stützt Oberflächenarbeit. Sturmstreuung, Finsternisgeometrie und Ozeantrübung drücken Abstiegslesbarkeit unter die Sicherheitsmarge.
 
 ## Audio
 
-DE LOC HOLD: The star is not absent. It just cannot follow you down.
+Der Stern ist da. Er kann dir nur nicht nach unten folgen.
 
 ## Field Note
 
-DE LOC HOLD: A real star is enough. The ocean does the rest.
+Ein echter Stern genügt. Den Rest erledigt der Ozean.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/de_DE. -->

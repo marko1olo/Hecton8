@@ -470,8 +470,8 @@ namespace Hecton8.World
             }
 
             Renderer renderer = null;
-            if (_objectPool == null ||
-                !_objectPool.TryGetPooledRootRenderer(volume, out renderer) ||
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool) ||
+                !pool.TryGetPooledRootRenderer(volume, out renderer) ||
                 renderer == null)
             {
                 PublishChunkFadeWarning(ChunkFadeRendererMissingWarningHash, key, 1f);
@@ -733,18 +733,60 @@ namespace Hecton8.World
             _playerRuntimeContext = GlobalRegistry.Player;
             if (_playerRuntimeContext != null && _playerRuntimeContext.PlayerTransform != null)
                 playerTransform = _playerRuntimeContext.PlayerTransform;
-            _objectPool ??= GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPool = pool;
+                return;
+            }
+
+            _objectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
+            playerAup = default;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext != null && playerContext.PlayerMovement != null)
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
             {
-                playerAup = playerContext.PlayerMovement.CurrentAup;
-                if (AbsoluteUniversePosition.IsFinite(in playerAup))
-                    return true;
+                playerAup = movementState.PredictedAup;
+                return true;
             }
+
+            if (playerContext != null)
+                return false;
 
             Vector3 playerPosition = playerTransform != null ? playerTransform.position : transform.position;
             return TryResolveAupFromRuntimeOrigin(playerPosition, out playerAup);
@@ -822,6 +864,7 @@ namespace Hecton8.World
 
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
                     return;
 
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
@@ -832,7 +875,7 @@ namespace Hecton8.World
                     return;
 
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     return;
 
                 case GlobalRegistryServiceSlot.Player:

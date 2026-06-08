@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "Centauri Compact 合法性"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# Centauri Compact 合法性
 
-CN LOC HOLD: Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt.
+Centauri Compact 合法性让更大的设定落地：人类扩张在某些地方已经能运转，这让 Aegir 不像英雄边疆，更像腐败边区。
 
 ## Scanner
 
-CN LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+Centauri 审计标签。早期太阳系外合法性，后来成了边境借口。
 
 ## Terminal
 
-CN LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+CENTAURI COMPACT HARDWARE: 压力箱已获民用转运认证。审计通道 inactive。经 Deep Reach 第三方改装后保修失效。
 
 ## Audio
 
-CN LOC HOLD: First legitimacy became old metal under a newer lie.
+最初的合法性，后来成了新谎言下面的旧金属。
 
 ## Field Note
 
-CN LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+Compact 让遥远的索赔显得体面。体面不是救援。
 
 <!-- External Site; generated from P072_CENTAURI_COMPACT_LEGITIMACY/zh_CN. -->

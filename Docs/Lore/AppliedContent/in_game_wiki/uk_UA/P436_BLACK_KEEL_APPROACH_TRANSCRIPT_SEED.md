@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Транскрипт підходу Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Black Keel Approach Transcript Seed
+# Транскрипт підходу Black Keel
 
-UA LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+Транскрипт підходу робить Black Keel корисною інфраструктурою, але не милістю. Carrier дає Marauder лінію до орбіти, а потім називає борг, вікно приймача, ліміт здоров'я, ліміт маси й вимогу доказів, перш ніж надія зможе переписати фізику.
 
 ## Scanner
 
-UK LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Відновлене аудіо carrier підтверджує оплачений спуск, умовне повернення, затримку чотири секунди й обов'язковий пакет доказів.
 
 ## Terminal
 
-UK LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
-UK LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+Тендер Black Keel до заявника. Затримка чотири секунди. Спуск виставлено до оплати. Повернення не гарантоване. Надішліть здоров'я, масу, доказ.
 
 ## Field Note
 
-UK LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+Буфер claim-tender, зрізаний storm carrier. Голос має бути процедурним: факти маршруту спершу, втіха ніколи.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/uk_UA. -->

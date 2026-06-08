@@ -1,0 +1,116 @@
+{
+  "schema": "hecton8.batch34.visor_trauma_decal_array_slice_contract.v1",
+  "arrayAsset": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
+  "alphaCandidateManifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+  "runtimeConsumer": "Assets/_Project/Scripts/Visor/DeferredDecalPass.cs",
+  "runtimeSource": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+  "editorIntegrator": "Assets/_Project/Scripts/Editor/Batch34VisorTraumaDecalArrayIntegrator.cs",
+  "rendererAssets": [
+    "Assets/_Project/Data/PC_Renderer.asset",
+    "Assets/_Project/Data/PC_High_Renderer.asset"
+  ],
+  "status": "STATIC_ROUTE_READY_PENDING_UNITY_BAKE_BIND",
+  "notes": [
+    "Texture2DArray slices are sampled by DeferredDecalPass through _GlobalVisorTraumaAtlas.",
+    "DynamicDecalVaultRuntime packs decal type in bits 0..3 and atlas slice in bits 4..7.",
+    "Do not reorder slices without updating Batch34VisorTraumaDecalArrayIntegrator.cs and Tools/ValidateBatch34VisorTraumaDecalArrayRoute.py."
+  ],
+  "slices": [
+    {
+      "slice": 0,
+      "sourceId": "B34-3429",
+      "runtimeDecalType": "Scorch",
+      "role": "cutter burn, scorch, heat stain"
+    },
+    {
+      "slice": 1,
+      "sourceId": "B34-3432",
+      "runtimeDecalType": "Blood",
+      "role": "organic contamination, dark biological residue"
+    },
+    {
+      "slice": 2,
+      "sourceId": "B34-3431",
+      "runtimeDecalType": "Acid",
+      "role": "wet rivulet, leak edge, acid-like smear"
+    },
+    {
+      "slice": 3,
+      "sourceId": "B34-3423",
+      "runtimeDecalType": "HullDent",
+      "role": "leak rust, hull scuff, old rupture residue"
+    },
+    {
+      "slice": 4,
+      "sourceId": "B34-3427",
+      "runtimeDecalType": "GlassCrack",
+      "role": "pressure glass crack, persistent visor/window fracture"
+    },
+    {
+      "slice": 5,
+      "sourceId": "B34-3428",
+      "runtimeDecalType": "Burn",
+      "role": "warning paint abrasion, impact-mark readability"
+    },
+    {
+      "slice": 6,
+      "sourceId": "B34-3425",
+      "runtimeDecalType": "SaltCrust",
+      "role": "salt crust and mineral deposit"
+    },
+    {
+      "slice": 7,
+      "sourceId": "B34-3426",
+      "runtimeDecalType": "GlassCrack",
+      "role": "instrument glass smudge and fine scratch"
+    },
+    {
+      "slice": 8,
+      "sourceId": "B34-3430",
+      "runtimeDecalType": "Scorch",
+      "role": "barnacle colony organic placement variant"
+    },
+    {
+      "slice": 9,
+      "sourceId": "B34-3433",
+      "runtimeDecalType": "Blood",
+      "role": "brine-zone flora smear and translucent organic residue"
+    },
+    {
+      "slice": 10,
+      "sourceId": "B34-3436",
+      "runtimeDecalType": "Acid",
+      "role": "sponge pore organic stain"
+    },
+    {
+      "slice": 11,
+      "sourceId": "B34-3439",
+      "runtimeDecalType": "Blood",
+      "role": "spore pod translucent stain"
+    },
+    {
+      "slice": 12,
+      "sourceId": "B34-3445",
+      "runtimeDecalType": "Blood",
+      "role": "larva egg sac membrane stain"
+    },
+    {
+      "slice": 13,
+      "sourceId": "B34-3446",
+      "runtimeDecalType": "Blood",
+      "role": "scavenged carcass trace"
+    },
+    {
+      "slice": 14,
+      "sourceId": "B34-3448",
+      "runtimeDecalType": "Scorch",
+      "role": "resource nodule pickup residue and small mineral chip trace"
+    },
+    {
+      "slice": 15,
+      "sourceId": "B34-3450",
+      "runtimeDecalType": "HullDent",
+      "role": "data core wet circuit ceramic trace"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # DE COMMUNICATIE-BLACKOUT EN ORBITALE STILTE
 
 > **Bron:** Operationele handleiding van de orbitale tender *Black Keel*, Sectie 4.

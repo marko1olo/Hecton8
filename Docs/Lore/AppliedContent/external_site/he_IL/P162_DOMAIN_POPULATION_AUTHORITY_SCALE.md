@@ -9,32 +9,24 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Population And Authority Scale"
+title: "סולם אוכלוסייה וסמכות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Population And Authority Scale
+# סולם אוכלוסייה וסמכות
 
-HE LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
+## ספירה אינה כוח
 
-## Scanner
+טבלת הדומיינים משאירה אוכלוסייה רכה בכוונה. מספרי census מדויקים יכוילו אחר כך, אבל יחסי הלחץ נעולים: Sol מחזיק מימון ישן ואישור, Centauri מחזיק שפת לגיטימיות, Barnard מחזיק תרבות salvage, Tau Ceti מחזיק לחץ ראיות ציבורי, Luyten מחזיק custody של חבילות, ו-Aegir מחזיק את המקום המלוכלך שבו כל זה נהפך למכונה.
 
-HE LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+שחקן ב-HECTON-8 לא אמור לקרוא שם דומיין כפרט טריוויה. Sol Core הוא חותם על בעלות והמשכיות ביטוחית. הוא יכול להפוך אוקיינוס מת לפעיל משפטית. Centauri Compact הוא זיכרון של התרחבות מתפקדת, ולכן Deep Reach יכול לשאול את טון הצ'רטר שלו ולהיראות פחות רקוב. Barnard Yards מסביר למה הגיבור מכיר מהדקים, cutters, pressure tools ועבודות רעות בלי מיתוס גבורה.
 
-## Terminal
+Tau Ceti חשוב כי הוא יכול להפוך ראיה למשמעותית בציבור. זה לא אומר שהוא יכול להציל צוללן לפני שהגאות משתנה. Luyten Junction קר יותר: הוא יכול לשמר custody, hash chains ו-packet notary records בלי סמכות מוסרית. Aegir הוא dirty claim node שבו shells מקומיים, חלונות Black Keel ו-priority hooks של Deep Reach הופכים סמכויות רחוקות לסכנה מיידית.
 
-HE LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
-
-## Audio
-
-HE LOC HOLD: The largest domain is not the nearest hand.
-
-## Field Note
-
-HE LOC HOLD: Do not turn the setting into census space opera.
+לכן desk קטן יכול להיות חשוב יותר מכוכב לכת. HECTON-8 לא נשלט על ידי האוכלוסייה הגדולה ביותר. הוא נשלט בידי מי שיכול לגרום ל-claim לשרוד מרחק ואז לחייב את השורד שנגע בו.
 
 <!-- External Site; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/he_IL. -->

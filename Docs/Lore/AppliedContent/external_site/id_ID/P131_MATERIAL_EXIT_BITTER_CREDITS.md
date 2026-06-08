@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Keluar Material: Kredit Pahit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Keluar Material: Kredit Pahit
 
-ID LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
+Keluar material harus terasa sah dan dingin. Pemain mengambil material tekanan, menjaga custody tetap utuh, memenuhi akuntansi massa-jendela Black Keel, dan mendapat pengurangan lien nyata. Tidak ada alarm yang menyatakan gagal; sistem bekerja persis seperti dirancang.
 
-## Scanner
-
-ID LOC HOLD: You can leave richer and still fail the place.
-
-## Terminal
-
-ID LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
-
-## Audio
-
-ID LOC HOLD: The invoice clears before the names do.
-
-## Field Note
-
-ID LOC HOLD: This ending should be real credits, not a fake game over.
+Kerusakan ada pada hal yang dikecualikan tanda terima. Nama pekerja hilang belum direkonsiliasi, rantai bukti tidak lengkap, dan Deep Reach memperoleh alasan komersial lebih bersih untuk kembali. HECTON-8 tidak menghukum pemain karena profesional. Ia menunjukkan biaya keberhasilan profesional saat lokasi kerja juga sebuah kuburan.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/id_ID. -->

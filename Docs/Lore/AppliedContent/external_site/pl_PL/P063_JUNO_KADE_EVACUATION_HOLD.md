@@ -8,33 +8,19 @@ biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+spoiler_tier: 1
+title: "Blokada ewakuacji Juno Kade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# Blokada ewakuacji Juno Kade
 
-PL LOC HOLD: Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent.
+Juno Kade jest osobą między paniką a procedurą. Jej log nie pokazuje kolonii zbyt głupiej, by wyjść. Pokazuje kolejkę, marshal, tablice tras, próby manual override i bramy czekające na zgodę, gdy woda porusza się szybciej niż review.
 
-## Scanner
-
-PL LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
-
-## Terminal
-
-PL LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
-
-## Audio
-
-PL LOC HOLD: She kept counting people after the system started counting rooms.
-
-## Field Note
-
-PL LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+Blokada ma kilka nazw: kwarantanna, certyfikacja, ranga payload, claim seal. Każda brzmi osobno rozsądnie. Razem tworzą zamknięte drzwi z ludźmi po złej stronie. Kade jest ważna, bo zachowuje ludzki kształt ewakuacji. Gracz nie znajduje abstrakcyjnego zaniedbania. Znajduje działające wyjście, które autoryzowane opóźnienie uczyniło bezużytecznym.
 
 <!-- External Site; generated from P063_JUNO_KADE_EVACUATION_HOLD/pl_PL. -->

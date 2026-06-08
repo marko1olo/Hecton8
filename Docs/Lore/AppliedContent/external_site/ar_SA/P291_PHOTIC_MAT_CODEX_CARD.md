@@ -9,32 +9,36 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Photic Mat Codex Card"
+title: "بطاقة كودكس الحصيرة الضوئية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Photic Mat Codex Card
+# بطاقة كودكس الحصيرة الضوئية
 
-AR LOC HOLD: The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
+الحصائر الضوئية من أول دروس البيئة القابلة للقراءة في HECTON-8. تضيء المياه الضحلة، وتطعم grazers الصغيرة، وتثبت الغشاء المعدني، لكنها تشير أيضا إلى كيمياء الضغط والفواصل الهشة. يبدو المحيط داعيا لأن الأسطح الحية تعمل.
 
 ## Scanner
 
-AR LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+حصيرة ضوئية. صفيحة غشاء حيوي موجبة الأكسجين فوق جلد معدني. ساطعة، نافعة، وهشة تحت الضغط. لا تقشرها عن الشقوق المختومة.
 
 ## Terminal
 
-AR LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+عينة / حصيرة ضوئية
+الدور: سطح أكسجين ضحل، غذاء لـ grazers، مثبت غشاء معدني
+عينة آمنة: حافة رخوة أصغر من عرض الكف
+ارفض: صفائح تختم الفواصل، حصائر منتفخة بالغاز، حقول عض حديثة من grazers
+ملاحظة مسار: الحصائر الممزقة قد تنفس غازا محبوسا وتحول رفّا صافيا إلى hazard.
 
 ## Audio
 
-AR LOC HOLD: Light here is work, not comfort.
+تبدو ناعمة لأنها تعمل. إذا كانت تمسك فاصلا، فاتركها هناك.
 
 ## Field Note
 
-AR LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+حافة رخوة: عينة. غطاء فاصل: اتركه. إذا كانت الحصيرة تختم جرحا، فالجرح ما زال هناك.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/ar_SA. -->

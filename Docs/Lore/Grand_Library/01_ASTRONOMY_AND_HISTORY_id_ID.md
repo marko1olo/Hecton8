@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # SISTEM AEGIR: SEMBILAN BULAN DAN SATU KUBURAN
 
 > **Sumber:** Arsip Publik, Biro Registrasi Perbatasan, Galangan Kapal Barnard. Penyusun: J. Elkin-Torres, Kepala Arsiparis. Revisi terakhir: 2188. Tingkat akses: publik / tanpa sensor.  

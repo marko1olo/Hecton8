@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Black Keel Tender Interior Limits"
+title: "Límites interiores del tender Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Black Keel Tender Interior Limits
+# Límites interiores del tender Black Keel
 
-ES LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel es infraestructura de salvage hard-sci-fi, no una nave privada heroica. Su interior está construido alrededor de custodia de muestras, packet law, manejo de drones, mangas de cuarentena y presión de deuda. La nave puede ser una línea de vida y aun así seguir estructuralmente indiferente a la persona que la sostiene.
 
 ## Scanner
 
-ES LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+El tender tiene bastidores para muestras, drones, paquetes sellados y carga bajo lien antes de tener una litera apta para un pasajero vivo.
 
 ## Terminal
 
-ES LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: sin deep rescue crew, sin reserva de lanzadera atmosférica, sin ascenso gratuito fuera de lien authority, sin intendente humano.
 
 ## Audio
 
-ES LOC HOLD: The ship brought you here as cargo with hands.
+La nave te trajo aquí como carga con manos.
 
 ## Field Note
 
-ES LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel es un claim tender de trabajo: alquilado, embargado por deuda, automatizado y optimizado para custodia antes que rescate.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/es_ES. -->

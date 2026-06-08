@@ -120,6 +120,11 @@ namespace Hecton8.Tests.Editor
                     "IngestGameplaySignals",
                     "SignalBus<EntityDeathSignal>.GetFrameSnapshot",
                     "SignalBus<ItemAcquiredSignal>.GetFrameSnapshot",
+                    "SurvivalSignalRoute.TryGetLatestDeath",
+                    "_lastSurvivalDeathSignalSequence",
+                    "IngestLatestSurvivalDeathSignal",
+                    "TryRecordSurvivalDeathTelemetry",
+                    "ResolveSurvivalDeathSignalFrame",
                     "SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot",
                     "SignalBus<FrameTimeSignal>.GetFrameSnapshot",
                     "if (!recordRouteSample || _heatmapTimerSeconds < sampleSeconds)",
@@ -156,6 +161,9 @@ namespace Hecton8.Tests.Editor
                     "deleteAfterRead = true;",
                     "_fallbackFileSequence",
                     "FileMode.CreateNew",
+                    "FileOptions.WriteThrough",
+                    "stream.Length != byteCount",
+                    "TryGetFallbackFileLength(finalPath, out long finalBytes)",
                     "TryDeleteTempFallbackFile",
                     "response.Dispose();",
                     "IsHttpEndpoint",
@@ -198,19 +206,121 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ItemAcquiredTelemetry_RecordsOnlyResourceDeltaSources()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs");
+            string source = File.ReadAllText(path);
+            string ingest = ExtractMethodBody(source, "private void IngestItemAcquiredSignals(uint timestampSeconds)");
+            string filter = ExtractMethodBody(source, "private static bool IsResourceDeltaSource(byte sourceKind)");
+
+            Assert.That(ingest, Does.Contain("if (!IsResourceDeltaSource(signal.SourceKind))"));
+            Assert.That(ingest, Does.Contain("TryRecordEvent(AnalyticsEventHashes.ResourceDelta, timestampSeconds, aup);"));
+            Assert.That(filter, Does.Contain("ItemAcquiredSignalSourceKinds.Unknown"));
+            Assert.That(filter, Does.Contain("ItemAcquiredSignalSourceKinds.ResourceNode"));
+            Assert.That(filter, Does.Contain("ItemAcquiredSignalSourceKinds.ProceduralOreSpawner"));
+            Assert.That(filter, Does.Contain("ItemAcquiredSignalSourceKinds.DeployableSdfDrill"));
+            Assert.That(filter, Does.Contain("ItemAcquiredSignalSourceKinds.VoxelCarve"));
+            Assert.That(filter, Does.Contain("ItemAcquiredSignalSourceKinds.ScavengingLootOracle"));
+            Assert.That(filter, Does.Contain("ItemAcquiredSignalSourceKinds.HarvestableOutcrop"));
+            Assert.That(filter, Does.Contain("ItemAcquiredSignalSourceKinds.DroneMining"));
+            Assert.That(filter, Does.Not.Contain("ItemAcquiredSignalSourceKinds.Fabricator"));
+            Assert.That(filter, Does.Not.Contain("ItemAcquiredSignalSourceKinds.DeconstructionRefund"));
+            Assert.That(filter, Does.Not.Contain("ItemAcquiredSignalSourceKinds.ManualPickup"));
+            Assert.That(filter, Does.Not.Contain("ItemAcquiredSignalSourceKinds.LootMagnet"));
+        }
+
+        [Test]
+        public void SurvivalDeathTelemetryUsesLatestBridgeBeforeFrameSnapshot()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs");
+            string source = File.ReadAllText(path);
+            string reset = ExtractMethodBody(source, "private void ResetHotPathCounters()");
+            string ingest = ExtractMethodBody(source, "private void IngestSurvivalDeathSignals(uint timestampSeconds, uint frameId)");
+            string latest = ExtractMethodBody(source, "private void IngestLatestSurvivalDeathSignal(uint timestampSeconds, uint frameId)");
+            string record = ExtractMethodBody(source, "private bool TryRecordSurvivalDeathTelemetry(");
+            string frame = ExtractMethodBody(source, "private static uint ResolveSurvivalDeathSignalFrame(");
+
+            StringAssert.Contains("private int _lastSurvivalDeathSignalSequence;", source);
+            StringAssert.Contains("_lastSurvivalDeathSignalSequence = 0;", reset);
+            StringAssert.Contains("if (!_hasLastKnownPlayerAup)", ingest);
+            StringAssert.Contains("IngestLatestSurvivalDeathSignal(timestampSeconds, frameId);", ingest);
+            StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", ingest);
+            StringAssert.Contains("ResolveSurvivalDeathSignalFrame(in signal, frameId)", ingest);
+            StringAssert.Contains("TryRecordSurvivalDeathTelemetry(in signal, timestampSeconds, signalFrame);", ingest);
+            Assert.That(
+                ingest.IndexOf("IngestLatestSurvivalDeathSignal(timestampSeconds, frameId);", StringComparison.Ordinal),
+                Is.LessThan(ingest.IndexOf("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", StringComparison.Ordinal)));
+
+            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence)", latest);
+            StringAssert.Contains("if (sequence == _lastSurvivalDeathSignalSequence)", latest);
+            StringAssert.Contains("if (TryRecordSurvivalDeathTelemetry(in signal, timestampSeconds, signalFrame))", latest);
+            StringAssert.Contains("_lastSurvivalDeathSignalSequence = sequence;", latest);
+            Assert.That(
+                latest.IndexOf("TryRecordSurvivalDeathTelemetry(in signal, timestampSeconds, signalFrame)", StringComparison.Ordinal),
+                Is.LessThan(latest.IndexOf("_lastSurvivalDeathSignalSequence = sequence;", StringComparison.Ordinal)));
+
+            StringAssert.Contains("SurvivalVitalsChangedSignalFlags.Death", record);
+            StringAssert.Contains("if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)", record);
+            StringAssert.DoesNotContain("&& signal.DeathCause == 0", record);
+            StringAssert.Contains("signalFrame != 0u && signalFrame == _lastSurvivalDeathFrame", record);
+            StringAssert.Contains("if (!TryRecordEvent(AnalyticsEventHashes.Death, timestampSeconds, _lastKnownPlayerAup))", record);
+            StringAssert.Contains("_lastSurvivalDeathFrame = signalFrame;", record);
+            StringAssert.DoesNotContain("return TryRecordEvent(AnalyticsEventHashes.Death, timestampSeconds, _lastKnownPlayerAup);", record);
+            Assert.That(
+                record.IndexOf("TryRecordEvent(AnalyticsEventHashes.Death, timestampSeconds, _lastKnownPlayerAup)", StringComparison.Ordinal),
+                Is.LessThan(record.IndexOf("_lastSurvivalDeathFrame = signalFrame;", StringComparison.Ordinal)));
+
+            StringAssert.Contains("return signal.Frame != 0u ? signal.Frame : fallbackFrameId;", frame);
+        }
+
+        [Test]
+        public void DiskFallbackWriteUsesWriteThroughAndFinalLengthCheck()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs");
+            string source = File.ReadAllText(path);
+            string method = ExtractMethodBody(source, "private void WriteDiskFallback(NativeArray<byte> payload, int byteCount)");
+            string lengthHelper = ExtractMethodBody(source, "private static bool TryGetFallbackFileLength(string path, out long bytes)");
+
+            StringAssert.Contains("new FileStream(tmpPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough)", method);
+            StringAssert.Contains("stream.Flush(true);", method);
+            StringAssert.Contains("stream.Length != byteCount", method);
+            StringAssert.Contains("File.Move(tmpPath, finalPath);", method);
+            StringAssert.Contains("TryGetFallbackFileLength(finalPath, out long finalBytes)", method);
+            StringAssert.Contains("finalBytes != byteCount", method);
+            StringAssert.Contains("TryDeleteReplayFile(finalPath);", method);
+            StringAssert.Contains("TryDeleteTempFallbackFile(tmpPath);", method);
+            Assert.IsTrue(ContainsTokensInOrder(
+                method,
+                "FileOptions.WriteThrough",
+                "stream.Write(AsReadOnlySpan(payload, byteCount));",
+                "stream.Flush(true);",
+                "stream.Length != byteCount",
+                "File.Move(tmpPath, finalPath);",
+                "TryGetFallbackFileLength(finalPath, out long finalBytes)",
+                "finalBytes != byteCount",
+                "TryDeleteReplayFile(finalPath);",
+                "TryDeleteTempFallbackFile(tmpPath);"));
+
+            StringAssert.Contains("bytes = new FileInfo(path).Length;", lengthHelper);
+            StringAssert.Contains("return bytes >= 0L;", lengthHelper);
+            StringAssert.Contains("catch", lengthHelper);
+            StringAssert.Contains("return false;", lengthHelper);
+        }
+
+        [Test]
         public void WorkerIngressAcceptanceWaitsForSuccessfulWorkerStart()
         {
             string path = Path.Combine(Application.dataPath, "_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs");
             string source = File.ReadAllText(path);
             string onEnable = ExtractMethodBody(source, "private void OnEnable()");
-            string rebind = ExtractMethodBody(source, "private void RebindDataVault(IDataVault nextVault)");
+            string rebind = ExtractMethodBody(source, "private void RebindDataVault(IDataVault nextVault, IDataVault previousVault = null)");
             string startWorker = ExtractMethodBody(source, "private bool StartWorker()");
             string releaseFailure = ExtractMethodBody(source, "private void ReleaseWorkerStorageAfterStartFailure()");
             string disposeSignal = ExtractMethodBody(source, "private void DisposeWorkerSignalNoThrow()");
             string stopWorker = ExtractMethodBody(source, "private bool StopWorker()");
             string joinWorker = ExtractMethodBody(source, "private bool TryJoinWorkerNoThrow(Thread thread)");
             string signalWorker = ExtractMethodBody(source, "private bool SignalWorkerNoThrow()");
-            string releaseVaultHandle = ExtractMethodBody(source, "private void ReleaseVaultHandle<T>(ref VaultGenerationHandle<T> handle)");
+            string releaseVaultHandle = ExtractMethodBody(source, "private void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)");
             string unlockWorkerVault = ExtractMethodBody(source, "private void UnlockWorkerVaultBuffers()");
 
             StringAssert.Contains("if (_storageReady && StartWorker())", onEnable);
@@ -229,7 +339,7 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("Volatile.Write(ref _acceptingIngress, 0);", releaseFailure);
             StringAssert.Contains("_storageReady = false;", releaseFailure);
-            StringAssert.Contains("ReleaseVaultHandles();", releaseFailure);
+            StringAssert.Contains("ReleaseVaultHandles(_workerStorageVault ?? _dataVault);", releaseFailure);
             StringAssert.Contains("DisposeWorkerSignalNoThrow();", releaseFailure);
             StringAssert.Contains("_flushSignal.Dispose();", disposeSignal);
             StringAssert.Contains("catch (Exception)", disposeSignal);
@@ -253,9 +363,37 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("finally", releaseVaultHandle);
             StringAssert.Contains("handle = default;", releaseVaultHandle);
             StringAssert.Contains("vault.ReleaseMutationGuard(WorkerVaultMutationGuardMask);", unlockWorkerVault);
+            StringAssert.Contains("IDataVault vault = _workerBufferGuardVault ?? _workerStorageVault ?? _dataVault;", unlockWorkerVault);
+            StringAssert.Contains("_workerBufferGuardVault = null;", unlockWorkerVault);
             StringAssert.Contains("catch (Exception)", unlockWorkerVault);
             StringAssert.Contains("finally", unlockWorkerVault);
             StringAssert.Contains("_workerBuffersLocked = false;", unlockWorkerVault);
+        }
+
+        [Test]
+        public void DataVaultRebindReleasesExporterWorkerStorageThroughOwningVault()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs");
+            string source = File.ReadAllText(path);
+            string callback = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string acquire = ExtractMethodBody(source, "private bool TryAcquireVaultStorage()");
+            string releaseHandles = ExtractMethodBody(source, "private void ReleaseVaultHandles(IDataVault releaseVaultFallback = null)");
+            string rebind = ExtractMethodBody(source, "private void RebindDataVault(IDataVault nextVault, IDataVault previousVault = null)");
+            string lockWorkerVault = ExtractMethodBody(source, "private bool LockWorkerVaultBuffers()");
+            string unlockWorkerVault = ExtractMethodBody(source, "private void UnlockWorkerVaultBuffers()");
+
+            StringAssert.Contains("private IDataVault _workerStorageVault;", source);
+            StringAssert.Contains("private IDataVault _workerBufferGuardVault;", source);
+            StringAssert.Contains("RebindDataVault(currentService as IDataVault, previousService as IDataVault);", callback);
+            StringAssert.Contains("_workerStorageVault = vault;", acquire);
+            StringAssert.Contains("ReleaseVaultHandles(vault);", acquire);
+            StringAssert.Contains("IDataVault vault = _workerStorageVault ?? releaseVaultFallback ?? _dataVault;", releaseHandles);
+            StringAssert.Contains("_workerStorageVault = null;", releaseHandles);
+            StringAssert.Contains("ReleaseVaultHandles(_workerStorageVault ?? _dataVault ?? previousVault);", rebind);
+            StringAssert.Contains("_workerBufferGuardVault = vault;", lockWorkerVault);
+            StringAssert.Contains("IDataVault vault = _workerBufferGuardVault ?? _workerStorageVault ?? _dataVault;", unlockWorkerVault);
+            StringAssert.Contains("_workerBufferGuardVault = null;", unlockWorkerVault);
+            StringAssert.DoesNotContain("IDataVault vault = _dataVault;", unlockWorkerVault);
         }
 
         [Test]
@@ -367,6 +505,21 @@ namespace Hecton8.Tests.Editor
             }
 
             return count;
+        }
+
+        private static bool ContainsTokensInOrder(string text, params string[] tokens)
+        {
+            int index = 0;
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                int found = text.IndexOf(tokens[i], index, StringComparison.Ordinal);
+                if (found < 0)
+                    return false;
+
+                index = found + tokens[i].Length;
+            }
+
+            return true;
         }
     }
 }

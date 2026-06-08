@@ -8,33 +8,17 @@ biome_tags: biome.carrier_link;biome.shallow_annex
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Black Keel как внутрисистемный tender"
+spoiler_tier: 1
+title: "Внутрисистемный тендер Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel как внутрисистемный tender
+# Внутрисистемный тендер Black Keel
 
-Black Keel как внутрисистемный tender не дает carrier стать магической машиной спасения. Это hard-sci-fi salvage asset: полезный, условный, долговой и ограниченный локальной орбитальной механикой.
-
-## Scanner
-
-Tender limit. Black Keel может вернуть массу через окно; он не пересечет световые годы ради тебя.
-
-## Terminal
-
-CARRIER LIMIT: Aegir-system claim tender. Interstellar custody inherited from route owners; local recovery requires ascent package, quarantine handshake and payload acceptance.
-
-## Audio
-
-Black Keel достаточно близко, чтобы выставить счет. Недостаточно близко, чтобы спасать бесплатно.
-
-## Field Note
-
-Black Keel - рычаг и логистика, не кавалерия.
+Black Keel близок самым раздражающим способом. Он находится внутри пространства Aegir, способен держать custody, принимать payloads, выставлять долг и говорить через окна, но это не доброжелательный звездолет, готовый импровизировать спасение. Его власть локальна и процедурна. Он может принять чистый ascent package; он не может пожеланием вернуть сломанную bathydrop chain на орбиту. Этот предел делает carrier полезным, страшным и правдоподобным: машина достаточно близко, чтобы иметь значение, и достаточно ограничена, чтобы подвести тебя.
 
 <!-- External Site; generated from P105_BLACK_KEEL_IN_SYSTEM_TENDER/ru_RU. -->

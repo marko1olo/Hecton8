@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Kontak Black Keel
 
-Black Keel adalah carrier sistem, bukan kapal rumah. Ia memindahkan kapsul, tug kargo, paket claim, sampel tersegel, dan operator sial di lalu lintas Aegir. Ia bisa membantu, tetapi bantuan melewati geometri, cuaca, otomasi, utang, dan prioritas tersembunyi dalam kontrak.
+Black Keel adalah tender klaim sistem Aegir, bukan kapal rumah. Ia memindahkan kapsul, tug kargo, sampel tersegel, catatan lien, dan operator sial melalui lalu lintas lokal. Ia bisa membantu, tetapi bantuan melewati geometri orbit, cuaca, otomasi, utang, dan kait penerima manfaat yang disembunyikan dalam kontrak sebelum pemain menyentuh laut.
 
 ## Scanner
 
-Tiang relay tua. Asin, bengkok, masih mengarah ke langit yang benar.
+Tiang relay tua. Asin, bengkok, masih mengarah ke irisan langit Aegir yang benar.
 
 ## Terminal
 
-STATUS OPERATOR: hidup. STATUS DROPCRAFT: tak bisa dipulihkan. CLAIM: terbuka. SAMPEL: tidak diketahui. PEMULIHAN: menunggu jendela.
+STATUS OPERATOR: HIDUP. STATUS DROPCRAFT: TAK BISA DIPULIHKAN. STATUS KLAIM: TERBUKA. STATUS SAMPEL: TIDAK DIKETAHUI. PEMULIHAN: MENUNGGU JENDELA. MASSA LIEN: GARIS DASAR 4,8 TONNE-WINDOW.
 
 ## Audio
 
-Jendela menutup. Kirim satu paket. Pilih sebelum pita badai menutupi tiang.
+Jendela menutup. Kirim satu paket. Pilih sebelum pita badai menutup tiang.
 
 ## Field Note
 
-Kalau carrier bertanya apa yang kau temukan sebelum bertanya apakah kau bernapas, kau bukan klien. Kau alat.
+Kalau kapal pengangkut bertanya apa yang kau temukan sebelum bertanya apakah kau bernapas, kau bukan klien. Kau alat.
 
 <!-- In-Game Wiki; generated from P002_BLACK_KEEL_CONTACT/id_ID. -->

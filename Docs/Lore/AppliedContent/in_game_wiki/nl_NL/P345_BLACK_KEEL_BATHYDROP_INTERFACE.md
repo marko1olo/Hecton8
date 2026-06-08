@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Black Keel Bathydrop Interface"
+title: "Black Keel-bathydropinterface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Black Keel Bathydrop Interface
+# Black Keel-bathydropinterface
 
-NL LOC HOLD: The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+De eerste ontsnappingsblokkade is engineering. Black Keel bestaat nog boven het water, maar de beschadigde bathydropinterface kan oppervlak, orbit en timing niet op intentie verbinden. Reparatie vraagt deep-rated salvage, schone seals, werkende relaisgeometrie en een lanceervenster dat de carrier accepteert.
 
 ## Scanner
 
-NL LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+Bathydropinterface beschadigd: oppervlak-terugkeerketen kan niet sluiten zonder drukgeclassificeerde delen, relaistiming en schone opstijggrendel.
 
 ## Terminal
 
-NL LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+CAPSULERAPPORT: hitteschildtrim overleefd. Drijfgate verbogen. Commmast overstroomd. Opstijggrendel vervuild. Reparatie vereist drukkeramiek, afdichter, relaiswiskunde en geverifieerd venster.
 
 ## Audio
 
-NL LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
+Je verloor niet het hele schip. Je verloor de ene keten die het schip relevant maakt.
 
 ## Field Note
 
-NL LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+Eerste-uur-ontsnappingsrecord: de carrier is aanwezig, maar de keten tussen speler, zee, oppervlak en orbit is in benoemde delen gebroken.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/nl_NL. -->

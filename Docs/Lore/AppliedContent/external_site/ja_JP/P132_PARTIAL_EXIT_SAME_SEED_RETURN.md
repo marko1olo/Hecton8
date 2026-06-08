@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "部分退出：同一シード帰還"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# 部分退出：同一シード帰還
 
-JP LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed.
+部分退出は長いキャンペーンを偽の終結から守る。Black Keelは限られた窓で操作者を引き上げ、スーツを補修し、回収パケットを記録し、その休止を福祉として売ることができる。下の世界は清潔な別版へ入れ替わらない。
 
-## Scanner
-
-JP LOC HOLD: Extraction possible. Closure not included.
-
-## Terminal
-
-JP LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
-
-## Audio
-
-JP LOC HOLD: You left the pressure. You did not leave the contract.
-
-## Field Note
-
-JP LOC HOLD: Let the player breathe, then make the same ocean still be there.
+プレイヤーが戻る時、同じシードはまだそこにある。塩水階段には同じ罠があり、同じリレーには同じ悪い角度があり、同じ証拠はまだ危険である。この結末は免罪なき安堵を与える。肺の空気、契約上の追加債務、そして見つけたものを消さないこと。
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/ja_JP. -->

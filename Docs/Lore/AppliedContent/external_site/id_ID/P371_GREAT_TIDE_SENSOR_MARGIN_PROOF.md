@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Great Tide Sensor Margin Proof"
+title: "Jejak Margin Pasang Besar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Great Tide Sensor Margin Proof
+# Jejak Margin Pasang Besar
 
-ID LOC HOLD: The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.
+Bukti Deep Reach pertama yang berguna bukan pengakuan. Ia adalah margin sensor yang terus merekam setelah koridor tenggelam. Angka-angka itu tidak membuat bencana menjadi palsu: beban hidrostatik, geser pasang, dan infrastruktur gagal memang menaklukkan HECTON-8. Justru itu yang membuat bukti kuat. Kebohongan dimulai di jarak antara jejak mentah dan laporan publik. Jejak mentah menandai pelanggaran margin peringatan sebelum jendela rute resmi tertutup. Laporan publik mempertahankan cascade geoteknis dan membuang catatan accepted-tail-risk. Pemain yang menemukan jejak melihat bentuk kesalahan yang tepat: fisika menghantam koloni, lalu pejabat memutuskan peringatan lebih murah daripada penghentian.
 
 ## Scanner
 
-ID LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Sensor pasang berhasil dipulihkan. Geser puncak melampaui desain koloni, tetapi pelanggaran margin peringatan tercatat sebelum stempel cascade publik.
 
 ## Terminal
 
-ID LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Ambang tail-risk diterima otoritas rute. Catatan operator dihapus dari rantai insiden publik. Jejak mentah bertahan di memori brine-buffer.
 
 ## Audio
 
-ID LOC HOLD: Physics did the damage. A person signed the margin.
+Laut tidak berbohong. Laporannya berbohong.
 
 ## Field Note
 
-ID LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Catatan Marauder: jangan cari pidato penjahat. Cari baris yang dihapus.
 
 <!-- External Site; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/id_ID. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Математика польоту без FTL
 
-Дистанція стає тиском gameplay: затримані накази, стара влада, фізичні вікна втечі.
+No-FTL Transit Math перетворює міжзоряну відстань на тиск: затримані накази, застарілу владу, custody-затримки й фізичні вікна виходу.
 
 ## Scanner
 

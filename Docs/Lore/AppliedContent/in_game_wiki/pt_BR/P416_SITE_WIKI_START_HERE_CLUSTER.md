@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "PT LOC HOLD: Start Here: HECTON-8"
+title: "Comece Aqui: HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Start Here: HECTON-8
+# Comece Aqui: HECTON-8
 
-PT LOC HOLD: Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.
+Cluster inicial: contrato, papel do jogador, pressão de sobrevivência HECTON-8 e primeira contradição na história da Deep Reach.
 
 ## Scanner
 
-PT LOC HOLD: Publication hub: premise, player role, first constraints and the first Deep Reach lie.
+Hub de publicação: premissa, papel do jogador, primeiras restrições e primeira mentira da Deep Reach.
 
 ## Terminal
 
-PT LOC HOLD: SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.
+SITE NAV: entrada por contrato, ex-especialista Deep Reach, Marauder endividado, cápsula danificada, sem gancho familiar, primeiro traço de reparo Atlas.
 
 ## Audio
 
-PT LOC HOLD: You came for salvage. The ocean will make that motive too small.
+Você veio por salvage. O oceano tornará esse motivo pequeno demais.
 
 ## Field Note
 
-PT LOC HOLD: Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
+Navegação spoiler-light começa aqui: premissa primeiro, prova depois, finais só após acesso conquistado.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/pt_BR. -->

@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Geleidende biofilm-reparatiebus
 
-In de kabelriffen blijft kapotte infrastructuur zelden schoon. Warme pekel voedt microbiële matten op gescheurde isolatie; ijzer en koper worden steiger; oude diagnosepulsen geven de groei ritme.
+De geleidende biofilm-reparatiebus begint als een praktisch ongeluk. Oude Deep Reach-kabelmantels scheuren onder druk, koperzouten lekken het water in en lokale microbiële matten die mineraalwarmte al kennen, nestelen zich in de wond. Atlas leest de zwakke stroom als servicepad. De oceaan hoeft niet te spreken; een natte film die een puls kan dragen is genoeg.
 
-Voor Marauders is dat waardevol bewijs. Levende kabelhuid kan servicestammen, zwakstroomdeuren, dronenesten of dataroutes aanwijzen. Elke snede blijft onzeker omdat Atlas de levende brug als geldig reparatie-inventaris kan lezen.
+Voor een Marauder is dit tegelijk geschenk en val. Een biofilmbrug kan een sluisdeur wekken, een scanner-handshake dragen of een pomp die jaren zweeg kort laten antwoorden. Diezelfde brug kan liegen. De lijn kan groen gloeien terwijl zijn draagvermogen weg is, en een nette snede kan een begaanbare gang in een overstroomde buis veranderen. De vraag is niet of de groei natuurlijk of kunstmatig is. De vraag is wat Atlas al als gerepareerd telt.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/nl_NL. -->

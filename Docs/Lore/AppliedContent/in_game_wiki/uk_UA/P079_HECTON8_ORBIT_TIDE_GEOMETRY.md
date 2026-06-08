@@ -3,38 +3,40 @@ packet_id: P079_HECTON8_ORBIT_TIDE_GEOMETRY
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.hecton8_orbit_tide_geometry
 unlock_id: unlock.first_hecton8_orbit_tide_geometry
-poi_tags: poi.tide_geometry_panel;poi.orbital_timing_core
-biome_tags: biome.surface_relay;biome.tide_pump
+poi_tags: poi.tide_geometry_model;poi.atlas_evacuation_forecast
+biome_tags: biome.storm_shelf;biome.brine_canyon
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 Orbit / Tide Geometry"
+title: "Орбіта HECTON-8 / геометрія припливу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbit / Tide Geometry
+# Орбіта HECTON-8 / геометрія припливу
 
-UK LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.
+Орбіта HECTON-8 робить Great Tide переконливим до того, як він стає політикою. Резонанс тягнув океан. Льодовий стрес і штормовий нагін навантажували шельфи. Промислове тепло й заблокований дренаж змусили системи колонії відштовхнути у неправильну годину.
+
+Злочин не в тому, що Deep Reach вигадала фізику. Злочин у тому, що вона будувала евакуаційну математику навколо Atlas continuity, застрахованих вантажів і класів праці, а потім назвала мертвих допустимою помилкою прогнозу.
 
 ## Scanner
 
-UK LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.
+МОДЕЛЬ ПРИПЛИВНОЇ ГЕОМЕТРІЇ // Резонанс, льодовий стрес, штормовий нагін і тепловий скид перевищили прогноз евакуації. Прапори Atlas continuity перекрили пріоритет відступу.
 
 ## Terminal
 
-UK LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.
+ЛАНЦЮГ GREAT TIDE // Орбітальне примушення посилило океанське навантаження. Штучний тепловий скид і замкнений дренаж перетворили приплив на відмову колонії.
 
 ## Audio
 
-UK LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.
+Фізика відкрила двері. Deep Reach вирішила, хто вийде через них.
 
 ## Field Note
 
-UK LOC HOLD: A moon can drown a colony without hating it.
+Місяць може втопити колонію без ненависті.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/uk_UA. -->

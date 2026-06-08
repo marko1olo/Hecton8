@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # טכנולוגיית צוללות וחליפות צלילה של השודדים
 
 > **מקור:** מחלקת אובדן קילמרק (Keelmark Loss Desk), הערכת סיכונים אקטוארית לפעולות חילוץ עצמאיות.

@@ -9,32 +9,16 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Инварианты геологии сида"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Seed Geology Invariants
+# Инварианты геологии сида
 
-Seed Geology Invariants защищает лор HECTON-8 от procedural chaos и оставляет длинные перепрохождения с разными routes, evidence order, ecology и resource exposure.
-
-## Scanner
-
-Procedural note. Маршрут меняется; луна не забывает свои законы.
-
-## Terminal
-
-SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
-
-## Audio
-
-Новый seed, та же луна. Другая рана.
-
-## Field Note
-
-Реиграбельность должна двигать evidence и geography, а не переписывать physics в каждом seed.
+Каждый заход на добычу в HECTON-8 может открыть другой путь через рану. Каньон может раскрыться раньше, кабельный риф может спрятать безопасный карман, bloom может вытолкнуть фауну на маршрут, который в прошлый раз был пустым, а цепочка улик может всплыть в новом порядке. Физика луны не перезапускается ради развлечения. Эгир остается главной звездой. HECTON-8 остается на своей орбитальной лестнице. Great Tide держит интервал. Глубинные пояса стоят в том же жестком порядке. Blue debt сохраняет поведение под давлением. Atlas остается привязан к самому глубокому бассейну.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/ru_RU. -->

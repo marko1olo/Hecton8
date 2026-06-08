@@ -147,7 +147,7 @@ namespace Hecton8.Gameplay
             tuning.CurrentFatigueScale = 0.75f;
             tuning.SdfGradientEpsilon = 0.08f;
             tuning.PlayerRadius = 0.38f;
-            tuning.SeaLevelY = 0.0f;
+            tuning.SeaLevelY = SomaticKinematicsRuntime.DefaultSeaLevelY;
             tuning.Gravity = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
             tuning.SurfaceBlendMeters = 1.2f;
             tuning.ChestOffsetY = 0.45f;
@@ -809,7 +809,7 @@ namespace Hecton8.Gameplay
             tuning.CurrentFatigueScale = SanitizeRange(tuning.CurrentFatigueScale, fallback.CurrentFatigueScale, 0.0f, 4.0f);
             tuning.SdfGradientEpsilon = SanitizeRange(tuning.SdfGradientEpsilon, fallback.SdfGradientEpsilon, 0.005f, 0.5f);
             tuning.PlayerRadius = SanitizeRange(tuning.PlayerRadius, fallback.PlayerRadius, 0.1f, 2.0f);
-            tuning.SeaLevelY = SanitizeRange(tuning.SeaLevelY, fallback.SeaLevelY, -100000.0f, 100000.0f);
+            tuning.SeaLevelY = SanitizeSeaLevelY(tuning.SeaLevelY, fallback.SeaLevelY);
             tuning.Gravity = SanitizeRange(tuning.Gravity, fallback.Gravity, 0.0f, 30.0f);
             tuning.SurfaceBlendMeters = SanitizeRange(tuning.SurfaceBlendMeters, fallback.SurfaceBlendMeters, 0.1f, 10.0f);
             tuning.ChestOffsetY = SanitizeRange(tuning.ChestOffsetY, fallback.ChestOffsetY, 0.0f, 2.0f);
@@ -827,6 +827,15 @@ namespace Hecton8.Gameplay
         {
             float resolved = math.isfinite(value) ? value : fallback;
             return math.clamp(resolved, min, max);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeSeaLevelY(float value, float fallback)
+        {
+            float resolved = math.isfinite(value) && math.abs(value) > 0.0001f && math.abs(value) <= 1000f
+                ? value
+                : fallback;
+            return math.clamp(resolved, -100000.0f, 100000.0f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -853,6 +862,7 @@ namespace Hecton8.Gameplay
         public const int DragLutCapacity = 16;
         public const int HandHistoryCapacity = 6;
         public const int CsvScratchCapacity = 32768;
+        public const float DefaultSeaLevelY = 14.02f;
         public const uint StateFlagNonFinite = 1u << 0;
         public const uint StateFlagQualityPressureReserved = 1u << 1;
         public const uint StateFlagSeaglide = 1u << 2;
@@ -1108,6 +1118,16 @@ namespace Hecton8.Gameplay
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);
+            float shiftSqrMagnitude = math.lengthsq(shiftOffset);
+            if (!math.all(math.isfinite(shiftOffset)) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            {
+                return;
+            }
+
             CompleteScheduledKinematicsInPostFixedOrShutdown(true);
             if (!TryAcquireStateWriteBuffer(out NativeArray<PlayerKinematicState> stateBuffer))
                 return;
@@ -1208,8 +1228,7 @@ namespace Hecton8.Gameplay
             }
             if (!_registeredHotSwap)
             {
-                GlobalRegistry.RegisterHotSwapListener(this);
-                _registeredHotSwap = true;
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
             }
         }
 
@@ -1237,7 +1256,7 @@ namespace Hecton8.Gameplay
             }
             if (_registeredHotSwap)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
         }

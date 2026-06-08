@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Marauder Starting Claim"
+title: "Marauder-startclaim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Marauder Starting Claim
+# Marauder-startclaim
 
-NL LOC HOLD: The opening record frames the player as a professional under pressure, not a tourist and not a family avenger. Old Deep Reach history matters because the procedures on HECTON-8 are familiar before they become evidence.
+Het openingsrecord zet de speler neer als getrainde operator onder schulddruk. Geen toerist, gekozen erfgenaam of familiewreker; deze persoon begrijpt pompen, afdichtingen, routeformulieren en Deep Reach-afkortingen voordat het wrak die formulieren tegenspreekt. Het eerste uur blijft praktisch: bathydrop afdichten, druk herstellen, beschadigde machines lezen, vracht bergen en beslissen welke officiële regels al liegen.
 
 ## Scanner
 
-NL LOC HOLD: Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+Publiek claimrecord. De openingsroute identificeert een Marauder met schulddruk, Deep Reach field-systems-verleden, beschadigde bathydrop en Black Keel-herstelvenster boven P-63.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+PUBLIEK ARCHIEFKNOOPPUNT // STARTCLAIM. Contractantdossier: voormalig Deep Reach field-systems-specialist. Huidige status: Marauder onder lien. Route: Black Keel recovery claim, afdaling naar P-63 shelf, terugkeer met bewijs en vracht voor sluiting van custody window.
 
 ## Audio
 
-NL LOC HOLD: You are returning to paperwork you know too well.
+Je bezoekt HECTON-8 niet. Je keert terug naar papierwerk dat je te goed kent.
 
 ## Field Note
 
-NL LOC HOLD: Marauder note: the contract knows your past. That does not make it honest.
+Marauder-notitie: het contract kent je verleden. Daar wordt het niet eerlijk van.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/nl_NL. -->

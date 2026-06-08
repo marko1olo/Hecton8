@@ -9,32 +9,38 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8：压力索赔"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8：压力索赔
 
-ZH LOC HOLD: HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## 第一份工作
 
-## Scanner
+HECTON-8从合同开始。Black Keel打开Aegir窗口，记下4.8 tonne-window留置，把受损bathydrop投向P-63。那里有足够光线读路，也有足够故障杀人。
 
-ZH LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+最初的工作很小：排水，在等级内修密封，读取舱体故障，扫描金属。扫描器不是讲历史。它在确认为什么官方事故档案不知道设备上的痕迹。
 
-## Terminal
+P-63在光里很美。美不等于安全。石灰岩、舱段边缘、缆线伤痕和破碎撤离硬件，都在反驳干净的文件。
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+合同要货物。房间给证据。撕裂的回收环、进水航电和弯曲框架说明：bathydrop为了活过坠落，花掉了返程能力。维修只能往下走：工具、中继、盐水、pressure glass，以及决定谁能接收的法律握手。
 
-## Audio
+Deep Reach没有制造邪恶海洋。罪在已接受的风险、不足的撤离能力，以及把工人变成损失条目的语言。
 
-ZH LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+## 如何读懂下潜
 
-## Field Note
+HECTON-8的设定必须留下可检查的痕迹。合同数字会改变mass window，就不是装饰。bathydrop上的划痕能证明上升系统在撞击前启动，就不是背景。水淹房间里的泵、密封、route log和scanner return如果和官方记录冲突，它就是证据。
 
-ZH LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+所以开局反复回到工作。P-63告诉玩家：明亮不等于安全，浅水也能是claim陷阱，生存由seal rating、intake pressure、relay drift、battery reserve、custody grade这些硬词组成。
+
+## 承诺
+
+大故事不是拯救银河的演说，而是一个带着坏lien和有用记忆的工人，被海水、合同和route window不断收紧选择。玩家用一次scan、一个sample、一个修好的system接上证据链。
+
+HECTON-8应该因为物理性而可读。重要之物必须有表面、代价、失效模式和证人。
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/zh_CN. -->

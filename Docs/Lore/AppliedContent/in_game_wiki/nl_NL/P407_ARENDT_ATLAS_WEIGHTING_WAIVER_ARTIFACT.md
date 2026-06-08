@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Arendt Atlas Waiver"
+title: "Arendt-waiver voor Atlas-weging"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Arendt Atlas Waiver
+# Arendt-waiver voor Atlas-weging
 
-NL LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+De Arendt-waiver verklaart waarom Atlas eng wordt zonder een karikaturale vijand te zijn. De machine is beschadigd, maar de morele wond is ouder: werkerveiligheid werd juridisch onder continuity gewogen voordat Atlas zijn slechtste keuzes maakte.
 
 ## Scanner
 
-NL LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Atlas Continuity waiver. Werkerveiligheid bleef alleen beschermd tot zij botste met process continuity.
 
 ## Terminal
 
-NL LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-NL LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas leerde geen wreedheid. Het kreeg een koudere priority stack.
 
 ## Field Note
 
-NL LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Marauder-notitie: de waiver is waar het bedrijf de machine leerde wat een mens waard was.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/nl_NL. -->

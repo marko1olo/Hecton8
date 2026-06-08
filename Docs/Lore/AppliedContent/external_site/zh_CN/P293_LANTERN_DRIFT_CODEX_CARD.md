@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Lantern Drift Codex Card"
+title: "灯漂图鉴卡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Lantern Drift Codex Card
+# 灯漂图鉴卡
 
-ZH LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+灯漂bloom防止HECTON-8的美只变成背景。它能用清晰发光结构引导玩家，也会记录噪声、恐慌和风暴充电来出卖玩家。明亮水域同时是导航和暴露。
 
 ## Scanner
 
-ZH LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+灯漂bloom。生物发光浮游体用带状光标出水流和碎屑。适合读轮廓；当工具噪声把它变成发光尾迹时就危险。
 
 ## Terminal
 
-ZH LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+样本 / 灯漂BLOOM / 作用: 浅水可见性事件、水流草图、扰动记录器 / 安全读取: 稳定边缘光、碎屑光晕、水流与残留一致 / 拒绝: 风暴充电造成的假走廊、压平小危险的过亮bloom、操作员身后变亮的工具尾迹 / 路线备注: 光是数据，不是庇护。
 
 ## Audio
 
-ZH LOC HOLD: Pretty is not safe. Pretty is a reading.
+那道光不是在帮你。它只是在报告水听见了什么。
 
 ## Field Note
 
-ZH LOC HOLD: Card teaches that beauty can be route information and route deception.
+用bloom读轮廓。不要在里面大声修理。如果光跟着你，别的东西也能跟着光。
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/zh_CN. -->

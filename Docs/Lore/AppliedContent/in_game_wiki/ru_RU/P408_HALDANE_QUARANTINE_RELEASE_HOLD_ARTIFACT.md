@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Haldane Quarantine Hold"
+title: "Карантинный hold Халдейна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Haldane Quarantine Hold
+# Карантинный hold Халдейна
 
-RU LOC HOLD: The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
+Hold Халдейна не доказывает, что карантин был фальшивкой. Он хуже: у протокола была реальная основа, а потом Deep Reach использовала язык certification, чтобы удержать тела, образцы и liability на месте, когда колонии было важнее движение, чем бумага.
 
 ## Scanner
 
-RU LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Карантинный release hold. Реальный протокол загрязнения стал задержкой custody после того, как угроза давления уже стала физической.
 
 ## Terminal
 
-RU LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
+QUARANTINE HOLD DESK / HALDANE / RELEASE CERTIFICATION: evacuee movement remains suspended pending XO sample custody, seal-read variance and downstream exposure review.
 
 ## Audio
 
-RU LOC HOLD: The folder was orderly. That was the problem.
+Hold не выдумал опасность. Он удержал людей внутри неё.
 
 ## Field Note
 
-RU LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Заметка Marauder: карантин может быть правдой и всё равно работать как замок.
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/ru_RU. -->

@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Salida material: créditos amargos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Salida material: créditos amargos
 
-ES LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.
+La Salida material es un final real para un Marauder que trata HECTON-8 como trabajo pagado. El jugador puede irse con la deuda reducida y el registro del carrier satisfecho. El coste queda visible: la colonia sigue siendo una escena de crimen convertida en valor de reclamación, y Deep Reach recibe una ruta de vuelta mejor que la salida que jamás recibieron los trabajadores.
 
 ## Scanner
 
-ES LOC HOLD: You can leave richer and still fail the place.
+Material de presión aceptado. Ventana de salida comprable. Nombres de trabajadores aún sin conciliar.
 
 ## Terminal
 
-ES LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+RECIBO DE SALIDA MATERIAL: material de presión custody-grade aceptado; lien reducido; payload probatorio incompleto; registro de trabajadores desaparecidos sigue en disputa del reclamante; prioridad de Recovery Compliance elevada.
 
 ## Audio
 
-ES LOC HOLD: The invoice clears before the names do.
+La factura se limpia antes que los nombres.
 
 ## Field Note
 
-ES LOC HOLD: This ending should be real credits, not a fake game over.
+Black Keel pondrá precio a la muestra antes que a los muertos. No es un fallo del contrato.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/es_ES. -->

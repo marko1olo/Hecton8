@@ -285,6 +285,22 @@ namespace Hecton8.Gameplay
         private Vector3 _rightCalfBaseScale = Vector3.one;
         private Vector3 _leftFinBaseScale = Vector3.one;
         private Vector3 _rightFinBaseScale = Vector3.one;
+        private bool _torsoVisible;
+        private bool _pelvisVisible;
+        private bool _leftThighVisible;
+        private bool _rightThighVisible;
+        private bool _leftCalfVisible;
+        private bool _rightCalfVisible;
+        private bool _leftFinVisible;
+        private bool _rightFinVisible;
+        private bool _torsoVisibleDirty;
+        private bool _pelvisVisibleDirty;
+        private bool _leftThighVisibleDirty;
+        private bool _rightThighVisibleDirty;
+        private bool _leftCalfVisibleDirty;
+        private bool _rightCalfVisibleDirty;
+        private bool _leftFinVisibleDirty;
+        private bool _rightFinVisibleDirty;
 
         private void AutoResolveFullBodyReferences(Transform root)
         {
@@ -876,8 +892,7 @@ namespace Hecton8.Gameplay
             targetScale.y *= thicknessScale * visibility * verticalCompression;
             targetScale.z *= thicknessScale;
             bool rendererVisible = showDebugCubes && visibility > rendererDisableThreshold;
-            if (partRenderer != null && partRenderer.enabled != rendererVisible)
-                partRenderer.enabled = rendererVisible;
+            QueueRendererVisibility(partRenderer, rendererVisible);
 
             part.localPosition = ApproximateVectorLerp(part.localPosition, targetLocalPosition, poseT);
             Quaternion targetRotation = ResolveEulerRotationNoTrig(targetLocalEuler);
@@ -923,12 +938,87 @@ namespace Hecton8.Gameplay
             targetScale.z = length;
 
             bool rendererVisible = showDebugCubes && visibilityWeight > rendererDisableThreshold;
-            if (segmentRenderer != null && segmentRenderer.enabled != rendererVisible)
-                segmentRenderer.enabled = rendererVisible;
+            QueueRendererVisibility(segmentRenderer, rendererVisible);
 
             segment.localPosition = ApproximateVectorLerp(segment.localPosition, midpoint, poseT);
             segment.localRotation = ApproximateNlerpNoSqrt(segment.localRotation, targetRotation, poseT);
             segment.localScale = targetScale;
+        }
+
+        private bool TryQueueBodyRendererVisibility(Renderer renderer, bool visible)
+        {
+            if (renderer == null)
+                return false;
+
+            if (ReferenceEquals(renderer, torsoRenderer))
+            {
+                _torsoVisible = visible;
+                _torsoVisibleDirty = true;
+                return true;
+            }
+
+            if (ReferenceEquals(renderer, pelvisRenderer))
+            {
+                _pelvisVisible = visible;
+                _pelvisVisibleDirty = true;
+                return true;
+            }
+
+            if (ReferenceEquals(renderer, leftThighRenderer))
+            {
+                _leftThighVisible = visible;
+                _leftThighVisibleDirty = true;
+                return true;
+            }
+
+            if (ReferenceEquals(renderer, rightThighRenderer))
+            {
+                _rightThighVisible = visible;
+                _rightThighVisibleDirty = true;
+                return true;
+            }
+
+            if (ReferenceEquals(renderer, leftCalfRenderer))
+            {
+                _leftCalfVisible = visible;
+                _leftCalfVisibleDirty = true;
+                return true;
+            }
+
+            if (ReferenceEquals(renderer, rightCalfRenderer))
+            {
+                _rightCalfVisible = visible;
+                _rightCalfVisibleDirty = true;
+                return true;
+            }
+
+            if (ReferenceEquals(renderer, leftFinRenderer))
+            {
+                _leftFinVisible = visible;
+                _leftFinVisibleDirty = true;
+                return true;
+            }
+
+            if (ReferenceEquals(renderer, rightFinRenderer))
+            {
+                _rightFinVisible = visible;
+                _rightFinVisibleDirty = true;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void FlushQueuedBodyRendererVisibility()
+        {
+            FlushRendererVisibility(torsoRenderer, ref _torsoVisibleDirty, _torsoVisible);
+            FlushRendererVisibility(pelvisRenderer, ref _pelvisVisibleDirty, _pelvisVisible);
+            FlushRendererVisibility(leftThighRenderer, ref _leftThighVisibleDirty, _leftThighVisible);
+            FlushRendererVisibility(rightThighRenderer, ref _rightThighVisibleDirty, _rightThighVisible);
+            FlushRendererVisibility(leftCalfRenderer, ref _leftCalfVisibleDirty, _leftCalfVisible);
+            FlushRendererVisibility(rightCalfRenderer, ref _rightCalfVisibleDirty, _rightCalfVisible);
+            FlushRendererVisibility(leftFinRenderer, ref _leftFinVisibleDirty, _leftFinVisible);
+            FlushRendererVisibility(rightFinRenderer, ref _rightFinVisibleDirty, _rightFinVisible);
         }
 
         private float ResolveBodyTargetWeight(PlayerSwimPresentationMode mode)

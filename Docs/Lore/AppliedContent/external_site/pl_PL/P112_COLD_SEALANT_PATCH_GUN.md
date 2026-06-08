@@ -9,32 +9,18 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Pistolet zimnego uszczelniacza"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Pistolet zimnego uszczelniacza
 
-PL LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+Pistolet z zimnym uszczelniaczem uczy pierwszej uczciwej granicy. Może zatrzymać pinhole, przytrzymać krawędź uszczelki albo kupić minuty na spokojnym szwie. Nie uświęca ruszającej się konstrukcji. Rating label jest ważniejszy niż nadzieja gracza.
 
-## Scanner
-
-PL LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-PL LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-PL LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-PL LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Dlatego narzędzie należy do początku. Pozwala działać bez udawania, że każdy przeciek da się rozwiązać. Dobry patch tworzy czas; zły patch tworzy pewność tam, gdzie ocean później pobierze zapłatę.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/pl_PL. -->

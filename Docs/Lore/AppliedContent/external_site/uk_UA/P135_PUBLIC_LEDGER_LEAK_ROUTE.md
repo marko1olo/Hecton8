@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "Витік у публічний реєстр"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# Витік у публічний реєстр
 
-UA LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+Витік у публічний реєстр - не ідеальна фантазія викривача. Це пакет, що йде крізь вузьке relay-вікно з witness hash, достатньою custody, щоб його було важко заперечити, і надто багатьма прогалинами, щоб він був безпечним. Tau Ceti може зробити запис публічним значно пізніше, ніж здатна врятувати когось у воді.
 
-## Scanner
-
-UA LOC HOLD: You can leak truth before you understand all of it.
-
-## Terminal
-
-UA LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-UA LOC HOLD: The truth leaves first. You may not like who reads it.
-
-## Field Note
-
-UA LOC HOLD: Public does not mean safe. It means harder to erase.
+Саме затримка є сенсом. Deep Reach вже не може просто видалити claim, але гравець теж не може вирішити, хто використає його далі. Страховики, суперники, громадські суди, Marauder-пули й корпоративні офіси прочитають ту саму рану по-різному. Цей фінал робить правду важчою для поховання і важчою для привласнення.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/uk_UA. -->

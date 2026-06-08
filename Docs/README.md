@@ -35,6 +35,8 @@ Use this order when gathering documentation context:
 10. fresh proof artifacts under `Docs/Reports`
 11. archives under `Docs/DEPRECATED`, `Docs/_Archive`, and `Docs/Archive`
 
+After rule-surface edits, run `python -B Tools/Docs/TestAgentRuleRouting.py` before reporting. After mandate edits, run `python -B Tools/Docs/TestMandateRegistry.py`.
+
 `PROJECT_BIBLES.md`, `VISION_LOCKS.md`, and the standing root route bibles listed by `PROJECT_BIBLES.md` are explicit root authorities. Other root reports, prompts, status/log files, generated evidence, and task-progress prose are not.
 
 Current source can disprove stale documentation, but source presence alone does not prove Unity import, Play Mode, profiler, GC, visual, save/load, or player-build readiness.

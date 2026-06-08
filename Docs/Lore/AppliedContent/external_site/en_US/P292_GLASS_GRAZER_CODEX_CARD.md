@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Glass Grazer Codex Card
 
-HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+Glass grazers turn HECTON-8 ecology into a survival language. Their feeding clears bright route scars through film and mat growth, but their stillness is often more important than their motion. A harmless animal can warn the player before a meter does.
 
 ## Scanner
 
-Glass grazer: non-hostile. If the school freezes, leave the open water.
+Glass grazer school. Non-hostile shell-feeders scraping mineral film. Active ticking means work water; sudden silence means something larger has changed the clearing.
 
 ## Terminal
 
-SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+SPECIMEN / GLASS GRAZER SCHOOL / role: shallow film scraper, current witness, predator-displacement cue / safe read: feeding edge, fresh pale scrape lane, steady shell ticks / reject: abandoned food field, tight frozen school, no return ticks after pinger / route note: absence after feeding is hazard data.
 
 ## Audio
 
-When they stop eating, you stop moving.
+When the little mouths stop ticking and the food is still there, do not be the next thing that waits.
 
 ## Field Note
 
-When the school locks still, stop treating the clearing as safe. Something is reading the same water you are.
+Feeding school: read the lane. Frozen school: read the water. Empty lane with food left behind: leave.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/en_US. -->

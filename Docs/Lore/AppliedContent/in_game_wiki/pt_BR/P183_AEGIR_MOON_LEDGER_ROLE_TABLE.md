@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Moon Ledger Role Table"
+title: "Ledger de Rotas Lunares de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ledger Role Table
+# Ledger de Rotas Lunares de Aegir
 
-PT LOC HOLD: The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.
+O ledger lunar de Aegir dá funções de rota duras às luas próximas enquanto mantém HECTON-8 como a lua oceânica onde a reivindicação profunda é disputada. O céu parece habitado sem transformar cada lua em destino prometido.
 
 ## Scanner
 
-PT LOC HOLD: Aegir moons are not decoration; each public moon label carries a route or salvage role.
+As luas de Aegir ganham seus nomes pelo que quebram, escondem, dispersam, retransmitem ou vendem.
 
 ## Terminal
 
-PT LOC HOLD: LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+LEDGER: cisalhamento de radiação Skarn, mascaramento de relé Vela, dispersão de gelo Claw, cartas públicas de rota Lumen, tráfego de rumores de quarentena Thorne, salvage industrial Anvil, tráfego de janela alta Kestrel, reivindicação profunda HECTON, economia de balizas mortas Mute.
 
 ## Audio
 
-PT LOC HOLD: The system has more bodies than stories. Good. Use them as pressure.
+Mais corpos. Mais desculpas. Mais formas de a ajuda errar.
 
 ## Field Note
 
-PT LOC HOLD: Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+A lua oceânica está sozinha debaixo d'água, não sozinha no sistema.
 
 <!-- In-Game Wiki; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/pt_BR. -->

@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "HE LOC HOLD: Aegir Route and Ships"
+title: "מסלול Aegir וספינות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Aegir Route and Ships
+# מסלול Aegir וספינות
 
-HE LOC HOLD: Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
+מרכז מסלולים וספינות: תחומי אדם בלי FTL, מערכת ירחי Aegir, גבולות משמורת Black Keel, חלונות העברה ו-bathydrop פגום שמוכיח הגעה אך אינו מאשר בריחה.
 
 ## Scanner
 
-HE LOC HOLD: Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
+מרכז פרסום: אין FTL, לוח זמנים של מסלול Aegir, גבולות Black Keel והסיבה הקשיחה לכך שהצלה אינה מגיעה לפי דרישה.
 
 ## Terminal
 
-HE LOC HOLD: SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
+ניווט אתר: גשושי מחט, נתיבי קרן/pellet, בלימת seed-ship, משמורת Black Keel, מסלול העברה, כשל bathydrop.
 
 ## Audio
 
-HE LOC HOLD: Distance is not lore trivia. It is the pressure on every decision.
+מרחק אינו פרט lore. הוא לחץ על כל החלטה.
 
 ## Field Note
 
-HE LOC HOLD: Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
+קרא דפי ספינות כמכניקת הישרדות: עיכוב, משמורת, מסה, מזג אוויר, מסלול וממשק ירידה שבור קובעים את התוצאה.
 
 <!-- In-Game Wiki; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/he_IL. -->

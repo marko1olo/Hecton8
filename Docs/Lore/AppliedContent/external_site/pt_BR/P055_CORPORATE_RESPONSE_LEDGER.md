@@ -9,32 +9,16 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "Livro de resposta corporativa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# Livro de resposta corporativa
 
-PT-BR LOC HOLD: Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority.
-
-## Scanner
-
-PT-BR LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
-
-## Terminal
-
-PT-BR LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
-
-## Audio
-
-PT-BR LOC HOLD: The reply was automatic. The rescue was conditional.
-
-## Field Note
-
-PT-BR LOC HOLD: Immediate response is not immediate rescue.
+O Livro de resposta corporativa não é discurso de vilão. É mais frio. É uma promessa legível por máquina de que a Black Keel responderá, mas só dentro da ordem que seus contratos reconhecem. Custódia de ativo primeiro. Lacre de responsabilidade depois. Auditoria de casco, rota de amostra, rota de pagamento, então recuperação do operador se a fila permitir. O jogador pode usar esses livros como pistas, chaves e pressão porque o sistema é previsível. Essa previsibilidade é a acusação: HECTON-8 não foi abandonada por uma decisão ruim, mas por uma pilha de resposta que continuou funcionando enquanto pessoas viravam carga de menor prioridade.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/pt_BR. -->

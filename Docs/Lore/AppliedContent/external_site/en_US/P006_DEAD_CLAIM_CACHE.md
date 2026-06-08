@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Dead Claim Cache
 
-Dead Claim Cache introduces HECTON-8's shadow salvage history. Between the 2147 disaster and the player's arrival, other professionals came for value, found partial truth, and left behind equipment, rumors, and failed routes.
-
-## Scanner
-
-Hidden field cache. Packed by someone who expected to return.
-
-## Terminal
-
-Route under north pipe is quiet until the lamps wake up. Do not touch the blue casket. Do not answer carrier pings from inside the canyon.
-
-## Audio
-
-This is not Deep Reach kit. Somebody else came down here with a cutter and bad luck.
-
-## Field Note
-
-If a map says safe twice, it was written by someone trying to convince himself.
+A dead claim cache is a survival argument left by someone who lost. The bag is waterproof, double-tied, and hidden where a quick diver would never look: under the north pipe, below the lamp grid, behind a strip of torn acoustic baffling. Whoever packed it expected to come back. They marked a route, sealed spare cutters, folded a map until the wax cracked, and wrote the word safe twice in the same margin. That repetition is the first warning. On HECTON-8, safe usually means one person survived long enough to lie to himself. The cache matters because it widens the world without making it crowded. The player is still alone in the ocean, but not first. Between the carrier disaster and the present run, other professionals slipped down after metal, salvage rights, sealed cargo, and rumors. They found enough to leave equipment. They did not find enough to leave testimony. The blue casket note, the carrier ping warning, and the cut tether make the cache feel less like treasure and more like a hand reaching out from a failed route.
 
 <!-- External Site; generated from P006_DEAD_CLAIM_CACHE/en_US. -->

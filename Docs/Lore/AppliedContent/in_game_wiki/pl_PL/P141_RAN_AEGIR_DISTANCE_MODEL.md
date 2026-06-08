@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "PL LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Model odległości Ran-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Ran-Aegir Distance Model
+# Model odległości Ran-Aegir
 
-PL LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+Model Ran-Aegir daje HECTON-8 skalę, którą gracz czuje. Aegir jest dość blisko dla sond, frachtu, sprzętu seed i osadnictwa opartego na długu do 2190 roku. Nadal jest dość daleko, by zalana komora nie mogła czekać na litość światów wewnętrznych. Odległość pojawia się jako opóźnienie, custody, paliwo, hamowanie i własność.
 
 ## Scanner
 
-PL LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+Płyta trasy: Aegir jest osiągalny dla infrastruktury i nieosiągalny dla współczucia.
 
 ## Terminal
 
-PL LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+MODEL TRASY: Ran/Aegir traktuje się jako cel klasy dziesięciu lat świetlnych od Sol. Tekst gry używa Aegir; suche katalogi używają RAN-B:H8. Dokładne efemerydy zostają pracą tabel tras.
 
 ## Audio
 
-PL LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+Dziesięć lat świetlnych to mało na mapie gwiazd. Dość dużo, by zbankrutował ratunek.
 
 ## Field Note
 
-PL LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+Przybliżona odległość jest presją, nie dekoracją. Dziesięć lat świetlnych wciąż może zabić pomieszczenie.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/pl_PL. -->

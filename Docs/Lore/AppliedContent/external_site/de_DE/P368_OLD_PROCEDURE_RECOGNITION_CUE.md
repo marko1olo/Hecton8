@@ -9,32 +9,37 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Old Procedure Recognition Cue"
+title: "Hinweis auf alte Verfahrenskenntnis"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Old Procedure Recognition Cue
+# Hinweis auf alte Verfahrenskenntnis
 
-DE LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+HECTON-8 verankert Charaktermotivation in Verfahren. Der Protagonist erkennt ein altes Evakuierungssicherheitsformular und sieht, wie es umgedreht wurde: degradierte Arbeiterzahlen, versiegelte Zeugenfelder und Routen-Safe-Sprache, die Ansprüche statt Leben schützt.
 
 ## Scanner
 
-DE LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+Routen-Safe-Stempel vorhanden. Arbeiterzahl in zwei Tinten überschrieben. Manuelles Zeugenfeld versiegelt. Das Formular sollte genau solche Lügen auffangen, bevor jemand daraus Richtlinie machte.
 
 ## Terminal
 
-DE LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+EVAKUIERUNGSKONTINUITÄTSFORMULAR / ROUTEN-SAFE-ZERTIFIZIERUNG
+Route: Hilfsausstiegslinie
+gemeldete Insassen: degradierte Zählung akzeptiert
+manueller Zeuge: durch Kontinuitätsbüro versiegelt
+Feldkorrektur: Arbeiterzählung widerspricht Pumpenraum-Tags
+Status: anspruchserhaltend, nicht für Extraktion freigegeben.
 
 ## Audio
 
-DE LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+Du kennst dieses Formular. Es sollte verhindern, dass ein Raum leer gezählt wird, während darin noch Menschen atmen.
 
 ## Field Note
 
-DE LOC HOLD: Use where room evidence contradicts a clean procedural label.
+Das Formular sollte eine weitere Zählung erzwingen. Hier erzwang es Schweigen.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/de_DE. -->

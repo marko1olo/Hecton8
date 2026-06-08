@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "ビームセイル探査機時代"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# ビームセイル探査機時代
 
-JP LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-JP LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-JP LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-JP LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-JP LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+ビームセイル探査機時代は、Aegir史の静かな始まりである。小さなペイロードは遠方アレイの出力に乗り、最初に渡り、議論には古すぎても販売には十分なパケットを返した。探査機はAegirを安全にしなかった。重力井戸、放射帯、海洋シグネチャ、リレー視線、そして十分な無関心があれば利益化できる航路を読めるようにしただけだ。読めることと安全であることの差に、Deep Reachが入り込む。
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/ja_JP. -->

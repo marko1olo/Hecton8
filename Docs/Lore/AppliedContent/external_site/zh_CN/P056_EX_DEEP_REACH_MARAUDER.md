@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "前 Deep Reach 掠夺者"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# 前 Deep Reach 掠夺者
 
-CN LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+前 Deep Reach 掠夺者确定了玩家正史。玩家曾是企业现场系统与撤离基础设施专员，被黑名单或债务推入独立打捞，又在 Black Keel 托管下返回 HECTON-8。戏剧性来自职业识别：这颗月亮用玩家曾经理解的程序回应，而每一把熟悉的锁，都让公司谎言更难被当作别人的事故处理。
 
 ## Scanner
 
-CN LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+旧 Deep Reach 锁不查你的名字。它认得你的维修序列节奏。
 
 ## Terminal
 
-CN LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+凭据痕迹：前现场系统合同人员。撤离基础设施权限已吊销。打捞身份在索赔池债务托管下接受。
 
 ## Audio
 
-CN LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+你不是回家。你是回到一套从未停止运行的程序面前。
 
 ## Field Note
 
-CN LOC HOLD: Not family business. Procedure remembers who taught your hands.
+这不是家族恩怨。程序记得曾经使用它的那双手。
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/zh_CN. -->

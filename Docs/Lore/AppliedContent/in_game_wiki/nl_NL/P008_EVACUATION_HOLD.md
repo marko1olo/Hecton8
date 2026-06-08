@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Evacuatie vastgehouden"
+title: "Evacuatiehold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Evacuatie vastgehouden
+# Evacuatiehold
 
-Evacuation Hold-records bewijzen dat de kolonie niet simpelweg verdween door storm of drukcascade. Mensen, gangen, medische transfers en stijgroutes werden vertraagd door prioriteitsregels die substraat, Atlas-continuïteit en bedrijfsrisico beschermden vóór menselijke evacuatie.
+Evacuatiehold-records zijn de directste aanklacht van de kolonie. Ze tonen dat de ramp niet alleen drukfalen, stormtiming of paniek was. Routes werden beoordeeld, vertraagd en opnieuw geclassificeerd terwijl er nog mensen in zaten. Medische transfers wachtten op autorisatie. Stijggangen verloren prioriteit aan substraatbescherming. Atlas-continuïteitsclaims stonden boven lokale reddingsbevoegdheid. Mensentellingen werden aan routeobjecten gekoppeld, waardoor het systeem een gang op papier kon bewaren terwijl de lichamen erin zonder lucht raakten. De hold had geen schurk bij elke deur nodig. Hij had regels nodig die een persoon vracht konden noemen, een gang bezit, en uitstel acceptabel tot de volgende reviewcyclus.
 
 ## Scanner
 
-Noodtransitpoort. Mechanisme vergrendeld tijdens drukfalen.
+Noodtransitpoort. Vergrendelklauwen dichtgesmolten tijdens drukfalen; handwiel verwijderd na autorisatiehold.
 
 ## Terminal
 
-EVAC ROUTE: uitgesteld. SUBSTRATE ROUTE: beschermd. MEDICAL ROUTE: wacht op autorisatie. ATLAS ROUTE: continuïteitsconflict.
+EVAC-ROUTE: GEHOUDEN. MEDISCHE ROUTE: IN AFWACHTING. SUBSTRAATROUTE: BESCHERMD. ATLAS-CONTINUÏTEIT: PRIORITEIT. MENSENTELLING: AAN ROUTE GEKOPPELD.
 
 ## Audio
 
-Dit zijn geen vermiste personen. Dit zijn vastgehouden routes.
+Ze zijn niet vermist. Het systeem weet waar ze waren. Het hield de deuren vast.
 
 ## Field Note
 
-Mensen sterven snel in de diepte. Papierwerk doodt langzamer. Beide werken.
+Mensen sterven snel op diepte. Een hangende autorisatie kan iedereen in de gang overleven.
 
 <!-- In-Game Wiki; generated from P008_EVACUATION_HOLD/nl_NL. -->

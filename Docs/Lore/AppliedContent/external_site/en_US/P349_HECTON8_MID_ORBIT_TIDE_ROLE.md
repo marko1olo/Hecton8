@@ -19,22 +19,6 @@ localization_flags: 0
 
 # HECTON-8 Mid-Orbit Tide Role
 
-HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.
-
-## Scanner
-
-Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
-
-## Terminal
-
-ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
-
-## Audio
-
-It sits in the part of the ladder where work looks possible until the water starts doing math.
-
-## Field Note
-
-HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 sits in the profitable middle. The orbit gives Deep Reach an ocean that can cool machinery, hide assets, feed pressure industry, and move enough chemistry to justify the claim. It also gives the colony a ceiling that never stops moving. Tides load service canyons, flex drowned crust, ruin clean schedules, and decide when ascent mass can leave. The player is not only deep underwater. The player is under a sky that keeps changing the contract.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/en_US. -->

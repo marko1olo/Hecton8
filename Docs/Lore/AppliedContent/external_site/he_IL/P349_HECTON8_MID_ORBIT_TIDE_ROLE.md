@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: HECTON-8 Mid-Orbit Tide Role"
+title: "תפקיד הגאות של HECTON-8 במסלול אמצעי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: HECTON-8 Mid-Orbit Tide Role
+# תפקיד הגאות של HECTON-8 במסלול אמצעי
 
-HE LOC HOLD: HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.
-
-## Scanner
-
-HE LOC HOLD: Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
-
-## Terminal
-
-HE LOC HOLD: ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
-
-## Audio
-
-HE LOC HOLD: It sits in the part of the ladder where work looks possible until the water starts doing math.
-
-## Field Note
-
-HE LOC HOLD: HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 יושב באמצע הרווחי. המסלול נותן ל-Deep Reach אוקיינוס שמקרר מכונות, מחביא נכסים, מזין תעשיית לחץ ומניע די כימיה כדי להצדיק claim. הוא גם נותן למושבה תקרה שאינה מפסיקה לזוז. הגאות מעמיסה קניוני שירות, מכופפת קרום טבוע, הורסת לוחות נקיים ומחליטה מתי מסת העלייה יכולה לצאת.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/he_IL. -->

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Quarantine Release Delay Proof"
+title: "Wstrzymanie zwolnienia kwarantanny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Quarantine Release Delay Proof
+# Wstrzymanie zwolnienia kwarantanny
 
-PL LOC HOLD: Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
+Zapis wstrzymania nie czyni kwarantanny złem. Pokazuje czas. Deep Reach mogło nazwać niepewność, opóźnić zwolnienie, zachować pozycję ubezpieczeniową i trzymać pracownika w strefie aż do śmierci trasy.
 
 ## Scanner
 
-PL LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+Płyta wstrzymania kwarantanny. Język ochrony pojawia się po tym, jak droga wyjścia jest już zamknięta.
 
 ## Terminal
 
-PL LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
 
 ## Audio
 
-PL LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+Kwarantanna może ocalić ciało. Może też kazać ciału czekać, aż stanie się papierem.
 
 ## Field Note
 
-PL LOC HOLD: Use where player may confuse rescue with custody.
+Notatka Maraudera: ochrony nie dowodzi słowo ochrona. Sprawdź zegar.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/pl_PL. -->

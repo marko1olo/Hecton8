@@ -1,3 +1,4 @@
+<!-- localization_status: source_authority_en_US -->
 # COLONY LIFE BEFORE THE DISASTER: SECTOR 44
 
 > **Source:** Personal log recovered from Sector 44 Living Quarters, Unit 8-B.  

@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "랜턴 드리프트 거짓 안전 인카운터 문법"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# 랜턴 드리프트 거짓 안전 인카운터 문법
 
-KO LOC HOLD: HECTON-8's bright shallows are readable, but never innocent.
+랜턴 드리프트 거짓 안전은 HECTON-8의 밝은 얕은 물을 정직하게 만든다. 그 빛은 유용하고 매혹적이며 위험하다. 동시에 여러 진실을 기록하기 때문이다.
 
 ## Scanner
 
-KO LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+랜턴 드리프트 레인. 밝은 물은 산소 가장자리, 신호 잡음, 도구 항적, 또는 포식자로 밀린 이동을 뜻할 수 있다. 따라가기 전 해류 확인.
 
 ## Terminal
 
-KO LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+인카운터 문법 / 랜턴 드리프트 거짓 안전 / 역할: 애매한 데이터로서의 아름다움, 경로 유혹, stealth 페널티 / 안전 판독: 해류와 빛 일치, 동물 정상, 잔류물이 예상 쪽에 있음 / 거부: 푸른 빛을 안전으로 취급, 폭풍 전하 거짓 통로 추적, 밝은 항적 안에서 시끄럽게 수리 / 경로 메모: 하나의 빛은 길, 미끼, 공황 기록, 또는 노출일 수 있다.
 
 ## Audio
 
-KO LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+빛은 자비가 아니다. 네 suit가 아직 분리하지 못한 데이터다.
 
 ## Field Note
 
-KO LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+빛이 무엇을 나르는지 물어라. 해류, 산소, 네 소음, 또는 다른 모든 것을 밀어낸 것인가.
 
 <!-- External Site; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/ko_KR. -->

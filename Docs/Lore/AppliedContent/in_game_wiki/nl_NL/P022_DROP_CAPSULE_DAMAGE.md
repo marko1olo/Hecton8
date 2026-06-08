@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Schade aan daalcapsule
 
-De speler bereikt HECTON-8 met een daalcapsule. De crash laat schuilplaats, stroom en logs, maar vernietigt opstijgen. Vroege ontsnapping is techniek.
+De daalcapsule brengt de Marauder naar HECTON-8. De crash laat genoeg systemen over voor schuilplaats, stroom en logs, maar vernietigt opstijghardware. Vroege ontsnapping wordt een technische keten, geen knop.
 
 ## Scanner
 

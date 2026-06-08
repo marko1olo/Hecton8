@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Needleprobe Precursor Program"
+title: "Needleprobe-voorloperprogramma"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Needleprobe Precursor Program
+# Needleprobe-voorloperprogramma
 
-NL LOC HOLD: HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
-
-## Scanner
-
-NL LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
-
-## Terminal
-
-NL LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
-
-## Audio
-
-NL LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
-
-## Field Note
-
-NL LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+De eerste menselijke aanwezigheid in Aegir was niet heroïsch. Het was een reeks kleine, dure machines op een route die geen levende crew had beoordeeld. Needleprobes maten parallax, straling, oceaanchemie, maanefemeriden en relaiszichtlijnen en wachtten daarna jaren tot hun antwoorden bruikbaar werden. Deep Reach ontdekte HECTON-8 niet met een vlag in de hand; het kocht genoeg machinevertrouwen om de maan een asset te noemen. Die oorsprong telt, omdat de kolonie geen dataleugen erfde maar een toonleugen. De data was echt. Het vertrouwen dat eruit kwam was te schoon voor de mensen die later het water in gingen.
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/nl_NL. -->

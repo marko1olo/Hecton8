@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Ton-vensterschuld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Ton-vensterschuld
 
-NL LOC HOLD: Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.
+Ton-vensterschuld is het punt waar natuurkunde financiën wordt. Black Keel heeft geen oneindige liftmarge, transitbrandstof of schoon quarantainevolume. Elke kilogram van HECTON-8 concurreert met elke kilogram die nodig is om de operator levend te houden. De schuldmeter maakt de carrier wreed zonder hard science te breken: redding kan, maar het routebudget blijft vragen wat massa verdient.
 
 ## Scanner
 
-NL LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
+Massa-venstermeter. Elke kilogram hulp heeft een routeprijs.
 
 ## Terminal
 
-NL LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER: recovery-burnmarge smaller. Operator-extractiemassa conflicteert met verzegelde payload, ballastreserve, zuurstofschuld en quarantine sample custody. Handmatige override vereist betaalde prioriteit of gevarenbewijs.
 
 ## Audio
 
-NL LOC HOLD: You owe the orbit before you owe the money.
+Het schip kan jou dragen of wat je vond. Het verkiest een getal.
 
 ## Field Note
 
-NL LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Zuurstof, ballast, bewijs, payload, lichaam: de carrier weegt ze voordat hij genade weegt.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/nl_NL. -->

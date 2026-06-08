@@ -7,34 +7,34 @@ poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
 biome_tags: biome.factory_temple;biome.deep_abyss
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Stos zasobów biometalu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# Stos zasobów biometalu
 
-PL LOC HOLD: The resource stack prevents HECTON-8 from collapsing into one magic material. Xenon-Omega matters, but the moon also has metals, salts, vent chemistry, pressure ceramics, biofibers, photoproteins, salvage, and Atlas-altered biometal.
+Stos zasobów chroni HECTON-8 przed redukcją do jednego magicznego materiału. Xenon-Omega jest ważne, lecz księżyc ma też metale, sole, chemię kominów, ceramikę, biowłókna, fotoproteiny, salvage i biometal zmieniony przez Atlas.
 
 ## Scanner
 
-PL LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
+Tablica zasobów. Blue debt jest na szczycie, ale reszta księżyca nadal daje zysk wart zabijania.
 
 ## Terminal
 
-PL LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
+STOS ZASOBÓW HECTON-8: metale siarczkowe, sole, kieszenie gazów szlachetnych, ceramika ciśnieniowa, katalizatory kominowe, biowłókna, fotoproteiny, salvage hardware, biometal zmieniony przez Atlas i XO continuity substrate.
 
 ## Audio
 
-PL LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
+Jedna cudowna ruda byłaby leniwa. HECTON-8 ma całą ekonomię ran ciśnienia.
 
 ## Field Note
 
-PL LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+Jeśli każda próbka mówi Xenon-Omega, świat głupieje. Policz też inne powody.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/pl_PL. -->

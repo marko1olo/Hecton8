@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: No-FTL Route Delay"
+title: "Opóźnienie trasy bez FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: No-FTL Route Delay
+# Opóźnienie trasy bez FTL
 
-PL LOC HOLD: HECTON-8 has no instant rescue channel. Aegir was reached through precursor probes, beam infrastructure, pellet-fusion freight and braking systems that treat human urgency as one more payload constraint. A message can cross the route before the hardware that would make the message useful. That delay is why Black Keel can hold a valid claim while the player still has to fix seals by hand.
+HECTON-8 nie ma kanału natychmiastowego ratunku. System Aegir osiągnięto przez precursor probes, beam infrastructure, pellet-fusion freight i układy hamowania, które traktują pilność jako kolejne ograniczenie masy. Wiadomość może przyjść przed sprzętem, który uczyniłby ją użyteczną. Carrier może uznać twoje istnienie, wycenić payload i trzymać valid claim, a nadal nie móc wydać descent mass przy złej weather, relay angle lub custody window. Publiczny tekst podróży musi utrzymać to ograniczenie widoczne, bo izolacja tutaj powstaje z inżynierii, prawa i logistyki naraz. Black Keel może być blisko prawnie i nieosiągalny fizycznie. To opóźnienie wyjaśnia, czemu gracz nadal naprawia uszczelnienia ręcznie po odpowiedzi relay.
 
 ## Scanner
 
-PL LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+Zapis tranzytowy. Ruch Aegir zależy od precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody i opóźnienia prawnego.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+WĘZEŁ ARCHIWUM PUBLICZNEGO // GRANICA TRANZYTU. Brak FTL. Brak Ansible. Żywy ratunek wymaga fizycznego transferu, braking architecture, carrier position, descent mass i ważnego local window.
 
 ## Audio
 
-PL LOC HOLD: Help can be legally present and physically years away.
+Pomoc może być obecna prawnie i fizycznie oddalona o lata.
 
 ## Field Note
 
-PL LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+Notatka Maraudera: gdy relay odpowie, zapytaj, ile lat ma odpowiedź i jaką masę może ruszyć.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/pl_PL. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # GÉOLOGIE, PRESSION ET LA GRANDE MARÉE DE 2147
 
 > **Source :** Keelmark Loss Desk, Résumé du refus de réclamation. Annexe jointe : Guide des risques bathymétriques.  

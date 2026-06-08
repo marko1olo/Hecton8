@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Aegir Moon Route Map"
+title: "מפת מסלולי הירחים של Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Aegir Moon Route Map
+# מפת מסלולי הירחים של Aegir
 
-HE LOC HOLD: Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+מפת הירחים של Aegir היא תפעולית לפני שהיא יפה. HECTON-8 הוא גוף אוקייני אחד בתוך סולם של ירחים, shepherd rocks, ice-scatter paths ו-dead relay marks. גופים פנימיים משבשים narrowband contact וכיסוי קרינה. ירחי קרח שוברים optical relay lines לרסיסים גרועים. Occultation bands יוצרים חלונות דממה שבהם claim יכול להיות תקף ועדיין לא להישמע. beacons חיצוניים משמרים בעלות ישנה אחרי שצוותים נעלמים. גאומטריית גאות ו-storm stacking קובעים אם bathydrop chain תעלה נקי או תיכנס ל-loss ledger. מפות ציבוריות יכולות להראות זאת בלי להבטיח עולמות משחק נוספים; תפקידן להפוך את השמים לקריאים כלחץ, עיכוב וסיכון מסלול.
 
 ## Scanner
 
-HE LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+רשומת מפת מערכת. ירחי Aegir קובעים relay timing, כיסוי קרינה, ice scatter, לחץ גאות, occultation bands, beacons מתים ו-recovery geometry.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+צומת ארכיון ציבורי // סולם ירחי AEGIR. שמות ירחים הם תוויות מסלול. כל גוף משנה signal age, transfer risk, storm exposure, custody timing או claim reliability.
 
 ## Audio
 
-HE LOC HOLD: The map is why no one arrives the moment you ask.
+המפה מסבירה למה אף אחד לא מגיע ברגע שאתה מבקש.
 
 ## Field Note
 
-HE LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+הערת Marauder: סמן את הירח, ואז סמן מה הוא עושה למסלול.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/he_IL. -->

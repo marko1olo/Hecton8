@@ -16,7 +16,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Sargassum Cut Responder")]
-    public sealed class SargassumCutResponder : MonoBehaviour
+    public sealed class SargassumCutResponder : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         private static int s_x001SargassumCutResponderSignalPushDropCount;
         [Header("── Runtime Bindings ───────────────────")]
@@ -54,6 +54,7 @@ namespace Hecton8.Gameplay
         private SargassumCutManager _cachedCutManager;
         private AbsoluteUniversePosition _cachedRuntimeOriginAup;
         private bool _hasCachedRuntimeOriginAup;
+        private bool _hotSwapRegistered;
         private uint _nextDebrisFrame;
 
         /// <summary>
@@ -74,12 +75,17 @@ namespace Hecton8.Gameplay
         /// <param name="speed">Absolute cutter speed.</param>
         public void RegisterCut(Vector3 positionWS, Vector3 velocityWS, float speed)
         {
+            if (!IsFiniteVector3(positionWS) || !IsFiniteVector3(velocityWS) || !math.isfinite(speed))
+                return;
+
             float normalizedSpeed = ResolveNormalizedCutSpeed(speed, cutSpeedThreshold);
             if (normalizedSpeed <= 0f)
                 return;
 
+            float safeMinCutRadius = ResolveMinCutRadius(minCutRadius);
+            float safeMaxCutRadius = ResolveMaxCutRadius(maxCutRadius, safeMinCutRadius);
             _cutPositionWS = positionWS;
-            _cutRadius = math.lerp(minCutRadius, maxCutRadius, normalizedSpeed);
+            _cutRadius = math.lerp(safeMinCutRadius, safeMaxCutRadius, normalizedSpeed);
             _cutStrength = math.lerp(0.5f, 1f, normalizedSpeed);
             PublishCutMask(positionWS, velocityWS);
 
@@ -90,9 +96,11 @@ namespace Hecton8.Gameplay
                     !TryResolveRuntimeAup(positionWS, out AbsoluteUniversePosition positionAup))
                     return;
 
-                float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+                float rawQuality = HomeostasisBrain.GlobalQualityWeight;
+                float quality = math.isfinite(rawQuality) ? math.saturate(rawQuality) : 1f;
+                int safeBaseDebrisCount = math.max(0, baseDebrisCount);
                 ushort quantity = (ushort)math.clamp(
-                    (int)(math.lerp(baseDebrisCount, baseDebrisCount * 2.2f, normalizedSpeed) * math.lerp(0.35f, 1.4f, quality) + 0.5f),
+                    (int)(math.lerp(safeBaseDebrisCount, safeBaseDebrisCount * 2.2f, normalizedSpeed) * math.lerp(0.35f, 1.4f, quality) + 0.5f),
                     0,
                     ushort.MaxValue);
                 DebrisSpawnSignal debris = new DebrisSpawnSignal
@@ -143,7 +151,7 @@ namespace Hecton8.Gameplay
 
         private static uint ResolveCooldownFrames(float cooldownSeconds)
         {
-            float safeCooldown = math.max(0.01f, cooldownSeconds);
+            float safeCooldown = math.isfinite(cooldownSeconds) ? math.max(0.01f, cooldownSeconds) : 0.01f;
             return (uint)math.max(1, (int)math.ceil(safeCooldown * 60f));
         }
 
@@ -166,12 +174,14 @@ namespace Hecton8.Gameplay
         {
             CacheColdDependencies();
             RefreshCachedRuntimeOriginAup();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             _cutStrength = 0f;
-            _cutRadius = minCutRadius;
+            _cutRadius = ResolveMinCutRadius(minCutRadius);
             _nextDebrisFrame = 0u;
             ApplyCutState();
             ClearColdDependencies();
@@ -179,11 +189,19 @@ namespace Hecton8.Gameplay
             _hasCachedRuntimeOriginAup = false;
         }
 
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
+            ClearColdDependencies();
+            _cachedRuntimeOriginAup = default;
+            _hasCachedRuntimeOriginAup = false;
+        }
+
         private void ApplyCutState()
         {
-            _debugCutStrength = _cutStrength;
-            _debugCutRadius = _cutRadius;
-            _debugCutPosition = _cutPositionWS;
+            _debugCutStrength = math.isfinite(_cutStrength) ? math.saturate(_cutStrength) : 0f;
+            _debugCutRadius = math.isfinite(_cutRadius) ? math.max(0f, _cutRadius) : 0f;
+            _debugCutPosition = IsFiniteVector3(_cutPositionWS) ? _cutPositionWS : Vector3.zero;
             _debugParticleCooldown = EstimateCooldownSeconds(ResolveFrameId(), _nextDebrisFrame);
         }
 
@@ -193,18 +211,57 @@ namespace Hecton8.Gameplay
             if (cutManager == null)
                 return;
 
-            float recoverySeconds = math.rcp(math.max(0.5f, cutRecoverySpeed));
-            cutManager.RegisterExternalCut(positionWS, math.max(minCutRadius, _cutRadius), _cutStrength, velocityWS, recoverySeconds);
+            if (!IsFiniteVector3(positionWS) ||
+                !IsFiniteVector3(velocityWS) ||
+                !math.isfinite(_cutRadius) ||
+                !math.isfinite(_cutStrength))
+                return;
+
+            float safeMinCutRadius = ResolveMinCutRadius(minCutRadius);
+            float cutRadiusWS = math.max(safeMinCutRadius, _cutRadius);
+            float cutStrength01 = math.saturate(_cutStrength);
+            float safeRecoverySpeed = math.isfinite(cutRecoverySpeed) ? math.max(0.5f, cutRecoverySpeed) : 0.5f;
+            float recoverySeconds = math.rcp(safeRecoverySpeed);
+            cutManager.RegisterExternalCut(positionWS, cutRadiusWS, cutStrength01, velocityWS, recoverySeconds);
         }
 
         private void CacheColdDependencies()
         {
-            _cachedCutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
+            WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref _cachedCutManager);
         }
 
         private void ClearColdDependencies()
         {
             _cachedCutManager = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.SargassumCutRuntime)
+                return;
+
+            _cachedCutManager = currentService as SargassumCutManager;
+            WorldRuntimeReferenceUtility.TryResolveSargassumCutManager(ref _cachedCutManager);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private bool RefreshCachedRuntimeOriginAup()
@@ -224,9 +281,28 @@ namespace Hecton8.Gameplay
 
         private static float ResolveNormalizedCutSpeed(float speed, float threshold)
         {
-            float safeThreshold = math.max(0.001f, threshold);
+            if (!math.isfinite(speed))
+                return 0f;
+
+            float safeThreshold = math.isfinite(threshold) ? math.max(0.001f, threshold) : 0.001f;
             float normalized = (speed - safeThreshold) / (safeThreshold * 1.4f);
             return math.isfinite(normalized) ? math.saturate(normalized) : 0f;
+        }
+
+        private static float ResolveMinCutRadius(float radius)
+        {
+            return math.isfinite(radius) ? math.max(0.05f, radius) : 0.45f;
+        }
+
+        private static float ResolveMaxCutRadius(float radius, float safeMinRadius)
+        {
+            float fallback = math.max(safeMinRadius, 1.3f);
+            return math.isfinite(radius) ? math.max(safeMinRadius, radius) : fallback;
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
         }
     }
 }

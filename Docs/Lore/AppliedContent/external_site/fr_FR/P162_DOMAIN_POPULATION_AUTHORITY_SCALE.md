@@ -9,32 +9,24 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Population And Authority Scale"
+title: "Échelle De Population Et D'Autorité"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Population And Authority Scale
+# Échelle De Population Et D'Autorité
 
-FR LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
+## Le Nombre N'Est Pas Le Pouvoir
 
-## Scanner
+La table des domaines garde la population souple volontairement. Les chiffres de census exacts pourront être ajustés plus tard, mais la relation de pression est verrouillée : Sol possède l'ancienne finance et la certification, Centauri possède le langage de légitimité, Barnard possède une culture de salvage, Tau Ceti possède la pression publique des preuves, Luyten possède la custody des paquets, et Aegir possède le sale endroit où tout cela devient machine.
 
-FR LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+Sur HECTON-8, un nom de domaine ne doit jamais se lire comme une anecdote. Sol Core est un sceau sur la propriété et la continuité d'assurance. Il peut rendre actif un océan mort. Le Centauri Compact est une mémoire d'expansion fonctionnelle, ce qui permet à Deep Reach d'emprunter son ton de charte et de paraître moins pourri. Barnard Yards explique pourquoi le protagoniste connaît les pinces, cutters, outils de pression et mauvais boulots sans mythe héroïque.
 
-## Terminal
+Tau Ceti vaut parce qu'il peut rendre une preuve publiquement dangereuse. Cela ne signifie pas qu'il peut sauver un plongeur avant le changement de marée. Luyten Junction est plus froid : il peut préserver custody, hash chains et packet notary records sans autorité morale. Aegir est le dirty claim node où shells locaux, fenêtres du Black Keel et priority hooks de Deep Reach changent ces autorités lointaines en danger immédiat.
 
-FR LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
-
-## Audio
-
-FR LOC HOLD: The largest domain is not the nearest hand.
-
-## Field Note
-
-FR LOC HOLD: Do not turn the setting into census space opera.
+Voilà pourquoi un petit desk peut compter plus qu'une planète. HECTON-8 n'est pas gouvernée par la plus grande population. Elle est gouvernée par qui peut faire survivre un claim à la distance et facturer le survivant qui le touche.
 
 <!-- External Site; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/fr_FR. -->

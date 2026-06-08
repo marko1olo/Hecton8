@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "Kebocoran Ledger Publik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# Kebocoran Ledger Publik
 
-ID LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.
+Kebocoran Ledger Publik adalah ending kebenaran parsial. Pemain mengirim cukup bukti untuk membuat penghapusan lebih sulit, tetapi tidak cukup untuk mengontrol Atlas, pembalasan Deep Reach, atau apa yang akan dilakukan institusi publik dengan paket itu.
 
 ## Scanner
 
-ID LOC HOLD: You can leak truth before you understand all of it.
+Witness hash diterima. Kebenaran parsial pergi sebelum custody lengkap.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
+RUTE LEDGER PUBLIK: Tau Ceti packet notary menerima witness hash; payload tidak lengkap; tantangan claimant mungkin; jendela pembalasan Deep Reach mulai setelah pengakuan relay.
 
 ## Audio
 
-ID LOC HOLD: The truth leaves first. You may not like who reads it.
+Kebenaran pergi lebih dulu. Kau mungkin tidak suka siapa yang membacanya.
 
 ## Field Note
 
-ID LOC HOLD: Public does not mean safe. It means harder to erase.
+Publik tidak berarti aman. Itu hanya lebih sulit dihapus.
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/id_ID. -->

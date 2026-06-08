@@ -9,32 +9,20 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Deep Reach Suboffice Registry"
+title: "Registro De Suboficinas Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Deep Reach Suboffice Registry
+# Registro De Suboficinas Deep Reach
 
-ES LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## Oficinas Pequeñas, Consecuencias Grandes
 
-## Scanner
+Deep Reach asusta más cuando deja de sonar a conspiración y empieza a sonar a administración. El registro sirve porque cada nombre de oficina es bastante aburrido para ser real. Contract Continuity Desk mantiene vivas obligaciones que el trabajador preferiría muertas. Packet Notary Interface decide si un mensaje se vuelve prueba o ruido. Quarantine Hold Desk hace que la demora parezca responsabilidad médica. Asset Silence Board convierte testigos en exposure. Return Action Queue valora el cuerpo contra payload, orbit y public risk.
 
-ES LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-ES LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-ES LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-ES LOC HOLD: Use dull names. Dull names are where liability hides.
+Ningún desk necesita odiar al jugador. Solo necesita hacer su trabajo dentro de un priority stack escrito antes de que subiera el agua. Por eso la evidencia de HECTON-8 debe acumularse como sellos, routing fragments y pequeñas contradicciones. El crimen no está oculto tras mal teatral. Está repartido en formularios que parecen defensible hasta que el jugador los alinea.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/es_ES. -->

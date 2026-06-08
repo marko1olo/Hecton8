@@ -1,0 +1,384 @@
+{
+  "schema": "hecton8.generated_texture_optimization.v1",
+  "date": "2026-06-07",
+  "operation": "lossless_png_optimize_same_path",
+  "scope": [
+    "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported",
+    "Assets/_Project/Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png"
+  ],
+  "filesScanned": 37,
+  "filesChanged": 0,
+  "savedBytes": 0,
+  "records": [
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/albedo___family.coral.branching.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 2157189,
+      "afterBytes": 2157189,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/detail___family.coral.branching.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1107362,
+      "afterBytes": 1107362,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/mask___family.coral.branching.png",
+      "mode": "RGBA",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 677293,
+      "afterBytes": 677293,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/normal___family.coral.branching.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1992873,
+      "afterBytes": 1992873,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/albedo___family.coral.brittle.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 2157189,
+      "afterBytes": 2157189,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/detail___family.coral.brittle.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1107362,
+      "afterBytes": 1107362,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/mask___family.coral.brittle.png",
+      "mode": "RGBA",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 677293,
+      "afterBytes": 677293,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/normal___family.coral.brittle.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1992873,
+      "afterBytes": 1992873,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/albedo___family.coral.low.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1800578,
+      "afterBytes": 1800578,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/detail___family.coral.low.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1075476,
+      "afterBytes": 1075476,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/mask___family.coral.low.png",
+      "mode": "RGBA",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 672841,
+      "afterBytes": 672841,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/normal___family.coral.low.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 2045538,
+      "afterBytes": 2045538,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/albedo___family.coral.massive.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1658667,
+      "afterBytes": 1658667,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/detail___family.coral.massive.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1237140,
+      "afterBytes": 1237140,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/mask___family.coral.massive.png",
+      "mode": "RGBA",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 756014,
+      "afterBytes": 756014,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/normal___family.coral.massive.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 2087777,
+      "afterBytes": 2087777,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/albedo___family.coral.plate.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1800578,
+      "afterBytes": 1800578,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/detail___family.coral.plate.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1075476,
+      "afterBytes": 1075476,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/mask___family.coral.plate.png",
+      "mode": "RGBA",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 672841,
+      "afterBytes": 672841,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/normal___family.coral.plate.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 2045538,
+      "afterBytes": 2045538,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/albedo___family.kelp.abyssal.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1784759,
+      "afterBytes": 1784759,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/detail___family.kelp.abyssal.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 2391430,
+      "afterBytes": 2391430,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/mask___family.kelp.abyssal.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1654961,
+      "afterBytes": 1654961,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/normal___family.kelp.abyssal.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1507996,
+      "afterBytes": 1507996,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/albedo___family.kelp.canopy.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1159630,
+      "afterBytes": 1159630,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/detail___family.kelp.canopy.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1190357,
+      "afterBytes": 1190357,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/mask___family.kelp.canopy.png",
+      "mode": "RGBA",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 718108,
+      "afterBytes": 718108,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/normal___family.kelp.canopy.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 2058784,
+      "afterBytes": 2058784,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/albedo___family.kelp.patch.dense.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1159630,
+      "afterBytes": 1159630,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/detail___family.kelp.patch.dense.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1190357,
+      "afterBytes": 1190357,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/mask___family.kelp.patch.dense.png",
+      "mode": "RGBA",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 718108,
+      "afterBytes": 718108,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/normal___family.kelp.patch.dense.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 2058784,
+      "afterBytes": 2058784,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/albedo___family.kelp.tall.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1159630,
+      "afterBytes": 1159630,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/detail___family.kelp.tall.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 1190357,
+      "afterBytes": 1190357,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/mask___family.kelp.tall.png",
+      "mode": "RGBA",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 718108,
+      "afterBytes": 718108,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/normal___family.kelp.tall.png",
+      "mode": "RGB",
+      "width": 1024,
+      "height": 1024,
+      "beforeBytes": 2058784,
+      "afterBytes": 2058784,
+      "savedBytes": 0,
+      "changed": false
+    },
+    {
+      "path": "Assets/_Project/Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png",
+      "mode": "RGB",
+      "width": 2048,
+      "height": 2048,
+      "beforeBytes": 2632065,
+      "afterBytes": 2632065,
+      "savedBytes": 0,
+      "changed": false
+    }
+  ]
+}

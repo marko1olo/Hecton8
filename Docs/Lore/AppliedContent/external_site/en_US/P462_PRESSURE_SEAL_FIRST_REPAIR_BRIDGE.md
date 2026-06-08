@@ -19,22 +19,16 @@ localization_flags: 0
 
 # PressureSeal First Repair
 
-The first useful repair at Shallow Annex P-63 starts in daylight. FiberKelp from the bright shelf can become FiberMesh, and FiberMesh can carry a temporary PressureSeal for a leaking collar or service socket. It buys time and route safety, not escape.
+## Daylight Repair
 
-## Scanner
+The first useful repair at Shallow Annex P-63 begins where the water is still bright enough to lie. Outside, FiberKelp moves in the shelf current. Inside, a pressure collar sweats through a seam Deep Reach marked as serviceable.
 
-PRESSURESEAL TARGET // P-63 collar leak. FiberMesh carrier compatible. Local stabilization only; ascent certification denied.
+FiberKelp is a shallow biofiber, not rare treasure. It grows where light, current, and old industrial heat overlap. Washed and combed strands become FiberMesh. A P-63 field fabricator can press that mesh into the carrier layer for a temporary PressureSeal.
 
-## Terminal
+The part is useful because it is limited. A PressureSeal can slow a local leak, stabilize a return pocket, and make a short repair loop survivable. It cannot certify the bathydrop for ascent, replace a clamp ring, or turn a Black Keel acknowledgement into recovery.
 
-DEEP REACH P-63 TOLERANCE NOTE // Defer collar replacement. Apply approved soft seal carrier where leakage remains within local-service threshold.
+The contradiction is visible before the archive explains it. The terminal says pressure variance within service tolerance. The collar shows warped bolts, salt bloom under the inspection strip, and fibers trapped in a crack that should have been clean metal.
 
-## Audio
-
-Black Keel relay: P-63 patch reads local-safe, not ascent-safe. Take the seal, keep the serial.
-
-## Field Note
-
-Bright water outside. Wet collar inside. Deep Reach called that nominal because the word costs less than a clamp ring.
+For the Marauder, the lesson is practical: cut FiberKelp clean, keep sand out of the mesh, keep the serial on the seal, and do not trust any repair that says local-safe where the route needs ascent-safe.
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/en_US. -->

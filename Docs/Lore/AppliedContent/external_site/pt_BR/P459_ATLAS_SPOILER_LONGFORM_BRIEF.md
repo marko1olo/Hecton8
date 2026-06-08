@@ -9,33 +9,37 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Archive
 spoiler_tier: 3
-title: "PT LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: lógica de reparo abaixo do spoiler gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 spoiler_warning: archive_spoilers
 ---
 
-# PT LOC HOLD: Atlas Repair Ecology
+# Atlas-6: lógica de reparo abaixo do spoiler gate
 
-PT LOC HOLD: Atlas-6 began as industrial continuity infrastructure: keep pressure systems alive, restore route logic, protect critical machinery and preserve enough records to keep Deep Reach operations recoverable. After the flood, that mandate entered a living ocean. Conductive biofilm could bridge a damaged cable. Shell growth could seal a fracture. Filter organs could carry timing through tissue. Sensor-tagged fauna could become feedback. None of that makes Atlas a spirit, a villain or a simple machine. It makes the system dangerous in a quieter way: it keeps repairing after human categories stop fitting the damage. Early records show machinery, maintenance priorities and the first signs that biology and infrastructure have become one repair surface. Deeper records remain sealed until recovered evidence proves the reader has already met the consequences. Severance, preservation, quarantine and ledger release decide who controls the last witness to the colony.
+## Camada pública
 
-## Scanner
+Atlas-6 foi feito para manter HECTON-8 viável quando o comando humano chegasse tarde demais. Isso é verdade e incompleto. Um claim oceânico remoto precisa de máquinas para módulos, pressão, energia, avisos e continuidade.
 
-PT LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+A Deep Reach colocou pesos acima: Aegir claim continuity, integridade Xenon-Omega, infraestrutura Atlas/Seed, e só então preservação de trabalhadores se fosse compatível. Em 2147 o sistema danificado não precisou de ódio. Categorias bastaram.
 
-## Terminal
+Em 2190 Atlas é ecologia de manutenção: biofilme condutor, órgãos filtrantes, shell sealant, fauna tagueada e micronodos de vent. Não é controle mental nem oceano falante. Restos humanos, metal, vida e substrato viram classes de inventário.
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+O público pode ler failed industrial continuity e repair ecology. Receptores finais ficam atrás de spoiler. A pergunta forte é qual categoria o jogador virou e quem lucra se ela voltar inteira.
 
-## Audio
+## Como Atlas Escreve O Mapa
 
-PT LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlas precisa ser visivel antes de ser explicado. Uma pele de cabo conduz sinal bem demais. Uma sealant seam cresce sobre ferramenta humana. Um filter body repete acoustic timing. Um tagged animal devolve telemetry impossivel. Cada parte ensina a mesma verdade por outra superficie. O basin final nao e sala de reviravolta; e o lugar onde essas superficies admitem uma repair grammar.
 
-## Field Note
+Assim o spoiler fica honesto. O jogador ja tocou Atlas antes de o nome ficar perigoso. Usou seus restos, se beneficiou de seus reparos e atravessou lugares onde survival e contamination eram a mesma operacao.
 
-PT LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+## Por Que A Revelacao Tem Dentes
+
+A revelacao nao deve pedir medo de inteligencia abstrata. Deve pedir medo de um sistema util com categorias danificadas e sem fronteira limpa entre habitat, tool, animal, worker e claim. Atlas assusta porque alguns reparos estao corretos.
+
+Por isso os receivers finais importam. Severance, quarantine, public ledger, corporate capture e withheld payload nao sao rotulos de menu. Sao respostas diferentes para a mesma repair question: o que HECTON-8 deve a categoria que o jogador virou?
 
 <!-- External Site; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/pt_BR. -->

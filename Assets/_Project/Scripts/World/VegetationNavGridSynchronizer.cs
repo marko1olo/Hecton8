@@ -2201,22 +2201,24 @@ namespace Hecton8.World
                 return true;
             }
 
-            DisposeNativeArray(ref _abyssalPathTelemetryDumpPayload);
+            H8Memory.Release(ref _abyssalPathTelemetryDumpPayload, AbyssalPathTelemetryOwner);
+            if (_abyssalPathTelemetryDumpPayload.IsCreated)
+                return false;
 
             NativeArray<byte> replacement = default;
             try
             {
-                replacement = new NativeArray<byte>(
+                replacement = H8Memory.Allocate<byte>(
                     AbyssalPathTelemetryDumpPayloadBytes,
+                    AbyssalPathTelemetryOwner,
                     Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory);
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
-                    replacement,
-                    NativeMemoryOwner,
-                    nameof(_abyssalPathTelemetryDumpPayload),
-                    NativeMemoryLifetime);
-                if (sentinelId <= 0)
+                if (!replacement.IsCreated ||
+                    replacement.Length < AbyssalPathTelemetryDumpPayloadBytes)
+                {
+                    H8Memory.Release(ref replacement, AbyssalPathTelemetryOwner);
                     return false;
+                }
 
                 _abyssalPathTelemetryDumpPayload = replacement;
                 replacement = default;
@@ -2227,17 +2229,7 @@ namespace Hecton8.World
             }
             finally
             {
-                if (replacement.IsCreated)
-                {
-                    try
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(replacement);
-                    }
-                    finally
-                    {
-                        replacement.Dispose();
-                    }
-                }
+                H8Memory.Release(ref replacement, AbyssalPathTelemetryOwner);
             }
 
             return _abyssalPathTelemetryDumpPayload.IsCreated &&
@@ -2526,7 +2518,10 @@ namespace Hecton8.World
             ReleaseVegetationMemoryBuffer(ref _nativeMemory.AbyssalPathStagingHandle);
             ReleaseVegetationMemoryBuffer(ref _nativeMemory.PredatorFearNodesSnapshotHandle);
             ReleaseAbyssalPathTelemetryResources(_abyssalPathTelemetryVault);
-            DisposeNativeArray(ref _abyssalPathTelemetryDumpPayload);
+            H8Memory.Release(ref _abyssalPathTelemetryDumpPayload, AbyssalPathTelemetryOwner);
+            if (_abyssalPathTelemetryDumpPayload.IsCreated)
+                return;
+
             _abyssalPathTelemetryVault = null;
             _abyssalPathHandle = default;
             _abyssalPathScheduled = false;

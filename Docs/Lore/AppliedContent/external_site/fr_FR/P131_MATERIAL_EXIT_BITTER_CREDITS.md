@@ -9,32 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Sortie matérielle : crédits amers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Sortie matérielle : crédits amers
 
-FR LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
+La sortie matérielle doit paraître légalement froide. Le joueur récupère du matériau de pression, garde la custody intacte, satisfait la comptabilité de masse par fenêtre de Black Keel et obtient une vraie réduction du lien. Aucune alarme n'annonce l'échec ; le système agit exactement comme prévu.
 
-## Scanner
-
-FR LOC HOLD: You can leave richer and still fail the place.
-
-## Terminal
-
-FR LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
-
-## Audio
-
-FR LOC HOLD: The invoice clears before the names do.
-
-## Field Note
-
-FR LOC HOLD: This ending should be real credits, not a fake game over.
+Le dommage se trouve dans ce que le reçu exclut. Les noms des ouvriers disparus ne sont pas rapprochés, la chaîne de preuve est incomplète, et Deep Reach obtient une raison commerciale plus propre de revenir. HECTON-8 ne punit pas le joueur pour son professionnalisme. Il montre ce que coûte la réussite professionnelle quand le chantier est aussi une tombe.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/fr_FR. -->

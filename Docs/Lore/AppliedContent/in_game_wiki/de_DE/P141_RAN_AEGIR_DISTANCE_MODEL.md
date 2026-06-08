@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "DE LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Ran-Aegir-Distanzmodell"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Ran-Aegir Distance Model
+# Ran-Aegir-Distanzmodell
 
-DE LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+Das Ran-Aegir-Modell gibt HECTON-8 einen fühlbaren Maßstab. Aegir ist nah genug für Sonden, Fracht, Seed-Hardware und schuldbasierte Besiedlung bis 2190. Es ist weit genug, dass eine geflutete Kammer nicht auf Gnade der inneren Welten warten kann. Distanz erscheint als Verzögerung, custody, Treibstoff, Bremsung und Eigentum.
 
 ## Scanner
 
-DE LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+Routenplatte: Aegir ist durch Infrastruktur erreichbar und durch Mitgefühl unerreichbar.
 
 ## Terminal
 
-DE LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+ROUTENMODELL: Ran/Aegir gilt als Ziel der Zehn-Lichtjahr-Klasse von Sol. Spieltext nutzt Aegir; trockene Kataloge nutzen RAN-B:H8. Exakte Ephemeride bleibt Routentabellenarbeit.
 
 ## Audio
 
-DE LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+Zehn Lichtjahre sind klein auf einer Sternkarte. Groß genug, um eine Rettung zu ruinieren.
 
 ## Field Note
 
-DE LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+Ungefähre Distanz ist Druck, keine Dekoration. Zehn Lichtjahre können noch einen Raum töten.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/de_DE. -->

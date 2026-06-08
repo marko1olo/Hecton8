@@ -188,7 +188,7 @@ namespace Hecton8.World
 
             if (proximityColliderSystem == null)
             {
-                proximityColliderSystem = ProximityColliderSystem.ActiveRuntimeInstance;
+                WorldRuntimeReferenceUtility.TryResolveProximityColliderSystem(ref proximityColliderSystem);
                 if (proximityColliderSystem == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

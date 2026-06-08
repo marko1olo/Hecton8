@@ -527,7 +527,34 @@ namespace Hecton8.Systems.AI
     {
         private static HectonDirectorAI s_activeRuntimeInstance;
 
-        internal static HectonDirectorAI ActiveRuntimeInstance => s_activeRuntimeInstance;
+        public static HectonDirectorAI ActiveRuntimeInstance => s_activeRuntimeInstance;
+
+        public static bool TryResolveActiveRuntime(ref HectonDirectorAI target)
+        {
+            HectonDirectorAI registered = GlobalRegistry.EncounterDirector as HectonDirectorAI;
+            if (IsRuntimeOwnerUsable(registered))
+            {
+                target = registered;
+                if (!IsRuntimeOwnerUsable(s_activeRuntimeInstance))
+                    s_activeRuntimeInstance = registered;
+                return true;
+            }
+
+            HectonDirectorAI active = s_activeRuntimeInstance;
+            if (IsRuntimeOwnerUsable(active))
+            {
+                target = active;
+                return true;
+            }
+
+            target = null;
+            return false;
+        }
+
+        public static bool IsRuntimeOwnerUsable(HectonDirectorAI runtime)
+        {
+            return runtime != null && runtime.isActiveAndEnabled;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetActiveRuntimeInstance()
@@ -1122,6 +1149,8 @@ namespace Hecton8.Systems.AI
                     ActiveSonarLeviathanAggroDurationSeconds);
 
                 SargassumMicroFaunaBoids boidSystem = _sargassumMicroFauna;
+                WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref boidSystem);
+                _sargassumMicroFauna = boidSystem;
                 if (boidSystem != null)
                 {
                     Vector3 direction = _acousticPingPredatorContacts[i].Position - pingEvent.RuntimePosition;
@@ -1860,7 +1889,7 @@ namespace Hecton8.Systems.AI
         {
             _playerRuntimeContext = GlobalRegistry.Player;
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
-            _sargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
+            WorldRuntimeReferenceUtility.TryResolveSargassumMicroFaunaBoids(ref _sargassumMicroFauna);
             _dataVault = GlobalRegistry.DataVault;
             PredatorCognitionDomain.InjectDataVault(_dataVault);
             _terrainProvider = GlobalRegistry.Terrain;
@@ -2020,12 +2049,18 @@ namespace Hecton8.Systems.AI
             playerPosition = Vector3.zero;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext == null ||
-                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
             {
                 return false;
             }
 
-            playerPosition = ToVector3(movementState.PredictedAup.ToRuntimeFloat3());
+            float3 runtimePosition = movementState.PredictedAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtimePosition)))
+                return false;
+
+            playerPosition = ToVector3(runtimePosition);
             return true;
         }
 
@@ -2072,14 +2107,20 @@ namespace Hecton8.Systems.AI
 
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext == null ||
-                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
             {
                 return false;
             }
 
             playerContext.TryGetLookRuntimeState(out PlayerLookState lookState);
             playerAup = movementState.PredictedAup;
-            playerPosition = ToVector3(playerAup.ToRuntimeFloat3());
+            float3 runtimePosition = playerAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtimePosition)))
+                return false;
+
+            playerPosition = ToVector3(runtimePosition);
             playerVelocity = SanitizeFiniteVector(ToVector3(movementState.Velocity));
 
             Vector3 lookForward = ToVector3(lookState.AimForward);

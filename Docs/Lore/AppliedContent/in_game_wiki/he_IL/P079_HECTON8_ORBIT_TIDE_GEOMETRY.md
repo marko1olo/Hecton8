@@ -3,38 +3,40 @@ packet_id: P079_HECTON8_ORBIT_TIDE_GEOMETRY
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.hecton8_orbit_tide_geometry
 unlock_id: unlock.first_hecton8_orbit_tide_geometry
-poi_tags: poi.tide_geometry_panel;poi.orbital_timing_core
-biome_tags: biome.surface_relay;biome.tide_pump
+poi_tags: poi.tide_geometry_model;poi.atlas_evacuation_forecast
+biome_tags: biome.storm_shelf;biome.brine_canyon
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 Orbit / Tide Geometry"
+title: "מסלול HECTON-8 / גאומטריית גאות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbit / Tide Geometry
+# מסלול HECTON-8 / גאומטריית גאות
 
-HE LOC HOLD: HECTON-8's orbit makes the Great Tide believable: resonance, ice stress, storm surge, thermal discharge and ocean pressure formed a real disaster chain. The crime is not that Deep Reach invented physics; it is that they built a colony and evacuation model that could not survive it.
+מסלול HECTON-8 הופך את Great Tide לאמין לפני שהוא נעשה פוליטי. תהודה משכה את האוקיינוס. לחץ קרח ונחשול סערה העמיסו את המדפים. חום תעשייתי וניקוז חסום גרמו למערכות המושבה לדחוף חזרה בשעה הלא נכונה.
+
+הפשע אינו ש-Deep Reach המציאה פיזיקה. הפשע הוא מתמטיקת פינוי שנבנתה סביב Atlas continuity, מטענים מבוטחים ומעמדות עבודה, ואז קראה למתים שגיאת תחזית קבילה.
 
 ## Scanner
 
-HE LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.
+מודל גאומטריית גאות // תהודה, לחץ קרח, נחשול סערה ופליטת חום עברו את תחזית הפינוי. דגלי Atlas continuity דרסו עדיפות נסיגה.
 
 ## Terminal
 
-HE LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.
+שרשרת GREAT TIDE // כפייה מסלולית הגבירה עומס אוקייני. פליטת חום מלאכותית וניקוז חתום הפכו אירוע גאות לכשל מושבה.
 
 ## Audio
 
-HE LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.
+הפיזיקה פתחה את הדלת. Deep Reach החליטה מי יעבור בה.
 
 ## Field Note
 
-HE LOC HOLD: A moon can drown a colony without hating it.
+ירח יכול להטביע מושבה בלי לשנוא אותה.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/he_IL. -->

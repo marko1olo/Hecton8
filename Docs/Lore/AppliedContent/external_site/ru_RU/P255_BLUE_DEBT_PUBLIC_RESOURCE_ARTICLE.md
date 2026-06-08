@@ -9,32 +9,35 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Публичный материал ресурса blue debt"
+title: "Публичная статья о ресурсе Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Публичный материал ресурса blue debt
+# Публичная статья о ресурсе Blue Debt
 
-Публичная статья: Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure.
+Blue debt — фронтирное название Xenon-Omega-bearing pressure substrate на HECTON-8. Он может выглядеть как богатый рассолом минерал, клатратный карман, загрязнение pressure glass, lattice в биопленке или поврежденный индустриальный containment material. Его ценность идет от вычислений, containment и хранения экстремальных сред. Его опасность идет от custody: каждый образец спрашивает, кто им владеет, кто его сертифицировал и кого обвинят, если он изменит состояние.
 
 ## Scanner
 
-Сканер: The public name sounds like slang because the official name is built to hide liability.
+Сленг честнее. Официальное имя прячет ответственность: Xenon-Omega-bearing pressure substrate.
 
 ## Terminal
 
-Терминал: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+ПУБЛИЧНЫЙ УРОВЕНЬ СТАТЬИ / BLUE DEBT
+разрешено: поведение образцов, химия давления, клатратные и рассольные носители, ценность containment, вычислительное применение, риск хранения
+закрыто: точные таблицы рецептов, настройка payout, поздние substrate-маршруты Atlas
+заметка редактора: не магическая руда, не glowing loot fantasy, не чистая собственность.
 
 ## Audio
 
-Аудио: Ore is what people call it when they want to forget the paperwork.
+Его назвали blue debt, потому что каждый полезный грамм уже кому-то задолжал давлением, бумагами или кровью.
 
 ## Field Note
 
-Полевая заметка: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+Если он светится как сокровище, перепиши. Blue debt должен ощущаться полезным, мокрым, регулируемым, нестабильным и уже оспоренным.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/ru_RU. -->

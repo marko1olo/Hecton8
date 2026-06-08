@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Low-power induction cutter"
+title: "Маломощный индукционный резак"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-power induction cutter
+# Маломощный индукционный резак
 
-Low-power induction cutter - первый controlled access tool. Он превращает exploration в engineering choice, а не universal door removal.
+Первый резак опасен, потому что ощущается как разрешение. Он открывает service hatches, болты и замки ящиков, а затем отказывает фантазии, что каждое препятствие является дверью. Pressure glass, активные ребра и Atlas-grown seams выполняют работу, которую игрок еще может не понимать.
 
-## Scanner
-
-Induction cutter. Открывает work metal; перегревается на pressure glass и плохой вере.
-
-## Terminal
-
-TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
-
-## Audio
-
-Режь hatch. Не режь то, что держит комнату целой.
-
-## Field Note
-
-Cutter должен ощущаться ценным именно потому, что он ограничен.
+Именно ограничение дает инструменту ценность. Он заставляет читать функцию до насилия. HECTON-8 становится богаче, когда резка является решением, а не универсальным глаголом.
 
 <!-- External Site; generated from P113_LOW_POWER_INDUCTION_CUTTER/ru_RU. -->

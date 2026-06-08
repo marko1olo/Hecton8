@@ -7,7 +7,7 @@ Primary Category: Ships And Technology
 Source Voices: Public, Marauder Field Note, Deep Reach Internal, Writer Notes
 First Unlock: prologue / orbit / contract dossier
 Website Use: spoiler-safe with limited detail
-Related: Ship_Classes, Aegir_Route, Salvage_Economy, Player_Origin_Barnard_Yards
+Related: Ship_Classes, Aegir_Route, Salvage_Economy, Player_Origin_Barnard_Yards, Black_Keel_Ownership, Carrier_Quarantine_Debrief
 
 ## Public
 

@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "RAN-Aegir-Ephemeridenband-Datensatz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: RAN Aegir Ephemeris Bands
+# RAN-Aegir-Ephemeridenband-Datensatz
 
-DE LOC HOLD: Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.
+Ephemeridenbänder halten öffentliche Karten ehrlich: Sie zeigen genug Routendruck, um dem Fenster zu vertrauen, während exakte Orbitalwerte in den Tabellen bleiben, die Flugplanung besitzen.
 
 ## Scanner
 
-DE LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+Dieser Datensatz liefert Fensterbänder und Gefahrenursachen, keine tabelleneigenen exakten Perioden.
 
 ## Terminal
 
-DE LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+EPHEMERIDENBAND-DATENSATZ: öffentliche Atlas-Einträge dürfen Fensterband, Gefahrenklasse und Beziehung zu Aegir nennen. Exakte Perioden, Inklinationen und Resonanzen bleiben unter Autorität der Himmelstabelle.
 
 ## Audio
 
-DE LOC HOLD: A band is honest until the numbers have an owner.
+Ein Band kann dich retten. Eine geratene Zahl kann dich töten.
 
 ## Field Note
 
-DE LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+Die ehrliche öffentliche Karte sagt genug, um Risiko zu navigieren, und nicht genug, um die Himmelstabelle zu fälschen.
 
 <!-- In-Game Wiki; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/de_DE. -->

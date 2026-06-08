@@ -9,32 +9,35 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: HECTON-8 Public Primer Article"
+title: "Publieke Introductie van HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: HECTON-8 Public Primer Article
+# Publieke Introductie van HECTON-8
 
-NL LOC HOLD: The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
+HECTON-8 wordt geïntroduceerd als een plek die het waard is om in te overleven, niet alleen als plaats delict. De maan hoort bij het Aegir-systeem: koud, getijdenrijk, waardevol en ongemakkelijk ver van elke snelle redding. De fotische planken kunnen helder en levend zijn, met koloniehardware zichtbaar door het lichte water. Onder die schoonheid dalen oude Deep Reach-routes af naar pompkamers, drukgangen, brijnsneden, gebroken relaisvelden en machines die bleven werken nadat mensen ophielden te antwoorden. De publieke primer blijft spoiler-veilig. Hij mag zeggen dat de speler terugkeert als schuldgebonden Marauder. Hij mag zeggen dat de kolonie faalde, het salvage-contract dwingend is en de oceaan bewijs vasthoudt. Hij onthult niet de finale payload-keuze of de volledige Atlas-vraag. Het doel is de speler de wereld binnen te nodigen zonder haar tanden af te vijlen.
 
 ## Scanner
 
-NL LOC HOLD: A public primer is allowed to be beautiful. It is not allowed to lie.
+Vrijgave publieke primer: toon de maan eerst als mooi. Verkoop de oceaan niet door het misdrijf te verbergen.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+PUBLIEKE PRIMER / SPOILER-VEILIG
+toegestaan: Aegir-oceaanmaan, heldere planken, verdronken industriële kolonie, Marauder-salvage-terugkeer, Deep Reach-ruïnes
+geblokkeerd: finale payload-route, Atlas-resolutie, gevolgen van ending-receiver
+redactienotitie: schoonheid eerst, bewijs tweede, geen valse reddingsbelofte.
 
 ## Audio
 
-NL LOC HOLD: First sell the ocean. Then earn the crime.
+Het ondiepe water is geen masker. Het is wat ze bijna wisten te bouwen voordat de diepte de bonnetjes bewaarde.
 
 ## Field Note
 
-NL LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+Verkoop eerst de oceaan. Laat daarna roest, tags en routestempels bewijzen dat de oceaan niet onschuldig is.
 
 <!-- In-Game Wiki; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/nl_NL. -->

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Worker Locker Row
 
-Worker locker rows ground HECTON-8 in ordinary labor. The player finds tools, paint, food credits and frontier marks before the disaster becomes theory.
+Worker locker rows ground HECTON-8 in ordinary labor. Tools, paint, food credits and frontier marks appear before the disaster becomes theory.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ These lockers are not set dressing. Names, meal tabs and Barnard tool marks turn
 
 ## Terminal
 
-Locker audit: personal seals failed after pressure breach. Several tags show Barnard yard marks and unpaid shift advances.
+COLONY AUDIT: personal storage and Barnard marks tie the locker row to named crew and work routes.
 
 ## Audio
 

@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/PolyHavenExternalPBR_Manifest.json"
+DEFAULT_MANIFEST = ROOT / "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/PolyHavenExternalPBR_Manifest.json"
 DEFAULT_OUTPUT = ROOT / "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PREVIEW_ExternalPBR_LitMaterialSheet.png"
 
 
@@ -72,10 +72,11 @@ def render_material(asset: dict, tile_size: int) -> Image.Image:
 
 
 def render(args: argparse.Namespace) -> int:
-    if not MANIFEST.exists():
-        raise FileNotFoundError(display_path(MANIFEST))
+    manifest_path = project_path(str(args.manifest)).resolve()
+    if not manifest_path.exists():
+        raise FileNotFoundError(display_path(manifest_path))
 
-    manifest = json.loads(MANIFEST.read_text(encoding="utf-8-sig"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
     assets = manifest.get("assets", []) or []
     if not assets:
         raise RuntimeError("Manifest has no assets.")
@@ -96,12 +97,13 @@ def render(args: argparse.Namespace) -> int:
         preview = render_material(asset, tile)
         canvas.paste(preview, (x, y))
         draw.rectangle((x, y + tile, x + tile, y + tile + label_h), fill=(5, 9, 11))
-        draw.text((x + 6, y + tile + 6), f"Poly Haven / {asset['id']}"[:38], fill=(196, 222, 225))
+        draw.text((x + 6, y + tile + 6), f"{args.label_prefix} / {asset['id']}"[:38], fill=(196, 222, 225))
 
     output = project_path(str(args.output)).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(output, "PNG")
     print("EXTERNAL_PBR_LIT_PREVIEW_STATUS: PASS")
+    print(f"manifest={display_path(manifest_path)}")
     print(f"assets={len(assets)}")
     print(f"preview={display_path(output)}")
     return 0
@@ -109,7 +111,9 @@ def render(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--label-prefix", default="Poly Haven")
     parser.add_argument("--tile-size", type=int, default=220)
     parser.add_argument("--columns", type=int, default=4)
     return render(parser.parse_args())

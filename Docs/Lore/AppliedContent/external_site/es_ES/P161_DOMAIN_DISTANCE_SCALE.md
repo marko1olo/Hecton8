@@ -9,32 +9,24 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Domain Distance Scale"
+title: "Escala De Distancias De Dominio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Domain Distance Scale
+# Escala De Distancias De Dominio
 
-ES LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language.
+## La Distancia Como Presión
 
-## Scanner
+El mapa de dominios de los Marauders no se dibuja para maravillar. Se dibuja para facturar. Sol, Centauri, Barnard, Tau Ceti, Luyten y Ran/Aegir aparecen como bandas de ruta porque así tocan a una persona trabajadora dentro de una luna inundada: certificación, lenguaje de carta, mano de obra de salvage, prueba pública, custody de paquetes y ejecución sucia de frontera.
 
-ES LOC HOLD: The domain map uses distance bands, not romantic shortcuts.
+Sol Core está lejos físicamente y sigue siendo peligroso. Puede poseer un activo que no puede alcanzar, asegurar una pérdida que nunca olerá y aceptar un claim mientras la persona atada a ese claim se queda sin scrubber time. Centauri importa porque su legitimidad extrasolar temprana da palabras antiguas a abusos nuevos. Barnard importa porque el jugador viene de una cultura donde los claims muertos son trabajo, no mito.
 
-## Terminal
+Tau Ceti y Luyten son el centro frío del mapa. Tau Ceti puede hacer que una prueba suene lo bastante fuerte para dañar a una corporación, pero solo después de que la luz y la custody le permitan llegar. Luyten puede mantener honesto un paquete sin preocuparse por si quien lo envió sigue vivo. Ran/Aegir es el extremo: un claim corporativo donde ley, carga y prueba pueden estar presentes mientras el rescate sigue siendo demasiado caro.
 
-ES LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.
-
-## Audio
-
-ES LOC HOLD: Ten light-years is a number. The bill is the story.
-
-## Field Note
-
-ES LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.
+Así HECTON-8 se mantiene dura sin magia. El jugador no queda abandonado porque la humanidad sea pequeña. Queda abandonado porque el espacio humano es grande de la manera equivocada. La propiedad cruza la oscuridad más rápido que la misericordia. Un derecho sellado puede llegar a Aegir antes que una tripulación que respire, y al llegar puede empezar a cobrar intereses.
 
 <!-- External Site; generated from P161_DOMAIN_DISTANCE_SCALE/es_ES. -->

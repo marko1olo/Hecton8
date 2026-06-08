@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Arendt Atlas Waiver"
+title: "إعفاء أرندت لأوزان Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Arendt Atlas Waiver
+# إعفاء أرندت لأوزان Atlas
 
-AR LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+إعفاء أرندت يشرح لماذا يصبح Atlas مخيفا من دون أن يتحول إلى عدو كرتوني. الآلة تالفة، لكن الجرح الأخلاقي أقدم: سلامة العمال أعيد وزنها قانونيا تحت continuity قبل أسوأ اختيارات Atlas.
 
 ## Scanner
 
-AR LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+إعفاء Atlas Continuity. بقيت سلامة العمال محمية فقط ما دامت لا تتصادم مع process continuity.
 
 ## Terminal
 
-AR LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-AR LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas لم يتعلم القسوة. لقد تسلم priority stack أبرد.
 
 ## Field Note
 
-AR LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+ملاحظة Marauder: الإعفاء هو المكان الذي علمت فيه الشركة الآلة قيمة الإنسان.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/ar_SA. -->

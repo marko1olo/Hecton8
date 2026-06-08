@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Vent Forge Field Process Guide"
+title: "Veldprocesgids voor vent-forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Vent Forge Field Process Guide
+# Veldprocesgids voor vent-forge
 
-NL LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.
+Vent forges zijn natuurlijk-industriële reactoren. Ze veranderen hitte, brine en pressure history in bruikbare ceramics, sealants en charge materials en houden elk monster verbonden met zijn thermische pad.
 
 ## Scanner
 
-NL LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+Vent-forge chemistry actief. Kwaliteit volgt pressure history, heat pulse en langzame koeling, niet de glans van het monster.
 
 ## Terminal
 
-NL LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: vent forges koken sulfides, noble-gas pockets, ceramics en sealant precursors. De route van een monster door heat, brine en pressure telt meer dan zijn naam.
 
 ## Audio
 
-NL LOC HOLD: The vent did not make ore. It made a process you interrupted.
+De vent maakte geen erts. Hij maakte een proces dat jij onderbrak.
 
 ## Field Note
 
-NL LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+Til een verse partij niet direct in koud water. Laat de vent de anneal afmaken of de shell craqueleert.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/nl_NL. -->

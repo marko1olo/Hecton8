@@ -8,33 +8,19 @@ biome_tags: biome.tide_pump;biome.drowned_admin
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+spoiler_tier: 1
+title: "大潮汐物理記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# 大潮汐物理記録
 
-JP LOC HOLD: Great Tide Physics Record defines the disaster logic for HECTON-8: the ocean is physically dangerous, and the corporate crime is designing around optimistic margins until a moon-sized system collected the debt.
+大潮汐物理記録は災害を正直に保つ。HECTON-8は潮汐共振、氷崩壊、高潮、排熱に弱かった。Deep Reachの罪は偽の魔法原因ではなく、余裕率、避難能力、意思決定の優先順位に見える。
 
-## Scanner
-
-JP LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
-
-## Terminal
-
-JP LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
-
-## Audio
-
-JP LOC HOLD: The report was right. That is why they buried it.
-
-## Field Note
-
-JP LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+大潮汐物理記録はHECTON-8の災害論理を定義する。海は物理的に危険であり、企業犯罪は楽観的な余裕率で設計し続けたことにある。 柔らかく言うな。本物の物理が人を殺し、Deep Reachがその物理に犠牲者を用意した。
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/ja_JP. -->

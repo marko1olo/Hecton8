@@ -8,8 +8,8 @@ biome_tags: biome.drowned_colony;biome.service_corridor
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Luikafdichtingsregister"
+spoiler_tier: 1
+title: "Hatch-afdichtingsregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Luikafdichtingsregister
+# Hatch-afdichtingsregister
 
-Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop.
+Hatches zijn een van de stilste registers van HECTON-8. Ze leggen niet uit wie achterbleef; ze bewaren sluitrichting, pakkingstress en override-autoriteit. Een afdichtingsregister verandert een vergrendelde deur in een drukbesluit met tijdstempel.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+Afdichtingsgeheugen hersteld. De pakking nam drie druksneden en één evacuatie-override; toegang aan de terugkeerzijde werd vanaf de natte kant vergrendeld.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / FRAME H-17: pakkingvervorming boven servicetolerantie. Handmatige sluiting geaccepteerd onder EVAC OVERRIDE. Operatortelling aan terugkeerzijde onopgelost. Alleen heropenen na drukegalisatie en scharnierinspectie.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+Hij sloot af. Dat is alles wat de hatch beloofde.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+Een afgesloten hatch is een bon. Vraag voor het openen welke kant betaalde.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/nl_NL. -->

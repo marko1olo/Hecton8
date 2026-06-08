@@ -37,6 +37,8 @@ namespace Hecton8.Quest
         private const float ZeigarnikHapticLow01 = 0.2f;
         private const float ZeigarnikHapticHigh01 = 0.9f;
         private const float ZeigarnikHapticSeconds = 0.09f;
+        private static readonly uint _QuestNotificationMissWarningHash = unchecked((uint)LocHash.Compute("QuestManager.NotificationMiss"));
+        private static readonly uint _QuestNotificationContextHash = unchecked((uint)LocHash.Compute("QuestManager.Notification"));
 
         private static uint[] s_stagedLoadedPackedState;
         private static QuestSaveHeader s_stagedLoadedQuestHeader;
@@ -52,6 +54,7 @@ namespace Hecton8.Quest
         private bool _loadedFromSave;
         private bool _hasLookupAmbiguity;
         private bool _serviceRegistered;
+        private bool _runtimeOwnerAborted;
         private ISaveService _registeredSaveService;
         private ILocalizationTextReadModel _localizationManager;
         private IDataVault _questDagVault;
@@ -63,6 +66,7 @@ namespace Hecton8.Quest
         private uint[] _questNewNotificationHashes = Array.Empty<uint>();
         private readonly char[] _questNotificationMessageBuffer = new char[QuestNotificationMessageCapacity];
         private readonly char[] _questNotificationTitleBuffer = new char[QuestNotificationTitleCapacity];
+        private int _questNotificationMissCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -78,10 +82,12 @@ namespace Hecton8.Quest
 
         internal int PackedStateWordCount => _stateManager != null ? _stateManager.WordCount : 0;
 
+        public int QuestNotificationMissCount => _questNotificationMissCount;
+
         /// <summary>
         /// True once the quest runtime owner is registered in the global registry.
         /// </summary>
-        public bool IsInitialized => _serviceRegistered && ReferenceEquals(ActiveRuntimeInstance, this);
+        public bool IsInitialized => !_runtimeOwnerAborted && _serviceRegistered && ReferenceEquals(ActiveRuntimeInstance, this);
 
         private void Awake()
         {
@@ -94,7 +100,7 @@ namespace Hecton8.Quest
             QuestManager registeredQuest = GlobalRegistry.Quest;
             if (registeredQuest != null && registeredQuest != this)
             {
-                Destroy(gameObject);
+                AbortDuplicateRuntimeOwner();
                 return;
             }
 
@@ -126,6 +132,8 @@ namespace Hecton8.Quest
                 GlobalRegistry.UnregisterQuestRuntime(this);
                 _serviceRegistered = false;
             }
+
+            ClearQuestNotificationDiagnostics();
         }
 
         private void OnDestroy()
@@ -152,11 +160,16 @@ namespace Hecton8.Quest
                 GlobalRegistry.UnregisterQuestRuntime(this);
                 _serviceRegistered = false;
             }
+
+            ClearQuestNotificationDiagnostics();
         }
 
         private void Start()
         {
-            if (_loadedFromSave || _stateManager == null)
+            if (!_runtimeOwnerAborted)
+                BindSaveService(GlobalRegistry.Save);
+
+            if (_runtimeOwnerAborted || _loadedFromSave || _stateManager == null)
                 return;
 
             _stateManager.ApplyAutoActivationFlags(allQuests);
@@ -184,12 +197,25 @@ namespace Hecton8.Quest
 
         private void BindSaveService(ISaveService saveService)
         {
+            if (!IsSaveServiceUsable(saveService))
+                saveService = null;
+
             if (ReferenceEquals(_registeredSaveService, saveService))
                 return;
 
             _registeredSaveService?.Unregister(this);
+            _registeredSaveService = null;
+
+            if (!IsSaveServiceUsable(saveService))
+                return;
+
             _registeredSaveService = saveService;
-            _registeredSaveService?.Register(this);
+            _registeredSaveService.Register(this);
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void BindLocalization(ILocalizationTextReadModel localizationManager)
@@ -241,6 +267,31 @@ namespace Hecton8.Quest
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
+            _graphEvaluator?.Unbind();
+            TryUnregisterHotSwapListener();
+            BindSaveService(null);
+            BindQuestDagVault(null);
+            _localizationManager = null;
+
+            if (_serviceRegistered)
+            {
+                GlobalRegistry.UnregisterQuestRuntime(this);
+                _serviceRegistered = false;
+            }
+
+            ClearQuestNotificationDiagnostics();
+            _runtimeOwnerAborted = true;
+            enabled = false;
         }
 
         private void TryUnregisterHotSwapListener()
@@ -549,6 +600,7 @@ namespace Hecton8.Quest
         public void LoadFromSaveData(SaveData data)
         {
             _loadedFromSave = true;
+            ClearQuestNotificationDiagnostics();
             if (_stateManager == null)
                 return;
 
@@ -655,8 +707,29 @@ namespace Hecton8.Quest
                     break;
             }
 
-            if (notificationHash != 0u)
-                NotificationEvents.TryPushRegisteredInfo(notificationHash);
+            TryPushQuestNotification(notificationHash);
+        }
+
+        private void TryPushQuestNotification(uint notificationHash)
+        {
+            if (NotificationEvents.TryPushRegisteredInfo(notificationHash))
+                return;
+
+            ReportQuestNotificationMiss(notificationHash);
+        }
+
+        private void ReportQuestNotificationMiss(uint notificationHash)
+        {
+            _questNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _QuestNotificationMissWarningHash,
+                _QuestNotificationContextHash ^ notificationHash,
+                math.max(1, _questNotificationMissCount));
+        }
+
+        private void ClearQuestNotificationDiagnostics()
+        {
+            _questNotificationMissCount = 0;
         }
 
         private QuestData GetQuestDataByIndex(int questIndex)

@@ -9,32 +9,36 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Presión contractual de deuda y lista negra"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Debt Blacklist Contract Pressure
+# Presión contractual de deuda y lista negra
 
-ES LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+HECTON-8 enmarca a su protagonista mediante economía de frontera, no destino. Deuda, listas negras, custodia de fondo de reclamaciones, crédito de oxígeno, acceso a literas y viejas credenciales de Deep Reach hacen que el contrato de salvamento sea coercitivo sin volver indefenso al jugador.
 
 ## Scanner
 
-ES LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Aviso de gravamen ligado a custodia de Black Keel. Negarse sigue siendo legal, pero deja en tierra: sin litera, sin crédito de oxígeno limpio, sin ventana de ruta fuera de Aegir.
 
 ## Terminal
 
-ES LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+ACEPTACIÓN DE RECLAMACIÓN / VENTANA DE ALIVIO DE LISTA NEGRA
+estado del contratista: Marauder atado por deuda
+transportista: custodia de fondo de reclamaciones Black Keel
+términos de alivio: masa recuperable, prueba de custodia, cumplimiento del receptor
+estado de fallo: lista negra activa; acceso a litera denegado; apoyo de oxígeno convertido en servicio facturable.
 
 ## Audio
 
-ES LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+No fue un secuestro. Fue la clase de elección que la frontera vende como libertad: firma, bucea, o quédate limpio en el papel y atrapado en la práctica.
 
 ## Field Note
 
-ES LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+El gravamen no apuntó un arma. Apuntó a la factura de aire, la lista de literas y la próxima ventana de ruta.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/es_ES. -->

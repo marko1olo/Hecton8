@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.SaveSystem;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -776,28 +777,111 @@ namespace Hecton8.Core.Data
 
         private static void AtomicWrite(string path, byte[] bytes)
         {
+            if (bytes == null)
+                throw new ArgumentNullException(nameof(bytes));
+
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
             string tempPath = path + ".tmp";
-            using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            try
             {
-                stream.Write(bytes, 0, bytes.Length);
-                stream.Flush(true);
-            }
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                try
+                {
+                    using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+                    {
+                        stream.Write(bytes, 0, bytes.Length);
+                        stream.Flush(true);
+                    }
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                }
 
-            if (File.Exists(path))
-            {
-                string backupPath = path + ".bak";
-                if (File.Exists(backupPath))
-                    File.Delete(backupPath);
+                if (!AsyncWriteManager.TryGetFileLength(tempPath, out long tempBytes, out string lengthError) ||
+                    tempBytes != bytes.LongLength)
+                {
+                    throw new IOException(string.IsNullOrEmpty(lengthError)
+                        ? "Static data temp write length mismatch."
+                        : lengthError);
+                }
 
-                File.Replace(tempPath, path, backupPath, true);
+                if (!AsyncWriteManager.FlushCriticalSavePath(tempPath, tempBytes, out string flushError))
+                {
+                    throw new IOException(string.IsNullOrEmpty(flushError)
+                        ? "Static data temp write flush failed."
+                        : flushError);
+                }
+
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
+                if (File.Exists(path))
+                {
+                    string backupPath = path + ".bak";
+                    TryDeleteAtomicWriteFile(backupPath);
+                    File.Replace(tempPath, path, backupPath, true);
+                    AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
+                }
+                else
+                {
+                    File.Move(tempPath, path);
+                }
+
+                AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
+                if (!AsyncWriteManager.TryGetFileLength(path, out long promotedBytes, out lengthError) ||
+                    promotedBytes != bytes.LongLength)
+                {
+                    throw new IOException(string.IsNullOrEmpty(lengthError)
+                        ? "Static data promoted write length mismatch."
+                        : lengthError);
+                }
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(path, promotedBytes, out flushError))
+                {
+                    throw new IOException(string.IsNullOrEmpty(flushError)
+                        ? "Static data promoted write flush failed."
+                        : flushError);
+                }
             }
-            else
+            finally
             {
-                File.Move(tempPath, path);
+                TryDeleteAtomicWriteFile(tempPath);
+            }
+        }
+
+        private static void TryDeleteAtomicWriteFile(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            AsyncWriteManager.InvalidateCachedReadWindows(path);
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (System.Security.SecurityException)
+            {
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
             }
         }
 

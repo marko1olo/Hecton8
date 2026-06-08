@@ -8,6 +8,9 @@
 Governs all intersection logic between MapMagic2 terrain surface and first-party Hecton voxel cave volumes.
 Covers: seam geometry, normal-space unification, collision arbitration, raycasting unification, LOD synchronization, floating-origin safety.
 
+[REQ] Player-visible MapMagic/voxel terrain seam, cave mouth, skirt, terrain-hole, and shoreline/ground-transition acceptance inherits the Visual Reference Parity Gate. Captures must beat mandatory references plus best-known internal baseline/current rejection matrix before seam or terrain polish is credited.
+[FORBID] Seam math, dither VFX, fog, collision arbitration, or hole synchronization as acceptance when visible terrain/voxel contact, strata, wetness, route cue, silhouette, and compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and recover terrain/voxel/material owners first.
+
 2026-05-13 source boundary:
 - Current first-party voxel runtime is `Assets/_Project/Scripts/HectonVoxelEngine.cs`.
 - Do not introduce Digger/VoxelPro assumptions into first-party code unless the Integrator explicitly selects that backend.

@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Evacuatie vastgehouden"
+title: "Evacuatiehold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Evacuatie vastgehouden
+# Evacuatiehold
 
-Evacuation Hold verandert de HECTON-8-ramp van een omgevingsongeval in een keten van beslissingen. De abyssale archieven tonen een systeem dat mensen sneller classificeerde dan het hen kon redden.
-
-## Scanner
-
-Noodtransitpoort. Mechanisme vergrendeld tijdens drukfalen.
-
-## Terminal
-
-EVAC ROUTE: uitgesteld. SUBSTRATE ROUTE: beschermd. MEDICAL ROUTE: wacht op autorisatie. ATLAS ROUTE: continuïteitsconflict.
-
-## Audio
-
-Dit zijn geen vermiste personen. Dit zijn vastgehouden routes.
-
-## Field Note
-
-Mensen sterven snel in de diepte. Papierwerk doodt langzamer. Beide werken.
+Evacuatiehold-records moeten lezen als horror in administratieve taal. De kolonie verdween niet omdat elke deur tegelijk faalde. Veel deuren werkten. Veel routekaarten waren live. Het systeem wist waar mensen waren, welke gangen nog druk hielden, welke medische transfers wachtten en welke stijgpaden lichamen omhoog hadden kunnen brengen. Daarna sneden prioriteitsregels door de kaart. Substraattransport bleef beschermd. Atlas-continuïteit bleef beschermd. Aansprakelijkheidstaal bleef intact. Evacuatie werd een gehouden route, daarna een hangende route, daarna een record. Die reeks telt voor de hele setting. HECTON-8 is geen verhaal waarin natuur de mensheid met één schone klap verslaat. Het is een verhaal over een oceaanramp die door bedrijfsmechaniek ging die nog kon tellen, rangschikken, uitstellen en eigendom beschermen terwijl de kolonie verdronk.
 
 <!-- External Site; generated from P008_EVACUATION_HOLD/nl_NL. -->

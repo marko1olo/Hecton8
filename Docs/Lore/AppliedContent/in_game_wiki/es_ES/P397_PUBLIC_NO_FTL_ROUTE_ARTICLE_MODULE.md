@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: No-FTL Route Delay"
+title: "Retraso de ruta sin FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: No-FTL Route Delay
+# Retraso de ruta sin FTL
 
-ES LOC HOLD: Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
+La distancia es una regla de supervivencia en la ruta Aegir. Ley, deuda y packets antiguos pueden alcanzar al jugador mucho antes que un carrier, tender, repuesto o rescatista humano. La respuesta del relay no cancela el trabajo de presión delante de ti; solo prueba que alguien puso tu claim en una cola.
 
 ## Scanner
 
-ES LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+Registro de tránsito. El tráfico Aegir depende de precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody y demora legal.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+NODO DE ARCHIVO PÚBLICO // LÍMITE DE TRÁNSITO. FTL ausente. Ansible ausente. El rescate vivo requiere traslado físico, braking architecture, carrier position, descent mass y una local window válida.
 
 ## Audio
 
-ES LOC HOLD: Help can be legally present and physically years away.
+La ayuda puede estar presente en lo legal y a años de distancia en lo físico.
 
 ## Field Note
 
-ES LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+Nota de Marauder: cuando responda el relay, pregunta cuántos años tiene la respuesta y qué masa puede mover.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/es_ES. -->

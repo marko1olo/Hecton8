@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "Conjunto de Anel de Braçadeira de Vedação de Pressão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Pressure Seal Clamp Ring Assembly
+# Conjunto de Anel de Braçadeira de Vedação de Pressão
 
-PT LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.
+O Conjunto de Anel de Braçadeira de Vedação de Pressão transforma reparo de cápsula em barganha com pressão: metal deep-rated, assentamento de vidro e Atlas bio-sealant podem salvar ou prender a rota de subida.
 
 ## Scanner
 
-PT LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Cicatriz de clamp-ring. A manga de subida sobreviveu ao impacto gastando a vedação que deveria levá-la para casa.
 
 ## Terminal
 
-PT LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch segura apenas pressão de compartimento. Ascent seal exige deep-rated clamp ring, pressure-glass seat, shell-sealant map e perfil Deep Reach verificado. Atlas-grown sealant pode preservar o habitat enquanto bloqueia separação limpa.
 
 ## Audio
 
-PT LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+A vedação útil está viva na direção errada.
 
 ## Field Note
 
-PT LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+Um remendo de safe-room pode comprar uma hora de ar. Não segura um impulso de lançamento.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/pt_BR. -->

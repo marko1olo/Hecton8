@@ -9,32 +9,26 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Black Keel Anspruchsfenster"
+title: "Black Keel Anspruchsfenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Black Keel Anspruchsfenster
+# Black Keel Anspruchsfenster
 
-DE LOC HOLD: Black Keel kann ein Signal hören, bevor es einen Körper hebt. In Aegir ist eine Carrierantwort eine bezahlte Spur durch Relaisgeometrie, Wetter, Quarantäneprüfung, Nutzlastannahme und Masserückgewinnung. Kontakt ist Routenfakt. Rettung ist eine abgeschlossene Kette.
+## Empfang Ist Kein Lift
 
-## Scanner
+Black Keel kann ein Signal hören, bevor es einen Körper hebt. Diese Differenz ist das Anspruchsfenster.
 
-DE LOC HOLD: ANSPRUCHSFENSTER // Aegir-Relay sagt nur Empfangsfenster voraus. Bergung braucht Aufstiegspaket, Quarantäne-Handshake und tonne-window-Zuteilung.
+In Aegir ist eine Carrierantwort kein Rettungsversprechen. Sie ist eine getaktete Spur durch Relaisgeometrie, Wetter, Quarantäneprüfung, Nutzlastannahme und Masserückgewinnung. Dasselbe Fenster bepreist Fracht, Beweis, Sauerstoffschuld und Operatorwohl, weil jedes Kilogramm, das HECTON-8 verlässt, dieselbe orbitale Gelegenheit verbraucht.
 
-## Terminal
+Keelmark Mutual schreibt das Fenster als Verwahrungszeit. Black Keel schreibt Empfang bestätigt, Lift ausstehend. Deep-Reach-Klauseln können immer noch Probe, Koordinatenpaket oder Quarantänehalt vor einen Operator setzen, wenn die Prioritätssprache gültig ist.
 
-DE LOC HOLD: KEELMARK VERWAHRUNGSHINWEIS // Operatorsignal empfangen. Bergungspriorität ungeklärt. Empfang von Signal oder Beweispaket garantiert keine Operatorbergung.
+P-63 macht die Regel früh sichtbar. Ein Relayboard kann saubere Bestätigung zeigen, während dem Bathydrop Aufstiegspaket, Quarantäne-Handshake und zugeteiltes tonne-window fehlen. Der Carrier weiß, dass der Operator lebt. Er kann ihn belasten. Er kann ein Paket bepreisen. HECTON-8-Druck, Aegir-Timing und Vertragsordnung kann er nicht ignorieren.
 
-## Audio
-
-DE LOC HOLD: Black-Keel-Relais: Operatorsignal bepreist. Bergungsfenster ausstehend. Empfang ist kein Lift.
-
-## Field Note
-
-DE LOC HOLD: Wenn Black Keel antwortet, zähl die Rechnung, nicht die Rettung. Ein empfangenes Paket ist nur ein Platz in der Warteschlange, bis Masse, Siegel, Quarantäne und Wetter passen.
+Kontakt ist Routenfakt. Rettung ist eine abgeschlossene Kette.
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/de_DE. -->

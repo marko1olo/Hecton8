@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Карантинный hold со stale air"
+title: "Карантинное удержание: спертый воздух"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Карантинный hold со stale air
+# Карантинное удержание: спертый воздух
 
-Quarantine Hold - ранний выход, где выживание превращается в административное заключение. Он нужен, когда у игрока достаточно риска, чтобы уйти, но недостаточно custody, чтобы контролировать историю.
+Карантинное удержание спасает тело и подвешивает волю. Игрок ушел от давления, но не от custody. Каждый вдох дозирован, пока доказательство ждет за языком review.
 
 ## Scanner
 
-Ты жив, запечатан и все еще не свободен.
+Тело извлечено. Свидетель запечатан. Рацион воздуха активен.
 
 ## Terminal
 
-QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+КАРАНТИННОЕ УДЕРЖАНИЕ: подрядчик извлечен живым; рацион воздуха активен; sample custody не решен; внешние показания отложены до проверки заражения, спора claimant и review убытка Keelmark.
 
 ## Audio
 
-Люк открывается только к следующему закрытому люку.
+Люк открывается к другому закрытому люку.
 
 ## Field Note
 
-Это бюрократическая версия утопления.
+Это административная форма утопления.
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/ru_RU. -->

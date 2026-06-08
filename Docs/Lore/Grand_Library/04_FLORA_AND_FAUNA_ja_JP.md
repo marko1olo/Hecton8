@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 固有の生物相：植物相、動物相、そして生態系の崩壊
 
 > **出典:** 回収されたPDA、Styx級降下ポッド（呼称「ラザロ」）。  

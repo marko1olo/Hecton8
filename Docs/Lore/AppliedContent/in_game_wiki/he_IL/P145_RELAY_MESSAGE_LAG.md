@@ -7,34 +7,34 @@ poi_tags: poi.relay_packet_delay_meter;poi.legal_reply_timestamp
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Relay Message Lag"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "השהיית הודעות ממסר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# השהיית הודעות ממסר
 
-HE LOC HOLD: Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.
+השהיית ממסר מאפשרת ל-Deep Reach לאיים על השחקן בלי קול חי בחדר. מכונות חוזה, נוטריונים, חלונות תביעה וסעיפי נושאת יכולים להגיע לפני חמלה כי נכתבו מוקדם יותר, תורו מוקדם יותר ותומחרו כדי לשרוד מרחק.
 
 ## Scanner
 
-HE LOC HOLD: A message can be legally binding and still arrive too late to save air.
+הודעה יכולה להיות מחייבת משפטית ועדיין להגיע מאוחר מדי להציל אוויר.
 
 ## Terminal
 
-HE LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
+השהיית ממסר: הודעות מקומיות של Aegir יכולות לקחת שעות או ימים. חבילות משפטיות בין תחומים יכולות לקחת שנים. לחץ Deep Reach לכן ישן, אוטומטי, חוזי ועדיין מסוכן.
 
 ## Audio
 
-HE LOC HOLD: The reply is late. The lien is current.
+התשובה מאוחרת. השעבוד עדכני.
 
 ## Field Note
 
-HE LOC HOLD: No ansible means truth moves as freight.
+אין ansible אומר שהאמת נעה כמטען.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/he_IL. -->

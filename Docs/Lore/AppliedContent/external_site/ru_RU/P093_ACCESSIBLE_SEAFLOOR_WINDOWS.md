@@ -9,32 +9,16 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "Доступные окна морского дна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# Доступные окна морского дна
 
-Accessible Seafloor Windows объясняет, почему traversal HECTON-8 может быть структурированным без притворства, что весь ocean floor - walkable map.
-
-## Scanner
-
-Ridge window. Дно - не пол; это редкое exposed место.
-
-## Terminal
-
-SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-Ты садишься там, где луна разрешает камню показаться.
-
-## Field Note
-
-Хороший traversal рождается из редких footholds, а не бесконечного плоского seabed.
+Большая часть морского дна HECTON-8 недоступна обычной смелости. Давление строит стену раньше, чем появляется грунт. Доступные окна - исключения: рваные места, где рухнувший шельф, обнаженный гребень, прогретый жерловой шрам или плотный рапный столб меняют кривую спуска. Это не безопасные пещеры. Это узкие сделки с геологией. Экипаж может коснуться старой коры, поднять минералы, выросшие под давлением, найти запечатанное железо колонии или прочитать закопанное событие до того, как океан снова закроет маршрут.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ru_RU. -->

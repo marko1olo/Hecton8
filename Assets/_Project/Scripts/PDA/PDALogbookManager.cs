@@ -171,6 +171,7 @@ namespace Hecton8.PDA
         private HectonAtmosphereManager _atmosphereManager;
         private bool _registeredToSave;
         private bool _registered;
+        private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
         private uint _scanLogSourceId;
         private uint _survivalSignalSourceId;
@@ -183,6 +184,7 @@ namespace Hecton8.PDA
         private int _seenOriginCount;
         private int _nextSequence = 1;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
 
         /// <summary>Total number of retained journal entries.</summary>
         public int EntryCount => _entryCount;
@@ -212,6 +214,9 @@ namespace Hecton8.PDA
 
         private void Start()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CacheRegistryServicesCold();
             if (Application.isPlaying)
                 UIStateStore.EnsureInitialized();
@@ -361,10 +366,12 @@ namespace Hecton8.PDA
         {
             ClearEntries();
             ClearSeenOriginHashes();
+            UIStateStore.ClearPDALogEventHistory();
             _nextSequence = 1;
 
             if (data == null)
             {
+                Hecton8.UI.PDAEvents.TryRaiseLogbookChanged(0, 0u);
                 RebindOwnerSubscriptions();
                 RefreshLogbookSignalPumpRegistration();
                 return;
@@ -477,24 +484,62 @@ namespace Hecton8.PDA
 
         private void TryRegisterLogbookService()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             IPDALogbookService registered = GlobalRegistry.PDALogbook;
-            if (registered != null && !ReferenceEquals(registered, this))
+            if (ReferenceEquals(registered, this))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[PDALogbookManager] Duplicate logbook service detected. Disabling duplicate.");
-#endif
-                enabled = false;
+                _serviceRegistered = true;
                 return;
             }
 
-            if (!ReferenceEquals(registered, this))
+            if (ReferenceEquals(registered, null))
                 GlobalRegistry.RegisterPDALogbookService(this);
+
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.PDALogbook, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            IPDALogbookService registered = GlobalRegistry.PDALogbook;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            PDALogbookManager active = registered as PDALogbookManager;
+            if (active == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[PDALogbookManager] Existing logbook service uses another owner. Disabling extra component.");
+#endif
+                enabled = false;
+                return true;
+            }
+
+            if (IsPDALogbookRuntimeUsable(active))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[PDALogbookManager] Existing usable logbook service kept. Disabling extra component.");
+#endif
+                enabled = false;
+                return true;
+            }
+
+            GlobalRegistry.UnregisterPDALogbookService(registered);
+            return false;
+        }
+
+        private static bool IsPDALogbookRuntimeUsable(PDALogbookManager manager)
+        {
+            return manager != null && manager._serviceRegistered && manager.isActiveAndEnabled;
         }
 
         private void UnregisterLogbookService()
         {
             if (ReferenceEquals(GlobalRegistry.PDALogbook, this))
                 GlobalRegistry.UnregisterPDALogbookService(this);
+
+            _serviceRegistered = false;
         }
 
         private void TryRegister()
@@ -791,25 +836,36 @@ namespace Hecton8.PDA
             if (_registeredToSave || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _registeredToSave = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void UnregisterFromSaveManager()
         {
-            if (!_registeredToSave)
+            if (!_registeredToSave && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _registeredToSave = false;
         }
 

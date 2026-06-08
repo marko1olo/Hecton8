@@ -7,34 +7,34 @@ poi_tags: poi.ephemeris_handoff_rule;poi.celestial_table_boundary
 biome_tags: biome.authoring;biome.aegir_system
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "UA LOC HOLD: Ephemeris Data Boundary Rule"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Правило межі даних ефемерид"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Ephemeris Data Boundary Rule
+# Правило межі даних ефемерид
 
-UK LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.
+Ця межа зберігає hard-sci-fi lore корисним, не заморожуючи simulation constants у прозі. Публічний текст пояснює роль місяця, маршруту або вікна, поки фінальні числа лишаються в data tables.
 
 ## Scanner
 
-UA LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
+Межа даних: проза володіє діапазонами; фінальні орбітальні числа лишаються table-owned.
 
 ## Terminal
 
-UA LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY: проза може вказувати ролі, загрози й діапазони. Точні orbital values не входять у narrative copy.
 
 ## Audio
 
-UK LOC HOLD: Numbers are allowed when the table owns them.
+Числа дозволені, коли ними володіє таблиця.
 
 ## Field Note
 
-UA LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
+Записи ефемерид пояснюють логіку маршруту, а точні константи лишаються table-owned data.
 
 <!-- In-Game Wiki; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/uk_UA. -->

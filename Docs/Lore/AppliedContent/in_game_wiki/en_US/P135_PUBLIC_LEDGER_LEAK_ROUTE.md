@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "Public Ledger Leak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Public Ledger Leak Route
+# Public Ledger Leak
 
-Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.
+Public Ledger Leak is a partial-truth ending. The player sends enough evidence to make erasure harder, but not enough to control Atlas, Deep Reach retaliation or what public institutions will do with the packet.
 
 ## Scanner
 
-You can leak truth before you understand all of it.
+Witness hash accepted. Partial truth leaves before full custody.
 
 ## Terminal
 
-PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
+PUBLIC LEDGER ROUTE: Tau Ceti packet notary accepted witness hash; payload incomplete; claimant challenge probable; Deep Reach retaliation window begins after relay acknowledgement.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The truth leaves first. You may not like who reads it.
 
 ## Field Note
 
-Public does not mean safe. It means harder to erase.
+Public is not safe. It is only harder to erase.
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/en_US. -->

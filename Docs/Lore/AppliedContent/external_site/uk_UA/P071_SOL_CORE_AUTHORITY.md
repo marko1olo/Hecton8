@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Повноваження Sol Core"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Повноваження Sol Core
 
-UK LOC HOLD: Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help.
+Повноваження Sol Core пояснюють, чому HECTON-8 може бути далекою і все одно юридично присвоєною. У HECTON-8 стара цивілізація приходить паперами, стандартами й боргом раніше, ніж приходить допомога.
 
 ## Scanner
 
-UK LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+Стара правова печатка Sol. Вона може володіти фронтирним трупом, навіть не будучи досить близько, щоб відчути витік тиску.
 
 ## Terminal
 
-UK LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+СТАНДАРТ SOL CORE: безперервність претензії визнана через ліцензоване зберігання перевізником, маршрутне страхування та відкладений розгляд. Пріоритет повернення людей не визначено до місцевої сертифікації загроз.
 
 ## Audio
 
-UK LOC HOLD: The seal came from Earth space. The rescue clause did not.
+Печатка прийшла із земного простору. Пункт про порятунок - ні.
 
 ## Field Note
 
-UK LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol тут не дім. Це найстаріший підпис на документі, який досі може тебе зламати.
 
 <!-- External Site; generated from P071_SOL_CORE_AUTHORITY/uk_UA. -->

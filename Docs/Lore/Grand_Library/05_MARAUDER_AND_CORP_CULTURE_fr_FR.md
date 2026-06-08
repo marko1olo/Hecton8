@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # CONFORMITÉ DE L'ENTREPRISE ET SOUS-CULTURE DES MARAUDEURS
 
 > **Source :** Bureau de Conformité de Récupération, Guide d'Intégration des Sous-Traitants (Formulaire 88-C).  

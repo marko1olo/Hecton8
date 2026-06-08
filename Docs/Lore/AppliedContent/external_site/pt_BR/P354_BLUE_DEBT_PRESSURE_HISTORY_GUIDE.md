@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Blue Debt Pressure History Guide"
+title: "Guia de Histórico de Pressão de Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Blue Debt Pressure History Guide
+# Guia de Histórico de Pressão de Blue Debt
 
-PT LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.
+Xenon-Omega, chamado blue debt por salvagers, liga a geologia de HECTON-8 a computation, debt law e ao motivo pelo qual a Deep Reach ainda quer de volta uma reivindicação afogada.
 
 ## Scanner
 
-PT LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.
+Amostra de blue debt marcada. Verifique pressure history, containment stage e signal drift antes de export.
 
 ## Terminal
 
-PT LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
+MARAUDER NOTE: blue debt é gíria de salvage para Xenon-Omega-bearing pressure-stable substrate. É valioso porque extreme computation e energy isolation gostam dele, não porque brilha.
 
 ## Audio
 
-PT LOC HOLD: Blue debt is what people call it after the invoice arrives.
+Blue debt é como as pessoas chamam isso depois que a fatura chega.
 
 ## Field Note
 
-PT LOC HOLD: Use for resource glossary and Deep Reach motive articles.
+Cor não é grade. Um contêiner quieto com custody limpa paga; um que canta compra um drone wake.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/pt_BR. -->

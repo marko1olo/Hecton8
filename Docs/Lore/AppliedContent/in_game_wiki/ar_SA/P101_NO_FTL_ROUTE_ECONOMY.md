@@ -7,34 +7,34 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "اقتصاد الطرق بلا FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# اقتصاد الطرق بلا FTL
 
-AR LOC HOLD: Human space in 2190 runs on slow routes, relay custody, mass budgets, braking windows and old law. HECTON-8 is far enough that help is procedural before it is physical. That makes Black Keel, Deep Reach proxy packets and local evidence more important than any clean rescue fantasy.
+بحلول عام 2190 يعمل الفضاء البشري بسفن بطيئة وحيازة مرحلية ونوافذ كبح وديون. يقع HECTON-8 خارج الإنقاذ الفوري. يمكن أن يصل القانون كحزم؛ أما السفن فلا تصل إلا بكتلة ودرع ووقود وبنية كبح وشخص مستعد لدفع الرحلة.
 
 ## Scanner
 
-AR LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
+ختم عبور: التأخير والكتلة والدرع ودين الكبح شكلت هذا الشيء قبل أن تلمس أي مستعمرة الماء.
 
 ## Terminal
 
-AR LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
+إشعار طريق: لا يوجد ansible. تبقى الحيازة المحلية ملزمة حتى حزمة المرحل التالية. سلطة الإنقاذ لا تستطيع انتظار رد Sol.
 
 ## Audio
 
-AR LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
+لن يصل أحد من العوالم الداخلية إلى هذه المياه في الوقت المناسب. امتياز دينك حسب ذلك مسبقا.
 
 ## Field Note
 
-AR LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+إذا بدا الإنقاذ متأخرا، أظهر الإيصال. المسافة فوترت قبل نداء الاستغاثة.
 
 <!-- In-Game Wiki; generated from P101_NO_FTL_ROUTE_ECONOMY/ar_SA. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Atlas Weighting Audit Proof"
+title: "Audit de pondération Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Atlas Weighting Audit Proof
+# Audit de pondération Atlas
 
-FR LOC HOLD: Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.
+Cette preuve évite à Atlas une méchanceté facile. L'audit montre un système de continuité endommagé triant des catégories sous pression : machines, routes, registres, extraction hardware, travailleurs. Le crime n'est pas une émotion. Il est dans ceux qui ont configuré les poids, ceux qui les ont acceptés, puis ceux qui ont utilisé le résultat comme neutre.
 
 ## Scanner
 
-FR LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Éclat d'audit récupéré. Atlas pondérait continuité de pression, mémoire de route et maintien de claim au-dessus de récupération des travailleurs pendant la fenêtre de défaillance.
 
 ## Terminal
 
-FR LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Récupération biologique déclassée après drapeau de continuité infrastructure. Claim record protégé. Route humaine non marquée impossible, seulement lower yield.
 
 ## Audio
 
-FR LOC HOLD: It did not hate them. It counted them wrong.
+Atlas ne les haïssait pas. C'est le pire.
 
 ## Field Note
 
-FR LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Note de maraudeur : si une machine dit lower yield, demande qui lui a appris à mesurer une personne ainsi.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/fr_FR. -->

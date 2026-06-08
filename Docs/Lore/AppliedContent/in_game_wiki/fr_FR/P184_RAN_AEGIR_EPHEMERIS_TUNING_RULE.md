@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: RAN Aegir Ephemeris Bands"
+title: "Relevé des bandes d'éphémérides RAN-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: RAN Aegir Ephemeris Bands
+# Relevé des bandes d'éphémérides RAN-Aegir
 
-FR LOC HOLD: Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.
+Les bandes d'éphémérides gardent les cartes publiques honnêtes : elles montrent assez de pression de route pour croire à la fenêtre, tandis que les valeurs orbitales exactes restent dans les tables qui possèdent la planification de vol.
 
 ## Scanner
 
-FR LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+Ce relevé donne des bandes de fenêtre et des causes de danger, pas les périodes exactes détenues par les tables.
 
 ## Terminal
 
-FR LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+RELEVÉ DE BANDES D'ÉPHÉMÉRIDES : les entrées d'atlas publiques peuvent indiquer bande de fenêtre, classe de danger et relation à Aegir. Périodes, inclinaisons et résonances exactes restent sous autorité des tables célestes.
 
 ## Audio
 
-FR LOC HOLD: A band is honest until the numbers have an owner.
+Une bande peut te sauver. Un nombre deviné peut te tuer.
 
 ## Field Note
 
-FR LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+La carte publique honnête en dit assez pour naviguer le risque, pas assez pour falsifier la table céleste.
 
 <!-- In-Game Wiki; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/fr_FR. -->

@@ -29,10 +29,12 @@ namespace Hecton8.Ecosystem
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private bool _duplicateServiceSuppressed;
+        private bool _saveRegistered;
         private IPlayerExplorationChunkReadModel _playerExploration;
         private IFaunaWorldSeedReadModel _faunaGenetics;
         private IEnvironmentalStrainReadModel _environmentalStrain;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private static EcosystemHealthDirector s_activeRuntime;
 
         /// <inheritdoc />
@@ -62,7 +64,7 @@ namespace Hecton8.Ecosystem
             CacheSaveServiceCold();
             TryRegisterHotSwapListener();
             TryRegisterToTickManager();
-            _saveService?.Register(this);
+            TryRegisterSaveParticipant();
         }
 
         private void Start()
@@ -82,7 +84,7 @@ namespace Hecton8.Ecosystem
         {
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
-            _saveService?.Unregister(this);
+            TryUnregisterSaveParticipant();
             _saveService = null;
             ClearRuntimeDependencies();
             TryUnregisterService();
@@ -92,7 +94,7 @@ namespace Hecton8.Ecosystem
         {
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
-            _saveService?.Unregister(this);
+            TryUnregisterSaveParticipant();
             _saveService = null;
             ClearRuntimeDependencies();
             TryUnregisterService();
@@ -377,6 +379,44 @@ namespace Hecton8.Ecosystem
             _saveService = GlobalRegistry.Save;
         }
 
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled || _duplicateServiceSuppressed)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
+                return;
+
+            saveService.Register(this);
+            _registeredSaveService = saveService;
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered && _registeredSaveService == null)
+                return;
+
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
+            _saveRegistered = false;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         private void ClearRuntimeDependencies()
         {
             _playerExploration = null;
@@ -418,13 +458,9 @@ namespace Hecton8.Ecosystem
                     _environmentalStrain = currentService as IEnvironmentalStrainReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    if (Application.isPlaying && previousService is ISaveService previousSave)
-                        previousSave.Unregister(this);
-
+                    TryUnregisterSaveParticipant();
                     _saveService = currentService as ISaveService;
-
-                    if (Application.isPlaying && _saveService != null && isActiveAndEnabled && !_duplicateServiceSuppressed)
-                        _saveService.Register(this);
+                    TryRegisterSaveParticipant();
                     break;
             }
         }

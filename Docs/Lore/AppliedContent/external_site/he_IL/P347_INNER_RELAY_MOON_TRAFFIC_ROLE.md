@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela כירח relay פנימי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Inner Relay Moon Traffic Role
+# Vela כירח relay פנימי
 
-HE LOC HOLD: The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.
-
-## Scanner
-
-HE LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
-
-## Terminal
-
-HE LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
-
-## Audio
-
-HE LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
-
-## Field Note
-
-HE LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+הערך של Vela הוא חסימה. הירח חוצה נתיבים פנימיים שבהם קרינה, uplink וגאומטריית transfer רבים על אותן דקות. חומרת ה-relay ישנה, מטולאת וחצי עיוורת, אך צפויה מספיק כדי להישאר בטבלאות carrier. אות יכול להחליק מאחורי Vela ולהגיע נקי יותר. קריאת מצוקה יכולה להיעלם מאחורי אותו גוף ולחזור כעיכוב שניתן לחיוב.
 
 <!-- External Site; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/he_IL. -->

@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Motor geotérmico de forja de chimenea"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# Motor geotérmico de forja de chimenea
 
-ES LOC HOLD: Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+Las forjas de chimenea conectan geología con fabricación, supervivencia y horror. Dan calor y ciclos de presión para cerámica, sellos y vidrio de presión, pero esos ciclos crean bolsas de ebullición, falsos oxígenos, nubes corrosivas y migración de fauna.
 
 ## Scanner
 
-ES LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
+Colector de forja de chimenea. Calor, veneno y energía usan la misma tubería.
 
 ## Terminal
 
-ES LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+MOTOR GEOTÉRMICO: pulso de chimenea apto para curado cerámico, recocido de vidrio de presión y precalentamiento de carga de ascenso de emergencia. Riesgos: cizalla hirviente, falso positivo de oxígeno y floración corrosiva.
 
 ## Audio
 
-ES LOC HOLD: The vent does not care whether you call it power or weather.
+A la chimenea no le importa si la llamas energía o clima.
 
 ## Field Note
 
-ES LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+Cada chimenea útil también castiga el mal momento.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/es_ES. -->

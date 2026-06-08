@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Black Keel托管
 
-Black Keel不是玩家的私人豪华船。它是近乎自动化的打捞carrier，受claim-pool托管、保险债务和轨道窗口约束。它提供回到轨道的真实路线，但不提供简单忠诚的救援。
+Black Keel 不是豪华私人船。它是一艘近乎自动化的打捞航母，通过索赔池托管、保险债务和延迟轨道窗口运作。它提供真实的返轨路线，却不会让救援变得简单或忠诚。
 
 ## Scanner
 

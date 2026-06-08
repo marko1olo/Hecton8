@@ -8,33 +8,33 @@ biome_tags: biome.human_space;biome.publication
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "HE LOC HOLD: Ran/Aegir Distance Band"
+spoiler_tier: 1
+title: "רצועת מרחק Ran/Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Ran/Aegir Distance Band
+# רצועת מרחק Ran/Aegir
 
-HE LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.
+מערכת Aegir נמצאת ברצועת no-FTL נגישה אך מענישה: קרובה מספיק לתעשייה, רחוקה מספיק כדי שנטישה תהיה משמעותית.
 
 ## Scanner
 
-HE LOC HOLD: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+רצועה ציבורית: Ran/Aegir הוא נתיב no-FTL ברמת עשר שנות אור מ-Sol.
 
 ## Terminal
 
-HE LOC HOLD: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+EPHEMERIS BAND: להשתמש ברמת עשר שנות אור בפרוזה ציבורית עד שקבועי השמים מוקפאים בטבלאות. אין FTL rescue בנתיב הזה.
 
 ## Audio
 
-HE LOC HOLD: Ten light-years is close on a map and brutal for a contract.
+עשר שנות אור קרובות במפה ואכזריות בחוזה.
 
 ## Field Note
 
-HE LOC HOLD: Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
+רשומת אסטרונומיה ציבורית: רצועות מרחק ומפות נתיב הן טווחי הסבר, לא קבועי אפמריס סופיים.
 
 <!-- External Site; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/he_IL. -->

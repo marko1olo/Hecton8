@@ -2,7 +2,7 @@
 
 Packet: P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE
 
-Release set candidate: RS093_LORE_SYSTEM_INTEGRATION_BRIDGE
+Release set candidate: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
 
 Authority locale: en_US
 
@@ -169,209 +169,479 @@ Status: source_authority.
 
 Title: Xenon-Omega Public Material
 
-Site teaser: Public records treat Xenon-Omega as a pressure material rumor and procurement class, not proof of what Deep Reach found below HECTON-8.
+Site teaser: Public records may name Xenon-Omega as a rumor, procurement warning, or pressure-rated material class. A live sample is proof only if pressure containment and custody survive.
 
 Scanner: XENON-OMEGA CASE // Pressure-rated. Custody tag present. Do not vent, heat, or open outside certified handling.
 
-Field note: If the bottle is easy to carry, the sample is dead or the tag is bait. Price the seal before the shine.
+Terminal: MATERIAL HANDLING NOTICE // Treat Xenon-Omega references as public material risk, not process confession. Preserve pressure case, seal, custody tag, temperature history, and receiver route. Venting or heating may convert evidence into dead claim mass.
 
-Audio: Sample accepted as pressure material. Custody incomplete. Keep it sealed until a receiver is named.
+Codex: Xenon-Omega is public only as a dangerous material category: rumors, procurement traces, sealed cases, and handling rules. Do not read the name as final explanation. The useful question is whether the sample remained under pressure, stayed tagged, and still links to a route Black Keel or Deep Reach cannot quietly relabel.
+
+Field note: If it hisses, warms, or loses its tag, it stops being testimony and becomes another expensive object.
+
+Audio: Case intact. Rumor is cheap. Pressure history is proof.
+
+External site article:
+
+## What The Record Proves
+
+Public records may name Xenon-Omega as a rumor, procurement warning, or pressure-rated material class. A live sample is proof only if pressure containment and custody survive.
+
+Xenon-Omega is public only as a dangerous material category: rumors, procurement traces, sealed cases, and handling rules. Do not read the name as final explanation. The useful question is whether the sample remained under pressure, stayed tagged, and still links to a route Black Keel or Deep Reach cannot quietly relabel.
+
+MATERIAL HANDLING NOTICE // Treat Xenon-Omega references as public material risk, not process confession. Preserve pressure case, seal, custody tag, temperature history, and receiver route. Venting or heating may convert evidence into dead claim mass.
+
+## How The Player Reads It
+
+If it hisses, warms, or loses its tag, it stops being testimony and becomes another expensive object. Use it as a rule for evidence handling, not as a promise that help is already moving.
 
 ### ar_SA
 
-Status: draft_machine_or_llm; RTL/native review required.
+Status: draft_machine_or_llm.
 
-Title: جسر مادة Xenon-Omega العامة
+Title: مادة Xenon-Omega العامة
 
-Site teaser: تتعامل السجلات العامة مع Xenon-Omega كإشاعة مادة ضغط وفئة شراء، لا كدليل على ما وجدته Deep Reach تحت HECTON-8.
+Site teaser: قد تسمي السجلات العامة Xenon-Omega كإشاعة أو تحذير توريد أو فئة مادة مصنفة للضغط. العينة الحية تكون دليلا فقط إذا بقي الاحتواء والحفظ.
 
-Scanner: حاوية XENON-OMEGA // مصنفة للضغط. وسم الحيازة موجود. لا تفرغها ولا تسخنها ولا تفتحها خارج معالجة معتمدة.
+Scanner: حافظة XENON-OMEGA // مصنفة للضغط. وسم الحفظ موجود. لا تنفسها ولا تسخنها ولا تفتحها خارج معالجة معتمدة.
 
-Field note: إذا كانت الزجاجة سهلة الحمل فالعينة ميتة أو الوسم طعم. قيّم الختم قبل اللمعان.
+Terminal: إشعار تداول مادة // تعامل مع ذكر Xenon-Omega كخطر مادة عام، لا كاعتراف بعملية. احفظ الحافظة المضغوطة، الختم، وسم الحفظ، تاريخ الحرارة، ومسار المستلم. التنفيس أو التسخين قد يحول الدليل إلى كتلة مطالبة ميتة.
 
-Audio: تم قبول العينة كمادة ضغط. الحيازة غير مكتملة. أبقها مختومة حتى يسمي Black Keel جهة الاستلام.
+Codex: Xenon-Omega علنية فقط كفئة مادة خطرة: شائعات، آثار توريد، حافظات مختومة، وقواعد تداول. لا تقرأ الاسم كتفسير نهائي. السؤال المفيد هو هل بقيت العينة تحت الضغط، موسومة، ومتصلة بمسار لا تستطيع Black Keel أو Deep Reach إعادة تسميته بصمت.
+
+Field note: إذا صفرت أو سخنت أو فقدت وسمها، تتوقف عن الشهادة وتصبح جسما باهظا آخر.
+
+Audio: الحافظة سليمة. الإشاعة رخيصة. تاريخ الضغط هو الدليل.
+
+External site article:
+
+## ما الذي يثبته السجل
+
+قد تسمي السجلات العامة Xenon-Omega كإشاعة أو تحذير توريد أو فئة مادة مصنفة للضغط. العينة الحية تكون دليلا فقط إذا بقي الاحتواء والحفظ.
+
+Xenon-Omega علنية فقط كفئة مادة خطرة: شائعات، آثار توريد، حافظات مختومة، وقواعد تداول. لا تقرأ الاسم كتفسير نهائي. السؤال المفيد هو هل بقيت العينة تحت الضغط، موسومة، ومتصلة بمسار لا تستطيع Black Keel أو Deep Reach إعادة تسميته بصمت.
+
+إشعار تداول مادة // تعامل مع ذكر Xenon-Omega كخطر مادة عام، لا كاعتراف بعملية. احفظ الحافظة المضغوطة، الختم، وسم الحفظ، تاريخ الحرارة، ومسار المستلم. التنفيس أو التسخين قد يحول الدليل إلى كتلة مطالبة ميتة.
+
+## كيف يقرأه اللاعب
+
+إذا صفرت أو سخنت أو فقدت وسمها، تتوقف عن الشهادة وتصبح جسما باهظا آخر. استخدمه كقاعدة للتعامل مع الدليل، لا كوعد بأن النجدة بدأت تتحرك.
 
 ### de_DE
 
-Status: draft_machine_or_llm; native expansion review required.
+Status: draft_machine_or_llm.
 
-Title: Xenon-Omega als oeffentliches Druckmaterial
+Title: Xenon-Omega Öffentliches Material
 
-Site teaser: Oeffentliche Akten behandeln Xenon-Omega als Geruecht ueber Druckmaterial und Beschaffungsklasse, nicht als Beweis dafuer, was Deep Reach unter HECTON-8 fand.
+Site teaser: Öffentliche Akten dürfen Xenon-Omega als Gerücht, Beschaffungswarnung oder druckklassifizierte Materialklasse nennen. Eine lebende Probe ist nur Beweis, wenn Druckbehälter und Verwahrung überleben.
 
-Scanner: XENON-OMEGA-BEHAELTER // Druckbewertet. Verwahrungs-Tag vorhanden. Nicht entlueften, erhitzen oder ausserhalb zertifizierter Handhabung oeffnen.
+Scanner: XENON-OMEGA-KOFFER // Druckklassifiziert. Verwahrungstag vorhanden. Nicht entlüften, erhitzen oder außerhalb zertifizierter Behandlung öffnen.
 
-Field note: Wenn die Flasche leicht zu tragen ist, ist die Probe tot oder der Tag ist Koeder. Bewerte das Siegel vor dem Glanz.
+Terminal: MATERIALHINWEIS // Xenon-Omega-Verweise als öffentliches Materialrisiko behandeln, nicht als Prozessgeständnis. Druckkoffer, Siegel, Verwahrungstag, Temperaturverlauf und Empfängerroute sichern. Entlüften oder Erhitzen kann Beweis in tote Claim-Masse verwandeln.
 
-Audio: Probe als Druckmaterial angenommen. Verwahrung unvollstaendig. Versiegelt halten, bis ein Empfaenger benannt ist.
+Codex: Xenon-Omega ist öffentlich nur als gefährliche Materialklasse: Gerüchte, Beschaffungsspuren, versiegelte Koffer und Handhabungsregeln. Lies den Namen nicht als Enderklärung. Die nützliche Frage ist, ob die Probe unter Druck blieb, markiert blieb und noch zu einer Route gehört, die Black Keel oder Deep Reach nicht leise umetikettieren kann.
+
+Field note: Wenn es zischt, warm wird oder den Tag verliert, ist es keine Aussage mehr, sondern nur ein teurer Gegenstand.
+
+Audio: Koffer intakt. Gerücht ist billig. Druckgeschichte ist Beweis.
+
+External site article:
+
+## Was der Eintrag beweist
+
+Öffentliche Akten dürfen Xenon-Omega als Gerücht, Beschaffungswarnung oder druckklassifizierte Materialklasse nennen. Eine lebende Probe ist nur Beweis, wenn Druckbehälter und Verwahrung überleben.
+
+Xenon-Omega ist öffentlich nur als gefährliche Materialklasse: Gerüchte, Beschaffungsspuren, versiegelte Koffer und Handhabungsregeln. Lies den Namen nicht als Enderklärung. Die nützliche Frage ist, ob die Probe unter Druck blieb, markiert blieb und noch zu einer Route gehört, die Black Keel oder Deep Reach nicht leise umetikettieren kann.
+
+MATERIALHINWEIS // Xenon-Omega-Verweise als öffentliches Materialrisiko behandeln, nicht als Prozessgeständnis. Druckkoffer, Siegel, Verwahrungstag, Temperaturverlauf und Empfängerroute sichern. Entlüften oder Erhitzen kann Beweis in tote Claim-Masse verwandeln.
+
+## Wie der Spieler es liest
+
+Wenn es zischt, warm wird oder den Tag verliert, ist es keine Aussage mehr, sondern nur ein teurer Gegenstand. Lies es als Regel für Beweisführung, nicht als Versprechen, dass Hilfe bereits unterwegs ist.
 
 ### es_ES
 
-Status: draft_machine_or_llm; native review required.
+Status: draft_machine_or_llm.
 
-Title: Material publico Xenon-Omega
+Title: Material público Xenon-Omega
 
-Site teaser: Los registros publicos tratan Xenon-Omega como rumor de material de presion y clase de compra, no como prueba de lo que Deep Reach hallo bajo HECTON-8.
+Site teaser: Los registros públicos pueden nombrar Xenon-Omega como rumor, aviso de compra o clase de material clasificado por presión. Una muestra viva solo prueba algo si sobreviven contención y custodia.
 
-Scanner: ESTUCHE XENON-OMEGA // Calificado para presion. Etiqueta de custodia presente. No ventilar, calentar ni abrir fuera de manejo certificado.
+Scanner: CAJA XENON-OMEGA // Clasificada para presión. Etiqueta de custodia presente. No ventilar, calentar ni abrir fuera de manejo certificado.
 
-Field note: Si la botella se lleva facil, la muestra esta muerta o la etiqueta es cebo. Valora el sello antes que el brillo.
+Terminal: AVISO DE MANEJO DE MATERIAL // Tratar las referencias Xenon-Omega como riesgo material público, no como confesión de proceso. Preservar caja de presión, sello, etiqueta de custodia, historial térmico y ruta receptora. Ventilar o calentar puede convertir la prueba en masa de reclamo muerto.
 
-Audio: Muestra aceptada como material de presion. Custodia incompleta. Mantener sellada hasta nombrar receptor.
+Codex: Xenon-Omega solo es público como categoría de material peligroso: rumores, rastros de compra, cajas selladas y reglas de manejo. No leas el nombre como explicación final. La pregunta útil es si la muestra siguió bajo presión, siguió etiquetada y conserva una ruta que Black Keel o Deep Reach no puedan rebautizar en silencio.
+
+Field note: Si silba, se calienta o pierde la etiqueta, deja de testificar y pasa a ser otro objeto caro.
+
+Audio: Caja intacta. El rumor es barato. El historial de presión es prueba.
+
+External site article:
+
+## Lo que prueba el registro
+
+Los registros públicos pueden nombrar Xenon-Omega como rumor, aviso de compra o clase de material clasificado por presión. Una muestra viva solo prueba algo si sobreviven contención y custodia.
+
+Xenon-Omega solo es público como categoría de material peligroso: rumores, rastros de compra, cajas selladas y reglas de manejo. No leas el nombre como explicación final. La pregunta útil es si la muestra siguió bajo presión, siguió etiquetada y conserva una ruta que Black Keel o Deep Reach no puedan rebautizar en silencio.
+
+AVISO DE MANEJO DE MATERIAL // Tratar las referencias Xenon-Omega como riesgo material público, no como confesión de proceso. Preservar caja de presión, sello, etiqueta de custodia, historial térmico y ruta receptora. Ventilar o calentar puede convertir la prueba en masa de reclamo muerto.
+
+## Cómo lo lee el jugador
+
+Si silba, se calienta o pierde la etiqueta, deja de testificar y pasa a ser otro objeto caro. Úsalo como regla para manejar pruebas, no como promesa de que la ayuda ya está en marcha.
 
 ### fr_FR
 
-Status: draft_machine_or_llm; native review required.
+Status: draft_machine_or_llm.
 
-Title: Materiau public Xenon-Omega
+Title: Matériau public Xenon-Omega
 
-Site teaser: Les archives publiques traitent Xenon-Omega comme une rumeur de materiau sous pression et une classe d'achat, pas comme la preuve de ce que Deep Reach a trouve sous HECTON-8.
+Site teaser: Les archives publiques peuvent nommer Xenon-Omega comme rumeur, avertissement d'achat ou classe de matériau certifiée pression. Un échantillon vivant ne prouve quelque chose que si le confinement et la garde survivent.
 
-Scanner: CAISSE XENON-OMEGA // Classee pression. Etiquette de garde presente. Ne pas ventiler, chauffer ni ouvrir hors manipulation certifiee.
+Scanner: COFFRET XENON-OMEGA // Classé pression. Tag de garde présent. Ne pas purger, chauffer ou ouvrir hors traitement certifié.
 
-Field note: Si la bouteille se porte trop bien, l'echantillon est mort ou le tag sert d'appat. Evalue le sceau avant l'eclat.
+Terminal: AVIS DE MANUTENTION // Traiter les références Xenon-Omega comme risque matériel public, pas comme aveu de procédé. Préserver coffret pression, sceau, tag de garde, historique thermique et route de réception. Purger ou chauffer peut transformer la preuve en masse de concession morte.
 
-Audio: Echantillon accepte comme materiau de pression. Garde incomplete. Garder scelle jusqu'a nomination du recepteur.
+Codex: Xenon-Omega n'est public qu'en tant que catégorie de matériau dangereux: rumeurs, traces d'achat, coffrets scellés et règles de manutention. Ne lis pas le nom comme explication finale. La bonne question est si l'échantillon est resté sous pression, tagué, et relié à une route que Black Keel ou Deep Reach ne peut pas renommer discrètement.
+
+Field note: S'il siffle, chauffe ou perd son tag, il cesse de témoigner et devient un objet cher de plus.
+
+Audio: Coffret intact. La rumeur coûte peu. L'histoire de pression prouve.
+
+External site article:
+
+## Ce que le registre prouve
+
+Les archives publiques peuvent nommer Xenon-Omega comme rumeur, avertissement d'achat ou classe de matériau certifiée pression. Un échantillon vivant ne prouve quelque chose que si le confinement et la garde survivent.
+
+Xenon-Omega n'est public qu'en tant que catégorie de matériau dangereux: rumeurs, traces d'achat, coffrets scellés et règles de manutention. Ne lis pas le nom comme explication finale. La bonne question est si l'échantillon est resté sous pression, tagué, et relié à une route que Black Keel ou Deep Reach ne peut pas renommer discrètement.
+
+AVIS DE MANUTENTION // Traiter les références Xenon-Omega comme risque matériel public, pas comme aveu de procédé. Préserver coffret pression, sceau, tag de garde, historique thermique et route de réception. Purger ou chauffer peut transformer la preuve en masse de concession morte.
+
+## Comment le joueur le lit
+
+S'il siffle, chauffe ou perd son tag, il cesse de témoigner et devient un objet cher de plus. Lis-le comme une règle de traitement des preuves, pas comme la promesse qu'un secours arrive déjà.
 
 ### he_IL
 
-Status: draft_machine_or_llm; RTL/native review required.
+Status: draft_machine_or_llm.
 
 Title: חומר ציבורי Xenon-Omega
 
-Site teaser: רשומות ציבוריות מתייחסות אל Xenon-Omega כשמועה על חומר לחץ וכקטגוריית רכש, לא כהוכחה למה ש-Deep Reach מצאה מתחת ל-HECTON-8.
+Site teaser: רשומות ציבוריות יכולות להזכיר Xenon-Omega כשמועה, אזהרת רכש או מחלקת חומר מדורגת לחץ. דגימה חיה היא ראיה רק אם המכל והמשמורת שורדים.
 
-Scanner: מארז XENON-OMEGA // מדורג ללחץ. תג משמורת קיים. אין לאוורר, לחמם או לפתוח מחוץ לטיפול מוסמך.
+Scanner: תיבת XENON-OMEGA // מדורגת לחץ. תג משמורת קיים. אין לאוורר, לחמם או לפתוח מחוץ לטיפול מוסמך.
 
-Field note: אם הבקבוק קל לנשיאה, הדגימה מתה או שהתג פיתיון. תן מחיר לחותם לפני הברק.
+Terminal: הודעת טיפול בחומר // התייחס לאזכורי Xenon-Omega כסיכון חומר ציבורי, לא כהודאה בתהליך. שמור תיבת לחץ, חותם, תג משמורת, היסטוריית חום ונתיב מקבל. אוורור או חימום עלולים להפוך ראיה למסת תביעה מתה.
 
-Audio: הדגימה התקבלה כחומר לחץ. המשמורת אינה שלמה. השאר אותה חתומה עד ש-Black Keel יקבע מקבל.
+Codex: Xenon-Omega פומבית רק כקטגוריית חומר מסוכן: שמועות, עקבות רכש, תיבות אטומות וכללי טיפול. אל תקרא את השם כהסבר סופי. השאלה המועילה היא אם הדגימה נשארה בלחץ, נשארה מתויגת, ועדיין מחוברת לנתיב ש-Black Keel או Deep Reach לא יכולים לשנות בשקט.
+
+Field note: אם זה שורק, מתחמם או מאבד תג, זה מפסיק להעיד והופך לעוד חפץ יקר.
+
+Audio: התיבה שלמה. שמועה זולה. היסטוריית לחץ היא הראיה.
+
+External site article:
+
+## מה הרשומה מוכיחה
+
+רשומות ציבוריות יכולות להזכיר Xenon-Omega כשמועה, אזהרת רכש או מחלקת חומר מדורגת לחץ. דגימה חיה היא ראיה רק אם המכל והמשמורת שורדים.
+
+Xenon-Omega פומבית רק כקטגוריית חומר מסוכן: שמועות, עקבות רכש, תיבות אטומות וכללי טיפול. אל תקרא את השם כהסבר סופי. השאלה המועילה היא אם הדגימה נשארה בלחץ, נשארה מתויגת, ועדיין מחוברת לנתיב ש-Black Keel או Deep Reach לא יכולים לשנות בשקט.
+
+הודעת טיפול בחומר // התייחס לאזכורי Xenon-Omega כסיכון חומר ציבורי, לא כהודאה בתהליך. שמור תיבת לחץ, חותם, תג משמורת, היסטוריית חום ונתיב מקבל. אוורור או חימום עלולים להפוך ראיה למסת תביעה מתה.
+
+## איך השחקן קורא את זה
+
+אם זה שורק, מתחמם או מאבד תג, זה מפסיק להעיד והופך לעוד חפץ יקר. השתמש בזה ככלל לטיפול בראיות, לא כהבטחה שעזרה כבר בדרך.
 
 ### id_ID
 
-Status: draft_machine_or_llm; native review required.
+Status: draft_machine_or_llm.
 
 Title: Material Publik Xenon-Omega
 
-Site teaser: Catatan publik memperlakukan Xenon-Omega sebagai rumor material tekanan dan kelas pengadaan, bukan bukti tentang apa yang ditemukan Deep Reach di bawah HECTON-8.
+Site teaser: Catatan publik boleh menyebut Xenon-Omega sebagai rumor, peringatan pengadaan, atau kelas material bertekanan. Sampel hidup menjadi bukti hanya bila kontainer dan kustodinya selamat.
 
-Scanner: KASUS XENON-OMEGA // Dinilai untuk tekanan. Tag kustodi ada. Jangan buang tekanan, panaskan, atau buka di luar penanganan bersertifikat.
+Scanner: KASUS XENON-OMEGA // Berperingkat tekanan. Tag kustodi ada. Jangan buang tekanan, panaskan, atau buka di luar penanganan bersertifikat.
 
-Field note: Jika botol mudah dibawa, sampelnya mati atau tagnya umpan. Nilai segelnya sebelum kilaunya.
+Terminal: PEMBERITAHUAN MATERIAL // Perlakukan referensi Xenon-Omega sebagai risiko material publik, bukan pengakuan proses. Jaga kasus tekanan, segel, tag kustodi, riwayat suhu, dan rute penerima. Ventilasi atau pemanasan dapat mengubah bukti menjadi massa klaim mati.
 
-Audio: Sampel diterima sebagai material tekanan. Kustodi belum lengkap. Tetap segel sampai Black Keel menyebut penerima.
+Codex: Xenon-Omega hanya publik sebagai kategori material berbahaya: rumor, jejak pengadaan, kasus tersegel, dan aturan penanganan. Jangan baca nama itu sebagai penjelasan akhir. Pertanyaan berguna adalah apakah sampel tetap bertekanan, tetap bertag, dan masih terkait rute yang tidak bisa diganti label diam-diam oleh Black Keel atau Deep Reach.
+
+Field note: Jika mendesis, memanas, atau kehilangan tag, ia berhenti menjadi kesaksian dan berubah menjadi benda mahal.
+
+Audio: Kasus utuh. Rumor murah. Riwayat tekanan adalah bukti.
+
+External site article:
+
+## Yang Dibuktikan Catatan
+
+Catatan publik boleh menyebut Xenon-Omega sebagai rumor, peringatan pengadaan, atau kelas material bertekanan. Sampel hidup menjadi bukti hanya bila kontainer dan kustodinya selamat.
+
+Xenon-Omega hanya publik sebagai kategori material berbahaya: rumor, jejak pengadaan, kasus tersegel, dan aturan penanganan. Jangan baca nama itu sebagai penjelasan akhir. Pertanyaan berguna adalah apakah sampel tetap bertekanan, tetap bertag, dan masih terkait rute yang tidak bisa diganti label diam-diam oleh Black Keel atau Deep Reach.
+
+PEMBERITAHUAN MATERIAL // Perlakukan referensi Xenon-Omega sebagai risiko material publik, bukan pengakuan proses. Jaga kasus tekanan, segel, tag kustodi, riwayat suhu, dan rute penerima. Ventilasi atau pemanasan dapat mengubah bukti menjadi massa klaim mati.
+
+## Cara Pemain Membacanya
+
+Jika mendesis, memanas, atau kehilangan tag, ia berhenti menjadi kesaksian dan berubah menjadi benda mahal. Baca ini sebagai aturan menangani bukti, bukan janji bahwa bantuan sudah bergerak.
 
 ### ja_JP
 
-Status: draft_machine_or_llm; CJK/native review required.
+Status: draft_machine_or_llm.
 
-Title: Xenon-Omega公開圧力素材
+Title: Xenon-Omega 公開材料
 
-Site teaser: 公開記録はXenon-Omegaを圧力素材の噂と調達区分として扱う。Deep ReachがHECTON-8下で何を見つけたかの証明ではない。
+Site teaser: 公開記録で Xenon-Omega と呼べるのは、噂、調達警告、圧力等級付き材料分類としてだけだ。生きた試料は、圧力封じ込めと保管タグが残っている時だけ証拠になる。
 
-Scanner: XENON-OMEGAケース // 圧力対応。保管タグあり。認証済み処理外で排気、加熱、開封しないこと。
+Scanner: XENON-OMEGA ケース // 圧力等級あり。保管タグあり。認証処理外でベント、加熱、開封するな。
 
-Field note: ボトルが運びやすいなら、試料は死んでいるかタグが罠だ。輝きより先に封印を値踏みしろ。
+Terminal: 材料取扱通知 // Xenon-Omega 参照は公開材料リスクとして扱い、工程の自白として扱わない。圧力ケース、封印、保管タグ、温度履歴、受領経路を保全せよ。ベントや加熱は証拠を死んだ請求物質に変える。
 
-Audio: 試料は圧力素材として受理。保管不完全。Black Keelが受取先を指定するまで封印を維持。
+Codex: Xenon-Omega は危険材料カテゴリとしてだけ公開される。噂、調達痕跡、封印ケース、取扱規則だ。名前を最終説明として読んではならない。役に立つ問いは、試料が圧力下に残り、タグを保ち、Black Keel や Deep Reach が静かに改名できない経路につながっているかどうかだ。
+
+Field note: それが鳴り、温まり、タグを失えば、証言ではなく高価な物体になる。
+
+Audio: ケースは無事。噂は安い。圧力履歴が証拠だ。
+
+External site article:
+
+## 記録が証明するもの
+
+公開記録で Xenon-Omega と呼べるのは、噂、調達警告、圧力等級付き材料分類としてだけだ。生きた試料は、圧力封じ込めと保管タグが残っている時だけ証拠になる。
+
+Xenon-Omega は危険材料カテゴリとしてだけ公開される。噂、調達痕跡、封印ケース、取扱規則だ。名前を最終説明として読んではならない。役に立つ問いは、試料が圧力下に残り、タグを保ち、Black Keel や Deep Reach が静かに改名できない経路につながっているかどうかだ。
+
+材料取扱通知 // Xenon-Omega 参照は公開材料リスクとして扱い、工程の自白として扱わない。圧力ケース、封印、保管タグ、温度履歴、受領経路を保全せよ。ベントや加熱は証拠を死んだ請求物質に変える。
+
+## プレイヤーが読むべきこと
+
+それが鳴り、温まり、タグを失えば、証言ではなく高価な物体になる。 これは証拠を扱うための規則であり、救助がもう動いているという約束ではない。
 
 ### ko_KR
 
-Status: draft_machine_or_llm; CJK/native review required.
+Status: draft_machine_or_llm.
 
-Title: Xenon-Omega 공개 압력 물질
+Title: Xenon-Omega 공개 물질
 
-Site teaser: 공개 기록은 Xenon-Omega를 압력 물질 소문과 조달 등급으로 다룬다. Deep Reach가 HECTON-8 아래에서 무엇을 찾았는지의 증거는 아니다.
+Site teaser: 공개 기록은 Xenon-Omega를 소문, 조달 경고, 압력 등급 물질 분류로만 부를 수 있다. 살아 있는 시료는 압력 격납과 보관이 살아남을 때만 증거다.
 
-Scanner: XENON-OMEGA 케이스 // 압력 등급. 보관 태그 있음. 인증된 취급 밖에서 배기, 가열, 개봉 금지.
+Scanner: XENON-OMEGA 케이스 // 압력 등급. 보관 태그 있음. 인증 처리 밖에서 배출, 가열, 개봉 금지.
 
-Field note: 병을 쉽게 들 수 있다면 샘플은 죽었거나 태그가 미끼다. 빛보다 먼저 봉인을 가격 매겨라.
+Terminal: 물질 취급 공지 // Xenon-Omega 언급은 공개 물질 위험으로 취급하고 공정 자백으로 취급하지 말 것. 압력 케이스, 봉인, 보관 태그, 온도 이력, 수신 경로를 보존하라. 배출이나 가열은 증거를 죽은 청구 질량으로 바꿀 수 있다.
 
-Audio: 샘플은 압력 물질로 접수됨. 보관 기록 불완전. Black Keel이 수신자를 지정할 때까지 봉인 유지.
+Codex: Xenon-Omega는 위험 물질 범주로만 공개된다. 소문, 조달 흔적, 봉인된 케이스, 취급 규칙이다. 이름을 최종 설명으로 읽지 마라. 유용한 질문은 시료가 압력 아래 남아 있고, 태그를 지켰고, Black Keel이나 Deep Reach가 조용히 이름을 바꿀 수 없는 경로에 이어져 있는가다.
+
+Field note: 쉿소리가 나거나 따뜻해지거나 태그를 잃으면, 그것은 증언이 아니라 비싼 물건이 된다.
+
+Audio: 케이스 온전. 소문은 싸다. 압력 이력이 증거다.
+
+External site article:
+
+## 기록이 증명하는 것
+
+공개 기록은 Xenon-Omega를 소문, 조달 경고, 압력 등급 물질 분류로만 부를 수 있다. 살아 있는 시료는 압력 격납과 보관이 살아남을 때만 증거다.
+
+Xenon-Omega는 위험 물질 범주로만 공개된다. 소문, 조달 흔적, 봉인된 케이스, 취급 규칙이다. 이름을 최종 설명으로 읽지 마라. 유용한 질문은 시료가 압력 아래 남아 있고, 태그를 지켰고, Black Keel이나 Deep Reach가 조용히 이름을 바꿀 수 없는 경로에 이어져 있는가다.
+
+물질 취급 공지 // Xenon-Omega 언급은 공개 물질 위험으로 취급하고 공정 자백으로 취급하지 말 것. 압력 케이스, 봉인, 보관 태그, 온도 이력, 수신 경로를 보존하라. 배출이나 가열은 증거를 죽은 청구 질량으로 바꿀 수 있다.
+
+## 플레이어가 읽어야 할 것
+
+쉿소리가 나거나 따뜻해지거나 태그를 잃으면, 그것은 증언이 아니라 비싼 물건이 된다. 이것은 증거 처리 규칙이지, 구조가 이미 움직인다는 약속이 아니다.
 
 ### nl_NL
 
-Status: draft_machine_or_llm; native review required.
+Status: draft_machine_or_llm.
 
-Title: Xenon-Omega openbaar drukmateriaal
+Title: Publiek materiaal Xenon-Omega
 
-Site teaser: Openbare dossiers behandelen Xenon-Omega als gerucht over drukmateriaal en inkoopklasse, niet als bewijs van wat Deep Reach onder HECTON-8 vond.
+Site teaser: Publieke dossiers mogen Xenon-Omega noemen als gerucht, inkoopwaarschuwing of drukgeclassificeerde materiaalklasse. Een levende sample is alleen bewijs als drukbehuizing en bewaring overleven.
 
 Scanner: XENON-OMEGA-KOFFER // Drukgeclassificeerd. Bewaringstag aanwezig. Niet ontluchten, verhitten of openen buiten gecertificeerde behandeling.
 
-Field note: Als de fles makkelijk draagt, is het monster dood of is de tag lokaas. Prijs het zegel voor de glans.
+Terminal: MATERIAALBERICHT // Behandel Xenon-Omega-verwijzingen als publiek materiaalrisico, niet als procesbekentenis. Bewaar drukbehuizing, zegel, bewaringstag, temperatuurgeschiedenis en ontvangstroute. Ontluchten of verhitten kan bewijs in dode-claimmassa veranderen.
 
-Audio: Monster geaccepteerd als drukmateriaal. Bewaring onvolledig. Verzegeld houden tot Black Keel een ontvanger noemt.
+Codex: Xenon-Omega is publiek alleen als gevaarlijke materiaalklasse: geruchten, inkoopsporen, verzegelde koffers en behandelregels. Lees de naam niet als eindverklaring. De nuttige vraag is of de sample onder druk bleef, getagd bleef en nog aan een route hangt die Black Keel of Deep Reach niet stil kan hernoemen.
+
+Field note: Als het sist, warm wordt of zijn tag verliest, stopt het met getuigen en wordt het weer een duur object.
+
+Audio: Koffer intact. Gerucht is goedkoop. Drukgeschiedenis is bewijs.
+
+External site article:
+
+## Wat het record bewijst
+
+Publieke dossiers mogen Xenon-Omega noemen als gerucht, inkoopwaarschuwing of drukgeclassificeerde materiaalklasse. Een levende sample is alleen bewijs als drukbehuizing en bewaring overleven.
+
+Xenon-Omega is publiek alleen als gevaarlijke materiaalklasse: geruchten, inkoopsporen, verzegelde koffers en behandelregels. Lees de naam niet als eindverklaring. De nuttige vraag is of de sample onder druk bleef, getagd bleef en nog aan een route hangt die Black Keel of Deep Reach niet stil kan hernoemen.
+
+MATERIAALBERICHT // Behandel Xenon-Omega-verwijzingen als publiek materiaalrisico, niet als procesbekentenis. Bewaar drukbehuizing, zegel, bewaringstag, temperatuurgeschiedenis en ontvangstroute. Ontluchten of verhitten kan bewijs in dode-claimmassa veranderen.
+
+## Hoe de speler het leest
+
+Als het sist, warm wordt of zijn tag verliest, stopt het met getuigen en wordt het weer een duur object. Lees het als regel voor bewijsbehandeling, niet als belofte dat hulp al onderweg is.
 
 ### pl_PL
 
-Status: draft_machine_or_llm; native expansion review required.
+Status: draft_machine_or_llm.
 
-Title: Publiczny material cisnieniowy Xenon-Omega
+Title: Publiczny materiał Xenon-Omega
 
-Site teaser: Publiczne akta traktuja Xenon-Omega jako pogloske o materiale cisnieniowym i klase zamowien, nie jako dowod na to, co Deep Reach znalazlo pod HECTON-8.
+Site teaser: Publiczne akta mogą nazywać Xenon-Omega plotką, ostrzeżeniem zakupowym albo klasą materiału ciśnieniowego. Żywa próbka jest dowodem tylko wtedy, gdy przetrwa pojemnik i powiernictwo.
 
-Scanner: POJEMNIK XENON-OMEGA // Klasa cisnieniowa. Tag kustodii obecny. Nie odpowietrzac, nie ogrzewac i nie otwierac poza certyfikowana obsluga.
+Scanner: KASETA XENON-OMEGA // Klasa ciśnieniowa. Tag powiernictwa obecny. Nie odpowietrzać, nie grzać, nie otwierać poza certyfikowaną obsługą.
 
-Field note: Jesli butelke latwo niesc, probka jest martwa albo tag jest przyneta. Wycen pieczec przed polyskiem.
+Terminal: NOTA OBSŁUGI MATERIAŁU // Traktować wzmianki Xenon-Omega jako publiczne ryzyko materiałowe, nie jako przyznanie procesu. Zachować kasetę ciśnieniową, plombę, tag powiernictwa, historię temperatury i trasę odbiorcy. Odpowietrzenie lub grzanie może zmienić dowód w masę martwego roszczenia.
 
-Audio: Probka przyjeta jako material cisnieniowy. Kustodia niepelna. Trzymac zapieczetowana, az Black Keel nazwie odbiorce.
+Codex: Xenon-Omega jest publiczna tylko jako kategoria niebezpiecznego materiału: plotki, ślady zakupów, zaplombowane kasety i reguły obsługi. Nie czytaj nazwy jako końcowego wyjaśnienia. Przydatne pytanie brzmi, czy próbka została pod ciśnieniem, zachowała tag i nadal łączy się z trasą, której Black Keel albo Deep Reach nie mogą po cichu przemianować.
+
+Field note: Jeśli syczy, grzeje się albo traci tag, przestaje zeznawać i staje się kolejnym drogim przedmiotem.
+
+Audio: Kaseta cała. Plotka jest tania. Historia ciśnienia jest dowodem.
+
+External site article:
+
+## Co potwierdza zapis
+
+Publiczne akta mogą nazywać Xenon-Omega plotką, ostrzeżeniem zakupowym albo klasą materiału ciśnieniowego. Żywa próbka jest dowodem tylko wtedy, gdy przetrwa pojemnik i powiernictwo.
+
+Xenon-Omega jest publiczna tylko jako kategoria niebezpiecznego materiału: plotki, ślady zakupów, zaplombowane kasety i reguły obsługi. Nie czytaj nazwy jako końcowego wyjaśnienia. Przydatne pytanie brzmi, czy próbka została pod ciśnieniem, zachowała tag i nadal łączy się z trasą, której Black Keel albo Deep Reach nie mogą po cichu przemianować.
+
+NOTA OBSŁUGI MATERIAŁU // Traktować wzmianki Xenon-Omega jako publiczne ryzyko materiałowe, nie jako przyznanie procesu. Zachować kasetę ciśnieniową, plombę, tag powiernictwa, historię temperatury i trasę odbiorcy. Odpowietrzenie lub grzanie może zmienić dowód w masę martwego roszczenia.
+
+## Jak gracz ma to czytać
+
+Jeśli syczy, grzeje się albo traci tag, przestaje zeznawać i staje się kolejnym drogim przedmiotem. Czytaj to jako zasadę obchodzenia się z dowodem, nie jako obietnicę, że pomoc już ruszyła.
 
 ### pt_BR
 
-Status: draft_machine_or_llm; native review required.
+Status: draft_machine_or_llm.
 
-Title: Material publico Xenon-Omega
+Title: Material público Xenon-Omega
 
-Site teaser: Registros publicos tratam Xenon-Omega como rumor de material de pressao e classe de compra, nao como prova do que a Deep Reach encontrou sob HECTON-8.
+Site teaser: Registros públicos podem citar Xenon-Omega como rumor, alerta de compra ou classe de material com pressão certificada. Uma amostra viva só prova algo se contenção e custódia sobreviverem.
 
-Scanner: ESTOJO XENON-OMEGA // Classificado para pressao. Tag de custodia presente. Nao ventile, aqueça ou abra fora de manuseio certificado.
+Scanner: ESTOJO XENON-OMEGA // Classificado para pressão. Tag de custódia presente. Não ventilar, aquecer ou abrir fora de manuseio certificado.
 
-Field note: Se a garrafa e facil de carregar, a amostra esta morta ou a tag e isca. Precifique o selo antes do brilho.
+Terminal: AVISO DE MATERIAL // Trate referências Xenon-Omega como risco material público, não como confissão de processo. Preserve estojo de pressão, selo, tag de custódia, histórico térmico e rota receptora. Ventilar ou aquecer pode transformar prova em massa de reivindicação morta.
 
-Audio: Amostra aceita como material de pressao. Custodia incompleta. Manter selada ate Black Keel nomear um receptor.
+Codex: Xenon-Omega só é público como categoria de material perigoso: rumores, rastros de compra, estojos selados e regras de manuseio. Não leia o nome como explicação final. A pergunta útil é se a amostra continuou sob pressão, marcada, e ligada a uma rota que Black Keel ou Deep Reach não possam renomear em silêncio.
+
+Field note: Se chiar, esquentar ou perder a tag, deixa de ser testemunho e vira outro objeto caro.
+
+Audio: Estojo intacto. Rumor é barato. Histórico de pressão é prova.
+
+External site article:
+
+## O que o registro prova
+
+Registros públicos podem citar Xenon-Omega como rumor, alerta de compra ou classe de material com pressão certificada. Uma amostra viva só prova algo se contenção e custódia sobreviverem.
+
+Xenon-Omega só é público como categoria de material perigoso: rumores, rastros de compra, estojos selados e regras de manuseio. Não leia o nome como explicação final. A pergunta útil é se a amostra continuou sob pressão, marcada, e ligada a uma rota que Black Keel ou Deep Reach não possam renomear em silêncio.
+
+AVISO DE MATERIAL // Trate referências Xenon-Omega como risco material público, não como confissão de processo. Preserve estojo de pressão, selo, tag de custódia, histórico térmico e rota receptora. Ventilar ou aquecer pode transformar prova em massa de reivindicação morta.
+
+## Como o jogador lê isso
+
+Se chiar, esquentar ou perder a tag, deixa de ser testemunho e vira outro objeto caro. Leia como regra para lidar com prova, não como promessa de que o socorro já está vindo.
 
 ### ru_RU
 
-Status: draft_machine_or_llm; native proofread required.
+Status: draft_machine_or_llm.
 
 Title: Публичный материал Xenon-Omega
 
-Site teaser: Публичные записи трактуют Xenon-Omega как слух о материале давления и закупочную категорию, а не как доказательство того, что Deep Reach нашла под HECTON-8.
+Site teaser: В публичных записях Xenon-Omega может быть слухом, закупочным предупреждением или классом материала под давлением. Живой образец становится доказательством только если выжили контейнер и цепочка сохранности.
 
-Scanner: КЕЙС XENON-OMEGA // Рассчитан на давление. Метка хранения на месте. Не стравливать, не нагревать и не открывать вне сертифицированной обработки.
+Scanner: КОФР XENON-OMEGA // Рассчитан на давление. Тег сохранности на месте. Не стравливать, не греть и не открывать вне сертифицированной обработки.
 
-Field note: Если бутылку легко нести, образец мертв или метка приманка. Сначала оцени пломбу, потом блеск.
+Terminal: УВЕДОМЛЕНИЕ ПО МАТЕРИАЛУ // Упоминания Xenon-Omega считать публичным материальным риском, а не признанием процесса. Сохранить кофр давления, пломбу, тег сохранности, температурную историю и маршрут получателя. Стравливание или нагрев могут превратить доказательство в массу мертвой претензии.
 
-Audio: Образец принят как материал давления. Цепочка хранения неполная. Держать запечатанным, пока Black Keel не назовет получателя.
+Codex: Xenon-Omega публична только как категория опасного материала: слухи, закупочные следы, запечатанные кофры и правила обращения. Не читай имя как финальное объяснение. Важный вопрос другой: остался ли образец под давлением, сохранил ли тег и связан ли он с маршрутом, который Black Keel или Deep Reach не смогут тихо переименовать.
+
+Field note: Если оно шипит, греется или теряет тег, оно перестает свидетельствовать и становится еще одним дорогим предметом.
+
+Audio: Кофр цел. Слух дешевый. История давления - доказательство.
+
+External site article:
+
+## Что доказывает запись
+
+В публичных записях Xenon-Omega может быть слухом, закупочным предупреждением или классом материала под давлением. Живой образец становится доказательством только если выжили контейнер и цепочка сохранности.
+
+Xenon-Omega публична только как категория опасного материала: слухи, закупочные следы, запечатанные кофры и правила обращения. Не читай имя как финальное объяснение. Важный вопрос другой: остался ли образец под давлением, сохранил ли тег и связан ли он с маршрутом, который Black Keel или Deep Reach не смогут тихо переименовать.
+
+УВЕДОМЛЕНИЕ ПО МАТЕРИАЛУ // Упоминания Xenon-Omega считать публичным материальным риском, а не признанием процесса. Сохранить кофр давления, пломбу, тег сохранности, температурную историю и маршрут получателя. Стравливание или нагрев могут превратить доказательство в массу мертвой претензии.
+
+## Как игрок это читает
+
+Если оно шипит, греется или теряет тег, оно перестает свидетельствовать и становится еще одним дорогим предметом. Читай это как правило обращения с доказательством, а не как обещание, что помощь уже летит.
 
 ### uk_UA
 
-Status: draft_machine_or_llm; native proofread required.
+Status: draft_machine_or_llm.
 
 Title: Публічний матеріал Xenon-Omega
 
-Site teaser: Публічні записи трактують Xenon-Omega як чутку про матеріал тиску і закупівельну категорію, а не як доказ того, що Deep Reach знайшла під HECTON-8.
+Site teaser: У публічних записах Xenon-Omega може бути чуткою, закупівельним попередженням або класом матеріалу під тиском. Живий зразок є доказом лише тоді, коли вижили контейнер і ланцюг збереження.
 
-Scanner: КЕЙС XENON-OMEGA // Розрахований на тиск. Мітка зберігання на місці. Не стравлювати, не нагрівати і не відкривати поза сертифікованою обробкою.
+Scanner: КОФР XENON-OMEGA // Розрахований на тиск. Тег збереження на місці. Не стравлювати, не гріти й не відкривати поза сертифікованою обробкою.
 
-Field note: Якщо пляшку легко нести, зразок мертвий або мітка приманка. Спершу оціни пломбу, потім блиск.
+Terminal: ПОВІДОМЛЕННЯ ЩОДО МАТЕРІАЛУ // Згадки Xenon-Omega вважати публічним матеріальним ризиком, не визнанням процесу. Зберегти кофр тиску, пломбу, тег збереження, температурну історію й маршрут отримувача. Стравлювання чи нагрів можуть перетворити доказ на масу мертвої претензії.
 
-Audio: Зразок прийнято як матеріал тиску. Ланцюг зберігання неповний. Тримати запечатаним, доки Black Keel не назве отримувача.
+Codex: Xenon-Omega публічна лише як категорія небезпечного матеріалу: чутки, закупівельні сліди, запечатані кофри й правила поводження. Не читай назву як фінальне пояснення. Корисне питання інше: чи лишився зразок під тиском, чи зберіг тег і чи веде до маршруту, який Black Keel або Deep Reach не зможуть тихо перейменувати.
+
+Field note: Якщо воно шипить, гріється або втрачає тег, воно перестає свідчити й стає ще одним дорогим предметом.
+
+Audio: Кофр цілий. Чутка дешева. Історія тиску - доказ.
+
+External site article:
+
+## Що доводить запис
+
+У публічних записах Xenon-Omega може бути чуткою, закупівельним попередженням або класом матеріалу під тиском. Живий зразок є доказом лише тоді, коли вижили контейнер і ланцюг збереження.
+
+Xenon-Omega публічна лише як категорія небезпечного матеріалу: чутки, закупівельні сліди, запечатані кофри й правила поводження. Не читай назву як фінальне пояснення. Корисне питання інше: чи лишився зразок під тиском, чи зберіг тег і чи веде до маршруту, який Black Keel або Deep Reach не зможуть тихо перейменувати.
+
+ПОВІДОМЛЕННЯ ЩОДО МАТЕРІАЛУ // Згадки Xenon-Omega вважати публічним матеріальним ризиком, не визнанням процесу. Зберегти кофр тиску, пломбу, тег збереження, температурну історію й маршрут отримувача. Стравлювання чи нагрів можуть перетворити доказ на масу мертвої претензії.
+
+## Як гравець це читає
+
+Якщо воно шипить, гріється або втрачає тег, воно перестає свідчити й стає ще одним дорогим предметом. Читай це як правило поводження з доказом, а не як обіцянку, що допомога вже летить.
 
 ### zh_CN
 
-Status: draft_machine_or_llm; CJK/native review required.
+Status: draft_machine_or_llm.
 
-Title: Xenon-Omega公开压力材料
+Title: Xenon-Omega 公共材料
 
-Site teaser: 公开记录把Xenon-Omega当作压力材料传闻和采购类别，而不是Deep Reach在HECTON-8下方发现内容的证明。
+Site teaser: 公开记录可以把 Xenon-Omega 写成传闻、采购警告或压力额定材料类别。活样本只有在压力封存和保管链都存活时才是证据。
 
-Scanner: XENON-OMEGA箱 // 压力等级合格。保管标签存在。未经认证处理，不得排压、加热或打开。
+Scanner: XENON-OMEGA 箱体 // 压力额定。保管标签存在。未经认证处理，不得泄压、加热或开启。
 
-Field note: 如果瓶子容易携带，样本已经死了，或者标签是诱饵。先给封印定价，再看光泽。
+Terminal: 材料处理通知 // 将 Xenon-Omega 引用视为公共材料风险，不视为流程供认。保留压力箱、封印、保管标签、温度历史和接收路线。泄压或加热可能把证据变成死亡索赔质量。
 
-Audio: 样本作为压力材料接收。保管链不完整。在Black Keel指定接收方前保持密封。
+Codex: Xenon-Omega 只作为危险材料类别公开：传闻、采购痕迹、封存箱和处理规则。不要把这个名字读成最终解释。真正有用的问题是：样本是否仍在压力下，标签是否还在，路线是否还连着 Black Keel 或 Deep Reach 无法悄悄改名的地方。
+
+Field note: 如果它嘶响、升温或丢失标签，它就不再作证，只是另一件昂贵物品。
+
+Audio: 箱体完整。传闻廉价。压力历史才是证据。
+
+External site article:
+
+## 记录证明了什么
+
+公开记录可以把 Xenon-Omega 写成传闻、采购警告或压力额定材料类别。活样本只有在压力封存和保管链都存活时才是证据。
+
+Xenon-Omega 只作为危险材料类别公开：传闻、采购痕迹、封存箱和处理规则。不要把这个名字读成最终解释。真正有用的问题是：样本是否仍在压力下，标签是否还在，路线是否还连着 Black Keel 或 Deep Reach 无法悄悄改名的地方。
+
+材料处理通知 // 将 Xenon-Omega 引用视为公共材料风险，不视为流程供认。保留压力箱、封印、保管标签、温度历史和接收路线。泄压或加热可能把证据变成死亡索赔质量。
+
+## 玩家该怎样读它
+
+如果它嘶响、升温或丢失标签，它就不再作证，只是另一件昂贵物品。 把它当成处理证据的规则，不要当成救援已经出发的承诺。
 
 ## Runtime / Monolith Placement Notes
 

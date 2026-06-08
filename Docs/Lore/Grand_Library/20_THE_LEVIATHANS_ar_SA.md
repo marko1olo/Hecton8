@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # وحوش اللوياثان في HECTON-8
 
 > **المصدر:** شركة Deep Reach الكبرى، تقييم التهديدات البيولوجية الفضائية.

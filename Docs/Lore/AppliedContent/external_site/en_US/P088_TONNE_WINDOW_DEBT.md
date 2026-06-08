@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Tonne-Window Debt
 
-Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-You owe the orbit before you owe the money.
-
-## Field Note
-
-Money is too soft. In Aegir, debt is mass through a window.
+A tonne-window is a slice of carrier capacity measured in mass, burn timing, quarantine volume, and legal priority. For the operator it feels like debt because every useful object from HECTON-8 enters the same ledger as the body that found it. A sealed case may be light but legally heavy. A sample rack may cost little mass but demand clean volume. A human extraction may look obvious until ballast, oxygen reserve, and payload custody already spent the available window. This makes HECTON-8's economy physical instead of abstract. The player is not punished by a fake morality meter. The player is trapped inside a machine that prices survival through fuel, mass, contamination, and paperwork.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/en_US. -->

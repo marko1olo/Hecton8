@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Haki roszczeniowe Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Haki roszczeniowe Black Keel
 
-PL LOC HOLD: Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses.
+Haki roszczeniowe Black Keel wyznaczają presję otwarcia. Black Keel nie jest teatralnym statkiem złoczyńcy; to przewoźnik związany ekonomią puli roszczeń, prawem kwarantanny i uśpionymi dźwigniami Deep Reach. Problem gracza jest jednocześnie praktyczny i moralny: głos nad oceanem może usłyszeć wezwanie pomocy, ale droga do domu musi stać się cenna, certyfikowalna i prawnie niewygodna do zignorowania.
 
 ## Scanner
 
-PL LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+W manifeście Black Keel jest sprzętem puli roszczeń, a w klauzulach dźwignią Deep Reach.
 
 ## Terminal
 
-PL LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+NADZÓR PRZEWOŹNIKA: odzysk operatora dozwolony po triage ładunku, bramie kwarantanny, certyfikacie trasy i oczyszczeniu odpowiedzialności. Pieczęć priorytetu Deep Reach zachowana w uśpionych klauzulach.
 
 ## Audio
 
-PL LOC HOLD: It can hear you. It just has to price the answer first.
+Może cię słyszeć. Musi tylko najpierw wycenić odpowiedź.
 
 ## Field Note
 
-PL LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+Statek nie jest zły. Jest wydzierżawiony kontraktowi, który umie być okrutny, nie brzmiąc jak żywa istota.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/pl_PL. -->

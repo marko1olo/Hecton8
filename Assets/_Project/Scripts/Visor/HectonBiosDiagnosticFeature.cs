@@ -185,7 +185,6 @@ namespace Hecton8.Visor
         private bool _lootCacheInitialized;
         private bool _cachedHasLoot;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private HectonPlayerMovement _cachedPlayerMovement;
         private bool _hotSwapRegistered;
 
         public override void Create()
@@ -229,10 +228,8 @@ namespace Hecton8.Visor
             if (refreshLootCache)
             {
                 _lastLootRefreshFrame = frame;
-                HectonPlayerMovement playerMovement = ResolvePlayerMovement();
-                if (playerMovement != null)
+                if (TryResolvePlayerObserverAup(out AbsoluteUniversePosition observerAup))
                 {
-                    AbsoluteUniversePosition observerAup = playerMovement.PredictedAup;
                     _cachedHasLoot = HectonScanRenderRegistry.TryFindNearestLootSphereAup(
                         in observerAup,
                         settings.lootSearchRadius,
@@ -256,11 +253,20 @@ namespace Hecton8.Visor
             renderer.EnqueuePass(_pass);
         }
 
-        private HectonPlayerMovement ResolvePlayerMovement()
+        private bool TryResolvePlayerObserverAup(out AbsoluteUniversePosition observerAup)
         {
+            observerAup = default;
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            _cachedPlayerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            return _cachedPlayerMovement;
+            if (playerContext == null ||
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !movementState.PredictedAup.IsFinite())
+            {
+                return false;
+            }
+
+            observerAup = movementState.PredictedAup;
+            return true;
         }
 
         protected override void Dispose(bool disposing)
@@ -291,7 +297,6 @@ namespace Hecton8.Visor
                 return;
 
             _cachedPlayerContext = playerContext;
-            _cachedPlayerMovement = null;
         }
 
         private void TryRegisterHotSwapListener()

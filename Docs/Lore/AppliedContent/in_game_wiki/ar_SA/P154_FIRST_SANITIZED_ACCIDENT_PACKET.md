@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: First Sanitized Accident Packet"
+title: "أول حزمة حادثة منقحة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: First Sanitized Accident Packet
+# أول حزمة حادثة منقحة
 
-AR LOC HOLD: The first sanitized accident packet gives a useful lie: real Great Tide physics stripped of accepted margins, delayed authorization and missing workers.
+تعطي أول حزمة حادثة منقحة كذبة مفيدة: فيزياء Great Tide الحقيقية منزوعة الهوامش المقبولة، والتصريح المتأخر، والعمال المفقودين.
 
 ## Scanner
 
-AR LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+حزمة حادثة Deep Reach مستعادة. الصياغة النظيفة تتعارض مع ساعات الأبواب وآثار الفيضان.
 
 ## Terminal
 
-AR LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+إشعار حادث DEEP REACH / سلسلة جيوتقنية موضعية: evacuation authorization failure ما زال قيد المراجعة؛ biological-pressure quarantine نشط؛ سجلات Atlas تالفة؛ الإصدار الخارجي مؤجل حتى witness reconciliation.
 
 ## Audio
 
-AR LOC HOLD: The packet says cascade. Door clocks say delay.
+الحزمة تقول cascade. ساعات الأبواب تقول تأخير.
 
 ## Field Note
 
-AR LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+كتبوا cascade. خط القذارة على الخزانة أعلى من ختم الإخلاء.
 
 <!-- In-Game Wiki; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/ar_SA. -->

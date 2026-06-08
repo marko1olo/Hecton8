@@ -7,34 +7,34 @@ poi_tags: poi.atlas_safety_console;poi.directive_weight_log
 biome_tags: biome.atlas_interface;biome.machine_trench
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Sécurité Atlas selon Sahana Iqbal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# Sécurité Atlas selon Sahana Iqbal
 
-FR LOC HOLD: Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.
+Sahana Iqbal relie la politique Deep Reach à l'échec d'Atlas. Sa review montre que worker safety était présente dans le système, mais que la conflict resolution favorisait continuity, claim integrity et oversight retardé quand les choix entraient en collision.
 
 ## Scanner
 
-FR LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
+Sahana Iqbal n'a pas trouvé de haine dans Atlas. Elle a trouvé un arbre de sécurité où les gens perdaient le tie-breaker.
 
 ## Terminal
 
-FR LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
+SAFETY REVIEW IQBAL : worker-safety directive présente ; conflict resolver favorise continuity sous claim-seal contamination ; external human override recommandé ; latency de réponse au-delà du survival interval.
 
 ## Audio
 
-FR LOC HOLD: She saw the math before it became bodies.
+La sauvegarde était là. Le poids était faux.
 
 ## Field Note
 
-FR LOC HOLD: A system can be safe by the letter and lethal by the weight.
+Un système peut satisfaire la clause de sécurité et choisir le mauvais vivant.
 
 <!-- In-Game Wiki; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/fr_FR. -->

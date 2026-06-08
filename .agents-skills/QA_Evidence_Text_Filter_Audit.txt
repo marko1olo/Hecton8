@@ -34,7 +34,7 @@ Date: 2026-05-11
 [FORBID] Claiming IL2CPP, Quest, Android, console, or platform readiness from `link.xml`, package text, or preservation attributes without a platform build artifact.
 [FORBID] Claiming compile health when another log or current console reports duplicate signals, duplicate structs, missing methods, or unresolved generated-project errors.
 [FORBID] Reporting a task as done while `Status_[ID].md` remains unchecked or `LOG_[ID].md` is missing.
-[FORBID] Reporting hot-path purity while source still contains a private `Update()` fallback outside the dispatcher exception list.
+[FORBID] Reporting hot-path purity when a fresh scoped scan finds a private `Update()` fallback outside the dispatcher exception list.
 [FORBID] Claiming global-authority improvement from more `SignalBus<T>`, `GlobalRegistry`, `GlobalSignals`, `HectonEventBus`, or `GlobalDataVault` text hits without owner, phase, capacity, overflow, BufferID/SystemID, generation, and runtime proof as applicable.
 [FORBID] Repeated static scans, CSVs, boards, packets, status/rationale/log artifacts, or proof-language audits over unchanged state when the missing proof gate is already named.
 

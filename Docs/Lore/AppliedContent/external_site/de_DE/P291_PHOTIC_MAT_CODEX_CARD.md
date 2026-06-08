@@ -9,32 +9,36 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Photic Mat Codex Card"
+title: "Photic-Mat-Codexkarte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Photic Mat Codex Card
+# Photic-Mat-Codexkarte
 
-DE LOC HOLD: The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
+Photic mats sind eine der ersten Lektionen in lesbarer Ökologie auf HECTON-8. Sie erhellen die Flachwasser, ernähren kleine grazers und stabilisieren Mineralfilm, markieren aber auch Druckchemie und fragile Nähte. Der Ozean wirkt einladend, weil lebende Oberflächen arbeiten.
 
 ## Scanner
 
-DE LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Photic mat. Sauerstoffpositive Biofilmschicht über Mineralhaut. Hell, nützlich, druckfragil. Nicht von versiegelten Rissen abziehen.
 
 ## Terminal
 
-DE LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+SPEZIMEN / PHOTIC MAT
+Rolle: flache Sauerstoffoberfläche, Grazerfutter, Mineralfilmstabilisator
+sichere Probe: loser Rand unter Handbreite
+ablehnen: nahtversiegelnde Schichten, gasgeblähte Matten, frische Grazer-Bissfelder
+Routenhinweis: zerrissene Matten können gefangenes Gas entlüften und einen klaren Schelf in hazard verwandeln.
 
 ## Audio
 
-DE LOC HOLD: Light here is work, not comfort.
+Es sieht weich aus, weil es arbeitet. Wenn es eine Naht hält, lass es dort.
 
 ## Field Note
 
-DE LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+Loser Rand: Probe. Nahtabdeckung: lassen. Wenn die Matte eine Wunde versiegelt, ist die Wunde noch da.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/de_DE. -->

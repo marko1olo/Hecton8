@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "השאלה הסופית: מכירת זירת הפשע"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# השאלה הסופית: מכירת זירת הפשע
 
-HE LOC HOLD: Crime-scene sale is a material success route that keeps the moral damage visible.
+מכירת זירת הפשע היא נתיב הצלחה חומרית. השחקן שורד, עשוי לנקות חוב ואפילו לצאת עם כסף. המחיר הוא שראיות המושבה הופכות למנוף עבור אותה רשת סמכות שקברה את האתר, חסכה מסת חילוץ והתייחסה לגופות כמזג אוויר חוזי.
 
 ## Scanner
 
-HE LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
+קואורדינטות, הוכחת XO ושרשרת שמירה נקייה יכולות לקנות יציאה. הן גם מוכרות את חדר הרצח בחזרה למי שתמחר אותו.
 
 ## Terminal
 
-HE LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
+ציר המכירה הסופי: קואורדינטות אגן Atlas, דגימת blue debt תקפה, עדות XO וhash שמירה של carrier יכולים לסגור את השעבוד של המפעיל. בלי אישור נפרד, Deep Reach מקבלת דרך חזרה אל HECTON-8 נקייה יותר מכל דרך הצלה שהייתה לעובדים המתים.
 
 ## Audio
 
-HE LOC HOLD: You can pay the debt with a grave map.
+אפשר לשלם את החוב במפת קברים. הפנקס יקרא לזה עבודה.
 
 ## Field Note
 
-HE LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+זה לא סוף כישלון בדיחה. זה סוף בתשלום, עם קבלה, שעבוד שנמחק ועתיד גרוע יותר לכל מי שעדיין למטה.
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/he_IL. -->

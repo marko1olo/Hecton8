@@ -56,6 +56,7 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
 
         private bool _serviceRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _serviceShuttingDown;
         private bool _serviceShutdownComplete;
         internal static InputManager ActiveRuntimeInstance { get; private set; }
@@ -161,7 +162,7 @@ namespace Hecton8.Input
 #endif
 #endif
         }
-        
+
         public ServiceHeartbeatState HeartbeatState =>
             _serviceShuttingDown
                 ? ServiceHeartbeatState.Shutdown
@@ -174,11 +175,11 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // INPUT ACTIONS (CACHED)
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        
+
         [SerializeField] private InputActionAsset _inputActionAsset;
         private InputActionMap _playerActionMap;
         private InputActionMap _uiActionMap;
-        
+
         // Player Actions (cached references - zero GC)
         private InputAction _moveAction;
         private InputAction _lookAction;
@@ -196,7 +197,7 @@ namespace Hecton8.Input
         private InputAction _secondaryActionAction;
         private InputAction _verticalMovementAction;
         private InputAction _inventoryAction;
-        
+
         // UI Actions (cached references - zero GC)
         private InputAction _navigateAction;
         private InputAction _submitAction;
@@ -227,7 +228,7 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // EVENTS (ZERO GC)
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        
+
         // Movement Events
         public event Action<Vector2> OnMove;
         public event Action<Vector2> OnLook;
@@ -236,26 +237,26 @@ namespace Hecton8.Input
         public event Action OnSprint;
         public event Action OnSprintCanceled;
         public event Action<float> OnVerticalMove;
-        
+
         // Interaction Events
         public event Action OnInteract;
         public event Action OnFlashlight;
         public event Action OnPDA;
         public event Action OnPause;
         public event Action OnInventory;
-        
+
         // Tool Events
         public event Action OnToolSlot1;
         public event Action OnToolSlot2;
         public event Action OnToolSlot3;
         public event Action OnToolSlot4;
-        
+
         // Action Events
         public event Action OnPrimaryAction;
         public event Action OnPrimaryActionCanceled;
         public event Action OnSecondaryAction;
         public event Action OnSecondaryActionCanceled;
-        
+
         // UI Events
         public event Action<Vector2> OnNavigate;
         public event Action OnSubmit;
@@ -272,13 +273,13 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // PROPERTIES
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        
+
         public bool IsPlayerInputEnabled => TryGetActionMapEnabled(_playerActionMap);
         public bool IsUIInputEnabled => TryGetActionMapEnabled(_uiActionMap);
         public bool CanSwitchActionMaps => _serviceRegistered && !_serviceShuttingDown && _inputMapsInitialized && _runtimeInputActionAsset != null;
         public InputDisplayStyle CurrentDisplayStyle { get; private set; } = InputDisplayStyle.KeyboardMouse;
         public byte CurrentDisplayStyleCode => (byte)CurrentDisplayStyle;
-        
+
         public Vector2 MoveInput => _moveInput;
         public Vector2 LookInput => _lookInput;
         public bool IsJumping => _isJumping;
@@ -401,30 +402,30 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // INITIALIZATION
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        
+
         private void Awake()
         {
             EnsureCachedDelegates();
-            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out INativeInputManagerRuntime registered);
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             _serviceShuttingDown = false;
             _serviceShutdownComplete = false;
-            RegisterService();
+            if (!RegisterService())
+                return;
+
             InitializeInputActions();
         }
 
         private void OnEnable()
         {
-            if (_serviceShuttingDown)
+            if (_runtimeOwnerAborted || _serviceShuttingDown)
                 return;
 
             EnsureCachedDelegates();
-            RegisterService();
+            if (!RegisterService())
+                return;
+
             SubscribeToDeviceChanges();
             EnsureInputActionsInitialized();
 
@@ -457,10 +458,13 @@ namespace Hecton8.Input
 
         private void Start()
         {
+            if (_runtimeOwnerAborted || (!_serviceRegistered && !RegisterService()))
+                return;
+
             _initialActivationComplete = true;
             EnablePlayerInput();
         }
-        
+
         private void InitializeInputActions()
         {
             if (_inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true))
@@ -492,11 +496,11 @@ namespace Hecton8.Input
 
             _runtimeInputActionAsset.name = templateAsset.name;
             EnsureRequiredRuntimeActions(_runtimeInputActionAsset);
-            
+
             // Get action maps
             _playerActionMap = _runtimeInputActionAsset.FindActionMap("Player");
             _uiActionMap = _runtimeInputActionAsset.FindActionMap("UI");
-            
+
             if (_playerActionMap == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -512,12 +516,12 @@ namespace Hecton8.Input
 #endif
                 return;
             }
-            
+
             // Cache all action references (zero GC)
             CachePlayerActions();
             if (_uiActionMap != null)
                 CacheUIActions();
-            
+
             // Subscribe to all actions (zero GC - static delegates)
             SubscribeToPlayerActions();
             if (_uiActionMap != null)
@@ -531,7 +535,7 @@ namespace Hecton8.Input
             ResetInputActionCaches(disposeRuntimeAsset: true);
             InitializeInputActions();
         }
-        
+
         private void CachePlayerActions()
         {
             _moveAction = _playerActionMap.FindAction("Movement");
@@ -551,7 +555,7 @@ namespace Hecton8.Input
             _verticalMovementAction = _playerActionMap.FindAction("VerticalMovement");
             _inventoryAction = _playerActionMap.FindAction("Inventory");
         }
-        
+
         private void CacheUIActions()
         {
             _navigateAction = _uiActionMap.FindAction("Navigate");
@@ -655,7 +659,7 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // EVENT SUBSCRIPTION (ZERO GC)
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        
+
         private static InputActionAsset TryResolveGeneratedInputActionAsset(ref IInputActionCollection2 generatedInputActions)
         {
             if (generatedInputActions != null)
@@ -739,7 +743,7 @@ namespace Hecton8.Input
             SubscribeAction(_verticalMovementAction, _cachedVerticalMovementPerformedAction, _cachedVerticalMovementCanceledAction);
             _playerActionsSubscribed = true;
         }
-        
+
         private void SubscribeToUIActions()
         {
             if (_uiActionsSubscribed)
@@ -830,7 +834,7 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // INPUT CALLBACKS (ZERO GC)
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        
+
         // Movement Callbacks
         private void OnMovePerformed(InputAction.CallbackContext context)
         {
@@ -887,7 +891,7 @@ namespace Hecton8.Input
             _verticalMovementInput = 0f;
             OnVerticalMove?.Invoke(0f);
         }
-        
+
         // Interaction Callbacks
         private void OnInteractPerformed(InputAction.CallbackContext context)
         {
@@ -914,7 +918,7 @@ namespace Hecton8.Input
             CaptureInputDisplayStyle(context);
             OnInventory?.Invoke();
         }
-        
+
         // Tool Callbacks
         private void OnToolSlot1Performed(InputAction.CallbackContext context)
         {
@@ -936,7 +940,7 @@ namespace Hecton8.Input
             CaptureInputDisplayStyle(context);
             OnToolSlot4?.Invoke();
         }
-        
+
         // Action Callbacks
         private void OnPrimaryActionPerformed(InputAction.CallbackContext context)
         {
@@ -960,7 +964,7 @@ namespace Hecton8.Input
             _isSecondaryActionHeld = false;
             OnSecondaryActionCanceled?.Invoke();
         }
-        
+
         // UI Callbacks
         private void OnNavigatePerformed(InputAction.CallbackContext context)
         {
@@ -1005,7 +1009,7 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // PUBLIC API
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        
+
         public void EnablePlayerInput()
         {
             if (!EnsureInputActionsInitialized())
@@ -1014,13 +1018,13 @@ namespace Hecton8.Input
             _restorePlayerInputOnEnable = true;
             SafeEnableActionMap(_playerActionMap);
         }
-        
+
         public void DisablePlayerInput()
         {
             _restorePlayerInputOnEnable = false;
             SafeDisableActionMap(_playerActionMap);
         }
-        
+
         public void EnableUIInput()
         {
             if (!EnsureInputActionsInitialized() || _uiActionMap == null)
@@ -1029,7 +1033,7 @@ namespace Hecton8.Input
             _restoreUiInputOnEnable = true;
             SafeEnableActionMap(_uiActionMap);
         }
-        
+
         public void DisableUIInput()
         {
             if (_uiActionMap == null)
@@ -1038,7 +1042,7 @@ namespace Hecton8.Input
             _restoreUiInputOnEnable = false;
             SafeDisableActionMap(_uiActionMap);
         }
-        
+
         public void SwitchToPlayerInput()
         {
             if (!EnsureInputActionsInitialized())
@@ -1047,7 +1051,7 @@ namespace Hecton8.Input
             DisableUIInput();
             EnablePlayerInput();
         }
-        
+
         public void SwitchToUIInput()
         {
             if (!EnsureInputActionsInitialized())
@@ -1067,7 +1071,7 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // REBINDING SUPPORT
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        
+
         public InputAction GetAction(string actionName, string actionMap = "Player")
         {
             if (string.IsNullOrWhiteSpace(actionName) || !EnsureInputActionsInitialized())
@@ -1088,7 +1092,7 @@ namespace Hecton8.Input
             {
                 return null;
             }
-            
+
             return null;
         }
 
@@ -1115,7 +1119,7 @@ namespace Hecton8.Input
 
             return null;
         }
-        
+
         public string GetBindingDisplayString(string actionName, string actionMap = "Player", int bindingIndex = 0)
         {
             InputAction action = GetAction(actionName, actionMap);
@@ -2227,7 +2231,7 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // CLEANUP
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        
+
         private void ReinitializeInputActions()
         {
             if (_serviceShuttingDown)
@@ -2238,11 +2242,17 @@ namespace Hecton8.Input
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             OnServiceShutdown();
         }
 
         private void OnApplicationQuit()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             OnServiceShutdown();
             _inputRecoveryState = InputRecoveryState.Stable;
         }
@@ -2262,18 +2272,15 @@ namespace Hecton8.Input
             _serviceShutdownComplete = true;
         }
 
-        private void RegisterService()
+        private bool RegisterService()
         {
             if (_serviceShuttingDown || !Application.isPlaying)
-                return;
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out INativeInputManagerRuntime registered);
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
-                return;
-            }
-
             if (!ReferenceEquals(registered, this))
                 BootstrapRegistryBridge.Register(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, this);
 
@@ -2282,7 +2289,12 @@ namespace Hecton8.Input
                 ReferenceEquals(registered, this);
 
             if (_serviceRegistered)
+            {
+                _runtimeOwnerAborted = false;
                 ActiveRuntimeInstance = this;
+            }
+
+            return _serviceRegistered;
         }
 
         private void UnregisterService()
@@ -2295,6 +2307,72 @@ namespace Hecton8.Input
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            BootstrapRegistryBridge.TryResolve(
+                BootstrapRegistryBridgeSlot.NativeInputManagerRuntime,
+                out INativeInputManagerRuntime registeredRuntime);
+            if (!ReferenceEquals(registeredRuntime, null) && !ReferenceEquals(registeredRuntime, this))
+            {
+                InputManager registered = registeredRuntime as InputManager;
+                if (ReferenceEquals(registered, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (IsInputManagerRuntimeUsable(registered))
+                {
+                    ActiveRuntimeInstance = registered;
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(ActiveRuntimeInstance, registered))
+                    ActiveRuntimeInstance = null;
+
+                BootstrapRegistryBridge.Unregister(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, registeredRuntime);
+            }
+
+            InputManager active = ActiveRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsInputManagerRuntimeUsable(active))
+            {
+                BootstrapRegistryBridge.Register(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, active);
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            ActiveRuntimeInstance = null;
+            if (BootstrapRegistryBridge.TryResolve(
+                    BootstrapRegistryBridgeSlot.NativeInputManagerRuntime,
+                    out registeredRuntime) &&
+                ReferenceEquals(registeredRuntime, active))
+            {
+                BootstrapRegistryBridge.Unregister(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, active);
+            }
+
+            return false;
+        }
+
+        private static bool IsInputManagerRuntimeUsable(InputManager manager)
+        {
+            return !ReferenceEquals(manager, null) &&
+                   manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled &&
+                   !manager._serviceShuttingDown &&
+                   !manager._serviceShutdownComplete;
         }
 
         private void SafeEnableActionMap(InputActionMap actionMap)

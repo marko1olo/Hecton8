@@ -3,38 +3,38 @@ packet_id: P053_MARAUDER_GRAFFITI_MASKS
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
 unlock_id: unlock.first_marauder_graffiti_masks
-poi_tags: poi.graffiti_mask;poi.pressure_arrow
-biome_tags: biome.scrap_canyon;biome.marauder_route
+poi_tags: poi.graffiti_mask;poi.scavenger_route
+biome_tags: biome.service_corridor;biome.salvage_route
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Graffiti Masks"
+title: "Маскувальні графіті мародерів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Marauder Graffiti Masks
+# Маскувальні графіті мародерів
 
-UK LOC HOLD: Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.
+Мітки мародерів — польова навігація, соціальне попередження і мова проти нагляду. Вони грубі, бо мали пережити воду, страх, погані лампи і корпоративні камери. Гравець вчиться читати, які знаки говорять про шум, тиск, ризик патруля, схрони і маршрути, що вже не збігаються з офіційними картами.
 
 ## Scanner
 
-UK LOC HOLD: The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
+Код фарби: кількість рисок позначає шумову дисципліну, чорні кільця — небезпеку carrier-ping, зламані стрілки — дрейф тиску.
 
 ## Terminal
 
-UK LOC HOLD: MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
+ІНДЕКС МАСКИ МАРШРУТУ: три риски — безпечні лише ручні сигнали. Чорне кільце — скан носія. Зламана стрілка — тиск змінився після останньої мітки.
 
 ## Audio
 
-UK LOC HOLD: They made a language that looks like vandalism to the company.
+Якщо стіна здається лютою, читай її як погоду.
 
 ## Field Note
 
-UK LOC HOLD: Bad paint. Good map.
+Мародери писали для тих, хто не міг довіряти радіо і не міг оплатити карти.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/uk_UA. -->

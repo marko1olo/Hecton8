@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Autorité Sol Core"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Autorité Sol Core
 
-FR LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core est la racine juridique et financière de l'expansion humaine, ni patrie personnelle ni bureau de secours. Sur HECTON-8, ses normes survivent sous forme de sceaux, formulaires de responsabilité, plaques de sécurité et langage d'assurance qui ont survécu aux gens qu'ils étaient censés protéger.
 
 ## Scanner
 
-FR LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+Vieux sceau juridique de Sol. Il peut posséder un cadavre de frontière sans être assez proche pour sentir la fuite de pression.
 
 ## Terminal
 
-FR LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+NORME SOL CORE : continuité de réclamation reconnue par garde de transporteur licencié, assurance de route et arbitrage différé. Priorité de récupération humaine non résolue avant certification locale des risques.
 
 ## Audio
 
-FR LOC HOLD: The seal came from Earth space. The rescue clause did not.
+Le sceau venait de l'espace terrestre. Pas la clause de secours.
 
 ## Field Note
 
-FR LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol n'est pas chez soi ici. C'est la plus ancienne signature du document, et elle peut encore te ruiner.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/fr_FR. -->

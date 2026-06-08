@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "Grammar Encounter Clearing Glass Grazer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# Grammar Encounter Clearing Glass Grazer
 
-ID LOC HOLD: Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.
+Clearing glass grazer adalah pelajaran HECTON-8 tentang keamanan bersyarat. Ekologi terang yang berguna membantu pemain membaca rute, tetapi rute yang sama menjadi mencurigakan saat hewan berhenti memakainya.
 
 ## Scanner
 
-ID LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+Clearing glass grazer. Jalur kikis baru, film oksigen, dan ketukan cangkang stabil menandakan tekanan dekat rendah. Ladang makanan kosong berarti warning state.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+GRAMMAR ENCOUNTER / CLEARING GLASS GRAZER / peran: kontras dangkal, jalur cukup aman yang terbaca, tes absensi predator / baca aman: makan aktif, ketukan balik berpasangan, tepi mineral terkikis, garis keluar terlihat / tolak: memakai grazer sebagai jaminan aman, clearing sunyi, makanan ditinggal, return-line terblokir / catatan rute: koridor berguna karena hewan menggunakannya sekarang, bukan karena laut berjanji.
 
 ## Audio
 
-ID LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+Grazer membuat koridor terang. Mereka tidak menentukan berapa lama koridor itu milik mereka.
 
 ## Field Note
 
-ID LOC HOLD: Use for safe-zone literacy and shallow contrast.
+Makan aktif: pakai jalur. Ketukan berpasangan: tahan. Makanan ditinggal: berhenti percaya clearing.
 
 <!-- External Site; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/id_ID. -->

@@ -3,38 +3,38 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relay Queue Drift"
+title: "中继队列漂移"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Queue Drift
+# 中继队列漂移
 
-CN LOC HOLD: Relay Queue Drift makes delayed communication dangerous without inventing FTL. Old instructions can be physically true and tactically lethal.
+延迟通信危险，是因为它可能在错误时间保持准确。载体警告可能描述真实阀门、真实泄漏和真实路线，而那条路线已经在压力下改变。玩家必须把数据包年龄和本地证据比较，再决定是否相信远程权限。
 
 ## Scanner
 
-CN LOC HOLD: The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
+中继戳比它所命名的泄漏还旧；那条指令曾经适用于一个已经不存在的房间。
 
 ## Terminal
 
-CN LOC HOLD: QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
+队列漂移：数据包年龄超过路线有效期。在新的中继窗口打开前，本地证据高于载体指令。
 
 ## Audio
 
-CN LOC HOLD: The message is correct. That is the problem.
+消息是正确的。问题就在这里。
 
 ## Field Note
 
-CN LOC HOLD: A late truth can still kill.
+迟到的真相仍然能杀人。
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/zh_CN. -->

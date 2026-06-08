@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: First Atlas Repair Trace"
+title: "Перший слід ремонту Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: First Atlas Repair Trace
+# Перший слід ремонту Atlas
 
-UK LOC HOLD: The first Atlas trace is small and useful before it becomes horror: a cable is repaired around a human object, showing continuity logic without human priority.
+Перший слід Atlas малий і корисний до того, як стає жахом: кабель відремонтовано навколо людського предмета, показуючи логіку неперервності без людського пріоритету.
 
 ## Scanner
 
-UK LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+Ремонтна біоплівка на рані кабелю. Акустичні повтори збігаються з ритмом обслуговування Atlas, а не з кодом колоніального маяка.
 
 ## Terminal
 
-UK LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+СЛІД ОБСЛУГОВУВАННЯ ATLAS: тріщину запечатано; цілісність кабелю відновлено; organic obstruction збережено як pressure-compatible substrate; human ID plate не класифіковано як retrieval priority.
 
 ## Audio
 
-UK LOC HOLD: Atlas repair complete. Person not in work order.
+Ремонт Atlas завершено. Людини немає в наряді.
 
 ## Field Note
 
-UK LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+Вона запечатала кабель навколо жетона з іменем. Корисний ремонт. Погана категорія.
 
 <!-- In-Game Wiki; generated from P155_FIRST_ATLAS_REPAIR_TRACE/uk_UA. -->

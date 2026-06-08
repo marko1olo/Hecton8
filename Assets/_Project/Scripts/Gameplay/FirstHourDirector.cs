@@ -146,6 +146,8 @@ namespace Hecton8.Gameplay
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<FirstHourEventPayload> _pendingEvents;
         private static NativeQueue<FirstHourEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
@@ -326,14 +328,14 @@ namespace Hecton8.Gameplay
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate — owner: FirstHourEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — next-frame first-hour milestone lane prevents same-frame reentrant dispatch — owner: FirstHourEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -349,10 +351,12 @@ namespace Hecton8.Gameplay
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(FirstHourEvents),
@@ -361,25 +365,60 @@ namespace Hecton8.Gameplay
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(FirstHourEvents), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -664,6 +703,9 @@ namespace Hecton8.Gameplay
             NativeQueue<FirstHourEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
@@ -701,6 +743,9 @@ namespace Hecton8.Gameplay
     {
         private const int PendingNotificationCapacity = 4;
         private const int PendingNotificationCharCapacity = 512;
+        private static readonly uint _NotificationQueueDropWarningHash = unchecked((uint)LocHash.Compute("FirstHourDirector.NotificationQueueDrop"));
+        private static readonly uint _NotificationPushMissWarningHash = unchecked((uint)LocHash.Compute("FirstHourDirector.NotificationPushMiss"));
+        private static readonly uint _NotificationContextHash = unchecked((uint)LocHash.Compute("FirstHourDirector.Notification"));
 
         [Flags]
         private enum GuidanceStateFlags
@@ -843,12 +888,22 @@ namespace Hecton8.Gameplay
         private int _firstCraftResultItemHash5;
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
+        private bool _craftingEventRegistered;
+        private bool _narrativeEventRegistered;
+        private bool _questEventRegistered;
+        private bool _scanEventRegistered;
+        private bool _interactionEventRegistered;
+        private bool _audioLogEventRegistered;
+        private bool _runtimeOwnerAborted;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private PendingNotificationRequest _pendingNotification0;
         private PendingNotificationRequest _pendingNotification1;
         private PendingNotificationRequest _pendingNotification2;
         private PendingNotificationRequest _pendingNotification3;
         private byte _pendingNotificationCount;
+        private int _notificationQueueDropCount;
+        private int _notificationPushMissCount;
 
         private unsafe struct PendingNotificationRequest
         {
@@ -903,6 +958,10 @@ namespace Hecton8.Gameplay
         public float SessionTime => _sessionTime;
         public bool IsFirstHourComplete => IsMilestoneComplete(FirstHourMilestone.HumCloser);
 
+        public int NotificationQueueDropCount => _notificationQueueDropCount;
+
+        public int NotificationPushMissCount => _notificationPushMissCount;
+
         public bool IsMilestoneComplete(FirstHourMilestone m)
             => (_completedMilestones & (1 << (int)m)) != 0;
 
@@ -919,6 +978,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void RegisterServiceRelayRouteContact()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _hasLoreRouteContact = true;
         }
 
@@ -946,28 +1008,20 @@ namespace Hecton8.Gameplay
             ResolveWorldContext(force: true);
             SynchronizeContextFromRuntimeSystems();
 
-            CraftingEvents.Register(this);
-            NarrativeEvents.Register(this);
-            QuestEvents.Register(this);
-            ScanEvents.Register(this);
-            InteractionEvents.Register(this);
-            AudioLogEvents.Register(this);
+            TryRegisterRuntimeEventListeners();
         }
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregister();
             TryUnregisterLateFrameTick();
             TryUnregisterService();
             TryUnregisterSaveParticipant();
 
-            CraftingEvents.Unregister(this);
-            NarrativeEvents.Unregister(this);
-            QuestEvents.Unregister(this);
-            ScanEvents.Unregister(this);
-            InteractionEvents.Unregister(this);
-            AudioLogEvents.Unregister(this);
-
+            TryUnregisterRuntimeEventListeners();
             TryUnregisterHotSwapListener();
             ClearCachedRuntimeServices();
             _lastObservedZone = null;
@@ -980,16 +1034,21 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregister();
             TryUnregisterLateFrameTick();
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
+            TryUnregisterRuntimeEventListeners();
             TryUnregisterService();
+            ClearCachedRuntimeServices();
         }
 
         private void Start()
         {
-            if (!TryRegisterService())
+            if (_runtimeOwnerAborted || !TryRegisterService())
                 return;
 
             TryRegister();
@@ -1004,7 +1063,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered)
+            if (_runtimeOwnerAborted || _registered)
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
@@ -1023,13 +1082,16 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ConsumeCraftingCompletedSignals();
             FlushQueuedNotifications();
         }
 
         private void TryRegisterLateFrameTick()
         {
-            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_runtimeOwnerAborted || _lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
@@ -1049,10 +1111,20 @@ namespace Hecton8.Gameplay
 
         private unsafe bool QueueNotification(ReadOnlySpan<char> message, NotificationEventSeverity severity)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (message.IsEmpty || message.Length > PendingNotificationCharCapacity)
+            {
+                ReportNotificationQueueDrop((uint)severity);
                 return false;
+            }
+
             if (_pendingNotificationCount >= PendingNotificationCapacity)
+            {
+                ReportNotificationQueueDrop((uint)severity);
                 return false;
+            }
 
             ref PendingNotificationRequest request = ref GetPendingNotificationSlot(_pendingNotificationCount);
             fixed (char* destination = request.Characters)
@@ -1070,6 +1142,9 @@ namespace Hecton8.Gameplay
 
         private unsafe void FlushQueuedNotifications()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int count = _pendingNotificationCount;
             _pendingNotificationCount = 0;
 
@@ -1094,21 +1169,49 @@ namespace Hecton8.Gameplay
                     if (messageHash == 0u)
                         continue;
 
-                    if (severity == (byte)NotificationEventSeverity.Warning)
-                    {
-                        NotificationEvents.TryPushRegisteredWarning(messageHash);
-                        continue;
-                    }
-
-                    if (severity == (byte)NotificationEventSeverity.Critical)
-                    {
-                        NotificationEvents.TryPushRegisteredCritical(messageHash);
-                        continue;
-                    }
-
-                    NotificationEvents.TryPushRegisteredInfo(messageHash);
+                    TryPushQueuedNotification(messageHash, severity);
                 }
             }
+        }
+
+        private void TryPushQueuedNotification(uint messageHash, byte severity)
+        {
+            bool pushed;
+            if (severity == (byte)NotificationEventSeverity.Warning)
+            {
+                pushed = NotificationEvents.TryPushRegisteredWarning(messageHash);
+            }
+            else if (severity == (byte)NotificationEventSeverity.Critical)
+            {
+                pushed = NotificationEvents.TryPushRegisteredCritical(messageHash);
+            }
+            else
+            {
+                pushed = NotificationEvents.TryPushRegisteredInfo(messageHash);
+            }
+
+            if (pushed)
+                return;
+
+            ReportNotificationPushMiss(messageHash);
+        }
+
+        private void ReportNotificationQueueDrop(uint contextHash)
+        {
+            _notificationQueueDropCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _NotificationQueueDropWarningHash,
+                _NotificationContextHash ^ contextHash,
+                math.max(1, _notificationQueueDropCount));
+        }
+
+        private void ReportNotificationPushMiss(uint messageHash)
+        {
+            _notificationPushMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _NotificationPushMissWarningHash,
+                _NotificationContextHash ^ messageHash,
+                math.max(1, _notificationPushMissCount));
         }
 
         private void ClearQueuedNotifications()
@@ -1118,6 +1221,8 @@ namespace Hecton8.Gameplay
             _pendingNotification1.Clear();
             _pendingNotification2.Clear();
             _pendingNotification3.Clear();
+            _notificationQueueDropCount = 0;
+            _notificationPushMissCount = 0;
         }
 
         private ref PendingNotificationRequest GetPendingNotificationSlot(int index)
@@ -1137,18 +1242,33 @@ namespace Hecton8.Gameplay
 
         private bool TryRegisterService()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_serviceRegistered || !Application.isPlaying)
                 return true;
 
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
             FirstHourDirector registeredRuntime = GlobalRegistry.FirstHour;
-            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
+            if (IsFirstHourRuntimeUsable(registeredRuntime))
             {
-                Destroy(gameObject);
+                AbortDuplicateRuntimeOwner();
                 return false;
             }
 
+            if (!ReferenceEquals(registeredRuntime, null) && !ReferenceEquals(registeredRuntime, this))
+                GlobalRegistry.UnregisterFirstHourRuntime(registeredRuntime);
+
             GlobalRegistry.RegisterFirstHourRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.FirstHour, this);
+            if (!_serviceRegistered)
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
+
             return _serviceRegistered;
         }
 
@@ -1168,6 +1288,9 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
@@ -1192,7 +1315,17 @@ namespace Hecton8.Gameplay
                     CacheAudioLogSystem(currentService as IAudioLogRuntime);
                     break;
                 case GlobalRegistryServiceSlot.Player:
-                    CachePlayerContext(currentService as IPlayerRuntimeContext);
+                    CachePlayerContext(
+                        currentService as IPlayerRuntimeContext,
+                        previousService as IPlayerRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
+                    _biomeMatrixDirector = currentService as BiomeMatrixDirector;
+                    if (_biomeMatrixDirector == null || !_biomeMatrixDirector.isActiveAndEnabled)
+                    {
+                        _biomeMatrixDirector = null;
+                        WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
+                    }
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _cachedLocalization = currentService as ILocalizationTextReadModel;
@@ -1207,11 +1340,14 @@ namespace Hecton8.Gameplay
 
         private void CacheRuntimeServices()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _cachedQuestManager = GlobalRegistry.QuestSystem;
             _cachedAtlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
             _cachedEmergencyRelayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelayReadModel;
             CacheAudioLogSystem(Hecton8.Core.GlobalRegistry.AudioLogRuntime);
-            CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
+            CachePlayerContext(Hecton8.Core.GlobalRegistry.Player, null);
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
             _saveService = Hecton8.Core.GlobalRegistry.Save;
         }
@@ -1230,6 +1366,12 @@ namespace Hecton8.Gameplay
 
         private void CacheAudioLogSystem(IAudioLogRuntime audioLogSystem)
         {
+            if (_runtimeOwnerAborted)
+            {
+                _cachedAudioLogSystem = null;
+                return;
+            }
+
             _cachedAudioLogSystem = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null;
         }
 
@@ -1245,7 +1387,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
         {
-            if (audioLogSystem == null)
+            if (audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady)
                 return false;
 
             if (audioLogSystem is Behaviour behaviour)
@@ -1254,15 +1396,31 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        private void CachePlayerContext(
+            IPlayerRuntimeContext currentPlayerContext,
+            IPlayerRuntimeContext previousPlayerContext)
         {
-            _cachedPlayerContext = playerContext;
-            _survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            if (_runtimeOwnerAborted)
+                return;
+
+            if (previousPlayerContext != null &&
+                ReferenceEquals(_survivalSystem, previousPlayerContext.SurvivalSystem))
+            {
+                _survivalSystem = null;
+            }
+
+            _cachedPlayerContext = currentPlayerContext;
+            HectonSurvivalSystem contextSurvival = currentPlayerContext != null
+                ? currentPlayerContext.SurvivalSystem
+                : null;
+
+            if (contextSurvival != null)
+                _survivalSystem = contextSurvival;
         }
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapRegistered)
+            if (_runtimeOwnerAborted || _hotSwapRegistered)
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -1279,29 +1437,173 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterSaveParticipant()
         {
-            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+            if (_runtimeOwnerAborted || _saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = Hecton8.Core.GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = Hecton8.Core.GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveRegistered = false;
+        }
+
+        private void TryRegisterRuntimeEventListeners()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            if (!_craftingEventRegistered)
+            {
+                CraftingEvents.Register(this);
+                _craftingEventRegistered = true;
+            }
+
+            if (!_narrativeEventRegistered)
+            {
+                NarrativeEvents.Register(this);
+                _narrativeEventRegistered = true;
+            }
+
+            if (!_questEventRegistered)
+            {
+                QuestEvents.Register(this);
+                _questEventRegistered = true;
+            }
+
+            if (!_scanEventRegistered)
+            {
+                ScanEvents.Register(this);
+                _scanEventRegistered = true;
+            }
+
+            if (!_interactionEventRegistered)
+            {
+                InteractionEvents.Register(this);
+                _interactionEventRegistered = true;
+            }
+
+            if (!_audioLogEventRegistered)
+            {
+                AudioLogEvents.Register(this);
+                _audioLogEventRegistered = true;
+            }
+        }
+
+        private void TryUnregisterRuntimeEventListeners()
+        {
+            if (_craftingEventRegistered)
+            {
+                CraftingEvents.Unregister(this);
+                _craftingEventRegistered = false;
+            }
+
+            if (_narrativeEventRegistered)
+            {
+                NarrativeEvents.Unregister(this);
+                _narrativeEventRegistered = false;
+            }
+
+            if (_questEventRegistered)
+            {
+                QuestEvents.Unregister(this);
+                _questEventRegistered = false;
+            }
+
+            if (_scanEventRegistered)
+            {
+                ScanEvents.Unregister(this);
+                _scanEventRegistered = false;
+            }
+
+            if (_interactionEventRegistered)
+            {
+                InteractionEvents.Unregister(this);
+                _interactionEventRegistered = false;
+            }
+
+            if (_audioLogEventRegistered)
+            {
+                AudioLogEvents.Unregister(this);
+                _audioLogEventRegistered = false;
+            }
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            FirstHourDirector registeredRuntime = GlobalRegistry.FirstHour;
+            if (ReferenceEquals(registeredRuntime, this))
+                return false;
+
+            if (IsFirstHourRuntimeUsable(registeredRuntime))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            if (!ReferenceEquals(registeredRuntime, null))
+                GlobalRegistry.UnregisterFirstHourRuntime(registeredRuntime);
+
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            TryUnregister();
+            TryUnregisterLateFrameTick();
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
+            TryUnregisterRuntimeEventListeners();
+            ClearCachedRuntimeServices();
+            ClearQueuedNotifications();
+            _runtimeOwnerAborted = true;
+            _registered = false;
+            _lateFrameRegistered = false;
+            _serviceRegistered = false;
+            _hotSwapRegistered = false;
+            _registeredSaveService = null;
+            _saveRegistered = false;
+            _craftingEventRegistered = false;
+            _narrativeEventRegistered = false;
+            _questEventRegistered = false;
+            _scanEventRegistered = false;
+            _interactionEventRegistered = false;
+            _audioLogEventRegistered = false;
+            enabled = false;
+        }
+
+        private static bool IsFirstHourRuntimeUsable(FirstHourDirector director)
+        {
+            return !ReferenceEquals(director, null) &&
+                   director != null &&
+                   director._serviceRegistered &&
+                   director.isActiveAndEnabled &&
+                   !director._runtimeOwnerAborted;
         }
 
         // ----------------------------------------------------------
@@ -1310,15 +1612,18 @@ namespace Hecton8.Gameplay
 
         public void SlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (IsFirstHourComplete) return;
 
             _sessionTime += 0.5f;
             ResolveSurvivalSystem();
             ResolveWorldContext();
 
-            float depth = _survivalSystem != null ? _survivalSystem.Depth : 0f;
+            float depth = ResolveCurrentDepthMeters();
             WorldZoneAnchor currentZone = _worldZoneDirector != null ? _worldZoneDirector.CurrentZone : null;
-            int currentDepthTier = _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentDepthTier : 1;
+            int currentDepthTier = ResolveCurrentDepthTier(depth);
             int atlasRevealStage = GetCurrentAtlasRevealStage();
 
             CheckMilestone(FirstHourMilestone.Orientation,
@@ -1462,6 +1767,9 @@ namespace Hecton8.Gameplay
 
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if ((NarrativeEventType)payload.EventType != NarrativeEventType.DiscoveryMade)
                 return;
 
@@ -1479,6 +1787,9 @@ namespace Hecton8.Gameplay
 
         public void OnScanEvent(in ScanEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if ((ScanEventType)payload.EventType != ScanEventType.EntryDiscovered ||
                 IsMilestoneComplete(FirstHourMilestone.FirstModule))
             {
@@ -1491,6 +1802,9 @@ namespace Hecton8.Gameplay
 
         public void OnQuestEvent(in QuestEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if ((QuestEventType)payload.EventType != QuestEventType.Completed)
                 return;
 
@@ -1516,12 +1830,18 @@ namespace Hecton8.Gameplay
 
         public void OnAudioLogEvent(in AudioLogEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (payload.Type == AudioLogEventType.Discovered && payload.LogHash != 0u)
                 _hasLoreRouteContact = true;
         }
 
         public void OnCraftingEvent(in CraftingEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if ((CraftingEventType)payload.EventType != CraftingEventType.CraftCompleted)
                 return;
 
@@ -1533,6 +1853,9 @@ namespace Hecton8.Gameplay
 
         public void OnInteractionEvent(in InteractionEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if ((InteractionEventType)payload.EventType != InteractionEventType.ItemCollected)
                 return;
 
@@ -1573,25 +1896,69 @@ namespace Hecton8.Gameplay
 
         private bool ResolveSurvivalSystem()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_survivalSystem != null)
                 return true;
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            _survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            CachePlayerContext(playerContext, null);
             return _survivalSystem != null;
+        }
+
+        private float ResolveCurrentDepthMeters()
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
+                return 0f;
+
+            HectonSurvivalSystem survival = _survivalSystem;
+            if (survival != null && math.isfinite(survival.Depth))
+                return math.max(0f, survival.Depth);
+
+            if (_survivalSystem == null)
+                ResolveSurvivalSystem();
+
+            survival = _survivalSystem;
+            if (survival != null && math.isfinite(survival.Depth))
+                return math.max(0f, survival.Depth);
+
+            return 0f;
         }
 
         private void ResolveWorldContext(bool force = false)
         {
-            if (force || _worldZoneDirector == null)
-                _worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+            if (_runtimeOwnerAborted)
+                return;
 
-            if (force || _biomeMatrixDirector == null)
-                _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            if (force || _worldZoneDirector == null || !_worldZoneDirector.isActiveAndEnabled)
+            {
+                _worldZoneDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref _worldZoneDirector);
+            }
+
+            if (force || _biomeMatrixDirector == null || !_biomeMatrixDirector.isActiveAndEnabled)
+            {
+                _biomeMatrixDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
+            }
         }
 
         private void SynchronizeContextFromRuntimeSystems()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             IAudioLogRuntime audioLogSystem = ResolveAudioLogSystem();
             if (audioLogSystem != null && audioLogSystem.DiscoveredAudioLogCount > 0)
                 _hasLoreRouteContact = true;
@@ -1633,7 +2000,7 @@ namespace Hecton8.Gameplay
 
         public void PopulateSaveData(SaveData data)
         {
-            if (data == null) return;
+            if (_runtimeOwnerAborted || data == null) return;
             data.firstHourSessionTime = _sessionTime;
             data.firstHourMilestones  = _completedMilestones;
             data.firstHourGuidanceFlags = BuildGuidanceStateFlags();
@@ -1641,7 +2008,8 @@ namespace Hecton8.Gameplay
 
         public void LoadFromSaveData(SaveData data)
         {
-            if (data == null) return;
+            ClearQueuedNotifications();
+            if (_runtimeOwnerAborted || data == null) return;
             _sessionTime          = data.firstHourSessionTime;
             _completedMilestones  = data.firstHourMilestones;
             ApplyGuidanceStateFlags(data.firstHourGuidanceFlags);
@@ -1978,11 +2346,12 @@ namespace Hecton8.Gameplay
             if (TryIssueServiceRelayGuidance())
                 return;
 
+            ResolveWorldContext();
             WorldZoneAnchor currentZone = _worldZoneDirector != null ? _worldZoneDirector.CurrentZone : null;
             if (currentZone == null)
                 return;
 
-            int currentDepthTier = _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentDepthTier : 1;
+            int currentDepthTier = ResolveCurrentDepthTier(ResolveCurrentDepthMeters());
             HectonBiomeMatrixProfile currentBiome = ResolveCurrentBiomeProfile(currentZone);
             bool starterToolCompleted = questManager.IsCompleted(_starterToolQuestHash);
             bool resourceCompleted = questManager.IsCompleted(_firstResourceQuestHash);
@@ -2199,7 +2568,62 @@ namespace Hecton8.Gameplay
             if (currentZone != null && currentZone.DominantMatrixBiome != null)
                 return currentZone.DominantMatrixBiome;
 
-            return _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentProfile : null;
+            return TryResolveLiveBiomeMatrixDirector(out BiomeMatrixDirector matrixDirector)
+                ? matrixDirector.CurrentProfile
+                : null;
+        }
+
+        private int ResolveCurrentDepthTier(float depthMeters)
+        {
+            if (math.isfinite(depthMeters) && depthMeters >= 0f)
+                return ResolveFallbackDepthTier(depthMeters);
+
+            if (TryResolveLiveBiomeMatrixDirector(out BiomeMatrixDirector matrixDirector))
+                return math.max(1, matrixDirector.CurrentDepthTier);
+
+            return ResolveFallbackDepthTier(depthMeters);
+        }
+
+        private bool TryResolveLiveBiomeMatrixDirector(out BiomeMatrixDirector matrixDirector)
+        {
+            matrixDirector = _biomeMatrixDirector;
+            if (matrixDirector == null || !matrixDirector.isActiveAndEnabled)
+            {
+                matrixDirector = null;
+                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref matrixDirector);
+                _biomeMatrixDirector = matrixDirector;
+            }
+
+            return matrixDirector != null && matrixDirector.isActiveAndEnabled;
+        }
+
+        private static int ResolveFallbackDepthTier(float depth)
+        {
+            if (!math.isfinite(depth) || depth <= 0f)
+                return 1;
+            if (depth <= 300f)
+                return 2;
+            if (depth <= 600f)
+                return 3;
+            if (depth <= 1000f)
+                return 4;
+            if (depth <= 1500f)
+                return 5;
+            if (depth <= 2000f)
+                return 6;
+            if (depth <= 2500f)
+                return 7;
+            if (depth <= 3000f)
+                return 8;
+            if (depth <= 3500f)
+                return 9;
+            if (depth >= 14000f)
+                return 27;
+
+            float clamped = math.clamp(depth, 3500f, 14000f);
+            float normalized = (clamped - 3500f) / 10500f;
+            int tier = 10 + (int)math.floor(normalized * 17f);
+            return math.clamp(tier, 10, 26);
         }
 
         private ReadOnlySpan<char> ResolveResourceZoneGuidanceMessage(

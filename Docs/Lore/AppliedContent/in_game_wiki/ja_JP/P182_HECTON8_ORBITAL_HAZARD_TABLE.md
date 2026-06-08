@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 Orbital Hazard Table"
+title: "HECTON-8 軌道危険表"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbital Hazard Table
+# HECTON-8 軌道危険表
 
-JP LOC HOLD: Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.
+軌道危険は、修理済みカプセルだけでは足りない理由を示す。HECTON-8 を後にする前に、上昇系にはリレーアクセス、誘導タイミング、遮蔽作業、合法の発射窓がまだ必要だ。
 
 ## Scanner
 
-JP LOC HOLD: HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+HECTON-8 からの脱出は、食、放射線サージ、リレーシャッター、氷散乱、嵐プルームの窓に縛られる。
 
 ## Terminal
 
-JP LOC HOLD: ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+ORBITAL HAZARD TABLE: 食による blackout、Aegir 荷電粒子サージ、月面リレーシャッター、氷粒散乱、storm plume、guidance-lag 窓は上昇前に解決が必要。
 
 ## Audio
 
-JP LOC HOLD: The sky is not empty. It is a machine with bad timing.
+海の上の空は、タイミングに歯を持つ機械だ。
 
 ## Field Note
 
-JP LOC HOLD: This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+救助が演出のために待機しているわけではない。上昇は空の悪い時刻表に合わせなければならない。
 
 <!-- In-Game Wiki; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/ja_JP. -->

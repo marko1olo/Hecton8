@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "Paket Terakhir Lian Torres"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# Paket Terakhir Lian Torres
 
-ID LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.
+Lian Torres menambatkan kebenaran komunikasi. Paket bersih terakhirnya membuktikan bahwa sebagian bukti keluar dari HECTON-8 sebelum Deep Reach menguburnya di bawah kerusakan sinyal dan bahasa karantina.
 
 ## Scanner
 
-ID LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+Paket bersih terakhir itu tidak hilang. Mengakui penerimaannya terlalu mahal.
 
 ## Terminal
 
-ID LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+TORRES, L. Jabat tangan pembawa bersih tercapai. Jumlah pekerja terlampir. Bukti evakuasi terlampir. Usia relai tidak layak untuk penyelamatan hidup. Arsip korporat kemudian menandai paket sebagai rusak.
 
 ## Audio
 
-ID LOC HOLD: He sent the names. The archive called them noise.
+Ia mengirim nama-nama itu. Arsip menyebutnya derau.
 
 ## Field Note
 
-ID LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+Cap waktu bisa menjadi jenazah ketika pengangkut menjawab antrean yang salah.
 
 <!-- In-Game Wiki; generated from P066_LIAN_TORRES_LAST_PACKET/id_ID. -->

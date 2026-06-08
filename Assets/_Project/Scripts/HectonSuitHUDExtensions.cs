@@ -62,6 +62,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
     private float _nextAutoResolveAt;
     private bool _tickRegistered;
     private bool _hotSwapRegistered;
+    private bool _pdaEventsRegistered;
     private bool _referencesResolved;
     private Transform _cachedRoot;
 
@@ -103,7 +104,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         RegisterTick();
 
         FlashlightEvents.Register(this);
-        PDAEvents.Register(this);
+        _pdaEventsRegistered = PDAEvents.TryRegister(this);
     }
 
     public override void OnDisable()
@@ -113,7 +114,11 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         TryUnregisterHotSwapListener();
 
         FlashlightEvents.Unregister(this);
-        PDAEvents.Unregister(this);
+        if (_pdaEventsRegistered)
+        {
+            PDAEvents.Unregister(this);
+            _pdaEventsRegistered = false;
+        }
     }
 
     public void OnGlobalRegistryServiceReplaced(

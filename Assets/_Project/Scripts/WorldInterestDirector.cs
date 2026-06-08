@@ -238,22 +238,25 @@ namespace Hecton8.World
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (_playerMovement == null)
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null)
             {
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-                if (playerContext != null && playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    snapshot.Aup.IsFinite())
                 {
                     playerAup = snapshot.Aup;
-                    return playerAup.IsFinite();
+                    return true;
                 }
 
-                if (playerContext != null)
-                    _playerMovement = playerContext.PlayerMovement;
-            }
+                if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                    !movementState.PredictedAup.IsFinite())
+                {
+                    playerAup = default;
+                    return false;
+                }
 
-            if (_playerMovement != null)
-            {
-                playerAup = _playerMovement.CurrentAup;
+                playerAup = movementState.PredictedAup;
                 return true;
             }
 

@@ -9,32 +9,35 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Professional Guilt To Personal Stake"
+title: "職能上の罪悪感から個人的な賭けへ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Professional Guilt To Personal Stake
+# 職能上の罪悪感から個人的な賭けへ
 
-JA LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.
+主人公の動機は専門性から責任へ成長する。HECTON-8は無理な家族メロドラマを避ける。元Deep Reach作業員が気にかけるのは、置き去りを完了済みに見せた手続きの機械を理解しているからだ。
 
 ## Scanner
 
-JA LOC HOLD: Signature match. The form language is old. The names are new.
+署名パターンが古い手順キャッシュと一致する。名前は変わった。部屋は同じ失敗をした。専門知識はもう距離にならない。
 
 ## Terminal
 
-JA LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+ドシエ結論 / 職能上の賭け
+発火証拠: 手順認識、回収された作業員タグ、請求受領者の衝突
+除外動機: 家族関係、復讐の血筋、選ばれた証人の地位
+有効動機: 元システム作業員が防げた置き去りを認識し、それを記録した機械を今も読める。
 
 ## Audio
 
-JA LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+君は請求のために来た。残ったのは、書類が君の手を知っていたからだ。
 
 ## Field Note
 
-JA LOC HOLD: Use near late dossier and final payload route.
+君の署名ではない。それでも君の職能だ。だから部屋は黙らない。
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/ja_JP. -->

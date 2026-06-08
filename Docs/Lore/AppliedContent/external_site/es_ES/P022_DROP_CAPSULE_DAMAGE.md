@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Daño de cápsula
 
-El daño explica el encierro: descenso viable, supervivencia viva, hardware de ascenso muerto.
+El daño de la cápsula de descenso explica por qué el varamiento es creíble: el descenso funcionó, los sistemas de supervivencia sobrevivieron, el hardware de ascenso no.
 
 ## Scanner
 

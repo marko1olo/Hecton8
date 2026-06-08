@@ -9,32 +9,26 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Eerste PressureSeal-reparatie"
+title: "Eerste PressureSeal-reparatie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Eerste PressureSeal-reparatie
+# Eerste PressureSeal-reparatie
 
-NL LOC HOLD: De eerste nuttige reparatie in Shallow Annex P-63 begint in daglicht. FiberKelp van de heldere plaat wordt FiberMesh en draagt een tijdelijke PressureSeal voor een lekkende kraag of servicesocket. Het koopt tijd en routeveiligheid, geen ontsnapping.
+## Repareren In Licht
 
-## Scanner
+De eerste nuttige reparatie in Shallow Annex P-63 begint waar het water nog helder genoeg is om te liegen. Buiten beweegt FiberKelp in de plaatstroming. Binnen zweet een drukkraag door een naad die Deep Reach als bruikbaar markeerde.
 
-NL LOC HOLD: PRESSURESEAL-DOEL // Lek in P-63-kraag. FiberMesh-drager compatibel. Alleen lokale stabilisatie; opstijgcertificering geweigerd.
+FiberKelp is ondiepe biofiber, geen zeldzame schat. Het groeit waar licht, stroming en oude industriële warmte elkaar raken. Gewassen en gekamde strengen worden FiberMesh. Een P-63-veldfabricator kan dat mesh in de draaglaag van een tijdelijke PressureSeal persen.
 
-## Terminal
+Het onderdeel is nuttig omdat het beperkt is. Een PressureSeal kan een lokaal lek remmen, een terugkeerzak stabiliseren en een korte reparatielus overleefbaar maken. Het certificeert de bathydrop niet voor opstijgen, vervangt geen klemring en maakt een Black Keel-antwoord geen berging.
 
-NL LOC HOLD: DEEP REACH P-63 TOLERANTIENOTA // Kraagvervanging uitstellen. Goedgekeurde zachte zegeldrager toepassen zolang lekkage binnen lokale servicedrempel blijft.
+De tegenspraak is zichtbaar voor het archief spreekt. De terminal zegt drukvariant binnen servicedrempel. De kraag toont kromme bouten, zoutbloei onder de inspectiestrook en vezels in een scheur die schoon metaal had moeten zijn.
 
-## Audio
-
-NL LOC HOLD: Black Keel-relais: P-63-patch leest lokaal veilig, niet opstijgveilig. Neem het zegel, bewaar het serienummer.
-
-## Field Note
-
-NL LOC HOLD: Helder water buiten. Natte kraag binnen. Deep Reach noemde dat nominaal omdat het woord minder kost dan een klemring.
+Voor de Marauder is de les praktisch: snijd FiberKelp schoon, houd zand uit het mesh, bewaar het serienummer op de seal en vertrouw geen reparatie die lokaal veilig zegt wanneer de route opstijgveilig nodig heeft.
 
 <!-- External Site; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/nl_NL. -->

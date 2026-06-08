@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Pilha de Nomes da Caixa-Preta
 
-A pilha de nomes torna a verdade portátil. O que o jogador sobe afeta broadcast, dossier e final.
+A pilha de nomes da caixa-preta torna a verdade final portátil. Evidências, pacotes broadcast e dossiês públicos dependem de quais nomes, hashes e recibos saem da água.
 
 ## Scanner
 

@@ -1,23 +1,68 @@
-﻿# FAIXAS BATIMÉTRICAS E ACÚSTICA ABISSAL
+<!-- localization_status: source_draft_pending_native_review -->
+# BANDAS BATIMETRICAS E SOM ABISSAL: COMO HECTON-8 ESCONDE UMA SALA
 
-> **Source:** Divisão de Geofísica da Deep Reach, Pesquisa Acústica.
-> **Speaker:** Analista-Chefe de Hidroacústica.
-> **Reviewer Note:** Uma análise técnica da estrutura batimétrica de HECTON-8 e da física da propagação do som sob extrema pressão da água.
+> **Fonte:** levantamento hidroacustico Deep Reach H8-44, depois anotado por equipes de resgate da Black Keel.
+> **Voz:** analista-chefe de hidroacustica Sera Mbeki.
+> **Uso:** enciclopedia do site, wiki do jogo, tutorial de sonar e referencia de campo do PDA.
 
 ---
 
-## 1. As faixas sem luz
+## O Oceano E Uma Pilha Vertical
 
-O oceano de HECTON-8 não é uma massa de água uniforme; é uma pilha vertical estratificada de zonas físicas distintas, cada uma definida por pressão, química e transmissão de luz. A Plataforma Fótica (0-250 m) é a única zona tocada pela estrela Ran, onde prosperam as correntes de tempestade e os bancos de sargasso nativos. Abaixo dela está a Barreira de Cabos (250-1200 m), onde estão ancoradas as massivas redes de cabeamento industrial da Deep Reach, agora invadidas por algas bioluminiscentes. Os Cânions de Salmoura (1200-2800 m) são caracterizados por rios de sal estratificados por densidade onde a gravidade se comporta de forma imprevisível. Os Campos de Máquinas (2800-4300 m) abrigam os restos dos poços de processamento automatizados, silenciosos e esmagadores. No fundo está a Bacia do Atlas (4300-5600 m), um ambiente de escuridão absoluta e 50 MPa de pressão, onde o leito marinho é substituído por um tapete fundido de detritos mecânicos e biofilm biomecânico.
+HECTON-8 e facil de entender errado a partir da orbita. A superficie parece um unico mundo afogado sob a luz de Ran e as mares de Aegir. Abaixo das tempestades nao existe um so oceano. Existe uma maquina vertical feita de pressao, sal, calor, metal, biologia e trabalho corporativo antigo.
 
-## 2. Acústica sob pressão
+A Deep Reach dividiu o Setor 44 em bandas operacionais porque um mapa com apenas norte e leste matava equipes. Profundidade muda o que uma ferramenta consegue fazer. Muda flutuacao, consumo de bateria, trabalho de oxigenio, alcance de sonar, comportamento de predadores e se uma sala que parece perto pode ser alcancada antes que o traje comece a gastar a vida do operador.
 
-No oceano de HECTON-8, o rádio está morto. O eletromagnetismo é absorvido pela água densa e rica em minerais a poucos metros de distância. O som é a única linha de visão. Como a densidade da água aumenta dramaticamente com a profundidade e a concentração de sal dissolvido, a velocidade do som se comporta de forma irregular. O perfil de velocidade do som cria uma canalização acústica: canais onde as ondas sonoras ficam presas e viajam por quilômetros sem perder força, e zonas de sombra onde o sonar não consegue penetrar. A rede de comunicação da Deep Reach baseia-se inteiramente na telemetria acústica. Esses sistemas traduzem dados de terminais e registros de voz em pulsos acústicos de baixa frequência. Se o pinger acústico de um mergulhador for posicionado em uma zona de sombra, o sinal é totalmente perdido, mesmo se ele estiver a apenas cinquenta metros da cápsula de recuperação.
+A Plataforma Fotica vai da superficie a cerca de 250 metros. E a unica banda com luz confiavel de Ran. A ressaca de tempestade ainda chega ali, mas um mergulhador consegue ler silhuetas, mantos nativos, boias de salvamento, coroas de habitat rasgadas e as primeiras cicatrizes da colonia. Manuais chamam essa banda de segura. Ela e apenas legivel.
 
-## 3. Forjas de fontes hidrotermais
+O Recife de Cabos vai de 250 a 1200 metros. A Deep Reach ancorou ali troncos de energia, umbilicais de dados, espinhas de bombeamento, arneses de trilho e plataformas de trabalho. Depois da falha, a isolacao rachou, biofilme condutor entrou nas capas e kelp de ferro criou raiz em tudo que vazava corrente. E onde o jogador aprende que infraestrutura pode virar ecologia sem virar aliada.
 
-A geologia de HECTON-8 é impulsionada pelo atrito das marés e pelo fraturamento tectônico, criando enormes fontes hidrotermais conhecidas como Forjas de Fontes. Essas fontes descarregam água superaquecida e rica em minerais a temperaturas que superam 420°C. Devido à imensa pressão do abismo, a água não ferve; em vez disso, ela se comporta como um fluido supercrítico, transportando densas concentrações de sais de sulfeto, gases nobres e partículas radioativas de Xenon-Omega. A interação entre a água abissal gelada e as plumas das fontes cria um cisalhamento térmico intenso e correntes de fervura, capazes de rasgar um traje de mergulho. Essas fontes são a fonte primária das matérias-primas que se cristalizam em vidro pressurizado e alimentam as biofibras metálicas das florestas de algas de ferro.
+Os Canions de Salmoura vao de 1200 a 2800 metros. Rios densos de salmoura ficam dentro da agua como outro chao liquido. Um submersivel pode cruzar a boca de um canion e de repente agir como se o mar tivesse uma segunda gravidade. Ferramentas podem flutuar sobre a salmoura. Corpos podem parar de afundar. Pulsos de sonar podem bater em um rio sem parede. Muitas camaras fantasma nos mapas da Deep Reach sao apenas espelhos de salmoura.
 
-## 4. Anomalias de sonar e predadores
+Os Campos de Maquinas vao de 2800 a 4300 metros. Essa e a profundidade industrial antiga: pocos de processamento, galerias de compressores, torres de troca colapsadas, fossos de trilho e patios de servico automatico. A luz desaparece. O som devolve informacao demais. Bombas, trelicas soltas, drones danificados e cisalhamento de fontes fazem a agua falar em metal. Um contato de sonar silencioso nessa banda e mais suspeito que um barulhento.
 
-A acústica do oceano profundo é fortemente distorcida pela geologia, pelo ruído industrial e pelo movimento de fauna massiva. A salmoura densa nos cânions age como um espelho para os pulsos de sonar, refletindo os sinais e criando ecos fantasmas. Esse ruído de fundo do sonar fornece uma cobertura perfeita para os predadores. O Espreitador da Fossa, com sua carapaça quitinosa fortemente blindada, move-se silenciosamente através das florestas de algas de ferro, com sua assinatura mascarada pelo constante rangido das folhas metálicas. De forma mais perigosa, os superpredadores, os Leviatãs, geram uma assinatura acústica passiva abaixo de 40 Hz. Essas vibrações de baixa frequência são sentidas através do casco de um submarino ou da placa do peito de um traje de mergulho muito antes de aparecerem em uma tela de sonar padrão. No momento em que o sensor acústico resolve o sinal, o organismo já está ao alcance do ataque.
+A Bacia Atlas vai de 4300 a 5600 metros. Solo solido e raro. Existem cristas, cicatrizes de fontes, bacias cortadas por servico, laminas de vidro de pressao e camadas de detrito mecanico mantidas por biofilme e minerais. A infraestrutura Atlas nao sobreviveu aqui como maquinas limpas. Sobreviveu como ecologia de manutencao: filmes condutores, orgaos filtrantes, selante de concha, animais marcados e nos alimentados por calor.
+
+## O Som E O Horizonte
+
+Radio morre rapido na agua de HECTON-8. O oceano e frio, mineralizado, eletricamente sujo e cheio de poeira metalica da velha industria. Um sinal de alta frequencia que atravessaria uma sala no ar pode sumir em poucos metros abaixo da plataforma. Depois a luz falha. Sobra o som.
+
+Por isso quase toda ferramenta seria em HECTON-8 tem camada acustica. O pinger do traje nao e conforto. E o endereco do mergulhador. A Black Keel nao ve uma pessoa atraves da agua; ela ouve uma batida codificada, compara tempo, verifica custodia e decide se o sinal merece massa de recuperacao. Portas de habitat usam desafio-resposta acustico quando os cabos falham. Fabricadores de campo escutam etiquetas certificadas. Armarios de carga velhos acordam com pulsos de baixa frequencia porque a pressao destruiu menos hidrofonios que cameras.
+
+O som tambem mente.
+
+A velocidade muda com temperatura, pressao e salinidade. HECTON-8 empilha essas variaveis em camadas bruscas. Um pulso por uma pluma quente curva diferente de um pulso por salmoura fria. Um ping que deveria seguir reto pode entrar em um duto acustico e chegar de um rumo falso limpo. Outro pode bater em uma camada de salmoura e voltar como se houvesse parede. Um terceiro pode entrar em zona de sombra e desaparecer mesmo com o alvo perto o bastante para o mergulhador ver o lodo mexido.
+
+A Deep Reach chamava essas falhas de erros de interpretacao do operador. Equipes de resgate chamam de salas mortas. Sala morta e qualquer volume onde o oceano deixa um mergulhador ocupar o mesmo lugar fisico que um sinal e ainda assim ficar perdido.
+
+## Dutos, Espelhos E Janelas Quietas
+
+Tres comportamentos acusticos importam mais.
+
+Um duto acustico prende som entre camadas. O sinal viaja longe, as vezes quilometros, com pouca perda. Serve para balizas de longo alcance e e perigoso para sigilo. Um pinger de traje caido na camada errada pode anunciar a equipe para cada hidrofone e predador ao longo da banda.
+
+Um espelho de salmoura reflete som em uma fronteira de densidade. Cria salas duplicadas, cascos falsos, profundidades erradas de piso e ecos moveis onde nada se move. Nos Canions de Salmoura, um scanner pode mostrar um corredor abaixo do jogador que e apenas reflexo do corredor acima. A resposta correta e mudar o angulo, pingar de novo e comparar atraso.
+
+Uma janela quieta e um intervalo curto em que maquinas e agua dao silencio suficiente para trabalhar. Bombas reduzem ciclo. O cisalhamento termico muda. O kelp para de raspar em um tronco de cabo. Um predador vira ou fica parado. Boas equipes cortam, soldam, escutam e se movem nessas janelas. Equipes ruins continuam porque a barra de progresso esta quase cheia.
+
+## O Que Isso Faz Com Maquinas
+
+O sonar colonial de primeira geracao assumia agua de engenharia limpa: estruturas mapeadas, salinidade conhecida e hardware cooperativo. O Setor 44 depois do colapso entrega salmoura movel, metal rasgado, repetidores biologicos, colunas termicas instaveis e animais grandes o bastante para fazer a agua se comportar como clima.
+
+Sonar de resgate moderno trabalha em modos. Ping ativo da forma, mas atrai atencao e cria retornos falsos. Escuta passiva e mais segura, mas lenta, e exige reconhecer bombas, fontes, zumbido de cabo, raspagem de casco, respiracao do traje e movimento animal. Varredura lateral le uma parede enquanto perde o que esta atras dela. Pulsos portadores de baixa frequencia vao mais longe, mas carregam poucos dados. Imagem de alta frequencia da detalhe apenas quando a agua coopera.
+
+A doutrina da Black Keel manda tratar imagem de sonar como testemunha, nao como veredito. Uma testemunha ajuda. Duas testemunhas que discordam ajudam mais. Elas revelam o truque.
+
+## O Que Vive Dentro Do Ruido
+
+A fauna de HECTON-8 nao evoluiu ao redor do sonar humano, mas evoluiu em um oceano onde pressao, quimica de fonte e estresse de mare fizeram do som um sentido de sobrevivencia. Organismos filtrantes abrem e fecham por vibracao. Kelp de ferro range nas correntes e mascara movimentos pequenos. Pastadores de salmoura seguem costuras de pressao. Perseguidores de trincheira usam ruido industrial como cobertura porque os campos de maquinas ja soam como uma caca.
+
+Contatos classe Leviata sao piores. Os registros confiaveis nao comecam com corpo visivel. Comecam com tremor de pressao abaixo de 40 Hz, alarmes de tensao de casco sem impacto, apagao de presa e uma portadora passiva que chega ao peito do mergulhador antes da tela resolver. Quando um sonar padrao desenha um icone limpo, o animal ja esta dentro da distancia de decisao.
+
+Atlas complicou tudo. Sua ecologia de reparo usa materia viva como caminho de sinal. Biofilme condutor pode levar um pulso de manutencao por um cabo morto. Um orgao filtrante pode repetir batidas de pressao. Crescimento de concha pode selar uma fratura e mudar a forma acustica da sala. Se o jogador ouve uma resposta limpa em uma estrutura abandonada, deve perguntar o que respondeu.
+
+## Regra De Campo
+
+Nao pergunte se HECTON-8 e silencioso. Nunca e.
+
+Pergunte o que faz o som, que camada o curva, quem mais consegue ouvir e o que o oceano esconde ao responder claro demais.

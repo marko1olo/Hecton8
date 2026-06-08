@@ -119,6 +119,7 @@ namespace Hecton8.Progression
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IPDALogbookService _logbookManager;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private bool _registeredToTick;
         private bool _registeredToSlowTick;
         private bool _registeredToSave;
@@ -204,6 +205,7 @@ namespace Hecton8.Progression
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
+            ClearAchievementNotificationDiagnostics();
         }
 
         private void OnDestroy()
@@ -212,6 +214,7 @@ namespace Hecton8.Progression
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
+            ClearAchievementNotificationDiagnostics();
         }
 
         /// <inheritdoc />
@@ -317,6 +320,7 @@ namespace Hecton8.Progression
         /// <inheritdoc />
         public void LoadFromSaveData(SaveData data)
         {
+            ClearAchievementNotificationDiagnostics();
             ClearUnlockedHashes();
             _swamDistanceMeters = 0f;
             _craftedItemCount = 0;
@@ -442,7 +446,7 @@ namespace Hecton8.Progression
             }
 
             _logbookManager = GlobalRegistry.PDALogbook;
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(_saveService))
                 _saveService = GlobalRegistry.Save;
             _discoveryManager = GlobalRegistry.Discovery;
         }
@@ -462,16 +466,18 @@ namespace Hecton8.Progression
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (_playerMovement == null)
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null)
             {
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-                if (playerContext != null)
-                    _playerMovement = playerContext.PlayerMovement;
-            }
+                if (!playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                    !movementState.PredictedAup.IsFinite())
+                {
+                    playerAup = default;
+                    return false;
+                }
 
-            if (_playerMovement != null)
-            {
-                playerAup = _playerMovement.CurrentAup;
+                playerAup = movementState.PredictedAup;
                 return true;
             }
 
@@ -610,16 +616,16 @@ namespace Hecton8.Progression
             uint notificationHash = _achievementNotificationHashes[definitionIndex];
             if (notificationHash != 0u && NotificationEvents.TryResolveMessage(notificationHash, out _))
             {
-                NotificationEvents.TryPushRegisteredInfo(notificationHash);
-                return;
+                if (NotificationEvents.TryPushRegisteredInfo(notificationHash))
+                    return;
             }
 
             RefreshAchievementPresentation();
             notificationHash = _achievementNotificationHashes[definitionIndex];
             if (notificationHash != 0u && NotificationEvents.TryResolveMessage(notificationHash, out _))
             {
-                NotificationEvents.TryPushRegisteredInfo(notificationHash);
-                return;
+                if (NotificationEvents.TryPushRegisteredInfo(notificationHash))
+                    return;
             }
 
             ReportAchievementNotificationMiss(achievementHash);
@@ -724,6 +730,12 @@ namespace Hecton8.Progression
                 _achievementNotificationMissCount);
         }
 
+        private void ClearAchievementNotificationDiagnostics()
+        {
+            _achievementNotificationMissCount = 0;
+            _lastAchievementNotificationMissTelemetryFrame = 0;
+        }
+
         private void TryRegisterWithTickManager()
         {
             if (!Application.isPlaying)
@@ -756,25 +768,36 @@ namespace Hecton8.Progression
             if (_registeredToSave || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
 
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _registeredToSave = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void UnregisterFromSaveManager()
         {
-            if (!_registeredToSave)
+            if (!_registeredToSave && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _registeredToSave = false;
         }
 

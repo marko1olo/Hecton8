@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.service_corridor
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Hatch Seal Ledger"
+spoiler_tier: 1
+title: "יומן איטום האץ'"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Hatch Seal Ledger
+# יומן איטום האץ'
 
-Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop.
+האצ'ים הם מהתיעודים השקטים ביותר של HECTON-8. הם לא מסבירים מי נשאר מאחור; הם שומרים כיוון סגירה, מתח אטם וסמכות override. קריאת יומן איטום הופכת דלת נעולה להחלטת לחץ עם חותמת זמן.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+זיכרון איטום שוחזר. האטם ספג שלושה חיתוכי לחץ ו-override פינוי אחד; גישת צד החזרה ננעלה מהצד הרטוב.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / FRAME H-17: עיוות אטם מעל סבולת שירות. סגירה ידנית התקבלה תחת EVAC OVERRIDE. ספירת מפעילים בצד החזרה לא פתורה. לפתוח מחדש רק אחרי השוואת לחץ ובדיקת צירים.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+הוא נאטם. זה כל מה שההאץ' הבטיח.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+האץ' אטום הוא קבלה. לפני פתיחה, שאל איזה צד שילם.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/he_IL. -->

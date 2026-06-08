@@ -56,9 +56,18 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project", "Scripts", "ScanLogSystem.cs"));
             string awake = ExtractMethodBody(source, "private void Awake()");
             string onEnable = ExtractMethodBody(source, "private void OnEnable()");
+            string onDisable = ExtractMethodBody(source, "private void OnDisable()");
+            string onDestroy = ExtractMethodBody(source, "private void OnDestroy()");
             string register = ExtractMethodBody(source, "private void TryRegisterService()");
             string gate = ExtractMethodBody(source, "private bool TryAbortForUsableExistingRuntime()");
             string usable = ExtractMethodBody(source, "private static bool IsScanLogRuntimeUsable(");
+            string populateSaveData = ExtractMethodBody(source, "public void PopulateSaveData(");
+            string loadFromSaveData = ExtractMethodBody(source, "public void LoadFromSaveData(");
+            string clearRuntimeState = ExtractMethodBody(source, "private void ClearRuntimeState()");
+            string clearNotificationDiagnostics = ExtractMethodBody(source, "private void ClearScanArchivedNotificationDiagnostics()");
+            string showUnlockFeedback = ExtractMethodBody(source, "private void ShowUnlockFeedback()");
+            string tryPushScanArchivedNotification = ExtractMethodBody(source, "private void TryPushScanArchivedNotification()");
+            string reportScanArchivedNotificationMiss = ExtractMethodBody(source, "private void ReportScanArchivedNotificationMiss()");
 
             StringAssert.Contains("if (TryAbortForUsableExistingRuntime())", awake);
             Assert.Less(
@@ -87,6 +96,20 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("s_activeRuntimeInstance = null", gate);
             StringAssert.Contains("system._serviceRegistered", usable);
             StringAssert.Contains("system.isActiveAndEnabled", usable);
+            StringAssert.Contains("TryPushScanArchivedNotification();", showUnlockFeedback);
+            StringAssert.DoesNotContain("NotificationEvents.TryPushRegisteredInfo(_scanArchivedNotificationHash);", showUnlockFeedback);
+            StringAssert.Contains("if (NotificationEvents.TryPushRegisteredInfo(_scanArchivedNotificationHash))", tryPushScanArchivedNotification);
+            StringAssert.Contains("ReportScanArchivedNotificationMiss();", tryPushScanArchivedNotification);
+            StringAssert.Contains("_scanArchivedNotificationMissCount++", reportScanArchivedNotificationMiss);
+            StringAssert.Contains("GlobalTelemetryBus.PublishPerformanceWarning", reportScanArchivedNotificationMiss);
+            StringAssert.Contains("public int ScanArchivedNotificationMissCount =>", source);
+            StringAssert.Contains("ClearScanArchivedNotificationDiagnostics();", onDisable);
+            StringAssert.Contains("ClearScanArchivedNotificationDiagnostics();", onDestroy);
+            StringAssert.Contains("ClearScanArchivedNotificationDiagnostics();", gate);
+            StringAssert.Contains("ClearScanArchivedNotificationDiagnostics();", clearRuntimeState);
+            StringAssert.Contains("_scanArchivedNotificationMissCount = 0;", clearNotificationDiagnostics);
+            StringAssert.DoesNotContain("_scanArchivedNotificationMissCount", populateSaveData);
+            StringAssert.DoesNotContain("_scanArchivedNotificationMissCount", loadFromSaveData);
             StringAssert.DoesNotContain("registered != null && registered != this", awake);
             StringAssert.DoesNotContain("registered != null && registered != this", register);
         }

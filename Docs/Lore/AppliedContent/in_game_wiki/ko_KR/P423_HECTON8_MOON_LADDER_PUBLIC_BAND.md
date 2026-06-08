@@ -7,34 +7,34 @@ poi_tags: poi.moon_ladder_public_band;poi.hecton8_mid_orbit_card
 biome_tags: biome.aegir_system;biome.publication
 locale: ko_KR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "KO LOC HOLD: HECTON-8 Moon Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "HECTON-8 달 사다리"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: HECTON-8 Moon Ladder
+# HECTON-8 달 사다리
 
-KO LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
+달 사다리는 Aegir에 규모를 주면서 playable campaign을 HECTON-8에 묶어 둔다. 주변 천체는 relay, ice-scatter, quarantine timing, salvage traffic, silence windows를 만들지만 추가 playable moons를 약속하지 않는다.
 
 ## Scanner
 
-KO LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+달 사다리: HECTON-8은 하나의 claim이지 Aegir system 전체가 아니다.
 
 ## Terminal
 
-KO LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER: 공개 role labels만 사용한다. 정확한 orbital elements는 table-owned data로 남는다.
 
 ## Audio
 
-KO LOC HOLD: Other moons are not side quests. They are why the route has teeth.
+다른 달은 side quests가 아니다. 항로에 이빨이 있는 이유다.
 
 ## Field Note
 
-KO LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
+Moon ladder record: 공개 지도는 playable moons를 약속하지 않고 Aegir 규모를 보여 줄 수 있다.
 
 <!-- In-Game Wiki; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/ko_KR. -->

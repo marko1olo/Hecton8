@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Опека Black Keel
 
-Опека Black Keel задает орбитальную поддержку игрока как полезную, скомпрометированную инфраструктуру: спасение, долговую машину и давление Deep Reach в одном объекте.
+Black Keel Custody задает орбитальную поддержку как полезную, скомпрометированную инфраструктуру: маршрут спасения, долговую машину и поверхность давления Deep Reach в одном объекте.
 
 ## Scanner
 

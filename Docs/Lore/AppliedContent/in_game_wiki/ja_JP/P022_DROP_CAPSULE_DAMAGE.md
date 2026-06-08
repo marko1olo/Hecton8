@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 投下カプセル損傷
 
-プレイヤーは投下カプセルでHECTON-8へ来る。墜落後も避難、電力、ログは残るが、上昇装置は死ぬ。早期脱出はボタンではなく工学連鎖になる。
+降下カプセルがマローダーを HECTON-8 へ届ける。衝突後もシェルター、電力、ログに足るシステムは生き残るが、上昇機材は破壊される。早期脱出はボタンではなく工学の連鎖になる。
 
 ## Scanner
 

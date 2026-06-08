@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "Лінія редагування Atlas Basin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# Лінія редагування Atlas Basin
 
-UA LOC HOLD: Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons.
+Лінія редагування Atlas Basin позначає, що публічне покриття Aegir може казати про місяці, маршрути й тиск порятунку, залишаючи запечатаний басейн поза відкритими картами.
 
 ## Scanner
 
-UA LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+Публічний атлас місяців може назвати загрози неба; він не може надрукувати, що робить payload Atlas basin.
 
 ## Terminal
 
-UA LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+РЕДАКТУРА ATLAS: публічні сторінки місяців можуть перелічувати імена, маршрутні вікна, загрози, salvage economy і факти катастрофи HECTON-8. Ефекти payload, поведінка basin receiver і наслідки фінального рішення лишаються закритими.
 
 ## Audio
 
-UA LOC HOLD: Publish the sky. Redact the bottom.
+Публікуй небо. Запечатуй дно.
 
 ## Field Note
 
-UA LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+Над хмарами маршрут публічний. Під basin кожна відповідь досі замкнена.
 
 <!-- External Site; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/uk_UA. -->

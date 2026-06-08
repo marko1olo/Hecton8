@@ -9,32 +9,26 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Spoiler-Sperre"
+title: "Spoiler-Sperre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Spoiler-Sperre
+# Spoiler-Sperre
 
-DE LOC HOLD: Öffentliche HECTON-8-Seiten dürfen den Auftrag nennen, ohne den Beweis auszuliefern. Die offene Ebene gibt sicheren Kontext; Siegel, Routenstempel, Scans, Terminalfragmente, Arbeitertags und Black-Box-Zeilen öffnen spätere stärkere Ansprüche.
+## Öffentlicher Kontext
 
-## Scanner
+Öffentliche HECTON-8-Seiten dürfen den Job nennen, ohne die Beweise preiszugeben. Die offene Schicht kann sagen, dass HECTON-8 ein Ozeanmond unter Aegir ist, dass die Kolonie scheiterte, dass Black Keel Salvage-Druck statt sauberer Rettung bringt und dass Deep Reach einen öffentlichen Bericht aus Sturm, Einsturz, autonomem Versagen, Atlas-6-Rettungssprache und fehlenden Daten hinterließ.
 
-DE LOC HOLD: ÖFFENTLICHES ARCHIVTOR // Spoilerstufe 0/1. Nur öffentlicher Kontext. Tiefe Beweise brauchen geborgene Verwahrung vor Codex-Erweiterung.
+Das reicht, damit ein Leser die Prämisse versteht. Es reicht nicht, um das Verbrechen zu beweisen.
 
-## Terminal
+Tiefere Seiten brauchen geborgene Objekte: Paketsiegel, Routenstempel, Scanrecord, Arbeitertag, Terminalfragment, Blackbox-Zeile oder Probe mit intakter Verwahrung. Bevor diese Objekte im Spiel gefunden sind, bleibt das öffentliche Wiki bei sicherem Kontext. Nach der Entdeckung kann der Codex härter formulieren, weil der Spieler die Herkunft des Fakts gesehen hat.
 
-DE LOC HOLD: PUBLIC/WIKI EXPORTFILTER // Vor Beweis erlaubt: Setting, Routendruck, öffentliche Unfallformel, bekannte Institutionen und frühe Bergungsprämisse. Tiefe Beweise halten.
+Die Sperre schützt fünf Dinge: den ersten Abstieg des Spielers, die Beweise der Koloniearbeiter, die Deep-Reach-Haftungskette, die Wahrheit des Atlas-6-Reparaturnetzes und finale Nutzlastausgänge. Öffentliche Seiten dürfen darauf zeigen. Sie tragen keinen finalen Empfänger, keine finale Route und keine finale Konsequenz.
 
-## Audio
-
-DE LOC HOLD: Black-Keel-Relais: Öffentlicher Text nennt den Mond. Beweis braucht ein Siegel. Bring das Siegel.
-
-## Field Note
-
-DE LOC HOLD: Die öffentliche Seite sagt dir, wo du tauchen sollst. Sie sagt nicht, wer dafür bezahlt hat, dass die Tür geschlossen blieb.
+Öffentliche Artikel sind Karten. Geborgene Beweise sind Beweis.
 
 <!-- External Site; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/de_DE. -->

@@ -165,7 +165,7 @@ namespace Hecton8.World
         private void Awake()
         {
             _splineLinkId = GetEntityId().GetHashCode();
-            CacheObjectPoolServiceCold(GlobalRegistry.ObjectPoolService);
+            CacheObjectPoolServiceCold(null);
             ResolveRuntimeWiring();
             EnsureStorage();
             if (authoredSparkParticles != null || _objectPoolService != null)
@@ -681,12 +681,47 @@ namespace Hecton8.World
 
         private void CacheObjectPoolServiceCold(IObjectPoolService objectPoolService)
         {
-            if (ReferenceEquals(_objectPoolService, objectPoolService))
+            ObjectPoolManager candidate = objectPoolService as ObjectPoolManager;
+            ObjectPoolManager pool = candidate;
+            if (!ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) &&
+                !ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                pool = null;
+            }
+
+            if (ReferenceEquals(_objectPoolService, pool))
                 return;
 
-            _objectPoolService = objectPoolService;
-            if (_sparkParticles == null && authoredSparkPrefab != null && objectPoolService != null)
+            _objectPoolService = pool;
+            if (_sparkParticles == null && authoredSparkPrefab != null && pool != null)
                 _sparkEffectResolutionAttempted = false;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPoolService as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPoolService = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPoolService = null;
+            pool = null;
+            return false;
+        }
+
+        private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)
+        {
+            return ObjectPoolManager.CanDespawnWithPool(pool, instance);
         }
 
         private void ResolveRuntimeWiring()
@@ -789,8 +824,7 @@ namespace Hecton8.World
             }
             else if (authoredSparkPrefab != null)
             {
-                IObjectPoolService pool = _objectPoolService;
-                if (pool == null ||
+                if (!TryResolveCachedObjectPool(out IObjectPoolService pool) ||
                     !pool.HasPool(authoredSparkPrefab) ||
                     pool.GetAvailableCount(authoredSparkPrefab) <= 0)
                 {
@@ -805,7 +839,7 @@ namespace Hecton8.World
                     return;
                 }
 
-                if (!pool.CanDespawnWithoutDestroy(sparkObject))
+                if (!CanDespawnWithPool(pool, sparkObject))
                 {
                     pool.Despawn(sparkObject);
                     return;
@@ -871,8 +905,10 @@ namespace Hecton8.World
                 return;
 
             IObjectPoolService pool = _sparkPooledInstanceOwned ? _sparkPooledInstancePool : null;
-            if (pool != null && pool.CanDespawnWithoutDestroy(_sparkPooledInstance))
-                pool.Despawn(_sparkPooledInstance);
+            if (ObjectPoolManager.TryResolvePoolForInstance(_sparkPooledInstance, pool, out IObjectPoolService ownerPool))
+                ownerPool.Despawn(_sparkPooledInstance);
+            else
+                Destroy(_sparkPooledInstance);
 
             _sparkPooledInstance = null;
             _sparkPooledInstancePool = null;

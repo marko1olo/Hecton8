@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "Wyciek do rejestru publicznego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# Wyciek do rejestru publicznego
 
-PL LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.
+Wyciek do rejestru publicznego to zakończenie częściowej prawdy. Gracz wysyła dość dowodów, by utrudnić wymazanie, ale za mało, by kontrolować Atlas, odwet Deep Reach albo to, co instytucje publiczne zrobią z pakietem.
 
 ## Scanner
 
-PL LOC HOLD: You can leak truth before you understand all of it.
+Witness hash przyjęty. Częściowa prawda wychodzi przed pełną custody.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
+TRASA REJESTRU PUBLICZNEGO: Tau Ceti packet notary przyjęło witness hash; payload niepełny; sprzeciw claimant prawdopodobny; okno odwetu Deep Reach zaczyna się po potwierdzeniu relay.
 
 ## Audio
 
-PL LOC HOLD: The truth leaves first. You may not like who reads it.
+Prawda wychodzi pierwsza. Może nie spodoba ci się, kto ją przeczyta.
 
 ## Field Note
 
-PL LOC HOLD: Public does not mean safe. It means harder to erase.
+Publiczne nie znaczy bezpieczne. Znaczy tylko trudniejsze do wymazania.
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/pl_PL. -->

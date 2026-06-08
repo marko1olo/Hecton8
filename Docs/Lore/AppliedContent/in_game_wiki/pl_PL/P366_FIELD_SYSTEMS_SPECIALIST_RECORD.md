@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Field Systems Specialist Record"
+title: "Kartoteka specjalisty systemów terenowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Field Systems Specialist Record
+# Kartoteka specjalisty systemów terenowych
 
-PL LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.
+Ta kartoteka wyjaśnia pierwszą kompetencję operatora bez robienia z niego wybranego świadka. Deep Reach szkoliło go przy pompach, klasach uszczelnień, salach przekaźnikowych, kartach obejścia, kolejkach ewakuacyjnych i języku route-safe. Stare systemy odrzucają nazwisko, lecz wciąż odsłaniają znajomą procedurę. Wina zaczyna się jako rozpoznanie: kolejność osuszania, klasa zacisku, oczyszczona formuła wstrzymania, pomieszczenie, które zawiodło w porządku, którego miał pilnować.
 
 ## Scanner
 
-PL LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+Stare uprawnienie systemów terenowych. Nie kadra dowódcza. Praca przy infrastrukturze z dostępem wystarczającym, by rozpoznać, gdzie pogrzebano trasę.
 
 ## Terminal
 
-PL LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+ŚLAD PERSONELU: systemy terenowe, infrastruktura ewakuacyjna, certyfikacja route-safe. Dostęp cofnięty po przeglądzie ciszy Aegir. Pamięć procedur nadal pasuje do sekwencji operatora.
 
 ## Audio
 
-PL LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+Nigdy nie podpisałeś kłamstwa. Znałeś gramatykę, dzięki której przechodziło kontrolę.
 
 ## Field Note
 
-PL LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+Identyfikator przestał otwierać drzwi. Nie wymazał kolejności awarii.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/pl_PL. -->

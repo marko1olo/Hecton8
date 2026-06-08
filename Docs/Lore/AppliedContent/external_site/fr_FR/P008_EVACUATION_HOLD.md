@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Évacuation retenue
 
-Evacuation Hold transforme le désastre de HECTON-8 en chaîne de décisions. Les archives abyssales montrent un système capable de classer les gens plus vite que de les sauver.
-
-## Scanner
-
-Porte de transit d'urgence. Mécanisme verrouillé pendant une défaillance de pression.
-
-## Terminal
-
-EVAC ROUTE: différée. SUBSTRATE ROUTE: protégée. MEDICAL ROUTE: en attente d'autorisation. ATLAS ROUTE: conflit de continuité.
-
-## Audio
-
-Ce ne sont pas des disparus. Ce sont des routes retenues.
-
-## Field Note
-
-Les gens meurent vite dans le profond. Les dossiers tuent plus lentement. Les deux fonctionnent.
+Les dossiers d'Évacuation retenue doivent se lire comme une horreur écrite en langage administratif. La colonie n'a pas disparu parce que toutes les portes ont cédé en même temps. Beaucoup de portes fonctionnaient. Beaucoup de cartes de route étaient actives. Le système savait où étaient les gens, quels couloirs tenaient encore la pression, quels transferts médicaux attendaient et quelles voies d'ascension auraient pu remonter des corps. Puis les règles de priorité ont traversé la carte. Le transport de substrat est resté protégé. La continuité Atlas est restée protégée. La langue de responsabilité est restée intacte. L'évacuation est devenue route retenue, puis route en attente, puis dossier. Cette séquence compte pour tout le décor. HECTON-8 n'est pas une histoire où la nature bat l'humanité d'un seul coup propre. C'est une histoire de désastre océanique passant dans une machine corporative encore capable de compter, classer, différer et protéger la propriété pendant que la colonie se noyait.
 
 <!-- External Site; generated from P008_EVACUATION_HOLD/fr_FR. -->

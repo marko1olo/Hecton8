@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "عصر مجسات الشراع الشعاعي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# عصر مجسات الشراع الشعاعي
 
-AR LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-AR LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-AR LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-AR LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-AR LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+عصر مجسات الشراع الشعاعي هو البداية الهادئة لقصة Aegir. حملت الحمولات الصغيرة طاقة من مصفوفات بعيدة، عبرت أولا، ثم أعادت packets قديمة بما يكفي للنقاش وجيدة بما يكفي للبيع. لم تجعل المجسات Aegir آمنا. جعلته مقروءا: آبار جاذبية، أحزمة إشعاع، توقيعات محيطية، relay sightlines، وطريقا يمكن جعله مربحا بما يكفي من اللامبالاة. الفرق بين المقروء والآمن هو المكان الذي تدخل منه Deep Reach.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/ar_SA. -->

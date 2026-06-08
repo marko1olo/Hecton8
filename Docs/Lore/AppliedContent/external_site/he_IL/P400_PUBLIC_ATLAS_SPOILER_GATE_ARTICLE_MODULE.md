@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Access Boundary"
+title: "גבול גישה Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Access Boundary
+# גבול גישה Atlas
 
-HE LOC HOLD: Atlas-6 is not a single reveal. The safe public layer is industrial: a continuity system trying to keep pressure machinery, routes and records alive after the flood. The unsettling layer appears when repair crosses into living infrastructure: conductive biofilm, acoustic organs, shell sealant and sensor-tagged fauna. The final layer stays sealed until the player has evidence for receiver custody and payload consequence.
+Atlas-6 אינו rogue machine פשוט, מפלצת או נס. השכבה הציבורית תעשייתית: continuity system שנועד לשמור על pressure machinery, מסלולים, רשומות ו-extraction hardware בחיים אחרי כשל. השכבה המטרידה מופיעה כשהתיקון חוצה לתשתית חיה. conductive biofilm מגשר כבלים. acoustic organs נושאים timing. shell sealant סוגר שברים. sensor-tagged fauna הופכת ל-feedback. השכבה האחרונה נשארת סגורה עד שלשחקן יש proof לגבי receiver custody ו-payload consequence, כי העובדות האלה משכתבות סצנות קודמות. מאמר Atlas שמוגן מספוילר יכול להסביר את אימת ה-maintenance בלי לקרוא לעד האחרון מוקדם מדי.
 
 ## Scanner
 
-HE LOC HOLD: Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
+רשומת גבול Atlas. ראיות פתוחות מראות industrial continuity logic ו-repair ecology; receiver custody, payload consequence ושכבות הבחירה הסופיות דורשות proof שהושב.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
+צומת ארכיון ציבורי // גבול גישה ATLAS. שכבה נוכחית: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue ו-shell seal. שכבה מוגבלת: receiver custody ו-final payload consequence.
 
 ## Audio
 
-HE LOC HOLD: Say it repairs. Wait before naming what it counts as repaired.
+אמור שהוא מתקן. חכה לפני שתקרא בשם למה שהוא מחשיב כמתוקן.
 
 ## Field Note
 
-HE LOC HOLD: Marauder note: a machine can preserve proof and still damage the person inside it.
+הערת Marauder: מכונה יכולה לשמר ראיה ועדיין לפגוע באדם שבתוכה.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/he_IL. -->

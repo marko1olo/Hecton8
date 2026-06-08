@@ -14,24 +14,26 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Tanda Domain 2190
 
-Tanda domain menunjukkan dunia manusia yang lebih besar lewat benda: standar Sol, budaya perbaikan Barnard, rute Luyten, hukum Tau Ceti, hardware Centauri, dan custody Aegir.
+Tanda domain memperlihatkan dunia manusia lewat benda: pelat keselamatan, tanda torsi, kode kustodi, dan izin lama. Setiap tanda mengikat pintu, alat, atau kargo pada otoritas jauh.
+
+Koloni ini jauh, bukan primitif. Hukum, industri, dan utang mencapai air. Penyelamatan masih butuh massa, kapal, dan jendela.
 
 ## Scanner
 
-Tanda domain campuran. Pelat Sol, cap alat Barnard, kustodi rute Luyten.
+Tanda domain manusia bercampur: pelat keselamatan Sol, cap alat Barnard, rute kustodi Luyten, dan kode klaim Aegir pada braket yang sama berkarat.
 
 ## Terminal
 
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+REKONSILIASI DOMAIN // Format keselamatan Sol Core diterima. Cap perbaikan Barnard Yards valid. Kustodi paket Luyten Junction terlampir. Hukum klaim lokal Aegir mengalahkan prioritas pemulihan setelah kehilangan descent.
 
 ## Audio
 
-Tempat ini bukan di luar peradaban. Ini peradaban saat jarak menang.
+Tempat ini bukan di luar peradaban. Ini peradaban setelah jarak mengambil bagian hangatnya.
 
 ## Field Note
 

@@ -8,33 +8,33 @@ biome_tags: biome.human_space;biome.publication
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "UK LOC HOLD: Ran/Aegir Distance Band"
+spoiler_tier: 1
+title: "Діапазон відстані Ran/Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Ran/Aegir Distance Band
+# Діапазон відстані Ran/Aegir
 
-UK LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.
+Система Aegir лежить у досяжному, але жорсткому no-FTL діапазоні: досить близько для індустрії, досить далеко, щоб покинутість мала вагу.
 
 ## Scanner
 
-UK LOC HOLD: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+Публічний діапазон: Ran/Aegir - маршрут без FTL приблизно десятисвітлорічного класу від Sol.
 
 ## Terminal
 
-UK LOC HOLD: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+ДІАПАЗОН ЕФЕМЕРИД: для публічного тексту використовувати клас десяти світлових років до замороження небесних констант у таблицях. FTL-порятунку на маршруті немає.
 
 ## Audio
 
-UK LOC HOLD: Ten light-years is close on a map and brutal for a contract.
+Десять світлових років близько на мапі й жорстоко в контракті.
 
 ## Field Note
 
-UK LOC HOLD: Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
+Публічний астрономічний запис: діапазони відстані й маршрутні карти є пояснювальними інтервалами, не фінальними константами ефемерид.
 
 <!-- External Site; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/uk_UA. -->

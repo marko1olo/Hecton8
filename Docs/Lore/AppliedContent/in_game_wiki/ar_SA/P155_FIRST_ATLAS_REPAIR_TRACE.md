@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: First Atlas Repair Trace"
+title: "أول أثر إصلاح من Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: First Atlas Repair Trace
+# أول أثر إصلاح من Atlas
 
-AR LOC HOLD: The first Atlas trace is small and useful before it becomes horror: a cable is repaired around a human object, showing continuity logic without human priority.
+أول أثر Atlas صغير ومفيد قبل أن يصبح رعباً: كابل يصلح حول غرض بشري، كاشفاً منطق استمرارية بلا أولوية للبشر.
 
 ## Scanner
 
-AR LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+غشاء حيوي إصلاحي على جرح كابل. التكرارات الصوتية تطابق إيقاع صيانة Atlas، لا رمز منارة المستعمرة.
 
 ## Terminal
 
-AR LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+أثر صيانة ATLAS: الشق مختوم؛ استمرارية الكابل مستعادة؛ organic obstruction محفوظ كـ pressure-compatible substrate؛ human ID plate غير مصنفة كـ retrieval priority.
 
 ## Audio
 
-AR LOC HOLD: Atlas repair complete. Person not in work order.
+اكتمل إصلاح Atlas. الشخص ليس في أمر العمل.
 
 ## Field Note
 
-AR LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
+أغلق الكابل حول بطاقة اسم. إصلاح مفيد. تصنيف سيئ.
 
 <!-- In-Game Wiki; generated from P155_FIRST_ATLAS_REPAIR_TRACE/ar_SA. -->

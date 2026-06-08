@@ -14,9 +14,9 @@
 //      (HighlightNearbyResource).
 //
 // ARHITEKTURA (v2 — Direct API):
-//   • Registry service — custom MapMagic node resolves via GlobalRegistry.ScavengePopulator.
+//   • Registry service — custom MapMagic node resolves through WorldRuntimeReferenceUtility.
 //   • ISlowTickable — dlya time-sliced spavna (ne blokiruet osnovnoy potok).
-//   • HectonScatterOutput → RegisterSpawnPoint() — pryamye vyzovy, zero GC.
+//   • HectonScatterOutput → live ScavengePopulator → RegisterSpawnPoint() — pryamye vyzovy, zero GC.
 //   • ObjectPoolManager — spavn/despavn vseh ResourceNode.
 //   • WorldStateManager — proverka depleted sostoyaniya.
 //   • Deterministic ID: hash(chunkCoord, localIndex) → StringBuilder → string.
@@ -75,6 +75,12 @@ namespace Hecton8.Core
         private const int PendingPresentationOperationCapacity = 8192;
         private const uint ScavengePopulatorTelemetryContextHash = 0x53435050u; // SCPP
         private const uint PresentationQueueOverflowWarningHash = 0x53435051u; // SCPQ
+
+        internal bool IsRuntimeOwnerUsable =>
+            _serviceRegistered &&
+            isActiveAndEnabled &&
+            !_runtimeOwnerAborted &&
+            !_isDuplicateInstance;
 
         // ══════════════════════════════════════════════════════════
         //  REGISTRY SERVICE
@@ -264,12 +270,13 @@ namespace Hecton8.Core
         private bool _pendingScavengeVisualSync;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
+        private bool _runtimeOwnerAborted;
 
         public ServiceHeartbeatState HeartbeatState
         {
             get
             {
-                if (_isDuplicateInstance)
+                if (_runtimeOwnerAborted || _isDuplicateInstance)
                     return ServiceHeartbeatState.Failed;
                 if (!_initialized)
                     return ServiceHeartbeatState.NotStarted;
@@ -279,7 +286,7 @@ namespace Hecton8.Core
             }
         }
 
-        public bool IsServiceReady => _initialized && !_isDuplicateInstance && _serviceRegistered && enabled;
+        public bool IsServiceReady => _initialized && !_runtimeOwnerAborted && !_isDuplicateInstance && _serviceRegistered && enabled;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -301,16 +308,11 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            if (_isDuplicateInstance || !_initialized)
+            if (_runtimeOwnerAborted || _isDuplicateInstance || !_initialized)
                 return;
 
-            ScavengePopulator activeRuntime = GlobalRegistry.ScavengePopulator;
-            if (activeRuntime != null && !ReferenceEquals(activeRuntime, this))
-            {
-                _isDuplicateInstance = true;
-                enabled = false;
+            if (!TryRegisterService())
                 return;
-            }
 
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
@@ -323,19 +325,13 @@ namespace Hecton8.Core
             if (!_registeredToLateFrame && Application.isPlaying && GlobalRegistry.Dispatcher != null)
                 _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
-            if (!_serviceRegistered && Application.isPlaying)
-            {
-                GlobalRegistry.RegisterScavengePopulatorRuntime(this);
-                _serviceRegistered = ReferenceEquals(GlobalRegistry.ScavengePopulator, this);
-            }
-
             if (_playerTransform == null)
                 FindPlayer();
         }
 
         private void OnDisable()
         {
-            if (_isDuplicateInstance || !_initialized)
+            if (_runtimeOwnerAborted || _isDuplicateInstance || !_initialized)
                 return;
 
             if (_registeredToSlowTickManager)
@@ -355,6 +351,7 @@ namespace Hecton8.Core
             {
                 GlobalRegistry.UnregisterScavengePopulatorRuntime(this);
                 _serviceRegistered = false;
+                WorldRuntimeReferenceUtility.InvalidateScavengePopulatorCache(this);
             }
 
             DespawnAllChunks(flushPresentationImmediately: true);
@@ -366,6 +363,9 @@ namespace Hecton8.Core
 
         public void OnServiceShutdown()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_registeredToSlowTickManager)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
@@ -383,6 +383,7 @@ namespace Hecton8.Core
             {
                 GlobalRegistry.UnregisterScavengePopulatorRuntime(this);
                 _serviceRegistered = false;
+                WorldRuntimeReferenceUtility.InvalidateScavengePopulatorCache(this);
             }
 
             DespawnAllChunks(flushPresentationImmediately: true);
@@ -406,10 +407,13 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.WorldStateRuntime:
                     _worldState = currentService as WorldStateManager;
@@ -423,8 +427,11 @@ namespace Hecton8.Core
 
         private void CacheRegistryServicesCold()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_objectPool == null)
-                _objectPool = GlobalRegistry.ObjectPoolService;
+                CacheObjectPoolService(null);
 
             if (_worldState == null)
                 _worldState = GlobalRegistry.WorldState;
@@ -444,9 +451,45 @@ namespace Hecton8.Core
             _playerTransform = null;
         }
 
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(candidate))
+            {
+                _objectPool = candidate;
+                return;
+            }
+
+            ObjectPoolManager pool = null;
+            _objectPool = ObjectPoolManager.TryResolveActiveRuntime(ref pool)
+                ? pool
+                : null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = null;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
+        }
+
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapRegistered || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _hotSwapRegistered || !Application.isPlaying)
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -459,6 +502,77 @@ namespace Hecton8.Core
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
+        }
+
+        private bool TryRegisterService()
+        {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (_serviceRegistered || !Application.isPlaying)
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            ScavengePopulator registeredRuntime = GlobalRegistry.ScavengePopulator;
+            if (IsScavengePopulatorRuntimeUsable(registeredRuntime))
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
+
+            if (!ReferenceEquals(registeredRuntime, null) && !ReferenceEquals(registeredRuntime, this))
+                GlobalRegistry.UnregisterScavengePopulatorRuntime(registeredRuntime);
+
+            GlobalRegistry.RegisterScavengePopulatorRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.ScavengePopulator, this);
+            if (!_serviceRegistered)
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
+
+            return _serviceRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            ScavengePopulator registeredRuntime = GlobalRegistry.ScavengePopulator;
+            if (ReferenceEquals(registeredRuntime, this))
+                return false;
+
+            if (IsScavengePopulatorRuntimeUsable(registeredRuntime))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            if (!ReferenceEquals(registeredRuntime, null))
+                GlobalRegistry.UnregisterScavengePopulatorRuntime(registeredRuntime);
+
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            _runtimeOwnerAborted = true;
+            _isDuplicateInstance = true;
+            _registeredToSlowTickManager = false;
+            _registeredToLateFrame = false;
+            _serviceRegistered = false;
+            _hotSwapRegistered = false;
+            _pendingScavengeVisualSync = false;
+            ClearPendingPresentationOperations();
+            ClearCachedRegistryServices();
+            enabled = false;
+        }
+
+        private static bool IsScavengePopulatorRuntimeUsable(ScavengePopulator populator)
+        {
+            return !ReferenceEquals(populator, null) &&
+                   populator != null &&
+                   populator.IsRuntimeOwnerUsable;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -492,6 +606,9 @@ namespace Hecton8.Core
             int          localIndex,
             SpawnContext  context = SpawnContext.Surface)
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance || !_initialized)
+                return;
+
             // Ensure chunk tracking entry exists
             EnsureChunk(chunkCoord, 256);
 
@@ -521,6 +638,9 @@ namespace Hecton8.Core
         /// <param name="expectedCount">Ozhidaemoe kolichestvo uzlov (dlya pre-alloc).</param>
         public void PrepareChunkForReload(Vector2Int chunkCoord, int expectedCount)
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance || !_initialized)
+                return;
+
             if (_chunks.TryGetValue(chunkCoord, out ChunkData existing))
             {
                 if (existing.activeNodes.Count > 0)
@@ -553,7 +673,7 @@ namespace Hecton8.Core
         /// </summary>
         public void SlowTick()
         {
-            if (!_initialized || _spawnQueue == null || _chunks == null || _chunksToUnload == null)
+            if (_runtimeOwnerAborted || _isDuplicateInstance || !_initialized || _spawnQueue == null || _chunks == null || _chunksToUnload == null)
                 return;
 
             RefreshRuntimeStreamingSettings();
@@ -564,6 +684,9 @@ namespace Hecton8.Core
 
         public void LateFrameTick()
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance)
+                return;
+
             if (!_pendingScavengeVisualSync && _pendingPresentationOperationCount == 0)
                 return;
 
@@ -589,12 +712,14 @@ namespace Hecton8.Core
         /// </summary>
         private void ProcessSpawnQueue()
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance)
+                return;
+
             if (_spawnQueue.Count == 0) return;
 
-            IObjectPoolService pool = _objectPool;
             WorldStateManager wsm  = _worldState;
 
-            if (pool == null) return;
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool)) return;
 
             int spawned = 0;
 
@@ -699,6 +824,12 @@ namespace Hecton8.Core
 
         private bool TryReservePendingPresentationOperation(out int index)
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance)
+            {
+                index = -1;
+                return false;
+            }
+
             index = _pendingPresentationOperationCount;
             if ((uint)index >= (uint)_pendingPresentationOperations.Length)
             {
@@ -721,7 +852,7 @@ namespace Hecton8.Core
                 return;
 
             _pendingPresentationOperationCount = 0;
-            IObjectPoolService pool = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
 
             for (int i = 0; i < count; i++)
             {
@@ -778,6 +909,9 @@ namespace Hecton8.Core
         /// </summary>
         private void CullDistantChunks()
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance)
+                return;
+
             if (_playerTransform == null)
             {
                 FindPlayer();
@@ -914,7 +1048,7 @@ namespace Hecton8.Core
 
         /// <summary>
         /// Udalyaet iz ocheredi spavna vse pending-zaprosy dlya ukazannogo chanka.
-        /// 
+        ///
         /// Ispolzuetsya pri re-generate (MapMagic peresozdaet tayl):
         /// starye pending-zaprosy dolzhny byt otmeneny, inache oni
         /// zaspavnyatsya poverh novyh dannyh.
@@ -1056,6 +1190,9 @@ namespace Hecton8.Core
 
         private void FindPlayer()
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance)
+                return;
+
             IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
             Transform playerTransform = playerRuntimeContext != null ? playerRuntimeContext.PlayerTransform : null;
             if (playerTransform != null)
@@ -1108,6 +1245,9 @@ namespace Hecton8.Core
 
         public void SetRuntimeBudget(float newUnloadDistance, float newPriorityLoadRadius, int newMaxSpawnsPerTick)
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance)
+                return;
+
             unloadDistance = Mathf.Max(50f, newUnloadDistance);
             priorityLoadRadius = Mathf.Max(10f, newPriorityLoadRadius);
             maxSpawnsPerTick = Mathf.Max(1, newMaxSpawnsPerTick);
@@ -1120,6 +1260,9 @@ namespace Hecton8.Core
         /// </summary>
         public void ReloadChunk(Vector2Int coord)
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance)
+                return;
+
             DespawnChunk(coord);
         }
 
@@ -1129,6 +1272,9 @@ namespace Hecton8.Core
         /// </summary>
         public void UnloadAll()
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance)
+                return;
+
             DespawnAllChunks();
         }
 
@@ -1158,6 +1304,9 @@ namespace Hecton8.Core
         public void HighlightNearbyResource(Vector3 worldHint)
         {
             // ── Poisk blizhayshego aktivnogo uzla ──
+            if (_runtimeOwnerAborted || _isDuplicateInstance)
+                return;
+
             float bestDistSqr       = float.MaxValue;
             GameObject bestNodeGO   = null;
             string bestNodeId       = null;
@@ -1330,6 +1479,9 @@ namespace Hecton8.Core
 
         public void SetChunkStreamingProfile(WorldChunkStreamingProfile profile)
         {
+            if (_runtimeOwnerAborted || _isDuplicateInstance)
+                return;
+
             chunkStreamingProfile = profile;
             RefreshRuntimeStreamingSettings();
         }

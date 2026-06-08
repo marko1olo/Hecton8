@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Drowned Crust Strata Guide"
+title: "水没地殻層フィールドガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Drowned Crust Strata Guide
+# 水没地殻層フィールドガイド
 
-JA LOC HOLD: HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.
+水没地殻層フィールドガイドは HECTON-8 の海底を、建てられ壊された場所として感じさせる。terrain、salvage routes、鉱物試料はすべて同じ層状の圧力履歴から来る。
 
 ## Scanner
 
-JA LOC HOLD: Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+水没した地層は古い切断痕、pressure-glass の縫い目、同じ方向へ二度は壊れない鉱物帯を露出する。
 
 ## Terminal
 
-JA LOC HOLD: FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: HECTON-8 の水没地殻は、積まれた居住岩、崩壊氷の記憶、pressure glass、動く brine 下の extraction scars でできている。清潔な面より亀裂線を優先。
 
 ## Audio
 
-JA LOC HOLD: The map is not terrain. It is a stack of drownings.
+地図は地形ではない。溺死の積層だ。
 
 ## Field Note
 
-JA LOC HOLD: Use for geology codex and procedural world labels.
+帯が空洞の音を返すなら、平らな面を信用するな。亀裂を記録し、試料を取り、壁は支えたまま残せ。
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/ja_JP. -->

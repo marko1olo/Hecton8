@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Outer Dead Beacon Moon Role"
+title: "دور Mute كمنار خارجي ميت"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Outer Dead Beacon Moon Role
+# دور Mute كمنار خارجي ميت
 
-AR LOC HOLD: The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.
+Mute هو قمر المنار الميت الخارجي في سلم Aegir. مرحلاته غير موثوقة وباردة ومفقودة جزئيا من الخرائط العامة الحالية. لكنها ما زالت تظهر في محللات قديمة وبنود تأمين وجداول استرداد.
 
 ## Scanner
 
-AR LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
+نبضة منار ميت. Mute لم يعد يجيب بنقاء، لكن محللات الطريق القديمة ما زالت تنفق شبحه.
 
 ## Terminal
 
-AR LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
+ملاحظة منار H9 MUTE: الإيفيميرس المؤرشف يختلف مع صدى المرحل الحالي. محلل الإنقاذ يعلّم غموضا قابلا للاستخدام. مكتب العقود يجيز حيازة رسالة مؤجلة حتى تؤكد النافذة.
 
 ## Audio
 
-AR LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
+المنار الميت يبقى منارا إذا عرفت الفاتورة أين تجده.
 
 ## Field Note
 
-AR LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+البنية الميتة لا تغادر Aegir. تتحول إلى حد خطأ يمكن لأحدهم أن يفوّتره.
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/ar_SA. -->

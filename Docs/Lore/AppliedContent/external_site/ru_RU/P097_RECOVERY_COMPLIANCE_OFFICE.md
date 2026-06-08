@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "Офис контроля восстановления"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# Офис контроля восстановления
 
-Recovery Compliance Office оставляет Deep Reach живой в 2190 как конкретную corporate pressure cell, а не туманную историческую тень.
+Офис контроля восстановления удерживает Deep Reach живой в 2190 году: это конкретная корпоративная ячейка давления, а не туманная историческая тень.
 
 ## Scanner
 
-Present-tense office stamp. Deep Reach не призрак; это очередь с юристами.
+Служебный штамп настоящего времени. Deep Reach не призрак; это очередь с юристами.
 
 ## Terminal
 
-RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+ОФИС КОНТРОЛЯ ВОССТАНОВЛЕНИЯ: действие по возврату Aegir открыто. Приоритеты: custody XO, доступ Atlas, сдерживание ответственности, молчание подрядчика при наличии.
 
 ## Audio
 
-Они достаточно поздние, чтобы быть законными, и достаточно текущие, чтобы быть опасными.
+Они опоздали достаточно, чтобы быть законными, и достаточно актуальны, чтобы быть опасными.
 
 ## Field Note
 
-Живая фракция делает давление текущим, не превращая всю корпорацию в одного орущего злодея.
+Живая фракция делает давление текущим, не превращая всю корпорацию в одного кричащего злодея.
 
 <!-- External Site; generated from P097_RECOVERY_COMPLIANCE_OFFICE/ru_RU. -->

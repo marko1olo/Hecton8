@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Pressure Glass and Sealant Guide"
+title: "Довідник pressure glass і sealant"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Pressure Glass and Sealant Guide
+# Довідник pressure glass і sealant
 
-UK LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.
+Pressure glass - місце, де геологія зустрічає Atlas. Repair network використовує наявні тріщини, мінеральні краї й pressure memories як маршрути, тому корисна лінза може бути живою межею.
 
 ## Scanner
 
-UK LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+Тріщина pressure-glass запечатана хімією Atlas. Безпечний lens stock можливий лише якщо seal map лишається цілою.
 
 ## Terminal
 
-UK LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: pressure glass записує старий tide stress. Atlas sealant іде цими тріщинами, бо тріщини вже описують лінії відмови системи.
 
 ## Audio
 
-UK LOC HOLD: The repair network reads fractures the way you read a map.
+Ремонтна мережа читає тріщини так само, як ти читаєш карту.
 
 ## Field Note
 
-UK LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+Не шліфуй гарний край. Іди за fracture map і ріж з мертвого боку seal.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/uk_UA. -->

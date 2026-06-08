@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Lantern Drift Codex Card"
+title: "Karta kodeksu: latarniowy dryf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Lantern Drift Codex Card
+# Karta kodeksu: latarniowy dryf
 
-PL LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+Latarniowy dryf pilnuje, by piękno HECTON-8 nie stało się tapetą. Może prowadzić wyraźną świetlistą strukturą, a potem zdradzić, zapisując hałas, panikę i ładunek burzy. Jasna woda to nawigacja i ekspozycja naraz.
 
 ## Scanner
 
-PL LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Latarniowy bloom dryfu. Bioluminescencyjny plankton pasami znaczy prąd i szczątki. Przydatny dla konturów; groźny, gdy hałas narzędzi robi z niego świecący ślad.
 
 ## Terminal
 
-PL LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+OKAZ / LATARNIOWY BLOOM DRYFU / rola: zdarzenie widoczności płytkiej, szkic prądu, rejestrator zakłóceń / bezpieczny odczyt: stałe światło krawędzi, halo szczątków, zgodny prąd i osad / odrzuć: fałszywy korytarz od ładunku burzy, bloom spłaszcza małe zagrożenia, ślad narzędzi jaśnieje za operatorem / notatka trasy: światło to dane, nie schronienie.
 
 ## Audio
 
-PL LOC HOLD: Pretty is not safe. Pretty is a reading.
+Blask ci nie pomaga. On raportuje, co usłyszała woda.
 
 ## Field Note
 
-PL LOC HOLD: Card teaches that beauty can be route information and route deception.
+Użyj bloomu do sylwetek. Nie naprawiaj głośno w środku. Jeśli blask idzie za tobą, coś innego też może.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/pl_PL. -->

@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "전 Deep Reach 마로더"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# 전 Deep Reach 마로더
 
-KO LOC HOLD: This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.
+주인공은 HECTON-8에서 태어나지 않았고 가족의 유령을 쫓지도 않는다. 오래된 식민지가 알아보는 것은 더 차가운 것이다. 현장 시스템 수리 리듬, 비상 경로를 읽는 습관, Deep Reach 작업이 가르친 작은 지름길들이다. 그 이력은 첫 번째 잠긴 문들을 개인적인 것으로 만들지만, 이야기를 혈통 멜로드라마로 바꾸지는 않는다. 마로더는 돈을 위해 청구 캐시를 절단할 수 있다. 전 Deep Reach 전문가는 어떤 봉인 로그가 존재하면 안 되는지, 어떤 대피 지시가 지연을 덮기 위해 쓰였는지, 노동자들이 장부에서 지워진 뒤에도 어떤 수리 순서가 계속 살아 있었는지 알아본다.
 
 ## Scanner
 
-KO LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+오래된 Deep Reach 잠금 장치는 네 이름을 확인하지 않는다. 네 수리 순서의 리듬을 알아본다.
 
 ## Terminal
 
-KO LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+자격 흔적: 전 현장 시스템 계약자. 대피 기반 시설 접근 권한 취소. 청구 풀 채무 관리 아래 구난 지위 승인.
 
 ## Audio
 
-KO LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+너는 집으로 돌아온 것이 아니다. 멈추지 않은 절차 앞에 다시 온 것이다.
 
 ## Field Note
 
-KO LOC HOLD: Not family business. Procedure remembers who taught your hands.
+가족 일이 아니다. 절차는 그것을 사용한 손을 기억한다.
 
 <!-- In-Game Wiki; generated from P056_EX_DEEP_REACH_MARAUDER/ko_KR. -->

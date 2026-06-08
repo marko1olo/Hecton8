@@ -1,4 +1,5 @@
-﻿# シード計画とATLAS指令
+<!-- localization_status: source_draft_pending_native_review -->
+# シード計画とATLAS指令
 
 > **Source:** Deep Reach システムエンジニアリング部門、指令論理ログ。
 > **Speaker:** 自律運用ディレクター。

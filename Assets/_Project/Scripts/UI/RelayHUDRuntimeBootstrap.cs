@@ -44,7 +44,8 @@ namespace Hecton8.UI
 
         private static SuitHUDV4CanvasOverlay ResolvePreferredOverlay()
         {
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             if (overlay != null)
                 return overlay;
 

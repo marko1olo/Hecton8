@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "סמכות Sol Core"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# סמכות Sol Core
 
-HE LOC HOLD: Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help.
+סמכות Sol Core מסבירה מדוע HECTON-8 יכולה להיות רחוקה ועדיין שייכת משפטית. ב-HECTON-8 הציוויליזציה הישנה מגיעה כניירת, תקנים וחוב לפני שהיא מגיעה כעזרה.
 
 ## Scanner
 
-HE LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+חותם חוק ישן של Sol. הוא יכול להחזיק בגופה של ספר גם בלי להיות קרוב מספיק להריח דליפת לחץ.
 
 ## Terminal
 
-HE LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+תקן SOL CORE: רציפות התביעה מוכרת דרך משמורת מוביל מורשה, ביטוח מסלול והכרעה נדחית. עדיפות חילוץ אנושי לא נקבעה עד אישור סיכונים מקומי.
 
 ## Audio
 
-HE LOC HOLD: The seal came from Earth space. The rescue clause did not.
+החותם הגיע ממרחב כדור הארץ. סעיף החילוץ לא.
 
 ## Field Note
 
-HE LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol אינו בית כאן. זו החתימה העתיקה ביותר במסמך, והיא עדיין יכולה להרוס אותך.
 
 <!-- External Site; generated from P071_SOL_CORE_AUTHORITY/he_IL. -->

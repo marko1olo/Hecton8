@@ -9,32 +9,16 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: HECTON-8 Mid-Orbit Tide Role"
+title: "HECTON-8 i pływy orbity środkowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: HECTON-8 Mid-Orbit Tide Role
+# HECTON-8 i pływy orbity środkowej
 
-PL LOC HOLD: HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.
-
-## Scanner
-
-PL LOC HOLD: Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
-
-## Terminal
-
-PL LOC HOLD: ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
-
-## Audio
-
-PL LOC HOLD: It sits in the part of the ladder where work looks possible until the water starts doing math.
-
-## Field Note
-
-PL LOC HOLD: HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 siedzi w zyskownym środku. Orbita daje Deep Reach ocean, który chłodzi maszyny, chowa aktywa, karmi przemysł ciśnieniowy i porusza dość chemii, by uzasadnić claim. Daje też kolonii sufit, który nigdy nie stoi. Pływy obciążają kaniony serwisowe, wyginają zatopioną skorupę, psują czyste harmonogramy i decydują, kiedy masa wznoszenia może odejść.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/pl_PL. -->

@@ -12,6 +12,8 @@ namespace Hecton8.SaveSystem
     [Serializable]
     public sealed class SaveMetadata
     {
+        public const string UnknownSceneName = "Unknown";
+
         [Header("── Identification ─────────────────────────────")]
         public string SlotName;
         public string GameVersion;
@@ -23,13 +25,13 @@ namespace Hecton8.SaveSystem
         public Vector3 PlayerPosition;
         public int WorldSeed;
         public int WorldGenerationVersionId;
-        
+
         [Header("── Integrity ─────────────────────────────────")]
         public string Checksum; // XXHash3 checksum (hex; v4+ uses 64-bit, legacy v3 remains 32-bit)
 
         public DateTime GetDateTime() => new DateTime(Timestamp, DateTimeKind.Utc);
         public string slotName => SlotName;
-        public string sceneName => SceneName;
+        public string sceneName => NormalizeSceneName(SceneName);
         public string timestamp => GetDateTime().ToLocalTime().ToString("g", CultureInfo.InvariantCulture);
         public float totalPlayTime => PlayTimeSeconds;
         public string version => GameVersion;
@@ -91,7 +93,7 @@ namespace Hecton8.SaveSystem
                 GameVersion = "unknown",
                 Timestamp = timestampTicksUtc > 0 ? timestampTicksUtc : DateTime.UtcNow.Ticks,
                 PlayTimeSeconds = 0f,
-                SceneName = "Unknown",
+                SceneName = UnknownSceneName,
                 PlayerPosition = Vector3.zero,
                 WorldSeed = 0,
                 WorldGenerationVersionId = 0,
@@ -130,6 +132,11 @@ namespace Hecton8.SaveSystem
         public static bool Delete(string path)
         {
             return SaveSidecarStorage.Delete(path);
+        }
+
+        public static string NormalizeSceneName(string sceneName)
+        {
+            return string.IsNullOrWhiteSpace(sceneName) ? UnknownSceneName : sceneName.Trim();
         }
 
         private static SaveMetadata HandleLoadFailure(string path, string error)

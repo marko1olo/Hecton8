@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # سجل Black Keel
 
-Black Keel Ledger يعرف شريان اللاعب المداري كآلة عقد: مفيدة ومخترقة ولامبالية في الوقت نفسه.
+Black Keel ليست سفينة ودية. إنها عطاء claim-pool يرى الأجساد والحمولات والحجر وكتلة الصعود والتأمين كمدخلات في سجل واحد.
 
-## Scanner
-
-سجل claim-pool tender. عهدة carrier عامة، دين تأمين، وخطافات أولوية Deep Reach مخفية.
-
-## Terminal
-
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
-
-## Audio
-
-Black Keel ليست سفينتك. إنها الآلة التي تعرف ما تدين به.
-
-## Field Note
-
-يمكن للسفينة مساعدتك دون أن تكون في صفك.
+لا تحتاج إلى كراهية اللاعب. تستطيع الرد بأدب وقبول hash استغاثة وترفض الالتقاط حتى تتغير الأرقام.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/ar_SA. -->

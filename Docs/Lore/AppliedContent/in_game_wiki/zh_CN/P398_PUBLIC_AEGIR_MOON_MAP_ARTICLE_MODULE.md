@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Aegir Moon Route Map"
+title: "Aegir卫星路线图"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Aegir Moon Route Map
+# Aegir卫星路线图
 
-ZH LOC HOLD: Aegir moon data is route data. HECTON-8 is one ocean moon inside a larger ladder of relay, radiation, scatter and tide constraints; the visible sky is part of navigation, not decoration.
+Aegir卫星数据就是路线数据。HECTON-8是可游玩的海洋卫星，但它处在更大的relay、辐射、散射和潮汐约束阶梯中。可见天空决定救援信号会被听见、延迟、定价、拒绝，或在物理上变得不可能。
 
 ## Scanner
 
-ZH LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+系统地图记录。Aegir诸卫星决定relay timing、辐射掩护、冰散射、潮汐压力、occultation bands、失效beacons与recovery geometry。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+公共档案节点 // AEGIR卫星梯。卫星名是路线标签。每个天体都会改变signal age、transfer risk、storm exposure、custody timing或claim reliability。
 
 ## Audio
 
-ZH LOC HOLD: The map is why no one arrives the moment you ask.
+地图解释了为什么你请求的那一刻没有人抵达。
 
 ## Field Note
 
-ZH LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Marauder笔记：先标出卫星，再标出它对路线做了什么。
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/zh_CN. -->

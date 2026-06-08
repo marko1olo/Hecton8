@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "HE LOC HOLD: Resources and Ecology"
+title: "משאבים ואקולוגיה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Resources and Ecology
+# משאבים ואקולוגיה
 
-HE LOC HOLD: Resource/ecology hub: drowned crust, brine ladders, vent chemistry, living systems and Atlas' damaged repair logic.
+מרכז משאבים ואקולוגיה: drowned crust, brine ladders, vent chemistry, living systems ו-repair logic פגומה של Atlas.
 
 ## Scanner
 
-HE LOC HOLD: Publication hub: geology, blue debt, fauna grammar and Atlas repair-network misuse.
+מרכז פרסום: geology, blue debt, דקדוק פאונה ו-misuse של רשת תיקון Atlas.
 
 ## Terminal
 
-HE LOC HOLD: SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.
+SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology ו-encounter grammar כמפת process אחת.
 
 ## Audio
 
-HE LOC HOLD: Nothing here is just loot.
+שום דבר כאן אינו רק loot.
 
 ## Field Note
 
-HE LOC HOLD: Navigation cluster record: resources and ecology belong together when materials, biota, and evidence pressure share the same route.
+משאבים ואקולוגיה שייכים יחד כש-materials, biota ו-evidence pressure חולקים אותו מסלול.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/he_IL. -->

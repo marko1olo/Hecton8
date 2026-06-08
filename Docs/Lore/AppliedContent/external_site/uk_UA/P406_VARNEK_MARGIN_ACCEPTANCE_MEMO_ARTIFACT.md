@@ -9,32 +9,22 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Varnek Margin Memo"
+title: "Мемо Варнека про прийнятий запас"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Varnek Margin Memo
+# Мемо Варнека про прийнятий запас
 
-UK LOC HOLD: Deep Reach liability begins where real physics became an acceptable loss line.
+## Штамп Перед Потопом
 
-## Scanner
+Мемо Варнека важливе тим, що воно спокійне. Great Tide був справжнім. Каскад тиску був справжнім. Океану не був потрібен корпоративний наказ, щоб розчавити HECTON-8. Злочин з'являється в рядку, де відомий попереджувальний запас стає accepted tail exposure, а евакуаційний резерв лишається сплячим.
 
-UK LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Документ говорить мовою відповідального менеджменту: average model, continuity cost, reserve non-triggered, independent shutdown not recommended. У цьому небезпека. Варнек не звучить як лиходій. Він звучить як людина, що знайшла колонку, де небезпека стає payable. Коли Marauder знаходить мемо, старе рішення вже стало ландшафтом: зігнуті ребра коридорів, затоплені інструменти, двері тиску перед працівниками, які ще чекали зміни наказу.
 
-## Terminal
-
-UK LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
-
-## Audio
-
-UK LOC HOLD: No murder order. A margin acceptance.
-
-## Field Note
-
-UK LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Цей доказ має важити більше за зізнання. Зізнання можна списати на паніку чи злу волю. Підписана margin review показує Deep Reach у звичайній роботі, з летальними даними на столі. Компанія прийняла океан як cost center, а потім видала звіт про катастрофу достатньо чистий для страхової перевірки.
 
 <!-- External Site; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/uk_UA. -->

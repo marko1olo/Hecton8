@@ -7,34 +7,34 @@ poi_tags: poi.shallow_annex_p63_fabricator;poi.first_recipe_console
 biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "P-63 Field Fabricator"
+title: "מייצר שדה P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# P-63 Field Fabricator
+# מייצר שדה P-63
 
-HE LOC HOLD: Shallow Annex P-63 contains the first field fabricator. It should feel industrial, constrained and useful. Early recipes are valve gaskets, cutter contacts, pinger floats and sealant clamps. The fabricator refuses dangerous pressure material until the player earns containment knowledge.
+Shallow Annex P-63 מכיל את מייצר השדה הראשון, והוא מתנהג כתשתית תיקון ולא כמדפסת קסם. המתכונים הראשונים הם אטמי שסתום, מגעי חותך, מצופי פינגר ומהדקי איטום: חלקים קטנים שמחזירים אמון בכלים פגועים. המייצר דוחה חומרי לחץ מסוכנים עד שלשחקן יש הסמכה וידע containment לטפל בהם.
 
 ## Scanner
 
-HE LOC HOLD: Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
+מייצר שדה P-63. טבלת הסמכה שלמה; מקבל גרוטאות כחומר גלם, דוחה חומר לחץ לא מוסמך.
 
 ## Terminal
 
-HE LOC HOLD: FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
+FAB P-63 / מתכונים ראשונים מאושרים: אטם שסתום, מגע חותך, מצוף פינגר, מהדק איטום. שברי blue debt לא מוכרים נדחים עד שיש הסמכת לחץ ומחלקת containment.
 
 ## Audio
 
-HE LOC HOLD: The machine can make parts. It cannot make permission.
+חלקים הם קלים. הסמכות היא החלק היקר.
 
 ## Field Note
 
-HE LOC HOLD: Crafting starts as repair certification, not loot dopamine.
+הוא מדפיס חלקים, לא רשות. אם המתכון רוצה חותמת, האוקיינוס יבקש אותה גם.
 
 <!-- In-Game Wiki; generated from P115_P63_FIELD_FABRICATOR/he_IL. -->

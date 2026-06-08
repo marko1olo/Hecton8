@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "دور Claw كخطر تشتت جليدي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Ice Scatter Moon Hazard Role
+# دور Claw كخطر تشتت جليدي
 
-AR LOC HOLD: The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Claw قمر تشتت جليدي تحيط به هالة قذرة من الشظايا وغبار المطالبات ونفايات صناعية متجمدة. قد تكشف ممراته مادة نافعة بعد العواصف، وهذا يبقي الشائعات حية. الممرات نفسها تمزق ثقة المجسات.
 
 ## Scanner
 
-AR LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+سجل تشتت جليدي خارجي. Claw يرمي حطاما لامعا في ممرات تسافر فيها الشائعات أسرع مما ينبغي للطيارين.
 
 ## Terminal
 
-AR LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+سلم الأقمار H3 CLAW: ممر الحطام مفتوح لمسيّرات المسح فقط. حركة الهياكل تحتاج رادار غبار أمامي ودرعا مضحى به وإعفاء دفع لضربات شظايا غير مسجلة.
 
 ## Audio
 
-AR LOC HOLD: Every system has one moon that accountants love and pilots curse.
+في كل نظام قمر يحبه المحاسبون ويلعنه الطيارون.
 
 ## Field Note
 
-AR LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw يبدو مربحا على الورق لأن الورق لا يراوغ الجليد.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/ar_SA. -->

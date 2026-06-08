@@ -7,8 +7,8 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Sonar Return Route
 
-A return beacon is not a promise. It records what the route sounded like when it was last safe. Storm surge, loose cable, moving silt, fauna, and salvage cuts can change the echo without erasing the path. Ping before you load up. If the return tone has shifted, cache the cargo or mark a second line.
+A return beacon records how a route sounded when it was last safe. It does not promise the route stayed safe. Storm surge, loose cable, moving silt, fauna and fresh salvage cuts can bend a sonar return without erasing the corridor. Before carrying cargo or pushing deeper, ping the line. If the tone shifts, cache the load or mark a second way back.
 
 ## Scanner
 
-Return beacon stale. Compare old safe ping to current echo before carrying cargo or diving deeper.
+Return beacon stale. Old safe ping no longer matches the corridor echo; cargo mass will slow the retreat window.
 
 ## Terminal
 
-SONAR ROUTE: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift and silt density exceed map tolerance. Mark secondary line before cargo extraction.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+The route is still there. The echo is not the same.
 
 ## Field Note
 
-Never trust an old clean echo with new weight on your back.
+Ping before you load. If the way home changed while your hands were empty, it will not forgive a full pack.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/en_US. -->

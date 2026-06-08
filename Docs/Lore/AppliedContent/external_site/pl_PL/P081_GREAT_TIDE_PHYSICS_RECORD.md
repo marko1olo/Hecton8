@@ -8,33 +8,19 @@ biome_tags: biome.tide_pump;biome.drowned_admin
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+spoiler_tier: 1
+title: "Zapis fizyki Wielkiego Przypływu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# Zapis fizyki Wielkiego Przypływu
 
-PL LOC HOLD: Great Tide Physics Record defines the disaster logic for HECTON-8: the ocean is physically dangerous, and the corporate crime is designing around optimistic margins until a moon-sized system collected the debt.
+Zapis fizyki Wielkiego Przypływu utrzymuje katastrofę uczciwą. HECTON-8 był podatny na rezonans pływów, pękanie lodu, wezbranie sztormowe i zrzut ciepła. Wina Deep Reach leży w marginesach, pojemności ewakuacji i priorytetach decyzji, nie w fałszywej magii.
 
-## Scanner
-
-PL LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
-
-## Terminal
-
-PL LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
-
-## Audio
-
-PL LOC HOLD: The report was right. That is why they buried it.
-
-## Field Note
-
-PL LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+Zapis fizyki Wielkiego Przypływu określa logikę katastrofy HECTON-8: ocean jest fizycznie groźny, a korporacyjna zbrodnia polegała na projektowaniu pod optymistyczne marginesy. Nie łagodź tego: ludzi zabiła prawdziwa fizyka, a Deep Reach dopilnował, żeby fizyka miała ofiary.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/pl_PL. -->

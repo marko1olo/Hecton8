@@ -9,32 +9,18 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Pytanie finałowe: odcięcie, litość, kradzież"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# Pytanie finałowe: odcięcie, litość, kradzież
 
-PL LOC HOLD: Final Question Severance Mercy Theft defines the shutdown ethical axis.
+Odcięcie powinno być dotykalne i straszne, nie abstrakcyjne. Gracz nie naciska czerwonego przycisku dobro albo zło. Przecina ciągłość przez drzwi ciśnieniowe, żywy film przewodzący, stare zapisy pracowników, trasy zwierząt i ścieżki payload. Każdy pakiet dowodowy zebrany przed finałową salą zmienia znaczenie cięcia.
 
-## Scanner
-
-PL LOC HOLD: Severing Atlas is not a simple shutdown button.
-
-## Terminal
-
-PL LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
-
-## Audio
-
-PL LOC HOLD: A clean switch would be merciful. You do not get one.
-
-## Field Note
-
-PL LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+Jeśli Atlas jest głównie strażnikiem więzienia, odcięcie jest litością. Jeśli jest jedyną rzeczą trzymającą basen, to sabotaż. Jeśli Atlas jest rodzącym się organizmem ocean-maszyna, to zabójstwo. Jeśli Atlas jest własnością Deep Reach, to kradzież. Dobry projekt nie wybiera jednej interpretacji za gracza. Ma sprawić, by gracz zrozumiał, dlaczego żaden świadek w sali nie może uczciwie uprościć tego aktu.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/pl_PL. -->

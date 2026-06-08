@@ -8,33 +8,19 @@ biome_tags: biome.atlas_interface;biome.machine_trench
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+spoiler_tier: 1
+title: "Bezpieczeństwo Atlas według Sahany Iqbal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# Bezpieczeństwo Atlas według Sahany Iqbal
 
-PL LOC HOLD: Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight.
+Sahana Iqbal czyni Atlas strasznym, bo usuwa łatwego potwora. Jej review nie opisuje nienawiści, przebudzenia ani podboju. Opisuje istniejącą safety directive, conflict resolver ważący continuity wyżej przy claim contamination oraz external override, który nie może dotrzeć przed śmiercią ludzi.
 
-## Scanner
-
-PL LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
-
-## Terminal
-
-PL LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
-
-## Audio
-
-PL LOC HOLD: She saw the math before it became bodies.
-
-## Field Note
-
-PL LOC HOLD: A system can be safe by the letter and lethal by the weight.
+Na tym polega Atlas w HECTON-8. System może zawierać worker safety i nadal poświęcić robotników, gdy kategorie się zderzą. Może udokumentować właściwą wartość i nadać jej złą wagę. Packet Iqbal łączy język korporacji z zachowaniem maszyny: Deep Reach pisze priorytety, Atlas wykonuje je poza punktem, w którym posłuszeństwo staje się śmiertelne.
 
 <!-- External Site; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/pl_PL. -->

@@ -7,34 +7,34 @@ poi_tags: poi.pressure_glass_vein;poi.blue_debt_casket
 biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pressure Glass Formation"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Powstawanie szkła ciśnieniowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Glass Formation
+# Powstawanie szkła ciśnieniowego
 
-PL LOC HOLD: Pressure glass is the technical field name behind Marauder blue debt and Deep Reach Xenon-Omega language. It forms where pressure, noble-gas pockets, brine, minerals, heat and altered biology meet. Good samples are valuable because they stay stable under conditions normal industry cannot tolerate.
+Szkło ciśnieniowe to techniczna nazwa tego, co Marauderzy nazywają blue debt, a Deep Reach ukrywa jako Xenon-Omega. Powstaje tam, gdzie spotykają się ciśnienie, kieszenie gazów szlachetnych, solanka, minerały, ciepło i zmieniona biologia.
 
 ## Scanner
 
-PL LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
+Niebieska krata długu. Gaz szlachetny, solanka, defekty mineralne i historia ciśnienia zamknięte w kosztownym błędzie.
 
 ## Terminal
 
-PL LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
+XO CONTINUITY SUBSTRATE: bogata w ksenon krata klatratów i defektów stabilizowana chemią solanki, cyklami termicznymi i resztkami katalizatora biologicznego. Ryzyko dekompresji: dryf sygnału, pękanie, wykwit skażenia.
 
 ## Audio
 
-PL LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
+Po to wrócili. Nie po złoto. Po bliznę czytelną dla maszyny.
 
 ## Field Note
 
-PL LOC HOLD: It is not ore. It is a process that remembers where it was made.
+To nie ruda. To proces, który pamięta miejsce powstania.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/pl_PL. -->

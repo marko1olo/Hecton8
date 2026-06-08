@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Claim Continuity Loss Conversion Proof"
+title: "Конверсія втрат у безперервність claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Claim Continuity Loss Conversion Proof
+# Конверсія втрат у безперервність claim
 
-UK LOC HOLD: The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.
+Ланцюг доказів завершується конверсією. Deep Reach може визнати шкоду й зберегти власність, якщо працівники стають losses, доказ стає material custody, а claim лишається живим. Тому гравець несе не лише правду. Він несе те, що система вміє купувати.
 
 ## Scanner
 
-UK LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
+Відновлено штамп столу втрат. Ledger пережив працівників краще, ніж імена, які їм дав.
 
 ## Terminal
 
-UK LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
 
 ## Audio
 
-UK LOC HOLD: This is where dead workers became a clean column.
+Тут люди стали чистою колонкою.
 
 ## Field Note
 
-UA LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+Нотатка мародера: ledger може пам'ятати мертвих і все одно витрачати їх.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/uk_UA. -->

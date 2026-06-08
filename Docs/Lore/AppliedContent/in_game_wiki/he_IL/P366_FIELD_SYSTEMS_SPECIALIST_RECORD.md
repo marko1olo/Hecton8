@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Field Systems Specialist Record"
+title: "רשומת מומחה מערכות שטח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Field Systems Specialist Record
+# רשומת מומחה מערכות שטח
 
-HE LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.
+הרשומה הזאת מסבירה את הכשירות הראשונה של המפעיל בלי להפוך אותו לעד נבחר. Deep Reach הכשירה אותו סביב משאבות, דירוגי אטימה, חדרי ממסר, כרטיסי מעקף, תורי פינוי ושפת route-safe. המערכות הישנות דוחות את שמו, אבל עדיין חושפות נוהל מוכר. האשמה מתחילה כזיהוי: סדר ניקוז, דירוג מהדק, ניסוח עיכוב נקי מדי, וחדר שכשל בדיוק בסדר שלימדו אותו למנוע.
 
 ## Scanner
 
-HE LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+אישור ישן למערכות שטח. לא סגל פיקוד. עבודת תשתית עם גישה מספיקה לזהות היכן נקבר נתיב.
 
 ## Terminal
 
-HE LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+עקבת כוח אדם: מערכות שטח, תשתית פינוי, הסמכת route-safe. ההרשאה בוטלה אחרי סקירת שתיקת Aegir. מטמון הנהלים עדיין תואם את רצף המפעיל.
 
 ## Audio
 
-HE LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+אתה לא חתמת על השקר. הכרת את הדקדוק שעזר לו לעבור בדיקה.
 
 ## Field Note
 
-HE LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+התג הפסיק לפתוח דלתות. הוא לא מחק את סדר הכשל.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/he_IL. -->

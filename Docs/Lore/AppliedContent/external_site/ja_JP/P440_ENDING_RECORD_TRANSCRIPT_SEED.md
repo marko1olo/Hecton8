@@ -9,32 +9,22 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Ending Record Transcript Seed"
+title: "エンディング記録トランスクリプト"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Ending Record Transcript Seed
+# エンディング記録トランスクリプト
 
-JA LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.
+## Custodyとして書かれた終結
 
-## Scanner
+HECTON-8のエンディングは、プレイヤーに清潔な免罪を渡してはならない。記録はreceiver、payload hash、債務状態、生存状態を名指す。制度は人間よりそのフィールドをよく覚えるからだ。その冷たさは役に立つ。各結果を比較可能にしながら、真実をトロフィーにしない。
 
-JA LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+未解決のフィールドが最も重要だ。Suppression flag unknown. Truth custody unresolved. Atlas continuity unclear. Public ledger status pending. その穴が結末を正直に保つ。何かは海から出た。しかし所有は正義ではなく、生存は修復ではない。
 
-## Terminal
-
-JA LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
-
-## Audio
-
-JA LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
-
-## Field Note
-
-JA LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+この記録形式はreplayも守る。プレイヤーは知識を持って戻れるが、次のrunが力を継承してはならない。継承するのは疑い、手触り、恐れだ。記録は領収書であって、赦しではない。
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/ja_JP. -->

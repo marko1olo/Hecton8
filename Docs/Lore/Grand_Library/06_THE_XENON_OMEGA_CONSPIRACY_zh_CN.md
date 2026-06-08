@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 氙-欧米伽指令与 ATLAS-6 协议
 
 > **来源：** 鲁伊滕委员会公开调查，案件编号 CF-2148-0071。物证 44-B：Atlas-6 核心的审计日志。  

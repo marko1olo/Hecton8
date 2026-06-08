@@ -4,6 +4,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -229,11 +230,13 @@ namespace Hecton8.Construction
             }
         }
 
-        internal void EjectBufferedContents(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, ref Vector3 dropPosition)
+        internal bool CanEjectBufferedContents(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, Vector3 dropPosition)
         {
             if (owner == null || _bufferedItemCount <= 0)
-                return;
+                return true;
 
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            int persistentWorldDropCandidateCount = 0;
             for (int i = 0; i < bufferSlotCount; i++)
             {
                 ItemData item = _bufferItems[i];
@@ -241,14 +244,63 @@ namespace Hecton8.Construction
                 if (item == null || quantity <= 0)
                     continue;
 
-                int itemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
-                if (itemHashId == 0)
-                    continue;
+                int itemHashId = ItemData.ResolvePersistentHashId(item);
+                if (!owner.CanDropItemQuantityToInventoryOrWorld(itemHashId, quantity, inventory, pool, dropPosition))
+                    return false;
 
-                owner.DropItemQuantityToInventoryOrWorld(itemHashId, quantity, inventory, pool, ref dropPosition);
+                if (persistentWorldRegistry != null &&
+                    (inventory == null || !inventory.CanAcceptItemQuantity(itemHashId, quantity)) &&
+                    persistentWorldRegistry.CanRegisterDroppedItem(item, quantity, dropPosition))
+                {
+                    persistentWorldDropCandidateCount++;
+                }
             }
 
-            ClearBufferedState();
+            return persistentWorldRegistry == null ||
+                   persistentWorldRegistry.CanRegisterDroppedItemBatch(persistentWorldDropCandidateCount);
+        }
+
+        internal bool EjectBufferedContents(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, ref Vector3 dropPosition)
+        {
+            if (owner == null || _bufferedItemCount <= 0)
+                return true;
+
+            bool allDelivered = true;
+            for (int i = 0; i < bufferSlotCount; i++)
+            {
+                ItemData item = _bufferItems[i];
+                int quantity = _bufferQuantities[i];
+                if (item == null || quantity <= 0)
+                    continue;
+
+                int itemHashId = ItemData.ResolvePersistentHashId(item);
+                if (itemHashId == 0)
+                {
+                    allDelivered = false;
+                    continue;
+                }
+
+                int delivered = owner.DropItemQuantityToInventoryOrWorld(itemHashId, quantity, inventory, pool, ref dropPosition);
+                if (delivered >= quantity)
+                {
+                    _bufferItems[i] = null;
+                    _bufferQuantities[i] = 0;
+                    _bufferedItemCount = Mathf.Max(0, _bufferedItemCount - quantity);
+                    continue;
+                }
+
+                int safeDelivered = Mathf.Max(0, delivered);
+                _bufferQuantities[i] = quantity - safeDelivered;
+                _bufferedItemCount = Mathf.Max(0, _bufferedItemCount - safeDelivered);
+                allDelivered = false;
+            }
+
+            if (allDelivered)
+                ClearBufferedState();
+            else
+                _debugBufferedItemCount = _bufferedItemCount;
+
+            return allDelivered;
         }
 
         private void TryRegister()

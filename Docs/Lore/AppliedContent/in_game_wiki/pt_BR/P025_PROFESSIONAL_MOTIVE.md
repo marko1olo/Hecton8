@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Motivo profissional
 
-O jogador não é turista vazio. Começa com habilidade, contrato e razão para aceitar um dead claim; evidências tornam pessoal.
+O Marauder não é um turista vazio. A rota começa com interesse profissional, habilidade de salvage e uma razão para aceitar uma reivindicação morta. O motivo pessoal cresce por evidências, marcas familiares e a percepção de que HECTON-8 pertence ao mesmo mundo duro que tornou esse trabalho normal.
 
 ## Scanner
 

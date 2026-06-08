@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Light-Delay Authority
 
-Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather.
-
-## Scanner
-
-No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
-
-## Terminal
-
-COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
-
-## Audio
-
-Nobody ignored the call fast enough. Distance did it first.
-
-## Field Note
-
-Physics is the first censor. Priority only decides which late answer leaves first.
+A distress call on HECTON-8 is a physical shipment of meaning. It leaves a flooded mast, crosses Aegir space at light speed, waits inside relay buffers, and arrives at Black Keel through a queue that already knows how to price risk. The first delay is honest distance. The later delays are human: custody class, storm windows, liability language, and the carrier's habit of answering the asset before the person. That is why a reply can be technically fresh and still useless inside a collapsing pressure room. Players reading these logs should feel the cruelty of ordinary physics before they see corporate cruelty layered on top.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/en_US. -->

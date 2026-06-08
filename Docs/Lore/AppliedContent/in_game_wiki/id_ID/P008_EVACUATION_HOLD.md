@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Evakuasi Ditahan"
+title: "Penahanan Evakuasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Evakuasi Ditahan
+# Penahanan Evakuasi
 
-Catatan Evacuation Hold membuktikan koloni tidak sekadar lenyap karena badai atau runtuhnya tekanan. Orang, koridor, transfer medis, dan rute naik ditunda oleh aturan prioritas yang melindungi substrat, kontinuitas Atlas, dan tanggung jawab korporat sebelum evakuasi manusia.
+Catatan Penahanan Evakuasi adalah tuduhan paling langsung milik koloni. Catatan itu menunjukkan bahwa bencana bukan hanya kegagalan tekanan, timing badai, atau panik. Rute dinilai, ditunda, dan diklasifikasi ulang saat orang masih berada di dalamnya. Transfer medis menunggu otorisasi. Koridor naik kehilangan prioritas kepada perlindungan substrat. Klaim kontinuitas Atlas mengalahkan wewenang penyelamatan lokal. Jumlah manusia dilampirkan ke objek rute, sehingga sistem dapat mempertahankan koridor di atas kertas sementara tubuh di dalamnya kehabisan udara. Penahanan tidak membutuhkan penjahat di setiap pintu. Ia membutuhkan aturan yang bisa menyebut manusia sebagai kargo, koridor sebagai aset, dan penundaan sebagai dapat diterima sampai siklus tinjauan berikutnya.
 
 ## Scanner
 
-Gerbang transit darurat. Mekanisme terkunci saat kegagalan tekanan.
+Gerbang transit darurat. Kait pengunci melebur tertutup saat kegagalan tekanan; roda manual dicabut setelah penahanan otorisasi.
 
 ## Terminal
 
-EVAC ROUTE: ditunda. SUBSTRATE ROUTE: dilindungi. MEDICAL ROUTE: menunggu otorisasi. ATLAS ROUTE: konflik kontinuitas.
+RUTE EVAC: DITAHAN. RUTE MEDIS: TERTUNDA. RUTE SUBSTRAT: DILINDUNGI. KONTINUITAS ATLAS: PRIORITAS. JUMLAH MANUSIA: DILAMPIRKAN KE RUTE.
 
 ## Audio
 
-Ini bukan orang hilang. Ini rute yang ditahan.
+Mereka bukan hilang. Sistem tahu di mana mereka berada. Sistem menahan pintunya.
 
 ## Field Note
 
-Manusia mati cepat di kedalaman. Dokumen membunuh lebih lambat. Keduanya bekerja.
+Orang mati cepat di kedalaman. Otorisasi tertunda bisa hidup lebih lama daripada semua orang di koridor.
 
 <!-- In-Game Wiki; generated from P008_EVACUATION_HOLD/id_ID. -->

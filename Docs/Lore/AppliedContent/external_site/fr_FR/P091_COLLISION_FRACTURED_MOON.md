@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Lune fracturee par collision"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Lune fracturee par collision
 
-FR LOC HOLD: Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy.
-
-## Scanner
-
-FR LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
-
-## Terminal
-
-FR LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
-
-## Audio
-
-FR LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
-
-## Field Note
-
-FR LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+HECTON-8 n'etait pas un corps errant capture pour le spectacle. Elle s'est assemblee dans la ceinture de debris d'Aegir, a refroidi en lune oceanique stratifiee, puis a subi une collision oblique capable de deformer la croute sans effacer le monde. L'impact a souleve des plateaux, englouti des bassins et ouvert de longues echelles de failles ou une chimie chaude circule encore dans l'eau salee. La resonance mareale a garde ces plaies actives apres le verrouillage orbital. Voila l'origine des cicatrices lisibles: canyons de saumure, forges d'events, veines de verre de pression, cretes exposees et rares fenetres vers l'ancien fond.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/fr_FR. -->

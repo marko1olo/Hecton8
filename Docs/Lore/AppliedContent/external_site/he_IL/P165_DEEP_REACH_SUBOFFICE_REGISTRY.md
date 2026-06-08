@@ -9,32 +9,20 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Deep Reach Suboffice Registry"
+title: "מרשם תתי-משרדים של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Deep Reach Suboffice Registry
+# מרשם תתי-משרדים של Deep Reach
 
-HE LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## משרדים קטנים, השלכות גדולות
 
-## Scanner
+Deep Reach מפחידה יותר כשהיא מפסיקה להישמע כמו קונספירציה ומתחילה להישמע כמו מנהלה. המרשם שימושי כי כל שם משרד משעמם מספיק כדי להיות אמיתי. Contract Continuity Desk שומר obligations בחיים אחרי שהעובד היה מעדיף שימותו. Packet Notary Interface מחליט אם הודעה תהיה ראיה או רעש. Quarantine Hold Desk גורם לעיכוב להיראות כאחריות רפואית. Asset Silence Board הופך עדים ל-exposure. Return Action Queue מתמחר גוף מול payload, orbit ו-public risk.
 
-HE LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-HE LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-HE LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-HE LOC HOLD: Use dull names. Dull names are where liability hides.
+שום desk לא צריך לשנוא את השחקן. כל אחד צריך רק לעשות את עבודתו בתוך priority stack שנכתב לפני שהמים עלו. לכן ראיות HECTON-8 צריכות להצטבר כחותמות, routing fragments וסתירות קטנות. הפשע לא מסתתר מאחורי רוע תיאטרלי. הוא מפוזר בטפסים שנראים defensible עד שהשחקן מסדר אותם.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/he_IL. -->

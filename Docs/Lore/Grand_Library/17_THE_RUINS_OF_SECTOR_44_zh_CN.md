@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 第 44 区的废墟
 
 > **来源：** 勘测无人机制图日志 99-Delta（已恢复）。

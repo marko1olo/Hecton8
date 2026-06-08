@@ -19,19 +19,21 @@ localization_flags: 0
 
 # Domain Marks 2190
 
-Domain marks are the small signs of the larger human world: old Sol standards, Barnard repair culture, Luyten packet routing, Tau Ceti public law, Centauri hardware, and Aegir claim custody. They explain scale through objects, not lectures.
+Domain marks are how HECTON-8 shows the larger human sphere without a classroom. A safety plate may carry Sol Core formatting. A pump tool may bear a Barnard Yards service bite. A cargo tag may route through Luyten Junction custody, then land under Aegir local claim law. The player finds civilization as stamps, fonts, torque marks, insurance codes and incompatible old permissions.
+
+The marks matter because they make the colony distant, not primitive. Human law reached the water. Human industry reached the pressure hulls. Human debt reached the workers before rescue ever did. A Marauder can read those marks to learn who built a door, who owns the salvage and which authority might still answer after the room floods.
 
 ## Scanner
 
-Mixed domain markings. Sol safety plate, Barnard tool stamp, Luyten route custody.
+Mixed human-domain marks. Sol safety plate, Barnard tool stamp, Luyten custody route and Aegir claim code share the same corroded bracket.
 
 ## Terminal
 
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+DOMAIN RECONCILIATION // Sol Core safety format accepted. Barnard Yards repair stamp valid. Luyten Junction packet custody attached. Aegir local claim law overrides recovery priority after descent loss.
 
 ## Audio
 
-This place is not outside civilization. It is what civilization looks like when distance wins.
+This place is not beyond civilization. It is civilization after distance has taken the warm parts out.
 
 ## Field Note
 

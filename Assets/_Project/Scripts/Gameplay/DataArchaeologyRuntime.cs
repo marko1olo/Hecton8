@@ -445,6 +445,7 @@ namespace Hecton8.Gameplay
         private bool _hotSwapListenerRegistered;
         private ILoreUnlockSink _cachedLoreDatabase;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
 
         /// <inheritdoc />
         public int SavePriority => 206;
@@ -898,12 +899,13 @@ namespace Hecton8.Gameplay
                 _registeredColdTick = false;
             }
 
-            if (_registeredSave)
+            if (_registeredSave || _registeredSaveService != null)
             {
-                ISaveService saveService = _saveService;
+                ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
                 if (saveService != null)
                     saveService.Unregister(this);
 
+                _registeredSaveService = null;
                 _registeredSave = false;
             }
         }
@@ -935,12 +937,13 @@ namespace Hecton8.Gameplay
 
             if (serviceSlot == GlobalRegistryServiceSlot.Save)
             {
-                if (_registeredSave)
+                if (_registeredSave || _registeredSaveService != null)
                 {
-                    ISaveService previousSave = _saveService ?? previousService as ISaveService;
+                    ISaveService previousSave = _registeredSaveService != null ? _registeredSaveService : previousService as ISaveService ?? _saveService;
                     if (previousSave != null)
                         previousSave.Unregister(this);
 
+                    _registeredSaveService = null;
                     _registeredSave = false;
                 }
 
@@ -986,24 +989,41 @@ namespace Hecton8.Gameplay
 
             if (!_registeredSave)
             {
-                if (_saveService == null)
-                    _saveService = GlobalRegistry.Save;
+                ISaveService saveService = _saveService;
+                if (!IsSaveServiceUsable(saveService))
+                {
+                    saveService = GlobalRegistry.Save;
+                    _saveService = saveService;
+                }
 
-                if (_saveService == null)
+                if (!IsSaveServiceUsable(saveService))
                     return;
 
-                _saveService.Register(this);
+                saveService.Register(this);
+                _registeredSaveService = saveService;
+                _saveService = saveService;
                 _registeredSave = true;
             }
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
-            float3 runtimeDelta = -(float3)shiftData.ShiftOffset;
+            float3 runtimeDelta = -(float3)shiftOffset;
             RebaseRuntimePositions(runtimeDelta);
         }
 

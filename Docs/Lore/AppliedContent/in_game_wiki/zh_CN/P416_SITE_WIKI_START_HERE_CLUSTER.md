@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "ZH LOC HOLD: Start Here: HECTON-8"
+title: "从这里开始：HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Start Here: HECTON-8
+# 从这里开始：HECTON-8
 
-ZH LOC HOLD: Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.
+起始集群：合同、玩家身份、HECTON-8生存压力，以及Deep Reach叙事中的第一个矛盾。
 
 ## Scanner
 
-ZH LOC HOLD: Publication hub: premise, player role, first constraints and the first Deep Reach lie.
+发布导航枢纽：前提、玩家身份、最初限制，以及Deep Reach的第一处谎言。
 
 ## Terminal
 
-ZH LOC HOLD: SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.
+SITE NAV：合同进入、前Deep Reach专家、负债Marauder、受损舱体、无家庭钩子、第一处Atlas修复痕迹。
 
 ## Audio
 
-ZH LOC HOLD: You came for salvage. The ocean will make that motive too small.
+你是为salvage而来。海洋会让这个动机显得太小。
 
 ## Field Note
 
-ZH LOC HOLD: Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
+轻剧透导航从这里开始：先讲前提，再讲证据，结局只在玩家赢得入口后出现。
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/zh_CN. -->

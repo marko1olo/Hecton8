@@ -3,13 +3,13 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+poi_tags: poi.shell_sealant_growth;poi.pressure_fracture_patch
 biome_tags: biome.atlas;biome.pressure
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Crescimento pressurizado de selante de concha"
+title: "Crescimento de selante de concha sob pressão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Crescimento pressurizado de selante de concha
+# Crescimento de selante de concha sob pressão
 
-Selante de concha começa como química emergencial: espuma de remendo, lama mineral e pressão forçando material para dentro da brecha. Na água de HECTON-8, crescimento local pode colonizar o remendo e endurecer em concha em camadas.
-
-Atlas marca sucesso se a perda de pressão cai. Marauders ligam para largura de retorno, folga de ferramentas e o que a concha prendeu do outro lado. Um bom selo pode encalhar uma rota, esconder água ruim ou preservar uma sala morta por tempo bastante para suas máquinas responderem.
+O crescimento de selante de concha sob pressão é o erro mais limpo de Atlas: o reparo funciona. Camadas de silicato de cálcio e resina biopolimérica fecham uma fratura, seguram pressão estática e salvam uma sala que deveria ter afogado. O mesmo crescimento pode enterrar etiquetas, alças, setas de giz, arranhões e a última rota humana pela estação.
 
 ## Scanner
 
-Laminado de concha sobre rachadura de pressão. Crescimento de cálcio-silicato fundido com espuma de remendo Atlas. Flexiona sob carga.
+Selante em camadas fecha a fratura e enterra marcas de rota dos trabalhadores sob concha branca.
 
 ## Terminal
 
-EVENTO DE SELANTE // Espuma de remendo emergencial semeou concha mineral pela brecha P-4. Taxa de crescimento acima da tabela estática. Selo mantém na pressão atual; folga da rota reduzida em 31 por cento.
+CONFLITO DE REPARO: vazamento reduzido, fronteira de pressão melhorada, marcações de saída ocultas. Cortar a concha pode reabrir caminho de inundação.
 
 ## Audio
 
-A parede sarou. Esse é o problema. Sarou para dentro.
+A sala sobreviveu. A saída não.
 
 ## Field Note
 
-Marque remendos de concha na entrada. Na saída, assuma que ficaram mais estreitos.
+Melhor em portas, rotas de rastejo e escolhas de pressão em que reparo e dano são o mesmo objeto.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/pt_BR. -->

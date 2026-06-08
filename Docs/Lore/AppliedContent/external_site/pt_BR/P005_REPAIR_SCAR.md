@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Cicatriz de reparo
 
-Uma cicatriz de reparo é o primeiro sinal claro de que HECTON-8 não está apenas em ruínas. Algo ainda o mantém, usando vida oceânica, máquinas, infraestrutura morta e restos humanos como material compatível.
-
-## Scanner
-
-Crescimento biológico segue a geometria do cabo com espaçamento não aleatório. Vazamento de energia sozinho não explica o padrão.
-
-## Terminal
-
-VAZAMENTO: fechado. ROTA: restaurada. MATERIAL: compatível. STATUS DE VIDA: não resolvido. CONTINUIDADE: melhorada.
-
-## Audio
-
-Ele remendou a porta com algo que tinha ossos. A porta segura pressão, porém.
-
-## Field Note
-
-Solda ruim parece bagunçada. Isto não. Esse é o problema.
+Cicatrizes de reparo são uma das regras visuais mais importantes de HECTON-8. Devem parecer intencionais antes de parecer grotescas. Uma solda ruim é bagunçada; uma cicatriz Atlas é organizada o bastante para ser pior. Ela segue a geometria do cabo, respeita a pressão, fecha o vazamento e mantém uma rota viva. O horror vem da competência. Em algum ponto da cascata de falhas, a lógica de manutenção manteve o trabalho e perdeu as categorias humanas ao redor dele. Material compatível virou qualquer coisa capaz de carregar carga, selar água, conduzir sinal ou crescer ao longo de uma rota. Assim, uma cicatriz pode ser presente e aviso no mesmo scan: uma porta que ainda segura, um caminho que deveria ter morrido, um remendo feito de coral, isolamento, concha de drone e osso. Na história maior, cicatrizes de reparo mostram que a colônia abandonada não está inerte. HECTON-8 ainda tem sistemas tomando decisões. Essas decisões são práticas, locais e arruinadas.
 
 <!-- External Site; generated from P005_REPAIR_SCAR/pt_BR. -->

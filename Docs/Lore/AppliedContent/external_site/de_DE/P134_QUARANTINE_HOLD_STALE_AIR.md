@@ -9,32 +9,18 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "Quarantäne-Hold: abgestandene Luft"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# Quarantäne-Hold: abgestandene Luft
 
-DE LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+Quarantäne-Hold ist der leiseste falsche Ausstieg. Er braucht keinen Bösewicht im Raum. Das Formular sagt lebend geborgen, der Luftzähler sagt Ration aktiv, und die nächste Tür öffnet erst nach Kontaminationsprüfung, claimant-Anfechtung und Versicherungsprüfung.
 
-## Scanner
-
-DE LOC HOLD: You are alive, sealed, and still not free.
-
-## Terminal
-
-DE LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-DE LOC HOLD: The hatch opens only to another closed hatch.
-
-## Field Note
-
-DE LOC HOLD: This is the bureaucratic version of drowning.
+Das Ergebnis ist grausam, weil es verteidigbar ist. Niemand hat den Zeugen getötet. Niemand hat die Probe zerstört. Das System lässt nur jede Aussage länger warten, als Körper je warten konnten. Der Spieler überlebt den Ozean und betritt einen versiegelten Korridor aus Verfahren.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/de_DE. -->

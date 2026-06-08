@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Drowned Crust Strata Guide
 
-HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.
+Drowned Crust Strata Guide makes HECTON-8's seabed feel built and broken: terrain, salvage routes and mineral samples all come from the same layered pressure history.
 
 ## Scanner
 
-Flooded strata expose old industry, pressure-glass seams and unstable mineral bands. Scan fracture lines before cutting.
+Flooded strata expose old cut marks, pressure-glass seams and mineral bands that do not fail in the same direction twice.
 
 ## Terminal
 
-FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.
+FIELD GUIDE: HECTON-8's drowned crust is stacked settlement rock, collapsed ice memory, pressure glass and extraction scars under moving brine. Fracture lines outrank clean surfaces.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The map is not terrain. It is a stack of drownings.
 
 ## Field Note
 
-If a band rings hollow, do not trust the flat face. Mark the fracture, take the sample, and leave the wall holding.
+If a band rings hollow, do not trust the flat face. Mark the fracture, take the sample, leave the wall holding.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/en_US. -->

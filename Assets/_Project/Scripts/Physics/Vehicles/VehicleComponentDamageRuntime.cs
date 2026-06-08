@@ -25,6 +25,7 @@ namespace Hecton8.Physics.Vehicles
         private const uint HazardLaneHash = 0x565A4844u; // VZHD
         private const uint VehicleFaultEventHash = 0x56444654u; // VDFT
         private const uint VehicleFaultDumpHash = 0x56534654u; // VSFT
+        private const double DefaultSeaLevelAupY = 14.02d;
         private static readonly ulong DamageMutationGuardMask =
             MutationGuardBit(VehicleDamageConstants.GridWriteBuffer) |
             MutationGuardBit(VehicleDamageConstants.GridReadBuffer) |
@@ -1280,8 +1281,7 @@ namespace Hecton8.Physics.Vehicles
             if (!math.all(math.isfinite(rootAup)))
                 return 0f;
 
-            const double seaLevelAupY = 0d;
-            double depthMeters = seaLevelAupY - rootAup.y;
+            double depthMeters = DefaultSeaLevelAupY - rootAup.y;
             if (!math.isfinite(depthMeters))
                 return 0f;
 

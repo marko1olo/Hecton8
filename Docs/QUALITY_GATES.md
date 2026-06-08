@@ -160,16 +160,74 @@ Scatter:
 | breadth control | net-new systems not needed by the route are parked | Yes |
 | marketing send | no public send-ready state without real screenshot/clip/demo proof | Yes |
 
+## Visual Reference Parity Gate
+
+Run for player-visible water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero-biome work before accepting a visual result.
+
+| Gate | Command / proof | Blocks visual acceptance |
+|---|---|---|
+| mandatory reference owner matrix | `python -B Tools/ValidateVisualReferenceOwnerMatrix.py` | Yes |
+| current rejection matrix | `python -B Tools/ValidateVisualReferenceCurrentRejectionMatrix.py` | Yes while it reports rejection-only state |
+| visual validator self-tests | `python -B Tools/test_validate_visual_reference_owner_matrix.py`; `python -B Tools/test_validate_visual_reference_current_rejection_matrix.py` | Yes after changing visual reference validators |
+| repeated shot-list comparison | current screenshot/clip set must repeat the failed route class and compare against mandatory references plus April/previously-in-development internal baseline where present | Yes |
+
+Rules:
+
+- Raw diagnostic MCP screenshots, static reports, and near-identical capture galleries can reject bad visuals only. They cannot accept visual quality.
+- If current captures are below the mandatory reference floor or April/previously-in-development baseline on base geometry, material truth, waterline/contact, sky/Aegir/terrain readability, route cues, or compact-tier composition, declare `VISUAL_ROUTE_INVALID`.
+- After `VISUAL_ROUTE_INVALID`, the next work must recover or replace the owner stack: scene object, Crest/ocean binding, terrain source, texture/material source, lighting, camera composition, or asset package. Tint, fog, bloom, exposure, grading, and screenshot staging do not count as recovery.
+- Acceptance must preserve performance gates: compact-tier beauty is required, not optional.
+
+## AppliedLore Content Gate
+
+Use for in-world prose, codex/wiki/site articles, terminal notes, scanner text, diaries, audio transcript packets, and AppliedContent release sets.
+
+| Gate | Command / proof | Blocks content completion |
+|---|---|---|
+| Grand Library source quality | `python -B Tools/ValidateGrandLibraryLoreQuality.py --article-glob <glob> --require-status-comment` | Yes for Grand Library article work |
+| production packet source guard | `python -B Tools/AppliedLoreProductionSourceGuard.py --release-glob <RS*>` | Yes when `.production.md` packet sources are present; packet-JSON releases rely on import/page/coverage gates |
+| production source guard self-test | `python -B Tools/AppliedLoreProductionSourceGuard.py --self-test` | Yes after changing the guard |
+| Data Monolith import freshness | `python -B Tools/AppliedLoreImporter.py --check` | Yes when packet JSON/import tables are touched |
+| runtime route-card export freshness | `python -B Tools/AppliedLoreRouteCardExporter.py --check` | Yes when route cards, packet JSON, or DataMonolith route sources are touched |
+| localized page freshness | `python -B Tools/AppliedLorePageExporter.py --packet-glob <P*> --check` | Yes when site/wiki pages are expected |
+| packet coverage | `python -B Tools/AppliedLorePacketCoverageAudit.py --packet-id <P*>` | Yes when a packet claims production coverage |
+| production packet inventory | `python -B Tools/AppliedLorePacketCoverageAudit.py --inventory` and, for broad packet/import/export changes, `python -B Tools/AppliedLorePacketCoverageAudit.py --all --sample-limit 3` | Yes when a task changes canonical-ready status, packet manifests, importer selection, route-card export, or generated publication indexes |
+
+Rules:
+
+- A lore `CONTENT_ARTIFACT` is not complete if the only output is chat prose, a source brief, route card, outline, validator log, or packet plan.
+- Unless the task explicitly says English-only, production content carries all 15 locale rows. Non-English agent-generated rows remain `draft_machine_or_llm` unless native review proof exists.
+- Completion names concrete files under `Docs/Lore/Grand_Library`, `Docs/Lore/AppliedContent`, `Assets/_SourceData/DataMonolith/Narrative`, or the generated page/binding/route-card outputs. If a canon fact is missing, stop as `BLOCKER` with the exact missing source.
+- Runtime route-card export may only contain baked packet IDs. Source CSVs may carry draft prerequisite refs, but `AppliedLoreRouteCardExporter.py` must prune non-baked refs from DataMonolith output and `AppliedLorePacketCoverageAudit.py --all` must pass against the runtime-pruned export.
+
 ## Tasklocal Lane Contract Gate
 
 Run only for new or materially rewritten serious `taskslocal` batches before user distribution or controller dispatch. Do not run strict mode across all historical `taskslocal` folders by default.
 
 | Gate | Command / proof | Blocks dispatch |
 |---|---|---|
-| lane contract strict check | `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict` | Yes |
+| lane contract strict check | `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict`; requires `LANE_CLASS`, lane-compatible `DELIVERABLE_CLASS`, `VALID_COMPLETION`, `INVALID_COMPLETION`, `KILL_SWITCH`, executable lane-specific `PROOF_ROUTE`, and `EVIDENCE_BUDGET` | Yes |
 | legacy inspection | `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --allow-legacy` | No, unless the batch is being reissued |
 | exported subagent task | strict check applies if a subagent becomes a standalone task file | Yes |
 | internal bounded subagent | governed by root subagent rules; no separate batch roster required | No |
+
+## Agent Rule Routing Gate
+
+Run after root authority, route bible index, routing docs, doc governance, quality gates, local agent shims, or mandate registry-surface edits.
+
+| Gate | Command / proof | Blocks reporting |
+|---|---|---|
+| agent rule routing lint | `python -B Tools/Docs/TestAgentRuleRouting.py`; checks root mirror byte sync, authority read-order hooks, current live-path references, unguarded upper-authority/route-bible ambiguity/readiness/runtime tokens, subagent/orchestrator boundaries, lane contracts, mandate gate surfacing, and content-production gates | Yes |
+
+## Mandate Registry Gate
+
+Run after `.agents-skills/*.txt` or `.agents-skills/README.md` edits.
+
+| Gate | Command / proof | Blocks dispatch |
+|---|---|---|
+| mandate registry lint | `python -B Tools/Docs/TestMandateRegistry.py`; checks inventory count, command-language discipline, weak wording, ambiguous escape clauses, false readiness labels, truncated mandate bodies, visual parity inheritance for player-visible mandates, dangerous active runtime API examples, and proof/evidence language | Yes |
+| mandate registry lint self-test | `python -B Tools/Docs/TestMandateRegistry.py --self-test` | Yes after changing the mandate registry lint tool |
+| strict mandate format cleanup | `python -B Tools/Docs/TestMandateRegistry.py --strict-format` | Yes only when a mandate-format cleanup is the task |
 
 ## Signoff Rule
 

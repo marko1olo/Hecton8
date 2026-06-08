@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold sealant patch gun"
+title: "Пистолет холодного герметика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold sealant patch gun
+# Пистолет холодного герметика
 
-Cold sealant patch gun - второй opening tool. Он чинит малые leaks, стабилизирует capsule и учит лимитам. Игрок узнает, что каждый repair имеет rating, а HECTON-8 наказывает repairs вне этого rating.
+Пистолет холодного герметика дает первый честный ремонт после помпы. Он может остановить точечную течь или удержать край прокладки достаточно долго, чтобы вернуть маленькую комнату в работу, но не делает поврежденную конструкцию безопасной. Полезный урок написан на рейтинге: HECTON-8 наказывает каждый ремонт вне его класса давления.
 
 ## Scanner
 
-Patch gun. Рассчитан на pinholes, не на чудеса.
+Пистолет холодной заплатки. Картридж рассчитан только на точечные течи и спокойные швы; активный сдвиг сорвет слой.
 
 ## Terminal
 
-PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+ПРЕДЕЛ ЗАПЛАТКИ / ХОЛОДНЫЙ ГЕРМЕТИК: схватывается на мокрой низкоглубинной обшивке после протирки поверхности. Разрешено для точечных течей, кромок прокладок и тихого сочения шва. Отклонить активные сдвиговые трещины, теплое цветение blue debt и подвижные кабельные швы.
 
 ## Audio
 
-Заплатка - не безопасность. Это countdown, который выглядит твердым.
+Не называй это герметично. Называй это временем.
 
 ## Field Note
 
-Sealant repairs должны покупать время, а не отменять pressure.
+Заплатка покупает минуты. Если трещина еще движется, потрать эти минуты на отход.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/ru_RU. -->

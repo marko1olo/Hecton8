@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "Partial Exit: Same-Seed Return"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Partial Exit Same-Seed Return
+# Partial Exit: Same-Seed Return
 
-Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.
+Partial Exit is a recovery window, not a reset. The player gets air, repair time and distance from the water, then returns to the same HECTON-8 with the same routes, scars and unresolved evidence. Knowledge persists as pressure, not as inherited power.
 
 ## Scanner
 
-Extraction possible. Closure not included.
+Temporary pickup vector confirmed. Same ocean remains under the same contract.
 
 ## Terminal
 
-PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
+PARTIAL EXIT NOTICE: temporary Black Keel pickup accepted; same-seed return authorized under lien extension; route warnings, custody records and open evidence packets persist; geology and world truth remain unchanged.
 
 ## Audio
 
-You left the pressure. You did not leave the contract.
+You left the pressure. The contract kept your chair warm.
 
 ## Field Note
 
-Let the player breathe, then make the same ocean still be there.
+A breath in orbit is not freedom when the return slot is already billed.
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/en_US. -->

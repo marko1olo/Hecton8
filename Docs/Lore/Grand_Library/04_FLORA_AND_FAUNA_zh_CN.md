@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 当地生物群系：动植物与生态崩溃
 
 > **来源：** 回收的PDA，“冥河”级降落舱，代号“拉撒路”。  

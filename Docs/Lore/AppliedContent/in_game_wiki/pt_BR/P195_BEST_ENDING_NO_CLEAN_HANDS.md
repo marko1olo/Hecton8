@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "Melhor final: sem mãos limpas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# Melhor final: sem mãos limpas
 
-PT LOC HOLD: No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.
+Sem Mãos Limpas é a regra de tom final. HECTON-8 recompensa entendimento, preparo e trabalho de testemunha, não pureza. O melhor final deve fazer o jogador se sentir competente e implicado ao mesmo tempo.
 
 ## Scanner
 
-PT LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
+O melhor final deve salvar algo real sem fingir que a inocência sobreviveu à descida.
 
 ## Terminal
 
-PT LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
+REGRA SEM MÃOS LIMPAS: critérios do melhor final conhecido exigem agência, prova, consequência e resíduo. Se toda parte ferida está satisfeita, o final esqueceu HECTON-8.
 
 ## Audio
 
-PT LOC HOLD: If it feels clean, it forgot where you are.
+Se parece limpo, esqueceu onde você está.
 
 ## Field Note
 
-PT LOC HOLD: A strong ending lets the player save something real and lose something real.
+Uma rota forte pode expor verdade, negar Deep Reach, preservar parte da ecologia e libertar o jogador, mas o custo precisa continuar visível.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/pt_BR. -->

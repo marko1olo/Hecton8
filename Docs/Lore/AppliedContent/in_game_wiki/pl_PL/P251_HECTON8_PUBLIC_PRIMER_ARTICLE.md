@@ -9,32 +9,35 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: HECTON-8 Public Primer Article"
+title: "Publiczny wstęp do HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: HECTON-8 Public Primer Article
+# Publiczny wstęp do HECTON-8
 
-PL LOC HOLD: The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
+HECTON-8 zostaje przedstawiony jako miejsce warte przetrwania, nie tylko jako scena zbrodni. Księżyc należy do systemu Aegir: zimny, pływowy, cenny i niewygodnie daleki od szybkiego ratunku. Jego fotyczne półki mogą być przejrzyste i żywe, z hardwarem kolonii widocznym przez jasną wodę. Pod tym pięknem stare trasy Deep Reach schodzą do pompowni, korytarzy ciśnieniowych, solankowych rozcięć, połamanych pól przekaźnikowych i maszyn, które pracowały dalej po tym, jak ludzie przestali odpowiadać. Publiczny primer pozostaje bez spoilerów. Może powiedzieć, że gracz wraca jako Marauder związany długiem. Może powiedzieć, że kolonia zawiodła, kontrakt salvage jest przymusowy, a ocean trzyma dowody. Nie ujawnia końcowego wyboru payload ani pełnego pytania Atlas. Chodzi o zaproszenie gracza do świata bez spiłowania mu zębów.
 
 ## Scanner
 
-PL LOC HOLD: A public primer is allowed to be beautiful. It is not allowed to lie.
+Zgoda na publiczny primer: najpierw pokazać księżyc jako piękny. Nie sprzedawać oceanu przez ukrywanie zbrodni.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+PUBLICZNY PRIMER / BEZ SPOILERÓW
+dozwolone: oceaniczny księżyc Aegir, jasne półki, zatopiona kolonia przemysłowa, powrót Maraudera po salvage, ruiny Deep Reach
+zablokowane: końcowa trasa payload, rozwiązanie Atlas, konsekwencje odbiorcy zakończenia
+uwaga redakcyjna: najpierw piękno, potem dowód, żadnej fałszywej obietnicy ratunku.
 
 ## Audio
 
-PL LOC HOLD: First sell the ocean. Then earn the crime.
+Płytka woda nie jest maską. To jest to, co niemal zdołali zbudować, zanim głębia zachowała rachunki.
 
 ## Field Note
 
-PL LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+Najpierw sprzedaj ocean. Potem niech rdza, tagi i stemple tras dowiodą, że ocean nie jest niewinny.
 
 <!-- In-Game Wiki; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/pl_PL. -->

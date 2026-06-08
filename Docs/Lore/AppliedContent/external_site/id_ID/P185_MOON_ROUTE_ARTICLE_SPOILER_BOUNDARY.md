@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "Garis Redaksi Cekungan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# Garis Redaksi Cekungan Atlas
 
-ID LOC HOLD: Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons.
+Garis Redaksi Cekungan Atlas menandai apa yang boleh dikatakan cakupan publik Aegir tentang bulan, rute, dan tekanan penyelamatan sambil menjaga cekungan tersegel di luar peta terbuka.
 
 ## Scanner
 
-ID LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+Atlas bulan publik dapat menyebut bahaya langit; ia tidak boleh mencetak apa yang dilakukan payload cekungan Atlas.
 
 ## Terminal
 
-ID LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+REDAKSI ATLAS: halaman bulan publik boleh mencantumkan nama, jendela rute, bahaya, salvage economy, dan fakta bencana HECTON-8. Efek payload, perilaku basin receiver, dan hasil keputusan akhir tetap berpagar.
 
 ## Audio
 
-ID LOC HOLD: Publish the sky. Redact the bottom.
+Terbitkan langit. Segel dasar.
 
 ## Field Note
 
-ID LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+Di atas awan, rute bersifat publik. Di bawah cekungan, setiap jawaban masih terkunci.
 
 <!-- External Site; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/id_ID. -->

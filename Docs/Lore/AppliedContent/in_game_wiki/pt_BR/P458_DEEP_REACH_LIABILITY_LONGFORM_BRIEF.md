@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "PT LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: responsabilidade sob água real"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: responsabilidade sob água real
 
-PT LOC HOLD: Deep Reach guilt is strongest where clean reports meet broken hardware. The flood was real; the avoidable part is recorded in margins, clocks, doors and custody labels.
+A Deep Reach é culpada sem oceano falso. Maré, criosfera, tempestade e química de pressão causaram o desastre; procedimento escolheu margens ruins e limpou papel.
 
 ## Scanner
 
-PT LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+Brief público de prova. A física da Great Tide é real; a responsabilidade aparece em margens aceitas, evacuação insuficiente, prioridade Atlas, quarentena e conversão de perdas.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+NÓ PÚBLICO DE RESPONSABILIDADE // DEEP REACH. Cadeia: Varnek margin acceptance, Arendt Atlas waiver, Haldane quarantine hold, Ibarra loss ledger, Sato-Ren return action.
 
 ## Audio
 
-PT LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Áudio jurídico recuperado: "Não chame de atraso. Chame de review. A água fornecerá o intervalo."
 
 ## Field Note
 
-PT LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+Nota de saqueador: a física matou. O procedimento decidiu quem contava como recoverable.
 
 <!-- In-Game Wiki; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/pt_BR. -->

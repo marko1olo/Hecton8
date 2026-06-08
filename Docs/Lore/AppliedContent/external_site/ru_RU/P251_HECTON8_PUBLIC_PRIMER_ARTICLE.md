@@ -14,27 +14,30 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Публичный вводный материал HECTON-8
 
-Публичная статья: HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic.
+HECTON-8 — утонувшая индустриальная океанская луна в системе Aegir. Она красива раньше, чем становится уликой: яркие шельфы, живое мелководье, жесткий синий свет, кости колонии под давлением и более глубокие руины, где бумаги Deep Reach все еще спорят с машинами. Вы прибываете как Marauder под контрактным давлением, не как турист и не как избранный спаситель. Публичная завязка проста: выжить в океане, прочитать обломки, вернуть то, что еще может говорить, и понять, почему спасение может слышать вас задолго до того, как доберется.
 
 ## Scanner
 
-Сканер: A public primer is allowed to be beautiful. It is not allowed to lie.
+Разрешение публичного праймера: сначала показать луну красивой. Не продавать океан за счет сокрытия преступления.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+ПУБЛИЧНЫЙ ПРАЙМЕР / БЕЗ СПОЙЛЕРОВ
+разрешено: океанская луна Aegir, яркие шельфы, утонувшая индустриальная колония, возвращение Marauder за salvage, руины Deep Reach
+закрыто: финальный маршрут payload, развязка Atlas, последствия receiver в концовках
+заметка редактора: сначала красота, потом улики, без ложного обещания спасения.
 
 ## Audio
 
-Аудио: First sell the ocean. Then earn the crime.
+Мелководье не маска. Это то, что они почти успели построить, пока глубина не сохранила квитанции.
 
 ## Field Note
 
-RU LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+Сначала продай океан. Потом пусть ржавчина, бирки и маршрутные штампы докажут, что океан не невинен.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/ru_RU. -->

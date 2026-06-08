@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "تجميع سلسلة الهروب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# تجميع سلسلة الهروب
 
-AR LOC HOLD: Escape Chain Assembly defines the physical reason the campaign descends deeper instead of ending at the surface: every meaningful escape component lives in drowned infrastructure, mid-depth fabrication, or Atlas/Seed authority systems.
+تجميع سلسلة الهروب هو العمود الهندسي للحملة. لا تقدم HECTON-8 استخراجاً سطحياً نظيفاً بعد أول إصلاح؛ تصبح المغادرة مجموعة من مكونات مادية وقانونية وإثباتية موزعة عبر بنية تحتية غارقة. يمنح ذلك الهبوط الطويل سبباً عملياً وأخلاقياً: اللاعب لا يغادر المحيط فقط، بل يجمع طريقاً يثبت لماذا لم تمتلك المستعمرة مخرجاً عادلاً قط.
 
 ## Scanner
 
-AR LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+المغادرة تحتاج إلى ستة براهين صلبة: مرحل، ختم، توجيه، شحنة صعود، مصافحة قانونية وحمولة لا يستطيع الناقل تجاهلها.
 
 ## Terminal
 
-AR LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+حزمة الصعود: عمود الترحيل الصوتي مفقود. تصنيف حلقة التثبيت غير كاف. نواة التوجيه غائبة. مهد الشحنة فارغ. مصافحة الحجر غير محلولة. حمولة الأدلة اختيارية لكنها تغير سلطة الاستعادة.
 
 ## Audio
 
-AR LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+أنت لا تصلح الكبسولة. أنت تبني أول مخرج صادق لم تمتلكه المستعمرة قط.
 
 ## Field Note
 
-AR LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+الطريق إلى الأعلى يُبنى من قطع لم تُصمم قط لتسمح للعمال بالمغادرة وحدهم.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/ar_SA. -->

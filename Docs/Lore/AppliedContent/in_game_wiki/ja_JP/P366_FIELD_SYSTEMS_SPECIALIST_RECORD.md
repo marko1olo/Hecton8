@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Field Systems Specialist Record"
+title: "フィールドシステム担当記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Field Systems Specialist Record
+# フィールドシステム担当記録
 
-JA LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.
+この記録は、オペレーターの最初の有能さを、選ばれた証人という神話にせず説明する。Deep Reachはポンプ、シール等級、リレー室、バイパスカード、避難待ち列、route-safe文言の近くで彼らを訓練した。古いシステムは名前を拒むが、見覚えのある手順だけは漏らす。罪悪感は認識として始まる。排水順、クランプ等級、きれいすぎる保留文、そして防ぐよう教えられた順番で壊れた部屋。
 
 ## Scanner
 
-JA LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+古いフィールドシステム資格。指揮要員ではない。どこで経路が埋められたかを見抜けるだけのアクセスを持った、インフラ作業員の記録。
 
 ## Terminal
 
-JA LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+人員痕跡: フィールドシステム、避難インフラ、route-safe認証。Aegir沈黙審査後に許可は失効。手順キャッシュはまだオペレーターの作業順と一致。
 
 ## Audio
 
-JA LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+お前は嘘に署名していない。その嘘が検査を通る文法を知っていただけだ。
 
 ## Field Note
 
-JP LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+バッジは扉を開けなくなった。だが故障の順番までは忘れさせなかった。
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/ja_JP. -->

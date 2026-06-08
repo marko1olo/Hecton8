@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ES LOC HOLD: Colonia y trabajadores"
+title: "Colonia y trabajadores"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Colonia y trabajadores
+# Colonia y trabajadores
 
-ES LOC HOLD: Deep Reach archivó tormenta, colapso, evacuación autónoma fallida, rescate Atlas y datos perdidos; los registros de HECTON-8 mantienen los nombres unidos a bombas, relay, rutas brine, triage y vent-forge.
-
-## Scanner
-
-ES LOC HOLD: WORKER INDEX // Cinco registros nominales ligados a ruta. pump, relay, brine, triage, forge. Conservar tag chain antes de retirar hardware.
-
-## Terminal
-
-ES LOC HOLD: KEELMARK LOSS DESK: conservar name tags ligados a route, claim, custody o pressure work.
-
-## Audio
-
-ES LOC HOLD: Mara Venn, pump chief: si la pump canta limpio, regístralo. Si deja de cantar, corre hacia arriba.
-
-## Field Note
-
-ES LOC HOLD: No familia. Trabajo. Un nombre en una pump card explica por qué una puerta siguió abierta.
+El cluster de colonia y trabajadores impide que HECTON-8 se vuelva un mapa de salas vacías. La versión oficial de Deep Reach mete a las personas en categorías de pérdida, pero los registros supervivientes las conservan por su trabajo: pump chief en un pressure board, relay operator en witness trays, brine crew en rutas de sal y ration ledgers, triage technician en repair tags, forge shift en rejects que nadie tuvo tiempo de ocultar. No son ganchos familiares para el protagonista. Son pruebas laborales. El Marauder lee por qué una puerta quedó abierta, por qué una bomba arrancó tarde y por qué un name tag pequeño puede pesar más que un loss summary limpio.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/es_ES. -->

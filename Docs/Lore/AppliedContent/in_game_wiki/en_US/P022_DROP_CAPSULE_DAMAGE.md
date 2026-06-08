@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Drop Capsule Damage
 
-The player reaches HECTON-8 by drop capsule. The crash leaves enough systems alive for shelter, power and logs, but destroys the ascent route. Early escape becomes an engineering chain, not a button.
+The drop capsule gets the Marauder to HECTON-8. The crash leaves enough systems alive for shelter, power and logs, but destroys ascent hardware. Early escape becomes an engineering chain, not a button.
 
 ## Scanner
 

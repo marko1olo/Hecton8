@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "Pertanyaan Akhir: Pemutusan, Belas Kasihan, Pencurian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# Pertanyaan Akhir: Pemutusan, Belas Kasihan, Pencurian
 
-ID LOC HOLD: Severance forces the player to define what kind of life Atlas-ocean continuity has become.
+Pemutusan memaksa pemain menentukan apa jadinya kontinuitas Atlas-laut. Jika hanya alat rusak, memotong adalah perbaikan. Jika sistem hidup, memotong adalah membunuh. Jika ia kesaksian, memotong mungkin menghancurkan bukti.
 
 ## Scanner
 
-ID LOC HOLD: Severing Atlas is not a simple shutdown button.
+Memotong Atlas bukan tombol shutdown. Itu operasi tanpa anatomi bersih.
 
 ## Terminal
 
-ID LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
+SUMBU PEMUTUSAN: putus kontinuitas Atlas, isolasi ekologi tekanan, tolak routing payload Deep Reach, pertaruhkan runtuhnya cekungan, atau simpan hanya memori perbaikan parsial. Makna bergantung pada bukti yang dibawa ke ruang final.
 
 ## Audio
 
-ID LOC HOLD: A clean switch would be merciful. You do not get one.
+Saklar bersih akan terasa penuh belas kasihan. Kau tidak mendapatkannya.
 
 ## Field Note
 
-ID LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+Tindakan yang sama bisa membebaskan pekerja terjebak, membunuh hidup laut-mesin, menolak Deep Reach, dan mencuri infrastruktur hidup dari dirinya sendiri.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/id_ID. -->

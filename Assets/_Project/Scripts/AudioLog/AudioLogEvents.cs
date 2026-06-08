@@ -23,7 +23,7 @@ namespace Hecton8.Narrative
         [FieldOffset(16)] public float DurationSeconds;
         [FieldOffset(20)] public AudioLogEventType Type;
         [FieldOffset(21)] private byte _pad0;
-        [FieldOffset(22)] private ushort _pad1;
+        [FieldOffset(22)] public ushort Reserved;
         [FieldOffset(24)] public AudioGlitchParametersDTO Glitch;
     }
 
@@ -178,8 +178,12 @@ namespace Hecton8.Narrative
         private static readonly AudioLogReferenceSlot[] _referenceSlots = new AudioLogReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[128] — audio-log sidecar occupancy map — owner: AudioLogEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
+        // COLD ALLOC: ushort[128] - reference slot generations invalidate stale payload handles after sidecar reuse - owner: AudioLogEvents
+        private static readonly ushort[] _referenceSlotGenerations = new ushort[ReferenceSlotCapacity];
         private static NativeQueue<AudioLogEventPayload> _pendingEvents;
         private static NativeQueue<AudioLogEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
         private static int _pendingEventCount;
@@ -305,7 +309,7 @@ namespace Hecton8.Narrative
                     ApplyDeferredListenerMutations();
                 }
 
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
             }
 
             if (_pendingEvents.IsEmpty())
@@ -318,7 +322,7 @@ namespace Hecton8.Narrative
         public static bool TryResolveLogData(in AudioLogEventPayload payload, out AudioLogData data)
         {
             data = null;
-            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+            if (!IsReferenceSlotPayloadCurrent(in payload))
                 return false;
 
             data = _referenceSlots[payload.ReferenceSlot].LogData;
@@ -382,6 +386,82 @@ namespace Hecton8.Narrative
             return Enqueue(AudioLogEventType.PlaybackCompleted, logHash, 0f, in glitch, data);
         }
 
+        private static bool Enqueue(
+            AudioLogEventType type,
+            uint logHash,
+            float durationSeconds,
+            in AudioGlitchParametersDTO glitch,
+            AudioLogData data)
+        {
+            EnsureInitialized();
+
+            if (_isDispatching)
+            {
+                if (_nextFrameEventCount >= PendingEventCapacity)
+                {
+                    ReportQueueOverflow(type);
+                    return false;
+                }
+            }
+            else if (_pendingEventCount >= PendingEventCapacity)
+            {
+                ReportQueueOverflow(type);
+                return false;
+            }
+
+            int referenceSlot = -1;
+            ushort referenceGeneration = 0;
+            if (data != null)
+            {
+                if (!TryReserveReferenceSlot(out referenceSlot, out referenceGeneration))
+                {
+                    ReportReferenceSlotOverflow(type);
+                    return false;
+                }
+
+                _referenceSlots[referenceSlot].LogData = data;
+            }
+
+            float safeDuration = durationSeconds;
+            if (float.IsNaN(safeDuration) || safeDuration < 0f)
+                safeDuration = 0f;
+            else if (safeDuration > MaxEventDurationSeconds)
+                safeDuration = MaxEventDurationSeconds;
+
+            AudioLogEventPayload payload = new AudioLogEventPayload
+            {
+                TimestampTicks = unchecked((ulong)Stopwatch.GetTimestamp()),
+                LogHash = logHash,
+                ReferenceSlot = referenceSlot,
+                DurationSeconds = safeDuration,
+                Type = type,
+                Reserved = referenceGeneration,
+                Glitch = AudioGlitchParametersDTO.Sanitize(in glitch)
+            };
+
+            try
+            {
+                if (_isDispatching)
+                {
+                    _nextFrameEvents.Enqueue(payload);
+                    _nextFrameEventCount++;
+                }
+                else
+                {
+                    _pendingEvents.Enqueue(payload);
+                    _pendingEventCount++;
+                }
+            }
+            catch
+            {
+                if (referenceSlot >= 0)
+                    ReleaseReferenceSlot(referenceSlot);
+                throw;
+            }
+
+            return true;
+        }
+
         private static void EnsureInitialized()
         {
             try
@@ -389,14 +469,14 @@ namespace Hecton8.Narrative
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<AudioLogEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — deferred audio-log event lane flushed by SystemDispatcher LateUpdate — owner: AudioLogEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<AudioLogEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — next-frame audio-log event lane prevents same-frame reentrant dispatch — owner: AudioLogEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
             }
@@ -413,10 +493,12 @@ namespace Hecton8.Narrative
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(AudioLogEvents),
@@ -425,84 +507,60 @@ namespace Hecton8.Narrative
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(AudioLogEvents), label);
-            queue.Dispose();
-            queue = default;
-        }
-
-        private static bool Enqueue(
-            AudioLogEventType type,
-            uint logHash,
-            float durationSeconds,
-            in AudioGlitchParametersDTO glitch,
-            AudioLogData data)
-        {
-            if (_listeners.Count <= 0)
-                return true;
-
-            EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            if (sentinelId > 0)
             {
-                ReportQueueOverflow(type);
-                return false;
-            }
-
-            int referenceSlot = -1;
-            if (data != null)
-            {
-                if (!TryReserveReferenceSlot(out referenceSlot))
+                try
                 {
-                    ReportReferenceSlotOverflow(type);
-                    return false;
+                    NativeMemorySentinel.Unregister(sentinelId);
                 }
-
-                _referenceSlots[referenceSlot].LogData = data;
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
 
-            AudioLogEventPayload payload = new AudioLogEventPayload
+            if (queue.IsCreated)
             {
-                Type = type,
-                TimestampTicks = unchecked((ulong)Stopwatch.GetTimestamp()),
-                LogHash = logHash,
-                ReferenceSlot = referenceSlot,
-                DurationSeconds = SanitizeDurationSeconds(durationSeconds),
-                Glitch = AudioGlitchParametersDTO.Sanitize(in glitch)
-            };
-
-            if (_isDispatching)
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
             {
-                _nextFrameEvents.Enqueue(payload);
-                _nextFrameEventCount++;
-                return true;
+                queue = default;
             }
 
-            _pendingEvents.Enqueue(payload);
-            _pendingEventCount++;
-            return true;
-        }
-
-        private static float SanitizeDurationSeconds(float durationSeconds)
-        {
-            if (float.IsNaN(durationSeconds) || float.IsInfinity(durationSeconds) || durationSeconds <= 0f)
-                return 0f;
-
-            return durationSeconds > MaxEventDurationSeconds ? MaxEventDurationSeconds : durationSeconds;
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -557,7 +615,7 @@ namespace Hecton8.Narrative
                 if (pendingCount > 0)
                     pendingCount--;
 
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
             }
 
             if (queue.IsEmpty())
@@ -579,6 +637,9 @@ namespace Hecton8.Narrative
             NativeQueue<AudioLogEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
@@ -797,22 +858,23 @@ namespace Hecton8.Narrative
             if (_pendingEvents.IsCreated)
             {
                 while (_pendingEvents.TryDequeue(out AudioLogEventPayload payload))
-                    ReleaseReferenceSlot(payload.ReferenceSlot);
+                    ReleaseReferenceSlotForPayload(in payload);
             }
 
             if (_nextFrameEvents.IsCreated)
             {
                 while (_nextFrameEvents.TryDequeue(out AudioLogEventPayload payload))
-                    ReleaseReferenceSlot(payload.ReferenceSlot);
+                    ReleaseReferenceSlotForPayload(in payload);
             }
 
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
         }
 
-        private static bool TryReserveReferenceSlot(out int slot)
+        private static bool TryReserveReferenceSlot(out int slot, out ushort referenceGeneration)
         {
             slot = -1;
+            referenceGeneration = 0;
             if (_referencePendingCount >= ReferenceSlotCapacity)
                 return false;
 
@@ -826,6 +888,7 @@ namespace Hecton8.Narrative
                 _referenceSlotOccupied[candidate] = true;
                 _referencePendingCount++;
                 slot = candidate;
+                referenceGeneration = AdvanceReferenceSlotGeneration(slot);
                 return true;
             }
 
@@ -834,12 +897,40 @@ namespace Hecton8.Narrative
 
         private static bool IsValidReferenceSlot(int slot)
         {
-            return (uint)slot < ReferenceSlotCapacity && _referenceSlotOccupied[slot];
+            return (uint)slot < ReferenceSlotCapacity;
+        }
+
+        private static ushort AdvanceReferenceSlotGeneration(int slot)
+        {
+            ushort generation = unchecked((ushort)(_referenceSlotGenerations[slot] + 1));
+            if (generation == 0)
+                generation = 1;
+
+            _referenceSlotGenerations[slot] = generation;
+            return generation;
+        }
+
+        private static bool IsReferenceSlotPayloadCurrent(in AudioLogEventPayload payload)
+        {
+            int slot = payload.ReferenceSlot;
+            return IsValidReferenceSlot(slot) &&
+                   _referenceSlotOccupied[slot] &&
+                   payload.Reserved != 0 &&
+                   _referenceSlotGenerations[slot] == payload.Reserved;
+        }
+
+        private static void ReleaseReferenceSlotForPayload(in AudioLogEventPayload payload)
+        {
+            if (IsReferenceSlotPayloadCurrent(in payload))
+                ReleaseReferenceSlot(payload.ReferenceSlot);
         }
 
         private static void ReleaseReferenceSlot(int slot)
         {
             if (!IsValidReferenceSlot(slot))
+                return;
+
+            if (!_referenceSlotOccupied[slot])
                 return;
 
             _referenceSlots[slot].Clear();
@@ -854,6 +945,7 @@ namespace Hecton8.Narrative
             {
                 _referenceSlots[i].Clear();
                 _referenceSlotOccupied[i] = false;
+                AdvanceReferenceSlotGeneration(i);
             }
         }
     }

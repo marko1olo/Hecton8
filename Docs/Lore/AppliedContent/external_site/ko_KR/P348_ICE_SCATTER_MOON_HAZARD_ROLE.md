@@ -9,32 +9,16 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw 얼음 산란 위험 역할"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw 얼음 산란 위험 역할
 
-KO LOC HOLD: Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.
-
-## Scanner
-
-KO LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
-
-## Terminal
-
-KO LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
-
-## Audio
-
-KO LOC HOLD: Every system has one moon that accountants love and pilots curse.
-
-## Field Note
-
-KO LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw는 시스템이 이미 오래 쓰인 곳처럼 보이게 한다. 순수한 얼음 달이 아니라 파편, claim 깃발, 한때 주인이 있던 물건들로 이루어진 밝은 장이다. 폭풍 뒤 레인은 새 물질, 신선한 레이더 반사, 값싼 승무원을 죽이는 종류의 소문을 보여 준다. 위험은 평범한 물리다. 궤도 속도의 얼음은 선체가 증거, 식량, 몸 중 무엇을 싣고 있는지 묻지 않는다. 그러므로 Claw의 수익 이야기는 항상 항행 비용과 함께 온다. 발견물보다 그곳까지 가며 깎이는 장갑이 먼저 청구된다.
 
 <!-- External Site; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/ko_KR. -->

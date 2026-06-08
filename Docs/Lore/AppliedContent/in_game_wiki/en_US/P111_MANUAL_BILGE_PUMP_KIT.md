@@ -7,7 +7,7 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
 title: "Manual Bilge Pump Kit"
 source: AppliedContent packet JSON
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Manual Bilge Pump Kit
 
-The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.
+The manual bilge pump is the first useful tool after the drop because it works while the capsule is electrically unsafe. It clears only small flooded pockets, and it makes the player watch intake, outlet and valve resistance instead of trusting a green light. The kit teaches HECTON-8's opening rule: repair starts with water, pressure and hands.
 
 ## Scanner
 
-Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
+Hand bilge kit detected. Intake screen is clogged with capsule foam; clear it before energizing the panel.
 
 ## Terminal
 
-P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
+P-63 FIELD ISSUE / BILGE KIT: hand pump, hose clamp, intake screen, check valve. Clear standing water before any powered panel test. Do not dump the outlet into sealed cable troughs.
 
 ## Audio
 
-Hand work first. Electricity second. Breathing always.
+Water first. Power after. If the handle kicks back, the room is answering.
 
 ## Field Note
 
-First tool must teach survival before upgrade fantasy.
+Pumps lie less than gauges. If the handle kicks back, stop and check where the water is going.
 
 <!-- In-Game Wiki; generated from P111_MANUAL_BILGE_PUMP_KIT/en_US. -->

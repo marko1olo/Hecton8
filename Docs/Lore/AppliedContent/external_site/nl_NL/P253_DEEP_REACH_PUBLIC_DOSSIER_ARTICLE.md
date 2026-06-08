@@ -9,32 +9,35 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Deep Reach Public Dossier Article"
+title: "Publiek Deep Reach-dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Deep Reach Public Dossier Article
+# Publiek Deep Reach-dossier
 
-NL LOC HOLD: Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression.
+Deep Reach Extraterrestrial Development Combine is de bedrijfsmacht achter HECTON-8s industriële geschiedenis. Het bouwde drukroutes, werknemershabitats, extractiesystemen en het papierwerk dat ze legaal maakte. Publiek is het een mislukte ontwikkelingsautoriteit. Dieper bewijs toont de hardere vorm: evacuatiecapaciteit ondergebouwd, vertragingstaal opgeschoond, Atlas-continuity-weighting beschermd en claimrecht bewaard terwijl werknemers verliezen werden.
 
 ## Scanner
 
-NL LOC HOLD: The public company name is cleaner than its route history.
+De publieke bedrijfsnaam is schoner dan de routegeschiedenis. Begin met infrastructuur. Laat aansprakelijkheid door de naden komen.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+PUBLIEK ARTIKELNIVEAU / DEEP REACH
+toegestaan: development combine, kolonie-operator, infrastructuurautoriteit, evacuatiecapaciteitsprobleem, publieke faaltaal
+geblokkeerd: benoemde signoff-keten, Atlas-weighting-internals, finale receiver-gevolgen
+redactienotitie: eerst plausibele instelling; daarna misdrijf door procedure.
 
 ## Audio
 
-NL LOC HOLD: Never make the villain simpler than the paperwork.
+Deep Reach hoefde niet wreed te klinken. Het hoefde alleen elke gevaarlijke zin voltooid te laten klinken.
 
 ## Field Note
 
-NL LOC HOLD: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+Laat Deep Reach niet sissen. Laat het certificeren, uitstellen, bewaren en factureren.
 
 <!-- External Site; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/nl_NL. -->

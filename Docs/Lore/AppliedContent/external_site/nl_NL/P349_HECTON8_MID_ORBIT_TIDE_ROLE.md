@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: HECTON-8 Mid-Orbit Tide Role"
+title: "HECTON-8 middenbaan-getijrol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: HECTON-8 Mid-Orbit Tide Role
+# HECTON-8 middenbaan-getijrol
 
-NL LOC HOLD: HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.
-
-## Scanner
-
-NL LOC HOLD: Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
-
-## Terminal
-
-NL LOC HOLD: ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
-
-## Audio
-
-NL LOC HOLD: It sits in the part of the ladder where work looks possible until the water starts doing math.
-
-## Field Note
-
-NL LOC HOLD: HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 zit in het winstgevende midden. De baan geeft Deep Reach een oceaan die machines koelt, assets verbergt, drukindustrie voedt en genoeg chemie verplaatst om de claim te rechtvaardigen. Ze geeft de kolonie ook een plafond dat nooit stopt met bewegen. Getijden belasten servicecanyons, buigen verdronken korst, ruïneren schone schema's en bepalen wanneer opstijgmassa mag vertrekken.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/nl_NL. -->

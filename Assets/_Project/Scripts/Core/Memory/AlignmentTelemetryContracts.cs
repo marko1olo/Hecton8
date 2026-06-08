@@ -93,6 +93,7 @@ namespace Hecton8.Core.Memory
         private static VaultGenerationHandle<AlignmentTelemetryEntry> _ringHandle;
         private static VaultGenerationHandle<int> _cursorHandle;
         private static IDataVault _ringVault;
+        private static bool _ringReady;
 
         public static bool TryRecordFault(
             IDataVault vault,
@@ -264,7 +265,8 @@ namespace Hecton8.Core.Memory
 
         private static bool EnsureRing(IDataVault vault)
         {
-            if (_ringVault == vault &&
+            if (ReferenceEquals(_ringVault, vault) &&
+                _ringReady &&
                 TryReadRing(vault, out NativeArray<AlignmentTelemetryEntry>.ReadOnly existingRing) &&
                 existingRing.Length >= Capacity &&
                 TryReadCursor(vault, out NativeArray<int>.ReadOnly existingCursor) &&
@@ -274,19 +276,16 @@ namespace Hecton8.Core.Memory
             }
 
             if (_ringVault != null &&
-                _ringVault != vault)
+                !ReferenceEquals(_ringVault, vault))
             {
-                if (_ringHandle.BufferID != 0u)
-                    _ringVault.ReleaseBuffer(in _ringHandle);
-                _ringHandle = default;
-                if (_cursorHandle.BufferID != 0u)
-                    _ringVault.ReleaseBuffer(in _cursorHandle);
-                _cursorHandle = default;
+                ReleaseOwnedBuffers(_ringVault);
             }
 
             if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
+            _ringVault = vault;
+            _ringReady = false;
             _ringHandle = vault.EnsureGenerationHandle<AlignmentTelemetryEntry>(
                 BufferID.Arm64AlignmentTelemetryRing,
                 Capacity,
@@ -299,6 +298,13 @@ namespace Hecton8.Core.Memory
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
 
+            if (_ringHandle.BufferID == 0u ||
+                _cursorHandle.BufferID == 0u)
+            {
+                ReleaseOwnedBuffers(vault);
+                return false;
+            }
+
             if (!TryAcquireTelemetryMutationGuard(vault))
             {
                 return false;
@@ -309,13 +315,40 @@ namespace Hecton8.Core.Memory
                 bool ready = TryClearRing(vault) &&
                              TryWriteCursor(vault, 0);
                 if (ready)
-                    _ringVault = vault;
+                    _ringReady = true;
 
                 return ready;
             }
             finally
             {
                 ReleaseTelemetryMutationGuard(vault);
+            }
+        }
+
+        public static void ReleaseOwnedBuffers(IDataVault vault)
+        {
+            if (vault == null || !ReferenceEquals(_ringVault, vault))
+                return;
+
+            VaultGenerationHandle<AlignmentTelemetryEntry> ringHandle = _ringHandle;
+            VaultGenerationHandle<int> cursorHandle = _cursorHandle;
+            _ringReady = false;
+            try
+            {
+                if (ringHandle.BufferID != 0u)
+                    vault.ReleaseBuffer(in ringHandle);
+                if (cursorHandle.BufferID != 0u)
+                    vault.ReleaseBuffer(in cursorHandle);
+            }
+            finally
+            {
+                if (ReferenceEquals(_ringVault, vault))
+                {
+                    _ringHandle = default;
+                    _cursorHandle = default;
+                    _ringVault = null;
+                    _ringReady = false;
+                }
             }
         }
 

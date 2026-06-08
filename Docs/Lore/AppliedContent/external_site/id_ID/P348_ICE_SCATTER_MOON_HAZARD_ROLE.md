@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Bahaya Es Tersebar Claw"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ice Scatter Moon Hazard Role
+# Bahaya Es Tersebar Claw
 
-ID LOC HOLD: Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.
-
-## Scanner
-
-ID LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
-
-## Terminal
-
-ID LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
-
-## Audio
-
-ID LOC HOLD: Every system has one moon that accountants love and pilots curse.
-
-## Field Note
-
-ID LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw membuat sistem terasa sudah dikerjakan terlalu lama. Ia bukan bulan es murni, melainkan ladang terang berisi pecahan, bendera klaim, dan benda yang dulu punya pemilik. Setelah badai, jalurnya dapat menampilkan material baru, pantulan radar segar, dan rumor yang membunuh kru murah. Bahayanya fisika biasa. Es dengan kecepatan orbit tidak peduli apakah lambung membawa bukti, makanan, atau tubuh.
 
 <!-- External Site; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/id_ID. -->

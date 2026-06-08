@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "KO LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: custody 속 압력 이력"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Blue Debt Custody
+# Blue Debt: custody 속 압력 이력
 
-KO LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt는 유용하고 비싸며 도덕적으로 더럽다. 마법 광석이 아니라 handling, contamination, custody, Atlas compatibility, 증거 소유자에 따라 값이 정해지는 pressure-grown substrate다.
 
 ## Scanner
 
-KO LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+자원 아카이브. Blue debt는 custody 안의 Xenon-Omega pressure substrate다. pressure history, brine exposure, noble-gas capture, contamination stage, sample grade, mass-through-window payout을 가진다.
 
 ## Terminal
 
-KO LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+공개 자원 노드 // BLUE DEBT. 가치는 pressure-rated containment, extraction scar record, contamination status, custody receipt, recoverable tonne-window allocation을 요구한다.
 
 ## Audio
 
-KO LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+Black Keel 지급 음성: "샘플을 닦지 마라. 봉인하고, grade를 붙이고, receipt를 건조하게 둬라."
 
 ## Field Note
 
-KO LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Marauder 메모: 먼저 sample grade를 붙이고, 무엇이 닿았는지 물어라. custody 없는 가격은 미끼다.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/ko_KR. -->

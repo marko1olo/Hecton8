@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Transit Duration Bands"
+title: "Faixas De Duração De Trânsito"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Transit Duration Bands
+# Faixas De Duração De Trânsito
 
-PT LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+As faixas de trânsito explicam por que HECTON-8 pode ser alcançável e ainda cruel. Pacotes se movem primeiro porque são pequenos, baratos e úteis legalmente. Carga se move quando staging, braking rights e loss margins se alinham. Um corpo que respira se move devagar porque exige massa, liability, life support e alguém que pague a volta. Janelas locais de Aegir são mais curtas, mas não mais gentis: órbita, ruído de tempestade, radiação e geometria da Black Keel decidem se dados, carga ou pessoa podem se mover.
 
 ## Scanner
 
-PT LOC HOLD: The same route means different time for packets, freight and people.
+DURATION BAND CHART // Pacotes sonda, carga pesada, crews humanas e janelas locais de Aegir não compartilham um relógio.
 
 ## Terminal
 
-PT LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // Janelas locais: horas-dias. Movimento industrial no sistema: meses-anos. Crew rotation: anos de custódia e dívida. Heavy interdomain freight e consequência: anos-décadas.
 
 ## Audio
 
-PT LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
+Carga pode chegar antes da misericórdia. Isso não é falha. É doutrina.
 
 ## Field Note
 
-PT LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+Se todos os relógios combinarem, o cenário vira fantasia de resgate. Mantenha os relógios hostis.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/pt_BR. -->

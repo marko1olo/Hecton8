@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Barnard Yards Marauder Origin"
+title: "Origen merodeador de Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Barnard Yards Marauder Origin
+# Origen merodeador de Barnard Yards
 
-ES LOC HOLD: Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math.
+El origen merodeador de Barnard Yards define la clase de salvage endeudada de HECTON-8. El merodeador viene de una cultura de trabajo donde una reclamación muerta no es turismo de misterio; es un trabajo con malas cuentas.
 
 ## Scanner
 
-ES LOC HOLD: Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.
+Marca de herramienta Barnard. Cultura de desguace naval. El tipo de lugar que te enseña a desconfiar de las cláusulas de rescate limpias.
 
 ## Terminal
 
-ES LOC HOLD: BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.
+MARCA DE SERVICIO BARNARD YARDS: abrazadera de emergencia aceptada. Certificación de salvage válida para hábitat presurizado abandonado, compartimento carrier muerto y claim hull abandonado.
 
 ## Audio
 
-ES LOC HOLD: You learned this hand motion before HECTON-8. That is the problem.
+Aprendiste este movimiento de mano antes de HECTON-8. Ese es el problema.
 
 ## Field Note
 
-ES LOC HOLD: This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.
+Más cerca que la Tierra: cortadores alquilados, viejos hábitos de presión, deuda y cascos pelados.
 
 <!-- External Site; generated from P073_BARNARD_YARDS_MARAUDER_ORIGIN/es_ES. -->

@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Moon Name Lock Policy"
+title: "Aegir Moon Role Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Moon Name Lock Policy
+# Aegir Moon Role Ledger
 
-The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.
+Aegir's moon list is a working traffic chart. Each body around the gas giant changes traffic, salvage claim law, communication timing or HECTON-8 extraction planning.
 
 ## Scanner
 
-Moon labels can change; orbital roles cannot.
+Public names drift between charts; the orbits keep their jobs.
 
 ## Terminal
 
-ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.
+ATLAS LEDGER: public labels vary by insurer and route chart. Functional roles remain fixed: radiation shear, relay mask, tide forcing, ice scatter, public routing, quarantine rumor, industrial salvage, high-window traffic, deep claim and dead-beacon economy.
 
 ## Audio
 
-A name can be repainted. An orbit keeps the bill.
+You can rename a moon. You still pay the orbit.
 
 ## Field Note
 
-Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.
+Skarn shears particles. Vela masks relays. Claw throws ice. Lumen prints routes. Thorne carries quarantine rumors. Anvil feeds salvage. Kestrel owns high windows. HECTON keeps the deep claim. Mute sells dead beacons.
 
 <!-- In-Game Wiki; generated from P181_MOON_NAME_LOCK_POLICY/en_US. -->

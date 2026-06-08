@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "NL LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: reparatielogica onder de spoiler gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas Repair Ecology
+# Atlas-6: reparatielogica onder de spoiler gate
 
-NL LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas is geen toneelschurk. Horror komt van een beschadigde industriele governor die reparatiecategorieen toepast op overstroomde ecologie.
 
 ## Scanner
 
-NL LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Spoiler-artikelzaad. Publiek: Atlas was infrastructuur voor continuiteit. Beperkt: beschadigde classificatie voert leven, metaal, kabel, lichamen en habitat door dezelfde reparatiegrammatica.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // ATLAS-BRIEF. Lagen: factory-governor, damaged repair ecology, Atlas-compatible contamination, payload receiver consequences. Finale ontvangers gated.
 
 ## Audio
 
-NL LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlas-trace: "Personnel category unresolved. Sealant category available. Habitat breach priority remains active."
 
 ## Field Note
 
-NL LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+Marauder-notitie: als Atlas helpt, kijk wat het heeft uitgegeven. Reparatie kan lucht redden en een naam wissen.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/nl_NL. -->

@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "센타우리 컴팩트의 정당성"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# 센타우리 컴팩트의 정당성
 
-KO LOC HOLD: The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.
+센타우리 컴팩트는 인류 초기 외태양계 정당성의 닻이다. 실제 식민지, 실제 표준, 실제 시민적 권위가 있었다. HECTON-8에서는 Deep Reach가 그 정신을 무시하면서도 인용할 수 있었던 수입 압력 케이스와 감사 태그로 나타난다.
 
 ## Scanner
 
-KO LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+센타우리 감사 태그. 초기 외태양계 정당성, 나중에는 변경의 변명.
 
 ## Terminal
 
-KO LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+CENTAURI COMPACT HARDWARE: 민간 운송용 압력 케이스 인증 완료. 감사 채널 비활성. Deep Reach 제3자 개조 후 보증 무효.
 
 ## Audio
 
-KO LOC HOLD: First legitimacy became old metal under a newer lie.
+처음의 정당성은 새 거짓말 아래의 낡은 금속이 되었다.
 
 ## Field Note
 
-KO LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+컴팩트는 먼 청구를 그럴듯하게 만들었다. 그럴듯함은 구조가 아니다.
 
 <!-- In-Game Wiki; generated from P072_CENTAURI_COMPACT_LEGITIMACY/ko_KR. -->

@@ -14,15 +14,17 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Bremsbuch der Pelletspur
 
-HECTON-8 braucht keine magische Mauer, um den Spieler zu isolieren. Entfernung reicht. Die Aegir-Route wurde durch Pelletstrahlsonden eröffnet: kleine autonome Scouts, geschoben von gewaltigen Beam-Anlagen bei Luyten Junction. Eine Sonde kann abgefeuert, verloren und abgeschrieben werden. Ein Kolonieschiff nicht.
+HECTON-8 ist isoliert, weil Reise schwer ist. Die Aegir-Route begann mit Pelletstrahl-Scouts: kleinen autonomen Sonden, von Luyten Junction geschoben und darauf ausgelegt, nützlich zu sterben. Sie trugen Karten, Sternfixes und rechtliche Zeugnis-Pakete. Eine verlorene Sonde war eine Kostenzeile. Ein verlorenes Kolonieschiff war eine Generation Schuld.
 
-Atlas-Fracht ist etwas anderes. Sie trägt Fabriken, Kryobuchten, Bohrsysteme, versiegelte Schuldverträge und Menschen, die billig genug unterschrieben haben. Ihre fusionselektrischen Pulsantriebe verbringen Jahre damit, Geschwindigkeit aufzubauen. Kurz vor Ankunft muss das Schiff diese Geschwindigkeit wieder verlieren. Magnetsegel entfalten sich über absurde Spannweiten, um gegen geladene Teilchen zu bremsen. Spätere Durchgänge schrammen Atmosphäre, Sturmhülle und Gasriesenrand. Ein kleiner Fehler im Bremsbuch kann Fracht, Crew und Claim ausradieren.
+Die Atlas-Frachtära bewegte echte Masse. Ein Träger kreuzte mit Fabrikkernen, Kryobuchten, Bohrsystemen, Routenempfängern, versiegelten Verträgen und Menschen, die billig genug unterschrieben. Seine fusionselektrischen Stapel bauten jahrelang Geschwindigkeit auf. Nichts daran war ein Wunder. Jede Korrektur verbrannte Vorrat. Jede Schildplatte war eine Wette. Jedes Kilogramm kam mit einem Namen im Buch.
 
-Deshalb fühlt sich Rettung in HECTON-8 grausam an, ohne Physik zu brechen. Sol kann ein Paket empfangen, wenn die Entscheidung längst abgelaufen ist. Deep Reach kann eine Schuld schneller besitzen als einen Rumpf bewegen. Black Keel kann in lokaler Aegir-Umlaufbahn ein Bergungsfenster bepreisen, doch das ist lokale Salvage-Maschinerie, kein Versprechen von zu Hause. Zivilisation erreicht dich zuerst als Papier, dann als Signal, viel später als Masse.
+Das Bremsbuch ist die grausame Seite. Ein nahlichtschneller Träger muss wieder langsam werden, bevor er etwas liefern kann. Magnetsegel öffnen sich über unmögliche Spannweiten und ziehen gegen geladene Teilchen. Pelletbahnen beißen in die Segelkante. Die letzten Pässe nutzen Atmosphäre, Sturmhülle und Gasriesengravitation als Bremse. Verfehlt er die Marge, überlebt das Schiff an keinem nützlichen Ort. Schneidet er sie zu knapp, empfängt die Route eine Fahne, keine Fracht.
+
+Deshalb kann Rettung in HECTON-8 obszön wirken, ohne Physik zu brechen. Sol kann antworten, nachdem die Entscheidung verfallen ist. Deep Reach kann eine Schuld schneller erben, als es einen Rumpf bewegt. Black Keel kann im lokalen Orbit sitzen und ein Bergungsfenster verkaufen, weil es schon Teil der Aegir-Maschine ist. Der Überlebende steht nicht außerhalb der Zivilisation. Er steckt in ihrer Ankunftsreihenfolge: Papier, Signal, dann Masse.
 
 <!-- External Site; generated from P1091_PELLET_WAKE_BRAKING_LEDGER/de_DE. -->

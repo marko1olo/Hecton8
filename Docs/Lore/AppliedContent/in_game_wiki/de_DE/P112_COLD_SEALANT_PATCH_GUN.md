@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Kaltdichtungs-Patchpistole"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Kaltdichtungs-Patchpistole
 
-DE LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+Die Kaltdichtungs-Patchpistole liefert nach dem Pumpen die erste ehrliche Reparatur. Sie kann ein Nadelloch stoppen oder eine Dichtungslippe lang genug halten, um einen kleinen Raum wieder nutzbar zu machen, aber sie macht beschädigte Struktur nicht sicher. Die nützliche Lehre steckt auf dem Zulassungsschild: HECTON-8 bestraft jede Reparatur außerhalb ihrer Druckklasse.
 
 ## Scanner
 
-DE LOC HOLD: Patch gun. Rated for pinholes, not miracles.
+Kaltdichtungs-Patchpistole. Kartusche nur für Nadellochlecks und ruhige Nähte zugelassen; aktive Scherung zieht sie ab.
 
 ## Terminal
 
-DE LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+PATCHGRENZE / KALTDICHTUNG: haftet nach Abwischen auf nasser Niedertiefen-Haut. Freigegeben für Nadellöcher, Dichtungslippen und ruhiges Nahtweinen. Aktive Scherrisse, warme blue-debt-Blüte und bewegte Kabelnähte ablehnen.
 
 ## Audio
 
-DE LOC HOLD: A patch is not safety. It is a countdown that looks solid.
+Nenn es nicht dicht. Nenn es Zeit.
 
 ## Field Note
 
-DE LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Ein Patch kauft Minuten. Wenn der Riss noch wandert, nutz diese Minuten zum Weggehen.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/de_DE. -->

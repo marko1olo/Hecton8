@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Aegir Moon Route Map"
+title: "מפת מסלולי הירחים של Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Aegir Moon Route Map
+# מפת מסלולי הירחים של Aegir
 
-HE LOC HOLD: Aegir moon data is route data. HECTON-8 is one ocean moon inside a larger ladder of relay, radiation, scatter and tide constraints; the visible sky is part of navigation, not decoration.
+נתוני הירחים של Aegir הם נתוני מסלול. HECTON-8 הוא הירח האוקייני שניתן לשחק בו, אבל הוא נמצא בתוך סולם רחב יותר של מגבלות relay, קרינה, פיזור וגאות. השמים הנראים משתתפים בשאלה אם אות הצלה יישמע, יתעכב, יתומחר, יידחה או יהיה בלתי אפשרי פיזית.
 
 ## Scanner
 
-HE LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+רשומת מפת מערכת. ירחי Aegir קובעים relay timing, כיסוי קרינה, ice scatter, לחץ גאות, occultation bands, beacons מתים ו-recovery geometry.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+צומת ארכיון ציבורי // סולם ירחי AEGIR. שמות ירחים הם תוויות מסלול. כל גוף משנה signal age, transfer risk, storm exposure, custody timing או claim reliability.
 
 ## Audio
 
-HE LOC HOLD: The map is why no one arrives the moment you ask.
+המפה מסבירה למה אף אחד לא מגיע ברגע שאתה מבקש.
 
 ## Field Note
 
-HE LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+הערת Marauder: סמן את הירח, ואז סמן מה הוא עושה למסלול.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/he_IL. -->

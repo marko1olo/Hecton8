@@ -1,4 +1,5 @@
-﻿# THE SEED PROGRAM AND THE ATLAS DIRECTIVE
+<!-- localization_status: source_authority_en_US -->
+# THE SEED PROGRAM AND THE ATLAS DIRECTIVE
 
 > **Source:** Deep Reach Systems Engineering Division, Directive Logic Log.
 > **Speaker:** Director of Autonomous Operations.

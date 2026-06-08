@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # יערות אצות הברזל
 
 > **מקור:** מחלקת האקסנוביולוגיה של Deep Reach, יומן סכנות.

@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Deep Reach Suboffice Registry"
+title: "Deep Reach 하위 사무실 등록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Deep Reach Suboffice Registry
+# Deep Reach 하위 사무실 등록
 
-KO LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+하위 사무실 등록은 왕좌의 방을 만들지 않고 기계를 이름 붙이기 때문에 중요하다. Deep Reach에는 매번 죽음을 명령하는 한 사람이 필요하지 않았다. 좁은 이름의 offices가 필요했고, 각각 지연, 재분류, 패킷 전달을 할 수 있었다. Contract Continuity는 obligations를 살리고, Packet Notary는 무엇이 proof인지 정하고, Quarantine Hold는 rescue를 위험하게 들리게 하고, Asset Silence는 증인의 가치를 낮추고, Return Action은 누가 질량의 가치가 있는지 정했다.
 
 ## Scanner
 
-KO LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, Return Action Queue.
 
 ## Terminal
 
-KO LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach는 치명적 결정을 한 명의 악당 아래층에 두었다. 작은 desks가 clauses, packets, quarantine, silence, return priority를 라우팅해 어떤 도장도 살인처럼 보이지 않게 했다.
 
 ## Audio
 
-KO LOC HOLD: A small desk can kill more quietly than a director.
+작은 desk는 director보다 조용히 죽일 수 있다.
 
 ## Field Note
 
-KO LOC HOLD: Use dull names. Dull names are where liability hides.
+이름은 지루하게 둔다. liability는 지루한 이름 안에 숨는다.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/ko_KR. -->

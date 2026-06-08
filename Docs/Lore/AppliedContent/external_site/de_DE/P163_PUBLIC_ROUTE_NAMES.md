@@ -9,32 +9,20 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Public Route Names"
+title: "Öffentliche Routennamen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Public Route Names
+# Öffentliche Routennamen
 
-DE LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier.
+## Names That Bill
 
-## Scanner
+Öffentliche Routennamen sind keine Poesie im Dunkel. Sie sind Arbeitslabels, die Verträge, Rumpfplatten, Relaiswarteschlangen und Gerichtsstücke überleben. Sol-Centauri Charter Spine trägt Legitimität, Barnard Breaker Run riecht nach Abwrackwerften und Schuldarbeit. Luyten Packet Ladder ist die custody-Kette, die Beweis gültig oder nutzlos macht, Tau Public Ledger Lane ist langsamer öffentlicher Druck, und Ran Long Claim sagt, dass die Arbeit schon teuer ist, bevor der Ozean kassiert.
 
-DE LOC HOLD: Route names make travel feel owned before it feels adventurous.
-
-## Terminal
-
-DE LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.
-
-## Audio
-
-DE LOC HOLD: A route is a road only after somebody sells the delay twice.
-
-## Field Note
-
-DE LOC HOLD: Every route name should sound like a tariff, not a wonder.
+A player should read each name as a working pressure mark: whose law travels here, whose cargo moves, whose proof survives, and whose body was left off the return manifest.
 
 <!-- External Site; generated from P163_PUBLIC_ROUTE_NAMES/de_DE. -->

@@ -9,32 +9,35 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Blue Debt Public Resource Article"
+title: "Öffentlicher Artikel zur Ressource Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Blue Debt Public Resource Article
+# Öffentlicher Artikel zur Ressource Blue Debt
 
-DE LOC HOLD: Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.
+Blue debt ist Marauder-Slang, keine saubere Materialklasse. Öffentlich beschreibt er Xenon-Omega-bearing pressure substrate: instabile Mischungen aus Clathrat, Salzlösung, Mineralgitter, industriellem Biofilm und containment-vernarbter Hardware, die Extrembedingungen speichern können, ohne sich wie gewöhnliches Erz zu verhalten. Es zählt, weil HECTON-8 Druck nützlich machte. Dieselbe Umgebung, die einen Taucher zerquetscht, kann seltsame Chemie, abgeschirmtes Rechnen, Sensorspeicher und Containment-Oberflächen bewahren, die wertvoll genug sind, um Ansprüche am Leben zu halten. Blue debt darf nie wie magischer Loot lesen. Es ist gefährlich, weil es sich merkt, wo es entstand. Falsch erwärmt, falsch geschnitten oder ohne Verwahrungsnachweis bewegt, hört es auf, Ressource zu sein, und wird Beweis, Gift, Druck oder Schuld. Öffentlicher Text kann erklären, warum Marauders ihm nachjagen. Er sollte auch erklären, warum sie niemandem trauen, der es sauber nennt.
 
 ## Scanner
 
-DE LOC HOLD: The public name sounds like slang because the official name is built to hide liability.
+Der Slang ist ehrlich. Der offizielle Name versteckt die Haftung: Xenon-Omega-bearing pressure substrate.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+ÖFFENTLICHE ARTIKELSTUFE / BLUE DEBT
+erlaubt: Probenverhalten, Druckchemie, Clathrat- und Salzträger, Containment-Wert, Rechennutzung, Verwahrungsrisiko
+gesperrt: exakte Rezepttabellen, Payout-Tuning, späte Atlas-Substrate-Routen
+Redaktionsnotiz: kein magisches Erz, keine leuchtende Loot-Fantasie, kein sauberes Eigentum.
 
 ## Audio
 
-DE LOC HOLD: Ore is what people call it when they want to forget the paperwork.
+Sie nannten es blue debt, weil jedes nützliche Gramm bereits jemandem Druck, Papierkram oder Blut schuldete.
 
 ## Field Note
 
-DE LOC HOLD: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+Wenn es wie Schatz leuchtet, schreib es neu. Blue debt soll nützlich, nass, reguliert, instabil und bereits umstritten wirken.
 
 <!-- In-Game Wiki; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/de_DE. -->

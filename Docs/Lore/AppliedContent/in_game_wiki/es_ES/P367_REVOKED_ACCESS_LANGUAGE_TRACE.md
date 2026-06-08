@@ -9,32 +9,36 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Revoked Access Language Trace"
+title: "Rastro de lenguaje de acceso revocado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Revoked Access Language Trace
+# Rastro de lenguaje de acceso revocado
 
-ES LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+El lenguaje de acceso revocado se convirtió en uno de los cierres más silenciosos de Deep Reach. Una puerta podía negar a un antiguo trabajador, registrar la solicitud como mantenimiento rutinario y aun así filtrar los términos exactos que nombraban la ruta de evacuación oculta. En HECTON-8 eso importa porque el jugador no necesita una confesión limpia para seguir el rastro. Basta la vieja fraseología: protocolo de recuento degradado, testigo sustituto, archivo de ruta segura, encaminamiento de preservación de reclamación. Esas palabras se construyeron para revisión de responsabilidad, no para rescate. La denegación prueba dos cosas a la vez. La credencial está muerta. El procedimiento detrás de ella no.
 
 ## Scanner
 
-ES LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+El bloqueo no dice prohibido. Dice reclasificación de mantenimiento, retención de continuidad y materiales de ruta. Vieja fraseología de Deep Reach: una negativa que aún apunta a la puerta enterrada.
 
 ## Terminal
 
-ES LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+RESPUESTA DE ACCESO / ARCHIVO DE RUTA SEGURA
+credencial: revocada
+motivo: materiales de continuidad de evacuación restringidos a personal certificado de Deep Reach
+términos visibles: recuento degradado, testigo sustituto, ruta de preservación de reclamación, reclasificación de mantenimiento
+nota: el antiguo personal de campo puede ver el lenguaje de denegación solo para conciliación de incidente.
 
 ## Audio
 
-ES LOC HOLD: That is not security. That is a memo pretending to be a door.
+No borraron el pasillo. Lo envolvieron en un vocabulario que solo el personal culpable sigue entendiendo.
 
 ## Field Note
 
-ES LOC HOLD: Lockout language hints at hidden liability without granting free access.
+La placa está muerta. El bloqueo todavía habla el dialecto de oficina que enterró la ruta.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/es_ES. -->

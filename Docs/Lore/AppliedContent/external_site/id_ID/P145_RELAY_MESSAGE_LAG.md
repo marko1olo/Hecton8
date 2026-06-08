@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Relay Message Lag"
+spoiler_tier: 1
+title: "Jeda Pesan Relai"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# Jeda Pesan Relai
 
-ID LOC HOLD: Relay Message Lag makes communication a route system, not a magic voice channel.
-
-## Scanner
-
-ID LOC HOLD: A message can be legally binding and still arrive too late to save air.
-
-## Terminal
-
-ID LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
-
-## Audio
-
-ID LOC HOLD: The reply is late. The lien is current.
-
-## Field Note
-
-ID LOC HOLD: No ansible means truth moves as freight.
+Lag relai membuat HECTON-8 menerima otoritas tanpa menerima perawatan. Paket bisa membawa hukum, utang, kepemilikan, atau peringatan melintasi jam, hari, atau tahun, tetapi tidak bisa membawa tangan ke ruangan banjir. Perpecahan itu adalah tekanan komunikasi utama: sistem jauh tetap kuat karena ditulis lebih awal, mengantre lebih awal, dan diberi harga agar bertahan dari jarak. Belas kasih datang sebagai orang; kontrak datang sebagai data.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/id_ID. -->

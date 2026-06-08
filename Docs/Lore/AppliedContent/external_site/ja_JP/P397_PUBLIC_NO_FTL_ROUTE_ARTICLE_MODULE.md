@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: No-FTL Route Delay"
+title: "FTLなしのルート遅延"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: No-FTL Route Delay
+# FTLなしのルート遅延
 
-JA LOC HOLD: HECTON-8 has no instant rescue channel. Aegir was reached through precursor probes, beam infrastructure, pellet-fusion freight and braking systems that treat human urgency as one more payload constraint. A message can cross the route before the hardware that would make the message useful. That delay is why Black Keel can hold a valid claim while the player still has to fix seals by hand.
+HECTON-8には即時救助チャンネルがない。Aegir系はprecursor probes、beam infrastructure、pellet-fusion freight、そして緊急性さえ質量制約として扱う制動系で到達された。メッセージは、それを有用にする機材より先に届き得る。carrierはあなたの存在を認め、payloadを査定し、valid claimを保持できるが、悪いweather、relay angle、custody windowの下でdescent massを使えない場合がある。公開用の航行文はこの制約を見えるままにする必要がある。ここでの孤立は雰囲気ではなく、工学、法律、物流が同時に働いた結果だ。Black Keelは法的には近く、物理的には届かないことがある。だからrelayが応答した後も、プレイヤーは手でシールを直す。
 
 ## Scanner
 
-JA LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+輸送記録。Aegir交通はprecursor probes、beam lanes、pellet-fusion freight、braking mass、packet age、relay custody、法的遅延に依存する。
 
 ## Terminal
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+公開アーカイブノード // 輸送限界。FTLなし。Ansibleなし。生きた救助には物理移送、braking architecture、carrier position、descent mass、有効なlocal windowが必要。
 
 ## Audio
 
-JA LOC HOLD: Help can be legally present and physically years away.
+救助は法的には近く、物理的には何年も遠いことがある。
 
 ## Field Note
 
-JA LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+Marauderメモ: relayが答えたら、その答えが何年前のものか、どの質量を動かせるのかを聞け。
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/ja_JP. -->

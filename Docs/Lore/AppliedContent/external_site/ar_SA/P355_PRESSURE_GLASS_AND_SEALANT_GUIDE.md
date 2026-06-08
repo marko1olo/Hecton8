@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Pressure Glass and Sealant Guide"
+title: "دليل زجاج الضغط ومانع التسرب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Pressure Glass and Sealant Guide
+# دليل زجاج الضغط ومانع التسرب
 
-AR LOC HOLD: The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.
+يرسخ دليل زجاج الضغط ومانع التسرب رعب HECTON-8 الحيوي-الميكانيكي في منطق الإصلاح: يتبع Atlas الشقوق، والكابلات، وbiofilms، وpressure scars لأن الأنظمة المكسورة توفر الطرق مسبقا.
 
 ## Scanner
 
-AR LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+كسر pressure-glass مختوم بكيمياء Atlas. يكون lens stock آمنا فقط إذا بقيت seal map سليمة.
 
 ## Terminal
 
-AR LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: يسجل pressure glass إجهاد tide stress القديم. يتبع Atlas sealant تلك الشقوق لأنها تصف مسبقا خطوط فشل النظام.
 
 ## Audio
 
-AR LOC HOLD: The repair network reads fractures the way you read a map.
+تقرأ شبكة الإصلاح الكسور كما تقرأ أنت الخريطة.
 
 ## Field Note
 
-AR LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+لا تطحن الحافة الجميلة. اتبع fracture map واقطع من الجانب الميت للـ seal.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/ar_SA. -->

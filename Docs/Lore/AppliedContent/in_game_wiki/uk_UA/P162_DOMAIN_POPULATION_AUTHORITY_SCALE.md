@@ -9,32 +9,34 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Population And Authority Scale"
+title: "Шкала Населення І Влади"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Population And Authority Scale
+# Шкала Населення І Влади
 
-UK LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
+Цифри населення лишаються приблизними, бо гравцю не потрібна census opera. Корисне питання простіше: хто може діяти на тебе здалеку? Населений внутрішній домен може торкатися HECTON-8 лише рядком сертифікації. Малий depot може бути важливішим, бо контролює custody пакетів. Мертва frontier-shell може бути найважливішою, бо володіє залізом у кімнаті.
+
+Саме цю шкалу відчуває гравець. Sol може вирішити, що об'єкт комусь належить. Centauri може зробити стару мову Deep Reach пристойною. Barnard нормалізує роботу, яка ловить Marauders. Tau Ceti може перетворити доказ на публічний тиск, запізно для кисню, але не запізно для наслідків. Luyten може довести ланцюг повідомлень. Aegir - місце, де підписи стають тиском, водою, замкненими люками й оплачуваною масою.
 
 ## Scanner
 
-UK LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+AUTHORITY CENSUS STUB // Населення - тло. Важливо, який домен може сертифікувати, публікувати, рухати, страхувати, нотаріально фіксувати або ховати claim.
 
 ## Terminal
 
-UK LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AUTHORITY SCALE // Sol сертифікує власність. Centauri легітимує хартії. Barnard дає працю для мертвих claims. Tau Ceti публікує докази після затримки. Luyten доводить custody. Aegir виконує брудний фізичний claim.
 
 ## Audio
 
-UK LOC HOLD: The largest domain is not the nearest hand.
+Найбільший домен - не найближча рука. Це печатка, яка переживає затримку.
 
 ## Field Note
 
-UK LOC HOLD: Do not turn the setting into census space opera.
+Не додавай census trivia, якщо це не змінює тиск на тіло, маршрут, claim або доказовий ланцюг.
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/uk_UA. -->

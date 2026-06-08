@@ -9,32 +9,34 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "Klaim Dingin Bulan Luar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# Klaim Dingin Bulan Luar
 
-ID LOC HOLD: Outer moon cold claims show that Aegir is a system, not a single haunted moon. Failed brine prospects, mothballed metal routes and dead beacons create the salvage economy that brings Marauders into the system.
+Klaim dingin bulan luar membuktikan Aegir adalah sistem, bukan satu bulan berhantu. Prospek air garam yang gagal, rute logam yang dimothball, dan beacon mati menciptakan ekonomi salvage yang membawa Marauder ke jaringan lalu lintas.
+
+Yang penting bukan jarak, tetapi pola. Rute bisa mati dan tetap dapat ditagih. Beacon bisa mengulang kustodi tanpa kru hidup. HECTON-8 adalah kasus terlihat paling buruk, tetapi bukan tempat pertama Aegir belajar mengarsipkan kehilangan sebagai infrastruktur.
 
 ## Scanner
 
-ID LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+Beacon klaim luar. Tidak semua yang mati di Aegir berada di HECTON-8.
 
 ## Terminal
 
-ID LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+ARSIP TANGGA LUAR // Prospek air garam Thorne gagal. Rute ekspor Anvil dimothball. Beacon Mute mengulang ping kustodi tanpa deklarasi kru aktif.
 
 ## Audio
 
-ID LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegir belajar kehilangan orang sebelum HECTON-8 menyelesaikan pelajarannya.
 
 ## Field Note
 
-ID LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+Klaim dingin membuat Marauder mungkin. Mereka juga mengajari perusahaan cara mengubur pola.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/id_ID. -->

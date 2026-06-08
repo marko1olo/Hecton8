@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "החזקת הסגר: אוויר עומד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# החזקת הסגר: אוויר עומד
 
-HE LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+החזקת הסגר היא היציאה המזויפת השקטה ביותר. היא אינה צריכה נבל בחדר. הטופס אומר חולץ חי, מונה האוויר אומר מנה פעילה, והדלת הבאה תיפתח רק אחרי סקירת זיהום, ערעור claimant וסקירת ביטוח.
 
-## Scanner
-
-HE LOC HOLD: You are alive, sealed, and still not free.
-
-## Terminal
-
-HE LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-HE LOC HOLD: The hatch opens only to another closed hatch.
-
-## Field Note
-
-HE LOC HOLD: This is the bureaucratic version of drowning.
+התוצאה אכזרית מפני שהיא ניתנת להגנה. אף אחד לא הרג את העד. אף אחד לא השמיד את הדגימה. המערכת פשוט גורמת לכל הצהרה להמתין יותר זמן משהגופות יכלו אי פעם להמתין. השחקן שורד את האוקיינוס ונכנס למסדרון אטום שנבנה מנוהל.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/he_IL. -->

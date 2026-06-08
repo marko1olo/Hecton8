@@ -1268,20 +1268,44 @@ namespace Hecton8.Construction
             drone.RepairAccumulator = drone.TransactionProgress * holdSeconds;
 
             int quantity = Mathf.Max(1, result.InventoryQuantityAdded);
-            PublishDroneMiningItemAcquiredSignal(in drone, result.InventoryHash, quantity, sourceId);
+            int depositedQuantity;
+            if (!TryCommitDroneMiningOutputToHub(
+                    in drone,
+                    result.InventoryHash,
+                    quantity,
+                    out depositedQuantity,
+                    out byte commitFailureReason))
+            {
+                RecordDroneMiningCommitFailed(slot, commitFailureReason);
+                drone.RepairAccumulator = holdSeconds;
+                drone.TransactionProgress = 1f;
+                return;
+            }
+            else if (depositedQuantity < quantity)
+            {
+                RecordDroneMiningCommitFailed(slot, DroneMiningCommitFailureStorageFull);
+            }
 
-            DroneFleetInventoryTransactionSignal transactionSignal = default;
-            transactionSignal.DroneId = drone.DroneId;
-            transactionSignal.SourceId = sourceId;
-            transactionSignal.DestinationId = drone.HubGridId;
-            transactionSignal.ItemHash = unchecked((int)result.InventoryHash);
-            transactionSignal.Quantity = quantity;
-            transactionSignal.Position = drone.Position;
-            transactionSignal.Flags = 2u;
-            transactionSignal.Reserved0 = result.ActiveInventorySlots;
-            SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in transactionSignal, ref s_x001DroneFleetManagerTransactionsSignalPushDropCount);
+            if (depositedQuantity > 0)
+            {
+                PublishDroneMiningItemAcquiredSignal(in drone, result.InventoryHash, depositedQuantity, sourceId);
+
+                DroneFleetInventoryTransactionSignal transactionSignal = default;
+                transactionSignal.DroneId = drone.DroneId;
+                transactionSignal.SourceId = sourceId;
+                transactionSignal.DestinationId = drone.HubGridId;
+                transactionSignal.ItemHash = unchecked((int)result.InventoryHash);
+                transactionSignal.Quantity = depositedQuantity;
+                transactionSignal.Position = drone.Position;
+                transactionSignal.Flags = 2u;
+                transactionSignal.Reserved0 = result.ActiveInventorySlots;
+                if (!SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in transactionSignal, ref s_x001DroneFleetManagerTransactionsSignalPushDropCount))
+                    RecordInventoryTransactionSignalRejected();
+            }
+
             drone.RepairAccumulator = 0f;
             drone.TransactionProgress = 1f;
+            ClearDroneMiningCommitFailureLatch(slot);
             ReturnDroneToHub(ref drone);
         }
 
@@ -1305,7 +1329,8 @@ namespace Hecton8.Construction
             signal.SourceKind = ItemAcquiredSignalSourceKinds.DroneMining;
             signal.Flags = 0;
             signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-            SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref s_x001DroneFleetManagerTransactionsSignalPushDropCount);
+            if (!SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref s_x001DroneFleetManagerTransactionsSignalPushDropCount))
+                RecordItemAcquiredSignalRejected();
         }
 
         private static int ResolveInventoryActiveSlotCount(NativeArray<int>.ReadOnly activeSlotCount)

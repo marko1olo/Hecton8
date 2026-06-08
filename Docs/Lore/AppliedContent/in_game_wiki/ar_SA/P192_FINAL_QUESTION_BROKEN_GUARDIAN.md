@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "السؤال الأخير: الحارس المكسور"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# السؤال الأخير: الحارس المكسور
 
-AR LOC HOLD: The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.
+يسأل محور الحارس المكسور إن كان الحامي يستحق البقاء بعدما تعفنت تعريفاته للعامل والأداة والجرح والحيوان معا. إبقاء Atlas قد يمنع انهيار الحوض. لكنه يترك عدالة البشر ناقصة.
 
 ## Scanner
 
-AR LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
+Atlas حارس متضرر، لا شرير صاف ولا إله نظيف.
 
 ## Terminal
 
-AR LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
+محور الحارس: يواصل Atlas استقرار الضغط وبيئة الإصلاح وسلوك الاحتواء. لكنه يحفظ أيضا منطق تصنيف تالفا يستطيع وضع البشر والمعدن والكتلة الحيوية في مخزون صيانة واحد.
 
 ## Audio
 
-AR LOC HOLD: It kept the system breathing after it forgot what a worker was.
+أبقى النظام يتنفس بعدما نسي معنى العامل.
 
 ## Field Note
 
-AR LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+الحفاظ عليه يحمي بيئة ضغط تضم الآن دوائر حية وحيوانات موسومة وقبور عمال قدامى.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/ar_SA. -->

@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Доказательство задержки эвакуационной очереди"
+title: "Запись задержки эвакуационной очереди"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Доказательство задержки эвакуационной очереди
+# Запись задержки эвакуационной очереди
 
-Доказательство эвакуации должно быть физическим: clocks, sealed witness fields, delayed gates и комнаты, затопленные пока authorization pending.
+Эта улика превращает эвакуацию из трагедии в последовательность. Ворота не просто отрезало водой; они оставались в состоянии review, пока тревоги давления вошли в жилые коридоры. Пустое поле свидетеля важно, потому что система требовала человеческого подтверждения после того, как люди уже потеряли доступ к панели.
 
 ## Scanner
 
-Queue clock остановился до route collapse. Сначала delay, потом water.
+Часы очереди восстановлены. Выпускные ворота оставались закрытыми после того, как тревоги давления перешли из прогноза в коридор.
 
 ## Terminal
 
-EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Ручное подтверждение отсутствует. Карантинная проверка ожидает. Давление маршрута превысило класс уплотнения до завершения authorization.
 
 ## Audio
 
-Они не просто не спасли всех. Они ждали, пока спасти хоть кого-то стало сложнее.
+Они не провалили спасение всех. Они ждали, пока спасать хоть кого-то станет труднее.
 
 ## Field Note
 
-Ставить в drowned evacuation corridors и triage rooms.
+Заметка мародера: закрытые ворота с ожидающим полем не случайность. Это решение, ожидающее подписи.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/ru_RU. -->

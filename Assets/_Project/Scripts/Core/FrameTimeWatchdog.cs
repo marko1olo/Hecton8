@@ -284,7 +284,6 @@ namespace Hecton8.Core
             if (!_frameTimeSamples.IsCreated)
                 return;
 
-            _frameTimeSamples.UnregisterBackingArray();
             _frameTimeSamples.Dispose();
             _frameTimeSamples = default;
         }

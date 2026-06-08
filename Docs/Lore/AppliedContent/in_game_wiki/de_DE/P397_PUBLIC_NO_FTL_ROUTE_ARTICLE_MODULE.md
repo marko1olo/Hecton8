@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: No-FTL Route Delay"
+title: "No-FTL-Routenverzug"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: No-FTL Route Delay
+# No-FTL-Routenverzug
 
-DE LOC HOLD: Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
+Entfernung ist eine Überlebensregel auf der Aegir-Route. Recht, Schuld und alte packets erreichen den Spieler lange vor carrier, tender, Ersatzteil oder menschlichem Retter. Eine relay-Antwort hebt die Druckarbeit vor dir nicht auf; sie beweist nur, dass jemand deinen claim in eine Warteschlange gelegt hat.
 
 ## Scanner
 
-DE LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+Transitdatensatz. Aegir-Verkehr hängt an precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody und juristischem Verzug.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+ÖFFENTLICHER ARCHIVKNOTEN // TRANSITGRENZE. FTL fehlt. Ansible fehlt. Lebende Rettung braucht physischen Transfer, braking architecture, carrier position, descent mass und ein gültiges local window.
 
 ## Audio
 
-DE LOC HOLD: Help can be legally present and physically years away.
+Hilfe kann rechtlich anwesend und physisch Jahre entfernt sein.
 
 ## Field Note
 
-DE LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
+Marauder-Notiz: Wenn das relay antwortet, frag nach dem Alter der Antwort und welcher Masse sie bewegen kann.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/de_DE. -->

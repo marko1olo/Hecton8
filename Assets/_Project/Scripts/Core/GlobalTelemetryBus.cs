@@ -193,7 +193,6 @@ namespace Hecton8.Core
             if (!buffer.IsCreated)
                 return;
 
-            buffer.UnregisterBackingArray();
             buffer.Dispose();
             buffer = default;
         }

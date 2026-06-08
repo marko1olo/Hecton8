@@ -8,33 +8,33 @@ biome_tags: biome.service_corridor;biome.cable_reef
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Cable Splice Scar"
+spoiler_tier: 1
+title: "Шрам кабельної спайки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cable Splice Scar
+# Шрам кабельної спайки
 
-Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family.
+Шрами кабельних спайок показують ремонтний жах HECTON-8 на малій гучності. Сервісний кабель перерізано, зміни колонії немає, а нестандартний ремонт усе одно тримає контур живим. Гравець спершу читає користь, а вже потім намір.
 
 ## Scanner
 
-The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+Нестандартна спайка. Ізоляція знову наросла навколо сервісного кабелю після відмови людської маршрутизації; мітка Atlas-6 неповна, право обслуговування відсутнє.
 
 ## Terminal
 
-Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+POWER TRACE C-44: людська спайка відмовила з розривом. Автономний ремонт безперервності прийнято для збереження навантаження реле. Патерн повторюється на вузлах кабельного рифу з меншою втратою ізоляції і без підпису робітника.
 
 ## Audio
 
-Something fixed the cable after everyone stopped asking permission.
+Хтось полагодив кабель після того, як папери зупинились. Або щось.
 
 ## Field Note
 
-Atlas repair should look useful before it looks alive.
+Спершу корисно. Потім неправильно. Так ремонти Atlas представляються.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/uk_UA. -->

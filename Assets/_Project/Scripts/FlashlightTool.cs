@@ -744,7 +744,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             Ray ray = new Ray(origin, direction);
-            
+
             const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Collide;
             LayerMask resolvedContextMask = ResolveContextSurfaceLayerMask();
             if (!cache.TryGetHit(ray, contextProbeRange, resolvedContextMask, triggerMode, out InteractionSurfaceHit finalHit))

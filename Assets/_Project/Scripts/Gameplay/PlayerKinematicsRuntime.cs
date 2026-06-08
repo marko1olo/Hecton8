@@ -1131,10 +1131,10 @@ namespace Hecton8.Gameplay
             {
                 byte externalFlags = KccVelocitySignal.FlagMovementAuthorityExternal;
 
-                Vector3 bodyPosition = _body.position;
-                Vector3 bodyVelocity = _body.linearVelocity;
-                float3 rawAuthorityPosition = ToFloat3(bodyPosition);
-                float3 rawAuthorityVelocity = ToFloat3(bodyVelocity);
+                Vector3 authorityBodyPosition = _body.position;
+                Vector3 authorityBodyVelocity = _body.linearVelocity;
+                float3 rawAuthorityPosition = ToFloat3(authorityBodyPosition);
+                float3 rawAuthorityVelocity = ToFloat3(authorityBodyVelocity);
                 bool authorityInputInvalid =
                     !math.all(math.isfinite(rawAuthorityPosition)) ||
                     !math.all(math.isfinite(rawAuthorityVelocity));
@@ -1698,8 +1698,7 @@ namespace Hecton8.Gameplay
 
             if (!_registeredHotSwap)
             {
-                GlobalRegistry.RegisterHotSwapListener(this);
-                _registeredHotSwap = true;
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
             }
 
         }
@@ -1739,7 +1738,7 @@ namespace Hecton8.Gameplay
 
             if (_registeredHotSwap)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
 
@@ -1945,7 +1944,13 @@ namespace Hecton8.Gameplay
 
         private void RebindColdIfMissing()
         {
-            if (_fluidGpuReadModel != null && _analyticalFlowReadModel != null && _voxelEngine != null && _cameraTransform != null)
+            if (_gasDynamics != null &&
+                _fluidGpuReadModel != null &&
+                _analyticalFlowReadModel != null &&
+                _voxelEngine != null &&
+                _motor != null &&
+                _playerRuntimeContext != null &&
+                _cameraTransform != null)
                 return;
 
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
@@ -1953,6 +1958,28 @@ namespace Hecton8.Gameplay
                 return;
 
             _nextColdRebindFrame = frame + 64;
+            RefreshMissingRegistryServicesCold();
+        }
+
+        private void RefreshMissingRegistryServicesCold()
+        {
+            if (_gasDynamics == null)
+                _gasDynamics = GlobalRegistry.GasDynamics;
+            if (_fluidGpuReadModel == null)
+                _fluidGpuReadModel = GlobalRegistry.AbyssalFlowGpu;
+            if (_analyticalFlowReadModel == null)
+                _analyticalFlowReadModel = GlobalRegistry.AnalyticalFlow;
+            if (_voxelEngine == null)
+                _voxelEngine = GlobalRegistry.VoxelEngine;
+            if (_motor == null)
+            {
+                _motor = GlobalRegistry.PlayerMotor;
+                if (_motor == null)
+                    _motor = _localMotor;
+            }
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
             RefreshCameraTransformFromPlayerContext();
         }
 

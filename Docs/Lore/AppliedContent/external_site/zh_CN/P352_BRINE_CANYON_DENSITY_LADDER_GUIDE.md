@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Brine Canyon Density Ladder Guide"
+title: "盐水峡谷密度梯指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Brine Canyon Density Ladder Guide
+# 盐水峡谷密度梯指南
 
-ZH LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.
+盐水峡谷密度梯指南把 HECTON-8 的海沟当作工程地理：向下的路由密度构成，而不是由风景构成。
 
 ## Scanner
 
-ZH LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
+检测到 brine ladder：分层密度、假地板、声呐弯折。沿边走；这里的开阔水域会撒谎。
 
 ## Terminal
 
-ZH LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: brine 峡谷隐藏 pressure shelves、current ledges、resource pockets 和 scanner false positives。Hull rating 与 density transition 决定哪条岩架是路，哪条是坠落。
 
 ## Audio
 
-ZH LOC HOLD: A canyon is a staircase if your hull can pay for each step.
+如果你的船壳能为每一级付费，峡谷就是楼梯。
 
 ## Field Note
 
-ZH LOC HOLD: Use for scanner tutorials and resource route articles.
+把 vane 阴影当台阶用。brine 中的空白读数不是空处，而是仪器输掉了争论。
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/zh_CN. -->

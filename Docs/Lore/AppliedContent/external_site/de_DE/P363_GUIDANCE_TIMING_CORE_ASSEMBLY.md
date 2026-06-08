@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Guidance Timing Core Assembly"
+title: "Führungstimingkern-Baugruppe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Guidance Timing Core Assembly
+# Führungstimingkern-Baugruppe
 
-DE LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.
+Die Führungstimingkern-Baugruppe hält HECTON-8s Raumflug hart: extraction ist ein Routenproblem aus Uhren, Schatten und beschädigtem Vertrauen.
 
 ## Scanner
 
-DE LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+Leerer Timingkern. Aegir-Geometrie entscheidet, ob Aufstieg recovery, capture oder Stille wird.
 
 ## Terminal
 
-DE LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: Kapseluhr auf Aegir window, Black Keel receiver lane, moon relay shutter und storm-plume-Drift ausrichten. Späte packets werden Beweisverlust; frühe packets werden capture noise.
 
 ## Audio
 
-DE LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+Oben ist keine Richtung. Es ist ein Fenster mit Zeugen.
 
 ## Field Note
 
-DE LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+Von HECTON-8 gibt es kein einfaches Oben. Es gibt einen Empfänger, einen Schatten, Sturmdrift und eine packet queue, die schon älter ist als deine Panik.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/de_DE. -->

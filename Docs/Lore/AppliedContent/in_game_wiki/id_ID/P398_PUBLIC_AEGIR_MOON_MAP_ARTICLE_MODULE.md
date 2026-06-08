@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Aegir Moon Route Map"
+title: "Peta Rute Bulan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Aegir Moon Route Map
+# Peta Rute Bulan Aegir
 
-ID LOC HOLD: Aegir moon data is route data. HECTON-8 is one ocean moon inside a larger ladder of relay, radiation, scatter and tide constraints; the visible sky is part of navigation, not decoration.
+Data bulan Aegir adalah data rute. HECTON-8 adalah bulan samudra yang dimainkan, tetapi ia berada dalam tangga batasan relay, radiasi, sebaran, dan pasang yang lebih besar. Langit yang terlihat ikut menentukan apakah sinyal penyelamatan didengar, tertunda, diberi harga, ditolak, atau mustahil secara fisik.
 
 ## Scanner
 
-ID LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Catatan peta sistem. Bulan-bulan Aegir menentukan relay timing, perlindungan radiasi, ice scatter, tekanan pasang, occultation bands, beacons mati, dan recovery geometry.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+SIMPUL ARSIP PUBLIK // TANGGA BULAN AEGIR. Nama bulan adalah label rute. Tiap benda mengubah signal age, transfer risk, storm exposure, custody timing, atau claim reliability.
 
 ## Audio
 
-ID LOC HOLD: The map is why no one arrives the moment you ask.
+Peta menjelaskan mengapa tak ada yang datang tepat saat kau meminta.
 
 ## Field Note
 
-ID LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Catatan Marauder: tandai bulannya, lalu tandai apa yang ia lakukan pada rute.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/id_ID. -->

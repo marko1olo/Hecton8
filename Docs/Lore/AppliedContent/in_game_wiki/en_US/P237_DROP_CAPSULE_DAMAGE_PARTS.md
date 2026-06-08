@@ -19,7 +19,11 @@ localization_flags: 0
 
 # Drop Capsule Damage Parts
 
-Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.
+The drop capsule did not fail as one dramatic wreck. It failed as a chain of named parts that still almost did their job. The ascent sleeve is warped, so the capsule cannot reseal against lift pressure. The guidance gimbal is scarred, so any clean ascent would tumble before Black Keel could accept it. The relay mast is sheared, the compressor is fouled with brine grit, and cracked heat tiles turn every imagined burn into a debris field.
+
+That matters because HECTON-8 does not hand out a clean rescue button. A capsule that can keep air in for an hour is not the same thing as a capsule that can leave the ocean. Each broken part points to a real route: find pressure-rated sleeve stock, recover gimbal bearings, rebuild the relay spine, clean the compressor path, or prove enough damage for Black Keel to price an alternate window.
+
+The wreck is therefore not background. It is the first engineering map. If the capsule says FAIL, the ocean has already converted a landing into a parts list.
 
 ## Scanner
 
@@ -35,6 +39,6 @@ It landed well enough to strand you properly.
 
 ## Field Note
 
-The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+The capsule can keep a Marauder alive for the first hour. It cannot climb without deep-rated replacement parts.
 
 <!-- In-Game Wiki; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/en_US. -->

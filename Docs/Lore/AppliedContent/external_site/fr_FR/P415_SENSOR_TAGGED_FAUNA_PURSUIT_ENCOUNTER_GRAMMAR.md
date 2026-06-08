@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "Grammaire de rencontre : poursuite par faune marquée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# Grammaire de rencontre : poursuite par faune marquée
 
-FR LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+La poursuite par faune marquée montre Atlas comme une interprétation endommagée, pas comme un ordre de méchant. Un animal inoffensif ou apeuré peut devenir dangereux parce qu’une vieille infrastructure traite encore sa cicatrice comme de la télémétrie.
 
 ## Scanner
 
-FR LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+Poursuite par faune marquée. Ancienne balise biometal renvoyant un écho du réseau de réparation. Le mouvement de l’animal est local ; l’interprétation du réseau ne l’est pas.
 
 ## Terminal
 
-FR LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+GRAMMAIRE DE RENCONTRE / POURSUITE PAR BALISE SENSORIELLE / rôle : rétroaction de maintenance corrompue, risque de contamination d’abri, pression sans méchant / lecture sûre : le pouls de la balise retarde sur le mouvement, l’animal évite la douleur, l’écho de route Atlas suit le dernier trajet connu / rejeter : cadrage de contrôle mental, comportement d’IA hostile trop propre, conduite d’un animal marqué vers l’abri de base / note de route : rompre l’écho par l’angle, le silence et l’occlusion ; ne pas apprendre au réseau où se trouve la maison.
 
 ## Audio
 
-FR LOC HOLD: It follows because the network thinks following is a repair.
+Il suit parce que quelque chose d’ancien croit que suivre est une étape de réparation.
 
 ## Field Note
 
-FR LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+Ne ramène pas la balise chez toi. Brise la ligne, brise le son, brise l’interprétation. L’animal n’est pas le réseau.
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/fr_FR. -->

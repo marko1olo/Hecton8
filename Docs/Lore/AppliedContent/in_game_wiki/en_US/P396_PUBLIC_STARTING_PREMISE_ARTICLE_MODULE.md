@@ -19,19 +19,19 @@ localization_flags: 0
 
 # Marauder Starting Claim
 
-The opening record frames the player as a professional under pressure, not a tourist and not a family avenger. Old Deep Reach history matters because the procedures on HECTON-8 are familiar before they become evidence.
+The opening record frames the player as a trained operator under debt pressure. The character is no tourist, chosen heir or family avenger; they already understand pumps, seals, route forms and Deep Reach abbreviations before the wreckage starts contradicting those forms. This keeps the first hour practical: seal the bathydrop, restore pressure, read damaged machinery, recover cargo and decide which official lines are already lying.
 
 ## Scanner
 
-Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+Public claim record. The opening route identifies a debt-bound Marauder with Deep Reach field-systems history, a damaged bathydrop and a Black Keel recovery window over P-63.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor record: former Deep Reach field-systems specialist. Current status: lien-bound Marauder. Route: Black Keel recovery claim, P-63 shelf descent, evidence and cargo return before custody window close.
 
 ## Audio
 
-You are returning to paperwork you know too well.
+You are not sightseeing on HECTON-8. You are returning to paperwork you know too well.
 
 ## Field Note
 

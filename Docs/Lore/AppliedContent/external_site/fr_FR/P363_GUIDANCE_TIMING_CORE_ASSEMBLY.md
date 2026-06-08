@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Guidance Timing Core Assembly"
+title: "Assemblage de noyau de timing de guidage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Guidance Timing Core Assembly
+# Assemblage de noyau de timing de guidage
 
-FR LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.
+L'Assemblage de noyau de timing de guidage garde le vol spatial de HECTON-8 dur : l'extraction est un problème de route fait d'horloges, d'ombres et de confiance abîmée.
 
 ## Scanner
 
-FR LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+Noyau de timing vide. La géométrie d'Aegir décide si l'ascension devient recovery, capture ou silence.
 
 ## Terminal
 
-FR LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE : aligner l'horloge capsule sur l'Aegir window, la Black Keel receiver lane, le moon relay shutter et la dérive storm-plume. Les packets tardifs deviennent perte de preuve ; les packets précoces deviennent capture noise.
 
 ## Audio
 
-FR LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+Le haut n'est pas une direction. C'est une fenêtre avec témoin.
 
 ## Field Note
 
-FR LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+Il n'y a pas de simple haut depuis HECTON-8. Il y a un récepteur, une ombre, une dérive de tempête et une packet queue déjà plus vieille que ta panique.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/fr_FR. -->

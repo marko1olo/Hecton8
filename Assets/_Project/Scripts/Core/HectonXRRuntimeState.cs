@@ -785,10 +785,10 @@ namespace Hecton8.Core
 
         private static bool TryResolveHeadRuntimePosition(out Vector3 runtimePosition, out XRRuntimeAup48 headAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                TryResolveHeadRuntimePosition(in runtimeContext, out runtimePosition, out headAup))
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext != null)
             {
-                return true;
+                return TryResolveHeadRuntimePosition(runtimeContext, out runtimePosition, out headAup);
             }
 
             IPlayerRuntimeContext playerContext = _coldPlayerContextFallback;
@@ -821,24 +821,46 @@ namespace Hecton8.Core
         }
 
         private static bool TryResolveHeadRuntimePosition(
-            in PlayerRuntimeContext runtimeContext,
+            IPlayerRuntimeContext runtimeContext,
             out Vector3 runtimePosition,
             out XRRuntimeAup48 headAup)
         {
             runtimePosition = Vector3.zero;
             headAup = default;
-            if (runtimeContext == null || !runtimeContext.IsBound)
+            if (runtimeContext == null)
                 return false;
 
-            PlayerLookState lookState = runtimeContext.LookState;
-            if ((lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
-                !math.all(math.isfinite(lookState.EyePosition)))
+            if (runtimeContext.TryGetLookRuntimeState(out PlayerLookState lookState) &&
+                (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.all(math.isfinite(lookState.EyePosition)))
             {
-                return false;
+                runtimePosition = new Vector3(lookState.EyePosition.x, lookState.EyePosition.y, lookState.EyePosition.z);
+                return XRRuntimeAup48.TryFromRuntimePosition(runtimePosition, out headAup);
             }
 
-            runtimePosition = new Vector3(lookState.EyePosition.x, lookState.EyePosition.y, lookState.EyePosition.z);
-            return XRRuntimeAup48.TryFromRuntimePosition(runtimePosition, out headAup);
+            Camera playerCamera = runtimeContext.PlayerCamera;
+            if (playerCamera != null)
+            {
+                runtimePosition = playerCamera.transform.position;
+                return XRRuntimeAup48.TryFromRuntimePosition(runtimePosition, out headAup);
+            }
+
+            if (runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot poseSnapshot) &&
+                math.all(math.isfinite(poseSnapshot.RuntimePosition)))
+            {
+                float3 poseRuntime = poseSnapshot.RuntimePosition;
+                runtimePosition = new Vector3(poseRuntime.x, poseRuntime.y, poseRuntime.z);
+                return XRRuntimeAup48.TryFromRuntimePosition(runtimePosition, out headAup);
+            }
+
+            Transform playerTransform = runtimeContext.PlayerTransform;
+            if (playerTransform != null)
+            {
+                runtimePosition = playerTransform.position;
+                return XRRuntimeAup48.TryFromRuntimePosition(runtimePosition, out headAup);
+            }
+
+            return false;
         }
 
         private static void CacheHeadAup(Vector3 runtimePosition, in XRRuntimeAup48 headAup)

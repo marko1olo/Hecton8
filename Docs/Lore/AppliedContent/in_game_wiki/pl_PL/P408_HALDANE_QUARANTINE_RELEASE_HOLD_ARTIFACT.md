@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Haldane Quarantine Hold"
+title: "Hold Haldane'a na zwolnienie z kwarantanny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Haldane Quarantine Hold
+# Hold Haldane'a na zwolnienie z kwarantanny
 
-PL LOC HOLD: The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
+Hold Haldane'a nie dowodzi, że kwarantanna była fałszywa. Jest gorzej: protokół miał realną podstawę, a potem Deep Reach użyło języka certification, by zatrzymać ciała, próbki i liability w miejscu, gdy kolonia potrzebowała ruchu bardziej niż papieru.
 
 ## Scanner
 
-PL LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Hold zwolnienia z kwarantanny. Prawdziwy protokół skażenia stał się opóźnieniem custody, gdy zagrożenie ciśnieniem było już fizyczne.
 
 ## Terminal
 
-PL LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
+QUARANTINE HOLD DESK / HALDANE / RELEASE CERTIFICATION: evacuee movement remains suspended pending XO sample custody, seal-read variance and downstream exposure review.
 
 ## Audio
 
-PL LOC HOLD: The folder was orderly. That was the problem.
+Hold nie wymyślił zagrożenia. Zatrzymał ludzi w środku.
 
 ## Field Note
 
-PL LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Notatka Maraudera: kwarantanna może być prawdziwa i nadal działać jak zamek.
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/pl_PL. -->

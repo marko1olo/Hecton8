@@ -2213,7 +2213,7 @@ namespace Hecton8.Narrative.Editor
                 CountTextInMethod(settingsManagerFile.Root, "ResetToDefaults", "TextScale = AccessibilitySettings.DefaultTextScale");
             summary.SettingsManagerTextScaleApplies =
                 CountInvocationInMethod(settingsManagerFile.Root, "ApplyAllSettings", "TryApplyAccessibilityTextScale") +
-                CountTextInMethod(settingsManagerFile.Root, "TryApplyAccessibilityTextScale", "AccessibilitySettings.ActiveRuntimeInstance") +
+                CountTextInMethod(settingsManagerFile.Root, "TryApplyAccessibilityTextScale", "AccessibilitySettings.TryResolveActiveRuntime") +
                 CountTextInMethod(settingsManagerFile.Root, "TryApplyAccessibilityTextScale", "FontStreamingManager.RequestAccessibilityTextScale");
             summary.SettingsManagerTextScaleFiniteGuards =
                 CountTextInMethod(settingsManagerFile.Root, "ValidateTextScale", "float.IsNaN(value)") +
@@ -2357,7 +2357,7 @@ namespace Hecton8.Narrative.Editor
                 CountTextInMethod(settingsManagerFile.Root, "ResetToDefaults", "UiMotionScale = AccessibilitySettings.DefaultUiMotionScale");
             summary.SettingsManagerUiMotionApplies =
                 CountInvocationInMethod(settingsManagerFile.Root, "ApplyAllSettings", "TryApplyAccessibilityUiMotionScale") +
-                CountTextInMethod(settingsManagerFile.Root, "TryApplyAccessibilityUiMotionScale", "AccessibilitySettings.ActiveRuntimeInstance") +
+                CountTextInMethod(settingsManagerFile.Root, "TryApplyAccessibilityUiMotionScale", "AccessibilitySettings.TryResolveActiveRuntime") +
                 CountTextInMethod(settingsManagerFile.Root, "TryApplyAccessibilityUiMotionScale", "UIScreenShake.SetGlobalMotionScale");
             summary.SettingsManagerUiMotionFiniteGuards =
                 CountTextInMethod(settingsManagerFile.Root, "ValidateUiMotionScale", "float.IsNaN(value)") +

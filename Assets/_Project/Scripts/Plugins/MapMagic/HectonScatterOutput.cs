@@ -12,7 +12,7 @@
 // HOW IT WORKS:
 //   1. Receives TransitionsList from upstream scatter/adjust nodes.
 //   2. On Apply, iterates all positions WITHOUT creating arrays.
-//   3. Calls GlobalRegistry.ScavengePopulator.RegisterSpawnPoint() per position.
+//   3. Resolves the live ScavengePopulator and calls RegisterSpawnPoint() per position.
 //   4. Nothing is written to TerrainData — this is a terminal node.
 //
 // INTEGRATION:
@@ -59,7 +59,7 @@ namespace Hecton8.MapMagicIntegration
         /// <summary>
         /// Called by MapMagic after generation is complete.
         /// Creates the ApplyData object that will be executed on the main thread.
-        /// 
+        ///
         /// This runs on a WORKER THREAD — do not access Unity API here.
         /// We only package data for later application.
         /// </summary>
@@ -99,7 +99,7 @@ namespace Hecton8.MapMagicIntegration
         {
             // ScavengePopulator handles its own culling via CullDistantChunks.
             // If explicit purge is needed per-tile, we could call:
-            //   GlobalRegistry.ScavengePopulator?.ReloadChunk(coord);
+            //   WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref populator);
             // But we don't have coord here easily, and culling handles it.
         }
 
@@ -110,10 +110,10 @@ namespace Hecton8.MapMagicIntegration
         /// <summary>
         /// Carries transition data from worker thread to main thread.
         /// Apply() iterates all positions and feeds them to ScavengePopulator.
-        /// 
+        ///
         /// IMPORTANT: TransitionsList stores positions as arrays internally:
         ///   trns.list[i].pos   — Vector3 (world-space position)
-        ///   trns.list[i].rotation — float (Y-axis rotation in degrees)  
+        ///   trns.list[i].rotation — float (Y-axis rotation in degrees)
         ///   trns.list[i].scale — Vector3 (scale)
         ///   trns.list[i].id    — int (prototype index)
         ///
@@ -133,16 +133,16 @@ namespace Hecton8.MapMagicIntegration
 
             /// <summary>
             /// Called on MAIN THREAD by MapMagic tile application pipeline.
-            /// 
+            ///
             /// Iterates all scatter positions and registers them with
             /// ScavengePopulator for time-sliced spawning.
-            /// 
+            ///
             /// ZERO GC: struct SpawnRequest, direct array indexing.
             /// </summary>
             public void Apply(Terrain terrain)
             {
-                ScavengePopulator populator = GlobalRegistry.ScavengePopulator;
-                if (populator == null)
+                ScavengePopulator populator = null;
+                if (!Hecton8.World.WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref populator))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogError(
@@ -164,7 +164,7 @@ namespace Hecton8.MapMagicIntegration
                 // ── Iterate all transitions ──
                 // TransitionsList stores data in parallel arrays for SoA layout:
                 //   _transitions.posArr    — Vector3[]
-                //   _transitions.rotArr    — float[] (Y rotation in degrees)  
+                //   _transitions.rotArr    — float[] (Y rotation in degrees)
                 //   _transitions.scaleArr  — Vector3[]
                 for (int i = 0; i < count; i++)
                 {

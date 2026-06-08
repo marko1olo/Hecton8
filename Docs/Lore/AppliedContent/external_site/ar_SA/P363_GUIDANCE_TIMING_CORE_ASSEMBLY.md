@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Guidance Timing Core Assembly"
+title: "تجميعة نواة توقيت التوجيه"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Guidance Timing Core Assembly
+# تجميعة نواة توقيت التوجيه
 
-AR LOC HOLD: HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.
+تحافظ تجميعة نواة توقيت التوجيه على صلابة الطيران الفضائي في HECTON-8: extraction مشكلة مسار مكونة من ساعات وظلال وثقة متضررة.
 
 ## Scanner
 
-AR LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+نواة timing core فارغة. تحدد هندسة Aegir ما إذا كان الصعود recovery أو capture أو صمتا.
 
 ## Terminal
 
-AR LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: مزامنة ساعة الكبسولة مع Aegir window، وBlack Keel receiver lane، وmoon relay shutter، وانجراف storm-plume. تصبح packets المتأخرة فقدان أدلة؛ وتصبح packets المبكرة capture noise.
 
 ## Audio
 
-AR LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+الأعلى ليس اتجاها. إنه نافذة لها شاهد.
 
 ## Field Note
 
-AR LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+لا يوجد صعود بسيط من HECTON-8. هناك مستقبل، وظل، وانجراف عاصفة، وpacket queue أقدم من ذعرك.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/ar_SA. -->

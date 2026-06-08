@@ -170,6 +170,7 @@ namespace Hecton8.World
         private const double FarUnloadPlayerTravelThresholdSq = FarUnloadPlayerTravelThresholdMeters * FarUnloadPlayerTravelThresholdMeters;
         private const float FarUnloadDistanceMeters = 2500f;
         private const double FarUnloadDistanceSq = FarUnloadDistanceMeters * FarUnloadDistanceMeters;
+        private const float MaxTransientEventRadiusMeters = FarUnloadDistanceMeters;
         private const int AcousticDensityMapAxis = 8;
         private const int AcousticDensityMapCellCount = AcousticDensityMapAxis * AcousticDensityMapAxis * AcousticDensityMapAxis;
         private const int AcousticDensityMapCadenceFrames = 10;
@@ -1241,13 +1242,17 @@ namespace Hecton8.World
             if (IsInvalidTransientEvent(worldPosition, radiusMeters, intensity, lifetimeSeconds, eventType, temperature))
                 return;
 
+            float safeRadiusMeters = NormalizeTransientEventRadius(radiusMeters);
+            if (safeRadiusMeters <= 0f)
+                return;
+
             if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition positionAup))
                 return;
 
             RegisterTransientEvent(
                 worldPosition,
                 in positionAup,
-                radiusMeters,
+                safeRadiusMeters,
                 intensity,
                 lifetimeSeconds,
                 eventType,
@@ -1273,6 +1278,10 @@ namespace Hecton8.World
                 !IsFiniteAup(in positionAup))
                 return;
 
+            float safeRadiusMeters = NormalizeTransientEventRadius(radiusMeters);
+            if (safeRadiusMeters <= 0f)
+                return;
+
             EnsureInitialized();
             double currentTimestamp = RuntimeNowSeconds();
             if (!IsFiniteDouble(currentTimestamp))
@@ -1282,7 +1291,7 @@ namespace Hecton8.World
             uint sourceKey = ComposeTransientSignalSourceKey(signalRole, sourceSpeciesId);
             _nativeHash.RegisterTransientEvent(
                 in positionAup,
-                radiusMeters,
+                safeRadiusMeters,
                 math.saturate(intensity),
                 expirationTimestamp,
                 (uint)eventType,
@@ -1313,6 +1322,14 @@ namespace Hecton8.World
                    intensity <= 0f ||
                    lifetimeSeconds <= 0f ||
                    eventType == SpatialTransientEventType.None;
+        }
+
+        private static float NormalizeTransientEventRadius(float radiusMeters)
+        {
+            if (!math.isfinite(radiusMeters) || radiusMeters <= 0f)
+                return 0f;
+
+            return math.min(radiusMeters, MaxTransientEventRadiusMeters);
         }
 
         /// <summary>
@@ -1467,13 +1484,18 @@ namespace Hecton8.World
 
         internal static void HandleOriginShift(in OriginShiftEventData shiftData)
         {
-            Vector3 runtimeOffset = -shiftData.ShiftOffset;
-            if (!IsFiniteRuntimePosition(runtimeOffset))
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteRuntimePosition(shiftOffset) || !math.isfinite(shiftSqrMagnitude))
             {
                 ClearAcousticDensityMapForOriginShift();
                 return;
             }
 
+            if (shiftSqrMagnitude <= 0.000001f)
+                return;
+
+            Vector3 runtimeOffset = -shiftOffset;
             if (_nativeHash == null)
             {
                 ClearAcousticDensityMapForOriginShift();
@@ -2243,20 +2265,31 @@ namespace Hecton8.World
 
         private static bool TryResolveActivePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null)
             {
-                HectonPlayerMovement playerMovement = runtimeContext.PlayerMovement;
-                if (playerMovement != null)
+                playerAup = default;
+                return false;
+            }
+
+            if (runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                AbsoluteUniversePosition snapshotAup = snapshot.Aup;
+                if (snapshotAup.IsFinite())
                 {
-                    playerAup = playerMovement.CurrentAup;
+                    playerAup = snapshotAup;
                     return true;
                 }
+            }
 
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            if (runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                AbsoluteUniversePosition predictedAup = movementState.PredictedAup;
+                if (predictedAup.IsFinite())
                 {
-                    playerAup = movementState.PredictedAup;
+                    playerAup = predictedAup;
                     return true;
                 }
             }

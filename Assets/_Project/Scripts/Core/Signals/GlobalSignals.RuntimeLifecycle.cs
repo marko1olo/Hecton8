@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Hecton8.Atmosphere;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Generated;
@@ -211,6 +212,8 @@ namespace Hecton8.Core
             ValidateSignalSize<ItemAcquiredSignal>(64);
             ValidateSignalSize<InventoryDeathLootCacheSignal>(128);
             ValidateSignalSize<RadiationDoseSignal>(64);
+            ValidateSignalSize<ToxicityExposureSignal>(64);
+            ValidateSignalSize<ToxicBioluminescenceSignal>(64);
             ValidateSignalSize<TemperatureChangedSignal>(64);
             ValidateSignalSize<ThermalSourceSignal>(64);
             ValidateSignalSize<ResourceDepletionDeltaSignal>(32);
@@ -221,6 +224,7 @@ namespace Hecton8.Core
             ValidateSignalSize<PlayerStressSignal>(32);
             ValidateSignalSize<TraumaSignal>(32);
             ValidateSignalSize<WakeGeneratedSignal>(64);
+            ValidateSignalSize<BubbleSpawnSignal>(128);
             ValidateSignalSize<ProgressionEventSignal>(64);
             ValidateSignalSize<ProgressionMetaSignal>(32);
             ValidateSignalSize<SessionLifecycleSignal>(64);
@@ -649,6 +653,12 @@ namespace Hecton8.Core
             SignalBus<FaunaStateChangedSignal>.EnsureInitialized();
             SignalBus<WakeGeneratedSignal>.Configure(WakeGeneratedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(WakeGeneratedSignal)));
             SignalBus<WakeGeneratedSignal>.EnsureInitialized();
+            SignalBus<BubbleSpawnSignal>.Configure(
+                BubbleSpawnSignalCapacity,
+                maxFrameSignals: BubbleSpawnSignal.MaxFrameSignals,
+                lowTierFrameSignals: BubbleSpawnSignal.LowTierFrameSignals,
+                laneHash: BubbleSpawnSignal.LaneHash);
+            SignalBus<BubbleSpawnSignal>.EnsureInitialized();
             SignalBus<MemoryPressureSignal>.Configure(MemoryPressureSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(MemoryPressureSignal)));
             SignalBus<MemoryPressureSignal>.EnsureInitialized();
             SignalBus<HapticRequest>.Configure(HapticRequestCapacity, laneHash: ComputeStableSignalLaneHash(nameof(HapticRequest)));
@@ -695,7 +705,11 @@ namespace Hecton8.Core
             SignalBus<LaserCutterEventPayload>.EnsureInitialized();
             SignalBus<FramePacingWarningSignal>.Configure(FramePacingWarningSignalCapacity, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: ComputeStableSignalLaneHash(nameof(FramePacingWarningSignal)));
             SignalBus<FramePacingWarningSignal>.EnsureInitialized();
-            SignalBus<MovementAcousticSignal>.Configure(MovementAcousticSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(MovementAcousticSignal)));
+            SignalBus<MovementAcousticSignal>.Configure(
+                MovementAcousticSignalCapacity,
+                maxFrameSignals: MovementAcousticSignal.MaxFrameSignals,
+                lowTierFrameSignals: MovementAcousticSignal.LowTierFrameSignals,
+                laneHash: MovementAcousticSignal.LaneHash);
             SignalBus<MovementAcousticSignal>.EnsureInitialized();
             SignalBus<AcousticZoneChangedEvent>.Configure(
                 AcousticZoneChangedSignalCapacity,
@@ -789,7 +803,11 @@ namespace Hecton8.Core
             SignalBus<SectorDehydratedSignal>.EnsureInitialized();
             SignalBus<ChunkDehydratedSignal>.Configure(ChunkDehydratedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ChunkDehydratedSignal)));
             SignalBus<ChunkDehydratedSignal>.EnsureInitialized();
-            SignalBus<InventoryCommandSignal>.Configure(InventoryCommandSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(InventoryCommandSignal)));
+            SignalBus<InventoryCommandSignal>.Configure(
+                InventoryCommandSignalCapacity,
+                maxFrameSignals: InventoryCommandSignal.MaxFrameSignals,
+                lowTierFrameSignals: InventoryCommandSignal.LowTierFrameSignals,
+                laneHash: InventoryCommandSignal.LaneHash);
             SignalBus<InventoryCommandSignal>.EnsureInitialized();
             SignalBus<InventoryDeathLootCacheSignal>.Configure(
                 InventoryDeathLootCacheSignalCapacity,
@@ -803,10 +821,26 @@ namespace Hecton8.Core
             SignalBus<ItemDurabilityChangedSignal>.EnsureInitialized();
             SignalBus<ItemLifecycleSignal>.Configure(ItemLifecycleSignalCapacity, maxFrameSignals: ItemLifecycleSignalCapacity, lowTierFrameSignals: 32, laneHash: ComputeStableSignalLaneHash(nameof(ItemLifecycleSignal)));
             SignalBus<ItemLifecycleSignal>.EnsureInitialized();
-            SignalBus<ItemAcquiredSignal>.Configure(ItemAcquiredSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ItemAcquiredSignal)));
+            SignalBus<ItemAcquiredSignal>.Configure(
+                ItemAcquiredSignal.ExpectedCapacity,
+                maxFrameSignals: ItemAcquiredSignal.MaxFrameSignals,
+                lowTierFrameSignals: ItemAcquiredSignal.LowTierFrameSignals,
+                laneHash: ItemAcquiredSignal.LaneHash);
             SignalBus<ItemAcquiredSignal>.EnsureInitialized();
             SignalBus<RadiationDoseSignal>.Configure(RadiationDoseSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(RadiationDoseSignal)));
             SignalBus<RadiationDoseSignal>.EnsureInitialized();
+            SignalBus<ToxicityExposureSignal>.Configure(
+                ToxicityExposureSignal.ExpectedCapacity,
+                maxFrameSignals: ToxicityExposureSignal.MaxFrameSignals,
+                lowTierFrameSignals: ToxicityExposureSignal.LowTierFrameSignals,
+                laneHash: ToxicityExposureSignal.LaneHash);
+            SignalBus<ToxicityExposureSignal>.EnsureInitialized();
+            SignalBus<ToxicBioluminescenceSignal>.Configure(
+                ToxicBioluminescenceSignal.ExpectedCapacity,
+                maxFrameSignals: ToxicBioluminescenceSignal.MaxFrameSignals,
+                lowTierFrameSignals: ToxicBioluminescenceSignal.LowTierFrameSignals,
+                laneHash: ToxicBioluminescenceSignal.LaneHash);
+            SignalBus<ToxicBioluminescenceSignal>.EnsureInitialized();
             SignalBus<RadiationSourceSignal>.Configure(RadiationSourceSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(RadiationSourceSignal)));
             SignalBus<RadiationSourceSignal>.EnsureInitialized();
             SignalBus<ResourceDepletionDeltaSignal>.Configure(ResourceDepletionDeltaSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ResourceDepletionDeltaSignal)));

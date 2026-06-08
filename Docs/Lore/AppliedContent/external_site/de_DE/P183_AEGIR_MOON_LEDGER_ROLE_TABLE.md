@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ledger Role Table"
+title: "Aegir-Mondrouten-Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ledger Role Table
+# Aegir-Mondrouten-Ledger
 
-DE LOC HOLD: Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8.
+Das Aegir-Mondrouten-Ledger kartiert die Mondleiter um HECTON-8: nahe Körper bieten keine leichten Ausgänge, sie erschweren Rettungstiming, Verkehrsrechte und Vertrauen in Baken.
 
 ## Scanner
 
-DE LOC HOLD: Aegir moons are not decoration; each public moon label carries a route or salvage role.
+Aegirs Monde verdienen ihre Namen durch das, was sie brechen, verbergen, streuen, weiterleiten oder verkaufen.
 
 ## Terminal
 
-DE LOC HOLD: LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+LEDGER: Skarn-Strahlungsscherung, Vela-Relaismaskierung, Claw-Eisstreuung, Lumen-öffentliche Routenkarten, Thorne-Quarantänegerüchteverkehr, Anvil-industrielles salvage, Kestrel-Hochfensterverkehr, HECTON-Tiefenanspruch, Mute-Tote-Baken-Ökonomie.
 
 ## Audio
 
-DE LOC HOLD: The system has more bodies than stories. Good. Use them as pressure.
+Mehr Körper. Mehr Ausreden. Mehr Wege, wie Hilfe verfehlt.
 
 ## Field Note
 
-DE LOC HOLD: Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+Der Ozeanmond ist unter Wasser allein, nicht im System.
 
 <!-- External Site; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/de_DE. -->

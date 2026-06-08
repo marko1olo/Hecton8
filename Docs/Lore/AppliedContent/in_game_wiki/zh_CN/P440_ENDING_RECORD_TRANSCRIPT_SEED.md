@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Ending Record Transcript Seed"
+title: "结局记录转录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Ending Record Transcript Seed
+# 结局记录转录
 
-ZH LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
+结局记录转录让结果可记录、可在replay中比较，而不把知识变成可继承力量。
 
 ## Scanner
 
-ZH LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+结局记录片段列出receiver、payload hash、债务状态和未解决成本。
 
 ## Terminal
 
-ZH LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.
 
 ## Audio
 
-ZH LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
+事后记录。receiver已接受payload hash。claim按会计关闭。suppression flag不可读。truth custody未解决。
 
 ## Field Note
 
-ZH LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+用于ending dossier record。必须说出receiver、custody和未解决成本，不给干净道德闭合。
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/zh_CN. -->

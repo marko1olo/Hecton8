@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Claim Continuity Loss Conversion Proof"
+title: "Conversion de perte pour continuité de claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Claim Continuity Loss Conversion Proof
+# Conversion de perte pour continuité de claim
 
-FR LOC HOLD: The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.
+Le dernier maillon du mensonge Deep Reach n'est pas un dossier de dissimulation dramatique. C'est une conversion comptable qui sait survivre. Le ledger accepte que des personnes ont disparu, que des modules sont endommagés et que des routes sont compromises, puis déplace chaque fait vers une catégorie traitable par le système claim. L'absence des travailleurs devient unrecoverable loss. La preuve devient material sous custody. La cargaison survivante devient recoverable value. Le claim lui-même reste continuous, donc la propriété peut survivre à la colonie. C'est là que HECTON-8 passe du rapport d'accident à une machine morale. Le joueur qui remonte le ledger peut exposer les morts, vendre la preuve, l'enterrer ou la rediriger. Le document a de la valeur parce que la corporation a déjà entraîné le marché à l'évaluer.
 
 ## Scanner
 
-FR LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
+Tampon du bureau des pertes récupéré. Le ledger a mieux survécu que les travailleurs qu'il a renommés.
 
 ## Terminal
 
-FR LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
 
 ## Audio
 
-FR LOC HOLD: This is where dead workers became a clean column.
+C'est ici que des gens sont devenus une colonne propre.
 
 ## Field Note
 
-FR LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+Note de maraudeur : un ledger peut se souvenir des morts et quand même les dépenser.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/fr_FR. -->

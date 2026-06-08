@@ -9,32 +9,24 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Population And Authority Scale"
+title: "Skala Populasi Dan Otoritas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Population And Authority Scale
+# Skala Populasi Dan Otoritas
 
-ID LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
+## Jumlah Bukan Kekuasaan
 
-## Scanner
+Tabel domain sengaja menjaga populasi tetap lunak. Angka census persis bisa disetel nanti, tetapi hubungan tekanannya terkunci: Sol memegang keuangan lama dan sertifikasi, Centauri memegang bahasa legitimasi, Barnard memegang budaya salvage, Tau Ceti memegang tekanan bukti publik, Luyten memegang custody paket, dan Aegir memegang tempat kotor tempat semuanya menjadi mesin.
 
-ID LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+Di HECTON-8, nama domain tidak boleh dibaca sebagai trivia. Sol Core adalah segel pada kepemilikan dan kesinambungan asuransi. Ia bisa membuat laut mati tetap aktif secara hukum. Centauri Compact adalah ingatan ekspansi yang pernah berfungsi, sehingga Deep Reach bisa meminjam nada piagamnya dan terlihat kurang busuk. Barnard Yards menjelaskan mengapa protagonis mengenal clamp, cutter, pressure tools, dan pekerjaan buruk tanpa mitos pahlawan.
 
-## Terminal
+Tau Ceti bernilai karena bisa membuat bukti bermakna di depan publik. Itu tidak berarti ia bisa menyelamatkan penyelam sebelum pasang berubah. Luyten Junction lebih dingin: ia bisa menjaga custody, hash chains, dan packet notary records tanpa otoritas moral. Aegir adalah dirty claim node tempat shells lokal, jendela Black Keel, dan priority hooks Deep Reach mengubah otoritas jauh itu menjadi bahaya langsung.
 
-ID LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
-
-## Audio
-
-ID LOC HOLD: The largest domain is not the nearest hand.
-
-## Field Note
-
-ID LOC HOLD: Do not turn the setting into census space opera.
+Itulah mengapa desk kecil bisa lebih penting daripada planet. HECTON-8 tidak dikuasai populasi terbesar. Ia dikuasai siapa pun yang bisa membuat claim bertahan melewati jarak lalu menagih penyintas karena menyentuhnya.
 
 <!-- External Site; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/id_ID. -->

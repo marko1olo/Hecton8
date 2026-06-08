@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "到達可能な海底窓"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# 到達可能な海底窓
 
-JP LOC HOLD: Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.
+到達可能な海底窓は、HECTON-8の壊れた地殻が下降コストを短時間だけ下げる場所だ。崩れた棚、露出尾根、再加熱された噴出口傷、圧力を別に運ぶ塩水柱に生じる。急げば窓も死を招く。それでも古い床、希少鉱脈、埋もれた植民地機材、通常の海が届かせない証拠に触れられる。
 
 ## Scanner
 
-JP LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
+露出尾根マーカー。ここでは殻が薄く裂け、クローラーがペーストにならず古い床に触れられる。
 
 ## Terminal
 
-JP LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
+窓条件: 破砕地殻リップ、噴出口で再加熱された塩水柱、崩落棚ランプ、安定ソナー反射、スーツ赤線以下の圧力ポケット。低速サルベージのみ標識。
 
 ## Audio
 
-JP LOC HOLD: You land where the moon lets stone show through.
+海は窓で底に触らせる。勇気を出した場所ならどこでも、ではない。
 
 ## Field Note
 
-JP LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+月の大半は床を圧力の秘密として隠している。窓は牙のある例外だ。
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ja_JP. -->

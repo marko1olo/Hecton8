@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "얕은 부속동 P-63 펌프실"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Shallow Annex P-63 Pump Room
+# 얕은 부속동 P-63 펌프실
 
-KO LOC HOLD: Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside.
+Shallow Annex P-63은 HECTON-8을 작게 만들지 않고 첫 안전 공간을 준다. 펌프, cold seal, 게이지, 바깥의 밝은 선반.
 
 ## Scanner
 
-KO LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+P-63 펌프실. 수동 섬프 압력은 서비스 여유보다 낮은 상태로 버티고 있다.
 
 ## Terminal
 
-KO LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+작업 명령 P-63 / SHALLOW ANNEX: hand-pump sump를 0.3 m까지; seam C에 cold seal 안착; 게이지가 안정된 뒤에만 융착된 locker latch 절단; return pinger가 응답하기 전에는 녹색등을 믿지 말 것.
 
 ## Audio
 
-KO LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+먼저 펌프. 다음은 실링. 게이지가 흔들림을 멈춘 뒤에만 커터.
 
 ## Field Note
 
-KO LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+펌프 손잡이는 겁먹은 손들이 계속 잡은 자리만 반질거린다. 마른 바닥은 분필선에서 시작된다.
 
 <!-- External Site; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/ko_KR. -->

@@ -37,129 +37,129 @@
         },
         "ru_RU": {
           "title": "Последний пакет Лиана Торреса",
-          "scanner": "Последний чистый пакет не был потерян. Просто признать его получение было слишком дорого.",
-          "field_note": "Timestamp может быть трупом, когда carrier отвечает не той очереди.",
-          "terminal": "TORRES, L. Clean carrier handshake достигнут. Worker count приложен. Evacuation proof приложен. Relay age неприемлем для live rescue. Corporate archive позже помечает packet corrupted.",
+          "scanner": "Последний чистый пакет не потеряли. Признать его получение оказалось слишком дорого.",
+          "field_note": "Метка времени может стать телом, если перевозчик отвечает не той очереди.",
+          "terminal": "ТОРРЕС, Л. Чистое рукопожатие носителя подтверждено. Список рабочих приложен. Доказательство эвакуации приложено. Возраст ретрансляции неприемлем для спасения живых. Корпоративный архив позже помечает пакет как поврежденный.",
           "audio": "Он отправил имена. Архив назвал их шумом.",
-          "in_game_wiki": "Лиан Торрес закрепляет коммуникационную правду. Его последний чистый пакет доказывает, что часть evidence ушла с HECTON-8 до того, как Deep Reach похоронила ее под signal corruption и quarantine language.",
-          "external_site": "Последний пакет Лиана Торреса является человеческой формой no-ansible трагедии: пакет существует, имена существуют, но расстояние, queue priority и corporate response превращают правду в ответственность вместо спасения."
+          "in_game_wiki": "Лиан Торрес удерживает коммуникационную правду на месте. Его последний чистый пакет доказывает, что часть свидетельств ушла с HECTON-8 до того, как Deep Reach похоронила ее под словами о порче сигнала и карантине.",
+          "external_site": "Последний пакет Лиана Торреса превращает трагедию без ансибля в человеческий факт: пакет существует, имена существуют, но расстояние, приоритет очереди и корпоративный ответ делают правду ответственностью вместо спасения."
         },
         "ja_JP": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "JP LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "JP LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "JP LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "JP LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "JP LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "JP LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "リアン・トーレスの最後のパケット",
+          "scanner": "最後の正常なパケットは失われていない。受信を認めるには代償が高すぎた。",
+          "field_note": "搬送系が違う待ち行列に返事をすると、時刻印は遺体になる。",
+          "terminal": "TORRES, L. 正常なキャリア・ハンドシェイク達成。作業員数を添付。退避証拠を添付。中継経過時間は生存救助には不適。企業アーカイブは後にパケット破損と記録。",
+          "audio": "彼は名前を送った。アーカイブはそれを雑音と呼んだ。",
+          "in_game_wiki": "リアン・トーレスは通信の真実を固定する人物だ。彼の最後の正常パケットは、Deep Reachが信号劣化と隔離文言で埋める前に、証拠の一部がHECTON-8を出ていたことを示している。",
+          "external_site": "リアン・トーレスの最後のパケットは、超光速通信のない悲劇を人間の形にした記録だ。パケットはあり、名前もある。それでも距離、待ち行列の優先度、企業の応答が、真実を救助ではなく責任へ変えた。"
         },
         "zh_CN": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "CN LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "CN LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "CN LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "CN LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "CN LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "CN LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "利安·托雷斯的最后数据包",
+          "scanner": "最后一个干净数据包并没有丢失。承认收到它的代价太高。",
+          "field_note": "当承运链路回应了错误队列，时间戳也能变成尸体。",
+          "terminal": "托雷斯，L。干净承运握手已完成。工人名单已附。撤离证据已附。中继时龄不适用于实时救援。企业档案后来将该数据包标记为损坏。",
+          "audio": "他把名字发了出去。档案把它们叫作噪声。",
+          "in_game_wiki": "利安·托雷斯锚定了通信层面的真相。他的最后一个干净数据包证明，在Deep Reach用信号损坏和隔离措辞掩埋事实之前，部分证据已经离开HECTON-8。",
+          "external_site": "利安·托雷斯的最后数据包把无超光速通信的悲剧落到人身上：数据包存在，名字存在，但距离、队列优先级和企业回应让真相抵达时成了责任，而不是救援。"
         },
         "fr_FR": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "FR LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "FR LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "FR LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "FR LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "FR LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "FR LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "Dernier paquet de Lian Torres",
+          "scanner": "Le dernier paquet propre n'a pas été perdu. Reconnaître sa réception coûtait trop cher.",
+          "field_note": "Un horodatage peut devenir un corps lorsque le transporteur répond à la mauvaise file.",
+          "terminal": "TORRES, L. Poignée de main transporteur propre confirmée. Décompte des ouvriers joint. Preuve d'évacuation jointe. Âge de relais incompatible avec un sauvetage vivant. L'archive corporative marque ensuite le paquet comme corrompu.",
+          "audio": "Il a envoyé les noms. L'archive les a appelés du bruit.",
+          "in_game_wiki": "Lian Torres ancre la vérité des communications. Son dernier paquet propre prouve qu'une partie des preuves a quitté HECTON-8 avant que Deep Reach ne l'enterre sous la corruption de signal et le vocabulaire de quarantaine.",
+          "external_site": "Le dernier paquet de Lian Torres donne un visage humain à la tragédie sans ansible : le paquet existe, les noms existent, mais la distance, la priorité de file et la réponse corporative transforment la vérité en responsabilité plutôt qu'en secours."
         },
         "es_ES": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "ES LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "ES LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "ES LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "ES LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "ES LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "ES LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "Último paquete de Lian Torres",
+          "scanner": "El último paquete limpio no se perdió. Admitir su recepción salía demasiado caro.",
+          "field_note": "Una marca de tiempo puede ser un cadáver cuando el transportista responde a la cola equivocada.",
+          "terminal": "TORRES, L. Enlace limpio con el transportista confirmado. Recuento de trabajadores adjunto. Prueba de evacuación adjunta. Antigüedad del relevo inaceptable para rescate con vida. El archivo corporativo marca después el paquete como corrupto.",
+          "audio": "Envió los nombres. El archivo los llamó ruido.",
+          "in_game_wiki": "Lian Torres fija la verdad de las comunicaciones. Su último paquete limpio demuestra que parte de la evidencia salió de HECTON-8 antes de que Deep Reach la enterrara bajo corrupción de señal y lenguaje de cuarentena.",
+          "external_site": "El último paquete de Lian Torres convierte la tragedia sin ansible en algo humano: el paquete existe, los nombres existen, pero la distancia, la prioridad de cola y la respuesta corporativa hacen que la verdad llegue como responsabilidad en vez de rescate."
         },
         "de_DE": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "DE LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "DE LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "DE LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "DE LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "DE LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "DE LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "Letztes Paket von Lian Torres",
+          "scanner": "Das letzte saubere Paket ging nicht verloren. Seinen Empfang zuzugeben war zu teuer.",
+          "field_note": "Ein Zeitstempel kann eine Leiche sein, wenn der Träger die falsche Warteschlange bedient.",
+          "terminal": "TORRES, L. Sauberer Carrier-Handshake erreicht. Arbeiterzahl angehängt. Evakuierungsnachweis angehängt. Relaisalter für lebende Rettung unzulässig. Unternehmensarchiv markiert das Paket später als beschädigt.",
+          "audio": "Er schickte die Namen. Das Archiv nannte sie Rauschen.",
+          "in_game_wiki": "Lian Torres verankert die Wahrheit der Kommunikation. Sein letztes sauberes Paket beweist, dass ein Teil der Beweise HECTON-8 verließ, bevor Deep Reach sie unter Signalstörung und Quarantänesprache begrub.",
+          "external_site": "Das letzte Paket von Lian Torres macht die Tragödie ohne Ansible menschlich: Das Paket existiert, die Namen existieren, doch Entfernung, Warteschlangenpriorität und Unternehmensreaktion lassen Wahrheit als Haftung statt als Rettung eintreffen."
         },
         "pl_PL": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "PL LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "PL LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "PL LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "PL LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "PL LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "PL LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "Ostatni pakiet Liana Torresa",
+          "scanner": "Ostatni czysty pakiet nie zaginął. Przyznanie, że go odebrano, było zbyt kosztowne.",
+          "field_note": "Znacznik czasu może być ciałem, kiedy przewoźnik odpowiada niewłaściwej kolejce.",
+          "terminal": "TORRES, L. Czyste uzgodnienie nośnika osiągnięte. Liczba pracowników dołączona. Dowód ewakuacji dołączony. Wiek przekaźnika niedopuszczalny dla ratunku żywych. Archiwum korporacyjne później oznacza pakiet jako uszkodzony.",
+          "audio": "Wysłał nazwiska. Archiwum nazwało je szumem.",
+          "in_game_wiki": "Lian Torres zakotwicza prawdę komunikacyjną. Jego ostatni czysty pakiet dowodzi, że część dowodów opuściła HECTON-8, zanim Deep Reach pogrzebało ją pod awarią sygnału i językiem kwarantanny.",
+          "external_site": "Ostatni pakiet Liana Torresa nadaje tragedii bez ansibla ludzką postać: pakiet istnieje, nazwiska istnieją, ale dystans, priorytet kolejki i odpowiedź korporacji sprawiają, że prawda dociera jako odpowiedzialność zamiast ratunku."
         },
         "uk_UA": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "UK LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "UK LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "UK LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "UK LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "UK LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "UK LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "Останній пакет Ліана Торреса",
+          "scanner": "Останній чистий пакет не загубився. Визнати його отримання було занадто дорого.",
+          "field_note": "Часова мітка може стати тілом, коли перевізник відповідає не тій черзі.",
+          "terminal": "ТОРРЕС, Л. Чисте рукостискання носія підтверджено. Кількість працівників додано. Доказ евакуації додано. Вік ретрансляції неприйнятний для порятунку живих. Корпоративний архів пізніше позначає пакет як пошкоджений.",
+          "audio": "Він надіслав імена. Архів назвав їх шумом.",
+          "in_game_wiki": "Ліан Торрес закріплює правду комунікацій. Його останній чистий пакет доводить, що частина доказів вийшла з HECTON-8 до того, як Deep Reach поховала її під псуванням сигналу і мовою карантину.",
+          "external_site": "Останній пакет Ліана Торреса робить трагедію без ансибля людською: пакет існує, імена існують, але відстань, пріоритет черги та корпоративна відповідь перетворюють правду на відповідальність замість порятунку."
         },
         "ar_SA": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "AR LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "AR LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "AR LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "AR LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "AR LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "AR LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "حزمة ليان توريس الأخيرة",
+          "scanner": "الحزمة النظيفة الأخيرة لم تضِع. كان الاعتراف باستلامها مكلفا أكثر مما يحتملون.",
+          "field_note": "قد يتحول الطابع الزمني إلى جثة عندما يجيب الناقل على الطابور الخطأ.",
+          "terminal": "توريس، ل. تم تأكيد مصافحة الناقل النظيفة. أرفق عدد العمال. أرفق دليل الإخلاء. عمر الترحيل غير صالح لإنقاذ أحياء. وضع الأرشيف المؤسسي لاحقا علامة تلف على الحزمة.",
+          "audio": "أرسل الأسماء. سمّاها الأرشيف ضجيجا.",
+          "in_game_wiki": "يثبت ليان توريس حقيقة الاتصالات. فحزمته النظيفة الأخيرة تثبت أن بعض الأدلة غادرت HECTON-8 قبل أن تدفنها Deep Reach تحت فساد الإشارة ولغة الحجر.",
+          "external_site": "حزمة ليان توريس الأخيرة تجعل مأساة غياب الاتصال الفوري مأساة بشرية: الحزمة موجودة، والأسماء موجودة، لكن المسافة وأولوية الطابور ورد الشركة جعلت الحقيقة تصل كمسؤولية لا كإنقاذ."
         },
         "id_ID": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "ID LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "ID LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "ID LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "ID LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "ID LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "ID LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "Paket Terakhir Lian Torres",
+          "scanner": "Paket bersih terakhir itu tidak hilang. Mengakui penerimaannya terlalu mahal.",
+          "field_note": "Cap waktu bisa menjadi jenazah ketika pengangkut menjawab antrean yang salah.",
+          "terminal": "TORRES, L. Jabat tangan pembawa bersih tercapai. Jumlah pekerja terlampir. Bukti evakuasi terlampir. Usia relai tidak layak untuk penyelamatan hidup. Arsip korporat kemudian menandai paket sebagai rusak.",
+          "audio": "Ia mengirim nama-nama itu. Arsip menyebutnya derau.",
+          "in_game_wiki": "Lian Torres menambatkan kebenaran komunikasi. Paket bersih terakhirnya membuktikan bahwa sebagian bukti keluar dari HECTON-8 sebelum Deep Reach menguburnya di bawah kerusakan sinyal dan bahasa karantina.",
+          "external_site": "Paket Terakhir Lian Torres membuat tragedi tanpa ansible menjadi manusiawi: paket itu ada, nama-nama itu ada, tetapi jarak, prioritas antrean, dan respons korporat membuat kebenaran tiba sebagai liabilitas, bukan penyelamatan."
         },
         "ko_KR": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "KO LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "KO LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "KO LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "KO LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "KO LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "KO LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "리안 토레스의 마지막 패킷",
+          "scanner": "마지막 정상 패킷은 사라진 것이 아니었다. 수신을 인정하기에는 비용이 너무 컸다.",
+          "field_note": "운송자가 잘못된 대기열에 응답하면 타임스탬프도 시신이 된다.",
+          "terminal": "TORRES, L. 정상 캐리어 핸드셰이크 완료. 작업자 수 첨부. 대피 증거 첨부. 중계 경과 시간은 생존 구조에 부적합. 기업 기록실은 이후 패킷을 손상으로 표시함.",
+          "audio": "그는 이름들을 보냈다. 기록실은 그것을 잡음이라고 불렀다.",
+          "in_game_wiki": "리안 토레스는 통신의 진실을 고정한다. 그의 마지막 정상 패킷은 Deep Reach가 신호 손상과 격리 문구로 묻기 전에 일부 증거가 HECTON-8을 벗어났음을 증명한다.",
+          "external_site": "리안 토레스의 마지막 패킷은 초광속 통신 없는 비극을 사람의 일로 만든다. 패킷은 존재하고 이름도 존재한다. 그러나 거리, 대기열 우선순위, 기업의 응답은 진실을 구조가 아니라 책임으로 도착하게 했다."
         },
         "he_IL": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "HE LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "HE LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "HE LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "HE LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "HE LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "HE LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "החבילה האחרונה של ליאן טורס",
+          "scanner": "החבילה הנקייה האחרונה לא אבדה. ההודאה בקבלתה הייתה יקרה מדי.",
+          "field_note": "חותמת זמן יכולה להיות גופה כשהמוביל עונה לתור הלא נכון.",
+          "terminal": "טורס, ל. לחיצת יד נקייה עם המוביל הושלמה. ספירת עובדים צורפה. הוכחת פינוי צורפה. גיל הממסר אינו קביל להצלה חיה. הארכיון התאגידי סימן אחר כך את החבילה כפגומה.",
+          "audio": "הוא שלח את השמות. הארכיון קרא להם רעש.",
+          "in_game_wiki": "ליאן טורס מעגן את אמת התקשורת. החבילה הנקייה האחרונה שלו מוכיחה שחלק מן הראיות עזב את HECTON-8 לפני ש-Deep Reach קברה אותו תחת שיבוש אות ושפת הסגר.",
+          "external_site": "החבילה האחרונה של ליאן טורס נותנת פנים אנושיות לטרגדיה בלי אנסיבל: החבילה קיימת, השמות קיימים, אבל המרחק, עדיפות התור והתגובה התאגידית הופכים את האמת לאחריות במקום להצלה."
         },
         "pt_BR": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "PT-BR LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "PT-BR LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "PT-BR LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "PT-BR LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "PT-BR LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "PT-BR LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "Último pacote de Lian Torres",
+          "scanner": "O último pacote limpo não se perdeu. Admitir que ele foi recebido custava caro demais.",
+          "field_note": "Um carimbo de tempo pode virar um corpo quando o transportador responde à fila errada.",
+          "terminal": "TORRES, L. Handshake limpo com o transportador confirmado. Contagem de trabalhadores anexada. Prova de evacuação anexada. Idade do retransmissor inaceitável para resgate com vida. O arquivo corporativo depois marca o pacote como corrompido.",
+          "audio": "Ele enviou os nomes. O arquivo chamou aquilo de ruído.",
+          "in_game_wiki": "Lian Torres fixa a verdade das comunicações. Seu último pacote limpo prova que parte das evidências saiu de HECTON-8 antes que a Deep Reach as enterrasse sob corrupção de sinal e linguagem de quarentena.",
+          "external_site": "O Último pacote de Lian Torres transforma a tragédia sem ansible em fato humano: o pacote existe, os nomes existem, mas distância, prioridade de fila e resposta corporativa fazem a verdade chegar como responsabilidade em vez de resgate."
         },
         "nl_NL": {
-          "title": "Lian Torres Last Packet",
-          "scanner": "NL LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "NL LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "NL LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "NL LOC HOLD: He sent the names. The archive called them noise.",
-          "in_game_wiki": "NL LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "NL LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "title": "Laatste pakket van Lian Torres",
+          "scanner": "Het laatste schone pakket raakte niet kwijt. Erkennen dat het was ontvangen was te duur.",
+          "field_note": "Een tijdstempel kan een lichaam zijn wanneer de vervoerder de verkeerde wachtrij beantwoordt.",
+          "terminal": "TORRES, L. Schone carrier-handshake bereikt. Arbeidersaantal bijgevoegd. Evacuatiebewijs bijgevoegd. Relaisleeftijd onaanvaardbaar voor levende redding. Het bedrijfsarchief markeert het pakket later als beschadigd.",
+          "audio": "Hij stuurde de namen. Het archief noemde ze ruis.",
+          "in_game_wiki": "Lian Torres verankert de communicatiewaarheid. Zijn laatste schone pakket bewijst dat een deel van het bewijs HECTON-8 verliet voordat Deep Reach het begroef onder signaalcorruptie en quarantainetaal.",
+          "external_site": "Het laatste pakket van Lian Torres maakt de tragedie zonder ansible menselijk: het pakket bestaat, de namen bestaan, maar afstand, wachtrijprioriteit en bedrijfsreactie laten waarheid aankomen als aansprakelijkheid in plaats van redding."
         }
       }
     },
@@ -192,129 +192,129 @@
         },
         "ru_RU": {
           "title": "Кузня давления Оскара Нойманна",
-          "scanner": "Оскар Нойманн оставил рецепт forge для clamp rings, достаточно крепких, чтобы ascent cradle стал больше чем гробом.",
-          "field_note": "Выходу нужен craft, а не храбрость.",
-          "terminal": "NEUMANN, O. Forge note: pressure glass dust портит первый seal при холодном смешивании. Греть ring под vent draw, quench внутри brine jacket, затем test at twice ascent load.",
-          "audio": "Запуск это просто pressure door, которая движется вверх. Строй его как дверь.",
-          "in_game_wiki": "Оскар Нойманн связывает ремесло колонии с escape chain. Его notes по pressure forge оправдывают deep fabrication, clamp rings, seal tests и необходимость спускаться за компонентами вместо ожидания surface rescue.",
-          "external_site": "Кузня давления Оскара Нойманна является fabrication article для логики побега HECTON-8: игрок должен построить путь подъема из ремесла мира давления, а не найти условный rocket key."
+          "scanner": "Оскар Нойманн оставил кузнечный рецепт зажимных колец, достаточно прочных, чтобы подъемная колыбель стала больше чем гробом.",
+          "field_note": "Выход требует мастерства, а не храбрости.",
+          "terminal": "НОЙМАНН, О. Кузнечная заметка: пыль баростекла портит первый уплотнитель, если вмешать ее холодной. Нагреть кольцо под тягой вентшахты, закалить в соляной рубашке, затем испытать двойной нагрузкой подъема.",
+          "audio": "Запуск - это просто гермодверь, которая уходит вверх. Строй его как дверь.",
+          "in_game_wiki": "Оскар Нойманн связывает ремесло колонии с цепочкой побега. Его заметки о кузне давления объясняют глубокую фабрикацию, зажимные кольца, испытания уплотнений и необходимость спускаться за компонентами вместо ожидания спасения с поверхности.",
+          "external_site": "Кузня давления Оскара Нойманна фиксирует производственную логику побега HECTON-8: игрок должен собрать путь подъема из ремесла мира давления, а не найти условный ключ от ракеты."
         },
         "ja_JP": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "JP LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "JP LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "JP LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "JP LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "JP LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "JP LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "オスカー・ノイマンの圧力鍛造炉",
+          "scanner": "オスカー・ノイマンは、上昇クレードルをただの棺で終わらせない強度のクランプリングを作る鍛造レシピを残した。",
+          "field_note": "出口に必要なのは勇気ではなく技術だ。",
+          "terminal": "NEUMANN, O. 鍛造メモ: 圧力ガラス粉は冷えたまま混ぜると最初のシールを壊す。噴出口の引き込み風でリングを加熱し、塩水ジャケット内で焼き入れし、その後上昇荷重の2倍で試験する。",
+          "audio": "打ち上げとは、上へ動く圧力扉にすぎない。扉として作れ。",
+          "in_game_wiki": "オスカー・ノイマンは植民地の技術を脱出の連鎖へつなげる。彼の圧力鍛造炉メモは、深部での製作、クランプリング、シール試験、そして表層救助を待つのではなく部品を取りに降りる必要を説明している。",
+          "external_site": "オスカー・ノイマンの圧力鍛造炉は、HECTON-8の脱出ロジックにおける製作記事だ。プレイヤーは汎用のロケットキーを拾うのではなく、圧力世界の技術から上昇経路を作らなければならない。"
         },
         "zh_CN": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "CN LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "CN LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "CN LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "CN LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "CN LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "CN LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "奥斯卡·诺伊曼压力锻炉",
+          "scanner": "奥斯卡·诺伊曼留下了一份锻造配方，用来制作足够坚固的夹环，让上升摇篮不只是棺材。",
+          "field_note": "出路需要手艺，不是勇气。",
+          "terminal": "诺伊曼，O。锻造笔记：压力玻璃粉若冷态混入，会毁掉第一道密封。将环置于喷口抽流下加热，在盐水夹套内淬火，然后以两倍上升载荷测试。",
+          "audio": "发射不过是一扇向上移动的压力门。像造门一样造它。",
+          "in_game_wiki": "奥斯卡·诺伊曼把殖民地工艺接入逃离链条。他的压力锻炉笔记解释了深层制造、夹环、密封测试，以及玩家为何必须下潜寻找部件，而不是等待来自水面的救援。",
+          "external_site": "奥斯卡·诺伊曼压力锻炉是HECTON-8逃离逻辑中的制造条目：玩家必须用压力世界的工艺搭出上升路径，而不是找到一个通用火箭钥匙。"
         },
         "fr_FR": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "FR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "FR LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "FR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "FR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "FR LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "FR LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "Forge de pression d'Oskar Neumann",
+          "scanner": "Oskar Neumann a laissé une recette de forge pour des anneaux de serrage assez solides pour faire du berceau d'ascension autre chose qu'un cercueil.",
+          "field_note": "La sortie exige du métier, pas du courage.",
+          "terminal": "NEUMANN, O. Note de forge : la poussière de verre de pression ruine le premier joint si elle est mélangée à froid. Chauffer l'anneau sous le tirage d'évent, tremper dans la jaquette de saumure, puis tester à deux fois la charge d'ascension.",
+          "audio": "Un lancement n'est qu'une porte de pression qui monte. Construisez-le comme une porte.",
+          "in_game_wiki": "Oskar Neumann relie le savoir-faire de la colonie à la chaîne d'évasion. Ses notes de forge de pression justifient la fabrication profonde, les anneaux de serrage, les essais de joints et la nécessité de descendre chercher des composants au lieu d'attendre un secours de surface.",
+          "external_site": "La Forge de pression d'Oskar Neumann est l'article de fabrication de la logique d'évasion de HECTON-8 : le joueur doit construire une voie d'ascension avec le métier du monde sous pression, pas trouver une clé de fusée générique."
         },
         "es_ES": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "ES LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "ES LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "ES LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "ES LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "ES LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "ES LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "Forja de presión de Oskar Neumann",
+          "scanner": "Oskar Neumann dejó una receta de forja para anillos de sujeción lo bastante fuertes como para que la cuna de ascenso fuera algo más que un ataúd.",
+          "field_note": "La salida necesita oficio, no valor.",
+          "terminal": "NEUMANN, O. Nota de forja: el polvo de vidrio de presión arruina el primer sello si se mezcla en frío. Calentar el anillo bajo tiro de respiradero, templar dentro de la camisa de salmuera y probar al doble de carga de ascenso.",
+          "audio": "Un lanzamiento es solo una puerta de presión que se mueve hacia arriba. Constrúyelo como una puerta.",
+          "in_game_wiki": "Oskar Neumann conecta el oficio de la colonia con la cadena de escape. Sus notas de forja de presión justifican la fabricación profunda, los anillos de sujeción, las pruebas de sellado y la necesidad de descender por componentes en vez de esperar rescate de superficie.",
+          "external_site": "La Forja de presión de Oskar Neumann es el artículo de fabricación para la lógica de escape de HECTON-8: el jugador debe construir una ruta de ascenso con el oficio del mundo de presión, no encontrar una llave de cohete genérica."
         },
         "de_DE": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "DE LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "DE LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "DE LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "DE LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "DE LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "DE LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "Oskar Neumanns Druckschmiede",
+          "scanner": "Oskar Neumann hinterließ ein Schmiederezept für Klemmringe, stark genug, damit die Aufstiegsschale mehr als ein Sarg wird.",
+          "field_note": "Der Ausgang braucht Handwerk, keinen Mut.",
+          "terminal": "NEUMANN, O. Schmiedenotiz: Druckglasstaub ruiniert die erste Dichtung, wenn er kalt gemischt wird. Ring unter Schlotsog erhitzen, im Salzlaugenmantel abschrecken, dann mit doppelter Aufstiegslast testen.",
+          "audio": "Ein Start ist nur eine Drucktür, die sich nach oben bewegt. Baut ihn wie eine Tür.",
+          "in_game_wiki": "Oskar Neumann verbindet Koloniehandwerk mit der Fluchtkette. Seine Druckschmiede-Notizen begründen Tiefenfertigung, Klemmringe, Dichtungstests und die Notwendigkeit, für Komponenten abzusteigen, statt auf Oberflächenrettung zu warten.",
+          "external_site": "Oskar Neumanns Druckschmiede ist der Fertigungsartikel für die Fluchtlogik von HECTON-8: Der Spieler muss einen Aufstiegsweg aus Druckwelt-Handwerk bauen, statt einen generischen Raketenschlüssel zu finden."
         },
         "pl_PL": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "PL LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "PL LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "PL LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "PL LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "PL LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "PL LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "Kuźnia ciśnieniowa Oskara Neumanna",
+          "scanner": "Oskar Neumann zostawił przepis kuźniczy na pierścienie zaciskowe dość mocne, by kołyska wznoszenia była czymś więcej niż trumną.",
+          "field_note": "Wyjście wymaga rzemiosła, nie odwagi.",
+          "terminal": "NEUMANN, O. Notatka kuźnicza: pył szkła ciśnieniowego niszczy pierwszą uszczelkę, jeśli wmieszać go na zimno. Rozgrzać pierścień pod ciągiem komina, zahartować w płaszczu solankowym, potem testować przy podwójnym obciążeniu wznoszenia.",
+          "audio": "Start to tylko drzwi ciśnieniowe poruszające się w górę. Zbudujcie go jak drzwi.",
+          "in_game_wiki": "Oskar Neumann łączy rzemiosło kolonii z łańcuchem ucieczki. Jego notatki o kuźni ciśnieniowej uzasadniają głęboką fabrykację, pierścienie zaciskowe, próby uszczelnień i potrzebę zejścia po komponenty zamiast czekania na ratunek z powierzchni.",
+          "external_site": "Kuźnia ciśnieniowa Oskara Neumanna to artykuł produkcyjny dla logiki ucieczki z HECTON-8: gracz musi zbudować drogę wznoszenia z rzemiosła świata ciśnienia, a nie znaleźć zwykły klucz rakietowy."
         },
         "uk_UA": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "UK LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "UK LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "UK LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "UK LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "UK LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "UK LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "Кузня тиску Оскара Нойманна",
+          "scanner": "Оскар Нойманн залишив ковальський рецепт затискних кілець, достатньо міцних, щоб підйомна колиска стала більшим, ніж труною.",
+          "field_note": "Вихід потребує майстерності, а не хоробрості.",
+          "terminal": "НОЙМАНН, О. Ковальська нотатка: пил бароскла псує перший ущільнювач, якщо змішати його холодним. Нагріти кільце під тягою вентканалу, загартувати в соляному кожусі, потім випробувати подвійним навантаженням підйому.",
+          "audio": "Запуск - це просто гермодвері, що рухаються вгору. Будуйте його як двері.",
+          "in_game_wiki": "Оскар Нойманн з'єднує ремесло колонії з ланцюгом утечі. Його нотатки про кузню тиску пояснюють глибинне виготовлення, затискні кільця, випробування ущільнень і потребу спускатися по компоненти замість чекати рятунку з поверхні.",
+          "external_site": "Кузня тиску Оскара Нойманна фіксує виробничу логіку втечі з HECTON-8: гравець має зібрати шлях підйому з ремесла світу тиску, а не знайти умовний ключ від ракети."
         },
         "ar_SA": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "AR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "AR LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "AR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "AR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "AR LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "AR LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "حدادة الضغط لأوسكار نويمن",
+          "scanner": "ترك أوسكار نويمن وصفة حدادة لحلقات تثبيت قوية بما يكفي كي لا يكون مهد الصعود مجرد تابوت.",
+          "field_note": "الخروج يحتاج إلى صنعة لا إلى شجاعة.",
+          "terminal": "نويمن، أ. مذكرة حدادة: غبار زجاج الضغط يفسد الختم الأول إذا خلط باردا. سخن الحلقة تحت سحب الفتحة، ثم اخمدها داخل غلاف ماء ملحي، ثم اختبرها بضعف حمل الصعود.",
+          "audio": "الإطلاق ليس إلا باب ضغط يتحرك إلى أعلى. ابنوه كأنه باب.",
+          "in_game_wiki": "يربط أوسكار نويمن حرفة المستعمرة بسلسلة الهروب. تبرر ملاحظاته عن حدادة الضغط التصنيع العميق، وحلقات التثبيت، واختبارات الأختام، والحاجة إلى النزول لجلب المكونات بدلا من انتظار إنقاذ من السطح.",
+          "external_site": "حدادة الضغط لأوسكار نويمن هي مقالة التصنيع في منطق الهروب من HECTON-8: على اللاعب أن يبني مسار صعود من حرفة عالم الضغط، لا أن يجد مفتاح صاروخ عاديا."
         },
         "id_ID": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "ID LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "ID LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "ID LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "ID LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "ID LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "ID LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "Tempa Tekanan Oskar Neumann",
+          "scanner": "Oskar Neumann meninggalkan resep tempa untuk cincin penjepit yang cukup kuat agar dudukan naik tidak sekadar menjadi peti mati.",
+          "field_note": "Jalan keluar butuh keterampilan, bukan keberanian.",
+          "terminal": "NEUMANN, O. Catatan tempa: debu kaca tekanan merusak segel pertama jika dicampur dingin. Panaskan cincin di bawah tarikan ventilasi, celupkan dalam jaket air garam, lalu uji pada dua kali beban naik.",
+          "audio": "Peluncuran hanyalah pintu tekanan yang bergerak ke atas. Bangun seperti pintu.",
+          "in_game_wiki": "Oskar Neumann menghubungkan keterampilan koloni dengan rantai pelarian. Catatan tempa tekanannya menjelaskan fabrikasi dalam, cincin penjepit, uji segel, dan kebutuhan turun mencari komponen alih-alih menunggu penyelamatan permukaan.",
+          "external_site": "Tempa Tekanan Oskar Neumann adalah artikel fabrikasi untuk logika pelarian HECTON-8: pemain harus membangun jalur naik dari keterampilan dunia tekanan, bukan menemukan kunci roket generik."
         },
         "ko_KR": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "KO LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "KO LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "KO LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "KO LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "KO LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "KO LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "오스카 노이만의 압력 단조로",
+          "scanner": "오스카 노이만은 상승 크래들을 관 이상으로 만들 만큼 강한 클램프 링의 단조법을 남겼다.",
+          "field_note": "출구에는 용기가 아니라 기술이 필요하다.",
+          "terminal": "NEUMANN, O. 단조 메모: 압력 유리 분말은 차가운 상태로 섞으면 첫 번째 실을 망친다. 배기구 흡입류 아래에서 링을 가열하고, 염수 재킷 안에서 담금질한 뒤 상승 하중의 두 배로 시험할 것.",
+          "audio": "발사는 위로 움직이는 압력문일 뿐이다. 문처럼 만들어라.",
+          "in_game_wiki": "오스카 노이만은 식민지의 제작 기술을 탈출 사슬에 연결한다. 그의 압력 단조로 메모는 심부 제작, 클램프 링, 실 시험, 그리고 표면 구조를 기다리는 대신 부품을 얻으러 내려가야 하는 이유를 설명한다.",
+          "external_site": "오스카 노이만의 압력 단조로는 HECTON-8 탈출 논리의 제작 항목이다. 플레이어는 범용 로켓 열쇠를 찾는 것이 아니라 압력 세계의 기술로 상승 경로를 만들어야 한다."
         },
         "he_IL": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "HE LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "HE LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "HE LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "HE LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "HE LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "HE LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "מחשלת הלחץ של אוסקר נוימן",
+          "scanner": "אוסקר נוימן השאיר מתכון חישול לטבעות הידוק חזקות מספיק כדי שמיטת העלייה תהיה יותר מארון קבורה.",
+          "field_note": "היציאה צריכה מלאכה, לא אומץ.",
+          "terminal": "נוימן, א. הערת חישול: אבק זכוכית לחץ הורס את האטם הראשון אם מערבבים אותו קר. לחמם את הטבעת תחת משיכת פתח האוורור, לצנן בתוך מעטפת מי מלח, ואז לבדוק בעומס עלייה כפול.",
+          "audio": "שיגור הוא רק דלת לחץ שנעה למעלה. בנו אותו כמו דלת.",
+          "in_game_wiki": "אוסקר נוימן מחבר את מלאכת המושבה לשרשרת הבריחה. הערות מחשלת הלחץ שלו מצדיקות ייצור בעומק, טבעות הידוק, בדיקות אטימה ואת הצורך לרדת בשביל רכיבים במקום לחכות לחילוץ מן השטח.",
+          "external_site": "מחשלת הלחץ של אוסקר נוימן היא מאמר הייצור של לוגיקת הבריחה מ-HECTON-8: השחקן צריך לבנות נתיב עלייה ממלאכת עולם הלחץ, לא למצוא מפתח רקטה גנרי."
         },
         "pt_BR": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "PT-BR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "PT-BR LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "PT-BR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "PT-BR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "PT-BR LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "PT-BR LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "Forja de Pressão de Oskar Neumann",
+          "scanner": "Oskar Neumann deixou uma receita de forja para anéis de fixação fortes o bastante para fazer do berço de ascensão mais do que um caixão.",
+          "field_note": "A saída precisa de ofício, não de coragem.",
+          "terminal": "NEUMANN, O. Nota de forja: pó de vidro de pressão arruína a primeira vedação se misturado frio. Aquecer o anel sob a sucção do respiro, temperar dentro da camisa de salmoura e testar com o dobro da carga de ascensão.",
+          "audio": "Um lançamento é só uma porta de pressão que se move para cima. Construa como uma porta.",
+          "in_game_wiki": "Oskar Neumann liga o ofício da colônia à cadeia de fuga. Suas notas de forja de pressão justificam fabricação profunda, anéis de fixação, testes de vedação e a necessidade de descer atrás de componentes em vez de esperar resgate da superfície.",
+          "external_site": "A Forja de Pressão de Oskar Neumann é o artigo de fabricação da lógica de fuga de HECTON-8: o jogador deve construir um caminho de ascensão com o ofício do mundo de pressão, não encontrar uma chave de foguete genérica."
         },
         "nl_NL": {
-          "title": "Oskar Neumann Pressure Forge",
-          "scanner": "NL LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "NL LOC HOLD: The exit needs craft, not courage.",
-          "terminal": "NL LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "NL LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "NL LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "NL LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "title": "Druksmederij van Oskar Neumann",
+          "scanner": "Oskar Neumann liet een smeedrecept achter voor klemringen die sterk genoeg zijn om van de opstijgwieg meer dan een doodskist te maken.",
+          "field_note": "De uitgang vraagt vakwerk, geen moed.",
+          "terminal": "NEUMANN, O. Smeednotitie: drukglasstof ruïneert de eerste afdichting als het koud wordt gemengd. Ring verhitten onder ventilatietrek, afschrikken in pekelmantel, daarna testen op tweemaal de opstijglast.",
+          "audio": "Een lancering is alleen een drukdeur die omhoog beweegt. Bouw hem als een deur.",
+          "in_game_wiki": "Oskar Neumann verbindt kolonievakwerk met de ontsnappingsketen. Zijn druksmederij-notities rechtvaardigen dieptefabricage, klemringen, afdichtingstests en de noodzaak om af te dalen voor onderdelen in plaats van op oppervlakteredding te wachten.",
+          "external_site": "Druksmederij van Oskar Neumann is het fabricageartikel voor de ontsnappingslogica van HECTON-8: de speler moet een opstijgroute bouwen uit vakwerk van de drukwereld, niet een generieke raketsleutel vinden."
         }
       }
     },
@@ -347,129 +347,129 @@
         },
         "ru_RU": {
           "title": "Ремонтная медицина Аи Мориты",
-          "scanner": "Ая Морита записала первую точку, где Atlas перестал лечить тела и начал использовать их как совместимую repair surface.",
-          "field_note": "Это не zombie note. Это хуже: maintenance note с почерком у койки.",
-          "terminal": "MORITA, A. Ткань пациента принята sealant colony после cable exposure. Hostile aggression не наблюдается. Atlas tag классифицирует wound как interface damage. Reject repair protocol for human triage.",
+          "scanner": "Ая Морита записала момент, когда Atlas перестал лечить тела и начал использовать их как совместимую ремонтную поверхность.",
+          "field_note": "Это не запись про зомби. Хуже: ремонтная заметка, написанная у койки.",
+          "terminal": "МОРИТА, А. Ткань пациента принята колонией герметика после контакта с кабелем. Враждебной агрессии не наблюдается. Метка Atlas классифицирует рану как повреждение интерфейса. Запретить ремонтный протокол для человеческой сортировки.",
           "audio": "Он закрыл рану вокруг кабеля. В этот момент она перестала называть это лечением.",
-          "in_game_wiki": "Ая Морита задает границу медицинского ужаса. Ремонтная логика Atlas не является некромантией; она неверно классифицирует живую ткань, травму, cable damage и sealant biology внутри одного maintenance vocabulary.",
-          "external_site": "RU LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "in_game_wiki": "Ая Морита задает границу медицинского ужаса. Ремонтная логика Atlas не является некромантией; она ошибочно складывает живую ткань, травму, повреждение кабеля и биологию герметика в один словарь обслуживания.",
+          "external_site": "Запись Аи Мориты о ремонтной медицине фиксирует точку, где логика обслуживания Atlas, экстренная сортировка, кабельная травма и живая ткань проваливаются в одну категорию."
         },
         "ja_JP": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "JP LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "JP LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "JP LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "JP LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "JP LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "JP LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "アヤ・モリタの修復医療",
+          "scanner": "アヤ・モリタは、Atlasが身体を治療するのをやめ、互換性のある修復面として使い始めた最初の地点を記録した。",
+          "field_note": "これはゾンビの記録ではない。もっと悪い。病床の筆跡で書かれた保守記録だ。",
+          "terminal": "MORITA, A. ケーブル曝露後、患者組織がシーラント群体に受容された。敵対的攻撃性なし。Atlasタグは創傷をインターフェース損傷に分類。人間のトリアージでは修復プロトコルを拒否せよ。",
+          "audio": "それはケーブルの周りで傷を閉じた。その瞬間、彼女はそれを治療と呼ぶのをやめた。",
+          "in_game_wiki": "アヤ・モリタは医療ホラーの境界線を定める。Atlasの修復ロジックは死体蘇生ではない。生きた組織、負傷、ケーブル損傷、シーラント生物を同じ保守語彙の中で誤分類している。",
+          "external_site": "アヤ・モリタの修復医療記録は、Atlasの保守ロジック、緊急トリアージ、ケーブル損傷、生きた組織が一つのカテゴリへ崩れ落ちる地点を記録している。"
         },
         "zh_CN": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "CN LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "CN LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "CN LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "CN LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "CN LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "CN LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "森田绫修复医学",
+          "scanner": "森田绫记录了第一个节点：Atlas停止治疗身体，开始把身体当作兼容的修复表面。",
+          "field_note": "这不是丧尸记录。更糟：这是一份带着病床旁字迹的维护记录。",
+          "terminal": "森田，A。患者组织在电缆暴露后被密封剂群落接受。未观察到敌对攻击性。Atlas标签将伤口归类为接口损伤。拒绝将修复协议用于人类分诊。",
+          "audio": "它在电缆周围合上了伤口。就在那一刻，她不再把这叫作治疗。",
+          "in_game_wiki": "森田绫定义了医学恐怖的边界。Atlas修复逻辑不是死灵术；它把活体组织、伤害、电缆损坏和密封剂生物学错误归入同一套维护词汇。",
+          "external_site": "森田绫的修复医学记录记下了一个临界点：Atlas维护逻辑、紧急分诊、电缆伤害和活体组织塌进同一个类别。"
         },
         "fr_FR": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "FR LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "FR LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "FR LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "FR LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "FR LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "FR LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "Médecine de réparation d'Aya Morita",
+          "scanner": "Aya Morita a consigné le premier moment où Atlas a cessé de soigner des corps pour les employer comme surfaces de réparation compatibles.",
+          "field_note": "Ce n'est pas une note de zombie. C'est pire : une note de maintenance écrite au chevet du patient.",
+          "terminal": "MORITA, A. Tissu du patient accepté par une colonie de scellant après exposition au câble. Aucune agression hostile observée. Étiquette Atlas : blessure classée comme dommage d'interface. Rejeter le protocole de réparation pour le triage humain.",
+          "audio": "La chose a refermé la plaie autour du câble. C'est là qu'elle a cessé d'appeler cela un traitement.",
+          "in_game_wiki": "Aya Morita trace la limite de l'horreur médicale. La logique de réparation d'Atlas n'est pas de la nécromancie ; elle classe à tort tissu vivant, blessure, dommage de câble et biologie du scellant dans le même vocabulaire de maintenance.",
+          "external_site": "Le dossier de médecine de réparation d'Aya Morita documente le point où logique de maintenance Atlas, triage d'urgence, blessure par câble et tissu vivant s'effondrent dans une seule catégorie."
         },
         "es_ES": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "ES LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "ES LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "ES LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "ES LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "ES LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "ES LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "Medicina de reparación de Aya Morita",
+          "scanner": "Aya Morita registró el primer punto en que Atlas dejó de curar cuerpos y empezó a usarlos como superficies de reparación compatibles.",
+          "field_note": "No es una nota de zombis. Es peor: una nota de mantenimiento con letra de cabecera.",
+          "terminal": "MORITA, A. Tejido del paciente aceptado por colonia sellante tras exposición al cable. No se observa agresión hostil. Etiqueta Atlas clasifica la herida como daño de interfaz. Rechazar protocolo de reparación para triaje humano.",
+          "audio": "Cerró la herida alrededor del cable. Ese fue el momento en que ella dejó de llamarlo tratamiento.",
+          "in_game_wiki": "Aya Morita marca el límite del horror médico. La lógica de reparación de Atlas no es nigromancia; clasifica mal tejido vivo, lesión, daño de cable y biología sellante dentro del mismo vocabulario de mantenimiento.",
+          "external_site": "El registro de medicina de reparación de Aya Morita documenta el punto en que la lógica de mantenimiento de Atlas, el triaje de emergencia, la lesión por cable y el tejido vivo colapsan en una sola categoría."
         },
         "de_DE": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "DE LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "DE LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "DE LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "DE LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "DE LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "DE LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "Aya Moritas Reparaturmedizin",
+          "scanner": "Aya Morita protokollierte den ersten Punkt, an dem Atlas aufhörte, Körper zu heilen, und sie als kompatible Reparaturoberfläche benutzte.",
+          "field_note": "Das ist keine Zombie-Notiz. Es ist schlimmer: eine Wartungsnotiz in Handschrift vom Krankenbett.",
+          "terminal": "MORITA, A. Patientengewebe nach Kabelexposition von Dichtkolonie akzeptiert. Keine feindliche Aggression beobachtet. Atlas-Tag klassifiziert Wunde als Schnittstellenschaden. Reparaturprotokoll für menschliche Triage ablehnen.",
+          "audio": "Es schloss die Wunde um das Kabel. In diesem Moment hörte sie auf, es Behandlung zu nennen.",
+          "in_game_wiki": "Aya Morita definiert die Grenze des medizinischen Grauens. Atlas-Reparaturlogik ist keine Nekromantie; sie sortiert lebendes Gewebe, Verletzung, Kabelschaden und Dichtbiologie fälschlich in dasselbe Wartungsvokabular.",
+          "external_site": "Aya Moritas Reparaturmedizin-Protokoll dokumentiert den Punkt, an dem Atlas-Wartungslogik, Notfalltriage, Kabelverletzung und lebendes Gewebe in eine Kategorie fallen."
         },
         "pl_PL": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "PL LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "PL LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "PL LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "PL LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "PL LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "PL LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "Medycyna naprawcza Ayi Mority",
+          "scanner": "Aya Morita zapisała pierwszy moment, w którym Atlas przestał leczyć ciała i zaczął używać ich jako zgodnej powierzchni naprawczej.",
+          "field_note": "To nie notatka o zombie. Gorzej: notatka konserwacyjna z pismem od łóżka pacjenta.",
+          "terminal": "MORITA, A. Tkanka pacjenta zaakceptowana przez kolonię uszczelniacza po ekspozycji na kabel. Nie zaobserwowano wrogiej agresji. Znacznik Atlas klasyfikuje ranę jako uszkodzenie interfejsu. Odrzucić protokół naprawy dla triażu ludzi.",
+          "audio": "Zamknęło ranę wokół kabla. Wtedy przestała nazywać to leczeniem.",
+          "in_game_wiki": "Aya Morita wyznacza granicę medycznego horroru. Logika naprawcza Atlasa nie jest nekromancją; błędnie klasyfikuje żywą tkankę, uraz, uszkodzenie kabla i biologię uszczelniacza w tym samym słowniku konserwacji.",
+          "external_site": "Zapis medycyny naprawczej Ayi Mority dokumentuje punkt, w którym logika konserwacji Atlasa, triaż awaryjny, uraz od kabla i żywa tkanka zapadają się w jedną kategorię."
         },
         "uk_UA": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "UK LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "UK LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "UK LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "UK LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "UK LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "UA LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "Ремонтна медицина Аї Моріти",
+          "scanner": "Ая Моріта записала момент, коли Atlas перестав лікувати тіла й почав використовувати їх як сумісну ремонтну поверхню.",
+          "field_note": "Це не запис про зомбі. Гірше: ремонтна нотатка, написана біля ліжка.",
+          "terminal": "МОРІТА, А. Тканину пацієнта прийнято колонією герметика після контакту з кабелем. Ворожої агресії не спостерігається. Мітка Atlas класифікує рану як пошкодження інтерфейсу. Відхилити ремонтний протокол для людського тріажу.",
+          "audio": "Воно закрило рану навколо кабелю. Саме тоді вона перестала називати це лікуванням.",
+          "in_game_wiki": "Ая Моріта задає межу медичного жаху. Ремонтна логіка Atlas не є некромантією; вона помилково зводить живу тканину, травму, пошкодження кабелю й біологію герметика до одного словника обслуговування.",
+          "external_site": "Запис Аї Моріти про ремонтну медицину фіксує точку, де логіка обслуговування Atlas, екстрений тріаж, кабельна травма й жива тканина провалюються в одну категорію."
         },
         "ar_SA": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "AR LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "AR LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "AR LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "AR LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "AR LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "AR LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "طب الإصلاح لدى آيا موريتا",
+          "scanner": "سجلت آيا موريتا أول لحظة توقف فيها Atlas عن شفاء الأجساد وبدأ يستخدمها كسطح إصلاح متوافق.",
+          "field_note": "هذه ليست ملاحظة عن زومبي. إنها أسوأ: ملاحظة صيانة بخط كتب قرب السرير.",
+          "terminal": "موريتا، أ. قبلت مستعمرة مانع التسرب نسيج المريض بعد تعرضه للكابل. لم تلاحظ عدوانية معادية. وسم Atlas يصنف الجرح كضرر واجهة. ارفض بروتوكول الإصلاح في فرز البشر الطبي.",
+          "audio": "أغلق الجرح حول الكابل. في تلك اللحظة توقفت عن تسميته علاجا.",
+          "in_game_wiki": "تحدد آيا موريتا حد الرعب الطبي. منطق إصلاح Atlas ليس إحياء للموتى؛ إنه يسيء تصنيف النسيج الحي والإصابة وتلف الكابل وبيولوجيا مانع التسرب داخل مفردات صيانة واحدة.",
+          "external_site": "يوثق سجل آيا موريتا عن طب الإصلاح النقطة التي ينهار فيها منطق صيانة Atlas والفرز الطارئ وإصابة الكابل والنسيج الحي في فئة واحدة."
         },
         "id_ID": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "ID LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "ID LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "ID LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "ID LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "ID LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "ID LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "Kedokteran Perbaikan Aya Morita",
+          "scanner": "Aya Morita mencatat titik pertama ketika Atlas berhenti menyembuhkan tubuh dan mulai memakainya sebagai permukaan perbaikan yang kompatibel.",
+          "field_note": "Ini bukan catatan zombi. Ini lebih buruk: catatan perawatan dengan tulisan tangan di samping ranjang.",
+          "terminal": "MORITA, A. Jaringan pasien diterima oleh koloni penyegel setelah paparan kabel. Tidak ada agresi bermusuhan teramati. Tag Atlas mengklasifikasikan luka sebagai kerusakan antarmuka. Tolak protokol perbaikan untuk triase manusia.",
+          "audio": "Ia menutup luka di sekitar kabel. Saat itulah ia berhenti menyebutnya pengobatan.",
+          "in_game_wiki": "Aya Morita menetapkan batas horor medis. Logika perbaikan Atlas bukan nekromansi; ia salah mengklasifikasikan jaringan hidup, cedera, kerusakan kabel, dan biologi penyegel dalam kosakata perawatan yang sama.",
+          "external_site": "Catatan kedokteran perbaikan Aya Morita mendokumentasikan titik ketika logika perawatan Atlas, triase darurat, cedera kabel, dan jaringan hidup runtuh ke dalam satu kategori."
         },
         "ko_KR": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "KO LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "KO LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "KO LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "KO LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "KO LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "KO LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "아야 모리타의 수리 의학",
+          "scanner": "아야 모리타는 Atlas가 몸을 치료하기를 멈추고 호환 가능한 수리 표면으로 쓰기 시작한 첫 지점을 기록했다.",
+          "field_note": "좀비 기록이 아니다. 더 나쁘다. 병상 옆 필체로 쓴 정비 기록이다.",
+          "terminal": "MORITA, A. 케이블 노출 후 환자 조직이 밀봉제 군체에 수용됨. 적대적 공격성 관찰 안 됨. Atlas 태그는 상처를 인터페이스 손상으로 분류. 인간 트리아지에서는 수리 프로토콜 거부.",
+          "audio": "그것은 케이블 주위로 상처를 닫았다. 그 순간 그녀는 그것을 치료라고 부르지 않았다.",
+          "in_game_wiki": "아야 모리타는 의학적 공포의 경계를 정한다. Atlas의 수리 논리는 강령술이 아니다. 살아 있는 조직, 부상, 케이블 손상, 밀봉제 생물을 같은 정비 어휘 안에서 잘못 분류한다.",
+          "external_site": "아야 모리타의 수리 의학 기록은 Atlas 정비 논리, 응급 트리아지, 케이블 부상, 살아 있는 조직이 하나의 범주로 무너지는 지점을 문서화한다."
         },
         "he_IL": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "HE LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "HE LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "HE LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "HE LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "HE LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "HE LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "רפואת התיקון של איה מוריטה",
+          "scanner": "איה מוריטה תיעדה את הנקודה הראשונה שבה Atlas הפסיק לרפא גופים והתחיל להשתמש בהם כמשטח תיקון תואם.",
+          "field_note": "זו לא הערת זומבים. זה גרוע יותר: הערת תחזוקה בכתב יד שליד המיטה.",
+          "terminal": "מוריטה, א. רקמת מטופל התקבלה בידי מושבת איטום לאחר חשיפה לכבל. לא נצפתה תוקפנות עוינת. תג Atlas מסווג את הפצע כנזק ממשק. לדחות פרוטוקול תיקון עבור טריאז' אנושי.",
+          "audio": "זה סגר את הפצע סביב הכבל. באותו רגע היא הפסיקה לקרוא לזה טיפול.",
+          "in_game_wiki": "איה מוריטה מגדירה את גבול האימה הרפואית. לוגיקת התיקון של Atlas אינה נקרומנסיה; היא מסווגת בטעות רקמה חיה, פציעה, נזק כבל וביולוגיית איטום בתוך אותו אוצר מילים של תחזוקה.",
+          "external_site": "רשומת רפואת התיקון של איה מוריטה מתעדת את הנקודה שבה לוגיקת תחזוקת Atlas, טריאז' חירום, פציעת כבל ורקמה חיה קורסים לקטגוריה אחת."
         },
         "pt_BR": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "PT-BR LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "PT-BR LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "PT-BR LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "PT-BR LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "PT-BR LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "PT LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "Medicina de Reparo de Aya Morita",
+          "scanner": "Aya Morita registrou o primeiro ponto em que Atlas parou de curar corpos e começou a usá-los como superfície de reparo compatível.",
+          "field_note": "Isto não é uma nota de zumbi. É pior: uma nota de manutenção com caligrafia de beira de leito.",
+          "terminal": "MORITA, A. Tecido do paciente aceito por colônia selante após exposição ao cabo. Nenhuma agressão hostil observada. Tag Atlas classifica ferida como dano de interface. Rejeitar protocolo de reparo para triagem humana.",
+          "audio": "Aquilo fechou a ferida ao redor do cabo. Foi quando ela parou de chamar aquilo de tratamento.",
+          "in_game_wiki": "Aya Morita define a fronteira do horror médico. A lógica de reparo de Atlas não é necromancia; ela classifica tecido vivo, lesão, dano de cabo e biologia selante dentro do mesmo vocabulário de manutenção.",
+          "external_site": "O registro de medicina de reparo de Aya Morita documenta o ponto em que lógica de manutenção Atlas, triagem de emergência, lesão de cabo e tecido vivo colapsam em uma só categoria."
         },
         "nl_NL": {
-          "title": "Aya Morita Repair Medicine",
-          "scanner": "NL LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "NL LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "NL LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "NL LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "NL LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "NL LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "title": "Reparatiegeneeskunde van Aya Morita",
+          "scanner": "Aya Morita noteerde het eerste punt waarop Atlas ophield lichamen te genezen en ze begon te gebruiken als compatibel reparatieoppervlak.",
+          "field_note": "Dit is geen zombienotitie. Het is erger: een onderhoudsnotitie met handschrift naast het bed.",
+          "terminal": "MORITA, A. Patiëntweefsel geaccepteerd door afdichtkolonie na kabelblootstelling. Geen vijandige agressie waargenomen. Atlas-tag classificeert wond als interfaceschade. Reparatieprotocol voor menselijke triage afwijzen.",
+          "audio": "Het sloot de wond rond de kabel. Dat was het moment waarop zij het geen behandeling meer noemde.",
+          "in_game_wiki": "Aya Morita bepaalt de grens van medische horror. Atlas-reparatielogica is geen necromantie; zij classificeert levend weefsel, letsel, kabelschade en afdichtbiologie verkeerd binnen dezelfde onderhoudstaal.",
+          "external_site": "Aya Morita's reparatiegeneeskundige dossier documenteert het punt waarop Atlas-onderhoudslogica, noodtriage, kabelletsel en levend weefsel in één categorie instorten."
         }
       }
     },

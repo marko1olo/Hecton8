@@ -1956,6 +1956,7 @@ namespace Hecton8.World
 
         public bool IsCreated => _vault != null && _keysHandle.BufferID != 0u && _valuesHandle.BufferID != 0u && _countHandle.BufferID != 0u && _capacity > 0;
         public int Capacity => IsCreated ? _capacity : 0;
+        public int Count => ReadCount();
         public long EstimatedBytes => IsCreated ? (long)_capacity * (UnsafeUtility.SizeOf<TKey>() + UnsafeUtility.SizeOf<TValue>()) + UnsafeUtility.SizeOf<int>() : 0L;
 
         public void Initialize(IDataVault vault, BufferID keysBufferId, BufferID valuesBufferId, BufferID countBufferId, int capacity, SystemID owner)
@@ -2013,6 +2014,19 @@ namespace Hecton8.World
             {
                 vault.ReleaseWriteLock(in _countHandle, _owner);
             }
+        }
+
+        private int ReadCount()
+        {
+            if (!IsCreated ||
+                _vault == null ||
+                !_vault.TryReadOnlyHandle(in _countHandle, out NativeArray<int>.ReadOnly count) ||
+                count.Length <= 0)
+            {
+                return 0;
+            }
+
+            return math.clamp(count[0], 0, _capacity);
         }
 
         public bool Add(TKey key, TValue value)
@@ -2834,6 +2848,8 @@ namespace Hecton8.World
         private static readonly uint _hydrationApplyContextHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.HydrationApply"));
         private static readonly uint _sectorEntityStateThrottleWarningHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.EntityStateCompressionThrottle"));
         private static readonly uint _sectorEntityStateQueueOverflowWarningHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.EntityStateCompressionQueueOverflow"));
+        private static readonly uint _sectorCorruptionNotificationMissWarningHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.SectorCorruptionNotificationMiss"));
+        private static readonly uint _sectorCorruptionNotificationContextHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.SectorCorruptionNotification"));
         private static int _nextInstanceUidCounter;
 
         [Header("Settings")]
@@ -2857,6 +2873,7 @@ namespace Hecton8.World
         private int _lastHydrationBudgetTelemetryFrame = int.MinValue;
         private int _lastEntityStateThrottleTelemetryFrame = int.MinValue;
         private int _lastEntityStateQueueOverflowTelemetryFrame = int.MinValue;
+        private int _sectorCorruptionNotificationMissCount;
         private PersistentThermalVentRecord[] _activeThermalVents;
         private int _activeThermalVentCount;
         private int _activeThermalVentRevision;
@@ -2864,6 +2881,7 @@ namespace Hecton8.World
         internal int ChunkSizeMeters => chunkSizeMeters;
         public int ActiveThermalVentCount => _activeThermalVentCount;
         public int ActiveThermalVentRevision => _activeThermalVentRevision;
+        public int SectorCorruptionNotificationMissCount => _sectorCorruptionNotificationMissCount;
 
         /// <summary>
         /// Reads the active thermal vent count through the nutrient-facing owner interface.
@@ -3107,13 +3125,16 @@ namespace Hecton8.World
                 return playerAup.IsFinite();
             }
 
-            HectonPlayerMovement playerMovement = player.PlayerMovement;
-            if (playerMovement == null)
-                return false;
+            if (player.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
+            {
+                AbsoluteUniversePosition movementAup = movementState.PredictedAup;
+                playerAup = AbsoluteUniversePosition.Sanitize(in movementAup, in invalidAup);
+                return playerAup.IsFinite();
+            }
 
-            AbsoluteUniversePosition movementAup = playerMovement.CurrentAup;
-            playerAup = AbsoluteUniversePosition.Sanitize(in movementAup, in invalidAup);
-            return playerAup.IsFinite();
+            return false;
         }
 
         public bool AreResidentWorldPrefabPoolsReady()
@@ -3133,8 +3154,7 @@ namespace Hecton8.World
             if (!TryEnsureItemLookup() || _resolvedItemCatalog == null)
                 return false;
 
-            IObjectPoolService pool = _objectPoolService;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return false;
 
             HashSet<int>.Enumerator residentEnumerator = _residentWorldPrefabHashes.GetEnumerator();
@@ -3159,14 +3179,12 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            PersistentWorldRegistry registeredRegistry = s_activeRuntimeInstance;
-            if (registeredRegistry != null && registeredRegistry != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             TryRegisterService();
+            if (!_serviceRegistered)
+                return;
 
             maxTrackedItems = math.max(256, maxTrackedItems);
             chunkSizeMeters = math.max(16, chunkSizeMeters);
@@ -3260,7 +3278,13 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             TryRegisterService();
+            if (!_serviceRegistered)
+                return;
+
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterRuntimeLoops();
@@ -3268,6 +3292,9 @@ namespace Hecton8.World
 
         private void Start()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             TryRegisterRuntimeLoops();
         }
 
@@ -3386,6 +3413,7 @@ namespace Hecton8.World
             TryUnregisterService();
             DehydrateAll(syncTransformsBackToRecords: false);
             CaptureQueuedWorldTelemetryDumpSnapshotCold();
+            ClearSectorCorruptionNotificationDiagnostics();
             _saveService = null;
             _playerRuntimeContext = null;
             _playerInventoryService = null;
@@ -3403,6 +3431,7 @@ namespace Hecton8.World
             _saveService = null;
             _playerRuntimeContext = null;
             _playerInventoryService = null;
+            ClearSectorCorruptionNotificationDiagnostics();
             ShutdownWorldTelemetryDumpWorkerCold();
 
             DisposeVaultBackedStorage();
@@ -3498,20 +3527,64 @@ namespace Hecton8.World
             if (_serviceRegistered)
                 return;
 
-            if (GlobalRegistry.PersistentWorldRegistry != null &&
-                !ReferenceEquals(GlobalRegistry.PersistentWorldRegistry, this))
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
+            PersistentWorldRegistry registered = GlobalRegistry.PersistentWorldRegistry;
+            if (ReferenceEquals(registered, this))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[PersistentWorldRegistry] Duplicate registry owner detected. Disabling duplicate.");
-#endif
-                enabled = false;
+                _serviceRegistered = true;
+                s_activeRuntimeInstance = this;
                 return;
             }
 
-            GlobalRegistry.RegisterPersistentWorldRegistry(this);
+            if (ReferenceEquals(registered, null))
+                GlobalRegistry.RegisterPersistentWorldRegistry(this);
+
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PersistentWorldRegistry, this);
             if (_serviceRegistered)
                 s_activeRuntimeInstance = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            PersistentWorldRegistry registered = GlobalRegistry.PersistentWorldRegistry;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsPersistentWorldRuntimeUsable(registered))
+                {
+                    s_activeRuntimeInstance = registered;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                GlobalRegistry.UnregisterPersistentWorldRegistry(registered);
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+            }
+
+            PersistentWorldRegistry active = s_activeRuntimeInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsPersistentWorldRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterPersistentWorldRegistry(active);
+                s_activeRuntimeInstance = active;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterPersistentWorldRegistry(active);
+            if (ReferenceEquals(s_activeRuntimeInstance, active))
+                s_activeRuntimeInstance = null;
+
+            return false;
+        }
+
+        private static bool IsPersistentWorldRuntimeUsable(PersistentWorldRegistry registry)
+        {
+            return registry != null && registry._serviceRegistered && registry.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()
@@ -3613,6 +3686,46 @@ namespace Hecton8.World
             return TryRegisterDroppedItemStateful(itemData, quantity, runtimePosition, Vector3.zero, Vector3.zero, geneticsMask, qualityMilli);
         }
 
+        internal bool CanRegisterDroppedItem(ItemData itemData, int quantity)
+        {
+            if (!CanRegisterDroppedItemData(itemData, quantity, out string persistentId))
+                return false;
+
+            return ComputePersistentIdHash(persistentId) != 0UL &&
+                   CanAppendDroppedItemState();
+        }
+
+        internal bool CanRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition)
+        {
+            if (!CanRegisterDroppedItemData(itemData, quantity, out string persistentId))
+                return false;
+
+            return ComputePersistentIdHash(persistentId) != 0UL &&
+                   CanAppendDroppedItemState() &&
+                   CanResolveDroppedItemRuntimePosition(runtimePosition);
+        }
+
+        internal bool CanRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity)
+        {
+            if (itemHashId == 0 || itemCatalog == null)
+                return false;
+
+            return CanRegisterDroppedItem(itemCatalog.FindByHash(itemHashId), quantity);
+        }
+
+        internal bool CanRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity, Vector3 runtimePosition)
+        {
+            if (itemHashId == 0 || itemCatalog == null)
+                return false;
+
+            return CanRegisterDroppedItem(itemCatalog.FindByHash(itemHashId), quantity, runtimePosition);
+        }
+
+        internal bool CanRegisterDroppedItemBatch(int recordCount)
+        {
+            return recordCount <= 0 || CanAppendDroppedItemState(recordCount);
+        }
+
         internal bool TryRegisterDroppedItem(
             ItemData itemData,
             int quantity,
@@ -3632,16 +3745,14 @@ namespace Hecton8.World
             ulong geneticsMask,
             ushort qualityMilli)
         {
-            if (itemData == null || quantity <= 0 || !_records.IsCreated || _records.Length >= _records.Capacity)
+            if (!CanRegisterDroppedItemData(itemData, quantity, out string persistentId) ||
+                !CanAppendDroppedItemState())
+            {
                 return false;
+            }
 
-            if (string.IsNullOrWhiteSpace(itemData.PersistentId))
-                return false;
-
-            if (itemData.worldPrefab == null)
-                return false;
-
-            if (!TryGenerateInstanceUid(itemData, ComputePersistentIdHash(itemData.PersistentId), out uint instanceUid))
+            ulong persistentIdHash = ComputePersistentIdHash(persistentId);
+            if (persistentIdHash == 0UL || !TryGenerateInstanceUid(itemData, persistentIdHash, out uint instanceUid))
                 return false;
 
             Vector3 scatteredRuntimePosition = ApplyDeterministicDropScatter(runtimePosition, instanceUid);
@@ -3655,8 +3766,8 @@ namespace Hecton8.World
             {
                 Position = position,
                 ChunkId = chunkId,
-                ItemPersistentIdHash = ComputePersistentIdHash(itemData.PersistentId),
-                ItemPersistentId = new FixedString128Bytes(itemData.PersistentId),
+                ItemPersistentIdHash = persistentIdHash,
+                ItemPersistentId = new FixedString128Bytes(persistentId),
                 Quantity = quantity,
                 Flags = PersistentWorldItemFlags.None,
                 InstanceUid = instanceUid
@@ -3689,6 +3800,112 @@ namespace Hecton8.World
             return true;
         }
 
+        private static bool CanRegisterDroppedItemData(ItemData itemData, int quantity, out string persistentId)
+        {
+            persistentId = null;
+            if (itemData == null || quantity <= 0)
+                return false;
+
+            persistentId = itemData.PersistentId;
+            return !string.IsNullOrWhiteSpace(persistentId) &&
+                   itemData.worldPrefab != null;
+        }
+
+        private bool CanAppendDroppedItemState()
+        {
+            return CanAppendDroppedItemState(1);
+        }
+
+        private bool CanAppendDroppedItemState(int recordCount)
+        {
+            if (!_records.IsCreated ||
+                !_recordsByChunk.IsCreated ||
+                !_deltaRecords.IsCreated ||
+                !_deltaRecordIndexByEntityId.IsCreated ||
+                !_poolSlotData.IsCreated ||
+                !_guidToPoolIndex.IsCreated ||
+                !_entityStateByInstanceUid.IsCreated)
+            {
+                return false;
+            }
+
+            if (recordCount <= 0)
+                return true;
+
+            long nextRecordIndex = _records.Length;
+            long requiredRecordCount = nextRecordIndex + recordCount;
+            return nextRecordIndex >= 0 &&
+                   CanGenerateDroppedItemInstanceUidBatch(recordCount) &&
+                   requiredRecordCount <= _records.Capacity &&
+                   (long)_recordsByChunk.Count + recordCount <= _recordsByChunk.Capacity &&
+                   requiredRecordCount <= _poolSlotData.Length &&
+                   (long)_deltaRecords.Length + recordCount <= _deltaRecords.Capacity &&
+                   (long)_deltaRecordIndexByEntityId.Count + recordCount <= _deltaRecordIndexByEntityId.Capacity &&
+                   (long)_guidToPoolIndex.Count + recordCount <= _guidToPoolIndex.Capacity &&
+                   (long)_entityStateByInstanceUid.Count + recordCount <= _entityStateByInstanceUid.Capacity;
+        }
+
+        private static bool CanGenerateDroppedItemInstanceUidBatch(int recordCount)
+        {
+            if (recordCount <= 0)
+                return true;
+
+            int counterSnapshot = Volatile.Read(ref _nextInstanceUidCounter);
+            if (counterSnapshot < 0)
+                return false;
+
+            long requiredSequence = (long)counterSnapshot + recordCount;
+            return requiredSequence > 0L &&
+                   requiredSequence <= InstanceUidCounterMask;
+        }
+
+        private bool CanResolveDroppedItemRuntimePosition(Vector3 runtimePosition)
+        {
+            if (!CanResolveDroppedItemRuntimePositionSample(runtimePosition))
+                return false;
+
+            return CanResolveDroppedItemScatterEnvelope(runtimePosition);
+        }
+
+        private bool CanResolveDroppedItemScatterEnvelope(Vector3 runtimePosition)
+        {
+            if (!CanResolveDroppedItemLiftedSample(runtimePosition, 0f, 0f, DropScatterMinLiftMeters) ||
+                !CanResolveDroppedItemLiftedSample(runtimePosition, 0f, 0f, DropScatterMaxLiftMeters))
+            {
+                return false;
+            }
+
+            for (uint directionIndex = 0u; directionIndex < 8u; directionIndex++)
+            {
+                float2 direction = ResolveScatterPlanarDirection(directionIndex << 29);
+                if (!CanResolveDroppedItemLiftedSample(runtimePosition, direction.x, direction.y, DropScatterMinLiftMeters) ||
+                    !CanResolveDroppedItemLiftedSample(runtimePosition, direction.x, direction.y, DropScatterMaxLiftMeters))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool CanResolveDroppedItemLiftedSample(Vector3 runtimePosition, float directionX, float directionZ, float liftMeters)
+        {
+            Vector3 sample = runtimePosition;
+            sample.x += directionX * DropScatterRadiusMeters;
+            sample.y += liftMeters;
+            sample.z += directionZ * DropScatterRadiusMeters;
+            return CanResolveDroppedItemRuntimePositionSample(sample);
+        }
+
+        private bool CanResolveDroppedItemRuntimePositionSample(Vector3 runtimePosition)
+        {
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition position))
+                return false;
+
+            int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
+            return AbsoluteUniversePosition.IsValidChunkId(chunkId);
+        }
+
         internal bool TryRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity, Vector3 runtimePosition)
         {
             if (itemHashId == 0 || itemCatalog == null)
@@ -3696,6 +3913,16 @@ namespace Hecton8.World
 
             ItemData itemData = itemCatalog.FindByHash(itemHashId);
             return TryRegisterDroppedItem(itemData, quantity, runtimePosition);
+        }
+
+        bool IPersistentDroppedItemRegistry.CanRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition)
+        {
+            return CanRegisterDroppedItem(itemData, quantity, runtimePosition);
+        }
+
+        bool IPersistentDroppedItemRegistry.CanRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity, Vector3 runtimePosition)
+        {
+            return CanRegisterDroppedItem(itemHashId, itemCatalog, quantity, runtimePosition);
         }
 
         bool IPersistentDroppedItemRegistry.TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition)
@@ -5284,7 +5511,7 @@ namespace Hecton8.World
                     return;
 
                 if (quarantinedSectorResetApplied)
-                    Hecton8.UI.NotificationEvents.TryPushCritical(LocalizedSectorCorruptionMessage.AsSpan());
+                    TryPushSectorCorruptionNotification();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (backupRecoveredSectorRepairApplied)
@@ -5296,6 +5523,11 @@ namespace Hecton8.World
                     return;
 
                 RestoreFromLoadedRecords(stagedRecords, scheduleHydration: false);
+                int suppressedResourceNodes = Hecton8.Scavenging.ResourceNode.ApplyPersistentWorldRegistryStateToRegisteredNodes(this);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (suppressedResourceNodes > 0)
+                    H8Debug.Log($"[PersistentWorldRegistry] Suppressed {suppressedResourceNodes} resource nodes after indexed sector restore.");
+#endif
                 ApplyStagedEntityStates(stagedEntityStates);
                 if (TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup))
                 {
@@ -5335,6 +5567,7 @@ namespace Hecton8.World
 
             NativeArray<long> desiredSectorHashView = default;
             NativeList<PersistentWorldDeltaRecord> loadedSectorRecords = default;
+            int loadedSectorRecordsSentinelId = 0;
             try
             {
                 desiredSectorHashView = new NativeArray<long>(PagedSectorHashCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -5344,7 +5577,11 @@ namespace Hecton8.World
                     desiredSectorHashView[i] = desiredSectorHashes[i];
 
                 loadedSectorRecords = new NativeList<PersistentWorldDeltaRecord>(math.max(16, loadedRecordCapacity), Allocator.TempJob);
-                RegisterTrackedTransientNativeList(loadedSectorRecords, IndexedSectorPagingLoadedRecordsLabel, NativeAllocationLifetime.TempJob);
+                RegisterTrackedTransientNativeList(
+                    loadedSectorRecords,
+                    IndexedSectorPagingLoadedRecordsLabel,
+                    NativeAllocationLifetime.TempJob,
+                    out loadedSectorRecordsSentinelId);
 
                 if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(
                         indexedSectorSavePath,
@@ -5367,17 +5604,44 @@ namespace Hecton8.World
             }
             finally
             {
-                if (loadedSectorRecords.IsCreated)
+                Exception cleanupException = null;
+
+                if (loadedSectorRecords.IsCreated || loadedSectorRecordsSentinelId > 0)
                 {
-                    NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, IndexedSectorPagingLoadedRecordsLabel);
-                    loadedSectorRecords.Dispose();
+                    try
+                    {
+                        DisposeTrackedTransientNativeList(ref loadedSectorRecords, ref loadedSectorRecordsSentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        if (cleanupException == null)
+                            cleanupException = exception;
+                    }
+                }
+                else
+                {
+                    loadedSectorRecords = default;
                 }
 
                 if (desiredSectorHashView.IsCreated)
                 {
-                    NativeMemorySentinel.UnregisterNativeArray(desiredSectorHashView);
-                    desiredSectorHashView.Dispose();
+                    try
+                    {
+                        DisposeTrackedTransientArray(ref desiredSectorHashView);
+                    }
+                    catch (Exception exception)
+                    {
+                        if (cleanupException == null)
+                            cleanupException = exception;
+                    }
                 }
+                else
+                {
+                    desiredSectorHashView = default;
+                }
+
+                if (cleanupException != null)
+                    throw cleanupException;
             }
         }
 
@@ -5570,7 +5834,7 @@ namespace Hecton8.World
 
             if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
             {
-                _objectPoolService = currentService as IObjectPoolService;
+                CacheObjectPoolService(currentService as ObjectPoolManager);
                 return;
             }
 
@@ -5638,9 +5902,45 @@ namespace Hecton8.World
             _playerRuntimeContext = GlobalRegistry.Player;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _physicsService = GlobalRegistry.Physics;
-            _objectPoolService = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             _submarineRuntimeContext = GlobalRegistry.Submarine;
             TryEnsureItemLookup();
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(candidate))
+            {
+                _objectPoolService = candidate;
+                return;
+            }
+
+            ObjectPoolManager pool = null;
+            _objectPoolService = ObjectPoolManager.TryResolveActiveRuntime(ref pool)
+                ? pool
+                : null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPoolService as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = null;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPoolService = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPoolService = null;
+            pool = null;
+            return false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -5790,8 +6090,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            IObjectPoolService pool = _objectPoolService;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return false;
 
             if (!pool.HasPool(prefab))
@@ -5958,7 +6257,7 @@ namespace Hecton8.World
                 pooledRigidbody.Sleep();
             }
 
-            IObjectPoolService pool = _objectPoolService;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             if (pool != null)
             {
                 pool.Despawn(instance);
@@ -6167,7 +6466,8 @@ namespace Hecton8.World
                 if (itemData == null)
                     continue;
 
-                ulong itemHash = ComputePersistentIdHash(itemData.PersistentId);
+                string persistentId = itemData.PersistentId;
+                ulong itemHash = ComputePersistentIdHash(persistentId);
                 if (itemHash == 0UL)
                     continue;
 
@@ -6585,8 +6885,7 @@ namespace Hecton8.World
                     {
                         if (sectorRecords.IsCreated)
                         {
-                            NativeMemorySentinel.UnregisterNativeArray(sectorRecords);
-                            sectorRecords.Dispose();
+                            DisposeTrackedTransientArray(ref sectorRecords);
                         }
                     }
                 }
@@ -6650,8 +6949,7 @@ namespace Hecton8.World
             {
                 if (sectorStates.IsCreated)
                 {
-                    NativeMemorySentinel.UnregisterNativeArray(sectorStates);
-                    sectorStates.Dispose();
+                    DisposeTrackedTransientArray(ref sectorStates);
                 }
             }
         }
@@ -7175,6 +7473,7 @@ namespace Hecton8.World
             if (string.IsNullOrEmpty(path))
                 return true;
 
+            AsyncWriteManager.InvalidateCachedReadWindows(path);
             try
             {
                 if (File.Exists(path))
@@ -7196,6 +7495,14 @@ namespace Hecton8.World
             catch (NotSupportedException)
             {
                 return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                return false;
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(path);
             }
         }
 
@@ -8128,10 +8435,95 @@ namespace Hecton8.World
             {
                 if (sectorStates.IsCreated)
                 {
-                    NativeMemorySentinel.UnregisterNativeArray(sectorStates);
-                    sectorStates.Dispose();
+                    DisposeTrackedTransientArray(ref sectorStates);
                 }
             }
+        }
+
+        private static unsafe void DisposeTrackedTransientArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+            {
+                array = default;
+                return;
+            }
+
+            Exception firstException = null;
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+
+            if (trackedPointer != null)
+            {
+                try
+                {
+                    NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (Exception exception)
+            {
+                if (firstException == null)
+                    firstException = exception;
+            }
+            finally
+            {
+                array = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
+        }
+
+        private static void DisposeTrackedTransientNativeList<T>(ref NativeList<T> list, ref int sentinelId) where T : unmanaged
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (list.IsCreated)
+            {
+                try
+                {
+                    list.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    list = default;
+                }
+            }
+            else
+            {
+                list = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static NativeArray<T> CreateTrackedTransientArray<T>(
@@ -8168,9 +8560,10 @@ namespace Hecton8.World
         private static void RegisterTrackedTransientNativeList<T>(
             NativeList<T> list,
             string label,
-            NativeAllocationLifetime lifetime) where T : unmanaged
+            NativeAllocationLifetime lifetime,
+            out int sentinelId) where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeList(list, MemoryBudgetOwnerName, label, lifetime);
+            sentinelId = NativeMemorySentinel.RegisterNativeListInstance(list, MemoryBudgetOwnerName, label, lifetime);
             if (sentinelId <= 0)
                 throw new InvalidOperationException($"NativeMemorySentinel rejected persistent world transient list registration for {label}.");
         }
@@ -8190,6 +8583,28 @@ namespace Hecton8.World
 
             lastTelemetryFrame = frame;
             GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, scalarValue);
+        }
+
+        private void TryPushSectorCorruptionNotification()
+        {
+            if (Hecton8.UI.NotificationEvents.TryPushCritical(LocalizedSectorCorruptionMessage.AsSpan()))
+                return;
+
+            ReportSectorCorruptionNotificationMiss();
+        }
+
+        private void ReportSectorCorruptionNotificationMiss()
+        {
+            _sectorCorruptionNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _sectorCorruptionNotificationMissWarningHash,
+                _sectorCorruptionNotificationContextHash,
+                math.max(1, _sectorCorruptionNotificationMissCount));
+        }
+
+        private void ClearSectorCorruptionNotificationDiagnostics()
+        {
+            _sectorCorruptionNotificationMissCount = 0;
         }
 
         private static float StopwatchTicksToMilliseconds(long elapsedTicks)
@@ -9764,10 +10179,7 @@ namespace Hecton8.World
 
         private static int ComputeCatalogItemHash(ItemData itemData)
         {
-            if (itemData == null || string.IsNullOrWhiteSpace(itemData.PersistentId))
-                return 0;
-
-            return Hecton.Localization.LocHash.Compute(itemData.PersistentId);
+            return ItemData.ResolvePersistentHashId(itemData);
         }
 
         internal int CopyChunkDeltas(int3 chunkId, NativeList<PersistentWorldDeltaRecord> destination)
@@ -10497,11 +10909,22 @@ namespace Hecton8.World
         private int ResolveTombstoneDayIndex()
         {
             ISaveService saveService = _saveService;
-            double playSeconds = saveService != null
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            double playSeconds = IsSaveServiceUsable(saveService)
                 ? saveService.CurrentPlayTimeSeconds
                 : Time.timeAsDouble;
             int day = (int)math.floor(math.max(0d, playSeconds) / TombstoneInGameDaySeconds);
             return math.clamp(day, 1, ushort.MaxValue);
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private bool TryFindRecordIndexByInstanceUid(uint instanceUid, out int recordIndex)
@@ -10524,7 +10947,7 @@ namespace Hecton8.World
 
         internal static ulong ComputePersistentIdHash(string value)
         {
-            if (string.IsNullOrEmpty(value))
+            if (string.IsNullOrWhiteSpace(value))
                 return 0UL;
 
             ulong hash = FnvOffsetBasis64;
@@ -10546,16 +10969,23 @@ namespace Hecton8.World
                 return 0UL;
 
             ulong hash = FnvOffsetBasis64;
+            bool hasNonWhiteSpace = false;
             for (int i = 0; i < value.Length; i++)
             {
                 byte current = value[i];
+                hasNonWhiteSpace |= !IsAsciiWhiteSpace(current);
                 hash ^= current;
                 hash *= FnvPrime64;
                 hash ^= 0UL;
                 hash *= FnvPrime64;
             }
 
-            return hash;
+            return hasNonWhiteSpace ? hash : 0UL;
+        }
+
+        private static bool IsAsciiWhiteSpace(byte value)
+        {
+            return value == 32 || (value >= 9 && value <= 13);
         }
 
         private static bool UID_VALIDATE(in PersistentWorldItemRecord record)

@@ -9,32 +9,22 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Ending Record Transcript Seed"
+title: "Транскрипт фінального запису"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Ending Record Transcript Seed
+# Транскрипт фінального запису
 
-UK LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.
+## Закриття, Записане Як Custody
 
-## Scanner
+Фінали HECTON-8 не мають давати гравцеві чисте виправдання. Запис називає receiver, payload hash, стан боргу й стан виживання, бо інституції пам'ятають ці поля краще, ніж людей. Ця холодність корисна. Вона робить кожен наслідок порівнюваним, не перетворюючи правду на трофей.
 
-UK LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Найважливіші поля лишаються невирішеними. Suppression flag unknown. Truth custody unresolved. Atlas continuity unclear. Public ledger status pending. Ці розриви тримають фінал чесним: щось вийшло з океану, але володіння не дорівнює справедливості, а виживання не дорівнює ремонту.
 
-## Terminal
-
-UK LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
-
-## Audio
-
-UK LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
-
-## Field Note
-
-UK LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Формат транскрипта захищає replay. Гравець може повернутися зі знанням, але наступний захід не має успадковувати силу. Він успадковує підозру, смак і страх. Запис - квитанція, не прощення.
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/uk_UA. -->

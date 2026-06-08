@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "سلطة تأخر الضوء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# سلطة تأخر الضوء
 
-AR LOC HOLD: Light-Delay Authority defines the 2190 no-ansible communication model: carrier signals obey light speed, queue priority, orbital windows and local weather.
-
-## Scanner
-
-AR LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
-
-## Terminal
-
-AR LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
-
-## Audio
-
-AR LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
-
-## Field Note
-
-AR LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+نداء الاستغاثة في HECTON-8 هو شحنة مادية من المعنى. يخرج من صاري غارق، يعبر فضاء Aegir بسرعة الضوء، ينتظر داخل مخازن الترحيل، ثم يصل إلى Black Keel عبر طابور يعرف مسبقا كيف يسعر الخطر. أول تأخر هو المسافة الصادقة. التأخيرات اللاحقة بشرية: فئة الحيازة، نوافذ العاصفة، لغة المسؤولية، وعادة الناقل في الرد على الأصل قبل الإنسان. لذلك قد يكون الجواب جديدا تقنيا وعديم الفائدة داخل غرفة ضغط تنهار. يجب أن يشعر القارئ بقسوة الفيزياء العادية قبل أن يرى قسوة الشركة فوقها.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/ar_SA. -->

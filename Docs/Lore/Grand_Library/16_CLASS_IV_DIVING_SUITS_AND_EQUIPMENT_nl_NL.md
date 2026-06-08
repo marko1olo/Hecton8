@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # KLASSE-IV DUIKPAKKEN EN ABYSSALE UITRUSTING
 
 > **Bron:** Deep Reach Megacorporation, Uitrusting Kwartiermeester Handboek.

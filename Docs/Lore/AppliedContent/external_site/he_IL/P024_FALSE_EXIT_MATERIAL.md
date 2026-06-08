@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # יציאה חומרית
 
-היא תומכת במשחק חוזר כסוף רווחי ומזוהם עבור שלל, חוזה והישרדות.
+Material Exit תומך בנסיגה רווחית אך מוכתמת: שלל, חוזים והישרדות יכולים לזכות בעלייה בזמן שאמת הירידה המלאה נשארת למטה.
 
 ## Scanner
 

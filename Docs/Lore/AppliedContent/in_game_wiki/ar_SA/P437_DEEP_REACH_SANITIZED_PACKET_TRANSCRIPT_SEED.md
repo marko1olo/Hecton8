@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "تفريغ حزمة Deep Reach المنقحة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# تفريغ حزمة Deep Reach المنقحة
 
-AR LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.
+تظل الحزمة المنقحة قابلة للتصديق لأنها تحتفظ بأسماء الكارثة الحقيقية وتحذف القرارات التي جعلتها قاتلة.
 
 ## Scanner
 
-AR LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+حزمة Deep Reach مستعادة تكرر ملخص الحادث، ثم تربط المساعدة بالإحداثيات وتسعير الحجر.
 
 ## Terminal
 
-AR LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
+PACKET DR-RCO-2190: safety priority asserted; coordinates required; quarantine cost pending; worker-cause fields omitted.
 
 ## Audio
 
-AR LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
+حزمة Recovery Compliance. أولوية السلامة معترف بها. الإحداثيات أولا. كلفة الحجر معلقة. لا يمكن تسعير المساعدة بلا رؤية.
 
 ## Field Note
 
-AR LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+صوت مؤسسي بصيغة الحاضر. يجب أن يبدو قابلا للنجاة حتى يلاحظ اللاعب ما ترفض الحزمة تسميته.
 
 <!-- In-Game Wiki; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/ar_SA. -->

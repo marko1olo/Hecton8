@@ -9,32 +9,18 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "Kit de bomba de achique manual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# Kit de bomba de achique manual
 
-ES LOC HOLD: Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile.
+La bomba de achique manual es el primer verbo de supervivencia porque rechaza el drama. No hay powered panel, ni interfaz heroica, ni promesa de que la sala sea segura. El jugador limpia una admisión obstruida, siente la palanca pelear y aprende que el agua necesita una salida honesta.
 
-## Scanner
-
-ES LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
-
-## Terminal
-
-ES LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
-
-## Audio
-
-ES LOC HOLD: Hand work first. Electricity second. Breathing always.
-
-## Field Note
-
-ES LOC HOLD: First tool must teach survival before upgrade fantasy.
+Esa herramienta pequeña marca el tono de HECTON-8. Reparar empieza con manos, presión y consecuencia. Si la bomba devuelve el golpe, la sala responde. Si la salida es mala, sobrevivir solo mueve el peligro a otro lugar.
 
 <!-- External Site; generated from P111_MANUAL_BILGE_PUMP_KIT/es_ES. -->

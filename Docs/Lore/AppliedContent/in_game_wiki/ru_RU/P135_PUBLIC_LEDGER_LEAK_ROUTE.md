@@ -9,25 +9,25 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Маршрут утечки в public ledger"
+title: "Утечка в публичный реестр"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Маршрут утечки в public ledger
+# Утечка в публичный реестр
 
-Public Ledger Leak - концовка частичной правды. Игрок может опубликовать достаточно evidence, чтобы стирание стало сложнее, не решив Atlas и не защитив ocean-machine ecology. Это сильно, грязно и не является чистой победой.
+Утечка в публичный реестр - концовка частичной правды. Игрок отправляет достаточно доказательств, чтобы стирание стало труднее, но недостаточно, чтобы контролировать Atlas, ответ Deep Reach или то, что публичные институты сделают с пакетом.
 
 ## Scanner
 
-Можно слить правду раньше, чем ты поймешь ее целиком.
+Witness hash принят. Частичная правда уходит раньше полной custody.
 
 ## Terminal
 
-PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
+МАРШРУТ ПУБЛИЧНОГО РЕЕСТРА: packet notary Tau Ceti принял witness hash; payload неполон; спор claimant вероятен; окно ответного давления Deep Reach начинается после подтверждения relay.
 
 ## Audio
 
@@ -35,6 +35,6 @@ PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload in
 
 ## Field Note
 
-Public не значит безопасно. Это значит труднее стереть.
+Публичность не значит безопасность. Это только значит: стереть труднее.
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/ru_RU. -->

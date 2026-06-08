@@ -8,33 +8,19 @@ biome_tags: biome.factory_temple;biome.deep_abyss
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+spoiler_tier: 1
+title: "Pilha de Recursos Biometálicos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# Pilha de Recursos Biometálicos
 
-PT-BR LOC HOLD: Biometal Resource Stack frames HECTON-8 as a full pressure economy. The game can reward exploration with many resources while keeping blue debt as the strategic apex.
+A pilha de recursos impede HECTON-8 de virar um único material mágico. Xenon-Omega importa, mas a lua também tem metais, sais, química de vent, cerâmicas de pressão, biofibras, fotoproteínas, salvage e biometal alterado por Atlas.
 
-## Scanner
-
-PT-BR LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
-
-## Terminal
-
-PT-BR LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
-
-## Audio
-
-PT-BR LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
-
-## Field Note
-
-PT-BR LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+A Pilha de Recursos Biometálicos enquadra HECTON-8 como uma economia completa de pressão, recompensando exploração com muitos recursos enquanto blue debt permanece no ápice estratégico. Se toda amostra diz Xenon-Omega, o mundo fica burro. Conte também os outros motivos.
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/pt_BR. -->

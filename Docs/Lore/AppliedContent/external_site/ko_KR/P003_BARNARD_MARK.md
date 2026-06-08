@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Barnard 표식
 
-Barnard 표식은 인양을 동기로 바꾼다. 설명이 아니라 노동, 도구, 이름으로 플레이어를 HECTON-8에 연결한다.
-
-## Scanner
-
-Barnard Yards 도장. Deep Reach 지급품이 아니다. 누군가 고향 장비를 이 달의 바닥까지 가져왔다.
-
-## Terminal
-
-인원 경로: HOLD. 자원 경로: ACTIVE. 기질 경로: PROTECTED.
-
-## Audio
-
-저 표식은 Barnard다. 같은 절삭 패턴. 같은 싸구려 합금. 이걸 여기까지 들고 온 자는 너와 같은 작업장을 알았다.
-
-## Field Note
-
-죽은 회사를 무시하는 건 쉽다. 자기 조선소의 렌치를 무시하는 건 어렵다.
+Barnard Yards는 고귀한 출신지가 아니다. 선박 해체, 빌린 절단기, 압력 클램프, 세 번째 주인을 거친 도구, 나쁜 계약의 비용을 정확히 아는 사람들의 작업 흉터다. HECTON-8에서 처음 보는 Barnard 각인은 거의 lore라고 부르기엔 너무 작아야 한다. 연설이 아니다. 렌치의 표시, 사물함 경첩의 틀린 합금, Deep Reach가 절대 지정하지 않을 수리 습관이다. 플레이어에게 그 세부가 계약을 바꾼다. HECTON-8은 더 이상 외계 바다 아래의 죽은 기업 claim만이 아니다. 같은 야드 문화의 누군가가 먼저 이곳에 도착했고, 일했고, 같은 장부로 밀려 들어갔으며, Marauder가 보지 않으면 지워질 만큼 작은 증거를 남겼다.
 
 <!-- External Site; generated from P003_BARNARD_MARK/ko_KR. -->

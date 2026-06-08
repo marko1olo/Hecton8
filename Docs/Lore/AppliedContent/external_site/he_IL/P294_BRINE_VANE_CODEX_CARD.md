@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Brine Vane Codex Card"
+title: "כרטיס קודקס: סנפיר תמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Brine Vane Codex Card
+# כרטיס קודקס: סנפיר תמלחת
 
-HE LOC HOLD: In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+סנפירי תמלחת גורמים למים של עומק הביניים ב-HECTON-8 להרגיש פיזיים. הם מראים שהקניון בנוי מצפיפות, לא מנפח כחול ריק: קרום אחד יכול להיות אזהרה, מקור חומר ושפת רצפה כוזבת בו זמנית.
 
 ## Scanner
 
-HE LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+יריעת סנפיר תמלחת. קרום מלח-מינרל מקובע לגזירת צפיפות. שפה שלמה היא קיר; פה קרוע הוא מעבר; מים שחורים בלי שפת סנפיר הם סיכון לרצפה כוזבת.
 
 ## Terminal
 
-HE LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+דגימה / סנפיר תמלחת / תפקיד: סמן קיר צפיפות, אזהרת כיפוף sonar, מקור צלעות שנשרו / קריאה בטוחה: יריעה שלמה, פה קרוע במורד הזרם, קצה חלון גזירה מסולסל / דחה: חיתוך יריעת נתיב חיה, חציית זוהר פתוח, אמון בהחזר רצפה כוזבת / הערת מסלול: אסוף צלעות שנשרו, לא את הקרום שמחזיק את המפה שלך פתוחה.
 
 ## Audio
 
-HE LOC HOLD: The plant is not pointing up. It is pointing through.
+הסנפיר לא מצביע למעלה. הוא מראה איפה האוקיינוס פונה הצידה.
 
 ## Field Note
 
-HE LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+יריעה שלמה: קיר. פה קרוע: מסלול אפשרי. צלע שנשרה: דגימה. יריעה חיה מחזיקה נתיב: השאר.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/he_IL. -->

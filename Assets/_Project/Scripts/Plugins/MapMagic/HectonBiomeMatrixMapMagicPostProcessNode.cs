@@ -180,13 +180,47 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         private static void DisposeTracked(ref NativeArray<float> array, ref int registrationId)
         {
-            if (!array.IsCreated)
-                return;
+            System.Exception cleanupException = null;
 
-            NativeMemorySentinel.Unregister(registrationId);
-            registrationId = 0;
-            array.Dispose();
-            array = default;
+            if (registrationId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(registrationId);
+                }
+                catch (System.Exception exception)
+                {
+                    cleanupException = exception;
+                }
+                finally
+                {
+                    registrationId = 0;
+                }
+            }
+
+            if (array.IsCreated)
+            {
+                try
+                {
+                    array.Dispose();
+                }
+                catch (System.Exception exception)
+                {
+                    if (cleanupException == null)
+                        cleanupException = exception;
+                }
+                finally
+                {
+                    array = default;
+                }
+            }
+            else
+            {
+                array = default;
+            }
+
+            if (cleanupException != null)
+                throw cleanupException;
         }
 
         private bool ShouldApplyTectonicDisplacement()

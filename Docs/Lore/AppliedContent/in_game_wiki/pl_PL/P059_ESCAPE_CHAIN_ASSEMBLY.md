@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Escape Chain Assembly"
+title: "Montaż łańcucha ucieczki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Escape Chain Assembly
+# Montaż łańcucha ucieczki
 
-PL LOC HOLD: Escape Chain Assembly turns departure into a long engineering path. The damaged drop package cannot launch by itself. The player must assemble relay, pressure sealing, guidance, ascent energy, legal access and optional evidence capacity across increasing depth.
+Ucieczka jest łańcuchem montażowym, nie jednym naprawionym pojazdem. Uszkodzony pakiet zrzutowy może utrzymać gracza przy życiu, ale sam nie stworzy zaufanego wznoszenia. Droga do domu potrzebuje akustycznego kręgosłupa przekaźnikowego słyszalnego przez wodę i szum burzy, uszczelnienia ciśnieniowego, które nie zmieni wznoszenia w rozerwanie, rdzenia naprowadzania odpornego na lokalne zagrożenia HECTON-8, ładunku energii wznoszenia, uzgodnienia kwarantanny i prawa oraz, jeśli gracz chce wpływu na zapis odzysku, ładunku dowodowego, którego Black Keel nie zdoła wycenić do zera. Każda część leży głębiej niż komfort, bo pierwotny system budowano do przenoszenia aktywów, a nie do pozwalania porzuconym robotnikom odejść na własnych warunkach.
 
 ## Scanner
 
-PL LOC HOLD: Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal handshake and a payload the carrier cannot ignore.
+Odlot wymaga sześciu twardych dowodów: przekaźnika, uszczelnienia, naprowadzania, ładunku wznoszenia, prawnego uzgodnienia i ładunku, którego przewoźnik nie może zignorować.
 
 ## Terminal
 
-PL LOC HOLD: ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+PAKIET WZNOSZENIA: brak akustycznego kręgosłupa przekaźnikowego. Ocena pierścienia zaciskowego niewystarczająca. Brak rdzenia naprowadzania. Kołyska ładunku pusta. Uzgodnienie kwarantanny nierozwiązane. Ładunek dowodowy opcjonalny, ale zmienia władzę odzysku.
 
 ## Audio
 
-PL LOC HOLD: You do not repair the capsule. You build the first honest exit the colony never had.
+Nie naprawiasz kapsuły. Budujesz pierwsze uczciwe wyjście, którego kolonia nigdy nie miała.
 
 ## Field Note
 
-PL LOC HOLD: The route up is built from pieces that were never meant to let workers leave on their own.
+Droga w górę powstaje z części, których nigdy nie projektowano po to, by robotnicy mogli odejść samodzielnie.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/pl_PL. -->

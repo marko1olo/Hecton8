@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "Pemotong Induksi Daya Rendah"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# Pemotong Induksi Daya Rendah
 
-ID LOC HOLD: Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal.
+Cutter pertama berbahaya karena terasa seperti izin. Ia membuka service hatches, baut, dan kunci peti, lalu menolak fantasi bahwa setiap hambatan adalah pintu. Pressure glass, rusuk aktif, dan Atlas-grown seams sedang melakukan pekerjaan yang mungkin belum dipahami pemain.
 
-## Scanner
-
-ID LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
-
-## Terminal
-
-ID LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
-
-## Audio
-
-ID LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
-
-## Field Note
-
-ID LOC HOLD: The cutter should feel valuable because it is limited.
+Batasan itulah nilai desainnya. Alat ini meminta pemain membaca fungsi sebelum kekerasan. HECTON-8 menjadi lebih kaya ketika memotong adalah keputusan, bukan kata kerja universal.
 
 <!-- External Site; generated from P113_LOW_POWER_INDUCTION_CUTTER/id_ID. -->

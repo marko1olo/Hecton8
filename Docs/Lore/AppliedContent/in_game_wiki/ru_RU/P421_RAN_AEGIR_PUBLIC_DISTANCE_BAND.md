@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_distance_band;poi.no_ftl_route_index
 biome_tags: biome.human_space;biome.publication
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "RU LOC HOLD: Ran/Aegir Distance Band"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Диапазон расстояния Ran/Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Ran/Aegir Distance Band
+# Диапазон расстояния Ran/Aegir
 
-RU LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.
+Диапазон расстояния Ran/Aegir делает сеттинг читаемым, не выдавая прозу за финальные simulation data. Aegir достижим для зондов, грузов и debt-backed settlement, но не для случайного спасения, когда комната уже тонет.
 
 ## Scanner
 
-RU LOC HOLD: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+Публичный диапазон: Ran/Aegir - маршрут без FTL примерно десятисветолетнего класса от Sol.
 
 ## Terminal
 
-RU LOC HOLD: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+ДИАПАЗОН ЭФЕМЕРИД: для публичного текста использовать десятисветолетний класс до заморозки небесных констант в таблицах. FTL-спасения на маршруте нет.
 
 ## Audio
 
-RU LOC HOLD: Ten light-years is close on a map and brutal for a contract.
+Десять световых лет близко на карте и жестоко в контракте.
 
 ## Field Note
 
-RU LOC HOLD: Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
+Публичная астрономическая запись: диапазоны расстояния и маршрутные карты являются объяснительными интервалами, а не финальными константами эфемерид.
 
 <!-- In-Game Wiki; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/ru_RU. -->

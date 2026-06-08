@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "Ära der Strahlsegelsonden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Ära der Strahlsegelsonden
 
-DE LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-DE LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-DE LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-DE LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-DE LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Die Strahlsegel-Sondenära ist der leise Anfang der Aegir-Geschichte. Kleine Nutzlasten ritten Leistung aus fernen Arrays, kreuzten zuerst und schickten Pakete zurück, alt genug für Streit und sauber genug für Verkauf. Die Sonden machten Aegir nicht sicher. Sie machten es lesbar: Gravitationssenken, Strahlungsgürtel, Ozeansignaturen, Relais-Sichtlinien und eine Route, die ein Unternehmen mit genug Gleichgültigkeit profitabel machen konnte.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/de_DE. -->

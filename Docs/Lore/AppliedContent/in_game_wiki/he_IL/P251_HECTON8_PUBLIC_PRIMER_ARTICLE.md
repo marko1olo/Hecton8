@@ -9,32 +9,35 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: HECTON-8 Public Primer Article"
+title: "מבוא ציבורי ל-HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: HECTON-8 Public Primer Article
+# מבוא ציבורי ל-HECTON-8
 
-HE LOC HOLD: The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
+HECTON-8 מוצג כמקום ששווה לשרוד בו, לא רק כזירת פשע. הירח שייך למערכת Aegir: קר, גאותי, יקר, ורחוק מדי לכל הצלה מהירה. המדפים הפוטיים שלו יכולים להיות צלולים וחיים, עם חומרת מושבה הנראית דרך מים בהירים. מתחת ליופי הזה, נתיבי Deep Reach הישנים יורדים אל חדרי משאבות, מסדרונות לחץ, חתכי תמלחת, חצרות ממסר שבורות ומכונות שהמשיכו לעבוד אחרי שאנשים הפסיקו לענות. המבוא הציבורי נשאר בטוח מספוילרים. הוא יכול לומר שהשחקן חוזר כ-Marauder כבול בחוב. הוא יכול לומר שהמושבה נכשלה, שחוזה ה-salvage כופה, ושהאוקיינוס מחזיק ראיות. הוא אינו חושף את בחירת ה-payload הסופית או את שאלת Atlas המלאה. המטרה היא להזמין את השחקן לעולם בלי לשייף את שיניו.
 
 ## Scanner
 
-HE LOC HOLD: A public primer is allowed to be beautiful. It is not allowed to lie.
+אישור מבוא ציבורי: להראות את הירח יפה קודם. לא למכור את האוקיינוס באמצעות הסתרת הפשע.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+מבוא ציבורי / בטוח מספוילרים
+מותר: ירח האוקיינוס של Aegir, מדפים מוארים, מושבה תעשייתית שטבעה, חזרת Marauder ל-salvage, חורבות Deep Reach
+נעול: מסלול payload סופי, פתרון Atlas, השלכות receiver בסיום
+הערת עורך: יופי קודם, ראיות אחר כך, בלי הבטחת הצלה כוזבת.
 
 ## Audio
 
-HE LOC HOLD: First sell the ocean. Then earn the crime.
+המים הרדודים אינם מסכה. זה מה שהם כמעט הצליחו לבנות לפני שהעומק שמר את הקבלות.
 
 ## Field Note
 
-HE LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+מכור קודם את האוקיינוס. אחר כך תן לחלודה, לתגים ולחותמות המסלול להוכיח שהאוקיינוס אינו תמים.
 
 <!-- In-Game Wiki; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/he_IL. -->

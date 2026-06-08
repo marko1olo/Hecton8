@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -335,10 +335,12 @@ namespace Hecton8.Physics.KCC
         public const uint FlagExternalVelocityTarget = 1u << 15;
         public const uint FlagExternalPositionTarget = 1u << 16;
         public const uint FlagSignalDrop = 1u << 17;
+        public const uint FlagExternalRotationTarget = 1u << 18;
         public const uint InputFlagMask = 0x0000FFFFu;
         public const int InputGenerationShift = 16;
         public const float MinDenominator = 0.0001f;
         public const float AuthoritativeQualityWeight = 1f;
+        public const float DefaultWaterSurfaceY = 14.02f;
         public const float MillimeterScale = 1000f;
         public const float InvMillimeterScale = 0.001f;
         public const float MaxLocalFloatMagnitude = 131072f;
@@ -375,6 +377,16 @@ namespace Hecton8.Physics.KCC
         public static double3 Sanitize(double3 value, double3 fallback)
         {
             return IsFinite(value) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveWaterSurfaceY(float candidateWaterSurfaceY)
+        {
+            return math.isfinite(candidateWaterSurfaceY) &&
+                   math.abs(candidateWaterSurfaceY) > MinDenominator &&
+                   math.abs(candidateWaterSurfaceY) <= 1000f
+                ? candidateWaterSurfaceY
+                : DefaultWaterSurfaceY;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -993,6 +1005,9 @@ namespace Hecton8.Physics.KCC
                 externalFlags |= HydrodynamicKccMath.FlagExternalPositionTarget;
             }
 
+            if ((controlFlags & HydrodynamicKccMath.FlagExternalRotationTarget) != 0u)
+                externalFlags |= HydrodynamicKccMath.FlagExternalRotationTarget;
+
             float3 velocity = HydrodynamicKccMath.Sanitize(state.Velocity, float3.zero);
             float3 lateExternalVelocityChange = float3.zero;
             float3 lateExternalVelocityTarget = velocity;
@@ -1046,7 +1061,7 @@ namespace Hecton8.Physics.KCC
             float3 appliedFlow = sampledFlow * math.max(0f, math.isfinite(environmentProfile.CurrentAdvectionScalar) ? environmentProfile.CurrentAdvectionScalar : 1f);
             velocity += appliedFlow * dt;
 
-            float waterSurfaceY = math.isfinite(Tuning.WaterSurfaceY) ? Tuning.WaterSurfaceY : 0f;
+            float waterSurfaceY = HydrodynamicKccMath.ResolveWaterSurfaceY(Tuning.WaterSurfaceY);
             float depth = math.max(0f, waterSurfaceY - localPosition.y);
             float submersion = math.saturate(depth * math.rcp(math.max(0.1f, height)));
             submersion = submersion * submersion * (3f - 2f * submersion);
@@ -2843,6 +2858,8 @@ namespace Hecton8.Physics.KCC
         private const int EnvironmentGridAxisY = 8;
         private const int EnvironmentGridAxisZ = 16;
         private const int EnvironmentGridCellCount = EnvironmentGridAxisX * EnvironmentGridAxisY * EnvironmentGridAxisZ;
+        private const float MinQuaternionLengthSq = 0.000001f;
+        internal const float DefaultWaterSurfaceY = HydrodynamicKccMath.DefaultWaterSurfaceY;
         private const uint MetabolismFatigueFlag = 1u << 9;
         private const uint ScheduledVaultPinStates = 1u << 0;
         private const uint ScheduledVaultPinInputs = 1u << 1;
@@ -2870,7 +2887,7 @@ namespace Hecton8.Physics.KCC
         private const uint KccFaultDumpHash = 0x4B464450u; // KFDP
 
         [SerializeField] private int _entityCapacity = DefaultCapacity;
-        [SerializeField] private float _waterSurfaceY;
+        [SerializeField] private float _waterSurfaceY = DefaultWaterSurfaceY;
         [SerializeField] private bool _applyVisualToTransform = true;
         [SerializeField] private bool _runMockInput = true;
         [SerializeField] private bool _consumeExternalInputBuffer;
@@ -2940,7 +2957,12 @@ namespace Hecton8.Physics.KCC
         private float3 _queuedExternalVelocityChange;
         private float3 _queuedExternalVelocityTarget;
         private double3 _queuedExternalPositionTargetAup;
+        private quaternion _queuedExternalRotationTarget = quaternion.identity;
         private uint _queuedExternalControlFlags;
+        private Vector3 _pendingVisualPositionTarget;
+        private quaternion _pendingVisualRotationTarget = quaternion.identity;
+        private bool _hasPendingVisualPositionTarget;
+        private bool _hasPendingVisualRotationTarget;
         private float3 _lastGizmoCurrent;
         private float3 _lastGizmoPredicted;
         private float3 _lastGizmoNormal;
@@ -3079,6 +3101,8 @@ namespace Hecton8.Physics.KCC
             DrainPendingJobsForTeardown();
             _postScheduled = false;
             _collisionScheduled = false;
+            ClearQueuedExternalTargets();
+            ClearPendingExternalVisualTargets();
 #if UNITY_EDITOR
             if (EditorActiveRuntime == this)
                 EditorActiveRuntime = null;
@@ -3165,11 +3189,15 @@ namespace Hecton8.Physics.KCC
             float3 externalVelocityChange = _queuedExternalVelocityChange;
             float3 externalVelocityTarget = _queuedExternalVelocityTarget;
             double3 externalPositionTargetAup = _queuedExternalPositionTargetAup;
+            quaternion externalRotationTarget = _queuedExternalRotationTarget;
             uint externalControlFlags = _queuedExternalControlFlags;
+            bool hasExternalRotationTarget = (externalControlFlags & HydrodynamicKccMath.FlagExternalRotationTarget) != 0u &&
+                IsFiniteUnitQuaternion(externalRotationTarget);
             _queuedExternalAcceleration = float3.zero;
             _queuedExternalVelocityChange = float3.zero;
             _queuedExternalVelocityTarget = float3.zero;
             _queuedExternalPositionTargetAup = double3.zero;
+            _queuedExternalRotationTarget = quaternion.identity;
             _queuedExternalControlFlags = 0u;
             JobHandle clearFaultsHandle = faults.IsCreated
                 ? new ClearKccFaultFlagsJob { FaultFlags = faults }.Schedule(capacity, 32)
@@ -3255,6 +3283,7 @@ namespace Hecton8.Physics.KCC
                 _commandHandle = _integrationHandle;
                 _collisionHandle = _integrationHandle;
                 _collisionScheduled = true;
+                QueuePendingExternalRotationVisual(hasExternalRotationTarget, externalRotationTarget);
                 scheduled = true;
                 return;
             }
@@ -3273,6 +3302,7 @@ namespace Hecton8.Physics.KCC
                 MaxHitsPerEntity = maxHits
             }.Schedule(capacity, 32, _integrationHandle);
             _collisionScheduled = true;
+            QueuePendingExternalRotationVisual(hasExternalRotationTarget, externalRotationTarget);
             scheduled = true;
             }
             finally
@@ -3519,20 +3549,159 @@ namespace Hecton8.Physics.KCC
 
         public bool TryQueueExternalPositionTarget(Vector3 runtimePosition)
         {
-            if (!IsAuthorityRouteActive || !MathGuard.TryAcceptFinite(runtimePosition, out Vector3 acceptedRuntimePosition))
+            if (!IsAuthorityRouteActive ||
+                !TryResolveRuntimePositionTargetAup(runtimePosition, out Vector3 acceptedRuntimePosition, out double3 absolute))
+                return false;
+
+            _queuedExternalPositionTargetAup = absolute;
+            _queuedExternalControlFlags |= HydrodynamicKccMath.FlagExternalPositionTarget;
+            QueuePendingExternalPositionVisual(acceptedRuntimePosition);
+            return true;
+        }
+
+        public bool TryQueueExternalRotationTarget(Quaternion rotation)
+        {
+            if (!IsAuthorityRouteActive || !TryNormalizeRotation(rotation, out quaternion normalizedRotation))
+                return false;
+
+            _queuedExternalRotationTarget = normalizedRotation;
+            _queuedExternalControlFlags |= HydrodynamicKccMath.FlagExternalRotationTarget;
+            QueuePendingExternalRotationVisual(true, normalizedRotation);
+            return true;
+        }
+
+        public bool TryQueueExternalPoseTarget(Vector3 runtimePosition, Quaternion rotation)
+        {
+            if (!IsAuthorityRouteActive ||
+                !TryResolveRuntimePositionTargetAup(runtimePosition, out Vector3 acceptedRuntimePosition, out double3 absolute) ||
+                !TryNormalizeRotation(rotation, out quaternion normalizedRotation))
+                return false;
+
+            _queuedExternalPositionTargetAup = absolute;
+            _queuedExternalRotationTarget = normalizedRotation;
+            _queuedExternalControlFlags |= HydrodynamicKccMath.FlagExternalPositionTarget |
+                HydrodynamicKccMath.FlagExternalRotationTarget;
+            QueuePendingExternalPositionVisual(acceptedRuntimePosition);
+            QueuePendingExternalRotationVisual(true, normalizedRotation);
+            return true;
+        }
+
+        private static bool TryResolveRuntimePositionTargetAup(
+            Vector3 runtimePosition,
+            out Vector3 acceptedRuntimePosition,
+            out double3 absolute)
+        {
+            acceptedRuntimePosition = default;
+            absolute = double3.zero;
+            if (!MathGuard.TryAcceptFinite(runtimePosition, out acceptedRuntimePosition))
                 return false;
 
             AbsoluteUniversePosition aup = default;
             if (!RuntimeOriginRoute.TryRuntimePositionToAup(acceptedRuntimePosition, ref aup))
                 return false;
 
-            double3 absolute = aup.ToAbsoluteDouble3();
-            if (!HydrodynamicKccMath.IsFinite(absolute))
-                return false;
+            absolute = aup.ToAbsoluteDouble3();
+            return HydrodynamicKccMath.IsFinite(absolute);
+        }
 
-            _queuedExternalPositionTargetAup = absolute;
-            _queuedExternalControlFlags |= HydrodynamicKccMath.FlagExternalPositionTarget;
+        private static bool TryNormalizeRotation(Quaternion rotation, out quaternion normalizedRotation)
+        {
+            float4 value = new float4(rotation.x, rotation.y, rotation.z, rotation.w);
+            float lengthSq = math.lengthsq(value);
+            if (!math.all(math.isfinite(value)) || !math.isfinite(lengthSq) || lengthSq <= MinQuaternionLengthSq)
+            {
+                normalizedRotation = quaternion.identity;
+                return false;
+            }
+
+            value *= math.rsqrt(math.max(lengthSq, MinQuaternionLengthSq));
+            if (value.w < 0f)
+                value = -value;
+
+            normalizedRotation = new quaternion(value);
             return true;
+        }
+
+        private static bool IsFiniteUnitQuaternion(quaternion rotation)
+        {
+            float4 value = rotation.value;
+            float lengthSq = math.lengthsq(value);
+            return math.all(math.isfinite(value)) &&
+                math.isfinite(lengthSq) &&
+                lengthSq > MinQuaternionLengthSq;
+        }
+
+        private static Quaternion ToUnityQuaternion(quaternion rotation)
+        {
+            return new Quaternion(rotation.value.x, rotation.value.y, rotation.value.z, rotation.value.w);
+        }
+
+        private void QueuePendingExternalPositionVisual(Vector3 runtimePosition)
+        {
+            _pendingVisualPositionTarget = runtimePosition;
+            _hasPendingVisualPositionTarget = true;
+            ApplyPendingExternalPositionVisual(clearAfterApply: false);
+        }
+
+        private void QueuePendingExternalRotationVisual(bool hasExternalRotationTarget, quaternion rotation)
+        {
+            if (!hasExternalRotationTarget)
+            {
+                ClearPendingExternalRotationVisual();
+                return;
+            }
+
+            _pendingVisualRotationTarget = rotation;
+            _hasPendingVisualRotationTarget = true;
+            ApplyPendingExternalRotationVisual(clearAfterApply: false);
+        }
+
+        private void ApplyPendingExternalPositionVisual(bool clearAfterApply)
+        {
+            if (!_hasPendingVisualPositionTarget || !_applyVisualToTransform || _cachedTransform == null)
+                return;
+
+            _cachedTransform.position = _pendingVisualPositionTarget;
+            if (clearAfterApply)
+                ClearPendingExternalPositionVisual();
+        }
+
+        private void ApplyPendingExternalRotationVisual(bool clearAfterApply)
+        {
+            if (!_hasPendingVisualRotationTarget || !_applyVisualToTransform || _cachedTransform == null)
+                return;
+
+            _cachedTransform.rotation = ToUnityQuaternion(_pendingVisualRotationTarget);
+            if (clearAfterApply)
+                ClearPendingExternalRotationVisual();
+        }
+
+        private void ClearPendingExternalPositionVisual()
+        {
+            _pendingVisualPositionTarget = default;
+            _hasPendingVisualPositionTarget = false;
+        }
+
+        private void ClearPendingExternalRotationVisual()
+        {
+            _pendingVisualRotationTarget = quaternion.identity;
+            _hasPendingVisualRotationTarget = false;
+        }
+
+        private void ClearPendingExternalVisualTargets()
+        {
+            ClearPendingExternalPositionVisual();
+            ClearPendingExternalRotationVisual();
+        }
+
+        private void ClearQueuedExternalTargets()
+        {
+            _queuedExternalAcceleration = float3.zero;
+            _queuedExternalVelocityChange = float3.zero;
+            _queuedExternalVelocityTarget = float3.zero;
+            _queuedExternalPositionTargetAup = double3.zero;
+            _queuedExternalRotationTarget = quaternion.identity;
+            _queuedExternalControlFlags = 0u;
         }
 
         public uint ResolveNextInputFrame()
@@ -3557,7 +3726,10 @@ namespace Hecton8.Physics.KCC
             ReleaseScheduledVaultBufferPins();
             _postScheduled = false;
             if (!HasVaultBuffersReady())
+            {
+                ClearPendingExternalVisualTargets();
                 return;
+            }
 
             int entityCapacity = math.max(DefaultCapacity, _entityCapacity);
             if (!TryOpenVaultBuffer(_dataVault, ref _visualOutputsHandle, BufferID.ShinobuHydroKccVisualOutputs, SystemID.Physics, 1, out NativeArray<HydrodynamicKccVisualOutputDTO> visual) ||
@@ -3568,6 +3740,7 @@ namespace Hecton8.Physics.KCC
                 !TryOpenVaultBuffer(_dataVault, ref _telemetryRingHandle, BufferID.ShinobuHydroKccTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KinematicTelemetryEntry> telemetry) ||
                 !TryOpenVaultBuffer(_dataVault, ref _environmentTelemetryRingHandle, BufferID.ShinobuKccEnvironmentTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KccEnvironmentTelemetryEntry> environmentTelemetry))
             {
+                ClearPendingExternalVisualTargets();
                 return;
             }
 
@@ -3583,7 +3756,10 @@ namespace Hecton8.Physics.KCC
             }
 
             if (!visual.IsCreated || visual.Length == 0)
+            {
+                ClearPendingExternalVisualTargets();
                 return;
+            }
 
             HydrodynamicKccVisualOutputDTO output = visual[0];
             PublishKccVelocitySnapshot(states);
@@ -3613,10 +3789,15 @@ namespace Hecton8.Physics.KCC
             }
 
             if (!_applyVisualToTransform || _cachedTransform == null)
+            {
+                ClearPendingExternalVisualTargets();
                 return;
+            }
 
             Vector3 local = new Vector3(output.LocalPosition.x, output.LocalPosition.y, output.LocalPosition.z);
             _cachedTransform.localPosition = local;
+            ApplyPendingExternalPositionVisual(clearAfterApply: true);
+            ApplyPendingExternalRotationVisual(clearAfterApply: true);
         }
 
         private void PublishKccVelocitySnapshot(NativeArray<KinematicStateDTO> states)
@@ -3688,6 +3869,8 @@ namespace Hecton8.Physics.KCC
                 DrainPendingJobsForTeardown();
                 _postScheduled = false;
                 _collisionScheduled = false;
+                ClearQueuedExternalTargets();
+                ClearPendingExternalVisualTargets();
                 _scheduledEntityCount = 0;
                 _scheduledMaxHitsPerCommand = 0;
                 ResetVaultHandles();
@@ -4475,6 +4658,7 @@ namespace Hecton8.Physics.KCC
                 return true;
             }
 
+            _lastRespawnCollisionSnapshotGeneration = snapshotGeneration;
             return false;
         }
 
@@ -4620,7 +4804,7 @@ namespace Hecton8.Physics.KCC
             tuning.CapsuleHeight = math.max(tuning.CapsuleRadius * 2f, math.isfinite(tuning.CapsuleHeight) ? tuning.CapsuleHeight : 1.8f);
             tuning.SkinWidth = math.max(0.001f, math.isfinite(tuning.SkinWidth) ? tuning.SkinWidth : 0.025f);
             tuning.GlobalQualityWeight = HydrodynamicKccMath.ResolveQuality01(tuning.GlobalQualityWeight);
-            tuning.WaterSurfaceY = math.isfinite(tuning.WaterSurfaceY) ? tuning.WaterSurfaceY : 0f;
+            tuning.WaterSurfaceY = HydrodynamicKccMath.ResolveWaterSurfaceY(tuning.WaterSurfaceY);
             tuning.MockInputFrequency = math.max(0.01f, math.isfinite(tuning.MockInputFrequency) ? tuning.MockInputFrequency : 0.35f);
             tuning.MockInputAmplitude = math.max(0f, math.isfinite(tuning.MockInputAmplitude) ? tuning.MockInputAmplitude : 1f);
             tuning.VisualSyncSharpness = math.max(0.01f, math.isfinite(tuning.VisualSyncSharpness) ? tuning.VisualSyncSharpness : 18f);
@@ -4849,8 +5033,7 @@ namespace Hecton8.Physics.KCC
             if (_registeredHotSwap || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _registeredHotSwap = true;
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwap()
@@ -4858,7 +5041,7 @@ namespace Hecton8.Physics.KCC
             if (!_registeredHotSwap)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
         }
 

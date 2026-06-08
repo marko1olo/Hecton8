@@ -2,7 +2,7 @@
 
 Packet: P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE
 
-Release set candidate: RS093_LORE_SYSTEM_INTEGRATION_BRIDGE
+Release set candidate: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
 
 Authority locale: en_US
 
@@ -156,209 +156,479 @@ Status: source_authority.
 
 Title: Tau Ceti Public Ledger Pressure
 
-Site teaser: Tau Ceti cannot rescue the operator in real time, but a witnessed custody packet can become a public docket that weakens Deep Reach denial later.
+Site teaser: Tau Ceti cannot pull the operator out in real time, but a verified custody packet can become public docket pressure that weakens Deep Reach denial later.
 
 Scanner: PUBLIC LEDGER ROUTE // Witness hash intact. Luyten custody can carry proof to Tau Ceti after relay delay. No immediate rescue authority detected.
 
-Field note: Keep the witness hash dry. Tau Ceti cannot lift you, but Deep Reach hates a docket it does not own.
+Terminal: TAU CETI LEDGER INTAKE // Public docket route requires witness hash, Luyten custody, packet route, claimant mark, damage state, and receiver history. Docket pressure may affect liability and insurance review. It does not allocate live rescue.
 
-Audio: Packet received under delay. Docket opens when custody clears. This is not rescue authority.
+Codex: Tau Ceti turns a private underwater fact into a future public record only if custody survives. The ledger creates pressure on denial, insurance, and political cover; it does not send a rescue vessel across the delay. Deep Reach can still outwait a person. It has a harder time outwaiting a clean public docket.
+
+Field note: Make the proof portable before you make it loud.
+
+Audio: Public does not mean near. It means harder to bury.
+
+External site article:
+
+## What The Record Proves
+
+Tau Ceti cannot pull the operator out in real time, but a verified custody packet can become public docket pressure that weakens Deep Reach denial later.
+
+Tau Ceti turns a private underwater fact into a future public record only if custody survives. The ledger creates pressure on denial, insurance, and political cover; it does not send a rescue vessel across the delay. Deep Reach can still outwait a person. It has a harder time outwaiting a clean public docket.
+
+TAU CETI LEDGER INTAKE // Public docket route requires witness hash, Luyten custody, packet route, claimant mark, damage state, and receiver history. Docket pressure may affect liability and insurance review. It does not allocate live rescue.
+
+## How The Player Reads It
+
+Make the proof portable before you make it loud. Use it as a rule for evidence handling, not as a promise that help is already moving.
 
 ### ar_SA
 
-Status: draft_machine_or_llm; RTL/native review required.
+Status: draft_machine_or_llm.
 
-Title: ضغط سجل تاو سيتي العام
+Title: ضغط سجل Tau Ceti العام
 
-Site teaser: لا تستطيع Tau Ceti إنقاذ المشغل فوراً، لكن حزمة حيازة موثقة يمكن أن تصبح ملفاً عاماً يضعف إنكار Deep Reach لاحقاً.
+Site teaser: لا تستطيع Tau Ceti إخراج المشغل في الزمن الحي، لكن حزمة حفظ موثقة قد تصبح ضغط ملف عام يضعف إنكار Deep Reach لاحقا.
 
-Scanner: مسار السجل العام // تجزئة الشاهد سليمة. حيازة Luyten يمكنها حمل الدليل إلى Tau Ceti بعد تأخير الترحيل. لا توجد سلطة إنقاذ فورية.
+Scanner: مسار سجل عام // witness hash سليم. يمكن لحفظ Luyten حمل الدليل إلى Tau Ceti بعد تأخير relay. لا توجد سلطة إنقاذ فورية.
 
-Field note: أبق تجزئة الشاهد جافة. Tau Ceti لا ترفعك، لكن Deep Reach تكره ملفاً عاماً لا تملكه.
+Terminal: استقبال سجل TAU CETI // يحتاج مسار الملف العام إلى witness hash وحفظ Luyten ومسار الحزمة ووسم المطالب وحالة الضرر وتاريخ المستلم. قد يؤثر ضغط السجل على المسؤولية ومراجعة التأمين. لا يخصص إنقاذا حيا.
 
-Audio: استلمت الحزمة تحت التأخير. يفتح الملف عند تصفية الحيازة. هذه ليست سلطة إنقاذ.
+Codex: تحول Tau Ceti حقيقة خاصة تحت الماء إلى سجل عام مستقبلي فقط إذا نجت الحفظ. يخلق السجل ضغطا على الإنكار والتأمين والغطاء السياسي؛ لا يرسل سفينة إنقاذ عبر التأخير. لا تزال Deep Reach قادرة على انتظار شخص. يصعب عليها انتظار ملف عام نظيف.
+
+Field note: اجعل الدليل قابلا للحمل قبل أن تجعله صاخبا.
+
+Audio: العام لا يعني قريبا. يعني أصعب على الدفن.
+
+External site article:
+
+## ما الذي يثبته السجل
+
+لا تستطيع Tau Ceti إخراج المشغل في الزمن الحي، لكن حزمة حفظ موثقة قد تصبح ضغط ملف عام يضعف إنكار Deep Reach لاحقا.
+
+تحول Tau Ceti حقيقة خاصة تحت الماء إلى سجل عام مستقبلي فقط إذا نجت الحفظ. يخلق السجل ضغطا على الإنكار والتأمين والغطاء السياسي؛ لا يرسل سفينة إنقاذ عبر التأخير. لا تزال Deep Reach قادرة على انتظار شخص. يصعب عليها انتظار ملف عام نظيف.
+
+استقبال سجل TAU CETI // يحتاج مسار الملف العام إلى witness hash وحفظ Luyten ومسار الحزمة ووسم المطالب وحالة الضرر وتاريخ المستلم. قد يؤثر ضغط السجل على المسؤولية ومراجعة التأمين. لا يخصص إنقاذا حيا.
+
+## كيف يقرأه اللاعب
+
+اجعل الدليل قابلا للحمل قبل أن تجعله صاخبا. استخدمه كقاعدة للتعامل مع الدليل، لا كوعد بأن النجدة بدأت تتحرك.
 
 ### de_DE
 
-Status: draft_machine_or_llm; native expansion review required.
+Status: draft_machine_or_llm.
 
-Title: Tau Ceti Druck des oeffentlichen Ledgers
+Title: Tau-Ceti-Druck des öffentlichen Ledgers
 
-Site teaser: Tau Ceti kann den Operator nicht sofort retten, aber ein bezeugtes Verwahrungspaket kann spaeter ein oeffentliches Docket werden und Deep Reachs Leugnung schwaechen.
+Site teaser: Tau Ceti kann den Operator nicht in Echtzeit herausziehen, aber ein verifiziertes Verwahrungspaket kann später öffentlicher Docket-Druck werden und Deep-Reach-Leugnung schwächen.
 
-Scanner: OEFFENTLICHE LEDGER-ROUTE // Witness hash intakt. Luyten-Verwahrung kann den Beweis nach Relay-Verzug nach Tau Ceti tragen. Keine sofortige Rettungsautoritaet erkannt.
+Scanner: ÖFFENTLICHE LEDGERROUTE // witness hash intakt. Luyten-Verwahrung kann Beweis nach Relaisverzug nach Tau Ceti tragen. Keine unmittelbare Rettungsautorität erkannt.
 
-Field note: Halt den witness hash trocken. Tau Ceti hebt dich nicht hoch, aber Deep Reach hasst ein Docket, das nicht ihnen gehoert.
+Terminal: TAU-CETI-LEDGERAUFNAHME // Öffentliche Docketroute braucht witness hash, Luyten-Verwahrung, Paketroute, Anspruchsmarke, Schadenszustand und Empfängerhistorie. Docket-Druck kann Haftung und Versicherungsprüfung beeinflussen. Er weist keine Live-Rettung zu.
 
-Audio: Paket unter Verzug empfangen. Docket oeffnet nach Verwahrungsklaerung. Keine Rettungsautoritaet.
+Codex: Tau Ceti macht aus einem privaten Unterwasserfakt nur dann einen zukünftigen öffentlichen Eintrag, wenn die Verwahrung überlebt. Das Ledger erzeugt Druck auf Leugnung, Versicherung und politische Deckung; es schickt kein Rettungsschiff durch die Verzögerung. Deep Reach kann eine Person noch aussitzen. Einen sauberen öffentlichen Docket auszusitzen ist schwerer.
+
+Field note: Mach den Beweis transportierbar, bevor du ihn laut machst.
+
+Audio: Öffentlich heißt nicht nah. Es heißt schwerer zu begraben.
+
+External site article:
+
+## Was der Eintrag beweist
+
+Tau Ceti kann den Operator nicht in Echtzeit herausziehen, aber ein verifiziertes Verwahrungspaket kann später öffentlicher Docket-Druck werden und Deep-Reach-Leugnung schwächen.
+
+Tau Ceti macht aus einem privaten Unterwasserfakt nur dann einen zukünftigen öffentlichen Eintrag, wenn die Verwahrung überlebt. Das Ledger erzeugt Druck auf Leugnung, Versicherung und politische Deckung; es schickt kein Rettungsschiff durch die Verzögerung. Deep Reach kann eine Person noch aussitzen. Einen sauberen öffentlichen Docket auszusitzen ist schwerer.
+
+TAU-CETI-LEDGERAUFNAHME // Öffentliche Docketroute braucht witness hash, Luyten-Verwahrung, Paketroute, Anspruchsmarke, Schadenszustand und Empfängerhistorie. Docket-Druck kann Haftung und Versicherungsprüfung beeinflussen. Er weist keine Live-Rettung zu.
+
+## Wie der Spieler es liest
+
+Mach den Beweis transportierbar, bevor du ihn laut machst. Lies es als Regel für Beweisführung, nicht als Versprechen, dass Hilfe bereits unterwegs ist.
 
 ### es_ES
 
-Status: draft_machine_or_llm; native review required.
+Status: draft_machine_or_llm.
 
-Title: Presion del registro publico de Tau Ceti
+Title: Presión del libro público de Tau Ceti
 
-Site teaser: Tau Ceti no puede rescatar al operador en tiempo real, pero un paquete de custodia testificado puede abrir un expediente publico que debilite la negacion de Deep Reach mas tarde.
+Site teaser: Tau Ceti no puede sacar al operador en tiempo real, pero un paquete verificado de custodia puede volverse presión de expediente público que debilite luego la negación de Deep Reach.
 
-Scanner: RUTA DE REGISTRO PUBLICO // Hash de testigo intacto. La custodia de Luyten puede llevar prueba a Tau Ceti tras el retraso de relevo. Sin autoridad de rescate inmediata.
+Scanner: RUTA DE LIBRO PÚBLICO // witness hash intacto. La custodia Luyten puede llevar prueba a Tau Ceti tras retraso de relevo. No se detecta autoridad de rescate inmediata.
 
-Field note: Mantén seco el hash de testigo. Tau Ceti no te iza, pero Deep Reach odia un expediente que no controla.
+Terminal: INGRESO AL LIBRO TAU CETI // La ruta de expediente público requiere witness hash, custodia Luyten, ruta de paquete, marca de reclamante, estado de daño e historial receptor. La presión del expediente puede afectar responsabilidad y revisión de seguro. No asigna rescate vivo.
 
-Audio: Paquete recibido con retraso. El expediente abre cuando se despeja la custodia. No es autoridad de rescate.
+Codex: Tau Ceti convierte un hecho privado bajo el agua en registro público futuro solo si sobrevive la custodia. El libro presiona negación, seguro y cobertura política; no envía nave de rescate a través del retraso. Deep Reach aún puede esperar a una persona. Le cuesta más esperar a que muera un expediente público limpio.
+
+Field note: Haz la prueba portátil antes de hacerla ruidosa.
+
+Audio: Público no significa cercano. Significa más difícil de enterrar.
+
+External site article:
+
+## Lo que prueba el registro
+
+Tau Ceti no puede sacar al operador en tiempo real, pero un paquete verificado de custodia puede volverse presión de expediente público que debilite luego la negación de Deep Reach.
+
+Tau Ceti convierte un hecho privado bajo el agua en registro público futuro solo si sobrevive la custodia. El libro presiona negación, seguro y cobertura política; no envía nave de rescate a través del retraso. Deep Reach aún puede esperar a una persona. Le cuesta más esperar a que muera un expediente público limpio.
+
+INGRESO AL LIBRO TAU CETI // La ruta de expediente público requiere witness hash, custodia Luyten, ruta de paquete, marca de reclamante, estado de daño e historial receptor. La presión del expediente puede afectar responsabilidad y revisión de seguro. No asigna rescate vivo.
+
+## Cómo lo lee el jugador
+
+Haz la prueba portátil antes de hacerla ruidosa. Úsalo como regla para manejar pruebas, no como promesa de que la ayuda ya está en marcha.
 
 ### fr_FR
 
-Status: draft_machine_or_llm; native review required.
+Status: draft_machine_or_llm.
 
-Title: Pression du registre public de Tau Ceti
+Title: Pression du registre public Tau Ceti
 
-Site teaser: Tau Ceti ne peut pas sauver l'operateur en temps reel, mais un paquet de garde temoin peut devenir un dossier public qui affaiblit le deni de Deep Reach plus tard.
+Site teaser: Tau Ceti ne peut pas extraire l'opérateur en temps réel, mais un paquet de garde vérifié peut devenir une pression de dossier public qui affaiblit plus tard le déni de Deep Reach.
 
-Scanner: ROUTE DU REGISTRE PUBLIC // Hash temoin intact. La garde Luyten peut porter la preuve vers Tau Ceti apres delai relais. Aucune autorite de sauvetage immediate detectee.
+Scanner: ROUTE DE REGISTRE PUBLIC // witness hash intact. La garde Luyten peut porter la preuve vers Tau Ceti après délai relais. Aucune autorité de sauvetage immédiat détectée.
 
-Field note: Garde le hash temoin au sec. Tau Ceti ne te remonte pas, mais Deep Reach deteste un dossier qu'elle ne possede pas.
+Terminal: ENTRÉE REGISTRE TAU CETI // La route dossier public exige witness hash, garde Luyten, route du paquet, marque du prétendant, état des dégâts et historique de réception. La pression du dossier peut toucher responsabilité et assurance. Elle n'alloue pas de sauvetage vivant.
 
-Audio: Paquet recu sous delai. Le dossier ouvre quand la garde est clarifiee. Ce n'est pas une autorite de sauvetage.
+Codex: Tau Ceti transforme un fait privé sous l'eau en futur registre public seulement si la garde survit. Le registre crée une pression sur le déni, l'assurance et la couverture politique; il n'envoie pas de navire de secours à travers le délai. Deep Reach peut encore attendre qu'une personne cède. Il est plus dur d'attendre un dossier public propre.
+
+Field note: Rends la preuve transportable avant de la rendre bruyante.
+
+Audio: Public ne veut pas dire proche. Cela veut dire plus difficile à enterrer.
+
+External site article:
+
+## Ce que le registre prouve
+
+Tau Ceti ne peut pas extraire l'opérateur en temps réel, mais un paquet de garde vérifié peut devenir une pression de dossier public qui affaiblit plus tard le déni de Deep Reach.
+
+Tau Ceti transforme un fait privé sous l'eau en futur registre public seulement si la garde survit. Le registre crée une pression sur le déni, l'assurance et la couverture politique; il n'envoie pas de navire de secours à travers le délai. Deep Reach peut encore attendre qu'une personne cède. Il est plus dur d'attendre un dossier public propre.
+
+ENTRÉE REGISTRE TAU CETI // La route dossier public exige witness hash, garde Luyten, route du paquet, marque du prétendant, état des dégâts et historique de réception. La pression du dossier peut toucher responsabilité et assurance. Elle n'alloue pas de sauvetage vivant.
+
+## Comment le joueur le lit
+
+Rends la preuve transportable avant de la rendre bruyante. Lis-le comme une règle de traitement des preuves, pas comme la promesse qu'un secours arrive déjà.
 
 ### he_IL
 
-Status: draft_machine_or_llm; RTL/native review required.
+Status: draft_machine_or_llm.
 
-Title: לחץ המרשם הציבורי של Tau Ceti
+Title: לחץ ספר ציבורי של Tau Ceti
 
-Site teaser: Tau Ceti אינה יכולה לחלץ את המפעיל בזמן אמת, אבל חבילת חזקה עם עדות יכולה להפוך לתיק ציבורי שמחליש את ההכחשה של Deep Reach מאוחר יותר.
+Site teaser: Tau Ceti לא יכולה להוציא את המפעיל בזמן אמת, אבל חבילת משמורת מאומתת יכולה להפוך ללחץ תיק ציבורי שמחליש אחר כך הכחשה של Deep Reach.
 
-Scanner: נתיב מרשם ציבורי // hash עד שלם. חזקת Luyten יכולה לשאת הוכחה אל Tau Ceti לאחר עיכוב ממסר. אין סמכות חילוץ מיידית.
+Scanner: נתיב ספר ציבורי // witness hash שלם. משמורת Luyten יכולה לשאת ראיה ל-Tau Ceti אחרי עיכוב relay. לא זוהתה סמכות חילוץ מיידית.
 
-Field note: שמור את hash העד יבש. Tau Ceti לא מעלה אותך, אבל Deep Reach שונאת תיק שהיא לא מחזיקה.
+Terminal: קליטת ספר TAU CETI // נתיב תיק ציבורי דורש witness hash, משמורת Luyten, נתיב חבילה, סימן תובע, מצב נזק והיסטוריית מקבל. לחץ תיק עשוי להשפיע על אחריות ובדיקת ביטוח. הוא לא מקצה חילוץ חי.
 
-Audio: החבילה התקבלה תחת עיכוב. התיק נפתח כשהחזקה מתנקה. זו אינה סמכות חילוץ.
+Codex: Tau Ceti הופכת עובדה פרטית מתחת למים לרשומה ציבורית עתידית רק אם המשמורת שורדת. הספר יוצר לחץ על הכחשה, ביטוח וכיסוי פוליטי; הוא לא שולח ספינת חילוץ דרך העיכוב. Deep Reach עדיין יכולה להמתין לאדם. קשה לה יותר להמתין לתיק ציבורי נקי.
+
+Field note: הפוך את הראיה לניידת לפני שתהפוך אותה לרועשת.
+
+Audio: ציבורי לא אומר קרוב. זה אומר שקשה יותר לקבור.
+
+External site article:
+
+## מה הרשומה מוכיחה
+
+Tau Ceti לא יכולה להוציא את המפעיל בזמן אמת, אבל חבילת משמורת מאומתת יכולה להפוך ללחץ תיק ציבורי שמחליש אחר כך הכחשה של Deep Reach.
+
+Tau Ceti הופכת עובדה פרטית מתחת למים לרשומה ציבורית עתידית רק אם המשמורת שורדת. הספר יוצר לחץ על הכחשה, ביטוח וכיסוי פוליטי; הוא לא שולח ספינת חילוץ דרך העיכוב. Deep Reach עדיין יכולה להמתין לאדם. קשה לה יותר להמתין לתיק ציבורי נקי.
+
+קליטת ספר TAU CETI // נתיב תיק ציבורי דורש witness hash, משמורת Luyten, נתיב חבילה, סימן תובע, מצב נזק והיסטוריית מקבל. לחץ תיק עשוי להשפיע על אחריות ובדיקת ביטוח. הוא לא מקצה חילוץ חי.
+
+## איך השחקן קורא את זה
+
+הפוך את הראיה לניידת לפני שתהפוך אותה לרועשת. השתמש בזה ככלל לטיפול בראיות, לא כהבטחה שעזרה כבר בדרך.
 
 ### id_ID
 
-Status: draft_machine_or_llm; native review required.
+Status: draft_machine_or_llm.
 
 Title: Tekanan Ledger Publik Tau Ceti
 
-Site teaser: Tau Ceti tidak bisa menyelamatkan operator secara langsung, tetapi paket kustodi bersaksi dapat menjadi docket publik yang melemahkan sangkalan Deep Reach nanti.
+Site teaser: Tau Ceti tidak bisa menarik operator secara real time, tetapi paket kustodi terverifikasi dapat menjadi tekanan docket publik yang melemahkan bantahan Deep Reach nanti.
 
-Scanner: RUTE LEDGER PUBLIK // Hash saksi utuh. Kustodi Luyten dapat membawa bukti ke Tau Ceti setelah jeda relay. Tidak ada wewenang penyelamatan langsung.
+Scanner: RUTE LEDGER PUBLIK // witness hash utuh. Kustodi Luyten dapat membawa bukti ke Tau Ceti setelah jeda relay. Tidak ada otoritas penyelamatan langsung terdeteksi.
 
-Field note: Jaga hash saksi tetap kering. Tau Ceti tidak mengangkatmu, tapi Deep Reach benci docket yang bukan miliknya.
+Terminal: INTAKE LEDGER TAU CETI // Rute docket publik membutuhkan witness hash, kustodi Luyten, rute paket, tanda pengklaim, kondisi kerusakan, dan riwayat penerima. Tekanan docket dapat memengaruhi liabilitas dan tinjauan asuransi. Itu tidak memberi penyelamatan hidup.
 
-Audio: Paket diterima dalam jeda. Docket dibuka saat kustodi bersih. Ini bukan wewenang penyelamatan.
+Codex: Tau Ceti mengubah fakta pribadi di bawah air menjadi catatan publik masa depan hanya jika kustodi bertahan. Ledger memberi tekanan pada bantahan, asuransi, dan perlindungan politik; ia tidak mengirim kapal penyelamat melewati jeda. Deep Reach masih bisa menunggu seseorang. Lebih sulit menunggu docket publik yang bersih.
+
+Field note: Buat bukti mudah dibawa sebelum membuatnya keras terdengar.
+
+Audio: Publik bukan berarti dekat. Artinya lebih sulit dikubur.
+
+External site article:
+
+## Yang Dibuktikan Catatan
+
+Tau Ceti tidak bisa menarik operator secara real time, tetapi paket kustodi terverifikasi dapat menjadi tekanan docket publik yang melemahkan bantahan Deep Reach nanti.
+
+Tau Ceti mengubah fakta pribadi di bawah air menjadi catatan publik masa depan hanya jika kustodi bertahan. Ledger memberi tekanan pada bantahan, asuransi, dan perlindungan politik; ia tidak mengirim kapal penyelamat melewati jeda. Deep Reach masih bisa menunggu seseorang. Lebih sulit menunggu docket publik yang bersih.
+
+INTAKE LEDGER TAU CETI // Rute docket publik membutuhkan witness hash, kustodi Luyten, rute paket, tanda pengklaim, kondisi kerusakan, dan riwayat penerima. Tekanan docket dapat memengaruhi liabilitas dan tinjauan asuransi. Itu tidak memberi penyelamatan hidup.
+
+## Cara Pemain Membacanya
+
+Buat bukti mudah dibawa sebelum membuatnya keras terdengar. Baca ini sebagai aturan menangani bukti, bukan janji bahwa bantuan sudah bergerak.
 
 ### ja_JP
 
-Status: draft_machine_or_llm; CJK/native review required.
+Status: draft_machine_or_llm.
 
-Title: Tau Ceti公開台帳圧力
+Title: Tau Ceti 公開台帳圧力
 
-Site teaser: Tau Cetiは作業者を即時救助できない。だが証人ハッシュ付きの保管パケットは、後でDeep Reachの否認を弱める公開記録になる。
+Site teaser: Tau Ceti は作業者をリアルタイムで引き上げられない。それでも認証済み保管パケットは、後に Deep Reach の否認を弱める公開記録圧力になりうる。
 
-Scanner: 公開台帳ルート // 証人ハッシュは無傷。Luyten保管経路は中継遅延後に証拠をTau Cetiへ運べる。即時救助権限なし。
+Scanner: 公開台帳経路 // witness hash intact。Luyten 保管はリレー遅延後に証拠を Tau Ceti へ運べる。即時救助権限なし。
 
-Field note: 証人ハッシュを濡らすな。Tau Cetiは君を引き上げないが、Deep Reachは自分で握れない記録を嫌う。
+Terminal: TAU CETI 台帳受入 // 公開 docket 経路には witness hash、Luyten 保管、パケット経路、請求者マーク、損傷状態、受領履歴が必要。docket 圧力は責任と保険審査に影響しうるが、生存救助を割り当てない。
 
-Audio: パケットは遅延付きで受領。保管が通れば記録を開く。これは救助権限ではない。
+Codex: Tau Ceti は、保管が生き残った時だけ、水中の私的事実を未来の公開記録に変える。台帳は否認、保険、政治的遮蔽に圧力をかけるが、遅延を越えて救助船を送るわけではない。Deep Reach は人間なら待ち殺せる。きれいな公開 docket は待ち殺しにくい。
+
+Field note: 証拠を大声にする前に、持ち運べる形にしろ。
+
+Audio: 公開とは近いという意味ではない。埋めにくいという意味だ。
+
+External site article:
+
+## 記録が証明するもの
+
+Tau Ceti は作業者をリアルタイムで引き上げられない。それでも認証済み保管パケットは、後に Deep Reach の否認を弱める公開記録圧力になりうる。
+
+Tau Ceti は、保管が生き残った時だけ、水中の私的事実を未来の公開記録に変える。台帳は否認、保険、政治的遮蔽に圧力をかけるが、遅延を越えて救助船を送るわけではない。Deep Reach は人間なら待ち殺せる。きれいな公開 docket は待ち殺しにくい。
+
+TAU CETI 台帳受入 // 公開 docket 経路には witness hash、Luyten 保管、パケット経路、請求者マーク、損傷状態、受領履歴が必要。docket 圧力は責任と保険審査に影響しうるが、生存救助を割り当てない。
+
+## プレイヤーが読むべきこと
+
+証拠を大声にする前に、持ち運べる形にしろ。 これは証拠を扱うための規則であり、救助がもう動いているという約束ではない。
 
 ### ko_KR
 
-Status: draft_machine_or_llm; CJK/native review required.
+Status: draft_machine_or_llm.
 
-Title: Tau Ceti 공공 원장 압박
+Title: Tau Ceti 공개 장부 압력
 
-Site teaser: Tau Ceti는 운용자를 실시간으로 구조할 수 없다. 하지만 증인 해시가 붙은 보관 패킷은 나중에 Deep Reach의 부인을 약하게 만드는 공개 기록이 된다.
+Site teaser: Tau Ceti는 조작자를 실시간으로 끌어낼 수 없지만, 검증된 보관 패킷은 나중에 Deep Reach의 부인을 약화시키는 공개 docket 압력이 될 수 있다.
 
-Scanner: 공공 원장 경로 // 증인 해시 온전함. Luyten 보관 경로는 중계 지연 뒤 증거를 Tau Ceti로 보낼 수 있다. 즉시 구조 권한 없음.
+Scanner: 공개 장부 경로 // witness hash 온전. Luyten 보관은 릴레이 지연 뒤 증거를 Tau Ceti로 운반할 수 있음. 즉시 구조 권한 없음.
 
-Field note: 증인 해시를 젖게 하지 마라. Tau Ceti는 널 끌어올리지 못하지만, Deep Reach는 자기 소유가 아닌 기록을 싫어한다.
+Terminal: TAU CETI 장부 접수 // 공개 docket 경로에는 witness hash, Luyten 보관, 패킷 경로, 청구자 표식, 손상 상태, 수신 이력이 필요하다. docket 압력은 책임과 보험 검토에 영향을 줄 수 있다. 실시간 구조를 배정하지 않는다.
 
-Audio: 패킷 지연 수신. 보관 확인 후 기록 개방. 구조 권한이 아니다.
+Codex: Tau Ceti는 보관이 살아남을 때만 물속의 사적 사실을 미래의 공개 기록으로 바꾼다. 장부는 부인, 보험, 정치적 보호막에 압력을 만들지만 지연 너머로 구조선을 보내지는 않는다. Deep Reach는 사람을 기다려 죽일 수 있다. 깨끗한 공개 docket은 기다려 없애기 더 어렵다.
+
+Field note: 증거를 크게 외치기 전에 먼저 들고 갈 수 있게 만들어라.
+
+Audio: 공개는 가깝다는 뜻이 아니다. 묻기 어렵다는 뜻이다.
+
+External site article:
+
+## 기록이 증명하는 것
+
+Tau Ceti는 조작자를 실시간으로 끌어낼 수 없지만, 검증된 보관 패킷은 나중에 Deep Reach의 부인을 약화시키는 공개 docket 압력이 될 수 있다.
+
+Tau Ceti는 보관이 살아남을 때만 물속의 사적 사실을 미래의 공개 기록으로 바꾼다. 장부는 부인, 보험, 정치적 보호막에 압력을 만들지만 지연 너머로 구조선을 보내지는 않는다. Deep Reach는 사람을 기다려 죽일 수 있다. 깨끗한 공개 docket은 기다려 없애기 더 어렵다.
+
+TAU CETI 장부 접수 // 공개 docket 경로에는 witness hash, Luyten 보관, 패킷 경로, 청구자 표식, 손상 상태, 수신 이력이 필요하다. docket 압력은 책임과 보험 검토에 영향을 줄 수 있다. 실시간 구조를 배정하지 않는다.
+
+## 플레이어가 읽어야 할 것
+
+증거를 크게 외치기 전에 먼저 들고 갈 수 있게 만들어라. 이것은 증거 처리 규칙이지, 구조가 이미 움직인다는 약속이 아니다.
 
 ### nl_NL
 
-Status: draft_machine_or_llm; native review required.
+Status: draft_machine_or_llm.
 
-Title: Tau Ceti publieke ledgerdruk
+Title: Publieke ledgerdruk van Tau Ceti
 
-Site teaser: Tau Ceti kan de operator niet direct redden, maar een getuigd bewaarpakket kan later een publiek dossier worden dat Deep Reach ontkenning verzwakt.
+Site teaser: Tau Ceti kan de operator niet direct naar buiten trekken, maar een geverifieerd bewaringspakket kan later publieke docketdruk worden die Deep Reach-ontkenning verzwakt.
 
-Scanner: PUBLIEKE LEDGERROUTE // Witness hash intact. Luyten-bewaring kan bewijs na relayvertraging naar Tau Ceti dragen. Geen directe reddingsbevoegdheid gevonden.
+Scanner: PUBLIEKE LEDGERROUTE // witness hash intact. Luyten-bewaring kan bewijs na relaisvertraging naar Tau Ceti dragen. Geen onmiddellijke reddingsautoriteit gedetecteerd.
 
-Field note: Houd de witness hash droog. Tau Ceti tilt je niet op, maar Deep Reach haat een dossier dat niet van hen is.
+Terminal: TAU CETI LEDGER-INNAME // Publieke docketroute vereist witness hash, Luyten-bewaring, pakketroute, claimantmarkering, schadestaat en ontvangerhistorie. Docketdruk kan aansprakelijkheid en verzekeringsreview beïnvloeden. Ze wijst geen levende redding toe.
 
-Audio: Pakket onder vertraging ontvangen. Dossier opent als bewaring vrij is. Dit is geen reddingsbevoegdheid.
+Codex: Tau Ceti verandert een privéfeit onder water alleen in een toekomstig publiek record als bewaring overleeft. Het ledger zet druk op ontkenning, verzekering en politieke dekking; het stuurt geen reddingsschip door de vertraging. Deep Reach kan een persoon nog uitwachten. Een schoon publiek docket is moeilijker uit te wachten.
+
+Field note: Maak bewijs draagbaar voordat je het luid maakt.
+
+Audio: Publiek betekent niet dichtbij. Het betekent moeilijker te begraven.
+
+External site article:
+
+## Wat het record bewijst
+
+Tau Ceti kan de operator niet direct naar buiten trekken, maar een geverifieerd bewaringspakket kan later publieke docketdruk worden die Deep Reach-ontkenning verzwakt.
+
+Tau Ceti verandert een privéfeit onder water alleen in een toekomstig publiek record als bewaring overleeft. Het ledger zet druk op ontkenning, verzekering en politieke dekking; het stuurt geen reddingsschip door de vertraging. Deep Reach kan een persoon nog uitwachten. Een schoon publiek docket is moeilijker uit te wachten.
+
+TAU CETI LEDGER-INNAME // Publieke docketroute vereist witness hash, Luyten-bewaring, pakketroute, claimantmarkering, schadestaat en ontvangerhistorie. Docketdruk kan aansprakelijkheid en verzekeringsreview beïnvloeden. Ze wijst geen levende redding toe.
+
+## Hoe de speler het leest
+
+Maak bewijs draagbaar voordat je het luid maakt. Lees het als regel voor bewijsbehandeling, niet als belofte dat hulp al onderweg is.
 
 ### pl_PL
 
-Status: draft_machine_or_llm; native expansion review required.
+Status: draft_machine_or_llm.
 
 Title: Presja publicznego rejestru Tau Ceti
 
-Site teaser: Tau Ceti nie uratuje operatora w czasie rzeczywistym, ale potwierdzony pakiet kustodii moze pozniej stac sie publicznym dossier, ktore oslabia zaprzeczenia Deep Reach.
+Site teaser: Tau Ceti nie wyciągnie operatora w czasie rzeczywistym, ale zweryfikowany pakiet powiernictwa może stać się presją publicznego docketu, która później osłabi zaprzeczenia Deep Reach.
 
-Scanner: TRASA PUBLICZNEGO REJESTRU // Hash swiadka nienaruszony. Kustodia Luyten moze po opoznieniu przekaznika przeniesc dowod do Tau Ceti. Brak natychmiastowej wladzy ratunkowej.
+Scanner: TRASA PUBLICZNEGO REJESTRU // witness hash nienaruszony. Powiernictwo Luyten może przenieść dowód do Tau Ceti po opóźnieniu relay. Brak natychmiastowej władzy ratunkowej.
 
-Field note: Trzymaj hash swiadka suchy. Tau Ceti cie nie podniesie, ale Deep Reach nie znosi dossier poza swoja kontrola.
+Terminal: PRZYJĘCIE REJESTRU TAU CETI // Publiczna trasa docket wymaga witness hash, powiernictwa Luyten, trasy pakietu, znaku roszczącego, stanu szkód i historii odbiorcy. Presja docketu może wpłynąć na odpowiedzialność i przegląd ubezpieczenia. Nie przydziela żywego ratunku.
 
-Audio: Pakiet odebrany z opoznieniem. Dossier otworzy sie po oczyszczeniu kustodii. To nie jest zgoda na ratunek.
+Codex: Tau Ceti zmienia prywatny fakt spod wody w przyszły publiczny zapis tylko wtedy, gdy powiernictwo przetrwa. Rejestr tworzy presję na zaprzeczenie, ubezpieczenie i polityczną osłonę; nie wysyła statku ratunkowego przez opóźnienie. Deep Reach może przeczekać człowieka. Czysty publiczny docket trudniej przeczekać.
+
+Field note: Uczyń dowód przenośnym, zanim uczynisz go głośnym.
+
+Audio: Publiczne nie znaczy bliskie. Znaczy trudniejsze do pogrzebania.
+
+External site article:
+
+## Co potwierdza zapis
+
+Tau Ceti nie wyciągnie operatora w czasie rzeczywistym, ale zweryfikowany pakiet powiernictwa może stać się presją publicznego docketu, która później osłabi zaprzeczenia Deep Reach.
+
+Tau Ceti zmienia prywatny fakt spod wody w przyszły publiczny zapis tylko wtedy, gdy powiernictwo przetrwa. Rejestr tworzy presję na zaprzeczenie, ubezpieczenie i polityczną osłonę; nie wysyła statku ratunkowego przez opóźnienie. Deep Reach może przeczekać człowieka. Czysty publiczny docket trudniej przeczekać.
+
+PRZYJĘCIE REJESTRU TAU CETI // Publiczna trasa docket wymaga witness hash, powiernictwa Luyten, trasy pakietu, znaku roszczącego, stanu szkód i historii odbiorcy. Presja docketu może wpłynąć na odpowiedzialność i przegląd ubezpieczenia. Nie przydziela żywego ratunku.
+
+## Jak gracz ma to czytać
+
+Uczyń dowód przenośnym, zanim uczynisz go głośnym. Czytaj to jako zasadę obchodzenia się z dowodem, nie jako obietnicę, że pomoc już ruszyła.
 
 ### pt_BR
 
-Status: draft_machine_or_llm; native review required.
+Status: draft_machine_or_llm.
 
-Title: Pressao do registro publico de Tau Ceti
+Title: Pressão do ledger público de Tau Ceti
 
-Site teaser: Tau Ceti nao pode resgatar o operador em tempo real, mas um pacote de custodia testemunhado pode virar dossie publico e enfraquecer a negacao da Deep Reach depois.
+Site teaser: Tau Ceti não consegue puxar o operador em tempo real, mas um pacote de custódia verificado pode virar pressão de docket público que enfraquece depois a negação da Deep Reach.
 
-Scanner: ROTA DE REGISTRO PUBLICO // Hash de testemunha intacto. A custodia de Luyten pode levar prova a Tau Ceti depois do atraso de rele. Nenhuma autoridade de resgate imediata.
+Scanner: ROTA DE LEDGER PÚBLICO // witness hash intacto. Custódia Luyten pode levar prova a Tau Ceti após atraso de relay. Nenhuma autoridade de resgate imediato detectada.
 
-Field note: Mantenha o hash de testemunha seco. Tau Ceti nao te ergue, mas a Deep Reach odeia dossie que nao controla.
+Terminal: ENTRADA DE LEDGER TAU CETI // Rota de docket público exige witness hash, custódia Luyten, rota do pacote, marca de reclamante, estado de dano e histórico receptor. Pressão de docket pode afetar responsabilidade e revisão de seguro. Não aloca resgate vivo.
 
-Audio: Pacote recebido sob atraso. O dossie abre quando a custodia liberar. Isto nao e autoridade de resgate.
+Codex: Tau Ceti transforma um fato privado submerso em registro público futuro só se a custódia sobreviver. O ledger pressiona negação, seguro e cobertura política; não envia nave de resgate pelo atraso. A Deep Reach ainda pode esperar uma pessoa. É mais difícil esperar um docket público limpo desaparecer.
+
+Field note: Faça a prova ser portátil antes de fazê-la barulhenta.
+
+Audio: Público não quer dizer perto. Quer dizer mais difícil de enterrar.
+
+External site article:
+
+## O que o registro prova
+
+Tau Ceti não consegue puxar o operador em tempo real, mas um pacote de custódia verificado pode virar pressão de docket público que enfraquece depois a negação da Deep Reach.
+
+Tau Ceti transforma um fato privado submerso em registro público futuro só se a custódia sobreviver. O ledger pressiona negação, seguro e cobertura política; não envia nave de resgate pelo atraso. A Deep Reach ainda pode esperar uma pessoa. É mais difícil esperar um docket público limpo desaparecer.
+
+ENTRADA DE LEDGER TAU CETI // Rota de docket público exige witness hash, custódia Luyten, rota do pacote, marca de reclamante, estado de dano e histórico receptor. Pressão de docket pode afetar responsabilidade e revisão de seguro. Não aloca resgate vivo.
+
+## Como o jogador lê isso
+
+Faça a prova ser portátil antes de fazê-la barulhenta. Leia como regra para lidar com prova, não como promessa de que o socorro já está vindo.
 
 ### ru_RU
 
-Status: draft_machine_or_llm; native proofread required.
+Status: draft_machine_or_llm.
 
 Title: Давление публичного реестра Tau Ceti
 
-Site teaser: Tau Ceti не может спасти оператора в реальном времени, но подтвержденный пакет хранения может позже стать публичным досье и ослабить отрицание Deep Reach.
+Site teaser: Tau Ceti не может вытащить оператора в реальном времени, но проверенный пакет сохранности может стать публичным делом, которое позже ослабит отрицание Deep Reach.
 
-Scanner: МАРШРУТ ПУБЛИЧНОГО РЕЕСТРА // witness hash цел. Хранение Luyten может передать доказательство в Tau Ceti после задержки ретрансляции. Немедленных полномочий спасения нет.
+Scanner: МАРШРУТ ПУБЛИЧНОГО РЕЕСТРА // witness hash цел. Сохранность Luyten может донести доказательство до Tau Ceti после задержки реле. Немедленной спасательной власти не обнаружено.
 
-Field note: Держи witness hash сухим. Tau Ceti тебя не поднимет, но Deep Reach ненавидит досье, которым не владеет.
+Terminal: ПРИЕМ РЕЕСТРА TAU CETI // Для публичного дела нужны witness hash, сохранность Luyten, маршрут пакета, метка претендента, состояние повреждений и история получателя. Давление дела может повлиять на ответственность и страховой пересмотр. Оно не выделяет живое спасение.
 
-Audio: Пакет получен с задержкой. Досье откроется после очистки хранения. Это не полномочие на спасение.
+Codex: Tau Ceti превращает частный подводный факт в будущую публичную запись только если выжила сохранность. Реестр давит на отрицание, страховку и политическое прикрытие; он не отправляет спасательный корабль через задержку. Deep Reach все еще может переждать человека. Чистое публичное дело переждать сложнее.
+
+Field note: Сделай доказательство переносимым до того, как сделаешь его громким.
+
+Audio: Публичное не значит близкое. Это значит - труднее похоронить.
+
+External site article:
+
+## Что доказывает запись
+
+Tau Ceti не может вытащить оператора в реальном времени, но проверенный пакет сохранности может стать публичным делом, которое позже ослабит отрицание Deep Reach.
+
+Tau Ceti превращает частный подводный факт в будущую публичную запись только если выжила сохранность. Реестр давит на отрицание, страховку и политическое прикрытие; он не отправляет спасательный корабль через задержку. Deep Reach все еще может переждать человека. Чистое публичное дело переждать сложнее.
+
+ПРИЕМ РЕЕСТРА TAU CETI // Для публичного дела нужны witness hash, сохранность Luyten, маршрут пакета, метка претендента, состояние повреждений и история получателя. Давление дела может повлиять на ответственность и страховой пересмотр. Оно не выделяет живое спасение.
+
+## Как игрок это читает
+
+Сделай доказательство переносимым до того, как сделаешь его громким. Читай это как правило обращения с доказательством, а не как обещание, что помощь уже летит.
 
 ### uk_UA
 
-Status: draft_machine_or_llm; native proofread required.
+Status: draft_machine_or_llm.
 
 Title: Тиск публічного реєстру Tau Ceti
 
-Site teaser: Tau Ceti не може врятувати оператора в реальному часі, але підтверджений пакет зберігання може пізніше стати публічним досьє і послабити заперечення Deep Reach.
+Site teaser: Tau Ceti не може витягти оператора в реальному часі, але перевірений пакет збереження може стати публічною справою, що пізніше послабить заперечення Deep Reach.
 
-Scanner: МАРШРУТ ПУБЛІЧНОГО РЕЄСТРУ // witness hash цілий. Зберігання Luyten може передати доказ до Tau Ceti після затримки ретрансляції. Немає негайних повноважень порятунку.
+Scanner: МАРШРУТ ПУБЛІЧНОГО РЕЄСТРУ // witness hash цілий. Збереження Luyten може донести доказ до Tau Ceti після затримки relay. Негайної рятувальної влади не виявлено.
 
-Field note: Тримай witness hash сухим. Tau Ceti тебе не підніме, але Deep Reach ненавидить досьє, яким не володіє.
+Terminal: ПРИЙОМ РЕЄСТРУ TAU CETI // Для публічної справи потрібні witness hash, збереження Luyten, маршрут пакета, мітка претендента, стан пошкоджень і історія отримувача. Тиск справи може вплинути на відповідальність і страховий перегляд. Він не виділяє живий порятунок.
 
-Audio: Пакет отримано із затримкою. Досьє відкриється після очищення зберігання. Це не повноваження на порятунок.
+Codex: Tau Ceti перетворює приватний підводний факт на майбутній публічний запис лише якщо вижило збереження. Реєстр тисне на заперечення, страхування й політичне прикриття; він не посилає рятувальний корабель через затримку. Deep Reach все ще може перечекати людину. Чисту публічну справу перечекати важче.
+
+Field note: Зроби доказ переносним до того, як зробиш його гучним.
+
+Audio: Публічне не означає близьке. Це означає - важче поховати.
+
+External site article:
+
+## Що доводить запис
+
+Tau Ceti не може витягти оператора в реальному часі, але перевірений пакет збереження може стати публічною справою, що пізніше послабить заперечення Deep Reach.
+
+Tau Ceti перетворює приватний підводний факт на майбутній публічний запис лише якщо вижило збереження. Реєстр тисне на заперечення, страхування й політичне прикриття; він не посилає рятувальний корабель через затримку. Deep Reach все ще може перечекати людину. Чисту публічну справу перечекати важче.
+
+ПРИЙОМ РЕЄСТРУ TAU CETI // Для публічної справи потрібні witness hash, збереження Luyten, маршрут пакета, мітка претендента, стан пошкоджень і історія отримувача. Тиск справи може вплинути на відповідальність і страховий перегляд. Він не виділяє живий порятунок.
+
+## Як гравець це читає
+
+Зроби доказ переносним до того, як зробиш його гучним. Читай це як правило поводження з доказом, а не як обіцянку, що допомога вже летить.
 
 ### zh_CN
 
-Status: draft_machine_or_llm; CJK/native review required.
+Status: draft_machine_or_llm.
 
-Title: Tau Ceti公共账本压力
+Title: Tau Ceti 公共账本压力
 
-Site teaser: Tau Ceti无法实时救出操作员，但带见证哈希的保管包可以在以后成为公共案卷，削弱Deep Reach的否认。
+Site teaser: Tau Ceti 无法实时把操作员拉出来，但经过验证的保管数据包可以成为公共案卷压力，日后削弱 Deep Reach 的否认。
 
-Scanner: 公共账本路线 // 见证哈希完整。Luyten保管路线可在中继延迟后把证据送往Tau Ceti。未检测到即时救援权限。
+Scanner: 公共账本路线 // witness hash 完整。Luyten 保管可在中继延迟后把证据带到 Tau Ceti。未检测到即时救援权限。
 
-Field note: 保持见证哈希干燥。Tau Ceti不会把你吊上去，但Deep Reach讨厌自己控制不了的案卷。
+Terminal: TAU CETI 账本接收 // 公共案卷路线需要 witness hash、Luyten 保管、数据包路线、索赔方标记、损坏状态和接收历史。案卷压力可能影响责任和保险审查。它不分配现场救援。
 
-Audio: 包已按延迟接收。保管清除后开启案卷。这不是救援权限。
+Codex: 只有保管链存活，Tau Ceti 才能把水下的私人事实变成未来公共记录。账本会给否认、保险和政治掩护施压；它不会派救援船跨过延迟。Deep Reach 仍然可以耗死一个人。耗掉一份干净的公共案卷要难得多。
+
+Field note: 先让证据可以携带，再让它发声。
+
+Audio: 公开不等于接近。公开意味着更难埋掉。
+
+External site article:
+
+## 记录证明了什么
+
+Tau Ceti 无法实时把操作员拉出来，但经过验证的保管数据包可以成为公共案卷压力，日后削弱 Deep Reach 的否认。
+
+只有保管链存活，Tau Ceti 才能把水下的私人事实变成未来公共记录。账本会给否认、保险和政治掩护施压；它不会派救援船跨过延迟。Deep Reach 仍然可以耗死一个人。耗掉一份干净的公共案卷要难得多。
+
+TAU CETI 账本接收 // 公共案卷路线需要 witness hash、Luyten 保管、数据包路线、索赔方标记、损坏状态和接收历史。案卷压力可能影响责任和保险审查。它不分配现场救援。
+
+## 玩家该怎样读它
+
+先让证据可以携带，再让它发声。 把它当成处理证据的规则，不要当成救援已经出发的承诺。
 
 ## Runtime / Monolith Placement Notes
 

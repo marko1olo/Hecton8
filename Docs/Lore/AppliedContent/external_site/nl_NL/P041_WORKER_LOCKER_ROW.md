@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Rij arbeiderskluisjes
@@ -27,7 +27,7 @@ Objecten maken de kolonie menselijk: namen, gereedschap, voedselkrediet en werks
 
 ## Terminal
 
-Kolonie-audit: persoonlijke opslag en Barnard-markeringen koppelen de speler aan echte bemanningsleden.
+KOLONIE-AUDIT: persoonlijke opslag en Barnard-markeringen verbinden de lockerrij met benoemde crew en werkroutes.
 
 ## Audio
 

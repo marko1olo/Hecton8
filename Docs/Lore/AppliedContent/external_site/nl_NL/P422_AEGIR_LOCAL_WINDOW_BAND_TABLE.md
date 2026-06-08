@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "NL LOC HOLD: Aegir Window Bands"
+spoiler_tier: 1
+title: "Aegir-vensterbanden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Aegir Window Bands
+# Aegir-vensterbanden
 
-NL LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
+Aegir-verkeer wordt gestuurd door smalle transfer bands rond straling, eclipse, storm en relay geometry.
 
 ## Scanner
 
-NL LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
+Lokale band: ascent wacht op vensters van uren tot dagen, niet op directe redding.
 
 ## Terminal
 
-NL LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+WINDOW BAND: shutter, eclipse, relay, storm, carrier phase en legal handshake moeten uitlijnen voor veilige transfer.
 
 ## Audio
 
-NL LOC HOLD: The carrier can hear you and still be in the wrong sky.
+De carrier kan je horen en toch in de verkeerde hemel zitten.
 
 ## Field Note
 
-NL LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+Vensterbandrecord: Black Keel timing, lokale orbit labels en spoiler-light system pages delen dezelfde transfer constraints.
 
 <!-- External Site; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/nl_NL. -->

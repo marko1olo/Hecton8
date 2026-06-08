@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Aegir Moon Route Map"
+title: "Mapa de ruta de las lunas de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Aegir Moon Route Map
+# Mapa de ruta de las lunas de Aegir
 
-ES LOC HOLD: Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+El mapa de lunas de Aegir es operativo antes que hermoso. HECTON-8 es un cuerpo oceánico dentro de una escalera de lunas, shepherd rocks, ice-scatter paths y dead relay marks. Los cuerpos interiores perturban el narrowband contact y la cobertura de radiación. Las lunas de hielo rompen las optical relay lines en fragmentos malos. Las occultation bands crean ventanas de silencio donde un claim puede ser válido y seguir sin ser oído. Los beacons exteriores conservan propiedad antigua incluso tras la desaparición de tripulaciones. La geometría de mareas y el storm stacking deciden si una bathydrop chain sube limpia o entra en el loss ledger. Los mapas públicos pueden mostrar esto sin prometer mundos jugables extra; su función es hacer que el cielo se lea como presión, retraso y riesgo de ruta.
 
 ## Scanner
 
-ES LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Registro de mapa del sistema. Las lunas de Aegir definen relay timing, cobertura de radiación, ice scatter, presión de marea, occultation bands, beacons muertos y recovery geometry.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+NODO DE ARCHIVO PÚBLICO // ESCALERA LUNAR AEGIR. Los nombres de lunas son etiquetas de ruta. Cada cuerpo cambia signal age, transfer risk, storm exposure, custody timing o fiabilidad del claim.
 
 ## Audio
 
-ES LOC HOLD: The map is why no one arrives the moment you ask.
+El mapa explica por qué nadie llega en el momento en que lo pides.
 
 ## Field Note
 
-ES LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Nota de Marauder: marca la luna, luego marca qué le hace a la ruta.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/es_ES. -->

@@ -288,6 +288,28 @@ def crop_cell(image: Image.Image, column: int, row: int, margin_fraction: float)
     return image.crop((left, top, right, bottom))
 
 
+def repair_matte_carbon_watermark(tile: Image.Image) -> Image.Image:
+    base = tile.convert("RGB")
+    width, height = base.size
+    x0 = int(width * 0.50)
+    y0 = int(height * 0.52)
+    x1 = width
+    y1 = int(height * 0.72)
+    patch_w = x1 - x0
+    patch_h = y1 - y0
+    donor_x0 = max(0, x0 - patch_w - int(width * 0.04))
+    donor_y0 = y0
+    donor = base.crop((donor_x0, donor_y0, donor_x0 + patch_w, donor_y0 + patch_h))
+    mask = Image.new("L", (patch_w, patch_h), 0)
+    draw = ImageDraw.Draw(mask)
+    feather = max(10, int(min(width, height) * 0.035))
+    draw.rounded_rectangle((feather, feather, patch_w - feather, patch_h - feather), radius=feather, fill=255)
+    mask = mask.filter(ImageFilter.GaussianBlur(radius=feather))
+    repaired = base.copy()
+    repaired.paste(donor, (x0, y0), mask)
+    return repaired
+
+
 def save_base(tile: Image.Image, output: Path, max_size: int) -> Image.Image:
     base = tile.convert("RGB")
     side = min(base.width, base.height)
@@ -379,6 +401,8 @@ def split(args: argparse.Namespace) -> int:
         column = index % 4
         asset_id = f"gemini_{batch}_{spec['id']}"
         tile = crop_cell(atlas, column, row, args.margin_fraction)
+        if spec["id"] == "matte_carbon_composite":
+            tile = repair_matte_carbon_watermark(tile)
         asset_dir = tiles_root / asset_id
         base_path = asset_dir / f"TX_GM_{asset_id}_BaseColor.png"
         base = save_base(tile, base_path, args.max_tile_size)
@@ -414,7 +438,8 @@ def split(args: argparse.Namespace) -> int:
                 "normalScale": spec["normalScale"],
                 "heightScale": spec["heightScale"],
                 "provisionalPbrMaps": True,
-                "watermarkRisk": index == 15,
+                "watermarkRepaired": index == 15,
+                "watermarkRisk": False,
                 "maps": {
                     "BaseColor": display_path(base_path),
                     "NormalGL": display_path(normal_path),

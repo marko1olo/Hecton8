@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Relais-Gewahrsam-Schuldkette
 
-Relaisgewahrsam macht Logistik zu Druck: Hilfe trägt auch Schuld, Prioritäten und Konzernmacht.
+Relaisgewahrsam macht Raumlogistik zu Druck. Hilfe kann eintreffen, doch die Route, die Hilfe trägt, trägt auch Schuld, Prioritätshaken und Konzernmacht.
 
 ## Scanner
 

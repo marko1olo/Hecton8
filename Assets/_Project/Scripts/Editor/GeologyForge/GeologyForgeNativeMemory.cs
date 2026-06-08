@@ -2,6 +2,7 @@
 using System;
 using Hecton8.Core;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace Hecton8.Editor.GeologyForge
@@ -32,57 +33,136 @@ namespace Hecton8.Editor.GeologyForge
             return array;
         }
 
-        internal static void DisposeArray<T>(ref NativeArray<T> array) where T : struct
+        internal static unsafe void DisposeArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
             }
             finally
             {
-                array.Dispose();
                 array = default;
             }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
-        internal static NativeList<T> AllocateList<T>(int capacity, Allocator allocator, string owner, string label) where T : unmanaged
+        internal static NativeList<T> AllocateList<T>(int capacity, Allocator allocator, string owner, string label, out int sentinelId) where T : unmanaged
         {
+            sentinelId = 0;
             NativeList<T> list = new NativeList<T>(math.max(1, capacity), allocator);
             if (!list.IsCreated)
                 throw new InvalidOperationException("[GeologyForgeNativeMemory] NativeList allocation failed for " + owner + "." + label + ".");
 
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeList(list, owner, label, ResolveLifetime(allocator));
+                sentinelId = NativeMemorySentinel.RegisterNativeListInstance(list, owner, label, ResolveLifetime(allocator));
                 if (sentinelId <= 0)
                     throw new InvalidOperationException("[GeologyForgeNativeMemory] NativeMemorySentinel rejected NativeList registration for " + owner + "." + label + ".");
             }
             catch
             {
-                list.Dispose();
+                System.Exception nativeSentinelCleanupException1 = null;
+
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (System.Exception nativeSentinelException1)
+                    {
+                        nativeSentinelCleanupException1 = nativeSentinelException1;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                try
+                {
+                    list.Dispose();
+                }
+                catch (System.Exception nativeSentinelException1)
+                {
+                    if (nativeSentinelCleanupException1 == null)
+                        nativeSentinelCleanupException1 = nativeSentinelException1;
+                }
+
+                if (nativeSentinelCleanupException1 != null)
+                    throw nativeSentinelCleanupException1;
+
                 throw;
             }
 
             return list;
         }
 
-        internal static void DisposeList<T>(ref NativeList<T> list, string owner, string label) where T : unmanaged
+        internal static void DisposeList<T>(ref NativeList<T> list, ref int sentinelId) where T : unmanaged
         {
-            if (!list.IsCreated)
-                return;
+            Exception firstException = null;
 
-            try
+            if (sentinelId > 0)
             {
-                NativeMemorySentinel.UnregisterNativeList(owner, label);
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
             }
-            finally
+
+            if (list.IsCreated)
             {
-                list.Dispose();
+                try
+                {
+                    list.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    list = default;
+                }
+            }
+            else
+            {
                 list = default;
             }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static NativeAllocationLifetime ResolveLifetime(Allocator allocator)

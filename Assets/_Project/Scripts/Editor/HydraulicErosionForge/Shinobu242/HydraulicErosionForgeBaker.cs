@@ -138,6 +138,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
             NativeQueue<ErosionDropletDTO> south = default;
             NativeQueue<ErosionDropletDTO> east = default;
             NativeQueue<ErosionDropletDTO> west = default;
+            int northQueueSentinelId = 0;
+            int southQueueSentinelId = 0;
+            int eastQueueSentinelId = 0;
+            int westQueueSentinelId = 0;
             try
             {
                 heights = NewTrackedArray<float>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, HeightsLabel, NativeAllocationLifetime.TempJob);
@@ -147,10 +151,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
                 pixels = NewTrackedArray<uint>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, PixelsLabel, NativeAllocationLifetime.TempJob);
                 telemetry = NewTrackedArray<ErosionBakeTelemetryEntry>(HydraulicErosionForgeConstants.BlackBoxFrameCount, Allocator.TempJob, NativeArrayOptions.ClearMemory, TelemetryLabel, NativeAllocationLifetime.TempJob);
                 telemetryCursor = NewTrackedArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory, TelemetryCursorLabel, NativeAllocationLifetime.TempJob);
-                north = NewTrackedQueue<ErosionDropletDTO>(math.max(1, settings.DropletCount >> 2), PreviewNorthQueueLabel, NativeAllocationLifetime.TempJob);
-                south = NewTrackedQueue<ErosionDropletDTO>(math.max(1, settings.DropletCount >> 2), PreviewSouthQueueLabel, NativeAllocationLifetime.TempJob);
-                east = NewTrackedQueue<ErosionDropletDTO>(math.max(1, settings.DropletCount >> 2), PreviewEastQueueLabel, NativeAllocationLifetime.TempJob);
-                west = NewTrackedQueue<ErosionDropletDTO>(math.max(1, settings.DropletCount >> 2), PreviewWestQueueLabel, NativeAllocationLifetime.TempJob);
+                north = NewTrackedQueue<ErosionDropletDTO>(math.max(1, settings.DropletCount >> 2), PreviewNorthQueueLabel, NativeAllocationLifetime.TempJob, out northQueueSentinelId);
+                south = NewTrackedQueue<ErosionDropletDTO>(math.max(1, settings.DropletCount >> 2), PreviewSouthQueueLabel, NativeAllocationLifetime.TempJob, out southQueueSentinelId);
+                east = NewTrackedQueue<ErosionDropletDTO>(math.max(1, settings.DropletCount >> 2), PreviewEastQueueLabel, NativeAllocationLifetime.TempJob, out eastQueueSentinelId);
+                west = NewTrackedQueue<ErosionDropletDTO>(math.max(1, settings.DropletCount >> 2), PreviewWestQueueLabel, NativeAllocationLifetime.TempJob, out westQueueSentinelId);
 
                 JobHandle handle = ScheduleCore(settings, heights, silt, droplets, metrics, telemetry, telemetryCursor, north, south, east, west);
                 handle = new ErosionPreviewRgbaJob
@@ -171,10 +175,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
             }
             finally
             {
-                DisposeTrackedQueue(ref west, PreviewWestQueueLabel);
-                DisposeTrackedQueue(ref east, PreviewEastQueueLabel);
-                DisposeTrackedQueue(ref south, PreviewSouthQueueLabel);
-                DisposeTrackedQueue(ref north, PreviewNorthQueueLabel);
+                DisposeTrackedQueue(ref west, ref westQueueSentinelId);
+                DisposeTrackedQueue(ref east, ref eastQueueSentinelId);
+                DisposeTrackedQueue(ref south, ref southQueueSentinelId);
+                DisposeTrackedQueue(ref north, ref northQueueSentinelId);
                 DisposeTrackedArray(ref telemetryCursor);
                 DisposeTrackedArray(ref telemetry);
                 DisposeTrackedArray(ref pixels);
@@ -230,6 +234,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
             NativeQueue<ErosionDropletDTO> south = default;
             NativeQueue<ErosionDropletDTO> east = default;
             NativeQueue<ErosionDropletDTO> west = default;
+            int northQueueSentinelId = 0;
+            int southQueueSentinelId = 0;
+            int eastQueueSentinelId = 0;
+            int westQueueSentinelId = 0;
             ErosionBakeMetrics metrics = default;
             SeamTransferCaptureDTO seamCapture = default;
 
@@ -244,10 +252,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
                 telemetry = NewTrackedArray<ErosionBakeTelemetryEntry>(HydraulicErosionForgeConstants.BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory, TelemetryLabel, NativeAllocationLifetime.Session);
                 telemetryCursor = NewTrackedArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory, TelemetryCursorLabel, NativeAllocationLifetime.Session);
                 int transferSoftCapacity = math.max(1, settings.DropletCount >> 2);
-                north = NewTrackedQueue<ErosionDropletDTO>(transferSoftCapacity, BakeNorthQueueLabel, NativeAllocationLifetime.TempJob);
-                south = NewTrackedQueue<ErosionDropletDTO>(transferSoftCapacity, BakeSouthQueueLabel, NativeAllocationLifetime.TempJob);
-                east = NewTrackedQueue<ErosionDropletDTO>(transferSoftCapacity, BakeEastQueueLabel, NativeAllocationLifetime.TempJob);
-                west = NewTrackedQueue<ErosionDropletDTO>(transferSoftCapacity, BakeWestQueueLabel, NativeAllocationLifetime.TempJob);
+                north = NewTrackedQueue<ErosionDropletDTO>(transferSoftCapacity, BakeNorthQueueLabel, NativeAllocationLifetime.TempJob, out northQueueSentinelId);
+                south = NewTrackedQueue<ErosionDropletDTO>(transferSoftCapacity, BakeSouthQueueLabel, NativeAllocationLifetime.TempJob, out southQueueSentinelId);
+                east = NewTrackedQueue<ErosionDropletDTO>(transferSoftCapacity, BakeEastQueueLabel, NativeAllocationLifetime.TempJob, out eastQueueSentinelId);
+                west = NewTrackedQueue<ErosionDropletDTO>(transferSoftCapacity, BakeWestQueueLabel, NativeAllocationLifetime.TempJob, out westQueueSentinelId);
 
                 _Stopwatch.Restart();
                 JobHandle handle = ScheduleCore(settings, heights, silt, droplets, simMetrics, telemetry, telemetryCursor, north, south, east, west);
@@ -305,10 +313,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
                 metrics.SeamEastTransfers = seamCapture.EastCount;
                 metrics.SeamWestTransfers = seamCapture.WestCount;
 
-                DisposeTrackedQueue(ref west, BakeWestQueueLabel);
-                DisposeTrackedQueue(ref east, BakeEastQueueLabel);
-                DisposeTrackedQueue(ref south, BakeSouthQueueLabel);
-                DisposeTrackedQueue(ref north, BakeNorthQueueLabel);
+                DisposeTrackedQueue(ref west, ref westQueueSentinelId);
+                DisposeTrackedQueue(ref east, ref eastQueueSentinelId);
+                DisposeTrackedQueue(ref south, ref southQueueSentinelId);
+                DisposeTrackedQueue(ref north, ref northQueueSentinelId);
                 DisposeTrackedArray(ref scanMetrics);
                 DisposeTrackedArray(ref simMetrics);
                 DisposeTrackedArray(ref droplets);
@@ -342,10 +350,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
             }
             finally
             {
-                DisposeTrackedQueue(ref west, BakeWestQueueLabel);
-                DisposeTrackedQueue(ref east, BakeEastQueueLabel);
-                DisposeTrackedQueue(ref south, BakeSouthQueueLabel);
-                DisposeTrackedQueue(ref north, BakeNorthQueueLabel);
+                DisposeTrackedQueue(ref west, ref westQueueSentinelId);
+                DisposeTrackedQueue(ref east, ref eastQueueSentinelId);
+                DisposeTrackedQueue(ref south, ref southQueueSentinelId);
+                DisposeTrackedQueue(ref north, ref northQueueSentinelId);
                 DisposeTrackedArray(ref seamScratch);
                 DisposeTrackedArray(ref telemetryCursor);
                 DisposeTrackedArray(ref telemetry);
@@ -792,13 +800,15 @@ namespace Hecton8.Editor.HydraulicErosionForge
         private static NativeQueue<T> NewTrackedQueue<T>(
             int expectedCapacity,
             string label,
-            NativeAllocationLifetime lifetime) where T : unmanaged
+            NativeAllocationLifetime lifetime,
+            out int sentinelId) where T : unmanaged
         {
+            sentinelId = 0;
             NativeQueue<T> queue = new NativeQueue<T>(Allocator.TempJob);
             int capacity = math.max(1, expectedCapacity);
             try
             {
-                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(queue, capacity, NativeMemoryOwner, label, lifetime);
+                sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(queue, capacity, NativeMemoryOwner, label, lifetime);
                 if (sentinelId <= 0)
                     throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
 
@@ -806,7 +816,37 @@ namespace Hecton8.Editor.HydraulicErosionForge
             }
             catch
             {
-                queue.Dispose();
+                System.Exception nativeSentinelCleanupException1 = null;
+
+                if (sentinelId > 0)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(sentinelId);
+                    }
+                    catch (System.Exception nativeSentinelException1)
+                    {
+                        nativeSentinelCleanupException1 = nativeSentinelException1;
+                    }
+                    finally
+                    {
+                        sentinelId = 0;
+                    }
+                }
+
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (System.Exception nativeSentinelException1)
+                {
+                    if (nativeSentinelCleanupException1 == null)
+                        nativeSentinelCleanupException1 = nativeSentinelException1;
+                }
+
+                if (nativeSentinelCleanupException1 != null)
+                    throw nativeSentinelCleanupException1;
+
                 throw;
             }
 
@@ -826,24 +866,84 @@ namespace Hecton8.Editor.HydraulicErosionForge
             }
         }
 
-        private static void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+            finally
+            {
+                array = default;
+            }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
-        private static void DisposeTrackedQueue<T>(ref NativeQueue<T> queue, string label) where T : unmanaged
+        private static void DisposeTrackedQueue<T>(ref NativeQueue<T> queue, ref int sentinelId) where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void EnsureFolder(string relativeFolder)

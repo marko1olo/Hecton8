@@ -31,6 +31,28 @@ namespace Hecton8.Tests.Editor
                 carrionReleaseHandles.IndexOf("ReleaseVaultHandle(vault, ref _carrionStateHandle", StringComparison.Ordinal));
         }
 
+        [Test]
+        public void AbyssalFlowPayloadRejectsStaleHighWaterlineBeforeNutrientJobCopy()
+        {
+            string nutrient = ReadProjectFile("Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs");
+            string method = ExtractMethodBlock(nutrient, "private bool TryReadAbyssalFlowPayload(");
+
+            Assert.That(method, Does.Contain("math.isfinite(waterLevel)"));
+            Assert.That(method, Does.Contain("math.abs(waterLevel) <= 1000f"));
+            Assert.That(method, Does.Contain("waterLevel = 0f;"));
+        }
+
+        [Test]
+        public void DroneFleetRejectsStaleHighAbyssalFlowWaterlineBeforeCognitionJob()
+        {
+            string droneFleet = ReadProjectFile("Assets/_Project/Scripts/Construction/DroneFleetManager.cs");
+            string method = ExtractMethodBlock(droneFleet, "private static bool TryResolveAbyssalFlowVolumePayload(");
+
+            Assert.That(method, Does.Contain("math.isfinite(surfaceY)"));
+            Assert.That(method, Does.Contain("math.abs(surfaceY) <= 1000f"));
+            Assert.That(method, Does.Contain("surfaceY = 0f;"));
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

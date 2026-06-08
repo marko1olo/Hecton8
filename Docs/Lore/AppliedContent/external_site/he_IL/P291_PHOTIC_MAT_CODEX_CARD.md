@@ -9,32 +9,36 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Photic Mat Codex Card"
+title: "כרטיס קודקס יריעת אור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Photic Mat Codex Card
+# כרטיס קודקס יריעת אור
 
-HE LOC HOLD: The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
+יריעות אור הן אחד השיעורים הראשונים באקולוגיה קריאה של HECTON-8. הן מאירות רדודים, מאכילות grazers קטנים ומייצבות סרט מינרלי, אך גם מסמנות כימיית לחץ ותפרים שבירים. האוקיינוס נראה מזמין כי משטחים חיים עובדים.
 
 ## Scanner
 
-HE LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+יריעת אור. שכבת ביופילם חיובית חמצן מעל עור מינרלי. בהירה, שימושית, ושבירה בלחץ. לא לקלף מסדקים אטומים.
 
 ## Terminal
 
-HE LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+דגימה / יריעת אור
+תפקיד: פני חמצן רדודים, מזון ל-grazers, מייצב סרט מינרלי
+דגימה בטוחה: קצה רופף קטן מרוחב כף יד
+לדחות: יריעות שאוטמות תפרים, יריעות עם שלפוחיות גז, שדות נשיכה טריים של grazers
+הערת נתיב: יריעות קרועות יכולות לאוורר גז כלוא ולהפוך מדף צלול ל-hazard.
 
 ## Audio
 
-HE LOC HOLD: Light here is work, not comfort.
+זה נראה רך כי זה עובד. אם זה מחזיק תפר, השאר את זה שם.
 
 ## Field Note
 
-HE LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+קצה רופף: דגימה. כיסוי תפר: להשאיר. אם היריעה אוטמת פצע, הפצע עדיין שם.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/he_IL. -->

@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "低功率感应切割器"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# 低功率感应切割器
 
-CN LOC HOLD: The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+低功率感应切割器是第一个通行工具，不是万能钥匙。它能打开卡住的维修舱口、面板螺栓和打捞箱，同时迫使玩家判断部件正在承担什么作用。pressure glass、活动框架和Atlas生长接缝属于后续工具或更可靠证据的范围。
 
 ## Scanner
 
-CN LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+低功率感应切割器。仅限维修金属；承重框架和pressure glass不在额定范围内。
 
 ## Terminal
 
-CN LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+工具警告 / 感应切割器：授权目标为维修舱口、面板螺栓、轻型支架和货箱锁。没有后续等级认证时，不得切割活动框架、pressure-glass晶格或Atlas生长接缝。
 
 ## Audio
 
-CN LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
+切螺栓。留下肋梁。
 
 ## Field Note
 
-CN LOC HOLD: The cutter should feel valuable because it is limited.
+好切割器，不是信仰。它能开面板，但切掉让房间保持形状的肋梁不会被原谅。
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/zh_CN. -->

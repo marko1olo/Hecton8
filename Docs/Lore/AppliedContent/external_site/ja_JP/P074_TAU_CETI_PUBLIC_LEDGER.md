@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "タウ・セティ公開台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# タウ・セティ公開台帳
 
-JP LOC HOLD: Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly.
+タウ・セティ公開台帳は、硬派SFの責任追及だ。公的機関は実在するが、証拠が保管連鎖の規律で守られなければ、距離は正義を残光に変えてしまう。
 
 ## Scanner
 
-JP LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+タウ・セティ市民台帳の断片。Deep Reach を怖がらせるには十分公開され、植民地を救うには遅すぎる。
 
 ## Terminal
 
-JP LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+TAU CETI LEDGER MIRROR: 封印済み証拠はリレー認証後に受理可能。予想公開審査窓は現地生存間隔を 31.4 年超過。
 
 ## Audio
 
-JP LOC HOLD: A court can be honest and useless when light itself is late.
+光そのものが遅れる時、裁判所は誠実でも役に立たない。
 
 ## Field Note
 
-JP LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+監督は清潔に、そして遅れて到着できる。遅いなら、死は死だ。
 
 <!-- External Site; generated from P074_TAU_CETI_PUBLIC_LEDGER/ja_JP. -->

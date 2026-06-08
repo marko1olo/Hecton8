@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "回収コンプライアンス局"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# 回収コンプライアンス局
 
-JP LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+回収コンプライアンス局は、HECTON-8へ押し戻ってくる現在のDeep Reach派閥である。通信窓、代理権限、法務パケット、清掃命令で動く。即時命令は要らない。プレイヤーが最初に間違ったpayloadを送ることが必要なのだ。
 
 ## Scanner
 
-JP LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+現在形の事務印。Deep Reachは亡霊ではない。弁護士付きの待ち行列だ。
 
 ## Terminal
 
-JP LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+回収コンプライアンス局: Aegir帰還案件を開いた。優先事項: XO custody、Atlasアクセス、責任封じ、可能なら請負人の沈黙。
 
 ## Audio
 
-JP LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+彼らは合法でいられるほど遅く、危険でいられるほど現在にいる。
 
 ## Field Note
 
-JP LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+生きている派閥が圧力を現在のものにする。会社全体を一人の叫ぶ悪役にしなくていい。
 
 <!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/ja_JP. -->

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Varnek Margin Memo"
+title: "ヴァルネク許容マージン覚書"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Varnek Margin Memo
+# ヴァルネク許容マージン覚書
 
-JA LOC HOLD: The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
+ヴァルネク覚書は静かな罪の証拠だ。洪水を作ったわけではなく、殺害命令でもない。既知の圧力マージンが値付けされ、受理され、コロニー内に人が残ったまま continuity cost の下へ送られたことを示している。
 
 ## Scanner
 
-JA LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Aegir Operations Risk の覚書。Great Tide の余裕幅は、停止権限が動く前から見えていた。
 
 ## Terminal
 
-JA LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: tail exposure accepted under continuity cost. Evacuation reserve remains non-triggered. Independent shutdown not recommended.
 
 ## Audio
 
-JA LOC HOLD: No murder order. A margin acceptance.
+余裕幅の中に誰がいたかを見るまで、ただの計算に見える。
 
 ## Field Note
 
-JA LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Marauderメモ: 汚いのはリスク値ではない。accepted という語だ。
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/ja_JP. -->

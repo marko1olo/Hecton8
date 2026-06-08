@@ -9,32 +9,16 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "כשל כליאת לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# כשל כליאת לחץ
 
-HE LOC HOLD: Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating.
-
-## Scanner
-
-HE LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
-
-## Terminal
-
-HE LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
-
-## Audio
-
-HE LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
-
-## Field Note
-
-HE LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+blue debt אינו אוצר מקולל. הוא זיכרון חומרי תחת לחץ. שארית Xenon-Omega נשארת שימושית כל עוד הסריג שלה מאמין שהוא עדיין עמוק, קר ודחוס. הוצאה מהירה מדי, אחסון גרוע או גזירת אות בתוך הארון מתחילים כשל בשלבים קריאים. תחילה מגיעה סטייה: המדדים משקרים, התהודה רועדת, אזעקות הכליאה רבות זו עם זו. אחר כך הסריג נשבר. מלח נכנס. ביולוגיה הולכת אחרי הכימיה. בשלב 4 הערך מת, אבל הזיהום חי.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/he_IL. -->

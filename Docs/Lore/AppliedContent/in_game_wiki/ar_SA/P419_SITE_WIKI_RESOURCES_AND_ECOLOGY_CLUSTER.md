@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "AR LOC HOLD: Resources and Ecology"
+title: "الموارد والبيئة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Resources and Ecology
+# الموارد والبيئة
 
-AR LOC HOLD: Resource/ecology hub: drowned crust, brine ladders, vent chemistry, living systems and Atlas' damaged repair logic.
+محور الموارد والبيئة: drowned crust وbrine ladders وvent chemistry وliving systems وrepair logic المتضررة لدى Atlas.
 
 ## Scanner
 
-AR LOC HOLD: Publication hub: geology, blue debt, fauna grammar and Atlas repair-network misuse.
+محور نشر: geology وblue debt وقواعد الفاونا وmisuse شبكة إصلاح Atlas.
 
 ## Terminal
 
-AR LOC HOLD: SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.
+SITE NAV: native geology وprocess feedstock وAtlas-altered resources وshallow ecology وencounter grammar كخريطة process واحدة.
 
 ## Audio
 
-AR LOC HOLD: Nothing here is just loot.
+لا يوجد هنا شيء هو loot فقط.
 
 ## Field Note
 
-AR LOC HOLD: Navigation cluster record: resources and ecology belong together when materials, biota, and evidence pressure share the same route.
+الموارد والبيئة تنتميان معا حين تشترك المواد والبيوتا وevidence pressure في المسار نفسه.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/ar_SA. -->

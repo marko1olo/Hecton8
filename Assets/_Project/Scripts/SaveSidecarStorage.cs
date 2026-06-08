@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -10,10 +11,9 @@ namespace Hecton8.SaveSystem
     internal static unsafe class SaveSidecarStorage
     {
         private const int NullCollectionCount = -1;
-        private const string NativeMemoryOwner = nameof(SaveSidecarStorage);
-        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for SaveSidecarStorage temp buffer.";
-        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after SaveSidecarStorage native disposal fault.";
-        private const NativeAllocationLifetime NativeTempMemoryLifetime = NativeAllocationLifetime.Temp;
+        private const SystemID NativeArrayOwnerSystem = SystemID.SavePersistence;
+        private const string NativeMemoryAllocationFailureMessage = "H8Memory allocation failed for SaveSidecarStorage temp buffer.";
+        private const string NativeMemoryReleaseFailureMessage = "H8Memory release failed for SaveSidecarStorage temp buffer.";
         private const string MetadataWriteBufferLabel = "metadataWriteBuffer";
         private const string MetadataReadBufferLabel = "metadataReadBuffer";
         private const string MaintenanceWriteBufferLabel = "maintenanceWriteBuffer";
@@ -36,7 +36,17 @@ namespace Hecton8.SaveSystem
             if (!Exists(relativePath))
                 return false;
 
-            File.Delete(ToAbsolutePath(relativePath));
+            string absolutePath = ToAbsolutePath(relativePath);
+            AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+            try
+            {
+                File.Delete(absolutePath);
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+            }
+
             return true;
         }
 
@@ -55,6 +65,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            string sceneName = Hecton8.SaveSystem.SaveMetadata.NormalizeSceneName(metadata.SceneName);
             if (!TryResolveMetadataByteCount(metadata, out int byteCount, out error))
                 return false;
 
@@ -69,7 +80,7 @@ namespace Hecton8.SaveSystem
                     || !writer.WriteString(metadata.GameVersion)
                     || !writer.WriteLong(metadata.Timestamp)
                     || !writer.WriteFloat(metadata.PlayTimeSeconds)
-                    || !writer.WriteString(metadata.SceneName)
+                    || !writer.WriteString(sceneName)
                     || !writer.WriteFloat(metadata.PlayerPosition.x)
                     || !writer.WriteFloat(metadata.PlayerPosition.y)
                     || !writer.WriteFloat(metadata.PlayerPosition.z)
@@ -81,11 +92,7 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                string directory = Path.GetDirectoryName(absolutePath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                return AsyncWriteManager.WriteAll(absolutePath, bufferPtr, byteCount, out error);
+                return WriteSidecarAtomically(absolutePath, bufferPtr, byteCount, "Metadata", out error);
             }
             finally
             {
@@ -139,6 +146,7 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
+                loaded.SceneName = Hecton8.SaveSystem.SaveMetadata.NormalizeSceneName(loaded.SceneName);
                 metadata = loaded;
                 return true;
             }
@@ -191,15 +199,127 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                string directory = Path.GetDirectoryName(absolutePath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                return AsyncWriteManager.WriteAll(absolutePath, bufferPtr, byteCount, out error);
+                return WriteSidecarAtomically(absolutePath, bufferPtr, byteCount, "Maintenance", out error);
             }
             finally
             {
                 DisposeTempNativeArrayBuffer(ref buffer, MaintenanceWriteBufferLabel);
+            }
+        }
+
+        private static bool WriteSidecarAtomically(string absolutePath, void* bufferPtr, int byteCount, string sidecarName, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath) || bufferPtr == null || byteCount <= 0)
+            {
+                error = $"{sidecarName} sidecar write request is invalid.";
+                return false;
+            }
+
+            string tempPath = absolutePath + ".tmp";
+            try
+            {
+                string directory = Path.GetDirectoryName(absolutePath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                if (File.Exists(tempPath))
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                    try
+                    {
+                        File.Delete(tempPath);
+                    }
+                    finally
+                    {
+                        AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
+                    }
+                }
+
+                if (!AsyncWriteManager.WriteAll(tempPath, bufferPtr, byteCount, out error))
+                    return false;
+
+                if (!AsyncWriteManager.TryGetFileLength(tempPath, out long tempBytes, out string lengthError))
+                {
+                    error = string.IsNullOrEmpty(lengthError)
+                        ? $"{sidecarName} sidecar temp file length could not be resolved."
+                        : lengthError;
+                    return false;
+                }
+
+                if (tempBytes != byteCount)
+                {
+                    error = $"{sidecarName} sidecar temp byte count mismatch.";
+                    return false;
+                }
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(tempPath, tempBytes, out string flushError))
+                {
+                    error = string.IsNullOrEmpty(flushError)
+                        ? $"{sidecarName} sidecar temp critical flush failed."
+                        : flushError;
+                    return false;
+                }
+
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                if (File.Exists(absolutePath))
+                    File.Replace(tempPath, absolutePath, null);
+                else
+                    File.Move(tempPath, absolutePath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+
+                if (!AsyncWriteManager.TryGetFileLength(absolutePath, out long promotedBytes, out lengthError))
+                {
+                    error = string.IsNullOrEmpty(lengthError)
+                        ? $"{sidecarName} sidecar promoted file length could not be resolved."
+                        : lengthError;
+                    return false;
+                }
+
+                if (promotedBytes != byteCount)
+                {
+                    error = $"{sidecarName} sidecar promoted byte count mismatch.";
+                    return false;
+                }
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(absolutePath, promotedBytes, out flushError))
+                {
+                    error = string.IsNullOrEmpty(flushError)
+                        ? $"{sidecarName} sidecar promoted critical flush failed."
+                        : flushError;
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = $"{sidecarName} sidecar atomic write failed: {ex.Message}";
+                return false;
+            }
+            finally
+            {
+                DeleteFileBestEffort(tempPath);
+            }
+        }
+
+        private static void DeleteFileBestEffort(string absolutePath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(absolutePath))
+                    return;
+
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+                if (File.Exists(absolutePath))
+                    File.Delete(absolutePath);
+            }
+            catch
+            {
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
             }
         }
 
@@ -332,28 +452,16 @@ namespace Hecton8.SaveSystem
 
         private static NativeArray<byte> AllocateTempNativeArrayBuffer(int length, string label, NativeArrayOptions options)
         {
-            NativeArray<byte> buffer = new NativeArray<byte>(length, Allocator.Temp, options);
-            try
-            {
-                RegisterTempNativeArrayBuffer(buffer, label);
-                return buffer;
-            }
-            catch
-            {
-                if (buffer.IsCreated)
-                    buffer.Dispose();
-                throw;
-            }
-        }
+            NativeArray<byte> buffer = H8Memory.Allocate<byte>(
+                length,
+                NativeArrayOwnerSystem,
+                Allocator.Temp,
+                options);
 
-        private static void RegisterTempNativeArrayBuffer(NativeArray<byte> buffer, string label)
-        {
-            if (!buffer.IsCreated)
-                return;
+            if (!buffer.IsCreated || buffer.Length != length)
+                throw new InvalidOperationException($"{NativeMemoryAllocationFailureMessage} Label={label}.");
 
-            int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
-            if (registrationId <= 0)
-                throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+            return buffer;
         }
 
         private static void DisposeTempNativeArrayBuffer(ref NativeArray<byte> buffer, string label)
@@ -361,40 +469,10 @@ namespace Hecton8.SaveSystem
             if (!buffer.IsCreated)
                 return;
 
-            bool sentinelUnregistered = false;
-            try
-            {
-                NativeMemorySentinel.UnregisterNativeArray(buffer);
-                sentinelUnregistered = true;
-                buffer.Dispose();
-                buffer = default;
-            }
-            catch (Exception disposalException)
-            {
-                RestoreTempNativeArrayBufferSentinelOrThrow(buffer, label, sentinelUnregistered, disposalException);
-                throw;
-            }
-        }
+            H8Memory.Release(ref buffer, NativeArrayOwnerSystem);
 
-        private static void RestoreTempNativeArrayBufferSentinelOrThrow(
-            NativeArray<byte> buffer,
-            string label,
-            bool sentinelUnregistered,
-            Exception disposalException)
-        {
-            if (!sentinelUnregistered || !buffer.IsCreated)
-                return;
-
-            try
-            {
-                int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
-                if (registrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
-            }
-            catch (Exception restoreException)
-            {
-                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
-            }
+            if (buffer.IsCreated)
+                throw new InvalidOperationException($"{NativeMemoryReleaseFailureMessage} Label={label}.");
         }
 
         private static bool FinalizeMetadata(ref SaveMetadata metadata, float posX, float posY, float posZ, SidecarReader reader, out string error)
@@ -444,7 +522,7 @@ namespace Hecton8.SaveSystem
 
             return TryAddStringByteCount(ref total, metadata.SlotName, out error)
                 && TryAddStringByteCount(ref total, metadata.GameVersion, out error)
-                && TryAddStringByteCount(ref total, metadata.SceneName, out error)
+                && TryAddStringByteCount(ref total, Hecton8.SaveSystem.SaveMetadata.NormalizeSceneName(metadata.SceneName), out error)
                 && TryAddStringByteCount(ref total, metadata.Checksum, out error)
                 && TryFinalizeSidecarByteCount(
                     total,

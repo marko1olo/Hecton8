@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 黑匣姓名堆栈
 
-黑匣姓名堆栈把后期真相变成实物载荷。证据、广播和结局档案取决于玩家带上去的内容。
+黑匣子姓名栈让最终真相可以被携带。证据、广播包和公共档案取决于哪些姓名、哈希和收据离开水下。
 
 ## Scanner
 

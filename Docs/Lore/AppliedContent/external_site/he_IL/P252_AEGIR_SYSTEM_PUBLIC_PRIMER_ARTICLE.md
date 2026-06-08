@@ -9,32 +9,35 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Aegir System Public Primer Article"
+title: "מבוא ציבורי למערכת Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Aegir System Public Primer Article
+# מבוא ציבורי למערכת Aegir
 
-HE LOC HOLD: Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain.
+Aegir היא המערכת המארחת סביב HECTON-8, והיא חשובה בכל מובן מעשי. סולם הירחים שלה מעצב גאות וחלונות גישה. גיאומטריית הממסר שלה נותנת לראיות לנוע מהר יותר ממסת חילוץ. מסלולי המובילים שלה הופכים את Black Keel לנוכחת, אך לא שימושית מיד. אין מנוע נס, אין חילוץ ansible ואין כפתור חירום נקי. הגרסה הציבורית של Aegir צריכה להרגיש נגישה מספיק כדי להיות אכזרית: מחוברת, מתוזמנת, מתומחרת, ועדיין איטית מדי לאנשים הלכודים למטה.
 
 ## Scanner
 
-HE LOC HOLD: Aegir is not backdrop. It is a timetable with gravity.
+Aegir אינו רקע. זה לוח זמנים עם כבידה, קרינה, גאות, עיכוב ממסר וחלונות מסה יקרים.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
+רמת מאמר ציבורי / מערכת AEGIR
+מותר: מערכת מארחת, תפקיד הירח HECTON-8, חלונות גאות, גיאומטריית ממסר, עיכוב מוביל, שפת נתיב ללא FTL
+נעול: ניתוב payload סופי, עדיפות receiver נסתרת, נעילות אפמריס מאוחרות מדויקות
+הערת עורך: להסביר עיכוב בלי לגרום לעולם להרגיש בלתי ניתן להגעה.
 
 ## Audio
 
-HE LOC HOLD: The sky is a system, not a ceiling.
+המערכת קרובה מספיק כדי לענות. זה החלק האכזרי. היא לא קרובה מספיק כדי להרים גוף לפי פקודה.
 
 ## Field Note
 
-HE LOC HOLD: Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
+אל תקרא ל-Aegir רחוקה ותעצור. אמור מה המרחק עושה: מתמחר הרמה, מעכב גופים ונותן לראיות לעקוף חילוץ.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/he_IL. -->

@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Acoustic Relay Spine Assembly"
+title: "מכלול שדרת ממסר אקוסטית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Acoustic Relay Spine Assembly
+# מכלול שדרת ממסר אקוסטית
 
-HE LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.
+מכלול שדרת הממסר האקוסטית מקרקע את לולאת הבריחה של HECTON-8 בהנדסת salvage: הקול חייב לשרוד לחץ, גיאומטריית נתיב ו-custody לפני שהמסלול יאמין לו.
 
 ## Scanner
 
-HE LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+שדרה אקוסטית שבורה. היא יכולה לנקוש pressure-code דרך המים; המסלול עדיין שומע זאת כ-custody noise פגום.
 
 ## Terminal
 
-HE LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY: לשחזר שדרה אקוסטית נמוכת-פס לפני recovery window. High-gain mast אבד. Emergency buoy לא אמין. מקלט Black Keel מקבל pressure-code רק אחרי route proof.
 
 ## Audio
 
-HE LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
+אם ה-Keel שומע אותנו, הוא שומע פצע מקיש על צינור.
 
 ## Field Note
 
-HE LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+הקריאה הראשונה של הקפסולה אינה קול. היא צלעות קרמיות, עור כבל, pinger floats ומשמעת תזמון שמספיקה כדי שהאוקיינוס יחזור עליך נכון.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/he_IL. -->

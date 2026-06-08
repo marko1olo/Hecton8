@@ -313,7 +313,7 @@ namespace Hecton8.Core.Database
                         return false;
                     }
 
-                    _fileStream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+                    _fileStream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.WriteThrough | FileOptions.RandomAccess);
                     _fileStream.SetLength(safeLength);
                     if (!MapFile(safeLength))
                     {
@@ -876,12 +876,25 @@ namespace Hecton8.Core.Database
                     }
 
                     target.Flush();
+                    long promotedBytes = target._mappedBytes;
                     target.Shutdown();
                     target = null;
 
                     string activePath = _path;
+                    if (!TryFlushAndValidateCompactionDatabaseFile(_compactionTempPath, promotedBytes))
+                    {
+                        MarkCompactionFaultLocked();
+                        return false;
+                    }
+
                     CloseFileHandles();
                     File.Replace(_compactionTempPath, activePath, null, true);
+                    if (!TryFlushAndValidateCompactionDatabaseFile(activePath, promotedBytes))
+                    {
+                        MarkCompactionFaultLocked();
+                        return false;
+                    }
+
                     swapped = TryOpenExistingFile(activePath, true);
                     if (!swapped)
                     {
@@ -981,6 +994,7 @@ namespace Hecton8.Core.Database
             if (string.IsNullOrEmpty(path))
                 return;
 
+            string tempPath = path + ".tmp";
             lock (_fileGate)
             {
                 if (!TryReadBlackBox(out NativeArray<MacroDatabaseTelemetryEntry>.ReadOnly blackBox))
@@ -992,19 +1006,40 @@ namespace Hecton8.Core.Database
                     if (!string.IsNullOrEmpty(directory))
                         Directory.CreateDirectory(directory);
 
-                    using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                    long expectedBytes;
+                    TryDeleteBlackBoxDumpTempFile(tempPath);
+                    using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                     {
                         int entryBytes = UnsafeUtility.SizeOf<MacroDatabaseTelemetryEntry>();
+                        expectedBytes = (long)entryBytes * blackBox.Length;
                         for (int i = 0; i < blackBox.Length; i++)
                         {
                             MacroDatabaseTelemetryEntry entry = blackBox[i];
                             void* source = UnsafeUtility.AddressOf(ref entry);
                             stream.Write(new ReadOnlySpan<byte>(source, entryBytes));
                         }
+
+                        stream.Flush(true);
+                        if (stream.Length != expectedBytes)
+                            throw new IOException("Macro database black-box dump length mismatch.");
                     }
+
+                    if (!TryFlushAndValidateFileLength(tempPath, expectedBytes))
+                    {
+                        TryDeleteBlackBoxDumpTempFile(tempPath);
+                        return;
+                    }
+
+                    if (File.Exists(path))
+                        File.Replace(tempPath, path, null, true);
+                    else
+                        File.Move(tempPath, path);
+
+                    _ = TryFlushAndValidateFileLength(path, expectedBytes);
                 }
                 catch
                 {
+                    TryDeleteBlackBoxDumpTempFile(tempPath);
                 }
             }
         }
@@ -1575,6 +1610,49 @@ namespace Hecton8.Core.Database
             }
             catch
             {
+            }
+        }
+
+        private static void TryDeleteBlackBoxDumpTempFile(string tempPath)
+        {
+            if (string.IsNullOrEmpty(tempPath))
+                return;
+
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            catch
+            {
+            }
+        }
+
+        private static bool TryFlushAndValidateCompactionDatabaseFile(string path, long expectedBytes)
+        {
+            return expectedBytes >= MinimumFileBytes &&
+                   TryFlushAndValidateFileLength(path, expectedBytes);
+        }
+
+        private static bool TryFlushAndValidateFileLength(string path, long expectedBytes)
+        {
+            if (string.IsNullOrEmpty(path) || expectedBytes < 0L)
+                return false;
+
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, 1, FileOptions.WriteThrough))
+                {
+                    if (stream.Length != expectedBytes)
+                        return false;
+
+                    stream.Flush(true);
+                    return stream.Length == expectedBytes;
+                }
+            }
+            catch
+            {
+                return false;
             }
         }
 

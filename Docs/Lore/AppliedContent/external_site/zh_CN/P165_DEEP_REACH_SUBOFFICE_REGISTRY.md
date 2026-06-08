@@ -9,32 +9,20 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Deep Reach Suboffice Registry"
+title: "Deep Reach 分办公室登记"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Deep Reach Suboffice Registry
+# Deep Reach 分办公室登记
 
-ZH LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## 小办公室，大后果
 
-## Scanner
+当 Deep Reach 不再像阴谋，而开始像行政时，它更可怕。这份登记有用，因为每个办公室名都无聊到像真的。Contract Continuity Desk 让工人希望死掉的 obligations 继续活着。Packet Notary Interface 决定消息成为证据还是噪声。Quarantine Hold Desk 让延迟看起来像医疗责任。Asset Silence Board 把 witnesses 变成 exposure。Return Action Queue 用 payload、orbit 和 public risk 给身体定价。
 
-ZH LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-ZH LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-ZH LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-ZH LOC HOLD: Use dull names. Dull names are where liability hides.
+没有任何 desk 需要憎恨玩家。它只需要在洪水上涨前写好的 priority stack 里完成工作。所以 HECTON-8 的证据应以印章、routing fragments 和小矛盾积累。罪行没有藏在戏剧化邪恶背后。它散布在一张张看似 defensible 的表格里，直到玩家把它们排成一线。
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/zh_CN. -->

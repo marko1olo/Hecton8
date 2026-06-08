@@ -9,32 +9,18 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "Wyciek do rejestru publicznego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# Wyciek do rejestru publicznego
 
-PL LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+Wyciek do rejestru publicznego nie jest idealną fantazją sygnalisty. To pakiet wychodzący przez wąskie okno relay, z witness hash, custody dość mocną, by trudno było zaprzeczyć, i zbyt wieloma brakami, by było bezpiecznie. Tau Ceti może upublicznić zapis długo po tym, jak mogłoby uratować kogokolwiek w wodzie.
 
-## Scanner
-
-PL LOC HOLD: You can leak truth before you understand all of it.
-
-## Terminal
-
-PL LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
-
-## Audio
-
-PL LOC HOLD: The truth leaves first. You may not like who reads it.
-
-## Field Note
-
-PL LOC HOLD: Public does not mean safe. It means harder to erase.
+To opóźnienie jest sednem. Deep Reach nie może już po prostu usunąć claim, ale gracz też nie może zdecydować, kto użyje go następny. Ubezpieczyciele, rywale, sądy obywatelskie, pule Marauderów i biura korporacyjne odczytają tę samą ranę inaczej. To zakończenie sprawia, że prawdę trudniej pogrzebać i trudniej posiadać.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/pl_PL. -->

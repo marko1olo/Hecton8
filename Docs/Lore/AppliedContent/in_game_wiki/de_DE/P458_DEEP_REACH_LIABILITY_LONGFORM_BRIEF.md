@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "DE LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: Haftung unter echtem Wasser"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: Haftung unter echtem Wasser
 
-DE LOC HOLD: Deep Reach guilt is strongest where clean reports meet broken hardware. The flood was real; the avoidable part is recorded in margins, clocks, doors and custody labels.
+Deep Reach ist schuldig, ohne dass der Ozean falsch sein muss. Tide, Cryosphärenstress, Sturmstapelung und Druckchemie verursachten die Katastrophe; die Firma wählte schlechte Margins und säuberte Papier.
 
 ## Scanner
 
-DE LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+Öffentlicher Evidenzbrief. Great-Tide-Physik bleibt real; Deep-Reach-Haftung liegt in akzeptierten Margins, zu kleiner Evakuierung, Atlas-Continuity, Quarantäneverzug und Verlustumwandlung.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+ÖFFENTLICHER HAFTUNGSKNOTEN // DEEP REACH. Kette: Varnek margin acceptance, Arendt Atlas waiver, Haldane quarantine hold, Ibarra loss ledger, Sato-Ren return action.
 
 ## Audio
 
-DE LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Geborgenes Counsel-Audio: "Nennen Sie es nicht Verzögerung. Nennen Sie es review. Das Wasser liefert das Intervall."
 
 ## Field Note
 
-DE LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+Marauder-Notiz: Physik tötete. Procedure entschied, wer als recoverable zählte.
 
 <!-- In-Game Wiki; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/de_DE. -->

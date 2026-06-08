@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Black Keel 索赔钩"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Black Keel 索赔钩
 
-CN LOC HOLD: Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.
+Black Keel 是玩家的投送路线、回收承诺，也是第一座法律牢笼。运载船可以回答，但每一次回答都要经过索赔钩：载荷价值、隔离状态、路线证书、债务托管，以及本该过期的旧 Deep Reach 优先条款。所以海面不是救援按钮。船近到能说话，远到能拒绝；它的延迟不是情绪，而是合同逻辑按文字运行。
 
 ## Scanner
 
-CN LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+清单上，Black Keel 是索赔池硬件；条款里，它是 Deep Reach 的杠杆。
 
 ## Terminal
 
-CN LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+运载方托管：操作员回收须通过载荷分诊、隔离关口、路线证书与责任清算。Deep Reach 优先印章保留于休眠条款。
 
 ## Audio
 
-CN LOC HOLD: It can hear you. It just has to price the answer first.
+它听得见你。它只是必须先给回答定价。
 
 ## Field Note
 
-CN LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+船并不邪恶。它只是租给了一份合同，而那份合同懂得怎样在不像活物的情况下作恶。
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/zh_CN. -->

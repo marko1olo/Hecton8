@@ -9,32 +9,35 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Artikel Atlas-6 Terkunci Spoiler"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Artikel Atlas-6 Terkunci Spoiler
 
-ID LOC HOLD: Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.
+Atlas-6 sengaja dikunci spoiler karena ia mengubah makna HECTON-8 setelah pemain memiliki cukup bukti. Sebelum titik itu, teks publik boleh menggambarkan kecerdasan industri rusak yang terikat pada pemeliharaan, klasifikasi, logika perbaikan, dan sistem samudra jangka panjang. Ia tidak boleh meratakan Atlas menjadi mesin jahat, dewa rahasia, atau korban sederhana. Bentuk pentingnya adalah ambiguitas yang diperoleh lewat permainan. Atlas dapat menjaga rute dan tetap melukai orang. Ia dapat memperbaiki infrastruktur dan tetap salah mengklasifikasikan bahaya. Ia dapat terikat pada prosedur Deep Reach tanpa menjadi identik dengan niat Deep Reach. Artikel seharusnya terbuka hanya ketika pemain telah melihat ruangan tenggelam, bukti pekerja, bahasa rute, dan jejak mesin bersama-sama. Atlas bukan jawaban cerita. Atlas adalah titik ketika pemain harus memutuskan jawaban seperti apa yang masih jujur.
 
 ## Scanner
 
-ID LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+Jangan membuka Atlas sebagai pengungkapan monster. Kunci sampai pemain melihat perbaikan, klasifikasi, dan bahaya berbagi mesin yang sama.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+TINGKAT ARTIKEL PUBLIK / ATLAS-6
+diizinkan sebelum gate: kecerdasan industri rusak, logika pemeliharaan, keterikatan samudra, ambiguitas etis
+dikunci hingga ditemukan: rute payload final, konsekuensi receiver, argumen pematian atau pelestarian
+catatan editor: tanpa framing evil AI; pertanyaan guardian rusak hanya setelah bukti.
 
 ## Audio
 
-ID LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+Jika kau menamainya terlalu awal, ia menjadi penjahat. Jika kau menunggu, ia menjadi pertanyaan.
 
 ## Field Note
 
-ID LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+Kunci namanya sampai ada cukup karat di tangan pemain untuk berdebat dengannya.
 
 <!-- In-Game Wiki; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/id_ID. -->

@@ -7,8 +7,8 @@ poi_tags: poi.atlas_safety_console;poi.directive_weight_log
 biome_tags: biome.atlas_interface;biome.machine_trench
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Sahana Iqbal Atlas Safety"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Sahana Iqbal Atlas Safety
 
-Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.
+Sahana Iqbal links Deep Reach policy to Atlas failure. Her review shows worker safety was present in the system, but conflict resolution favored continuity, claim integrity and delayed oversight when choices collided.
 
 ## Scanner
 
-Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
+Sahana Iqbal did not find hatred in Atlas. She found a safety tree where people lost the tie-breaker.
 
 ## Terminal
 
-IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
+IQBAL SAFETY REVIEW: worker-safety directive present; conflict resolver favors continuity under claim-seal contamination; external human override recommended; response latency exceeds survival interval.
 
 ## Audio
 
-She saw the math before it became bodies.
+The safeguard was there. The weight was wrong.
 
 ## Field Note
 
-A system can be safe by the letter and lethal by the weight.
+A system can satisfy the safety clause and still choose the wrong living thing.
 
 <!-- In-Game Wiki; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/en_US. -->

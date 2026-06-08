@@ -9,32 +9,36 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Photic Mat Codex Card"
+title: "כרטיס קודקס יריעת אור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Photic Mat Codex Card
+# כרטיס קודקס יריעת אור
 
-HE LOC HOLD: Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.
+יריעות אור גורמות למדפים הרדודים להרגיש חיים בלי להפוך אותם לבטוחים. הן שכבות ביופילם הגדלות במקום שבו אור, עור מינרלי, דליפת גז חלשה וכימיית לחץ נפגשים. יריעה בריאה יכולה להוסיף חמצן לכיס, להאכיל glass grazers, לצבוע אבן גיר בשוליים ירוקים-זהובים ולייצב משקע דק שהיה מתרומם במים. השימושיות הזאת היא בדיוק הסיבה שהשחקן לא צריך להתייחס אליה כקישוט או אוכל חינם. דגימות קטנות מקצה רופף בטוחות מספיק לסריקה. יריעה מתוחה על סדק, תפר gasket, צלקת כבל או שלפוחית גז חיוורת כבר היא חלק מהנתיב. קרע אותה שם והמדף עשוי להשתנות: גז כלוא ייצא, grazers יתפזרו, משקע יעכיר את המים וכתם בהיר יהפוך לבעיית ראות. הכלל פשוט. קח את הקצה. אל תגנוב את התחבושת.
 
 ## Scanner
 
-HE LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+יריעת אור. שכבת ביופילם חיובית חמצן מעל עור מינרלי. בהירה, שימושית, ושבירה בלחץ. לא לקלף מסדקים אטומים.
 
 ## Terminal
 
-HE LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+דגימה / יריעת אור
+תפקיד: פני חמצן רדודים, מזון ל-grazers, מייצב סרט מינרלי
+דגימה בטוחה: קצה רופף קטן מרוחב כף יד
+לדחות: יריעות שאוטמות תפרים, יריעות עם שלפוחיות גז, שדות נשיכה טריים של grazers
+הערת נתיב: יריעות קרועות יכולות לאוורר גז כלוא ולהפוך מדף צלול ל-hazard.
 
 ## Audio
 
-HE LOC HOLD: Light here is work, not comfort.
+זה נראה רך כי זה עובד. אם זה מחזיק תפר, השאר את זה שם.
 
 ## Field Note
 
-HE LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+קצה רופף: דגימה. כיסוי תפר: להשאיר. אם היריעה אוטמת פצע, הפצע עדיין שם.
 
 <!-- In-Game Wiki; generated from P291_PHOTIC_MAT_CODEX_CARD/he_IL. -->

@@ -9,24 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 2
-title: "JA LOC HOLD: Endings and Payload Custody"
+title: "結末とpayload custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Endings and Payload Custody
+# 結末とpayload custody
 
-JA LOC HOLD: Every known HECTON-8 outcome begins before the final ascent. The decisive object is not only the body in the capsule, but the payload attached to it: coordinates, samples, Atlas records, worker evidence, quarantine status and the legal chain that decides who can call the recovery legitimate.
-
-Black Keel can lift a survivor and still sell the truth badly. Deep Reach can receive coordinates and bury them under recovery compliance. A public ledger can damage the company without returning the dead. Quarantine can be medically rational and politically useful in the same hour. Material payout can be real money and still leave the ocean holding the important proof.
-
-Atlas makes the custody problem worse. Severance can end a dangerous repair network, but it can also destroy the last system that remembers the colony as more than an insurance case. Preservation can protect records, but it leaves a damaged maintenance intelligence inside a living ocean-machine. Coordinate sale can end a debt and deliver the most valuable witness to the least trustworthy office.
-
-The false exits are not failures of courage. They are exits where one chain closes and another remains unpaid. The body leaves, the claim remains. The sample leaves, the worker record does not. The ledger leaks, but the carrier still owns the mass window. The quarantine hold preserves evidence until someone else decides what evidence means.
-
-No ending removes custody from the story. The final question is who owns the proof when HECTON-8 falls silent again.
+結末クラスターはgoodやbadの単純な札で分けてはいけない。HECTON-8では、payloadを誰が受け取るか、proofを誰が読めるか、身体、データ、Atlas recordsのcustodyを誰が得るか、どの真実がルート後に残るかが重要だ。False exitも構造の一部である。不完全な証拠で去ることは救出に見えるかもしれないが、after-action recordsが沈黙を誰が買ったか示す。ここはspoiler gatesで閉じ、Black Keel、Deep Reach、public archive、quarantine authority、Atlas continuity、解釈権の喪失といったreceiver consequencesで整理する。
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/ja_JP. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Transcription d'approche Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Black Keel Approach Transcript Seed
+# Transcription d'approche Black Keel
 
-FR LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+La transcription d'approche rend Black Keel utile sans le rendre clément. Le carrier donne au Marauder une ligne vers l'orbite, puis nomme dette, fenêtre de réception, limite de santé, limite de masse et preuve requise avant que l'espoir puisse réécrire la physique.
 
 ## Scanner
 
-FR LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Audio carrier récupéré: descente facturée, retour conditionnel, quatre secondes de latence et paquet de preuve requis.
 
 ## Terminal
 
-FR LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
-FR LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+Tender Black Keel au demandeur. Latence quatre secondes. Descente facturée. Retour non garanti. Envoyez santé, masse, preuve.
 
 ## Field Note
 
-FR LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+Tampon de tender de claim, coupé par le carrier de tempête. Garder une voix procédurale: faits de route d'abord, réconfort jamais.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/fr_FR. -->

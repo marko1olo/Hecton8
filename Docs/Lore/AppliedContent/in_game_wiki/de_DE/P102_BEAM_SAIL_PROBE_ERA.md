@@ -7,34 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Ära der Strahlsegelsonden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Ära der Strahlsegelsonden
 
-DE LOC HOLD: Early extrasolar expansion leaned on beam-assisted probes and small autonomous packets. They could map, listen and seed relay assumptions faster than heavy crewed ships could move. That asymmetry explains how Deep Reach could prepare Aegir infrastructure before ordinary workers understood the full risk.
+Frühe extrasolare Expansion schickte Strahlsegelsonden und autonome Pakete vor den Menschen. Sie kartierten Gravitation, Strahlung, Mondbahnen, Relais-Sichtlinien und mögliche Ozeanwelten, während schwere Schiffe noch Papierzusagen waren. Deep Reach erbte maschinengemachtes Vertrauen und behandelte es als Erlaubnis.
 
 ## Scanner
 
-DE LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+Vermessungsrolle: Aegirs erste Karten kamen als leichte Fracht, nicht als bemanntes Versprechen.
 
 ## Terminal
 
-DE LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+VERMESSUNGSLINIE: Strahlsegelpakete kartierten Ran und Aegir, bevor Frachtrouten für lebende Ladung freigegeben waren. Vertrauensverfall vor Kolonieausbau vermerkt.
 
 ## Audio
 
-DE LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
+Das erste menschliche Ding hier war kein Mensch. Es war ein Vermessungspaket mit Quittung.
 
 ## Field Note
 
-DE LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Sonden sahen zuerst. Maschinen bereiteten als zweite vor. Arbeiter kamen, als Vertrauen abrechenbar wurde.
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/de_DE. -->

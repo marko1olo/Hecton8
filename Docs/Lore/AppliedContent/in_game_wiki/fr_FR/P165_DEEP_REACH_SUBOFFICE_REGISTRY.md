@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Deep Reach Suboffice Registry"
+title: "Registre Des Sous-Bureaux Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Deep Reach Suboffice Registry
+# Registre Des Sous-Bureaux Deep Reach
 
-FR LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+Le registre des sous-bureaux compte parce qu'il nomme la machine sans inventer de salle du trône. Deep Reach n'avait pas besoin d'une personne ordonnant chaque mort. Il lui fallait des offices aux noms étroits, capables de retarder, reclassifier ou passer un paquet. Contract Continuity gardait les obligations vivantes. Packet Notary décidait ce qui comptait comme proof. Quarantine Hold rendait le rescue dangereux. Asset Silence réduisait la valeur des témoins. Return Action décidait qui valait de la masse.
 
 ## Scanner
 
-FR LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board et Return Action Queue.
 
 ## Terminal
 
-FR LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach gardait les décisions létales sous le niveau d'un seul méchant. De petits desks routaient clauses, paquets, quarantaine, silence et priorité de retour jusqu'à ce qu'aucun tampon ne ressemble à un meurtre.
 
 ## Audio
 
-FR LOC HOLD: A small desk can kill more quietly than a director.
+Un petit desk peut tuer plus silencieusement qu'un directeur.
 
 ## Field Note
 
-FR LOC HOLD: Use dull names. Dull names are where liability hides.
+Garde les noms ternes. C'est là que la liability se cache.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/fr_FR. -->

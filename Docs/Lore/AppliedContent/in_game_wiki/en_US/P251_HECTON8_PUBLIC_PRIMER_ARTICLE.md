@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 Public Primer Article"
+title: "HECTON-8 Public Primer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# HECTON-8 Public Primer Article
+# HECTON-8 Public Primer
 
-The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
+HECTON-8 is introduced as a place worth surviving, not just a crime scene. The moon belongs to the Aegir system: cold, tidal, valuable, and inconveniently far from any quick rescue. Its photic shelves can be clear and alive, with colony hardware visible through bright water. Below that beauty, the old Deep Reach routes descend into pump rooms, pressure corridors, brine cuts, broken relay yards, and machinery that kept working after people stopped answering. The public primer stays spoiler-safe. It can say the player returns as a debt-bound Marauder. It can say the colony failed, the salvage contract is coercive, and the ocean holds evidence. It does not reveal the final payload choice or the full Atlas question. The point is to invite the player into the world without sanding off its teeth.
 
 ## Scanner
 
-A public primer is allowed to be beautiful. It is not allowed to lie.
+Public primer clearance: show the moon as beautiful first. Do not sell the ocean by hiding the crime.
 
 ## Terminal
 
-PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+PUBLIC PRIMER / SPOILER-SAFE
+allowed: Aegir ocean moon, bright shelves, drowned industrial colony, Marauder salvage return, Deep Reach ruins
+gated: final payload route, Atlas resolution, ending receiver consequences
+editor note: beauty first, evidence second, no false rescue promise.
 
 ## Audio
 
-First sell the ocean. Then earn the crime.
+The shallow water is not a mask. It is what they almost managed to build before the depth kept the receipts.
 
 ## Field Note
 
-The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+Sell the ocean first. Then let the rust, tags, and route stamps prove why the ocean is not innocent.
 
 <!-- In-Game Wiki; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/en_US. -->

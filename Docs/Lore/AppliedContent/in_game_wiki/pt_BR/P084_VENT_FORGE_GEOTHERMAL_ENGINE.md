@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Motor Geotérmico da Forja de Vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# Motor Geotérmico da Forja de Vent
 
-PT-BR LOC HOLD: Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+Forjas de vent conectam geologia a crafting, sobrevivência e horror. Elas fornecem calor e ciclos de pressão para cerâmica, selos e vidro de pressão, mas os mesmos ciclos criam bolsões ferventes, leituras falsas de oxigênio, nuvens corrosivas e migração de fauna.
 
 ## Scanner
 
-PT-BR LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
+Coletor da forja de vent. Calor, veneno e energia usam o mesmo tubo.
 
 ## Terminal
 
-PT-BR LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+MOTOR GEOTÉRMICO: pulso de vent adequado para cura cerâmica, recozimento de vidro de pressão e pré-aquecimento de carga de ascensão emergencial. Riscos: cisalhamento fervente, falso positivo de oxigênio e bloom corrosivo.
 
 ## Audio
 
-PT-BR LOC HOLD: The vent does not care whether you call it power or weather.
+O vent não liga se você chama isso de energia ou clima.
 
 ## Field Note
 
-PT-BR LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+Todo vent útil também é uma máquina que pune timing ruim.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/pt_BR. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 강하 캡슐 손상
 
-플레이어는 강하 캡슐로 HECTON-8에 도착한다. 추락은 피난, 전력, 로그를 남기지만 상승 장치를 죽인다. 조기 탈출은 엔지니어링 체인이다.
+강하 캡슐은 마로더를 HECTON-8로 보낸다. 충돌은 대피처, 전력, 로그에 충분한 시스템을 남기지만 상승 장비를 파괴한다. 초기 탈출은 버튼이 아니라 공학 사슬이 된다.
 
 ## Scanner
 

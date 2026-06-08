@@ -9,32 +9,36 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Долг и blacklist как давление контракта"
+title: "Долг, черный список и давление контракта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Долг и blacklist как давление контракта
+# Долг, черный список и давление контракта
 
-HECTON-8 описывает протагониста через экономику фронтира: debt, blacklists, claim pools и старый corporate access.
+HECTON-8 описывает протагониста через экономику фронтира, а не через судьбу. Долги, черные списки, хранение claim-pool, кислородный кредит, доступ к койке и старые учетные данные Deep Reach делают salvage-контракт принудительным, но не беспомощным.
 
 ## Scanner
 
-Lien notice. Отказ оставил бы игрока законным, голодным и на земле.
+Уведомление о залоге привязано к хранению Black Keel. Отказ остается законным, но приземляет: без койки, без чистого кислородного кредита, без маршрутного окна из Aegir.
 
 ## Terminal
 
-CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+ПРИНЯТИЕ ПРЕТЕНЗИИ / ОКНО СНЯТИЯ ЧЕРНОГО СПИСКА
+статус подрядчика: долговой Marauder
+перевозчик: хранение claim-pool Black Keel
+условия облегчения: извлекаемая масса, доказательство хранения, соответствие приемника
+состояние отказа: черный список активен; доступ к койке запрещен; кислородная поддержка переведена в оплачиваемую услугу.
 
 ## Audio
 
-Это не похищение. Это выбор, который frontier продает как свободу.
+Это не было похищением. Это был тот выбор, который фронтир продает как свободу: подпиши, ныряй или оставайся чистым на бумаге и запертым на практике.
 
 ## Field Note
 
-RU LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+Залог не наставил пистолет. Он указал на счет за воздух, список коек и следующее маршрутное окно.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/ru_RU. -->

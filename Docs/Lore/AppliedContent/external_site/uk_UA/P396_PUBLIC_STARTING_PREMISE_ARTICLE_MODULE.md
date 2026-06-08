@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Marauder Starting Claim"
+title: "Стартова претензія Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Marauder Starting Claim
+# Стартова претензія Marauder
 
-UK LOC HOLD: The first HECTON-8 claim is personal only in the professional sense. The Marauder knows pressure systems, Deep Reach procedure and the kind of paperwork that turns risk into someone else's debt. Black Keel offers a salvage window because the route is valuable, not because the carrier has become generous. That starting frame keeps the descent grounded: repair the capsule, read the site, recover cargo or proof, and decide how much of the old company language can survive contact with the rooms below.
+Перший файл Black Keel про HECTON-8 виглядає як salvage-робота, доки його власні формулювання не починають видавати провину. Борговий Marauder бере маршрут, бо lien справжній, а вікно відновлення вузьке. Його минуле Deep Reach field-systems одразу важить: процедури тиску, maintenance-скорочення, liability-фрази й евакуаційні мітки знайомі ще до того, як стають доказами. Black Keel дає доступ, не милість. Спуск починається з конкретної роботи навколо P-63: залатати bathydrop, перевірити ущільнення, просканувати shelf, перезапустити машини, повернути вантаж або доказ і піти до того, як orbital timing і legal custody закриють claim. Гачок у професійному впізнаванні: гравець бачить, де гладка мова й фізичні пошкодження розповідають різні історії.
 
 ## Scanner
 
-UK LOC HOLD: Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+Публічний запис claim. Початковий маршрут показує боргового Marauder з минулим Deep Reach field-systems, пошкодженим bathydrop і вікном відновлення Black Keel над P-63.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+ВУЗОЛ ПУБЛІЧНОГО АРХІВУ // СТАРТОВА ПРЕТЕНЗІЯ. Досьє підрядника: колишній спеціаліст Deep Reach field-systems. Поточний статус: Marauder під lien. Маршрут: recovery claim Black Keel, спуск на shelf P-63, повернення доказу й вантажу до закриття custody window.
 
 ## Audio
 
-UK LOC HOLD: You are returning to paperwork you know too well.
+Ти не оглядаєш HECTON-8. Ти повертаєшся до паперів, які знаєш надто добре.
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: the contract knows your past. That does not make it honest.
+Нотатка Marauder: контракт знає твоє минуле. Від цього він не стає чесним.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/uk_UA. -->

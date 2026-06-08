@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Vent Forge Field Process Guide"
+title: "ベントフォージ野外工程ガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Vent Forge Field Process Guide
+# ベントフォージ野外工程ガイド
 
-JA LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.
+ベントフォージ野外工程ガイドは資源価値を現場処理に結びつける。重要なのは何を見つけたかだけではなく、pressure と cooling がそれを recovery まで生かすかだ。
 
 ## Scanner
 
-JA LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+vent-forge chemistry 活性。品質は試料の輝きではなく、pressure history、heat pulse、slow cooling に従う。
 
 ## Terminal
 
-JA LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: vent forges は sulfides、noble-gas pockets、ceramics、sealant precursors を煮る。試料の名前より、heat、brine、pressure を通った経路が重要だ。
 
 ## Audio
 
-JA LOC HOLD: The vent did not make ore. It made a process you interrupted.
+vent は鉱石を作らなかった。君が中断した工程を作った。
 
 ## Field Note
 
-JA LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+新しいロットをそのまま冷水へ持ち上げるな。vent に anneal を終えさせろ。そうしなければ shell はひび割れる。
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/ja_JP. -->

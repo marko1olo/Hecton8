@@ -699,7 +699,17 @@ namespace Hecton8.Physics
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            _cachedSectorAup = math.select(double3.zero, shiftData.NewTotalOffsetDouble, math.isfinite(shiftData.NewTotalOffsetDouble));
+            float3 shiftOffset = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);
+            float shiftSqrMagnitude = math.lengthsq(shiftOffset);
+            if (!math.all(math.isfinite(shiftOffset)) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            {
+                return;
+            }
+
+            _cachedSectorAup = shiftData.NewTotalOffsetDouble;
         }
 
         public bool GenerateMockBuoyantObjects()
@@ -1862,8 +1872,7 @@ namespace Hecton8.Physics
 
             if (!_registeredHotSwap)
             {
-                GlobalRegistry.RegisterHotSwapListener(this);
-                _registeredHotSwap = true;
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
             }
 
             if (GlobalRegistry.Dispatcher == null)
@@ -1921,7 +1930,7 @@ namespace Hecton8.Physics
 
             if (_registeredHotSwap)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
         }

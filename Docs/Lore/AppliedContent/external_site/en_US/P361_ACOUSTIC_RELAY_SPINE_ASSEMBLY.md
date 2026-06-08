@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Acoustic Relay Spine Assembly
 
-HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.
+Acoustic Relay Spine Assembly grounds HECTON-8's escape loop in salvage engineering: sound must survive pressure, route geometry and custody before orbit believes it.
 
 ## Scanner
 
-Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+Broken acoustic spine. It can tap pressure-code through water; orbit still hears it as damaged custody noise.
 
 ## Terminal
 
-ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY: restore low-band acoustic spine before recovery window. High-gain mast lost. Emergency buoy unreliable. Black Keel receiver accepts pressure-code only after route proof.
 
 ## Audio
 
-If Black Keel hears this, it hears a pressure code, not a voice.
+If the Keel hears us, it hears a wound tapping a pipe.
 
 ## Field Note
 
-Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+The capsule's first call is not a voice. It is ceramic ribs, cable skin, pinger floats and enough timing discipline to make the ocean repeat you correctly.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/en_US. -->

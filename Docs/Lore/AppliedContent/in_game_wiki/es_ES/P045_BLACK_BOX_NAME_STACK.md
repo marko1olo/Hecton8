@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Pila de nombres de caja negra
 
-La pila de nombres vuelve transportable la verdad. Lo que el jugador sube afecta emisión, dossier y final.
+La pila de nombres de caja negra vuelve transportable la verdad final. Evidencia, paquetes broadcast y dosieres públicos dependen de qué nombres, hashes y recibos salgan del agua.
 
 ## Scanner
 

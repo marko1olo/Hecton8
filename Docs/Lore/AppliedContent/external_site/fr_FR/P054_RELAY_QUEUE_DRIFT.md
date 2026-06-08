@@ -3,38 +3,22 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Relay Queue Drift"
+title: "Dérive de file relais"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Queue Drift
+# Dérive de file relais
 
-FR LOC HOLD: Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable.
-
-## Scanner
-
-FR LOC HOLD: The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
-
-## Terminal
-
-FR LOC HOLD: QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
-
-## Audio
-
-FR LOC HOLD: The message is correct. That is the problem.
-
-## Field Note
-
-FR LOC HOLD: A late truth can still kill.
+La dérive de file relais est l'écart entre vérité et utilité. HECTON-8 n'a pas besoin de faux parasites ni d'interférence magique pour rendre la communication inquiétante. Un message peut arriver intact, authentifié et parfaitement correct pour la pièce d'il y a trente minutes. Puis l'eau bouge une écoutille, la pression plie un cadre, la croissance Atlas scelle la mauvaise fissure et la même instruction devient piège. Le joueur ne cherche pas si le système ment, mais s'il est trop vieux pour être fiable.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/fr_FR. -->

@@ -42,6 +42,8 @@ namespace Hecton8.Construction
         public const uint NonFinite = 1u << 0;
         public const uint DumpRequested = 1u << 1;
         public const uint ScheduleTimeOnly = 1u << 2;
+        public const uint IntentRejected = 1u << 3;
+        public const uint IntentOverflowCompensated = 1u << 4;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = BulkheadStateLayoutGuard.StateSizeBytes)]

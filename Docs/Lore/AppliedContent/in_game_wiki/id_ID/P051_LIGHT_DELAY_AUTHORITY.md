@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Light-Delay Authority"
+title: "Otoritas Tunda-Cahaya"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Light-Delay Authority
+# Otoritas Tunda-Cahaya
 
-ID LOC HOLD: Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.
+HECTON-8 tidak punya ansible dan tidak punya suara komando langsung dari orbit. Pesan bergerak secepat cahaya, lalu kehilangan waktu lagi di antrean buffer, jendela badai, geometri relai, dan aturan kustodi kapal induk. Setiap jawaban adalah bukti lama, bukan perintah.
 
 ## Scanner
 
-ID LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
+Cache tiang relai: panggilan keluar bersih, lalu menunggu di belakang cahaya, hukum antrean, sebaran badai, dan garis pandang Aegir.
 
 ## Terminal
 
-ID LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
+OTORITAS KOM: jeda satu arah terverifikasi. Sebaran badai tinggi. Antrean relai di bawah prioritas kustodi. Otoritas survival lokal tetap aktif.
 
 ## Audio
 
-ID LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
+Balasan sedang datang. Itu belum berarti penyelamatan.
 
 ## Field Note
 
-ID LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
+Tidak ada yang menyensor jeritan pertama. Fisika membawanya cukup lambat sampai kebijakan sempat menyusul.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/id_ID. -->

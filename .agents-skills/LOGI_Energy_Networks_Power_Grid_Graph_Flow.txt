@@ -304,7 +304,7 @@ i3-10gen @ 5Hz tick:
 [RULE] `ISlowTickable` may be the cadence entrypoint; `ILateFrameTickable` may consume completed job outputs. Neither may contain per-frame `Update`, coroutine, physics callback, or allocation-driven simulation.
 [RULE] Authoring endpoint MonoBehaviours such as pipe nodes and pump modules are adapters. They register into a shared scheduler and must not own per-segment simulation loops.
 [RULE] Runtime state of record is NativeArray/CSR/queue data, not component fields, except debug mirrors and inspector authoring data.
-[RULE] Pipe Black Box capacity is 300 frames. Current dump target: `Docs/AgentLogs/Dump_PIPE_LOGISTICS_ARCHITECT.bin`.
+[RULE] Pipe Black Box capacity is 300 frames. Dump route follows root Black Box law: explicit batch/logging ID may use `Docs/AgentLogs/Dump_[ID].bin`; ordinary logistics runtime uses a deterministic system-name/timestamp project artifact.
 
 [FORBID] Treating the presence of `LogisticsPipeNode`, `WaterPumpModule`, or `FluidPipeGraphRuntime` MonoBehaviours as a mandate violation when they are cold adapters with shared scheduler ownership.
 [FORBID] One MonoBehaviour `Update`/`FixedUpdate` per pipe/cable segment.

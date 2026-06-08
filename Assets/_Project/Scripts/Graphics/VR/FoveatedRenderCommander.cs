@@ -146,6 +146,7 @@ namespace Hecton8.Graphics.VR
         private bool _blackBoxDumped;
         private bool _uiSuppressionActive;
         private bool _displayLevelNonFinite;
+        private bool _runtimeOwnerAborted;
         private bool _disposed;
         private bool _coldAndroidRuntime;
         private bool _coldStandaloneLikeRuntime;
@@ -234,9 +235,10 @@ namespace Hecton8.Graphics.VR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void BootstrapAfterSceneLoad()
         {
-            if (!Application.isPlaying || s_activeCommander != null)
+            if (!Application.isPlaying || IsCommanderRuntimeUsable(s_activeCommander))
                 return;
 
+            s_activeCommander = null;
             GameObject host = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] - runtime foveated rendering commander host - owner: FoveatedRenderCommander
             DontDestroyOnLoad(host);
             host.AddComponent<FoveatedRenderCommander>(); // COLD ALLOC: FoveatedRenderCommander[1] - runtime foveated rendering policy owner - owner: FoveatedRenderCommander
@@ -244,13 +246,9 @@ namespace Hecton8.Graphics.VR
 
         private void Awake()
         {
-            if (s_activeCommander != null && !ReferenceEquals(s_activeCommander, this))
-            {
-                Destroy(this);
+            if (!EnsureRuntimeOwnership())
                 return;
-            }
 
-            s_activeCommander = this;
             EnsureTelemetry();
             CacheRuntimeCapabilitySnapshotCold();
             _framesUntilSample = 0;
@@ -258,7 +256,7 @@ namespace Hecton8.Graphics.VR
 
         private void OnEnable()
         {
-            if (!ReferenceEquals(s_activeCommander, this))
+            if (!EnsureRuntimeOwnership())
                 return;
 
             _disposed = false;
@@ -277,7 +275,7 @@ namespace Hecton8.Graphics.VR
 
         private void Start()
         {
-            if (!ReferenceEquals(s_activeCommander, this))
+            if (!EnsureRuntimeOwnership())
                 return;
 
             TryRegisterTick();
@@ -291,6 +289,9 @@ namespace Hecton8.Graphics.VR
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             bool ownsRuntimeState = ReferenceEquals(s_activeCommander, this);
             TryUnregisterRenderable();
             TryUnregisterHotSwap();
@@ -307,6 +308,9 @@ namespace Hecton8.Graphics.VR
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             Dispose();
             if (ReferenceEquals(s_activeCommander, this))
                 s_activeCommander = null;
@@ -314,7 +318,7 @@ namespace Hecton8.Graphics.VR
 
         public void Dispose()
         {
-            if (_disposed)
+            if (_runtimeOwnerAborted || _disposed)
                 return;
 
             _disposed = true;
@@ -334,6 +338,9 @@ namespace Hecton8.Graphics.VR
 
         public void LateFrameTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (TryQueueDetachIfInactiveCommander())
                 return;
 
@@ -353,6 +360,9 @@ namespace Hecton8.Graphics.VR
 
         public void SlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (TryDetachIfInactiveCommander())
                 return;
 
@@ -469,7 +479,7 @@ namespace Hecton8.Graphics.VR
 
         internal void RequestBlackBoxDump()
         {
-            if (!ReferenceEquals(s_activeCommander, this) || _disposed)
+            if (_runtimeOwnerAborted || !ReferenceEquals(s_activeCommander, this) || _disposed)
                 return;
 
             DumpBlackBoxOnce();
@@ -842,11 +852,74 @@ namespace Hecton8.Graphics.VR
 
         private bool IsInactiveCommander()
         {
-            return !ReferenceEquals(s_activeCommander, this) || _disposed || _detachRequested;
+            return _runtimeOwnerAborted || !ReferenceEquals(s_activeCommander, this) || _disposed || _detachRequested;
+        }
+
+        private bool EnsureRuntimeOwnership()
+        {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            if (!ReferenceEquals(s_activeCommander, this))
+                s_activeCommander = this;
+
+            return true;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            FoveatedRenderCommander activeCommander = s_activeCommander;
+            if (ReferenceEquals(activeCommander, null) || ReferenceEquals(activeCommander, this))
+                return false;
+
+            if (IsCommanderRuntimeUsable(activeCommander))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeCommander, activeCommander))
+                s_activeCommander = null;
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            TryUnregisterRenderable();
+            TryUnregisterHotSwap();
+            TryUnregisterTick();
+            TryUnregisterSlowTick();
+            ReleaseTelemetryBuffer();
+            _runtimeOwnerAborted = true;
+            _disposed = true;
+            _registeredRenderable = false;
+            _registeredHotSwap = false;
+            _registeredLateFrame = false;
+            _registeredSlowTick = false;
+            _detachRequested = false;
+            _hardwareThermal = null;
+            _dataVault = null;
+            _telemetryWriteVault = null;
+            enabled = false;
+            Destroy(this);
+        }
+
+        private static bool IsCommanderRuntimeUsable(FoveatedRenderCommander commander)
+        {
+            return commander != null &&
+                   commander.isActiveAndEnabled &&
+                   !commander._runtimeOwnerAborted &&
+                   !commander._disposed;
         }
 
         private void TryRegisterTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_registeredLateFrame)
                 return;
 
@@ -861,6 +934,9 @@ namespace Hecton8.Graphics.VR
 
         private void TryRegisterSlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_registeredSlowTick)
                 return;
 
@@ -893,15 +969,12 @@ namespace Hecton8.Graphics.VR
 
         private void TryRegisterHotSwap()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!Application.isPlaying)
             {
                 _registeredHotSwap = false;
-                return;
-            }
-
-            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
-            {
-                _registeredHotSwap = true;
                 return;
             }
 
@@ -910,11 +983,8 @@ namespace Hecton8.Graphics.VR
 
         private void TryUnregisterHotSwap()
         {
-            if (!_registeredHotSwap && !GlobalRegistry.IsHotSwapListenerRegistered(this))
-            {
-                _registeredHotSwap = false;
+            if (!_registeredHotSwap)
                 return;
-            }
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
@@ -922,6 +992,9 @@ namespace Hecton8.Graphics.VR
 
         private void TryRegisterRenderable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!Application.isPlaying)
                 return;
 

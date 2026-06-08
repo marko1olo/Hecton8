@@ -226,14 +226,18 @@ namespace Hecton8.UI
 
         private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
         {
+            observerAup = default;
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext != null && playerContext.PlayerMovement != null)
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
             {
-                observerAup = playerContext.PlayerMovement.CurrentAup;
+                observerAup = movementState.PredictedAup;
                 return true;
             }
 
-            observerAup = default;
             return false;
         }
 

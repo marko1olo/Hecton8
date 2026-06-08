@@ -1919,22 +1919,17 @@ namespace Hecton8.World
                 return playerAup.IsFinite() && math.all(math.isfinite(runtimePosition));
             }
 
-            var playerMovement = playerContext.PlayerMovement;
-            if (playerMovement == null)
-                return false;
-
-            playerAup = playerMovement.CurrentAup;
-            if (!playerAup.IsFinite())
-                return false;
-
-            runtimePosition = playerAup.ToRuntimeFloat3();
-            Transform cachedTransform = playerContext.PlayerTransform;
-            if (cachedTransform != null)
+            if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
             {
-                Vector3 transformForward = cachedTransform.forward;
-                forward = ResolveFiniteForward(new float3(transformForward.x, transformForward.y, transformForward.z));
+                playerAup = movementState.PredictedAup;
+                runtimePosition = movementState.WorldPosition;
+                forward = ResolveFiniteForward(movementState.CameraForward);
+                return math.all(math.isfinite(runtimePosition));
             }
-            return math.all(math.isfinite(runtimePosition));
+
+            return false;
         }
 
         private static float3 ResolveFiniteForward(float3 forward)
@@ -2682,18 +2677,22 @@ namespace Hecton8.World
             if ((uint)wordIndex >= (uint)views.DepletionMasks.Length)
                 return false;
 
+            int depletedOreType = views.OreTypes[oreIndex];
+            uint resolvedItemHash = unchecked((uint)ResolveItemHash(depletedOreType));
+            if (resolvedItemHash == 0u)
+                return false;
+
             ulong mask = views.DepletionMasks[wordIndex] & ~(1UL << bitIndex);
             views.DepletionMasks[wordIndex] = mask;
             StoreDepletionWord(views, wordIndex, mask);
 
             uint oreHash = ComputeOreHash(_currentSectorHash, deterministicSlot);
-            int depletedOreType = views.OreTypes[oreIndex];
             uint frame = AdvanceSimulationFrameId();
             acquiredSignal.PositionAup = positionAup;
-            acquiredSignal.ItemHash = unchecked((uint)ResolveItemHash(depletedOreType));
+            acquiredSignal.ItemHash = resolvedItemHash;
             acquiredSignal.OreHash = oreHash;
             acquiredSignal.Quantity = 1;
-            acquiredSignal.SourceKind = 2;
+            acquiredSignal.SourceKind = ItemAcquiredSignalSourceKinds.ProceduralOreSpawner;
             acquiredSignal.Flags = 0;
             acquiredSignal.Frame = frame;
 

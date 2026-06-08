@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # GEOLOGIE, DRUK EN DE GROTE VLOED VAN 2147
 
 > **Bron:** Keelmark Schadeafdeling, Samenvatting Afwijzing Claim. Bijgevoegd Addendum: Gids voor Bathymetrische Gevaren.  

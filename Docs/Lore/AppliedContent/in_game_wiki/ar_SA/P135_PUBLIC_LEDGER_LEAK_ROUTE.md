@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Public Ledger Leak Route"
+title: "تسريب إلى السجل العام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Public Ledger Leak Route
+# تسريب إلى السجل العام
 
-AR LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.
+تسريب السجل العام نهاية حقيقة جزئية. يرسل اللاعب أدلة كافية لجعل المحو أصعب، لكن ليست كافية للسيطرة على Atlas أو رد Deep Reach أو ما ستفعله المؤسسات العامة بالحزمة.
 
 ## Scanner
 
-AR LOC HOLD: You can leak truth before you understand all of it.
+تم قبول witness hash. الحقيقة الجزئية تغادر قبل custody الكاملة.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.
+مسار السجل العام: قبل packet notary في Tau Ceti witness hash؛ payload غير مكتمل؛ طعن claimant محتمل؛ نافذة انتقام Deep Reach تبدأ بعد إقرار relay.
 
 ## Audio
 
-AR LOC HOLD: The truth leaves first. You may not like who reads it.
+الحقيقة تغادر أولا. قد لا يعجبك من يقرؤها.
 
 ## Field Note
 
-AR LOC HOLD: Public does not mean safe. It means harder to erase.
+العلن ليس آمنا. إنه فقط أصعب في المحو.
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/ar_SA. -->

@@ -8,33 +8,33 @@ biome_tags: biome.authoring;biome.aegir_system
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "AR LOC HOLD: Ephemeris Data Boundary Rule"
+spoiler_tier: 1
+title: "قاعدة حدود بيانات التقويم السماوي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Ephemeris Data Boundary Rule
+# قاعدة حدود بيانات التقويم السماوي
 
-AR LOC HOLD: Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.
+يمكن للصفحات العامة شرح Aegir وHECTON-8 وtransfer windows وroute hazards من دون تجميد orbital constants الدقيقة.
 
 ## Scanner
 
-AR LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
+حدود البيانات: النص يملك النطاقات؛ الأرقام المدارية النهائية تبقى table-owned.
 
 ## Terminal
 
-AR LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY: يمكن للنص ذكر الأدوار والمخاطر والنطاقات. orbital values الدقيقة تبقى خارج narrative copy.
 
 ## Audio
 
-AR LOC HOLD: Numbers are allowed when the table owns them.
+الأرقام مسموحة عندما تملكها الجداول.
 
 ## Field Note
 
-AR LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
+سجلات التقويم تشرح منطق الطريق بينما تبقى الثوابت الدقيقة table-owned data.
 
 <!-- External Site; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/ar_SA. -->

@@ -9,32 +9,34 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Population And Authority Scale"
+title: "Шкала Населения И Власти"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Population And Authority Scale
+# Шкала Населения И Власти
 
-RU LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
+Числа населения остаются приблизительными, потому что игроку не нужна census opera. Полезный вопрос проще: кто может действовать на тебя издалека? Переполненный внутренний домен может касаться HECTON-8 только строкой сертификации. Малый depot может быть важнее, потому что держит custody пакетов. Мертвая frontier-shell может быть важнее всех, потому что владеет железом в комнате.
+
+Именно эту шкалу чувствует игрок. Sol может решить, что объект кому-то принадлежит. Centauri может сделать старый язык Deep Reach приличным. Barnard нормализует работу, которая ловит Marauders. Tau Ceti может превратить доказательство в публичное давление - слишком поздно для кислорода, но не слишком поздно для последствий. Luyten может доказать цепочку сообщений. Aegir - место, где подписи становятся давлением, водой, запертыми люками и оплачиваемой массой.
 
 ## Scanner
 
-RU LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+ЧЕРНОВОЙ CENSUS STUB // Население - фон. Важно, какой домен может сертифицировать, публиковать, перевозить, страховать, нотариально заверять или хоронить claim.
 
 ## Terminal
 
-RU LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AUTHORITY SCALE // Sol сертифицирует собственность. Centauri легитимирует хартии. Barnard дает труд для мертвых claims. Tau Ceti публикует доказательства после задержки. Luyten доказывает custody. Aegir исполняет грязный физический claim.
 
 ## Audio
 
-RU LOC HOLD: The largest domain is not the nearest hand.
+Крупнейший домен - не ближайшая рука. Это печать, которая переживает задержку.
 
 ## Field Note
 
-RU LOC HOLD: Do not turn the setting into census space opera.
+Не добавляй census trivia, если оно не давит на тело, маршрут, claim или цепочку доказательств.
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/ru_RU. -->

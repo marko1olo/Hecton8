@@ -280,9 +280,34 @@ namespace Hecton8.EditorTools
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+            finally
+            {
+                array = default;
+            }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
         private static Texture2D BuildArmTextureAsset(
@@ -1468,18 +1493,55 @@ namespace Hecton8.EditorTools
                     if (_ringSentinelId <= 0)
                         throw new InvalidOperationException($"Native memory sentinel registration failed for {RingLabel}.");
                 }
-                catch
+                catch (Exception registrationException)
                 {
+                    Exception cleanupException = null;
                     if (_ring.IsCreated)
                     {
+                        void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_ring);
+
                         if (_ringSentinelId > 0)
-                            NativeMemorySentinel.Unregister(_ringSentinelId);
+                        {
+                            try
+                            {
+                                NativeMemorySentinel.Unregister(_ringSentinelId);
+                            }
+                            catch (Exception exception)
+                            {
+                                cleanupException = exception;
+                            }
+                        }
                         else
-                            NativeMemorySentinel.UnregisterNativeArray(_ring);
-                        _ring.Dispose();
+                        {
+                            try
+                            {
+                                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                            }
+                            catch (Exception exception)
+                            {
+                                cleanupException = exception;
+                            }
+                        }
+
+                        try
+                        {
+                            _ring.Dispose();
+                        }
+                        catch (Exception exception)
+                        {
+                            if (cleanupException == null)
+                                cleanupException = exception;
+                        }
                     }
                     _ring = default;
                     _ringSentinelId = 0;
+
+                    if (cleanupException != null)
+                        throw new AggregateException(
+                            "Texture channel packer telemetry ring registration failed and cleanup also failed.",
+                            registrationException,
+                            cleanupException);
+
                     throw;
                 }
             }
@@ -1501,13 +1563,53 @@ namespace Hecton8.EditorTools
         {
             if (_ring.IsCreated)
             {
+                void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_ring);
+                Exception firstException = null;
+
                 if (_ringSentinelId > 0)
-                    NativeMemorySentinel.Unregister(_ringSentinelId);
+                {
+                    try
+                    {
+                        NativeMemorySentinel.Unregister(_ringSentinelId);
+                    }
+                    catch (Exception exception)
+                    {
+                        firstException = exception;
+                    }
+                    finally
+                    {
+                        _ringSentinelId = 0;
+                    }
+                }
                 else
-                    NativeMemorySentinel.UnregisterNativeArray(_ring);
-                _ringSentinelId = 0;
-                _ring.Dispose();
-                _ring = default;
+                {
+                    try
+                    {
+                        NativeMemorySentinel.UnregisterPointer(trackedPointer);
+                    }
+                    catch (Exception exception)
+                    {
+                        firstException = exception;
+                    }
+                }
+
+                try
+                {
+                    _ring.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    _ring = default;
+                    _ringSentinelId = 0;
+                }
+
+                if (firstException != null)
+                    throw firstException;
             }
 
             _cursor = 0;

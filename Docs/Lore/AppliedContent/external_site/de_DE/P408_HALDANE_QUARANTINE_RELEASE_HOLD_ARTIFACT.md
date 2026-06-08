@@ -9,32 +9,22 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Haldane Quarantine Hold"
+title: "Haldane Quarantine-Release-Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Haldane Quarantine Hold
+# Haldane Quarantine-Release-Hold
 
-DE LOC HOLD: HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
+## Ein Richtiges Verfahren Zur Falschen Minute
 
-## Scanner
+Der Haldane-hold darf nicht wie einfacher Betrug lesen. HECTON-8 hatte Kontaminationsrisiko, kompromittierte seals, Probleme mit sample custody und biologische Unsicherheit. Ein Quarantäneprotokoll ergab Sinn, bevor die Katastrophe kinetisch wurde. Genau deshalb schneidet das Dokument: Das Verfahren war echt genug zur Verteidigung und langsam genug zum Töten.
 
-DE LOC HOLD: Quarantine release hold. Evacuation files stayed correct and late.
+Release certification wird durch Timing zur Waffe. Während Druck steigt und Routen ausfallen, verlangt der hold XO sample custody, seal-read variance und downstream exposure review. Jede Phrase klingt verantwortlich. Zusammen halten sie Evakuierte, Mechaniker und Zeugen in einer sterbenden Kolonie, bis rescue nicht mehr das bestimmende Verb ist.
 
-## Terminal
-
-DE LOC HOLD: QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
-
-## Audio
-
-DE LOC HOLD: The folder was orderly. That was the problem.
-
-## Field Note
-
-DE LOC HOLD: Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
+Hier fühlt sich Deep Reach institutionell an. Haldane muss über gefangene Arbeiter nicht lachen. Der desk muss nur chain of custody bewahren, künftige liability senken und verhindern, dass kontaminierte Beweise in einen unkontrollierten claim space gelangen. Der Schrecken liegt darin, dass all diese Motive in der Minute richtig klingen können, in der die Tür geöffnet werden musste.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/de_DE. -->

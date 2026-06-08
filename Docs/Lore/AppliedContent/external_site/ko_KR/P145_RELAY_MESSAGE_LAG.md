@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Relay Message Lag"
+spoiler_tier: 1
+title: "릴레이 메시지 지연"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# 릴레이 메시지 지연
 
-KO LOC HOLD: Relay Message Lag makes communication a route system, not a magic voice channel.
-
-## Scanner
-
-KO LOC HOLD: A message can be legally binding and still arrive too late to save air.
-
-## Terminal
-
-KO LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
-
-## Audio
-
-KO LOC HOLD: The reply is late. The lien is current.
-
-## Field Note
-
-KO LOC HOLD: No ansible means truth moves as freight.
+relay lag는 HECTON-8이 보살핌 없이 권한을 받게 한다. packet은 법, 부채, ownership, warning을 몇 시간, 며칠, 몇 년에 걸쳐 운반할 수 있지만 침수된 방 안으로 손을 데려올 수는 없다. 이 분리가 통신 압력의 핵심이다. 원격 시스템은 일찍 작성되고 일찍 queue되며 거리를 견디도록 가격이 매겨졌기 때문에 강하다. 연민은 사람으로 오고, 계약은 데이터로 온다. 데이터가 너무 자주 이긴다.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/ko_KR. -->

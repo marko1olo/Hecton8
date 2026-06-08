@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Barnard Yards 출신
 
-Barnard Yards는 선박 해체와 압력 장비 문화다. 플레이어에게 지구 관광객이 아닌 전문 직업적 출신을 준다.
+Barnard Yards는 선박 해체와 압력 장비 문화다. 빌린 절단기, 덧댄 클램프, 죽은 청구, 생존 도구가 평범한 일로 취급된다. HECTON-8에 지구식 낭만이 아니라 부채와 노동에 가까운 전문 출신을 준다.
 
 ## Scanner
 

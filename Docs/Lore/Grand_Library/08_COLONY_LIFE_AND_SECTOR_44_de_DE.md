@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # KOLONIELEBEN VOR DER KATASTROPHE: SEKTOR 44
 
 > **Quelle:** Persönliches Logbuch, geborgen aus den Wohnquartieren von Sektor 44, Einheit 8-B.

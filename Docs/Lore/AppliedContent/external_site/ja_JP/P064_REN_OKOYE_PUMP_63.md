@@ -8,33 +8,19 @@ biome_tags: biome.pump_annex;biome.shallow_wreck
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Ren Okoye Pump 63"
+spoiler_tier: 1
+title: "レン・オコイエ Pump 63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ren Okoye Pump 63
+# レン・オコイエ Pump 63
 
-JP LOC HOLD: Ren Okoye Pump 63 is a field-note character packet: a pump chief whose surviving repair logic helps the player while proving that colonists were competent, present and abandoned by systems above them.
+レン・オコイエは壁の悲劇的な名前ではない。いまも経路を形作る働く手だ。Pump 63はダッシュボードが緑で、ラインが危険だと示す。彼のメモは、下部ホイールを使い、2秒圧を抜き、hammerがannexを閉じる前に再起動しろと教える。
 
-## Scanner
-
-JP LOC HOLD: Ren Okoye kept Sector 63 dry long enough to leave repair notes that still beat the polished manual.
-
-## Terminal
-
-JP LOC HOLD: OKOYE, R. Pump 63: ignore green dashboard. Manual bypass at lower wheel. Bleed two seconds before restart or the line hammers the annex shut.
-
-## Audio
-
-JP LOC HOLD: He saved a room for people who never reached it. You can still use the room.
-
-## Field Note
-
-JP LOC HOLD: The colony gives the player tools through people, not exposition.
+このpacketが重要なのは、死んだ植民地へ有能さを返すからだ。作業員はloreを受けるだけの受動的な犠牲者ではなかった。彼らは補修し、印を付け、パネルが先に嘘をついた時にはパネルに嘘をつき返し、Marauderが信じられる手順を残した。レンはsalvageを聞く行為に変える。有用な道はDeep Reachの磨きではなく、油性ペンで書かれている。
 
 <!-- External Site; generated from P064_REN_OKOYE_PUMP_63/ja_JP. -->

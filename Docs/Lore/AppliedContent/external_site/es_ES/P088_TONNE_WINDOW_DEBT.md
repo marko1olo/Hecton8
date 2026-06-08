@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Deuda de ventana-tonelada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Deuda de ventana-tonelada
 
-ES LOC HOLD: Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-ES LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-ES LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-ES LOC HOLD: You owe the orbit before you owe the money.
-
-## Field Note
-
-ES LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Una ventana-tonelada es una porción de capacidad del carrier medida en masa, momento de burn, volumen de cuarentena y prioridad legal. Para el operador se siente como deuda porque cada objeto útil de HECTON-8 entra en el mismo libro que el cuerpo que lo encontró. Una caja sellada puede ser ligera y legalmente pesada. Un soporte de muestras puede costar poca masa y exigir volumen limpio. Una extracción humana parece obvia hasta que el lastre, la reserva de oxígeno y la custodia de payload ya gastaron la ventana disponible. Así la economía de HECTON-8 se vuelve física, no abstracta. El jugador no recibe castigo de un falso medidor moral. El jugador queda atrapado dentro de una máquina que pone precio a la supervivencia con combustible, masa, contaminación y papeles.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/es_ES. -->

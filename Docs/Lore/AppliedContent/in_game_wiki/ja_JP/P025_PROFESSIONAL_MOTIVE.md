@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 職業的動機
 
-プレイヤーは空白の観光客ではない。専門技能と死んだclaimを受ける理由を持って始まり、証拠と馴染みある印で個人的になる。
+マローダーは空っぽの観光客ではない。航行は専門的な関心、サルベージ技術、死んだ請求を受ける理由から始まる。個人的な動機は証拠、見慣れた印、そして HECTON-8 がこの仕事を普通にした同じ硬い世界に属するという理解から育つ。
 
 ## Scanner
 

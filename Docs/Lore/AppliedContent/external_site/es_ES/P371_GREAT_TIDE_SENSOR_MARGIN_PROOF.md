@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Great Tide Sensor Margin Proof"
+title: "Traza de margen de la Gran Marea"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Great Tide Sensor Margin Proof
+# Traza de margen de la Gran Marea
 
-ES LOC HOLD: The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.
+La primera prueba útil contra Deep Reach no es una confesión. Es un margen de sensor que siguió grabando después de que el corredor se ahogara. Los números no vuelven artificial el desastre: carga hidrostática, cizalla de marea e infraestructura fallida arrollaron HECTON-8 de verdad. Por eso importa la prueba. La mentira empieza entre la traza cruda y el informe público. La traza marca una ruptura del margen de aviso antes de cerrar la ventana de ruta aprobada. El informe conserva la cascade geotécnica y elimina la nota de accepted-tail-risk. Quien encuentra la traza ve la forma exacta de la culpa: la física golpeó la colonia; luego alguien con autoridad decidió que el aviso era más barato que parar.
 
 ## Scanner
 
-ES LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Sensor de marea recuperado. El cizallamiento máximo superó el diseño colonial, pero la ruptura del margen de aviso quedó registrada antes del sello público de la cascade.
 
 ## Terminal
 
-ES LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Umbral de riesgo de cola aceptado por autoridad de ruta. Nota de operador retirada de la cadena pública del incidente. Traza cruda conservada en memoria brine-buffer.
 
 ## Audio
 
-ES LOC HOLD: Physics did the damage. A person signed the margin.
+El océano no mintió. El informe sí.
 
 ## Field Note
 
-ES LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Nota de merodeador: no busques un discurso de villano. Busca la línea que alguien borró.
 
 <!-- External Site; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/es_ES. -->

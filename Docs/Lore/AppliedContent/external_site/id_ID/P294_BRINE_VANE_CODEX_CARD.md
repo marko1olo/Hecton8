@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Brine Vane Codex Card"
+title: "Kartu Kodex Brine Vane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Brine Vane Codex Card
+# Kartu Kodex Brine Vane
 
-ID LOC HOLD: In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+Brine vane membuat air kedalaman menengah HECTON-8 terasa fisik. Mereka menunjukkan bahwa canyon dibangun dari densitas, bukan volume biru kosong: satu membran bisa menjadi peringatan, sumber material, dan tepi lantai palsu sekaligus.
 
 ## Scanner
 
-ID LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Lembar brine vane. Membran garam-mineral melekat pada density shear. Tepi utuh berarti dinding; mulut sobek berarti jalur; air hitam tanpa tepi vane berarti risiko lantai palsu.
 
 ## Terminal
 
-ID LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+SPESIMEN / BRINE VANE / peran: penanda dinding densitas, peringatan bengkok sonar, sumber rib luruh / baca aman: lembar utuh, mulut sobek hilir, ujung shear-window melengkung / tolak: memotong lembar rute hidup, menyeberangi glow terbuka, percaya false-floor return / catatan rute: ambil rib luruh, bukan membran yang menjaga petamu tetap terbuka.
 
 ## Audio
 
-ID LOC HOLD: The plant is not pointing up. It is pointing through.
+Vane itu tidak menunjuk ke atas. Ia menunjukkan tempat laut berbelok ke samping.
 
 ## Field Note
 
-ID LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Lembar utuh: dinding. Mulut sobek: rute mungkin. Rib luruh: sampel. Lembar hidup menahan jalur: tinggalkan.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/id_ID. -->

@@ -9,32 +9,22 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Ending Record Transcript Seed"
+title: "تفريغ سجل النهاية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Ending Record Transcript Seed
+# تفريغ سجل النهاية
 
-AR LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.
+## إغلاق مكتوب كـ Custody
 
-## Scanner
+نهايات HECTON-8 لا يجب أن تمنح اللاعب براءة نظيفة. يسمي السجل receiver وpayload hash وحالة الدين وحالة النجاة لأن المؤسسات تتذكر هذه الحقول أفضل مما تتذكر الناس. هذا البرد مفيد. يجعل كل نتيجة قابلة للمقارنة من غير تحويل الحقيقة إلى كأس.
 
-AR LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+الحقول غير المحسومة هي الأهم. Suppression flag unknown. Truth custody unresolved. Atlas continuity unclear. Public ledger status pending. هذه الفجوات تجعل النهاية صادقة: شيء خرج من المحيط، لكن الملكية ليست عدالة، والنجاة ليست إصلاحا.
 
-## Terminal
-
-AR LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
-
-## Audio
-
-AR LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
-
-## Field Note
-
-AR LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+صيغة التفريغ تحمي replay أيضا. يمكن للاعب أن يعود بالمعرفة، لكن الجولة التالية لا يجب أن ترث قوة. إنها ترث شكا وذوقا وخوفا. السجل إيصال، لا غفران.
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/ar_SA. -->

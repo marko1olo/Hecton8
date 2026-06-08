@@ -33,7 +33,8 @@ namespace Hecton8.Gameplay
     /// Ð£Ð¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð¾Ð¼, Ð¿Ñ€ÐµÑ€Ñ‹Ð²Ð°Ð½Ð¸ÑÐ¼Ð¸ Ð¸ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸ÐµÐ¼ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerActionController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IPlayerActionInterruptSink, IGlobalRegistryHotSwapListener
+    [DefaultExecutionOrder(-9920)]
+    public sealed class PlayerActionController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IPlayerActionInterruptSink, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static int s_x001PlayerActionControllerSignalPushDropCount;
         private const float TwoPi = 6.28318530718f;
@@ -128,6 +129,8 @@ namespace Hecton8.Gameplay
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
+        private bool _isInitialized;
+        private bool _runtimeOwnerAborted;
         private float _cameraBobPhase;
         private ActionAudioRequest _pendingActionAudio;
         private ActionCameraBobRequest _pendingActionCameraBob;
@@ -140,6 +143,7 @@ namespace Hecton8.Gameplay
         private PlayerToolManager _toolManager;
         private HectonSurvivalSystem _survivalSystem;
         private Transform _cachedTransform;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private IPlayerInventoryService _playerInventoryService;
         private IAudioService _audioService;
 
@@ -150,11 +154,55 @@ namespace Hecton8.Gameplay
         /// <summary>Ð˜Ð´Ñ‘Ñ‚ Ð»Ð¸ ÑÐµÐ¹Ñ‡Ð°Ñ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ.</summary>
         public bool IsActionInProgress => _state == ActionState.InProgress;
 
+        public bool IsInitialized =>
+            !_runtimeOwnerAborted &&
+            _isInitialized &&
+            _serviceRegistered &&
+            isActiveAndEnabled &&
+            ReferenceEquals(GlobalRegistry.PlayerActions, this);
+
+        public ServiceHeartbeatState HeartbeatState => IsInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        public bool IsServiceReady => IsInitialized;
+
         /// <summary>Ð¢ÐµÐºÑƒÑ‰Ð¸Ð¹ Ð¿Ñ€Ð¾Ð³Ñ€ÐµÑÑ (0-1).</summary>
         public float Progress => ResolveProgress01();
 
         /// <summary>ÐÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¹ Ð¿Ñ€ÐµÐ´Ð¼ÐµÑ‚ (null ÐµÑÐ»Ð¸ Ð½ÐµÑ‚ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ).</summary>
         public ItemData ActiveItem => _activeItem;
+
+        internal static PlayerActionController ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+            s_x001PlayerActionControllerSignalPushDropCount = 0;
+        }
+
+        public static PlayerActionController EnsureRuntimeInstance()
+        {
+            PlayerActionController runtime = ResolveUsableRuntime();
+            if (runtime != null)
+                return runtime;
+
+            GameObject runtimeRoot = new GameObject("[PlayerActionController]"); // COLD ALLOC: GameObject[1] - bootstrap-owned delayed player action/audio service root - owner: PlayerActionController
+            return runtimeRoot.AddComponent<PlayerActionController>();
+        }
+
+        public void InitializeService()
+        {
+            if (_runtimeOwnerAborted || !EnsureSingletonOwnership())
+                return;
+
+            if (!TryRegisterService())
+                return;
+
+            _isInitialized = true;
+            TryRegisterHotSwap();
+            TryRegister();
+            CacheRegistryServicesCold();
+        }
 
         /// <summary>
         /// Ð—Ð°Ð¿ÑƒÑÐºÐ°ÐµÑ‚ Ð¾Ñ‚Ð»Ð¾Ð¶ÐµÐ½Ð½Ð¾Ðµ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ.
@@ -175,8 +223,13 @@ namespace Hecton8.Gameplay
         /// <returns>true ÐµÑÐ»Ð¸ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ Ð·Ð°Ð¿ÑƒÑ‰ÐµÐ½Ð¾.</returns>
         public bool StartAction(ItemData item, int anchorX, int anchorY)
         {
+            RefreshPlayerOwnedReferencesCold();
+
             if (item == null) return false;
             if (_state == ActionState.InProgress) return false;
+            if (!CanUseInventoryAnchor(anchorX, anchorY, item)) return false;
+            if (!CanApplyConsumableEffects(item)) return false;
+
             if (item.UseDuration <= 0f)
             {
                 // ÐœÐ³Ð½Ð¾Ð²ÐµÐ½Ð½Ð¾Ðµ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸Ðµ - ÑƒÐ´Ð°Ð»ÑÐµÐ¼ Ð¸Ð· Ð¸Ð½Ð²ÐµÐ½Ñ‚Ð°Ñ€Ñ ÐµÑÐ»Ð¸ ÐµÑÑ‚ÑŒ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ñ‹
@@ -185,6 +238,7 @@ namespace Hecton8.Gameplay
 
                 ConsumableItem.TryConsumeWithoutAudio(item, _survivalSystem);
                 PlayCompletionSound(item);
+                PublishActionCompleted(item, anchorX, anchorY);
                 return true;
             }
 
@@ -233,7 +287,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            if (TryAbortForUsableExistingRuntime())
+            if (_runtimeOwnerAborted || !EnsureSingletonOwnership())
                 return;
 
             _cachedTransform = transform;
@@ -246,14 +300,14 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
-            TryUnregisterHotSwap();
-            TryUnregisterService();
-
+            ShutdownServiceState();
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         private void OnEnable()
         {
-            if (TryAbortForUsableExistingRuntime())
+            if (_runtimeOwnerAborted || !EnsureSingletonOwnership())
                 return;
 
             // ÐšÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ SurvivalSystem
@@ -261,14 +315,25 @@ namespace Hecton8.Gameplay
                 TryGetComponent(out _survivalSystem);
 
             ConsumableItem.BindSurvivalSystemCold(_survivalSystem);
+            if (!TryRegisterService())
+                return;
+
+            _isInitialized = true;
             TryRegister();
-            TryRegisterService();
             TryRegisterHotSwap();
             CacheRegistryServicesCold();
         }
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+            {
+                if (ReferenceEquals(ActiveRuntimeInstance, this))
+                    ActiveRuntimeInstance = null;
+
+                return;
+            }
+
             if (_state == ActionState.InProgress)
                 CancelAction();
 
@@ -277,12 +342,22 @@ namespace Hecton8.Gameplay
             TryUnregisterService();
         }
 
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    RefreshPlayerOwnedReferencesCold();
+                    break;
                 case GlobalRegistryServiceSlot.PlayerInventory:
-                    _playerInventoryService = currentService as IPlayerInventoryService;
+                    CachePlayerInventoryService(currentService as IPlayerInventoryService);
+                    RefreshPlayerOwnedReferencesCold();
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     CacheAudioService(currentService as IAudioService);
@@ -525,6 +600,14 @@ namespace Hecton8.Gameplay
             // â”€â”€ ATOMIC: Remove item from inventory ONLY on completion â”€â”€
             if (completedItem != null)
             {
+                RefreshPlayerOwnedReferencesCold();
+
+                if (!CanApplyConsumableEffects(completedItem))
+                {
+                    PublishActionCancelled(completedItem, 1f, PlayerActionCancelledSignal.ReasonGeneric);
+                    return;
+                }
+
                 if (HasInventoryAnchor(anchorX, anchorY) && !TryRemoveItemFromInventory(anchorX, anchorY, completedItem))
                 {
                     PublishActionCancelled(completedItem, 1f, PlayerActionCancelledSignal.ReasonGeneric);
@@ -555,6 +638,28 @@ namespace Hecton8.Gameplay
 
             int removedHash = inventory.RemoveOneItem(anchorX, anchorY);
             return removedHash != 0 && (expectedHash == 0 || removedHash == expectedHash);
+        }
+
+        private bool CanUseInventoryAnchor(int anchorX, int anchorY, ItemData expectedItem)
+        {
+            if (!HasInventoryAnchor(anchorX, anchorY))
+                return true;
+
+            IPlayerInventoryService inventoryService = _playerInventoryService;
+            PlayerInventory inventory = inventoryService != null ? inventoryService.Inventory : null;
+            if (inventory == null)
+                return false;
+
+            int expectedHash = expectedItem != null ? expectedItem.PersistentHashId : 0;
+            return expectedHash == 0 || inventory.GetItemHashAt(anchorX, anchorY) == expectedHash;
+        }
+
+        private bool CanApplyConsumableEffects(ItemData item)
+        {
+            return item == null ||
+                   !item.isConsumable ||
+                   !ConsumableItem.HasAnyEffect(item) ||
+                   _survivalSystem != null;
         }
 
         private static bool HasInventoryAnchor(int anchorX, int anchorY)
@@ -679,7 +784,7 @@ namespace Hecton8.Gameplay
                 return;
 
             float volume = ResolveActionAudioPresentationVolume();
-            if (request.EventId != 0u && audioService.IsInitialized)
+            if (request.EventId != 0u && audioService.IsAudioRuntimeReady)
             {
                 CoreAudioEvent audioEvent = new CoreAudioEvent(request.EventId, request.Position, volume, 1f);
                 if (audioService.QueueAudioEvent(in audioEvent))
@@ -772,27 +877,89 @@ namespace Hecton8.Gameplay
                 ClearQueuedActionAudio();
         }
 
-        private void TryRegisterService()
+        private bool EnsureSingletonOwnership()
         {
-            if (_serviceRegistered || !Application.isPlaying)
-                return;
+            if (_runtimeOwnerAborted)
+                return false;
 
             if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            PlayerActionController activeRuntime = ActiveRuntimeInstance;
+            if (!ReferenceEquals(activeRuntime, null) && !ReferenceEquals(activeRuntime, this))
+            {
+                if (IsPlayerActionRuntimeUsable(activeRuntime))
+                {
+                    AbortDuplicateRuntimeOwner();
+                    return false;
+                }
+
+                ActiveRuntimeInstance = null;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            ActiveRuntimeInstance = this;
+            return true;
+        }
+
+        private void ShutdownServiceState()
+        {
+            if (_runtimeOwnerAborted)
                 return;
+
+            if (_state == ActionState.InProgress)
+                CancelAction();
+
+            TryUnregisterHotSwap();
+            TryUnregister();
+            TryUnregisterService();
+            _isInitialized = false;
+            _playerRuntimeContext = null;
+            _playerInventoryService = null;
+            _audioService = null;
+            _playerMovement = null;
+            _toolManager = null;
+            _survivalSystem = null;
+            _cachedTransform = null;
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+        }
+
+        private bool TryRegisterService()
+        {
+            if (_serviceRegistered)
+            {
+                if (ReferenceEquals(GlobalRegistry.PlayerActions, this))
+                    return true;
+
+                _serviceRegistered = false;
+            }
+
+            if (!Application.isPlaying)
+                return false;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             GlobalRegistry.RegisterPlayerActionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PlayerActions, this);
+            return _serviceRegistered;
         }
 
         private bool TryAbortForUsableExistingRuntime()
         {
+            if (_runtimeOwnerAborted)
+                return true;
+
             PlayerActionController registered = GlobalRegistry.PlayerActions;
             if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
                 return false;
 
             if (IsPlayerActionRuntimeUsable(registered))
             {
-                Destroy(gameObject);
+                AbortDuplicateRuntimeOwner();
                 return true;
             }
 
@@ -802,7 +969,49 @@ namespace Hecton8.Gameplay
 
         private static bool IsPlayerActionRuntimeUsable(PlayerActionController controller)
         {
-            return controller != null && controller._serviceRegistered && controller.isActiveAndEnabled;
+            return controller != null &&
+                   !controller._runtimeOwnerAborted &&
+                   controller._serviceRegistered &&
+                   controller.isActiveAndEnabled &&
+                   ReferenceEquals(GlobalRegistry.PlayerActions, controller);
+        }
+
+        private static PlayerActionController ResolveUsableRuntime()
+        {
+            PlayerActionController runtime = ActiveRuntimeInstance;
+            if (IsPlayerActionRuntimeUsable(runtime))
+                return runtime;
+
+            PlayerActionController registered = GlobalRegistry.PlayerActions;
+            if (IsPlayerActionRuntimeUsable(registered))
+            {
+                ActiveRuntimeInstance = registered;
+                return registered;
+            }
+
+            ActiveRuntimeInstance = null;
+            return null;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            TryUnregisterHotSwap();
+            TryUnregister();
+            TryUnregisterService();
+            _isInitialized = false;
+            _runtimeOwnerAborted = true;
+            _playerRuntimeContext = null;
+            _playerInventoryService = null;
+            _audioService = null;
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
+            if (Application.isPlaying)
+                Destroy(this);
         }
 
         private void TryUnregisterService()
@@ -816,8 +1025,78 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _playerInventoryService = GlobalRegistry.PlayerInventory;
+            CachePlayerRuntimeContext(GlobalRegistry.Player ?? PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerInventoryService(GlobalRegistry.PlayerInventory);
             CacheAudioService(GlobalRegistry.Audio);
+            RefreshPlayerOwnedReferencesCold();
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
+        {
+            _playerRuntimeContext = IsPlayerRuntimeContextUsable(playerRuntimeContext) ? playerRuntimeContext : null;
+        }
+
+        private void CachePlayerInventoryService(IPlayerInventoryService playerInventoryService)
+        {
+            _playerInventoryService = playerInventoryService != null && playerInventoryService.IsInitialized
+                ? playerInventoryService
+                : null;
+        }
+
+        private void RefreshPlayerOwnedReferencesCold()
+        {
+            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+            if (!IsPlayerRuntimeContextUsable(playerRuntimeContext))
+            {
+                CachePlayerRuntimeContext(GlobalRegistry.Player ?? PlayerRuntimeContextService.ActiveRuntimeContext);
+                playerRuntimeContext = _playerRuntimeContext;
+            }
+
+            if (IsPlayerRuntimeContextUsable(playerRuntimeContext))
+            {
+                _cachedTransform = playerRuntimeContext.PlayerTransform != null ? playerRuntimeContext.PlayerTransform : _cachedTransform;
+                _playerMovement = playerRuntimeContext.PlayerMovement;
+                _toolManager = playerRuntimeContext.ToolManager;
+                _survivalSystem = playerRuntimeContext.SurvivalSystem;
+            }
+            else
+            {
+                ClearPlayerOwnedReferences();
+            }
+
+            IPlayerInventoryService inventoryService = _playerInventoryService;
+            if (inventoryService == null || !inventoryService.IsInitialized)
+            {
+                CachePlayerInventoryService(GlobalRegistry.PlayerInventory);
+                inventoryService = _playerInventoryService;
+            }
+
+            if (inventoryService != null)
+            {
+                if (_toolManager == null)
+                    _toolManager = inventoryService.ToolManager;
+            }
+
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
+
+            ConsumableItem.BindSurvivalSystemCold(_survivalSystem);
+        }
+
+        private static bool IsPlayerRuntimeContextUsable(IPlayerRuntimeContext playerRuntimeContext)
+        {
+            return playerRuntimeContext != null &&
+                   playerRuntimeContext.IsInitialized &&
+                   playerRuntimeContext.PlayerObject != null &&
+                   playerRuntimeContext.PlayerTransform != null;
+        }
+
+        private void ClearPlayerOwnedReferences()
+        {
+            _playerMovement = null;
+            _toolManager = null;
+            _survivalSystem = null;
+            _cachedTransform = transform;
         }
 
         private void CacheAudioService(IAudioService audioService)
@@ -837,7 +1116,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)

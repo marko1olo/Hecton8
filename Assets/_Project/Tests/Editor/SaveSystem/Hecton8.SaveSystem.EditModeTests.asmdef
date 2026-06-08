@@ -3,7 +3,11 @@
     "rootNamespace": "Hecton8.Tests.Editor",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.SaveSystem.Editor",
         "Unity.Collections",
+        "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

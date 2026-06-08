@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.carrier_link
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+spoiler_tier: 1
+title: "Économie de route sans FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# Économie de route sans FTL
 
-FR LOC HOLD: No-FTL Route Economy defines HECTON-8's hard-sci-fi pressure. There is no ansible, no instant rescue and no cheap return trip. Interstellar law can arrive as packets and liens long before ships arrive as help.
-
-## Scanner
-
-FR LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
-
-## Terminal
-
-FR LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
-
-## Audio
-
-FR LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
-
-## Field Note
-
-FR LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+L'économie de route sans FTL garde HECTON-8 honnête. En 2190, l'espace humain peut atteindre Aegir, mais chaque arrivée se paie en fenêtres de lancement, masse de blindage, carburant, freinage, paquets de garde et années de patience achetée. Le décor devient vaste sans devenir commode. Le droit dépasse les vaisseaux parce qu'il voyage comme donnée. La dette dépasse le secours parce qu'elle a été tarifée avant l'urgence. Le joueur n'est pas abandonné par un miracle absent ; il est abandonné par une économie qui n'a jamais promis de miracles.
 
 <!-- External Site; generated from P101_NO_FTL_ROUTE_ECONOMY/fr_FR. -->

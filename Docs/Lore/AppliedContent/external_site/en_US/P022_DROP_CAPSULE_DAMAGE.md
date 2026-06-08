@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Drop Capsule Damage
 
-Drop Capsule Damage explains why the player is stranded without making the setting stupid: the descent worked, survival systems survived, ascent hardware did not.
+Drop Capsule Damage explains why the stranding is credible: descent worked, survival systems survived, ascent hardware did not.
 
 ## Scanner
 

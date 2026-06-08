@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "UK LOC HOLD: Колонія і робітники"
+title: "Колонія та працівники"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Колонія і робітники
+# Колонія та працівники
 
-UK LOC HOLD: Deep Reach списала провал на шторм, обвал, збій автономної евакуації, спробу порятунку Atlas і втрачені дані; записи HECTON-8 тримають імена біля насосів, relay, brine-маршрутів, triage і vent-forge.
-
-## Scanner
-
-UK LOC HOLD: WORKER INDEX // П'ять іменних записів, прив'язаних до маршруту. pump, relay, brine, triage, forge. Зберегти tag chain до демонтажу.
-
-## Terminal
-
-UK LOC HOLD: KEELMARK LOSS DESK: зберігати name tags, якщо вони пов'язані з route, claim, custody або pressure work.
-
-## Audio
-
-UK LOC HOLD: Mara Venn, pump chief: якщо pump співає чисто, внеси в log. Якщо замовкла - біжи вгору.
-
-## Field Note
-
-UK LOC HOLD: Не родина. Робота. Ім'я на pump card пояснює, чому двері лишались відкритими.
+Кластер колонії та працівників не дає HECTON-8 стати мапою порожніх кімнат. Офіційна версія Deep Reach стискає людей у категорії втрат, але вцілілі записи тримають їх через роботу: pump chief у pressure board, relay operator у witness trays, brine crew у соляних маршрутах і ration ledgers, triage technician у repair tags, forge shift у rejects, які ніхто не встиг сховати. Це не родинні гачки протагоніста. Це трудові докази. Marauder читає, чому двері лишилися відкритими, чому насос перезапустили запізно і чому малий name tag може важити більше за чистий loss summary.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/uk_UA. -->

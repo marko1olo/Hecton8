@@ -158,14 +158,22 @@ def collect_packets(root: Path, release_set: str | None) -> tuple[list[PacketRec
     seen: set[str] = set()
     for manifest_path in load_manifest_paths(root, release_set):
         manifest = read_json(manifest_path)
+        if release_set is None and manifest.get("canonical_importer_ready") is False:
+            warnings.append(f"manifest-noncanonical-skipped:{manifest_path.as_posix()}")
+            continue
         release_id = str(manifest.get("release_set_id", "")).strip()
         sources = manifest.get("packet_sources", [])
+        if not sources and manifest.get("canonical_importer_ready") is True:
+            sources = manifest.get("canonical_importer_sources", [])
         if not isinstance(sources, list) or not sources:
             warnings.append(f"manifest-no-packet-source:{manifest_path.as_posix()}")
             continue
 
         for source in sources:
             source_path = resolve_source(root, str(source))
+            if source_path.suffix.lower() != ".json":
+                warnings.append(f"manifest-non-json-packet-source:{manifest_path.as_posix()}:{source_path.as_posix()}")
+                continue
             bundle = read_json(source_path)
             source_packets = bundle.get("packets")
             if not isinstance(source_packets, list):
@@ -409,16 +417,11 @@ def rewrite_draft_prefixes(packets: list[PacketRecord]) -> list[dict[str, str]]:
     paths = sorted({packet.source_path for packet in packets})
     for path in paths:
         original = path.read_text(encoding="utf-8")
-
-        def replace(match: re.Match[str]) -> str:
-            lang = match.group(1)
-            return f"{lang} LOC HOLD: "
-
-        updated = DRAFT_PREFIX_RE.sub(replace, original)
+        updated = DRAFT_PREFIX_RE.sub("", original)
         if updated == original:
             continue
         path.write_text(updated, encoding="utf-8", newline="\n")
-        touched.append({"source": path.as_posix(), "change": "shortened draft native-pass prefix"})
+        touched.append({"source": path.as_posix(), "change": "removed player-visible draft native-pass prefix"})
     return touched
 
 
@@ -455,6 +458,7 @@ def main() -> int:
     parser.add_argument("--write-draft-prefix-fixes", action="store_true")
     parser.add_argument("--write-title-label-fixes", action="store_true")
     parser.add_argument("--fail-on-risk", action="store_true")
+    parser.add_argument("--no-write-reports", action="store_true", help="Run audit without writing JSON/CSV report files.")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -502,20 +506,25 @@ def main() -> int:
 
     json_report = root / args.json_report
     csv_report = root / args.csv_report
-    write_json(json_report, report)
-    write_csv_report(csv_report, rows)
+    if not args.no_write_reports:
+        write_json(json_report, report)
+        write_csv_report(csv_report, rows)
 
     print(
-        "lore_text_bounds packets={0} surfaces={1} issues={2} collisions={3} rewrites={4}".format(
+        "lore_text_bounds packets={0} surfaces={1} issues={2} collisions={3} warnings={4} rewrites={5}".format(
             len(packets),
             len(rows),
             len(issues),
             len(collisions),
+            len(warnings),
             len(rewrites),
         )
     )
-    print(f"json={json_report.relative_to(root).as_posix()}")
-    print(f"csv={csv_report.relative_to(root).as_posix()}")
+    if args.no_write_reports:
+        print("reports=skipped")
+    else:
+        print(f"json={json_report.relative_to(root).as_posix()}")
+        print(f"csv={csv_report.relative_to(root).as_posix()}")
     if args.fail_on_risk and (issues or collisions):
         return 1
     return 0

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Keel Custody
 
-Black Keel Custody defines the player's orbital support as useful, compromised infrastructure: a rescue route, a debt machine and a Deep Reach pressure surface in one object.
+Black Keel Custody defines orbital support as useful, compromised infrastructure: a rescue route, a debt machine and a Deep Reach pressure surface in one object.
 
 ## Scanner
 

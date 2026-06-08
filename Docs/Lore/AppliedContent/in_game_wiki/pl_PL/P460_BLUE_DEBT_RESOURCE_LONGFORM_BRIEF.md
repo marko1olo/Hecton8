@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "PL LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: historia ciśnienia w custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Blue Debt Custody
+# Blue Debt: historia ciśnienia w custody
 
-PL LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt jest użyteczny, drogi i moralnie brudny. To nie magiczna ruda, lecz pressure-grown substrate, którego wartość zależy od handling, contamination, custody, Atlas compatibility i właściciela dowodu.
 
 ## Scanner
 
-PL LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Archiwum zasobu. Blue debt to Xenon-Omega pressure substrate w custody: pressure history, brine exposure, noble-gas capture, contamination stage, sample grade i mass-through-window payout.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+PUBLICZNY WĘZEŁ ZASOBU // BLUE DEBT. Wartość wymaga pressure-rated containment, extraction scar record, contamination status, custody receipt i recoverable tonne-window allocation.
 
 ## Audio
 
-PL LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+Audio wypłaty Black Keel: "Nie poleruj próbki. Uszczelnij ją, nadaj grade i trzymaj receipt suchy."
 
 ## Field Note
 
-PL LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Notatka Maraudera: najpierw grade próbki, potem pytaj, co jej dotknęło. Cena bez custody to przynęta.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/pl_PL. -->

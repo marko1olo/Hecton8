@@ -7,8 +7,8 @@ poi_tags: poi.freight_stage_mass_board;poi.seed_ship_burn_schedule
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Heavy Freight Staging Time"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Heavy Freight Staging Time
 
-Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.
+Heavy freight timing protects the no-FTL timeline. Atlas hardware can arrive before mass settlement because corporations launch precursor cargo early, stage it forward, accept unmanned risk, and bury failure windows in program language. Rescue cannot borrow that trick after the emergency starts.
 
 ## Scanner
 
-Atlas-class freight is not fast. It is prepaid patience with armor.
+Atlas-class freight is prepaid patience wrapped in armor.
 
 ## Terminal
 
-FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
+FREIGHT NOTE: Atlas and seed cargo use staging, pellet-fusion assist, long coasts, and braking infrastructure. Public dates can hide precursor launches and forward-domain departures.
 
 ## Audio
 
-A ship that heavy does not travel. It becomes an invoice with a wake.
+A ship that heavy does not simply travel. It becomes an invoice with a wake.
 
 ## Field Note
 
-A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+A heavy route is assembled from depots, beam windows, braking mass, and political nerve.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/en_US. -->

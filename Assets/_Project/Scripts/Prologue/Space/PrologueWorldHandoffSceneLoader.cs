@@ -60,8 +60,8 @@ namespace Hecton8.Prologue.Space
 
         public void ConfigureTargetScene(string sceneName)
         {
-            if (!string.IsNullOrEmpty(sceneName))
-                targetWorldSceneName = sceneName;
+            if (!string.IsNullOrWhiteSpace(sceneName))
+                targetWorldSceneName = sceneName.Trim();
         }
 
         private void OnEnable()
@@ -429,7 +429,7 @@ namespace Hecton8.Prologue.Space
 
         private string ResolveTargetWorldSceneName()
         {
-            return string.IsNullOrEmpty(targetWorldSceneName) ? DefaultWorldSceneName : targetWorldSceneName;
+            return string.IsNullOrWhiteSpace(targetWorldSceneName) ? DefaultWorldSceneName : targetWorldSceneName.Trim();
         }
 
         private static void PublishOnce(ref bool reported, uint warningHash)

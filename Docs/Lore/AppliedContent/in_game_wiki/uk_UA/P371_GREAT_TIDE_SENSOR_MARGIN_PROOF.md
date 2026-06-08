@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Great Tide Sensor Margin Proof"
+title: "Слід допуску Великого припливу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Great Tide Sensor Margin Proof
+# Слід допуску Великого припливу
 
-UK LOC HOLD: Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.
+Слід доводить дві речі водночас: Великий приплив був реальним, а смертельний допуск видно до того, як звіт це визнав. Deep Reach не наказала воді піднятися. Компанія прийняла маршрутне вікно, коли колоніальний контур тиску вже втратив запас, а тоді опублікувала cascade без підпису попередження.
 
 ## Scanner
 
-UK LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Відновлений припливний датчик. Піковий зсув перевищив проєкт колонії, але прорив попереджувального допуску записали раніше за публічну мітку cascade.
 
 ## Terminal
 
-UK LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Поріг хвостового ризику прийняла маршрутна влада. Операторську нотатку прибрали з публічного ланцюга інциденту. Сирий слід зберігся у brine-buffer пам'яті.
 
 ## Audio
 
-UK LOC HOLD: Physics did the damage. A person signed the margin.
+Океан не брехав. Збрехав звіт.
 
 ## Field Note
 
-UK LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Нотатка мародера: не шукай промову лиходія. Шукай рядок, який хтось видалив.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/uk_UA. -->

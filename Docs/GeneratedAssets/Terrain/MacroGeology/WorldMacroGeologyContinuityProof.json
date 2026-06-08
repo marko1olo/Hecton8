@@ -1,0 +1,23 @@
+{
+  "artifact": "WorldMacroGeologyContinuityProof",
+  "artifactVersion": 4,
+  "checks": [
+    {
+      "averageNeighborGradient": 0.140722,
+      "axis": "x",
+      "maxNeighborGradient": 0.621217,
+      "maxSameCoordinateDeltaMeters": 0.0,
+      "sampleCount": 192
+    },
+    {
+      "averageNeighborGradient": 0.218241,
+      "axis": "z",
+      "maxNeighborGradient": 0.993957,
+      "maxSameCoordinateDeltaMeters": 0.0,
+      "sampleCount": 192
+    }
+  ],
+  "runtimeSeed": 0,
+  "seed": 880031,
+  "status": "OK"
+}

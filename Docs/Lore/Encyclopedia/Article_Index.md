@@ -34,6 +34,8 @@ Packet text readiness does not prove scene binding, Unity route, PDA/scanner/ter
 - Named_Domains_2190: six major named nodes and implied smaller systems.
 - Human_Domains: domain type taxonomy.
 - Relay_Spine: infrastructure connecting domains.
+- Luyten_Packet_Ladder: packet custody, relay notary delay, and why evidence can outrun rescue mass.
+- Claim_Receiver_Publication_Route: public acknowledgement path that can force claim disputes into wider records without becoming instant rescue or justice.
 - Corporate_Claims: legal/economic ownership model.
 - Dead_Claims: failed/cold claim category.
 - Salvage_Economy: why Marauders and player work exist.
@@ -42,14 +44,18 @@ Packet text readiness does not prove scene binding, Unity route, PDA/scanner/ter
 ## Ships And Technology
 
 - Interstellar_Travel: no-FTL travel frame.
+- SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT: source-authored site/wiki/codex packet for nearlight infrastructure, route ownership, braking cost, and why signal can outrun rescue mass.
 - Ship_Classes: ship taxonomy.
 - Technology_Overview_2190: technology baseline.
 - Aegir_Route: local route and claim logistics.
+- Aegir_Descent_Loss_Priority: local claim-law downgrade from biological recovery to evidence and inventory preservation.
 - Salvage_Carrier: player's delivery/recovery infrastructure.
 - Black_Keel_Ownership: carrier ownership/control hybrid model.
+- Carrier_Quarantine_Debrief: post-recovery custody layer where medical hold, payload certification, debt billing, and witness control can merge.
 - Player_Motive_Arc: why professional interest becomes personal.
 - AppliedContent packet P036_RETURN_VECTOR_WINDOW: source-authored orbital/return timing explanation.
 - AppliedContent packet P037_COWARD_EXIT_CHAIN: source-authored partial escape route.
+- SourceArticles/SA001_BLACK_KEEL_RECOVERY_WINDOW_AND_BATHYDROP_LOSS: source-authored site/wiki/codex packet for why Black Keel can acknowledge the bathy-drop loss without certifying immediate recovery.
 
 ## Aegir System
 
@@ -57,6 +63,7 @@ Packet text readiness does not prove scene binding, Unity route, PDA/scanner/ter
 - Aegir_Gas_Giant: giant's physical and orbital role.
 - Aegir_Astronomy_Reference: source-bound real astronomy anchor.
 - Aegir_Moon_System: multi-moon scaffold and HECTON-8's place inside it.
+- SourceArticles/SA006_AEGIR_MOON_LADDER_SKY_MACHINE: source-authored site/wiki/codex packet for the locked Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute sky as route pressure, relay timing, tides, and recovery-window logic.
 - Aegir_Moon_Catalog: orbital/geology table for Aegir moons.
 - HECTON_8: moon overview.
 - HECTON8_Geology_Resources: moon geology/resource atlas.
@@ -64,7 +71,11 @@ Packet text readiness does not prove scene binding, Unity route, PDA/scanner/ter
 - HECTON8_Flora_Fauna_Overview: ecology gradient and known scanner families.
 - HECTON8_Depth_Bands: depth progression and discovery structure.
 - HECTON8_Colony_Layout: drowned worker modules, ordinary labor spaces, and human evidence routing.
+- SourceArticles/SA009_PRESSURE_BUNKS_SHIFT_BOARDS_AND_NAME_CHAINS: source-authored site/wiki/codex packet for worker rooms, pressure bunks, shift boards, Barnard marks, body-chain linkage, and names as physical evidence payload.
+- Body_Chain_Marks: physical worker identity evidence linking names, suits, lockers, routes, and ending payloads.
+- Black_Box_Name_Stack: recovered worker names as a physical evidence payload for endings, proof, leverage, and public release.
 - AppliedContent packet P031_PHOTIC_SHELF_LIFE: source-authored shallow ecology contrast.
+- SourceArticles/SA003_PHOTIC_SHELF_PRESSURE_ECOLOGY: source-authored site/wiki/codex packet for the bright 0-100 m shelf as useful ecology, route evidence, and early safety trap.
 - AppliedContent packet P032_PRESSURE_LADDER_DEPTH_BANDS: source-authored depth-gate engineering structure.
 - AppliedContent packet P033_CABLE_REEF_SYMBIOSIS: source-authored mid-depth infrastructure ecology.
 - AppliedContent packet P034_ABYSSAL_REPAIR_FAUNA: source-authored deep biomechanical fauna escalation.
@@ -78,8 +89,11 @@ Packet text readiness does not prove scene binding, Unity route, PDA/scanner/ter
 ## Factions
 
 - Marauders: player class and field culture.
+- SourceArticles/SA004_MARAUDER_CORRECTION_MARKS: source-authored site/wiki/codex packet for Marauder field corrections as source-bound counter-readings beside official claimant language.
 - Deep_Reach: corporate public/internal profile.
 - Deep_Reach_Liability_Doctrine: how the company lies without sounding theatrical.
+- Keelmark_Loss_Desk: loss-adjuster layer that converts missing workers, damaged payload, carrier risk, debt, and evidence into categories.
+- SourceArticles/SA002_RECOVERY_COMPLIANCE_COORDINATE_DEMAND: source-authored site/wiki/codex packet for the 2190 Deep Reach office that asks for coordinates, payload class and custody before biological recovery language.
 - AppliedContent packet P039_DEEP_REACH_CLEANSE_ORDER: source-authored present-tense cleanup pressure.
 
 ## Resource / Atlas
@@ -87,14 +101,17 @@ Packet text readiness does not prove scene binding, Unity route, PDA/scanner/ter
 - Strategic_Pressure_Resources: resource class model.
 - Xenon_Omega: locked Deep Reach codename and science model.
 - Blue_Debt_Field_Behavior: containment, Atlas signal, and contamination behavior.
+- SourceArticles/SA008_BLUE_DEBT_PRESSURE_HISTORY_AND_CUSTODY: source-authored site/wiki/codex packet for blue debt pressure history, containment state, custody telemetry, Atlas attention, contamination risk, and material/ending pressure.
 - Seed_Program: Deep Reach autonomous infrastructure doctrine.
 - Atlas_6: AI/factory-ship overview and spoiler model.
+- SourceArticles/SA007_ATLAS6_DAMAGED_REPAIR_LOGIC: source-authored site/wiki/codex packet for Atlas-6 as damaged factory-governor repair logic, physical repair scars, scanner classifications, and early/midgame Atlas evidence.
 - Atlas6_Original_Directive: locked directive stack and failure mode.
 - Deep_Reach_2147_Cover_Story: locked public lie and hidden cause chain.
 - False_Ending_Families: material/partial/capture/coward ending patterns.
+- Ending_Dossiers: final receipt structure for payload, names, custody, settlement, public receiver, and unresolved loss.
 - AppliedContent packet P038_MATERIAL_PAYOUT_LEDGER: source-authored material false-success lane.
 - AppliedContent packet P040_ATLAS_FINAL_ARGUMENT: source-authored final ethics packet.
 
 ## Next Missing Articles
 
-- Ending_Dossiers.
+- Payload_Certification_Authority.

@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "噴出口鍛造地熱エンジン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# 噴出口鍛造地熱エンジン
 
-JP LOC HOLD: Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+噴出口鍛造は地質をクラフト、生存、恐怖につなぐ。セラミック、シール、圧力ガラスの熱と圧力サイクルを与えるが、同じサイクルが沸騰ポケット、偽酸素、腐食雲、動物移動を作る。
 
 ## Scanner
 
-JP LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
+噴出口鍛造マニホールド。熱、毒、電力が同じ管を使う。
 
 ## Terminal
 
-JP LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+GEOTHERMAL ENGINE: 噴出口パルスはセラミック硬化、圧力ガラス焼鈍、緊急上昇チャージ予熱に適合。曝露リスク: 沸騰せん断、酸素センサー偽陽性、腐食ブルーム。
 
 ## Audio
 
-JP LOC HOLD: The vent does not care whether you call it power or weather.
+噴出口は、それを電力と呼ぶか天候と呼ぶか気にしない。
 
 ## Field Note
 
-JP LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+有用な噴出口はすべて、悪いタイミングを罰する機械でもある。
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/ja_JP. -->

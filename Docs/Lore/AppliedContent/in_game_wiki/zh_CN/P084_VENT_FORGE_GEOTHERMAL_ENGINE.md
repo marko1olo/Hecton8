@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "热泉锻炉地热引擎"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# 热泉锻炉地热引擎
 
-CN LOC HOLD: Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+热泉锻炉把地质和制造、生存、恐怖连在一起。它们提供陶瓷、密封件和压力玻璃需要的热压循环，但同样的循环也制造沸腾空穴、假氧读数、腐蚀云和动物迁移。
 
 ## Scanner
 
-CN LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
+热泉锻炉歧管。热、毒和动力共用同一根管。
 
 ## Terminal
 
-CN LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+地热引擎：热泉脉冲适合陶瓷固化、压力玻璃退火和紧急上升充能预热。暴露风险：沸腾剪切、氧气传感器假阳性、腐蚀云。
 
 ## Audio
 
-CN LOC HOLD: The vent does not care whether you call it power or weather.
+你叫它动力还是天气，热泉都不在乎。
 
 ## Field Note
 
-CN LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+每个有用的热泉也是惩罚错误时机的机器。
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/zh_CN. -->

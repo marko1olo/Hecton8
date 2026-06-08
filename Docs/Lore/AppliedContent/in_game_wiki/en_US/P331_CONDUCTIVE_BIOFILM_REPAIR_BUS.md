@@ -19,24 +19,22 @@ localization_flags: 0
 
 # Conductive Biofilm Repair Bus
 
-Conductive biofilm appears where Deep Reach cable, warm brine and damaged insulation stay in contact. The mat carries weak current across copper breaks and lets Atlas diagnostics reach rooms that should be electrically dead. It is useful evidence: a living patch can mark a hidden line, a drone route or a service door still tied to old logic.
-
-The danger is category failure. Atlas sees continuity and assigns repair priority. The organism sees heat, mineral flow and surface area. A Marauder who cuts the mat may interrupt a door, wake a drone audit or expose enough fresh charge to call predators that hunt by field shimmer.
+Conductive biofilm forms where cracked cable jackets leak copper salts, heat, and weak current into HECTON-8 water. It is not a mind. It is a living conductor good enough for Atlas to treat as a repair bus. A damaged line can read healthy while the film carries only a thin diagnostic pulse across the wound.
 
 ## Scanner
 
-Biofilm sheath bridging broken copper and living mat. Weak current present. Atlas repair tag found in salt crust.
+Green-black film crosses the cable wound. Leakage is weak, patterned, and still moving.
 
 ## Terminal
 
-ATLAS REPAIR BUS // Conductive microbial film has crossed cable breaks C-18 through C-22. Diagnostic pulses route through wet growth when copper is gone. Do not classify as cognition. Treat as contaminated maintenance substrate.
+ATLAS TRACE: microbial film bridges exposed contacts, slows copper loss, and returns false-continuity pulses. Certified line repair not present.
 
 ## Audio
 
-The film is carrying a pulse. That doesn't make it smart. It means the wire learned to rot alive.
+Do not trust the green light. The cable is alive enough to lie.
 
 ## Field Note
 
-If a wet cable has a skin, trace it before cutting. The dead side is usually safer. Usually.
+Early Atlas scar: useful, quiet, and wrong enough to teach scanner distrust.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/en_US. -->

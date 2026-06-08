@@ -647,7 +647,8 @@ namespace Hecton8.Gameplay
             if (!IsFiniteFloat3(target) || !IsFiniteFloat3(physical) || !math.isfinite(separationSq))
                 return false;
 
-            InputDispatcher dispatcher = InputDispatcher.ActiveRuntimeInstance;
+            InputDispatcher dispatcher = null;
+            InputDispatcher.TryResolveActiveRuntime(ref dispatcher);
             bool hasTracking = dispatcher != null &&
                                dispatcher.TryGetXRInputState(handIndex, out XRInputState state) &&
                                state.IsTracked != 0;
@@ -670,6 +671,11 @@ namespace Hecton8.Gameplay
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude) || shiftSqrMagnitude <= 0.000001f)
+                return;
+
             CompleteSomaticComfortForBarrier();
             _stateFlags &= ~(StateHeadCollisionReady | StateHasPreviousHeadPose | StateRootInitialized | StateQueuedPresentationPoseMask);
             _lastObservedAupShiftSequence = shiftData.Sequence;
@@ -692,10 +698,6 @@ namespace Hecton8.Gameplay
             _lastPublishedNearCollision01 = float.PositiveInfinity;
             PublishComfortVignette(0f);
             PublishShaderState();
-
-            Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (!IsFiniteVector(shiftOffset))
-                return;
 
             float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
             if (HandTargets.TryAcquireWriteNativeArray(out NativeArray<float3> handTargets))
@@ -910,14 +912,10 @@ namespace Hecton8.Gameplay
             _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
             CachePlayerRuntimeContextCold();
             RefreshComfortProfileSelection();
-            _cachedPlayerCamera = null;
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-                _cachedPlayerCamera = runtimeContext.PlayerCamera;
-            if (_cachedPlayerCamera == null)
-            {
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-                _cachedPlayerCamera = playerContext != null ? playerContext.PlayerCamera : null;
-            }
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null)
+                runtimeContext = _playerRuntimeContext;
+            _cachedPlayerCamera = runtimeContext != null ? runtimeContext.PlayerCamera : null;
         }
 
         private void TrySubscribeXRRuntime()
@@ -981,7 +979,9 @@ namespace Hecton8.Gameplay
             if ((_stateFlags & StateRegisteredHotSwap) != 0u || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
+            if (!GlobalRegistry.TryRegisterHotSwapListener(this))
+                return;
+
             _stateFlags |= StateRegisteredHotSwap;
         }
 
@@ -990,7 +990,7 @@ namespace Hecton8.Gameplay
             if ((_stateFlags & StateRegisteredHotSwap) == 0u)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _stateFlags &= ~StateRegisteredHotSwap;
         }
 
@@ -1068,9 +1068,8 @@ namespace Hecton8.Gameplay
             if (activeHmd != null)
                 return true;
 
-            Camera playerCamera = null;
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-                playerCamera = runtimeContext.PlayerCamera;
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            Camera playerCamera = runtimeContext != null ? runtimeContext.PlayerCamera : null;
 
             if (playerCamera == null)
             {
@@ -1649,16 +1648,23 @@ namespace Hecton8.Gameplay
             oxygen01 = 1f;
             depthMeters = 0f;
 
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null)
+                runtimeContext = _playerRuntimeContext;
+            if (runtimeContext == null)
                 return;
 
-            PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-            PlayerSurvivalRuntimeState survivalState = runtimeContext.SurvivalState;
+            bool hasPublishedMovement = runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState);
+            bool hasPublishedSurvival = runtimeContext.TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState survivalState);
             bool hasSurvival = (survivalState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasSurvival) != 0u;
-            bool hasMovement = (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u;
+            bool hasMovementDepth =
+                hasPublishedMovement &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters);
 
-            depthMeters = hasMovement ? SanitizeNonNegative(movementState.DepthMeters) : 0f;
-            if (hasSurvival)
+            depthMeters = hasMovementDepth ? SanitizeNonNegative(movementState.DepthMeters) : 0f;
+            if (hasPublishedSurvival && hasSurvival)
             {
                 oxygen01 = Sanitize01(survivalState.OxygenNormalized, 1f);
                 stress01 = math.max(
@@ -1672,29 +1678,38 @@ namespace Hecton8.Gameplay
                                 Sanitize01(survivalState.NitrogenNarcosis01, 0f)))));
             }
 
-            if (hasMovement)
+            if (hasMovementDepth)
                 stress01 = math.max(stress01, Sanitize01(movementState.UnderwaterStressIntensity01, 0f));
 
             HectonPlayerMovement movement = runtimeContext.PlayerMovement;
             if (movement != null)
+            {
+                if (!hasMovementDepth && math.isfinite(movement.CurrentDepth))
+                    depthMeters = math.max(depthMeters, SanitizeNonNegative(movement.CurrentDepth));
+
                 stress01 = math.max(
                     stress01,
                     math.max(
                         Sanitize01(movement.CurrentHullStress01, 0f),
                         Sanitize01(movement.CurrentUnderwaterStressIntensity01, 0f)));
+            }
 
             HectonSurvivalSystem survival = runtimeContext.SurvivalSystem;
-            if (survival != null && !hasSurvival)
+            if (survival != null)
             {
-                oxygen01 = Sanitize01(survival.OxygenNormalized, 1f);
-                depthMeters = math.max(depthMeters, SanitizeNonNegative(survival.Depth));
-                stress01 = math.max(
-                    stress01,
-                    math.max(
-                        1f - oxygen01,
+                if (!hasMovementDepth && math.isfinite(survival.Depth))
+                    depthMeters = math.max(depthMeters, SanitizeNonNegative(survival.Depth));
+                if (!hasSurvival)
+                {
+                    oxygen01 = Sanitize01(survival.OxygenNormalized, 1f);
+                    stress01 = math.max(
+                        stress01,
                         math.max(
-                            Sanitize01(survival.PressureExposureSeverity01, 0f),
-                            Sanitize01(survival.ThermalStressSeverity01, 0f))));
+                            1f - oxygen01,
+                            math.max(
+                                Sanitize01(survival.PressureExposureSeverity01, 0f),
+                                Sanitize01(survival.ThermalStressSeverity01, 0f))));
+                }
             }
 
             stress01 = Sanitize01(stress01, 0f);
@@ -2001,7 +2016,8 @@ namespace Hecton8.Gameplay
 
         private void CaptureHandTargets(NativeArray<float3> handTargets, Vector3 headPosition, Quaternion headRotation)
         {
-            InputDispatcher dispatcher = InputDispatcher.ActiveRuntimeInstance;
+            InputDispatcher dispatcher = null;
+            InputDispatcher.TryResolveActiveRuntime(ref dispatcher);
             handTargets[0] = ResolveHandTarget(handTargets, dispatcher, 0, headPosition, headRotation, -0.22f);
             handTargets[1] = ResolveHandTarget(handTargets, dispatcher, 1, headPosition, headRotation, 0.22f);
         }

@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "חותך השראה בהספק נמוך"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# חותך השראה בהספק נמוך
 
-HE LOC HOLD: Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal.
+החותך הראשון מסוכן כי הוא מרגיש כמו רשות. הוא פותח service hatches, ברגים ומנעולי ארגזים, ואז מסרב לפנטזיה שכל מכשול הוא דלת. pressure glass, צלעות פעילות ו-Atlas-grown seams עושים עבודות שהשחקן אולי עוד לא מבין.
 
-## Scanner
-
-HE LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
-
-## Terminal
-
-HE LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
-
-## Audio
-
-HE LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
-
-## Field Note
-
-HE LOC HOLD: The cutter should feel valuable because it is limited.
+המגבלה הזאת היא ערך העיצוב. הכלי מבקש לקרוא תפקיד לפני אלימות. HECTON-8 נעשה עשיר יותר כשחיתוך הוא החלטה, לא פועל אוניברסלי.
 
 <!-- External Site; generated from P113_LOW_POWER_INDUCTION_CUTTER/he_IL. -->

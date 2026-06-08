@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Сборка энергетического заряда ascent"
+title: "Сборка энергетического заряда взлета"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Сборка энергетического заряда ascent
+# Сборка энергетического заряда взлета
 
-Ресурсы напрямую завязаны на сюжет: blue debt и vent-forged hardware решают escape, custody и compromise.
+Сборка энергетического заряда взлета связывает экономику ресурсов с последствиями сюжета: blue debt и vent-forged hardware решают надежность побега, custody доказательств и компромисс.
 
 ## Scanner
 
-Energy cradle иссечен pressure pulse. Дешевый заряд равен мертвой капсуле.
+Energy cradle иссечена pressure pulse. Дешевый заряд делает аккуратный гроб.
 
 ## Terminal
 
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: требуются vent-forged heat cell, pressure-history insulator и custody stamp. Raw fuel отклоняется. Несертифицированный blue debt трескается под launch impulse и аннулирует recovery claim.
 
 ## Audio
 
-Каждый грамм здесь - побег, доказательство или деньги. Все три сразу не выйдут.
+Можно продать подъем или лететь на нем. Не оба сразу.
 
 ## Field Note
 
-RU LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+Каждый грамм в cradle - это побег, доказательство или выплата blue-debt. Капсула не прощает жадность.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/ru_RU. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "Граматика зустрічі: хибна безпека ліхтарного дрейфу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# Граматика зустрічі: хибна безпека ліхтарного дрейфу
 
-UK LOC HOLD: Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.
+Зустрічі з хибною безпекою ліхтарного дрейфу мають змусити гравця спершу захотіти світло, а потім засумніватися в ньому. Яскрава лінія може показати кисневу плівку, дуги кабелів, завислий пил і чистий шлях крізь рифовий безлад. Вона ж може бути власним слідом гравця, штормовим залишком, шумом сигналу від старої інфраструктури або лінією зміщення хижака, де дрібні тварини вже відійшли. Граматика працює, коли одна й та сама краса несе кілька значень. Колір сам по собі не має розв’язувати маршрут. Швидкість пульсу, напрям течії, поведінка шкребаків, бік осаду, повернення pinger і шум інструменту мають збігтися, перш ніж лінії можна довіряти. Якщо світіння різкішає позаду гравця, зустріч стала викриттям. Якщо воно яснішає попереду, а фауна стихає, воно стало приманкою. Йди за ліхтарним дрейфом як за свідком, не як за обіцянкою.
 
 ## Scanner
 
-UK LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Лінія ліхтарного дрейфу. Яскрава вода може означати кисневий край, шум сигналу, інструментальний слід або рух, зміщений хижаком. Перевір течію перед слідуванням.
 
 ## Terminal
 
-UK LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+ГРАМАТИКА ЗУСТРІЧІ / ХИБНА БЕЗПЕКА ЛІХТАРНОГО ДРЕЙФУ / роль: краса як неоднозначні дані, спокуса маршруту, штраф stealth / безпечне читання: течія збігається зі світінням, фауна нормальна, осад на очікуваному боці / відмова: вважати синє світло безпекою, йти за штормовим хибним коридором, ремонтувати гучно всередині світного сліду / примітка маршруту: одне світіння може бути шляхом, приманкою, записом паніки або викриттям.
 
 ## Audio
 
-UK LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+Світло — не милість. Це дані, які твій костюм ще не навчився розділяти.
 
 ## Field Note
 
-UK LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+Запитай, що несе світло: течію, кисень, твій шум або те, що змусило все інше відійти.
 
 <!-- In-Game Wiki; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/uk_UA. -->

@@ -22,6 +22,12 @@ namespace Hecton8.Construction
         private const string NoSubstrateWarningMessage = "FOUNDATION SNAP FAILED: VOXEL SDF SUBSTRATE MISSING";
         private const uint NoSubstrateWarningCadenceFrames = 30u;
         private const uint WarningMask = FoundationPylonFlags.ExtensionCulled | FoundationPylonFlags.OutOfSdfBounds | FoundationPylonFlags.NonFinite | FoundationPylonFlags.SnapFailed_NoSubstrate;
+        private static readonly uint s_noSubstrateNotificationMissWarningHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("FoundationPylonGpuBatch.NoSubstrateNotificationMiss"));
+        private static readonly uint s_foundationPylonGpuBatchContextHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("FoundationPylonGpuBatch"));
+        private static readonly uint s_noSubstrateNotificationContextHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("FoundationPylonGpuBatch.NoSubstrateNotification"));
         private const ulong FoundationPylonJobCoreMutationGuardMask =
             (1UL << ((int)FoundationSnappingCalculatorRuntime.ModuleBufferId & 31)) |
             (1UL << ((int)FoundationSnappingCalculatorRuntime.PylonMatrixBufferId & 31)) |
@@ -88,6 +94,7 @@ namespace Hecton8.Construction
         private int _writeBufferIndex;
         private uint _frameCounter;
         private uint _lastNoSubstrateWarningFrame;
+        private int _noSubstrateNotificationMissCount;
         private long _pendingScheduleTicks;
         private Color _lastBaseColor;
         private Color _lastEmbeddedColor;
@@ -99,6 +106,8 @@ namespace Hecton8.Construction
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int EmbeddedColorId = Shader.PropertyToID("_EmbeddedColor");
         private static readonly int CameraWorldOffsetId = Shader.PropertyToID("_H8FoundationPylonCameraWorldOffset");
+
+        public int NoSubstrateNotificationMissCount => _noSubstrateNotificationMissCount;
 
         private void Awake()
         {
@@ -157,6 +166,7 @@ namespace Hecton8.Construction
             CompletePendingForTeardown();
             _uploadedSlotCount = 0;
             _drawBoundsValid = false;
+            ClearNoSubstrateNotificationDiagnostics();
             ClearVaultCacheCold();
         }
 
@@ -172,6 +182,7 @@ namespace Hecton8.Construction
             ReleaseGraphicsBuffer(ref _argsBufferB);
             _boundMatrixBuffer = null;
             _boundSurfaceBuffer = null;
+            ClearNoSubstrateNotificationDiagnostics();
             ClearVaultCacheCold();
         }
 
@@ -862,11 +873,43 @@ namespace Hecton8.Construction
             signal.Frame = frame;
             signal.ResultHash = FoundationPylonFlags.SnapFailed_NoSubstrate;
             SignalBus<FoundationStructuralWarningSignal>.TryPushTracked(in signal, ref s_x001FoundationPylonGpuBatchSignalPushDropCount);
-            NotificationEvents.TryPushWarning(NoSubstrateWarningMessage.AsSpan());
+            TryPushNoSubstrateNotification();
+        }
+
+        private void TryPushNoSubstrateNotification()
+        {
+            if (NotificationEvents.TryPushWarning(NoSubstrateWarningMessage.AsSpan()))
+                return;
+
+            ReportNoSubstrateNotificationMiss();
+        }
+
+        private void ReportNoSubstrateNotificationMiss()
+        {
+            _noSubstrateNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                s_noSubstrateNotificationMissWarningHash,
+                s_foundationPylonGpuBatchContextHash ^ s_noSubstrateNotificationContextHash,
+                math.max(1, _noSubstrateNotificationMissCount));
+        }
+
+        private void ClearNoSubstrateNotificationDiagnostics()
+        {
+            _noSubstrateNotificationMissCount = 0;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            {
+                return;
+            }
+
             _cachedOriginAup = shiftData.NewTotalOffsetDouble;
             _originSnapshotValid = math.all(math.isfinite(_cachedOriginAup));
             _pendingDiscard = _pendingScheduled;

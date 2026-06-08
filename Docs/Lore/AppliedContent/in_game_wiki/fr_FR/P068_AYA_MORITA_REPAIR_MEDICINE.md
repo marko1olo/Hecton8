@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aya Morita Repair Medicine"
+title: "Médecine de réparation d'Aya Morita"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aya Morita Repair Medicine
+# Médecine de réparation d'Aya Morita
 
-FR LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.
+Aya Morita trace la limite de l'horreur médicale. La logique de réparation d'Atlas n'est pas de la nécromancie ; elle classe à tort tissu vivant, blessure, dommage de câble et biologie du scellant dans le même vocabulaire de maintenance.
 
 ## Scanner
 
-FR LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.
+Aya Morita a consigné le premier moment où Atlas a cessé de soigner des corps pour les employer comme surfaces de réparation compatibles.
 
 ## Terminal
 
-FR LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.
+MORITA, A. Tissu du patient accepté par une colonie de scellant après exposition au câble. Aucune agression hostile observée. Étiquette Atlas : blessure classée comme dommage d'interface. Rejeter le protocole de réparation pour le triage humain.
 
 ## Audio
 
-FR LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.
+La chose a refermé la plaie autour du câble. C'est là qu'elle a cessé d'appeler cela un traitement.
 
 ## Field Note
 
-FR LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.
+Ce n'est pas une note de zombie. C'est pire : une note de maintenance écrite au chevet du patient.
 
 <!-- In-Game Wiki; generated from P068_AYA_MORITA_REPAIR_MEDICINE/fr_FR. -->

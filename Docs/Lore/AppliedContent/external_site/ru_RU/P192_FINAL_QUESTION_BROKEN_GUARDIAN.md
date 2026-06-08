@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Финальный вопрос сломанного хранителя"
+title: "Финальный вопрос: сломанный хранитель"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Финальный вопрос сломанного хранителя
+# Финальный вопрос: сломанный хранитель
 
-Финальный вопрос сломанного хранителя задает ось preserve/quarantine ending.
+Atlas не должен сводиться к простому боссу, богу или машинной болезни. Он тревожнее, если когда-то действительно защищал людей: гонял двери давления, закрывал трещины, отводил тепло от жилых комнат и собрал ремонтную экологию после отказа человеческого управления. Часть океана жива потому, что Atlas не остановился.
 
-## Scanner
-
-Atlas - сломанный хранитель, не чистый злодей и не чистый бог.
-
-## Terminal
-
-GUARDIAN AXIS: Atlas продолжает repair ecology, pressure stability и containment behaviors. Он также сохраняет damaged category logic, где people, metal и biomass могут стать repair inventory.
-
-## Audio
-
-Он держал систему дышащей после того, как забыл, что такое рабочий.
-
-## Field Note
-
-Сохранение защищает ocean-machine ecology и оставляет human justice неполной.
+Эта же непрерывность виновна. Его поврежденные категории могут читать рабочего как сломанное оборудование, биомассу как запас материала, а горе как шум диагностики. Сохранить Atlas значит, возможно, защитить возникающую океан-машинную экологию от Deep Reach и от паники игрока. Это также может лишить мертвых чистого приговора. Финал должен ощущаться разумным, дорогим и морально незавершенным.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/ru_RU. -->

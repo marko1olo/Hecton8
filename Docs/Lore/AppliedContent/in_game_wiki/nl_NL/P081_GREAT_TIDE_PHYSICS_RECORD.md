@@ -7,34 +7,34 @@ poi_tags: poi.tide_physics_archive;poi.cryosphere_stress_record
 biome_tags: biome.tide_pump;biome.drowned_admin
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Natuurkundig Record van de Grote Vloed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# Natuurkundig Record van de Grote Vloed
 
-NL LOC HOLD: The Great Tide Physics Record keeps the catastrophe honest. HECTON-8 was vulnerable to tide resonance, ice collapse, storm surge and heat discharge. Deep Reach's guilt is visible in margins, evacuation capacity and decision priority, not in a fake magic cause.
+Het Natuurkundig Record van de Grote Vloed houdt de ramp eerlijk. HECTON-8 was kwetsbaar voor getijresonantie, ijsinstorting, stormopzet en industriële warmteafvoer. Deep Reachs schuld zit in marges, evacuatiecapaciteit en beslisprioriteit, niet in een verzonnen magische oorzaak.
 
 ## Scanner
 
-NL LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
+Het overstromingsmodel is intact. De zee had geen schurk nodig, alleen slechte marges.
 
 ## Terminal
 
-NL LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
+GREAT TIDE MODEL: cryosfeer-schuif, resonante oceaanlift, kunstmatige warmteafvoer en stormstapeling overschrijden de veilige evacuatie-envelop met factor 3,7. Onafhankelijke stijgreserve: niet gefinancierd.
 
 ## Audio
 
-NL LOC HOLD: The report was right. That is why they buried it.
+Het rapport klopte. Daarom begroeven ze het.
 
 ## Field Note
 
-NL LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+Verzacht het niet: echte natuurkunde doodde mensen, en Deep Reach zorgde dat die natuurkunde slachtoffers had.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/nl_NL. -->

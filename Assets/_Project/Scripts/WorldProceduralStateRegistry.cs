@@ -43,6 +43,7 @@ namespace Hecton8.World
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
 
         internal static WorldProceduralStateRegistry ActiveRuntimeInstance { get; private set; }
 
@@ -97,11 +98,7 @@ namespace Hecton8.World
 
             TryUnregisterSaveParticipant();
             _saveService = currentService as ISaveService;
-            if (_saveService == null)
-                return;
-
-            _saveService.Register(this);
-            _saveRegistered = true;
+            TryRegisterSaveParticipant();
         }
 
         public bool IsPlacementSuppressed(long runtimeKey)
@@ -378,9 +375,20 @@ namespace Hecton8.World
         private float GetCurrentPlayTimeSeconds()
         {
             ISaveService saveService = _saveService;
-            return saveService != null
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            return IsSaveServiceUsable(saveService)
                 ? saveService.CurrentPlayTimeSeconds
                 : (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryRegisterHotSwapListener()
@@ -405,23 +413,31 @@ namespace Hecton8.World
             if (_saveRegistered)
                 return;
 
-            _saveService = GlobalRegistry.Save;
-            if (_saveService == null)
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveService = null;
             _saveRegistered = false;
         }

@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Field Systems Specialist Record
 
-The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.
+This record explains the operator's first competence without turning them into a chosen witness. Deep Reach trained them around pumps, seal ratings, relay rooms, bypass cards, evacuation queues, and route-safe language. The old systems reject their name and still expose familiar procedure. The guilt begins as recognition: a drain order, a clamp rating, a sanitized hold phrase, a room that failed in the order they were taught to prevent.
 
 ## Scanner
 
-Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+Old field-systems credential. Not command staff. Infrastructure labor with enough access to recognize where a route was buried.
 
 ## Terminal
 
-PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review. Procedure cache still matches operator sequence.
 
 ## Audio
 
-You were never the person who signed the lie. You knew the language that made it work.
+You never signed the lie. You knew the grammar that made it pass inspection.
 
 ## Field Note
 
-The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+The badge stopped opening doors. It did not unteach the order of failure.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/en_US. -->

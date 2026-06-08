@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "السؤال الأخير: بيع مسرح الجريمة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# السؤال الأخير: بيع مسرح الجريمة
 
-AR LOC HOLD: Crime-scene sale is a material success route that keeps the moral damage visible.
+بيع مسرح الجريمة هو طريق نجاح مادي. اللاعب ينجو، قد يمحو الدين، وقد يخرج بمال. الثمن أن أدلة المستعمرة تصبح أداة للسلطة نفسها التي دفنت الموقع، وخفضت كتلة الإنقاذ، وتعاملت مع الجثث كأنها طقس تعاقدي.
 
 ## Scanner
 
-AR LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
+الإحداثيات ودليل XO وسلسلة حفظ نظيفة يمكن أن تشتري مخرجا. وهي أيضا تبيع غرفة القتل لمن وضعوا لها السعر.
 
 ## Terminal
 
-AR LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
+محور البيع النهائي: إحداثيات حوض Atlas، عينة blue debt صالحة، دليل شاهد XO وhash حفظ من carrier يمكنها إغلاق lien المشغل. إن لم توثق الأدلة بشكل منفصل، تحصل Deep Reach على طريق عودة إلى HECTON-8 أنظف من الطريق الذي امتلكه العمال الموتى نحو الإنقاذ.
 
 ## Audio
 
-AR LOC HOLD: You can pay the debt with a grave map.
+يمكنك دفع الدين بخريطة قبر. السجل سيسمي ذلك عملا.
 
 ## Field Note
 
-AR LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+هذه ليست نهاية فشل ساخرة. إنها نهاية مدفوعة: إيصال، دين ممسوح، ومستقبل أسوأ لمن بقي في الأسفل.
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/ar_SA. -->

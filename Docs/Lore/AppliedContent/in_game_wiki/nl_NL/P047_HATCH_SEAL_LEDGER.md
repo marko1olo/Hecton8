@@ -7,9 +7,9 @@ poi_tags: poi.hatch_seal;poi.airlock_frame
 biome_tags: biome.drowned_colony;biome.service_corridor
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Luikafdichtingsregister"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Hatch-afdichtingsregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Luikafdichtingsregister
+# Hatch-afdichtingsregister
 
-Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.
+Hatchframes bewaren nuttige leugens. Een groen afdichtingslampje betekent dat de pakking hield, niet dat de sluiting eerlijk, veilig of omkeerbaar was. Afdichtingsregisters bewaren druksneden, override-stempels en de richting van de laatste handmatige sluiting. In verlaten kolonieruimtes kan een hatch tegelijk routeblokkade, overlevingsgereedschap en arbeidersbewijs zijn.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+Afdichtingsgeheugen hersteld. De pakking nam drie druksneden en één evacuatie-override; toegang aan de terugkeerzijde werd vanaf de natte kant vergrendeld.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / FRAME H-17: pakkingvervorming boven servicetolerantie. Handmatige sluiting geaccepteerd onder EVAC OVERRIDE. Operatortelling aan terugkeerzijde onopgelost. Alleen heropenen na drukegalisatie en scharnierinspectie.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+Hij sloot af. Dat is alles wat de hatch beloofde.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+Een afgesloten hatch is een bon. Vraag voor het openen welke kant betaalde.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/nl_NL. -->

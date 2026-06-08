@@ -9,32 +9,20 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Canteen Water Ledger"
+title: "Журнал води їдальні"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Canteen Water Ledger
+# Журнал води їдальні
 
-UK LOC HOLD: HECTON-8 makes catastrophe believable through ordinary systems under pressure: water ledgers, canteen tokens and shift accountability.
+Журнал води їдальні - один із найпростіших людських артефактів HECTON-8: табличка кімнати харчування, де записані питна вода, повернення жетонів, доступ до насосів і медичні винятки. Вона не пояснює катастрофу. Вона показує колонію прямо перед тим, як катастрофа стала історією.
 
-## Scanner
+Її цінність - фактура і доказ. Шість зниклих жетонів звучать дрібно, доки гравець не зрозуміє, чим була вода в колонії під тиском. Питна вода проходила через фільтри, облік змін, медичні override і custody насосної. Зникла чашка могла бути втомленим працівником. А могла бути хворою бригадою, забрудненою лінією, обхідним наказом пайка або старшим, який ховав локальну відмову від звітів Deep Reach.
 
-UK LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
-
-## Terminal
-
-UK LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
-
-## Audio
-
-UK LOC HOLD: The last argument was about water tokens.
-
-## Field Note
-
-UK LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+Сенс не в мелодрамі. Журнал робить колонію читабельною як працю: люди поверталися зі змін, сперечалися, виправляли записи, позичали інструменти, прикривали своїх і намагалися тримати кімнату нормальною, поки океан уже входив у систему. У HECTON-8 такий звичайний слід може стати доказом.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/uk_UA. -->

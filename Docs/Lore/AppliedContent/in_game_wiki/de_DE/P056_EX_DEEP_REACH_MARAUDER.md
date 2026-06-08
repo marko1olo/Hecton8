@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Ehemaliger Deep-Reach-Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Ehemaliger Deep-Reach-Marauder
 
-DE LOC HOLD: This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.
+Der Protagonist wurde nicht auf HECTON-8 geboren und jagt keinem Familiengeist nach. Die alte Kolonie erkennt etwas Kälteres: den Reparaturrhythmus von Feldsystemen, Gewohnheiten aus der Notfallroutenführung und die kleinen Abkürzungen, die Deep-Reach-Arbeit lehrte. Diese Vergangenheit macht die ersten verschlossenen Türen persönlich, ohne die Geschichte in Blutlinienmelodram zu verwandeln. Ein Marauder kann ein Anspruchsdepot für Geld aufschneiden; ein ehemaliger Deep-Reach-Spezialist erkennt außerdem, welches Dichtungsprotokoll nicht existieren dürfte, welche Evakuierungsanweisung eine Verzögerung verdeckt und welche Reparatursequenz weiterlief, nachdem die Arbeiter abgeschrieben waren.
 
 ## Scanner
 
-DE LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+Das alte Deep-Reach-Schloss prüft nicht deinen Namen. Es erkennt den Rhythmus deiner Reparatursequenz.
 
 ## Terminal
 
-DE LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+BERECHTIGUNGSSPUR: ehemaliger Feldsystemvertrag. Zugriff auf Evakuierungsinfrastruktur widerrufen. Bergungsstatus unter Schuldenverwahrung des Anspruchspools akzeptiert.
 
 ## Audio
 
-DE LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Du bist nicht nach Hause gekommen. Du bist zu einer Prozedur zurückgekehrt, die nie aufgehört hat zu laufen.
 
 ## Field Note
 
-DE LOC HOLD: Not family business. Procedure remembers who taught your hands.
+Das ist keine Familienangelegenheit. Die Prozedur erinnert sich an die Hände, die sie benutzt haben.
 
 <!-- In-Game Wiki; generated from P056_EX_DEEP_REACH_MARAUDER/de_DE. -->

@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Lantern Drift Codex Card"
+title: "Cartão de códice da deriva-lanterna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Lantern Drift Codex Card
+# Cartão de códice da deriva-lanterna
 
-PT LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+A deriva-lanterna impede que a beleza de HECTON-8 vire papel de parede. Ela pode guiar por estrutura luminosa clara e depois trair ao registrar ruído, pânico e carga de tempestade. Água brilhante é navegação e exposição ao mesmo tempo.
 
 ## Scanner
 
-PT LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Bloom de deriva-lanterna. Plâncton bioluminescente marca corrente e detritos em faixas. Útil para silhuetas; perigoso quando ruído de ferramenta vira rastro iluminado.
 
 ## Terminal
 
-PT LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+ESPÉCIME / BLOOM DE DERIVA-LANTERNA / função: evento de visibilidade rasa, esboço de corrente, gravador de perturbação / leitura segura: luz de borda estável, halos de detrito, corrente e resíduo de acordo / rejeitar: corredor falso carregado por tempestade, bloom achatando perigos pequenos, rastro de ferramenta acendendo atrás do operador / nota de rota: luz é dado, não abrigo.
 
 ## Audio
 
-PT LOC HOLD: Pretty is not safe. Pretty is a reading.
+O brilho não está ajudando você. Ele está relatando o que a água ouviu.
 
 ## Field Note
 
-PT LOC HOLD: Card teaches that beauty can be route information and route deception.
+Use bloom para silhuetas. Não repare com barulho dentro dele. Se o brilho seguir você, outra coisa também pode seguir.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/pt_BR. -->

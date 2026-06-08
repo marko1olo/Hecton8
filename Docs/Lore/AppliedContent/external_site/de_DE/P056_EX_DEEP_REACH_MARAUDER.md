@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Ehemaliger Deep-Reach-Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Ehemaliger Deep-Reach-Marauder
 
-DE LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+Ehemaliger Deep-Reach-Marauder legt den Spielerkanon fest. Der Spieler ist ein früherer Konzernspezialist für Feldsysteme und Evakuierungsinfrastruktur, durch Schwarze Liste oder Schulden in unabhängige Bergung gedrückt und unter Black-Keel-Verwahrung nach HECTON-8 zurückgebracht. Das Drama entsteht aus professionellem Wiedererkennen: Der Mond antwortet mit Prozeduren, die der Spieler einst verstand, und jedes vertraute Schloss macht es schwerer, die Konzernlüge als fremden Unfall abzutun.
 
 ## Scanner
 
-DE LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+Das alte Deep-Reach-Schloss prüft nicht deinen Namen. Es erkennt den Rhythmus deiner Reparatursequenz.
 
 ## Terminal
 
-DE LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+BERECHTIGUNGSSPUR: ehemaliger Feldsystemvertrag. Zugriff auf Evakuierungsinfrastruktur widerrufen. Bergungsstatus unter Schuldenverwahrung des Anspruchspools akzeptiert.
 
 ## Audio
 
-DE LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Du bist nicht nach Hause gekommen. Du bist zu einer Prozedur zurückgekehrt, die nie aufgehört hat zu laufen.
 
 ## Field Note
 
-DE LOC HOLD: Not family business. Procedure remembers who taught your hands.
+Das ist keine Familienangelegenheit. Die Prozedur erinnert sich an die Hände, die sie benutzt haben.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/de_DE. -->

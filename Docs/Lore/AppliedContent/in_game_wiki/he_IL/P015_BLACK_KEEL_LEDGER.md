@@ -14,20 +14,22 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # ספר Black Keel
 
-ספר Black Keel מסביר מדוע carrier יכול ליצור קשר, להכווין, לחייב, לעכב, לחלץ או לנטוש בלי להיות נבל. זו תשתית claim-pool ציבורית עם משמורת debt ועדיפויות Deep Reach מוסתרות.
+Black Keel היא קו החיים המסלולי של השחקן, אבל לא פנטזיית חילוץ. היא שייכת לתשתית claim-pool: ספרי משמורת, חוב ביטוח, חלונות חילוץ, הסגר וסמכות carrier.
+
+היא מדריכה כי הדרכה מגנה על ערך. היא מעכבת כי עיכוב גם מגן על ערך. עזרה אינה צד.
 
 ## Scanner
 
-ספר claim-pool tender. משמורת carrier ציבורית, חוב ביטוח, hook עדיפות Deep Reach מוסתרים.
+ספר מכרז claim-pool. משמורת carrier ציבורית, חוב ביטוח, קנסות מסת עלייה וקרסי עדיפות Deep Reach מוסתרים.
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+ספר BLACK KEEL // שירות חילוץ מותנה. ניקוי תביעה לא שלם. נתיב עדיפות עומק מוסתר. סמכות מטען נשארת בצד carrier. הישרדות קבלן אינה גוברת על מטען מבוטח בלי ערך עלייה מעודכן.
 
 ## Audio
 

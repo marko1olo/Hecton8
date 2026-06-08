@@ -7,34 +7,34 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Bergungswerkzeug-Kustodie"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Verwahrung des Bergungswerkzeugs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Bergungswerkzeug-Kustodie
+# Verwahrung des Bergungswerkzeugs
 
-Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.
+Bergungswerkzeuge sind keine neutrale Ausrüstung. Schneider, Patcher und Fabricator-Docks können aufzeichnen, wer ein Panel öffnete, eine Leitung reparierte oder eine Probe bewegte. Dieses Log kann Beweise schützen, Auszahlungsrechte anhängen oder den Claim gegen den Spieler stärken. Werkzeugverwahrung ist der Punkt, an dem minutengenaue Überlebensarbeit die größere Bergungsökonomie berührt.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Werkzeugdock enthält ein versiegeltes Verwahrungslog. Letzter Schnitt, Reparatur und Probenbeutel sind an einen Keelmark-Claim-Token gebunden.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: Schneidereinsatz unter Salvage-Claim akzeptiert. Reparaturhandlung bezeugt. Probenrechte an Keelmark-Mutual-Token gebunden. Beweisexport kollidiert mit materieller Auszahlungsroute.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Jeder nützliche Schnitt hinterlässt einen Zeugen.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Ein Schneider kann deine Luft retten und deine Hände im selben Hub verkaufen. Prüfe, was er aufzeichnet, bevor du ihn deinen nennst.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/de_DE. -->

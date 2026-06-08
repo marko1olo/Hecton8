@@ -14,20 +14,22 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Ledger Black Keel
 
-Ledger Black Keel menjelaskan mengapa carrier bisa menghubungi, menuntun, menagih, menunda, memulihkan, atau meninggalkan pemain tanpa menjadi penjahat. Ini infrastruktur claim-pool publik dengan debt custody dan prioritas Deep Reach tersembunyi.
+Black Keel adalah garis hidup orbit pemain, tapi bukan fantasi penyelamatan. Ia bagian dari infrastruktur claim-pool: ledger kustodi, utang asuransi, jendela pemulihan, karantina, dan otoritas carrier.
+
+Ia bisa menuntun karena tuntunan melindungi nilai. Ia bisa menunda karena penundaan juga melindungi nilai. Membantu bukan berarti berpihak.
 
 ## Scanner
 
-Ledger claim-pool tender. Custody carrier publik, utang asuransi, hook prioritas Deep Reach tersembunyi.
+Ledger tender claim-pool. Kustodi carrier publik, utang asuransi, penalti massa naik, dan hook prioritas Deep Reach tersembunyi.
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+LEDGER BLACK KEEL // Layanan pemulihan bersyarat. Izin klaim belum lengkap. Rute prioritas dalam disamarkan. Otoritas payload tetap di sisi carrier. Kelangsungan hidup kontraktor tidak mengalahkan kargo diasuransikan tanpa nilai naik terbaru.
 
 ## Audio
 

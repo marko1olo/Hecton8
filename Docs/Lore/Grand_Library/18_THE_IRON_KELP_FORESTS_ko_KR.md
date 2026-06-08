@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 강철 다시마 숲
 
 > **출처:** Deep Reach 외계 생물학 부서, 위험 로그.

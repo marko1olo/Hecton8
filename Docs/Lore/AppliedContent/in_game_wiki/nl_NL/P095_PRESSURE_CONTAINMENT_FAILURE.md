@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Drukcontainmentfalen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Drukcontainmentfalen
 
-NL LOC HOLD: Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.
+Drukcontainmentfalen geeft blue debt leesbaar materiaalgedrag. Het is waardevol omdat diepe druk het coherent maakte, en gevaarlijk omdat ondiepe behandeling die coherentie sloopt. Fase 0 is verzegeld. Fase 1 drijft en kan soms door bron-repressurisatie worden gered. Fase 2 breekt het rooster. Fase 3 nodigt pekel en biologie uit. Fase 4 laat een dood monster achter dat uitrusting, water en routes besmet.
 
 ## Scanner
 
-NL LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+Casket-fasekaart. Blue debt faalt door drukgeheugen, signaalschuif en bloom; bijgeloof verspilt zuurstof.
 
 ## Terminal
 
-NL LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+CONTAINMENTFASEN: 0 verzegeld rooster; 1 signaaldrift; 2 roosterbreuk; 3 pekel/biologische bloom; 4 dood monster met levende besmetting. Bron-repressurisatie kan alleen fase 1 herstellen.
 
 ## Audio
 
-NL LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
+Het monster haat je niet. Het probeert terug te zijn waar het gevormd werd.
 
 ## Field Note
 
-NL LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Een monster kan op een diepte een fortuin waard zijn en tien meter later aansprakelijkheid worden.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/nl_NL. -->

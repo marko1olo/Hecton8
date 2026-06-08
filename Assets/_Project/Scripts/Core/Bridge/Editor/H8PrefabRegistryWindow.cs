@@ -183,7 +183,7 @@ namespace Hecton8.Core.Bridge.EditorTools
             if (!H8PrefabRegistryRuntimeBinder.Bind(
                 registry,
                 Hecton8.Core.GlobalRegistry.DataVault,
-                Hecton8.Core.GlobalRegistry.PrefabRegistryRuntime))
+                H8PrefabRegistryRuntimeBinder.ResolveRuntimeRegistryForBinding()))
             {
                 Debug.LogError("[H8Bridge] Prefab registry bind failed. Fix duplicate prefab hashes or wait for DataVault allocation fences to clear.");
             }
@@ -273,7 +273,7 @@ namespace Hecton8.Core.Bridge.EditorTools
             if (!H8PrefabRegistryRuntimeBinder.Bind(
                 registry,
                 Hecton8.Core.GlobalRegistry.DataVault,
-                Hecton8.Core.GlobalRegistry.PrefabRegistryRuntime))
+                H8PrefabRegistryRuntimeBinder.ResolveRuntimeRegistryForBinding()))
             {
                 Debug.LogError("[H8Bridge] Prefab registry bind failed. Fix duplicate prefab hashes or wait for DataVault allocation fences to clear.");
             }

@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Deuda de ventana-tonelada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Deuda de ventana-tonelada
 
-ES LOC HOLD: Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.
+La deuda de ventana-tonelada es el punto donde la física se vuelve finanzas. Black Keel no tiene margen de elevación infinito, combustible de tránsito infinito ni volumen limpio de cuarentena infinito. Cada kilogramo subido desde HECTON-8 compite con cada kilogramo necesario para mantener vivo al operador. El medidor de deuda hace cruel al carrier sin romper la ciencia dura: el rescate es posible, pero el presupuesto de ruta pregunta qué merece masa.
 
 ## Scanner
 
-ES LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
+Medidor de ventana de masa. Cada kilogramo de ayuda tiene precio de ruta.
 
 ## Terminal
 
-ES LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER: margen de recovery burn reducido. Masa de extracción del operador en conflicto con payload sellado, reserva de lastre, deuda de oxígeno y custodia de muestra de cuarentena. Anulación manual requiere prioridad pagada o prueba de peligro.
 
 ## Audio
 
-ES LOC HOLD: You owe the orbit before you owe the money.
+La nave puede llevarte a ti o lo que encontraste. Prefiere un número.
 
 ## Field Note
 
-ES LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Oxígeno, lastre, prueba, payload, cuerpo: el carrier los pesa antes de pesar misericordia.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/es_ES. -->

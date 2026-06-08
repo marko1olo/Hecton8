@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Vent Forge Field Process Guide"
+title: "Przewodnik terenowy procesu vent-forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Vent Forge Field Process Guide
+# Przewodnik terenowy procesu vent-forge
 
-PL LOC HOLD: Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.
+Przewodnik terenowy procesu vent-forge wiąże wartość zasobu z obsługą w terenie: ważne jest nie tylko, co znaleziono, lecz jak pressure i cooling pozwolą temu przetrwać recovery.
 
 ## Scanner
 
-PL LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+Vent-forge chemistry aktywna. Jakość zależy od pressure history, heat pulse i powolnego chłodzenia, nie od połysku próbki.
 
 ## Terminal
 
-PL LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE: vent forges gotują sulfides, noble-gas pockets, ceramics i sealant precursors. Droga próbki przez heat, brine i pressure ważniejsza jest niż jej nazwa.
 
 ## Audio
 
-PL LOC HOLD: The vent did not make ore. It made a process you interrupted.
+Vent nie zrobił rudy. Zrobił proces, który przerwałeś.
 
 ## Field Note
 
-PL LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+Nie wynoś świeżej partii prosto do zimnej wody. Pozwól vent dokończyć anneal, albo shell spęka.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/pl_PL. -->

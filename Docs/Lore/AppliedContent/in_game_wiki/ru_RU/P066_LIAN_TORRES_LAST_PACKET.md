@@ -14,20 +14,20 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Последний пакет Лиана Торреса
 
-Лиан Торрес закрепляет коммуникационную правду. Его последний чистый пакет доказывает, что часть evidence ушла с HECTON-8 до того, как Deep Reach похоронила ее под signal corruption и quarantine language.
+Лиан Торрес удерживает коммуникационную правду на месте. Его последний чистый пакет доказывает, что часть свидетельств ушла с HECTON-8 до того, как Deep Reach похоронила ее под словами о порче сигнала и карантине.
 
 ## Scanner
 
-Последний чистый пакет не был потерян. Просто признать его получение было слишком дорого.
+Последний чистый пакет не потеряли. Признать его получение оказалось слишком дорого.
 
 ## Terminal
 
-TORRES, L. Clean carrier handshake достигнут. Worker count приложен. Evacuation proof приложен. Relay age неприемлем для live rescue. Corporate archive позже помечает packet corrupted.
+ТОРРЕС, Л. Чистое рукопожатие носителя подтверждено. Список рабочих приложен. Доказательство эвакуации приложено. Возраст ретрансляции неприемлем для спасения живых. Корпоративный архив позже помечает пакет как поврежденный.
 
 ## Audio
 
@@ -35,6 +35,6 @@ TORRES, L. Clean carrier handshake достигнут. Worker count прилож
 
 ## Field Note
 
-Timestamp может быть трупом, когда carrier отвечает не той очереди.
+Метка времени может стать телом, если перевозчик отвечает не той очереди.
 
 <!-- In-Game Wiki; generated from P066_LIAN_TORRES_LAST_PACKET/ru_RU. -->

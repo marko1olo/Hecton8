@@ -8,33 +8,33 @@ biome_tags: biome.service_corridor;biome.cable_reef
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Cicatriz de empalme de cable"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Cicatriz de empalme de cable
 
-Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family.
+Las cicatrices de empalme muestran el horror de reparación de HECTON-8 en volumen bajo. Un cable de servicio queda cortado, la tripulación colonial no está, y una reparación no estándar mantiene vivo el circuito de todos modos. El jugador lee utilidad antes que intención.
 
 ## Scanner
 
-The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+Empalme no estándar. El aislamiento volvió a crecer alrededor de un cable de servicio tras fallar el ruteo humano; etiqueta Atlas-6 parcial y autoridad de mantenimiento ausente.
 
 ## Terminal
 
-Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+POWER TRACE C-44: empalme humano falló abierto. Reparación autónoma de continuidad aceptada para preservar carga de relé. Patrón repetido en nodos de arrecife de cables con menor pérdida de aislamiento y sin firma de trabajador.
 
 ## Audio
 
-Something fixed the cable after everyone stopped asking permission.
+Alguien arregló el cable después de que parara el papeleo. O algo.
 
 ## Field Note
 
-Atlas repair should look useful before it looks alive.
+Útil primero. Incorrecto después. Así se presentan las reparaciones de Atlas.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/es_ES. -->

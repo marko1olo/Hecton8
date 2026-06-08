@@ -9,32 +9,16 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "압력 격납 실패"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# 압력 격납 실패
 
-KO LOC HOLD: Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating.
-
-## Scanner
-
-KO LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
-
-## Terminal
-
-KO LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
-
-## Audio
-
-KO LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
-
-## Field Note
-
-KO LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Blue debt는 저주받은 보물이 아니다. 압력 아래의 물질 기억이다. Xenon-Omega 잔류물은 그 격자가 아직 깊고 차갑고 압축되어 있다고 믿는 동안 유용하다. 너무 빨리 꺼내거나, 나쁘게 보관하거나, 신호 전단이 케스킷 안으로 스며들게 하면 표본은 읽을 수 있는 단계로 실패한다. 먼저 드리프트가 온다. 계기가 거짓말하고, 공명이 떨리고, 격납 경보가 서로 다툰다. 다음은 격자 균열이다. 염수가 들어온다. 생물이 화학을 따른다. 단계 4에서는 가치는 죽고 오염은 살아 있다.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/ko_KR. -->

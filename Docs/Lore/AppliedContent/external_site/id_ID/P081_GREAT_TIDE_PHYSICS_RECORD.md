@@ -8,33 +8,19 @@ biome_tags: biome.tide_pump;biome.drowned_admin
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+spoiler_tier: 1
+title: "Catatan Fisika Great Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# Catatan Fisika Great Tide
 
-ID LOC HOLD: Great Tide Physics Record defines the disaster logic for HECTON-8: the ocean is physically dangerous, and the corporate crime is designing around optimistic margins until a moon-sized system collected the debt.
+Catatan Fisika Great Tide menjaga bencana tetap jujur. HECTON-8 rentan terhadap resonansi pasang, runtuh es, surge badai dan buangan panas. Kesalahan Deep Reach terlihat pada margin, kapasitas evakuasi dan prioritas keputusan, bukan pada sebab magis palsu.
 
-## Scanner
-
-ID LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
-
-## Terminal
-
-ID LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
-
-## Audio
-
-ID LOC HOLD: The report was right. That is why they buried it.
-
-## Field Note
-
-ID LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+Catatan Fisika Great Tide menetapkan logika bencana HECTON-8: laut berbahaya secara fisik, dan kejahatan korporatnya adalah merancang dengan margin optimistis sampai sistem sebesar bulan menagih utang. Jangan dilunakkan: fisika nyata membunuh orang, dan Deep Reach memastikan fisika itu punya korban.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/id_ID. -->

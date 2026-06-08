@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Походження Barnard Yards
 
-Barnard Yards - культура розбирання кораблів і тискового обладнання. Вона дає гравцю професійне походження.
+Barnard Yards - культура розбирання кораблів і гермообладнання: орендовані різаки, латаныя затискачі, мертві претензії й засоби виживання як звичайна робота. Вона дає HECTON-8 професійне походження поруч із боргом і працею, а не земну романтику.
 
 ## Scanner
 

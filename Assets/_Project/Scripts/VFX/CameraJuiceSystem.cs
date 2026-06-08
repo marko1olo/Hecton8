@@ -358,6 +358,7 @@ namespace Hecton8.VFX
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _hotSwapRegistered;
         private int _dependencyResolveSlowTickCountdown;
 
@@ -398,19 +399,16 @@ namespace Hecton8.VFX
 
         private void Awake()
         {
-            ICameraJuiceSystem registeredRuntime = GlobalRegistry.CameraJuice;
-            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
-            {
-                LogDuplicateInstanceDetected();
-                Destroy(gameObject);
+            if (Application.isPlaying && !TryRegisterToGlobalRegistry())
                 return;
-            }
 
             RefreshCachedRegistryServices();
             RefreshCachedPresentationMotionScale();
             if (!TryResolveCamera())
             {
                 LogMainCameraMissing();
+                TryUnregister();
+                TryUnregisterFromGlobalRegistry();
                 enabled = false;
                 return;
             }
@@ -445,7 +443,9 @@ namespace Hecton8.VFX
 
         private void OnEnable()
         {
-            TryRegisterToGlobalRegistry();
+            if (_runtimeOwnerAborted || !TryRegisterToGlobalRegistry())
+                return;
+
             TryRegisterHotSwapListener();
             if (Application.isPlaying)
                 CameraJuiceSignals.EnsurePrewarmed();
@@ -463,6 +463,9 @@ namespace Hecton8.VFX
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             // Unregister from GameTickManager
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
@@ -524,43 +527,129 @@ namespace Hecton8.VFX
 
         private void TryRegisterDispatcherTicks()
         {
-            if (_registered || !Application.isPlaying || _dispatcher == null)
+            if (_runtimeOwnerAborted || _registered || !Application.isPlaying || _dispatcher == null)
                 return;
 
             bool slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
             _registered = slowTickRegistered;
         }
 
-        private void TryRegisterToGlobalRegistry()
+        private bool TryRegisterToGlobalRegistry()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (_serviceRegistered || !Application.isPlaying)
-                return;
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             ICameraJuiceSystem registeredRuntime = GlobalRegistry.CameraJuice;
-            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
+            if (!ReferenceEquals(registeredRuntime, null) && !ReferenceEquals(registeredRuntime, this))
             {
-                LogDuplicateInstanceDetected();
-                enabled = false;
-                Destroy(gameObject);
-                return;
+                if (IsCameraJuiceRuntimeUsable(registeredRuntime))
+                {
+                    AbortDuplicateRuntimeOwner();
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterCameraJuiceRuntime(registeredRuntime);
             }
 
             GlobalRegistry.RegisterCameraJuiceRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.CameraJuice, this);
+            if (!_serviceRegistered)
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
+
+            return true;
         }
 
         private void TryUnregisterFromGlobalRegistry()
         {
-            if (!_serviceRegistered)
+            if (_runtimeOwnerAborted || !_serviceRegistered)
                 return;
 
             GlobalRegistry.UnregisterCameraJuiceRuntime(this);
             _serviceRegistered = false;
         }
 
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            ICameraJuiceSystem registeredRuntime = GlobalRegistry.CameraJuice;
+            if (ReferenceEquals(registeredRuntime, null) || ReferenceEquals(registeredRuntime, this))
+                return false;
+
+            if (IsCameraJuiceRuntimeUsable(registeredRuntime))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            GlobalRegistry.UnregisterCameraJuiceRuntime(registeredRuntime);
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            LogDuplicateInstanceDetected();
+            TryUnregister();
+            if (_serviceRegistered)
+            {
+                GlobalRegistry.UnregisterCameraJuiceRuntime(this);
+                _serviceRegistered = false;
+            }
+
+            TryUnregisterHotSwapListener();
+            InteractionEvents.Unregister(this);
+            TryUnregisterPhysicsImpactListener();
+            StopCameraSpeedLineParticles();
+            ReleaseProceduralCameraJuiceBuffers();
+            ReleaseCameraJuiceTelemetry();
+
+            _playerRuntimeContext = null;
+            _submarineRuntimeContext = null;
+            _submarineHullRigidbody = null;
+            _dynamicResolutionScaler = null;
+            _vramMonitor = null;
+            _dispatcher = null;
+            _runtimeOwnerAborted = true;
+            _registered = false;
+            _registeredLateFrame = false;
+            _serviceRegistered = false;
+            _hotSwapRegistered = false;
+            _physicsImpactRegistered = false;
+            enabled = false;
+            Destroy(gameObject);
+        }
+
+        private static bool IsCameraJuiceRuntimeUsable(ICameraJuiceSystem service)
+        {
+            CameraJuiceSystem runtime = service as CameraJuiceSystem;
+            if (runtime == null)
+            {
+                UnityEngine.Object unityObject = service as UnityEngine.Object;
+                if (!ReferenceEquals(unityObject, null))
+                    return unityObject != null;
+
+                return !ReferenceEquals(service, null);
+            }
+
+            return runtime != null &&
+                   runtime._serviceRegistered &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._runtimeOwnerAborted;
+        }
+
         private void TryRegisterLateFrame()
         {
-            if (_registeredLateFrame || !Application.isPlaying || _dispatcher == null)
+            if (_runtimeOwnerAborted || _registeredLateFrame || !Application.isPlaying || _dispatcher == null)
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
@@ -577,6 +666,9 @@ namespace Hecton8.VFX
 
         private void TryRegisterHotSwapListener()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_hotSwapRegistered)
                 _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
 
@@ -596,6 +688,9 @@ namespace Hecton8.VFX
             GlobalRegistryServiceSlot serviceSlot,
             ref object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
@@ -604,11 +699,17 @@ namespace Hecton8.VFX
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
         private void RefreshCachedRegistryServices()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Player, GlobalRegistry.Player);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Submarine, GlobalRegistry.Submarine);
@@ -620,6 +721,9 @@ namespace Hecton8.VFX
 
         private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
@@ -659,7 +763,7 @@ namespace Hecton8.VFX
 
         private void TryRegisterPhysicsImpactListener()
         {
-            if (_physicsImpactRegistered)
+            if (_runtimeOwnerAborted || _physicsImpactRegistered)
                 return;
 
             RebindPhysicsStateEventService(GlobalRegistry.PhysicsStateEvents);
@@ -680,6 +784,9 @@ namespace Hecton8.VFX
 
         private void RebindPhysicsStateEventService(IPhysicsStateEventService physicsStateEvents)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (ReferenceEquals(_physicsStateEvents, physicsStateEvents) && _physicsImpactRegistered)
                 return;
 
@@ -689,15 +796,25 @@ namespace Hecton8.VFX
             _physicsStateEvents = physicsStateEvents;
             _physicsImpactRegistered = false;
 
-            if (_physicsStateEvents == null || !isActiveAndEnabled)
+            if (_physicsStateEvents == null ||
+                !isActiveAndEnabled ||
+                !IsPhysicsStateEventServiceUsable(_physicsStateEvents))
                 return;
 
             _physicsStateEvents.RegisterImpactListener(this);
             _physicsImpactRegistered = true;
         }
 
+        private static bool IsPhysicsStateEventServiceUsable(IPhysicsStateEventService physicsStateEvents)
+        {
+            return physicsStateEvents != null && physicsStateEvents.IsInitialized;
+        }
+
         private void BindPlayerRuntime(IPlayerRuntimeContext playerRuntimeContext)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (ReferenceEquals(_playerRuntimeContext, playerRuntimeContext))
                 return;
 
@@ -712,12 +829,18 @@ namespace Hecton8.VFX
 
         private void BindSubmarineRuntime(ISubmarineRuntimeContext submarineRuntimeContext)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _submarineRuntimeContext = submarineRuntimeContext;
             _submarineHullRigidbody = submarineRuntimeContext != null ? submarineRuntimeContext.HullRigidbody : null;
         }
 
         private void BindDataVault(IDataVault vault)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (ReferenceEquals(_dataVault, vault))
                 return;
 
@@ -732,6 +855,9 @@ namespace Hecton8.VFX
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
             TryUnregisterHotSwapListener();
@@ -750,6 +876,9 @@ namespace Hecton8.VFX
         /// </summary>
         private void AdvanceCameraJuicePresentation(float dt)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             long startTicks = Stopwatch.GetTimestamp();
 #endif
@@ -813,6 +942,9 @@ namespace Hecton8.VFX
 
         public void LateFrameTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             AdvanceCameraJuicePresentation(SystemDispatcher.CurrentFrameDeltaTime);
 
             if (_speedLineVisualDirty)
@@ -840,6 +972,9 @@ namespace Hecton8.VFX
         /// </summary>
         public void SlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             RefreshCachedPresentationMotionScale();
 
             if (_dependencyResolveSlowTickCountdown <= 0)
@@ -1008,7 +1143,7 @@ namespace Hecton8.VFX
 
         public void PopulateSaveData(SaveData data)
         {
-            if (data == null) return;
+            if (_runtimeOwnerAborted || data == null) return;
 
             // CameraJuiceSystem settings stored as public fields in SaveData
             // Note: SaveData uses public fields, not Set/Get methods
@@ -1021,7 +1156,7 @@ namespace Hecton8.VFX
 
         public void LoadFromSaveData(SaveData data)
         {
-            if (data == null) return;
+            if (_runtimeOwnerAborted || data == null) return;
 
             // Load settings from SaveData public fields
             // Implementation pending SaveData field additions
@@ -1035,6 +1170,9 @@ namespace Hecton8.VFX
         /// <param name="weight">Normalized pause menu focus weight.</param>
         public void ApplyPauseDepthOfFieldWeight(float weight)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _pauseDepthOfFieldWeight = math.saturate(weight);
         }
 
@@ -1043,7 +1181,7 @@ namespace Hecton8.VFX
         /// </summary>
         public void BeginInputReclaimFov(float startFov, float durationSeconds)
         {
-            if (!_fovEnabled || _mainCamera == null || HectonXRRuntimeState.IsXRActive)
+            if (_runtimeOwnerAborted || !_fovEnabled || _mainCamera == null || HectonXRRuntimeState.IsXRActive)
                 return;
 
             _inputReclaimFovStart = math.clamp(startFov, MIN_FOV, MAX_FOV);
@@ -1061,6 +1199,9 @@ namespace Hecton8.VFX
         /// <param name="intensityScale">Intensity multiplier (default 1.0)</param>
         public void TriggerShake(ShakeProfile profile, float intensityScale = 1.0f)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (profile == null)
             {
                 LogNullShakeProfile();
@@ -1091,7 +1232,7 @@ namespace Hecton8.VFX
         /// </summary>
         public void TriggerSubmarineImpactShake(float severity01)
         {
-            if (!_shakeEnabled)
+            if (_runtimeOwnerAborted || !_shakeEnabled)
                 return;
 
             float safeSeverity = math.saturate(severity01);
@@ -1111,7 +1252,7 @@ namespace Hecton8.VFX
         /// <param name="duration">Transition duration in seconds</param>
         public void TriggerFOVKick(float amount, float duration)
         {
-            if (!_fovEnabled || HectonXRRuntimeState.IsXRActive)
+            if (_runtimeOwnerAborted || !_fovEnabled || HectonXRRuntimeState.IsXRActive)
                 return;
 
             _fovBlendStart = _currentFOVOffset;
@@ -1128,6 +1269,9 @@ namespace Hecton8.VFX
         /// <param name="blendDuration">Blend duration in seconds</param>
         public void TransitionToBiome(BiomeProfile biome, float blendDuration)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (biome == null)
             {
                 LogNullBiomeProfile();
@@ -1206,6 +1350,9 @@ namespace Hecton8.VFX
 
         private void ConsumePlayerSprintSignals()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ReadOnlySpan<PlayerSprintStateSignal> signals = SignalBus<PlayerSprintStateSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
             {
@@ -1230,6 +1377,9 @@ namespace Hecton8.VFX
 
         private void HandleHoverChanged(IInteractable target)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _focusTarget = target;
             _focusTargetTransform = null;
 
@@ -1241,6 +1391,9 @@ namespace Hecton8.VFX
 
         public void OnInteractionEvent(in InteractionEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if ((InteractionEventType)payload.EventType != InteractionEventType.HoverChanged)
                 return;
 
@@ -1250,7 +1403,7 @@ namespace Hecton8.VFX
 
         void IPhysicsImpactEventListener.OnPhysicsImpact(in PhysicsImpactSignal impactSignal)
         {
-            if (!_shakeEnabled)
+            if (_runtimeOwnerAborted || !_shakeEnabled)
                 return;
 
             float severity = ResolvePhysicsImpactSeverity(in impactSignal);
@@ -1308,6 +1461,9 @@ namespace Hecton8.VFX
 
         private void RecoverCameraJuiceVaultBindings()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             IDataVault vault = _dataVault;
             if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return;
@@ -1327,6 +1483,9 @@ namespace Hecton8.VFX
 
         private void AddProceduralTrauma(float severity01, float3 worldDirection)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             float severity = math.saturate(severity01);
             if (severity <= 0f || !math.isfinite(severity))
                 return;
@@ -1397,6 +1556,9 @@ namespace Hecton8.VFX
 
         private void RequestProceduralHitStop()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ITickDispatcher dispatcher = _dispatcher;
             if (dispatcher != null)
                 dispatcher.RequestCoreTickDilation(0.05f, 3, CAMERA_JUICE_HIT_STOP_REASON_HASH);
@@ -1404,6 +1566,9 @@ namespace Hecton8.VFX
 
         private bool EnsureCameraJuiceTelemetry()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (!ValidateCameraJuiceTelemetryLayout())
             {
                 ReleaseCameraJuiceTelemetry();
@@ -1593,6 +1758,9 @@ namespace Hecton8.VFX
 
         private void RecordCameraJuiceTelemetry()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             IDataVault vault = _dataVault;
             NativeArray<CameraJuiceTelemetryEntry> telemetry = default;
             bool acquired = false;
@@ -1776,6 +1944,9 @@ namespace Hecton8.VFX
 
         private void EnsureCameraSpeedLineParticles()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_speedLineParticles != null || _cameraTransform == null)
                 return;
 
@@ -1863,6 +2034,9 @@ namespace Hecton8.VFX
 
         private void UpdateCameraSpeedLines(float dt)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_speedLineParticles == null)
                 return;
 
@@ -1914,6 +2088,9 @@ namespace Hecton8.VFX
 
         private void QueueCameraSpeedLineUpdate(float dt)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (_speedLineParticles == null)
                 return;
 
@@ -1931,6 +2108,9 @@ namespace Hecton8.VFX
 
         private float ResolveCurrentCameraSpeed()
         {
+            if (_runtimeOwnerAborted)
+                return 0f;
+
             float speed = 0f;
             if (CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityCameraJuiceMaxAgeFrames, out Vector3 kccVelocity))
                 speed = math.max(speed, ApproximateVectorMagnitude(kccVelocity));
@@ -2414,7 +2594,8 @@ namespace Hecton8.VFX
             if (_cameraTransform == null)
                 return math.max(0.01f, _hudFocusDistance);
 
-            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            SuitHUDV4CanvasOverlay overlay = null;
+            SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             if (overlay == null || overlay.TargetCanvas == null)
                 return math.max(0.01f, _hudFocusDistance);
 
@@ -2492,6 +2673,9 @@ namespace Hecton8.VFX
 
         private void TryResolveGameplayDependencies()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _submarineHullRigidbody = _submarineRuntimeContext != null ? _submarineRuntimeContext.HullRigidbody : null;
             Transform playerRoot = null;
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
@@ -2540,6 +2724,9 @@ namespace Hecton8.VFX
 
         private void RefreshGameplayDependenciesFromCachedRuntime()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _submarineHullRigidbody = _submarineRuntimeContext != null ? _submarineRuntimeContext.HullRigidbody : null;
 
             if (_survivalSystemReference != null)
@@ -2557,6 +2744,9 @@ namespace Hecton8.VFX
 
         private void SyncDependencyFlags()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _healthO2EffectsEnabled = _survivalSystem != null;
             _sprintFOVEnabled = _playerMovement != null;
         }

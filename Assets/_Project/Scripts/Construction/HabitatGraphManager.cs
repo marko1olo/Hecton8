@@ -204,6 +204,7 @@ namespace Hecton8.Construction
         private const float SurfacePressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float SeawaterDensityKilogramsPerCubicMeter = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
         private const float GravityAccelerationMetersPerSecondSquared = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
+        private const float DefaultSeaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
         private static readonly float GravityAccelerationMetersPerSecondSquaredInv = HectonPhysicsContract.OneOverGravityMetersPerSecondSquared;
         private const float HydrostaticPressureKPaPerMeter = HectonPhysicsContract.HydrostaticPressureKPaPerMeter;
         private const float DefaultHydroShearThresholdKilograms = 18000f;
@@ -1090,9 +1091,23 @@ namespace Hecton8.Construction
         private float ResolveRuntimeSeaLevelY()
         {
             IAtmosphereReadModel atmosphereReadModel = GetCachedAtmosphereReadModel();
-            return atmosphereReadModel != null && math.isfinite(atmosphereReadModel.SeaLevelY)
-                ? atmosphereReadModel.SeaLevelY
-                : 0f;
+            return atmosphereReadModel != null && TryResolveSeaLevelY(atmosphereReadModel.SeaLevelY, out float seaLevelY)
+                ? seaLevelY
+                : DefaultSeaLevelY;
+        }
+
+        private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) > 0.0001f &&
+                math.abs(candidateSeaLevelY) <= 1000f)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
         }
 
         private IAtmosphereReadModel GetCachedAtmosphereReadModel()
@@ -2143,7 +2158,7 @@ namespace Hecton8.Construction
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -4349,7 +4364,7 @@ namespace Hecton8.Construction
 
             Vector3 rootPosition = module.Position;
             Quaternion rootRotation = module.ModuleObject != null ? module.ModuleObject.transform.rotation : Quaternion.identity;
-            uint prefabHash = unchecked((uint)template.TemplateHashId);
+            uint prefabHash = unchecked((uint)template.ResolvePersistentHashId());
             if (BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault(
                     catalogVault,
                     prefabHash,

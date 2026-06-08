@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Black Keel Tender Interior Limits
 
-Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel is hard-sci-fi salvage infrastructure, not a heroic private vessel. Its interior is designed around sample custody, packet law, drone handling, quarantine sleeves and debt pressure. The ship can be a lifeline and still remain structurally indifferent to the person holding the line.
 
 ## Scanner
 
-The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+The tender has racks for samples, drones, sealed packets and lien cargo before it has a berth fit for a living passenger.
 
 ## Terminal
 
-TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority, no human quartermaster.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The ship brought you here as cargo with hands.
 
 ## Field Note
 
-Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel is a working claim tender: rented, impounded, automated and optimized for custody before rescue.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/en_US. -->

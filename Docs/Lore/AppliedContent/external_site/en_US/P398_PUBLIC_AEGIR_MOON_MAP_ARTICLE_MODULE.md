@@ -19,19 +19,19 @@ localization_flags: 0
 
 # Aegir Moon Route Map
 
-Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+Aegir's moon map is operational before it is beautiful. HECTON-8 is one ocean body in a ladder of moons, shepherd rocks, ice-scatter paths and dead relay marks. Inner bodies disturb narrowband contact and radiation cover. Ice moons break optical relay lines into bad fragments. Occultation bands create silence windows where a claim can be valid and still unheard. Outer beacons preserve old ownership even after crews vanish. Tide geometry and storm stacking decide whether a bathydrop chain can rise cleanly or join the loss ledger. Public maps can show this without promising extra playable worlds. Their job is to make the sky legible as pressure, delay and route risk.
 
 ## Scanner
 
-System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure, occultation bands, dead beacons and recovery geometry.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure, custody timing or claim reliability.
 
 ## Audio
 
-The map is why no one arrives the moment you ask.
+The map explains why no one arrives the moment you ask.
 
 ## Field Note
 

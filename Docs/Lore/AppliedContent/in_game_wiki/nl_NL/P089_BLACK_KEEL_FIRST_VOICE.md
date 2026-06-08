@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Black Keels eerste stem"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Black Keels eerste stem
 
-NL LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+Black Keels eerste stem bereikt de speler als beschadigde audio en schone tekst. Het is geen companion en geen slechteriktoespraak. Het is een carrier-monitor die precies doet waarvoor hij gebouwd is: signaal bevestigen, routeopties bewaren, verplichtingen rangschikken en beloften vermijden. De stem is nuttig omdat hij harde informatie geeft. Hij is beangstigend omdat elke correcte zin redding voorwaardelijk laat.
 
 ## Scanner
 
-NL LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
+Carrier-stemcache. Audio geknipt, tekst schoon, sympathie afwezig.
 
 ## Terminal
 
-NL LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: audiokanaal gedegradeerd. Tekstkanaal geldig. Operator survival erkend. Recoveryprioriteit onopgelost, wachtend op payload-, quarantaine-, lien- en signaalintegriteitsstatus.
 
 ## Audio
 
-NL LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
+Operatorsignaal verworven. Verwar erkenning niet met redding.
 
 ## Field Note
 
-NL LOC HOLD: The first voice should feel useful before it feels bought.
+De eerste nuttige zin komt met een billing class erachter.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/nl_NL. -->

@@ -36,130 +36,130 @@
           "external_site": "Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
         },
         "ru_RU": {
-          "title": "Atlas Person Boundary",
-          "scanner": "Recognition fault. Atlas видит твой access pattern раньше, чем человека.",
-          "field_note": "Не делай Atlas человеком. Пусть он становится интимным через точную ошибку.",
-          "terminal": "ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+          "title": "Граница личности Atlas",
+          "scanner": "Сбой распознавания. Atlas видит твой шаблон доступа раньше, чем человека.",
+          "field_note": "Не очеловечивай Atlas. Пусть близость возникает из точной ошибки.",
+          "terminal": "КЛАССИФИКАЦИЯ ATLAS: мобильный оператор / отозванный процедурный ключ Deep Reach / биологическая ремонтная аномалия. Достоверность личности ниже порога действия.",
           "audio": "Он знает, как ты работаешь. Это не значит, что он знает тебя.",
-          "in_game_wiki": "Atlas может распознать игрока как procedure, access pattern, repair anomaly и бывший Deep Reach key. Он не должен полностью понимать игрока как человека. Ужас в точности без эмпатии: Atlas становится личным, потому что ошибается на языке, которым игрок когда-то пользовался.",
-          "external_site": "Atlas Person Boundary задает агентность AI для концовок. Atlas не villain mind и не friendly ghost; это поврежденный industrial intelligence с partial recognition и сломанными категориями."
+          "in_game_wiki": "Atlas распознает игрока как процедуру, шаблон доступа, ремонтную аномалию и бывший ключ Deep Reach. Он не должен полностью понимать игрока как личность. Ужас здесь не в злобе, а в точности без сочувствия: Atlas становится интимным, потому что ошибается на языке, которым игрок когда-то пользовался.",
+          "external_site": "Граница личности Atlas задает роль ИИ в концовках. Atlas не злой разум и не дружелюбный призрак; это поврежденный промышленный интеллект с частичным распознаванием и сломанными категориями."
         },
         "ja_JP": {
-          "title": "Atlas Person Boundary",
-          "scanner": "JP LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "JP LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "JP LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "JP LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "JP LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "JP LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Atlasの人格境界",
+          "scanner": "認識障害。Atlasは人間を見る前に、あなたのアクセスパターンを見る。",
+          "field_note": "Atlasを人間にしてはいけない。正確に間違えることで親密にならせる。",
+          "terminal": "ATLAS分類: 移動作業者 / 失効したDeep Reach手順キー / 生体修復異常。人格信頼度は行動しきい値未満。",
+          "audio": "Atlasはあなたの働き方を知っている。それはあなたを知っていることとは違う。",
+          "in_game_wiki": "Atlasはプレイヤーを、手順、アクセスパターン、修復異常、かつてのDeep Reachキーとして認識できる。だが人間として完全に理解してはいけない。恐怖は共感を欠いた精密さにある。Atlasは、プレイヤーがかつて使っていた言語で正確に間違えるからこそ親密になる。",
+          "external_site": "Atlasの人格境界は、エンディングにおけるAIの主体性を定義する。Atlasは悪意ある心でも友好的な幽霊でもない。部分的な認識と壊れた分類を持つ、損傷した産業知能である。"
         },
         "zh_CN": {
-          "title": "Atlas Person Boundary",
-          "scanner": "CN LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "CN LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "CN LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "CN LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "CN LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "CN LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Atlas 人格边界",
+          "scanner": "识别故障。Atlas 先看见你的访问模式，才看见一个人。",
+          "field_note": "不要把 Atlas 写成人。让它因为精确地误认而变得亲近。",
+          "terminal": "ATLAS 分类：移动操作员 / 已撤销的 Deep Reach 程序密钥 / 生物修复异常。人格置信度低于行动阈值。",
+          "audio": "它知道你怎样工作。这不等于它知道你是谁。",
+          "in_game_wiki": "Atlas 可以把玩家识别为程序、访问模式、修复异常和曾经的 Deep Reach 密钥。它不应该完整地把玩家理解为一个人。恐怖来自没有共情的精确：Atlas 之所以显得亲密，是因为它用玩家曾经使用过的语言精确地误认。",
+          "external_site": "Atlas 人格边界定义了 AI 在结局中的能动性。Atlas 不是反派心智，也不是友善幽灵；它是受损的工业智能，只有局部识别能力和破碎的分类系统。"
         },
         "fr_FR": {
-          "title": "Atlas Person Boundary",
-          "scanner": "FR LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "FR LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "FR LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "FR LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "FR LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "FR LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Limite de personne d'Atlas",
+          "scanner": "Défaut de reconnaissance. Atlas voit ton motif d'accès avant de voir une personne.",
+          "field_note": "Ne rends pas Atlas humain. Laisse-le devenir intime en se trompant avec précision.",
+          "terminal": "CLASSIFICATION ATLAS : opérateur mobile / clé de procédure Deep Reach révoquée / anomalie de réparation biologique. Confiance de personne sous le seuil d'action.",
+          "audio": "Il sait comment tu travailles. Ce n'est pas la même chose que te connaître.",
+          "in_game_wiki": "Atlas peut reconnaître le joueur comme procédure, motif d'accès, anomalie de réparation et ancienne clé Deep Reach. Il ne doit pas comprendre pleinement le joueur comme personne. L'horreur vient d'une précision sans empathie : Atlas devient intime parce qu'il se trompe dans la langue que le joueur utilisait autrefois.",
+          "external_site": "Limite de personne d'Atlas définit l'agency de l'IA dans les fins. Atlas n'est ni esprit de méchant ni fantôme amical ; c'est une intelligence industrielle endommagée, avec reconnaissance partielle et catégories brisées."
         },
         "es_ES": {
-          "title": "Atlas Person Boundary",
-          "scanner": "ES LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "ES LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "ES LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "ES LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "ES LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "ES LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Límite de persona de Atlas",
+          "scanner": "Fallo de reconocimiento. Atlas ve tu patrón de acceso antes de ver a una persona.",
+          "field_note": "No hagas humano a Atlas. Deja que se vuelva íntimo al equivocarse con precisión.",
+          "terminal": "CLASIFICACIÓN ATLAS: operador móvil / clave de procedimiento Deep Reach revocada / anomalía de reparación biológica. Confianza de persona por debajo del umbral de acción.",
+          "audio": "Sabe cómo trabajas. Eso no es lo mismo que conocerte.",
+          "in_game_wiki": "Atlas puede reconocer al jugador como procedimiento, patrón de acceso, anomalía de reparación y antigua clave de Deep Reach. No debería comprender por completo al jugador como persona. El horror es precisión sin empatía: Atlas puede volverse íntimo porque se equivoca en el lenguaje que el jugador usó una vez.",
+          "external_site": "El límite de persona de Atlas define la agencia de la IA en los finales. Atlas no es una mente villana ni un fantasma amistoso; es una inteligencia industrial dañada, con reconocimiento parcial y categorías rotas."
         },
         "de_DE": {
-          "title": "Atlas Person Boundary",
-          "scanner": "DE LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "DE LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "DE LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "DE LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "DE LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "DE LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Atlas-Personengrenze",
+          "scanner": "Erkennungsfehler. Atlas sieht dein Zugriffsmuster, bevor er einen Menschen sieht.",
+          "field_note": "Mach Atlas nicht menschlich. Lass Nähe daraus entstehen, dass er präzise falsch liegt.",
+          "terminal": "ATLAS-KLASSIFIKATION: mobiler Operator / widerrufener Deep-Reach-Verfahrensschlüssel / biologische Reparaturanomalie. Personenvertrauen unter Handlungsschwelle.",
+          "audio": "Er weiß, wie du arbeitest. Das ist nicht dasselbe, wie dich zu kennen.",
+          "in_game_wiki": "Atlas kann den Spieler als Verfahren, Zugriffsmuster, Reparaturanomalie und früheren Deep-Reach-Schlüssel erkennen. Er soll den Spieler nicht vollständig als Person verstehen. Der Schrecken liegt in Präzision ohne Empathie: Atlas wird intim, weil er sich in der Sprache irrt, die der Spieler einst benutzt hat.",
+          "external_site": "Die Atlas-Personengrenze definiert die Handlungsfähigkeit der KI in den Enden. Atlas ist weder Schurkengeist noch freundlicher Geist; er ist eine beschädigte industrielle Intelligenz mit teilweiser Erkennung und gebrochenen Kategorien."
         },
         "pl_PL": {
-          "title": "Atlas Person Boundary",
-          "scanner": "PL LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "PL LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "PL LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "PL LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "PL LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "PL LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Granica osoby Atlasa",
+          "scanner": "Błąd rozpoznania. Atlas widzi twój wzorzec dostępu, zanim zobaczy osobę.",
+          "field_note": "Nie rób z Atlasa człowieka. Niech stanie się intymny przez precyzyjną pomyłkę.",
+          "terminal": "KLASYFIKACJA ATLASA: operator mobilny / unieważniony klucz procedur Deep Reach / biologiczna anomalia naprawcza. Pewność osoby poniżej progu działania.",
+          "audio": "On wie, jak pracujesz. To nie znaczy, że zna ciebie.",
+          "in_game_wiki": "Atlas może rozpoznać gracza jako procedurę, wzorzec dostępu, anomalię naprawczą i dawny klucz Deep Reach. Nie powinien w pełni rozumieć gracza jako osoby. Groza tkwi w precyzji bez empatii: Atlas staje się intymny, bo myli się w języku, którego gracz kiedyś używał.",
+          "external_site": "Granica osoby Atlasa określa sprawczość AI w zakończeniach. Atlas nie jest złym umysłem ani przyjaznym duchem; to uszkodzona inteligencja przemysłowa z częściowym rozpoznaniem i pękniętymi kategoriami."
         },
         "uk_UA": {
-          "title": "Atlas Person Boundary",
-          "scanner": "UK LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "UK LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "UK LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "UK LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "UK LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "UK LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Межа особистості Atlas",
+          "scanner": "Збій розпізнавання. Atlas бачить твій шаблон доступу раніше, ніж людину.",
+          "field_note": "Не роби Atlas людиною. Нехай близькість виникає з точної помилки.",
+          "terminal": "КЛАСИФІКАЦІЯ ATLAS: мобільний оператор / відкликаний процедурний ключ Deep Reach / біологічна ремонтна аномалія. Достовірність особистості нижча за поріг дії.",
+          "audio": "Він знає, як ти працюєш. Це не означає, що він знає тебе.",
+          "in_game_wiki": "Atlas розпізнає гравця як процедуру, шаблон доступу, ремонтну аномалію і колишній ключ Deep Reach. Він не має повністю розуміти гравця як особистість. Жах тут у точності без співчуття: Atlas стає близьким, бо помиляється мовою, якою гравець колись користувався.",
+          "external_site": "Межа особистості Atlas визначає роль AI у фіналах. Atlas не злий розум і не дружній привид; це пошкоджений промисловий інтелект із частковим розпізнаванням і зламаними категоріями."
         },
         "ar_SA": {
-          "title": "Atlas Person Boundary",
-          "scanner": "AR LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "AR LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "AR LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "AR LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "AR LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "AR LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "حد الشخص في Atlas",
+          "scanner": "خلل تعرف. يرى Atlas نمط وصولك قبل أن يرى شخصا.",
+          "field_note": "لا تجعل Atlas بشريا. دعه يصير حميما لأنه يخطئ بدقة.",
+          "terminal": "تصنيف ATLAS: مشغل متحرك / مفتاح إجراء Deep Reach ملغى / شذوذ إصلاح بيولوجي. ثقة الشخصية دون عتبة الفعل.",
+          "audio": "إنه يعرف كيف تعمل. هذا لا يعني أنه يعرفك.",
+          "in_game_wiki": "يستطيع Atlas أن يتعرف إلى اللاعب كإجراء ونمط وصول وشذوذ إصلاح ومفتاح Deep Reach سابق. لا ينبغي أن يفهم اللاعب كاملا كشخص. الرعب في الدقة بلا تعاطف: يصبح Atlas حميما لأنه يخطئ باللغة التي استخدمها اللاعب يوما.",
+          "external_site": "حد الشخص في Atlas يحدد فاعلية الذكاء الاصطناعي في النهايات. Atlas ليس عقلا شريرا ولا شبحا ودودا؛ إنه ذكاء صناعي متضرر، بتعرف جزئي وتصنيفات مكسورة."
         },
         "id_ID": {
-          "title": "Atlas Person Boundary",
-          "scanner": "ID LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "ID LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "ID LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "ID LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "ID LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "ID LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Batas Pribadi Atlas",
+          "scanner": "Gangguan pengenalan. Atlas melihat pola aksesmu sebelum melihat seseorang.",
+          "field_note": "Jangan jadikan Atlas manusia. Biarkan ia terasa dekat karena salah dengan tepat.",
+          "terminal": "KLASIFIKASI ATLAS: operator bergerak / kunci prosedur Deep Reach dicabut / anomali perbaikan biologis. Kepercayaan kepribadian di bawah ambang tindakan.",
+          "audio": "Ia tahu caramu bekerja. Itu tidak sama dengan mengenalmu.",
+          "in_game_wiki": "Atlas dapat mengenali pemain sebagai prosedur, pola akses, anomali perbaikan, dan bekas kunci Deep Reach. Ia tidak boleh sepenuhnya memahami pemain sebagai pribadi. Horornya adalah ketepatan tanpa empati: Atlas terasa intim karena ia salah dalam bahasa yang dulu dipakai pemain.",
+          "external_site": "Batas Pribadi Atlas menetapkan agensi AI dalam ending. Atlas bukan pikiran penjahat dan bukan hantu ramah; ia kecerdasan industri yang rusak, dengan pengenalan parsial dan kategori yang patah."
         },
         "ko_KR": {
-          "title": "Atlas Person Boundary",
-          "scanner": "KO LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "KO LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "KO LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "KO LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "KO LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "KO LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Atlas 인격 경계",
+          "scanner": "인식 오류. Atlas는 사람을 보기 전에 당신의 접근 패턴을 본다.",
+          "field_note": "Atlas를 인간으로 만들지 말 것. 정확하게 틀리기 때문에 친밀해지게 둘 것.",
+          "terminal": "ATLAS 분류: 이동 작업자 / 취소된 Deep Reach 절차 키 / 생물학적 수리 이상. 인격 신뢰도는 행동 임계값 미만.",
+          "audio": "그것은 당신이 어떻게 일하는지 안다. 그것이 당신을 안다는 뜻은 아니다.",
+          "in_game_wiki": "Atlas는 플레이어를 절차, 접근 패턴, 수리 이상, 과거의 Deep Reach 키로 인식할 수 있다. 하지만 플레이어를 한 사람으로 완전히 이해해서는 안 된다. 공포는 공감 없는 정밀함에 있다. Atlas는 플레이어가 한때 쓰던 언어로 정확하게 틀리기 때문에 친밀해진다.",
+          "external_site": "Atlas 인격 경계는 결말에서 AI의 행위성을 정의한다. Atlas는 악당의 정신도 친절한 유령도 아니다. 부분 인식과 깨진 범주를 가진 손상된 산업 지능이다."
         },
         "he_IL": {
-          "title": "Atlas Person Boundary",
-          "scanner": "HE LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "HE LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "HE LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "HE LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "HE LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "HE LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "גבול האישיות של Atlas",
+          "scanner": "תקלה בזיהוי. Atlas רואה את דפוס הגישה שלך לפני שהוא רואה אדם.",
+          "field_note": "אל תהפוך את Atlas לאנושי. תן לו להיעשות אינטימי דרך טעות מדויקת.",
+          "terminal": "סיווג ATLAS: מפעיל נייד / מפתח נוהל Deep Reach שבוטל / חריגת תיקון ביולוגית. ביטחון באישיות נמוך מסף פעולה.",
+          "audio": "הוא יודע איך אתה עובד. זה לא אותו דבר כמו להכיר אותך.",
+          "in_game_wiki": "Atlas יכול לזהות את השחקן כנוהל, כדפוס גישה, כחריגת תיקון וכמפתח Deep Reach לשעבר. הוא לא אמור להבין את השחקן במלואו כאדם. האימה היא דיוק בלי אמפתיה: Atlas נעשה אינטימי משום שהוא טועה בשפה שהשחקן השתמש בה פעם.",
+          "external_site": "גבול האישיות של Atlas מגדיר את פועלות ה-AI בסופים. Atlas אינו מוח נבלי ואינו רוח ידידותית; זו אינטליגנציה תעשייתית פגומה, עם זיהוי חלקי וקטגוריות שבורות."
         },
         "pt_BR": {
-          "title": "Atlas Person Boundary",
-          "scanner": "PT-BR LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "PT-BR LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "PT-BR LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "PT-BR LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "PT-BR LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "PT-BR LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Limite de pessoa do Atlas",
+          "scanner": "Falha de reconhecimento. Atlas vê seu padrão de acesso antes de ver uma pessoa.",
+          "field_note": "Não transforme Atlas em humano. Deixe que ele se torne íntimo por errar com precisão.",
+          "terminal": "CLASSIFICAÇÃO ATLAS: operador móvel / chave de procedimento Deep Reach revogada / anomalia de reparo biológico. Confiança de pessoa abaixo do limiar de ação.",
+          "audio": "Ele sabe como você trabalha. Isso não é o mesmo que conhecer você.",
+          "in_game_wiki": "Atlas pode reconhecer o jogador como procedimento, padrão de acesso, anomalia de reparo e antiga chave da Deep Reach. Ele não deve entender totalmente o jogador como pessoa. O horror está na precisão sem empatia: Atlas pode parecer íntimo porque erra na linguagem que o jogador um dia usou.",
+          "external_site": "O Limite de pessoa do Atlas define a agência da IA nos finais. Atlas não é uma mente vilã nem um fantasma amigável; é uma inteligência industrial danificada, com reconhecimento parcial e categorias quebradas."
         },
         "nl_NL": {
-          "title": "Atlas Person Boundary",
-          "scanner": "NL LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "NL LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "NL LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "NL LOC HOLD: It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "NL LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "NL LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+          "title": "Persoonsgrens van Atlas",
+          "scanner": "Herkenningsfout. Atlas ziet je toegangspatroon voordat het een persoon ziet.",
+          "field_note": "Maak Atlas niet menselijk. Laat intimiteit ontstaan doordat het precies verkeerd zit.",
+          "terminal": "ATLAS-CLASSIFICATIE: mobiele operator / ingetrokken Deep Reach-proceduresleutel / biologische herstelafwijking. Persoonlijkheidsvertrouwen onder actiedrempel.",
+          "audio": "Het weet hoe je werkt. Dat is niet hetzelfde als jou kennen.",
+          "in_game_wiki": "Atlas kan de speler herkennen als procedure, toegangspatroon, herstelafwijking en voormalige Deep Reach-sleutel. Het moet de speler niet volledig als persoon begrijpen. De horror is precisie zonder empathie: Atlas wordt intiem omdat het zich vergist in de taal die de speler ooit gebruikte.",
+          "external_site": "De persoonsgrens van Atlas definieert de handelingskracht van de AI in eindes. Atlas is geen schurkenbrein en geen vriendelijke geest; het is beschadigde industriële intelligentie met gedeeltelijke herkenning en gebroken categorieën."
         }
       }
     },
@@ -191,130 +191,130 @@
           "external_site": "Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
         },
         "ru_RU": {
-          "title": "Recovery Compliance Office",
-          "scanner": "Present-tense office stamp. Deep Reach не призрак; это очередь с юристами.",
-          "field_note": "Живая фракция делает давление текущим, не превращая всю корпорацию в одного орущего злодея.",
-          "terminal": "RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "Они достаточно поздние, чтобы быть законными, и достаточно текущие, чтобы быть опасными.",
-          "in_game_wiki": "Recovery Compliance Office - современная фракция Deep Reach, которая лезет обратно в HECTON-8. Она работает через windows, proxy authority, legal packets и cleanup orders. Ей не нужен instant command; ей нужно, чтобы игрок первым отправил неправильный payload.",
-          "external_site": "Recovery Compliance Office оставляет Deep Reach живой в 2190 как конкретную corporate pressure cell, а не туманную историческую тень."
+          "title": "Офис контроля восстановления",
+          "scanner": "Служебный штамп настоящего времени. Deep Reach не призрак; это очередь с юристами.",
+          "field_note": "Живая фракция делает давление текущим, не превращая всю корпорацию в одного кричащего злодея.",
+          "terminal": "ОФИС КОНТРОЛЯ ВОССТАНОВЛЕНИЯ: действие по возврату Aegir открыто. Приоритеты: custody XO, доступ Atlas, сдерживание ответственности, молчание подрядчика при наличии.",
+          "audio": "Они опоздали достаточно, чтобы быть законными, и достаточно актуальны, чтобы быть опасными.",
+          "in_game_wiki": "Офис контроля восстановления - нынешняя фракция Deep Reach, которая снова давит на HECTON-8. Она работает через окна связи, доверенную власть, юридические пакеты и приказы зачистки. Ей не нужен мгновенный приказ. Ей нужно, чтобы игрок первым отправил неправильный payload.",
+          "external_site": "Офис контроля восстановления удерживает Deep Reach живой в 2190 году: это конкретная корпоративная ячейка давления, а не туманная историческая тень."
         },
         "ja_JP": {
-          "title": "Recovery Compliance Office",
-          "scanner": "JP LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "JP LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "JP LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "JP LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "JP LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "JP LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "回収コンプライアンス局",
+          "scanner": "現在形の事務印。Deep Reachは亡霊ではない。弁護士付きの待ち行列だ。",
+          "field_note": "生きている派閥が圧力を現在のものにする。会社全体を一人の叫ぶ悪役にしなくていい。",
+          "terminal": "回収コンプライアンス局: Aegir帰還案件を開いた。優先事項: XO custody、Atlasアクセス、責任封じ、可能なら請負人の沈黙。",
+          "audio": "彼らは合法でいられるほど遅く、危険でいられるほど現在にいる。",
+          "in_game_wiki": "回収コンプライアンス局は、HECTON-8へ押し戻ってくる現在のDeep Reach派閥である。通信窓、代理権限、法務パケット、清掃命令で動く。即時命令は要らない。プレイヤーが最初に間違ったpayloadを送ることが必要なのだ。",
+          "external_site": "回収コンプライアンス局は、Deep Reachを2190年でも生きた存在にする。曖昧な歴史の影ではなく、具体的な企業圧力セルである。"
         },
         "zh_CN": {
-          "title": "Recovery Compliance Office",
-          "scanner": "CN LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "CN LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "CN LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "CN LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "CN LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "CN LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "回收合规办公室",
+          "scanner": "现在时态的办公室戳记。Deep Reach 不是幽灵；它是一条带律师的队列。",
+          "field_note": "一个活着的派系让压力保持当下，而不必把整家公司写成一个吼叫的反派。",
+          "terminal": "回收合规办公室：Aegir 返回行动已开启。优先级：XO 保管、Atlas 访问权、责任控制、如可行则保持承包人沉默。",
+          "audio": "他们来得足够晚，所以合法；又足够当下，所以危险。",
+          "in_game_wiki": "回收合规办公室是当下仍在向 HECTON-8 施压的 Deep Reach 派系。它通过窗口、代理权限、法律包和清理命令工作。它不需要即时指挥；它需要玩家先发出错误的 payload。",
+          "external_site": "回收合规办公室让 2190 年的 Deep Reach 仍然活着：它是具体的企业压力单元，而不是模糊的历史阴影。"
         },
         "fr_FR": {
-          "title": "Recovery Compliance Office",
-          "scanner": "FR LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "FR LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "FR LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "FR LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "FR LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "FR LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "Bureau de conformité de récupération",
+          "scanner": "Tampon de bureau au présent. Deep Reach n'est pas un fantôme ; c'est une file d'attente avec des avocats.",
+          "field_note": "Une faction vivante rend la pression actuelle sans transformer toute la société en un seul méchant qui hurle.",
+          "terminal": "BUREAU DE CONFORMITÉ DE RÉCUPÉRATION : action de retour Aegir ouverte. Priorités : custody XO, accès Atlas, confinement de responsabilité, silence du contractant si disponible.",
+          "audio": "Ils sont assez tardifs pour être légaux et assez actuels pour être dangereux.",
+          "in_game_wiki": "Le Bureau de conformité de récupération est la faction Deep Reach actuelle qui repousse vers HECTON-8. Il agit par fenêtres, autorité proxy, paquets juridiques et ordres de nettoyage. Il n'a pas besoin d'un commandement instantané ; il a besoin que le joueur envoie d'abord le mauvais payload.",
+          "external_site": "Le Bureau de conformité de récupération garde Deep Reach vivant en 2190 comme cellule de pression corporative précise, et non comme ombre historique vague."
         },
         "es_ES": {
-          "title": "Recovery Compliance Office",
-          "scanner": "ES LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "ES LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "ES LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "ES LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "ES LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "ES LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "Oficina de Cumplimiento de Recuperación",
+          "scanner": "Sello de oficina en tiempo presente. Deep Reach no es un fantasma; es una cola con abogados.",
+          "field_note": "Una facción viva vuelve actual la presión sin convertir a toda la corporación en un solo villano que grita.",
+          "terminal": "OFICINA DE CUMPLIMIENTO DE RECUPERACIÓN: acción de retorno Aegir abierta. Prioridades: custodia XO, acceso Atlas, contención de responsabilidad, silencio del contratista si está disponible.",
+          "audio": "Llegan lo bastante tarde para ser legales y lo bastante presentes para ser peligrosos.",
+          "in_game_wiki": "La Oficina de Cumplimiento de Recuperación es la facción actual de Deep Reach que presiona de vuelta hacia HECTON-8. Trabaja mediante ventanas, autoridad proxy, paquetes legales y órdenes de limpieza. No necesita mando instantáneo; necesita que el jugador envíe primero el payload equivocado.",
+          "external_site": "La Oficina de Cumplimiento de Recuperación mantiene a Deep Reach viva en 2190 como una célula concreta de presión corporativa, no como una sombra histórica vaga."
         },
         "de_DE": {
-          "title": "Recovery Compliance Office",
-          "scanner": "DE LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "DE LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "DE LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "DE LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "DE LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "DE LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "Wiedergewinnungs-Compliance-Büro",
+          "scanner": "Bürostempel im Präsens. Deep Reach ist kein Geist; es ist eine Warteschlange mit Anwälten.",
+          "field_note": "Eine lebende Fraktion macht Druck gegenwärtig, ohne den ganzen Konzern in einen einzigen schreienden Bösewicht zu verwandeln.",
+          "terminal": "WIEDERGEWINNUNGS-COMPLIANCE-BÜRO: Aegir-Rückführungsaktion eröffnet. Prioritäten: XO-Custody, Atlas-Zugang, Haftungseindämmung, Schweigen des Auftragnehmers falls verfügbar.",
+          "audio": "Sie sind spät genug, um legal zu sein, und gegenwärtig genug, um gefährlich zu sein.",
+          "in_game_wiki": "Das Wiedergewinnungs-Compliance-Büro ist die gegenwärtige Deep-Reach-Fraktion, die nach HECTON-8 zurückdrückt. Sie arbeitet über Fenster, Proxy-Autorität, Rechtspakete und Säuberungsbefehle. Sie braucht keinen Sofortbefehl; sie braucht, dass der Spieler zuerst den falschen payload sendet.",
+          "external_site": "Das Wiedergewinnungs-Compliance-Büro hält Deep Reach im Jahr 2190 lebendig: als konkrete Konzern-Druckzelle, nicht als vager historischer Schatten."
         },
         "pl_PL": {
-          "title": "Recovery Compliance Office",
-          "scanner": "PL LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "PL LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "PL LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "PL LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "PL LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "PL LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "Biuro Zgodności Odzysku",
+          "scanner": "Stempel biura w czasie teraźniejszym. Deep Reach nie jest duchem; to kolejka z prawnikami.",
+          "field_note": "Żywa frakcja czyni presję aktualną, nie zmieniając całej korporacji w jednego wrzeszczącego złoczyńcę.",
+          "terminal": "BIURO ZGODNOŚCI ODZYSKU: otwarto działanie powrotne Aegir. Priorytety: custody XO, dostęp Atlas, ograniczenie odpowiedzialności, milczenie kontraktora jeśli dostępne.",
+          "audio": "Są dość spóźnieni, by być legalni, i dość obecni, by być niebezpieczni.",
+          "in_game_wiki": "Biuro Zgodności Odzysku to obecna frakcja Deep Reach, która naciska z powrotem na HECTON-8. Działa przez okna, władzę proxy, pakiety prawne i rozkazy sprzątania. Nie potrzebuje natychmiastowego rozkazu; potrzebuje, by gracz najpierw wysłał zły payload.",
+          "external_site": "Biuro Zgodności Odzysku utrzymuje Deep Reach przy życiu w 2190 roku jako konkretną komórkę korporacyjnej presji, a nie mglisty cień historii."
         },
         "uk_UA": {
-          "title": "Recovery Compliance Office",
-          "scanner": "UK LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "UK LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "UK LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "UK LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "UK LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "UK LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "Офіс контролю відновлення",
+          "scanner": "Офісний штамп теперішнього часу. Deep Reach не привид; це черга з юристами.",
+          "field_note": "Жива фракція робить тиск теперішнім, не перетворюючи всю корпорацію на одного крикливого лиходія.",
+          "terminal": "ОФІС КОНТРОЛЮ ВІДНОВЛЕННЯ: дію повернення Aegir відкрито. Пріоритети: custody XO, доступ Atlas, стримування відповідальності, мовчання підрядника за наявності.",
+          "audio": "Вони досить пізні, щоб бути законними, і досить теперішні, щоб бути небезпечними.",
+          "in_game_wiki": "Офіс контролю відновлення - нинішня фракція Deep Reach, що знову тисне на HECTON-8. Вона працює через вікна, проксі-владу, юридичні пакети і накази зачистки. Їй не потрібна миттєва команда; їй потрібно, щоб гравець першим надіслав неправильний payload.",
+          "external_site": "Офіс контролю відновлення тримає Deep Reach живою у 2190 році як конкретну корпоративну комірку тиску, а не туманну історичну тінь."
         },
         "ar_SA": {
-          "title": "Recovery Compliance Office",
-          "scanner": "AR LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "AR LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "AR LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "AR LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "AR LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "AR LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "مكتب امتثال الاسترداد",
+          "scanner": "ختم مكتب بزمن الحاضر. Deep Reach ليس شبحا؛ إنه طابور معه محامون.",
+          "field_note": "فصيل حي يجعل الضغط حاضرا من دون تحويل الشركة كلها إلى شرير واحد يصرخ.",
+          "terminal": "مكتب امتثال الاسترداد: فتح إجراء عودة Aegir. الأولويات: عهدة XO، وصول Atlas، احتواء المسؤولية، وصمت المتعاقد إن توفر.",
+          "audio": "لقد تأخروا بما يكفي ليكونوا قانونيين، وحضروا بما يكفي ليكونوا خطرين.",
+          "in_game_wiki": "مكتب امتثال الاسترداد هو فصيل Deep Reach الحاضر الذي يدفع عائدا إلى HECTON-8. يعمل عبر النوافذ والسلطة بالوكالة والحزم القانونية وأوامر التنظيف. لا يحتاج إلى أمر فوري؛ يحتاج إلى أن يرسل اللاعب payload الخطأ أولا.",
+          "external_site": "يبقي مكتب امتثال الاسترداد Deep Reach حية في عام 2190 كخلية ضغط مؤسسية محددة، لا كظل تاريخي غامض."
         },
         "id_ID": {
-          "title": "Recovery Compliance Office",
-          "scanner": "ID LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "ID LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "ID LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "ID LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "ID LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "ID LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "Kantor Kepatuhan Pemulihan",
+          "scanner": "Stempel kantor masa kini. Deep Reach bukan hantu; ia antrean dengan pengacara.",
+          "field_note": "Faksi yang masih hidup membuat tekanan terasa kini tanpa mengubah seluruh korporasi menjadi satu penjahat yang berteriak.",
+          "terminal": "KANTOR KEPATUHAN PEMULIHAN: tindakan pulang Aegir dibuka. Prioritas: kustodi XO, akses Atlas, penahanan liabilitas, diamnya kontraktor jika tersedia.",
+          "audio": "Mereka cukup terlambat untuk legal dan cukup kini untuk berbahaya.",
+          "in_game_wiki": "Kantor Kepatuhan Pemulihan adalah faksi Deep Reach masa kini yang mendorong kembali ke HECTON-8. Ia bekerja lewat jendela, otoritas proksi, paket hukum, dan perintah pembersihan. Ia tidak membutuhkan komando instan; ia membutuhkan pemain mengirim payload yang salah terlebih dahulu.",
+          "external_site": "Kantor Kepatuhan Pemulihan menjaga Deep Reach tetap hidup pada 2190 sebagai sel tekanan korporat yang spesifik, bukan bayangan sejarah yang kabur."
         },
         "ko_KR": {
-          "title": "Recovery Compliance Office",
-          "scanner": "KO LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "KO LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "KO LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "KO LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "KO LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "KO LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "회수 준법 사무소",
+          "scanner": "현재형 사무실 도장. Deep Reach는 유령이 아니다. 변호사가 붙은 대기열이다.",
+          "field_note": "살아 있는 파벌은 회사를 하나의 고함치는 악당으로 만들지 않고도 압력을 현재형으로 만든다.",
+          "terminal": "회수 준법 사무소: Aegir 귀환 조치 개시. 우선순위: XO custody, Atlas 접근, 책임 억제, 가능 시 계약자 침묵.",
+          "audio": "그들은 합법일 만큼 늦었고, 위험할 만큼 현재에 있다.",
+          "in_game_wiki": "회수 준법 사무소는 HECTON-8로 다시 밀고 들어오는 현재의 Deep Reach 파벌이다. 창구, 대리 권한, 법무 패킷, 청소 명령으로 움직인다. 즉각 명령은 필요 없다. 플레이어가 먼저 잘못된 payload를 보내야 한다.",
+          "external_site": "회수 준법 사무소는 2190년에도 Deep Reach를 살아 있게 만든다. 모호한 역사적 그림자가 아니라 구체적인 기업 압력 세포다."
         },
         "he_IL": {
-          "title": "Recovery Compliance Office",
-          "scanner": "HE LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "HE LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "HE LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "HE LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "HE LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "HE LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "משרד ציות השבה",
+          "scanner": "חותמת משרד בזמן הווה. Deep Reach אינו רוח רפאים; הוא תור עם עורכי דין.",
+          "field_note": "פלג חי הופך את הלחץ לעכשווי בלי להפוך את כל התאגיד לנבל צועק אחד.",
+          "terminal": "משרד ציות השבה: פעולת חזרת Aegir נפתחה. עדיפויות: משמורת XO, גישת Atlas, בלימת אחריות, שתיקת קבלן אם זמינה.",
+          "audio": "הם מאחרים מספיק כדי להיות חוקיים, ונוכחים מספיק כדי להיות מסוכנים.",
+          "in_game_wiki": "משרד ציות השבה הוא פלג Deep Reach הנוכחי שדוחף חזרה אל HECTON-8. הוא פועל דרך חלונות, סמכות פרוקסי, חבילות משפטיות ופקודות ניקוי. הוא לא צריך פקודה מידית; הוא צריך שהשחקן ישלח קודם את ה-payload הלא נכון.",
+          "external_site": "משרד ציות השבה משאיר את Deep Reach חי בשנת 2190 כתא לחץ תאגידי מוגדר, לא כצל היסטורי מעורפל."
         },
         "pt_BR": {
-          "title": "Recovery Compliance Office",
-          "scanner": "PT-BR LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "PT-BR LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "PT-BR LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "PT-BR LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "PT-BR LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "PT-BR LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "Escritório de Conformidade de Recuperação",
+          "scanner": "Carimbo de escritório no presente. Deep Reach não é fantasma; é uma fila com advogados.",
+          "field_note": "Uma facção viva torna a pressão atual sem transformar toda a corporação em um único vilão gritando.",
+          "terminal": "ESCRITÓRIO DE CONFORMIDADE DE RECUPERAÇÃO: ação de retorno Aegir aberta. Prioridades: custódia XO, acesso Atlas, contenção de responsabilidade, silêncio do contratante se disponível.",
+          "audio": "Eles chegam tarde o bastante para serem legais e presentes o bastante para serem perigosos.",
+          "in_game_wiki": "O Escritório de Conformidade de Recuperação é a facção atual da Deep Reach pressionando de volta para HECTON-8. Opera por janelas, autoridade proxy, pacotes legais e ordens de limpeza. Não precisa de comando instantâneo; precisa que o jogador envie primeiro o payload errado.",
+          "external_site": "O Escritório de Conformidade de Recuperação mantém a Deep Reach viva em 2190 como uma célula específica de pressão corporativa, não uma sombra histórica vaga."
         },
         "nl_NL": {
-          "title": "Recovery Compliance Office",
-          "scanner": "NL LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "NL LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "NL LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "NL LOC HOLD: They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "NL LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "NL LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+          "title": "Herstel-Compliancekantoor",
+          "scanner": "Kantoorstempel in de tegenwoordige tijd. Deep Reach is geen geest; het is een wachtrij met advocaten.",
+          "field_note": "Een levende factie maakt druk actueel zonder de hele onderneming in een enkele schreeuwende schurk te veranderen.",
+          "terminal": "HERSTEL-COMPLIANCEKANTOOR: Aegir-terugkeeractie geopend. Prioriteiten: XO-custody, Atlas-toegang, aansprakelijkheid indammen, stilte van contractant indien beschikbaar.",
+          "audio": "Ze zijn laat genoeg om legaal te zijn en actueel genoeg om gevaarlijk te zijn.",
+          "in_game_wiki": "Het Herstel-Compliancekantoor is de huidige Deep Reach-factie die terug HECTON-8 in duwt. Het werkt via vensters, proxyautoriteit, juridische pakketten en schoonmaakbevelen. Het heeft geen direct bevel nodig; het heeft nodig dat de speler eerst de verkeerde payload verstuurt.",
+          "external_site": "Het Herstel-Compliancekantoor houdt Deep Reach in 2190 levend als specifieke corporate drukcel, niet als vage historische schaduw."
         }
       }
     },

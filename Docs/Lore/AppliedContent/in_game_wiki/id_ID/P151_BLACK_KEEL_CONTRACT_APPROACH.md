@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Black Keel Claim Acceptance"
+title: "Penerimaan Klaim Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Black Keel Claim Acceptance
+# Penerimaan Klaim Black Keel
 
-ID LOC HOLD: Recovered contract text shows the job begins as lien pressure, not rescue. Black Keel offers descent, debt relief and a narrow route window while keeping payload custody.
+Teks kontrak yang ditemukan menunjukkan pekerjaan ini dimulai sebagai tekanan utang, bukan penyelamatan. Black Keel menawarkan turun, keringanan utang, dan jendela rute sempit sambil tetap memegang payload custody.
 
 ## Scanner
 
-ID LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+Konsol kontrak. Aegir Reclamation Pool menampilkan lien 4.8 tonne-window sebelum menampilkan oksigen.
 
 ## Terminal
 
-ID LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / TERMINAL PENERIMAAN KLAIM: route RAN-B:H8 salvage descent; keringanan lien 4.8 tonne-window bersyarat; oxygen welfare addenda ditagih setelah pemulihan; payload custody utama Black Keel, saksi Keelmark Mutual; penolakan membuat Barnard blacklist review tetap aktif.
 
 ## Audio
 
-ID LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel ke kontraktor: jendela klaim terbuka. Oksigen ditagih setelah pemulihan. Akui jika kamu masih bisa bekerja.
 
 ## Field Note
 
-ID LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+Stylus diikat ke layar dengan kabel tekanan. Seseorang memperkirakan tangan akan gemetar.
 
 <!-- In-Game Wiki; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/id_ID. -->

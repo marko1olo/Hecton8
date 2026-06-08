@@ -9,32 +9,24 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Domain Distance Scale"
+title: "مقياس مسافات النطاقات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Domain Distance Scale
+# مقياس مسافات النطاقات
 
-AR LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language.
+## المسافة كضغط
 
-## Scanner
+خريطة النطاقات التي يستخدمها Marauders لا ترسم من أجل الدهشة. ترسم من أجل الفوترة. تظهر Sol وCentauri وBarnard وTau Ceti وLuyten وRan/Aegir كأحزمة طريق لأنها تلمس العامل داخل قمر غارق بهذه الطريقة: توثيق، لغة ميثاق، عمل salvage، دليل علني، custody حزم، وتنفيذ حدودي قذر.
 
-AR LOC HOLD: The domain map uses distance bands, not romantic shortcuts.
+Sol Core بعيد جسديا، لكنه لا يزال خطرا. يمكنه امتلاك أصل لا يستطيع الوصول إليه، وتأمين خسارة لن يشمها أبدا، وقبول claim بينما الشخص المرتبط به يخسر scrubber time. Centauri مهم لأن الشرعية extrasolar المبكرة تمنح الإساءة الجديدة لغة قديمة. Barnard مهم لأن اللاعب يأتي من ثقافة حيث claims الميتة عمل لا أسطورة.
 
-## Terminal
+Tau Ceti وLuyten هما وسط الخريطة البارد. يستطيع Tau Ceti جعل الدليل عاليا بما يكفي لإيذاء شركة، لكن فقط بعد أن يسمح الضوء وcustody بوصوله. يستطيع Luyten إبقاء الحزمة صادقة من دون أن يهتم إن كان المرسل حيا. Ran/Aegir هو طرف هذا النظام: claim مؤسسي يمكن أن يحضر فيه القانون والشحن والدليل بينما يبقى الإنقاذ مكلفا جدا.
 
-AR LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.
-
-## Audio
-
-AR LOC HOLD: Ten light-years is a number. The bill is the story.
-
-## Field Note
-
-AR LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.
+بهذا يبقى HECTON-8 قاسيا بلا سحر. لا يترك اللاعب لأن البشرية صغيرة. يترك لأن الفضاء البشري كبير بالطريقة الخاطئة. تعبر الملكية الظلام أسرع من الرحمة. قد يصل حق مختوم إلى Aegir قبل طاقم يتنفس، وحين يصل يبدأ بحساب الفائدة.
 
 <!-- External Site; generated from P161_DOMAIN_DISTANCE_SCALE/ar_SA. -->

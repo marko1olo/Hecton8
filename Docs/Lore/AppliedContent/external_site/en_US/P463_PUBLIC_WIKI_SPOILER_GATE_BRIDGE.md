@@ -19,22 +19,16 @@ localization_flags: 0
 
 # Spoiler Gate
 
-Public HECTON-8 pages may name the job without giving away the evidence. The open layer gives safe context; packet seals, route stamps, scans, terminal fragments, worker tags, and black-box records unlock stronger claims later.
+## Public Context
 
-## Scanner
+Public HECTON-8 pages may name the job without giving away the evidence. The open layer can say that HECTON-8 is an ocean moon under Aegir, that the colony failed, that Black Keel carries salvage pressure instead of clean rescue, and that Deep Reach left behind a public report built from storm, collapse, autonomous failure, Atlas-6 rescue language, and missing data.
 
-PUBLIC ARCHIVE GATE // Spoiler tier 0/1. Public context only. Deep evidence requires recovered custody before codex expansion.
+That is enough for a reader to understand the premise. It is not enough to prove the crime.
 
-## Terminal
+Deeper pages need recovered objects: a packet seal, a route stamp, a scan record, a worker tag, a terminal fragment, a black-box line, or a sample with custody intact. Before those objects are found in-game, the public wiki stops at safe context. After discovery, the codex can use stronger wording because the player has seen where the fact came from.
 
-PUBLIC/WIKI EXPORT FILTER // Allowed before evidence: setting, route pressure, public accident language, known institutions, and early salvage premise. Hold deep evidence until recovered.
+The gate protects five things: the player's first descent, colony worker evidence, the Deep Reach liability chain, Atlas-6 repair-network truth, and final payload outcomes. Public pages can point toward those subjects. They cannot carry the final receiver, route, or consequence.
 
-## Audio
-
-Black Keel relay: Public copy names the moon. Proof needs a seal. Bring the seal.
-
-## Field Note
-
-The public page tells you where to dive. It does not tell you who paid to keep the door shut.
+Use public articles as maps. Use recovered evidence as proof.
 
 <!-- External Site; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/en_US. -->

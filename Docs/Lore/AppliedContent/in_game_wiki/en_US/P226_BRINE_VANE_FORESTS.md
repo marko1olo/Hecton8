@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Brine Vane Forests
 
-Brine vane forests are the first mid-depth ecology that makes invisible physics visible. They are flat salt-mineral membranes stretched along boundaries between brine, temperature and pressure. From a distance they look like pale leaves in a drowned canyon; up close they are route instruments. An intact sheet means the water on the other side is not just different but harder to enter, with enough density shear to bend sonar and pull a body off trim. Torn edges mark recent passage. Curled tips show where the boundary is weakening into a shear window. Pale mineral ribs can be harvested from shed strips, but cutting the live sheet may close the only readable lane through a canyon wall. Follow torn vanes when you need a route. Avoid black layered water that erases their edges.
+Brine vane forests are the first mid-depth ecology that makes invisible physics visible. They are flat salt-mineral membranes stretched along boundaries between brine, temperature and pressure. From a distance they look like pale leaves in a drowned canyon; up close they are route instruments. An intact sheet means the water on the other side has a steeper density wall, hard enough to bend sonar and pull a body off trim. Torn edges mark recent passage. Curled tips show where the boundary is weakening into a shear window. Pale mineral ribs can be harvested from shed strips, but cutting the live sheet may close the only readable lane through a canyon wall. Follow torn vanes when you need a route. Avoid black layered water that erases their edges.
 
 ## Scanner
 

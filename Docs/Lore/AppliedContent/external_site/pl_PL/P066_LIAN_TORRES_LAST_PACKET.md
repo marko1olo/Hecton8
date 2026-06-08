@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "Ostatni pakiet Liana Torresa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# Ostatni pakiet Liana Torresa
 
-PL LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue.
+Ostatni pakiet Liana Torresa nadaje tragedii bez ansibla ludzką postać: pakiet istnieje, nazwiska istnieją, ale dystans, priorytet kolejki i odpowiedź korporacji sprawiają, że prawda dociera jako odpowiedzialność zamiast ratunku.
 
 ## Scanner
 
-PL LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+Ostatni czysty pakiet nie zaginął. Przyznanie, że go odebrano, było zbyt kosztowne.
 
 ## Terminal
 
-PL LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+TORRES, L. Czyste uzgodnienie nośnika osiągnięte. Liczba pracowników dołączona. Dowód ewakuacji dołączony. Wiek przekaźnika niedopuszczalny dla ratunku żywych. Archiwum korporacyjne później oznacza pakiet jako uszkodzony.
 
 ## Audio
 
-PL LOC HOLD: He sent the names. The archive called them noise.
+Wysłał nazwiska. Archiwum nazwało je szumem.
 
 ## Field Note
 
-PL LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+Znacznik czasu może być ciałem, kiedy przewoźnik odpowiada niewłaściwej kolejce.
 
 <!-- External Site; generated from P066_LIAN_TORRES_LAST_PACKET/pl_PL. -->

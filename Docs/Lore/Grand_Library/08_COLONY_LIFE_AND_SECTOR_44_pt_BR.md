@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # VIDA NA COLÔNIA ANTES DO DESASTRE: SETOR 44
 
 > **Fonte:** Registro pessoal recuperado dos alojamentos do Setor 44, Unidade 8-B.

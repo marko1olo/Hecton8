@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Ascent Energy Charge Assembly"
+title: "上昇エネルギーチャージアセンブリ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Ascent Energy Charge Assembly
+# 上昇エネルギーチャージアセンブリ
 
-JA LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.
+上昇チャージは深部資源を機械的かつ倫理的な取引に変える。高圧材料はカプセルを持ち上げ、custody 中の証拠を守り、あるいは帰還航路を弱める支払いになる。
 
 ## Scanner
 
-JA LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+エネルギークレードルは pressure pulse で削られている。安いチャージは清潔な棺を作る。
 
 ## Terminal
 
-JA LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: vent-forged heat cell、pressure-history insulator、custody stamp 必須。Raw fuel 拒否。未認証 blue debt は launch impulse 下で割れ、recovery claim を無効化。
 
 ## Audio
 
-JA LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+揚力は売るか、それに乗るかだ。両方はできない。
 
 ## Field Note
 
-JP LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+クレードル内のすべてのグラムは、脱出、証拠、または blue-debt payout だ。カプセルは欲を許さない。
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/ja_JP. -->

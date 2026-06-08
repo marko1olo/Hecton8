@@ -208,7 +208,7 @@ namespace Hecton8.EditorTools
                 writer.WriteLine(
                     "| " + asset.name +
                     " | " + asset.PersistentId +
-                    " | " + asset.TemplateHashId +
+                    " | " + asset.ResolvePersistentHashId() +
                     " | " + asset.DefaultIntegrityState.ToString("0.00", CultureInfo.InvariantCulture) +
                     " | " + assetPath +
                     " |");

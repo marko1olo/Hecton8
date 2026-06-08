@@ -1,6 +1,5 @@
 namespace Hecton8.Inventory
 {
-    using Hecton.Localization;
     using Hecton8.Items;
     using Unity.Collections.LowLevel.Unsafe;
     using UnityEngine;
@@ -110,9 +109,7 @@ namespace Hecton8.Inventory
                 return;
             }
 
-            int stableHash = itemData.PersistentHashId != 0
-                ? itemData.PersistentHashId
-                : LocHash.Compute(itemData.PersistentId);
+            int stableHash = ItemData.ResolvePersistentHashId(itemData);
             ConfigureEditorBake(
                 stableHash,
                 itemData.MassKg,

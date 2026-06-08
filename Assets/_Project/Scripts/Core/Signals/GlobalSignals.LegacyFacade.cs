@@ -89,7 +89,9 @@ namespace Hecton8.Core
         [global::System.Obsolete("Legacy publish facade is retired. Use SignalBus<T> or an owner route wrapper.", true)]
         public static void Publish(in SurvivalVitalsChangedSignal signal)
         {
-            SurvivalSignalRoute.TryQueueVitals(in signal);
+            EnsureInitialized();
+            if (!SurvivalSignalRoute.TryQueueVitals(in signal))
+                SignalBridgeState.RecordLegacyPublishDrop();
         }
 
         /// <summary>Queues one hull deformation VFX packet for downstream audio and feedback systems.</summary>
@@ -1263,7 +1265,7 @@ namespace Hecton8.Core
         [global::System.Obsolete("Central latest-state facade is retired. Use SurvivalSignalRoute.TryGetLatestDeath.", true)]
         public static bool TryGetLatestSurvivalDeathSignal(out SurvivalVitalsChangedSignal signal, out int sequence)
         {
-            return SignalBridgeState.TryGetLatestSurvivalDeath(out signal, out sequence);
+            return SurvivalSignalRoute.TryGetLatestDeath(out signal, out sequence);
         }
 
         [global::System.Obsolete("Central latest-state facade is retired. Use SignalBus<SeismicSignal>.TryGetLatest or an owner route reader.", true)]

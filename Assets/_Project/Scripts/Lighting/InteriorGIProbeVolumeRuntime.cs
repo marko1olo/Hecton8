@@ -493,14 +493,30 @@ namespace Hecton8.Lighting
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!isActiveAndEnabled ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            {
+                return;
+            }
+
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
-            if (TryResolveAbsoluteAupFromRuntimeOrigin(_cachedTransform.position, out double3 shiftedRootAup))
-            {
-                _rootAup = shiftedRootAup;
-                _rootHash = HashAup(_rootAup);
-            }
+            Vector3 runtimePosition = _cachedTransform.position;
+            if (!MathGuard.IsFinite(runtimePosition))
+                return;
+
+            double3 shiftedRootAup = shiftData.NewTotalOffsetDouble + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(shiftedRootAup)))
+                return;
+
+            _rootAup = shiftedRootAup;
+            _rootHash = HashAup(_rootAup);
 
             _visualDirty = true;
         }

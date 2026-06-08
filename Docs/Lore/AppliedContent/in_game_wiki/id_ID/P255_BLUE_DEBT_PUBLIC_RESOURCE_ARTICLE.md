@@ -9,32 +9,35 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Blue Debt Public Resource Article"
+title: "Artikel Publik Sumber Daya Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Blue Debt Public Resource Article
+# Artikel Publik Sumber Daya Blue Debt
 
-ID LOC HOLD: Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.
+Blue debt adalah slang Marauder, bukan kelas material yang bersih. Secara publik, ia menggambarkan Xenon-Omega-bearing pressure substrate: campuran tak stabil dari clathrate, brine, kisi mineral, biofilm industri, dan hardware berbekas containment yang dapat menyimpan kondisi ekstrem tanpa berperilaku seperti bijih biasa. Ia penting karena HECTON-8 membuat tekanan berguna. Lingkungan yang sama yang menghancurkan penyelam dapat menyimpan kimia aneh, komputasi terlindung, memori sensor, dan permukaan containment yang cukup berharga untuk menjaga klaim tetap hidup. Blue debt tidak boleh terbaca sebagai loot ajaib. Ia berbahaya karena mengingat tempat ia terbentuk. Hangatkan dengan salah, potong dengan salah, atau pindahkan tanpa proof of custody, dan ia berhenti menjadi sumber daya lalu menjadi bukti, racun, tekanan, atau utang. Teks publik dapat menjelaskan mengapa Marauders mengejarnya. Ia juga harus menjelaskan mengapa mereka tidak percaya siapa pun yang menyebutnya bersih.
 
 ## Scanner
 
-ID LOC HOLD: The public name sounds like slang because the official name is built to hide liability.
+Bahasa slang itu jujur. Nama resmi justru menyembunyikan liabilitas: Xenon-Omega-bearing pressure substrate.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+TINGKAT ARTIKEL PUBLIK / BLUE DEBT
+diizinkan: perilaku sampel, kimia tekanan, pembawa clathrate dan brine, nilai containment, penggunaan komputasi, risiko kustodi
+dikunci: tabel resep persis, tuning payout, rute substrate Atlas akhir game
+catatan editor: tanpa bijih ajaib, tanpa fantasi loot bercahaya, tanpa kepemilikan bersih.
 
 ## Audio
 
-ID LOC HOLD: Ore is what people call it when they want to forget the paperwork.
+Mereka menyebutnya blue debt karena setiap gram berguna tiba sudah berutang tekanan, dokumen, atau darah kepada seseorang.
 
 ## Field Note
 
-ID LOC HOLD: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+Jika ia bersinar seperti harta, tulis ulang. Blue debt harus terasa berguna, basah, diatur, tidak stabil, dan sudah diperebutkan.
 
 <!-- In-Game Wiki; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/id_ID. -->

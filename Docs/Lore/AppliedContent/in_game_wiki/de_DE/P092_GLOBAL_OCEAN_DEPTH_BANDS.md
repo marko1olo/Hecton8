@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Global Ocean Depth Bands"
+title: "Globale Ozean-Tiefenbaender"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Global Ocean Depth Bands
+# Globale Ozean-Tiefenbaender
 
-DE LOC HOLD: HECTON-8's ocean bands define exploration pacing. The first shelf can be bright and alive. Mid-depths teach industrial ruins and cable reefs. Brine canyons distort navigation. Abyssal machine fields make repairs hostile. The Atlas basin turns geology into final authority.
+HECTON-8s Ozean wird in Baendern gelesen, nicht als einzelne Bodenzahl. Der photische Schelf erlaubt noch Licht, Wracks, Algen und schlechte Piloten. Der Industrieschelf traegt Kabelriff, Rohrkaefige und alte Ladedecks. Darunter biegen Salzlauge-Treppen Schall und Ballast. Abyssale Maschinenfelder bestrafen Reparaturen. Im Atlas-Becken wirkt Druck wie Zuständigkeit.
 
 ## Scanner
 
-DE LOC HOLD: Depth chart. Shallows invite you; the lower bands start charging rent in pressure.
+Tiefenkarte. Der erste Schelf verzeiht schlechten Ballast; tieferes Wasser stellt jeden Fehler in Druck, Hitze und Stille in Rechnung.
 
 ## Terminal
 
-DE LOC HOLD: BANDS: 0-250 m photic shelf. 250-1200 m industrial shelf and cable reef. 1200-2800 m brine canyon. 2800-4300 m abyssal machine field. 4300-5600 m Atlas basin.
+BAENDER: 0-250 m photischer Bergungsschelf; 250-1200 m Industrieschelf und Kabelriff; 1200-2800 m Salzlauge-Treppe/Canyon; 2800-4300 m abyssales Maschinenfeld; 4300-5600 m Atlas-Becken.
 
 ## Audio
 
-DE LOC HOLD: Every band changes what the world allows you to do.
+Alle hundert Meter nimmt dir eine Gewohnheit weg.
 
 ## Field Note
 
-DE LOC HOLD: Depth is not a number. It is a ruleset.
+Tiefe auf HECTON-8 ist Gesetz, Wetter, Grenze und Hunger mit derselben Zahl.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/de_DE. -->

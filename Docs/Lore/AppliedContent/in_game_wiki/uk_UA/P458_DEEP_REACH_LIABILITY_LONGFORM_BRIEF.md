@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "UK LOC HOLD: Deep Reach Liability Chain"
+title: "Deep Reach: відповідальність під справжньою водою"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Deep Reach Liability Chain
+# Deep Reach: відповідальність під справжньою водою
 
-UK LOC HOLD: Deep Reach guilt is strongest where clean reports meet broken hardware. The flood was real; the avoidable part is recorded in margins, clocks, doors and custody labels.
+Deep Reach винна без фальшивого океану. Припливи, кріосфера, шторми й хімія тиску спричинили катастрофу; процедура вибрала погані margin і зачистила папери.
 
 ## Scanner
 
-UK LOC HOLD: Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
+Публічний доказовий brief. Фізика Great Tide реальна; вина Deep Reach видна в прийнятих margin, замалій евакуації, пріоритеті Atlas, карантинній затримці й конверсії збитків.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
+ПУБЛІЧНИЙ ВУЗОЛ ВІДПОВІДАЛЬНОСТІ // DEEP REACH. Ланцюг: Varnek margin acceptance, Arendt Atlas waiver, Haldane quarantine hold, Ibarra loss ledger, Sato-Ren return action.
 
 ## Audio
 
-UK LOC HOLD: A natural disaster can still carry signatures. Read the room before you read the report.
+Відновлене legal audio: "Не називайте це затримкою. Назвіть review. Вода дасть інтервал."
 
 ## Field Note
 
-UK LOC HOLD: Marauder note: trust timestamps, pressure scars and door states before polished incident language.
+Нотатка мародера: убивала фізика. Procedure вирішувала, кого рахувати recoverable.
 
 <!-- In-Game Wiki; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/uk_UA. -->

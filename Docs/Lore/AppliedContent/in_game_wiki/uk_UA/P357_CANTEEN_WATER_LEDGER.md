@@ -9,32 +9,36 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Canteen Water Ledger"
+title: "Журнал води їдальні"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Canteen Water Ledger
+# Журнал води їдальні
 
-UK LOC HOLD: The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.
+Журнал їдальні достатньо малий, щоб його пропустити, і надто людський, щоб назвати сміттям. Це ламінована під тиск табличка із затопленої кімнати харчування: з одного боку жетони води, з іншого доступ до насосів, а медичні override втиснуті на поле, де програмне забезпечення не залишило людського рядка. Ніхто не написав на ній прощання. Ніхто не пояснив Велику Хвилю. Останній видимий конфлікт - шість зниклих чашок, поганий північний фільтр і питання, чи має насосна бригада отримати воду перед нічним спуском.
+
+Саме тому це важливо. HECTON-8 стає справжнім, коли колонія перестає бути лише місцем катастрофи й стає місцем, де втомлені працівники рахували питну воду як custody інструментів. Жетон їжі був не лише пайком. Він доводив, що людина вийшла зі зміни, повернула ключ насоса, перевірила симптоми тиску або мала бути в койці, а не під підлогою. Журнал перетворює безіменну втрату на рутину: скорочені імена, підписані правки, борги, перенесені далі, бо система не мала часу стати доброю.
+
+Для ??????? цей об'єкт корисний раніше, ніж сумний. Корекція насосної пов'язує їдальню з маршрутом обслуговування. Медичні override вказують на тискову хворобу до того, як офіційний пакет визнає cluster травм. Зниклі жетони можуть означати крадіжку, термінове сортування, забруднення або когось, хто тихо годував бригаду, вже стерту розкладом. Збережи табличку перед тим, як розбирати кімнату. Рядок про чашки може довести більше, ніж меморіал.
 
 ## Scanner
 
-UK LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
+ЖУРНАЛ ВОДИ ЇДАЛЬНІ // Ламінована табличка, кути розбухли. Бракує шести жетонів води до їжі, два медичні override, одна корекція насосної жирним олівцем. Колонія ще сперечалася про чашки, коли океан почав забирати кімнати.
 
 ## Terminal
 
-UK LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
+ЖУРНАЛ ЇДАЛЬНІ: питний ліміт запечатаний старшим зміни. Відсутні жетони: 6. Медичні override: 2. Корекція насосної: Mara Venn. Спір про пайок утримано після тону 2, бо північний фільтр скис, і ніхто ще не хотів писати ???????????.
 
 ## Audio
 
-UK LOC HOLD: The last argument was about water tokens.
+Остання суперечка не була героїчною. Вона була про те, хто пив, хто працював мокрим і хто підписав повернення чашки.
 
 ## Field Note
 
-UK LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+????? ??????? ???????, ??? ??????? ???????, ???? ???????? ????????. ?? ?????? ????. ????????? ??? ????? ? ? ???????.
 
 <!-- In-Game Wiki; generated from P357_CANTEEN_WATER_LEDGER/uk_UA. -->

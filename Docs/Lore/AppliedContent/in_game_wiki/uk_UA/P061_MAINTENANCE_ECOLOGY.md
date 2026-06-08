@@ -7,34 +7,34 @@ poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
 biome_tags: biome.cable_reef;biome.repair_fauna
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Maintenance Ecology"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Екологія обслуговування"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Екологія обслуговування
 
-UK LOC HOLD: Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.
+Екологія обслуговування робить HECTON-8 корисним і неправильним водночас. Atlas навчився, що біоплівка переносить слабкий сигнал, фільтрувальні колонії повторюють пінги, мушлевий ріст закриває тріщини, а мічена фауна повертає зіпсовані sensor packets. Океан не є особою. Та ремонтна мережа достатньо жива, щоб кожен cable reef став інструментом, загрозою і слідом доказів.
 
 ## Scanner
 
-UK LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+Провідна біоплівка, мушлеві нарости, мічена фауна й тепло жерл несуть ремонтний трафік.
 
 ## Terminal
 
-UK LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+ЕКОЛОГІЯ ОБСЛУГОВУВАННЯ ATLAS: біоплівковий міст стабільний; фільтрувальна колонія повторює акустичний імпульс; мушлевий ущільнювач закриває тріщину; мічена фауна повертає пошкоджені sensor packets.
 
 ## Audio
 
-UK LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
+Кабель живий, бо машина потребувала, щоб він жив.
 
 ## Field Note
 
-UK LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Не зрізай кожен живий шов. Деякі тримають тиск краще за метал.
 
 <!-- In-Game Wiki; generated from P061_MAINTENANCE_ECOLOGY/uk_UA. -->

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Deep Reach Liability Evidence"
+title: "Dowody odpowiedzialności Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Deep Reach Liability Evidence
+# Dowody odpowiedzialności Deep Reach
 
-PL LOC HOLD: Deep Reach is culpable because the HECTON-8 disaster can be both natural and managed badly. The ocean supplied real force. The company supplied thin margins, late authorization, quarantine delays, Atlas priority rules and paperwork clean enough to outlive the workers it described. The strongest evidence is physical: doors, clocks, sensor tolerances, route holds and loss ledgers.
+Deep Reach jest winne, bo katastrofa HECTON-8 mogła być naturalna i jednocześnie źle zarządzana. Ocean dostarczył prawdziwej siły: tide resonance, cryosphere shear, storm stacking i pressure failure. Firma dostarczyła cienkie margins, późną authorization, quarantine delay, Atlas priority rules i papierologię tak czystą, że przetrwała ludzi, których opisywała. Najmocniejsze dowody są fizyczne i proceduralne: drzwi trzymane przez executive authority, sensor tolerance zmienione przed zamknięciem okna, kolejka opóźniona przez legal clearance, loss ledger zmieniający pracowników w claim categories, gdy woda wciąż się poruszała. Gracz uczy się nie ufać oficjalnemu językowi, porównując go z wgnieceniami, zegarami i trasami.
 
 ## Scanner
 
-PL LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Zapis liability. Realna fizyka pływów, zaakceptowane margin risk, opóźnienie ewakuacji, quarantine holds, Atlas weighting i oczyszczony język strat schodzą się w jednym łańcuchu dowodów.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+WĘZEŁ ARCHIWUM PUBLICZNEGO // DOWODY LIABILITY. Great Tide przyjęty. Przegląd otwarty dla sensor margins, opóźnienia evacuation queue, quarantine holds, Atlas weighting, worker classification i loss conversion.
 
 ## Audio
 
-PL LOC HOLD: A disaster can be natural and still have signatures on it.
+Katastrofa może być naturalna i nadal nieść podpisy.
 
 ## Field Note
 
-PL LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Notatka Maraudera: nie kłóć się z pływem. Kłóć się z podpisami obok.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/pl_PL. -->

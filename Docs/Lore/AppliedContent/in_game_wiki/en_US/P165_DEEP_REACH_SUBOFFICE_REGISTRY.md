@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Deep Reach Suboffice Registry
 
-The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+The suboffice registry matters because it names the machinery without inventing a throne room. Deep Reach did not need one person to order every death. It needed offices with narrow names, each able to delay, reclassify or pass a packet. Contract Continuity kept obligations alive. Packet Notary decided what counted as proof. Quarantine Hold made rescue sound dangerous. Asset Silence lowered the value of witnesses. Return Action decided who was worth mass.
 
 ## Scanner
 
-Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board and Return Action Queue.
 
 ## Terminal
 
-SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach kept lethal decisions below the level of one villain. Small desks routed clauses, packets, quarantine, silence and return priority until no single stamp looked like murder.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A small desk can kill more quietly than a director.
 
 ## Field Note
 
-Use dull names. Dull names are where liability hides.
+Keep the names dull. Dull names are where liability hides.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/en_US. -->

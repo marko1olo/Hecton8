@@ -7,34 +7,34 @@ poi_tags: poi.tide_model_terminal;poi.glacier_warning
 biome_tags: biome.tide_gauge;biome.glacier_break
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Mara-Venn-Gezeitenmodell"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# Mara-Venn-Gezeitenmodell
 
-DE LOC HOLD: Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.
+Mara Venn gibt der Great Tide eine wissenschaftliche Zeugin. Ihr Modell verband Aegir-Mondgeometrie, cryosphere shear und Evakuierungskapazität zu einer hässlichen Marge. Deep Reach löschte das Modell nicht; es änderte das Handlungsetikett, bis die Warnung billig genug war, um sie zu ignorieren.
 
 ## Scanner
 
-DE LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
+Mara Venn sagte keinen Mord voraus. Sie sagte die Gezeitenmarge voraus, die Deep Reach in unwahrscheinlich umbenannte.
 
 ## Terminal
 
-DE LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
+VENN-MODELLREVISION: cryosphere shear übersteigt Evakuierungsmarge unter Aegir-Frühlingsgeometrie; review action auf monitor herabgestuft bis asset-continuity-Budget vorliegt.
 
 ## Audio
 
-DE LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
+Für die Leute, die Zahlen lasen, kam das Wasser nicht plötzlich.
 
 ## Field Note
 
-DE LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+Eine Warnung wird billig, sobald jemand sie auf Papier herabstuft.
 
 <!-- In-Game Wiki; generated from P062_MARA_VENN_TIDE_MODEL/de_DE. -->

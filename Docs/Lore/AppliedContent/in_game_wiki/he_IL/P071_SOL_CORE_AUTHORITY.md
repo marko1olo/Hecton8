@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "סמכות Sol Core"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# סמכות Sol Core
 
-HE LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core הוא השורש המשפטי והפיננסי של ההתפשטות האנושית, לא מולדת אישית ולא משרד חילוץ. על HECTON-8 התקנים שלו שרדו כחותמות, טפסי אחריות, לוחות בטיחות ושפת ביטוח שחיו מעבר לאנשים שהיו אמורים להגן עליהם.
 
 ## Scanner
 
-HE LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+חותם חוק ישן של Sol. הוא יכול להחזיק בגופה של ספר גם בלי להיות קרוב מספיק להריח דליפת לחץ.
 
 ## Terminal
 
-HE LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+תקן SOL CORE: רציפות התביעה מוכרת דרך משמורת מוביל מורשה, ביטוח מסלול והכרעה נדחית. עדיפות חילוץ אנושי לא נקבעה עד אישור סיכונים מקומי.
 
 ## Audio
 
-HE LOC HOLD: The seal came from Earth space. The rescue clause did not.
+החותם הגיע ממרחב כדור הארץ. סעיף החילוץ לא.
 
 ## Field Note
 
-HE LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol אינו בית כאן. זו החתימה העתיקה ביותר במסמך, והיא עדיין יכולה להרוס אותך.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/he_IL. -->

@@ -9,32 +9,36 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: 구조를 거부하는 하늘"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Aegir Transfer Windows
+# Aegir: 구조를 거부하는 하늘
 
-KO LOC HOLD: Aegir is reachable by machinery, timing and debt. No faster-than-light drive crosses the route. Probe packets mapped the warm dwarf system first, then beam infrastructure and pellet-fusion freight built enough traffic to move seed mass, claim platforms and slow human decisions into the same ledger. HECTON-8 sits inside that machinery as a pressure moon under Aegir, bright at the surface, dangerous by depth and useful enough that nobody could leave it alone. Black Keel does not ignore a survivor because rescue is impossible. It waits because recovery requires several clocks to agree: relay delay, carrier position, descent mass, storm shutters, custody signatures and a window narrow enough to close while a person is still sealing a capsule. Every visible moon, relay path and transfer band is part of the same route accounting. That is why help reaches HECTON-8 first as a number, then as a signal, and only much later as hardware.
+## 빈 하늘이 아니다
 
-## Scanner
+Aegir는 배경이 아니다. 바다 위의 기계다. 중력, 방사선, 중계 기하, 잔해 날씨, 계약 시간, 회수법이 거기서 움직인다.
 
-KO LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+ansible도 FTL도 없다. Ran/Aegir 경로는 광년급 문제이고, 지역 창도 궤도, 폭풍, 달 그림자, custody 대기열에 묶인다. 참인 패킷은 늦을 수 있다. 깨끗한 패킷은 법적으로 쓸모없을 수 있다.
 
-## Terminal
+사다리는 Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON, Mute를 부른다. 정확한 상수는 미래 표의 몫이다. 현장 언어는 shadow, surge, scatter, plume, lag, receiver로 충분하다.
 
-KO LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+Black Keel은 높이 남는다. 내려가는 것은 열, 연료, 노출, 일정, 책임을 소모한다. 귀환에는 음향 중계, 상승 하드웨어, 타이밍, 날씨, 검역, payload hash, 질량 창이 필요하다. 하나가 빠져도 carrier는 침착하게 들린다. 침착함은 ledger가 붙은 자동화다.
 
-## Audio
+## 하늘은 기계다
 
-KO LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Aegir는 그려진 배경처럼 읽히면 안 된다. 주성, 달의 사다리, relay shadows, pellet lanes, braking wakes, ice scatter, storm plume, guidance lag가 하나의 적대적인 일정으로 쌓인 이야기 최대의 기계다. 플레이어는 전부를 한 번에 볼 필요가 없다. 모든 메시지, 투하, 회수 뒤에 기하가 있음을 느껴야 한다.
 
-## Field Note
+그래서 구조는 그냥 오지 못한다. FTL 보정도, 숨은 ansible도, 질량을 무시하는 영웅적 carrier도 없다. route window는 법의 허가이기 전에 물리의 허가다. Black Keel이 tender를 내릴 수 있는 것은 좁은 현지 작업 때문이지 기적 때문이 아니다.
 
-KO LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+## 올려다본다는 것
+
+HECTON-8에서 위를 보는 일은 희망이 아니라 timing을 보는 일이다. Aegir는 packet이 오를 때, receiver가 답할 때, claim이 공증될 때, 그리고 플레이어가 오래된 지시와 홀로 남는 때를 정한다.
+
+좋은 천문학 글은 달빛을 위험으로 읽게 한다. Kestrel이 움직이면 relay shadow가 바뀐다. ice scatter가 오르면 항법은 소문이 된다. Silent Orbit이 침묵해도 오래된 금속은 현재를 결정할 수 있다.
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/ko_KR. -->

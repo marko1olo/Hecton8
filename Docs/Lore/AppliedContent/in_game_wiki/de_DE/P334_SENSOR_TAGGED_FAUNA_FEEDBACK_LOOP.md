@@ -3,13 +3,13 @@ packet_id: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.sensor_tagged_fauna_feedback_loop
 unlock_id: unlock.sensor_tagged_fauna_feedback_loop
-poi_tags: poi.tagged_fauna_loop;poi.old_colony_sensor
-biome_tags: biome.ecology;biome.comms
+poi_tags: poi.sensor_tagged_fauna;poi.old_colony_tag
+biome_tags: biome.atlas;biome.fauna
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Rückkopplungsschleife sensormarkierter Fauna"
+title: "Rückkopplungsschleife sensorgetaggter Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rückkopplungsschleife sensormarkierter Fauna
+# Rückkopplungsschleife sensorgetaggter Fauna
 
-Deep Reach markierte lokale Fauna, um Strömungen, Chemie und Migration zu kartieren. Viele Tags überlebten die Crews. Atlas liest sie weiter als Vermessungsdaten, wodurch eine Tierroute Reparaturpriorität erhöhen oder eine alte Kartenkachel öffnen kann.
-
-Das macht das Tier nicht gehorsam. Es kann verwundet, territorial, von alter Hardware befallen oder auf Nahrungssuche sein. Die Maschine sieht nur Bewegung plus Daten. Ein Marauder sieht die schlimmere Wahrheit: der Ozean kann dich aus Versehen melden.
+Sensorgetaggte Fauna trägt die alte Kolonie in ihren Narben. Deep Reach markierte Tiere für Migrations-, Druck- und Kontaminationsstudien; Atlas las diese Tags später als billige Umwelttelemetrie. Das Wesen ist keine Puppe. Seine Bewegung kann dennoch Reparaturpriorität ändern, eine Drohnenroute wecken oder einen sicheren Durchgang besetzt aussehen lassen.
 
 ## Scanner
 
-Alter Kolonie-Sensortag unter neuem Narbengewebe. Bewegungsprofil geht in Atlas-Vermessungskanal. Tier durch aktiven Ping gereizt.
+Alter Deep-Reach-Tag unter Schalenwuchs. Migrationsspur entspricht einem Wartungssurvey.
 
 ## Terminal
 
-FAUNA-SCHLEIFE // Legacy-Tag 7F meldet Temperatur, Bewegung und Salzgehalt über beschädigten Vermessungskanal. Atlas-Reparaturpriorität stieg nach Migration. Markiertes Tier ist Telemetriequelle, kein Befehlsobjekt.
+FAUNASCHLEIFE: eingebetteter Tag sendet schwache Druck-, Bewegungs- und Kontaminationspakete. Atlas liest Bewegung als Umweltzustand, nicht als Tierabsicht.
 
 ## Audio
 
-Es jagt nicht für Atlas. Es schwimmt mit einer Marke, die noch unter die Haut genagelt ist.
+Es jagt dich nicht. Es kann dich trotzdem melden.
 
 ## Field Note
 
-Markierte Tiere ändern die Karte ohne Absicht. Folge einem nur, wenn du weißt, was ihm folgt.
+Gut für Begegnungen, bei denen das Tier unschuldig und trotzdem gefährlich für die Route ist.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/de_DE. -->

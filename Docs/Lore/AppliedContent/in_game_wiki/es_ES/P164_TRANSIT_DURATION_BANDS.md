@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Transit Duration Bands"
+title: "Bandas De Duración De Tránsito"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Transit Duration Bands
+# Bandas De Duración De Tránsito
 
-ES LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+Las bandas de tránsito explican por qué HECTON-8 puede ser alcanzable y aun así cruel. Los paquetes se mueven primero porque son pequeños, baratos y útiles legalmente. La carga se mueve cuando staging, braking rights y loss margins encajan. Un cuerpo que respira se mueve despacio porque exige masa, liability, life support y alguien que pague el retorno. Las ventanas locales de Aegir son más cortas pero no más amables: órbita, ruido de tormenta, radiación y geometría de Black Keel deciden si se mueven datos, carga o una persona.
 
 ## Scanner
 
-ES LOC HOLD: The same route means different time for packets, freight and people.
+DURATION BAND CHART // Paquetes sonda, carga pesada, crews humanos y ventanas locales de Aegir no comparten un reloj.
 
 ## Terminal
 
-ES LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // Ventanas locales: horas a días. Movimiento industrial interno: meses a años. Crew rotation: años de custody y deuda. Heavy interdomain freight y consecuencias: años a décadas.
 
 ## Audio
 
-ES LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
+La carga puede llegar antes que la misericordia. No es fallo. Es doctrina.
 
 ## Field Note
 
-ES LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+Si todos los relojes coinciden, el mundo se vuelve fantasía de rescate. Mantén los relojes hostiles.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/es_ES. -->

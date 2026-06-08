@@ -42,7 +42,8 @@ namespace Hecton8.Gameplay
         [FieldOffset(8)] public float WeldProgress01;
         [FieldOffset(12)] public int ReferenceSlot;
         [FieldOffset(16)] public uint StatusFlags;
-        [FieldOffset(20)] public uint Reserved0;
+        [FieldOffset(20)] public ushort Reserved;
+        [FieldOffset(22)] public ushort Reserved0;
         [FieldOffset(24)] public uint Reserved1;
         [FieldOffset(28)] public uint Reserved2;
 
@@ -191,9 +192,13 @@ namespace Hecton8.Gameplay
         private static readonly AirlockReferenceSlot[] _referenceSlots = new AirlockReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[32] - sidecar occupancy map prevents wrap overwrite before deferred dispatch - owner: BaseAirlockEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
+        // COLD ALLOC: ushort[32] - generation tokens reject stale airlock sidecar payloads after release/reuse - owner: BaseAirlockEvents
+        private static readonly ushort[] _referenceSlotGenerations = new ushort[ReferenceSlotCapacity];
 
         private static NativeQueue<BaseAirlockEventPayload> _pendingEvents;
         private static NativeQueue<BaseAirlockEventPayload> _nextFrameEvents;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
         private static int _pendingEventCount;
@@ -401,7 +406,7 @@ namespace Hecton8.Gameplay
                     _isDispatching = false;
                 }
 
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
             }
 
             if (_pendingEvents.IsEmpty())
@@ -418,7 +423,7 @@ namespace Hecton8.Gameplay
         public static bool TryResolveAirlock(in BaseAirlockEventPayload payload, out BaseAirlock airlock)
         {
             airlock = null;
-            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+            if (!IsReferenceSlotPayloadCurrent(in payload))
                 return false;
 
             airlock = _referenceSlots[payload.ReferenceSlot].Airlock;
@@ -432,7 +437,7 @@ namespace Hecton8.Gameplay
         public static bool TryResolveInteractor(in BaseAirlockEventPayload payload, out Transform interactor)
         {
             interactor = null;
-            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+            if (!IsReferenceSlotPayloadCurrent(in payload))
                 return false;
 
             interactor = _referenceSlots[payload.ReferenceSlot].Interactor;
@@ -444,7 +449,7 @@ namespace Hecton8.Gameplay
             if (airlock == null)
                 return false;
 
-            if (!TryReserveReferenceSlot(out int referenceSlot))
+            if (!TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration))
                 return false;
 
             _referenceSlots[referenceSlot].Airlock = airlock;
@@ -461,7 +466,8 @@ namespace Hecton8.Gameplay
                     airlock.IsPlayerInside,
                     airlock.IsEmergencyLockedDown,
                     airlock.IsManualOverrideBlocked),
-                Reserved0 = 0u,
+                Reserved = referenceGeneration,
+                Reserved0 = 0,
                 Reserved1 = 0u,
                 Reserved2 = 0u
             });
@@ -472,7 +478,7 @@ namespace Hecton8.Gameplay
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
                 return false;
             }
 
@@ -495,13 +501,13 @@ namespace Hecton8.Gameplay
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<BaseAirlockEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BaseAirlockEventPayload>[32] - deferred airlock event lane flushed by SystemDispatcher LateUpdate - owner: BaseAirlockEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<BaseAirlockEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BaseAirlockEventPayload>[32] - next-frame airlock event lane prevents same-frame reentrant dispatch - owner: BaseAirlockEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                 }
             }
             catch
@@ -517,10 +523,12 @@ namespace Hecton8.Gameplay
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(BaseAirlockEvents),
@@ -529,25 +537,60 @@ namespace Hecton8.Gameplay
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeQueues()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(BaseAirlockEvents), label);
-            queue.Dispose();
-            queue = default;
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrimeQueueStorage(ref NativeQueue<BaseAirlockEventPayload> queue)
@@ -567,9 +610,10 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static bool TryReserveReferenceSlot(out int referenceSlot)
+        private static bool TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration)
         {
             referenceSlot = -1;
+            referenceGeneration = 0;
             if (_referencePendingCount >= ReferenceSlotCapacity)
                 return false;
 
@@ -584,12 +628,29 @@ namespace Hecton8.Gameplay
                     continue;
 
                 referenceSlot = candidateSlot;
+                referenceGeneration = AdvanceReferenceSlotGeneration(referenceSlot);
                 _referenceSlotOccupied[referenceSlot] = true;
                 _referencePendingCount++;
                 return true;
             }
 
             return false;
+        }
+
+        private static ushort AdvanceReferenceSlotGeneration(int referenceSlot)
+        {
+            ushort generation = unchecked((ushort)(_referenceSlotGenerations[referenceSlot] + 1));
+            if (generation == 0)
+                generation = 1;
+
+            _referenceSlotGenerations[referenceSlot] = generation;
+            return generation;
+        }
+
+        private static void ReleaseReferenceSlotForPayload(in BaseAirlockEventPayload payload)
+        {
+            if (IsReferenceSlotPayloadCurrent(in payload))
+                ReleaseReferenceSlot(payload.ReferenceSlot);
         }
 
         private static void ReleaseReferenceSlot(int referenceSlot)
@@ -611,12 +672,22 @@ namespace Hecton8.Gameplay
             return (uint)referenceSlot < ReferenceSlotCapacity;
         }
 
+        private static bool IsReferenceSlotPayloadCurrent(in BaseAirlockEventPayload payload)
+        {
+            int referenceSlot = payload.ReferenceSlot;
+            return IsValidReferenceSlot(referenceSlot) &&
+                   _referenceSlotOccupied[referenceSlot] &&
+                   payload.Reserved != 0 &&
+                   _referenceSlotGenerations[referenceSlot] == payload.Reserved;
+        }
+
         private static void ClearReferenceSlots()
         {
             for (int i = 0; i < ReferenceSlotCapacity; i++)
             {
                 _referenceSlots[i].Clear();
                 _referenceSlotOccupied[i] = false;
+                AdvanceReferenceSlotGeneration(i);
             }
         }
 
@@ -658,7 +729,7 @@ namespace Hecton8.Gameplay
                 if (pendingCount > 0)
                     pendingCount--;
 
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
             }
 
             if (queue.IsEmpty())
@@ -680,6 +751,9 @@ namespace Hecton8.Gameplay
             NativeQueue<BaseAirlockEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }

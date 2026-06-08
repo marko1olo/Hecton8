@@ -8,7 +8,7 @@ biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Rute Pulang Sonar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Rute Pulang Sonar
 
-Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work.
+Navigasi di HECTON-8 memperlakukan jalan pulang sebagai kerja, bukan penghiburan. Beacon usang masih bisa menunjuk koridor benar sambil menyembunyikan rintangan baru, dasar lumpur bergeser, atau pintu tekanan yang mengubah gema.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+Beacon pulang sudah basi. Ping aman lama tidak lagi cocok dengan gema koridor; massa kargo akan memperlambat jendela mundur.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: gema bersih terakhir tidak valid. Ping Black Keel diterima dengan kepercayaan rendah. Pergeseran rintangan dan kepadatan lumpur melebihi toleransi peta. Tandai garis kedua sebelum ekstraksi kargo.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+Rutenya masih ada. Gemanya tidak sama.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+Ping sebelum memuat. Jika jalan pulang berubah saat tanganmu kosong, ia tidak akan memaafkan tas penuh.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/id_ID. -->

@@ -8,33 +8,19 @@ biome_tags: biome.tide_pump;biome.drowned_admin
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Физическая запись Great Tide"
+spoiler_tier: 1
+title: "Запись физики Великого Прилива"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Физическая запись Great Tide
+# Запись физики Великого Прилива
 
-Физическая запись Great Tide задает логику бедствия HECTON-8: океан физически опасен, а корпоративное преступление - проектировать на оптимистичных margins, пока система размером с луну не взыскала долг.
+Запись физики Великого Прилива удерживает катастрофу честной. HECTON-8 был уязвим для приливного резонанса, обвала льда, штормового нагона и промышленного тепла. Вина Deep Reach видна в запасах, вместимости эвакуации и приоритетах решений, а не в выдуманной магии.
 
-## Scanner
-
-Flood model цела. Морю не нужен был злодей. Ему хватило плохих margins.
-
-## Terminal
-
-GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
-
-## Audio
-
-Отчет был прав. Поэтому его похоронили.
-
-## Field Note
-
-Не смягчай: реальная физика убила людей, а Deep Reach сделала так, чтобы у физики были жертвы.
+Запись физики Великого Прилива задает логику бедствия HECTON-8: океан опасен физически, а корпоративное преступление состоит в том, что проектировали по оптимистичным запасам, пока система масштаба луны не предъявила счет. Не смягчай: людей убила настоящая физика, а Deep Reach сделал так, чтобы у физики были жертвы.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/ru_RU. -->

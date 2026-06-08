@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "ZH LOC HOLD: Blue Debt Custody"
+title: "Blue Debt：custody中的压力历史"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Blue Debt Custody
+# Blue Debt：custody中的压力历史
 
-ZH LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt有用、昂贵，而且道德上肮脏。它不是魔法矿石，而是pressure-grown substrate，价值取决于handling、contamination、custody、Atlas compatibility和证据归属。
 
 ## Scanner
 
-ZH LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+资源档案。Blue debt是custody中的Xenon-Omega pressure substrate：pressure history、brine exposure、noble-gas capture、contamination stage、sample grade和mass-through-window payout。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+公共资源节点 // BLUE DEBT。价值需要pressure-rated containment、extraction scar record、contamination status、custody receipt和recoverable tonne-window allocation。
 
 ## Audio
 
-ZH LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+Black Keel付款音频：“不要抛光样本。封存它，评grade，保持receipt干燥。”
 
 ## Field Note
 
-ZH LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+掠夺者笔记：先评sample grade，再问什么接触过它。没有custody的价格是诱饵。
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/zh_CN. -->

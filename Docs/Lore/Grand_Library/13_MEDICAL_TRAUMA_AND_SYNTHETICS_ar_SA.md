@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # الصدمات الطبية والبدائل الاصطناعية
 
 > **المصدر:** إجراءات تشغيل المرفأ الطبي التلقائي في *Black Keel*.

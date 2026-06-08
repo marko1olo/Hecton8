@@ -14,15 +14,17 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Księga hamowania śladu peletowego
 
-HECTON-8 nie potrzebuje magicznej ściany, by odizolować gracza. Wystarczy odległość. Trasę Aegir otworzyły sondy peletowe: małe autonomiczne zwiadowce pchane przez ogromne instalacje wiązkowe w Luyten Junction. Sondę można wystrzelić, stracić i odpisać. Statku kolonialnego nie.
+HECTON-8 jest odizolowany, bo podróż jest ciężka. Trasa Aegir zaczęła się od sond peletowych: małych autonomicznych zwiadowców pchniętych z Luyten Junction i przeznaczonych do użytecznej śmierci. Niosły mapy, poprawki gwiezdne i prawne pakiety świadków. Utracona sonda była linią kosztu. Utracony statek kolonialny był pokoleniem długu.
 
-Fracht Atlas to inna rzecz. Niesie fabryki, zatoki krio, systemy wiertnicze, zapieczętowane umowy długu i ludzi dość tanich, by je podpisać. Jego silniki impulsowe fuzyjno-elektryczne latami budują prędkość. Przy przybyciu statek musi ją zgubić. Żagle magnetyczne rozpinają się na absurdalne odległości, by hamować na naładowanych cząstkach. Ostatnie przeloty drapią atmosferę, powłokę burzową i krawędź gazowego olbrzyma. Mały błąd w księdze hamowania może wymazać ładunek, załogę i roszczenie.
+Epoka frachtu Atlas poruszała prawdziwą masę. Nośnik przechodził z rdzeniami fabryk, komorami krio, systemami wiertniczymi, odbiornikami trasy, zapieczętowanymi kontraktami i ludźmi dość tanimi, by podpisać. Jego stosy fuzyjno-elektryczne budowały prędkość latami. Nic w tej architekturze nie przypominało cudu. Każda korekta spalała zapas. Każda płyta osłony była zakładem. Każdy kilogram przybywał z nazwiskiem przywiązanym do księgi.
 
-Dlatego ratunek w HECTON-8 wydaje się okrutny bez łamania fizyki. Sol może odebrać pakiet po wygaśnięciu decyzji. Deep Reach może posiadać dług szybciej, niż przesuwa kadłub. Black Keel może siedzieć na lokalnej orbicie Aegir i wyceniać okno odzysku, ale to lokalna maszyna salvage, nie obietnica domu. Cywilizacja dociera najpierw jako papier, potem jako sygnał, dużo później jako masa.
+Księga hamowania jest okrutną stroną. Nośnik bliski światłu musi znów zwolnić, zanim cokolwiek dostarczy. Żagle magnetyczne otwierają się na niemożliwe rozpiętości i ciągną przeciw naładowanym cząstkom. Tory peletów wgryzają się w krawędź żagla. Ostatnie przeloty używają atmosfery, powłoki burzowej i grawitacji gazowego olbrzyma jako hamulca. Jeśli chybi marginesu, statek nie przetrwa w użytecznym miejscu. Jeśli tnie zbyt cienko, trasa odbiera pióropusz, nie ładunek.
+
+Dlatego ratunek w HECTON-8 może wydawać się obsceniczny bez łamania fizyki. Sol może odpowiedzieć po wygaśnięciu decyzji. Deep Reach może odziedziczyć dług szybciej, niż poruszy kadłub. Black Keel może siedzieć na lokalnej orbicie i sprzedawać okno odzysku, bo już jest częścią maszyny Aegir. Ocalały nie jest poza cywilizacją. Jest wewnątrz kolejności jej przybycia: dokumenty, sygnał, potem masa.
 
 <!-- External Site; generated from P1091_PELLET_WAKE_BRAKING_LEDGER/pl_PL. -->

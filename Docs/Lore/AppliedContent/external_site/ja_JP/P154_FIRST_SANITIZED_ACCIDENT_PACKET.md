@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: First Sanitized Accident Packet"
+title: "最初の清書済み事故パケット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: First Sanitized Accident Packet
+# 最初の清書済み事故パケット
 
-JA LOC HOLD: The first Deep Reach notice is frightening because it is defensible. It names cascade, quarantine and corrupted logs while the room preserves the omissions.
+最初の Deep Reach 通知が恐ろしいのは、防御可能だからだ。cascade、quarantine、破損ログを名指しする一方で、部屋そのものが省かれたものを保存している。
 
 ## Scanner
 
-JA LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+回収された Deep Reach 事故パケット。きれいな文面がドア時計と浸水痕に矛盾している。
 
 ## Terminal
 
-JA LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+DEEP REACH 事故通知 / 局所的地質工学カスケード: 避難承認失敗は審査中; biological-pressure quarantine 有効; Atlas ログ破損; 外部公開は witness reconciliation まで延期。
 
 ## Audio
 
-JA LOC HOLD: The packet says cascade. Door clocks say delay.
+パケットは cascade と言う。ドア時計は delay と言う。
 
 ## Field Note
 
-JA LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+彼らは cascade と書いた。ロッカーの汚水線は避難スタンプより高い。
 
 <!-- External Site; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/ja_JP. -->

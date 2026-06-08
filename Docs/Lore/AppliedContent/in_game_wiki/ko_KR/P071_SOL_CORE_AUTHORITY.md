@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "솔 코어 권한"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# 솔 코어 권한
 
-KO LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+솔 코어는 인류 확장의 법적, 금융적 뿌리이지 개인의 고향도 구조 사무소도 아니다. HECTON-8에서 그 표준은 인장, 책임 서식, 안전 표지, 보험 문구로 남아, 보호해야 했던 사람들보다 오래 살아남았다.
 
 ## Scanner
 
-KO LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+오래된 솔 법률 인장. 압력 누출 냄새를 맡을 만큼 가까이 있지 않아도, 변경의 시체를 소유할 수 있다.
 
 ## Terminal
 
-KO LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+SOL CORE STANDARD: 허가 운송자 보관, 항로 보험, 지연 심리를 통해 청구 연속성이 인정됨. 인간 회수 우선권은 현지 위험 인증 전까지 미결.
 
 ## Audio
 
-KO LOC HOLD: The seal came from Earth space. The rescue clause did not.
+인장은 지구권에서 왔다. 구조 조항은 오지 않았다.
 
 ## Field Note
 
-KO LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+여기서 솔은 고향이 아니다. 아직도 너를 망칠 수 있는 문서 위의 가장 오래된 서명이다.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/ko_KR. -->

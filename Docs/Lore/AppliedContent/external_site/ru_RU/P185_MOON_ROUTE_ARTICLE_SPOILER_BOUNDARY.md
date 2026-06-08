@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Граница спойлеров для статей о лунных маршрутах"
+title: "Линия редактуры Atlas Basin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Граница спойлеров для статей о лунных маршрутах
+# Линия редактуры Atlas Basin
 
-Граница спойлеров для статей о лунных маршрутах задает безопасное покрытие Aegir moons для public wiki.
+Линия редактуры Atlas Basin отмечает, что публичное покрытие Aegir может говорить о лунах, маршрутах и давлении спасения, оставляя запечатанный бассейн вне открытых карт.
 
 ## Scanner
 
-Статьи о лунах могут объяснять опасности и роли маршрутов, но не последствия финального payload Atlas.
+Публичный атлас лун может назвать угрозы неба; он не может напечатать, что делает payload Atlas basin.
 
 ## Terminal
 
-SPOILER RULE: публичные страницы лун могут раскрывать names, hazards, route windows, salvage economy и public disaster HECTON-8. Atlas-basin payload effects требуют spoiler gates.
+РЕДАКТУРА ATLAS: публичные страницы лун могут перечислять имена, маршрутные окна, угрозы, salvage economy и факты катастрофы HECTON-8. Эффекты payload, поведение basin receiver и исходы финального решения остаются закрытыми.
 
 ## Audio
 
-Публикуй небо. Редактируй дно.
+Публикуй небо. Запечатывай дно.
 
 ## Field Note
 
-Статьи про Aegir должны расширять мир, не решая последний акт за игрока.
+Над облаками маршрут публичен. Под basin у каждого ответа все еще есть замок.
 
 <!-- External Site; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/ru_RU. -->

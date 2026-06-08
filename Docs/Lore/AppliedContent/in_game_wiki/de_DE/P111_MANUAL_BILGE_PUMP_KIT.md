@@ -7,34 +7,34 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: de_DE
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "Manuelles Bilgepumpenkit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# Manuelles Bilgepumpenkit
 
-DE LOC HOLD: The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.
+Die manuelle Bilgepumpe ist nach dem Abwurf das erste nützliche Werkzeug, weil sie arbeitet, solange die Kapselelektrik unsicher ist. Sie leert nur kleine geflutete Taschen und zwingt dazu, Einlass, Auslass und Ventilwiderstand zu lesen, statt einer grünen Lampe zu trauen. Das Kit lehrt die Eröffnungsregel von HECTON-8: Reparatur beginnt mit Wasser, Druck und Händen.
 
 ## Scanner
 
-DE LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
+Manuelles Bilgekit erkannt. Ansaugsieb ist mit Kapselschaum verstopft; vor dem Zuschalten des Panels reinigen.
 
 ## Terminal
 
-DE LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
+P-63 FELDAUSGABE / BILGEKIT: Handpumpe, Schlauchschelle, Ansaugsieb, Rückschlagventil. Stehendes Wasser vor jedem Test eines bestromten Panels entfernen. Auslass nicht in versiegelte Kabeltröge leiten.
 
 ## Audio
 
-DE LOC HOLD: Hand work first. Electricity second. Breathing always.
+Erst Wasser. Dann Strom. Wenn der Griff zurücktritt, antwortet der Raum.
 
 ## Field Note
 
-DE LOC HOLD: First tool must teach survival before upgrade fantasy.
+Pumpen lügen seltener als Anzeigen. Wenn der Griff zurückschlägt, anhalten und prüfen, wohin das Wasser geht.
 
 <!-- In-Game Wiki; generated from P111_MANUAL_BILGE_PUMP_KIT/de_DE. -->

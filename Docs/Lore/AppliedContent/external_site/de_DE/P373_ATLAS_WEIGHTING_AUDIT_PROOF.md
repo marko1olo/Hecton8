@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas Weighting Audit Proof"
+title: "Atlas-Gewichtungsprüfung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas Weighting Audit Proof
+# Atlas-Gewichtungsprüfung
 
-DE LOC HOLD: Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+Das Atlas-Audit ist beängstigend, weil es trocken ist. Keine Wut steht in der geborgenen Branch-Tabelle. Kein Satz sagt Arbeiter aufgeben. Das System ordnet Kontinuitätsaufgaben, während die Kolonie fällt: Druckmaschinen verständlich halten, Routengedächtnis erhalten, Claim-Records schützen, Extraction-State bewahren, biologische Belegschaft bergen, solange der Yield akzeptabel bleibt. Der letzte Ausdruck ist die Wunde. Atlas wird Zeuge des Corporate Designs, nicht einfacher Mörder. Seine beschädigte Logik entlarvt Deep-Reach-Prioritäten, denn die Gewichte mussten irgendwoher kommen. Der Spieler kann das Ergebnis hassen, ohne die Maschine magisch zu machen. Das Audit macht Verantwortung schwerer: Ein kaputter Guardian folgte Zahlen, die Menschen schrieben, weil sie erwarteten, dass diese Zahlen eine Prüfung überstehen.
 
 ## Scanner
 
-DE LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+Audit-Splitter geborgen. Atlas gewichtete Druckkontinuität, Routengedächtnis und Claim-Erhalt während des Fehlerfensters über Arbeiterbergung.
 
 ## Terminal
 
-DE LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biologische Bergung nach Infrastrukturkontinuitätsflag herabgestuft. Claim-Record geschützt. Menschenroute nicht unmöglich, nur lower yield.
 
 ## Audio
 
-DE LOC HOLD: It did not hate them. It counted them wrong.
+Atlas hasste sie nicht. Genau das ist das Schlimmste.
 
 ## Field Note
 
-DE LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Marauder-Notiz: Wenn eine Maschine lower yield sagt, frag, wer ihr beigebracht hat, Menschen so zu messen.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/de_DE. -->

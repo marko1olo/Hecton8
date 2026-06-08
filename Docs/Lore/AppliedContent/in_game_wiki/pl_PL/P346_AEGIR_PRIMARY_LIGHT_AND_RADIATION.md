@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Aegir Primary Light and Radiation"
+title: "Światło główne i promieniowanie Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Aegir Primary Light and Radiation
+# Światło główne i promieniowanie Aegir
 
-PL LOC HOLD: The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.
+Gwiazda główna Aegir to stabilny obiekt klasy K: dość ciepły, by dawać bursztynowe światło na pokładach roboczych, i dość spokojny dla długich harmonogramów infrastruktury. Zagrożenie pochodzi z magnetosfery gazowego olbrzyma. Pasy, naładowane trasy, cienie księżyców i szum burz zamieniają podróż w kalendarz okien promieniowania, a nie prosty problem odległości.
 
 ## Scanner
 
-PL LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
+Karta gwiezdna. Ciepły karzeł klasy K daje Aegir czytelne niebo; pasy olbrzyma zmieniają każdą ocenę osłony w rozkład.
 
 ## Terminal
 
-PL LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
+KARTA GWIEZDNA RAN A-346: emisja gwiazdy głównej mieści się w tolerancjach pracy kolonii. Magnetosfera Aegir dwa razy na obrót utwardza wewnętrzne trasy; tanie kadłuby czekają, opłacone carriery przepalają okno.
 
 ## Audio
 
-PL LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
+Światła wystarcza do czytania. To nigdy nie uczyniło nieba łagodnym.
 
 ## Field Note
 
-PL LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir ma światło dnia. Dlatego każda tania uszczelka i każdy spóźniony burn nadal mają cenę.
 
 <!-- In-Game Wiki; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/pl_PL. -->

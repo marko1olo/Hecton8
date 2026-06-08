@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "Black Keelの最初の声"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# Black Keelの最初の声
 
-JP LOC HOLD: Black Keel First Voice establishes the opening tone: hard-sci-fi machine support, not emotional AI. The carrier helps the player survive while making it clear that acknowledgement is not rescue.
-
-## Scanner
-
-JP LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
-
-## Terminal
-
-JP LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
-
-## Audio
-
-JP LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
-
-## Field Note
-
-JP LOC HOLD: The first voice should feel useful before it feels bought.
+Black Keelの最初の声は、半分だけ開く扉のように感じられるべきだ。音声は破損し、テキストチャネルは清潔で、carrierは慰めに一語も使わない。その不在が重要だ。友好的なAIなら海を柔らかくしてしまう。劇的な悪役なら危険を人間的にしすぎる。Black Keelはそのどちらより有用だ。安全を拒む形式で真実を告げるからだ。信号取得。生存承認。回収未解決。聞かれたことは救われたことではないとプレイヤーは学ぶ。水面の上にある唯一の声は、まだ見ていないledgerに縛られている。
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/ja_JP. -->

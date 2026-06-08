@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Centauri Compact Legitimacy"
+title: "Legitimasi Centauri Compact"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Centauri Compact Legitimacy
+# Legitimasi Centauri Compact
 
-ID LOC HOLD: The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.
+Centauri Compact adalah jangkar legitimasi ekstrasurya awal umat manusia: koloni nyata, standar nyata, prestise sipil nyata. Di HECTON-8, ia muncul sebagai peti tekanan impor dan tag audit yang bisa dikutip Deep Reach sambil mengabaikan semangat di baliknya.
 
 ## Scanner
 
-ID LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+Tag audit Centauri. Legitimasi ekstrasurya awal, lalu alasan perbatasan.
 
 ## Terminal
 
-ID LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+PERANGKAT CENTAURI COMPACT: peti tekanan tersertifikasi untuk transit sipil. Kanal audit tidak aktif. Garansi batal setelah retrofit pihak ketiga Deep Reach.
 
 ## Audio
 
-ID LOC HOLD: First legitimacy became old metal under a newer lie.
+Legitimasi pertama menjadi logam tua di bawah kebohongan yang lebih baru.
 
 ## Field Note
 
-ID LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
+Compact membuat klaim jauh terlihat terhormat. Kehormatan bukan penyelamatan.
 
 <!-- In-Game Wiki; generated from P072_CENTAURI_COMPACT_LEGITIMACY/id_ID. -->

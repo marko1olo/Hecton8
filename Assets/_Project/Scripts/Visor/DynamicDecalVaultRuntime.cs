@@ -39,6 +39,15 @@ namespace Hecton8.Visor
         public const uint GlassCrack = 4u;
         public const uint Burn = 5u;
         public const uint SaltCrust = 6u;
+        public const uint GlassSmudge = 7u;
+        public const uint BarnacleColony = 8u;
+        public const uint BrineFloraSmear = 9u;
+        public const uint SpongePoreStain = 10u;
+        public const uint SporePodSmear = 11u;
+        public const uint EggSacMembrane = 12u;
+        public const uint CarcassTrace = 13u;
+        public const uint ResourceNoduleTrace = 14u;
+        public const uint DataCoreCircuitTrace = 15u;
     }
 
     public static class DynamicDecalFlags
@@ -249,6 +258,42 @@ namespace Hecton8.Visor
         private const byte WaterTransitionKindSurfaceExit = 2;
         private const float SaltCrustVerticalOffsetMeters = 0.18f;
         private const float SaltCrustProjectionDepthMeters = 0.32f;
+        private const int DefaultBatch34MaterialProfileRuntimeEntries = 31;
+
+        private const uint ScorchProfileSourceHash = 0xB9D1FB11u;
+        private const uint BloodProfileSourceHash = 0xEDEEAD07u;
+        private const uint AcidProfileSourceHash = 0x550683A8u;
+        private const uint HullDentProfileSourceHash = 0xAC9F8ED2u;
+        private const uint GlassCrackProfileSourceHash = 0x85C2C38Au;
+        private const uint BurnProfileSourceHash = 0x51F91098u;
+        private const uint SaltCrustProfileSourceHash = 0x0B9319EDu;
+        private const uint GlassSmudgeProfileSourceHash = 0x4378E8B5u;
+        private const uint BarnacleColonyProfileSourceHash = 0x05D9B98Eu;
+        private const uint BrineFloraSmearProfileSourceHash = 0x2D24FDE7u;
+        private const uint SpongePoreStainProfileSourceHash = 0x35E5FF62u;
+        private const uint SporePodSmearProfileSourceHash = 0x00A1C64Du;
+        private const uint EggSacMembraneProfileSourceHash = 0xBD142E30u;
+        private const uint CarcassTraceProfileSourceHash = 0x0DB4F085u;
+        private const uint ResourceNoduleTraceProfileSourceHash = 0xA4FC1993u;
+        private const uint DataCoreCircuitTraceProfileSourceHash = 0x11FC1413u;
+        private const uint GameplayDamagePressureMask = 1u << 0;
+        private const uint GameplayDamageThermalMask = 1u << 1;
+        private const uint GameplayDamageImpactMask = 1u << 2;
+        private const uint GameplayDamageParasiteMask = 1u << 3;
+        private const uint GameplayDamageRadioactiveMask = 1u << 4;
+        private const uint GameplayDamageToxicMask = 1u << 5;
+        private const uint GameplayDamageEmpMask = 1u << 6;
+        private const uint GameplayDamageMicroFractureMask = 1u << 7;
+        private const uint GameplayDamageKnownMask =
+            GameplayDamagePressureMask |
+            GameplayDamageThermalMask |
+            GameplayDamageImpactMask |
+            GameplayDamageParasiteMask |
+            GameplayDamageRadioactiveMask |
+            GameplayDamageToxicMask |
+            GameplayDamageEmpMask |
+            GameplayDamageMicroFractureMask;
+        private const uint SubmarineHullDentVisualSourceHash = 0xD3CA0149u;
 
         private const uint RuntimeInitializedFlag = 1u << 0;
         private const uint RuntimeLayoutFaultFlag = 1u << 1;
@@ -1207,9 +1252,17 @@ namespace Hecton8.Visor
 
                 try
                 {
-                    profilesWritten = ParseMaterialProfilesCsv(scratch.Slice(0, bytesRead), profiles);
-                    _materialProfileCount = profilesWritten;
-                    return profilesWritten > 0;
+                    int parsedProfiles = ParseMaterialProfilesCsv(scratch.Slice(0, bytesRead), profiles);
+                    if (parsedProfiles < DefaultBatch34MaterialProfileRuntimeEntries)
+                    {
+                        _materialProfileCount = SeedDefaultMaterialProfiles(profiles);
+                        profilesWritten = 0;
+                        return false;
+                    }
+
+                    profilesWritten = parsedProfiles;
+                    _materialProfileCount = parsedProfiles;
+                    return true;
                 }
                 finally
                 {
@@ -1282,7 +1335,7 @@ namespace Hecton8.Visor
                     profile.SourceHash = HashLowerAscii(sourceToken);
                 profile.AtlasSlice = TryReadField(line, 1, out ReadOnlySpan<byte> sliceToken) &&
                                      TryParseUInt(sliceToken, out uint slice)
-                    ? slice % AtlasSliceCount
+                    ? SanitizeAtlasSlice(slice)
                     : DynamicDecalMaterialHashes.Scorch;
                 profile.LifetimeSeconds = TryReadField(line, 2, out ReadOnlySpan<byte> lifetimeToken) &&
                                           TryParseFloat(lifetimeToken, out float lifetime)
@@ -1299,11 +1352,54 @@ namespace Hecton8.Visor
                 profile.Flags = DynamicDecalFlags.Active;
                 if (TryInsertMaterialProfile(profiles, in profile))
                     count++;
+                if (TryResolveKnownMaterialProfileAlias(sourceToken, out uint aliasHash) && aliasHash != profile.SourceHash)
+                {
+                    DecalMaterialProfileDTO aliasProfile = profile;
+                    aliasProfile.SourceHash = aliasHash;
+                    if (TryInsertMaterialProfile(profiles, in aliasProfile))
+                        count++;
+                }
             }
 
             return count;
         }
 #endif
+
+        private static bool TryResolveKnownMaterialProfileAlias(ReadOnlySpan<byte> sourceToken, out uint sourceHash)
+        {
+            sourceHash = 0u;
+            if (EqualsLowerAscii(sourceToken, "blood"))
+                sourceHash = DynamicDecalMaterialHashes.Blood;
+            else if (EqualsLowerAscii(sourceToken, "acid"))
+                sourceHash = DynamicDecalMaterialHashes.Acid;
+            else if (EqualsLowerAscii(sourceToken, "hull_dent"))
+                sourceHash = DynamicDecalMaterialHashes.HullDent;
+            else if (EqualsLowerAscii(sourceToken, "glass_crack"))
+                sourceHash = DynamicDecalMaterialHashes.GlassCrack;
+            else if (EqualsLowerAscii(sourceToken, "burn"))
+                sourceHash = DynamicDecalMaterialHashes.Burn;
+            else if (EqualsLowerAscii(sourceToken, "salt_crust"))
+                sourceHash = DynamicDecalMaterialHashes.SaltCrust;
+            else if (EqualsLowerAscii(sourceToken, "glass_smudge"))
+                sourceHash = DynamicDecalMaterialHashes.GlassSmudge;
+            else if (EqualsLowerAscii(sourceToken, "barnacle_colony"))
+                sourceHash = DynamicDecalMaterialHashes.BarnacleColony;
+            else if (EqualsLowerAscii(sourceToken, "brine_flora_smear"))
+                sourceHash = DynamicDecalMaterialHashes.BrineFloraSmear;
+            else if (EqualsLowerAscii(sourceToken, "sponge_pore_stain"))
+                sourceHash = DynamicDecalMaterialHashes.SpongePoreStain;
+            else if (EqualsLowerAscii(sourceToken, "spore_pod_smear"))
+                sourceHash = DynamicDecalMaterialHashes.SporePodSmear;
+            else if (EqualsLowerAscii(sourceToken, "egg_sac_membrane"))
+                sourceHash = DynamicDecalMaterialHashes.EggSacMembrane;
+            else if (EqualsLowerAscii(sourceToken, "carcass_trace"))
+                sourceHash = DynamicDecalMaterialHashes.CarcassTrace;
+            else if (EqualsLowerAscii(sourceToken, "resource_nodule_trace"))
+                sourceHash = DynamicDecalMaterialHashes.ResourceNoduleTrace;
+            else if (EqualsLowerAscii(sourceToken, "data_core_circuit_trace"))
+                sourceHash = DynamicDecalMaterialHashes.DataCoreCircuitTrace;
+            return sourceHash != 0u;
+        }
 
         private static bool TryInsertMaterialProfile(NativeArray<DecalMaterialProfileDTO> profiles, in DecalMaterialProfileDTO profile)
         {
@@ -1332,6 +1428,90 @@ namespace Hecton8.Visor
             return false;
         }
 
+        private static bool EnsureDefaultMaterialProfiles()
+        {
+            if (_materialProfileCount >= DefaultBatch34MaterialProfileRuntimeEntries)
+                return true;
+
+            bool profilesLocked = false;
+            try
+            {
+                if (!TryAcquireDynamicDecalVaultBuffer(in _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles, MaxMaterialProfiles, out NativeArray<DecalMaterialProfileDTO> profiles))
+                    return false;
+
+                profilesLocked = true;
+                _materialProfileCount = SeedDefaultMaterialProfiles(profiles);
+                return _materialProfileCount >= DefaultBatch34MaterialProfileRuntimeEntries;
+            }
+            finally
+            {
+                if (profilesLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles);
+            }
+        }
+
+        private static int SeedDefaultMaterialProfiles(NativeArray<DecalMaterialProfileDTO> profiles)
+        {
+            if (!profiles.IsCreated || profiles.Length < DefaultBatch34MaterialProfileRuntimeEntries)
+                return 0;
+
+            for (int i = 0; i < profiles.Length; i++)
+                profiles[i] = default;
+
+            int count = 0;
+            count += TrySeedDefaultMaterialProfile(profiles, ScorchProfileSourceHash, DynamicDecalMaterialHashes.Scorch, 9.5f, 0.42f, 0.18f) ? 1 : 0;
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, BloodProfileSourceHash, DynamicDecalMaterialHashes.Blood, 10.0f, 0.48f, 0.18f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, AcidProfileSourceHash, DynamicDecalMaterialHashes.Acid, 8.0f, 0.52f, 0.16f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, HullDentProfileSourceHash, DynamicDecalMaterialHashes.HullDent, 12.0f, 0.55f, 0.20f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, GlassCrackProfileSourceHash, DynamicDecalMaterialHashes.GlassCrack, 60.0f, 0.32f, 0.10f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, BurnProfileSourceHash, DynamicDecalMaterialHashes.Burn, 12.0f, 0.50f, 0.20f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, SaltCrustProfileSourceHash, DynamicDecalMaterialHashes.SaltCrust, 18.0f, 0.65f, 0.32f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, GlassSmudgeProfileSourceHash, DynamicDecalMaterialHashes.GlassSmudge, 24.0f, 0.40f, 0.08f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, BarnacleColonyProfileSourceHash, DynamicDecalMaterialHashes.BarnacleColony, 16.0f, 0.70f, 0.22f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, BrineFloraSmearProfileSourceHash, DynamicDecalMaterialHashes.BrineFloraSmear, 11.0f, 0.50f, 0.16f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, SpongePoreStainProfileSourceHash, DynamicDecalMaterialHashes.SpongePoreStain, 9.0f, 0.45f, 0.15f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, SporePodSmearProfileSourceHash, DynamicDecalMaterialHashes.SporePodSmear, 10.0f, 0.42f, 0.12f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, EggSacMembraneProfileSourceHash, DynamicDecalMaterialHashes.EggSacMembrane, 14.0f, 0.48f, 0.12f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, CarcassTraceProfileSourceHash, DynamicDecalMaterialHashes.CarcassTrace, 12.0f, 0.52f, 0.17f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, ResourceNoduleTraceProfileSourceHash, DynamicDecalMaterialHashes.ResourceNoduleTrace, 9.5f, 0.36f, 0.12f);
+            count += TrySeedDefaultMaterialProfileWithAlias(profiles, DataCoreCircuitTraceProfileSourceHash, DynamicDecalMaterialHashes.DataCoreCircuitTrace, 10.0f, 0.34f, 0.10f);
+            return count;
+        }
+
+        private static int TrySeedDefaultMaterialProfileWithAlias(
+            NativeArray<DecalMaterialProfileDTO> profiles,
+            uint sourceHash,
+            uint compactMaterialHash,
+            float lifetimeSeconds,
+            float radiusMeters,
+            float projectionDepthMeters)
+        {
+            int count = 0;
+            if (TrySeedDefaultMaterialProfile(profiles, sourceHash, compactMaterialHash, lifetimeSeconds, radiusMeters, projectionDepthMeters))
+                count++;
+            if (TrySeedDefaultMaterialProfile(profiles, compactMaterialHash, compactMaterialHash, lifetimeSeconds, radiusMeters, projectionDepthMeters))
+                count++;
+            return count;
+        }
+
+        private static bool TrySeedDefaultMaterialProfile(
+            NativeArray<DecalMaterialProfileDTO> profiles,
+            uint sourceHash,
+            uint atlasSlice,
+            float lifetimeSeconds,
+            float radiusMeters,
+            float projectionDepthMeters)
+        {
+            DecalMaterialProfileDTO profile = default;
+            profile.SourceHash = sourceHash;
+            profile.AtlasSlice = SanitizeAtlasSlice(atlasSlice);
+            profile.LifetimeSeconds = lifetimeSeconds;
+            profile.RadiusMeters = radiusMeters;
+            profile.ProjectionDepthMeters = projectionDepthMeters;
+            profile.Flags = DynamicDecalFlags.Active;
+            return TryInsertMaterialProfile(profiles, in profile);
+        }
+
         private static bool EnsureInitialized()
         {
             if (!_coldRoutesCached && !WarmupColdGlobalRoutes())
@@ -1356,6 +1536,8 @@ namespace Hecton8.Visor
                 HasDynamicDecalVaultBuffer(_vault, in _signalIngestKeyHandle, DynamicDecalVaultBufferIds.SignalIngestKeyRing, SignalIngestKeyCapacity))
             {
                 SeedDefaultTuning();
+                if (!EnsureDefaultMaterialProfiles())
+                    return false;
                 SeedRequestQueueState();
                 SeedColdRuntimeState();
                 return true;
@@ -1432,6 +1614,8 @@ namespace Hecton8.Visor
             }
 
             SeedDefaultTuning();
+            if (!EnsureDefaultMaterialProfiles())
+                return false;
             SeedRequestQueueState();
             SeedColdRuntimeState();
             return true;
@@ -2280,6 +2464,124 @@ namespace Hecton8.Visor
             return ((ulong)a << 32) | b;
         }
 
+        private static uint ResolveHighSpeedImpactVisualMaterialHash(in HighSpeedImpactSignal signal)
+        {
+            if (signal.MaterialHash != 0u && signal.MaterialHash < AtlasSliceCount)
+                return signal.MaterialHash;
+
+            byte materialId = signal.PrimaryMaterialId;
+            if (materialId == HighSpeedImpactSignal.MaterialMetal)
+                return DynamicDecalMaterialHashes.HullDent;
+            if (materialId == HighSpeedImpactSignal.MaterialGlass)
+                return DynamicDecalMaterialHashes.GlassCrack;
+            if (materialId == HighSpeedImpactSignal.MaterialOrganic &&
+                (signal.SourceKind == HighSpeedImpactSignal.SourceLeviathan || signal.SecondaryMaterialId != 0))
+            {
+                return DynamicDecalMaterialHashes.Blood;
+            }
+
+            materialId = signal.SecondaryMaterialId;
+            if (materialId == HighSpeedImpactSignal.MaterialMetal)
+                return DynamicDecalMaterialHashes.HullDent;
+            if (materialId == HighSpeedImpactSignal.MaterialGlass)
+                return DynamicDecalMaterialHashes.GlassCrack;
+            if (materialId == HighSpeedImpactSignal.MaterialOrganic &&
+                signal.SourceKind == HighSpeedImpactSignal.SourceLeviathan)
+            {
+                return DynamicDecalMaterialHashes.Blood;
+            }
+
+            return DynamicDecalMaterialHashes.HullDent;
+        }
+
+        private static uint ResolveHighSpeedImpactProfileHash(in HighSpeedImpactSignal signal)
+        {
+            // HighSpeedImpactSignal.MaterialHash is a runtime collision signature from producers
+            // such as CCD fauna impacts and armor penetration. Profile lookup falls back to the
+            // resolved compact material hash, so do not use composed entity/material hashes here.
+            return 0u;
+        }
+
+        private static uint ResolveCombatDamageVisualMaterialHash(in CombatDamageSignal signal)
+        {
+            uint damageType = signal.DamageType;
+            if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)
+            {
+                if (signal.SourceHash == damageType &&
+                    TryResolveCompactVisualOnlyMaterial(signal.SourceHash, out uint sourceMaterialHash))
+                    return sourceMaterialHash;
+
+                if (TryResolveKnownVisualOnlySourceMaterial(signal.SourceHash, out sourceMaterialHash))
+                    return sourceMaterialHash;
+
+                if (IsKnownGameplayDamageMask(damageType))
+                    return ResolveGameplayDamageMaskVisualMaterialHash(damageType);
+
+                if (TryResolveCompactVisualOnlyMaterial(damageType, out uint damageTypeMaterialHash))
+                    return damageTypeMaterialHash;
+
+                return DynamicDecalMaterialHashes.Scorch;
+            }
+
+            return ResolveGameplayDamageMaskVisualMaterialHash(damageType);
+        }
+
+        private static uint ResolveCombatDamageProfileHash(in CombatDamageSignal signal)
+        {
+            return (signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0
+                ? signal.SourceHash
+                : 0u;
+        }
+
+        private static bool TryResolveCompactVisualOnlyMaterial(uint value, out uint materialHash)
+        {
+            if (value != 0u && value < AtlasSliceCount)
+            {
+                materialHash = value;
+                return true;
+            }
+
+            materialHash = 0u;
+            return false;
+        }
+
+        private static bool TryResolveKnownVisualOnlySourceMaterial(uint sourceHash, out uint materialHash)
+        {
+            if (sourceHash == SubmarineHullDentVisualSourceHash)
+            {
+                materialHash = DynamicDecalMaterialHashes.HullDent;
+                return true;
+            }
+
+            materialHash = 0u;
+            return false;
+        }
+
+        private static bool IsKnownGameplayDamageMask(uint damageType)
+        {
+            return damageType != 0u && (damageType & ~GameplayDamageKnownMask) == 0u;
+        }
+
+        private static uint ResolveGameplayDamageMaskVisualMaterialHash(uint damageType)
+        {
+            if (damageType == 0u)
+                return DynamicDecalMaterialHashes.HullDent;
+            if ((damageType & (GameplayDamagePressureMask | GameplayDamageMicroFractureMask)) != 0u)
+                return DynamicDecalMaterialHashes.GlassCrack;
+            if ((damageType & GameplayDamageThermalMask) != 0u)
+                return DynamicDecalMaterialHashes.Burn;
+            if ((damageType & (GameplayDamageToxicMask | GameplayDamageRadioactiveMask)) != 0u)
+                return DynamicDecalMaterialHashes.Acid;
+            if ((damageType & GameplayDamageEmpMask) != 0u)
+                return DynamicDecalMaterialHashes.DataCoreCircuitTrace;
+            if ((damageType & GameplayDamageParasiteMask) != 0u)
+                return DynamicDecalMaterialHashes.Blood;
+            if ((damageType & GameplayDamageImpactMask) != 0u)
+                return DynamicDecalMaterialHashes.HullDent;
+
+            return DynamicDecalMaterialHashes.Scorch;
+        }
+
         private static ulong BuildWaterTransitionIngestKey(
             in WaterTransitionSignal signal,
             double3 impactAup,
@@ -2330,26 +2632,26 @@ namespace Hecton8.Visor
                 if (!math.all(math.isfinite(impactAup)))
                     continue;
 
-                uint materialHash = signal.MaterialHash != 0u
-                    ? signal.MaterialHash
-                    : HighSpeedImpactSignal.ComposeMaterialHash(signal.TargetHash, signal.PrimaryMaterialId, signal.SecondaryMaterialId);
+                uint materialHash = ResolveHighSpeedImpactVisualMaterialHash(in signal);
                 ulong ingestKey = BuildHighSpeedImpactIngestKey(in signal, impactAup, materialHash, i);
                 if (HasSignalIngestKey(ingestKey))
                     continue;
 
                 float speed = math.max(0f, math.isfinite(signal.ImpactSpeed) ? signal.ImpactSpeed : 0f);
                 float energy = math.max(0f, math.isfinite(signal.KineticEnergy) ? signal.KineticEnergy : signal.LostKineticEnergy);
+                uint profileHash = ResolveHighSpeedImpactProfileHash(in signal);
                 if (!EnqueueSignalImpact(
                     impactAup,
                     signal.Normal,
                     materialHash,
-                    signal.SourceHash ^ signal.TargetHash,
+                    profileHash,
                     tuning,
                     materialProfiles,
                     materialProfileCapacity,
                     energy * 0.0125f,
                     speed,
                     frame,
+                    ingestKey,
                     DynamicDecalFlags.Ballistic))
                 {
                     continue;
@@ -2369,7 +2671,8 @@ namespace Hecton8.Visor
                     continue;
 
                 float3 normal = -SanitizeNormal(signal.Direction, MakeFloat3(0f, 1f, 0f));
-                uint materialHash = signal.DamageType != 0u ? signal.DamageType : signal.SourceHash;
+                uint materialHash = ResolveCombatDamageVisualMaterialHash(in signal);
+                uint profileHash = ResolveCombatDamageProfileHash(in signal);
                 ulong ingestKey = BuildCombatDamageIngestKey(in signal, materialHash, i);
                 if (HasSignalIngestKey(ingestKey))
                     continue;
@@ -2383,13 +2686,14 @@ namespace Hecton8.Visor
                     signal.ImpactAup,
                     normal,
                     materialHash,
-                    signal.SourceHash,
+                    profileHash,
                     tuning,
                     materialProfiles,
                     materialProfileCapacity,
                     signal.Magnitude,
                     signal.Magnitude,
                     frame,
+                    ingestKey,
                     flags))
                 {
                     continue;
@@ -2485,13 +2789,16 @@ namespace Hecton8.Visor
             float damage,
             float velocity,
             uint frame,
+            ulong ingestKey,
             uint flags)
         {
             DecalRequestSignal request = default;
             request.ImpactAup = impactAup;
             request.Normal = SanitizeNormal(normal, MakeFloat3(0f, 1f, 0f));
-            if (TryResolveMaterialProfile(
-                    profileHash != 0u ? profileHash : materialHash,
+            uint resolvedDecalType;
+            if (TryResolveMaterialProfileForRequest(
+                    profileHash,
+                    materialHash,
                     materialProfiles,
                     materialProfileCapacity,
                     out DecalMaterialProfileDTO profile))
@@ -2499,20 +2806,28 @@ namespace Hecton8.Visor
                 request.RadiusMeters = profile.RadiusMeters;
                 request.ProjectionDepthMeters = profile.ProjectionDepthMeters;
                 request.LifetimeSeconds = profile.LifetimeSeconds;
-                request.MaterialHash = PackRequestMaterialPayload(ResolveDecalTypeFromMaterial(materialHash), profile.AtlasSlice);
+                uint atlasSlice = SanitizeAtlasSlice(profile.AtlasSlice);
+                resolvedDecalType = ResolveProfileDecalType(materialHash, atlasSlice);
+                request.MaterialHash = PackRequestMaterialPayload(resolvedDecalType, atlasSlice);
             }
             else
             {
                 request.RadiusMeters = ResolveBallisticRadius(damage, velocity, tuning);
                 request.ProjectionDepthMeters = tuning.ProjectionDepthMeters;
                 request.LifetimeSeconds = ResolveBallisticLifetime(materialHash, damage, tuning);
-                request.MaterialHash = PackRequestMaterialPayload(ResolveDecalTypeFromMaterial(materialHash), ResolveAtlasSliceFromMaterial(materialHash));
+                resolvedDecalType = ResolveDecalTypeFromMaterial(materialHash);
+                request.MaterialHash = PackRequestMaterialPayload(resolvedDecalType, ResolveAtlasSliceFromMaterial(materialHash));
             }
 
             request.Flags = DynamicDecalFlags.Active | flags;
-            if (ResolveDecalTypeFromMaterial(materialHash) == DynamicDecalMaterialHashes.GlassCrack)
+            if (resolvedDecalType == DynamicDecalMaterialHashes.GlassCrack)
                 request.Flags |= DynamicDecalFlags.PersistentGlass;
-            request.StableSeed = Mix(materialHash ^ profileHash ^ frame);
+            uint seedHash = materialHash ^
+                            RotateLeft(profileHash, 5) ^
+                            RotateLeft(frame, 11) ^
+                            (uint)ingestKey ^
+                            (uint)(ingestKey >> 32);
+            request.StableSeed = Mix(seedHash);
             request.SourceFrame = frame;
             return TryEnqueueRequest(in request);
         }
@@ -2520,7 +2835,10 @@ namespace Hecton8.Visor
         private static bool TryEnqueueRequest(in DecalRequestSignal request)
         {
             if (!IsInitializedForRead())
+            {
+                AccumulateDroppedIngress(1);
                 return false;
+            }
 
             bool requestQueueLocked = false;
             try
@@ -2670,6 +2988,26 @@ namespace Hecton8.Visor
 
         private static double3 ResolveCameraAup(Camera camera)
         {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null)
+            {
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    snapshot.Aup.IsFinite())
+                {
+                    return snapshot.Aup.ToAbsoluteDouble3();
+                }
+
+                if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    movementState.PredictedAup.IsFinite())
+                {
+                    return movementState.PredictedAup.ToAbsoluteDouble3();
+                }
+
+                return double3.zero;
+            }
+
             if (camera != null)
             {
                 Vector3 position = camera.transform.position;
@@ -2686,24 +3024,6 @@ namespace Hecton8.Visor
                                 return absolute;
                         }
                     }
-                }
-            }
-
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext != null)
-            {
-                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                    snapshot.Aup.IsFinite())
-                {
-                    return snapshot.Aup.ToAbsoluteDouble3();
-                }
-
-                var playerMovement = playerContext.PlayerMovement;
-                if (playerMovement != null)
-                {
-                    var currentAup = playerMovement.CurrentAup;
-                    if (currentAup.IsFinite())
-                        return currentAup.ToAbsoluteDouble3();
                 }
             }
 
@@ -2785,6 +3105,29 @@ namespace Hecton8.Visor
                 return true;
             }
 
+            return false;
+        }
+
+        private static bool TryResolveMaterialProfileForRequest(
+            uint preferredHash,
+            uint materialHash,
+            NativeArray<DecalMaterialProfileDTO>.ReadOnly profiles,
+            int profileCapacity,
+            out DecalMaterialProfileDTO profile)
+        {
+            if (preferredHash != 0u &&
+                TryResolveMaterialProfile(preferredHash, profiles, profileCapacity, out profile))
+            {
+                return true;
+            }
+
+            if (materialHash != preferredHash &&
+                TryResolveMaterialProfile(materialHash, profiles, profileCapacity, out profile))
+            {
+                return true;
+            }
+
+            profile = default;
             return false;
         }
 
@@ -3255,9 +3598,28 @@ namespace Hecton8.Visor
         internal static uint ResolveDecalTypeFromMaterial(uint materialHash)
         {
             uint materialType = materialHash & DecalTypePackedMask;
-            return materialHash < AtlasSliceCount && materialType <= DynamicDecalMaterialHashes.SaltCrust
-                ? materialType
-                : DynamicDecalMaterialHashes.Scorch;
+            if (materialHash >= AtlasSliceCount)
+                return DynamicDecalMaterialHashes.Scorch;
+
+            return materialType switch
+            {
+                DynamicDecalMaterialHashes.Blood => DynamicDecalMaterialHashes.Blood,
+                DynamicDecalMaterialHashes.Acid => DynamicDecalMaterialHashes.Acid,
+                DynamicDecalMaterialHashes.HullDent => DynamicDecalMaterialHashes.HullDent,
+                DynamicDecalMaterialHashes.GlassCrack => DynamicDecalMaterialHashes.GlassCrack,
+                DynamicDecalMaterialHashes.Burn => DynamicDecalMaterialHashes.Burn,
+                DynamicDecalMaterialHashes.SaltCrust => DynamicDecalMaterialHashes.SaltCrust,
+                DynamicDecalMaterialHashes.GlassSmudge => DynamicDecalMaterialHashes.GlassCrack,
+                DynamicDecalMaterialHashes.BarnacleColony => DynamicDecalMaterialHashes.Scorch,
+                DynamicDecalMaterialHashes.BrineFloraSmear => DynamicDecalMaterialHashes.Blood,
+                DynamicDecalMaterialHashes.SpongePoreStain => DynamicDecalMaterialHashes.Acid,
+                DynamicDecalMaterialHashes.SporePodSmear => DynamicDecalMaterialHashes.Blood,
+                DynamicDecalMaterialHashes.EggSacMembrane => DynamicDecalMaterialHashes.Blood,
+                DynamicDecalMaterialHashes.CarcassTrace => DynamicDecalMaterialHashes.Blood,
+                DynamicDecalMaterialHashes.ResourceNoduleTrace => DynamicDecalMaterialHashes.Scorch,
+                DynamicDecalMaterialHashes.DataCoreCircuitTrace => DynamicDecalMaterialHashes.HullDent,
+                _ => DynamicDecalMaterialHashes.Scorch,
+            };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3265,7 +3627,25 @@ namespace Hecton8.Visor
         {
             return materialHash < AtlasSliceCount
                 ? materialHash & DecalAtlasPackedMask
-                : Mix(materialHash) & DecalAtlasPackedMask;
+                : DynamicDecalMaterialHashes.Scorch;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ResolveProfileDecalType(uint materialHash, uint atlasSlice)
+        {
+            uint sanitizedSlice = SanitizeAtlasSlice(atlasSlice);
+            if (materialHash < AtlasSliceCount && (materialHash != DynamicDecalMaterialHashes.Scorch || sanitizedSlice == DynamicDecalMaterialHashes.Scorch))
+                return ResolveDecalTypeFromMaterial(materialHash);
+
+            return ResolveDecalTypeFromMaterial(sanitizedSlice);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint SanitizeAtlasSlice(uint atlasSlice)
+        {
+            return atlasSlice < AtlasSliceCount
+                ? atlasSlice
+                : DynamicDecalMaterialHashes.Scorch;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

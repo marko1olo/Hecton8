@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "AR LOC HOLD: Start Here: HECTON-8"
+title: "ابدأ هنا: HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Start Here: HECTON-8
+# ابدأ هنا: HECTON-8
 
-AR LOC HOLD: Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.
+عنقود البداية: العقد، دور اللاعب، ضغط النجاة في HECTON-8 وأول تناقض في رواية Deep Reach.
 
 ## Scanner
 
-AR LOC HOLD: Publication hub: premise, player role, first constraints and the first Deep Reach lie.
+محور نشر: المقدمة، دور اللاعب، القيود الأولى وأول كذبة Deep Reach.
 
 ## Terminal
 
-AR LOC HOLD: SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.
+SITE NAV: دخول عبر العقد، اختصاصي Deep Reach سابق، Marauder مثقل بالدين، كبسولة متضررة، بلا خطاف عائلي، أول أثر إصلاح Atlas.
 
 ## Audio
 
-AR LOC HOLD: You came for salvage. The ocean will make that motive too small.
+جئت من أجل salvage. سيجعل المحيط هذا الدافع صغيرا جدا.
 
 ## Field Note
 
-AR LOC HOLD: Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
+ملاحة spoiler-light تبدأ هنا: المقدمة أولا، ثم الدليل، والنهايات بعد أن يكسب اللاعب الوصول.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/ar_SA. -->

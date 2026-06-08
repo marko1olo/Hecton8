@@ -3,8 +3,8 @@ packet_id: P014_AEGIR_ROUTE_WINDOW
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: aegir.route_window
 unlock_id: unlock.first_aegir_window_table
-poi_tags: poi.window_table;poi.moon_shadow_timer
-biome_tags: biome.crash_shelf;biome.surface_storm
+poi_tags: poi.ephemeris_table;poi.window_timer
+biome_tags: biome.crash_shelf;biome.black_keel_link
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -19,15 +19,17 @@ localization_flags: 0
 
 # Aegir Route Window
 
-Aegir route windows turn the gas giant system into gameplay. The player watches sky, storm, moon shadow, radiation, tide, signal, and Black Keel geometry because escape and evidence upload depend on timing.
+An Aegir route window is not a weather forecast with prettier words. It is the moment when several hostile clocks briefly agree: gas-giant radiation, moon shadow, storm noise, tide shear, acoustic link quality, ascent mass and Black Keel's orbital geometry. The window can be open for data and bad for bodies, or good for ascent and noisy enough to corrupt evidence.
+
+HECTON-8's sky belongs in the survival loop. The player reads the ocean and orbit together. A route may be physically clear but legally cold. A carrier may be overhead but outside recovery angle. A quiet uplink may arrive during a tide that chews the service canyons into moving debris.
 
 ## Scanner
 
-Local ephemeris table. Comm, tide, radiation, and carrier geometry share one window.
+Local ephemeris table. Comm, tide, radiation, moon shadow and carrier geometry share one narrow ascent window.
 
 ## Terminal
 
-Window update: moon shadow clearing. Uplink noise falling. Radiation count rising. Ascent mass estimate pending carrier geometry.
+AEGIR WINDOW UPDATE // Kestrel shadow clearing. Uplink noise falling. Radiation count rising. Tide shear in service canyons increasing. Black Keel recovery geometry pending ascent mass.
 
 ## Audio
 

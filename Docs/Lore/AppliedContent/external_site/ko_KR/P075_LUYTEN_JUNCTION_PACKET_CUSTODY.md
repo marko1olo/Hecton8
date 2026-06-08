@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "루이텐 정션 패킷 보관"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# 루이텐 정션 패킷 보관
 
-KO LOC HOLD: Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing.
+루이텐 정션 패킷 보관은 성간 통신을 항로 압박으로 바꾼다. HECTON-8에는 즉시 구조 채널이 없으므로 모든 메시지는 custody, 비용, 궤도 타이밍을 견뎌야 한다.
 
 ## Scanner
 
-KO LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+루이텐 custody 스풀. 메시지는 공짜로 이동하지 않는다. 진실도 마찬가지다.
 
 ## Terminal
 
-KO LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+LUYTEN JUNCTION ROUTE: packet custody가 요금 대기열을 통해 이전됨. live command 금지. 증거 우선권은 emergency claim escrow 하에서 구매 가능.
 
 ## Audio
 
-KO LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+ansible은 없다. 자비도 없다. custody, tariff, 시간뿐.
 
 ## Field Note
 
-KO LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+중계기는 어떤 슬픔에 bandwidth를 줄지 결정하는 기계다.
 
 <!-- External Site; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/ko_KR. -->

@@ -196,17 +196,26 @@ namespace Hecton8.Audio.Editor
             return any;
         }
 
-        private static PlayerCriticalProceduralAudioRenderer ResolveRenderer()
+        private static PlayerCriticalProceduralAudioRenderer ResolveRenderer(bool requireReady = true)
         {
             PlayerCriticalProceduralAudioRenderer registeredRenderer = GlobalRegistry.PlayerCriticalAudio;
-            if (registeredRenderer != null)
+            if (IsRendererUsable(registeredRenderer, requireReady))
                 return registeredRenderer;
 
 #if UNITY_2023_1_OR_NEWER
-            return UnityEngine.Object.FindAnyObjectByType<PlayerCriticalProceduralAudioRenderer>(FindObjectsInactive.Include);
+            PlayerCriticalProceduralAudioRenderer sceneRenderer = UnityEngine.Object.FindAnyObjectByType<PlayerCriticalProceduralAudioRenderer>(FindObjectsInactive.Include);
 #else
-            return UnityEngine.Object.FindObjectOfType<PlayerCriticalProceduralAudioRenderer>();
+            PlayerCriticalProceduralAudioRenderer sceneRenderer = UnityEngine.Object.FindObjectOfType<PlayerCriticalProceduralAudioRenderer>();
 #endif
+            return IsRendererUsable(sceneRenderer, requireReady) ? sceneRenderer : null;
+        }
+
+        private static bool IsRendererUsable(PlayerCriticalProceduralAudioRenderer renderer, bool requireReady)
+        {
+            if (renderer == null)
+                return false;
+
+            return requireReady ? renderer.IsPlayerCriticalAudioRuntimeReady : renderer.isActiveAndEnabled;
         }
 
         private static string ResolveProfileAbsolutePath()

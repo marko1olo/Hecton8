@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "خروج مادي: أرصدة مرة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# خروج مادي: أرصدة مرة
 
-AR LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.
+الخروج المادي نهاية حقيقية لمارودر يتعامل مع HECTON-8 كعمل مدفوع. يمكن للاعب أن يغادر بدين أقل وسجل carrier راض. الكلفة واضحة: تبقى المستعمرة مسرح جريمة محولا إلى قيمة مطالبة، ويحصل Deep Reach على طريق عودة أنظف من الطريق الذي حصل عليه العمال إلى الخارج.
 
 ## Scanner
 
-AR LOC HOLD: You can leave richer and still fail the place.
+تم قبول مادة الضغط. يمكن شراء نافذة الخروج. أسماء العمال لم تُسوَّ بعد.
 
 ## Terminal
 
-AR LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+إيصال خروج مادي: تم قبول مادة ضغط custody-grade؛ تم خفض lien؛ payload الدليل غير مكتمل؛ سجل العمال المفقودين يبقى محل نزاع claimant؛ أولوية Recovery Compliance ارتفعت.
 
 ## Audio
 
-AR LOC HOLD: The invoice clears before the names do.
+تُقفل الفاتورة قبل الأسماء.
 
 ## Field Note
 
-AR LOC HOLD: This ending should be real credits, not a fake game over.
+ستسعر Black Keel العينة قبل أن تسعر الموتى. هذا ليس خللا في العقد.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/ar_SA. -->

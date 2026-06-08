@@ -7,34 +7,34 @@ poi_tags: poi.probe_packet_spool;poi.beam_sail_archive
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Tiempos de viaje de paquetes sonda"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# Tiempos de viaje de paquetes sonda
 
-ES LOC HOLD: Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.
+El tiempo de las sondas explica cómo Deep Reach pudo valorar HECTON-8 antes de proteger personas allí. Los primeros registros eran estrechos, viejos al llegar y ya financieros. Un paquete puede hacer que una reclamación parezca madura mientras el plan humano sigue siendo una conjetura.
 
 ## Scanner
 
-ES LOC HOLD: The first Aegir witnesses were packets, not colonists.
+Los primeros testigos de Aegir fueron paquetes, no colonos.
 
 ## Terminal
 
-ES LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
+CADENA DE ESTUDIO: sondas asistidas por haz y naves paquete cruzan primero, devuelven verdad rancia, establecen matemáticas de frenado y dejan a las corporaciones vender una ruta antes de que sea humana.
 
 ## Audio
 
-ES LOC HOLD: The probe saw the ocean before anyone had a grave there.
+La sonda vio el océano antes de que nadie tuviera una tumba allí.
 
 ## Field Note
 
-ES LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+Una sonda puede gastar una carrera humana cruzando una ruta antes de que alguien arriesgue un cuerpo.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/es_ES. -->

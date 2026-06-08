@@ -7,34 +7,34 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "Kit de bomba de porão manual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# Kit de bomba de porão manual
 
-PT LOC HOLD: The first tool chain starts with a manual bilge pump kit. It lets the player clear a small flooded space without trusting broken power. This anchors the opening in work: air, water level, hand force, valves and patience before any heroic cutting.
+A bomba de porão manual é a primeira ferramenta útil depois da queda porque funciona enquanto a cápsula não é segura eletricamente. Ela limpa apenas pequenas bolsas alagadas e obriga o jogador a observar admissão, saída e resistência da válvula em vez de confiar numa luz verde. O kit ensina a regra inicial de HECTON-8: reparo começa com água, pressão e mãos.
 
 ## Scanner
 
-PT LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
+Kit de porão manual detectado. A tela de admissão está entupida com espuma da cápsula; limpe antes de energizar o painel.
 
 ## Terminal
 
-PT LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
+EMISSÃO P-63 / KIT DE PORÃO: bomba manual, abraçadeira de mangueira, tela de admissão, válvula de retenção. Remova água parada antes de testar qualquer painel energizado. Não descarregue a saída em calhas de cabo seladas.
 
 ## Audio
 
-PT LOC HOLD: Hand work first. Electricity second. Breathing always.
+Água primeiro. Energia depois. Se a alavanca volta, a sala está respondendo.
 
 ## Field Note
 
-PT LOC HOLD: First tool must teach survival before upgrade fantasy.
+Bombas mentem menos que medidores. Se a alavanca voltar com força, pare e confira para onde a água está indo.
 
 <!-- In-Game Wiki; generated from P111_MANUAL_BILGE_PUMP_KIT/pt_BR. -->

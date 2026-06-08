@@ -457,8 +457,13 @@ namespace Hecton8.AI
         private struct FaunaDirectorPlayerRuntimeContextSnapshot
         {
             public Transform PlayerTransform;
+            public PlayerRuntimePoseSnapshot PoseSnapshot;
             public PlayerMovementRuntimeState MovementState;
             public PlayerLookState LookState;
+            public bool HasActiveRuntimeContext;
+            public bool HasPoseSnapshot;
+            public bool HasMovementState;
+            public bool HasLookState;
             public bool IsBound;
         }
 
@@ -474,6 +479,7 @@ namespace Hecton8.AI
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private float _slowTickAccumulator;
         private bool _pendingResidentCreatureHydration;
         private AbsoluteUniversePosition _pendingResidentCreatureHydrationAup;
@@ -729,6 +735,7 @@ namespace Hecton8.AI
             TryUnregisterHotSwapListener();
             UnsubscribeAcousticPingEvents();
             CompleteResidentDataOnlySimulation(forceComplete: false);
+            _sargassumMicroFauna = null;
 
             if (_dispatcherRegistered)
             {
@@ -801,10 +808,10 @@ namespace Hecton8.AI
         {
             _mapMagicRuntime = GlobalRegistry.Terrain;
             _physicsService = GlobalRegistry.Physics;
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = ResolveActivePlayerRuntimeContext();
             _dispatcherRuntime = GlobalRegistry.Dispatcher;
-            _sargassumMicroFauna = GlobalRegistry.MicroFaunaPresentationPulses;
-            _objectPool = GlobalRegistry.ObjectPoolService;
+            WorldRuntimeReferenceUtility.TryResolveMicroFaunaPresentationPulseSink(ref _sargassumMicroFauna);
+            CacheObjectPoolService(null);
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             _faunaGenetics = GlobalRegistry.FaunaGenetics;
             _ecosystemHealth = GlobalRegistry.EcosystemHealth;
@@ -819,8 +826,46 @@ namespace Hecton8.AI
                 _depthZoneReadModel = depthZoneDirector;
             if (_vegetationThreatBridge == null)
                 _vegetationThreatBridge = GlobalRegistry.VegetationThreat;
-            if (_saveService == null)
+            if (!IsSaveServiceUsable(_saveService))
                 _saveService = GlobalRegistry.Save;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            if (!ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(candidate))
+            {
+                _objectPool = null;
+                return;
+            }
+
+            _objectPool = candidate;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private static void DespawnCreatureInstanceOrDeactivate(GameObject instance, IObjectPoolService preferredPool)
+        {
+            ObjectPoolManager.DespawnOrDeactivate(instance, preferredPool);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -832,6 +877,8 @@ namespace Hecton8.AI
             {
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    if (!IsUsablePlayerRuntimeContext(_playerRuntimeContext))
+                        _playerRuntimeContext = ResolveActivePlayerRuntimeContext();
                     InvalidatePlayerRuntimeContextCache();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
@@ -850,7 +897,7 @@ namespace Hecton8.AI
                     _sargassumMicroFauna = currentService as IMicroFaunaPresentationPulseSink;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     _creaturePoolsWarmed = false;
                     break;
                 case GlobalRegistryServiceSlot.EcosystemDirector:
@@ -885,11 +932,7 @@ namespace Hecton8.AI
                 case GlobalRegistryServiceSlot.Save:
                     TryUnregisterSaveParticipant();
                     _saveService = currentService as ISaveService;
-                    if (_saveService != null)
-                    {
-                        _saveService.Register(this);
-                        _saveRegistered = true;
-                    }
+                    TryRegisterSaveParticipant();
                     break;
             }
         }
@@ -899,26 +942,37 @@ namespace Hecton8.AI
             if (_saveRegistered)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
-            if (_saveService == null)
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveService = null;
             _saveRegistered = false;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         public void ServiceEmergencyReset()
@@ -1102,6 +1156,7 @@ namespace Hecton8.AI
             if (_acousticPanicCount <= 0)
                 return;
 
+            WorldRuntimeReferenceUtility.TryResolveMicroFaunaPresentationPulseSink(ref _sargassumMicroFauna);
             IMicroFaunaPresentationPulseSink boids = _sargassumMicroFauna;
             while (_acousticPanicCount > 0)
             {
@@ -1262,7 +1317,6 @@ namespace Hecton8.AI
                 return 0;
 
             int dehydrated = 0;
-            IObjectPoolService pool = _objectPool;
 
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
@@ -1319,7 +1373,7 @@ namespace Hecton8.AI
 
         private void FlushPendingPresentationDeactivations()
         {
-            IObjectPoolService pool = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             for (int i = 0; i < _pendingPresentationDeactivationCount; i++)
             {
                 GameObject target = _pendingPresentationDeactivations[i];
@@ -1327,10 +1381,7 @@ namespace Hecton8.AI
                 if (target == null)
                     continue;
 
-                if (pool != null)
-                    pool.Despawn(target);
-                else if (target.activeSelf)
-                    target.SetActive(false);
+                DespawnCreatureInstanceOrDeactivate(target, pool);
             }
 
             _pendingPresentationDeactivationCount = 0;
@@ -1365,8 +1416,8 @@ namespace Hecton8.AI
             ref int anchorBasedSpawns,
             ref int fallbackRingSpawns)
         {
-            IObjectPoolService pool = _objectPool;
-            if (pool == null) return 0;
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
+                return 0;
 
             int biomeIdx = biomeData.biomeIndex;
             IEcosystemDirectorService ecosystemDirector = ResolveEcosystemDirector();
@@ -1580,10 +1631,7 @@ namespace Hecton8.AI
                         out ActiveCreature record))
                 {
                     ecosystemDirector?.RefundSpawnCredit(selectedEntry.archetype, isLargeThreat, selectedEntry.isPredator);
-                    if (pool != null)
-                        pool.Despawn(instance);
-                    else
-                        instance.SetActive(false);
+                    DespawnCreatureInstanceOrDeactivate(instance, pool);
 
                     continue;
                 }
@@ -2902,8 +2950,7 @@ namespace Hecton8.AI
             if (_activeDehydrationSlotCount <= 0 || _activeCreatures == null)
                 return 0;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return 0;
 
             int hydrated = 0;
@@ -3498,6 +3545,9 @@ namespace Hecton8.AI
                 return;
             }
 
+            if (runtimeContext.HasActiveRuntimeContext)
+                return;
+
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
 
             if (_playerTransform != null)
@@ -3518,11 +3568,13 @@ namespace Hecton8.AI
 
             _hasPlayerLookView = false;
             if (TryResolveCachedPlayerRuntimeContext(out FaunaDirectorPlayerRuntimeContextSnapshot runtimeContext) &&
-                runtimeContext.IsBound)
+                runtimeContext.IsBound &&
+                TryResolveCachedLookState(in runtimeContext, out PlayerLookState lookState))
             {
-                PlayerLookState lookState = runtimeContext.LookState;
                 float aimForwardLengthSq = math.lengthsq(lookState.AimForward);
                 if ((lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    math.all(math.isfinite(lookState.EyePosition)) &&
+                    math.all(math.isfinite(lookState.AimForward)) &&
                     aimForwardLengthSq > MinimumSpawnViewDirectionMagnitudeSqr)
                 {
                     _playerLookViewPosition = (Vector3)lookState.EyePosition;
@@ -3537,13 +3589,41 @@ namespace Hecton8.AI
         private bool TryResolvePlayerLogicPose(out Vector3 playerPosition, out AbsoluteUniversePosition playerAup)
         {
             if (TryResolveCachedPlayerRuntimeContext(out FaunaDirectorPlayerRuntimeContextSnapshot runtimeContext) &&
-                runtimeContext.IsBound &&
-                (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                runtimeContext.IsBound)
             {
-                playerAup = runtimeContext.MovementState.PredictedAup;
-                float3 runtimePosition = playerAup.ToRuntimeFloat3();
-                playerPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
-                return true;
+                if (runtimeContext.HasPoseSnapshot &&
+                    (runtimeContext.PoseSnapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    runtimeContext.PoseSnapshot.Aup.IsFinite() &&
+                    math.all(math.isfinite(runtimeContext.PoseSnapshot.RuntimePosition)))
+                {
+                    playerAup = runtimeContext.PoseSnapshot.Aup;
+                    playerPosition = (Vector3)runtimeContext.PoseSnapshot.RuntimePosition;
+                    return true;
+                }
+
+                if (TryResolveCachedMovementState(in runtimeContext, out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                {
+                    AbsoluteUniversePosition predictedAup = movementState.PredictedAup;
+                    if (!predictedAup.IsFinite())
+                    {
+                        playerPosition = default;
+                        playerAup = default;
+                        return false;
+                    }
+
+                    playerAup = predictedAup;
+                    float3 runtimePosition = playerAup.ToRuntimeFloat3();
+                    if (!math.all(math.isfinite(runtimePosition)))
+                    {
+                        playerPosition = default;
+                        playerAup = default;
+                        return false;
+                    }
+
+                    playerPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                    return true;
+                }
             }
 
             playerPosition = default;
@@ -3602,20 +3682,84 @@ namespace Hecton8.AI
             {
                 _playerRuntimeContextCacheFrame = frame;
                 _playerRuntimeContextCache = default;
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                IPlayerRuntimeContext playerContext = ResolveActivePlayerRuntimeContext();
                 if (playerContext != null)
                 {
+                    _playerRuntimeContextCache.HasActiveRuntimeContext = true;
                     _playerRuntimeContextCache.PlayerTransform = playerContext.PlayerTransform;
-                    playerContext.TryGetMovementRuntimeState(out _playerRuntimeContextCache.MovementState);
-                    playerContext.TryGetLookRuntimeState(out _playerRuntimeContextCache.LookState);
-                    _playerRuntimeContextCache.IsBound = _playerRuntimeContextCache.PlayerTransform != null;
+                    _playerRuntimeContextCache.HasPoseSnapshot = playerContext.TryGetPlayerPoseSnapshot(out _playerRuntimeContextCache.PoseSnapshot);
+                    _playerRuntimeContextCache.HasMovementState = playerContext.TryGetMovementRuntimeState(out _playerRuntimeContextCache.MovementState);
+                    _playerRuntimeContextCache.HasLookState = playerContext.TryGetLookRuntimeState(out _playerRuntimeContextCache.LookState);
+                    _playerRuntimeContextCache.IsBound =
+                        _playerRuntimeContextCache.PlayerTransform != null ||
+                        _playerRuntimeContextCache.HasPoseSnapshot ||
+                        _playerRuntimeContextCache.HasMovementState;
                 }
 
-                _playerRuntimeContextCacheValid = _playerRuntimeContextCache.IsBound;
+                _playerRuntimeContextCacheValid = _playerRuntimeContextCache.HasActiveRuntimeContext;
             }
 
             runtimeContext = _playerRuntimeContextCache;
             return _playerRuntimeContextCacheValid;
+        }
+
+        private IPlayerRuntimeContext ResolveActivePlayerRuntimeContext()
+        {
+            IPlayerRuntimeContext activeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (IsUsablePlayerRuntimeContext(activeContext))
+            {
+                _playerRuntimeContext = activeContext;
+                return activeContext;
+            }
+
+            IPlayerRuntimeContext cachedContext = _playerRuntimeContext;
+            if (IsUsablePlayerRuntimeContext(cachedContext))
+                return cachedContext;
+
+            IPlayerRuntimeContext registryContext = GlobalRegistry.Player;
+            if (IsUsablePlayerRuntimeContext(registryContext))
+            {
+                _playerRuntimeContext = registryContext;
+                return registryContext;
+            }
+
+            if (activeContext != null)
+            {
+                _playerRuntimeContext = activeContext;
+                return activeContext;
+            }
+
+            if (registryContext != null)
+            {
+                _playerRuntimeContext = registryContext;
+                return registryContext;
+            }
+
+            _playerRuntimeContext = null;
+            return null;
+        }
+
+        private static bool IsUsablePlayerRuntimeContext(IPlayerRuntimeContext runtimeContext)
+        {
+            return runtimeContext != null &&
+                   runtimeContext.IsInitialized &&
+                   runtimeContext.PlayerTransform != null;
+        }
+
+        private static bool TryResolveCachedLookState(
+            in FaunaDirectorPlayerRuntimeContextSnapshot snapshot,
+            out PlayerLookState lookState)
+        {
+            lookState = snapshot.HasLookState ? snapshot.LookState : default;
+            return snapshot.HasLookState;
+        }
+
+        private static bool TryResolveCachedMovementState(
+            in FaunaDirectorPlayerRuntimeContextSnapshot snapshot,
+            out PlayerMovementRuntimeState movementState)
+        {
+            movementState = snapshot.HasMovementState ? snapshot.MovementState : default;
+            return snapshot.HasMovementState;
         }
 
         private void InvalidatePlayerRuntimeContextCache()
@@ -4140,8 +4284,7 @@ namespace Hecton8.AI
             if (_creaturePoolsWarmed || biomeDatasets == null || biomeDatasets.Length == 0)
                 return;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             _warmupPrefabs.Clear();
@@ -4282,8 +4425,7 @@ namespace Hecton8.AI
             EnsureRuntimeStateInitialized();
             ResolvePlayerViewTransform();
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return false;
 
             if (!TryResolveEncounterBiomeData(
@@ -4405,10 +4547,7 @@ namespace Hecton8.AI
                     out ActiveCreature record))
             {
                 ecosystemDirector?.RefundSpawnCredit(selectedEntry.archetype, selectedEntry.isLargeThreat, selectedEntry.isPredator);
-                if (pool != null)
-                    pool.Despawn(instance);
-                else
-                    instance.SetActive(false);
+                DespawnCreatureInstanceOrDeactivate(instance, pool);
 
                 return false;
             }
@@ -4433,7 +4572,7 @@ namespace Hecton8.AI
             if (instanceId == 0 || _activeCreatures == null || _activeCreatures.Count <= 0)
                 return false;
 
-            IObjectPoolService pool = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
                 ActiveCreature creature = _activeCreatures[i];
@@ -4448,10 +4587,7 @@ namespace Hecton8.AI
                 if (unchecked((int)EntityId.ToULong(creature.gameObject.GetEntityId())) != instanceId)
                     continue;
 
-                if (pool != null)
-                    pool.Despawn(creature.gameObject);
-                else
-                    creature.gameObject.SetActive(false);
+                DespawnCreatureInstanceOrDeactivate(creature.gameObject, pool);
 
                 DecrementCreatureCounters(in creature);
                 ReleaseDehydrationSlot(creature.dehydrationSlotIndex);
@@ -4470,16 +4606,13 @@ namespace Hecton8.AI
         public void DespawnAll()
         {
             CompleteResidentDataOnlySimulation(forceComplete: true);
-            IObjectPoolService pool = _objectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
 
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
                 ActiveCreature creature = _activeCreatures[i];
 
-                if (creature.gameObject != null && pool != null)
-                {
-                    pool.Despawn(creature.gameObject);
-                }
+                DespawnCreatureInstanceOrDeactivate(creature.gameObject, pool);
             }
 
             _activeCreatures.Clear();
@@ -4804,8 +4937,7 @@ namespace Hecton8.AI
 
             ResolvePlayerViewTransform();
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return;
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -4973,10 +5105,7 @@ namespace Hecton8.AI
                         out record))
                 {
                     ecosystemDirector?.RefundSpawnCredit(selectedEntry.archetype, selectedEntry.isLargeThreat, selectedEntry.isPredator);
-                    if (pool != null)
-                        pool.Despawn(instance);
-                    else
-                        instance.SetActive(false);
+                    DespawnCreatureInstanceOrDeactivate(instance, pool);
 
                     continue;
                 }
@@ -5476,4 +5605,3 @@ namespace Hecton8.AI
         }
     }
 }
-

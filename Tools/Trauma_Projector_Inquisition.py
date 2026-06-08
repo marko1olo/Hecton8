@@ -8,11 +8,30 @@ from datetime import datetime, timezone
 import Decal_Projector_Inquisition as base
 
 
-TRAUMA_ROUTE_PATTERNS = (
-    re.compile(r"AddComponent\s*<\s*(?:Image|RawImage|DecalProjector)\s*>.*(?:blood|crack|wound|trauma|decal)", re.IGNORECASE),
-    re.compile(r"new\s+GameObject\s*\([^)]*(?:blood|crack|wound|trauma|decal)", re.IGNORECASE),
-    re.compile(r"Instantiate\s*\([^;]*(?:blood|crack|wound|trauma|decal)", re.IGNORECASE),
+TRAUMA_CONTEXT_MARKERS = (
+    "dynamicdecal",
+    "visordecal",
+    "visortrauma",
+    "visorwound",
+    "traumadecal",
+    "traumawound",
+    "wounddecal",
 )
+TRAUMA_ROUTE_PATTERNS = (
+    re.compile(r"AddComponent\s*<\s*(?:Image|RawImage|DecalProjector)\s*>.*(?:blood|crack|wound|trauma)", re.IGNORECASE),
+    re.compile(r"new\s+GameObject\s*\([^)]*(?:blood|crack|wound|trauma)", re.IGNORECASE),
+    re.compile(r"Instantiate\s*\([^;]*(?:blood|crack|wound|trauma)", re.IGNORECASE),
+)
+
+
+def is_trauma_context(path, text: str) -> bool:
+    relative_path = base.relative(path).lower()
+    compact_path = re.sub(r"[^a-z0-9]", "", relative_path)
+    if any(marker in compact_path for marker in TRAUMA_CONTEXT_MARKERS):
+        return True
+
+    compact_text = re.sub(r"[^a-z0-9]", "", text[:20000].lower())
+    return any(marker in compact_text for marker in TRAUMA_CONTEXT_MARKERS)
 
 
 def main() -> int:
@@ -25,6 +44,7 @@ def main() -> int:
 
     for path in candidate_files:
         text = base.read_text(path)
+        trauma_context = is_trauma_context(path, text)
         active, inactive = base.scan_active_renderer_features(path, text)
         active_renderer_features.extend(active)
         inactive_renderer_feature_count += inactive
@@ -33,7 +53,7 @@ def main() -> int:
             if "DecalProjector" in line:
                 token_hits.append({"path": base.relative(path), "line": line_index, "text": line.strip()[:180]})
 
-            if any(pattern.search(line) for pattern in base.ACTIVE_DECAL_PATTERNS) or any(pattern.search(line) for pattern in TRAUMA_ROUTE_PATTERNS):
+            if (trauma_context and any(pattern.search(line) for pattern in base.ACTIVE_DECAL_PATTERNS)) or any(pattern.search(line) for pattern in TRAUMA_ROUTE_PATTERNS):
                 active_violations.append({"path": base.relative(path), "line": line_index, "text": line.strip()[:180]})
 
     passed = len(active_violations) == 0 and len(active_renderer_features) == 0

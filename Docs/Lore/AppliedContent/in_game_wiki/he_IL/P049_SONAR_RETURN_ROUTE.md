@@ -7,34 +7,34 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Sonar Return Route"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "מסלול חזרה בסונאר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sonar Return Route
+# מסלול חזרה בסונאר
 
-Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.
+משואת חזרה מתעדת איך נשמע מסלול כשהיה בטוח בפעם האחרונה. היא לא מבטיחה שהוא נשאר בטוח. גל סערה, כבל רופף, סחף נע, fauna וחתכי salvage חדשים יכולים לכופף החזרת סונאר בלי למחוק את המסדרון. לפני נשיאת מטען או ירידה עמוקה יותר, שלח ping לקו. אם הטון זז, אחסן את המטען או סמן דרך שנייה הביתה.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+משואת חזרה מיושנת. ping בטוח ישן כבר אינו תואם את הד המסדרון; מסת מטען תאט את חלון הנסיגה.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: הד נקי אחרון לא תקף. ping מ-Black Keel התקבל באמון נמוך. סחיפת מכשולים וצפיפות סחף מעל סבולת מפה. סמן קו משני לפני חילוץ מטען.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+המסלול עדיין שם. ההד אינו אותו הדבר.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+שלח ping לפני טעינה. אם הדרך הביתה השתנתה כשהידיים היו ריקות, היא לא תסלח לתיק מלא.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/he_IL. -->

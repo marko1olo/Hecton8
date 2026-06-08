@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute外側死んだbeacon役"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Outer Dead Beacon Moon Role
+# Mute外側死んだbeacon役
 
-JA LOC HOLD: The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.
+MuteはAegir梯子の外側にある死んだbeacon月だ。relayは信頼できず、冷たく、現在の公開地図から一部消えている。それでも古いsolver、保険条項、recovery表に残る。HECTON-8との通信が稀で醜い理由は、魔法ではなくそのためだ。メッセージは物理、悪いデータ、またはその二つを同じものとして扱う保管規則で遅れる。
 
 ## Scanner
 
-JA LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
+死んだbeacon ping。Muteはもうきれいに答えないが、古いroute solverはまだその幽霊を使う。
 
 ## Terminal
 
-JA LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
+BEACON注記H9 MUTE：保存ephemerisが現在のrelay反響と不一致。救助solverは使用可能な曖昧さを標示。契約デスクは窓確認まで遅延メッセージ保管を許可。
 
 ## Audio
 
-JA LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
+請求書が場所を知っているなら、死んだbeaconもbeaconだ。
 
 ## Field Note
 
-JA LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+死んだインフラはAegirを去らない。誰かが請求できる誤差項になる。
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/ja_JP. -->

@@ -9,25 +9,25 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Транскрипт подхода Black Keel"
+title: "Транскрипт подхода Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Транскрипт подхода Black Keel
+# Транскрипт подхода Black Keel
 
-RU LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+Транскрипт подхода делает Black Keel полезной инфраструктурой, но не милостью. Carrier дает Marauder линию к орбите, а затем называет долг, окно приемника, лимит здоровья, лимит массы и требование доказательств прежде, чем надежда успеет переписать физику.
 
 ## Scanner
 
-Восстановленное аудио ретранслятора подтверждает оплаченный спуск, условный возврат, задержку четыре секунды и обязательный пакет доказательств.
+Восстановленное аудио carrier подтверждает оплаченный спуск, условный возврат, задержку четыре секунды и обязательный пакет доказательств.
 
 ## Terminal
 
-РАСШИФРОВКА РЕТРАНСЛЯТОРА BK-APP-01: задержка 4.0 с; потеря пакетов 18%; спуск выставлен к оплате; возврат зависит от окна приемника, здоровья, массы и доказательства.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
@@ -35,6 +35,6 @@ RU LOC HOLD: The approach transcript proves Black Keel is useful infrastructure,
 
 ## Field Note
 
-Буфер тендера по требованию, срезанный штормовым ретранслятором. Голос дает факты маршрута и не обещает спасение.
+Буфер claim-tender, срезанный storm carrier. Держать голос процедурным: факты маршрута сначала, утешение никогда.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/ru_RU. -->

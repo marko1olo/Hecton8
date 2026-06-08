@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "Gramática de encontro: falsa segurança da deriva-lanterna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# Gramática de encontro: falsa segurança da deriva-lanterna
 
-PT LOC HOLD: HECTON-8's bright shallows are readable, but never innocent.
+A falsa segurança da deriva-lanterna mantém honestos os rasos brilhantes de HECTON-8. O brilho é útil, sedutor e perigoso porque registra mais de uma verdade ao mesmo tempo.
 
 ## Scanner
 
-PT LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Faixa de deriva-lanterna. Água brilhante pode significar borda de oxigênio, ruído de sinal, rastro de ferramenta ou tráfego deslocado por predador. Verifique corrente antes de seguir.
 
 ## Terminal
 
-PT LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+GRAMÁTICA DE ENCONTRO / FALSA SEGURANÇA DA DERIVA-LANTERNA / função: beleza como dado ambíguo, tentação de rota, penalidade de stealth / leitura segura: corrente combina com brilho, fauna normal, resíduo no lado esperado / rejeitar: tratar luz azul como segurança, seguir corredor falso carregado por tempestade, reparar com barulho dentro de rastro iluminado / nota de rota: um brilho pode ser caminho, isca, registro de pânico ou exposição.
 
 ## Audio
 
-PT LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+Luz não é misericórdia. É dado que seu traje ainda não aprendeu a separar.
 
 ## Field Note
 
-PT LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+Pergunte o que a luz carrega: corrente, oxigênio, seu ruído ou algo que moveu todo o resto para longe.
 
 <!-- External Site; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/pt_BR. -->

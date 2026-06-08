@@ -446,6 +446,8 @@ namespace Hecton8.Construction
         public float AuthorityCadenceHz;
         public float LastScheduleMicroseconds;
         public uint Flags;
+        public ulong IntentCounters0;
+        public ulong IntentCounters1;
 
         public void Execute()
         {
@@ -509,7 +511,9 @@ namespace Hecton8.Construction
                 StateHash = stateHash,
                 CollisionEdgeHash = collision.EdgeHashID,
                 CollisionDepthMeters = collisionDepth,
-                Flags = flags
+                Flags = flags,
+                Reserved0 = IntentCounters0,
+                Reserved1 = IntentCounters1
             };
             Cursor[0] = unchecked(Cursor[0] + 1u);
         }

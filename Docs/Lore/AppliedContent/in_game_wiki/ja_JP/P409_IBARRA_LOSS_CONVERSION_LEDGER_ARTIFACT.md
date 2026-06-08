@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Ibarra Loss Ledger"
+title: "イバラ損失変換台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Ibarra Loss Ledger
+# イバラ損失変換台帳
 
-JA LOC HOLD: The Ibarra ledger is the accounting form of the cover. It keeps asset rights active while missing workers become unresolved load.
+イバラ台帳は隠蔽の会計形式だ。Deep Reach は所有権を手放さずに損失を認められる。人は unresolved personnel load になり、証拠は material custody になり、claim はコロニーより長く生き残る。
 
 ## Scanner
 
-JA LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Keelmark loss ledger。行方不明の作業員、損傷モジュール、生きている claims が同じ変換表に入る。
 
 ## Terminal
 
-JA LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel unresolved. Habitat modules, tool banks and claim rights retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-JA LOC HOLD: The ledger did not forget names. It made them payable later.
+台帳は名前を忘れなかった。使い方を覚えた。
 
 ## Field Note
 
-JA LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Marauderメモ: 台帳は死者を覚えたまま、働かせることができる。
 
 <!-- In-Game Wiki; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/ja_JP. -->

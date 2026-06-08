@@ -241,7 +241,7 @@ namespace Hecton8.Gameplay
         public static bool TryFindNearestLootSphereAup(in AbsoluteUniversePosition observerAup, float maxDistance, float radiusPadding, out Vector4 lootSphereAup)
         {
             lootSphereAup = default;
-            if (s_activeLootCount <= 0)
+            if (s_activeLootCount <= 0 || !observerAup.IsFinite())
                 return false;
 
             double maxDistanceSq = maxDistance > 0f ? (double)maxDistance * maxDistance : double.MaxValue;
@@ -273,6 +273,9 @@ namespace Hecton8.Gameplay
                     continue;
 
                 AbsoluteUniversePosition centerAup = s_lootCenterAups[i];
+                if (!centerAup.IsFinite())
+                    continue;
+
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in observerAup, in centerAup);
                 if (distanceSq > bestDistanceSq)
                     continue;

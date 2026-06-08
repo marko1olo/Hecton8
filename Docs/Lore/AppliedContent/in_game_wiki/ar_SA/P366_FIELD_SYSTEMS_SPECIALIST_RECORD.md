@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Field Systems Specialist Record"
+title: "سجل اختصاصي الأنظمة الميدانية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Field Systems Specialist Record
+# سجل اختصاصي الأنظمة الميدانية
 
-AR LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.
+يفسر هذا السجل كفاءة المشغل الأولى من دون تحويله إلى شاهد مختار. دربته Deep Reach قرب المضخات، وتصنيفات الأختام، وغرف المرحلات، وبطاقات التجاوز، وطوابير الإخلاء، ولغة route-safe. الأنظمة القديمة ترفض اسمه، لكنها ما زالت تكشف إجراءً مألوفاً. يبدأ الذنب كتعرف: ترتيب تصريف، تصنيف مشبك، عبارة احتجاز نظيفة أكثر من اللازم، وغرفة فشلت بالترتيب الذي تعلم أن يمنعه.
 
 ## Scanner
 
-AR LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+اعتماد قديم للأنظمة الميدانية. ليس طاقم قيادة. عمل بنية تحتية مع وصول يكفي لمعرفة أين دُفن المسار.
 
 ## Terminal
 
-AR LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+أثر موظف: أنظمة ميدانية، بنية إخلاء، اعتماد route-safe. أُلغي التصريح بعد مراجعة صمت Aegir. مخبأ الإجراءات ما زال يطابق تسلسل المشغل.
 
 ## Audio
 
-AR LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+أنت لم توقع الكذبة. كنت تعرف القواعد التي جعلتها تمر من التفتيش.
 
 ## Field Note
 
-AR LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+توقفت الشارة عن فتح الأبواب. لكنها لم تمح ترتيب الفشل.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/ar_SA. -->

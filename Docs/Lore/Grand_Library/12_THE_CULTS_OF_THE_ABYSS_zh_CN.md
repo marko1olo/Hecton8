@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 深渊邪教与压力精神病
 
 > **来源：** 心理学评估日志，第44区医疗舱（已回收）。

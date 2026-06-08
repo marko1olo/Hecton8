@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 제논-오메가 지침과 ATLAS-6 프로토콜
 
 > **출처:** 루이텐 위원회 공개 조사, 사건 번호 CF-2148-0071. 증거물 44-B: Atlas-6 코어의 감사 로그.  

@@ -9,32 +9,36 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Tekanan Kontrak Utang dan Daftar Hitam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Debt Blacklist Contract Pressure
+# Tekanan Kontrak Utang dan Daftar Hitam
 
-ID LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.
+Tekanan utang membuat pembuka tetap jujur. Protagonis tidak diseret ke HECTON-8 oleh melodrama, dan juga tidak bebas dalam arti yang berguna. Black Keel dapat menawarkan kontrak karena claim-pool, jendela utang, kredit oksigen, akses ranjang, dan bukti kustodi berada dalam ekonomi perbatasan yang sama. Menolak klaim itu legal. Itu juga akan membuat pemain tetap masuk daftar hitam, tertahan, dan tidak mampu membeli rute. Menerimanya tidak menjadikan Black Keel penjahat berwajah. Itu menjadikan pengangkut sebagai mesin untuk mengubah risiko menjadi dokumen. Pemain menyelam karena kontraknya buruk, masih bisa dilalui, dan masuk akal sebagai satu-satunya rute kembali ke gerak.
 
 ## Scanner
 
-ID LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Pemberitahuan hak tanggungan terikat pada kustodi Black Keel. Menolak tetap legal, tetapi membuatmu tertahan: tanpa ranjang, tanpa kredit oksigen bersih, tanpa jendela rute keluar dari Aegir.
 
 ## Terminal
 
-ID LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+PENERIMAAN KLAIM / JENDELA KERINGANAN DAFTAR HITAM
+status kontraktor: Marauder terikat utang
+pengangkut: kustodi claim-pool Black Keel
+syarat keringanan: massa dapat dipulihkan, bukti kustodi, kepatuhan penerima
+status gagal: daftar hitam tetap aktif; akses ranjang ditolak; dukungan kesejahteraan oksigen menjadi layanan tertagih.
 
 ## Audio
 
-ID LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+Ini bukan penculikan. Ini jenis pilihan yang dijual perbatasan sebagai kebebasan: tanda tangan, menyelam, atau tetap bersih di kertas dan terjebak dalam praktik.
 
 ## Field Note
 
-ID LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+Hak tanggungan tidak menodongkan senjata. Ia menunjuk tagihan udara, daftar ranjang, dan jendela rute berikutnya.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/id_ID. -->

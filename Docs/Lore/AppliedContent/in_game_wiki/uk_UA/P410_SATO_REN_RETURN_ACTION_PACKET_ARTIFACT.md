@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Sato-Ren Return Packet"
+title: "Return Action Packet Сато-Рен"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Sato-Ren Return Packet
+# Return Action Packet Сато-Рен
 
-UK LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190 through compliance traffic, not a warship: coordinates, custody, access and silence first.
+Пакет Сато-Рен доводить, що Deep Reach активна у 2190 через compliance traffic, а не через rescue fleet. Він просить координати, Atlas access state, sample custody і silence до того, як пропонує слово extraction.
 
 ## Scanner
 
-UK LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+Пакет Recovery Compliance. Координати, access state і payload custody запитують до появи мови extraction.
 
 ## Terminal
 
-UK LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
+RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
 
 ## Audio
 
-UK LOC HOLD: The packet knows where the asset is. It is less certain where you are.
+Пакет знає, що asset живий. Він ще вирішує, чи ти рахуєшся.
 
 ## Field Note
 
-UK LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+Нотатка Marauder: якщо вони кажуть extraction після custody, перечитай порядок двічі.
 
 <!-- In-Game Wiki; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/uk_UA. -->

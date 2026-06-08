@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "JA LOC HOLD: RAN-B:H8 Public Catalog"
+spoiler_tier: 1
+title: "RAN-B:H8公開カタログ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: RAN-B:H8 Public Catalog
+# RAN-B:H8公開カタログ
 
-JA LOC HOLD: RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name.
-
-## Scanner
-
-JA LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
-
-## Terminal
-
-JA LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
-
-## Audio
-
-JA LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
-
-## Field Note
-
-JA LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+RAN-B:H8は、月が座標である時の名である。HECTON-8は、月が傷である時の名である。この分裂は重要だ。同じ場所が天文学表、保険書式、労働者の言葉、death ledgers、Black Keel custodyで働かなければならないからだ。公開カタログは目的地を清潔で並べ替え可能にする。claim nameは人間の沈殿物を残す。良いロアは、索引化された天体と沈んだ職場を同時に感じさせる。
 
 <!-- External Site; generated from P104_RAN_B_H8_PUBLIC_CATALOG/ja_JP. -->

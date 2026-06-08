@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Sato-Ren Return Packet"
+title: "حزمة سوتو-رن Return Action"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Sato-Ren Return Packet
+# حزمة سوتو-رن Return Action
 
-AR LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190 through compliance traffic, not a warship: coordinates, custody, access and silence first.
+تثبت حزمة سوتو-رن أن Deep Reach نشطة في 2190 عبر compliance traffic لا عبر rescue fleet. تطلب الإحداثيات وAtlas access state وsample custody وsilence قبل أن تقدم كلمة extraction.
 
 ## Scanner
 
-AR LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+حزمة Recovery Compliance. تطلب coordinates وaccess state وpayload custody قبل ظهور لغة extraction.
 
 ## Terminal
 
-AR LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
+RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
 
 ## Audio
 
-AR LOC HOLD: The packet knows where the asset is. It is less certain where you are.
+تعرف الحزمة أن asset حي. لكنها ما زالت تقرر إن كنت محسوبا.
 
 ## Field Note
 
-AR LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+ملاحظة Marauder: إذا قالوا extraction بعد custody فاقرأ الترتيب مرتين.
 
 <!-- In-Game Wiki; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/ar_SA. -->

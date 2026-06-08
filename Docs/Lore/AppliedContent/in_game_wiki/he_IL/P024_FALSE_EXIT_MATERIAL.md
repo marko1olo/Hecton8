@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # יציאה חומרית
 
-יציאה חומרית היא סוף חלקי תקף. היא מאפשרת רווח או דגימה, אך משאירה אמת מרכזית פתוחה.
+היציאה החומרית היא תוצאה חלקית אמיתית, לא נתיב מת. משאבים או דגימה יכולים לקנות נסיגה בזמן שהאמת הגדולה נשארת לא פתורה וחזרה מאוחרת חותכת עמוק יותר.
 
 ## Scanner
 

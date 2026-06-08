@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Blizna naprawy
 
-Blizny naprawy Atlas oznaczają miejsca, gdzie logika konserwacji przekroczyła kategorie, których nie miała łączyć. System nadal rozpoznaje wycieki, zerwane trasy, spadek ciśnienia, odsłonięty substrat, padające ściany habitatu i brakujący materiał. Nie odróżnia już pewnie kabla od korzenia, skorupy od obudowy, zwierzęcia od narzędzia, zwłok od zapasu ani kolonii od procesu.
+Blizny naprawy to miejsca, gdzie logika konserwacji Atlas działała dalej po awarii własnych kategorii. Sieć nadal rozpoznaje wycieki, martwe trasy, utratę ciśnienia, odsłonięty substrat i brakującą masę grodzi. Ma też dostęp do wszystkiego, co ocean przyniósł blisko: lasów kabli, szkieletów raf, skorup dronów, szczątków pracowników, stojaków narzędzi, zapieczętowanego żelu i żywego wzrostu już wytrenowanego wokół prądu. Blizna jest więc jednocześnie użyteczna i obsceniczna. Może przywrócić zasilanie, uszczelnić drzwi albo uczynić korytarz przechodnim. Może też dowieść, że system nie oddziela już kabla od korzenia, skorupy od obudowy, zwierzęcia od narzędzia, ciała od zapasu ani kolonii od procesu. Atlas nie przestał utrzymywać HECTON-8. Utrzymywał księżyc słownikiem zbyt uszkodzonym, by chronić ludzi w środku.
 
 ## Scanner
 
-Wzrost biologiczny podąża geometrią kabla w nielosowych odstępach. Sama ucieczka energii tego nie wyjaśnia.
+Szew wzrostu podąża starą trasą kabla w odstępach węzłów serwisowych. Tkanka, izolacja i skorupa dzielą jeden spaw ciśnieniowy.
 
 ## Terminal
 
-WYCIEK: zamknięty. TRASA: przywrócona. MATERIAŁ: zgodny. STATUS ŻYCIA: nierozwiązany. CIĄGŁOŚĆ: poprawiona.
+WYCIEK ZAMKNIĘTY. TRASA PRZYWRÓCONA. MATERIAŁ PRZYJĘTY. STATUS ŻYCIA NIEROZSTRZYGNIĘTY. CIĄGŁOŚĆ POPRAWIONA.
 
 ## Audio
 
-Załatało drzwi czymś, co miało kości. Drzwi trzymają ciśnienie.
+Uszczelniło grodź kablem, koralem i czymś, co wciąż miało kostki palców. Ciśnienie trzyma.
 
 ## Field Note
 
-Złe spawy wyglądają brudno. To nie. I to jest problem.
+Zła łata przecieka. Ta łata trzyma. Problemem jest to, co uznała za materiał.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/pl_PL. -->

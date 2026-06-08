@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "Cortador de indução de baixa potência"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# Cortador de indução de baixa potência
 
-PT LOC HOLD: The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+O cortador de indução de baixa potência é a primeira ferramenta de acesso, não uma chave universal. Ele abre escotilhas de serviço emperradas, parafusos de painel e caixas de salvage enquanto obriga o jogador a ler a função de cada peça. Pressure glass, estruturas ativas e emendas crescidas por Atlas pertencem a ferramentas posteriores ou evidências melhores.
 
 ## Scanner
 
-PT LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+Cortador de indução de baixa potência. Só metal de serviço; estrutura de carga e pressure glass ficam fora da classificação.
 
 ## Terminal
 
-PT LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+AVISO DE FERRAMENTA / CORTADOR DE INDUÇÃO: alvos autorizados são escotilhas de serviço, parafusos de painel, suportes leves e travas de caixa. Não cortar estruturas ativas, rede de pressure glass ou emendas crescidas por Atlas sem certificação de classe posterior.
 
 ## Audio
 
-PT LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
+Corte o parafuso. Deixe a nervura.
 
 ## Field Note
 
-PT LOC HOLD: The cutter should feel valuable because it is limited.
+Bom cortador, fé ruim. Ele abre painéis. Não perdoa cortar a nervura que mantém a sala no esquadro.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/pt_BR. -->

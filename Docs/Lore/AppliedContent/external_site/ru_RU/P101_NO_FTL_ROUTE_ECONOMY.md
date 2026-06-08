@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.carrier_link
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Экономика маршрутов без FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Экономика маршрутов без FTL
 
-Экономика маршрутов без FTL задает hard-sci-fi давление HECTON-8. Нет ansible, нет мгновенного спасения и нет дешевого возвращения. Межзвездное право может прийти в виде пакетов и долгов задолго до того, как корабли придут как помощь.
-
-## Scanner
-
-Транзитный артефакт. Задержка, масса и торможение сформировали этот объект раньше, чем колония коснулась воды.
-
-## Terminal
-
-ROUTE NOTICE: ansible receipt отсутствует. Локальные решения обязательны до следующего packet window. Salvage authority не может ждать ответа Sol.
-
-## Audio
-
-Из внутренних миров никто не придет вовремя. Контракт это знает.
-
-## Field Note
-
-Дистанция не фон. Именно она объясняет, почему игрока не спасают по расписанию.
+Экономика маршрутов без FTL - правило, которое делает HECTON-8 честным. Человеческое пространство способно добраться до Aegir к 2190 году, но каждый приход складывается из стартовых окон, массы защиты, топлива, тормозных систем, custody packets и оплаченного терпения длиной в годы. Закон может обгонять корабли, потому что идет данными. Долг может обгонять спасение, потому что был оценен до аварии. Игрок не брошен из-за отсутствия чуда; его бросила экономика, которая никогда чудес не обещала.
 
 <!-- External Site; generated from P101_NO_FTL_ROUTE_ECONOMY/ru_RU. -->

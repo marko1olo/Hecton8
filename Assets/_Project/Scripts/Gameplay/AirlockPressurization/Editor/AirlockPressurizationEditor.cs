@@ -113,7 +113,52 @@ namespace Hecton8.Gameplay.AirlockPressurization.Editor
             _curveExponent.SetValueWithoutNotify(dto.EqualizationCurveExponent);
             _powerDraw.SetValueWithoutNotify(dto.PowerDrawWatts);
             _qualityWeight.SetValueWithoutNotify(dto.GlobalQualityWeight);
-            _readout.text = $"water={dto.MaxWaterVolumeLiters:0}L pressure={dto.ExternalPressureAtm:0.00}atm tick={AirlockPressurizationMath.ResolveAuthorityTickInterval():0.000}s";
+
+            StringBuilder readout = new StringBuilder(160);
+            readout.Append("water=").Append(dto.MaxWaterVolumeLiters.ToString("0")).Append("L")
+                .Append(" pressure=").Append(dto.ExternalPressureAtm.ToString("0.00")).Append("atm")
+                .Append(" tick=").Append(AirlockPressurizationMath.ResolveAuthorityTickInterval().ToString("0.000")).Append("s");
+
+            if (TryReadLatestTelemetry(out AirlockTelemetryEntry latestTelemetry))
+            {
+                uint flushCounters = latestTelemetry.Reserved0;
+                readout.Append(" | Intents: ")
+                    .Append(AirlockPressurizationIntentFlush.UnpackFlushPublishedCount(flushCounters)).Append('/')
+                    .Append(AirlockPressurizationIntentFlush.UnpackFlushRetryCount(flushCounters)).Append('/')
+                    .Append(AirlockPressurizationIntentFlush.UnpackFlushInvalidCount(flushCounters))
+                    .Append(" | VFX: ")
+                    .Append(AirlockPressurizationSignalFlush.UnpackTelemetrySignalExpectedCount(latestTelemetry.VfxSignals)).Append('/')
+                    .Append(AirlockPressurizationSignalFlush.UnpackTelemetrySignalPublishedCount(latestTelemetry.VfxSignals)).Append('/')
+                    .Append(AirlockPressurizationSignalFlush.UnpackTelemetrySignalDroppedCount(latestTelemetry.VfxSignals))
+                    .Append(" | Audio: ")
+                    .Append(AirlockPressurizationSignalFlush.UnpackTelemetrySignalExpectedCount(latestTelemetry.AcousticSignals)).Append('/')
+                    .Append(AirlockPressurizationSignalFlush.UnpackTelemetrySignalPublishedCount(latestTelemetry.AcousticSignals)).Append('/')
+                    .Append(AirlockPressurizationSignalFlush.UnpackTelemetrySignalDroppedCount(latestTelemetry.AcousticSignals))
+                    .Append(" | Frame: ").Append(latestTelemetry.Frame);
+            }
+
+            _readout.text = readout.ToString();
+        }
+
+        private static bool TryReadLatestTelemetry(out AirlockTelemetryEntry entry)
+        {
+            entry = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!AirlockPressurizationVault.TryReadTelemetry(vault, out NativeArray<AirlockTelemetryEntry>.ReadOnly telemetry) ||
+                !AirlockPressurizationVault.TryReadTelemetryCursor(vault, out NativeArray<int>.ReadOnly cursor) ||
+                telemetry.Length <= 0 ||
+                cursor.Length <= 0 ||
+                cursor[0] <= 0)
+            {
+                return false;
+            }
+
+            int capacity = math.min(AirlockPressurizationConstants.TelemetryFrameCount, telemetry.Length);
+            if (capacity <= 0)
+                return false;
+
+            entry = telemetry[(cursor[0] - 1) % capacity];
+            return true;
         }
 
         private static void Mutate(TuningField field, float value)

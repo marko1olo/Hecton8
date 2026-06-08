@@ -49,7 +49,119 @@ namespace Hecton8.Core
         /// <summary>
         /// Runtime pool service owned by the active scene instance.
         /// </summary>
-        public static ObjectPoolManager Instance => ActiveRuntimeInstance;
+        public static ObjectPoolManager Instance
+        {
+            get
+            {
+                ObjectPoolManager instance = null;
+                TryResolveActiveRuntime(ref instance);
+                return instance;
+            }
+        }
+
+        public static bool TryResolveActiveRuntime(ref ObjectPoolManager target)
+        {
+            ObjectPoolManager registered = GlobalRegistry.ObjectPoolRuntimeMirror;
+            if (IsRuntimeOwnerUsable(registered))
+            {
+                target = registered;
+                if (!IsRuntimeOwnerUsable(ActiveRuntimeInstance))
+                    ActiveRuntimeInstance = registered;
+                return true;
+            }
+
+            ClearRuntimeMirrorIfOwnedBy(registered);
+
+            ObjectPoolManager active = ActiveRuntimeInstance;
+            if (IsRuntimeOwnerUsable(active))
+            {
+                target = active;
+                return true;
+            }
+
+            ClearRuntimeMirrorIfOwnedBy(active);
+            target = null;
+            return false;
+        }
+
+        private static bool IsRuntimeOwnerUsable(ObjectPoolManager runtime)
+        {
+            return IsRuntimeOwnerUsableForRegistry(runtime);
+        }
+
+        public static bool IsRuntimeOwnerUsableForRegistry(ObjectPoolManager runtime)
+        {
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   !runtime._serviceShuttingDown;
+        }
+
+        internal static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)
+        {
+            return instance != null &&
+                   pool is ObjectPoolManager manager &&
+                   IsRuntimeOwnerUsableForRegistry(manager) &&
+                   manager.CanDespawnWithoutDestroy(instance);
+        }
+
+        internal static bool TryResolvePoolForInstance(
+            GameObject instance,
+            IObjectPoolService preferredPool,
+            out IObjectPoolService pool)
+        {
+            if (CanDespawnWithPool(preferredPool, instance))
+            {
+                pool = preferredPool;
+                return true;
+            }
+
+            if (instance != null &&
+                instance.TryGetComponent(out PoolItemMarker marker) &&
+                marker.Owner != null &&
+                IsRuntimeOwnerUsableForRegistry(marker.Owner) &&
+                marker.Owner.CanDespawnWithoutDestroy(instance))
+            {
+                pool = marker.Owner;
+                return true;
+            }
+
+            ObjectPoolManager active = null;
+            if (instance != null &&
+                TryResolveActiveRuntime(ref active) &&
+                active.CanDespawnWithoutDestroy(instance))
+            {
+                pool = active;
+                return true;
+            }
+
+            pool = null;
+            return false;
+        }
+
+        internal static void DespawnOrDeactivate(GameObject instance, IObjectPoolService preferredPool)
+        {
+            if (instance == null)
+                return;
+
+            if (TryResolvePoolForInstance(instance, preferredPool, out IObjectPoolService pool))
+            {
+                pool.Despawn(instance);
+                return;
+            }
+
+            instance.SetActive(false);
+        }
+
+        private static void ClearRuntimeMirrorIfOwnedBy(ObjectPoolManager runtime)
+        {
+            if (ReferenceEquals(runtime, null))
+                return;
+
+            if (ReferenceEquals(ActiveRuntimeInstance, runtime))
+                ActiveRuntimeInstance = null;
+
+            GlobalRegistry.UnregisterObjectPoolService(runtime);
+        }
 
         /// <summary>
         /// True after scene-authored warmup presets have finished their frame-budgeted allocation pass.
@@ -91,7 +203,7 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            if (ActiveRuntimeInstance == null)
+            if (!IsRuntimeOwnerUsable(ActiveRuntimeInstance))
                 ActiveRuntimeInstance = this;
 
             EnsurePrefabRegistry();
@@ -142,7 +254,7 @@ namespace Hecton8.Core
 
             _poolMarkerCache.Clear();
 
-            if (_serviceRegistered && ReferenceEquals(GlobalRegistry.ObjectPool, this))
+            if (_serviceRegistered)
                 GlobalRegistry.UnregisterObjectPoolService(this);
 
             _serviceRegistered = false;
@@ -156,7 +268,7 @@ namespace Hecton8.Core
             if (_serviceRegistered)
                 return;
 
-            if (ActiveRuntimeInstance == null)
+            if (!IsRuntimeOwnerUsable(ActiveRuntimeInstance))
                 ActiveRuntimeInstance = this;
 
             EnsurePoolDictionary();
@@ -169,7 +281,9 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterObjectPoolService(this);
             GlobalTelemetryBus.Initialize();
-            _serviceRegistered = ReferenceEquals(GlobalRegistry.ObjectPool, this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.ObjectPoolRuntimeMirror, this);
+            if (_serviceRegistered)
+                ActiveRuntimeInstance = this;
         }
 
         /// <summary>
@@ -835,8 +949,8 @@ namespace Hecton8.Core
 
         private static PrefabRegistry EnsurePrefabRegistry()
         {
-            PrefabRegistry registry = PrefabRegistry.ActiveRuntimeInstance;
-            if (registry != null)
+            PrefabRegistry registry = null;
+            if (PrefabRegistry.TryResolveActiveRuntime(ref registry))
                 return registry;
 
             if (!Application.isPlaying)
@@ -904,7 +1018,7 @@ namespace Hecton8.Core
             instance.TryGetComponent(out DespawnTimer rootDespawnTimer);
             instance.GetComponents(s_poolableCache);
             instance.GetComponents(s_componentCache);
-            marker.Initialize(prefabId, rootRenderer, rootRigidbody, rootDespawnTimer, s_poolableCache, s_componentCache);
+            marker.Initialize(this, prefabId, rootRenderer, rootRigidbody, rootDespawnTimer, s_poolableCache, s_componentCache);
             s_poolableCache.Clear();
             s_componentCache.Clear();
             _poolMarkerCache[instance] = marker;
@@ -1006,6 +1120,7 @@ namespace Hecton8.Core
         [AddComponentMenu("")]
         public sealed class PoolItemMarker : MonoBehaviour
         {
+            private ObjectPoolManager _owner;
             private int _prefabId;
             private bool _initialized;
             private Renderer _rootRenderer;
@@ -1018,6 +1133,8 @@ namespace Hecton8.Core
             /// Registered prefab identifier.
             /// </summary>
             public int PrefabId => _prefabId;
+
+            public ObjectPoolManager Owner => _owner;
 
             /// <summary>
             /// Root renderer captured during pool warmup/instantiation.
@@ -1082,6 +1199,7 @@ namespace Hecton8.Core
             /// Assigns the prefab id once for the pooled instance.
             /// </summary>
             public void Initialize(
+                ObjectPoolManager owner,
                 int prefabId,
                 Renderer rootRenderer,
                 Rigidbody rootRigidbody,
@@ -1089,6 +1207,8 @@ namespace Hecton8.Core
                 List<IPoolable> poolables,
                 List<Component> rootComponents)
             {
+                _owner = owner;
+
                 if (!_initialized)
                 {
                     _prefabId = prefabId;
@@ -1135,22 +1255,18 @@ namespace Hecton8.Core
             {
                 if (delaySeconds <= 0f)
                 {
-                    ObjectPoolManager pool = ObjectPoolManager.Instance;
-                    if (pool != null)
-                        pool.Despawn(gameObject);
+                    DespawnNowOrDestroy();
                     return;
                 }
 
                 if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 {
-                    ObjectPoolManager pool = ObjectPoolManager.Instance;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogError(
                         "[ObjectPoolManager] DespawnTimer requested before SystemDispatcher was ready. Falling back to immediate despawn.",
                         this);
 #endif
-                    if (pool != null)
-                        pool.Despawn(gameObject);
+                    DespawnNowOrDestroy();
                     return;
                 }
 
@@ -1198,9 +1314,43 @@ namespace Hecton8.Core
                     return;
 
                 _pendingDespawn = false;
-                ObjectPoolManager pool = ObjectPoolManager.Instance;
-                if (pool != null)
+                DespawnNowOrDestroy();
+            }
+
+            private void DespawnNowOrDestroy()
+            {
+                if (TryResolveOwningPool(out ObjectPoolManager pool))
+                {
                     pool.Despawn(gameObject);
+                    return;
+                }
+
+                Destroy(gameObject);
+            }
+
+            private bool TryResolveOwningPool(out ObjectPoolManager pool)
+            {
+                pool = null;
+                if (TryGetComponent(out PoolItemMarker marker))
+                {
+                    ObjectPoolManager owner = marker.Owner;
+                    if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(owner) &&
+                        owner.CanDespawnWithoutDestroy(gameObject))
+                    {
+                        pool = owner;
+                        return true;
+                    }
+                }
+
+                ObjectPoolManager active = null;
+                if (ObjectPoolManager.TryResolveActiveRuntime(ref active) &&
+                    active.CanDespawnWithoutDestroy(gameObject))
+                {
+                    pool = active;
+                    return true;
+                }
+
+                return false;
             }
 
             private void OnDisable()

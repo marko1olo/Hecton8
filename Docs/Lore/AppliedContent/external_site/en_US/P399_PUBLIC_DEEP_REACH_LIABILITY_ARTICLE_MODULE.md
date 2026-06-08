@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Deep Reach Liability Evidence
 
-Deep Reach is culpable because the HECTON-8 disaster can be both natural and managed badly. The ocean supplied real force. The company supplied thin margins, late authorization, quarantine delays, Atlas priority rules and paperwork clean enough to outlive the workers it described. The strongest evidence is physical: doors, clocks, sensor tolerances, route holds and loss ledgers.
+Deep Reach is culpable because the HECTON-8 disaster can be natural and managed badly at the same time. The ocean supplied real force: tide resonance, cryosphere shear, storm stacking and pressure failure. The company supplied thin margins, late authorization, quarantine delay, Atlas priority rules and paperwork clean enough to outlive the people it described. The strongest evidence is physical and procedural: a door held under executive authority, a sensor tolerance changed before the window closed, a queue delayed for legal clearance, a loss ledger converting workers into claim categories while water was still moving. The player learns to distrust official language by comparing it against dents, clocks and routes.
 
 ## Scanner
 
-Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Liability record. Real tide physics, accepted margin risk, evacuation delay, quarantine holds, Atlas weighting and sanitized loss language converge in the same evidence chain.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine holds, Atlas weighting, worker classification and loss conversion.
 
 ## Audio
 

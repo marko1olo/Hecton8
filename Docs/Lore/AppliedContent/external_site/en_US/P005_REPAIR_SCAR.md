@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Repair Scar
 
-A repair scar is the first clear sign that HECTON-8 is not simply ruined. Something is still maintaining it, using ocean life, machines, dead infrastructure, and human remains as compatible material.
-
-## Scanner
-
-Biological growth follows cable geometry with non-random spacing. Energy leakage alone does not explain the pattern.
-
-## Terminal
-
-LEAK: closed. ROUTE: restored. MATERIAL: compatible. LIFE STATUS: unresolved. CONTINUITY: improved.
-
-## Audio
-
-It patched the door with something that had bones in it. Door holds pressure, though.
-
-## Field Note
-
-Bad welds look messy. This does not. That is the problem.
+Repair scars are one of HECTON-8's most important visual rules. They should look purposeful before they look grotesque. A bad weld is messy; an Atlas scar is neat enough to be worse. It follows cable geometry, respects pressure, closes the leak, and keeps a route alive. The horror comes from competence. Somewhere in the failure cascade, maintenance logic kept the job but lost the human categories around the job. Compatible material became anything that could carry load, seal water, conduct signal, or grow along a route. That means a scar can be a gift to the player and a warning in the same scan: a door that still holds, a path that should have died, a patch made from coral, insulation, drone shell, and bone. In the larger story, repair scars show why the abandoned colony is not inert. HECTON-8 still has systems making decisions. Those decisions are practical, local, and ruined.
 
 <!-- External Site; generated from P005_REPAIR_SCAR/en_US. -->

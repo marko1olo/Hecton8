@@ -7,34 +7,34 @@ poi_tags: poi.freight_stage_mass_board;poi.seed_ship_burn_schedule
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Heavy Freight Staging Time"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Час підготовки важкого фрахту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Heavy Freight Staging Time
+# Час підготовки важкого фрахту
 
-UA LOC HOLD: Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.
+Таймінг важкого фрахту захищає no-FTL хронологію. Обладнання Atlas може прибути до масового поселення, бо корпорації рано запускають попередній вантаж, стадирують його вперед, приймають безпілотний ризик і ховають вікна відмов у мові програми. Порятунок не може позичити цей трюк після початку аварії.
 
 ## Scanner
 
-UA LOC HOLD: Atlas-class freight is not fast. It is prepaid patience with armor.
+Фрахт класу Atlas — це передплачене терпіння, загорнуте в броню.
 
 ## Terminal
 
-UA LOC HOLD: FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.
+ФРАХТОВА НОТАТКА: Atlas і seed-вантаж використовують стадирування, пелетно-термоядерну підтримку, довгі дрейфи й гальмівну інфраструктуру. Публічні дати можуть ховати попередні запуски й відправлення з forward-domain.
 
 ## Audio
 
-UA LOC HOLD: A ship that heavy does not travel. It becomes an invoice with a wake.
+Корабель такої маси не просто мандрує. Він стає рахунком із кільватером.
 
 ## Field Note
 
-UA LOC HOLD: A heavy route is assembled from depots, beam windows, braking mass and political nerve.
+Важкий маршрут збирається з депо, променевих вікон, гальмівної маси й політичної сміливості.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/uk_UA. -->

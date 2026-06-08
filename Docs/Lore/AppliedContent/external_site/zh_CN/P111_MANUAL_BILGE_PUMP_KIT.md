@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Manual Bilge Pump Kit"
+title: "手动舱底泵套件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Manual Bilge Pump Kit
+# 手动舱底泵套件
 
-CN LOC HOLD: Manual Bilge Pump Kit defines the first survival verb of HECTON-8. It is intentionally humble: a hard-sci-fi tutorial object that makes pressure work tactile.
+手动舱底泵成为第一个生存动词，因为它拒绝戏剧化。没有powered panel，没有英雄界面，也没有房间安全的承诺。玩家清理堵塞进水口，感受手柄反抗，并学会水必须有一个真实的去处。
 
-## Scanner
-
-CN LOC HOLD: Manual pump kit. Slow, ugly, reliable; the first lesson is that powered systems lie.
-
-## Terminal
-
-CN LOC HOLD: P-63 FIELD ISSUE: hand bilge pump, hose clamp, intake screen, check valve. Use before energizing flooded panels.
-
-## Audio
-
-CN LOC HOLD: Hand work first. Electricity second. Breathing always.
-
-## Field Note
-
-CN LOC HOLD: First tool must teach survival before upgrade fantasy.
+这个小工具定下HECTON-8的语气。修理从双手、压力和后果开始。如果泵回弹，就是房间在回答。如果出水口选错，生存只是把危险移动到别处。
 
 <!-- External Site; generated from P111_MANUAL_BILGE_PUMP_KIT/zh_CN. -->

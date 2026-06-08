@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "Граматика зустрічі: навігація розсільними лопатями"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Brine Vane Navigation Encounter Grammar
+# Граматика зустрічі: навігація розсільними лопатями
 
-UK LOC HOLD: The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
+Навігація розсільними лопатями робить каньйони HECTON-8 читаними без стрілок. Маршрут написаний щільністю, пошкодженням мембрани, викривленням sonar і дисципліною плавучості гравця.
 
 ## Scanner
 
-UK LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+Поле розсільних лопатей. Узгоджені листи позначають повороти щільності; закручені кінці — слабкі вікна; sonar викривляється біля відкритого світіння. Тримай один край у полі зору.
 
 ## Terminal
 
-UK LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+ГРАМАТИКА ЗУСТРІЧІ / НАВІГАЦІЯ РОЗСІЛЬНИМИ ЛОПАТЯМИ / роль: грамотність маршруту на середніх глибинах, поручень стіни щільності, виправлення хибної підлоги / безпечне читання: цілий край лопаті, рване гирло, вигин sonar збігається з дрейфом плавучості / відмова: перетинати чорну відкриту воду, різати лист-провідник, довіряти поверненню підлоги без межі лопаті / примітка маршруту: лопать веде не наміром; вона достатньо голосно підкоряється воді, щоб за нею йти.
 
 ## Audio
 
-UK LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+Лопать не вказівник. Це вода робить стіну й лишає шов.
 
 ## Field Note
 
-UK LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+Вважай край лопаті поручнем. Якщо лінія гнеться неправильно, твоє читання плавучості вже спізнилося.
 
 <!-- External Site; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/uk_UA. -->

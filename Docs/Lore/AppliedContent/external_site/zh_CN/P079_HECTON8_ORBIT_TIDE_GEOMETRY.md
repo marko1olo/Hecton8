@@ -3,38 +3,38 @@ packet_id: P079_HECTON8_ORBIT_TIDE_GEOMETRY
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.hecton8_orbit_tide_geometry
 unlock_id: unlock.first_hecton8_orbit_tide_geometry
-poi_tags: poi.tide_geometry_panel;poi.orbital_timing_core
-biome_tags: biome.surface_relay;biome.tide_pump
+poi_tags: poi.tide_geometry_model;poi.atlas_evacuation_forecast
+biome_tags: biome.storm_shelf;biome.brine_canyon
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8 Orbit / Tide Geometry"
+title: "HECTON-8轨道 / 潮汐几何"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbit / Tide Geometry
+# HECTON-8轨道 / 潮汐几何
 
-CN LOC HOLD: HECTON-8 Orbit / Tide Geometry is the core hard-sci-fi disaster article. The moon dies by tides, heat and pressure first; corporate priority turns the disaster into a crime.
+HECTON-8轨道 / 潮汐几何是硬科幻灾难层：潮汐、热和压力先摧毁殖民地；公司优先级把失败变成罪行。
 
 ## Scanner
 
-CN LOC HOLD: Tide geometry model. The Great Tide was not a metaphor. The math was always on the wall.
+潮汐几何模型 // 共振、冰应力、风暴增水和热排放超过撤离预测。Atlas continuity标志覆盖撤退优先级。
 
 ## Terminal
 
-CN LOC HOLD: HECTON-8 ORBIT MODEL: resonant tide amplification, cryosphere stress, storm surge and artificial heat discharge exceeded evacuation forecast. Atlas continuity flags overrode manual retreat priority.
+GREAT TIDE链 // 轨道强迫放大海洋载荷。人工热排放和封闭排水把潮汐事件转成殖民地失效。
 
 ## Audio
 
-CN LOC HOLD: Physics opened the door. Deep Reach decided who got to leave through it.
+物理打开了门。Deep Reach决定谁能离开。
 
 ## Field Note
 
-CN LOC HOLD: A moon can drown a colony without hating it.
+一颗月亮可以不带仇恨地淹死殖民地。
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/zh_CN. -->

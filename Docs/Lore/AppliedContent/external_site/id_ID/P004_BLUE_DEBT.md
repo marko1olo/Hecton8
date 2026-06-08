@@ -9,32 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Blue Debt"
+title: "Utang Biru"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Blue Debt
+# Utang Biru
 
-Blue debt adalah lapisan sumber daya yang membuat HECTON-8 lebih dari koloni hilang. Ia berharga, tidak stabil, dan terkait langsung dengan alasan Deep Reach ingin mengubur sekaligus mengambil kembali bulan ini.
-
-## Scanner
-
-Residu Xenon-Omega yang dijaga tekanan. Stabil hanya dalam kondisi keras. Jangan ventilasi dekat udara kabin hangat.
-
-## Terminal
-
-SUBSTRAT KONTINUITAS XO. Jangan dekompresi. Jangan paparkan ke atmosfer habitat tanpa filter.
-
-## Audio
-
-Kontainer itu bernyanyi di sonar. Rendah, teratur. Itu bukan makhluk. Itu lebih buruk.
-
-## Field Note
-
-Blue debt dibayar mahal karena menggigit dua kali. Saat kau membawanya. Lalu saat orang tahu kau memilikinya.
+Utang Biru membuat salvage di HECTON-8 terasa menguntungkan sebelum terasa aman. Material itu bukan kristal harta yang menunggu di karang. Ia adalah residu sistem tekanan industri: substrat Xenon-Omega, media penahanan gagal, slag komputasi, dan scrap tersegel yang tetap stabil karena samudra tidak pernah berhenti menekannya. Angkat dengan cara salah dan sampel berubah keadaan. Jual dengan cara salah dan jejak dokumen mengubah dirimu. Risiko ganda itu adalah maksud namanya. Utang biru membayar penyintas dengan cepat, tetapi setiap kontainer membawa biaya masa depan: dekontaminasi, lien carrier, aturan kustodi Black Keel, bahasa klaim Deep Reach, dan kemungkinan bahwa sampel juga bukti. Dalam lore yang lebih luas, sumber daya ini menjadi salah satu petunjuk pertama bahwa HECTON-8 bukan sekadar ditinggalkan. Ia ditinggalkan dengan sistem bernilai masih berjalan di bawah tekanan, di tempat yang hanya operator putus asa mau menyentuhnya.
 
 <!-- External Site; generated from P004_BLUE_DEBT/id_ID. -->

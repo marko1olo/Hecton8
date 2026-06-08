@@ -7,34 +7,34 @@ poi_tags: poi.brine_density_marker;poi.canyon_current_gate
 biome_tags: biome.brine_canyon;biome.drop_zone
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Échelle de route du canyon de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# Échelle de route du canyon de saumure
 
-FR LOC HOLD: Brine canyons make depth progression physical. Dense brine layers, mineral walls, thermal leaks and acoustic distortion create routes that teach the player why deeper travel requires better instruments and better pressure discipline.
+Les canyons de saumure rendent la progression en profondeur physique. Couches denses, murs minéraux, fuites thermiques et distorsion acoustique apprennent au joueur pourquoi il faut de meilleurs instruments et une discipline de pression.
 
 ## Scanner
 
-FR LOC HOLD: Brine density marker. The descent route is chemistry with walls.
+Marqueur de densité de saumure. La descente est une chimie avec des murs.
 
 ## Terminal
 
-FR LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
+CONTRÔLE CANYON SAUMURE: interface de densité assez stable pour une descente étagée. Avertissement: distorsion de relais acoustique, erreur de flottabilité véhicule et faux-planchers attendus sous 1800 m.
 
 ## Audio
 
-FR LOC HOLD: The canyon is a staircase made of wrong water.
+Le canyon est un escalier fait d'eau fausse.
 
 ## Field Note
 
-FR LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+On ne nage pas dans le canyon. On négocie avec des couches plus lourdes que la combinaison.
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/fr_FR. -->

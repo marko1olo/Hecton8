@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Evacuation Queue Delay Proof"
+title: "Zapis opóźnienia kolejki ewakuacji"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Evacuation Queue Delay Proof
+# Zapis opóźnienia kolejki ewakuacji
 
-PL LOC HOLD: Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.
+Zatopiony pokój nadal może przechować czas. Odzyskany zegar pokazuje okrutny porządek: alarm, review, opóźnienie, przekroczenie klasy uszczelnienia, woda. Publiczny język Deep Reach redukuje to do niepełnej ewakuacji podczas nagłej awarii struktury. Pokój się nie zgadza. Jego zapis zachowuje puste pole świadka i trwający przegląd kwarantanny poza punktem, w którym ścieżka ratunku była jeszcze fizycznie użyteczna. To nie twierdzenie, że wszystkich dało się ocalić. To coś dokładniejszego i gorszego: autoryzacja czekała, aż zmaleje liczba możliwych do uratowania. Dla gracza ratunek przestaje brzmieć jak obietnica, a zaczyna jak system pozwoleń.
 
 ## Scanner
 
-PL LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
+Odzyskano zegar kolejki. Brama zwolnienia pozostała zamknięta po tym, jak alarmy ciśnienia przeszły z prognozy do korytarza.
 
 ## Terminal
 
-PL LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // WITNESS SLOT EMPTY. Brak ręcznego potwierdzenia. Przegląd kwarantanny w toku. Ciśnienie trasy przekroczyło klasę uszczelnienia przed końcem autoryzacji.
 
 ## Audio
 
-PL LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
+Oni nie zawiedli przy ratowaniu wszystkich. Czekali, aż uratowanie kogokolwiek stanie się trudniejsze.
 
 ## Field Note
 
-PL LOC HOLD: Use in drowned evacuation corridors and triage rooms.
+Notatka Maraudera: zamknięta brama z oczekującym polem to nie wypadek. To decyzja czekająca na podpis.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/pl_PL. -->

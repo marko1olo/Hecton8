@@ -144,7 +144,9 @@ namespace Hecton8.PDA
             out float dayTimeHours,
             out float playTimeSeconds)
         {
-            playTimeSeconds = saveService != null ? saveService.CurrentPlayTimeSeconds : 0f;
+            playTimeSeconds = IsSaveServiceUsable(saveService)
+                ? math.max(0f, saveService.CurrentPlayTimeSeconds)
+                : 0f;
 
             if (atmosphereManager != null)
             {
@@ -157,6 +159,11 @@ namespace Hecton8.PDA
             float fallbackCycleDuration = math.max(1f, FallbackCycleDurationSeconds);
             dayIndex = (int)math.floor(playTimeSeconds / fallbackCycleDuration) + 1;
             dayTimeHours = Repeat01(playTimeSeconds / fallbackCycleDuration) * 24f;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private static float Repeat01(float value)

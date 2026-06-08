@@ -9,32 +9,35 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Aegir System Public Primer Article"
+title: "مدخل عام إلى نظام Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Aegir System Public Primer Article
+# مدخل عام إلى نظام Aegir
 
-AR LOC HOLD: Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain.
+Aegir هو النظام المضيف حول HECTON-8، وهو مهم بكل معنى عملي. سلم أقماره يشكل المد والجزر ونوافذ الاقتراب. هندسة ترحيله تسمح للأدلة بأن تسافر أسرع من كتلة الإنقاذ. مدارات حاملاته تجعل Black Keel حاضرا لكنه غير مفيد فورا. لا يوجد محرك معجزة، ولا إنقاذ ansible، ولا زر طوارئ نظيف. يجب أن تبدو النسخة العامة من Aegir قابلة للوصول بما يكفي لتكون قاسية: متصلة، مجدولة، مسعرة، وما زالت بطيئة جدا لمن هم عالقون في الأسفل.
 
 ## Scanner
 
-AR LOC HOLD: Aegir is not backdrop. It is a timetable with gravity.
+Aegir ليس خلفية. إنه جدول زمني له جاذبية وإشعاع ومد وجزر وتأخر ترحيل ونوافذ كتلة مكلفة.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
+مستوى مقال عام / نظام AEGIR
+المسموح: النظام المضيف، دور قمر HECTON-8، نوافذ المد، هندسة الترحيل، تأخر الناقل، لغة مسار بلا FTL
+المحجوب: توجيه payload النهائي، أولوية receiver المخفية، أقفال الإيفيميرس الدقيقة المتأخرة
+ملاحظة تحرير: اشرح التأخر من دون جعل المكان يبدو غير قابل للوصول.
 
 ## Audio
 
-AR LOC HOLD: The sky is a system, not a ceiling.
+النظام قريب بما يكفي ليرد. ذلك هو الجزء القاسي. ليس قريبا بما يكفي لرفع جسد عند الأمر.
 
 ## Field Note
 
-AR LOC HOLD: Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
+لا تقل إن Aegir بعيد وتتوقف. سم ما تفعله المسافة: تسعر الرفع، تؤخر الأجساد، وتدع الأدلة تسبق الإنقاذ.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/ar_SA. -->

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Black Keel Claim Acceptance"
+title: "Black Keel 索赔受理"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Black Keel Claim Acceptance
+# Black Keel 索赔受理
 
-ZH LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+Black Keel 的索赔终端在海水触到画面之前，就把开局钉在债务、氧气附加费和 custody 上。
 
 ## Scanner
 
-ZH LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+合同终端。Aegir Reclamation Pool 先列出 4.8 tonne-window 留置债，再列氧气。
 
 ## Terminal
 
-ZH LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / 索赔受理终端：route RAN-B:H8 salvage descent；4.8 tonne-window 留置减免为有条件；氧气 welfare addenda 在回收后计费；payload custody 以 Black Keel 为主，Keelmark Mutual 作证；拒绝将使 Barnard blacklist review 继续有效。
 
 ## Audio
 
-ZH LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel 致承包人：索赔窗口已开启。氧气将在回收后计费。若还能工作，请确认。
 
 ## Field Note
 
-ZH LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+手写笔被耐压绳拴在屏幕上。有人预料到签字的手会发抖。
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/zh_CN. -->

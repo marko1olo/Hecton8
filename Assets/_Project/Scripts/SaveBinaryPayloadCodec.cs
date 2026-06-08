@@ -47,6 +47,10 @@ namespace Hecton8.SaveSystem
         private const int HazardZoneRuntimeSaveVersion = SaveData.HazardZoneRuntimePersistenceVersion;
         private const int VoxelDeltaSaveVersion = SaveData.VoxelDeltaPersistenceVersion;
         private const int VoxelDeltaDenseCellFlagsSaveVersion = SaveData.VoxelDeltaDenseCellFlagsPersistenceVersion;
+        private const int ResourceRecyclerModuleSaveVersion = SaveData.ResourceRecyclerModulePersistenceVersion;
+        private const int StorageCrateModuleSaveVersion = SaveData.StorageCrateModulePersistenceVersion;
+        private const int FabricatorPendingOutputSaveVersion = SaveData.FabricatorPendingOutputPersistenceVersion;
+        private const int CultivationSeedHashSaveVersion = SaveData.CultivationSeedHashPersistenceVersion;
         private const int MaxVoxelDeltaChunks = 65536;
         private const int MaxVoxelDeltaCarvingOperations = 65536;
         private const float VoxelDeltaDefaultVoxelSize = 0.25f;
@@ -59,7 +63,10 @@ namespace Hecton8.SaveSystem
         private const int ProceduralFaunaStateStrideBytes = 16;
         private const int HibernatedFaunaStateStrideBytes = 112;
         private const int ModuleSorterBufferSlotMax = 8;
+        private const int ModuleRecyclerBufferSlotMax = 8;
+        private const int ModuleRecyclerPendingYieldSlotMax = 16;
         private const int ModuleCultivationSlotMax = 4;
+        private const int ModuleStorageCrateSlotMax = 32;
         private const int SerializedStringHeaderBytes = sizeof(int);
         private const int SerializedIntBytes = sizeof(int);
         private const int SerializedLongBytes = sizeof(long);
@@ -576,10 +583,7 @@ namespace Hecton8.SaveSystem
                 && WriteNonBlankStringList(ref writer, data.suitInstalledUpgradeIds, SaveData.MaxSuitUpgradeIds)
                 && WriteNonBlankStringList(ref writer, data.suitUnlockedBlueprintIds, SaveData.MaxSuitUpgradeIds)
                 && WriteNonBlankStringList(ref writer, data.suitBrokenUpgradeIds, SaveData.MaxSuitUpgradeIds)
-                && writer.WriteString(
-                    string.IsNullOrWhiteSpace(data.playerExpressionProfileId)
-                        ? string.Empty
-                        : data.playerExpressionProfileId)
+                && writer.WriteString(SaveData.SanitizePersistenceString(data.playerExpressionProfileId))
                 && writer.WriteInt(SanitizeAtlas6PlayerStatus(data.atlas6PlayerStatus))
                 && writer.WriteInt(Math.Max(0, data.atlas6BarterCount))
                 && writer.WriteBool(data.atlas6DirectiveConflictTriggered)
@@ -858,8 +862,7 @@ namespace Hecton8.SaveSystem
             CompactNonBlankStringList(data.suitInstalledUpgradeIds, SaveData.MaxSuitUpgradeIds);
             CompactNonBlankStringList(data.suitUnlockedBlueprintIds, SaveData.MaxSuitUpgradeIds);
             CompactNonBlankStringList(data.suitBrokenUpgradeIds, SaveData.MaxSuitUpgradeIds);
-            if (string.IsNullOrWhiteSpace(data.playerExpressionProfileId))
-                data.playerExpressionProfileId = string.Empty;
+            data.playerExpressionProfileId = SaveData.SanitizePersistenceString(data.playerExpressionProfileId);
             data.corporateReceivedOrderIds ??= new List<string>(SaveData.MaxCorporateOrderIds);
             CompactNonBlankStringList(data.corporateReceivedOrderIds, SaveData.MaxCorporateOrderIds);
             SanitizeCorporatePendingOrdersAfterRead(data);
@@ -897,8 +900,7 @@ namespace Hecton8.SaveSystem
             if (data == null)
                 return;
 
-            data.narrativeDiscoveryCount = ClampCollectionCount(
-                data.narrativeDiscoveryCount,
+            data.narrativeDiscoveryCount = ResolveDecodedCollectionCount(
                 data.narrativeDiscoveryIds,
                 SaveData.MaxNarrativeDiscoveries);
             SaveData.EnsureExactArrayCapacity(
@@ -2472,6 +2474,7 @@ namespace Hecton8.SaveSystem
             return writer.WriteFloat(value.oxygen)
                 && writer.WriteFloat(value.energy)
                 && writer.WriteFloat(value.integrity)
+                && writer.WriteFloat(value.health)
                 && writer.WriteFloat(value.weight)
                 && writer.WriteFloat(value.hunger)
                 && writer.WriteFloat(value.thirst)
@@ -2519,6 +2522,7 @@ namespace Hecton8.SaveSystem
             bool read = reader.ReadFloat(out value.oxygen)
                 && reader.ReadFloat(out value.energy)
                 && reader.ReadFloat(out value.integrity)
+                && ReadPlayerHealth(ref reader, version, ref value)
                 && reader.ReadFloat(out value.weight)
                 && reader.ReadFloat(out value.hunger)
                 && reader.ReadFloat(out value.thirst)
@@ -2575,6 +2579,17 @@ namespace Hecton8.SaveSystem
             return reader.ReadFloat(out value.velX)
                 && reader.ReadFloat(out value.velY)
                 && reader.ReadFloat(out value.velZ);
+        }
+
+        private static bool ReadPlayerHealth(ref BufferReader reader, int version, ref PlayerStatsDTO value)
+        {
+            if (version < SaveData.PlayerHealthPersistenceVersion)
+            {
+                value.health = SaveData.PlayerHealthDefault;
+                return true;
+            }
+
+            return reader.ReadFloat(out value.health);
         }
 
         private static bool ReadNitrogenBuildUp(ref BufferReader reader, int version, ref PlayerStatsDTO value)
@@ -2658,11 +2673,11 @@ namespace Hecton8.SaveSystem
             int writeIndex = 0;
             for (int i = 0; i < bound; i++)
             {
-                string value = values[i];
+                string value = SaveData.SanitizePersistenceString(values[i]);
                 if (string.IsNullOrWhiteSpace(value))
                     continue;
 
-                if (writeIndex != i)
+                if (writeIndex != i || !string.Equals(values[writeIndex], value, StringComparison.Ordinal))
                     values[writeIndex] = value;
 
                 writeIndex++;
@@ -2681,11 +2696,12 @@ namespace Hecton8.SaveSystem
             int writeIndex = 0;
             for (int i = 0; i < bound; i++)
             {
-                string id = ids[i];
+                string id = SaveData.SanitizePersistenceString(ids[i]);
                 if (string.IsNullOrWhiteSpace(id))
                     continue;
 
-                if (writeIndex != i)
+                if (writeIndex != i ||
+                    !string.Equals(ids[writeIndex], id, StringComparison.Ordinal))
                 {
                     ids[writeIndex] = id;
                     values[writeIndex] = values[i];
@@ -2737,17 +2753,23 @@ namespace Hecton8.SaveSystem
             value.EnsureCapacity();
             int legacyCapacity = legacyCells != null ? legacyCells.Length : 0;
             int safeCount = Math.Min(Math.Min(value.cellCount, legacyCapacity), InventoryDTO.MaxCells);
-            value.cellCount = safeCount;
 
+            int writeIndex = 0;
             for (int i = 0; i < safeCount; i++)
             {
                 InventoryCellDTO legacyCell = legacyCells[i];
-                value.itemHashIds[i] = LocHash.Compute(legacyCell.itemId);
-                value.packedCellCoordinates[i] = InventoryDTO.PackCellCoordinate(legacyCell.x, legacyCell.y);
-                value.stackCounts[i] = (ushort)Math.Clamp(legacyCell.stackCount > 0 ? legacyCell.stackCount : 1, 1, ushort.MaxValue);
-                value.qualityMilli[i] = DefaultQualityMilli;
+                string itemId = SaveData.SanitizePersistenceString(legacyCell.itemId);
+                if (itemId.Length == 0)
+                    continue;
+
+                value.itemHashIds[writeIndex] = LocHash.Compute(itemId);
+                value.packedCellCoordinates[writeIndex] = InventoryDTO.PackCellCoordinate(legacyCell.x, legacyCell.y);
+                value.stackCounts[writeIndex] = (ushort)Math.Clamp(legacyCell.stackCount > 0 ? legacyCell.stackCount : 1, 1, ushort.MaxValue);
+                value.qualityMilli[writeIndex] = DefaultQualityMilli;
+                writeIndex++;
             }
 
+            value.cellCount = writeIndex;
             SaveDataInventorySanitizer.SanitizeInventory(ref value);
             return true;
         }
@@ -3116,22 +3138,17 @@ namespace Hecton8.SaveSystem
 
         private static void SanitizeWorldStateAfterRead(ref WorldStateDTO value)
         {
-            value.depletedCount = ClampCollectionCount(
-                value.depletedCount,
-                value.depletedNodeIds,
-                WorldStateDTO.MaxNodes);
+            value.depletedCount = ResolveDecodedCollectionCount(value.depletedNodeIds, WorldStateDTO.MaxNodes);
             CompactNonBlankStringArraySlice(
                 value.depletedNodeIds,
                 ref value.depletedCount,
                 WorldStateDTO.MaxNodes);
-            value.depletedPickupChunkCount = ClampPairedCollectionCount(
-                value.depletedPickupChunkCount,
+            value.depletedPickupChunkCount = ResolveDecodedPairedCollectionCount(
                 WorldStateDTO.MaxPickupChunks,
                 value.depletedPickupChunkKeys,
                 value.depletedPickupChunkWordStarts,
                 value.depletedPickupChunkWordCounts);
-            value.depletedPickupWordCount = ClampCollectionCount(
-                value.depletedPickupWordCount,
+            value.depletedPickupWordCount = ResolveDecodedCollectionCount(
                 value.depletedPickupWords,
                 WorldStateDTO.MaxPickupWords);
             value.EnsureCapacity();
@@ -3237,24 +3254,19 @@ namespace Hecton8.SaveSystem
 
         private static void SanitizeProceduralWorldStateAfterRead(ref ProceduralWorldStateDTO value)
         {
-            value.suppressedPlacementCount = ClampCollectionCount(
-                value.suppressedPlacementCount,
+            value.suppressedPlacementCount = ResolveDecodedCollectionCount(
                 value.suppressedPlacementKeys,
                 ProceduralWorldStateDTO.MaxSuppressedPlacements);
-            value.faunaStateCount = ClampCollectionCount(
-                value.faunaStateCount,
+            value.faunaStateCount = ResolveDecodedCollectionCount(
                 value.faunaStates,
                 ProceduralWorldStateDTO.MaxFaunaStates);
-            value.geologySeamStateCount = ClampCollectionCount(
-                value.geologySeamStateCount,
+            value.geologySeamStateCount = ResolveDecodedCollectionCount(
                 value.geologySeamStates,
                 ProceduralWorldStateDTO.MaxGeologySeamStates);
-            value.geologyCaveEntranceCount = ClampCollectionCount(
-                value.geologyCaveEntranceCount,
+            value.geologyCaveEntranceCount = ResolveDecodedCollectionCount(
                 value.geologyCaveEntrances,
                 ProceduralWorldStateDTO.MaxGeologyCaveEntrances);
-            value.hibernatedFaunaCount = ClampCollectionCount(
-                value.hibernatedFaunaCount,
+            value.hibernatedFaunaCount = ResolveDecodedCollectionCount(
                 value.hibernatedFaunaStates,
                 ProceduralWorldStateDTO.MaxHibernatedFaunaStates);
             value.EnsureCapacity();
@@ -3323,6 +3335,22 @@ namespace Hecton8.SaveSystem
             return Math.Clamp(count, 0, upperBound);
         }
 
+        private static int ResolveDecodedCollectionCount<T>(T[] values, int maxCount)
+        {
+            return values != null
+                ? Math.Clamp(values.Length, 0, Math.Max(maxCount, 0))
+                : 0;
+        }
+
+        private static int ResolveDecodedPairedCollectionCount(int maxCount, Array first, Array second, Array third)
+        {
+            int upperBound = Math.Max(maxCount, 0);
+            upperBound = Math.Min(upperBound, first != null ? first.Length : 0);
+            upperBound = Math.Min(upperBound, second != null ? second.Length : 0);
+            upperBound = Math.Min(upperBound, third != null ? third.Length : 0);
+            return upperBound;
+        }
+
         private static int ClampPairedCollectionCount(int count, int maxCount, Array first, Array second)
         {
             int upperBound = Math.Min(Math.Max(maxCount, 0), first != null ? first.Length : 0);
@@ -3357,6 +3385,24 @@ namespace Hecton8.SaveSystem
             upperBound = Math.Min(upperBound, values1 != null ? values1.Length : 0);
             upperBound = Math.Min(upperBound, values2 != null ? values2.Length : 0);
             upperBound = Math.Min(upperBound, values3 != null ? values3.Length : 0);
+            return Math.Clamp(count, 0, upperBound);
+        }
+
+        private static int ClampPairedCollectionCount<T0, T1, T2, T3, T4>(
+            int count,
+            int maxCount,
+            T0[] values0,
+            T1[] values1,
+            T2[] values2,
+            T3[] values3,
+            T4[] values4)
+        {
+            int upperBound = Math.Max(maxCount, 0);
+            upperBound = Math.Min(upperBound, values0 != null ? values0.Length : 0);
+            upperBound = Math.Min(upperBound, values1 != null ? values1.Length : 0);
+            upperBound = Math.Min(upperBound, values2 != null ? values2.Length : 0);
+            upperBound = Math.Min(upperBound, values3 != null ? values3.Length : 0);
+            upperBound = Math.Min(upperBound, values4 != null ? values4.Length : 0);
             return Math.Clamp(count, 0, upperBound);
         }
 
@@ -3609,6 +3655,8 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            value.moduleCount = ResolveDecodedCollectionCount(value.modules, ConstructionDTO.MaxModules);
+
             if (version >= 47)
             {
                 if (!reader.ReadInt(out value.graphNodeCount) ||
@@ -3619,14 +3667,17 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
+                value.graphNodeCount = ResolveDecodedCollectionCount(value.graphNodes, ConstructionDTO.MaxModules);
+                value.graphEdgeCount = ResolveDecodedCollectionCount(value.graphEdges, ConstructionDTO.MaxGraphEdges);
+
                 if (version >= 63)
                 {
                     if (!ReadModuleBlitArray(ref reader, out value.moduleBlitRecords))
                         return false;
 
-                    value.moduleBlitCount = value.moduleBlitRecords != null
-                        ? Math.Clamp(value.moduleBlitRecords.Length, 0, ConstructionDTO.MaxModules)
-                        : 0;
+                    value.moduleBlitCount = ResolveDecodedCollectionCount(
+                        value.moduleBlitRecords,
+                        ConstructionDTO.MaxModules);
                 }
 
                 SanitizeConstructionGraphEdgesAfterRead(ref value);
@@ -3724,9 +3775,8 @@ namespace Hecton8.SaveSystem
 
         private static void SanitizeScanLogAfterRead(ref ScanLogDTO value)
         {
-            value.entryCount = ClampCollectionCount(value.entryCount, value.entries, ScanLogDTO.MaxEntries);
-            value.recentCount = ClampCollectionCount(
-                value.recentCount,
+            value.entryCount = ResolveDecodedCollectionCount(value.entries, ScanLogDTO.MaxEntries);
+            value.recentCount = ResolveDecodedCollectionCount(
                 value.recentEntryIds,
                 ScanLogDTO.MaxRecentEntries);
             CompactNonBlankStringArraySlice(
@@ -3766,9 +3816,8 @@ namespace Hecton8.SaveSystem
 
         private static void SanitizeBarterAfterRead(ref BarterDTO value)
         {
-            value.stateCount = ClampCollectionCount(value.stateCount, value.offerStates, BarterDTO.MaxOffers);
-            value.recentTransactionCount = ClampCollectionCount(
-                value.recentTransactionCount,
+            value.stateCount = ResolveDecodedCollectionCount(value.offerStates, BarterDTO.MaxOffers);
+            value.recentTransactionCount = ResolveDecodedCollectionCount(
                 value.recentTransactions,
                 BarterDTO.MaxRecentTransactions);
             value.EnsureCapacity();
@@ -3799,8 +3848,7 @@ namespace Hecton8.SaveSystem
 
         private static void SanitizeFieldOperationLogAfterRead(ref FieldOperationLogDTO value)
         {
-            value.recentCount = ClampCollectionCount(
-                value.recentCount,
+            value.recentCount = ResolveDecodedCollectionCount(
                 value.recentEntries,
                 FieldOperationLogDTO.MaxRecentEntries);
             value.EnsureCapacity();
@@ -3831,7 +3879,7 @@ namespace Hecton8.SaveSystem
 
         private static void SanitizeBeaconNetworkAfterRead(ref BeaconNetworkDTO value)
         {
-            value.activeCount = ClampCollectionCount(value.activeCount, value.entries, BeaconNetworkDTO.MaxEntries);
+            value.activeCount = ResolveDecodedCollectionCount(value.entries, BeaconNetworkDTO.MaxEntries);
             value.nextSequence = Math.Max(1, value.nextSequence);
             value.EnsureCapacity();
         }
@@ -4092,19 +4140,17 @@ namespace Hecton8.SaveSystem
 
         private static void SanitizePdaLogbookAfterRead(ref PDALogbookDTO value)
         {
-            value.entryCount = ClampCollectionCount(value.entryCount, value.entries, PDALogbookDTO.MaxEntries);
+            value.entryCount = ResolveDecodedCollectionCount(value.entries, PDALogbookDTO.MaxEntries);
             value.nextSequence = Math.Max(1, value.nextSequence);
             if (value.seenOriginHashes != null)
             {
-                value.seenOriginCount = ClampCollectionCount(
-                    value.seenOriginCount,
+                value.seenOriginCount = ResolveDecodedCollectionCount(
                     value.seenOriginHashes,
                     PDALogbookDTO.MaxSeenOrigins);
             }
             else
             {
-                value.seenOriginCount = ClampCollectionCount(
-                    value.seenOriginCount,
+                value.seenOriginCount = ResolveDecodedCollectionCount(
                     value.seenOriginKeys,
                     PDALogbookDTO.MaxSeenOrigins);
             }
@@ -4138,8 +4184,7 @@ namespace Hecton8.SaveSystem
 
         private static void SanitizePdaMarkersAfterRead(ref PDAMarkerRegistryDTO value)
         {
-            value.markerCount = ClampCollectionCount(
-                value.markerCount,
+            value.markerCount = ResolveDecodedCollectionCount(
                 value.entries,
                 PDAMarkerRegistryDTO.MaxEntries);
             value.nextSequence = Math.Max(1, value.nextSequence);
@@ -4190,8 +4235,7 @@ namespace Hecton8.SaveSystem
 
         private static void SanitizeProceduralLoreAfterRead(ref ProceduralLoreStateDTO value)
         {
-            value.activeCount = ClampCollectionCount(
-                value.activeCount,
+            value.activeCount = ResolveDecodedCollectionCount(
                 value.activePlacements,
                 ProceduralLoreStateDTO.MaxActivePlacements);
             value.nextSourceIndex = Math.Max(0, value.nextSourceIndex);
@@ -4242,8 +4286,7 @@ namespace Hecton8.SaveSystem
             value.swamDistanceMeters = SanitizeNonNegativeFinite(value.swamDistanceMeters);
             value.craftedItemCount = Math.Max(0, value.craftedItemCount);
             value.discoveredBiomeCount = Math.Max(0, value.discoveredBiomeCount);
-            value.unlockedCount = ClampCollectionCount(
-                value.unlockedCount,
+            value.unlockedCount = ResolveDecodedCollectionCount(
                 value.unlockedIds,
                 AchievementRegistryDTO.MaxUnlockedAchievements);
             CompactNonBlankStringArraySlice(
@@ -4281,8 +4324,14 @@ namespace Hecton8.SaveSystem
 
         private static RunModifiersDTO SanitizeRunModifiers(RunModifiersDTO value)
         {
-            if (!value.isDailySeed || string.IsNullOrWhiteSpace(value.dailySeedId))
+            if (!value.isDailySeed)
+            {
                 value.dailySeedId = string.Empty;
+            }
+            else
+            {
+                value.dailySeedId = SaveData.SanitizePersistenceString(value.dailySeedId);
+            }
 
             if (!value.isPermadeath)
                 value.runMarkedDead = false;
@@ -4384,8 +4433,10 @@ namespace Hecton8.SaveSystem
             for (int i = 0; i < entryCount; i++)
             {
                 int hash = value.itemHashIds != null && i < value.itemHashIds.Length ? value.itemHashIds[i] : 0;
-                string itemId = value.itemIds != null && i < value.itemIds.Length ? value.itemIds[i] : null;
-                if (hash == 0 && !string.IsNullOrWhiteSpace(itemId))
+                string itemId = value.itemIds != null && i < value.itemIds.Length
+                    ? SanitizeResourceScarcityItemId(hash, value.itemIds[i])
+                    : string.Empty;
+                if (hash == 0 && itemId.Length != 0)
                     hash = LocHash.Compute(itemId);
 
                 if (!writer.WriteInt(hash))
@@ -4402,7 +4453,10 @@ namespace Hecton8.SaveSystem
 
             for (int i = 0; i < entryCount; i++)
             {
-                string itemId = value.itemIds != null && i < value.itemIds.Length ? value.itemIds[i] : null;
+                int hash = value.itemHashIds != null && i < value.itemHashIds.Length ? value.itemHashIds[i] : 0;
+                string itemId = value.itemIds != null && i < value.itemIds.Length
+                    ? SanitizeResourceScarcityItemId(hash, value.itemIds[i])
+                    : string.Empty;
                 if (!writer.WriteString(itemId))
                     return false;
             }
@@ -4462,22 +4516,40 @@ namespace Hecton8.SaveSystem
                 ? Math.Min(value.collectedCounts.Length, ResourceScarcityDTO.MaxTrackedResources)
                 : 0;
             int identityCapacity = Math.Max(hashCapacity, itemCapacity);
-            value.entryCount = Math.Clamp(
-                value.entryCount,
-                0,
-                Math.Min(ResourceScarcityDTO.MaxTrackedResources, Math.Min(identityCapacity, countCapacity)));
+            int activeCapacity = Math.Min(
+                ResourceScarcityDTO.MaxTrackedResources,
+                Math.Min(identityCapacity, countCapacity));
+            value.entryCount = activeCapacity;
 
             value.EnsureCapacity();
             for (int i = 0; i < value.entryCount; i++)
             {
-                if (value.itemHashIds[i] == 0 && !string.IsNullOrWhiteSpace(value.itemIds[i]))
+                value.itemIds[i] = SanitizeResourceScarcityItemId(value.itemHashIds[i], value.itemIds[i]);
+
+                if (value.itemHashIds[i] == 0 && value.itemIds[i].Length != 0)
                     value.itemHashIds[i] = LocHash.Compute(value.itemIds[i]);
 
                 if (value.collectedCounts[i] < 0)
                     value.collectedCounts[i] = 0;
             }
 
+            for (int i = value.entryCount; i < ResourceScarcityDTO.MaxTrackedResources; i++)
+            {
+                value.itemHashIds[i] = 0;
+                value.itemIds[i] = string.Empty;
+                value.collectedCounts[i] = 0;
+            }
+
             return true;
+        }
+
+        private static string SanitizeResourceScarcityItemId(int itemHashId, string itemId)
+        {
+            itemId = SaveData.SanitizePersistenceString(itemId);
+            if (itemId.Length == 0 || itemHashId == 0)
+                return itemId;
+
+            return LocHash.Compute(itemId) == itemHashId ? itemId : string.Empty;
         }
 
         private static bool WriteEnvironmentalStrain(ref BufferWriter writer, EnvironmentalStrainDTO value)
@@ -4565,17 +4637,22 @@ namespace Hecton8.SaveSystem
         {
             return writer.WriteInt(value.x)
                 && writer.WriteInt(value.y)
-                && writer.WriteString(value.itemId)
+                && writer.WriteString(SaveData.SanitizePersistenceString(value.itemId))
                 && writer.WriteInt(value.stackCount);
         }
 
         private static bool ReadInventoryCell(ref BufferReader reader, out InventoryCellDTO value)
         {
             value = default;
-            return reader.ReadInt(out value.x)
+            bool read = reader.ReadInt(out value.x)
                 && reader.ReadInt(out value.y)
                 && reader.ReadString(out value.itemId)
                 && reader.ReadInt(out value.stackCount);
+            if (!read)
+                return false;
+
+            value.itemId = SaveData.SanitizePersistenceString(value.itemId);
+            return true;
         }
 
         private static bool WriteScanEntry(ref BufferWriter writer, in ScanEntryDTO value)
@@ -4754,9 +4831,6 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            value.titleHash = LocHash.Compute(value.title);
-            value.messageHash = LocHash.Compute(value.message);
-            value.originHash = LocHash.Compute(value.originKey);
             value = PDALogbookEntryDTO.SanitizeForPersistence(in value);
             return true;
         }
@@ -4869,6 +4943,16 @@ namespace Hecton8.SaveSystem
                 ModuleSorterBufferSlotMax,
                 safeValue.sorterBufferedItemIds,
                 safeValue.sorterBufferedQuantities);
+            int recyclerBufferSlotCount = ClampPairedCollectionCount(
+                safeValue.recyclerBufferedSlotCount,
+                ModuleRecyclerBufferSlotMax,
+                safeValue.recyclerBufferedItemIds,
+                safeValue.recyclerBufferedQuantities);
+            int recyclerPendingYieldSlotCount = ClampPairedCollectionCount(
+                safeValue.recyclerPendingYieldSlotCount,
+                ModuleRecyclerPendingYieldSlotMax,
+                safeValue.recyclerPendingYieldItemIds,
+                safeValue.recyclerPendingYieldQuantities);
             int cultivationSlotCount = ClampPairedCollectionCount(
                 safeValue.cultivationSlotCount,
                 ModuleCultivationSlotMax,
@@ -4876,6 +4960,13 @@ namespace Hecton8.SaveSystem
                 safeValue.cultivationGeneticsMasks,
                 safeValue.cultivationGrowth01,
                 safeValue.cultivationQuality01);
+            int storageCrateSlotCount = safeValue.storageCrateContentsSerialized
+                ? ClampPairedCollectionCount(
+                    safeValue.storageCrateSlotCount,
+                    ModuleStorageCrateSlotMax,
+                    safeValue.storageCrateItemIds,
+                    safeValue.storageCrateQuantities)
+                : 0;
 
             return writer.WriteString(safeValue.prefabId)
                 && writer.WriteString(safeValue.slottedToolItemId)
@@ -4897,6 +4988,41 @@ namespace Hecton8.SaveSystem
                     safeValue.sorterBufferedQuantities,
                     sorterSlotCount,
                     ModuleSorterBufferSlotMax)
+                && writer.WriteInt(recyclerBufferSlotCount)
+                && WriteRequiredStringArraySlice(
+                    ref writer,
+                    safeValue.recyclerBufferedItemIds,
+                    recyclerBufferSlotCount,
+                    ModuleRecyclerBufferSlotMax)
+                && WriteNonNegativeIntArraySlice(
+                    ref writer,
+                    safeValue.recyclerBufferedQuantities,
+                    recyclerBufferSlotCount,
+                    ModuleRecyclerBufferSlotMax)
+                && writer.WriteString(safeValue.recyclerActiveSourceItemId)
+                && writer.WriteInt(recyclerPendingYieldSlotCount)
+                && WriteRequiredStringArraySlice(
+                    ref writer,
+                    safeValue.recyclerPendingYieldItemIds,
+                    recyclerPendingYieldSlotCount,
+                    ModuleRecyclerPendingYieldSlotMax)
+                && WriteNonNegativeIntArraySlice(
+                    ref writer,
+                    safeValue.recyclerPendingYieldQuantities,
+                    recyclerPendingYieldSlotCount,
+                    ModuleRecyclerPendingYieldSlotMax)
+                && writer.WriteBool(safeValue.storageCrateContentsSerialized)
+                && writer.WriteInt(storageCrateSlotCount)
+                && WriteRequiredStringArraySlice(
+                    ref writer,
+                    safeValue.storageCrateItemIds,
+                    storageCrateSlotCount,
+                    ModuleStorageCrateSlotMax)
+                && WriteNonNegativeIntArraySlice(
+                    ref writer,
+                    safeValue.storageCrateQuantities,
+                    storageCrateSlotCount,
+                    ModuleStorageCrateSlotMax)
                 && writer.WriteFloat(safeValue.posX)
                 && writer.WriteFloat(safeValue.posY)
                 && writer.WriteFloat(safeValue.posZ)
@@ -4929,7 +5055,16 @@ namespace Hecton8.SaveSystem
                     ref writer,
                     safeValue.cultivationQuality01,
                     cultivationSlotCount,
-                    ModuleCultivationSlotMax);
+                    ModuleCultivationSlotMax)
+                && WriteCultivationSeedHashArraySlice(
+                    ref writer,
+                    safeValue.cultivationSeedItemHashIds,
+                    safeValue.cultivationSeedItemIds,
+                    cultivationSlotCount,
+                    ModuleCultivationSlotMax)
+                && writer.WriteString(safeValue.fabricatorPendingOutputItemId)
+                && writer.WriteInt(safeValue.fabricatorPendingOutputQuantity)
+                && writer.WriteInt(safeValue.fabricatorPendingOutputTotalQuantity);
         }
 
         private static bool ReadModule(ref BufferReader reader, int version, out ModuleDTO value)
@@ -4953,8 +5088,72 @@ namespace Hecton8.SaveSystem
                 && reader.ReadStructArrayBounded(
                     out value.sorterBufferedQuantities,
                     ModuleSorterBufferSlotMax,
-                    nameof(value.sorterBufferedQuantities))
-                && reader.ReadFloat(out value.posX)
+                    nameof(value.sorterBufferedQuantities));
+            if (!ok)
+                return false;
+
+            if (version >= ResourceRecyclerModuleSaveVersion)
+            {
+                ok = reader.ReadInt(out value.recyclerBufferedSlotCount)
+                    && ReadStringArray(
+                        ref reader,
+                        out value.recyclerBufferedItemIds,
+                        ModuleRecyclerBufferSlotMax,
+                        nameof(value.recyclerBufferedItemIds))
+                    && reader.ReadStructArrayBounded(
+                        out value.recyclerBufferedQuantities,
+                        ModuleRecyclerBufferSlotMax,
+                        nameof(value.recyclerBufferedQuantities))
+                    && reader.ReadString(out value.recyclerActiveSourceItemId)
+                    && reader.ReadInt(out value.recyclerPendingYieldSlotCount)
+                    && ReadStringArray(
+                        ref reader,
+                        out value.recyclerPendingYieldItemIds,
+                        ModuleRecyclerPendingYieldSlotMax,
+                        nameof(value.recyclerPendingYieldItemIds))
+                    && reader.ReadStructArrayBounded(
+                        out value.recyclerPendingYieldQuantities,
+                        ModuleRecyclerPendingYieldSlotMax,
+                        nameof(value.recyclerPendingYieldQuantities));
+                if (!ok)
+                    return false;
+            }
+            else
+            {
+                value.recyclerBufferedSlotCount = 0;
+                value.recyclerBufferedItemIds = null;
+                value.recyclerBufferedQuantities = null;
+                value.recyclerActiveSourceItemId = string.Empty;
+                value.recyclerPendingYieldSlotCount = 0;
+                value.recyclerPendingYieldItemIds = null;
+                value.recyclerPendingYieldQuantities = null;
+            }
+
+            if (version >= StorageCrateModuleSaveVersion)
+            {
+                ok = reader.ReadBool(out value.storageCrateContentsSerialized)
+                    && reader.ReadInt(out value.storageCrateSlotCount)
+                    && ReadStringArray(
+                        ref reader,
+                        out value.storageCrateItemIds,
+                        ModuleStorageCrateSlotMax,
+                        nameof(value.storageCrateItemIds))
+                    && reader.ReadStructArrayBounded(
+                        out value.storageCrateQuantities,
+                        ModuleStorageCrateSlotMax,
+                        nameof(value.storageCrateQuantities));
+                if (!ok)
+                    return false;
+            }
+            else
+            {
+                value.storageCrateContentsSerialized = false;
+                value.storageCrateSlotCount = 0;
+                value.storageCrateItemIds = null;
+                value.storageCrateQuantities = null;
+            }
+
+            ok = reader.ReadFloat(out value.posX)
                 && reader.ReadFloat(out value.posY)
                 && reader.ReadFloat(out value.posZ)
                 && reader.ReadFloat(out value.rotX)
@@ -4998,6 +5197,7 @@ namespace Hecton8.SaveSystem
             {
                 value.cultivationSlotCount = 0;
                 value.cultivationSeedItemIds = null;
+                value.cultivationSeedItemHashIds = null;
                 value.cultivationGeneticsMasks = null;
                 value.cultivationGrowth01 = null;
                 value.cultivationQuality01 = null;
@@ -5037,11 +5237,38 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
+                if (version >= CultivationSeedHashSaveVersion)
+                {
+                    if (!reader.ReadStructArrayBounded(
+                        out value.cultivationSeedItemHashIds,
+                        ModuleCultivationSlotMax,
+                        nameof(value.cultivationSeedItemHashIds)))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    value.cultivationSeedItemHashIds = null;
+                }
+
+                if (version >= FabricatorPendingOutputSaveVersion &&
+                    (!reader.ReadString(out value.fabricatorPendingOutputItemId) ||
+                     !reader.ReadInt(out value.fabricatorPendingOutputQuantity) ||
+                     !reader.ReadInt(out value.fabricatorPendingOutputTotalQuantity)))
+                {
+                    return false;
+                }
+
                 ModuleDTO.SanitizeForPersistenceInPlace(ref value);
                 return true;
             }
 
             value.cultivationQuality01 = null;
+            value.cultivationSeedItemHashIds = null;
+            value.fabricatorPendingOutputItemId = string.Empty;
+            value.fabricatorPendingOutputQuantity = 0;
+            value.fabricatorPendingOutputTotalQuantity = 0;
             ModuleDTO.SanitizeForPersistenceInPlace(ref value);
             return true;
         }
@@ -5591,6 +5818,30 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        private static bool WriteCultivationSeedHashArraySlice(
+            ref BufferWriter writer,
+            int[] values,
+            string[] seedItemIds,
+            int count,
+            int maxCount)
+        {
+            int safeCount = ClampCollectionCount(count, seedItemIds, maxCount);
+            if (!writer.WriteInt(safeCount))
+                return false;
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                int value = values != null && i < values.Length ? values[i] : 0;
+                if (string.IsNullOrWhiteSpace(seedItemIds[i]))
+                    value = 0;
+
+                if (!writer.WriteInt(value))
+                    return false;
+            }
+
+            return true;
+        }
+
         private static bool WriteRequiredStringArraySlice(ref BufferWriter writer, string[] values, int count, int maxCount)
         {
             int safeCount = ClampCollectionCount(count, values, maxCount);
@@ -5619,7 +5870,7 @@ namespace Hecton8.SaveSystem
             int written = 0;
             for (int i = 0; i < bound && written < safeCount; i++)
             {
-                string value = values[i];
+                string value = SaveData.SanitizePersistenceString(values[i]);
                 if (string.IsNullOrWhiteSpace(value))
                     continue;
 
@@ -5638,7 +5889,7 @@ namespace Hecton8.SaveSystem
             int nonBlankCount = 0;
             for (int i = 0; i < safeCount; i++)
             {
-                if (!string.IsNullOrWhiteSpace(values[i]))
+                if (SaveData.SanitizePersistenceString(values[i]).Length != 0)
                     nonBlankCount++;
             }
 
@@ -5737,11 +5988,11 @@ namespace Hecton8.SaveSystem
             int writeIndex = 0;
             for (int i = 0; i < safeCount; i++)
             {
-                string value = values[i];
+                string value = SaveData.SanitizePersistenceString(values[i]);
                 if (string.IsNullOrWhiteSpace(value))
                     continue;
 
-                if (writeIndex != i)
+                if (writeIndex != i || !string.Equals(values[writeIndex], value, StringComparison.Ordinal))
                     values[writeIndex] = value;
 
                 writeIndex++;
@@ -5772,10 +6023,11 @@ namespace Hecton8.SaveSystem
                 return 0;
 
             int count = 0;
+            HashSet<string> claimedKeys = new HashSet<string>(StringComparer.Ordinal);
             Dictionary<string, TValue>.Enumerator enumerator = values.GetEnumerator();
             while (count < safeMax && enumerator.MoveNext())
             {
-                if (string.IsNullOrWhiteSpace(enumerator.Current.Key))
+                if (!TryClaimCanonicalDictionaryKey(values, enumerator.Current.Key, claimedKeys, out _))
                     continue;
 
                 count++;
@@ -5783,6 +6035,25 @@ namespace Hecton8.SaveSystem
 
             enumerator.Dispose();
             return count;
+        }
+
+        private static bool TryClaimCanonicalDictionaryKey<TValue>(
+            Dictionary<string, TValue> values,
+            string key,
+            HashSet<string> claimedKeys,
+            out string canonicalKey)
+        {
+            canonicalKey = SaveData.SanitizePersistenceString(key);
+            if (canonicalKey.Length == 0)
+                return false;
+
+            if (!string.Equals(key, canonicalKey, StringComparison.Ordinal) &&
+                values.ContainsKey(canonicalKey))
+            {
+                return false;
+            }
+
+            return claimedKeys.Add(canonicalKey);
         }
 
         private static bool ReadCollectionCount(
@@ -5826,7 +6097,7 @@ namespace Hecton8.SaveSystem
             int written = 0;
             for (int i = 0; i < bound && written < count; i++)
             {
-                string value = values[i];
+                string value = SaveData.SanitizePersistenceString(values[i]);
                 if (string.IsNullOrWhiteSpace(value))
                     continue;
 
@@ -5856,7 +6127,7 @@ namespace Hecton8.SaveSystem
             int written = 0;
             for (int i = 0; i < bound && written < count; i++)
             {
-                string id = ids[i];
+                string id = SaveData.SanitizePersistenceString(ids[i]);
                 if (string.IsNullOrWhiteSpace(id))
                     continue;
 
@@ -5886,7 +6157,8 @@ namespace Hecton8.SaveSystem
             int written = 0;
             for (int i = 0; i < bound && written < count; i++)
             {
-                if (string.IsNullOrWhiteSpace(ids[i]))
+                string id = SaveData.SanitizePersistenceString(ids[i]);
+                if (id.Length == 0)
                     continue;
 
                 if (!writer.WriteFloat(SanitizeNonNegativeFinite(values[i])))
@@ -5904,7 +6176,7 @@ namespace Hecton8.SaveSystem
             int count = 0;
             for (int i = 0; i < bound; i++)
             {
-                if (!string.IsNullOrWhiteSpace(values[i]))
+                if (SaveData.SanitizePersistenceString(values[i]).Length != 0)
                     count++;
             }
 
@@ -5920,7 +6192,7 @@ namespace Hecton8.SaveSystem
             int count = 0;
             for (int i = 0; i < bound; i++)
             {
-                if (!string.IsNullOrWhiteSpace(ids[i]))
+                if (SaveData.SanitizePersistenceString(ids[i]).Length != 0)
                     count++;
             }
 
@@ -5996,14 +6268,15 @@ namespace Hecton8.SaveSystem
                 return true;
 
             int written = 0;
+            HashSet<string> writtenKeys = new HashSet<string>(StringComparer.Ordinal);
             Dictionary<string, float>.Enumerator enumerator = values.GetEnumerator();
             while (written < count && enumerator.MoveNext())
             {
                 KeyValuePair<string, float> pair = enumerator.Current;
-                if (string.IsNullOrWhiteSpace(pair.Key))
+                if (!TryClaimCanonicalDictionaryKey(values, pair.Key, writtenKeys, out string key))
                     continue;
 
-                if (!writer.WriteString(pair.Key) || !writer.WriteFloat(SanitizeNonNegativeFinite(pair.Value)))
+                if (!writer.WriteString(key) || !writer.WriteFloat(SanitizeNonNegativeFinite(pair.Value)))
                     return false;
 
                 written++;
@@ -6035,8 +6308,15 @@ namespace Hecton8.SaveSystem
                 if (!reader.ReadString(out string key) || !reader.ReadFloat(out float entryValue))
                     return false;
 
-                if (!string.IsNullOrWhiteSpace(key))
-                    values[key] = SanitizeNonNegativeFinite(entryValue);
+                string canonicalKey = SaveData.SanitizePersistenceString(key);
+                if (canonicalKey.Length == 0)
+                    continue;
+
+                if (string.Equals(key, canonicalKey, StringComparison.Ordinal) ||
+                    !values.ContainsKey(canonicalKey))
+                {
+                    values[canonicalKey] = SanitizeNonNegativeFinite(entryValue);
+                }
             }
 
             return true;
@@ -6055,14 +6335,15 @@ namespace Hecton8.SaveSystem
                 return true;
 
             int written = 0;
+            HashSet<string> writtenKeys = new HashSet<string>(StringComparer.Ordinal);
             Dictionary<string, bool>.Enumerator enumerator = values.GetEnumerator();
             while (written < count && enumerator.MoveNext())
             {
                 KeyValuePair<string, bool> pair = enumerator.Current;
-                if (string.IsNullOrWhiteSpace(pair.Key))
+                if (!TryClaimCanonicalDictionaryKey(values, pair.Key, writtenKeys, out string key))
                     continue;
 
-                if (!writer.WriteString(pair.Key) || !writer.WriteBool(pair.Value))
+                if (!writer.WriteString(key) || !writer.WriteBool(pair.Value))
                     return false;
 
                 written++;
@@ -6094,8 +6375,15 @@ namespace Hecton8.SaveSystem
                 if (!reader.ReadString(out string key) || !reader.ReadBool(out bool entryValue))
                     return false;
 
-                if (!string.IsNullOrWhiteSpace(key))
-                    values[key] = entryValue;
+                string canonicalKey = SaveData.SanitizePersistenceString(key);
+                if (canonicalKey.Length == 0)
+                    continue;
+
+                if (string.Equals(key, canonicalKey, StringComparison.Ordinal) ||
+                    !values.ContainsKey(canonicalKey))
+                {
+                    values[canonicalKey] = entryValue;
+                }
             }
 
             return true;
@@ -6114,14 +6402,15 @@ namespace Hecton8.SaveSystem
                 return true;
 
             int written = 0;
+            HashSet<string> writtenKeys = new HashSet<string>(StringComparer.Ordinal);
             Dictionary<string, string>.Enumerator enumerator = values.GetEnumerator();
             while (written < count && enumerator.MoveNext())
             {
                 KeyValuePair<string, string> pair = enumerator.Current;
-                if (string.IsNullOrWhiteSpace(pair.Key))
+                if (!TryClaimCanonicalDictionaryKey(values, pair.Key, writtenKeys, out string key))
                     continue;
 
-                if (!writer.WriteString(pair.Key) || !writer.WriteString(pair.Value ?? string.Empty))
+                if (!writer.WriteString(key) || !writer.WriteString(pair.Value ?? string.Empty))
                     return false;
 
                 written++;
@@ -6153,8 +6442,15 @@ namespace Hecton8.SaveSystem
                 if (!reader.ReadString(out string key) || !reader.ReadString(out string entryValue))
                     return false;
 
-                if (!string.IsNullOrWhiteSpace(key))
-                    values[key] = entryValue ?? string.Empty;
+                string canonicalKey = SaveData.SanitizePersistenceString(key);
+                if (canonicalKey.Length == 0)
+                    continue;
+
+                if (string.Equals(key, canonicalKey, StringComparison.Ordinal) ||
+                    !values.ContainsKey(canonicalKey))
+                {
+                    values[canonicalKey] = entryValue ?? string.Empty;
+                }
             }
 
             return true;

@@ -290,18 +290,32 @@ namespace Hecton8.Construction
 
         internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)
         {
-            ClearInFlightState();
-            _exportTimer = math.clamp(dto.pipeExportTimerSeconds, 0f, math.max(exportIntervalSeconds, SlowTickDeltaTime));
+            float restoredExportTimer = math.clamp(
+                dto.pipeExportTimerSeconds,
+                0f,
+                math.max(exportIntervalSeconds, SlowTickDeltaTime));
+            bool hasSavedInFlightItem =
+                dto.pipeInFlightAmount > 0 &&
+                !string.IsNullOrWhiteSpace(dto.pipeInFlightItemId);
 
-            if (itemCatalog == null || string.IsNullOrWhiteSpace(dto.pipeInFlightItemId) || dto.pipeInFlightAmount <= 0)
+            if (!hasSavedInFlightItem)
+            {
+                ClearInFlightState();
+                _exportTimer = restoredExportTimer;
+                return;
+            }
+
+            if (itemCatalog == null)
                 return;
 
             ItemData item = itemCatalog.FindById(dto.pipeInFlightItemId);
             if (item == null)
                 return;
 
+            ClearInFlightState();
+            _exportTimer = restoredExportTimer;
             _inFlightItem = item;
-            _inFlightItemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
+            _inFlightItemHashId = ItemData.ResolvePersistentHashId(item);
             _transitRemaining = math.max(0f, ResolveTransitDuration() * (1f - math.saturate(dto.pipeTransitProgress)));
             _payloadIntegrity = MaxPayloadIntegrity;
             _debugInFlightItemId = item.PersistentId;
@@ -312,9 +326,7 @@ namespace Hecton8.Construction
 
         internal bool TryExtractInFlightCargoHashForDeconstruct(out int itemHashId, out int amount)
         {
-            itemHashId = _inFlightItemHashId;
-            amount = itemHashId != 0 ? 1 : 0;
-            if (itemHashId == 0)
+            if (!TryPeekInFlightCargoHashForDeconstruct(out itemHashId, out amount))
                 return false;
 
             if (_activeReservationId > 0)
@@ -322,6 +334,13 @@ namespace Hecton8.Construction
 
             ClearInFlightState();
             return true;
+        }
+
+        internal bool TryPeekInFlightCargoHashForDeconstruct(out int itemHashId, out int amount)
+        {
+            itemHashId = _inFlightItemHashId;
+            amount = itemHashId != 0 ? 1 : 0;
+            return itemHashId != 0;
         }
 
         private void TryRegister()
@@ -390,7 +409,7 @@ namespace Hecton8.Construction
 
             _activeReservationId = reservationId;
             _inFlightItem = item;
-            _inFlightItemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
+            _inFlightItemHashId = ItemData.ResolvePersistentHashId(item);
             _transitRemaining = ResolveTransitDuration();
             _payloadIntegrity = MaxPayloadIntegrity;
             _debugInFlightItemId = item.PersistentId;
@@ -817,7 +836,28 @@ namespace Hecton8.Construction
             if (TrySpillInFlightItemToWorld(spillPosition))
                 return;
 
+            if (TryReturnCommittedInFlightItemToSource())
+                return;
+
             RollbackInFlightTransfer();
+        }
+
+        private bool TryReturnCommittedInFlightItemToSource()
+        {
+            if (_inFlightItem == null ||
+                _activeReservationId > 0 ||
+                sourceCrate == null ||
+                !sourceCrate.HasAutomatedCapacity())
+            {
+                return false;
+            }
+
+            if (!sourceCrate.TryAddAutomatedItem(_inFlightItem))
+                return false;
+
+            ClearInFlightState();
+            NotifyGridBalanceChanged();
+            return true;
         }
 
         private bool TrySpillInFlightItemToWorld(Vector3 spillPosition)

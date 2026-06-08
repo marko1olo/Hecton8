@@ -127,9 +127,10 @@ namespace Hecton8.Audio.Editor
             if (EditorApplication.isPlaying)
                 PublishToRuntime();
 
-            PlayerCriticalProceduralAudioRenderer renderer = ResolveRenderer();
+            PlayerCriticalProceduralAudioRenderer renderer = ResolveRenderer(false);
             bool hasRenderer = renderer != null;
-            bool hasScope = hasRenderer && renderer.TryCopyLatestGranularOscilloscope(_oscilloscopeSamples, 0, _oscilloscopeSamples.Length);
+            bool readyOwner = hasRenderer && renderer.IsPlayerCriticalAudioRuntimeReady;
+            bool hasScope = readyOwner && renderer.TryCopyLatestGranularOscilloscope(_oscilloscopeSamples, 0, _oscilloscopeSamples.Length);
             ReadOnlySpan<BaseStructuralWarningSignal> structuralWarnings = SignalBus<BaseStructuralWarningSignal>.GetFrameSnapshot();
             float maxStress = 0f;
             for (int i = 0; i < structuralWarnings.Length; i++)
@@ -142,7 +143,7 @@ namespace Hecton8.Audio.Editor
             if (_statusLabel != null)
             {
                 _statusLabel.text = hasRenderer
-                    ? "Runtime live | signals " + structuralWarnings.Length + " | scope " + (hasScope ? "native" : "silent")
+                    ? "Runtime " + (readyOwner ? "ready" : "not ready") + " | signals " + structuralWarnings.Length + " | scope " + (hasScope ? "native" : "silent")
                     : "Runtime unavailable.";
             }
 
@@ -277,17 +278,26 @@ namespace Hecton8.Audio.Editor
             }
         }
 
-        private static PlayerCriticalProceduralAudioRenderer ResolveRenderer()
+        private static PlayerCriticalProceduralAudioRenderer ResolveRenderer(bool requireReady = true)
         {
             PlayerCriticalProceduralAudioRenderer registeredRenderer = GlobalRegistry.PlayerCriticalAudio;
-            if (registeredRenderer != null)
+            if (IsRendererUsable(registeredRenderer, requireReady))
                 return registeredRenderer;
 
 #if UNITY_2023_1_OR_NEWER
-            return UnityEngine.Object.FindAnyObjectByType<PlayerCriticalProceduralAudioRenderer>();
+            PlayerCriticalProceduralAudioRenderer sceneRenderer = UnityEngine.Object.FindAnyObjectByType<PlayerCriticalProceduralAudioRenderer>();
 #else
-            return UnityEngine.Object.FindObjectOfType<PlayerCriticalProceduralAudioRenderer>();
+            PlayerCriticalProceduralAudioRenderer sceneRenderer = UnityEngine.Object.FindObjectOfType<PlayerCriticalProceduralAudioRenderer>();
 #endif
+            return IsRendererUsable(sceneRenderer, requireReady) ? sceneRenderer : null;
+        }
+
+        private static bool IsRendererUsable(PlayerCriticalProceduralAudioRenderer renderer, bool requireReady)
+        {
+            if (renderer == null)
+                return false;
+
+            return requireReady ? renderer.IsPlayerCriticalAudioRuntimeReady : renderer.isActiveAndEnabled;
         }
 
         private static double3 ToDouble3(in AcousticAup aup)

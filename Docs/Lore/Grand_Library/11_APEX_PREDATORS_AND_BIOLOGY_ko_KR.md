@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 최상위 포식자와 심해 생물학
 
 > **출처:** 제44구역 연구 연구소(복구됨)로부터 회수된 외계생물학 보고서의 단편.

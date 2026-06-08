@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 物资撤离
 
-物资撤离为重玩提供盈利但受污染的结局，适合选择战利品、合同和生存而非完整真相的玩家。
+Material Exit 支持一种有利可图但受污染的撤离：战利品、合同和生存可以赢得上升，而完整的深潜真相仍留在下方。
 
 ## Scanner
 

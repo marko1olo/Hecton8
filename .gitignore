@@ -66,6 +66,7 @@ __pycache__/
 ExportedObj/
 .consoleapp.meta
 *.csproj
+!Tools/DataMonolithBakeCli/DataMonolithBakeCli.csproj
 *.unityproj
 *.sln
 *.slnx

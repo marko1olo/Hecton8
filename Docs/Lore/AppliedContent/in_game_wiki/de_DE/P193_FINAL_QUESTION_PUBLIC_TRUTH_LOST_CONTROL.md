@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Public Truth Lost Control"
+title: "Finale Frage: öffentliche Wahrheit, verlorene Kontrolle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Public Truth Lost Control
+# Finale Frage: öffentliche Wahrheit, verlorene Kontrolle
 
-DE LOC HOLD: The public-truth axis makes exposure powerful and dangerous rather than automatically clean.
+Die öffentliche-Wahrheit-Route bricht die saubere Vertuschung. Sie bricht auch den Besitz an Folgen. Beweise können Namen vor Löschung retten, echten Rettungsdruck erzeugen und jeden Räuber mit Rechtsabteilung oder Gebetskanal einladen.
 
 ## Scanner
 
-DE LOC HOLD: Publishing truth prevents erasure but removes player control over consequences.
+Die Veröffentlichung der Beweise verhindert Auslöschung. Sie gibt die Entdeckung auch schnell genug an alle, die sie falsch nutzen können.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.
+ACHSE ÖFFENTLICHER WAHRHEIT: Zeugenhash, Haftungskette, Atlas-Status, Blauschuld-Koordinaten und Payload-Route können Deep Reach verlassen. Nach der Veröffentlichung kontrolliert der Operator weder Empfänger noch Marktreaktion noch den ersten Ankömmling.
 
 ## Audio
 
-DE LOC HOLD: Truth leaves your hand faster than rescue ever could.
+Wahrheit verlässt deine Hand schneller, als Rettung je reisen kann.
 
 ## Field Note
 
-DE LOC HOLD: Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.
+Öffentliche Wahrheit ist keine reine Gerechtigkeit. Sie erzeugt Sanktionen, Kulte, Auktionen, Klagen, Rettungsdruck und Nachahmer-Claims.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/de_DE. -->

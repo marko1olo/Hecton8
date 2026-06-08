@@ -7,34 +7,34 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: pt_BR
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "Linha de pinger acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# Linha de pinger acústico
 
-PT LOC HOLD: The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.
+A linha de pinger acústico é a primeira disciplina de navegação. Ela deixa o jogador criar uma rota de retorno antes que luz, corrente ou pânico tornem o caminho estranho. O trabalho de fuga posterior cresce da mesma ideia: som pela água, temporização de relé, handshakes com carrier e prova de que um caminho ainda existe.
 
 ## Scanner
 
-PT LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
+Carretel de pinger acústico. Pulso de curto alcance confirmado; ancore antes de água turva ou brilho de salmoura.
 
 ## Terminal
 
-PT LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
+LINHA DE RETORNO / PINGER: ancorar antes de turbidez, brilho de salmoura, cotovelos inundados ou cortes longos de plataforma. Ping local apoia apenas navegação de retorno. Handshake com carrier requer uma espinha de relé acústico.
 
 ## Audio
 
-PT LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
+Se as luzes apagarem, siga o som que você colocou.
 
 ## Field Note
 
-PT LOC HOLD: Navigation should become physical early.
+Coloque o pinger enquanto ainda sabe voltar. Orgulho não é marcador de rota.
 
 <!-- In-Game Wiki; generated from P114_ACOUSTIC_PINGER_LINE/pt_BR. -->

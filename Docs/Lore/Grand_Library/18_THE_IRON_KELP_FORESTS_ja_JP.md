@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # アイアン・ケルプ（鉄の昆布）の森
 
 > **出典:** Deep Reach 異星生物学部門、危険ログ。

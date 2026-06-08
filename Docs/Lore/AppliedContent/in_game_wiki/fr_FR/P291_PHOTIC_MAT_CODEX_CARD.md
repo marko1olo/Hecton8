@@ -9,32 +9,36 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Photic Mat Codex Card"
+title: "Carte Codex du tapis photique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Photic Mat Codex Card
+# Carte Codex du tapis photique
 
-FR LOC HOLD: Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.
+Les tapis photiques rendent les plateaux peu profonds vivants sans les rendre sûrs. Ce sont des feuilles de biofilm en couches qui poussent là où lumière, peau minérale, faible suintement de gaz et chimie de pression se rencontrent. Un tapis sain peut ajouter de l’oxygène à une poche, nourrir les glass grazers, teinter le calcaire de bords vert-or et stabiliser un sédiment fin qui se lèverait autrement dans l’eau. Cette utilité est précisément la raison pour laquelle le joueur ne doit pas le traiter comme décoration ou nourriture gratuite. De petits échantillons de bord libre sont assez sûrs pour le scanner. Un tapis tendu sur une fissure, une jointure de gasket, une cicatrice de câble ou une cloque de gaz pâle fait déjà partie de la route. Le déchirer là change le plateau: gaz piégé évacué, grazers dispersés, sédiment en nuage, et une tache claire devient problème de visibilité. La règle est simple. Prends le bord. Ne vole pas le bandage.
 
 ## Scanner
 
-FR LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Tapis photique. Feuille de biofilm à bilan oxygène positif sur peau minérale. Claire, utile, fragile à la pression. Ne pas la décoller des fissures scellées.
 
 ## Terminal
 
-FR LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+SPÉCIMEN / TAPIS PHOTIQUE
+rôle: surface oxygène de hauts-fonds, nourriture pour grazers, stabilisateur de film minéral
+échantillon sûr: bord libre plus petit qu’une paume
+refuser: feuilles qui scellent une jointure, tapis à cloques de gaz, champs de morsures fraîches de grazers
+note de route: des tapis déchirés peuvent évacuer du gaz piégé et changer un plateau clair en hazard.
 
 ## Audio
 
-FR LOC HOLD: Light here is work, not comfort.
+Il a l’air doux parce qu’il travaille. S’il tient une jointure, laisse-le là.
 
 ## Field Note
 
-FR LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+Bord libre: échantillon. Couverture de jointure: laisser. Si le tapis scelle une blessure, la blessure est encore là.
 
 <!-- In-Game Wiki; generated from P291_PHOTIC_MAT_CODEX_CARD/fr_FR. -->

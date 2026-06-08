@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Acoustic Relay Spine Assembly"
+title: "Conjunto de espina de relé acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Acoustic Relay Spine Assembly
+# Conjunto de espina de relé acústico
 
-ES LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.
+La huida empieza bajo el agua. La espina de relé acústico permite que una cápsula dañada pruebe posición, reloj y estado de supervivencia antes de que los receptores orbitales la traten como recoverable mass.
 
 ## Scanner
 
-ES LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+Espina acústica rota. Puede golpear pressure-code a través del agua; la órbita aún lo oye como custody noise dañado.
 
 ## Terminal
 
-ES LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ASCENT RELAY: restaurar espina acústica de baja banda antes de la recovery window. High-gain mast perdida. Emergency buoy poco fiable. El receptor Black Keel acepta pressure-code solo tras route proof.
 
 ## Audio
 
-ES LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
+Si el Keel nos oye, oye una herida golpeando una tubería.
 
 ## Field Note
 
-ES LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+La primera llamada de la cápsula no es una voz. Son costillas cerámicas, piel de cable, pinger floats y disciplina de sincronía suficiente para que el océano te repita bien.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/es_ES. -->

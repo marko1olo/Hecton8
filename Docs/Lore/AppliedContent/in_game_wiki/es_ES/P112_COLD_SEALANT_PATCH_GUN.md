@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: es_ES
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Pistola de sellante frío"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Pistola de sellante frío
 
-ES LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+La pistola de sellante frío ofrece la primera reparación honesta después de bombear. Puede detener una fuga de poro o sostener un labio de junta lo suficiente para recuperar una sala pequeña, pero no vuelve segura una estructura dañada. La lección útil está en la etiqueta de clase: HECTON-8 castiga toda reparación usada fuera de su clase de presión.
 
 ## Scanner
 
-ES LOC HOLD: Patch gun. Rated for pinholes, not miracles.
+Pistola de sellado frío. Cartucho apto solo para fugas de poro y juntas quietas; el cizallamiento activo lo despegará.
 
 ## Terminal
 
-ES LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+LÍMITE DE PARCHE / SELLANTE FRÍO: adhiere en piel de casco húmeda de baja profundidad tras limpiar superficie. Aprobado para poros, labios de junta y goteo estable. Rechazar grietas con cizalla activa, floración cálida de blue debt y uniones de cable móviles.
 
 ## Audio
 
-ES LOC HOLD: A patch is not safety. It is a countdown that looks solid.
+No lo llames sellado. Llámalo tiempo.
 
 ## Field Note
 
-ES LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Un parche compra minutos. Si la grieta sigue moviéndose, usa esos minutos para irte.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/es_ES. -->

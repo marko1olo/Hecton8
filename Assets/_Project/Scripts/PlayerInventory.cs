@@ -7,6 +7,7 @@ namespace Hecton8.Inventory
 {
     using System;
     using System.IO;
+    using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
     using Hecton.Localization;
     using Hecton8.Audio;
@@ -73,7 +74,7 @@ namespace Hecton8.Inventory
         private const uint InventoryBlackBoxDumpMagic = 0x494E5638u;
         private const uint SalinityCorrosionBlackBoxDumpMagic = 0x53434F52u;
         private const string InventoryBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_INVENTORY_BLACKBOX.bin";
-        private const int PendingScavengingItemSignalCapacity = 128;
+        private const int PendingScavengingItemSignalCapacity = ItemAcquiredSignal.ExpectedCapacity;
         private const int PendingInventoryCommandSignalCapacity = 16;
         private const float SalinityCorrosionFrostTickSeconds = 5f;
         private const float SalinityCorrosionDegradationRatePerFrostTick = 0.00325f;
@@ -655,6 +656,8 @@ namespace Hecton8.Inventory
         private PostSimulationPhaseSystem _postSimulationPhase;
         private int _pendingScavengingItemSignalCount;
         private int _pendingInventoryCommandCount;
+        private int _droppedInventoryCommandSignalCount;
+        private int _lastScavengingItemSignalCaptureGeneration = -1;
         private bool _registeredPostSimulationDispatcher;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
@@ -696,6 +699,7 @@ namespace Hecton8.Inventory
         private IPlayerRuntimeContext _cachedPlayerContext;
         private IAudioService _cachedAudioService;
         private ISaveService _cachedSaveService;
+        private ISaveService _registeredSaveService;
         private IDataVault _cachedDataVault;
         private IPhysicsStateEventService _cachedPhysicsStateEvents;
         private bool _physicsImpactRegistered;
@@ -1259,6 +1263,7 @@ namespace Hecton8.Inventory
         public float CachedMaxSwimSpeedMultiplier { get; private set; } = 1f;
         public ulong CurrentInventoryMask { get; private set; }
         public bool HasPressurizedContainerProtection => _pressurizedContainerProtectionCount > 0;
+        public int DroppedInventoryCommandSignalCount => _droppedInventoryCommandSignalCount;
         public InventoryGrid Grid => _grid;
         public ItemCatalog ItemCatalog => itemCatalog;
         public int InventoryVersion { get; private set; }
@@ -1324,7 +1329,7 @@ namespace Hecton8.Inventory
             _sortBuffer = new ItemPlacement[columns * rows];
             // COLD ALLOC: ushort[cellCount] - bulk transfer merge-cap scratch - owner: PlayerInventory
             _bulkCompactionMaxStackBuffer = new ushort[cellCount];
-            // COLD ALLOC: ItemAcquiredSignal[128] - late-frame to slow-tick scavenging ingress - owner: PlayerInventory
+            // COLD ALLOC: ItemAcquiredSignal[ItemAcquiredSignal.ExpectedCapacity] - late-frame to slow-tick scavenging ingress - owner: PlayerInventory
             _pendingScavengingItemSignals = new ItemAcquiredSignal[PendingScavengingItemSignalCapacity];
             // COLD ALLOC: PendingInventoryCommand[16] - late-frame to slow-tick command ingress - owner: PlayerInventory
             _pendingInventoryCommands = new PendingInventoryCommand[PendingInventoryCommandSignalCapacity];
@@ -1346,8 +1351,9 @@ namespace Hecton8.Inventory
 
         private void OnDisable()
         {
+            CaptureScavengingLootOracleSignals();
             ApplyDeferredScavengingLootOracleSignals();
-            _pendingInventoryCommandCount = 0;
+            DropDeferredInventoryCommandSignals();
             TryUnregisterPhysicsImpactListener();
             TryUnregisterSaveParticipant();
             TryUnregisterSlowTick();
@@ -1358,6 +1364,9 @@ namespace Hecton8.Inventory
 
         private void OnDestroy()
         {
+            CaptureScavengingLootOracleSignals();
+            ApplyDeferredScavengingLootOracleSignals();
+            DropDeferredInventoryCommandSignals();
             TryUnregisterPhysicsImpactListener();
             TryUnregisterSaveParticipant();
             TryUnregisterLateFrameTick();
@@ -1463,7 +1472,7 @@ namespace Hecton8.Inventory
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1510,11 +1519,18 @@ namespace Hecton8.Inventory
             _cachedPhysicsStateEvents = physicsStateEvents;
             _physicsImpactRegistered = false;
 
-            if (_cachedPhysicsStateEvents == null || !isActiveAndEnabled)
+            if (_cachedPhysicsStateEvents == null ||
+                !isActiveAndEnabled ||
+                !IsPhysicsStateEventServiceUsable(_cachedPhysicsStateEvents))
                 return;
 
             _cachedPhysicsStateEvents.RegisterImpactListener(this);
             _physicsImpactRegistered = true;
+        }
+
+        private static bool IsPhysicsStateEventServiceUsable(IPhysicsStateEventService physicsStateEvents)
+        {
+            return physicsStateEvents != null && physicsStateEvents.IsInitialized;
         }
 
         private void TryRegisterSaveParticipant()
@@ -1522,25 +1538,36 @@ namespace Hecton8.Inventory
             if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_cachedSaveService == null)
-                _cachedSaveService = GlobalRegistry.Save;
+            ISaveService saveService = _cachedSaveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _cachedSaveService = saveService;
+            }
 
-            if (_cachedSaveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _cachedSaveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _cachedSaveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _cachedSaveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveRegistered = false;
         }
 
@@ -1549,14 +1576,39 @@ namespace Hecton8.Inventory
             // GlobalDataVault owns generation descriptor allocation telemetry.
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private static unsafe void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception nativeSentinelCleanupException0 = null;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception nativeSentinelException0)
+            {
+                if (nativeSentinelCleanupException0 == null)
+                    nativeSentinelCleanupException0 = nativeSentinelException0;
+            }
+            finally
+            {
+                array = default;
+            }
+
+            if (nativeSentinelCleanupException0 != null)
+                throw nativeSentinelCleanupException0;
         }
 
         public void RemoveItemAt(int x, int y)
@@ -1946,6 +1998,18 @@ namespace Hecton8.Inventory
             return CanAcceptQuantityBatch(itemHashIds, quantities, count);
         }
 
+        /// <summary>
+        /// Preflights stateful item insertion against one shared grid simulation without mutating live inventory.
+        /// </summary>
+        public bool CanAcceptItemWithStateBatch(
+            ReadOnlySpan<int> itemHashIds,
+            ReadOnlySpan<ulong> geneticsMasks,
+            ReadOnlySpan<ushort> qualityMillis,
+            int count)
+        {
+            return CanAcceptQuantityWithStateBatch(itemHashIds, geneticsMasks, qualityMillis, count);
+        }
+
         public bool TryAddItemWithGenetics(int itemHashId, uint geneticsMask, int quantity = 1)
         {
             return TryAddItemWithGenetics(itemHashId, (ulong)geneticsMask, quantity);
@@ -2302,6 +2366,7 @@ namespace Hecton8.Inventory
             if (data == null)
                 return;
 
+            CaptureScavengingLootOracleSignals();
             ApplyDeferredScavengingLootOracleSignals();
             if (_isDirty || !_inventoryShadowValid)
                 RefreshInventoryShadowBufferFromRuntime();
@@ -2803,11 +2868,17 @@ namespace Hecton8.Inventory
             PendingInventoryCommand[] commands = _pendingInventoryCommands;
             _pendingInventoryCommandCount = 0;
             if (commands == null)
+            {
+                RecordDroppedInventoryCommandSignals(count);
                 return;
+            }
 
-            for (int index = 0; index < count; index++)
+            int safeCount = math.min(count, commands.Length);
+            bool shouldSort = false;
+            for (int index = 0; index < safeCount; index++)
             {
                 PendingInventoryCommand pending = commands[index];
+                commands[index] = default;
                 InventoryCommandSignal command = pending.Command;
 
                 if (command.Command == InventoryCommandSignalCommands.DropNonEquippedResources)
@@ -2827,9 +2898,14 @@ namespace Hecton8.Inventory
                     continue;
 
                 _lastInventorySortCommandFrame = commandFrame;
-                SortInventory();
-                return;
+                shouldSort = true;
             }
+
+            if (count > safeCount)
+                RecordDroppedInventoryCommandSignals(count - safeCount);
+
+            if (shouldSort)
+                SortInventory();
         }
 
         private bool TryApplyRespawnDropPenalty(in InventoryCommandSignal command)
@@ -3074,10 +3150,10 @@ namespace Hecton8.Inventory
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;
             PlayerTool currentTool = toolManager != null ? toolManager.CurrentTool : null;
-            if (currentTool == null || currentTool.ToolData == null || string.IsNullOrEmpty(currentTool.ToolData.PersistentId))
+            if (currentTool == null || currentTool.ToolData == null)
                 return false;
 
-            itemHash = unchecked((uint)LocHash.Compute(currentTool.ToolData.PersistentId));
+            itemHash = unchecked((uint)ItemData.ResolvePersistentHashId(currentTool.ToolData));
             return itemHash != 0u;
         }
 
@@ -4608,6 +4684,110 @@ namespace Hecton8.Inventory
             return true;
         }
 
+        private bool CanAcceptQuantityWithStateBatch(
+            ReadOnlySpan<int> itemHashIds,
+            ReadOnlySpan<ulong> geneticsMasks,
+            ReadOnlySpan<ushort> qualityMillis,
+            int count)
+        {
+            if (_grid == null ||
+                count < 0 ||
+                itemHashIds.Length < count ||
+                geneticsMasks.Length < count ||
+                qualityMillis.Length < count ||
+                !_stackCounts.IsCreated ||
+                !_scavengeSimStackCounts.IsCreated ||
+                !_simulationOccupiedCells.IsCreated)
+            {
+                return false;
+            }
+
+            CopyNativeArray(_stackCounts, _scavengeSimStackCounts);
+            _grid.CopyOccupiedMask(_simulationOccupiedCells);
+
+            if (!TryResolveCurrentPhysicalTotals(out float currentWeightKg, out float currentVolumeLiters))
+                return false;
+
+            float additionalWeightKg = 0f;
+            float additionalVolumeLiters = 0f;
+            for (int groupIndex = 0; groupIndex < count; groupIndex++)
+            {
+                int itemHashId = itemHashIds[groupIndex];
+                if (itemHashId == 0 ||
+                    !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor) ||
+                    !TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor) ||
+                    !TryResolveAdditionalPhysicalDemand(in runtimeDescriptor, 1, out float groupWeightKg, out float groupVolumeLiters))
+                {
+                    return false;
+                }
+
+                additionalWeightKg += groupWeightKg;
+                additionalVolumeLiters += groupVolumeLiters;
+                if (!math.isfinite(additionalWeightKg) ||
+                    !math.isfinite(additionalVolumeLiters) ||
+                    WouldExceedPhysicalCapacity(currentWeightKg, currentVolumeLiters, additionalWeightKg, additionalVolumeLiters))
+                {
+                    return false;
+                }
+
+                int remaining = 1;
+                ushort resolvedStateFlags = runtimeDescriptor.StateFlags;
+                byte compressedGenetics = CompressItemGenetics(geneticsMasks[groupIndex]);
+                ushort resolvedQualityMilli = NormalizeQualityMilli(qualityMillis[groupIndex]);
+                if (descriptor.Stackable != 0)
+                {
+                    for (int anchorIndex = 0; anchorIndex < _stackCounts.Length && remaining > 0; anchorIndex++)
+                    {
+                        if (!_grid.HasAnchor(anchorIndex) ||
+                            _grid.GetAnchorHashId(anchorIndex) != descriptor.HashId ||
+                            IsCraftLockedFlagSet(anchorIndex) ||
+                            !CanStackStatefulItemAt(anchorIndex, resolvedStateFlags, compressedGenetics, resolvedQualityMilli))
+                        {
+                            continue;
+                        }
+
+                        int stackCount = math.max(1, (int)_scavengeSimStackCounts[anchorIndex]);
+                        if (stackCount >= descriptor.MaxStack)
+                            continue;
+
+                        ushort nextStackCount = InventorySoAUtility.ResolveStackInsert(
+                            (ushort)math.min(stackCount, ushort.MaxValue),
+                            (ushort)math.min(remaining, ushort.MaxValue),
+                            descriptor.MaxStack,
+                            out ushort transfer);
+                        if (transfer == 0)
+                            continue;
+
+                        _scavengeSimStackCounts[anchorIndex] = nextStackCount;
+                        remaining -= transfer;
+                    }
+                }
+
+                while (remaining > 0)
+                {
+                    if (!TryReservePlacementInSimulation(in descriptor))
+                        return false;
+
+                    remaining -= descriptor.Stackable != 0
+                        ? math.min(math.max(1, (int)descriptor.MaxStack), remaining)
+                        : 1;
+                }
+            }
+
+            return true;
+        }
+
+        private bool CanStackStatefulItemAt(
+            int anchorIndex,
+            ushort itemStateFlags,
+            byte geneticsMask,
+            ushort qualityMilli)
+        {
+            return (!_itemStateFlags.IsCreated || _itemStateFlags[anchorIndex] == itemStateFlags) &&
+                   (!_itemGenetics.IsCreated || _itemGenetics[anchorIndex] == geneticsMask) &&
+                   (!_qualityMilli.IsCreated || NormalizeQualityMilli(_qualityMilli[anchorIndex]) == qualityMilli);
+        }
+
         private bool TryResolveCapacityLimitedQuantity(
             in ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor,
             int requestedQuantity,
@@ -5199,31 +5379,46 @@ namespace Hecton8.Inventory
 
         private void CaptureScavengingLootOracleSignals()
         {
+            int snapshotGeneration = SignalBus<ItemAcquiredSignal>.SnapshotGeneration;
+            if (_lastScavengingItemSignalCaptureGeneration == snapshotGeneration)
+                return;
+
+            _lastScavengingItemSignalCaptureGeneration = snapshotGeneration;
             ReadOnlySpan<ItemAcquiredSignal> signals = SignalBus<ItemAcquiredSignal>.GetFrameSnapshot();
             if (signals.Length == 0)
                 return;
 
             ItemAcquiredSignal[] pending = _pendingScavengingItemSignals;
             if (pending == null)
+            {
+                SpillScavengingSignalsToWorldDrops(signals);
                 return;
+            }
 
             int writeIndex = _pendingScavengingItemSignalCount;
             for (int i = 0; i < signals.Length; i++)
             {
                 ItemAcquiredSignal signal = signals[i];
-                if ((signal.SourceKind != ItemAcquiredSignalSourceKinds.ScavengingLootOracle &&
-                     signal.SourceKind != ItemAcquiredSignalSourceKinds.DroneMining) ||
-                    signal.ItemHash == 0u ||
-                    signal.Quantity == 0)
+                if (!IsPendingScavengingInventorySignal(in signal))
+                    continue;
+
+                if (TryMergePendingScavengingSignal(pending, ref writeIndex, in signal, out int overflowQuantity))
                 {
+                    if (overflowQuantity > 0 &&
+                        !TryRegisterPendingScavengingWorldDrop(in signal, overflowQuantity))
+                    {
+                        InventoryEvents.TryNotifyInventoryFull(unchecked((int)signal.ItemHash));
+                    }
+
                     continue;
                 }
 
-                if (TryMergePendingScavengingSignal(pending, ref writeIndex, in signal))
-                    continue;
-
                 if (writeIndex >= pending.Length)
-                    break;
+                {
+                    if (!TryRegisterPendingScavengingWorldDrop(in signal, signal.Quantity))
+                        InventoryEvents.TryNotifyInventoryFull(unchecked((int)signal.ItemHash));
+                    continue;
+                }
 
                 pending[writeIndex++] = signal;
             }
@@ -5231,11 +5426,33 @@ namespace Hecton8.Inventory
             _pendingScavengingItemSignalCount = writeIndex;
         }
 
+        private void SpillScavengingSignalsToWorldDrops(ReadOnlySpan<ItemAcquiredSignal> signals)
+        {
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ItemAcquiredSignal signal = signals[i];
+                if (!IsPendingScavengingInventorySignal(in signal))
+                    continue;
+
+                if (!TryRegisterPendingScavengingWorldDrop(in signal, signal.Quantity))
+                    InventoryEvents.TryNotifyInventoryFull(unchecked((int)signal.ItemHash));
+            }
+        }
+
+        private static bool IsPendingScavengingInventorySignal(in ItemAcquiredSignal signal)
+        {
+            return signal.SourceKind == ItemAcquiredSignalSourceKinds.ScavengingLootOracle &&
+                   signal.ItemHash != 0u &&
+                   signal.Quantity != 0;
+        }
+
         private static bool TryMergePendingScavengingSignal(
             ItemAcquiredSignal[] pending,
             ref int pendingCount,
-            in ItemAcquiredSignal signal)
+            in ItemAcquiredSignal signal,
+            out int overflowQuantity)
         {
+            overflowQuantity = 0;
             for (int i = 0; i < pendingCount; i++)
             {
                 if (pending[i].ItemHash != signal.ItemHash)
@@ -5251,6 +5468,7 @@ namespace Hecton8.Inventory
 
                 int mergedQuantity = pending[i].Quantity + signal.Quantity;
                 pending[i].Quantity = (ushort)math.min(ushort.MaxValue, mergedQuantity);
+                overflowQuantity = math.max(0, mergedQuantity - ushort.MaxValue);
                 pending[i].Frame = pending[i].Frame >= signal.Frame ? pending[i].Frame : signal.Frame;
                 return true;
             }
@@ -5301,6 +5519,7 @@ namespace Hecton8.Inventory
                     out int addedQuantity);
 
                 int clampedAddedQuantity = math.clamp(addedQuantity, 0, requestedQuantity);
+                PublishPendingScavengingLifecycleCollected(in signal, clampedAddedQuantity);
                 int remainingQuantity = requestedQuantity - clampedAddedQuantity;
                 if (remainingQuantity <= 0)
                     continue;
@@ -5316,6 +5535,32 @@ namespace Hecton8.Inventory
                 pending[i] = default;
 
             _pendingScavengingItemSignalCount = retainedCount;
+        }
+
+        private void PublishPendingScavengingLifecycleCollected(in ItemAcquiredSignal signal, int addedQuantity)
+        {
+            if (addedQuantity <= 0 || signal.ItemHash == 0u || itemCatalog == null)
+                return;
+
+            ItemData item = itemCatalog.FindByHash(unchecked((int)signal.ItemHash));
+            if (item == null)
+                return;
+
+            bool hasRuntimePosition =
+                signal.PositionAup.TryToRuntimeFloat3(out float3 runtimePosition) &&
+                math.all(math.isfinite(runtimePosition));
+
+            Vector3 signalPosition = hasRuntimePosition
+                ? new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z)
+                : Vector3.zero;
+
+            ulong interactorEntityId = gameObject != null ? EntityId.ToULong(gameObject.GetEntityId()) : 0ul;
+            ItemLifecycleSignalRoute.TryPublishCollected(
+                item,
+                addedQuantity,
+                interactorEntityId,
+                signalPosition,
+                hasRuntimePosition);
         }
 
         private bool TryRegisterPendingScavengingWorldDrop(in ItemAcquiredSignal signal, int quantity)
@@ -5355,24 +5600,24 @@ namespace Hecton8.Inventory
 
             PendingInventoryCommand[] pending = _pendingInventoryCommands;
             if (pending == null)
+            {
+                DropInventoryCommandSignals(commands, ResolveInventorySignalHash());
                 return;
+            }
 
             uint inventoryHash = ResolveInventorySignalHash();
             int writeIndex = _pendingInventoryCommandCount;
             for (int index = 0; index < commands.Length; index++)
             {
                 InventoryCommandSignal command = commands[index];
-                if (command.InventoryHash != 0u && command.InventoryHash != inventoryHash)
+                if (!IsPendingInventoryCommandForOwner(in command, inventoryHash))
                     continue;
-
-                if (command.Command != InventoryCommandSignalCommands.DropNonEquippedResources &&
-                    command.Command != InventoryCommandSignalCommands.Sort)
-                {
-                    continue;
-                }
 
                 if (writeIndex >= pending.Length)
-                    break;
+                {
+                    DropInventoryCommandSignal(in command);
+                    continue;
+                }
 
                 PendingInventoryCommand entry = default;
                 entry.Command = command;
@@ -5387,6 +5632,77 @@ namespace Hecton8.Inventory
             }
 
             _pendingInventoryCommandCount = writeIndex;
+        }
+
+        private void DropDeferredInventoryCommandSignals()
+        {
+            int count = _pendingInventoryCommandCount;
+            if (count <= 0)
+                return;
+
+            _pendingInventoryCommandCount = 0;
+            PendingInventoryCommand[] pending = _pendingInventoryCommands;
+            if (pending == null)
+            {
+                RecordDroppedInventoryCommandSignals(count);
+                return;
+            }
+
+            int safeCount = math.min(count, pending.Length);
+            for (int index = 0; index < safeCount; index++)
+            {
+                InventoryCommandSignal command = pending[index].Command;
+                pending[index] = default;
+                if (command.Command == 0)
+                    continue;
+
+                DropInventoryCommandSignal(in command);
+            }
+
+            if (count > safeCount)
+                RecordDroppedInventoryCommandSignals(count - safeCount);
+        }
+
+        private void DropInventoryCommandSignals(ReadOnlySpan<InventoryCommandSignal> commands, uint inventoryHash)
+        {
+            for (int index = 0; index < commands.Length; index++)
+            {
+                InventoryCommandSignal command = commands[index];
+                if (!IsPendingInventoryCommandForOwner(in command, inventoryHash))
+                    continue;
+
+                DropInventoryCommandSignal(in command);
+            }
+        }
+
+        private void DropInventoryCommandSignal(in InventoryCommandSignal command)
+        {
+            RecordDroppedInventoryCommandSignal();
+
+            if (command.Command == InventoryCommandSignalCommands.DropNonEquippedResources)
+                PublishRespawnDropPenaltyResult(in command, 0);
+        }
+
+        private void RecordDroppedInventoryCommandSignal()
+        {
+            if (_droppedInventoryCommandSignalCount < int.MaxValue)
+                _droppedInventoryCommandSignalCount++;
+        }
+
+        private void RecordDroppedInventoryCommandSignals(int droppedCount)
+        {
+            if (droppedCount <= 0 || _droppedInventoryCommandSignalCount >= int.MaxValue)
+                return;
+
+            int remaining = int.MaxValue - _droppedInventoryCommandSignalCount;
+            _droppedInventoryCommandSignalCount += math.min(droppedCount, remaining);
+        }
+
+        private static bool IsPendingInventoryCommandForOwner(in InventoryCommandSignal command, uint inventoryHash)
+        {
+            return (command.InventoryHash == 0u || command.InventoryHash == inventoryHash) &&
+                   (command.Command == InventoryCommandSignalCommands.DropNonEquippedResources ||
+                    command.Command == InventoryCommandSignalCommands.Sort);
         }
 
         private void DrainRepairToolTitaniumSignals()
@@ -5416,10 +5732,10 @@ namespace Hecton8.Inventory
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;
             PlayerTool currentTool = toolManager != null ? toolManager.CurrentTool : null;
-            if (!(currentTool is RepairTool) || currentTool.ToolData == null || string.IsNullOrEmpty(currentTool.ToolData.PersistentId))
+            if (!(currentTool is RepairTool) || currentTool.ToolData == null)
                 return false;
 
-            itemHashId = LocHash.Compute(currentTool.ToolData.PersistentId);
+            itemHashId = ItemData.ResolvePersistentHashId(currentTool.ToolData);
             return itemHashId != 0;
         }
 
@@ -6463,13 +6779,18 @@ namespace Hecton8.Inventory
 
         private bool TryResolveInventoryPlayerAup(out AbsoluteUniversePosition playerAup)
         {
+            playerAup = AbsoluteUniversePosition.Invalid();
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (movement != null)
+            if (playerContext != null)
             {
-                playerAup = movement.CurrentAup;
-                if (playerAup.IsFinite())
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    snapshot.Aup.IsFinite())
+                {
+                    playerAup = snapshot.Aup;
                     return true;
+                }
+
+                return false;
             }
 
             return TryResolveAupFromRuntimeOrigin(transform.position, out playerAup);
@@ -6639,9 +6960,27 @@ namespace Hecton8.Inventory
 
         private float ResolveInventoryCarrierDepthMeters()
         {
+            if (TryResolveInventoryMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                return math.max(0f, movementState.DepthMeters);
+
+            return 0f;
+        }
+
+        private bool TryResolveInventoryMovementRuntimeState(out PlayerMovementRuntimeState movementState)
+        {
+            movementState = default;
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
-            return movement != null ? math.max(0f, movement.CurrentDepth) : 0f;
+            if (playerContext == null ||
+                !playerContext.IsInitialized ||
+                !playerContext.TryGetMovementRuntimeState(out movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !math.isfinite(movementState.DepthMeters))
+            {
+                movementState = default;
+                return false;
+            }
+
+            return true;
         }
 
         private static TraumaLevel ResolveRadiationTraumaLevel(float hazard01)
@@ -6660,9 +6999,11 @@ namespace Hecton8.Inventory
 
         private bool ResolveInventoryCarrierSubmergedState()
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
-            return movement != null && movement.CurrentDepth > 0f;
+            if (TryResolveInventoryMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+                return (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.Underwater) != 0u ||
+                       movementState.DepthMeters > 0f;
+
+            return false;
         }
 
         private bool TryGetRuntimeDescriptor(int itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor)

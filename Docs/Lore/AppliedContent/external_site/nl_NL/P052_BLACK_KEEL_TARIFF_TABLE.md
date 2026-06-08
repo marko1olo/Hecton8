@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Tariff Table"
+title: "Black Keel-tarieftabel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Tariff Table
+# Black Keel-tarieftabel
 
-NL LOC HOLD: Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency.
-
-## Scanner
-
-NL LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
-
-## Terminal
-
-NL LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
-
-## Audio
-
-NL LOC HOLD: The table has a price for rescue and a discount for evidence.
-
-## Field Note
-
-NL LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
+De tarieftabel is de duidelijkste plek waar HECTON-8 het stille deel hardop zegt. Black Keel kan de speler horen, gevaar indelen en pakketten door het systeem bewegen, maar elke handeling wordt eerst een factuurcategorie. Een bewaard monster kan sneller reizen dan een ademende operator. Een verzegelde lockbox kan de route eerder verhogen dan een gewond lichaam. Dit is geen toneelkwaad; het is een grootboek dat doet waarvoor het gebouwd is. De wreedheid is praktisch: de speler leert overleven door dezelfde economische grammatica te misbruiken die de kolonie wegwerpbaar maakte.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/nl_NL. -->

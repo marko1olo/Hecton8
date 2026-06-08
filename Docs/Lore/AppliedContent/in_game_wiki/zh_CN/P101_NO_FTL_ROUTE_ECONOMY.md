@@ -7,34 +7,34 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "No-FTL Route Economy"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "无FTL航线经济"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# No-FTL Route Economy
+# 无FTL航线经济
 
-CN LOC HOLD: Human space in 2190 runs on slow routes, relay custody, mass budgets, braking windows and old law. HECTON-8 is far enough that help is procedural before it is physical. That makes Black Keel, Deep Reach proxy packets and local evidence more important than any clean rescue fantasy.
+到2190年，人类空间依靠慢船、中继托管、制动窗口和债务运行。HECTON-8位于即时救援之外。法律可以用数据包抵达；船只只有在具备质量、屏蔽、燃料、制动架构和付款人时才会抵达。
 
 ## Scanner
 
-CN LOC HOLD: Transit artifact. Delay, mass and braking shaped this object before any colony touched water.
+运输戳记：延迟、质量、屏蔽和制动债务，在殖民地触水前就塑造了这个物件。
 
 ## Terminal
 
-CN LOC HOLD: ROUTE NOTICE: no ansible receipt. Local decisions remain binding until next packet window. Salvage authority cannot wait for Sol response.
+航线通知：无ansible。直到下一次中继包到达，本地托管仍具约束力。打捞授权不能等待Sol回应。
 
 ## Audio
 
-CN LOC HOLD: No one is coming from the inner worlds in time. The contract knows that.
+内圈世界没人能及时抵达这片水域。你的留置债权早已把这点算进去了。
 
 ## Field Note
 
-CN LOC HOLD: Distance is not background lore. It is why nobody rescues the player on schedule.
+如果救援显得太晚，就看收据。距离在求救信号之前就已经计费。
 
 <!-- In-Game Wiki; generated from P101_NO_FTL_ROUTE_ECONOMY/zh_CN. -->

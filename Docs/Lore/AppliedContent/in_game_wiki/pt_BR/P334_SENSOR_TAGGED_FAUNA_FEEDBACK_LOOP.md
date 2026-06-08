@@ -3,13 +3,13 @@ packet_id: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.sensor_tagged_fauna_feedback_loop
 unlock_id: unlock.sensor_tagged_fauna_feedback_loop
-poi_tags: poi.tagged_fauna_loop;poi.old_colony_sensor
-biome_tags: biome.ecology;biome.comms
+poi_tags: poi.sensor_tagged_fauna;poi.old_colony_tag
+biome_tags: biome.atlas;biome.fauna
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Loop de fauna com etiqueta sensora"
+title: "Ciclo de feedback de fauna com sensores"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Loop de fauna com etiqueta sensora
+# Ciclo de feedback de fauna com sensores
 
-Deep Reach etiquetou fauna local para mapear correntes, química e migração. Muitas etiquetas duraram mais que as tripulações. Atlas ainda as lê como entrada de levantamento, então a rota de um animal pode elevar prioridade de reparo ou abrir um bloco velho do mapa.
-
-Isso não deixa o animal obediente. Ele pode estar ferido, territorial, infectado por hardware velho ou seguindo comida. A máquina vê só movimento e dados. Um Marauder vê a verdade pior: o oceano pode denunciar você por acidente.
+Fauna com sensores carrega a antiga colônia dentro das cicatrizes. A Deep Reach marcou animais para estudos de migração, pressão e contaminação; depois Atlas leu essas tags como telemetria ambiental barata. A criatura não é fantoche. Seu movimento ainda pode mudar prioridade de reparo, acordar uma rota de drone ou fazer uma passagem segura parecer ocupada.
 
 ## Scanner
 
-Etiqueta sensora colonial antiga sob cicatriz nova. Perfil de movimento entra no canal de levantamento Atlas. Animal agitado por ping ativo.
+Tag antigo da Deep Reach sob crescimento de concha. Traço migratório combina com varredura de manutenção.
 
 ## Terminal
 
-LOOP DE FAUNA // Etiqueta legada 7F reporta temperatura, movimento e salinidade por canal de levantamento danificado. Prioridade de reparo Atlas subiu após migração. Animal etiquetado é fonte de telemetria, não ativo de comando.
+CICLO DE FAUNA: tag embutida retorna pacotes fracos de pressão, movimento e contaminação. Atlas lê movimento como estado ambiental, não intenção animal.
 
 ## Audio
 
-Ele não caça para Atlas. Ele nada com um crachá ainda pregado sob a pele.
+Ele não está caçando você. Ainda pode reportar você.
 
 ## Field Note
 
-Animais etiquetados mudam o mapa sem querer. Siga um só se souber o que mais o segue.
+Bom para encontros em que o animal é inocente e ainda perigoso para a rota.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/pt_BR. -->

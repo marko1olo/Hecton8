@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Geleidende biofilm-reparatiebus
 
-Geleidende biofilm verschijnt waar Deep Reach-kabel, warme pekel en beschadigde isolatie contact houden. De mat draagt zwakke stroom over koperbreuken en laat Atlas-diagnostiek kamers bereiken die elektrisch dood zouden moeten zijn.
-
-Het gevaar zit in categoriefout. Atlas ziet continuïteit en geeft reparatieprioriteit. Het organisme ziet warmte, mineraalstroom en oppervlak. Een Marauder die de mat snijdt, kan een deur onderbreken, een drone-audit wekken of verse lading blootleggen die veldjagende roofdieren lokt.
+Geleidende biofilm ontstaat waar gescheurde kabelmantels koperzouten, warmte en zwakke stroom in het water van HECTON-8 lekken. Het is geen geest. Het is een levende geleider die nuttig genoeg is voor Atlas om hem als reparatiebus te behandelen. Een beschadigde lijn kan gezond lijken terwijl de film alleen een dunne diagnostische puls over de wond draagt.
 
 ## Scanner
 
-Biofilmhuid overbrugt gebroken koper en levende mat. Zwakke stroom aanwezig. Atlas-reparatietag in zoutkorst.
+Groen-zwarte film kruist de kabelwond. De lekstroom is zwak, patroonmatig en nog in beweging.
 
 ## Terminal
 
-ATLAS-REPARATIEBUS // Geleidende microbiële film kruist kabelbreuken C-18 tot C-22. Diagnosepulsen lopen door natte groei wanneer koper verdwenen is. Niet als cognitie classificeren. Behandel als besmet onderhoudssubstraat.
+ATLAS-SPOOR: microbiële film overbrugt blootliggende contacten, remt koperverlies en geeft valse continuïteitspulsen terug. Geen gecertificeerde lijnreparatie aanwezig.
 
 ## Audio
 
-De film draagt een puls. Dat maakt hem niet slim. Het betekent dat de draad levend heeft leren rotten.
+Vertrouw het groene licht niet. Die kabel leeft genoeg om te liegen.
 
 ## Field Note
 
-Als een natte kabel huid heeft, volg hem voor je snijdt. De dode kant is meestal veiliger. Meestal.
+Vroege Atlas-littekens: nuttig, stil en fout genoeg om scannerwantrouwen te leren.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/nl_NL. -->

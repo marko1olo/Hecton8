@@ -7,34 +7,34 @@ poi_tags: poi.relay_packet_delay_meter;poi.legal_reply_timestamp
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Relay Message Lag"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "リレー通信遅延"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# リレー通信遅延
 
-JP LOC HOLD: Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.
+リレー遅延により、Deep Reachは部屋に生の声がなくてもプレイヤーを脅せる。契約機械、公証、請求窓、キャリア条項は、同情より先に届くことがある。なぜなら先に書かれ、先にキューへ入り、距離に耐える価格で設計されているからだ。
 
 ## Scanner
 
-JP LOC HOLD: A message can be legally binding and still arrive too late to save air.
+メッセージは法的に有効でも、空気を救うには遅すぎることがある。
 
 ## Terminal
 
-JP LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
+リレー遅延: Aegir内のローカル通信は数時間から数日かかる。領域間の法的パケットは数年かかる。Deep Reachの圧力は古く、自動化され、契約的で、なお危険。
 
 ## Audio
 
-JP LOC HOLD: The reply is late. The lien is current.
+返答は遅い。先取特権は現在有効だ。
 
 ## Field Note
 
-JP LOC HOLD: No ansible means truth moves as freight.
+アンシブルなしでは、真実は貨物として動く。
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/ja_JP. -->

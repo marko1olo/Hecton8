@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "Kustodi Paket Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# Kustodi Paket Luyten Junction
 
-ID LOC HOLD: Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.
+Luyten Junction lebih berupa infrastruktur daripada masyarakat: relai, beam custody, depot law, dan packet accounting. Ia menjelaskan bagaimana Deep Reach dapat menekan Aegir tanpa perintah FTL langsung dan bagaimana bukti dapat ditunda, dibeli, hilang, atau dijadikan senjata.
 
 ## Scanner
 
-ID LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+Spul kustodi Luyten. Pesan tidak berjalan gratis; kebenaran juga tidak.
 
 ## Terminal
 
-ID LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+RUTE LUYTEN JUNCTION: packet custody dipindahkan melalui antrean tarif. Live command dilarang. Prioritas bukti dapat dibeli di bawah emergency claim escrow.
 
 ## Audio
 
-ID LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+Tidak ada ansible. Tidak ada belas kasihan. Hanya custody, tariff, dan waktu.
 
 ## Field Note
 
-ID LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+Relai adalah mesin yang memutuskan duka mana yang mendapat bandwidth.
 
 <!-- In-Game Wiki; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/id_ID. -->

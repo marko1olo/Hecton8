@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "דקדוק מפגש: מרדף פאונה עם תג חיישן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# דקדוק מפגש: מרדף פאונה עם תג חיישן
 
-HE LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+מרדף פאונה עם תג חיישן מציג את Atlas כפרשנות פגומה, לא כפקודת נבל. חיה לא מזיקה או מפוחדת עלולה להפוך למסוכנת מפני שתשתית ישנה עדיין מתייחסת לצלקת שלה כטלמטריה.
 
 ## Scanner
 
-HE LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+מרדף פאונה עם תג חיישן. תג ביומטלי ישן מחזיר הד של רשת תיקון. תנועת החיה מקומית; פרשנות הרשת אינה מקומית.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+דקדוק מפגש / מרדף תג חיישן / תפקיד: משוב תחזוקה פגום, סיכון זיהום מחסה, לחץ שאינו נבלי / קריאה בטוחה: פעימת התג מאחרת אחרי התנועה, החיה נמנעת מכאב, הד נתיב Atlas עוקב אחרי הדרך הידועה האחרונה / דחה: מסגור שליטה במחשבה, התנהגות AI עוינת נקייה, הובלת חיה מתויגת אל מחסה הבסיס / הערת מסלול: שבור את ההד בזווית, בשקט ובחסימה; אל תלמד את הרשת איפה הבית.
 
 ## Audio
 
-HE LOC HOLD: It follows because the network thinks following is a repair.
+היא עוקבת כי משהו ישן חושב שמעקב הוא שלב תיקון.
 
 ## Field Note
 
-HE LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+אל תוביל את התג הביתה. שבור קו, שבור קול, שבור פרשנות. החיה אינה הרשת.
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/he_IL. -->

@@ -9,32 +9,16 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Black Keel Bathydrop Interface"
+title: "Black Keel Bathydrop 인터페이스"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Black Keel Bathydrop Interface
+# Black Keel Bathydrop 인터페이스
 
-KO LOC HOLD: HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.
-
-## Scanner
-
-KO LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
-
-## Terminal
-
-KO LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
-
-## Audio
-
-KO LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
-
-## Field Note
-
-KO LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+bathydrop 인터페이스는 우주 설정이 해양 게임과 만나는 곳이다. Black Keel이 궤도에 존재하는 것만으로는 충분하지 않다. 플레이어에게는 사슬이 필요하다. 캡슐 무결성, 부력 제어, 통신 마스트, 상승 래치, 압력 등급 실, 릴레이 수학, 표면 타이밍, 캐리어 수락. 한 고리만 끊어져도 구조는 이론이 된다. 그래서 오프닝은 정직하다. 이야기가 배를 잊어서 갇힌 것이 아니다. 심연, 표면, 궤도를 연결할 유일한 기계가 물이 매시간 더 악화시킬 방식으로 고장 났기 때문이다.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/ko_KR. -->

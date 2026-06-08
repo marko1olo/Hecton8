@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Метки доменов 2190
 
-Domain Marks 2190 показывает HECTON-8 как часть зрелой, но разреженной человеческой сферы. Сеттинг межзвездный, но расстояние все еще решает, кто может помочь и когда.
-
-## Scanner
-
-Смешанные доменные маркировки. Табличка Sol, штамп Barnard, маршрутная custody Luyten.
-
-## Terminal
-
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
-
-## Audio
-
-Это место не вне цивилизации. Это цивилизация, когда расстояние побеждает.
-
-## Field Note
-
-Человечество стало большим. Спасению все равно надо долететь.
+К 2190 году один сломанный предмет может нести несколько владельцев: стандарт Sol, ремонт Barnard, хранение Luyten, претензию Aegir. Изоляция HECTON-8 не в отсутствии истории. История лежит штампами на металле, пока комнату заливает.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/ru_RU. -->

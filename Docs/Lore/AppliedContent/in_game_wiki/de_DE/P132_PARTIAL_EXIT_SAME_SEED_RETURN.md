@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "Teilweiser Ausstieg: Rückkehr in denselben Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# Teilweiser Ausstieg: Rückkehr in denselben Seed
 
-DE LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.
+Der teilweise Ausstieg ist ein Bergungsfenster, kein Reset. Der Spieler bekommt Luft, Reparaturzeit und Abstand zum Wasser, kehrt dann aber nach demselben HECTON-8 zurück, mit denselben Routen, Narben und ungelösten Beweisen. Wissen bleibt als Druck bestehen, nicht als vererbte Macht.
 
 ## Scanner
 
-DE LOC HOLD: Extraction possible. Closure not included.
+Temporärer Abholvektor bestätigt. Derselbe Ozean bleibt unter demselben Vertrag.
 
 ## Terminal
 
-DE LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
+HINWEIS TEILWEISER AUSSTIEG: temporäre Black-Keel-Abholung angenommen; Rückkehr in denselben Seed unter lien-Verlängerung autorisiert; Routenwarnungen, custody-Datensätze und offene Beweispakete bleiben; Geologie und Weltwahrheit unverändert.
 
 ## Audio
 
-DE LOC HOLD: You left the pressure. You did not leave the contract.
+Du hast den Druck verlassen. Der Vertrag hielt deinen Stuhl warm.
 
 ## Field Note
 
-DE LOC HOLD: Let the player breathe, then make the same ocean still be there.
+Ein Atemzug im Orbit ist keine Freiheit, wenn der Rückkehrslot schon berechnet ist.
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/de_DE. -->

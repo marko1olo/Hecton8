@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Транскрипт очищеного пакета Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Транскрипт очищеного пакета Deep Reach
 
-UK LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.
+Очищений пакет лишається правдоподібним, бо зберігає справжні іменники катастрофи й прибирає рішення, що зробили їх смертельними.
 
 ## Scanner
 
-UK LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Відновлений пакет Deep Reach повторює зведення аварії, потім ставить допомогу за координати й ціну карантину.
 
 ## Terminal
 
-UK LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
+PACKET DR-RCO-2190: safety priority asserted; coordinates required; quarantine cost pending; worker-cause fields omitted.
 
 ## Audio
 
-UK LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
+Пакет Recovery Compliance. Пріоритет безпеки підтверджено. Координати спершу. Вартість карантину очікує. Допомогу не можна оцінити наосліп.
 
 ## Field Note
 
-UK LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Корпоративний голос у теперішньому часі. Має звучати як шанс вижити, доки гравець не помітить, що пакет відмовляється назвати.
 
 <!-- In-Game Wiki; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/uk_UA. -->

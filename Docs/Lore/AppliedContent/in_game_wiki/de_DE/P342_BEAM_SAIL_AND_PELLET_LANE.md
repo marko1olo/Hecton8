@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Beam Sail and Pellet Lane"
+title: "Strahlsegel und Pellet-Lane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Beam Sail and Pellet Lane
+# Strahlsegel und Pellet-Lane
 
-DE LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+Strahlsegel, Pellet-Lanes, Fusion-Catch-Stufen und Magsails machten Nearlight-Fracht ohne FTL praktisch. Ein Schiff lief mit Tanks, Schildeis, Radiatoren und Steuerhoheit aus und lieh den Rest seines Motors von der Route: Strahlleistung hinter sich, Pelletmasse im eigenen Pfad und einen Empfänger, der Bremsbesitz akzeptiert. Darum ist Aegir erreichbar und wirkt trotzdem verlassen. Der Korridor bewegt geplante Fracht; er lässt sich nicht wie ein Rettungsseil rufen.
 
 ## Scanner
 
-DE LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+Transitspurdaten: Das Segel schob sich nicht selbst. Es mietete Leistung aus Arrays hinter dem Schiff und Masse aus Pelletströmen vor ihm.
 
 ## Terminal
 
-DE LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+LANE-STATUS: Strahlarray ausgezahlt. Pelletstrom 0,8 ppm außerhalb Vertrag. Catch-Burn noch möglich. Fehlender Bremsbesitzer macht schnelle Fracht zu schnellem Schrott.
 
 ## Audio
 
-DE LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+Das Schiff ist schnell, weil die Hälfte des Motors außerhalb des Schiffs liegt.
 
 ## Field Note
 
-DE LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Wenn ein Datensatz nur den Strahl lobt, lies weiter, bis er den Catch-Besitzer nennt.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/de_DE. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "Garde des paquets de Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# Garde des paquets de Luyten Junction
 
-FR LOC HOLD: Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing.
+La garde des paquets de Luyten Junction transforme la communication interstellaire en pression de route. HECTON-8 n'a pas de canal de secours instantané, donc chaque message doit survivre à la garde, au coût et au timing orbital.
 
 ## Scanner
 
-FR LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+Bobine de garde Luyten. Les messages ne voyagent pas gratuitement ; la vérité non plus.
 
 ## Terminal
 
-FR LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+ROUTE LUYTEN JUNCTION : packet custody transférée par file tarifaire. Live command interdite. Priorité de preuve achetable sous emergency claim escrow.
 
 ## Audio
 
-FR LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+Pas d'ansible. Pas de pitié. Juste la garde, le tarif et le temps.
 
 ## Field Note
 
-FR LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+Un relais est une machine qui décide quel chagrin reçoit de la bande passante.
 
 <!-- External Site; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/fr_FR. -->

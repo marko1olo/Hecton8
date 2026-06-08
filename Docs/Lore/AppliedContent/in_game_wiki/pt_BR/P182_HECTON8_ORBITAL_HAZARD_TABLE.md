@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 Orbital Hazard Table"
+title: "Tabela de Perigos Orbitais de HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HECTON-8 Orbital Hazard Table
+# Tabela de Perigos Orbitais de HECTON-8
 
-PT LOC HOLD: Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.
+Perigos orbitais explicam por que uma cápsula reparada não basta. Antes que HECTON-8 fique para trás, a cadeia de subida ainda precisa de acesso a relé, timing de orientação, blindagem e uma janela legal de lançamento.
 
 ## Scanner
 
-PT LOC HOLD: HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+A extração de HECTON-8 é bloqueada por janelas de eclipse, pico de radiação, obturador de relé, dispersão de gelo e plume de tempestade.
 
 ## Terminal
 
-PT LOC HOLD: ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+TABELA DE PERIGOS ORBITAIS: blackout de eclipse, pico de partículas carregadas de Aegir, obturador de relé lunar, dispersão de grãos de gelo, storm plume e janelas guidance-lag devem estar livres antes da subida.
 
 ## Audio
 
-PT LOC HOLD: The sky is not empty. It is a machine with bad timing.
+O céu sobre o oceano é uma máquina com dentes no timing.
 
 ## Field Note
 
-PT LOC HOLD: This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+Ninguém está segurando resgate por drama. A subida precisa encontrar o horário ruim do céu.
 
 <!-- In-Game Wiki; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/pt_BR. -->

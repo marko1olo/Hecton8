@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Brine Canyon Density Ladder Guide"
+title: "Feldführer zur Dichteleiter der Soleschluchten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Brine Canyon Density Ladder Guide
+# Feldführer zur Dichteleiter der Soleschluchten
 
-DE LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.
+Brine-Schluchten machen Tiefe physisch. Sie lehren Dichteschichten, Rumpfgrenzen, Druckversagen und resource pockets, bevor tiefere Routen öffnen.
 
 ## Scanner
 
-DE LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
+Brine ladder erkannt: geschichtete Dichte, falscher Boden, Sonarbiegung. Folge den Kanten; offenes Wasser lügt hier.
 
 ## Terminal
 
-DE LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: brine-Schluchten verbergen pressure shelves, current ledges, resource pockets und scanner false positives. Hull rating und density transition entscheiden, welche Leiste Route ist und welche Sturz.
 
 ## Audio
 
-DE LOC HOLD: A canyon is a staircase if your hull can pay for each step.
+Eine Schlucht ist eine Treppe, wenn dein Rumpf jede Stufe bezahlen kann.
 
 ## Field Note
 
-DE LOC HOLD: Use for scanner tutorials and resource route articles.
+Nutze vane-Schatten wie Stufen. Ein leerer Messwert in brine ist kein leerer Raum; es ist das Instrument, das den Streit verliert.
 
 <!-- In-Game Wiki; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/de_DE. -->

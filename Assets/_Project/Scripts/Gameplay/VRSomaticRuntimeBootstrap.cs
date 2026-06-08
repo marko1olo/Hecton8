@@ -254,7 +254,7 @@ namespace Hecton8.Gameplay
             if (runtime == null)
                 return false;
 
-            if (!TryResolvePlayerContext(out PlayerRuntimeContext runtimeContext, out GameObject playerObject))
+            if (!TryResolvePlayerContext(out IPlayerRuntimeContext runtimeContext, out GameObject playerObject))
                 return false;
 
             Transform playerTransform = playerObject.transform;
@@ -297,7 +297,7 @@ namespace Hecton8.Gameplay
             if (runtime == null)
                 return false;
 
-            if (!TryResolvePlayerContext(out PlayerRuntimeContext runtimeContext, out GameObject playerObject))
+            if (!TryResolvePlayerContext(out IPlayerRuntimeContext runtimeContext, out GameObject playerObject))
                 return false;
 
             Transform playerTransform = playerObject.transform;
@@ -344,14 +344,12 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static bool TryResolvePlayerContext(out PlayerRuntimeContext runtimeContext, out GameObject playerObject)
+        private static bool TryResolvePlayerContext(out IPlayerRuntimeContext runtimeContext, out GameObject playerObject)
         {
-            runtimeContext = null;
             playerObject = null;
+            runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
 
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.PlayerObject != null)
+            if (runtimeContext != null && runtimeContext.PlayerObject != null)
             {
                 playerObject = runtimeContext.PlayerObject;
                 return true;
@@ -370,7 +368,7 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        private static Transform ResolveHmdTransform(PlayerRuntimeContext runtimeContext, Transform playerTransform)
+        private static Transform ResolveHmdTransform(IPlayerRuntimeContext runtimeContext, Transform playerTransform)
         {
             if (runtimeContext != null)
             {

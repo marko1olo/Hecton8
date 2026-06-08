@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Пістолет холодного герметика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Пістолет холодного герметика
 
-UA LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+Пістолет холодного герметика вчить першої чесної межі. Він може зупинити pinhole, втримати край прокладки або купити хвилини на спокійному шві. Він не благословляє рухому конструкцію. Rating label важливіший за надію гравця.
 
-## Scanner
-
-UA LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-UA LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-UA LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-UA LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Тому інструмент має бути раннім. Він дає дію без удавання, що кожен витік можна вирішити. Добрий patch створює час; поганий patch створює впевненість там, де океан пізніше візьме плату.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/uk_UA. -->

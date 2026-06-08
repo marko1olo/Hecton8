@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # הכתות של המצולות ושיגעון הלחץ
 
 > **מקור:** יומני הערכה פסיכולוגית, האגף הרפואי של מגזר 44 (חולץ).

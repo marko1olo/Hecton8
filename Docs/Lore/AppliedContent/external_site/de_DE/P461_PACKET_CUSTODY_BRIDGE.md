@@ -9,32 +9,28 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Paketverwahrung"
+title: "Paketverwahrung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Paketverwahrung
+# Paketverwahrung
 
-DE LOC HOLD: Eine Nachricht von HECTON-8 zählt nur, wenn Route, Siegel, Empfänger und Schadenszustand mit ihr überleben. Paketverwahrung trägt einen Fakt durch Aegir-Verzug, Anspruchsdruck und Bergung, ohne ihn zu Wegwerffracht zu machen.
+## Was Das Siegel Bedeutet
 
-## Scanner
+Eine Nachricht von HECTON-8 ist nicht nützlich, weil sie gesprochen wurde. Sie ist nützlich, wenn ihre Route beweist, wer sie trug, wann sie abging, was sie durchquerte und welcher Anspruchsteller sie nicht löschen konnte.
 
-DE LOC HOLD: PAKETSIEGEL // Zeugenhash-Streifen beschädigt, aber lesbar. Vor dem Bergungsschnitt sichern. Ungesiegelte Beweise werden Anspruchsmaterial.
+Black Keel behandelt Aussage wie Fracht: Masse, Siegel, Seriennummer, Empfänger, Verzögerung. Eine Probe ohne Verwahrungsstreifen wird zu Anspruchsmaterial. Ein Arbeitername ohne Zeugenhash wird zur Verlustkategorie. Ein Druckprotokoll ohne Routenstempel kann vor dem nächsten Relaisfenster als Sensorrauschen verschwinden.
 
-## Terminal
+Deshalb führt frühe Bergung immer wieder zu kleinen hässlichen Dingen: verbogenen Paketplatten, nassen Notarstreifen, Routenstempeln, Relaisscheinen, salzgeschwollenen Steckertags. Sie sehen nach Papier aus, bis der Ozean sie körperlich macht. Der Spieler bewahrt die Kette, durch die ein Fakt Aegir übersteht.
 
-DE LOC HOLD: KEELMARK PAKETNOTAR // Siegelplatte, Zeugenhash, Routenstempel und Steckertag vor Transfer sichern. Ungestempeltes Material kann als Anspruchsverlust laufen.
+Paketverwahrung ist keine Gerechtigkeit. Sie ist die Mindestbedingung, damit Gerechtigkeit eine Route bekommt. Brich das Siegel, und Deep Reach kann Korruption behaupten. Halte das Siegel zusammen, und dasselbe Metall wird ein Zeuge für Druck, Distanz, Schuld und Anspruchsrecht.
 
-## Audio
+## Nutzen Im Spiel
 
-DE LOC HOLD: Black-Keel-Relais: Fracht ist Masse. Beweis ist Verwahrung. Bring beides, sonst berechnet das Fenster die Differenz.
-
-## Field Note
-
-DE LOC HOLD: Erst siegeln, dann schneiden. Eine saubere Probe mit gebrochenem Tag gehört dem, der das Ledger besitzt.
+Scanne die Platte, bevor du die Hardware rundherum schneidest. Routenstempel, Empfängerbahn, Zeugenhash und Schadenszustand gehören zusammen. Trennt sich das Tag von der Probe, bleibt der Fund wertvoll, beweist aber nicht mehr dieselbe Sache.
 
 <!-- External Site; generated from P461_PACKET_CUSTODY_BRIDGE/de_DE. -->

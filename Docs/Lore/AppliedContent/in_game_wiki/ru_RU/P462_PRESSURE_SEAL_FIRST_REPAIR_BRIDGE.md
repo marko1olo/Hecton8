@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Первый ремонт PressureSeal"
+title: "Первый ремонт PressureSeal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Первый ремонт PressureSeal
+# Первый ремонт PressureSeal
 
-RU LOC HOLD: Найдена ремонтная заметка P-63. FiberKelp перерабатывается в FiberMesh и служит несущим слоем временного PressureSeal. Уплотнение замедляет местную течь, но не годится для подъема.
+Найдена ремонтная заметка P-63. FiberKelp можно переработать в FiberMesh и использовать как несущий слой временного PressureSeal. Пломба замедляет локальную течь, но не сертифицирует подъем.
 
 ## Scanner
 
-RU LOC HOLD: ЦЕЛЬ PRESSURESEAL // течь воротника P-63. Носитель FiberMesh совместим. Только локальная стабилизация; сертификация подъема отклонена.
+ЦЕЛЬ PRESSURESEAL // Течь воротника P-63. Носитель FiberMesh совместим. Только локальная стабилизация; сертификация подъема отклонена.
 
 ## Terminal
 
-RU LOC HOLD: ЗАМЕТКА DEEP REACH P-63 // Отложить замену воротника. Применить мягкий носитель уплотнения, если течь остается в пределах локального обслуживания.
+ДОПУСК P-63 DEEP REACH // Замену воротника отложить. Применить утвержденный мягкий носитель там, где течь остается в локальном сервисном пороге.
 
 ## Audio
 
-RU LOC HOLD: Ретранслятор Black Keel: патч P-63 читается как локально безопасный, не подъемный. Забери уплотнение, сохрани серийник.
+Ретранслятор Black Keel: заплатка P-63 локально безопасна, но не годится для подъема. Забери пломбу, сохрани серийник.
 
 ## Field Note
 
-RU LOC HOLD: Снаружи светлая вода. Внутри мокрый воротник. Deep Reach назвала это штатным, потому что слово дешевле зажимного кольца.
+Снаружи светлая вода. Внутри мокрый воротник. Deep Reach назвала это штатным, потому что слово дешевле зажимного кольца.
 
 <!-- In-Game Wiki; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/ru_RU. -->

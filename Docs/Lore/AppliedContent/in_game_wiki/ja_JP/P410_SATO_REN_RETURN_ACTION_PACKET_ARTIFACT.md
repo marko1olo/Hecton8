@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Sato-Ren Return Packet"
+title: "サトウ・レン Return Action Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Sato-Ren Return Packet
+# サトウ・レン Return Action Packet
 
-JA LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190 through compliance traffic, not a warship: coordinates, custody, access and silence first.
+サトウ・レン packet は、2190 年の Deep Reach が rescue fleet ではなく compliance traffic で活動している証拠だ。extraction という語を出す前に、座標、Atlas access state、sample custody、silence を求める。
 
 ## Scanner
 
-JA LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+Recovery Compliance packet。extraction の語が出る前に、座標、access state、payload custody が要求される。
 
 ## Terminal
 
-JA LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
+RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
 
 ## Audio
 
-JA LOC HOLD: The packet knows where the asset is. It is less certain where you are.
+packet は asset が生きていることを知っている。あなたを数えるかはまだ決めていない。
 
 ## Field Note
 
-JA LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+Marauderメモ: custody の後に extraction と言うなら、その順序を二度読め。
 
 <!-- In-Game Wiki; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/ja_JP. -->

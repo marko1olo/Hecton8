@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "Conjunto de anillo de abrazadera de sello de presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Pressure Seal Clamp Ring Assembly
+# Conjunto de anillo de abrazadera de sello de presión
 
-ES LOC HOLD: Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.
+Los sellos de presión explican por qué la reparación tiene que ir más profundo. Los materiales que mantienen el agua fuera de una sala también pueden pegar la cápsula al pecio cuando se acepta una cadena de sellado equivocada.
 
 ## Scanner
 
-ES LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Cicatriz de clamp-ring. La manga de ascenso sobrevivió al impacto gastando el sello que debía llevarla a casa.
 
 ## Terminal
 
-ES LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch solo mantiene presión de compartimento. Ascent seal requiere deep-rated clamp ring, pressure-glass seat, shell-sealant map y perfil Deep Reach verificado. Atlas-grown sealant puede conservar el habitat mientras bloquea una separación limpia.
 
 ## Audio
 
-ES LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+El sello útil está vivo en la dirección equivocada.
 
 ## Field Note
 
-ES LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+Un parche de safe-room puede comprar una hora de aire. No puede sostener un impulso de lanzamiento.
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/es_ES. -->

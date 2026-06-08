@@ -99,6 +99,8 @@ namespace Hecton8.Gameplay
         private bool _originShiftRegistered;
         private bool _hotSwapRegistered;
         private bool _clearRequested;
+        private bool _serviceRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _isInitialized;
         private bool _debrisSolveWarningArmed;
         private float _lastTickDeltaTime;
@@ -119,8 +121,21 @@ namespace Hecton8.Gameplay
         /// <returns>Runtime debris owner.</returns>
         public static DebrisManager EnsureRuntimeInstance()
         {
-            if (GlobalRegistry.Debris is DebrisManager registeredManager)
-                return registeredManager;
+            IDebrisService registeredService = GlobalRegistry.Debris;
+            if (IsDebrisRuntimeUsable(registeredService))
+                return registeredService as DebrisManager;
+
+            DebrisManager staleManager = registeredService as DebrisManager;
+            if (!ReferenceEquals(staleManager, null))
+            {
+                GlobalRegistry.UnregisterDebrisService(registeredService);
+                staleManager._serviceRegistered = false;
+                staleManager._isInitialized = false;
+            }
+            else if (!ReferenceEquals(registeredService, null))
+            {
+                return null;
+            }
 
             GameObject runtimeRoot = new GameObject("[DebrisManager]");
             DebrisManager manager = runtimeRoot.AddComponent<DebrisManager>();
@@ -135,26 +150,28 @@ namespace Hecton8.Gameplay
             if (_isInitialized)
                 return;
 
+            if (!TryRegisterService())
+                return;
+
             RefreshColdRegistryReferences();
             EnsureRuntimeResources();
-            GlobalRegistry.RegisterDebrisService(this);
-            _isInitialized = ReferenceEquals(GlobalRegistry.Debris, this);
+            _isInitialized = _serviceRegistered;
         }
 
         private void Awake()
         {
-            RefreshColdRegistryReferences();
-            if (GlobalRegistry.Debris is DebrisManager registeredManager && registeredManager != this)
-            {
-                Destroy(gameObject);
+            if (Application.isPlaying && !TryRegisterService())
                 return;
-            }
 
+            RefreshColdRegistryReferences();
             EnsureRuntimeResources();
         }
 
         private void OnEnable()
         {
+            if (Application.isPlaying && !TryRegisterService())
+                return;
+
             RefreshColdRegistryReferences();
             EnsureRuntimeResources();
             if (!Application.isPlaying)
@@ -178,6 +195,9 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             UnregisterRuntimeHooks();
 
             _clearRequested = true;
@@ -188,6 +208,9 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             ShutdownServiceState();
         }
 
@@ -198,20 +221,99 @@ namespace Hecton8.Gameplay
 
         private void ShutdownServiceState()
         {
-            if (_isInitialized && ReferenceEquals(GlobalRegistry.Debris, this))
+            if (_runtimeOwnerAborted)
+                return;
+
+            if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Debris, this))
             {
                 GlobalRegistry.UnregisterDebrisService(this);
-                _isInitialized = false;
+                _serviceRegistered = false;
             }
-            else
-            {
-                _isInitialized = false;
-            }
+
+            _isInitialized = false;
 
             UnregisterRuntimeHooks();
             _clearRequested = true;
             _pendingBurstCount = 0;
             ReleaseNativeState();
+        }
+
+        private bool TryRegisterService()
+        {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (_serviceRegistered)
+                return true;
+
+            if (!Application.isPlaying)
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            IDebrisService registeredService = GlobalRegistry.Debris;
+            if (!ReferenceEquals(registeredService, null) && !ReferenceEquals(registeredService, this))
+            {
+                DebrisManager staleManager = registeredService as DebrisManager;
+                if (ReferenceEquals(staleManager, null))
+                {
+                    _runtimeOwnerAborted = true;
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterDebrisService(registeredService);
+                staleManager._serviceRegistered = false;
+                staleManager._isInitialized = false;
+            }
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
+
+            GlobalRegistry.RegisterDebrisService(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Debris, this);
+            _runtimeOwnerAborted = !_serviceRegistered;
+            if (_runtimeOwnerAborted)
+                Destroy(gameObject);
+            return _serviceRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            IDebrisService registeredService = GlobalRegistry.Debris;
+            if (ReferenceEquals(registeredService, null) || ReferenceEquals(registeredService, this))
+                return false;
+
+            if (IsDebrisRuntimeUsable(registeredService))
+            {
+                _runtimeOwnerAborted = true;
+                Destroy(gameObject);
+                return true;
+            }
+
+            DebrisManager staleManager = registeredService as DebrisManager;
+            if (!ReferenceEquals(staleManager, null))
+            {
+                GlobalRegistry.UnregisterDebrisService(registeredService);
+                staleManager._serviceRegistered = false;
+                staleManager._isInitialized = false;
+            }
+
+            return false;
+        }
+
+        private static bool IsDebrisRuntimeUsable(IDebrisService service)
+        {
+            if (ReferenceEquals(service, null))
+                return false;
+
+            DebrisManager manager = service as DebrisManager;
+            return ReferenceEquals(manager, null) ||
+                   (manager != null &&
+                    manager._serviceRegistered &&
+                    manager.isActiveAndEnabled &&
+                    !manager._runtimeOwnerAborted);
         }
 
         private void UnregisterRuntimeHooks()
@@ -230,7 +332,7 @@ namespace Hecton8.Gameplay
 
             if (_hotSwapRegistered)
             {
-                GlobalRegistry.UnregisterHotSwapListener(this);
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _hotSwapRegistered = false;
             }
 
@@ -359,7 +461,13 @@ namespace Hecton8.Gameplay
                 _clearRequested = false;
             }
 
-            if (_pendingShiftOffset.sqrMagnitude > 0.000001f && !_simulationScheduled)
+            float pendingShiftSqrMagnitude = _pendingShiftOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(_pendingShiftOffset) ||
+                !MathGuard.IsFinite(pendingShiftSqrMagnitude))
+            {
+                _pendingShiftOffset = Vector3.zero;
+            }
+            else if (pendingShiftSqrMagnitude > 0.000001f && !_simulationScheduled)
             {
                 if (TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> shiftedFrontStates, out IDataVault shiftedFrontVault))
                 {
@@ -438,8 +546,13 @@ namespace Hecton8.Gameplay
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= 0.000001f)
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             if (_simulationScheduled)
             {
@@ -1160,6 +1273,9 @@ namespace Hecton8.Gameplay
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsRuntime)
             {
                 _thermalRuntime = currentService as IThermodynamicsService;
@@ -1207,8 +1323,14 @@ namespace Hecton8.Gameplay
 
         private void ApplyShiftToBuffer(NativeArray<DebrisChunkState> buffer, Vector3 shiftOffset)
         {
-            if (!buffer.IsCreated)
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!buffer.IsCreated ||
+                !MathGuard.IsFinite(shiftOffset) ||
+                !MathGuard.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
                 return;
+            }
 
             float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
             for (int i = 0; i < buffer.Length; i++)

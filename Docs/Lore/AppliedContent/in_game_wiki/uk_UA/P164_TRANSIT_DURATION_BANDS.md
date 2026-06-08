@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Transit Duration Bands"
+title: "Діапазони Тривалості Транзиту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Transit Duration Bands
+# Діапазони Тривалості Транзиту
 
-UK LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
+Діапазони транзиту пояснюють, чому HECTON-8 досяжний і все одно жорстокий. Пакети рухаються першими, бо вони малі, дешеві й юридично корисні. Вантаж іде, коли збігаються staging, braking rights і loss margins. Людське тіло рухається повільно, бо потребує маси, liability, life support і того, хто оплатить повернення. Локальні вікна Aegir коротші, але не добріші: орбіта, шум штормів, радіація й геометрія Black Keel вирішують, чи рухаються дані, вантаж або людина.
 
 ## Scanner
 
-UK LOC HOLD: The same route means different time for packets, freight and people.
+DURATION BAND CHART // Зондові пакети, heavy freight, human crews і локальні вікна Aegir не мають одного годинника.
 
 ## Terminal
 
-UK LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+DURATION BANDS // Локальні вікна: години-дні. Внутрішньосистемний промисловий рух: місяці-роки. Crew rotation: роки custody й боргу. Heavy interdomain freight та наслідки: роки-десятиліття.
 
 ## Audio
 
-UK LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
+Вантаж може прийти раніше за милість. Це не збій. Це доктрина.
 
 ## Field Note
 
-UA LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+Якщо всі годинники збігаються, світ стає фантазією порятунку. Тримай годинники ворожими.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/uk_UA. -->

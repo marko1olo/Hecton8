@@ -221,9 +221,7 @@ namespace Hecton8.UI
             if (previewPanel == null)
                 return;
 
-            PopulatePreviewMetadata();
-            if (previewThumbnail != null)
-                previewThumbnail.LoadThumbnail(_currentSlotId);
+            RefreshVisiblePreviewFromCachedSaveManager();
 
             PositionPreview();
 
@@ -268,15 +266,23 @@ namespace Hecton8.UI
 
         private void PopulatePreviewMetadata()
         {
+            _ = TryPopulatePreviewMetadata();
+        }
+
+        private bool TryPopulatePreviewMetadata()
+        {
             if (string.IsNullOrEmpty(_currentSlotId))
             {
                 ClearPreviewMetadata();
-                return;
+                return false;
             }
 
             ILocalizationTextReadModel localization = _cachedLocalization;
             SaveManager saveManager = _cachedSaveManager;
-            if (saveManager == null || !saveManager.TryGetSaveSlotInfo(_currentSlotId, out SaveSlotInfo slotInfo) || slotInfo == null)
+            if (!IsSaveManagerUsable(saveManager) ||
+                !saveManager.TryGetSaveSlotInfo(_currentSlotId, out SaveSlotInfo slotInfo) ||
+                slotInfo == null ||
+                !slotInfo.HasAnySaveData)
             {
                 ApplyPreviewTexts(
                     ReadOnlySpan<char>.Empty,
@@ -284,7 +290,7 @@ namespace Hecton8.UI
                     ReadOnlySpan<char>.Empty,
                     Color.white);
                 ApplySlotTitle(localization, _currentSlotId);
-                return;
+                return false;
             }
 
             SaveMetadata metadata = slotInfo.Metadata;
@@ -297,6 +303,25 @@ namespace Hecton8.UI
             ApplySlotTitle(localization, _currentSlotId);
             if (previewDetailsText != null)
                 previewDetailsText.SetCharArray(_previewDetailsBuffer, 0, detailsLength);
+
+            return true;
+        }
+
+        private void RefreshVisiblePreviewFromCachedSaveManager()
+        {
+            bool hasPreviewData = TryPopulatePreviewMetadata();
+            if (previewThumbnail == null)
+                return;
+
+            if (hasPreviewData)
+                previewThumbnail.LoadThumbnail(_currentSlotId);
+            else
+                previewThumbnail.ClearThumbnail();
+        }
+
+        private static bool IsSaveManagerUsable(SaveManager saveManager)
+        {
+            return saveManager != null && saveManager.IsInitialized;
         }
 
         private void ApplyPreviewTexts(ReadOnlySpan<char> title, ReadOnlySpan<char> details, ReadOnlySpan<char> status, Color statusColor)
@@ -438,8 +463,7 @@ namespace Hecton8.UI
 
         private static ReadOnlySpan<char> ResolveSceneLabel(ILocalizationTextReadModel localization, string sceneName)
         {
-            if (string.IsNullOrEmpty(sceneName))
-                return ReadOnlySpan<char>.Empty;
+            sceneName = SaveMetadata.NormalizeSceneName(sceneName);
 
             if (string.Equals(sceneName, "02_HECTON_WORLD", System.StringComparison.Ordinal))
                 return ResolveLocalizedSpan(localization, SlotSceneWorldKeyHash, "WORLD");
@@ -650,7 +674,7 @@ namespace Hecton8.UI
                     if (!string.IsNullOrEmpty(_currentSlotId) &&
                         (_state == State.Visible || _state == State.FadingIn))
                     {
-                        PopulatePreviewMetadata();
+                        RefreshVisiblePreviewFromCachedSaveManager();
                     }
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:

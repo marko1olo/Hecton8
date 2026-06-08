@@ -2,9 +2,9 @@
 packet_id: P013_NEARLIGHT_SHIP_CLASSES
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: ships.nearlight_classes
-unlock_id: unlock.first_transit_manifest
-poi_tags: poi.transit_manifest;poi.sleeper_tag
-biome_tags: biome.drowned_colony;biome.crash_shelf
+unlock_id: unlock.first_nearlight_manifest
+poi_tags: poi.transit_manifest;poi.old_ship_class_table
+biome_tags: biome.drowned_colony;biome.black_keel_link
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
@@ -14,27 +14,13 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Nearlight-scheepsklassen
 
-Nearlight Ship Classes houdt HECTON-8 hard-sci-fi. Interstellair reizen bestaat, maar is traag, gefinancierd en infrastructuurgebonden.
+HECTON-8 heeft geen FTL nodig om groot te voelen. Probes konden verloren gaan, zaadschepen droegen instructies, Atlas-carriers verplaatsten dure massa.
 
-## Scanner
-
-Transitmanifest: needleprobe, seed ship, mass carrier, sleeper transport, system carrier.
-
-## Terminal
-
-No FTL lane registered. Transit class requires launch infrastructure, braking plan, shielding mass, and route custody.
-
-## Audio
-
-Een schip kan sterren kruisen en nutteloos zijn voor een overstroomde kamer.
-
-## Field Note
-
-Schepen zijn geen vrijheid. Schepen zijn schema's met motoren.
+Aankomst is even belangrijk als vertrek. Snelheid moet worden kwijtgeraakt via magsails, gasreusgeometrie en harde marges. Daarom kan de claim menselijk zijn terwijl de speler alleen in het water blijft.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/nl_NL. -->

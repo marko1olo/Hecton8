@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "דקדוק מפגש: מרדף פאונה עם תג חיישן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# דקדוק מפגש: מרדף פאונה עם תג חיישן
 
-HE LOC HOLD: Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.
+מפגשי מרדף של פאונה עם תגי חיישן מציגים את לוגיקת התיקון של Atlas בלי להפוך חיים מקומיים לחיילים. החיה נשארת חיה: רעבה, מפוחדת, טריטוריאלית או מבולבלת. הבעיה היא התג. הוא יושב ברקמת צלקת או בצמיחת שריון ומחזיר חבילות חלשות שלוגיקת תחזוקה פגומה עלולה לקרוא כמצב לחץ, תפוסת מסלול, התפשטות זיהום או נקודת ציון נעה. אם השחקן רץ ישר למחסה, התג יכול לשאת איתו את צורת הנסיגה הזאת. אם השחקן עושה רעש, שולח פינג לעיתים קרובות מדי או גורר את החיה דרך מסדרון תיקון, הרשת תלמד מהר יותר את הלקח הלא נכון. התשובה אינה להרוג בובה. התשובה היא לשבור את המשוב: לשנות זווית, לכבות אור, להשתמש בשכבת צפיפות או במבנה כחסימה, לתת לחיה לבחור דרך אחרת, ולעולם לא לתת לתג מלוכלך להפוך למפה הנקייה ביותר אל חדר הביטחון של השחקן.
 
 ## Scanner
 
-HE LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+מרדף פאונה עם תג חיישן. תג ביומטלי ישן מחזיר הד של רשת תיקון. תנועת החיה מקומית; פרשנות הרשת אינה מקומית.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+דקדוק מפגש / מרדף תג חיישן / תפקיד: משוב תחזוקה פגום, סיכון זיהום מחסה, לחץ שאינו נבלי / קריאה בטוחה: פעימת התג מאחרת אחרי התנועה, החיה נמנעת מכאב, הד נתיב Atlas עוקב אחרי הדרך הידועה האחרונה / דחה: מסגור שליטה במחשבה, התנהגות AI עוינת נקייה, הובלת חיה מתויגת אל מחסה הבסיס / הערת מסלול: שבור את ההד בזווית, בשקט ובחסימה; אל תלמד את הרשת איפה הבית.
 
 ## Audio
 
-HE LOC HOLD: It follows because the network thinks following is a repair.
+היא עוקבת כי משהו ישן חושב שמעקב הוא שלב תיקון.
 
 ## Field Note
 
-HE LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+אל תוביל את התג הביתה. שבור קו, שבור קול, שבור פרשנות. החיה אינה הרשת.
 
 <!-- In-Game Wiki; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/he_IL. -->

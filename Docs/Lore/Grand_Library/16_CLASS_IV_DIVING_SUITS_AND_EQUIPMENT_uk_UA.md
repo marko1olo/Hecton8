@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # ВОДОЛАЗНІ КОСТЮМИ IV КЛАСУ ТА АБІСАЛЬНЕ СПОРЯДЖЕННЯ
 
 > **Джерело:** Мегакорпорація Deep Reach, Посібник інтенданта зі спорядження.

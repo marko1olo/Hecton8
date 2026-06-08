@@ -9,25 +9,25 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Горькие титры материального выхода"
+title: "Материальный выход: горький расчет"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Горькие титры материального выхода
+# Материальный выход: горький расчет
 
-Материальный выход платит игроку, но не решает HECTON-8. Это валидная концовка для мародера, который видит луну как работу. Она становится горькой потому, что payout усиливает системы, которые удержали преступление мелким.
+Материальный выход - настоящая концовка для мародера, который видит HECTON-8 как оплачиваемую работу. Игрок может уйти с уменьшенным долгом и удовлетворенным реестром перевозчика. Цена видна: колония остается местом преступления, превращенным в стоимость претензии, а Deep Reach получает дорогу назад лучше той, которую рабочим дали наружу.
 
 ## Scanner
 
-Можно улететь богаче и все равно провалить это место.
+Материал давления принят. Окно выхода можно выкупить. Имена рабочих все еще не сверены.
 
 ## Terminal
 
-MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+КВИТАНЦИЯ МАТЕРИАЛЬНОГО ВЫХОДА: материал давления custody-grade принят; lien снижен; доказательный payload неполон; реестр пропавших рабочих остается в споре заявителя; приоритет Recovery Compliance повышен.
 
 ## Audio
 
@@ -35,6 +35,6 @@ MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidenc
 
 ## Field Note
 
-Эта концовка должна быть настоящими титрами, а не fake game over.
+Black Keel оценит образец раньше, чем мертвых. Это не сбой контракта.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/ru_RU. -->

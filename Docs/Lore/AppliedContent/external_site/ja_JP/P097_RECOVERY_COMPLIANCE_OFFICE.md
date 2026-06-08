@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "回収コンプライアンス局"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# 回収コンプライアンス局
 
-JP LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow.
+回収コンプライアンス局は、Deep Reachを2190年でも生きた存在にする。曖昧な歴史の影ではなく、具体的な企業圧力セルである。
 
 ## Scanner
 
-JP LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+現在形の事務印。Deep Reachは亡霊ではない。弁護士付きの待ち行列だ。
 
 ## Terminal
 
-JP LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+回収コンプライアンス局: Aegir帰還案件を開いた。優先事項: XO custody、Atlasアクセス、責任封じ、可能なら請負人の沈黙。
 
 ## Audio
 
-JP LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+彼らは合法でいられるほど遅く、危険でいられるほど現在にいる。
 
 ## Field Note
 
-JP LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+生きている派閥が圧力を現在のものにする。会社全体を一人の叫ぶ悪役にしなくていい。
 
 <!-- External Site; generated from P097_RECOVERY_COMPLIANCE_OFFICE/ja_JP. -->

@@ -7,8 +7,8 @@ poi_tags: poi.ephemeris_handoff_rule;poi.celestial_table_boundary
 biome_tags: biome.authoring;biome.aegir_system
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Ephemeris Data Boundary Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Ephemeris Data Boundary Rule
 
-This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.
+This boundary keeps hard-sci-fi lore useful without freezing simulation constants inside prose. Public copy can explain what a moon, route or window does while final numbers remain in data tables.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Data boundary: prose owns bands; final orbital numbers stay table-owned.
 
 ## Terminal
 
-DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY: prose may state roles, hazards and bands. Exact orbital values stay out of narrative copy.
 
 ## Audio
 

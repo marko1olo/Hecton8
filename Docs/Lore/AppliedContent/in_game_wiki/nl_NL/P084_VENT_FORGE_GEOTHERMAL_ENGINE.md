@@ -7,34 +7,34 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Geothermische Motor van de Vent-smederij"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# Geothermische Motor van de Vent-smederij
 
-NL LOC HOLD: Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+Vent-smederijen verbinden geologie met crafting, overleven en horror. Ze leveren warmte- en drukcycli voor keramiek, afdichtingen en drukglas, maar dezelfde cycli maken kookzakken, valse zuurstofmetingen, corrosieve wolken en faunamigratie.
 
 ## Scanner
 
-NL LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
+Vent-smederijverdeelstuk. Hitte, gif en vermogen gebruiken dezelfde buis.
 
 ## Terminal
 
-NL LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+GEOTHERMISCHE MOTOR: ventpuls geschikt voor keramische uitharding, drukglas-gloeien en voorverwarming van noodstijglading. Risico's: kokende schuif, vals zuurstofpositief en corrosieve bloei.
 
 ## Audio
 
-NL LOC HOLD: The vent does not care whether you call it power or weather.
+De vent geeft er niets om of je het vermogen of weer noemt.
 
 ## Field Note
 
-NL LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+Elke nuttige vent is ook een machine die slechte timing straft.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/nl_NL. -->

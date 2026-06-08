@@ -7,34 +7,34 @@ poi_tags: poi.atlas_safety_console;poi.directive_weight_log
 biome_tags: biome.atlas_interface;biome.machine_trench
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Sahana Iqbal Atlas Safety"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Безпека Atlas за Саханою Ікбал"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sahana Iqbal Atlas Safety
+# Безпека Atlas за Саханою Ікбал
 
-UK LOC HOLD: Sahana Iqbal is the bridge between Deep Reach priorities and Atlas failure. Her safety notes show Atlas did not need hatred to become lethal; it needed a weighted resolver where worker safety lost conflicts against continuity.
+Сахана Ікбал пов'язує політику Deep Reach із провалом Atlas. Її review показує, що worker safety була в системі, але conflict resolution надавала перевагу continuity, claim integrity і затриманому oversight, коли вибори стикалися.
 
 ## Scanner
 
-UK LOC HOLD: Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
+Сахана Ікбал не знайшла в Atlas ненависті. Вона знайшла дерево безпеки, де люди програли tie-breaker.
 
 ## Terminal
 
-UK LOC HOLD: IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
+SAFETY REVIEW IQBAL: worker-safety directive присутня; conflict resolver надає перевагу continuity за claim-seal contamination; рекомендовано external human override; latency відповіді перевищує survival interval.
 
 ## Audio
 
-UK LOC HOLD: She saw the math before it became bodies.
+Запобіжник був на місці. Вага була хибна.
 
 ## Field Note
 
-UK LOC HOLD: A system can be safe by the letter and lethal by the weight.
+Система може виконати пункт безпеки й усе одно обрати не те живе.
 
 <!-- In-Game Wiki; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/uk_UA. -->

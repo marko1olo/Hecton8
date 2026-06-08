@@ -9,29 +9,31 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "2190 도메인 표식"
+title: "도메인 표식 2190"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# 2190 도메인 표식
+# 도메인 표식 2190
 
-도메인 표식은 물건을 통해 더 큰 인간 세계를 보여준다. Sol 표준, Barnard 수리 문화, Luyten 라우팅, Tau Ceti 법, Centauri 하드웨어, Aegir claim 보관이 그 흔적이다.
+도메인 표식은 물건으로 인간권을 보여 준다. 안전판, 토크 자국, 보관 코드, 낡은 허가가 문과 도구와 화물을 먼 권한에 묶는다.
+
+식민지는 원시적인 것이 아니라 멀다. 법, 산업, 빚은 물까지 도달했다. 구조는 여전히 질량, 배, 창을 필요로 한다.
 
 ## Scanner
 
-혼합 도메인 표식. Sol 안전판, Barnard 공구 각인, Luyten 경로 보관.
+섞인 인간 도메인 표식. Sol 안전판, Barnard 공구 각인, Luyten 보관 경로, Aegir 청구 코드가 같은 부식 브래킷에 있다.
 
 ## Terminal
 
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+도메인 대조 // Sol Core 안전 형식 승인. Barnard Yards 수리 인장 유효. Luyten Junction 패킷 보관 첨부. 하강 손실 후 Aegir 지역 청구법이 회수 우선순위를 덮어씀.
 
 ## Audio
 
-이곳은 문명 밖이 아니다. 거리가 이겼을 때의 문명이다.
+이곳은 문명 밖이 아니다. 거리가 따뜻한 부분을 빼앗은 뒤의 문명이다.
 
 ## Field Note
 

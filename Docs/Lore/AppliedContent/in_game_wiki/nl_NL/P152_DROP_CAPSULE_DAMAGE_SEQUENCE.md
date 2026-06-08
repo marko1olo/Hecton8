@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Drop Capsule Damage Sequence"
+title: "Schadereeks Van De Dropcapsule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Drop Capsule Damage Sequence
+# Schadereeks Van De Dropcapsule
 
-NL LOC HOLD: The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.
+De beschadigde bathy-drop maakt ontsnappen tot een technische keten. Schuilplaats en diagnose overleefden, maar opstijghardware is fysiek weg of ondergelopen.
 
 ## Scanner
 
-NL LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+Capsulediagnose. De afdaling redde het lichaam door opstijghardware op te gebruiken.
 
 ## Terminal
 
-NL LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+BATHY-DROP SCHADESAMENVATTING: crush-frame kromgetrokken; high-gain mast verloren; ascent avionics ondergelopen; recovery/flotation ring gescheurd; noodboei herhaalt no-lock. Schuilstroom beschikbaar. Onafhankelijke opstijging niet beschikbaar.
 
 ## Audio
 
-NL LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus ondergelopen. Recovery ring no-lock. Deze capsule kan je laten ademen, maar brengt je niet thuis.
 
 ## Field Note
 
-NL LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+De onderste ring is twee vingers ovaal. High-gain mast weg. De boei vraagt nog om een lancering die hij niet kan maken.
 
 <!-- In-Game Wiki; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/nl_NL. -->

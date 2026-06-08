@@ -9,32 +9,16 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Outer Dead Beacon Moon Role"
+title: "Mute 外侧死 beacon 角色"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Outer Dead Beacon Moon Role
+# Mute 外侧死 beacon 角色
 
-ZH LOC HOLD: Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.
-
-## Scanner
-
-ZH LOC HOLD: Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
-
-## Terminal
-
-ZH LOC HOLD: BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
-
-## Audio
-
-ZH LOC HOLD: Dead infrastructure does not leave. It just becomes another error term.
-
-## Field Note
-
-ZH LOC HOLD: Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
+Mute 是旧基础设施不消失而沉默的地方。死 beacon 网络仍在弯曲 route solver，因为没人付得起代价去清除每张依赖它的 legacy 表。有时幽灵数据预测可用 relay 窗口。有时它给 carrier 台扣留消息的借口。在 HECTON-8 周边，沉默很少是单纯缺席；它可能是轨道延迟、坏硬件、法律保管，或披着数学语言的主动选择。 这种歧义不会停在通信故障上。保险、合同和救援窗口会用不同语言利用同一段沉默。
 
 <!-- External Site; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/zh_CN. -->

@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Black-Keel-Anspruchshaken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Black-Keel-Anspruchshaken
 
-DE LOC HOLD: Black Keel Claim Hooks explains why the orbital carrier can answer but cannot simply rescue the player. It is not a personal luxury ship: it is automated salvage infrastructure filtered through insurance, debt and Deep Reach priority clauses.
+Black-Keel-Anspruchshaken definiert den Anfangsdruck. Black Keel ist kein theatralisches Schurkenschiff, sondern ein Träger, gebunden an Anspruchspool-Ökonomie, Quarantänerecht und ruhende Deep-Reach-Hebel. Das Problem des Spielers ist praktisch und moralisch zugleich: Eine Stimme über dem Ozean kann den Notruf hören, aber der Heimweg muss wertvoll, zertifizierbar und juristisch unbequem zu ignorieren werden.
 
 ## Scanner
 
-DE LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+Auf dem Manifest ist Black Keel Anspruchspool-Hardware; in den Klauseln ist es Deep-Reach-Hebelwirkung.
 
 ## Terminal
 
-DE LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+TRÄGERVERWAHRUNG: Operatorbergung erlaubt nach Nutzlasttriage, Quarantänetor, Routenzertifikat und Haftungsfreigabe. Deep-Reach-Prioritätssiegel in ruhenden Klauseln erhalten.
 
 ## Audio
 
-DE LOC HOLD: It can hear you. It just has to price the answer first.
+Es kann dich hören. Es muss nur zuerst den Preis der Antwort berechnen.
 
 ## Field Note
 
-DE LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+Das Schiff ist nicht böse. Es ist an einen Vertrag verleast, der böse sein kann, ohne lebendig zu klingen.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/de_DE. -->

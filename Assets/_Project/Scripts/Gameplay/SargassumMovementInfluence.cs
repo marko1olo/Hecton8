@@ -81,37 +81,37 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Gets the current sticky max-speed multiplier.
         /// </summary>
-        public float SpeedMultiplier => _currentSpeedMultiplier;
+        public float SpeedMultiplier => ResolveSpeedMultiplier(_currentSpeedMultiplier);
 
         /// <summary>
         /// Gets the current sticky drag multiplier.
         /// </summary>
-        public float DragMultiplier => _currentDragMultiplier;
+        public float DragMultiplier => ResolveDragMultiplier(_currentDragMultiplier);
 
         /// <summary>
         /// Gets the current normalized entanglement tension.
         /// </summary>
-        internal float Entanglement01 => _currentEntanglement01;
+        internal float Entanglement01 => Resolve01(_currentEntanglement01);
 
         /// <summary>
         /// Gets the current world-space entanglement anchor.
         /// </summary>
-        internal Vector3 EntanglementAnchorWS => _currentEntanglementAnchorWS;
+        internal Vector3 EntanglementAnchorWS => IsFiniteVector3(_currentEntanglementAnchorWS) ? _currentEntanglementAnchorWS : Vector3.zero;
 
         /// <summary>
         /// Gets the current local camera shake offset.
         /// </summary>
-        internal Vector3 CameraLocalOffset => _cameraLocalOffset;
+        internal Vector3 CameraLocalOffset => IsFiniteVector3(_cameraLocalOffset) ? _cameraLocalOffset : Vector3.zero;
 
         /// <summary>
         /// Gets the current additive camera pitch offset in degrees.
         /// </summary>
-        internal float CameraPitchOffset => _cameraPitchOffset;
+        internal float CameraPitchOffset => math.isfinite(_cameraPitchOffset) ? _cameraPitchOffset : 0f;
 
         /// <summary>
         /// Gets the current additive camera roll offset in degrees.
         /// </summary>
-        internal float CameraRollOffset => _cameraRollOffset;
+        internal float CameraRollOffset => math.isfinite(_cameraRollOffset) ? _cameraRollOffset : 0f;
 
         /// <summary>
         /// Increments the active sticky-contact count when entering a sargassum zone.
@@ -149,7 +149,7 @@ namespace Hecton8.Gameplay
             if (_activeContacts <= 0)
             {
                 _activeContacts = 0;
-                _exitGraceTimer = exitGraceTime;
+                _exitGraceTimer = ResolveNonNegative(exitGraceTime, 0.1f);
             }
 
             SyncDebugState();
@@ -184,12 +184,13 @@ namespace Hecton8.Gameplay
             Vector3 entanglementAnchorWS,
             float entanglement01)
         {
+            bool hasFiniteAnchor = IsFiniteVector3(entanglementAnchorWS);
             _fieldActive = active;
-            _fieldSpeedMultiplier = active ? math.clamp(speedMultiplier, 0.1f, 1f) : 1f;
-            _fieldDragMultiplier = active ? math.max(1f, dragMultiplier) : 1f;
-            _fieldDensity01 = active ? math.saturate(density01) : 0f;
-            _fieldEntanglementAnchorWS = active ? entanglementAnchorWS : _currentEntanglementAnchorWS;
-            _fieldEntanglement01 = active ? math.saturate(entanglement01) : 0f;
+            _fieldSpeedMultiplier = active ? ResolveSpeedMultiplier(speedMultiplier) : 1f;
+            _fieldDragMultiplier = active ? ResolveDragMultiplier(dragMultiplier) : 1f;
+            _fieldDensity01 = active ? Resolve01(density01) : 0f;
+            _fieldEntanglementAnchorWS = active && hasFiniteAnchor ? entanglementAnchorWS : EntanglementAnchorWS;
+            _fieldEntanglement01 = active && hasFiniteAnchor ? Resolve01(entanglement01) : 0f;
             SyncDebugState();
         }
 
@@ -199,12 +200,14 @@ namespace Hecton8.Gameplay
         /// <param name="deltaTime">Fixed-step delta time supplied by locomotion.</param>
         public void Advance(float deltaTime)
         {
+            NormalizeRuntimeState();
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             bool shouldRecover = _activeContacts <= 0 && !_fieldActive;
             if (shouldRecover)
             {
                 if (_exitGraceTimer > 0f)
                 {
-                    _exitGraceTimer -= deltaTime;
+                    _exitGraceTimer -= safeDeltaTime;
                     if (_exitGraceTimer < 0f)
                         _exitGraceTimer = 0f;
                 }
@@ -217,7 +220,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                _exitGraceTimer = exitGraceTime;
+                _exitGraceTimer = ResolveNonNegative(exitGraceTime, 0.1f);
             }
 
             float resolvedTargetSpeedMultiplier = _targetSpeedMultiplier;
@@ -229,14 +232,14 @@ namespace Hecton8.Gameplay
             }
 
             float blendSpeed = shouldRecover ? exitBlendSpeed : enterBlendSpeed;
-            float blendT = FastExpDecayBlend01(blendSpeed, deltaTime);
+            float blendT = FastExpDecayBlend01(blendSpeed, safeDeltaTime);
             _currentSpeedMultiplier = math.lerp(_currentSpeedMultiplier, resolvedTargetSpeedMultiplier, blendT);
             _currentDragMultiplier = math.lerp(_currentDragMultiplier, resolvedTargetDragMultiplier, blendT);
 
-            float entanglementBlendT = FastExpDecayBlend01(entanglementBlendSpeed, deltaTime);
+            float entanglementBlendT = FastExpDecayBlend01(entanglementBlendSpeed, safeDeltaTime);
             _currentEntanglement01 = math.lerp(_currentEntanglement01, _fieldEntanglement01, entanglementBlendT);
             _currentEntanglementAnchorWS = LerpVector3(_currentEntanglementAnchorWS, _fieldEntanglementAnchorWS, entanglementBlendT);
-            AdvanceCameraTension(deltaTime);
+            AdvanceCameraTension(safeDeltaTime);
             SyncDebugState();
         }
 
@@ -265,16 +268,18 @@ namespace Hecton8.Gameplay
 
         private void RegisterInfluence(float speedMultiplier, float dragMultiplier)
         {
-            _targetSpeedMultiplier = math.min(_targetSpeedMultiplier, math.clamp(speedMultiplier, 0.1f, 1f));
-            _targetDragMultiplier = math.max(_targetDragMultiplier, math.max(1f, dragMultiplier));
-            _exitGraceTimer = exitGraceTime;
+            NormalizeRuntimeState();
+            _targetSpeedMultiplier = math.min(_targetSpeedMultiplier, ResolveSpeedMultiplier(speedMultiplier));
+            _targetDragMultiplier = math.max(_targetDragMultiplier, ResolveDragMultiplier(dragMultiplier));
+            _exitGraceTimer = ResolveNonNegative(exitGraceTime, 0.1f);
         }
 
         internal void ApplyOriginShiftOffset(Vector3 shiftOffset)
         {
-            if (shiftOffset.sqrMagnitude <= 0.000001f)
+            if (!IsFiniteVector3(shiftOffset) || shiftOffset.sqrMagnitude <= 0.000001f)
                 return;
 
+            NormalizeRuntimeState();
             _fieldEntanglementAnchorWS -= shiftOffset;
             _currentEntanglementAnchorWS -= shiftOffset;
             _debugEntanglementAnchorWS = _currentEntanglementAnchorWS;
@@ -283,44 +288,52 @@ namespace Hecton8.Gameplay
         private void SyncDebugState()
         {
             _debugActiveContacts = _activeContacts;
-            _debugTargetSpeedMultiplier = _targetSpeedMultiplier;
-            _debugTargetDragMultiplier = _targetDragMultiplier;
-            _debugCurrentSpeedMultiplier = _currentSpeedMultiplier;
-            _debugCurrentDragMultiplier = _currentDragMultiplier;
+            _debugTargetSpeedMultiplier = ResolveSpeedMultiplier(_targetSpeedMultiplier);
+            _debugTargetDragMultiplier = ResolveDragMultiplier(_targetDragMultiplier);
+            _debugCurrentSpeedMultiplier = SpeedMultiplier;
+            _debugCurrentDragMultiplier = DragMultiplier;
             _debugFieldActive = _fieldActive;
-            _debugFieldDensity01 = _fieldDensity01;
-            _debugEntangled = _currentEntanglement01 > 0.01f;
-            _debugEntanglement01 = _currentEntanglement01;
-            _debugEntanglementAnchorWS = _currentEntanglementAnchorWS;
+            _debugFieldDensity01 = Resolve01(_fieldDensity01);
+            _debugEntangled = Entanglement01 > 0.01f;
+            _debugEntanglement01 = Entanglement01;
+            _debugEntanglementAnchorWS = EntanglementAnchorWS;
         }
 
         private void AdvanceCameraTension(float deltaTime)
         {
-            float tension = math.saturate(_currentEntanglement01);
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+            float tension = Resolve01(_currentEntanglement01);
             if (tension <= 0.0001f)
             {
-                float recoverBlendT = FastExpDecayBlend01(entanglementBlendSpeed, deltaTime);
+                float recoverBlendT = FastExpDecayBlend01(entanglementBlendSpeed, safeDeltaTime);
                 _cameraLocalOffset = LerpVector3(_cameraLocalOffset, Vector3.zero, recoverBlendT);
                 _cameraPitchOffset = math.lerp(_cameraPitchOffset, 0f, recoverBlendT);
                 _cameraRollOffset = math.lerp(_cameraRollOffset, 0f, recoverBlendT);
                 return;
             }
 
-            _entanglementShakeTime += deltaTime * math.lerp(cameraShakeFrequency * 0.65f, cameraShakeFrequency * 1.4f, tension);
+            float safeFrequency = ResolveNonNegative(cameraShakeFrequency, 7.5f);
+            _entanglementShakeTime += safeDeltaTime * math.lerp(safeFrequency * 0.65f, safeFrequency * 1.4f, tension);
+            if (!math.isfinite(_entanglementShakeTime))
+                _entanglementShakeTime = 0f;
+
             float sinA = TriangleWaveSigned(_entanglementShakeTime * InvTwoPi);
             float sinB = TriangleWaveSigned((_entanglementShakeTime * 1.73f + 0.67f) * InvTwoPi);
             float cosA = TriangleWaveSigned((_entanglementShakeTime * 1.21f + 1.14f + HalfPi) * InvTwoPi);
-            float amplitude = cameraShakeAmplitude * tension;
+            float amplitude = ResolveNonNegative(cameraShakeAmplitude, 0f) * tension;
             _cameraLocalOffset.x = sinA * amplitude;
             _cameraLocalOffset.y = cosA * (amplitude * 0.42f);
             _cameraLocalOffset.z = -math.abs(sinB) * (amplitude * 0.75f);
-            _cameraPitchOffset = sinB * cameraPitchAmplitude * tension;
-            _cameraRollOffset = cosA * cameraRollAmplitude * tension;
+            _cameraPitchOffset = sinB * ResolveNonNegative(cameraPitchAmplitude, 0f) * tension;
+            _cameraRollOffset = cosA * ResolveNonNegative(cameraRollAmplitude, 0f) * tension;
         }
 
         private static float FastExpDecayBlend01(float blendSpeed, float deltaTime)
         {
-            float x = math.max(BlendSpeedFloor, blendSpeed) * math.max(0f, deltaTime);
+            float safeBlendSpeed = math.isfinite(blendSpeed) ? math.max(BlendSpeedFloor, blendSpeed) : BlendSpeedFloor;
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+            float rawX = safeBlendSpeed * safeDeltaTime;
+            float x = math.isfinite(rawX) ? math.min(rawX, 64f) : 64f;
             float x2 = x * x;
             float numerator = 1f - 0.5f * x + x2 * PadeOneTwelfth;
             float denominator = 1f + 0.5f * x + x2 * PadeOneTwelfth;
@@ -329,16 +342,69 @@ namespace Hecton8.Gameplay
 
         private static Vector3 LerpVector3(Vector3 current, Vector3 target, float t)
         {
+            Vector3 safeCurrent = IsFiniteVector3(current) ? current : Vector3.zero;
+            Vector3 safeTarget = IsFiniteVector3(target) ? target : safeCurrent;
+            float safeT = Resolve01(t);
             return new Vector3(
-                math.lerp(current.x, target.x, t),
-                math.lerp(current.y, target.y, t),
-                math.lerp(current.z, target.z, t));
+                math.lerp(safeCurrent.x, safeTarget.x, safeT),
+                math.lerp(safeCurrent.y, safeTarget.y, safeT),
+                math.lerp(safeCurrent.z, safeTarget.z, safeT));
         }
 
         private static float TriangleWaveSigned(float phase)
         {
+            if (!math.isfinite(phase))
+                return 0f;
+
             float cycle = phase - math.floor(phase);
             return 1f - math.abs((cycle * 4f) - 2f);
+        }
+
+        private void NormalizeRuntimeState()
+        {
+            _targetSpeedMultiplier = ResolveSpeedMultiplier(_targetSpeedMultiplier);
+            _targetDragMultiplier = ResolveDragMultiplier(_targetDragMultiplier);
+            _currentSpeedMultiplier = ResolveSpeedMultiplier(_currentSpeedMultiplier);
+            _currentDragMultiplier = ResolveDragMultiplier(_currentDragMultiplier);
+            _fieldSpeedMultiplier = ResolveSpeedMultiplier(_fieldSpeedMultiplier);
+            _fieldDragMultiplier = ResolveDragMultiplier(_fieldDragMultiplier);
+            _fieldDensity01 = Resolve01(_fieldDensity01);
+            _fieldEntanglementAnchorWS = IsFiniteVector3(_fieldEntanglementAnchorWS) ? _fieldEntanglementAnchorWS : Vector3.zero;
+            _fieldEntanglement01 = Resolve01(_fieldEntanglement01);
+            _currentEntanglement01 = Resolve01(_currentEntanglement01);
+            _currentEntanglementAnchorWS = IsFiniteVector3(_currentEntanglementAnchorWS) ? _currentEntanglementAnchorWS : Vector3.zero;
+            _cameraLocalOffset = IsFiniteVector3(_cameraLocalOffset) ? _cameraLocalOffset : Vector3.zero;
+            _cameraPitchOffset = math.isfinite(_cameraPitchOffset) ? _cameraPitchOffset : 0f;
+            _cameraRollOffset = math.isfinite(_cameraRollOffset) ? _cameraRollOffset : 0f;
+            _exitGraceTimer = ResolveNonNegative(_exitGraceTimer, 0f);
+        }
+
+        private static float ResolveSpeedMultiplier(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, 0.1f, 1f) : 1f;
+        }
+
+        private static float ResolveDragMultiplier(float value)
+        {
+            return math.isfinite(value) ? math.max(1f, value) : 1f;
+        }
+
+        private static float Resolve01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float ResolveNonNegative(float value, float fallback)
+        {
+            float safeFallback = math.isfinite(fallback) ? math.max(0f, fallback) : 0f;
+            return math.isfinite(value) ? math.max(0f, value) : safeFallback;
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
     }
 }

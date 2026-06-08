@@ -7,34 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "UK LOC HOLD: Ran-Aegir Distance Model"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Модель відстані Ran-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Ran-Aegir Distance Model
+# Модель відстані Ran-Aegir
 
-UK LOC HOLD: The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+Модель Ran-Aegir дає HECTON-8 масштаб, який гравець відчуває. Aegir достатньо близький для зондів, фрахту, seed-обладнання й боргового заселення до 2190 року. Він усе ще достатньо далекий, щоб затоплена камера не могла чекати милості внутрішніх світів. Відстань проявляється як затримка, custody, паливо, гальмування й власність.
 
 ## Scanner
 
-UK LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
+Маршрутна пластина: Aegir досяжний інфраструктурою й недосяжний співчуттям.
 
 ## Terminal
 
-UK LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+МОДЕЛЬ МАРШРУТУ: Ran/Aegir вважається ціллю класу десяти світлових років від Sol. Ігровий текст використовує Aegir; сухі каталоги використовують RAN-B:H8. Точна ефемерида лишається роботою маршрутних таблиць.
 
 ## Audio
 
-UK LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+Десять світлових років малі на зоряній мапі. Їх достатньо, щоб збанкрутувати порятунок.
 
 ## Field Note
 
-UK LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
+Приблизна відстань — тиск, а не прикраса. Десять світлових років усе ще можуть убити кімнату.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/uk_UA. -->

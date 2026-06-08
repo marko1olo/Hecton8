@@ -9,32 +9,37 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Old Procedure Recognition Cue"
+title: "Indice de reconnaissance d’ancienne procédure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Old Procedure Recognition Cue
+# Indice de reconnaissance d’ancienne procédure
 
-FR LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+HECTON-8 ancre la motivation du personnage dans la procédure. Le protagoniste reconnaît un ancien formulaire de sécurité d’évacuation et voit comment il a été inversé: comptages dégradés, champs de témoins scellés, langage route-sûre utilisé pour préserver des réclamations plutôt que des vies.
 
 ## Scanner
 
-FR LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+Tampon route-sûre présent. Comptage des travailleurs réécrit avec deux encres. Champ de témoin manuel scellé. Le formulaire avait été conçu pour attraper ce genre de mensonge avant qu’on en fasse une politique.
 
 ## Terminal
 
-FR LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+FORMULAIRE DE CONTINUITÉ D’ÉVACUATION / CERTIFICATION ROUTE-SÛRE
+route: ligne d’issue auxiliaire
+occupants déclarés: comptage dégradé accepté
+témoin manuel: scellé par le bureau de continuité
+correction terrain: décompte des travailleurs incohérent avec les étiquettes de salle des pompes
+statut: préservation de réclamation, pas d’autorisation d’extraction.
 
 ## Audio
 
-FR LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+Tu connais ce formulaire. Il devait empêcher qu’une pièce soit comptée vide pendant que des gens y respiraient encore.
 
 ## Field Note
 
-FR LOC HOLD: Use where room evidence contradicts a clean procedural label.
+Le formulaire devait imposer un autre comptage. Ici, il a imposé le silence.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/fr_FR. -->

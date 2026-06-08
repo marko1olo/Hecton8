@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Tonnenfenster-Schuld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Tonnenfenster-Schuld
 
-DE LOC HOLD: Black Keel's starting debt is measured as a 4.8 tonne-window lien: mass, timing and carrier risk, not just currency. The number explains why the player cannot treat rescue, evidence and samples as separate fantasies. Every kilogram that leaves HECTON-8 spends the same window.
+Tonnenfenster-Schuld ist der Punkt, an dem Physik zu Finanzen wird. Black Keel besitzt keinen unendlichen Hubspielraum, kein unbegrenztes Transitfuel und kein endlos sauberes Quarantänevolumen. Jedes Kilogramm von HECTON-8 konkurriert mit jedem Kilogramm, das den Operator am Leben hält. Der Schuldenzähler macht den Carrier grausam, ohne Hard Science zu brechen: Rettung ist möglich, aber das Routenbudget fragt immer, was Masse verdient.
 
 ## Scanner
 
-DE LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
+Massenfensterzähler. Jedes Kilogramm Hilfe hat einen Routenpreis.
 
 ## Terminal
 
-DE LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
+TONNE-WINDOW LEDGER: Recovery-Burn-Marge verengt. Operator-Extraktionsmasse kollidiert mit versiegelter Payload, Ballastreserve, Sauerstoffschuld und Quarantäneproben-Custody. Manueller Override verlangt bezahlte Priorität oder Gefahrenbeweis.
 
 ## Audio
 
-DE LOC HOLD: You owe the orbit before you owe the money.
+Das Schiff kann dich tragen oder das, was du gefunden hast. Es bevorzugt eine Zahl.
 
 ## Field Note
 
-DE LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Sauerstoff, Ballast, Beweis, Payload, Körper: Der Carrier wiegt sie, bevor er Gnade wiegt.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/de_DE. -->

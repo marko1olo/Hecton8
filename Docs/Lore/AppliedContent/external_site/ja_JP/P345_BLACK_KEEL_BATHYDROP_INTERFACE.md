@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Black Keel Bathydrop Interface"
+title: "Black Keel Bathydropインターフェース"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Black Keel Bathydrop Interface
+# Black Keel Bathydropインターフェース
 
-JA LOC HOLD: HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.
-
-## Scanner
-
-JA LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
-
-## Terminal
-
-JA LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
-
-## Audio
-
-JA LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
-
-## Field Note
-
-JA LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+bathydropインターフェースは、宇宙設定が海洋ゲームに触れる場所だ。Black Keelが軌道にあるだけでは足りない。プレイヤーには鎖が必要だ。カプセル完全性、浮力制御、通信マスト、上昇ラッチ、耐圧シール、リレー計算、水面タイミング、キャリア受諾。一本でも切れれば救助は理論になる。だから序盤は正直だ。物語が船を忘れたから閉じ込められたのではない。深淵、水面、軌道をつなぐ唯一の機械が、水によって毎時悪化する形で故障したからだ。
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/ja_JP. -->

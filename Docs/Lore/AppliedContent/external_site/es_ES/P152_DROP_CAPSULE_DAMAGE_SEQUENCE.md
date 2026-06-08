@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Drop Capsule Damage Sequence"
+title: "Secuencia De Daño De La Cápsula"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Drop Capsule Damage Sequence
+# Secuencia De Daño De La Cápsula
 
-ES LOC HOLD: The drop capsule explains stranding through broken parts: warped frame, drowned avionics, lost antenna and a recovery ring that cannot lock.
+La cápsula de descenso explica el varamiento con piezas rotas: marco deformado, aviónica ahogada, antena perdida y un recovery ring que no puede cerrar.
 
 ## Scanner
 
-ES LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+Diagnóstico de cápsula. El descenso salvó el cuerpo gastando hardware de ascenso.
 
 ## Terminal
 
-ES LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+RESUMEN DE DAÑO BATHY-DROP: crush-frame deformado; high-gain mast perdido; ascent avionics inundada; recovery/flotation ring rasgado; boya de emergencia repitiendo no-lock. Energía de refugio disponible. Ascenso independiente no disponible.
 
 ## Audio
 
-ES LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus inundado. Recovery ring no-lock. Esta cápsula puede mantenerte respirando, no llevarte a casa.
 
 ## Field Note
 
-ES LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+El aro inferior está ovalado por dos dedos. High-gain mast perdido. La boya aún pide un lanzamiento que no puede hacer.
 
 <!-- External Site; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/es_ES. -->

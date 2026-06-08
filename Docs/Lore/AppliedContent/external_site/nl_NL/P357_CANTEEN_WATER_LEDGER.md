@@ -9,32 +9,20 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Canteen Water Ledger"
+title: "Kantinewater-log"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Canteen Water Ledger
+# Kantinewater-log
 
-NL LOC HOLD: HECTON-8 makes catastrophe believable through ordinary systems under pressure: water ledgers, canteen tokens and shift accountability.
+De Kantinewater-log is een van HECTON-8's eenvoudigste menselijke artefacten: een eetruimtebord dat drinkwater, tokenretouren, pomptoegang en medische uitzonderingen vastlegt. Het verklaart de ramp niet. Het toont de kolonie vlak voordat de ramp een verhaal werd.
 
-## Scanner
+De waarde ligt in textuur en bewijs. Zes ontbrekende tokens klinken klein totdat de speler begrijpt wat water in een drukkolonie betekende. Drinkwater liep door filters, shiftboekhouding, medische uitzonderingen en custody van de pompkamer. Een ontbrekende beker kon een vermoeide arbeider zijn. Hij kon ook een zieke ploeg zijn, een besmette lijn, een omzeilde rantsoenorder of een supervisor die een lokale fout verborgen hield voor Deep Reach-rapportage.
 
-NL LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
-
-## Terminal
-
-NL LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
-
-## Audio
-
-NL LOC HOLD: The last argument was about water tokens.
-
-## Field Note
-
-NL LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+Het punt is geen melodrama. De log maakt de kolonie leesbaar als werk: mensen kwamen van shift, maakten ruzie, corrigeerden records, leenden gereedschap, beschermden elkaar en probeerden de ruimte normaal te houden terwijl de oceaan al het systeem binnenkwam. In HECTON-8 kan zo'n gewone spoor bewijs worden.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/nl_NL. -->

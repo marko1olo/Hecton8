@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Needleprobe Precursor Program
 
-Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Needleprobes carried the first human claim into Aegir. They were narrow, shielded survey payloads sent ahead of crews to read gravity, radiation, ocean spectra, moon orbits, and relay lines. Their delayed packets made HECTON-8 legible to investors before it became livable for workers.
 
 ## Scanner
 
-Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+Needleprobe archive: Aegir was a ledger target long before it became a workplace. Machine eyes reached the moons first.
 
 ## Terminal
 
-RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+RAN ARCHIVE: probe chain returned parallax, radiation, ocean signatures, relay geometry, and pellet-lane confidence. Crew rating withheld until the third risk model stabilized.
 
 ## Audio
 
-Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+The first human thing in Aegir was not a person. It was a machine asking whether people would be profitable here.
 
 ## Field Note
 
-Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+Probe archives are route evidence. Old telemetry can be older than the colony and still decide who owns the water.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/en_US. -->

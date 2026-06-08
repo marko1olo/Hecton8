@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Aegir Primary Light and Radiation"
+title: "Aegir primair licht en straling"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Aegir Primary Light and Radiation
+# Aegir primair licht en straling
 
-NL LOC HOLD: Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
-
-## Scanner
-
-NL LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
-
-## Terminal
-
-NL LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
-
-## Audio
-
-NL LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
-
-## Field Note
-
-NL LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir leest nooit als leeg zwart. De K-klasse ster legt amberlicht op de dekken, lange schaduwen en genoeg flux om blootgestelde instrumenten te laten driften als niemand de bandenteller controleert. De gasreus is de tweede klok: magnetosfeerbanen verharden, verzachten en verharden opnieuw wanneer manen lading en schaduw kruisen. Deep Reach verkocht die getallen als gewone werkvensters. Bemanningen leerden de praktische versie: een warme hemel kan een goedkope afdichting koken, een link dempen en redding per minuut prijzen.
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/nl_NL. -->

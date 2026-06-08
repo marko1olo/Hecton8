@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Sensor-Tagged Fauna Pursuit Encounter Grammar
 
-Atlas does not command an army. It misuses life as sensing, patching and feedback.
+Sensor-tagged pursuit shows Atlas as damaged interpretation, not villain command. A harmless or frightened animal can become dangerous because old infrastructure still treats its scar as telemetry.
 
 ## Scanner
 
-Sensor-tagged fauna. Old biometal tag emits repair-network echo; avoid leading it toward shelter.
+Sensor-tagged pursuit. Old biometal tag returns a repair-network echo. Animal movement is local; network interpretation is not.
 
 ## Terminal
 
-FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+ENCOUNTER GRAMMAR / SENSOR-TAGGED PURSUIT / role: corrupted maintenance feedback, shelter-contamination risk, non-villain pressure / safe read: tag pulse lags movement, animal avoids pain, Atlas route echo follows last known path / reject: mind-control framing, clean hostile AI behavior, leading tagged animal to base shelter / route note: break the echo with angle, silence and occlusion; do not teach the network where home is.
 
 ## Audio
 
-It follows because the network thinks following is a repair.
+It follows because something old thinks following is a repair step.
 
 ## Field Note
 
-The tag is not steering the animal cleanly. It is making your route easier to hear.
+Do not lead the tag home. Break line, break sound, break interpretation. The animal is not the network.
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/en_US. -->

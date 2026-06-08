@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # رزمة أسماء الصندوق الأسود
 
-رزمة الأسماء تجعل الحقيقة قابلة للحمل. ما يرفعه اللاعب يغير البث والملف والنهاية.
+تجعل حزمة أسماء الصندوق الأسود الحقيقة النهائية قابلة للحمل. تعتمد الأدلة وحزم broadcast والملفات العامة على الأسماء والهاشات والإيصالات التي تخرج من الماء.
 
 ## Scanner
 

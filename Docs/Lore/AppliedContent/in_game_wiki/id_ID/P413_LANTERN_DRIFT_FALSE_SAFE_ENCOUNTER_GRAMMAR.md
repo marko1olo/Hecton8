@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
+title: "Grammar Encounter False-Safe Lantern Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Lantern Drift False-Safe Encounter Grammar
+# Grammar Encounter False-Safe Lantern Drift
 
-ID LOC HOLD: Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.
+Encounter false-safe lantern drift harus membuat pemain menginginkan cahaya sebelum tidak mempercayainya. Lane terang bisa memperlihatkan film oksigen, lengkung kabel, grit melayang, dan jalan bersih melalui kekacauan reef. Ia juga bisa menjadi wake pemain sendiri, residu bermuatan badai, noise sinyal dari infrastruktur tua, atau garis perpindahan predator tempat hewan kecil sudah menyingkir. Grammar bekerja saat keindahan yang sama membawa beberapa makna sekaligus. Warna saja tidak boleh menyelesaikan rute. Kecepatan pulsa, arah arus, perilaku grazer, sisi residu, return pinger, dan suara alat harus sepakat sebelum lane dipercaya. Jika glow menajam di belakang pemain, encounter menjadi exposure. Jika ia mencerah di depan sementara fauna diam, ia menjadi umpan. Ikuti lantern drift sebagai saksi, bukan janji.
 
 ## Scanner
 
-ID LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Lane lantern drift. Air terang bisa berarti tepi oksigen, noise sinyal, jejak alat, atau traffic yang digeser predator. Verifikasi arus sebelum mengikuti.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+GRAMMAR ENCOUNTER / FALSE-SAFE LANTERN DRIFT / peran: beauty sebagai data ambigu, godaan rute, penalti stealth / baca aman: arus cocok dengan glow, fauna normal, residu di sisi yang diharapkan / tolak: menganggap cahaya biru aman, mengikuti koridor palsu bermuatan badai, memperbaiki bising di dalam jejak terang / catatan rute: satu glow bisa menjadi jalan, umpan, catatan panik, atau exposure.
 
 ## Audio
 
-ID LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
+Cahaya bukan belas kasihan. Itu data yang belum bisa dipisahkan suit-mu.
 
 ## Field Note
 
-ID LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
+Tanyakan apa yang dibawa cahaya: arus, oksigen, suaramu, atau sesuatu yang membuat semuanya menyingkir.
 
 <!-- In-Game Wiki; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/id_ID. -->

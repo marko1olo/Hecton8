@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Materiële uitgang: bittere kredieten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Materiële uitgang: bittere kredieten
 
-NL LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.
+De Materiële Uitgang is een echt einde voor een Marauder die HECTON-8 als betaald werk behandelt. De speler kan vertrekken met lagere schuld en een tevreden carrier-ledger. De prijs blijft zichtbaar: de kolonie blijft een misdaadlocatie omgezet in claimwaarde, en Deep Reach krijgt een betere terugweg dan de arbeiders ooit naar buiten kregen.
 
 ## Scanner
 
-NL LOC HOLD: You can leave richer and still fail the place.
+Drukmateriaal geaccepteerd. Uitgangsvenster koopbaar. Namen van arbeiders nog niet verrekend.
 
 ## Terminal
 
-NL LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+BEWIJS MATERIËLE UITGANG: custody-grade drukmateriaal geaccepteerd; lien verlaagd; bewijs-payload onvolledig; vermiste-arbeidersledger blijft onder claimant-geschil; prioriteit Recovery Compliance verhoogd.
 
 ## Audio
 
-NL LOC HOLD: The invoice clears before the names do.
+De factuur wordt eerder vereffend dan de namen.
 
 ## Field Note
 
-NL LOC HOLD: This ending should be real credits, not a fake game over.
+Black Keel zal het monster eerder prijzen dan de doden. Dat is geen fout in het contract.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/nl_NL. -->

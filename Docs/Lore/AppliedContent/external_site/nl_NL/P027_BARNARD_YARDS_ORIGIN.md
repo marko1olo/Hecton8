@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Herkomst Barnard Yards
 
-Barnard Yards verankert de protagonist in de salvage-economie en maakt HECTON-8 persoonlijk via vakmanschap.
+Barnard Yards bindt de Marauder-klasse aan de salvage-economie en vakcultuur. HECTON-8 wordt persoonlijk door werkgewoonten, gereedschapssporen en schuld, niet door vast melodrama.
 
 ## Scanner
 

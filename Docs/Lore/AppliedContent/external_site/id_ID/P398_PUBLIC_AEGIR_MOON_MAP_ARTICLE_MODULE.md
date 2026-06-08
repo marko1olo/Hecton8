@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Aegir Moon Route Map"
+title: "Peta Rute Bulan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Aegir Moon Route Map
+# Peta Rute Bulan Aegir
 
-ID LOC HOLD: Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+Peta bulan Aegir bersifat operasional sebelum indah. HECTON-8 adalah satu tubuh samudra di dalam tangga bulan, shepherd rocks, ice-scatter paths, dan dead relay marks. Benda bagian dalam mengganggu narrowband contact dan perlindungan radiasi. Bulan es memecah optical relay lines menjadi fragmen buruk. Occultation bands menciptakan jendela sunyi tempat claim tetap sah namun tak terdengar. Beacons luar menyimpan kepemilikan lama setelah kru hilang. Geometri pasang dan storm stacking menentukan apakah bathydrop chain naik bersih atau masuk loss ledger. Peta publik dapat menunjukkan ini tanpa menjanjikan dunia main tambahan; tugasnya membuat langit terbaca sebagai tekanan, tunda, dan risiko rute.
 
 ## Scanner
 
-ID LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Catatan peta sistem. Bulan-bulan Aegir menentukan relay timing, perlindungan radiasi, ice scatter, tekanan pasang, occultation bands, beacons mati, dan recovery geometry.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+SIMPUL ARSIP PUBLIK // TANGGA BULAN AEGIR. Nama bulan adalah label rute. Tiap benda mengubah signal age, transfer risk, storm exposure, custody timing, atau claim reliability.
 
 ## Audio
 
-ID LOC HOLD: The map is why no one arrives the moment you ask.
+Peta menjelaskan mengapa tak ada yang datang tepat saat kau meminta.
 
 ## Field Note
 
-ID LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Catatan Marauder: tandai bulannya, lalu tandai apa yang ia lakukan pada rute.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/id_ID. -->

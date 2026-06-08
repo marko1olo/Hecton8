@@ -8,8 +8,8 @@ biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Pompkamer-handshake"
+spoiler_tier: 1
+title: "Pompkamerklep-handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pompkamer-handshake
+# Pompkamerklep-handshake
 
-Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive.
+Pompkamers op HECTON-8 zijn geen simpele afvoeren. Lokale kleppen, handwielen en vermoeide terugslagkleppen laten de speler vragen waar het water heen gaat nadat de vloer droog is. Een werkende pomp kan een deur openen, een gang wekken, ruis in sonar voeden en de terugweg in het volgende probleem veranderen.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+Lokale sumppomp accepteerde handwielinvoer. De inlaatmand is vervuild met capsulefoam; de uitlaatpuls belast Terugkeergang B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 SUMP CONTROLE / LOKALE HANDSHAKE: handwielautoriteit geaccepteerd. Externe override geweigerd. Inlaatstroom hersteld op laag debiet. Uitlaatdruk stijgt in RETURN CORRIDOR B; herstart alleen na controle van de stroomafwaartse hatch.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+De klep pakte. De uitlaat klopt. Noem dit nog niet veilig.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Een droge pompkamer kan de weg terug verdrinken. Luister naar waterslag in de uitlaat voordat je de klep stript.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/nl_NL. -->

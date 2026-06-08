@@ -8,33 +8,17 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Human Crew Rotation Transit"
+spoiler_tier: 1
+title: "人員ローテーション輸送"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Human Crew Rotation Transit
+# 人員ローテーション輸送
 
-JP LOC HOLD: Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt.
-
-## Scanner
-
-JP LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
-
-## Terminal
-
-JP LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
-
-## Audio
-
-JP LOC HOLD: By the time home asks where you are, the room has already flooded.
-
-## Field Note
-
-JP LOC HOLD: A frontier worker sells time before they sell labor.
+人間輸送は、航路が抽象でなくなる場所である。労働者はAegirへ瞬間移動しない。予定され、冷却され、保険をかけられ、索引化され、何年も権限の間を渡される。契約は一方向に古び、中の人間は別の方向に古びる。乗員が目覚める頃、雇用者、liability owner、訓練された非常事態はすべて変わっているかもしれない。だから放棄はメロドラマではなく手続きとして感じられる。
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/ja_JP. -->

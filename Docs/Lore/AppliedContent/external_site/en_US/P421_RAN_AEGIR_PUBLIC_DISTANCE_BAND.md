@@ -8,7 +8,7 @@ biome_tags: biome.human_space;biome.publication
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Ran/Aegir Distance Band"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Ran/Aegir Distance Band
 
-The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.
+The Aegir system sits in a reachable but punishing no-FTL band: close enough for industry, far enough for abandonment to matter.
 
 ## Scanner
 
-Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
+Public band: Ran/Aegir is a ten-light-year-class no-FTL route from Sol.
 
 ## Terminal
 
-EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
+EPHEMERIS BAND: Use the ten-light-year class for public prose until celestial constants are table-frozen. No FTL rescue exists on this route.
 
 ## Audio
 

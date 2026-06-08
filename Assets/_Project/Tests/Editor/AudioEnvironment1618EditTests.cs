@@ -15,6 +15,7 @@ namespace Hecton8.Tests.Editor
         private const string MasterMixerPath = "Assets/_Project/MasterMixer.mixer";
         private const string PrologueSignalWarmupPath = "Assets/_Project/Scripts/Core/Signals/PrologueReentrySignals.cs";
         private const string MusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
+        private const string MusicDirectorAnchorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirectorAnchor.cs";
         private const string MusicDirectorConfigPath = "Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset";
         private const string MusicDirectorPrefabPath = "Assets/_Project/Prefabs/Audio/PFB_HectonMusicDirectorRoot.prefab";
         private const string DynamicMusicSignalPath = "Assets/_Project/Scripts/Core/Contracts/Signals/DynamicMusicScalarSignal.cs";
@@ -387,6 +388,29 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void MusicDirectorAnchorFallbackUsesLiveRuntimeResolver()
+        {
+            string anchor = Read(MusicDirectorAnchorPath);
+            string director = Read(MusicDirectorPath);
+            string disable = ExtractMethodBody(anchor, "private void OnDisable()");
+            string destroy = ExtractMethodBody(anchor, "private void OnDestroy()");
+            string instantiate = ExtractMethodBody(director, "private static bool TryInstantiateConfiguredRuntimeDirector(");
+            string applySceneConfig = ExtractMethodBody(director, "private void ApplySceneConfigCold(");
+
+            StringAssert.Contains("public static bool TryResolveActiveRuntime(ref HectonMusicDirectorAnchor target)", anchor);
+            StringAssert.Contains("active = FindFirstLiveAnchor();", anchor);
+            StringAssert.Contains("private static void RefreshActiveRuntimeInstance()", anchor);
+            StringAssert.Contains("private static bool IsLiveAnchor(HectonMusicDirectorAnchor anchor)", anchor);
+            StringAssert.Contains("RefreshActiveRuntimeInstance();", disable);
+            StringAssert.Contains("RefreshActiveRuntimeInstance();", destroy);
+
+            StringAssert.Contains("HectonMusicDirectorAnchor.TryResolveActiveRuntime(ref anchor)", instantiate);
+            Assert.That(instantiate.Contains("HectonMusicDirectorAnchor.ActiveRuntimeInstance"), Is.False);
+            StringAssert.Contains("HectonMusicDirectorAnchor.TryResolveActiveRuntime(ref anchor)", applySceneConfig);
+            Assert.That(applySceneConfig.Contains("HectonMusicDirectorAnchor.ActiveRuntimeInstance"), Is.False);
+        }
+
+        [Test]
         public void MusicVolumeSettingsDriveMasterMixerMusicBus()
         {
             const string masterMixerGuid = "69195f25e7aad1b44a0d49cc645ff0f3";
@@ -428,7 +452,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("EnsureRuntimeDirectorPoolReserve(pool, runtimeDirectorPrefab);", instantiate);
             AssertTextBefore(instantiate, "EnsureRuntimeDirectorPoolReserve(pool, runtimeDirectorPrefab);", "pool.Spawn(runtimeDirectorPrefab");
             StringAssert.Contains("pool.Warmup(runtimeDirectorPrefab, RuntimeDirectorPoolReserveCount);", reserve);
-            StringAssert.Contains("ObjectPoolManager.ActiveRuntimeInstance", resolvePool);
+            StringAssert.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref pool)", resolvePool);
             StringAssert.Contains("Pool pool = PreparePool(prefab, registry);", warmup);
             StringAssert.Contains("if (!_pools.TryGetValue(prefabId, out Pool pool))", spawn);
             StringAssert.Contains("return null;", spawn);
@@ -612,6 +636,7 @@ namespace Hecton8.Tests.Editor
             string depthTier = ExtractMethodBody(soundscape, "void IBiomeMatrixEventListener.OnDepthTierChanged(");
             string rebound = ExtractMethodBody(soundscape, "void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(");
             string hotSwap = ExtractMethodBody(soundscape, "void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(");
+            string resolveSoundscapeDepth = ExtractMethodBody(soundscape, "private bool TryResolveCurrentDepthMeters(out float depthMeters)");
             string sync = ExtractMethodBody(soundscape, "private void SyncMusicDirectorSoundscapeContext(");
             string syncCached = ExtractMethodBody(soundscape, "private void SyncCachedMusicDirectorSoundscapeContext(");
             string cacheMusic = ExtractMethodBody(soundscape, "private void CacheMusicDirector(");
@@ -619,6 +644,7 @@ namespace Hecton8.Tests.Editor
             string resolveProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveProfile(");
             string soundscapeProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveSoundscapeTierProfile(");
             string resolveLayerDepth = ExtractMethodBody(musicDirector, "private float ResolveLayerDepthMeters()");
+            string tryResolvePlayerLayerDepth = ExtractMethodBody(musicDirector, "private bool TryResolvePlayerMovementDepthMeters(");
             string tension = ExtractMethodBody(musicDirector, "private float ResolveTension01()");
             string route = ExtractMethodBody(musicDirector, "private void UpdateLayerRouting(");
 
@@ -628,17 +654,23 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("_musicDirector = null", onDestroy);
             StringAssert.Contains("SyncMusicDirectorSoundscapeContext(newTier, depth)", slowTick);
             AssertTextBefore(slowTick, "SyncMusicDirectorSoundscapeContext(newTier, depth)", "if (newTier == _currentTier)");
-            StringAssert.Contains("director.SetSoundscapeTierContext(CalculateTier(depthMeters, _currentTier), depthMeters)", depthTier);
+            StringAssert.Contains("TryResolveCurrentDepthMeters(out float playerDepthMeters)", depthTier);
+            StringAssert.Contains("? playerDepthMeters", depthTier);
+            StringAssert.Contains(": math.max(0f, math.isfinite(depthMeters) ? depthMeters : 0f)", depthTier);
+            StringAssert.Contains("director.SetSoundscapeTierContext(CalculateTier(resolvedDepthMeters, _currentTier), resolvedDepthMeters)", depthTier);
             StringAssert.Contains("GlobalRegistryServiceSlot.MusicDirectorRuntime", rebound);
             StringAssert.Contains("CacheMusicDirector(currentService as HectonMusicDirector)", rebound);
-            StringAssert.Contains("SyncCachedMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", rebound);
+            StringAssert.Contains("SyncCachedMusicDirectorSoundscapeContext(_currentTier, ResolveCurrentDepthMeters())", rebound);
             StringAssert.Contains("GlobalRegistryServiceSlot.Player", rebound);
-            StringAssert.Contains("SyncMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", rebound);
+            StringAssert.Contains("SyncMusicDirectorSoundscapeContext(_currentTier, ResolveCurrentDepthMeters())", rebound);
             StringAssert.Contains("GlobalRegistryServiceSlot.MusicDirectorRuntime", hotSwap);
             StringAssert.Contains("CacheMusicDirector(currentService as HectonMusicDirector)", hotSwap);
-            StringAssert.Contains("SyncCachedMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", hotSwap);
+            StringAssert.Contains("SyncCachedMusicDirectorSoundscapeContext(_currentTier, ResolveCurrentDepthMeters())", hotSwap);
             StringAssert.Contains("GlobalRegistryServiceSlot.Player", hotSwap);
-            StringAssert.Contains("SyncMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", hotSwap);
+            StringAssert.Contains("SyncMusicDirectorSoundscapeContext(_currentTier, ResolveCurrentDepthMeters())", hotSwap);
+            StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", resolveSoundscapeDepth);
+            StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", resolveSoundscapeDepth);
+            AssertTextBefore(resolveSoundscapeDepth, "playerContext.TryGetMovementRuntimeState", "HectonSurvivalSystem currentSurvival = survivalSystem");
             StringAssert.Contains("director.SetSoundscapeTierContext(tier, depthMeters)", sync);
             StringAssert.Contains("HectonMusicDirector director = _musicDirector", syncCached);
             StringAssert.Contains("director == null || !director.isActiveAndEnabled", syncCached);
@@ -661,11 +693,87 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("_shelfProfile != null ? _shelfProfile", soundscapeProfile);
             StringAssert.Contains("case SoundscapeTier.Shallow", soundscapeProfile);
             StringAssert.Contains("_shallowProfile != null ? _shallowProfile", soundscapeProfile);
-            StringAssert.Contains("return math.max(0f, _soundscapeDepthHintMeters);", resolveLayerDepth);
+            StringAssert.Contains("float soundscapeDepthMeters = math.max(0f, _soundscapeDepthHintMeters);", resolveLayerDepth);
+            StringAssert.Contains("TryResolvePlayerMovementDepthMeters(out float playerDepthMeters)", resolveLayerDepth);
+            AssertTextBefore(resolveLayerDepth, "TryResolvePlayerMovementDepthMeters(out float playerDepthMeters)", "TryResolveBiomeMatrixContext(out _, out _, out float biomeDepthMeters)");
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();", tryResolvePlayerLayerDepth);
+            StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", tryResolvePlayerLayerDepth);
+            StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u", tryResolvePlayerLayerDepth);
+            StringAssert.Contains("depthMeters = math.max(0f, movementState.DepthMeters);", tryResolvePlayerLayerDepth);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();", resolveLayerDepth);
+            StringAssert.Contains("if (playerContext != null)", resolveLayerDepth);
+            StringAssert.Contains("return 0f;", resolveLayerDepth);
+            StringAssert.Contains("return soundscapeDepthMeters;", resolveLayerDepth);
             StringAssert.Contains("soundscapePressure01 * _soundscapePressureWeight", tension);
             StringAssert.Contains("_debugSoundscapePressure01 = soundscapePressure01", tension);
             StringAssert.Contains("math.max(InverseLerp(20f, 900f, depthMeters), soundscapePressure01)", route);
             StringAssert.Contains("soundscapePressure01 * 0.18f", route);
+        }
+
+        [Test]
+        public void PlayerCriticalAudioAupRoutesUseRuntimePoseSnapshotBeforeLegacyMovement()
+        {
+            string renderer = Read(RendererPath);
+            string musicDirector = Read(MusicDirectorPath);
+            string psychosis = Read(DeepPsychosisControllerPath);
+            string stressVfx = Read(PlayerStressVfxPath);
+
+            string boundDistance = ExtractMethodBody(renderer, "private bool TryResolveBoundPlayerAupDistance(");
+            string forwardProbe = ExtractMethodBody(renderer, "private bool TryResolveForwardEchoProbe(");
+            string threatPulse = ExtractMethodBody(renderer, "private void UpdateAcousticThreatPulse()");
+            string absoluteDepth = ExtractMethodBody(renderer, "private float ResolveAbsoluteDepthMeters()");
+            string apexHeartbeat = ExtractMethodBody(renderer, "private void UpdateApexHeartbeatThreatCache()");
+            string poseAup = ExtractMethodBody(renderer, "private bool TryResolvePlayerPoseAup(");
+            string poseRuntimePosition = ExtractMethodBody(renderer, "private bool TryResolvePlayerPoseRuntimePosition(");
+            string musicThreat = ExtractMethodBody(musicDirector, "private void RefreshLayerThreatSnapshot()");
+            string musicThreatPose = ExtractMethodBody(musicDirector, "private bool TryResolvePlayerThreatPose(");
+            string psychosisPosition = ExtractMethodBody(psychosis, "private bool TryResolvePlayerAupRuntimePosition(");
+            string stressHeartbeat = ExtractMethodBody(stressVfx, "private Vector3 ResolveHeartbeatAudioPosition()");
+
+            StringAssert.Contains("TryResolvePlayerPoseAup(out playerAup)", boundDistance);
+            Assert.That(boundDistance.IndexOf("playerMovement.CurrentAup", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(CountOccurrences(renderer, "TryResolvePlayerPoseAup(out playerAup)"), Is.EqualTo(3));
+
+            StringAssert.Contains("TryResolvePlayerPoseRuntimePosition(out Vector3 playerRuntimePosition)", forwardProbe);
+            StringAssert.Contains("TryResolvePlayerPoseRuntimePosition(out Vector3 playerRuntimePosition)", threatPulse);
+            StringAssert.Contains("TryResolvePlayerPoseRuntimePosition(out Vector3 playerPosition)", apexHeartbeat);
+            Assert.That(forwardProbe.IndexOf("playerMovement.CurrentAup", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(threatPulse.IndexOf("playerMovement.CurrentAup", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(apexHeartbeat.IndexOf("playerMovement.CurrentAup", StringComparison.Ordinal), Is.LessThan(0));
+
+            StringAssert.Contains("TryResolvePlayerPoseAup(out AbsoluteUniversePosition playerAup)", absoluteDepth);
+            Assert.That(absoluteDepth.IndexOf("playerMovement.CurrentAup", StringComparison.Ordinal), Is.LessThan(0));
+
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();", poseAup);
+            StringAssert.Contains("playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", poseAup);
+            StringAssert.Contains("pose.Aup.IsFinite()", poseAup);
+            StringAssert.Contains("return playerAup.IsFinite();", poseAup);
+            AssertTextBefore(poseAup, "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", "HectonPlayerMovement movement = playerMovement");
+            AssertTextBefore(poseAup, "return false;", "HectonPlayerMovement movement = playerMovement");
+
+            StringAssert.Contains("playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", poseRuntimePosition);
+            StringAssert.Contains("math.all(math.isfinite(pose.RuntimePosition))", poseRuntimePosition);
+            AssertTextBefore(poseRuntimePosition, "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", "HectonPlayerMovement movement = playerMovement");
+            AssertTextBefore(poseRuntimePosition, "return false;", "HectonPlayerMovement movement = playerMovement");
+
+            StringAssert.Contains("TryResolvePlayerThreatPose(out AbsoluteUniversePosition playerAup, out Vector3 playerRuntimePosition)", musicThreat);
+            Assert.That(musicThreat.IndexOf("_playerMovement.CurrentAup", StringComparison.Ordinal), Is.LessThan(0));
+            StringAssert.Contains("playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", musicThreatPose);
+            StringAssert.Contains("math.all(math.isfinite(pose.RuntimePosition))", musicThreatPose);
+            AssertTextBefore(musicThreatPose, "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", "HectonPlayerMovement movement = _playerMovement");
+            AssertTextBefore(musicThreatPose, "return false;", "HectonPlayerMovement movement = _playerMovement");
+
+            StringAssert.Contains("playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", psychosisPosition);
+            StringAssert.Contains("math.all(math.isfinite(pose.RuntimePosition))", psychosisPosition);
+            AssertTextBefore(psychosisPosition, "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", "HectonPlayerMovement movement = _playerMovement");
+            AssertTextBefore(psychosisPosition, "return false;", "HectonPlayerMovement movement = _playerMovement");
+
+            StringAssert.Contains("playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", stressHeartbeat);
+            StringAssert.Contains("math.all(math.isfinite(pose.RuntimePosition))", stressHeartbeat);
+            StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", stressHeartbeat);
+            AssertTextBefore(stressHeartbeat, "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", "HectonPlayerMovement movement = _playerMovement");
+            AssertTextBefore(stressHeartbeat, "return Vector3.zero;", "HectonPlayerMovement movement = _playerMovement");
+            Assert.That(stressHeartbeat.IndexOf("playerContext.PlayerMovement", StringComparison.Ordinal), Is.LessThan(0));
         }
 
         [Test]
@@ -934,6 +1042,8 @@ namespace Hecton8.Tests.Editor
             string acousticResolve = ExtractMethodBody(acousticZone, "private IAudioService ResolveAudioService()");
             string acousticSpatial = ExtractMethodBody(acousticZone, "private ISpatialAudioWorldEmitterReadModel ResolveSpatialAudioEmitterReadModel()");
             string acousticUsable = ExtractMethodBody(acousticZone, "private static bool IsAudioServiceUsable(");
+            string acousticPhysicsRebind = ExtractMethodBody(acousticZone, "private void RebindPhysicsStateEventService(");
+            string acousticPhysicsUsable = ExtractMethodBody(acousticZone, "private static bool IsPhysicsStateEventServiceUsable(");
 
             string synthCache = ExtractMethodBody(dynamicSynth, "private void CacheAudioService(");
             string synthResolve = ExtractMethodBody(dynamicSynth, "private IAudioService ResolveAudioService()");
@@ -1065,6 +1175,8 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("if (IsAudioServiceUsable(audioService))", acousticResolve);
             StringAssert.Contains("_cachedSpatialAudioEmitterReadModel = null", acousticResolve);
             StringAssert.Contains("if (audioService == null)", acousticSpatial);
+            AssertTextBefore(acousticPhysicsRebind, "!IsPhysicsStateEventServiceUsable(_physicsStateEvents)", "_physicsStateEvents.RegisterImpactListener(this);");
+            StringAssert.Contains("return physicsStateEvents != null && physicsStateEvents.IsInitialized;", acousticPhysicsUsable);
 
             StringAssert.Contains("_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", synthCache);
             StringAssert.Contains("if (IsAudioServiceUsable(audioService))", synthResolve);
@@ -1207,6 +1319,8 @@ namespace Hecton8.Tests.Editor
             string feedbackRuntimeUsable = ExtractMethodBody(feedback, "private static bool IsUIAudioFeedbackRuntimeUsable(");
             string feedbackRebound = ExtractMethodBody(feedback, "public void OnGlobalRegistryServiceRebound(");
             string feedbackHotSwap = ExtractMethodBody(feedback, "public void OnGlobalRegistryServiceReplaced(");
+            string feedbackHotSwapRegister = ExtractMethodBody(feedback, "private void TryRegisterHotSwapListener()");
+            string feedbackHotSwapUnregister = ExtractMethodBody(feedback, "private void TryUnregisterHotSwapListener()");
             string feedbackBind = ExtractMethodBody(feedback, "private void BindAudioAndRegisterControls()");
             string feedbackCache = ExtractMethodBody(feedback, "private void CacheAudioService(");
             string feedbackResolve = ExtractMethodBody(feedback, "private IAudioService ResolveAudioService()");
@@ -1247,6 +1361,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("feedback != null && feedback._runtimeRegistered && feedback.isActiveAndEnabled", feedbackRuntimeUsable);
             Assert.That(feedbackAwake.IndexOf("registered != null && registered != this", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(feedbackRegister.IndexOf("registered != null && registered != this", StringComparison.Ordinal), Is.LessThan(0));
+            StringAssert.Contains("_hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);", feedbackHotSwapRegister);
+            StringAssert.Contains("GlobalRegistry.TryUnregisterHotSwapListener(this);", feedbackHotSwapUnregister);
+            StringAssert.DoesNotContain("GlobalRegistry.UnregisterHotSwapListener(this);", feedbackHotSwapUnregister);
             StringAssert.Contains("CacheAudioService(currentService as IAudioService)", feedbackRebound);
             StringAssert.Contains("CacheAudioService(currentService as IAudioService)", feedbackHotSwap);
             StringAssert.Contains("CacheAudioService(GlobalRegistry.Audio)", feedbackBind);
@@ -1317,6 +1434,28 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("IAudioService audioManager = ResolveAudioService()", playThunder);
             Assert.That(playThunder.IndexOf("_audioRuntime", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(playThunder.IndexOf("GlobalRegistry.Audio", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void PlayerCriticalKineticImpactWaterlineFallbackMatchesRuntimeSeaLevel()
+        {
+            string renderer = Read(RendererPath);
+            string resolveWaterline = ExtractMethodBody(renderer, "private float ResolveKineticImpactWaterlineY()");
+            string resolveDepth = ExtractMethodBody(renderer, "private float ResolveAbsoluteDepthMeters()");
+
+            StringAssert.Contains("private const float KineticImpactDefaultWaterlineY = 14.02f;", renderer);
+            StringAssert.Contains("playerMovement != null && TryResolveKineticImpactWaterlineY(playerMovement.CurrentWaterSurfaceY, out float playerWaterlineY)", resolveWaterline);
+            StringAssert.Contains("return playerWaterlineY;", resolveWaterline);
+            StringAssert.Contains("return KineticImpactDefaultWaterlineY;", resolveWaterline);
+            StringAssert.Contains("private static bool TryResolveKineticImpactWaterlineY(float candidateWaterlineY, out float waterlineY)", renderer);
+            StringAssert.Contains("math.abs(candidateWaterlineY) > 0.0001f", renderer);
+            StringAssert.Contains("math.abs(candidateWaterlineY) <= 1000f", renderer);
+            StringAssert.Contains("waterlineY = KineticImpactDefaultWaterlineY;", renderer);
+            StringAssert.DoesNotContain("math.isfinite(playerMovement.CurrentWaterSurfaceY)", resolveWaterline);
+            StringAssert.DoesNotContain("return playerMovement.CurrentWaterSurfaceY;", resolveWaterline);
+            StringAssert.Contains("double absoluteSurfaceY = (double)ResolveKineticImpactWaterlineY() + originAup.ToAbsoluteDouble3().y;", resolveDepth);
+            StringAssert.DoesNotContain("(double)playerMovement.CurrentWaterSurfaceY", resolveDepth);
+            StringAssert.DoesNotContain("private const float KineticImpactDefaultWaterlineY = 0f;", renderer);
         }
 
         [Test]
@@ -1536,6 +1675,7 @@ namespace Hecton8.Tests.Editor
             string reactorResolve = ExtractMethodBody(bioReactor, "private IAudioService ResolveAudioService()");
             string reactorUsable = ExtractMethodBody(bioReactor, "private static bool IsAudioServiceUsable(");
             string reactorLateFrame = ExtractMethodBody(bioReactor, "public void LateFrameTick()");
+            string reactorUnregisterHotSwap = ExtractMethodBody(bioReactor, "private void TryUnregisterHotSwap()");
 
             AssertAudioServiceUsableBody(fragmentUsable);
             AssertAudioServiceUsableBody(ladderUsable);
@@ -1567,6 +1707,8 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("if (IsAudioServiceUsable(audioService))", reactorResolve);
             StringAssert.Contains("_audioService = null", reactorResolve);
             StringAssert.Contains("IAudioService audio = ResolveAudioService()", reactorLateFrame);
+            StringAssert.Contains("GlobalRegistry.TryUnregisterHotSwapListener(this);", reactorUnregisterHotSwap);
+            StringAssert.DoesNotContain("GlobalRegistry.UnregisterHotSwapListener(this);", reactorUnregisterHotSwap);
             Assert.That(reactorHotSwap.IndexOf("_audioService = currentService as IAudioService", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(reactorColdCache.IndexOf("_audioService = GlobalRegistry.Audio", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(reactorLateFrame.IndexOf("IAudioService audio = _audioService", StringComparison.Ordinal), Is.LessThan(0));
@@ -2133,6 +2275,7 @@ namespace Hecton8.Tests.Editor
 
             string ballastHotSwap = ExtractMethodBody(ballast, "public void OnGlobalRegistryServiceReplaced(");
             string ballastRegister = ExtractMethodBody(ballast, "private void RegisterRuntime()");
+            string ballastUnregister = ExtractMethodBody(ballast, "private void UnregisterRuntime()");
             string ballastCache = ExtractMethodBody(ballast, "private void CacheAudioService(");
             string ballastClear = ExtractMethodBody(ballast, "private void ClearCachedAudioService()");
             string ballastUsable = ExtractMethodBody(ballast, "private static bool IsAudioServiceUsable(");
@@ -2183,6 +2326,8 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("CacheAudioService(GlobalRegistry.Audio)", ballastRegister);
             StringAssert.Contains("_audio = IsAudioServiceUsable(audioService) ? audioService : null", ballastCache);
             StringAssert.Contains("_audio = null", ballastClear);
+            StringAssert.Contains("GlobalRegistry.TryUnregisterHotSwapListener(this);", ballastUnregister);
+            StringAssert.DoesNotContain("GlobalRegistry.UnregisterHotSwapListener(this);", ballastUnregister);
             Assert.That(ballastHotSwap.IndexOf("_audio = currentService as IAudioService", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(ballastRegister.IndexOf("_audio = GlobalRegistry.Audio", StringComparison.Ordinal), Is.LessThan(0));
         }
@@ -2224,6 +2369,8 @@ namespace Hecton8.Tests.Editor
             string randomResolve = ExtractMethodBody(randomEvents, "private IMeteorShowerAudioSink ResolveMeteorShowerAudioSink()");
             string randomUsable = ExtractMethodBody(randomEvents, "private static bool IsAudioRuntimeObjectUsable(");
             string randomMeteorBoom = ExtractMethodBody(randomEvents, "private void TryPublishMeteorBoom(");
+            string randomWaterImpact = ExtractMethodBody(randomEvents, "private void TryPublishMeteorWaterImpact(");
+            string randomSeaLevel = ExtractMethodBody(randomEvents, "private static float ResolveCurrentSeaLevelY()");
             string randomWaterBoom = ExtractMethodBody(randomEvents, "private void TickMeteorWaterBoomDelay(");
 
             string eclipseOnEnable = ExtractMethodBody(eclipse, "private void OnEnable()");
@@ -2288,6 +2435,11 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("if (IsAudioRuntimeObjectUsable(spatialAudioManager))", randomResolve);
             StringAssert.Contains("_cachedSpatialAudioManager = null", randomResolve);
             StringAssert.Contains("IMeteorShowerAudioSink spatialAudioManager = ResolveMeteorShowerAudioSink()", randomMeteorBoom);
+            StringAssert.Contains("float seaLevelY = ResolveCurrentSeaLevelY();", randomWaterImpact);
+            StringAssert.Contains("Vector3 impactPosition = new Vector3(meteorSourcePosition.x, seaLevelY, meteorSourcePosition.z);", randomWaterImpact);
+            StringAssert.Contains("private const float MeteorWaterPlaneY = 14.02f;", randomEvents);
+            StringAssert.Contains("return MeteorWaterPlaneY;", randomSeaLevel);
+            StringAssert.DoesNotContain("private const float MeteorWaterPlaneY = 0f;", randomEvents);
             StringAssert.Contains("IMeteorShowerAudioSink spatialAudioManager = ResolveMeteorShowerAudioSink()", randomWaterBoom);
 
             StringAssert.Contains("CacheSpatialAudioSink(GlobalRegistry.Audio)", eclipseOnEnable);
@@ -2559,6 +2711,45 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PlayerHealthPresentationAndRespawnAupUseRuntimeContextBeforeMovementFallback()
+        {
+            string health = Read(HectonPlayerHealthPath);
+            string capturePresentation = ExtractMethodBody(health, "private Vector3 CapturePlayerRuntimePositionForPresentation()");
+            string respawnDeath = ExtractMethodBody(health, "internal bool TryResolveRespawnDeathAup(out double3 deathAup)");
+            string activeAup = ExtractMethodBody(health, "private static bool TryResolveActivePlayerAup(");
+            string runtimePosition = ExtractMethodBody(health, "private static bool TryResolveRuntimePositionFromAup(");
+
+            StringAssert.Contains("TryResolveActivePlayerAup(out AbsoluteUniversePosition activeAup, out bool hasRuntimeContext)", capturePresentation);
+            StringAssert.Contains("TryResolveRuntimePositionFromAup(in activeAup, out Vector3 runtimePosition)", capturePresentation);
+            StringAssert.Contains("if (hasRuntimeContext)", capturePresentation);
+            AssertTextBefore(capturePresentation, "TryResolveActivePlayerAup", "AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup");
+            AssertTextBefore(capturePresentation, "if (hasRuntimeContext)", "AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup");
+
+            StringAssert.Contains("TryResolveActivePlayerAup(out AbsoluteUniversePosition activeAup, out bool hasRuntimeContext)", respawnDeath);
+            StringAssert.Contains("deathAup = activeAup.ToAbsoluteDouble3();", respawnDeath);
+            StringAssert.Contains("if (hasRuntimeContext)", respawnDeath);
+            AssertTextBefore(respawnDeath, "TryResolveActivePlayerAup", "var currentAup = _playerMovement.CurrentAup");
+            AssertTextBefore(respawnDeath, "if (hasRuntimeContext)", "var currentAup = _playerMovement.CurrentAup");
+
+            StringAssert.Contains("IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext", activeAup);
+            StringAssert.Contains("runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)", activeAup);
+            StringAssert.Contains("(snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", activeAup);
+            StringAssert.Contains("snapshot.Aup.IsFinite()", activeAup);
+            StringAssert.Contains("runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", activeAup);
+            StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u", activeAup);
+            StringAssert.Contains("!movementState.PredictedAup.IsFinite()", activeAup);
+            StringAssert.Contains("playerAup = movementState.PredictedAup;", activeAup);
+            AssertTextBefore(activeAup, "runtimeContext.TryGetPlayerPoseSnapshot", "runtimeContext.TryGetMovementRuntimeState");
+            AssertTextBefore(activeAup, "snapshot.Aup.IsFinite()", "playerAup = snapshot.Aup;");
+            AssertTextBefore(activeAup, "movementState.PredictedAup.IsFinite()", "playerAup = movementState.PredictedAup;");
+            Assert.That(activeAup.IndexOf("runtimeContext.MovementState", StringComparison.Ordinal), Is.LessThan(0));
+
+            StringAssert.Contains("playerAup.IsFinite()", runtimePosition);
+            StringAssert.Contains("float3 runtimePosition3 = playerAup.ToRuntimeFloat3();", runtimePosition);
+            StringAssert.Contains("math.all(math.isfinite(runtimePosition3))", runtimePosition);
+        }
+
+        [Test]
         public void AtlasSignalAudioLogConsumersUseOnlyUsableRuntime()
         {
             string beacon = Read(SignalBeaconPath);
@@ -2824,6 +3015,28 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SurvivalVitalsAudioConsumersRequireFlagsAndFiniteValues()
+        {
+            string adaptiveStem = Read(AdaptiveStemMixerPath);
+            string vocalWarning = Read(VocalWarningSystemPath);
+            string drain = ExtractMethodBody(adaptiveStem, "private void DrainSignalInputs()");
+            int survivalStart = vocalWarning.IndexOf("for (int i = 0; i < SurvivalSignals.Length && evaluations < MaxEvaluations; i++)", StringComparison.Ordinal);
+            int survivalEnd = vocalWarning.IndexOf("private unsafe void DecayCooldowns()", survivalStart, StringComparison.Ordinal);
+            Assert.That(survivalStart, Is.GreaterThanOrEqualTo(0));
+            Assert.That(survivalEnd, Is.GreaterThan(survivalStart));
+            string vocalSurvivalBlock = vocalWarning.Substring(survivalStart, survivalEnd - survivalStart);
+
+            StringAssert.Contains("(signal.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) == 0u", drain);
+            StringAssert.Contains("!math.isfinite(signal.Oxygen01)", drain);
+            StringAssert.Contains("oxygenDanger01 = 1f - math.saturate(signal.Oxygen01);", drain);
+            StringAssert.Contains("uint survivalFlags = signal.Flags;", vocalSurvivalBlock);
+            StringAssert.Contains("(survivalFlags & SurvivalVitalsChangedSignalFlags.OxygenCritical) != 0u", vocalSurvivalBlock);
+            StringAssert.Contains("(survivalFlags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u && oxygen01 < 0.22f", vocalSurvivalBlock);
+            StringAssert.Contains("math.select(0f, signal.Oxygen01, math.isfinite(signal.Oxygen01))", vocalSurvivalBlock);
+            StringAssert.DoesNotContain("|| signal.Oxygen01 < 0.22f", vocalSurvivalBlock);
+        }
+
+        [Test]
         public void ManagedAudioCallbacksStayTransferOnlyAndDirectLookupFree()
         {
             string dynamicMusic = ExtractMethodBody(Read(DynamicMusicSynthPath), "private void OnAudioFilterRead(");
@@ -2845,6 +3058,37 @@ namespace Hecton8.Tests.Editor
             Assert.That(vocalRelease.IndexOf("TryAcquireAudioCallbackViews", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(vocalRelease.IndexOf("TryAcquireLockedView", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(vocalRelease.IndexOf("Stopwatch.GetTimestamp", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void VocalBankEditorCsvScratchClearsPointerBeforeSentinelUnregisterRetry()
+        {
+            string vocalRuntime = Read(VocalBankRuntimePath);
+            string allocateScratch = ExtractMethodBody(vocalRuntime, "private bool TryGetEditorCsvScratch(");
+            string releaseScratch = ExtractMethodBody(vocalRuntime, "private void ReleaseEditorCsvScratch()");
+
+            StringAssert.Contains("catch (Exception exception)", allocateScratch);
+            StringAssert.Contains("ReleaseEditorCsvScratch();", allocateScratch);
+            StringAssert.Contains("catch (Exception releaseException)", allocateScratch);
+            StringAssert.Contains("throw new AggregateException", allocateScratch);
+            StringAssert.Contains("throw;", allocateScratch);
+            AssertTextBefore(allocateScratch, "ReleaseEditorCsvScratch();", "throw;");
+            Assert.That(allocateScratch.IndexOf("NativeMemorySentinel.Unregister(sentinelId)", StringComparison.Ordinal), Is.LessThan(0));
+
+            StringAssert.Contains("bool released = _editorCsvScratch == null;", releaseScratch);
+            StringAssert.Contains("UnsafeUtility.Free(_editorCsvScratch, Allocator.Persistent);", releaseScratch);
+            StringAssert.Contains("_editorCsvScratch = null;", releaseScratch);
+            StringAssert.Contains("released = true;", releaseScratch);
+            StringAssert.Contains("if (released)", releaseScratch);
+            StringAssert.Contains("if (_editorCsvScratchSentinelId > 0)", releaseScratch);
+            StringAssert.Contains("NativeMemorySentinel.Unregister(_editorCsvScratchSentinelId);", releaseScratch);
+            AssertTextBefore(
+                releaseScratch,
+                "UnsafeUtility.Free(_editorCsvScratch, Allocator.Persistent);",
+                "_editorCsvScratch = null;");
+            AssertTextBefore(releaseScratch, "_editorCsvScratch = null;", "NativeMemorySentinel.Unregister(_editorCsvScratchSentinelId);");
+            AssertTextBefore(releaseScratch, "NativeMemorySentinel.Unregister(_editorCsvScratchSentinelId);", "_editorCsvScratchSentinelId = 0;");
+            Assert.That(releaseScratch.IndexOf("int sentinelId = _editorCsvScratchSentinelId;", StringComparison.Ordinal), Is.LessThan(0));
         }
 
         [Test]

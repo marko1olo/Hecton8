@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "Paketverwahrung von Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# Paketverwahrung von Luyten Junction
 
-DE LOC HOLD: Luyten Junction Packet Custody turns interstellar communication into gameplay pressure. HECTON-8 has no magic radio, so every message must survive custody, cost and orbital timing.
+Die Paketverwahrung von Luyten Junction verwandelt interstellare Kommunikation in Routendruck. HECTON-8 hat keinen Sofortrettungskanal, also muss jede Nachricht custody, Kosten und Orbitaltiming überstehen.
 
 ## Scanner
 
-DE LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+Luyten-Verwahrungsspule. Nachrichten reisen nicht kostenlos; Wahrheit auch nicht.
 
 ## Terminal
 
-DE LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+LUYTEN JUNCTION ROUTE: packet custody durch Tarifwarteschlange übertragen. Live command verboten. Beweispriorität unter emergency claim escrow käuflich.
 
 ## Audio
 
-DE LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+Kein ansible. Keine Gnade. Nur custody, tariff und Zeit.
 
 ## Field Note
 
-DE LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+Ein Relais ist eine Maschine, die entscheidet, welcher Trauer Bandbreite zusteht.
 
 <!-- External Site; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/de_DE. -->

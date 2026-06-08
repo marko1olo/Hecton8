@@ -99,6 +99,7 @@ namespace Hecton8.AtlasSignal
         private bool _fragmentRecovered;
         private int _registrySlot = -1;
         private IAudioLogRuntime _audioLogs;
+        private object _spatialAudioRuntime;
         private ISpatialAudioListenerCaveReadModel _spatialAudio;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private SignalBeaconTelemetry _telemetry;
@@ -480,6 +481,7 @@ namespace Hecton8.AtlasSignal
         private void ClearCachedRegistryServices()
         {
             _audioLogs = null;
+            _spatialAudioRuntime = null;
             _spatialAudio = null;
             _playerRuntimeContext = null;
         }
@@ -491,9 +493,15 @@ namespace Hecton8.AtlasSignal
 
         private void CacheSpatialAudio(object audioRuntime)
         {
-            _spatialAudio = IsAudioRuntimeObjectUsable(audioRuntime)
-                ? audioRuntime as ISpatialAudioListenerCaveReadModel
-                : null;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _spatialAudioRuntime = null;
+                _spatialAudio = null;
+                return;
+            }
+
+            _spatialAudioRuntime = audioRuntime;
+            _spatialAudio = audioRuntime as ISpatialAudioListenerCaveReadModel;
         }
 
         private IAudioLogRuntime ResolveAudioLogSystem()
@@ -508,17 +516,26 @@ namespace Hecton8.AtlasSignal
 
         private ISpatialAudioListenerCaveReadModel ResolveSpatialAudio()
         {
+            object audioRuntime = _spatialAudioRuntime;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _spatialAudioRuntime = null;
+                _spatialAudio = null;
+                return null;
+            }
+
             ISpatialAudioListenerCaveReadModel spatialAudio = _spatialAudio;
-            if (IsAudioRuntimeObjectUsable(spatialAudio))
+            if (ReferenceEquals(spatialAudio, audioRuntime) && IsAudioRuntimeObjectUsable(spatialAudio))
                 return spatialAudio;
 
-            _spatialAudio = null;
-            return null;
+            spatialAudio = audioRuntime as ISpatialAudioListenerCaveReadModel;
+            _spatialAudio = spatialAudio;
+            return IsAudioRuntimeObjectUsable(spatialAudio) ? spatialAudio : null;
         }
 
         private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
         {
-            if (audioLogSystem == null)
+            if (audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady)
                 return false;
 
             if (audioLogSystem is Behaviour behaviour)
@@ -532,7 +549,7 @@ namespace Hecton8.AtlasSignal
             if (runtime == null)
                 return false;
 
-            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+            if (runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (runtime is Behaviour behaviour)

@@ -286,8 +286,16 @@ namespace Hecton8.Gameplay.AirlockPressurization
                 return false;
 
             int count = math.clamp(activeAirlockCount, 0, buffers.Airlocks.Length);
-            AirlockPressurizationIntentFlush.PushBulkheadIntents(buffers.BulkheadIntents, count);
-            AirlockPressurizationSignalFlush.PushFrameSignals(buffers.VfxSignals, buffers.AcousticSignals, count);
+            uint bulkheadIntentFlushCounters = AirlockPressurizationIntentFlush.PushBulkheadIntents(buffers.BulkheadIntents, count);
+            AirlockPressurizationIntentFlush.MergeFlushCountersIntoTelemetry(
+                buffers.Telemetry,
+                buffers.TelemetryCursor,
+                bulkheadIntentFlushCounters);
+            uint signalFlushCounters = AirlockPressurizationSignalFlush.PushFrameSignals(buffers.VfxSignals, buffers.AcousticSignals, count);
+            AirlockPressurizationSignalFlush.MergeSignalFlushCountersIntoTelemetry(
+                buffers.Telemetry,
+                buffers.TelemetryCursor,
+                signalFlushCounters);
             if (buffers.DumpRequested.Length <= 0 || buffers.DumpRequested[0] == 0)
                 return true;
 
@@ -308,6 +316,8 @@ namespace Hecton8.Gameplay.AirlockPressurization
             {
                 Airlocks = buffers.Airlocks,
                 Results = buffers.Results,
+                VfxSignals = buffers.VfxSignals,
+                AcousticSignals = buffers.AcousticSignals,
                 Telemetry = buffers.Telemetry,
                 TelemetryCursor = buffers.TelemetryCursor,
                 DumpRequested = buffers.DumpRequested,

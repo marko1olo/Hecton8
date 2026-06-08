@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Keel Approach Transcript
 
-The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+The approach transcript makes the Black Keel useful without making it merciful. The carrier gives the Marauder a line back to orbit, then names the debt, receiver window, health limit, mass limit and proof requirement before hope can rewrite physics.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ Black Keel tender to claimant. Lag four seconds. Descent billed. Return not guar
 
 ## Field Note
 
-Claim-tender buffer, clipped by storm carrier. The speaker gives route facts and refuses to promise rescue.
+Claim-tender buffer, clipped by storm carrier. Keep the voice procedural: route facts first, comfort never.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/en_US. -->

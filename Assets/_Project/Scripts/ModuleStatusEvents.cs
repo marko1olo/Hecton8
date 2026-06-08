@@ -3,6 +3,7 @@
 // NativeQueue-backed BaseModule -> HUD/gameplay status lane.
 // ============================================================================
 
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Building;
 using Hecton8.Core;
@@ -191,8 +192,12 @@ public static class ModuleStatusEvents
     private static readonly ModuleReferenceSlot[] _referenceSlots = new ModuleReferenceSlot[ReferenceSlotCapacity];
     // COLD ALLOC: bool[128] — sidecar occupancy map prevents overwrite before deferred dispatch — owner: ModuleStatusEvents
     private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
+    // COLD ALLOC: ushort[128] - reference slot generations invalidate stale payload handles after sidecar reuse - owner: ModuleStatusEvents
+    private static readonly ushort[] _referenceSlotGenerations = new ushort[ReferenceSlotCapacity];
     private static NativeQueue<ModuleStatusEventPayload> _pendingEvents;
     private static NativeQueue<ModuleStatusEventPayload> _nextFrameEvents;
+    private static int _pendingEventsSentinelId;
+    private static int _nextFrameEventsSentinelId;
     private static int _referenceWriteIndex;
     private static int _referencePendingCount;
     private static int _pendingEventCount;
@@ -323,7 +328,7 @@ public static class ModuleStatusEvents
                 _isDispatching = false;
             }
 
-            ReleaseReferenceSlot(payload.ReferenceSlot);
+            ReleaseReferenceSlotForPayload(in payload);
         }
 
         if (_pendingEvents.IsEmpty())
@@ -340,7 +345,7 @@ public static class ModuleStatusEvents
     public static bool TryResolveModule(in ModuleStatusEventPayload payload, out BaseModule module)
     {
         module = null;
-        if (!IsValidReferenceSlot(payload.ReferenceSlot))
+        if (!IsReferenceSlotPayloadCurrent(in payload))
             return false;
 
         module = _referenceSlots[payload.ReferenceSlot].Module;
@@ -387,7 +392,7 @@ public static class ModuleStatusEvents
             return false;
 #endif
 
-        if (!TryReserveReferenceSlot(out int referenceSlot))
+        if (!TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration))
         {
             _droppedReferenceSlotCount++;
             return false;
@@ -404,6 +409,7 @@ public static class ModuleStatusEvents
             PowerSupply01 = module.PowerSupplyRatio,
             ReferenceSlot = referenceSlot,
             EventType = (ushort)eventType,
+            Reserved = referenceGeneration,
             StatusFlags = ComputeStatusFlags(module)
         });
     }
@@ -415,14 +421,14 @@ public static class ModuleStatusEvents
             if (!_pendingEvents.IsCreated)
             {
                 _pendingEvents = new NativeQueue<ModuleStatusEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] — deferred module status event lane flushed by SystemDispatcher LateUpdate — owner: ModuleStatusEvents
-                RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                 PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
                 _nextFrameEvents = new NativeQueue<ModuleStatusEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] — next-frame module status lane prevents same-frame reentrant dispatch — owner: ModuleStatusEvents
-                RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                 PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
         }
@@ -439,10 +445,12 @@ public static class ModuleStatusEvents
     private static void RegisterNativeQueue<T>(
         ref NativeQueue<T> queue,
         int capacity,
-        string label)
+        string label,
+        out int sentinelId)
         where T : unmanaged
     {
-        int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+        sentinelId = 0;
+        sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
             queue,
             capacity,
             nameof(ModuleStatusEvents),
@@ -451,25 +459,60 @@ public static class ModuleStatusEvents
         if (sentinelId > 0)
             return;
 
-        ReleaseNativeQueue(ref queue, label);
+        ReleaseNativeQueue(ref queue, ref sentinelId);
         throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
     }
 
     private static void ReleaseNativeQueues()
     {
-        ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-        ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+        ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
     }
 
-    private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+    private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
         where T : unmanaged
     {
-        if (!queue.IsCreated)
-            return;
+        Exception firstException = null;
 
-        NativeMemorySentinel.UnregisterNativeQueue(nameof(ModuleStatusEvents), label);
-        queue.Dispose();
-        queue = default;
+        if (sentinelId > 0)
+        {
+            try
+            {
+                NativeMemorySentinel.Unregister(sentinelId);
+            }
+            catch (Exception exception)
+            {
+                firstException = exception;
+            }
+            finally
+            {
+                sentinelId = 0;
+            }
+        }
+
+        if (queue.IsCreated)
+        {
+            try
+            {
+                queue.Dispose();
+            }
+            catch (Exception exception)
+            {
+                if (firstException == null)
+                    firstException = exception;
+            }
+            finally
+            {
+                queue = default;
+            }
+        }
+        else
+        {
+            queue = default;
+        }
+
+        if (firstException != null)
+            throw firstException;
     }
 
     private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -492,7 +535,7 @@ public static class ModuleStatusEvents
         if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
         {
             _droppedEventCount++;
-            ReleaseReferenceSlot(payload.ReferenceSlot);
+            ReleaseReferenceSlotForPayload(in payload);
             return false;
         }
 
@@ -508,9 +551,10 @@ public static class ModuleStatusEvents
         return true;
     }
 
-    private static bool TryReserveReferenceSlot(out int referenceSlot)
+    private static bool TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration)
     {
         referenceSlot = -1;
+        referenceGeneration = 0;
         if (_referencePendingCount >= ReferenceSlotCapacity)
             return false;
 
@@ -525,12 +569,29 @@ public static class ModuleStatusEvents
                 continue;
 
             referenceSlot = candidateSlot;
+            referenceGeneration = AdvanceReferenceSlotGeneration(referenceSlot);
             _referenceSlotOccupied[referenceSlot] = true;
             _referencePendingCount++;
             return true;
         }
 
         return false;
+    }
+
+    private static ushort AdvanceReferenceSlotGeneration(int referenceSlot)
+    {
+        ushort generation = unchecked((ushort)(_referenceSlotGenerations[referenceSlot] + 1));
+        if (generation == 0)
+            generation = 1;
+
+        _referenceSlotGenerations[referenceSlot] = generation;
+        return generation;
+    }
+
+    private static void ReleaseReferenceSlotForPayload(in ModuleStatusEventPayload payload)
+    {
+        if (IsReferenceSlotPayloadCurrent(in payload))
+            ReleaseReferenceSlot(payload.ReferenceSlot);
     }
 
     private static void ReleaseReferenceSlot(int referenceSlot)
@@ -550,6 +611,15 @@ public static class ModuleStatusEvents
     private static bool IsValidReferenceSlot(int referenceSlot)
     {
         return (uint)referenceSlot < ReferenceSlotCapacity;
+    }
+
+    private static bool IsReferenceSlotPayloadCurrent(in ModuleStatusEventPayload payload)
+    {
+        int referenceSlot = payload.ReferenceSlot;
+        return IsValidReferenceSlot(referenceSlot) &&
+               _referenceSlotOccupied[referenceSlot] &&
+               payload.Reserved != 0 &&
+               _referenceSlotGenerations[referenceSlot] == payload.Reserved;
     }
 
     private static void DrainWithoutDispatch()
@@ -590,7 +660,7 @@ public static class ModuleStatusEvents
             if (pendingCount > 0)
                 pendingCount--;
 
-            ReleaseReferenceSlot(payload.ReferenceSlot);
+            ReleaseReferenceSlotForPayload(in payload);
         }
 
         if (queue.IsEmpty())
@@ -612,6 +682,9 @@ public static class ModuleStatusEvents
         NativeQueue<ModuleStatusEventPayload> swap = _pendingEvents;
         _pendingEvents = _nextFrameEvents;
         _nextFrameEvents = swap;
+        int sentinelIdSwap = _pendingEventsSentinelId;
+        _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+        _nextFrameEventsSentinelId = sentinelIdSwap;
         _pendingEventCount = _nextFrameEventCount;
         _nextFrameEventCount = 0;
     }
@@ -622,6 +695,7 @@ public static class ModuleStatusEvents
         {
             _referenceSlots[i].Clear();
             _referenceSlotOccupied[i] = false;
+            AdvanceReferenceSlotGeneration(i);
         }
     }
 
@@ -629,7 +703,7 @@ public static class ModuleStatusEvents
     {
         var moduleTemplate = module.ModuleTemplate;
         return moduleTemplate != null
-            ? unchecked((uint)moduleTemplate.TemplateHashId)
+            ? unchecked((uint)moduleTemplate.ResolvePersistentHashId())
             : 0u;
     }
 

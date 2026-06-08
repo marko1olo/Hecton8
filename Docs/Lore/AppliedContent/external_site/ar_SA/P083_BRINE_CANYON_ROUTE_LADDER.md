@@ -8,33 +8,19 @@ biome_tags: biome.brine_canyon;biome.drop_zone
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Brine Canyon Route Ladder"
+spoiler_tier: 1
+title: "سلم مسار أخدود المحلول الملحي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Brine Canyon Route Ladder
+# سلم مسار أخدود المحلول الملحي
 
-AR LOC HOLD: Brine Canyon Route Ladder is one of HECTON-8's core exploration structures: not a hallway, but a chemical geography where density, current and sound shape progression.
+تجعل أخاديد المحلول الملحي التقدم في العمق أمرا فيزيائيا. الطبقات الكثيفة والجدران المعدنية وتسربات الحرارة والتشوه الصوتي تعلم اللاعب لماذا يحتاج السفر الأعمق إلى أدوات أفضل وانضباط ضغط.
 
-## Scanner
-
-AR LOC HOLD: Brine density marker. The descent route is chemistry with walls.
-
-## Terminal
-
-AR LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
-
-## Audio
-
-AR LOC HOLD: The canyon is a staircase made of wrong water.
-
-## Field Note
-
-AR LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
+سلم مسار أخدود المحلول الملحي بنية استكشاف أساسية في HECTON-8: ليس ممرا، بل جغرافيا كيميائية تصنعها الكثافة والتيار والصوت. أنت لا تسبح عبر الأخدود. أنت تفاوض طبقات أثقل من بدلتك.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/ar_SA. -->

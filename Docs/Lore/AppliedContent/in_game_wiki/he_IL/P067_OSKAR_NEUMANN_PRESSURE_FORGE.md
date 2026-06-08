@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "מחשלת הלחץ של אוסקר נוימן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# מחשלת הלחץ של אוסקר נוימן
 
-HE LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
+אוסקר נוימן מחבר את מלאכת המושבה לשרשרת הבריחה. הערות מחשלת הלחץ שלו מצדיקות ייצור בעומק, טבעות הידוק, בדיקות אטימה ואת הצורך לרדת בשביל רכיבים במקום לחכות לחילוץ מן השטח.
 
 ## Scanner
 
-HE LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+אוסקר נוימן השאיר מתכון חישול לטבעות הידוק חזקות מספיק כדי שמיטת העלייה תהיה יותר מארון קבורה.
 
 ## Terminal
 
-HE LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+נוימן, א. הערת חישול: אבק זכוכית לחץ הורס את האטם הראשון אם מערבבים אותו קר. לחמם את הטבעת תחת משיכת פתח האוורור, לצנן בתוך מעטפת מי מלח, ואז לבדוק בעומס עלייה כפול.
 
 ## Audio
 
-HE LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+שיגור הוא רק דלת לחץ שנעה למעלה. בנו אותו כמו דלת.
 
 ## Field Note
 
-HE LOC HOLD: The exit needs craft, not courage.
+היציאה צריכה מלאכה, לא אומץ.
 
 <!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/he_IL. -->

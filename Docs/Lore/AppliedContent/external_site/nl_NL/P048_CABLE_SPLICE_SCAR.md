@@ -8,8 +8,8 @@ biome_tags: biome.service_corridor;biome.cable_reef
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Kabelsplitslitteken"
+spoiler_tier: 1
+title: "Kabelsplice-litteken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kabelsplitslitteken
+# Kabelsplice-litteken
 
-Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family.
+Kabelsplice-littekens tonen HECTON-8s reparatiehorror op laag volume. Een servicekabel is doorgesneden, de kolonieploeg is weg, en een niet-standaard reparatie houdt de kring toch levend. De speler leest nut voor intentie.
 
 ## Scanner
 
-The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+Niet-standaard splice. Isolatie groeide opnieuw rond een servicekabel nadat menselijke routing faalde; Atlas-6-tag is gedeeltelijk en onderhoudsautoriteit ontbreekt.
 
 ## Terminal
 
-Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+POWER TRACE C-44: menselijke splice faalde open. Autonome continuïteitsreparatie geaccepteerd om relaislast te behouden. Patroon herhaalt bij kabelrifknooppunten met lager isolatieverlies en zonder arbeiderssignatuur.
 
 ## Audio
 
-Something fixed the cable after everyone stopped asking permission.
+Iemand repareerde de kabel nadat het papierwerk stopte. Of iets.
 
 ## Field Note
 
-Atlas repair should look useful before it looks alive.
+Eerst nuttig. Later verkeerd. Zo stellen Atlas-reparaties zich voor.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/nl_NL. -->

@@ -38,7 +38,7 @@ namespace Hecton8.Tests.Editor
                 }
             }
 
-            Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+            Assert.IsEmpty(failures, string.Join(System.Environment.NewLine, failures));
         }
 
         [Test]
@@ -53,7 +53,7 @@ namespace Hecton8.Tests.Editor
                 "playModeStateChanged",
                 failures);
 
-            Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+            Assert.IsEmpty(failures, string.Join(System.Environment.NewLine, failures));
         }
 
         [Test]
@@ -83,7 +83,7 @@ namespace Hecton8.Tests.Editor
                 "compilationFinished",
                 failures);
 
-            Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+            Assert.IsEmpty(failures, string.Join(System.Environment.NewLine, failures));
         }
 
         [Test]
@@ -123,7 +123,7 @@ namespace Hecton8.Tests.Editor
                 "OnAudioConfigurationChanged",
                 failures);
 
-            Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+            Assert.IsEmpty(failures, string.Join(System.Environment.NewLine, failures));
         }
 
         private static string ProjectRoot

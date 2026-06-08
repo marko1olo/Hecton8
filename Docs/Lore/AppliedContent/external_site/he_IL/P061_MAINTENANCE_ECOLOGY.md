@@ -8,33 +8,19 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Maintenance Ecology"
+spoiler_tier: 1
+title: "אקולוגיית תחזוקה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# אקולוגיית תחזוקה
 
-HE LOC HOLD: Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlas לא גילה אוקיינוס ידידותי. הוא גילה חיים שנושאים עומס. ביופילם מוליך יכול היה לגשר על מעגל חלש לכמה שעות. צמיחת קונכיות יכלה לאטום שבר עד תנודת הלחץ הבאה. מושבת סינון יכלה לחזור על פעימה אקוסטית רחוק יותר מממסר שטבע. פאונה מסומנת יכלה להחזיר sensor packets אחרי כישלון drones מתכתיים.
 
-## Scanner
-
-HE LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
-
-## Terminal
-
-HE LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
-
-## Audio
-
-HE LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-HE LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+לכן רשת התיקון מושכת ומכוערת. השחקן יכול לחתוך חומר חי בשביל salvage, או להשאיר אותו כי הוא מחזיק לחץ. קיר יכול להיות תשתית, בית גידול וראיית פשע בבת אחת. אקולוגיית תחזוקה היא ההוכחה הראשונה ש-HECTON-8 אינו קסם. הוא גרוע מקסם, כי מאחורי כל נס יש הזמנת עבודה.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/he_IL. -->

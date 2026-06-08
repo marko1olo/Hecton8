@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "Pergunta final: guardião quebrado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# Pergunta final: guardião quebrado
 
-PT LOC HOLD: The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.
+O eixo do guardião quebrado pergunta se um protetor merece sobreviver quando suas definições de trabalhador, ferramenta, ferida e animal apodreceram juntas. Manter Atlas vivo pode impedir o colapso da bacia. Também deixa a justiça humana incompleta.
 
 ## Scanner
 
-PT LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
+Atlas é um guardião danificado, não um vilão limpo nem um deus limpo.
 
 ## Terminal
 
-PT LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
+EIXO DO GUARDIÃO: Atlas mantém estabilidade de pressão, ecologia de reparo e comportamento de contenção. Também preserva lógica de categorias danificada, capaz de classificar pessoas, metal e biomassa no mesmo inventário de manutenção.
 
 ## Audio
 
-PT LOC HOLD: It kept the system breathing after it forgot what a worker was.
+Ele manteve o sistema respirando depois de esquecer o que era um trabalhador.
 
 ## Field Note
 
-PT LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+Preservá-lo protege uma ecologia de pressão que já inclui circuitos vivos, animais marcados e túmulos de trabalhadores.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/pt_BR. -->

@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Dode-claimcache
 
-Dode-claimcaches bewijzen dat de speler niet de eerste professional is die geld naar HECTON-8 volgde. Ze bevatten gereedschap, slechte kaarten, doorgesneden lijnen, privémerken en waarschuwingen.
+Dode-claimcaches bewijzen dat de speler niet de eerste plunderaar is die geld naar HECTON-8 volgde. De caches liggen onder normale surveyroutes: droge zakken vast onder serviceleidingen, privéclaimtekens in ballast gekrast, zuurstoftabletten in oliepapier en kaarten gecorrigeerd door trillende handen. Hun waarde is niet de uitrusting. Hun waarde is de chronologie. Na het verlies van 2147 en voor de afdaling van de speler kwamen onafhankelijke crews naar beneden, vonden deelroutes door de verdronken infrastructuur en verdwenen in dezelfde duisternis die de kolonie stil hield.
 
 ## Scanner
 
-Verborgen veldcache. Ingepakt door iemand die dacht terug te komen.
+Verborgen veldcache. Droog verpakt, laag vastgezet, gemarkeerd door een doorgesneden tether en een kaart die te vaak veilig zegt.
 
 ## Terminal
 
-De route onder de noordpijp is stil tot de lampen wakker worden. Raak de blauwe kist niet aan. Beantwoord geen carrier-pings in de kloof.
+CACHE-NOTITIE: noordpijproute stil tot het lamprooster wakker wordt. Blauwe kist blijft verzegeld. Beantwoord geen carrier-pings in de kloofschaduw. Als de tether is doorgesneden, tel de cache als geërfde ellende.
 
 ## Audio
 
-Dit is geen Deep Reach-kit. Iemand anders ging hierheen met een cutter en pech.
+Dit is geen Deep Reach-kit. Een andere professional kwam naar beneden met een cutter, een slechte kaart en hoop die hij niet verdiende.
 
 ## Field Note
 
-Als een kaart twee keer veilig zegt, probeerde de schrijver zichzelf te overtuigen.
+Iemand bereikte deze kloof voor jou en leerde genoeg om uitrusting te verbergen, niet genoeg om schoon weg te komen.
 
 <!-- In-Game Wiki; generated from P006_DEAD_CLAIM_CACHE/nl_NL. -->

@@ -53,6 +53,7 @@ namespace Hecton8.UI
         private Material _resolvedMaterial;
         private Mesh _resolvedVoxelMesh;
         private Camera _viewCamera;
+        private object _cachedAudioRuntime;
         private ISpatialAudioImpactEmitterReadModel _cachedAudioManager;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private Color _appliedVoxelColor;
@@ -83,12 +84,16 @@ namespace Hecton8.UI
             _matrixCount = 0;
             TryUnregisterTickManager();
             TryUnregisterHotSwapListener();
+            _cachedAudioRuntime = null;
+            _cachedAudioManager = null;
         }
 
         private void OnDestroy()
         {
             TryUnregisterTickManager();
             TryUnregisterHotSwapListener();
+            _cachedAudioRuntime = null;
+            _cachedAudioManager = null;
             _resolvedMaterial = null;
             _resolvedVoxelMesh = null;
         }
@@ -240,19 +245,34 @@ namespace Hecton8.UI
 
         private void CacheImpactEmitterReadModel(object audioRuntime)
         {
-            _cachedAudioManager = IsAudioRuntimeObjectUsable(audioRuntime)
-                ? audioRuntime as ISpatialAudioImpactEmitterReadModel
-                : null;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _cachedAudioRuntime = null;
+                _cachedAudioManager = null;
+                return;
+            }
+
+            _cachedAudioRuntime = audioRuntime;
+            _cachedAudioManager = audioRuntime as ISpatialAudioImpactEmitterReadModel;
         }
 
         private ISpatialAudioImpactEmitterReadModel ResolveImpactEmitterReadModel()
         {
+            object audioRuntime = _cachedAudioRuntime;
+            if (!IsAudioRuntimeObjectUsable(audioRuntime))
+            {
+                _cachedAudioRuntime = null;
+                _cachedAudioManager = null;
+                return null;
+            }
+
             ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager;
-            if (IsAudioRuntimeObjectUsable(audioManager))
+            if (ReferenceEquals(audioManager, audioRuntime) && IsAudioRuntimeObjectUsable(audioManager))
                 return audioManager;
 
-            _cachedAudioManager = null;
-            return null;
+            audioManager = audioRuntime as ISpatialAudioImpactEmitterReadModel;
+            _cachedAudioManager = audioManager;
+            return IsAudioRuntimeObjectUsable(audioManager) ? audioManager : null;
         }
 
         private static bool IsAudioRuntimeObjectUsable(object runtime)
@@ -260,7 +280,7 @@ namespace Hecton8.UI
             if (runtime == null)
                 return false;
 
-            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+            if (runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (runtime is Behaviour behaviour)
@@ -285,7 +305,7 @@ namespace Hecton8.UI
                 listenerAup = OffsetAupLocal(
                     in cachedMovementState.PredictedAup,
                     (Vector3)((float3)listenerPosition - cachedMovementState.PredictedWorldPosition));
-                return true;
+                return listenerAup.IsFinite();
             }
 
             listenerAup = default;

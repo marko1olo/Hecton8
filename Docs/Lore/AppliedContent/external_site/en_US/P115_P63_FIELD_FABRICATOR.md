@@ -19,22 +19,8 @@ localization_flags: 0
 
 # P-63 Field Fabricator
 
-P-63 Field Fabricator anchors HECTON-8 crafting in certification. Crafting is not generic alchemy; it is rated repair under pressure.
+P-63 makes crafting industrial instead of magical. It accepts dirty scrap, checks a certification table and returns small parts with pressure limits: gaskets, contacts, pinger floats, sealant clamps. It is useful because it says no.
 
-## Scanner
-
-Field fabricator. Not a magic printer: it accepts dirty inputs and gives rated parts.
-
-## Terminal
-
-FAB P-63: approved first recipes: valve gasket, cutter contact, pinger float, sealant clamp. Rejects unknown blue-debt fragments without pressure certification.
-
-## Audio
-
-The machine can make parts. It cannot make permission.
-
-## Field Note
-
-Crafting starts as repair certification, not loot dopamine.
+That refusal matters. The fabricator will not turn unknown pressure material into miracle gear, and it cannot authorize an escape. Crafting in HECTON-8 begins as repair certification: practical, limited and tied to the same bureaucracy that trapped the colony.
 
 <!-- External Site; generated from P115_P63_FIELD_FABRICATOR/en_US. -->

@@ -1,10 +1,9 @@
 {
-  "schema": "H8.RELEASE_SET_MANIFEST.V0",
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
   "release_set_id": "RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE",
-  "status": "production_facing_draft_pending_native_localization",
-  "packet_sources": [
-    "Docs/Lore/AppliedContent/packets/RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE.packets.json"
-  ],
+  "title": "First Tool Chain / Survival Gate",
+  "status": "production_facing_localized_pending_native_review",
+  "evidence_class": "STATIC_SOURCE",
   "packets": [
     "P111_MANUAL_BILGE_PUMP_KIT",
     "P112_COLD_SEALANT_PATCH_GUN",
@@ -12,59 +11,32 @@
     "P114_ACOUSTIC_PINGER_LINE",
     "P115_P63_FIELD_FABRICATOR"
   ],
-  "locales_present_in_packet_bundle": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE.packets.json"
   ],
-  "markdown_publication_locales_present": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
+  "article_sources": [
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_en_US.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_ru_RU.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_ja_JP.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_zh_CN.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_fr_FR.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_es_ES.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_de_DE.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_pl_PL.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_uk_UA.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_ar_SA.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_id_ID.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_ko_KR.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_he_IL.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_pt_BR.md",
+    "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_nl_NL.md"
   ],
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
-  ],
-  "runtime_contract": {
-    "runtime_must_not_parse_markdown": true,
-    "runtime_must_not_generate_translation": true,
-    "expected_bake_output": [
-      "packet_id_hash",
-      "loc_id_hashes",
-      "surface_enum",
-      "unlock_id",
-      "domain_tag",
-      "route_window_id",
-      "localized_string_pool_offsets"
-    ]
-  }
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
 }

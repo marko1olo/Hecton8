@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-power induction cutter"
+title: "Маломощный индукционный резак"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-power induction cutter
+# Маломощный индукционный резак
 
-Low-power induction cutter дает первое deliberate opening action: заевший hatch, panel bolt, salvage crate. Он не решает каждый barrier. Pressure glass, active load-bearing frames и Atlas-grown seams требуют позднего знания.
+Маломощный индукционный резак - первый инструмент доступа, а не универсальный ключ. Он открывает заклинившие сервисные люки, болты панелей и salvage crates, заставляя читать, что делает деталь. Pressure glass, активные рамы и Atlas-grown швы относятся к более поздним инструментам или к лучшим уликам.
 
 ## Scanner
 
-Induction cutter. Открывает work metal; перегревается на pressure glass и плохой вере.
+Маломощный индукционный резак. Только сервисный металл; несущие рамы и pressure glass вне допуска.
 
 ## Terminal
 
-TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+ПРЕДУПРЕЖДЕНИЕ ИНСТРУМЕНТА / ИНДУКЦИОННЫЙ РЕЗАК: разрешенные цели - сервисные люки, болты панелей, легкие кронштейны и замки ящиков. Не резать активные рамы, решетку pressure glass или швы Atlas-growth без допуска более позднего класса.
 
 ## Audio
 
-Режь hatch. Не режь то, что держит комнату целой.
+Режь болт. Ребро оставь.
 
 ## Field Note
 
-Cutter должен ощущаться ценным именно потому, что он ограничен.
+Хороший резак, плохая вера. Он открывает панели. Он не прощает, если срезать ребро, которое держит комнату ровной.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/ru_RU. -->

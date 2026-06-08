@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "Druksmederij van Oskar Neumann"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# Druksmederij van Oskar Neumann
 
-NL LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
+Oskar Neumann verbindt kolonievakwerk met de ontsnappingsketen. Zijn druksmederij-notities rechtvaardigen dieptefabricage, klemringen, afdichtingstests en de noodzaak om af te dalen voor onderdelen in plaats van op oppervlakteredding te wachten.
 
 ## Scanner
 
-NL LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+Oskar Neumann liet een smeedrecept achter voor klemringen die sterk genoeg zijn om van de opstijgwieg meer dan een doodskist te maken.
 
 ## Terminal
 
-NL LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+NEUMANN, O. Smeednotitie: drukglasstof ruïneert de eerste afdichting als het koud wordt gemengd. Ring verhitten onder ventilatietrek, afschrikken in pekelmantel, daarna testen op tweemaal de opstijglast.
 
 ## Audio
 
-NL LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+Een lancering is alleen een drukdeur die omhoog beweegt. Bouw hem als een deur.
 
 ## Field Note
 
-NL LOC HOLD: The exit needs craft, not courage.
+De uitgang vraagt vakwerk, geen moed.
 
 <!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/nl_NL. -->

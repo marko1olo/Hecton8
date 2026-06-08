@@ -46,7 +46,7 @@ namespace Hecton8.Physics
         private readonly ulong[] _fixedKeys;
         private readonly CachedQueryResult[] _fixedValues;
         private readonly byte[] _fixedStates;
-        
+
         public int Hits { get; private set; }
         public int Misses { get; private set; }
         public static int CacheHits;

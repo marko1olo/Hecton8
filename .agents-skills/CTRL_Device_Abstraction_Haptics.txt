@@ -1,4 +1,3 @@
-```markdown
 # CTRL_Device_Abstraction_Haptics.md
 ## Device-Agnostic Input | Haptic Control | Zero-GC Polling
 ### Target: i3-10gen / MX350 2GB / 6-8GB RAM | Underwater Horror (NASA-Punk)

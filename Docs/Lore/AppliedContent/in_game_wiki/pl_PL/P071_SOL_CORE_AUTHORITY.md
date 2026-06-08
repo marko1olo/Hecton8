@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Władza Sol Core"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Władza Sol Core
 
-PL LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core jest prawnym i finansowym korzeniem ludzkiej ekspansji, a nie osobistą ojczyzną ani biurem ratunkowym. Na HECTON-8 jego standardy przetrwały jako pieczęcie, formularze odpowiedzialności, tablice bezpieczeństwa i język ubezpieczeń, który przeżył ludzi, których miał chronić.
 
 ## Scanner
 
-PL LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+Stara pieczęć prawa Sol. Może posiadać pograniczne zwłoki, choć jest zbyt daleko, by poczuć wyciek ciśnienia.
 
 ## Terminal
 
-PL LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+STANDARD SOL CORE: ciągłość roszczenia uznana przez licencjonowaną pieczę przewoźnika, ubezpieczenie trasy i odroczone orzeczenie. Priorytet odzysku ludzi nierozstrzygnięty do lokalnej certyfikacji zagrożeń.
 
 ## Audio
 
-PL LOC HOLD: The seal came from Earth space. The rescue clause did not.
+Pieczęć przyszła z przestrzeni Ziemi. Klauzula ratunkowa nie.
 
 ## Field Note
 
-PL LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol nie jest tutaj domem. To najstarszy podpis na dokumencie, który wciąż może cię zniszczyć.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/pl_PL. -->

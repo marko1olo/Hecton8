@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # O LIVRO DE DÍVIDAS
 
 > **Fonte:** Megacorporação Deep Reach, Divisão de Recursos Humanos e Atuária.

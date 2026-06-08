@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Partial Exit Same-Seed Return"
+title: "Keluar Parsial: Kembali ke Seed yang Sama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Partial Exit Same-Seed Return
+# Keluar Parsial: Kembali ke Seed yang Sama
 
-ID LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed.
+Keluar parsial melindungi kampanye panjang dari penutupan palsu. Black Keel bisa mengangkat operator untuk jendela terbatas, menambal suit, mencatat paket yang ditemukan, dan menjual jeda sebagai kesejahteraan. Dunia di bawah tidak berganti menjadi versi yang lebih bersih.
 
-## Scanner
-
-ID LOC HOLD: Extraction possible. Closure not included.
-
-## Terminal
-
-ID LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
-
-## Audio
-
-ID LOC HOLD: You left the pressure. You did not leave the contract.
-
-## Field Note
-
-ID LOC HOLD: Let the player breathe, then make the same ocean still be there.
+Saat pemain kembali, seed yang sama masih ada. Tangga brine memiliki perangkap yang sama, relay yang sama punya sudut buruk yang sama, dan bukti yang sama tetap berbahaya. Ending ini memberi lega tanpa pengampunan: udara di paru-paru, lebih banyak utang di kontrak, dan tidak ada penghapusan atas apa yang ditemukan.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/id_ID. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Blue Debt Pressure History Guide"
+title: "Guide d'historique de pression de la dette bleue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Blue Debt Pressure History Guide
+# Guide d'historique de pression de la dette bleue
 
-FR LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.
+La blue debt est du langage contractuel enroulé autour d'un substrate dangereux. Pressure history, custody marks et signal drift décident si elle devient paiement propre, levier Atlas ou motif de retour pour Deep Reach.
 
 ## Scanner
 
-FR LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.
+Échantillon de blue debt marqué. Vérifier pressure history, containment stage et signal drift avant export.
 
 ## Terminal
 
-FR LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
+MARAUDER NOTE : blue debt est l'argot de salvage pour un Xenon-Omega-bearing pressure-stable substrate. Il vaut cher parce que l'extreme computation et l'energy isolation l'aiment, pas parce qu'il brille.
 
 ## Audio
 
-FR LOC HOLD: Blue debt is what people call it after the invoice arrives.
+La dette bleue, c'est le nom qu'on lui donne après l'arrivée de la facture.
 
 ## Field Note
 
-FR LOC HOLD: Use for resource glossary and Deep Reach motive articles.
+La couleur n'est pas le grade. Un conteneur silencieux avec custody propre paie ; un conteneur qui chante achète un drone wake.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/fr_FR. -->

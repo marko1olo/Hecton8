@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate Response Ledger"
+title: "Bedrijfsrespons-grootboek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Response Ledger
+# Bedrijfsrespons-grootboek
 
-NL LOC HOLD: Corporate Response Ledger records the hard limit of Black Keel assistance: response speed does not equal rescue priority.
-
-## Scanner
-
-NL LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
-
-## Terminal
-
-NL LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
-
-## Audio
-
-NL LOC HOLD: The reply was automatic. The rescue was conditional.
-
-## Field Note
-
-NL LOC HOLD: Immediate response is not immediate rescue.
+Het bedrijfsrespons-grootboek is geen schurkenmonoloog. Het is kouder. Het is een machinaal leesbare belofte dat Black Keel zal reageren, maar alleen in de volgorde die zijn contracten herkennen. Assetbewaring eerst. Aansprakelijkheidszegel tweede. Rompaudit, monsterroute, betaalroute, dan operatorberging als de wachtrij het toestaat. De speler kan deze grootboeken gebruiken als aanwijzing, sleutel en hefboom omdat het systeem voorspelbaar is. Die voorspelbaarheid is de aanklacht: HECTON-8 werd niet verlaten door één slechte beslissing, maar door een responsstack die bleef werken terwijl mensen lading met lagere prioriteit werden.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/nl_NL. -->

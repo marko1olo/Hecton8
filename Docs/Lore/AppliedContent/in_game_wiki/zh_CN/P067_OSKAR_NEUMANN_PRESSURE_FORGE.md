@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "奥斯卡·诺伊曼压力锻炉"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# 奥斯卡·诺伊曼压力锻炉
 
-CN LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
+奥斯卡·诺伊曼把殖民地工艺接入逃离链条。他的压力锻炉笔记解释了深层制造、夹环、密封测试，以及玩家为何必须下潜寻找部件，而不是等待来自水面的救援。
 
 ## Scanner
 
-CN LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+奥斯卡·诺伊曼留下了一份锻造配方，用来制作足够坚固的夹环，让上升摇篮不只是棺材。
 
 ## Terminal
 
-CN LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+诺伊曼，O。锻造笔记：压力玻璃粉若冷态混入，会毁掉第一道密封。将环置于喷口抽流下加热，在盐水夹套内淬火，然后以两倍上升载荷测试。
 
 ## Audio
 
-CN LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+发射不过是一扇向上移动的压力门。像造门一样造它。
 
 ## Field Note
 
-CN LOC HOLD: The exit needs craft, not courage.
+出路需要手艺，不是勇气。
 
 <!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/zh_CN. -->

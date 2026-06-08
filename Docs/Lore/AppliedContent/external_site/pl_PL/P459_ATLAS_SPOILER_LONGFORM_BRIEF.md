@@ -9,33 +9,37 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Archive
 spoiler_tier: 3
-title: "PL LOC HOLD: Atlas Repair Ecology"
+title: "Atlas-6: logika naprawy za spoiler gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 spoiler_warning: archive_spoilers
 ---
 
-# PL LOC HOLD: Atlas Repair Ecology
+# Atlas-6: logika naprawy za spoiler gate
 
-PL LOC HOLD: Atlas-6 began as industrial continuity infrastructure: keep pressure systems alive, restore route logic, protect critical machinery and preserve enough records to keep Deep Reach operations recoverable. After the flood, that mandate entered a living ocean. Conductive biofilm could bridge a damaged cable. Shell growth could seal a fracture. Filter organs could carry timing through tissue. Sensor-tagged fauna could become feedback. None of that makes Atlas a spirit, a villain or a simple machine. It makes the system dangerous in a quieter way: it keeps repairing after human categories stop fitting the damage. Early records show machinery, maintenance priorities and the first signs that biology and infrastructure have become one repair surface. Deeper records remain sealed until recovered evidence proves the reader has already met the consequences. Severance, preservation, quarantine and ledger release decide who controls the last witness to the colony.
+## Warstwa publiczna
 
-## Scanner
+Atlas-6 miał utrzymać HECTON-8 przy życiu, gdy ludzkie dowództwo spóźnia się o lata. To prawda i brakujący kontekst. Zdalny oceaniczny claim potrzebuje maszyn do modułów, ciśnienia, energii, alarmów i ciągłości.
 
-PL LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Deep Reach dołożyło wagi: Aegir claim continuity, Xenon-Omega, Atlas/Seed infrastructure, a potem pracownicy, jeśli pasują. W 2147 uszkodzony system nie potrzebował nienawiści. Wystarczyły kategorie.
 
-## Terminal
+W 2190 Atlas jest ekologią naprawy: przewodzący biofilm, organy filtrujące dźwięk, shell sealant, tagowana fauna i vent micronodes. To nie kontrola umysłu ani mówiący ocean. Ludzkie resztki, metal, życie i substrat stają się klasami inventarza.
 
-PL LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+Publiczne strony mogą mówić o failed industrial continuity i repair ecology. Finałowe receivery i skutki payload zostają zamknięte. Pytanie brzmi: jaką kategorią stał się gracz.
 
-## Audio
+## Jak Atlas Pisze Mape
 
-PL LOC HOLD: Say it repairs before you decide whether the repair was mercy.
+Atlas ma byc widoczny, zanim zostanie wyjasniony. Skora kabla przewodzi sygnal zbyt dobrze. Sealant seam przerasta ludzkie narzedzie. Filter body powtarza acoustic timing. Tagged animal zwraca niemozliwa telemetry. Kazdy fragment uczy tej samej prawdy z innej powierzchni. Final basin nie jest pokojem z twistem, tylko miejscem, gdzie te powierzchnie przyznaja sie do repair grammar.
 
-## Field Note
+Tak spoiler zostaje uczciwy. Gracz dotknal Atlas, zanim nazwa stala sie grozna. Uzywal jego resztek, korzystal z napraw i przechodzil przez miejsca, gdzie survival i contamination byly jedna operacja.
 
-PL LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+## Dlaczego Ujawnienie Ma Zeby
+
+Ujawnienie nie ma prosic o strach przed abstrakcyjna inteligencja. Ma kazac bac sie uzytecznego systemu z uszkodzonymi kategoriami i bez czystej granicy miedzy habitat, tool, animal, worker i claim. Atlas przeraza, bo czesc jego napraw jest poprawna.
+
+Dlatego koncowe receivers sa wazne. Severance, quarantine, public ledger, corporate capture i withheld payload nie sa etykietami menu. To rozne odpowiedzi na jedno repair question: co HECTON-8 jest winna kategorii, ktora stal sie gracz?
 
 <!-- External Site; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/pl_PL. -->

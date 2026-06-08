@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Box Name Stack
 
-The black box name stack turns late-game truth into a physical payload. Evidence, broadcast and ending dossiers depend on what the player carries upward.
+The black box name stack makes the final truth portable. Evidence, broadcast packets and public dossiers depend on which names, hashes and receipts leave the water.
 
 ## Scanner
 

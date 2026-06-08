@@ -1,0 +1,40 @@
+---
+packet_id: P473_BARNARD_YARDS_SALVAGE_ORIGIN_BRIDGE
+release_set_id: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
+article_id: applied_lore.barnard_yards_salvage_origin_bridge
+unlock_id: unlock.barnard_yards_salvage_origin_bridge
+poi_tags: 
+biome_tags: 
+locale: ar_SA
+surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "أصل الإنقاذ في ساحات Barnard"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: rtl
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# أصل الإنقاذ في ساحات Barnard
+
+تشرح Barnard Yards لماذا يعرف المشغل ترتيب الإصلاح الأول على HECTON-8: تصريف، عزل، رقعة ضمن التصنيف، قطع معدن الخدمة فقط، حفظ الدليل، ثم الحركة. هذه الكفاءة ليست حرية. المنطق نفسه يحول الأدوات والتدريب والمطالبات الميتة إلى دين تسعره Black Keel.
+
+## Scanner
+
+وسم أداة BARNARD YARDS // مقبض قاطع مؤجر. شهادة مشبك الضغط صالحة. نافذة الدين مرتبطة باستقبال Black Keel. المشغل مدرب على إنقاذ المطالبات الميتة، لا الإنقاذ المجاني.
+
+## Terminal
+
+عداد إيجار BARNARD YARDS // صادر: قاطع حثي، طقم مشابك، مقياس ختم، أكمام شهود. ملاحظة رهن: فقدان الأداة أو التلوث أو قطع غير معتمد أو فشل شاهد الحمولة قد يحول العمل إلى دين قابل للاسترداد. صرّف قبل القطع. قيّم قبل الرفع. وسم قبل البيع.
+
+## Audio
+
+استأجرت القاطع، لا المطالبة. أعد المقبض وعدد المشابك ووسم شاهد نظيفا.
+
+## Field Note
+
+تعلمك Barnard أن تقطع بهدوء وتقرأ الدين بصوت عال. وسم القاطع رباط يحمل رقما تسلسليا.
+
+<!-- In-Game Wiki; generated from P473_BARNARD_YARDS_SALVAGE_ORIGIN_BRIDGE/ar_SA. -->

@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Glass Grazer Codex Card"
+title: "Kodexkarte: Glasgrazer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Glass Grazer Codex Card
+# Kodexkarte: Glasgrazer
 
-DE LOC HOLD: HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+Glasgrazer machen HECTON-8s Ökologie zu einer Überlebenssprache. Beim Fressen räumen sie helle Routennarben durch Film und Mattenwuchs, doch ihre Starre ist oft wichtiger als ihre Bewegung. Ein harmloses Tier kann den Spieler früher warnen als ein Messgerät.
 
 ## Scanner
 
-DE LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+Glasgrazer-Schwarm. Nicht feindliche Schalenfresser schaben Mineralfilm ab. Gleichmäßiges Ticken heißt Arbeitswasser; plötzliche Stille heißt, etwas Größeres hat die Lichtung verändert.
 
 ## Terminal
 
-DE LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+PROBE / GLASGRAZER-SCHWARM / Rolle: Flachfilm-Schaber, Strömungszeuge, Hinweis auf Räuberverdrängung / sichere Lesung: Fressrand, frische blasse Schabspur, stabile Schalenticks / verwerfen: verlassenes Futterfeld, eng erstarrter Schwarm, keine Rückticks nach pinger / Routennotiz: Abwesenheit nach Fressen ist Gefahrendaten.
 
 ## Audio
 
-DE LOC HOLD: When they stop eating, you stop moving.
+Wenn die kleinen Münder aufhören zu ticken und das Futter bleibt, werde nicht das Nächste, das wartet.
 
 ## Field Note
 
-DE LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Fressender Schwarm: Bahn lesen. Erstarrter Schwarm: Wasser lesen. Leere Bahn mit Futter: gehen.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/de_DE. -->

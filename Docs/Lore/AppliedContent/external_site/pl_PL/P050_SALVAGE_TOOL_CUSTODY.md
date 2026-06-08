@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.deep_colony
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Salvage Tool Custody"
+spoiler_tier: 1
+title: "Nadzór narzędzia salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Salvage Tool Custody
+# Nadzór narzędzia salvage
 
-Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder.
+Na HECTON-8 narzędzie może być jednocześnie sprzętem przetrwania i świadkiem kontraktu. Logi nadzoru salvage wiążą cięcia, naprawy i próbki z tokenami claim, czyniąc użyteczne działanie częścią późniejszego dowodu, długu lub presji wypłaty.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Dok narzędzia zawiera zapieczętowany log nadzoru. Ostatnie cięcie, naprawa i worek próbki są powiązane z tokenem claim Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: użycie przecinaka przyjęte pod salvage claim. Działanie naprawcze poświadczone. Prawa do próbki przypięte do tokena Keelmark Mutual. Eksport dowodów koliduje z trasą wypłaty materiałowej.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Każde użyteczne cięcie zostawia świadka.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Przecinak może uratować ci powietrze i sprzedać twoje ręce jednym ruchem. Sprawdź, co zapisuje, zanim nazwiesz go swoim.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/pl_PL. -->

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Wyjście materialne
 
-Wyjście materialne to prawdziwe częściowe zakończenie. Daje zysk, ale zostawia główną prawdę otwartą.
+Materialne wyjście jest prawdziwym częściowym wynikiem, nie martwą trasą. Zasoby albo próbka mogą kupić odwrót, gdy większa prawda zostaje nierozwiązana, a późniejszy powrót tnie ostrzej.
 
 ## Scanner
 

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 2
-title: "JA LOC HOLD: Endings and Payload Custody"
+title: "結末とpayload custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Endings and Payload Custody
+# 結末とpayload custody
 
-JA LOC HOLD: Ending dossier hub: custody, evidence, Atlas' future and the price of leaving.
+結末dossierハブ: custody、evidence、Atlasの未来、離脱の代価。
 
 ## Scanner
 
-JA LOC HOLD: Spoiler hub: payload receivers, false exits, custody, public truth, Atlas continuity and after-action records.
+Spoiler hub: payload receivers、false exits、custody、公開真実、Atlas continuity、after-action records。
 
 ## Terminal
 
-JA LOC HOLD: SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver and proof ownership.
+SITE NAV: final payload pagesはspoiler gatesの奥に置く。receiverとproof ownershipで整理する。
 
 ## Audio
 
-JA LOC HOLD: The ending is who owns the proof afterward.
+結末とは、上昇後に誰が証拠を所有するかだ。
 
 ## Field Note
 
-JA LOC HOLD: Navigation cluster record: endings stay spoiler-gated and organized by receiver and custody consequence, not moral labels.
+結末はspoiler-gatedのまま、道徳ラベルではなくreceiverとcustody consequenceで整理する。
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/ja_JP. -->

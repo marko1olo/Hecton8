@@ -9,32 +9,20 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Transit Duration Bands"
+title: "Band Durasi Transit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Transit Duration Bands
+# Band Durasi Transit
 
-ID LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
+## Jam Yang Berbeda
 
-## Scanner
+Rute yang sama tidak berarti waktu yang sama. Probe packet bisa berangkat awal, membakar cahaya, dan menjadi claim puluhan tahun sebelum crew melihat air. Heavy freight butuh staged launches, braking rights, pellet lanes, radiator, dan asuransi yang menerima kurva rugi. Human crew butuh semua itu plus life support, liability language, dan alasan untuk membayar return mass.
 
-ID LOC HOLD: The same route means different time for packets, freight and people.
-
-## Terminal
-
-ID LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
-
-## Audio
-
-ID LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
-
-## Field Note
-
-ID LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+HECTON-8 menjebak pemain di jam-jam yang tidak cocok itu. Distress hash bisa valid dan tidak berguna. Peluang cargo bisa terbuka sementara rescue tetap tertutup. Akibat publik bisa bertahun-tahun jauhnya dan tetap layak dilindungi. Horornya bukan rute rusak. Horornya adalah rute bekerja untuk semua hal kecuali tubuh yang memintanya peduli.
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/id_ID. -->

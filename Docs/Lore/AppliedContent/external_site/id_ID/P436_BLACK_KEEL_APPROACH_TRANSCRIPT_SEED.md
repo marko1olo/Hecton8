@@ -9,32 +9,22 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Transkrip Pendekatan Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Black Keel Approach Transcript Seed
+# Transkrip Pendekatan Black Keel
 
-ID LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+## Empat Detik Di Antara Suara
 
-## Scanner
+Suara pertama dari orbit tidak boleh terdengar seperti keselamatan. Ia harus terdengar seperti infrastruktur yang sedang menanggung beban: terkompresi, terlambat, berguna, dan sudah menagih. Transkrip Black Keel bekerja karena memberi pemain bantuan dan penghinaan dalam napas yang sama. Carrier mendengar jatuhnya kapsul. Carrier bisa menerima bukti. Carrier mungkin mengembalikan claimant hidup. Tidak satu pun berarti penyelamatan.
 
-ID LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Jeda itu penting. Empat detik cukup kecil untuk percakapan dan cukup besar untuk mengingatkan bahwa samudra menjawab lebih dulu. Packet loss penting karena setiap argumen berikutnya dengan orbit punya biaya fisik. Kesehatan, massa, dan bukti bukan istilah hiasan; itu bentuk jendela pulang. Marauder bisa masih hidup tetapi tetap tidak bisa diambil. Payload bisa benar tetapi terlalu berat. Carrier bisa jujur dan tetap menolak.
 
-## Terminal
-
-ID LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
-
-## Audio
-
-ID LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
-
-## Field Note
-
-ID LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+Untuk jam pertama, transkrip ini memaku fantasi ke kenyataan. Kau datang sebagai pekerja terlilit utang dengan slot claim, bukan penyintas terpilih. Black Keel adalah jalur di atasmu, bukan tangan di sampingmu. Menghabiskan oksigen untuk berdebat dengan orbit sudah menjadi kesalahan.
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/id_ID. -->

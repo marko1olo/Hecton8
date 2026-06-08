@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Dev",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
         "Hecton8.SpaceEngine098Terrain",
         "Unity.Collections",
         "Unity.Jobs",
@@ -12,7 +13,7 @@
         "Editor"
     ],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": false,

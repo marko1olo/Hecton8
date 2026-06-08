@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # РАДИОМОЛЧАНИЕ И ОРБИТАЛЬНАЯ ТИШИНА
 
 > **Источник:** Руководство по эксплуатации орбитального носителя *Black Keel*, раздел 4.

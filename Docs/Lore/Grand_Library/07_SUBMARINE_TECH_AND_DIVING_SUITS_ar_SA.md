@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # تكنولوجيا الغواصات وبذل الغوص الخاصة بالنافذين
 
 > **المصدر:** مكتب خسائر كيلمارك (Keelmark Loss Desk)، تقييم المخاطر الاكتوارية لعمليات الإنقاذ المستقلة.

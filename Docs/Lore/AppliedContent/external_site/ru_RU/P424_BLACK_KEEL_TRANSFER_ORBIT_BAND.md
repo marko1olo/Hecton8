@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "RU LOC HOLD: Black Keel Transfer Band"
+spoiler_tier: 1
+title: "Трансферный диапазон Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Black Keel Transfer Band
+# Трансферный диапазон Black Keel
 
-RU LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.
+Black Keel - контрактный carrier на custody route. Он может принимать payloads раньше, чем безопасно забирать человека.
 
 ## Scanner
 
-RU LOC HOLD: Carrier band: Black Keel loiters high, not above HECTON-8.
+Диапазон carrier: Black Keel держится высоко, не над HECTON-8.
 
 ## Terminal
 
-RU LOC HOLD: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+ОРБИТА CARRIER: высокая custody lane; descent mass ограничена и gated погодой.
 
 ## Audio
 
-RU LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.
+Он не припаркован над тобой. Он ждет там, где позволяет страховка.
 
 ## Field Note
 
-RU LOC HOLD: Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
+Запись орбиты carrier: Black Keel может принять payloads раньше людей; этот разрыв питает partial-exit logic.
 
 <!-- External Site; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/ru_RU. -->

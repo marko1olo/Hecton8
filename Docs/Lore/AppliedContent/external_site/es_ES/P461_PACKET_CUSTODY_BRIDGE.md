@@ -9,32 +9,28 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Custodia del paquete"
+title: "Custodia del paquete"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Custodia del paquete
+# Custodia del paquete
 
-ES LOC HOLD: Un mensaje de HECTON-8 solo importa si sobreviven su ruta, sello, receptor y estado de daño. La custodia del paquete permite que un hecho cruce el retraso de Aegir, las reclamaciones y la extracción física sin volverse carga desechable.
+## Qué Significa El Sello
 
-## Scanner
+Un mensaje de HECTON-8 no sirve porque alguien lo haya dicho. Sirve cuando la ruta puede probar quién lo cargó, cuándo salió, qué cruzó y qué reclamante no consiguió borrarlo.
 
-ES LOC HOLD: SELLO DE PAQUETE // Tira de hash testigo dañada pero legible. Preservar antes del corte. La prueba sin sello pasa a material de reclamación.
+Black Keel trata el testimonio como carga: masa, sello, número, receptor, demora. Una muestra que llega al carrier sin tira de custodia se archiva como material de reclamación. Un nombre de trabajador sin hash testigo puede pasar a categoría de pérdida. Un registro de presión sin sellos de ruta puede llamarse ruido de sensor antes de la siguiente ventana de relé.
 
-## Terminal
+Por eso el salvamento temprano vuelve a objetos pequeños y feos: placas dobladas, tiras notariales mojadas, sellos de ruta, recibos de relé, etiquetas de conector hinchadas por sal. Parecen papeleo hasta que el océano las vuelve físicas. El jugador conserva la cadena que permite a un hecho sobrevivir en Aegir.
 
-ES LOC HOLD: NOTARÍA KEELMARK // Conservar placa de sello, hash testigo, sello de ruta y etiqueta de conector antes de transferir. El material sin sello puede procesarse como pérdida de reclamación.
+La custodia del paquete no es justicia. Es la condición mínima para que la justicia tenga ruta. Rompe el sello y Deep Reach puede alegar corrupción. Mantén el sello y el mismo metal se convierte en testigo de presión, distancia, deuda y ley de reclamaciones.
 
-## Audio
+## Uso Para El Jugador
 
-ES LOC HOLD: Relé Black Keel: la carga es masa. La prueba es custodia. Trae ambas, o la ventana cobrará la diferencia.
-
-## Field Note
-
-ES LOC HOLD: Primero el sello, luego el corte. Una muestra limpia con una etiqueta rota pertenece a quien tenga el libro.
+Escanea la placa antes de cortar el hardware alrededor. Mantén juntos el sello de ruta, el carril receptor, el hash testigo y el estado de daño. Si la etiqueta se separa de la muestra, el hallazgo puede seguir teniendo valor, pero ya no prueba lo mismo.
 
 <!-- External Site; generated from P461_PACKET_CUSTODY_BRIDGE/es_ES. -->

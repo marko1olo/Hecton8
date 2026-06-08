@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sato-Ren Return Packet"
+title: "Sato-Ren Terugkeeractie-pakket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,13 +17,13 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Sato-Ren Return Packet
+# Sato-Ren Terugkeeractie-pakket
 
-The Sato-Ren packet proves Deep Reach is active in 2190 through compliance traffic, not a warship: coordinates, custody, access and silence first.
+The Sato-Ren packet proves Deep Reach is active in 2190 through compliance traffic, not a rescue fleet. It asks for coordinates, Atlas access state, sample custody and silence before it offers the word extraction.
 
 ## Scanner
 
-Recovery Compliance packet. Coordinates requested before rescue language.
+Recovery Compliance packet. Coordinates, access state and payload custody are requested before extraction language appears.
 
 ## Terminal
 
@@ -31,10 +31,10 @@ RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas acce
 
 ## Audio
 
-The packet knows where the asset is. It is less certain where you are.
+The packet knows the asset is alive. It is still deciding whether you count.
 
 ## Field Note
 
-Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+Marauder note: if they say extraction after custody, read the order twice.
 
 <!-- In-Game Wiki; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/en_US. -->

@@ -9,32 +9,16 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Priority Hook"
+title: "خطاف أولوية Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Priority Hook
+# خطاف أولوية Deep Reach
 
-AR LOC HOLD: Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control.
-
-## Scanner
-
-AR LOC HOLD: Old certificate hook. Deep Reach does not own the ship; it owns the clause.
-
-## Terminal
-
-AR LOC HOLD: ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
-
-## Audio
-
-AR LOC HOLD: They do not need to be on the bridge to steer the answer.
-
-## Field Note
-
-AR LOC HOLD: This is cleaner than conspiracy: the paperwork is still alive.
+خطاف الأولوية هو أنظف طريقة تبقى بها Deep Reach خطرة بعد صمت المستعمرة. لا تحتاج الشركة إلى قيادة Black Keel بمعجزة بعيدة. تحتاج فقط إلى شهادة قديمة لا يزال carrier يتعرف عليها، وقاعدة استمرارية مرتبطة بوصول Atlas، وفئة payload تتفوق على جسد متعاقد في ظروف خطر محددة. هذا يكفي. يمكن إزاحة route. يمكن لصندوق مختوم أن يصعد في الطابور. يمكن لقفل الحجر أن يبقى مغلقا بينما يصبح عد أكسجين المشغل خانة دين أخرى. النتيجة أبرد من التخريب: النظام يعمل كما كتب، وDeep Reach تعلمت كيف تكتب نفسها في الأجزاء التي تنجو من الكوارث.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/ar_SA. -->

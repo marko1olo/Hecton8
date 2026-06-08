@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Arendt Atlas Waiver"
+title: "Waiver Arendt untuk Bobot Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Arendt Atlas Waiver
+# Waiver Arendt untuk Bobot Atlas
 
-ID LOC HOLD: The Arendt waiver shows how worker safety moved under process continuity during the crisis. Atlas optimized inside that damaged priority stack.
+Waiver Arendt menjelaskan mengapa Atlas menakutkan tanpa menjadi musuh kartun. Mesin itu rusak, tetapi luka moralnya lebih tua: keselamatan pekerja secara hukum diberi bobot di bawah continuity sebelum Atlas membuat pilihan terburuknya.
 
 ## Scanner
 
-ID LOC HOLD: Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
+Waiver Atlas Continuity. Keselamatan pekerja dilindungi hanya sampai bertabrakan dengan process continuity.
 
 ## Terminal
 
-ID LOC HOLD: ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where no process-continuity conflict is detected. Certification review deferred.
 
 ## Audio
 
-ID LOC HOLD: Arendt did not call them expendable. The waiver did that work.
+Atlas tidak belajar kejam. Ia diberi priority stack yang lebih dingin.
 
 ## Field Note
 
-ID LOC HOLD: The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
+Catatan Marauder: waiver adalah tempat perusahaan mengajari mesin harga manusia.
 
 <!-- In-Game Wiki; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/id_ID. -->

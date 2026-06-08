@@ -3,38 +3,22 @@ packet_id: P054_RELAY_QUEUE_DRIFT
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.relay_queue_drift
 unlock_id: unlock.first_relay_queue_drift
-poi_tags: poi.relay_queue;poi.timestamp_panel
-biome_tags: biome.surface_relay;biome.service_corridor
+poi_tags: poi.relay_buffer;poi.packet_stamp
+biome_tags: biome.surface_relay;biome.storm_shelf
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Relay Queue Drift"
+title: "انجراف طابور الترحيل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Queue Drift
+# انجراف طابور الترحيل
 
-AR LOC HOLD: Relay Queue Drift defines communication decay on HECTON-8: message age, route validity and local evidence decide whether a response is usable.
-
-## Scanner
-
-AR LOC HOLD: The relay stamp is older than the leak it describes; the instruction was true for a room that no longer exists.
-
-## Terminal
-
-AR LOC HOLD: QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
-
-## Audio
-
-AR LOC HOLD: The message is correct. That is the problem.
-
-## Field Note
-
-AR LOC HOLD: A late truth can still kill.
+انجراف طابور الترحيل هو الفرق بين الحقيقة والفائدة. لا تحتاج HECTON-8 إلى تشويش مزيف أو تدخل سحري كي تجعل الاتصال مخيفا. قد تصل رسالة كاملة وموثقة وصحيحة تماما للغرفة كما كانت قبل ثلاثين دقيقة. ثم يدفع الماء بابا، يثني الضغط إطارا، يسد نمو Atlas الشق الخطأ، فيصبح الأمر نفسه فخا. هذا يعطي العالم رهبة إجرائية: اللاعب لا يسأل هل النظام يكذب، بل هل صار أقدم من أن يثق به.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/ar_SA. -->

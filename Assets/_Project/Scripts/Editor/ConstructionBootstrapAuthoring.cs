@@ -23,8 +23,6 @@ namespace Hecton8.EditorTools
         private const string RuinSeepSheenMaterialPath = "Assets/_Project/Art/Materials/Construction/Mat_RuinSeepSheen.mat";
         private const string SupportCreaturePassiveMaterialPath = "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_CreaturePassive.mat";
         private const string SupportCreaturePredatorMaterialPath = "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_CreaturePredator.mat";
-        private const string IndustrialStripeDecalPrefabPath = "Assets/ScifiFacility/Prefabs/decals/stripes_03.prefab";
-        private const string IndustrialScuffDecalPrefabPath = "Assets/ScifiFacility/Prefabs/decals/decal_04.prefab";
         private const string LeakVfxChildName = "LeakVfx";
         private const string LeakWetSheenChildName = "LeakWetSheen";
         private const string LeakStripeDecalChildName = "LeakStripeDecal";
@@ -51,6 +49,8 @@ namespace Hecton8.EditorTools
             EnsureFolder("Assets/_Project/Prefabs");
             EnsureFolder("Assets/_Project/Prefabs/Construction");
             EnsureFolder("Assets/_Project/Prefabs/Construction/Final");
+            if (WorldSupportGeneratedDecalMaterialBuilder.AreSourceTexturesAvailable())
+                WorldSupportGeneratedDecalMaterialBuilder.Build();
 
             Material foundationMat = CreateOrUpdateMaterial(
                 $"{MaterialFolder}/Mat_Module_Foundation.mat",
@@ -1481,34 +1481,34 @@ namespace Hecton8.EditorTools
 
             if (isFlatModule)
             {
-                AttachPrefabDecal(
+                AttachGeneratedDecal(
                     visualRoot,
                     LeakStripeDecalChildName,
-                    IndustrialStripeDecalPrefabPath,
+                    WorldSupportGeneratedDecalMaterialBuilder.WarningStripeMaterialPath,
                     new Vector3(scale.x * 0.25f, (scale.y * 0.5f) + 0.011f, scale.z * 0.18f),
                     new Vector3(90f, 0f, 0f),
                     new Vector3(0.24f, 0.12f, 0.24f));
-                AttachPrefabDecal(
+                AttachGeneratedDecal(
                     visualRoot,
                     LeakScuffDecalChildName,
-                    IndustrialScuffDecalPrefabPath,
+                    WorldSupportGeneratedDecalMaterialBuilder.CutterScorchMaterialPath,
                     new Vector3(-scale.x * 0.18f, (scale.y * 0.5f) + 0.011f, -scale.z * 0.24f),
                     new Vector3(90f, 0f, 0f),
                     new Vector3(0.18f, 0.14f, 0.18f));
                 return;
             }
 
-            AttachPrefabDecal(
+            AttachGeneratedDecal(
                 visualRoot,
                 LeakStripeDecalChildName,
-                IndustrialStripeDecalPrefabPath,
+                WorldSupportGeneratedDecalMaterialBuilder.WarningStripeMaterialPath,
                 new Vector3(scale.x * 0.34f, -scale.y * 0.14f, (scale.z * 0.5f) + 0.011f),
                 Vector3.zero,
                 new Vector3(0.18f, 0.34f, 0.18f));
-            AttachPrefabDecal(
+            AttachGeneratedDecal(
                 visualRoot,
                 LeakScuffDecalChildName,
-                IndustrialScuffDecalPrefabPath,
+                WorldSupportGeneratedDecalMaterialBuilder.CutterScorchMaterialPath,
                 new Vector3(-scale.x * 0.31f, 0f, (scale.z * 0.5f) + 0.011f),
                 Vector3.zero,
                 new Vector3(0.24f, 0.3f, 0.24f));
@@ -1912,39 +1912,43 @@ namespace Hecton8.EditorTools
             if (lod0 == null)
                 lod0 = root;
 
-            AttachPrefabDecal(lod0, childName, IndustrialStripeDecalPrefabPath, localPosition, localEulerAngles, localScale);
+            AttachGeneratedDecal(lod0, childName, WorldSupportGeneratedDecalMaterialBuilder.WarningStripeMaterialPath, localPosition, localEulerAngles, localScale);
         }
 
-        private static void AttachPrefabDecal(
+        private static void AttachGeneratedDecal(
             Transform parent,
             string childName,
-            string prefabPath,
+            string materialPath,
             Vector3 localPosition,
             Vector3 localEulerAngles,
             Vector3 localScale)
         {
-            if (parent == null || string.IsNullOrEmpty(childName) || string.IsNullOrEmpty(prefabPath))
+            if (parent == null || string.IsNullOrEmpty(childName) || string.IsNullOrEmpty(materialPath))
                 return;
 
-            GameObject decalPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (decalPrefab == null)
+            Material decalMaterial = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (decalMaterial == null)
                 return;
 
             Transform existingDecal = FindChild(parent, childName);
             if (existingDecal != null)
                 Object.DestroyImmediate(existingDecal.gameObject);
 
-            GameObject decalObject = PrefabUtility.InstantiatePrefab(decalPrefab, parent) as GameObject;
-            if (decalObject == null)
-                return;
-
+            GameObject decalObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
             decalObject.name = childName;
+            decalObject.transform.SetParent(parent, false);
             decalObject.transform.localPosition = localPosition;
             decalObject.transform.localRotation = Quaternion.Euler(localEulerAngles);
             decalObject.transform.localScale = localScale;
+            Collider collider = decalObject.GetComponent<Collider>();
+            if (collider != null)
+                Object.DestroyImmediate(collider);
 
             if (decalObject.TryGetComponent(out Renderer renderer))
+            {
+                renderer.sharedMaterial = decalMaterial;
                 ConfigureDecalRenderer(renderer);
+            }
         }
 
         private static void ConfigureDecalRenderer(Renderer renderer)

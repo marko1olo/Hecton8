@@ -97,14 +97,17 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            HectonBiolumController registered = GlobalRegistry.BiolumController;
-            if (registered != null && registered != this) { Destroy(gameObject); return; }
+            if (TryAbortForUsableExistingRuntime())
+                return;
 
             CachePlayerRuntimeContext(GlobalRegistry.Player, null);
         }
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             if (!TryRegisterRuntime())
                 return;
 
@@ -201,7 +204,7 @@ namespace Hecton8.World
             const float dt = 0.5f;
 
             // Vychislyaem tselevuyu intensivnost
-            float depth = survivalSystem != null ? survivalSystem.Depth : 0f;
+            float depth = ResolveCurrentDepthMeters();
             float transitionDepth = deepTransitionDepth > 1f ? deepTransitionDepth : 1f;
             float depthFactor = depth >= transitionDepth ? 1f : depth / transitionDepth;
             if (depthFactor < 0f)
@@ -421,6 +424,28 @@ namespace Hecton8.World
                 survivalSystem = contextSurvival;
         }
 
+        private float ResolveCurrentDepthMeters()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
+                return 0f;
+
+            HectonSurvivalSystem currentSurvival = survivalSystem;
+            if (currentSurvival != null && math.isfinite(currentSurvival.Depth))
+                return math.max(0f, currentSurvival.Depth);
+
+            return 0f;
+        }
+
         void IDepthZoneEventListener.OnDepthZoneEntered(DepthZoneProfile zone)
         {
             HandleDepthZoneEntered(zone);
@@ -450,16 +475,33 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return false;
 
-            HectonBiolumController registered = GlobalRegistry.BiolumController;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterBiolumControllerRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.BiolumController, this);
             return _runtimeRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            HectonBiolumController registered = GlobalRegistry.BiolumController;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsBiolumControllerRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterBiolumControllerRuntime(registered);
+            return false;
+        }
+
+        private static bool IsBiolumControllerRuntimeUsable(HectonBiolumController controller)
+        {
+            return controller != null && controller._runtimeRegistered && controller.isActiveAndEnabled;
         }
 
         private void TryUnregister()

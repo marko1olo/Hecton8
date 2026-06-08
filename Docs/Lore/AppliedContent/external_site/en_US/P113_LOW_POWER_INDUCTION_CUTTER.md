@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Low-Power Induction Cutter
 
-Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal.
+The first cutter is dangerous because it feels like permission. It opens service hatches, bolts and crate locks, then refuses the fantasy that every obstacle is a door. Pressure glass, active ribs and Atlas-grown seams are doing jobs the player may not understand yet.
 
-## Scanner
-
-Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
-
-## Terminal
-
-TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
-
-## Audio
-
-Cut the hatch. Do not cut the thing holding the room together.
-
-## Field Note
-
-The cutter should feel valuable because it is limited.
+That limitation is the design value. The tool asks the player to read function before violence. HECTON-8 becomes richer when cutting is a decision, not a universal verb.
 
 <!-- External Site; generated from P113_LOW_POWER_INDUCTION_CUTTER/en_US. -->

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: First Sanitized Accident Packet"
+title: "首份净化事故数据包"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: First Sanitized Accident Packet
+# 首份净化事故数据包
 
-ZH LOC HOLD: The first sanitized accident packet gives a useful lie: real Great Tide physics stripped of accepted margins, delayed authorization and missing workers.
+第一份净化事故数据包给出一个有用的谎言：真实的 Great Tide 物理，被剥去了已接受的风险余量、延迟授权和失踪工人。
 
 ## Scanner
 
-ZH LOC HOLD: Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
+回收的 Deep Reach 事故数据包。干净措辞与门钟和水痕冲突。
 
 ## Terminal
 
-ZH LOC HOLD: DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
+DEEP REACH 事故通知 / 局部地质技术级联：evacuation authorization failure 仍在复审；biological-pressure quarantine 有效；Atlas 日志损坏；外部发布延后至 witness reconciliation。
 
 ## Audio
 
-ZH LOC HOLD: The packet says cascade. Door clocks say delay.
+数据包说是 cascade。门钟说是 delay。
 
 ## Field Note
 
-ZH LOC HOLD: They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
+他们写的是 cascade。柜子上的污线高过疏散戳记。
 
 <!-- In-Game Wiki; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/zh_CN. -->

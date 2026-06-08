@@ -8,33 +8,19 @@ biome_tags: biome.cable_reef;biome.repair_fauna
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Maintenance Ecology"
+spoiler_tier: 1
+title: "Ecologia de manutenção"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Maintenance Ecology
+# Ecologia de manutenção
 
-PT-BR LOC HOLD: Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Atlas não descobriu um oceano amigável. Descobriu vida capaz de sustentar carga. Biofilme condutor podia fazer ponte em um circuito fraco por algumas horas. Crescimento de concha podia selar uma fratura até a próxima oscilação de pressão. Uma colônia filtrante podia repetir um pulso acústico mais longe que um relé afogado. Fauna marcada podia devolver sensor packets depois da falha dos drones metálicos.
 
-## Scanner
-
-PT-BR LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
-
-## Terminal
-
-PT-BR LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
-
-## Audio
-
-PT-BR LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
-
-## Field Note
-
-PT-BR LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Essa rede de reparo seduz e suja. O jogador pode cortar material vivo para salvage, ou deixá-lo porque ele segura pressão. Uma parede pode ser infraestrutura, habitat e prova criminal ao mesmo tempo. A Ecologia de manutenção é a primeira prova de que HECTON-8 não é magia. É pior que magia, porque cada milagre tem uma ordem de serviço por trás.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/pt_BR. -->

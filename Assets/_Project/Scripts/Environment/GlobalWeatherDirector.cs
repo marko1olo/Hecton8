@@ -1,5 +1,6 @@
 ﻿using Hecton8.Core;
 using Hecton8.Celestial;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -257,6 +258,7 @@ namespace Hecton8.Environment
         private bool _weatherShaderDirty;
         private IFluidCurrentWriteSink _fluidCurrentSink;
         private BiomeMatrixDirector _cachedBiomeMatrix;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private HectonCelestialEngine _cachedCelestialEngine;
         private bool _atmosphericShaderDirty;
         private bool _noirFogLutDirty;
@@ -420,6 +422,9 @@ namespace Hecton8.Environment
             _noirFogLutDirty = false;
             _noirFogLutRepairRequested = false;
             _hasPublishedWeatherEvent = false;
+            _cachedBiomeMatrix = null;
+            _cachedPlayerContext = null;
+            _cachedCelestialEngine = null;
             ReleaseNoirFogLutResources();
         }
 
@@ -438,6 +443,18 @@ namespace Hecton8.Environment
             if (serviceSlot == GlobalRegistryServiceSlot.BiomeMatrixRuntime)
             {
                 _cachedBiomeMatrix = currentService as BiomeMatrixDirector;
+                if (_cachedBiomeMatrix == null || !_cachedBiomeMatrix.isActiveAndEnabled)
+                {
+                    _cachedBiomeMatrix = null;
+                    WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _cachedBiomeMatrix);
+                }
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
+                _cachedPlayerContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
                 return;
             }
 
@@ -615,7 +632,14 @@ namespace Hecton8.Environment
                     _fluidCurrentSink = GlobalRegistry.FluidCurrentWriteSink;
             }
 
-            _cachedBiomeMatrix = GlobalRegistry.BiomeMatrix;
+            if (_cachedBiomeMatrix == null || !_cachedBiomeMatrix.isActiveAndEnabled)
+            {
+                _cachedBiomeMatrix = null;
+                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _cachedBiomeMatrix);
+            }
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
             _cachedCelestialEngine = GlobalRegistry.CelestialEngine;
         }
 
@@ -915,8 +939,32 @@ namespace Hecton8.Environment
 
         private float ResolveCurrentBiomeDepthMeters()
         {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
             BiomeMatrixDirector biomeMatrix = _cachedBiomeMatrix;
-            return biomeMatrix != null ? math.max(0f, biomeMatrix.CurrentDepthMeters) : 0f;
+            if (biomeMatrix == null || !biomeMatrix.isActiveAndEnabled)
+            {
+                biomeMatrix = null;
+                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrix);
+                _cachedBiomeMatrix = biomeMatrix;
+            }
+
+            if (biomeMatrix != null &&
+                biomeMatrix.isActiveAndEnabled &&
+                math.isfinite(biomeMatrix.CurrentDepthMeters))
+            {
+                return math.max(0f, biomeMatrix.CurrentDepthMeters);
+            }
+
+            return 0f;
         }
 
         private void ResolveWeatherLutProfiles(out WeatherProfile sourceProfile, out WeatherProfile targetProfile, out float influence)

@@ -9,7 +9,6 @@
 
 namespace Hecton8.Gameplay
 {
-    using Hecton.Localization;
     using Unity.Mathematics;
     using UnityEngine;
     using Hecton8.Core;
@@ -817,16 +816,13 @@ namespace Hecton8.Gameplay
 
         internal void HandleRuntimeOverchargeFailure(float playerDamage)
         {
-            if (_toolData != null)
+            int toolHashId = ItemData.ResolvePersistentHashId(_toolData);
+            if (toolHashId != 0)
             {
-                int toolHashId = LocHash.Compute(_toolData.PersistentId);
-                if (toolHashId != 0)
-                {
-                    PlayerInventory inventory = _playerInventoryService != null
-                        ? _playerInventoryService.Inventory
-                        : null;
-                    inventory?.TryRemoveFirstMatchingItemByHash(toolHashId);
-                }
+                PlayerInventory inventory = _playerInventoryService != null
+                    ? _playerInventoryService.Inventory
+                    : null;
+                inventory?.TryRemoveFirstMatchingItemByHash(toolHashId);
             }
 
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
@@ -1069,7 +1065,7 @@ namespace Hecton8.Gameplay
             toolId = null;
             itemHashId = 0u;
             maxDurability = 1f;
-            if (_toolMetadata == null || string.IsNullOrEmpty(_toolMetadata.toolID))
+            if (_toolMetadata == null || string.IsNullOrWhiteSpace(_toolMetadata.toolID))
                 return false;
 
             toolId = _toolMetadata.toolID;
@@ -1101,10 +1097,13 @@ namespace Hecton8.Gameplay
 
         private void CacheToolItemHash()
         {
-            if (_toolData != null)
-                _cachedToolItemHashId = unchecked((uint)LocHash.Compute(_toolData.PersistentId));
+            _cachedToolItemHashId = 0u;
 
-            _cachedToolMetadataHashId = _toolMetadata != null && !string.IsNullOrEmpty(_toolMetadata.toolID)
+            int toolHashId = ItemData.ResolvePersistentHashId(_toolData);
+            if (toolHashId != 0)
+                _cachedToolItemHashId = unchecked((uint)toolHashId);
+
+            _cachedToolMetadataHashId = _toolMetadata != null && !string.IsNullOrWhiteSpace(_toolMetadata.toolID)
                 ? unchecked((uint)Animator.StringToHash(_toolMetadata.toolID))
                 : 0u;
 
@@ -1166,7 +1165,7 @@ namespace Hecton8.Gameplay
         {
             if (_toolDurabilityService == null ||
                 _toolMetadata == null ||
-                string.IsNullOrEmpty(_toolMetadata.toolID))
+                string.IsNullOrWhiteSpace(_toolMetadata.toolID))
             {
                 return;
             }

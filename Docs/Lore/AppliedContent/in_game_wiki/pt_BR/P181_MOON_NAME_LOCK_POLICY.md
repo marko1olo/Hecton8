@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Moon Name Lock Policy"
+title: "Ledger de Funções Lunares de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Name Lock Policy
+# Ledger de Funções Lunares de Aegir
 
-PT LOC HOLD: The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.
+A lista de luas de Aegir é uma carta de tráfego em operação. Cada corpo ao redor do gigante gasoso muda tráfego, lei de reivindicação de salvage, timing de comunicação ou planejamento de extração de HECTON-8.
 
 ## Scanner
 
-PT LOC HOLD: Moon labels can change; orbital roles cannot.
+Nomes públicos derivam entre cartas; as órbitas mantêm seus trabalhos.
 
 ## Terminal
 
-PT LOC HOLD: ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.
+LEDGER ATLAS: rótulos públicos variam por seguradora e carta de rota. Funções permanecem fixas: cisalhamento de radiação, máscara de relé, força de maré, dispersão de gelo, roteamento público, rumor de quarentena, salvage industrial, tráfego de janela alta, reivindicação profunda e economia de balizas mortas.
 
 ## Audio
 
-PT LOC HOLD: A name can be repainted. An orbit keeps the bill.
+Você pode renomear uma lua. A órbita ainda cobra.
 
 ## Field Note
 
-PT LOC HOLD: Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.
+Skarn cisalha partículas. Vela mascara relés. Claw arremessa gelo. Lumen imprime rotas. Thorne carrega rumores de quarentena. Anvil alimenta salvage. Kestrel controla janelas altas. HECTON guarda a reivindicação profunda. Mute vende balizas mortas.
 
 <!-- In-Game Wiki; generated from P181_MOON_NAME_LOCK_POLICY/pt_BR. -->

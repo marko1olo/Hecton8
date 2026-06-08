@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Inner Relay Moon Traffic Role"
+title: "Vela als innerer Relay-Verkehrsmond"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Inner Relay Moon Traffic Role
+# Vela als innerer Relay-Verkehrsmond
 
-DE LOC HOLD: Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
+Vela ist ein innerer Arbeitsmond Aegirs. Er kreuzt geladene Bahnen schnell genug, um schlechte Schilde zu bestrafen, doch seine alten Relay-Masken und Reflexionen formen weiter die Routentabellen. Ein Black-Keel-Anflug kann Velas Schatten nutzen, um Linkrauschen für wenige Minuten zu verstecken.
 
 ## Scanner
 
-DE LOC HOLD: Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
+Mondledger. Vela maskiert und spiegelt Relay-Verkehr; Schiffe behandeln ihn wie ein bewegliches Zolltor.
 
 ## Terminal
 
-DE LOC HOLD: MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
+MONDLEITER H2 VELA: Relay-Schatten klärt in dreiundvierzig Minuten. Strahlungszähler steigt auf der Skarn-Seite. HECTON-Transferburn bleibt legal, wenn Carrier-Masse unter dem gemeldeten Limit bleibt.
 
 ## Audio
 
-DE LOC HOLD: The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
+Niemand fliegt wegen der Aussicht nach Vela. Man zählt ihn, wartet auf ihn und hofft, dass das alte Beacon weiter gleich lügt.
 
 ## Field Note
 
-DE LOC HOLD: Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
+Vela ist nützlich, weil er pünktlich im Weg steht.
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/de_DE. -->

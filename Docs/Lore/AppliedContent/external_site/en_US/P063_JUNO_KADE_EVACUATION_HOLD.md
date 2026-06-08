@@ -8,7 +8,7 @@ biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Juno Kade Evacuation Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Juno Kade Evacuation Hold
 
-Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent.
+Juno Kade is the person between panic and procedure. Her log does not show a colony too stupid to leave. It shows a queue, a marshal, route boards, manual override attempts and gates waiting for permission while water moved faster than review.
 
-## Scanner
-
-Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
-
-## Terminal
-
-KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
-
-## Audio
-
-She kept counting people after the system started counting rooms.
-
-## Field Note
-
-An evacuation marshal can move people. She cannot move a clause that owns the door.
+The hold has several names: quarantine, certification, payload rank, claim seal. Each name sounds reasonable by itself. Together they form a locked door with people on the wrong side. Kade matters because she preserves the human shape of the evacuation. The player is not finding abstract negligence. The player is finding a working exit that became unusable through authorized delay.
 
 <!-- External Site; generated from P063_JUNO_KADE_EVACUATION_HOLD/en_US. -->

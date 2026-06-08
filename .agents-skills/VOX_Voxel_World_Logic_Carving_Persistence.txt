@@ -1,6 +1,9 @@
 # VOXEL_WORLD_LOGIC.md
 # Hecton-8 | Voxel Persistence - Carving - Dynamic Snapping
 
+[REQ] Player-visible carving, breach, tunnel, cave, deformation, and persistent voxel state acceptance inherits the Visual Reference Parity Gate. Captures must beat mandatory references plus best-known internal baseline/current rejection matrix before carving or persistence work is credited visually.
+[FORBID] Save-correct carving, boolean subtraction, fog, decals, or dark cave staging as visual acceptance when geometry contact, material truth, fracture readability, route cue, and compact-tier composition remain below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` and recover voxel/material owner stack.
+
 ---
 
 ## Section0 - FOUNDATIONAL CONTRACTS

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "浅部別棟 P-63 ポンプ室"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Shallow Annex P-63 Pump Room
+# 浅部別棟 P-63 ポンプ室
 
-JA LOC HOLD: Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside.
+Shallow Annex P-63 は HECTON-8 を小さくせず最初の安全な空隙を与える。ポンプ、cold seal、ゲージ、そして外の明るい棚。
 
 ## Scanner
 
-JA LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+P-63 ポンプ室。手動サンプ圧は保守マージン未満でかろうじて保っている。
 
 ## Terminal
 
-JA LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+作業指示 P-63 / SHALLOW ANNEX: hand-pump sump を 0.3 m まで; seam C に cold seal を着座; ゲージ安定後にのみ溶着ロッカーラッチを切断; return pinger が応答するまで緑ランプを信じるな。
 
 ## Audio
 
-JA LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+まずポンプ。次にシール。ゲージの流れが止まってからカッター。
 
 ## Field Note
 
-JA LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+ポンプハンドルは、怯えた手が握り続けた場所だけ磨かれている。乾いた床はチョーク線から始まる。
 
 <!-- External Site; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/ja_JP. -->

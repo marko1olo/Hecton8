@@ -1135,16 +1135,22 @@ namespace Hecton8.Visor
                     return 1f;
 
                 IPlayerRuntimeContext playerContext = _playerContext;
-                var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-                if (playerMovement == null)
-                    return 0f;
+                if (playerContext != null &&
+                    playerContext.IsInitialized &&
+                    playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    math.isfinite(movementState.DepthMeters))
+                {
+                    if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.Underwater) != 0u)
+                        return 1f;
 
-                if (playerMovement.IsPlayerSubmerged)
-                    return 1f;
+                    float depth = math.max(0f, movementState.DepthMeters);
+                    return math.saturate(
+                        (depth - SurfaceNoirSuppressionDepth) /
+                        math.max(0.0001f, UnderwaterNoirFullDepth - SurfaceNoirSuppressionDepth));
+                }
 
-                return math.saturate(
-                    (playerMovement.CurrentDepth - SurfaceNoirSuppressionDepth) /
-                    math.max(0.0001f, UnderwaterNoirFullDepth - SurfaceNoirSuppressionDepth));
+                return 0f;
             }
 
             private static float ResolveGlobalQualityWeight01()
@@ -1208,25 +1214,17 @@ namespace Hecton8.Visor
             private float3 ResolvePlayerVelocity()
             {
                 IPlayerRuntimeContext playerContext = _playerContext;
-                if (playerContext == null)
-                    return default;
-
-                var playerMovement = playerContext.PlayerMovement;
-                if (playerMovement != null)
-                    return ToFloat3(playerMovement.InterpolatedLinearVelocity);
+                if (playerContext != null &&
+                    playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasMovement) != 0u &&
+                    math.all(math.isfinite(movementState.Velocity)))
+                {
+                    return movementState.Velocity;
+                }
 
                 return CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityShaftMaxAgeFrames, out float3 velocity)
                     ? velocity
                     : default;
-            }
-
-            private static float3 ToFloat3(Vector3 value)
-            {
-                float3 result;
-                result.x = value.x;
-                result.y = value.y;
-                result.z = value.z;
-                return result;
             }
 
             private static Color ResolveNoirLiftColor(Color configured)

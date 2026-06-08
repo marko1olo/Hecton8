@@ -9,32 +9,36 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Aegir Transfer Windows"
+title: "Aegir：救助を拒む空"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Aegir Transfer Windows
+# Aegir：救助を拒む空
 
-JA LOC HOLD: Aegir is reachable by machinery, timing and debt. No faster-than-light drive crosses the route. Probe packets mapped the warm dwarf system first, then beam infrastructure and pellet-fusion freight built enough traffic to move seed mass, claim platforms and slow human decisions into the same ledger. HECTON-8 sits inside that machinery as a pressure moon under Aegir, bright at the surface, dangerous by depth and useful enough that nobody could leave it alone. Black Keel does not ignore a survivor because rescue is impossible. It waits because recovery requires several clocks to agree: relay delay, carrier position, descent mass, storm shutters, custody signatures and a window narrow enough to close while a person is still sealing a capsule. Every visible moon, relay path and transfer band is part of the same route accounting. That is why help reaches HECTON-8 first as a number, then as a signal, and only much later as hardware.
+## 空は空白ではない
 
-## Scanner
+Aegirは背景ではない。海の上にある機械だ。重力、放射、中継幾何、デブリ天候、契約時間、回収法がそこで動く。
 
-JA LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+ansibleもFTLもない。Ran/Aegirルートは光年級で、局所窓も軌道、嵐、月影、custody待ちに支配される。正しいパケットは遅すぎることがある。きれいなパケットは法的に死ぬことがある。
 
-## Terminal
+階段はSkarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON、Muteを呼ぶ。正確な定数は将来の表の仕事だ。現場ではshadow、surge、scatter、plume、lag、receiverが役に立つ。
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+Black Keelは高い軌道に残る。降下は熱、燃料、曝露、予定、責任を消費するからだ。帰還には音響中継、上昇機材、時刻、天候、隔離、payload hash、質量窓がいる。一つ欠けてもcarrierは穏やかに聞こえる。穏やかさは帳簿を持った自動化だ。
 
-## Audio
+## 空は機械だ
 
-JA LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Aegirは絵の背景ではない。主星、月の梯子、relay shadows、pellet lanes、braking wakes、ice scatter、storm plume、guidance lagが重なった、物語最大の機械だ。プレイヤーは全体を一度に見る必要はない。ただ、すべての通信、投下、回収に幾何があると感じる必要がある。
 
-## Field Note
+だから救助は簡単には来ない。FTL補正も隠れたansibleも、質量を無視する英雄的carrierもない。route windowは法の許可である前に物理の許可だ。Black Keelがtenderを降ろせるのは、局所任務が狭いからで、奇跡を持つからではない。
 
-JA LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+## 見上げる意味
+
+HECTON-8で空を見ることは、希望ではなくtimingを見ることだ。Aegirはpacketが上がる時、receiverが答える時、claimが公証される時、そして古い指示だけが残る時を決める。
+
+よい天文記事は、月明かりをリスクとして読ませる。Kestrelが動けばrelay shadowが変わる。ice scatterが増えれば航法は噂になる。Silent Orbitが黙っていても、古い金属は現在を決められる。
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/ja_JP. -->

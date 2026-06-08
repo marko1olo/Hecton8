@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "מכלול טבעת מהדק איטום לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Pressure Seal Clamp Ring Assembly
+# מכלול טבעת מהדק איטום לחץ
 
-HE LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.
+מכלול טבעת מהדק איטום הלחץ הופך תיקון קפסולה למיקוח עם לחץ: מתכת deep-rated, מושב זכוכית ו-Atlas bio-sealant יכולים להציל או לכלוא את נתיב העלייה.
 
 ## Scanner
 
-HE LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+צלקת clamp-ring. שרוול העלייה שרד את הפגיעה בכך שבזבז את האטם שהיה אמור לקחת אותו הביתה.
 
 ## Terminal
 
-HE LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch מחזיק רק לחץ מדור. Ascent seal דורש deep-rated clamp ring, pressure-glass seat, shell-sealant map ופרופיל Deep Reach מאומת. Atlas-grown sealant עשוי לשמר habitat תוך חסימת הפרדה נקייה.
 
 ## Audio
 
-HE LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+האטם השימושי חי בכיוון הלא נכון.
 
 ## Field Note
 
-HE LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+טלאי safe-room יכול לקנות שעה של אוויר. הוא לא יחזיק דחף שיגור.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/he_IL. -->

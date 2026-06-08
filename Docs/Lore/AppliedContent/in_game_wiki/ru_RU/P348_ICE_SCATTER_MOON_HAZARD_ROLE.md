@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Ice Scatter Moon Hazard Role"
+title: "Claw и опасность ледяного рассеяния"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Ice Scatter Moon Hazard Role
+# Claw и опасность ледяного рассеяния
 
-RU LOC HOLD: The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
+Claw - луна ледяного рассеяния с грязным ореолом осколков, claim-пыли и замерзшего индустриального мусора. После штормов ее полосы могут показывать полезный материал, поэтому слухи не умирают. Те же полосы ломают доверие к датчикам.
 
 ## Scanner
 
-RU LOC HOLD: Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
+Внешняя запись ice-scatter. Claw сбрасывает яркий мусор в трассы, где слухи о salvage бегут быстрее, чем должны летать пилоты.
 
 ## Terminal
 
-RU LOC HOLD: MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
+ЛУННАЯ ЛЕСТНИЦА H3 CLAW: полоса мусора открыта только для survey-дронов. Движение корпусов требует передний пылевой радар, жертвенную защиту и отказ от выплаты за незаписанные удары осколков.
 
 ## Audio
 
-RU LOC HOLD: Every system has one moon that accountants love and pilots curse.
+В каждой системе есть луна, которую любят бухгалтеры и проклинают пилоты.
 
 ## Field Note
 
-RU LOC HOLD: Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
+Claw выглядит прибыльной на бумаге, потому что бумаге не надо уворачиваться от льда.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/ru_RU. -->

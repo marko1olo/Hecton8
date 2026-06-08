@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "ID LOC HOLD: Black Keel Transfer Band"
+spoiler_tier: 1
+title: "Pita Transfer Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Black Keel Transfer Band
+# Pita Transfer Black Keel
 
-ID LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.
+Black Keel adalah carrier kontrak di custody route. Ia dapat menerima payloads sebelum aman mengambil manusia.
 
 ## Scanner
 
-ID LOC HOLD: Carrier band: Black Keel loiters high, not above HECTON-8.
+Pita carrier: Black Keel menunggu tinggi, bukan di atas HECTON-8.
 
 ## Terminal
 
-ID LOC HOLD: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+CARRIER ORBIT: custody lane tinggi; descent mass terbatas dan weather-gated.
 
 ## Audio
 
-ID LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.
+Ia tidak parkir di atasmu. Ia menunggu di tempat yang diizinkan asuransi.
 
 ## Field Note
 
-ID LOC HOLD: Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
+Catatan orbit carrier: Black Keel bisa menerima payloads sebelum manusia; celah itu menggerakkan partial-exit logic.
 
 <!-- External Site; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/id_ID. -->

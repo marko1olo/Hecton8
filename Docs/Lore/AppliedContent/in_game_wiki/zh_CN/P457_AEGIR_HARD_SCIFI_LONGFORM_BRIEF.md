@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Aegir Transfer Windows"
+title: "Aegir：拒绝救援的天空"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Aegir Transfer Windows
+# Aegir：拒绝救援的天空
 
-ZH LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir是运行中的天空。月梯能延迟或破坏干净数据包，却不必让表面永远黑暗。救援会被距离、几何、法律和成本击碎。
 
 ## Scanner
 
-ZH LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+天体路线入门。不存在FTL或ansible。Aegir窗口要经过卫星、碎屑、中继custody、风暴状态和Black Keel质量账本。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+AEGIR导航入门 // 公共波段。使用危险类别而非最终常数：route-shadow、charged surge、ice scatter、storm plume、guidance lag、receiver custody。
 
 ## Audio
 
-ZH LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Black Keel调度摘录：“真实信号不等于有用信号。窗口由质量、天气、custody和接收者锁定维持。”
 
 ## Field Note
 
-ZH LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+掠夺者天空规则：不要问信号有没有发出。问哪颗月亮挡住它，哪个ledger抓住它，接收者听见的是人还是质量类别。
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/zh_CN. -->

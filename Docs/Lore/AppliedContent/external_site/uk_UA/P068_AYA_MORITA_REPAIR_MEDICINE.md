@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aya Morita Repair Medicine"
+title: "Ремонтна медицина Аї Моріти"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aya Morita Repair Medicine
+# Ремонтна медицина Аї Моріти
 
-UA LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category.
+Запис Аї Моріти про ремонтну медицину фіксує точку, де логіка обслуговування Atlas, екстрений тріаж, кабельна травма й жива тканина провалюються в одну категорію.
 
 ## Scanner
 
-UK LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.
+Ая Моріта записала момент, коли Atlas перестав лікувати тіла й почав використовувати їх як сумісну ремонтну поверхню.
 
 ## Terminal
 
-UK LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.
+МОРІТА, А. Тканину пацієнта прийнято колонією герметика після контакту з кабелем. Ворожої агресії не спостерігається. Мітка Atlas класифікує рану як пошкодження інтерфейсу. Відхилити ремонтний протокол для людського тріажу.
 
 ## Audio
 
-UK LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.
+Воно закрило рану навколо кабелю. Саме тоді вона перестала називати це лікуванням.
 
 ## Field Note
 
-UK LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.
+Це не запис про зомбі. Гірше: ремонтна нотатка, написана біля ліжка.
 
 <!-- External Site; generated from P068_AYA_MORITA_REPAIR_MEDICINE/uk_UA. -->

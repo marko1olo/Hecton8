@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Glass Grazer Codex Card"
+title: "Codexkaart: glasgrazer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Glass Grazer Codex Card
+# Codexkaart: glasgrazer
 
-NL LOC HOLD: HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+Glasgrazers veranderen HECTON-8s ecologie in een overlevingstaal. Hun eten opent heldere routelittekens door film en matgroei, maar hun stilstand is vaak belangrijker dan hun beweging. Een onschuldig dier kan de speler eerder waarschuwen dan een meter.
 
 ## Scanner
 
-NL LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+School glasgrazers. Niet-vijandige schaaleters schrapen mineraalfilm. Regelmatig tikken betekent werkbaar water; plotselinge stilte betekent dat iets groters de open plek veranderde.
 
 ## Terminal
 
-NL LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+SPECIMEN / SCHOOL GLASGRAZERS / rol: schraper van ondiepe film, getuige van stroming, aanwijzing voor roofdierverplaatsing / veilige lezing: voederrand, verse bleke schraapbaan, stabiele schaaltikken / afwijzen: verlaten voedselveld, strak bevroren school, geen terugkerende tikken na pinger / routenotitie: afwezigheid na eten is gevarendata.
 
 ## Audio
 
-NL LOC HOLD: When they stop eating, you stop moving.
+Als de kleine monden stoppen met tikken en het voedsel blijft liggen, word dan niet het volgende dat wacht.
 
 ## Field Note
 
-NL LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Etende school: lees de baan. Bevroren school: lees het water. Lege baan met voedsel over: vertrek.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/nl_NL. -->

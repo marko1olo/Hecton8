@@ -1,0 +1,27 @@
+{
+  "schema": "hecton8.generated_single_texture_normalization.v1",
+  "date": "2026-06-07",
+  "operation": "resize_and_png_optimize_same_path_generated_uv_atlas",
+  "maxSize": 1024,
+  "records": [
+    {
+      "path": "Assets/_Project/Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png",
+      "beforeBytes": 2632065,
+      "afterBytes": 904986,
+      "savedBytes": 1727079,
+      "beforeSize": [
+        2048,
+        2048
+      ],
+      "afterSize": [
+        1024,
+        1024
+      ],
+      "mode": "RGB"
+    }
+  ],
+  "missing": [],
+  "totalBeforeBytes": 2632065,
+  "totalAfterBytes": 904986,
+  "totalSavedBytes": 1727079
+}

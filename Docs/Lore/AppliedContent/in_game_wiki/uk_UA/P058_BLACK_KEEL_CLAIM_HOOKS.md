@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Claim Hooks"
+title: "Гачки претензій Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Claim Hooks
+# Гачки претензій Black Keel
 
-UK LOC HOLD: Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.
+Black Keel — маршрут доставки гравця, обіцянка повернення і перша юридична клітка. Носій може відповісти, але кожна відповідь проходить крізь гачки претензій: цінність корисного вантажу, карантинний статус, сертифікат маршруту, боргову опіку і старі пріоритетні клаузули Deep Reach, які давно мали втратити силу. Тому поверхня не є кнопкою порятунку. Корабель досить близько, щоб говорити, і досить далеко, щоб відмовити; його затримки — не настрій. Це контрактна логіка, що працює саме так, як її записали.
 
 ## Scanner
 
-UK LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+У маніфесті Black Keel — обладнання пулу претензій, а в клаузулах — важіль Deep Reach.
 
 ## Terminal
 
-UK LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+ОПІКА НОСІЯ: повернення оператора дозволено після сортування корисного вантажу, карантинної брами, сертифіката маршруту й очищення відповідальності. Пріоритетну печатку Deep Reach збережено в сплячих клаузулах.
 
 ## Audio
 
-UK LOC HOLD: It can hear you. It just has to price the answer first.
+Він тебе чує. Просто спершу мусить оцінити ціну відповіді.
 
 ## Field Note
 
-UK LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+Корабель не злий. Його здано контракту, який уміє бути жорстоким, не звучачи живим.
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/uk_UA. -->

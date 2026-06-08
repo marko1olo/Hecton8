@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "ソル・コア管轄局"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# ソル・コア管轄局
 
-JP LOC HOLD: Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help.
+ソル・コア管轄局は、HECTON-8 が遠隔地でありながら法的には所有され得る理由を示す。HECTON-8 では、古い文明は救援より先に、書類、標準、負債として到着する。
 
 ## Scanner
 
-JP LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+古いソル法の封印。圧力漏れの臭いを嗅げる距離になくても、辺境の死体を所有できる。
 
 ## Terminal
 
-JP LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+SOL CORE STANDARD: 請求権の継続は、認可輸送者の保管、航路保険、遅延審理によって承認される。人員回収の優先度は、現地危険認証まで未確定。
 
 ## Audio
 
-JP LOC HOLD: The seal came from Earth space. The rescue clause did not.
+封印は地球圏から来た。救助条項は来なかった。
 
 ## Field Note
 
-JP LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+ここでソルは故郷ではない。君をまだ破滅させられる、文書上で最も古い署名だ。
 
 <!-- External Site; generated from P071_SOL_CORE_AUTHORITY/ja_JP. -->

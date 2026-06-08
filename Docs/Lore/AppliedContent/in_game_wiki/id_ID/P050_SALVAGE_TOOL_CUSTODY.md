@@ -7,8 +7,8 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Kustodi Alat Salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Kustodi Alat Salvage
 
-Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.
+Alat salvage bukan perlengkapan netral. Cutter, patcher, dan dock fabricator bisa mencatat siapa membuka panel, memperbaiki jalur, atau memindahkan sampel. Log itu bisa melindungi bukti, menempelkan hak payout, atau memperkuat claim terhadap pemain. Kustodi alat adalah tempat bertahan hidup menit demi menit menyentuh ekonomi salvage yang lebih luas.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Dock alat menyimpan log kustodi tersegel. Potongan terakhir, perbaikan, dan kantong sampel terikat ke token claim Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: penggunaan cutter diterima di bawah salvage claim. Aksi repair disaksikan. Hak sampel melekat pada token Keelmark Mutual. Ekspor bukti bertentangan dengan rute payout material.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Setiap potongan berguna meninggalkan saksi.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Cutter bisa menyelamatkan udaramu dan menjual tanganmu dalam satu gerakan. Periksa apa yang ia catat sebelum menyebutnya milikmu.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/id_ID. -->

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "ID LOC HOLD: Aegir Route and Ships"
+title: "Rute Aegir dan Kapal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Aegir Route and Ships
+# Rute Aegir dan Kapal
 
-ID LOC HOLD: Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
+Hub rute dan kapal: domain manusia tanpa FTL, sistem bulan Aegir, batas kustodi Black Keel, jendela transfer, dan bathydrop rusak yang membuktikan kedatangan tanpa mengesahkan pelarian.
 
 ## Scanner
 
-ID LOC HOLD: Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
+Hub publikasi: tanpa FTL, jadwal rute Aegir, batas Black Keel, dan alasan keras mengapa penyelamatan tidak datang sesuai permintaan.
 
 ## Terminal
 
-ID LOC HOLD: SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
+NAV SITUS: probe jarum, jalur berkas dan pellet, pengereman seed-ship, kustodi Black Keel, orbit transfer, kegagalan bathydrop.
 
 ## Audio
 
-ID LOC HOLD: Distance is not lore trivia. It is the pressure on every decision.
+Jarak bukan trivia lore. Ia menekan setiap keputusan.
 
 ## Field Note
 
-ID LOC HOLD: Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
+Baca halaman kapal sebagai mekanik bertahan hidup: jeda, kustodi, massa, cuaca, orbit, dan antarmuka turun yang rusak menentukan hasil.
 
 <!-- In-Game Wiki; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/id_ID. -->

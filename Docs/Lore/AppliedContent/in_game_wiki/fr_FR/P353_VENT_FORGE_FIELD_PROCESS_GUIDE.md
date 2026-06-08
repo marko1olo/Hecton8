@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Vent Forge Field Process Guide"
+title: "Guide de procédé de terrain des forges-vents"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Vent Forge Field Process Guide
+# Guide de procédé de terrain des forges-vents
 
-FR LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.
+Les vent forges sont des réacteurs naturels-industriels. Ils transforment chaleur, brine et pressure history en ceramics, sealants et charge materials utiles tout en liant chaque échantillon à son trajet thermique.
 
 ## Scanner
 
-FR LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+Vent-forge chemistry active. La qualité suit pressure history, heat pulse et refroidissement lent, pas l'éclat de l'échantillon.
 
 ## Terminal
 
-FR LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+FIELD GUIDE : les vent forges cuisent sulfides, noble-gas pockets, ceramics et sealant precursors. Le trajet d'un échantillon à travers heat, brine et pressure compte plus que son nom.
 
 ## Audio
 
-FR LOC HOLD: The vent did not make ore. It made a process you interrupted.
+Le vent n'a pas fait du minerai. Il a fait un procédé que tu as interrompu.
 
 ## Field Note
 
-FR LOC HOLD: Use for resource taxonomy and crafting-table handoff.
+Ne remonte pas un lot frais directement dans l'eau froide. Laisse le vent terminer l'anneal ou la coque se craquellera.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/fr_FR. -->

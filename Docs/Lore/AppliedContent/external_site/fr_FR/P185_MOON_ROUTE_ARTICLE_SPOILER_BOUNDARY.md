@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "Ligne de caviardage du bassin Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# Ligne de caviardage du bassin Atlas
 
-FR LOC HOLD: Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons.
+La Ligne de caviardage du bassin Atlas marque ce que la couverture publique d'Aegir peut dire des lunes, des routes et de la pression de secours tout en gardant le bassin scellé hors des cartes ouvertes.
 
 ## Scanner
 
-FR LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+L'atlas lunaire public peut nommer les dangers du ciel ; il ne peut pas imprimer ce que fait le payload du bassin Atlas.
 
 ## Terminal
 
-FR LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+CAVIARDAGE ATLAS : les pages lunaires publiques peuvent lister noms, fenêtres de route, dangers, économie de salvage et faits du désastre HECTON-8. Effets du payload, comportement du basin receiver et résultats de décision finale restent verrouillés.
 
 ## Audio
 
-FR LOC HOLD: Publish the sky. Redact the bottom.
+Publie le ciel. Scelle le fond.
 
 ## Field Note
 
-FR LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+Au-dessus des nuages, la route est publique. Sous le bassin, chaque réponse a encore un verrou.
 
 <!-- External Site; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/fr_FR. -->

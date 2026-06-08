@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Lantern Drift Codex Card"
+title: "بطاقة كودكس انجراف المصابيح"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Lantern Drift Codex Card
+# بطاقة كودكس انجراف المصابيح
 
-AR LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+انجراف المصابيح يمنع جمال HECTON-8 من أن يصبح خلفية. يمكنه أن يقود اللاعب عبر بنية مضيئة واضحة، ثم يخونه بتسجيل الضجيج والذعر وشحنة العاصفة. الماء الساطع ملاحة وانكشاف في الوقت نفسه.
 
 ## Scanner
 
-AR LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Bloom انجراف المصابيح. عوالق مضيئة حيويا ترسم التيار والحطام في أشرطة. نافعة للحدود؛ خطرة حين يحولها ضجيج الأدوات إلى أثر مضاء.
 
 ## Terminal
 
-AR LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+عينة / BLOOM انجراف المصابيح / الدور: حدث رؤية ضحل، رسم تيار، مسجل اضطراب / قراءة آمنة: ضوء حافة ثابت، هالات حطام، توافق التيار والبقايا / ارفض: ممر كاذب مشحون بالعاصفة، bloom يسحق الأخطار الصغيرة، أثر أدوات يزداد ضوءا خلف العامل / ملاحظة مسار: الضوء بيانات، لا مأوى.
 
 ## Audio
 
-AR LOC HOLD: Pretty is not safe. Pretty is a reading.
+التوهج لا يساعدك. إنه يبلّغ عما سمعه الماء.
 
 ## Field Note
 
-AR LOC HOLD: Card teaches that beauty can be route information and route deception.
+استخدم bloom للحدود. لا تصلح بضجيج داخله. إذا تبعك التوهج، فقد يتبعه شيء آخر أيضا.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/ar_SA. -->

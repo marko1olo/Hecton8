@@ -9,32 +9,38 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: roszczenie pod ciśnieniem"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: roszczenie pod ciśnieniem
 
-PL LOC HOLD: HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## Pierwsza robota
 
-## Scanner
+HECTON-8 zaczyna się od kontraktu. Black Keel otwiera okno Aegir, wpisuje zastaw 4.8 tonne-window i zrzuca uszkodzony bathydrop ku P-63. Jest tam dość światła na trasę i dość awarii na śmierć.
 
-PL LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+Pierwsze czynności są małe: wypompować wodę, założyć uszczelnienie w klasie, przeczytać błędy kapsuły, zeskanować metal. Skan nie wykłada historii. Sprawdza, czemu raport nie zna śladów na sprzęcie.
 
-## Terminal
+P-63 jest piękne w świetle. Piękno nie jest bezpieczeństwem. Wapień, moduły, kable i zniszczone elementy ewakuacji pokazują, że kontrakt mówi o ładunku, a pomieszczenie o dowodzie.
 
-PL LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+Rozerwany pierścień odzysku, zalana awionika i krzywa rama dowodzą, że bathydrop zużył powrót, by przetrwać upadek. Naprawa prowadzi w dół: narzędzia, przekaźniki, solanka, pressure glass i legalny odbiorca.
 
-## Audio
+Deep Reach nie stworzyło złego oceanu. Winę widać w zaakceptowanym ryzyku, zbyt małej ewakuacji i języku, który zmienia pracowników w kategorie strat.
 
-PL LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+## Jak Czytac Zejscie
 
-## Field Note
+Praktyczna zasada HECTON-8 jest prosta: kazdy element lore musi zostawiac slad, ktory gracz moze sprawdzic. Numer kontraktu nie jest ozdoba, jesli zmienia mass window. Rysa na bathydropie nie jest dekoracja, jesli dowodzi, ze system wynurzenia odpalil przed uderzeniem. Zalany pokoj nie jest tlem, jesli pompa, uszczelka, route log i odczyt scanner kloca sie z oficjalnym pakietem.
 
-PL LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+Dlatego poczatek wraca do pracy. P-63 uczy, ze piekno nie oznacza bezpieczenstwa, plytka woda tez moze byc pulapka claim, a przetrwanie sklada sie z twardych slow: seal rating, intake pressure, relay drift, battery reserve, custody grade.
+
+## Obietnica
+
+To nie jest historia o ratowaniu galaktyki. To dlugi problem cisnienia wokol pracownika ze zlym lien i uzyteczna pamiecia. Ocean, kontrakt i route window zaciskaja wybor. Gracz odpowiada lancuchem dowodow: jeden scan, jedna probka, jeden naprawiony system.
+
+HECTON-8 ma byc czytelne, bo jest fizyczne. To, co wazne, ma powierzchnie, koszt, tryb awarii i swiadka.
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/pl_PL. -->

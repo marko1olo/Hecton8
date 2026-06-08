@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Motif Profesional
 
-Motif profesional memberi agensi tanpa mengunci biografi.
+Professional Motive memberi Marauder agensi tanpa mengunci biografi terlalu keras: kompetensi datang lebih dulu, keterlibatan pribadi datang lewat bukti.
 
 ## Scanner
 

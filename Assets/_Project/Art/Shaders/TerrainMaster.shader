@@ -24,6 +24,11 @@ Shader "HECTON/Terrain/TerrainMaster"
         [NoScaleOffset] _TerrainControlRGBA ("Baked Biome Weight RGBA", 2D) = "black" {}
         _ControlScale ("Control UV Scale", Float) = 0.001953125
 
+        [Header(Control Fallback)]
+        _FallbackWaterlineY ("Fallback Waterline Y", Float) = 14.02
+        _FallbackShoreWidth ("Fallback Shore Width", Float) = 18
+        _FallbackHeightRange ("Fallback Height Range", Float) = 96
+
         [Header(Blending)]
         _StochasticStrength ("Stochastic Jitter", Range(0,1)) = 0.55
 
@@ -90,6 +95,9 @@ Shader "HECTON/Terrain/TerrainMaster"
             float  _SandNormalStr;
             float  _SiltNormalStr;
             float  _ControlScale;
+            float  _FallbackWaterlineY;
+            float  _FallbackShoreWidth;
+            float  _FallbackHeightRange;
             float  _StochasticStrength;
             float  _BiomeEdgeBleedScale;
             float  _BiomeEdgeBleedStrength;
@@ -248,6 +256,35 @@ Shader "HECTON/Terrain/TerrainMaster"
         half HectonCellNoise2D(float2 position)
         {
             return HectonInterleavedGradientNoise(floor(position));
+        }
+
+        void HectonResolveMissingControlWeights(
+            float3 positionWS,
+            float3 normalWS,
+            half ign01,
+            out half rockWeight,
+            out half sandWeight,
+            out half siltWeight,
+            out half sedimentMask)
+        {
+            half upAxis = saturate(abs(HectonDominantAxisDirection(normalWS).y));
+            half steepRock = saturate((0.74h - upAxis) * 3.8461538h);
+            float shoreWidth = max(_FallbackShoreWidth, 0.001);
+            float heightRange = max(_FallbackHeightRange, 1.0);
+            float waterDelta = positionWS.y - _FallbackWaterlineY;
+            half waterlineBand = saturate((half)(1.0 - abs(waterDelta) / shoreWidth));
+            half belowWater = saturate((half)((_FallbackWaterlineY - positionWS.y) / heightRange));
+            half terraceNoise = (ign01 - 0.5h) * 0.16h;
+
+            rockWeight = saturate(steepRock + waterlineBand * 0.18h + terraceNoise);
+            siltWeight = saturate(belowWater * 0.62h + waterlineBand * 0.24h - steepRock * 0.35h);
+            sandWeight = saturate((1.0h - rockWeight) * (1.0h - siltWeight * 0.45h));
+
+            half total = max(rockWeight + sandWeight + siltWeight, 0.001h);
+            rockWeight *= rcp(total);
+            sandWeight *= rcp(total);
+            siltWeight *= rcp(total);
+            sedimentMask = saturate(siltWeight * 0.65h + waterlineBand * 0.22h);
         }
 
         half HectonCheapSharp01(half value, float sharpness)
@@ -459,6 +496,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 float2 sandUv = IN.positionWS.xz * max(_SandScale, 0.0001);
                 float2 rockUv = IN.positionWS.xz * max(_RockScale, 0.0001);
                 float2 siltUv = IN.positionWS.xz * max(_SiltScale, 0.0001);
+                half screenIgn = HectonInterleavedGradientNoise(IN.positionCS.xy);
                 half4 control = SAMPLE_TEXTURE2D(_TerrainControlRGBA, sampler_TerrainControlRGBA, IN.positionWS.xz * max(_ControlScale, 0.000001));
                 // SHINOBU_243: R=Rock, G=Sand, B=ambient silt, A=erosion-deposited silt.
                 half controlSum = control.r + control.g + control.b + control.a;
@@ -467,9 +505,15 @@ Shader "HECTON/Terrain/TerrainMaster"
                 half controlRock = control.r * controlInvSum;
                 half controlSand = control.g * controlInvSum;
                 half controlSilt = saturate((control.b + control.a) * controlInvSum);
-                half rockWeight = saturate(controlRock * hasControl);
-                half sandWeight = saturate(controlSand * hasControl + (1.0h - hasControl));
-                half siltWeight = saturate(controlSilt * hasControl);
+                half rockWeight = saturate(controlRock);
+                half sandWeight = saturate(controlSand);
+                half siltWeight = saturate(controlSilt);
+                half sedimentSource = control.a;
+                [branch]
+                if (hasControl < 0.5h)
+                {
+                    HectonResolveMissingControlWeights(IN.positionWS, IN.normalWS, screenIgn, rockWeight, sandWeight, siltWeight, sedimentSource);
+                }
                 half bakedWeightTotal = max(rockWeight + sandWeight + siltWeight, 0.001h);
                 rockWeight *= rcp(bakedWeightTotal);
                 sandWeight *= rcp(bakedWeightTotal);
@@ -477,8 +521,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 half stochasticStrength = saturate((half)_StochasticStrength);
                 float jitterGridScale = max(max(max(_SandScale, _RockScale), _SiltScale), 0.0001);
                 float2 stochasticJitter = HectonResolveHexJitter(IN.positionWS.xz * jitterGridScale, stochasticStrength);
-                half screenIgn = HectonInterleavedGradientNoise(IN.positionCS.xy);
-                half steepMask = saturate(max(rockWeight, control.a * hasControl)) * (half)_MicroErosionStrength;
+                half steepMask = saturate(max(rockWeight, sedimentSource)) * (half)_MicroErosionStrength;
                 float2 microBumpOffset = HectonResolveMicroBumpOffset(IN.positionWS, viewDirectionWS, rockWeight, steepMask);
                 sandUv += microBumpOffset * 0.35;
                 rockUv += microBumpOffset;
@@ -574,7 +617,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 }
                 half3 finalNormalWS = HectonDominantAxisDirection(
                     IN.normalWS + blendedNormalOffset + flowNormalWS * steepMask);
-                half sedimentMask = saturate(control.a * hasControl) * (half)_SedimentStrength;
+                half sedimentMask = saturate(sedimentSource) * (half)_SedimentStrength;
                 albedo = lerp(albedo, siltAlbedo, sedimentMask);
                 smoothness = lerp(smoothness, smoothness * 0.55h, sedimentMask);
 

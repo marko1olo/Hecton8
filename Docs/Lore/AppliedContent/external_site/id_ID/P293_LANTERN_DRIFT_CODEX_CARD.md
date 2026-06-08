@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Lantern Drift Codex Card"
+title: "Kartu Kodex Lantern Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Lantern Drift Codex Card
+# Kartu Kodex Lantern Drift
 
-ID LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+Lantern drift menjaga agar keindahan HECTON-8 tidak menjadi wallpaper. Ia dapat memandu pemain lewat struktur terang yang jelas, lalu mengkhianati dengan merekam suara, panik, dan muatan badai. Air terang adalah navigasi dan eksposur sekaligus.
 
 ## Scanner
 
-ID LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Bloom lantern drift. Plankton bioluminesen menandai arus dan debris dalam pita. Berguna untuk siluet; berbahaya saat suara alat mengubahnya menjadi jejak terang.
 
 ## Terminal
 
-ID LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+SPESIMEN / BLOOM LANTERN DRIFT / peran: kejadian visibilitas dangkal, sketsa arus, perekam gangguan / baca aman: cahaya tepi stabil, halo debris, arus dan residu cocok / tolak: koridor palsu bermuatan badai, bloom meratakan hazard kecil, jejak alat mencerah di belakang operator / catatan rute: cahaya adalah data, bukan perlindungan.
 
 ## Audio
 
-ID LOC HOLD: Pretty is not safe. Pretty is a reading.
+Cahaya itu tidak membantumu. Ia melaporkan apa yang didengar air.
 
 ## Field Note
 
-ID LOC HOLD: Card teaches that beauty can be route information and route deception.
+Pakai bloom untuk siluet. Jangan memperbaiki dengan bising di dalamnya. Jika cahaya mengikutimu, sesuatu lain juga bisa mengikutinya.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/id_ID. -->

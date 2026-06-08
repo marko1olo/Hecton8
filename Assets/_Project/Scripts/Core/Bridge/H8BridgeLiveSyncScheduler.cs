@@ -118,8 +118,10 @@ namespace Hecton8.Core.Bridge
                 s_registered = GlobalRegistry.TryRegisterLateFrameTickable(s_runner, PriorityLayer.Core);
 
             if (!s_hotSwapRegistered)
-                s_hotSwapRegistered = GlobalRegistry.IsHotSwapListenerRegistered(s_runner) ||
-                                      GlobalRegistry.TryRegisterHotSwapListener(s_runner);
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(s_runner);
+                s_hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(s_runner);
+            }
 
             return s_registered && s_hotSwapRegistered;
         }
@@ -211,8 +213,17 @@ namespace Hecton8.Core.Bridge
                 PrefabRequest request = s_prefabRequests[i];
                 s_prefabRequests[i] = default;
 
-                if (request.Registry != null && request.Vault != null)
-                    H8PrefabRegistryRuntimeBinder.BindExistingBuffers(request.Registry, request.Vault, request.RuntimeRegistry);
+                if (request.Registry == null || request.Vault == null)
+                    continue;
+
+                PrefabRegistry runtimeRegistry = request.RuntimeRegistry;
+                if (Application.isPlaying &&
+                    !PrefabRegistry.TryResolveActiveRuntime(ref runtimeRegistry))
+                {
+                    continue;
+                }
+
+                H8PrefabRegistryRuntimeBinder.BindExistingBuffers(request.Registry, request.Vault, runtimeRegistry);
             }
         }
 

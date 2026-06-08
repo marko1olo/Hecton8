@@ -94,11 +94,31 @@ namespace Hecton.Localization
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteRuntimeVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude))
+            {
+                _hasAupPosition = false;
+                return;
+            }
+
+            if (shiftSqrMagnitude <= 0.000001f)
+                return;
+
             if (!_hasAupPosition)
                 CacheTransformAndAup();
 
-            if (_cachedTransform != null && _hasAupPosition)
-                _cachedTransform.position = shiftData.ToRuntimePosition(_absoluteUniversePositionDouble);
+            if (_cachedTransform == null || !_hasAupPosition)
+                return;
+
+            Vector3 runtimePosition = shiftData.ToRuntimePosition(_absoluteUniversePositionDouble);
+            if (!IsFiniteRuntimeVector(runtimePosition))
+            {
+                _hasAupPosition = false;
+                return;
+            }
+
+            _cachedTransform.position = runtimePosition;
 
             if (targetText != null)
             {
@@ -295,6 +315,13 @@ namespace Hecton.Localization
 
             absoluteAup = originAup.ToAbsoluteDouble3() + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             return math.all(math.isfinite(absoluteAup));
+        }
+
+        private static bool IsFiniteRuntimeVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
     }
 }

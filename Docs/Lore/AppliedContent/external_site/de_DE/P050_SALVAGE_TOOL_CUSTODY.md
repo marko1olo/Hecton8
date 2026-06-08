@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.deep_colony
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Bergungswerkzeug-Kustodie"
+spoiler_tier: 1
+title: "Verwahrung des Bergungswerkzeugs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Bergungswerkzeug-Kustodie
+# Verwahrung des Bergungswerkzeugs
 
-Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder.
+Auf HECTON-8 kann ein Werkzeug zugleich Überlebensgerät und Vertragszeuge sein. Salvage-Verwahrungslogs binden Schnitte, Reparaturen und Proben an Claim-Token und machen eine nützliche Handlung zu späterem Beweis, Schulddruck oder Auszahlungslast.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Werkzeugdock enthält ein versiegeltes Verwahrungslog. Letzter Schnitt, Reparatur und Probenbeutel sind an einen Keelmark-Claim-Token gebunden.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: Schneidereinsatz unter Salvage-Claim akzeptiert. Reparaturhandlung bezeugt. Probenrechte an Keelmark-Mutual-Token gebunden. Beweisexport kollidiert mit materieller Auszahlungsroute.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Jeder nützliche Schnitt hinterlässt einen Zeugen.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Ein Schneider kann deine Luft retten und deine Hände im selben Hub verkaufen. Prüfe, was er aufzeichnet, bevor du ihn deinen nennst.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/de_DE. -->

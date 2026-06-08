@@ -3,6 +3,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Unity.Mathematics;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -13,6 +14,8 @@ using UnityEditor;
     [AddComponentMenu("Hecton8/Environment/Sky System Follow Camera")]
 public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
 {
+    private const float DefaultSeaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+
     [Tooltip("Explicit runtime camera override. Falls back to the current player camera when empty.")]
     [SerializeField] private Camera runtimeCamera;
     [Tooltip("Optional explicit atmosphere owner. When empty, the component falls back to the atmosphere read-model route.")]
@@ -28,7 +31,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     [Tooltip("Legacy sea-level lock. Disabled by default because it exposes celestial bodies inside the world when the observer climbs in height.")]
     [SerializeField] private bool lockToSeaLevel = false;
     [Tooltip("Fallback world Y used only when no live sea-level owner is available.")]
-    [SerializeField] private float fallbackSeaLevelY = 0f;
+    [SerializeField] private float fallbackSeaLevelY = DefaultSeaLevelY;
     [Tooltip("Manual Y trim applied after resolving the live sea level. Use this only if the authored sky horizon needs a small scene-specific offset.")]
     [SerializeField] private float horizonVerticalOffset = 0f;
     [Tooltip("Optional position offset applied after resolving the follow target.")]
@@ -370,13 +373,42 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     private float ResolveSeaLevelY()
     {
         if (playerMovement != null)
-            return playerMovement.CurrentWaterSurfaceY;
+        {
+            float movementSurfaceY = playerMovement.CurrentWaterSurfaceY;
+            if (TryResolveSeaLevelY(movementSurfaceY, out float movementSeaLevelY))
+                return movementSeaLevelY;
+        }
 
         IAtmosphereReadModel resolvedAtmosphere = ResolveAtmosphereReadModel();
         if (resolvedAtmosphere != null)
-            return resolvedAtmosphere.SeaLevelY;
+        {
+            float atmosphereSeaLevelY = resolvedAtmosphere.SeaLevelY;
+            if (TryResolveSeaLevelY(atmosphereSeaLevelY, out float resolvedSeaLevelY))
+                return resolvedSeaLevelY;
+        }
 
-        return fallbackSeaLevelY;
+        return ResolveFallbackSeaLevelY();
+    }
+
+    private float ResolveFallbackSeaLevelY()
+    {
+        return TryResolveSeaLevelY(fallbackSeaLevelY, out float seaLevelY)
+            ? seaLevelY
+            : DefaultSeaLevelY;
+    }
+
+    private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+    {
+        if (math.isfinite(candidateSeaLevelY) &&
+            math.abs(candidateSeaLevelY) > 0.0001f &&
+            math.abs(candidateSeaLevelY) <= 1000f)
+        {
+            seaLevelY = candidateSeaLevelY;
+            return true;
+        }
+
+        seaLevelY = DefaultSeaLevelY;
+        return false;
     }
 
     private void CachePlayerMovementFromCamera(Camera targetCamera)

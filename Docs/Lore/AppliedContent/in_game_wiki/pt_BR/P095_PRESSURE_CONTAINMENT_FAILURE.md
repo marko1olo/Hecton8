@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Containment Failure"
+title: "Falha de contencao de pressao"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pressure Containment Failure
+# Falha de contencao de pressao
 
-PT-BR LOC HOLD: Pressure containment failure gives blue debt a clear gameplay model. The valuable material degrades through signal drift, lattice fracture, brine-biological bloom and dead-sample contamination. This creates risk, salvage choices and crafting pressure without a supernatural infection.
+Falha de contencao de pressao da ao blue debt um comportamento material legivel. Ele vale porque a pressao profunda o tornou coerente, e e perigoso porque o manejo raso desfaz essa coerencia. Estagio 0 esta selado. Estagio 1 deriva e as vezes pode ser recuperado por repressao de respiradouro. Estagio 2 fratura a rede. Estagio 3 chama salmoura e biologia. Estagio 4 deixa uma amostra morta que contamina equipamento, agua e rotas.
 
 ## Scanner
 
-PT-BR LOC HOLD: Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+Grafico de estagios do cofre. Blue debt falha por memoria de pressao, cisalhamento de sinal e bloom; supersticao desperdiça oxigenio.
 
 ## Terminal
 
-PT-BR LOC HOLD: CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+ESTAGIOS DE CONTENCAO: 0 rede selada; 1 deriva de sinal; 2 fratura de rede; 3 bloom de salmoura/biologia; 4 amostra morta com contaminacao viva. Repressao por respiradouro pode recuperar apenas estagio 1.
 
 ## Audio
 
-PT-BR LOC HOLD: The sample does not hate you. It just remembers the wrong pressure.
+A amostra nao odeia voce. Ela tenta voltar para onde se formou.
 
 ## Field Note
 
-PT-BR LOC HOLD: Containment gives gameplay thresholds without making the resource magic.
+Uma amostra pode valer uma fortuna em uma profundidade e virar passivo dez metros depois.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/pt_BR. -->

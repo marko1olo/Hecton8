@@ -9,32 +9,24 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Population And Authority Scale"
+title: "Bevölkerungs- Und Autoritätsskala"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Population And Authority Scale
+# Bevölkerungs- Und Autoritätsskala
 
-DE LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
+## Kopfzahl Ist Keine Macht
 
-## Scanner
+Die Domänentabelle hält Bevölkerung absichtlich weich. Exakte Census-Werte können später getunt werden, aber das Druckverhältnis ist fix: Sol besitzt alte Finanz- und Zertifizierungsmacht, Centauri besitzt Legitimitätssprache, Barnard besitzt salvage-Kultur, Tau Ceti besitzt öffentlichen Beweisdruck, Luyten besitzt Paket-custody, und Aegir besitzt den schmutzigen Ort, an dem all das zu Maschinerie wird.
 
-DE LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+Ein Spieler auf HECTON-8 soll einen Domänennamen nie als Trivia lesen. Sol Core ist ein Siegel auf Eigentum und Versicherungskontinuität. Es kann einen toten Ozean rechtlich aktiv machen. Der Centauri Compact ist Erinnerung an funktionierende Expansion, weshalb Deep Reach seinen Charta-Ton ausleihen und weniger verfault wirken kann. Barnard Yards erklärt, warum der Protagonist Klemmen, Cutter, Druckwerkzeuge und schlechte Arbeit kennt, ohne Heldensage.
 
-## Terminal
+Tau Ceti ist wertvoll, weil es Beweise öffentlich bedeutsam machen kann. Das heißt nicht, dass es einen Taucher vor dem Gezeitenwechsel retten kann. Luyten Junction ist kälter: Es kann custody, hash chains und packet notary records ohne moralische Autorität erhalten. Aegir ist der dirty claim node, wo lokale shells, Black-Keel-Fenster und Deep-Reach-priority hooks diese fernen Autoritäten in sofortige Gefahr verwandeln.
 
-DE LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
-
-## Audio
-
-DE LOC HOLD: The largest domain is not the nearest hand.
-
-## Field Note
-
-DE LOC HOLD: Do not turn the setting into census space opera.
+Deshalb kann ein kleiner desk wichtiger sein als ein Planet. HECTON-8 wird nicht von der größten Bevölkerung beherrscht. Es wird von dem beherrscht, der einen claim durch Entfernung am Leben halten und dem Überlebenden das Berühren berechnen kann.
 
 <!-- External Site; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/de_DE. -->

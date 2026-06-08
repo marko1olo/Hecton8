@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Drop Capsule Damage Sequence"
+title: "Séquence De Dégâts De La Capsule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Drop Capsule Damage Sequence
+# Séquence De Dégâts De La Capsule
 
-FR LOC HOLD: The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.
+Le bathy-drop endommagé transforme l'évasion en chaîne d'ingénierie. Abri et diagnostics ont survécu, mais le matériel de remontée est perdu ou noyé.
 
 ## Scanner
 
-FR LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+Diagnostic capsule. La descente a sauvé le corps en dépensant le matériel de remontée.
 
 ## Terminal
 
-FR LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+RÉSUMÉ DÉGÂTS BATHY-DROP : crush-frame gauchi; high-gain mast perdu; ascent avionics noyée; recovery/flotation ring déchiré; bouée d'urgence répète no-lock. Alimentation abri disponible. Remontée indépendante indisponible.
 
 ## Audio
 
-FR LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus noyé. Recovery ring no-lock. Cette capsule peut te garder en vie, pas te ramener chez toi.
 
 ## Field Note
 
-FR LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+L'anneau bas est ovale de deux doigts. High-gain mast perdu. La bouée demande encore un lancement impossible.
 
 <!-- In-Game Wiki; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/fr_FR. -->

@@ -7,7 +7,7 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
 title: "Low-Power Induction Cutter"
 source: AppliedContent packet JSON
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Low-Power Induction Cutter
 
-The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+The low-power induction cutter is the first access tool, not a universal key. It opens jammed service hatches, panel bolts and salvage crates while forcing the player to read what a part is doing. Pressure glass, active frames and Atlas-grown seams belong to later tools or better evidence.
 
 ## Scanner
 
-Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+Low-power induction cutter. Service metal only; load-bearing frame and pressure glass remain outside rating.
 
 ## Terminal
 
-TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+TOOL WARNING / INDUCTION CUTTER: authorized targets are service hatches, panel bolts, light brackets and crate locks. Do not cut active frames, pressure-glass lattice or Atlas-grown seams without later class certification.
 
 ## Audio
 
-Cut the hatch. Do not cut the thing holding the room together.
+Cut the bolt. Leave the rib.
 
 ## Field Note
 
-The cutter should feel valuable because it is limited.
+Good cutter, bad religion. It opens panels. It does not forgive cutting the rib that keeps the room square.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/en_US. -->

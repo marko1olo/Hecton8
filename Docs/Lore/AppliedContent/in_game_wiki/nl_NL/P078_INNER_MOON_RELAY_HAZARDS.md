@@ -3,38 +3,40 @@ packet_id: P078_INNER_MOON_RELAY_HAZARDS
 release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.inner_moon_relay_hazards
 unlock_id: unlock.first_inner_moon_relay_hazards
-poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
-biome_tags: biome.orbital_window;biome.drowned_comms
+poi_tags: poi.relay_noise_log;poi.skarn_surge_alarm
+biome_tags: biome.orbital_window;biome.surface_relay
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Inner Moon Relay Hazards"
+title: "Relaisgevaren van Binnenmanen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Inner Moon Relay Hazards
+# Relaisgevaren van Binnenmanen
 
-NL LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.
+Relaisgevaren van binnenmanen maken contactfalen fysiek. Skarn-uitgelijnde surge kan antennes corrumperen zonder ze te doden. Stof en ijs van Vela sluiten optiek terwijl de route nog beweert te bestaan.
+
+Claw en Lumen zijn erger omdat ze oude routelogica dragen. Een handshake kan formeel geldig en operationeel nutteloos zijn. Black Keel kan een pakket loggen, custody bewaren en toch een lichaam in het water laten.
 
 ## Scanner
 
-NL LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.
+BINNENLADDER // Skarn verzadigt antennes. Vela verstrooit optiek. Oude Claw- en Lumen-routes houden verlopen handshakes levend.
 
 ## Terminal
 
-NL LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
+RELAISGEVAAR NOTITIE // Contactverlies kan geometrie, deeltjesweer, stofshutter of geërfde buoy law zijn. Wantrouw schone UI tijdens surgevensters.
 
 ## Audio
 
-NL LOC HOLD: The orbital model is innocent. The clause written around it is not.
+Het relais werd niet stil. Het herhaalde de verkeerde eeuw.
 
 ## Field Note
 
-NL LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.
+Een schoon icoon kan nog steeds liegen door oude hemel.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/nl_NL. -->

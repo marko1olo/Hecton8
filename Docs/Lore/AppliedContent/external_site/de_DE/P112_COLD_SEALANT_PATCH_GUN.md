@@ -9,32 +9,18 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Kaltdichtungs-Patchpistole"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Kaltdichtungs-Patchpistole
 
-DE LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+Die Kalt-Dichtmittelpistole lehrt die erste ehrliche Grenze. Sie kann ein pinhole stoppen, eine Dichtungslippe halten oder Minuten an einer ruhigen Naht kaufen. Sie segnet keine bewegte Struktur. Das rating label zählt mehr als die Hoffnung des Spielers.
 
-## Scanner
-
-DE LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-DE LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-DE LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-DE LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Darum gehört das Werkzeug früh ins Spiel. Es erlaubt Handlung, ohne so zu tun, als sei jedes Leck lösbar. Ein guter Patch schafft Zeit; ein schlechter Patch schafft Vertrauen an der Stelle, an der der Ozean später kassiert.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/de_DE. -->

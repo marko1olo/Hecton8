@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "Gramática de encontro: perseguição de fauna marcada por sensor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# Gramática de encontro: perseguição de fauna marcada por sensor
 
-PT LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+A perseguição por fauna marcada por sensor mostra a Atlas como interpretação danificada, não como comando de vilão. Um animal inofensivo ou assustado pode se tornar perigoso porque a infraestrutura antiga ainda trata sua cicatriz como telemetria.
 
 ## Scanner
 
-PT LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+Perseguição de fauna marcada por sensor. Marca biometálica antiga devolve eco da rede de reparo. O movimento do animal é local; a interpretação da rede não é.
 
 ## Terminal
 
-PT LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+GRAMÁTICA DE ENCONTRO / PERSEGUIÇÃO COM MARCA SENSORIAL / papel: realimentação de manutenção corrompida, risco de contaminação do abrigo, pressão sem vilão / leitura segura: pulso da marca atrasa em relação ao movimento, animal evita dor, eco de rota da Atlas segue o último caminho conhecido / rejeitar: enquadramento de controle mental, comportamento limpo de IA hostil, conduzir animal marcado ao abrigo da base / nota de rota: quebre o eco com ângulo, silêncio e oclusão; não ensine à rede onde fica casa.
 
 ## Audio
 
-PT LOC HOLD: It follows because the network thinks following is a repair.
+Ela segue porque algo antigo acha que seguir é uma etapa de reparo.
 
 ## Field Note
 
-PT LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+Não leve a marca para casa. Quebre a linha, quebre o som, quebre a interpretação. O animal não é a rede.
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/pt_BR. -->

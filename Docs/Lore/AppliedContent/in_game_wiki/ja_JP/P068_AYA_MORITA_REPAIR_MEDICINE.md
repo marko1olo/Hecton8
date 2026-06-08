@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aya Morita Repair Medicine"
+title: "アヤ・モリタの修復医療"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aya Morita Repair Medicine
+# アヤ・モリタの修復医療
 
-JP LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.
+アヤ・モリタは医療ホラーの境界線を定める。Atlasの修復ロジックは死体蘇生ではない。生きた組織、負傷、ケーブル損傷、シーラント生物を同じ保守語彙の中で誤分類している。
 
 ## Scanner
 
-JP LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.
+アヤ・モリタは、Atlasが身体を治療するのをやめ、互換性のある修復面として使い始めた最初の地点を記録した。
 
 ## Terminal
 
-JP LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.
+MORITA, A. ケーブル曝露後、患者組織がシーラント群体に受容された。敵対的攻撃性なし。Atlasタグは創傷をインターフェース損傷に分類。人間のトリアージでは修復プロトコルを拒否せよ。
 
 ## Audio
 
-JP LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.
+それはケーブルの周りで傷を閉じた。その瞬間、彼女はそれを治療と呼ぶのをやめた。
 
 ## Field Note
 
-JP LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.
+これはゾンビの記録ではない。もっと悪い。病床の筆跡で書かれた保守記録だ。
 
 <!-- In-Game Wiki; generated from P068_AYA_MORITA_REPAIR_MEDICINE/ja_JP. -->

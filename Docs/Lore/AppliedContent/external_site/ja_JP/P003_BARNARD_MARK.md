@@ -9,32 +9,16 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Barnardの刻印"
+title: "Barnardの印"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Barnardの刻印
+# Barnardの印
 
-Barnardの刻印はサルベージを動機に変える。説明ではなく、労働、道具、名前によってプレイヤーをHECTON-8へ結びつける。
-
-## Scanner
-
-Barnard Yardsの刻印。Deep Reach支給品ではない。誰かが故郷の道具をこの月の底まで持ち込んだ。
-
-## Terminal
-
-人員ルート: 保留。資源ルート: 有効。基質ルート: 保護。
-
-## Audio
-
-これはBarnardの刻印だ。同じ切削跡。同じ安い合金。これを持ち込んだ奴は、お前と同じ工場を知っていた。
-
-## Field Note
-
-死んだ企業は無視できる。自分のヤードのレンチは無視しにくい。
+Barnard Yardsは高貴な故郷ではない。船の解体、借り物のカッター、圧力クランプ、三番目の所有者を渡った工具、悪い契約の値段を知る人間たちの作業傷だ。HECTON-8で最初のBarnard刻印は、ほとんど lore には小さすぎるものに見えるべきだ。演説ではない。レンチの印、ロッカー蝶番の間違った合金、Deep Reachなら指定しない修理癖。プレイヤーにとって、その細部が契約を変える。HECTON-8はもう異星の水底に沈む死んだ企業 claim だけではない。同じヤード文化の誰かが先にここへ来て、働き、同じ台帳に押し込まれ、Marauderが気づかなければ消されるほど小さな証拠を残した。
 
 <!-- External Site; generated from P003_BARNARD_MARK/ja_JP. -->

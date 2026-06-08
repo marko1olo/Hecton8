@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Guidance Timing Core Assembly"
+title: "מכלול ליבת תזמון הנחיה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Guidance Timing Core Assembly
+# מכלול ליבת תזמון הנחיה
 
-HE LOC HOLD: A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.
+עלייה עובדת צריכה ליבת תזמון הנחיה שמבינה את גיאומטריית הירחים של Aegir, מרווחי blackout, צללי ממסרים ו-carrier recovery lanes. תזמון רע יכול לאבד את הקפסולה בלי לשבור אף חלק.
 
 ## Scanner
 
-HE LOC HOLD: Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.
+Timing core ריקה. גיאומטריית Aegir מחליטה אם העלייה תהיה recovery, capture או שתיקה.
 
 ## Terminal
 
-HE LOC HOLD: GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.
+GUIDANCE CORE: לסנכרן את שעון הקפסולה עם Aegir window, Black Keel receiver lane, moon relay shutter וסחיפת storm-plume. packets מאוחרות הופכות לאובדן ראיות; packets מוקדמות הופכות ל-capture noise.
 
 ## Audio
 
-HE LOC HOLD: There is no up. There is a window, a receiver, and a lie in the queue.
+למעלה אינו כיוון. זה חלון עם עד.
 
 ## Field Note
 
-HE LOC HOLD: Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage.
+אין למעלה פשוט מ-HECTON-8. יש מקלט, צל, סחיפת סערה ו-packet queue שכבר ישנה יותר מהבהלה שלך.
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/he_IL. -->

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Field Systems Specialist Record"
+title: "フィールドシステム担当記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Field Systems Specialist Record
+# フィールドシステム担当記録
 
-JA LOC HOLD: The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.
+HECTON-8のプレイヤーキャラクターは実用的な傷を抱えて海へ入る。Deep Reachの元フィールドシステム勤務、避難インフラへのアクセス、失効した許可、沈んだ機械を証拠として読めるだけの手順記憶。今の彼らはMarauderであり、会社役員でも乗客ヒーローでもない。壊れたポンプ、経路スタンプ、責任文言が重いのは、作業員を守るはずだった仕組みが紙に変わる前の姿を知っているからだ。
 
 ## Scanner
 
-JA LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+古いフィールドシステム資格。指揮要員ではない。どこで経路が埋められたかを見抜けるだけのアクセスを持った、インフラ作業員の記録。
 
 ## Terminal
 
-JA LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+人員痕跡: フィールドシステム、避難インフラ、route-safe認証。Aegir沈黙審査後に許可は失効。手順キャッシュはまだオペレーターの作業順と一致。
 
 ## Audio
 
-JA LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+お前は嘘に署名していない。その嘘が検査を通る文法を知っていただけだ。
 
 ## Field Note
 
-JP LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+バッジは扉を開けなくなった。だが故障の順番までは忘れさせなかった。
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/ja_JP. -->

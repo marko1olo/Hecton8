@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Black Keel Bathydrop Interface"
+title: "Black Keel Bathydropインターフェース"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Black Keel Bathydrop Interface
+# Black Keel Bathydropインターフェース
 
-JA LOC HOLD: The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+最初の脱出障害は工学だ。Black Keelは水上に存在するが、損傷したbathydropインターフェースは意志だけで水面、軌道、タイミングを再接続できない。修理には深度対応salvage、清浄なシール、稼働するリレー幾何、キャリアが受け入れる発射窓が必要だ。
 
 ## Scanner
 
-JA LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+Bathydropインターフェース損傷: 耐圧部品、リレータイミング、清浄な上昇ラッチなしでは水面帰還チェーンは閉じない。
 
 ## Terminal
 
-JA LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+カプセル報告: 耐熱シールドトリム生存。浮力ゲート湾曲。通信マスト浸水。上昇ラッチ汚染。修理には耐圧セラミック、シーラント、リレー計算、検証済み窓が必要。
 
 ## Audio
 
-JA LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
+君は船全体を失ったのではない。船を意味あるものにする一本の鎖を失った。
 
 ## Field Note
 
-JA LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+初時間脱出記録: キャリアは存在するが、プレイヤー、海、水面、軌道を結ぶ鎖は名前のある部品で壊れている。
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/ja_JP. -->

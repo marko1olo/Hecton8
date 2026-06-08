@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: ar_SA
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "مسدس رقع الختم البارد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# مسدس رقع الختم البارد
 
-AR LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+مسدس رقع الختم البارد يقدم أول إصلاح صادق بعد الضخ. يمكنه وقف تسرب ثقب صغير أو تثبيت حافة حشية بما يكفي لإعادة غرفة صغيرة إلى العمل، لكنه لا يجعل البنية المتضررة آمنة. الدرس المفيد على ملصق التصنيف: HECTON-8 يعاقب كل إصلاح يستخدم خارج فئة ضغطه.
 
 ## Scanner
 
-AR LOC HOLD: Patch gun. Rated for pinholes, not miracles.
+مسدس ختم بارد. الخرطوشة مصنفة لثقوب الإبر والوصلات الهادئة فقط؛ القص النشط سيقشرها.
 
 ## Terminal
 
-AR LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+حد الرقعة / ختم بارد: يلتصق بجلد هيكل رطب على عمق منخفض بعد مسح السطح. معتمد لثقوب الإبر وحواف الحشيات ونز الوصلات الهادئ. ارفض شقوق القص النشطة، وتفتح blue debt الدافئ، ووصلات الكابلات المتحركة.
 
 ## Audio
 
-AR LOC HOLD: A patch is not safety. It is a countdown that looks solid.
+لا تسمه محكما. سمه وقتا.
 
 ## Field Note
 
-AR LOC HOLD: Sealant repairs should buy time, not erase pressure.
+الرقعة تشتري دقائق. إذا كان الشرخ ما زال يتحرك، فأنفق تلك الدقائق في المغادرة.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/ar_SA. -->

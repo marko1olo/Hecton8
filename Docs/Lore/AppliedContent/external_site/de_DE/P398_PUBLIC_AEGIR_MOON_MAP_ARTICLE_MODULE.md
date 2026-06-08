@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Aegir Moon Route Map"
+title: "Aegir-Mondroutenkarte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Aegir Moon Route Map
+# Aegir-Mondroutenkarte
 
-DE LOC HOLD: Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+Aegirs Mondkarte ist zuerst betrieblich und erst danach schön. HECTON-8 ist ein Ozeankörper in einer Leiter aus Monden, shepherd rocks, ice-scatter paths und dead relay marks. Innere Körper stören narrowband contact und Strahlenschutz. Eismonde zerbrechen optical relay lines in schlechte Fragmente. Occultation bands erzeugen Schweigefenster, in denen ein claim gültig und dennoch ungehört bleibt. Äußere beacons bewahren alte Eigentumsrechte, nachdem Besatzungen verschwunden sind. Gezeitengeometrie und storm stacking entscheiden, ob eine bathydrop chain sauber aufsteigt oder ins loss ledger eingeht. Öffentliche Karten können das zeigen, ohne zusätzliche spielbare Welten zu versprechen; ihre Aufgabe ist, den Himmel als Druck, Verzögerung und Routenrisiko lesbar zu machen.
 
 ## Scanner
 
-DE LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+Systemkartendatensatz. Aegir-Monde bestimmen relay timing, Strahlenschutz, ice scatter, Gezeitendruck, occultation bands, tote beacons und recovery geometry.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+ÖFFENTLICHER ARCHIVKNOTEN // AEGIR-MONDLEITER. Mondnamen sind Routenetiketten. Jeder Körper verändert signal age, transfer risk, storm exposure, custody timing oder claim reliability.
 
 ## Audio
 
-DE LOC HOLD: The map is why no one arrives the moment you ask.
+Die Karte erklärt, warum niemand in dem Moment ankommt, in dem du fragst.
 
 ## Field Note
 
-DE LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Marauder-Notiz: Markiere den Mond, dann markiere, was er mit der Route macht.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/de_DE. -->

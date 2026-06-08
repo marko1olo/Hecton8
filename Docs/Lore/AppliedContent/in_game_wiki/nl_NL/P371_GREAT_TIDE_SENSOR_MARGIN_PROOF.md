@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Great Tide Sensor Margin Proof"
+title: "Margepoor van de Grote Getijde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Great Tide Sensor Margin Proof
+# Margepoor van de Grote Getijde
 
-NL LOC HOLD: Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.
+De trace bewijst twee dingen tegelijk: de Grote Getijde was echt, en de dodelijke marge was zichtbaar voordat het rapport haar toegaf. Deep Reach beval het water niet te stijgen. Het bedrijf accepteerde een routevenster terwijl de drukomhulling van de kolonie al geen speling meer had, en publiceerde daarna de cascade zonder sign-off.
 
 ## Scanner
 
-NL LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Geborgen getijdensensor. Piekshear overschreed het koloniedesign, maar de waarschuwingsmargebreuk werd gelogd vóór het publieke cascade-tijdstempel.
 
 ## Terminal
 
-NL LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Tail-riskdrempel geaccepteerd door routeautoriteit. Operatornotitie uit publieke incidentketen verwijderd. Ruwe trace bewaard in brine-buffergeheugen.
 
 ## Audio
 
-NL LOC HOLD: Physics did the damage. A person signed the margin.
+De oceaan loog niet. Het rapport wel.
 
 ## Field Note
 
-NL LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Marauder-notitie: zoek geen schurkenspeech. Zoek de regel die iemand heeft verwijderd.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/nl_NL. -->

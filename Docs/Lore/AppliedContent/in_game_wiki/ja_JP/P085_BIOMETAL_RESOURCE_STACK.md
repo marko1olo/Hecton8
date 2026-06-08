@@ -7,34 +7,34 @@ poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
 biome_tags: biome.factory_temple;biome.deep_abyss
 locale: ja_JP
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Biometal Resource Stack"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "バイオメタル資源スタック"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Resource Stack
+# バイオメタル資源スタック
 
-JP LOC HOLD: The resource stack prevents HECTON-8 from collapsing into one magic material. Xenon-Omega matters, but the moon also has metals, salts, vent chemistry, pressure ceramics, biofibers, photoproteins, salvage, and Atlas-altered biometal.
+資源スタックはHECTON-8を一つの魔法素材に縮めない。Xenon-Omegaは重要だが、金属、塩、噴出口化学、圧力セラミック、バイオ繊維、光タンパク、salvage、Atlas改変バイオメタルも存在する。
 
 ## Scanner
 
-JP LOC HOLD: Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
+資源スタック盤。頂点はblue debt。それでも月の残りも、殺す価値があるほど利益を生む。
 
 ## Terminal
 
-JP LOC HOLD: HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
+HECTON-8 RESOURCE STACK: 硫化金属、塩、希ガスポケット、圧力セラミック、噴出口触媒、バイオ繊維、光タンパク、salvage hardware、Atlas改変バイオメタル、XO continuity substrate。
 
 ## Audio
 
-JP LOC HOLD: One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
+一つの奇跡鉱石では怠慢だ。HECTON-8には圧力傷の経済がある。
 
 ## Field Note
 
-JP LOC HOLD: If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+すべてのサンプルがXenon-Omegaと言うなら、世界は愚かになる。他の理由も数えろ。
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/ja_JP. -->

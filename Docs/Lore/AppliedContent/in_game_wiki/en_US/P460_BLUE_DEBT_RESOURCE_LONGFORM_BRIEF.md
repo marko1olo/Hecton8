@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "Blue Debt Custody"
+title: "Blue Debt: Pressure History In Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Blue Debt Custody
+# Blue Debt: Pressure History In Custody
 
-Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt is useful, expensive and morally dirty. It is not magic ore; it is pressure-grown substrate whose value depends on handling, contamination, custody, Atlas compatibility and who owns the proof.
 
 ## Scanner
 
-Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Resource archive. Blue debt is Xenon-Omega pressure substrate in custody: pressure history, brine exposure, noble-gas capture, contamination stage, sample grade, and mass-through-window payout.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+PUBLIC RESOURCE NODE // BLUE DEBT. Value requires pressure-rated containment, extraction scar record, contamination status, custody receipt, and recoverable tonne-window allocation.
 
 ## Audio
 
-The sample is valuable because it remembers the pressure that made it.
+Black Keel payout audio: "Do not polish the sample. Seal it, grade it, and keep the receipt dry."
 
 ## Field Note
 
-Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Marauder note: grade the sample first, then ask what touched it. Price without custody is bait.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/en_US. -->

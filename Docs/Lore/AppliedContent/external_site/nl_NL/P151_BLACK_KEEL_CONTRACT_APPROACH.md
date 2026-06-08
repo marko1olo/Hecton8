@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Black Keel Claim Acceptance"
+title: "Black Keel Claimaanvaarding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Black Keel Claim Acceptance
+# Black Keel Claimaanvaarding
 
-NL LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+Een Black Keel-claimterminal zet de opening vast in schuld, zuurstofaddenda en custody voordat de oceaan het scherm raakt.
 
 ## Scanner
 
-NL LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+Contractconsole. Aegir Reclamation Pool vermeldt eerst een pand van 4.8 tonne-window en daarna pas zuurstof.
 
 ## Terminal
 
-NL LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / CLAIMAANVAARDINGSTERMINAL: route RAN-B:H8 salvage descent; pandverlichting 4.8 tonne-window voorwaardelijk; zuurstof-welfare-addenda na berging gefactureerd; payload custody primair Black Keel, getuige Keelmark Mutual; weigering houdt Barnard blacklist review actief.
 
 ## Audio
 
-NL LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel aan contractant: claimvenster open. Zuurstof wordt na berging gefactureerd. Bevestig als je kunt werken.
 
 ## Field Note
 
-NL LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+De stylus zit met een drukkabel aan het scherm vast. Iemand rekende op trillende handen.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/nl_NL. -->

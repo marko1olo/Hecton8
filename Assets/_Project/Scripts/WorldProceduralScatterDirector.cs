@@ -487,6 +487,8 @@ namespace Hecton8.World
         [SerializeField] private int _debugScatterBackendShadowPassesScheduled;
         [Tooltip("Number of shadow backend passes completed since the last diagnostics reset.")]
         [SerializeField] private int _debugScatterBackendShadowPassesCompleted;
+        [Tooltip("Number of pending shadow backend passes interrupted by backend facade replacement since the last diagnostics reset.")]
+        [SerializeField] private int _debugScatterBackendShadowInterruptedCount;
         [Tooltip("Candidate count reported by the last completed shadow backend pass.")]
         [SerializeField] private int _debugScatterBackendShadowLastCandidateCount;
         [Tooltip("Classic queued-candidate count captured when the last shadow backend pass was scheduled.")]
@@ -786,8 +788,8 @@ namespace Hecton8.World
             UnregisterProceduralStateRegistryCallbacks();
             CompleteSamplingJobForTeardown();
             DisposeMigratorySargassumLane();
-            DisposeCellSamplingArrays();
             DisposeScatterBackendFacade();
+            DisposeCellSamplingArrays();
             ClearFloraGpuiVisibility();
 
             if (_lifecycleRuntimeState.RegisteredToTickManager != 0)
@@ -1159,15 +1161,18 @@ namespace Hecton8.World
 
         private void ForceRefreshProceduralContext()
         {
-            WorldZoneDirector zoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+            WorldZoneDirector zoneDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref zoneDirector);
             if (zoneDirector != null)
                 zoneDirector.ForceRefresh();
 
-            BiomeMatrixDirector matrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            BiomeMatrixDirector matrixDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref matrixDirector);
             if (matrixDirector != null)
                 matrixDirector.ForceRefresh();
 
-            WorldContentDirector contentDirector = WorldContentDirector.ActiveRuntimeInstance;
+            WorldContentDirector contentDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveWorldContentDirector(ref contentDirector);
             if (contentDirector != null)
                 contentDirector.ForceRefresh();
 
@@ -2286,6 +2291,7 @@ namespace Hecton8.World
             _debugReconcileCreatedCount = 0;
             _debugReconcileReusedCount = 0;
             ScatterHybridRuntimePlan backendPlan = RefreshScatterBackendPlan();
+            _scatterBackendHost?.ResetTelemetry();
             ResetScatterBackendDebugTelemetry(backendPlan);
         }
 
@@ -3003,8 +3009,7 @@ namespace Hecton8.World
             Dictionary<int, int> prefabCreateAllowances = _memory.PrefabCreateAllowances;
             prefabCreateAllowances.Clear();
 
-            IObjectPoolService pool = _cachedObjectPool;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
                 return false;
 
             ClearScatterPoolWarmupScratch();
@@ -3198,8 +3203,8 @@ namespace Hecton8.World
 
         private bool TryGetPrefabRegistry(out PrefabRegistry prefabRegistry)
         {
-            prefabRegistry = PrefabRegistry.ActiveRuntimeInstance;
-            if (prefabRegistry != null)
+            prefabRegistry = null;
+            if (PrefabRegistry.TryResolveActiveRuntime(ref prefabRegistry))
                 return true;
 
             if (!_loggedMissingPrefabRegistry)
@@ -4885,6 +4890,9 @@ namespace Hecton8.World
                 case WorldProceduralFieldSampler.SeafloorSource.SceneProbeLegacy:
                     sceneProbeLegacyCount++;
                     break;
+                case WorldProceduralFieldSampler.SeafloorSource.MacroGeologyFallback:
+                    fallbackCount++;
+                    break;
                 case WorldProceduralFieldSampler.SeafloorSource.FallbackSynthetic:
                     fallbackCount++;
                     break;
@@ -4941,6 +4949,45 @@ namespace Hecton8.World
 
                 _occupiedCellBuffer.Add(ComposeWindowKey(placement.CellX, placement.CellZ, 1, placement.HeightLayerIndex));
             }
+        }
+
+        private ScatterBackendParityReference BuildScatterBackendParityReferenceFromDesiredPlacements()
+        {
+            ScatterClassicParityAccumulator accumulator = default;
+            Dictionary<long, ScatterPlacement> desiredPlacements = _desiredPlacements;
+            if (desiredPlacements == null || desiredPlacements.Count == 0)
+                return accumulator.ToReference();
+
+            List<long> sortedPlacementKeys = _removalBuffer;
+            if (sortedPlacementKeys == null)
+                return accumulator.ToReference();
+
+            sortedPlacementKeys.Clear();
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                ScatterPlacement placement = enumerator.Current.Value;
+                if (placement == null || placement.Family == null)
+                    continue;
+
+                sortedPlacementKeys.Add(enumerator.Current.Key);
+            }
+
+            sortedPlacementKeys.Sort();
+            for (int i = 0; i < sortedPlacementKeys.Count; i++)
+            {
+                if (!desiredPlacements.TryGetValue(sortedPlacementKeys[i], out ScatterPlacement placement) ||
+                    placement == null ||
+                    placement.Family == null)
+                {
+                    continue;
+                }
+
+                accumulator.Register(placement, placement.Family.scatterLayer);
+            }
+
+            sortedPlacementKeys.Clear();
+            return accumulator.ToReference();
         }
 
         private static void RegisterLayerFamilyCount(
@@ -7926,8 +7973,7 @@ namespace Hecton8.World
 
             if (prefab != null)
             {
-                pool = _cachedObjectPool;
-                if (pool != null)
+                if (TryResolveCachedObjectPool(out pool))
                 {
                     instance = pool.Spawn(prefab, runtimePosition, placement.Rotation, !Application.isPlaying);
                     if (instance != null)
@@ -8007,7 +8053,7 @@ namespace Hecton8.World
                 return;
 
             GameObject instance = proxy.gameObject;
-            IObjectPoolService pool = _cachedObjectPool;
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
             if (pool != null && proxy.IsPoolManaged)
             {
                 pool.Despawn(instance);
@@ -11511,7 +11557,7 @@ namespace Hecton8.World
                     InvalidateObserverAbsolutePositionCache();
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _cachedObjectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     OnMigratorySargassumDataVaultReplaced(currentService as Hecton8.Core.Memory.IDataVault);
@@ -11522,7 +11568,43 @@ namespace Hecton8.World
         private void CachePlayerContextCold()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
-            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(candidate))
+            {
+                _cachedObjectPool = candidate;
+                return;
+            }
+
+            ObjectPoolManager pool = null;
+            _cachedObjectPool = ObjectPoolManager.TryResolveActiveRuntime(ref pool)
+                ? pool
+                : null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _cachedObjectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = null;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _cachedObjectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _cachedObjectPool = null;
+            pool = null;
+            return false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -11687,6 +11769,16 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f ||
+                !math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
+            {
+                return;
+            }
+
             InvalidateObserverAbsolutePositionCache();
             RebuildFloraGpuiMatricesForCommittedOrigin();
         }

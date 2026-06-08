@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Domänenmarken 2190
 
-Domain Marks 2190 verortet HECTON-8 in einer reifen, dünn verteilten Menschensphäre. Interstellar bedeutet nicht schnell erreichbar.
-
-## Scanner
-
-Gemischte Domänenmarken. Sol-Sicherheitsplatte, Barnard-Werkzeugstempel, Luyten-Routengewahrsam.
-
-## Terminal
-
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
-
-## Audio
-
-Dieser Ort liegt nicht außerhalb der Zivilisation. Er zeigt Zivilisation, wenn Entfernung gewinnt.
-
-## Field Note
-
-Die Menschheit wurde groß. Rettung muss trotzdem reisen.
+Im Jahr 2190 kann ein kaputtes Objekt mehrere Besitzer tragen: Sol-Standard, Barnard-Reparatur, Luyten-Gewahrsam, Aegir-Claim. HECTON-8 ist keine geschichtslose Ruine. Die Geschichte liegt als Stempel auf Metall, während der Raum vollläuft.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/de_DE. -->

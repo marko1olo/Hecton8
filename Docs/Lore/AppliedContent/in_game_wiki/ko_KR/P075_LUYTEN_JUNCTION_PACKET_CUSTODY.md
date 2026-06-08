@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Luyten Junction Packet Custody"
+title: "루이텐 정션 패킷 보관"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Luyten Junction Packet Custody
+# 루이텐 정션 패킷 보관
 
-KO LOC HOLD: Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.
+루이텐 정션은 사회라기보다 기반 시설이다. relays, beam custody, depot law, packet accounting. Deep Reach가 실시간 FTL 명령 없이 Aegir를 압박하는 방식과 증거가 지연되고, 팔리고, 사라지고, 무기화되는 방식을 설명한다.
 
 ## Scanner
 
-KO LOC HOLD: Luyten custody spool. Messages do not travel free; neither does truth.
+루이텐 custody 스풀. 메시지는 공짜로 이동하지 않는다. 진실도 마찬가지다.
 
 ## Terminal
 
-KO LOC HOLD: LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.
+LUYTEN JUNCTION ROUTE: packet custody가 요금 대기열을 통해 이전됨. live command 금지. 증거 우선권은 emergency claim escrow 하에서 구매 가능.
 
 ## Audio
 
-KO LOC HOLD: No ansible. No mercy. Just custody, tariff and time.
+ansible은 없다. 자비도 없다. custody, tariff, 시간뿐.
 
 ## Field Note
 
-KO LOC HOLD: A relay is a machine that decides which grief gets bandwidth.
+중계기는 어떤 슬픔에 bandwidth를 줄지 결정하는 기계다.
 
 <!-- In-Game Wiki; generated from P075_LUYTEN_JUNCTION_PACKET_CUSTODY/ko_KR. -->

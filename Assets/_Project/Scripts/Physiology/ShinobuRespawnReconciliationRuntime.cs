@@ -116,6 +116,8 @@ namespace Hecton8.Physiology
         private uint _lastRequestSequence;
         private uint _lastRequestPlayerHash;
         private uint _lastCommittedTransformSequence;
+        private uint _activeLoadOperationId;
+        private SaveStatusSignal _completedLoadPendingRespawnCancel;
         private uint _mockLethalSequence;
         private uint _lastFrame;
         private int _lastInventoryPenaltyResultSnapshotGeneration;
@@ -132,6 +134,9 @@ namespace Hecton8.Physiology
         private bool _jobScheduled;
         private bool _jobBuffersLocked;
         private bool _dumpedFault;
+        private bool _loadOperationInProgress;
+        private bool _loadCompletionRespawnCancelPending;
+        private bool _respawnCommitSuppressedForLoad;
         private bool _respawnDearLieVisualActive;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -247,6 +252,12 @@ namespace Hecton8.Physiology
             if (!HasHotVaultState(vault))
                 return;
 
+            if (timing.FrameId != 0u)
+                _lastFrame = timing.FrameId;
+
+            if (ConsumeLoadStatusSignals(vault))
+                return;
+
             if (_jobScheduled)
             {
                 if (!_activeHandle.IsCompleted)
@@ -283,6 +294,155 @@ namespace Hecton8.Physiology
             }
         }
 
+        private bool ConsumeLoadStatusSignals(IDataVault vault)
+        {
+            ReadOnlySpan<SaveStatusSignal> snapshot = SignalBus<SaveStatusSignal>.GetFrameSnapshot();
+            SaveStatusSignal completedLoad = default;
+            bool loadCompleted = false;
+            bool loadFailedOrRejected = false;
+            for (int i = 0; i < snapshot.Length; i++)
+            {
+                SaveStatusSignal status = snapshot[i];
+                if ((status.Flags & SaveStatusSignal.LoadOperationFlag) == 0)
+                    continue;
+
+                if (status.State == SaveStatusSignal.InProgress)
+                {
+                    _loadOperationInProgress = true;
+                    _activeLoadOperationId = status.OperationId;
+                    continue;
+                }
+
+                if (status.State == SaveStatusSignal.Completed ||
+                    status.State == SaveStatusSignal.Failed ||
+                    status.State == SaveStatusSignal.Rejected)
+                {
+                    if (_activeLoadOperationId == 0u || status.OperationId == _activeLoadOperationId)
+                    {
+                        _loadOperationInProgress = false;
+                        _activeLoadOperationId = 0u;
+                        if (status.State == SaveStatusSignal.Completed)
+                        {
+                            completedLoad = status;
+                            loadCompleted = true;
+                        }
+                        else
+                        {
+                            loadFailedOrRejected = true;
+                        }
+                    }
+                }
+            }
+
+            if (loadCompleted)
+            {
+                if (completedLoad.Frame == 0u)
+                    completedLoad.Frame = _lastFrame;
+                QueueOrApplyCompletedLoadRespawnCancel(vault, in completedLoad);
+                return true;
+            }
+
+            if (loadFailedOrRejected)
+                TryReleaseSuppressedRespawnCommitAfterLoadFailure();
+
+            if (_loadOperationInProgress)
+                return true;
+
+            return false;
+        }
+
+        private void QueueOrApplyCompletedLoadRespawnCancel(IDataVault vault, in SaveStatusSignal completedLoad)
+        {
+            _completedLoadPendingRespawnCancel = completedLoad;
+            if (_jobScheduled)
+            {
+                _loadCompletionRespawnCancelPending = true;
+                return;
+            }
+
+            TryFlushCompletedLoadRespawnCancel(vault);
+        }
+
+        private bool TryFlushCompletedLoadRespawnCancel(IDataVault vault)
+        {
+            SaveStatusSignal completedLoad = _completedLoadPendingRespawnCancel;
+            if (completedLoad.State != SaveStatusSignal.Completed && !_loadCompletionRespawnCancelPending)
+                return false;
+
+            if (completedLoad.Frame == 0u)
+                completedLoad.Frame = _lastFrame;
+
+            bool canceled = TryCancelPendingRespawnForLoad(vault, in completedLoad);
+            _completedLoadPendingRespawnCancel = default;
+            _loadCompletionRespawnCancelPending = false;
+            _respawnCommitSuppressedForLoad = false;
+            return canceled;
+        }
+
+        private bool TryReleaseSuppressedRespawnCommitAfterLoadFailure()
+        {
+            if (!_respawnCommitSuppressedForLoad)
+                return false;
+
+            _respawnCommitSuppressedForLoad = false;
+            return TryTransformCommittedRespawnSignal();
+        }
+
+        private bool TryCancelPendingRespawnForLoad(IDataVault vault, in SaveStatusSignal status)
+        {
+            if (!HasHotVaultState(vault))
+                return false;
+
+            NativeArray<RespawnRequestDTO> requestArray = ResolveVaultBuffer(vault, in _requestHandle);
+            NativeArray<RespawnStateDTO> stateArray = ResolveVaultBuffer(vault, in _stateHandle);
+            NativeArray<RespawnFadeDTO> fadeArray = ResolveVaultBuffer(vault, in _fadeHandle);
+            if (!HasRequiredLength(requestArray, 1) ||
+                !HasRequiredLength(stateArray, 1) ||
+                !HasRequiredLength(fadeArray, 1))
+            {
+                return false;
+            }
+
+            RespawnRequestDTO previousRequest = requestArray[0];
+            RespawnStateDTO previousState = stateArray[0];
+            RespawnFadeDTO previousFade = fadeArray[0];
+            if ((previousRequest.Flags & ShinobuRespawnFlags.PendingRequest) == 0u &&
+                (previousState.Flags & ShinobuRespawnFlags.RespawnActive) == 0u &&
+                previousFade.DeathFadeIntensity <= 0.0001f)
+            {
+                return false;
+            }
+
+            if (!vault.TryAcquireMutationGuard(RequestMutationGuardMask))
+                return false;
+
+            bool cleared = false;
+            try
+            {
+                RespawnFadeDTO clearedFade = default;
+                clearedFade.GlobalQualityWeight = ResolveQualityWeight();
+                clearedFade.Frame = status.Frame != 0u ? status.Frame : _lastFrame;
+                requestArray[0] = default;
+                stateArray[0] = default;
+                fadeArray[0] = clearedFade;
+                _lastRequestSequence = 0u;
+                _lastRequestPlayerHash = 0u;
+                _lastCommittedTransformSequence = 0u;
+                cleared = true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(RequestMutationGuardMask);
+            }
+
+            if (!cleared)
+                return false;
+
+            TryWriteLoadCanceledRespawnTelemetry(vault, in previousRequest, in previousState, in previousFade, in status);
+            ClearRespawnDearLieVisualIfNeeded();
+            return true;
+        }
+
         private JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
         {
             IDataVault vault = _dataVault;
@@ -297,6 +457,9 @@ namespace Hecton8.Physiology
                 if (!TryFinalizeActiveJobNoWait())
                     return JobHandle.CombineDependencies(dependsOn, _activeHandle);
             }
+
+            if (_loadOperationInProgress)
+                return dependsOn;
 
             if (!HasPendingRespawnWork(vault))
                 return dependsOn;
@@ -559,6 +722,59 @@ namespace Hecton8.Physiology
                 telemetry[index] = entry;
                 telemetryCursor.Cursor = (index + 1) % ShinobuRespawnConstants.TelemetryFrameCount;
                 telemetryCursor.Flags = flags;
+                cursor[0] = telemetryCursor;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
+            }
+        }
+
+        private bool TryWriteLoadCanceledRespawnTelemetry(
+            IDataVault vault,
+            in RespawnRequestDTO request,
+            in RespawnStateDTO state,
+            in RespawnFadeDTO fade,
+            in SaveStatusSignal status)
+        {
+            if (vault == null ||
+                !IsVaultDescriptorCreated(in _telemetryHandle) ||
+                !IsVaultDescriptorCreated(in _telemetryCursorHandle))
+            {
+                return false;
+            }
+
+            NativeArray<RespawnTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryHandle);
+            NativeArray<RespawnTelemetryCursor64> cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+            if (!HasRequiredLength(telemetry, ShinobuRespawnConstants.TelemetryFrameCount) ||
+                !HasRequiredLength(cursor, 1))
+            {
+                return false;
+            }
+
+            uint routeFlags = request.Flags | state.Flags | fade.Flags | ShinobuRespawnFlags.CanceledByLoad;
+            RespawnTelemetryEntry entry = default;
+            entry.DeathAUP = SanitizeAup(request.DeathAUP);
+            entry.RespawnAUP = SanitizeAup(state.TargetAUP);
+            entry.CauseHash = request.DamageHash != 0u ? request.DamageHash : status.OperationId;
+            entry.Frame = status.Frame != 0u ? status.Frame : _lastFrame;
+            entry.ReconcileMicroseconds = 0f;
+            entry.Flags = routeFlags;
+
+            if (!vault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
+                return false;
+
+            try
+            {
+                RespawnTelemetryCursor64 telemetryCursor = cursor[0];
+                int index = telemetryCursor.Cursor % ShinobuRespawnConstants.TelemetryFrameCount;
+                if (index < 0)
+                    index += ShinobuRespawnConstants.TelemetryFrameCount;
+
+                telemetry[index] = entry;
+                telemetryCursor.Cursor = (index + 1) % ShinobuRespawnConstants.TelemetryFrameCount;
+                telemetryCursor.Flags = routeFlags & (ShinobuRespawnFlags.NanDetected | ShinobuRespawnFlags.InvalidTargetAup | ShinobuRespawnFlags.CanceledByLoad);
                 cursor[0] = telemetryCursor;
                 return true;
             }
@@ -1782,16 +1998,28 @@ namespace Hecton8.Physiology
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeHandle))
                 return false;
 
+            bool suppressTransform = _loadOperationInProgress || _loadCompletionRespawnCancelPending;
             try
             {
-                TryTransformCommittedRespawnSignal();
-                return true;
+                if (suppressTransform)
+                {
+                    _respawnCommitSuppressedForLoad = true;
+                }
+                else
+                {
+                    TryTransformCommittedRespawnSignal();
+                }
             }
             finally
             {
                 _jobScheduled = false;
                 UnlockJobBuffers();
             }
+
+            if (_loadCompletionRespawnCancelPending)
+                TryFlushCompletedLoadRespawnCancel(_dataVault);
+
+            return true;
         }
 
         private void CompleteActiveJobForTeardown()
@@ -1815,15 +2043,22 @@ namespace Hecton8.Physiology
             if (!completed)
                 return;
 
+            bool suppressTransform = _loadOperationInProgress || _loadCompletionRespawnCancelPending;
             try
             {
-                TryTransformCommittedRespawnSignal();
+                if (suppressTransform)
+                    _respawnCommitSuppressedForLoad = true;
+                else
+                    TryTransformCommittedRespawnSignal();
             }
             finally
             {
                 _jobScheduled = false;
                 UnlockJobBuffers();
             }
+
+            if (_loadCompletionRespawnCancelPending)
+                TryFlushCompletedLoadRespawnCancel(_dataVault);
         }
 
         private static ulong MutationGuardBit(BufferID bufferId)
@@ -1833,6 +2068,9 @@ namespace Hecton8.Physiology
 
         private bool TryTransformCommittedRespawnSignal()
         {
+            if (_loadOperationInProgress || _loadCompletionRespawnCancelPending)
+                return false;
+
             IDataVault vault = _dataVault;
             if (!HasHotVaultState(vault))
                 return false;
@@ -1937,7 +2175,7 @@ namespace Hecton8.Physiology
             if (!_registeredHotSwap)
                 return;
 
-            GlobalRegistry.UnregisterHotSwapListener(this);
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
         }
 
@@ -1975,6 +2213,11 @@ namespace Hecton8.Physiology
             _lastRequestSequence = 0u;
             _lastRequestPlayerHash = 0u;
             _lastCommittedTransformSequence = 0u;
+            _activeLoadOperationId = 0u;
+            _completedLoadPendingRespawnCancel = default;
+            _loadOperationInProgress = false;
+            _loadCompletionRespawnCancelPending = false;
+            _respawnCommitSuppressedForLoad = false;
         }
 
         private static void ConfigureSignalLanes()
@@ -2121,6 +2364,7 @@ namespace Hecton8.Physiology
             if ((flags & ShinobuRespawnFlags.FallbackLifepod) != 0u) translated |= PlayerRespawnSignalFlags.FallbackLifepod;
             if ((flags & ShinobuRespawnFlags.InvalidTargetAup) != 0u) translated |= PlayerRespawnSignalFlags.InvalidTargetAup;
             if ((flags & ShinobuRespawnFlags.PenaltyApplied) != 0u) translated |= PlayerRespawnSignalFlags.PenaltyApplied;
+            if ((flags & ShinobuRespawnFlags.NanDetected) != 0u) translated |= PlayerRespawnSignalFlags.InvalidDeathAup;
             return translated;
         }
 

@@ -9,32 +9,34 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Population And Authority Scale"
+title: "Skala Populasi Dan Otoritas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Population And Authority Scale
+# Skala Populasi Dan Otoritas
 
-ID LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
+Angka populasi tetap perkiraan karena pemain tidak membutuhkan census opera. Pertanyaan bergunanya lebih sederhana: siapa yang bisa bertindak atas dirimu dari jauh? Domain inti yang padat mungkin hanya menyentuh HECTON-8 sebagai baris sertifikasi. Depot kecil bisa lebih penting karena mengontrol custody paket. Frontier shell mati bisa paling penting karena memiliki perangkat keras di ruangan.
+
+Inilah skala yang dirasakan pemain. Sol bisa memutuskan bahwa suatu benda milik seseorang. Centauri bisa membuat bahasa lama Deep Reach terlihat terhormat. Barnard menormalkan pekerjaan yang menjebak Marauders. Tau Ceti bisa mengubah bukti menjadi tekanan publik, terlalu lambat untuk oksigen tetapi tidak terlalu lambat untuk akibat. Luyten bisa membuktikan rantai pesan. Aegir adalah tempat tanda tangan menjadi tekanan, air, palka terkunci, dan massa yang bisa ditagih.
 
 ## Scanner
 
-ID LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+AUTHORITY CENSUS STUB // Populasi hanya latar. Yang penting adalah domain mana yang bisa mengesahkan, mempublikasikan, memindahkan, mengasuransikan, menotariskan, atau mengubur claim.
 
 ## Terminal
 
-ID LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AUTHORITY SCALE // Sol mengesahkan kepemilikan. Centauri melegitimasi piagam. Barnard menyediakan tenaga dead-claim. Tau Ceti menerbitkan bukti setelah jeda. Luyten membuktikan custody. Aegir mengeksekusi claim fisik yang kotor.
 
 ## Audio
 
-ID LOC HOLD: The largest domain is not the nearest hand.
+Domain terbesar bukan tangan terdekat. Ia adalah stempel yang selamat dari jeda.
 
 ## Field Note
 
-ID LOC HOLD: Do not turn the setting into census space opera.
+Jangan tambah trivia sensus kecuali mengubah tekanan pada tubuh, rute, claim, atau rantai bukti.
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/id_ID. -->

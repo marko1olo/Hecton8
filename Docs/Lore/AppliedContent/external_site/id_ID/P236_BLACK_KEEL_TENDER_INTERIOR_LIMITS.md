@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Black Keel Tender Interior Limits"
+title: "Batas Interior Tender Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Black Keel Tender Interior Limits
+# Batas Interior Tender Black Keel
 
-ID LOC HOLD: Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure.
+Black Keel adalah infrastruktur salvage hard-sci-fi, bukan kapal pribadi heroik. Interiornya dibangun di sekitar kustodi sampel, packet law, penanganan drone, selongsong karantina, dan tekanan utang. Kapal itu bisa menjadi jalur hidup dan tetap secara struktural tidak peduli pada orang yang memegang jalur itu.
 
 ## Scanner
 
-ID LOC HOLD: The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.
+Tender punya rak untuk sampel, drone, paket tersegel, dan kargo lien sebelum punya tempat tidur layak bagi penumpang hidup.
 
 ## Terminal
 
-ID LOC HOLD: TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.
+TENDER LIMIT: tidak ada deep rescue crew, tidak ada cadangan shuttle atmosfer, tidak ada ascent burn gratis di luar lien authority, tidak ada quartermaster manusia.
 
 ## Audio
 
-ID LOC HOLD: The ship brought you here as cargo with hands.
+Kapal membawamu ke sini sebagai kargo dengan tangan.
 
 ## Field Note
 
-ID LOC HOLD: Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.
+Black Keel adalah claim tender kerja: disewa, disita utang, otomatis, dan dioptimalkan untuk kustodi sebelum penyelamatan.
 
 <!-- External Site; generated from P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS/id_ID. -->

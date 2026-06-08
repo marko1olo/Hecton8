@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Pressure Glass and Sealant Guide
 
-The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.
+Pressure Glass and Sealant Guide grounds HECTON-8's biomechanical horror in repair logic: Atlas follows cracks, cables, biofilms and pressure scars because broken systems already provide paths.
 
 ## Scanner
 
-Pressure glass fracture sealed by Atlas chemistry. Safe lens stock only if the seal map stays intact.
+Pressure-glass fracture sealed by Atlas chemistry. Safe lens stock only if the seal map stays intact.
 
 ## Terminal
 

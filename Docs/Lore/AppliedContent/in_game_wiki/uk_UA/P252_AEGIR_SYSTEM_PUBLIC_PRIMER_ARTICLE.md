@@ -9,32 +9,35 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Aegir System Public Primer Article"
+title: "Публічний вступ до системи Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Aegir System Public Primer Article
+# Публічний вступ до системи Aegir
 
-UA LOC HOLD: Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.
+Aegir задає HECTON-8 практичну форму. Система не намальоване небо навколо історії; вона причина, чому маршрути відкриваються, закриваються, затримуються і коштують надто дорого. HECTON-8 рухається всередині драбини місяців, припливів, радіаційних вікон, орбіт переносу перевізників і кутів реле. Повідомлення може вийти раніше, ніж рятувальний апарат увійде. Претензія може отримати ціну раніше, ніж стек людського вилучення буде підготовлено. Black Keel може відповісти, бо сигнал дешевий порівняно з переміщенням екранованої маси. Це не робить Aegir порожньою чи недосяжною. Це робить її індустріальною: розклади, паливні допуски, карантинна мова, тіні місяців, океанські припливи й орбітальне зберігання тиснуть на одного нирця. Публічний текст про Aegir має тримати науку твердою, а драму практичною. Система працює. Саме тому залишення людей може бути процедурним, а не мовчазним.
 
 ## Scanner
 
-UA LOC HOLD: Aegir is not backdrop. It is a timetable with gravity.
+Aegir не тло. Це розклад із гравітацією, радіацією, припливами, затримкою реле й дорогими вікнами маси.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
+ПУБЛІЧНИЙ РІВЕНЬ СТАТТІ / СИСТЕМА AEGIR
+дозволено: система-господар, роль місяця HECTON-8, припливні вікна, геометрія реле, затримка перевізника, мова маршрутів без FTL
+закрито: маршрутизація фінального payload, прихований пріоритет receiver, точні пізні locks ефемерид
+примітка редактора: пояснити затримку так, щоб сетинг не здавався недосяжним.
 
 ## Audio
 
-UA LOC HOLD: The sky is a system, not a ceiling.
+Система досить близько, щоб відповісти. У цьому й жорстокість. Вона недостатньо близько, щоб підняти тіло за командою.
 
 ## Field Note
 
-UA LOC HOLD: Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
+Не називай Aegir далекою і не зупиняйся. Назви, що робить дистанція: підвищує ціну підйому, затримує тіла й дозволяє доказам обігнати порятунок.
 
 <!-- In-Game Wiki; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/uk_UA. -->

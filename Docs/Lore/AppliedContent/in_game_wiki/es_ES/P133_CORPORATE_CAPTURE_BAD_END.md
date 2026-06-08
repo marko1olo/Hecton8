@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate Capture Bad End"
+title: "Captura corporativa: rescate limpio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corporate Capture Bad End
+# Captura corporativa: rescate limpio
 
-ES LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.
+Captura corporativa es un mal final construido desde un rescate plausible. El jugador sale vivo del océano, pero la autoridad que responde trata al testigo como material de contención y al payload como el paciente real.
 
 ## Scanner
 
-ES LOC HOLD: Rescue offer. Payload first. Witness second.
+Fuente de recuperación verificada: proxy de Deep Reach. Payload solicitado antes del control de bienestar.
 
 ## Terminal
 
-ES LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
+RECOGIDA DEEP REACH: el equipo de recuperación acepta coordenadas, custody XO y llave de acceso Atlas antes de revisar el bienestar del contratista. Testimonio del contratista sellado bajo protocolo de contaminación.
 
 ## Audio
 
-ES LOC HOLD: The clean room is not for you.
+La sala limpia no es para ti.
 
 ## Field Note
 
-ES LOC HOLD: A rescue that demands silence is a capture with better lighting.
+Un rescate limpio que pide coordenadas primero es captura con mejor aire.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/es_ES. -->

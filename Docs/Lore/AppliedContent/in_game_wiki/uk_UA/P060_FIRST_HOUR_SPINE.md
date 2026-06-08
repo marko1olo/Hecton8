@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "First Hour Spine"
+title: "Хребет першої години"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# First Hour Spine
+# Хребет першої години
 
-UK LOC HOLD: First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.
+Перша година не повинна починатися в темряві. Вона починається з контрактного голосу, пошкодженого спуску, контролю дихання, яскравої мілкої води й практичної потреби перезапустити помпу. Краса — частина пастки: HECTON-8 має виглядати місцем, якого хочеться, перш ніж його папери стануть смертельними. Потім хребет відкриття перетворює виживання на доказ. Перше сховище корисне, але скомпрометоване; вичищений пакет інциденту звучить надто гладко; перший ремонтний шрам Atlas показує кабель, метал інструмента й живий залишок, стиснуті в одне рішення обслуговування. Гравець учить базовий цикл дією, а не лекцією: дихати, ремонтувати, читати, сумніватися, йти глибше.
 
 ## Scanner
 
-UK LOC HOLD: Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Контракт, пошкоджений спуск, повітря, яскраві мілководдя, насосне сховище, вичищена брехня, а потім перший ремонтний шрам, де життя використане як прокладка.
 
 ## Terminal
 
-UK LOC HOLD: SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+МІЛКОВОДНИЙ АНЕКС: ручний перезапуск помпи чинний. Пакет інциденту Deep Reach закешовано. Ремонтний ріст Atlas виявлено навколо кабелю, фрагмента інструмента й біологічного залишку.
 
 ## Audio
 
-UK LOC HOLD: The first safe room is not clean. It is only holding its breath better than you are.
+Перша безпечна кімната не чиста. Вона просто краще за тебе затримує дихання.
 
 ## Field Note
 
-UK LOC HOLD: The opening must be beautiful before it becomes accusing.
+Відкриття має бути красивим до того, як стане обвинувальним.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/uk_UA. -->

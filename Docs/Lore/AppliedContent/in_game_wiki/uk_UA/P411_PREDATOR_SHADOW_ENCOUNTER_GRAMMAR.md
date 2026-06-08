@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Predator Shadow Encounter Grammar"
+title: "Граматика зустрічі: тінь хижака"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Predator Shadow Encounter Grammar
+# Граматика зустрічі: тінь хижака
 
-UK LOC HOLD: Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.
+Зустрічі з тінню хижака мають робити океан зайнятим до того, як тварина стане видимою. Корисний ланцюг попереджень середовищний: скляні шкребаки зупиняються, хоча корм відкритий, lantern bloom рідшає з одного боку, pressureweed складається без поштовху, sonar показує провал надто широкий для уламків, а світло гравця перетинає широку форму, яка не збирається в чистий силует. Тварина — не boss на арені. Це тиск маршруту. Він змінює витрату кисню, дисципліну return-line, час ремонту й довіру до scan. Добра зустріч із тінню дає вижити тому, хто читає відсутність: не додавай шуму, тримай лампу вузькою, не женись за чистою смугою й виходь під кутом, а не прямо назад через позначену воду.
 
 ## Scanner
 
-UK LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Слід тіні хижака. Розрив sonar, обірваний шлях здобичі, раптова тиша шкребаків, широке перекриття світла. Тіло не підтверджене; дисципліна світла й кут виходу.
 
 ## Terminal
 
-UK LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+ГРАМАТИКА ЗУСТРІЧІ / ТІНЬ ХИЖАКА / роль: тиск маршруту до показу тіла, стрибок витрати кисню, розрив довіри до scan / безпечне читання: шлях здобичі зупиняється, шум bloom схлопується, sonar-повернення розходяться навколо порожньої води / відмова: scripted full-body reveal як перше попередження, безпечний jump scare, чиста boss arena / примітка маршруту: якщо дрібні тварини зупинилися до того, як scanner назвав ціль, маршрут уже змінився.
 
 ## Audio
 
-UK LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+Безпечний знак — не побачити його. Безпечний знак — помітити, що все інше першим обрало тишу.
 
 ## Field Note
 
-UK LOC HOLD: Use for AI/spawn design notes and scanner cards.
+Назви тварину пізно. Нехай здобич, світло й sonar відмовлять першими. Якщо маршрут стих, тінь уже володіє ним.
 
 <!-- In-Game Wiki; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/uk_UA. -->

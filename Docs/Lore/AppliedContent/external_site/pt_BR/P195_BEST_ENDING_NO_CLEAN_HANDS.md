@@ -9,32 +9,18 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Best Ending No Clean Hands"
+title: "Melhor final: sem mãos limpas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Best Ending No Clean Hands
+# Melhor final: sem mãos limpas
 
-PT LOC HOLD: Best Ending No Clean Hands defines the moral standard for final outcomes.
+O melhor final de HECTON-8 não deve ser aquele em que tudo é consertado. Isso tornaria o oceano, os trabalhadores mortos e a máquina contratual menores que a checklist do jogador. A versão mais forte permite salvar algo concreto: um registro público, uma bacia viva, um payload corporativo negado, um operador libertado, um nome que não pode mais ser apagado.
 
-## Scanner
-
-PT LOC HOLD: The best ending should not erase cost, uncertainty or complicity.
-
-## Terminal
-
-PT LOC HOLD: NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.
-
-## Audio
-
-PT LOC HOLD: If it feels clean, it forgot where you are.
-
-## Field Note
-
-PT LOC HOLD: A strong ending lets the player save something real and lose something real.
+Também precisa deixar resíduo. Talvez Atlas sobreviva em quarentena. Talvez o corte salve pessoas e mate uma forma de vida. Talvez a verdade seja pública mas incontrolável. Talvez o jogador vá embora sem dívida com uma prova que continuará ferindo pessoas. Sem Mãos Limpas não é cinismo. É respeito pela escala. O jogador pode agir com significado sem se tornar inocente.
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/pt_BR. -->

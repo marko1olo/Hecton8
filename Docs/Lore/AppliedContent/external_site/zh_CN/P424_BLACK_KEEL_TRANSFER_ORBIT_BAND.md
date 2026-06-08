@@ -8,33 +8,33 @@ biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "ZH LOC HOLD: Black Keel Transfer Band"
+spoiler_tier: 1
+title: "Black Keel转移带"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Black Keel Transfer Band
+# Black Keel转移带
 
-ZH LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.
+Black Keel是custody route上的合同carrier。它能先接收payloads，之后才可能安全回收人员。
 
 ## Scanner
 
-ZH LOC HOLD: Carrier band: Black Keel loiters high, not above HECTON-8.
+Carrier带：Black Keel在高处徘徊，不在HECTON-8正上方。
 
 ## Terminal
 
-ZH LOC HOLD: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+CARRIER ORBIT：高custody lane；descent mass受限，并被天气gated。
 
 ## Audio
 
-ZH LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.
+它没有停在你头顶。它在保险允许的地方等待。
 
 ## Field Note
 
-ZH LOC HOLD: Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
+Carrier轨道记录：Black Keel可以先接收payloads，再接人；这个差距驱动partial-exit logic。
 
 <!-- External Site; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/zh_CN. -->

@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "RU LOC HOLD: Blue Debt Custody"
+title: "Blue Debt: история давления в custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Blue Debt Custody
+# Blue Debt: история давления в custody
 
-RU LOC HOLD: Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
+Blue debt полезен, дорог и грязен морально. Это не magic ore, а pressure-grown substrate, чья ценность зависит от handling, contamination, custody, Atlas compatibility и владельца доказательств.
 
 ## Scanner
 
-RU LOC HOLD: Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
+Ресурсный архив. Blue debt - Xenon-Omega pressure substrate в custody: pressure history, brine exposure, noble-gas capture, contamination stage, sample grade и payout через mass-through-window.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
+ПУБЛИЧНЫЙ РЕСУРСНЫЙ УЗЕЛ // BLUE DEBT. Ценность требует pressure-rated containment, extraction scar record, contamination status, custody receipt и recoverable tonne-window allocation.
 
 ## Audio
 
-RU LOC HOLD: The sample is valuable because it remembers the pressure that made it.
+Аудио выплаты Black Keel: "Не полируй образец. Запечатай, оцени grade и держи receipt сухим."
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
+Заметка мародера: сначала оцени grade, потом спрашивай, что касалось образца. Цена без custody - приманка.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/ru_RU. -->

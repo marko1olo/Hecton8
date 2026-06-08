@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "浅层附属区 P-63 泵房"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Shallow Annex P-63 Pump Room
+# 浅层附属区 P-63 泵房
 
-ZH LOC HOLD: Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside.
+Shallow Annex P-63 给出第一个安全小口袋，却没有把 HECTON-8 缩小：一台泵、一道 cold seal、一只仪表，以及外面明亮的陆架。
 
 ## Scanner
 
-ZH LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+P-63 泵房。手动集水压力只以低于维护余量的状态撑着。
 
 ## Terminal
 
-ZH LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+工单 P-63 / SHALLOW ANNEX：手泵集水槽至 0.3 m；将 cold seal 压入 C 缝；仪表稳定后才切开熔死的柜锁；return pinger 回答前不要相信绿灯。
 
 ## Audio
 
-ZH LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+先泵水。再封缝。仪表不再漂移后才用切割器。
 
 ## Field Note
 
-ZH LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+泵柄在恐惧的手反复用力处被磨亮。干地从粉笔线开始。
 
 <!-- External Site; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/zh_CN. -->

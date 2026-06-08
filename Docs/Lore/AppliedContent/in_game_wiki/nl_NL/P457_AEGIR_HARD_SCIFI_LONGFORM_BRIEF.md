@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: de hemel die redding weigert"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Aegir Transfer Windows
+# Aegir: de hemel die redding weigert
 
-NL LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir is werkende hemel. De moon ladder kan pakketten vertragen of bederven zonder de oppervlakte permanent donker te maken. Redding faalt door afstand, geometrie, wet en kosten.
 
 ## Scanner
 
-NL LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Hemelroute-primer. Geen FTL of ansible. Aegir-vensters lopen door manen, puin, relais-custody, stormstatus en Black Keel-massaboekhouding.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+AEGIR-NAVIGATIEPRIMER // PUBLIEKE BAND. Gebruik hazardklassen: route-shadow, charged surge, ice scatter, storm plume, guidance lag, receiver custody.
 
 ## Audio
 
-NL LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Black Keel-planning: "Signaal waar is niet signaal bruikbaar. Venster houdt voor massa, weer, custody en receiver lock."
 
 ## Field Note
 
-NL LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+Marauder-hemelregel: vraag niet of het signaal is verzonden. Vraag welke maan blokkeerde, welk ledger het ving en of de ontvanger mens of massaklasse hoorde.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/nl_NL. -->

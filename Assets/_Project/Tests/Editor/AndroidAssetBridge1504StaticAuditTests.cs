@@ -163,10 +163,18 @@ namespace Hecton8.Tests.Editor
             string arena = ReadProjectFile("Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs");
             string native = ReadProjectFile("Assets/Plugins/Android/Native/HectonAndroidAssetBridge.cpp");
             string audit = ReadProjectFile("Assets/_Project/Scripts/Editor/DataMonolith/H8AndroidAssetBridge1504StaticAudit.cs");
+            string telemetryDumpBody = ExtractWindow(
+                arena,
+                "private static void WriteTelemetryDump(",
+                "#endif");
 
             StringAssert.Contains("dumpTelemetryReadOnlyOnly", audit);
             StringAssert.Contains("telemetryDumpChronologicalOrderPresent", audit);
             StringAssert.Contains("private static void DumpTelemetry(H8DataBlobLoadStatus status)", arena);
+            StringAssert.Contains("new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough)", telemetryDumpBody);
+            StringAssert.Contains("new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: true)", telemetryDumpBody);
+            StringAssert.Contains("writer.Flush();", telemetryDumpBody);
+            StringAssert.Contains("stream.Flush(true);", telemetryDumpBody);
             StringAssert.Contains("if (!TryReadTelemetry(out NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor))", arena);
             Assert.IsTrue(TokenWindowDoesNotContain(
                 arena,
@@ -265,6 +273,63 @@ namespace Hecton8.Tests.Editor
                 "AAsset* asset = AAssetManager_open(resolvedAssetManager, filename, AASSET_MODE_STREAMING);",
                 "AAsset_close(asset);",
                 "return totalRead == assetLength;"));
+        }
+
+        [Test]
+        public void DataMonolithCachePromotion_UsesCriticalFlushWithoutDeleteGap()
+        {
+            string arena = ReadProjectFile("Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs");
+
+            StringAssert.Contains("using Hecton8.SaveSystem;", arena);
+
+            string stageBody = ExtractWindow(
+                arena,
+                "private static async Awaitable<string> TryStageStreamingAssetsUriToCacheAsync(",
+                "private static void TryDeleteFile(");
+            StringAssert.Contains("if (!TryPromoteDataMonolithTempFile(tempPath, cachePath))", stageBody);
+            StringAssert.Contains("TryDeleteFile(tempPath);", stageBody);
+            StringAssert.DoesNotContain("TryDeleteFile(cachePath);", stageBody);
+            StringAssert.DoesNotContain("File.Move(tempPath, cachePath);", stageBody);
+
+            string cleanupBody = ExtractWindow(
+                arena,
+                "private static void TryDeleteFile(string path)",
+                "private static bool TryPromoteDataMonolithTempFile(string tempPath, string finalPath)");
+            Assert.IsTrue(ContainsTokensInOrder(
+                cleanupBody,
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);",
+                "File.Delete(path);",
+                "finally",
+                "AsyncWriteManager.InvalidateCachedReadWindows(path);"));
+
+            string promotionBody = ExtractWindow(
+                arena,
+                "private static bool TryPromoteDataMonolithTempFile(string tempPath, string finalPath)",
+                "#endif");
+            Assert.IsTrue(ContainsTokensInOrder(
+                promotionBody,
+                "AsyncWriteManager.TryGetFileLength(tempPath, out long tempBytes, out _)",
+                "tempBytes <= 0L",
+                "AsyncWriteManager.FlushCriticalSavePath(tempPath, tempBytes, out _)",
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                "AsyncWriteManager.InvalidateCachedReadWindows(finalPath);",
+                "File.Replace(tempPath, finalPath, null, true);",
+                "File.Move(tempPath, finalPath);",
+                "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
+                "AsyncWriteManager.InvalidateCachedReadWindows(finalPath);",
+                "AsyncWriteManager.TryGetFileLength(finalPath, out long promotedBytes, out _)",
+                "promotedBytes != tempBytes",
+                "AsyncWriteManager.FlushCriticalSavePath(finalPath, promotedBytes, out _)"));
+
+            string rollbackBody = ExtractWindow(
+                arena,
+                "private static unsafe bool TryWriteEditorHotReloadRollbackSnapshot(",
+                "[MethodImpl(MethodImplOptions.AggressiveInlining)]");
+            StringAssert.Contains("FileOptions.WriteThrough | FileOptions.SequentialScan", rollbackBody);
+            StringAssert.Contains("stream.Flush(true);", rollbackBody);
+            StringAssert.Contains("if (!TryPromoteDataMonolithTempFile(tempPath, finalPath))", rollbackBody);
+            StringAssert.DoesNotContain("TryDeleteFile(finalPath);", rollbackBody);
+            StringAssert.DoesNotContain("File.Move(tempPath, finalPath);", rollbackBody);
         }
 
         [Test]
@@ -528,6 +593,17 @@ namespace Hecton8.Tests.Editor
 
             int length = end - start;
             return text.IndexOf(forbiddenToken, start, length, StringComparison.Ordinal) < 0;
+        }
+
+        private static string ExtractWindow(string text, string startToken, string endToken)
+        {
+            int start = text.IndexOf(startToken, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(start, 0, startToken);
+
+            int end = text.IndexOf(endToken, start + startToken.Length, StringComparison.Ordinal);
+            Assert.Greater(end, start, endToken);
+
+            return text.Substring(start, end - start);
         }
 
         private static bool ContainsTokensInOrder(string text, params string[] tokens)

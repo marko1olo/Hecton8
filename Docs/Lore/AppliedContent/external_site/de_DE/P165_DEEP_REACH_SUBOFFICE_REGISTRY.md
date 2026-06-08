@@ -9,32 +9,20 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Deep Reach Suboffice Registry"
+title: "Deep-Reach-Unterbüroregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Deep Reach Suboffice Registry
+# Deep-Reach-Unterbüroregister
 
-DE LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## Kleine Büros, Große Folgen
 
-## Scanner
+Deep Reach wird furchterregender, wenn es nicht mehr wie Verschwörung klingt, sondern wie Verwaltung. Das Register funktioniert, weil jeder Büroname langweilig genug ist, um echt zu sein. Contract Continuity Desk hält obligations am Leben, die der Arbeiter lieber tot sähe. Packet Notary Interface entscheidet, ob eine Nachricht Beweis oder Rauschen wird. Quarantine Hold Desk lässt Verzögerung medizinisch verantwortlich aussehen. Asset Silence Board verwandelt Zeugen in exposure. Return Action Queue bewertet Körper gegen payload, orbit und public risk.
 
-DE LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-DE LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-DE LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-DE LOC HOLD: Use dull names. Dull names are where liability hides.
+Kein desk muss den Spieler hassen. Jeder muss nur in einem priority stack arbeiten, der vor dem steigenden Wasser geschrieben wurde. Deshalb sollten HECTON-8-Beweise als Stempel, routing fragments und kleine Widersprüche wachsen. Das Verbrechen steckt nicht hinter theatralischem Bösen. Es verteilt sich auf Formulare, die defensible aussehen, bis der Spieler sie ausrichtet.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/de_DE. -->

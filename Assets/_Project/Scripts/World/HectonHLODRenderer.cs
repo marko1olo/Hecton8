@@ -189,16 +189,19 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
             if (!isActiveAndEnabled ||
                 !_hasBoundsOverride ||
-                !IsFinite(shiftData.ShiftOffset) ||
-                shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                !IsFinite(shiftOffset) ||
+                !float.IsFinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.0001f)
             {
                 return;
             }
 
             Bounds drawBounds = _drawBounds;
-            drawBounds.center -= shiftData.ShiftOffset;
+            drawBounds.center -= shiftOffset;
             _drawBounds = drawBounds;
 
             if (_batchRendererGroup != null)

@@ -259,7 +259,7 @@ namespace Hecton8.World
 
             CachePlayerRuntimeContext(GlobalRegistry.Player);
             _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
-            _vegetationBridge = GlobalRegistry.MapMagicVegetation;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
@@ -316,6 +316,7 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregister();

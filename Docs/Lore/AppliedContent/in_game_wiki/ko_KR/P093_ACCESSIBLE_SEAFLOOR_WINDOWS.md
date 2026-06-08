@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "접근 가능한 해저 창"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# 접근 가능한 해저 창
 
-KO LOC HOLD: Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.
+접근 가능한 해저 창은 HECTON-8의 부서진 지각이 잠시 하강 비용을 낮추는 곳이다. 붕괴 선반, 드러난 능선, 다시 가열된 분출구 흉터, 압력을 다르게 운반하는 염수 기둥에서 생긴다. 서두르면 창도 치명적이다. 그래도 오래된 바닥, 희귀 광맥, 묻힌 식민지 장비, 일반 바다가 손닿지 않게 부술 증거에 닿을 수 있다.
 
 ## Scanner
 
-KO LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
+드러난 능선 표식. 여기서는 껍질이 충분히 얇게 찢겨 크롤러가 반죽이 되지 않고 오래된 바닥을 만질 수 있다.
 
 ## Terminal
 
-KO LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
+창 조건: 갈라진 지각 가장자리, 분출구로 재가열된 염수 기둥, 붕괴 선반 램프, 안정 소나 반사, 슈트 적색선 아래 압력 주머니. 느린 인양 전용으로 표시.
 
 ## Audio
 
-KO LOC HOLD: You land where the moon lets stone show through.
+바다는 창에서만 바닥을 만지게 한다. 네가 용감하다고 느끼는 곳마다가 아니다.
 
 ## Field Note
 
-KO LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+달의 대부분은 바닥을 압력의 비밀로 감춘다. 창은 이빨 달린 예외다.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ko_KR. -->

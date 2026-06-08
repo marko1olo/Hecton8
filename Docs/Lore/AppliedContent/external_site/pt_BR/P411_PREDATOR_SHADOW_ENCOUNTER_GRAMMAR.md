@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Predator Shadow Encounter Grammar"
+title: "Gramática de encontro: sombra predadora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Predator Shadow Encounter Grammar
+# Gramática de encontro: sombra predadora
 
-PT LOC HOLD: HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.
+Sombras predadoras definem o medo de HECTON-8 sem lógica barata de revelação. O perigo muitas vezes chega como presa ausente, bloom quebrado, sonar errado e uma rota que de repente custa oxigênio demais.
 
 ## Scanner
 
-PT LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Traço de sombra predadora. Lacuna de sonar, caminho de presa cortado, silêncio súbito de raspadores, ampla oclusão de luz. Corpo não confirmado; disciplina de luz e ângulo de saída.
 
 ## Terminal
 
-PT LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+GRAMÁTICA DE ENCONTRO / SOMBRA PREDADORA / função: pressão de rota antes de revelar corpo, pico de gasto de oxigênio, quebra de confiança de scan / leitura segura: caminho de presa para, ruído de bloom colapsa, retornos de sonar se dividem ao redor de água vazia / rejeitar: revelação scripted de corpo inteiro como primeiro aviso, jump scare sem custo, boss arena limpa / nota de rota: se todo animal pequeno para antes do scanner nomear um alvo, a rota já mudou.
 
 ## Audio
 
-PT LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
+O sinal seguro não é ver a coisa. É notar que todo o resto escolheu silêncio primeiro.
 
 ## Field Note
 
-PT LOC HOLD: Use for AI/spawn design notes and scanner cards.
+Nomeie o animal tarde. Deixe presa, luz e sonar falharem primeiro. Se a rota silencia, a sombra já é dona dela.
 
 <!-- External Site; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/pt_BR. -->

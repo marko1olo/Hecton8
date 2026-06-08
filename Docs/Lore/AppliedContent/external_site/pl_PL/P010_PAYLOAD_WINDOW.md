@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Okno ładunku
 
-Payload Window określa strukturę zakończeń HECTON-8. Ostatnie pytanie brzmi nie tylko, w co gracz wierzy, ale co potrafi wynieść z oceanu.
-
-## Scanner
-
-Improwizowany pakiet wynurzenia. Może opuścić ocean, jeśli zgadzają się masa, pogoda i geometria carriera.
-
-## Terminal
-
-PAYLOAD SLOT: ograniczony. WINDOW: otwarte. ROUTE: sporna. CLAIM VALUE: zmienna. EVIDENCE STATE: niewystarczający do czystego sporu.
-
-## Audio
-
-Okno jest otwarte. Nie pozostanie otwarte dla wszystkiego.
-
-## Field Note
-
-Wydostanie się to trasa. Czyste wydostanie się to mit.
+Ostatni problem na HECTON-8 nie jest moralnym menu unoszącym się nad oceanem. To okno ładunku. Pakiet wynurzenia ma limity masy, pogoda ma timing, Aegir ma ograniczenia promieniowania i orbity, a Black Keel ma zasady odbiorcy, zanim okaże litość. Każde zakończenie pyta więc, co opuszcza księżyc i kto to dostaje. Koordynaty mogą kupić odzysk i oddać Deep Reach miejsce zbrodni. Dowody mogą trafić do publicznego rejestru i odebrać graczowi kontrolę nad konsekwencją. Próbki mogą spłacić dług, wzmacniając system, który pogrzebał nazwiska pracowników. Cisza może odmówić korporacji i zostawić dowód pod wodą. Okno nie jest sprawiedliwością. Jest kształtem, przez który sprawiedliwość musi się przecisnąć.
 
 <!-- External Site; generated from P010_PAYLOAD_WINDOW/pl_PL. -->

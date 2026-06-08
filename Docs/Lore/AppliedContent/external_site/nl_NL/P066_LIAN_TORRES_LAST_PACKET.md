@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "Laatste pakket van Lian Torres"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# Laatste pakket van Lian Torres
 
-NL LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue.
+Het laatste pakket van Lian Torres maakt de tragedie zonder ansible menselijk: het pakket bestaat, de namen bestaan, maar afstand, wachtrijprioriteit en bedrijfsreactie laten waarheid aankomen als aansprakelijkheid in plaats van redding.
 
 ## Scanner
 
-NL LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+Het laatste schone pakket raakte niet kwijt. Erkennen dat het was ontvangen was te duur.
 
 ## Terminal
 
-NL LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+TORRES, L. Schone carrier-handshake bereikt. Arbeidersaantal bijgevoegd. Evacuatiebewijs bijgevoegd. Relaisleeftijd onaanvaardbaar voor levende redding. Het bedrijfsarchief markeert het pakket later als beschadigd.
 
 ## Audio
 
-NL LOC HOLD: He sent the names. The archive called them noise.
+Hij stuurde de namen. Het archief noemde ze ruis.
 
 ## Field Note
 
-NL LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+Een tijdstempel kan een lichaam zijn wanneer de vervoerder de verkeerde wachtrij beantwoordt.
 
 <!-- External Site; generated from P066_LIAN_TORRES_LAST_PACKET/nl_NL. -->

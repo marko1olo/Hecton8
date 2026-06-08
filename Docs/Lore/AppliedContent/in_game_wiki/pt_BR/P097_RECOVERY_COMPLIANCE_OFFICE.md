@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Office"
+title: "Escritório de Conformidade de Recuperação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Recovery Compliance Office
+# Escritório de Conformidade de Recuperação
 
-PT-BR LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+O Escritório de Conformidade de Recuperação é a facção atual da Deep Reach pressionando de volta para HECTON-8. Opera por janelas, autoridade proxy, pacotes legais e ordens de limpeza. Não precisa de comando instantâneo; precisa que o jogador envie primeiro o payload errado.
 
 ## Scanner
 
-PT-BR LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+Carimbo de escritório no presente. Deep Reach não é fantasma; é uma fila com advogados.
 
 ## Terminal
 
-PT-BR LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+ESCRITÓRIO DE CONFORMIDADE DE RECUPERAÇÃO: ação de retorno Aegir aberta. Prioridades: custódia XO, acesso Atlas, contenção de responsabilidade, silêncio do contratante se disponível.
 
 ## Audio
 
-PT-BR LOC HOLD: They are late enough to be legal and current enough to be dangerous.
+Eles chegam tarde o bastante para serem legais e presentes o bastante para serem perigosos.
 
 ## Field Note
 
-PT-BR LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+Uma facção viva torna a pressão atual sem transformar toda a corporação em um único vilão gritando.
 
 <!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/pt_BR. -->

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Ibarra Loss Ledger"
+title: "伊瓦拉损失转换台账"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Ibarra Loss Ledger
+# 伊瓦拉损失转换台账
 
-ZH LOC HOLD: The Ibarra ledger is the accounting form of the cover. It keeps asset rights active while missing workers become unresolved load.
+伊瓦拉台账是掩盖的会计形式。它让 Deep Reach 承认损失却不交出所有权：人变成 unresolved personnel load，证据变成 material custody，claim 活得比殖民地更久。
 
 ## Scanner
 
-ZH LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
+Keelmark loss ledger。失踪工人、受损模块和仍有效的 claims 共享同一张转换表。
 
 ## Terminal
 
-ZH LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel unresolved. Habitat modules, tool banks and claim rights retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-ZH LOC HOLD: The ledger did not forget names. It made them payable later.
+台账没有忘记名字。它学会了怎样花掉名字。
 
 ## Field Note
 
-ZH LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+Marauder笔记：台账可以记住死者，也仍能让他们继续干活。
 
 <!-- In-Game Wiki; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/zh_CN. -->

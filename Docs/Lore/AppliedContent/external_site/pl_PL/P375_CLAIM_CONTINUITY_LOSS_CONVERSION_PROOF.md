@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Claim Continuity Loss Conversion Proof"
+title: "Konwersja straty dla ciągłości claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Claim Continuity Loss Conversion Proof
+# Konwersja straty dla ciągłości claim
 
-PL LOC HOLD: The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.
+Ostatnie ogniwo kłamstwa Deep Reach nie jest dramatycznym plikiem tuszowania. To konwersja księgowa, która wie, jak przetrwać. Ledger akceptuje, że ludzie zniknęli, moduły są uszkodzone, a trasy naruszone, po czym przesuwa każdy fakt do kategorii przetwarzalnej przez claim system. Nieobecność pracowników staje się unrecoverable loss. Dowód staje się materiałem pod custody. Ocalały ładunek staje się recoverable value. Sam claim pozostaje continuous, więc własność może przeżyć kolonię. W tym momencie HECTON-8 zmienia się z raportu wypadku w maszynę moralną. Gracz, który wynosi ledger, może ujawnić zmarłych, sprzedać dowód, pogrzebać go albo przekierować. Dokument ma wartość, bo korporacja już nauczyła rynek go wyceniać.
 
 ## Scanner
 
-PL LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
+Odzyskano stempel biura strat. Ledger przetrwał lepiej niż pracownicy, którym zmienił nazwę.
 
 ## Terminal
 
-PL LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
 
 ## Audio
 
-PL LOC HOLD: This is where dead workers became a clean column.
+Tutaj ludzie stali się czystą kolumną.
 
 ## Field Note
 
-PL LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+Notatka Maraudera: ledger może pamiętać zmarłych i nadal ich wydawać.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/pl_PL. -->

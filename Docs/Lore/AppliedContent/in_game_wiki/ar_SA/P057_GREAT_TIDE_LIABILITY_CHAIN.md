@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "سلسلة مسؤولية المد العظيم"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# سلسلة مسؤولية المد العظيم
 
-AR LOC HOLD: The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.
+لم يكن المد العظيم زراً ضغطه شخص في غرفة مجلس الإدارة. غرق HECTON-8 عبر تضخيم المدّ، وفشل الغلاف الجليدي، وكيمياء الضغط، وهوامش هندسة استعمارية بيعت على أنها مقبولة. هذا الفرق مهم لأنه يجعل الجريمة أقذر لا أنظف. لم تكن Deep Reach بحاجة إلى اختراع الكارثة. كان عليها فقط أن تبني إخلاءً مستقلاً أقل من اللازم، وأن تترك وزن الاستمرارية في Atlas يقود، وأن تحفظ أصول المطالبات قبل استخراج البشر، وأن تخفي التأخير في لغة التصديق. الماء كان فيزياء. سلسلة المسؤولية هي مجموعة القرارات التي حولت الفيزياء إلى هجر.
 
 ## Scanner
 
-AR LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+كان الغرق فيزياء حقيقية: اقتران مدّي، انهيار جليد، كيمياء ضغط وهوامش سُعّرت أرق مما ينبغي. الجريمة كانت طبقة الأولويات المبنية حول ذلك.
 
 ## Terminal
 
-AR LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+ملخص الحادث: تأكدت سلسلة جيوتقنية. قدرة الإخلاء دون طلب خطر الذيل. بقي وزن الاستمرارية في Atlas نشطاً. استخراج البشر ينتظر التصديق.
 
 ## Audio
 
-AR LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+البحر صنع الغرق. الشركة قررت أي الأبواب سيبقى ورقاً.
 
 ## Field Note
 
-AR LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+لم تحتج Deep Reach إلى إغراق القمر. كان يكفي أن تجعل الإخلاء اختيارياً.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/ar_SA. -->

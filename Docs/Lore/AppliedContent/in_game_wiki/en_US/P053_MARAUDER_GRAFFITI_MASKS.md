@@ -3,8 +3,8 @@ packet_id: P053_MARAUDER_GRAFFITI_MASKS
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
 unlock_id: unlock.first_marauder_graffiti_masks
-poi_tags: poi.graffiti_mask;poi.pressure_arrow
-biome_tags: biome.scrap_canyon;biome.marauder_route
+poi_tags: poi.graffiti_mask;poi.scavenger_route
+biome_tags: biome.service_corridor;biome.salvage_route
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Marauder Graffiti Masks
 
-Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.
+Marauder marks are field navigation, social warning, and anti-surveillance language. They look rough because they had to survive water, fear, bad lamps, and corporate cameras. The player learns which marks indicate noise, pressure, patrol risk, hidden caches, and routes that no longer match official maps.
 
 ## Scanner
 
-The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
+Paint code: slash count marks noise discipline, black rings mark carrier-ping danger, broken arrows mark pressure drift.
 
 ## Terminal
 
-MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
+ROUTE MASK INDEX: three slashes safe for hand signals only. Black ring means carrier sweep. Broken arrow means pressure change since last mark.
 
 ## Audio
 
-They made a language that looks like vandalism to the company.
+If the wall looks angry, read it as weather.
 
 ## Field Note
 
-Bad paint. Good map.
+Marauders wrote for people who could not trust radios and could not afford maps.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/en_US. -->

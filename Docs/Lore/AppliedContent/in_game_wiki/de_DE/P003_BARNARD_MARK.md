@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Barnard-Marke
 
-Die erste Barnard-Marke auf HECTON-8 ist klein genug, um sie zu übersehen: Werkzeugstempel, Wartungsgewohnheit, Versorgungsetikett. Genau deshalb zählt sie. HECTON-8 ist kein ferner Vertrag mehr, wenn dieselben Marken neben Namen, Evakuierungsrouten und gescheiterten Freigaben auftauchen.
+Die erste Barnard-Marke auf HECTON-8 ist klein genug, um sie zu übersehen: Werkzeugstempel, Spindmarke, Versorgungsgewohnheit, Narbe von billigem Werftstahl. Genau deshalb zählt sie. Der Mond ist kein ferner Vertrag mehr, sobald vertraute Arbeitsmarken neben Evakuierungssperren, Arbeiternamen und gescheiterten Routenfreigaben auftauchen.
 
 ## Scanner
 
-Stempel der Barnard Yards. Keine Deep-Reach-Ausgabe. Jemand brachte Heimatausrüstung bis auf den Grund dieses Mondes.
+Stempel der Barnard Yards. Keine Deep-Reach-Ausgabe. Jemand trug Werfthardware bis auf den Grund dieses Mondes.
 
 ## Terminal
 
-PERSONALROUTE: HOLD. RESSOURCENROUTE: ACTIVE. SUBSTRATROUTE: PROTECTED.
+PERSONALROUTE: HOLD. RESSOURCENROUTE: ACTIVE. SUBSTRATROUTE: PROTECTED. WERKZEUGURSPRUNG: BARNARD YARDS / REPARATURBESTAND DRITTER HAND.
 
 ## Audio
 
-Das ist Barnard. Gleiches Schnittmuster. Gleiche billige Legierung. Wer das hierher brachte, kannte dieselben Werkstätten wie du.
+Dieser Schnitt ist Barnard. Billige Legierung, Linkshandstempel, schlechte Wärmebehandlung. Wer das hierher brachte, kannte dieselben Werkstätten wie du.
 
 ## Field Note
 
-Eine tote Firma kann man ignorieren. Einen Schraubenschlüssel aus der eigenen Werft schwerer.
+Eine tote Firma kann man abtun. Einen Schraubenschlüssel aus der eigenen Werft lässt man schwerer im Schlamm.
 
 <!-- In-Game Wiki; generated from P003_BARNARD_MARK/de_DE. -->

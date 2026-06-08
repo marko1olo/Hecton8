@@ -7,34 +7,34 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pump Room Handshake"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "לחיצת שסתום בחדר המשאבות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pump Room Handshake
+# לחיצת שסתום בחדר המשאבות
 
-Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.
+לחיצת משאבה היא הרגע שבו חדר מוצף מקבל שליטה מקומית. היא נותנת גישה, אבל גם מעבירה מים, רעש ולחץ לחלק אחר של המסלול. קרא את סל היניקה, פעימת היציאה ומכת המים במסדרון החזרה לפני שרצפה יבשה נחשבת בטוחה. חדרי P-63 הראשונים מלמדים את הרגל התיקון המרכזי: מכונה יכולה לשפר תא אחד ולהרע את הדרך הביתה.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+משאבת הסאמפ המקומית קיבלה קלט מגלגל יד. סל היניקה מזוהם בקצף קפסולה; פעימת היציאה מעמיסה את מסדרון החזרה B.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+P-63 בקרת סאמפ / לחיצה מקומית: סמכות גלגל יד התקבלה. עקיפה מרחוק נדחתה. זרימת יניקה שוחזרה בקצב נמוך. לחץ יציאה עולה ב-RETURN CORRIDOR B; הפעלה מחדש רק אחרי בדיקת האץ' במורד.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+השסתום תפס. היציאה דופקת. אל תקרא לזה בטוח עדיין.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+חדר משאבות יבש יכול להטביע את הדרך חזרה. הקשב למכת מים ביציאה לפני שאתה מפרק את השסתום.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/he_IL. -->

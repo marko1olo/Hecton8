@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Material Exit Bitter Credits"
+title: "Keluar Material: Kredit Pahit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Material Exit Bitter Credits
+# Keluar Material: Kredit Pahit
 
-ID LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.
+Keluar Material adalah ending nyata bagi Marauder yang memperlakukan HECTON-8 sebagai pekerjaan berbayar. Pemain bisa pergi dengan utang berkurang dan ledger carrier puas. Biayanya terlihat: koloni tetap menjadi TKP yang diubah menjadi nilai klaim, dan Deep Reach menerima jalan kembali yang lebih baik daripada jalan keluar para pekerja.
 
 ## Scanner
 
-ID LOC HOLD: You can leave richer and still fail the place.
+Material tekanan diterima. Jendela keluar bisa dibeli. Nama pekerja masih belum direkonsiliasi.
 
 ## Terminal
 
-ID LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+TANDA TERIMA KELUAR MATERIAL: material tekanan custody-grade diterima; lien dikurangi; payload bukti tidak lengkap; buku pekerja hilang tetap dalam sengketa claimant; prioritas Recovery Compliance naik.
 
 ## Audio
 
-ID LOC HOLD: The invoice clears before the names do.
+Tagihan bersih lebih dulu daripada nama.
 
 ## Field Note
 
-ID LOC HOLD: This ending should be real credits, not a fake game over.
+Black Keel akan memberi harga pada sampel sebelum memberi harga pada yang mati. Itu bukan cacat kontrak.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/id_ID. -->

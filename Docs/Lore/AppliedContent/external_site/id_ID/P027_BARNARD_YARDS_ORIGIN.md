@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Asal Barnard Yards
 
-Barnard Yards menanam protagonis dalam ekonomi salvage dan membuat HECTON-8 personal lewat pekerjaan.
+Barnard Yards mengikat kelas Marauder ke ekonomi salvage dan budaya kerja. HECTON-8 menjadi personal lewat kebiasaan kerja, bekas alat, dan utang, bukan melodrama tetap.
 
 ## Scanner
 

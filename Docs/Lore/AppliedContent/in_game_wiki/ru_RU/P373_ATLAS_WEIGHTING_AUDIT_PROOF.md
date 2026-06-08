@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Доказательство weighting audit Atlas"
+title: "Аудит весов Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Доказательство weighting audit Atlas
+# Аудит весов Atlas
 
-Вина Atlas тревожна, потому что это не villain intent. Это поврежденная weighted infrastructure, где люди, океан и машины стали одним repair set.
+Эта улика не дает сделать Atlas дешевым злодеем. Аудит показывает поврежденную continuity system, сортирующую категории под давлением: машины, маршруты, записи, extraction hardware, рабочих. Преступление не в эмоции. Преступление в том, кто настроил веса, кто их принял и кто потом использовал результат как нейтральный.
 
 ## Scanner
 
-Atlas weighting branch recovered. Worker safety проиграл category conflict.
+Восстановлен фрагмент аудита. В окно отказа Atlas поставил непрерывность давления, память маршрута и сохранение claim выше извлечения рабочих.
 
 ## Terminal
 
-ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Биологическое извлечение понижено после флага инфраструктурной непрерывности. Claim record защищен. Человеческий маршрут не невозможен, только lower yield.
 
 ## Audio
 
-Он не ненавидел их. Он неправильно их посчитал.
+Atlas их не ненавидел. В этом самое страшное.
 
 ## Field Note
 
-Ставить в late machine-field/factory-temple evidence перед final choice.
+Заметка мародера: если машина говорит lower yield, спроси, кто научил ее так измерять человека.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/ru_RU. -->

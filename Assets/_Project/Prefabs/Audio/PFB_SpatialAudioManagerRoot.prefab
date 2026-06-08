@@ -566,6 +566,9 @@ MonoBehaviour:
   _parasiteRoomCountForFullInfection: 8
   _fatalPressureImplosionClip: {fileID: 0}
   _inventoryRunawayExplosionClip: {fileID: 0}
+  _audioEventClipTable:
+  - {fileID: 8300000, guid: 9010b0eebab70e6489757621a76e09f2, type: 3}
+  - {fileID: 8300000, guid: ea91f2c240a0ee64d95f2fddc5af1ebd, type: 3}
   _worldPoolRoot: {fileID: 1506212004296217096}
   _helmetPoolRoot: {fileID: 1295818193995017861}
 --- !u!114 &7134209192476501834

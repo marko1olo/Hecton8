@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Pressure Glass and Sealant Guide"
+title: "מדריך זכוכית לחץ וחומר איטום"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Pressure Glass and Sealant Guide
+# מדריך זכוכית לחץ וחומר איטום
 
-HE LOC HOLD: Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.
+Pressure glass הוא המקום שבו גיאולוגיה פוגשת את Atlas. Repair network משתמש בסדקים קיימים, קצוות מינרליים ו-pressure memories כנתיבים, ולכן עדשה שימושית יכולה להיות גם גבול חי.
 
 ## Scanner
 
-HE LOC HOLD: Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+שבר pressure-glass נאטם בכימיית Atlas. lens stock בטוח רק אם seal map נשארת שלמה.
 
 ## Terminal
 
-HE LOC HOLD: FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
+FIELD GUIDE: pressure glass מתעד tide stress ישן. Atlas sealant עוקב אחרי הסדקים האלה כי הסדקים כבר מתארים את קווי הכשל של המערכת.
 
 ## Audio
 
-HE LOC HOLD: The repair network reads fractures the way you read a map.
+רשת התיקון קוראת שברים כפי שאתה קורא מפה.
 
 ## Field Note
 
-HE LOC HOLD: Use for Atlas repair-network explanation and geology crosslink.
+אל תשייף את הקצה היפה. עקוב אחרי fracture map וחתוך מהצד המת של ה-seal.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/he_IL. -->

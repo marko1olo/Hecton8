@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Person Boundary"
+title: "Atlas 人格边界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Person Boundary
+# Atlas 人格边界
 
-CN LOC HOLD: Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories.
+Atlas 人格边界定义了 AI 在结局中的能动性。Atlas 不是反派心智，也不是友善幽灵；它是受损的工业智能，只有局部识别能力和破碎的分类系统。
 
 ## Scanner
 
-CN LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
+识别故障。Atlas 先看见你的访问模式，才看见一个人。
 
 ## Terminal
 
-CN LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+ATLAS 分类：移动操作员 / 已撤销的 Deep Reach 程序密钥 / 生物修复异常。人格置信度低于行动阈值。
 
 ## Audio
 
-CN LOC HOLD: It knows how you work. That is not the same as knowing you.
+它知道你怎样工作。这不等于它知道你是谁。
 
 ## Field Note
 
-CN LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
+不要把 Atlas 写成人。让它因为精确地误认而变得亲近。
 
 <!-- External Site; generated from P096_ATLAS_PERSON_BOUNDARY/zh_CN. -->

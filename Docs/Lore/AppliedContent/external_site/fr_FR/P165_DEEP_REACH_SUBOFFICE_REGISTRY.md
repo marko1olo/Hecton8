@@ -9,32 +9,20 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Deep Reach Suboffice Registry"
+title: "Registre Des Sous-Bureaux Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Deep Reach Suboffice Registry
+# Registre Des Sous-Bureaux Deep Reach
 
-FR LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
+## Petits Bureaux, Grandes Conséquences
 
-## Scanner
+Deep Reach fait plus peur quand il cesse de ressembler à une conspiration et commence à sonner administratif. Le registre fonctionne parce que chaque nom de bureau est assez terne pour être vrai. Contract Continuity Desk garde vivantes des obligations que le travailleur préférerait mortes. Packet Notary Interface décide si un message devient preuve ou bruit. Quarantine Hold Desk fait passer le délai pour responsabilité médicale. Asset Silence Board transforme les témoins en exposure. Return Action Queue price le corps contre payload, orbit et public risk.
 
-FR LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
-
-## Terminal
-
-FR LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
-
-## Audio
-
-FR LOC HOLD: A small desk can kill more quietly than a director.
-
-## Field Note
-
-FR LOC HOLD: Use dull names. Dull names are where liability hides.
+Aucun desk n'a besoin de haïr le joueur. Chacun doit seulement faire son travail dans une priority stack écrite avant la montée de l'eau. C'est pourquoi les preuves HECTON-8 doivent s'accumuler en tampons, fragments de routage et petites contradictions. Le crime n'est pas caché derrière un mal théâtral. Il est réparti dans des formulaires qui semblent defensible jusqu'à ce que le joueur les aligne.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/fr_FR. -->

@@ -187,8 +187,8 @@
           "field_note": "Someone brought home engineering to the bottom.",
           "terminal": "Marauder cross-check: Barnard Yards stamps appear in worker lockers, capsule repair kits and independent salvage tools.",
           "audio": "This is not your family. It is worse: it is your trade.",
-          "in_game_wiki": "Barnard Yards is a shipbreaking and pressure-hardware culture. It gives the player a believable origin: not Earth, not hero royalty, but a professional world where dead claims and rented survival tools are normal work.",
-          "external_site": "Barnard Yards grounds the protagonist in the salvage economy and lets HECTON-8 become personal through trade culture rather than fixed melodrama."
+          "in_game_wiki": "Barnard Yards is a shipbreaking and pressure-hardware culture: rented cutters, patched clamps, dead claims and survival tools treated as ordinary work. It gives HECTON-8 a professional origin close to debt and labor, not Earth romance.",
+          "external_site": "Barnard Yards ties the Marauder class to salvage economy and trade culture. HECTON-8 becomes personal through work habits, tool marks and debt, not fixed melodrama."
         },
         "ru_RU": {
           "title": "Происхождение: Barnard Yards",
@@ -196,8 +196,8 @@
           "field_note": "Кто-то принес домашнюю инженерку на самое дно.",
           "terminal": "Marauder cross-check: штампы Barnard Yards есть в рабочих шкафах, ремонтных комплектах капсулы и независимых salvage-инструментах.",
           "audio": "Это не твоя семья. Хуже: это твое ремесло.",
-          "in_game_wiki": "Barnard Yards - культура разделки кораблей и давления. Она дает игроку правдоподобное происхождение: не Earth, не геройская кровь, а профессиональная среда, где dead claims и арендованные средства выживания являются обычной работой.",
-          "external_site": "Barnard Yards заземляет протагониста в salvage-экономике и делает HECTON-8 личным через ремесло, а не через жестко заданную мелодраму."
+          "in_game_wiki": "Barnard Yards - культура разделки кораблей и гермооборудования: арендованные резаки, латанные зажимы, мертвые претензии и средства выживания как обычная работа. Она дает HECTON-8 профессиональное происхождение рядом с долгом и трудом, а не земную романтику.",
+          "external_site": "Barnard Yards связывает класс мародеров с salvage-экономикой и рабочей культурой. HECTON-8 становится личным через привычки труда, следы инструмента и долг, а не через жестко заданную мелодраму."
         },
         "ja_JP": {
           "title": "Barnard Yards出身",
@@ -205,8 +205,8 @@
           "field_note": "誰かが故郷の工学を底へ持ち込んだ。",
           "terminal": "Marauder照合: Barnard Yards刻印は作業員ロッカー、カプセル修理キット、独立サルベージ工具にある。",
           "audio": "これは家族ではない。もっと悪い。君の職能だ。",
-          "in_game_wiki": "Barnard Yardsは船体解体と圧力機器の文化だ。プレイヤーは地球観光客でも血統英雄でもなく、dead claimと借り物の生存工具を仕事にする専門家として始まる。",
-          "external_site": "Barnard Yardsは主人公をサルベージ経済に接地し、固定メロドラマでなく職能文化からHECTON-8を個人的にする。"
+          "in_game_wiki": "Barnard Yards は船体解体と圧力機器の文化だ。借り物のカッター、継ぎ当てクランプ、死んだ請求権、生存工具が普通の仕事として扱われる。HECTON-8 に、地球ロマンではなく負債と労働に近い専門的な出自を与える。",
+          "external_site": "Barnard Yards はマローダー階級をサルベージ経済と職能文化に結び付ける。HECTON-8 は固定メロドラマではなく、作業癖、工具痕、負債によって個人的になる。"
         },
         "zh_CN": {
           "title": "Barnard Yards出身",
@@ -214,8 +214,8 @@
           "field_note": "有人把家乡工程带到了海底。",
           "terminal": "Marauder cross-check：Barnard Yards印记出现在工人柜、胶囊维修包和独立打捞工具上。",
           "audio": "这不是你的家族。更糟：这是你的行当。",
-          "in_game_wiki": "Barnard Yards是一种拆船和压力硬件文化。它让玩家不是地球游客，也不是英雄血统，而是把dead claim和租来的生存工具当工作的人。",
-          "external_site": "Barnard Yards把主角放进打捞经济，让HECTON-8通过职业文化而不是固定苦情变得私人。"
+          "in_game_wiki": "Barnard Yards 是拆船和压力硬件文化：租来的切割器、补过的夹具、死亡索赔和生存工具都被当作普通工作。它给 HECTON-8 一个靠近债务与劳动的职业出身，而不是地球浪漫。",
+          "external_site": "Barnard Yards 把掠夺者阶层接到打捞经济和职业文化上。HECTON-8 通过工作习惯、工具痕迹和债务变得私人，而不是靠固定苦情。"
         },
         "fr_FR": {
           "title": "Origine Barnard Yards",
@@ -223,8 +223,8 @@
           "field_note": "Quelqu'un a amené l'ingénierie de chez lui au fond.",
           "terminal": "Vérification maraudeur: tampons Barnard dans casiers, kits de capsule et outils salvage indépendants.",
           "audio": "Ce n'est pas votre famille. C'est pire: c'est votre métier.",
-          "in_game_wiki": "Barnard Yards est une culture de démantèlement naval et de matériel sous pression. Elle donne au joueur une origine professionnelle crédible.",
-          "external_site": "Barnard Yards ancre le protagoniste dans l'économie salvage et rend HECTON-8 personnel par le métier."
+          "in_game_wiki": "Barnard Yards est une culture de démantèlement naval et de matériel sous pression : découpeurs loués, pinces rafistolées, réclamations mortes et outils de survie traités comme du travail ordinaire. Elle donne à HECTON-8 une origine professionnelle proche de la dette et du labeur, pas une romance terrienne.",
+          "external_site": "Barnard Yards lie la classe maraudeuse à l'économie salvage et à la culture de métier. HECTON-8 devient personnel par les habitudes de travail, les marques d'outils et la dette, pas par un mélodrame fixé."
         },
         "es_ES": {
           "title": "Origen Barnard Yards",
@@ -232,8 +232,8 @@
           "field_note": "Alguien llevó ingeniería de casa hasta el fondo.",
           "terminal": "Cruce marauder: sellos Barnard en taquillas, kits de cápsula y herramientas salvage independientes.",
           "audio": "No es tu familia. Es peor: es tu oficio.",
-          "in_game_wiki": "Barnard Yards es cultura de desguace y hardware de presión. Da al jugador un origen profesional creíble.",
-          "external_site": "Barnard Yards enraíza al protagonista en la economía salvage y vuelve HECTON-8 personal por oficio."
+          "in_game_wiki": "Barnard Yards es una cultura de desguace naval y hardware de presión: cortadores alquilados, abrazaderas remendadas, reclamaciones muertas y herramientas de supervivencia tratadas como trabajo normal. Da a HECTON-8 un origen profesional cercano a deuda y labor, no a romance terrestre.",
+          "external_site": "Barnard Yards une la clase merodeadora con la economía salvage y la cultura de oficio. HECTON-8 se vuelve personal por hábitos de trabajo, marcas de herramienta y deuda, no por melodrama fijo."
         },
         "de_DE": {
           "title": "Herkunft Barnard Yards",
@@ -241,8 +241,8 @@
           "field_note": "Jemand brachte Heimtechnik bis auf den Grund.",
           "terminal": "Marauder-Abgleich: Barnard-Stempel in Spinden, Kapsel-Kits und unabhängigen Bergungswerkzeugen.",
           "audio": "Das ist nicht deine Familie. Schlimmer: Es ist dein Handwerk.",
-          "in_game_wiki": "Barnard Yards ist Schiffbruch- und Druckhardwarekultur. Sie gibt dem Spieler eine glaubwürdige professionelle Herkunft.",
-          "external_site": "Barnard Yards verankert den Protagonisten in der Bergungswirtschaft und macht HECTON-8 über Handwerk persönlich."
+          "in_game_wiki": "Barnard Yards ist eine Kultur aus Schiffsausschlachtung und Druckhardware: gemietete Schneidgeräte, geflickte Klemmen, tote Ansprüche und Überlebenswerkzeug als normale Arbeit. Sie gibt HECTON-8 eine professionelle Herkunft nahe bei Schuld und Arbeit, nicht bei Erdromantik.",
+          "external_site": "Barnard Yards bindet die Marauder-Klasse an Salvage-Ökonomie und Handwerkskultur. HECTON-8 wird durch Arbeitsgewohnheiten, Werkzeugspuren und Schulden persönlich, nicht durch festes Melodram."
         },
         "pl_PL": {
           "title": "Pochodzenie Barnard Yards",
@@ -250,8 +250,8 @@
           "field_note": "Ktoś przyniósł domową inżynierię na dno.",
           "terminal": "Sprawdzenie maraudera: stemple Barnard w szafkach, kitach kapsuły i niezależnych narzędziach salvage.",
           "audio": "To nie twoja rodzina. Gorzej: to twój fach.",
-          "in_game_wiki": "Barnard Yards to kultura złomowania statków i sprzętu ciśnieniowego. Daje graczowi wiarygodne zawodowe pochodzenie.",
-          "external_site": "Barnard Yards osadza bohatera w gospodarce salvage i czyni HECTON-8 osobistym przez fach."
+          "in_game_wiki": "Barnard Yards to kultura rozbiórki statków i sprzętu ciśnieniowego: wynajęte palniki, łatane zaciski, martwe roszczenia i narzędzia przetrwania traktowane jak zwykła praca. Daje HECTON-8 zawodowe pochodzenie bliskie długowi i robocie, nie ziemskiemu romansowi.",
+          "external_site": "Barnard Yards wiąże klasę Marauder z gospodarką salvage i kulturą fachu. HECTON-8 staje się osobisty przez nawyki pracy, ślady narzędzi i dług, a nie przez gotowy melodramat."
         },
         "uk_UA": {
           "title": "Походження Barnard Yards",
@@ -259,8 +259,8 @@
           "field_note": "Хтось приніс домашню інженерію на дно.",
           "terminal": "Marauder cross-check: штампи Barnard у шафах, ремонті капсули й незалежних salvage-інструментах.",
           "audio": "Це не твоя родина. Гірше: це твоє ремесло.",
-          "in_game_wiki": "Barnard Yards - культура розбирання кораблів і тискового обладнання. Вона дає гравцю професійне походження.",
-          "external_site": "Barnard Yards вкорінює протагоніста в salvage-економіці й робить HECTON-8 особистим через ремесло."
+          "in_game_wiki": "Barnard Yards - культура розбирання кораблів і гермообладнання: орендовані різаки, латаныя затискачі, мертві претензії й засоби виживання як звичайна робота. Вона дає HECTON-8 професійне походження поруч із боргом і працею, а не земну романтику.",
+          "external_site": "Barnard Yards пов'язує клас мародерів із salvage-економікою та робочою культурою. HECTON-8 стає особистим через звички праці, сліди інструментів і борг, а не через заздалегідь задану мелодраму."
         },
         "ar_SA": {
           "title": "أصل Barnard Yards",
@@ -268,8 +268,8 @@
           "field_note": "شخص ما أحضر هندسة بيته إلى القاع.",
           "terminal": "فحص marauder: أختام Barnard في خزائن العمال وعدة الكبسولة وأدوات salvage المستقلة.",
           "audio": "هذه ليست عائلتك. الأسوأ: إنها مهنتك.",
-          "in_game_wiki": "Barnard Yards ثقافة تفكيك سفن وعتاد ضغط. تعطي اللاعب أصلا مهنيا مقنعا لا أصلا بطوليا.",
-          "external_site": "Barnard Yards يربط البطل باقتصاد salvage ويجعل HECTON-8 شخصيا عبر الحرفة."
+          "in_game_wiki": "Barnard Yards ثقافة تفكيك سفن وعتاد ضغط: قواطع مستأجرة، ومشابك مرقعة، ومطالبات ميتة، وأدوات بقاء تعامل كعمل عادي. تمنح HECTON-8 أصلا مهنيا قريبا من الدين والعمل، لا رومانسية أرضية.",
+          "external_site": "يربط Barnard Yards طبقة المغير باقتصاد salvage وثقافة الحرفة. تصبح HECTON-8 شخصية عبر عادات العمل وآثار الأدوات والدين، لا عبر ميلودراما ثابتة."
         },
         "id_ID": {
           "title": "Asal Barnard Yards",
@@ -277,8 +277,8 @@
           "field_note": "Seseorang membawa teknik rumah ke dasar.",
           "terminal": "Cek marauder: cap Barnard ada di loker, kit kapsul dan alat salvage mandiri.",
           "audio": "Ini bukan keluargamu. Lebih buruk: ini keahlianmu.",
-          "in_game_wiki": "Barnard Yards adalah budaya bongkar kapal dan hardware tekanan. Ini memberi pemain asal profesional yang masuk akal.",
-          "external_site": "Barnard Yards menanam protagonis dalam ekonomi salvage dan membuat HECTON-8 personal lewat pekerjaan."
+          "in_game_wiki": "Barnard Yards adalah budaya bongkar kapal dan perangkat tekanan: pemotong sewaan, klem tambalan, klaim mati, dan alat bertahan hidup yang diperlakukan sebagai kerja biasa. Ia memberi HECTON-8 asal profesional yang dekat dengan utang dan kerja, bukan romansa Bumi.",
+          "external_site": "Barnard Yards mengikat kelas Marauder ke ekonomi salvage dan budaya kerja. HECTON-8 menjadi personal lewat kebiasaan kerja, bekas alat, dan utang, bukan melodrama tetap."
         },
         "ko_KR": {
           "title": "Barnard Yards 출신",
@@ -286,8 +286,8 @@
           "field_note": "누군가 고향의 공학을 바닥까지 가져왔다.",
           "terminal": "Marauder 대조: Barnard 각인은 작업자 사물함, 캡슐 수리 키트, 독립 salvage 공구에 있다.",
           "audio": "가족이 아니다. 더 나쁘다. 네 직업이다.",
-          "in_game_wiki": "Barnard Yards는 선박 해체와 압력 장비 문화다. 플레이어에게 지구 관광객이 아닌 전문 직업적 출신을 준다.",
-          "external_site": "Barnard Yards는 주인공을 salvage 경제에 묶고 HECTON-8을 직업 문화로 개인화한다."
+          "in_game_wiki": "Barnard Yards는 선박 해체와 압력 장비 문화다. 빌린 절단기, 덧댄 클램프, 죽은 청구, 생존 도구가 평범한 일로 취급된다. HECTON-8에 지구식 낭만이 아니라 부채와 노동에 가까운 전문 출신을 준다.",
+          "external_site": "Barnard Yards는 마로더 계급을 salvage 경제와 직능 문화에 묶는다. HECTON-8은 고정 멜로드라마가 아니라 작업 습관, 공구 흔적, 빚을 통해 개인적인 장소가 된다."
         },
         "he_IL": {
           "title": "מוצא Barnard Yards",
@@ -295,8 +295,8 @@
           "field_note": "מישהו הביא הנדסת בית אל הקרקעית.",
           "terminal": "בדיקת marauder: חותמות Barnard בארונות עובדים, ערכות קפסולה וכלי salvage עצמאיים.",
           "audio": "זו לא המשפחה שלך. גרוע מזה: זה המקצוע שלך.",
-          "in_game_wiki": "Barnard Yards היא תרבות פירוק ספינות וחומרת לחץ. היא נותנת לשחקן מוצא מקצועי אמין.",
-          "external_site": "Barnard Yards מעגן את הגיבור בכלכלת salvage והופך את HECTON-8 לאישי דרך המקצוע."
+          "in_game_wiki": "Barnard Yards היא תרבות של פירוק ספינות וחומרת לחץ: חותכים שכורים, מהדקים מטולאים, תביעות מתות וכלי הישרדות כעבודה רגילה. היא נותנת ל-HECTON-8 מוצא מקצועי הקרוב לחוב ולעמל, לא לרומנטיקה של כדור הארץ.",
+          "external_site": "Barnard Yards קושר את מעמד המראודרים לכלכלת salvage ולתרבות מקצוע. HECTON-8 נעשה אישי דרך הרגלי עבודה, סימני כלים וחוב, לא דרך מלודרמה קבועה."
         },
         "pt_BR": {
           "title": "Origem Barnard Yards",
@@ -304,8 +304,8 @@
           "field_note": "Alguém levou engenharia de casa ao fundo.",
           "terminal": "Checagem marauder: carimbos Barnard em armários, kits da cápsula e ferramentas salvage independentes.",
           "audio": "Não é sua família. Pior: é seu ofício.",
-          "in_game_wiki": "Barnard Yards é cultura de desmonte de naves e hardware de pressão. Dá ao jogador uma origem profissional plausível.",
-          "external_site": "Barnard Yards ancora o protagonista na economia salvage e torna HECTON-8 pessoal pelo ofício."
+          "in_game_wiki": "Barnard Yards é uma cultura de desmanche naval e hardware de pressão: cortadores alugados, braçadeiras remendadas, reivindicações mortas e ferramentas de sobrevivência tratadas como trabalho normal. Dá a HECTON-8 uma origem profissional perto de dívida e labor, não romance terrestre.",
+          "external_site": "Barnard Yards liga a classe Marauder à economia salvage e à cultura de ofício. HECTON-8 se torna pessoal por hábitos de trabalho, marcas de ferramenta e dívida, não por melodrama fixo."
         },
         "nl_NL": {
           "title": "Herkomst Barnard Yards",
@@ -313,8 +313,8 @@
           "field_note": "Iemand bracht thuistechniek naar de bodem.",
           "terminal": "Marauder-check: Barnard-stempels in lockers, capsulekits en onafhankelijke salvage-tools.",
           "audio": "Dit is niet je familie. Erger: het is je vak.",
-          "in_game_wiki": "Barnard Yards is cultuur van scheepssloop en drukhardware. Het geeft de speler een geloofwaardige professionele herkomst.",
-          "external_site": "Barnard Yards verankert de protagonist in de salvage-economie en maakt HECTON-8 persoonlijk via vakmanschap."
+          "in_game_wiki": "Barnard Yards is een cultuur van scheepssloop en drukhardware: gehuurde snijders, opgelapte klemmen, dode claims en overlevingstools als gewoon werk. Het geeft HECTON-8 een professionele herkomst dicht bij schuld en arbeid, niet bij aardse romantiek.",
+          "external_site": "Barnard Yards bindt de Marauder-klasse aan de salvage-economie en vakcultuur. HECTON-8 wordt persoonlijk door werkgewoonten, gereedschapssporen en schuld, niet door vast melodrama."
         }
       }
     },
@@ -343,7 +343,7 @@
           "terminal": "Transit note: no FTL, no ansible. Aegir packets move through relays, buffers and orbital windows; response authority can be older than the emergency.",
           "audio": "Help is not absent. It is late by physics.",
           "in_game_wiki": "No-FTL travel keeps HECTON-8 hard sci-fi. Ships and messages move by infrastructure, velocity, shielding, braking and custody. This makes rescue a chain of windows and repairs, not a button.",
-          "external_site": "No-FTL Transit Math turns interstellar distance into gameplay pressure: delayed orders, stale authority and physical escape windows."
+          "external_site": "No-FTL Transit Math turns interstellar distance into pressure: delayed orders, stale authority, custody lag and physical escape windows."
         },
         "ru_RU": {
           "title": "Математика полета без FTL",
@@ -352,7 +352,7 @@
           "terminal": "Transit note: FTL нет, ansible нет. Пакеты Aegir идут через relay, buffers и орбитальные окна; ответ может быть старше аварии.",
           "audio": "Помощь не отсутствует. Она опаздывает по физике.",
           "in_game_wiki": "Полет без FTL держит HECTON-8 в hard sci-fi. Корабли и сообщения зависят от инфраструктуры, скорости, защиты, торможения и custody. Спасение становится цепью окон и ремонтов, а не кнопкой.",
-          "external_site": "No-FTL Transit Math превращает межзвездную дистанцию в давление gameplay: задержанные приказы, устаревшая власть и физические окна побега."
+          "external_site": "No-FTL Transit Math превращает межзвездную дистанцию в давление: задержанные приказы, устаревшая власть, custody-задержки и физические окна выхода."
         },
         "ja_JP": {
           "title": "FTLなしの航行計算",
@@ -361,7 +361,7 @@
           "terminal": "Transit note: FTLなし、ansibleなし。Aegirパケットは中継、バッファ、軌道窓を通り、返答権限は事故より古い場合がある。",
           "audio": "救助が無いのではない。物理で遅い。",
           "in_game_wiki": "FTLなしの移動はHECTON-8をhard sci-fiに保つ。船と通信は速度、遮蔽、制動、保管に縛られる。",
-          "external_site": "FTLなしの航行計算は、距離を遅延命令、古い権限、脱出窓としてゲーム圧力に変える。"
+          "external_site": "FTLなしの航行計算は、星間距離を圧力に変える。遅延命令、古い権限、保管遅れ、物理的な脱出窓。"
         },
         "zh_CN": {
           "title": "无FTL航行计算",
@@ -370,7 +370,7 @@
           "terminal": "Transit note：没有FTL，没有ansible。Aegir数据包经过中继、缓存和轨道窗口；回应权限可能比事故更旧。",
           "audio": "帮助不是不存在。它被物理迟到。",
           "in_game_wiki": "无FTL航行让HECTON-8保持硬科幻。船和消息受基础设施、速度、护盾、制动和托管约束。",
-          "external_site": "无FTL航行计算把星际距离变成玩法压力：延迟命令、过期权力和物理逃生窗口。"
+          "external_site": "无FTL航行计算把星际距离变成压力：延迟命令、过期权力、托管滞后和物理逃生窗口。"
         },
         "fr_FR": {
           "title": "Calcul de transit sans FTL",
@@ -379,7 +379,7 @@
           "terminal": "Note transit: pas de FTL, pas d'ansible. Les paquets Aegir passent relais, tampons et fenêtres orbitales.",
           "audio": "L'aide n'est pas absente. La physique la retarde.",
           "in_game_wiki": "Le voyage sans FTL garde HECTON-8 hard sci-fi: infrastructure, vitesse, blindage, freinage et custody.",
-          "external_site": "Ce calcul transforme la distance en pression de jeu: ordres retardés, autorité périmée et fenêtres de fuite."
+          "external_site": "Le calcul de transit sans FTL transforme la distance interstellaire en pression : ordres retardés, autorité périmée, latence de garde et fenêtres d'échappée physiques."
         },
         "es_ES": {
           "title": "Cálculo de tránsito sin FTL",
@@ -388,7 +388,7 @@
           "terminal": "Nota: sin FTL ni ansible. Los paquetes Aegir pasan por relés, buffers y ventanas orbitales.",
           "audio": "La ayuda no falta. Llega tarde por física.",
           "in_game_wiki": "El viaje sin FTL mantiene HECTON-8 hard sci-fi: infraestructura, velocidad, blindaje, frenado y custodia.",
-          "external_site": "Convierte la distancia en presión jugable: órdenes tardías, autoridad vieja y ventanas físicas de escape."
+          "external_site": "El cálculo de tránsito sin FTL convierte la distancia interestelar en presión: órdenes tardías, autoridad caduca, retraso de custodia y ventanas físicas de escape."
         },
         "de_DE": {
           "title": "Transitmathematik ohne FTL",
@@ -397,7 +397,7 @@
           "terminal": "Transitnotiz: kein FTL, kein Ansible. Aegir-Pakete laufen über Relais, Puffer und Orbitfenster.",
           "audio": "Hilfe fehlt nicht. Physik macht sie spät.",
           "in_game_wiki": "Ohne FTL bleibt HECTON-8 Hard Sci-Fi: Infrastruktur, Geschwindigkeit, Abschirmung, Bremsen und Gewahrsam.",
-          "external_site": "Die Distanz wird Spiel-Druck: verspätete Befehle, alte Autorität, physische Fluchtfenster."
+          "external_site": "No-FTL-Transitmathematik verwandelt interstellare Entfernung in Druck: verspätete Befehle, alte Autorität, Gewahrsamsverzug und physische Fluchtfenster."
         },
         "pl_PL": {
           "title": "Matematyka lotu bez FTL",
@@ -406,7 +406,7 @@
           "terminal": "Nota tranzytu: brak FTL i ansible. Pakiety Aegir idą przez przekaźniki, bufory i okna orbitalne.",
           "audio": "Pomoc nie znika. Fizyka ją spóźnia.",
           "in_game_wiki": "Brak FTL utrzymuje HECTON-8 w hard sci-fi: infrastruktura, prędkość, osłony, hamowanie i custody.",
-          "external_site": "Dystans staje się presją gry: opóźnione rozkazy, stara władza, fizyczne okna ucieczki."
+          "external_site": "Matematyka tranzytu bez FTL zmienia międzygwiezdną odległość w presję: opóźnione rozkazy, przestarzałą władzę, zwłokę custody i fizyczne okna ucieczki."
         },
         "uk_UA": {
           "title": "Математика польоту без FTL",
@@ -415,7 +415,7 @@
           "terminal": "Transit note: FTL нема, ansible нема. Пакети Aegir ідуть через relay, buffers і орбітальні вікна.",
           "audio": "Допомога не відсутня. Фізика її запізнює.",
           "in_game_wiki": "Без FTL HECTON-8 лишається hard sci-fi: інфраструктура, швидкість, захист, гальмування й custody.",
-          "external_site": "Дистанція стає тиском gameplay: затримані накази, стара влада, фізичні вікна втечі."
+          "external_site": "No-FTL Transit Math перетворює міжзоряну відстань на тиск: затримані накази, застарілу владу, custody-затримки й фізичні вікна виходу."
         },
         "ar_SA": {
           "title": "حساب العبور بلا FTL",
@@ -424,7 +424,7 @@
           "terminal": "ملاحظة عبور: لا FTL ولا ansible. حزم Aegir تمر عبر مرحلات ومخازن ونوافذ مدار.",
           "audio": "المساعدة ليست غائبة. الفيزياء تؤخرها.",
           "in_game_wiki": "غياب FTL يحافظ على HECTON-8 كخيال علمي صلب: بنية وسرعة ودرع وكبح وعهدة.",
-          "external_site": "المسافة تصبح ضغط لعب: أوامر متأخرة وسلطة قديمة ونوافذ هروب فيزيائية."
+          "external_site": "تحول حسابات العبور بلا FTL المسافة بين النجوم إلى ضغط: أوامر متأخرة، وسلطة قديمة، وتأخر حيازة، ونوافذ خروج فيزيائية."
         },
         "id_ID": {
           "title": "Matematika Transit Tanpa FTL",
@@ -433,7 +433,7 @@
           "terminal": "Catatan transit: tanpa FTL, tanpa ansible. Paket Aegir lewat relay, buffer dan jendela orbit.",
           "audio": "Bantuan bukan hilang. Fisika membuatnya terlambat.",
           "in_game_wiki": "Tanpa FTL menjaga HECTON-8 hard sci-fi: infrastruktur, kecepatan, pelindung, pengereman dan kustodi.",
-          "external_site": "Jarak menjadi tekanan gameplay: perintah terlambat, otoritas basi dan jendela kabur fisik."
+          "external_site": "Matematika transit tanpa FTL mengubah jarak antarbintang menjadi tekanan: perintah terlambat, otoritas basi, jeda kustodi, dan jendela keluar fisik."
         },
         "ko_KR": {
           "title": "FTL 없는 항행 수학",
@@ -442,7 +442,7 @@
           "terminal": "Transit note: FTL 없음, ansible 없음. Aegir 패킷은 중계, 버퍼, 궤도 창을 지난다.",
           "audio": "도움은 없는 게 아니다. 물리 때문에 늦다.",
           "in_game_wiki": "FTL 없는 이동은 HECTON-8을 하드 SF로 유지한다: 기반시설, 속도, 차폐, 감속, 보관.",
-          "external_site": "거리는 지연 명령, 낡은 권한, 물리 탈출 창이라는 게임 압력이 된다."
+          "external_site": "FTL 없는 항행 계산은 성간 거리를 압력으로 바꾼다. 지연 명령, 낡은 권한, 보관 지연, 물리 탈출 창."
         },
         "he_IL": {
           "title": "חישוב מעבר ללא FTL",
@@ -451,7 +451,7 @@
           "terminal": "הערת מעבר: אין FTL ואין ansible. חבילות Aegir עוברות ממסרים, חוצצים וחלונות מסלול.",
           "audio": "העזרה אינה חסרה. הפיזיקה מאחרת אותה.",
           "in_game_wiki": "ללא FTL, HECTON-8 נשאר hard sci-fi: תשתית, מהירות, מיגון, בלימה ומשמורת.",
-          "external_site": "המרחק הופך ללחץ משחק: פקודות מאוחרות, סמכות ישנה וחלונות בריחה פיזיים."
+          "external_site": "חישוב מעבר ללא FTL הופך מרחק בין-כוכבי ללחץ: פקודות מאוחרות, סמכות ישנה, שיהוי משמורת וחלונות יציאה פיזיים."
         },
         "pt_BR": {
           "title": "Matemática de trânsito sem FTL",
@@ -460,7 +460,7 @@
           "terminal": "Nota: sem FTL, sem ansible. Pacotes Aegir passam por relés, buffers e janelas orbitais.",
           "audio": "A ajuda não falta. A física a atrasa.",
           "in_game_wiki": "Sem FTL mantém HECTON-8 hard sci-fi: infraestrutura, velocidade, blindagem, frenagem e custódia.",
-          "external_site": "A distância vira pressão de jogo: ordens atrasadas, autoridade velha e janelas físicas de fuga."
+          "external_site": "A matemática de trânsito sem FTL transforma distância interestelar em pressão: ordens atrasadas, autoridade vencida, atraso de custódia e janelas físicas de fuga."
         },
         "nl_NL": {
           "title": "Transitwiskunde zonder FTL",
@@ -469,7 +469,7 @@
           "terminal": "Transitnotitie: geen FTL, geen ansible. Aegir-pakketten gaan via relais, buffers en orbitale vensters.",
           "audio": "Hulp ontbreekt niet. Fysica maakt haar laat.",
           "in_game_wiki": "Zonder FTL blijft HECTON-8 hard sci-fi: infrastructuur, snelheid, schild, remmen en bewaring.",
-          "external_site": "Afstand wordt speldruk: late orders, oude autoriteit en fysieke ontsnappingsvensters."
+          "external_site": "Transitwiskunde zonder FTL verandert interstellaire afstand in druk: late orders, oude autoriteit, bewaringsvertraging en fysieke ontsnappingsvensters."
         }
       }
     },
@@ -652,7 +652,7 @@
           "field_note": "A rescue invoice can be a command structure.",
           "terminal": "Custody note: Luyten packet buffer, Aegir claim pool and Black Keel carrier rights all reference the same debt chain.",
           "audio": "You do not own the route. The route owns your return.",
-          "in_game_wiki": "Relay custody turns space logistics into pressure. The player can receive help, but the route that carries help also carries debt, priority hooks and corporate authority.",
+          "in_game_wiki": "Relay custody turns space logistics into pressure. Help can arrive, but the route that carries help also carries debt, priority hooks and corporate authority.",
           "external_site": "Relay Custody Debt Chain explains why rescue can be real, useful and hostile at the same time."
         },
         "ru_RU": {
@@ -661,7 +661,7 @@
           "field_note": "Счет за спасение может быть командной структурой.",
           "terminal": "Custody note: Luyten packet buffer, Aegir claim pool и права Black Keel ссылаются на одну долговую цепь.",
           "audio": "Ты не владеешь маршрутом. Маршрут владеет твоим возвращением.",
-          "in_game_wiki": "Relay custody превращает космическую логистику в давление. Игрок может получать помощь, но маршрут помощи несет долг, priority hooks и корпоративную власть.",
+          "in_game_wiki": "Relay custody превращает космическую логистику в давление. Помощь может прийти, но маршрут помощи несет с собой долг, priority hooks и корпоративную власть.",
           "external_site": "Relay Custody Debt Chain объясняет, почему спасение может быть реальным, полезным и враждебным одновременно."
         },
         "ja_JP": {
@@ -670,7 +670,7 @@
           "field_note": "救助請求書は指揮構造にもなる。",
           "terminal": "Custody note: Luyten packet buffer、Aegir claim pool、Black Keel carrier権が同じ債務鎖を参照。",
           "audio": "君は経路を所有しない。経路が君の帰還を所有する。",
-          "in_game_wiki": "中継保管は宇宙物流を圧力に変える。助けは来るが、同じ経路が債務、優先フック、企業権限も運ぶ。",
+          "in_game_wiki": "中継保管は宇宙物流を圧力に変える。助けは届き得るが、助けを運ぶ経路は債務、優先フック、企業権限も運ぶ。",
           "external_site": "この債務鎖は救助が本物で有用で敵対的にもなれる理由を説明する。"
         },
         "zh_CN": {
@@ -679,7 +679,7 @@
           "field_note": "救援发票也可以是指挥结构。",
           "terminal": "Custody note：Luyten packet buffer、Aegir claim pool和Black Keel carrier权利引用同一债务链。",
           "audio": "你不拥有路线。路线拥有你的返回。",
-          "in_game_wiki": "中继托管把空间物流变成压力。玩家能得到帮助，但承载帮助的路线也承载债务、优先钩子和公司权力。",
+          "in_game_wiki": "中继托管把空间物流变成压力。帮助可以抵达，但承载帮助的路线也承载债务、优先钩子和公司权力。",
           "external_site": "中继托管债务链解释为什么救援能同时真实、有用且敌对。"
         },
         "fr_FR": {
@@ -688,7 +688,7 @@
           "field_note": "Une facture de secours peut devenir structure de commandement.",
           "terminal": "Note custody: tampon Luyten, claim pool Aegir et droits Black Keel renvoient à la même dette.",
           "audio": "Vous ne possédez pas la route. La route possède votre retour.",
-          "in_game_wiki": "La garde relais transforme la logistique spatiale en pression: l'aide porte aussi dette, priorités et autorité corporative.",
+          "in_game_wiki": "La garde relais transforme la logistique spatiale en pression. L'aide peut arriver, mais la route qui la porte transporte aussi dette, crochets de priorité et autorité corporative.",
           "external_site": "Elle explique pourquoi le secours peut être réel, utile et hostile."
         },
         "es_ES": {
@@ -697,7 +697,7 @@
           "field_note": "Una factura de rescate puede ser mando.",
           "terminal": "Nota custody: buffer Luyten, claim pool Aegir y derechos Black Keel referencian la misma deuda.",
           "audio": "No posees la ruta. La ruta posee tu regreso.",
-          "in_game_wiki": "La custodia de relé vuelve presión a la logística: la ayuda trae deuda, prioridades y autoridad corporativa.",
+          "in_game_wiki": "La custodia de relé convierte la logística espacial en presión. La ayuda puede llegar, pero la ruta que la trae también trae deuda, ganchos de prioridad y autoridad corporativa.",
           "external_site": "Explica por qué el rescate puede ser real, útil y hostil."
         },
         "de_DE": {
@@ -706,7 +706,7 @@
           "field_note": "Eine Rettungsrechnung kann Befehlsstruktur sein.",
           "terminal": "Custody-Notiz: Luyten-Puffer, Aegir-Claimpool und Black-Keel-Rechte verweisen auf dieselbe Schuld.",
           "audio": "Du besitzt die Route nicht. Die Route besitzt deine Rückkehr.",
-          "in_game_wiki": "Relaisgewahrsam macht Logistik zu Druck: Hilfe trägt auch Schuld, Prioritäten und Konzernmacht.",
+          "in_game_wiki": "Relaisgewahrsam macht Raumlogistik zu Druck. Hilfe kann eintreffen, doch die Route, die Hilfe trägt, trägt auch Schuld, Prioritätshaken und Konzernmacht.",
           "external_site": "Sie erklärt, warum Rettung real, nützlich und feindlich zugleich sein kann."
         },
         "pl_PL": {
@@ -715,7 +715,7 @@
           "field_note": "Faktura za ratunek może być strukturą rozkazów.",
           "terminal": "Nota custody: bufor Luyten, claim pool Aegir i prawa Black Keel wskazują ten sam dług.",
           "audio": "Nie posiadasz trasy. Trasa posiada twój powrót.",
-          "in_game_wiki": "Relay custody zmienia logistykę w presję: pomoc niesie też dług, priorytety i władzę korporacji.",
+          "in_game_wiki": "Relay custody zmienia logistykę kosmiczną w presję. Pomoc może nadejść, ale trasa, która niesie pomoc, niesie też dług, haki priorytetu i władzę korporacji.",
           "external_site": "Wyjaśnia, czemu ratunek może być realny, użyteczny i wrogi."
         },
         "uk_UA": {
@@ -724,7 +724,7 @@
           "field_note": "Рахунок за порятунок може бути командною структурою.",
           "terminal": "Custody note: Luyten packet buffer, Aegir claim pool і права Black Keel ведуть до одного боргу.",
           "audio": "Ти не володієш маршрутом. Маршрут володіє твоїм поверненням.",
-          "in_game_wiki": "Relay custody перетворює космічну логістику на тиск: допомога несе борг, priority hooks і корпоративну владу.",
+          "in_game_wiki": "Relay custody перетворює космічну логістику на тиск. Допомога може прийти, але маршрут допомоги несе із собою борг, priority hooks і корпоративну владу.",
           "external_site": "Пояснює, чому порятунок може бути реальним, корисним і ворожим одночасно."
         },
         "ar_SA": {
@@ -733,7 +733,7 @@
           "field_note": "فاتورة الإنقاذ قد تكون بنية قيادة.",
           "terminal": "ملاحظة custody: مخزن Luyten وclaim pool Aegir وحقوق Black Keel تشير إلى الدين نفسه.",
           "audio": "أنت لا تملك الطريق. الطريق يملك عودتك.",
-          "in_game_wiki": "relay custody يحول لوجستيات الفضاء إلى ضغط: المساعدة تحمل أيضا دينا وأولويات وسلطة شركة.",
+          "in_game_wiki": "relay custody يحول لوجستيات الفضاء إلى ضغط. يمكن أن تصل المساعدة، لكن الطريق الذي يحملها يحمل أيضا دينا وخطافات أولوية وسلطة شركة.",
           "external_site": "تشرح السلسلة لماذا يكون الإنقاذ حقيقيا ومفيدا وعدائيا في الوقت نفسه."
         },
         "id_ID": {
@@ -742,7 +742,7 @@
           "field_note": "Faktur penyelamatan bisa menjadi struktur komando.",
           "terminal": "Catatan custody: buffer Luyten, claim pool Aegir dan hak Black Keel menunjuk rantai utang yang sama.",
           "audio": "Kau tidak memiliki rute. Rute memiliki kepulanganmu.",
-          "in_game_wiki": "Relay custody mengubah logistik ruang menjadi tekanan: bantuan membawa utang, prioritas dan otoritas korporat.",
+          "in_game_wiki": "Relay custody mengubah logistik ruang menjadi tekanan. Bantuan bisa tiba, tetapi rute yang membawa bantuan juga membawa utang, kait prioritas, dan otoritas korporat.",
           "external_site": "Menjelaskan mengapa penyelamatan bisa nyata, berguna dan bermusuhan sekaligus."
         },
         "ko_KR": {
@@ -751,7 +751,7 @@
           "field_note": "구조 청구서는 명령 구조가 될 수 있다.",
           "terminal": "Custody note: Luyten 패킷 버퍼, Aegir claim pool, Black Keel 권리가 같은 부채를 참조한다.",
           "audio": "너는 경로를 소유하지 않는다. 경로가 네 귀환을 소유한다.",
-          "in_game_wiki": "중계 보관은 우주 물류를 압력으로 바꾼다. 도움은 부채, 우선권, 기업 권한도 함께 운반한다.",
+          "in_game_wiki": "중계 보관은 우주 물류를 압력으로 바꾼다. 도움은 도착할 수 있지만, 도움을 운반하는 항로는 부채, 우선권 고리, 기업 권한도 함께 운반한다.",
           "external_site": "이 부채 사슬은 구조가 현실적이고 유용하며 동시에 적대적일 수 있는 이유다."
         },
         "he_IL": {
@@ -760,7 +760,7 @@
           "field_note": "חשבונית חילוץ יכולה להיות מבנה פיקוד.",
           "terminal": "הערת custody: חוצץ Luyten, claim pool Aegir וזכויות Black Keel מפנים לאותו חוב.",
           "audio": "אתה לא הבעלים של הנתיב. הנתיב הבעלים של חזרתך.",
-          "in_game_wiki": "relay custody הופך לוגיסטיקת חלל ללחץ: העזרה נושאת גם חוב, עדיפויות וסמכות תאגידית.",
+          "in_game_wiki": "relay custody הופך לוגיסטיקת חלל ללחץ. עזרה יכולה להגיע, אבל הנתיב שנושא עזרה נושא גם חוב, ווי עדיפות וסמכות תאגידית.",
           "external_site": "הוא מסביר מדוע חילוץ יכול להיות אמיתי, שימושי ועוין יחד."
         },
         "pt_BR": {
@@ -769,7 +769,7 @@
           "field_note": "Uma fatura de resgate pode virar estrutura de comando.",
           "terminal": "Nota custody: buffer Luyten, claim pool Aegir e direitos Black Keel apontam para a mesma dívida.",
           "audio": "Você não possui a rota. A rota possui seu retorno.",
-          "in_game_wiki": "Relay custody transforma logística espacial em pressão: ajuda carrega dívida, prioridades e autoridade corporativa.",
+          "in_game_wiki": "Relay custody transforma logística espacial em pressão. A ajuda pode chegar, mas a rota que carrega ajuda também carrega dívida, ganchos de prioridade e autoridade corporativa.",
           "external_site": "Explica por que resgate pode ser real, útil e hostil ao mesmo tempo."
         },
         "nl_NL": {
@@ -778,7 +778,7 @@
           "field_note": "Een reddingsfactuur kan commandostructuur zijn.",
           "terminal": "Custody note: Luyten-buffer, Aegir-claimpool en Black Keel-rechten verwijzen naar dezelfde schuld.",
           "audio": "Jij bezit de route niet. De route bezit je terugkeer.",
-          "in_game_wiki": "Relay custody maakt ruimtelogistiek tot druk: hulp draagt ook schuld, prioriteitshaken en bedrijfsgezag.",
+          "in_game_wiki": "Relay custody maakt ruimtelogistiek tot druk. Hulp kan aankomen, maar de route die hulp draagt, draagt ook schuld, prioriteitshaken en bedrijfsgezag.",
           "external_site": "De keten verklaart waarom redding echt, nuttig en vijandig tegelijk kan zijn."
         }
       }

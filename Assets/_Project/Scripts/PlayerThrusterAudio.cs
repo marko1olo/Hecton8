@@ -107,6 +107,7 @@ namespace Hecton8.Audio
         private bool _hotSwapRegistered;
         private bool _transportCoordinatorLookupAttempted;
         private PlayerTransportFeelContract _transportFeelContractCurrent;
+        private IAudioService _cachedAudioService;
         private ISpatialAudioSfxMixerRouteReadModel _cachedSpatialAudioSfxRoute;
         private float _pendingUnityVolume;
         private float _pendingUnityPitch;
@@ -582,9 +583,15 @@ namespace Hecton8.Audio
 
         private void CacheSpatialAudioManager(IAudioService audioService)
         {
-            _cachedSpatialAudioSfxRoute = IsAudioServiceUsable(audioService)
-                ? audioService as ISpatialAudioSfxMixerRouteReadModel
-                : null;
+            if (!IsAudioServiceUsable(audioService))
+            {
+                _cachedAudioService = null;
+                _cachedSpatialAudioSfxRoute = null;
+                return;
+            }
+
+            _cachedAudioService = audioService;
+            _cachedSpatialAudioSfxRoute = audioService as ISpatialAudioSfxMixerRouteReadModel;
         }
 
         private void TryAssignMixerRoute(bool force = false)
@@ -599,17 +606,26 @@ namespace Hecton8.Audio
 
         private ISpatialAudioSfxMixerRouteReadModel ResolveSpatialAudioSfxRoute()
         {
+            IAudioService audioService = _cachedAudioService;
+            if (!IsAudioServiceUsable(audioService))
+            {
+                _cachedAudioService = null;
+                _cachedSpatialAudioSfxRoute = null;
+                return null;
+            }
+
             ISpatialAudioSfxMixerRouteReadModel route = _cachedSpatialAudioSfxRoute;
-            if (IsAudioRuntimeObjectUsable(route))
+            if (ReferenceEquals(route, audioService) && IsAudioRuntimeObjectUsable(route))
                 return route;
 
-            _cachedSpatialAudioSfxRoute = null;
-            return null;
+            route = audioService as ISpatialAudioSfxMixerRouteReadModel;
+            _cachedSpatialAudioSfxRoute = route;
+            return IsAudioRuntimeObjectUsable(route) ? route : null;
         }
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             return IsAudioRuntimeObjectUsable(audioService);
@@ -620,7 +636,7 @@ namespace Hecton8.Audio
             if (runtime == null)
                 return false;
 
-            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+            if (runtime is IAudioService audioService && !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (runtime is Behaviour behaviour)

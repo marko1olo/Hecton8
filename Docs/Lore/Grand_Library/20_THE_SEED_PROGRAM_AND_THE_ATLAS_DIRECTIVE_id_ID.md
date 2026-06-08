@@ -1,4 +1,5 @@
-﻿# PROGRAM BENIH DAN DIREKTIF ATLAS
+<!-- localization_status: source_draft_pending_native_review -->
+# PROGRAM BENIH DAN DIREKTIF ATLAS
 
 > **Source:** Divisi Rekayasa Sistem Deep Reach, Log Logika Direktif.
 > **Speaker:** Direktur Operasi Otonom.

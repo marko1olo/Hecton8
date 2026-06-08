@@ -1,8 +1,10 @@
 using System;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -19,6 +21,9 @@ namespace Hecton8.World
         private const int SeverityInfo = 0;
         private const int SeverityWarning = 1;
         private const int SeverityCritical = 2;
+        private const int NotificationPublishRetryFrameLimit = 3;
+        private static readonly uint _NotificationMissWarningHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.NotificationMiss"));
+        private static readonly uint _NotificationContextHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.Notification"));
 
         [Header("References")]
         [Tooltip("Live biome matrix owner used for biome framing reads.")]
@@ -81,8 +86,13 @@ namespace Hecton8.World
         private bool _hotSwapRegistered;
         private IFirstHourReadModel _firstHourDirector;
         private IDepthZoneReadModel _cachedDepthZoneReadModel;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private float _nextNotificationTime;
+        private int _notificationMissCount;
+        private int _pendingNotificationRetryCount;
+
+        public int NotificationMissCount => _notificationMissCount;
 
         private void Awake()
         {
@@ -129,7 +139,9 @@ namespace Hecton8.World
             _hasObservedContext = false;
             _pendingMessage = null;
             _pendingSeverity = SeverityInfo;
+            _pendingNotificationRetryCount = 0;
             _nextNotificationTime = 0f;
+            _notificationMissCount = 0;
             _debugPendingMessage = "None";
             _debugPendingSeverity = SeverityInfo;
             _debugNextNotificationTime = 0f;
@@ -174,6 +186,9 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.DepthZoneRuntime:
                     _cachedDepthZoneReadModel = currentService as IDepthZoneReadModel;
                     break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
             }
         }
 
@@ -181,6 +196,7 @@ namespace Hecton8.World
         {
             _firstHourDirector = GlobalRegistry.FirstHourReadModel;
             _cachedDepthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            _playerRuntimeContext = GlobalRegistry.Player;
             if (_cachedDepthZoneReadModel == null && depthZoneDirector != null)
                 _cachedDepthZoneReadModel = depthZoneDirector;
         }
@@ -227,8 +243,7 @@ namespace Hecton8.World
             WorldZoneAnchor currentZone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
             IDepthZoneReadModel depthZoneReadModel = _cachedDepthZoneReadModel ?? depthZoneDirector;
             DepthZoneProfile currentDepthZone = depthZoneReadModel != null ? depthZoneReadModel.CurrentZone : null;
-            int currentDepthTier = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentDepthTier : 1;
-            float currentDepthMeters = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentDepthMeters : 0f;
+            ResolveCurrentDepthContext(out int currentDepthTier, out float currentDepthMeters);
 
             if (!CanPublishReadability())
             {
@@ -299,6 +314,63 @@ namespace Hecton8.World
                 _cachedDepthZoneReadModel = depthZoneDirector;
         }
 
+        private void ResolveCurrentDepthContext(out int depthTier, out float depthMeters)
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                depthMeters = math.max(0f, movementState.DepthMeters);
+                depthTier = ResolveFallbackDepthTier(depthMeters);
+                return;
+            }
+
+            BiomeMatrixDirector biomeMatrix = biomeMatrixDirector;
+            if (biomeMatrix != null &&
+                biomeMatrix.isActiveAndEnabled &&
+                math.isfinite(biomeMatrix.CurrentDepthMeters))
+            {
+                depthMeters = math.max(0f, biomeMatrix.CurrentDepthMeters);
+                depthTier = math.max(1, biomeMatrix.CurrentDepthTier);
+                return;
+            }
+
+            depthMeters = 0f;
+            depthTier = 1;
+        }
+
+        private static int ResolveFallbackDepthTier(float depth)
+        {
+            if (!math.isfinite(depth) || depth <= 0f)
+                return 1;
+            if (depth <= 300f)
+                return 2;
+            if (depth <= 600f)
+                return 3;
+            if (depth <= 1000f)
+                return 4;
+            if (depth <= 1500f)
+                return 5;
+            if (depth <= 2000f)
+                return 6;
+            if (depth <= 2500f)
+                return 7;
+            if (depth <= 3000f)
+                return 8;
+            if (depth <= 3500f)
+                return 9;
+            if (depth >= 14000f)
+                return 27;
+
+            float clamped = math.clamp(depth, 3500f, 14000f);
+            float normalized = (clamped - 3500f) / 10500f;
+            int tier = 10 + (int)math.floor(normalized * 17f);
+            return math.clamp(tier, 10, 26);
+        }
+
         private void ResetObservedState()
         {
             _hasObservedContext = false;
@@ -315,6 +387,7 @@ namespace Hecton8.World
             _pendingMessage = null;
             _pendingSeverity = SeverityInfo;
             _hasPendingMessage = false;
+            _pendingNotificationRetryCount = 0;
             _debugPendingMessage = "None";
             _debugPendingSeverity = SeverityInfo;
         }
@@ -408,6 +481,7 @@ namespace Hecton8.World
             _pendingMessage = message;
             _pendingSeverity = severity;
             _hasPendingMessage = true;
+            _pendingNotificationRetryCount = 0;
             _debugPendingMessage = message;
             _debugPendingSeverity = severity;
         }
@@ -420,33 +494,59 @@ namespace Hecton8.World
             if ((float)SystemDispatcher.CurrentUnscaledTimeSeconds < _nextNotificationTime)
                 return;
 
-            PublishNotification(_pendingMessage, _pendingSeverity);
-            _pendingMessage = null;
-            _pendingSeverity = SeverityInfo;
-            _hasPendingMessage = false;
-            _debugPendingMessage = "None";
-            _debugPendingSeverity = SeverityInfo;
+            if (!PublishNotification(_pendingMessage, _pendingSeverity))
+            {
+                if (ShouldDropPendingNotificationAfterMiss())
+                    ClearPendingMessage();
+
+                return;
+            }
+
+            ClearPendingMessage();
         }
 
-        private void PublishNotification(string message, int severity)
+        private bool PublishNotification(string message, int severity)
         {
+            bool pushed;
             switch (severity)
             {
                 case SeverityCritical:
-                    NotificationEvents.TryPushCritical(message.AsSpan());
+                    pushed = NotificationEvents.TryPushCritical(message.AsSpan());
                     break;
                 case SeverityWarning:
-                    NotificationEvents.TryPushWarning(message.AsSpan());
+                    pushed = NotificationEvents.TryPushWarning(message.AsSpan());
                     break;
                 default:
-                    NotificationEvents.TryPushInfo(message.AsSpan());
+                    pushed = NotificationEvents.TryPushInfo(message.AsSpan());
                     break;
+            }
+
+            if (!pushed)
+            {
+                ReportReadabilityNotificationMiss(severity);
+                return false;
             }
 
             _debugLastPublishedMessage = message;
             _debugLastPublishedSeverity = severity;
             _nextNotificationTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds + Mathf.Max(0f, notificationCooldown);
             _debugNextNotificationTime = _nextNotificationTime;
+            return true;
+        }
+
+        private bool ShouldDropPendingNotificationAfterMiss()
+        {
+            _pendingNotificationRetryCount++;
+            return _pendingNotificationRetryCount >= NotificationPublishRetryFrameLimit;
+        }
+
+        private void ReportReadabilityNotificationMiss(int severity)
+        {
+            _notificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _NotificationMissWarningHash,
+                _NotificationContextHash ^ unchecked((uint)math.max(0, severity)),
+                math.max(1, _notificationMissCount));
         }
 
         private static string ResolveBiomeGuidanceMessage(HectonBiomeMatrixProfile profile, out int severity)
@@ -578,7 +678,7 @@ namespace Hecton8.World
         {
             severity = SeverityInfo;
 
-            if (profile == null || depthTier <= 1 || depthMeters <= 0f)
+            if (depthTier <= 1 || depthMeters <= 0f)
                 return null;
 
             if (depthZone != null)
@@ -591,6 +691,18 @@ namespace Hecton8.World
 
                 if ((depthZone.isThermal || depthZone.hasCaves) && !string.IsNullOrWhiteSpace(depthZone.description))
                     return depthZone.description;
+            }
+
+            if (profile == null)
+            {
+                if (zone != null &&
+                    zone.RouteCritical &&
+                    !string.IsNullOrWhiteSpace(zone.GameplayIntent))
+                {
+                    return zone.GameplayIntent;
+                }
+
+                return null;
             }
 
             if (profile.survivalPressure >= 4 && !string.IsNullOrWhiteSpace(profile.safePocketIdentity))
@@ -699,7 +811,7 @@ namespace Hecton8.World
             DepthZoneProfile depthZone,
             int depthTier)
         {
-            if (profile == null || depthTier <= 1)
+            if (depthTier <= 1)
                 return null;
 
             if (depthZone != null)
@@ -709,6 +821,14 @@ namespace Hecton8.World
 
                 if (depthZone.dangerLevel >= 0.72f && !string.IsNullOrWhiteSpace(depthZone.description))
                     return depthZone.description;
+            }
+
+            if (profile == null)
+            {
+                if (zone != null && !string.IsNullOrWhiteSpace(zone.GameplayIntent))
+                    return zone.GameplayIntent;
+
+                return null;
             }
 
             if (!string.IsNullOrWhiteSpace(profile.safePocketIdentity))
@@ -745,8 +865,7 @@ namespace Hecton8.World
             _debugDepthZone = _lastDepthZone != null && !string.IsNullOrWhiteSpace(_lastDepthZone.displayName)
                 ? _lastDepthZone.displayName
                 : "None";
-            _debugDepthTier = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentDepthTier : 1;
-            _debugDepthMeters = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentDepthMeters : 0f;
+            ResolveCurrentDepthContext(out _debugDepthTier, out _debugDepthMeters);
             _debugRouteLegible = _lastRouteLegible;
             _debugSafePocket = _lastSafePocket;
         }

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Sol Core Authority
 
-Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core is the legal and financial root of human expansion, not a personal birthplace and not a rescue office. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
 
 ## Scanner
 

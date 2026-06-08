@@ -10,6 +10,8 @@
 [INVARIANT] Ref-count reaches zero = release scheduled. Deferred max 1 frame via end-of-frame coroutine queue.
 [INVARIANT] VRAM budget is hard ceiling. RAM budget is soft ceiling with pressure-graduated response.
 [INVARIANT] No synchronous stall on main thread exceeding 0.5ms for any asset operation.
+[REQ] Player-visible asset loading, texture residency, LOD residency, Addressables grouping, and streaming lifecycle changes inherit the Visual Reference Parity Gate. Captures must beat mandatory references plus best-known internal baseline/current rejection matrix before streaming/memory savings are credited visually.
+[FORBID] Memory savings, smaller bundles, lower mips, unloaded detail, or shorter residency as success when terrain/water/sky/UI/material captures fall below April/previously-in-development baseline. Declare `VISUAL_ROUTE_INVALID` or visual `PENDING VERIFICATION` until owner stack and streaming proof recover the floor.
 
 ---
 
@@ -59,7 +61,7 @@ Every frame END:
 [RULE] Asset groups must record their load mode in the streaming budget table and in the release ledger.
 
 [FORBID] Enabling `AllPackedAssetsAndDependencies` on biome, texture, audio, terrain, or HLOD groups without a written memory budget.
-[FORBID] Calling a bundle "resident-safe" without Memory Profiler resident/committed evidence from Unity 2023.1+ compatible snapshots or platform-native memory counters.
+[FORBID] Calling a bundle "resident-safe" without Unity 6000.4-compatible Memory Profiler resident/committed evidence or platform-native memory counters.
 [FORBID] Evicting based only on Addressables ref-count. Residency pressure also considers texture mip residency, render target pressure, native buffers, and driver reserve.
 
 ## Engineering Data

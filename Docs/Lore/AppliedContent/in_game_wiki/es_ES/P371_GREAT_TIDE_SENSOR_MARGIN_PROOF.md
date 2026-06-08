@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Great Tide Sensor Margin Proof"
+title: "Traza de margen de la Gran Marea"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Great Tide Sensor Margin Proof
+# Traza de margen de la Gran Marea
 
-ES LOC HOLD: Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.
+La traza demuestra dos cosas a la vez: la Gran Marea fue real y el margen letal era visible antes de que el informe lo admitiera. Deep Reach no ordenó subir al agua. Aceptó una ventana de ruta cuando el envolvente de presión de la colonia ya no tenía holgura, y luego publicó la cascade sin el visto bueno.
 
 ## Scanner
 
-ES LOC HOLD: Sensor margin survived. The ocean did flood the colony. The warning margin was also known.
+Sensor de marea recuperado. El cizallamiento máximo superó el diseño colonial, pero la ruptura del margen de aviso quedó registrada antes del sello público de la cascade.
 
 ## Terminal
 
-ES LOC HOLD: MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.
+SENSOR MARGIN // P-63 NORTH SPINE. Umbral de riesgo de cola aceptado por autoridad de ruta. Nota de operador retirada de la cadena pública del incidente. Traza cruda conservada en memoria brine-buffer.
 
 ## Audio
 
-ES LOC HOLD: Physics did the damage. A person signed the margin.
+El océano no mintió. El informe sí.
 
 ## Field Note
 
-ES LOC HOLD: Use to anchor the public lie against real sensor evidence.
+Nota de merodeador: no busques un discurso de villano. Busca la línea que alguien borró.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/es_ES. -->

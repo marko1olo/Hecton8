@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Crime Scene Sale"
+title: "Finale Frage: Verkauf des Tatorts"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Crime Scene Sale
+# Finale Frage: Verkauf des Tatorts
 
-DE LOC HOLD: Crime-scene sale is a material success route that keeps the moral damage visible.
+Der Tatortverkauf ist die Route des materiellen Erfolgs. Der Spieler überlebt, kann die Schuld löschen und sogar mit Geld gehen. Der Preis ist, dass Koloniebeweise zum Hebel für dasselbe Autoritätsnetz werden, das den Ort begrub, Rettungsmasse kürzte und Leichen als Vertragswetter behandelte.
 
 ## Scanner
 
-DE LOC HOLD: Selling coordinates and XO proof is a real ending, not a joke fail state.
+Koordinaten, XO-Beweis und eine saubere Gewahrsamskette können einen Ausgang kaufen. Sie verkaufen den Mordraum auch an jene zurück, die ihn bepreist haben.
 
 ## Terminal
 
-DE LOC HOLD: FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.
+FINALE VERKAUFSACHSE: Atlas-Beckenkoordinaten, brauchbare Blauschuld-Probe, XO-Zeugenbeweis und Carrier-Gewahrsamshash können die Pfandlast des Operators löschen. Ohne getrennte notarielle Sicherung erhält Deep Reach einen saubereren Rückweg nach HECTON-8, als die toten Arbeiter je zur Rettung hatten.
 
 ## Audio
 
-DE LOC HOLD: You can pay the debt with a grave map.
+Du kannst die Schuld mit einer Grabkarte zahlen. Das Ledger nennt es Arbeit.
 
 ## Field Note
 
-DE LOC HOLD: The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.
+Das ist kein Scherz-Fehlschlag. Es ist ein bezahltes Ende mit Quittung, gelöschter Pfandlast und schlechterer Zukunft für alle, die unten bleiben.
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/de_DE. -->

@@ -8,33 +8,19 @@ biome_tags: biome.tide_gauge;biome.glacier_break
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Mara Venn Tide Model"
+spoiler_tier: 1
+title: "نموذج مد مارا فين"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Mara Venn Tide Model
+# نموذج مد مارا فين
 
-AR LOC HOLD: Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning.
+لم تكتب مارا فين نبوءة. كتبت نموذجا به حدود خطأ وهوامش إخلاء وتوقيت قاس. تحت هندسة ربيع Aegir كان cryosphere shear قادرا على تجاوز قدرة الرفع المتاحة. لم تكن المستعمرة بحاجة إلى يقين كامل كي تتحرك. كانت بحاجة إلى من يعامل ذيل المنحنى كأناس لا كتكلفة.
 
-## Scanner
-
-AR LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
-
-## Terminal
-
-AR LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
-
-## Audio
-
-AR LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
-
-## Field Note
-
-AR LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
+احتفظ Deep Reach بالنموذج وأضعف الرد. صار التحذير monitor، وصار هامش الإخلاء مشكلة ميزانية لاحقة، ثم قال السجل العام إن الفيضان لم يكن قابلا للقراءة. يجب أن يشعر اللاعب بالكذبة في شكل الورق: كان المد طبيعيا، لكن الكارثة حُررت.
 
 <!-- External Site; generated from P062_MARA_VENN_TIDE_MODEL/ar_SA. -->

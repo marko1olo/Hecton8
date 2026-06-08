@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Barnard Yards Marauder Origin"
+title: "バーナード造船場のマローダー起源"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Barnard Yards Marauder Origin
+# バーナード造船場のマローダー起源
 
-JP LOC HOLD: Barnard Yards Marauder Origin defines HECTON-8's protagonist class. The player comes from a working salvage culture where a dead claim is not mystery tourism; it is a job with bad math.
+バーナード造船場のマローダー起源は、HECTON-8 の債務漬けサルベージ階級を定義する。マローダーは、死んだ請求権を神秘観光ではなく割に合わない仕事として扱う労働文化から来る。
 
 ## Scanner
 
-JP LOC HOLD: Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.
+バーナードの工具刻印。船体解体の文化。きれいな救助条項を疑うことを教える場所だ。
 
 ## Terminal
 
-JP LOC HOLD: BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.
+BARNARD YARDS SERVICE MARK: 緊急クランプ承認。サルベージ認証は、放棄圧力居住区、死んだ carrier 区画、放棄 claim hull に有効。
 
 ## Audio
 
-JP LOC HOLD: You learned this hand motion before HECTON-8. That is the problem.
+君は HECTON-8 の前にこの手の動きを覚えた。それが問題だ。
 
 ## Field Note
 
-JP LOC HOLD: This is closer to the player than Earth: rented cutters, old pressure habits, debt and stripped hulls.
+地球より近いもの: 借り物のカッター、古い圧力作法、負債、剥がされた船体。
 
 <!-- External Site; generated from P073_BARNARD_YARDS_MARAUDER_ORIGIN/ja_JP. -->

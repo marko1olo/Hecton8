@@ -102,7 +102,7 @@ namespace Hecton8.Narrative.Prologue
         private CancellationToken _runCancellationToken;
         private ReentryStateDTO _reentryState;
         private ushort _acousticStressSequence;
-        private int _lastSurvivalVitalsSequence;
+        private int _lastSurvivalVitalsSnapshotGeneration;
         private int _lastSurvivalDeathSequence;
         private int _signalPushDropCount;
 
@@ -368,8 +368,7 @@ namespace Hecton8.Narrative.Prologue
             _stageElapsedSeconds = 0d;
             _traumaPublishAccumulatorSeconds = 0d;
             ClearPendingCameraPressureImpact();
-            _lastSurvivalVitalsSequence = 0;
-            _lastSurvivalDeathSequence = 0;
+            PrimeSurvivalSignalCursors();
             _runCancellationToken = cancellationToken;
             _reentryState = default;
             _acousticStressSequence = 0;
@@ -1051,25 +1050,39 @@ namespace Hecton8.Narrative.Prologue
                 return true;
             }
 
-            if (!SignalBus<SurvivalVitalsChangedSignal>.TryGetLatest(out SurvivalVitalsChangedSignal vitals, out int sequence) ||
-                sequence == _lastSurvivalVitalsSequence ||
-                !IsFreshSurvivalSignalFrame(vitals.Frame))
+            int snapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;
+            if (snapshotGeneration == 0 || snapshotGeneration == _lastSurvivalVitalsSnapshotGeneration)
             {
                 return false;
             }
 
-            _lastSurvivalVitalsSequence = sequence;
-            bool oxygenZero =
-                (vitals.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u &&
-                math.isfinite(vitals.Oxygen01) &&
-                vitals.Oxygen01 <= SurvivalAbortOxygenThreshold01;
-            bool death =
-                (vitals.Flags & SurvivalVitalsChangedSignalFlags.Death) != 0u ||
-                vitals.DeathCause != 0;
-            if (!oxygenZero && !death)
-                return false;
+            _lastSurvivalVitalsSnapshotGeneration = snapshotGeneration;
+            ReadOnlySpan<SurvivalVitalsChangedSignal> vitalsSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < vitalsSignals.Length; i++)
+            {
+                ref readonly SurvivalVitalsChangedSignal vitals = ref vitalsSignals[i];
+                if (!IsFreshSurvivalSignalFrame(vitals.Frame))
+                    continue;
 
-            return true;
+                bool oxygenZero =
+                    (vitals.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u &&
+                    math.isfinite(vitals.Oxygen01) &&
+                    vitals.Oxygen01 <= SurvivalAbortOxygenThreshold01;
+                bool death =
+                    (vitals.Flags & SurvivalVitalsChangedSignalFlags.Death) != 0u;
+                if (oxygenZero || death)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void PrimeSurvivalSignalCursors()
+        {
+            _lastSurvivalVitalsSnapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;
+            _lastSurvivalDeathSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int deathSequence)
+                ? deathSequence
+                : 0;
         }
 
         private bool IsFreshSurvivalSignalFrame(uint frame)

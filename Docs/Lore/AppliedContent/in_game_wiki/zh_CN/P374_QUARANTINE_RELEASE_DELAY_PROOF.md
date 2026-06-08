@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Quarantine Release Delay Proof"
+title: "隔离释放扣留"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Quarantine Release Delay Proof
+# 隔离释放扣留
 
-ZH LOC HOLD: Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
+扣留记录并没有把隔离变成恶。它让时间可见。Deep Reach可以命名不确定性、延迟释放、保存保险位置，并把工人留在区域内，直到路线死亡。
 
 ## Scanner
 
-ZH LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
+隔离扣留牌。出口路线已经锁定后，保护措辞才出现。
 
 ## Terminal
 
-ZH LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+RELEASE GATE // BIO-PRESSURE UNCERTAINTY。hold until review。Recovery队列先接受资产质量，再释放工人。insurance ping仍活动。
 
 ## Audio
 
-ZH LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+隔离可以救一个身体。它也可以让身体等到变成文书。
 
 ## Field Note
 
-ZH LOC HOLD: Use where player may confuse rescue with custody.
+Marauder笔记：protection这个词不能证明保护。看时钟。
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/zh_CN. -->

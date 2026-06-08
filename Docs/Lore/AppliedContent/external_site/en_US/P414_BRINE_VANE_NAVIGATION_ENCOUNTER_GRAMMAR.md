@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Brine Vane Navigation Encounter Grammar
 
-The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
+Brine vane navigation makes HECTON-8’s canyons legible without arrows. The route is written in density, membrane damage, sonar distortion and the player’s own buoyancy discipline.
 
 ## Scanner
 
-Brine vane field. Aligned fans mark density turns; sonar warps near open glow.
+Brine vane field. Aligned sheets mark density turns; curled tips mark weak windows; sonar warps near open glow. Keep one edge in sight.
 
 ## Terminal
 
-FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+ENCOUNTER GRAMMAR / BRINE VANE NAVIGATION / role: mid-depth route literacy, density-wall handrail, false-floor correction / safe read: intact vane edge, torn mouth, sonar bend matching buoyancy drift / reject: crossing black open water, cutting the guide sheet, trusting a floor return without a vane boundary / route note: the vane does not guide you by intent; it obeys water loudly enough to follow.
 
 ## Audio
 
-The vane does not guide you. It obeys the water loudly enough to follow.
+The vane is not a signpost. It is water making a wall and leaving a seam.
 
 ## Field Note
 
-Follow the vane edge like a handrail. If the line bends wrong, your buoyancy reading is late.
+Treat the vane edge as a handrail. If the line bends wrong, your buoyancy reading is already late.
 
 <!-- External Site; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/en_US. -->

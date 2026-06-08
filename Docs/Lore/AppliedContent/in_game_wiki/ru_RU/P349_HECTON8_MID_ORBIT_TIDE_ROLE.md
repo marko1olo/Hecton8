@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: HECTON-8 Mid-Orbit Tide Role"
+title: "Приливная роль HECTON-8 в среднем орбите"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: HECTON-8 Mid-Orbit Tide Role
+# Приливная роль HECTON-8 в среднем орбите
 
-RU LOC HOLD: HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.
+HECTON-8 - луна, где орбитальная математика Aegir становится личной. Она достаточно далеко от худшей внутренней радиации, достаточно близко для живого океанского прилива и достаточно ценна, чтобы Deep Reach строила под давлением.
 
 ## Scanner
 
-RU LOC HOLD: Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
+Запись приливов HECTON-8. Средняя орбита делает океан пригодным для добычи и достаточно жестоким, чтобы хоронить доказательства.
 
 ## Terminal
 
-RU LOC HOLD: ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
+ОРБИТАЛЬНАЯ ЗАПИСЬ H8 HECTON: приливная нагрузка в текущем окне Black Keel внутри промышленных допусков. Прогиб drowned crust усиливается у сервисных каньонов. Трафик ремонта Atlas остается ниже порога публичного раскрытия.
 
 ## Audio
 
-RU LOC HOLD: It sits in the part of the ladder where work looks possible until the water starts doing math.
+Она находится в той части лестницы, где работа кажется возможной, пока вода не начинает считать.
 
 ## Field Note
 
-RU LOC HOLD: HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 платит, потому что там пересекаются давление, прилив и ответственность.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/ru_RU. -->

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # No-FTL Transit Math
 
-No-FTL Transit Math turns interstellar distance into gameplay pressure: delayed orders, stale authority and physical escape windows.
+No-FTL Transit Math turns interstellar distance into pressure: delayed orders, stale authority, custody lag and physical escape windows.
 
 ## Scanner
 

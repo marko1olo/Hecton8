@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Black Keel Approach Transcript Seed"
+title: "Black-Keel-Anflugtranskript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Black Keel Approach Transcript Seed
+# Black-Keel-Anflugtranskript
 
-DE LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
+Das Anflugtranskript macht die Black Keel nützlich, ohne sie barmherzig zu machen. Der Carrier gibt dem Marauder eine Leitung in den Orbit und nennt dann Schuld, Empfängerfenster, Gesundheitsgrenze, Massengrenze und Beweispflicht, bevor Hoffnung die Physik umschreiben kann.
 
 ## Scanner
 
-DE LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Geborgenes Carrier-Audio bestätigt bezahlten Abstieg, bedingte Rückkehr, vier Sekunden Lag und nötiges Beweispaket.
 
 ## Terminal
 
-DE LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
-DE LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+Black-Keel-Tender an Anspruchsteller. Vier Sekunden Lag. Abstieg berechnet. Rückkehr nicht garantiert. Gesundheit, Masse, Beweis senden.
 
 ## Field Note
 
-DE LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
+Claim-Tender-Puffer, vom Sturmcarrier gekappt. Stimme prozedural halten: Routendaten zuerst, Trost nie.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/de_DE. -->

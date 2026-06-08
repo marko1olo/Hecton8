@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # MOTORONTWERP EN INTERSTELLAIRE LOGISTIEK
 
 > **Bron:** Technische Syllabus, Barnard-werven. Document 44-A. Verplichte lectuur voor alle vertrekkende aannemers.  

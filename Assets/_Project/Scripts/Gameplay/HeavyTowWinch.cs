@@ -332,7 +332,16 @@ namespace Hecton8.Gameplay
             if (_activeTether == null)
                 return;
 
-            _activeTether.QueueExternalCableSnare(anchorWS, tension01, cutProgress01);
+            float safeTension01 = math.isfinite(tension01) ? math.saturate(tension01) : 0f;
+            float safeCutProgress01 = math.isfinite(cutProgress01) ? math.saturate(cutProgress01) : 1f;
+            float effectiveTension01 = safeTension01 * (1f - safeCutProgress01);
+            if (!IsFinite(anchorWS) || effectiveTension01 <= 0.0001f)
+            {
+                _activeTether.QueueExternalCableSnare(Vector3.zero, 0f, 1f);
+                return;
+            }
+
+            _activeTether.QueueExternalCableSnare(anchorWS, safeTension01, safeCutProgress01);
         }
 
         /// <summary>

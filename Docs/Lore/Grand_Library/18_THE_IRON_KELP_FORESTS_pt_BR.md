@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # AS FLORESTAS DE ALGAS DE FERRO
 
 > **Fonte:** Divisão de Xenobiologia Deep Reach, Registro de Perigos.

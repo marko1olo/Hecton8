@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Lantern Drift Codex Card"
+title: "כרטיס קודקס: סחף פנסים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Lantern Drift Codex Card
+# כרטיס קודקס: סחף פנסים
 
-HE LOC HOLD: Lantern Drift Codex Card links visual wonder with storm-window route pressure.
+Bloom של סחף פנסים הוא מערכת האזהרה היפה ביותר של המדף. במים שקטים התאים מציירים זרם, גרגרים מרחפים, לולאות כבל, שברי pressure glass,‏ shell clamps שבורים וסכנות קטנות משוננות לפני שמנורה מוצאת אותם. לכן הוא מועיל כשהמסלול עמוס חזותית או כשהשחקן צריך צללית נקייה בתוך בלגן השונית. אבל הוא גם הופך את השחקן לקריא. רטט cutter, משאבה משתעלת, שימוש חוזר ב-pinger, פגיעת גוף או thruster מבוהל יכולים לעורר את ה-bloom לשובל מואר שנושא את המיקום דרך מארג המזון. מטען סערה מוסיף בעיה אחרת: מסדרונות שקריים, שארית בהירה מדי, וניגוד שטוח שמסתיר נזק קטן בתוך יותר מדי יופי. עקוב אחרי הזוהר רק כשהזרם, השארית והפאונה מסכימים. עבוד ברעש בתוך bloom רק אם להימצא הוא חלק מהתוכנית.
 
 ## Scanner
 
-HE LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
+Bloom של סחף פנסים. פלנקטון ביולומינסנטי מסמן זרם ופסולת ברצועות. מועיל לקווי מתאר; מסוכן כשרעש כלים הופך אותו לשובל מואר.
 
 ## Terminal
 
-HE LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+דגימה / BLOOM סחף פנסים / תפקיד: אירוע ראות רדוד, סקיצת זרם, רשם הפרעה / קריאה בטוחה: אור שפה יציב, הילות פסולת, התאמת זרם ושארית / דחה: מסדרון שקרי טעון סערה, bloom שמשטח סכנות קטנות, שובל כלי שמבהיר מאחורי המפעיל / הערת מסלול: אור הוא נתון, לא מחסה.
 
 ## Audio
 
-HE LOC HOLD: Pretty is not safe. Pretty is a reading.
+הזוהר לא עוזר לך. הוא מדווח על מה שהמים שמעו.
 
 ## Field Note
 
-HE LOC HOLD: Card teaches that beauty can be route information and route deception.
+השתמש ב-bloom לצלליות. אל תתקן ברעש בתוכו. אם הזוהר עוקב אחריך, משהו אחר יכול לעקוב אחריו.
 
 <!-- In-Game Wiki; generated from P293_LANTERN_DRIFT_CODEX_CARD/he_IL. -->

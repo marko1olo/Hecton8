@@ -1,0 +1,34 @@
+---
+packet_id: P469_AEGIR_RELAY_WINDOW_BRIDGE
+release_set_id: RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION
+article_id: applied_lore.aegir_relay_window_bridge
+unlock_id: unlock.aegir_relay_window_bridge
+poi_tags: poi.aegir_relay_forecast;poi.p63_relay_board
+biome_tags: biome.surface_weather;biome.orbit_window
+locale: uk_UA
+surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Релейне вікно Aegir"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# Релейне вікно Aegir
+
+## Що доводить запис
+
+Релейне вікно - не порятунок. Це брудний збіг погоди, тіні місяця, магнітного шуму, геометрії carrier, черги relay, карантину й розподілу маси.
+
+Aegir може випустити пакет угору й залишити оператора під водою. Релейне вікно - тимчасова геометрія між погодою, магнетикою, чергою, положенням carrier Black Keel і правовим допуском. Воно доводить, що повідомлення може покинути HECTON-8; воно не доводить, що тіло піднімуть тим самим отвором.
+
+ПОВІДОМЛЕННЯ RELAY AEGIR // Контакт може пройти раніше, ніж допомога зрушить. Зберегти маршрут пакета, часову мітку, стан антени, читання штормового плюму, лінію carrier і пломбу збереження. Прийняття вікна не виділяє кисень, підйомну масу чи евакуацію оператора.
+
+## Як гравець це читає
+
+Прийнятий ping - не рятувальний корабель. Познач вікно, збережи маршрут і продовжуй різати. Читай це як правило поводження з доказом, а не як обіцянку, що допомога вже летить.
+
+<!-- External Site; generated from P469_AEGIR_RELAY_WINDOW_BRIDGE/uk_UA. -->

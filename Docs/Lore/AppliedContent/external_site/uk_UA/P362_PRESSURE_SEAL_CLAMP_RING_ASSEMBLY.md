@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Pressure Seal Clamp Ring Assembly"
+title: "Збірка притискного кільця гермоущільнення"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Pressure Seal Clamp Ring Assembly
+# Збірка притискного кільця гермоущільнення
 
-UK LOC HOLD: The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.
+Збірка притискного кільця гермоущільнення перетворює ремонт капсули на торг із тиском: deep-rated метал, посадка скла й Atlas bio-sealant можуть урятувати або замкнути шлях підйому.
 
 ## Scanner
 
-UK LOC HOLD: Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.
+Шрам clamp-ring. Підйомна муфта пережила удар, витративши ущільнення, яке мало повернути її додому.
 
 ## Terminal
 
-UK LOC HOLD: SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.
+SEAL CERT: shallow patch тримає лише тиск відсіку. Ascent seal потребує deep-rated clamp ring, pressure-glass seat, shell-sealant map і перевіреного профілю Deep Reach. Atlas-grown sealant може зберегти habitat, водночас блокуючи чисте відділення.
 
 ## Audio
 
-UK LOC HOLD: The useful seal is the one Atlas grew wrong. That is the problem.
+Корисне ущільнення живе не в той бік.
 
 ## Field Note
 
-UK LOC HOLD: Use where repair ecology and mechanical seal evidence overlap.
+Латка safe-room може купити годину повітря. Вона не витримає стартовий імпульс.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/uk_UA. -->

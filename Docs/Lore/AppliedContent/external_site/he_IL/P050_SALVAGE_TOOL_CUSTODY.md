@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.deep_colony
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Salvage Tool Custody"
+spoiler_tier: 1
+title: "משמורת כלי salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Salvage Tool Custody
+# משמורת כלי salvage
 
-Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder.
+ב-HECTON-8 כלי יכול להיות ציוד הישרדות ועד חוזי באותו זמן. יומני משמורת salvage קושרים חיתוכים, תיקונים ודגימות לטוקני claim, והופכים פעולה מועילה לחלק מראיה, חוב או לחץ payout עתידי.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+מעגן הכלי מחזיק יומן משמורת חתום. החיתוך האחרון, התיקון ושקית הדגימה קשורים לטוקן claim של Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: שימוש בחותך התקבל תחת salvage claim. פעולת תיקון נצפתה. זכויות דגימה מחוברות לטוקן Keelmark Mutual. ייצוא ראיות מתנגש עם מסלול payout חומרי.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+כל חיתוך מועיל משאיר עד.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+חותך יכול להציל את האוויר שלך ולמכור את הידיים שלך באותה תנועה. בדוק מה הוא רושם לפני שתקרא לו שלך.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/he_IL. -->

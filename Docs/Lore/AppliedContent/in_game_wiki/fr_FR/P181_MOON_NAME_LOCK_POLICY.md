@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Moon Name Lock Policy"
+title: "Registre des rôles lunaires d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Name Lock Policy
+# Registre des rôles lunaires d'Aegir
 
-FR LOC HOLD: The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.
+La liste des lunes d'Aegir est une carte de trafic en service. Chaque corps autour de la géante gazeuse modifie le trafic, le droit des réclamations de salvage, le timing de communication ou la planification d'extraction depuis HECTON-8.
 
 ## Scanner
 
-FR LOC HOLD: Moon labels can change; orbital roles cannot.
+Les noms publics dérivent selon les cartes ; les orbites gardent leur travail.
 
 ## Terminal
 
-FR LOC HOLD: ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.
+REGISTRE ATLAS : les étiquettes publiques varient selon l'assureur et la carte de route. Les rôles fonctionnels restent fixes : cisaillement radiatif, masque de relais, forçage de marée, diffusion de glace, routage public, rumeur de quarantaine, salvage industriel, trafic de fenêtre haute, réclamation profonde et économie de balises mortes.
 
 ## Audio
 
-FR LOC HOLD: A name can be repainted. An orbit keeps the bill.
+On peut renommer une lune. L'orbite présente quand même la facture.
 
 ## Field Note
 
-FR LOC HOLD: Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.
+Skarn cisaille les particules. Vela masque les relais. Claw projette la glace. Lumen imprime les routes. Thorne porte les rumeurs de quarantaine. Anvil nourrit le salvage. Kestrel tient les fenêtres hautes. HECTON garde la réclamation profonde. Mute vend des balises mortes.
 
 <!-- In-Game Wiki; generated from P181_MOON_NAME_LOCK_POLICY/fr_FR. -->

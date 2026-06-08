@@ -416,13 +416,17 @@ namespace Hecton8.World
 
             if (serviceSlot == GlobalRegistryServiceSlot.ResourceDistributionRuntime)
             {
-                _resourceDistributionDirector = currentService as ResourceDistributionDirector;
+                ResourceDistributionDirector currentDistribution = currentService as ResourceDistributionDirector;
+                if (WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref currentDistribution))
+                    _resourceDistributionDirector = currentDistribution;
+                else
+                    _resourceDistributionDirector = null;
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
             {
-                _objectPoolService = currentService as IObjectPoolService;
+                CacheObjectPoolService(currentService as ObjectPoolManager);
                 EnsureVoxelPoolWarmCold(
                     ResolveRuntimeVolumeBudget(ResolveGlobalQualityWeight()),
                     ResolveGlobalQualityWeight());
@@ -462,13 +466,50 @@ namespace Hecton8.World
         private void RefreshColdRegistryDependencies()
         {
             _runtimeDispatcherReady = GlobalRegistry.Dispatcher != null;
-            _thermalManager = AbyssalThermalManager.ActiveRuntimeInstance;
+            _thermalManager = null;
+            WorldRuntimeReferenceUtility.TryResolveAbyssalThermalManager(ref _thermalManager);
             _persistentWorldRegistry = PersistentWorldRegistry.Instance;
-            _resourceDistributionDirector = GlobalRegistry.ResourceDistribution;
-            _objectPoolService = GlobalRegistry.ObjectPoolService;
+            _resourceDistributionDirector = null;
+            WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref _resourceDistributionDirector);
+            CacheObjectPoolService(null);
             _dataVault = GlobalRegistry.DataVault;
             TryRegisterHotSwapListener();
             TryEnsureVoxelBridgeBlackBox();
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _objectPoolService = pool;
+                return;
+            }
+
+            _objectPoolService = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _objectPoolService as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _objectPoolService = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _objectPoolService = null;
+            pool = null;
+            return false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1743,16 +1784,17 @@ namespace Hecton8.World
                 cableRadius);
 
             ResourceDistributionDirector resourceDirector = _resourceDistributionDirector;
-            if (resourceDirector != null)
-            {
-                if (!TryResolveAupFromRuntimeOrigin(ventPosition, out AbsoluteUniversePosition ventAup))
-                    return;
+            if (!WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref resourceDirector))
+                return;
 
-                resourceDirector.TrySpawnDeepMantleGeodeAtAup(
-                    ventAup,
-                    radius,
-                    unchecked((uint)request.runtimeKey));
-            }
+            _resourceDistributionDirector = resourceDirector;
+            if (!TryResolveAupFromRuntimeOrigin(ventPosition, out AbsoluteUniversePosition ventAup))
+                return;
+
+            resourceDirector.TrySpawnDeepMantleGeodeAtAup(
+                ventAup,
+                radius,
+                unchecked((uint)request.runtimeKey));
         }
 
         private static bool ShouldRegisterHydrothermalVent(in WorldGenerativeGeologyVoxelBlendRequest request)
@@ -2224,8 +2266,7 @@ namespace Hecton8.World
                 return;
             }
 
-            IObjectPoolService pool = _objectPoolService;
-            if (pool == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
             {
                 _debugWarmedPoolTarget = _estimatedWarmedPoolCount;
                 return;

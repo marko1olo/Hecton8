@@ -9,32 +9,38 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: drukclaim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: drukclaim
 
-NL LOC HOLD: HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## De eerste klus
 
-## Scanner
+HECTON-8 begint met een contract. Black Keel opent een Aegir-venster, boekt 4.8 tonne-window aan lien en laat een beschadigde bathydrop naar P-63 vallen. Er is licht genoeg voor routelezen en defect genoeg om te sterven.
 
-NL LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+De eerste taken zijn klein: water wegpompen, afdichten binnen klasse, capsulefouten lezen, metaal scannen. De scanner vertelt geen wereldgeschiedenis. Hij toont waarom het rapport de sporen niet kent.
 
-## Terminal
+P-63 is mooi in daglicht. Dat maakt het niet veilig. Kalksteen, modulelippen, kabelsporen en gebroken evacuatiehardware spreken tegen de schone papieren.
 
-NL LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+Het contract vraagt vracht. De ruimte geeft bewijs. Gescheurde recoverring, natte avionica en krom frame bewijzen dat de bathydrop zijn terugkeer heeft uitgegeven aan de val. Reparatie wijst omlaag: gereedschap, relais, brine, pressure glass en juridische ontvangst.
 
-## Audio
+Deep Reach maakte geen kwaadwillige oceaan. Schuld zit in geaccepteerd risico, te kleine evacuatie en taal die werknemers in verliesposten verandert.
 
-NL LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+## Hoe Je De Afdaling Leest
 
-## Field Note
+De bruikbare regel voor HECTON-8 is dat elk stuk lore een spoor moet achterlaten dat de speler kan controleren. Een contractnummer is geen sfeer als het de mass window verandert. Een kras op de bathydrop is geen decor als die bewijst dat het opstijgsysteem voor de inslag vuurde. Een verdronken kamer is geen achtergrond als pomp, pakking, routelog en scannerantwoord het officiele pakket tegenspreken.
 
-NL LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+Daarom keert de opening steeds terug naar werk. P-63 leert dat schoonheid geen veiligheid is, dat ondiep water nog steeds een claim-val kan zijn, en dat overleven uit harde woorden bestaat: seal rating, intake pressure, relay drift, battery reserve, custody grade.
+
+## De Belofte
+
+Het grote verhaal is geen toespraak over het redden van de melkweg. Het is een lang drukprobleem rond een werker met een slechte lien en een bruikbaar geheugen. Oceaan, contract en route window worden smaller. Daartegenover bouwt de speler bewijs: een scan, een monster, een gerepareerd systeem.
+
+HECTON-8 moet leesbaar zijn omdat het fysiek is. Wat telt heeft oppervlak, kosten, faalmodus en getuige.
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/nl_NL. -->

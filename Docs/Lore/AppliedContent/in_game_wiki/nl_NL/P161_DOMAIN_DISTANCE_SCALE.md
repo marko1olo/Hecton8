@@ -9,32 +9,34 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Domain Distance Scale"
+title: "Domein-Afstandsschaal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Domain Distance Scale
+# Domein-Afstandsschaal
 
-NL LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.
+De domeinschaal is een drukkaart, geen toeristenkaart. Sol Core kan eigendom op afstand certificeren. Centauri kan een oud charter schoon laten klinken. Barnard kan een cutter en een Marauder met schuld naar vuil werk sturen. Tau Ceti kan bewijs na vertraging openbaar maken. Luyten kan pakket-custody bewijzen. Ran/Aegir is waar die verre machten water boven je helm worden.
+
+Daarom voelt HECTON-8 alleen zonder een leeg universum nodig te hebben. Een bericht kan de route oversteken en toch aankomen nadat zuurstof, getij, romptemperatuur en Black Keels recovery window al hebben beslist. Afstand wist wet niet uit. Afstand maakt wet kouder dan redding.
 
 ## Scanner
 
-NL LOC HOLD: The domain map uses distance bands, not romantic shortcuts.
+DOMAIN DISTANCE PLATE // Sol, Centauri, Barnard, Tau Ceti, Luyten en Ran/Aegir zijn geen decor. Ze zijn vertraging, bewaring, massa, bewijs en reddingskosten.
 
 ## Terminal
 
-NL LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.
+DOMAIN SCALE // Ran/Aegir blijft een doel in de klasse van ongeveer 10,5 lichtjaar vanaf Sol tot definitieve efemeridetabellen de band vervangen. Geen FTL-hulpvector. Geen direct antwoord. Routeautoriteit komt vóór menselijke hulp aan.
 
 ## Audio
 
-NL LOC HOLD: Ten light-years is a number. The bill is the story.
+Tien lichtjaar is niet het harde deel. Het harde deel is ontdekken wie de retourmassa heeft betaald.
 
 ## Field Note
 
-NL LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.
+Als de tabel groots gaat klinken, snijd. De speler heeft de kosten van afstand nodig, geen sterrenposter.
 
 <!-- In-Game Wiki; generated from P161_DOMAIN_DISTANCE_SCALE/nl_NL. -->

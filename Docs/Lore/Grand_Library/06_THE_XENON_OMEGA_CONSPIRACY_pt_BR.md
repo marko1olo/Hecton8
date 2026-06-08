@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # A DIRETRIZ XENÔNIO-ÔMEGA E OS PROTOCOLOS ATLAS-6
 
 > **Fonte:** Investigação Aberta do Comitê Luyten, Caso Nº CF-2148-0071. Prova Documental 44-B: Registro de Auditoria do Núcleo Atlas-6.  

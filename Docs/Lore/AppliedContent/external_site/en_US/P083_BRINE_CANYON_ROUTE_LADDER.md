@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.drop_zone
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Brine Canyon Route Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Brine Canyon Route Ladder
 
-Brine Canyon Route Ladder is one of HECTON-8's core exploration structures: not a hallway, but a chemical geography where density, current and sound shape progression.
+The Brine Canyon Route Ladder turns descent into chemistry. Dense salt rivers sit inside the ocean like floors, mirrors and traps. A diver can cross what looks like open water and suddenly find the suit arguing with a heavier liquid layer. Sonar may report a false floor because the brine reflected the room above it.
 
-## Scanner
-
-Brine density marker. The descent route is chemistry with walls.
-
-## Terminal
-
-BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
-
-## Audio
-
-The canyon is a staircase made of wrong water.
-
-## Field Note
-
-You do not swim through the canyon. You negotiate with layers heavier than your suit.
+Good routes are not straight lines. They are density markers, ballast windows, relay checks and angle changes. The canyon teaches the player that depth is not only meters. Depth is discipline: how long a vehicle can hold trim, when to ping again, and when a shortcut is only wrong water pretending to be a road.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/en_US. -->

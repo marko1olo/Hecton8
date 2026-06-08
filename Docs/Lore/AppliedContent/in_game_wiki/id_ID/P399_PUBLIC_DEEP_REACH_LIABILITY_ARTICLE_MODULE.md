@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Deep Reach Liability Evidence"
+title: "Bukti Tanggung Jawab Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Liability Evidence
+# Bukti Tanggung Jawab Deep Reach
 
-ID LOC HOLD: Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
+Liability Deep Reach berjalan karena banjir itu tidak memerlukan fisika palsu. Great Tide nyata. Kerusakan yang dapat dicegah muncul dalam margins, jam, access holds, dan catatan yang membersihkan pekerja menjadi kategori sebelum siapa pun bisa diangkat.
 
 ## Scanner
 
-ID LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Catatan liability. Fisika pasang nyata, margin risk yang diterima, tunda evakuasi, quarantine holds, Atlas weighting, dan bahasa kerugian yang dirapikan bertemu dalam rantai bukti yang sama.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+SIMPUL ARSIP PUBLIK // BUKTI LIABILITY. Great Tide diterima. Tinjauan tetap terbuka untuk sensor margins, tunda evacuation queue, quarantine holds, Atlas weighting, worker classification, dan loss conversion.
 
 ## Audio
 
-ID LOC HOLD: A disaster can be natural and still have signatures on it.
+Bencana bisa alami dan tetap memiliki tanda tangan.
 
 ## Field Note
 
-ID LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Catatan Marauder: jangan berdebat dengan pasang. Berdebatlah dengan tanda tangan di sampingnya.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/id_ID. -->

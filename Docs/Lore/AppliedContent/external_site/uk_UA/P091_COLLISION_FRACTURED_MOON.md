@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Collision-Fractured Moon"
+title: "Місяць, розламаний зіткненням"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Collision-Fractured Moon
+# Місяць, розламаний зіткненням
 
-UK LOC HOLD: Collision-Fractured Moon defines HECTON-8's physical origin: not a fantasy captured object, but a local ocean moon whose later damage created the route geography and pressure economy.
-
-## Scanner
-
-UK LOC HOLD: Old crust sample. HECTON-8 formed here, then broke badly enough to become useful.
-
-## Terminal
-
-UK LOC HOLD: ORIGIN MODEL: circum-Aegir formation likely. Later impact fracturing and resonance heating opened brine faults, vent corridors and pressure-glass chemistry.
-
-## Audio
-
-UK LOC HOLD: It was not stolen by the planet. It was built here and damaged here.
-
-## Field Note
-
-UK LOC HOLD: Captured moon drama is weaker than a local moon with a wound you can read.
+HECTON-8 не був мандрівним тілом, захопленим заради видовища. Він зібрався у власному поясі уламків Егіра, охолов як шаруватий океанічний місяць, а потім прийняв косий удар, що деформував кору, але не стер світ. Зіткнення підняло шельфи, втопило басейни й відкрило довгі драбини розломів, де гаряча хімія досі рухається крізь солону воду. Припливний резонанс утримав ці рани живими після орбітального замка. Тому океан має читані шрами: ропні каньйони, жерлові кузні, жили скла тиску, оголені гребені й рідкісні вікна до давнього дна.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/uk_UA. -->

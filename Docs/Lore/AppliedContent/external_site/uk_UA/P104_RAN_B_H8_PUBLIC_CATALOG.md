@@ -8,33 +8,17 @@ biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "UK LOC HOLD: RAN-B:H8 Public Catalog"
+spoiler_tier: 1
+title: "Публічний каталог RAN-B:H8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: RAN-B:H8 Public Catalog
+# Публічний каталог RAN-B:H8
 
-UK LOC HOLD: RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name.
-
-## Scanner
-
-UK LOC HOLD: Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
-
-## Terminal
-
-UK LOC HOLD: CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.
-
-## Audio
-
-UK LOC HOLD: The star chart calls it H8. The people who died here called it HECTON.
-
-## Field Note
-
-UK LOC HOLD: Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
+RAN-B:H8 - ім'я, коли місяць є координатою. HECTON-8 - ім'я, коли місяць є раною. Розділення важливе, бо одне місце має працювати в астрономічних таблицях, страхових формах, мові працівників, death ledgers і custody Black Keel. Публічний каталог робить пункт чистим і сортувальним; claim name тримає людський осад. Добрий лор має дати гравцю відчути обидва імені: індексоване тіло й затоплене робоче місце.
 
 <!-- External Site; generated from P104_RAN_B_H8_PUBLIC_CATALOG/uk_UA. -->

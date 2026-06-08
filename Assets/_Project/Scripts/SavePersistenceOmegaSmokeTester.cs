@@ -7,6 +7,7 @@ using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor;
@@ -146,14 +147,19 @@ namespace Hecton8.Dev
 
             return ContainsAll(
                        saveManager,
-                       "RegisterTransientNativeArray(packedQuestStateSnapshot",
-                       "DisposeNativeArray(ref packedQuestStateSnapshot",
+                       "packedQuestStateSnapshot = CreateTransientNativeArray<uint>",
+                       "DisposeTransientNativeArrayBestEffort(ref packedQuestStateSnapshot",
                        "NativeAllocationLifetime.TransientArena") &&
                    ContainsAll(
                        saveBinaryStorage,
-                       "RegisterNativeMemorySentinel();",
-                       "UnregisterNativeMemorySentinel();",
-                       "NativeAllocationLifetime.TempJob") &&
+                       "internal static NativeArray<T> AllocateRegisteredArray<T>",
+                       "writeHandle.SourceStates = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<EntityDataRecord>",
+                       "NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, " + "NativeAllocationLifetime.TempJob)",
+                       "DisposeRegisteredArray(ref SourceStates)",
+                       "DisposeTrackedNativeArrayByPointer(ref array)",
+                       "AllocateRegisteredPersistentScratchNativeArray<byte>",
+                       "DisposeRegisteredPersistentScratchNativeArray(ref compactBytes, IndexedSectorCompactionBufferLabel)",
+                       "DisposeRegisteredPersistentScratchNativeArray(ref commitBytes, IndexedSectorCommitBufferLabel)") &&
                    ContainsNone(
                        saveBinaryStorage,
                        "EntityStateWrite" + "Dictionary" + "ScratchLabel",
@@ -164,7 +170,7 @@ namespace Hecton8.Dev
                        "IndexedSectorPagingLoadedRecordsLabel",
                        "NativeMemorySentinel.RegisterNativeArray",
                        "NativeMemorySentinel.RegisterNativeList",
-                       "NativeAllocationLifetime.TransientArena") &&
+                       "NativeAllocationLifetime.TempJob") &&
                    ContainsAll(
                        smokeTester,
                        "AllocateTrackedTempJobArray<IndexedSectorBoundsProbe>(8, BoundsProbeLabel",
@@ -172,9 +178,12 @@ namespace Hecton8.Dev
                        "NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options)",
                        "int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)",
                        "if (sentinelId > 0)",
+                       "DisposeTrackedTempJobArray(ref array)",
                        "DisposeTrackedTempJobArray(ref probes)",
                        "DisposeTrackedTempJobArray(ref results)",
-                       "NativeMemorySentinel.UnregisterNativeArray(array)");
+                       "void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array)",
+                       "array.Dispose()",
+                       "NativeMemorySentinel.UnregisterPointer(trackedPointer)");
         }
 
         private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options)
@@ -187,39 +196,90 @@ namespace Hecton8.Dev
                 if (sentinelId > 0)
                     return array;
             }
-            catch
+            catch (Exception exception)
             {
-                if (array.IsCreated)
-                    array.Dispose();
+                Exception cleanupException = null;
+                try
+                {
+                    DisposeTrackedTempJobArray(ref array);
+                }
+                catch (Exception cleanupFault)
+                {
+                    cleanupException = cleanupFault;
+                }
+
+                if (cleanupException != null)
+                    throw new AggregateException(
+                        "Save persistence omega TempJob NativeArray allocation failed and cleanup also failed.",
+                        exception,
+                        cleanupException);
 
                 throw;
             }
 
-            array.Dispose();
-            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            InvalidOperationException registrationException = new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            Exception registrationCleanupException = null;
+            try
+            {
+                DisposeTrackedTempJobArray(ref array);
+            }
+            catch (Exception cleanupFault)
+            {
+                registrationCleanupException = cleanupFault;
+            }
+
+            if (registrationCleanupException != null)
+                throw new AggregateException(
+                    "Save persistence omega TempJob NativeArray registration failed and cleanup also failed.",
+                    registrationException,
+                    registrationCleanupException);
+
+            throw registrationException;
         }
 
-        private static void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array)
+        private static unsafe void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            void* trackedPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(array);
+            System.Exception cleanupException = null;
+
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(array);
+                NativeMemorySentinel.UnregisterPointer(trackedPointer);
+            }
+            catch (System.Exception exception)
+            {
+                cleanupException = exception;
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (System.Exception exception)
+            {
+                if (cleanupException == null)
+                    cleanupException = exception;
             }
             finally
             {
-                array.Dispose();
                 array = default;
             }
+
+            if (cleanupException != null)
+                throw cleanupException;
         }
 
         private static bool TryRunRuntimeBarrierSourceAudit()
         {
+            string saveBinaryStorage = ReadProjectFile("Assets/_Project/Scripts/SaveBinaryStorage.cs")
+                .Replace("disposeHandle.Complete();", string.Empty);
+
             return ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveManager.cs"), ".Complete(", ".Run(") &&
-                   ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveBinaryStorage.cs"), ".Complete(", ".Run(") &&
+                   ContainsNone(saveBinaryStorage, ".Complete(", ".Run(") &&
                    ContainsNone(ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"), ".Complete(", ".Run(") &&
                    ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveIndexedSectorBoundsMath.cs"), ".Complete(", ".Run(");
         }
@@ -232,7 +292,8 @@ namespace Hecton8.Dev
             string globalRegistry = ReadProjectFile("Assets/_Project/Scripts/Core/GlobalRegistry.cs");
 
             return ContainsNone(saveManager, "DontDestroyOnLoad", "ActiveRuntimeInstance", "private static SaveManager", "static SaveManager _instance") &&
-                   ContainsNone(persistentRegistry, "DontDestroyOnLoad", "private static PersistentWorldRegistry", "static PersistentWorldRegistry _instance") &&
+                   ContainsNone(persistentRegistry, "DontDestroyOnLoad", "static PersistentWorldRegistry _instance") &&
+                   ContainsAll(persistentRegistry, "s_activeRuntimeInstance = null;", "public static PersistentWorldRegistry Instance => s_activeRuntimeInstance") &&
                    ContainsNone(worldGenerator, "DontDestroyOnLoad", "ActiveRuntimeInstance") &&
                    ContainsAll(globalRegistry, "WorldSeedProvider", "RegisterWorldSeedProvider", "UnregisterWorldSeedProvider");
         }
@@ -276,7 +337,7 @@ namespace Hecton8.Dev
                        boundsMath,
                        "internal static class SaveIndexedSectorBoundsMath",
                        "byteOffset <= fileLength - compressedSize",
-                       "[BurstCompile]",
+                       "[BurstCompile(",
                        "ValidateIndexedSectorBoundsProbeJob") &&
                    ContainsAll(
                        saveBinaryStorage,

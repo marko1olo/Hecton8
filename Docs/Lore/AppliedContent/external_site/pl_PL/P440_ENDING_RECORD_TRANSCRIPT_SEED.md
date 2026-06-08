@@ -9,32 +9,22 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Ending Record Transcript Seed"
+title: "Transkrypt rekordu zakończenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Ending Record Transcript Seed
+# Transkrypt rekordu zakończenia
 
-PL LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.
+## Zamknięcie Zapisane Jako Custody
 
-## Scanner
+Zakończenia HECTON-8 nie powinny dawać graczowi czystego rozgrzeszenia. Rekord nazywa receiver, payload hash, stan długu i stan przeżycia, bo instytucje pamiętają te pola lepiej niż ludzi. Ten chłód jest użyteczny. Pozwala porównać każdy wynik bez zmiany prawdy w trofeum.
 
-PL LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Najważniejsze są pola nierozwiązane. Suppression flag unknown. Truth custody unresolved. Atlas continuity unclear. Public ledger status pending. Te luki utrzymują zakończenie uczciwe: coś opuściło ocean, ale posiadanie to nie sprawiedliwość, a przeżycie to nie naprawa.
 
-## Terminal
-
-PL LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
-
-## Audio
-
-PL LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
-
-## Field Note
-
-PL LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
+Format transkryptu chroni też replay. Gracz może wrócić z wiedzą, ale następne przejście nie powinno dziedziczyć mocy. Dziedziczy podejrzliwość, smak i strach. Rekord jest rachunkiem, nie przebaczeniem.
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/pl_PL. -->

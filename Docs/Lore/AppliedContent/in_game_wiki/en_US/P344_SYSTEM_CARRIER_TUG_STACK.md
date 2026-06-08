@@ -3,7 +3,7 @@ packet_id: P344_SYSTEM_CARRIER_TUG_STACK
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.system_carrier_tug_stack
 unlock_id: unlock.system_carrier_tug_stack
-poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
+poi_tags: poi.black_keel_carrier_spec;poi.tug_manifest
 biome_tags: biome.orbit;biome.contract
 locale: en_US
 surface: in_game_wiki
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # System Carrier Tug Stack
 
-The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.
+Black Keel is a system carrier and salvage platform, not a personal starship. It can hold orbit, handle cargo, run custody locks, launch capsules, and coordinate tugs. It cannot erase light delay, route windows, damaged bathydrop hardware, or the cost rules that decide when help moves.
 
 ## Scanner
 
-Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
+Carrier stack record: Black Keel moves salvage with tugs, custody locks, capsule racks, and timers. It is not a home ship.
 
 ## Terminal
 
-BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
+BLACK KEEL SPEC: claim-pool carrier. Functions: hold orbit, receive cargo, deploy bathydrops, berth tugs, recycle debt. Limit: cannot replace broken moon insertion chain.
 
 ## Audio
 
-The carrier is not your home. It is a machine that knows who owns your debt.
+The carrier knows your debt better than it knows your name.
 
 ## Field Note
 
-Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
+Carrier ownership record: useful orbital machinery can still be hostile when its first loyalty is custody.
 
 <!-- In-Game Wiki; generated from P344_SYSTEM_CARRIER_TUG_STACK/en_US. -->

@@ -557,9 +557,47 @@ namespace Hecton8.Items
             s_playerInventoryService = GlobalRegistry.PlayerInventory;
             s_physicsService = GlobalRegistry.Physics;
             s_physicsStateEvents = GlobalRegistry.PhysicsStateEvents;
-            s_objectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             s_localizationText = GlobalRegistry.LocalizationText;
             TryRegisterStaticHotSwapListener();
+        }
+
+        private static void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            if (!ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(candidate))
+            {
+                s_objectPool = null;
+                return;
+            }
+
+            s_objectPool = candidate;
+        }
+
+        private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = s_objectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                s_objectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            s_objectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private static bool TryResolvePoolForInstance(GameObject instance, IObjectPoolService preferredPool, out IObjectPoolService pool)
+        {
+            return ObjectPoolManager.TryResolvePoolForInstance(instance, preferredPool, out pool);
         }
 
         private static void TryRegisterStaticHotSwapListener()
@@ -567,6 +605,7 @@ namespace Hecton8.Items
             if (s_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
+            GlobalRegistry.TryUnregisterHotSwapListener(s_hotSwapListener);
             s_hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(s_hotSwapListener);
         }
 
@@ -592,7 +631,7 @@ namespace Hecton8.Items
                         s_physicsStateEvents = currentService as IPhysicsStateEventService;
                         break;
                     case GlobalRegistryServiceSlot.ObjectPool:
-                        s_objectPool = currentService as IObjectPoolService;
+                        CacheObjectPoolService(currentService as ObjectPoolManager);
                         break;
                     case GlobalRegistryServiceSlot.LocalizationRuntime:
                         s_localizationText = currentService as ILocalizationTextReadModel;
@@ -662,10 +701,11 @@ namespace Hecton8.Items
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
 
-            IObjectPoolService pool = s_objectPool;
-            if (pool != null && _isPooledRuntimeInstance)
+            TryResolveCachedObjectPool(out IObjectPoolService pool);
+            if (_isPooledRuntimeInstance &&
+                TryResolvePoolForInstance(gameObject, pool, out IObjectPoolService ownerPool))
             {
-                pool.Despawn(gameObject);
+                ownerPool.Despawn(gameObject);
                 return;
             }
 

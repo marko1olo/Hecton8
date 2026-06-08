@@ -9,32 +9,38 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8：圧力請求"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8：圧力請求
 
-JA LOC HOLD: HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## 最初の仕事
 
-## Scanner
+HECTON-8は契約で始まる。Black KeelはAegir窓を開き、4.8 tonne-windowの担保を記録し、損傷したbathydropをP-63へ落とす。そこにはルートを読む光があり、油断を殺す故障もある。
 
-JA LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+最初の作業は小さい。水を抜く。等級内でシールを直す。カプセル障害を読む。金属を走査する。スキャナーは歴史を語らない。公式記録が装置の痕を知らない理由を確かめる。
 
-## Terminal
+P-63は光の中で美しい。美しさは安全ではない。石灰岩、モジュールの縁、ケーブルの傷、壊れた避難部品が、きれいな文書と食い違う。
 
-JA LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+契約は貨物を求める。部屋は証拠を出す。破れた回収リング、浸水した航空電子、歪んだフレームは、bathydropが落下を生き延びるために帰還能力を使ったことを示す。修理は下へ続く。工具、中継、brine、pressure glass、そして回収相手を決める法的ハンドシェイクへ。
 
-## Audio
+Deep Reachは悪い海を作ったのではない。罪は受け入れたリスク、不足した避難、労働者を損失項目に変える言葉にある。
 
-JA LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+## 降下の読み方
 
-## Field Note
+HECTON-8のロアは、必ずプレイヤーが確かめられる痕跡を持つ。契約番号はmass windowを変えるなら飾りではない。bathydropの傷は、上昇系が衝突前に作動した証拠なら背景ではない。水没室も、ポンプ、ガスケット、route log、scanner returnが公式記録と食い違うなら舞台装置ではない。
 
-JA LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+だから序盤は作業に戻る。P-63は、明るさが安全ではないこと、浅瀬でもclaimの罠になること、生存がseal rating、intake pressure、relay drift、battery reserve、custody gradeでできていることを教える。
+
+## 約束
+
+大きな物語は銀河救済の演説ではない。悪いlienと役に立つ記憶を持つ作業員をめぐる、長い圧力問題だ。海、契約、route windowが選択を狭める。プレイヤーはscan、sample、修理したsystemを積み上げ、証拠の鎖で答える。
+
+HECTON-8は物理的だから読める。重要なものには表面、代価、故障モード、証人がある。
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/ja_JP. -->

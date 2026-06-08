@@ -7,34 +7,34 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: nl_NL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "Akoestische pingerlijn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# Akoestische pingerlijn
 
-NL LOC HOLD: The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.
+De akoestische pingerlijn is de eerste navigatiediscipline. Hij laat de speler een terugroute maken voordat licht, stroming of paniek de route vreemd maakt. Later ontsnappingswerk groeit uit hetzelfde idee: geluid door water, relaistiming, carrier-handshakes en bewijs dat een pad nog bestaat.
 
 ## Scanner
 
-NL LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
+Akoestische pingerspoel. Korteafstandspuls bevestigd; veranker voor troebel water of pekelglans.
 
 ## Terminal
 
-NL LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
+TERUGLIJN / PINGER: veranker voor troebelheid, pekelglans, overstroomde bochten of lange shelfsneden. Lokale ping ondersteunt alleen terugnavigatie. Carrier-handshake vereist een akoestische relaisrug.
 
 ## Audio
 
-NL LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
+Als het licht uitgaat, volg het geluid dat je hebt geplaatst.
 
 ## Field Note
 
-NL LOC HOLD: Navigation should become physical early.
+Zet de pinger neer terwijl je de weg terug nog kent. Trots is geen routemarker.
 
 <!-- In-Game Wiki; generated from P114_ACOUSTIC_PINGER_LINE/nl_NL. -->

@@ -152,7 +152,7 @@ namespace Hecton8.Construction
                 return 0u;
 
             BaseModuleTemplate template = data.ModuleTemplate;
-            int hashId = template != null ? template.TemplateHashId : data.ModuleHashId;
+            int hashId = template != null ? template.ResolvePersistentHashId() : data.ModuleHashId;
             return hashId == 0 ? 0u : unchecked((uint)hashId);
         }
 

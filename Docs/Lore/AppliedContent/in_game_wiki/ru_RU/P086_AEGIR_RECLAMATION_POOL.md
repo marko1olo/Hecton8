@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Реквизиционный пул Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Реквизиционный пул Aegir
 
-Aegir Reclamation Pool - публичная оболочка Black Keel. Он нужен, чтобы мертвые claims можно было проверять без личного межпланетного корабля у каждого Marauder. Но это же ловушка: тот же пул, который присылает помощь, решает, что важнее - груз, доказательство или человек.
+Реквизиционный пул Aegir — публичная salvage-оболочка за Black Keel. Он позволяет малым лицензиям marauder добираться до заброшенных claims Aegir без личного межпланетного carrier. Сделка полезна и ядовита одновременно: тот же пул, который может прислать тендер, решает, что стоит следующего burn — дышащий оператор, запечатанный payload, карантинный замок или пакет доказательств.
 
 ## Scanner
 
-Штамп claim-pool. Black Keel назначили, а не подарили.
+Штамп claim-пула. Black Keel назначили по долгу маршрута, а не подарили оператору.
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+AEGIR RECLAMATION POOL: автономный тендер Black Keel назначен на заброшенную pressure-claim HECTON-8. Класс благополучия экипажа: contractor. Класс payload custody: переменный приоритет. Извлечение человека остается условным до закрытия арбитража пула.
 
 ## Audio
 
-Пул владеет маршрутом. Ты арендуешь только ответ.
+Пул владеет маршрутом. Ты арендуешь ответ, если выживешь достаточно долго, чтобы спросить.
 
 ## Field Note
 
-Общий пул делает спасение дешевле, медленнее и удобнее для чужой ответственности.
+Общий пул делает спасение дешевле, медленнее и удобнее для каждого подписанта, который захочет отречься.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/ru_RU. -->

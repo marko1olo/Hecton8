@@ -162,6 +162,12 @@ namespace Hecton8.Interaction
             RefreshCurrentPrompt();
         }
 
+        private void HandleOverridesSaved()
+        {
+            RefreshInteractPrefixCache();
+            RefreshCurrentPrompt();
+        }
+
         private void HandleOverridesCleared()
         {
             RefreshInteractPrefixCache();
@@ -379,6 +385,7 @@ namespace Hecton8.Interaction
             _subscribedInputBindingService.OnRebindCompleted += HandleBindingChanged;
             _subscribedInputBindingService.OnRebindCanceled += HandleBindingCanceled;
             _subscribedInputBindingService.OnOverridesLoaded += HandleOverridesLoaded;
+            _subscribedInputBindingService.OnOverridesSaved += HandleOverridesSaved;
             _subscribedInputBindingService.OnOverridesCleared += HandleOverridesCleared;
         }
 
@@ -399,6 +406,7 @@ namespace Hecton8.Interaction
             _subscribedInputBindingService.OnRebindCompleted -= HandleBindingChanged;
             _subscribedInputBindingService.OnRebindCanceled -= HandleBindingCanceled;
             _subscribedInputBindingService.OnOverridesLoaded -= HandleOverridesLoaded;
+            _subscribedInputBindingService.OnOverridesSaved -= HandleOverridesSaved;
             _subscribedInputBindingService.OnOverridesCleared -= HandleOverridesCleared;
             _subscribedInputBindingService = null;
         }

@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Transkrip Paket Deep Reach yang Dibersihkan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Transkrip Paket Deep Reach yang Dibersihkan
 
-ID LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.
+Paket yang dibersihkan tetap masuk akal karena menyimpan kata benda bencana yang benar dan membuang keputusan yang membuatnya mematikan.
 
 ## Scanner
 
-ID LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Paket Deep Reach pulih mengulang ringkasan kecelakaan, lalu menggantung bantuan pada koordinat dan harga karantina.
 
 ## Terminal
 
-ID LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
+PACKET DR-RCO-2190: safety priority asserted; coordinates required; quarantine cost pending; worker-cause fields omitted.
 
 ## Audio
 
-ID LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
+Paket Recovery Compliance. Prioritas keselamatan diakui. Koordinat dulu. Biaya karantina menunggu. Bantuan tidak bisa dihargai buta.
 
 ## Field Note
 
-ID LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Suara korporat waktu kini. Harus terdengar bisa diselamatkan sampai pemain melihat apa yang ditolak paket untuk disebut.
 
 <!-- In-Game Wiki; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/id_ID. -->

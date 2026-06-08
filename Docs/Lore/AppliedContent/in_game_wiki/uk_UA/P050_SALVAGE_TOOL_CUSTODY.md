@@ -7,34 +7,34 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Salvage Tool Custody"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Опіка salvage-інструмента"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Salvage Tool Custody
+# Опіка salvage-інструмента
 
-Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.
+Salvage-інструменти не є нейтральним спорядженням. Різаки, патчери й доки фабрикаторів можуть записувати, хто відкрив панель, полагодив лінію чи переніс зразок. Цей журнал може захистити доказ, прикріпити права виплати або посилити claim проти гравця. Опіка інструмента це місце, де поминутне виживання торкається ширшої економіки salvage.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Док інструмента містить запечатаний журнал опіки. Останній різ, ремонт і мішок зразка прив’язані до claim-токена Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: використання різака прийнято під salvage claim. Ремонтну дію засвідчено. Права на зразок прив’язані до токена Keelmark Mutual. Експорт доказів конфліктує з маршрутом матеріальної виплати.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Кожен корисний різ залишає свідка.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Різак може врятувати повітря і продати твої руки одним рухом. Перевір, що він записує, перш ніж назвати його своїм.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/uk_UA. -->

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "Граматика зустрічі: галявина скляних шкребаків"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# Граматика зустрічі: галявина скляних шкребаків
 
-UK LOC HOLD: Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.
+Галявини скляних шкребаків — урок умовної безпеки HECTON-8. Яскрава корисна екологія допомагає гравцю читати маршрут, але той самий маршрут стає підозрілим, коли тварини перестають ним користуватися.
 
 ## Scanner
 
-UK LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+Галявина скляних шкребаків. Свіжі шкребки, киснева плівка й сталі панцирні цокання натякають на низький близький тиск. Порожнє кормове поле — warning state.
 
 ## Terminal
 
-UK LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+ГРАМАТИКА ЗУСТРІЧІ / ГАЛЯВИНА СКЛЯНИХ ШКРЕБАКІВ / роль: мілководний контраст, читана умовно-безпечна лінія, тест відсутності хижака / безпечне читання: активне живлення, парні зворотні цокання, вишкребаний мінеральний край, видима лінія виходу / відмова: вважати шкребаків гарантією безпеки, тиха галявина, покинутий корм, заблокована return-line / примітка маршруту: коридор корисний тому, що тварини користуються ним зараз, а не тому, що океан щось пообіцяв.
 
 ## Audio
 
-UK LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+Шкребаки роблять яскраві коридори. Вони не вирішують, як довго коридор належить їм.
 
 ## Field Note
 
-UK LOC HOLD: Use for safe-zone literacy and shallow contrast.
+Активне живлення: використовуй лінію. Парні цокання: тримай. Корм покинуто: перестань довіряти галявині.
 
 <!-- External Site; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/uk_UA. -->

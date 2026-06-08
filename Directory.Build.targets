@@ -629,6 +629,30 @@
     </ItemGroup>
   </Target>
 
+  <Target Name="HectonCoreRestoreCliScriptAssemblyReferences"
+          BeforeTargets="ResolveAssemblyReferences"
+          DependsOnTargets="HectonPruneMissingGeneratedPackageReferences;HectonPruneNativeCliReferences;HectonPruneRuntimeEditorScriptAssemblyReferences;HectonPruneBurstCompilerIlCliReference;HectonCorePruneGeneratedProjectOutputs"
+          Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <ItemGroup>
+      <Reference Include="Hecton8.Bootstrap.Contracts" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Bootstrap.Contracts'))">
+        <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Hecton8.Core.Contracts" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Core.Contracts.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Core.Contracts'))">
+        <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Core.Contracts.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Hecton8.World.Contracts" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.World.Contracts.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.World.Contracts'))">
+        <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.World.Contracts.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="ShapesRuntime" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\ShapesRuntime.dll') And !$([System.String]::Copy('@(Reference)').Contains('ShapesRuntime'))">
+        <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\ShapesRuntime.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+    </ItemGroup>
+  </Target>
+
   <Target Name="HectonPruneMissingWaveHarmonicCrestPackageItems"
           BeforeTargets="PrepareProjectReferences;ResolveProjectReferences;ResolveAssemblyReferences;CoreCompile"
           Condition="!Exists('$(MSBuildThisFileDirectory)Packages\com.waveharmonic.crest')">

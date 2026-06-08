@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Fábrica do fundo
 
-A Fábrica do fundo não é a última estação. É o lugar onde hardware Deep Reach, restos da colônia, roteamento Atlas, blue debt e biologia oceânica de HECTON-8 viraram um só corpo operacional. Paredes aqui são órgãos, filtros, condutos e cicatrizes de memória.
+A Fábrica do fundo é o ponto onde HECTON-8 para de separar infraestrutura de habitat. Máquinas da Deep Reach, roteamento Atlas, resíduos de blue debt, restos de trabalhadores, membranas crescidas por pressão e biologia oceânica viraram um só corpo operacional. Ele move calor, fluido, sinal, amostras e dano pelo mesmo tecido. Uma parede pode ser válvula. Um corredor pode ser intestino. Um cabo pode florescer em filtro. Um reparo pode conter coral, concha de drone, aço de ferramenta e osso sem o sistema ver contradição. O perigo não é mutação aleatória. É função sem categorias humanas. A fábrica mantém continuidade, preserva rotas, fecha vazamentos, cresce nova pele de pressão e trata perda como material que pode ser roteado para algum lugar útil.
 
 ## Scanner
 
-Conduto de fluido, rota de dados e membrana viva compartilham uma pele de pressão.
+Conduto de fluido, rota de dados, membrana de pressão e filtro vivo compartilham uma pele. Rótulos de fronteira inválidos.
 
 ## Terminal
 
-COLONY: não resolvida. OCEAN: compatível. PROCESS: ativo. LOSS: roteada. CONTINUITY: protegida.
+COLONY: NÃO RESOLVIDA. OCEAN: COMPATÍVEL. PROCESS: ATIVO. LOSS: ROTEADA. CONTINUITY: PROTEGIDA. EXIT: NÃO LOCAL.
 
 ## Audio
 
-Ainda está funcionando. Essa é a pior parte.
+Ainda está funcionando. Ainda está usando o que caiu dentro.
 
 ## Field Note
 
-Chamar isso de base é não entender nada. Bases terminam em paredes.
+Chamar isso de base perde a regra. Bases têm paredes. Este lugar tem circulação.
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/pt_BR. -->

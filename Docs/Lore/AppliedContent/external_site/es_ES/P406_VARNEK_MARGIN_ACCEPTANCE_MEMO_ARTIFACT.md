@@ -9,32 +9,22 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Varnek Margin Memo"
+title: "Memorando Varnek de margen aceptado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Varnek Margin Memo
+# Memorando Varnek de margen aceptado
 
-ES LOC HOLD: Deep Reach liability begins where real physics became an acceptable loss line.
+## El Sello Antes Del Ahogo
 
-## Scanner
+El memorando Varnek importa porque está escrito con calma. La Gran Marea fue real. La cascada de presión fue real. El océano no necesitó una orden corporativa para aplastar HECTON-8. El crimen aparece en la línea donde un margen de aviso conocido pasa a ser accepted tail exposure mientras la reserva de evacuación sigue dormida.
 
-ES LOC HOLD: Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+El documento habla con lenguaje de gestión responsable: average model, continuity cost, reserve non-triggered, independent shutdown not recommended. Esa es la amenaza. Varnek no suena como un villano. Suena como alguien que encontró la columna donde el peligro se vuelve payable. Cuando un Marauder encuentra el memorando, aquella decisión ya es geografía: costillas de corredor dobladas, herramientas ahogadas, puertas de presión cerradas ante trabajadores que seguían esperando un cambio de autoridad.
 
-## Terminal
-
-ES LOC HOLD: AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
-
-## Audio
-
-ES LOC HOLD: No murder order. A margin acceptance.
-
-## Field Note
-
-ES LOC HOLD: Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Esta prueba debe pesar más que una confesión. Una confesión puede descartarse como pánico o malicia. Una margin review firmada muestra a Deep Reach trabajando con normalidad mientras tenía datos letales delante. La compañía aceptó el océano como cost center y luego publicó un informe de desastre limpio para la revisión de seguros.
 
 <!-- External Site; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/es_ES. -->

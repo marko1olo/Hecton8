@@ -9,32 +9,35 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: HECTON-8 Public Primer Article"
+title: "Primer Publik HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: HECTON-8 Public Primer Article
+# Primer Publik HECTON-8
 
-ID LOC HOLD: The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
+HECTON-8 diperkenalkan sebagai tempat yang layak diperjuangkan untuk bertahan hidup, bukan hanya sebagai tempat perkara. Bulan ini berada di sistem Aegir: dingin, dikuasai pasang surut, berharga, dan terlalu jauh untuk penyelamatan cepat. Shelf fotiknya bisa jernih dan hidup, dengan perangkat koloni terlihat melalui air terang. Di bawah keindahan itu, rute lama Deep Reach turun ke ruang pompa, koridor tekanan, celah brine, halaman relay rusak, dan mesin yang tetap bekerja setelah orang berhenti menjawab. Primer publik tetap aman spoiler. Ia boleh mengatakan pemain kembali sebagai Marauder terikat utang. Ia boleh mengatakan koloni gagal, kontrak salvage bersifat memaksa, dan samudra menyimpan bukti. Ia tidak mengungkap pilihan payload final atau pertanyaan Atlas sepenuhnya. Tujuannya mengundang pemain masuk ke dunia tanpa mengikir giginya.
 
 ## Scanner
 
-ID LOC HOLD: A public primer is allowed to be beautiful. It is not allowed to lie.
+Izin primer publik: tunjukkan bulan itu indah terlebih dahulu. Jangan menjual samudra dengan menyembunyikan kejahatan.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+PRIMER PUBLIK / AMAN SPOILER
+diizinkan: bulan samudra Aegir, shelf cerah, koloni industri tenggelam, kembalinya Marauder untuk salvage, reruntuhan Deep Reach
+dikunci: rute payload final, resolusi Atlas, konsekuensi receiver akhir
+catatan editor: keindahan dulu, bukti kemudian, tanpa janji penyelamatan palsu.
 
 ## Audio
 
-ID LOC HOLD: First sell the ocean. Then earn the crime.
+Air dangkal bukan topeng. Itu yang hampir berhasil mereka bangun sebelum kedalaman menyimpan kuitansinya.
 
 ## Field Note
 
-ID LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+Jual samudranya dulu. Lalu biarkan karat, tag, dan stempel rute membuktikan bahwa samudra tidak polos.
 
 <!-- In-Game Wiki; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/id_ID. -->

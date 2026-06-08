@@ -1,10 +1,9 @@
 {
-  "schema": "H8.RELEASE_SET_MANIFEST.V0",
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
   "release_set_id": "RS024_RESOURCE_RECIPE_TAXONOMY",
-  "status": "production_facing_draft_pending_native_localization",
-  "packet_sources": [
-    "Docs/Lore/AppliedContent/packets/RS024_RESOURCE_RECIPE_TAXONOMY.packets.json"
-  ],
+  "title": "Resource Recipe Taxonomy",
+  "status": "production_article_source_candidate_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_SOURCE",
   "packets": [
     "P116_NATIVE_SULFIDE_SALT_STACK",
     "P117_NOBLE_GAS_BRINE_POCKETS",
@@ -12,59 +11,32 @@
     "P119_ATLAS_BIOFIBER_SEALANT",
     "P120_BIOMETAL_SENSOR_TAGS"
   ],
-  "locales_present_in_packet_bundle": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS024_RESOURCE_RECIPE_TAXONOMY.packets.json"
   ],
-  "markdown_publication_locales_present": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
+  "article_sources": [
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_en_US.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_ru_RU.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_ja_JP.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_zh_CN.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_fr_FR.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_es_ES.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_de_DE.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_pl_PL.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_uk_UA.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_ar_SA.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_id_ID.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_ko_KR.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_he_IL.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_pt_BR.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_nl_NL.md"
   ],
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
-  ],
-  "runtime_contract": {
-    "runtime_must_not_parse_markdown": true,
-    "runtime_must_not_generate_translation": true,
-    "expected_bake_output": [
-      "packet_id_hash",
-      "loc_id_hashes",
-      "surface_enum",
-      "unlock_id",
-      "domain_tag",
-      "route_window_id",
-      "localized_string_pool_offsets"
-    ]
-  }
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
 }

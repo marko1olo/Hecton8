@@ -206,14 +206,54 @@ namespace Hecton8.Tests.Editor
         public void SubtitleCueDto1749_PreservesSourceHashInsideFixedLayout()
         {
             string runtimeSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs"));
+            string resetState = ExtractMethodBody(runtimeSource, "private static void ResetStaticState()");
+            string bindVault = ExtractMethodBody(runtimeSource, "public static void BindDataVaultCold(");
+            string resetCueRuntime = ExtractMethodBody(runtimeSource, "private static void ResetCueRuntimeStateForVaultRebind()");
+            string publishCue = ExtractMethodBody(runtimeSource, "public static bool PublishCue(");
             string registerCue = ExtractMethodBody(runtimeSource, "private static bool RegisterCue(");
+            string findCueSlot = ExtractMethodBody(runtimeSource, "private static int FindCueSlot(");
             string drainSignals = ExtractMethodBody(runtimeSource, "private static void DrainCueSignals()");
+            string recordCueDrop = ExtractMethodBody(runtimeSource, "private static void RecordCueDrop(uint tokenHash, uint sourceHash, uint contextHash, int droppedCount)");
+            string addDroppedCueCount = ExtractMethodBody(runtimeSource, "private static int AddDroppedCueCountSaturated(");
             string acquireMutation = ExtractMethodBody(runtimeSource, "private static bool TryAcquireSubtitleMutationBuffer<T>(");
 
             StringAssert.Contains("[FieldOffset(20)] public uint SourceHash;", runtimeSource);
             StringAssert.Contains("OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.SourceHash)) == 20", runtimeSource);
             StringAssert.Contains("cue.SourceHash = sourceHash;", runtimeSource);
             StringAssert.Contains("RegisterCue(signal.TokenHash, startAudioFrame, duration, flags, signal.SourceHash)", runtimeSource);
+            StringAssert.Contains("public static int DroppedCueCount => Volatile.Read(ref s_droppedCueCount);", runtimeSource);
+            StringAssert.Contains("public static int SignalPushDropCount => Volatile.Read(ref s_x001DirectSignalPushDropCount_BabelSubtitleSyncRuntime);", runtimeSource);
+            StringAssert.Contains("ResetCueRuntimeStateForVaultRebind();", resetState);
+            StringAssert.Contains("ResetCueRuntimeStateForVaultRebind();", bindVault);
+            StringAssert.Contains("s_initialized = false;", bindVault);
+            StringAssert.Contains("Volatile.Write(ref s_x001DirectSignalPushDropCount_BabelSubtitleSyncRuntime, 0);", resetCueRuntime);
+            StringAssert.Contains("Volatile.Write(ref s_droppedCueCount, 0);", resetCueRuntime);
+            StringAssert.Contains("Volatile.Write(ref s_lastCueDropTelemetryFrame, -1);", resetCueRuntime);
+            StringAssert.Contains("s_lastPreparedFrame = 0u;", resetCueRuntime);
+            StringAssert.Contains("s_uiOptimizationWriteSequence = 0u;", resetCueRuntime);
+
+            StringAssert.Contains("EnsureSignalBusInitializedCold();", publishCue);
+            StringAssert.Contains("if (SignalBus<SubtitleCueSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_BabelSubtitleSyncRuntime))", publishCue);
+            Assert.Less(
+                publishCue.IndexOf("EnsureSignalBusInitializedCold();", StringComparison.Ordinal),
+                publishCue.IndexOf("SignalBus<SubtitleCueSignal>.TryPushTracked", StringComparison.Ordinal));
+            StringAssert.Contains("RecordCueDrop(tokenHash, SystemHash, SubtitleCuePublishSignalDropContextHash);", publishCue);
+
+            StringAssert.Contains("RecordCueDrop(tokenHash, sourceHash, SubtitleCueAcquireContextHash);", registerCue);
+            StringAssert.Contains("int slot = FindCueSlot(cues, tokenHash, sourceHash);", registerCue);
+            StringAssert.Contains("RecordCueDrop(tokenHash, sourceHash, SubtitleCueRegisterContextHash);", registerCue);
+            StringAssert.Contains("RecordCueDrop(tokenHash, sourceHash, SubtitleCueOverwriteContextHash);", findCueSlot);
+            StringAssert.Contains("RecordCueDrop(0u, 0u, SubtitleCueSignalOverflowContextHash, signals.Length - count);", drainSignals);
+
+            StringAssert.Contains("int droppedTotal = AddDroppedCueCountSaturated(droppedCount);", recordCueDrop);
+            StringAssert.Contains("Interlocked.Exchange(ref s_lastCueDropTelemetryFrame, frame) == frame", recordCueDrop);
+            StringAssert.Contains("GlobalTelemetryBus.PublishPerformanceWarning(", recordCueDrop);
+            StringAssert.Contains("SubtitleCueDropWarningHash", recordCueDrop);
+            StringAssert.Contains("SubtitleCueDropContextHash ^ contextHash ^ tokenHash ^ sourceHash", recordCueDrop);
+            StringAssert.Contains("math.max(1, droppedTotal)", recordCueDrop);
+            StringAssert.Contains("Volatile.Read(ref s_droppedCueCount)", addDroppedCueCount);
+            StringAssert.Contains("current > int.MaxValue - droppedCount", addDroppedCueCount);
+            StringAssert.Contains("Interlocked.CompareExchange(ref s_droppedCueCount, updated, current)", addDroppedCueCount);
             StringAssert.Contains("UnsafeUtility.SizeOf<SubtitleCueDTO>() == 32", runtimeSource);
             StringAssert.Contains("s_activeMutationGuardMask != 0ul", acquireMutation);
             Assert.AreEqual(1, CountToken(acquireMutation, "TryAcquireMutationGuard("), "subtitle mutation acquire count");
@@ -291,6 +331,72 @@ namespace Hecton8.Tests.Editor
             AssertZeroGcTextBody(consumeRescale, "SubtitleManager.ConsumeUiRescaleRequestsVisualSync");
             AssertZeroGcTextBody(resolveScale, "SubtitleManager.ResolveSubtitleTextScale");
             AssertZeroGcTextBody(fontScale, "FontStreamingManager.ResolveSafeTextScale");
+        }
+
+        [Test]
+        public void SubtitleManager_RuntimeOwnerAbortClearsEventAndLateFrameRoutes()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/SubtitleManager.cs"));
+            string awake = ExtractMethodBody(source, "private void Awake()");
+            string onEnable = ExtractMethodBody(source, "private void OnEnable()");
+            string onDestroy = ExtractMethodBody(source, "private void OnDestroy()");
+            string register = ExtractMethodBody(source, "private void TryRegisterToGlobalRegistry()");
+            string gate = ExtractMethodBody(source, "private bool TryAbortForUsableExistingRuntime()");
+            string activeUsable = ExtractMethodBody(source, "private static bool IsSubtitleRuntimeInstanceUsable(");
+            string registeredUsable = ExtractMethodBody(source, "private static bool IsSubtitleRegisteredRuntimeUsable(");
+            string abort = ExtractMethodBody(source, "private void AbortDuplicateRuntimeOwner()");
+            string clearQueues = ExtractMethodBody(source, "private void ClearQueuedSubtitleState()");
+            string lateFrame = ExtractMethodBody(source, "public void LateFrameTick()");
+            string displayResolved = ExtractMethodBody(source, "private bool DisplaySubtitleResolved(");
+            string enqueueBuffered = ExtractMethodBody(source, "private bool EnqueueBuffered(");
+            string snapshot = ExtractMethodBody(source, "public bool TryGetAudioLogCueSnapshot(");
+            string registerTick = ExtractMethodBody(source, "private void RegisterToTickManager()");
+            string registerLate = ExtractMethodBody(source, "private bool RegisterLateFrameSwap()");
+
+            StringAssert.Contains("private bool _runtimeOwnerAborted;", source);
+            StringAssert.Contains("if (TryAbortForUsableExistingRuntime())", awake);
+            StringAssert.Contains("if (_runtimeOwnerAborted)", onEnable);
+            StringAssert.Contains("TryRegisterToGlobalRegistry();", onEnable);
+            StringAssert.Contains("if (_runtimeOwnerAborted)", register);
+            StringAssert.Contains("if (_runtimeOwnerAborted)", gate);
+            StringAssert.Contains("if (!Application.isPlaying)", gate);
+            StringAssert.Contains("SubtitleManager active = s_activeInstance", gate);
+            StringAssert.Contains("SubtitleManager registered = GlobalRegistry.Subtitles", gate);
+            StringAssert.Contains("AbortDuplicateRuntimeOwner();", gate);
+            StringAssert.Contains("!manager._runtimeOwnerAborted", activeUsable);
+            StringAssert.Contains("manager._serviceRegistered", registeredUsable);
+            StringAssert.Contains("!manager._runtimeOwnerAborted", registeredUsable);
+            StringAssert.Contains("_runtimeOwnerAborted = true", abort);
+            StringAssert.Contains("NotificationEvents.Unregister(this);", abort);
+            StringAssert.Contains("AudioLogEvents.Unregister(this);", abort);
+            StringAssert.Contains("NotificationEvents.Unregister(this);", onDestroy);
+            StringAssert.Contains("AudioLogEvents.Unregister(this);", onDestroy);
+            Assert.Less(
+                onDestroy.IndexOf("NotificationEvents.Unregister(this);", StringComparison.Ordinal),
+                onDestroy.IndexOf("TryUnregisterHotSwapListener();", StringComparison.Ordinal));
+            Assert.Less(
+                onDestroy.IndexOf("AudioLogEvents.Unregister(this);", StringComparison.Ordinal),
+                onDestroy.IndexOf("TryUnregisterHotSwapListener();", StringComparison.Ordinal));
+            StringAssert.Contains("TryUnregisterHotSwapListener();", abort);
+            StringAssert.Contains("UnregisterFromTickManager();", abort);
+            StringAssert.Contains("UnregisterLateFrameSwap();", abort);
+            StringAssert.Contains("TryUnregisterFromGlobalRegistry();", abort);
+            StringAssert.Contains("ClearPendingAudioLogSubtitleEvents();", abort);
+            StringAssert.Contains("ClearTimedAudioLogState();", abort);
+            StringAssert.Contains("ClearQueuedSubtitleState();", abort);
+            StringAssert.Contains("Destroy(gameObject);", abort);
+            StringAssert.Contains("_subtitleCommandQueueCount = 0", clearQueues);
+            StringAssert.Contains("_bufferedQueueCount = 0", clearQueues);
+            StringAssert.Contains("_subtitleSwapPending = false", clearQueues);
+            StringAssert.Contains("_currentSubtitleState = default", clearQueues);
+            StringAssert.Contains("if (_runtimeOwnerAborted)", lateFrame);
+            StringAssert.Contains("if (_runtimeOwnerAborted)", displayResolved);
+            StringAssert.Contains("if (_runtimeOwnerAborted)", enqueueBuffered);
+            StringAssert.Contains("textBuffer = EmptyCueBuffer", snapshot);
+            StringAssert.Contains("_runtimeOwnerAborted", registerTick);
+            StringAssert.Contains("!_serviceRegistered", registerTick);
+            StringAssert.Contains("_runtimeOwnerAborted", registerLate);
+            StringAssert.Contains("!_serviceRegistered", registerLate);
         }
 
         [Test]
@@ -805,6 +911,7 @@ namespace Hecton8.Tests.Editor
             string toolHit = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/ToolHitUtility.cs"));
             string moddingApi = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/ModdingAPI/HectonAPI.cs"));
             string acquireQueue = ExtractMethodBody(source, "private bool TryAcquireQueueWrite(");
+            string onDestroy = ExtractMethodBody(source, "private void OnDestroy()");
 
             StringAssert.DoesNotContain("ShowWarning(string", source);
             StringAssert.DoesNotContain("ShowCritical(string", source);
@@ -826,6 +933,21 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(1, CountToken(acquireQueue, "finally"));
             StringAssert.Contains("bool releaseOnExit = true;", acquireQueue);
             StringAssert.Contains("releaseOnExit = false;", acquireQueue);
+            StringAssert.Contains("if (ReferenceEquals(_activeRuntime, this))", onDestroy);
+            StringAssert.Contains("_activeRuntime = null;", onDestroy);
+            StringAssert.Contains("UnregisterFromTickManager();", onDestroy);
+            StringAssert.Contains("TryUnregisterHotSwapListener();", onDestroy);
+            StringAssert.Contains("InventoryEvents.Unregister(this);", onDestroy);
+            StringAssert.Contains("NotificationEvents.Unregister(this);", onDestroy);
+            Assert.Less(
+                onDestroy.IndexOf("NotificationEvents.Unregister(this);", StringComparison.Ordinal),
+                onDestroy.IndexOf("ReleaseQueue(_dataVault);", StringComparison.Ordinal));
+            Assert.Less(
+                onDestroy.IndexOf("UnregisterFromTickManager();", StringComparison.Ordinal),
+                onDestroy.IndexOf("ReleaseQueue(_dataVault);", StringComparison.Ordinal));
+            Assert.Less(
+                onDestroy.IndexOf("TryUnregisterHotSwapListener();", StringComparison.Ordinal),
+                onDestroy.IndexOf("ReleaseQueue(_dataVault);", StringComparison.Ordinal));
         }
 
         [Test]

@@ -7,34 +7,34 @@ poi_tags: poi.black_keel_limit_notice;poi.tender_maintenance_tag
 biome_tags: biome.carrier_link;biome.shallow_annex
 locale: zh_CN
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Black Keel In-System Tender"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Black Keel系统内投送艇"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel In-System Tender
+# Black Keel系统内投送艇
 
-CN LOC HOLD: Black Keel is an Aegir-system automated claim-tender, not a personal interstellar ship. It can hold custody, speak through windows, recover payload mass and enforce debt. It cannot ignore HECTON-8 weather, orbital timing, quarantine clauses or damaged descent hardware.
+Black Keel是Aegir系统自动索赔投送艇，不是个人星际船。它能持有托管权，通过窗口说话，回收payload质量，执行债务，并接受或拒绝检疫条款。它不能无视HECTON-8天气、轨道时机、受损下降硬件或移动质量的成本。
 
 ## Scanner
 
-CN LOC HOLD: Tender limit. Black Keel can recover mass through a window; it cannot cross light-years for you.
+投送艇限制：Black Keel能在窗口内回收质量。它不能为了你跨越光年。
 
 ## Terminal
 
-CN LOC HOLD: CARRIER LIMIT: Aegir-system claim tender. Interstellar custody is inherited from route owners; local recovery requires ascent package, quarantine handshake and payload acceptance.
+载具限制：Aegir系统索赔投送艇。回收需要上升包、检疫握手、payload接受和窗口对齐。
 
 ## Audio
 
-CN LOC HOLD: Black Keel is close enough to bill you. Not close enough to save you for free.
+Black Keel近到可以给你开账单。不近到能免费救你。
 
 ## Field Note
 
-CN LOC HOLD: Black Keel is leverage and logistics, not cavalry.
+Black Keel是杠杆和物流，不是救兵。
 
 <!-- In-Game Wiki; generated from P105_BLACK_KEEL_IN_SYSTEM_TENDER/zh_CN. -->

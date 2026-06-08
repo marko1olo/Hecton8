@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Black Keel Bathydrop Interface"
+title: "واجهة bathydrop لـ Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Black Keel Bathydrop Interface
+# واجهة bathydrop لـ Black Keel
 
-AR LOC HOLD: The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.
+أول عائق هروب هندسي. ما زالت Black Keel فوق الماء، لكن واجهة bathydrop التالفة لا تستطيع إعادة وصل السطح والمدار والتوقيت بالإرادة وحدها. يتطلب الإصلاح salvage مصنفا للعمق، أختاما نظيفة، هندسة ترحيل عاملة، ونافذة إطلاق يقبلها الناقل.
 
 ## Scanner
 
-AR LOC HOLD: Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
+واجهة bathydrop تالفة: لا تغلق سلسلة العودة السطحية من دون قطع مصنفة للضغط وتوقيت ترحيل ومزلاج صعود نظيف.
 
 ## Terminal
 
-AR LOC HOLD: CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
+تقرير الكبسولة: تشذيب الدرع الحراري نجا. بوابة الطفو منحنية. صاري الاتصال مغمور. مزلاج الصعود ملوث. الإصلاح يتطلب خزفا ضغطيا ومادة ختم وحساب ترحيل ونافذة موثقة.
 
 ## Audio
 
-AR LOC HOLD: You did not lose the whole ship. You lost the one chain that makes the ship matter.
+لم تفقد السفينة كلها. فقدت السلسلة الوحيدة التي تجعل السفينة مهمة.
 
 ## Field Note
 
-AR LOC HOLD: First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
+سجل هروب الساعة الأولى: الناقل موجود، لكن السلسلة بين اللاعب والبحر والسطح والمدار مكسورة في قطع مسماة.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/ar_SA. -->

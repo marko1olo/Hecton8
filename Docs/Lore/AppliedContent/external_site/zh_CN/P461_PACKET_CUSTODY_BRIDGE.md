@@ -9,32 +9,28 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: 数据包保管链"
+title: "数据包保管链"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: 数据包保管链
+# 数据包保管链
 
-ZH LOC HOLD: 来自 HECTON-8 的信息只有在路线、封签、接收方和损伤状态一起保存时才有意义。数据包保管链让事实穿过 Aegir 延迟、索赔压力和实物回收，而不变成可丢弃的货物。
+## 封签的意义
 
-## Scanner
+来自 HECTON-8 的消息并不会因为被说出就有用。只有当路线能证明是谁携带、何时离开、穿过了什么、哪个索赔方没能抹掉它时，它才有用。
 
-ZH LOC HOLD: 数据包封签 // 见证哈希带受损但可读。打捞切割前必须保留。未封签证据会转为索赔材料。
+Black Keel 像处理货物一样处理证词：质量、封签、编号、接收方、延迟。没有保管带就抵达 carrier 的样本，会被记作索赔材料。没有 witness hash 的工人姓名可能变成损失类别。没有路线戳的压力记录，能在下一次中继窗口前被归为传感器噪声。
 
-## Terminal
+所以早期打捞总会回到那些难看的小物件：弯曲的数据包板、湿透的公证带、路线戳、中继票据、被盐胀起的接头标签。它们看起来像文书，直到海水让它们成为实体证据。玩家保存的是让事实在 Aegir 中活下来的链条。
 
-ZH LOC HOLD: KEELMARK 数据包公证 // 转移前保留封签板、见证哈希、路线戳和接头标签。无戳材料可按索赔损失处理。
+数据包保管链不是正义。它是让正义拥有路线的最低条件。弄断封签，Deep Reach 就能声称材料被污染。保住封签，同一块金属就成了压力、距离、债务和索赔法的证人。
 
-## Audio
+## 玩家用途
 
-ZH LOC HOLD: Black Keel中继：货物是质量。证据是保管链。两者都带回，否则窗口会按差额计费。
-
-## Field Note
-
-ZH LOC HOLD: 先封签，再切割。带断裂标签的干净样本，属于掌握账本的人。
+切割周围硬件前先扫描封签板。路线戳、接收通道、witness hash 和损伤状态必须留在一起。标签若与样本分离，发现物仍可能有价值，但它不再证明同一件事。
 
 <!-- External Site; generated from P461_PACKET_CUSTODY_BRIDGE/zh_CN. -->

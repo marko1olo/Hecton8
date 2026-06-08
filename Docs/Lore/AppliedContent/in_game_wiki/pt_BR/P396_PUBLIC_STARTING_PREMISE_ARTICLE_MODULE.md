@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Marauder Starting Claim"
+title: "Reivindicação Inicial do Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Marauder Starting Claim
+# Reivindicação Inicial do Marauder
 
-PT LOC HOLD: The opening record frames the player as a professional under pressure, not a tourist and not a family avenger. Old Deep Reach history matters because the procedures on HECTON-8 are familiar before they become evidence.
+O registro de abertura posiciona o jogador como operador treinado sob pressão de dívida. Não é turista, herdeiro escolhido nem vingador familiar; ele entende bombas, vedações, formulários de rota e abreviações Deep Reach antes de os destroços contradizerem esses formulários. A primeira hora permanece prática: vedar o bathydrop, restaurar pressão, ler máquinas danificadas, recuperar carga e decidir quais linhas oficiais já mentem.
 
 ## Scanner
 
-PT LOC HOLD: Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+Registro público de claim. A rota inicial identifica um Marauder endividado com histórico Deep Reach field-systems, bathydrop danificado e janela de recuperação Black Keel sobre P-63.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+NÓ DE ARQUIVO PÚBLICO // REIVINDICAÇÃO INICIAL. Registro do contratado: ex-especialista Deep Reach field-systems. Status atual: Marauder sob lien. Rota: recovery claim Black Keel, descida ao shelf P-63, retorno de prova e carga antes do fechamento da custody window.
 
 ## Audio
 
-PT LOC HOLD: You are returning to paperwork you know too well.
+Você não está visitando HECTON-8. Você está voltando a uma papelada que conhece bem demais.
 
 ## Field Note
 
-PT LOC HOLD: Marauder note: the contract knows your past. That does not make it honest.
+Nota de Marauder: o contrato conhece seu passado. Isso não o torna honesto.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/pt_BR. -->

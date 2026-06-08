@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Glass Grazer Clearing Encounter Grammar"
+title: "玻璃啃食者清场遭遇语法"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Glass Grazer Clearing Encounter Grammar
+# 玻璃啃食者清场遭遇语法
 
-ZH LOC HOLD: Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.
+玻璃啃食者清场是HECTON-8关于条件安全的课程。明亮有用的生态能帮助玩家读取路线，但动物停止使用它的那一刻，同一条路线就变得可疑。
 
 ## Scanner
 
-ZH LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+玻璃啃食者清场。新鲜刮痕、氧气膜和稳定壳声表示近处压力较低。食物留在空场就是 warning state。
 
 ## Terminal
 
-ZH LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+遭遇语法 / 玻璃啃食者清场 / 作用: 浅水对比、可读的暂时安全线、捕食者缺席测试 / 安全读取: 活跃取食、成对回响、被刮开的矿物边缘、可见退出线 / 拒绝: 把啃食者当作安全保证、安静清场、被遗弃食物、被堵 return-line / 路线备注: 走廊有用是因为动物现在正在使用它，不是因为海洋承诺了什么。
 
 ## Audio
 
-ZH LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
+啃食者会制造明亮走廊。但走廊属于它们多久，不由它们决定。
 
 ## Field Note
 
-ZH LOC HOLD: Use for safe-zone literacy and shallow contrast.
+活跃取食：使用路线。成对壳声：保持。食物被留下：停止信任清场。
 
 <!-- External Site; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/zh_CN. -->

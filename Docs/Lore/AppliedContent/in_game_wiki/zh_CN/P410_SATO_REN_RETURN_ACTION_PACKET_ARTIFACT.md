@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Sato-Ren Return Packet"
+title: "佐藤-任 Return Action Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Sato-Ren Return Packet
+# 佐藤-任 Return Action Packet
 
-ZH LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190 through compliance traffic, not a warship: coordinates, custody, access and silence first.
+佐藤-任 packet 证明 Deep Reach 在 2190 仍通过 compliance traffic 活动，而不是派来 rescue fleet。它在给出 extraction 这个词之前，要求坐标、Atlas access state、sample custody 和 silence。
 
 ## Scanner
 
-ZH LOC HOLD: Recovery Compliance packet. Coordinates requested before rescue language.
+Recovery Compliance packet。在 extraction 语言出现前，先要求坐标、access state 和 payload custody。
 
 ## Terminal
 
-ZH LOC HOLD: RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
+RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
 
 ## Audio
 
-ZH LOC HOLD: The packet knows where the asset is. It is less certain where you are.
+packet 知道 asset 还活着。它仍在决定你算不算数。
 
 ## Field Note
 
-ZH LOC HOLD: Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
+Marauder笔记：如果他们在 custody 之后才说 extraction，把顺序读两遍。
 
 <!-- In-Game Wiki; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/zh_CN. -->

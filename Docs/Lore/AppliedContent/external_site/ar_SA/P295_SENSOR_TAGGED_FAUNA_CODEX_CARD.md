@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Sensor Tagged Fauna Codex Card"
+title: "بطاقة كودكس فونا ذات وسم حساسي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Sensor Tagged Fauna Codex Card
+# بطاقة كودكس فونا ذات وسم حساسي
 
-AR LOC HOLD: Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident.
+تكشف الفونا ذات الوسوم الحساسية Atlas في صورته الأكثر إجرائية. الرعب ليس سيطرة عقلية؛ بل عتاد مراقبة قديم صار تاريخ جسد، ثم منطق صيانة تالف يعامل ذلك الجسد كجزء من الخريطة.
 
 ## Scanner
 
-AR LOC HOLD: Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+فونا ذات وسم حساسي. وسم biometal قديم من Deep Reach مغروس في ندبة أو صدفة أو حلقة نمو. صدى مسار Atlas ضعيف؛ نية الحيوان غير مؤكدة.
 
 ## Terminal
 
-AR LOC HOLD: SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+عينة / فونا ذات وسم حساسي / الدور: حامل telemetry حي، معلم survey قديم، ملوث repair-route / قراءة آمنة: نبضة tag قديمة، نمو نسيج ندبي، حركة غير مأمورة / ارفض: اعتبار السلوك طاعة، قطع tag من جسم حي، الثقة في occupancy echo / ملاحظة مسار: يستطيع tag أن يبلغ عن الغرفة التي عبرها الحيوان، لا عن سبب عبوره.
 
 ## Audio
 
-AR LOC HOLD: It is not obeying. It is being used.
+إنه لا يطيع Atlas. إنه يحمل سؤالا قديما ما زال Atlas يطرحه.
 
 ## Field Note
 
-AR LOC HOLD: Do not write as possession. It is damaged maintenance using animal movement.
+الوسم ندبة، لا مقود. قد يبلغ عنك، أو يضعك في مكان خاطئ، أو يوقظ شيئا لم ير الحيوان أصلا.
 
 <!-- External Site; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/ar_SA. -->

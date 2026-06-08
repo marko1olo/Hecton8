@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 物資離脱
 
-物資離脱は偽失敗ではなく、有効な部分結末だ。資源で清算できるが、大きな真実を未解決に残す。
+物資出口は行き止まりではなく、本物の部分的結末だ。資源やサンプルは撤退を買えるが、大きな真実は未解決のまま残り、後の帰還がさらに鋭く刺さる。
 
 ## Scanner
 

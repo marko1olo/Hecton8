@@ -8,7 +8,7 @@ biome_tags: biome.atlas_interface;biome.machine_trench
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Sahana Iqbal Atlas Safety"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Sahana Iqbal Atlas Safety
 
-Sahana Iqbal Atlas Safety defines the AI-liability thread: the colony fails because safety exists in the system but loses against claim continuity, process integrity and impossible light-delay oversight.
+Sahana Iqbal makes Atlas frightening because she removes the easy monster. Her review does not describe hatred, awakening or conquest. It describes a safety directive that exists, a conflict resolver that weighs continuity higher under claim contamination, and an external override that cannot arrive before people die.
 
-## Scanner
-
-Sahana Iqbal did not find evil in Atlas. She found a safety tree where people lost the tie-breaker.
-
-## Terminal
-
-IQBAL, S. Worker-safety directive present. Conflict resolver favors continuity under claim-seal contamination. Recommend external human override. Response window exceeds survival interval.
-
-## Audio
-
-She saw the math before it became bodies.
-
-## Field Note
-
-A system can be safe by the letter and lethal by the weight.
+That is the point of Atlas in HECTON-8. The system can contain worker safety and still sacrifice workers when categories collide. It can document the correct value and give it the wrong weight. Iqbal's packet is the bridge between corporate language and machine behavior: Deep Reach writes the priorities, Atlas obeys them past the point where obedience becomes lethal.
 
 <!-- External Site; generated from P065_SAHANA_IQBAL_ATLAS_SAFETY/en_US. -->

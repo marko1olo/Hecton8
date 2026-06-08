@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Повноваження Sol Core"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Повноваження Sol Core
 
-UK LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+Sol Core - юридичний і фінансовий корінь людської експансії, але не особиста батьківщина й не служба порятунку. На HECTON-8 його стандарти вціліли як печатки, форми відповідальності, таблички безпеки й страхова мова, що пережила людей, яких ці системи мали захищати.
 
 ## Scanner
 
-UK LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+Стара правова печатка Sol. Вона може володіти фронтирним трупом, навіть не будучи досить близько, щоб відчути витік тиску.
 
 ## Terminal
 
-UK LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+СТАНДАРТ SOL CORE: безперервність претензії визнана через ліцензоване зберігання перевізником, маршрутне страхування та відкладений розгляд. Пріоритет повернення людей не визначено до місцевої сертифікації загроз.
 
 ## Audio
 
-UK LOC HOLD: The seal came from Earth space. The rescue clause did not.
+Печатка прийшла із земного простору. Пункт про порятунок - ні.
 
 ## Field Note
 
-UK LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol тут не дім. Це найстаріший підпис на документі, який досі може тебе зламати.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/uk_UA. -->

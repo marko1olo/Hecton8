@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Hecton8.Audio.Editor;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Content;
 using UnityEditor;
@@ -96,6 +97,7 @@ namespace Hecton8.Core.Content.Editor
             ValidateObjectBatchPayloads(maps);
             ValidateLoreBlockIoBudgets();
             ValidateRuntimePrefabBindings();
+            ValidateAudioEventAuthoring();
             ValidateComputeShaderThreadGroups();
             ValidateVfxPrewarmManifests();
         }
@@ -1011,6 +1013,12 @@ namespace Hecton8.Core.Content.Editor
                     }
                 }
             }
+        }
+
+        private static void ValidateAudioEventAuthoring()
+        {
+            if (!AudioEventAuthoringValidator.Run(out string report))
+                Fail(report);
         }
 
         private static void ValidateComputeShaderThreadGroups()

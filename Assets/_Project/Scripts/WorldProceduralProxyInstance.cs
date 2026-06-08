@@ -17,6 +17,7 @@ namespace Hecton8.World
         private const string FieldSourceNoneLabel = "None";
         private const string FieldSourceMapMagicLabel = "MapMagicHeight";
         private const string FieldSourceSceneProbeLegacyLabel = "SceneProbeLegacy";
+        private const string FieldSourceMacroGeologyLabel = "MacroGeologyFallback";
         private const string FieldSourceFallbackLabel = "FallbackSynthetic";
         private const string GeologyArchetypeArchLabel = "Arch";
         private const string GeologyArchetypeCanopyLabel = "Canopy";
@@ -197,6 +198,7 @@ namespace Hecton8.World
             {
                 WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight => FieldSourceMapMagicLabel,
                 WorldProceduralFieldSampler.SeafloorSource.SceneProbeLegacy => FieldSourceSceneProbeLegacyLabel,
+                WorldProceduralFieldSampler.SeafloorSource.MacroGeologyFallback => FieldSourceMacroGeologyLabel,
                 WorldProceduralFieldSampler.SeafloorSource.FallbackSynthetic => FieldSourceFallbackLabel,
                 _ => FieldSourceNoneLabel
             };

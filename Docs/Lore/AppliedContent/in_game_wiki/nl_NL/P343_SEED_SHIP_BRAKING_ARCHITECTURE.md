@@ -3,38 +3,38 @@ packet_id: P343_SEED_SHIP_BRAKING_ARCHITECTURE
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.seed_ship_braking_architecture
 unlock_id: unlock.seed_ship_braking_architecture
-poi_tags: poi.seed_ship_archive;poi.braking_debris_marker
-biome_tags: biome.archive;biome.colony
+poi_tags: poi.braking_mass_manifest;poi.seed_ship_burn_record
+biome_tags: biome.orbit;biome.archive
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Seed Ship Braking Architecture"
+title: "Remarchitectuur van seed ships"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Seed Ship Braking Architecture
+# Remarchitectuur van seed ships
 
-NL LOC HOLD: Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.
+Seed ships kwamen niet aan als verkenningskruisers. Het waren industriële payloads rond vertragingsmassa, schildverlies, automatische bouw en jaren koude staging. Aegir had hardware voor het een stabiele menselijke gemeenschap had, omdat machines het rembudget beter overleefden.
 
 ## Scanner
 
-NL LOC HOLD: Seed ship archive. Arrival depended on braking mass, not faith in the destination.
+Remarchief: aankomst hing af van opofferingsmassa, magnetische zeilvangst, fusie-catchbranden en schildijs dat volgens schema werd verbruikt.
 
 ## Terminal
 
-NL LOC HOLD: COLONY LOG: early Aegir hardware arrived as seed cargo, reactor shells, printers, water chemistry rigs and braking debris. The first human phase inherited what survived deceleration.
+SEED-REMLOG: primaire magsail ontplooid. Pelletvangst gedeeltelijk. Schildijsmarge besteed. Vracht alleen geaccepteerd voor automatische infrastructuurinzet.
 
 ## Audio
 
-NL LOC HOLD: The colony started as cargo that managed to stop.
+Er komen was niet het moeilijke deel. Stoppen met genoeg machine over om te bouwen was het moeilijke deel.
 
 ## Field Note
 
-NL LOC HOLD: Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community.
+Remrecords zijn kolonieprehistorie. Elk vroeg habitat begon als besluit over welke massa kon worden besteed.
 
 <!-- In-Game Wiki; generated from P343_SEED_SHIP_BRAKING_ARCHITECTURE/nl_NL. -->

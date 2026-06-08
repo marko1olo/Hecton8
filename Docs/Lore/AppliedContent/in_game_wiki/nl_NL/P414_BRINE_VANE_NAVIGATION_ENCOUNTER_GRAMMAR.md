@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Brine Vane Navigation Encounter Grammar"
+title: "Ontmoetingsgrammatica: navigatie langs pekelvanen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Brine Vane Navigation Encounter Grammar
+# Ontmoetingsgrammatica: navigatie langs pekelvanen
 
-NL LOC HOLD: Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.
+Navigatie langs pekelvanen leert dat middendiep water gebouwd is, niet leeg. De speler moet een vanenveld lezen als een beschadigde trap: intacte bladen zijn muren, gescheurde monden mogelijke openingen, gekrulde punten verzwakkende schering, en zwarte gaten zonder zichtbare vaanrand plekken waar sonar een vloer kan verzinnen. De ontmoeting moet trage beweging, voorzichtige drijftrim en hoekwissels vragen, niet recht naar de mooiste gloed zwemmen. Atlas kan dezelfde dichtheidsgrens voor repair routing gebruiken, maar de stroming blijft fysiek. Dat onderscheid doet ertoe. De oceaan spreekt niet. Hij maakt een proces zichtbaar. Een goede vaanroute laat de speler één rand volgen, vanuit een tweede hoek pingen, drift testen en zich slim voelen omdat hij de open shortcut weigert.
 
 ## Scanner
 
-NL LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+Pekelvanenveld. Uitgelijnde bladen markeren dichtheidsbochten; gekrulde punten zwakke vensters; sonar vervormt nabij open gloed. Houd één rand in zicht.
 
 ## Terminal
 
-NL LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+ONTMOETINGSGRAMMATICA / NAVIGATIE LANGS PEKELVANEN / rol: routegeletterdheid op middendiepte, leuning van dichtheidsmuur, correctie van valse vloer / veilige lezing: intacte vaanrand, gescheurde mond, sonarbuiging past bij drijfdrift / afwijzen: zwart open water kruisen, gidsblad snijden, vloerretour zonder vaanrand vertrouwen / routenotitie: de vaan leidt niet met intentie; ze gehoorzaamt het water luid genoeg om te volgen.
 
 ## Audio
 
-NL LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
+De vaan is geen wegwijzer. Het is water dat een muur maakt en een naad achterlaat.
 
 ## Field Note
 
-NL LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
+Behandel de vaanrand als leuning. Als de lijn verkeerd buigt, is je drijflezing al te laat.
 
 <!-- In-Game Wiki; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/nl_NL. -->

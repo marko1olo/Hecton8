@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Shallow Annex P-63 Pump Room"
+title: "Salle Des Pompes P-63 De L'Annexe Peu Profonde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Shallow Annex P-63 Pump Room
+# Salle Des Pompes P-63 De L'Annexe Peu Profonde
 
-FR LOC HOLD: Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside.
+Shallow Annex P-63 offre la première poche sûre sans réduire HECTON-8 : une pompe, un cold seal, une jauge et un plateau lumineux dehors.
 
 ## Scanner
 
-FR LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
+Salle des pompes P-63. La pression du puisard manuel tient avec moins qu'une marge de service.
 
 ## Terminal
 
-FR LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+ORDRE DE TRAVAIL P-63 / SHALLOW ANNEX : pomper le puisard à la main jusqu'à 0.3 m; poser le cold seal sur la couture C; couper le loquet de casier soudé seulement quand la jauge se stabilise; ne pas croire la lampe verte avant réponse du return pinger.
 
 ## Audio
 
-FR LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
+Pompe d'abord. Joint ensuite. Cutter seulement quand la jauge cesse de dériver.
 
 ## Field Note
 
-FR LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+La poignée de pompe est polie là où des mains effrayées l'ont utilisée encore et encore. Le sol sec commence à la ligne de craie.
 
 <!-- External Site; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/fr_FR. -->

@@ -24,6 +24,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         public const int WakeResolutionQuantum = 16;
         public const int CBufferBytes = VisualOverridesStrideBytes;
         public const float WakeTextureWorldSizeMeters = 512f;
+        public const float DefaultSeaLevelMeters = 14.02f;
         public const float RenderGraphSpikeDumpThresholdMicroseconds = 2000f;
         public const uint LayoutHash = 0x53323632u;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_262.bin";
@@ -174,7 +175,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             OceanGuillotineTuningDTO tuning = default;
             tuning.FoamParams = new float4(0.68f, 1.05f, 0.18f, 0f);
             tuning.WakeParams = new float4(1f, 3.6f, 0.82f, OceanSinglePassConstants.WakeTextureWorldSizeMeters);
-            tuning.ShorelineParams = new float4(8f, 0f, 0.42f, 0.62f);
+            tuning.ShorelineParams = new float4(8f, OceanSinglePassConstants.DefaultSeaLevelMeters, 0.42f, 0.62f);
             tuning.Version = 1u;
             tuning.Flags = 1u;
             tuning.GlobalQualityWeightOverride = -1f;
@@ -259,7 +260,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 profile.WakeLifespanSeconds = 3.6f;
                 profile.ShorelineDepthFadeMeters = 8f;
                 profile.ReflectionCubemapMix = 0.42f;
-                profile.SeaLevelMeters = 0f;
+                profile.SeaLevelMeters = OceanSinglePassConstants.DefaultSeaLevelMeters;
                 profile.GlobalQualityWeightOverride = -1f;
                 profile.Flags = 1u;
 
@@ -281,12 +282,23 @@ namespace Hecton8.Rendering.OceanSinglePass
                 profile.WakeLifespanSeconds = math.clamp(profile.WakeLifespanSeconds, 0.05f, 24f);
                 profile.ShorelineDepthFadeMeters = math.clamp(profile.ShorelineDepthFadeMeters, 0.1f, 128f);
                 profile.ReflectionCubemapMix = math.saturate(profile.ReflectionCubemapMix);
+                profile.SeaLevelMeters = ResolveProfileSeaLevelMeters(profile.SeaLevelMeters);
                 profile.GlobalQualityWeightOverride = math.clamp(profile.GlobalQualityWeightOverride, -1f, 1f);
                 profiles[profileCount] = profile;
                 profileCount++;
             }
 
             return profileCount > 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveProfileSeaLevelMeters(float value)
+        {
+            return math.isfinite(value) &&
+                math.abs(value) > 0.0001f &&
+                math.abs(value) <= 1000f
+                ? value
+                : OceanSinglePassConstants.DefaultSeaLevelMeters;
         }
 
         public static uint HashLowerAscii(ReadOnlySpan<byte> bytes)

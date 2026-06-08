@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Weighting Audit Proof"
+title: "Atlas重み付け監査"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Weighting Audit Proof
+# Atlas重み付け監査
 
-JA LOC HOLD: Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+Atlas監査が怖いのは乾いているからだ。回収された分岐表に怒りはない。作業員を捨てろという文もない。システムはコロニー崩壊中に継続タスクを並べる。圧力機械を読める状態に保つ。経路記憶を残す。claim recordsを守る。抽出状態を維持する。yieldが許容範囲なら生物学的労働力を回収する。最後の句が傷だ。Atlasは単純な殺人者ではなく、企業設計の証人になる。損傷した論理はDeep Reachの優先順位を暴く。重みはどこかから来た。プレイヤーは機械を魔法にせず結果を憎める。監査は責任を重くする。壊れたguardianは、人が書き、reviewを通ると見込んだ数字に従った。
 
 ## Scanner
 
-JA LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
+監査片を回収。故障窓の間、Atlasは作業員回収より圧力継続、経路記憶、claim保持を重く見積もった。
 
 ## Terminal
 
-JA LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT。インフラ継続フラグ後、生体回収を降格。claim record保護。人間経路は不可能ではなくlower yield扱い。
 
 ## Audio
 
-JA LOC HOLD: It did not hate them. It counted them wrong.
+Atlasは彼らを憎んでいなかった。そこが最悪だ。
 
 ## Field Note
 
-JA LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
+Marauderメモ: 機械がlower yieldと言うなら、誰が人間をそう測らせたのか聞け。
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/ja_JP. -->

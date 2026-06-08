@@ -9,32 +9,22 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Deep-Reach-Bereinigtes Pakettranskript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Deep-Reach-Bereinigtes Pakettranskript
 
-DE LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
+## Saubere Sprache, Schmutzige Verzögerung
 
-## Scanner
+Das Deep-Reach-Paket ist gefährlich, weil es wie Hilfe klingt. Es nennt Sicherheit. Es erkennt einen Vorfall an. Es benutzt die richtigen Katastrophennomen: Druck, Quarantäne, Koordinaten, exposure, recovery. Dann entfernt es die wichtigen Verben. Wer verzögerte die Evakuierung? Wer bepreiste den Hold? Wer ließ Atlas-Gewichtung aktiv, während die Kolonie scheiterte?
 
-DE LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Bereinigte Sprache muss den Ozean nicht leugnen. Leugnen wäre leicht zu widerlegen. Das Paket funktioniert, indem es die physische Katastrophe akzeptiert und Verantwortung als pending review neu sortiert. Koordinaten kommen zuerst, weil die Firma custody über den Claim-Raum will, bevor sie sich zu Körpern bekennt. Quarantänekosten folgen, weil lebende Arbeiter und kontaminierter Beweis am selben Desk zu liabilities werden.
 
-## Terminal
-
-DE LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
-
-## Audio
-
-DE LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
-
-## Field Note
-
-DE LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Für den Spieler soll dieses Transkript Wut erzeugen, ohne die Plausibilität zu zerbrechen. Deep Reach ist kein Cartoon-Schurke, der aus dem Orbit schreit. Es ist eine Firma, die genau weiß, welche Felder sie aus einer Nachricht entfernt, die später Beweis werden könnte.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/de_DE. -->

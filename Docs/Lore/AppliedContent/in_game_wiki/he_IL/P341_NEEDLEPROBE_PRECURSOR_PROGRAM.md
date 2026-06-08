@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Needleprobe Precursor Program"
+title: "תוכנית הקדם Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Needleprobe Precursor Program
+# תוכנית הקדם Needleprobe
 
-HE LOC HOLD: Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+Needleprobes נשאו את התביעה האנושית הראשונה אל Aegir. אלה היו מטעני סקר צרים וממוגנים שנשלחו לפני צוותים כדי לקרוא כבידה, קרינה, ספקטרום אוקיינוס, מסלולי ירחים וקווי ממסר. החבילות המאוחרות שלהן הפכו את HECTON-8 לקריא למשקיעים לפני שהיה ראוי לעובדים.
 
 ## Scanner
 
-HE LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+ארכיון needleprobe: Aegir היה יעד בספרים הרבה לפני שנעשה מקום עבודה. עיני מכונה הגיעו לירחים ראשונות.
 
 ## Terminal
 
-HE LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+ארכיון RAN: שרשרת הגשושיות החזירה פרלקסה, קרינה, חתימות אוקיינוס, גאומטריית ממסר ואמון בנתיב pellet. דירוג צוות נעצר עד שמודל הסיכון השלישי התייצב.
 
 ## Audio
 
-HE LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+הדבר האנושי הראשון ב-Aegir לא היה אדם. זו הייתה מכונה ששאלה אם אנשים יהיו רווחיים כאן.
 
 ## Field Note
 
-HE LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+ארכיוני גשושיות הם ראיות נתיב. טלמטריה ישנה יכולה להיות קדומה מהמושבה ועדיין לקבוע מי מחזיק במים.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/he_IL. -->

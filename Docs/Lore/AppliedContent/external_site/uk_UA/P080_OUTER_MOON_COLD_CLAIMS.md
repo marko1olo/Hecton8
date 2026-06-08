@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Outer Moon Cold Claims"
+title: "Холодні претензії зовнішніх місяців"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Outer Moon Cold Claims
+# Холодні претензії зовнішніх місяців
 
-UK LOC HOLD: Outer Moon Cold Claims expands Aegir beyond the playable moon while staying useful: other bodies feed route rumors, salvage law, abandoned caches and the sense that HECTON-8 is the worst visible case of a wider claim economy.
+Холодні претензії зовнішніх місяців розширюють Aegir за межі HECTON-8: мертві маршрути, холодні схованки й покинуті маяки живлять salvage-право та приховують повторні втрати.
 
 ## Scanner
 
-UK LOC HOLD: Outer claim beacon. Not every dead thing in Aegir is on HECTON-8.
+Маяк зовнішньої претензії. Не все мертве в Aegir лежить на HECTON-8.
 
 ## Terminal
 
-UK LOC HOLD: OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration.
+АРХІВ ЗОВНІШНЬОЇ ДРАБИНИ // Соляний проспект Thorne провалено. Експортний маршрут Anvil законсервовано. Маяк Mute повторює ping опіки без заяви активного екіпажу.
 
 ## Audio
 
-UK LOC HOLD: Aegir learned to lose people before HECTON-8 finished the lesson.
+Aegir навчилася втрачати людей до того, як HECTON-8 закінчила урок.
 
 ## Field Note
 
-UK LOC HOLD: Cold claims make Marauders possible. They also teach companies how to bury patterns.
+Холодні претензії роблять Marauder можливими. Вони ж навчають компанії ховати закономірності.
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/uk_UA. -->

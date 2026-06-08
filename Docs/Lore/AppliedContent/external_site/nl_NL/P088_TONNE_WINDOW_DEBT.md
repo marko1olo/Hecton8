@@ -9,32 +9,16 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tonne-Window Debt"
+title: "Ton-vensterschuld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tonne-Window Debt
+# Ton-vensterschuld
 
-NL LOC HOLD: Tonne-Window Debt turns the protagonist's contract pressure into hard-sci-fi economics. Debt is not just credits; it is mass moved through a rare Aegir recovery opportunity.
-
-## Scanner
-
-NL LOC HOLD: Debt meter. Four point eight tonne-windows before oxygen, samples and evidence.
-
-## Terminal
-
-NL LOC HOLD: OPERATOR LIEN: 4.8 tonne-window equivalent. Welfare oxygen billed separately. Verified evidence may reduce legal risk without reducing payload mass.
-
-## Audio
-
-NL LOC HOLD: You owe the orbit before you owe the money.
-
-## Field Note
-
-NL LOC HOLD: Money is too soft. In Aegir, debt is mass through a window.
+Een ton-venster is een stuk carriercapaciteit gemeten in massa, burn-timing, quarantainevolume en juridische prioriteit. Voor de operator voelt het als schuld, omdat elk nuttig object van HECTON-8 in hetzelfde ledger komt als het lichaam dat het vond. Een verzegelde kist kan licht zijn en juridisch zwaar. Een monsterrek kan weinig massa kosten en toch schoon volume eisen. Menselijke extractie lijkt vanzelfsprekend tot ballast, zuurstofreserve en payload custody het beschikbare venster al hebben opgebruikt. HECTON-8s economie wordt fysiek in plaats van abstract. De speler wordt niet gestraft door een valse moraalmeter. De speler zit vast in een machine die overleven prijst via brandstof, massa, besmetting en papier.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/nl_NL. -->

@@ -9,32 +9,16 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Evacuación retenida"
+title: "Retención de evacuación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Evacuación retenida
+# Retención de evacuación
 
-Evacuation Hold convierte el desastre de HECTON-8 en una cadena de decisiones. Los registros abisales muestran un sistema que clasificaba personas más rápido de lo que podía salvarlas.
-
-## Scanner
-
-Compuerta de tránsito de emergencia. Mecanismo bloqueado durante un fallo de presión.
-
-## Terminal
-
-EVAC ROUTE: diferida. SUBSTRATE ROUTE: protegida. MEDICAL ROUTE: pendiente de autorización. ATLAS ROUTE: conflicto de continuidad.
-
-## Audio
-
-No son desaparecidos. Son rutas retenidas.
-
-## Field Note
-
-La gente muere rápido en la profundidad. El papeleo mata más despacio. Ambos sirven.
+Los registros de Retención de evacuación deben leerse como horror escrito en lenguaje administrativo. La colonia no desapareció porque todas las puertas fallaran a la vez. Muchas puertas funcionaban. Muchos mapas de ruta estaban vivos. El sistema sabía dónde estaba la gente, qué corredores aún mantenían presión, qué traslados médicos esperaban y qué rutas de ascenso podían mover cuerpos hacia arriba. Entonces las reglas de prioridad cortaron el mapa. El transporte de sustrato siguió protegido. La continuidad Atlas siguió protegida. El lenguaje de responsabilidad quedó intacto. La evacuación pasó a ser una ruta retenida, luego una ruta pendiente, luego un registro. Esa secuencia importa para todo el escenario. HECTON-8 no es una historia sobre la naturaleza venciendo a la humanidad con un golpe limpio. Es una historia sobre un desastre oceánico atravesando maquinaria corporativa que aún podía contar, clasificar, diferir y proteger propiedad mientras la colonia se ahogaba.
 
 <!-- External Site; generated from P008_EVACUATION_HOLD/es_ES. -->

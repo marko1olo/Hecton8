@@ -9,32 +9,37 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Old Procedure Recognition Cue"
+title: "إشارة تعرف على إجراء قديم"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Old Procedure Recognition Cue
+# إشارة تعرف على إجراء قديم
 
-AR LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+ترسخ HECTON-8 دافع الشخصية في الإجراء. يتعرف البطل على نموذج سلامة إخلاء قديم ويرى كيف انقلب: أعداد عمال متدهورة، خانات شهود مختومة، ولغة مسار آمن استُخدمت لحفظ المطالبات بدلا من الأرواح.
 
 ## Scanner
 
-AR LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
+ختم المسار الآمن موجود. عُدل عدد العمال بحبرين. خانة الشاهد اليدوي مختومة. صُمم النموذج ليمسك هذا النوع من الكذب قبل أن يحوله أحدهم إلى سياسة.
 
 ## Terminal
 
-AR LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+نموذج استمرارية الإخلاء / اعتماد المسار الآمن
+المسار: خط خروج مساعد
+الأشخاص المعلنون: قُبل التعداد المتدهور
+الشاهد اليدوي: مختوم من مكتب الاستمرارية
+تصحيح ميداني: تعداد العمال لا يطابق وسوم غرفة المضخات
+الحالة: حفظ مطالبة، لا تصريح استخراج.
 
 ## Audio
 
-AR LOC HOLD: You know this form. It was supposed to protect people from exactly this.
+أنت تعرف هذا النموذج. كان يفترض أن يمنع اعتبار الغرفة فارغة بينما ما زال الناس يتنفسون فيها.
 
 ## Field Note
 
-AR LOC HOLD: Use where room evidence contradicts a clean procedural label.
+كان يفترض أن يفرض النموذج عدا آخر. هنا فرض الصمت.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/ar_SA. -->

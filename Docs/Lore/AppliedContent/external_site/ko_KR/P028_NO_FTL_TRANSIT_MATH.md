@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # FTL 없는 항행 수학
 
-거리는 지연 명령, 낡은 권한, 물리 탈출 창이라는 게임 압력이 된다.
+FTL 없는 항행 계산은 성간 거리를 압력으로 바꾼다. 지연 명령, 낡은 권한, 보관 지연, 물리 탈출 창.
 
 ## Scanner
 

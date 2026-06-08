@@ -27,7 +27,7 @@ namespace Hecton8.Editor.GeographySanity
             store._profiles = new NativeList<SanityProfileDTO>(capacity, allocator);
             try
             {
-                store._profilesSentinelId = NativeMemorySentinel.RegisterNativeList(
+                store._profilesSentinelId = NativeMemorySentinel.RegisterNativeListInstance(
                     store._profiles,
                     NativeMemoryOwner,
                     ProfilesLabel,
@@ -46,13 +46,47 @@ namespace Hecton8.Editor.GeographySanity
 
         public void Dispose()
         {
+            Exception cleanupException = null;
+
+            if (_profilesSentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(_profilesSentinelId);
+                }
+                catch (Exception exception)
+                {
+                    cleanupException = exception;
+                }
+                finally
+                {
+                    _profilesSentinelId = 0;
+                }
+            }
+
             if (_profiles.IsCreated)
             {
-                NativeMemorySentinel.Unregister(_profilesSentinelId);
-                _profilesSentinelId = 0;
-                _profiles.Dispose();
+                try
+                {
+                    _profiles.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (cleanupException == null)
+                        cleanupException = exception;
+                }
+                finally
+                {
+                    _profiles = default;
+                }
+            }
+            else
+            {
                 _profiles = default;
             }
+
+            if (cleanupException != null)
+                throw cleanupException;
         }
 
         internal void Add(SanityProfileDTO profile)

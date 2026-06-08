@@ -7,34 +7,34 @@ poi_tags: poi.black_keel_limit_notice;poi.tender_maintenance_tag
 biome_tags: biome.carrier_link;biome.shallow_annex
 locale: ru_RU
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Black Keel как внутрисистемный tender"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Внутрисистемный тендер Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel как внутрисистемный tender
+# Внутрисистемный тендер Black Keel
 
-Black Keel - автоматический claim-tender системы Aegir, а не личный межзвездный корабль. Он может держать custody, говорить через окна, возвращать payload mass и давить долгом. Он не может игнорировать погоду HECTON-8, orbital timing, quarantine clauses или поврежденное descent hardware.
+Black Keel — автоматический claim tender системы Aegir, а не личный межзвездный корабль. Он может держать опеку, говорить через окна, поднимать payload mass, взыскивать долг и принимать или отклонять карантинные условия. Он не может игнорировать погоду HECTON-8, орбитальное время, поврежденное спусковое железо или цену перемещения массы.
 
 ## Scanner
 
-Tender limit. Black Keel может вернуть массу через окно; он не пересечет световые годы ради тебя.
+Предел тендера: Black Keel может поднять массу через окно. Он не пересечет световые годы ради тебя.
 
 ## Terminal
 
-CARRIER LIMIT: Aegir-system claim tender. Interstellar custody inherited from route owners; local recovery requires ascent package, quarantine handshake and payload acceptance.
+ПРЕДЕЛ НОСИТЕЛЯ: claim tender системы Aegir. Восстановление требует пакета подъема, карантинного рукопожатия, принятия payload и совпадения окна.
 
 ## Audio
 
-Black Keel достаточно близко, чтобы выставить счет. Недостаточно близко, чтобы спасать бесплатно.
+Black Keel достаточно близко, чтобы выставить счет. Не достаточно близко, чтобы спасти бесплатно.
 
 ## Field Note
 
-Black Keel - рычаг и логистика, не кавалерия.
+Black Keel — это рычаг и логистика, не кавалерия.
 
 <!-- In-Game Wiki; generated from P105_BLACK_KEEL_IN_SYSTEM_TENDER/ru_RU. -->

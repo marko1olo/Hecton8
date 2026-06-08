@@ -9,32 +9,16 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Aegir Primary Light and Radiation"
+title: "Aegir 주성 빛과 방사선"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Aegir Primary Light and Radiation
+# Aegir 주성 빛과 방사선
 
-KO LOC HOLD: Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
-
-## Scanner
-
-KO LOC HOLD: Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
-
-## Terminal
-
-KO LOC HOLD: RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
-
-## Audio
-
-KO LOC HOLD: It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
-
-## Field Note
-
-KO LOC HOLD: System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
+Aegir는 빈 검정으로 읽히지 않는다. K급 주성은 갑판에 호박빛과 긴 그림자를 놓고, 벨트 수를 확인하지 않으면 노출 장비가 틀어질 만큼의 플럭스를 준다. 가스 거성은 두 번째 시계다. 자기권 항로는 달들이 전하와 그림자를 지날 때 굳고, 풀리고, 다시 굳는다. Deep Reach는 그 숫자를 일상 작업 창으로 팔았다. 승무원들은 현장판을 배웠다. 따뜻한 하늘도 싼 씰을 익히고, 링크를 침묵시키며, 구조를 분 단위로 가격 매길 수 있다.
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/ko_KR. -->

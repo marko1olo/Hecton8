@@ -3,8 +3,8 @@ packet_id: P014_AEGIR_ROUTE_WINDOW
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: aegir.route_window
 unlock_id: unlock.first_aegir_window_table
-poi_tags: poi.window_table;poi.moon_shadow_timer
-biome_tags: biome.crash_shelf;biome.surface_storm
+poi_tags: poi.ephemeris_table;poi.window_timer
+biome_tags: biome.crash_shelf;biome.black_keel_link
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -14,24 +14,26 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Jendela Rute Aegir
 
-Jendela Aegir mengubah sistem gas raksasa menjadi gameplay: langit, badai, bayangan bulan, radiasi, pasang, sinyal, dan geometri Black Keel.
+Jendela Aegir adalah momen saat jam bermusuhan setuju: radiasi raksasa gas, bayang bulan, derau badai, pasang, kualitas tautan, massa naik, dan geometri Black Keel.
+
+Karena itu langit masuk loop bertahan hidup. Data bisa naik saat tubuh tidak aman. Naik bisa terbuka saat derau merusak bukti.
 
 ## Scanner
 
-Tabel efemeris lokal. Komunikasi, pasang, radiasi, dan geometri carrier berbagi satu jendela.
+Tabel efemeris lokal. Komunikasi, pasang, radiasi, bayang bulan, dan geometri carrier berbagi satu jendela naik sempit.
 
 ## Terminal
 
-Window update: moon shadow clearing. Uplink noise falling. Radiation count rising. Ascent mass estimate pending carrier geometry.
+PEMBARUAN JENDELA AEGIR // Bayang Kestrel membuka. Derau uplink turun. Hitung radiasi naik. Geser pasang di ngarai servis meningkat. Geometri pemulihan Black Keel menunggu massa naik.
 
 ## Audio
 
-Langit cerah bukan langit aman. Periksa raksasa itu.
+Langit cerah bukan langit aman. Periksa raksasanya.
 
 ## Field Note
 

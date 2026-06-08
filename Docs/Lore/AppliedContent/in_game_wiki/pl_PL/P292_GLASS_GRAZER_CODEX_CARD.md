@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Glass Grazer Codex Card"
+title: "Karta kodeksu: szklany skrobacz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Glass Grazer Codex Card
+# Karta kodeksu: szklany skrobacz
 
-PL LOC HOLD: Glass Grazer Codex Card turns a benign animal into a readable safety instrument.
+Szklane skrobacze nie są pupilami, łupem ani dekoracją. To małe przezroczyste organizmy skorupowe, które czynią fotyczny shelf czytelnym, zeskrobując film mineralny z pressure glass, luźnych krawędzi mat fotycznych, starych osłon kabli i wapiennych warg. Żerujące stado zostawia w narośli blade pasy. Mogą wskazać świeży prąd, czysty chwyt, szew bez nadmiernego ciepła albo miejsce, przez które od kilku minut nie przeszedł drapieżnik. Użyteczna wskazówka to nie tylko ruch. To przerwanie. Jeśli pokarm zostaje, a tykanie skorup cichnie, stado usłyszało zmianę ciśnienia, ruch cienia, wibrację cutter albo większe zwierzę poza stożkiem scanner. Wyskrobany pas jest dowodem, nie pozwoleniem. Idź po krawędzi. Odejdź, gdy krawędź zwija się do środka.
 
 ## Scanner
 
-PL LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
+Stado szklanych skrobaczy. Nieagresywne skorupowe żerujące organizmy zeskrobują film mineralny. Równe tykanie: woda robocza. Nagła cisza: polanę zmieniło coś większego.
 
 ## Terminal
 
-PL LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+OKAZ / STADO SZKLANYCH SKROBACZY / rola: skrobacz płytkiego filmu, świadek prądu, sygnał wyparcia przez drapieżnika / bezpieczny odczyt: krawędź żerowania, świeży blady pas, stabilne tyknięcia skorup / odrzuć: porzucone pole pokarmu, ciasno zastygłe stado, brak tyknięć po pinger / notatka trasy: nieobecność po żerowaniu to dane zagrożenia.
 
 ## Audio
 
-PL LOC HOLD: When they stop eating, you stop moving.
+Gdy małe pyski przestają tykać, a jedzenie zostaje, nie bądź następną rzeczą, która czeka.
 
 ## Field Note
 
-PL LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
+Stado żeruje: czytaj pas. Stado zastygło: czytaj wodę. Pusty pas z pokarmem: odejdź.
 
 <!-- In-Game Wiki; generated from P292_GLASS_GRAZER_CODEX_CARD/pl_PL. -->

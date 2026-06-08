@@ -188,7 +188,9 @@ namespace Hecton8.World
         private const int ChemicalCellCount = GridAxisX * GridAxisY * GridAxisZ;
         private const float DefaultCellSizeMeters = 8f;
         private const float DefaultMaximumChannelIntensity = 32f;
+        private const float DefaultBreadcrumbRadiusMeters = 28f;
         private const float MinimumRadiusMeters = 0.25f;
+        private const float MaxChemicalRadiusMeters = DefaultCellSizeMeters * GridAxisX;
         private const float MinimumSubmarineVelocitySqr = 0.25f;
         private const float ChemicalTransientRadiusMeters = 18f;
         private const float ChemicalTransientLifetimeSeconds = 12f;
@@ -542,7 +544,10 @@ namespace Hecton8.World
                 return;
             }
 
-            float safeRadius = math.max(MinimumRadiusMeters, radiusMeters);
+            float safeRadius = NormalizeChemicalRadius(radiusMeters);
+            if (safeRadius <= 0f)
+                return;
+
             float clampedIntensity = math.max(0f, intensity);
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             if (instance == null)
@@ -553,7 +558,8 @@ namespace Hecton8.World
             instance.QueueChemicalEmitter(worldPosition, new float4(0f, 0f, 0f, -clampedIntensity), safeRadius, EmitterFlagDefoliant, HashAscii("DefoliantDeadZone"));
             RegisterChemicalTransient(worldPosition, clampedIntensity);
 
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            DestructibleOrganicManager organicManager = null;
+            WorldRuntimeReferenceUtility.TryResolveDestructibleOrganicManager(ref organicManager);
             if (organicManager != null)
                 organicManager.ApplyDefoliantDeadZone(worldPosition, safeRadius);
         }
@@ -810,7 +816,10 @@ namespace Hecton8.World
                 if (waypoint.ExpiresAt <= now || waypoint.RadiusMeters <= 0f)
                     continue;
 
-                float radius = math.max(1f, waypoint.RadiusMeters);
+                float radius = NormalizeChemicalRadius(waypoint.RadiusMeters);
+                if (radius <= 0f)
+                    continue;
+
                 float3 delta = waypoint.RuntimePosition - center;
                 float distanceSq = math.lengthsq(delta);
                 float radiusSq = math.max(1f, radius * radius);
@@ -914,7 +923,7 @@ namespace Hecton8.World
             breadcrumbCapacity = Mathf.Clamp(breadcrumbCapacity, 8, DefaultBreadcrumbCapacity);
             breadcrumbDropIntervalSeconds = FiniteAtLeast(breadcrumbDropIntervalSeconds, 5f, 0.25f);
             breadcrumbLifetimeSeconds = FiniteAtLeast(breadcrumbLifetimeSeconds, 90f, 1f);
-            breadcrumbRadiusMeters = FiniteAtLeast(breadcrumbRadiusMeters, 28f, 1f);
+            breadcrumbRadiusMeters = math.max(1f, NormalizeChemicalRadius(FiniteAtLeast(breadcrumbRadiusMeters, DefaultBreadcrumbRadiusMeters, 1f)));
             maximumChannelIntensity = FiniteAtLeast(maximumChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);
             baseDiffusionRate = FiniteAtLeast(baseDiffusionRate, 0.18f, 0.001f);
             advectionStrength = FiniteAtLeast(advectionStrength, 0.72f, 0f);
@@ -1194,8 +1203,8 @@ namespace Hecton8.World
             profile.BloodMultiplier = blood;
             profile.PheromoneMultiplier = pheromone;
             profile.ToxinMultiplier = toxin;
-            profile.RadiusMultiplier = math.max(0.001f, radius);
-            profile.DissipationMultiplier = math.max(0.001f, dissipation);
+            profile.RadiusMultiplier = FiniteAtLeast(radius, 1f, 0.001f);
+            profile.DissipationMultiplier = FiniteAtLeast(dissipation, 1f, 0.001f);
             profile.Flags = flags;
             profile.SourceHash = ChemicalSourceHash;
             return profile;
@@ -1437,12 +1446,17 @@ namespace Hecton8.World
             if (!TryResolveAupFromRuntimeOrigin(worldPosition, out double3 emitterAup))
                 return;
 
+            float radiusScale = FiniteAtLeast(profile.RadiusMultiplier, 1f, 0.001f);
+            float safeRadius = NormalizeChemicalRadius(radiusMeters * radiusScale);
+            if (safeRadius <= 0f)
+                return;
+
             pending[index] = new ChemicalEmitterDTO
             {
                 Aup = emitterAup,
                 Channels = scaledChannels,
-                RadiusMeters = math.max(MinimumRadiusMeters, radiusMeters * math.max(0.001f, profile.RadiusMultiplier)),
-                LifetimeSeconds = ChemicalTransientLifetimeSeconds * math.max(0.001f, profile.DissipationMultiplier),
+                RadiusMeters = safeRadius,
+                LifetimeSeconds = ChemicalTransientLifetimeSeconds * FiniteAtLeast(profile.DissipationMultiplier, 1f, 0.001f),
                 ProfileHash = profileHash,
                 Flags = flags | profile.Flags,
                 SpawnFrame = _simulationFrameCounter,
@@ -1487,7 +1501,10 @@ namespace Hecton8.World
                 return;
 
             float3 absolute = ToFloat3(absolutePosition - HectonFloatingOrigin.CurrentTotalOffsetDouble);
-            float safeRadius = math.max(1f, radiusOverrideMeters > 0f ? radiusOverrideMeters : breadcrumbRadiusMeters);
+            float safeRadius = NormalizeChemicalRadius(radiusOverrideMeters > 0f ? radiusOverrideMeters : breadcrumbRadiusMeters);
+            if (safeRadius <= 0f)
+                safeRadius = DefaultBreadcrumbRadiusMeters;
+
             int mergeIndex = FindMergeCandidate(breadcrumbs, absolutePosition, primaryChannel, now);
             float4 clampedChannels = ClampChemicalChannels(channels, maximumChannelIntensity);
             if (mergeIndex >= 0)
@@ -1497,7 +1514,7 @@ namespace Hecton8.World
                 merged.AbsolutePositionDouble = absolutePosition;
                 merged.RuntimePosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
                 merged.Channels = ClampChemicalChannels(merged.Channels + clampedChannels, maximumChannelIntensity);
-                merged.RadiusMeters = math.max(merged.RadiusMeters, safeRadius);
+                merged.RadiusMeters = math.max(NormalizeChemicalRadius(merged.RadiusMeters), safeRadius);
                 merged.SpawnTime = now;
                 merged.ExpiresAt = now + breadcrumbLifetimeSeconds;
                 breadcrumbs[mergeIndex] = merged;
@@ -1978,7 +1995,10 @@ namespace Hecton8.World
                 if (channelSignal <= 0f)
                     continue;
 
-                float radius = math.max(MinimumRadiusMeters, waypoint.RadiusMeters);
+                float radius = NormalizeChemicalRadius(waypoint.RadiusMeters);
+                if (radius <= 0f)
+                    continue;
+
                 double distanceSq = math.lengthsq(ResolveWaypointAbsolutePositionDouble(in waypoint) - queryAbsolute);
                 double radiusSq = (double)radius * radius;
                 if (distanceSq > radiusSq || distanceSq >= bestDistanceSq)
@@ -2094,7 +2114,10 @@ namespace Hecton8.World
             if (!TryResolveAupFromRuntimeOrigin(worldPosition, out double3 absolutePosition))
                 return;
 
-            float safeRadius = math.max(MinimumRadiusMeters, radiusMeters);
+            float safeRadius = NormalizeChemicalRadius(radiusMeters);
+            if (safeRadius <= 0f)
+                return;
+
             double mergeRadiusSq = (double)safeRadius * safeRadius;
             int safeCount = math.min(_defoliantDeadZoneCount, zones.Length);
             for (int i = 0; i < safeCount; i++)
@@ -2104,7 +2127,7 @@ namespace Hecton8.World
                     continue;
 
                 zone.CenterAup = (zone.CenterAup + absolutePosition) * 0.5d;
-                zone.RadiusMeters = math.max(zone.RadiusMeters, safeRadius);
+                zone.RadiusMeters = math.max(NormalizeChemicalRadius(zone.RadiusMeters), safeRadius);
                 zone.Intensity = math.max(zone.Intensity, intensity);
                 zone.Flags |= EmitterFlagDefoliant;
                 zones[i] = zone;
@@ -2139,7 +2162,11 @@ namespace Hecton8.World
             for (int i = 0; i < safeCount; i++)
             {
                 ChemicalDefoliantZoneDTO zone = zones[i];
-                double radiusSq = (double)zone.RadiusMeters * zone.RadiusMeters;
+                float radius = NormalizeChemicalRadius(zone.RadiusMeters);
+                if (radius <= 0f)
+                    continue;
+
+                double radiusSq = (double)radius * radius;
                 if (math.lengthsq(absolutePosition - zone.CenterAup) <= radiusSq)
                     return true;
             }
@@ -2518,8 +2545,16 @@ namespace Hecton8.World
         private double3 ResolveFocusAup()
         {
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext != null && playerContext.PlayerMovement != null)
-                return playerContext.PlayerMovement.CurrentAup.ToAbsoluteDouble3();
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                movementState.PredictedAup.IsFinite())
+            {
+                double3 playerAup = movementState.PredictedAup.ToAbsoluteDouble3();
+                if (math.all(math.isfinite(playerAup)))
+                    return playerAup;
+            }
 
             ISubmarineRuntimeContext submarine = _submarineRuntimeContext;
             if (submarine != null && submarine.PlatformTransform != null)
@@ -2735,6 +2770,14 @@ namespace Hecton8.World
                 math.clamp(value.y, 0f, safeMax),
                 math.clamp(value.z, 0f, safeMax),
                 math.clamp(value.w, -safeMax, safeMax));
+        }
+
+        private static float NormalizeChemicalRadius(float radiusMeters)
+        {
+            if (!math.isfinite(radiusMeters) || radiusMeters <= 0f)
+                return 0f;
+
+            return math.clamp(radiusMeters, MinimumRadiusMeters, MaxChemicalRadiusMeters);
         }
 
         private static float FiniteAtLeast(float value, float fallback, float minimum)
@@ -3194,7 +3237,10 @@ namespace Hecton8.World
             private void InjectEmitter(in ChemicalEmitterDTO emitter)
             {
                 float cellSize = math.max(GridSampleEpsilon, CellSizeMeters);
-                float radius = math.max(MinimumRadiusMeters, emitter.RadiusMeters * math.max(0.001f, EmitterRadiusScale));
+                float radius = NormalizeChemicalRadius(emitter.RadiusMeters * FiniteAtLeast(EmitterRadiusScale, 1f, 0.001f));
+                if (radius <= 0f)
+                    return;
+
                 float3 localCenter = ToFloat3Burst(emitter.Aup - GridOriginAup);
                 float3 centerGrid = localCenter * math.rcp(cellSize);
                 int radiusCells = math.max(1, (int)math.ceil(radius * math.rcp(cellSize)));
@@ -3419,7 +3465,10 @@ namespace Hecton8.World
                 for (int i = 0; i < count; i++)
                 {
                     ChemicalDefoliantZoneDTO zone = DefoliantZones[i];
-                    float radius = math.max(MinimumRadiusMeters, zone.RadiusMeters);
+                    float radius = NormalizeChemicalRadius(zone.RadiusMeters);
+                    if (radius <= 0f)
+                        continue;
+
                     double radiusSq = (double)radius * radius;
                     double distanceSq = math.lengthsq(cellAup - zone.CenterAup);
                     if (distanceSq > radiusSq)

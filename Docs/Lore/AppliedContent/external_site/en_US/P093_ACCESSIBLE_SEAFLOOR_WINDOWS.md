@@ -19,22 +19,6 @@ localization_flags: 0
 
 # Accessible Seafloor Windows
 
-Accessible Seafloor Windows explains why HECTON-8 traversal can be structured without pretending the entire ocean floor is a walkable map.
-
-## Scanner
-
-Ridge window. The bottom is not a floor; it is a rare exposure.
-
-## Terminal
-
-SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
-
-## Audio
-
-You land where the moon lets stone show through.
-
-## Field Note
-
-Good traversal comes from scarce footholds, not endless flat seabed.
+Most of HECTON-8's seafloor is unreachable by ordinary courage. Pressure makes a wall before the bottom appears. Accessible seafloor windows are the exceptions: torn places where a collapsed shelf, exposed ridge, reheated vent scar, or dense brine column changes the descent curve. These windows are not safe caves. They are narrow bargains with geology. A crew can touch old crust, recover pressure-grown minerals, find sealed colony hardware, or read a buried event before the ocean closes the route again. Good pilots enter slowly, leave markers, and treat stable sonar as a temporary mercy.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/en_US. -->

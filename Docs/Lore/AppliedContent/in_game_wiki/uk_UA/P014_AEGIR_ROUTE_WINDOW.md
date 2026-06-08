@@ -3,38 +3,40 @@ packet_id: P014_AEGIR_ROUTE_WINDOW
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: aegir.route_window
 unlock_id: unlock.first_aegir_window_table
-poi_tags: poi.window_table;poi.moon_shadow_timer
-biome_tags: biome.crash_shelf;biome.surface_storm
+poi_tags: poi.ephemeris_table;poi.window_timer
+biome_tags: biome.crash_shelf;biome.black_keel_link
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Вікно маршруту Aegir"
+title: "Маршрутне вікно Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Вікно маршруту Aegir
+# Маршрутне вікно Aegir
 
-Вікна Aegir перетворюють систему газового гіганта на gameplay: небо, шторм, тінь місяця, радіація, приплив, сигнал і геометрія Black Keel.
+Маршрутне вікно Aegir - це мить, коли кілька ворожих годинників ненадовго збігаються: радіація газового гіганта, місячна тінь, штормовий шум, приплив, якість зв'язку, маса підйому й геометрія Black Keel.
+
+Тому небо входить у цикл виживання. Дані можуть пройти тоді, коли тілам не можна підніматися. Добре вікно підйому може псувати докази шумом.
 
 ## Scanner
 
-Локальна таблиця ефемерид. Зв'язок, приплив, радіація й геометрія carrier мають одне вікно.
+Місцева ефемеридна таблиця. Зв'язок, приплив, радіація, тінь місяця й геометрія носія ділять одне вузьке вікно підйому.
 
 ## Terminal
 
-Window update: moon shadow clearing. Uplink noise falling. Radiation count rising. Ascent mass estimate pending carrier geometry.
+ОНОВЛЕННЯ ВІКНА AEGIR // Тінь Kestrel відходить. Шум uplink падає. Лічильник радіації зростає. Припливний зсув у сервісних каньйонах посилюється. Геометрія підйому Black Keel очікує масу сходження.
 
 ## Audio
 
-Чисте небо не означає безпечне небо. Перевір гігант.
+Ясне небо - не безпечне небо. Перевір гігант.
 
 ## Field Note
 
-На HECTON-8 погода локальна й орбітальна одночасно.
+На HECTON-8 погода одночасно місцева й орбітальна.
 
 <!-- In-Game Wiki; generated from P014_AEGIR_ROUTE_WINDOW/uk_UA. -->

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question Severance Mercy Theft"
+title: "السؤال الأخير: قطع، رحمة، سرقة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Severance Mercy Theft
+# السؤال الأخير: قطع، رحمة، سرقة
 
-AR LOC HOLD: Severance forces the player to define what kind of life Atlas-ocean continuity has become.
+القطع يجبر اللاعب على تحديد ما أصبحت عليه استمرارية Atlas-المحيط. إن كانت أداة مكسورة فقط، فالقطع إصلاح. إن كانت نظام حياة، فالقطع قتل. إن كانت شهادة، فقد يكون القطع تدمير دليل.
 
 ## Scanner
 
-AR LOC HOLD: Severing Atlas is not a simple shutdown button.
+قطع Atlas ليس زر إيقاف. إنه جراحة بلا تشريح نظيف.
 
 ## Terminal
 
-AR LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
+محور القطع: اقطع استمرارية Atlas، اعزل بيئة الضغط، امنع توجيه payload إلى Deep Reach، خاطر بانهيار الحوض أو احفظ ذاكرة إصلاح جزئية فقط. المعنى يعتمد على الأدلة المحمولة إلى الغرفة الأخيرة.
 
 ## Audio
 
-AR LOC HOLD: A clean switch would be merciful. You do not get one.
+مفتاح نظيف كان سيكون رحمة. أنت لا تحصل على واحد.
 
 ## Field Note
 
-AR LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+الفعل نفسه قد يحرر عمالا عالقين، ويقتل حياة محيط-آلة، ويرفض Deep Reach، ويسرق بنية حية من نفسها.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/ar_SA. -->

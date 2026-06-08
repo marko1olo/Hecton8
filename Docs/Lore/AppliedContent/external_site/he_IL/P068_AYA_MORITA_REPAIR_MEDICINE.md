@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aya Morita Repair Medicine"
+title: "רפואת התיקון של איה מוריטה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aya Morita Repair Medicine
+# רפואת התיקון של איה מוריטה
 
-HE LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category.
+רשומת רפואת התיקון של איה מוריטה מתעדת את הנקודה שבה לוגיקת תחזוקת Atlas, טריאז' חירום, פציעת כבל ורקמה חיה קורסים לקטגוריה אחת.
 
 ## Scanner
 
-HE LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.
+איה מוריטה תיעדה את הנקודה הראשונה שבה Atlas הפסיק לרפא גופים והתחיל להשתמש בהם כמשטח תיקון תואם.
 
 ## Terminal
 
-HE LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.
+מוריטה, א. רקמת מטופל התקבלה בידי מושבת איטום לאחר חשיפה לכבל. לא נצפתה תוקפנות עוינת. תג Atlas מסווג את הפצע כנזק ממשק. לדחות פרוטוקול תיקון עבור טריאז' אנושי.
 
 ## Audio
 
-HE LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.
+זה סגר את הפצע סביב הכבל. באותו רגע היא הפסיקה לקרוא לזה טיפול.
 
 ## Field Note
 
-HE LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.
+זו לא הערת זומבים. זה גרוע יותר: הערת תחזוקה בכתב יד שליד המיטה.
 
 <!-- External Site; generated from P068_AYA_MORITA_REPAIR_MEDICINE/he_IL. -->

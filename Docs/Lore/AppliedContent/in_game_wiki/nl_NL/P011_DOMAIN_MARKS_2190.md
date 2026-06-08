@@ -14,24 +14,26 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Domeinmarkeringen 2190
 
-Domeinmarkeringen tonen de grotere mensenwereld via objecten: Sol-normen, Barnard-reparatiecultuur, Luyten-routing, Tau Ceti-recht, Centauri-hardware en Aegir-claimbewaring.
+Domeinmarkeringen tonen de mensenwereld via objecten: veiligheidsplaten, torsiesporen, bewaringscodes en oude toestemmingen. Elk merk bindt een deur, gereedschap of lading aan verre autoriteit.
+
+De kolonie is ver weg, niet primitief. Recht, industrie en schuld bereikten het water. Redding heeft nog steeds massa, schip en venster nodig.
 
 ## Scanner
 
-Gemengde domeinmarkeringen. Sol-veiligheidsplaat, Barnard-gereedschapsstempel, Luyten-routebewaring.
+Gemengde menselijke domeinmarkeringen: Sol-veiligheidsplaat, Barnard-gereedschapsstempel, Luyten-bewaringsroute en Aegir-claimcode op dezelfde verroeste beugel.
 
 ## Terminal
 
-Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.
+DOMEINAFSTEMMING // Sol Core-veiligheidsformaat geaccepteerd. Barnard Yards-reparatiestempel geldig. Luyten Junction-pakketbewaring gekoppeld. Aegir lokaal claimrecht overschrijft bergingsprioriteit na verlies van afdaling.
 
 ## Audio
 
-Deze plek ligt niet buiten de beschaving. Dit is beschaving wanneer afstand wint.
+Deze plek ligt niet voorbij beschaving. Dit is beschaving nadat afstand de warme delen eruit heeft gehaald.
 
 ## Field Note
 

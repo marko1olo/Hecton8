@@ -9,32 +9,16 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "FR LOC HOLD: Colonie et travailleurs"
+title: "Colonie et travailleurs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Colonie et travailleurs
+# Colonie et travailleurs
 
-FR LOC HOLD: Deep Reach a classé l'échec comme tempête, effondrement, évacuation autonome ratée, tentative de sauvetage Atlas et données perdues; les archives de HECTON-8 gardent les noms attachés aux pompes, relais, routes de brine, triage et vent-forge.
-
-## Scanner
-
-FR LOC HOLD: WORKER INDEX // Cinq noms liés à des routes. pump, relay, brine, triage, forge. Préserver la tag chain avant récupération matérielle.
-
-## Terminal
-
-FR LOC HOLD: KEELMARK LOSS DESK: préserver les name tags liés à route, claim, custody ou pressure work.
-
-## Audio
-
-FR LOC HOLD: Mara Venn, pump chief: si la pump chante clair, consigne-le. Si elle cesse de chanter, monte en courant.
-
-## Field Note
-
-FR LOC HOLD: Pas la famille. Le travail. Un nom sur une pump card explique pourquoi une porte est restée ouverte.
+Le cluster colonie et travailleurs empêche HECTON-8 de devenir une carte de pièces vides. La version officielle Deep Reach range les personnes en catégories de perte, mais les archives survivantes les gardent par leur travail : pump chief dans un pressure board, relay operator dans les witness trays, brine crew dans les routes de sel et ration ledgers, triage technician dans les repair tags, forge shift dans les rejects que personne n'a eu le temps de cacher. Ce ne sont pas des crochets familiaux pour le protagoniste. Ce sont des preuves de travail. Le Maraudeur lit pourquoi une porte est restée ouverte, pourquoi une pompe a redémarré trop tard et pourquoi un petit name tag peut peser plus qu'un loss summary propre.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/fr_FR. -->

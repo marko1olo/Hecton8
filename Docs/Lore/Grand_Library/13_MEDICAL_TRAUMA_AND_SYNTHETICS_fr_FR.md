@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # TRAUMATISMES MÉDICAUX ET REMPLACEMENTS SYNTHÉTIQUES
 
 > **Source :** Procédure Opératoire Automatisée de la Baie Médicale du *Black Keel*.

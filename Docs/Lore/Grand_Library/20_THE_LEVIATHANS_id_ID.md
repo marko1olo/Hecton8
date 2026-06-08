@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # LEVIATHAN HECTON-8
 
 > **Sumber:** Megacorporation Deep Reach, Penilaian Ancaman Xenobiologi.

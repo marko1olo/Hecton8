@@ -8,33 +8,17 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Relay Message Lag"
+spoiler_tier: 1
+title: "Relaisnachrichtenverzug"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Relay Message Lag
+# Relaisnachrichtenverzug
 
-DE LOC HOLD: Relay Message Lag makes communication a route system, not a magic voice channel.
-
-## Scanner
-
-DE LOC HOLD: A message can be legally binding and still arrive too late to save air.
-
-## Terminal
-
-DE LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
-
-## Audio
-
-DE LOC HOLD: The reply is late. The lien is current.
-
-## Field Note
-
-DE LOC HOLD: No ansible means truth moves as freight.
+Relaisverzug lässt HECTON-8 Autorität empfangen, aber keine Fürsorge. Ein Paket kann Recht, Schuld, Eigentum oder Warnung über Stunden, Tage oder Jahre tragen, aber es bringt keine Hände in einen gefluteten Raum. Diese Trennung ist der Kern des Kommunikationsdrucks: Entfernte Systeme bleiben mächtig, weil sie früh geschrieben, früh eingereiht und für Entfernung bepreist wurden. Mitgefühl kommt als Person; Vertrag kommt als Daten.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/de_DE. -->

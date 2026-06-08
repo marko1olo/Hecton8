@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "מארודר לשעבר של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# מארודר לשעבר של Deep Reach
 
-HE LOC HOLD: Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+מארודר לשעבר של Deep Reach קובע את קאנון השחקן. השחקן הוא מומחה תאגידי לשעבר למערכות שטח ולתשתית פינוי, שנדחק לחילוץ ופירוק עצמאיים בגלל רשימה שחורה או חוב, וחוזר אל HECTON-8 תחת משמורת Black Keel. הדרמה נובעת מזיהוי מקצועי: הירח עונה בנוהלים שהשחקן הבין פעם, וכל מנעול מוכר מקשה יותר להתייחס לשקר התאגידי כתאונה של מישהו אחר.
 
 ## Scanner
 
-HE LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+המנעול הישן של Deep Reach אינו בודק את שמך. הוא מזהה את קצב רצף התיקון שלך.
 
 ## Terminal
 
-HE LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+עקבת הרשאה: חוזה מערכות שטח לשעבר. גישה לתשתית פינוי בוטלה. מעמד חילוץ ופירוק התקבל תחת משמורת חוב של מאגר תביעות.
 
 ## Audio
 
-HE LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+לא חזרת הביתה. חזרת אל נוהל שמעולם לא הפסיק לפעול.
 
 ## Field Note
 
-HE LOC HOLD: Not family business. Procedure remembers who taught your hands.
+זה אינו עניין משפחתי. הנוהל זוכר את הידיים שהשתמשו בו.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/he_IL. -->

@@ -3,38 +3,38 @@ packet_id: P053_MARAUDER_GRAFFITI_MASKS
 release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
 unlock_id: unlock.first_marauder_graffiti_masks
-poi_tags: poi.graffiti_mask;poi.pressure_arrow
-biome_tags: biome.scrap_canyon;biome.marauder_route
+poi_tags: poi.graffiti_mask;poi.scavenger_route
+biome_tags: biome.service_corridor;biome.salvage_route
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Graffiti Masks"
+title: "מסכות הגרפיטי של הבוזזים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Marauder Graffiti Masks
+# מסכות הגרפיטי של הבוזזים
 
-HE LOC HOLD: Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.
+סימני הבוזזים הם ניווט שטח, אזהרה חברתית ושפה נגד מעקב. הם גסים כי היו צריכים לשרוד מים, פחד, מנורות גרועות ומצלמות חברה. השחקן לומד אילו סימנים מצביעים על רעש, לחץ, סיכון סיור, מטמונים ונתיבים שכבר לא תואמים מפות רשמיות.
 
 ## Scanner
 
-HE LOC HOLD: The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
+קוד צבע: מספר חתכים מסמן משמעת רעש, טבעות שחורות מסמנות סכנת פינג מהנושא, וחצים שבורים מסמנים סחיפת לחץ.
 
 ## Terminal
 
-HE LOC HOLD: MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
+אינדקס מסכת נתיב: שלושה חתכים בטוח רק לסימני יד. טבעת שחורה פירושה סריקת נושא. חץ שבור פירושו שינוי לחץ מאז הסימון האחרון.
 
 ## Audio
 
-HE LOC HOLD: They made a language that looks like vandalism to the company.
+אם הקיר נראה כועס, קרא אותו כמו מזג אוויר.
 
 ## Field Note
 
-HE LOC HOLD: Bad paint. Good map.
+הבוזזים כתבו לאנשים שלא יכלו לסמוך על רדיו ולא יכלו לשלם על מפות.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/he_IL. -->

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # 医疗创伤与合成替代品
 
 > **来源：** *Black Keel* 自动医疗舱操作程序。

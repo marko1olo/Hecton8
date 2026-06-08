@@ -7,34 +7,34 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "חותך השראה בהספק נמוך"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# חותך השראה בהספק נמוך
 
-HE LOC HOLD: The low-power induction cutter gives the first deliberate opening action: a jammed hatch, a panel bolt, a salvage crate. It cannot solve every barrier. Pressure glass, active load-bearing frames and Atlas-grown seams demand later knowledge.
+חותך ההשראה בהספק נמוך הוא כלי הגישה הראשון, לא מפתח אוניברסלי. הוא פותח פתחי שירות תקועים, ברגי לוח וארגזי salvage, ומאלץ לקרוא מה החלק עושה. Pressure glass, מסגרות פעילות ותפרים שגדלו מ-Atlas שייכים לכלים מאוחרים יותר או לראיות טובות יותר.
 
 ## Scanner
 
-HE LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
+חותך השראה בהספק נמוך. מתכת שירות בלבד; מסגרת נושאת ו-pressure glass מחוץ לדירוג.
 
 ## Terminal
 
-HE LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
+אזהרת כלי / חותך השראה: יעדים מורשים הם פתחי שירות, ברגי לוח, תושבות קלות ומנעולי ארגז. אין לחתוך מסגרות פעילות, סבכת pressure glass או תפרים שגדלו מ-Atlas ללא הסמכת מחלקה מאוחרת.
 
 ## Audio
 
-HE LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
+חתוך את הבורג. השאר את הצלע.
 
 ## Field Note
 
-HE LOC HOLD: The cutter should feel valuable because it is limited.
+חותך טוב, אמונה רעה. הוא פותח לוחות. הוא לא סולח על חיתוך הצלע ששומרת את החדר ישר.
 
 <!-- In-Game Wiki; generated from P113_LOW_POWER_INDUCTION_CUTTER/he_IL. -->

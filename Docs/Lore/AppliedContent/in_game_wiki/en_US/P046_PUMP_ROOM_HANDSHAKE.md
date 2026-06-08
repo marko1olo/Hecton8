@@ -7,9 +7,9 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Pump Room Handshake"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Pump Room Valve Handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Pump Room Handshake
+# Pump Room Valve Handshake
 
-The pump room is useful after the local valve accepts your control, not before. Watch intake, outlet pressure, and the sound of the return corridor. A dry floor can mean the next room is taking the water. Treat every pump restart as a trade: safer access here, higher pressure or noise somewhere else.
+A pump handshake is the moment a drowned room accepts local control. It gives access, but it also moves water, noise and pressure into another part of the route. Read the intake basket, outlet pulse and return-corridor hammer before treating a dry floor as safety. Early P-63 pump rooms teach the core repair habit: a machine can improve one compartment while making the way home worse.
 
 ## Scanner
 
-Local pump authority accepted. Intake clears the room, but outlet pressure rises along the return corridor.
+Local sump pump accepted handwheel input. Intake basket is fouled with capsule foam; outlet pulse is loading Return Corridor B.
 
 ## Terminal
 
-PUMP HANDSHAKE: local valve accepted. Remote override denied. Drain rate falls as return-corridor pressure rises.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B; restart only with downstream hatch checked.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+Valve took. Outlet is knocking. Do not call this safe yet.
 
 ## Field Note
 
-Before stripping parts, listen to the outlet line. If it is hammering, the pump is moving the problem, not solving it.
+A dry pump room can drown the way back. Listen for hammer in the outlet before you strip the valve.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/en_US. -->

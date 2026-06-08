@@ -3,6 +3,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using Hecton8.Audio.Virtualization;
+using Hecton8.Core;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,6 +19,8 @@ namespace Hecton8.Audio.Editor
 
         private VirtualVoiceTuningSnapshot _tuning = VirtualVoiceTuningSnapshot.CreateDefault();
         private VirtualVoiceStatistics _stats;
+        private int _droppedAudioEventCount;
+        private int _proceduralAudioSignalDropCount;
         private DateTime _profileLastWriteUtc;
         private string _profileAbsolutePath;
         private double _nextStatsRefreshTime;
@@ -62,7 +65,13 @@ namespace Hecton8.Audio.Editor
 
         private void OnGUI()
         {
-            EditorGUILayout.LabelField("Vault", _hasRuntimeTuning ? "Live" : "Unavailable");
+            SpatialAudioManager statusManager = ResolveSpatialAudioManager(false);
+            string runtimeStatus = statusManager == null
+                ? "Unavailable"
+                : statusManager.IsSpatialAudioRuntimeReady
+                    ? (_hasRuntimeTuning ? "Live" : "Runtime ready")
+                    : "Runtime not ready";
+            EditorGUILayout.LabelField("Vault", runtimeStatus);
             EditorGUI.BeginChangeCheck();
             _tuning.SoundSpeedMetersPerSecond = EditorGUILayout.Slider(
                 "Speed of Sound",
@@ -122,6 +131,8 @@ namespace Hecton8.Audio.Editor
             EditorGUILayout.LabelField("Audible Virtual Voices", _stats.AudibleVoices.ToString());
             EditorGUILayout.LabelField("Hydrated Voices", _stats.ActivePhysicalVoices.ToString());
             EditorGUILayout.LabelField("Culled Voices", _stats.CulledVoices.ToString());
+            EditorGUILayout.LabelField("Dropped Audio Events", _droppedAudioEventCount.ToString());
+            EditorGUILayout.LabelField("Procedural Signal Drops", _proceduralAudioSignalDropCount.ToString());
             EditorGUILayout.LabelField("Average Sort Time ms", _stats.SortTimeMs.ToString("0.000"));
             EditorGUILayout.LabelField("SDF Occlusion Time ms", _stats.AcousticOcclusionTimeMs.ToString("0.000"));
             EditorGUILayout.LabelField("Average RT60 s", _stats.AverageRt60Seconds.ToString("0.000"));
@@ -143,15 +154,19 @@ namespace Hecton8.Audio.Editor
 
         private void PullFromRuntime()
         {
+            _proceduralAudioSignalDropCount = ProceduralAudioEvents.DirectSignalPushDroppedCount;
             SpatialAudioManager manager = ResolveSpatialAudioManager();
             if (manager == null)
             {
                 _hasRuntimeTuning = false;
+                _stats = default;
+                _droppedAudioEventCount = 0;
                 return;
             }
 
             _hasRuntimeTuning = manager.TryGetVirtualVoiceRuntimeTuning(out _tuning);
             manager.TryGetVirtualizationStats(out _stats);
+            _droppedAudioEventCount = manager.DroppedAudioEventCount;
         }
 
         private void PublishToRuntime()
@@ -209,13 +224,26 @@ namespace Hecton8.Audio.Editor
             TryReloadCsvProfile(force: true);
         }
 
-        private static SpatialAudioManager ResolveSpatialAudioManager()
+        private static SpatialAudioManager ResolveSpatialAudioManager(bool requireReady = true)
         {
+            SpatialAudioManager registeredManager = GlobalRegistry.Audio as SpatialAudioManager;
+            if (IsSpatialAudioManagerUsable(registeredManager, requireReady))
+                return registeredManager;
+
 #if UNITY_2023_1_OR_NEWER
-            return UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(FindObjectsInactive.Include);
+            SpatialAudioManager sceneManager = UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(FindObjectsInactive.Include);
 #else
-            return UnityEngine.Object.FindObjectOfType<SpatialAudioManager>();
+            SpatialAudioManager sceneManager = UnityEngine.Object.FindObjectOfType<SpatialAudioManager>();
 #endif
+            return IsSpatialAudioManagerUsable(sceneManager, requireReady) ? sceneManager : null;
+        }
+
+        private static bool IsSpatialAudioManagerUsable(SpatialAudioManager manager, bool requireReady)
+        {
+            if (manager == null)
+                return false;
+
+            return requireReady ? manager.IsSpatialAudioRuntimeReady : manager.isActiveAndEnabled;
         }
 
         private static string ResolveProfileAbsolutePath()

@@ -137,11 +137,13 @@ namespace Hecton8.Narrative
         private int _vaultResolutionSuccessCount;
         private int _vaultResolutionFailureCount;
         private int _resolvedLogHashCount;
+        private int _discoveryNotificationMissCount;
         private static readonly uint _QueueFullWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.QueueFull"));
         private static readonly uint _LookupMissWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.LookupMiss"));
         private static readonly uint _ResolvedLogCatalogFullWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.ResolvedLogCatalogFull"));
         private static readonly uint _EncryptedFragmentStateFullWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.EncryptedFragmentStateFull"));
         private static readonly uint _EncryptedVoiceRouteMissingWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.EncryptedVoiceRouteMissing"));
+        private static readonly uint _DiscoveryNotificationMissWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.DiscoveryNotificationMiss"));
         private static readonly uint _NarrativeQueueContextHash = unchecked((uint)LocHash.Compute("NarrativeQueue"));
         private const float NarrativeRadioDeepStartDepthMeters = 450f;
         private const float NarrativeRadioDeepFullDepthMeters = 1800f;
@@ -158,6 +160,7 @@ namespace Hecton8.Narrative
         private bool _registered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _registeredHotSwapListener;
         private bool _currentPlaybackBitCrushed;
         private bool _pendingPlaybackDirty;
@@ -176,6 +179,7 @@ namespace Hecton8.Narrative
         private ISpatialAudioNarrativeRadioSink _cachedNarrativeAudioSink;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ISaveService _cachedSaveService;
+        private ISaveService _registeredSaveService;
         private bool _saveRegistered;
 
         //  ISaveable
@@ -185,12 +189,14 @@ namespace Hecton8.Narrative
 
         //  PUBLIC PROPERTIES
 
-        public bool IsPlaying => _isPlaying;
-        public bool IsNarrativeQueueBlocked => _isPlaying || _atmosphericWarningActive || _queueCount > 0;
-        public AudioLogData CurrentLog => _currentLog;
-        public int DiscoveredCount => _discoveredLogHashes.Count;
-        public int DiscoveredAudioLogCount => _discoveredLogHashes.Count;
-        public bool CurrentPlaybackBitCrushed => _currentPlaybackBitCrushed;
+        public bool IsPlaying => !_runtimeOwnerAborted && _isPlaying;
+        public bool IsNarrativeQueueBlocked => !_runtimeOwnerAborted && (_isPlaying || _atmosphericWarningActive || _queueCount > 0);
+        public bool IsAudioLogRuntimeReady => !_runtimeOwnerAborted && _serviceRegistered && isActiveAndEnabled;
+        public AudioLogData CurrentLog => _runtimeOwnerAborted ? null : _currentLog;
+        public int DiscoveredCount => _runtimeOwnerAborted ? 0 : _discoveredLogHashes.Count;
+        public int DiscoveredAudioLogCount => _runtimeOwnerAborted ? 0 : _discoveredLogHashes.Count;
+        public int DiscoveryNotificationMissCount => _runtimeOwnerAborted ? 0 : _discoveryNotificationMissCount;
+        public bool CurrentPlaybackBitCrushed => !_runtimeOwnerAborted && _currentPlaybackBitCrushed;
 
         //  LIFECYCLE
 
@@ -209,10 +215,12 @@ namespace Hecton8.Narrative
 
         private void OnEnable()
         {
+            if (!TryRegisterService())
+                return;
+
             CacheRegistryServicesCold();
             EnsureVaultBuffersCold();
             TryRegisterHotSwapListener();
-            TryRegisterService();
             TryRegister();
 
             TryRegisterSaveParticipant();
@@ -220,6 +228,9 @@ namespace Hecton8.Narrative
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterSaveParticipant();
             TryUnregister();
             TryUnregisterHotSwapListener();
@@ -235,10 +246,14 @@ namespace Hecton8.Narrative
             FlushPendingNarrativeRadioGlitchReset();
             TryUnregisterLateFrame();
             ClearAtmosphericWarningBlocker();
+            ClearDiscoveryNotificationDiagnostics();
         }
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryUnregisterSaveParticipant();
             TryUnregister();
             if (_isPlaying)
@@ -249,6 +264,7 @@ namespace Hecton8.Narrative
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             ReleaseVaultBuffers(_dataVault);
+            ClearDiscoveryNotificationDiagnostics();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -256,6 +272,9 @@ namespace Hecton8.Narrative
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
@@ -263,7 +282,7 @@ namespace Hecton8.Narrative
                     CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Player:
-                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    _cachedPlayerContext = ResolveInitializedPlayerContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     TryUnregisterSaveParticipant();
@@ -290,6 +309,9 @@ namespace Hecton8.Narrative
 
         public void SlowTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             bool queuedPlaybackStarted = TickAtmosphericWarningBlocker();
             if (queuedPlaybackStarted)
                 return;
@@ -327,6 +349,9 @@ namespace Hecton8.Narrative
 
         public void LateFrameTick()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             FlushPendingPlaybackVisualSync();
             RefreshActiveNarrativeRadioGlitchVisualSync();
             FlushPendingNarrativeRadioGlitchReset();
@@ -342,6 +367,9 @@ namespace Hecton8.Narrative
         /// </summary>
         public void DiscoverLog(AudioLogData data)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (data == null || !TryResolveLogHash(data, out uint discoveredHash))
                 return;
 
@@ -355,8 +383,7 @@ namespace Hecton8.Narrative
             if (discoveredHash != 0u)
                 AudioLogEvents.TryRaiseLogDiscovered(discoveredHash, data);
             uint notificationHash = ResolveDiscoveryNotificationHash(discoveredHash);
-            if (notificationHash != 0u)
-                NotificationEvents.TryPushRegisteredInfo(notificationHash);
+            TryPushDiscoveryNotification(notificationHash, discoveredHash);
 
             // Also register the discovery with narrative systems.
             NarrativeEvents.TryRaiseDiscoveryMade(discoveredHash);
@@ -370,6 +397,9 @@ namespace Hecton8.Narrative
         /// </summary>
         public void PlayLog(AudioLogData data)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (data == null || !TryResolveLogHash(data, out uint logHash))
                 return;
 
@@ -395,6 +425,9 @@ namespace Hecton8.Narrative
 
         public bool TryPlayLogByHash(uint logHash)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (logHash == 0u)
                 return false;
 
@@ -435,6 +468,9 @@ namespace Hecton8.Narrative
 
         public uint GetRecoveredEncryptedBits(uint logHash)
         {
+            if (_runtimeOwnerAborted)
+                return 0u;
+
             if (logHash == 0u)
                 return 0u;
 
@@ -453,6 +489,9 @@ namespace Hecton8.Narrative
 
         public bool RecoverEncryptedFragment(uint logHash, uint fragmentHash)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (logHash == 0u || fragmentHash == 0u)
                 return false;
 
@@ -494,6 +533,9 @@ namespace Hecton8.Narrative
 
         private void PlayLogByHash(uint logHash, AudioLogData data)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (data == null || logHash == 0u)
                 return;
 
@@ -530,6 +572,9 @@ namespace Hecton8.Narrative
 
         private void PlayEncryptedPartialPreview(uint logHash, AudioLogData data)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (data == null || logHash == 0u)
                 return;
 
@@ -575,6 +620,9 @@ namespace Hecton8.Narrative
             bool preferBitCrush,
             in AudioGlitchParametersDTO glitch)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (clip == null)
                 return false;
 
@@ -595,6 +643,9 @@ namespace Hecton8.Narrative
 
         private void FlushPendingPlaybackVisualSync()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_pendingPlaybackDirty)
                 return;
 
@@ -623,6 +674,9 @@ namespace Hecton8.Narrative
 
         private void BeginNarrativeRadioGlitch(in AudioGlitchParametersDTO glitch)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_audioGlitchParametersLayoutValid)
             {
                 _currentPlaybackGlitch = default;
@@ -638,6 +692,9 @@ namespace Hecton8.Narrative
 
         private void RefreshActiveNarrativeRadioGlitchVisualSync()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_isPlaying)
                 return;
 
@@ -678,6 +735,9 @@ namespace Hecton8.Narrative
 
         private void QueueNarrativeRadioGlitchReset()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _currentPlaybackGlitch = default;
             _playbackGlitchElapsedSeconds = 0f;
             _lastGlitchVisualSyncFrame = 0u;
@@ -687,6 +747,9 @@ namespace Hecton8.Narrative
 
         private void FlushPendingNarrativeRadioGlitchReset()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_pendingGlitchResetDirty)
                 return;
 
@@ -776,9 +839,7 @@ namespace Hecton8.Narrative
         private float ResolveNarrativeRadioInterference01()
         {
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonSurvivalSystem survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
-            float rawDepthMeters = survivalSystem != null ? survivalSystem.Depth : 0f;
-            float depthMeters = math.isfinite(rawDepthMeters) ? math.max(0f, rawDepthMeters) : 0f;
+            float depthMeters = ResolvePlayerDepthMeters(playerContext);
             float depth01 = math.saturate(
                 (depthMeters - NarrativeRadioDeepStartDepthMeters) /
                 math.max(1f, NarrativeRadioDeepFullDepthMeters - NarrativeRadioDeepStartDepthMeters));
@@ -786,6 +847,21 @@ namespace Hecton8.Narrative
             TraumaDispatcher traumaDispatcher = playerContext != null ? playerContext.TraumaDispatcher : null;
             float radiation01 = traumaDispatcher != null ? Sanitize01(traumaDispatcher.HazardRadiationSignal01) : 0f;
             return math.max(depth01, radiation01);
+        }
+
+        private static float ResolvePlayerDepthMeters(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null || !playerContext.IsInitialized)
+                return 0f;
+
+            if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            return 0f;
         }
 
         private static float Sanitize01(float value)
@@ -800,12 +876,18 @@ namespace Hecton8.Narrative
 
         public void NotifyAtmosphericWarningStarted(float durationSeconds)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             _atmosphericWarningActive = true;
             _atmosphericWarningTimer = math.max(_atmosphericWarningTimer, ResolvePlaybackDuration(durationSeconds));
         }
 
         public void NotifyAtmosphericWarningCompleted()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!_atmosphericWarningActive)
                 return;
 
@@ -819,6 +901,9 @@ namespace Hecton8.Narrative
         /// </summary>
         public void StopPlayback()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             AudioLogData stoppedLog = _currentLog;
             uint stoppedHash = _currentLogHash;
             bool hadPlayback = _isPlaying || stoppedLog != null || _pendingPlaybackDirty || _currentPlaybackBitCrushed;
@@ -837,16 +922,37 @@ namespace Hecton8.Narrative
                 AudioLogEvents.TryRaisePlaybackStopped(stoppedHash, stoppedLog);
         }
 
+        private void ClearTransientPlaybackState()
+        {
+            _isPlaying = false;
+            _currentLog = null;
+            _currentLogHash = 0u;
+            _playbackTimer = 0f;
+            _currentPlaybackBitCrushed = false;
+            ClearPendingPlaybackSync();
+            _pendingGlitchResetDirty = false;
+            _currentPlaybackGlitch = default;
+            _pendingPlaybackGlitch = default;
+            ClearPlaybackQueue();
+            ClearAtmosphericWarningBlocker();
+        }
+
         /// <summary>
         /// Checks whether a log has been discovered.
         /// </summary>
         public bool IsDiscovered(string logId)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             return IsDiscovered(ComputeAudioLogHash(logId));
         }
 
         public bool IsDiscovered(uint logHash)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             return logHash != 0u && _discoveredLogHashes.Contains(logHash);
         }
 
@@ -976,6 +1082,34 @@ namespace Hecton8.Narrative
             }
 
             return ResolveFallbackDiscoveryNotificationHash();
+        }
+
+        private void TryPushDiscoveryNotification(uint notificationHash, uint logHash)
+        {
+            if (notificationHash == 0u)
+            {
+                ReportDiscoveryNotificationMiss(logHash);
+                return;
+            }
+
+            if (NotificationEvents.TryPushRegisteredInfo(notificationHash))
+                return;
+
+            ReportDiscoveryNotificationMiss(logHash);
+        }
+
+        private void ReportDiscoveryNotificationMiss(uint logHash)
+        {
+            _discoveryNotificationMissCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _DiscoveryNotificationMissWarningHash,
+                _NarrativeQueueContextHash ^ logHash,
+                math.max(1, _discoveryNotificationMissCount));
+        }
+
+        private void ClearDiscoveryNotificationDiagnostics()
+        {
+            _discoveryNotificationMissCount = 0;
         }
 
         private static uint ComputeAudioLogHash(string logId)
@@ -1178,6 +1312,9 @@ namespace Hecton8.Narrative
 
         private void EnsureVaultBuffersCold()
         {
+            if (_runtimeOwnerAborted || !_serviceRegistered)
+                return;
+
             IDataVault vault = _dataVault;
             if (vault == null)
                 return;
@@ -1220,6 +1357,7 @@ namespace Hecton8.Narrative
             _playbackQueueWriteIndex = 0;
             _encryptedFragmentStateCount = 0;
             _telemetryWriteCursor = 0;
+            ClearDiscoveryNotificationDiagnostics();
             ClearQueuedLogHashes();
         }
 
@@ -1245,6 +1383,9 @@ namespace Hecton8.Narrative
             out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
+            if (_runtimeOwnerAborted)
+                return false;
+
             IDataVault vault = _dataVault;
             if (vault == null || !IsAudioLogVaultHandle(in handle, bufferId))
                 return false;
@@ -1278,6 +1419,12 @@ namespace Hecton8.Narrative
         {
             buffer = default;
             guardVault = _dataVault;
+            if (_runtimeOwnerAborted)
+            {
+                guardVault = null;
+                return false;
+            }
+
             if (guardVault == null || !IsAudioLogVaultHandle(in handle, bufferId))
             {
                 _vaultResolutionFailureCount++;
@@ -1344,6 +1491,13 @@ namespace Hecton8.Narrative
             out NativeArray<uint>.ReadOnly hashes,
             out NativeArray<uint>.ReadOnly recoveredBits)
         {
+            if (_runtimeOwnerAborted)
+            {
+                hashes = default;
+                recoveredBits = default;
+                return false;
+            }
+
             bool hasHashes = TryReadVaultBuffer(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes, EncryptedFragmentStateCapacity, out hashes);
             bool hasBits = TryReadVaultBuffer(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits, EncryptedFragmentStateCapacity, out recoveredBits);
             return hasHashes && hasBits;
@@ -1351,6 +1505,9 @@ namespace Hecton8.Narrative
 
         private void ClearEncryptedFragmentState()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             int count = _encryptedFragmentStateCount;
             if (count > EncryptedFragmentStateCapacity)
                 count = EncryptedFragmentStateCapacity;
@@ -1487,6 +1644,12 @@ namespace Hecton8.Narrative
             hashes = default;
             recoveredBits = default;
             guardVault = _dataVault;
+            if (_runtimeOwnerAborted)
+            {
+                guardVault = null;
+                return false;
+            }
+
             if (guardVault == null ||
                 !IsAudioLogVaultHandle(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes) ||
                 !IsAudioLogVaultHandle(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits))
@@ -1614,6 +1777,9 @@ namespace Hecton8.Narrative
 
         private void RecordVaultTelemetry(uint fallbackFlags, BufferID bufferId)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             IDataVault vault = _dataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
@@ -1721,7 +1887,7 @@ namespace Hecton8.Narrative
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_runtimeOwnerAborted || !_serviceRegistered || _registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
@@ -1738,7 +1904,7 @@ namespace Hecton8.Narrative
 
         private void TryRegisterLateFrame()
         {
-            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_runtimeOwnerAborted || !_serviceRegistered || _lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
@@ -1755,14 +1921,25 @@ namespace Hecton8.Narrative
 
         private void CacheRegistryServicesCold()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             CacheAudioService(GlobalRegistry.Audio);
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPlayerContext = ResolveInitializedPlayerContext(Hecton8.Core.GlobalRegistry.Player);
             _cachedSaveService = GlobalRegistry.Save;
             RebindDataVaultCold(GlobalRegistry.DataVault, ensureBuffers: false);
         }
 
+        private static IPlayerRuntimeContext ResolveInitializedPlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            return playerContext != null && playerContext.IsInitialized ? playerContext : null;
+        }
+
         private void CacheAudioService(IAudioService audioService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!IsAudioServiceUsable(audioService))
             {
                 _cachedAudioService = null;
@@ -1780,6 +1957,9 @@ namespace Hecton8.Narrative
 
         private IAudioService ResolveAudioService()
         {
+            if (_runtimeOwnerAborted)
+                return null;
+
             IAudioService audioService = _cachedAudioService;
             if (IsAudioServiceUsable(audioService))
                 return audioService;
@@ -1791,12 +1971,15 @@ namespace Hecton8.Narrative
 
         private ISpatialAudioNarrativeRadioSink ResolveNarrativeAudioSink()
         {
+            if (_runtimeOwnerAborted)
+                return null;
+
             IAudioService audioService = ResolveAudioService();
             if (audioService == null)
                 return null;
 
             ISpatialAudioNarrativeRadioSink narrativeAudioSink = _cachedNarrativeAudioSink;
-            if (IsNarrativeAudioSinkUsable(narrativeAudioSink))
+            if (ReferenceEquals(narrativeAudioSink, audioService) && IsNarrativeAudioSinkUsable(narrativeAudioSink))
                 return narrativeAudioSink;
 
             narrativeAudioSink = audioService as ISpatialAudioNarrativeRadioSink;
@@ -1806,6 +1989,9 @@ namespace Hecton8.Narrative
 
         private void ResetPreviousNarrativeRadioSink(ISpatialAudioNarrativeRadioSink previousSink, object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (previousSink == null ||
                 ReferenceEquals(previousSink, currentService) ||
                 !IsNarrativeAudioSinkUsable(previousSink))
@@ -1827,7 +2013,7 @@ namespace Hecton8.Narrative
 
         private static bool IsAudioServiceUsable(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -1841,42 +2027,56 @@ namespace Hecton8.Narrative
             if (narrativeAudioSink == null)
                 return false;
 
+            if (narrativeAudioSink is IAudioService audioService && !audioService.IsAudioRuntimeReady)
+                return false;
+
             if (narrativeAudioSink is Behaviour behaviour)
                 return behaviour != null && behaviour.isActiveAndEnabled;
 
             return true;
         }
 
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         private void TryRegisterSaveParticipant()
         {
-            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+            if (_runtimeOwnerAborted || !_serviceRegistered || _saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_cachedSaveService == null)
-                _cachedSaveService = GlobalRegistry.Save;
+            ISaveService saveService = _cachedSaveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _cachedSaveService = saveService;
+            }
 
-            if (_cachedSaveService == null)
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _cachedSaveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _cachedSaveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _cachedSaveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveRegistered = false;
         }
 
         private void TryRegisterHotSwapListener()
         {
-            if (_registeredHotSwapListener || !Application.isPlaying)
+            if (_runtimeOwnerAborted || !_serviceRegistered || _registeredHotSwapListener || !Application.isPlaying)
                 return;
 
             _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -1891,18 +2091,27 @@ namespace Hecton8.Narrative
             _registeredHotSwapListener = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying)
-                return;
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (_serviceRegistered)
+                return true;
+
+            if (!Application.isPlaying)
+                return true;
+
+            if (TryAbortForUsableExistingRuntime())
+                return false;
 
             AudioLogSystem registeredAudioLogs = GlobalRegistry.AudioLogs;
             if (!ReferenceEquals(registeredAudioLogs, null) && !ReferenceEquals(registeredAudioLogs, this))
             {
                 if (IsAudioLogSystemUsable(registeredAudioLogs))
                 {
-                    Destroy(gameObject);
-                    return;
+                    AbortDuplicateRuntimeOwner();
+                    return false;
                 }
 
                 GlobalRegistry.UnregisterAudioLogRuntime(registeredAudioLogs);
@@ -1910,16 +2119,75 @@ namespace Hecton8.Narrative
 
             GlobalRegistry.RegisterAudioLogRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AudioLogs, this);
+            if (!_serviceRegistered)
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
+
+            return true;
         }
 
         private static bool IsAudioLogSystemUsable(AudioLogSystem audioLogSystem)
         {
-            return audioLogSystem != null && audioLogSystem.isActiveAndEnabled;
+            return audioLogSystem != null && audioLogSystem.IsAudioLogRuntimeReady;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (_runtimeOwnerAborted)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
+            AudioLogSystem registeredAudioLogs = GlobalRegistry.AudioLogs;
+            if (ReferenceEquals(registeredAudioLogs, this))
+                return false;
+
+            if (IsAudioLogSystemUsable(registeredAudioLogs))
+            {
+                AbortDuplicateRuntimeOwner();
+                return true;
+            }
+
+            if (registeredAudioLogs != null)
+                GlobalRegistry.UnregisterAudioLogRuntime(registeredAudioLogs);
+
+            return false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            TryUnregisterSaveParticipant();
+            TryUnregister();
+            TryUnregisterLateFrame();
+            TryUnregisterHotSwapListener();
+            TryUnregisterService();
+
+            ClearTransientPlaybackState();
+            ReleaseVaultBuffers(_dataVault);
+            _dataVault = null;
+            _cachedAudioService = null;
+            _cachedNarrativeAudioSink = null;
+            _cachedPlayerContext = null;
+            _cachedSaveService = null;
+            _serviceRegistered = false;
+            _registered = false;
+            _lateFrameRegistered = false;
+            _registeredHotSwapListener = false;
+            _saveRegistered = false;
+            _runtimeOwnerAborted = true;
+            enabled = false;
+            Destroy(gameObject);
         }
 
         private void TryUnregisterService()
         {
-            if (!_serviceRegistered)
+            if (_runtimeOwnerAborted || !_serviceRegistered)
                 return;
 
             if (ReferenceEquals(GlobalRegistry.AudioLogs, this))
@@ -1930,6 +2198,9 @@ namespace Hecton8.Narrative
 
         private void RebindDataVaultCold(IDataVault nextVault, bool ensureBuffers)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!ReferenceEquals(_dataVault, nextVault))
             {
                 ReleaseVaultBuffers(_dataVault);
@@ -1976,6 +2247,9 @@ namespace Hecton8.Narrative
 
         public void PopulateSaveData(SaveData data)
         {
+            if (_runtimeOwnerAborted || (Application.isPlaying && !_serviceRegistered))
+                return;
+
             if (data == null) return;
 
             if (data.audioLogDiscoveredIds == null)
@@ -2024,6 +2298,11 @@ namespace Hecton8.Narrative
 
         public void LoadFromSaveData(SaveData data)
         {
+            if (_runtimeOwnerAborted || (Application.isPlaying && !_serviceRegistered))
+                return;
+
+            ClearDiscoveryNotificationDiagnostics();
+            ClearTransientPlaybackState();
             _discoveredLogHashes.Clear();
             ClearEncryptedFragmentState();
             if (_logLookupByHash.Count == 0 && allLogs != null && allLogs.Length > 0)
@@ -2084,6 +2363,9 @@ namespace Hecton8.Narrative
 
         public bool RecoverEncryptedAudioLogFragment(uint logHash, uint fragmentHash)
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             return RecoverEncryptedFragment(logHash, fragmentHash);
         }
 
@@ -2115,6 +2397,9 @@ namespace Hecton8.Narrative
 
         private void LoadEncryptedFragmentState(SaveData data)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (data == null ||
                 data.audioLogEncryptedFragmentHashes == null ||
                 data.audioLogEncryptedFragmentBits == null)

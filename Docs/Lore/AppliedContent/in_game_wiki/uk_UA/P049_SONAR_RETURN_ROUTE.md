@@ -7,34 +7,34 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: uk_UA
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Sonar Return Route"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Сонарний маршрут повернення"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sonar Return Route
+# Сонарний маршрут повернення
 
-Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.
+Маяк повернення записує, як звучав маршрут, коли він востаннє був безпечним. Він не обіцяє, що маршрут лишився безпечним. Штормовий нагін, вільний кабель, рухомий мул, fauna і свіжі вирізи salvage можуть зігнути сонарне повернення, не стираючи коридор. Перед вантажем або глибшим зануренням пінгуй лінію. Якщо тон зсунувся, сховай вантаж або познач другий шлях назад.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+Маяк повернення застарів. Старий безпечний ping більше не збігається з ехом коридору; маса вантажу сповільнить вікно відходу.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+RETURN ROUTE SONAR / BEACON R-09: останній чистий ехосигнал недійсний. Ping Black Keel отримано з низькою достовірністю. Зсув перешкод і щільність мулу вище допуску карти. Позначити другу лінію до вилучення вантажу.
 
 ## Audio
 
-The way back is not gone. It is different enough to kill you.
+Маршрут усе ще там. Ехо вже інше.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+Пінгуй до завантаження. Якщо дорога додому змінилася, поки руки були порожні, повний наплічник вона не пробачить.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/uk_UA. -->

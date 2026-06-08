@@ -55,6 +55,7 @@ namespace Hecton8.Physiology
         public const uint MedicalBayActive = 1u << 8;
         public const uint MedicalBayPowered = 1u << 9;
         public const uint DeathSequenceBlackoutPrimed = 1u << 10;
+        public const uint CanceledByLoad = 1u << 11;
         public const uint NanDetected = 1u << 31;
     }
 

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # エイペックス・プレデターと深海生物学
 
 > **情報源:** 第44セクター研究ラボより回収された地球外生物学報告書の断片。

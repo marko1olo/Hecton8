@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Low-Power Induction Cutter"
+title: "قاطع حثي منخفض الطاقة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Low-Power Induction Cutter
+# قاطع حثي منخفض الطاقة
 
-AR LOC HOLD: Low-Power Induction Cutter is the first controlled access tool. It turns exploration into engineering choice rather than universal door removal.
+القاطع الأول خطر لأنه يبدو كإذن. يفتح service hatches والبراغي وأقفال الصناديق، ثم يرفض خيال أن كل عائق باب. pressure glass والأضلاع النشطة وAtlas-grown seams تؤدي أعمالا قد لا يفهمها اللاعب بعد.
 
-## Scanner
-
-AR LOC HOLD: Induction cutter. Opens work metal; overheats on pressure glass and bad faith.
-
-## Terminal
-
-AR LOC HOLD: TOOL WARNING: induction cutter rated for service hatches, panel bolts and light frame members. Pressure-glass lattice requires anneal or later tool class.
-
-## Audio
-
-AR LOC HOLD: Cut the hatch. Do not cut the thing holding the room together.
-
-## Field Note
-
-AR LOC HOLD: The cutter should feel valuable because it is limited.
+هذا الحد هو قيمة التصميم. تطلب الأداة قراءة الوظيفة قبل العنف. يصبح HECTON-8 أغنى عندما يكون القطع قرارا لا فعلا عاما لكل شيء.
 
 <!-- External Site; generated from P113_LOW_POWER_INDUCTION_CUTTER/ar_SA. -->

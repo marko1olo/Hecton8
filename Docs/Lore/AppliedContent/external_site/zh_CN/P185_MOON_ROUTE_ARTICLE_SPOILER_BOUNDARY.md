@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Moon Route Article Spoiler Boundary"
+title: "Atlas Basin 删节线"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Moon Route Article Spoiler Boundary
+# Atlas Basin 删节线
 
-CN LOC HOLD: Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons.
+Atlas Basin 删节线标明公共 Aegir 覆盖可以如何谈论月群、航路和救援压力，同时把封闭盆地留在公开星图之外。
 
 ## Scanner
 
-CN LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+公共月群图集可以说出天空危险；它不能印出 Atlas basin payload 到底做什么。
 
 ## Terminal
 
-CN LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+ATLAS REDACTION: 公共月面页面可列出名称、航路窗口、危险、salvage economy 和 HECTON-8 灾难事实。payload 效果、basin receiver 行为和最终抉择结果保持门控。
 
 ## Audio
 
-CN LOC HOLD: Publish the sky. Redact the bottom.
+公开天空。封住底部。
 
 ## Field Note
 
-CN LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
+云层之上，航路是公共的。basin 之下，每个答案仍然上着锁。
 
 <!-- External Site; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/zh_CN. -->

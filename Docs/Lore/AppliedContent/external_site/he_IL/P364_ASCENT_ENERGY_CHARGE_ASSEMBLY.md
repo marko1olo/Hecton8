@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Ascent Energy Charge Assembly"
+title: "מכלול מטען אנרגיית עלייה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Ascent Energy Charge Assembly
+# מכלול מטען אנרגיית עלייה
 
-HE LOC HOLD: Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.
+מכלול מטען אנרגיית העלייה קושר כלכלת משאבים לתוצאה עלילתית: blue debt ו-vent-forged hardware מחליטים אמינות בריחה, custody של ראיות ופשרה.
 
 ## Scanner
 
-HE LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+עריסת אנרגיה חרוצה מ-pressure pulse. מטען זול עושה ארון נקי.
 
 ## Terminal
 
-HE LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+ASCENT CHARGE: נדרשים vent-forged heat cell, pressure-history insulator ו-custody stamp. Raw fuel נדחה. blue debt לא מאושר נסדק תחת launch impulse ומבטל recovery claim.
 
 ## Audio
 
-HE LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
+אפשר למכור את העילוי או לרכוב עליו. לא שניהם.
 
 ## Field Note
 
-HE LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+כל גרם בעריסה הוא בריחה, ראיה או blue-debt payout. הקפסולה אינה סולחת לחמדנות.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/he_IL. -->

@@ -14,27 +14,11 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Janela de carga
 
-Payload Window define a estrutura final de HECTON-8. A última pergunta não é só no que o jogador acredita, mas o que consegue tirar do oceano.
-
-## Scanner
-
-Pacote de subida improvisado. Pode deixar o oceano se massa, clima e geometria do carrier coincidirem.
-
-## Terminal
-
-PAYLOAD SLOT: limitado. WINDOW: aberta. ROUTE: contestada. CLAIM VALUE: variável. EVIDENCE STATE: insuficiente para disputa limpa.
-
-## Audio
-
-A janela está aberta. Ela não ficará aberta para tudo.
-
-## Field Note
-
-Sair é uma rota. Sair limpo é mito.
+O problema final em HECTON-8 não é um menu moral flutuando sobre o oceano. É uma janela de carga. O pacote de subida tem limites de massa, o clima tem tempo, Aegir tem restrições de radiação e órbita, e a Black Keel tem regras de receptor antes de ter misericórdia. Cada final pergunta o que deixa a lua e quem recebe. Coordenadas podem comprar recuperação e entregar a cena do crime à Deep Reach. Provas podem chegar a um registro público e tirar do jogador o controle sobre a consequência. Amostras podem pagar dívida enquanto fortalecem o sistema que enterrou nomes de trabalhadores. Silêncio pode negar a corporação e deixar prova sob a água. A janela não é justiça. É o formato pelo qual a justiça precisa passar.
 
 <!-- External Site; generated from P010_PAYLOAD_WINDOW/pt_BR. -->

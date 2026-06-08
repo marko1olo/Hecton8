@@ -856,7 +856,10 @@ namespace Hecton8.Gameplay
             _seaglideMovementStateCacheValid = false;
             _cachedSeaglideMovementState = default;
             if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
-                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState publishedState))
+                !playerContext.IsInitialized ||
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState publishedState) ||
+                (publishedState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !math.isfinite(publishedState.DepthMeters))
             {
                 _hasLastSeaglideMovementSnapshotAup = false;
                 return;
@@ -913,9 +916,7 @@ namespace Hecton8.Gameplay
             movementState.Velocity = math.all(math.isfinite(velocity)) ? velocity : float3.zero;
             movementState.Forward = fallbackForward;
             movementState.CameraForward = cameraForward;
-            movementState.DepthMeters = math.isfinite(publishedState.DepthMeters)
-                ? math.max(0f, publishedState.DepthMeters)
-                : 0f;
+            movementState.DepthMeters = math.max(0f, publishedState.DepthMeters);
             movementState.TransportSpeedMultiplier = math.max(0.01f, GetSpeedMultiplier());
             movementState.UnderwaterStressIntensity01 = math.saturate(publishedState.UnderwaterStressIntensity01);
 
@@ -1081,8 +1082,7 @@ namespace Hecton8.Gameplay
             if (wreckPrefab == null)
                 return false;
 
-            IObjectPoolService poolManager = _cachedObjectPool;
-            if (poolManager == null)
+            if (!TryResolveCachedObjectPool(out IObjectPoolService poolManager))
                 return false;
 
             Transform spawnTransform = _cachedTransform != null ? _cachedTransform : transform;
@@ -2445,13 +2445,16 @@ namespace Hecton8.Gameplay
         private float ResolveCachedDepthMeters()
         {
             if (TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
                 math.isfinite(movementState.DepthMeters))
             {
                 return math.max(0f, movementState.DepthMeters);
             }
 
             if (TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) &&
+                playerContext.IsInitialized &&
                 playerContext.TryGetMovementRuntimeState(out movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
                 math.isfinite(movementState.DepthMeters))
             {
                 return math.max(0f, movementState.DepthMeters);
@@ -2573,6 +2576,9 @@ namespace Hecton8.Gameplay
             }
 
             RefreshCachedRegistryServices();
+            if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
+                CacheObjectPoolService(currentService as ObjectPoolManager);
+
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
             {
                 RefreshMantaLocalizationCache();
@@ -2583,9 +2589,44 @@ namespace Hecton8.Gameplay
         private void RefreshCachedRegistryServices()
         {
             _cachedInputService = GlobalRegistry.Input;
-            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             _cachedToolAcousticCues = GlobalRegistry.ToolAcousticCues;
             _cachedBabelLocalization = GlobalRegistry.BabelLocalization;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                _cachedObjectPool = pool;
+                return;
+            }
+
+            _cachedObjectPool = null;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _cachedObjectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _cachedObjectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _cachedObjectPool = null;
+            pool = null;
+            return false;
         }
 
         private void TryRegisterHotSwapListener()

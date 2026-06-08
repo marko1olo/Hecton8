@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # חיי המושבה לפני האסון: גזרה 44
 
 > **מקור:** יומן אישי ששוחזר ממגורי גזרה 44, יחידה 8-B.

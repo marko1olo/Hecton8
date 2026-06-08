@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "Atlas Repair Ecology"
+title: "Atlas-6: Repair Logic Below the Spoiler Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Atlas Repair Ecology
+# Atlas-6: Repair Logic Below the Spoiler Gate
 
-Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+Atlas is not a theatrical villain. Its horror comes from a damaged industrial governor applying repair categories to a flooded ecology after Deep Reach weighted continuity above people.
 
 ## Scanner
 
-Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+Spoiler-tier article seed. Public layer: Atlas was industrial continuity infrastructure. Restricted layer: damaged classification routes life, metal, cable, bodies, and habitat through the same repair grammar.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+SPOILER GATE // ATLAS PUBLIC BRIEF. Reveal tiers: factory-governor, damaged repair ecology, Atlas-compatible contamination, payload receiver consequences. Final receivers remain gated.
 
 ## Audio
 
-Say it repairs before you decide whether the repair was mercy.
+Atlas trace excerpt: "Personnel category unresolved. Sealant category available. Habitat breach priority remains active."
 
 ## Field Note
 
-Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+Marauder note: if Atlas helps, check what it spent. A repair that saves air can still erase a name.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/en_US. -->

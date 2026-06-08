@@ -9,32 +9,32 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Quarantine Legal Handshake Assembly"
+title: "격리 법적 핸드셰이크 조립체"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Quarantine Legal Handshake Assembly
+# 격리 법적 핸드셰이크 조립체
 
-KO LOC HOLD: HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.
+격리 법적 핸드셰이크 조립체는 extraction을 의도적으로 더럽게 만든다. 작동하는 엔진도 생존자를 corporate custody, 지연된 공공 진실, 또는 해결되지 않은 격리로 데려갈 수 있다.
 
 ## Scanner
 
-KO LOC HOLD: Handshake socket. The capsule can be mechanically ready and still legally captured.
+핸드셰이크 소켓. 캡슐은 기계적으로 준비되어도 여전히 잘못된 receiver의 소유일 수 있다.
 
 ## Terminal
 
-KO LOC HOLD: RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.
+RECOVERY HANDSHAKE: receiver key 필요. Keelmark는 mass와 lien 수락. Recovery Compliance는 coordinates와 quarantine status 수락. Public ledger는 지연 후 proof 수락. Unkeyed launch는 기본적으로 custody dispute.
 
 ## Audio
 
-KO LOC HOLD: The last part is not metal. It is who gets to call you recovered.
+누가 응답하는지가 구조의 의미를 결정한다.
 
 ## Field Note
 
-KO LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+마지막 부품은 금속이 아니다. 너를 recovered라고 부를 수 있는 시스템의 이름이다.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/ko_KR. -->

@@ -77,8 +77,7 @@ namespace Hecton8.Gameplay
                 if (!TryResolveCurrentPlayerAup(out AbsoluteUniversePosition playerAup))
                     return;
 
-                IObjectPoolService poolManager = s_cachedObjectPool;
-                if (poolManager == null)
+                if (!MantaEmergencyWreck.TryResolveCachedObjectPool(out IObjectPoolService poolManager))
                     return;
 
                 for (int i = s_activeDehydratedResidencySlotCount - 1; i >= 0; i--)
@@ -152,7 +151,7 @@ namespace Hecton8.Gameplay
                 object currentService)
             {
                 if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
-                    s_cachedObjectPool = currentService as IObjectPoolService;
+                    MantaEmergencyWreck.CacheObjectPoolService(currentService as ObjectPoolManager);
             }
 
             private void TryRegisterHotSwapListener()
@@ -174,7 +173,7 @@ namespace Hecton8.Gameplay
 
             private static void CacheRegistryServicesCold()
             {
-                s_cachedObjectPool = GlobalRegistry.ObjectPoolService;
+                MantaEmergencyWreck.CacheObjectPoolService(null);
             }
 
             private bool TryResolvePlayerTransform(float deltaTime, out Transform playerTransform)
@@ -276,6 +275,41 @@ namespace Hecton8.Gameplay
             s_residencyRuntime = null;
             s_cachedObjectPool = null;
             s_lastSpawnedWreck = null;
+        }
+
+        private static void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            ObjectPoolManager pool = candidate;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(pool) ||
+                ObjectPoolManager.TryResolveActiveRuntime(ref pool))
+            {
+                s_cachedObjectPool = pool;
+                return;
+            }
+
+            s_cachedObjectPool = null;
+        }
+
+        private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = s_cachedObjectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                s_cachedObjectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            s_cachedObjectPool = null;
+            pool = null;
+            return false;
         }
 
         /// <summary>
@@ -508,8 +542,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _selfDeactivateQueued = false;
-            IObjectPoolService poolManager = s_cachedObjectPool;
-            if (poolManager != null)
+            if (TryResolveCachedObjectPool(out IObjectPoolService poolManager))
             {
                 poolManager.Despawn(gameObject);
                 return;
@@ -893,23 +926,31 @@ namespace Hecton8.Gameplay
         private static bool TryResolveCurrentPlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
-                !runtimeContext.IsBound)
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null)
             {
                 return false;
             }
 
-            playerAup = runtimeContext.MovementState.PredictedAup;
+            if (runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                playerAup = snapshot.Aup;
+                if (playerAup.IsFinite())
+                    return true;
+            }
+
+            if (!runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
+            {
+                return false;
+            }
+
+            playerAup = movementState.PredictedAup;
             if (playerAup.IsFinite())
                 return true;
 
-            HectonPlayerMovement playerMovement = runtimeContext.PlayerMovement;
-            if (playerMovement == null)
-                return false;
-
-            playerAup = playerMovement.CurrentAup;
-            return playerAup.IsFinite();
+            return false;
         }
 
         private static AbsoluteUniversePosition ReadPoolSlotPosition(PoolSlotData slotData)

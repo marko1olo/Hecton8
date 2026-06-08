@@ -19,6 +19,7 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_x001DirectSignalPushDropCount_PlayerDeathReconciliationBridge = 0;
             s_sequence = 0u;
             s_lanesConfigured = false;
         }
@@ -31,16 +32,23 @@ namespace Hecton8.Gameplay
 
         internal static bool RequestRespawn(double3 deathAup, uint damageHash)
         {
-            return RequestRespawn(deathAup, damageHash, DefaultPlayerHash);
+            return RequestRespawn(deathAup, damageHash, DefaultPlayerHash, out _);
         }
 
         internal static bool RequestRespawn(double3 deathAup, uint damageHash, uint playerHash)
         {
-            ConfigureSignalLanes();
+            return RequestRespawn(deathAup, damageHash, playerHash, out _);
+        }
 
-            uint sequence = ++s_sequence;
-            if (sequence == 0u)
-                sequence = ++s_sequence;
+        internal static bool RequestRespawn(double3 deathAup, uint damageHash, uint playerHash, out uint sequence)
+        {
+            ConfigureSignalLanes();
+            sequence = 0u;
+
+            uint nextSequence = ++s_sequence;
+            if (nextSequence == 0u)
+                nextSequence = ++s_sequence;
+            sequence = nextSequence;
 
             bool deathAupFinite = math.all(math.isfinite(deathAup));
             double3 safeDeathAup = deathAupFinite ? deathAup : DefaultFallbackAup();
@@ -51,18 +59,48 @@ namespace Hecton8.Gameplay
             signal.PlayerHash = playerHash != 0u ? playerHash : DefaultPlayerHash;
             signal.DamageHash = damageHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
-            signal.Sequence = sequence;
+            signal.Sequence = nextSequence;
             signal.Flags = PlayerRespawnSignalFlags.Requested | PlayerRespawnSignalFlags.SuspendCollision;
             if (!deathAupFinite)
                 signal.Flags |= PlayerRespawnSignalFlags.InvalidDeathAup | PlayerRespawnSignalFlags.InvalidTargetAup;
             signal.Phase = PlayerRespawnSignalPhase.Request;
             signal.SuspendCollisionFrames = 1;
 
-            if (SignalBus<PlayerRespawnSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_PlayerDeathReconciliationBridge))
-                return true;
+            bool pushed = SignalBus<PlayerRespawnSignal>.TryPushTracked(
+                in signal,
+                ref s_x001DirectSignalPushDropCount_PlayerDeathReconciliationBridge);
+            if (!pushed)
+            {
+                ConfigureSignalLanes();
+                pushed = SignalBus<PlayerRespawnSignal>.TryPushTracked(
+                    in signal,
+                    ref s_x001DirectSignalPushDropCount_PlayerDeathReconciliationBridge);
+            }
 
-            ConfigureSignalLanes();
-            return SignalBus<PlayerRespawnSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_PlayerDeathReconciliationBridge);
+            return pushed;
+        }
+
+        internal static bool IsAcceptedCommittedRespawnSignal(
+            in PlayerRespawnSignal signal,
+            uint expectedSequence,
+            uint playerHash)
+        {
+            if (expectedSequence == 0u ||
+                signal.Sequence != expectedSequence ||
+                signal.Phase != PlayerRespawnSignalPhase.Committed)
+            {
+                return false;
+            }
+
+            uint flags = signal.Flags;
+            if ((flags & PlayerRespawnSignalFlags.Committed) == 0u ||
+                !math.all(math.isfinite(signal.DeathAUP)) ||
+                !math.all(math.isfinite(signal.RespawnAUP)))
+            {
+                return false;
+            }
+
+            return playerHash == 0u || signal.PlayerHash == 0u || signal.PlayerHash == playerHash;
         }
 
         private static void ConfigureSignalLanes()

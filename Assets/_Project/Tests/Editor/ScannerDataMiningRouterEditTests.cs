@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using Hecton8.Gameplay;
@@ -310,6 +312,34 @@ namespace Hecton8.Tests.Editor
             Assert.Greater(pressured, ultra);
         }
 
+        [Test]
+        public void RuntimeScannerPose_DoesNotFallbackToStaleMovementAup()
+        {
+            string source = ReadSource("_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs");
+            string poseResolver = ExtractMethodBody(source, "private bool TryResolveScannerPose(out double3 originAup, out float3 forward)");
+            string cachedAupResolver = ExtractMethodBody(source, "private bool TryResolveCachedPlayerAup(out double3 originAup)");
+            string slowTick = ExtractMethodBody(source, "public void SlowTick()");
+            string cacheRuntime = ExtractMethodBody(source, "private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)");
+
+            StringAssert.Contains("playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)", poseResolver);
+            StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", poseResolver);
+            StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u", poseResolver);
+            StringAssert.Contains("!movementState.PredictedAup.IsFinite()", poseResolver);
+            StringAssert.Contains("TryNormalizeScannerForward(movementState.CameraForward, out forward)", poseResolver);
+            StringAssert.Contains("originAup = movementState.PredictedAup.ToAbsoluteDouble3();", poseResolver);
+            Assert.Less(
+                poseResolver.IndexOf("playerContext.TryGetPlayerPoseSnapshot", StringComparison.Ordinal),
+                poseResolver.IndexOf("playerContext.TryGetMovementRuntimeState", StringComparison.Ordinal));
+
+            StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", cachedAupResolver);
+            StringAssert.Contains("originAup = movementState.PredictedAup.ToAbsoluteDouble3();", cachedAupResolver);
+            StringAssert.DoesNotContain("CurrentAup", source);
+            StringAssert.DoesNotContain("_cachedPlayerMovement", source);
+            StringAssert.DoesNotContain("playerContext.PlayerMovement", source);
+            StringAssert.DoesNotContain("PlayerMovement", slowTick);
+            StringAssert.DoesNotContain("PlayerMovement", cacheRuntime);
+        }
+
         private static ScannerSpatialEntityDTO MakeEntity(uint hash, double3 aup, uint metadataIndex)
         {
             return new ScannerSpatialEntityDTO
@@ -357,6 +387,37 @@ namespace Hecton8.Tests.Editor
                 ToolLevel = 1u,
                 Flags = 1u
             };
+        }
+
+        private static string ReadSource(string relativePath)
+        {
+            return File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), relativePath));
+        }
+
+        private static string ExtractMethodBody(string source, string signature)
+        {
+            int start = source.IndexOf(signature, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(start, 0, signature);
+            int open = source.IndexOf('{', start);
+            Assert.GreaterOrEqual(open, 0, signature);
+
+            int depth = 0;
+            for (int i = open; i < source.Length; i++)
+            {
+                if (source[i] == '{')
+                {
+                    depth++;
+                }
+                else if (source[i] == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                        return source.Substring(open, i - open + 1);
+                }
+            }
+
+            Assert.Fail("Unable to extract method body for " + signature);
+            return string.Empty;
         }
     }
 }

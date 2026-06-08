@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "Ланцюг відповідальності Великого припливу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# Ланцюг відповідальності Великого припливу
 
-UK LOC HOLD: The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.
+Великий приплив не був кнопкою, яку хтось натиснув у залі ради директорів. HECTON-8 пішов під воду через посилення припливів, відмову кріосфери, хімію тиску й інженерні запаси колонії, продані як прийнятні. Це розрізнення важливе, бо робить злочин бруднішим, а не чистішим. Deep Reach не треба було вигадувати катастрофу. Досить було недобудувати незалежну евакуацію, залишити Atlas із активною вагою безперервності, берегти претензійні активи перед витягом людей і сховати затримку в мові сертифікації. Вода була фізикою. Ланцюг відповідальності — це набір рішень, які перетворили фізику на покинення людей.
 
 ## Scanner
 
-UK LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+Потоп був реальною фізикою: припливним зв’язком, обвалом льоду, хімією тиску й надто тонко оціненими запасами. Злочином був стек пріоритетів навколо цього.
 
 ## Terminal
 
-UK LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+ЗВЕДЕННЯ ІНЦИДЕНТУ: геотехнічний каскад підтверджено. Евакуаційна місткість нижча за попит хвостового ризику. Вага безперервності Atlas залишалася активною. Витяг людей очікує сертифікації.
 
 ## Audio
 
-UK LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+Море зробило потоп. Компанія вирішила, які двері залишаться папером.
 
 ## Field Note
 
-UK LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach не мусила топити місяць. Досить було зробити евакуацію необов’язковою.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/uk_UA. -->

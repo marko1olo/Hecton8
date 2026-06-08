@@ -146,16 +146,24 @@ namespace Hecton8.Optimization
             if (!Application.isPlaying)
                 return;
 
+            if (!TryRegisterService())
+                return;
+
             EnsureProgressSignalLaneCold();
             RefreshGraphicsBudgetBytes();
             CacheDependencies();
             TryRegisterHotSwap();
-            if (TryRegisterService())
-                TryRegister();
+            TryRegister();
         }
 
         private void Start()
         {
+            if (!Application.isPlaying)
+                return;
+
+            if (!_registeredService && !TryRegisterService())
+                return;
+
             EnsureProgressSignalLaneCold();
             RefreshGraphicsBudgetBytes();
             CacheDependencies();
@@ -531,18 +539,60 @@ namespace Hecton8.Optimization
             if (!Application.isPlaying)
                 return false;
 
-            AssetLoadDispatcher registered = GlobalRegistry.AssetLoadDispatcher;
-            if (registered != null && !ReferenceEquals(registered, this))
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterAssetLoadDispatcherRuntime(this);
             _registeredService = ReferenceEquals(GlobalRegistry.AssetLoadDispatcher, this);
             if (_registeredService)
                 s_registeredInstance = this;
             return _registeredService;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            if (!Application.isPlaying)
+                return false;
+
+            AssetLoadDispatcher registered = GlobalRegistry.AssetLoadDispatcher;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsAssetLoadDispatcherRuntimeUsable(registered))
+                {
+                    s_registeredInstance = registered;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_registeredInstance, registered))
+                    s_registeredInstance = null;
+                GlobalRegistry.UnregisterAssetLoadDispatcherRuntime(registered);
+            }
+
+            AssetLoadDispatcher active = s_registeredInstance;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsAssetLoadDispatcherRuntimeUsable(active))
+            {
+                if (!ReferenceEquals(GlobalRegistry.AssetLoadDispatcher, active))
+                    GlobalRegistry.RegisterAssetLoadDispatcherRuntime(active);
+                Destroy(gameObject);
+                return true;
+            }
+
+            if (ReferenceEquals(s_registeredInstance, active))
+                s_registeredInstance = null;
+            if (ReferenceEquals(GlobalRegistry.AssetLoadDispatcher, active))
+                GlobalRegistry.UnregisterAssetLoadDispatcherRuntime(active);
+            return false;
+        }
+
+        private static bool IsAssetLoadDispatcherRuntimeUsable(AssetLoadDispatcher dispatcher)
+        {
+            return dispatcher != null &&
+                   dispatcher._registeredService &&
+                   dispatcher.isActiveAndEnabled;
         }
 
         private void TryUnregister()
@@ -635,6 +685,11 @@ namespace Hecton8.Optimization
                     break;
                 case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
                     _assetLifecycle = currentService as IAssetLifecyclePressureSink;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
             }
         }

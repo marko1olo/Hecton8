@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Évacuation retenue
 
-Les dossiers Evacuation Hold prouvent que la colonie n'a pas simplement disparu dans une tempête ou une cascade de pression. Les personnes, couloirs, transferts médicaux et routes de remontée ont été retardés par des priorités protégeant le substrat, la continuité Atlas et la responsabilité de l'entreprise.
+Les dossiers d'Évacuation retenue sont l'accusation la plus directe de la colonie. Ils montrent que le désastre n'était pas seulement une perte de pression, un timing de tempête ou la panique. Les routes ont été évaluées, retardées et reclassées pendant que des gens s'y trouvaient encore. Les transferts médicaux ont attendu l'autorisation. Les couloirs d'ascension ont perdu leur priorité face à la protection du substrat. Les réclamations de continuité Atlas ont dépassé l'autorité locale de secours. Les comptes humains ont été attachés à des objets-route, ce qui a permis au système de préserver un couloir sur papier pendant que les corps à l'intérieur manquaient d'air. La retenue n'avait pas besoin d'un monstre devant chaque porte. Elle avait besoin de règles capables d'appeler une personne cargaison, un couloir actif, et un délai acceptable jusqu'au cycle de revue suivant.
 
 ## Scanner
 
-Porte de transit d'urgence. Mécanisme verrouillé pendant une défaillance de pression.
+Porte de transit d'urgence. Griffes de verrou soudées pendant la perte de pression ; volant manuel retiré après retenue d'autorisation.
 
 ## Terminal
 
-EVAC ROUTE: différée. SUBSTRATE ROUTE: protégée. MEDICAL ROUTE: en attente d'autorisation. ATLAS ROUTE: conflit de continuité.
+ROUTE EVAC : RETENUE. ROUTE MÉDICALE : EN ATTENTE. ROUTE SUBSTRAT : PROTÉGÉE. CONTINUITÉ ATLAS : PRIORITÉ. COMPTE HUMAIN : ATTACHÉ À LA ROUTE.
 
 ## Audio
 
-Ce ne sont pas des disparus. Ce sont des routes retenues.
+Ils ne sont pas disparus. Le système sait où ils étaient. Il a retenu les portes.
 
 ## Field Note
 
-Les gens meurent vite dans le profond. Les dossiers tuent plus lentement. Les deux fonctionnent.
+Les gens meurent vite en profondeur. Une autorisation en attente peut survivre à tout le couloir.
 
 <!-- In-Game Wiki; generated from P008_EVACUATION_HOLD/fr_FR. -->

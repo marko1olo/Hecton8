@@ -1,12 +1,14 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$BindingMap,
+    [string]$SpecJson = "",
     [int]$MaxTextureSize = 512,
     [int]$CpuLimitPercent = 50,
     [int]$CpuSamples = 4,
     [int]$CpuSampleIntervalSeconds = 2,
     [string]$UnityPath = "",
     [switch]$AllowOverwrite,
+    [switch]$AllowDisabledSpecGaps,
     [switch]$WaitForGate,
     [int]$MaxWaitSeconds = 900
 )
@@ -32,6 +34,7 @@ function Resolve-ProjectOrAbsolutePath {
 }
 
 $bindingMapPath = Resolve-ProjectOrAbsolutePath -Path $BindingMap
+$specJsonPath = if ($SpecJson) { Resolve-ProjectOrAbsolutePath -Path $SpecJson } else { $null }
 
 $validatorArgs = @(
     "-B",
@@ -43,6 +46,12 @@ $validatorArgs = @(
     "--require-source-bake-manifest",
     "--require-approved-bindings"
 )
+if ($specJsonPath) {
+    $validatorArgs += @("--spec-json", $specJsonPath)
+}
+if ($AllowDisabledSpecGaps) {
+    $validatorArgs += "--allow-disabled-spec-gaps"
+}
 if (-not $AllowOverwrite) {
     $validatorArgs += "--require-empty-icon"
 }

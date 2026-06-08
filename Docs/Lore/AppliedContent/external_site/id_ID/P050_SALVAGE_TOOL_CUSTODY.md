@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.deep_colony
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "Kustodi Alat Salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Kustodi Alat Salvage
 
-Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder.
+Di HECTON-8, alat bisa menjadi perlengkapan bertahan hidup dan saksi kontrak sekaligus. Log kustodi salvage mengikat potongan, perbaikan, dan sampel ke token claim, membuat tindakan berguna menjadi bagian dari bukti, utang, atau tekanan payout nanti.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+Dock alat menyimpan log kustodi tersegel. Potongan terakhir, perbaikan, dan kantong sampel terikat ke token claim Keelmark.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CUSTODY LOG / TOOL DOCK S-12: penggunaan cutter diterima di bawah salvage claim. Aksi repair disaksikan. Hak sampel melekat pada token Keelmark Mutual. Ekspor bukti bertentangan dengan rute payout material.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+Setiap potongan berguna meninggalkan saksi.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+Cutter bisa menyelamatkan udaramu dan menjual tanganmu dalam satu gerakan. Periksa apa yang ia catat sebelum menyebutnya milikmu.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/id_ID. -->

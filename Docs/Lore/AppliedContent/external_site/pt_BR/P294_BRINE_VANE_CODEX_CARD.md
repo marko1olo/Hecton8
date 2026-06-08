@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Brine Vane Codex Card"
+title: "Cartão de códice da lâmina de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Brine Vane Codex Card
+# Cartão de códice da lâmina de salmoura
 
-PT LOC HOLD: In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+Lâminas de salmoura tornam física a água de meia profundidade de HECTON-8. Elas mostram que o cânion é construído por densidade, não por volume azul vazio: uma membrana pode ser aviso, fonte de material e borda de falso piso ao mesmo tempo.
 
 ## Scanner
 
-PT LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Folha de lâmina de salmoura. Membrana sal-mineral presa à cisalha de densidade. Borda intacta: parede; boca rasgada: passagem; água preta sem borda de lâmina: risco de falso piso.
 
 ## Terminal
 
-PT LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+ESPÉCIME / LÂMINA DE SALMOURA / função: marcador de parede de densidade, aviso de dobra do sonar, fonte de costelas desprendidas / leitura segura: folha intacta, boca rasgada a jusante, ponta curvada de janela de cisalha / rejeitar: cortar folha viva de rota, cruzar brilho aberto, confiar em retorno de falso piso / nota de rota: colete costelas desprendidas, não a membrana que mantém seu mapa aberto.
 
 ## Audio
 
-PT LOC HOLD: The plant is not pointing up. It is pointing through.
+A lâmina não aponta para cima. Ela mostra onde o oceano vira de lado.
 
 ## Field Note
 
-PT LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Folha intacta: parede. Boca rasgada: rota possível. Costela desprendida: amostra. Folha viva segurando a via: deixe.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/pt_BR. -->

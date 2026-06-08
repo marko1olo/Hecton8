@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Reclamation Pool"
+title: "Реквізиційний пул Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Reclamation Pool
+# Реквізиційний пул Aegir
 
-UK LOC HOLD: Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
-
-## Scanner
-
-UK LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
-
-## Terminal
-
-UK LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
-
-## Audio
-
-UK LOC HOLD: The pool owns the route. You only rent the answer.
-
-## Field Note
-
-UK LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
+Реквізиційний пул Aegir — спосіб залишити гравця самого на HECTON-8 і водночас зробити прибуття правдоподібним. Жоден малий marauder не володіє Black Keel напряму. Carrier-тендер належить спільній системі claims, створеній для мертвої інфраструктури, спірних вантажів і світів, надто дорогих для звичайних екіпажів. Штамп пулу купує доступ до маршруту, але разом із цим передає маршрут арбітражу. Коли оператор опиняється нижче ватерлінії, кожен запит конкурує з payload custody, карантинними резервами, цінністю доказів і паливними вікнами. Страх пулу процедурний. Він може надіслати допомогу й усе одно відмовити в порятунку, бо допомога за claim-правом Aegir — лише одна оплачувана послуга серед багатьох.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/uk_UA. -->

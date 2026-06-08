@@ -8,33 +8,19 @@ biome_tags: biome.tide_pump;biome.drowned_admin
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+spoiler_tier: 1
+title: "대조석 물리 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# 대조석 물리 기록
 
-KO LOC HOLD: Great Tide Physics Record defines the disaster logic for HECTON-8: the ocean is physically dangerous, and the corporate crime is designing around optimistic margins until a moon-sized system collected the debt.
+대조석 물리 기록은 재난을 정직하게 붙잡는다. HECTON-8은 조석 공명, 얼음 붕괴, 폭풍 해일, 산업 열 방출에 취약했다. Deep Reach의 죄는 가짜 마법 원인이 아니라 margin, evacuation capacity, decision priority에 보인다.
 
-## Scanner
-
-KO LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
-
-## Terminal
-
-KO LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
-
-## Audio
-
-KO LOC HOLD: The report was right. That is why they buried it.
-
-## Field Note
-
-KO LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+대조석 물리 기록은 HECTON-8 재난 논리를 정의한다. 바다는 물리적으로 위험했고, 기업 범죄는 낙관적 margin으로 설계한 데 있었다. 부드럽게 말하지 마라. 실제 물리가 사람을 죽였고, Deep Reach는 그 물리에 희생자를 배정했다.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/ko_KR. -->

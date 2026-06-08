@@ -469,10 +469,11 @@ CRAFT_FAIL(ItemData[] inputs):
 
 ### 8.1 Proxy Mesh Instantiation Strategy
 
-GPU Instancing groups by proxyMeshIndex:
+GPU/BRG groups by proxyMeshIndex:
   Build InstancedRenderData[32] arrays each frame
   Per-instance data: float4x4 TRS (computed from proxy.position + identity rotation)
-  Submit via Graphics.DrawMeshInstanced(mesh, 0, mat, matrices, count)
+  Submit via BatchRendererGroup / GPU Resident Drawer compatible path where possible.
+  Raw Graphics.DrawMeshInstanced requires a route exception and profiler proof.
   Batch threshold: submit when count >= 1 (no minimum - underwater scenes sparse)
 
 ### 8.2 Icon Atlas Sampling
@@ -486,10 +487,10 @@ UV tile calculation (512x512 atlas, 32x32 icon tiles = 16x16 grid):
 ### 8.3 Highlight Shader Integration (Scavenge Target)
 
 On raycast hit proxy:
-  Pass instanceUID to highlight shader via MaterialPropertyBlock
+  Pass highlighted instanceUID through GraphicsBuffer instance data, a renderer-feature highlight buffer, or a material CBUFFER owned by the highlight route.
   Shader reads: _HighlightUID (uint) - compares against per-instance ID
   If match: rim light + depth-outline pass active
-  No material duplication. Single property override.
+  No material duplication. No MaterialPropertyBlock on standard SRP-batched geometry.
 
 ---
 

@@ -14,20 +14,22 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Livro Black Keel
 
-O livro Black Keel explica por que o carrier pode contatar, guiar, cobrar, atrasar, recuperar ou abandonar sem virar vilão. É infraestrutura pública com debt custody e prioridades Deep Reach ocultas.
+Black Keel é a linha orbital do jogador, mas não uma fantasia de resgate. Pertence à infraestrutura claim-pool: livros de custódia, dívida de seguro, janelas de recuperação, quarentena e autoridade do carrier.
+
+Guia porque guiar protege valor. Atrasa porque atraso também protege valor. Ajuda sem estar do seu lado.
 
 ## Scanner
 
-Livro de claim-pool tender. Custódia carrier pública, dívida de seguro, hooks Deep Reach ocultos.
+Livro de tender claim-pool. Custódia pública do carrier, dívida de seguro, penalidades de massa de subida e hooks Deep Reach ocultos.
 
 ## Terminal
 
-Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side.
+LIVRO BLACK KEEL // Serviço de recuperação condicional. Liberação de claim incompleta. Rota de prioridade profunda mascarada. Autoridade de payload permanece no carrier. Sobrevivência do contratado não supera carga segurada sem valor de subida atualizado.
 
 ## Audio
 

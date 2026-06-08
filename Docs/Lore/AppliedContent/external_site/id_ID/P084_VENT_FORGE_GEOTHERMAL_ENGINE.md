@@ -8,33 +8,19 @@ biome_tags: biome.thermal_fields;biome.factory_temple
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Vent Forge Geothermal Engine"
+spoiler_tier: 1
+title: "Mesin Geotermal Tempa Vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent Forge Geothermal Engine
+# Mesin Geotermal Tempa Vent
 
-ID LOC HOLD: Vent Forge Geothermal Engine shows why HECTON-8 is valuable and lethal. The moon is an industrial engine before humans build one on it.
+Tempa vent menghubungkan geologi dengan crafting, bertahan hidup dan horor. Ia memberi panas dan siklus tekanan untuk keramik, seal dan kaca tekanan, tetapi siklus yang sama membuat kantong mendidih, pembacaan oksigen palsu, awan korosif dan migrasi fauna.
 
-## Scanner
-
-ID LOC HOLD: Vent forge manifold. Heat, poison and power using the same pipe.
-
-## Terminal
-
-ID LOC HOLD: GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
-
-## Audio
-
-ID LOC HOLD: The vent does not care whether you call it power or weather.
-
-## Field Note
-
-ID LOC HOLD: Every useful vent is also a machine for punishing bad timing.
+Mesin Geotermal Tempa Vent menunjukkan mengapa HECTON-8 berharga dan mematikan: bulan itu mesin industri sebelum manusia membangun mesin di atasnya. Setiap vent berguna juga mesin yang menghukum timing buruk.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/id_ID. -->

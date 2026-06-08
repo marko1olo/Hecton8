@@ -8,33 +8,17 @@ biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+spoiler_tier: 1
+title: "빔 세일 탐사기 시대"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# 빔 세일 탐사기 시대
 
-KO LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
-
-## Scanner
-
-KO LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
-
-## Terminal
-
-KO LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
-
-## Audio
-
-KO LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
-
-## Field Note
-
-KO LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+빔 세일 탐사기 시대는 Aegir 이야기의 조용한 시작이다. 작은 payload는 먼 array의 출력을 타고 먼저 건너갔고, 논쟁하기에는 오래됐지만 팔기에는 충분한 packet을 돌려보냈다. 탐사기는 Aegir를 안전하게 만들지 않았다. 중력 우물, 방사선대, 해양 signature, relay sightline, 그리고 충분한 무관심이면 수익화할 수 있는 항로를 읽을 수 있게 만들었다. 읽을 수 있음과 안전함의 차이 속으로 Deep Reach가 들어온다.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/ko_KR. -->

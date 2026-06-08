@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # נזק לקפסולת נחיתה
 
-השחקן מגיע ל-HECTON-8 בקפסולת נחיתה. ההתרסקות משאירה מחסה, כוח ויומנים, אבל הורסת את העלייה. בריחה מוקדמת היא שרשרת הנדסית.
+קפסולת ההטלה מביאה את המראודר אל HECTON-8. ההתרסקות משאירה מספיק מערכות למחסה, כוח ויומנים, אך הורסת חומרת עלייה. יציאה מוקדמת נעשית שרשרת הנדסית, לא כפתור.
 
 ## Scanner
 

@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Rząd szafek pracowniczych
 
-Znalezisko robi z HECTON-8 miejsce pracy z nawykami, długami i kulturą pogranicza.
+Rzędy szafek pracowniczych osadzają HECTON-8 w zwykłej pracy. Narzędzia, farba, kredyty żywnościowe i znaki pogranicza pojawiają się, zanim katastrofa stanie się teorią.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Przedmioty czynią kolonię ludzką: nazwiska, narzędzia, kredyty żywnościowe
 
 ## Terminal
 
-Audyt kolonii: prywatne schowki i znaki Barnard łączą gracza z realną załogą.
+AUDYT KOLONII: prywatne schowki i znaki Barnard wiążą rząd szafek z nazwaną załogą i trasami pracy.
 
 ## Audio
 

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "JA LOC HOLD: Resources and Ecology"
+title: "資源と生態"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Resources and Ecology
+# 資源と生態
 
-JA LOC HOLD: Resource/ecology hub: drowned crust, brine ladders, vent chemistry, living systems and Atlas' damaged repair logic.
+資源・生態ハブ: drowned crust、brine ladders、vent chemistry、living systems、Atlasの損傷したrepair logic。
 
 ## Scanner
 
-JA LOC HOLD: Publication hub: geology, blue debt, fauna grammar and Atlas repair-network misuse.
+公開ハブ: geology、blue debt、fauna grammar、Atlas修理ネットワークの誤用。
 
 ## Terminal
 
-JA LOC HOLD: SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.
+SITE NAV: native geology、process feedstock、Atlas-altered resources、shallow ecology、encounter grammarを一枚のprocess mapとして扱う。
 
 ## Audio
 
-JA LOC HOLD: Nothing here is just loot.
+ここに単なるlootはない。
 
 ## Field Note
 
-JA LOC HOLD: Navigation cluster record: resources and ecology belong together when materials, biota, and evidence pressure share the same route.
+資源と生態は、材料、生物、証拠圧が同じルートを共有する時に結びつく。
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/ja_JP. -->

@@ -9,32 +9,20 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Transit Duration Bands"
+title: "Transitdauer-Bänder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Transit Duration Bands
+# Transitdauer-Bänder
 
-DE LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
+## Verschiedene Uhren
 
-## Scanner
+Dieselbe Route bedeutet nicht dieselbe Zeit. Ein probe packet kann früh starten, Licht verbrennen und Jahrzehnte vor der ersten Crew am Wasser zum claim werden. Heavy freight braucht staged launches, braking rights, pellet lanes, Radiatoren und Versicherung, die die Verlustkurve akzeptiert. Human crew braucht all das plus life support, liability language und einen Grund, return mass zu bezahlen.
 
-DE LOC HOLD: The same route means different time for packets, freight and people.
-
-## Terminal
-
-DE LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
-
-## Audio
-
-DE LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
-
-## Field Note
-
-DE LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+HECTON-8 sperrt den Spieler in diese versetzten Uhren. Ein distress hash kann gültig und nutzlos sein. Eine Cargo-Chance kann offen sein, während rescue geschlossen bleibt. Öffentliche Folgen können Jahre entfernt und trotzdem schützenswert sein. Der Horror ist nicht, dass die Route kaputt ist. Der Horror ist, dass sie für alles funktioniert außer für den Körper, der sie um Sorge bittet.
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/de_DE. -->

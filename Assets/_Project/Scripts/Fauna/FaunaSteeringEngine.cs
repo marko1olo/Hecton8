@@ -20,14 +20,14 @@ namespace Hecton8.AI
         [Header("Configuration")]
         public float moveSpeed = 5f;
         [FormerlySerializedAs("maxSpeed")]
-        public float maxSpeed = 5f; 
+        public float maxSpeed = 5f;
         [FormerlySerializedAs("swimForce")]
-        public float swimForce = 15f; 
+        public float swimForce = 15f;
         public float acceleration = 2f;
         [FormerlySerializedAs("rotationSpeed")]
         public float rotationSpeed = 3f;
         [FormerlySerializedAs("turnSpeed")]
-        public float turnSpeed = 3f; 
+        public float turnSpeed = 3f;
         public float bankingStrength = 25f;
         public float stopDistance = 0.5f;
 
@@ -80,7 +80,7 @@ namespace Hecton8.AI
             desiredDirection = targetDir;
             float resolvedForceMultiplier = math.max(0.1f, forceMult);
             bool useApexSteering = UsesApexSmoothSteering();
-            
+
             // TACTICAL DIRECTION: Predator Retreat (User REQ: Flee strictly from threat)
             if (isRetreating && threatPos != default)
             {
@@ -152,7 +152,7 @@ namespace Hecton8.AI
                 Quaternion targetRot = useApexSteering
                     ? ResolveApexRotation(lookDir, _body.rotation)
                     : ResolveDominantAxisRotation(lookDir);
-                
+
                 // Rotation Speed multiplier for aggressive/retreat states
                 float rotMod = (isRetreating || speedMult > 1.1f) ? 2.5f * turnMult : turnMult;
                 float turnResponse = turnSpeed * rotMod * resolvedForceMultiplier * fdt;

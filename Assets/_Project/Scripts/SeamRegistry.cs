@@ -29,6 +29,7 @@ namespace Hecton8.World
         private Dictionary<long, ProceduralGeologyCaveEntranceDTO> _caveEntrancesByRuntimeKey;
         private Dictionary<long, float2> _seamHeightsByChunk;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private bool _saveRegistered;
         private bool _hotSwapRegistered;
 
@@ -99,24 +100,37 @@ namespace Hecton8.World
                 return;
 
             ISaveService saveService = _saveService;
-            if (saveService == null)
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveService = null;
             _saveRegistered = false;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void CacheRegistryServicesCold()

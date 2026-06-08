@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Drop Capsule Damage Sequence"
+title: "Sequência De Dano Da Cápsula"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Drop Capsule Damage Sequence
+# Sequência De Dano Da Cápsula
 
-PT-BR LOC HOLD: The drop capsule explains stranding through broken parts: warped frame, drowned avionics, lost antenna and a recovery ring that cannot lock.
+A cápsula de queda explica o encalhe por peças quebradas: armação empenada, aviônica afogada, antena perdida e um recovery ring que não consegue travar.
 
 ## Scanner
 
-PT-BR LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
+Diagnóstico da cápsula. A descida salvou o corpo gastando hardware de ascensão.
 
 ## Terminal
 
-PT-BR LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+RESUMO DE DANO BATHY-DROP: crush-frame empenado; high-gain mast perdido; ascent avionics inundada; recovery/flotation ring rasgado; boia de emergência repetindo no-lock. Energia de abrigo disponível. Ascensão independente indisponível.
 
 ## Audio
 
-PT-BR LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+Ascent bus inundado. Recovery ring no-lock. Esta cápsula consegue manter você respirando, não levar você para casa.
 
 ## Field Note
 
-PT-BR LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+O anel inferior está oval por dois dedos. High-gain mast sumiu. A boia ainda pede um lançamento que não pode fazer.
 
 <!-- External Site; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/pt_BR. -->

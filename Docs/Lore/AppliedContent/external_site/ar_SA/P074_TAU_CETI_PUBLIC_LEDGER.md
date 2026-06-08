@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tau Ceti Public Ledger"
+title: "السجل العام لتاو سيتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Tau Ceti Public Ledger
+# السجل العام لتاو سيتي
 
-AR LOC HOLD: Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly.
+السجل العام لتاو سيتي هو مساءلة خيال علمي صارم: توجد مؤسسات عامة حقيقية، لكن المسافة تحول العدالة إلى أثر ضوئي ما لم تحفظ الأدلة بانضباط سلسلة الحيازة.
 
 ## Scanner
 
-AR LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+جزء من سجل مدني في Tau Ceti. علني بما يكفي لإخافة Deep Reach، ومتأخر أكثر مما يلزم لإنقاذ المستعمرة.
 
 ## Terminal
 
-AR LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+مرآة سجل TAU CETI: الأدلة المختومة مقبولة بعد مصادقة المرحل. نافذة المراجعة العامة المتوقعة تتجاوز فترة النجاة المحلية بـ 31.4 سنة.
 
 ## Audio
 
-AR LOC HOLD: A court can be honest and useless when light itself is late.
+يمكن للمحكمة أن تكون نزيهة وعديمة الفائدة عندما يتأخر الضوء نفسه.
 
 ## Field Note
 
-AR LOC HOLD: Oversight can arrive clean and late. Late is still dead.
+قد تصل الرقابة نظيفة ومتأخرة. المتأخر ما زال ميتا.
 
 <!-- External Site; generated from P074_TAU_CETI_PUBLIC_LEDGER/ar_SA. -->

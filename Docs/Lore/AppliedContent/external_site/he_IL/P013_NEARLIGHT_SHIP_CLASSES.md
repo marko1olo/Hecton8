@@ -2,39 +2,25 @@
 packet_id: P013_NEARLIGHT_SHIP_CLASSES
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: ships.nearlight_classes
-unlock_id: unlock.first_transit_manifest
-poi_tags: poi.transit_manifest;poi.sleeper_tag
-biome_tags: biome.drowned_colony;biome.crash_shelf
+unlock_id: unlock.first_nearlight_manifest
+poi_tags: poi.transit_manifest;poi.old_ship_class_table
+biome_tags: biome.drowned_colony;biome.black_keel_link
 locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "מחלקות ספינות nearlight"
+title: "מחלקות ספינות קרובות-אור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# מחלקות ספינות nearlight
+# מחלקות ספינות קרובות-אור
 
-Nearlight Ship Classes שומר את HECTON-8 כ-hard-sci-fi. מסע בין-כוכבי קיים, אך הוא איטי, ממומן ותלוי תשתית.
+HECTON-8 לא צריכה FTL כדי להרגיש עצומה. גשושיות אפשר לאבד, ספינות זרע נושאות הוראות, ומובילי Atlas מזיזים את המסה היקרה.
 
-## Scanner
-
-מניפסט מעבר: needleprobe, seed ship, mass carrier, sleeper transport, system carrier.
-
-## Terminal
-
-No FTL lane registered. Transit class requires launch infrastructure, braking plan, shielding mass, and route custody.
-
-## Audio
-
-ספינה יכולה לחצות כוכבים ועדיין להיות חסרת תועלת לחדר מוצף.
-
-## Field Note
-
-ספינות אינן חירות. ספינות הן לוחות זמנים עם מנועים.
+הגעה קשה כמו יציאה. צריך לאבד מהירות במפרשים מגנטיים ובגאומטריית ענקי גז. לכן התביעה יכולה להיות אנושית והשחקן עדיין לבד במים.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/he_IL. -->

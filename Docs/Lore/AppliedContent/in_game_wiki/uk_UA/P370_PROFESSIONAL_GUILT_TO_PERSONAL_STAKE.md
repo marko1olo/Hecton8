@@ -9,32 +9,35 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Professional Guilt To Personal Stake"
+title: "Від професійної провини до особистої ставки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Professional Guilt To Personal Stake
+# Від професійної провини до особистої ставки
 
-UK LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.
+Професійна провина стає особистою ставкою, не перетворюючи протагоніста на причину катастрофи. Гравцеві не потрібні зниклий родич, кровна помста чи таємна роль обраного свідка. Тиск холодніший і доросліший. Він упізнає процедуру. Він знає, чому поле свідка важливе, чому штамп безпечного маршруту може брехати, чому перевізник може чути його і все одно не підняти. HECTON-8 стає особистим, бо стара мова Deep Reach для нього не абстракція. Це робота, якій він колись довіряв, робота, поруч із якою працював, і тепер ця робота прив’язана до імен, знайдених у затоплених кімнатах. Арка не про зізнання. Вона про відмову: коли гравець уміє читати машину залишення, залишити її похованою стає ще однією участю.
 
 ## Scanner
 
-UK LOC HOLD: Signature match. The form language is old. The names are new.
+Візерунок підпису збігається зі старим кешем процедур. Імена змінилися. Кімната відмовила тим самим способом. Компетенція більше не є дистанцією.
 
 ## Terminal
 
-UK LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+ПІДСУМОК ДОСЬЄ / ПРОФЕСІЙНА СТАВКА
+докази-тригери: упізнання процедури, знайдені мітки працівників, конфлікт приймача претензії
+виключений мотив: родинний зв’язок, лінія помсти, статус обраного свідка
+активний мотив: колишній системний працівник упізнає відвернене залишення і досі може читати машину, яка його оформила.
 
 ## Audio
 
-UK LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
+Ти прийшов по претензію. Залишився, бо папери знали твої руки.
 
 ## Field Note
 
-UK LOC HOLD: Use near late dossier and final payload route.
+Не твій підпис. Але твій фах. Тому кімната не замовкне.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/uk_UA. -->

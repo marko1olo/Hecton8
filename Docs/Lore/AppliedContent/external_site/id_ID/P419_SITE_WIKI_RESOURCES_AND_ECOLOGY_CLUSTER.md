@@ -9,24 +9,16 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ID LOC HOLD: Resources and Ecology"
+title: "Sumber Daya dan Ekologi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Resources and Ecology
+# Sumber Daya dan Ekologi
 
-ID LOC HOLD: The useful matter of HECTON-8 is rarely clean. It comes out of pressure seams, brine traps, vent heat, dead machinery and living tissue that has learned to grow around metal. A sample can be mineral, biological, industrial and legal evidence at the same time.
-
-Blue debt is the best known example. The name began as salvage slang for pressure-formed value that carried unpaid risk with it. A blue debt sample records the conditions that made it: depth, heat, contamination, extraction method and contact with Atlas-altered lattice. Two pieces with the same shine may not have the same custody value. One is a payout. Another is proof.
-
-The ocean's biology is not a speaking mind. It is a set of processes under extreme pressure. Mats conduct current across damaged surfaces. Shell growth can seal a fracture. Filter organs can carry acoustic timing through tissue. Brine vanes mark density flow. Grazers clear mineral film and expose safe scrape zones. Predators follow vibration, heat and disturbed silt.
-
-Atlas changed the meaning of those processes. After the flood, its emergency maintenance model expanded through anything that could carry signal, seal pressure or move material. Conductive biofilm became cable skin. Sensor-tagged fauna became feedback. Vent micronodes became power nests. Some routes look natural until they answer a machine need too precisely.
-
-Nothing in the HECTON-8 ocean is just scenery, and nothing valuable is just loot. The question attached to every sample is older than the claim stamped on it: what made this, and what was damaged while it formed?
+Klaster sumber daya harus menunjukkan rantai proses, bukan daftar jarahan. Mineral bisa berasal dari drowned crust, endapan brine trap, jejak vent heat, mesin tua, atau jaringan yang tumbuh di sekitar logam setelah campur tangan Atlas. Blue debt mengikat ekonomi pada geologi: apa pun yang bisa diangkat sudah punya harga di atas. Ekologi bukan latar dan bukan kebun binatang. Fauna merespons suara, tekanan, cahaya, jejak garam, dan repair paths yang rusak. Karena itu sumber daya, biota, dan bukti harus dibaca bersama: satu sampel dapat memberi makan alat, mengungkap kecelakaan, dan menunjukkan tempat Atlas menyamakan perbaikan dengan pemakaian yang hidup.
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/id_ID. -->

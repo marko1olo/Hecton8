@@ -8,33 +8,19 @@ biome_tags: biome.tide_pump;biome.drowned_admin
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Great Tide Physics Record"
+spoiler_tier: 1
+title: "Registro físico de la Gran Marea"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Physics Record
+# Registro físico de la Gran Marea
 
-ES LOC HOLD: Great Tide Physics Record defines the disaster logic for HECTON-8: the ocean is physically dangerous, and the corporate crime is designing around optimistic margins until a moon-sized system collected the debt.
+El Registro físico de la Gran Marea mantiene honesta la catástrofe. HECTON-8 era vulnerable a resonancia de marea, colapso de hielo, marejada y descarga de calor. La culpa de Deep Reach aparece en márgenes, capacidad de evacuación y prioridad de decisión, no en una falsa causa mágica.
 
-## Scanner
-
-ES LOC HOLD: Flood model intact. The sea did not need a villain. It needed bad margins.
-
-## Terminal
-
-ES LOC HOLD: GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
-
-## Audio
-
-ES LOC HOLD: The report was right. That is why they buried it.
-
-## Field Note
-
-ES LOC HOLD: Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+El Registro físico de la Gran Marea define la lógica del desastre de HECTON-8: el océano es físicamente peligroso, y el crimen corporativo fue diseñar con márgenes optimistas hasta que un sistema lunar cobró la deuda. No lo suavices: la física real mató gente, y Deep Reach se aseguró de que esa física tuviera víctimas.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/es_ES. -->

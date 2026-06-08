@@ -9,32 +9,20 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Transit Duration Bands"
+title: "Діапазони Тривалості Транзиту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Transit Duration Bands
+# Діапазони Тривалості Транзиту
 
-UA LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
+## Різні Годинники
 
-## Scanner
+Один маршрут не означає один час. Probe packet може піти рано, спалити світло й стати claim за десятиліття до того, як crew побачить воду. Heavy freight потребує staged launches, braking rights, pellet lanes, радіаторів і страховки, що приймає криву втрат. Human crew потребує цього всього плюс life support, liability language і причину платити return mass.
 
-UK LOC HOLD: The same route means different time for packets, freight and people.
-
-## Terminal
-
-UK LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
-
-## Audio
-
-UK LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
-
-## Field Note
-
-UA LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+HECTON-8 ловить гравця в цих розсинхронізованих годинниках. Distress hash може бути чинним і марним. Cargo opportunity може відкритися, поки rescue закритий. Публічні наслідки можуть бути за роки й усе одно варті захисту. Жах не в тому, що маршрут зламаний. Жах у тому, що він працює для всього, крім тіла, яке просить турботи.
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/uk_UA. -->

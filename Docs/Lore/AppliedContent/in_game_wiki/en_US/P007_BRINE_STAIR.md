@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Brine Stair
 
-Brine layers are not just hazards. They preserve, hide, carry, and separate. A route that is impossible in open water can become survivable if the player learns density, heat, and ballast timing.
+Brine stairs form where dense salt water, vent heat, and slow basin flow stack into sharp boundaries. To a careless pilot they are invisible walls: buoyancy shifts late, sonar bends, lights smear, and a descent can become a slide. To a careful pilot they are routes. A submersible can ride one layer, punch through another, hide under a curtain, or use thermal lift to cross a gap that open water would make impossible. The layers also preserve wreckage and biological traces with cruel patience. Bodies, tool crates, sample caskets, and old drones can sit in the same unmixed step for years. The Brine Stair teaches a central rule of HECTON-8: depth is negotiated with the ocean's structure, not conquered by hull strength alone.
 
 ## Scanner
 
-High-density brine layer. Sonar returns bend at the boundary. Buoyancy model unreliable.
+High-density brine layer. Sonar bends at the boundary; ballast response delayed. Thermal plume rising through stepped shear.
 
 ## Terminal
 
-Thermal tap alignment complete. Substrate growth exceeds expected rate. Atlas maintenance request deferred by operations.
+THERMAL TAP ALIGNED. DENSITY STEP MAPPED. SUBSTRATE GROWTH ABOVE FORECAST. ATLAS ROUTE REQUEST DEFERRED BY OPERATIONS.
 
 ## Audio
 
-There is a whole staircase down here, if you stop treating water like one thing.
+There is a staircase down here. It is made of salt, heat, and patience.
 
 ## Field Note
 
-Your hull rating tells you when metal gives up. Brine tells you when you were arrogant.
+Hull rating tells you when metal gives up. Brine tells you when you treated the ocean as flat.
 
 <!-- In-Game Wiki; generated from P007_BRINE_STAIR/en_US. -->

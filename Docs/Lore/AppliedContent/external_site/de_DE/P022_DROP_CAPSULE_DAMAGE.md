@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Schaden der Landekapsel
 
-Der Schaden erklärt das Stranden: Abstieg gelungen, Lebenserhaltung lebt, Aufstiegstechnik tot.
+Drop-Capsule-Schaden erklärt, warum das Festsitzen glaubwürdig ist: Der Abstieg funktionierte, Überlebenssysteme überlebten, Aufstiegshardware nicht.
 
 ## Scanner
 

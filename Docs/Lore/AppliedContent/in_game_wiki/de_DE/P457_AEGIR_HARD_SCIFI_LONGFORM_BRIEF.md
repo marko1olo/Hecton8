@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Aegir Transfer Windows"
+title: "Aegir: Der Himmel, der Rettung verweigert"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Aegir Transfer Windows
+# Aegir: Der Himmel, der Rettung verweigert
 
-DE LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+Aegir ist ein operativer Himmel. Mondleiter und Relais können Pakete verzögern oder beschädigen, ohne die Oberfläche dauerhaft dunkel zu machen. Rettung scheitert an Entfernung, Geometrie, Recht und Kosten.
 
 ## Scanner
 
-DE LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+Himmelsrouten-Primer. Kein FTL, kein Ansible. Aegir-Fenster laufen durch Monde, Schutt, Relais-Custody, Sturmzustand und Black-Keel-Massenrechnung.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+AEGIR-NAVIGATIONSPRIMER // ÖFFENTLICHES BAND. Hazardklassen verwenden, keine finalen Konstanten: route-shadow, charged surge, ice scatter, storm plume, guidance lag, receiver custody.
 
 ## Audio
 
-DE LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
+Black-Keel-Planung: "Signal wahr ist nicht Signal brauchbar. Fenster hält für Masse, Wetter, Custody und Empfängerlock."
 
 ## Field Note
 
-DE LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+Marauder-Himmelsregel: Frag nicht, ob das Signal gesendet wurde. Frag, welcher Mond es blockierte, welches Ledger es fing und ob der Empfänger einen Menschen oder eine Masseklasse hörte.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/de_DE. -->

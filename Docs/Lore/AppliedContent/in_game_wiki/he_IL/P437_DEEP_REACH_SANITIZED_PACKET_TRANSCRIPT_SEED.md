@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "תמליל חבילת Deep Reach מחוטאת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# תמליל חבילת Deep Reach מחוטאת
 
-HE LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.
+החבילה המחוטאת נשארת אמינה כי היא משאירה שמות אסון אמיתיים ומסירה את ההחלטות שהפכו אותם לקטלניים.
 
 ## Scanner
 
-HE LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+חבילת Deep Reach משוחזרת חוזרת על סיכום התאונה, ואז תולה סיוע בקואורדינטות ובתמחור הסגר.
 
 ## Terminal
 
-HE LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
+PACKET DR-RCO-2190: safety priority asserted; coordinates required; quarantine cost pending; worker-cause fields omitted.
 
 ## Audio
 
-HE LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
+חבילת Recovery Compliance. עדיפות בטיחות אושרה. קואורדינטות קודם. עלות הסגר בהמתנה. אי אפשר לתמחר סיוע בעיוורון.
 
 ## Field Note
 
-HE LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+קול תאגידי בזמן הווה. הוא צריך להישמע שריד עד שהשחקן שם לב למה החבילה מסרבת לנקוב.
 
 <!-- In-Game Wiki; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/he_IL. -->

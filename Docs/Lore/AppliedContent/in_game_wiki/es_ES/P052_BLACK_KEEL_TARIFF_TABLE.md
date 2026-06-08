@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel Tariff Table"
+title: "Tabla tarifaria de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel Tariff Table
+# Tabla tarifaria de Black Keel
 
-ES LOC HOLD: Black Keel Tariff Table turns corporate response into mechanics: distress, sample custody, oxygen debt and liability seals have different queue priority.
+El apoyo de Black Keel sirve, pero nunca es neutral. Socorro, muestras, oxígeno, sellos de responsabilidad, recuperación de operador y daño de casco entran en colas distintas. El jugador puede explotar esas reglas, pero las mismas reglas explican por qué la ayuda llega con precio.
 
 ## Scanner
 
-ES LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
+La placa pone precio a socorro, custodia de muestras, reserva de oxígeno, equipo de presión y recuperación de cuerpos como partidas separadas.
 
 ## Terminal
 
-ES LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
+CLASE TARIFA: emergencia de salvamento. Anexo de bienestar pendiente. Custodia de muestra verificada sube la prioridad saliente dos niveles de facturación.
 
 ## Audio
 
-ES LOC HOLD: The table has a price for rescue and a discount for evidence.
+Hay descuento por evidencia y recargo por respirar.
 
 ## Field Note
 
-ES LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
+La clase más rápida no es rescate. Es propiedad verificada subiendo.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/es_ES. -->

@@ -37,6 +37,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
         public static readonly uint ChenMWorkerTagHash = Atlas6LiabilityTelemetry.ComputeStableHash(ChenMWorkerTagId);
 
         public static Atlas6CorporateLiabilityManager ActiveRuntimeInstance { get; private set; }
+        internal static event Action<Atlas6CorporateLiabilityManager> ActiveRuntimeInstanceChanged;
 
         [Header("Corporate Directive Settings")]
         [SerializeField] private float sectorXenonOmegaYield = 0f;
@@ -72,7 +73,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 return false;
 
             Atlas6CorporateLiabilityManager activeRuntime = ActiveRuntimeInstance;
-            if (activeRuntime == null)
+            if (!IsLiabilityRuntimeUsable(activeRuntime))
                 return false;
 
             activeRuntime.ReportXenonOmegaExtracted(amount);
@@ -96,9 +97,11 @@ namespace Hecton8.Gameplay.Atlas6Liability
         private bool _registeredAudioLogEvents;
         private bool _registeredNarrativeEvents;
         private bool _saveRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _actuarialThreatPublished;
         private bool _satoRenSeverancePublished;
         private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private IAudioLogRuntime _audioLogs;
         private ActuarialLiabilitySystem _wiredActuarialLiability;
         private ExtractionGatingSystem _wiredExtractionGating;
@@ -107,6 +110,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
         private static void ResetActiveRuntimeInstance()
         {
             ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged = null;
         }
 
         private void Awake()
@@ -145,6 +149,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void OnDisable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             UnregisterFromGlobalRegistry();
             TryUnregisterNarrativeEvents();
             TryUnregisterAudioLogEvents();
@@ -158,6 +165,10 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void OnDestroy()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
+            UnregisterFromGlobalRegistry();
             TryUnregisterNarrativeEvents();
             TryUnregisterAudioLogEvents();
             TryUnregisterHotSwapListener();
@@ -169,7 +180,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public void Tick(float deltaTime)
         {
-            if (!_isRegistered) return;
+            if (_runtimeOwnerAborted || !_isRegistered) return;
 
             SanitizeSectorXenonOmegaYield();
             EvaluateThreatLevel();
@@ -236,6 +247,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public void ReportXenonOmegaExtracted(float amount)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             EnsureSubsystemsInitialized();
             SanitizeSectorXenonOmegaYield();
             bool invalidAmount = !math.isfinite(amount) || amount <= 0f;
@@ -276,24 +290,36 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public void ReportWorkerTagScanned(string workerId)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             EnsureSubsystemsInitialized();
             ActuarialLiability?.RegisterWorkerTagRecovery(workerId);
         }
 
         public void ReportWorkerTagScannedHash(uint workerTagHash)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             EnsureSubsystemsInitialized();
             ActuarialLiability?.RegisterWorkerTagRecoveryHash(workerTagHash);
         }
 
         public void ReportGhostPDADataUploaded(float dataSizeInMegabytes)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             EnsureSubsystemsInitialized();
             ActuarialLiability?.UploadGhostPDAData(dataSizeInMegabytes);
         }
 
         public void ReportDisasterEvidenceCollected()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             EnsureSubsystemsInitialized();
             if (hasDisasterEvidenceInInventory)
                 return;
@@ -307,6 +333,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public void ReportDisasterEvidenceDiscarded()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             EnsureSubsystemsInitialized();
             if (!hasDisasterEvidenceInInventory)
                 return;
@@ -320,6 +349,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public ThermalSheerManager.TelemetryReadout GetSubmarineOSReadout(float trueSheer)
         {
+            if (_runtimeOwnerAborted)
+                return default;
+
             if (ThermalSheer == null)
                 ThermalSheer = new ThermalSheerManager();
 
@@ -328,6 +360,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public bool AttemptCarrierTether()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             EnsureSubsystemsInitialized();
             return ExtractionGating != null &&
                    ExtractionGating.RequestExtractionTether(sectorXenonOmegaYield, hasDisasterEvidenceInInventory);
@@ -335,13 +370,16 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public bool BoardBlackKeel()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             EnsureSubsystemsInitialized();
             return ExtractionGating != null && ExtractionGating.AttemptBoardingSequence();
         }
 
         public bool TryCopyLatestTelemetry(out Atlas6LiabilityTelemetryRecord record)
         {
-            if (Telemetry == null)
+            if (_runtimeOwnerAborted || Telemetry == null)
             {
                 record = default;
                 return false;
@@ -352,7 +390,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public bool TryCopyTelemetryNewest(int newestOffset, out Atlas6LiabilityTelemetryRecord record)
         {
-            if (Telemetry == null)
+            if (_runtimeOwnerAborted || Telemetry == null)
             {
                 record = default;
                 return false;
@@ -363,6 +401,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public void OnAudioLogEvent(in AudioLogEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (payload.Type != AudioLogEventType.Discovered ||
                 !IsAtlas6DisasterEvidenceAudioLogHash(payload.LogHash))
             {
@@ -374,6 +415,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if ((NarrativeEventType)payload.EventType != NarrativeEventType.DiscoveryMade ||
                 !IsAtlas6WorkerTagDiscoveryHash(payload.DiscoveryHash))
             {
@@ -385,7 +429,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public void PopulateSaveData(SaveData data)
         {
-            if (data == null)
+            if (_runtimeOwnerAborted || data == null)
                 return;
 
             data.atlas6LiabilitySectorXenonOmegaYield = math.isfinite(sectorXenonOmegaYield)
@@ -427,7 +471,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public void LoadFromSaveData(SaveData data)
         {
-            if (data == null)
+            if (_runtimeOwnerAborted || data == null)
                 return;
 
             EnsureSubsystemsInitialized();
@@ -525,6 +569,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 UnregisterFromGlobalRegistry();
@@ -555,7 +602,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void RegisterWithGlobalRegistry()
         {
-            if (!Application.isPlaying)
+            if (_runtimeOwnerAborted || !Application.isPlaying)
                 return;
 
             if (!_isRegistered)
@@ -583,7 +630,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void TryRegisterHotSwapListener()
         {
-            if (_registeredHotSwapListener || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _registeredHotSwapListener || !Application.isPlaying)
                 return;
 
             _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -600,7 +647,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void TryRegisterAudioLogEvents()
         {
-            if (_registeredAudioLogEvents || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _registeredAudioLogEvents || !Application.isPlaying)
                 return;
 
             AudioLogEvents.Register(this);
@@ -618,7 +665,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void TryRegisterNarrativeEvents()
         {
-            if (_registeredNarrativeEvents || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _registeredNarrativeEvents || !Application.isPlaying)
                 return;
 
             NarrativeEvents.Register(this);
@@ -636,27 +683,39 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void TryRegisterSaveParticipant()
         {
-            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+            if (_runtimeOwnerAborted || _saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
-            if (_saveService == null)
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
+            _registeredSaveService = saveService;
             _saveRegistered = true;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (!_saveRegistered && _registeredSaveService == null)
                 return;
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
+            _registeredSaveService = null;
             _saveService = null;
             _saveRegistered = false;
         }
@@ -668,7 +727,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void TrySyncDisasterEvidenceFromAudioLogRuntime()
         {
-            if (!Application.isPlaying)
+            if (_runtimeOwnerAborted || !Application.isPlaying)
                 return;
 
             if (hasDisasterEvidenceInInventory)
@@ -684,6 +743,12 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void CacheAudioLogSystem(IAudioLogRuntime audioLogSystem)
         {
+            if (_runtimeOwnerAborted)
+            {
+                _audioLogs = null;
+                return;
+            }
+
             _audioLogs = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null;
         }
 
@@ -699,7 +764,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
         {
-            if (audioLogSystem == null)
+            if (audioLogSystem == null || !audioLogSystem.IsAudioLogRuntimeReady)
                 return false;
 
             if (audioLogSystem is Behaviour behaviour)
@@ -710,7 +775,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void TrySyncWorkerTagsFromNarrativeDiscoveryReadModel(INarrativeDiscoveryReadModel narrativeDiscovery)
         {
-            if (!Application.isPlaying)
+            if (_runtimeOwnerAborted || !Application.isPlaying)
                 return;
 
             if (narrativeDiscovery == null)
@@ -722,6 +787,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void EnsureSubsystemsInitialized()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (Telemetry == null)
                 Telemetry = new Atlas6LiabilityTelemetry();
 
@@ -749,6 +817,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void WireSubsystemEvents()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (!ReferenceEquals(_wiredActuarialLiability, ActuarialLiability))
             {
                 if (_wiredActuarialLiability != null)
@@ -822,25 +893,95 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private bool TryRegisterActiveRuntimeInstance()
         {
+            if (_runtimeOwnerAborted)
+                return false;
+
             if (!Application.isPlaying)
                 return true;
 
             Atlas6CorporateLiabilityManager activeRuntime = ActiveRuntimeInstance;
-            if (activeRuntime != null && !ReferenceEquals(activeRuntime, this))
+            if (ReferenceEquals(activeRuntime, this))
+                return true;
+
+            if (IsLiabilityRuntimeUsable(activeRuntime))
             {
-                enabled = false;
-                Destroy(this);
+                AbortDuplicateRuntimeOwner();
                 return false;
             }
 
+            if (activeRuntime != null)
+            {
+                ActiveRuntimeInstance = null;
+                PublishActiveRuntimeInstanceChanged(null);
+            }
+
             ActiveRuntimeInstance = this;
+            PublishActiveRuntimeInstanceChanged(this);
             return true;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            UnregisterFromGlobalRegistry();
+            TryUnregisterNarrativeEvents();
+            TryUnregisterAudioLogEvents();
+            TryUnregisterHotSwapListener();
+            TryUnregisterSaveParticipant();
+            UnwireSubsystemEvents();
+            ClearCachedRuntimeServices();
+            _runtimeOwnerAborted = true;
+            enabled = false;
+            Destroy(this);
         }
 
         private void TryUnregisterActiveRuntimeInstance()
         {
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
+            if (!ReferenceEquals(ActiveRuntimeInstance, this))
+                return;
+
+            ActiveRuntimeInstance = null;
+            PublishActiveRuntimeInstanceChanged(null);
+        }
+
+        private static void PublishActiveRuntimeInstanceChanged(Atlas6CorporateLiabilityManager activeRuntime)
+        {
+            Action<Atlas6CorporateLiabilityManager> listeners = ActiveRuntimeInstanceChanged;
+            if (listeners == null)
+                return;
+
+            foreach (Delegate listener in listeners.GetInvocationList())
+            {
+                try
+                {
+                    ((Action<Atlas6CorporateLiabilityManager>)listener)?.Invoke(activeRuntime);
+                }
+                catch (Exception exception)
+                {
+                    LogActiveRuntimeListenerException(exception);
+                }
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogActiveRuntimeListenerException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            try
+            {
+                H8Debug.LogException(exception);
+            }
+            catch
+            {
+            }
+#endif
+        }
+
+        private static bool IsLiabilityRuntimeUsable(Atlas6CorporateLiabilityManager manager)
+        {
+            return manager != null &&
+                   manager.isActiveAndEnabled &&
+                   !manager._runtimeOwnerAborted;
         }
     }
 }

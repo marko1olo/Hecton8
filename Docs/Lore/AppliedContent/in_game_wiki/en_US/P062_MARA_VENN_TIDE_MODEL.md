@@ -7,8 +7,8 @@ poi_tags: poi.tide_model_terminal;poi.glacier_warning
 biome_tags: biome.tide_gauge;biome.glacier_break
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Mara Venn Tide Model"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Mara Venn Tide Model
 
-Mara Venn gives the Great Tide a human-scale scientific witness. Her logs show the flood risk was physical and visible enough to model, but not funded enough to change evacuation capacity.
+Mara Venn gives the Great Tide a scientific witness. Her model tied Aegir moon geometry, cryosphere shear and evacuation capacity into one ugly margin. Deep Reach did not erase the model; it changed the action label until the warning became cheap enough to ignore.
 
 ## Scanner
 
-Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
+Mara Venn did not predict murder. She predicted the tide margin Deep Reach renamed improbable.
 
 ## Terminal
 
-Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
+VENN MODEL REVISION: cryosphere shear exceeds evacuation margin under Aegir spring geometry; review action downgraded to monitor pending asset-continuity budget.
 
 ## Audio
 
-She was wrong only in the way every ignored model is wrong: it happened with names inside it.
+The water was not sudden to the people reading the numbers.
 
 ## Field Note
 
-A warning is not prophecy after procurement deletes the expensive part.
+A warning stops being expensive when someone downgrades it on paper.
 
 <!-- In-Game Wiki; generated from P062_MARA_VENN_TIDE_MODEL/en_US. -->

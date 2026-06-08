@@ -32,9 +32,7 @@ namespace Hecton8.SaveSystem
             in SteamCloudSaveCandidate cloud)
         {
             SteamCloudSaveChoice suggested = ResolveSuggestedChoice(in local, in cloud);
-            SteamCloudSaveChoice alternate = suggested == SteamCloudSaveChoice.Cloud
-                ? SteamCloudSaveChoice.Local
-                : SteamCloudSaveChoice.Cloud;
+            SteamCloudSaveChoice alternate = ResolveAlternateChoice(suggested, in local, in cloud);
 
             return new SteamCloudSaveResolution(suggested, alternate);
         }
@@ -69,6 +67,18 @@ namespace Hecton8.SaveSystem
             in SteamCloudSaveCandidate local,
             in SteamCloudSaveCandidate cloud)
         {
+            bool localUsable = local.IsUsableForResolution;
+            bool cloudUsable = cloud.IsUsableForResolution;
+
+            if (cloudUsable && !localUsable)
+                return SteamCloudSaveChoice.Cloud;
+
+            if (localUsable && !cloudUsable)
+                return SteamCloudSaveChoice.Local;
+
+            if (!localUsable && !cloudUsable)
+                return SteamCloudSaveChoice.Local;
+
             if (cloud.TimestampUnixMs > local.TimestampUnixMs)
                 return SteamCloudSaveChoice.Cloud;
 
@@ -79,6 +89,20 @@ namespace Hecton8.SaveSystem
                 return SteamCloudSaveChoice.Cloud;
 
             return SteamCloudSaveChoice.Local;
+        }
+
+        private static SteamCloudSaveChoice ResolveAlternateChoice(
+            SteamCloudSaveChoice suggested,
+            in SteamCloudSaveCandidate local,
+            in SteamCloudSaveCandidate cloud)
+        {
+            if (suggested == SteamCloudSaveChoice.Cloud)
+                return local.IsUsableForResolution ? SteamCloudSaveChoice.Local : SteamCloudSaveChoice.None;
+
+            if (suggested == SteamCloudSaveChoice.Local)
+                return cloud.IsUsableForResolution ? SteamCloudSaveChoice.Cloud : SteamCloudSaveChoice.None;
+
+            return SteamCloudSaveChoice.None;
         }
 
         private static int BuildPromptMessage(
@@ -100,7 +124,9 @@ namespace Hecton8.SaveSystem
             cursor += written;
             if (!ZeroGCFormatter.AppendToSpan(", playTime=".AsSpan(), destination, ref cursor) ||
                 !ZeroGCFormatter.AppendInt(localPlayTimeSeconds, destination, ref cursor) ||
-                !ZeroGCFormatter.AppendToSpan("s\nCloud MMF header: timestamp=".AsSpan(), destination, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan("s, status=".AsSpan(), destination, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan(FormatCandidateStatus(local).AsSpan(), destination, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan("\nCloud MMF header: timestamp=".AsSpan(), destination, ref cursor) ||
                 !cloud.TimestampUnixMs.TryFormat(destination.Slice(cursor), out written))
             {
                 return 0;
@@ -109,13 +135,24 @@ namespace Hecton8.SaveSystem
             cursor += written;
             if (!ZeroGCFormatter.AppendToSpan(", playTime=".AsSpan(), destination, ref cursor) ||
                 !ZeroGCFormatter.AppendInt(cloudPlayTimeSeconds, destination, ref cursor) ||
-                !ZeroGCFormatter.AppendToSpan("s\nSuggested source: ".AsSpan(), destination, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan("s, status=".AsSpan(), destination, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan(FormatCandidateStatus(cloud).AsSpan(), destination, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan("\nSuggested source: ".AsSpan(), destination, ref cursor) ||
                 !ZeroGCFormatter.AppendToSpan(FormatChoiceLabel(resolution.SuggestedChoice).AsSpan(), destination, ref cursor))
             {
                 return 0;
             }
 
             return cursor;
+        }
+
+        private static string FormatCandidateStatus(in SteamCloudSaveCandidate candidate)
+        {
+            return candidate.IsUsableForResolution
+                ? "OK"
+                : candidate.IsReadable
+                    ? "CHECKSUM FAIL"
+                    : "UNREADABLE";
         }
 
         private static string FormatChoiceLabel(SteamCloudSaveChoice choice)
@@ -162,11 +199,26 @@ namespace Hecton8.SaveSystem
     {
         public readonly ulong TimestampUnixMs;
         public readonly float PlayTimeSeconds;
+        public readonly bool IsReadable;
+        public readonly bool IntegrityVerified;
+
+        public bool IsUsableForResolution => IsReadable && IntegrityVerified;
 
         public SteamCloudSaveCandidate(ulong timestampUnixMs, float playTimeSeconds)
+            : this(timestampUnixMs, playTimeSeconds, true, true)
+        {
+        }
+
+        public SteamCloudSaveCandidate(
+            ulong timestampUnixMs,
+            float playTimeSeconds,
+            bool isReadable,
+            bool integrityVerified)
         {
             TimestampUnixMs = timestampUnixMs;
             PlayTimeSeconds = playTimeSeconds;
+            IsReadable = isReadable;
+            IntegrityVerified = integrityVerified;
         }
     }
 

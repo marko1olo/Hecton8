@@ -1,4 +1,5 @@
-﻿# 种子计划与ATLAS指令
+<!-- localization_status: source_draft_pending_native_review -->
+# 种子计划与ATLAS指令
 
 > **Source:** Deep Reach 系统工程部，指令逻辑日志。
 > **Speaker:** 自主运营总监。

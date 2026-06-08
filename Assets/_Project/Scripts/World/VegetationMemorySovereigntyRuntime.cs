@@ -124,7 +124,10 @@ namespace Hecton8.World
 
             _vegetationMemoryTelemetryHandle = default;
             _vegetationMemoryTelemetryCursorHandle = default;
-            DisposeNativeArray(ref _vegetationMemoryTelemetryDumpPayload);
+            H8Memory.Release(ref _vegetationMemoryTelemetryDumpPayload, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            if (_vegetationMemoryTelemetryDumpPayload.IsCreated)
+                return;
+
             _vegetationMemoryTelemetryDumped = false;
         }
 
@@ -136,30 +139,22 @@ namespace Hecton8.World
                 return true;
             }
 
-            DisposeNativeArray(ref _vegetationMemoryTelemetryDumpPayload);
+            H8Memory.Release(ref _vegetationMemoryTelemetryDumpPayload, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            if (_vegetationMemoryTelemetryDumpPayload.IsCreated)
+                return false;
+
             NativeArray<byte> replacement = default;
             try
             {
-                replacement = new NativeArray<byte>(
+                replacement = H8Memory.Allocate<byte>(
                     VegetationMemoryDumpPayloadBytes,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
                     Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory);
                 if (!replacement.IsCreated ||
                     replacement.Length < VegetationMemoryDumpPayloadBytes)
                 {
-                    if (replacement.IsCreated)
-                        replacement.Dispose();
-                    return false;
-                }
-
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
-                    replacement,
-                    NativeMemoryOwner,
-                    nameof(_vegetationMemoryTelemetryDumpPayload),
-                    NativeMemoryLifetime);
-                if (sentinelId <= 0)
-                {
-                    replacement.Dispose();
+                    H8Memory.Release(ref replacement, VegetationMemorySovereigntyConstants.OwnerSystemId);
                     return false;
                 }
 
@@ -169,18 +164,7 @@ namespace Hecton8.World
             }
             catch
             {
-                if (replacement.IsCreated)
-                {
-                    try
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(replacement);
-                    }
-                    finally
-                    {
-                        replacement.Dispose();
-                    }
-                }
-
+                H8Memory.Release(ref replacement, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 throw;
             }
         }

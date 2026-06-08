@@ -219,6 +219,7 @@ namespace Hecton8.Narrative
         private ISaveService _registeredSaveService;
         private ILocalizationTextReadModel _localizationText;
         private bool _serviceRegistered;
+        private bool _runtimeOwnerAborted;
         private bool _hotSwapListenerRegistered;
         private bool _recordLookupBuilt;
         private bool _recordLookupCollisionLogged;
@@ -263,9 +264,14 @@ namespace Hecton8.Narrative
 
         private void OnEnable()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             CacheRegistryServicesCold();
             BuildRecordLookupCold();
-            TryRegisterService();
+            if (!TryRegisterService())
+                return;
+
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
             AudioLogEvents.Register(this);
@@ -274,6 +280,9 @@ namespace Hecton8.Narrative
 
         private void Start()
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             TryRegisterSaveParticipant();
         }
 
@@ -294,13 +303,27 @@ namespace Hecton8.Narrative
             ReleaseUnlockStorage(_dataVault);
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
-                return;
+                return !_runtimeOwnerAborted;
+
+            LoreDatabaseManager registeredRuntime = GlobalRegistry.LoreDatabase;
+            if (registeredRuntime != null && registeredRuntime != this)
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
 
             GlobalRegistry.RegisterLoreDatabaseRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.LoreDatabase, this);
+            if (!_serviceRegistered)
+            {
+                AbortDuplicateRuntimeOwner();
+                return false;
+            }
+
+            return true;
         }
 
         private void TryUnregisterService()
@@ -320,6 +343,9 @@ namespace Hecton8.Narrative
             object previousService,
             object currentService)
         {
+            if (_runtimeOwnerAborted)
+                return;
+
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 if (previousService is IDataVault previousVault && !ReferenceEquals(previousVault, currentService))
@@ -356,7 +382,16 @@ namespace Hecton8.Narrative
 
         private void TryRegisterSaveParticipant(ISaveService saveService)
         {
-            if (!Application.isPlaying || _registeredSaveService != null || saveService == null)
+            if (_runtimeOwnerAborted || !Application.isPlaying || _registeredSaveService != null)
+                return;
+
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
                 return;
 
             saveService.Register(this);
@@ -372,6 +407,11 @@ namespace Hecton8.Narrative
             _registeredSaveService = null;
         }
 
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         private void CacheRegistryServicesCold()
         {
             _saveService = GlobalRegistry.Save;
@@ -382,11 +422,10 @@ namespace Hecton8.Narrative
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapListenerRegistered || !Application.isPlaying)
+            if (_runtimeOwnerAborted || _hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.IsHotSwapListenerRegistered(this);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -394,10 +433,22 @@ namespace Hecton8.Narrative
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
-                GlobalRegistry.UnregisterHotSwapListener(this);
-
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
+        }
+
+        private void AbortDuplicateRuntimeOwner()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            AudioLogEvents.Unregister(this);
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
+            TryUnregisterService();
+            ReleaseUnlockStorage(_dataVault);
+            _runtimeOwnerAborted = true;
+            enabled = false;
         }
 
         /// <summary>

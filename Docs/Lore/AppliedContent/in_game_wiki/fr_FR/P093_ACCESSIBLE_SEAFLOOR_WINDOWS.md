@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Accessible Seafloor Windows"
+title: "Fenetres accessibles du plancher marin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Accessible Seafloor Windows
+# Fenetres accessibles du plancher marin
 
-FR LOC HOLD: Solid seafloor is not broadly accessible on HECTON-8. Players reach ridges, vent scars, collapsed shelves and service basins. This lets procedural generation vary routes while preserving the feeling that the moon's ocean is bigger than the playable path.
+Les fenetres de plancher accessible sont des lieux ou la croute brisee de HECTON-8 baisse brievement le prix de la descente. Elles apparaissent aux plateaux effondres, cretes exposees, cicatrices d'events rechauffees et colonnes de saumure qui portent la pression autrement. Une fenetre reste mortelle si on la brusque. Elle donne contact avec un vieux fond, des veines minerales rares, du materiel colonial enterre et des preuves que l'ocean principal garderait hors d'atteinte.
 
 ## Scanner
 
-FR LOC HOLD: Ridge window. The bottom is not a floor; it is a rare exposure.
+Marqueur de crete exposee. Ici, la coque s'est dechiree assez mince pour qu'un crawler touche l'ancien fond sans devenir de la pate.
 
 ## Terminal
 
-FR LOC HOLD: SEAFLOOR ACCESS: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins only. Unmapped silt plains exceed safe anchor tolerance.
+CRITERES DE FENETRE: levre de croute fracturee, colonne de saumure rechauffee par event, rampe de plateau effondre, retour sonar stable, poche de pression sous ligne rouge de combinaison. Marquage pour recuperation lente seulement.
 
 ## Audio
 
-FR LOC HOLD: You land where the moon lets stone show through.
+La mer te laisse toucher le fond par des fenetres, pas la ou tu te sens brave.
 
 ## Field Note
 
-FR LOC HOLD: Good traversal comes from scarce footholds, not endless flat seabed.
+La majeure partie de la lune garde son plancher comme secret de pression. Les fenetres sont des exceptions avec des dents.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/fr_FR. -->

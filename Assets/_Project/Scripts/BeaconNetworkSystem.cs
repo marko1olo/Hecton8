@@ -58,10 +58,12 @@ namespace Hecton8.Gameplay
         private readonly List<BeaconRuntime> _activeBeacons = new List<BeaconRuntime>(32); // COLD ALLOC: List<BeaconRuntime>[32] - active beacon runtime registry - owner: BeaconNetworkSystem
         private int _nextSequence = 1;
         private bool _serviceRegistered;
+        private bool _saveRegistered;
         private bool _hotSwapListenerRegistered;
         private IObjectPoolService _cachedObjectPool;
         private ILocalizationTextReadModel _cachedLocalization;
         private ISaveService _cachedSaveService;
+        private ISaveService _registeredSaveService;
         private readonly char[] _labelPrefixBuffer = new char[32];
         private static BeaconNetworkSystem s_activeRuntime;
 
@@ -118,12 +120,12 @@ namespace Hecton8.Gameplay
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterService();
-            _cachedSaveService?.Register(this);
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
-            _cachedSaveService?.Unregister(this);
+            TryUnregisterSaveParticipant();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
             if (ReferenceEquals(s_activeRuntime, this))
@@ -138,19 +140,15 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _cachedObjectPool = currentService as IObjectPoolService;
+                    CacheObjectPoolService(currentService as ObjectPoolManager);
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _cachedLocalization = currentService as ILocalizationTextReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    if (Application.isPlaying && previousService is ISaveService previousSave)
-                        previousSave.Unregister(this);
-
+                    TryUnregisterSaveParticipant();
                     _cachedSaveService = currentService as ISaveService;
-
-                    if (Application.isPlaying && _cachedSaveService != null && isActiveAndEnabled)
-                        _cachedSaveService.Register(this);
+                    TryRegisterSaveParticipant();
                     break;
                 case GlobalRegistryServiceSlot.BeaconNetworkRuntime:
                     if (currentService is BeaconNetworkSystem currentBeaconNetwork)
@@ -254,6 +252,44 @@ namespace Hecton8.Gameplay
             if (ReferenceEquals(s_activeRuntime, this))
                 s_activeRuntime = null;
             _serviceRegistered = false;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered || !_serviceRegistered || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            ISaveService saveService = _cachedSaveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _cachedSaveService = saveService;
+            }
+            if (!IsSaveServiceUsable(saveService))
+                return;
+
+            saveService.Register(this);
+            _registeredSaveService = saveService;
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (_saveRegistered || _registeredSaveService != null)
+            {
+                ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _cachedSaveService;
+                if (saveService != null)
+                    saveService.Unregister(this);
+            }
+
+            _registeredSaveService = null;
+            _saveRegistered = false;
+            _cachedSaveService = null;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
         }
 
         public static BeaconNetworkSystem GetOrCreate()
@@ -555,7 +591,7 @@ namespace Hecton8.Gameplay
 
                 // Zero-GC spawn from pool.
                 BeaconRuntime runtime = SpawnRuntimeBeacon(
-                    beaconPrefab, 
+                    beaconPrefab,
                     entry.GetPosition(),
                     entry.GetRotation(),
                     entry.GetColor(),
@@ -781,8 +817,7 @@ namespace Hecton8.Gameplay
             if (worldBeaconPrefab == null)
                 return null;
 
-            IObjectPoolService pool = _cachedObjectPool;
-            if (pool != null)
+            if (TryResolveCachedObjectPool(out IObjectPoolService pool))
             {
                 GameObject instance = pool.Spawn(worldBeaconPrefab, position, rotation);
                 if (instance != null)
@@ -790,7 +825,7 @@ namespace Hecton8.Gameplay
                     instance.TryGetComponent(out BeaconRuntime pooled);
                     if (pooled == null)
                     {
-                        pool.Despawn(instance);
+                        DespawnBeaconInstanceOrDeactivate(instance, pool);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                         if (verboseLogging)
                             Hecton8.Core.H8Debug.LogWarning("[BeaconNetwork] Beacon prefab is missing BeaconRuntime; spawn rejected.");
@@ -922,9 +957,47 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+            CacheObjectPoolService(null);
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
             _cachedSaveService = GlobalRegistry.Save;
+        }
+
+        private void CacheObjectPoolService(ObjectPoolManager candidate)
+        {
+            if (!ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(candidate))
+            {
+                _cachedObjectPool = null;
+                return;
+            }
+
+            _cachedObjectPool = candidate;
+        }
+
+        private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+        {
+            ObjectPoolManager cached = _cachedObjectPool as ObjectPoolManager;
+            if (ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached))
+            {
+                pool = cached;
+                return true;
+            }
+
+            ObjectPoolManager resolved = cached;
+            if (ObjectPoolManager.TryResolveActiveRuntime(ref resolved))
+            {
+                _cachedObjectPool = resolved;
+                pool = resolved;
+                return true;
+            }
+
+            _cachedObjectPool = null;
+            pool = null;
+            return false;
+        }
+
+        private static void DespawnBeaconInstanceOrDeactivate(GameObject instance, IObjectPoolService preferredPool)
+        {
+            ObjectPoolManager.DespawnOrDeactivate(instance, preferredPool);
         }
 
         private void TryRegisterHotSwapListener()

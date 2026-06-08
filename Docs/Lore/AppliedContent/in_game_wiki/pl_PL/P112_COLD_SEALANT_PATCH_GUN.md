@@ -7,34 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "Pistolet zimnego uszczelniacza"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# Pistolet zimnego uszczelniacza
 
-PL LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+Pistolet zimnego uszczelniacza daje pierwszą uczciwą naprawę po pompowaniu. Może zatrzymać punktowy przeciek albo utrzymać krawędź uszczelki do czasu odzyskania małego pomieszczenia, ale nie czyni uszkodzonej konstrukcji bezpieczną. Lekcja jest na etykiecie klasy: HECTON-8 karze każdą naprawę używaną poza jej klasą ciśnienia.
 
 ## Scanner
 
-PL LOC HOLD: Patch gun. Rated for pinholes, not miracles.
+Pistolet zimnego uszczelniania. Nabój tylko na przecieki punktowe i spokojne szwy; aktywne ścinanie zerwie warstwę.
 
 ## Terminal
 
-PL LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+LIMIT ŁATY / ZIMNY USZCZELNIACZ: wiąże na mokrej powłoce małej głębokości po przetarciu. Dopuszczony do punktowych przecieków, krawędzi uszczelek i spokojnego sączenia szwu. Odrzucić aktywne pęknięcia ścinające, ciepły rozkwit blue debt i ruchome szwy kablowe.
 
 ## Audio
 
-PL LOC HOLD: A patch is not safety. It is a countdown that looks solid.
+Nie mów, że szczelne. Mów, że masz czas.
 
 ## Field Note
 
-PL LOC HOLD: Sealant repairs should buy time, not erase pressure.
+Łata kupuje minuty. Jeśli pęknięcie nadal pracuje, wydaj te minuty na odejście.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/pl_PL. -->

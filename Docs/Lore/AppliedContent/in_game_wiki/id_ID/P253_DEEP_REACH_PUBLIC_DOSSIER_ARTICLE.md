@@ -9,32 +9,35 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Deep Reach Public Dossier Article"
+title: "Dossier Publik Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Public Dossier Article
+# Dossier Publik Deep Reach
 
-ID LOC HOLD: Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.
+Deep Reach harus terbaca seperti institusi yang benar-benar bisa membangun HECTON-8 sebelum menggagalkannya. Secara publik, ia adalah development combine: infrastruktur tekanan, sertifikasi rute, hunian pekerja, kustodi orbital, ekologi industri, bahasa asuransi, dan otoritas lokal yang dibundel menjadi satu mesin. Itu membuat kejahatan berikutnya lebih tajam. Deep Reach bukan imperium kartun yang ingin menenggelamkan bulan. Mereka menilai tail risk terlalu murah, membangun evakuasi mandiri terlalu kecil, membiarkan bahasa kontinuitas mengungguli ekstraksi, dan menjaga struktur klaim lama tetap hidup saat orang masih berada di ruangan yang gagal. Dossier publik dapat menyebut perusahaan dan pola kegagalannya tanpa membocorkan setiap tanda tangan. Ia harus mengajari pemain mencurigai kata benda korporat yang bersih: release, continuity, welfare, quarantine, route-safe, recoverable. Di HECTON-8, kata-kata itu sering menandai tempat masalah manusia diubah menjadi masalah aset.
 
 ## Scanner
 
-ID LOC HOLD: The public company name is cleaner than its route history.
+Nama publik perusahaan lebih bersih daripada riwayat rutenya. Mulai dari infrastruktur. Biarkan tanggung jawab tampak dari sambungannya.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+TINGKAT ARTIKEL PUBLIK / DEEP REACH
+diizinkan: development combine, operator koloni, otoritas infrastruktur, masalah kapasitas evakuasi, bahasa kegagalan publik
+dikunci: rantai signoff bernama, internal weighting Atlas, konsekuensi receiver final
+catatan editor: institusi masuk akal dulu; kejahatan lewat prosedur kemudian.
 
 ## Audio
 
-ID LOC HOLD: Never make the villain simpler than the paperwork.
+Deep Reach tidak perlu terdengar kejam. Ia hanya perlu membuat setiap kalimat berbahaya terdengar selesai.
 
 ## Field Note
 
-ID LOC HOLD: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+Jangan buat Deep Reach mendesis. Buat ia mensertifikasi, menunda, melestarikan, dan menagih.
 
 <!-- In-Game Wiki; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/id_ID. -->

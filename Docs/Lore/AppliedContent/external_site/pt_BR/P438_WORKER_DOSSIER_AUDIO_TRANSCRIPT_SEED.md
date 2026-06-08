@@ -9,32 +9,22 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "Transcrição de Áudio de Dossiê de Trabalhador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Worker Dossier Audio Transcript Seed
+# Transcrição de Áudio de Dossiê de Trabalhador
 
-PT LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+## Uma Colônia Antes De Virar Prova
 
-## Scanner
+O áudio de dossiê de trabalhadores não deve apresentar mortos como objetos de altar. Deve deixá-los trabalhar. Uma chefe de bombas confere uma válvula. Um notário de relay reclama de um quadro. Uma médica discute com um water ledger. Um operador de fabricator registra certificado de ferramenta porque a ferramenta importa mais que qualquer discurso sobre coragem.
 
-PT LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Essa rotina dá peso às ruínas. O jogador deve ouvir nomes antes de memoriais, funções antes de tragédia e pequenas irritações antes de a mentira maior se fechar. HECTON-8 não era palco para o Marauder. Era local de trabalho com hábitos, rancores, piadas, avisos de dívida e matemática de pressão.
 
-## Terminal
-
-PT LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
-
-## Audio
-
-PT LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
-
-## Field Note
-
-PT LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+Essa camada protege o cânone de melodrama. Não há gancho familiar tornando o jogador especial. A culpa é profissional. Você reconhece procedimentos, crachás e decisões ruins porque pertenceu a esse tipo de sistema, e agora o sistema fala por ordens de trabalho afogadas.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/pt_BR. -->

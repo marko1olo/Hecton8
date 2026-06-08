@@ -43,6 +43,16 @@ def validate(args: argparse.Namespace) -> int:
         "normalScale",
         "heightScale",
     )
+    usage_flags = (
+        "heldToolAllowed",
+        "stationPropAllowed",
+        "salvageAllowed",
+        "worldPanelAllowed",
+        "floraAllowed",
+        "faunaAllowed",
+        "geologyAllowed",
+        "playerGearAllowed",
+    )
     asset_count = 0
     map_count = 0
 
@@ -53,7 +63,7 @@ def validate(args: argparse.Namespace) -> int:
         for key in required_meta:
             if key not in asset:
                 errors.append(f"{asset_id}: missing metadata key {key}")
-        for key in ("heldToolAllowed", "stationPropAllowed", "salvageAllowed", "worldPanelAllowed"):
+        for key in usage_flags:
             if key in asset and not isinstance(asset.get(key), bool):
                 errors.append(f"{asset_id}:{key}: expected bool")
         for key, minimum, maximum in (
@@ -71,7 +81,7 @@ def validate(args: argparse.Namespace) -> int:
                 continue
             if float(value) < minimum or float(value) > maximum:
                 errors.append(f"{asset_id}:{key}: out of range {value} expected {minimum}..{maximum}")
-        if not any(bool(asset.get(key, False)) for key in ("heldToolAllowed", "stationPropAllowed", "salvageAllowed", "worldPanelAllowed")):
+        if not any(bool(asset.get(key, False)) for key in usage_flags):
             errors.append(f"{asset_id}: no gameplay usage flag enabled")
         for key in required:
             raw_path = str(maps.get(key, "")).strip()

@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # A ECONOMIA DA SOBREVIVÊNCIA E A DÍVIDA KEELMARK
 
 > **Fonte:** Contrato de Contratado Independente Keelmark, Adendo 14-B (Obrigações Financeiras).

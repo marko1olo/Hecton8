@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ledger Role Table"
+title: "Ledger Rute Bulan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ledger Role Table
+# Ledger Rute Bulan Aegir
 
-ID LOC HOLD: Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8.
+Ledger Rute Bulan Aegir memetakan tangga bulan di sekitar HECTON-8: benda dekat tidak menawarkan jalan keluar mudah, tetapi mempersulit waktu penyelamatan, hak lalu lintas, dan kepercayaan suar.
 
 ## Scanner
 
-ID LOC HOLD: Aegir moons are not decoration; each public moon label carries a route or salvage role.
+Bulan-bulan Aegir mendapat nama dari apa yang mereka patahkan, sembunyikan, sebarkan, teruskan, atau jual.
 
 ## Terminal
 
-ID LOC HOLD: LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+LEDGER: geser radiasi Skarn, masker relai Vela, sebar es Claw, peta rute publik Lumen, lalu lintas rumor karantina Thorne, salvage industri Anvil, lalu lintas jendela tinggi Kestrel, klaim dalam HECTON, ekonomi suar mati Mute.
 
 ## Audio
 
-ID LOC HOLD: The system has more bodies than stories. Good. Use them as pressure.
+Lebih banyak benda. Lebih banyak alasan. Lebih banyak cara bantuan meleset.
 
 ## Field Note
 
-ID LOC HOLD: Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+Bulan samudra sendirian di bawah air, bukan sendirian dalam sistem.
 
 <!-- External Site; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/id_ID. -->

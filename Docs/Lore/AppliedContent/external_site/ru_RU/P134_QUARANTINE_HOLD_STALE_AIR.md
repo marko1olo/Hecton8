@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Карантинный hold со stale air"
+title: "Карантинное удержание: спертый воздух"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Карантинный hold со stale air
+# Карантинное удержание: спертый воздух
 
-Карантинный hold со stale air превращает побег в подвешенную agency, а не в смерть или победу.
+Карантинное удержание - самый тихий ложный выход. Ему не нужен злодей в комнате. Форма говорит: извлечен живым. Счетчик воздуха говорит: рацион активен. Следующая дверь откроется только после проверки заражения, спора claimant и страхового review.
 
-## Scanner
-
-Ты жив, запечатан и все еще не свободен.
-
-## Terminal
-
-QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-Люк открывается только к следующему закрытому люку.
-
-## Field Note
-
-Это бюрократическая версия утопления.
+Исход жесток потому, что он защищаем. Никто не убил свидетеля. Никто не уничтожил образец. Система просто заставляет каждое заявление ждать дольше, чем когда-либо ждали тела. Игрок переживает океан и входит в герметичный коридор, построенный из процедуры.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/ru_RU. -->

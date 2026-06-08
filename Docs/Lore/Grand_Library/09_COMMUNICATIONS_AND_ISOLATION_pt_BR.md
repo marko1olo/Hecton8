@@ -1,3 +1,4 @@
+<!-- localization_status: source_draft_pending_native_review -->
 # O APAGÃO DE COMUNICAÇÃO E O SILÊNCIO ORBITAL
 
 > **Fonte:** Manual de Operações do Tender Orbital *Black Keel*, Seção 4.

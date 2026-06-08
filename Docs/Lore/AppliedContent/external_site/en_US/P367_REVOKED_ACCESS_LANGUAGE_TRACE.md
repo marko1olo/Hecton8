@@ -19,22 +19,26 @@ localization_flags: 0
 
 # Revoked Access Language Trace
 
-The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+The protagonist reads Deep Reach lockouts as evidence. Revoked credentials block access, but the wording still exposes the buried route: degraded counts, substitute witnesses, maintenance reclassification, and claim-preservation language.
 
 ## Scanner
 
-Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+The lockout does not say forbidden. It says maintenance reclassification, continuity hold, and route materials. Old Deep Reach phrasing: a denial that still points at the buried door.
 
 ## Terminal
 
-LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+ACCESS RESPONSE / ROUTE-SAFE ARCHIVE
+credential: revoked
+reason: evacuation-continuity materials restricted to certified Deep Reach staff
+visible terms: degraded-count, substitute witness, claim-preservation route, maintenance reclassification
+note: legacy field personnel may view denial language for incident reconciliation only.
 
 ## Audio
 
-That is not security. That is a memo pretending to be a door.
+They did not erase the corridor. They wrapped it in vocabulary only guilty staff would still understand.
 
 ## Field Note
 
-Lockout language hints at hidden liability without granting free access.
+The badge is dead. The lockout still speaks the office dialect that buried the route.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/en_US. -->

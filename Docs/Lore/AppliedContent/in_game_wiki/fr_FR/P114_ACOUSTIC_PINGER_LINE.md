@@ -7,34 +7,34 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: fr_FR
 surface: in_game_wiki
-source_voice: Neutral Reference
+source_voice: Recovered Operational Note
 spoiler_tier: 0
-title: "Acoustic Pinger Line"
+title: "Ligne de balise acoustique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic Pinger Line
+# Ligne de balise acoustique
 
-FR LOC HOLD: The acoustic pinger line is the first navigation discipline. It teaches the player to mark return routes, not just chase POIs. Later escape systems grow from the same idea: acoustic relays, timing, carrier handshakes and route confidence.
+La ligne de balise acoustique est la première discipline de navigation. Elle permet de créer une route de retour avant que lumière, courant ou panique ne rendent le trajet étranger. Les travaux d'évasion ultérieurs naissent de la même idée : son dans l'eau, rythme des relais, poignées de main avec le porteur et preuve qu'un chemin existe encore.
 
 ## Scanner
 
-FR LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
+Bobine de balise acoustique. Impulsion courte portée confirmée; ancrer avant eau trouble ou miroitement de saumure.
 
 ## Terminal
 
-FR LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
+LIGNE DE RETOUR / BALISE : ancrer avant turbidité, miroitement de saumure, coude inondé ou longue coupe de plateau. Le ping local soutient seulement la navigation retour. La poignée de main avec le porteur exige une épine de relais acoustique.
 
 ## Audio
 
-FR LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
+Si les lumières tombent, suivez le son que vous avez posé.
 
 ## Field Note
 
-FR LOC HOLD: Navigation should become physical early.
+Posez la balise tant que vous connaissez encore le retour. La fierté n'est pas un marqueur de route.
 
 <!-- In-Game Wiki; generated from P114_ACOUSTIC_PINGER_LINE/fr_FR. -->

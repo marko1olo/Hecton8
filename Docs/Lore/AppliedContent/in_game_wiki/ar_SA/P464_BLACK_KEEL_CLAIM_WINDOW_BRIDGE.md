@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: نافذة مطالبة Black Keel"
+title: "نافذة مطالبة Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: نافذة مطالبة Black Keel
+# نافذة مطالبة Black Keel
 
-AR LOC HOLD: تم العثور على إشعار نافذة Black Keel. اتصال الحاملة يعني أن الإشارة وصلت إلى ممر Aegir؛ لا يعني أن الاسترداد متاح. الاستخراج يحتاج عتاد صعود ومصافحة حجر وحمولة مقبولة وتخصيص tonne-window.
+تم العثور على إشعار نافذة Black Keel. اتصال carrier يعني أن الإشارة وصلت إلى ممر Aegir؛ لا يعني أن الاسترداد متاح. الاستخراج يحتاج عتاد صعود ومصافحة حجر وحمولة مقبولة وتخصيص tonne-window.
 
 ## Scanner
 
-AR LOC HOLD: نافذة مطالبة // ترحيل Aegir يتوقع نافذة استقبال فقط. الاسترداد يحتاج حزمة صعود ومصافحة حجر وتخصيص tonne-window.
+نافذة مطالبة // ترحيل Aegir يتوقع نافذة استقبال فقط. الاسترداد يحتاج حزمة صعود ومصافحة حجر وتخصيص tonne-window.
 
 ## Terminal
 
-AR LOC HOLD: إشعار حيازة KEELMARK // تم استقبال إشارة العامل. أولوية الاسترداد غير محسومة. استقبال إشارة أو حزمة دليل لا يضمن استرداد العامل.
+إشعار حيازة KEELMARK // تم استقبال إشارة العامل. أولوية الاسترداد غير محسومة. استقبال إشارة أو حزمة دليل لا يضمن استرداد العامل.
 
 ## Audio
 
-AR LOC HOLD: ترحيل Black Keel: تم تسعير إشارة العامل. نافذة الاسترداد معلقة. لا تخلط بين الاستلام والرفع.
+ترحيل Black Keel: تم تسعير إشارة العامل. نافذة الاسترداد معلقة. لا تخلط بين الاستلام والرفع.
 
 ## Field Note
 
-AR LOC HOLD: إذا أجاب Black Keel فاحسب الفاتورة لا الإنقاذ. الحزمة المستلمة مجرد مكان في الطابور حتى تتفق الكتلة والختم والحجر والطقس.
+إذا أجاب Black Keel فاحسب الفاتورة لا الإنقاذ. الحزمة المستلمة مجرد مكان في الطابور حتى تتفق الكتلة والختم والحجر والطقس.
 
 <!-- In-Game Wiki; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/ar_SA. -->

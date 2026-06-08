@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ex-Deep-Reach Marauder"
+title: "Marauder Mantan Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Ex-Deep-Reach Marauder
+# Marauder Mantan Deep Reach
 
-ID LOC HOLD: This packet locks the protagonist as former Deep Reach field-systems / evacuation-infrastructure labor, now operating as a Marauder. The motive begins as salvage professionalism and turns personal when old Deep Reach procedures, signatures and failure modes become recognizable evidence.
+Protagonis tidak lahir di HECTON-8 dan tidak mengejar hantu keluarga. Koloni lama mengenali sesuatu yang lebih dingin: irama perbaikan sistem lapangan, kebiasaan membaca rute darurat, dan jalan pintas kecil yang diajarkan pekerjaan Deep Reach. Riwayat itu membuat pintu terkunci pertama terasa pribadi tanpa mengubah cerita menjadi drama garis darah murahan garis darah. Seorang Marauder dapat membelah cache klaim demi uang; mantan spesialis Deep Reach juga tahu log segel mana yang tidak seharusnya ada, instruksi evakuasi mana yang ditulis untuk menutupi penundaan, dan urutan perbaikan mana yang tetap hidup setelah para pekerja dihapus dari hitungan.
 
 ## Scanner
 
-ID LOC HOLD: The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+Kunci Deep Reach tua tidak memeriksa namamu. Ia mengenali irama urutan perbaikanmu.
 
 ## Terminal
 
-ID LOC HOLD: CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+JEJAK KREDENSIAL: bekas kontrak sistem lapangan. Akses infrastruktur evakuasi dicabut. Status pemulungan diterima di bawah pengawasan utang pool klaim.
 
 ## Audio
 
-ID LOC HOLD: You did not come home. You came back to a procedure that never stopped running.
+Kau tidak pulang. Kau kembali pada prosedur yang tidak pernah berhenti berjalan.
 
 ## Field Note
 
-ID LOC HOLD: Not family business. Procedure remembers who taught your hands.
+Ini bukan urusan keluarga. Prosedur mengingat tangan yang pernah memakainya.
 
 <!-- In-Game Wiki; generated from P056_EX_DEEP_REACH_MARAUDER/id_ID. -->

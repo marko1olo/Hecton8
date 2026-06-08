@@ -14,12 +14,12 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # 근무판 경로 보류
 
-이 증거는 물류 언어가 시신을 숨기고 죄를 흩트리는 방식을 보여준다.
+교대판은 재난을 읽을 수 있는 절차로 바꾼다. Deep Reach와 Atlas는 연극적 악의가 아니라 분류, 지연, 우선순위로 죽였다.
 
 ## Scanner
 

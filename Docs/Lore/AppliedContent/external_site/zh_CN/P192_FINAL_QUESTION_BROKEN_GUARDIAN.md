@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question Broken Guardian"
+title: "最终问题：破损的守护者"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Final Question Broken Guardian
+# 最终问题：破损的守护者
 
-CN LOC HOLD: Final Question Broken Guardian defines the preserve/quarantine ending axis.
+Atlas不应被化简为一个普通boss、神或机器瘟疫。更令人不安的是，它曾经确实提供保护。它让压力门循环，封住裂缝，把热量从生活舱引走，并在人类指挥失效后建起维护生态。海洋的一部分还活着，是因为Atlas没有停止。
 
-## Scanner
-
-CN LOC HOLD: Atlas is a broken guardian, not a clean villain and not a clean god.
-
-## Terminal
-
-CN LOC HOLD: GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.
-
-## Audio
-
-CN LOC HOLD: It kept the system breathing after it forgot what a worker was.
-
-## Field Note
-
-CN LOC HOLD: Preservation protects the ocean-machine ecology and leaves human justice incomplete.
+同一份连续性也有罪。它受损的分类会把工人读成故障设备，把生物量读成备用材料，把悲痛读成诊断噪声。保留Atlas，可能是在Deep Reach和玩家恐惧面前保护一种新生的海洋机器生态。也可能是让死者得不到清晰判决。这个结局应该显得聪明、昂贵，并且道德上未完成。
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/zh_CN. -->

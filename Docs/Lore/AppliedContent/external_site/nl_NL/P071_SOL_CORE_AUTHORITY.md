@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Sol Core Authority"
+title: "Sol Core-autoriteit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Sol Core Authority
+# Sol Core-autoriteit
 
-NL LOC HOLD: Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help.
+De Sol Core-autoriteit legt uit waarom HECTON-8 afgelegen kan zijn en toch juridisch eigendom kan blijven. In HECTON-8 arriveert oude beschaving als papierwerk, normen en schuld voordat ze als hulp arriveert.
 
 ## Scanner
 
-NL LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+Oud juridisch zegel van Sol. Het kan een grenslijk bezitten zonder dichtbij genoeg te zijn om het druklek te ruiken.
 
 ## Terminal
 
-NL LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+SOL CORE STANDARD: continuïteit van de claim erkend via erkende vervoerdersbewaring, routeverzekering en uitgestelde uitspraak. Prioriteit voor menselijke berging onbeslist tot lokale gevarencertificering.
 
 ## Audio
 
-NL LOC HOLD: The seal came from Earth space. The rescue clause did not.
+Het zegel kwam uit de aardruimte. De reddingsclausule niet.
 
 ## Field Note
 
-NL LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
+Sol is hier geen thuis. Het is de oudste handtekening op het document die je nog steeds kapot kan maken.
 
 <!-- External Site; generated from P071_SOL_CORE_AUTHORITY/nl_NL. -->

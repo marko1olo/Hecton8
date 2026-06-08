@@ -7,34 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: pl_PL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Beam-Sail Probe Era"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Era sond żagla wiązkowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Beam-Sail Probe Era
+# Era sond żagla wiązkowego
 
-PL LOC HOLD: Early extrasolar expansion leaned on beam-assisted probes and small autonomous packets. They could map, listen and seed relay assumptions faster than heavy crewed ships could move. That asymmetry explains how Deep Reach could prepare Aegir infrastructure before ordinary workers understood the full risk.
+Wczesna ekspansja pozasłoneczna wysyłała sondy żagla wiązkowego i autonomiczne pakiety przed ludźmi. Mapowały grawitację, promieniowanie, orbity księżyców, linie widzenia przekaźników i możliwe światy oceaniczne, gdy ciężkie statki były jeszcze zobowiązaniami na papierze. Deep Reach odziedziczyło pewność wyprodukowaną przez maszyny i potraktowało ją jak pozwolenie.
 
 ## Scanner
 
-PL LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+Rolka pomiarowa: pierwsze mapy Aegir dotarły jako lekki ładunek, nie obietnica załogowa.
 
 ## Terminal
 
-PL LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+LINIA POMIAROWA: pakiety żagla wiązkowego mapowały Ran i Aegir, zanim trasy frachtowe oceniono dla żywego ładunku. Spadek pewności odnotowany przed rozbudową kolonii.
 
 ## Audio
 
-PL LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
+Pierwsza ludzka rzecz tutaj nie była człowiekiem. Była pakietem pomiarowym z rachunkiem.
 
 ## Field Note
 
-PL LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+Sondy zobaczyły pierwsze. Maszyny przygotowały drugie. Robotnicy przybyli, gdy pewność dało się zafakturować.
 
 <!-- In-Game Wiki; generated from P102_BEAM_SAIL_PROBE_ERA/pl_PL. -->

@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Beam Sail and Pellet Lane"
+title: "Лучевой парус и pellet-lane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Beam Sail and Pellet Lane
+# Лучевой парус и pellet-lane
 
-RU LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+Лучевые паруса, pellet lanes, термоядерные стадии захвата и магнитные паруса сделали околосветовые грузы практичными без FTL. Корабль выходил из порта с баками, защитным льдом, радиаторами и правом управления, а остальную часть двигателя занимал у маршрута: лучевую энергию позади, массу пеллет в рассчитанной дорожке впереди и приемник, который соглашался владеть торможением. Поэтому Aegir достижим и все равно ощущается брошенным. Коридор двигает запланированный груз; его нельзя вызвать как спасательный трос.
 
 ## Scanner
 
-RU LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+Запись транзитной линии: парус не толкал себя сам. Он арендовал энергию у массивов позади корабля и массу у потоков пеллет впереди.
 
 ## Terminal
 
-RU LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+СТАТУС ЛИНИИ: лучевой массив оплачен. Поток пеллет на 0,8 ppm вне контракта. Захватный прожиг еще возможен. Без владельца торможения быстрый груз станет быстрым мусором.
 
 ## Audio
 
-RU LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+Корабль быстрый потому, что половина двигателя находится вне корабля.
 
 ## Field Note
 
-RU LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Если запись хвалит только луч, читай дальше, пока она не назовет владельца захвата.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/ru_RU. -->

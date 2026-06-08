@@ -9,32 +9,36 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Photic Mat Codex Card"
+title: "Kartu Codex Photic Mat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Photic Mat Codex Card
+# Kartu Codex Photic Mat
 
-ID LOC HOLD: The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
+Photic mat adalah salah satu pelajaran pertama tentang ekologi terbaca HECTON-8. Mereka mencerahkan perairan dangkal, memberi makan grazers kecil, dan menstabilkan film mineral, tetapi juga menandai kimia tekanan dan sambungan rapuh. Samudra terlihat mengundang karena permukaan hidup sedang bekerja.
 
 ## Scanner
 
-ID LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Photic mat. Lembaran biofilm oksigen-positif di atas kulit mineral. Terang, berguna, rapuh terhadap tekanan. Jangan kupas dari retakan tersegel.
 
 ## Terminal
 
-ID LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+SPESIMEN / PHOTIC MAT
+peran: permukaan oksigen dangkal, makanan grazers, penstabil film mineral
+sampel aman: tepi longgar kurang dari lebar telapak
+tolak: lembar penyegel sambungan, mat bergelembung gas, bidang gigitan grazers baru
+catatan rute: mat robek dapat melepas gas terperangkap dan mengubah shelf jernih menjadi hazard.
 
 ## Audio
 
-ID LOC HOLD: Light here is work, not comfort.
+Ia terlihat lunak karena sedang bekerja. Jika ia menahan sambungan, biarkan di sana.
 
 ## Field Note
 
-ID LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+Tepi longgar: sampel. Penutup sambungan: biarkan. Jika mat menyegel luka, lukanya masih ada.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/id_ID. -->

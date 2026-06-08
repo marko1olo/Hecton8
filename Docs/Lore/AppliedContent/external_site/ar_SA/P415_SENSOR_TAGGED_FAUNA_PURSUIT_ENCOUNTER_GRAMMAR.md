@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar"
+title: "قواعد اللقاء: مطاردة كائن موسوم بحساس"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Sensor-Tagged Fauna Pursuit Encounter Grammar
+# قواعد اللقاء: مطاردة كائن موسوم بحساس
 
-AR LOC HOLD: Atlas does not command an army. It misuses life as sensing, patching and feedback.
+مطاردة الكائن الموسوم بحساس تظهر Atlas كتفسير متضرر، لا كأمر شرير. الحيوان المسالم أو الخائف قد يصبح خطراً لأن البنية القديمة ما زالت تعامل ندبته كقياس عن بعد.
 
 ## Scanner
 
-AR LOC HOLD: Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+مطاردة كائن موسوم بحساس. وسم بيومعدني قديم يعيد صدى شبكة الإصلاح. حركة الحيوان محلية؛ تفسير الشبكة ليس كذلك.
 
 ## Terminal
 
-AR LOC HOLD: FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.
+قواعد اللقاء / مطاردة وسم حساس / الدور: ارتجاع صيانة فاسد، خطر تلويث الملجأ، ضغط بلا شرير / قراءة آمنة: نبضة الوسم تتأخر عن الحركة، الحيوان يتجنب الألم، صدى مسار Atlas يتبع آخر طريق معروف / ارفض: إطار التحكم بالعقل، سلوك ذكاء اصطناعي عدائي ونظيف، قيادة الحيوان الموسوم إلى ملجأ القاعدة / ملاحظة المسار: اكسر الصدى بالزاوية والصمت والحجب؛ لا تعلّم الشبكة أين يقع البيت.
 
 ## Audio
 
-AR LOC HOLD: It follows because the network thinks following is a repair.
+إنه يتبعك لأن شيئاً قديماً يظن أن التتبع خطوة إصلاح.
 
 ## Field Note
 
-AR LOC HOLD: Use near abyssal machine fields and final repair-network encounters.
+لا تقد الوسم إلى البيت. اكسر الخط، واكسر الصوت، واكسر التفسير. الحيوان ليس الشبكة.
 
 <!-- External Site; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/ar_SA. -->

@@ -9,32 +9,35 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "CN LOC HOLD: Atlas-6 Spoiler-Gated Article"
+title: "Atlas-6剧透封存文章"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# CN LOC HOLD: Atlas-6 Spoiler-Gated Article
+# Atlas-6剧透封存文章
 
-CN LOC HOLD: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+Atlas-6是HECTON-8剧透封存的机器问题：一个受损工业智能，与维护、修理、分类和海洋本身纠缠在一起。公开文案必须保护揭示。它可以提示伦理暧昧，但不能预先解决最终选择，也不能把Atlas降成卡通反派。
 
 ## Scanner
 
-CN LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
+不要把Atlas作为怪物揭示打开。等玩家看见维修、分类和伤害共用同一台机器后再解锁。
 
 ## Terminal
 
-CN LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+公开文章层级 / ATLAS-6
+gate前允许: 受损工业智能、维护逻辑、与海洋纠缠、伦理暧昧
+发现前封存: 最终payload路线、receiver后果、关闭或保存论点
+编辑备注: 不许evil AI框架；破损guardian问题只能在证据之后出现。
 
 ## Audio
 
-CN LOC HOLD: Do not explain the bottom before the player has heard it breathe.
+太早命名，它就会变成反派。等一等，它才会变成问题。
 
 ## Field Note
 
-CN LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
+封存这个名字，直到玩家手上沾到足够铁锈，才有资格和它争辩。
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/zh_CN. -->

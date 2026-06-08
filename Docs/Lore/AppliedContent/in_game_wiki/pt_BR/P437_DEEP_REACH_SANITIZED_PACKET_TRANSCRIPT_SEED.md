@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
+title: "Transcrição do Pacote Sanitizado da Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
+# Transcrição do Pacote Sanitizado da Deep Reach
 
-PT LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.
+O pacote sanitizado continua plausível porque mantém substantivos reais do desastre e remove as decisões que os tornaram fatais.
 
 ## Scanner
 
-PT LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Pacote Deep Reach recuperado repete o resumo do acidente e prende assistência a coordenadas e preço de quarentena.
 
 ## Terminal
 
-PT LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
+PACKET DR-RCO-2190: safety priority asserted; coordinates required; quarantine cost pending; worker-cause fields omitted.
 
 ## Audio
 
-PT LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
+Pacote Recovery Compliance. Prioridade de segurança reconhecida. Coordenadas primeiro. Custo de quarentena pendente. Assistência não pode ser precificada às cegas.
 
 ## Field Note
 
-PT LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
+Voz corporativa em presente. Deve soar sobrevivível até o jogador notar o que o pacote se recusa a nomear.
 
 <!-- In-Game Wiki; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/pt_BR. -->

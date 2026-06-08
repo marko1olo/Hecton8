@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cold Sealant Patch Gun"
+title: "冷封胶补枪"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Cold Sealant Patch Gun
+# 冷封胶补枪
 
-CN LOC HOLD: Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+冷封补丁枪教会第一个诚实限制。它能止住pinhole，压住垫片边，或在安静接缝上买来几分钟。它不能祝福正在移动的结构。rating label比玩家的希望更重要。
 
-## Scanner
-
-CN LOC HOLD: Patch gun. Rated for pinholes, not miracles.
-
-## Terminal
-
-CN LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
-
-## Audio
-
-CN LOC HOLD: A patch is not safety. It is a countdown that looks solid.
-
-## Field Note
-
-CN LOC HOLD: Sealant repairs should buy time, not erase pressure.
+所以它应该早早出现。它让玩家行动，却不假装每个漏点都能解决。好补丁创造时间；坏补丁在海洋稍后收账的地方制造信心。
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/zh_CN. -->

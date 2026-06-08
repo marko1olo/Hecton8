@@ -11,12 +11,12 @@ using Unity.Mathematics;
 namespace MapMagic.Nodes.MatrixGenerators
 {
     /// <summary>
-    /// Sandbox-only MapMagic base height generator for the HECTON planetary shelf foundation.
+    /// MapMagic base height adapter for the HECTON macro geology source fields.
     /// </summary>
     [System.Serializable]
     [GeneratorMenu(
         menu = "Hecton",
-        name = "Sandbox Abyssal Shelf Base",
+        name = "Macro Geology Base",
         disengageable = true,
         colorType = typeof(MatrixWorld))]
     [UnityEngine.Scripting.Preserve]
@@ -112,7 +112,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                     dst.worldPos.x,
                     dst.worldPos.z,
                     AbsoluteUniversePosition.CellSizeMeters);
-                uint worldSeed = HectonSandboxAbyssalShelfMath.CombineWorldSeed(
+                uint worldSeed = WorldMacroGeologyFields.CombineWorldSeed(
                     unchecked((uint)seed),
                     ResolveRuntimeWorldSeed());
                 var parameters = new HectonSandboxAbyssalShelfParams
@@ -138,7 +138,8 @@ namespace MapMagic.Nodes.MatrixGenerators
                     TrenchSharpness = math.max(0.35f, trenchSharpness),
                     IslandCenterRadiusMeters = math.max(1f, islandCenterRadiusMeters),
                     IslandJunctionThreshold = math.saturate(islandJunctionThreshold),
-                    Seed = worldSeed
+                    Seed = worldSeed,
+                    MacroGeologyArtifactVersion = WorldMacroGeologyFields.ArtifactVersion
                 };
 
                 var baseJob = new HectonSandboxAbyssalShelfBaseJob
@@ -239,13 +240,47 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         private static void DisposeTracked(ref NativeArray<float> array, ref int registrationId)
         {
-            if (!array.IsCreated)
-                return;
+            System.Exception cleanupException = null;
 
-            NativeMemorySentinel.Unregister(registrationId);
-            registrationId = 0;
-            array.Dispose();
-            array = default;
+            if (registrationId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(registrationId);
+                }
+                catch (System.Exception exception)
+                {
+                    cleanupException = exception;
+                }
+                finally
+                {
+                    registrationId = 0;
+                }
+            }
+
+            if (array.IsCreated)
+            {
+                try
+                {
+                    array.Dispose();
+                }
+                catch (System.Exception exception)
+                {
+                    if (cleanupException == null)
+                        cleanupException = exception;
+                }
+                finally
+                {
+                    array = default;
+                }
+            }
+            else
+            {
+                array = default;
+            }
+
+            if (cleanupException != null)
+                throw cleanupException;
         }
 
         private static double ResolveCellSizeMeters(MatrixWorld matrix)

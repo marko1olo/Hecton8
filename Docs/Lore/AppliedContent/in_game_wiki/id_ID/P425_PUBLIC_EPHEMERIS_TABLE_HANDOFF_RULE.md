@@ -7,34 +7,34 @@ poi_tags: poi.ephemeris_handoff_rule;poi.celestial_table_boundary
 biome_tags: biome.authoring;biome.aegir_system
 locale: id_ID
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "ID LOC HOLD: Ephemeris Data Boundary Rule"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "Aturan Batas Data Ephemeris"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Ephemeris Data Boundary Rule
+# Aturan Batas Data Ephemeris
 
-ID LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.
+Batas ini menjaga hard-sci-fi lore tetap berguna tanpa membekukan simulation constants di dalam prosa. Teks publik menjelaskan fungsi bulan, rute atau jendela sementara angka final tetap di data tables.
 
 ## Scanner
 
-ID LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
+Batas data: prosa memiliki pita; angka orbit final tetap table-owned.
 
 ## Terminal
 
-ID LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+DATA BOUNDARY: prosa boleh menyatakan peran, bahaya dan pita. Orbital values tepat tetap keluar dari narrative copy.
 
 ## Audio
 
-ID LOC HOLD: Numbers are allowed when the table owns them.
+Angka diizinkan saat tabel memilikinya.
 
 ## Field Note
 
-ID LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
+Catatan ephemeris menjelaskan logika rute sementara konstanta tepat tetap table-owned data.
 
 <!-- In-Game Wiki; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/id_ID. -->

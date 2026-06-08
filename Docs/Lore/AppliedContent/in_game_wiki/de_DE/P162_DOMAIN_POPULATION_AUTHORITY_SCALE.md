@@ -9,32 +9,34 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Population And Authority Scale"
+title: "Bevölkerungs- Und Autoritätsskala"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Population And Authority Scale
+# Bevölkerungs- Und Autoritätsskala
 
-DE LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
+Bevölkerungszahlen bleiben ungefähr, weil der Spieler keine census opera braucht. Die nützliche Frage ist einfacher: Wer kann aus der Ferne auf dich wirken? Eine volle Innendomäne berührt HECTON-8 vielleicht nur als Zertifizierungszeile. Ein kleines Depot kann wichtiger sein, weil es Paket-custody kontrolliert. Eine tote Frontier-Shell kann am wichtigsten sein, weil sie die Hardware im Raum besitzt.
+
+Diese Skala spürt der Spieler. Sol kann entscheiden, dass ein Objekt jemandem gehört. Centauri kann alte Deep-Reach-Sprache respektabel klingen lassen. Barnard normalisiert die Arbeit, die Marauders einfängt. Tau Ceti kann Beweise in öffentlichen Druck verwandeln, zu spät für Sauerstoff, aber nicht zu spät für Folgen. Luyten kann die Nachrichtenkette beweisen. Aegir ist der Ort, an dem Signaturen zu Druck, Wasser, verriegelten Luken und abrechenbarer Masse werden.
 
 ## Scanner
 
-DE LOC HOLD: Population scale is background. Authority pressure is what the player feels.
+AUTHORITY CENSUS STUB // Bevölkerung ist Hintergrund. Wichtig ist, welche Domäne einen claim zertifizieren, veröffentlichen, bewegen, versichern, notariell sichern oder begraben kann.
 
 ## Terminal
 
-DE LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AUTHORITY SCALE // Sol zertifiziert Eigentum. Centauri legitimiert Chartas. Barnard liefert Arbeit für tote claims. Tau Ceti veröffentlicht Beweise nach Verzögerung. Luyten beweist custody. Aegir führt den schmutzigen physischen claim aus.
 
 ## Audio
 
-DE LOC HOLD: The largest domain is not the nearest hand.
+Die größte Domäne ist nicht die nächste Hand. Es ist der Stempel, der die Verzögerung überlebt.
 
 ## Field Note
 
-DE LOC HOLD: Do not turn the setting into census space opera.
+Keine Census-Trivia hinzufügen, außer sie verändert Druck auf Körper, Route, claim oder Beweiskette.
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/de_DE. -->

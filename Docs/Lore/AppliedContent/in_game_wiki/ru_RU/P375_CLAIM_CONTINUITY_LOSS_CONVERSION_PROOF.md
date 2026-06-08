@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Доказательство conversion loss в claim continuity"
+title: "Конверсия потерь в непрерывность claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Доказательство conversion loss в claim continuity
+# Конверсия потерь в непрерывность claim
 
-Цепь proof заканчивается claim conversion: Deep Reach может признать damage и сохранить ownership, если люди стали losses, а evidence - material custody.
+Цепочка доказательств заканчивается конверсией. Deep Reach может признать ущерб и сохранить владение, если рабочие становятся losses, доказательство становится material custody, а claim остается живым. Поэтому игрок несет не только правду. Он несет то, что система умеет покупать.
 
 ## Scanner
 
-Loss conversion stamp. Ledger пережил людей лучше.
+Восстановлен штамп стола потерь. Ledger пережил рабочих лучше, чем имена, которые он им дал.
 
 ## Terminal
 
-KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
 
 ## Audio
 
-Вот здесь мертвые работники стали чистой колонкой.
+Здесь люди стали чистой колонкой.
 
 ## Field Note
 
-RU LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+Заметка мародера: ledger может помнить мертвых и все равно тратить их.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/ru_RU. -->

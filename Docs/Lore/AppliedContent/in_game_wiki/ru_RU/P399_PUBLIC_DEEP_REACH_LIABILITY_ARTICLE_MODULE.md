@@ -9,32 +9,32 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Deep Reach Liability Evidence"
+title: "Доказательства ответственности Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# RU LOC HOLD: Deep Reach Liability Evidence
+# Доказательства ответственности Deep Reach
 
-RU LOC HOLD: Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
+Liability Deep Reach работает потому, что потоп не требует фальшивой физики. Great Tide был реальным. Предотвратимый ущерб виден в margins, часах, access holds и записях, которые превращали работников в категории до того, как кого-либо можно было поднять.
 
 ## Scanner
 
-RU LOC HOLD: Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
+Запись liability. Реальная приливная физика, принятый риск по margin, задержка эвакуации, quarantine holds, Atlas weighting и очищенный язык потерь сходятся в одной цепочке доказательств.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
+ПУБЛИЧНЫЙ АРХИВНЫЙ УЗЕЛ // ДОКАЗАТЕЛЬСТВА LIABILITY. Great Tide принят. Проверка остается открытой по sensor margins, задержке evacuation queue, quarantine holds, Atlas weighting, worker classification и loss conversion.
 
 ## Audio
 
-RU LOC HOLD: A disaster can be natural and still have signatures on it.
+Катастрофа может быть природной и все равно иметь подписи.
 
 ## Field Note
 
-RU LOC HOLD: Marauder note: never argue with the tide. Argue with the signatures beside it.
+Заметка Marauder: не спорь с приливом. Спорь с подписями рядом с ним.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/ru_RU. -->

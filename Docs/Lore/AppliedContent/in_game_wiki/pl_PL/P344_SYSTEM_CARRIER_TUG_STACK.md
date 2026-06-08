@@ -3,38 +3,38 @@ packet_id: P344_SYSTEM_CARRIER_TUG_STACK
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.system_carrier_tug_stack
 unlock_id: unlock.system_carrier_tug_stack
-poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
+poi_tags: poi.black_keel_carrier_spec;poi.tug_manifest
 biome_tags: biome.orbit;biome.contract
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: System Carrier Tug Stack"
+title: "Stos systemowego przewoźnika i holowników"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: System Carrier Tug Stack
+# Stos systemowego przewoźnika i holowników
 
-PL LOC HOLD: The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.
+Black Keel jest systemowym przewoźnikiem i platformą salvage, nie osobistym statkiem. Może trzymać orbitę, obsługiwać ładunek, uruchamiać blokady pieczy, wystrzeliwać kapsuły i koordynować holowniki. Nie usuwa opóźnienia światła, okien trasy, uszkodzonego bathydrop ani reguł kosztu.
 
 ## Scanner
 
-PL LOC HOLD: Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
+Rejestr stosu przewoźnika: Black Keel przesuwa salvage holownikami, blokadami pieczy, stojakami kapsuł i zegarami. To nie jest statek-dom.
 
 ## Terminal
 
-PL LOC HOLD: BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
+SPEC BLACK KEEL: przewoźnik claim-pool. Funkcje: trzyma orbitę, przyjmuje ładunek, deploy bathydrops, cumuje holowniki, recyklinguje dług. Granica: nie zastąpi zerwanego łańcucha insercji księżycowej.
 
 ## Audio
 
-PL LOC HOLD: The carrier is not your home. It is a machine that knows who owns your debt.
+Przewoźnik zna twój dług lepiej niż twoje imię.
 
 ## Field Note
 
-PL LOC HOLD: Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
+Rejestr własności przewoźnika: użyteczna maszyna orbitalna może być wroga, jeśli jej pierwszą lojalnością jest piecza.
 
 <!-- In-Game Wiki; generated from P344_SYSTEM_CARRIER_TUG_STACK/pl_PL. -->

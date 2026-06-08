@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Stale Air"
+title: "隔離保留：よどんだ空気"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Quarantine Hold Stale Air
+# 隔離保留：よどんだ空気
 
-JP LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+隔離保留は最も静かな偽退出である。部屋に悪役はいらない。書式は生存回収と示し、空気カウンターは配給作動中と示し、次の扉は汚染審査、claimant異議、保険損失審査の後でしか開かない。
 
-## Scanner
-
-JP LOC HOLD: You are alive, sealed, and still not free.
-
-## Terminal
-
-JP LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
-
-## Audio
-
-JP LOC HOLD: The hatch opens only to another closed hatch.
-
-## Field Note
-
-JP LOC HOLD: This is the bureaucratic version of drowning.
+この結果が残酷なのは、防御可能だからだ。誰も証人を殺していない。誰もサンプルを破壊していない。システムはただ、すべての声明を、死体が待てた時間より長く待たせる。プレイヤーは海を生き延び、手続きで作られた密閉通路へ入る。
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/ja_JP. -->

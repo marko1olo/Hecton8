@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Worker Dossier Audio Transcript Seed"
+title: "תמליל שמע תיק עובד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Worker Dossier Audio Transcript Seed
+# תמליל שמע תיק עובד
 
-HE LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.
+תמלילי תיקי עובדים נותנים למושבה הטבועה אוכלוסייה עובדת לפני שהם נעשים ראיה. העיקר הוא השגרה: שמות, משימות, כלים, חשבון מים רע וההרגל לצפות לעוד משמרת.
 
 ## Scanner
 
-HE LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+שמע עובד משוחזר מחבר שמות, תפקידים, לוקרים, ספירות מים ו-route holds לשרשרת custody אנושית.
 
 ## Terminal
 
-HE LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
+DOSSIER AUDIO WKR-SET: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold.
 
 ## Audio
 
-HE LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
+הערת משמרת. חדר המשאבות עדיין נושם. חותם הלוקר תקוע. ספירת המים קצרה. תגיד ל-Kade שהלוח שיקר.
 
 ## Field Note
 
-HE LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
+לשימוש ב-dossier barks, כיתובי לוקר ועמודי עובדים. לשמור קולות עסוקים, לא פיוטיים.
 
 <!-- In-Game Wiki; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/he_IL. -->

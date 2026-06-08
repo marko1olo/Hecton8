@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Beam Sail and Pellet Lane"
+title: "Vela de haz y carril de pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Beam Sail and Pellet Lane
+# Vela de haz y carril de pellets
 
-ES LOC HOLD: Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
+Velas de haz, carriles de pellets, etapas de captura de fusión y magsails hicieron práctica la carga nearlight sin FTL. Una nave salía con tanques, hielo de escudo, radiadores y autoridad de control, y luego tomaba prestado el resto del motor de la ruta: potencia de haz detrás, masa de pellets sincronizada delante y un receptor dispuesto a hacerse dueño del frenado. Por eso Aegir puede ser alcanzable y seguir sintiéndose abandonado. El corredor mueve carga programada; no se invoca como cuerda de rescate.
 
 ## Scanner
 
-ES LOC HOLD: Transit lane record. Slow freight survives because infrastructure does the acceleration math.
+Registro de carril de tránsito: la vela no se empujaba sola. Alquilaba potencia de matrices tras la nave y masa de corrientes de pellets delante.
 
 ## Terminal
 
-ES LOC HOLD: ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
+ESTADO CARRIL: matriz de haz pagada. Corriente de pellets 0,8 ppm fuera de contrato. Quemado de captura aún posible. Sin dueño de frenado, carga rápida se vuelve escombro rápido.
 
 ## Audio
 
-ES LOC HOLD: The ship is not fast by magic. It is fast because half the route is machinery you never see.
+La nave es rápida porque medio motor está fuera de la nave.
 
 ## Field Note
 
-ES LOC HOLD: Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
+Si un registro solo alaba el haz, sigue leyendo hasta que nombre al dueño de la captura.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/es_ES. -->

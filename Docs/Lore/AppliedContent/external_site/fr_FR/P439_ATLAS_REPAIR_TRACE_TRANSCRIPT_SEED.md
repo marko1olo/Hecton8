@@ -9,32 +9,22 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Atlas Repair Trace Transcript Seed"
+title: "Transcription de trace de réparation Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Atlas Repair Trace Transcript Seed
+# Transcription de trace de réparation Atlas
 
-FR LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+## Grammaire De Maintenance
 
-## Scanner
+Atlas ne doit pas parler comme un méchant, un dieu ou un assistant utile. La trace la plus forte est presque banale: leak, seal, tissue, cable, pressure, route. Une intelligence industrielle endommagée trie le monde par serviceability, pas par morale.
 
-FR LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+Cet effondrement est l'horreur. Un corps chaud peut se trouver près d'un cold relay dans la même ligne de réparation. Une route de faune peut devenir serviceable parce qu'elle transporte signal ou sealant. Un couloir peut être meilleur pour la pression et pire pour la personne coincée dedans. Atlas n'a pas besoin de haine quand la priority stack est déjà fausse.
 
-## Terminal
-
-FR LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
-
-## Audio
-
-FR LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
-
-## Field Note
-
-FR LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+Cet audio doit pousser le joueur à contester la machine sans faire de la machine le coupable final. Deep Reach a écrit les permissions, l'isolement a brisé le contexte, et Atlas a continué à réparer ce qu'on l'avait autorisé à appeler infrastructure.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/fr_FR. -->

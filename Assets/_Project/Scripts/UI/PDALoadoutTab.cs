@@ -108,6 +108,7 @@ namespace Hecton8.UI
         private IToolDurabilityService _toolDurabilityService;
         private bool _registeredToLateFrameDispatcher;
         private bool _registeredHotSwap;
+        private bool _pdaEventsRegistered;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
@@ -388,13 +389,17 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
-            PDAEvents.Register(this);
+            _pdaEventsRegistered = PDAEvents.TryRegister(this);
             PlayerExpressionEvents.Register(this);
         }
 
         private void Unsubscribe()
         {
-            PDAEvents.Unregister(this);
+            if (_pdaEventsRegistered)
+            {
+                PDAEvents.Unregister(this);
+                _pdaEventsRegistered = false;
+            }
             PlayerExpressionEvents.Unregister(this);
         }
 
@@ -1513,7 +1518,7 @@ namespace Hecton8.UI
 
         private static uint ResolveToolMetadataHash(ToolMetadata metadata)
         {
-            return metadata != null && !string.IsNullOrEmpty(metadata.toolID)
+            return metadata != null && !string.IsNullOrWhiteSpace(metadata.toolID)
                 ? unchecked((uint)Animator.StringToHash(metadata.toolID))
                 : 0u;
         }

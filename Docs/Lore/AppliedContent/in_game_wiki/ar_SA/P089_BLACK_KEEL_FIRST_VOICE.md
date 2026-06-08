@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel First Voice"
+title: "صوت Black Keel الأول"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Black Keel First Voice
+# صوت Black Keel الأول
 
-AR LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+يصل صوت Black Keel الأول إلى اللاعب كصوت متضرر ونص نظيف. ليس رفيقا وليس خطاب شرير. إنه مراقب carrier يفعل ما بني لأجله: يؤكد الإشارة، يحفظ خيارات الطريق، يرتب الالتزامات، ويتجنب الوعود. الصوت مفيد لأنه يعطي معلومات صلبة. ومخيف لأن كل جملة صحيحة تترك الإنقاذ مشروطا.
 
 ## Scanner
 
-AR LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
+مخبأ صوت carrier. الصوت مقطوع، النص نظيف، التعاطف غائب.
 
 ## Terminal
 
-AR LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: قناة الصوت متدهورة. قناة النص صالحة. نجاة المشغل معترف بها. أولوية الاسترداد غير محسومة بانتظار حالة payload والحجر وlien وسلامة الإشارة.
 
 ## Audio
 
-AR LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
+تم التقاط إشارة المشغل. لا تخلط بين الاعتراف والإنقاذ.
 
 ## Field Note
 
-AR LOC HOLD: The first voice should feel useful before it feels bought.
+أول جملة مفيدة تصل ومعها فئة فوترة خلفها.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/ar_SA. -->

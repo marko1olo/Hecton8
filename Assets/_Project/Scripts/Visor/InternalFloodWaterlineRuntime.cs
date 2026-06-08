@@ -308,8 +308,13 @@ namespace Hecton8.Visor
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            float shiftY = shiftData.ShiftOffset.y;
-            if (!math.isfinite(shiftY))
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!IsFiniteVector(shiftOffset) || !math.isfinite(shiftSqrMagnitude))
+                return;
+
+            float shiftY = shiftOffset.y;
+            if (shiftSqrMagnitude <= 0.000001f || math.abs(shiftY) <= 0.000001f)
                 return;
 
             if (math.isfinite(_currentWaterlineY))

@@ -35,6 +35,7 @@ HECTON8_MAGIC = 0x00384E4F54434548
 BIOMASS_MAGIC = 0x0038424D53434548
 MACRO_SWARM_MAGIC = 0x004D57534F434548
 FAUNA_MUTATION_MAGIC = 0x004D55474F434548
+FAUNA_GENETICS_MAGIC = 0x00474E474F434548
 HEADLESS_MAGIC = 0x48385142
 LIVE_TELEMETRY_MAGIC = 0x4D4C4554
 GLOBAL_TELEMETRY_BUS_DUMP_MAGIC = 0x4838444D
@@ -59,6 +60,7 @@ BIOMASS_HEADER = struct.Struct("<Qiiii")
 BIOMASS_ENTRY = struct.Struct("<IIiiffff")
 MACRO_SWARM_ENTRY = struct.Struct("<IIiifiII")
 FAUNA_MUTATION_ENTRY = struct.Struct("<IIiiiIfffII4x")
+FAUNA_GENETICS_ENTRY = struct.Struct("<IIiiiifffffIIIII")
 HEADLESS_HEADER = struct.Struct("<Iiii")
 HEADLESS_ENTRY = struct.Struct("<IiIqqqffffffI")
 LIVE_TELEMETRY_ENTRY_V1 = struct.Struct("<IIIIIfff")
@@ -68,8 +70,53 @@ DATA_MONOLITH_TELEMETRY_HEADER = struct.Struct("<IIiii")
 DATA_MONOLITH_TELEMETRY_ENTRY = struct.Struct("<Qqq" + "I" * 10)
 GLOBAL_TELEMETRY_PREFIX = struct.Struct("<QII")
 SURVIVAL_BLACKBOX_SOURCE_ENTRY = struct.Struct("<III" + "f" * 11 + "II")
+VAULT_SOVEREIGNTY_TELEMETRY_HEADER = struct.Struct("<Qiii")
+VAULT_SOVEREIGNTY_TELEMETRY_ENTRY = struct.Struct("<qqiiifIIIIfIQ")
 ARM64_ALIGNMENT_TELEMETRY_HEADER = struct.Struct("<Qiii")
 ARM64_ALIGNMENT_TELEMETRY_ENTRY = struct.Struct("<QQdddIIIIfI")
+HAPTIC_SYNTHESIS_TELEMETRY_ENTRY = struct.Struct("<dddffIIIIIfII")
+VOCAL_WARNING_TELEMETRY_HEADER = struct.Struct("<IIIIIIII")
+VOCAL_WARNING_TELEMETRY_ENTRY = struct.Struct("<qqqQIIIffIIHBB")
+GRANULAR_AUDIO_TELEMETRY_HEADER = struct.Struct("<ii")
+GRANULAR_AUDIO_TELEMETRY_ROW = struct.Struct("<IffffffiiiI")
+PROLOGUE_AUDIO_TRANSITION_HEADER = struct.Struct("<ii")
+PROLOGUE_AUDIO_TRANSITION_ROW = struct.Struct("<IIffffffffiBBBBI")
+AUDIO_SYNTHESIS_TELEMETRY_HEADER = struct.Struct("<ii")
+AUDIO_SYNTHESIS_TELEMETRY_ROW = struct.Struct("<qIIIIIIiiffii")
+VOCAL_BANK_SYNTHESIS_HEADER = struct.Struct("<IIIIIIII")
+VOCAL_BANK_SYNTHESIS_ENTRY = struct.Struct("<IIIIfffffiIIIII4x")
+ADAPTIVE_STEM_MIXER_ENTRY = struct.Struct("<IIIIffffffffffff")
+CAMERA_JUICE_TELEMETRY_HEADER = struct.Struct("<IIiiIiiI")
+CAMERA_JUICE_TELEMETRY_ENTRY = struct.Struct("<IIffffffffifffII")
+MATERIAL_DECAY_HEADER = struct.Struct("<IBii")
+MATERIAL_DECAY_ROW = struct.Struct("<IIfffHBBBI")
+INTERACTIVE_WAKE_HEADER = struct.Struct("<Iii")
+INTERACTIVE_WAKE_ENTRY = struct.Struct("<IHHffffffffIIIIff")
+FLORA_SWAY_FIELD_HEADER = struct.Struct("<Iii")
+FLORA_SWAY_FIELD_ENTRY = struct.Struct("<IHHIIffffffffIIII")
+FLORA_MEMORY_TELEMETRY_HEADER = struct.Struct("<ii")
+FLORA_MEMORY_TELEMETRY_ENTRY = struct.Struct("<IIIIIIIIIIffIIII")
+FLORA_AMBIENT_SWAY_HEADER = struct.Struct("<IIIIII")
+FLORA_AMBIENT_SWAY_ENTRY = struct.Struct("<IIffffII32x")
+VEGETATION_MEMORY_HEADER = struct.Struct("<Qiiii")
+VEGETATION_MEMORY_ENTRY = struct.Struct("<QIIIiiiffHHIfffI")
+DEAR_LIE_ORGANICS_ENTRY = struct.Struct("<iiiiiiiiiifIIfB7x")
+CHEMICAL_INFLUENCE_HEADER = struct.Struct("<Qiii")
+CHEMICAL_INFLUENCE_ENTRY = struct.Struct("<dddffIiiiIIfi")
+SARGASSUM_FOOD_CHAIN_HEADER = struct.Struct("<IIiiiI")
+SARGASSUM_FOOD_CHAIN_ENTRY = struct.Struct("<IIIIiiiiffffffIf")
+SARGASSUM_BOID_SENSORY_HEADER = struct.Struct("<IIiiiI")
+SARGASSUM_BOID_SENSORY_ENTRY = struct.Struct("<IIIi" + "f" * 12)
+MARINE_SNOW_VFX_HEADER = struct.Struct("<IIII")
+MARINE_SNOW_VFX_ENTRY = struct.Struct("<iiiiffffffffIIiI")
+PROPWASH_GPU_HEADER = struct.Struct("<IIII")
+PROPWASH_GPU_ENTRY = struct.Struct("<iiiifffffffIIIII")
+CARVE_DEBRIS_HEADER = struct.Struct("<IIIII")
+CARVE_DEBRIS_ENTRY = struct.Struct("<IiiiIIfffIIIIIII")
+BIOLUM_PULSE_HEADER = struct.Struct("<IBBHii")
+BIOLUM_PULSE_ENTRY = struct.Struct("<IIfffffHBB32s")
+BIOLUM_DIRECTOR_HEADER = struct.Struct("<IIBi")
+BIOLUM_DIRECTOR_ENTRY = struct.Struct("<IffffffHBB")
 TOXIC_OUTGASSING_HEADER = struct.Struct("<IIIIIIII")
 TOXIC_OUTGASSING_ENTRY = struct.Struct("<dddffffIIHHHBBQ")
 GAS_DYNAMICS_HEADER = struct.Struct("<Iiiiii")
@@ -168,11 +215,162 @@ DATA_MONOLITH_TELEMETRY_HEADER_BYTES = 20
 DATA_MONOLITH_TELEMETRY_ENTRY_BYTES = 64
 DATA_MONOLITH_TELEMETRY_RING_CAPACITY = 300
 DATA_MONOLITH_MAX_BLOB_BYTES = 256 * 1024 * 1024
+VAULT_SOVEREIGNTY_TELEMETRY_MAGIC = 0x3030315F55424F53
+VAULT_SOVEREIGNTY_TELEMETRY_VERSION = 1
+VAULT_SOVEREIGNTY_TELEMETRY_HEADER_BYTES = 20
+VAULT_SOVEREIGNTY_TELEMETRY_ENTRY_BYTES = 64
+VAULT_SOVEREIGNTY_TELEMETRY_CAPACITY = 300
 ARM64_ALIGNMENT_TELEMETRY_MAGIC = 0x3430325F55424F53
 ARM64_ALIGNMENT_TELEMETRY_VERSION = 1
 ARM64_ALIGNMENT_TELEMETRY_HEADER_BYTES = 20
 ARM64_ALIGNMENT_TELEMETRY_ENTRY_BYTES = 64
 ARM64_ALIGNMENT_TELEMETRY_CAPACITY = 300
+HAPTIC_SYNTHESIS_TELEMETRY_ENTRY_BYTES = 64
+HAPTIC_SYNTHESIS_TELEMETRY_CAPACITY = 300
+HAPTIC_SYNTHESIS_PULSE_CAPACITY = 64
+VOCAL_WARNING_TELEMETRY_MAGIC = 0x56333532
+VOCAL_WARNING_TELEMETRY_VERSION = 2
+VOCAL_WARNING_TELEMETRY_HEADER_BYTES = 32
+VOCAL_WARNING_TELEMETRY_ENTRY_BYTES = 64
+VOCAL_WARNING_TELEMETRY_CAPACITY = 300
+GRANULAR_AUDIO_TELEMETRY_HEADER_BYTES = 8
+GRANULAR_AUDIO_TELEMETRY_ROW_BYTES = 44
+GRANULAR_AUDIO_TELEMETRY_CAPACITY = 300
+GRANULAR_AUDIO_VOICE_CAPACITY = 64
+GRANULAR_AUDIO_ECHO_TAP_CAPACITY = 32
+GRANULAR_AUDIO_MAX_SAFE_IMPACT_JOULES = 120000.0
+PROLOGUE_AUDIO_TRANSITION_HEADER_BYTES = 8
+PROLOGUE_AUDIO_TRANSITION_ROW_BYTES = 52
+PROLOGUE_AUDIO_TRANSITION_CAPACITY = 300
+PROLOGUE_AUDIO_OPEN_LOW_PASS_HZ = 22000.0
+AUDIO_SYNTHESIS_TELEMETRY_HEADER_BYTES = 8
+AUDIO_SYNTHESIS_TELEMETRY_ROW_BYTES = 56
+AUDIO_SYNTHESIS_TELEMETRY_CAPACITY = 300
+AUDIO_SYNTHESIS_AUDIO_PLAYER_CRITICAL_SYSTEM_ID = 261
+VOCAL_BANK_SYNTHESIS_MAGIC = 0x44563848
+VOCAL_BANK_SYNTHESIS_VERSION = 1
+VOCAL_BANK_SYNTHESIS_HEADER_BYTES = 32
+VOCAL_BANK_SYNTHESIS_ENTRY_BYTES = 64
+VOCAL_BANK_SYNTHESIS_TELEMETRY_CAPACITY = 300
+VOCAL_BANK_SYNTHESIS_DSP_DUMP_THRESHOLD_US = 1000.0
+ADAPTIVE_STEM_MIXER_ENTRY_BYTES = 64
+ADAPTIVE_STEM_MIXER_TELEMETRY_CAPACITY = 300
+ADAPTIVE_STEM_MIXER_DUMP_THRESHOLD_US = 1000.0
+CAMERA_JUICE_TELEMETRY_MAGIC = 0x354A4353
+CAMERA_JUICE_TELEMETRY_VERSION = 4
+CAMERA_JUICE_TELEMETRY_HEADER_BYTES = 32
+CAMERA_JUICE_TELEMETRY_ENTRY_BYTES = 64
+CAMERA_JUICE_TELEMETRY_CAPACITY = 300
+CAMERA_JUICE_BURST_BUDGET_US = 100.0
+MATERIAL_DECAY_MAGIC = 0x4D445350
+MATERIAL_DECAY_HEADER_BYTES = 13
+MATERIAL_DECAY_ROW_BYTES = 29
+MATERIAL_DECAY_TELEMETRY_CAPACITY = 300
+INTERACTIVE_WAKE_MAGIC = 0x57414B45
+INTERACTIVE_WAKE_HEADER_BYTES = 12
+INTERACTIVE_WAKE_ENTRY_BYTES = 64
+INTERACTIVE_WAKE_BLACKBOX_CAPACITY = 300
+INTERACTIVE_WAKE_MAX_SOURCE_SLOTS = 16
+FLORA_SWAY_FIELD_MAGIC = 0x46535759
+FLORA_SWAY_FIELD_HEADER_BYTES = 12
+FLORA_SWAY_FIELD_ENTRY_BYTES = 64
+FLORA_SWAY_FIELD_BLACKBOX_CAPACITY = 300
+FLORA_SWAY_FIELD_MIN_RESOLUTION = 16
+FLORA_SWAY_FIELD_MAX_RESOLUTION = 64
+FLORA_SWAY_FIELD_MAX_NODE_COUNT = FLORA_SWAY_FIELD_MAX_RESOLUTION ** 3
+FLORA_SWAY_FIELD_MIN_CELL_SIZE = 2.05
+FLORA_SWAY_FIELD_MAX_CELL_SIZE = 4.6
+FLORA_SWAY_FIELD_MIN_UPDATE_INTERVAL_SECONDS = 1.0 / 60.0
+FLORA_SWAY_FIELD_MAX_UPDATE_INTERVAL_SECONDS = 0.2
+FLORA_SWAY_FIELD_MAX_DISPLACEMENT_METERS = 1.35
+FLORA_MEMORY_TELEMETRY_HEADER_BYTES = 8
+FLORA_MEMORY_TELEMETRY_ENTRY_BYTES = 64
+FLORA_MEMORY_TELEMETRY_CAPACITY = 300
+FLORA_MEMORY_TELEMETRY_EVENT_RESOLVE = 0x46525652
+FLORA_MEMORY_TELEMETRY_EVENT_WRITE_LOCK = 0x4652574C
+FLORA_MEMORY_TELEMETRY_EVENT_NAN = 0x46524E41
+FLORA_MEMORY_TELEMETRY_BUFFER_ID = 71669
+FLORA_MEMORY_TELEMETRY_DUMP_FAILURE_THRESHOLD = 3
+FLORA_AMBIENT_SWAY_MAGIC = 0x37363253
+FLORA_AMBIENT_SWAY_VERSION = 1
+FLORA_AMBIENT_SWAY_SOURCE_HASH = 0x53465759
+FLORA_AMBIENT_SWAY_HEADER_BYTES = 24
+FLORA_AMBIENT_SWAY_ENTRY_BYTES = 64
+FLORA_AMBIENT_SWAY_TELEMETRY_CAPACITY = 300
+VEGETATION_MEMORY_MAGIC = 0x313331365F564547
+VEGETATION_MEMORY_VERSION = 1
+VEGETATION_MEMORY_HEADER_BYTES = 24
+VEGETATION_MEMORY_ENTRY_BYTES = 64
+VEGETATION_MEMORY_TELEMETRY_CAPACITY = 300
+VEGETATION_MEMORY_TELEMETRY_RING_BUFFER_ID = 74398
+VEGETATION_MEMORY_TELEMETRY_CURSOR_BUFFER_ID = 74399
+DEAR_LIE_ORGANICS_ENTRY_BYTES = 64
+DEAR_LIE_ORGANICS_TELEMETRY_CAPACITY = 300
+DEAR_LIE_MAX_DAMAGE_SIGNALS_PER_FRAME = 128
+DEAR_LIE_MAX_RESULTS_PER_FRAME = DEAR_LIE_MAX_DAMAGE_SIGNALS_PER_FRAME * 2
+DEAR_LIE_MAX_REGEN_RECORDS = 2048
+CHEMICAL_INFLUENCE_MAGIC = 0x3833315F4D454843
+CHEMICAL_INFLUENCE_VERSION = 1
+CHEMICAL_INFLUENCE_HEADER_BYTES = 20
+CHEMICAL_INFLUENCE_ENTRY_BYTES = 64
+CHEMICAL_INFLUENCE_TELEMETRY_CAPACITY = 300
+CHEMICAL_INFLUENCE_MAX_ACTIVE_EMITTERS = 160
+CHEMICAL_INFLUENCE_MAX_MOCK_EMITTERS = 8
+CHEMICAL_INFLUENCE_MAX_JACOBI_ITERATIONS = 6
+FAUNA_GENETICS_TELEMETRY_CAPACITY = 300
+FAUNA_GENETICS_TELEMETRY_BUDGET_US = 500.0
+SARGASSUM_FOOD_CHAIN_MAGIC_LOW = 0x48454354
+SARGASSUM_FOOD_CHAIN_MAGIC_HIGH = 0x4643484E
+SARGASSUM_FOOD_CHAIN_HEADER_BYTES = 24
+SARGASSUM_FOOD_CHAIN_ENTRY_BYTES = 64
+SARGASSUM_FOOD_CHAIN_CAPACITY = 300
+SARGASSUM_FOOD_CHAIN_MAX_LOD_TIER = 2
+SARGASSUM_FOOD_CHAIN_MAX_PENDING_KILL_SIGNALS = 8
+SARGASSUM_BOID_SENSORY_MAGIC_LOW = 0x424F4944
+SARGASSUM_BOID_SENSORY_MAGIC_HIGH = 0x53454E53
+SARGASSUM_BOID_SENSORY_HEADER_BYTES = 24
+SARGASSUM_BOID_SENSORY_ENTRY_BYTES = 64
+SARGASSUM_BOID_SENSORY_CAPACITY = 300
+SARGASSUM_BOID_SENSORY_MAX_THREATS = 16
+SARGASSUM_BOID_SENSORY_MIN_RADIUS_METERS = 0.1
+SARGASSUM_BOID_SENSORY_MAX_RADIUS_METERS = 256.0
+MARINE_SNOW_VFX_CONTEXT_HASH = 0x4D534E57
+MARINE_SNOW_VFX_HEADER_BYTES = 16
+MARINE_SNOW_VFX_ENTRY_BYTES = 64
+MARINE_SNOW_VFX_TELEMETRY_CAPACITY = 300
+MARINE_SNOW_VFX_DYNAMIC_WAKE_CAPACITY = 16
+MARINE_SNOW_VFX_MIN_PARTICLE_CAPACITY = 64
+MARINE_SNOW_VFX_MAX_PARTICLE_CAPACITY = 28672
+MARINE_SNOW_VFX_GPU_DUMP_THRESHOLD_US = 1500
+PROPWASH_GPU_LAYOUT_HASH = 0x53483237
+PROPWASH_GPU_HEADER_BYTES = 16
+PROPWASH_GPU_ENTRY_BYTES = 64
+PROPWASH_GPU_TELEMETRY_CAPACITY = 300
+PROPWASH_GPU_EVENT_RING_CAPACITY = 512
+PROPWASH_GPU_MIN_PARTICLE_BUDGET = 64
+PROPWASH_GPU_MAX_PARTICLE_BUDGET = 28672
+PROPWASH_GPU_ESTIMATED_BUDGET_WARNING_US = 1000.0
+CARVE_DEBRIS_MAGIC = 0x44584656
+CARVE_DEBRIS_HEADER_BYTES = 20
+CARVE_DEBRIS_ENTRY_BYTES = 64
+CARVE_DEBRIS_BLACKBOX_CAPACITY = 300
+CARVE_DEBRIS_MIN_ACTIVE_CAPACITY = 500
+CARVE_DEBRIS_MAX_ACTIVE_CAPACITY = 10000
+CARVE_DEBRIS_MAX_CARVE_SIGNALS_PER_FRAME = 32
+BIOLUM_PULSE_MAGIC = 0x42505359
+BIOLUM_PULSE_HEADER_BYTES = 16
+BIOLUM_PULSE_ENTRY_BYTES = 64
+BIOLUM_PULSE_BLACKBOX_CAPACITY = 300
+BIOLUM_PULSE_MAX_GLOW_INSTANCES = 50000
+BIOLUM_PULSE_SYNC_PULSE_CAPACITY = 16
+BIOLUM_PULSE_MAX_HDR_INTENSITY = 10.0
+BIOLUM_PULSE_OSCILLATOR_WARNING_MS = 0.1
+BIOLUM_DIRECTOR_MAGIC = 0x42494F4C
+BIOLUM_DIRECTOR_HEADER_BYTES = 13
+BIOLUM_DIRECTOR_ENTRY_BYTES = 32
+BIOLUM_DIRECTOR_TELEMETRY_CAPACITY = 300
+BIOLUM_DIRECTOR_MAX_TOUCH_RIPPLES = 16
+BIOLUM_DIRECTOR_MAX_PREDATOR_CONTACTS = 16
 SURVIVAL_BLACKBOX_SOURCE_HASH = 0x53555256
 SURVIVAL_BLACKBOX_SOURCE_BYTES = 64
 SURVIVAL_BLACKBOX_DEATH_CAUSE_SHIFT = 24
@@ -261,12 +459,311 @@ DATA_MONOLITH_FAILURE_STAGE_LABELS = {
     8: "telemetry-bootstrap",
 }
 
+VAULT_SOVEREIGNTY_FLAG_LABELS = (
+    (1 << 0, "fault", "fault"),
+)
+
 ARM64_ALIGNMENT_TELEMETRY_FLAG_LABELS = (
     (1 << 0, "pack1Detected", "pack1-detected"),
     (1 << 1, "misalignedEightByteField", "misaligned-8-byte-field"),
     (1 << 2, "invalidStride", "invalid-stride"),
     (1 << 3, "dynamicCastFault", "dynamic-cast-fault"),
     (1 << 4, "dumpWritten", "dump-written"),
+)
+
+HAPTIC_SYNTHESIS_FLAG_LABELS = (
+    (1 << 0, "nanSanitized", "nan-sanitized"),
+    (1 << 1, "budgetExceeded", "budget-exceeded"),
+    (1 << 2, "pulseOverflow", "pulse-overflow"),
+    (1 << 3, "missingPlayerAup", "missing-player-aup"),
+    (1 << 4, "mockStormActive", "mock-storm-active"),
+)
+
+VOCAL_WARNING_ID_LABELS = {
+    0: "none",
+    1: "crush-depth",
+    2: "hull-breach",
+    3: "oxygen-low",
+    4: "radiation",
+    5: "power-low",
+}
+
+VOCAL_WARNING_ACTIVE_ALARM_LABELS = (
+    (1 << 0, "crushDepth", "crush-depth"),
+    (1 << 1, "hullBreach", "hull-breach"),
+    (1 << 2, "oxygenLow", "oxygen-low"),
+    (1 << 3, "radiation", "radiation"),
+    (1 << 4, "powerLow", "power-low"),
+)
+
+VOCAL_WARNING_FAULT_LABELS = (
+    (1 << 0, "telemetryInvalid", "telemetry-invalid"),
+    (1 << 1, "priorityInvalid", "priority-invalid"),
+    (1 << 2, "priorityInputInvalid", "priority-input-invalid"),
+    (1 << 3, "vocalCueRejected", "vocal-cue-rejected"),
+    (1 << 4, "subtitleRejected", "subtitle-rejected"),
+    (1 << 5, "alarmMaskOverflow", "alarm-mask-overflow"),
+    (1 << 6, "vocalWarningSignalRejected", "vocal-warning-signal-rejected"),
+)
+
+GRANULAR_AUDIO_FLAG_LABELS = (
+    (1 << 0, "invalid", "invalid"),
+    (1 << 1, "voiceLimitReached", "voice-limit-reached"),
+    (1 << 2, "impactDriveActive", "impact-drive-active"),
+)
+
+PROLOGUE_AUDIO_STAGE_LABELS = {
+    1: "space",
+    2: "plasma",
+    3: "whiteout",
+    4: "ocean-handoff",
+}
+
+PROLOGUE_AUDIO_STATE_FLAG_LABELS = (
+    (1 << 0, "splashdown", "splashdown"),
+    (1 << 1, "portalActive", "portal-active"),
+    (1 << 2, "granularEnabled", "granular-enabled"),
+    (1 << 3, "lowTierProxy", "low-tier-proxy"),
+    (1 << 4, "nonFiniteGuard", "nonfinite-guard"),
+)
+
+PROLOGUE_AUDIO_DSP_FLAG_LABELS = (
+    (1 << 0, "invalid", "invalid"),
+    (1 << 2, "portalActive", "portal-active"),
+    (1 << 3, "granularEnabled", "granular-enabled"),
+    (1 << 4, "splashdown", "splashdown"),
+)
+
+AUDIO_SYNTHESIS_FLAG_LABELS = (
+    (1 << 0, "lockContention", "lock-contention"),
+    (1 << 1, "staleOrMissingHandle", "stale-or-missing-handle"),
+    (1 << 2, "nonFiniteSample", "nonfinite-sample"),
+    (1 << 3, "outputUnderrun", "output-underrun"),
+)
+
+AUDIO_SYNTHESIS_FAILURE_LABELS = {
+    0: "none",
+    1: "vault-resolution",
+    2: "telemetry-lock",
+    3: "nonfinite-sample",
+    4: "output-ring-full",
+}
+
+VOCAL_BANK_SYNTHESIS_FLAG_LABELS = (
+    (1 << 0, "playing", "playing"),
+    (1 << 1, "vorbisUnsupported", "vorbis-unsupported"),
+    (1 << 2, "nonFinite", "nonfinite"),
+    (1 << 3, "bankMiss", "bank-miss"),
+    (1 << 4, "interrupted", "interrupted"),
+)
+
+VOCAL_BANK_SYNTHESIS_CODEC_LABELS = {
+    0: "pcm16",
+    1: "h8-adpcm",
+    2: "vorbis",
+}
+
+ADAPTIVE_STEM_MIXER_FLAG_LABELS = (
+    (1 << 0, "beatGateOpen", "beat-gate-open"),
+    (1 << 1, "narrativeOverride", "narrative-override"),
+    (1 << 2, "ioTransitionDelay", "io-transition-delay"),
+    (1 << 3, "clipNotStreaming", "clip-not-streaming"),
+    (1 << 4, "nonFinite", "nonfinite"),
+)
+
+CAMERA_JUICE_FLAG_LABELS = (
+    (1 << 0, "xrSuppressed", "xr-suppressed"),
+    (1 << 1, "nanSanitized", "nan-sanitized"),
+    (1 << 2, "noPlayerAup", "no-player-aup"),
+    (1 << 3, "vrSomaticWriteRejected", "vr-somatic-write-rejected"),
+    (1 << 4, "vaultUnavailable", "vault-unavailable"),
+    (1 << 5, "burstBudgetExceeded", "burst-budget-exceeded"),
+)
+
+MATERIAL_DECAY_FLAG_LABELS = (
+    (1 << 0, "rustActive", "rust-active"),
+    (1 << 1, "wet", "wet"),
+    (1 << 2, "blood", "blood"),
+)
+
+MATERIAL_DECAY_DUMP_REASON_LABELS = {
+    0: "none",
+    1: "invalid-delta-time",
+    2: "invalid-rust",
+}
+
+INTERACTIVE_WAKE_FLAG_LABELS = (
+    (1 << 0, "invalidInput", "invalid-input"),
+    (1 << 1, "nan", "nan"),
+    (1 << 2, "budgetPressure", "budget-pressure"),
+    (1 << 3, "thermalPressure", "thermal-pressure"),
+)
+
+FLORA_SWAY_FIELD_FLAG_LABELS = (
+    (1 << 0, "invalidInput", "invalid-input"),
+    (1 << 1, "nan", "nan"),
+    (1 << 2, "vaultMissing", "vault-missing"),
+    (1 << 3, "emptyWake", "empty-wake"),
+    (1 << 4, "uploadStall", "upload-stall"),
+    (1 << 5, "wrappedShift", "wrapped-shift"),
+    (1 << 6, "fullReset", "full-reset"),
+    (1 << 7, "discardedUpload", "discarded-upload"),
+)
+
+FLORA_MEMORY_TELEMETRY_FLAG_LABELS = (
+    (1 << 0, "missingVault", "missing-vault"),
+    (1 << 1, "invalidLength", "invalid-length"),
+    (1 << 2, "compactionFence", "compaction-fence"),
+    (1 << 3, "handleMismatch", "handle-mismatch"),
+    (1 << 4, "resolveFailed", "resolve-failed"),
+    (1 << 5, "invalidBuffer", "invalid-buffer"),
+    (1 << 6, "writeLockFailed", "write-lock-failed"),
+    (1 << 7, "nan", "nan"),
+)
+
+FLORA_MEMORY_TELEMETRY_EVENT_LABELS = {
+    FLORA_MEMORY_TELEMETRY_EVENT_RESOLVE: "resolve",
+    FLORA_MEMORY_TELEMETRY_EVENT_WRITE_LOCK: "write-lock",
+    FLORA_MEMORY_TELEMETRY_EVENT_NAN: "nan",
+}
+
+FLORA_MEMORY_TELEMETRY_BUFFER_LABELS = {
+    71650: "flora-sway-displacement-field",
+    71651: "flora-sway-field-meta",
+    71652: "flora-sway-field-blackbox",
+    71653: "flora-stiffness-rules",
+    71654: "flora-stiffness-csv-scratch",
+    71655: "flora-ocean-flow-sample-positions",
+    71656: "flora-ocean-flow-sample-results",
+    71657: "flora-parasite-nodes",
+    71658: "flora-cascade-reactive-template-mask",
+    71659: "flora-defensive-spore-template-mask",
+    71660: "flora-blood-kelp-template-mask",
+    71661: "flora-ghost-weed-template-mask",
+    71662: "flora-surface-cascade-phase-seeds",
+    71663: "flora-underwater-cascade-phase-seeds",
+    71664: "flora-surface-cascade-events",
+    71665: "flora-underwater-cascade-events",
+    71666: "flora-surface-reactive-handles",
+    71667: "flora-underwater-reactive-handles",
+    71668: "flora-reactive-query-handles",
+    FLORA_MEMORY_TELEMETRY_BUFFER_ID: "flora-memory-telemetry",
+}
+
+FLORA_AMBIENT_SWAY_FLAG_LABELS = (
+    (1 << 0, "vaultMissing", "vault-missing"),
+    (1 << 1, "constantBufferUnsupported", "constant-buffer-unsupported"),
+    (1 << 2, "invalidNumber", "invalid-number"),
+    (1 << 3, "uploadSkipped", "upload-skipped"),
+    (1 << 4, "burstKernelUnavailable", "burst-kernel-unavailable"),
+)
+
+VEGETATION_MEMORY_FLAG_LABELS = (
+    (1 << 0, "coldBoot", "cold-boot"),
+    (1 << 1, "defrag", "defrag"),
+    (1 << 2, "lockContention", "lock-contention"),
+    (1 << 3, "staleHandle", "stale-handle"),
+    (1 << 4, "nan", "nan"),
+    (1 << 5, "capacity", "capacity"),
+    (1 << 6, "compactionFence", "compaction-fence"),
+)
+
+VEGETATION_MEMORY_FAILURE_CODE_LABELS = {
+    0: "none",
+    1: "cold-boot-registered",
+    2: "defrag-scheduled",
+    3: "defrag-completed",
+    4: "vault-resolve-failed",
+    5: "write-lock-contention",
+    6: "nan-detected",
+    7: "shutdown-released",
+    8: "staging-capacity-exceeded",
+    9: "compaction-fence-active",
+}
+
+VEGETATION_MEMORY_PHASE_LABELS = {
+    0: "unknown",
+    1: "cold-boot",
+    2: "slow-tick",
+    3: "visual-sync",
+    4: "defrag",
+    5: "shutdown",
+}
+
+VEGETATION_MEMORY_BUFFER_LABELS = {
+    VEGETATION_MEMORY_TELEMETRY_RING_BUFFER_ID: "vegetation-memory-telemetry-ring",
+    VEGETATION_MEMORY_TELEMETRY_CURSOR_BUFFER_ID: "vegetation-memory-telemetry-cursor",
+}
+
+DEAR_LIE_ORGANICS_FLAG_LABELS = (
+    (1 << 2, "regenerationRecovered", "regeneration-recovered"),
+    (1 << 5, "guardFailed", "guard-failed"),
+    (1 << 6, "dropDrainFailed", "drop-drain-failed"),
+    (1 << 7, "overflowOrReject", "overflow-or-reject"),
+)
+
+CHEMICAL_INFLUENCE_FLAG_LABELS = (
+    (1 << 0, "nan", "nan"),
+)
+
+FAUNA_GENETICS_FLAG_LABELS = (
+    (1 << 0, "invalidMask", "invalid-mask"),
+)
+
+SARGASSUM_FOOD_CHAIN_FLAG_LABELS = (
+    (1 << 0, "tick", "tick"),
+    (1 << 1, "killJobScheduled", "kill-job-scheduled"),
+    (1 << 2, "killJobCompleted", "kill-job-completed"),
+    (1 << 3, "killDrained", "kill-drained"),
+    (1 << 4, "whaleFall", "whale-fall"),
+    (1 << 5, "boidsScattered", "boids-scattered"),
+    (1 << 31, "nonFinite", "nonfinite"),
+)
+
+SARGASSUM_BOID_SENSORY_FLAG_LABELS = (
+    (1 << 0, "tick", "tick"),
+    (1 << 1, "lightActive", "light-active"),
+    (1 << 2, "pingActive", "ping-active"),
+    (1 << 3, "capsule", "capsule"),
+    (1 << 31, "nonFinite", "nonfinite"),
+)
+
+MARINE_SNOW_VFX_FLAG_LABELS = (
+    (1 << 0, "nonFinite", "nonfinite"),
+    (1 << 1, "gpuBudgetExceeded", "gpu-budget-exceeded"),
+)
+
+PROPWASH_GPU_FLAG_LABELS = (
+    (1 << 0, "mockSource", "mock-source"),
+    (1 << 1, "vehicleWakeSource", "vehicle-wake-source"),
+    (1 << 2, "wakeSourceBridge", "wake-source-bridge"),
+)
+
+CARVE_DEBRIS_FLAG_LABELS = (
+    (1 << 0, "invalidState", "invalid-state"),
+    (1 << 2, "sdfActive", "sdf-active"),
+    (1 << 3, "flowActive", "flow-active"),
+    (1 << 4, "stressRecycle", "stress-recycle"),
+    (1 << 5, "wakeActive", "wake-active"),
+)
+
+BIOLUM_PULSE_FLAG_LABELS = (
+    (1 << 0, "nonFinite", "nonfinite"),
+    (1 << 1, "jobOverrun", "job-overrun"),
+    (1 << 2, "aupInvalid", "aup-invalid"),
+)
+
+BIOLUM_DIRECTOR_FLAG_LABELS = (
+    (1 << 0, "daylightMasked", "daylight-masked"),
+    (1 << 1, "predatorDim", "predator-dim"),
+    (1 << 2, "eclipseMasked", "eclipse-masked"),
+    (1 << 3, "cameraNonfinite", "camera-nonfinite"),
+    (1 << 4, "zoneRegistryOverflow", "zone-registry-overflow"),
+)
+
+BIOLUM_DIRECTOR_REASON_LABELS = (
+    (1 << 1, "nonfiniteIntensityPhase", "nonfinite-intensity-phase"),
+    (1 << 3, "cameraNonfinite", "camera-nonfinite"),
 )
 
 SURVIVAL_BLACKBOX_FLAG_LABELS = (
@@ -2045,6 +2542,156 @@ def parse_data_monolith_telemetry_blackbox(data: bytes) -> dict[str, Any]:
     }
 
 
+def is_vault_sovereignty_telemetry_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSHINOBU100BIN", "DUMPSHINOBU100H8DUMP"}
+
+
+def build_vault_sovereignty_memory_map(latest: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not latest:
+        return []
+
+    total = max(0, safe_int(latest.get("totalVaultBytes"), 0))
+    arena = max(0, safe_int(latest.get("arenaBytes"), 0))
+    if total <= 0 and arena <= 0:
+        return []
+
+    blocks = []
+    if arena > 0:
+        blocks.append({"state": "occupied", "bytes": arena, "label": "vault-arena", "estimated": True})
+    remaining = max(0, total - arena)
+    if remaining > 0:
+        blocks.append({"state": "occupied", "bytes": remaining, "label": "non-arena-vault", "estimated": True})
+    return blocks
+
+
+def parse_vault_sovereignty_telemetry_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < VAULT_SOVEREIGNTY_TELEMETRY_HEADER_BYTES:
+        return {
+            "type": "vault_sovereignty_telemetry_blackbox",
+            "entries": [],
+            "latest": None,
+            "memoryMap": [],
+            "warnings": ["truncated_header"],
+        }
+
+    magic, version, entry_count, entry_size = VAULT_SOVEREIGNTY_TELEMETRY_HEADER.unpack_from(data, 0)
+    if (
+        magic != VAULT_SOVEREIGNTY_TELEMETRY_MAGIC
+        or version != VAULT_SOVEREIGNTY_TELEMETRY_VERSION
+        or entry_count <= 0
+        or entry_size != VAULT_SOVEREIGNTY_TELEMETRY_ENTRY_BYTES
+    ):
+        return {
+            "type": "vault_sovereignty_telemetry_blackbox",
+            "magic": magic,
+            "version": version,
+            "entries": [],
+            "latest": None,
+            "memoryMap": [],
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = VAULT_SOVEREIGNTY_TELEMETRY_HEADER_BYTES
+    expected_bytes = payload_offset + entry_count * entry_size
+    readable_entries = min(entry_count, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = VAULT_SOVEREIGNTY_TELEMETRY_ENTRY.unpack_from(data, offset)
+        flags = fields[11]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, VAULT_SOVEREIGNTY_FLAG_LABELS)
+        if not math.isfinite(fields[5]) or not math.isfinite(fields[10]):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "totalVaultBytes": fields[0],
+                "arenaBytes": fields[1],
+                "activeBufferCount": fields[2],
+                "generationMisses": fields[3],
+                "strideMultiplier": fields[4],
+                "maxMemoryJobUs": finite_round(fields[5]),
+                "frame": fields[6],
+                "vaultGenerationId": fields[7],
+                "bufferId": fields[8],
+                "bufferIdHex": f"0x{fields[8]:08X}",
+                "stateHash": fields[9],
+                "stateHashHex": f"0x{fields[9]:08X}",
+                "globalQualityWeight": finite_round(fields[10]),
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "reserved0": fields[12],
+                "fault": bool(flags & (1 << 0)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if entry_count > VAULT_SOVEREIGNTY_TELEMETRY_CAPACITY:
+        warnings.append("entry_capacity_exceeded")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if any(entry.get("fault") for entry in entries):
+        warnings.append("fault_flag")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(entry.get("totalVaultBytes", 0) < 0 or entry.get("arenaBytes", 0) < 0 for entry in entries):
+        warnings.append("negative_bytes")
+    if any(entry.get("arenaBytes", 0) > entry.get("totalVaultBytes", 0) >= 0 for entry in entries):
+        warnings.append("arena_exceeds_total_vault_bytes")
+    if any(entry.get("activeBufferCount", 0) < 0 or entry.get("generationMisses", 0) < 0 for entry in entries):
+        warnings.append("negative_counts")
+    if any(entry.get("strideMultiplier", 0) < 1 or entry.get("strideMultiplier", 0) > 16 for entry in entries):
+        warnings.append("stride_multiplier_out_of_range")
+    if any(
+        entry.get("maxMemoryJobUs") is None or entry.get("maxMemoryJobUs", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("memory_job_time_out_of_range")
+    if any(
+        entry.get("globalQualityWeight") is None
+        or entry.get("globalQualityWeight", 0.0) < 0.0
+        or entry.get("globalQualityWeight", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("quality_weight_out_of_range")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("reserved0") for entry in entries):
+        warnings.append("reserved_nonzero")
+    return {
+        "type": "vault_sovereignty_telemetry_blackbox",
+        "magic": magic,
+        "version": version,
+        "headerBytes": VAULT_SOVEREIGNTY_TELEMETRY_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": entry_count,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "memoryMap": build_vault_sovereignty_memory_map(latest),
+        "warnings": warnings,
+    }
+
+
 def is_arm64_alignment_telemetry_blackbox_path(path: Path) -> bool:
     normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
     return normalized in {"DUMPSHINOBU204BIN", "DUMPSHINOBU204H8DUMP"}
@@ -2080,15 +2727,19 @@ def parse_arm64_alignment_telemetry_blackbox(data: bytes) -> dict[str, Any]:
     readable_entries = min(entry_count, max(0, len(data) - payload_offset) // entry_size)
     entries = []
     nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
     for index in range(readable_entries):
         offset = payload_offset + index * entry_size
         if is_empty_entry(data, offset, entry_size):
             continue
 
         fields = ARM64_ALIGNMENT_TELEMETRY_ENTRY.unpack_from(data, offset)
-        flags = fields[7]
+        flags = fields[8]
         flag_labels, unknown_flags = resolve_bit_labels(flags, ARM64_ALIGNMENT_TELEMETRY_FLAG_LABELS)
-        if any(not math.isfinite(value) for value in fields[2:6]):
+        if any(not math.isfinite(value) for value in fields[2:5]):
             nonfinite_seen = True
         entries.append(
             {
@@ -2098,9 +2749,9 @@ def parse_arm64_alignment_telemetry_blackbox(data: bytes) -> dict[str, Any]:
                 "offendingAddress": fields[1],
                 "offendingAddressHex": f"0x{fields[1]:016X}",
                 "aupOrRuntimePosition": {
-                    "x": round(fields[2], 4),
-                    "y": round(fields[3], 4),
-                    "z": round(fields[4], 4),
+                    "x": finite_round(fields[2]),
+                    "y": finite_round(fields[3]),
+                    "z": finite_round(fields[4]),
                 },
                 "bufferID": fields[5],
                 "bufferIDHex": f"0x{fields[5]:08X}",
@@ -2109,9 +2760,9 @@ def parse_arm64_alignment_telemetry_blackbox(data: bytes) -> dict[str, Any]:
                 "flags": flags,
                 "flagLabels": flag_labels,
                 "unknownFlags": unknown_flags,
-                "severity01": round(fields[8], 4),
-                "stateHash": fields[9],
-                "stateHashHex": f"0x{fields[9]:08X}",
+                "severity01": finite_round(fields[9]),
+                "stateHash": fields[10],
+                "stateHashHex": f"0x{fields[10]:08X}",
                 "pack1Detected": bool(flags & (1 << 0)),
                 "misalignedEightByteField": bool(flags & (1 << 1)),
                 "invalidStride": bool(flags & (1 << 2)),
@@ -2145,7 +2796,10 @@ def parse_arm64_alignment_telemetry_blackbox(data: bytes) -> dict[str, Any]:
         warnings.append("dynamic_cast_fault")
     if any(entry.get("stateHash") == 0 for entry in entries):
         warnings.append("state_hash_zero")
-    if any(entry.get("severity01", 0.0) < 0.0 or entry.get("severity01", 0.0) > 1.0 for entry in entries):
+    if any(
+        entry.get("severity01") is None or entry.get("severity01", 0.0) < 0.0 or entry.get("severity01", 0.0) > 1.0
+        for entry in entries
+    ):
         warnings.append("severity_out_of_range")
     return {
         "type": "arm64_alignment_telemetry_blackbox",
@@ -2154,6 +2808,3714 @@ def parse_arm64_alignment_telemetry_blackbox(data: bytes) -> dict[str, Any]:
         "headerBytes": ARM64_ALIGNMENT_TELEMETRY_HEADER_BYTES,
         "entrySize": entry_size,
         "declaredEntryCount": entry_count,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_haptic_synthesis_telemetry_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSHINOBU353BIN", "DUMPSHINOBU353H8DUMP"}
+
+
+def parse_haptic_synthesis_telemetry_blackbox(data: bytes) -> dict[str, Any]:
+    entry_size = HAPTIC_SYNTHESIS_TELEMETRY_ENTRY_BYTES
+    expected_bytes = HAPTIC_SYNTHESIS_TELEMETRY_CAPACITY * entry_size
+    available_entries = len(data) // entry_size
+    readable_entries = min(HAPTIC_SYNTHESIS_TELEMETRY_CAPACITY, available_entries)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = HAPTIC_SYNTHESIS_TELEMETRY_ENTRY.unpack_from(data, offset)
+        flags = fields[9]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, HAPTIC_SYNTHESIS_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in (fields[0], fields[1], fields[2], fields[3], fields[4], fields[10])):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "playerAup": {
+                    "x": finite_round(fields[0]),
+                    "y": finite_round(fields[1]),
+                    "z": finite_round(fields[2]),
+                },
+                "finalLowFrequency01": finite_round(fields[3]),
+                "finalHighFrequency01": finite_round(fields[4]),
+                "frame": fields[5],
+                "rawSignalCount": fields[6],
+                "droppedSignalCount": fields[7],
+                "burstExecutionMicroseconds": fields[8],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "globalQualityWeight": finite_round(fields[10]),
+                "stateHash": fields[11],
+                "stateHashHex": f"0x{fields[11]:08X}",
+                "generatedPulseCount": fields[12],
+                "nanSanitized": bool(flags & (1 << 0)),
+                "budgetExceeded": bool(flags & (1 << 1)),
+                "pulseOverflow": bool(flags & (1 << 2)),
+                "missingPlayerAup": bool(flags & (1 << 3)),
+                "mockStormActive": bool(flags & (1 << 4)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if available_entries > HAPTIC_SYNTHESIS_TELEMETRY_CAPACITY:
+        warnings.append("entry_capacity_exceeded")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("nanSanitized") for entry in entries):
+        warnings.append("nan_sanitized")
+    if any(entry.get("budgetExceeded") for entry in entries):
+        warnings.append("budget_exceeded")
+    if any(entry.get("pulseOverflow") for entry in entries):
+        warnings.append("pulse_overflow")
+    if any(entry.get("missingPlayerAup") for entry in entries):
+        warnings.append("missing_player_aup")
+    if any(entry.get("mockStormActive") for entry in entries):
+        warnings.append("mock_storm_active")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(entry.get("droppedSignalCount", 0) > 0 for entry in entries):
+        warnings.append("dropped_signals")
+    if any(entry.get("burstExecutionMicroseconds", 0) > 200 for entry in entries):
+        warnings.append("burst_over_200us")
+    if any(entry.get("generatedPulseCount", 0) > HAPTIC_SYNTHESIS_PULSE_CAPACITY for entry in entries):
+        warnings.append("generated_pulse_over_capacity")
+    if any(
+        entry.get("finalLowFrequency01") is None
+        or entry.get("finalHighFrequency01") is None
+        or entry.get("finalLowFrequency01", 0.0) < 0.0
+        or entry.get("finalLowFrequency01", 0.0) > 1.0
+        or entry.get("finalHighFrequency01", 0.0) < 0.0
+        or entry.get("finalHighFrequency01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("motor_out_of_range")
+    if any(
+        entry.get("globalQualityWeight") is None
+        or entry.get("globalQualityWeight", 0.0) < 0.0
+        or entry.get("globalQualityWeight", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("quality_weight_out_of_range")
+
+    return {
+        "type": "haptic_synthesis_telemetry_blackbox",
+        "headerBytes": 0,
+        "entrySize": entry_size,
+        "capacity": HAPTIC_SYNTHESIS_TELEMETRY_CAPACITY,
+        "pulseCapacity": HAPTIC_SYNTHESIS_PULSE_CAPACITY,
+        "declaredEntryCount": HAPTIC_SYNTHESIS_TELEMETRY_CAPACITY,
+        "availableEntryCount": available_entries,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_vocal_warning_telemetry_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSHINOBU352VWSBIN", "DUMPSHINOBU352VWSH8DUMP", "DUMPX011BIN", "DUMPX011H8DUMP"}
+
+
+def vocal_warning_id_label(warning_id: int) -> str:
+    return VOCAL_WARNING_ID_LABELS.get(warning_id, f"unknown={warning_id}")
+
+
+def parse_vocal_warning_telemetry_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < VOCAL_WARNING_TELEMETRY_HEADER_BYTES:
+        return {
+            "type": "vocal_warning_telemetry_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, version, entry_stride, capacity, cursor, emitted_count, ring_start, reserved0 = (
+        VOCAL_WARNING_TELEMETRY_HEADER.unpack_from(data, 0)
+    )
+    invalid_header = (
+        magic != VOCAL_WARNING_TELEMETRY_MAGIC
+        or version != VOCAL_WARNING_TELEMETRY_VERSION
+        or entry_stride != VOCAL_WARNING_TELEMETRY_ENTRY_BYTES
+        or capacity <= 0
+        or capacity > VOCAL_WARNING_TELEMETRY_CAPACITY
+        or emitted_count > capacity
+        or cursor >= capacity
+        or (emitted_count > 0 and ring_start >= capacity)
+    )
+    if invalid_header:
+        return {
+            "type": "vocal_warning_telemetry_blackbox",
+            "magic": magic,
+            "version": version,
+            "entrySize": entry_stride,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "emittedCount": emitted_count,
+            "ringStartIndex": ring_start,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = VOCAL_WARNING_TELEMETRY_HEADER_BYTES
+    expected_bytes = payload_offset + emitted_count * entry_stride
+    readable_entries = min(emitted_count, max(0, len(data) - payload_offset) // entry_stride)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_stride
+        if is_empty_entry(data, offset, entry_stride):
+            continue
+
+        fields = VOCAL_WARNING_TELEMETRY_ENTRY.unpack_from(data, offset)
+        active_alarm_mask = fields[3]
+        fault_flags = fields[9]
+        active_alarm_labels, active_alarm_unknown = resolve_bit_labels64(
+            active_alarm_mask,
+            VOCAL_WARNING_ACTIVE_ALARM_LABELS,
+        )
+        fault_labels, unknown_fault_flags = resolve_bit_labels(fault_flags, VOCAL_WARNING_FAULT_LABELS)
+        current_warning_id = fields[12]
+        last_dispatched_warning_id = fields[13]
+        if not math.isfinite(fields[7]) or not math.isfinite(fields[8]):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "ringSlot": (ring_start + index) % capacity,
+                "sourceAupGrid": {"x": fields[0], "y": fields[1], "z": fields[2]},
+                "activeAlarmsMask": active_alarm_mask,
+                "activeAlarmsMaskHex": f"0x{active_alarm_mask:016X}",
+                "activeAlarmLabels": active_alarm_labels,
+                "unknownActiveAlarmFlags": active_alarm_unknown,
+                "frame": fields[4],
+                "activePriorityCount": fields[5],
+                "currentAudioBankHashID": fields[6],
+                "currentAudioBankHashHex": f"0x{fields[6]:08X}",
+                "currentPriorityScore": finite_round(fields[7]),
+                "burstExecutionMicros": finite_round(fields[8]),
+                "faultFlags": fault_flags,
+                "faultFlagLabels": fault_labels,
+                "unknownFaultFlags": unknown_fault_flags,
+                "highestPriorityBitIndex": fields[10],
+                "directionHash": fields[11],
+                "directionHashHex": f"0x{fields[11]:04X}",
+                "currentWarningId": current_warning_id,
+                "currentWarningLabel": vocal_warning_id_label(current_warning_id),
+                "lastDispatchedWarningId": last_dispatched_warning_id,
+                "lastDispatchedWarningLabel": vocal_warning_id_label(last_dispatched_warning_id),
+                "telemetryInvalid": bool(fault_flags & (1 << 0)),
+                "priorityInvalid": bool(fault_flags & (1 << 1)),
+                "priorityInputInvalid": bool(fault_flags & (1 << 2)),
+                "vocalCueRejected": bool(fault_flags & (1 << 3)),
+                "subtitleRejected": bool(fault_flags & (1 << 4)),
+                "alarmMaskOverflow": bool(fault_flags & (1 << 5)),
+                "vocalWarningSignalRejected": bool(fault_flags & (1 << 6)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_stride != 0:
+        warnings.append("trailing_partial_entry")
+    if reserved0 != 0:
+        warnings.append("reserved_nonzero")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("unknownFaultFlags") for entry in entries):
+        warnings.append("unknown_fault_flags")
+    if any(entry.get("unknownActiveAlarmFlags") for entry in entries):
+        warnings.append("unknown_active_alarm_flags")
+    if any(entry.get("faultFlags") for entry in entries):
+        warnings.append("fault_flags")
+    if any(entry.get("telemetryInvalid") for entry in entries):
+        warnings.append("telemetry_invalid")
+    if any(entry.get("priorityInvalid") for entry in entries):
+        warnings.append("priority_invalid")
+    if any(entry.get("priorityInputInvalid") for entry in entries):
+        warnings.append("priority_input_invalid")
+    if any(entry.get("vocalCueRejected") for entry in entries):
+        warnings.append("vocal_cue_rejected")
+    if any(entry.get("subtitleRejected") for entry in entries):
+        warnings.append("subtitle_rejected")
+    if any(entry.get("alarmMaskOverflow") for entry in entries):
+        warnings.append("alarm_mask_overflow")
+    if any(entry.get("vocalWarningSignalRejected") for entry in entries):
+        warnings.append("vocal_warning_signal_rejected")
+    if any(entry.get("burstExecutionMicros") is None or entry.get("burstExecutionMicros", 0.0) < 0.0 for entry in entries):
+        warnings.append("burst_time_out_of_range")
+    if any(entry.get("burstExecutionMicros", 0.0) > 100.0 for entry in entries):
+        warnings.append("burst_over_100us")
+    if any(entry.get("currentPriorityScore") is None or entry.get("currentPriorityScore", 0.0) < 0.0 for entry in entries):
+        warnings.append("priority_score_out_of_range")
+    if any(
+        entry.get("currentWarningId") not in VOCAL_WARNING_ID_LABELS
+        or entry.get("lastDispatchedWarningId") not in VOCAL_WARNING_ID_LABELS
+        for entry in entries
+    ):
+        warnings.append("unknown_warning_id")
+    if any(
+        entry.get("currentAudioBankHashID", 0) != 0 and entry.get("currentWarningId", 0) == 0
+        for entry in entries
+    ):
+        warnings.append("audio_bank_hash_without_warning_id")
+    return {
+        "type": "vocal_warning_telemetry_blackbox",
+        "magic": magic,
+        "version": version,
+        "headerBytes": VOCAL_WARNING_TELEMETRY_HEADER_BYTES,
+        "entrySize": entry_stride,
+        "declaredEntryCount": emitted_count,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "ringStartIndex": ring_start,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_granular_audio_telemetry_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {
+        "DUMPPROCEDURALSYNTHBIN",
+        "DUMPPROCEDURALSYNTHH8DUMP",
+        "DUMPSTRUCTURALACOUSTICSLEADBIN",
+        "DUMPSTRUCTURALACOUSTICSLEADH8DUMP",
+        "DUMPACOUSTICREFLECTIONMAPPERBIN",
+        "DUMPACOUSTICREFLECTIONMAPPERH8DUMP",
+        "DUMPKINETICIMPACTACOUSTICSBIN",
+        "DUMPKINETICIMPACTACOUSTICSH8DUMP",
+        "DUMPSHINOBU351BIN",
+        "DUMPSHINOBU351H8DUMP",
+    }
+
+
+def parse_granular_audio_telemetry_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < GRANULAR_AUDIO_TELEMETRY_HEADER_BYTES:
+        return {
+            "type": "granular_audio_telemetry_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    capacity, cursor = GRANULAR_AUDIO_TELEMETRY_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        capacity <= 0
+        or capacity > GRANULAR_AUDIO_TELEMETRY_CAPACITY
+        or cursor < 0
+        or cursor >= capacity
+        or GRANULAR_AUDIO_TELEMETRY_ROW.size != GRANULAR_AUDIO_TELEMETRY_ROW_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "granular_audio_telemetry_blackbox",
+            "headerBytes": GRANULAR_AUDIO_TELEMETRY_HEADER_BYTES,
+            "entrySize": GRANULAR_AUDIO_TELEMETRY_ROW_BYTES,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = GRANULAR_AUDIO_TELEMETRY_HEADER_BYTES
+    entry_size = GRANULAR_AUDIO_TELEMETRY_ROW_BYTES
+    expected_bytes = payload_offset + capacity * entry_size
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = GRANULAR_AUDIO_TELEMETRY_ROW.unpack_from(data, offset)
+        flags = fields[10]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, GRANULAR_AUDIO_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in fields[1:7]):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "sampleIndex": fields[0],
+                "stress01": finite_round(fields[1]),
+                "stressDerivative01": finite_round(fields[2]),
+                "depth01": finite_round(fields[3]),
+                "impact01": finite_round(fields[4]),
+                "mixedSample": finite_round(fields[5]),
+                "peakImpactEnergyJoules": finite_round(fields[6]),
+                "activeVoices": fields[7],
+                "voiceLimit": fields[8],
+                "activeEchoTaps": fields[9],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "invalid": bool(flags & (1 << 0)),
+                "voiceLimitReached": bool(flags & (1 << 1)),
+                "impactDriveActive": bool(flags & (1 << 2)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("sampleIndex"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != GRANULAR_AUDIO_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("invalid") for entry in entries):
+        warnings.append("invalid")
+    if any(entry.get("voiceLimitReached") for entry in entries):
+        warnings.append("voice_limit_reached")
+    if any(
+        entry.get("activeVoices", 0) < 0
+        or entry.get("activeVoices", 0) > GRANULAR_AUDIO_VOICE_CAPACITY
+        or entry.get("voiceLimit", 0) < 0
+        or entry.get("voiceLimit", 0) > GRANULAR_AUDIO_VOICE_CAPACITY
+        for entry in entries
+    ):
+        warnings.append("voice_count_out_of_range")
+    if any(entry.get("activeVoices", 0) > entry.get("voiceLimit", GRANULAR_AUDIO_VOICE_CAPACITY) for entry in entries):
+        warnings.append("active_voices_over_limit")
+    if any(
+        entry.get("activeEchoTaps", 0) < 0
+        or entry.get("activeEchoTaps", 0) > GRANULAR_AUDIO_ECHO_TAP_CAPACITY
+        for entry in entries
+    ):
+        warnings.append("echo_taps_out_of_range")
+    if any(
+        entry.get("stress01") is None
+        or entry.get("stressDerivative01") is None
+        or entry.get("depth01") is None
+        or entry.get("impact01") is None
+        or entry.get("stress01", 0.0) < 0.0
+        or entry.get("stress01", 0.0) > 1.0
+        or entry.get("stressDerivative01", 0.0) < 0.0
+        or entry.get("stressDerivative01", 0.0) > 1.0
+        or entry.get("depth01", 0.0) < 0.0
+        or entry.get("depth01", 0.0) > 1.0
+        or entry.get("impact01", 0.0) < 0.0
+        or entry.get("impact01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("drive_out_of_range")
+    if any(
+        entry.get("peakImpactEnergyJoules") is None
+        or entry.get("peakImpactEnergyJoules", 0.0) < 0.0
+        or entry.get("peakImpactEnergyJoules", 0.0) > GRANULAR_AUDIO_MAX_SAFE_IMPACT_JOULES
+        for entry in entries
+    ):
+        warnings.append("impact_energy_out_of_range")
+
+    return {
+        "type": "granular_audio_telemetry_blackbox",
+        "headerBytes": GRANULAR_AUDIO_TELEMETRY_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_prologue_audio_transition_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPPROLOGUEACOUSTICORCHESTRATORBIN", "DUMPPROLOGUEACOUSTICORCHESTRATORH8DUMP"}
+
+
+def prologue_audio_stage_label(stage: int) -> str:
+    return PROLOGUE_AUDIO_STAGE_LABELS.get(stage, f"unknown={stage}")
+
+
+def parse_prologue_audio_transition_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < PROLOGUE_AUDIO_TRANSITION_HEADER_BYTES:
+        return {
+            "type": "prologue_audio_transition_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    capacity, cursor = PROLOGUE_AUDIO_TRANSITION_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        capacity <= 0
+        or capacity > PROLOGUE_AUDIO_TRANSITION_CAPACITY
+        or cursor < 0
+        or cursor >= capacity
+        or PROLOGUE_AUDIO_TRANSITION_ROW.size != PROLOGUE_AUDIO_TRANSITION_ROW_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "prologue_audio_transition_blackbox",
+            "headerBytes": PROLOGUE_AUDIO_TRANSITION_HEADER_BYTES,
+            "entrySize": PROLOGUE_AUDIO_TRANSITION_ROW_BYTES,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = PROLOGUE_AUDIO_TRANSITION_HEADER_BYTES
+    entry_size = PROLOGUE_AUDIO_TRANSITION_ROW_BYTES
+    expected_bytes = payload_offset + capacity * entry_size
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = PROLOGUE_AUDIO_TRANSITION_ROW.unpack_from(data, offset)
+        state_flags = fields[12]
+        dsp_flags = fields[15]
+        state_labels, unknown_state_flags = resolve_bit_labels(state_flags, PROLOGUE_AUDIO_STATE_FLAG_LABELS)
+        dsp_labels, unknown_dsp_flags = resolve_bit_labels(dsp_flags, PROLOGUE_AUDIO_DSP_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in fields[2:10]):
+            nonfinite_seen = True
+        stage = fields[11]
+        entries.append(
+            {
+                "slot": index,
+                "frame": fields[0],
+                "sequence": fields[1],
+                "universeVelocityMetersPerSecond": finite_round(fields[2]),
+                "heat01": finite_round(fields[3]),
+                "lowPassCutoffHz": finite_round(fields[4], 2),
+                "lfeGain01": finite_round(fields[5]),
+                "granularStress01": finite_round(fields[6]),
+                "splashdownGain01": finite_round(fields[7]),
+                "portalBlend01": finite_round(fields[8]),
+                "audioLowPassCutoffHz": finite_round(fields[9], 2),
+                "splashdownSamplesRemaining": fields[10],
+                "stage": stage,
+                "stageLabel": prologue_audio_stage_label(stage),
+                "flags": state_flags,
+                "flagLabels": state_labels,
+                "unknownFlags": unknown_state_flags,
+                "qualityTier": fields[13],
+                "reserved": fields[14],
+                "dspFlags": dsp_flags,
+                "dspFlagLabels": dsp_labels,
+                "unknownDspFlags": unknown_dsp_flags,
+                "splashdown": bool(state_flags & (1 << 0)),
+                "portalActive": bool(state_flags & (1 << 1)),
+                "granularEnabled": bool(state_flags & (1 << 2)),
+                "lowTierProxy": bool(state_flags & (1 << 3)),
+                "nonFiniteGuard": bool(state_flags & (1 << 4)),
+                "dspInvalid": bool(dsp_flags & (1 << 0)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != PROLOGUE_AUDIO_TRANSITION_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if any(entry.get("unknownDspFlags") for entry in entries):
+        warnings.append("unknown_dsp_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("dspInvalid") for entry in entries):
+        warnings.append("invalid")
+    if any(entry.get("nonFiniteGuard") for entry in entries):
+        warnings.append("nonfinite_guard")
+    if any(entry.get("stage") not in PROLOGUE_AUDIO_STAGE_LABELS for entry in entries):
+        warnings.append("unknown_stage")
+    if any(entry.get("reserved", 0) != 0 for entry in entries):
+        warnings.append("reserved_nonzero")
+    if any(entry.get("splashdownSamplesRemaining", 0) < 0 for entry in entries):
+        warnings.append("splashdown_samples_negative")
+    if any(
+        entry.get("universeVelocityMetersPerSecond") is None
+        or entry.get("universeVelocityMetersPerSecond", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("velocity_out_of_range")
+    if any(
+        entry.get(name) is None or entry.get(name, 0.0) < 0.0 or entry.get(name, 0.0) > 1.0
+        for entry in entries
+        for name in ("heat01", "lfeGain01", "granularStress01", "splashdownGain01", "portalBlend01")
+    ):
+        warnings.append("blend_out_of_range")
+    if any(
+        entry.get("lowPassCutoffHz") is None
+        or entry.get("audioLowPassCutoffHz") is None
+        or entry.get("lowPassCutoffHz", 0.0) <= 0.0
+        or entry.get("audioLowPassCutoffHz", 0.0) <= 0.0
+        or entry.get("lowPassCutoffHz", 0.0) > PROLOGUE_AUDIO_OPEN_LOW_PASS_HZ
+        or entry.get("audioLowPassCutoffHz", 0.0) > PROLOGUE_AUDIO_OPEN_LOW_PASS_HZ
+        for entry in entries
+    ):
+        warnings.append("low_pass_out_of_range")
+
+    return {
+        "type": "prologue_audio_transition_blackbox",
+        "headerBytes": PROLOGUE_AUDIO_TRANSITION_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_audio_synthesis_telemetry_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMP1320SYNTHESISBIN", "DUMP1320SYNTHESISH8DUMP"}
+
+
+def audio_synthesis_failure_label(failure_code: int) -> str:
+    return AUDIO_SYNTHESIS_FAILURE_LABELS.get(failure_code, f"unknown={failure_code}")
+
+
+def parse_audio_synthesis_telemetry_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < AUDIO_SYNTHESIS_TELEMETRY_HEADER_BYTES:
+        return {
+            "type": "audio_synthesis_telemetry_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    capacity, cursor = AUDIO_SYNTHESIS_TELEMETRY_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        capacity <= 0
+        or capacity > AUDIO_SYNTHESIS_TELEMETRY_CAPACITY
+        or cursor < 0
+        or cursor >= capacity
+        or AUDIO_SYNTHESIS_TELEMETRY_ROW.size != AUDIO_SYNTHESIS_TELEMETRY_ROW_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "audio_synthesis_telemetry_blackbox",
+            "headerBytes": AUDIO_SYNTHESIS_TELEMETRY_HEADER_BYTES,
+            "entrySize": AUDIO_SYNTHESIS_TELEMETRY_ROW_BYTES,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = AUDIO_SYNTHESIS_TELEMETRY_HEADER_BYTES
+    entry_size = AUDIO_SYNTHESIS_TELEMETRY_ROW_BYTES
+    expected_bytes = payload_offset + capacity * entry_size
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = AUDIO_SYNTHESIS_TELEMETRY_ROW.unpack_from(data, offset)
+        flags = fields[6]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, AUDIO_SYNTHESIS_FLAG_LABELS)
+        failure_code = fields[11]
+        if not math.isfinite(fields[9]) or not math.isfinite(fields[10]):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "stopwatchTicks": fields[0],
+                "frame": fields[1],
+                "bufferId": fields[2],
+                "bufferIdHex": f"0x{fields[2]:08X}",
+                "systemId": fields[3],
+                "expectedGeneration": fields[4],
+                "actualGeneration": fields[5],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "activePolyphony": fields[7],
+                "voiceLimit": fields[8],
+                "dspMicroseconds": finite_round(fields[9], 2),
+                "globalQualityWeight": finite_round(fields[10]),
+                "failureCode": failure_code,
+                "failureLabel": audio_synthesis_failure_label(failure_code),
+                "underrunCount": fields[12],
+                "lockContention": bool(flags & (1 << 0)),
+                "staleOrMissingHandle": bool(flags & (1 << 1)),
+                "nonFiniteSample": bool(flags & (1 << 2)),
+                "outputUnderrun": bool(flags & (1 << 3)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != AUDIO_SYNTHESIS_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("failureCode", 0) != 0 for entry in entries):
+        warnings.append("failure_code")
+    if any(entry.get("failureCode") not in AUDIO_SYNTHESIS_FAILURE_LABELS for entry in entries):
+        warnings.append("unknown_failure_code")
+    if any(entry.get("lockContention") for entry in entries):
+        warnings.append("lock_contention")
+    if any(entry.get("staleOrMissingHandle") for entry in entries):
+        warnings.append("stale_or_missing_handle")
+    if any(entry.get("nonFiniteSample") for entry in entries):
+        warnings.append("nonfinite_sample")
+    if any(entry.get("outputUnderrun") for entry in entries):
+        warnings.append("output_underrun")
+    if any(entry.get("expectedGeneration") != entry.get("actualGeneration") for entry in entries):
+        warnings.append("generation_mismatch")
+    if any(entry.get("systemId") != AUDIO_SYNTHESIS_AUDIO_PLAYER_CRITICAL_SYSTEM_ID for entry in entries):
+        warnings.append("system_id_mismatch")
+    if any(entry.get("underrunCount", 0) > 0 for entry in entries):
+        warnings.append("underruns")
+    if any(
+        entry.get("activePolyphony", 0) < 0
+        or entry.get("activePolyphony", 0) > GRANULAR_AUDIO_VOICE_CAPACITY
+        or entry.get("voiceLimit", 0) < 0
+        or entry.get("voiceLimit", 0) > GRANULAR_AUDIO_VOICE_CAPACITY
+        for entry in entries
+    ):
+        warnings.append("voice_count_out_of_range")
+    if any(entry.get("activePolyphony", 0) > entry.get("voiceLimit", GRANULAR_AUDIO_VOICE_CAPACITY) for entry in entries):
+        warnings.append("active_polyphony_over_limit")
+    if any(entry.get("dspMicroseconds") is None or entry.get("dspMicroseconds", 0.0) < 0.0 for entry in entries):
+        warnings.append("dsp_time_out_of_range")
+    if any(
+        entry.get("globalQualityWeight") is None
+        or entry.get("globalQualityWeight", 0.0) < 0.0
+        or entry.get("globalQualityWeight", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("quality_weight_out_of_range")
+
+    return {
+        "type": "audio_synthesis_telemetry_blackbox",
+        "headerBytes": AUDIO_SYNTHESIS_TELEMETRY_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_vocal_bank_synthesis_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMP1308SYNTHESISBIN", "DUMP1308SYNTHESISH8DUMP"}
+
+
+def vocal_bank_synthesis_codec_label(codec: int) -> str:
+    return VOCAL_BANK_SYNTHESIS_CODEC_LABELS.get(codec, f"unknown={codec}")
+
+
+def parse_vocal_bank_synthesis_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < VOCAL_BANK_SYNTHESIS_HEADER_BYTES:
+        return {
+            "type": "vocal_bank_synthesis_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, version, capacity, entry_stride, cursor, last_fault_flags, last_phrase_hash, frame_counter = (
+        VOCAL_BANK_SYNTHESIS_HEADER.unpack_from(data, 0)
+    )
+    invalid_header = (
+        magic != VOCAL_BANK_SYNTHESIS_MAGIC
+        or version != VOCAL_BANK_SYNTHESIS_VERSION
+        or capacity <= 0
+        or capacity > VOCAL_BANK_SYNTHESIS_TELEMETRY_CAPACITY
+        or entry_stride != VOCAL_BANK_SYNTHESIS_ENTRY_BYTES
+        or cursor >= capacity
+        or VOCAL_BANK_SYNTHESIS_ENTRY.size != VOCAL_BANK_SYNTHESIS_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "vocal_bank_synthesis_blackbox",
+            "magic": magic,
+            "version": version,
+            "headerBytes": VOCAL_BANK_SYNTHESIS_HEADER_BYTES,
+            "entrySize": entry_stride,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "lastFaultFlags": last_fault_flags,
+            "lastPhraseHashID": last_phrase_hash,
+            "lastPhraseHashHex": f"0x{last_phrase_hash:08X}",
+            "frameCounter": frame_counter,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = VOCAL_BANK_SYNTHESIS_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * entry_stride
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // entry_stride)
+    entries = []
+    nonfinite_seen = False
+    last_fault_labels, unknown_last_fault_flags = resolve_bit_labels(
+        last_fault_flags,
+        VOCAL_BANK_SYNTHESIS_FLAG_LABELS,
+    )
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_stride
+        if is_empty_entry(data, offset, entry_stride):
+            continue
+
+        fields = VOCAL_BANK_SYNTHESIS_ENTRY.unpack_from(data, offset)
+        flags = fields[10]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, VOCAL_BANK_SYNTHESIS_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in fields[4:9]):
+            nonfinite_seen = True
+        codec = fields[14]
+        entries.append(
+            {
+                "slot": index,
+                "frame": fields[0],
+                "phraseHashID": fields[1],
+                "phraseHashHex": f"0x{fields[1]:08X}",
+                "currentSampleIndex": fields[2],
+                "totalSamples": fields[3],
+                "dspMicroseconds": finite_round(fields[4], 2),
+                "outputPeak": finite_round(fields[5]),
+                "outputRms": finite_round(fields[6]),
+                "qualityWeight01": finite_round(fields[7]),
+                "radioDistortion01": finite_round(fields[8]),
+                "priority": fields[9],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "underrunCount": fields[11],
+                "payloadByteLength": fields[12],
+                "sampleRate": fields[13],
+                "codec": codec,
+                "codecLabel": vocal_bank_synthesis_codec_label(codec),
+                "playing": bool(flags & (1 << 0)),
+                "vorbisUnsupported": bool(flags & (1 << 1)),
+                "nonFinite": bool(flags & (1 << 2)),
+                "bankMiss": bool(flags & (1 << 3)),
+                "interrupted": bool(flags & (1 << 4)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_stride != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != VOCAL_BANK_SYNTHESIS_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if unknown_last_fault_flags:
+        warnings.append("unknown_last_fault_flags")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if last_fault_flags:
+        warnings.append("last_fault_flags")
+    if any(entry.get("vorbisUnsupported") for entry in entries) or (last_fault_flags & (1 << 1)):
+        warnings.append("vorbis_unsupported")
+    if any(entry.get("nonFinite") for entry in entries) or (last_fault_flags & (1 << 2)):
+        warnings.append("nonfinite")
+    if any(entry.get("bankMiss") for entry in entries) or (last_fault_flags & (1 << 3)):
+        warnings.append("bank_miss")
+    if any(entry.get("interrupted") for entry in entries):
+        warnings.append("interrupted")
+    if any(entry.get("underrunCount", 0) > 0 for entry in entries):
+        warnings.append("underruns")
+    if any(entry.get("dspMicroseconds") is None or entry.get("dspMicroseconds", 0.0) < 0.0 for entry in entries):
+        warnings.append("dsp_time_out_of_range")
+    if any(entry.get("dspMicroseconds", 0.0) > VOCAL_BANK_SYNTHESIS_DSP_DUMP_THRESHOLD_US for entry in entries):
+        warnings.append("dsp_over_1000us")
+    if any(
+        entry.get("qualityWeight01") is None
+        or entry.get("qualityWeight01", 0.0) < 0.0
+        or entry.get("qualityWeight01", 0.0) > 1.0
+        or entry.get("radioDistortion01") is None
+        or entry.get("radioDistortion01", 0.0) < 0.0
+        or entry.get("radioDistortion01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("quality_or_distortion_out_of_range")
+    if any(
+        entry.get("outputPeak") is None
+        or entry.get("outputPeak", 0.0) < 0.0
+        or entry.get("outputRms") is None
+        or entry.get("outputRms", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("output_meter_out_of_range")
+    if any(entry.get("totalSamples", 0) > 0 and entry.get("currentSampleIndex", 0) > entry.get("totalSamples", 0) for entry in entries):
+        warnings.append("sample_index_out_of_range")
+    if any(entry.get("sampleRate", 0) <= 0 for entry in entries):
+        warnings.append("sample_rate_out_of_range")
+    if any(entry.get("codec") not in VOCAL_BANK_SYNTHESIS_CODEC_LABELS for entry in entries):
+        warnings.append("unknown_codec")
+
+    return {
+        "type": "vocal_bank_synthesis_blackbox",
+        "magic": magic,
+        "version": version,
+        "headerBytes": VOCAL_BANK_SYNTHESIS_HEADER_BYTES,
+        "entrySize": entry_stride,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "lastFaultFlags": last_fault_flags,
+        "lastFaultFlagLabels": last_fault_labels,
+        "unknownLastFaultFlags": unknown_last_fault_flags,
+        "lastPhraseHashID": last_phrase_hash,
+        "lastPhraseHashHex": f"0x{last_phrase_hash:08X}",
+        "frameCounter": frame_counter,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_adaptive_stem_mixer_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSTEMMIXERBIN", "DUMPSTEMMIXERH8DUMP"}
+
+
+def parse_adaptive_stem_mixer_blackbox(data: bytes) -> dict[str, Any]:
+    entry_size = ADAPTIVE_STEM_MIXER_ENTRY_BYTES
+    expected_bytes = ADAPTIVE_STEM_MIXER_TELEMETRY_CAPACITY * entry_size
+    available_entries = len(data) // entry_size
+    readable_entries = min(ADAPTIVE_STEM_MIXER_TELEMETRY_CAPACITY, available_entries)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = ADAPTIVE_STEM_MIXER_ENTRY.unpack_from(data, offset)
+        flags = fields[3]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, ADAPTIVE_STEM_MIXER_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in fields[4:16]):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "frame": fields[0],
+                "activeStemHash": fields[1],
+                "activeStemHashHex": f"0x{fields[1]:08X}",
+                "biomeHash": fields[2],
+                "biomeHashHex": f"0x{fields[2]:08X}",
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "tensionIndex": finite_round(fields[4]),
+                "depthFilter": finite_round(fields[5]),
+                "cutoffHz": finite_round(fields[6], 2),
+                "mixerUpdateMicroseconds": finite_round(fields[7], 2),
+                "baseVolume": finite_round(fields[8]),
+                "actionVolume": finite_round(fields[9]),
+                "depthVolume": finite_round(fields[10]),
+                "bossVolume": finite_round(fields[11]),
+                "qualityWeight": finite_round(fields[12]),
+                "beatPhase01": finite_round(fields[13]),
+                "ioPressure01": finite_round(fields[14]),
+                "updateCadenceHz": finite_round(fields[15], 3),
+                "beatGateOpen": bool(flags & (1 << 0)),
+                "narrativeOverride": bool(flags & (1 << 1)),
+                "ioTransitionDelay": bool(flags & (1 << 2)),
+                "clipNotStreaming": bool(flags & (1 << 3)),
+                "nonFinite": bool(flags & (1 << 4)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if available_entries > ADAPTIVE_STEM_MIXER_TELEMETRY_CAPACITY:
+        warnings.append("entry_capacity_exceeded")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("nonFinite") for entry in entries):
+        warnings.append("nonfinite")
+    if any(entry.get("clipNotStreaming") for entry in entries):
+        warnings.append("clip_not_streaming")
+    if any(entry.get("ioTransitionDelay") for entry in entries):
+        warnings.append("io_transition_delay")
+    if any(
+        entry.get("mixerUpdateMicroseconds") is None
+        or entry.get("mixerUpdateMicroseconds", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("mixer_time_out_of_range")
+    if any(entry.get("mixerUpdateMicroseconds", 0.0) > ADAPTIVE_STEM_MIXER_DUMP_THRESHOLD_US for entry in entries):
+        warnings.append("mixer_over_1000us")
+    if any(
+        entry.get("qualityWeight") is None
+        or entry.get("beatPhase01") is None
+        or entry.get("ioPressure01") is None
+        or entry.get("qualityWeight", 0.0) < 0.0
+        or entry.get("qualityWeight", 0.0) > 1.0
+        or entry.get("beatPhase01", 0.0) < 0.0
+        or entry.get("beatPhase01", 0.0) > 1.0
+        or entry.get("ioPressure01", 0.0) < 0.0
+        or entry.get("ioPressure01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("quality_or_phase_out_of_range")
+    if any(
+        entry.get("cutoffHz") is None
+        or entry.get("cutoffHz", 0.0) <= 0.0
+        or entry.get("updateCadenceHz") is None
+        or entry.get("updateCadenceHz", 0.0) <= 0.0
+        for entry in entries
+    ):
+        warnings.append("frequency_out_of_range")
+    if any(
+        entry.get("baseVolume") is None
+        or entry.get("actionVolume") is None
+        or entry.get("depthVolume") is None
+        or entry.get("bossVolume") is None
+        or entry.get("baseVolume", 0.0) < 0.0
+        or entry.get("actionVolume", 0.0) < 0.0
+        or entry.get("depthVolume", 0.0) < 0.0
+        or entry.get("bossVolume", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("volume_out_of_range")
+
+    return {
+        "type": "adaptive_stem_mixer_blackbox",
+        "headerBytes": 0,
+        "entrySize": entry_size,
+        "capacity": ADAPTIVE_STEM_MIXER_TELEMETRY_CAPACITY,
+        "declaredEntryCount": ADAPTIVE_STEM_MIXER_TELEMETRY_CAPACITY,
+        "availableEntryCount": available_entries,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_camera_juice_telemetry_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {
+        "DUMPCAMERAJUICESYSTEMBIN",
+        "DUMPCAMERAJUICESYSTEMH8DUMP",
+    }
+
+
+def parse_camera_juice_telemetry_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < CAMERA_JUICE_TELEMETRY_HEADER_BYTES:
+        return {
+            "type": "camera_juice_telemetry_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, version, entry_size, capacity, cursor, count, start_index, reserved0 = (
+        CAMERA_JUICE_TELEMETRY_HEADER.unpack_from(data, 0)
+    )
+    invalid_header = (
+        magic != CAMERA_JUICE_TELEMETRY_MAGIC
+        or version != CAMERA_JUICE_TELEMETRY_VERSION
+        or entry_size != CAMERA_JUICE_TELEMETRY_ENTRY_BYTES
+        or capacity <= 0
+        or capacity > CAMERA_JUICE_TELEMETRY_CAPACITY
+        or count < 0
+        or count > capacity
+        or start_index < 0
+        or (count > 0 and start_index >= capacity)
+        or CAMERA_JUICE_TELEMETRY_ENTRY.size != CAMERA_JUICE_TELEMETRY_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "camera_juice_telemetry_blackbox",
+            "magic": magic,
+            "version": version,
+            "headerBytes": CAMERA_JUICE_TELEMETRY_HEADER_BYTES,
+            "entrySize": entry_size,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "declaredEntryCount": count,
+            "startIndex": start_index,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = CAMERA_JUICE_TELEMETRY_HEADER_BYTES
+    expected_bytes = payload_offset + count * entry_size
+    readable_entries = min(count, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = CAMERA_JUICE_TELEMETRY_ENTRY.unpack_from(data, offset)
+        flags = fields[1]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, CAMERA_JUICE_FLAG_LABELS)
+        float_values = fields[2:10] + fields[11:14]
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "ringSlot": (start_index + index) % capacity,
+                "frame": fields[0],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "traumaScalar": finite_round(fields[2]),
+                "maxTranslationalOffsetMagnitude": finite_round(fields[3]),
+                "offset": {
+                    "x": finite_round(fields[4]),
+                    "y": finite_round(fields[5]),
+                    "z": finite_round(fields[6]),
+                },
+                "rotationDegrees": {
+                    "x": finite_round(fields[7]),
+                    "y": finite_round(fields[8]),
+                    "z": finite_round(fields[9]),
+                },
+                "incomingSignalCount": fields[10],
+                "burstExecutionMicroseconds": finite_round(fields[11], 2),
+                "globalQualityWeight01": finite_round(fields[12]),
+                "directionalImpulseMagnitude": finite_round(fields[13]),
+                "stateHash": fields[14],
+                "stateHashHex": f"0x{fields[14]:08X}",
+                "sequence": fields[15],
+                "xrSuppressed": bool(flags & (1 << 0)),
+                "nanSanitized": bool(flags & (1 << 1)),
+                "noPlayerAup": bool(flags & (1 << 2)),
+                "vrSomaticWriteRejected": bool(flags & (1 << 3)),
+                "vaultUnavailable": bool(flags & (1 << 4)),
+                "burstBudgetExceeded": bool(flags & (1 << 5)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if reserved0 != 0:
+        warnings.append("reserved_nonzero")
+    if capacity != CAMERA_JUICE_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("nanSanitized") for entry in entries):
+        warnings.append("nan_sanitized")
+    if any(entry.get("noPlayerAup") for entry in entries):
+        warnings.append("no_player_aup")
+    if any(entry.get("vrSomaticWriteRejected") for entry in entries):
+        warnings.append("vr_somatic_write_rejected")
+    if any(entry.get("vaultUnavailable") for entry in entries):
+        warnings.append("vault_unavailable")
+    if any(entry.get("burstBudgetExceeded") for entry in entries):
+        warnings.append("burst_budget_exceeded")
+    if any(
+        entry.get("burstExecutionMicroseconds") is None
+        or entry.get("burstExecutionMicroseconds", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("burst_time_out_of_range")
+    if any(entry.get("burstExecutionMicroseconds", 0.0) > CAMERA_JUICE_BURST_BUDGET_US for entry in entries):
+        warnings.append("burst_over_100us")
+    if any(entry.get("incomingSignalCount", 0) < 0 or entry.get("incomingSignalCount", 0) > 32 for entry in entries):
+        warnings.append("incoming_signal_count_out_of_range")
+    if any(
+        entry.get("traumaScalar") is None
+        or entry.get("globalQualityWeight01") is None
+        or entry.get("traumaScalar", 0.0) < 0.0
+        or entry.get("traumaScalar", 0.0) > 1.0
+        or entry.get("globalQualityWeight01", 0.0) < 0.0
+        or entry.get("globalQualityWeight01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("trauma_or_quality_out_of_range")
+    if any(entry.get("maxTranslationalOffsetMagnitude") is None or entry.get("maxTranslationalOffsetMagnitude", 0.0) < 0.0 for entry in entries):
+        warnings.append("offset_magnitude_out_of_range")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(entry.get("sequence") != entry.get("frame") for entry in entries):
+        warnings.append("sequence_frame_mismatch")
+
+    return {
+        "type": "camera_juice_telemetry_blackbox",
+        "magic": magic,
+        "version": version,
+        "headerBytes": CAMERA_JUICE_TELEMETRY_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": count,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "startIndex": start_index,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_material_decay_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPMATERIALDECAYARTISTBIN", "DUMPMATERIALDECAYARTISTH8DUMP"}
+
+
+def material_decay_dump_reason_label(reason: int) -> str:
+    return MATERIAL_DECAY_DUMP_REASON_LABELS.get(reason, f"unknown={reason}")
+
+
+def parse_material_decay_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < MATERIAL_DECAY_HEADER_BYTES:
+        return {
+            "type": "material_decay_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, dump_reason, cursor, capacity = MATERIAL_DECAY_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        magic != MATERIAL_DECAY_MAGIC
+        or capacity <= 0
+        or capacity > MATERIAL_DECAY_TELEMETRY_CAPACITY
+        or cursor < 0
+        or cursor >= capacity
+        or MATERIAL_DECAY_ROW.size != MATERIAL_DECAY_ROW_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "material_decay_blackbox",
+            "magic": magic,
+            "headerBytes": MATERIAL_DECAY_HEADER_BYTES,
+            "entrySize": MATERIAL_DECAY_ROW_BYTES,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "dumpReason": dump_reason,
+            "dumpReasonLabel": material_decay_dump_reason_label(dump_reason),
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = MATERIAL_DECAY_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * MATERIAL_DECAY_ROW_BYTES
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // MATERIAL_DECAY_ROW_BYTES)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * MATERIAL_DECAY_ROW_BYTES
+        if is_empty_entry(data, offset, MATERIAL_DECAY_ROW_BYTES):
+            continue
+
+        fields = MATERIAL_DECAY_ROW.unpack_from(data, offset)
+        flags = fields[8]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, MATERIAL_DECAY_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in fields[2:5]):
+            nonfinite_seen = True
+        quality_weight_byte = fields[7]
+        entries.append(
+            {
+                "slot": index,
+                "ringSlot": (cursor + index) % capacity,
+                "frame": fields[0],
+                "itemHash": fields[1],
+                "itemHashHex": f"0x{fields[1]:08X}",
+                "rust01": finite_round(fields[2]),
+                "wetness01": finite_round(fields[3]),
+                "blood01": finite_round(fields[4]),
+                "slotIndex": fields[5],
+                "reason": fields[6],
+                "qualityWeightByte": quality_weight_byte,
+                "qualityWeight01": round(quality_weight_byte / 255.0, 4),
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "stateHash": fields[9],
+                "stateHashHex": f"0x{fields[9]:08X}",
+                "rustActive": bool(flags & (1 << 0)),
+                "wet": bool(flags & (1 << 1)),
+                "blood": bool(flags & (1 << 2)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % MATERIAL_DECAY_ROW_BYTES != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != MATERIAL_DECAY_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if dump_reason != 0:
+        warnings.append("dump_reason")
+    if dump_reason not in MATERIAL_DECAY_DUMP_REASON_LABELS:
+        warnings.append("unknown_dump_reason")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(
+        entry.get("rust01") is None
+        or entry.get("wetness01") is None
+        or entry.get("blood01") is None
+        or entry.get("rust01", 0.0) < 0.0
+        or entry.get("rust01", 0.0) > 1.0
+        or entry.get("wetness01", 0.0) < 0.0
+        or entry.get("wetness01", 0.0) > 1.0
+        or entry.get("blood01", 0.0) < 0.0
+        or entry.get("blood01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("decay_value_out_of_range")
+    if any(entry.get("rustActive") for entry in entries):
+        warnings.append("rust_active")
+    if any(entry.get("wet") for entry in entries):
+        warnings.append("wet")
+    if any(entry.get("blood") for entry in entries):
+        warnings.append("blood")
+
+    return {
+        "type": "material_decay_blackbox",
+        "magic": magic,
+        "headerBytes": MATERIAL_DECAY_HEADER_BYTES,
+        "entrySize": MATERIAL_DECAY_ROW_BYTES,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "dumpReason": dump_reason,
+        "dumpReasonLabel": material_decay_dump_reason_label(dump_reason),
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_interactive_wake_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPINTERACTIVEWAKEVFXBIN", "DUMPINTERACTIVEWAKEVFXH8DUMP"}
+
+
+def parse_interactive_wake_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < INTERACTIVE_WAKE_HEADER_BYTES:
+        return {
+            "type": "interactive_wake_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, capacity, cursor = INTERACTIVE_WAKE_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        magic != INTERACTIVE_WAKE_MAGIC
+        or capacity <= 0
+        or capacity > INTERACTIVE_WAKE_BLACKBOX_CAPACITY
+        or cursor < 0
+        or cursor >= capacity
+        or INTERACTIVE_WAKE_ENTRY.size != INTERACTIVE_WAKE_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "interactive_wake_blackbox",
+            "magic": magic,
+            "magicHex": f"0x{magic:08X}",
+            "headerBytes": INTERACTIVE_WAKE_HEADER_BYTES,
+            "entrySize": INTERACTIVE_WAKE_ENTRY_BYTES,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = INTERACTIVE_WAKE_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * INTERACTIVE_WAKE_ENTRY_BYTES
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // INTERACTIVE_WAKE_ENTRY_BYTES)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * INTERACTIVE_WAKE_ENTRY_BYTES
+        if is_empty_entry(data, offset, INTERACTIVE_WAKE_ENTRY_BYTES):
+            continue
+
+        fields = INTERACTIVE_WAKE_ENTRY.unpack_from(data, offset)
+        flags = fields[11]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, INTERACTIVE_WAKE_FLAG_LABELS)
+        float_values = fields[3:11] + fields[15:17]
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "ringSlot": (cursor + index) % capacity,
+                "frame": fields[0],
+                "activeWakeSourcesCount": fields[1],
+                "slotLimit": fields[2],
+                "strongestWakePositionWS": {
+                    "x": finite_round(fields[3]),
+                    "y": finite_round(fields[4]),
+                    "z": finite_round(fields[5]),
+                },
+                "strongestIntensity": finite_round(fields[6]),
+                "strongestVelocityWS": {
+                    "x": finite_round(fields[7]),
+                    "y": finite_round(fields[8]),
+                    "z": finite_round(fields[9]),
+                },
+                "maxRadius": finite_round(fields[10]),
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "stateHash": fields[12],
+                "stateHashHex": f"0x{fields[12]:08X}",
+                "dataVaultGeneration": fields[13],
+                "aupShiftSequence": fields[14],
+                "systemStress01": finite_round(fields[15]),
+                "budgetPressure01": finite_round(fields[16]),
+                "invalidInput": bool(flags & (1 << 0)),
+                "nan": bool(flags & (1 << 1)),
+                "budgetPressure": bool(flags & (1 << 2)),
+                "thermalPressure": bool(flags & (1 << 3)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % INTERACTIVE_WAKE_ENTRY_BYTES != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != INTERACTIVE_WAKE_BLACKBOX_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("invalidInput") for entry in entries):
+        warnings.append("invalid_input")
+    if any(entry.get("nan") for entry in entries):
+        warnings.append("nan_flag")
+    if any(entry.get("budgetPressure") for entry in entries):
+        warnings.append("budget_pressure")
+    if any(entry.get("thermalPressure") for entry in entries):
+        warnings.append("thermal_pressure")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(
+        entry.get("activeWakeSourcesCount", 0) > INTERACTIVE_WAKE_MAX_SOURCE_SLOTS
+        or entry.get("slotLimit", 0) > INTERACTIVE_WAKE_MAX_SOURCE_SLOTS
+        or entry.get("activeWakeSourcesCount", 0) > entry.get("slotLimit", 0)
+        for entry in entries
+    ):
+        warnings.append("wake_source_count_out_of_range")
+    if any(
+        entry.get("strongestIntensity") is None
+        or entry.get("strongestIntensity", 0.0) < 0.0
+        or entry.get("maxRadius") is None
+        or entry.get("maxRadius", 0.0) < 0.0
+        or entry.get("systemStress01") is None
+        or entry.get("systemStress01", 0.0) < 0.0
+        or entry.get("systemStress01", 0.0) > 1.0
+        or entry.get("budgetPressure01") is None
+        or entry.get("budgetPressure01", 0.0) < 0.0
+        or entry.get("budgetPressure01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("wake_value_out_of_range")
+
+    return {
+        "type": "interactive_wake_blackbox",
+        "magic": magic,
+        "magicHex": f"0x{magic:08X}",
+        "headerBytes": INTERACTIVE_WAKE_HEADER_BYTES,
+        "entrySize": INTERACTIVE_WAKE_ENTRY_BYTES,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_flora_sway_field_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPFLORASWAYDIRECTORBIN", "DUMPFLORASWAYDIRECTORH8DUMP"}
+
+
+def parse_flora_sway_field_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < FLORA_SWAY_FIELD_HEADER_BYTES:
+        return {
+            "type": "flora_sway_field_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, capacity, cursor = FLORA_SWAY_FIELD_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        magic != FLORA_SWAY_FIELD_MAGIC
+        or capacity <= 0
+        or capacity > FLORA_SWAY_FIELD_BLACKBOX_CAPACITY
+        or cursor < 0
+        or cursor >= capacity
+        or FLORA_SWAY_FIELD_ENTRY.size != FLORA_SWAY_FIELD_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "flora_sway_field_blackbox",
+            "magic": magic,
+            "magicHex": f"0x{magic:08X}",
+            "headerBytes": FLORA_SWAY_FIELD_HEADER_BYTES,
+            "entrySize": FLORA_SWAY_FIELD_ENTRY_BYTES,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = FLORA_SWAY_FIELD_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * FLORA_SWAY_FIELD_ENTRY_BYTES
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // FLORA_SWAY_FIELD_ENTRY_BYTES)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * FLORA_SWAY_FIELD_ENTRY_BYTES
+        if is_empty_entry(data, offset, FLORA_SWAY_FIELD_ENTRY_BYTES):
+            continue
+
+        fields = FLORA_SWAY_FIELD_ENTRY.unpack_from(data, offset)
+        flags = fields[4]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, FLORA_SWAY_FIELD_FLAG_LABELS)
+        float_values = fields[5:13]
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "ringSlot": (cursor + index) % capacity,
+                "frame": fields[0],
+                "resolution": fields[1],
+                "activeWakeSourcesCount": fields[2],
+                "nonZeroCellsCount": fields[3],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "fieldCenterWS": {
+                    "x": finite_round(fields[5]),
+                    "y": finite_round(fields[6]),
+                    "z": finite_round(fields[7]),
+                },
+                "cellSize": finite_round(fields[8]),
+                "maxMagnitude": finite_round(fields[9]),
+                "globalQualityWeight": finite_round(fields[10]),
+                "updateIntervalSeconds": finite_round(fields[11], 5),
+                "systemStress01": finite_round(fields[12]),
+                "stateHash": fields[13],
+                "stateHashHex": f"0x{fields[13]:08X}",
+                "dataVaultGeneration": fields[14],
+                "aupShiftSequence": fields[15],
+                "cpuMicroseconds": fields[16],
+                "invalidInput": bool(flags & (1 << 0)),
+                "nan": bool(flags & (1 << 1)),
+                "vaultMissing": bool(flags & (1 << 2)),
+                "emptyWake": bool(flags & (1 << 3)),
+                "uploadStall": bool(flags & (1 << 4)),
+                "wrappedShift": bool(flags & (1 << 5)),
+                "fullReset": bool(flags & (1 << 6)),
+                "discardedUpload": bool(flags & (1 << 7)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % FLORA_SWAY_FIELD_ENTRY_BYTES != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != FLORA_SWAY_FIELD_BLACKBOX_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("invalidInput") for entry in entries):
+        warnings.append("invalid_input")
+    if any(entry.get("nan") for entry in entries):
+        warnings.append("nan_flag")
+    if any(entry.get("vaultMissing") for entry in entries):
+        warnings.append("vault_missing")
+    if any(entry.get("uploadStall") for entry in entries):
+        warnings.append("upload_stall")
+    if any(entry.get("discardedUpload") for entry in entries):
+        warnings.append("discarded_upload")
+    if any(entry.get("wrappedShift") for entry in entries):
+        warnings.append("wrapped_shift")
+    if any(entry.get("fullReset") for entry in entries):
+        warnings.append("full_reset")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(
+        entry.get("resolution", 0) < FLORA_SWAY_FIELD_MIN_RESOLUTION
+        or entry.get("resolution", 0) > FLORA_SWAY_FIELD_MAX_RESOLUTION
+        for entry in entries
+    ):
+        warnings.append("resolution_out_of_range")
+    if any(
+        entry.get("activeWakeSourcesCount", 0) > INTERACTIVE_WAKE_MAX_SOURCE_SLOTS
+        or entry.get("nonZeroCellsCount", 0) > FLORA_SWAY_FIELD_MAX_NODE_COUNT
+        for entry in entries
+    ):
+        warnings.append("cell_or_wake_count_out_of_range")
+    if any(
+        entry.get("cellSize") is None
+        or entry.get("cellSize", 0.0) < FLORA_SWAY_FIELD_MIN_CELL_SIZE
+        or entry.get("cellSize", 0.0) > FLORA_SWAY_FIELD_MAX_CELL_SIZE
+        or entry.get("maxMagnitude") is None
+        or entry.get("maxMagnitude", 0.0) < 0.0
+        or entry.get("maxMagnitude", 0.0) > FLORA_SWAY_FIELD_MAX_DISPLACEMENT_METERS
+        or entry.get("globalQualityWeight") is None
+        or entry.get("globalQualityWeight", 0.0) < 0.0
+        or entry.get("globalQualityWeight", 0.0) > 1.0
+        or entry.get("updateIntervalSeconds") is None
+        or entry.get("updateIntervalSeconds", 0.0) < FLORA_SWAY_FIELD_MIN_UPDATE_INTERVAL_SECONDS
+        or entry.get("updateIntervalSeconds", 0.0) > FLORA_SWAY_FIELD_MAX_UPDATE_INTERVAL_SECONDS
+        or entry.get("systemStress01") is None
+        or entry.get("systemStress01", 0.0) < 0.0
+        or entry.get("systemStress01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("field_value_out_of_range")
+
+    return {
+        "type": "flora_sway_field_blackbox",
+        "magic": magic,
+        "magicHex": f"0x{magic:08X}",
+        "headerBytes": FLORA_SWAY_FIELD_HEADER_BYTES,
+        "entrySize": FLORA_SWAY_FIELD_ENTRY_BYTES,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_flora_memory_telemetry_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMP1327FLORAINTERACTIONBIN", "DUMP1327FLORAINTERACTIONH8DUMP"}
+
+
+def parse_flora_memory_telemetry_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < FLORA_MEMORY_TELEMETRY_HEADER_BYTES:
+        return {
+            "type": "flora_memory_telemetry_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    capacity, cursor = FLORA_MEMORY_TELEMETRY_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        capacity <= 0
+        or capacity > FLORA_MEMORY_TELEMETRY_CAPACITY
+        or cursor < 0
+        or cursor >= capacity
+        or FLORA_MEMORY_TELEMETRY_ENTRY.size != FLORA_MEMORY_TELEMETRY_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "flora_memory_telemetry_blackbox",
+            "headerBytes": FLORA_MEMORY_TELEMETRY_HEADER_BYTES,
+            "entrySize": FLORA_MEMORY_TELEMETRY_ENTRY_BYTES,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = FLORA_MEMORY_TELEMETRY_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * FLORA_MEMORY_TELEMETRY_ENTRY_BYTES
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // FLORA_MEMORY_TELEMETRY_ENTRY_BYTES)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * FLORA_MEMORY_TELEMETRY_ENTRY_BYTES
+        if is_empty_entry(data, offset, FLORA_MEMORY_TELEMETRY_ENTRY_BYTES):
+            continue
+
+        fields = FLORA_MEMORY_TELEMETRY_ENTRY.unpack_from(data, offset)
+        flags = fields[7]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, FLORA_MEMORY_TELEMETRY_FLAG_LABELS)
+        event_hash = fields[1]
+        buffer_id = fields[2]
+        expected_state_hash = (event_hash ^ buffer_id ^ fields[4] ^ flags) & 0xFFFFFFFF
+        if any(not math.isfinite(value) for value in fields[10:12]):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "ringSlot": (cursor + index) % capacity,
+                "frame": fields[0],
+                "eventHash": event_hash,
+                "eventHashHex": f"0x{event_hash:08X}",
+                "eventLabel": FLORA_MEMORY_TELEMETRY_EVENT_LABELS.get(event_hash, "unknown"),
+                "bufferId": buffer_id,
+                "bufferLabel": FLORA_MEMORY_TELEMETRY_BUFFER_LABELS.get(buffer_id, "unknown"),
+                "systemId": fields[3],
+                "generation": fields[4],
+                "requiredLength": fields[5],
+                "actualLength": fields[6],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "consecutiveFailures": fields[8],
+                "vaultGeneration": fields[9],
+                "globalQualityWeight": finite_round(fields[10]),
+                "systemStress01": finite_round(fields[11]),
+                "stateHash": fields[12],
+                "stateHashHex": f"0x{fields[12]:08X}",
+                "expectedStateHash": expected_state_hash,
+                "expectedStateHashHex": f"0x{expected_state_hash:08X}",
+                "stateHashOk": fields[12] == expected_state_hash,
+                "aupShiftSequence": fields[13],
+                "cpuMicroseconds": fields[14],
+                "reserved0": fields[15],
+                "missingVault": bool(flags & (1 << 0)),
+                "invalidLength": bool(flags & (1 << 1)),
+                "compactionFence": bool(flags & (1 << 2)),
+                "handleMismatch": bool(flags & (1 << 3)),
+                "resolveFailed": bool(flags & (1 << 4)),
+                "invalidBuffer": bool(flags & (1 << 5)),
+                "writeLockFailed": bool(flags & (1 << 6)),
+                "nan": bool(flags & (1 << 7)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % FLORA_MEMORY_TELEMETRY_ENTRY_BYTES != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != FLORA_MEMORY_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if any(entry.get("eventLabel") == "unknown" for entry in entries):
+        warnings.append("unknown_event_hash")
+    if any(entry.get("bufferLabel") == "unknown" for entry in entries):
+        warnings.append("unknown_buffer_id")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(not entry.get("stateHashOk", True) for entry in entries):
+        warnings.append("state_hash_mismatch")
+    if any(entry.get("reserved0") != 0 for entry in entries):
+        warnings.append("reserved_nonzero")
+    if any(entry.get("missingVault") for entry in entries):
+        warnings.append("missing_vault")
+    if any(entry.get("invalidLength") for entry in entries):
+        warnings.append("invalid_length")
+    if any(entry.get("compactionFence") for entry in entries):
+        warnings.append("compaction_fence")
+    if any(entry.get("handleMismatch") for entry in entries):
+        warnings.append("handle_mismatch")
+    if any(entry.get("resolveFailed") for entry in entries):
+        warnings.append("resolve_failed")
+    if any(entry.get("invalidBuffer") for entry in entries):
+        warnings.append("invalid_buffer")
+    if any(entry.get("writeLockFailed") for entry in entries):
+        warnings.append("write_lock_failed")
+    if any(entry.get("nan") for entry in entries):
+        warnings.append("nan_flag")
+    if any(entry.get("consecutiveFailures", 0) >= FLORA_MEMORY_TELEMETRY_DUMP_FAILURE_THRESHOLD for entry in entries):
+        warnings.append("consecutive_failure_threshold")
+    if any(
+        entry.get("actualLength", 0) < entry.get("requiredLength", 0)
+        and (
+            entry.get("invalidBuffer")
+            or entry.get("invalidLength")
+            or entry.get("resolveFailed")
+            or entry.get("missingVault")
+        )
+        for entry in entries
+    ):
+        warnings.append("actual_length_below_required")
+    if any(
+        entry.get("globalQualityWeight") is None
+        or entry.get("globalQualityWeight", 0.0) < 0.0
+        or entry.get("globalQualityWeight", 0.0) > 1.0
+        or entry.get("systemStress01") is None
+        or entry.get("systemStress01", 0.0) < 0.0
+        or entry.get("systemStress01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("quality_or_stress_out_of_range")
+
+    return {
+        "type": "flora_memory_telemetry_blackbox",
+        "headerBytes": FLORA_MEMORY_TELEMETRY_HEADER_BYTES,
+        "entrySize": FLORA_MEMORY_TELEMETRY_ENTRY_BYTES,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_flora_ambient_sway_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSHINOBU267BIN", "DUMPSHINOBU267H8DUMP"}
+
+
+def parse_flora_ambient_sway_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < FLORA_AMBIENT_SWAY_HEADER_BYTES:
+        return {
+            "type": "flora_ambient_sway_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, version, source_hash, entry_size, capacity, cursor = FLORA_AMBIENT_SWAY_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        magic != FLORA_AMBIENT_SWAY_MAGIC
+        or version != FLORA_AMBIENT_SWAY_VERSION
+        or entry_size != FLORA_AMBIENT_SWAY_ENTRY_BYTES
+        or capacity <= 0
+        or capacity > FLORA_AMBIENT_SWAY_TELEMETRY_CAPACITY
+        or cursor >= max(1, capacity)
+        or FLORA_AMBIENT_SWAY_ENTRY.size != FLORA_AMBIENT_SWAY_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "flora_ambient_sway_blackbox",
+            "magic": magic,
+            "magicHex": f"0x{magic:08X}",
+            "version": version,
+            "sourceHash": source_hash,
+            "sourceHashHex": f"0x{source_hash:08X}",
+            "headerBytes": FLORA_AMBIENT_SWAY_HEADER_BYTES,
+            "entrySize": entry_size,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = FLORA_AMBIENT_SWAY_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * entry_size
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = FLORA_AMBIENT_SWAY_ENTRY.unpack_from(data, offset)
+        flags = fields[1]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, FLORA_AMBIENT_SWAY_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in fields[2:6]):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "ringSlot": (cursor + index) % capacity,
+                "frame": fields[0],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "wrappedTime": finite_round(fields[2], 5),
+                "flowMagnitude": finite_round(fields[3]),
+                "globalQualityWeight": finite_round(fields[4]),
+                "amplitudeMeters": finite_round(fields[5]),
+                "stateHash": fields[6],
+                "stateHashHex": f"0x{fields[6]:08X}",
+                "sourceHash": fields[7],
+                "sourceHashHex": f"0x{fields[7]:08X}",
+                "sourceHashOk": fields[7] == FLORA_AMBIENT_SWAY_SOURCE_HASH,
+                "vaultMissing": bool(flags & (1 << 0)),
+                "constantBufferUnsupported": bool(flags & (1 << 1)),
+                "invalidNumber": bool(flags & (1 << 2)),
+                "uploadSkipped": bool(flags & (1 << 3)),
+                "burstKernelUnavailable": bool(flags & (1 << 4)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != FLORA_AMBIENT_SWAY_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if source_hash != FLORA_AMBIENT_SWAY_SOURCE_HASH:
+        warnings.append("source_hash_mismatch")
+    if any(entry.get("sourceHashOk") is False for entry in entries):
+        warnings.append("entry_source_hash_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("vaultMissing") for entry in entries):
+        warnings.append("vault_missing")
+    if any(entry.get("constantBufferUnsupported") for entry in entries):
+        warnings.append("constant_buffer_unsupported")
+    if any(entry.get("invalidNumber") for entry in entries):
+        warnings.append("invalid_number")
+    if any(entry.get("uploadSkipped") for entry in entries):
+        warnings.append("upload_skipped")
+    if any(entry.get("burstKernelUnavailable") for entry in entries):
+        warnings.append("burst_kernel_unavailable")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(
+        entry.get("flowMagnitude") is None
+        or entry.get("flowMagnitude", 0.0) < 0.0
+        or entry.get("globalQualityWeight") is None
+        or entry.get("globalQualityWeight", 0.0) < 0.0
+        or entry.get("globalQualityWeight", 0.0) > 1.0
+        or entry.get("amplitudeMeters") is None
+        or entry.get("amplitudeMeters", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("sway_value_out_of_range")
+
+    return {
+        "type": "flora_ambient_sway_blackbox",
+        "magic": magic,
+        "magicHex": f"0x{magic:08X}",
+        "version": version,
+        "sourceHash": source_hash,
+        "sourceHashHex": f"0x{source_hash:08X}",
+        "headerBytes": FLORA_AMBIENT_SWAY_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_vegetation_memory_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMP1316VEGETATIONBIN", "DUMP1316VEGETATIONH8DUMP"}
+
+
+def float32_bits(value: float) -> int:
+    return struct.unpack("<I", struct.pack("<f", value))[0]
+
+
+def compute_vegetation_memory_state_hash(
+    buffer_id: int,
+    generation: int,
+    frame: int,
+    expected_length: int,
+    actual_length: int,
+    culled_instances: int,
+    job_microseconds: float,
+    quality_weight: float,
+    failure_code: int,
+    phase: int,
+    flags: int,
+    position_x: float,
+    position_y: float,
+    position_z: float,
+) -> int:
+    hash_value = 1469598103934665603
+
+    def mix(value: int) -> None:
+        nonlocal hash_value
+        hash_value ^= value & 0xFFFFFFFF
+        hash_value = (hash_value * 1099511628211) & 0xFFFFFFFFFFFFFFFF
+
+    mix(buffer_id)
+    mix(generation)
+    mix(frame)
+    mix(expected_length)
+    mix(actual_length)
+    mix(culled_instances)
+    mix(float32_bits(job_microseconds))
+    mix(float32_bits(quality_weight))
+    mix(failure_code)
+    mix(phase)
+    mix(flags)
+    mix(float32_bits(position_x))
+    mix(float32_bits(position_y))
+    mix(float32_bits(position_z))
+    return hash_value
+
+
+def parse_vegetation_memory_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < VEGETATION_MEMORY_HEADER_BYTES:
+        return {
+            "type": "vegetation_memory_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, version, capacity, entry_size, cursor = VEGETATION_MEMORY_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        magic != VEGETATION_MEMORY_MAGIC
+        or version != VEGETATION_MEMORY_VERSION
+        or capacity <= 0
+        or capacity > VEGETATION_MEMORY_TELEMETRY_CAPACITY
+        or entry_size != VEGETATION_MEMORY_ENTRY_BYTES
+        or cursor < 0
+        or cursor >= capacity
+        or VEGETATION_MEMORY_ENTRY.size != VEGETATION_MEMORY_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "vegetation_memory_blackbox",
+            "magic": magic,
+            "magicHex": f"0x{magic:016X}",
+            "version": version,
+            "headerBytes": VEGETATION_MEMORY_HEADER_BYTES,
+            "entrySize": entry_size,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = VEGETATION_MEMORY_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * entry_size
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = VEGETATION_MEMORY_ENTRY.unpack_from(data, offset)
+        flags = fields[11]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, VEGETATION_MEMORY_FLAG_LABELS)
+        float_values = (fields[7], fields[8], fields[12], fields[13], fields[14])
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        expected_hash = compute_vegetation_memory_state_hash(
+            fields[1],
+            fields[2],
+            fields[3],
+            fields[4],
+            fields[5],
+            fields[6],
+            fields[7],
+            fields[8],
+            fields[9],
+            fields[10],
+            flags,
+            fields[12],
+            fields[13],
+            fields[14],
+        )
+        entries.append(
+            {
+                "slot": index,
+                "ringSlot": (cursor + index) % capacity,
+                "stateHash": fields[0],
+                "stateHashHex": f"0x{fields[0]:016X}",
+                "expectedStateHash": expected_hash,
+                "expectedStateHashHex": f"0x{expected_hash:016X}",
+                "stateHashOk": fields[0] == expected_hash,
+                "bufferId": fields[1],
+                "bufferLabel": VEGETATION_MEMORY_BUFFER_LABELS.get(fields[1], "unknown"),
+                "generation": fields[2],
+                "frame": fields[3],
+                "expectedLength": fields[4],
+                "actualLength": fields[5],
+                "culledInstances": fields[6],
+                "jobMicroseconds": finite_round(fields[7], 2),
+                "qualityWeight": finite_round(fields[8]),
+                "failureCode": fields[9],
+                "failureCodeLabel": VEGETATION_MEMORY_FAILURE_CODE_LABELS.get(fields[9], "unknown"),
+                "phase": fields[10],
+                "phaseLabel": VEGETATION_MEMORY_PHASE_LABELS.get(fields[10], "unknown"),
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "position": {
+                    "x": finite_round(fields[12]),
+                    "y": finite_round(fields[13]),
+                    "z": finite_round(fields[14]),
+                },
+                "reserved0": fields[15],
+                "coldBoot": bool(flags & (1 << 0)),
+                "defrag": bool(flags & (1 << 1)),
+                "lockContention": bool(flags & (1 << 2)),
+                "staleHandle": bool(flags & (1 << 3)),
+                "nan": bool(flags & (1 << 4)),
+                "capacity": bool(flags & (1 << 5)),
+                "compactionFence": bool(flags & (1 << 6)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != VEGETATION_MEMORY_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if any(entry.get("failureCodeLabel") == "unknown" for entry in entries):
+        warnings.append("unknown_failure_code")
+    if any(entry.get("phaseLabel") == "unknown" for entry in entries):
+        warnings.append("unknown_phase")
+    if any(entry.get("bufferLabel") == "unknown" for entry in entries):
+        warnings.append("unknown_buffer_id")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(not entry.get("stateHashOk", True) for entry in entries):
+        warnings.append("state_hash_mismatch")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(entry.get("reserved0") != 0 for entry in entries):
+        warnings.append("reserved_nonzero")
+    if any(entry.get("coldBoot") for entry in entries):
+        warnings.append("cold_boot")
+    if any(entry.get("defrag") for entry in entries):
+        warnings.append("defrag")
+    if any(entry.get("lockContention") for entry in entries):
+        warnings.append("lock_contention")
+    if any(entry.get("staleHandle") for entry in entries):
+        warnings.append("stale_handle")
+    if any(entry.get("nan") for entry in entries):
+        warnings.append("nan_flag")
+    if any(entry.get("capacity") for entry in entries):
+        warnings.append("capacity_flag")
+    if any(entry.get("compactionFence") for entry in entries):
+        warnings.append("compaction_fence")
+    if any(
+        entry.get("expectedLength", 0) < 0
+        or entry.get("actualLength", 0) < 0
+        or entry.get("culledInstances", 0) < 0
+        for entry in entries
+    ):
+        warnings.append("negative_count")
+    if any(
+        entry.get("actualLength", 0) < entry.get("expectedLength", 0)
+        and (
+            entry.get("staleHandle")
+            or entry.get("capacity")
+            or entry.get("lockContention")
+            or entry.get("compactionFence")
+        )
+        for entry in entries
+    ):
+        warnings.append("actual_length_below_expected")
+    if any(
+        entry.get("qualityWeight") is None
+        or entry.get("qualityWeight", 0.0) < 0.0
+        or entry.get("qualityWeight", 0.0) > 1.0
+        or entry.get("jobMicroseconds") is None
+        or entry.get("jobMicroseconds", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("quality_or_job_time_out_of_range")
+
+    return {
+        "type": "vegetation_memory_blackbox",
+        "magic": magic,
+        "magicHex": f"0x{magic:016X}",
+        "version": version,
+        "headerBytes": VEGETATION_MEMORY_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_dear_lie_organics_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMP1318ORGANICSBIN", "DUMP1318ORGANICSH8DUMP"}
+
+
+def compute_dear_lie_organics_hash(
+    frame_index: int,
+    damage_signal_count: int,
+    destroyed_count: int,
+    last_instance_uid: int,
+    query_microseconds: float,
+) -> int:
+    hash_value = 2166136261
+    for value in (
+        frame_index & 0xFFFFFFFF,
+        damage_signal_count & 0xFFFFFFFF,
+        destroyed_count & 0xFFFFFFFF,
+        last_instance_uid & 0xFFFFFFFF,
+        float32_bits(query_microseconds),
+    ):
+        hash_value ^= value
+        hash_value = (hash_value * 16777619) & 0xFFFFFFFF
+    return hash_value
+
+
+def parse_dear_lie_organics_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < DEAR_LIE_ORGANICS_ENTRY_BYTES:
+        return {
+            "type": "dear_lie_organics_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_entry"],
+        }
+
+    raw_entry_count = len(data) // DEAR_LIE_ORGANICS_ENTRY_BYTES
+    readable_entries = min(raw_entry_count, DEAR_LIE_ORGANICS_TELEMETRY_CAPACITY)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = index * DEAR_LIE_ORGANICS_ENTRY_BYTES
+        if is_empty_entry(data, offset, DEAR_LIE_ORGANICS_ENTRY_BYTES):
+            continue
+
+        fields = DEAR_LIE_ORGANICS_ENTRY.unpack_from(data, offset)
+        flags = fields[14]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, DEAR_LIE_ORGANICS_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in (fields[10], fields[13])):
+            nonfinite_seen = True
+        expected_hash = compute_dear_lie_organics_hash(fields[0], fields[3], fields[4], fields[12], fields[13])
+        entries.append(
+            {
+                "slot": index,
+                "frame": fields[0],
+                "surfaceCount": fields[1],
+                "underwaterCount": fields[2],
+                "damageSignalCount": fields[3],
+                "destroyedCount": fields[4],
+                "vfxSignalCount": fields[5],
+                "regenQueuedCount": fields[6],
+                "recoveredCount": fields[7],
+                "rejectedSignalCount": fields[8],
+                "nanRejectCount": fields[9],
+                "globalQualityWeight": finite_round(fields[10]),
+                "hash": fields[11],
+                "hashHex": f"0x{fields[11]:08X}",
+                "expectedHash": expected_hash,
+                "expectedHashHex": f"0x{expected_hash:08X}",
+                "hashOk": fields[11] == expected_hash,
+                "lastInstanceUid": fields[12],
+                "lastInstanceUidHex": f"0x{fields[12]:08X}",
+                "queryMicroseconds": finite_round(fields[13], 2),
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "regenerationRecovered": bool(flags & (1 << 2)),
+                "guardFailed": bool(flags & (1 << 5)),
+                "dropDrainFailed": bool(flags & (1 << 6)),
+                "overflowOrReject": bool(flags & (1 << 7)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) % DEAR_LIE_ORGANICS_ENTRY_BYTES != 0:
+        warnings.append("trailing_partial_entry")
+    if raw_entry_count > DEAR_LIE_ORGANICS_TELEMETRY_CAPACITY:
+        warnings.append("capacity_exceeded")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(not entry.get("hashOk", True) for entry in entries):
+        warnings.append("hash_mismatch")
+    if any(entry.get("regenerationRecovered") for entry in entries):
+        warnings.append("regeneration_recovered")
+    if any(entry.get("guardFailed") for entry in entries):
+        warnings.append("guard_failed")
+    if any(entry.get("dropDrainFailed") for entry in entries):
+        warnings.append("drop_drain_failed")
+    if any(entry.get("overflowOrReject") for entry in entries):
+        warnings.append("overflow_or_reject")
+    if any(entry.get("rejectedSignalCount", 0) > 0 for entry in entries):
+        warnings.append("rejected_signals")
+    if any(entry.get("nanRejectCount", 0) > 0 for entry in entries):
+        warnings.append("nan_rejects")
+    if any(
+        entry.get("surfaceCount", 0) < 0
+        or entry.get("underwaterCount", 0) < 0
+        or entry.get("damageSignalCount", 0) < 0
+        or entry.get("destroyedCount", 0) < 0
+        or entry.get("vfxSignalCount", 0) < 0
+        or entry.get("regenQueuedCount", 0) < 0
+        or entry.get("recoveredCount", 0) < 0
+        or entry.get("rejectedSignalCount", 0) < 0
+        or entry.get("nanRejectCount", 0) < 0
+        for entry in entries
+    ):
+        warnings.append("negative_count")
+    if any(
+        entry.get("damageSignalCount", 0) > DEAR_LIE_MAX_DAMAGE_SIGNALS_PER_FRAME
+        or entry.get("destroyedCount", 0) > DEAR_LIE_MAX_RESULTS_PER_FRAME
+        or entry.get("vfxSignalCount", 0) > DEAR_LIE_MAX_RESULTS_PER_FRAME
+        or entry.get("regenQueuedCount", 0) > DEAR_LIE_MAX_REGEN_RECORDS
+        for entry in entries
+    ):
+        warnings.append("count_out_of_range")
+    if any(
+        entry.get("globalQualityWeight") is None
+        or entry.get("globalQualityWeight", 0.0) < 0.0
+        or entry.get("globalQualityWeight", 0.0) > 1.0
+        or entry.get("queryMicroseconds") is None
+        or entry.get("queryMicroseconds", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("quality_or_query_out_of_range")
+
+    return {
+        "type": "dear_lie_organics_blackbox",
+        "entrySize": DEAR_LIE_ORGANICS_ENTRY_BYTES,
+        "declaredEntryCount": readable_entries,
+        "rawEntryCount": raw_entry_count,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_chemical_influence_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPCHEMISTRYSURGEONBIN", "DUMPCHEMISTRYSURGEONH8DUMP"}
+
+
+def compute_chemical_influence_state_hash(
+    frame: int,
+    active_emitters: int,
+    mock_emitters: int,
+    iterations: int,
+    max_blood: float,
+    global_quality_weight: float,
+    flags: int,
+) -> int:
+    hash_value = 2166136261
+    for value in (
+        frame & 0xFFFFFFFF,
+        active_emitters & 0xFFFFFFFF,
+        mock_emitters & 0xFFFFFFFF,
+        iterations & 0xFFFFFFFF,
+        float32_bits(max_blood),
+        float32_bits(global_quality_weight),
+        flags & 0xFFFFFFFF,
+    ):
+        hash_value ^= value
+        hash_value = (hash_value * 16777619) & 0xFFFFFFFF
+    return hash_value or 1
+
+
+def parse_chemical_influence_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < CHEMICAL_INFLUENCE_HEADER_BYTES:
+        return {
+            "type": "chemical_influence_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, version, capacity, entry_size = CHEMICAL_INFLUENCE_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        magic != CHEMICAL_INFLUENCE_MAGIC
+        or version != CHEMICAL_INFLUENCE_VERSION
+        or capacity <= 0
+        or capacity > CHEMICAL_INFLUENCE_TELEMETRY_CAPACITY
+        or entry_size != CHEMICAL_INFLUENCE_ENTRY_BYTES
+        or CHEMICAL_INFLUENCE_HEADER.size != CHEMICAL_INFLUENCE_HEADER_BYTES
+        or CHEMICAL_INFLUENCE_ENTRY.size != CHEMICAL_INFLUENCE_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "chemical_influence_blackbox",
+            "magic": magic,
+            "magicHex": f"0x{magic:016X}",
+            "version": version,
+            "headerBytes": CHEMICAL_INFLUENCE_HEADER_BYTES,
+            "entrySize": entry_size,
+            "capacity": capacity,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = CHEMICAL_INFLUENCE_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * entry_size
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = CHEMICAL_INFLUENCE_ENTRY.unpack_from(data, offset)
+        flags = fields[10]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, CHEMICAL_INFLUENCE_FLAG_LABELS)
+        float_values = fields[0:5] + (fields[11],)
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        expected_hash = compute_chemical_influence_state_hash(
+            fields[5],
+            fields[6],
+            fields[7],
+            fields[8],
+            fields[3],
+            fields[11],
+            flags,
+        )
+        entries.append(
+            {
+                "slot": index,
+                "gridOriginAup": {
+                    "x": finite_round(fields[0], 3),
+                    "y": finite_round(fields[1], 3),
+                    "z": finite_round(fields[2], 3),
+                },
+                "maxBlood": finite_round(fields[3]),
+                "solverMicros": finite_round(fields[4], 2),
+                "frame": fields[5],
+                "activeEmitters": fields[6],
+                "mockEmitters": fields[7],
+                "iterations": fields[8],
+                "stateHash": fields[9],
+                "stateHashHex": f"0x{fields[9]:08X}",
+                "expectedStateHash": expected_hash,
+                "expectedStateHashHex": f"0x{expected_hash:08X}",
+                "stateHashOk": fields[9] == expected_hash,
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "globalQualityWeight": finite_round(fields[11]),
+                "gridShiftManhattan": fields[12],
+                "nan": bool(flags & (1 << 0)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != CHEMICAL_INFLUENCE_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(not entry.get("stateHashOk", True) for entry in entries):
+        warnings.append("state_hash_mismatch")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(entry.get("nan") for entry in entries):
+        warnings.append("nan_flag")
+    if any(
+        entry.get("activeEmitters", 0) < 0
+        or entry.get("activeEmitters", 0) > CHEMICAL_INFLUENCE_MAX_ACTIVE_EMITTERS
+        or entry.get("mockEmitters", 0) < 0
+        or entry.get("mockEmitters", 0) > CHEMICAL_INFLUENCE_MAX_MOCK_EMITTERS
+        for entry in entries
+    ):
+        warnings.append("emitter_count_out_of_range")
+    if any(
+        entry.get("iterations", 0) < 0
+        or entry.get("iterations", 0) > CHEMICAL_INFLUENCE_MAX_JACOBI_ITERATIONS
+        for entry in entries
+    ):
+        warnings.append("iterations_out_of_range")
+    if any(entry.get("gridShiftManhattan", 0) < 0 for entry in entries):
+        warnings.append("grid_shift_out_of_range")
+    if any(
+        entry.get("maxBlood") is None
+        or entry.get("maxBlood", 0.0) < 0.0
+        or entry.get("maxBlood", 0.0) > 1.0
+        or entry.get("globalQualityWeight") is None
+        or entry.get("globalQualityWeight", 0.0) < 0.0
+        or entry.get("globalQualityWeight", 0.0) > 1.0
+        or entry.get("solverMicros") is None
+        or entry.get("solverMicros", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("chemical_value_out_of_range")
+
+    return {
+        "type": "chemical_influence_blackbox",
+        "magic": magic,
+        "magicHex": f"0x{magic:016X}",
+        "version": version,
+        "headerBytes": CHEMICAL_INFLUENCE_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_sargassum_food_chain_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSARGASSUMFOODCHAINBIN", "DUMPSARGASSUMFOODCHAINH8DUMP"}
+
+
+def has_sargassum_food_chain_signature(data: bytes) -> bool:
+    if len(data) < SARGASSUM_FOOD_CHAIN_HEADER_BYTES:
+        return False
+    magic_low, magic_high, *_ = SARGASSUM_FOOD_CHAIN_HEADER.unpack_from(data, 0)
+    return (
+        magic_low == SARGASSUM_FOOD_CHAIN_MAGIC_LOW
+        and magic_high == SARGASSUM_FOOD_CHAIN_MAGIC_HIGH
+    )
+
+
+def parse_sargassum_food_chain_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < SARGASSUM_FOOD_CHAIN_HEADER_BYTES:
+        return {
+            "type": "sargassum_food_chain_blackbox",
+            "headerBytes": SARGASSUM_FOOD_CHAIN_HEADER_BYTES,
+            "entrySize": SARGASSUM_FOOD_CHAIN_ENTRY_BYTES,
+            "declaredEntryCount": 0,
+            "capacity": 0,
+            "telemetryCursor": 0,
+            "nonEmptyEntryCount": 0,
+            "returnedEntryCount": 0,
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic_low, magic_high, entry_size, capacity, cursor, anomaly_hash = SARGASSUM_FOOD_CHAIN_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        magic_low != SARGASSUM_FOOD_CHAIN_MAGIC_LOW
+        or magic_high != SARGASSUM_FOOD_CHAIN_MAGIC_HIGH
+        or entry_size != SARGASSUM_FOOD_CHAIN_ENTRY_BYTES
+        or capacity <= 0
+        or capacity > SARGASSUM_FOOD_CHAIN_CAPACITY
+        or cursor < 0
+        or cursor > capacity
+        or SARGASSUM_FOOD_CHAIN_HEADER.size != SARGASSUM_FOOD_CHAIN_HEADER_BYTES
+        or SARGASSUM_FOOD_CHAIN_ENTRY.size != SARGASSUM_FOOD_CHAIN_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "sargassum_food_chain_blackbox",
+            "magicLow": magic_low,
+            "magicLowHex": f"0x{magic_low:08X}",
+            "magicHigh": magic_high,
+            "magicHighHex": f"0x{magic_high:08X}",
+            "headerBytes": SARGASSUM_FOOD_CHAIN_HEADER_BYTES,
+            "entrySize": entry_size,
+            "declaredEntryCount": capacity,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "anomalyHash": anomaly_hash,
+            "anomalyHashHex": f"0x{anomaly_hash:08X}",
+            "nonEmptyEntryCount": 0,
+            "returnedEntryCount": 0,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = SARGASSUM_FOOD_CHAIN_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * entry_size
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    def vector3(values: tuple[float, float, float]) -> dict[str, float | None]:
+        return {
+            "x": finite_round(values[0], 3),
+            "y": finite_round(values[1], 3),
+            "z": finite_round(values[2], 3),
+        }
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = SARGASSUM_FOOD_CHAIN_ENTRY.unpack_from(data, offset)
+        flags = fields[3]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, SARGASSUM_FOOD_CHAIN_FLAG_LABELS)
+        float_values = fields[8:14] + (fields[15],)
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "frame": fields[0],
+                "stateHash": fields[1],
+                "stateHashHex": f"0x{fields[1]:08X}",
+                "sourceHash": fields[2],
+                "sourceHashHex": f"0x{fields[2]:08X}",
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "activeBoidCount": fields[4],
+                "consumedBoidCount": fields[5],
+                "pendingKillJob": fields[6],
+                "lodTier": fields[7],
+                "fieldCenterWS": vector3(fields[8:11]),
+                "eventPositionWS": vector3(fields[11:14]),
+                "entryAnomalyHash": fields[14],
+                "entryAnomalyHashHex": f"0x{fields[14]:08X}",
+                "simulationTime": finite_round(fields[15], 3),
+                "tick": bool(flags & (1 << 0)),
+                "killJobScheduled": bool(flags & (1 << 1)),
+                "killJobCompleted": bool(flags & (1 << 2)),
+                "killDrained": bool(flags & (1 << 3)),
+                "whaleFall": bool(flags & (1 << 4)),
+                "boidsScattered": bool(flags & (1 << 5)),
+                "nonFinite": bool(flags & (1 << 31)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != SARGASSUM_FOOD_CHAIN_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if cursor == capacity:
+        warnings.append("cursor_at_capacity")
+    if anomaly_hash != 0:
+        warnings.append("anomaly_hash")
+    if any(entry.get("entryAnomalyHash") for entry in entries):
+        warnings.append("entry_anomaly_hash")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("nonFinite") for entry in entries):
+        warnings.append("nonfinite_flag")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(entry.get("activeBoidCount", 0) < 0 for entry in entries):
+        warnings.append("active_count_out_of_range")
+    if any(
+        entry.get("consumedBoidCount", 0) < 0
+        or (
+            entry.get("activeBoidCount", 0) >= 0
+            and entry.get("consumedBoidCount", 0) > entry.get("activeBoidCount", 0)
+        )
+        for entry in entries
+    ):
+        warnings.append("consumed_count_out_of_range")
+    if any(
+        entry.get("pendingKillJob", 0) < 0
+        or entry.get("pendingKillJob", 0) > SARGASSUM_FOOD_CHAIN_MAX_PENDING_KILL_SIGNALS
+        for entry in entries
+    ):
+        warnings.append("pending_kill_job_out_of_range")
+    if any(
+        entry.get("lodTier", 0) < 0
+        or entry.get("lodTier", 0) > SARGASSUM_FOOD_CHAIN_MAX_LOD_TIER
+        for entry in entries
+    ):
+        warnings.append("lod_tier_out_of_range")
+    if any(entry.get("simulationTime") is None or entry.get("simulationTime", 0.0) < 0.0 for entry in entries):
+        warnings.append("simulation_time_out_of_range")
+    if any(entry.get("killJobScheduled") for entry in entries):
+        warnings.append("kill_job_scheduled")
+    if any(entry.get("killJobCompleted") for entry in entries):
+        warnings.append("kill_job_completed")
+    if any(entry.get("killDrained") for entry in entries):
+        warnings.append("kill_drained")
+    if any(entry.get("whaleFall") for entry in entries):
+        warnings.append("whale_fall")
+    if any(entry.get("boidsScattered") for entry in entries):
+        warnings.append("boids_scattered")
+    if any(entry.get("nonFinite") for entry in entries) and anomaly_hash == 0:
+        warnings.append("nonfinite_without_anomaly_hash")
+
+    return {
+        "type": "sargassum_food_chain_blackbox",
+        "magicLow": magic_low,
+        "magicLowHex": f"0x{magic_low:08X}",
+        "magicHigh": magic_high,
+        "magicHighHex": f"0x{magic_high:08X}",
+        "headerBytes": SARGASSUM_FOOD_CHAIN_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "anomalyHash": anomaly_hash,
+        "anomalyHashHex": f"0x{anomaly_hash:08X}",
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_sargassum_boid_sensory_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSARGASSUMBOIDSENSORYBIN", "DUMPSARGASSUMBOIDSENSORYH8DUMP"}
+
+
+def has_sargassum_boid_sensory_signature(data: bytes) -> bool:
+    if len(data) < SARGASSUM_BOID_SENSORY_HEADER_BYTES:
+        return False
+    magic_low, magic_high, *_ = SARGASSUM_BOID_SENSORY_HEADER.unpack_from(data, 0)
+    return (
+        magic_low == SARGASSUM_BOID_SENSORY_MAGIC_LOW
+        and magic_high == SARGASSUM_BOID_SENSORY_MAGIC_HIGH
+    )
+
+
+def parse_sargassum_boid_sensory_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < SARGASSUM_BOID_SENSORY_HEADER_BYTES:
+        return {
+            "type": "sargassum_boid_sensory_blackbox",
+            "headerBytes": SARGASSUM_BOID_SENSORY_HEADER_BYTES,
+            "entrySize": SARGASSUM_BOID_SENSORY_ENTRY_BYTES,
+            "declaredEntryCount": 0,
+            "capacity": 0,
+            "telemetryCursor": 0,
+            "nonEmptyEntryCount": 0,
+            "returnedEntryCount": 0,
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic_low, magic_high, entry_size, capacity, cursor, anomaly_hash = SARGASSUM_BOID_SENSORY_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        magic_low != SARGASSUM_BOID_SENSORY_MAGIC_LOW
+        or magic_high != SARGASSUM_BOID_SENSORY_MAGIC_HIGH
+        or entry_size != SARGASSUM_BOID_SENSORY_ENTRY_BYTES
+        or capacity <= 0
+        or capacity > SARGASSUM_BOID_SENSORY_CAPACITY
+        or cursor < 0
+        or cursor > capacity
+        or SARGASSUM_BOID_SENSORY_HEADER.size != SARGASSUM_BOID_SENSORY_HEADER_BYTES
+        or SARGASSUM_BOID_SENSORY_ENTRY.size != SARGASSUM_BOID_SENSORY_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "sargassum_boid_sensory_blackbox",
+            "magicLow": magic_low,
+            "magicLowHex": f"0x{magic_low:08X}",
+            "magicHigh": magic_high,
+            "magicHighHex": f"0x{magic_high:08X}",
+            "headerBytes": SARGASSUM_BOID_SENSORY_HEADER_BYTES,
+            "entrySize": entry_size,
+            "declaredEntryCount": capacity,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "anomalyHash": anomaly_hash,
+            "anomalyHashHex": f"0x{anomaly_hash:08X}",
+            "nonEmptyEntryCount": 0,
+            "returnedEntryCount": 0,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = SARGASSUM_BOID_SENSORY_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * entry_size
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    def threat_vector(values: tuple[float, float, float, float]) -> dict[str, float | None]:
+        return {
+            "x": finite_round(values[0], 3),
+            "y": finite_round(values[1], 3),
+            "z": finite_round(values[2], 3),
+            "radius": finite_round(values[3], 3),
+        }
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = SARGASSUM_BOID_SENSORY_ENTRY.unpack_from(data, offset)
+        flags = fields[2]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, SARGASSUM_BOID_SENSORY_FLAG_LABELS)
+        float_values = fields[4:16]
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        submarine = fields[4:8]
+        flashlight = fields[8:12]
+        acoustic = fields[12:16]
+        entries.append(
+            {
+                "slot": index,
+                "frame": fields[0],
+                "stateHash": fields[1],
+                "stateHashHex": f"0x{fields[1]:08X}",
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "activeThreatCount": fields[3],
+                "submarineThreat": threat_vector(submarine),
+                "flashlightThreat": threat_vector(flashlight),
+                "acousticPingRadii": {
+                    "a": finite_round(acoustic[0], 3),
+                    "b": finite_round(acoustic[1], 3),
+                    "c": finite_round(acoustic[2], 3),
+                    "lodTier": finite_round(acoustic[3], 3),
+                },
+                "tick": bool(flags & (1 << 0)),
+                "lightActive": bool(flags & (1 << 1)),
+                "pingActive": bool(flags & (1 << 2)),
+                "capsule": bool(flags & (1 << 3)),
+                "nonFinite": bool(flags & (1 << 31)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != SARGASSUM_BOID_SENSORY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if cursor == capacity:
+        warnings.append("cursor_at_capacity")
+    if anomaly_hash != 0:
+        warnings.append("anomaly_hash")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("nonFinite") for entry in entries):
+        warnings.append("nonfinite_flag")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(
+        entry.get("activeThreatCount", 0) < 0
+        or entry.get("activeThreatCount", 0) > SARGASSUM_BOID_SENSORY_MAX_THREATS
+        for entry in entries
+    ):
+        warnings.append("active_threat_count_out_of_range")
+
+    def radius_value(entry: dict[str, Any], group: str, key: str = "radius") -> float | None:
+        value = entry.get(group)
+        if not isinstance(value, dict):
+            return None
+        radius = value.get(key)
+        return radius if isinstance(radius, (int, float)) else None
+
+    if any(
+        _radius is None
+        or _radius < 0.0
+        or _radius > SARGASSUM_BOID_SENSORY_MAX_RADIUS_METERS
+        for entry in entries
+        for _radius in (
+            radius_value(entry, "submarineThreat"),
+            radius_value(entry, "flashlightThreat"),
+            radius_value(entry, "acousticPingRadii", "a"),
+            radius_value(entry, "acousticPingRadii", "b"),
+            radius_value(entry, "acousticPingRadii", "c"),
+        )
+    ):
+        warnings.append("threat_radius_out_of_range")
+    if any(
+        bool(entry.get("lightActive"))
+        != ((radius_value(entry, "flashlightThreat") or 0.0) >= SARGASSUM_BOID_SENSORY_MIN_RADIUS_METERS)
+        for entry in entries
+    ):
+        warnings.append("light_flag_mismatch")
+    if any(
+        bool(entry.get("pingActive"))
+        != any(
+            (value or 0.0) >= SARGASSUM_BOID_SENSORY_MIN_RADIUS_METERS
+            for value in (
+                radius_value(entry, "acousticPingRadii", "a"),
+                radius_value(entry, "acousticPingRadii", "b"),
+                radius_value(entry, "acousticPingRadii", "c"),
+            )
+        )
+        for entry in entries
+    ):
+        warnings.append("ping_flag_mismatch")
+    if any(entry.get("nonFinite") for entry in entries) and anomaly_hash == 0:
+        warnings.append("nonfinite_without_anomaly_hash")
+
+    return {
+        "type": "sargassum_boid_sensory_blackbox",
+        "magicLow": magic_low,
+        "magicLowHex": f"0x{magic_low:08X}",
+        "magicHigh": magic_high,
+        "magicHighHex": f"0x{magic_high:08X}",
+        "headerBytes": SARGASSUM_BOID_SENSORY_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "anomalyHash": anomaly_hash,
+        "anomalyHashHex": f"0x{anomaly_hash:08X}",
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_marine_snow_vfx_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSILTVFXH8DUMP", "DUMPSILTVFXBIN"}
+
+
+def has_marine_snow_vfx_blackbox_signature(data: bytes) -> bool:
+    if len(data) < MARINE_SNOW_VFX_HEADER_BYTES:
+        return False
+    context_hash, capacity, entry_size, _written_count = MARINE_SNOW_VFX_HEADER.unpack_from(data, 0)
+    return (
+        context_hash == MARINE_SNOW_VFX_CONTEXT_HASH
+        and capacity == MARINE_SNOW_VFX_TELEMETRY_CAPACITY
+        and entry_size == MARINE_SNOW_VFX_ENTRY_BYTES
+        and MARINE_SNOW_VFX_ENTRY.size == MARINE_SNOW_VFX_ENTRY_BYTES
+    )
+
+
+def parse_marine_snow_vfx_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < MARINE_SNOW_VFX_HEADER_BYTES:
+        return {
+            "type": "marine_snow_vfx_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    context_hash, capacity, entry_size, written_count = MARINE_SNOW_VFX_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        context_hash != MARINE_SNOW_VFX_CONTEXT_HASH
+        or capacity != MARINE_SNOW_VFX_TELEMETRY_CAPACITY
+        or entry_size != MARINE_SNOW_VFX_ENTRY_BYTES
+        or MARINE_SNOW_VFX_ENTRY.size != MARINE_SNOW_VFX_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "marine_snow_vfx_blackbox",
+            "contextHash": context_hash,
+            "contextHashHex": f"0x{context_hash:08X}",
+            "headerBytes": MARINE_SNOW_VFX_HEADER_BYTES,
+            "entrySize": entry_size,
+            "capacity": capacity,
+            "writtenCount": written_count,
+            "declaredEntryCount": 0,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = MARINE_SNOW_VFX_HEADER_BYTES
+    declared_entries = min(written_count, capacity)
+    expected_bytes = payload_offset + declared_entries * entry_size
+    readable_entries = min(declared_entries, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = MARINE_SNOW_VFX_ENTRY.unpack_from(data, offset)
+        flags = fields[12]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, MARINE_SNOW_VFX_FLAG_LABELS)
+        float_values = fields[4:12]
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "frame": fields[0],
+                "dispatchedParticleCount": fields[1],
+                "capacity": fields[2],
+                "dynamicWakeCount": fields[3],
+                "throttle": finite_round(fields[4]),
+                "systemStress01": finite_round(fields[5]),
+                "maxSiltSpeed": finite_round(fields[6]),
+                "aupShiftSq": finite_round(fields[7]),
+                "cameraPositionWS": {
+                    "x": finite_round(fields[8]),
+                    "y": finite_round(fields[9]),
+                    "z": finite_round(fields[10]),
+                },
+                "headlightBoost": finite_round(fields[11]),
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "stateHash": fields[13],
+                "stateHashHex": f"0x{fields[13]:08X}",
+                "mockGpuMicroseconds": fields[14],
+                "commandSequence": fields[15],
+                "nonFinite": bool(flags & (1 << 0)),
+                "gpuBudgetExceeded": bool(flags & (1 << 1)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("nonFinite") for entry in entries):
+        warnings.append("nonfinite_flag")
+    if any(entry.get("gpuBudgetExceeded") for entry in entries):
+        warnings.append("gpu_budget_exceeded")
+    if any(entry.get("mockGpuMicroseconds", 0) > MARINE_SNOW_VFX_GPU_DUMP_THRESHOLD_US for entry in entries):
+        warnings.append("gpu_over_1500us")
+    if any(entry.get("mockGpuMicroseconds", 0) < 0 for entry in entries):
+        warnings.append("gpu_time_out_of_range")
+    if any(
+        entry.get("dispatchedParticleCount", 0) < 0
+        or entry.get("capacity", 0) < MARINE_SNOW_VFX_MIN_PARTICLE_CAPACITY
+        or entry.get("capacity", 0) > MARINE_SNOW_VFX_MAX_PARTICLE_CAPACITY
+        or entry.get("dispatchedParticleCount", 0) > entry.get("capacity", 0)
+        for entry in entries
+    ):
+        warnings.append("particle_count_out_of_range")
+    if any(entry.get("dynamicWakeCount", 0) < 0 or entry.get("dynamicWakeCount", 0) > MARINE_SNOW_VFX_DYNAMIC_WAKE_CAPACITY for entry in entries):
+        warnings.append("dynamic_wake_count_out_of_range")
+    if any(
+        entry.get("throttle") is None
+        or entry.get("systemStress01") is None
+        or entry.get("throttle", 0.0) < 0.0
+        or entry.get("throttle", 0.0) > 1.0
+        or entry.get("systemStress01", 0.0) < 0.0
+        or entry.get("systemStress01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("throttle_or_stress_out_of_range")
+    if any(entry.get("maxSiltSpeed") is None or entry.get("maxSiltSpeed", 0.0) < 0.0 for entry in entries):
+        warnings.append("max_silt_speed_out_of_range")
+    if any(entry.get("aupShiftSq") is None or entry.get("aupShiftSq", 0.0) < 0.0 for entry in entries):
+        warnings.append("aup_shift_out_of_range")
+    if any(entry.get("headlightBoost") is None or entry.get("headlightBoost", 0.0) < 0.0 for entry in entries):
+        warnings.append("headlight_boost_out_of_range")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+
+    return {
+        "type": "marine_snow_vfx_blackbox",
+        "contextHash": context_hash,
+        "contextHashHex": f"0x{context_hash:08X}",
+        "headerBytes": MARINE_SNOW_VFX_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": declared_entries,
+        "writtenCount": written_count,
+        "capacity": capacity,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_propwash_gpu_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPPROPWASHGPUH8DUMP", "DUMPPROPWASHGPUBIN"}
+
+
+def has_propwash_gpu_blackbox_signature(data: bytes) -> bool:
+    if len(data) < PROPWASH_GPU_HEADER_BYTES:
+        return False
+    layout_hash, capacity, entry_size, _written_count = PROPWASH_GPU_HEADER.unpack_from(data, 0)
+    return (
+        layout_hash == PROPWASH_GPU_LAYOUT_HASH
+        and capacity == PROPWASH_GPU_TELEMETRY_CAPACITY
+        and entry_size == PROPWASH_GPU_ENTRY_BYTES
+        and PROPWASH_GPU_ENTRY.size == PROPWASH_GPU_ENTRY_BYTES
+    )
+
+
+def parse_propwash_gpu_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < PROPWASH_GPU_HEADER_BYTES:
+        return {
+            "type": "propwash_gpu_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    layout_hash, capacity, entry_size, written_count = PROPWASH_GPU_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        layout_hash != PROPWASH_GPU_LAYOUT_HASH
+        or capacity != PROPWASH_GPU_TELEMETRY_CAPACITY
+        or entry_size != PROPWASH_GPU_ENTRY_BYTES
+        or PROPWASH_GPU_ENTRY.size != PROPWASH_GPU_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "propwash_gpu_blackbox",
+            "layoutHash": layout_hash,
+            "layoutHashHex": f"0x{layout_hash:08X}",
+            "headerBytes": PROPWASH_GPU_HEADER_BYTES,
+            "entrySize": entry_size,
+            "capacity": capacity,
+            "writtenCount": written_count,
+            "declaredEntryCount": 0,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = PROPWASH_GPU_HEADER_BYTES
+    declared_entries = min(written_count, capacity)
+    expected_bytes = payload_offset + declared_entries * entry_size
+    readable_entries = min(declared_entries, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = PROPWASH_GPU_ENTRY.unpack_from(data, offset)
+        flags = fields[12]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, PROPWASH_GPU_FLAG_LABELS)
+        float_values = fields[4:11]
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "frame": fields[0],
+                "eventCount": fields[1],
+                "particleBudgetLimit": fields[2],
+                "overflowCount": fields[3],
+                "globalQualityWeight": finite_round(fields[4]),
+                "maxIntensity": finite_round(fields[5]),
+                "estimatedGpuMicroseconds": finite_round(fields[6], 2),
+                "sdfProximityMeters": finite_round(fields[7], 4),
+                "strongestLocalPosition": {
+                    "x": finite_round(fields[8], 4),
+                    "y": finite_round(fields[9], 4),
+                    "z": finite_round(fields[10], 4),
+                },
+                "stateHash": fields[11],
+                "stateHashHex": f"0x{fields[11]:08X}",
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "cursor": fields[13],
+                "profileHash": fields[14],
+                "profileHashHex": f"0x{fields[14]:08X}",
+                "pad0": fields[15],
+                "mockSource": bool(flags & (1 << 0)),
+                "vehicleWakeSource": bool(flags & (1 << 1)),
+                "wakeSourceBridge": bool(flags & (1 << 2)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if written_count > capacity:
+        warnings.append("ring_wrapped")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("mockSource") for entry in entries):
+        warnings.append("mock_source")
+    if any(entry.get("overflowCount", 0) > 0 for entry in entries):
+        warnings.append("overflow_count")
+    if any(entry.get("eventCount", 0) < 0 or entry.get("eventCount", 0) > PROPWASH_GPU_EVENT_RING_CAPACITY for entry in entries):
+        warnings.append("event_count_out_of_range")
+    if any(
+        entry.get("particleBudgetLimit", 0) < PROPWASH_GPU_MIN_PARTICLE_BUDGET
+        or entry.get("particleBudgetLimit", 0) > PROPWASH_GPU_MAX_PARTICLE_BUDGET
+        for entry in entries
+    ):
+        warnings.append("particle_budget_out_of_range")
+    if any(
+        entry.get("globalQualityWeight") is None
+        or entry.get("globalQualityWeight", 0.0) < 0.0
+        or entry.get("globalQualityWeight", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("quality_out_of_range")
+    if any(entry.get("maxIntensity") is None or entry.get("maxIntensity", 0.0) < 0.0 for entry in entries):
+        warnings.append("max_intensity_out_of_range")
+    if any(entry.get("estimatedGpuMicroseconds") is None or entry.get("estimatedGpuMicroseconds", 0.0) < 0.0 for entry in entries):
+        warnings.append("gpu_time_out_of_range")
+    if any(entry.get("estimatedGpuMicroseconds", 0.0) > PROPWASH_GPU_ESTIMATED_BUDGET_WARNING_US for entry in entries):
+        warnings.append("gpu_over_1000us")
+    if any(entry.get("sdfProximityMeters") is None or entry.get("sdfProximityMeters", 0.0) < 0.0 for entry in entries):
+        warnings.append("sdf_out_of_range")
+    if any(entry.get("cursor", 0) > PROPWASH_GPU_EVENT_RING_CAPACITY for entry in entries):
+        warnings.append("cursor_out_of_range")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(entry.get("pad0") != 0 for entry in entries):
+        warnings.append("pad_nonzero")
+    if any(entry.get("eventCount", 0) > 0 and entry.get("flags", 0) == 0 for entry in entries):
+        warnings.append("missing_source_flags")
+
+    return {
+        "type": "propwash_gpu_blackbox",
+        "layoutHash": layout_hash,
+        "layoutHashHex": f"0x{layout_hash:08X}",
+        "headerBytes": PROPWASH_GPU_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": declared_entries,
+        "writtenCount": written_count,
+        "capacity": capacity,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_carve_debris_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {
+        "DUMPSHINOBU05DEBRISPHYSICSFAKEH8DUMP",
+        "DUMPSHINOBU05DEBRISPHYSICSFAKEBIN",
+    }
+
+
+def parse_carve_debris_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < CARVE_DEBRIS_HEADER_BYTES:
+        return {
+            "type": "carve_debris_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, capacity, entry_size, cursor, reason_flags = CARVE_DEBRIS_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        magic != CARVE_DEBRIS_MAGIC
+        or capacity != CARVE_DEBRIS_BLACKBOX_CAPACITY
+        or entry_size != CARVE_DEBRIS_ENTRY_BYTES
+        or cursor >= max(1, capacity)
+        or CARVE_DEBRIS_ENTRY.size != CARVE_DEBRIS_ENTRY_BYTES
+    )
+    reason_labels, unknown_reason_flags = resolve_bit_labels(reason_flags, CARVE_DEBRIS_FLAG_LABELS)
+    if invalid_header:
+        return {
+            "type": "carve_debris_blackbox",
+            "magic": magic,
+            "headerBytes": CARVE_DEBRIS_HEADER_BYTES,
+            "entrySize": entry_size,
+            "capacity": capacity,
+            "telemetryCursor": cursor,
+            "reasonFlags": reason_flags,
+            "reasonFlagLabels": reason_labels,
+            "unknownReasonFlags": unknown_reason_flags,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = CARVE_DEBRIS_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * entry_size
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = CARVE_DEBRIS_ENTRY.unpack_from(data, offset)
+        flags = fields[4]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, CARVE_DEBRIS_FLAG_LABELS)
+        aup_shift = fields[6:9]
+        if any(not math.isfinite(value) for value in aup_shift):
+            nonfinite_seen = True
+        quality_pad = fields[9]
+        quality_pressure_q8 = quality_pad & 0xFF
+        pad0_high = quality_pad & 0xFFFFFF00
+        pad_values = (pad0_high,) + fields[10:16]
+        entries.append(
+            {
+                "slot": index,
+                "ringSlot": (cursor + index) % capacity,
+                "frame": fields[0],
+                "activeCarveDebrisCount": fields[1],
+                "queuedCarves": fields[2],
+                "injectedParticles": fields[3],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "stateHash": fields[5],
+                "stateHashHex": f"0x{fields[5]:08X}",
+                "appliedAupShift": {
+                    "x": finite_round(fields[6]),
+                    "y": finite_round(fields[7]),
+                    "z": finite_round(fields[8]),
+                },
+                "qualityPressureQ8": quality_pressure_q8,
+                "qualityPressure01": round(quality_pressure_q8 / 255.0, 4),
+                "pad0High": pad0_high,
+                "padValues": list(pad_values),
+                "invalidState": bool(flags & (1 << 0)),
+                "sdfActive": bool(flags & (1 << 2)),
+                "flowActive": bool(flags & (1 << 3)),
+                "stressRecycle": bool(flags & (1 << 4)),
+                "wakeActive": bool(flags & (1 << 5)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if reason_flags != 0:
+        warnings.append("reason_flags")
+    if unknown_reason_flags:
+        warnings.append("unknown_reason_flags")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("invalidState") for entry in entries) or (reason_flags & (1 << 0)) != 0:
+        warnings.append("invalid_state")
+    if any(entry.get("stressRecycle") for entry in entries) or (reason_flags & (1 << 4)) != 0:
+        warnings.append("stress_recycle")
+    if any(entry.get("activeCarveDebrisCount", 0) < 0 or entry.get("activeCarveDebrisCount", 0) > CARVE_DEBRIS_MAX_ACTIVE_CAPACITY for entry in entries):
+        warnings.append("active_count_out_of_range")
+    if any(entry.get("queuedCarves", 0) < 0 or entry.get("queuedCarves", 0) > CARVE_DEBRIS_MAX_CARVE_SIGNALS_PER_FRAME for entry in entries):
+        warnings.append("queued_carves_out_of_range")
+    if any(entry.get("injectedParticles", 0) < 0 or entry.get("injectedParticles", 0) > CARVE_DEBRIS_MAX_ACTIVE_CAPACITY for entry in entries):
+        warnings.append("injected_particles_out_of_range")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(any(value != 0 for value in entry.get("padValues", [])) for entry in entries):
+        warnings.append("pad_nonzero")
+
+    return {
+        "type": "carve_debris_blackbox",
+        "magic": magic,
+        "headerBytes": CARVE_DEBRIS_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetryCursor": cursor,
+        "reasonFlags": reason_flags,
+        "reasonFlagLabels": reason_labels,
+        "unknownReasonFlags": unknown_reason_flags,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_biolum_pulse_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {
+        "DUMPSHINOBU238BIN",
+        "DUMPSHINOBU238H8DUMP",
+    }
+
+
+def parse_biolum_pulse_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < BIOLUM_PULSE_HEADER_BYTES:
+        return {
+            "type": "biolum_pulse_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, reason, reserved, entry_size, write_cursor, entry_count = BIOLUM_PULSE_HEADER.unpack_from(data, 0)
+    reason_labels, unknown_reason_flags = resolve_bit_labels(reason, BIOLUM_PULSE_FLAG_LABELS)
+    invalid_header = (
+        magic != BIOLUM_PULSE_MAGIC
+        or entry_size != BIOLUM_PULSE_ENTRY_BYTES
+        or entry_count <= 0
+        or entry_count > BIOLUM_PULSE_BLACKBOX_CAPACITY
+        or write_cursor < 0
+        or write_cursor >= BIOLUM_PULSE_BLACKBOX_CAPACITY
+        or BIOLUM_PULSE_ENTRY.size != BIOLUM_PULSE_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "biolum_pulse_blackbox",
+            "magic": magic,
+            "headerBytes": BIOLUM_PULSE_HEADER_BYTES,
+            "entrySize": entry_size,
+            "telemetryCursor": write_cursor,
+            "declaredEntryCount": entry_count,
+            "reason": reason,
+            "reasonFlagLabels": reason_labels,
+            "unknownReasonFlags": unknown_reason_flags,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = BIOLUM_PULSE_HEADER_BYTES
+    expected_bytes = payload_offset + entry_count * entry_size
+    readable_entries = min(entry_count, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = BIOLUM_PULSE_ENTRY.unpack_from(data, offset)
+        flags = fields[9]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, BIOLUM_PULSE_FLAG_LABELS)
+        float_values = fields[2:7]
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        pad_bytes = fields[10]
+        entries.append(
+            {
+                "slot": index,
+                "frame": fields[0],
+                "activeGlowingInstances": fields[1],
+                "oscillatorComputeTimeMs": finite_round(fields[2], 5),
+                "globalDarknessScalar": finite_round(fields[3]),
+                "group0Phase": finite_round(fields[4]),
+                "frequencyMultiplier": finite_round(fields[5]),
+                "primaryAmplitudeHdr": finite_round(fields[6]),
+                "wavePulsesActive": fields[7],
+                "qualityTier": fields[8],
+                "qualityWeight01": round(fields[8] / 255.0, 4),
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "padNonzero": any(value != 0 for value in pad_bytes),
+                "nonFinite": bool(flags & (1 << 0)),
+                "jobOverrun": bool(flags & (1 << 1)),
+                "aupInvalid": bool(flags & (1 << 2)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if reserved != 0:
+        warnings.append("reserved_nonzero")
+    if reason != 0:
+        warnings.append("reason_flags")
+    if unknown_reason_flags:
+        warnings.append("unknown_reason_flags")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("nonFinite") for entry in entries) or (reason & (1 << 0)) != 0:
+        warnings.append("nonfinite_flag")
+    if any(entry.get("jobOverrun") for entry in entries) or (reason & (1 << 1)) != 0:
+        warnings.append("job_overrun")
+    if any(entry.get("aupInvalid") for entry in entries) or (reason & (1 << 2)) != 0:
+        warnings.append("aup_invalid")
+    if any(entry.get("oscillatorComputeTimeMs", 0.0) > BIOLUM_PULSE_OSCILLATOR_WARNING_MS for entry in entries):
+        warnings.append("oscillator_over_0_1ms")
+    if any(
+        entry.get("activeGlowingInstances", 0) > BIOLUM_PULSE_MAX_GLOW_INSTANCES
+        for entry in entries
+    ):
+        warnings.append("active_instances_out_of_range")
+    if any(entry.get("wavePulsesActive", 0) > BIOLUM_PULSE_SYNC_PULSE_CAPACITY for entry in entries):
+        warnings.append("wave_pulses_out_of_range")
+    if any(
+        entry.get("globalDarknessScalar") is None
+        or entry.get("frequencyMultiplier") is None
+        or entry.get("primaryAmplitudeHdr") is None
+        or entry.get("globalDarknessScalar", 0.0) < 0.0
+        or entry.get("globalDarknessScalar", 0.0) > 1.0
+        or entry.get("frequencyMultiplier", 0.0) < 0.0
+        or entry.get("frequencyMultiplier", 0.0) > 8.0
+        or entry.get("primaryAmplitudeHdr", 0.0) < 0.0
+        or entry.get("primaryAmplitudeHdr", 0.0) > BIOLUM_PULSE_MAX_HDR_INTENSITY
+        for entry in entries
+    ):
+        warnings.append("pulse_value_out_of_range")
+    if any(entry.get("padNonzero") for entry in entries):
+        warnings.append("pad_nonzero")
+
+    return {
+        "type": "biolum_pulse_blackbox",
+        "magic": magic,
+        "headerBytes": BIOLUM_PULSE_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": entry_count,
+        "capacity": BIOLUM_PULSE_BLACKBOX_CAPACITY,
+        "telemetryCursor": write_cursor,
+        "reason": reason,
+        "reasonFlagLabels": reason_labels,
+        "unknownReasonFlags": unknown_reason_flags,
         "nonEmptyEntryCount": len(entries),
         "returnedEntryCount": len(capped),
         "entries": capped,
@@ -2320,6 +6682,151 @@ def parse_survival_blackbox_source_payload(
         "toxicity": bool(flags & (1 << 7)),
         "thermalStress": bool(flags & (1 << 8)),
         "hasStats": bool(flags & (1 << 9)),
+        "warnings": warnings,
+    }
+
+
+def is_biolum_director_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPBIOLUMINESCENCEDIRECTORBIN", "DUMPBIOLUMINESCENCEDIRECTORH8DUMP"}
+
+
+def parse_biolum_director_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < BIOLUM_DIRECTOR_HEADER_BYTES:
+        return {
+            "type": "biolum_director_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, telemetry_sequence, reason_flags, capacity = BIOLUM_DIRECTOR_HEADER.unpack_from(data, 0)
+    reason_labels, unknown_reason_flags = resolve_bit_labels(reason_flags, BIOLUM_DIRECTOR_REASON_LABELS)
+    invalid_header = (
+        magic != BIOLUM_DIRECTOR_MAGIC
+        or capacity <= 0
+        or capacity > BIOLUM_DIRECTOR_TELEMETRY_CAPACITY
+        or BIOLUM_DIRECTOR_HEADER.size != BIOLUM_DIRECTOR_HEADER_BYTES
+        or BIOLUM_DIRECTOR_ENTRY.size != BIOLUM_DIRECTOR_ENTRY_BYTES
+    )
+    if invalid_header:
+        return {
+            "type": "biolum_director_blackbox",
+            "magic": magic,
+            "magicHex": f"0x{magic:08X}",
+            "headerBytes": BIOLUM_DIRECTOR_HEADER_BYTES,
+            "entrySize": BIOLUM_DIRECTOR_ENTRY_BYTES,
+            "telemetrySequence": telemetry_sequence,
+            "reasonFlags": reason_flags,
+            "reasonFlagLabels": reason_labels,
+            "unknownReasonFlags": unknown_reason_flags,
+            "capacity": capacity,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = BIOLUM_DIRECTOR_HEADER_BYTES
+    expected_bytes = payload_offset + capacity * BIOLUM_DIRECTOR_ENTRY_BYTES
+    readable_entries = min(capacity, max(0, len(data) - payload_offset) // BIOLUM_DIRECTOR_ENTRY_BYTES)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    for index in range(readable_entries):
+        offset = payload_offset + index * BIOLUM_DIRECTOR_ENTRY_BYTES
+        if is_empty_entry(data, offset, BIOLUM_DIRECTOR_ENTRY_BYTES):
+            continue
+
+        fields = BIOLUM_DIRECTOR_ENTRY.unpack_from(data, offset)
+        flags = fields[9]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, BIOLUM_DIRECTOR_FLAG_LABELS)
+        float_values = fields[1:7]
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "frame": fields[0],
+                "cameraPosition": {
+                    "x": finite_round(fields[1]),
+                    "y": finite_round(fields[2]),
+                    "z": finite_round(fields[3]),
+                },
+                "intensity": finite_round(fields[4]),
+                "phase": finite_round(fields[5]),
+                "predatorDim": finite_round(fields[6]),
+                "predatorHits": fields[7],
+                "activeRipples": fields[8],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "daylightMasked": bool(flags & (1 << 0)),
+                "predatorDimmed": bool(flags & (1 << 1)),
+                "eclipseMasked": bool(flags & (1 << 2)),
+                "cameraNonfinite": bool(flags & (1 << 3)),
+                "zoneRegistryOverflow": bool(flags & (1 << 4)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % BIOLUM_DIRECTOR_ENTRY_BYTES != 0:
+        warnings.append("trailing_partial_entry")
+    if capacity != BIOLUM_DIRECTOR_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if reason_flags:
+        warnings.append("reason_flags")
+    if unknown_reason_flags:
+        warnings.append("unknown_reason_flags")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if (reason_flags & (1 << 1)) != 0:
+        warnings.append("nonfinite_intensity_phase")
+    if any(entry.get("cameraNonfinite") for entry in entries) or (reason_flags & (1 << 3)) != 0:
+        warnings.append("camera_nonfinite")
+    if any(entry.get("zoneRegistryOverflow") for entry in entries):
+        warnings.append("zone_registry_overflow")
+    if any(entry.get("activeRipples", 0) > BIOLUM_DIRECTOR_MAX_TOUCH_RIPPLES for entry in entries):
+        warnings.append("active_ripples_out_of_range")
+    if any(entry.get("predatorHits", 0) > BIOLUM_DIRECTOR_MAX_PREDATOR_CONTACTS for entry in entries):
+        warnings.append("predator_hits_out_of_range")
+    if any(
+        entry.get("intensity") is None
+        or entry.get("intensity", 0.0) < 0.0
+        or entry.get("phase") is None
+        or entry.get("predatorDim") is None
+        or entry.get("predatorDim", 0.0) < 0.0
+        or entry.get("predatorDim", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("biolum_value_out_of_range")
+
+    return {
+        "type": "biolum_director_blackbox",
+        "magic": magic,
+        "magicHex": f"0x{magic:08X}",
+        "headerBytes": BIOLUM_DIRECTOR_HEADER_BYTES,
+        "entrySize": BIOLUM_DIRECTOR_ENTRY_BYTES,
+        "declaredEntryCount": capacity,
+        "capacity": capacity,
+        "telemetrySequence": telemetry_sequence,
+        "reasonFlags": reason_flags,
+        "reasonFlagLabels": reason_labels,
+        "unknownReasonFlags": unknown_reason_flags,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
         "warnings": warnings,
     }
 
@@ -7143,6 +11650,14 @@ def try_parse_magic_identified_blackbox(data: bytes) -> dict[str, Any] | None:
         return None
 
     magic = struct.unpack_from("<I", data, 0)[0]
+    if has_marine_snow_vfx_blackbox_signature(data):
+        return parse_marine_snow_vfx_blackbox(data)
+    if has_propwash_gpu_blackbox_signature(data):
+        return parse_propwash_gpu_blackbox(data)
+    if has_sargassum_food_chain_signature(data):
+        return parse_sargassum_food_chain_blackbox(data)
+    if has_sargassum_boid_sensory_signature(data):
+        return parse_sargassum_boid_sensory_blackbox(data)
     if len(data) >= 8:
         magic64 = struct.unpack_from("<Q", data, 0)[0]
         if magic64 == ORIGIN_SHIFT_MAGIC:
@@ -7165,9 +11680,23 @@ def try_parse_magic_identified_blackbox(data: bytes) -> dict[str, Any] | None:
             return parse_base_atmosphere_logistics_blackbox(data)
         if magic64 == THERMODYNAMICS_HAZARD_MAGIC:
             return parse_thermodynamics_hazard_blackbox(data)
+        if magic64 == VEGETATION_MEMORY_MAGIC:
+            return parse_vegetation_memory_blackbox(data)
+        if magic64 == CHEMICAL_INFLUENCE_MAGIC:
+            return parse_chemical_influence_blackbox(data)
 
     magic_parsers = (
         (DATA_MONOLITH_TELEMETRY_MAGIC, parse_data_monolith_telemetry_blackbox),
+        (VOCAL_WARNING_TELEMETRY_MAGIC, parse_vocal_warning_telemetry_blackbox),
+        (VOCAL_BANK_SYNTHESIS_MAGIC, parse_vocal_bank_synthesis_blackbox),
+        (CAMERA_JUICE_TELEMETRY_MAGIC, parse_camera_juice_telemetry_blackbox),
+        (MATERIAL_DECAY_MAGIC, parse_material_decay_blackbox),
+        (INTERACTIVE_WAKE_MAGIC, parse_interactive_wake_blackbox),
+        (FLORA_SWAY_FIELD_MAGIC, parse_flora_sway_field_blackbox),
+        (FLORA_AMBIENT_SWAY_MAGIC, parse_flora_ambient_sway_blackbox),
+        (CARVE_DEBRIS_MAGIC, parse_carve_debris_blackbox),
+        (BIOLUM_PULSE_MAGIC, parse_biolum_pulse_blackbox),
+        (BIOLUM_DIRECTOR_MAGIC, parse_biolum_director_blackbox),
         (TOXIC_OUTGASSING_MAGIC, parse_toxic_outgassing_blackbox),
         (GAS_DYNAMICS_MAGIC, parse_gas_dynamics_blackbox),
         (STORM_PROPAGATION_MAGIC, parse_storm_propagation_blackbox),
@@ -8117,6 +12646,178 @@ def parse_fauna_mutation_dump(path: Path, data: bytes) -> dict[str, Any]:
     )
 
 
+def decode_packed_nibble_histogram(lo: int, hi: int) -> list[int]:
+    counts: list[int] = []
+    for index in range(16):
+        packed = lo if index < 8 else hi
+        counts.append((packed >> ((index & 7) * 4)) & 0xF)
+    return counts
+
+
+def parse_fauna_genetics_dump(path: Path, data: bytes) -> dict[str, Any]:
+    parser_type = "fauna_genetics"
+    if len(data) < BIOMASS_HEADER.size:
+        return {"type": parser_type, "entries": [], "latest": None, "warnings": ["truncated_header"]}
+
+    magic, entry_count, entry_size, oldest_index, capacity = BIOMASS_HEADER.unpack_from(data, 0)
+    invalid_header = (
+        magic != FAUNA_GENETICS_MAGIC
+        or entry_count < 0
+        or entry_size != FAUNA_GENETICS_ENTRY.size
+        or oldest_index < 0
+        or capacity <= 0
+        or capacity > FAUNA_GENETICS_TELEMETRY_CAPACITY
+        or oldest_index >= capacity
+    )
+    if invalid_header:
+        return {
+            "type": parser_type,
+            "magic": magic,
+            "magicHex": f"0x{magic:016X}",
+            "entrySize": entry_size,
+            "entryCount": entry_count,
+            "oldestIndex": oldest_index,
+            "capacity": capacity,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = BIOMASS_HEADER.size
+    expected_bytes = payload_offset + entry_count * entry_size
+    readable = min(entry_count, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+
+    def finite_round(value: float, digits: int = 4) -> float | None:
+        return round(value, digits) if math.isfinite(value) else None
+
+    offset = payload_offset
+    for index in range(readable):
+        fields = FAUNA_GENETICS_ENTRY.unpack_from(data, offset)
+        offset += entry_size
+        flags = fields[14]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, FAUNA_GENETICS_FLAG_LABELS)
+        float_values = fields[6:11]
+        if any(not math.isfinite(value) for value in float_values):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "ringSlot": (oldest_index + index) % capacity,
+                "frame": fields[0],
+                "stateHash": fields[1],
+                "stateHashHex": f"0x{fields[1]:08X}",
+                "compiledGenomeCount": fields[2],
+                "activeGenomeCount": fields[3],
+                "extractionOperationCount": fields[4],
+                "invalidMaskCount": fields[5],
+                "averageHueShift01": finite_round(fields[6]),
+                "averageSize01": finite_round(fields[7]),
+                "averageAggression01": finite_round(fields[8]),
+                "averagePattern01": finite_round(fields[9]),
+                "burstExecutionMicroseconds": finite_round(fields[10], 2),
+                "tuningStateHash": fields[11],
+                "tuningStateHashHex": f"0x{fields[11]:08X}",
+                "patternHistogramLo": fields[12],
+                "patternHistogramLoHex": f"0x{fields[12]:08X}",
+                "patternHistogramHi": fields[13],
+                "patternHistogramHiHex": f"0x{fields[13]:08X}",
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "reserved0": fields[15],
+                "patternHistogram": decode_packed_nibble_histogram(fields[12], fields[13]),
+                "invalidMask": bool(flags & (1 << 0)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if entry_count > capacity:
+        warnings.append("entry_count_exceeds_capacity")
+    if capacity != FAUNA_GENETICS_TELEMETRY_CAPACITY:
+        warnings.append("capacity_mismatch")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(entry.get("reserved0") != 0 for entry in entries):
+        warnings.append("reserved_nonzero")
+    if any(entry.get("invalidMask") for entry in entries):
+        warnings.append("invalid_mask")
+    if any(
+        (entry.get("invalidMaskCount", 0) > 0) != bool(entry.get("invalidMask"))
+        for entry in entries
+    ):
+        warnings.append("invalid_mask_flag_mismatch")
+    if any(
+        entry.get("compiledGenomeCount", 0) < 0
+        or entry.get("activeGenomeCount", 0) < 0
+        or entry.get("extractionOperationCount", 0) < 0
+        or entry.get("invalidMaskCount", 0) < 0
+        or entry.get("activeGenomeCount", 0) > entry.get("compiledGenomeCount", 0)
+        for entry in entries
+    ):
+        warnings.append("genome_count_out_of_range")
+    if any(
+        entry.get("extractionOperationCount", 0) != entry.get("activeGenomeCount", 0) * 4
+        for entry in entries
+    ):
+        warnings.append("extraction_count_mismatch")
+    if any(
+        entry.get("burstExecutionMicroseconds") is None
+        or entry.get("burstExecutionMicroseconds", 0.0) < 0.0
+        for entry in entries
+    ):
+        warnings.append("burst_time_out_of_range")
+    if any(
+        entry.get("burstExecutionMicroseconds", 0.0) > FAUNA_GENETICS_TELEMETRY_BUDGET_US
+        for entry in entries
+    ):
+        warnings.append("burst_over_500us")
+    if any(
+        entry.get("averageHueShift01") is None
+        or entry.get("averageHueShift01", 0.0) < 0.0
+        or entry.get("averageHueShift01", 0.0) > 1.0
+        or entry.get("averageSize01") is None
+        or entry.get("averageSize01", 0.0) < 0.0
+        or entry.get("averageSize01", 0.0) > 1.0
+        or entry.get("averageAggression01") is None
+        or entry.get("averageAggression01", 0.0) < 0.0
+        or entry.get("averageAggression01", 0.0) > 1.0
+        or entry.get("averagePattern01") is None
+        or entry.get("averagePattern01", 0.0) < 0.0
+        or entry.get("averagePattern01", 0.0) > 1.0
+        for entry in entries
+    ):
+        warnings.append("average_out_of_range")
+
+    return {
+        "type": parser_type,
+        "magic": magic,
+        "magicHex": f"0x{magic:016X}",
+        "entrySize": entry_size,
+        "entryCount": entry_count,
+        "oldestIndex": oldest_index,
+        "capacity": capacity,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
 def parse_headless_blackbox(path: Path, data: bytes) -> dict[str, Any]:
     if len(data) < HEADLESS_HEADER.size:
         return {"type": "headless_blackbox", "entries": [], "warnings": ["truncated_header"]}
@@ -8278,6 +12979,56 @@ def parse_dump_file(path: Path) -> dict[str, Any]:
         return {**base, **parse_global_telemetry_bus_blackbox(data)}
     if is_data_monolith_telemetry_blackbox_path(path):
         return {**base, **parse_data_monolith_telemetry_blackbox(data)}
+    if is_vault_sovereignty_telemetry_blackbox_path(path):
+        return {**base, **parse_vault_sovereignty_telemetry_blackbox(data)}
+    if is_arm64_alignment_telemetry_blackbox_path(path):
+        return {**base, **parse_arm64_alignment_telemetry_blackbox(data)}
+    if is_haptic_synthesis_telemetry_blackbox_path(path):
+        return {**base, **parse_haptic_synthesis_telemetry_blackbox(data)}
+    if is_vocal_warning_telemetry_blackbox_path(path):
+        return {**base, **parse_vocal_warning_telemetry_blackbox(data)}
+    if is_granular_audio_telemetry_blackbox_path(path):
+        return {**base, **parse_granular_audio_telemetry_blackbox(data)}
+    if is_prologue_audio_transition_blackbox_path(path):
+        return {**base, **parse_prologue_audio_transition_blackbox(data)}
+    if is_audio_synthesis_telemetry_blackbox_path(path):
+        return {**base, **parse_audio_synthesis_telemetry_blackbox(data)}
+    if is_vocal_bank_synthesis_blackbox_path(path):
+        return {**base, **parse_vocal_bank_synthesis_blackbox(data)}
+    if is_adaptive_stem_mixer_blackbox_path(path):
+        return {**base, **parse_adaptive_stem_mixer_blackbox(data)}
+    if is_camera_juice_telemetry_blackbox_path(path):
+        return {**base, **parse_camera_juice_telemetry_blackbox(data)}
+    if is_material_decay_blackbox_path(path):
+        return {**base, **parse_material_decay_blackbox(data)}
+    if is_interactive_wake_blackbox_path(path):
+        return {**base, **parse_interactive_wake_blackbox(data)}
+    if is_flora_sway_field_blackbox_path(path):
+        return {**base, **parse_flora_sway_field_blackbox(data)}
+    if is_flora_memory_telemetry_blackbox_path(path):
+        return {**base, **parse_flora_memory_telemetry_blackbox(data)}
+    if is_flora_ambient_sway_blackbox_path(path):
+        return {**base, **parse_flora_ambient_sway_blackbox(data)}
+    if is_vegetation_memory_blackbox_path(path):
+        return {**base, **parse_vegetation_memory_blackbox(data)}
+    if is_dear_lie_organics_blackbox_path(path):
+        return {**base, **parse_dear_lie_organics_blackbox(data)}
+    if is_chemical_influence_blackbox_path(path):
+        return {**base, **parse_chemical_influence_blackbox(data)}
+    if is_sargassum_food_chain_blackbox_path(path):
+        return {**base, **parse_sargassum_food_chain_blackbox(data)}
+    if is_sargassum_boid_sensory_blackbox_path(path):
+        return {**base, **parse_sargassum_boid_sensory_blackbox(data)}
+    if is_marine_snow_vfx_blackbox_path(path):
+        return {**base, **parse_marine_snow_vfx_blackbox(data)}
+    if is_propwash_gpu_blackbox_path(path):
+        return {**base, **parse_propwash_gpu_blackbox(data)}
+    if is_carve_debris_blackbox_path(path):
+        return {**base, **parse_carve_debris_blackbox(data)}
+    if is_biolum_pulse_blackbox_path(path):
+        return {**base, **parse_biolum_pulse_blackbox(data)}
+    if is_biolum_director_blackbox_path(path):
+        return {**base, **parse_biolum_director_blackbox(data)}
     if is_toxic_outgassing_blackbox_path(path):
         return {**base, **parse_toxic_outgassing_blackbox(data)}
     if is_gas_dynamics_blackbox_path(path):
@@ -8376,6 +13127,10 @@ def parse_dump_file(path: Path) -> dict[str, Any]:
     name = path.name.upper()
     if len(data) >= GENERIC_BLACKBOX_HEADER.size:
         magic64 = struct.unpack_from("<Q", data, 0)[0]
+        if magic64 == VAULT_SOVEREIGNTY_TELEMETRY_MAGIC:
+            return {**base, **parse_vault_sovereignty_telemetry_blackbox(data)}
+        if magic64 == ARM64_ALIGNMENT_TELEMETRY_MAGIC:
+            return {**base, **parse_arm64_alignment_telemetry_blackbox(data)}
         if magic64 == HECTON8_MAGIC:
             return {**base, **parse_generic_blackbox(path, data)}
         if magic64 == BIOMASS_MAGIC:
@@ -8384,6 +13139,8 @@ def parse_dump_file(path: Path) -> dict[str, Any]:
             return {**base, **parse_macro_swarm_dump(path, data)}
         if magic64 == FAUNA_MUTATION_MAGIC:
             return {**base, **parse_fauna_mutation_dump(path, data)}
+        if magic64 == FAUNA_GENETICS_MAGIC:
+            return {**base, **parse_fauna_genetics_dump(path, data)}
     if len(data) >= HEADLESS_HEADER.size and struct.unpack_from("<I", data, 0)[0] == HEADLESS_MAGIC:
         return {**base, **parse_headless_blackbox(path, data)}
     if len(data) >= LIVE_TELEMETRY_ENTRY_V1.size and struct.unpack_from("<I", data, 0)[0] == LIVE_TELEMETRY_MAGIC:

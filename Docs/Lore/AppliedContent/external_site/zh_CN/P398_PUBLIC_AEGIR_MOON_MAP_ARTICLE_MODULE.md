@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Aegir Moon Route Map"
+title: "Aegir卫星路线图"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Aegir Moon Route Map
+# Aegir卫星路线图
 
-ZH LOC HOLD: Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
+Aegir的卫星图首先是操作图，其次才是景观。HECTON-8是一颗海洋天体，位于由卫星、shepherd rocks、ice-scatter paths和失效relay marks组成的阶梯中。内侧天体会干扰narrowband contact和辐射掩护。冰卫星把光学relay lines打碎成糟糕片段。occultation bands制造沉默窗口：claim仍有效，却无人听见。外侧beacons在船员消失后仍保存旧所有权。潮汐几何和storm stacking决定bathydrop chain能否干净上升，或成为loss ledger的新行。公开地图不需要承诺额外可玩世界；它的职责是让天空被读作压力、延迟和路线风险。
 
 ## Scanner
 
-ZH LOC HOLD: System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
+系统地图记录。Aegir诸卫星决定relay timing、辐射掩护、冰散射、潮汐压力、occultation bands、失效beacons与recovery geometry。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
+公共档案节点 // AEGIR卫星梯。卫星名是路线标签。每个天体都会改变signal age、transfer risk、storm exposure、custody timing或claim reliability。
 
 ## Audio
 
-ZH LOC HOLD: The map is why no one arrives the moment you ask.
+地图解释了为什么你请求的那一刻没有人抵达。
 
 ## Field Note
 
-ZH LOC HOLD: Marauder note: mark the moon, then mark what it does to the route.
+Marauder笔记：先标出卫星，再标出它对路线做了什么。
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/zh_CN. -->

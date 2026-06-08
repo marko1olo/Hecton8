@@ -8,33 +8,19 @@ biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Juno Kade Evacuation Hold"
+spoiler_tier: 1
+title: "朱诺·凯德疏散扣留"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Juno Kade Evacuation Hold
+# 朱诺·凯德疏散扣留
 
-CN LOC HOLD: Juno Kade Evacuation Hold translates Deep Reach liability into a playable door: the evacuation exists, the people exist, but certification and claim logic hold the exit until the ocean makes the decision permanent.
+朱诺·凯德站在恐慌与程序之间。她的日志没有显示殖民地愚蠢到不会离开。它显示的是队列、指挥、路线板、manual override尝试，以及在水比review更快移动时仍等待许可的门。
 
-## Scanner
-
-CN LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
-
-## Terminal
-
-CN LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
-
-## Audio
-
-CN LOC HOLD: She kept counting people after the system started counting rooms.
-
-## Field Note
-
-CN LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
+扣留有几个名字：隔离、认证、payload等级、claim seal。每个名字单独听起来都合理。合在一起，它们形成一扇上锁的门，而人们在错误的一侧。凯德重要，因为她保留了疏散的人形。玩家找到的不是抽象失职，而是一条能工作的出口，因授权延迟而无法使用。
 
 <!-- External Site; generated from P063_JUNO_KADE_EVACUATION_HOLD/zh_CN. -->

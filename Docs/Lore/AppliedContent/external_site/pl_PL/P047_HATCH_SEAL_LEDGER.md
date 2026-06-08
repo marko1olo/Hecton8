@@ -8,33 +8,33 @@ biome_tags: biome.drowned_colony;biome.service_corridor
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "Hatch Seal Ledger"
+spoiler_tier: 1
+title: "Rejestr uszczelnienia włazu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Hatch Seal Ledger
+# Rejestr uszczelnienia włazu
 
-Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop.
+Włazy są jednymi z najcichszych zapisów HECTON-8. Nie wyjaśniają, kogo zostawiono; przechowują kierunek zamknięcia, naprężenie uszczelki i uprawnienie override. Odczyt rejestru zmienia zamknięte drzwi w decyzję ciśnieniową z czasem.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+Odzyskano pamięć uszczelnienia. Uszczelka przyjęła trzy cięcia ciśnienia i jedno nadpisanie ewakuacyjne; dostęp po stronie powrotu zamknięto od mokrej strony.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+SEAL LEDGER / RAMA H-17: deformacja uszczelki powyżej tolerancji serwisowej. Ręczne zamknięcie przyjęte pod EVAC OVERRIDE. Liczba operatorów po stronie powrotu nierozstrzygnięta. Otwierać tylko po wyrównaniu ciśnienia i kontroli zawiasów.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+Uszczelnił. Tyle właz obiecał.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+Zamknięty właz to rachunek. Przed otwarciem zapytaj, która strona zapłaciła.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/pl_PL. -->

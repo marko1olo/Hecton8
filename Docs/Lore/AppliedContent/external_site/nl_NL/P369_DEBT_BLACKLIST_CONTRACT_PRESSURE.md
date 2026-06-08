@@ -9,32 +9,36 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Contractdruk door Schuld en Blacklist"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Debt Blacklist Contract Pressure
+# Contractdruk door Schuld en Blacklist
 
-NL LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+HECTON-8 kadert zijn protagonist via grenseconomie in plaats van lot. Schuld, blacklists, claim-pool-bewaring, zuurstofkrediet, kooi-toegang en oude Deep Reach-credentials maken het salvage-contract dwingend zonder de speler hulpeloos te maken.
 
 ## Scanner
 
-NL LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Retentierechtmelding gekoppeld aan Black Keel-bewaring. Weigeren blijft legaal, maar houdt je aan de grond: geen kooi, geen schone zuurstofkrediet, geen routevenster uit Aegir.
 
 ## Terminal
 
-NL LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+CLAIMAANVAARDING / BLACKLIST-VERLICHTINGSVENSTER
+contractorstatus: schuldgebonden Marauder
+drager: Black Keel claim-pool-bewaring
+verlichtingsvoorwaarden: terugwinbare massa, bewijs van bewaring, ontvanger-compliance
+foutstatus: blacklist blijft actief; toegang tot kooi geweigerd; zuurstofwelzijn wordt factureerbare steun.
 
 ## Audio
 
-NL LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+Dit was geen ontvoering. Het was het soort keuze dat de grens als vrijheid verkoopt: teken, duik, of blijf schoon op papier en vast in de praktijk.
 
 ## Field Note
 
-NL LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+Het retentierecht wees geen wapen aan. Het wees naar de luchtrekening, de kooienlijst en het volgende routevenster.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/nl_NL. -->

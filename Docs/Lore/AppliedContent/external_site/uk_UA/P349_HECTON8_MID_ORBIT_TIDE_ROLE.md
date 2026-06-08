@@ -9,32 +9,16 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: HECTON-8 Mid-Orbit Tide Role"
+title: "Припливна роль HECTON-8 на середній орбіті"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: HECTON-8 Mid-Orbit Tide Role
+# Припливна роль HECTON-8 на середній орбіті
 
-UK LOC HOLD: HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.
-
-## Scanner
-
-UK LOC HOLD: Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
-
-## Terminal
-
-UK LOC HOLD: ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
-
-## Audio
-
-UK LOC HOLD: It sits in the part of the ladder where work looks possible until the water starts doing math.
-
-## Field Note
-
-UK LOC HOLD: HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 сидить у прибутковій середині. Орбіта дає Deep Reach океан, який охолоджує машини, ховає активи, годує індустрію тиску й ганяє достатньо хімії, щоб виправдати claim. Вона ж дає колонії стелю, що ніколи не стоїть. Припливи навантажують сервісні каньйони, гнуть утоплену кору, ламають чисті розклади й вирішують, коли маса підйому може піти.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/uk_UA. -->

@@ -24,7 +24,7 @@ Date: 2026-05-11
 [SOURCE] Unity ShaderLab stencil documentation states the stencil buffer is an 8-bit per-pixel mask and that failed stencil tests skip the remaining processing for that pixel.
 https://docs.unity.cn/Manual/SL-Stencil.html
 
-[PROJECT] `Docs/AgentLogs/LOG_FILL-RATE_DICTATOR.md` already records a visor stencil writer and HUD stencil Equal path with estimated GPU savings, but the savings remain PENDING VERIFICATION.
+[PROJECT] Historical fill-rate logs are not active proof. Current visor/HUD stencil claims need fresh source route, Frame Debugger ordering, XR/GPU capture, and explicit PENDING VERIFICATION for any missing artifact.
 
 ---
 

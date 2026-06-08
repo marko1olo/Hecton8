@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: HECTON-8 Mid-Orbit Tide Role"
+title: "HECTON-8 middenbaan-getijrol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: HECTON-8 Mid-Orbit Tide Role
+# HECTON-8 middenbaan-getijrol
 
-NL LOC HOLD: HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.
+HECTON-8 is de maan waar Aegirs orbitale wiskunde persoonlijk wordt. Ze ligt ver genoeg van de ergste binnenstraling voor lange operaties, dicht genoeg voor getijden die de oceaan blijven bewegen, en is waardevol genoeg voor Deep Reach om onder druk te bouwen. Dezelfde positie maakt redding vuil: getijfase, carrier-massa, stormruis en juridische bewaring ontmoeten elkaar boven het hoofd van de speler.
 
 ## Scanner
 
-NL LOC HOLD: Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
+HECTON-8 getijrecord. Middenbaan maakt de oceaan nuttig genoeg om te mijnen en gewelddadig genoeg om bewijs te begraven.
 
 ## Terminal
 
-NL LOC HOLD: ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
+ORBITNOTE H8 HECTON: getijlast binnen industriële tolerantie tijdens huidig Black Keel-venster. Verdronken korst buigt sterker bij servicecanyons. Atlas-reparatieverkeer blijft onder publieke meldgrens.
 
 ## Audio
 
-NL LOC HOLD: It sits in the part of the ladder where work looks possible until the water starts doing math.
+Ze zit in het deel van de ladder waar werk mogelijk lijkt totdat het water begint te rekenen.
 
 ## Field Note
 
-NL LOC HOLD: HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
+HECTON-8 betaalt omdat druk, getij en aansprakelijkheid daar overlappen.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/nl_NL. -->

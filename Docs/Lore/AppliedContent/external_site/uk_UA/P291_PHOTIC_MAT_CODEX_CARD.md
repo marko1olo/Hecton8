@@ -9,32 +9,36 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Photic Mat Codex Card"
+title: "Картка кодексу фотичного мату"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Photic Mat Codex Card
+# Картка кодексу фотичного мату
 
-UK LOC HOLD: The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
+Фотичні мати — один із перших уроків читаної екології HECTON-8. Вони підсвічують мілководдя, годують малих grazers і стабілізують мінеральну плівку, але також позначають хімію тиску і крихкі шви. Океан здається привітним тому, що живі поверхні виконують роботу.
 
 ## Scanner
 
-UK LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+Фотичний мат. Кисень-позитивна біоплівкова пластина поверх мінеральної шкіри. Яскрава, корисна, крихка до тиску. Не здирати із запечатаних тріщин.
 
 ## Terminal
 
-UK LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+ЗРАЗОК / ФОТИЧНИЙ МАТ
+роль: мілководна киснева поверхня, корм для grazers, стабілізатор мінеральної плівки
+безпечний зразок: вільний край менший за ширину долоні
+відхилити: пластини, що закривають шви; мати з газовими пухирями; свіжі поля укусів grazers
+маршрутна примітка: розірвані мати можуть випустити замкнений газ і перетворити чистий шельф на hazard.
 
 ## Audio
 
-UK LOC HOLD: Light here is work, not comfort.
+Він виглядає м’яким тому, що працює. Якщо він тримає шов, залиш його там.
 
 ## Field Note
 
-UK LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
+Вільний край: зразок. Покриття шва: залишити. Якщо мат закриває рану, рана все ще там.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/uk_UA. -->

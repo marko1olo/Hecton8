@@ -7,8 +7,8 @@ poi_tags: poi.black_keel_transfer_band;poi.carrier_custody_orbit
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Black Keel Transfer Band"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Keel Transfer Band
 
-The carrier's orbit explains why contact, payload pickup and human extraction are different problems.
+Black Keel's transfer band explains why contact, payload pickup and human extraction are different problems. A carrier can hear, price and accept cargo before it can safely spend mass on a person.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Carrier band: Black Keel loiters high, not above HECTON-8.
 
 ## Terminal
 
-CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+CARRIER ORBIT: high custody lane; descent mass is limited and weather-gated.
 
 ## Audio
 

@@ -1197,7 +1197,7 @@ namespace Hecton8.Gameplay
             if (acousticInterference01 <= 0f || !math.isfinite(acousticInterference01))
                 return;
 
-            ISpatialAudioNarrativeRadioSink narrativeAudioSink = _narrativeAudioSink;
+            ISpatialAudioNarrativeRadioSink narrativeAudioSink = ResolveNarrativeAudioSink();
             if (narrativeAudioSink == null)
                 return;
 

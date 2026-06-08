@@ -9,32 +9,32 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Codex card: sensor-tagged fauna"
+title: "Кодекс: фауна с сенсорной меткой"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Codex card: sensor-tagged fauna
+# Кодекс: фауна с сенсорной меткой
 
-Ужас Atlas процедурный: он гонит repair через рост, звук и движение, пока живое животное случайно не становится infrastructure.
+Фауна с сенсорными метками показывает Atlas в самом процедурном виде. Ужас не в контроле разума; ужас в том, что старое мониторинговое железо стало историей тела, а поврежденная maintenance logic приняла это тело за часть карты.
 
 ## Scanner
 
-Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+Фауна с сенсорной меткой. Старый биометаллический tag Deep Reach врос в шрам, панцирь или кольцо роста. Слабое эхо маршрута Atlas; намерение животного не подтверждено.
 
 ## Terminal
 
-SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+ОБРАЗЕЦ / ФАУНА С СЕНСОРНОЙ МЕТКОЙ / роль: живой носитель telemetry, устаревший survey landmark, загрязнитель repair-route / безопасное чтение: старый импульс tag, рост рубцовой ткани, движение без команды / отказ: считать поведение послушанием, вырезать tag из живого тела, доверять occupancy echo / маршрутная заметка: tag может сообщить комнату, через которую прошло животное, но не причину прохода.
 
 ## Audio
 
-Оно не подчиняется. Его используют.
+Оно не подчиняется Atlas. Оно несет старый вопрос, который Atlas всё еще задает.
 
 ## Field Note
 
-Не писать как possession. Это damaged maintenance, использующая animal movement.
+Метка — шрам, не поводок. Она может выдать тебя, поставить не туда или разбудить то, что животного даже не видело.
 
 <!-- External Site; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/ru_RU. -->

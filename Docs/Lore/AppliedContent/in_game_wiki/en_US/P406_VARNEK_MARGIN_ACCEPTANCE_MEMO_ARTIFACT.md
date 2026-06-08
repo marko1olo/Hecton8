@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Varnek Margin Memo"
+title: "Varnek Margin Acceptance Memo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Varnek Margin Memo
+# Varnek Margin Acceptance Memo
 
-The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
+The Varnek memo is a quiet piece of guilt. It does not invent the flood and it does not order a killing. It shows a known pressure margin being priced, accepted and routed below continuity cost while the colony still had people inside the envelope.
 
 ## Scanner
 
-Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
+Aegir Operations Risk memo. The Great Tide margin was visible before shutdown authority moved.
 
 ## Terminal
 
-AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: tail exposure accepted under continuity cost. Evacuation reserve remains non-triggered. Independent shutdown not recommended.
 
 ## Audio
 
-No murder order. A margin acceptance.
+It reads like arithmetic until you see who was inside the margin.
 
 ## Field Note
 
-Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
+Marauder note: the ugly line is not the risk number. It is the word accepted.
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/en_US. -->

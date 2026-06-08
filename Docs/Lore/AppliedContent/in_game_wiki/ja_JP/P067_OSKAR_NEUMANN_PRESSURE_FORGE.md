@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oskar Neumann Pressure Forge"
+title: "オスカー・ノイマンの圧力鍛造炉"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Oskar Neumann Pressure Forge
+# オスカー・ノイマンの圧力鍛造炉
 
-JP LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
+オスカー・ノイマンは植民地の技術を脱出の連鎖へつなげる。彼の圧力鍛造炉メモは、深部での製作、クランプリング、シール試験、そして表層救助を待つのではなく部品を取りに降りる必要を説明している。
 
 ## Scanner
 
-JP LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+オスカー・ノイマンは、上昇クレードルをただの棺で終わらせない強度のクランプリングを作る鍛造レシピを残した。
 
 ## Terminal
 
-JP LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+NEUMANN, O. 鍛造メモ: 圧力ガラス粉は冷えたまま混ぜると最初のシールを壊す。噴出口の引き込み風でリングを加熱し、塩水ジャケット内で焼き入れし、その後上昇荷重の2倍で試験する。
 
 ## Audio
 
-JP LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
+打ち上げとは、上へ動く圧力扉にすぎない。扉として作れ。
 
 ## Field Note
 
-JP LOC HOLD: The exit needs craft, not courage.
+出口に必要なのは勇気ではなく技術だ。
 
 <!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/ja_JP. -->

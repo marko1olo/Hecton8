@@ -9,32 +9,36 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Debt Blacklist Contract Pressure"
+title: "Druck durch Schulden-Blacklist-Vertrag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Debt Blacklist Contract Pressure
+# Druck durch Schulden-Blacklist-Vertrag
 
-DE LOC HOLD: The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.
+Schuldendruck hält den Einstieg ehrlich. Der Protagonist wird nicht durch Melodrama nach HECTON-8 gezerrt, ist aber in keinem nützlichen Sinn frei. Black Keel kann einen Vertrag anbieten, weil Claim Pools, Schuldenfenster, Sauerstoffkredite, Liegeplatzzugang und Verwahrungsnachweis zur selben Grenzökonomie gehören. Den Anspruch abzulehnen wäre legal. Es würde den Spieler auch auf der Blacklist lassen, bewegungslos machen und aus dem Routenpreis drängen. Die Annahme macht Black Keel nicht zu einem Schurken mit Gesicht. Sie macht den Träger zu einer Maschine, die Risiko in Papier verwandelt. Der Spieler taucht, weil der Vertrag hässlich, überlebbar und plausibel der einzige Weg zurück in Bewegung ist.
 
 ## Scanner
 
-DE LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
+Pfandhinweis an Black-Keel-Verwahrung gebunden. Ablehnung bleibt legal, aber macht bewegungslos: kein Liegeplatz, kein sauberer Sauerstoffkredit, kein Routenfenster aus Aegir.
 
 ## Terminal
 
-DE LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+ANSPRUCHSANNAHME / BLACKLIST-ENTLASTUNGSFENSTER
+Auftragnehmerstatus: schuldengebundener Marauder
+Träger: Black-Keel-Claim-Pool-Verwahrung
+Entlastungsbedingungen: verwertbare Masse, Verwahrungsnachweis, Empfänger-Compliance
+Fehlerzustand: Blacklist bleibt aktiv; Liegeplatzzugang verweigert; Sauerstofffürsorge wird abrechenbare Unterstützung.
 
 ## Audio
 
-DE LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+Das war keine Entführung. Es war die Art von Wahl, die die Grenze als Freiheit verkauft: unterschreiben, tauchen, oder auf Papier sauber bleiben und praktisch gefangen sein.
 
 ## Field Note
 
-DE LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+Das Pfand zeigte nicht mit einer Waffe. Es zeigte auf die Luftrechnung, die Liegeplatzliste und das nächste Routenfenster.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/de_DE. -->

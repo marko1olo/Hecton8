@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lian Torres Last Packet"
+title: "החבילה האחרונה של ליאן טורס"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Lian Torres Last Packet
+# החבילה האחרונה של ליאן טורס
 
-HE LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.
+ליאן טורס מעגן את אמת התקשורת. החבילה הנקייה האחרונה שלו מוכיחה שחלק מן הראיות עזב את HECTON-8 לפני ש-Deep Reach קברה אותו תחת שיבוש אות ושפת הסגר.
 
 ## Scanner
 
-HE LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.
+החבילה הנקייה האחרונה לא אבדה. ההודאה בקבלתה הייתה יקרה מדי.
 
 ## Terminal
 
-HE LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+טורס, ל. לחיצת יד נקייה עם המוביל הושלמה. ספירת עובדים צורפה. הוכחת פינוי צורפה. גיל הממסר אינו קביל להצלה חיה. הארכיון התאגידי סימן אחר כך את החבילה כפגומה.
 
 ## Audio
 
-HE LOC HOLD: He sent the names. The archive called them noise.
+הוא שלח את השמות. הארכיון קרא להם רעש.
 
 ## Field Note
 
-HE LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.
+חותמת זמן יכולה להיות גופה כשהמוביל עונה לתור הלא נכון.
 
 <!-- In-Game Wiki; generated from P066_LIAN_TORRES_LAST_PACKET/he_IL. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Brine Vane Codex Card"
+title: "Fiche codex de la vane de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Brine Vane Codex Card
+# Fiche codex de la vane de saumure
 
-FR LOC HOLD: In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route.
+Les vanes de saumure donnent une présence physique à l’eau de mi-profondeur de HECTON-8. Elles montrent que le canyon est bâti par la densité, non par un volume bleu vide: une membrane peut être un avertissement, une source de matériau et le bord d’un faux plancher à la fois.
 
 ## Scanner
 
-FR LOC HOLD: Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Feuille de vane de saumure. Membrane sel-minéral fixée à un cisaillement de densité. Bord intact: mur. Bouche déchirée: passage. Eau noire sans bord de vane: risque de faux plancher.
 
 ## Terminal
 
-FR LOC HOLD: SPECIMEN: brine vane. Stable shear marker; hull contact not advised.
+SPÉCIMEN / VANE DE SAUMURE / rôle: marqueur de mur de densité, alerte de courbure sonar, source de nervures tombées / lecture sûre: feuille intacte, bouche aval déchirée, pointe de fenêtre de cisaillement recourbée / rejet: couper une feuille vivante de route, traverser une lueur ouverte, croire un retour de faux plancher / note de route: récolte les nervures tombées, pas la membrane qui maintient ta carte ouverte.
 
 ## Audio
 
-FR LOC HOLD: The plant is not pointing up. It is pointing through.
+La vane ne pointe pas vers le haut. Elle montre où l’océan tourne de côté.
 
 ## Field Note
 
-FR LOC HOLD: Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Feuille intacte: mur. Bouche déchirée: route possible. Nervure tombée: échantillon. Feuille vivante qui tient la voie: laisse-la.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/fr_FR. -->

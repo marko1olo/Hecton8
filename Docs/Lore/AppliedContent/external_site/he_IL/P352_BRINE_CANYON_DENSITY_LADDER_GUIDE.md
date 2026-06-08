@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Brine Canyon Density Ladder Guide"
+title: "מדריך סולם צפיפות של קניון תמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Brine Canyon Density Ladder Guide
+# מדריך סולם צפיפות של קניון תמלחת
 
-HE LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.
+מדריך סולם צפיפות של קניון תמלחת מתייחס לתעלות HECTON-8 כגיאוגרפיה הנדסית: הדרך למטה עשויה מצפיפות, לא מנוף.
 
 ## Scanner
 
-HE LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
+זוהה brine ladder: צפיפות שכבתית, רצפה כוזבת, כיפוף סונאר. עקוב אחרי הקצוות; מים פתוחים משקרים כאן.
 
 ## Terminal
 
-HE LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FIELD GUIDE: קניוני brine מסתירים pressure shelves, current ledges, resource pockets ו-scanner false positives. Hull rating ו-density transition מחליטים איזו מדרגה היא נתיב ואיזו נפילה.
 
 ## Audio
 
-HE LOC HOLD: A canyon is a staircase if your hull can pay for each step.
+קניון הוא גרם מדרגות אם הגוף שלך יכול לשלם על כל צעד.
 
 ## Field Note
 
-HE LOC HOLD: Use for scanner tutorials and resource route articles.
+השתמש בצללי vane כמו מדרגות. קריאה ריקה ב-brine אינה חלל ריק; זה המכשיר שמפסיד בוויכוח.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/he_IL. -->

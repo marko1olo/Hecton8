@@ -7,8 +7,8 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: en_US
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
+source_voice: Recovered Operational Note
+spoiler_tier: 1
 title: "Ran-Aegir Distance Model"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Ran-Aegir Distance Model
 
-The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.
+The Ran-Aegir model gives HECTON-8 a scale the player can feel. Aegir is close enough for probes, freight, seed hardware, and debt-backed settlement by 2190. It is still far enough that a flooded chamber cannot wait for inner-world mercy. Distance appears as delay, custody, fuel, braking, and ownership.
 
 ## Scanner
 
-Aegir is close enough to be reachable by 2190, far enough that help is history.
+Route plate: Aegir is reachable on infrastructure and unreachable by sympathy.
 
 ## Terminal
 
-ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+ROUTE MODEL: Ran/Aegir is held as a ten-light-year-class target from Sol. Play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains route-table work.
 
 ## Audio
 
-Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+Ten light-years is small on a star chart. It is large enough to bankrupt a rescue.
 
 ## Field Note
 
-Use approximate route numbers as pressure, not as a decorative star chart.
+Approximate distance is pressure, not decoration. Ten light-years can still kill a room.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/en_US. -->

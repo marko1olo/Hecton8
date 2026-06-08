@@ -147,11 +147,14 @@ namespace Hecton8.Tests.Editor
             Assert.That(vegetationIndex, Is.GreaterThan(resolveIndex));
             string resolveBlock = utility.Substring(resolveIndex, vegetationIndex - resolveIndex);
             Assert.That(resolveBlock.Contains("MapMagicBridge.ActiveRuntimeInstance"), Is.True);
+            Assert.That(resolveBlock.Contains("TryResolveLiveCachedActiveRuntime(ref target, ref _CachedMapMagicBridge, MapMagicBridge.ActiveRuntimeInstance)"), Is.True);
+            Assert.That(resolveBlock.Contains("if (IsLiveBehaviour(_CachedMapMagicBridge))"), Is.False);
             Assert.That(resolveBlock.Contains("GlobalRegistry.MapMagic"), Is.False);
 
             string seamPath = Path.Combine(root, "Assets", "_Project", "Scripts", "VoxelSeamDirector.cs");
             string seam = File.ReadAllText(seamPath);
-            Assert.That(seam.Contains("MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;"), Is.True);
+            Assert.That(seam.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge)"), Is.True);
+            Assert.That(seam.Contains("MapMagicBridge.Instance"), Is.False);
             Assert.That(seam.Contains("MapMagicBridge mapMagicBridge = GlobalRegistry.MapMagic;"), Is.False);
 
             string vegetationPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "HectonMapMagicVegetationBridge.cs");
@@ -181,9 +184,11 @@ namespace Hecton8.Tests.Editor
             string ecosystem = File.ReadAllText(ecosystemPath);
             Assert.That(ecosystem.Contains("GlobalRegistry.MapMagic"), Is.False);
             Assert.That(ecosystem.Contains("GlobalRegistry.ResourceDistribution"), Is.False);
-            Assert.That(ecosystem.Contains("MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;"), Is.True);
-            Assert.That(ecosystem.Contains("MapMagicBridge bridge = MapMagicBridge.Instance;"), Is.True);
-            Assert.That(ecosystem.Contains("ResourceDistributionDirector resourceDistribution = ResourceDistributionDirector.ActiveRuntimeInstance;"), Is.True);
+            Assert.That(ecosystem.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _cachedMapMagicBridge);"), Is.True);
+            Assert.That(ecosystem.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge)"), Is.True);
+            Assert.That(ecosystem.Contains("MapMagicBridge.Instance"), Is.False);
+            Assert.That(ecosystem.Contains("ResourceDistributionDirector resourceDistribution = _cachedResourceDistribution;"), Is.True);
+            Assert.That(ecosystem.Contains("ResourceDistributionDirector resourceDistribution = ResourceDistributionDirector.ActiveRuntimeInstance;"), Is.False);
         }
 
         [Test]
@@ -226,6 +231,1066 @@ namespace Hecton8.Tests.Editor
             Assert.That(splatBlock.Contains("TryGetCachedBiomeTerrainLayers(terrainData, totalLayers"), Is.True);
             Assert.That(source.Contains("private bool TryGetCachedBiomeTerrainLayers("), Is.True);
             Assert.That(source.Contains("TerrainLayer[] sourceLayers = terrainData.terrainLayers;"), Is.True);
+        }
+
+        [Test]
+        public void BiomeWeightMapBake_BindsProductionTerrainControlTexture()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string pipelinePath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "BiomeWeightMapBaker", "Editor", "BiomeWeightMapBakePipeline.cs");
+            string constantsPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "BiomeWeightMapBaker", "Editor", "BiomeWeightMapBakeJobs.cs");
+            string pipeline = File.ReadAllText(pipelinePath);
+            string constants = File.ReadAllText(constantsPath);
+
+            Assert.That(pipeline.Contains("ProductionTerrainMaterialPath = \"Assets/_Project/Art/Materials/World/MAT_H8TerrainLit_BasaltSediment_1428.mat\""), Is.True);
+            Assert.That(pipeline.Contains("TerrainControlTextureProperty = \"_TerrainControlRGBA\""), Is.True);
+            Assert.That(pipeline.Contains("TryBindControlTextureToProductionTerrainMaterial(outputPath)"), Is.True);
+            Assert.That(pipeline.Contains("material.SetTexture(TerrainControlTextureProperty, texture);"), Is.True);
+            Assert.That(pipeline.Contains("EditorUtility.SetDirty(material);"), Is.True);
+            Assert.That(constants.Contains("WarningMaterialBindingFailed"), Is.True);
+        }
+
+        [Test]
+        public void TerrainMaster_EmptyControlMapUsesSlopeWaterlineFallback()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string shaderPath = Path.Combine(root, "Assets", "_Project", "Art", "Shaders", "TerrainMaster.shader");
+            string materialPath = Path.Combine(root, "Assets", "_Project", "Art", "Materials", "World", "MAT_H8TerrainLit_BasaltSediment_1428.mat");
+            string shader = File.ReadAllText(shaderPath);
+            string material = File.ReadAllText(materialPath);
+
+            Assert.That(shader.Contains("void HectonResolveMissingControlWeights("), Is.True);
+            Assert.That(shader.Contains("_FallbackWaterlineY"), Is.True);
+            Assert.That(shader.Contains("if (hasControl < 0.5h)"), Is.True);
+            Assert.That(shader.Contains("HectonResolveMissingControlWeights(IN.positionWS, IN.normalWS, screenIgn, rockWeight, sandWeight, siltWeight, sedimentSource);"), Is.True);
+            Assert.That(shader.Contains("half sedimentSource = control.a;"), Is.True);
+            Assert.That(shader.Contains("controlSand * hasControl + (1.0h - hasControl)"), Is.False);
+
+            Assert.That(material.Contains("- _FallbackWaterlineY: 14.02"), Is.True);
+            Assert.That(material.Contains("- _FallbackShoreWidth:"), Is.True);
+            Assert.That(material.Contains("- _FallbackHeightRange:"), Is.True);
+        }
+
+        [Test]
+        public void ProductionMapMagicTerrainRoute_RemainsEnabledAndMaterialBound()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string scenePath = Path.Combine(root, "Assets", "_Project", "Scenes", "02_HECTON_WORLD.unity");
+            string bridgePath = Path.Combine(root, "Assets", "_Project", "Scripts", "Plugins", "MapMagic", "MapMagicRuntimeBridge.cs");
+            string scene = File.ReadAllText(scenePath);
+            string bridge = File.ReadAllText(bridgePath);
+
+            int mapMagicIdentifier = scene.IndexOf("m_EditorClassIdentifier: MapMagic::MapMagic.Core.MapMagicObject", StringComparison.Ordinal);
+            Assert.That(mapMagicIdentifier, Is.GreaterThanOrEqualTo(0));
+            int blockStart = scene.LastIndexOf("--- !u!114", mapMagicIdentifier, StringComparison.Ordinal);
+            int blockEnd = scene.IndexOf("\n--- ", mapMagicIdentifier, StringComparison.Ordinal);
+            Assert.That(blockStart, Is.GreaterThanOrEqualTo(0));
+            Assert.That(blockEnd, Is.GreaterThan(mapMagicIdentifier));
+            string mapMagicBlock = scene.Substring(blockStart, blockEnd - blockStart);
+
+            Assert.That(mapMagicBlock.Contains("m_Enabled: 1"), Is.True);
+            Assert.That(mapMagicBlock.Contains("material: {fileID: 2100000, guid: 3d0eae0538ca3ef40bf13fcd5a586ead, type: 2}"), Is.True);
+            Assert.That(bridge.Contains("mapMagicObject.enabled = true;"), Is.True);
+            Assert.That(bridge.Contains("mapMagicObject.draftsInPlaymode = true;"), Is.True);
+            Assert.That(bridge.Contains("mapMagicObject.enabled = false;"), Is.False);
+        }
+
+        [Test]
+        public void WorldStreamingDirector_RebindsMapMagicLifecycleAndKeepsNewDraftTiles()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string directorPath = Path.Combine(root, "Assets", "_Project", "Scripts", "WorldStreamingDirector.cs");
+            string bridgePath = Path.Combine(root, "Assets", "_Project", "Scripts", "Plugins", "MapMagic", "MapMagicRuntimeBridge.cs");
+            string referenceUtilityPath = Path.Combine(root, "Assets", "_Project", "Scripts", "WorldRuntimeReferenceUtility.cs");
+            string director = File.ReadAllText(directorPath);
+            string bridge = File.ReadAllText(bridgePath);
+            string referenceUtility = File.ReadAllText(referenceUtilityPath);
+
+            Assert.That(director.Contains("case GlobalRegistryServiceSlot.Player:"), Is.True);
+            Assert.That(director.Contains("case GlobalRegistryServiceSlot.MapMagicRuntime:"), Is.True);
+            Assert.That(director.Contains("case GlobalRegistryServiceSlot.TerrainProviderRuntime:"), Is.True);
+            Assert.That(director.Contains("RebindPlayerRuntimeContext(currentService as IPlayerRuntimeContext);"), Is.True);
+            Assert.That(director.Contains("isActiveAndEnabled && currentService != null"), Is.True);
+            Assert.That(director.Contains("InvalidateStreamingProfileState();"), Is.True);
+            Assert.That(director.Contains("private bool ConfigureMapMagicTerrainTopology(bool force)"), Is.True);
+            Assert.That(director.Contains("bool topologyChanged = ConfigureMapMagicTerrainTopology(force);"), Is.True);
+            Assert.That(director.Contains("force |= topologyChanged;"), Is.True);
+            Assert.That(director.Contains("_terrainStreamingTopologyDirty"), Is.True);
+            Assert.That(director.Contains("_lastTerrainDraftResolution"), Is.True);
+            Assert.That(director.Contains("mapMagicBridge == null || !mapMagicBridge.isActiveAndEnabled"), Is.True);
+            Assert.That(director.Contains("biomeSamplerCache == null || !biomeSamplerCache.isActiveAndEnabled"), Is.True);
+            Assert.That(director.Contains("scatterBudgetController == null || !scatterBudgetController.isActiveAndEnabled"), Is.True);
+            Assert.That(director.Contains("worldSliceDirector == null || !worldSliceDirector.isActiveAndEnabled"), Is.True);
+
+            Assert.That(referenceUtility.Contains("public static void InvalidateMapMagicBridgeCache(MapMagicBridge instance)"), Is.True);
+            Assert.That(referenceUtility.Contains("target = null;\r\n            MapMagicBridge active = MapMagicBridge.ActiveRuntimeInstance") ||
+                        referenceUtility.Contains("target = null;\n            MapMagicBridge active = MapMagicBridge.ActiveRuntimeInstance"), Is.True);
+            Assert.That(bridge.Contains("WorldRuntimeReferenceUtility.InvalidateMapMagicBridgeCache(this);"), Is.True);
+            Assert.That(bridge.Contains("mapMagicObject.draftsInPlaymode && tile.draft == null"), Is.True);
+            Assert.That(bridge.Contains("tile.draft = CreateRuntimeDetailLevel(tile, isDraft: true);"), Is.True);
+            Assert.That(bridge.Contains("keep newly streamed tiles on the runtime draft continuum"), Is.True);
+        }
+
+        [Test]
+        public void VisibleWorldTerrainRuntimeConsumers_RebindThroughLiveTerrainRuntime()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string scatterPath = Path.Combine(root, "Assets", "_Project", "Scripts", "ScatterBudgetController.cs");
+            string vegetationPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "HectonMapMagicVegetationBridge.cs");
+            string sargassumPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "SargassumMicroFaunaBoids.cs");
+            string underwaterPath = Path.Combine(root, "Assets", "_Project", "Scripts", "HectonUnderwaterVisuals.cs");
+            string floraPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "FloraInteractionManager.cs");
+            string ecosystemPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "EcosystemDirector.cs");
+            string playerSpawnerPath = Path.Combine(root, "Assets", "_Project", "Scripts", "HectonPlayerSpawner.cs");
+            string fluidEnginePath = Path.Combine(root, "Assets", "_Project", "Scripts", "HectonFluidEngine.cs");
+            string buoyancyPath = Path.Combine(root, "Assets", "_Project", "Scripts", "BuoyancyObject.cs");
+            string biomeSamplerPath = Path.Combine(root, "Assets", "_Project", "Scripts", "BiomeSamplerCache.cs");
+            string fieldSamplerPath = Path.Combine(root, "Assets", "_Project", "Scripts", "WorldProceduralFieldSampler.cs");
+            string footstepAudioPath = Path.Combine(root, "Assets", "_Project", "Scripts", "PlayerFootstepAudio.cs");
+            string criticalAudioPath = Path.Combine(root, "Assets", "_Project", "Scripts", "Audio", "PlayerCriticalProceduralAudioRenderer.cs");
+            string sargassumCutPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "SargassumCutManager.cs");
+            string drillPath = Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "Mining", "DeployableSdfDrillRuntime.cs");
+            string wreckPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ProceduralWreckGenerator.cs");
+            string voxelSeamPath = Path.Combine(root, "Assets", "_Project", "Scripts", "VoxelSeamDirector.cs");
+            string scatter = File.ReadAllText(scatterPath);
+            string vegetation = File.ReadAllText(vegetationPath);
+            string sargassum = File.ReadAllText(sargassumPath);
+            string underwater = File.ReadAllText(underwaterPath);
+            string flora = File.ReadAllText(floraPath);
+            string ecosystem = File.ReadAllText(ecosystemPath);
+            string playerSpawner = File.ReadAllText(playerSpawnerPath);
+            string fluidEngine = File.ReadAllText(fluidEnginePath);
+            string buoyancy = File.ReadAllText(buoyancyPath);
+            string biomeSampler = File.ReadAllText(biomeSamplerPath);
+            string fieldSampler = File.ReadAllText(fieldSamplerPath);
+            string footstepAudio = File.ReadAllText(footstepAudioPath);
+            string criticalAudio = File.ReadAllText(criticalAudioPath);
+            string sargassumCut = File.ReadAllText(sargassumCutPath);
+            string drill = File.ReadAllText(drillPath);
+            string wreck = File.ReadAllText(wreckPath);
+            string voxelSeam = File.ReadAllText(voxelSeamPath);
+
+            Assert.That(scatter.Contains("serviceSlot == GlobalRegistryServiceSlot.MapMagicRuntime ||"), Is.True);
+            Assert.That(scatter.Contains("serviceSlot == GlobalRegistryServiceSlot.TerrainProviderRuntime"), Is.True);
+            Assert.That(scatter.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+            Assert.That(scatter.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);"), Is.True);
+            Assert.That(scatter.Contains("mapMagicBridge = GlobalRegistry.MapMagic"), Is.False);
+            Assert.That(scatter.Contains("ApplyCurrentBudget(force: true);"), Is.True);
+
+            Assert.That(vegetation.Contains("case GlobalRegistryServiceSlot.TerrainProviderRuntime:"), Is.True);
+            Assert.That(vegetation.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+            Assert.That(vegetation.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);"), Is.True);
+            Assert.That(vegetation.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge)"), Is.True);
+            Assert.That(vegetation.Contains("mapMagicBridge = GlobalRegistry.MapMagic"), Is.False);
+            Assert.That(vegetation.Contains("MapMagicBridge bridge = mapMagicBridge != null ? mapMagicBridge : GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(sargassum.Contains("case GlobalRegistryServiceSlot.TerrainProviderRuntime:"), Is.True);
+            Assert.That(sargassum.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+            Assert.That(sargassum.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagicRuntime);"), Is.True);
+            Assert.That(sargassum.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge)"), Is.True);
+            Assert.That(sargassum.Contains("_mapMagicRuntime = GlobalRegistry.MapMagic"), Is.False);
+            Assert.That(sargassum.Contains("MapMagicBridge bridge = _mapMagicRuntime != null ? _mapMagicRuntime : GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(underwater.Contains("case GlobalRegistryServiceSlot.TerrainProviderRuntime:"), Is.True);
+            Assert.That(underwater.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+            Assert.That(underwater.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagicRuntime);"), Is.True);
+            Assert.That(underwater.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref terrainRuntime)"), Is.True);
+            Assert.That(underwater.Contains("_mapMagicRuntime = GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(flora.Contains("case GlobalRegistryServiceSlot.TerrainProviderRuntime:"), Is.True);
+            Assert.That(flora.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+            Assert.That(flora.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagicRuntime);"), Is.True);
+            Assert.That(flora.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicRuntime)"), Is.True);
+            Assert.That(flora.Contains("_mapMagicRuntime = GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(ecosystem.Contains("case GlobalRegistryServiceSlot.TerrainProviderRuntime:"), Is.True);
+            Assert.That(ecosystem.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+            Assert.That(ecosystem.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _cachedMapMagicBridge);"), Is.True);
+            Assert.That(ecosystem.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge)"), Is.True);
+            Assert.That(ecosystem.Contains("_cachedMapMagicBridge = GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(playerSpawner.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref terrainBridge)"), Is.True);
+            Assert.That(playerSpawner.Contains("MapMagicBridge terrainBridge = GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(fluidEngine.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagic)"), Is.True);
+            Assert.That(fluidEngine.Contains("MapMagicBridge mapMagic = GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(buoyancy.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagic)"), Is.True);
+            Assert.That(buoyancy.Contains("MapMagicBridge mapMagic = GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(biomeSampler.Contains("case GlobalRegistryServiceSlot.TerrainProviderRuntime:"), Is.True);
+            Assert.That(biomeSampler.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+            Assert.That(biomeSampler.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);"), Is.True);
+            Assert.That(biomeSampler.Contains("mapMagicBridge = GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(fieldSampler.Contains("case GlobalRegistryServiceSlot.TerrainProviderRuntime:"), Is.True);
+            Assert.That(fieldSampler.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+            Assert.That(fieldSampler.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);"), Is.True);
+            Assert.That(fieldSampler.Contains("mapMagicBridge = GlobalRegistry.MapMagic"), Is.False);
+            Assert.That(fieldSampler.Contains("!mapMagicBridge.isActiveAndEnabled"), Is.True);
+
+            Assert.That(footstepAudio.Contains("serviceSlot == GlobalRegistryServiceSlot.TerrainProviderRuntime"), Is.True);
+            Assert.That(footstepAudio.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+            Assert.That(footstepAudio.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagic);"), Is.True);
+            Assert.That(footstepAudio.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge)"), Is.True);
+            Assert.That(footstepAudio.Contains("_mapMagic = GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(criticalAudio.Contains("case GlobalRegistryServiceSlot.TerrainProviderRuntime:"), Is.True);
+            Assert.That(criticalAudio.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+            Assert.That(criticalAudio.Contains("CacheRegistryServiceReference(serviceSlot, previousService, currentService);"), Is.True);
+            Assert.That(criticalAudio.Contains("CacheRegistryServiceReference(serviceSlot, currentService);"), Is.False);
+            Assert.That(criticalAudio.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagicBridge);"), Is.True);
+            Assert.That(criticalAudio.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagic)"), Is.True);
+            Assert.That(criticalAudio.Contains("_mapMagicBridge = GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(sargassumCut.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref terrainBridge)"), Is.True);
+            Assert.That(sargassumCut.Contains("MapMagicBridge terrainBridge = GlobalRegistry.MapMagic"), Is.False);
+
+            Assert.That(drill.Contains("case GlobalRegistryServiceSlot.MapMagicRuntime:"), Is.True);
+            Assert.That(drill.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagic);"), Is.True);
+            Assert.That(drill.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagic)"), Is.True);
+            Assert.That(drill.Contains("MapMagicBridge.Instance"), Is.False);
+
+            Assert.That(wreck.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge)"), Is.True);
+            Assert.That(wreck.Contains("MapMagicBridge.Instance"), Is.False);
+
+            Assert.That(voxelSeam.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge)"), Is.True);
+            Assert.That(voxelSeam.Contains("MapMagicBridge.Instance"), Is.False);
+        }
+
+        [Test]
+        public void WorldRuntimeReferenceUtility_InvalidatesCachedRuntimeOwnersOnShutdown()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string referenceUtilityPath = Path.Combine(root, "Assets", "_Project", "Scripts", "WorldRuntimeReferenceUtility.cs");
+            string mapMagicBridgePath = Path.Combine(root, "Assets", "_Project", "Scripts", "Plugins", "MapMagic", "MapMagicRuntimeBridge.cs");
+            string playerRuntimePath = Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "PlayerRuntimeContextService.cs");
+            string referenceUtility = File.ReadAllText(referenceUtilityPath);
+            string mapMagicBridge = File.ReadAllText(mapMagicBridgePath);
+            string playerRuntime = File.ReadAllText(playerRuntimePath);
+
+            Assert.That(referenceUtility.Contains("private static bool IsLiveTransform(Transform transform)"), Is.True);
+            Assert.That(referenceUtility.Contains("transform.gameObject.activeInHierarchy"), Is.True);
+            Assert.That(referenceUtility.Contains("if (!TryResolveCurrentPlayerTransform(out Transform active))"), Is.True);
+            Assert.That(referenceUtility.Contains("if (ReferenceEquals(target, active))"), Is.True);
+            Assert.That(referenceUtility.Contains("if (_CachedPlayerTransform != null)"), Is.False);
+            Assert.That(referenceUtility.Contains("public static void InvalidatePlayerTransformCache(Transform instance)"), Is.True);
+            Assert.That(referenceUtility.Contains("public static void InvalidateMapMagicBridgeCache(MapMagicBridge instance)"), Is.True);
+            Assert.That(mapMagicBridge.Contains("WorldRuntimeReferenceUtility.InvalidateMapMagicBridgeCache(this);"), Is.True);
+            Assert.That(playerRuntime.Contains("WorldRuntimeReferenceUtility.InvalidatePlayerTransformCache(_playerTransform);"), Is.True);
+            Assert.That(playerRuntime.Contains("WorldRuntimeReferenceUtility.InvalidatePlayerTransformCache(registeredContext.PlayerTransform);"), Is.True);
+        }
+
+        [Test]
+        public void WorldRuntimeReferenceUtility_RejectsDisabledStreamingOwners()
+        {
+            string utilityPath = Path.Combine(Directory.GetCurrentDirectory(), "Assets", "_Project", "Scripts", "WorldRuntimeReferenceUtility.cs");
+            string utility = File.ReadAllText(utilityPath);
+
+            Assert.That(utility.Contains("private static bool IsLiveBehaviour(Behaviour behaviour)"), Is.True);
+            Assert.That(utility.Contains("return behaviour != null && behaviour.isActiveAndEnabled;"), Is.True);
+            Assert.That(utility.Contains("private static bool TryResolveLiveActiveRuntime<T>(ref T target, T active) where T : Behaviour"), Is.True);
+            Assert.That(utility.Contains("if (IsLiveBehaviour(target) && ReferenceEquals(target, active))"), Is.True);
+            Assert.That(utility.Contains("target = null;"), Is.True);
+            Assert.That(utility.Contains("if (!IsLiveBehaviour(active))"), Is.True);
+            Assert.That(utility.Contains("private static bool TryResolveLiveCachedActiveRuntime<T>(ref T target, ref T cache, T active) where T : Behaviour"), Is.True);
+            Assert.That(utility.Contains("if (!TryResolveLiveActiveRuntime(ref target, active))"), Is.True);
+            Assert.That(utility.Contains("cache = null;"), Is.True);
+
+            string[] liveResolverContracts =
+            {
+                "return TryResolveLiveActiveRuntime(ref target, BiomeSamplerCache.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, ScatterBudgetController.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldSliceDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldZoneDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldContentDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, ProximityColliderSystem.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, BiomeMatrixDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldProceduralStateRegistry.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldProceduralScatterDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, EcosystemDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, ResourceDistributionDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldFaunaSpawnRegistry.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldProceduralFieldSampler.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldProceduralFillDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldCaveDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, FaunaDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldGenerativeGeologyService.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldGenerativeGeologyIntegrationDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, WorldGenerativeGeologySeamExecutionDirector.ActiveRuntimeInstance);",
+                "return TryResolveLiveActiveRuntime(ref target, HectonVoxelEngine.ActiveRuntimeInstance);"
+            };
+
+            for (int i = 0; i < liveResolverContracts.Length; i++)
+                Assert.That(utility.Contains(liveResolverContracts[i]), Is.True, liveResolverContracts[i]);
+
+            Assert.That(utility.Contains("public static bool TryResolveScavengePopulator(ref ScavengePopulator target)"), Is.True);
+            Assert.That(utility.Contains("target != null && target.IsRuntimeOwnerUsable"), Is.True);
+            Assert.That(utility.Contains("registered != null && registered.IsRuntimeOwnerUsable"), Is.True);
+            Assert.That(utility.Contains("public static void InvalidateScavengePopulatorCache(ScavengePopulator instance)"), Is.True);
+        }
+
+        [Test]
+        public void StreamingRuntimeOwners_ClearActiveInstanceOnDisable()
+        {
+            string root = Directory.GetCurrentDirectory();
+            AssertStreamingOwnerLifecycle(
+                File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "BiomeSamplerCache.cs")));
+            AssertStreamingOwnerLifecycle(
+                File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ScatterBudgetController.cs")));
+            AssertStreamingOwnerLifecycle(
+                File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "WorldSliceDirector.cs")));
+        }
+
+        [Test]
+        public void ScavengePopulatorConsumers_ResolveLiveRuntimeOwnerInsteadOfRegistrySlot()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string populator = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ScavengePopulator.cs"));
+            string bootstrap = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Bootstrap", "GameBootstrapper.cs"));
+            string voxel = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "HectonVoxelEngine.cs"));
+            string scatterBudget = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ScatterBudgetController.cs"));
+            string scatterOutput = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Plugins", "MapMagic", "HectonScatterOutput.cs"));
+
+            Assert.That(populator.Contains("internal bool IsRuntimeOwnerUsable =>"), Is.True);
+            Assert.That(populator.Contains("WorldRuntimeReferenceUtility.InvalidateScavengePopulatorCache(this);"), Is.True);
+
+            Assert.That(bootstrap.Contains("WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref populator)"), Is.True);
+            Assert.That(bootstrap.Contains("ScavengePopulator populator = GlobalRegistry.ScavengePopulator;"), Is.False);
+            Assert.That(bootstrap.Contains("WorldRuntimeReferenceUtility.TryResolveEcosystemDirector(ref director)"), Is.True);
+            Assert.That(bootstrap.Contains("EcosystemDirector director = EcosystemDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(bootstrap.Contains("WorldRuntimeReferenceUtility.TryResolveWorldProceduralScatterDirector(ref director)"), Is.True);
+            Assert.That(bootstrap.Contains("WorldProceduralScatterDirector director = WorldProceduralScatterDirector.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(voxel.Contains("WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref _scavengePopulator);"), Is.True);
+            Assert.That(voxel.Contains("_scavengePopulator = GlobalRegistry.ScavengePopulator;"), Is.False);
+
+            Assert.That(scatterBudget.Contains("WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);"), Is.True);
+            Assert.That(scatterBudget.Contains("scavengePopulator = GlobalRegistry.ScavengePopulator;"), Is.False);
+            Assert.That(scatterBudget.Contains("WorldRuntimeReferenceUtility.TryResolveProximityColliderSystem(ref proximityColliderSystem);"), Is.True);
+            Assert.That(scatterBudget.Contains("proximityColliderSystem = ProximityColliderSystem.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(scatterOutput.Contains("WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref populator)"), Is.True);
+            Assert.That(scatterOutput.Contains("ScavengePopulator populator = GlobalRegistry.ScavengePopulator;"), Is.False);
+        }
+
+        [Test]
+        public void PlayerVisibleWorldOwnerConsumers_ResolveLiveRuntimeOwnersInsteadOfActiveInstanceReads()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string pdaMap = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "PDAMapTab.cs"));
+            string pdaSpectrum = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "PDASpectrumTab.cs"));
+            string firstHour = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "FirstHourDirector.cs"));
+            string thermal = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "AbyssalThermalManager.cs"));
+            string anomalyResourceBinding = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "HectonAnomalyResourceBinding.cs"));
+            string sargassum = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "SargassumMicroFaunaBoids.cs"));
+            string floraRegrowth = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "FloraRegrowthDirector.cs"));
+            string groundRadar = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "GroundPenetratingRadarRuntime.cs"));
+            string underwater = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "HectonUnderwaterVisuals.cs"));
+            string spatialAudio = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "SpatialAudioManager.cs"));
+            string music = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Audio", "HectonMusicDirector.cs"));
+            string atlas = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "AtlasSignal", "AtlasSignalSystem.cs"));
+            string baseModule = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "BaseModule.cs"));
+
+            Assert.That(pdaMap.Contains("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);"), Is.True);
+            Assert.That(pdaMap.Contains("BiomeMatrixDirector biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(pdaSpectrum.Contains("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeDirector);"), Is.True);
+            Assert.That(pdaSpectrum.Contains("biomeDirector = BiomeMatrixDirector.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(firstHour.Contains("WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref _worldZoneDirector);"), Is.True);
+            Assert.That(firstHour.Contains("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);"), Is.True);
+            Assert.That(firstHour.Contains("_worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(firstHour.Contains("_biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(thermal.Contains("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);"), Is.True);
+            Assert.That(thermal.Contains("WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);"), Is.True);
+            Assert.That(thermal.Contains("WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref engine);"), Is.True);
+            Assert.That(thermal.Contains("WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref resourceDistributionDirector);"), Is.True);
+            Assert.That(thermal.Contains("WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref director);"), Is.True);
+            Assert.That(thermal.Contains("HectonVoxelEngine engine = currentService as HectonVoxelEngine;"), Is.True);
+            Assert.That(thermal.Contains("biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(thermal.Contains("worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(thermal.Contains("HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(thermal.Contains("ResourceDistributionDirector.ActiveRuntimeInstance"), Is.False);
+
+            Assert.That(anomalyResourceBinding.Contains("WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref director)"), Is.True);
+            Assert.That(anomalyResourceBinding.Contains("ResourceDistributionDirector.ActiveRuntimeInstance"), Is.False);
+
+            Assert.That(sargassum.Contains("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);"), Is.True);
+            Assert.That(sargassum.Contains("WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref _worldZoneDirector);"), Is.True);
+            Assert.That(sargassum.Contains("WorldRuntimeReferenceUtility.TryResolveEcosystemDirector(ref ecosystemDirector)"), Is.True);
+            Assert.That(sargassum.Contains("WorldRuntimeReferenceUtility.TryResolveWorldProceduralScatterDirector(ref _proceduralScatterDirector)"), Is.True);
+            Assert.That(sargassum.Contains("MapMagicBridge currentMapMagic = currentService as MapMagicBridge;"), Is.True);
+            Assert.That(sargassum.Contains("WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref currentMapMagic)"), Is.True);
+            Assert.That(sargassum.Contains("_biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(sargassum.Contains("_worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(sargassum.Contains("_ecosystemDirector = EcosystemDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(sargassum.Contains("_proceduralScatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(sargassum.Contains("currentService is MapMagicBridge currentMapMagic && currentMapMagic.isActiveAndEnabled"), Is.False);
+
+            Assert.That(floraRegrowth.Contains("WorldRuntimeReferenceUtility.TryResolveWorldProceduralScatterDirector(ref scatterDirector)"), Is.True);
+            Assert.That(floraRegrowth.Contains("WorldProceduralScatterDirector scatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(groundRadar.Contains("WorldRuntimeReferenceUtility.TryResolveEcosystemDirector(ref ecosystemDirector)"), Is.True);
+            Assert.That(groundRadar.Contains("_ecosystemDirector = EcosystemDirector.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(underwater.Contains("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);"), Is.True);
+            Assert.That(underwater.Contains("biomeMatrixDirector != null && biomeMatrixDirector.isActiveAndEnabled"), Is.True);
+            Assert.That(underwater.Contains("biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(spatialAudio.Contains("WorldRuntimeReferenceUtility.TryResolveWorldCaveDirector(ref _worldCaveDirector);"), Is.True);
+            Assert.That(spatialAudio.Contains("_worldCaveDirector = WorldCaveDirector.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(music.Contains("WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref runtimeWorldZoneDirector);"), Is.True);
+            Assert.That(music.Contains("WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref director);"), Is.True);
+            Assert.That(music.Contains("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref director);"), Is.True);
+            Assert.That(music.Contains("CacheRuntimeWorldZoneDirectorCold(WorldZoneDirector.ActiveRuntimeInstance);"), Is.False);
+
+            Assert.That(atlas.Contains("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);"), Is.True);
+            Assert.That(atlas.Contains("BiomeMatrixDirector biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(baseModule.Contains("WorldRuntimeReferenceUtility.TryResolveWorldFaunaSpawnRegistry(ref registry);"), Is.True);
+            Assert.That(baseModule.Contains("WorldFaunaSpawnRegistry registry = WorldFaunaSpawnRegistry.ActiveRuntimeInstance;"), Is.False);
+        }
+
+        [Test]
+        public void DestructibleOrganicManagerConsumers_ResolveLiveRuntimeOwner()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string utility = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "WorldRuntimeReferenceUtility.cs"));
+            string manager = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "DestructibleOrganicManager.cs"));
+            string ecosystem = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "EcosystemDirector.cs"));
+            string flora = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "FloraInteractionManager.cs"));
+            string chemical = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ChemicalInfluenceGrid.cs"));
+            string transport = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "MountablePlayerTransport.cs"));
+
+            Assert.That(utility.Contains("public static bool TryResolveDestructibleOrganicManager(ref DestructibleOrganicManager target)"), Is.True);
+            Assert.That(utility.Contains("TryResolveLiveActiveRuntime(ref target, DestructibleOrganicManager.ActiveRuntimeInstance)"), Is.True);
+
+            int onDisableIndex = manager.IndexOf("private void OnDisable()", StringComparison.Ordinal);
+            int unregisterIndex = manager.IndexOf("TryUnregisterTickLanes();", onDisableIndex, StringComparison.Ordinal);
+            Assert.That(onDisableIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(unregisterIndex, Is.GreaterThan(onDisableIndex));
+            string onDisableBlock = manager.Substring(onDisableIndex, unregisterIndex - onDisableIndex);
+            Assert.That(onDisableBlock.Contains("if (ReferenceEquals(_activeRuntimeInstance, this))"), Is.True);
+            Assert.That(onDisableBlock.Contains("_activeRuntimeInstance = null;"), Is.True);
+
+            Assert.That(ecosystem.Contains("TryResolveDestructibleOrganicManager(out DestructibleOrganicManager organicManager);"), Is.True);
+            Assert.That(ecosystem.Contains("DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(flora.Contains("WorldRuntimeReferenceUtility.TryResolveDestructibleOrganicManager(ref activeManager);"), Is.True);
+            Assert.That(flora.Contains("WorldRuntimeReferenceUtility.TryResolveDestructibleOrganicManager(ref _destructibleOrganicManager);"), Is.True);
+            Assert.That(flora.Contains("DestructibleOrganicManager.ActiveRuntimeInstance"), Is.False);
+
+            Assert.That(chemical.Contains("WorldRuntimeReferenceUtility.TryResolveDestructibleOrganicManager(ref organicManager);"), Is.True);
+            Assert.That(chemical.Contains("DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(transport.Contains("WorldRuntimeReferenceUtility.TryResolveDestructibleOrganicManager(ref organicManager);"), Is.True);
+            Assert.That(transport.Contains("WorldRuntimeReferenceUtility.TryResolveDestructibleOrganicManager(ref destructibleOrganicManager);"), Is.True);
+            Assert.That(transport.Contains("DestructibleOrganicManager.ActiveRuntimeInstance"), Is.False);
+        }
+
+        [Test]
+        public void AbyssalThermalManagerConsumers_ResolveLiveRuntimeOwner()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string utility = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "WorldRuntimeReferenceUtility.cs"));
+            string ecosystem = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "EcosystemDirector.cs"));
+            string volcanic = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "VolcanicUpdraftDirector.cs"));
+            string thermal = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "AbyssalThermalManager.cs"));
+            string bioCable = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "BioCableIK.cs"));
+
+            Assert.That(utility.Contains("public static bool TryResolveAbyssalThermalManager(ref AbyssalThermalManager target)"), Is.True);
+            Assert.That(utility.Contains("TryResolveLiveActiveRuntime(ref target, AbyssalThermalManager.ActiveRuntimeInstance)"), Is.True);
+
+            Assert.That(ecosystem.Contains("WorldRuntimeReferenceUtility.TryResolveAbyssalThermalManager(ref thermalManager);"), Is.True);
+            Assert.That(ecosystem.Contains("AbyssalThermalManager thermalManager = AbyssalThermalManager.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(volcanic.Contains("WorldRuntimeReferenceUtility.TryResolveAbyssalThermalManager(ref thermalManager);"), Is.True);
+            Assert.That(volcanic.Contains("_thermodynamicsService = AbyssalThermalManager.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(thermal.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(thermal.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(thermal.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(thermal.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(thermal.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(thermal.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(thermal.Contains("_objectPoolService = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(thermal.Contains("_objectPoolService = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(thermal.Contains("IObjectPoolService pool = _objectPoolService;"), Is.False);
+
+            Assert.That(bioCable.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(bioCable.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.True);
+            Assert.That(bioCable.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(bioCable.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(bioCable.Contains("ObjectPoolManager.TryResolvePoolForInstance(_sparkPooledInstance, pool, out IObjectPoolService ownerPool)"), Is.True);
+            Assert.That(bioCable.Contains("CacheObjectPoolServiceCold(null);"), Is.True);
+            Assert.That(bioCable.Contains("IObjectPoolService pool = _objectPoolService;"), Is.False);
+            Assert.That(bioCable.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
+        }
+
+        [Test]
+        public void HectonDirectorAIConsumers_ResolveLiveRuntimeOwner()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string directorSource = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "HectonDirectorAI.cs"));
+            string bootstrap = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Bootstrap", "GameBootstrapper.cs"));
+            string ecosystem = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "EcosystemDirector.cs"));
+            string flora = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "FloraInteractionManager.cs"));
+            string telemetry = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "CrashTelemetryBuffer.cs"));
+
+            Assert.That(directorSource.Contains("internal static bool TryResolveActiveRuntime(ref HectonDirectorAI target)"), Is.True);
+            Assert.That(directorSource.Contains("!active._encounterDirectorServiceRegistered"), Is.True);
+
+            Assert.That(bootstrap.Contains("HectonDirectorAI.TryResolveActiveRuntime(ref director);"), Is.True);
+            Assert.That(bootstrap.Contains("HectonDirectorAI director = HectonDirectorAI.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(ecosystem.Contains("HectonDirectorAI.TryResolveActiveRuntime(ref director);"), Is.True);
+            Assert.That(ecosystem.Contains("HectonDirectorAI director = HectonDirectorAI.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(flora.Contains("HectonDirectorAI.TryResolveActiveRuntime(ref director);"), Is.True);
+            Assert.That(flora.Contains("HectonDirectorAI director = HectonDirectorAI.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(telemetry.Contains("HectonDirectorAI.TryResolveActiveRuntime(ref director);"), Is.True);
+            Assert.That(telemetry.Contains("HectonDirectorAI director = HectonDirectorAI.ActiveRuntimeInstance;"), Is.False);
+        }
+
+        [Test]
+        public void FloraInteractionManagerConsumers_ResolveLiveRuntimeOwner()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string utility = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "WorldRuntimeReferenceUtility.cs"));
+            string bootstrap = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Bootstrap", "GameBootstrapper.cs"));
+            string baseModule = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "BaseModule.cs"));
+            string vehicleMotor = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "VehicleMotor.cs"));
+            string constructionManager = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ConstructionManager.cs"));
+            string baseDegradation = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Construction", "BaseDegradationSystem.cs"));
+            string submarineFluid = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "SubmarineFluidDynamics.cs"));
+            string tuner = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Editor", "FloraSwayTunerWindow.cs"));
+
+            Assert.That(utility.Contains("public static bool TryResolveFloraInteractionManager(ref FloraInteractionManager target)"), Is.True);
+            Assert.That(utility.Contains("TryResolveLiveActiveRuntime(ref target, FloraInteractionManager.ActiveRuntimeInstance)"), Is.True);
+
+            Assert.That(bootstrap.Contains("WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref manager);"), Is.True);
+            Assert.That(bootstrap.Contains("FloraInteractionManager manager = FloraInteractionManager.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(baseModule.Contains("WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref floraInteractionManager);"), Is.True);
+            Assert.That(baseModule.Contains("FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(vehicleMotor.Contains("WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref floraInteractionManager);"), Is.True);
+            Assert.That(vehicleMotor.Contains("FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(constructionManager.Contains("WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref floraInteractionManager);"), Is.True);
+            Assert.That(constructionManager.Contains("FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(baseDegradation.Contains("WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref floraInteractionManager);"), Is.True);
+            Assert.That(baseDegradation.Contains("FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(submarineFluid.Contains("WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref floraInteractionManager);"), Is.True);
+            Assert.That(submarineFluid.Contains("FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(tuner.Contains("WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref _target);"), Is.True);
+            Assert.That(tuner.Contains("_target = FloraInteractionManager.ActiveRuntimeInstance;"), Is.False);
+        }
+
+        [Test]
+        public void HectonUnderwaterVisualsConsumers_ResolveLiveRuntimeOwner()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string utility = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "WorldRuntimeReferenceUtility.cs"));
+            string flora = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "FloraInteractionManager.cs"));
+            string debugUi = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "HectonSystemsDebugUI.cs"));
+            string playerContext = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "PlayerRuntimeContextService.cs"));
+            string sensory = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "PlayerSensoryManager.cs"));
+
+            Assert.That(utility.Contains("public static bool TryResolveHectonUnderwaterVisuals(ref HectonUnderwaterVisuals target)"), Is.True);
+            Assert.That(utility.Contains("TryResolveLiveActiveRuntime(ref target, HectonUnderwaterVisuals.ActiveRuntimeInstance)"), Is.True);
+
+            Assert.That(flora.Contains("WorldRuntimeReferenceUtility.TryResolveHectonUnderwaterVisuals(ref underwaterVisuals);"), Is.True);
+            Assert.That(flora.Contains("HectonUnderwaterVisuals underwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(debugUi.Contains("WorldRuntimeReferenceUtility.TryResolveHectonUnderwaterVisuals(ref _resolvedUnderwaterVisuals);"), Is.True);
+            Assert.That(debugUi.Contains("_resolvedUnderwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(playerContext.Contains("WorldRuntimeReferenceUtility.TryResolveHectonUnderwaterVisuals(ref _underwaterVisuals);"), Is.True);
+            Assert.That(playerContext.Contains("_underwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(sensory.Contains("WorldRuntimeReferenceUtility.TryResolveHectonUnderwaterVisuals(ref _underwaterVisuals);"), Is.True);
+            Assert.That(sensory.Contains("_underwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;"), Is.False);
+        }
+
+        [Test]
+        public void WorldReadabilityBootstrap_ResolvesLiveRuntimeOwners()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string utility = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "WorldRuntimeReferenceUtility.cs"));
+            string bootstrap = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "WorldReadabilityRuntimeBootstrap.cs"));
+            string relayAuthoring = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Editor", "RelayRouteAuthoringUtility.cs"));
+
+            Assert.That(utility.Contains("public static bool TryResolveWorldReadabilityDirector(ref WorldReadabilityDirector target)"), Is.True);
+            Assert.That(utility.Contains("TryResolveLiveActiveRuntime(ref target, WorldReadabilityDirector.ActiveRuntimeInstance)"), Is.True);
+            Assert.That(utility.Contains("public static bool TryResolveEmergencyServiceRelayDirector(ref EmergencyServiceRelayDirector target)"), Is.True);
+            Assert.That(utility.Contains("TryResolveLiveActiveRuntime(ref target, EmergencyServiceRelayDirector.ActiveRuntimeInstance)"), Is.True);
+
+            Assert.That(bootstrap.Contains("WorldRuntimeReferenceUtility.TryResolveWorldReadabilityDirector(ref existingDirector);"), Is.True);
+            Assert.That(bootstrap.Contains("WorldReadabilityDirector existingDirector = WorldReadabilityDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(bootstrap.Contains("IDepthZoneReadModel runtimeDepthZoneReadModel = GlobalRegistry.DepthZoneReadModel;"), Is.True);
+            Assert.That(bootstrap.Contains("runtimeWorldZoneDirector == null &&"), Is.True);
+            Assert.That(bootstrap.Contains("runtimeBiomeMatrixDirector == null &&"), Is.True);
+            Assert.That(bootstrap.Contains("runtimeDepthZoneReadModel == null"), Is.True);
+            Assert.That(bootstrap.Contains("runtimeWorldZoneDirector == null || runtimeBiomeMatrixDirector == null"), Is.False);
+
+            Assert.That(bootstrap.Contains("WorldRuntimeReferenceUtility.TryResolveEmergencyServiceRelayDirector(ref existingDirector);"), Is.True);
+            Assert.That(bootstrap.Contains("EmergencyServiceRelayDirector existingDirector = EmergencyServiceRelayDirector.ActiveRuntimeInstance;"), Is.False);
+
+            Assert.That(relayAuthoring.Contains("WorldRuntimeReferenceUtility.TryResolveEmergencyServiceRelayDirector(ref director);"), Is.True);
+            Assert.That(relayAuthoring.Contains("EmergencyServiceRelayDirector director = EmergencyServiceRelayDirector.ActiveRuntimeInstance;"), Is.False);
+        }
+
+        [Test]
+        public void SuitHudConsumers_ResolveLiveRuntimeOwner()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string hud = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "SuitHUDV4CanvasOverlay.cs"));
+
+            Assert.That(hud.Contains("internal static bool TryResolveActiveRuntime(ref SuitHUDV4CanvasOverlay target)"), Is.True);
+            Assert.That(hud.Contains("active == null || !active.isActiveAndEnabled"), Is.True);
+
+            string[] consumerPaths =
+            {
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "AcousticEcholocationTranslator.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "ARWaypointOverlay.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "FontStreamingManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "FakeRadarBlipController.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "HectonSubmarineOsDisplay.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "HectonOSBootManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "PDADeathMemoryDump.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "RelayHUDRuntimeBootstrap.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "ShaderCompassRibbon.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "SonarHoloCompass.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "SubtitleManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "VFX", "CameraJuiceSystem.cs")
+            };
+
+            for (int i = 0; i < consumerPaths.Length; i++)
+            {
+                string consumer = File.ReadAllText(consumerPaths[i]);
+                Assert.That(consumer.Contains("SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref "), Is.True, consumerPaths[i]);
+                Assert.That(consumer.Contains("SuitHUDV4CanvasOverlay.ActiveRuntimeInstance"), Is.False, consumerPaths[i]);
+            }
+        }
+
+        [Test]
+        public void PlayerPdaContextBridge_ResolvesLiveRuntimeOwner()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string pda = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "PlayerPDA.cs"));
+            string context = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "PlayerRuntimeContextService.cs"));
+
+            Assert.That(pda.Contains("internal static bool TryResolveActiveRuntime(ref PlayerPDA target)"), Is.True);
+            Assert.That(pda.Contains("active == null || !active.isActiveAndEnabled"), Is.True);
+            Assert.That(context.Contains("PlayerPDA.TryResolveActiveRuntime(ref _playerPda);"), Is.True);
+            Assert.That(context.Contains("_playerPda = PlayerPDA.ActiveRuntimeInstance;"), Is.False);
+        }
+
+        [Test]
+        public void ObjectPoolAndPrefabRegistryConsumers_ResolveLiveRuntimeOwners()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string objectPool = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ObjectPoolManager.cs"));
+            string prefabRegistry = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "PrefabRegistry.cs"));
+            string globalRegistry = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "GlobalRegistry.cs"));
+            string systemDispatcher = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "SystemDispatcher.cs"));
+            string commandQueue = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "ThreadSafeCommandQueue.cs"));
+            string bootstrap = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Bootstrap", "GameBootstrapper.cs"));
+            string music = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Audio", "HectonMusicDirector.cs"));
+            string runtimeInstanceId = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "RuntimeInstanceId.cs"));
+            string scatter = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "WorldProceduralScatterDirector.cs"));
+            string resourceNode = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ResourceNode.cs"));
+            string harvestableOutcrop = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "HarvestableOutcrop.cs"));
+            string harvestablePlant = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "HarvestablePlant.cs"));
+            string oxygenPlant = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "OxygenPlant.cs"));
+            string oxygenBubble = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "OxygenBubble.cs"));
+            string voxelStreamingBridge = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "HectonVoxelStreamingBridge.cs"));
+            string resourceDistribution = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ResourceDistributionDirector.cs"));
+            string worldChunkResidency = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "WorldChunkResidencyManager.cs"));
+            string impostorSystem = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ImpostorSystem.cs"));
+            string marauderOutpost = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "Outposts", "MarauderOutpostGenerationService.cs"));
+            string faunaDirector = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "FaunaDirector.cs"));
+            string faunaBrain = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Fauna", "FaunaBrain.cs"));
+            string proceduralWreck = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ProceduralWreckGenerator.cs"));
+            string sargassumCollapse = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "SargassumCollapseChunk.cs"));
+            string playerTool = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "PlayerToolManager.cs"));
+            string construction = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ConstructionManager.cs"));
+            string baseModule = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "BaseModule.cs"));
+            string playerBuilder = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "PlayerBuilder.cs"));
+            string beaconNetwork = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "BeaconNetworkSystem.cs"));
+            string proximityCollider = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ProximityColliderSystem.cs"));
+            string uiParticle = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "UIParticleEffect.cs"));
+            string proceduralLore = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Narrative", "ProceduralLoreDirector.cs"));
+            string mantaEmergencyWreck = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "MantaEmergencyWreck.cs"));
+            string mantaScooter = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "MantaScooter.cs"));
+            string floraProjectile = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "FloraProjectile.cs"));
+            string randomEvent = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "RandomEventSystem.cs"));
+            string hectonItem = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "HectonItem.cs"));
+            string pickupItem = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Items", "PickupItem.cs"));
+
+            Assert.That(objectPool.Contains("internal static bool TryResolveActiveRuntime(ref ObjectPoolManager target)"), Is.True);
+            Assert.That(objectPool.Contains("ObjectPoolManager registered = GlobalRegistry.ObjectPoolRuntimeMirror;"), Is.True);
+            Assert.That(objectPool.Contains("internal static bool IsRuntimeOwnerUsableForRegistry(ObjectPoolManager runtime)"), Is.True);
+            Assert.That(objectPool.Contains("if (!IsRuntimeOwnerUsable(ActiveRuntimeInstance))"), Is.True);
+            Assert.That(objectPool.Contains("if (_serviceRegistered)\r\n                ActiveRuntimeInstance = this;") ||
+                        objectPool.Contains("if (_serviceRegistered)\n                ActiveRuntimeInstance = this;"), Is.True);
+            Assert.That(objectPool.Contains("if (ActiveRuntimeInstance == null)"), Is.False);
+            Assert.That(objectPool.Contains("internal static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.True);
+            Assert.That(objectPool.Contains("internal static bool TryResolvePoolForInstance("), Is.True);
+            Assert.That(objectPool.Contains("internal static void DespawnOrDeactivate(GameObject instance, IObjectPoolService preferredPool)"), Is.True);
+            Assert.That(objectPool.Contains("!runtime._serviceShuttingDown"), Is.True);
+            Assert.That(objectPool.Contains("ClearRuntimeMirrorIfOwnedBy(registered);"), Is.True);
+            Assert.That(objectPool.Contains("if (ReferenceEquals(runtime, null))"), Is.True);
+            Assert.That(objectPool.Contains("GlobalRegistry.UnregisterObjectPoolService(runtime);"), Is.True);
+            Assert.That(objectPool.Contains("marker.Initialize(this, prefabId"), Is.True);
+            Assert.That(objectPool.Contains("private ObjectPoolManager _owner;"), Is.True);
+            Assert.That(objectPool.Contains("public ObjectPoolManager Owner => _owner;"), Is.True);
+            Assert.That(objectPool.Contains("_owner = owner;"), Is.True);
+            Assert.That(objectPool.Contains("if (_owner == null)"), Is.False);
+            Assert.That(objectPool.Contains("private void DespawnNowOrDestroy()"), Is.True);
+            Assert.That(objectPool.Contains("private bool TryResolveOwningPool(out ObjectPoolManager pool)"), Is.True);
+            Assert.That(objectPool.Contains("owner.CanDespawnWithoutDestroy(gameObject)"), Is.True);
+            Assert.That(objectPool.Contains("active.CanDespawnWithoutDestroy(gameObject)"), Is.True);
+            Assert.That(objectPool.Contains("ObjectPoolManager.Instance"), Is.False);
+            Assert.That(prefabRegistry.Contains("internal static bool TryResolveActiveRuntime(ref PrefabRegistry target)"), Is.True);
+            Assert.That(globalRegistry.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(_objectPool)"), Is.True);
+            Assert.That(globalRegistry.Contains("public static IObjectPoolService ObjectPoolService => ObjectPool;"), Is.True);
+            Assert.That(globalRegistry.Contains("internal static ObjectPoolManager ObjectPoolRuntimeMirror => _objectPool;"), Is.True);
+            Assert.That(systemDispatcher.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(systemDispatcher.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(systemDispatcher.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(systemDispatcher.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(systemDispatcher.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(systemDispatcher.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(systemDispatcher.Contains("IObjectPoolService objectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(systemDispatcher.Contains("_objectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(commandQueue.Contains("BindObjectPoolServiceCold(null);"), Is.True);
+            Assert.That(commandQueue.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.False);
+            Assert.That(commandQueue.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(commandQueue.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(commandQueue.Contains("Volatile.Write(ref _objectPool, GlobalRegistry.ObjectPoolService);"), Is.False);
+            Assert.That(commandQueue.Contains("ObjectPoolManager.TryResolvePoolForInstance(instance, pool, out IObjectPoolService ownerPool)"), Is.True);
+            Assert.That(commandQueue.Contains("ownerPool.Despawn(instance, Mathf.Max(0f, command.FloatValue));"), Is.True);
+
+            Assert.That(music.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref pool)"), Is.True);
+            Assert.That(bootstrap.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref objectPoolManager);"), Is.True);
+            Assert.That(bootstrap.Contains("PrefabRegistry.TryResolveActiveRuntime(ref registry)"), Is.True);
+            Assert.That(bootstrap.Contains("PrefabRegistry.TryResolveActiveRuntime(ref prefabRegistry)"), Is.True);
+            Assert.That(runtimeInstanceId.Contains("PrefabRegistry.TryResolveActiveRuntime(ref registry)"), Is.True);
+            Assert.That(objectPool.Contains("PrefabRegistry.TryResolveActiveRuntime(ref registry)"), Is.True);
+            Assert.That(scatter.Contains("PrefabRegistry.TryResolveActiveRuntime(ref prefabRegistry)"), Is.True);
+            Assert.That(scatter.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(scatter.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(scatter.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(scatter.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(scatter.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(scatter.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+            Assert.That(scatter.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(scatter.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+
+            Assert.That(resourceNode.Contains("private static void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(resourceNode.Contains("private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(resourceNode.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(resourceNode.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(resourceNode.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(resourceNode.Contains("IObjectPoolService pool = s_objectPool;"), Is.False);
+            Assert.That(resourceNode.Contains("s_objectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(resourceNode.Contains("s_objectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+
+            AssertResourceObjectPoolConsumerUsesLiveResolver(harvestableOutcrop);
+            AssertResourceObjectPoolConsumerUsesLiveResolver(harvestablePlant);
+            AssertResourceObjectPoolConsumerUsesLiveResolver(oxygenPlant);
+            AssertResourceObjectPoolConsumerUsesLiveResolver(oxygenBubble);
+            AssertResourceObjectPoolConsumerUsesLiveResolver(voxelStreamingBridge);
+            AssertResourceObjectPoolConsumerUsesLiveResolver(resourceDistribution);
+            Assert.That(impostorSystem.Contains("public IObjectPoolService BillboardPoolOwner;"), Is.True);
+            Assert.That(impostorSystem.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(impostorSystem.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(impostorSystem.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.False);
+            Assert.That(impostorSystem.Contains("private static void DespawnBillboardOrDeactivate(IObjectPoolService pool, GameObject billboardObject)"), Is.True);
+            Assert.That(impostorSystem.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(impostorSystem.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(impostorSystem.Contains("instance.BillboardPoolOwner = pool;"), Is.True);
+            Assert.That(impostorSystem.Contains("DespawnBillboardOrDeactivate(instance.BillboardPoolOwner, instance.BillboardObject);"), Is.True);
+            Assert.That(impostorSystem.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(impostorSystem.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(impostorSystem.Contains("ObjectPoolManager.DespawnOrDeactivate(billboardObject, pool);"), Is.True);
+            Assert.That(impostorSystem.Contains("_objectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(impostorSystem.Contains("_objectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(impostorSystem.Contains("IObjectPoolService pool = _objectPool;"), Is.False);
+
+            Assert.That(marauderOutpost.Contains("private IObjectPoolService[] _spawnedInteractableOwners;"), Is.True);
+            Assert.That(marauderOutpost.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(marauderOutpost.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(marauderOutpost.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.True);
+            Assert.That(marauderOutpost.Contains("private static bool TryResolvePoolForInstance("), Is.True);
+            Assert.That(marauderOutpost.Contains("private static void DespawnInteractableProxyOrDeactivate(IObjectPoolService pool, GameObject instance)"), Is.True);
+            Assert.That(marauderOutpost.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(marauderOutpost.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(marauderOutpost.Contains("_spawnedInteractableOwners[i] = instance != null ? pool : null;"), Is.True);
+            Assert.That(marauderOutpost.Contains("DespawnInteractableProxyOrDeactivate(ownerPool, instance);"), Is.True);
+            Assert.That(marauderOutpost.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(marauderOutpost.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(marauderOutpost.Contains("ObjectPoolManager.PoolItemMarker marker"), Is.True);
+            Assert.That(marauderOutpost.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref active)"), Is.True);
+            Assert.That(marauderOutpost.Contains("ownerPool.Despawn(instance);"), Is.True);
+            Assert.That(marauderOutpost.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(marauderOutpost.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            AssertResourceObjectPoolConsumerUsesLiveResolver(faunaDirector);
+            AssertResourceObjectPoolConsumerUsesLiveResolver(faunaBrain);
+            AssertResourceObjectPoolConsumerUsesLiveResolver(proceduralWreck);
+            AssertResourceObjectPoolConsumerUsesLiveResolver(sargassumCollapse);
+            AssertResourceObjectPoolConsumerUsesLiveResolver(playerTool);
+            Assert.That(playerTool.Contains("private bool TryResolvePoolForInstance("), Is.True);
+            Assert.That(playerTool.Contains("ObjectPoolManager.TryResolvePoolForInstance(instance, preferredPool, out pool)"), Is.True);
+            Assert.That(playerTool.Contains("preferredManager.CanDespawnWithoutDestroy(instance)"), Is.False);
+            Assert.That(playerTool.Contains("pool.CanDespawnWithoutDestroy(instance)"), Is.False);
+
+            Assert.That(construction.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(construction.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(construction.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(construction.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(construction.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(construction.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(construction.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(construction.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(construction.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+
+            Assert.That(baseModule.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(baseModule.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(baseModule.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(baseModule.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(baseModule.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(baseModule.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(baseModule.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(baseModule.Contains("_cachedObjectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(baseModule.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+
+            Assert.That(playerBuilder.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(playerBuilder.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(playerBuilder.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(playerBuilder.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(playerBuilder.Contains("return TryResolveCachedObjectPool(out pool);"), Is.True);
+            Assert.That(playerBuilder.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(playerBuilder.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(playerBuilder.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(playerBuilder.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(playerBuilder.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+
+            Assert.That(beaconNetwork.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(beaconNetwork.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(beaconNetwork.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(beaconNetwork.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(beaconNetwork.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(beaconNetwork.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(beaconNetwork.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(beaconNetwork.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(beaconNetwork.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+
+            Assert.That(proximityCollider.Contains("private void CacheObjectPool(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(proximityCollider.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(proximityCollider.Contains("CacheObjectPool(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(proximityCollider.Contains("CacheObjectPool(null);"), Is.True);
+            Assert.That(proximityCollider.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(proximityCollider.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(proximityCollider.Contains("pool.CanDespawnWithoutDestroy(colliderObject)"), Is.True);
+            Assert.That(proximityCollider.Contains("CacheObjectPool(currentService as IObjectPoolService);"), Is.False);
+            Assert.That(proximityCollider.Contains("CacheObjectPool(GlobalRegistry.ObjectPoolService);"), Is.False);
+            Assert.That(proximityCollider.Contains("IObjectPoolService pool = _objectPool;"), Is.False);
+
+            Assert.That(uiParticle.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(uiParticle.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(uiParticle.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.True);
+            Assert.That(uiParticle.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(uiParticle.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(uiParticle.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(_uiEffectPool)"), Is.True);
+            Assert.That(uiParticle.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(uiParticle.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(uiParticle.Contains("ObjectPoolManager.TryResolvePoolForInstance(instance, pool, out IObjectPoolService ownerPool)"), Is.True);
+            Assert.That(uiParticle.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(uiParticle.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+
+            Assert.That(proceduralLore.Contains("private bool CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(proceduralLore.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(proceduralLore.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.False);
+            Assert.That(proceduralLore.Contains("CacheObjectPoolService(currentService as ObjectPoolManager)"), Is.True);
+            Assert.That(proceduralLore.Contains("CacheObjectPoolService(null)"), Is.True);
+            Assert.That(proceduralLore.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(proceduralLore.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(proceduralLore.Contains("ObjectPoolManager.DespawnOrDeactivate(instance, pool);"), Is.True);
+            Assert.That(proceduralLore.Contains("_objectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(proceduralLore.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
+            Assert.That(proceduralLore.Contains("IObjectPoolService pool = _objectPool;"), Is.False);
+
+            Assert.That(mantaEmergencyWreck.Contains("private static void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(mantaEmergencyWreck.Contains("private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(mantaEmergencyWreck.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(mantaEmergencyWreck.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(mantaEmergencyWreck.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(mantaEmergencyWreck.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(mantaEmergencyWreck.Contains("s_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(mantaEmergencyWreck.Contains("s_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(mantaEmergencyWreck.Contains("IObjectPoolService poolManager = s_cachedObjectPool;"), Is.False);
+
+            Assert.That(mantaScooter.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(mantaScooter.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(mantaScooter.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(mantaScooter.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(mantaScooter.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(mantaScooter.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(mantaScooter.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(mantaScooter.Contains("IObjectPoolService poolManager = _cachedObjectPool;"), Is.False);
+
+            Assert.That(floraProjectile.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref pool)"), Is.True);
+            Assert.That(floraProjectile.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
+
+            Assert.That(randomEvent.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(randomEvent.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(randomEvent.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(randomEvent.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(randomEvent.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(randomEvent.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(randomEvent.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(randomEvent.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(randomEvent.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+
+            Assert.That(worldChunkResidency.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(worldChunkResidency.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(worldChunkResidency.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(worldChunkResidency.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(worldChunkResidency.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(worldChunkResidency.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(worldChunkResidency.Contains("currentService as IObjectPoolService"), Is.False);
+            Assert.That(worldChunkResidency.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
+            Assert.That(worldChunkResidency.Contains("IObjectPoolService pool = _objectPoolManager"), Is.False);
+            Assert.That(worldChunkResidency.Contains("_objectPoolManager = currentService"), Is.False);
+            Assert.That(worldChunkResidency.Contains("_objectPoolManager = GlobalRegistry"), Is.False);
+            AssertStaticObjectPoolConsumerUsesLiveResolver(hectonItem);
+            AssertStaticObjectPoolConsumerUsesLiveResolver(pickupItem);
+        }
+
+        [Test]
+        public void H8PrefabRegistryBridge_RevalidatesRuntimeOwnerAtBindAndFlush()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string bridgeRoot = Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "Bridge");
+            string binder = File.ReadAllText(Path.Combine(bridgeRoot, "H8PrefabRegistryRuntimeBinder.cs"));
+            string scheduler = File.ReadAllText(Path.Combine(bridgeRoot, "H8BridgeLiveSyncScheduler.cs"));
+            string registry = File.ReadAllText(Path.Combine(bridgeRoot, "H8PrefabRegistry.cs"));
+            string editorWindow = File.ReadAllText(Path.Combine(bridgeRoot, "Editor", "H8PrefabRegistryWindow.cs"));
+
+            Assert.That(binder.Contains("public static PrefabRegistry ResolveRuntimeRegistryForBinding()"), Is.True);
+            Assert.That(binder.Contains("return PrefabRegistry.TryResolveActiveRuntime(ref runtimeRegistry) ? runtimeRegistry : null;"), Is.True);
+            Assert.That(binder.Contains("if (!PrefabRegistry.TryResolveActiveRuntime(ref runtimeRegistry))"), Is.True);
+            Assert.That(binder.Contains("runtimeRegistry = null;"), Is.True);
+            Assert.That(binder.Contains("GlobalRegistry.PrefabRegistryRuntime"), Is.False);
+            Assert.That(binder.Contains("H8BridgeLiveSyncScheduler.RequestPrefabBind(registry, vault, runtimeRegistry);"), Is.True);
+            Assert.That(binder.Contains("allowRuntimeRegistration: allowBufferGrowth"), Is.True);
+            Assert.That(binder.Contains("allowRuntimeRegistration: runtimeRegistry != null"), Is.True);
+            Assert.That(binder.Contains("if (runtimePrefabId <= 0)"), Is.True);
+
+            Assert.That(scheduler.Contains("PrefabRegistry runtimeRegistry = request.RuntimeRegistry;"), Is.True);
+            Assert.That(scheduler.Contains("!PrefabRegistry.TryResolveActiveRuntime(ref runtimeRegistry)"), Is.True);
+            Assert.That(scheduler.Contains("H8PrefabRegistryRuntimeBinder.BindExistingBuffers(request.Registry, request.Vault, runtimeRegistry);"), Is.True);
+            Assert.That(scheduler.Contains("GlobalRegistry.PrefabRegistryRuntime"), Is.False);
+
+            Assert.That(registry.Contains("H8PrefabRegistryRuntimeBinder.ResolveRuntimeRegistryForBinding()"), Is.True);
+            Assert.That(registry.Contains("GlobalRegistry.PrefabRegistryRuntime"), Is.False);
+            Assert.That(editorWindow.Contains("H8PrefabRegistryRuntimeBinder.ResolveRuntimeRegistryForBinding()"), Is.True);
+            Assert.That(editorWindow.Contains("GlobalRegistry.PrefabRegistryRuntime"), Is.False);
+
+            string scriptsRoot = Path.Combine(root, "Assets", "_Project", "Scripts");
+            foreach (string scriptPath in Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories))
+            {
+                if (scriptPath.EndsWith("PrefabRegistry.cs", StringComparison.Ordinal))
+                    continue;
+
+                string script = File.ReadAllText(scriptPath);
+                Assert.That(script.Contains("GlobalRegistry.PrefabRegistryRuntime"), Is.False, scriptPath);
+            }
+        }
+
+        private static void AssertResourceObjectPoolConsumerUsesLiveResolver(string source)
+        {
+            Assert.That(source.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(source.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(source.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(source.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(source.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(source.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(source.Contains("currentService as IObjectPoolService"), Is.False);
+            Assert.That(source.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
+            Assert.That(source.Contains("IObjectPoolService pool = _objectPool"), Is.False);
+            Assert.That(source.Contains("_objectPool = currentService"), Is.False);
+            Assert.That(source.Contains("_objectPool = GlobalRegistry"), Is.False);
+        }
+
+        private static void AssertStaticObjectPoolConsumerUsesLiveResolver(string source)
+        {
+            Assert.That(source.Contains("private static void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(source.Contains("private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(source.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(source.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(source.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(source.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(source.Contains("currentService as IObjectPoolService"), Is.False);
+            Assert.That(source.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
+            Assert.That(source.Contains("IObjectPoolService pool = s_objectPool"), Is.False);
+            Assert.That(source.Contains("s_objectPool = currentService"), Is.False);
+            Assert.That(source.Contains("s_objectPool = GlobalRegistry"), Is.False);
+        }
+
+        [Test]
+        public void RuntimeOwnerConsumers_DoNotBypassLiveResolverWithActiveInstanceAssignments()
+        {
+            string scriptsRoot = Path.Combine(Directory.GetCurrentDirectory(), "Assets", "_Project", "Scripts");
+            string[] blockedAssignments =
+            {
+                "= BiomeMatrixDirector.ActiveRuntimeInstance",
+                "= WorldZoneDirector.ActiveRuntimeInstance",
+                "= WorldContentDirector.ActiveRuntimeInstance",
+                "= ProximityColliderSystem.ActiveRuntimeInstance",
+                "= WorldProceduralStateRegistry.ActiveRuntimeInstance",
+                "= WorldFaunaSpawnRegistry.ActiveRuntimeInstance",
+                "= WorldProceduralFieldSampler.ActiveRuntimeInstance",
+                "= WorldProceduralFillDirector.ActiveRuntimeInstance",
+                "= WorldCaveDirector.ActiveRuntimeInstance",
+                "= FaunaDirector.ActiveRuntimeInstance",
+                "= WorldGenerativeGeologyService.ActiveRuntimeInstance",
+                "= WorldGenerativeGeologyIntegrationDirector.ActiveRuntimeInstance",
+                "= WorldGenerativeGeologySeamExecutionDirector.ActiveRuntimeInstance",
+                "= HectonVoxelEngine.ActiveRuntimeInstance",
+                "= DestructibleOrganicManager.ActiveRuntimeInstance",
+                "= AbyssalThermalManager.ActiveRuntimeInstance",
+                "= HectonDirectorAI.ActiveRuntimeInstance",
+                "= FloraInteractionManager.ActiveRuntimeInstance",
+                "= HectonUnderwaterVisuals.ActiveRuntimeInstance",
+                "= WorldReadabilityDirector.ActiveRuntimeInstance",
+                "= EmergencyServiceRelayDirector.ActiveRuntimeInstance",
+                "= SuitHUDV4CanvasOverlay.ActiveRuntimeInstance",
+                "= HectonMusicDirectorAnchor.ActiveRuntimeInstance",
+                "= PlayerPDA.ActiveRuntimeInstance",
+                "= AccessibilitySettings.ActiveRuntimeInstance",
+                "= InputDispatcher.ActiveRuntimeInstance",
+                "= RebindingManager.ActiveRuntimeInstance",
+                "= ObjectPoolManager.ActiveRuntimeInstance",
+                "= PrefabRegistry.ActiveRuntimeInstance"
+            };
+
+            foreach (string scriptPath in Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories))
+            {
+                string script = File.ReadAllText(scriptPath);
+                foreach (string blockedAssignment in blockedAssignments)
+                    Assert.That(script.Contains(blockedAssignment), Is.False, scriptPath + " " + blockedAssignment);
+            }
         }
 
         [Test]
@@ -807,7 +1872,14 @@ namespace Hecton8.Tests.Editor
             Assert.That(source.Contains("if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)"), Is.True);
             Assert.That(source.Contains("if (serviceSlot == GlobalRegistryServiceSlot.Physics)"), Is.True);
             Assert.That(source.Contains("if (serviceSlot == GlobalRegistryServiceSlot.VRAMPressureRuntime)"), Is.True);
-            Assert.That(source.Contains("_objectPoolService = currentService as IObjectPoolService;"), Is.True);
+            Assert.That(source.Contains("void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(source.Contains("bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(source.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(source.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(source.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(source.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(source.Contains("_objectPoolService = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(source.Contains("_objectPoolService = GlobalRegistry.ObjectPoolService;"), Is.False);
             Assert.That(source.Contains("_physicsService = currentService as IPhysicsService;"), Is.True);
             Assert.That(source.Contains("_vramPressureReadModel = currentService as IVramPressureReadModel;"), Is.True);
 
@@ -816,7 +1888,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(despawnIndex, Is.GreaterThanOrEqualTo(0));
             Assert.That(purgeIndex, Is.GreaterThan(despawnIndex));
             string despawnBlock = source.Substring(despawnIndex, purgeIndex - despawnIndex);
-            Assert.That(despawnBlock.Contains("IObjectPoolService pool = _objectPoolService;"), Is.True);
+            Assert.That(despawnBlock.Contains("TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(despawnBlock.Contains("IObjectPoolService pool = _objectPoolService;"), Is.False);
             Assert.That(despawnBlock.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
 
             int clearIndex = source.IndexOf("public void ClearAllVolumes()", StringComparison.Ordinal);
@@ -824,7 +1897,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(clearIndex, Is.GreaterThanOrEqualTo(0));
             Assert.That(activeCountIndex, Is.GreaterThan(clearIndex));
             string clearBlock = source.Substring(clearIndex, activeCountIndex - clearIndex);
-            Assert.That(clearBlock.Contains("IObjectPoolService pool = _objectPoolService;"), Is.True);
+            Assert.That(clearBlock.Contains("TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(clearBlock.Contains("IObjectPoolService pool = _objectPoolService;"), Is.False);
             Assert.That(clearBlock.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
 
             int spawnIndex = source.IndexOf("GameObject SpawnVolume()", StringComparison.Ordinal);
@@ -832,7 +1906,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(spawnIndex, Is.GreaterThanOrEqualTo(0));
             Assert.That(weldedMeshIndex, Is.GreaterThan(spawnIndex));
             string spawnBlock = source.Substring(spawnIndex, weldedMeshIndex - spawnIndex);
-            Assert.That(spawnBlock.Contains("IObjectPoolService pool = _objectPoolService;"), Is.True);
+            Assert.That(spawnBlock.Contains("TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(spawnBlock.Contains("IObjectPoolService pool = _objectPoolService;"), Is.False);
             Assert.That(spawnBlock.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
 
             int budgetIndex = source.IndexOf("static void RecordVoxelRebuildBudget", StringComparison.Ordinal);
@@ -886,9 +1961,27 @@ namespace Hecton8.Tests.Editor
             string gpr = File.ReadAllText(gprPath);
             Assert.That(gpr.Contains("CacheOreReadModelFromOwnerRoute();"), Is.True);
             Assert.That(gpr.Contains("WorldRuntimeReferenceUtility.TryResolveWorldResourceSpawnerReadModel"), Is.True);
-            Assert.That(gpr.Contains("_ecosystemDirector = EcosystemDirector.ActiveRuntimeInstance;"), Is.True);
+            Assert.That(gpr.Contains("if (!CacheOreReadModelFromOwnerRoute())"), Is.True);
+            Assert.That(gpr.Contains("WorldRuntimeReferenceUtility.TryResolveEcosystemDirector(ref ecosystemDirector)"), Is.True);
+            Assert.That(gpr.Contains("_ecosystemDirector = EcosystemDirector.ActiveRuntimeInstance;"), Is.False);
             Assert.That(gpr.Contains("_worldResourceSpawnerReadModel = GlobalRegistry.WorldResourceSpawner;"), Is.False);
             Assert.That(gpr.Contains("WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine)"), Is.True);
+
+            int cacheIndex = gpr.IndexOf("private bool CacheOreReadModelFromOwnerRoute()", StringComparison.Ordinal);
+            int frameIndex = gpr.IndexOf("private uint AdvanceRadarFrameId()", cacheIndex, StringComparison.Ordinal);
+            Assert.That(cacheIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(frameIndex, Is.GreaterThan(cacheIndex));
+            string cacheBlock = gpr.Substring(cacheIndex, frameIndex - cacheIndex);
+            Assert.That(cacheBlock.Contains("if (_worldResourceSpawnerReadModel != null)"), Is.False);
+            Assert.That(cacheBlock.Contains("_worldResourceSpawnerCommandModel = null;"), Is.True);
+
+            int serviceSlotIndex = gpr.IndexOf("case GlobalRegistryServiceSlot.WorldResourceSpawnerRuntime:", StringComparison.Ordinal);
+            int nextSlotIndex = gpr.IndexOf("return;", serviceSlotIndex, StringComparison.Ordinal);
+            Assert.That(serviceSlotIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(nextSlotIndex, Is.GreaterThan(serviceSlotIndex));
+            string serviceSlotBlock = gpr.Substring(serviceSlotIndex, nextSlotIndex - serviceSlotIndex);
+            Assert.That(serviceSlotBlock.Contains("WorldRuntimeReferenceUtility.TryResolveWorldResourceSpawnerReadModel("), Is.True);
+            Assert.That(serviceSlotBlock.Contains("_worldResourceSpawnerCommandModel = null;"), Is.True);
             Assert.That(gpr.Contains("_voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;"), Is.False);
             Assert.That(gpr.Contains("_ecosystemDirector = GlobalRegistry.EcosystemDirector;"), Is.False);
         }
@@ -911,18 +2004,33 @@ namespace Hecton8.Tests.Editor
             string utility = File.ReadAllText(utilityPath);
             Assert.That(utility.Contains("HectonMapMagicVegetationBridge.ActiveRuntimeInstance"), Is.True);
             Assert.That(utility.Contains("HectonMapMagicVegetationBridge registered = GlobalRegistry.MapMagicVegetation;"), Is.False);
+            Assert.That(utility.Contains("public static void InvalidateHectonMapMagicVegetationBridgeCache(HectonMapMagicVegetationBridge instance)"), Is.True);
+            int resolveIndex = utility.IndexOf("public static bool TryResolveHectonMapMagicVegetationBridge", StringComparison.Ordinal);
+            int invalidateIndex = utility.IndexOf("public static void InvalidateHectonMapMagicVegetationBridgeCache", resolveIndex, StringComparison.Ordinal);
+            Assert.That(resolveIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(invalidateIndex, Is.GreaterThan(resolveIndex));
+            string resolveBlock = utility.Substring(resolveIndex, invalidateIndex - resolveIndex);
+            Assert.That(resolveBlock.Contains("TryResolveLiveCachedActiveRuntime(ref target, ref _CachedVegetationBridge, HectonMapMagicVegetationBridge.ActiveRuntimeInstance)"), Is.True);
+            Assert.That(resolveBlock.Contains("if (IsLiveBehaviour(_CachedVegetationBridge))"), Is.False);
+            Assert.That(resolveBlock.Contains("GlobalRegistry.MapMagicVegetation"), Is.False);
+            Assert.That(bridge.Contains("WorldRuntimeReferenceUtility.InvalidateHectonMapMagicVegetationBridgeCache(null);"), Is.True);
+            Assert.That(bridge.Contains("WorldRuntimeReferenceUtility.InvalidateHectonMapMagicVegetationBridgeCache(this);"), Is.True);
 
             string runtimeBridgePath = Path.Combine(root, "Assets", "_Project", "Scripts", "Plugins", "MapMagic", "MapMagicRuntimeBridge.cs");
             string runtimeBridge = File.ReadAllText(runtimeBridgePath);
-            Assert.That(runtimeBridge.Contains("_cachedVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;"), Is.True);
+            Assert.That(runtimeBridge.Contains("WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _cachedVegetationBridge);"), Is.True);
+            Assert.That(runtimeBridge.Contains("_cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;"), Is.False);
 
             string microFaunaPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "SargassumMicroFaunaBoids.cs");
             string microFauna = File.ReadAllText(microFaunaPath);
             Assert.That(microFauna.Contains("WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _mapMagicVegetationBridge);"), Is.True);
             Assert.That(microFauna.Contains("_mapMagicVegetationBridge = GlobalRegistry.MapMagicVegetation;"), Is.False);
-            Assert.That(microFauna.Contains("_ecosystemDirector = EcosystemDirector.ActiveRuntimeInstance;"), Is.True);
-            Assert.That(microFauna.Contains("_proceduralScatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;"), Is.True);
-            Assert.That(microFauna.Contains("_biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;"), Is.True);
+            Assert.That(microFauna.Contains("WorldRuntimeReferenceUtility.TryResolveEcosystemDirector(ref ecosystemDirector)"), Is.True);
+            Assert.That(microFauna.Contains("WorldRuntimeReferenceUtility.TryResolveWorldProceduralScatterDirector(ref _proceduralScatterDirector)"), Is.True);
+            Assert.That(microFauna.Contains("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);"), Is.True);
+            Assert.That(microFauna.Contains("_ecosystemDirector = EcosystemDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(microFauna.Contains("_proceduralScatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;"), Is.False);
+            Assert.That(microFauna.Contains("_biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;"), Is.False);
             Assert.That(microFauna.Contains("_ecosystemDirector = GlobalRegistry.EcosystemDirector;"), Is.False);
             Assert.That(microFauna.Contains("_proceduralScatterDirector = GlobalRegistry.ProceduralScatter;"), Is.False);
             Assert.That(microFauna.Contains("_biomeMatrixDirector = GlobalRegistry.BiomeMatrix;"), Is.False);
@@ -931,6 +2039,62 @@ namespace Hecton8.Tests.Editor
             string migration = File.ReadAllText(migrationPath);
             Assert.That(migration.Contains("WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _mapMagicVegetationBridge);"), Is.True);
             Assert.That(migration.Contains("_mapMagicVegetationBridge = GlobalRegistry.MapMagicVegetation;"), Is.False);
+
+            string[] vegetationConsumerPaths =
+            {
+                Path.Combine(root, "Assets", "_Project", "Scripts", "World", "GPUScatterDirector.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "World", "SargassumGlobalDragManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "SeamGapDitherRenderer.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "SuitHUDV4CanvasOverlay.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "Fauna", "FaunaBrain.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "Construction", "DroneFleetManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "World", "FloraInteractionManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "HectonVoxelVolume.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "HectonVoxelEngine.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "HectonDirectorAI.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "LocalizationManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "TetherManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "World", "VoxelDynamicNavGridRuntimeLifecycle.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "Audio", "PlayerCriticalProceduralAudioRenderer.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "Construction", "BaseModuleNavModifier.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "EncounterDirector.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "HectonPlayerSpawner.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "MountablePlayerTransport.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "SaveManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "SubmarineElectrolysisModule.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "SubmarineFluidDynamics.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "AcousticEcholocationTranslator.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "PDAIntrusionManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "PDADataLogTab.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "World", "AcousticOcclusionUtility.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "World", "EcosystemDirector.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "World", "SargassumCutManager.cs"),
+                Path.Combine(root, "Assets", "_Project", "Scripts", "VFX", "HectonMarineSnowRenderer.cs")
+            };
+
+            foreach (string consumerPath in vegetationConsumerPaths)
+            {
+                string consumer = File.ReadAllText(consumerPath);
+                Assert.That(consumer.Contains("WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge"), Is.True, consumerPath);
+                Assert.That(consumer.Contains("GlobalRegistry.MapMagicVegetation"), Is.False, consumerPath);
+            }
+
+            string floraInteraction = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "FloraInteractionManager.cs"));
+            Assert.That(floraInteraction.Contains("_vegetationBridgeResolveRequested = _vegetationBridge == null;"), Is.True);
+
+            string scriptsRoot = Path.Combine(root, "Assets", "_Project", "Scripts");
+            foreach (string scriptPath in Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories))
+            {
+                if (scriptPath.EndsWith(Path.Combine("World", "HectonMapMagicVegetationBridge.cs"), StringComparison.Ordinal))
+                    continue;
+                if (scriptPath.EndsWith("WorldRuntimeReferenceUtility.cs", StringComparison.Ordinal))
+                    continue;
+
+                string script = File.ReadAllText(scriptPath);
+                Assert.That(script.Contains("GlobalRegistry.MapMagicVegetation"), Is.False, scriptPath);
+                Assert.That(script.Contains("HectonMapMagicVegetationBridge.ActiveRuntimeInstance"), Is.False, scriptPath);
+                AssertVegetationBridgeServiceCastsAreResolverValidated(script, scriptPath);
+            }
         }
 
         [Test]
@@ -959,12 +2123,13 @@ namespace Hecton8.Tests.Editor
 
             string voxelEnginePath = Path.Combine(root, "Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");
             string voxelEngine = File.ReadAllText(voxelEnginePath);
-            Assert.That(voxelEngine.Contains("ResourceDistributionDirector director = ResourceDistributionDirector.ActiveRuntimeInstance;"), Is.True);
+            Assert.That(voxelEngine.Contains("ResourceDistributionDirector director = ResourceDistributionDirector.ActiveRuntimeInstance;"), Is.False);
             Assert.That(voxelEngine.Contains("ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;"), Is.False);
 
             string anomalyBindingPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "HectonAnomalyResourceBinding.cs");
             string anomalyBinding = File.ReadAllText(anomalyBindingPath);
-            Assert.That(anomalyBinding.Contains("ResourceDistributionDirector director = ResourceDistributionDirector.ActiveRuntimeInstance;"), Is.True);
+            Assert.That(anomalyBinding.Contains("WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref director)"), Is.True);
+            Assert.That(anomalyBinding.Contains("ResourceDistributionDirector director = ResourceDistributionDirector.ActiveRuntimeInstance;"), Is.False);
             Assert.That(anomalyBinding.Contains("ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;"), Is.False);
         }
 
@@ -1039,6 +2204,15 @@ namespace Hecton8.Tests.Editor
             Assert.That(drag.Contains("ReferenceEquals(s_activeRuntimeInstance, this)"), Is.True);
             Assert.That(drag.Contains("_cutManager = SargassumCutManager.Instance;"), Is.True);
             Assert.That(drag.Contains("_cutManager = GlobalRegistry.SargassumCut;"), Is.False);
+            Assert.That(drag.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(drag.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(drag.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(drag.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(drag.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(drag.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(drag.Contains("_objectPoolService = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(drag.Contains("_objectPoolService = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(drag.Contains("IObjectPoolService poolManager = _objectPoolService;"), Is.False);
 
             string cutPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "SargassumCutManager.cs");
             string cut = File.ReadAllText(cutPath);
@@ -1095,6 +2269,17 @@ namespace Hecton8.Tests.Editor
             string bootstrap = File.ReadAllText(bootstrapPath);
             Assert.That(bootstrap.Contains("_cullingManager ??= GlobalRegistry.Culling;"), Is.True);
             Assert.That(bootstrap.Contains("_cullingManager ??= CullingManager.Instance;"), Is.False);
+            Assert.That(bootstrap.Contains("_authoringScenePath = NormalizeSceneIdentifier(authoringScene.path);"), Is.True);
+            Assert.That(bootstrap.Contains("_authoringSceneName = NormalizeSceneIdentifier(authoringScene.name);"), Is.True);
+            Assert.That(bootstrap.Contains("string authoringScenePath = NormalizeSceneIdentifier(_authoringScenePath);"), Is.True);
+            Assert.That(bootstrap.Contains("if (authoringScenePath.Length != 0)"), Is.True);
+            Assert.That(bootstrap.Contains("Scene sceneByPath = SceneManager.GetSceneByPath(authoringScenePath);"), Is.True);
+            Assert.That(bootstrap.Contains("string authoringSceneName = NormalizeSceneIdentifier(_authoringSceneName);"), Is.True);
+            Assert.That(bootstrap.Contains("if (authoringSceneName.Length != 0)"), Is.True);
+            Assert.That(bootstrap.Contains("Scene sceneByName = SceneManager.GetSceneByName(authoringSceneName);"), Is.True);
+            Assert.That(bootstrap.Contains("return string.IsNullOrWhiteSpace(sceneIdentifier) ? string.Empty : sceneIdentifier.Trim();"), Is.True);
+            Assert.That(bootstrap.Contains("string.IsNullOrEmpty(_authoringScenePath)"), Is.False);
+            Assert.That(bootstrap.Contains("string.IsNullOrEmpty(_authoringSceneName)"), Is.False);
 
             string lodPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "LODSystemManager.cs");
             string lod = File.ReadAllText(lodPath);
@@ -1126,7 +2311,8 @@ namespace Hecton8.Tests.Editor
             string ecosystem = File.ReadAllText(ecosystemPath);
             Assert.That(ecosystem.Contains("EnvironmentalStrainManager.Instance?.AccumulatePredationStrain"), Is.True);
             Assert.That(ecosystem.Contains("PersistentWorldRegistry.Instance"), Is.True);
-            Assert.That(ecosystem.Contains("AbyssalThermalManager thermalManager = AbyssalThermalManager.ActiveRuntimeInstance;"), Is.True);
+            Assert.That(ecosystem.Contains("WorldRuntimeReferenceUtility.TryResolveAbyssalThermalManager(ref thermalManager);"), Is.True);
+            Assert.That(ecosystem.Contains("AbyssalThermalManager thermalManager = AbyssalThermalManager.ActiveRuntimeInstance;"), Is.False);
             Assert.That(ecosystem.Contains("GlobalRegistry.PersistentWorldRegistry"), Is.False);
             Assert.That(ecosystem.Contains("GlobalRegistry.EnvironmentalStrain?.AccumulatePredationStrain"), Is.False);
             Assert.That(ecosystem.Contains("AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;"), Is.False);
@@ -1142,7 +2328,8 @@ namespace Hecton8.Tests.Editor
 
             string volcanicPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "VolcanicUpdraftDirector.cs");
             string volcanic = File.ReadAllText(volcanicPath);
-            Assert.That(volcanic.Contains("_thermodynamicsService = AbyssalThermalManager.ActiveRuntimeInstance;"), Is.True);
+            Assert.That(volcanic.Contains("WorldRuntimeReferenceUtility.TryResolveAbyssalThermalManager(ref thermalManager);"), Is.True);
+            Assert.That(volcanic.Contains("_thermodynamicsService = AbyssalThermalManager.ActiveRuntimeInstance;"), Is.False);
             Assert.That(volcanic.Contains("_thermodynamicsService = GlobalRegistry.ThermodynamicsService;"), Is.False);
 
             string pollutionPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "BasePollutionManager.cs");
@@ -1187,10 +2374,24 @@ namespace Hecton8.Tests.Editor
             Assert.That(voxelBridge.Contains("s_activeRuntimeInstance = this;"), Is.True);
             Assert.That(voxelBridge.Contains("ReferenceEquals(s_activeRuntimeInstance, this)"), Is.True);
             Assert.That(voxelBridge.Contains("ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, this)"), Is.True);
-            Assert.That(voxelBridge.Contains("_thermalManager = AbyssalThermalManager.ActiveRuntimeInstance;"), Is.True);
+            Assert.That(voxelBridge.Contains("WorldRuntimeReferenceUtility.TryResolveAbyssalThermalManager(ref _thermalManager);"), Is.True);
+            Assert.That(voxelBridge.Contains("_thermalManager = AbyssalThermalManager.ActiveRuntimeInstance;"), Is.False);
             Assert.That(voxelBridge.Contains("_thermalManager = GlobalRegistry.Thermodynamics;"), Is.False);
             Assert.That(voxelBridge.Contains("_persistentWorldRegistry = PersistentWorldRegistry.Instance;"), Is.True);
             Assert.That(voxelBridge.Contains("_persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;"), Is.False);
+            Assert.That(voxelBridge.Contains("WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref _resourceDistributionDirector);"), Is.True);
+            Assert.That(voxelBridge.Contains("WorldRuntimeReferenceUtility.TryResolveResourceDistributionDirector(ref resourceDirector)"), Is.True);
+            Assert.That(voxelBridge.Contains("_resourceDistributionDirector = currentService as ResourceDistributionDirector;"), Is.False);
+            Assert.That(voxelBridge.Contains("_resourceDistributionDirector = GlobalRegistry.ResourceDistribution;"), Is.False);
+            Assert.That(voxelBridge.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(voxelBridge.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(voxelBridge.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(voxelBridge.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(voxelBridge.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(voxelBridge.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(voxelBridge.Contains("_objectPoolService = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(voxelBridge.Contains("_objectPoolService = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(voxelBridge.Contains("IObjectPoolService pool = _objectPoolService;"), Is.False);
             Assert.That(voxelBridge.Contains("private struct PendingRequestState"), Is.True);
             Assert.That(voxelBridge.Contains("private sealed class PendingRequestState"), Is.False);
             Assert.That(voxelBridge.Contains("public int Sequence;"), Is.True);
@@ -1289,6 +2490,7 @@ namespace Hecton8.Tests.Editor
             string hotswapBlock = bridge.Substring(hotswapIndex, registerHotSwapIndex - hotswapIndex);
             Assert.That(hotswapBlock.Contains("case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:"), Is.True);
             Assert.That(hotswapBlock.Contains("vegetationBridge = currentService as HectonMapMagicVegetationBridge;"), Is.True);
+            Assert.That(hotswapBlock.Contains("WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);"), Is.True);
             Assert.That(hotswapBlock.Contains("case GlobalRegistryServiceSlot.VoxelEngineRuntime:"), Is.True);
             Assert.That(hotswapBlock.Contains("voxelEngine = currentService as HectonVoxelEngine;"), Is.True);
             Assert.That(hotswapBlock.Contains("ReleaseChunkFadeMaterialPool();"), Is.True);
@@ -1493,6 +2695,40 @@ namespace Hecton8.Tests.Editor
             Assert.That(block.Contains("PublishFrame("), Is.False, startToken);
             Assert.That(block.Contains("InitializeRuntime()"), Is.False, startToken);
             Assert.That(block.Contains("TryGetReadableRuntime(out ChemicalInfluenceGrid instance)"), Is.True, startToken);
+        }
+
+        private static void AssertStreamingOwnerLifecycle(string source)
+        {
+            int enableIndex = source.IndexOf("private void OnEnable()", StringComparison.Ordinal);
+            int disableIndex = source.IndexOf("private void OnDisable()", enableIndex, StringComparison.Ordinal);
+            int destroyIndex = source.IndexOf("private void OnDestroy()", disableIndex, StringComparison.Ordinal);
+            Assert.That(enableIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(disableIndex, Is.GreaterThan(enableIndex));
+            Assert.That(destroyIndex, Is.GreaterThan(disableIndex));
+
+            string enableBlock = source.Substring(enableIndex, disableIndex - enableIndex);
+            string disableBlock = source.Substring(disableIndex, destroyIndex - disableIndex);
+            Assert.That(enableBlock.Contains("PublishActiveRuntimeInstance();"), Is.True);
+            Assert.That(disableBlock.Contains("if (ActiveRuntimeInstance == this)"), Is.True);
+            Assert.That(disableBlock.Contains("ClearActiveRuntimeInstance();"), Is.True);
+        }
+
+        private static void AssertVegetationBridgeServiceCastsAreResolverValidated(string source, string sourcePath)
+        {
+            const string castToken = "currentService as HectonMapMagicVegetationBridge";
+            const string resolverToken = "WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge";
+            int searchIndex = 0;
+            while (true)
+            {
+                int castIndex = source.IndexOf(castToken, searchIndex, StringComparison.Ordinal);
+                if (castIndex < 0)
+                    return;
+
+                int windowEnd = Math.Min(source.Length, castIndex + 320);
+                string window = source.Substring(castIndex, windowEnd - castIndex);
+                Assert.That(window.Contains(resolverToken), Is.True, sourcePath);
+                searchIndex = castIndex + castToken.Length;
+            }
         }
 
         private static void AssertHotThermalBlockIsDependencyPure(string source, string startToken, string endToken)

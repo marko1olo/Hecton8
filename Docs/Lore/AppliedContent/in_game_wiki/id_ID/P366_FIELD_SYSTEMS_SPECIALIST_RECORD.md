@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Field Systems Specialist Record"
+title: "Catatan Spesialis Sistem Lapangan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Field Systems Specialist Record
+# Catatan Spesialis Sistem Lapangan
 
-ID LOC HOLD: The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.
+Catatan ini menjelaskan kompetensi awal operator tanpa menjadikannya saksi terpilih. Deep Reach melatihnya di sekitar pompa, rating segel, ruang relay, kartu bypass, antrean evakuasi, dan bahasa route-safe. Sistem lama menolak namanya, tetapi masih membocorkan prosedur yang akrab. Rasa bersalah bermula sebagai pengenalan: urutan pengurasan, rating klem, frasa penahanan yang terlalu bersih, dan ruangan yang gagal dalam urutan yang diajarkan untuk dicegah.
 
 ## Scanner
 
-ID LOC HOLD: Old field-systems credential. Not command staff. Infrastructure labor with enough access to know when a route was buried.
+Kredensial sistem lapangan lama. Bukan staf komando. Pekerja infrastruktur dengan akses cukup untuk mengenali di mana sebuah rute dikubur.
 
 ## Terminal
 
-ID LOC HOLD: PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review.
+JEJAK PERSONEL: sistem lapangan, infrastruktur evakuasi, sertifikasi route-safe. Izin dicabut setelah tinjauan kebisuan Aegir. Cache prosedur masih cocok dengan urutan operator.
 
 ## Audio
 
-ID LOC HOLD: You were never the person who signed the lie. You knew the language that made it work.
+Kamu tidak pernah menandatangani kebohongan itu. Kamu tahu tata bahasa yang membuatnya lolos inspeksi.
 
 ## Field Note
 
-ID LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+Lencana itu berhenti membuka pintu. Ia tidak menghapus urutan kegagalan.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/id_ID. -->

@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS195_FIRST_WALKWAY_RAIL_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1220_HANDRAIL_SALT_PALM_POLISH",
+    "P1221_LADDER_RUNG_BOOT_CRESCENT",
+    "P1222_DECK_GRATE_SILT_WEDGE",
+    "P1223_STANCHION_PAINT_CHIP_STACK",
+    "P1224_WARNING_STRIPE_PEEL_EDGE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1220_HANDRAIL_SALT_PALM_POLISH.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1221_LADDER_RUNG_BOOT_CRESCENT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1222_DECK_GRATE_SILT_WEDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1223_STANCHION_PAINT_CHIP_STACK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1224_WARNING_STRIPE_PEEL_EDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

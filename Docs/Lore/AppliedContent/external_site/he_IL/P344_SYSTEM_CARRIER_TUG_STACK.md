@@ -3,38 +3,22 @@ packet_id: P344_SYSTEM_CARRIER_TUG_STACK
 release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
 article_id: applied_lore.system_carrier_tug_stack
 unlock_id: unlock.system_carrier_tug_stack
-poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
+poi_tags: poi.black_keel_carrier_spec;poi.tug_manifest
 biome_tags: biome.orbit;biome.contract
 locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: System Carrier Tug Stack"
+title: "מחסנית נושא וגוררות מערכת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: System Carrier Tug Stack
+# מחסנית נושא וגוררות מערכת
 
-HE LOC HOLD: HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.
-
-## Scanner
-
-HE LOC HOLD: Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
-
-## Terminal
-
-HE LOC HOLD: BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
-
-## Audio
-
-HE LOC HOLD: The carrier is not your home. It is a machine that knows who owns your debt.
-
-## Field Note
-
-HE LOC HOLD: Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
+Black Keel צריכה להרגיש קרובה מספיק כדי להאשים אותה ורחוקה מספיק כדי להישאר בלתי מושגת. זו אינה הספינה מפנטזיית הצלה הירואית. זו מחסנית תעשייתית שכורה מגוף נושא, רציפי גוררות, מדפי מטען, תוכנת משמורת, מסילות קפסולות וספר חשבונות שאינו ישן. זה עושה אותה שימושית: היא מקבלת דגימות, עונה לחבילות, מחזיקה מסלול וזורקת חומרה לחלון. זה גם עושה אותה אכזרית: כל פונקציה שימושית קשורה לבעלות, תזמון וחוב. השחקן תקוע מתחת למכונה אמיתית ונוכחת שמבנית אינה מוכנה להפוך להורה.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/he_IL. -->

@@ -1268,7 +1268,7 @@ namespace Hecton8.AI.GPU
 
         /// <summary>
         /// Sets all compute shader uniforms and binds Ping-Pong buffers.
-        /// 
+        ///
         /// Ping-Pong logic:
         ///   Even _frameIndex â†’ Read from A, Write to B.
         ///   Odd  _frameIndex â†’ Read from B, Write to A.
@@ -1700,7 +1700,7 @@ namespace Hecton8.AI.GPU
         /// PING-PONG RENDER BINDING:
         ///   After Dispatch + _frameIndex++, we need to render from the buffer
         ///   that was WRITTEN TO during this frame's dispatch.
-        ///   
+        ///
         ///   Before increment: writeBuffer = (_frameIndex % 2 == 0) ? B : A
         ///   After  increment: _frameIndex is now +1, so:
         ///     currentData = (_frameIndex % 2 == 0) ? B : A

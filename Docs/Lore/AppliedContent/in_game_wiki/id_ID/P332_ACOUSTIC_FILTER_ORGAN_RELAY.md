@@ -3,13 +3,13 @@ packet_id: P332_ACOUSTIC_FILTER_ORGAN_RELAY
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.acoustic_filter_organ_relay
 unlock_id: unlock.acoustic_filter_organ_relay
-poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_resonator
-biome_tags: biome.atlas;biome.comms
+poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_chamber
+biome_tags: biome.atlas;biome.sonar
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relai Organ Penyaring Akustik"
+title: "Relai Organ Filter Akustik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relai Organ Penyaring Akustik
+# Relai Organ Filter Akustik
 
-Beberapa hewan terumbu menumbuhkan organ penyaring cukup padat untuk membentuk suara. Node perbaikan Atlas memakai jaringan itu sebagai peredam akustik setelah rumah relai retak.
-
-Bantuan itu punya gigi. Organ yang membawa ping rute juga bisa memberi tahu getaran pada pemakan, membangunkan fauna bertag, atau memantulkan gerak Marauder turun ke terumbu. Jawaban bersih bukan koridor aman. Itu berarti koridor punya pendengar.
+Organ filter akustik tumbuh di tenggorokan relai lama, tempat air, tekanan, dan suara melakukan pekerjaan yang tidak bisa dilakukan radio. Jaringan itu tidak berbicara. Ia mengubah impedansi, meredam deru pompa, dan membuat nada pinger sempit berjalan lebih jauh dari semestinya. Atlas dapat memakai gema berulang itu sebagai relai murah, dan pemain teliti dapat memakainya sebagai petunjuk rute.
 
 ## Scanner
 
-Resonansi organ penyaring cocok dengan irama relai rusak. Pantulan lebih bersih setelah melewati jaringan. Bekas gigitan pada rumah relai.
+Jaringan sekat lunak di pipa relai meloloskan nada pinger dan membunuh bising pompa.
 
 ## Terminal
 
-RELAI AKUSTIK // Jaringan organ penyaring lokal meredam derau badai dan mengulang ping layanan di dalam terumbu kabel. Penguatan sinyal tidak stabil saat lonjakan tekanan. Relai biologis adalah bantuan rute sekaligus umpan predator.
+CATATAN RELAI: lipatan hidup menolak bising mesin lebar, meloloskan pulsa pinger sempit, dan menggeser fase gema balik. Kepercayaan peta hilir dikurangi.
 
 ## Audio
 
-Ia menjawab seperti peralatan karena peralatan memakai tenggorokannya.
+Jika ia menjawab seperti peralatan, ingat bahwa peralatan tidak berdarah.
 
 ## Field Note
 
-Jika gema punya pulsa di belakangnya, diamkan alat dan periksa air sebelum bergerak.
+Pakai saat sonar terasa membantu sebelum terasa mencurigakan.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/id_ID. -->

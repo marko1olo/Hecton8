@@ -194,9 +194,14 @@ namespace Hecton8.Inventory
         private static readonly InventoryReferenceSlot[] _referenceSlots = new InventoryReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[64] — reference slot occupancy map prevents wrap overwrite before deferred flush — owner: InventoryEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
+        // COLD ALLOC: ushort[64] - reference slot generations invalidate stale payload handles after sidecar reuse - owner: InventoryEvents
+        private static readonly ushort[] _referenceSlotGenerations = new ushort[ReferenceSlotCapacity];
         private static NativeQueue<InventoryEventPayload> _pendingEvents;
         private static NativeQueue<InventoryEventPayload> _nextFrameEvents;
         private static NativeParallelHashSet<ulong> _queuedEventKeys;
+        private static int _pendingEventsSentinelId;
+        private static int _nextFrameEventsSentinelId;
+        private static int _queuedEventKeysSentinelId;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
         private static int _pendingEventCount;
@@ -321,7 +326,7 @@ namespace Hecton8.Inventory
                     _isDispatching = false;
                 }
 
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
             }
 
             if (_pendingEvents.IsEmpty())
@@ -341,7 +346,7 @@ namespace Hecton8.Inventory
         public static bool TryResolveItem(in InventoryEventPayload payload, out ItemData item)
         {
             item = null;
-            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+            if (!IsReferenceSlotPayloadCurrent(in payload))
                 return false;
 
             item = _referenceSlots[payload.ReferenceSlot].Item;
@@ -360,7 +365,7 @@ namespace Hecton8.Inventory
             out EncumbranceChangedEvent encumbranceEvent)
         {
             encumbranceEvent = default;
-            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+            if (!IsReferenceSlotPayloadCurrent(in payload))
                 return false;
 
             PlayerInventory inventory = _referenceSlots[payload.ReferenceSlot].Inventory;
@@ -438,7 +443,7 @@ namespace Hecton8.Inventory
                 return false;
             }
 
-            if (!TryReserveReferenceSlot(out int referenceSlot))
+            if (!TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration))
             {
                 _droppedEventCount++;
                 return false;
@@ -455,7 +460,7 @@ namespace Hecton8.Inventory
                 ItemHashId = itemHashId,
                 ReferenceSlot = referenceSlot,
                 EventType = (ushort)InventoryEventType.InventoryFull,
-                Reserved = 0
+                Reserved = referenceGeneration
             });
         }
 
@@ -513,7 +518,7 @@ namespace Hecton8.Inventory
                 return false;
             }
 
-            if (!TryReserveReferenceSlot(out int referenceSlot))
+            if (!TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration))
             {
                 _droppedEventCount++;
                 return false;
@@ -530,7 +535,7 @@ namespace Hecton8.Inventory
                 ItemHashId = 0u,
                 ReferenceSlot = referenceSlot,
                 EventType = (ushort)InventoryEventType.EncumbranceChanged,
-                Reserved = 0
+                Reserved = referenceGeneration
             });
         }
 
@@ -544,21 +549,21 @@ namespace Hecton8.Inventory
                 if (!_pendingEvents.IsCreated)
                 {
                     _pendingEvents = new NativeQueue<InventoryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — deferred inventory event lane flushed by SystemDispatcher LateUpdate — owner: InventoryEvents
-                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
                 }
 
                 if (!_nextFrameEvents.IsCreated)
                 {
                     _nextFrameEvents = new NativeQueue<InventoryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — next-frame inventory event lane prevents same-frame reentrant dispatch — owner: InventoryEvents
-                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
                 }
 
                 if (!_queuedEventKeys.IsCreated)
                 {
                     _queuedEventKeys = new NativeParallelHashSet<ulong>(EventDedupCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashSet<ulong>[128] - per-frame inventory duplicate suppression keys - owner: InventoryEvents
-                    RegisterNativeHashSet(ref _queuedEventKeys, nameof(_queuedEventKeys));
+                    RegisterNativeHashSet(ref _queuedEventKeys, nameof(_queuedEventKeys), out _queuedEventKeysSentinelId);
                 }
             }
             catch
@@ -575,10 +580,12 @@ namespace Hecton8.Inventory
         private static void RegisterNativeQueue<T>(
             ref NativeQueue<T> queue,
             int capacity,
-            string label)
+            string label,
+            out int sentinelId)
             where T : unmanaged
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeQueueInstance(
                 queue,
                 capacity,
                 nameof(InventoryEvents),
@@ -587,14 +594,18 @@ namespace Hecton8.Inventory
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeQueue(ref queue, label);
+            ReleaseNativeQueue(ref queue, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
-        private static void RegisterNativeHashSet<T>(ref NativeParallelHashSet<T> hashSet, string label)
-            where T : unmanaged
+        private static void RegisterNativeHashSet<T>(
+            ref NativeParallelHashSet<T> hashSet,
+            string label,
+            out int sentinelId)
+            where T : unmanaged, IEquatable<T>
         {
-            int sentinelId = NativeMemorySentinel.RegisterNativeParallelHashSet(
+            sentinelId = 0;
+            sentinelId = NativeMemorySentinel.RegisterNativeParallelHashSetInstance(
                 hashSet,
                 nameof(InventoryEvents),
                 label,
@@ -602,37 +613,61 @@ namespace Hecton8.Inventory
             if (sentinelId > 0)
                 return;
 
-            ReleaseNativeHashSet(ref hashSet, label);
+            ReleaseNativeHashSet(ref hashSet, ref sentinelId);
             throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void ReleaseNativeState()
         {
-            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
-            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
-            ReleaseNativeHashSet(ref _queuedEventKeys, nameof(_queuedEventKeys));
+            ReleaseNativeQueue(ref _pendingEvents, ref _pendingEventsSentinelId);
+            ReleaseNativeQueue(ref _nextFrameEvents, ref _nextFrameEventsSentinelId);
+            ReleaseNativeHashSet(ref _queuedEventKeys, ref _queuedEventKeysSentinelId);
         }
 
-        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, ref int sentinelId)
             where T : unmanaged
         {
-            if (!queue.IsCreated)
-                return;
+            Exception firstException = null;
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(InventoryEvents), label);
-            queue.Dispose();
-            queue = default;
-        }
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
 
-        private static void ReleaseNativeHashSet<T>(ref NativeParallelHashSet<T> hashSet, string label)
-            where T : unmanaged
-        {
-            if (!hashSet.IsCreated)
-                return;
+            if (queue.IsCreated)
+            {
+                try
+                {
+                    queue.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    queue = default;
+                }
+            }
+            else
+            {
+                queue = default;
+            }
 
-            NativeMemorySentinel.UnregisterNativeParallelHashSet(nameof(InventoryEvents), label);
-            hashSet.Dispose();
-            hashSet = default;
+            if (firstException != null)
+                throw firstException;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -649,12 +684,58 @@ namespace Hecton8.Inventory
             }
         }
 
+        private static void ReleaseNativeHashSet<T>(ref NativeParallelHashSet<T> hashSet, ref int sentinelId)
+            where T : unmanaged, IEquatable<T>
+        {
+            Exception firstException = null;
+
+            if (sentinelId > 0)
+            {
+                try
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    sentinelId = 0;
+                }
+            }
+
+            if (hashSet.IsCreated)
+            {
+                try
+                {
+                    hashSet.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+                finally
+                {
+                    hashSet = default;
+                }
+            }
+            else
+            {
+                hashSet = default;
+            }
+
+            if (firstException != null)
+                throw firstException;
+        }
+
         private static bool Enqueue(in InventoryEventPayload payload)
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
                 _droppedEventCount++;
                 return false;
             }
@@ -697,9 +778,10 @@ namespace Hecton8.Inventory
             _dedupFrame = frame;
         }
 
-        private static bool TryReserveReferenceSlot(out int referenceSlot)
+        private static bool TryReserveReferenceSlot(out int referenceSlot, out ushort referenceGeneration)
         {
             referenceSlot = -1;
+            referenceGeneration = 0;
             if (_referencePendingCount >= ReferenceSlotCapacity)
                 return false;
 
@@ -714,12 +796,29 @@ namespace Hecton8.Inventory
                     continue;
 
                 referenceSlot = candidateSlot;
+                referenceGeneration = AdvanceReferenceSlotGeneration(referenceSlot);
                 _referenceSlotOccupied[referenceSlot] = true;
                 _referencePendingCount++;
                 return true;
             }
 
             return false;
+        }
+
+        private static ushort AdvanceReferenceSlotGeneration(int referenceSlot)
+        {
+            ushort generation = unchecked((ushort)(_referenceSlotGenerations[referenceSlot] + 1));
+            if (generation == 0)
+                generation = 1;
+
+            _referenceSlotGenerations[referenceSlot] = generation;
+            return generation;
+        }
+
+        private static void ReleaseReferenceSlotForPayload(in InventoryEventPayload payload)
+        {
+            if (IsReferenceSlotPayloadCurrent(in payload))
+                ReleaseReferenceSlot(payload.ReferenceSlot);
         }
 
         private static void ReleaseReferenceSlot(int referenceSlot)
@@ -739,6 +838,15 @@ namespace Hecton8.Inventory
         private static bool IsValidReferenceSlot(int referenceSlot)
         {
             return (uint)referenceSlot < ReferenceSlotCapacity;
+        }
+
+        private static bool IsReferenceSlotPayloadCurrent(in InventoryEventPayload payload)
+        {
+            int referenceSlot = payload.ReferenceSlot;
+            return IsValidReferenceSlot(referenceSlot) &&
+                   _referenceSlotOccupied[referenceSlot] &&
+                   payload.Reserved != 0 &&
+                   _referenceSlotGenerations[referenceSlot] == payload.Reserved;
         }
 
         private static void DrainWithoutDispatch()
@@ -781,7 +889,7 @@ namespace Hecton8.Inventory
                 if (pendingCount > 0)
                     pendingCount--;
 
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReleaseReferenceSlotForPayload(in payload);
             }
 
             if (queue.IsEmpty())
@@ -803,6 +911,9 @@ namespace Hecton8.Inventory
             NativeQueue<InventoryEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            int sentinelIdSwap = _pendingEventsSentinelId;
+            _pendingEventsSentinelId = _nextFrameEventsSentinelId;
+            _nextFrameEventsSentinelId = sentinelIdSwap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
@@ -813,6 +924,7 @@ namespace Hecton8.Inventory
             {
                 _referenceSlots[i].Clear();
                 _referenceSlotOccupied[i] = false;
+                AdvanceReferenceSlotGeneration(i);
             }
         }
 

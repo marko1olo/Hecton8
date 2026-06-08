@@ -536,9 +536,11 @@ namespace Hecton8.UI
         private Color scannerHologramScanCompleteColor = new Color(0.14f, 1f, 0.46f, 0.52f);
 
         private const string RootName = "HUD_V4_CanvasRoot";
+        private const string ActionProgressHudName = "ActionProgressHUD";
 
         private RectTransform _root;
         private RectTransform _ornamentRoot;
+        private RectTransform _actionProgressHudRoot;
         private CanvasGroup _rootCanvasGroup;
         private RectMask2D _rootScissorMask;
         private CanvasGroup _ornamentCanvasGroup;
@@ -559,6 +561,7 @@ namespace Hecton8.UI
         private CanvasGroup _quickbarCanvasGroup;
         private CanvasGroup _savingProgressCanvasGroup;
         private CanvasGroup _scannerFlatHologramCanvasGroup;
+        private ActionProgressHUD _actionProgressHud;
         private Image _biosBackdrop;
         private AcousticRadarRawImage _acousticRadarOverlay;
         private Image _topVeil;
@@ -862,6 +865,21 @@ namespace Hecton8.UI
         internal static SuitHUDV4CanvasOverlay ActiveRuntimeInstance { get; private set; }
 
         internal static int ActiveOverlayCount => s_activeOverlayCount;
+
+        internal static bool TryResolveActiveRuntime(ref SuitHUDV4CanvasOverlay target)
+        {
+            SuitHUDV4CanvasOverlay active = ActiveRuntimeInstance;
+            if (active == null || !active.isActiveAndEnabled)
+            {
+                target = null;
+                return false;
+            }
+
+            if (!ReferenceEquals(target, active))
+                target = active;
+
+            return true;
+        }
 
         public static void CopyActiveOverlaysTo(System.Collections.Generic.List<SuitHUDV4CanvasOverlay> results)
         {
@@ -1614,6 +1632,15 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
+                return;
+            }
+
             if (IsStencilRenderGraphSuppressedRuntime())
             {
                 ApplyStencilRenderGraphSuppressionIfNeeded();
@@ -2017,8 +2044,7 @@ namespace Hecton8.UI
             _localizationRuntime = localizationRuntime;
             CacheAudioService(GlobalRegistry.Audio);
             _playerRuntimeContext = GlobalRegistry.Player;
-            if (_vegetationBridge == null)
-                _vegetationBridge = GlobalRegistry.MapMagicVegetation;
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
             RebindInventoryService(GlobalRegistry.PlayerInventory);
             RefreshRuntimeDependenciesFromCachedServices();
             RefreshQualityPolicy();
@@ -2042,7 +2068,7 @@ namespace Hecton8.UI
 
         private static bool IsAudioServiceUsable(Hecton8.Core.IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (audioService == null || !audioService.IsAudioRuntimeReady)
                 return false;
 
             if (audioService is Behaviour behaviour)
@@ -2125,6 +2151,7 @@ namespace Hecton8.UI
 
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
                     return;
 
                 default:
@@ -3546,6 +3573,7 @@ namespace Hecton8.UI
             EnsureRootCanvasGroup();
             if (_layoutBuilt)
             {
+                EnsureActionProgressHudBinding(_root);
                 SetRootVisible(true);
                 return;
             }
@@ -3700,6 +3728,7 @@ namespace Hecton8.UI
 
             BuildSavingProgressHierarchy(_root);
             BuildScannerFlatHologramHierarchy(_root);
+            EnsureActionProgressHudBinding(_root);
 
             EnsureIsolatedDynamicCanvas(_reticleRoot, DynamicCanvasCadenceBucket.HighCadence);
             EnsureIsolatedDynamicCanvas(_depthLabel.rectTransform, DynamicCanvasCadenceBucket.LowCadence);
@@ -3724,6 +3753,38 @@ namespace Hecton8.UI
             SetScannerFlatHologramVisible(false);
 
             _layoutBuilt = true;
+        }
+
+        private void EnsureActionProgressHudBinding(RectTransform parent)
+        {
+            if (parent == null)
+                return;
+
+            if (_actionProgressHudRoot == null)
+                _actionProgressHudRoot = FindChildRect(parent, ActionProgressHudName);
+
+            if (_actionProgressHudRoot == null)
+            {
+                _actionProgressHudRoot = CreateRect(ActionProgressHudName, parent);
+                Anchor(_actionProgressHudRoot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -112f), new Vector2(118f, 78f));
+            }
+            else if (_actionProgressHudRoot.parent != parent)
+            {
+                _actionProgressHudRoot.SetParent(parent, false);
+                Anchor(_actionProgressHudRoot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -112f), new Vector2(118f, 78f));
+            }
+
+            _actionProgressHudRoot.SetAsLastSibling();
+            if (!_actionProgressHudRoot.TryGetComponent(out _actionProgressHud))
+                // COLD ALLOC: ActionProgressHUD[1] - delayed player action progress binding in the live suit HUD - owner: SuitHUDV4CanvasOverlay
+                _actionProgressHud = _actionProgressHudRoot.gameObject.AddComponent<ActionProgressHUD>();
+
+            CanvasGroup canvasGroup = EnsureCanvasGroup(_actionProgressHudRoot);
+            if (canvasGroup != null)
+            {
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
         }
 
         private void EnsureRootCanvasGroup()
@@ -4722,13 +4783,35 @@ namespace Hecton8.UI
 
         private void RefreshDepthFromMovementFallback()
         {
-            if (_depthSignalSource == null && playerMovement != null)
-                _depthMeters = math.max(0f, playerMovement.CurrentDepth);
+            if (_depthSignalSource == null)
+                _depthMeters = ResolveHudDepthMeters(_depthMeters);
         }
 
         private void HandleDepthChanged(float depth)
         {
-            _depthMeters = math.max(0f, depth);
+            _depthMeters = ResolveHudDepthMeters(depth);
+        }
+
+        private float ResolveHudDepthMeters(float fallbackDepth)
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            if (playerContext != null)
+                return 0f;
+
+            HectonPlayerMovement movement = playerMovement;
+            if (movement != null && math.isfinite(movement.CurrentDepth))
+                return math.max(0f, movement.CurrentDepth);
+
+            return math.isfinite(fallbackDepth) ? math.max(0f, fallbackDepth) : 0f;
         }
 
         private bool NeedsHeadingCadenceRefresh(bool cadenceGateOpen, float headingDegrees)
@@ -7621,6 +7704,15 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float shiftSqrMagnitude = shiftOffset.sqrMagnitude;
+            if (!math.all(math.isfinite(new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z))) ||
+                !math.isfinite(shiftSqrMagnitude) ||
+                shiftSqrMagnitude <= 0.000001f)
+            {
+                return;
+            }
+
             _lastScreenWidth = -1;
             _lastScreenHeight = -1;
             _lastAppliedScale = -1f;

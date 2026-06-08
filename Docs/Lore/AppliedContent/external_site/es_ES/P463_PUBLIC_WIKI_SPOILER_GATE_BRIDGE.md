@@ -9,32 +9,26 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Compuerta de spoilers"
+title: "Compuerta de spoilers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Compuerta de spoilers
+# Compuerta de spoilers
 
-ES LOC HOLD: Las páginas públicas de HECTON-8 pueden nombrar el trabajo sin entregar la evidencia. La capa abierta da contexto seguro; sellos, marcas de ruta, escaneos, terminales, etiquetas de trabajadores y cajas negras abren afirmaciones más fuertes después.
+## Contexto Público
 
-## Scanner
+Las páginas públicas de HECTON-8 pueden nombrar el trabajo sin entregar la evidencia. La capa abierta puede decir que HECTON-8 es una luna oceánica bajo Aegir, que la colonia falló, que Black Keel trae presión de salvamento en vez de rescate limpio, y que Deep Reach dejó un informe público hecho de tormenta, colapso, fallo autónomo, lenguaje de rescate Atlas-6 y datos ausentes.
 
-ES LOC HOLD: COMPUERTA DE ARCHIVO PÚBLICO // Nivel de spoiler 0/1. Solo contexto público. La evidencia profunda requiere custodia recuperada antes de ampliar el códice.
+Eso basta para entender la premisa. No basta para probar el crimen.
 
-## Terminal
+Las páginas profundas necesitan objetos recuperados: sello de paquete, marca de ruta, registro de escaneo, tag de trabajador, fragmento de terminal, línea de caja negra o muestra con custodia intacta. Antes de hallar esos objetos en el juego, la wiki pública se queda en contexto seguro. Después del hallazgo, el códice puede hablar con más dureza porque el jugador vio de dónde salió el hecho.
 
-ES LOC HOLD: FILTRO PUBLIC/WIKI // Antes de la evidencia se permite: escenario, presión de ruta, lenguaje público del accidente, instituciones conocidas y premisa de salvamento. Retener evidencia profunda.
+La compuerta protege cinco cosas: el primer descenso, la evidencia de los trabajadores, la cadena de responsabilidad de Deep Reach, la verdad de la red de reparación Atlas-6 y los resultados finales de carga. Las páginas públicas pueden apuntar hacia esos temas. No llevan el receptor, la ruta ni la consecuencia final.
 
-## Audio
-
-ES LOC HOLD: Relé Black Keel: el texto público nombra la luna. La prueba necesita un sello. Trae el sello.
-
-## Field Note
-
-ES LOC HOLD: La página pública te dice dónde bucear. No te dice quién pagó para mantener cerrada la puerta.
+Los artículos públicos son mapas. La evidencia recuperada es prueba.
 
 <!-- External Site; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/es_ES. -->

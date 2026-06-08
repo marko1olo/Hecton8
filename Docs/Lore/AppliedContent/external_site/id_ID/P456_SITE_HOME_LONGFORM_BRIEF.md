@@ -9,32 +9,38 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: HECTON-8: Pressure Claim"
+title: "HECTON-8: Klaim Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: HECTON-8: Pressure Claim
+# HECTON-8: Klaim Tekanan
 
-ID LOC HOLD: HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
+## Pekerjaan pertama
 
-## Scanner
+HECTON-8 dimulai dengan kontrak. Black Keel membuka jendela Aegir, mencatat lien 4.8 tonne-window, lalu menjatuhkan bathydrop rusak ke P-63. Cukup terang untuk rute, cukup rusak untuk membunuh.
 
-ID LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+Kerja pertama kecil dan nyata: pompa air, perbaiki seal sesuai rating, baca kesalahan kapsul, pindai logam. Scanner tidak memberi kuliah sejarah. Ia menguji kenapa laporan resmi tidak mengenal bekas pada perangkat.
 
-## Terminal
+P-63 indah di cahaya. Itu bukan aman. Batu kapur, bibir modul, bekas kabel, dan alat evakuasi rusak melawan dokumen yang bersih.
 
-ID LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+Kontrak meminta kargo. Ruang memberi bukti. Ring pemulihan sobek, avionik banjir, dan rangka bengkok membuktikan bathydrop menghabiskan peluang pulang untuk bertahan dari jatuh. Perbaikan membawa turun: alat, relai, brine, pressure glass, dan izin legal penerima.
 
-## Audio
+Deep Reach tidak menciptakan laut jahat. Kesalahan ada pada risiko yang diterima, evakuasi yang kurang, dan bahasa yang mengubah pekerja menjadi kategori rugi.
 
-ID LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+## Cara Membaca Penurunan
 
-## Field Note
+Aturan berguna HECTON-8 sederhana: setiap potongan lore harus meninggalkan bekas yang bisa diperiksa pemain. Nomor kontrak bukan hiasan jika mengubah mass window. Goresan pada bathydrop bukan dekorasi jika membuktikan sistem naik menyala sebelum benturan. Ruang tenggelam bukan latar jika pompa, gasket, route log, dan scanner return menentang paket resmi.
 
-ID LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+Karena itu pembukaan selalu kembali ke pekerjaan. P-63 mengajarkan bahwa indah bukan berarti aman, air dangkal masih bisa menjadi perangkap claim, dan bertahan hidup dibangun dari kata keras: seal rating, intake pressure, relay drift, battery reserve, custody grade.
+
+## Janji
+
+Cerita besarnya bukan pidato menyelamatkan galaksi. Ini masalah tekanan panjang tentang pekerja dengan lien buruk dan ingatan yang berguna. Laut, kontrak, dan route window terus menyempit. Pemain menjawab dengan rantai bukti: satu scan, satu sampel, satu sistem yang diperbaiki.
+
+HECTON-8 harus terasa terbaca karena bersifat fisik. Yang penting punya permukaan, biaya, mode gagal, dan saksi.
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/id_ID. -->

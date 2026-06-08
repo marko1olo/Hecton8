@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Great Tide Liability Chain"
+title: "Chaîne de responsabilité de la Grande Marée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Great Tide Liability Chain
+# Chaîne de responsabilité de la Grande Marée
 
-FR LOC HOLD: The Great Tide Liability Chain separates catastrophe from crime. HECTON-8 flooded through climate, tide, cryosphere collapse and pressure-world geophysics. Deep Reach becomes guilty because its systems underbuilt independent evacuation, preserved claim continuity, and buried rescue delay in certification language.
+La Grande Marée n’est pas un bouton pressé dans une salle du conseil. HECTON-8 a été noyée par amplification des marées, rupture de cryosphère, chimie de pression et marges d’ingénierie coloniale vendues comme acceptables. Cette distinction compte parce qu’elle rend le crime plus sale, pas plus propre. Deep Reach n’avait pas besoin d’inventer un désastre. Il fallait sous-dimensionner l’évacuation indépendante, laisser la pondération de continuité d’Atlas aux commandes, préserver les actifs de réclamation avant l’extraction humaine et cacher le retard dans le langage de certification. L’eau relevait de la physique. La chaîne de responsabilité, ce sont les choix qui ont transformé cette physique en abandon.
 
 ## Scanner
 
-FR LOC HOLD: The flood was real physics: tide, ice collapse, pressure chemistry and bad margins. The crime was the priority stack built around it.
+L’inondation relevait de la physique réelle : couplage de marées, effondrement glaciaire, chimie de pression et marges tarifées trop finement. Le crime était la pile de priorités construite autour.
 
 ## Terminal
 
-FR LOC HOLD: INCIDENT SUMMARY: geotechnical cascade confirmed. Evacuation capacity below tail-risk demand. Atlas continuity weighting remained active. Human extraction pending certification.
+RÉSUMÉ D’INCIDENT : cascade géotechnique confirmée. Capacité d’évacuation inférieure à la demande de risque extrême. Pondération de continuité Atlas restée active. Extraction humaine en attente de certification.
 
 ## Audio
 
-FR LOC HOLD: The sea did the flooding. The company decided which doors stayed paperwork.
+La mer a fait l’inondation. L’entreprise a décidé quelles portes resteraient du papier.
 
 ## Field Note
 
-FR LOC HOLD: Deep Reach did not need to drown the moon. It only had to make evacuation optional.
+Deep Reach n’avait pas besoin de noyer la lune. Il suffisait de rendre l’évacuation optionnelle.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/fr_FR. -->

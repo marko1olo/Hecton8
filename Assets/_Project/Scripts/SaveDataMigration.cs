@@ -51,14 +51,14 @@ namespace Hecton8.SaveSystem
             int writeIndex = 0;
             for (int i = 0; i < values.Count; i++)
             {
-                string value = values[i];
+                string value = SaveData.SanitizePersistenceString(values[i]);
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     changed = true;
                     continue;
                 }
 
-                if (writeIndex != i)
+                if (writeIndex != i || !string.Equals(values[writeIndex], value, StringComparison.Ordinal))
                 {
                     values[writeIndex] = value;
                     changed = true;
@@ -93,14 +93,15 @@ namespace Hecton8.SaveSystem
             int writeIndex = 0;
             for (int i = 0; i < bound; i++)
             {
-                string id = ids[i];
+                string id = SaveData.SanitizePersistenceString(ids[i]);
                 if (string.IsNullOrWhiteSpace(id))
                 {
                     changed = true;
                     continue;
                 }
 
-                if (writeIndex != i)
+                if (writeIndex != i ||
+                    !string.Equals(ids[writeIndex], id, StringComparison.Ordinal))
                 {
                     ids[writeIndex] = id;
                     values[writeIndex] = values[i];
@@ -143,10 +144,10 @@ namespace Hecton8.SaveSystem
             int writeIndex = 0;
             for (int i = 0; i < safeCount; i++)
             {
-                string value = values[i];
+                string value = SaveData.SanitizePersistenceString(values[i]);
                 if (string.IsNullOrWhiteSpace(value))
                 {
-                    if (value != string.Empty)
+                    if (values[i] != string.Empty)
                     {
                         values[i] = string.Empty;
                         changed = true;
@@ -155,7 +156,7 @@ namespace Hecton8.SaveSystem
                     continue;
                 }
 
-                if (writeIndex != i)
+                if (writeIndex != i || !string.Equals(values[writeIndex], value, StringComparison.Ordinal))
                 {
                     values[writeIndex] = value;
                     changed = true;
@@ -225,26 +226,53 @@ namespace Hecton8.SaveSystem
                 return false;
 
             List<string> keysToRemove = null;
+            List<KeyValuePair<string, TValue>> keysToAdd = null;
+            HashSet<string> pendingCanonicalKeys = null;
             Dictionary<string, TValue>.Enumerator enumerator = values.GetEnumerator();
             while (enumerator.MoveNext())
             {
-                string key = enumerator.Current.Key;
-                if (!string.IsNullOrWhiteSpace(key))
+                KeyValuePair<string, TValue> pair = enumerator.Current;
+                string key = pair.Key;
+                string canonicalKey = SaveData.SanitizePersistenceString(key);
+                if (canonicalKey.Length == 0)
+                {
+                    keysToRemove ??= new List<string>(1);
+                    keysToRemove.Add(key);
+                    continue;
+                }
+
+                if (string.Equals(key, canonicalKey, StringComparison.Ordinal))
                     continue;
 
                 keysToRemove ??= new List<string>(1);
                 keysToRemove.Add(key);
+                if (values.ContainsKey(canonicalKey))
+                    continue;
+
+                pendingCanonicalKeys ??= new HashSet<string>(StringComparer.Ordinal);
+                if (!pendingCanonicalKeys.Add(canonicalKey))
+                    continue;
+
+                keysToAdd ??= new List<KeyValuePair<string, TValue>>(1);
+                keysToAdd.Add(new KeyValuePair<string, TValue>(canonicalKey, pair.Value));
             }
 
             enumerator.Dispose();
-            if (keysToRemove == null)
+            if (keysToRemove == null && keysToAdd == null)
                 return false;
 
-            for (int i = 0; i < keysToRemove.Count; i++)
+            for (int i = 0; keysToRemove != null && i < keysToRemove.Count; i++)
             {
                 string key = keysToRemove[i];
                 if (key != null)
                     values.Remove(key);
+            }
+
+            for (int i = 0; keysToAdd != null && i < keysToAdd.Count; i++)
+            {
+                KeyValuePair<string, TValue> pair = keysToAdd[i];
+                if (!values.ContainsKey(pair.Key))
+                    values[pair.Key] = pair.Value;
             }
 
             steps.Add(step);
@@ -295,24 +323,10 @@ namespace Hecton8.SaveSystem
             if (values.Count <= safeMax)
                 return false;
 
-            while (values.Count > safeMax)
-            {
-                TKey keyToRemove = default(TKey);
-                bool hasKey = false;
-                Dictionary<TKey, TValue>.Enumerator enumerator = values.GetEnumerator();
-                if (enumerator.MoveNext())
-                {
-                    keyToRemove = enumerator.Current.Key;
-                    hasKey = true;
-                }
-
-                enumerator.Dispose();
-
-                if (!hasKey)
-                    break;
-
-                values.Remove(keyToRemove);
-            }
+            List<TKey> keys = new List<TKey>(values.Keys);
+            keys.Sort(CompareStableTrimKeys);
+            for (int i = safeMax; i < keys.Count; i++)
+                values.Remove(keys[i]);
 
             steps.Add(step);
             return true;
@@ -327,27 +341,33 @@ namespace Hecton8.SaveSystem
             if (values.Count <= safeMax)
                 return false;
 
-            while (values.Count > safeMax)
-            {
-                T valueToRemove = default(T);
-                bool hasValue = false;
-                HashSet<T>.Enumerator enumerator = values.GetEnumerator();
-                if (enumerator.MoveNext())
-                {
-                    valueToRemove = enumerator.Current;
-                    hasValue = true;
-                }
-
-                enumerator.Dispose();
-
-                if (!hasValue)
-                    break;
-
-                values.Remove(valueToRemove);
-            }
+            List<T> sortedValues = new List<T>(values);
+            sortedValues.Sort(CompareStableTrimKeys);
+            for (int i = safeMax; i < sortedValues.Count; i++)
+                values.Remove(sortedValues[i]);
 
             steps.Add(step);
             return true;
+        }
+
+        private static int CompareStableTrimKeys<T>(T left, T right)
+        {
+            object leftObject = left;
+            object rightObject = right;
+            if (ReferenceEquals(leftObject, rightObject))
+                return 0;
+            if (leftObject == null)
+                return -1;
+            if (rightObject == null)
+                return 1;
+            if (leftObject is string leftString && rightObject is string rightString)
+                return string.CompareOrdinal(leftString, rightString);
+            if (leftObject is IComparable<T> typedComparable)
+                return typedComparable.CompareTo(right);
+            if (leftObject is IComparable comparable)
+                return comparable.CompareTo(rightObject);
+
+            return string.CompareOrdinal(leftObject.ToString(), rightObject.ToString());
         }
 
         public static bool MigrateInPlace(SaveData data, out int originalVersion, out string summary)
@@ -437,11 +457,6 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("tool durability map created");
             }
-            changed |= TrimDictionaryToMax(
-                data.toolDurabilityMap,
-                SaveData.MaxToolDurabilityRecords,
-                "tool durability map capped",
-                steps);
             changed |= EnsureNonBlankStringDictionaryKeys(
                 data.toolDurabilityMap,
                 "tool durability keys repaired",
@@ -450,6 +465,11 @@ namespace Hecton8.SaveSystem
                 data.toolDurabilityMap,
                 "tool durability values repaired",
                 steps);
+            changed |= TrimDictionaryToMax(
+                data.toolDurabilityMap,
+                SaveData.MaxToolDurabilityRecords,
+                "tool durability map capped",
+                steps);
 
             if (data.toolBrokenMap == null)
             {
@@ -457,14 +477,14 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("tool broken map created");
             }
+            changed |= EnsureNonBlankStringDictionaryKeys(
+                data.toolBrokenMap,
+                "tool broken keys repaired",
+                steps);
             changed |= TrimDictionaryToMax(
                 data.toolBrokenMap,
                 SaveData.MaxToolDurabilityRecords,
                 "tool broken map capped",
-                steps);
-            changed |= EnsureNonBlankStringDictionaryKeys(
-                data.toolBrokenMap,
-                "tool broken keys repaired",
                 steps);
 
             if (data.CustomModData == null)
@@ -473,11 +493,6 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("custom mod data created");
             }
-            changed |= TrimDictionaryToMax(
-                data.CustomModData,
-                SaveData.MaxCustomModDataEntries,
-                "custom mod data capped",
-                steps);
             changed |= EnsureNonBlankStringDictionaryKeys(
                 data.CustomModData,
                 "custom mod data keys repaired",
@@ -485,6 +500,11 @@ namespace Hecton8.SaveSystem
             changed |= EnsureNonNullStringDictionaryValues(
                 data.CustomModData,
                 "custom mod data values repaired",
+                steps);
+            changed |= TrimDictionaryToMax(
+                data.CustomModData,
+                SaveData.MaxCustomModDataEntries,
+                "custom mod data capped",
                 steps);
 
             if (data.suitBrokenUpgradeIds == null)
@@ -748,6 +768,12 @@ namespace Hecton8.SaveSystem
         {
             PlayerStatsDTO safeStats = data.playerStats;
             SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref safeStats);
+            bool defaultedPlayerHealth = false;
+            if (sourceVersion < SaveData.PlayerHealthPersistenceVersion && safeStats.health <= 0f)
+            {
+                safeStats.health = SaveData.PlayerHealthDefault;
+                defaultedPlayerHealth = true;
+            }
 
             PlayerKinematicStateDTO safeKinematic = sourceVersion >= SaveData.FirstHourDtoLockPersistenceVersion
                 ? data.playerKinematicState
@@ -756,13 +782,17 @@ namespace Hecton8.SaveSystem
             safeKinematic.ApplyTo(ref safeStats);
             SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref safeStats);
 
-            bool changed = !SaveDataPlayerSurvivalSanitizer.PlayerStatsEqual(in data.playerStats, in safeStats) ||
+            bool changed = defaultedPlayerHealth ||
+                           !SaveDataPlayerSurvivalSanitizer.PlayerStatsEqual(in data.playerStats, in safeStats) ||
                            !SaveDataPlayerSurvivalSanitizer.PlayerKinematicStateEqual(
                                in data.playerKinematicState,
                                in safeKinematic);
 
             data.playerStats = safeStats;
             data.playerKinematicState = safeKinematic;
+
+            if (defaultedPlayerHealth)
+                steps.Add("player health defaulted");
 
             if (changed)
                 steps.Add("player survival state repaired");
@@ -1903,18 +1933,22 @@ namespace Hecton8.SaveSystem
         {
             bool changed = false;
 
-            if (!dto.isDailySeed && !string.IsNullOrEmpty(dto.dailySeedId))
+            if (!dto.isDailySeed && dto.dailySeedId != string.Empty)
             {
                 dto.dailySeedId = string.Empty;
                 changed = true;
                 steps.Add("run modifiers daily-seed id cleared");
             }
 
-            if (dto.isDailySeed && string.IsNullOrWhiteSpace(dto.dailySeedId))
+            if (dto.isDailySeed)
             {
-                dto.dailySeedId = string.Empty;
-                changed = true;
-                steps.Add("run modifiers daily-seed id repaired");
+                string dailySeedId = SaveData.SanitizePersistenceString(dto.dailySeedId);
+                if (!string.Equals(dto.dailySeedId, dailySeedId, StringComparison.Ordinal))
+                {
+                    dto.dailySeedId = dailySeedId;
+                    changed = true;
+                    steps.Add("run modifiers daily-seed id repaired");
+                }
             }
 
             if (!dto.isPermadeath && dto.runMarkedDead)
@@ -1999,12 +2033,22 @@ namespace Hecton8.SaveSystem
             }
 
             bool repairedHashes = false;
+            bool repairedItemIds = false;
             bool repairedCounts = false;
+            bool repairedTail = false;
             for (int i = 0; i < dto.entryCount; i++)
             {
-                if (dto.itemHashIds[i] == 0 && !string.IsNullOrWhiteSpace(dto.itemIds[i]))
+                string canonicalItemId = SanitizeResourceScarcityItemId(dto.itemHashIds[i], dto.itemIds[i]);
+                if (!string.Equals(dto.itemIds[i], canonicalItemId, StringComparison.Ordinal))
                 {
-                    dto.itemHashIds[i] = LocHash.Compute(dto.itemIds[i]);
+                    dto.itemIds[i] = canonicalItemId;
+                    changed = true;
+                    repairedItemIds = true;
+                }
+
+                if (dto.itemHashIds[i] == 0 && canonicalItemId.Length != 0)
+                {
+                    dto.itemHashIds[i] = LocHash.Compute(canonicalItemId);
                     changed = true;
                     repairedHashes = true;
                 }
@@ -2017,12 +2061,114 @@ namespace Hecton8.SaveSystem
                 }
             }
 
+            bool repairedEntries = false;
+            int compactCount = 0;
+            for (int readIndex = 0; readIndex < dto.entryCount; readIndex++)
+            {
+                int itemHashId = dto.itemHashIds[readIndex];
+                int collectedCount = dto.collectedCounts[readIndex];
+                string itemId = dto.itemIds[readIndex] ?? string.Empty;
+                if (itemHashId == 0)
+                {
+                    changed = true;
+                    repairedEntries = true;
+                    continue;
+                }
+
+                int duplicateIndex = -1;
+                for (int i = 0; i < compactCount; i++)
+                {
+                    if (dto.itemHashIds[i] == itemHashId)
+                    {
+                        duplicateIndex = i;
+                        break;
+                    }
+                }
+
+                if (duplicateIndex >= 0)
+                {
+                    dto.collectedCounts[duplicateIndex] = SaturatingResourceScarcityCount(
+                        dto.collectedCounts[duplicateIndex],
+                        collectedCount);
+                    if (dto.itemIds[duplicateIndex].Length == 0 && itemId.Length != 0)
+                        dto.itemIds[duplicateIndex] = itemId;
+
+                    changed = true;
+                    repairedEntries = true;
+                    continue;
+                }
+
+                if (compactCount != readIndex)
+                {
+                    dto.itemHashIds[compactCount] = itemHashId;
+                    dto.itemIds[compactCount] = itemId;
+                    dto.collectedCounts[compactCount] = collectedCount;
+                    changed = true;
+                    repairedEntries = true;
+                }
+
+                compactCount++;
+            }
+
+            if (compactCount != dto.entryCount)
+            {
+                dto.entryCount = compactCount;
+                changed = true;
+                repairedEntries = true;
+            }
+
+            for (int i = dto.entryCount; i < ResourceScarcityDTO.MaxTrackedResources; i++)
+            {
+                if (dto.itemHashIds[i] != 0)
+                {
+                    dto.itemHashIds[i] = 0;
+                    changed = true;
+                    repairedTail = true;
+                }
+
+                string tailItemId = dto.itemIds[i];
+                if (tailItemId != null && tailItemId.Length != 0)
+                {
+                    dto.itemIds[i] = string.Empty;
+                    changed = true;
+                    repairedTail = true;
+                }
+
+                if (dto.collectedCounts[i] != 0)
+                {
+                    dto.collectedCounts[i] = 0;
+                    changed = true;
+                    repairedTail = true;
+                }
+            }
+
             if (repairedHashes)
                 steps.Add("resource scarcity hash repaired");
+            if (repairedItemIds)
+                steps.Add("resource scarcity item ids repaired");
             if (repairedCounts)
                 steps.Add("resource scarcity collected counts repaired");
+            if (repairedEntries)
+                steps.Add("resource scarcity entries compacted");
+            if (repairedTail)
+                steps.Add("resource scarcity tail repaired");
 
             return changed;
+        }
+
+        private static int SaturatingResourceScarcityCount(int left, int right)
+        {
+            long total = (long)math.max(0, left) + math.max(0, right);
+            return total >= int.MaxValue ? int.MaxValue : (int)total;
+        }
+
+        private static string SanitizeResourceScarcityItemId(int itemHashId, string itemId)
+        {
+            itemId = SaveData.SanitizePersistenceString(itemId);
+            if (itemId.Length == 0 || itemHashId == 0)
+                return itemId;
+
+            return LocHash.Compute(itemId) == itemHashId ? itemId : string.Empty;
         }
 
         private static bool EnsureAtlas6DirectiveState(SaveData data, List<string> steps)
@@ -2217,17 +2363,18 @@ namespace Hecton8.SaveSystem
 
         private static bool EnsurePlayerExpression(ref SaveData data, List<string> steps)
         {
+            string profileId = SaveData.SanitizePersistenceString(data.playerExpressionProfileId);
             if (data.playerExpressionProfileId == null)
             {
-                data.playerExpressionProfileId = string.Empty;
+                data.playerExpressionProfileId = profileId;
                 steps.Add("player expression profile initialized");
                 return true;
             }
 
-            if (!string.IsNullOrWhiteSpace(data.playerExpressionProfileId))
+            if (string.Equals(data.playerExpressionProfileId, profileId, StringComparison.Ordinal))
                 return false;
 
-            data.playerExpressionProfileId = string.Empty;
+            data.playerExpressionProfileId = profileId;
             steps.Add("player expression profile repaired");
             return true;
         }
@@ -2312,6 +2459,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("construction flood states repaired");
 
             bool repairedModules = false;
+            bool repairedCultivationSeedHashes = false;
             for (int i = 0; i < dto.moduleCount; i++)
             {
                 ModuleDTO module = dto.modules[i];
@@ -2323,6 +2471,11 @@ namespace Hecton8.SaveSystem
                     moduleChanged |= ModuleDTO.SanitizeForPersistenceInPlace(ref module);
                 }
 
+                bool hashBackfilled = BackfillCultivationSeedHashIds(ref module);
+                if (hashBackfilled)
+                    repairedCultivationSeedHashes = true;
+
+                moduleChanged |= hashBackfilled;
                 if (!moduleChanged && !capacityChanged)
                     continue;
 
@@ -2333,6 +2486,8 @@ namespace Hecton8.SaveSystem
 
             if (repairedModules)
                 steps.Add("construction module state repaired");
+            if (repairedCultivationSeedHashes)
+                steps.Add("construction cultivation seed hashes repaired");
 
             bool repairedGraphNodes = false;
             for (int i = 0; i < dto.graphNodeCount; i++)
@@ -2415,7 +2570,7 @@ namespace Hecton8.SaveSystem
                 for (int i = 0; i < dto.moduleCount; i++)
                 {
                     ModuleDTO module = dto.modules[i];
-                    if (!string.IsNullOrEmpty(module.prefabId) && module.integrity <= 0f)
+                    if (!string.IsNullOrWhiteSpace(module.prefabId) && module.integrity <= 0f)
                     {
                         module.integrity = LegacyModuleIntegrityDefault;
                         dto.modules[i] = module;
@@ -2458,14 +2613,61 @@ namespace Hecton8.SaveSystem
                    module.sorterBufferedItemIds.Length == ModuleDTO.MaxSorterBufferedSlots &&
                    module.sorterBufferedQuantities != null &&
                    module.sorterBufferedQuantities.Length == ModuleDTO.MaxSorterBufferedSlots &&
+                   module.recyclerBufferedItemIds != null &&
+                   module.recyclerBufferedItemIds.Length == ModuleDTO.MaxRecyclerBufferedSlots &&
+                   module.recyclerBufferedQuantities != null &&
+                   module.recyclerBufferedQuantities.Length == ModuleDTO.MaxRecyclerBufferedSlots &&
+                   module.recyclerPendingYieldItemIds != null &&
+                   module.recyclerPendingYieldItemIds.Length == ModuleDTO.MaxRecyclerPendingYieldSlots &&
+                   module.recyclerPendingYieldQuantities != null &&
+                   module.recyclerPendingYieldQuantities.Length == ModuleDTO.MaxRecyclerPendingYieldSlots &&
+                   module.storageCrateItemIds != null &&
+                   module.storageCrateItemIds.Length == ModuleDTO.MaxStorageCrateSlots &&
+                   module.storageCrateQuantities != null &&
+                   module.storageCrateQuantities.Length == ModuleDTO.MaxStorageCrateSlots &&
                    module.cultivationSeedItemIds != null &&
                    module.cultivationSeedItemIds.Length == ModuleDTO.MaxCultivationSlots &&
+                   module.cultivationSeedItemHashIds != null &&
+                   module.cultivationSeedItemHashIds.Length == ModuleDTO.MaxCultivationSlots &&
                    module.cultivationGeneticsMasks != null &&
                    module.cultivationGeneticsMasks.Length == ModuleDTO.MaxCultivationSlots &&
                    module.cultivationGrowth01 != null &&
                    module.cultivationGrowth01.Length == ModuleDTO.MaxCultivationSlots &&
                    module.cultivationQuality01 != null &&
                    module.cultivationQuality01.Length == ModuleDTO.MaxCultivationSlots;
+        }
+
+        private static bool BackfillCultivationSeedHashIds(ref ModuleDTO module)
+        {
+            if (module.cultivationSlotCount <= 0 ||
+                module.cultivationSeedItemIds == null ||
+                module.cultivationSeedItemHashIds == null)
+            {
+                return false;
+            }
+
+            int count = Math.Min(
+                Math.Clamp(module.cultivationSlotCount, 0, ModuleDTO.MaxCultivationSlots),
+                Math.Min(module.cultivationSeedItemIds.Length, module.cultivationSeedItemHashIds.Length));
+            bool changed = false;
+            for (int i = 0; i < count; i++)
+            {
+                if (module.cultivationSeedItemHashIds[i] != 0)
+                    continue;
+
+                string seedItemId = SaveData.SanitizePersistenceString(module.cultivationSeedItemIds[i]);
+                if (seedItemId.Length == 0)
+                    continue;
+
+                int seedHashId = LocHash.Compute(seedItemId);
+                if (seedHashId == 0)
+                    continue;
+
+                module.cultivationSeedItemHashIds[i] = seedHashId;
+                changed = true;
+            }
+
+            return changed;
         }
 
         private static bool EnsureHabitatFloodStateMirrors(ref ConstructionDTO dto, List<string> steps)
@@ -2835,13 +3037,15 @@ namespace Hecton8.SaveSystem
 
                 if (string.IsNullOrWhiteSpace(entry.id))
                 {
-                    entry.id = Guid.NewGuid().ToString("N");
+                    entry.id = BuildRepairedBeaconId(i, dto.nextSequence);
+                    repairedBeaconEntries = true;
                     changed = true;
                 }
 
                 if (string.IsNullOrWhiteSpace(entry.label))
                 {
                     entry.label = $"{DefaultBeaconLabelPrefix} {i + 1:00}";
+                    repairedBeaconEntries = true;
                     changed = true;
                 }
 
@@ -2870,6 +3074,15 @@ namespace Hecton8.SaveSystem
         }
 
         // ── v11-16: Lore Systems ──────────────────────────────────
+
+        private static string BuildRepairedBeaconId(int entryIndex, int nextSequence)
+        {
+            uint salt = unchecked((uint)LocHash.Compute("SaveDataMigration.BeaconNetwork.RepairedId"));
+            uint safeIndex = unchecked((uint)math.max(0, entryIndex));
+            uint safeSequence = unchecked((uint)math.max(1, nextSequence));
+            uint capacity = unchecked((uint)BeaconNetworkDTO.MaxEntries);
+            return $"{salt:x8}{safeIndex:x8}{safeSequence:x8}{capacity:x8}";
+        }
 
         private static bool EnsureLoreSystems(ref SaveData data, int sourceVersion, List<string> steps)
         {

@@ -4,7 +4,7 @@ release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.vent_micronode_power_nest
 unlock_id: unlock.vent_micronode_power_nest
 poi_tags: poi.vent_micronode_nest;poi.thermal_logic_patch
-biome_tags: biome.atlas;biome.vent
+biome_tags: biome.atlas;biome.abyss
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -19,24 +19,22 @@ localization_flags: 1
 
 # 噴出口マイクロノード電力巣
 
-噴出口マイクロノードは、熱い化学、金属粉、古い電力ハードが同じ亀裂を共有する場所にできる。コロニーを炉のように動かすものではない。小さなものを生かす。記憶ループ、診断の点滅、ドローンの一歩、何年も前に死ぬべきだったドアラッチ。
-
-Atlas Basin近くでは巣が濃くなる。どの勾配も使えるからだ。地質は熱を出す。生命は導電面を出す。壊れた機械は規則を出す。Marauderは電荷や記憶残滓を取れるが、同じノードが盗みに気づく修理ループを養っているかもしれない。
+噴出口マイクロノード巣は、深層機械フィールド付近でAtlasが濃くなる理由を説明するが、万能にはしない。各ノードは熱、鉱物化学、振動、圧力という局所勾配を回収する。単独の巣はコロニーを指揮できないが、パッチを起こし、ドローン痕に給電し、記憶断片を保存し、悪い修理を生かし続ける。
 
 ## Scanner
 
-噴出口クラスト内に熱マイクロノード。ドローン充電痕と記憶残滓あり。局所修理バスが電流を引いている。
+熱マイクロノードが噴出口壁で脈動している。鉱物喉部の周囲にドローン充電痕。
 
 ## Terminal
 
-噴出口マイクロノード // 化学勾配が低電力ルーティング、記憶残滓、断続的ドローン充電サイクルを支える。Atlas Basinの工場神殿構造近くでノード密度上昇。
+ATLAS電力痕跡: 噴出口勾配が局所ノードを養い、ノードがバイオフィルムとシーラント反応を起こす。ドローン充電間隔は不規則。中央命令の確度低。
 
 ## Audio
 
-ここまで来ると、熱にまで書類がある。
+ここまで深いと、熱にさえ作業命令がある。
 
 ## Field Note
 
-充電は一回だけ取って動け。二回目で巣が見返してくる。
+噴出口地帯、factory-temple接近、終盤ルートの修理残存に使う。
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/ja_JP. -->

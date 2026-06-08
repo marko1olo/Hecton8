@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Moon Ledger Role Table"
+title: "Rejestr tras księżyców Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Aegir Moon Ledger Role Table
+# Rejestr tras księżyców Aegir
 
-PL LOC HOLD: Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8.
+Rejestr tras księżyców Aegir mapuje księżycową drabinę wokół HECTON-8: bliskie ciała nie dają łatwych wyjść, tylko utrudniają timing ratunku, prawa ruchu i zaufanie do boi.
 
 ## Scanner
 
-PL LOC HOLD: Aegir moons are not decoration; each public moon label carries a route or salvage role.
+Księżyce Aegir zasługują na nazwy tym, co łamią, ukrywają, rozpraszają, przekaźnikują albo sprzedają.
 
 ## Terminal
 
-PL LOC HOLD: LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+REJESTR: ścinanie promieniowania Skarn, maskowanie przekaźników Vela, rozpraszanie lodu Claw, publiczne mapy tras Lumen, ruch plotek kwarantanny Thorne, przemysłowy salvage Anvil, ruch wysokich okien Kestrel, głębokie roszczenie HECTON, ekonomia martwych boi Mute.
 
 ## Audio
 
-PL LOC HOLD: The system has more bodies than stories. Good. Use them as pressure.
+Więcej ciał. Więcej wymówek. Więcej sposobów, by pomoc chybiła.
 
 ## Field Note
 
-PL LOC HOLD: Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+Księżyc oceaniczny jest sam pod wodą, nie sam w systemie.
 
 <!-- External Site; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/pl_PL. -->

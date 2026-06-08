@@ -7,34 +7,34 @@ poi_tags: poi.probe_packet_spool;poi.beam_sail_archive
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: he_IL
 surface: in_game_wiki
-source_voice: Neutral Reference
-spoiler_tier: 0
-title: "Probe Packet Travel Times"
+source_voice: Recovered Operational Note
+spoiler_tier: 1
+title: "זמני מסע של חבילות גשוש"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Probe Packet Travel Times
+# זמני מסע של חבילות גשוש
 
-HE LOC HOLD: Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.
+זמן מסע גשושים הוא הסיבה ש-Deep Reach יכלה להעריך את HECTON-8 לפני שיכלה להגן שם על אנשים. הרשומות הראשונות היו צרות, ישנות עם הגעתן וכבר פיננסיות. חבילה יכולה לגרום לתביעה להיראות בשלה בזמן שהתוכנית האנושית מאחוריה עדיין ניחוש.
 
 ## Scanner
 
-HE LOC HOLD: The first Aegir witnesses were packets, not colonists.
+העדים הראשונים של Aegir היו חבילות, לא מתיישבים.
 
 ## Terminal
 
-HE LOC HOLD: SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.
+שרשרת סקר: גשושים בסיוע קרן וכלי חבילה חוצים ראשונים, מחזירים אמת מיושנת, קובעים מתמטיקת בלימה ומאפשרים לתאגידים למכור נתיב לפני שהוא אנושי.
 
 ## Audio
 
-HE LOC HOLD: The probe saw the ocean before anyone had a grave there.
+הגשוש ראה את האוקיינוס לפני שלמישהו היה שם קבר.
 
 ## Field Note
 
-HE LOC HOLD: Unmanned craft can spend a career crossing a route before a person bets a body on it.
+גשוש יכול לבלות קריירה אנושית בחציית נתיב לפני שמישהו מסכן גוף.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/he_IL. -->

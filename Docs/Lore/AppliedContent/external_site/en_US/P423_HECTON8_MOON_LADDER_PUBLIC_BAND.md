@@ -8,7 +8,7 @@ biome_tags: biome.aegir_system;biome.publication
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 1
 title: "HECTON-8 Moon Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -27,7 +27,7 @@ Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
 
 ## Terminal
 
-MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER: public role labels only; exact orbital elements remain table-owned data.
 
 ## Audio
 

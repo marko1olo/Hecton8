@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "KO LOC HOLD: Resources and Ecology"
+title: "자원과 생태"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Resources and Ecology
+# 자원과 생태
 
-KO LOC HOLD: Resource/ecology hub: drowned crust, brine ladders, vent chemistry, living systems and Atlas' damaged repair logic.
+자원/생태 허브: drowned crust, brine ladders, vent chemistry, living systems, 손상된 Atlas repair logic.
 
 ## Scanner
 
-KO LOC HOLD: Publication hub: geology, blue debt, fauna grammar and Atlas repair-network misuse.
+공개 허브: geology, blue debt, fauna grammar, Atlas 수리 네트워크 misuse.
 
 ## Terminal
 
-KO LOC HOLD: SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.
+SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology, encounter grammar를 하나의 process map으로.
 
 ## Audio
 
-KO LOC HOLD: Nothing here is just loot.
+여기에는 단순한 loot가 없다.
 
 ## Field Note
 
-KO LOC HOLD: Navigation cluster record: resources and ecology belong together when materials, biota, and evidence pressure share the same route.
+자원과 생태는 material, biota, evidence pressure가 같은 루트를 공유할 때 함께 속한다.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/ko_KR. -->

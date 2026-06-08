@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Deep Reach Suboffice Registry"
+title: "Rejestr Podbiur Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Deep Reach Suboffice Registry
+# Rejestr Podbiur Deep Reach
 
-PL LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
+Rejestr podbiur jest ważny, bo nazywa maszynerię bez wymyślania sali tronowej. Deep Reach nie potrzebowało jednej osoby rozkazującej każdej śmierci. Potrzebowało biur o wąskich nazwach, zdolnych opóźniać, przeklasyfikować lub przekazać pakiet. Contract Continuity trzymało obligations przy życiu. Packet Notary decydowało, co jest proof. Quarantine Hold sprawiało, że rescue brzmiał groźnie. Asset Silence obniżało wartość świadków. Return Action decydowało, kto jest wart masy.
 
 ## Scanner
 
-PL LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
+SUBOFFICE REGISTRY // Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board i Return Action Queue.
 
 ## Terminal
 
-PL LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
+SUBOFFICES // Deep Reach trzymało śmiertelne decyzje poniżej poziomu jednego złoczyńcy. Małe desks routowały clauses, packets, quarantine, silence i return priority, aż żadna pieczęć nie wyglądała jak morderstwo.
 
 ## Audio
 
-PL LOC HOLD: A small desk can kill more quietly than a director.
+Mały desk może zabić ciszej niż dyrektor.
 
 ## Field Note
 
-PL LOC HOLD: Use dull names. Dull names are where liability hides.
+Nazwy mają być nudne. Tam chowa się liability.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/pl_PL. -->

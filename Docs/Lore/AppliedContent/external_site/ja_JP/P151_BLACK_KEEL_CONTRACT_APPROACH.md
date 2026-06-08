@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Black Keel Claim Acceptance"
+title: "Black Keel 請求受諾"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Black Keel Claim Acceptance
+# Black Keel 請求受諾
 
-JA LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+Black Keel の請求端末は、海が画面に触れる前から、債務、酸素加算、custody を開幕の重しにする。
 
 ## Scanner
 
-JA LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+契約端末。Aegir Reclamation Pool は酸素より先に 4.8 tonne-window の担保を表示する。
 
 ## Terminal
 
-JA LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+BLACK KEEL / 請求受諾端末: route RAN-B:H8 salvage descent; 4.8 tonne-window の lien relief は条件付き; 酸素 welfare addenda は回収後請求; payload custody は Black Keel 優先、Keelmark Mutual 証人; 拒否すると Barnard blacklist review が継続。
 
 ## Audio
 
-JA LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+Black Keel から請負者へ: 請求窓は開いている。酸素は回収後に請求される。働けるなら承認しろ。
 
 ## Field Note
 
-JA LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+スタイラスは圧力コードで画面につながれている。震える手を想定した作りだ。
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/ja_JP. -->
